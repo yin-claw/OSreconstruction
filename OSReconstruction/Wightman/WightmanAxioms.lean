@@ -180,16 +180,14 @@ structure WightmanQFT (d : ℕ) [NeZero d] where
   /-- Covariance: U(g) φ(f) U(g)⁻¹ = φ(g·f) where (g·f)(x) = f(g⁻¹·x).
 
       Expressed via matrix elements: for all g ∈ ISO(1,d), f ∈ 𝒮, and ψ, χ ∈ D,
-        ⟨U(g)χ, φ(f) U(g)ψ⟩ = ⟨χ, φ(g·f) ψ⟩
+        ⟨U(g)χ, φ(f) U(g)ψ⟩ = ⟨χ, φ(g⁻¹·f) ψ⟩
 
-      For scalar fields, the field transforms as:
-        U(g) φ(f) U(g)⁻¹ = φ(g·f)
-
-      This is equivalent to: ⟨U(g)χ, φ(f) U(g)ψ⟩ = ⟨χ, φ(g·f) ψ⟩ by unitarity. -/
+      Derivation: U(g)⁻¹ φ(f) U(g) = φ(g⁻¹·f) (substitute g → g⁻¹ in U(g)φ(f)U(g)⁻¹ = φ(g·f)),
+      so ⟨U(g)χ, φ(f) U(g)ψ⟩ = ⟨χ, U(g)⁻¹ φ(f) U(g) ψ⟩ = ⟨χ, φ(g⁻¹·f) ψ⟩. -/
   covariance : ∀ (g : PoincareGroup d) (f : SchwartzSpacetime d) (χ ψ : HilbertSpace),
     χ ∈ field.domain → ψ ∈ field.domain →
     ⟪poincare_rep.U g χ, field.operator f (poincare_rep.U g ψ)⟫_ℂ =
-    ⟪χ, field.operator (poincareActionOnSchwartz g f) ψ⟫_ℂ
+    ⟪χ, field.operator (poincareActionOnSchwartz g⁻¹ f) ψ⟫_ℂ
 
   -- W3: Locality
   /-- Locality: spacelike-separated fields commute -/
