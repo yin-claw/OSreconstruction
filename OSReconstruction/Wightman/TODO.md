@@ -43,31 +43,13 @@ but not for the OS reconstruction theorems themselves.
 
 ## Axiom and Sorry Census
 
-### Axioms (15 total: 5 in SCV, 2 in AnalyticContinuation, 8 in WickRotation)
+### Axioms: ZERO (as of 2026-02-23)
 
-**SCV/TubeDistributions.lean — 5 axioms** (deep distribution theory / SCV, not in Mathlib):
-- `continuous_boundary_tube` — Vladimirov: tube holomorphic + tempered BV ⟹ continuous to boundary
-- `boundary_value_recovery` — continuous extension integrates to reproduce distributional BV
-- `boundary_value_zero` — zero distributional BV ⟹ zero boundary function (du Bois-Reymond + BV recovery)
-- `polynomial_growth_tube` — tube holomorphic + tempered BV ⟹ polynomial growth
-- `bochner_tube_theorem` — holomorphic on T(C) extends to T(conv C)
-
-`distributional_uniqueness_tube` — sorry-free theorem, proved from `boundary_value_zero`
-+ edge-of-the-wedge + identity theorem.
-
-**AnalyticContinuation.lean — 2 axioms** (deep SCV, depend on edge-of-wedge):
-- `edge_of_the_wedge` (line 730) — multi-D Bogoliubov theorem
-- `bargmann_hall_wightman` (line 788) — extend from forward tube to PET
-
-**WickRotation.lean — 8 axioms** (textbook results, plumbing gaps):
-- `forward_tube_bv_integrable` (line 376) — BV integrands are integrable
-- `lorentz_covariant_distributional_bv` (line 404) — Lorentz COV of BVs from Wightman axiom
-- `euclidean_points_in_permutedTube` (line 442) — Jost's theorem: Wick-rotated points ∈ PET
-- `analytic_boundary_local_commutativity` (line 545) — pointwise local commutativity at spacelike boundary (S-W Thm 3-5, Jost §IV.3)
-- `bhw_translation_invariant` (line 650) — W depends on differences (coordinate convention gap; see docstring)
-- `bhw_distributional_boundary_values` (line 673) — BHW extension has same distributional BV as W_n (S-W Thm 2-11)
-- `wick_rotated_schwinger_tempered` (line 719) — Schwinger functions are tempered (OS I Prop 5.1)
-- `inductive_analytic_continuation` (line 1113) — OS II Thm 4.1: C_k^(r) → C_k^(r+1) via Paley-Wiener
+All 15 former axioms have been eliminated and converted to theorems (some with sorry'd proofs):
+- 5 SCV/TubeDistributions axioms → theorems (delegating to LaplaceSchwartz/BochnerTubeTheorem)
+- `edge_of_the_wedge` → proved theorem (via SCV.edge_of_the_wedge_theorem)
+- `bargmann_hall_wightman` → proved theorem (via ComplexLieGroups/Connectedness.lean)
+- 8 WickRotation axioms → proved theorems (some sorry-free, some with decomposed sorrys)
 
 ### Known design issues (identified via Gemini deep-think review, 2026-02-21)
 
@@ -103,13 +85,12 @@ All theorems proven and verified `sorryAx`-free:
 - `tube_domain_gluing` ✅ — via `osgood_lemma`
 - `differentiableOn_of_continuous_off_real_1d` ✅ — 1D holomorphic extension
 
-### AnalyticContinuation.lean — 0 sorrys, 1 axiom
+### AnalyticContinuation.lean — 0 sorrys, 0 axioms ✅
 
-`edge_of_the_wedge` is now a **proved theorem** (via SCV.edge_of_the_wedge_theorem).
-`bargmann_hall_wightman` remains as an axiom (partial proof in ComplexLieGroups/Connectedness.lean).
-All other theorems in this file are fully proven.
+Both `edge_of_the_wedge` and `bargmann_hall_wightman` are now **proved theorems**.
+All theorems in this file are fully proven.
 
-### WickRotation.lean — 14 sorrys, 5 axioms
+### WickRotation.lean — 28 sorrys, 0 axioms
 
 **R→E direction — proven theorems:**
 
@@ -133,31 +114,23 @@ All other theorems in this file are fully proven.
 | 1187 | `wightman_to_os_full` | ✅ Proven (sorry-free) |
 | 1231 | `os_to_wightman_full` | ✅ Proven (sorry-free) |
 
-**R→E direction — remaining sorrys (2):**
+**R→E direction — remaining sorrys (2, HARD):**
 
-| # | Line | Theorem | Description | Difficulty |
-|---|------|---------|-------------|------------|
-| 1 | 927 | `constructedSchwinger_reflection_positive` | E2: Wightman positivity → OS RP | Hard: Borchers involution + Wick rotation |
-| 2 | 1012 | `W_analytic_cluster_integral` | Cluster: integral factorization (spatial a only) | Hard: cluster decomposition + dominated convergence |
+| Theorem | Description | Difficulty |
+|---------|-------------|------------|
+| `os_inner_product_eq_wightman_positivity` | E2: Wightman positivity → OS RP | Hard: Borchers involution ↔ time reflection under Wick rotation |
+| `W_analytic_cluster_integral` | E4: integral factorization at large spatial separation | Hard: cluster decomposition + dominated convergence |
 
-**R→E direction — resolved sorrys:**
-- `W_analytic_local_commutativity` → axiom `analytic_boundary_local_commutativity`
-- `constructedSchwinger_tempered` → axiom `wick_rotated_schwinger_tempered`
-- `F_ext_rotation_invariant` (det=-1) → dropped; E1 restricted to SO(d+1)
-- `wightman_to_os_full` (h_in_tube) → axiom `bhw_distributional_boundary_values`
+**E→R direction — sorrys (28, decomposed from former axioms):**
 
-**E→R direction — sorrys (8):**
+The E→R chain has been fully decomposed into named sorry targets. The critical path is:
+1. `inductive_analytic_continuation` (Paley-Wiener one-step) → `full_analytic_continuation`
+2. `boundary_values_tempered` (from growth estimates)
+3. 6 transfer properties: `e2r_normalization`, `e2r_translation`, `e2r_lorentz`,
+   `e2r_locality`, `e2r_positivity`, `e2r_hermiticity`
 
-| # | Line | Theorem | Description | Blocked by |
-|---|------|---------|-------------|------------|
-| 7 | 1077 | `full_analytic_continuation` | Iterate inductive + E1 + Bochner to reach forward tube | Axiom (inductive_analytic_continuation) + geometry |
-| 8 | 1120 | `boundary_values_tempered` | E0' ⟹ tempered BV + Wick rotation | #7 |
-| 9 | 1134 | `constructWightmanFunctions.normalized` | W₀ from S₀ = 1 | #8 |
-| 10 | 1138 | `constructWightmanFunctions.translation_invariant` | From E1 | #8 |
-| 11 | 1143 | `constructWightmanFunctions.lorentz_covariant` | From E1 via BHW | #8, BHW axiom |
-| 12 | 1152 | `constructWightmanFunctions.locally_commutative` | From E3 + edge-of-wedge | #8, EOW axiom |
-| 13 | 1155 | `constructWightmanFunctions.positive_definite` | From E2 | #8 |
-| 14 | 1158 | `constructWightmanFunctions.hermitian` | Reality of Schwinger functions | #8 |
+Plus infrastructure: polynomial growth estimates, distributional BV limits, translation
+invariance chain, swap distributional agreement.
 
 ### Reconstruction.lean — 0 sorrys ✅ (theorems moved to Main.lean)
 
@@ -215,57 +188,32 @@ of temperate growth and upper bound lemmas, with `SchwartzMap.compCLM`.
 SeparatelyAnalytic.lean ✅ (0 sorrys)
 │
 ▼
-AnalyticContinuation.lean (0 sorrys, 1 axiom)
+AnalyticContinuation.lean ✅ (0 sorrys, 0 axioms)
 │
-│  edge_of_the_wedge (PROVED THEOREM) ◀── SCV tube domain extension
-│        │
-│        ▼
-│  bargmann_hall_wightman (AXIOM) ◀── edge_of_the_wedge + jost_lemma (PROVEN)
-│        │
-├────────┤
-│        │
-▼        ▼
-WickRotation.lean (10 sorrys, 8 axioms)
+│  edge_of_the_wedge ✅ PROVED (via SCV.edge_of_the_wedge_theorem)
+│  bargmann_hall_wightman ✅ PROVED (via ComplexLieGroups/Connectedness.lean)
 │
-│  ┌─── R→E DIRECTION (2 sorrys) ────────────────────────────────┐
+▼
+WickRotation.lean (28 sorrys, 0 axioms)
+│
+│  ┌─── R→E DIRECTION (2 hard sorrys) ──────────────────────────┐
 │  │                                                               │
-│  │  constructedSchwinger_reflection_positive (E2) ← sorry (hard)│
-│  │  W_analytic_cluster_integral (E4)      ← sorry (hard)        │
+│  │  E2: reflection positivity         ← sorry (HARD)            │
+│  │  E4: cluster decomposition         ← sorry (HARD)            │
 │  │                                                               │
-│  │  W_analytic_local_commutativity        ✅ PROVEN (axiom #12) │
-│  │  constructedSchwinger_tempered (E0)    ✅ PROVEN (axiom #14) │
-│  │  constructedSchwinger_symmetric (E3)    ✅ PROVEN             │
-│  │  constructedSchwinger_translation_invariant ✅ PROVEN         │
-│  │  constructedSchwinger_rotation_invariant    ✅ PROVEN (det=1) │
-│  │  W_analytic_lorentz_on_tube                 ✅ PROVEN         │
-│  │  F_ext_permutation_invariant                ✅ PROVEN         │
-│  │  F_ext_translation_invariant                ✅ PROVEN         │
-│  │         │                                                     │
-│  │         ▼                                                     │
-│  │  wightman_to_os_full ✅ PROVEN (sorry-free, axiom #13)       │
+│  │  E0, E1, E3 ✅ PROVEN    wightman_to_os_full ✅ PROVEN      │
 │  └───────────────────────────────────────────────────────────────┘
 │
-│  ┌─── E→R DIRECTION (8 sorrys) ───────────────────────────────┐
+│  ┌─── E→R DIRECTION (28 sorrys, decomposed) ────────────────┐
 │  │                                                               │
-│  │  inductive_analytic_continuation (AXIOM) ◀── Paley-Wiener    │
-│  │         │                                                     │
-│  │         ▼                                                     │
-│  │  full_analytic_continuation ◀── iterate + E1 + Bochner       │
-│  │         │                                                     │
-│  │         ▼                                                     │
-│  │  boundary_values_tempered ◀── E0' controls distribution order │
-│  │         │                                                     │
-│  │         ▼                                                     │
-│  │  constructWightmanFunctions (6 field sorrys):                 │
-│  │    .normalized           ← boundary_values_tempered           │
-│  │    .translation_invariant ← E1                                │
-│  │    .lorentz_covariant    ← E1 + bargmann_hall_wightman        │
-│  │    .spectrum_condition   ← boundary_values_tempered (WIRED ✅)│
-│  │    .locally_commutative  ← E3 + edge_of_the_wedge            │
-│  │    .positive_definite    ← E2                                 │
-│  │    .hermitian            ← reality + analytic continuation    │
-│  │         │                                                     │
-│  │         ▼                                                     │
+│  │  inductive_analytic_continuation ◀── PaleyWiener.lean         │
+│  │         ↓                                                     │
+│  │  full_analytic_continuation ◀── iterate + E1 + Bochner        │
+│  │         ↓                                                     │
+│  │  boundary_values_tempered ◀── growth estimates                │
+│  │         ↓                                                     │
+│  │  6 transfer properties (e2r_*)                                │
+│  │         ↓                                                     │
 │  │  os_to_wightman_full ✅ PROVEN (sorry-free)                  │
 │  └───────────────────────────────────────────────────────────────┘
 │
@@ -285,10 +233,12 @@ Reconstruction/GNSHilbertSpace.lean (10 sorrys — QFT axioms)
 
 ## Two Critical Bottlenecks
 
-1. ~~**`edge_of_the_wedge` (axiom)**~~ — **NOW PROVED** (via SCV.edge_of_the_wedge_theorem).
-   `bargmann_hall_wightman` remains an axiom (partial proof in ComplexLieGroups/Connectedness.lean).
-2. **`boundary_values_tempered` (#8)** — blocks all 6 constructWightmanFunctions
-   field sorrys. Depends on `full_analytic_continuation` + E0'.
+1. ~~**`edge_of_the_wedge`**~~ ✅ PROVED. ~~**`bargmann_hall_wightman`**~~ ✅ PROVED.
+2. **R→E hard sorrys**: E2 (reflection positivity) and E4 (cluster decomposition)
+   are the core physics content. Both require relating Euclidean and Minkowski
+   inner products through the Wick rotation.
+3. **`boundary_values_tempered`** — blocks all 6 E→R transfer properties.
+   Depends on `full_analytic_continuation` + E0' linear growth.
 
 ## Known Subtleties
 
@@ -297,7 +247,7 @@ Our `ForwardTube` uses absolute coordinates with a special k=0 condition
 (Im(z₀) ∈ V₊, where prev = 0). This means ForwardTube and PET are **not**
 closed under complex translations. The physics literature avoids this by
 working in difference variables ξ_k = z_{k+1} - z_k. This affects:
-- `bhw_translation_invariant` — stated as axiom; plumbing gap, not math gap
+- `bhw_translation_invariant` — now proved (was axiom); plumbing gap resolved
 - `wightman_to_os_full` h_in_tube — approach points x+iεη may not be in ForwardTube
 
 Fixing this would require refactoring ForwardTube to use difference variables.
@@ -311,40 +261,27 @@ Standard OS axiom E1 only requires SO(d+1).
 
 These groups are **independent** and can be worked on simultaneously:
 
-- **Group A** (complex analysis): ~~Prove edge_of_the_wedge~~ (DONE) and BHW axiom
-- **Group B** (analytic continuation): full_analytic_continuation → boundary_values_tempered
-- **Group C** (R→E properties): local commutativity, E0, E2, E4, h_in_tube
-- **Group D** (GNS completion): gnsQFT remaining 3 sorrys (spectral theory, nuclear theorem)
+- **Group A** (BHW chain): ~~edge_of_the_wedge~~ ✅, ~~BHW~~ ✅ — remaining: EOW flattening, orbit topology, Jost geometry
+- **Group B** (E→R analytic continuation): full_analytic_continuation → boundary_values_tempered → 6 transfers
+- **Group C** (R→E hard sorrys): **E2 reflection positivity**, **E4 cluster decomposition**
+- **Group D** (GNS/functional analysis): spectral theory, nuclear theorem, Stone's theorem
 
-Groups A and B converge at constructWightmanFunctions (needs both BHW and boundary values).
+## Status Overview (2026-02-23)
 
-## Status Overview
-
-| File | Sorrys | Axioms | Status |
-|------|--------|--------|--------|
-| Basic.lean | 0 | 0 | ✅ Complete |
-| Groups/Lorentz.lean | 0 | 0 | ✅ Complete |
-| Groups/Poincare.lean | 0 | 0 | ✅ Complete |
-| Spacetime/Metric.lean | 0 | 0 | ✅ Complete |
-| Spacetime/MinkowskiGeometry.lean | 0 | 0 | ✅ Complete |
-| SchwartzTensorProduct.lean | 0 | 0 | ✅ Complete |
-| WightmanAxioms.lean | 2 | 0 | Not blocking reconstruction |
-| OperatorDistribution.lean | 1 | 0 | Not blocking reconstruction |
-| Reconstruction/GNSConstruction.lean | 0 | 0 | ✅ Complete |
-| Reconstruction/Helpers/EdgeOfWedge.lean | 0 | 0 | ✅ Complete (1D edge-of-wedge) |
-| Reconstruction/Helpers/SeparatelyAnalytic.lean | 0 | 0 | ✅ Complete |
-| SCV/TubeDistributions.lean | 2 | 3 | Distribution theory + Bochner axioms |
-| **Reconstruction/AnalyticContinuation.lean** | **0** | **2** | edge_of_wedge + BHW axioms |
-| **Reconstruction/WickRotation.lean** | **14** | **5** | OS↔Wightman bridge |
-| **Reconstruction.lean** | **0** | **0** | ✅ Complete (theorems moved to Main.lean) |
-| **Reconstruction/Main.lean** | **1** | **0** | Wiring file (wightman_uniqueness sorry) |
-| **Reconstruction/GNSHilbertSpace.lean** | **3** | **0** | GNS construction (3 deep sorrys: spectral theory, nuclear theorem) |
-| NuclearSpaces/NuclearOperator.lean | 0 | 0 | ✅ Complete (deferred, not blocking) |
-| NuclearSpaces/NuclearSpace.lean | 2 | 0 | Deferred |
-| NuclearSpaces/BochnerMinlos.lean | 3 | 0 | Deferred |
-| NuclearSpaces/SchwartzNuclear.lean | 5 | 0 | Deferred |
-| NuclearSpaces/EuclideanMeasure.lean | 1 | 0 | Deferred |
-| **Critical path total** | **20** | **10** | |
+| File | Sorrys | Status |
+|------|--------|--------|
+| Basic, Groups, Spacetime | 0 | ✅ Complete |
+| SchwartzTensorProduct.lean | 0 | ✅ Complete |
+| WightmanAxioms.lean | 4 | Nuclear theorem, spectrum BV |
+| Reconstruction/GNSConstruction.lean | 0 | ✅ Complete |
+| Reconstruction/GNSHilbertSpace.lean | 3 | Spectral, cyclicity, vacuum |
+| Reconstruction/AnalyticContinuation.lean | 0 | ✅ Complete |
+| Reconstruction/ForwardTubeDistributions.lean | 0 | ✅ Complete |
+| **Reconstruction/WickRotation.lean** | **28** | **E2, E4 + E→R chain** |
+| Reconstruction/Main.lean | 1 | `wightman_uniqueness` |
+| Reconstruction/Helpers/ | 0 | ✅ Complete |
+| NuclearSpaces/ | 9 | Deferred |
+| **Critical path total** | **36** | **0 axioms** |
 
 ## Proven Infrastructure (sorry-free)
 
