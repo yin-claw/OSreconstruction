@@ -570,6 +570,70 @@ instance : IsTopologicalGroup (RestrictedLorentzGroup d) where
       ((continuous_subtype_val.comp continuous_subtype_val).matrix_transpose)).matrix_mul
       continuous_const
 
+/-- Any Lorentz element joined to the identity has `Λ₀₀ ≥ 1`.
+
+This is the connected-component version of orthochrony: along any continuous path in
+the Lorentz group, the inequality `Λ₀₀^2 ≥ 1` prevents crossing from `Λ₀₀ ≥ 1` to
+`Λ₀₀ ≤ -1` without passing through `(-1,1)`, which is impossible. -/
+theorem joined_entry00_ge_one
+    (Λ : LorentzGroup d) (hJ : Joined (1 : LorentzGroup d) Λ) :
+    ((Λ : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) 0 0) ≥ 1 := by
+  rcases hJ with ⟨γ⟩
+  let f : unitInterval → ℝ := fun t =>
+    ((γ t : LorentzGroup d) : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) 0 0
+  have hcont : Continuous f :=
+    (continuous_subtype_val.comp γ.continuous).matrix_elem 0 0
+  have hsq : ∀ t : unitInterval, (f t) ^ 2 ≥ 1 := by
+    intro t
+    exact IsLorentzMatrix.entry00_sq_ge_one (d := d)
+      (Λ := ((γ t : LorentzGroup d) : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ))
+      (show IsLorentzMatrix d
+        (((γ t : LorentzGroup d) : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)) from
+          (γ t).2)
+  set S : Set unitInterval := {t | f t ≥ 1}
+  set T : Set unitInterval := {t | f t ≤ -1}
+  have hcover : ∀ t : unitInterval, f t ≥ 1 ∨ f t ≤ -1 := by
+    intro t
+    rcases le_total 0 (f t) with hnonneg | hneg
+    · left
+      nlinarith [hsq t]
+    · right
+      nlinarith [hsq t]
+  have hS_closed : IsClosed S := isClosed_le continuous_const hcont
+  have hT_closed : IsClosed T := isClosed_le hcont continuous_const
+  have hS_eq_Tc : S = Tᶜ := by
+    ext t
+    constructor
+    · intro ht
+      simp only [T, Set.mem_setOf_eq, Set.mem_compl_iff]
+      intro htT
+      have ht' : f t ≥ 1 := by simpa [S, Set.mem_setOf_eq] using ht
+      nlinarith [ht', htT]
+    · intro ht
+      have hnotT : ¬ f t ≤ -1 := by
+        simpa [T, Set.mem_setOf_eq, Set.mem_compl_iff] using ht
+      exact (hcover t).resolve_right hnotT
+  have hS_open : IsOpen S := by
+    rw [hS_eq_Tc]
+    exact hT_closed.isOpen_compl
+  have hγ0 : (γ ⟨0, unitInterval.zero_mem⟩ : LorentzGroup d) = 1 := by
+    exact γ.source
+  have h0_ge : f ⟨0, unitInterval.zero_mem⟩ ≥ 1 := by
+    have hle : (((1 : LorentzGroup d) : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) 0 0) ≥ 1 := by
+      rfl
+    simpa [f, hγ0] using hle
+  have hS_zero : (⟨0, unitInterval.zero_mem⟩ : unitInterval) ∈ S := by
+    simpa [S, Set.mem_setOf_eq] using h0_ge
+  have hS_univ : S = Set.univ := IsClopen.eq_univ ⟨hS_closed, hS_open⟩ ⟨_, hS_zero⟩
+  have h_end_mem : (⟨1, unitInterval.one_mem⟩ : unitInterval) ∈ S := by
+    rw [hS_univ]
+    exact Set.mem_univ _
+  have h_end_f : f ⟨1, unitInterval.one_mem⟩ ≥ 1 := by
+    simpa [S, Set.mem_setOf_eq] using h_end_mem
+  have hγ1 : (γ ⟨1, unitInterval.one_mem⟩ : LorentzGroup d) = Λ := by
+    exact γ.target
+  simpa [f, hγ1] using h_end_f
+
 /-- Joined 1 a → Joined 1 b → Joined 1 (a * b) in any topological group. -/
 private theorem joined_one_mul_general {G : Type*} [TopologicalSpace G] [Group G]
     [IsTopologicalGroup G] {a b : G} (ha : Joined 1 a) (hb : Joined 1 b) :

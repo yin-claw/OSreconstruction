@@ -21,7 +21,6 @@ O_w = {Λ ∈ SO⁺(1,d;ℂ) : Λ·w ∈ ForwardTube} is path-connected.
 - `inOpenForwardCone_convex`: The forward cone is convex.
 - `real_lorentz_preserves_forwardCone`: Real Lorentz transformations preserve V₊.
 - `ofReal_im_action`: For real Lorentz R, Im(R·w) = R·Im(w).
-- `geodesic_convexity_forwardCone`: The geodesic convexity theorem.
 
 Ref: Streater & Wightman, Theorem 2-11; Bros-Epstein-Glaser (1967).
 -/
@@ -458,86 +457,13 @@ theorem conjLG_realAlgPath_one (Y : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
 
 /-! ### Geodesic convexity of the forward cone -/
 
-/-- **Geodesic convexity of the forward light cone.**
-
-    If w ∈ ℂ^{d+1} has Im(w) ∈ V₊, and for Y ∈ so(1,d;ℝ),
-    Im(exp(iY)·w) ∈ V₊, then Im(exp(itY)·w) ∈ V₊ for all t ∈ [0,1].
-
-    The proof uses the ODE d²η/dt² = -Y²η satisfied by η(t) = Im(exp(itY)·w),
-    combined with block diagonalization, sinh convexity, and sine positivity.
-
-    Ref: Streater-Wightman, Lemma 2-2; Bros-Epstein-Glaser (1967). -/
-theorem geodesic_convexity_forwardCone
-    (Y : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
-    (hY : IsInLorentzAlgebra d Y)
-    (w : Fin (d + 1) → ℂ)
-    (hw : InOpenForwardCone d (fun μ => (w μ).im))
-    (hexp : InOpenForwardCone d (fun μ =>
-      (∑ ν, (realAlgPath Y hY 1).val μ ν * w ν).im)) :
-    ∀ t : ℝ, 0 ≤ t → t ≤ 1 →
-      InOpenForwardCone d (fun μ =>
-        (∑ ν, (realAlgPath Y hY t).val μ ν * w ν).im) := by
-  -- Define the imaginary part path η(t) = Im(exp(itY)·w)
-  set η : ℝ → Fin (d + 1) → ℝ :=
-    fun t μ => (∑ ν, (realAlgPath Y hY t).val μ ν * w ν).im with η_def
-  -- The set S = {t ∈ [0,1] | η(t) ∈ V₊} is what we want to show equals [0,1]
-  -- Strategy: S is open in [0,1] (by continuity + V₊ open) and non-empty (contains 0 and 1).
-  -- We show S is also closed in [0,1], hence S = [0,1] by connectedness.
-
-  -- Step 1: η is continuous
-  have η_continuous : Continuous η := by
-    apply continuous_pi; intro μ
-    -- Im(∑ ν, (realAlgPath Y hY t).val μ ν * w ν) is continuous in t
-    apply Complex.continuous_im.comp
-    apply continuous_finset_sum; intro ν _
-    -- t ↦ (realAlgPath Y hY t).val μ ν is continuous
-    have hentry : Continuous (fun t => (realAlgPath Y hY t).val μ ν) :=
-      (ComplexLorentzGroup.continuous_entry μ ν).comp (realAlgPath_continuous Y hY)
-    exact hentry.mul continuous_const
-
-  -- Step 2: η(0) = Im(w) ∈ V₊
-  have η_zero : η 0 = fun μ => (w μ).im := by
-    ext μ; simp only [η_def, realAlgPath_zero]
-    simp [ComplexLorentzGroup.one_val', Matrix.one_apply, ite_mul, one_mul, zero_mul,
-      Finset.sum_ite_eq, Finset.mem_univ]
-
-  -- Step 3: η(1) ∈ V₊
-  have η_one : InOpenForwardCone d (η 1) := by
-    show InOpenForwardCone d (fun μ => (∑ ν, (realAlgPath Y hY 1).val μ ν * w ν).im)
-    exact hexp
-
-  -- Step 4: η(0) ∈ V₊
-  have η_zero_cone : InOpenForwardCone d (η 0) := by rw [η_zero]; exact hw
-
-  -- Step 5: The set S = η⁻¹(V₊) ∩ [0,1] is open in [0,1]
-  -- since V₊ is open (as a set in ℝ^{d+1}) and η is continuous
-  have hV_open : IsOpen {v : Fin (d + 1) → ℝ | InOpenForwardCone d v} := by
-    -- V₊ = {v | v 0 > 0} ∩ {v | ∑ μ, η_μ * v_μ² < 0}
-    -- Both sets are open (preimages of open sets under continuous functions)
-    have h1 : IsOpen {v : Fin (d + 1) → ℝ | v 0 > 0} :=
-      isOpen_lt continuous_const (continuous_apply 0)
-    have h2 : IsOpen {v : Fin (d + 1) → ℝ | ∑ μ, minkowskiSignature d μ * v μ ^ 2 < 0} := by
-      apply isOpen_lt
-      · exact continuous_finset_sum _ (fun μ _ =>
-          (continuous_const.mul ((continuous_apply μ).pow 2)))
-      · exact continuous_const
-    exact h1.inter h2
-
-  -- The key mathematical step: geodesic convexity.
-  -- {t ∈ [0,1] | η(t) ∈ V₊} is open (proved above) AND closed in [0,1].
-  -- The closedness uses the fact that η(t) cannot cross the light cone boundary
-  -- because the Lorentz group preserves the causal structure.
-  --
-  -- Proof idea for closedness: Consider the Minkowski norm Q(η(t)) along the path.
-  -- Since exp(itY) ∈ SO⁺(1,d;ℂ), the complex Lorentz transformation preserves
-  -- the quadratic form on the full complex vector, which constrains the imaginary part.
-  -- Combined with η₀(t) > 0 at endpoints, the intermediate value theorem
-  -- and the constraint from the quadratic form prevent η(t) from leaving V₊.
-  --
-  -- The full proof requires analyzing the ODE η''(t) = -Y²η(t) and showing
-  -- that the solutions (combinations of sinh, cosh, sin, cos) preserve the cone.
-  -- This is the content of Streater-Wightman Lemma 2-2.
-  sorry
+/-
+NOTE (2026-02-25): The previous theorem
+`geodesic_convexity_forwardCone` has been removed from the working chain.
+A numerical d=1 counterexample search indicates the stated endpoint-to-full-interval
+implication was too strong as written. Any replacement must use a corrected statement
+or additional hypotheses before it can be used safely in connectedness arguments.
+-/
 
 /-! ### Polar decomposition (Cartan decomposition of symmetric space) -/
 

@@ -35,23 +35,23 @@ All `sorry`s removed in `JostPoints.lean`.
 - `forwardJostSet_subset_jostSet` ✅ — ForwardJostSet ⊂ JostSet
 - `jostSet_nonempty`, `forwardJostSet_nonempty`, `forwardJostSet_isOpen` ✅
 
-### Connectedness.lean — 4 sorrys
+### Connectedness.lean — 3 sorrys
 | # | Line | Name | Status |
 |---|------|------|--------|
-| 1 | 1961 | `T_inter_U_grp_isOpen` | **sorry** — generic statement currently too weak; counterexample formalized in `test/t_inter_u_grp_counterexample.lean` |
-| 2 | 1972 | `U_grp_isPreconnected` | **sorry** — U_grp preconnected on extension domain |
-| 3 | 2283 | `iterated_eow_permutation_extension` | **sorry** — EOW iteration for general σ |
-| 4 | 2541 | `adjacent_sectors_overlap` | **sorry** — Jost-point style overlap between adjacent sectors |
+| 1 | 1246 | `orbitSet_isPreconnected` | **sorry** — geometric orbit preconnectedness after removing false geodesic convexity route |
+| 2 | 2121 | `iterated_eow_permutation_extension` | **sorry** — EOW iteration for general σ |
+| 3 | 2418 | `adjacent_sectors_overlap_right` | **sorry** — Jost-point style overlap between adjacent sectors |
 
-### GeodesicConvexity.lean — 3 sorrys
+### GeodesicConvexity.lean — 2 sorrys
 | # | Line | Name | Status |
 |---|------|------|--------|
-| 1 | 540 | `geodesic_convexity_forwardCone` | **sorry** — geodesic cone convexity |
-| 2 | 598 | `cartan_exp_embedding` | **sorry** — symmetric-space exponential surjectivity |
-| 3 | 745 | `hM_orth` subgoal in `polar_decomposition` | **sorry** — orthochronous real factor |
+| 1 | 524 | `cartan_exp_embedding` | **sorry** — symmetric-space exponential surjectivity |
+| 2 | 671 | `polar_decomposition` | **sorry** — orthochronous real factor / real Cartan extraction |
 
 NOTE: The false lemma `open_locally_path_connected_subset_preconnected` was DELETED
 (GitHub issue #30). The counterexample is G = ℝ, S = (-2,-1) ∪ (-½,½) ∪ (1,2).
+The previous `geodesic_convexity_forwardCone` statement was also REMOVED
+(2026-02-25) after counterexample analysis.
 Also U = {Λ | ∃ w ∈ FT, Λ·w ∈ FT} ≠ G (counterexample: Λ = -I maps V⁺ to V⁻).
 See `test/proofideas_orbit_preconnected.lean` for correct proof strategies.
 
@@ -63,9 +63,9 @@ See `test/proofideas_orbit_preconnected.lean` for correct proof strategies.
 - BHW Property 4 (permutation symmetry) — permutation composition + well-definedness
 - **BHW Property 5 (uniqueness)** — identity theorem for product types + PET connected
 
-Note: `nonemptyDomain_isPreconnected` is PROVED from `orbitSet_isPreconnected`
+Note: `nonemptyDomain_isPreconnected` is reduced to `orbitSet_isPreconnected`
 using `isPreconnected_sUnion`. `complex_lorentz_invariance` is proved modulo
-`orbitSet_isPreconnected`.
+this geometric input.
 
 New infrastructure (2026-02-22):
 - `SCV.flattenCLE` — CLE from `Fin n → Fin m → ℂ` to `Fin (n*m) → ℂ`
@@ -86,7 +86,7 @@ Previously proved infrastructure:
 - `extendF`, `extendF_eq_on_forwardTube`, `extendF_preimage_eq`, etc.
 - BHW theorem statement with all hypotheses
 
-**Total: 7 sorrys across 2 files** (Connectedness: 4, GeodesicConvexity: 3)
+**Total: 5 sorrys across 2 files** (Connectedness: 3, GeodesicConvexity: 2)
 
 ---
 
@@ -144,21 +144,21 @@ LorentzLieGroup.lean ✓                       Complexification.lean ✓
             │                                        │
             │                                        │
             ▼                                        ▼
-          JostPoints.lean (4 sorrys)
-            forwardJostSet_subset_extendedTube ✓ (Jost's lemma)
-            spatial_rotation_e12_plane [sorry]
-            swap_jost_set_exists [sorry]
-            isConnected_extendedTube [sorry]
-            tube_domain_intersection_connected [sorry]
+          JostPoints.lean ✓
+            forwardJostSet_subset_extendedTube ✓
+            extendF_holomorphicOn ✓
+            extendF_eq_boundary_value ✓
                      │
                      ▼
-          Connectedness.lean (6 sorrys)
+          GeodesicConvexity.lean (2 sorrys)
+            cartan_exp_embedding [symmetric-space exp surjectivity]
+            polar_decomposition [real/orthochronous factor extraction]
+                     │
+                     ▼
+          Connectedness.lean (3 sorrys)
             orbitSet_isPreconnected [geometric — needs Lie group fiber theory]
-            eow_adj_swap_extension [EOW flattening]
-            T_inter_U_grp_isOpen [orbit connectivity on extension domain]
-            U_grp_isPreconnected [orbit connectivity on extension domain]
             iterated_eow_permutation_extension [EOW iteration]
-            adjacent_sectors_overlap [Jost points]
+            adjacent_sectors_overlap_right [Jost-point overlap witness]
                      │
                      ▼
           SCV/IdentityTheorem.lean ✓
@@ -171,8 +171,8 @@ LorentzLieGroup.lean ✓                       Complexification.lean ✓
 
 ## Execution Order
 
-1. **Connectedness.lean** — prove `orbitSet_isPreconnected` (geometric analysis)
-2. **Connectedness.lean** — prove `F_permutation_invariance` (edge-of-the-wedge)
-3. **Connectedness.lean** — prove PET preconnected (follows from 2)
-4. Build: `lake build OSReconstruction.ComplexLieGroups`
-5. **LorentzLieGroup.lean** — prove `isPathConnected` (Phase 3, when convenient)
+1. **GeodesicConvexity.lean** — prove `cartan_exp_embedding` / `polar_decomposition`
+2. **Connectedness.lean** — prove `orbitSet_isPreconnected` (geometric analysis)
+3. **Connectedness.lean** — prove `iterated_eow_permutation_extension`
+4. **Connectedness.lean** — prove `adjacent_sectors_overlap_right`
+5. Build: `lake build OSReconstruction.ComplexLieGroups`

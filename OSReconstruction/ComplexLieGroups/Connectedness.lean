@@ -1233,104 +1233,17 @@ private theorem ofReal_preserves_forwardTube (R : RestrictedLorentzGroup d)
   rw [imDiff_eq_im_diffVec] at hk
   exact real_lorentz_preserves_forwardCone R _ hk
 
-/-- The geodesic path exp(itY) preserves the forward tube,
-    given endpoints are in the forward tube (geodesic convexity). -/
-private theorem geodesicPath_preserves_forwardTube
-    (Y : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) (hY : IsInLorentzAlgebra d Y)
-    (z : Fin n → Fin (d + 1) → ℂ) (hz : z ∈ ForwardTube d n)
-    (hexp : complexLorentzAction (realAlgPath Y hY 1) z ∈ ForwardTube d n)
-    (t : ℝ) (ht0 : 0 ≤ t) (ht1 : t ≤ 1) :
-    complexLorentzAction (realAlgPath Y hY t) z ∈ ForwardTube d n := by
-  intro k
-  show InOpenForwardCone d (imDiff (complexLorentzAction (realAlgPath Y hY t) z) k)
-  rw [imDiff_eq_im_diffVec, diffVec_action]
-  -- Apply geodesic_convexity_forwardCone to each difference vector δ_k
-  have hz_k : InOpenForwardCone d (imDiff z k) := hz k
-  rw [imDiff_eq_im_diffVec] at hz_k
-  have hexp_k : InOpenForwardCone d
-      (imDiff (complexLorentzAction (realAlgPath Y hY 1) z) k) := hexp k
-  rw [imDiff_eq_im_diffVec, diffVec_action] at hexp_k
-  exact geodesic_convexity_forwardCone Y hY (diffVec z k) hz_k hexp_k t ht0 ht1
-
 /-- **The orbit set O_w is preconnected.**
-    Uses polar decomposition + geodesic convexity + real Lorentz path-connectedness.
+    Geometric input for `nonemptyDomain_isPreconnected`.
 
-    For Λ ∈ O_w, write Λ = ofReal(R) · exp(iY) (polar decomposition).
-    Path 1: 1 → ofReal(R) via the real Lorentz group (stays in O_w by FT preservation).
-    Path 2: ofReal(R) → Λ via t ↦ ofReal(R) · exp(itY) (stays in O_w by geodesic convexity).
-
-    Ref: Streater & Wightman, *PCT, Spin and Statistics*, proof of Theorem 2-11.
-    See also `test/proofideas_orbit_preconnected.lean` for detailed analysis.
-
-    NOTE: A previous general topology lemma claiming that an open locally
-    path-connected subset of a path-connected group containing 1 is preconnected
-    was FALSE (counterexample: G = ℝ, S = (-2,-1) ∪ (-½,½) ∪ (1,2)).
-    See GitHub issue #30. The correct proof requires the specific Lie-theoretic
-    structure of the Lorentz group orbit, not just general topology. -/
+    NOTE (2026-02-25): The previous proof route used a global endpoint-to-interval
+    geodesic cone lemma, which is false as stated and has been removed. A corrected
+    proof must use stronger hypotheses (or a different path construction). -/
 private theorem orbitSet_isPreconnected (w : Fin n → Fin (d + 1) → ℂ)
     (hw : w ∈ ForwardTube d n) :
     IsPreconnected {Λ : ComplexLorentzGroup d |
       complexLorentzAction Λ w ∈ ForwardTube d n} := by
-  -- Suffices to show path-connected (path-connected → connected → preconnected)
-  set O := {Λ : ComplexLorentzGroup d | complexLorentzAction Λ w ∈ ForwardTube d n}
-  suffices h : IsPathConnected O from h.isConnected.isPreconnected
-  refine ⟨1, show (1 : ComplexLorentzGroup d) ∈ O by
-    simp [O, complexLorentzAction_one, hw], ?_⟩
-  -- Every Λ ∈ O is joined to 1 in O
-  intro Λ hΛ
-  -- Polar decomposition: Λ = ofReal(R) · realAlgPath Y hY 1
-  obtain ⟨R, Y, hY, hΛ_eq⟩ := polar_decomposition Λ
-  -- Phase 1: Join 1 to ofReal(R) in O via the real Lorentz group
-  -- Get path from 1 to R in SO↑+(1,d;ℝ) (path-connected)
-  have hj : JoinedIn Set.univ (1 : RestrictedLorentzGroup d) R :=
-    (RestrictedLorentzGroup.isPathConnected (d := d)).joinedIn 1
-      (Set.mem_univ _) R (Set.mem_univ _)
-  obtain ⟨hR_path⟩ := joinedIn_univ.mp hj
-  -- Lift the path: t ↦ ofReal(σ(t))
-  have h_phase1 : JoinedIn O 1 (ComplexLorentzGroup.ofReal R) :=
-    ⟨{ toFun := fun t => ComplexLorentzGroup.ofReal (hR_path t)
-       continuous_toFun := continuous_ofReal.comp hR_path.continuous_toFun
-       source' := by
-         show ComplexLorentzGroup.ofReal (hR_path 0) = 1
-         rw [hR_path.source]; exact ofReal_one_eq
-       target' := by
-         show ComplexLorentzGroup.ofReal (hR_path 1) = _
-         rw [hR_path.target] },
-     fun t => ofReal_preserves_forwardTube (hR_path t) w hw⟩
-  -- Phase 2: Join ofReal(R) to Λ in O via geodesic path
-  -- Need exp(iY)·w ∈ FT. Since Λ·w ∈ FT and Λ = ofReal(R)·exp(iY):
-  have hΛw_ft : complexLorentzAction Λ w ∈ ForwardTube d n := hΛ
-  -- exp(iY)·w ∈ FT because R⁻¹·(Λ·w) = exp(iY)·w and R⁻¹ preserves FT
-  have hexp_ft : complexLorentzAction (realAlgPath Y hY 1) w ∈ ForwardTube d n := by
-    have h1 : complexLorentzAction (ComplexLorentzGroup.ofReal R⁻¹)
-        (complexLorentzAction Λ w) ∈ ForwardTube d n :=
-      ofReal_preserves_forwardTube R⁻¹ _ hΛw_ft
-    have h2 : ComplexLorentzGroup.ofReal R⁻¹ * ComplexLorentzGroup.ofReal R = 1 := by
-      rw [← ofReal_mul_eq, inv_mul_cancel]; exact ofReal_one_eq
-    rw [← complexLorentzAction_mul] at h1
-    rw [hΛ_eq, ← mul_assoc, h2, one_mul] at h1
-    exact h1
-  have h_phase2 : JoinedIn O (ComplexLorentzGroup.ofReal R) Λ := by
-    rw [hΛ_eq]
-    exact ⟨{ toFun := fun t => ComplexLorentzGroup.ofReal R * realAlgPath Y hY t
-             continuous_toFun := by
-               apply continuous_induced_rng.mpr
-               show Continuous (fun t : unitInterval =>
-                 (ComplexLorentzGroup.ofReal R * realAlgPath Y hY t).val)
-               simp only [ComplexLorentzGroup.mul_val]
-               exact continuous_const.mul
-                 (ComplexLorentzGroup.continuous_val.comp
-                   ((realAlgPath_continuous Y hY).comp continuous_subtype_val))
-             source' := by simp [realAlgPath_zero]
-             target' := rfl },
-           fun t => by
-             show complexLorentzAction
-               (ComplexLorentzGroup.ofReal R * realAlgPath Y hY (t : ℝ)) w ∈ ForwardTube d n
-             rw [complexLorentzAction_mul]
-             exact ofReal_preserves_forwardTube R _
-               (geodesicPath_preserves_forwardTube Y hY w hw hexp_ft (t : ℝ)
-                 t.prop.1 t.prop.2)⟩
-  exact h_phase1.trans h_phase2
+  sorry
 
 /-- The set U = {Λ ∈ G : D_Λ ≠ ∅} of group elements with nonempty domain is connected.
     U = ⋃_{w ∈ FT} O_w where each O_w is preconnected and all contain 1, so the
