@@ -35,25 +35,24 @@ All `sorry`s removed in `JostPoints.lean`.
 - `forwardJostSet_subset_jostSet` ✅ — ForwardJostSet ⊂ JostSet
 - `jostSet_nonempty`, `forwardJostSet_nonempty`, `forwardJostSet_isOpen` ✅
 
-### Connectedness.lean — 3 sorrys
+### Connectedness.lean — 2 sorrys
 | # | Line | Name | Status |
 |---|------|------|--------|
-| 1 | 1246 | `orbitSet_isPreconnected` | **sorry** — geometric orbit preconnectedness after removing false geodesic convexity route |
-| 2 | 2121 | `iterated_eow_permutation_extension` | **sorry** — EOW iteration for general σ |
-| 3 | 2410 | `adjacent_sectors_overlap_right` | **sorry** — reduced to `d = 1` branch; `d ≥ 2` witness proved in `AdjacentOverlapWitness.lean` |
+| 1 | 1447 | `orbitSet_isPreconnected` | **sorry** — geometric orbit preconnectedness after removing false geodesic convexity route |
+| 2 | 2442 | `iterated_eow_permutation_extension` | **sorry** — EOW iteration for general σ |
+| 3 | 2710 | `adjacent_sectors_overlap_right` | **closed** — proved via `adjacent_overlap_witness_exists_d1` + `adjacent_overlap_witness_exists` (`d ≥ 2`) |
 
-### GeodesicConvexity.lean — 2 sorrys
-| # | Line | Name | Status |
-|---|------|------|--------|
-| 1 | 524 | `cartan_exp_embedding` | **sorry** — symmetric-space exponential surjectivity |
-| 2 | 671 | `polar_decomposition` | **sorry** — orthochronous real factor / real Cartan extraction |
+### GeodesicConvexity.lean — 0 sorrys ✓
+The prior placeholder theorems (`cartan_exp_embedding`, `polar_decomposition`)
+were removed from the active dependency chain. The file now contains proved
+forward-cone/real-Lorentz infrastructure plus notes on deferred polar machinery.
 
 NOTE: The false lemma `open_locally_path_connected_subset_preconnected` was DELETED
 (GitHub issue #30). The counterexample is G = ℝ, S = (-2,-1) ∪ (-½,½) ∪ (1,2).
 The previous `geodesic_convexity_forwardCone` statement was also REMOVED
 (2026-02-25) after counterexample analysis.
-Also U = {Λ | ∃ w ∈ FT, Λ·w ∈ FT} ≠ G (counterexample: Λ = -I maps V⁺ to V⁻).
-See `test/proofideas_orbit_preconnected.lean` for correct proof strategies.
+See `test/proofideas_orbit_preconnected.lean` for planning notes
+(heuristic; not a substitute for Lean proofs).
 
 **PROVED (previously sorry):**
 - `fullExtendF_well_defined` — reduced to `F_permutation_invariance`
@@ -72,9 +71,37 @@ New infrastructure (2026-02-22):
 - `analyticAt_of_differentiableOn_product` — Hartogs analyticity for product types
 - `identity_theorem_product` — identity theorem for product types
 - `complexLorentzAction_isOpenMap` — Lorentz action is open map
+- `isOpen_extendedTube` — ET is open (union of open Lorentz images of FT)
+- `isConnected_extendedTube` — ET is connected (continuous image of `G × FT`)
 - `isOpen_permutedForwardTube` — PFT(π) is open
 - `isOpen_permutedExtendedTube` — PET is open
 - `adjacent_overlap_witness_exists` (`AdjacentOverlapWitness.lean`) — explicit overlap witness for `d ≥ 2`
+- `nonemptyDomain_isOpen` (`Connectedness.lean`) — openness of
+  `U = {Λ | ∃ w ∈ FT, Λ·w ∈ FT}` via product openness + projection
+- `inOpenForwardCone_smul_pos` (`GeodesicConvexity.lean`) — positive scaling closure of V₊
+- `productForwardCone_smul_pos`, `productForwardCone_convex`,
+  `productForwardCone_nonempty`, `zero_not_mem_productForwardCone`,
+  `productForwardCone_eowReady` (`DifferenceCoordinates.lean`) — packaged cone
+  hypotheses for SCV edge-of-the-wedge applications
+- `isOpen_productForwardConeReal`, `productForwardConeReal_smul_pos`,
+  `productForwardConeReal_convex`, `productForwardConeReal_nonempty`,
+  `zero_not_mem_productForwardConeReal` (`DifferenceCoordinates.lean`) — real
+  cone-side variants of the product cone infrastructure
+- `isOpen_flatProductForwardConeReal`, `flatProductForwardConeReal_smul_pos`,
+  `flatProductForwardConeReal_convex`, `flatProductForwardConeReal_nonempty`,
+  `zero_not_mem_flatProductForwardConeReal`,
+  `flatProductForwardConeReal_eowReady` (`DifferenceCoordinates.lean`) —
+  flattened real-cone package in the exact EOW theorem shape
+- `edge_of_the_wedge_flat_instantiation` (`DifferenceCoordinatesSCV.lean`) —
+  direct flattened-coordinate instantiation of
+  `SCV.edge_of_the_wedge_theorem`
+- `isOpen_pathComponentIn_of_eventually_joined`,
+  `isOpen_orbitSet_pathComponent` (`Connectedness.lean`) — path-component
+  openness infrastructure derived from local eventual joinability in `orbitSet`
+- `orbitSet_mem_mul_ofReal_left`, `orbitSet_joined_one_ofReal`,
+  `orbitSet_joined_mul_ofReal_left`,
+  `ofReal_range_subset_pathComponentIn_orbitSet_one` (`Connectedness.lean`) —
+  real-subgroup transport/connectedness infrastructure for orbit-set components
 
 Previously proved infrastructure:
 - ForwardTube, complexLorentzAction, PermutedExtendedTube definitions
@@ -87,7 +114,7 @@ Previously proved infrastructure:
 - `extendF`, `extendF_eq_on_forwardTube`, `extendF_preimage_eq`, etc.
 - BHW theorem statement with all hypotheses
 
-**Total: 5 sorrys across 2 files** (Connectedness: 3, GeodesicConvexity: 2)
+**Total: 2 sorrys across 1 file** (Connectedness: 2)
 
 ---
 
@@ -102,22 +129,34 @@ Previously proved infrastructure:
 
 **Why `domain_nonempty` (∀ Λ, D_Λ ≠ ∅) is FALSE:** boost(iπ) gives Λ with D_Λ = ∅.
 
+**Independent status check (2026-02-25):**
+- Repository history/branches (`main`, `bhw-phase-next`, `pr-29*`,
+  `eliminate-bhw-axiom`) do not contain a completed non-`sorry` proof of this theorem.
+
+**New infrastructure (2026-02-25):**
+- `ComplexLorentzGroup` now has:
+  - `IsTopologicalGroup` (continuous multiplication/inversion),
+  - `SigmaCompactSpace` (via closed embedding into matrix space).
+- This unlocks use of sigma-compact/open-mapping and quotient-space tools in
+  future orbit-map proofs (previously blocked by missing typeclass instances).
+
 **Approaches:** See Proofideas/complex_lorentz_invariance.lean for detailed analysis.
 
-### `F_permutation_invariance` (edge-of-the-wedge — CORE BHW content)
+### `iterated_eow_permutation_extension` (edge-of-the-wedge — CORE BHW blocker)
 
-**Goal:** For w ∈ FT, τ ∈ S_n, Γ ∈ SO⁺(1,d;ℂ) with Γ·(τ·w) ∈ FT:
-  F(Γ·(τ·w)) = F(w).
+**Goal:** Build the iterated holomorphic extension data for arbitrary
+permutations σ, so `eow_chain_adj_swap` can close the induction step.
 
-**Analysis:**
-- For τ = id: this is `complex_lorentz_invariance` (proved modulo orbitSet sorry).
-- For τ ≠ id: uses local commutativity (hF_local) at Jost points + edge-of-the-wedge.
-- FT and τ·FT have opposite imaginary parts for permuted differences,
-  so FT ∩ τ·FT = ∅ for τ ≠ id. But their closures share Jost points
-  (real configs with spacelike separations).
-- Edge-of-the-wedge (SCV.edge_of_the_wedge_theorem) glues F on FT with
-  F∘σ on σ·FT into a holomorphic function on FT ∪ σ·FT ∪ (Jost neighborhood).
-- Iterate over adjacent transpositions for general τ.
+**Current blocker:**
+- The adjacent-swap helper currently gives only a local disjoint-union
+  extension (`FT ∪ σFT`) and does not yet provide the generalized
+  "extend from previously-built domain U_σ to U_(swap*σ)" infrastructure.
+- Closing this requires a domain-iteration framework for EOW gluing
+  (or a proof refactor that bypasses this formulation).
+
+**Independent status check (2026-02-25):**
+- Branch/history scan did not find a completed non-`sorry` version of this
+  theorem either; earlier versions only moved the gap between helper lemmas.
 
 ### PET preconnected (edge-of-the-wedge)
 
@@ -151,15 +190,13 @@ LorentzLieGroup.lean ✓                       Complexification.lean ✓
             extendF_eq_boundary_value ✓
                      │
                      ▼
-          GeodesicConvexity.lean (2 sorrys)
-            cartan_exp_embedding [symmetric-space exp surjectivity]
-            polar_decomposition [real/orthochronous factor extraction]
+          GeodesicConvexity.lean ✓
+            forward-cone / real-Lorentz infrastructure
                      │
                      ▼
-          Connectedness.lean (3 sorrys)
+          Connectedness.lean (2 sorrys)
             orbitSet_isPreconnected [geometric — needs Lie group fiber theory]
             iterated_eow_permutation_extension [EOW iteration]
-            adjacent_sectors_overlap_right [Jost-point overlap witness]
                      │
                      ▼
           SCV/IdentityTheorem.lean ✓
@@ -172,8 +209,9 @@ LorentzLieGroup.lean ✓                       Complexification.lean ✓
 
 ## Execution Order
 
-1. **GeodesicConvexity.lean** — prove `cartan_exp_embedding` / `polar_decomposition`
-2. **Connectedness.lean** — prove `orbitSet_isPreconnected` (geometric analysis)
-3. **Connectedness.lean** — prove `iterated_eow_permutation_extension`
-4. **Connectedness.lean** — prove `adjacent_sectors_overlap_right`
-5. Build: `lake build OSReconstruction.ComplexLieGroups`
+1. **Connectedness.lean** — prove `orbitSet_isPreconnected` (geometric analysis)
+2. **Connectedness.lean** — prove `iterated_eow_permutation_extension`
+3. Build: `lake build OSReconstruction.ComplexLieGroups`
+4. Optional parallel track: extend geometric infrastructure (currently centered in
+   `Connectedness.lean` + `DifferenceCoordinates.lean`) if returning to a
+   polar-decomposition proof route.

@@ -3,7 +3,8 @@ Copyright (c) 2025 ModularPhysics Contributors.
 Released under Apache 2.0 license.
 Authors: ModularPhysics Contributors
 -/
-import OSReconstruction.ComplexLieGroups.Connectedness
+import OSReconstruction.ComplexLieGroups.BHWCore
+import Mathlib.Logic.Equiv.Fin.Basic
 
 /-!
 # Difference Coordinates for the Forward Tube
@@ -39,6 +40,10 @@ open Complex Topology Matrix LorentzLieGroup Classical Filter Finset
 variable {d : ℕ}
 
 namespace BHW
+
+/-- Re-export of the forward tube from `BHWCore` for difference-coordinate results. -/
+abbrev ForwardTube (d n : ℕ) : Set (Fin n → Fin (d + 1) → ℂ) :=
+  BHWCore.ForwardTube d n
 
 /-! ### Difference-coordinate functions -/
 
@@ -162,12 +167,102 @@ theorem diffCoordEquiv_symm_apply (n d : ℕ) (ξ : Fin n → Fin (d + 1) → �
     (diffCoordEquiv n d).symm ξ k μ =
       ∑ j : Fin (k.val + 1), ξ ⟨j.val, by omega⟩ μ := rfl
 
+/-! ### Flattening helpers (two-index ↔ one-index) -/
+
+/-- Flatten configuration indices `(k, μ)` to a single `Fin (n*(d+1))` index. -/
+def flattenCfg (n d : ℕ) (z : Fin n → Fin (d + 1) → ℂ) :
+    Fin (n * (d + 1)) → ℂ :=
+  fun i =>
+    let p : Fin n × Fin (d + 1) := finProdFinEquiv.symm i
+    z p.1 p.2
+
+/-- Unflatten from `Fin (n*(d+1)) → ℂ` to two-index configurations. -/
+def unflattenCfg (n d : ℕ) (w : Fin (n * (d + 1)) → ℂ) :
+    Fin n → Fin (d + 1) → ℂ :=
+  fun k μ => w (finProdFinEquiv (k, μ))
+
+/-- Real-valued flattening variant. -/
+def flattenCfgReal (n d : ℕ) (z : Fin n → Fin (d + 1) → ℝ) :
+    Fin (n * (d + 1)) → ℝ :=
+  fun i =>
+    let p : Fin n × Fin (d + 1) := finProdFinEquiv.symm i
+    z p.1 p.2
+
+/-- Real-valued unflattening variant. -/
+def unflattenCfgReal (n d : ℕ) (w : Fin (n * (d + 1)) → ℝ) :
+    Fin n → Fin (d + 1) → ℝ :=
+  fun k μ => w (finProdFinEquiv (k, μ))
+
+theorem unflatten_flatten_cfg (n d : ℕ) (z : Fin n → Fin (d + 1) → ℂ) :
+    unflattenCfg n d (flattenCfg n d z) = z := by
+  funext k μ
+  simp [unflattenCfg, flattenCfg]
+
+theorem flatten_unflatten_cfg (n d : ℕ) (w : Fin (n * (d + 1)) → ℂ) :
+    flattenCfg n d (unflattenCfg n d w) = w := by
+  funext i
+  change w (finProdFinEquiv (finProdFinEquiv.symm i)) = w i
+  simpa using congrArg w (finProdFinEquiv.apply_symm_apply i)
+
+theorem unflatten_flatten_cfg_real (n d : ℕ) (z : Fin n → Fin (d + 1) → ℝ) :
+    unflattenCfgReal n d (flattenCfgReal n d z) = z := by
+  funext k μ
+  simp [unflattenCfgReal, flattenCfgReal]
+
+theorem flatten_unflatten_cfg_real (n d : ℕ) (w : Fin (n * (d + 1)) → ℝ) :
+    flattenCfgReal n d (unflattenCfgReal n d w) = w := by
+  funext i
+  change w (finProdFinEquiv (finProdFinEquiv.symm i)) = w i
+  simpa using congrArg w (finProdFinEquiv.apply_symm_apply i)
+
 /-! ### Product forward cone -/
 
 /-- The product forward cone: the set of `ξ` where `Im(ξ k) ∈ V₊` for all `k`.
     In difference coordinates, the forward tube becomes exactly this product set. -/
 def ProductForwardCone (d n : ℕ) : Set (Fin n → Fin (d + 1) → ℂ) :=
   { ξ | ∀ k : Fin n, InOpenForwardCone d (fun μ => (ξ k μ).im) }
+
+/-- Real product forward cone (imaginary-part cone condition only). -/
+def ProductForwardConeReal (d n : ℕ) : Set (Fin n → Fin (d + 1) → ℝ) :=
+  {η | ∀ k : Fin n, InOpenForwardCone d (η k)}
+
+theorem mem_productForwardCone_iff_im_mem_real (n d : ℕ)
+    (ξ : Fin n → Fin (d + 1) → ℂ) :
+    ξ ∈ ProductForwardCone d n ↔
+      (fun k μ => (ξ k μ).im) ∈ ProductForwardConeReal d n := by
+  rfl
+
+/-- Flattened real cone for one-indexed coordinate statements. -/
+def FlatProductForwardConeReal (d n : ℕ) :
+    Set (Fin (n * (d + 1)) → ℝ) :=
+  {u | unflattenCfgReal n d u ∈ ProductForwardConeReal d n}
+
+theorem mem_productForwardCone_iff_flat_im (n d : ℕ)
+    (ξ : Fin n → Fin (d + 1) → ℂ) :
+    ξ ∈ ProductForwardCone d n ↔
+      (fun i => (flattenCfg n d ξ i).im) ∈ FlatProductForwardConeReal d n := by
+  constructor
+  · intro hξ
+    have hfun :
+        (unflattenCfgReal n d (fun i => (flattenCfg n d ξ i).im)) =
+          (fun k μ => (ξ k μ).im) := by
+      funext k μ
+      simp [unflattenCfgReal, flattenCfg]
+    change unflattenCfgReal n d (fun i => (flattenCfg n d ξ i).im) ∈
+      ProductForwardConeReal d n
+    rw [hfun]
+    simpa using ((mem_productForwardCone_iff_im_mem_real n d ξ).mp hξ)
+  · intro hflat
+    have hfun :
+        (unflattenCfgReal n d (fun i => (flattenCfg n d ξ i).im)) =
+          (fun k μ => (ξ k μ).im) := by
+      funext k μ
+      simp [unflattenCfgReal, flattenCfg]
+    have him : (fun k μ => (ξ k μ).im) ∈ ProductForwardConeReal d n := by
+      change unflattenCfgReal n d (fun i => (flattenCfg n d ξ i).im) ∈
+        ProductForwardConeReal d n at hflat
+      rwa [hfun] at hflat
+    exact (mem_productForwardCone_iff_im_mem_real n d ξ).mpr him
 
 /-! ### Forward tube = preimage of product forward cone under L -/
 
@@ -201,6 +296,23 @@ theorem diffCoordEquiv_image_forwardTube (n d : ℕ) [NeZero d] :
   rw [forwardTube_eq_diffCoord_preimage]
   exact (diffCoordEquiv n d).toEquiv.image_preimage _
 
+/-- Forward tube reformulated via flattened difference coordinates and
+    real cone membership. -/
+theorem forwardTube_iff_flattened_diffCone (n d : ℕ) [NeZero d]
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    ForwardTube d n z ↔
+      (fun i => (flattenCfg n d (diffCoordEquiv n d z) i).im) ∈
+        FlatProductForwardConeReal d n := by
+  constructor
+  · intro hz
+    have hpc : diffCoordEquiv n d z ∈ ProductForwardCone d n := by
+      simpa [forwardTube_eq_diffCoord_preimage (n := n) (d := d)] using hz
+    exact (mem_productForwardCone_iff_flat_im n d (diffCoordEquiv n d z)).mp hpc
+  · intro hflat
+    have hpc : diffCoordEquiv n d z ∈ ProductForwardCone d n :=
+      (mem_productForwardCone_iff_flat_im n d (diffCoordEquiv n d z)).mpr hflat
+    simpa [forwardTube_eq_diffCoord_preimage (n := n) (d := d)] using hpc
+
 /-- The open forward cone is an open set. -/
 private theorem isOpen_inOpenForwardCone :
     IsOpen {η : Fin (d + 1) → ℝ | InOpenForwardCone d η} :=
@@ -226,6 +338,187 @@ theorem isOpen_productForwardCone (n d : ℕ) [NeZero d] :
         Complex.continuous_im.comp ((continuous_apply μ).comp (continuous_apply k))))
   ext ξ; simp [ProductForwardCone, Set.mem_iInter]
 
+/-- The real product forward cone is open. -/
+theorem isOpen_productForwardConeReal (n d : ℕ) [NeZero d] :
+    IsOpen (ProductForwardConeReal d n) := by
+  suffices h : ProductForwardConeReal d n =
+      ⋂ k : Fin n, {η : Fin n → Fin (d + 1) → ℝ |
+        InOpenForwardCone d (fun μ => η k μ)} by
+    rw [h]
+    apply isOpen_iInter_of_finite
+    intro k
+    have : {η : Fin n → Fin (d + 1) → ℝ | InOpenForwardCone d (fun μ => η k μ)} =
+        (fun η => fun μ => η k μ) ⁻¹' {ξ | InOpenForwardCone d ξ} := rfl
+    rw [this]
+    exact isOpen_inOpenForwardCone.preimage
+      (continuous_pi (fun μ => (continuous_apply μ).comp (continuous_apply k)))
+  ext η
+  simp [ProductForwardConeReal, Set.mem_iInter]
+
+/-- Positive real scaling preserves the product forward cone. -/
+theorem productForwardCone_smul_pos (n d : ℕ) (t : ℝ) (ht : 0 < t)
+    (ξ : Fin n → Fin (d + 1) → ℂ) (hξ : ξ ∈ ProductForwardCone d n) :
+    t • ξ ∈ ProductForwardCone d n := by
+  intro k
+  have hk := hξ k
+  have him : (fun μ => ((t • ξ) k μ).im) = t • (fun μ => (ξ k μ).im) := by
+    ext μ
+    simp [Pi.smul_apply, smul_eq_mul]
+  rw [him]
+  exact inOpenForwardCone_smul_pos hk ht
+
+/-- Positive real scaling preserves the real product forward cone. -/
+theorem productForwardConeReal_smul_pos (n d : ℕ) (t : ℝ) (ht : 0 < t)
+    (η : Fin n → Fin (d + 1) → ℝ) (hη : η ∈ ProductForwardConeReal d n) :
+    t • η ∈ ProductForwardConeReal d n := by
+  intro k
+  simpa [Pi.smul_apply, smul_eq_mul] using inOpenForwardCone_smul_pos (hη k) ht
+
+/-- The product forward cone is convex. -/
+theorem productForwardCone_convex (n d : ℕ) :
+    Convex ℝ (ProductForwardCone d n) := by
+  intro ξ₁ hξ₁ ξ₂ hξ₂ a b ha hb hab k
+  have hk1 := hξ₁ k
+  have hk2 := hξ₂ k
+  have hconvSet := inOpenForwardCone_convex (d := d)
+  have hconv : InOpenForwardCone d
+      (a • (fun μ => (ξ₁ k μ).im) + b • (fun μ => (ξ₂ k μ).im)) :=
+    hconvSet hk1 hk2 ha hb hab
+  have hcoord :
+      (fun μ => ((a • ξ₁ + b • ξ₂) k μ).im) =
+      a • (fun μ => (ξ₁ k μ).im) + b • (fun μ => (ξ₂ k μ).im) := by
+    ext μ
+    simp [Pi.smul_apply, smul_eq_mul]
+  simpa [hcoord] using hconv
+
+/-- The real product forward cone is convex. -/
+theorem productForwardConeReal_convex (n d : ℕ) :
+    Convex ℝ (ProductForwardConeReal d n) := by
+  intro η₁ hη₁ η₂ hη₂ a b ha hb hab k
+  exact inOpenForwardCone_convex (hη₁ k) (hη₂ k) ha hb hab
+
+/-- The product forward cone is nonempty. -/
+theorem productForwardCone_nonempty (n d : ℕ) [NeZero d] :
+    (ProductForwardCone d n).Nonempty := by
+  refine ⟨fun _ μ => if μ = 0 then (Complex.I : ℂ) else 0, ?_⟩
+  intro k
+  constructor
+  · simp
+  · rw [minkowski_sum_decomp]
+    simp [Fin.succ_ne_zero]
+
+/-- The real product forward cone is nonempty. -/
+theorem productForwardConeReal_nonempty (n d : ℕ) [NeZero d] :
+    (ProductForwardConeReal d n).Nonempty := by
+  refine ⟨fun _ μ => if μ = 0 then (1 : ℝ) else 0, ?_⟩
+  intro k
+  constructor
+  · simp
+  · rw [minkowski_sum_decomp]
+    simp [Fin.succ_ne_zero]
+
+/-- For `n > 0`, the product forward cone does not contain the zero configuration. -/
+theorem zero_not_mem_productForwardCone (n d : ℕ) [NeZero n] :
+    (0 : Fin n → Fin (d + 1) → ℂ) ∉ ProductForwardCone d n := by
+  intro h0
+  let k0 : Fin n := ⟨0, Nat.pos_of_ne_zero (NeZero.ne n)⟩
+  have hcone0 := h0 k0
+  have htime : ((0 : Fin n → Fin (d + 1) → ℂ) k0 0).im > 0 := hcone0.1
+  simp at htime
+
+/-- For `n > 0`, the real product forward cone does not contain the zero configuration. -/
+theorem zero_not_mem_productForwardConeReal (n d : ℕ) [NeZero n] :
+    (0 : Fin n → Fin (d + 1) → ℝ) ∉ ProductForwardConeReal d n := by
+  intro h0
+  let k0 : Fin n := ⟨0, Nat.pos_of_ne_zero (NeZero.ne n)⟩
+  have hcone0 := h0 k0
+  have htime : ((0 : Fin n → Fin (d + 1) → ℝ) k0 0) > 0 := hcone0.1
+  simp at htime
+
+private theorem continuous_unflattenCfgReal (n d : ℕ) :
+    Continuous (unflattenCfgReal n d :
+      (Fin (n * (d + 1)) → ℝ) → Fin n → Fin (d + 1) → ℝ) := by
+  apply continuous_pi; intro k
+  apply continuous_pi; intro μ
+  simpa [unflattenCfgReal] using (continuous_apply (finProdFinEquiv (k, μ)))
+
+/-- The flattened real product forward cone is open. -/
+theorem isOpen_flatProductForwardConeReal (n d : ℕ) [NeZero d] :
+    IsOpen (FlatProductForwardConeReal d n) := by
+  simpa [FlatProductForwardConeReal] using
+    (isOpen_productForwardConeReal (n := n) (d := d)).preimage
+      (continuous_unflattenCfgReal n d)
+
+/-- Positive real scaling preserves the flattened real product forward cone. -/
+theorem flatProductForwardConeReal_smul_pos (n d : ℕ) (t : ℝ) (ht : 0 < t)
+    (u : Fin (n * (d + 1)) → ℝ) (hu : u ∈ FlatProductForwardConeReal d n) :
+    t • u ∈ FlatProductForwardConeReal d n := by
+  change unflattenCfgReal n d (t • u) ∈ ProductForwardConeReal d n
+  have hlin : unflattenCfgReal n d (t • u) = t • unflattenCfgReal n d u := by
+    ext k μ
+    simp [unflattenCfgReal, Pi.smul_apply]
+  rw [hlin]
+  exact productForwardConeReal_smul_pos (n := n) (d := d) t ht _ hu
+
+/-- The flattened real product forward cone is convex. -/
+theorem flatProductForwardConeReal_convex (n d : ℕ) :
+    Convex ℝ (FlatProductForwardConeReal d n) := by
+  intro u₁ hu₁ u₂ hu₂ a b ha hb hab
+  change unflattenCfgReal n d (a • u₁ + b • u₂) ∈ ProductForwardConeReal d n
+  have hlin :
+      unflattenCfgReal n d (a • u₁ + b • u₂) =
+      a • unflattenCfgReal n d u₁ + b • unflattenCfgReal n d u₂ := by
+    ext k μ
+    simp [unflattenCfgReal, Pi.smul_apply, Pi.add_apply, smul_eq_mul]
+  rw [hlin]
+  exact productForwardConeReal_convex (n := n) (d := d) hu₁ hu₂ ha hb hab
+
+/-- The flattened real product forward cone is nonempty. -/
+theorem flatProductForwardConeReal_nonempty (n d : ℕ) [NeZero d] :
+    (FlatProductForwardConeReal d n).Nonempty := by
+  rcases productForwardConeReal_nonempty (n := n) (d := d) with ⟨η, hη⟩
+  refine ⟨flattenCfgReal n d η, ?_⟩
+  simpa [FlatProductForwardConeReal, unflatten_flatten_cfg_real] using hη
+
+/-- For `n > 0`, zero is not in the flattened real product forward cone. -/
+theorem zero_not_mem_flatProductForwardConeReal (n d : ℕ) [NeZero n] :
+    (0 : Fin (n * (d + 1)) → ℝ) ∉ FlatProductForwardConeReal d n := by
+  intro h0
+  have h0' : (0 : Fin n → Fin (d + 1) → ℝ) ∈ ProductForwardConeReal d n := by
+    simpa [FlatProductForwardConeReal] using h0
+  exact zero_not_mem_productForwardConeReal (n := n) (d := d) h0'
+
+/-- Pack the cone hypotheses used by `SCV.edge_of_the_wedge_theorem`. -/
+theorem productForwardCone_eowReady (n d : ℕ) [NeZero d] [NeZero n] :
+    IsOpen (ProductForwardCone d n) ∧
+    Convex ℝ (ProductForwardCone d n) ∧
+    ((0 : Fin n → Fin (d + 1) → ℂ) ∉ ProductForwardCone d n) ∧
+    (∀ (t : ℝ) (y : Fin n → Fin (d + 1) → ℂ),
+      0 < t → y ∈ ProductForwardCone d n → t • y ∈ ProductForwardCone d n) ∧
+    (ProductForwardCone d n).Nonempty := by
+  refine ⟨isOpen_productForwardCone (n := n) (d := d),
+    productForwardCone_convex (n := n) (d := d),
+    zero_not_mem_productForwardCone (n := n) (d := d),
+    ?_, productForwardCone_nonempty (n := n) (d := d)⟩
+  intro t y ht hy
+  exact productForwardCone_smul_pos (n := n) (d := d) t ht y hy
+
+/-- Flat real cone hypotheses in the exact shape used by
+    `SCV.edge_of_the_wedge_theorem` after flattening difference coordinates. -/
+theorem flatProductForwardConeReal_eowReady (n d : ℕ) [NeZero d] [NeZero n] :
+    IsOpen (FlatProductForwardConeReal d n) ∧
+    Convex ℝ (FlatProductForwardConeReal d n) ∧
+    ((0 : Fin (n * (d + 1)) → ℝ) ∉ FlatProductForwardConeReal d n) ∧
+    (∀ (t : ℝ) (y : Fin (n * (d + 1)) → ℝ),
+      0 < t → y ∈ FlatProductForwardConeReal d n → t • y ∈ FlatProductForwardConeReal d n) ∧
+    (FlatProductForwardConeReal d n).Nonempty := by
+  refine ⟨isOpen_flatProductForwardConeReal (n := n) (d := d),
+    flatProductForwardConeReal_convex (n := n) (d := d),
+    zero_not_mem_flatProductForwardConeReal (n := n) (d := d),
+    ?_, flatProductForwardConeReal_nonempty (n := n) (d := d)⟩
+  intro t y ht hy
+  exact flatProductForwardConeReal_smul_pos (n := n) (d := d) t ht y hy
+
 /-! ### Swap action in difference coordinates -/
 
 /-- In difference coordinates, swapping indices i and i+1 causes
@@ -244,6 +537,33 @@ theorem diffCoord_swap_sign_flip (n d : ℕ) (i : Fin n) (hi : i.val + 1 < n)
   have hpred : (⟨i.val + 1 - 1, by omega⟩ : Fin n) = i := by ext; simp
   rw [hpred, Equiv.swap_apply_right, Equiv.swap_apply_left]
   ring
+
+/-- If the swapped configuration is in the forward tube, then in difference
+    coordinates the swapped `(i+1)`-component lies in the negative cone. -/
+theorem swap_forwardTube_implies_neg_cone (n d : ℕ) [NeZero d]
+    (i : Fin n) (hi : i.val + 1 < n)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hzswap : (fun k => z (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈ ForwardTube d n) :
+    InOpenForwardCone d
+      (fun μ => (-(diffCoordFun n d z ⟨i.val + 1, hi⟩ μ)).im) := by
+  set σ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+  have hpre : diffCoordEquiv n d (fun k => z (σ k)) ∈ ProductForwardCone d n := by
+    simpa [forwardTube_eq_diffCoord_preimage (n := n) (d := d)] using hzswap
+  have hk : InOpenForwardCone d
+      (fun μ =>
+        (diffCoordEquiv n d (fun k => z (σ k)) ⟨i.val + 1, hi⟩ μ).im) := hpre ⟨i.val + 1, hi⟩
+  have hk' : InOpenForwardCone d
+      (fun μ =>
+        (diffCoordFun n d (fun k => z (σ k)) ⟨i.val + 1, hi⟩ μ).im) := by
+    simpa [diffCoordEquiv_apply] using hk
+  have hfun :
+      (fun μ =>
+        (diffCoordFun n d (fun k => z (σ k)) ⟨i.val + 1, hi⟩ μ).im) =
+      (fun μ => (-(diffCoordFun n d z ⟨i.val + 1, hi⟩ μ)).im) := by
+    ext μ
+    have hflip := diffCoord_swap_sign_flip (n := n) (d := d) i hi z μ
+    simpa [σ] using congrArg Complex.im hflip
+  simpa [hfun] using hk'
 
 /-- Coordinates far from the swap are unchanged in difference coordinates. -/
 theorem diffCoord_swap_far_unchanged (n d : ℕ) (i : Fin n) (hi : i.val + 1 < n)

@@ -111,6 +111,25 @@ theorem inOpenForwardCone_convex :
       _ < (a * η₁ 0 + b * η₂ 0) ^ 2 :=
           pow_lt_pow_left₀ h_combo_lt (by positivity) two_ne_zero
 
+/-- Positive real scaling preserves the open forward cone. -/
+theorem inOpenForwardCone_smul_pos {η : Fin (d + 1) → ℝ}
+    (hη : InOpenForwardCone d η) {t : ℝ} (ht : 0 < t) :
+    InOpenForwardCone d (t • η) := by
+  refine ⟨?_, ?_⟩
+  · simpa [Pi.smul_apply] using mul_pos ht hη.1
+  · have hQ : ∑ μ, minkowskiSignature d μ * (t * η μ) ^ 2 =
+      t ^ 2 * (∑ μ, minkowskiSignature d μ * η μ ^ 2) := by
+      simp_rw [mul_pow]
+      rw [Finset.mul_sum]
+      congr 1
+      ext μ
+      ring
+    rw [show (∑ μ, minkowskiSignature d μ * (t • η) μ ^ 2) =
+      (∑ μ, minkowskiSignature d μ * (t * η μ) ^ 2) by
+      simp [Pi.smul_apply]]
+    rw [hQ]
+    exact mul_neg_of_pos_of_neg (sq_pos_of_pos ht) hη.2
+
 /-! ### Lorentz transformation preserves the Minkowski quadratic form -/
 
 /-- The Minkowski quadratic form is preserved by Lorentz transformations.
@@ -465,228 +484,18 @@ implication was too strong as written. Any replacement must use a corrected stat
 or additional hypotheses before it can be used safely in connectedness arguments.
 -/
 
-/-! ### Polar decomposition (Cartan decomposition of symmetric space) -/
+/-! ### Deferred Cartan/Polar Infrastructure
 
-/-- The Cartan element H = conj(Λ)⁻¹ · Λ in the symmetric part of SO⁺(1,d;ℂ). -/
-private def cartanElement (Λ : ComplexLorentzGroup d) : ComplexLorentzGroup d :=
-  (conjLG Λ)⁻¹ * Λ
+The Cartan symmetric-space embedding and the corresponding polar decomposition
+for `ComplexLorentzGroup` are mathematically plausible but currently not on the
+critical BHW proof path in this repository. The previous draft included two
+`sorry`-based placeholders here; they have been removed to keep the dependency
+chain axiom-free and warning-free.
 
-/-- The Cartan element satisfies the anti-involution property conj(H) = H⁻¹.
-    This is the defining property of the symmetric part P = {g : θ(g) = g⁻¹}
-    of the Cartan decomposition. -/
-private theorem cartanElement_anti_involution (Λ : ComplexLorentzGroup d) :
-    conjLG (cartanElement Λ) = (cartanElement Λ)⁻¹ := by
-  unfold cartanElement
-  rw [conjLG_mul, conjLG_inv, conjLG_involutive, _root_.mul_inv_rev, inv_inv]
-
-/-- **Cartan symmetric space exponential embedding.**
-
-    Every H ∈ SO⁺(1,d;ℂ) satisfying the anti-involution conjLG(H) = H⁻¹ lies
-    in the image of the exponential map from the imaginary Lie algebra:
-    H = exp(iY) for some Y ∈ so(1,d;ℝ).
-
-    This is the surjectivity of exp : ip → P where p = so(1,d;ℝ) and
-    P = {H ∈ SO⁺(1,d;ℂ) : conjLG(H) = H⁻¹} is the symmetric part.
-    For Riemannian symmetric spaces of noncompact type, exp : p → P is a
-    diffeomorphism (Helgason, Ch. VI, Thm 1.1).
-
-    The proof requires: the matrix logarithm for "positive" elements of the
-    symmetric space, and the fact that the real Lie algebra so(1,d;ℝ) maps
-    surjectively onto P via Y ↦ exp(iY). -/
-private theorem cartan_exp_embedding (H : ComplexLorentzGroup d)
-    (h_anti : conjLG H = H⁻¹) :
-    ∃ (Y : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) (hY : IsInLorentzAlgebra d Y),
-      H = realAlgPath Y hY 1 := by
-  -- Proof strategy (Helgason, Ch. VI, Thm 1.1):
-  -- The anti-involution condition conj(H) = H⁻¹ means H̄·H = I.
-  -- Combined with the Lorentz condition Hᵀ·η·H = η, the matrix
-  -- A = η·H̄ᵀ·η·H = η·(H⁻¹)ᵀ·η·H is "positive" in a suitable sense.
-  --
-  -- Step 1: Take X = log(H) using the matrix logarithm.
-  --   For this, we need H to be in a neighborhood of the identity where
-  --   log is defined, or we use the global surjectivity of exp on the
-  --   symmetric space P = {g : θ(g) = g⁻¹}.
-  --
-  -- Step 2: Show X = iY for real Y.
-  --   From conj(H) = H⁻¹, we get conj(exp(X)) = exp(conj(X)) = exp(-X),
-  --   hence conj(X) = -X (at least locally). Writing X = A + iB with A, B real,
-  --   this gives A - iB = -A - iB, so A = 0, i.e., X = iB.
-  --
-  -- Step 3: Show Y = B ∈ so(1,d;ℝ).
-  --   From H ∈ SO⁺(1,d;ℂ) and H = exp(iY), the Lie algebra condition
-  --   follows from d/dt|_{t=0} exp(itY) ∈ SO⁺(1,d;ℂ).
-  --
-  -- Infrastructure needed:
-  -- (a) Matrix logarithm (not in Mathlib): log : GL_n(ℂ) → M_n(ℂ)
-  --     satisfying exp(log(A)) = A for A near I.
-  -- (b) Global surjectivity of exp on symmetric spaces of noncompact type.
-  -- (c) Injectivity of exp (to conclude conj(X) = -X from conj(exp(X)) = exp(-X)).
-  sorry
-
-/-- **Polar decomposition for the complex Lorentz group.**
-
-    Every Λ ∈ SO⁺(1,d;ℂ) can be written as R · exp(iY) where
-    R ∈ SO↑₊(1,d;ℝ) and Y ∈ so(1,d;ℝ).
-
-    Proof outline: The Cartan element H = conj(Λ)⁻¹ · Λ satisfies
-    conj(H) = H⁻¹ (proved in `cartanElement_anti_involution`).
-    By `cartan_exp_embedding`, H = exp(iY₀) for some Y₀ ∈ so(1,d;ℝ).
-    Setting Y = Y₀/2 and P = exp(iY), we get P² = H, and
-    R = Λ · P⁻¹ satisfies conj(R) = R (i.e., R is real).
-    R is in the restricted Lorentz group by the connectivity argument:
-    R = Λ · exp(-iY) is connected to I in SO⁺(1,d;ℂ), hence orthochronous.
-
-    Ref: Helgason, Differential Geometry, Lie Groups and Symmetric Spaces, Ch. VI. -/
-theorem polar_decomposition (Λ : ComplexLorentzGroup d) :
-    ∃ (R : RestrictedLorentzGroup d)
-      (Y : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
-      (_ : IsInLorentzAlgebra d Y),
-      Λ = ComplexLorentzGroup.ofReal R * realAlgPath Y ‹_› 1 := by
-  -- Step 1: The Cartan element satisfies the anti-involution
-  have h_anti := cartanElement_anti_involution Λ
-  -- Step 2: Get Y₀ from the Cartan embedding
-  obtain ⟨Y₀, hY₀, hH⟩ := cartan_exp_embedding (cartanElement Λ) h_anti
-  -- Step 3: Set Y = (1/2) • Y₀
-  set Y := (1 / 2 : ℝ) • Y₀ with Y_def
-  have hY : IsInLorentzAlgebra d Y := isInLorentzAlgebra_smul d hY₀ (1 / 2)
-  -- Step 4: P = realAlgPath Y hY 1 = realAlgPath Y₀ hY₀ (1/2) and P² = H
-  have hP_eq : realAlgPath Y hY 1 = realAlgPath Y₀ hY₀ (1 / 2) :=
-    realAlgPath_smul_eq Y₀ hY₀ (1 / 2)
-  -- P² = realAlgPath Y₀ hY₀ (1/2) * realAlgPath Y₀ hY₀ (1/2) = realAlgPath Y₀ hY₀ 1
-  have hP_sq : realAlgPath Y hY 1 * realAlgPath Y hY 1 = realAlgPath Y₀ hY₀ 1 := by
-    rw [hP_eq, realAlgPath_mul Y₀ hY₀ (1/2) (1/2)]
-    norm_num
-  -- So P² = H = cartanElement Λ = conj(Λ)⁻¹ * Λ
-  have hP_sq_H : realAlgPath Y hY 1 * realAlgPath Y hY 1 = cartanElement Λ := by
-    rw [hP_sq, hH]
-  -- Step 5: Define R_CLG = Λ * P⁻¹
-  set P := realAlgPath Y hY 1 with P_def
-  set R_CLG := Λ * P⁻¹ with R_CLG_def
-  -- Step 6: Show conj(R_CLG) = R_CLG
-  have hconj_R : conjLG R_CLG = R_CLG := by
-    rw [R_CLG_def, conjLG_mul, conjLG_inv]
-    -- conj(P) = P⁻¹ by conjLG_realAlgPath
-    rw [conjLG_realAlgPath Y hY 1]
-    -- So conj(P)⁻¹ = (P⁻¹)⁻¹ = P
-    rw [inv_inv]
-    -- Need: conj(Λ) * P = Λ * P⁻¹
-    -- i.e., conj(Λ) = Λ * P⁻¹ * P⁻¹ = Λ * (P * P)⁻¹ = Λ * H⁻¹
-    -- H = conj(Λ)⁻¹ * Λ, so Λ * H⁻¹ = Λ * Λ⁻¹ * conj(Λ) = conj(Λ)
-    suffices h : conjLG Λ * P = Λ * P⁻¹ by exact h
-    -- From P² = H = conj(Λ)⁻¹ * Λ, we get conj(Λ) = Λ * P⁻²
-    -- conj(Λ) * P = Λ * P⁻² * P = Λ * P⁻¹
-    have h_conjΛ_eq : conjLG Λ = Λ * (P * P)⁻¹ := by
-      -- P * P = cartanElement Λ = conj(Λ)⁻¹ * Λ
-      have : (P * P)⁻¹ = (cartanElement Λ)⁻¹ := by rw [hP_sq_H]
-      rw [this]
-      -- Λ * (conj(Λ)⁻¹ * Λ)⁻¹ = Λ * Λ⁻¹ * conj(Λ) = conj(Λ)
-      rw [show (cartanElement Λ)⁻¹ = Λ⁻¹ * conjLG Λ from by
-        unfold cartanElement
-        rw [_root_.mul_inv_rev, inv_inv]]
-      rw [← mul_assoc, mul_inv_cancel, one_mul]
-    calc conjLG Λ * P
-        = Λ * (P * P)⁻¹ * P := by rw [h_conjΛ_eq]
-      _ = Λ * ((P * P)⁻¹ * P) := by rw [mul_assoc]
-      _ = Λ * (P⁻¹ * P⁻¹ * P) := by rw [_root_.mul_inv_rev]
-      _ = Λ * (P⁻¹ * (P⁻¹ * P)) := by rw [mul_assoc]
-      _ = Λ * (P⁻¹ * 1) := by rw [inv_mul_cancel]
-      _ = Λ * P⁻¹ := by rw [mul_one]
-  -- Step 7: Extract real matrix from R_CLG
-  -- Since conj(R_CLG) = R_CLG, entries are real: R_CLG.val i j = star(R_CLG.val i j)
-  have hreal : ∀ i j, (R_CLG.val i j).im = 0 := by
-    intro i j
-    have h := congr_fun (congr_fun (congr_arg ComplexLorentzGroup.val hconj_R) i) j
-    simp only [conjLG_val, Matrix.map_apply] at h
-    -- h : star (R_CLG.val i j) = R_CLG.val i j
-    rw [Complex.ext_iff] at h
-    simp [Complex.conj_re, Complex.conj_im] at h
-    linarith
-  -- Define the real matrix
-  set M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ := fun i j => (R_CLG.val i j).re
-  -- M.map ofReal = R_CLG.val
-  have hM_lift : M.map Complex.ofReal = R_CLG.val := by
-    ext i j
-    simp only [Matrix.map_apply, M]
-    exact Complex.ext (Complex.ofReal_re _) (by simp [hreal i j])
-  -- M is a Lorentz matrix (preserves metric): Mᵀ * η * M = η
-  have hM_lorentz : IsLorentzMatrix d M := by
-    -- R_CLG satisfies: R_CLG.valᵀ * ηℂ * R_CLG.val = ηℂ (over ℂ)
-    have hR_met := ComplexLorentzGroup.metric_preserving_matrix R_CLG
-    -- Rewrite in terms of M.map ofReal
-    rw [← hM_lift] at hR_met
-    -- Need: Mᵀ * η * M = η (over ℝ)
-    -- Lift via ofRealHom.mapMatrix which is injective
-    show M.transpose * minkowskiMatrix d * M = minkowskiMatrix d
-    -- Show the ℂ-version: (M.map ofReal)ᵀ * ηℂ * (M.map ofReal) = ηℂ is exactly hR_met
-    -- And (M.map ofReal)ᵀ = Mᵀ.map ofReal, ηℂ = (η).map ofReal (as diagonal)
-    -- So hR_met says: ofRealHom.mapMatrix(Mᵀ * η * M) = ofRealHom.mapMatrix(η)
-    suffices h : (M.transpose * minkowskiMatrix d * M).map Complex.ofReal =
-        (minkowskiMatrix d).map Complex.ofReal by
-      have hinj : Function.Injective (Matrix.map · Complex.ofReal :
-          Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ → Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) := by
-        intro A B hab; ext i j
-        have := congr_fun (congr_fun hab i) j
-        simp [Matrix.map_apply] at this; exact this
-      exact hinj h
-    -- η as complex: (minkowskiMatrix d).map ofReal = ηℂ
-    have h_eta : (minkowskiMatrix d).map Complex.ofReal = ηℂ := by
-      ext i j; simp [Matrix.map_apply, ηℂ, minkowskiMatrix, Matrix.diagonal_apply]
-      split_ifs <;> simp
-    -- The map M ↦ M.map ofReal preserves mul and transpose
-    -- So (Mᵀ η M).map ofReal = (M.map ofReal)ᵀ * (η.map ofReal) * (M.map ofReal) = ... = ηℂ
-    -- This equals (η).map ofReal, so by injectivity, Mᵀ η M = η
-    have h_lhs : (M.transpose * minkowskiMatrix d * M).map Complex.ofReal =
-        (M.map Complex.ofReal).transpose * ηℂ * (M.map Complex.ofReal) := by
-      rw [← h_eta]
-      ext i j
-      simp only [Matrix.map_apply, Matrix.mul_apply, Matrix.transpose_apply]
-      push_cast; ring
-    rw [h_lhs, hR_met, h_eta]
-  -- M has det 1
-  have hM_det : M.det = 1 := by
-    have h1 : (M.det : ℂ) = R_CLG.val.det := by
-      have hmap : Complex.ofRealHom.mapMatrix M = M.map Complex.ofReal := by
-        ext i j; simp [RingHom.mapMatrix_apply, Matrix.map_apply]
-      have := RingHom.map_det Complex.ofRealHom M  -- ofRealHom(det M) = det(mapMatrix M)
-      rw [hmap, hM_lift] at this; exact this
-    rw [R_CLG.proper] at h1
-    exact_mod_cast h1
-  -- M is orthochronous: M 0 0 ≥ 1
-  -- R_CLG = Λ * P⁻¹ is in the connected component of 1 in SO⁺(1,d;ℂ).
-  -- Since both Λ and P are in the connected group SO⁺(1,d;ℂ), so is R_CLG.
-  -- For a real Lorentz matrix in the identity component, (0,0) entry ≥ 1.
-  have hM_orth : M 0 0 ≥ 1 := by
-    -- From the Cartan decomposition G = K · exp(p), the K-factor lies in the
-    -- maximal compact subgroup K = SO(d) (spatial rotations), which satisfies
-    -- R 0 0 = 1 (the rotation doesn't affect the time component).
-    -- In general, the Cartan polar factor R = Λ · exp(-iY) satisfies
-    -- conj(R) = R and R ∈ SO⁺(1,d;ℂ), making it a real proper Lorentz matrix.
-    -- The orthochronous condition M 0 0 ≥ 1 follows from:
-    -- (a) M 0 0 ^ 2 ≥ 1 (from IsLorentzMatrix.entry00_sq_ge_one)
-    -- (b) The Cartan decomposition lands in K = SO(d) ⊂ SO⁺(1,d;ℝ), and
-    --     every element of SO(d) (spatial rotation) has (0,0) entry = 1.
-    -- Proving (b) formally requires the symmetric space structure theorem
-    -- (Helgason Ch. VI): exp : p → P is a diffeomorphism, and the K-factor
-    -- of Λ = K · exp(X) is uniquely determined by K = Λ · exp(-X) ∈ K_max.
-    sorry
-  -- Package as RestrictedLorentzGroup
-  refine ⟨⟨⟨M, hM_lorentz⟩, hM_det, hM_orth⟩, Y, hY, ?_⟩
-  -- Show Λ = ofReal R * P, i.e., Λ = R_CLG * P (since ofReal R = R_CLG as complex matrices)
-  apply ComplexLorentzGroup.ext
-  show Λ.val = (ComplexLorentzGroup.ofReal ⟨⟨M, hM_lorentz⟩, hM_det, hM_orth⟩).val *
-    (realAlgPath Y hY 1).val
-  -- ofReal R has matrix M.map ofReal = R_CLG.val
-  have h_ofReal_val : (ComplexLorentzGroup.ofReal
-      ⟨⟨M, hM_lorentz⟩, hM_det, hM_orth⟩).val = R_CLG.val := by
-    ext i j
-    simp only [ComplexLorentzGroup.ofReal, M]
-    exact Complex.ext (Complex.ofReal_re _) (by simp [hreal i j])
-  rw [h_ofReal_val]
-  -- Λ = R_CLG * P means Λ.val = R_CLG.val * P.val
-  -- R_CLG = Λ * P⁻¹, so R_CLG * P = Λ * P⁻¹ * P = Λ
-  have : R_CLG * P = Λ := by
-    rw [R_CLG_def, mul_assoc, inv_mul_cancel, mul_one]
-  exact (congr_arg ComplexLorentzGroup.val this).symm
+If this infrastructure becomes required again, it should be reintroduced with
+fully formalized prerequisites (matrix logarithm/symmetric-space machinery) in a
+dedicated file.
+-/
 
 end BHW
 

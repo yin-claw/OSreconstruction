@@ -4,6 +4,8 @@ Released under Apache 2.0 license.
 Authors: ModularPhysics Contributors
 -/
 import Mathlib.Topology.Connected.PathConnected
+import Mathlib.Topology.Compactness.SigmaCompact
+import Mathlib.Topology.Baire.LocallyCompactRegular
 import Mathlib.Analysis.Complex.Basic
 import Mathlib.Analysis.Normed.Algebra.MatrixExponential
 import OSReconstruction.ComplexLieGroups.LorentzLieGroup
@@ -227,6 +229,113 @@ instance instGroup : Group (ComplexLorentzGroup d) where
             metric_preserving_matrix ⟨v, mp, pr⟩
           simpa using this
       _ = 1 := ηℂ_sq
+
+/-! ### Topological Group / Compactness Infrastructure -/
+
+instance instContinuousMul : ContinuousMul (ComplexLorentzGroup d) where
+  continuous_mul := by
+    apply continuous_induced_rng.mpr
+    change Continuous (fun p : ComplexLorentzGroup d × ComplexLorentzGroup d =>
+      p.1.val * p.2.val)
+    exact (continuous_val.comp continuous_fst).mul
+      (continuous_val.comp continuous_snd)
+
+instance instContinuousInv : ContinuousInv (ComplexLorentzGroup d) where
+  continuous_inv := by
+    apply continuous_induced_rng.mpr
+    change Continuous (fun a : ComplexLorentzGroup d =>
+      (ηℂ : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) * a.val.transpose * ηℂ)
+    exact ((continuous_const.mul (continuous_val.matrix_transpose)).mul
+      continuous_const)
+
+instance instIsTopologicalGroup : IsTopologicalGroup (ComplexLorentzGroup d) :=
+  { instContinuousMul, instContinuousInv with }
+
+private theorem isClosed_range_val :
+    IsClosed (Set.range (ComplexLorentzGroup.val :
+      ComplexLorentzGroup d → Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ)) := by
+  let metricSet : Set (Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) :=
+    {M | ∀ (μ ν : Fin (d + 1)),
+      ∑ α : Fin (d + 1),
+        (minkowskiSignature d α : ℂ) * M α μ * M α ν =
+      if μ = ν then (minkowskiSignature d μ : ℂ) else 0}
+  let detSet : Set (Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) := {M | M.det = 1}
+  have hmetric_closed : IsClosed metricSet := by
+    let S : Fin (d + 1) → Fin (d + 1) →
+        Set (Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) :=
+      fun μ ν =>
+        {M | ∑ α : Fin (d + 1),
+            (minkowskiSignature d α : ℂ) * M α μ * M α ν =
+          if μ = ν then (minkowskiSignature d μ : ℂ) else 0}
+    have hS_closed : ∀ μ ν, IsClosed (S μ ν) := by
+      intro μ ν
+      have hcont : Continuous (fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ =>
+          ∑ α : Fin (d + 1), (minkowskiSignature d α : ℂ) * M α μ * M α ν) := by
+        apply continuous_finset_sum Finset.univ
+        intro α _
+        have hentryμ : Continuous (fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ => M α μ) :=
+          (continuous_apply μ).comp (continuous_apply α)
+        have hentryν : Continuous (fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ => M α ν) :=
+          (continuous_apply ν).comp (continuous_apply α)
+        simpa [mul_assoc] using (continuous_const.mul (hentryμ.mul hentryν))
+      exact (isClosed_singleton
+          (x := if μ = ν then (minkowskiSignature d μ : ℂ) else 0)).preimage hcont
+    have hmetric_eq : metricSet = ⋂ μ : Fin (d + 1), ⋂ ν : Fin (d + 1), S μ ν := by
+      ext M
+      simp [metricSet, S]
+    rw [hmetric_eq]
+    exact isClosed_iInter (fun μ => isClosed_iInter (fun ν => hS_closed μ ν))
+  have hdet_closed : IsClosed detSet := by
+    exact (isClosed_singleton (x := (1 : ℂ))).preimage (continuous_id.matrix_det)
+  have h_range_eq :
+      Set.range (ComplexLorentzGroup.val :
+        ComplexLorentzGroup d → Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) =
+      metricSet ∩ detSet := by
+    ext M
+    constructor
+    · rintro ⟨Λ, rfl⟩
+      exact ⟨Λ.metric_preserving, Λ.proper⟩
+    · intro hM
+      exact ⟨⟨M, hM.1, hM.2⟩, rfl⟩
+  simpa [h_range_eq] using hmetric_closed.inter hdet_closed
+
+private theorem isClosedEmbedding_val :
+    Topology.IsClosedEmbedding (ComplexLorentzGroup.val :
+      ComplexLorentzGroup d → Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) := by
+  have hind : Topology.IsInducing (ComplexLorentzGroup.val :
+      ComplexLorentzGroup d → Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) := ⟨rfl⟩
+  have hinj : Function.Injective (ComplexLorentzGroup.val :
+      ComplexLorentzGroup d → Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) := by
+    intro x y hxy
+    cases x
+    cases y
+    cases hxy
+    rfl
+  exact Topology.IsClosedEmbedding.mk ⟨hind, hinj⟩ isClosed_range_val
+
+instance instT2Space : T2Space (ComplexLorentzGroup d) :=
+  (isClosedEmbedding_val (d := d)).t2Space
+
+instance instLocallyCompactSpace : LocallyCompactSpace (ComplexLorentzGroup d) := by
+  letI : LocallyCompactSpace (Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) := by
+    simpa [Matrix] using
+      (inferInstance : LocallyCompactSpace
+        (Fin (d + 1) → Fin (d + 1) → ℂ))
+  exact (isClosedEmbedding_val (d := d)).locallyCompactSpace
+
+instance instBaireSpace : BaireSpace (ComplexLorentzGroup d) :=
+  BaireSpace.of_t2Space_locallyCompactSpace
+
+instance instSigmaCompactSpace : SigmaCompactSpace (ComplexLorentzGroup d) := by
+  letI : SecondCountableTopology (Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) := by
+    simpa [Matrix] using
+      (inferInstance : SecondCountableTopology
+        (Fin (d + 1) → Fin (d + 1) → ℂ))
+  letI : LocallyCompactSpace (Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) := by
+    simpa [Matrix] using
+      (inferInstance : LocallyCompactSpace
+        (Fin (d + 1) → Fin (d + 1) → ℂ))
+  exact (isClosedEmbedding_val (d := d)).sigmaCompactSpace
 
 /-! ### Embedding of the real restricted Lorentz group -/
 
