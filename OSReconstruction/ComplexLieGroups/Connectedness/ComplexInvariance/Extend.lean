@@ -9,6 +9,109 @@ variable {d : ℕ}
 
 namespace BHW
 
+/-- The Lorentz-invariance set used in the global clopen argument:
+`Λ ∈ lorentzInvarianceSet` iff `F (Λ·w) = F w` for every `w ∈ FT`
+with `Λ·w ∈ FT`. -/
+private def lorentzInvarianceSet (n : ℕ)
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ) : Set (ComplexLorentzGroup d) :=
+  { Λ | ∀ w, w ∈ ForwardTube d n → complexLorentzAction Λ w ∈ ForwardTube d n →
+      F (complexLorentzAction Λ w) = F w }
+
+/-- Left multiplication by real Lorentz elements preserves
+`lorentzInvarianceSet`. -/
+private lemma lorentzInvarianceSet_left_mul_ofReal (n : ℕ)
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF_real_inv : ∀ (Λ : RestrictedLorentzGroup d)
+      (z : Fin n → Fin (d + 1) → ℂ), z ∈ ForwardTube d n →
+      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
+    {Λ : ComplexLorentzGroup d}
+    (hΛT : Λ ∈ lorentzInvarianceSet (d := d) n F)
+    (R : RestrictedLorentzGroup d) :
+    ComplexLorentzGroup.ofReal R * Λ ∈ lorentzInvarianceSet (d := d) n F := by
+  intro w hw hRw
+  have hΛw : complexLorentzAction Λ w ∈ ForwardTube d n := by
+    have hmul :
+        complexLorentzAction (ComplexLorentzGroup.ofReal R⁻¹)
+          (complexLorentzAction (ComplexLorentzGroup.ofReal R * Λ) w) =
+        complexLorentzAction Λ w := by
+      calc
+        complexLorentzAction (ComplexLorentzGroup.ofReal R⁻¹)
+            (complexLorentzAction (ComplexLorentzGroup.ofReal R * Λ) w)
+            = complexLorentzAction
+                (ComplexLorentzGroup.ofReal R⁻¹ * (ComplexLorentzGroup.ofReal R * Λ)) w := by
+                symm
+                exact complexLorentzAction_mul (ComplexLorentzGroup.ofReal R⁻¹)
+                  (ComplexLorentzGroup.ofReal R * Λ) w
+        _ = complexLorentzAction
+              ((ComplexLorentzGroup.ofReal R⁻¹ * ComplexLorentzGroup.ofReal R) * Λ) w := by
+              simp [mul_assoc]
+        _ = complexLorentzAction
+              (ComplexLorentzGroup.ofReal (R⁻¹ * R) * Λ) w := by
+              rw [← ofReal_mul_eq]
+        _ = complexLorentzAction
+              (ComplexLorentzGroup.ofReal (1 : RestrictedLorentzGroup d) * Λ) w := by
+              simp
+        _ = complexLorentzAction Λ w := by
+              simp [ofReal_one_eq]
+    have hback :
+        complexLorentzAction (ComplexLorentzGroup.ofReal R⁻¹)
+          (complexLorentzAction (ComplexLorentzGroup.ofReal R * Λ) w) ∈ ForwardTube d n :=
+      ofReal_preserves_forwardTube (R := R⁻¹)
+        (complexLorentzAction (ComplexLorentzGroup.ofReal R * Λ) w) hRw
+    simpa [hmul] using hback
+  have hcore : F (complexLorentzAction Λ w) = F w := hΛT w hw hΛw
+  have hreal :
+      F (complexLorentzAction (ComplexLorentzGroup.ofReal R)
+        (complexLorentzAction Λ w)) = F (complexLorentzAction Λ w) :=
+    hF_real_inv R (complexLorentzAction Λ w) hΛw
+  have hmul :
+      complexLorentzAction (ComplexLorentzGroup.ofReal R * Λ) w =
+        complexLorentzAction (ComplexLorentzGroup.ofReal R) (complexLorentzAction Λ w) := by
+    simpa using complexLorentzAction_mul (ComplexLorentzGroup.ofReal R) Λ w
+  calc
+    F (complexLorentzAction (ComplexLorentzGroup.ofReal R * Λ) w)
+        = F (complexLorentzAction (ComplexLorentzGroup.ofReal R) (complexLorentzAction Λ w)) := by
+            rw [hmul]
+    _ = F (complexLorentzAction Λ w) := hreal
+    _ = F w := hcore
+
+/-- Right multiplication by real Lorentz elements preserves
+`lorentzInvarianceSet`. -/
+private lemma lorentzInvarianceSet_right_mul_ofReal (n : ℕ)
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF_real_inv : ∀ (Λ : RestrictedLorentzGroup d)
+      (z : Fin n → Fin (d + 1) → ℂ), z ∈ ForwardTube d n →
+      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
+    {Λ : ComplexLorentzGroup d}
+    (hΛT : Λ ∈ lorentzInvarianceSet (d := d) n F)
+    (R : RestrictedLorentzGroup d) :
+    Λ * ComplexLorentzGroup.ofReal R ∈ lorentzInvarianceSet (d := d) n F := by
+  intro w hw hΛRw
+  have hRw : complexLorentzAction (ComplexLorentzGroup.ofReal R) w ∈ ForwardTube d n :=
+    ofReal_preserves_forwardTube (R := R) w hw
+  have hcore :
+      F (complexLorentzAction Λ (complexLorentzAction (ComplexLorentzGroup.ofReal R) w)) =
+      F (complexLorentzAction (ComplexLorentzGroup.ofReal R) w) :=
+    hΛT (complexLorentzAction (ComplexLorentzGroup.ofReal R) w) hRw
+      (by
+        have hmul :
+            complexLorentzAction (Λ * ComplexLorentzGroup.ofReal R) w =
+              complexLorentzAction Λ (complexLorentzAction (ComplexLorentzGroup.ofReal R) w) := by
+          simpa using complexLorentzAction_mul Λ (ComplexLorentzGroup.ofReal R) w
+        simpa [hmul] using hΛRw)
+  have hreal : F (complexLorentzAction (ComplexLorentzGroup.ofReal R) w) = F w :=
+    hF_real_inv R w hw
+  have hmul :
+      complexLorentzAction (Λ * ComplexLorentzGroup.ofReal R) w =
+        complexLorentzAction Λ (complexLorentzAction (ComplexLorentzGroup.ofReal R) w) := by
+    simpa using complexLorentzAction_mul Λ (ComplexLorentzGroup.ofReal R) w
+  calc
+    F (complexLorentzAction (Λ * ComplexLorentzGroup.ofReal R) w)
+        = F (complexLorentzAction Λ (complexLorentzAction (ComplexLorentzGroup.ofReal R) w)) := by
+            rw [hmul]
+    _ = F (complexLorentzAction (ComplexLorentzGroup.ofReal R) w) := hcore
+    _ = F w := hreal
+
 theorem complex_lorentz_invariance (n : ℕ)
     (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
     (hF_holo : DifferentiableOn ℂ F (ForwardTube d n))
@@ -20,9 +123,7 @@ theorem complex_lorentz_invariance (n : ℕ)
       complexLorentzAction Λ z ∈ ForwardTube d n →
       F (complexLorentzAction Λ z) = F z := by
   -- === Define T = {Λ : ∀ w ∈ FT, Λ·w ∈ FT → F(Λ·w) = F(w)} ===
-  set T : Set (ComplexLorentzGroup d) :=
-    { Λ | ∀ w, w ∈ ForwardTube d n → complexLorentzAction Λ w ∈ ForwardTube d n →
-          F (complexLorentzAction Λ w) = F w } with hT_def
+  set T : Set (ComplexLorentzGroup d) := lorentzInvarianceSet (d := d) n F with hT_def
   -- Suffices: T = univ
   suffices hT_univ : T = Set.univ by
     intro Λ z hz hΛz; exact (Set.eq_univ_iff_forall.mp hT_univ Λ) z hz hΛz
@@ -38,7 +139,7 @@ theorem complex_lorentz_invariance (n : ℕ)
   -- === Tᶜ ⊆ U (if Λ ∉ T, the witness w₀ shows D_Λ ≠ ∅) ===
   have hTc_sub_U : Tᶜ ⊆ U := by
     intro Λ hΛ
-    simp only [Set.mem_compl_iff, hT_def, Set.mem_setOf_eq, not_forall] at hΛ
+    simp [hT_def, lorentzInvarianceSet] at hΛ
     push_neg at hΛ
     obtain ⟨w, hw, hΛw, _⟩ := hΛ
     exact ⟨w, hw, hΛw⟩
@@ -46,7 +147,7 @@ theorem complex_lorentz_invariance (n : ℕ)
   have hT_closed : IsClosed T := by
     rw [← isOpen_compl_iff, isOpen_iff_forall_mem_open]
     intro Λ₀ hΛ₀
-    simp only [Set.mem_compl_iff, hT_def, Set.mem_setOf_eq, not_forall] at hΛ₀
+    simp [hT_def, lorentzInvarianceSet] at hΛ₀
     push_neg at hΛ₀
     obtain ⟨w₀, hw₀, hΛ₀w₀, hne⟩ := hΛ₀
     have hV_open : IsOpen {Λ : ComplexLorentzGroup d |
@@ -61,9 +162,8 @@ theorem complex_lorentz_invariance (n : ℕ)
       fun Λ ⟨hΛw₀, hΛne⟩ => ?_,
       hcomp.isOpen_inter_preimage hV_open isOpen_compl_singleton,
       ⟨hΛ₀w₀, hne⟩⟩
-    simp only [Set.mem_compl_iff, hT_def, Set.mem_setOf_eq, not_forall]
-    push_neg
-    exact ⟨w₀, hw₀, hΛw₀, hΛne⟩
+    intro hΛT
+    exact hΛne (hΛT w₀ hw₀ hΛw₀)
   -- === T ∩ U is open (identity theorem argument at Λ₀ ∈ T ∩ U) ===
   have hTU_open : IsOpen (T ∩ U) := by
     rw [isOpen_iff_forall_mem_open]

@@ -1087,6 +1087,40 @@ private lemma orbitSet_joined_mul_ofReal_left
   intro t
   exact orbitSet_mem_mul_ofReal_left w (γ t) hΛ
 
+private lemma orbitSet_mem_mul_ofReal_right_of_stabilizes
+    (w : Fin n → Fin (d + 1) → ℂ)
+    {Λ : ComplexLorentzGroup d}
+    (hΛ : Λ ∈ orbitSet w)
+    (R : RestrictedLorentzGroup d)
+    (hRw : complexLorentzAction (ComplexLorentzGroup.ofReal R) w = w) :
+    (Λ * ComplexLorentzGroup.ofReal R) ∈ orbitSet w := by
+  change complexLorentzAction (Λ * ComplexLorentzGroup.ofReal R) w ∈ ForwardTube d n
+  rw [complexLorentzAction_mul, hRw]
+  exact hΛ
+
+private lemma orbitSet_joined_mul_ofReal_right_of_stabilizerPath
+    (w : Fin n → Fin (d + 1) → ℂ)
+    {Λ : ComplexLorentzGroup d}
+    (hΛ : Λ ∈ orbitSet w)
+    (R : RestrictedLorentzGroup d)
+    (hstabPath :
+      JoinedIn
+        {S : RestrictedLorentzGroup d |
+          complexLorentzAction (ComplexLorentzGroup.ofReal S) w = w}
+        1 R) :
+    JoinedIn (orbitSet w) Λ (Λ * ComplexLorentzGroup.ofReal R) := by
+  rcases hstabPath with ⟨γ, hγ⟩
+  refine ⟨
+    { toFun := fun t => Λ * ComplexLorentzGroup.ofReal (γ t)
+      continuous_toFun := continuous_const.mul (continuous_ofReal.comp γ.continuous_toFun)
+      source' := by
+        rw [γ.source, ofReal_one_eq, mul_one]
+      target' := by
+        rw [γ.target] },
+    ?_⟩
+  intro t
+  exact orbitSet_mem_mul_ofReal_right_of_stabilizes w hΛ (γ t) (hγ t)
+
 private lemma ofReal_range_subset_pathComponentIn_orbitSet_one
     (w : Fin n → Fin (d + 1) → ℂ) (hw : w ∈ ForwardTube d n) :
     Set.range (ComplexLorentzGroup.ofReal : RestrictedLorentzGroup d → ComplexLorentzGroup d) ⊆
@@ -1122,6 +1156,44 @@ private theorem orbitSet_isPreconnected_of_joinedIn_one
       exact (hjoined_subtype x).symm.trans (hjoined_subtype y)
   exact (isPreconnected_iff_preconnectedSpace).2
     (inferInstance : PreconnectedSpace (orbitSet w))
+
+private theorem orbitSet_isPreconnected_of_doubleCoset_generation_with_stabilizerPath
+    (w : Fin n → Fin (d + 1) → ℂ)
+    (hw : w ∈ ForwardTube d n)
+    (Λ0 : ComplexLorentzGroup d)
+    (hΛ0 : Λ0 ∈ orbitSet w)
+    (hjoin0 : JoinedIn (orbitSet w) (1 : ComplexLorentzGroup d) Λ0)
+    (hgen : ∀ Λ ∈ orbitSet w,
+      ∃ R1 R2 : RestrictedLorentzGroup d,
+        JoinedIn
+          {S : RestrictedLorentzGroup d |
+            complexLorentzAction (ComplexLorentzGroup.ofReal S) w = w}
+          1 R2 ∧
+        Λ = ComplexLorentzGroup.ofReal R1 * Λ0 * ComplexLorentzGroup.ofReal R2) :
+    IsPreconnected (orbitSet w) := by
+  have hjoin : ∀ (Λ : ComplexLorentzGroup d), Λ ∈ orbitSet w →
+      JoinedIn (orbitSet w) (1 : ComplexLorentzGroup d) Λ := by
+    intro Λ hΛ
+    rcases hgen Λ hΛ with ⟨R1, R2, hR2path, rfl⟩
+    have hmid : (Λ0 * ComplexLorentzGroup.ofReal R2) ∈ orbitSet w := by
+      exact orbitSet_mem_mul_ofReal_right_of_stabilizes w hΛ0 R2 (hR2path.target_mem)
+    have h0_to_mid :
+        JoinedIn (orbitSet w) (1 : ComplexLorentzGroup d)
+          (Λ0 * ComplexLorentzGroup.ofReal R2) :=
+      hjoin0.trans
+        (orbitSet_joined_mul_ofReal_right_of_stabilizerPath w hΛ0 R2 hR2path)
+    have hmid_to_goal :
+        JoinedIn (orbitSet w)
+          (Λ0 * ComplexLorentzGroup.ofReal R2)
+          (ComplexLorentzGroup.ofReal R1 * (Λ0 * ComplexLorentzGroup.ofReal R2)) :=
+      orbitSet_joined_mul_ofReal_left w hmid R1
+    have hmid_to_goal' :
+        JoinedIn (orbitSet w)
+          (Λ0 * ComplexLorentzGroup.ofReal R2)
+          (ComplexLorentzGroup.ofReal R1 * Λ0 * ComplexLorentzGroup.ofReal R2) := by
+      simpa [mul_assoc] using hmid_to_goal
+    exact h0_to_mid.trans hmid_to_goal'
+  exact orbitSet_isPreconnected_of_joinedIn_one w hw hjoin
 
 /-- **The orbit set O_w is preconnected.**
     Geometric input for `nonemptyDomain_isPreconnected`.

@@ -37,12 +37,11 @@ All `sorry`s removed in `JostPoints.lean`.
 - `forwardJostSet_subset_jostSet` ✅ — ForwardJostSet ⊂ JostSet
 - `jostSet_nonempty`, `forwardJostSet_nonempty`, `forwardJostSet_isOpen` ✅
 
-### Connectedness.lean — 2 sorrys
-| # | Line | Name | Status |
-|---|------|------|--------|
-| 1 | 1844 | `orbitSet_isPreconnected` | **1 local sorry hole** — remaining `d ≥ 2`, `n > 0` joinability goal `hjoin : ∀ Λ ∈ orbitSet w, JoinedIn (orbitSet w) 1 Λ` |
-| 2 | 4372 | `iterated_eow_permutation_extension` | **1 local sorry hole** — remaining nontrivial permutation branch (`d > 0`, `n ≥ 2`, `σ ≠ 1`) via `hExtPerm` |
-| 3 | 4015 | `adjacent_sectors_overlap_right` | **closed** — proved via `adjacent_overlap_witness_exists_d1` + `adjacent_overlap_witness_exists` (`d ≥ 2`) |
+### Connectedness/* — 2 sorrys
+| # | File | Line | Name | Status |
+|---|------|------|------|--------|
+| 1 | `Connectedness/ComplexInvariance/Core.lean` | 1250 | `orbitSet_isPreconnected` | **1 local sorry hole** — remaining `d ≥ 2`, `n > 0` joinability goal `hjoin : ∀ Λ ∈ orbitSet w, JoinedIn (orbitSet w) 1 Λ` (with new double-coset/stabilizer-path infrastructure available) |
+| 2 | `Connectedness/BHWPermutation/PermutationFlow.lean` | 1382 | `iterated_eow_permutation_extension` | **1 local sorry hole** — remaining nontrivial permutation branch (`d > 0`, `n ≥ 2`, `σ ≠ 1`) via `hExtPerm` |
 
 ### GeodesicConvexity.lean — 0 sorrys ✓
 The prior placeholder theorems (`cartan_exp_embedding`, `polar_decomposition`)
@@ -78,7 +77,7 @@ New infrastructure (2026-02-22):
 - `isOpen_permutedForwardTube` — PFT(π) is open
 - `isOpen_permutedExtendedTube` — PET is open
 - `adjacent_overlap_witness_exists` (`AdjacentOverlapWitness.lean`) — explicit overlap witness for `d ≥ 2`
-- `nonemptyDomain_isOpen` (`Connectedness.lean`) — openness of
+- `nonemptyDomain_isOpen` (`Connectedness/ComplexInvariance/Core.lean`) — openness of
   `U = {Λ | ∃ w ∈ FT, Λ·w ∈ FT}` via product openness + projection
 - `inOpenForwardCone_smul_pos` (`GeodesicConvexity.lean`) — positive scaling closure of V₊
 - `productForwardCone_smul_pos`, `productForwardCone_convex`,
@@ -98,12 +97,28 @@ New infrastructure (2026-02-22):
   direct flattened-coordinate instantiation of
   `SCV.edge_of_the_wedge_theorem`
 - `isOpen_pathComponentIn_of_eventually_joined`,
-  `isOpen_orbitSet_pathComponent` (`Connectedness.lean`) — path-component
+  `isOpen_orbitSet_pathComponent` (`Connectedness/ComplexInvariance/Core.lean`) — path-component
   openness infrastructure derived from local eventual joinability in `orbitSet`
 - `orbitSet_mem_mul_ofReal_left`, `orbitSet_joined_one_ofReal`,
   `orbitSet_joined_mul_ofReal_left`,
-  `ofReal_range_subset_pathComponentIn_orbitSet_one` (`Connectedness.lean`) —
+  `ofReal_range_subset_pathComponentIn_orbitSet_one` (`Connectedness/ComplexInvariance/Core.lean`) —
   real-subgroup transport/connectedness infrastructure for orbit-set components
+- `orbitSet_mem_mul_ofReal_right_of_stabilizes`,
+  `orbitSet_joined_mul_ofReal_right_of_stabilizerPath`,
+  `orbitSet_isPreconnected_of_doubleCoset_generation_with_stabilizerPath`
+  (`Connectedness/ComplexInvariance/Core.lean`) — right-action/stabilizer-path
+  orbit-set transport and a reduced double-coset preconnectedness criterion
+- `rapidityElementD1`, `rapidityElementD1_mul`,
+  `d1_exists_rapidityElement_principal_im_repr`,
+  `d1_exists_rapidityElement_principal_im_strict_of_forwardTube`,
+  `rapidityElementD1_real_preserves_forwardTube` (`D1OrbitSet.lean`) —
+  exported `d=1` rapidity normal-form/decomposition infrastructure for reuse
+  in permutation-overlap geometry
+- `extendF_perm_eq_on_realJost`,
+  `extendF_perm_overlap_of_jostWitness_and_forwardOverlapConnected`
+  (`Connectedness/BHWPermutation/PermutationFlow.lean`) — local-Jost-witness
+  ET-overlap identity-theorem infrastructure that avoids assuming global
+  `JostSet ⊆ ExtendedTube`
 
 Previously proved infrastructure:
 - ForwardTube, complexLorentzAction, PermutedExtendedTube definitions
@@ -116,7 +131,7 @@ Previously proved infrastructure:
 - `extendF`, `extendF_eq_on_forwardTube`, `extendF_preimage_eq`, etc.
 - BHW theorem statement with all hypotheses
 
-**Total: 2 sorrys across 1 file** (Connectedness: 2)
+**Total: 2 sorrys across 2 files** (`Core.lean`: 1, `PermutationFlow.lean`: 1)
 
 ---
 
@@ -178,6 +193,11 @@ permutations σ, so `eow_chain_adj_swap` can close the induction step.
   `test/midpoint_route_vacuous_test.lean` show the needed midpoint hypothesis
   is false already at `σ = 1` (for `d ≥ 2`, `n ≥ 2`), so this cannot be used to
   close `hExtPerm`.
+- The global bridge `JostSet ⊆ ExtendedTube` is also not viable as a proof input.
+  `test/jostset_et_counterexample_test.lean` compiles a counterexample
+  (`jostSet_not_subset_extendedTube_counterexample`) for `n = 3` and any `d ≥ 1`.
+  Any remaining route must use a weaker/local real-overlap condition rather than
+  universal `JostSet` inclusion.
 
 **Update (2026-02-26):**
 - The theorem now has a completed `n ≤ 1` branch (trivial permutation case).
@@ -189,9 +209,13 @@ permutations σ, so `eow_chain_adj_swap` can close the induction step.
   `permInvariance_forwardTube_iff_extendF_overlap`.
 - `PermutationFlow` now includes explicit chain-reduction infrastructure
   (`etAdj_chain_of_midCond`,
+  `extendF_perm_overlap_of_adjSwap_connected_and_chain_hd2`,
   `extendF_perm_overlap_of_adjSwap_connected_and_midCond_hd2`), so the
   remaining gap is purely geometric (global ET-overlap control), not
   permutation-chain boilerplate.
+- The `hJostET` route is now isolated as a strong wrapper layered over the
+  new local-witness theorem; remaining obligations are reduced to geometric
+  witness/connectedness inputs rather than global `JostSet` inclusion.
 
 **Independent status check (2026-02-25):**
 - Branch/history scan did not find a completed non-`sorry` version of this
@@ -233,7 +257,7 @@ LorentzLieGroup.lean ✓                       Complexification.lean ✓
             forward-cone / real-Lorentz infrastructure
                      │
                      ▼
-          Connectedness.lean (2 sorrys)
+          Connectedness/* (2 sorrys)
             orbitSet_isPreconnected [geometric — needs orbit-set joinability in `d ≥ 2`]
             iterated_eow_permutation_extension [EOW iteration; `hExtPerm` gap]
                      │
@@ -248,10 +272,10 @@ LorentzLieGroup.lean ✓                       Complexification.lean ✓
 
 ## Execution Order
 
-1. **Connectedness.lean / geometric lane** — close `orbitSet_isPreconnected` by
+1. **Connectedness/ComplexInvariance/Core.lean / geometric lane** — close `orbitSet_isPreconnected` by
    proving the remaining `d ≥ 2`, `n > 0` orbit-set joinability goal
    `hjoin : ∀ Λ ∈ orbitSet w, JoinedIn (orbitSet w) 1 Λ`.
-2. **Connectedness.lean / EOW lane** — close `iterated_eow_permutation_extension`
+2. **Connectedness/BHWPermutation/PermutationFlow.lean / EOW lane** — close `iterated_eow_permutation_extension`
    by proving `hExtPerm` for nontrivial `σ`, then discharge the theorem via
    `iterated_eow_permutation_extension_of_extendF_perm`.
 3. Build: `lake build OSReconstruction.ComplexLieGroups`

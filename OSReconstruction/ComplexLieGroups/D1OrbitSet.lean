@@ -880,6 +880,56 @@ private theorem d1_orbitSet_isPreconnected [NeZero n]
   intro Λ hΛ
   exact d1_joinedIn_orbitSet_one_to_any (n := n) w hw hΛ
 
+/-- Public wrapper for the `d = 1` rapidity normal form element. -/
+def rapidityElementD1 (θ : ℂ) : ComplexLorentzGroup 1 :=
+  rapidityElement θ
+
+/-- Multiplicative composition law for `d = 1` rapidity elements. -/
+theorem rapidityElementD1_mul (x y : ℂ) :
+    rapidityElementD1 (x + y) = rapidityElementD1 x * rapidityElementD1 y := by
+  simpa [rapidityElementD1] using rapidityElement_mul x y
+
+/-- Every `d = 1` complex Lorentz element admits principal-imaginary rapidity
+coordinates with `b ∈ (-π, π]`. -/
+theorem d1_exists_rapidityElement_principal_im_repr
+    (Λ : ComplexLorentzGroup 1) :
+    ∃ a b : ℝ, b ∈ Set.Ioc (-Real.pi) Real.pi ∧
+      Λ = rapidityElementD1 ((a : ℂ) + (b : ℂ) * Complex.I) := by
+  rcases d1_exists_rapidityElement_principal_im Λ with ⟨a, b, hb, hrepr⟩
+  exact ⟨a, b, hb, by simpa [rapidityElementD1] using hrepr⟩
+
+/-- Real rapidity elements preserve the `d = 1` forward tube. -/
+theorem rapidityElementD1_real_preserves_forwardTube
+    (a : ℝ) {n : ℕ}
+    (z : Fin n → Fin (1 + 1) → ℂ)
+    (hz : z ∈ BHWCore.ForwardTube 1 n) :
+    BHWCore.complexLorentzAction (d := 1) (n := n) (rapidityElementD1 (a : ℂ)) z
+      ∈ BHWCore.ForwardTube 1 n := by
+  have hz' : z ∈ ForwardTube 1 n := by
+    simpa [ForwardTube] using hz
+  have hpres : complexLorentzAction (rapidityElement (a : ℂ)) z ∈ ForwardTube 1 n :=
+    rapidityElement_real_preserves_forwardTube a z hz'
+  simpa [rapidityElementD1, complexLorentzAction, ForwardTube] using hpres
+
+/-- Public wrapper for the principal-imaginary rapidity decomposition in `d = 1`.
+
+If both `w` and `Λ • w` lie in the forward tube, then `Λ` can be written as
+`rapidityElementD1 (a + i b)` with `|b| < π`. -/
+theorem d1_exists_rapidityElement_principal_im_strict_of_forwardTube [NeZero n]
+    (Λ : ComplexLorentzGroup 1)
+    (w : Fin n → Fin (1 + 1) → ℂ)
+    (hw : w ∈ BHWCore.ForwardTube 1 n)
+    (hΛw : BHWCore.complexLorentzAction (d := 1) (n := n) Λ w ∈ BHWCore.ForwardTube 1 n) :
+    ∃ a b : ℝ, |b| < Real.pi ∧
+      Λ = rapidityElementD1 ((a : ℂ) + (b : ℂ) * Complex.I) := by
+  have hw' : w ∈ ForwardTube 1 n := by
+    simpa [ForwardTube] using hw
+  have hΛw' : complexLorentzAction Λ w ∈ ForwardTube 1 n := by
+    simpa [complexLorentzAction, ForwardTube] using hΛw
+  rcases d1_exists_rapidityElement_principal_im_strict (n := n) Λ w hw' hΛw' with
+    ⟨a, b, hb, hrepr⟩
+  exact ⟨a, b, hb, by simpa [rapidityElementD1] using hrepr⟩
+
 theorem orbitSet_isPreconnected_d1
     (w : Fin n → Fin (1 + 1) → ℂ) (hw : w ∈ BHWCore.ForwardTube 1 n) :
     IsPreconnected {Λ : ComplexLorentzGroup 1 |
