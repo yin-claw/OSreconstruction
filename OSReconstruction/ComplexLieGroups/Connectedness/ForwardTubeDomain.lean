@@ -1,0 +1,126 @@
+import OSReconstruction.ComplexLieGroups.Connectedness.OrbitSetBasic
+
+noncomputable section
+
+open Complex Topology Matrix LorentzLieGroup Classical Filter NormedSpace
+
+namespace BHW
+
+variable {d n : ℕ}
+
+/-- Extract the k-th imaginary difference from z. -/
+def imDiff (z : Fin n → Fin (d + 1) → ℂ) (k : Fin n) : Fin (d + 1) → ℝ :=
+  fun μ => (z k μ - (if h : k.val = 0 then 0 else z ⟨k.val - 1, by omega⟩) μ).im
+
+/-- The imaginary difference is ℝ-linear in z. -/
+lemma imDiff_linear (z₁ z₂ : Fin n → Fin (d + 1) → ℂ) (a b : ℝ) (k : Fin n) :
+    imDiff (a • z₁ + b • z₂) k = a • imDiff z₁ k + b • imDiff z₂ k := by
+  ext μ
+  simp only [imDiff, Pi.add_apply, Pi.smul_apply, smul_eq_mul]
+  by_cases hk : k.val = 0
+  · simp [hk, Complex.add_im, Complex.mul_im, Complex.ofReal_im, Complex.ofReal_re, sub_zero]
+  · simp [hk, Complex.sub_im, Complex.add_im, Complex.mul_im, Complex.ofReal_im,
+      Complex.ofReal_re]
+    ring
+
+/-- **The forward tube is ℝ-convex.** -/
+theorem forwardTube_convex : Convex ℝ (ForwardTube d n) := by
+  intro z₁ hz₁ z₂ hz₂ a b ha hb hab k
+  show InOpenForwardCone d (imDiff (a • z₁ + b • z₂) k)
+  rw [imDiff_linear]
+  exact inOpenForwardCone_convex
+    (Set.mem_setOf.mpr (hz₁ k)) (Set.mem_setOf.mpr (hz₂ k)) ha hb hab
+
+/-- The complex Lorentz action is ℝ-linear in z. -/
+lemma complexLorentzAction_real_linear
+    (Λ : ComplexLorentzGroup d) (z₁ z₂ : Fin n → Fin (d + 1) → ℂ) (a b : ℝ) :
+    complexLorentzAction Λ (a • z₁ + b • z₂) =
+    a • complexLorentzAction Λ z₁ + b • complexLorentzAction Λ z₂ := by
+  ext k μ
+  simp only [complexLorentzAction, Pi.add_apply, Pi.smul_apply, Complex.real_smul]
+  trans (↑a * ∑ ν, Λ.val μ ν * z₁ k ν + ↑b * ∑ ν, Λ.val μ ν * z₂ k ν)
+  · rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
+    congr 1
+    ext ν
+    ring
+  · rfl
+
+/-- **The intersection domain D_Λ is ℝ-convex.** -/
+theorem d_lambda_convex (Λ : ComplexLorentzGroup d) :
+    Convex ℝ {z | z ∈ ForwardTube d n ∧ complexLorentzAction Λ z ∈ ForwardTube d n} := by
+  intro z₁ ⟨hz₁, hΛz₁⟩ z₂ ⟨hz₂, hΛz₂⟩ a b ha hb hab
+  refine ⟨forwardTube_convex hz₁ hz₂ ha hb hab, ?_⟩
+  rw [complexLorentzAction_real_linear]
+  exact forwardTube_convex hΛz₁ hΛz₂ ha hb hab
+
+/-- **The intersection domain D_Λ is preconnected** (convex implies preconnected). -/
+theorem d_lambda_isPreconnected (Λ : ComplexLorentzGroup d) :
+    IsPreconnected {z | z ∈ ForwardTube d n ∧ complexLorentzAction Λ z ∈ ForwardTube d n} :=
+  (d_lambda_convex Λ).isPreconnected
+
+/-- The action map z ↦ Λ·z is continuous (ℂ-linear in z). -/
+theorem continuous_complexLorentzAction_snd (Λ : ComplexLorentzGroup d) :
+    Continuous (fun z : Fin n → Fin (d + 1) → ℂ => complexLorentzAction Λ z) := by
+  apply continuous_pi
+  intro k
+  apply continuous_pi
+  intro μ
+  simp only [complexLorentzAction]
+  exact continuous_finset_sum Finset.univ
+    (fun ν _ => continuous_const.mul ((continuous_apply ν).comp (continuous_apply k)))
+
+/-- The action map z ↦ Λ·z is ℂ-differentiable (it is ℂ-linear in z). -/
+theorem differentiable_complexLorentzAction_snd (Λ : ComplexLorentzGroup d) :
+    Differentiable ℂ (fun z : Fin n → Fin (d + 1) → ℂ => complexLorentzAction Λ z) := by
+  apply differentiable_pi.mpr
+  intro k
+  apply differentiable_pi.mpr
+  intro μ
+  simp only [complexLorentzAction]
+  apply Differentiable.fun_sum
+  intro ν _
+  apply Differentiable.const_mul
+  have h1 : Differentiable ℂ (fun z : Fin n → Fin (d + 1) → ℂ => z k) := differentiable_apply k
+  exact (differentiable_apply ν).comp h1
+
+/-- D_Λ = {z ∈ FT : Λ·z ∈ FT} is open (intersection of two open preimages). -/
+theorem isOpen_d_lambda (Λ : ComplexLorentzGroup d) :
+    IsOpen {z | z ∈ ForwardTube d n ∧ complexLorentzAction Λ z ∈ ForwardTube d n} :=
+  isOpen_forwardTube.inter (isOpen_forwardTube.preimage (continuous_complexLorentzAction_snd Λ))
+
+/-- The forward tube is nonempty (for any n, d). -/
+theorem forwardTube_nonempty : (ForwardTube d n).Nonempty := by
+  -- Witness: z_k(μ) = (k+1) · i for μ = 0, and 0 otherwise.
+  -- Then η_k = imDiff z k has η_k(0) = 1 > 0 and η_k(i>0) = 0, so Q(η_k) = -1 < 0.
+  -- Use imDiff helper for cleaner reasoning.
+  refine ⟨fun (k : Fin n) (μ : Fin (d + 1)) =>
+    if μ = 0 then Complex.I * (↑(k : ℕ) + 1 : ℝ) else 0, fun k => ?_⟩
+  set z : Fin n → Fin (d + 1) → ℂ :=
+    fun k μ => if μ = 0 then Complex.I * (↑(k : ℕ) + 1 : ℝ) else 0
+  -- Compute imDiff z k
+  have hη0 : imDiff z k 0 = 1 := by
+    simp only [imDiff, z, ↓reduceIte]
+    by_cases hk : (k : ℕ) = 0
+    · simp [hk]
+    · have hk1 : 1 ≤ (k : ℕ) := Nat.one_le_iff_ne_zero.mpr hk
+      simp only [hk, ↓reduceDIte, ↓reduceIte, Complex.sub_im, Complex.mul_im, Complex.I_re,
+        Complex.I_im, Complex.ofReal_re, Complex.ofReal_im, Nat.cast_sub hk1]
+      ring
+  have hηi : ∀ i : Fin d, imDiff z k (Fin.succ i) = 0 := by
+    intro i
+    have hs : (Fin.succ i : Fin (d + 1)) ≠ 0 := Fin.succ_ne_zero i
+    by_cases hk : (k : ℕ) = 0
+    · simp [imDiff, z, hs, hk]
+    · simp [imDiff, z, hs, hk]
+  constructor
+  · -- η 0 > 0
+    change imDiff z k 0 > 0
+    rw [hη0]
+    exact one_pos
+  · -- Minkowski sum < 0
+    change ∑ μ, minkowskiSignature d μ * imDiff z k μ ^ 2 < 0
+    rw [minkowski_sum_decomp, hη0]
+    simp only [hηi]
+    norm_num
+
+end BHW
