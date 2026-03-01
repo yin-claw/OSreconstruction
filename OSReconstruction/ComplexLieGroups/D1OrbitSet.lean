@@ -957,4 +957,217 @@ theorem orbitSet_isPreconnected_d1
       exact d1_orbitSet_isPreconnected (n := n) w hw'
   simpa [orbitSet, ForwardTube, complexLorentzAction, BHWCore.complexLorentzAction] using hpre
 
+/-- `d=1, n=2` swap back-witness equations in components.
+
+If `Λ · (swap · w) = w`, then in normal-form coordinates
+`Λ = [[a,b],[b,a]]` with `a^2-b^2=1`, the components of `w` satisfy the
+explicit linear relations listed below. -/
+theorem swap_backWitness_n2_component_constraints
+    (w : Fin 2 → Fin (1 + 1) → ℂ)
+    (Λ : ComplexLorentzGroup 1)
+    (hback :
+      BHWCore.complexLorentzAction (d := 1) (n := 2) Λ
+        (fun k => w ((Equiv.swap (0 : Fin 2) 1) k)) = w) :
+    ∃ a b : ℂ,
+      Λ.val = !![a, b; b, a] ∧
+      a * a - b * b = (1 : ℂ) ∧
+      w 0 0 = a * w 1 0 + b * w 1 1 ∧
+      w 0 1 = b * w 1 0 + a * w 1 1 ∧
+      w 1 0 = a * w 0 0 + b * w 0 1 ∧
+      w 1 1 = b * w 0 0 + a * w 0 1 := by
+  rcases d1_matrix_normal_form Λ with ⟨a, b, hmat, hrel⟩
+  refine ⟨a, b, hmat, hrel, ?_, ?_, ?_, ?_⟩
+  · have h := congrArg (fun f => f (0 : Fin 2) (0 : Fin (1 + 1))) hback
+    simpa [BHWCore.complexLorentzAction, complexLorentzAction, hmat] using h.symm
+  · have h := congrArg (fun f => f (0 : Fin 2) (1 : Fin (1 + 1))) hback
+    simpa [BHWCore.complexLorentzAction, complexLorentzAction, hmat] using h.symm
+  · have h := congrArg (fun f => f (1 : Fin 2) (0 : Fin (1 + 1))) hback
+    simpa [BHWCore.complexLorentzAction, complexLorentzAction, hmat] using h.symm
+  · have h := congrArg (fun f => f (1 : Fin 2) (1 : Fin (1 + 1))) hback
+    simpa [BHWCore.complexLorentzAction, complexLorentzAction, hmat] using h.symm
+
+/-- `d=1, n=2` swap back-witness constraints in light-cone combinations.
+
+With `u = t+x`, `v = t-x` and `λ = a+b`, `η = a-b`, a swap back-witness
+forces `u0 = λ u1`, `u1 = λ u0`, `v0 = η v1`, `v1 = η v0`, and `λη = 1`. -/
+theorem swap_backWitness_n2_lightcone_constraints
+    (w : Fin 2 → Fin (1 + 1) → ℂ)
+    (Λ : ComplexLorentzGroup 1)
+    (hback :
+      BHWCore.complexLorentzAction (d := 1) (n := 2) Λ
+        (fun k => w ((Equiv.swap (0 : Fin 2) 1) k)) = w) :
+    ∃ lmb eta : ℂ,
+      lmb * eta = (1 : ℂ) ∧
+      let u0 : ℂ := w 0 0 + w 0 1
+      let u1 : ℂ := w 1 0 + w 1 1
+      let v0 : ℂ := w 0 0 - w 0 1
+      let v1 : ℂ := w 1 0 - w 1 1
+      u0 = lmb * u1 ∧
+      u1 = lmb * u0 ∧
+      v0 = eta * v1 ∧
+      v1 = eta * v0 := by
+  rcases swap_backWitness_n2_component_constraints w Λ hback with
+    ⟨a, b, _hmat, hrel, h00, h01, h10, h11⟩
+  refine ⟨a + b, a - b, ?_, ?_⟩
+  · calc
+      (a + b) * (a - b) = a * a - b * b := by ring
+      _ = (1 : ℂ) := hrel
+  · dsimp
+    refine ⟨?_, ?_, ?_, ?_⟩
+    · calc
+        w 0 0 + w 0 1
+            = (a * w 1 0 + b * w 1 1) + (b * w 1 0 + a * w 1 1) := by
+                rw [h00, h01]
+        _ = (a + b) * (w 1 0 + w 1 1) := by ring
+    · calc
+        w 1 0 + w 1 1
+            = (a * w 0 0 + b * w 0 1) + (b * w 0 0 + a * w 0 1) := by
+                rw [h10, h11]
+        _ = (a + b) * (w 0 0 + w 0 1) := by ring
+    · calc
+        w 0 0 - w 0 1
+            = (a * w 1 0 + b * w 1 1) - (b * w 1 0 + a * w 1 1) := by
+                rw [h00, h01]
+        _ = (a - b) * (w 1 0 - w 1 1) := by ring
+    · calc
+        w 1 0 - w 1 1
+            = (a * w 0 0 + b * w 0 1) - (b * w 0 0 + a * w 0 1) := by
+                rw [h10, h11]
+        _ = (a - b) * (w 0 0 - w 0 1) := by ring
+
+/-- `d=1, n=2` swap back-witness rigidity on the `u=t+x` light-cone coordinate:
+if `u0 ≠ 0`, then `u1` must equal either `u0` or `-u0`. -/
+theorem swap_backWitness_n2_sum_rigidity
+    (w : Fin 2 → Fin (1 + 1) → ℂ)
+    (Λ : ComplexLorentzGroup 1)
+    (hback :
+      BHWCore.complexLorentzAction (d := 1) (n := 2) Λ
+        (fun k => w ((Equiv.swap (0 : Fin 2) 1) k)) = w)
+    (hu0 : w 0 0 + w 0 1 ≠ 0) :
+    (w 1 0 + w 1 1 = w 0 0 + w 0 1) ∨
+    (w 1 0 + w 1 1 = -(w 0 0 + w 0 1)) := by
+  rcases swap_backWitness_n2_lightcone_constraints w Λ hback with
+    ⟨lmb, eta, _hprod, hu0_eq, hu1_eq, _hv0_eq, _hv1_eq⟩
+  -- `u0 = lmb*u1` and `u1 = lmb*u0` force `lmb^2 = 1` when `u0 ≠ 0`.
+  have hlmb_sq : lmb * lmb = (1 : ℂ) := by
+    have hcalc : (w 0 0 + w 0 1) = (lmb * lmb) * (w 0 0 + w 0 1) := by
+      calc
+        (w 0 0 + w 0 1)
+            = lmb * (w 1 0 + w 1 1) := hu0_eq
+        _ = lmb * (lmb * (w 0 0 + w 0 1)) := by rw [hu1_eq]
+        _ = (lmb * lmb) * (w 0 0 + w 0 1) := by ring
+    have hmul :
+        ((lmb * lmb) - 1) * (w 0 0 + w 0 1) = 0 := by
+      calc
+        ((lmb * lmb) - 1) * (w 0 0 + w 0 1)
+            = (lmb * lmb) * (w 0 0 + w 0 1) - (w 0 0 + w 0 1) := by ring
+        _ = (w 0 0 + w 0 1) - (w 0 0 + w 0 1) := by rw [← hcalc]
+        _ = 0 := by ring
+    have hzero : ((lmb * lmb) - 1) = 0 := by
+      rcases mul_eq_zero.mp hmul with h | h
+      · exact h
+      · exact (hu0 h).elim
+    exact sub_eq_zero.mp hzero
+  have hlmb_sign : lmb = 1 ∨ lmb = -1 := by
+    have hfac : (lmb - 1) * (lmb + 1) = 0 := by
+      calc
+        (lmb - 1) * (lmb + 1) = lmb * lmb - 1 := by ring
+        _ = 0 := by simpa [sub_eq_zero] using hlmb_sq
+    rcases mul_eq_zero.mp hfac with hminus | hplus
+    · exact Or.inl (sub_eq_zero.mp hminus)
+    · exact Or.inr (eq_neg_of_add_eq_zero_left hplus)
+  rcases hlmb_sign with hlmb1 | hlmbm1
+  · left
+    calc
+      (w 1 0 + w 1 1) = lmb * (w 0 0 + w 0 1) := hu1_eq
+      _ = (w 0 0 + w 0 1) := by simp [hlmb1]
+  · right
+    calc
+      (w 1 0 + w 1 1) = lmb * (w 0 0 + w 0 1) := hu1_eq
+      _ = -(w 0 0 + w 0 1) := by simp [hlmbm1]
+
+/-- `d=1, n=2` swap back-witness rigidity on the `v=t-x` light-cone coordinate:
+if `v0 ≠ 0`, then `v1` must equal either `v0` or `-v0`. -/
+theorem swap_backWitness_n2_diff_rigidity
+    (w : Fin 2 → Fin (1 + 1) → ℂ)
+    (Λ : ComplexLorentzGroup 1)
+    (hback :
+      BHWCore.complexLorentzAction (d := 1) (n := 2) Λ
+        (fun k => w ((Equiv.swap (0 : Fin 2) 1) k)) = w)
+    (hv0 : w 0 0 - w 0 1 ≠ 0) :
+    (w 1 0 - w 1 1 = w 0 0 - w 0 1) ∨
+    (w 1 0 - w 1 1 = -(w 0 0 - w 0 1)) := by
+  rcases swap_backWitness_n2_lightcone_constraints w Λ hback with
+    ⟨_lmb, eta, _hprod, _hu0_eq, _hu1_eq, hv0_eq, hv1_eq⟩
+  have heta_sq : eta * eta = (1 : ℂ) := by
+    have hcalc : (w 0 0 - w 0 1) = (eta * eta) * (w 0 0 - w 0 1) := by
+      calc
+        (w 0 0 - w 0 1)
+            = eta * (w 1 0 - w 1 1) := hv0_eq
+        _ = eta * (eta * (w 0 0 - w 0 1)) := by rw [hv1_eq]
+        _ = (eta * eta) * (w 0 0 - w 0 1) := by ring
+    have hmul :
+        ((eta * eta) - 1) * (w 0 0 - w 0 1) = 0 := by
+      calc
+        ((eta * eta) - 1) * (w 0 0 - w 0 1)
+            = (eta * eta) * (w 0 0 - w 0 1) - (w 0 0 - w 0 1) := by ring
+        _ = (w 0 0 - w 0 1) - (w 0 0 - w 0 1) := by rw [← hcalc]
+        _ = 0 := by ring
+    have hzero : ((eta * eta) - 1) = 0 := by
+      rcases mul_eq_zero.mp hmul with h | h
+      · exact h
+      · exact (hv0 h).elim
+    exact sub_eq_zero.mp hzero
+  have heta_sign : eta = 1 ∨ eta = -1 := by
+    have hfac : (eta - 1) * (eta + 1) = 0 := by
+      calc
+        (eta - 1) * (eta + 1) = eta * eta - 1 := by ring
+        _ = 0 := by simpa [sub_eq_zero] using heta_sq
+    rcases mul_eq_zero.mp hfac with hminus | hplus
+    · exact Or.inl (sub_eq_zero.mp hminus)
+    · exact Or.inr (eq_neg_of_add_eq_zero_left hplus)
+  rcases heta_sign with heta1 | hetam1
+  · left
+    calc
+      (w 1 0 - w 1 1) = eta * (w 0 0 - w 0 1) := hv1_eq
+      _ = (w 0 0 - w 0 1) := by simp [heta1]
+  · right
+    calc
+      (w 1 0 - w 1 1) = eta * (w 0 0 - w 0 1) := hv1_eq
+      _ = -(w 0 0 - w 0 1) := by simp [hetam1]
+
+/-- Generic obstruction (`u=t+x`): if `u0 ≠ 0` and `u1` is neither `u0` nor
+`-u0`, then no `d=1, n=2` swap back-witness can exist. -/
+theorem not_exists_swap_backWitness_n2_of_sum_generic
+    (w : Fin 2 → Fin (1 + 1) → ℂ)
+    (hu0 : w 0 0 + w 0 1 ≠ 0)
+    (hgen :
+      w 1 0 + w 1 1 ≠ w 0 0 + w 0 1 ∧
+      w 1 0 + w 1 1 ≠ -(w 0 0 + w 0 1)) :
+    ¬ ∃ Λ : ComplexLorentzGroup 1,
+      BHWCore.complexLorentzAction (d := 1) (n := 2) Λ
+        (fun k => w ((Equiv.swap (0 : Fin 2) 1) k)) = w := by
+  intro h
+  rcases h with ⟨Λ, hback⟩
+  rcases swap_backWitness_n2_sum_rigidity w Λ hback hu0 with hEq | hNeg
+  · exact (hgen.1 hEq).elim
+  · exact (hgen.2 hNeg).elim
+
+/-- Generic obstruction (`v=t-x`): if `v0 ≠ 0` and `v1` is neither `v0` nor
+`-v0`, then no `d=1, n=2` swap back-witness can exist. -/
+theorem not_exists_swap_backWitness_n2_of_diff_generic
+    (w : Fin 2 → Fin (1 + 1) → ℂ)
+    (hv0 : w 0 0 - w 0 1 ≠ 0)
+    (hgen :
+      w 1 0 - w 1 1 ≠ w 0 0 - w 0 1 ∧
+      w 1 0 - w 1 1 ≠ -(w 0 0 - w 0 1)) :
+    ¬ ∃ Λ : ComplexLorentzGroup 1,
+      BHWCore.complexLorentzAction (d := 1) (n := 2) Λ
+        (fun k => w ((Equiv.swap (0 : Fin 2) 1) k)) = w := by
+  intro h
+  rcases h with ⟨Λ, hback⟩
+  rcases swap_backWitness_n2_diff_rigidity w Λ hback hv0 with hEq | hNeg
+  · exact (hgen.1 hEq).elim
+  · exact (hgen.2 hNeg).elim
+
 end BHW

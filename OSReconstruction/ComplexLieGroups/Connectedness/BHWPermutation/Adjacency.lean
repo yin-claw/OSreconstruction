@@ -633,6 +633,26 @@ def adjSwapForwardOverlapSet (n : ℕ) (i : Fin n) (hi : i.val + 1 < n) :
   let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
   {w | w ∈ ForwardTube d n ∧ (fun k => w (τ k)) ∈ ExtendedTube d n}
 
+/-- In `d = 1`, swapping adjacent labels destroys forward-tube membership. -/
+theorem adjSwap_not_mem_forwardTube_d1
+    {n : ℕ} (i : Fin n) (hi : i.val + 1 < n)
+    {z : Fin n → Fin (1 + 1) → ℂ}
+    (hz : z ∈ ForwardTube 1 n) :
+    (fun k => z (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∉ ForwardTube 1 n := by
+  intro hz_swap
+  have h1 := hz ⟨i.val + 1, hi⟩
+  have h2 := hz_swap ⟨i.val + 1, hi⟩
+  have hk_ne : ¬ ((⟨i.val + 1, hi⟩ : Fin n).val = 0) := Nat.succ_ne_zero _
+  simp only [hk_ne, ↓reduceDIte] at h1 h2
+  have hprev : (⟨i.val + 1 - 1, by omega⟩ : Fin n) = i := by
+    ext
+    simp
+  rw [hprev] at h1 h2
+  rw [Equiv.swap_apply_right, Equiv.swap_apply_left] at h2
+  linarith [h1.1, h2.1,
+    Complex.sub_im (z ⟨i.val + 1, hi⟩ 0) (z i 0),
+    Complex.sub_im (z i 0) (z ⟨i.val + 1, hi⟩ 0)]
+
 /-- Fixed-Λ slice of `adjSwapForwardOverlapSet`. -/
 def adjSwapForwardOverlapSlice
     (n : ℕ) (i : Fin n) (hi : i.val + 1 < n) (Λ : ComplexLorentzGroup d) :
