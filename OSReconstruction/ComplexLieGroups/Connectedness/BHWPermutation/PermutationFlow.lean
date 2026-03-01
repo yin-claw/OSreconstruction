@@ -3871,7 +3871,23 @@ private theorem deferred_d1_leftAdjSwap_scheme_inputs
                 have hστ' : σ = τ := by
                   simpa [hτswap] using hσswap
                 exact (False.elim (hστ hστ'))
-          · sorry
+          · have hn2le : 2 ≤ n := by
+              have h1le : 1 ≤ i.val + 1 := Nat.succ_le_succ (Nat.zero_le i.val)
+              have h1lt : 1 < n := lt_of_le_of_lt h1le hi
+              exact Nat.succ_le_of_lt h1lt
+            have hn3 : 3 ≤ n := by
+              omega
+            have htriple :
+                ({y : Fin n → Fin (1 + 1) → ℂ |
+                    y ∈ ExtendedTube 1 n ∧
+                    permAct (d := 1) τ y ∈ ExtendedTube 1 n ∧
+                    permAct (d := 1) σ y ∈ ExtendedTube 1 n
+                }).Nonempty := by
+              -- TODO(d=1, n≥3): construct a triple ET witness for nontrivial `σ`.
+              -- This is now the isolated geometric subgoal.
+              -- `hn3` is available for this branch.
+              sorry
+            exact leftAdj_anchor_nonempty_of_ET_triple (d := 1) n σ i hi htriple
     exact ⟨hSwap, hAnchor⟩
 
 /-- Deferred `d = 1` bridge: ET-overlap invariance from seed connectedness,

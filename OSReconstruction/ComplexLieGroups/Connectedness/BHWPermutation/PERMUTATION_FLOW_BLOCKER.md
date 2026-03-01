@@ -28,6 +28,8 @@ Current code progress inside `hAnchor`:
 - `n = 2` is eliminated in the remaining branch by explicit permutation
   classification (`Perm(Fin 2)` has only `1` and `swap`).
 - remaining branch: `n ≥ 3`, `σ ≠ 1`, and `σ ≠ swap(i,i+1)`.
+- this remaining branch is now explicitly reduced in code to triple-witness
+  existence: `∃ y, y ∈ ET ∧ swap·y ∈ ET ∧ σ·y ∈ ET`.
 
 Recent formal checks relevant to this blocker:
 

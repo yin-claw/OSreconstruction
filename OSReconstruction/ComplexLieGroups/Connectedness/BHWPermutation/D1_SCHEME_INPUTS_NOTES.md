@@ -98,6 +98,10 @@ The following points are now concretely checked in `test/`:
     cases force a contradiction since `Perm(Fin 2)` has only `1` and `swap`).
   The only remaining anchor branch is now the genuinely nontrivial
   `n ≥ 3`, `σ ≠ 1`, and `σ ≠ swap(i,i+1)` case.
+  In code this is now reduced to the explicit witness goal
+  `∃ y, y ∈ ET ∧ swap·y ∈ ET ∧ σ·y ∈ ET` (via
+  `leftAdj_anchor_nonempty_of_ET_triple`), so the unresolved branch is in its
+  minimal geometric form.
 
 ## Why Existing Adjacency Wrapper Is Not Enough in d=1
 
