@@ -133,7 +133,7 @@ theorem blocker_eventually_slice_anchor_on_prepared_nhds_d1
       · have hperm : permAct (d := 1) (1 : Equiv.Perm (Fin n)) w = w := by
           ext k μ
           simp [permAct]
-        simpa [complexLorentzAction_one, hperm])
+        simp [complexLorentzAction_one, hperm])
   · by_cases hn : n ≤ 1
     · have hsub : Subsingleton (Fin n) := by
         refine ⟨?_⟩
