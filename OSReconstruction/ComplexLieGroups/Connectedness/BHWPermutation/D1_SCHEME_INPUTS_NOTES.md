@@ -7,11 +7,13 @@ block used by `PermutationFlow.lean` (with bridge reductions now extracted to
 Companion note for the `n>=4` branch:
 
 - `D1_NGE4_LINEAR_REDUCTION_NOTES.md` (same folder).
+- comparison note against Mike's branch:
+  - `MIKE_BRANCH_COMPARISON.md` (same folder).
 
 Current active deferred declarations in this block are:
 
-- `deferred_d1_adjSwap_forward_open_anchor`
-- `deferred_d1_forward_triple_nonempty_nontrivial`
+- `deferred_eventually_slice_anchor_on_prepared_nhds_d1`
+- `deferred_d1_forward_triple_nonempty_nge4`
 
 The ET-form wrapper
 `deferred_d1_ET_triple_nonempty_nontrivial` is now proved from this forward
@@ -19,6 +21,24 @@ form via `ET_triple_nonempty_iff_forward_triple_nonempty`.
 
 The wrapper theorem `deferred_d1_leftAdjSwap_scheme_inputs` is now proved by
 pairing those two inputs, so the blocker shape is explicit and minimal.
+
+Update (2026-03-01, late):
+
+- `deferred_d1_adjSwap_forward_open_anchor` is now fully proved in
+  `PermutationFlow.lean`.
+- Its former inline local-analytic `sorry` was extracted and narrowed to the
+  dedicated theorem `deferred_eventually_slice_anchor_on_prepared_nhds_d1`,
+  after proving the forward-equality propagation wrapper.
+- So the d=1 local non-connective blocker is now a single explicit local
+  gluing theorem with prepared-anchor hypotheses, rather than a large wrapper.
+
+## Active Priority (2026-03-01)
+
+Current execution focus is:
+
+1. fully settle `d=1, n=2,3` theorem-level closure (not just internal case splits),
+2. use those explicit small-`n` patterns to guide the general-`n` proof shape,
+3. keep `n>=4` geometry isolated in `deferred_d1_forward_triple_nonempty_nge4`.
 
 ## Status Update (2026-03-01, `n=3, i=0` constructive branch landed)
 
@@ -149,6 +169,12 @@ The following points are now concretely checked in `test/`:
   `x` with both `realEmbed x ∈ ET` and `realEmbed (swap·x) ∈ ET`.
   This is evidence that real-witness routes are over-strong in `d=1`.
 
+- `test/d1_no_real_witness_swap_n2_probe.lean` now also proves the boundary
+  case `n=2, i=0`:
+  `no_real_adjacent_spacelike_witness_swap_n2`.
+  So the real-witness obstruction is already present in the smallest adjacent
+  case, not only in `i.val ≠ 0` branches.
+
 - In `PermutationFlow.lean`, branch-level `hSwap`/`hAnchor` casework was removed
   from the scheme theorem and replaced by two explicit deferred declarations:
   `deferred_d1_adjSwap_forward_open_anchor` and
@@ -170,6 +196,10 @@ restricted.
 
 So deriving `hSwap` from that wrapper in `d=1` currently fails at witness
 construction, not at connectedness plumbing.
+
+Given the `n=2` probe theorem above, this is not just a missing helper lemma:
+the real-witness requirement is structurally too strong for the adjacent-swap
+`d=1` route.
 
 Implementation status (2026-03-01 update):
 

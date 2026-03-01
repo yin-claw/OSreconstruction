@@ -1,37 +1,86 @@
 # PermutationFlow Sorry Blocker (2026-02-28)
 
-This note documents the remaining blocker in
+This note documents the remaining blocker declarations, now isolated in
+`OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/PermutationFlowBlockers.lean`
+and wrapped by
 `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/PermutationFlow.lean`.
 
 ## Status Update (2026-03-01, current canonical view)
 
-Current active deferred declarations in `PermutationFlow.lean` are:
+Current active deferred declarations (in `PermutationFlowBlockers.lean`) are:
 
 1. `deferred_isConnected_permOrbitSeedSet_dge2`
 2. `deferred_isConnected_permOrbitSeedSet_d1`
-3. `deferred_d1_leftAdjSwap_scheme_inputs`
+3. `deferred_eventually_slice_anchor_on_prepared_nhds_d1`
+4. `deferred_d1_forward_triple_nonempty_nge4`
 
-The third item is now the only non-connectivity blocker in the active route.
-Its `n ≤ 1` branch is now fully discharged (vacuous adjacent-index quantifiers),
-so only the genuine `n ≥ 2` geometry remains.
+Items 3 and 4 are now the non-connectivity blockers. The wrapper theorem
+`deferred_d1_leftAdjSwap_scheme_inputs` is proved by combining those two inputs,
+so the blocker shape is now explicit and minimal.
 
-Its precise obligations are:
+### Status Update (2026-03-01, late)
 
-- `hSwap`: adjacent-swap ET-overlap invariance for `extendF` in `d=1`,
-- `hAnchor`: nonempty step-anchor set
-  `{z | z ∈ D_(swap*σ) ∧ swap·z ∈ ET}` for each step.
+`deferred_d1_adjSwap_forward_open_anchor` is now proved (no `sorry` in its body).
+Its previous inline local-analytic gap was extracted and narrowed to:
 
-Current code progress inside `hAnchor`:
+- `deferred_eventually_slice_anchor_on_prepared_nhds_d1`
 
-- `σ = 1` branch: proved.
-- `σ = swap(i,i+1)` branch: proved (via direct adjacent sector-overlap witness).
-- `n = 2` is eliminated in the remaining branch by explicit permutation
-  classification (`Perm(Fin 2)` has only `1` and `swap`).
-- remaining branch: `n ≥ 3`, `σ ≠ 1`, and `σ ≠ swap(i,i+1)`.
-- this remaining branch is now explicitly reduced in code to triple-witness
-  existence: `∃ y, y ∈ ET ∧ swap·y ∈ ET ∧ σ·y ∈ ET`.
+So the d=1 non-connective blocker is now a single explicit prepared-neighborhood
+slice-anchor theorem, plus the independent `n>=4` triple-witness geometry.
+
+### Incremental Progress (2026-03-01, `n=3, i=0` closed constructively)
+
+A new production module was added:
+
+- `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/D1N3Witnesses.lean`
+
+with proved exports:
+
+- `d1_n3_forward_triple_nonempty_i0_pairA`
+- `d1_n3_forward_triple_nonempty_i0_pairB`
+- `d1_n3_forward_triple_nonempty_i1_pairA`
+- `d1_n3_forward_triple_nonempty_i1_pairB`
+
+`PermutationFlow.lean` now uses these to fully discharge the
+full `n=3` branch inside
+`deferred_d1_forward_triple_nonempty_nontrivial`.
+
+So the remaining deferred geometry in item 4 is now strictly smaller:
+
+- `n≥4` (now isolated in
+  `deferred_d1_forward_triple_nonempty_nge4`).
+
+Their precise obligations are:
+
+- local prepared-neighborhood slice-anchor pack for adjacent swap
+  (`deferred_eventually_slice_anchor_on_prepared_nhds_d1`), from which
+  forward-equality propagation, forward-open anchor, ET-overlap open anchor,
+  and global `hSwap` are already derived in code;
+- nonempty step-anchor set
+  `{z | z ∈ D_(swap*σ) ∧ swap·z ∈ ET}` for each step,
+  reduced through:
+  `deferred_d1_forward_triple_nonempty_nontrivial`
+  -> `deferred_d1_ET_triple_nonempty_nontrivial`.
+
+Reduction update now in mainline code:
+
+- `deferred_d1_ET_triple_nonempty_nontrivial` is normalized through
+  `ET_triple_nonempty_iff_forward_triple_nonempty` to the forward witness form
+  `∃ w, w ∈ FT ∧ swap·w ∈ ET ∧ σ·w ∈ ET`.
+  So the remaining hard content is an explicit forward-triple existence problem,
+  not ET-decomposition bookkeeping.
 
 Recent formal checks relevant to this blocker:
+
+- EOW infrastructure status:
+  - `PermutationFlow.lean` and the d=1 midpoint counterexample tests compile.
+  - The EOW layer itself is not missing; the current issue is geometric input.
+  - In `d=1`, midpoint-implication closure is formally refuted in
+    `test/midpoint_route_vacuous_test.lean` and
+    `test/midpoint_condition_d1_counterexample_test.lean`.
+  - Also in `d=1`, the direct common-FT-overlap anchor route is blocked:
+    `FT ∩ swap⁻¹(FT)` is empty for adjacent swaps, so `hSwap` cannot be closed
+    by a plain "EOW on common FT overlap" argument.
 
 - `test/witness_test.lean` is fully checked and provides a concrete
   `d=1, n=2` positive witness (`w ∈ FT` with `swap·w ∈ ET`).
@@ -40,6 +89,17 @@ Recent formal checks relevant to this blocker:
 - `test/proofideas_ih_composition.lean` now has no `sorry` and includes a
   complete formal `route_B_counterexample_statement` (`swap⁻¹·FT ⊄ ET` in
   `d=1`) alongside the IH-composition infrastructure.
+
+- `test/d1_no_real_witness_adjacent_general_test.lean` compiles and proves
+  `no_real_et_pair_swap_adjacent_d1_iPos`: for adjacent swaps with `i.val ≠ 0`,
+  there is no real `x` with both `realEmbed x ∈ ET` and
+  `realEmbed (swap·x) ∈ ET`.
+
+- `test/d1_no_real_witness_swap_n2_probe.lean` compiles and proves the missing
+  base adjacent case:
+  `no_real_adjacent_spacelike_witness_swap_n2`.
+  So in `d=1`, even `n=2` does not admit the real adjacent-witness shape used
+  by the standard real-open-anchor wrapper.
 
 - midpoint implication routes are already formally refuted in test files
   (`midpoint_route_vacuous_test.lean`, `midpoint_condition_d1_counterexample_test.lean`),
@@ -52,13 +112,89 @@ Important current negative result for closure planning:
   and there is no general `d=1` witness package in production code.
   So `hSwap` is not yet obtainable from that route alone.
 
+- stronger conclusion after the `n=2` probe theorem:
+  this is not only an infrastructure gap; the real-witness route is
+  fundamentally over-strong for adjacent swaps in `d=1`.
+  Production closure should prioritize complex-anchor gluing inputs.
+
 - heuristic numerical checks (non-formal) suggest this global anchor condition
-  may fail for some `d=1, n=3` permutations, so it should be treated as
-  potentially too strong until geometrically validated.
+  is hard but plausible: in updated `d=1, n=3` random searches, all nontrivial
+  `(τ, σ)` cases were hit with explicit triple witnesses, including previously
+  hard permutations.
+  Additional quick `n=4` sampling produced several misses under comparable
+  budgets, so this remains non-formal and should be treated as cautionary only.
+
+- follow-up targeted dense-grid probing did find explicit witnesses for some
+  previously-missed `n=4` hard cases (example:
+  `i=0`, `τ=(1,0,2,3)`, `σ=(0,2,3,1)`), so low-budget misses are not reliable
+  counterexamples by themselves.
+  Current interpretation: `n≥4` remains unresolved mathematically, not falsified.
+
+- practical reduction insight for the remaining `n≥4` branch:
+  for witness ansatz `w_k=(iT_k, R_k)` in `d=1`, pure-imaginary rapidity
+  reduces ET checks to linear inequalities on step data:
+  `ΔT + λΔR > 0` (or rational `3-4-5` forms `4ΔT ± 3ΔR > 0`).
+  This reframes the blocker as an explicit real-inequality construction problem.
+  Full derivation is added to `D1_SCHEME_INPUTS_NOTES.md`.
+
+- LP feasibility checks on this reduced system (non-formal) are now strong:
+  - exhaustive `n=4` and `n=5` case sets are feasible,
+  - random `n=6..10` samples are feasible.
+  This supports treating the remaining `n≥4` blocker as a constructive
+  inequality proof task rather than a likely-false statement.
+  Repro helper:
+  - `scripts/d1_linear_witness_lp.py`
+  Observed pattern in exhaustive data:
+  - with fixed `lambda_tau = 1`, every tested case is feasible with
+    `lambda_sigma` chosen from just `{3/2, -2}`;
+  - branch criterion appears to be the order of `i` and `i+1` in `sigma`
+    (via `sigma⁻¹`).
+
+Constructive refinement target now documented in
+`D1_NGE4_LINEAR_REDUCTION_NOTES.md`:
+
+- encode tau-side by `A = 4T + 3R`,
+- encode sigma-side by `B = 3T ± 4R` (branch by order of `i, i+1` in
+  `sigma⁻¹`),
+- use closed forms:
+  - plus branch: `T=(4A-3B)/7`, `R=(4B-3A)/7`,
+  - minus branch: `T=(4A+3B)/25`, `R=(3A-4B)/25`,
+- choose explicit `A,B` profiles (`A` with one controlled negative natural
+  jump, `B` from sigma-ranks) so positivity checks reduce to bounded rank
+  inequalities (`|ΔB| ≤ 2(n-1)` plus a branch-special `ΔB_{i+1}` sign gap).
 
 These are now documented in:
 
 - `D1_SCHEME_INPUTS_NOTES.md` (same folder).
+
+Latest technical reduction inside `PermutationFlow.lean`:
+
+- branchwise `w ∈ FT` lemmas for the `T/R` closed forms are proved;
+- branchwise `sigma·w ∈ ET` lemmas are proved (`plus` and `minus`);
+- remaining `n≥4` obstruction is now focused on tau-side ET, namely a reusable
+  proof that the chosen `A` profile is positive on tau-ordered steps.
+
+## Status Update (2026-03-01, `proofideas_hswap_d1` check)
+
+`test/proofideas_hswap_d1.lean` now compiles error-free with warning-only
+`sorry`s. This is useful as exploration context, but it is not production-ready:
+
+- It still contains unresolved placeholders.
+- One local algebraic step (`diff_of_swap_lorentz`) has now been proved; the
+  remaining placeholders are in translation-reduction and final orbit-closure
+  layers.
+- Its strongest closure route uses extra translation-invariance assumptions that
+  are not present in `PermutationFlow.lean`.
+- The directly reusable part is limited to low-level d=1 Lorentz-action
+  calculations; it does not close the current production `hSwap` or `hAnchor`
+  obligations by itself.
+
+Current production warning set:
+
+1. `deferred_isConnected_permOrbitSeedSet_dge2`
+2. `deferred_isConnected_permOrbitSeedSet_d1`
+3. `deferred_eventually_slice_anchor_on_prepared_nhds_d1`
+4. `deferred_d1_forward_triple_nonempty_nge4`
 
 This replaces older local-gluing/back-witness wording as the canonical blocker
 description for current code.
@@ -427,6 +563,12 @@ All currently sound routes collapse to one of two missing global ingredients:
     - `no_real_et_pair_swap_n2`
     - `no_real_jost_witness_swap_n2`
 
+- Additional bounded random probe (`d=1`, `n=3`, adjacent `i=1`) over real
+  configurations with random complex rapidities found no candidate with both
+  `x ∈ ET` and `swap(i,i+1)·x ∈ ET` plus spacelike swapped pair.
+  This is non-formal evidence only, but it points in the same direction:
+  the real-witness route appears over-strong beyond `n=2` as well.
+
 - Midpoint-drop implication is false in `d=1`:
   - `test/midpoint_condition_d1_counterexample_test.lean`
 - Additional numerical probe (`d=1`, `n=2`, swap) found prepared points with
@@ -696,3 +838,23 @@ Implementation note landed in `PermutationFlow.lean`:
 
 So the remaining gap is explicitly geometric (connectedness + anchor existence),
 not analytic-gluing architecture.
+
+## Mike Branch Comparison (2026-03-01)
+
+Detailed note:
+
+- `MIKE_BRANCH_COMPARISON.md`
+
+Summary:
+
+- Mike's branch provides a strong `d>=2` architecture split (`OverlapConnected`)
+  and zero-`sorry` flow, but currently relies on explicit axioms including
+  `hExtPerm_of_d1`.
+- Our branch keeps the constructive local `d=1` route and currently carries
+  four deferred lemmas in `PermutationFlow.lean`.
+
+Current focus decision:
+
+- prioritize full theorem-level closure for `d=1, n=2,3`,
+- use these small-`n` patterns to guide the general-`n` closure,
+- keep `n>=4` isolated behind `deferred_d1_forward_triple_nonempty_nge4`.

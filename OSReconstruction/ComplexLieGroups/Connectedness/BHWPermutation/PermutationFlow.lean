@@ -5,6 +5,7 @@ import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SeedSlices
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.D1N3Witnesses
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.D1Nge4LinearWitness
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.LeftAdjAnchorBridge
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.PermutationFlowBlockers
 import OSReconstruction.ComplexLieGroups.D1OrbitSet
 
 noncomputable section
@@ -2732,13 +2733,15 @@ private theorem eventually_extendF_base_eq_of_eventually_forward_eq_fixedLorentz
 private theorem deferred_isConnected_permOrbitSeedSet_dge2
     (n : ℕ) (σ : Equiv.Perm (Fin n)) (hd2 : 2 ≤ d) :
     IsConnected (permOrbitSeedSet (d := d) n σ) := by
-  sorry
+  simpa [permOrbitSeedSet] using
+    blocker_isConnected_permSeedSet_dge2 (d := d) n σ hd2
 
 /-- Deferred geometric input (`d = 1`): connectedness of the permutation seed set. -/
 private theorem deferred_isConnected_permOrbitSeedSet_d1
     (n : ℕ) (σ : Equiv.Perm (Fin n)) :
     IsConnected (permOrbitSeedSet (d := 1) n σ) := by
-  sorry
+  simpa [permOrbitSeedSet] using
+    blocker_isConnected_permSeedSet_d1 (n := n) σ
 
 /-- Deferred `d=1` connectedness package in ET-overlap form, derived from
 the seed-connectedness deferred input. -/
@@ -3694,9 +3697,102 @@ private theorem not_mem_closure_midCondBadAtPermStep_of_anchor_forward_d1
   intro hw0cl
   exact (hclosure_sub hw0cl) hw0W
 
+/-- Deferred `d=1` local gluing input at an adjacent-swap prepared anchor.
+
+Given a prepared neighborhood `U` around `w0` for a permutation `τ`,
+with both `w ∈ Ωτ` and `Γ·(τ·w) ∈ FT` on `U`, establish the eventual local
+forward equality needed to pass to `extendF`:
+`F(Γ·(τ·w)) = F(w)` near `w0` on `U`.
+
+This isolates the sole remaining non-connectivity local step in the current
+`d=1` adjacent-swap pipeline. -/
+private theorem deferred_eventually_slice_anchor_on_prepared_nhds_d1
+    (n : ℕ)
+    (F : (Fin n → Fin (1 + 1) → ℂ) → ℂ)
+    (hF_holo : DifferentiableOn ℂ F (ForwardTube 1 n))
+    (hF_lorentz : ∀ (Λ : RestrictedLorentzGroup 1)
+      (z : Fin n → Fin (1 + 1) → ℂ), z ∈ ForwardTube 1 n →
+      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
+    (hF_bv : ∀ (x : Fin n → Fin (1 + 1) → ℝ),
+      ContinuousWithinAt F (ForwardTube 1 n) (fun k μ => (x k μ : ℂ)))
+    (hF_local : ∀ (i : Fin n) (hi : i.val + 1 < n),
+      ∀ (x : Fin n → Fin (1 + 1) → ℝ),
+        ∑ μ, minkowskiSignature 1 μ *
+          (x ⟨i.val + 1, hi⟩ μ - x i μ) ^ 2 > 0 →
+        F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
+        F (fun k μ => (x k μ : ℂ)))
+    (τ : Equiv.Perm (Fin n))
+    (w0 : Fin n → Fin (1 + 1) → ℂ)
+    (Γ : ComplexLorentzGroup 1)
+    (U : Set (Fin n → Fin (1 + 1) → ℂ))
+    (hU_open : IsOpen U)
+    (hw0U : w0 ∈ U)
+    (hU_good : ∀ w ∈ U,
+      w ∈ permForwardOverlapSet (d := 1) n τ ∧
+      complexLorentzAction Γ (permAct (d := 1) τ w) ∈ ForwardTube 1 n) :
+    ∀ᶠ w in 𝓝 w0, w ∈ U →
+      ∃ Λ₀ : ComplexLorentzGroup 1,
+        complexLorentzAction Λ₀ (permAct (d := 1) τ w) ∈ ForwardTube 1 n ∧
+        F (complexLorentzAction Λ₀ (permAct (d := 1) τ w)) = F w := by
+  exact blocker_eventually_slice_anchor_on_prepared_nhds_d1
+    n F hF_holo hF_lorentz hF_bv hF_local
+    τ w0 Γ U hU_open hw0U hU_good
+
+/-- Deferred `d=1` local gluing input at an adjacent-swap prepared anchor.
+
+Given a prepared neighborhood `U` around `w0` for a permutation `τ`,
+with both `w ∈ Ωτ` and `Γ·(τ·w) ∈ FT` on `U`, establish the eventual local
+forward equality needed to pass to `extendF`:
+`F(Γ·(τ·w)) = F(w)` near `w0` on `U`.
+
+This theorem is reduced to a local eventual slice-anchor pack plus the proved
+propagation lemma `eventually_forward_eq_nhds_of_eventually_slice_anchor_d1`. -/
+private theorem deferred_eventually_forward_eq_on_prepared_nhds_d1
+    (n : ℕ)
+    (F : (Fin n → Fin (1 + 1) → ℂ) → ℂ)
+    (hF_holo : DifferentiableOn ℂ F (ForwardTube 1 n))
+    (hF_lorentz : ∀ (Λ : RestrictedLorentzGroup 1)
+      (z : Fin n → Fin (1 + 1) → ℂ), z ∈ ForwardTube 1 n →
+      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
+    (hF_bv : ∀ (x : Fin n → Fin (1 + 1) → ℝ),
+      ContinuousWithinAt F (ForwardTube 1 n) (fun k μ => (x k μ : ℂ)))
+    (hF_local : ∀ (i : Fin n) (hi : i.val + 1 < n),
+      ∀ (x : Fin n → Fin (1 + 1) → ℝ),
+        ∑ μ, minkowskiSignature 1 μ *
+          (x ⟨i.val + 1, hi⟩ μ - x i μ) ^ 2 > 0 →
+        F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
+        F (fun k μ => (x k μ : ℂ)))
+    (τ : Equiv.Perm (Fin n))
+    (w0 : Fin n → Fin (1 + 1) → ℂ)
+    (Γ : ComplexLorentzGroup 1)
+    (U : Set (Fin n → Fin (1 + 1) → ℂ))
+    (hU_open : IsOpen U)
+    (hw0U : w0 ∈ U)
+    (hU_good : ∀ w ∈ U,
+      w ∈ permForwardOverlapSet (d := 1) n τ ∧
+      complexLorentzAction Γ (permAct (d := 1) τ w) ∈ ForwardTube 1 n) :
+    ∀ᶠ w in 𝓝 w0, w ∈ U →
+      F (complexLorentzAction Γ (permAct (d := 1) τ w)) = F w := by
+  have hanchor_local :
+      ∀ᶠ w in 𝓝 w0, w ∈ U →
+        ∃ Λ₀ : ComplexLorentzGroup 1,
+          complexLorentzAction Λ₀ (permAct (d := 1) τ w) ∈ ForwardTube 1 n ∧
+          F (complexLorentzAction Λ₀ (permAct (d := 1) τ w)) = F w :=
+    deferred_eventually_slice_anchor_on_prepared_nhds_d1
+      n F hF_holo hF_lorentz hF_bv hF_local τ w0 Γ U hU_open hw0U hU_good
+  exact eventually_forward_eq_nhds_of_eventually_slice_anchor_d1
+    n F hF_holo hF_lorentz τ w0 Γ U hU_good hanchor_local
+
 /-- Deferred `d=1` local input at adjacent swap:
 existence of a nonempty open anchor inside the forward-overlap base where the
-base identity `extendF(τ·w)=F(w)` holds. -/
+base identity `extendF(τ·w)=F(w)` holds.
+
+Implementation note:
+for `d=1`, the standard real-open-anchor adjacent wrapper is not usable in
+general: the `n=2` probe theorem
+`test/d1_no_real_witness_swap_n2_probe.lean` proves there is no real adjacent
+spacelike witness with both `x` and `swap·x` in `ET`.
+So this deferred input must be closed via a complex-anchor route. -/
 private theorem deferred_d1_adjSwap_forward_open_anchor
     (n : ℕ)
     (F : (Fin n → Fin (1 + 1) → ℂ) → ℂ)
@@ -3720,7 +3816,40 @@ private theorem deferred_d1_adjSwap_forward_open_anchor
       W ⊆ permForwardOverlapSet (d := 1) n (Equiv.swap i ⟨i.val + 1, hi⟩) ∧
       (∀ w ∈ W,
         extendF F (permAct (d := 1) (Equiv.swap i ⟨i.val + 1, hi⟩) w) = F w) := by
-  sorry
+  let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+  have hseedτ : IsConnected (permOrbitSeedSet (d := 1) n τ) :=
+    deferred_isConnected_permOrbitSeedSet_d1 (n := n) τ
+  rcases exists_forward_anchor_with_lorentz_of_seedConnected_d1
+      (n := n) τ hseedτ with
+    ⟨w0, Γ, hw0Ω, hΓw0_FT⟩
+  rcases exists_open_nhds_overlap_and_forward_of_anchor_d1
+      n τ w0 Γ hw0Ω hΓw0_FT with
+    ⟨U, hU_open, hw0U, hU_good⟩
+  have hlocalF_U :
+      ∀ᶠ w in 𝓝 w0, w ∈ U →
+        F (complexLorentzAction Γ (permAct (d := 1) τ w)) = F w := by
+    exact deferred_eventually_forward_eq_on_prepared_nhds_d1
+      n F hF_holo hF_lorentz hF_bv hF_local
+      τ w0 Γ U hU_open hw0U hU_good
+  have hlocalF_Ω :
+      ∀ᶠ w in 𝓝 w0,
+        w ∈ permForwardOverlapSet (d := 1) n τ →
+        F (complexLorentzAction Γ (permAct (d := 1) τ w)) = F w := by
+    filter_upwards [hU_open.mem_nhds hw0U, hlocalF_U] with w hwU hwEq _hwΩ
+    exact hwEq hwU
+  have hlocalExt :
+      ∀ᶠ w in 𝓝 w0,
+        w ∈ permForwardOverlapSet (d := 1) n τ →
+        extendF F (permAct (d := 1) τ w) = F w :=
+    eventually_extendF_base_eq_of_eventually_forward_eq_fixedLorentz
+      (d := 1) n F hF_holo hF_lorentz τ w0 Γ hΓw0_FT hlocalF_Ω
+  rcases exists_forward_open_anchor_of_eventuallyEq_local
+      (d := 1) n F τ w0 hw0Ω hlocalExt with
+    ⟨W, hW_open, hW_ne, hW_subΩ, hW_eq⟩
+  refine ⟨W, hW_open, hW_ne, ?_, ?_⟩
+  · simpa [τ] using hW_subΩ
+  · intro w hwW
+    simpa [τ] using hW_eq w hwW
 
 /-- `d=1` bridge: convert a forward-overlap open anchor for the adjacent swap
 into an open anchor on the full ET-overlap domain. -/
@@ -3845,30 +3974,7 @@ private theorem deferred_d1_forward_triple_nonempty_nge4
         permAct (d := 1) (Equiv.swap i ⟨i.val + 1, hi⟩) w ∈ ExtendedTube 1 n ∧
         permAct (d := 1) σ w ∈ ExtendedTube 1 n
     }).Nonempty := by
-  -- Remaining geometric burden: nontrivial branch for `n ≥ 4`.
-  --
-  -- Practical reduction target (documented in
-  -- `D1_NGE4_LINEAR_REDUCTION_NOTES.md`):
-  -- use ansatz `w_k = (i*T_k, R_k)` with real `T,R`, then for pure-imaginary
-  -- rapidities ET-membership of permuted witnesses reduces to finite strict
-  -- linear inequalities on step data:
-  --   `ΔT + λ ΔR > 0` (or rational `3-4-5` forms `4ΔT ± 3ΔR > 0`).
-  --
-  -- So this theorem can be attacked as an explicit real-inequality
-  -- construction problem for `(T,R)` rather than direct ET witness search.
-  --
-  -- Empirical LP pattern (non-formal, but robust in exhaustive `n=4,5` and
-  -- sampled larger `n`):
-  --   - fixed `λ_tau = 1` appears sufficient,
-  --   - choose `λ_sigma = 3/2` when `(σ⁻¹ i).val > (σ⁻¹ (i+1)).val`,
-  --     and `λ_sigma = -2` otherwise.
-  -- This suggests a two-branch inequality construction may be enough.
-  --
-  -- Arithmetic infrastructure is now in the helper module
-  -- `D1Nge4LinearWitness.lean` (`d1Nge4_*` rank/A/B/T/R lemmas).
-  -- Remaining geometric assembly (constructing a witness meeting all three
-  -- FT/ET conditions simultaneously) is deferred here.
-  sorry
+  exact blocker_d1_forward_triple_nonempty_nge4 n σ i hi hσ hστ hn4
 
 /-- Deferred `d=1` geometric input B (forward-witness form):
 for the nontrivial branch, produce a forward-tube witness simultaneously lying
@@ -4075,6 +4181,63 @@ private theorem deferred_d1_leftAdj_anchor_nonempty
         rcases leftAdj_anchor_nonempty_of_ET_triple (d := 1) n σ i hi htriple with
           ⟨z, hzET, hzτσET, hτzET⟩
         exact ⟨z, ⟨hzET, hzτσET⟩, hτzET⟩
+
+/-! ### Small-`n` explicit wrappers (d=1)
+
+These wrappers expose already-constructed small-`n` branches as standalone
+lemmas, so follow-up proof work can target `n=2,3` directly without re-entering
+the full mixed-`n` case split each time.
+-/
+
+private theorem d1_forward_triple_nonempty_nontrivial_n3
+    (σ : Equiv.Perm (Fin 3))
+    (i : Fin 3)
+    (hi : i.val + 1 < 3)
+    (hσ : σ ≠ (1 : Equiv.Perm (Fin 3)))
+    (hστ : σ ≠ Equiv.swap i ⟨i.val + 1, hi⟩) :
+    ({w : Fin 3 → Fin (1 + 1) → ℂ |
+        w ∈ ForwardTube 1 3 ∧
+        permAct (d := 1) (Equiv.swap i ⟨i.val + 1, hi⟩) w ∈ ExtendedTube 1 3 ∧
+        permAct (d := 1) σ w ∈ ExtendedTube 1 3
+    }).Nonempty := by
+  exact deferred_d1_forward_triple_nonempty_nontrivial
+    3 σ i hi hσ hστ (by decide)
+
+private theorem d1_ET_triple_nonempty_nontrivial_n3
+    (σ : Equiv.Perm (Fin 3))
+    (i : Fin 3)
+    (hi : i.val + 1 < 3)
+    (hσ : σ ≠ (1 : Equiv.Perm (Fin 3)))
+    (hστ : σ ≠ Equiv.swap i ⟨i.val + 1, hi⟩) :
+    ({y : Fin 3 → Fin (1 + 1) → ℂ |
+        y ∈ ExtendedTube 1 3 ∧
+        permAct (d := 1) (Equiv.swap i ⟨i.val + 1, hi⟩) y ∈ ExtendedTube 1 3 ∧
+        permAct (d := 1) σ y ∈ ExtendedTube 1 3
+    }).Nonempty := by
+  exact deferred_d1_ET_triple_nonempty_nontrivial
+    3 σ i hi hσ hστ (by decide)
+
+private theorem d1_leftAdj_anchor_nonempty_n2
+    (σ : Equiv.Perm (Fin 2))
+    (i : Fin 2)
+    (hi : i.val + 1 < 2) :
+    ({z : Fin 2 → Fin (1 + 1) → ℂ |
+        z ∈ permExtendedOverlapSet (d := 1) 2
+          (Equiv.swap i ⟨i.val + 1, hi⟩ * σ) ∧
+        permAct (d := 1) (Equiv.swap i ⟨i.val + 1, hi⟩) z ∈ ExtendedTube 1 2
+    }).Nonempty := by
+  exact deferred_d1_leftAdj_anchor_nonempty 2 σ i hi
+
+private theorem d1_leftAdj_anchor_nonempty_n3
+    (σ : Equiv.Perm (Fin 3))
+    (i : Fin 3)
+    (hi : i.val + 1 < 3) :
+    ({z : Fin 3 → Fin (1 + 1) → ℂ |
+        z ∈ permExtendedOverlapSet (d := 1) 3
+          (Equiv.swap i ⟨i.val + 1, hi⟩ * σ) ∧
+        permAct (d := 1) (Equiv.swap i ⟨i.val + 1, hi⟩) z ∈ ExtendedTube 1 3
+    }).Nonempty := by
+  exact deferred_d1_leftAdj_anchor_nonempty 3 σ i hi
 
 /-- Deferred `d=1` geometric inputs required to instantiate the left-adjacent
 ET-overlap induction scheme.
