@@ -22,6 +22,13 @@ It asks for:
   near `w0`, each prepared `w` admits some slice anchor `Λ₀` with
   `Λ₀·(τ·w) ∈ FT` and `F(Λ₀·(τ·w)) = F(w)`.
 
+Current reductions already proved in code:
+
+- if `τ = 1`, the theorem is fully proved (choose `Λ₀ = 1`);
+- if `n ≤ 1`, the non-identity `τ` branch is impossible.
+
+So the true deferred content is the nontrivial branch `n ≥ 2` and `τ ≠ 1`.
+
 ## Why this is now the right granularity
 
 `PermutationFlow.lean` now proves wrappers reducing to this blocker module:
