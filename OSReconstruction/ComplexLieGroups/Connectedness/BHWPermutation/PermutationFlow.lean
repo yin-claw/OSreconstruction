@@ -1576,6 +1576,86 @@ private theorem extendF_perm_overlap_of_jostSet_and_real_double_coset_generation
   exact extendF_perm_overlap_of_jostWitness_and_real_double_coset_generation
     (d := d) n F hF_holo hF_lorentz hF_bv hF_local σ hJostWitness hgenPack
 
+/-- Packaging lemma: a local Jost witness together with connectedness of the
+seed set is enough for ET-overlap permutation invariance of `extendF`. -/
+private theorem extendF_perm_overlap_of_jostWitness_and_seedConnected
+    (n : ℕ)
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF_holo : DifferentiableOn ℂ F (ForwardTube d n))
+    (hF_lorentz : ∀ (Λ : RestrictedLorentzGroup d)
+      (z : Fin n → Fin (d + 1) → ℂ), z ∈ ForwardTube d n →
+      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
+    (hF_bv : ∀ (x : Fin n → Fin (d + 1) → ℝ),
+      ContinuousWithinAt F (ForwardTube d n) (realEmbed x))
+    (hF_local : ∀ (i : Fin n) (hi : i.val + 1 < n),
+      ∀ (x : Fin n → Fin (d + 1) → ℝ),
+        ∑ μ, minkowskiSignature d μ *
+          (x ⟨i.val + 1, hi⟩ μ - x i μ) ^ 2 > 0 →
+        F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
+          F (fun k μ => (x k μ : ℂ)))
+    (σ : Equiv.Perm (Fin n))
+    (hJostWitness :
+      ∃ x : Fin n → Fin (d + 1) → ℝ,
+        x ∈ JostSet d n ∧
+        realEmbed x ∈ ExtendedTube d n ∧
+        realEmbed (fun k => x (σ k)) ∈ ExtendedTube d n)
+    (hseed_conn : IsConnected (permOrbitSeedSet (d := d) n σ)) :
+    ∀ (z : Fin n → Fin (d + 1) → ℂ),
+      z ∈ ExtendedTube d n →
+      permAct (d := d) σ z ∈ ExtendedTube d n →
+      extendF F (permAct (d := d) σ z) = extendF F z := by
+  have hFwd_conn : IsConnected (permForwardOverlapSet (d := d) n σ) :=
+    (isConnected_permOrbitSeedSet_iff_permForwardOverlapSet (d := d) n σ).1 hseed_conn
+  exact extendF_perm_overlap_of_jostWitness_and_forwardOverlapConnected
+    (d := d) n F hF_holo hF_lorentz hF_bv hF_local σ hJostWitness hFwd_conn
+
+/-- Specialized d≥2 package: once seed connectedness is available, the
+nontrivial `hExtPerm` branch closes immediately. -/
+private theorem extendF_perm_overlap_dge2_of_seedConnected
+    (n : ℕ)
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF_holo : DifferentiableOn ℂ F (ForwardTube d n))
+    (hF_lorentz : ∀ (Λ : RestrictedLorentzGroup d)
+      (z : Fin n → Fin (d + 1) → ℂ), z ∈ ForwardTube d n →
+      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
+    (hF_bv : ∀ (x : Fin n → Fin (d + 1) → ℝ),
+      ContinuousWithinAt F (ForwardTube d n) (realEmbed x))
+    (hF_local : ∀ (i : Fin n) (hi : i.val + 1 < n),
+      ∀ (x : Fin n → Fin (d + 1) → ℝ),
+        ∑ μ, minkowskiSignature d μ *
+          (x ⟨i.val + 1, hi⟩ μ - x i μ) ^ 2 > 0 →
+        F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
+          F (fun k μ => (x k μ : ℂ)))
+    (hd2 : 2 ≤ d)
+    (σ : Equiv.Perm (Fin n))
+    (hseed_conn : IsConnected (permOrbitSeedSet (d := d) n σ)) :
+    ∀ (z : Fin n → Fin (d + 1) → ℂ),
+      z ∈ ExtendedTube d n →
+      permAct (d := d) σ z ∈ ExtendedTube d n →
+      extendF F (permAct (d := d) σ z) = extendF F z := by
+  have hJostWitness :
+      ∃ x : Fin n → Fin (d + 1) → ℝ,
+        x ∈ JostSet d n ∧
+        realEmbed x ∈ ExtendedTube d n ∧
+        realEmbed (fun k => x (σ k)) ∈ ExtendedTube d n := by
+    simpa using
+      JostWitnessGeneralSigma.jostWitness_exists (d := d) (n := n) hd2 σ
+  exact extendF_perm_overlap_of_jostWitness_and_seedConnected
+    (d := d) n F hF_holo hF_lorentz hF_bv hF_local σ hJostWitness hseed_conn
+
+/-- d=1 connective chain packaging: seed connectedness plus nonemptiness gives
+connected permutation forward overlap. -/
+private theorem isConnected_permForwardOverlapSet_d1_of_seedConnected_and_nonempty
+    (n : ℕ) (σ : Equiv.Perm (Fin n))
+    (hseed_conn : IsConnected (permOrbitSeedSet (d := 1) n σ))
+    (hnonempty : (permForwardOverlapSet (d := 1) n σ).Nonempty) :
+    IsConnected (permForwardOverlapSet (d := 1) n σ) := by
+  have hidx_conn :
+      IsConnected (permForwardOverlapIndexSet (d := 1) n σ) :=
+    isConnected_permForwardOverlapIndexSet_d1_of_seedConnected (n := n) σ hseed_conn
+  exact isConnected_permForwardOverlapSet_of_indexConnected
+    (d := 1) n σ hidx_conn hnonempty
+
 /-- Build a holomorphic extension domain for a fixed permutation `σ` from
     the corresponding permutation-invariance hypothesis.
 
@@ -2157,7 +2237,7 @@ private theorem iteratedExtension_exists_of_adjSwapStep
     permExtensionData_all_of_adjSwap (d := d) n F hF_holo hF_lorentz hStepPacked
   exact iteratedExtension_exists_of_allData (d := d) n F hAll
 
-/-- **Iterated EOW extension for permutations.**
+/- **Iterated EOW extension for permutations.**
     For any permutation σ of Fin n (decomposed as a product of adjacent swaps),
     the iterated application of eow_adj_swap_extension produces a holomorphic
     function F_σ on an open domain U_σ ⊇ FT ∪ σ·FT such that:
@@ -2174,6 +2254,46 @@ private theorem iteratedExtension_exists_of_adjSwapStep
     Infrastructure gap: this requires eow_adj_swap_extension to work on
     general holomorphic domains (not just FT), which needs a generalization
     of the EOW theorem to tube-like subsets of the extended domain. -/
+/-- Deferred geometric input (`d ≥ 2`): connectedness of the permutation seed set.
+    This isolates the remaining global connectedness obligation from the EOW/identity
+    theorem plumbing. -/
+private theorem deferred_isConnected_permOrbitSeedSet_dge2
+    (n : ℕ) (σ : Equiv.Perm (Fin n)) (hd2 : 2 ≤ d) :
+    IsConnected (permOrbitSeedSet (d := d) n σ) := by
+  sorry
+
+/-- Deferred geometric input (`d = 1`): connectedness of the permutation seed set. -/
+private theorem deferred_isConnected_permOrbitSeedSet_d1
+    (n : ℕ) (σ : Equiv.Perm (Fin n)) :
+    IsConnected (permOrbitSeedSet (d := 1) n σ) := by
+  sorry
+
+/-- Deferred `d = 1` bridge: ET-overlap invariance from seed connectedness.
+    The intent is to prove this via a dedicated complex-anchor argument in the
+    `d = 1` geometry. -/
+private theorem deferred_extendF_perm_overlap_d1_of_seedConnected
+    (n : ℕ)
+    (F : (Fin n → Fin (1 + 1) → ℂ) → ℂ)
+    (hF_holo : DifferentiableOn ℂ F (ForwardTube 1 n))
+    (hF_lorentz : ∀ (Λ : RestrictedLorentzGroup 1)
+      (z : Fin n → Fin (1 + 1) → ℂ), z ∈ ForwardTube 1 n →
+      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
+    (hF_bv : ∀ (x : Fin n → Fin (1 + 1) → ℝ),
+      ContinuousWithinAt F (ForwardTube 1 n) (fun k μ => (x k μ : ℂ)))
+    (hF_local : ∀ (i : Fin n) (hi : i.val + 1 < n),
+      ∀ (x : Fin n → Fin (1 + 1) → ℝ),
+        ∑ μ, minkowskiSignature 1 μ *
+          (x ⟨i.val + 1, hi⟩ μ - x i μ) ^ 2 > 0 →
+        F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
+        F (fun k μ => (x k μ : ℂ)))
+    (σ : Equiv.Perm (Fin n))
+    (_hseed_conn : IsConnected (permOrbitSeedSet (d := 1) n σ)) :
+    ∀ (z : Fin n → Fin (1 + 1) → ℂ),
+      z ∈ ExtendedTube 1 n →
+      (fun k => z (σ k)) ∈ ExtendedTube 1 n →
+      extendF F (fun k => z (σ k)) = extendF F z := by
+  sorry
+
 private theorem iterated_eow_permutation_extension (n : ℕ)
     (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
     (hF_holo : DifferentiableOn ℂ F (ForwardTube d n))
@@ -2250,16 +2370,19 @@ private theorem iterated_eow_permutation_extension (n : ℕ)
             intro hd2
             simpa using
               JostWitnessGeneralSigma.jostWitness_exists (d := d) (n := n) hd2 σ
-          -- Remaining geometric obligations in the nontrivial branch:
-          -- `hJostWitness_hd2` provides the local witness for `d ≥ 2`.
-          -- ET-overlap invariance is then reduced (directly) to:
-          --   (a) connectedness of `permOrbitSeedSet` for the `d ≥ 2` route,
-          --       converted via `isConnected_permOrbitSeedSet_iff_permForwardOverlapSet`,
-          --       then applied to
-          --       `extendF_perm_overlap_of_jostWitness_and_forwardOverlapConnected`,
-          -- plus the separate `d = 1` branch (which cannot use the same real
-          -- Jost-witness mechanism).
-          sorry
+          by_cases hd2 : 2 ≤ d
+          · exact extendF_perm_overlap_dge2_of_seedConnected
+              (d := d) n F hF_holo hF_lorentz hF_bv hF_local hd2 σ
+              (deferred_isConnected_permOrbitSeedSet_dge2 (d := d) n σ hd2)
+          · have hd_eq1 : d = 1 := by
+              have hle : d ≤ 1 := Nat.not_lt.mp hd2
+              exact Nat.le_antisymm hle hd1
+            subst hd_eq1
+            have hseed_conn_d1 :
+                IsConnected (permOrbitSeedSet (d := 1) n σ) :=
+              deferred_isConnected_permOrbitSeedSet_d1 (n := n) σ
+            exact deferred_extendF_perm_overlap_d1_of_seedConnected
+              n F hF_holo hF_lorentz hF_bv hF_local σ hseed_conn_d1
       exact iterated_eow_permutation_extension_of_extendF_perm n F hF_holo hF_lorentz
         hF_bv hF_local σ hExtPerm
 
