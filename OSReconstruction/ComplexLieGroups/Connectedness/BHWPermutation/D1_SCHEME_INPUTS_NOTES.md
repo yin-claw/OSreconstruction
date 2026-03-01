@@ -87,9 +87,15 @@ The following points are now concretely checked in `test/`:
   `test/midpoint_condition_d1_counterexample_test.lean`.
   So midpoint-implication style closure should not be reused as a primary d=1 route.
 
-- In `PermutationFlow.lean`, the `hAnchor` subgoal now has its `σ = 1` branch
-  discharged directly via `leftAdj_anchor_nonempty_base`; only the
-  nontrivial-`σ` branch remains deferred.
+- In `PermutationFlow.lean`, the `hAnchor` subgoal now has both easy branches
+  discharged:
+  - `σ = 1` via `leftAdj_anchor_nonempty_base`,
+  - `σ = swap(i,i+1)` via a direct witness from
+    `adjacent_permSector_overlap_nonempty`.
+  - `n = 2` is now fully eliminated in the remaining branch (the excluded
+    cases force a contradiction since `Perm(Fin 2)` has only `1` and `swap`).
+  The only remaining anchor branch is now the genuinely nontrivial
+  `n ≥ 3`, `σ ≠ 1`, and `σ ≠ swap(i,i+1)` case.
 
 ## Why Existing Adjacency Wrapper Is Not Enough in d=1
 

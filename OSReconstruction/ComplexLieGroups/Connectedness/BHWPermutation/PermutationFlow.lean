@@ -3828,13 +3828,50 @@ private theorem deferred_d1_leftAdjSwap_scheme_inputs
               permAct (d := 1) (Equiv.swap i ⟨i.val + 1, hi⟩) z ∈ ExtendedTube 1 n
           }).Nonempty := by
       intro σ i hi
+      let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
       by_cases hσ : σ = 1
       · subst hσ
         simpa [one_mul] using
           (leftAdj_anchor_nonempty_base (d := 1) (n := n) i hi)
-      · -- TODO(d=1): nontrivial-`σ` branch. Equivalently produce a triple ET
-        -- witness `y ∈ ET`, `swap·y ∈ ET`, `σ·y ∈ ET`.
-        sorry
+      · by_cases hστ : σ = τ
+        · subst hστ
+          have hsec :
+              (permSector (d := 1) n (1 : Equiv.Perm (Fin n)) ∩
+                permSector (d := 1) n ((1 : Equiv.Perm (Fin n)) * τ)).Nonempty :=
+            adjacent_permSector_overlap_nonempty (d := 1) n (1 : Equiv.Perm (Fin n)) i hi
+          rcases hsec with ⟨y, hy1, hy1τ⟩
+          have hyET : y ∈ ExtendedTube 1 n := by
+            simpa [permSector, permAct] using hy1
+          have hτyET : permAct (d := 1) τ y ∈ ExtendedTube 1 n := by
+            simpa [permSector] using hy1τ
+          have hswapτyET :
+              permAct (d := 1) ((Equiv.swap i ⟨i.val + 1, hi⟩) * τ) y ∈ ExtendedTube 1 n := by
+            simpa [permAct, τ] using hyET
+          refine ⟨y, ?_, hτyET⟩
+          refine ⟨hyET, ?_⟩
+          exact hswapτyET
+        · -- TODO(d=1): genuinely nontrivial permutation branch (`σ ≠ 1` and `σ ≠ τ`).
+          -- Equivalently produce a triple ET witness `y ∈ ET`, `τ·y ∈ ET`, `σ·y ∈ ET`.
+          by_cases hn2 : n = 2
+          · subst hn2
+            have hi0 : i = (0 : Fin 2) := by
+              apply Fin.ext
+              omega
+            subst hi0
+            have hcases :
+                σ = (1 : Equiv.Perm (Fin 2)) ∨ σ = Equiv.swap (0 : Fin 2) 1 := by
+              fin_cases σ <;> simp
+            cases hcases with
+            | inl hσ1 =>
+                exact (False.elim (hσ hσ1))
+            | inr hσswap =>
+                have hτswap : τ = Equiv.swap (0 : Fin 2) 1 := by
+                  ext k
+                  simp [τ]
+                have hστ' : σ = τ := by
+                  simpa [hτswap] using hσswap
+                exact (False.elim (hστ hστ'))
+          · sorry
     exact ⟨hSwap, hAnchor⟩
 
 /-- Deferred `d = 1` bridge: ET-overlap invariance from seed connectedness,

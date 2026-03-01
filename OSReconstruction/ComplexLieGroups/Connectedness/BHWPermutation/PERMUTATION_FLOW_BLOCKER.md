@@ -21,6 +21,14 @@ Its precise obligations are:
 - `hAnchor`: nonempty step-anchor set
   `{z | z ∈ D_(swap*σ) ∧ swap·z ∈ ET}` for each step.
 
+Current code progress inside `hAnchor`:
+
+- `σ = 1` branch: proved.
+- `σ = swap(i,i+1)` branch: proved (via direct adjacent sector-overlap witness).
+- `n = 2` is eliminated in the remaining branch by explicit permutation
+  classification (`Perm(Fin 2)` has only `1` and `swap`).
+- remaining branch: `n ≥ 3`, `σ ≠ 1`, and `σ ≠ swap(i,i+1)`.
+
 Recent formal checks relevant to this blocker:
 
 - `test/witness_test.lean` is fully checked and provides a concrete
