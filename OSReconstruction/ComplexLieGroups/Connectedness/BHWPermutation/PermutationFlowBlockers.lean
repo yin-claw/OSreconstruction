@@ -296,6 +296,58 @@ theorem blocker_d1N2InvariantKernelSwap_core_of_forwardizableQuadricDiffZero
   exact hquadDiff (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z)
     (d1_invariant_quadric_relation z) ⟨z, Γ, hz, hΓswap, rfl⟩
 
+/-- If forward-swap equality holds on `FT_{1,2}`, then any `FT` invariant kernel
+representation has vanishing swap-difference on forwardizable invariant points. -/
+theorem d1N2InvariantKernelDiffZeroOnForwardizableQuadric_of_forwardSwapEq
+    (F : (Fin 2 → Fin (1 + 1) → ℂ) → ℂ)
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hf_onFT : ∀ z, z ∈ ForwardTube 1 2 →
+      F z = f (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z))
+    (hforward :
+      ∀ z, z ∈ ForwardTube 1 2 →
+        ∀ Γ : ComplexLorentzGroup 1,
+          complexLorentzAction Γ
+            (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 →
+          F (complexLorentzAction Γ (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z)) = F z) :
+    d1N2InvariantKernelDiffZeroOnForwardizableQuadric f := by
+  intro q0 q1 p s _hquad hfw
+  rcases hfw with ⟨z, Γ, hz, hΓswap, hquadZ⟩
+  let y : Fin 2 → Fin (1 + 1) → ℂ :=
+    complexLorentzAction Γ (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z)
+  have hyFT : y ∈ ForwardTube 1 2 := by
+    simpa [y] using hΓswap
+  have hF_forward : F y = F z := by
+    simpa [y] using hforward z hz Γ hΓswap
+  have hleft : f q0 q1 p s = F z := by
+    have hq :
+        f q0 q1 p s = f (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) := by
+      simpa [d1InvariantQuad] using
+        (congrArg (fun t => f t.1 t.2.1 t.2.2.1 t.2.2.2) hquadZ).symm
+    calc
+      f q0 q1 p s = f (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) := hq
+      _ = F z := by simpa using (hf_onFT z hz).symm
+  have hquadY :
+      d1InvariantQuad y = (q1, q0, p, -s) := by
+    calc
+      d1InvariantQuad y
+          = d1InvariantQuad (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) := by
+              simp [y, d1InvariantQuad_lorentzAction]
+      _ = (d1Q1 z, d1Q0 z, d1P01 z, -d1S01 z) := d1InvariantQuad_swap01 z
+      _ = (q1, q0, p, -s) := by
+            simpa [d1InvariantQuad] using congrArg
+              (fun t => (t.2.1, t.1, t.2.2.1, -t.2.2.2)) hquadZ
+  have hright : f q1 q0 p (-s) = F y := by
+    have hq :
+        f q1 q0 p (-s) = f (d1Q0 y) (d1Q1 y) (d1P01 y) (d1S01 y) := by
+      simpa [d1InvariantQuad] using
+        (congrArg (fun t => f t.1 t.2.1 t.2.2.1 t.2.2.2) hquadY).symm
+    calc
+      f q1 q0 p (-s) = f (d1Q0 y) (d1Q1 y) (d1P01 y) (d1S01 y) := hq
+      _ = F y := by simpa using (hf_onFT y hyFT).symm
+  calc
+    f q0 q1 p s - f q1 q0 p (-s) = F z - F y := by rw [hleft, hright]
+    _ = 0 := sub_eq_zero.mpr hF_forward.symm
+
 /-- Deferred invariant-function analytic core (`d=1,n=2`):
 pure quadric-level involution law on Lorentz invariants. -/
 theorem blocker_d1N2InvariantKernelSwapOnQuadric_core_deferred
@@ -303,23 +355,6 @@ theorem blocker_d1N2InvariantKernelSwapOnQuadric_core_deferred
     (hquadDiff : d1N2InvariantKernelDiffZeroOnForwardizableQuadric f) :
     d1N2InvariantKernelDiffZeroOnForwardizableQuadric f := by
   exact hquadDiff
-
-/-- Deferred bridge (`d=1,n=2`): extract the forwardizable invariant
-swap-difference vanishing statement from the Wightman-source package. -/
-theorem blocker_d1N2InvariantKernelSwapOnForwardizable_core_fromSource_deferred
-    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
-    (hsource : d1N2InvariantKernelSource f) :
-    d1N2InvariantKernelDiffZeroOnForwardizableQuadric f := by
-  rcases hsource with ⟨F, hF_holo, hF_lorentz, hF_bv, hF_local, hf_onFT⟩
-  let _ := hF_holo
-  let _ := hF_lorentz
-  let _ := hF_bv
-  let _ := hF_local
-  let _ := hf_onFT
-  -- Remaining analytic invariant-function step:
-  -- for g(q0,q1,p,s) := f(q0,q1,p,s) - f(q1,q0,p,-s), prove g ≡ 0 on
-  -- the quadric s^2 = 4*(p^2 - q0*q1).
-  sorry
 
 /-- `d=1,n=2` invariant-function core (deferred):
 construct a swap-compatible invariant-kernel model on `FT`. -/
@@ -341,20 +376,36 @@ theorem blocker_d1N2InvariantModel_core_deferred
   rcases blocker_d1N2InvariantFactorization_core_deferred
       F hF_holo hF_lorentz hF_bv hF_local with
     ⟨f, hf_onFT⟩
-  have hsource : d1N2InvariantKernelSource f :=
-    ⟨F, hF_holo, hF_lorentz, hF_bv, hF_local, hf_onFT⟩
-  have hquadDiffZero : d1N2InvariantKernelDiffZeroOnForwardizableQuadric f :=
-    blocker_d1N2InvariantKernelSwapOnForwardizable_core_fromSource_deferred
-      f hsource
   have hf_swap :
       ∀ z, z ∈ ForwardTube 1 2 →
         ∀ Γ : ComplexLorentzGroup 1,
           complexLorentzAction Γ
             (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 →
           f (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) =
-            f (d1Q1 z) (d1Q0 z) (d1P01 z) (-d1S01 z) :=
-    blocker_d1N2InvariantKernelSwap_core_of_forwardizableQuadricDiffZero f hquadDiffZero
+            f (d1Q1 z) (d1Q0 z) (d1P01 z) (-d1S01 z) := by
+    -- Remaining analytic invariant-function core:
+    -- establish swap-compatibility of the invariant kernel on forwardizable
+    -- `FT_{1,2}` points from local commutativity via the invariant-quadric route.
+    sorry
   exact ⟨f, hf_onFT, hf_swap⟩
+
+/-- Deferred bridge (`d=1,n=2`): extract the forwardizable invariant
+swap-difference vanishing statement from the Wightman-source package. -/
+theorem blocker_d1N2InvariantKernelSwapOnForwardizable_core_fromSource_deferred
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hsource : d1N2InvariantKernelSource f) :
+    d1N2InvariantKernelDiffZeroOnForwardizableQuadric f := by
+  rcases hsource with ⟨F, hF_holo, hF_lorentz, hF_bv, hF_local, hf_onFT⟩
+  have hforward :
+      ∀ z, z ∈ ForwardTube 1 2 →
+        ∀ Γ : ComplexLorentzGroup 1,
+          complexLorentzAction Γ
+            (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 →
+          F (complexLorentzAction Γ (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z)) = F z :=
+    d1_n2_forward_swap_eq_of_invariantModel F
+      (blocker_d1N2InvariantModel_core_deferred F hF_holo hF_lorentz hF_bv hF_local)
+  exact d1N2InvariantKernelDiffZeroOnForwardizableQuadric_of_forwardSwapEq
+    F f hf_onFT hforward
 
 /-- `d=1,n=2` invariant-function step B:
 kernel swap symmetry reduced to forward-swap equality from the invariant model. -/
