@@ -177,8 +177,187 @@ theorem blocker_d1N2InvariantFactorization_core_deferred
     F z = F hex.choose := hFz_eq_hchoose
     _ = f (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) := hf_eq.symm
 
-/-- `d=1,n=2` invariant-function step B (deferred):
-kernel swap symmetry from local commutativity + identity theorem on invariants. -/
+/-- Pure invariant-function swap law on the `d=1,n=2` invariant quadric. -/
+def d1N2InvariantKernelSwapOnQuadric (f : ℂ → ℂ → ℂ → ℂ → ℂ) : Prop :=
+  ∀ q0 q1 p s : ℂ,
+    s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+      f q0 q1 p s = f q1 q0 p (-s)
+
+/-- Equivalent invariant-only formulation:
+the swap-difference kernel vanishes on the quadric
+`s^2 = 4*(p^2 - q0*q1)`. -/
+def d1N2InvariantKernelDiffZeroOnQuadric (f : ℂ → ℂ → ℂ → ℂ → ℂ) : Prop :=
+  ∀ q0 q1 p s : ℂ,
+    s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+      f q0 q1 p s - f q1 q0 p (-s) = 0
+
+/-- From vanishing swap-difference on the quadric, recover the swap law. -/
+theorem d1N2InvariantKernelSwapOnQuadric_of_diffZero
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hzero : d1N2InvariantKernelDiffZeroOnQuadric f) :
+    d1N2InvariantKernelSwapOnQuadric f := by
+  intro q0 q1 p s hquad
+  exact sub_eq_zero.mp (hzero q0 q1 p s hquad)
+
+/-- Invariant quadruple `(q0,q1,p,s)` is realized by an `FT_{1,2}` point. -/
+def d1N2InvariantRealizable (q0 q1 p s : ℂ) : Prop :=
+  ∃ z : Fin 2 → Fin (1 + 1) → ℂ,
+    z ∈ ForwardTube 1 2 ∧ d1InvariantQuad z = (q0, q1, p, s)
+
+/-- Swap-difference vanishes on quadric points that are realized by `FT_{1,2}`
+configurations. This is the maximal statement forced by `hf_onFT` data alone. -/
+def d1N2InvariantKernelDiffZeroOnRealizableQuadric
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ) : Prop :=
+  ∀ q0 q1 p s : ℂ,
+    s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+    d1N2InvariantRealizable q0 q1 p s →
+      f q0 q1 p s - f q1 q0 p (-s) = 0
+
+/-- Invariant quadruple `(q0,q1,p,s)` is represented by a forward configuration
+whose swapped image is forwardizable by some complex Lorentz witness. -/
+def d1N2InvariantForwardizableSwap (q0 q1 p s : ℂ) : Prop :=
+  ∃ z : Fin 2 → Fin (1 + 1) → ℂ, ∃ Γ : ComplexLorentzGroup 1,
+    z ∈ ForwardTube 1 2 ∧
+    complexLorentzAction Γ
+      (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 ∧
+    d1InvariantQuad z = (q0, q1, p, s)
+
+/-- Swap-difference vanishes on quadric points that are forwardizable in the
+`d=1,n=2` swap sense. -/
+def d1N2InvariantKernelDiffZeroOnForwardizableQuadric
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ) : Prop :=
+  ∀ q0 q1 p s : ℂ,
+    s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+    d1N2InvariantForwardizableSwap q0 q1 p s →
+      f q0 q1 p s - f q1 q0 p (-s) = 0
+
+/-- Source package for an invariant kernel arising from the `d=1,n=2`
+Wightman assumptions and FT factorization data. -/
+def d1N2InvariantKernelSource (f : ℂ → ℂ → ℂ → ℂ → ℂ) : Prop :=
+  ∃ F : (Fin 2 → Fin (1 + 1) → ℂ) → ℂ,
+    DifferentiableOn ℂ F (ForwardTube 1 2) ∧
+    (∀ (Λ : RestrictedLorentzGroup 1)
+      (z : Fin 2 → Fin (1 + 1) → ℂ), z ∈ ForwardTube 1 2 →
+      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z) ∧
+    (∀ (x : Fin 2 → Fin (1 + 1) → ℝ),
+      ContinuousWithinAt F (ForwardTube 1 2) (fun k μ => (x k μ : ℂ))) ∧
+    (∀ (i : Fin 2) (hi : i.val + 1 < 2),
+      ∀ (x : Fin 2 → Fin (1 + 1) → ℝ),
+        ∑ μ, minkowskiSignature 1 μ *
+          (x ⟨i.val + 1, hi⟩ μ - x i μ) ^ 2 > 0 →
+        F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
+        F (fun k μ => (x k μ : ℂ))) ∧
+    (∀ z, z ∈ ForwardTube 1 2 →
+      F z = f (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z))
+
+/-- Reduce the `FT` kernel-swap condition to a pure invariant-quadric swap law. -/
+theorem blocker_d1N2InvariantKernelSwap_core_of_quadricSwapLaw
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hquadSwap : d1N2InvariantKernelSwapOnQuadric f) :
+    ∀ z, z ∈ ForwardTube 1 2 →
+      ∀ Γ : ComplexLorentzGroup 1,
+        complexLorentzAction Γ
+          (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 →
+        f (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) =
+          f (d1Q1 z) (d1Q0 z) (d1P01 z) (-d1S01 z) := by
+  intro z _hz _Γ _hΓswap
+  exact hquadSwap (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z)
+    (d1_invariant_quadric_relation z)
+
+/-- Reduce the `FT` kernel-swap condition to vanishing of the invariant swap-
+difference on realizable quadric points. -/
+theorem blocker_d1N2InvariantKernelSwap_core_of_realizableQuadricDiffZero
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hquadDiff : d1N2InvariantKernelDiffZeroOnRealizableQuadric f) :
+    ∀ z, z ∈ ForwardTube 1 2 →
+      ∀ Γ : ComplexLorentzGroup 1,
+        complexLorentzAction Γ
+          (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 →
+        f (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) =
+          f (d1Q1 z) (d1Q0 z) (d1P01 z) (-d1S01 z) := by
+  intro z hz _Γ _hΓswap
+  apply sub_eq_zero.mp
+  exact hquadDiff (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z)
+    (d1_invariant_quadric_relation z) ⟨z, hz, rfl⟩
+
+/-- Reduce the `FT` kernel-swap condition to vanishing of the invariant swap-
+difference on forwardizable quadric points. -/
+theorem blocker_d1N2InvariantKernelSwap_core_of_forwardizableQuadricDiffZero
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hquadDiff : d1N2InvariantKernelDiffZeroOnForwardizableQuadric f) :
+    ∀ z, z ∈ ForwardTube 1 2 →
+      ∀ Γ : ComplexLorentzGroup 1,
+        complexLorentzAction Γ
+          (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 →
+        f (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) =
+          f (d1Q1 z) (d1Q0 z) (d1P01 z) (-d1S01 z) := by
+  intro z hz Γ hΓswap
+  apply sub_eq_zero.mp
+  exact hquadDiff (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z)
+    (d1_invariant_quadric_relation z) ⟨z, Γ, hz, hΓswap, rfl⟩
+
+/-- Deferred invariant-function analytic core (`d=1,n=2`):
+pure quadric-level involution law on Lorentz invariants. -/
+theorem blocker_d1N2InvariantKernelSwapOnQuadric_core_deferred
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hquadDiff : d1N2InvariantKernelDiffZeroOnForwardizableQuadric f) :
+    d1N2InvariantKernelDiffZeroOnForwardizableQuadric f := by
+  exact hquadDiff
+
+/-- Deferred bridge (`d=1,n=2`): extract the forwardizable invariant
+swap-difference vanishing statement from the Wightman-source package. -/
+theorem blocker_d1N2InvariantKernelSwapOnForwardizable_core_fromSource_deferred
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hsource : d1N2InvariantKernelSource f) :
+    d1N2InvariantKernelDiffZeroOnForwardizableQuadric f := by
+  rcases hsource with ⟨F, hF_holo, hF_lorentz, hF_bv, hF_local, hf_onFT⟩
+  let _ := hF_holo
+  let _ := hF_lorentz
+  let _ := hF_bv
+  let _ := hF_local
+  let _ := hf_onFT
+  -- Remaining analytic invariant-function step:
+  -- for g(q0,q1,p,s) := f(q0,q1,p,s) - f(q1,q0,p,-s), prove g ≡ 0 on
+  -- the quadric s^2 = 4*(p^2 - q0*q1).
+  sorry
+
+/-- `d=1,n=2` invariant-function core (deferred):
+construct a swap-compatible invariant-kernel model on `FT`. -/
+theorem blocker_d1N2InvariantModel_core_deferred
+    (F : (Fin 2 → Fin (1 + 1) → ℂ) → ℂ)
+    (hF_holo : DifferentiableOn ℂ F (ForwardTube 1 2))
+    (hF_lorentz : ∀ (Λ : RestrictedLorentzGroup 1)
+      (z : Fin 2 → Fin (1 + 1) → ℂ), z ∈ ForwardTube 1 2 →
+      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
+    (hF_bv : ∀ (x : Fin 2 → Fin (1 + 1) → ℝ),
+      ContinuousWithinAt F (ForwardTube 1 2) (fun k μ => (x k μ : ℂ)))
+    (hF_local : ∀ (i : Fin 2) (hi : i.val + 1 < 2),
+      ∀ (x : Fin 2 → Fin (1 + 1) → ℝ),
+        ∑ μ, minkowskiSignature 1 μ *
+          (x ⟨i.val + 1, hi⟩ μ - x i μ) ^ 2 > 0 →
+        F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
+        F (fun k μ => (x k μ : ℂ))) :
+    d1N2InvariantModel F := by
+  rcases blocker_d1N2InvariantFactorization_core_deferred
+      F hF_holo hF_lorentz hF_bv hF_local with
+    ⟨f, hf_onFT⟩
+  have hsource : d1N2InvariantKernelSource f :=
+    ⟨F, hF_holo, hF_lorentz, hF_bv, hF_local, hf_onFT⟩
+  have hquadDiffZero : d1N2InvariantKernelDiffZeroOnForwardizableQuadric f :=
+    blocker_d1N2InvariantKernelSwapOnForwardizable_core_fromSource_deferred
+      f hsource
+  have hf_swap :
+      ∀ z, z ∈ ForwardTube 1 2 →
+        ∀ Γ : ComplexLorentzGroup 1,
+          complexLorentzAction Γ
+            (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 →
+          f (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) =
+            f (d1Q1 z) (d1Q0 z) (d1P01 z) (-d1S01 z) :=
+    blocker_d1N2InvariantKernelSwap_core_of_forwardizableQuadricDiffZero f hquadDiffZero
+  exact ⟨f, hf_onFT, hf_swap⟩
+
+/-- `d=1,n=2` invariant-function step B:
+kernel swap symmetry reduced to forward-swap equality from the invariant model. -/
 theorem blocker_d1N2InvariantKernelSwap_core_deferred
     (F : (Fin 2 → Fin (1 + 1) → ℂ) → ℂ)
     (hF_holo : DifferentiableOn ℂ F (ForwardTube 1 2))
@@ -202,45 +381,17 @@ theorem blocker_d1N2InvariantKernelSwap_core_deferred
           (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 →
         f (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) =
           f (d1Q1 z) (d1Q0 z) (d1P01 z) (-d1S01 z) := by
-  let _ := hF_holo
-  let _ := hF_lorentz
-  let _ := hF_bv
-  let _ := hF_local
-  let _ := hf_onFT
-  -- Remaining analytic invariant-function step:
-  -- real-local commutativity in invariant coordinates + identity theorem propagation.
-  sorry
-
-/-- `d=1,n=2` invariant-function core (deferred):
-construct a swap-compatible invariant-kernel model on `FT`. -/
-theorem blocker_d1N2InvariantModel_core_deferred
-    (F : (Fin 2 → Fin (1 + 1) → ℂ) → ℂ)
-    (hF_holo : DifferentiableOn ℂ F (ForwardTube 1 2))
-    (hF_lorentz : ∀ (Λ : RestrictedLorentzGroup 1)
-      (z : Fin 2 → Fin (1 + 1) → ℂ), z ∈ ForwardTube 1 2 →
-      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
-    (hF_bv : ∀ (x : Fin 2 → Fin (1 + 1) → ℝ),
-      ContinuousWithinAt F (ForwardTube 1 2) (fun k μ => (x k μ : ℂ)))
-    (hF_local : ∀ (i : Fin 2) (hi : i.val + 1 < 2),
-      ∀ (x : Fin 2 → Fin (1 + 1) → ℝ),
-        ∑ μ, minkowskiSignature 1 μ *
-          (x ⟨i.val + 1, hi⟩ μ - x i μ) ^ 2 > 0 →
-        F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
-        F (fun k μ => (x k μ : ℂ))) :
-    d1N2InvariantModel F := by
-  rcases blocker_d1N2InvariantFactorization_core_deferred
-      F hF_holo hF_lorentz hF_bv hF_local with
-    ⟨f, hf_onFT⟩
-  have hf_swap :
+  have hforward :
       ∀ z, z ∈ ForwardTube 1 2 →
         ∀ Γ : ComplexLorentzGroup 1,
           complexLorentzAction Γ
             (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 →
-          f (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) =
-            f (d1Q1 z) (d1Q0 z) (d1P01 z) (-d1S01 z) :=
-    blocker_d1N2InvariantKernelSwap_core_deferred
-      F hF_holo hF_lorentz hF_bv hF_local f hf_onFT
-  exact ⟨f, hf_onFT, hf_swap⟩
+          F (complexLorentzAction Γ (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z)) = F z := by
+    intro z hz Γ hΓswap
+    exact d1_n2_forward_swap_eq_of_invariantModel F
+      (blocker_d1N2InvariantModel_core_deferred F hF_holo hF_lorentz hF_bv hF_local)
+      z hz Γ hΓswap
+  exact d1_n2_invariantKernelSwapRule_of_forwardSwapEq F f hf_onFT hforward
 
 /-- `d=1,n=2` forward swap equality on `FT`, reduced to the invariant model. -/
 theorem blocker_d1N2ForwardSwapEq_on_FT_core_deferred
