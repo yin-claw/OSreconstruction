@@ -731,6 +731,168 @@ lemma d1_adj_spacelike_expr_eq_q0q1p (x : Fin 2 → Fin (1 + 1) → ℝ) :
       d1Q0R x + d1Q1R x - 2 * d1P01R x := by
   simpa [d1Q0R, d1Q1R, d1P01R] using d1_n2_adj_spacelike_expr_eq_invariants x
 
+/-- Explicit complex-coordinate chart for `d=1,n=2`:
+`z₀=(a,b)` and `z₁=(c,d)`. -/
+def d1N2ComplexConfig (a b c d : ℂ) : D1N2Config :=
+  fun k μ =>
+    if k = 0 then
+      if μ = 0 then a else b
+    else
+      if μ = 0 then c else d
+
+@[simp] lemma d1N2ComplexConfig_00 (a b c d : ℂ) :
+    d1N2ComplexConfig a b c d 0 0 = a := by
+  simp [d1N2ComplexConfig]
+
+@[simp] lemma d1N2ComplexConfig_01 (a b c d : ℂ) :
+    d1N2ComplexConfig a b c d 0 1 = b := by
+  simp [d1N2ComplexConfig]
+
+@[simp] lemma d1N2ComplexConfig_10 (a b c d : ℂ) :
+    d1N2ComplexConfig a b c d 1 0 = c := by
+  simp [d1N2ComplexConfig]
+
+@[simp] lemma d1N2ComplexConfig_11 (a b c d : ℂ) :
+    d1N2ComplexConfig a b c d 1 1 = d := by
+  simp [d1N2ComplexConfig]
+
+lemma d1Q0_complexConfig (a b c d : ℂ) :
+    d1Q0 (d1N2ComplexConfig a b c d) = -(a ^ 2) + b ^ 2 := by
+  simp [d1Q0, d1MinkowskiBilinC, d1N2ComplexConfig, Fin.sum_univ_two, minkowskiSignature]
+  ring
+
+lemma d1Q1_complexConfig (a b c d : ℂ) :
+    d1Q1 (d1N2ComplexConfig a b c d) = -(c ^ 2) + d ^ 2 := by
+  simp [d1Q1, d1MinkowskiBilinC, d1N2ComplexConfig, Fin.sum_univ_two, minkowskiSignature]
+  ring
+
+lemma d1P01_complexConfig (a b c d : ℂ) :
+    d1P01 (d1N2ComplexConfig a b c d) = -(a * c) + b * d := by
+  simp [d1P01, d1MinkowskiBilinC, d1N2ComplexConfig, Fin.sum_univ_two, minkowskiSignature]
+
+lemma d1S01_complexConfig (a b c d : ℂ) :
+    d1S01 (d1N2ComplexConfig a b c d) = (-2 : ℂ) * (a * d - b * c) := by
+  simp [d1S01, d1PointMatrix, d1N2ComplexConfig, Matrix.det_fin_two]
+  ring
+
+lemma d1InvariantQuad_complexConfig (a b c d : ℂ) :
+    d1InvariantQuad (d1N2ComplexConfig a b c d) =
+      (-(a ^ 2) + b ^ 2, -(c ^ 2) + d ^ 2, -(a * c) + b * d,
+        (-2 : ℂ) * (a * d - b * c)) := by
+  simp [d1InvariantQuad, d1Q0_complexConfig, d1Q1_complexConfig,
+    d1P01_complexConfig, d1S01_complexConfig]
+
+lemma d1InvariantQuad_complexConfig_on_quadric (a b c d : ℂ) :
+    (d1S01 (d1N2ComplexConfig a b c d)) ^ 2 =
+      4 * ((d1P01 (d1N2ComplexConfig a b c d)) ^ 2 -
+        d1Q0 (d1N2ComplexConfig a b c d) * d1Q1 (d1N2ComplexConfig a b c d)) := by
+  simp [d1Q0_complexConfig, d1Q1_complexConfig, d1P01_complexConfig,
+    d1S01_complexConfig]
+  ring
+
+lemma d1InvariantQuad_complexConfig_swap (a b c d : ℂ) :
+    d1InvariantQuad (d1N2ComplexConfig c d a b) =
+      (d1Q1 (d1N2ComplexConfig a b c d),
+        d1Q0 (d1N2ComplexConfig a b c d),
+        d1P01 (d1N2ComplexConfig a b c d),
+        -d1S01 (d1N2ComplexConfig a b c d)) := by
+  simp [d1InvariantQuad, d1Q0_complexConfig, d1Q1_complexConfig,
+    d1P01_complexConfig, d1S01_complexConfig]
+  constructor <;> ring
+
+/-- `d=1,n=2` invariant-section chart with free parameter `v0`.
+It is the standard light-cone parametrization:
+`u0 = q0 / v0`, `v0 = v0`, `u1 = (p - s/2)/v0`, `v1 = (p + s/2)*v0/q0`,
+converted to `(t,x)` coordinates by
+`t = (u+v)/2`, `x = (u-v)/2`. -/
+def d1N2InvariantSection (q0 p s v0 : ℂ) : D1N2Config :=
+  d1N2ComplexConfig
+    (((q0 / v0) + v0) / 2)
+    (((q0 / v0) - v0) / 2)
+    ((((p - s / 2) / v0) + ((p + s / 2) * v0 / q0)) / 2)
+    ((((p - s / 2) / v0) - ((p + s / 2) * v0 / q0)) / 2)
+
+@[simp] lemma d1U0_invariantSection (q0 p s v0 : ℂ) :
+    d1U0 (d1N2InvariantSection q0 p s v0) = q0 / v0 := by
+  simp [d1N2InvariantSection, d1U0]
+  ring
+
+@[simp] lemma d1V0_invariantSection (q0 p s v0 : ℂ) :
+    d1V0 (d1N2InvariantSection q0 p s v0) = v0 := by
+  simp [d1N2InvariantSection, d1V0]
+  ring
+
+@[simp] lemma d1U1_invariantSection (q0 p s v0 : ℂ) :
+    d1U1 (d1N2InvariantSection q0 p s v0) = (p - s / 2) / v0 := by
+  simp [d1N2InvariantSection, d1U1]
+  ring
+
+@[simp] lemma d1V1_invariantSection (q0 p s v0 : ℂ) :
+    d1V1 (d1N2InvariantSection q0 p s v0) = (p + s / 2) * v0 / q0 := by
+  simp [d1N2InvariantSection, d1V1]
+  ring
+
+lemma d1Q0_invariantSection (q0 p s v0 : ℂ) (hv0 : v0 ≠ 0) :
+    d1Q0 (d1N2InvariantSection q0 p s v0) = -q0 := by
+  rw [d1Q0_eq_neg_U0_mul_V0]
+  simp [d1U0_invariantSection, d1V0_invariantSection, hv0]
+
+lemma d1P01_invariantSection (q0 p s v0 : ℂ) (hq0 : q0 ≠ 0) (hv0 : v0 ≠ 0) :
+    d1P01 (d1N2InvariantSection q0 p s v0) = -p := by
+  have htwo :
+      (2 : ℂ) * d1P01 (d1N2InvariantSection q0 p s v0) = -(2 * p) := by
+    calc
+      (2 : ℂ) * d1P01 (d1N2InvariantSection q0 p s v0)
+          = -(
+              d1R01 (d1N2InvariantSection q0 p s v0) +
+              d1T01 (d1N2InvariantSection q0 p s v0)
+            ) := d1_two_mul_P01_eq_neg_R01_add_T01 (d1N2InvariantSection q0 p s v0)
+      _ = -(
+              (q0 / v0) * ((p + s / 2) * v0 / q0) +
+              ((p - s / 2) / v0) * v0
+            ) := by
+              simp [d1R01, d1T01, d1U0_invariantSection, d1V1_invariantSection,
+                d1U1_invariantSection, d1V0_invariantSection]
+      _ = -(2 * p) := by
+            field_simp [hq0, hv0]
+            ring
+  have hdiv : d1P01 (d1N2InvariantSection q0 p s v0) = (-(2 * p)) / 2 := by
+    simpa [mul_assoc] using congrArg (fun t : ℂ => t / (2 : ℂ)) htwo
+  calc
+    d1P01 (d1N2InvariantSection q0 p s v0) = (-(2 * p)) / 2 := hdiv
+    _ = -p := by ring
+
+lemma d1S01_invariantSection (q0 p s v0 : ℂ) (hq0 : q0 ≠ 0) (hv0 : v0 ≠ 0) :
+    d1S01 (d1N2InvariantSection q0 p s v0) = s := by
+  calc
+    d1S01 (d1N2InvariantSection q0 p s v0)
+        = d1R01 (d1N2InvariantSection q0 p s v0) -
+            d1T01 (d1N2InvariantSection q0 p s v0) := d1S01_eq_R01_sub_T01 (d1N2InvariantSection q0 p s v0)
+    _ = (q0 / v0) * ((p + s / 2) * v0 / q0) - ((p - s / 2) / v0) * v0 := by
+          simp [d1R01, d1T01, d1U0_invariantSection, d1V1_invariantSection,
+            d1U1_invariantSection, d1V0_invariantSection]
+    _ = s := by
+          field_simp [hq0, hv0]
+          ring
+
+lemma d1Q1_invariantSection (q0 p s v0 : ℂ) (hq0 : q0 ≠ 0) (hv0 : v0 ≠ 0) :
+    d1Q1 (d1N2InvariantSection q0 p s v0) = -((p ^ 2 - (s ^ 2) / 4) / q0) := by
+  rw [d1Q1_eq_neg_U1_mul_V1]
+  calc
+    -(d1U1 (d1N2InvariantSection q0 p s v0) * d1V1 (d1N2InvariantSection q0 p s v0))
+        = -(((p - s / 2) / v0) * (((p + s / 2) * v0) / q0)) := by
+            simp [d1U1_invariantSection, d1V1_invariantSection]
+    _ = -((p ^ 2 - (s ^ 2) / 4) / q0) := by
+          field_simp [hq0, hv0]
+          ring
+
+lemma d1InvariantQuad_invariantSection
+    (q0 p s v0 : ℂ) (hq0 : q0 ≠ 0) (hv0 : v0 ≠ 0) :
+    d1InvariantQuad (d1N2InvariantSection q0 p s v0) =
+      (-q0, -((p ^ 2 - (s ^ 2) / 4) / q0), -p, s) := by
+  simp [d1InvariantQuad, d1Q0_invariantSection, d1Q1_invariantSection,
+    d1P01_invariantSection, d1S01_invariantSection, hq0, hv0]
+
 /-- Explicit real-coordinate chart for `d=1,n=2`:
 `x₀=(a,b)` and `x₁=(c,d)`. -/
 def d1N2RealConfig (a b c d : ℝ) : Fin 2 → Fin (1 + 1) → ℝ :=
@@ -755,6 +917,12 @@ def d1N2RealConfig (a b c d : ℝ) : Fin 2 → Fin (1 + 1) → ℝ :=
 @[simp] lemma d1N2RealConfig_11 (a b c d : ℝ) :
     d1N2RealConfig a b c d 1 1 = d := by
   simp [d1N2RealConfig]
+
+@[simp] lemma d1N2ComplexConfig_realCast (a b c d : ℝ) :
+    d1N2ComplexConfig a b c d = realEmbed (d1N2RealConfig a b c d) := by
+  ext k μ
+  fin_cases k <;> fin_cases μ <;>
+    simp [d1N2ComplexConfig, d1N2RealConfig, realEmbed]
 
 lemma d1Q0R_realConfig (a b c d : ℝ) :
     d1Q0R (d1N2RealConfig a b c d) = -(a ^ 2) + b ^ 2 := by
@@ -854,13 +1022,138 @@ def d1N2InvariantJacobianMinorAtProbe : Matrix (Fin 3) (Fin 3) ℝ :=
     | 2, 2 => -2
     | _, _ => 0
 
+/-- Symbolic real Jacobian minor (rows `(Q₀,Q₁,S)`, columns `(a,c,d)`) for
+the chart `(a,b,c,d) ↦ (Q₀,Q₁,P,S)`. -/
+def d1N2InvariantJacobianMinorR (a b c d : ℝ) : Matrix (Fin 3) (Fin 3) ℝ :=
+  fun i j =>
+    match i.1, j.1 with
+    | 0, 0 => (-2 : ℝ) * a
+    | 1, 1 => (-2 : ℝ) * c
+    | 1, 2 => (2 : ℝ) * d
+    | 2, 0 => (-2 : ℝ) * d
+    | 2, 1 => (2 : ℝ) * b
+    | 2, 2 => (-2 : ℝ) * a
+    | _, _ => 0
+
+lemma d1N2InvariantJacobianMinorR_det (a b c d : ℝ) :
+    (d1N2InvariantJacobianMinorR a b c d).det =
+      (-8 : ℝ) * a * (a * c - b * d) := by
+  simp [d1N2InvariantJacobianMinorR, Matrix.det_fin_three]
+  ring
+
+lemma d1N2InvariantJacobianMinorR_det_ne_zero_of
+    {a b c d : ℝ}
+    (ha : a ≠ 0)
+    (hminor : a * c - b * d ≠ 0) :
+    (d1N2InvariantJacobianMinorR a b c d).det ≠ 0 := by
+  rw [d1N2InvariantJacobianMinorR_det]
+  exact mul_ne_zero (mul_ne_zero (by norm_num : (-8 : ℝ) ≠ 0) ha) hminor
+
+lemma d1N2InvariantJacobianMinorR_atProbe :
+    d1N2InvariantJacobianMinorR 1 0 1 2 =
+      d1N2InvariantJacobianMinorAtProbe := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> norm_num
+    [d1N2InvariantJacobianMinorR, d1N2InvariantJacobianMinorAtProbe]
+
 lemma d1N2InvariantJacobianMinorAtProbe_det :
     (d1N2InvariantJacobianMinorAtProbe.det : ℝ) = (-8 : ℝ) := by
-  norm_num [d1N2InvariantJacobianMinorAtProbe, Matrix.det_fin_three]
+  calc
+    (d1N2InvariantJacobianMinorAtProbe.det : ℝ)
+        = (d1N2InvariantJacobianMinorR 1 0 1 2).det := by
+            rw [d1N2InvariantJacobianMinorR_atProbe]
+    _ = (-8 : ℝ) * (1 : ℝ) * ((1 : ℝ) * 1 - 0 * 2) := by
+          simpa using d1N2InvariantJacobianMinorR_det 1 0 1 2
+    _ = (-8 : ℝ) := by ring
 
 lemma d1N2InvariantJacobianMinorAtProbe_det_ne_zero :
     (d1N2InvariantJacobianMinorAtProbe.det : ℝ) ≠ 0 := by
   norm_num [d1N2InvariantJacobianMinorAtProbe_det]
+
+lemma d1N2InvariantJacobianMinorAtProbe_linearIndependent_rows :
+    LinearIndependent ℝ d1N2InvariantJacobianMinorAtProbe := by
+  exact Matrix.linearIndependent_rows_of_det_ne_zero
+    (A := d1N2InvariantJacobianMinorAtProbe)
+    d1N2InvariantJacobianMinorAtProbe_det_ne_zero
+
+/-- Symbolic complex Jacobian minor (rows `(Q₀,Q₁,S)`, columns `(a,c,d)`) for
+the chart `(a,b,c,d) ↦ (Q₀,Q₁,P,S)`. -/
+def d1N2InvariantJacobianMinorC (a b c d : ℂ) : Matrix (Fin 3) (Fin 3) ℂ :=
+  fun i j =>
+    match i.1, j.1 with
+    | 0, 0 => (-2 : ℂ) * a
+    | 1, 1 => (-2 : ℂ) * c
+    | 1, 2 => (2 : ℂ) * d
+    | 2, 0 => (-2 : ℂ) * d
+    | 2, 1 => (2 : ℂ) * b
+    | 2, 2 => (-2 : ℂ) * a
+    | _, _ => 0
+
+lemma d1N2InvariantJacobianMinorC_det (a b c d : ℂ) :
+    (d1N2InvariantJacobianMinorC a b c d).det =
+      (-8 : ℂ) * a * (a * c - b * d) := by
+  simp [d1N2InvariantJacobianMinorC, Matrix.det_fin_three]
+  ring
+
+lemma d1N2InvariantJacobianMinorC_ofReal (a b c d : ℝ) :
+    d1N2InvariantJacobianMinorC (a : ℂ) b c d =
+      fun i j => ((d1N2InvariantJacobianMinorR a b c d i j : ℝ) : ℂ) := by
+  ext i j
+  fin_cases i <;> fin_cases j <;>
+    simp [d1N2InvariantJacobianMinorC, d1N2InvariantJacobianMinorR]
+
+lemma d1N2InvariantJacobianMinorC_det_ofReal (a b c d : ℝ) :
+    (d1N2InvariantJacobianMinorC (a : ℂ) b c d).det =
+      ((d1N2InvariantJacobianMinorR a b c d).det : ℂ) := by
+  rw [d1N2InvariantJacobianMinorC_det, d1N2InvariantJacobianMinorR_det]
+  norm_num
+
+lemma d1N2InvariantJacobianMinorC_det_ne_zero_of
+    {a b c d : ℂ}
+    (ha : a ≠ 0)
+    (hminor : a * c - b * d ≠ 0) :
+    (d1N2InvariantJacobianMinorC a b c d).det ≠ 0 := by
+  rw [d1N2InvariantJacobianMinorC_det]
+  exact mul_ne_zero (mul_ne_zero (by norm_num : (-8 : ℂ) ≠ 0) ha) hminor
+
+/-- Complex version of the explicit invariant-route Jacobian minor at the probe
+point, with the same numeric entries as the real matrix. -/
+def d1N2InvariantJacobianMinorAtProbeC : Matrix (Fin 3) (Fin 3) ℂ :=
+  fun i j =>
+    match i.1, j.1 with
+    | 0, 0 => (-2 : ℂ)
+    | 1, 1 => (-2 : ℂ)
+    | 1, 2 => (4 : ℂ)
+    | 2, 0 => (-4 : ℂ)
+    | 2, 2 => (-2 : ℂ)
+    | _, _ => 0
+
+lemma d1N2InvariantJacobianMinorC_atProbe :
+    d1N2InvariantJacobianMinorC (1 : ℂ) 0 1 2 =
+      d1N2InvariantJacobianMinorAtProbeC := by
+  ext i j
+  fin_cases i <;> fin_cases j <;> norm_num
+    [d1N2InvariantJacobianMinorC, d1N2InvariantJacobianMinorAtProbeC]
+
+lemma d1N2InvariantJacobianMinorAtProbeC_det :
+    (d1N2InvariantJacobianMinorAtProbeC.det : ℂ) = (-8 : ℂ) := by
+  calc
+    (d1N2InvariantJacobianMinorAtProbeC.det : ℂ)
+        = (d1N2InvariantJacobianMinorC (1 : ℂ) 0 1 2).det := by
+            rw [d1N2InvariantJacobianMinorC_atProbe]
+    _ = (-8 : ℂ) * (1 : ℂ) * ((1 : ℂ) * 1 - 0 * 2) := by
+          simpa using d1N2InvariantJacobianMinorC_det (1 : ℂ) 0 1 2
+    _ = (-8 : ℂ) := by ring
+
+lemma d1N2InvariantJacobianMinorAtProbeC_det_ne_zero :
+    (d1N2InvariantJacobianMinorAtProbeC.det : ℂ) ≠ 0 := by
+  norm_num [d1N2InvariantJacobianMinorAtProbeC_det]
+
+lemma d1N2InvariantJacobianMinorAtProbeC_linearIndependent_rows :
+    LinearIndependent ℂ d1N2InvariantJacobianMinorAtProbeC := by
+  exact Matrix.linearIndependent_rows_of_det_ne_zero
+    (A := d1N2InvariantJacobianMinorAtProbeC)
+    d1N2InvariantJacobianMinorAtProbeC_det_ne_zero
 
 /-- `d=1,n=2` local commutativity in invariant form:
 if `Q₀ + Q₁ - 2P > 0` on a real configuration, then swapping the two points
