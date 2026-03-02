@@ -905,6 +905,11 @@ def d1N2InvariantSectionDomain (q0 p s : ℂ) : Prop :=
   0 < (q0 - p + s / 2).re ∧
   0 < (((p + s / 2) / q0 - 1).re)
 
+/-- The fixed-gauge section domain is nonempty (explicit probe point). -/
+lemma d1N2InvariantSectionDomain_probe :
+    d1N2InvariantSectionDomain (-1 : ℂ) (-3 : ℂ) 0 := by
+  refine ⟨by norm_num, ?_, ?_, ?_⟩ <;> norm_num [d1N2InvariantSectionDomain]
+
 lemma d1N2InvariantSectionPoint_mem_forwardTube_of_domain
     {q0 p s : ℂ}
     (hdom : d1N2InvariantSectionDomain q0 p s) :
@@ -971,6 +976,17 @@ lemma d1N2InvariantSectionPoint_mem_forwardTube_of_domain
 /-- Section-side parameter for the swap involution on invariant quadruples. -/
 def d1N2InvariantSectionSwapQ0 (q0 p s : ℂ) : ℂ :=
   (p ^ 2 - (s ^ 2) / 4) / q0
+
+/-- At the probe, the fixed-gauge domain is not preserved by the swap-side
+parameter update. This shows the `v0 = I` chart alone is not swap-closed. -/
+lemma d1N2InvariantSectionDomain_swapProbe_not :
+    ¬ d1N2InvariantSectionDomain
+      (d1N2InvariantSectionSwapQ0 (-1 : ℂ) (-3 : ℂ) 0) (-3 : ℂ) 0 := by
+  intro hdom
+  have hthird :
+      0 < ((d1N2InvariantSectionSwapQ0 (-1 : ℂ) (-3 : ℂ) 0) - (-3 : ℂ) + 0 / 2).re :=
+    hdom.2.2.1
+  norm_num [d1N2InvariantSectionSwapQ0] at hthird
 
 lemma d1InvariantQuad_invariantSectionPoint
     (q0 p s : ℂ) (hq0 : q0 ≠ 0) :

@@ -103,6 +103,10 @@ The goal is to isolate the blocker proof into a clean model statement:
      `d1N2InvariantJacobianMinorAtProbeC_det`,
      `d1N2InvariantJacobianMinorAtProbeC_det_ne_zero`,
      `d1N2InvariantJacobianMinorAtProbeC_linearIndependent_rows`
+   - fixed-gauge section domain probe facts:
+     `d1N2InvariantSectionDomain_probe`,
+     `d1N2InvariantSectionDomain_swapProbe_not`
+     (the `v0 = I` section chart is nonempty but not swap-closed at the probe).
 
 ## Reduction theorem now available
 
