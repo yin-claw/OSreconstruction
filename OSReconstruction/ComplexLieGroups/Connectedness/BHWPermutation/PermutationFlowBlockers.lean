@@ -136,6 +136,30 @@ theorem fin2_perm_ne_one_eq_swap01 (τ : Equiv.Perm (Fin 2)) (hτ : τ ≠ 1) :
     τ = Equiv.swap (0 : Fin 2) 1 := by
   fin_cases τ <;> simp at hτ ⊢
 
+/-- On `FT_{1,2}`, equal signed invariant quadruples force equality of field
+values under the source holomorphy + real-Lorentz invariance package. -/
+theorem d1N2Field_eq_of_sameInvariantQuad_onFT
+    (F : (Fin 2 → Fin (1 + 1) → ℂ) → ℂ)
+    (hF_holo : DifferentiableOn ℂ F (ForwardTube 1 2))
+    (hF_lorentz : ∀ (Λ : RestrictedLorentzGroup 1)
+      (z : Fin 2 → Fin (1 + 1) → ℂ), z ∈ ForwardTube 1 2 →
+      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
+    {z w : Fin 2 → Fin (1 + 1) → ℂ}
+    (hz : z ∈ ForwardTube 1 2)
+    (hw : w ∈ ForwardTube 1 2)
+    (hquad : d1InvariantQuad z = d1InvariantQuad w) :
+    F z = F w := by
+  rcases d1_exists_lorentz_of_sameInvariantQuad_on_FT hz hw hquad with ⟨Λ, hw_eq⟩
+  have hΛzFT : complexLorentzAction Λ z ∈ ForwardTube 1 2 := by
+    rw [← hw_eq]
+    exact hw
+  have hinv :
+      F (complexLorentzAction Λ z) = F z :=
+    complex_lorentz_invariance 2 F hF_holo hF_lorentz Λ z hz hΛzFT
+  calc
+    F z = F (complexLorentzAction Λ z) := hinv.symm
+    _ = F w := by rw [hw_eq]
+
 /-- `d=1,n=2` invariant-function step A (deferred):
 factorization of `F` on `FT` through Lorentz invariants `(Q₀,Q₁,P,S)`. -/
 theorem blocker_d1N2InvariantFactorization_core_deferred
@@ -177,20 +201,11 @@ theorem blocker_d1N2InvariantFactorization_core_deferred
   have hchooseQuad :
       d1InvariantQuad hex.choose = (d1Q0 z, d1Q1 z, d1P01 z, d1S01 z) :=
     hex.choose_spec.2
-  have hquadEq : d1InvariantQuad hex.choose = d1InvariantQuad z := by
-    simpa [d1InvariantQuad] using hchooseQuad
-  rcases d1_exists_lorentz_of_sameInvariantQuad_on_FT hchooseFT hz hquadEq with ⟨Λ, hz_eq⟩
-  have hΛchooseFT : complexLorentzAction Λ hex.choose ∈ ForwardTube 1 2 := by
-    rw [← hz_eq]
-    exact hz
-  have hFΛ :
-      F (complexLorentzAction Λ hex.choose) = F hex.choose :=
-    complex_lorentz_invariance 2 F hF_holo hF_lorentz
-      Λ hex.choose hchooseFT hΛchooseFT
-  have hFz_action : F z = F (complexLorentzAction Λ hex.choose) :=
-    congrArg F hz_eq
+  have hquadEq : d1InvariantQuad z = d1InvariantQuad hex.choose := by
+    simpa [d1InvariantQuad] using hchooseQuad.symm
   have hFz_eq_hchoose : F z = F hex.choose :=
-    hFz_action.trans hFΛ
+    d1N2Field_eq_of_sameInvariantQuad_onFT
+      F hF_holo hF_lorentz hz hchooseFT hquadEq
   calc
     F z = F hex.choose := hFz_eq_hchoose
     _ = f (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) := hf_eq.symm
@@ -221,6 +236,35 @@ theorem d1N2InvariantKernelSwapOnQuadric_of_diffZero
 def d1N2InvariantRealizable (q0 q1 p s : ℂ) : Prop :=
   ∃ z : Fin 2 → Fin (1 + 1) → ℂ,
     z ∈ ForwardTube 1 2 ∧ d1InvariantQuad z = (q0, q1, p, s)
+
+/-- Canonical-section realizability: points in the explicit section domain are
+realizable by `FT_{1,2}` configurations in invariant coordinates. -/
+lemma d1N2InvariantRealizable_of_sectionDomain
+    {q0 p s : ℂ}
+    (hdom : d1N2InvariantSectionDomain q0 p s) :
+    d1N2InvariantRealizable
+      (-q0) (-(d1N2InvariantSectionSwapQ0 q0 p s)) (-p) s := by
+  let z : Fin 2 → Fin (1 + 1) → ℂ := d1N2InvariantSectionPoint q0 p s
+  refine ⟨z, ?_, ?_⟩
+  · exact d1N2InvariantSectionPoint_mem_forwardTube_of_domain hdom
+  · rcases hdom with ⟨hq0, _, _, _⟩
+    simpa [z] using d1InvariantQuad_invariantSectionPoint q0 p s hq0
+
+/-- Swap-side canonical-section realizability on the transformed section
+parameters. -/
+lemma d1N2InvariantRealizable_swap_of_sectionDomain
+    {q0 p s : ℂ}
+    (hq0 : q0 ≠ 0)
+    (hΔ : d1N2InvariantSectionSwapQ0 q0 p s ≠ 0)
+    (hdomSwap :
+      d1N2InvariantSectionDomain (d1N2InvariantSectionSwapQ0 q0 p s) p (-s)) :
+    d1N2InvariantRealizable
+      (-(d1N2InvariantSectionSwapQ0 q0 p s)) (-q0) (-p) (-s) := by
+  let y : Fin 2 → Fin (1 + 1) → ℂ :=
+    d1N2InvariantSectionPoint (d1N2InvariantSectionSwapQ0 q0 p s) p (-s)
+  refine ⟨y, ?_, ?_⟩
+  · exact d1N2InvariantSectionPoint_mem_forwardTube_of_domain hdomSwap
+  · simpa [y] using d1InvariantQuad_invariantSectionPoint_swapParams q0 p s hq0 hΔ
 
 /-- Swap-difference vanishes on quadric points that are realized by `FT_{1,2}`
 configurations. This is the maximal statement forced by `hf_onFT` data alone. -/
@@ -372,6 +416,22 @@ def d1N2InvariantKernelSource (f : ℂ → ℂ → ℂ → ℂ → ℂ) : Prop :
         F (fun k μ => (x k μ : ℂ))) ∧
     (∀ z, z ∈ ForwardTube 1 2 →
       F z = f (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z))
+
+/-- Source-form orbit constancy on `FT_{1,2}`: equal invariant quadruples imply
+equal source-field values. -/
+theorem d1N2InvariantKernelSource_eq_of_sameInvariantQuad_onFT
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hsource : d1N2InvariantKernelSource f)
+    {z w : Fin 2 → Fin (1 + 1) → ℂ}
+    (hz : z ∈ ForwardTube 1 2)
+    (hw : w ∈ ForwardTube 1 2)
+    (hquad : d1InvariantQuad z = d1InvariantQuad w) :
+    (Classical.choose hsource) z = (Classical.choose hsource) w := by
+  exact d1N2Field_eq_of_sameInvariantQuad_onFT
+    (Classical.choose hsource)
+    (Classical.choose_spec hsource).1
+    (Classical.choose_spec hsource).2.1
+    hz hw hquad
 
 /-- The source package alone does not force full-quadric involution
 `g ≡ 0` for an arbitrary representative `f`; off-image values of `f` are
@@ -1549,6 +1609,94 @@ theorem d1N2InvariantKernelSwapDiffZeroOnRealizable_source_iff_swappedInvariantF
     (d1N2InvariantKernelPairSwapOnRealizable_source_iff_swappedInvariantForwardEq
       f hsource)
 
+/-- Exact reduction (`d=1,n=2`, source form):
+the realizable-pair invariant diff-zero statement is equivalent to forward-swap
+equality on `FT_{1,2}` for the sourced field. -/
+theorem d1N2InvariantKernelSwapDiffZeroOnRealizable_source_iff_forwardSwapEq_onFT
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hsource : d1N2InvariantKernelSource f) :
+    (∀ q0 q1 p s, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+      d1N2InvariantRealizable q0 q1 p s →
+      d1N2InvariantRealizable q1 q0 p (-s) →
+      f q0 q1 p s - f q1 q0 p (-s) = 0) ↔
+    (∀ z, z ∈ ForwardTube 1 2 →
+      ∀ Γ : ComplexLorentzGroup 1,
+        complexLorentzAction Γ
+          (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 →
+        (Classical.choose hsource)
+          (complexLorentzAction Γ
+            (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z)) =
+          (Classical.choose hsource) z) := by
+  have hf_onFT : ∀ z, z ∈ ForwardTube 1 2 →
+      (Classical.choose hsource) z =
+        f (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) :=
+    (Classical.choose_spec hsource).2.2.2.2
+  have hdiff_pair :
+      (∀ q0 q1 p s, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+        d1N2InvariantRealizable q0 q1 p s →
+        d1N2InvariantRealizable q1 q0 p (-s) →
+        f q0 q1 p s - f q1 q0 p (-s) = 0) ↔
+      (∀ q0 q1 p s, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+        d1N2InvariantRealizable q0 q1 p s →
+        d1N2InvariantRealizable q1 q0 p (-s) →
+        f q0 q1 p s = f q1 q0 p (-s)) := by
+    constructor
+    · intro hdiff q0 q1 p s hquad hreal hswapReal
+      exact sub_eq_zero.mp (hdiff q0 q1 p s hquad hreal hswapReal)
+    · intro hpair q0 q1 p s hquad hreal hswapReal
+      exact sub_eq_zero.mpr (hpair q0 q1 p s hquad hreal hswapReal)
+  have hpair_forward :
+      (∀ q0 q1 p s, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+        d1N2InvariantRealizable q0 q1 p s →
+        d1N2InvariantRealizable q1 q0 p (-s) →
+        f q0 q1 p s = f q1 q0 p (-s)) ↔
+      (∀ z, z ∈ ForwardTube 1 2 →
+        ∀ Γ : ComplexLorentzGroup 1,
+          complexLorentzAction Γ
+            (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 →
+          (Classical.choose hsource)
+            (complexLorentzAction Γ
+              (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z)) =
+          (Classical.choose hsource) z) :=
+    (d1N2ForwardSwapEq_onFT_iff_invariantKernelPairSwapOnRealizable
+      (Classical.choose hsource) f hf_onFT).symm
+  exact hdiff_pair.trans hpair_forward
+
+/-- Exact reduction (`d=1,n=2`, source form):
+the realizable-pair invariant diff-zero statement is equivalent to existence of
+a nonempty complex-open forward-base anchor where `extendF(swap·w)=F(w)`. -/
+theorem d1N2InvariantKernelSwapDiffZeroOnRealizable_source_iff_openAnchor
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hsource : d1N2InvariantKernelSource f) :
+    (∀ q0 q1 p s, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+      d1N2InvariantRealizable q0 q1 p s →
+      d1N2InvariantRealizable q1 q0 p (-s) →
+      f q0 q1 p s - f q1 q0 p (-s) = 0) ↔
+    (∃ W : Set (Fin 2 → Fin (1 + 1) → ℂ),
+      IsOpen W ∧
+      W.Nonempty ∧
+      W ⊆ permForwardOverlapSet (d := 1) 2 (Equiv.swap (0 : Fin 2) 1) ∧
+      (∀ w ∈ W,
+        extendF (Classical.choose hsource)
+          (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) w) =
+        (Classical.choose hsource) w)) := by
+  have hdiff_pair :
+      (∀ q0 q1 p s, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+        d1N2InvariantRealizable q0 q1 p s →
+        d1N2InvariantRealizable q1 q0 p (-s) →
+        f q0 q1 p s - f q1 q0 p (-s) = 0) ↔
+      (∀ q0 q1 p s, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+        d1N2InvariantRealizable q0 q1 p s →
+        d1N2InvariantRealizable q1 q0 p (-s) →
+        f q0 q1 p s = f q1 q0 p (-s)) := by
+    constructor
+    · intro hdiff q0 q1 p s hquad hreal hswapReal
+      exact sub_eq_zero.mp (hdiff q0 q1 p s hquad hreal hswapReal)
+    · intro hpair q0 q1 p s hquad hreal hswapReal
+      exact sub_eq_zero.mpr (hpair q0 q1 p s hquad hreal hswapReal)
+  exact hdiff_pair.trans
+    (d1N2InvariantKernelPairSwapOnRealizable_source_iff_openAnchor f hsource)
+
 /-- Under the bundled `d=1,n=2` EOW geometry package, source assumptions imply
 the forward-base equality core statement. -/
 theorem d1N2ForwardBaseEq_of_EOWGeometryPackage
@@ -1637,18 +1785,45 @@ theorem blocker_d1N2InvariantKernelSwapDiffZeroOnRealizable_source_invariantOnly
       d1N2InvariantRealizable q0 q1 p s →
       d1N2InvariantRealizable q1 q0 p (-s) →
       f q0 q1 p s - f q1 q0 p (-s) = 0 := by
-  have hswapInv :
-      ∀ z y : Fin 2 → Fin (1 + 1) → ℂ,
-        z ∈ ForwardTube 1 2 →
-        y ∈ ForwardTube 1 2 →
-        d1InvariantQuad y = (d1Q1 z, d1Q0 z, d1P01 z, -d1S01 z) →
-        (Classical.choose hsource) y = (Classical.choose hsource) z := by
-    -- Remaining invariant-function analytic core (`d=1,n=2`) in sourced
-    -- swapped-invariant forward-equality form.
-    sorry
+  -- Remaining invariant-only analytic core (`d=1,n=2`): involution symmetry
+  -- on realizable invariant tuples.
+  sorry
+
+/-- Deferred invariant-function source core (`d=1,n=2`, open-anchor form):
+the invariant-only realizable diff-zero core implies existence of a nonempty
+complex-open forward-base anchor where `extendF(swap·w)=F(w)`. -/
+theorem blocker_d1N2OpenAnchor_source_invariantAnalytic_core_deferred
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hsource : d1N2InvariantKernelSource f) :
+    ∃ W : Set (Fin 2 → Fin (1 + 1) → ℂ),
+      IsOpen W ∧
+      W.Nonempty ∧
+      W ⊆ permForwardOverlapSet (d := 1) 2 (Equiv.swap (0 : Fin 2) 1) ∧
+      (∀ w ∈ W,
+        extendF (Classical.choose hsource)
+          (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) w) =
+        (Classical.choose hsource) w) := by
+  exact
+    (d1N2InvariantKernelSwapDiffZeroOnRealizable_source_iff_openAnchor
+      f hsource).1
+      (blocker_d1N2InvariantKernelSwapDiffZeroOnRealizable_source_invariantOnly_core_deferred
+        f hsource)
+
+/-- Deferred invariant-function source core (`d=1,n=2`, realizable-pair form):
+for source data, swapped-invariant equality on `FT_{1,2}` points. -/
+theorem blocker_d1N2Source_swappedInvariantForwardEq_fromSource_invariantOnly_core_deferred
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hsource : d1N2InvariantKernelSource f) :
+    ∀ z y : Fin 2 → Fin (1 + 1) → ℂ,
+      z ∈ ForwardTube 1 2 →
+      y ∈ ForwardTube 1 2 →
+      d1InvariantQuad y = (d1Q1 z, d1Q0 z, d1P01 z, -d1S01 z) →
+      (Classical.choose hsource) y = (Classical.choose hsource) z := by
   exact
     (d1N2InvariantKernelSwapDiffZeroOnRealizable_source_iff_swappedInvariantForwardEq
-      f hsource).2 hswapInv
+      f hsource).1
+      (blocker_d1N2InvariantKernelSwapDiffZeroOnRealizable_source_invariantOnly_core_deferred
+        f hsource)
 
 /-- Deferred invariant-function source core (`d=1,n=2`, realizable-pair form):
 for a source kernel `f`, establish involution symmetry on invariant tuples whose
@@ -2461,6 +2636,91 @@ theorem d1N2PointwiseSliceAnchor_iff_forwardSwapEq_onFT
   · intro hforward z hz hex
     rcases hex with ⟨Γ, hΓswap⟩
     exact ⟨Γ, hΓswap, hforward z hz Γ hΓswap⟩
+
+/-- Exact reduction (`d=1,n=2`, source form):
+the realizable-pair invariant diff-zero statement is equivalent to pointwise
+slice-anchor existence for the sourced field. -/
+theorem d1N2InvariantKernelSwapDiffZeroOnRealizable_source_iff_pointwiseSliceAnchor
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hsource : d1N2InvariantKernelSource f) :
+    (∀ q0 q1 p s, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+      d1N2InvariantRealizable q0 q1 p s →
+      d1N2InvariantRealizable q1 q0 p (-s) →
+      f q0 q1 p s - f q1 q0 p (-s) = 0) ↔
+    (∀ z, z ∈ ForwardTube 1 2 →
+      (∃ Γ : ComplexLorentzGroup 1,
+        complexLorentzAction Γ
+          (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2) →
+      ∃ Λ₀ : ComplexLorentzGroup 1,
+        complexLorentzAction Λ₀
+          (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 ∧
+        (Classical.choose hsource)
+          (complexLorentzAction Λ₀
+            (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z)) =
+          (Classical.choose hsource) z) := by
+  have hF_holo :
+      DifferentiableOn ℂ (Classical.choose hsource) (ForwardTube 1 2) :=
+    (Classical.choose_spec hsource).1
+  have hF_lorentz :
+      ∀ (Λ : RestrictedLorentzGroup 1)
+        (z : Fin 2 → Fin (1 + 1) → ℂ), z ∈ ForwardTube 1 2 →
+        (Classical.choose hsource)
+          (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) =
+        (Classical.choose hsource) z :=
+    (Classical.choose_spec hsource).2.1
+  calc
+    (∀ q0 q1 p s, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+      d1N2InvariantRealizable q0 q1 p s →
+      d1N2InvariantRealizable q1 q0 p (-s) →
+      f q0 q1 p s - f q1 q0 p (-s) = 0) ↔
+        (∀ z, z ∈ ForwardTube 1 2 →
+          ∀ Γ : ComplexLorentzGroup 1,
+            complexLorentzAction Γ
+              (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 →
+            (Classical.choose hsource)
+              (complexLorentzAction Γ
+                (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z)) =
+            (Classical.choose hsource) z) :=
+      d1N2InvariantKernelSwapDiffZeroOnRealizable_source_iff_forwardSwapEq_onFT
+        f hsource
+    _ ↔
+      (∀ z, z ∈ ForwardTube 1 2 →
+        (∃ Γ : ComplexLorentzGroup 1,
+          complexLorentzAction Γ
+            (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2) →
+        ∃ Λ₀ : ComplexLorentzGroup 1,
+          complexLorentzAction Λ₀
+            (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 ∧
+          (Classical.choose hsource)
+            (complexLorentzAction Λ₀
+              (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z)) =
+            (Classical.choose hsource) z) := by
+        symm
+        exact d1N2PointwiseSliceAnchor_iff_forwardSwapEq_onFT
+          (Classical.choose hsource) hF_holo hF_lorentz
+
+/-- Deferred invariant-function source core (`d=1,n=2`, pointwise form):
+from the active realizable-pair diff-zero core, extract pointwise slice-anchor
+existence for the sourced field on `FT_{1,2}`. -/
+theorem blocker_d1N2PointwiseSliceAnchor_fromSource_invariantOnly_core_deferred
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hsource : d1N2InvariantKernelSource f) :
+    ∀ z, z ∈ ForwardTube 1 2 →
+      (∃ Γ : ComplexLorentzGroup 1,
+        complexLorentzAction Γ
+          (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2) →
+      ∃ Λ₀ : ComplexLorentzGroup 1,
+        complexLorentzAction Λ₀
+          (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 ∧
+        (Classical.choose hsource)
+          (complexLorentzAction Λ₀
+            (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z)) =
+          (Classical.choose hsource) z := by
+  exact
+    (d1N2InvariantKernelSwapDiffZeroOnRealizable_source_iff_pointwiseSliceAnchor
+      f hsource).1
+      (blocker_d1N2InvariantKernelSwapDiffZeroOnRealizable_source_invariantOnly_core_deferred
+        f hsource)
 
 /-- Deferred local analytic anchor extraction (`d=1,n=2`):
 for each forwardizable `z ∈ FT_{1,2}`, produce one slice anchor `Λ₀` already
