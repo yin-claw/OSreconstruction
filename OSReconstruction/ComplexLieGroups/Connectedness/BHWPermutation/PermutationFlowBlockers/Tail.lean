@@ -251,7 +251,69 @@ theorem blocker_d1N2InvariantBridgeCorrection_fromSource_deferred
       q0.re + q1.re - 2 * p.re > 0 →
       f q0 q1 p s = f q1 q0 p (-s) := by
   let _ := hsource
-  sorry
+  intro q0 q1 p s _hquad hOrigFT hSwapFT hq0im hq1im hpim hsim hsp
+  rcases hOrigFT with ⟨v0, hv0im, _hv0a, hv0b, _hv0c⟩
+  rcases hSwapFT with ⟨w0, hw0im, _hw0a, hw0b, _hw0c⟩
+  have hOrig_im0 : (q0 - p - s / 2).im = 0 := by
+    simp [hq0im, hpim, hsim]
+  have hSwap_im0 : (q1 - p + s / 2).im = 0 := by
+    simp [hq1im, hpim, hsim]
+  have hv0_ne : v0 ≠ 0 := by
+    intro hv0
+    have : v0.im = 0 := by simp [hv0]
+    linarith
+  have hw0_ne : w0 ≠ 0 := by
+    intro hw0
+    have : w0.im = 0 := by simp [hw0]
+    linarith
+  have hv0_normSq_pos : 0 < Complex.normSq v0 := (Complex.normSq_pos).2 hv0_ne
+  have hw0_normSq_pos : 0 < Complex.normSq w0 := (Complex.normSq_pos).2 hw0_ne
+  have hOrig_div :
+      0 < (-(q0 - p - s / 2).re * v0.im) / Complex.normSq v0 := by
+    have hform :
+        ((q0 - p - s / 2) / v0).im =
+          (-(q0 - p - s / 2).re * v0.im) / Complex.normSq v0 := by
+      calc
+        ((q0 - p - s / 2) / v0).im
+            = (q0 - p - s / 2).im * v0.re / Complex.normSq v0 -
+                (q0 - p - s / 2).re * v0.im / Complex.normSq v0 := by
+                  simpa using Complex.div_im (q0 - p - s / 2) v0
+        _ = (-(q0 - p - s / 2).re * v0.im) / Complex.normSq v0 := by
+              simp [hOrig_im0]
+              ring
+    simpa [hform] using hv0b
+  have hSwap_div :
+      0 < (-(q1 - p + s / 2).re * w0.im) / Complex.normSq w0 := by
+    have hform :
+        ((q1 - p + s / 2) / w0).im =
+          (-(q1 - p + s / 2).re * w0.im) / Complex.normSq w0 := by
+      calc
+        ((q1 - p + s / 2) / w0).im
+            = (q1 - p + s / 2).im * w0.re / Complex.normSq w0 -
+                (q1 - p + s / 2).re * w0.im / Complex.normSq w0 := by
+                  simpa using Complex.div_im (q1 - p + s / 2) w0
+        _ = (-(q1 - p + s / 2).re * w0.im) / Complex.normSq w0 := by
+              simp [hSwap_im0]
+              ring
+    simpa [hform] using hw0b
+  have hOrig_mul : 0 < (-(q0 - p - s / 2).re * v0.im) := by
+    exact (div_pos_iff_of_pos_right hv0_normSq_pos).1 hOrig_div
+  have hSwap_mul : 0 < (-(q1 - p + s / 2).re * w0.im) := by
+    exact (div_pos_iff_of_pos_right hw0_normSq_pos).1 hSwap_div
+  have hOrig_lt : (q0 - p - s / 2).re < 0 := by
+    have hneg : 0 < -(q0 - p - s / 2).re := by
+      exact pos_of_mul_pos_left hOrig_mul (le_of_lt hv0im)
+    linarith
+  have hSwap_lt : (q1 - p + s / 2).re < 0 := by
+    have hneg : 0 < -(q1 - p + s / 2).re := by
+      exact pos_of_mul_pos_left hSwap_mul (le_of_lt hw0im)
+    linarith
+  have hsum_lt : q0.re + q1.re - 2 * p.re < 0 := by
+    have h1 : q0.re - p.re - s.re / 2 < 0 := by simpa using hOrig_lt
+    have h2 : q1.re - p.re + s.re / 2 < 0 := by simpa using hSwap_lt
+    linarith
+  exfalso
+  linarith
 
 /-- Source wrapper around the invariant-only forwardizable-kernel core. -/
 theorem blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred
