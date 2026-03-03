@@ -103,6 +103,9 @@ Run this in parallel with constructive proof work to avoid proving a false targe
    - restate blocker theorem accordingly.
 4. If no counterexample is found:
    - continue constructive route and keep search harness tests compiling.
+5. Latest heuristic sweep status (2026-03-03):
+   - no counterexample found in sampled low-degree invariant-kernel ansätze
+     satisfying sampled local-comm constraints.
 
 Counterexample harness file:
 - `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/ProofHarness/D1N2CounterexampleSearch.lean`

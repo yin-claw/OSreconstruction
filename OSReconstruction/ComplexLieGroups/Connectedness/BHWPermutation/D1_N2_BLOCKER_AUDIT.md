@@ -37,6 +37,13 @@ Reason:
 - Off-image freedom of `f` prevents deriving global quadric involution from source data alone.
 - Therefore the proof must stay on the doubly witnessed/relevant locus and propagate there.
 
+## Numerical Falsification Sweep (Heuristic, 2026-03-03)
+- Performed local numerical sweeps (outside Lean) for low-degree invariant-kernel
+  ansätze constrained by sampled real spacelike local-commutativity equations.
+- Linear and quadratic ansätze fitted to those sampled constraints showed no
+  violations on sampled doubly realizable complex tuples.
+- This is not a formal proof, but it did not produce a blocker counterexample.
+
 ## Accepted Remaining Gap
 The unproved step is:
 - derive paired-chart anchor connectivity for the sourced field from the source package.
