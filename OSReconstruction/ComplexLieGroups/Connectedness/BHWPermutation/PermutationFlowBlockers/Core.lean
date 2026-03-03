@@ -194,12 +194,6 @@ theorem blocker_d1N2InvariantFactorization_core_deferred
     F z = F hex.choose := hFz_eq_hchoose
     _ = f (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) := hf_eq.symm
 
-/-- Pure invariant-function swap law on the `d=1,n=2` invariant quadric. -/
-def d1N2InvariantKernelSwapOnQuadric (f : ℂ → ℂ → ℂ → ℂ → ℂ) : Prop :=
-  ∀ q0 q1 p s : ℂ,
-    s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
-      f q0 q1 p s = f q1 q0 p (-s)
-
 /-- Equivalent invariant-only formulation:
 the swap-difference kernel vanishes on the quadric
 `s^2 = 4*(p^2 - q0*q1)`. -/
@@ -305,35 +299,6 @@ lemma d1N2InvariantRealizable_swappedProbe_not :
     exact mul_neg_of_neg_of_pos hcoef_neg hV0ImPos
   linarith
 
-/-- Canonical-section realizability: points in the explicit section domain are
-realizable by `FT_{1,2}` configurations in invariant coordinates. -/
-lemma d1N2InvariantRealizable_of_sectionDomain
-    {q0 p s : ℂ}
-    (hdom : d1N2InvariantSectionDomain q0 p s) :
-    d1N2InvariantRealizable
-      (-q0) (-(d1N2InvariantSectionSwapQ0 q0 p s)) (-p) s := by
-  let z : Fin 2 → Fin (1 + 1) → ℂ := d1N2InvariantSectionPoint q0 p s
-  refine ⟨z, ?_, ?_⟩
-  · exact d1N2InvariantSectionPoint_mem_forwardTube_of_domain hdom
-  · rcases hdom with ⟨hq0, _, _, _⟩
-    simpa [z] using d1InvariantQuad_invariantSectionPoint q0 p s hq0
-
-/-- Swap-side canonical-section realizability on the transformed section
-parameters. -/
-lemma d1N2InvariantRealizable_swap_of_sectionDomain
-    {q0 p s : ℂ}
-    (hq0 : q0 ≠ 0)
-    (hΔ : d1N2InvariantSectionSwapQ0 q0 p s ≠ 0)
-    (hdomSwap :
-      d1N2InvariantSectionDomain (d1N2InvariantSectionSwapQ0 q0 p s) p (-s)) :
-    d1N2InvariantRealizable
-      (-(d1N2InvariantSectionSwapQ0 q0 p s)) (-q0) (-p) (-s) := by
-  let y : Fin 2 → Fin (1 + 1) → ℂ :=
-    d1N2InvariantSectionPoint (d1N2InvariantSectionSwapQ0 q0 p s) p (-s)
-  refine ⟨y, ?_, ?_⟩
-  · exact d1N2InvariantSectionPoint_mem_forwardTube_of_domain hdomSwap
-  · simpa [y] using d1InvariantQuad_invariantSectionPoint_swapParams q0 p s hq0 hΔ
-
 /-- Invariant quadruple `(q0,q1,p,s)` is represented by a forward configuration
 whose swapped image is forwardizable by some complex Lorentz witness. -/
 def d1N2InvariantForwardizableSwap (q0 q1 p s : ℂ) : Prop :=
@@ -422,65 +387,11 @@ theorem d1N2InvariantForwardizableSwap_iff_realizable_pair
   · intro hpair
     exact d1N2InvariantForwardizable_of_realizable_pair hpair.1 hpair.2
 
-/-- Invariant forwardizability is equivalent to having light-cone witnesses for
-both the original and swap-sign invariant tuples. -/
-theorem d1N2InvariantForwardizableSwap_iff_lightConeWitness_pair
-    {q0 q1 p s : ℂ} :
-    d1N2InvariantForwardizableSwap q0 q1 p s ↔
-      d1N2InvariantLightConeWitness q0 q1 p s ∧
-      d1N2InvariantLightConeWitness q1 q0 p (-s) := by
-  constructor
-  · intro hfw
-    rcases (d1N2InvariantForwardizableSwap_iff_realizable_pair
-      (q0 := q0) (q1 := q1) (p := p) (s := s)).1 hfw with ⟨hreal, hswapReal⟩
-    refine ⟨?_, ?_⟩
-    · exact (d1N2InvariantRealizable_iff_lightConeWitness q0 q1 p s).1 hreal
-    · exact (d1N2InvariantRealizable_iff_lightConeWitness q1 q0 p (-s)).1 hswapReal
-  · intro hLC
-    rcases hLC with ⟨hLC, hswapLC⟩
-    refine (d1N2InvariantForwardizableSwap_iff_realizable_pair
-      (q0 := q0) (q1 := q1) (p := p) (s := s)).2 ?_
-    refine ⟨?_, ?_⟩
-    · exact (d1N2InvariantRealizable_iff_lightConeWitness q0 q1 p s).2 hLC
-    · exact (d1N2InvariantRealizable_iff_lightConeWitness q1 q0 p (-s)).2 hswapLC
-
 /-- Invariant-level paired witness condition (`d=1,n=2`):
 both the original and swap-sign tuples admit forward light-cone witnesses. -/
 def d1N2InvariantSectionWitnessPair (q0 q1 p s : ℂ) : Prop :=
   d1N2InvariantLightConeWitness q0 q1 p s ∧
     d1N2InvariantLightConeWitness q1 q0 p (-s)
-
-/-- The doubly-realizable invariant locus in the `d=1,n=2` swap setting is
-nonempty. -/
-theorem d1N2InvariantRealizable_pair_nonempty :
-    ∃ q0 q1 p s : ℂ,
-      s ^ 2 = 4 * (p ^ 2 - q0 * q1) ∧
-      d1N2InvariantRealizable q0 q1 p s ∧
-      d1N2InvariantRealizable q1 q0 p (-s) := by
-  rcases adjSwapForwardOverlap_nonempty (d := 1) 2 (0 : Fin 2) (by decide) with
-    ⟨w, hwFT, hswapET⟩
-  rcases Set.mem_iUnion.mp hswapET with ⟨Γ, u, huFT, hrepr⟩
-  have hrepr' :
-      permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) w = complexLorentzAction Γ u := by
-    simpa [permAct] using hrepr
-  have hΓswap :
-      complexLorentzAction Γ⁻¹
-        (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) w) ∈ ForwardTube 1 2 := by
-    simpa [hrepr', complexLorentzAction_inv] using huFT
-  let q0 : ℂ := d1Q0 w
-  let q1 : ℂ := d1Q1 w
-  let p : ℂ := d1P01 w
-  let s : ℂ := d1S01 w
-  refine ⟨q0, q1, p, s, ?_, ?_, ?_⟩
-  · simpa [q0, q1, p, s] using d1_invariant_quadric_relation w
-  · exact ⟨w, hwFT, by simp [q0, q1, p, s, d1InvariantQuad]⟩
-  · have hpair :
-        d1N2InvariantRealizable q0 q1 p s ∧
-          d1N2InvariantRealizable q1 q0 p (-s) :=
-      d1N2InvariantRealizable_pair_of_forwardizable
-        (q0 := q0) (q1 := q1) (p := p) (s := s)
-        ⟨w, Γ⁻¹, hwFT, hΓswap, by simp [q0, q1, p, s, d1InvariantQuad]⟩
-    exact hpair.2
 
 /-- `Q₀` cannot vanish on `FT_{1,2}`. -/
 lemma d1Q0_ne_zero_of_mem_forwardTube_d1_n2

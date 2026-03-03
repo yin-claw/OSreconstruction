@@ -29,7 +29,7 @@ This lock file tracks only the active analytic blocker for the `d=1, n=2` route.
   - removed dead `Tail.lean` wrappers (`invariantModel`, pointwise-anchor, and
     source-open-anchor helpers) that had no call sites.
 - no change to blocker mathematics; only proof-graph pruning.
-- `PermutationFlowBlockers/Core.lean` is now reduced to 747 lines.
+- `PermutationFlowBlockers/Core.lean` is now reduced to 658 lines.
 
 ## Canonical Reduction Chain
 From current theorems in `Core/Tail`:
@@ -79,6 +79,35 @@ Details are recorded in:
    - `lake env lean OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/PermutationFlowBlockers/Tail.lean`
    - `lake env lean OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/PermutationFlowBlockers.lean`
    - full folder compile for `OSReconstruction/ComplexLieGroups`.
+
+## Parallel Falsification Track (Required)
+Run this in parallel with constructive proof work to avoid proving a false target.
+
+1. Counterexample target:
+   - search for `f` and a doubly light-cone-witnessed quadric tuple
+     `(q0,q1,p,s)` such that
+     `f q0 q1 p s - f q1 q0 p (-s) ≠ 0`
+     under `d1N2InvariantKernelSource f`.
+2. Candidate pruning:
+   - reject off-image tuples that are not realizable/light-cone-witnessed.
+   - keep all checks on the exact blocker hypotheses, not weaker surrogates.
+3. If a valid counterexample is found:
+   - stop closure attempt, record witness in local docs and tests,
+   - restate blocker theorem accordingly.
+4. If no counterexample is found:
+   - continue constructive route and keep search harness tests compiling.
+
+Counterexample harness file:
+- `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/ProofHarness/D1N2CounterexampleSearch.lean`
+  - includes formal proposition `d1N2ActiveBlockerStatement`,
+    formal counterexample predicate, and lemma
+    `d1N2ActiveCounterexample_implies_not_statement`.
+
+Proof-harness test files:
+- `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/ProofHarness/D1N2ReductionChain.lean`
+- `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/ProofHarness/D1N2SectionInvariants.lean`
+- `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/ProofHarness/D1N2ObstructionChecks.lean`
+- `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/ProofHarness/D1N2LocalAnchorTransport.lean`
 
 ## Notes for Collaborators
 - This file intentionally omits d>=2 and n>=3 planning.
