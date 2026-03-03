@@ -15,7 +15,10 @@ This lock file tracks only the active analytic blocker for the `d=1, n=2` route.
 - The entire `OSReconstruction/ComplexLieGroups` folder compiles.
 - Remaining `sorry` frontiers in this branch are concentrated in `PermutationFlowBlockers/Tail.lean`.
 - The active blocker above is reduced to one analytic gap:
-  - prove source-level paired-chart anchor connectivity from `d1N2InvariantKernelSource`.
+  - for each doubly witnessed quadric tuple, prove equality of the sourced
+    field on one anchored witness-built section pair:
+    `F (d1N2SectionSwap ... (d1V0 y)) = F (d1N2SectionOrig ... (d1V0 z))`.
+  - existence/FT-membership of the anchored pair is now fully proved in `Tail.lean`.
 - Wrapper cleanup status:
   - removed unused paired-chart equivalence wrappers from
     `PermutationFlowBlockers/Core.lean` to keep the blocker route minimal.

@@ -31,6 +31,11 @@ Refined reduction now available:
 8. Finish blocker by the already-proved reduction theorem
    `d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_of_pairedChartAnchorConnected`.
 
+Current code status:
+- Step 7 is implemented.
+- In Step 5/6, the only remaining unresolved part is proving equality on one
+  witness-built anchored pair (existence and FT-membership are already proved).
+
 ## Lemmas To Add (Planned)
 1. `d1N2SectionPairDiff_zero_on_anchor_from_localComm`
 2. `d1N2SectionPairDiff_zero_on_component_from_identity`
