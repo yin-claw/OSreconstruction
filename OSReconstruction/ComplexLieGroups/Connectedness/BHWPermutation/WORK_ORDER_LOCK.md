@@ -24,6 +24,8 @@ This lock file tracks only the active analytic blocker for the `d=1, n=2` route.
   - removed unused `d=1,n=2` EOW-package adapter cluster from
     `PermutationFlowBlockers/Core.lean`; retained only the open-anchor bridge
     used by the active source route.
+  - removed dead `Tail.lean` wrappers (`invariantModel`, pointwise-anchor, and
+    source-open-anchor helpers) that had no call sites.
   - no change to blocker mathematics; only proof-graph pruning.
 
 ## Canonical Reduction Chain
