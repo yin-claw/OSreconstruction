@@ -893,6 +893,313 @@ lemma d1InvariantQuad_invariantSection
   simp [d1InvariantQuad, d1Q0_invariantSection, d1Q1_invariantSection,
     d1P01_invariantSection, d1S01_invariantSection, hq0, hv0]
 
+/-- Linear identity solving `(P,S)` for `T` in `d=1,n=2` light-cone invariants. -/
+lemma d1_neg_P01_sub_half_S01_eq_T01 (z : D1N2Config) :
+    -(d1P01 z) - d1S01 z / 2 = d1T01 z := by
+  have hPdiv : -(d1P01 z) = (d1R01 z + d1T01 z) / 2 := by
+    apply (eq_div_iff (by norm_num : (2 : ℂ) ≠ 0)).2
+    calc
+      -(d1P01 z) * (2 : ℂ) = -((2 : ℂ) * d1P01 z) := by ring
+      _ = -(- (d1R01 z + d1T01 z)) := by
+            rw [d1_two_mul_P01_eq_neg_R01_add_T01]
+      _ = d1R01 z + d1T01 z := by ring
+  calc
+    -(d1P01 z) - d1S01 z / 2
+        = (d1R01 z + d1T01 z) / 2 - (d1R01 z - d1T01 z) / 2 := by
+            rw [hPdiv, d1S01_eq_R01_sub_T01]
+    _ = d1T01 z := by ring
+
+/-- Linear identity solving `(P,S)` for `R` in `d=1,n=2` light-cone invariants. -/
+lemma d1_neg_P01_add_half_S01_eq_R01 (z : D1N2Config) :
+    -(d1P01 z) + d1S01 z / 2 = d1R01 z := by
+  have hPdiv : -(d1P01 z) = (d1R01 z + d1T01 z) / 2 := by
+    apply (eq_div_iff (by norm_num : (2 : ℂ) ≠ 0)).2
+    calc
+      -(d1P01 z) * (2 : ℂ) = -((2 : ℂ) * d1P01 z) := by ring
+      _ = -(- (d1R01 z + d1T01 z)) := by
+            rw [d1_two_mul_P01_eq_neg_R01_add_T01]
+      _ = d1R01 z + d1T01 z := by ring
+  calc
+    -(d1P01 z) + d1S01 z / 2
+        = (d1R01 z + d1T01 z) / 2 + (d1R01 z - d1T01 z) / 2 := by
+            rw [hPdiv, d1S01_eq_R01_sub_T01]
+    _ = d1R01 z := by ring
+
+/-- Variable-`v0` section wrapper for the original invariant tuple. -/
+def d1N2SectionOrig (q0 _q1 p s v0 : ℂ) : D1N2Config :=
+  d1N2InvariantSection (-q0) (-p) s v0
+
+/-- Variable-`w0` section wrapper for the swapped invariant tuple. -/
+def d1N2SectionSwap (_q0 q1 p s w0 : ℂ) : D1N2Config :=
+  d1N2InvariantSection (-q1) (-p) (-s) w0
+
+/-- Fiber domain of original variable-chart points landing in `FT_{1,2}`. -/
+def d1N2SectionOrigFiberDomain (q0 q1 p s : ℂ) : Set ℂ :=
+  {v0 : ℂ | d1N2SectionOrig q0 q1 p s v0 ∈ ForwardTube 1 2}
+
+/-- Fiber domain of swapped variable-chart points landing in `FT_{1,2}`. -/
+def d1N2SectionSwapFiberDomain (q0 q1 p s : ℂ) : Set ℂ :=
+  {w0 : ℂ | d1N2SectionSwap q0 q1 p s w0 ∈ ForwardTube 1 2}
+
+/-- Paired variable-chart domain where both original and swapped sections lie in
+`FT_{1,2}`. -/
+def d1N2SectionPairedDomain (q0 q1 p s : ℂ) : Set (ℂ × ℂ) :=
+  {vw : ℂ × ℂ |
+    d1N2SectionOrig q0 q1 p s vw.1 ∈ ForwardTube 1 2 ∧
+    d1N2SectionSwap q0 q1 p s vw.2 ∈ ForwardTube 1 2}
+
+/-- Open-domain extraction for original variable-chart fibers from a continuity
+input. -/
+lemma isOpen_d1N2SectionOrigFiberDomain_of_continuous
+    (q0 q1 p s : ℂ)
+    (hcont : Continuous (fun v0 : ℂ => d1N2SectionOrig q0 q1 p s v0)) :
+    IsOpen (d1N2SectionOrigFiberDomain q0 q1 p s) := by
+  simpa [d1N2SectionOrigFiberDomain] using isOpen_forwardTube.preimage hcont
+
+/-- Open-domain extraction for swapped variable-chart fibers from a continuity
+input. -/
+lemma isOpen_d1N2SectionSwapFiberDomain_of_continuous
+    (q0 q1 p s : ℂ)
+    (hcont : Continuous (fun w0 : ℂ => d1N2SectionSwap q0 q1 p s w0)) :
+    IsOpen (d1N2SectionSwapFiberDomain q0 q1 p s) := by
+  simpa [d1N2SectionSwapFiberDomain] using isOpen_forwardTube.preimage hcont
+
+/-- Product-domain extraction for paired variable-chart points from continuity
+inputs. -/
+lemma isOpen_d1N2SectionPairedDomain_of_continuous
+    (q0 q1 p s : ℂ)
+    (hcontOrig : Continuous (fun v0 : ℂ => d1N2SectionOrig q0 q1 p s v0))
+    (hcontSwap : Continuous (fun w0 : ℂ => d1N2SectionSwap q0 q1 p s w0)) :
+    IsOpen (d1N2SectionPairedDomain q0 q1 p s) := by
+  have hOrig :
+      IsOpen {vw : ℂ × ℂ |
+        d1N2SectionOrig q0 q1 p s vw.1 ∈ ForwardTube 1 2} := by
+    exact isOpen_forwardTube.preimage (hcontOrig.comp continuous_fst)
+  have hSwap :
+      IsOpen {vw : ℂ × ℂ |
+        d1N2SectionSwap q0 q1 p s vw.2 ∈ ForwardTube 1 2} := by
+    exact isOpen_forwardTube.preimage (hcontSwap.comp continuous_snd)
+  simpa [d1N2SectionPairedDomain, Set.setOf_and] using hOrig.inter hSwap
+
+/-- Variable-chart difference function on paired section parameters. -/
+def d1N2SectionPairDiff
+    (F : D1N2Config → ℂ) (q0 q1 p s : ℂ) (vw : ℂ × ℂ) : ℂ :=
+  F (d1N2SectionSwap q0 q1 p s vw.2) - F (d1N2SectionOrig q0 q1 p s vw.1)
+
+/-- Differentiability of the variable-chart difference follows from
+differentiability of the two section pullbacks. -/
+lemma d1N2SectionPairDiff_differentiableOn
+    (F : D1N2Config → ℂ) (q0 q1 p s : ℂ)
+    (D : Set (ℂ × ℂ))
+    (hSwap : DifferentiableOn ℂ
+      (fun vw : ℂ × ℂ => F (d1N2SectionSwap q0 q1 p s vw.2)) D)
+    (hOrig : DifferentiableOn ℂ
+      (fun vw : ℂ × ℂ => F (d1N2SectionOrig q0 q1 p s vw.1)) D) :
+    DifferentiableOn ℂ (d1N2SectionPairDiff F q0 q1 p s) D := by
+  simpa [d1N2SectionPairDiff] using hSwap.sub hOrig
+
+/-- Solving the quadric relation for `q1` when `q0 ≠ 0`. -/
+lemma d1_q1_eq_of_quadric
+    {q0 q1 p s : ℂ}
+    (hq0 : q0 ≠ 0)
+    (hquad : s ^ 2 = 4 * (p ^ 2 - q0 * q1)) :
+    q1 = (p ^ 2 - s ^ 2 / 4) / q0 := by
+  apply (eq_div_iff hq0).2
+  have hdiv : s ^ 2 / 4 = p ^ 2 - q0 * q1 := by
+    apply (div_eq_iff (by norm_num : (4 : ℂ) ≠ 0)).2
+    simpa [mul_assoc, mul_comm, mul_left_comm] using hquad
+  calc
+    q1 * q0 = q0 * q1 := by ring
+    _ = p ^ 2 - s ^ 2 / 4 := by
+          rw [hdiv]
+          ring
+
+/-- Solving the quadric relation for `q0` when `q1 ≠ 0`. -/
+lemma d1_q0_eq_of_quadric
+    {q0 q1 p s : ℂ}
+    (hq1 : q1 ≠ 0)
+    (hquad : s ^ 2 = 4 * (p ^ 2 - q0 * q1)) :
+    q0 = (p ^ 2 - s ^ 2 / 4) / q1 := by
+  apply (eq_div_iff hq1).2
+  have hdiv : s ^ 2 / 4 = p ^ 2 - q0 * q1 := by
+    apply (div_eq_iff (by norm_num : (4 : ℂ) ≠ 0)).2
+    simpa [mul_assoc, mul_comm, mul_left_comm] using hquad
+  calc
+    q0 * q1 = p ^ 2 - s ^ 2 / 4 := by
+      rw [hdiv]
+      ring
+    _ = (p ^ 2 - s ^ 2 / 4) := by rfl
+
+/-- On the quadric, the original variable section realizes `(q0,q1,p,s)`. -/
+lemma d1InvariantQuad_sectionOrig
+    {q0 q1 p s v0 : ℂ}
+    (hquad : s ^ 2 = 4 * (p ^ 2 - q0 * q1))
+    (hq0 : q0 ≠ 0)
+    (hv0 : v0 ≠ 0) :
+    d1InvariantQuad (d1N2SectionOrig q0 q1 p s v0) = (q0, q1, p, s) := by
+  have hq1 : q1 = (p ^ 2 - s ^ 2 / 4) / q0 := d1_q1_eq_of_quadric hq0 hquad
+  have hraw :
+      d1InvariantQuad (d1N2SectionOrig q0 q1 p s v0) =
+        (q0, -((p ^ 2 - s ^ 2 / 4) / (-q0)), p, s) := by
+    simpa [d1N2SectionOrig, hq0, hv0] using
+      d1InvariantQuad_invariantSection (-q0) (-p) s v0
+        (neg_ne_zero.mpr hq0) hv0
+  have hsimpl : -((p ^ 2 - s ^ 2 / 4) / (-q0)) = (p ^ 2 - s ^ 2 / 4) / q0 := by
+    field_simp [hq0]
+  have hraw' :
+      d1InvariantQuad (d1N2SectionOrig q0 q1 p s v0) =
+        (q0, (p ^ 2 - s ^ 2 / 4) / q0, p, s) := by
+    simpa [hsimpl] using hraw
+  simpa [hq1] using hraw'
+
+/-- On the quadric, the swapped variable section realizes `(q1,q0,p,-s)`. -/
+lemma d1InvariantQuad_sectionSwap
+    {q0 q1 p s w0 : ℂ}
+    (hquad : s ^ 2 = 4 * (p ^ 2 - q0 * q1))
+    (hq1 : q1 ≠ 0)
+    (hw0 : w0 ≠ 0) :
+    d1InvariantQuad (d1N2SectionSwap q0 q1 p s w0) = (q1, q0, p, -s) := by
+  have hq0 : q0 = (p ^ 2 - s ^ 2 / 4) / q1 := d1_q0_eq_of_quadric hq1 hquad
+  have hraw :
+      d1InvariantQuad (d1N2SectionSwap q0 q1 p s w0) =
+        (q1, -((p ^ 2 - s ^ 2 / 4) / (-q1)), p, -s) := by
+    simpa [d1N2SectionSwap, hq1, hw0] using
+      d1InvariantQuad_invariantSection (-q1) (-p) (-s) w0
+        (neg_ne_zero.mpr hq1) hw0
+  have hsimpl : -((p ^ 2 - s ^ 2 / 4) / (-q1)) = (p ^ 2 - s ^ 2 / 4) / q1 := by
+    field_simp [hq1]
+  have hraw' :
+      d1InvariantQuad (d1N2SectionSwap q0 q1 p s w0) =
+        (q1, (p ^ 2 - s ^ 2 / 4) / q1, p, -s) := by
+    simpa [hsimpl] using hraw
+  simpa [hq0] using hraw'
+
+lemma d1_coord00_eq_u0v0 (z : D1N2Config) :
+    z 0 0 = (d1U0 z + d1V0 z) / 2 := by
+  simp [d1U0, d1V0]
+
+lemma d1_coord01_eq_u0v0 (z : D1N2Config) :
+    z 0 1 = (d1U0 z - d1V0 z) / 2 := by
+  simp [d1U0, d1V0]
+
+lemma d1_coord10_eq_u1v1 (z : D1N2Config) :
+    z 1 0 = (d1U1 z + d1V1 z) / 2 := by
+  simp [d1U1, d1V1]
+
+lemma d1_coord11_eq_u1v1 (z : D1N2Config) :
+    z 1 1 = (d1U1 z - d1V1 z) / 2 := by
+  simp [d1U1, d1V1]
+
+/-- For any forward point, the original variable section with `v0 = d1V0 z`
+reconstructs the same configuration. -/
+lemma d1N2SectionOrig_eq_of_forward
+    (z : D1N2Config)
+    (hz : z ∈ ForwardTube 1 2) :
+    d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z) = z := by
+  have hV0_ne : d1V0 z ≠ 0 := d1V0_ne_zero_of_forward z hz
+  have hU0_ne : d1U0 z ≠ 0 := d1U0_ne_zero_of_forward z hz
+  have hU0 :
+      d1U0 (d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z))
+        = d1U0 z := by
+    calc
+      d1U0 (d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z))
+          = (-d1Q0 z) / d1V0 z := by
+              simp [d1N2SectionOrig, d1U0_invariantSection]
+      _ = d1U0 z := by
+            rw [d1Q0_eq_neg_U0_mul_V0]
+            field_simp [hV0_ne]
+  have hV0 :
+      d1V0 (d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z))
+        = d1V0 z := by
+    simp [d1N2SectionOrig, d1V0_invariantSection]
+  have hU1 :
+      d1U1 (d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z))
+        = d1U1 z := by
+    calc
+      d1U1 (d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z))
+          = (-(d1P01 z) - d1S01 z / 2) / d1V0 z := by
+              simp [d1N2SectionOrig, d1U1_invariantSection]
+      _ = d1T01 z / d1V0 z := by
+            rw [d1_neg_P01_sub_half_S01_eq_T01]
+      _ = (d1U1 z * d1V0 z) / d1V0 z := by
+            simp [d1T01]
+      _ = d1U1 z := by
+            field_simp [hV0_ne]
+  have hV1 :
+      d1V1 (d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z))
+        = d1V1 z := by
+    calc
+      d1V1 (d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z))
+          = (-(d1P01 z) + d1S01 z / 2) * d1V0 z / (-d1Q0 z) := by
+              simp [d1N2SectionOrig, d1V1_invariantSection]
+      _ = d1R01 z * d1V0 z / (-d1Q0 z) := by
+            rw [d1_neg_P01_add_half_S01_eq_R01]
+      _ = (d1U0 z * d1V1 z) * d1V0 z / (-d1Q0 z) := by
+            simp [d1R01]
+      _ = (d1U0 z * d1V1 z) * d1V0 z / (d1U0 z * d1V0 z) := by
+            rw [d1Q0_eq_neg_U0_mul_V0]
+            ring
+      _ = d1V1 z := by
+            field_simp [hU0_ne, hV0_ne]
+  ext k μ
+  fin_cases k <;> fin_cases μ
+  · calc
+      d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z) 0 0
+          = (d1U0 (d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z)) +
+              d1V0 (d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z))) / 2 := by
+                simp [d1U0, d1V0]
+      _ = (d1U0 z + d1V0 z) / 2 := by rw [hU0, hV0]
+      _ = z 0 0 := by
+            exact (d1_coord00_eq_u0v0 z).symm
+  · calc
+      d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z) 0 1
+          = (d1U0 (d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z)) -
+              d1V0 (d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z))) / 2 := by
+                simp [d1U0, d1V0]
+      _ = (d1U0 z - d1V0 z) / 2 := by rw [hU0, hV0]
+      _ = z 0 1 := by
+            exact (d1_coord01_eq_u0v0 z).symm
+  · calc
+      d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z) 1 0
+          = (d1U1 (d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z)) +
+              d1V1 (d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z))) / 2 := by
+                simp [d1U1, d1V1]
+      _ = (d1U1 z + d1V1 z) / 2 := by rw [hU1, hV1]
+      _ = z 1 0 := by
+            exact (d1_coord10_eq_u1v1 z).symm
+  · calc
+      d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z) 1 1
+          = (d1U1 (d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z)) -
+              d1V1 (d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z))) / 2 := by
+                simp [d1U1, d1V1]
+      _ = (d1U1 z - d1V1 z) / 2 := by rw [hU1, hV1]
+      _ = z 1 1 := by
+            exact (d1_coord11_eq_u1v1 z).symm
+
+/-- For a forward point with swapped invariant data `(q1,q0,p,-s)`, the
+swapped variable section with `w0 = d1V0 y` reconstructs `y`. -/
+lemma d1N2SectionSwap_eq_of_forward_invariants
+    {q0 q1 p s : ℂ}
+    (y : D1N2Config)
+    (hy : y ∈ ForwardTube 1 2)
+    (hquadY : d1InvariantQuad y = (q1, q0, p, -s)) :
+    d1N2SectionSwap q0 q1 p s (d1V0 y) = y := by
+  have hyQ0 : d1Q0 y = q1 := by
+    simpa [d1InvariantQuad] using congrArg Prod.fst hquadY
+  have hyQ1 : d1Q1 y = q0 := by
+    simpa [d1InvariantQuad] using congrArg (fun t => t.2.1) hquadY
+  have hyP : d1P01 y = p := by
+    simpa [d1InvariantQuad] using congrArg (fun t => t.2.2.1) hquadY
+  have hyS : d1S01 y = -s := by
+    simpa [d1InvariantQuad] using congrArg (fun t => t.2.2.2) hquadY
+  calc
+    d1N2SectionSwap q0 q1 p s (d1V0 y)
+        = d1N2SectionOrig q1 q0 p (-s) (d1V0 y) := by
+            rfl
+    _ = d1N2SectionOrig (d1Q0 y) (d1Q1 y) (d1P01 y) (d1S01 y) (d1V0 y) := by
+          simp [hyQ0, hyQ1, hyP, hyS]
+    _ = y := d1N2SectionOrig_eq_of_forward y hy
+
 /-- Canonical section point with fixed light-cone gauge `v0 = I`. -/
 def d1N2InvariantSectionPoint (q0 p s : ℂ) : D1N2Config :=
   d1N2InvariantSection q0 p s I

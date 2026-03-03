@@ -72,16 +72,50 @@ No transition to step 3 is allowed before both step 1 and step 2 are marked
 
 - Step 1 (`d=1,n=2` local blocker): IN_PROGRESS
   - Current active theorem:
-    `blocker_d1N2InvariantKernelSwapDiffZeroOnRealizable_source_invariantOnly_core_deferred`
-  - Exact remaining subgoal inside that theorem:
-    prove the invariant-only realizable-pair swap-difference identity:
-    for `(q0,q1,p,s)` on `s^2 = 4*(p^2 - q0*q1)`, if both
-    `d1N2InvariantRealizable q0 q1 p s` and
-    `d1N2InvariantRealizable q1 q0 p (-s)` hold, then
+    `blocker_d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_source_invariantOnly_core_deferred`
+  - Exact remaining deferred lemma (single local analytic `sorry`):
+    `blocker_d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_invariantQuadric_core_deferred`
+    with fully invariant statement:
+    for quadric tuples `(q0,q1,p,s)` with paired light-cone witness conditions
+    `d1N2InvariantLightConeWitness q0 q1 p s` and
+    `d1N2InvariantLightConeWitness q1 q0 p (-s)`, prove
     `f q0 q1 p s - f q1 q0 p (-s) = 0`.
+    The theorem body is now explicitly reduced to:
+    1. the paired-witness form via
+       `d1N2InvariantKernelDiffZeroOnForwardizableQuadric_iff_sectionWitnessDiffZero`,
+    2. then the light-cone witness form via
+       `d1N2InvariantKernelDiffZeroOnLightConeWitness_iff_forwardizableDiffZero`.
+    Here `d1N2InvariantSectionWitnessPair` is currently the paired light-cone
+    witness condition (both original and swapped tuples witnessed in `FT_{1,2}`).
+    So the single remaining internal analytic subgoal is this paired-witness
+    diff-zero statement inside the active theorem.
+    The source wrapper theorem above is now `sorry`-free and aliases this
+    invariant-only lemma.
+    The former realizable-form theorem
+    `blocker_d1N2InvariantKernelSwapDiffZeroOnRealizable_source_invariantOnly_core_deferred`
+    is now a proved wrapper via
+    `d1N2InvariantRealizable_iff_lightConeWitness`.
+    The witness theorem
+    `blocker_d1N2ForwardSwapEq_witness_fromSource_invariantOnly_core_deferred`
+    is now a proved wrapper derived from this invariant-only core via
+    factorization + `d1N2ForwardSwapEq_onFT_of_invariantKernelPairSwapOnRealizable`.
+    The forwardizable invariant-kernel theorem
+    `blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred`
+    is now a proved wrapper from this active theorem via
+    `d1N2InvariantRealizable_pair_of_forwardizable`.
     Non-vacuity is now explicit in code:
     `d1N2InvariantRealizable_pair_nonempty` and
     `d1N2InvariantForwardizableSwap_nonempty` are proved.
+    Paired light-cone witness non-vacuity is now explicit:
+    `d1N2InvariantLightConeWitness_pair_nonempty`.
+    New exact bridge:
+    `d1N2InvariantForwardizableSwap_iff_lightConeWitness_pair`.
+    New paired-witness bridge:
+    `d1N2InvariantForwardizableSwap_iff_sectionWitness_pair`.
+    New condition equivalence:
+    `d1N2InvariantKernelDiffZeroOnLightConeWitness_iff_forwardizableDiffZero`.
+    New section-form condition equivalence:
+    `d1N2InvariantKernelDiffZeroOnForwardizableQuadric_iff_sectionWitnessDiffZero`.
     The theorem
     `blocker_d1N2Source_swappedInvariantForwardEq_invariantOnly_core_deferred`
     is now a proved wrapper via
@@ -177,6 +211,65 @@ No transition to step 3 is allowed before both step 1 and step 2 are marked
     (`d1_adj_spacelike_expr_realConfig`), and explicit nonzero Jacobian minor
     witness at `d1N2RealProbePoint`
     (`d1N2InvariantJacobianMinorAtProbe_det_ne_zero`).
+  - Added production probe obstruction:
+    `d1N2InvariantRealizable_swappedProbe_not`, proving the swapped probe tuple
+    `(-9,-1,-3,0)` is not realizable by any `FT_{1,2}` point.
+    This blocks naive probe-point propagation arguments and keeps the active
+    closure path on the invariant-only realizable domain.
+  - Added production real-witness obstruction module:
+    `D1N2RealWitnessObstruction.lean`, including
+    `d1N2_no_real_et_pair_swap` and
+    `d1N2_no_real_adjacent_spacelike_witness_swap`.
+    Integrated into blockers via
+    `d1N2ForwardSwapEOWGeometryPackage_false`, formally proving the
+    `d=1,n=2` EOW real-witness package is inconsistent.
+  - Added fixed-gauge chart obstruction in
+    `D1N2LorentzInvariantRoute.lean`:
+    `d1_not_re_gt_one_and_inv_re_gt_one` and
+    `d1N2InvariantSectionDomain_not_swapClosed`.
+    This proves the `v0 = I` section chart can never be simultaneously valid
+    for both original and swap-side section parameters, so a single-chart
+    section argument cannot close the active theorem by itself.
+  - Added complementary dual section chart infrastructure in
+    `D1N2LorentzInvariantRoute.lean`:
+    `d1N2InvariantSectionDual`,
+    `d1InvariantQuad_invariantSectionDual`,
+    `d1N2InvariantSectionDualDomain`,
+    `d1N2InvariantSectionDualDomain_probe`,
+    `d1N2InvariantSectionDualPoint_mem_forwardTube_of_domain`.
+    This is the first production multi-chart step toward closing the active
+    invariant-only analytic core without leaving Lorentz-invariant coordinates.
+  - Added explicit non-coverage witness for the two fixed gauges
+    (`v0 = I`, `u0 = I`):
+    `d1N2InvariantSectionPairDomains_not_cover_explicit_lightConeWitness_pair`.
+    This proves there exists a tuple with both
+    `d1N2InvariantLightConeWitness q0 q1 p s` and
+    `d1N2InvariantLightConeWitness q1 q0 p (-s)` while both
+    `d1N2InvariantSectionDomain (-q0) (-p) s` and
+    `d1N2InvariantSectionDualDomain (-q0) (-p) s` fail.
+    So the current two fixed-gauge charts are not a complete cover of the
+    active doubly-witnessed locus.
+  - Added explicit mixed-chart overlap probe:
+    `d1N2InvariantSectionDomain_mixedComplexProbe`,
+    `d1N2InvariantSectionDualDomain_mixedComplexProbe`,
+    `d1N2InvariantSectionMixedDomains_quadricProbe`.
+    This gives a concrete nonempty quadric tuple where the original side is
+    captured by the `v0 = I` chart and the swapped side by the dual `u0 = I`
+    chart.
+  - Added mixed-domain packaging and FT-membership wrappers:
+    `d1N2InvariantSectionMixedDomain`,
+    `d1N2InvariantSectionMixedDomain_nonempty`,
+    `d1N2InvariantSectionPoint_mem_forwardTube_of_mixedDomain`,
+    `d1N2InvariantSectionDualSwapPoint_mem_forwardTube_of_mixedDomain`.
+  - Added scalar light-cone realizability equivalence:
+    `d1N2ConfigOfLightCone`,
+    `d1N2ConfigOfLightCone_mem_forwardTube_iff`,
+    `d1N2InvariantLightConeWitness`,
+    `d1N2InvariantLightConeWitness_iff_exists_forwardInvariants`
+    (route file), plus
+    `d1N2InvariantRealizable_iff_lightConeWitness`
+    (blocker file). This rewrites realizability into explicit `u/v` scalar
+    constraints for invariant-route proofs.
 - Step 2 (`d=1,n=3` local blocker): PENDING
 - Step 3 (`n>=4` and global cleanup): LOCKED
 
@@ -399,6 +492,13 @@ No transition to step 3 is allowed before both step 1 and step 2 are marked
   `blocker_d1N2InvariantKernelSwapDiffZeroOnRealizable_source_invariantOnly_core_deferred`
   in the open-anchor form (via the equivalence above), so the remaining `sorry`
   subgoal now matches the locked complex-open-anchor route exactly.
+- 2026-03-02: Extracted the remaining `d=1,n=2` analytic `sorry` into the
+  invariant-only theorem
+  `blocker_d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_invariantQuadric_core_deferred`.
+  The source theorem
+  `blocker_d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_source_invariantOnly_core_deferred`
+  is now a proved wrapper, keeping the deferred statement purely in Lorentz
+  invariants (`q0,q1,p,s` + witness predicates).
 - 2026-03-02: Extended `D1N2LorentzInvariantRoute.lean` with additional
   invariant-function analytic scaffolding used by
   `INVARIANT_FUNCTION_PROOF_D1_N2.md`:
@@ -493,15 +593,11 @@ No transition to step 3 is allowed before both step 1 and step 2 are marked
   for the active `d=1,n=2` blocker. The active theorem is already posed in
   invariant coordinates with realizability hypotheses, and work remains locked
   to the invariant-function route (no translation-invariance detour).
-- 2026-03-02 (state correction, superseding stale note at lines 438-445):
-  in current Lean code, the active deferred theorem is
-  `blocker_d1N2InvariantKernelSwapDiffZeroOnRealizable_source_invariantOnly_core_deferred`
-  (line ~1752 in `PermutationFlowBlockers.lean`), while
-  `blocker_d1N2OpenAnchor_source_invariantAnalytic_core_deferred` is proved as a
-  wrapper via
-  `d1N2InvariantKernelSwapDiffZeroOnRealizable_source_iff_openAnchor`.
-  The pair-swap theorem remains a proved `sub_eq_zero` wrapper around this
-  active diff-zero core.
+- 2026-03-02 (state correction): in current Lean code, the single active
+  deferred theorem for the `d=1,n=2` invariant route is
+  `blocker_d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_invariantQuadric_core_deferred`,
+  while the source/realisable/open-anchor theorems are proved wrappers through
+  the existing exact equivalence chain.
 - 2026-03-02 (convention clarification):
   in this local blocker file, `d1N2InvariantKernelSource` is a 2-slot
   configuration source package (`Fin 2 → ...`) and does not include a separate
@@ -515,3 +611,64 @@ No transition to step 3 is allowed before both step 1 and step 2 are marked
   `test/d1_real_witness_sign_obstruction_test.lean`.
   Active closure target remains the invariant-function diff-zero core, not
   construction of `d1N2ForwardSwapEOWGeometryPackage`.
+- 2026-03-02 (state refinement):
+  added exact reduction
+  `d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_source_iff_swappedInvariantForwardEq`.
+  The active light-cone theorem is now reduced in-code to one sourced
+  swapped-invariant forward-equality subgoal (`F y = F z` under the swapped
+  invariant-quad relation).
+- 2026-03-02 (chart-coverage refinement):
+  added
+  `d1N2InvariantSectionPairDomains_not_cover_explicit_lightConeWitness_pair`,
+  giving an explicit doubly-light-cone-witness tuple outside both fixed-gauge
+  section domains (`v0 = I` and `u0 = I`). This rules out closing the active
+  blocker by a two-fixed-chart-only argument.
+- 2026-03-03 (variable-chart route implementation):
+  implemented variable-parameter section infrastructure in
+  `D1N2LorentzInvariantRoute.lean`:
+  - `d1N2SectionOrig`, `d1N2SectionSwap`,
+  - fiber/paired-domain defs
+    (`d1N2SectionOrigFiberDomain`, `d1N2SectionSwapFiberDomain`,
+    `d1N2SectionPairedDomain`),
+  - paired difference helper
+    (`d1N2SectionPairDiff`, `d1N2SectionPairDiff_differentiableOn`),
+  - quadric section identities
+    (`d1InvariantQuad_sectionOrig`, `d1InvariantQuad_sectionSwap`),
+  - reconstruction lemmas
+    (`d1N2SectionOrig_eq_of_forward`,
+     `d1N2SectionSwap_eq_of_forward_invariants`).
+  Added in `PermutationFlowBlockers/Core.lean`:
+  - hypothesis package
+    `d1N2PairedChartAnchorConnected`,
+  - conditional closure theorem
+    `d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_of_pairedChartAnchorConnected`.
+  Rewired in `PermutationFlowBlockers/Tail.lean`:
+  - active light-cone theorem
+    `blocker_d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_invariantQuadric_core_deferred`
+    is now proved from the conditional closure theorem plus a dedicated source
+    extraction theorem,
+  - the remaining `d=1,n=2` analytic `sorry` is now isolated as
+    `blocker_d1N2PairedChartAnchorConnected_fromSource_deferred`.
+- 2026-03-03 (documentation correction):
+  previous notes mentioning dual/mixed fixed-gauge chart lemmas are stale for
+  the current local code snapshot; the production Lean file currently carries
+  the variable-parameter chart route above.
+- 2026-03-03 (blocker placement correction):
+  added the converse bridge in `PermutationFlowBlockers/Core.lean`:
+  `d1N2PairedChartAnchorConnected_of_lightConeWitnessDiffZero`
+  (`light-cone diff-zero ⇒ paired-chart anchor`).
+  Rewired `PermutationFlowBlockers/Tail.lean` so:
+  1. the single `d=1,n=2` analytic `sorry` is again on the invariant theorem
+     `blocker_d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_invariantQuadric_core_deferred`,
+  2. `blocker_d1N2PairedChartAnchorConnected_fromSource_deferred` is now a
+  proved wrapper from that invariant theorem via the new converse bridge.
+- 2026-03-03 (exact frontier equivalence):
+  added
+  `d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_iff_pairedChartAnchorConnected`
+  in `PermutationFlowBlockers/Core.lean`, giving a bidirectional equivalence:
+  - light-cone witness diff-zero on invariants
+    `↔`
+  - paired variable-chart anchor connectedness of the sourced field.
+  Then simplified
+  `blocker_d1N2PairedChartAnchorConnected_fromSource_deferred`
+  to use the `.1` direction of this exact equivalence.
