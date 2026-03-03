@@ -4,7 +4,7 @@
 This lock file tracks only the active analytic blocker for the `d=1, n=2` route.
 
 - Active blocker theorem:
-  - `blocker_d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_invariantQuadric_core_deferred`
+  - `blocker_d1N2PairedChartAnchorPair_fromSource_deferred`
   - File: `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/PermutationFlowBlockers/Tail.lean`
 - Route lock:
   - Lorentz-invariant-function route only.
@@ -14,11 +14,14 @@ This lock file tracks only the active analytic blocker for the `d=1, n=2` route.
 ## Current Lean State
 - The entire `OSReconstruction/ComplexLieGroups` folder compiles.
 - Remaining `sorry` frontiers in this branch are concentrated in `PermutationFlowBlockers/Tail.lean`.
-- The active blocker above is reduced to one analytic gap:
-  - for each doubly witnessed quadric tuple, prove equality of the sourced
-    field on one anchored witness-built section pair:
-    `F (d1N2SectionSwap ... (d1V0 y)) = F (d1N2SectionOrig ... (d1V0 z))`.
-  - existence/FT-membership of the anchored pair is now fully proved in `Tail.lean`.
+- Current `d=1,n=2` status:
+  - `blocker_d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_invariantQuadric_core_deferred`
+    is now a clean reduction theorem (no internal `sorry`).
+  - the unique remaining analytic gap is isolated in
+    `blocker_d1N2PairedChartAnchorPair_fromSource_deferred`:
+    for each doubly witnessed quadric tuple, prove one anchored pair equality
+    `F (d1N2SectionSwap ... wA) = F (d1N2SectionOrig ... vA)`.
+  - existence and FT-membership of the witness-built anchors are already proved.
 - Wrapper cleanup status:
   - removed unused paired-chart equivalence wrappers from
     `PermutationFlowBlockers/Core.lean` to keep the blocker route minimal.
@@ -41,10 +44,9 @@ From current theorems in `Core/Tail`:
 2. target blocker:
    - light-cone witness diff-zero on invariant quadric tuples
 3. exact reduction already formalized:
-   - enough to prove existence of one anchored pair `(vA,wA)` per doubly
-     witnessed quadric tuple, via
-     `d1N2PairedChartAnchorConnected_of_exists_anchorPair`
-   - this yields
+   - enough to prove `blocker_d1N2PairedChartAnchorPair_fromSource_deferred`
+     (one anchored pair equality per doubly witnessed tuple)
+   - via `d1N2PairedChartAnchorConnected_of_exists_anchorPair`, this yields
      `d1N2PairedChartAnchorConnected (Classical.choose hsource)`
 4. once paired-chart anchor is obtained, the blocker follows immediately through
    `d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_of_pairedChartAnchorConnected`.
@@ -113,6 +115,9 @@ Run this in parallel with constructive proof work to avoid proving a false targe
      - violations above `1e-6`: 0
    - run B (degree 4, 1200 real constraints, 1500 forwardizable tuples):
      - antisym basis size: 56
+     - nullspace dim: 0 (no nonzero sampled antisymmetric ansatz survives)
+   - run C (degree 5, 2200 real constraints, 2200 forwardizable tuples):
+     - antisym basis size: 106
      - nullspace dim: 0 (no nonzero sampled antisymmetric ansatz survives)
    - no sampled counterexample found.
 

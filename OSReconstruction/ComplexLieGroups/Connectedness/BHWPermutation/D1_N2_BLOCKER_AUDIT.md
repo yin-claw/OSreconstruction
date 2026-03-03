@@ -1,14 +1,16 @@
 # d=1, n=2 Blocker Audit
 
 ## Active Blocker
-- `blocker_d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_invariantQuadric_core_deferred`
+- `blocker_d1N2PairedChartAnchorPair_fromSource_deferred`
 
-This asks for swap-difference vanishing of the invariant kernel on the doubly light-cone-witnessed quadric locus.
+This asks for one anchored paired-chart equality per doubly light-cone-witnessed
+quadric tuple; the main light-cone witness diff-zero theorem now reduces to this.
 
 ## What Has Been Proven Around It
 - Invariant factorization machinery on `FT_{1,2}` is present.
 - Realizable/light-cone/forwardizable equivalences are present.
-- Reduction from blocker to paired-chart anchor connectivity is present.
+- Reduction from this anchor-pair lemma to paired-chart anchor connectivity and
+  then to light-cone witness diff-zero is present.
 
 ## Failed Attempts (Documented)
 
@@ -53,12 +55,16 @@ Reason:
   - degree 4:
     - basis size 56, sampled local-comm constraints 1200,
     - nullspace dim 0 (no surviving nonzero ansatz in sampled system).
+  - degree 5:
+    - basis size 106, sampled local-comm constraints 2200,
+    - nullspace dim 0 (no surviving nonzero ansatz in sampled system).
 - This is still heuristic (not formal Lean proof), but no sampled counterexample
   has been found.
 
 ## Accepted Remaining Gap
 The unproved step is:
-- derive paired-chart anchor connectivity for the sourced field from the source package.
+- derive the anchored pair equality from source data for each doubly witnessed tuple
+  (`blocker_d1N2PairedChartAnchorPair_fromSource_deferred`).
 
 Once this is shown, the blocker closes by existing reduction lemmas.
 

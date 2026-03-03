@@ -3,17 +3,16 @@
 ## Target
 Close:
 
-- `blocker_d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_invariantQuadric_core_deferred`
+- `blocker_d1N2PairedChartAnchorPair_fromSource_deferred`
 - file: `PermutationFlowBlockers/Tail.lean`
 
 ## Exact Remaining Gap
-The theorem is already reduced to proving:
-
-- `d1N2PairedChartAnchorConnected (Classical.choose hsource)`
-
-Refined reduction now available:
-- it is enough to produce one anchored chart pair per tuple via
-  `d1N2PairedChartAnchorConnected_of_exists_anchorPair`.
+- `blocker_d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_invariantQuadric_core_deferred`
+  is now reduced and sorry-free internally.
+- The unique deferred step is:
+  - produce one anchored section pair with equal source values for each doubly
+    witnessed tuple (`blocker_d1N2PairedChartAnchorPair_fromSource_deferred`).
+- This feeds `d1N2PairedChartAnchorConnected_of_exists_anchorPair`.
 
 ## End-to-End Proof Skeleton
 1. Unpack `hsource` into `F`, `hF_holo`, `hF_lorentz`, `hF_bv`, `hF_local`, `hf_onFT`.
@@ -33,8 +32,8 @@ Refined reduction now available:
 
 Current code status:
 - Step 7 is implemented.
-- In Step 5/6, the only remaining unresolved part is proving equality on one
-  witness-built anchored pair (existence and FT-membership are already proved).
+- In Step 5/6, the only unresolved part remains the equality on one
+  witness-built anchored pair; existence and FT-membership are already proved.
 
 ## Lemmas To Add (Planned)
 1. `d1N2SectionPairDiff_zero_on_anchor_from_localComm`
@@ -62,6 +61,8 @@ Latest sweep snapshot (2026-03-03):
   1200 sampled forwardizable tuples (`max |g| ~ 2.18e-11`).
 - degree-4 sweep: sampled local-comm linear system had nullspace dimension 0
   (no nonzero sampled ansatz survived).
+- degree-5 sweep (2200 real constraints, 2200 forwardizable tuples): nullspace
+  dimension 0 (no nonzero sampled antisymmetric ansatz survived).
 
 ## Test Matrix
 The following dedicated tests are added to keep the plan executable:

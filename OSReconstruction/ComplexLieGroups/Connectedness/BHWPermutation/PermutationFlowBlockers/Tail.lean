@@ -8,6 +8,45 @@ namespace BHW
 
 variable {d : ℕ}
 
+/-- Deferred source-to-anchor reduction (`d=1,n=2`):
+for each doubly witnessed invariant quadric tuple, produce one paired original/
+swapped section anchor in `FT_{1,2}` with equal source values. -/
+theorem blocker_d1N2PairedChartAnchorPair_fromSource_deferred
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hsource : d1N2InvariantKernelSource f) :
+    ∀ q0 q1 p s, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+      d1N2InvariantSectionWitnessPair q0 q1 p s →
+      ∃ vA wA,
+        d1N2SectionOrig q0 q1 p s vA ∈ ForwardTube 1 2 ∧
+        d1N2SectionSwap q0 q1 p s wA ∈ ForwardTube 1 2 ∧
+        (Classical.choose hsource) (d1N2SectionSwap q0 q1 p s wA) =
+          (Classical.choose hsource) (d1N2SectionOrig q0 q1 p s vA) := by
+  intro q0 q1 p s hquad hsecPair
+  rcases hsecPair with ⟨hLC, hswapLC⟩
+  rcases (d1N2InvariantLightConeWitness_iff_exists_forwardInvariants q0 q1 p s).1 hLC with
+    ⟨z, hz, hq0, hq1, hp, hs⟩
+  rcases (d1N2InvariantLightConeWitness_iff_exists_forwardInvariants q1 q0 p (-s)).1 hswapLC with
+    ⟨y, hy, hyq0, hyq1, hyp, hys⟩
+  refine ⟨d1V0 z, d1V0 y, ?_, ?_, ?_⟩
+  · have hzSecEq :
+      d1N2SectionOrig q0 q1 p s (d1V0 z) = z := by
+      have hzEq :
+          d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z) = z :=
+        d1N2SectionOrig_eq_of_forward z hz
+      simpa [hq0, hq1, hp, hs] using hzEq
+    simpa [hzSecEq] using hz
+  · have hquadY : d1InvariantQuad y = (q1, q0, p, -s) := by
+      simp [d1InvariantQuad, hyq0, hyq1, hyp, hys]
+    have hySecEq :
+        d1N2SectionSwap q0 q1 p s (d1V0 y) = y := by
+      exact d1N2SectionSwap_eq_of_forward_invariants
+        (q0 := q0) (q1 := q1) (p := p) (s := s) y hy hquadY
+    simpa [hySecEq] using hy
+  · let _ := hquad
+    -- Remaining invariant-function analytic gap (`d=1,n=2`):
+    -- establish equality on one witness-built anchored original/swapped pair.
+    sorry
+
 /-- Deferred invariant-function source core (`d=1,n=2`, light-cone witness form):
 vanishing of the swap-difference kernel on invariant tuples whose two swap-sign
 partners both satisfy `d1N2InvariantLightConeWitness`. -/
@@ -32,30 +71,9 @@ theorem blocker_d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_invariantQuadr
     refine d1N2PairedChartAnchorConnected_of_exists_anchorPair
       (F := Classical.choose hsource) hF_holo hF_lorentz ?_
     intro q0 q1 p s hquad hsecPair
-    rcases hsecPair with ⟨hLC, hswapLC⟩
-    rcases (d1N2InvariantLightConeWitness_iff_exists_forwardInvariants q0 q1 p s).1 hLC with
-      ⟨z, hz, hq0, hq1, hp, hs⟩
-    rcases (d1N2InvariantLightConeWitness_iff_exists_forwardInvariants q1 q0 p (-s)).1 hswapLC with
-      ⟨y, hy, hyq0, hyq1, hyp, hys⟩
-    refine ⟨d1V0 z, d1V0 y, ?_, ?_, ?_⟩
-    · have hzSecEq :
-        d1N2SectionOrig q0 q1 p s (d1V0 z) = z := by
-        have hzEq :
-            d1N2SectionOrig (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) (d1V0 z) = z :=
-          d1N2SectionOrig_eq_of_forward z hz
-        simpa [hq0, hq1, hp, hs] using hzEq
-      simpa [hzSecEq] using hz
-    · have hquadY : d1InvariantQuad y = (q1, q0, p, -s) := by
-        simp [d1InvariantQuad, hyq0, hyq1, hyp, hys]
-      have hySecEq :
-          d1N2SectionSwap q0 q1 p s (d1V0 y) = y := by
-        exact d1N2SectionSwap_eq_of_forward_invariants
-          (q0 := q0) (q1 := q1) (p := p) (s := s) y hy hquadY
-      simpa [hySecEq] using hy
-    · -- Remaining invariant-function analytic gap (`d=1,n=2`):
-      -- establish equality between one anchored original/swapped pair built
-      -- from light-cone witnesses.
-      sorry
+    simpa using
+      blocker_d1N2PairedChartAnchorPair_fromSource_deferred
+        f hsource q0 q1 p s hquad hsecPair
   exact
     d1N2InvariantKernelSwapDiffZeroOnLightConeWitness_of_pairedChartAnchorConnected
       f hsource hanchor
