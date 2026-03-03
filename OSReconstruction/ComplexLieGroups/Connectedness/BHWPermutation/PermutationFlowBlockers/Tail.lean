@@ -8,98 +8,6 @@ namespace BHW
 
 variable {d : ℕ}
 
-/-- Exact reduction (`d=1,n=2`, source form):
-the realizable-pair invariant diff-zero statement is equivalent to forward-swap
-equality on `FT_{1,2}` for the sourced field. -/
-theorem d1N2InvariantKernelSwapDiffZeroOnRealizable_source_iff_forwardSwapEq_onFT
-    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
-    (hsource : d1N2InvariantKernelSource f) :
-    (∀ q0 q1 p s, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
-      d1N2InvariantRealizable q0 q1 p s →
-      d1N2InvariantRealizable q1 q0 p (-s) →
-      f q0 q1 p s - f q1 q0 p (-s) = 0) ↔
-    (∀ z, z ∈ ForwardTube 1 2 →
-      ∀ Γ : ComplexLorentzGroup 1,
-        complexLorentzAction Γ
-          (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 →
-        (Classical.choose hsource)
-          (complexLorentzAction Γ
-            (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z)) =
-          (Classical.choose hsource) z) := by
-  have hf_onFT : ∀ z, z ∈ ForwardTube 1 2 →
-      (Classical.choose hsource) z =
-        f (d1Q0 z) (d1Q1 z) (d1P01 z) (d1S01 z) :=
-    (Classical.choose_spec hsource).2.2.2.2
-  have hdiff_pair :
-      (∀ q0 q1 p s, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
-        d1N2InvariantRealizable q0 q1 p s →
-        d1N2InvariantRealizable q1 q0 p (-s) →
-        f q0 q1 p s - f q1 q0 p (-s) = 0) ↔
-      (∀ q0 q1 p s, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
-        d1N2InvariantRealizable q0 q1 p s →
-        d1N2InvariantRealizable q1 q0 p (-s) →
-        f q0 q1 p s = f q1 q0 p (-s)) := by
-    constructor
-    · intro hdiff q0 q1 p s hquad hreal hswapReal
-      exact sub_eq_zero.mp (hdiff q0 q1 p s hquad hreal hswapReal)
-    · intro hpair q0 q1 p s hquad hreal hswapReal
-      exact sub_eq_zero.mpr (hpair q0 q1 p s hquad hreal hswapReal)
-  have hpair_forward :
-      (∀ q0 q1 p s, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
-        d1N2InvariantRealizable q0 q1 p s →
-        d1N2InvariantRealizable q1 q0 p (-s) →
-        f q0 q1 p s = f q1 q0 p (-s)) ↔
-      (∀ z, z ∈ ForwardTube 1 2 →
-        ∀ Γ : ComplexLorentzGroup 1,
-          complexLorentzAction Γ
-            (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 →
-          (Classical.choose hsource)
-            (complexLorentzAction Γ
-              (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z)) =
-          (Classical.choose hsource) z) :=
-    (d1N2ForwardSwapEq_onFT_iff_invariantKernelPairSwapOnRealizable
-      (Classical.choose hsource) f hf_onFT).symm
-  exact hdiff_pair.trans hpair_forward
-
-/-- If adjacent forward-overlap is connected and one has a nonempty complex-open
-forward-base anchor where `extendF(swap·w)=F(w)`, then the `d=1,n=2`
-forward-base equality core follows. -/
-theorem d1N2ForwardBaseEq_of_connectedForwardOverlap_and_openAnchor
-    (F : (Fin 2 → Fin (1 + 1) → ℂ) → ℂ)
-    (hF_holo : DifferentiableOn ℂ F (ForwardTube 1 2))
-    (hF_lorentz : ∀ (Λ : RestrictedLorentzGroup 1)
-      (z : Fin 2 → Fin (1 + 1) → ℂ), z ∈ ForwardTube 1 2 →
-      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
-    (hFwd_conn :
-      IsConnected (adjSwapForwardOverlapSet (d := 1) 2 (0 : Fin 2) (by decide)))
-    (W : Set (Fin 2 → Fin (1 + 1) → ℂ))
-    (hW_open : IsOpen W)
-    (hW_ne : W.Nonempty)
-    (hW_sub : W ⊆ permForwardOverlapSet (d := 1) 2 (Equiv.swap (0 : Fin 2) 1))
-    (hW_eq : ∀ w ∈ W,
-      extendF F (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) w) = F w) :
-    ∀ z, z ∈ ForwardTube 1 2 →
-      permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z ∈ ExtendedTube 1 2 →
-      extendF F (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) = F z := by
-  have hforward :
-      ∀ z, z ∈ ForwardTube 1 2 →
-        ∀ Γ : ComplexLorentzGroup 1,
-          complexLorentzAction Γ
-            (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 →
-          F (complexLorentzAction Γ
-            (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z)) = F z :=
-    d1N2ForwardSwapEq_onFT_of_connectedForwardOverlap_and_openAnchor
-      F hF_holo hF_lorentz hFwd_conn W hW_open hW_ne hW_sub hW_eq
-  have hswapInv :
-      ∀ z y : Fin 2 → Fin (1 + 1) → ℂ,
-        z ∈ ForwardTube 1 2 →
-        y ∈ ForwardTube 1 2 →
-        d1InvariantQuad y = (d1Q1 z, d1Q0 z, d1P01 z, -d1S01 z) →
-        F y = F z :=
-    d1N2Source_swappedInvariantForwardEq_of_forwardSwapEq F hforward
-  exact (d1N2Source_swappedInvariantForwardEq_iff_forwardBaseEq
-    F hF_holo hF_lorentz).1 hswapInv
-
 /-- Deferred invariant-function source core (`d=1,n=2`, light-cone witness form):
 vanishing of the swap-difference kernel on invariant tuples whose two swap-sign
 partners both satisfy `d1N2InvariantLightConeWitness`. -/
@@ -484,37 +392,6 @@ theorem blocker_d1N2LocalSliceAnchorNhd_core_deferred
       F hF_holo hF_lorentz hF_bv hF_local w0 Γ U hU_open hw0U hU_good
   exact (d1N2EventuallySliceAnchor_iff_eventuallyForwardEq_fixedWitness
     F hF_holo hF_lorentz w0 Γ U hU_good).2 hforward
-
-/-- For `d=1,n=2`, pointwise slice-anchor existence and full forward-swap
-equality on `FT_{1,2}` are equivalent. -/
-theorem d1N2PointwiseSliceAnchor_iff_forwardSwapEq_onFT
-    (F : (Fin 2 → Fin (1 + 1) → ℂ) → ℂ)
-    (hF_holo : DifferentiableOn ℂ F (ForwardTube 1 2))
-    (hF_lorentz : ∀ (Λ : RestrictedLorentzGroup 1)
-      (z : Fin 2 → Fin (1 + 1) → ℂ), z ∈ ForwardTube 1 2 →
-      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z) :
-    (∀ z, z ∈ ForwardTube 1 2 →
-      (∃ Γ : ComplexLorentzGroup 1,
-        complexLorentzAction Γ
-          (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2) →
-      ∃ Λ₀ : ComplexLorentzGroup 1,
-        complexLorentzAction Λ₀
-          (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 ∧
-        F (complexLorentzAction Λ₀
-            (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z)) = F z) ↔
-    (∀ z, z ∈ ForwardTube 1 2 →
-      ∀ Γ : ComplexLorentzGroup 1,
-        complexLorentzAction Γ
-          (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 →
-        F (complexLorentzAction Γ
-          (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z)) = F z) := by
-  constructor
-  · intro hanchor
-    exact d1N2ForwardSwapEq_onFT_of_pointwiseSliceAnchor
-      F hF_holo hF_lorentz hanchor
-  · intro hforward z hz hex
-    rcases hex with ⟨Γ, hΓswap⟩
-    exact ⟨Γ, hΓswap, hforward z hz Γ hΓswap⟩
 
 /-- Deferred local analytic anchor extraction (`d=1,n=2`):
 for each forwardizable `z ∈ FT_{1,2}`, produce one slice anchor `Λ₀` already
