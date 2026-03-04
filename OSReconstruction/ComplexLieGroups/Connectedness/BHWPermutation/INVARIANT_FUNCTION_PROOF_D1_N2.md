@@ -37,16 +37,49 @@ Hence the proof target is intentionally the realizable/light-cone witnessed locu
 - without adding extra axioms,
 - and without detouring through unrelated d>=2 infrastructure.
 
+## New Formal Geometry Fact (Tail)
+`Tail.lean` now includes:
+
+- `d1N2SectionOrig_mem_forwardTube_of_witnessIneq`
+- `d1N2SectionSwap_mem_forwardTube_of_witnessIneq`
+
+These are kept as direct geometric conversion lemmas (intrinsic witness
+inequalities to section-coordinate `ForwardTube` membership), without extra
+wrapper packaging.
+
 ## Source-to-Invariant Bridge Split (Current Tail State)
-The source wrapper now factors through three explicit bridge lemmas in
-`PermutationFlowBlockers/Tail.lean`:
+`Tail.lean` now separates:
 
-1. `blocker_d1N2InvariantBridgeAnalyticity_fromSource_deferred`
-2. `blocker_d1N2InvariantBridgePreconnected_fromSource_deferred`
-3. `blocker_d1N2InvariantBridgeCorrection_fromSource_deferred`
+1. a proved invariant-function reduction theorem
+   `blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_invariantFunction_core_deferred`
+   that consumes intrinsic invariant-function assumptions
+   (analyticity + preconnectedness + correction),
+2. a single deferred source-wrapper bridge theorem
+   `blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred`
+   whose remaining work is deriving those three assumptions from
+   `d1N2InvariantKernelSource f`.
+   A non-deferred pass-through theorem is now available once those three bridge
+   inputs are provided explicitly:
+   `d1N2InvariantKernelDiffZeroOnForwardizableQuadric_of_source_and_invariantBridgeInputs`.
 
-These are assembled into the bridge package used by
-`blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred`.
+Correction statement lock:
+- The correction premise is now real-slice witnessed and fully intrinsic:
+  on the quadric, with both intrinsic witness inequalities and
+  `q0.im = q1.im = p.im = s.im = 0`, enforce
+  `f q0 q1 p s = f q1 q0 p (-s)`.
+- This avoids the incompatible standalone spacelike-sign condition (`> 0`) on
+  real paired-witness points.
+- Deriving this witnessed correction premise from
+  `d1N2InvariantKernelSource` remains part of the deferred bridge work.
+- The existing formal counterexample harness still records why the old
+  spacelike-only correction variant is unusable:
+  - `ProofHarness/D1N2SourceCorrectionCounterexample.lean`
+  - theorem:
+    `d1N2InvariantKernelSource_not_sufficient_for_realSpacelikeCorrection_nonzero`.
+
+These assumptions are consumed directly by
+`blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_invariantFunction_core_deferred`;
+the source-wrapper theorem remains deferred at the bridge step.
 
 ## Meaning of "Bridge Analyticity"
 `bridgeAnalyticity` is a statement of `DifferentiableOn ℂ` for the invariant

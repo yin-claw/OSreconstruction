@@ -32,19 +32,42 @@ This lock file tracks only the active analytic blocker for the `d=1, n=2` route.
   analytic/correction premises.
 
 ## Bridge-Lemma Lock (2026-03-03 update)
-- `hBridge` inside
+- The invariant-function reduction step is now explicit and proved as:
+  - `blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_invariantFunction_core_deferred`.
+- This theorem takes exactly the three intrinsic invariant-function inputs:
+  1. witnessed-locus differentiability of the swap-difference,
+  2. witnessed-locus preconnectedness,
+  3. real-slice witnessed correction rule for `f`.
+- The source-to-invariant bridge is locked to three explicit deferred lemmas:
+  1. `blocker_d1N2InvariantBridgeAnalyticity_fromSource_deferred`,
+  2. `blocker_d1N2InvariantBridgePreconnected_fromSource_deferred`,
+  3. `blocker_d1N2InvariantBridgeCorrection_fromSource_deferred`.
+- The source wrapper theorem
   `blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred`
-  must be an assembly of explicit lemmas, not a hidden local `sorry`.
-- Current bridge split in `Tail.lean`:
-  1. `blocker_d1N2InvariantBridgeAnalyticity_fromSource_deferred`
-  2. `blocker_d1N2InvariantBridgePreconnected_fromSource_deferred`
-  3. `blocker_d1N2InvariantBridgeCorrection_fromSource_deferred`
-- Semantic lock for (1):
-  - it is a `DifferentiableOn ℂ` statement on the intrinsic witnessed locus;
-  - it is not an analytic-extension claim.
+  must consume exactly those three lemmas (no hidden bridge packaging).
+- Direct non-deferred pass-through theorem (when the three bridge inputs are
+  supplied explicitly):
+  `d1N2InvariantKernelDiffZeroOnForwardizableQuadric_of_source_and_invariantBridgeInputs`.
 - Numerical checks support only the intrinsic witness-inequality translation
   (section-coordinate FT inequalities ↔ invariant inequalities), not the full
   proofs of (1)-(3).
+- Correction-hypothesis fix:
+  - the correction premise in the invariant core is now stated on real
+    invariant tuples together with the intrinsic paired witness inequalities.
+  - the standalone spacelike-sign variant
+    (`q0.re + q1.re - 2*p.re > 0`) was removed from the correction premise
+    because it is incompatible with real paired-witness inequalities.
+  - `blocker_d1N2InvariantBridgeCorrection_fromSource_deferred` must target this
+    corrected witnessed correction statement (not the removed spacelike-sign
+    variant).
+- Source-implies-correction status:
+  - deriving the current real-slice witnessed correction premise from
+    `d1N2InvariantKernelSource` remains deferred bridge work.
+  - a formal counterexample still records that the older spacelike-only
+    correction variant is not source-forced for arbitrary off-image values.
+  - harness theorem:
+    `ProofHarness/D1N2SourceCorrectionCounterexample.lean`
+    (`d1N2InvariantKernelSource_not_sufficient_for_realSpacelikeCorrection_nonzero`).
 
 ## Current Lean State
 - The entire `OSReconstruction/ComplexLieGroups` folder compiles.
@@ -57,8 +80,9 @@ This lock file tracks only the active analytic blocker for the `d=1, n=2` route.
   - active deferred front is split between:
     1. invariant-core theorem
        `blocker_d1N2InvariantKernelSwapEq_onSectionWitnessPair_invariantFunction_core_deferred`,
-    2. source-to-invariant bridge lemmas (analyticity/preconnectedness/correction)
-       used by
+    2. three explicit source-to-invariant bridge lemmas
+       (`...BridgeAnalyticity...`, `...BridgePreconnected...`,
+       `...BridgeCorrection...`) used by
        `blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred`.
   - source-wrapper theorem
     `blocker_d1N2ForwardWitnessEq_fromSource_deferred` now has no `sorry`.
@@ -74,6 +98,9 @@ This lock file tracks only the active analytic blocker for the `d=1, n=2` route.
     `PermutationFlowBlockers/Core.lean` after confirming zero downstream uses.
   - removed dead `Tail.lean` wrappers (`invariantModel`, pointwise-anchor, and
     source-open-anchor helpers) that had no call sites.
+  - removed additional dead `Tail.lean` correction wrappers with no call sites
+    (`d1N2InvariantKernelSwapEq_onSectionWitnessPair_realSlice_of_correction`
+    and the real-spacelike witness-negation wrapper chain).
 - no change to blocker mathematics; only proof-graph pruning.
 - `PermutationFlowBlockers/Core.lean` is now reduced to 658 lines.
 

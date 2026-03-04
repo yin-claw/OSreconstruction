@@ -11,7 +11,7 @@ variable {d : ℕ}
 /-- Deferred invariant-only core (`d=1,n=2`):
 for a function of Lorentz invariants, prove swap symmetry on the doubly
 witnessed quadric locus from intrinsic analyticity/connectedness plus a real
-spacelike correction condition, all in `(q0,q1,p,s)` variables. -/
+witnessed correction condition, all in `(q0,q1,p,s)` variables. -/
 theorem blocker_d1N2InvariantKernelSwapEq_onSectionWitnessPair_invariantFunction_core_deferred
     (f : ℂ → ℂ → ℂ → ℂ → ℂ)
     (hAnalytic :
@@ -61,7 +61,6 @@ theorem blocker_d1N2InvariantKernelSwapEq_onSectionWitnessPair_invariantFunction
         q1.im = 0 →
         p.im = 0 →
         s.im = 0 →
-        q0.re + q1.re - 2 * p.re > 0 →
         f q0 q1 p s = f q1 q0 p (-s)) :
     ∀ q0 q1 p s : ℂ, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
       (∃ v0 : ℂ,
@@ -85,9 +84,13 @@ theorem blocker_d1N2InvariantKernelSwapEq_onSectionWitnessPair_invariantFunction
   -- Remaining invariant-route analytic input.
   sorry
 
-/-- Convert a forward witness with invariant quadruple `(q0,q1,p,s)` into the
-intrinsic `v0`-side witness inequalities used by the invariant-only core
-theorem. -/
+/-- Forward-to-invariant witness extraction (`d=1,n=2`):
+from a concrete forward-tube configuration `z` with invariant tuple
+`(q0,q1,p,s)`, produce an intrinsic original-chart witness `v0` satisfying the
+inequalities in invariant variables.
+
+Mathematically, this maps a point of `FT_{1,2}` to the original-side invariant
+witness locus used in the invariant-only core theorem. -/
 lemma d1N2InvariantOrigWitnessIneq_of_forwardInvariants
     {q0 q1 p s : ℂ} {z : Fin 2 → Fin (1 + 1) → ℂ}
     (hz : z ∈ ForwardTube 1 2)
@@ -180,145 +183,210 @@ lemma d1N2InvariantOrigWitnessIneq_of_forwardInvariants
               ring_nf
     exact hEq.symm ▸ hVdiff_im_pos
 
-/-- Deferred source-to-invariant bridge (analyticity part): from
-`d1N2InvariantKernelSource f`, obtain differentiability of the swap-difference
-invariant function on the intrinsic witnessed quadric locus. -/
-theorem blocker_d1N2InvariantBridgeAnalyticity_fromSource_deferred
+/-- Invariant-to-forward reconstruction for the original chart (`d=1,n=2`):
+if `v0` satisfies the intrinsic original-side witness inequalities for
+`(q0,p,s)`, then the explicit section representative
+`d1N2SectionOrig q0 q1 p s v0` belongs to `FT_{1,2}`.
+
+This is the converse direction to forward-to-invariant witness extraction on
+the original chart. -/
+lemma d1N2SectionOrig_mem_forwardTube_of_witnessIneq
+    {q0 q1 p s v0 : ℂ}
+    (hv0im : 0 < v0.im)
+    (hU0im : 0 < ((-q0) / v0).im)
+    (hUdiffim : 0 < ((q0 - p - s / 2) / v0).im)
+    (hVdiffim : 0 < (((p - s / 2 - q0) * v0 / q0).im)) :
+    d1N2SectionOrig q0 q1 p s v0 ∈ ForwardTube 1 2 := by
+  let z : Fin 2 → Fin (1 + 1) → ℂ := d1N2SectionOrig q0 q1 p s v0
+  have hq0_ne : q0 ≠ 0 := by
+    intro hq0
+    have hzero : (((p - s / 2 - q0) * v0 / q0).im) = 0 := by
+      simp [hq0]
+    linarith
+  have hz0cone : InOpenForwardCone 1 (fun μ => (z 0 μ).im) := by
+    have hz0pm :
+        (fun μ => (z 0 μ).im) 0 + (fun μ => (z 0 μ).im) 1 > 0 ∧
+          (fun μ => (z 0 μ).im) 0 - (fun μ => (z 0 μ).im) 1 > 0 := by
+      refine ⟨?_, ?_⟩
+      · have hsum :
+          (fun μ => (z 0 μ).im) 0 + (fun μ => (z 0 μ).im) 1 = (d1U0 z).im := by
+            simp [d1U0, Complex.add_im]
+        have hU0 :
+            d1U0 z = (-q0) / v0 := by
+          simp [z, d1N2SectionOrig]
+        rw [hsum, hU0]
+        exact hU0im
+      · have hdiff :
+          (fun μ => (z 0 μ).im) 0 - (fun μ => (z 0 μ).im) 1 = (d1V0 z).im := by
+            simp [d1V0, Complex.sub_im]
+        have hV0 : d1V0 z = v0 := by
+          simp [z, d1N2SectionOrig]
+        rw [hdiff, hV0]
+        exact hv0im
+    exact (inOpenForwardCone_d1_iff_pm (fun μ => (z 0 μ).im)).2 hz0pm
+  have hzdiffcone : InOpenForwardCone 1 (fun μ => (z 1 μ - z 0 μ).im) := by
+    have hpm :
+        (fun μ => (z 1 μ - z 0 μ).im) 0 + (fun μ => (z 1 μ - z 0 μ).im) 1 > 0 ∧
+          (fun μ => (z 1 μ - z 0 μ).im) 0 - (fun μ => (z 1 μ - z 0 μ).im) 1 > 0 := by
+      refine ⟨?_, ?_⟩
+      · have hsum :
+          (fun μ => (z 1 μ - z 0 μ).im) 0 + (fun μ => (z 1 μ - z 0 μ).im) 1 =
+            (d1U1 z - d1U0 z).im := by
+          simp [d1U0, d1U1, Complex.add_im, Complex.sub_im]
+          ring
+        have hU :
+            d1U1 z - d1U0 z = (q0 - p - s / 2) / v0 := by
+          simp [z, d1N2SectionOrig]
+          ring
+        rw [hsum, hU]
+        exact hUdiffim
+      · have hdiff :
+          (fun μ => (z 1 μ - z 0 μ).im) 0 - (fun μ => (z 1 μ - z 0 μ).im) 1 =
+            (d1V1 z - d1V0 z).im := by
+          simp [d1V0, d1V1, Complex.sub_im]
+          ring
+        have hV :
+            d1V1 z - d1V0 z = (p - s / 2 - q0) * v0 / q0 := by
+          calc
+            d1V1 z - d1V0 z = (p - s / 2) * v0 / q0 - v0 := by
+              simp [z, d1N2SectionOrig]
+              ring
+            _ = (p - s / 2 - q0) * v0 / q0 := by
+              field_simp [hq0_ne]
+        rw [hdiff, hV]
+        exact hVdiffim
+    exact (inOpenForwardCone_d1_iff_pm (fun μ => (z 1 μ - z 0 μ).im)).2 hpm
+  exact (forwardTube_d1_n2_iff z).2 ⟨hz0cone, hzdiffcone⟩
+
+/-- Invariant-to-forward reconstruction for the swapped chart (`d=1,n=2`):
+if `w0` satisfies the intrinsic swapped-side witness inequalities for
+`(q1,p,s)`, then the explicit swapped section representative
+`d1N2SectionSwap q0 q1 p s w0` belongs to `FT_{1,2}`.
+
+Together with the original-chart reconstruction lemma, this identifies the
+intrinsic witness inequalities with forward realizability of section charts. -/
+lemma d1N2SectionSwap_mem_forwardTube_of_witnessIneq
+    {q0 q1 p s w0 : ℂ}
+    (hw0im : 0 < w0.im)
+    (hU0im : 0 < ((-q1) / w0).im)
+    (hUdiffim : 0 < ((q1 - p + s / 2) / w0).im)
+    (hVdiffim : 0 < (((p + s / 2 - q1) * w0 / q1).im)) :
+    d1N2SectionSwap q0 q1 p s w0 ∈ ForwardTube 1 2 := by
+  let z : Fin 2 → Fin (1 + 1) → ℂ := d1N2SectionSwap q0 q1 p s w0
+  have hq1_ne : q1 ≠ 0 := by
+    intro hq1
+    have hzero : (((p + s / 2 - q1) * w0 / q1).im) = 0 := by
+      simp [hq1]
+    linarith
+  have hz0cone : InOpenForwardCone 1 (fun μ => (z 0 μ).im) := by
+    have hz0pm :
+        (fun μ => (z 0 μ).im) 0 + (fun μ => (z 0 μ).im) 1 > 0 ∧
+          (fun μ => (z 0 μ).im) 0 - (fun μ => (z 0 μ).im) 1 > 0 := by
+      refine ⟨?_, ?_⟩
+      · have hsum :
+          (fun μ => (z 0 μ).im) 0 + (fun μ => (z 0 μ).im) 1 = (d1U0 z).im := by
+            simp [d1U0, Complex.add_im]
+        have hU0 :
+            d1U0 z = (-q1) / w0 := by
+          simp [z, d1N2SectionSwap]
+        rw [hsum, hU0]
+        exact hU0im
+      · have hdiff :
+          (fun μ => (z 0 μ).im) 0 - (fun μ => (z 0 μ).im) 1 = (d1V0 z).im := by
+            simp [d1V0, Complex.sub_im]
+        have hV0 : d1V0 z = w0 := by
+          simp [z, d1N2SectionSwap]
+        rw [hdiff, hV0]
+        exact hw0im
+    exact (inOpenForwardCone_d1_iff_pm (fun μ => (z 0 μ).im)).2 hz0pm
+  have hzdiffcone : InOpenForwardCone 1 (fun μ => (z 1 μ - z 0 μ).im) := by
+    have hpm :
+        (fun μ => (z 1 μ - z 0 μ).im) 0 + (fun μ => (z 1 μ - z 0 μ).im) 1 > 0 ∧
+          (fun μ => (z 1 μ - z 0 μ).im) 0 - (fun μ => (z 1 μ - z 0 μ).im) 1 > 0 := by
+      refine ⟨?_, ?_⟩
+      · have hsum :
+          (fun μ => (z 1 μ - z 0 μ).im) 0 + (fun μ => (z 1 μ - z 0 μ).im) 1 =
+            (d1U1 z - d1U0 z).im := by
+          simp [d1U0, d1U1, Complex.add_im, Complex.sub_im]
+          ring
+        have hU :
+            d1U1 z - d1U0 z = (q1 - p + s / 2) / w0 := by
+          simp [z, d1N2SectionSwap]
+          ring
+        rw [hsum, hU]
+        exact hUdiffim
+      · have hdiff :
+          (fun μ => (z 1 μ - z 0 μ).im) 0 - (fun μ => (z 1 μ - z 0 μ).im) 1 =
+            (d1V1 z - d1V0 z).im := by
+          simp [d1V0, d1V1, Complex.sub_im]
+          ring
+        have hV :
+            d1V1 z - d1V0 z = (p + s / 2 - q1) * w0 / q1 := by
+          calc
+            d1V1 z - d1V0 z = (p + s / 2) * w0 / q1 - w0 := by
+              simp [z, d1N2SectionSwap]
+              ring
+            _ = (p + s / 2 - q1) * w0 / q1 := by
+              field_simp [hq1_ne]
+        rw [hdiff, hV]
+        exact hVdiffim
+    exact (inOpenForwardCone_d1_iff_pm (fun μ => (z 1 μ - z 0 μ).im)).2 hpm
+  exact (forwardTube_d1_n2_iff z).2 ⟨hz0cone, hzdiffcone⟩
+
+/-- Invariant-function wrapper around the intrinsic `d=1,n=2` core theorem:
+if the analytic, preconnectedness, and real-slice correction inputs hold on the
+invariant witnessed quadric locus, then the forwardizable-kernel difference
+vanishes. -/
+theorem blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_invariantFunction_core_deferred
     (f : ℂ → ℂ → ℂ → ℂ → ℂ)
-    (hsource : d1N2InvariantKernelSource f) :
-    DifferentiableOn ℂ
-      (fun t : ℂ × ℂ × ℂ × ℂ =>
-        f t.1 t.2.1 t.2.2.1 t.2.2.2 - f t.2.1 t.1 t.2.2.1 (-t.2.2.2))
-      {t : ℂ × ℂ × ℂ × ℂ |
-        t.2.2.2 ^ 2 = 4 * (t.2.2.1 ^ 2 - t.1 * t.2.1) ∧
+    (hAnalytic :
+      DifferentiableOn ℂ
+        (fun t : ℂ × ℂ × ℂ × ℂ =>
+          f t.1 t.2.1 t.2.2.1 t.2.2.2 - f t.2.1 t.1 t.2.2.1 (-t.2.2.2))
+        {t : ℂ × ℂ × ℂ × ℂ |
+          t.2.2.2 ^ 2 = 4 * (t.2.2.1 ^ 2 - t.1 * t.2.1) ∧
+          (∃ v0 : ℂ,
+            0 < v0.im ∧
+            0 < ((-t.1) / v0).im ∧
+            0 < ((t.1 - t.2.2.1 - t.2.2.2 / 2) / v0).im ∧
+            0 < (((t.2.2.1 - t.2.2.2 / 2 - t.1) * v0 / t.1).im)) ∧
+          (∃ w0 : ℂ,
+            0 < w0.im ∧
+            0 < ((-t.2.1) / w0).im ∧
+            0 < ((t.2.1 - t.2.2.1 + t.2.2.2 / 2) / w0).im ∧
+            0 < (((t.2.2.1 + t.2.2.2 / 2 - t.2.1) * w0 / t.2.1).im))})
+    (hConnected :
+      IsPreconnected
+        {t : ℂ × ℂ × ℂ × ℂ |
+          t.2.2.2 ^ 2 = 4 * (t.2.2.1 ^ 2 - t.1 * t.2.1) ∧
+          (∃ v0 : ℂ,
+            0 < v0.im ∧
+            0 < ((-t.1) / v0).im ∧
+            0 < ((t.1 - t.2.2.1 - t.2.2.2 / 2) / v0).im ∧
+            0 < (((t.2.2.1 - t.2.2.2 / 2 - t.1) * v0 / t.1).im)) ∧
+          (∃ w0 : ℂ,
+            0 < w0.im ∧
+            0 < ((-t.2.1) / w0).im ∧
+            0 < ((t.2.1 - t.2.2.1 + t.2.2.2 / 2) / w0).im ∧
+            0 < (((t.2.2.1 + t.2.2.2 / 2 - t.2.1) * w0 / t.2.1).im))})
+    (hCorrection :
+      ∀ q0 q1 p s : ℂ,
+        s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
         (∃ v0 : ℂ,
           0 < v0.im ∧
-          0 < ((-t.1) / v0).im ∧
-          0 < ((t.1 - t.2.2.1 - t.2.2.2 / 2) / v0).im ∧
-          0 < (((t.2.2.1 - t.2.2.2 / 2 - t.1) * v0 / t.1).im)) ∧
+          0 < ((-q0) / v0).im ∧
+          0 < ((q0 - p - s / 2) / v0).im ∧
+          0 < (((p - s / 2 - q0) * v0 / q0).im)) →
         (∃ w0 : ℂ,
           0 < w0.im ∧
-          0 < ((-t.2.1) / w0).im ∧
-          0 < ((t.2.1 - t.2.2.1 + t.2.2.2 / 2) / w0).im ∧
-          0 < (((t.2.2.1 + t.2.2.2 / 2 - t.2.1) * w0 / t.2.1).im))} := by
-  let _ := hsource
-  sorry
-
-/-- Deferred source-to-invariant bridge (connectedness part): from
-`d1N2InvariantKernelSource f`, obtain preconnectedness of the intrinsic
-witnessed quadric locus for the invariant swap-difference. -/
-theorem blocker_d1N2InvariantBridgePreconnected_fromSource_deferred
-    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
-    (hsource : d1N2InvariantKernelSource f) :
-    IsPreconnected
-      {t : ℂ × ℂ × ℂ × ℂ |
-        t.2.2.2 ^ 2 = 4 * (t.2.2.1 ^ 2 - t.1 * t.2.1) ∧
-        (∃ v0 : ℂ,
-          0 < v0.im ∧
-          0 < ((-t.1) / v0).im ∧
-          0 < ((t.1 - t.2.2.1 - t.2.2.2 / 2) / v0).im ∧
-          0 < (((t.2.2.1 - t.2.2.2 / 2 - t.1) * v0 / t.1).im)) ∧
-        (∃ w0 : ℂ,
-          0 < w0.im ∧
-          0 < ((-t.2.1) / w0).im ∧
-          0 < ((t.2.1 - t.2.2.1 + t.2.2.2 / 2) / w0).im ∧
-          0 < (((t.2.2.1 + t.2.2.2 / 2 - t.2.1) * w0 / t.2.1).im))} := by
-  let _ := hsource
-  sorry
-
-/-- Deferred source-to-invariant bridge (correction part): from
-`d1N2InvariantKernelSource f`, obtain the real-slice spacelike correction rule
-for the invariant kernel function. -/
-theorem blocker_d1N2InvariantBridgeCorrection_fromSource_deferred
-    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
-    (hsource : d1N2InvariantKernelSource f) :
-    ∀ q0 q1 p s : ℂ,
-      s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
-      (∃ v0 : ℂ,
-        0 < v0.im ∧
-        0 < ((-q0) / v0).im ∧
-        0 < ((q0 - p - s / 2) / v0).im ∧
-        0 < (((p - s / 2 - q0) * v0 / q0).im)) →
-      (∃ w0 : ℂ,
-        0 < w0.im ∧
-        0 < ((-q1) / w0).im ∧
-        0 < ((q1 - p + s / 2) / w0).im ∧
-        0 < (((p + s / 2 - q1) * w0 / q1).im)) →
-      q0.im = 0 →
-      q1.im = 0 →
-      p.im = 0 →
-      s.im = 0 →
-      q0.re + q1.re - 2 * p.re > 0 →
-      f q0 q1 p s = f q1 q0 p (-s) := by
-  let _ := hsource
-  intro q0 q1 p s _hquad hOrigFT hSwapFT hq0im hq1im hpim hsim hsp
-  rcases hOrigFT with ⟨v0, hv0im, _hv0a, hv0b, _hv0c⟩
-  rcases hSwapFT with ⟨w0, hw0im, _hw0a, hw0b, _hw0c⟩
-  have hOrig_im0 : (q0 - p - s / 2).im = 0 := by
-    simp [hq0im, hpim, hsim]
-  have hSwap_im0 : (q1 - p + s / 2).im = 0 := by
-    simp [hq1im, hpim, hsim]
-  have hv0_ne : v0 ≠ 0 := by
-    intro hv0
-    have : v0.im = 0 := by simp [hv0]
-    linarith
-  have hw0_ne : w0 ≠ 0 := by
-    intro hw0
-    have : w0.im = 0 := by simp [hw0]
-    linarith
-  have hv0_normSq_pos : 0 < Complex.normSq v0 := (Complex.normSq_pos).2 hv0_ne
-  have hw0_normSq_pos : 0 < Complex.normSq w0 := (Complex.normSq_pos).2 hw0_ne
-  have hOrig_div :
-      0 < (-(q0 - p - s / 2).re * v0.im) / Complex.normSq v0 := by
-    have hform :
-        ((q0 - p - s / 2) / v0).im =
-          (-(q0 - p - s / 2).re * v0.im) / Complex.normSq v0 := by
-      calc
-        ((q0 - p - s / 2) / v0).im
-            = (q0 - p - s / 2).im * v0.re / Complex.normSq v0 -
-                (q0 - p - s / 2).re * v0.im / Complex.normSq v0 := by
-                  simpa using Complex.div_im (q0 - p - s / 2) v0
-        _ = (-(q0 - p - s / 2).re * v0.im) / Complex.normSq v0 := by
-              simp [hOrig_im0]
-              ring
-    simpa [hform] using hv0b
-  have hSwap_div :
-      0 < (-(q1 - p + s / 2).re * w0.im) / Complex.normSq w0 := by
-    have hform :
-        ((q1 - p + s / 2) / w0).im =
-          (-(q1 - p + s / 2).re * w0.im) / Complex.normSq w0 := by
-      calc
-        ((q1 - p + s / 2) / w0).im
-            = (q1 - p + s / 2).im * w0.re / Complex.normSq w0 -
-                (q1 - p + s / 2).re * w0.im / Complex.normSq w0 := by
-                  simpa using Complex.div_im (q1 - p + s / 2) w0
-        _ = (-(q1 - p + s / 2).re * w0.im) / Complex.normSq w0 := by
-              simp [hSwap_im0]
-              ring
-    simpa [hform] using hw0b
-  have hOrig_mul : 0 < (-(q0 - p - s / 2).re * v0.im) := by
-    exact (div_pos_iff_of_pos_right hv0_normSq_pos).1 hOrig_div
-  have hSwap_mul : 0 < (-(q1 - p + s / 2).re * w0.im) := by
-    exact (div_pos_iff_of_pos_right hw0_normSq_pos).1 hSwap_div
-  have hOrig_lt : (q0 - p - s / 2).re < 0 := by
-    have hneg : 0 < -(q0 - p - s / 2).re := by
-      exact pos_of_mul_pos_left hOrig_mul (le_of_lt hv0im)
-    linarith
-  have hSwap_lt : (q1 - p + s / 2).re < 0 := by
-    have hneg : 0 < -(q1 - p + s / 2).re := by
-      exact pos_of_mul_pos_left hSwap_mul (le_of_lt hw0im)
-    linarith
-  have hsum_lt : q0.re + q1.re - 2 * p.re < 0 := by
-    have h1 : q0.re - p.re - s.re / 2 < 0 := by simpa using hOrig_lt
-    have h2 : q1.re - p.re + s.re / 2 < 0 := by simpa using hSwap_lt
-    linarith
-  exfalso
-  linarith
-
-/-- Source wrapper around the invariant-only forwardizable-kernel core. -/
-theorem blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred
-    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
-    (hsource : d1N2InvariantKernelSource f) :
+          0 < ((-q1) / w0).im ∧
+          0 < ((q1 - p + s / 2) / w0).im ∧
+          0 < (((p + s / 2 - q1) * w0 / q1).im)) →
+        q0.im = 0 →
+        q1.im = 0 →
+        p.im = 0 →
+        s.im = 0 →
+        f q0 q1 p s = f q1 q0 p (-s)) :
     d1N2InvariantKernelDiffZeroOnForwardizableQuadric f := by
   intro q0 q1 p s hquad hfw
   have hpairReal :
@@ -348,25 +416,169 @@ theorem blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invaria
       simpa [hB] using hw0b
     · have hC : p - (-s) / 2 - q1 = p + s / 2 - q1 := by ring
       simpa [hC] using hw0c
-  let S : Set (ℂ × ℂ × ℂ × ℂ) :=
-    {t | t.2.2.2 ^ 2 = 4 * (t.2.2.1 ^ 2 - t.1 * t.2.1) ∧
+  have hEq :
+      f q0 q1 p s = f q1 q0 p (-s) :=
+    blocker_d1N2InvariantKernelSwapEq_onSectionWitnessPair_invariantFunction_core_deferred
+      f
+      hAnalytic
+      hConnected
+      hCorrection
+      q0 q1 p s hquad hOrigFT hSwapFT
+  exact sub_eq_zero.mpr hEq
+
+/-- Deferred source-to-invariant bridge (analyticity input).
+
+Define the invariant antisymmetric difference
+`g(q0,q1,p,s) := f q0 q1 p s - f q1 q0 p (-s)`, and let `D` be the intrinsic
+domain cut out by:
+1. `s^2 = 4 * (p^2 - q0*q1)`,
+2. the original witness inequalities,
+3. the swapped witness inequalities.
+
+This theorem asks to derive `DifferentiableOn ℂ g D` from the source package
+`d1N2InvariantKernelSource f` (i.e. from a holomorphic source field on
+`FT_{1,2}` plus invariant factorization). -/
+theorem blocker_d1N2InvariantBridgeAnalyticity_fromSource_deferred
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hsource : d1N2InvariantKernelSource f) :
+    DifferentiableOn ℂ
+      (fun t : ℂ × ℂ × ℂ × ℂ =>
+        f t.1 t.2.1 t.2.2.1 t.2.2.2 - f t.2.1 t.1 t.2.2.1 (-t.2.2.2))
+      {t : ℂ × ℂ × ℂ × ℂ |
+        t.2.2.2 ^ 2 = 4 * (t.2.2.1 ^ 2 - t.1 * t.2.1) ∧
+        (∃ v0 : ℂ,
+          0 < v0.im ∧
+          0 < ((-t.1) / v0).im ∧
+          0 < ((t.1 - t.2.2.1 - t.2.2.2 / 2) / v0).im ∧
+          0 < (((t.2.2.1 - t.2.2.2 / 2 - t.1) * v0 / t.1).im)) ∧
+        (∃ w0 : ℂ,
+          0 < w0.im ∧
+          0 < ((-t.2.1) / w0).im ∧
+          0 < ((t.2.1 - t.2.2.1 + t.2.2.2 / 2) / w0).im ∧
+          0 < (((t.2.2.1 + t.2.2.2 / 2 - t.2.1) * w0 / t.2.1).im))} := by
+  let _ := hsource
+  sorry
+
+/-- Deferred source-to-invariant bridge (connectedness input).
+
+For the same intrinsic invariant domain `D` (quadric relation + original and
+swapped witness inequalities), prove `IsPreconnected D`.
+
+Mathematically, this is the topological propagation domain on which a
+holomorphic identity for the swap-difference can extend from an anchored subset
+to all of `D`. -/
+theorem blocker_d1N2InvariantBridgePreconnected_fromSource_deferred
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hsource : d1N2InvariantKernelSource f) :
+    IsPreconnected
+      {t : ℂ × ℂ × ℂ × ℂ |
+        t.2.2.2 ^ 2 = 4 * (t.2.2.1 ^ 2 - t.1 * t.2.1) ∧
+        (∃ v0 : ℂ,
+          0 < v0.im ∧
+          0 < ((-t.1) / v0).im ∧
+          0 < ((t.1 - t.2.2.1 - t.2.2.2 / 2) / v0).im ∧
+          0 < (((t.2.2.1 - t.2.2.2 / 2 - t.1) * v0 / t.1).im)) ∧
+        (∃ w0 : ℂ,
+          0 < w0.im ∧
+          0 < ((-t.2.1) / w0).im ∧
+          0 < ((t.2.1 - t.2.2.1 + t.2.2.2 / 2) / w0).im ∧
+          0 < (((t.2.2.1 + t.2.2.2 / 2 - t.2.1) * w0 / t.2.1).im))} := by
+  let _ := hsource
+  sorry
+
+/-- Deferred source-to-invariant bridge (correction input).
+
+This is the anchor identity for the same swap-difference
+`g(q0,q1,p,s) := f q0 q1 p s - f q1 q0 p (-s)`:
+on points satisfying
+1. the quadric relation,
+2. both intrinsic witness inequalities,
+3. real-slice conditions `q0.im = q1.im = p.im = s.im = 0`,
+prove `g(q0,q1,p,s) = 0`.
+
+This is the real-slice correction datum that feeds the invariant-core theorem. -/
+theorem blocker_d1N2InvariantBridgeCorrection_fromSource_deferred
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hsource : d1N2InvariantKernelSource f) :
+    ∀ q0 q1 p s : ℂ,
+      s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
       (∃ v0 : ℂ,
         0 < v0.im ∧
-        0 < ((-t.1) / v0).im ∧
-        0 < ((t.1 - t.2.2.1 - t.2.2.2 / 2) / v0).im ∧
-        0 < (((t.2.2.1 - t.2.2.2 / 2 - t.1) * v0 / t.1).im)) ∧
+        0 < ((-q0) / v0).im ∧
+        0 < ((q0 - p - s / 2) / v0).im ∧
+        0 < (((p - s / 2 - q0) * v0 / q0).im)) →
       (∃ w0 : ℂ,
         0 < w0.im ∧
-        0 < ((-t.2.1) / w0).im ∧
-        0 < ((t.2.1 - t.2.2.1 + t.2.2.2 / 2) / w0).im ∧
-        0 < (((t.2.2.1 + t.2.2.2 / 2 - t.2.1) * w0 / t.2.1).im))}
-  have hBridge :
+        0 < ((-q1) / w0).im ∧
+        0 < ((q1 - p + s / 2) / w0).im ∧
+        0 < (((p + s / 2 - q1) * w0 / q1).im)) →
+      q0.im = 0 →
+      q1.im = 0 →
+      p.im = 0 →
+      s.im = 0 →
+      f q0 q1 p s = f q1 q0 p (-s) := by
+  let _ := hsource
+  intro q0 q1 p s hquad hOrigFT hSwapFT hq0im hq1im hpim hsim
+  let _ := hquad
+  let _ := hOrigFT
+  let _ := hSwapFT
+  let _ := hq0im
+  let _ := hq1im
+  let _ := hpim
+  let _ := hsim
+  -- Roadmap for this deferred bridge:
+  -- 1) Geometric/change-of-variables part (already formalized):
+  --    witness inequalities -> section points in `FT_{1,2}`, and via `hf_onFT`
+  --    rewrite the target as equality of source values
+  --    `F (d1N2SectionSwap ...) = F (d1N2SectionOrig ...)`.
+  -- 2) Remaining non-geometric step:
+  --    promote real-slice local-commutativity anchor equality to these complex
+  --    section points by analytic uniqueness propagation on the witnessed
+  --    invariant domain for
+  --    `g(q0,q1,p,s) = f q0 q1 p s - f q1 q0 p (-s)`.
+  -- EOW-type geometry gives the domain/anchor reachability; the blocker here
+  -- is the analytic uniqueness transfer from the source field formulation to
+  -- the invariant `g`-formulation.
+  sorry
+
+/-- Pass-through reduction:
+if the three invariant bridge inputs are available, source-level forwardizable
+kernel diff-zero follows immediately. -/
+theorem d1N2InvariantKernelDiffZeroOnForwardizableQuadric_of_source_and_invariantBridgeInputs
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hsource : d1N2InvariantKernelSource f)
+    (hAnalytic :
       DifferentiableOn ℂ
         (fun t : ℂ × ℂ × ℂ × ℂ =>
           f t.1 t.2.1 t.2.2.1 t.2.2.2 - f t.2.1 t.1 t.2.2.1 (-t.2.2.2))
-        S ∧
-      IsPreconnected S ∧
-      (∀ q0 q1 p s : ℂ,
+        {t : ℂ × ℂ × ℂ × ℂ |
+          t.2.2.2 ^ 2 = 4 * (t.2.2.1 ^ 2 - t.1 * t.2.1) ∧
+          (∃ v0 : ℂ,
+            0 < v0.im ∧
+            0 < ((-t.1) / v0).im ∧
+            0 < ((t.1 - t.2.2.1 - t.2.2.2 / 2) / v0).im ∧
+            0 < (((t.2.2.1 - t.2.2.2 / 2 - t.1) * v0 / t.1).im)) ∧
+          (∃ w0 : ℂ,
+            0 < w0.im ∧
+            0 < ((-t.2.1) / w0).im ∧
+            0 < ((t.2.1 - t.2.2.1 + t.2.2.2 / 2) / w0).im ∧
+            0 < (((t.2.2.1 + t.2.2.2 / 2 - t.2.1) * w0 / t.2.1).im))})
+    (hConnected :
+      IsPreconnected
+        {t : ℂ × ℂ × ℂ × ℂ |
+          t.2.2.2 ^ 2 = 4 * (t.2.2.1 ^ 2 - t.1 * t.2.1) ∧
+          (∃ v0 : ℂ,
+            0 < v0.im ∧
+            0 < ((-t.1) / v0).im ∧
+            0 < ((t.1 - t.2.2.1 - t.2.2.2 / 2) / v0).im ∧
+            0 < (((t.2.2.1 - t.2.2.2 / 2 - t.1) * v0 / t.1).im)) ∧
+          (∃ w0 : ℂ,
+            0 < w0.im ∧
+            0 < ((-t.2.1) / w0).im ∧
+            0 < ((t.2.1 - t.2.2.1 + t.2.2.2 / 2) / w0).im ∧
+            0 < (((t.2.2.1 + t.2.2.2 / 2 - t.2.1) * w0 / t.2.1).im))})
+    (hCorrection :
+      ∀ q0 q1 p s : ℂ,
         s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
         (∃ v0 : ℂ,
           0 < v0.im ∧
@@ -382,22 +594,74 @@ theorem blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invaria
         q1.im = 0 →
         p.im = 0 →
         s.im = 0 →
-        q0.re + q1.re - 2 * p.re > 0 →
-        f q0 q1 p s = f q1 q0 p (-s)) := by
-    refine ⟨?_, ?_, ?_⟩
-    · simpa [S] using blocker_d1N2InvariantBridgeAnalyticity_fromSource_deferred f hsource
-    · simpa [S] using blocker_d1N2InvariantBridgePreconnected_fromSource_deferred f hsource
-    · exact blocker_d1N2InvariantBridgeCorrection_fromSource_deferred f hsource
-  rcases hBridge with ⟨hAnalyticS, hConnectedS, hCorrection⟩
-  have hEq :
-      f q0 q1 p s = f q1 q0 p (-s) :=
-    blocker_d1N2InvariantKernelSwapEq_onSectionWitnessPair_invariantFunction_core_deferred
-      f
-      (by simpa [S] using hAnalyticS)
-      (by simpa [S] using hConnectedS)
-      hCorrection
-      q0 q1 p s hquad hOrigFT hSwapFT
-  exact sub_eq_zero.mpr hEq
+        f q0 q1 p s = f q1 q0 p (-s)) :
+    d1N2InvariantKernelDiffZeroOnForwardizableQuadric f := by
+  let _ := hsource
+  exact blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_invariantFunction_core_deferred
+    f hAnalytic hConnected hCorrection
+
+/-- Source wrapper around the invariant-function reduction:
+the remaining blocker is to derive the three invariant-function hypotheses from
+`d1N2InvariantKernelSource f`:
+analyticity + witnessed-locus preconnectedness + real-slice witnessed
+correction. -/
+theorem blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hsource : d1N2InvariantKernelSource f) :
+    d1N2InvariantKernelDiffZeroOnForwardizableQuadric f := by
+  have hAnalytic :
+      DifferentiableOn ℂ
+        (fun t : ℂ × ℂ × ℂ × ℂ =>
+          f t.1 t.2.1 t.2.2.1 t.2.2.2 - f t.2.1 t.1 t.2.2.1 (-t.2.2.2))
+        {t : ℂ × ℂ × ℂ × ℂ |
+          t.2.2.2 ^ 2 = 4 * (t.2.2.1 ^ 2 - t.1 * t.2.1) ∧
+          (∃ v0 : ℂ,
+            0 < v0.im ∧
+            0 < ((-t.1) / v0).im ∧
+            0 < ((t.1 - t.2.2.1 - t.2.2.2 / 2) / v0).im ∧
+            0 < (((t.2.2.1 - t.2.2.2 / 2 - t.1) * v0 / t.1).im)) ∧
+          (∃ w0 : ℂ,
+            0 < w0.im ∧
+            0 < ((-t.2.1) / w0).im ∧
+            0 < ((t.2.1 - t.2.2.1 + t.2.2.2 / 2) / w0).im ∧
+            0 < (((t.2.2.1 + t.2.2.2 / 2 - t.2.1) * w0 / t.2.1).im))} :=
+    blocker_d1N2InvariantBridgeAnalyticity_fromSource_deferred f hsource
+  have hConnected :
+      IsPreconnected
+        {t : ℂ × ℂ × ℂ × ℂ |
+          t.2.2.2 ^ 2 = 4 * (t.2.2.1 ^ 2 - t.1 * t.2.1) ∧
+          (∃ v0 : ℂ,
+            0 < v0.im ∧
+            0 < ((-t.1) / v0).im ∧
+            0 < ((t.1 - t.2.2.1 - t.2.2.2 / 2) / v0).im ∧
+            0 < (((t.2.2.1 - t.2.2.2 / 2 - t.1) * v0 / t.1).im)) ∧
+          (∃ w0 : ℂ,
+            0 < w0.im ∧
+            0 < ((-t.2.1) / w0).im ∧
+            0 < ((t.2.1 - t.2.2.1 + t.2.2.2 / 2) / w0).im ∧
+            0 < (((t.2.2.1 + t.2.2.2 / 2 - t.2.1) * w0 / t.2.1).im))} :=
+    blocker_d1N2InvariantBridgePreconnected_fromSource_deferred f hsource
+  have hCorrection :
+      ∀ q0 q1 p s : ℂ,
+        s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+        (∃ v0 : ℂ,
+          0 < v0.im ∧
+          0 < ((-q0) / v0).im ∧
+          0 < ((q0 - p - s / 2) / v0).im ∧
+          0 < (((p - s / 2 - q0) * v0 / q0).im)) →
+        (∃ w0 : ℂ,
+          0 < w0.im ∧
+          0 < ((-q1) / w0).im ∧
+          0 < ((q1 - p + s / 2) / w0).im ∧
+          0 < (((p + s / 2 - q1) * w0 / q1).im)) →
+        q0.im = 0 →
+        q1.im = 0 →
+        p.im = 0 →
+        s.im = 0 →
+        f q0 q1 p s = f q1 q0 p (-s) :=
+    blocker_d1N2InvariantBridgeCorrection_fromSource_deferred f hsource
+  exact d1N2InvariantKernelDiffZeroOnForwardizableQuadric_of_source_and_invariantBridgeInputs
+    f hsource hAnalytic hConnected hCorrection
 
 /-- Forward witness equality from the source package, reduced to the invariant
 forwardizable-kernel theorem. -/
@@ -604,7 +868,10 @@ theorem blocker_d1N2LocalSliceAnchorNhd_core_deferred
     F hF_holo hF_lorentz w0 Γ U hU_good).2 hforward
 
 
-/-- Deferred `d=1` local slice-anchor input at a prepared adjacent-swap anchor. -/
+/-- Deferred `d=1` local slice-anchor input on prepared neighborhoods in the
+nontrivial permutation branch (`¬ n ≤ 1`, `τ ≠ 1`).
+The `n = 2` case is reduced to the `d1N2` core; the remaining `n = 3` and
+`n ≥ 4` branches stay deferred. -/
 theorem blocker_eventually_slice_anchor_on_prepared_nhds_d1_nontrivial
     (n : ℕ)
     (F : (Fin n → Fin (1 + 1) → ℂ) → ℂ)
@@ -645,7 +912,10 @@ theorem blocker_eventually_slice_anchor_on_prepared_nhds_d1_nontrivial
   · -- Remaining nontrivial local branches (`n = 3` and `4 ≤ n`) stay deferred.
     sorry
 
-/-- Deferred `d=1` local slice-anchor input at a prepared adjacent-swap anchor. -/
+/-- Deferred `d=1` local slice-anchor input on prepared neighborhoods for an
+arbitrary permutation `τ`: the identity and `n ≤ 1` branches are discharged
+directly, and the nontrivial branch is reduced to
+`blocker_eventually_slice_anchor_on_prepared_nhds_d1_nontrivial`. -/
 theorem blocker_eventually_slice_anchor_on_prepared_nhds_d1
     (n : ℕ)
     (F : (Fin n → Fin (1 + 1) → ℂ) → ℂ)
