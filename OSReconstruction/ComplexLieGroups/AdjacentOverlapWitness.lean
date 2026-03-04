@@ -184,26 +184,6 @@ private lemma swapWitnessRealSwapped_diff_e2_at_ip1
   simp [consecutiveDiff, swapWitnessRealSwapped, swapWitnessReal, e1, e2, ip1, hip1_ne0, hprev,
     e2_ne_zero, e2_ne_e1, hi_ne_ip1]
 
-private lemma swapWitnessRealSwapped_linear_pos_special
-    (hd : 2 ≤ d) (i : Fin n) (hi : i.val + 1 < n) :
-    (3 / 5 : ℝ) * consecutiveDiff (swapWitnessRealSwapped (d := d) (n := n) hd i hi) i (e1 hd) +
-      (-4 / 5 : ℝ) * consecutiveDiff (swapWitnessRealSwapped (d := d) (n := n) hd i hi) i (e2 hd)
-      > 0 := by
-  rw [swapWitnessRealSwapped_diff_e1_at_i (d := d) (n := n) hd i hi,
-      swapWitnessRealSwapped_diff_e2_at_i (d := d) (n := n) hd i hi]
-  norm_num
-
-private lemma swapWitnessRealSwapped_linear_pos_ip1
-    (hd : 2 ≤ d) (i : Fin n) (hi : i.val + 1 < n) :
-    (3 / 5 : ℝ) *
-      consecutiveDiff (swapWitnessRealSwapped (d := d) (n := n) hd i hi) ⟨i.val + 1, hi⟩ (e1 hd) +
-      (-4 / 5 : ℝ) *
-      consecutiveDiff (swapWitnessRealSwapped (d := d) (n := n) hd i hi) ⟨i.val + 1, hi⟩ (e2 hd)
-      > 0 := by
-  rw [swapWitnessRealSwapped_diff_e1_at_ip1 (d := d) (n := n) hd i hi,
-      swapWitnessRealSwapped_diff_e2_at_ip1 (d := d) (n := n) hd i hi]
-  norm_num
-
 end BHW
 private noncomputable def spatialRotMatrix12 (d : ℕ) (_hd : 2 ≤ d) (a b : ℝ)
     (_hab : 0 < a ^ 2 + b ^ 2) : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ :=

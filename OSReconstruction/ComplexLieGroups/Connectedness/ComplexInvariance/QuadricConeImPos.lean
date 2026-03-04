@@ -91,26 +91,6 @@ private lemma etaContractFixed_one
   · intro i
     simp [etaContractFixed]
 
-private lemma parallel_value_etaContractFixed
-    (c : ℂ) (η : MinkowskiSpace (m + 1)) (t : ℝ) :
-    (fun μ : Fin (m + 2) =>
-      (((c.re / c.im) * (etaContractFixed (m := m) c η t μ) : ℝ) : ℂ) +
-        ((etaContractFixed (m := m) c η t μ : ℝ) : ℂ) * Complex.I)
-      =
-    (fun μ : Fin (m + 2) =>
-      if μ = 0 then
-        (Real.sqrt (c.im ^ 2 + (1 - t) ^ 2 * MinkowskiSpace.spatialNormSq (m + 1) η) : ℂ) *
-          ((c.re / c.im : ℝ) + Complex.I)
-      else
-        ((1 - t) * η μ : ℝ) * ((c.re / c.im : ℝ) + Complex.I)) := by
-  ext μ
-  refine Fin.cases ?_ ?_ μ
-  · simp [etaContractFixed, mul_add]
-    ring
-  · intro i
-    simp [etaContractFixed, mul_add]
-    ring
-
 private lemma etaContractFixed_one_general
     (c : ℂ) (η : MinkowskiSpace (m + 1)) (hcim : 0 < c.im) :
     etaContractFixed (m := m) c η 1 = (fun μ => if μ = 0 then c.im else 0) := by

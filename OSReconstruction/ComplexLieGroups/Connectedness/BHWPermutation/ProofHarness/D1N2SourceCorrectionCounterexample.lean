@@ -181,24 +181,74 @@ theorem d1N2_source_not_sufficient_for_boundaryIdentification_shape :
           q0.re + q1.re - 2 * p.re > 0 →
           f q0 q1 p s = f q1 q0 p (-s) := by
     intro f hsource q0 q1 p s hquad hq0im hq1im hpim hsim hsp
-    have hBoundaryId :
-        ∀ q0 q1 p s : ℂ,
-          s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
-          q0.im = 0 →
-          q1.im = 0 →
-          p.im = 0 →
-          s.im = 0 →
-          q0.re + q1.re - 2 * p.re > 0 →
-          ∃ x : Fin 2 → Fin (1 + 1) → ℝ,
-            d1InvariantQuad (realEmbed x) = (q0, q1, p, s) ∧
-            f q0 q1 p s = (Classical.choose hsource) (realEmbed x) ∧
-            f q1 q0 p (-s) =
-              (Classical.choose hsource)
-                (fun k μ => (x (Equiv.swap (0 : Fin 2) 1 k) μ : ℂ)) := by
-      intro q0 q1 p s hquad hq0im hq1im hpim hsim hsp
+    have hBoundary :
+        ∃ x : Fin 2 → Fin (1 + 1) → ℝ,
+          d1InvariantQuad (realEmbed x) = (q0, q1, p, s) ∧
+          f q0 q1 p s = (Classical.choose hsource) (realEmbed x) ∧
+          f q1 q0 p (-s) =
+            (Classical.choose hsource)
+              (fun k μ => (x (Equiv.swap (0 : Fin 2) 1 k) μ : ℂ)) := by
       simpa using hBoundaryFromSource f hsource q0 q1 p s hquad hq0im hq1im hpim hsim hsp
     exact blocker_d1N2InvariantBridgeCorrection_fromSource_deferred
-      f hsource hBoundaryId q0 q1 p s hquad hq0im hq1im hpim hsim hsp
+      f hsource q0 q1 p s hquad hq0im hq1im hpim hsim hsp hBoundary
   exact d1N2_source_not_sufficient_for_bridgeCorrection_shape hBridgeCorr
+
+/-- The stronger source-only shape that asks for fixed-invariant `ForwardTube`
+approach families at every real-spacelike tuple is also not derivable from
+`d1N2InvariantKernelSource` alone. -/
+theorem d1N2_source_not_sufficient_for_boundaryApproachFamilies_shape :
+    ¬ (∀ (f : ℂ → ℂ → ℂ → ℂ → ℂ) (_hsource : d1N2InvariantKernelSource f),
+      ∀ q0 q1 p s : ℂ,
+        s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+        q0.im = 0 →
+        q1.im = 0 →
+        p.im = 0 →
+        s.im = 0 →
+        q0.re + q1.re - 2 * p.re > 0 →
+        ∀ x : Fin 2 → Fin (1 + 1) → ℝ,
+          d1InvariantQuad (realEmbed x) = (q0, q1, p, s) →
+          (∃ φ : ℕ → Fin 2 → Fin (1 + 1) → ℂ,
+            (∀ n, φ n ∈ ForwardTube 1 2) ∧
+            Tendsto φ atTop
+              (𝓝[ForwardTube 1 2] (realEmbed (n := 2) (d := 1) x)) ∧
+            (∀ n, d1InvariantQuad (φ n) = (q0, q1, p, s))) ∧
+          (∃ ψ : ℕ → Fin 2 → Fin (1 + 1) → ℂ,
+            (∀ n, ψ n ∈ ForwardTube 1 2) ∧
+            Tendsto ψ atTop
+              (𝓝[ForwardTube 1 2]
+                (realEmbed (n := 2) (d := 1)
+                  (fun k μ => x (Equiv.swap (0 : Fin 2) 1 k) μ))) ∧
+            (∀ n, d1InvariantQuad (ψ n) = (q1, q0, p, -s)))) := by
+  intro hApproachFromSource
+  have hsource : d1N2InvariantKernelSource d1N2CounterexampleF :=
+    d1N2CounterexampleF_source
+  have hquad : (0 : ℂ) ^ 2 = 4 * ((3 : ℂ) ^ 2 - (9 : ℂ) * (1 : ℂ)) := by
+    norm_num
+  have hsp : (9 : ℂ).re + (1 : ℂ).re - 2 * (3 : ℂ).re > 0 := by
+    norm_num
+  rcases d1N2InvariantRealBoundaryWitness_exists
+      (9 : ℂ) (1 : ℂ) (3 : ℂ) (0 : ℂ)
+      hquad (by simp) (by simp) (by simp) (by simp) with
+    ⟨x, hxquad⟩
+  have hApproach :
+      (∃ φ : ℕ → Fin 2 → Fin (1 + 1) → ℂ,
+        (∀ n, φ n ∈ ForwardTube 1 2) ∧
+        Tendsto φ atTop
+          (𝓝[ForwardTube 1 2] (realEmbed (n := 2) (d := 1) x)) ∧
+        (∀ n, d1InvariantQuad (φ n) = ((9 : ℂ), (1 : ℂ), (3 : ℂ), (0 : ℂ)))) ∧
+      (∃ ψ : ℕ → Fin 2 → Fin (1 + 1) → ℂ,
+        (∀ n, ψ n ∈ ForwardTube 1 2) ∧
+        Tendsto ψ atTop
+          (𝓝[ForwardTube 1 2]
+            (realEmbed (n := 2) (d := 1)
+              (fun k μ => x (Equiv.swap (0 : Fin 2) 1 k) μ))) ∧
+        (∀ n, d1InvariantQuad (ψ n) = ((1 : ℂ), (9 : ℂ), (3 : ℂ), (-0 : ℂ)))) :=
+    hApproachFromSource d1N2CounterexampleF hsource
+      (9 : ℂ) (1 : ℂ) (3 : ℂ) (0 : ℂ)
+      hquad (by simp) (by simp) (by simp) (by simp) hsp x hxquad
+  rcases hApproach.1 with ⟨φ, hφFT, _hφtend, hφquad⟩
+  have hreal : d1N2InvariantRealizable (9 : ℂ) (1 : ℂ) (3 : ℂ) 0 :=
+    ⟨φ 0, hφFT 0, by simpa using hφquad 0⟩
+  exact d1N2InvariantRealizable_posProbe_not hreal
 
 end BHW

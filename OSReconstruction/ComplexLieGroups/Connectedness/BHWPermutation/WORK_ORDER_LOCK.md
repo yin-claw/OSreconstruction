@@ -84,16 +84,18 @@ locked exactly as currently stated:
 3. `blocker_d1N2InvariantBridgePreconnected_fromSource_deferred`
    - geometry-only `IsPreconnected` input for the same witnessed quadric domain
      (no source wrapper parameters).
-4. source-to-invariant boundary identification
-  - deferred theorem:
-    `blocker_d1N2InvariantBoundaryIdentification_fromSource_deferred`,
-  - mathematical content: real-slice spacelike source-to-invariant
-    identification on `(q0,q1,p,s)`,
-  - consumed downstream as the explicit `hBoundaryId` input of
+4. source-to-invariant correction bridge
+  - no source-only boundary-identification theorem claim is kept in `Tail.lean`
+    (that shape is formally false from source data alone),
+  - `blocker_d1N2InvariantBridgeCorrection_fromSource_deferred` remains a proved
+    conditional bridge: given an explicit boundary-identification witness, it
+    yields intrinsic correction equality in `(q0,q1,p,s)`,
+  - `blocker_d1N2InvariantBoundaryApproachFamilies_fromSource_deferred` is now a
+    sound obstruction theorem (real-spacelike hypotheses imply simultaneous
+    original+swapped fixed-invariant `FT` approach families are impossible),
+  - active deferred source input is now explicit as the local `hBoundary` `sorry`
+    inside
     `blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred`.
-
-`blocker_d1N2InvariantBridgeCorrection_fromSource_deferred` is now a proved
-reduction from that explicit boundary-identification hypothesis.
 
 No wrapper aliases are to be introduced for these statements; edits should
 target these declarations directly.
@@ -114,16 +116,13 @@ target these declarations directly.
   1. witnessed-locus differentiability of the swap-difference,
   2. witnessed-locus preconnectedness,
   3. real-slice spacelike correction rule for `f`.
-- The source-to-invariant bridge is locked to three explicit deferred lemmas:
+- The source-to-invariant bridge is locked to three explicit bridge inputs:
   1. `blocker_d1N2InvariantBridgeAnalyticity_fromSource_deferred`,
   2. `blocker_d1N2InvariantBridgePreconnected_fromSource_deferred`,
-  3. correction is derived by the now sorry-free theorem
-     `blocker_d1N2InvariantBridgeCorrection_fromSource_deferred`
-     from an explicit `hBoundaryId` input.
+  3. `blocker_d1N2InvariantBridgeCorrection_fromSource_deferred`.
 - The source wrapper theorem
   `blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred`
-  must consume those two deferred bridge lemmas plus explicit `hBoundaryId`
-  (no hidden bridge packaging).
+  must consume these three bridge inputs directly (no hidden bridge packaging).
 - Numerical checks support only the intrinsic witness-inequality translation
   (section-coordinate FT inequalities ↔ invariant inequalities), not the full
   proofs of (1)-(3).
@@ -136,9 +135,12 @@ target these declarations directly.
   - `blocker_d1N2InvariantBridgeCorrection_fromSource_deferred` targets this
     intrinsic real-slice spacelike correction statement.
 - Source-implies-correction status:
-  - deriving the explicit `hBoundaryId` input from
-    `d1N2InvariantKernelSource` remains deferred bridge work.
-  - once `hBoundaryId` is available, correction is now a proved reduction theorem.
+  - deriving the required per-point boundary-identification witness from
+    `d1N2InvariantKernelSource` remains deferred as a local input (`hBoundary`)
+    in
+    `blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred`.
+  - numerics now include an explicit off-image spike stress (test 8) that
+    reports `SOURCE_ONLY_SHAPE_PLAUSIBLY_FALSE`.
   - a formal counterexample records that source data alone does not force
     arbitrary off-image values of `f` on that real-spacelike set, so bridge
     closure must include the source-to-invariant analytic/boundary
@@ -158,14 +160,13 @@ target these declarations directly.
   - active deferred front is split between:
     1. invariant-core theorem
        `blocker_d1N2InvariantKernelSwapEq_onSectionWitnessPair_invariantFunction_core_deferred`,
-    2. one explicit source-to-invariant bridge lemma
-       (`...BridgePreconnected...`) plus the explicit
-       boundary-identification input required by
-       `blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred`,
-    3. explicit deferred boundary-identification theorem
-       `blocker_d1N2InvariantBoundaryIdentification_fromSource_deferred`.
-  - source-wrapper theorem
-    `blocker_d1N2ForwardWitnessEq_fromSource_deferred` now has no `sorry`.
+    2. source-to-invariant bridge lemmas
+       (`...BridgePreconnected...`) plus the explicit boundary-identification
+       input (`hBoundary`) inside
+       `...InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly...`.
+  - local `d=1,n=2` fixed-witness neighborhood theorem
+    `blocker_d1N2LocalForwardEqNhd_core_deferred` is now sorry-free and derived
+    from `blocker_d1N2ForwardWitnessEq_field_deferred`.
 - Wrapper cleanup status:
   - removed unused paired-chart equivalence wrappers from
     `PermutationFlowBlockers/Core.lean` to keep the blocker route minimal.
@@ -285,9 +286,41 @@ Run this in parallel with constructive proof work to avoid proving a false targe
   - correction anchors: `9000`,
   - complex witnessed-domain points: `4000`,
   - source-constraint points: `9000`,
-  - direct z-family correction hits: `30000/30000`.
+  - direct z-family correction hits: `30000/30000`,
+  - boundary-geometry reconstruction checks (test 6): `200000` with
+    `0` failures (max reconstruction error `2.10e-11`).
+  - local prepared-neighborhood surrogate checks (test 7): `14400`
+    sampled local points, no falsifier found.
+  - source-only correction off-image spike stress (test 8):
+    status `SOURCE_ONLY_SHAPE_PLAUSIBLY_FALSE`.
+  - swapped-branch FT realizability stress (test 9) on sampled real-spacelike
+    tuples:
+    - sampled tuples: `360` (`180` real-FT family + `180` phase-locked family),
+    - per-tuple randomized exact-invariant search trials: `9000`,
+    - original-branch FT hits: `360/360`,
+    - swapped-branch FT hits: `0/360`,
+    - status:
+      `SWAPPED_BRANCH_NOT_FOUND_ON_SAMPLED_REAL_SPACELIKE_TUPLES`.
+  - multi-seed test 9 sweep (`20260300..20260305`) with
+    `240` tuples/seed and `7000` searches/tuple:
+    - original-branch hits: `240/240` on all `6/6` seeds,
+    - swapped-branch hits: `0/240` on all `6/6` seeds.
+- Multi-seed sweep (`20260300..20260305`) with the same harness:
+  - per seed: source constraints `3700`, correction anchors `7500`,
+    complex witnessed-domain points `3200`, boundary reconstruction checks
+    `100000`;
+  - aggregate boundary reconstruction checks: `600000`, failures: `0`,
+    worst max reconstruction error across seeds: `2.97e-11`;
+  - source and correction nullspace dimensions were `0` on all seeds;
+  - all reported test statuses were `NO_NUMERIC_FALSIFIER_FOUND`.
 - Therefore tests 1/3/4 are not vacuous empty-domain checks; they evaluate the
   antisymmetric kernel on populated sampled domains.
+- For bridge-correction interpretation, test 4 by itself can be inconclusive
+  when sampled source-constrained nullspace collapses to `0`;
+  test 8 is the relevant stress for off-image freedom.
+- For source-side boundary identification on real-spacelike tuples, test 9
+  indicates an additional geometric/analytic mechanism is needed beyond simple
+  swapped-branch FT realizability.
 - Test 2 is also non-vacuous in sampling, but remains a finite-ansatz
   differentiability surrogate (not a formal analytic proof).
 
@@ -300,9 +333,12 @@ Run this in parallel with constructive proof work to avoid proving a false targe
 - This records that `d1N2InvariantKernelSource` alone does not force arbitrary
   off-image values of `f` on the full real-spacelike quadric set.
 - Practical consequence for proving campaign:
-  - proving `...BridgeCorrection_fromSource_deferred` requires an explicit
-    source-to-invariant boundary-identification step (the current blocker),
-    not only the raw source package data.
+  - do not attempt a source-only correction theorem shape;
+    keep the explicit boundary-identification bridge input in the source wrapper
+    reduction step.
+  - formalized geometric obstruction in `Tail.lean`:
+    `d1N2InvariantRealizablePair_real_spacelike_impossible` and
+    `d1N2InvariantForwardizableSwap_real_spacelike_impossible`.
 
 Counterexample harness file:
 - `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/ProofHarness/D1N2CounterexampleSearch.lean`

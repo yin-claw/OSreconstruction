@@ -65,30 +65,12 @@ theorem mem_orbitSet_wScalarE0_iff
 def firstColCLG : ComplexLorentzGroup (m + 1) → (Fin (m + 2) → ℂ) :=
   fun Λ k => Λ.val k 0
 
-theorem continuous_firstColCLG : Continuous (firstColCLG (m := m)) := by
-  apply continuous_pi
-  intro k
-  exact (continuous_apply 0).comp ((continuous_apply k).comp ComplexLorentzGroup.continuous_val)
-
 /-- Orbit-set membership for `wScalarE0 c` depends only on first-column data. -/
 theorem mem_orbitSet_wScalarE0_iff_firstCol
     (c : ℂ) (Λ : ComplexLorentzGroup (m + 1)) :
     Λ ∈ orbitSet (d := m + 1) (n := 1) (wScalarE0 (m := m) c) ↔
       InOpenForwardCone (m + 1) (fun μ => (c * firstColCLG (m := m) Λ μ).im) := by
   simpa [firstColCLG] using (mem_orbitSet_wScalarE0_iff (m := m) Λ c)
-
-/-- The one-point orbit set of `wScalarE0 c` as a first-column preimage. -/
-theorem orbitSet_wScalarE0_eq_preimage_firstCol
-    (c : ℂ) :
-    orbitSet (d := m + 1) (n := 1) (wScalarE0 (m := m) c)
-      = (firstColCLG (m := m)) ⁻¹'
-          {v : Fin (m + 2) → ℂ | InOpenForwardCone (m + 1) (fun μ => (c * v μ).im)} := by
-  ext Λ
-  constructor
-  · intro hΛ
-    exact (mem_orbitSet_wScalarE0_iff_firstCol (m := m) c Λ).1 hΛ
-  · intro hΛ
-    exact (mem_orbitSet_wScalarE0_iff_firstCol (m := m) c Λ).2 hΛ
 
 private lemma minkowskiComplex_decomp
     (v : Fin (m + 2) → ℂ) :
@@ -445,17 +427,6 @@ theorem isConnected_stabilizer_wScalarE0
   rw [stabilizer_wScalarE0_eq_stabilizerI0 (m := m) c hc]
   exact isConnected_stabilizerI0 (m := m)
 
-/-- Connectedness transport from `Stab(i e₀)` to any conjugate point. -/
-theorem isConnected_stabilizer_of_eq_action_wI0
-    {w : Fin 1 → Fin (m + 2) → ℂ}
-    (Γ : ComplexLorentzGroup (m + 1))
-    (hEq : w = complexLorentzAction Γ (wI0 (m := m))) :
-    IsConnected (stabilizer (d := m + 1) (n := 1) w) := by
-  rw [hEq]
-  simpa [stabilizer, wI0, stabilizerI0] using
-    (isConnected_stabilizer_of_conj (d := m + 1) (n := 1)
-      (w := wI0 (m := m)) Γ (isConnected_stabilizerI0 (m := m)))
-
 /-- Connectedness transport from `Stab(c e₀)` (`c ≠ 0`) to any conjugate point. -/
 theorem isConnected_stabilizer_of_eq_action_wScalarE0
     {w : Fin 1 → Fin (m + 2) → ℂ}
@@ -466,14 +437,5 @@ theorem isConnected_stabilizer_of_eq_action_wScalarE0
   rw [hEq]
   exact isConnected_stabilizer_of_conj (d := m + 1) (n := 1)
     (w := wScalarE0 (m := m) c) Γ (isConnected_stabilizer_wScalarE0 (m := m) c hc)
-
-/-- Connectedness of the one-point stabilizer at any forward-tube configuration. -/
-theorem isConnected_stabilizer_of_forwardTube_one
-    (w : Fin 1 → Fin (m + 2) → ℂ)
-    (hw : w ∈ ForwardTube (m + 1) 1) :
-    IsConnected (stabilizer (d := m + 1) (n := 1) w) := by
-  obtain ⟨Γ, c, hc, hEq⟩ :=
-    exists_action_wScalarE0_of_forwardTube_one (m := m) w hw
-  exact isConnected_stabilizer_of_eq_action_wScalarE0 (m := m) Γ c hc hEq
 
 end BHW

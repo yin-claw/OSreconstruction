@@ -153,29 +153,6 @@ theorem quadricConeSet_wScalarE0_isPreconnected_of_c_im_zero
   have hempty := quadricConeSet_wScalarE0_empty_of_c_im_zero (m := m) c hc hcim
   simpa [hempty] using (isPreconnected_empty : IsPreconnected (∅ : Set (Fin (m + 2) → ℂ)))
 
-theorem quadricConeSet_wScalarE0_nonempty_of_c_im_ne_zero
-    (c : ℂ) (hcim : c.im ≠ 0) :
-    (quadricConeSet_wScalarE0 (m := m) c).Nonempty := by
-  by_cases hpos : 0 < c.im
-  · refine ⟨fun μ => if μ = 0 then (1 : ℂ) else 0, ?_⟩
-    refine ⟨?_, ?_⟩
-    · simp [minkowskiColQuadric, minkowskiSignature]
-    · constructor
-      · simpa [Complex.mul_im] using hpos
-      · rw [Fin.sum_univ_succ]
-        simp [minkowskiSignature]
-        nlinarith
-  · have hneg : c.im < 0 := lt_of_le_of_ne (le_of_not_gt hpos) hcim
-    refine ⟨fun μ => if μ = 0 then (-1 : ℂ) else 0, ?_⟩
-    refine ⟨?_, ?_⟩
-    · simp [minkowskiColQuadric, minkowskiSignature]
-    · constructor
-      · have hnegIm : 0 < -c.im := neg_pos.mpr hneg
-        simpa [Complex.mul_im] using hnegIm
-      · rw [Fin.sum_univ_succ]
-        simp [minkowskiSignature]
-        nlinarith
-
 theorem quadricConeSet_wScalarE0_isPreconnected_of_im_ne_zero_reduction
     (hmain :
       ∀ c : ℂ, c ≠ 0 → c.im ≠ 0 →
@@ -319,16 +296,6 @@ lemma firstColImageCLG_surj_of_minkowski_eq_neg_one
         simpa [mul_assoc] using hcancel
       simpa [firstColCLG] using htmp
   exact ⟨Λ, hΛcol⟩
-
-theorem firstColImageCLG_eq_minkowskiQuadric :
-    firstColImageCLG (m := m) =
-      {v : Fin (m + 2) → ℂ | minkowskiColQuadric (m := m) v = (-1 : ℂ)} := by
-  ext v
-  constructor
-  · intro hv
-    exact firstColImageCLG_minkowski_eq_neg_one (m := m) hv
-  · intro hv
-    exact firstColImageCLG_surj_of_minkowski_eq_neg_one (m := m) v hv
 
 /-- One-point quadric slice in configuration space at Minkowski value `-c²`. -/
 abbrev onePointQuadricSet_wScalarE0 (c : ℂ) : Set (Fin 1 → Fin (m + 2) → ℂ) :=
@@ -712,23 +679,6 @@ lemma minkowskiNormSq_eta_lower_bound
     exact (not_lt_of_ge hfactor) hpos_prod
   have hbound' : -c.im ^ 2 ≤ q := by linarith [hbound]
   simpa [q] using hbound'
-
-lemma minkowskiNormSq_eta_interval
-    (c : ℂ)
-    (u : Fin (m + 2) → ℂ)
-    (hu : u ∈ quadricConeSet_im_with_value (m := m) (-(c ^ 2))) :
-    (let η : MinkowskiSpace (m + 1) := fun μ => (u μ).im;
-     -c.im ^ 2 ≤ MinkowskiSpace.minkowskiNormSq (m + 1) η ∧
-       MinkowskiSpace.minkowskiNormSq (m + 1) η < 0) := by
-  let η : MinkowskiSpace (m + 1) := fun μ => (u μ).im
-  have hlow : -c.im ^ 2 ≤ MinkowskiSpace.minkowskiNormSq (m + 1) η :=
-    minkowskiNormSq_eta_lower_bound (m := m) c u hu
-  rcases (mem_quadricConeSet_im_with_value_iff (m := m) (-(c ^ 2)) u).1 hu with
-    ⟨hcone, _, _⟩
-  have hneg : MinkowskiSpace.minkowskiNormSq (m + 1) η < 0 := by
-    simpa [η, InOpenForwardCone, MinkowskiSpace.minkowskiNormSq, MinkowskiSpace.minkowskiInner,
-      MinkowskiSpace.metricSignature, minkowskiSignature, sq] using hcone.2
-  exact ⟨hlow, hneg⟩
 
 lemma canonical_mem_quadricConeSet_im_with_value
     (c : ℂ) (hcim : 0 < c.im) :
@@ -1122,29 +1072,6 @@ theorem isConnected_fiber_firstColOrbitMapRestricted_wScalarE0_geom
       rfl
   simpa [h_range_eq] using h_range_conn
 
-theorem orbitSet_wScalarE0_isPreconnected_of_quadricCone_and_firstColQuotient
-    (c : ℂ)
-    (hwc : wScalarE0 (m := m) c ∈ ForwardTube (m + 1) 1)
-    (hquot : Topology.IsQuotientMap
-      (firstColOrbitMapRestricted_wScalarE0_geom (m := m) c))
-    (hpre : IsPreconnected (quadricConeSet_wScalarE0 (m := m) c)) :
-    IsPreconnected (orbitSet (d := m + 1) (n := 1) (wScalarE0 (m := m) c)) := by
-  have hpreImg :
-      IsPreconnected (firstColOrbitImage_wScalarE0_geom (m := m) c) :=
-    isPreconnected_firstColOrbitImage_wScalarE0_geom_of_quadricCone (m := m) c hpre
-  haveI : PreconnectedSpace (firstColOrbitImage_wScalarE0_geom (m := m) c) :=
-    isPreconnected_iff_preconnectedSpace.mp hpreImg
-  have hFib :
-      ∀ y : firstColOrbitImage_wScalarE0_geom (m := m) c,
-        IsConnected
-          ((firstColOrbitMapRestricted_wScalarE0_geom (m := m) c) ⁻¹' ({y} : Set _)) :=
-    isConnected_fiber_firstColOrbitMapRestricted_wScalarE0_geom (m := m) c
-  haveI : Nonempty (orbitSet (d := m + 1) (n := 1) (wScalarE0 (m := m) c)) :=
-    ⟨⟨1, by simpa [orbitSet, complexLorentzAction_one] using hwc⟩⟩
-  haveI : PreconnectedSpace (orbitSet (d := m + 1) (n := 1) (wScalarE0 (m := m) c)) :=
-    IsQuotientMap.preconnectedSpace_of_connectedFibers hquot hFib
-  exact isPreconnected_iff_preconnectedSpace.mpr inferInstance
-
 /-- Orbit-map image for `wScalarE0 c`. -/
 abbrev orbitImage_wScalarE0_geom (c : ℂ) :
     Set (Fin 1 → Fin (m + 2) → ℂ) :=
@@ -1169,29 +1096,6 @@ lemma continuous_scalePack_geom (c : ℂ) :
   apply continuous_pi
   intro μ
   exact continuous_const.mul (continuous_apply μ)
-
-lemma continuous_scaleUnpack_geom (c : ℂ) :
-    Continuous (scaleUnpack_geom (m := m) c) := by
-  apply continuous_pi
-  intro μ
-  have h0μ : Continuous (fun z : Fin 1 → Fin (m + 2) → ℂ => z 0 μ) :=
-    (continuous_apply μ).comp (continuous_apply 0)
-  simpa [scaleUnpack_geom, div_eq_mul_inv] using h0μ.mul continuous_const
-
-lemma scaleUnpack_scalePack_geom (c : ℂ) (hc : c ≠ 0) (v : Fin (m + 2) → ℂ) :
-    scaleUnpack_geom (m := m) c (scalePack_geom (m := m) c v) = v := by
-  ext μ
-  simp [scaleUnpack_geom, scalePack_geom, hc]
-
-lemma scalePack_scaleUnpack_geom (c : ℂ) (hc : c ≠ 0) (z : Fin 1 → Fin (m + 2) → ℂ) :
-    scalePack_geom (m := m) c (scaleUnpack_geom (m := m) c z) = z := by
-  ext k μ
-  fin_cases k
-  change c * (z 0 μ / c) = z 0 μ
-  rw [div_eq_mul_inv]
-  calc
-    c * (z 0 μ * c⁻¹) = (c * c⁻¹) * z 0 μ := by ring
-    _ = z 0 μ := by simp [hc]
 
 lemma orbitImage_wScalarE0_eq_scalePack_image_firstCol_geom
     (c : ℂ) :
@@ -1253,16 +1157,6 @@ theorem orbitSet_wScalarE0_isPreconnected_of_quadricCone_nonempty
       (d := m + 1) (n := 1) (w := wScalarE0 (m := m) c)
   exact orbitSet_isPreconnected_of_stabilizer_connected_nonempty
     (d := m + 1) (n := 1) (w := wScalarE0 (m := m) c) hne hstab hquot
-
-theorem orbitSet_wScalarE0_isPreconnected_of_quadricCone
-    (c : ℂ) (hc : c ≠ 0)
-    (hwc : wScalarE0 (m := m) c ∈ ForwardTube (m + 1) 1)
-    (hpre : IsPreconnected (quadricConeSet_wScalarE0 (m := m) c)) :
-    IsPreconnected (orbitSet (d := m + 1) (n := 1) (wScalarE0 (m := m) c)) := by
-  have hne : Nonempty (orbitSet (d := m + 1) (n := 1) (wScalarE0 (m := m) c)) :=
-    ⟨⟨1, by simpa [orbitSet, complexLorentzAction_one] using hwc⟩⟩
-  exact orbitSet_wScalarE0_isPreconnected_of_quadricCone_nonempty
-    (m := m) c hc hne hpre
 
 /-- One-point reduction: preconnectedness for all one-point forward-tube orbit sets
 follows from preconnectedness of the canonical quadric-cone slices. -/

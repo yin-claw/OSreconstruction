@@ -25,58 +25,6 @@ noncomputable def fullExtendF
     then F h.choose_spec.choose_spec.choose
     else 0
 
-/-- The forward tube in the i-th difference variable is a tube domain with cone V₊.
-    After swapping indices i and i+1, the i-th difference variable ζᵢ = z_{i+1} - z_i
-    flips sign, so the cone becomes -V₊. The remaining (n-1) difference variables
-    retain their forward-cone conditions.
-
-    This helper extracts the i-th cone direction from the full forward tube condition.
-
-    Blocked by: expressing the forward tube as a product of individual cone conditions
-    on each difference variable, in the flattened coordinate system. -/
-theorem forwardTube_ith_cone_decomp (n : ℕ) (i : Fin n) (hi : i.val + 1 < n) :
-    ∀ z : Fin n → Fin (d + 1) → ℂ, z ∈ ForwardTube d n →
-      InOpenForwardCone d (fun μ => (z ⟨i.val + 1, hi⟩ μ - z i μ).im) := by
-  intro z hz
-  -- The FT condition at k = ⟨i.val + 1, hi⟩ gives exactly this.
-  have hk := hz ⟨i.val + 1, hi⟩
-  -- Unfold the dite: k.val = i.val + 1 ≠ 0
-  have hk_ne : ¬ (i.val + 1 = 0) := Nat.succ_ne_zero _
-  simp only [hk_ne, ↓reduceDIte] at hk
-  -- prev = z ⟨i.val + 1 - 1, _⟩ = z ⟨i.val, _⟩ = z i
-  have heq : (⟨i.val + 1 - 1, by have := i.isLt; omega⟩ : Fin n) = i := by
-    ext; simp
-  rw [heq] at hk
-  exact hk
-
-/-- The spacelike boundary set (where the i-th difference is real and spacelike)
-    is a totally real submanifold that serves as the matching boundary for EOW.
-
-    At boundary points where Im(z_{i+1} - z_i) = 0 and the real part satisfies
-    the spacelike condition, the locality hypothesis `hF_local` provides
-    F(swap(x)) = F(x). This is the "E" (edge) in edge-of-the-wedge.
-
-    Blocked by: expressing the spacelike boundary as an open subset of a totally
-    real submanifold in the flattened coordinate system. -/
-theorem spacelike_boundary_matching (n : ℕ)
-    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
-    (hF_bv : ∀ (x : Fin n → Fin (d + 1) → ℝ),
-      ContinuousWithinAt F (ForwardTube d n) (fun k μ => (x k μ : ℂ)))
-    (hF_local : ∀ (i : Fin n) (hi : i.val + 1 < n),
-      ∀ (x : Fin n → Fin (d + 1) → ℝ),
-        ∑ μ, minkowskiSignature d μ *
-          (x ⟨i.val + 1, hi⟩ μ - x i μ) ^ 2 > 0 →
-        F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
-        F (fun k μ => (x k μ : ℂ)))
-    (i : Fin n) (hi : i.val + 1 < n) :
-    ∀ (x : Fin n → Fin (d + 1) → ℝ),
-      ∑ μ, minkowskiSignature d μ * (x ⟨i.val + 1, hi⟩ μ - x i μ) ^ 2 > 0 →
-      ContinuousWithinAt F (ForwardTube d n) (fun k μ => (x k μ : ℂ)) ∧
-      F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
-      F (fun k μ => (x k μ : ℂ)) := by
-  intro x hx
-  exact ⟨hF_bv x, hF_local i hi x hx⟩
-
 theorem eow_adj_swap_extension_holo_only (n : ℕ)
     (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
     (hF_holo : DifferentiableOn ℂ F (ForwardTube d n))
@@ -179,50 +127,6 @@ theorem eow_adj_swap_extension (n : ℕ)
         F_ext z = F (fun k => z (Equiv.swap i ⟨i.val + 1, hi⟩ k))) := by
   exact eow_adj_swap_extension_holo_only n F hF_holo i hi
 
-/-- **EOW gluing for adjacent swap on the forward tube overlap.**
-    When both w and σ·w lie in the forward tube (σ = swap(i, i+1)),
-    local commutativity at Jost points (hF_local) + the edge-of-the-wedge theorem
-    (SCV.edge_of_the_wedge_theorem) + the identity theorem together imply
-    F(σ·w) = F(w).
-
-    The proof uses eow_adj_swap_extension to get a holomorphic extension F_ext
-    on U ⊇ FT ∪ σ·FT. At any w ∈ FT ∩ σ·FT:
-    - F_ext(w) = F(w) (from agreement on U ∩ FT)
-    - F_ext(w) = F(σ·w) (from agreement on U ∩ σ·FT)
-    Hence F(σ·w) = F(w). -/
-theorem eow_adj_swap_on_overlap (n : ℕ)
-    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
-    (hF_holo : DifferentiableOn ℂ F (ForwardTube d n))
-    (_hF_lorentz : ∀ (Λ : RestrictedLorentzGroup d)
-      (z : Fin n → Fin (d + 1) → ℂ), z ∈ ForwardTube d n →
-      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
-    (hF_bv : ∀ (x : Fin n → Fin (d + 1) → ℝ),
-      ContinuousWithinAt F (ForwardTube d n) (fun k μ => (x k μ : ℂ)))
-    (hF_local : ∀ (i : Fin n) (hi : i.val + 1 < n),
-      ∀ (x : Fin n → Fin (d + 1) → ℝ),
-        ∑ μ, minkowskiSignature d μ *
-          (x ⟨i.val + 1, hi⟩ μ - x i μ) ^ 2 > 0 →
-        F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
-        F (fun k μ => (x k μ : ℂ)))
-    (i : Fin n) (hi : i.val + 1 < n)
-    {w : Fin n → Fin (d + 1) → ℂ} (hw : w ∈ ForwardTube d n)
-    (hσw : (fun k => w (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈ ForwardTube d n) :
-    F (fun k => w (Equiv.swap i ⟨i.val + 1, hi⟩ k)) = F w := by
-  -- Obtain the EOW extension
-  obtain ⟨U, F_ext, _hU_open, hFT_sub, hσFT_sub, _hF_ext_holo,
-    hF_ext_eq_F, hF_ext_eq_Fσ⟩ :=
-    eow_adj_swap_extension n F hF_holo hF_bv hF_local i hi
-  -- w ∈ FT, so w ∈ U
-  have hw_U : w ∈ U := hFT_sub hw
-  -- σ·w ∈ FT means w ∈ σ·FT (since σ = σ⁻¹), so w ∈ U via the σ·FT inclusion
-  have hw_σFT : w ∈ {z | (fun k => z (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈ ForwardTube d n} := hσw
-  -- F_ext(w) = F(w) and F_ext(w) = F(σ·w)
-  have h1 : F_ext w = F w := hF_ext_eq_F w ⟨hw_U, hw⟩
-  have h2 : F_ext w = F (fun k => w (Equiv.swap i ⟨i.val + 1, hi⟩ k)) :=
-    hF_ext_eq_Fσ w ⟨hw_U, hw_σFT⟩
-  -- Combine: F(σ·w) = F_ext(w) = F(w)
-  exact h2.symm.trans h1
-
 /-- **Lorentz-permutation commutation** (definitional).
     The complex Lorentz action acts on the μ-index (spacetime), while
     permutations act on the k-index (particle). They commute:
@@ -232,110 +136,6 @@ theorem lorentz_perm_commute (Γ : ComplexLorentzGroup d)
     complexLorentzAction Γ (fun k => w (τ k)) =
     fun k => (complexLorentzAction Γ w) (τ k) := by
   ext k μ; simp only [complexLorentzAction]
-
-/-- Permutation-invariance hypothesis for `τ` implies the corresponding
-    `τ⁻¹`-version. -/
-theorem permInvariance_of_inverse (n : ℕ)
-    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
-    (τ : Equiv.Perm (Fin n))
-    (hperm : ∀ (w : Fin n → Fin (d + 1) → ℂ), w ∈ ForwardTube d n →
-      ∀ (Γ : ComplexLorentzGroup d),
-        complexLorentzAction Γ (fun k => w (τ k)) ∈ ForwardTube d n →
-        F (complexLorentzAction Γ (fun k => w (τ k))) = F w) :
-    ∀ (w : Fin n → Fin (d + 1) → ℂ), w ∈ ForwardTube d n →
-      ∀ (Γ : ComplexLorentzGroup d),
-        complexLorentzAction Γ (fun k => w (τ⁻¹ k)) ∈ ForwardTube d n →
-        F (complexLorentzAction Γ (fun k => w (τ⁻¹ k))) = F w := by
-  intro w hw Γ hΓ
-  set v : Fin n → Fin (d + 1) → ℂ :=
-    complexLorentzAction Γ (fun k => w (τ⁻¹ k)) with hv_def
-  have hv : v ∈ ForwardTube d n := hΓ
-  have hvτ : (fun k => v (τ k)) = complexLorentzAction Γ w := by
-    calc
-      (fun k => v (τ k))
-          = (fun k => (complexLorentzAction Γ (fun j => w (τ⁻¹ j))) (τ k)) := by
-              simp [v]
-      _ = complexLorentzAction Γ w := by
-            ext k μ
-            simp [complexLorentzAction]
-  have hcond : complexLorentzAction Γ⁻¹ (fun k => v (τ k)) ∈ ForwardTube d n := by
-    rw [hvτ, complexLorentzAction_inv]
-    exact hw
-  have hmain : F (complexLorentzAction Γ⁻¹ (fun k => v (τ k))) = F v :=
-    hperm v hv Γ⁻¹ hcond
-  have hleft : complexLorentzAction Γ⁻¹ (fun k => v (τ k)) = w := by
-    rw [hvτ, complexLorentzAction_inv]
-  have hmain' : F w = F v := by
-    simpa [hleft] using hmain
-  simpa [v, hv_def] using hmain'.symm
-
-/-- The `τ` and `τ⁻¹` permutation-invariance statements are equivalent. -/
-theorem permInvariance_iff_inverse (n : ℕ)
-    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
-    (τ : Equiv.Perm (Fin n)) :
-    (∀ (w : Fin n → Fin (d + 1) → ℂ), w ∈ ForwardTube d n →
-      ∀ (Γ : ComplexLorentzGroup d),
-        complexLorentzAction Γ (fun k => w (τ k)) ∈ ForwardTube d n →
-        F (complexLorentzAction Γ (fun k => w (τ k))) = F w) ↔
-    (∀ (w : Fin n → Fin (d + 1) → ℂ), w ∈ ForwardTube d n →
-      ∀ (Γ : ComplexLorentzGroup d),
-        complexLorentzAction Γ (fun k => w (τ⁻¹ k)) ∈ ForwardTube d n →
-        F (complexLorentzAction Γ (fun k => w (τ⁻¹ k))) = F w) := by
-  constructor
-  · intro h
-    exact permInvariance_of_inverse n F τ h
-  · intro h
-    have h' := permInvariance_of_inverse n F τ⁻¹ h
-    simpa using h'
-
-/-- Reduction lemma: if one has permutation invariance of `extendF` on the
-extended tube, then the target forward-tube permutation invariance statement
-follows immediately. This isolates the remaining work to ET-level permutation
-invariance of `extendF`. -/
-theorem permutation_invariance_of_extendF_on_extendedTube
-    (n : ℕ)
-    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
-    (hF_holo : DifferentiableOn ℂ F (ForwardTube d n))
-    (hF_real_inv : ∀ (Λ : RestrictedLorentzGroup d)
-      (z : Fin n → Fin (d + 1) → ℂ), z ∈ ForwardTube d n →
-      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
-    (hExtPerm :
-      ∀ (τ : Equiv.Perm (Fin n)) (z : Fin n → Fin (d + 1) → ℂ),
-        z ∈ ExtendedTube d n →
-        (fun k => z (τ k)) ∈ ExtendedTube d n →
-        extendF F (fun k => z (τ k)) = extendF F z)
-    {w : Fin n → Fin (d + 1) → ℂ} (hw : w ∈ ForwardTube d n)
-    {τ : Equiv.Perm (Fin n)} {Γ : ComplexLorentzGroup d}
-    (h : complexLorentzAction Γ (fun k => w (τ k)) ∈ ForwardTube d n) :
-    F (complexLorentzAction Γ (fun k => w (τ k))) = F w := by
-  set z : Fin n → Fin (d + 1) → ℂ := complexLorentzAction Γ w
-  have hcomm : complexLorentzAction Γ (fun k => w (τ k)) = fun k => z (τ k) := by
-    simpa [z] using (lorentz_perm_commute Γ w τ)
-  have hτz_FT : (fun k => z (τ k)) ∈ ForwardTube d n := by
-    simpa [hcomm] using h
-  have hz_ET : z ∈ ExtendedTube d n := by
-    refine Set.mem_iUnion.mpr ?_
-    refine ⟨Γ, ?_⟩
-    exact ⟨w, hw, by simp [z]⟩
-  have hτz_ET : (fun k => z (τ k)) ∈ ExtendedTube d n :=
-    forwardTube_subset_extendedTube hτz_FT
-  have hperm_z : extendF F (fun k => z (τ k)) = extendF F z :=
-    hExtPerm τ z hz_ET hτz_ET
-  have hLorentz_z : extendF F z = extendF F w := by
-    simpa [z] using
-      (extendF_complex_lorentz_invariant n F hF_holo hF_real_inv Γ w
-        (forwardTube_subset_extendedTube hw))
-  have hleft : extendF F (fun k => z (τ k)) = F (fun k => z (τ k)) :=
-    extendF_eq_on_forwardTube n F hF_holo hF_real_inv _ hτz_FT
-  have hright : extendF F w = F w :=
-    extendF_eq_on_forwardTube n F hF_holo hF_real_inv w hw
-  calc
-    F (complexLorentzAction Γ (fun k => w (τ k)))
-        = F (fun k => z (τ k)) := by simp [hcomm]
-    _ = extendF F (fun k => z (τ k)) := hleft.symm
-    _ = extendF F z := hperm_z
-    _ = extendF F w := hLorentz_z
-    _ = F w := hright
 
 /-- Identity-theorem propagation template on a connected domain inside the
 extended-tube overlap for a fixed permutation `τ`. This isolates the analytic
@@ -721,12 +521,6 @@ theorem adjSwapForwardOverlapSlice_convex
   rw [hlin]
   exact forwardTube_convex hw₁.2 hw₂.2 ha hb hab
 
-/-- Each fixed-Λ forward-overlap slice is preconnected. -/
-theorem adjSwapForwardOverlapSlice_isPreconnected
-    (n : ℕ) (i : Fin n) (hi : i.val + 1 < n) (Λ : ComplexLorentzGroup d) :
-    IsPreconnected (adjSwapForwardOverlapSlice (d := d) n i hi Λ) :=
-  (adjSwapForwardOverlapSlice_convex (d := d) n i hi Λ).isPreconnected
-
 /-- `adjSwapForwardOverlapSet` is the union of fixed-Λ convex slices. -/
 theorem adjSwapForwardOverlapSet_eq_iUnion_slices
     (n : ℕ) (i : Fin n) (hi : i.val + 1 < n) :
@@ -845,105 +639,11 @@ theorem reflTransGen_slice_overlap_of_indexConnected
   have hbU : b ∈ U := by simp [hU_eq]
   exact hbU
 
-/-- If the nonempty-slice index set is connected, then the full adjacent forward-overlap
-set is connected. -/
-theorem isConnected_adjSwapForwardOverlapSet_of_indexConnected
-    (n : ℕ) (i : Fin n) (hi : i.val + 1 < n)
-    (hidx_conn : IsConnected
-      {Λ : ComplexLorentzGroup d |
-        (adjSwapForwardOverlapSlice (d := d) n i hi Λ).Nonempty})
-    (hnonempty : (adjSwapForwardOverlapSet (d := d) n i hi).Nonempty) :
-    IsConnected (adjSwapForwardOverlapSet (d := d) n i hi) := by
-  let t : Set (ComplexLorentzGroup d) :=
-    {Λ : ComplexLorentzGroup d |
-      (adjSwapForwardOverlapSlice (d := d) n i hi Λ).Nonempty}
-
-  have hpre_union_subtype :
-      IsPreconnected
-        (⋃ x : {Λ : ComplexLorentzGroup d | t Λ},
-          adjSwapForwardOverlapSlice (d := d) n i hi x.1) := by
-    apply IsPreconnected.iUnion_of_reflTransGen
-    · intro x
-      exact (adjSwapForwardOverlapSlice_convex (d := d) n i hi x.1).isPreconnected
-    · intro x y
-      exact reflTransGen_slice_overlap_of_indexConnected (d := d) (n := n) i hi hidx_conn x y
-
-  have h_union_eq_all :
-      (⋃ x : {Λ : ComplexLorentzGroup d | t Λ},
-        adjSwapForwardOverlapSlice (d := d) n i hi x.1)
-        = ⋃ Λ : ComplexLorentzGroup d,
-            adjSwapForwardOverlapSlice (d := d) n i hi Λ := by
-    ext w
-    constructor
-    · intro hw
-      rcases Set.mem_iUnion.mp hw with ⟨x, hx⟩
-      exact Set.mem_iUnion.mpr ⟨x.1, hx⟩
-    · intro hw
-      rcases Set.mem_iUnion.mp hw with ⟨Λ, hΛ⟩
-      have hΛt : t Λ := ⟨w, hΛ⟩
-      exact Set.mem_iUnion.mpr ⟨⟨Λ, hΛt⟩, hΛ⟩
-
-  have hset_eq :
-      adjSwapForwardOverlapSet (d := d) n i hi =
-        (⋃ x : {Λ : ComplexLorentzGroup d | t Λ},
-          adjSwapForwardOverlapSlice (d := d) n i hi x.1) := by
-    calc
-      adjSwapForwardOverlapSet (d := d) n i hi
-          = ⋃ Λ : ComplexLorentzGroup d,
-              adjSwapForwardOverlapSlice (d := d) n i hi Λ :=
-            adjSwapForwardOverlapSet_eq_iUnion_slices (d := d) n i hi
-      _ = (⋃ x : {Λ : ComplexLorentzGroup d | t Λ},
-            adjSwapForwardOverlapSlice (d := d) n i hi x.1) :=
-          h_union_eq_all.symm
-
-  refine ⟨hnonempty, ?_⟩
-  simpa [hset_eq] using hpre_union_subtype
-
-/-- The nonempty-slice index set is open in the Lorentz group. -/
-theorem isOpen_adjSwapForwardOverlapIndexSet
-    (n : ℕ) (i : Fin n) (hi : i.val + 1 < n) :
-    IsOpen {Λ : ComplexLorentzGroup d |
-      (adjSwapForwardOverlapSlice (d := d) n i hi Λ).Nonempty} := by
-  rw [isOpen_iff_mem_nhds]
-  intro Λ hΛ
-  rcases hΛ with ⟨w, hw⟩
-  rcases adjSwapForwardOverlapSlice_nonempty_nhds (d := d) (n := n) i hi hw with
-    ⟨V, hV_open, hΛV, hV_sub⟩
-  refine Filter.mem_of_superset (hV_open.mem_nhds hΛV) ?_
-  intro Λ' hΛ'V
-  exact ⟨w, hV_sub Λ' hΛ'V⟩
-
-/-- If the adjacent forward-overlap set is nonempty, then so is its nonempty-slice
-index set. -/
-theorem nonempty_adjSwapForwardOverlapIndexSet_of_forwardOverlapNonempty
-    (n : ℕ) (i : Fin n) (hi : i.val + 1 < n)
-    (hnonempty : (adjSwapForwardOverlapSet (d := d) n i hi).Nonempty) :
-    ({Λ : ComplexLorentzGroup d |
-      (adjSwapForwardOverlapSlice (d := d) n i hi Λ).Nonempty}).Nonempty := by
-  rcases hnonempty with ⟨w, hw⟩
-  rw [adjSwapForwardOverlapSet_eq_iUnion_slices (d := d) n i hi] at hw
-  rcases Set.mem_iUnion.mp hw with ⟨Λ, hΛ⟩
-  exact ⟨Λ, ⟨w, hΛ⟩⟩
-
 /-- Nonempty-slice index set for adjacent forward overlap slices. -/
 def adjSwapForwardOverlapIndexSet
     (n : ℕ) (i : Fin n) (hi : i.val + 1 < n) : Set (ComplexLorentzGroup d) :=
   {Λ : ComplexLorentzGroup d |
     (adjSwapForwardOverlapSlice (d := d) n i hi Λ).Nonempty}
-
-theorem isOpen_adjSwapForwardOverlapIndexSet'
-    (n : ℕ) (i : Fin n) (hi : i.val + 1 < n) :
-    IsOpen (adjSwapForwardOverlapIndexSet (d := d) n i hi) := by
-  simpa [adjSwapForwardOverlapIndexSet] using
-    isOpen_adjSwapForwardOverlapIndexSet (d := d) n i hi
-
-theorem nonempty_adjSwapForwardOverlapIndexSet_of_forwardOverlapNonempty'
-    (n : ℕ) (i : Fin n) (hi : i.val + 1 < n)
-    (hnonempty : (adjSwapForwardOverlapSet (d := d) n i hi).Nonempty) :
-    (adjSwapForwardOverlapIndexSet (d := d) n i hi).Nonempty := by
-  simpa [adjSwapForwardOverlapIndexSet] using
-    nonempty_adjSwapForwardOverlapIndexSet_of_forwardOverlapNonempty
-      (d := d) n i hi hnonempty
 
 theorem indexSet_left_mul_ofReal
     (n : ℕ) (i : Fin n) (hi : i.val + 1 < n)
@@ -1056,37 +756,6 @@ theorem indexSet_joined_right_ofReal
   intro t
   exact indexSet_right_mul_ofReal (d := d) n i hi hΛ (γ t)
 
-theorem indexSet_isConnected_of_real_double_coset_generation
-    (n : ℕ) (i : Fin n) (hi : i.val + 1 < n)
-    (Λ0 : ComplexLorentzGroup d)
-    (hΛ0 : Λ0 ∈ adjSwapForwardOverlapIndexSet (d := d) n i hi)
-    (hgen : ∀ Λ ∈ adjSwapForwardOverlapIndexSet (d := d) n i hi,
-      ∃ R1 R2 : RestrictedLorentzGroup d,
-        Λ = ComplexLorentzGroup.ofReal R1 * Λ0 * ComplexLorentzGroup.ofReal R2) :
-    IsConnected (adjSwapForwardOverlapIndexSet (d := d) n i hi) := by
-  refine ⟨⟨Λ0, hΛ0⟩, ?_⟩
-  refine isPreconnected_of_joinedIn_base hΛ0 ?_
-  intro Λ hΛ
-  rcases hgen Λ hΛ with ⟨R1, R2, rfl⟩
-  have hright :
-      JoinedIn (adjSwapForwardOverlapIndexSet (d := d) n i hi)
-        Λ0 (Λ0 * ComplexLorentzGroup.ofReal R2) :=
-    indexSet_joined_right_ofReal (d := d) n i hi hΛ0 R2
-  have hmid_mem : Λ0 * ComplexLorentzGroup.ofReal R2 ∈
-      adjSwapForwardOverlapIndexSet (d := d) n i hi :=
-    indexSet_right_mul_ofReal (d := d) n i hi hΛ0 R2
-  have hleft :
-      JoinedIn (adjSwapForwardOverlapIndexSet (d := d) n i hi)
-        (Λ0 * ComplexLorentzGroup.ofReal R2)
-        (ComplexLorentzGroup.ofReal R1 * (Λ0 * ComplexLorentzGroup.ofReal R2)) :=
-    indexSet_joined_left_ofReal (d := d) n i hi hmid_mem R1
-  have hleft' :
-      JoinedIn (adjSwapForwardOverlapIndexSet (d := d) n i hi)
-        (Λ0 * ComplexLorentzGroup.ofReal R2)
-        (ComplexLorentzGroup.ofReal R1 * Λ0 * ComplexLorentzGroup.ofReal R2) := by
-    simpa [mul_assoc] using hleft
-  exact hright.trans hleft'
-
 /-- The adjacent-swap overlap domain is the Lorentz-action image of
     `adjSwapForwardOverlapSet`. -/
 theorem adjSwapExtendedOverlap_eq_action_image_forwardOverlap
@@ -1176,98 +845,6 @@ theorem isConnected_adjSwapExtendedOverlap_of_forwardOverlapConnected
   simpa [adjSwapExtendedOverlap_eq_action_image_forwardOverlap (d := d) n i hi] using
     himage_conn
 
-/-- The forward overlap slice is open in configuration space. -/
-theorem isOpen_adjSwapForwardOverlapSet
-    (n : ℕ)
-    (i : Fin n) (hi : i.val + 1 < n) :
-    IsOpen (adjSwapForwardOverlapSet (d := d) n i hi) := by
-  let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
-  have hperm_cont : Continuous
-      (fun z : Fin n → Fin (d + 1) → ℂ => fun k => z (τ k)) :=
-    continuous_pi (fun k => continuous_pi (fun μ =>
-      (continuous_apply μ).comp (continuous_apply (τ k))))
-  simpa [adjSwapForwardOverlapSet, τ] using
-    isOpen_forwardTube.inter (isOpen_extendedTube.preimage hperm_cont)
-
-/-- Nonemptiness of the forward overlap slice for adjacent swaps (`d > 0`),
-    extracted from the adjacent-overlap witness infrastructure. -/
-theorem adjSwapForwardOverlap_nonempty [NeZero d]
-    (n : ℕ)
-    (i : Fin n) (hi : i.val + 1 < n) :
-    (adjSwapForwardOverlapSet (d := d) n i hi).Nonempty := by
-  let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
-  by_cases hd2 : 2 ≤ d
-  · rcases adjacent_overlap_witness_exists (d := d) (n := n) hd2 i hi with
-      ⟨x, hxET_raw, hτxET_raw⟩
-    have hxET : x ∈ ExtendedTube d n := by
-      simpa [ExtendedTube, BHWCore.ExtendedTube] using hxET_raw
-    have hτxET : (fun k => x (τ k)) ∈ ExtendedTube d n := by
-      simpa [ExtendedTube, BHWCore.ExtendedTube, τ] using hτxET_raw
-    rcases Set.mem_iUnion.mp hxET with ⟨Λ, w, hwFT_raw, hx_eq_raw⟩
-    have hwFT : w ∈ ForwardTube d n := by
-      simpa [ForwardTube, BHWCore.ForwardTube] using hwFT_raw
-    have hx_eq : x = complexLorentzAction Λ w := by
-      simpa [complexLorentzAction, BHWCore.complexLorentzAction] using hx_eq_raw
-    have hτx_as_action :
-        (fun k => x (τ k)) = complexLorentzAction Λ (fun k => w (τ k)) := by
-      calc
-        (fun k => x (τ k))
-            = (fun k => (complexLorentzAction Λ w) (τ k)) := by simp [hx_eq]
-        _ = complexLorentzAction Λ (fun k => w (τ k)) := by
-              symm
-              exact lorentz_perm_commute Λ w τ
-    have hΛτw_ET : complexLorentzAction Λ (fun k => w (τ k)) ∈ ExtendedTube d n := by
-      simpa [hτx_as_action] using hτxET
-    have hτw_ET : (fun k => w (τ k)) ∈ ExtendedTube d n := by
-      have := complexLorentzAction_mem_extendedTube n Λ⁻¹ hΛτw_ET
-      simpa [complexLorentzAction_inv] using this
-    refine ⟨w, ?_⟩
-    exact ⟨hwFT, hτw_ET⟩
-  · have hd_pos : 0 < d := Nat.pos_of_ne_zero (NeZero.ne d)
-    have hd1 : d = 1 := by omega
-    subst hd1
-    rcases adjacent_overlap_witness_exists_d1 (n := n) i hi with ⟨x, hxET', hτxET'⟩
-    have hxET : x ∈ ExtendedTube 1 n := by
-      simpa [ExtendedTube, BHWCore.ExtendedTube] using hxET'
-    have hτxET : (fun k => x (τ k)) ∈ ExtendedTube 1 n := by
-      simpa [ExtendedTube, BHWCore.ExtendedTube] using hτxET'
-    rcases Set.mem_iUnion.mp hxET with ⟨Λ, w, hwFT, hx_eq⟩
-    have hτx_as_action :
-        (fun k => x (τ k)) = complexLorentzAction Λ (fun k => w (τ k)) := by
-      calc
-        (fun k => x (τ k))
-            = (fun k => (complexLorentzAction Λ w) (τ k)) := by simp [hx_eq]
-        _ = complexLorentzAction Λ (fun k => w (τ k)) := by
-              symm
-              exact lorentz_perm_commute Λ w τ
-    have hΛτw_ET : complexLorentzAction Λ (fun k => w (τ k)) ∈ ExtendedTube 1 n := by
-      simpa [hτx_as_action] using hτxET
-    have hτw_ET : (fun k => w (τ k)) ∈ ExtendedTube 1 n := by
-      have := complexLorentzAction_mem_extendedTube n Λ⁻¹ hΛτw_ET
-      simpa [complexLorentzAction_inv] using this
-    refine ⟨w, ?_⟩
-    exact ⟨hwFT, hτw_ET⟩
-
-/-- Wrapper reduction: a real double-coset generation hypothesis on the
-adjacent-overlap index set implies connectedness of the corresponding forward
-overlap slice. -/
-theorem isConnected_adjSwapForwardOverlapSet_of_real_double_coset_generation [NeZero d]
-    (n : ℕ) (i : Fin n) (hi : i.val + 1 < n)
-    (Λ0 : ComplexLorentzGroup d)
-    (hΛ0 : Λ0 ∈ adjSwapForwardOverlapIndexSet (d := d) n i hi)
-    (hgen : ∀ Λ ∈ adjSwapForwardOverlapIndexSet (d := d) n i hi,
-      ∃ R1 R2 : RestrictedLorentzGroup d,
-        Λ = ComplexLorentzGroup.ofReal R1 * Λ0 * ComplexLorentzGroup.ofReal R2) :
-    IsConnected (adjSwapForwardOverlapSet (d := d) n i hi) := by
-  have hidx_conn : IsConnected (adjSwapForwardOverlapIndexSet (d := d) n i hi) :=
-    indexSet_isConnected_of_real_double_coset_generation
-      (d := d) n i hi Λ0 hΛ0 hgen
-  have hnonempty : (adjSwapForwardOverlapSet (d := d) n i hi).Nonempty :=
-    adjSwapForwardOverlap_nonempty (d := d) n i hi
-  simpa [adjSwapForwardOverlapIndexSet] using
-    isConnected_adjSwapForwardOverlapSet_of_indexConnected
-      (d := d) n i hi hidx_conn hnonempty
-
 /-- Conditional adjacent-swap ET invariance:
     connectedness of the ET overlap domain plus one real spacelike witness yields
     global equality `extendF(swap z) = extendF z` on that overlap domain. -/
@@ -1335,76 +912,5 @@ theorem extendF_adjSwap_eq_of_connected_overlap
     hF_real_inv τ D hD_open hD_conn' hD_sub_ET hD_sub_permET V hV_open hV_ne
     hV_sub_D hV_eq z hzD
   simpa [τ] using hmain
-
-/-- Adjacent-swap ET invariance from connectedness of the forward overlap slice.
-    This packages the geometric reduction used to avoid proving connectedness of
-    the full overlap domain directly. -/
-theorem extendF_adjSwap_eq_of_connected_forwardOverlap
-    (n : ℕ)
-    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
-    (hF_holo : DifferentiableOn ℂ F (ForwardTube d n))
-    (hF_real_inv : ∀ (Λ : RestrictedLorentzGroup d)
-      (z : Fin n → Fin (d + 1) → ℂ), z ∈ ForwardTube d n →
-      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
-    (hF_bv : ∀ (x : Fin n → Fin (d + 1) → ℝ),
-      ContinuousWithinAt F (ForwardTube d n) (realEmbed x))
-    (hF_local : ∀ (i : Fin n) (hi : i.val + 1 < n),
-      ∀ (x : Fin n → Fin (d + 1) → ℝ),
-        ∑ μ, minkowskiSignature d μ *
-          (x ⟨i.val + 1, hi⟩ μ - x i μ) ^ 2 > 0 →
-        F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
-        F (fun k μ => (x k μ : ℂ)))
-    (i : Fin n) (hi : i.val + 1 < n)
-    (hFwd_conn : IsConnected (adjSwapForwardOverlapSet (d := d) n i hi))
-    (x0 : Fin n → Fin (d + 1) → ℝ)
-    (hx0_sp : ∑ μ, minkowskiSignature d μ *
-      (x0 ⟨i.val + 1, hi⟩ μ - x0 i μ) ^ 2 > 0)
-    (hx0_ET : realEmbed x0 ∈ ExtendedTube d n)
-    (hx0_swapET :
-      realEmbed (fun k => x0 (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈ ExtendedTube d n) :
-    ∀ (z : Fin n → Fin (d + 1) → ℂ),
-      z ∈ ExtendedTube d n →
-      (fun k => z (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈ ExtendedTube d n →
-      extendF F (fun k => z (Equiv.swap i ⟨i.val + 1, hi⟩ k)) = extendF F z := by
-  have hD_conn :
-      IsConnected
-        {z : Fin n → Fin (d + 1) → ℂ |
-          z ∈ ExtendedTube d n ∧
-          (fun k => z (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈ ExtendedTube d n} := by
-    simpa [adjSwapExtendedOverlapSet] using
-      isConnected_adjSwapExtendedOverlap_of_forwardOverlapConnected
-        n i hi hFwd_conn
-  exact extendF_adjSwap_eq_of_connected_overlap n F hF_holo hF_real_inv
-    hF_bv hF_local i hi hD_conn x0 hx0_sp hx0_ET hx0_swapET
-
-/-- `d ≥ 2` wrapper: obtain the required real spacelike overlap witness from
-    `AdjacentOverlapWitness` automatically. -/
-theorem extendF_adjSwap_eq_of_connected_forwardOverlap_hd2
-    (n : ℕ)
-    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
-    (hF_holo : DifferentiableOn ℂ F (ForwardTube d n))
-    (hF_real_inv : ∀ (Λ : RestrictedLorentzGroup d)
-      (z : Fin n → Fin (d + 1) → ℂ), z ∈ ForwardTube d n →
-      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
-    (hF_bv : ∀ (x : Fin n → Fin (d + 1) → ℝ),
-      ContinuousWithinAt F (ForwardTube d n) (realEmbed x))
-    (hF_local : ∀ (i : Fin n) (hi : i.val + 1 < n),
-      ∀ (x : Fin n → Fin (d + 1) → ℝ),
-        ∑ μ, minkowskiSignature d μ *
-          (x ⟨i.val + 1, hi⟩ μ - x i μ) ^ 2 > 0 →
-        F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
-        F (fun k μ => (x k μ : ℂ)))
-    (hd : 2 ≤ d)
-    (i : Fin n) (hi : i.val + 1 < n)
-    (hFwd_conn : IsConnected (adjSwapForwardOverlapSet (d := d) n i hi)) :
-    ∀ (z : Fin n → Fin (d + 1) → ℂ),
-      z ∈ ExtendedTube d n →
-      (fun k => z (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈ ExtendedTube d n →
-      extendF F (fun k => z (Equiv.swap i ⟨i.val + 1, hi⟩ k)) = extendF F z := by
-  rcases adjacent_overlap_real_spacelike_witness_exists (d := d) (n := n) hd i hi with
-    ⟨x0, hx0_sp, hx0_ET, hx0_swapET⟩
-  exact extendF_adjSwap_eq_of_connected_forwardOverlap n F hF_holo hF_real_inv
-    hF_bv hF_local i hi hFwd_conn x0 hx0_sp hx0_ET hx0_swapET
-
 
 end BHW

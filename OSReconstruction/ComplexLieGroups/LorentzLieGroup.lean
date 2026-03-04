@@ -1263,10 +1263,6 @@ private theorem lorentz_spatial_col_orthonormal
   convert h using 1
   simp [Fin.succ_inj]
 
-/-- When R = 1, (↑↑R * Λ) = Λ for matrices. -/
-private theorem one_val_val_eq :
-    (1 : RestrictedLorentzGroup d).val.val = (1 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) := rfl
-
 /-- Subdiagonal entry zeroing: for a single column j, zero out entries below the
     diagonal, preserving col 0 = e₀, row 0 = e₀ᵀ, and any previously zeroed columns. -/
 private theorem spatial_subdiag_zeroing (j : Fin d)

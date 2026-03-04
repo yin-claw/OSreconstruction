@@ -97,13 +97,6 @@ theorem jostSet_nonempty (_hn : 1 ≤ n) (hd : 1 ≤ d) :
     · intro μ _ hμ; simp [hμ]
     · exact absurd (Finset.mem_univ _)
 
-/-- The Minkowski quadratic form is continuous. -/
-private theorem continuous_minkowski_quadratic (d : ℕ) :
-    Continuous (fun ζ : Fin (d + 1) → ℝ =>
-      ∑ μ, minkowskiSignature d μ * ζ μ ^ 2) :=
-  continuous_finset_sum _ (fun μ _ => (continuous_const.mul
-    ((continuous_apply μ).pow 2)))
-
 /-- The Jost set is open in ℝ^{n(d+1)}. -/
 theorem isOpen_jostSet : IsOpen (JostSet d n) := by
   -- Each IsSpacelike condition is an open condition (preimage of (0,∞) under continuous map)
@@ -137,16 +130,6 @@ theorem isOpen_jostSet : IsOpen (JostSet d n) := by
         rw [hseteq]; exact key _ hcont
   ext x; simp [JostSet, Set.mem_iInter]
 
-/-- The Jost set is invariant under permutations of the position indices.
-    Manifest from the pairwise definition: permuting indices preserves
-    "all x_i spacelike" and "all x_i - x_j spacelike". -/
-theorem jostSet_permutation_invariant (σ : Equiv.Perm (Fin n))
-    {x : Fin n → Fin (d + 1) → ℝ} (hx : x ∈ JostSet d n) :
-    (fun k => x (σ k)) ∈ JostSet d n := by
-  obtain ⟨hx_sp, hx_pair⟩ := hx
-  exact ⟨fun i => hx_sp (σ i),
-    fun i j hij => hx_pair (σ i) (σ j) (fun h => hij (σ.injective h))⟩
-
 /-! ### Consecutive differences and the Jost condition -/
 
 /-- Consecutive difference: ζ_k = x_k - x_{k-1} (with x_{-1} = 0).
@@ -178,18 +161,6 @@ def ForwardJostSet (d n : ℕ) (hd : 1 ≤ d) : Set (Fin n → Fin (d + 1) → �
   { x | ∀ k : Fin n,
     let ζ := consecutiveDiff x k
     |ζ 0| < ζ ⟨1, by omega⟩ }
-
-/-- The forward Jost set is open (defined by strict inequalities). -/
-theorem isOpen_forwardJostSet (hd : 1 ≤ d) :
-    IsOpen (@ForwardJostSet d n hd) := by
-  have heq : ForwardJostSet d n hd = ⋂ k : Fin n,
-      {x | |consecutiveDiff x k 0| < consecutiveDiff x k ⟨1, by omega⟩} := by
-    ext x; simp [ForwardJostSet, Set.mem_iInter]
-  rw [heq]
-  apply isOpen_iInter_of_finite
-  intro k
-  exact isOpen_lt (continuous_abs.comp (continuous_consecutiveDiff_component k 0))
-    (continuous_consecutiveDiff_component k ⟨1, by omega⟩)
 
 /-- The forward Jost set is nonempty (x_k = (0, k+1, 0, ..., 0) works).
     Each consecutive difference is (0, 1, 0, ..., 0), so |0| < 1. -/

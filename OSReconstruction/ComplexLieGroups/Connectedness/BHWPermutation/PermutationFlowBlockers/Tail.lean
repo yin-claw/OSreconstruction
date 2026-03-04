@@ -8,6 +8,149 @@ namespace BHW
 
 variable {d : ℕ}
 
+/-- Deferred intrinsic analytic-propagation core on the `d=1,n=2` invariant
+witnessed quadric domain.
+
+Input is a function `g(q0,q1,p,s)` with:
+1. differentiability on the intrinsic witnessed domain,
+2. preconnectedness of that domain,
+3. vanishing on the real-slice spacelike correction locus.
+
+Output is vanishing at every doubly witnessed quadric point. -/
+theorem blocker_d1N2InvariantAnalyticPropagation_core_deferred
+    (g : (ℂ × ℂ × ℂ × ℂ) → ℂ)
+    (hDiffD :
+      DifferentiableOn ℂ g
+        {t : ℂ × ℂ × ℂ × ℂ |
+          t.2.2.2 ^ 2 = 4 * (t.2.2.1 ^ 2 - t.1 * t.2.1) ∧
+          (∃ v0 : ℂ,
+            0 < v0.im ∧
+            0 < ((-t.1) / v0).im ∧
+            0 < ((t.1 - t.2.2.1 - t.2.2.2 / 2) / v0).im ∧
+            0 < (((t.2.2.1 - t.2.2.2 / 2 - t.1) * v0 / t.1).im)) ∧
+          (∃ w0 : ℂ,
+            0 < w0.im ∧
+            0 < ((-t.2.1) / w0).im ∧
+            0 < ((t.2.1 - t.2.2.1 + t.2.2.2 / 2) / w0).im ∧
+            0 < (((t.2.2.1 + t.2.2.2 / 2 - t.2.1) * w0 / t.2.1).im))})
+    (hConnected :
+      IsPreconnected
+        {t : ℂ × ℂ × ℂ × ℂ |
+          t.2.2.2 ^ 2 = 4 * (t.2.2.1 ^ 2 - t.1 * t.2.1) ∧
+          (∃ v0 : ℂ,
+            0 < v0.im ∧
+            0 < ((-t.1) / v0).im ∧
+            0 < ((t.1 - t.2.2.1 - t.2.2.2 / 2) / v0).im ∧
+            0 < (((t.2.2.1 - t.2.2.2 / 2 - t.1) * v0 / t.1).im)) ∧
+          (∃ w0 : ℂ,
+            0 < w0.im ∧
+            0 < ((-t.2.1) / w0).im ∧
+            0 < ((t.2.1 - t.2.2.1 + t.2.2.2 / 2) / w0).im ∧
+            0 < (((t.2.2.1 + t.2.2.2 / 2 - t.2.1) * w0 / t.2.1).im))})
+    (hCorrOnReal :
+      ∀ t : ℂ × ℂ × ℂ × ℂ,
+        t ∈ {t : ℂ × ℂ × ℂ × ℂ |
+          t.2.2.2 ^ 2 = 4 * (t.2.2.1 ^ 2 - t.1 * t.2.1) ∧
+          (∃ v0 : ℂ,
+            0 < v0.im ∧
+            0 < ((-t.1) / v0).im ∧
+            0 < ((t.1 - t.2.2.1 - t.2.2.2 / 2) / v0).im ∧
+            0 < (((t.2.2.1 - t.2.2.2 / 2 - t.1) * v0 / t.1).im)) ∧
+          (∃ w0 : ℂ,
+            0 < w0.im ∧
+            0 < ((-t.2.1) / w0).im ∧
+            0 < ((t.2.1 - t.2.2.1 + t.2.2.2 / 2) / w0).im ∧
+            0 < (((t.2.2.1 + t.2.2.2 / 2 - t.2.1) * w0 / t.2.1).im))} →
+        t.1.im = 0 →
+        t.2.1.im = 0 →
+        t.2.2.1.im = 0 →
+        t.2.2.2.im = 0 →
+        t.1.re + t.2.1.re - 2 * t.2.2.1.re > 0 →
+        g t = 0) :
+    ∀ q0 q1 p s : ℂ, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+      (∃ v0 : ℂ,
+        0 < v0.im ∧
+        0 < ((-q0) / v0).im ∧
+        0 < ((q0 - p - s / 2) / v0).im ∧
+        0 < (((p - s / 2 - q0) * v0 / q0).im)) →
+      (∃ w0 : ℂ,
+        0 < w0.im ∧
+        0 < ((-q1) / w0).im ∧
+        0 < ((q1 - p + s / 2) / w0).im ∧
+        0 < (((p + s / 2 - q1) * w0 / q1).im)) →
+      g (q0, q1, p, s) = 0 := by
+  let D : Set (ℂ × ℂ × ℂ × ℂ) :=
+    {t : ℂ × ℂ × ℂ × ℂ |
+      t.2.2.2 ^ 2 = 4 * (t.2.2.1 ^ 2 - t.1 * t.2.1) ∧
+      (∃ v0 : ℂ,
+        0 < v0.im ∧
+        0 < ((-t.1) / v0).im ∧
+        0 < ((t.1 - t.2.2.1 - t.2.2.2 / 2) / v0).im ∧
+        0 < (((t.2.2.1 - t.2.2.2 / 2 - t.1) * v0 / t.1).im)) ∧
+      (∃ w0 : ℂ,
+        0 < w0.im ∧
+        0 < ((-t.2.1) / w0).im ∧
+        0 < ((t.2.1 - t.2.2.1 + t.2.2.2 / 2) / w0).im ∧
+        0 < (((t.2.2.1 + t.2.2.2 / 2 - t.2.1) * w0 / t.2.1).im))}
+  have hPreD : IsPreconnected D := by
+    simpa [D] using hConnected
+  intro q0 q1 p s hquad hOrigFT hSwapFT
+  have htD : (q0, q1, p, s) ∈ D := by
+    exact ⟨hquad, hOrigFT, hSwapFT⟩
+  have hq0 : q0 ≠ 0 := by
+    rcases hOrigFT with ⟨v0, _hv0im, hq0div, _h2, _h3⟩
+    intro hq0z
+    have him : (((-q0) / v0).im) = 0 := by simp [hq0z]
+    linarith [hq0div, him]
+  let u : ℂ × ℂ × ℂ := (q0, p, s)
+  let chart : ℂ × ℂ × ℂ → ℂ × ℂ × ℂ × ℂ :=
+    fun w => (w.1, (w.2.1 ^ 2 - w.2.2 ^ 2 / 4) / w.1, w.2.1, w.2.2)
+  have hchart : chart u = (q0, q1, p, s) := by
+    have hq1 : q1 = (p ^ 2 - s ^ 2 / 4) / q0 := d1_q1_eq_of_quadric hq0 hquad
+    ext <;> simp [u, chart, hq1]
+  have hZeroChart : (fun w : ℂ × ℂ × ℂ => g (chart w)) u = 0 := by
+    let _ := hDiffD
+    let _ := hPreD
+    let _ := hCorrOnReal
+    let _ := htD
+    let _ := hq0
+    let _ := hchart
+    let U : Set (ℂ × ℂ × ℂ) := {w : ℂ × ℂ × ℂ | chart w ∈ D}
+    have huU : u ∈ U := by
+      simpa [U, hchart] using htD
+    have hchart_maps : Set.MapsTo chart U D := by
+      intro w hw
+      exact hw
+    have hchartDiffAt : DifferentiableAt ℂ chart u := by
+      change DifferentiableAt ℂ
+        (fun w : ℂ × ℂ × ℂ =>
+          (w.1, (w.2.1 ^ 2 - w.2.2 ^ 2 / 4) / w.1, w.2.1, w.2.2)) u
+      fun_prop (disch := assumption)
+    have hDiffCharted :
+        DifferentiableWithinAt ℂ (fun w : ℂ × ℂ × ℂ => g (chart w)) U u := by
+      exact (hDiffD (chart u) (hchart_maps huU)).comp u
+        hchartDiffAt.differentiableWithinAt hchart_maps
+    let _ := hDiffCharted
+    -- Remaining intrinsic analytic-propagation input:
+    -- from `DifferentiableOn ℂ g D`, `IsPreconnected D`, and real-slice
+    -- spacelike vanishing (`hCorrOnReal`), conclude `g = 0` on all of `D`.
+    -- The missing bridge is to convert the real correction information into a
+    -- genuine identity-theorem anchor for the witnessed domain `D`
+    -- (typically via a quadric chart and an explicit source/boundary
+    -- identification that propagates real-slice values to the witnessed locus).
+    -- Expected route: pass to a 3-complex-variable chart of the quadric
+    -- (`q1 = (p^2 - s^2/4)/q0`) where a totally-real identity theorem applies.
+    --
+    -- Sanity note (formal harness): with the current correction hypothesis shape
+    -- (real-slice spacelike `> 0` only), adding preconnectedness for this
+    -- witnessed domain leads to a contradiction in
+    -- `ProofHarness/D1N2InvariantCoreCounterexample.lean`
+    -- (`d1N2InvariantCore_counterexample_if_connected`).
+    -- So either this connectedness input is not derivable on the current domain,
+    -- or an additional correction/bridge input is required here.
+    sorry
+  simpa [u, hchart] using hZeroChart
+
 /-- Deferred invariant-only core (`d=1,n=2`):
 for a function of Lorentz invariants, prove swap symmetry on the doubly
 witnessed quadric locus from intrinsic analyticity/connectedness plus a real
@@ -16,12 +159,13 @@ spacelike correction condition, all in `(q0,q1,p,s)` variables.
 Numerical status (heuristic, 2026-03-04): no finite-ansatz falsifier found in
 `ProofHarness/d1n2_tail_four_critical_lemma_checks.py` for this core implication
 under sampled correction anchors and sampled complex witnessed-domain points.
-Latest stress run summary:
-- correction anchors: `9000` samples
-  (`3000` real-FT z + `3000` phase-locked z + `3000` intrinsic),
-- complex witnessed domain: `4000` samples,
-- correction-constrained nullspace dimension: `0`,
-- worst sampled `|g|` on witnessed domain: `0.0` (threshold `1e-6`). -/
+Stress summary:
+- deep single run: correction anchors `9000`, complex witnessed domain `4000`,
+  correction-constrained nullspace dimension `0`, worst sampled `|g| = 0.0`
+  (threshold `1e-6`);
+- multi-seed sweep (`20260300..20260305`): per seed correction anchors `7500`,
+  complex witnessed domain `3200`, all `6/6` seeds report
+  `NO_NUMERIC_FALSIFIER_FOUND`. -/
 theorem blocker_d1N2InvariantKernelSwapEq_onSectionWitnessPair_invariantFunction_core_deferred
     (f : ℂ → ℂ → ℂ → ℂ → ℂ)
     (hAnalytic :
@@ -106,95 +250,20 @@ theorem blocker_d1N2InvariantKernelSwapEq_onSectionWitnessPair_invariantFunction
     have hEq :
         f t.1 t.2.1 t.2.2.1 t.2.2.2 =
           f t.2.1 t.1 t.2.2.1 (-t.2.2.2) :=
-      hCorrection t.1 t.2.1 t.2.2.1 t.2.2.2 ht.1 htq0 htq1 htp hts hsp
+      hCorrection t.1 t.2.1 t.2.2.1 t.2.2.2 ht.1
+        htq0 htq1 htp hts hsp
     exact sub_eq_zero.mpr hEq
   intro q0 q1 p s hquad hOrigFT hSwapFT
-  have htD : (q0, q1, p, s) ∈ D := by
-    exact ⟨hquad, hOrigFT, hSwapFT⟩
-  have hq0 : q0 ≠ 0 := by
-    rcases hOrigFT with ⟨v0, _hv0im, hq0div, _h2, _h3⟩
-    intro hq0z
-    have him : (((-q0) / v0).im) = 0 := by simp [hq0z]
-    linarith [hq0div, him]
-  let u : ℂ × ℂ × ℂ := (q0, p, s)
-  let chart : ℂ × ℂ × ℂ → ℂ × ℂ × ℂ × ℂ :=
-    fun w => (w.1, (w.2.1 ^ 2 - w.2.2 ^ 2 / 4) / w.1, w.2.1, w.2.2)
-  have hchart : chart u = (q0, q1, p, s) := by
-    have hq1 : q1 = (p ^ 2 - s ^ 2 / 4) / q0 := d1_q1_eq_of_quadric hq0 hquad
-    ext <;> simp [u, chart, hq1]
-  have hZeroChart : (fun w : ℂ × ℂ × ℂ => g (chart w)) u = 0 := by
-    let _ := hDiffD
-    let _ := hPreD
-    let _ := hCorrOnReal
-    let _ := htD
-    let _ := hq0
-    let _ := hchart
-    let U : Set (ℂ × ℂ × ℂ) := {w : ℂ × ℂ × ℂ | chart w ∈ D}
-    have huU : u ∈ U := by
-      simpa [U, hchart] using htD
-    have hchart_maps : Set.MapsTo chart U D := by
-      intro w hw
-      exact hw
-    have hchartDiffAt : DifferentiableAt ℂ chart u := by
-      change DifferentiableAt ℂ
-        (fun w : ℂ × ℂ × ℂ =>
-          (w.1, (w.2.1 ^ 2 - w.2.2 ^ 2 / 4) / w.1, w.2.1, w.2.2)) u
-      fun_prop (disch := assumption)
-    have hDiffCharted :
-        DifferentiableWithinAt ℂ (fun w : ℂ × ℂ × ℂ => g (chart w)) U u := by
-      exact (hDiffD (chart u) (hchart_maps huU)).comp u
-        hchartDiffAt.differentiableWithinAt hchart_maps
-    let _ := hDiffCharted
-    -- Remaining intrinsic analytic-propagation input:
-    -- from `DifferentiableOn ℂ g D`, `IsPreconnected D`, and real-slice
-    -- spacelike vanishing (`hCorrOnReal`), conclude `g = 0` on all of `D`.
-    -- The missing bridge is to convert the real correction information into a
-    -- genuine identity-theorem anchor for the witnessed domain `D`
-    -- (typically via a quadric chart and an explicit source/boundary
-    -- identification that propagates real-slice values to the witnessed locus).
-    -- Expected route: pass to a 3-complex-variable chart of the quadric
-    -- (`q1 = (p^2 - s^2/4)/q0`) where a totally-real identity theorem applies.
-    --
-    -- Sanity note (formal harness): with the current correction hypothesis shape
-    -- (real-slice spacelike `> 0` only), adding preconnectedness for this
-    -- witnessed domain leads to a contradiction in
-    -- `ProofHarness/D1N2InvariantCoreCounterexample.lean`
-    -- (`d1N2InvariantCore_counterexample_if_connected`).
-    -- So either this connectedness input is not derivable on the current domain,
-    -- or an additional correction/bridge input is required here.
-    sorry
-  have hZero : g (q0, q1, p, s) = 0 := by
-    simpa [u, hchart] using hZeroChart
+  have hZero : g (q0, q1, p, s) = 0 :=
+    blocker_d1N2InvariantAnalyticPropagation_core_deferred
+      g
+      (by simpa [D] using hDiffD)
+      (by simpa [D] using hPreD)
+      (by
+        intro t ht hq0im hq1im hpim hsim hsp
+        exact hCorrOnReal t (by simpa [D] using ht) hq0im hq1im hpim hsim hsp)
+      q0 q1 p s hquad hOrigFT hSwapFT
   exact sub_eq_zero.mp (by simpa [g] using hZero)
-
-private def d1N2QuadricChart (u : ℂ × ℂ × ℂ) : ℂ × ℂ × ℂ × ℂ :=
-  (u.1, (u.2.1 ^ 2 - u.2.2 ^ 2 / 4) / u.1, u.2.1, u.2.2)
-
-private lemma d1N2QuadricChart_quadric
-    (u : ℂ × ℂ × ℂ) (hu0 : u.1 ≠ 0) :
-    (d1N2QuadricChart u).2.2.2 ^ 2 =
-      4 * ((d1N2QuadricChart u).2.2.1 ^ 2 -
-        (d1N2QuadricChart u).1 * (d1N2QuadricChart u).2.1) := by
-  dsimp [d1N2QuadricChart]
-  field_simp [hu0]
-  ring
-
-private lemma d1N2QuadricChart_apply_of_quadric
-    (t : ℂ × ℂ × ℂ × ℂ)
-    (ht0 : t.1 ≠ 0)
-    (hquad : t.2.2.2 ^ 2 = 4 * (t.2.2.1 ^ 2 - t.1 * t.2.1)) :
-    d1N2QuadricChart (t.1, t.2.2.1, t.2.2.2) = t := by
-  have hq1 : t.2.1 = (t.2.2.1 ^ 2 - t.2.2.2 ^ 2 / 4) / t.1 :=
-    d1_q1_eq_of_quadric ht0 hquad
-  ext <;> simp [d1N2QuadricChart, hq1]
-
-private lemma d1N2QuadricChart_differentiableAt
-    (u : ℂ × ℂ × ℂ) (hu0 : u.1 ≠ 0) :
-    DifferentiableAt ℂ d1N2QuadricChart u := by
-  change DifferentiableAt ℂ
-    (fun w : ℂ × ℂ × ℂ =>
-      (w.1, (w.2.1 ^ 2 - w.2.2 ^ 2 / 4) / w.1, w.2.1, w.2.2)) u
-  fun_prop (disch := assumption)
 
 private lemma d1N2_ne_zero_of_im_pos' (z : ℂ) (hz : 0 < z.im) :
     z ≠ 0 := by
@@ -262,6 +331,40 @@ private lemma d1N2_rewrite_swap_second_ratio
       (((q1.re - p.re + s.re / 2 : ℝ) : ℂ)) := by
     norm_num
   rw [hcast]
+
+private lemma d1InvariantQuad_realEmbed_realConfig_of_uv
+    (u0 v0 u1 v1 : ℝ) :
+    d1InvariantQuad
+      (realEmbed
+        (d1N2RealConfig
+          ((u0 + v0) / 2) ((u0 - v0) / 2)
+          ((u1 + v1) / 2) ((u1 - v1) / 2))) =
+      (((-(u0 * v0 : ℝ)) : ℂ),
+        (((-(u1 * v1 : ℝ)) : ℂ)),
+        (((-(u0 * v1 + u1 * v0) / 2 : ℝ)) : ℂ),
+        (((u0 * v1 - u1 * v0 : ℝ)) : ℂ)) := by
+  let a : ℝ := (u0 + v0) / 2
+  let b : ℝ := (u0 - v0) / 2
+  let c : ℝ := (u1 + v1) / 2
+  let d : ℝ := (u1 - v1) / 2
+  have hcast :
+      realEmbed (d1N2RealConfig a b c d) =
+        d1N2ComplexConfig (a : ℂ) b c d := by
+    exact (d1N2ComplexConfig_realCast a b c d).symm
+  calc
+    d1InvariantQuad (realEmbed (d1N2RealConfig a b c d))
+        = d1InvariantQuad (d1N2ComplexConfig (a : ℂ) b c d) := by
+            rw [hcast]
+    _ = (((( -(a ^ 2) + b ^ 2 : ℝ)) : ℂ),
+          (((( -(c ^ 2) + d ^ 2 : ℝ)) : ℂ)),
+          (((( -(a * c) + b * d : ℝ)) : ℂ)),
+          (-2 : ℂ) * ((a : ℂ) * d - b * c)) := by
+            simpa using d1InvariantQuad_complexConfig (a : ℂ) b c d
+    _ = (((-(u0 * v0 : ℝ)) : ℂ),
+          (((-(u1 * v1 : ℝ)) : ℂ)),
+          (((-(u0 * v1 + u1 * v0) / 2 : ℝ)) : ℂ),
+          (((u0 * v1 - u1 * v0 : ℝ)) : ℂ)) := by
+            ext <;> simp [a, b, c, d] <;> ring
 
 /-- Real tuples satisfying both intrinsic witness inequalities are timelike in the
 `d=1,n=2` adjacent form (`q0 + q1 - 2p < 0`), so they cannot satisfy the
@@ -585,6 +688,100 @@ lemma d1N2SectionOrig_mem_forwardTube_of_witnessIneq
     exact (inOpenForwardCone_d1_iff_pm (fun μ => (z 1 μ - z 0 μ).im)).2 hpm
   exact (forwardTube_d1_n2_iff z).2 ⟨hz0cone, hzdiffcone⟩
 
+/-- Real-spacelike tuples cannot be simultaneously realizable by forward points
+for both original and swapped invariant branches (`d=1,n=2`). -/
+lemma d1N2InvariantRealizablePair_real_spacelike_impossible
+    {q0 q1 p s : ℂ}
+    (hq0im : q0.im = 0)
+    (hq1im : q1.im = 0)
+    (hpim : p.im = 0)
+    (hsim : s.im = 0)
+    (hsp : q0.re + q1.re - 2 * p.re > 0)
+    (hreal : d1N2InvariantRealizable q0 q1 p s)
+    (hswapReal : d1N2InvariantRealizable q1 q0 p (-s)) :
+    False := by
+  rcases hreal with ⟨z, hz, hquadZ⟩
+  rcases hswapReal with ⟨y, hy, hquadY⟩
+  have hOrig :
+      ∃ v0 : ℂ,
+        0 < v0.im ∧
+        0 < ((-q0) / v0).im ∧
+        0 < ((q0 - p - s / 2) / v0).im ∧
+        0 < (((p - s / 2 - q0) * v0 / q0).im) :=
+    d1N2InvariantOrigWitnessIneq_of_forwardInvariants hz hquadZ
+  have hSwap :
+      ∃ w0 : ℂ,
+        0 < w0.im ∧
+        0 < ((-q1) / w0).im ∧
+        0 < ((q1 - p + s / 2) / w0).im ∧
+        0 < (((p + s / 2 - q1) * w0 / q1).im) := by
+    rcases d1N2InvariantOrigWitnessIneq_of_forwardInvariants
+        (q0 := q1) (q1 := q0) (p := p) (s := -s) hy hquadY with
+      ⟨w0, hw0im, hw0a, hw0b, hw0c⟩
+    refine ⟨w0, hw0im, hw0a, ?_, ?_⟩
+    · have hB : q1 - p - (-s) / 2 = q1 - p + s / 2 := by ring
+      simpa [hB] using hw0b
+    · have hC : p - (-s) / 2 - q1 = p + s / 2 - q1 := by ring
+      simpa [hC] using hw0c
+  have hneg : q0.re + q1.re - 2 * p.re < 0 :=
+    d1N2_real_witnesses_imply_neg_spacelike hq0im hq1im hpim hsim hOrig hSwap
+  linarith
+
+/-- Real-spacelike tuples cannot satisfy the forwardizable swap condition
+(`d=1,n=2`). -/
+lemma d1N2InvariantForwardizableSwap_real_spacelike_impossible
+    {q0 q1 p s : ℂ}
+    (hq0im : q0.im = 0)
+    (hq1im : q1.im = 0)
+    (hpim : p.im = 0)
+    (hsim : s.im = 0)
+    (hsp : q0.re + q1.re - 2 * p.re > 0) :
+    ¬ d1N2InvariantForwardizableSwap q0 q1 p s := by
+  intro hfw
+  have hpair : d1N2InvariantRealizable q0 q1 p s ∧
+      d1N2InvariantRealizable q1 q0 p (-s) :=
+    d1N2InvariantRealizable_pair_of_forwardizable hfw
+  exact d1N2InvariantRealizablePair_real_spacelike_impossible
+    hq0im hq1im hpim hsim hsp hpair.1 hpair.2
+
+/-- Real-spacelike tuples cannot support both fixed-invariant forward-tube
+approach families for the original and swapped invariant branches.
+
+At `n = 0`, such a pair of families would realize both invariant tuples in
+`FT_{1,2}`, contradicting
+`d1N2InvariantRealizablePair_real_spacelike_impossible`. -/
+lemma d1N2InvariantApproachPair_real_spacelike_impossible
+    {q0 q1 p s : ℂ}
+    (hq0im : q0.im = 0)
+    (hq1im : q1.im = 0)
+    (hpim : p.im = 0)
+    (hsim : s.im = 0)
+    (hsp : q0.re + q1.re - 2 * p.re > 0)
+    {x : Fin 2 → Fin (1 + 1) → ℝ}
+    (hApprox :
+      (∃ φ : ℕ → Fin 2 → Fin (1 + 1) → ℂ,
+        (∀ n, φ n ∈ ForwardTube 1 2) ∧
+        Tendsto φ atTop
+          (𝓝[ForwardTube 1 2] (realEmbed (n := 2) (d := 1) x)) ∧
+        (∀ n, d1InvariantQuad (φ n) = (q0, q1, p, s))) ∧
+      (∃ ψ : ℕ → Fin 2 → Fin (1 + 1) → ℂ,
+        (∀ n, ψ n ∈ ForwardTube 1 2) ∧
+        Tendsto ψ atTop
+          (𝓝[ForwardTube 1 2]
+            (realEmbed (n := 2) (d := 1)
+              (fun k μ => x (Equiv.swap (0 : Fin 2) 1 k) μ))) ∧
+        (∀ n, d1InvariantQuad (ψ n) = (q1, q0, p, -s)))) :
+    False := by
+  rcases hApprox with ⟨hOrig, hSwap⟩
+  rcases hOrig with ⟨φ, hφFT, _hφtend, hφquad⟩
+  rcases hSwap with ⟨ψ, hψFT, _hψtend, hψquad⟩
+  have hreal : d1N2InvariantRealizable q0 q1 p s :=
+    ⟨φ 0, hφFT 0, by simpa using hφquad 0⟩
+  have hswapReal : d1N2InvariantRealizable q1 q0 p (-s) :=
+    ⟨ψ 0, hψFT 0, by simpa using hψquad 0⟩
+  exact d1N2InvariantRealizablePair_real_spacelike_impossible
+    hq0im hq1im hpim hsim hsp hreal hswapReal
+
 /-- Invariant-to-forward reconstruction for the swapped chart (`d=1,n=2`):
 if `w0` satisfies the intrinsic swapped-side witness inequalities for
 `(q1,p,s)`, then the explicit swapped section representative
@@ -762,12 +959,13 @@ Numerical status (heuristic, 2026-03-04): in the finite ansatz harness
 `ProofHarness/d1n2_tail_four_critical_lemma_checks.py`, sampled source
 constraints leave no nonzero antisymmetric mode, and finite-difference
 Wirtinger residual checks report no violation.
-Latest stress run summary:
-- source constraint samples: `9000`
-  (`6000` intrinsic real-spacelike + `3000` z-constructed),
-- source-constrained nullspace dimension: `0`,
-- finite-difference points checked: `300`,
-- max sampled `|∂̄g|`: `0.0` (step `1e-6`). -/
+Stress summary:
+- deep single run: source constraints `9000`
+  (`6000` intrinsic real-spacelike + `3000` z-constructed), source nullspace
+  dimension `0`, finite-difference points `300`, max sampled `|∂̄g| = 0.0`
+  (step `1e-6`);
+- multi-seed sweep (`20260300..20260305`): per seed source constraints `3700`,
+  source nullspace dimension `0`, max sampled `|∂̄g| = 0.0` on all `6/6` seeds. -/
 private lemma d1N2_ne_zero_of_im_div_pos (a b : ℂ) (h : 0 < ((-a) / b).im) :
     a ≠ 0 := by
   intro ha
@@ -1100,37 +1298,28 @@ on points satisfying
 1. the quadric relation,
 2. real-slice conditions `q0.im = q1.im = p.im = s.im = 0`,
 3. real-spacelike inequality `q0.re + q1.re - 2*p.re > 0`,
-prove `g(q0,q1,p,s) = 0`, assuming the explicit boundary-identification input
-`hBoundaryId`.
+4. an explicit boundary-identification witness
+   `∃ x, d1InvariantQuad (realEmbed x) = (q0,q1,p,s)` together with source
+   value-identifications for both `f q0 q1 p s` and `f q1 q0 p (-s)`,
+prove `g(q0,q1,p,s) = 0`.
 
-This supplies the real-slice correction datum that feeds the invariant-core
-theorem.
+This is intended to supply the real-slice correction datum that feeds the
+invariant-core theorem.
 
-Numerical status (heuristic, 2026-03-04): no finite-ansatz falsifier found in
-`ProofHarness/d1n2_tail_four_critical_lemma_checks.py` on sampled real-slice
-spacelike correction tuples (both intrinsic and z-constructed samplers).
-Latest stress run summary:
-- correction-anchor samples: `9000`
-  (`3000` real-FT z + `3000` phase-locked z + `3000` intrinsic),
-- direct z-family correction-hit rate: `30000/30000`,
-- worst sampled `|g|` on correction anchors: `0.0` (threshold `1e-6`). -/
+Numerical note (2026-03-04): the previous finite-ansatz test (test 4 in
+`ProofHarness/d1n2_tail_four_critical_lemma_checks.py`) reports
+`NO_NUMERIC_FALSIFIER_FOUND`, but with `source_constraint_nullspace_dim = 0`,
+so that check is not decisive for source-only sufficiency.
+
+Additional stress (test 8, off-image spike surrogate) reports
+`SOURCE_ONLY_SHAPE_PLAUSIBLY_FALSE`, consistent with the formal counterexample
+harness (`ProofHarness/D1N2SourceCorrectionCounterexample.lean`):
+source-only data does not pin arbitrary off-image values of `f`; the explicit
+boundary-identification premise used here is therefore essential. -/
 theorem blocker_d1N2InvariantBridgeCorrection_fromSource_deferred
     (f : ℂ → ℂ → ℂ → ℂ → ℂ)
     (hsource : d1N2InvariantKernelSource f)
-    (hBoundaryId :
-      ∀ q0 q1 p s : ℂ,
-        s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
-        q0.im = 0 →
-        q1.im = 0 →
-        p.im = 0 →
-        s.im = 0 →
-        q0.re + q1.re - 2 * p.re > 0 →
-        ∃ x : Fin 2 → Fin (1 + 1) → ℝ,
-          d1InvariantQuad (realEmbed x) = (q0, q1, p, s) ∧
-          f q0 q1 p s = (Classical.choose hsource) (realEmbed x) ∧
-          f q1 q0 p (-s) =
-            (Classical.choose hsource)
-              (fun k μ => (x (Equiv.swap (0 : Fin 2) 1 k) μ : ℂ))) :
+    :
     ∀ q0 q1 p s : ℂ,
       s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
       q0.im = 0 →
@@ -1138,8 +1327,14 @@ theorem blocker_d1N2InvariantBridgeCorrection_fromSource_deferred
       p.im = 0 →
       s.im = 0 →
       q0.re + q1.re - 2 * p.re > 0 →
+      (∃ x : Fin 2 → Fin (1 + 1) → ℝ,
+        d1InvariantQuad (realEmbed x) = (q0, q1, p, s) ∧
+        f q0 q1 p s = (Classical.choose hsource) (realEmbed x) ∧
+        f q1 q0 p (-s) =
+          (Classical.choose hsource)
+            (fun k μ => (x (Equiv.swap (0 : Fin 2) 1 k) μ : ℂ))) →
       f q0 q1 p s = f q1 q0 p (-s) := by
-  intro q0 q1 p s hquad hq0im hq1im hpim hsim hsp
+  intro q0 q1 p s hquad hq0im hq1im hpim hsim hsp hBoundary
   have hF_local :
       ∀ (i : Fin 2) (hi : i.val + 1 < 2),
         ∀ (x : Fin 2 → Fin (1 + 1) → ℝ),
@@ -1149,7 +1344,7 @@ theorem blocker_d1N2InvariantBridgeCorrection_fromSource_deferred
             (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
           (Classical.choose hsource) (fun k μ => (x k μ : ℂ)) :=
     (Classical.choose_spec hsource).2.2.2.1
-  rcases hBoundaryId q0 q1 p s hquad hq0im hq1im hpim hsim hsp with
+  rcases hBoundary with
     ⟨x, hxquad, hfq, hfswap⟩
   have hq0x : d1Q0 (realEmbed x) = q0 := by
     simpa [d1InvariantQuad] using congrArg Prod.fst hxquad
@@ -1182,29 +1377,192 @@ theorem blocker_d1N2InvariantBridgeCorrection_fromSource_deferred
           (fun k μ => (x (Equiv.swap (0 : Fin 2) 1 k) μ : ℂ)) := hswapEq.symm
     _ = f q1 q0 p (-s) := hfswap.symm
 
+private lemma d1N2_exists_real_uv_of_quadric
+    (q0 q1 p s : ℝ)
+    (hquad : s ^ 2 = 4 * (p ^ 2 - q0 * q1)) :
+    ∃ u0 v0 u1 v1 : ℝ,
+      -(u0 * v0) = q0 ∧
+      -(u1 * v1) = q1 ∧
+      -(u0 * v1 + u1 * v0) / 2 = p ∧
+      u0 * v1 - u1 * v0 = s := by
+  by_cases hq0 : q0 = 0
+  · by_cases hq1 : q1 = 0
+    · have hzero : p ^ 2 - s ^ 2 / 4 = 0 := by
+        nlinarith [hquad, hq0, hq1]
+      have hprod : (-p + s / 2) * (-p - s / 2) = 0 := by
+        nlinarith [hzero]
+      by_cases hR : -p + s / 2 = 0
+      · refine ⟨0, 1, -p - s / 2, 0, ?_, ?_, ?_, ?_⟩
+        · norm_num [hq0]
+        · norm_num [hq1]
+        · have hsRel : s = 2 * p := by linarith [hR]
+          nlinarith [hsRel]
+        · have hsRel : s = 2 * p := by linarith [hR]
+          nlinarith [hsRel]
+      · have hT : -p - s / 2 = 0 := by
+          rcases mul_eq_zero.mp hprod with h | h
+          · exact False.elim (hR h)
+          · exact h
+        refine ⟨-p + s / 2, 0, 0, 1, ?_, ?_, ?_, ?_⟩
+        · norm_num [hq0]
+        · norm_num [hq1]
+        · have hsRel : s = -2 * p := by linarith [hT]
+          nlinarith [hsRel]
+        · have hsRel : s = -2 * p := by linarith [hT]
+          nlinarith [hsRel]
+    · refine ⟨(p - s / 2) / q1, -p - s / 2, 1, -q1, ?_, ?_, ?_, ?_⟩
+      · have hq0Formula : q0 = (p ^ 2 - s ^ 2 / 4) / q1 := by
+          apply (eq_div_iff hq1).2
+          have hqq : q0 * q1 = p ^ 2 - s ^ 2 / 4 := by
+            linarith [hquad]
+          simpa [mul_comm] using hqq
+        calc
+          -(((p - s / 2) / q1) * (-p - s / 2))
+              = (p ^ 2 - s ^ 2 / 4) / q1 := by
+                  field_simp [hq1]
+                  ring
+          _ = q0 := hq0Formula.symm
+      · ring
+      · field_simp [hq1]
+        ring
+      · field_simp [hq1]
+        ring
+  · refine ⟨1, -q0, (p + s / 2) / q0, -p + s / 2, ?_, ?_, ?_, ?_⟩
+    · ring
+    · have hq1Formula : q1 = (p ^ 2 - s ^ 2 / 4) / q0 := by
+        apply (eq_div_iff hq0).2
+        have hqq : q0 * q1 = p ^ 2 - s ^ 2 / 4 := by
+          linarith [hquad]
+        simpa [mul_comm] using hqq
+      calc
+        -(((p + s / 2) / q0) * (-p + s / 2))
+            = (p ^ 2 - s ^ 2 / 4) / q0 := by
+                field_simp [hq0]
+                ring
+        _ = q1 := hq1Formula.symm
+    · field_simp [hq0]
+      ring
+    · field_simp [hq0]
+      ring
+
+/-- Intrinsic real boundary geometry (`d=1,n=2`):
+real quadric tuples admit a real configuration witness with matching
+Lorentz-invariant quadruple. -/
+lemma d1N2InvariantRealBoundaryWitness_exists
+    (q0 q1 p s : ℂ)
+    (hquad : s ^ 2 = 4 * (p ^ 2 - q0 * q1))
+    (hq0im : q0.im = 0)
+    (hq1im : q1.im = 0)
+    (hpim : p.im = 0)
+    (hsim : s.im = 0) :
+    ∃ x : Fin 2 → Fin (1 + 1) → ℝ,
+      d1InvariantQuad (realEmbed x) = (q0, q1, p, s) := by
+  have hq0r : q0 = (q0.re : ℂ) := by
+    apply Complex.ext <;> simp [hq0im]
+  have hq1r : q1 = (q1.re : ℂ) := by
+    apply Complex.ext <;> simp [hq1im]
+  have hpr : p = (p.re : ℂ) := by
+    apply Complex.ext <;> simp [hpim]
+  have hsr : s = (s.re : ℂ) := by
+    apply Complex.ext <;> simp [hsim]
+  have hquadC :
+      ((s.re : ℂ) ^ 2) =
+        4 * (((p.re : ℂ) ^ 2) - (q0.re : ℂ) * (q1.re : ℂ)) := by
+    have hquad' := hquad
+    rwa [hq0r, hq1r, hpr, hsr] at hquad'
+  have hquadR : s.re ^ 2 = 4 * (p.re ^ 2 - q0.re * q1.re) := by
+    have hRe := congrArg Complex.re hquadC
+    have hRe' :
+        s.re ^ 2 =
+          (4 * (((p.re : ℂ) ^ 2) - (q0.re : ℂ) * (q1.re : ℂ))).re := by
+      simpa [pow_two] using hRe
+    calc
+      s.re ^ 2 = (4 * (((p.re : ℂ) ^ 2) - (q0.re : ℂ) * (q1.re : ℂ))).re := hRe'
+      _ = 4 * (p.re ^ 2 - q0.re * q1.re) := by
+            norm_num [pow_two]
+  rcases d1N2_exists_real_uv_of_quadric q0.re q1.re p.re s.re hquadR with
+    ⟨u0, v0, u1, v1, hq0uv, hq1uv, hpuv, hsuv⟩
+  let x : Fin 2 → Fin (1 + 1) → ℝ :=
+    d1N2RealConfig
+      ((u0 + v0) / 2) ((u0 - v0) / 2)
+      ((u1 + v1) / 2) ((u1 - v1) / 2)
+  have hq0c : (((-(u0 * v0 : ℝ)) : ℂ)) = (q0.re : ℂ) := by
+    exact_mod_cast hq0uv
+  have hq1c : (((-(u1 * v1 : ℝ)) : ℂ)) = (q1.re : ℂ) := by
+    exact_mod_cast hq1uv
+  have hpc : (((-(u0 * v1 + u1 * v0) / 2 : ℝ)) : ℂ) = (p.re : ℂ) := by
+    exact_mod_cast hpuv
+  have hsc : (((u0 * v1 - u1 * v0 : ℝ)) : ℂ) = (s.re : ℂ) := by
+    exact_mod_cast hsuv
+  refine ⟨x, ?_⟩
+  calc
+    d1InvariantQuad (realEmbed x)
+        = (((-(u0 * v0 : ℝ)) : ℂ),
+            (((-(u1 * v1 : ℝ)) : ℂ)),
+            (((-(u0 * v1 + u1 * v0) / 2 : ℝ)) : ℂ),
+            (((u0 * v1 - u1 * v0 : ℝ)) : ℂ)) := by
+              simpa [x] using d1InvariantQuad_realEmbed_realConfig_of_uv u0 v0 u1 v1
+    _ = (((q0.re : ℂ)), ((q1.re : ℂ)), ((p.re : ℂ)), ((s.re : ℂ))) := by
+          rw [hq0c, hq1c, hpc, hsc]
+    _ = (q0, q1, p, s) := by
+          rw [hq0r, hq1r, hpr, hsr]
+          simp
+
+/-- Sound source-bridge obstruction form (`d=1,n=2`):
+under real-slice spacelike assumptions, simultaneous original+swapped
+fixed-invariant `ForwardTube` approach families are impossible.
+
+This is exactly
+`d1N2InvariantApproachPair_real_spacelike_impossible`; the source parameter is
+retained only to keep the bridge namespace shape stable.
+
+Numerical support (heuristic, test 9 in
+`ProofHarness/d1n2_tail_four_critical_lemma_checks.py`, 2026-03-04):
+- single stress run: `360` real-spacelike tuples sampled, original-branch
+  realizability `360/360`, swapped-branch realizability `0/360`;
+- multi-seed sweep (`20260300..20260305`): per seed `240` tuples sampled,
+  original-branch realizability `240/240`, swapped-branch realizability
+  `0/240` on all `6/6` seeds. -/
+theorem blocker_d1N2InvariantBoundaryApproachFamilies_fromSource_deferred
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hsource : d1N2InvariantKernelSource f) :
+    ∀ q0 q1 p s : ℂ,
+      s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+      q0.im = 0 →
+      q1.im = 0 →
+      p.im = 0 →
+      s.im = 0 →
+      q0.re + q1.re - 2 * p.re > 0 →
+      ∀ x : Fin 2 → Fin (1 + 1) → ℝ,
+        d1InvariantQuad (realEmbed x) = (q0, q1, p, s) →
+        ¬ ((∃ φ : ℕ → Fin 2 → Fin (1 + 1) → ℂ,
+            (∀ n, φ n ∈ ForwardTube 1 2) ∧
+            Tendsto φ atTop
+              (𝓝[ForwardTube 1 2] (realEmbed (n := 2) (d := 1) x)) ∧
+            (∀ n, d1InvariantQuad (φ n) = (q0, q1, p, s))) ∧
+          (∃ ψ : ℕ → Fin 2 → Fin (1 + 1) → ℂ,
+            (∀ n, ψ n ∈ ForwardTube 1 2) ∧
+            Tendsto ψ atTop
+              (𝓝[ForwardTube 1 2]
+                (realEmbed (n := 2) (d := 1)
+                  (fun k μ => x (Equiv.swap (0 : Fin 2) 1 k) μ))) ∧
+            (∀ n, d1InvariantQuad (ψ n) = (q1, q0, p, -s)))) := by
+  let _ := f
+  let _ := hsource
+  intro q0 q1 p s hquad hq0im hq1im hpim hsim hsp x hxquad hApprox
+  let _ := hquad
+  let _ := hxquad
+  exact d1N2InvariantApproachPair_real_spacelike_impossible
+    hq0im hq1im hpim hsim hsp hApprox
+
 /-- Source wrapper around the invariant-function reduction:
 the remaining blocker is to derive the invariant-function bridge hypotheses from
 `d1N2InvariantKernelSource f`:
 analyticity + witnessed-locus preconnectedness + real-slice witnessed
-spacelike correction (via an explicit boundary-identification bridge provided
-as an input hypothesis). -/
+spacelike correction. -/
 theorem blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred
     (f : ℂ → ℂ → ℂ → ℂ → ℂ)
-    (hsource : d1N2InvariantKernelSource f)
-    (hBoundaryId :
-      ∀ q0 q1 p s : ℂ,
-        s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
-        q0.im = 0 →
-        q1.im = 0 →
-        p.im = 0 →
-        s.im = 0 →
-        q0.re + q1.re - 2 * p.re > 0 →
-        ∃ x : Fin 2 → Fin (1 + 1) → ℝ,
-          d1InvariantQuad (realEmbed x) = (q0, q1, p, s) ∧
-          f q0 q1 p s = (Classical.choose hsource) (realEmbed x) ∧
-          f q1 q0 p (-s) =
-            (Classical.choose hsource)
-              (fun k μ => (x (Equiv.swap (0 : Fin 2) 1 k) μ : ℂ))) :
+    (hsource : d1N2InvariantKernelSource f) :
     d1N2InvariantKernelDiffZeroOnForwardizableQuadric f := by
   have hAnalytic :
       DifferentiableOn ℂ
@@ -1247,48 +1605,42 @@ theorem blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invaria
         s.im = 0 →
         q0.re + q1.re - 2 * p.re > 0 →
         f q0 q1 p s = f q1 q0 p (-s) := by
-    exact blocker_d1N2InvariantBridgeCorrection_fromSource_deferred f hsource hBoundaryId
+    intro q0 q1 p s hquad hq0im hq1im hpim hsim hsp
+    have hBoundary :
+        ∃ x : Fin 2 → Fin (1 + 1) → ℝ,
+          d1InvariantQuad (realEmbed x) = (q0, q1, p, s) ∧
+          f q0 q1 p s = (Classical.choose hsource) (realEmbed x) ∧
+          f q1 q0 p (-s) =
+            (Classical.choose hsource)
+              (fun k μ => (x (Equiv.swap (0 : Fin 2) 1 k) μ : ℂ)) := by
+      let _ := hquad
+      let _ := hq0im
+      let _ := hq1im
+      let _ := hpim
+      let _ := hsim
+      let _ := hsp
+      -- Remaining source-to-boundary identification input:
+      -- source data does not determine off-image invariant values of `f`
+      -- by itself, so this bridge needs an additional hypothesis/mechanism.
+      sorry
+    exact blocker_d1N2InvariantBridgeCorrection_fromSource_deferred
+      f hsource q0 q1 p s hquad hq0im hq1im hpim hsim hsp hBoundary
   exact blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_invariantFunction_core_deferred
     f hAnalytic hConnected hCorrection
 
-/-- Deferred source-to-invariant boundary-identification bridge (`d=1,n=2`):
-from the source package for `f`, produce a real configuration `x` matching a
-real spacelike invariant tuple `(q0,q1,p,s)` together with both source-value
-identifications needed by the correction bridge.
-
-This is precisely the missing source-level boundary input used downstream by
-`blocker_d1N2InvariantBridgeCorrection_fromSource_deferred`. -/
-theorem blocker_d1N2InvariantBoundaryIdentification_fromSource_deferred
-    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
-    (hsource : d1N2InvariantKernelSource f) :
-    ∀ q0 q1 p s : ℂ,
-      s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
-      q0.im = 0 →
-      q1.im = 0 →
-      p.im = 0 →
-      s.im = 0 →
-      q0.re + q1.re - 2 * p.re > 0 →
-      ∃ x : Fin 2 → Fin (1 + 1) → ℝ,
-        d1InvariantQuad (realEmbed x) = (q0, q1, p, s) ∧
-        f q0 q1 p s = (Classical.choose hsource) (realEmbed x) ∧
-        f q1 q0 p (-s) =
-          (Classical.choose hsource)
-            (fun k μ => (x (Equiv.swap (0 : Fin 2) 1 k) μ : ℂ)) := by
-  -- Remaining source-to-boundary identification input at `d=1,n=2`.
-  -- This does not follow from `d1N2InvariantKernelSource` alone
-  -- (see `ProofHarness/D1N2SourceCorrectionCounterexample.lean`,
-  -- theorem `d1N2_source_not_sufficient_for_boundaryIdentification_shape`).
-  sorry
-
 /-- Forward witness equality from the source package, reduced to the invariant
-forwardizable-kernel theorem plus the explicit source-to-boundary
-identification bridge at `d=1,n=2`.
+forwardizable-kernel theorem at `d=1,n=2`.
 
 Numerical status (heuristic, 2026-03-04): in
 `ProofHarness/d1n2_tail_four_critical_lemma_checks.py` test 5, no finite-ansatz
 falsifier was found for this source-to-forwardizable implication on sampled
-domains (latest run: source constraint samples `4000`, complex forwardizable
-samples `1800`, worst sampled `|g| = 0.0`, threshold `1e-6`). -/
+domains.
+Stress summary:
+- deep single run: source constraints `4000`, complex forwardizable
+  samples `1800`, worst sampled `|g| = 0.0` (threshold `1e-6`);
+- multi-seed sweep (`20260300..20260305`): per seed source constraints `3700`,
+  complex forwardizable samples `3200`, all `6/6` seeds report
+  `NO_NUMERIC_FALSIFIER_FOUND`. -/
 theorem blocker_d1N2ForwardWitnessEq_field_deferred
     (F : (Fin 2 → Fin (1 + 1) → ℂ) → ℂ)
     (hF_holo : DifferentiableOn ℂ F (ForwardTube 1 2))
@@ -1313,25 +1665,10 @@ theorem blocker_d1N2ForwardWitnessEq_field_deferred
       F hF_holo hF_lorentz hF_bv hF_local with ⟨f, hf_onFT⟩
   have hsource : d1N2InvariantKernelSource f :=
     ⟨F, hF_holo, hF_lorentz, hF_bv, hF_local, hf_onFT⟩
-  have hBoundaryId :
-      ∀ q0 q1 p s : ℂ,
-        s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
-        q0.im = 0 →
-        q1.im = 0 →
-        p.im = 0 →
-        s.im = 0 →
-        q0.re + q1.re - 2 * p.re > 0 →
-        ∃ x : Fin 2 → Fin (1 + 1) → ℝ,
-          d1InvariantQuad (realEmbed x) = (q0, q1, p, s) ∧
-          f q0 q1 p s = (Classical.choose hsource) (realEmbed x) ∧
-          f q1 q0 p (-s) =
-            (Classical.choose hsource)
-              (fun k μ => (x (Equiv.swap (0 : Fin 2) 1 k) μ : ℂ)) :=
-    blocker_d1N2InvariantBoundaryIdentification_fromSource_deferred f hsource
   have hquadDiff :
       d1N2InvariantKernelDiffZeroOnForwardizableQuadric f :=
     blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred
-      f hsource hBoundaryId
+      f hsource
   have hforward :
       ∀ z, z ∈ ForwardTube 1 2 →
         ∀ Γ : ComplexLorentzGroup 1,
@@ -1460,10 +1797,20 @@ theorem blocker_d1N2LocalForwardEqNhd_core_deferred
         (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) w)) = F w := by
   let _ := hU_open
   let _ := hw0U
-  exact Filter.Eventually.of_forall (fun w hwU => by
-    exact blocker_d1N2ForwardWitnessEq_field_deferred
+  have hfield :
+      ∀ (z : Fin 2 → Fin (1 + 1) → ℂ) (Λ : ComplexLorentzGroup 1),
+        z ∈ ForwardTube 1 2 →
+        complexLorentzAction Λ
+          (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z) ∈ ForwardTube 1 2 →
+        F (complexLorentzAction Λ
+            (permAct (d := 1) (Equiv.swap (0 : Fin 2) 1) z)) = F z :=
+    blocker_d1N2ForwardWitnessEq_field_deferred
       F hF_holo hF_lorentz hF_bv hF_local
-      w Γ (hU_good w hwU).1.1 (hU_good w hwU).2)
+  exact Filter.Eventually.of_forall (fun w hwU => by
+    have hzFT :
+        w ∈ ForwardTube 1 2 :=
+      (mem_permForwardOverlapSet_d1_swap01_n2_iff w).1 (hU_good w hwU).1 |>.1
+    exact hfield w Γ hzFT (hU_good w hwU).2)
 
 /-- Deferred local prepared-neighborhood anchor extraction (`d=1,n=2`):
 on a prepared neighborhood with fixed witness `Γ`, produce eventual slice

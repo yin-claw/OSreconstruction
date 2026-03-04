@@ -402,31 +402,12 @@ private theorem rapidityElement_mul (x y : ℂ) :
   apply ComplexLorentzGroup.ext
   simp [rapidityElement, rapidityMatrix_mul]
 
-private theorem d1_real_im_rapidity_decomp (Λ : ComplexLorentzGroup 1) :
-    ∃ a b : ℝ,
-      Λ.val = rapidityMatrix ((a : ℂ) + (b : ℂ) * Complex.I) ∧
-      rapidityMatrix ((a : ℂ) + (b : ℂ) * Complex.I) =
-        rapidityMatrix (a : ℂ) * rapidityMatrix ((b : ℂ) * Complex.I) := by
-  rcases d1_exists_rapidity Λ with ⟨θ, hθ⟩
-  refine ⟨θ.re, θ.im, ?_, ?_⟩
-  · simpa [Complex.re_add_im] using hθ
-  · simpa using rapidityMatrix_mul (x := (θ.re : ℂ)) (y := (θ.im : ℂ) * Complex.I)
-
 private theorem d1_exists_rapidityElement (Λ : ComplexLorentzGroup 1) :
     ∃ θ : ℂ, Λ = rapidityElement θ := by
   rcases d1_exists_rapidity Λ with ⟨θ, hθ⟩
   refine ⟨θ, ?_⟩
   apply ComplexLorentzGroup.ext
   simpa [rapidityElement] using hθ
-
-private theorem d1_rapidityElement_real_im_decomp (Λ : ComplexLorentzGroup 1) :
-    ∃ a b : ℝ, Λ = rapidityElement (a : ℂ) * rapidityElement ((b : ℂ) * Complex.I) := by
-  rcases d1_exists_rapidityElement Λ with ⟨θ, rfl⟩
-  refine ⟨θ.re, θ.im, ?_⟩
-  have hθ : θ = (θ.re : ℂ) + (θ.im : ℂ) * Complex.I := (Complex.re_add_im θ).symm
-  rw [hθ]
-  simpa using
-    (rapidityElement_mul (x := (θ.re : ℂ)) (y := (θ.im : ℂ) * Complex.I))
 
 private theorem rapidityMatrix_add_two_pi_I_int (θ : ℂ) (m : ℤ) :
     rapidityMatrix (θ + (m : ℂ) * (2 * Real.pi) * Complex.I) = rapidityMatrix θ := by

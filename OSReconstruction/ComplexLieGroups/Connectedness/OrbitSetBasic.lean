@@ -24,23 +24,6 @@ def orbitMap {n : ℕ} (w : Fin n → Fin (d + 1) → ℂ) :
 def stabilizer {n : ℕ} (w : Fin n → Fin (d + 1) → ℂ) : Set (ComplexLorentzGroup d) :=
   {g | complexLorentzAction g w = w}
 
-lemma stabilizer_contains_one {n : ℕ} (w : Fin n → Fin (d + 1) → ℂ) :
-    (1 : ComplexLorentzGroup d) ∈ stabilizer w := by
-  simp [stabilizer, complexLorentzAction_one]
-
-lemma stabilizer_closed {n : ℕ} (w : Fin n → Fin (d + 1) → ℂ) :
-    IsClosed (stabilizer w) := by
-  have h1 : Continuous (orbitMap w) := by
-    apply continuous_pi
-    intro k
-    apply continuous_pi
-    intro μ
-    simp only [orbitMap, complexLorentzAction]
-    exact continuous_finset_sum Finset.univ
-      (fun ν _ => (ComplexLorentzGroup.continuous_entry μ ν).mul continuous_const)
-  have h2 : Continuous (fun _ : ComplexLorentzGroup d => w) := continuous_const
-  simpa [stabilizer, orbitMap] using isClosed_eq h1 h2
-
 /-- Stabilizers are conjugate along the orbit: `Stab(Γ·w) = Γ Stab(w) Γ⁻¹`. -/
 theorem stabilizer_eq_conj_image {n : ℕ}
     (w : Fin n → Fin (d + 1) → ℂ)
@@ -120,24 +103,6 @@ lemma fiber_orbitMap_isPreconnected_of_stabilizer {n : ℕ}
     exact continuous_const.mul ComplexLorentzGroup.continuous_val
   exact hstab.image _ hcont.continuousOn
 
-/-- Reduction principle for orbit-set preconnectedness via quotient-map fibers. -/
-theorem orbitSet_isPreconnected_of_quotientData {n : ℕ}
-    (w : Fin n → Fin (d + 1) → ℂ) (hw : w ∈ ForwardTube d n)
-    (hquot : Topology.IsQuotientMap
-      (fun Λ : orbitSet w =>
-        (⟨orbitMap w Λ, ⟨Λ, Λ.property, rfl⟩⟩ : orbitMap w '' orbitSet w)))
-    (hFib : ∀ y : (orbitMap w '' orbitSet w),
-      IsConnected ((fun Λ : orbitSet w =>
-        (⟨orbitMap w Λ, ⟨Λ, Λ.property, rfl⟩⟩ : orbitMap w '' orbitSet w)) ⁻¹' ({y} : Set _)))
-    [PreconnectedSpace (orbitMap w '' orbitSet w)] :
-    IsPreconnected (orbitSet w) := by
-  haveI : Nonempty (orbitSet w) := ⟨⟨1, by simpa [orbitSet, complexLorentzAction_one] using hw⟩⟩
-  haveI : PreconnectedSpace (orbitSet w) :=
-    IsQuotientMap.preconnectedSpace_of_connectedFibers
-      (f := fun Λ : orbitSet w =>
-        (⟨orbitMap w Λ, ⟨Λ, Λ.property, rfl⟩⟩ : orbitMap w '' orbitSet w)) hquot hFib
-  exact isPreconnected_iff_preconnectedSpace.mpr inferInstance
-
 /-- Reduction principle for orbit-set preconnectedness via quotient-map fibers,
 with explicit nonemptiness of the orbit set. -/
 theorem orbitSet_isPreconnected_of_quotientData_nonempty {n : ℕ}
@@ -157,13 +122,6 @@ theorem orbitSet_isPreconnected_of_quotientData_nonempty {n : ℕ}
       (f := fun Λ : orbitSet w =>
         (⟨orbitMap w Λ, ⟨Λ, Λ.property, rfl⟩⟩ : orbitMap w '' orbitSet w)) hquot hFib
   exact isPreconnected_iff_preconnectedSpace.mpr inferInstance
-
-/-- The orbit set contains the identity. -/
-theorem mem_orbitSet_one {n : ℕ} {z : Fin n → Fin (d + 1) → ℂ}
-    (hz : z ∈ ForwardTube d n) :
-    (1 : ComplexLorentzGroup d) ∈ orbitSet z := by
-  rw [orbitSet, Set.mem_setOf_eq, complexLorentzAction_one]
-  exact hz
 
 /-- The forward tube is open (strict inequalities on continuous functions). -/
 theorem isOpen_forwardTube {n : ℕ} : IsOpen (ForwardTube d n) := by

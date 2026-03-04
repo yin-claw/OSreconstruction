@@ -100,6 +100,52 @@ def swap_then_lorentz_uv(
     return (y0u, y0v, y1u, y1v)
 
 
+def ft_margins_uv(u0: complex, v0: complex, u1: complex, v1: complex) -> Tuple[float, float, float, float]:
+    return (
+        u0.imag,
+        v0.imag,
+        (u1 - u0).imag,
+        (v1 - v0).imag,
+    )
+
+
+def hU_good_strong_local_surrogate(
+    u0: complex, v0: complex, u1: complex, v1: complex, lam: complex, eps: float
+) -> bool:
+    if not in_ft_uv(u0, v0, u1, v1, eps):
+        return False
+    y0u, y0v, y1u, y1v = swap_then_lorentz_uv(u0, v0, u1, v1, lam)
+    return in_ft_uv(y0u, y0v, y1u, y1v, eps)
+
+
+def sample_local_prepared_center(
+    rng: random.Random, eps: float, trials: int
+) -> Tuple[Complex4, complex, float] | None:
+    # Produce a center w0 in FT and a fixed witness lam such that
+    # swap_then_lorentz(w0, lam) is also in FT with positive margins.
+    for _ in range(trials):
+        u0, v0, u1, v1 = sample_ft_uv(rng)
+        if not in_ft_uv(u0, v0, u1, v1, eps):
+            continue
+        lam = random_nonzero_complex_scale(rng)
+        y0u, y0v, y1u, y1v = swap_then_lorentz_uv(u0, v0, u1, v1, lam)
+        if not in_ft_uv(y0u, y0v, y1u, y1v, eps):
+            continue
+        margins = ft_margins_uv(u0, v0, u1, v1) + ft_margins_uv(y0u, y0v, y1u, y1v)
+        m = min(margins)
+        if m <= eps:
+            continue
+        return ((u0, v0, u1, v1), lam, m)
+    return None
+
+
+def perturb_uv(rng: random.Random, z: Complex4, radius: float) -> Complex4:
+    return tuple(
+        zi + complex(rng.uniform(-radius, radius), rng.uniform(-radius, radius))
+        for zi in z
+    )  # type: ignore[return-value]
+
+
 def random_nonzero_complex_scale(rng: random.Random) -> complex:
     r = rng.uniform(0.2, 4.0)
     th = rng.uniform(-math.pi, math.pi)
@@ -301,6 +347,42 @@ def reconstruct_real_uv_from_invariants(inv: Real4, eps: float) -> Tuple[Real4, 
     if abs(b) <= eps:
         return ((a, 0.0, 0.0, 1.0), "degenerate_b0")
     return None
+
+
+def uv_from_q0_p_s_and_u0(
+    q0: complex, p: complex, s: complex, u0: complex
+) -> Complex4 | None:
+    if abs(u0) <= 1e-14:
+        return None
+    v0 = -q0 / u0
+    if abs(v0) <= 1e-14:
+        return None
+    # Solve the linear system:
+    #   u0*v1 + u1*v0 = -2p
+    #   u0*v1 - u1*v0 = s
+    v1 = (-p + s / 2.0) / u0
+    u1 = (-p - s / 2.0) / v0
+    return (u0, v0, u1, v1)
+
+
+def random_search_ft_realizable_from_q0_p_s(
+    rng: random.Random,
+    q0: complex,
+    p: complex,
+    s: complex,
+    eps: float,
+    trials: int,
+    y_max: float,
+) -> bool:
+    y_floor = max(1e-8, 10.0 * eps)
+    for _ in range(trials):
+        u0 = complex(rng.uniform(-50.0, 50.0), rng.uniform(y_floor, y_max))
+        uv = uv_from_q0_p_s_and_u0(q0, p, s, u0)
+        if uv is None:
+            continue
+        if in_ft_uv(*uv, eps):
+            return True
+    return False
 
 
 @dataclass
@@ -555,6 +637,14 @@ def main() -> None:
     parser.add_argument("--boundary-z-constructed-samples", type=int, default=30000)
     parser.add_argument("--boundary-near-q0-zero-samples", type=int, default=12000)
     parser.add_argument("--boundary-reconstruct-tol", type=float, default=1e-7)
+    parser.add_argument("--local-nhd-centers", type=int, default=120)
+    parser.add_argument("--local-nhd-samples-per-center", type=int, default=120)
+    parser.add_argument("--local-nhd-center-trials", type=int, default=3000)
+    parser.add_argument("--local-nhd-noise-fraction", type=float, default=0.18)
+    parser.add_argument("--source-offimage-probe-tol", type=float, default=1e-4)
+    parser.add_argument("--swap-branch-spacelike-samples", type=int, default=240)
+    parser.add_argument("--swap-branch-search-trials", type=int, default=12000)
+    parser.add_argument("--swap-branch-y-max", type=float, default=40.0)
     args = parser.parse_args()
 
     rng = random.Random(args.seed)
@@ -726,6 +816,119 @@ def main() -> None:
         )
     )
 
+    # Test 7: LocalForwardEqNhd_core_deferred (local fixed-witness neighborhood surrogate).
+    # We sample centers (w0, lam) with w0 in FT and lam·(swap·w0) in FT, perturb within
+    # a small neighborhood, keep points satisfying the same two FT constraints, and probe g.
+    local_centers_collected = 0
+    local_points_checked = 0
+    local_points_rejected = 0
+    worst_local = 0.0
+    for _ in range(args.local_nhd_centers):
+        center = sample_local_prepared_center(
+            rng, args.eps, args.local_nhd_center_trials
+        )
+        if center is None:
+            continue
+        (u0, v0, u1, v1), lam, margin = center
+        local_centers_collected += 1
+        radius = max(1e-6, args.local_nhd_noise_fraction * margin)
+        attempts = 10 * args.local_nhd_samples_per_center
+        accepted = 0
+        for _ in range(attempts):
+            if accepted >= args.local_nhd_samples_per_center:
+                break
+            uu0, vv0, uu1, vv1 = perturb_uv(rng, (u0, v0, u1, v1), radius)
+            if not hU_good_strong_local_surrogate(uu0, vv0, uu1, vv1, lam, args.eps):
+                local_points_rejected += 1
+                continue
+            inv = invariants_from_uv(uu0, vv0, uu1, vv1)
+            for coeff in coeffs_source:
+                worst_local = max(worst_local, abs(evaluate_g(coeff, basis, inv)))
+            local_points_checked += 1
+            accepted += 1
+
+    print("\n=== Test 7: LocalForwardEqNhd_core_deferred (Neighborhood Surrogate) ===")
+    print(f"local_centers_requested={args.local_nhd_centers}")
+    print(f"local_centers_collected={local_centers_collected}")
+    print(f"local_samples_per_center_requested={args.local_nhd_samples_per_center}")
+    print(f"local_points_checked={local_points_checked}")
+    print(f"local_points_rejected={local_points_rejected}")
+    print(f"worst_|g|_on_local_prepared_points={worst_local:.6e}")
+    print(f"report_threshold={args.report_threshold:.1e}")
+    if local_points_checked == 0:
+        print("status=INCONCLUSIVE_NO_LOCAL_POINTS")
+    else:
+        print(
+            "status="
+            + (
+                "NO_NUMERIC_FALSIFIER_FOUND"
+                if worst_local <= args.report_threshold
+                else "POTENTIAL_FALSIFIER_FOUND"
+            )
+        )
+
+    # Test 8: Source-only correction shape stress (explicit off-image spike surrogate).
+    # Probe tuple from formal harness:
+    #   (q0,q1,p,s) = (9,1,3,0), quadric + real-slice + spacelike.
+    # Define a spike antisymmetric difference g_spike that is nonzero only at the probe.
+    # On sampled forwardizable/source domains this should stay zero (off-image),
+    # while correction fails exactly at the probe.
+    probe = (complex(9.0), complex(1.0), complex(3.0), complex(0.0))
+    probe_swap = (probe[1], probe[0], probe[2], -probe[3])
+
+    def close4(a: Complex4, b: Complex4, tol: float) -> bool:
+        return max(abs(a[i] - b[i]) for i in range(4)) <= tol
+
+    def g_spike(inv: Complex4, tol: float) -> complex:
+        if close4(inv, probe, tol):
+            return complex(1.0)
+        if close4(inv, probe_swap, tol):
+            return complex(-1.0)
+        return complex(0.0)
+
+    probe_quadric_res = abs(quadric_residual(probe))
+    probe_real_slice = max(abs(probe[0].imag), abs(probe[1].imag), abs(probe[2].imag), abs(probe[3].imag))
+    probe_spacelike = probe[0].real + probe[1].real - 2.0 * probe[2].real
+
+    min_dist_probe_source = min(
+        (max(abs(inv[i] - probe[i]) for i in range(4)) for inv in complex_domain),
+        default=float("inf"),
+    )
+    source_hits_probe_tol = sum(
+        1 for inv in complex_domain if close4(inv, probe, args.source_offimage_probe_tol)
+    )
+    max_spike_on_source = max(
+        (abs(g_spike(inv, args.source_offimage_probe_tol)) for inv in complex_domain),
+        default=0.0,
+    )
+    probe_violation = abs(g_spike(probe, args.source_offimage_probe_tol))
+
+    print("\n=== Test 8: Source-Only Correction Shape (Off-Image Spike Surrogate) ===")
+    print(f"probe_tuple={probe}")
+    print(f"probe_quadric_residual={probe_quadric_res:.6e}")
+    print(f"probe_real_slice_max_im={probe_real_slice:.6e}")
+    print(f"probe_spacelike_value={probe_spacelike:.6e}")
+    print(f"source_offimage_probe_tol={args.source_offimage_probe_tol:.1e}")
+    print(f"min_supnorm_distance_probe_to_source_samples={min_dist_probe_source:.6e}")
+    print(f"source_hits_within_probe_tol={source_hits_probe_tol}")
+    print(f"max_|g_spike|_on_sampled_source_domain={max_spike_on_source:.6e}")
+    print(f"|g_spike|(probe)={probe_violation:.6e}")
+    print(
+        "status="
+        + (
+            "SOURCE_ONLY_SHAPE_PLAUSIBLY_FALSE"
+            if (
+                probe_quadric_res <= 1e-10
+                and probe_real_slice <= 1e-10
+                and probe_spacelike > args.eps
+                and source_hits_probe_tol == 0
+                and max_spike_on_source <= 1e-12
+                and probe_violation > args.report_threshold
+            )
+            else "INCONCLUSIVE"
+        )
+    )
+
     # Test 6: BoundaryIdentification geometry core (real tuple -> real witness config).
     # This checks the geometric existence content numerically:
     # for real quadric+spacelike tuples, reconstruct real light-cone coordinates
@@ -788,6 +991,60 @@ def main() -> None:
             "NO_NUMERIC_FALSIFIER_FOUND"
             if (total_checked > 0 and total_failures == 0 and overall_max_err <= args.boundary_reconstruct_tol)
             else "POTENTIAL_FALSIFIER_FOUND"
+        )
+    )
+
+    # Test 9: swapped-branch FT realizability stress on real-spacelike tuples.
+    # Sample real-spacelike tuples from explicit FT z-families, then test whether
+    # the swapped tuple (q1,q0,p,-s) admits any FT realization via random search
+    # in the exact (q0,p,s,u0) parameterization.
+    swap_branch_from_real_ft = collect_samples(
+        lambda: sample_real_spacelike_invariant_from_z_family(rng, args.eps),
+        n=args.swap_branch_spacelike_samples,
+        max_attempts=60 * args.swap_branch_spacelike_samples,
+    )
+    swap_branch_from_phase_locked = collect_samples(
+        lambda: sample_real_spacelike_invariant_from_phase_locked_z_family(rng, args.eps),
+        n=args.swap_branch_spacelike_samples,
+        max_attempts=80 * args.swap_branch_spacelike_samples,
+    )
+    swap_branch_samples = swap_branch_from_real_ft + swap_branch_from_phase_locked
+    orig_hits = 0
+    swap_hits = 0
+    checked = 0
+    for q0, q1, p, s in swap_branch_samples:
+        if max(abs(q0.imag), abs(q1.imag), abs(p.imag), abs(s.imag)) > 1e-8:
+            continue
+        if (q0.real + q1.real - 2.0 * p.real) <= args.eps:
+            continue
+        checked += 1
+        if random_search_ft_realizable_from_q0_p_s(
+            rng, q0, p, s, args.eps, args.swap_branch_search_trials, args.swap_branch_y_max
+        ):
+            orig_hits += 1
+        if random_search_ft_realizable_from_q0_p_s(
+            rng, q1, p, -s, args.eps, args.swap_branch_search_trials, args.swap_branch_y_max
+        ):
+            swap_hits += 1
+
+    print("\n=== Test 9: Swapped Branch FT Realizability on Real-Spacelike Samples ===")
+    print(f"swap_branch_samples_from_real_ft={len(swap_branch_from_real_ft)}")
+    print(f"swap_branch_samples_from_phase_locked={len(swap_branch_from_phase_locked)}")
+    print(f"swap_branch_samples_checked={checked}")
+    print(f"swap_branch_random_search_trials_per_tuple={args.swap_branch_search_trials}")
+    print(f"swap_branch_u0_imag_max={args.swap_branch_y_max:.2f}")
+    print(f"orig_branch_ft_hits={orig_hits}")
+    print(f"swapped_branch_ft_hits={swap_hits}")
+    print(
+        "status="
+        + (
+            "SWAPPED_BRANCH_NOT_FOUND_ON_SAMPLED_REAL_SPACELIKE_TUPLES"
+            if (checked > 0 and swap_hits == 0)
+            else (
+                "SWAPPED_BRANCH_FOUND_ON_SAMPLED_REAL_SPACELIKE_TUPLES"
+                if checked > 0
+                else "INCONCLUSIVE_NO_SPACELIKE_SAMPLES"
+            )
         )
     )
 

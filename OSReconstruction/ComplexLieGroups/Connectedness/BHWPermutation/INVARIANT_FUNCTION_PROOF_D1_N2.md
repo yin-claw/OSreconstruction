@@ -111,7 +111,16 @@ wrapper packaging.
    `blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred`
    whose remaining work is deriving the source-to-invariant bridge inputs from
    `d1N2InvariantKernelSource f`.
-   A non-deferred pass-through theorem is now available once those three bridge
+   The remaining source-side deferred input is now an explicit local witness
+   requirement (`hBoundary`) inside this theorem: per real-slice spacelike
+   tuple, produce `x` with matching invariants and the two boundary
+   value-identifications for `f`.
+   The theorem
+   `blocker_d1N2InvariantBoundaryApproachFamilies_fromSource_deferred` is now a
+   proved obstruction statement (not an existence bridge): under real-slice
+   spacelike assumptions, simultaneous original+swapped fixed-invariant `FT`
+   approach families are impossible.
+   A non-deferred pass-through theorem remains available once the three bridge
    inputs are provided explicitly:
    `d1N2InvariantKernelDiffZeroOnForwardizableQuadric_of_source_and_invariantBridgeInputs`.
 
@@ -122,13 +131,13 @@ Correction statement lock:
   `q0.re + q1.re - 2*p.re > 0`, enforce
   `f q0 q1 p s = f q1 q0 p (-s)`.
 - `blocker_d1N2InvariantBridgeCorrection_fromSource_deferred` is now a proved
-  reduction, provided an explicit source-to-invariant boundary-identification
-  hypothesis `hBoundaryId`.
+  reduction, provided an explicit per-point source-to-invariant
+  boundary-identification witness.
 - The false claim that this boundary-identification follows from
-  `d1N2InvariantKernelSource` alone has been removed from `Tail.lean`; the
-  unresolved bridge is now isolated as the explicit deferred theorem
-  `blocker_d1N2InvariantBoundaryIdentification_fromSource_deferred` and is
-  consumed as the `hBoundaryId` input downstream.
+  `d1N2InvariantKernelSource` alone has been removed from the proved bridge
+  chain; the unresolved bridge is tracked explicitly as the local `hBoundary`
+  deferred input inside
+  `blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred`.
 - The existing formal counterexample harness records the key obstruction:
   source data alone does not constrain arbitrary off-image values of `f` on
   this real-spacelike set, so the bridge must include source-to-invariant
@@ -159,9 +168,17 @@ The stress harness
 - correction anchors on real-spacelike tuples (intrinsic + z-constructed),
 - complex witnessed-domain tuples from `z in FT` with explicit swap-then-Lorentz
   witness,
+- boundary-geometry reconstruction checks from intrinsic real invariants
+  `(q0,q1,p,s)` back to real witness coordinates,
 - a direct source-to-forwardizable surrogate check for
-  `blocker_d1N2ForwardWitnessEq_field_deferred` (test 5).
-Current runs report no numeric falsifier for tests 1/2/3/4/5 in the finite
+  `blocker_d1N2ForwardWitnessEq_field_deferred` (test 5),
+- a local fixed-witness neighborhood surrogate for
+  `blocker_d1N2LocalForwardEqNhd_core_deferred` (test 7),
+- an explicit off-image spike stress for the source-only correction shape
+  (test 8),
+- a swapped-branch FT realizability stress on sampled real-spacelike tuples
+  (test 9).
+Current runs report no numeric falsifier for tests 1/2/3/4/5/6/7 in the finite
 ansatz model.
 
 This numerical check supports the witness-inequality translation only; it does
@@ -172,33 +189,83 @@ These runs test populated sampled domains under the current theorem
 assumptions, so the reported “no falsifier found” outcomes are based on actual
 constraint-and-evaluation checks (not empty-set behavior).
 
-Latest stress run (2026-03-04) from
+Latest stress runs (2026-03-04) from
 `ProofHarness/d1n2_tail_four_critical_lemma_checks.py`:
 
-- Test 1 (invariant core implication):
-  - correction-anchor samples: `9000`,
-  - complex witnessed-domain samples: `4000`,
-  - correction-constrained nullspace dimension: `0`,
-  - worst sampled `|g|` on complex witnessed domain: `0.0` (threshold `1e-6`).
-- Test 4 (bridge correction surrogate):
-  - correction-anchor samples: `9000`,
-  - direct z-family correction-hit rate: `30000/30000`,
-  - worst sampled `|g|` on correction anchors: `0.0`.
-- Test 3 (bridge preconnectedness surrogate):
-  - complex witnessed-domain samples: `4000`,
-  - KNN graph components: `1`,
-  - largest component: `4000/4000` points (`k=10`).
-- Test 2 (bridge analyticity surrogate):
-  - source-constraint samples: `9000`,
-  - source-constrained antisymmetric nullspace dimension: `0`,
-  - finite-difference checks: `300` points, max sampled `|∂̄g| = 0.0`.
-- Test 5 (forward witness equality surrogate):
-  - source-constraint samples: `4000`,
-  - complex forwardizable samples: `1800`,
-  - worst sampled `|g|` on forwardizable domain: `0.0`.
+- Deep single run:
+  - Test 1 (invariant core implication):
+    - correction-anchor samples: `9000`,
+    - complex witnessed-domain samples: `4000`,
+    - correction-constrained nullspace dimension: `0`,
+    - worst sampled `|g|` on complex witnessed domain: `0.0` (threshold `1e-6`).
+  - Test 4 (bridge correction surrogate):
+    - correction-anchor samples: `9000`,
+    - direct z-family correction-hit rate: `30000/30000`,
+    - worst sampled `|g|` on correction anchors: `0.0`.
+  - Test 3 (bridge preconnectedness surrogate):
+    - complex witnessed-domain samples: `4000`,
+    - KNN graph components: `1`,
+    - largest component: `4000/4000` points (`k=10`).
+  - Test 2 (bridge analyticity surrogate):
+    - source-constraint samples: `9000`,
+    - source-constrained antisymmetric nullspace dimension: `0`,
+    - finite-difference checks: `300` points, max sampled `|∂̄g| = 0.0`.
+  - Test 5 (forward witness equality surrogate):
+    - source-constraint samples: `4000`,
+    - complex forwardizable samples: `1800`,
+    - worst sampled `|g|` on forwardizable domain: `0.0`.
+  - Test 6 (boundary geometry reconstruction):
+    - intrinsic + near-`q0=0` + z-constructed tuples checked: `200000`,
+    - reconstruction failures: `0`,
+    - max invariant reconstruction error: `2.10e-11`.
+  - Test 7 (local fixed-witness neighborhood surrogate):
+    - local centers: `120/120` collected,
+    - local prepared-neighborhood points checked: `14400`,
+    - rejected local perturbations: `1`,
+    - worst sampled `|g|` on local prepared points: `0.0`
+      (threshold `1e-6`).
+  - Test 8 (source-only correction shape, off-image spike surrogate):
+    - probe tuple `(9,1,3,0)` satisfies quadric + real-slice + spacelike,
+    - min sampled supnorm distance from probe to source-domain samples:
+      `4.05`,
+    - sampled source-domain hits near probe (`tol=1e-4`): `0`,
+    - spike value on source-domain samples: `0`,
+    - spike value at probe: `1`,
+    - status: `SOURCE_ONLY_SHAPE_PLAUSIBLY_FALSE`.
+  - Test 9 (swapped-branch FT realizability on real-spacelike samples):
+    - sampled tuples: `360` (`180` real-FT family + `180` phase-locked family),
+    - randomized exact-invariant search trials per tuple: `9000`,
+    - original branch FT hits: `360/360`,
+    - swapped branch FT hits: `0/360`,
+    - status: `SWAPPED_BRANCH_NOT_FOUND_ON_SAMPLED_REAL_SPACELIKE_TUPLES`.
+
+- Multi-seed sweep (`20260300..20260305`):
+  - per seed:
+    - source constraints: `3700`,
+    - correction anchors: `7500`,
+    - complex witnessed-domain samples: `3200`,
+    - boundary reconstruction checks: `100000`.
+  - aggregate across 6 seeds:
+    - boundary reconstruction checks: `600000`,
+    - boundary reconstruction failures: `0`,
+    - worst boundary reconstruction error across seeds: `2.97e-11`,
+    - source/correction nullspace dimensions: always `0`,
+    - all reported statuses: `NO_NUMERIC_FALSIFIER_FOUND` (`24/24` checks),
+    - test 9 (swapped-branch FT realizability):
+      original branch hits `240/240` on all seeds,
+      swapped branch hits `0/240` on all seeds.
 
 Interpretation:
 - These are genuine finite-model falsification checks because sampled anchor
   and target domains are populated (not empty), and `g` is evaluated on those
   sets under the intended constraint families.
+- For the source-only correction shape, test 4 alone is inconclusive when the
+  sampled source-constrained nullspace collapses to dimension `0`; test 8 is
+  the relevant stress for off-image freedom.
+- Test 9 supports the current formal concern that real-spacelike correction data
+  does not naturally come from swapped-branch FT realizability, so a separate
+  source-to-invariant boundary-identification mechanism is required.
+- This geometric obstruction is now also formalized in `Tail.lean`:
+  `d1N2InvariantRealizablePair_real_spacelike_impossible` and
+  `d1N2InvariantForwardizableSwap_real_spacelike_impossible`.
 - They remain heuristic (not formal proof): finite ansatz + finite sampling.
