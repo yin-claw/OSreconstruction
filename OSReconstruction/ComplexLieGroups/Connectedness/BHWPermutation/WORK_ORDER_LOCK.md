@@ -3,6 +3,21 @@
 ## Scope Lock
 This lock file tracks only the active analytic blocker for the `d=1, n=2` route.
 
+- Priority lock (2026-03-04):
+  - Top priority is numerical verification of the remaining `sorry` lemmas.
+  - For each active deferred statement, first establish high-quality numerical
+    support/falsification checks aligned with the exact theorem hypotheses.
+  - Whether a lemma can be proved immediately in the current Lean
+    infrastructure is secondary to first confirming the mathematical statement.
+
+- Hard-focus lock (2026-03-04):
+  - Active proof work is restricted to `d=1, n=2` lemmas only.
+  - `n = 3` / `n ≥ 4` geometric branches are explicitly out of scope for this
+    lock unless a separate lock update states otherwise.
+  - Within `d=1,n=2`, current sprint focus is analytic extension only.
+  - Do not spend active proof effort on connectivity/preconnectedness lemmas in
+    this sprint; they are parked unless explicitly re-enabled.
+
 - Active blocker theorem:
   - `blocker_d1N2InvariantKernelSwapEq_onSectionWitnessPair_invariantFunction_core_deferred`
   - File: `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/PermutationFlowBlockers/Tail.lean`
@@ -38,21 +53,59 @@ locked exactly as currently stated:
 1. `blocker_d1N2InvariantKernelSwapEq_onSectionWitnessPair_invariantFunction_core_deferred`
    - assumptions: `hAnalytic`, `hConnected`, real-slice spacelike `hCorrection`;
    - goal: swap equality on doubly witnessed quadric points.
+   - proof-body status (2026-03-04):
+     now explicitly decomposed in `Tail.lean` into intrinsic objects
+     `D(q0,q1,p,s)` and `g(q0,q1,p,s)`, with the real-slice correction
+     reduction (`hCorrOnReal`) formalized; the only remaining `sorry` in this
+     theorem is the intrinsic analytic propagation step
+     (`DifferentiableOn + IsPreconnected + real-slice vanishing -> g = 0 on D`).
+     Current substep closure inside the theorem also includes the pullback
+     charted differentiability fact on `U := {w | chart w ∈ D}`.
+     New geometric note (formalized helper lemmas): under both intrinsic witness
+     inequalities on real tuples, one gets
+     `q0.re + q1.re - 2*p.re < 0`; hence real-spacelike (`> 0`) correction
+     anchors do not directly lie in the witnessed domain.
+     The intrinsic witnessed domain is confirmed nonempty/nontrivial by an
+     explicit formal example with `q0 ≠ q1`:
+     `d1N2InvariantWitnessedDomain_nontrivial_example`.
+     Supporting numerics (2026-03-04): stress sampling over `12000` real-spacelike
+     tuples with random complex witness search (`4000` witness attempts each)
+     yielded `0` hits for simultaneous original+swapped witness inequalities.
+     Formal obstruction harness (2026-03-04):
+     `ProofHarness/D1N2InvariantCoreCounterexample.lean`,
+     theorem `d1N2InvariantCore_counterexample_if_connected` shows that if this
+     witnessed domain is preconnected, the current core hypothesis shape
+     (analyticity + connectedness + only real-spacelike `>0` correction) is
+     inconsistent; hence an additional bridge/input is required.
 2. `blocker_d1N2InvariantBridgeAnalyticity_fromSource_deferred`
    - source package to `DifferentiableOn` of invariant swap-difference on the
      witnessed quadric domain.
+   - status (2026-03-04): proved in `Tail.lean` (sorry-free).
 3. `blocker_d1N2InvariantBridgePreconnected_fromSource_deferred`
-   - source package to `IsPreconnected` of the same witnessed quadric domain.
-4. explicit boundary-identification input `hBoundaryId`
-   - real-slice spacelike source-to-invariant identification on `(q0,q1,p,s)`,
-     passed as a hypothesis to
-     `blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred`.
+   - geometry-only `IsPreconnected` input for the same witnessed quadric domain
+     (no source wrapper parameters).
+4. source-to-invariant boundary identification
+  - deferred theorem:
+    `blocker_d1N2InvariantBoundaryIdentification_fromSource_deferred`,
+  - mathematical content: real-slice spacelike source-to-invariant
+    identification on `(q0,q1,p,s)`,
+  - consumed downstream as the explicit `hBoundaryId` input of
+    `blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred`.
 
 `blocker_d1N2InvariantBridgeCorrection_fromSource_deferred` is now a proved
 reduction from that explicit boundary-identification hypothesis.
 
 No wrapper aliases are to be introduced for these statements; edits should
 target these declarations directly.
+
+### Active-sprint subset (2026-03-04)
+- Active target:
+  - analytic-extension components feeding
+    `blocker_d1N2InvariantKernelSwapEq_onSectionWitnessPair_invariantFunction_core_deferred`.
+  - `blocker_d1N2InvariantBridgeAnalyticity_fromSource_deferred` is closed.
+- Parked (not active this sprint):
+  - `blocker_d1N2InvariantBridgePreconnected_fromSource_deferred`
+  - other connectivity-only obligations.
 
 ## Bridge-Lemma Lock (2026-03-03 update)
 - The invariant-function reduction step is now explicit and proved as:
@@ -71,9 +124,6 @@ target these declarations directly.
   `blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred`
   must consume those two deferred bridge lemmas plus explicit `hBoundaryId`
   (no hidden bridge packaging).
-- Direct non-deferred pass-through theorem (when the three bridge inputs are
-  supplied explicitly):
-  `d1N2InvariantKernelDiffZeroOnForwardizableQuadric_of_source_and_invariantBridgeInputs`.
 - Numerical checks support only the intrinsic witness-inequality translation
   (section-coordinate FT inequalities ↔ invariant inequalities), not the full
   proofs of (1)-(3).
@@ -108,12 +158,12 @@ target these declarations directly.
   - active deferred front is split between:
     1. invariant-core theorem
        `blocker_d1N2InvariantKernelSwapEq_onSectionWitnessPair_invariantFunction_core_deferred`,
-    2. two explicit source-to-invariant bridge lemmas
-       (`...BridgeAnalyticity...`, `...BridgePreconnected...`) plus the explicit
+    2. one explicit source-to-invariant bridge lemma
+       (`...BridgePreconnected...`) plus the explicit
        boundary-identification input required by
        `blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred`,
-    3. local boundary-identification discharge in
-       `blocker_d1N2ForwardWitnessEq_field_deferred`.
+    3. explicit deferred boundary-identification theorem
+       `blocker_d1N2InvariantBoundaryIdentification_fromSource_deferred`.
   - source-wrapper theorem
     `blocker_d1N2ForwardWitnessEq_fromSource_deferred` now has no `sorry`.
 - Wrapper cleanup status:

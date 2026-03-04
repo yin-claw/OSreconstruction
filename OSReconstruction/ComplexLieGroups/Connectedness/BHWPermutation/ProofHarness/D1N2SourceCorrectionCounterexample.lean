@@ -1,4 +1,5 @@
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.PermutationFlowBlockers.Core
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.PermutationFlowBlockers.Tail
 
 noncomputable section
 
@@ -145,5 +146,59 @@ theorem d1N2_source_not_sufficient_for_bridgeCorrection_shape :
     intro q0 q1 p s hquad hq0ne hq1ne hq0im hq1im hpim hsim hsp
     exact hbridge f hsource q0 q1 p s hquad hq0im hq1im hpim hsim hsp
   exact hnot hnonzeroRule
+
+/-- The explicit boundary-identification shape used in `Tail` is also not
+derivable from `d1N2InvariantKernelSource` alone.
+
+Reason: if it were derivable, `blocker_d1N2InvariantBridgeCorrection_fromSource_deferred`
+would convert it into the bridge-correction shape, contradicting
+`d1N2_source_not_sufficient_for_bridgeCorrection_shape`. -/
+theorem d1N2_source_not_sufficient_for_boundaryIdentification_shape :
+    ¬ (∀ (f : ℂ → ℂ → ℂ → ℂ → ℂ) (hsource : d1N2InvariantKernelSource f),
+      ∀ q0 q1 p s : ℂ,
+        s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+        q0.im = 0 →
+        q1.im = 0 →
+        p.im = 0 →
+        s.im = 0 →
+        q0.re + q1.re - 2 * p.re > 0 →
+        ∃ x : Fin 2 → Fin (1 + 1) → ℝ,
+          d1InvariantQuad (realEmbed x) = (q0, q1, p, s) ∧
+          f q0 q1 p s = (Classical.choose hsource) (realEmbed x) ∧
+          f q1 q0 p (-s) =
+            (Classical.choose hsource)
+              (fun k μ => (x (Equiv.swap (0 : Fin 2) 1 k) μ : ℂ))) := by
+  intro hBoundaryFromSource
+  have hBridgeCorr :
+      ∀ f : ℂ → ℂ → ℂ → ℂ → ℂ,
+        d1N2InvariantKernelSource f →
+        ∀ q0 q1 p s : ℂ,
+          s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+          q0.im = 0 →
+          q1.im = 0 →
+          p.im = 0 →
+          s.im = 0 →
+          q0.re + q1.re - 2 * p.re > 0 →
+          f q0 q1 p s = f q1 q0 p (-s) := by
+    intro f hsource q0 q1 p s hquad hq0im hq1im hpim hsim hsp
+    have hBoundaryId :
+        ∀ q0 q1 p s : ℂ,
+          s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+          q0.im = 0 →
+          q1.im = 0 →
+          p.im = 0 →
+          s.im = 0 →
+          q0.re + q1.re - 2 * p.re > 0 →
+          ∃ x : Fin 2 → Fin (1 + 1) → ℝ,
+            d1InvariantQuad (realEmbed x) = (q0, q1, p, s) ∧
+            f q0 q1 p s = (Classical.choose hsource) (realEmbed x) ∧
+            f q1 q0 p (-s) =
+              (Classical.choose hsource)
+                (fun k μ => (x (Equiv.swap (0 : Fin 2) 1 k) μ : ℂ)) := by
+      intro q0 q1 p s hquad hq0im hq1im hpim hsim hsp
+      simpa using hBoundaryFromSource f hsource q0 q1 p s hquad hq0im hq1im hpim hsim hsp
+    exact blocker_d1N2InvariantBridgeCorrection_fromSource_deferred
+      f hsource hBoundaryId q0 q1 p s hquad hq0im hq1im hpim hsim hsp
+  exact d1N2_source_not_sufficient_for_bridgeCorrection_shape hBridgeCorr
 
 end BHW

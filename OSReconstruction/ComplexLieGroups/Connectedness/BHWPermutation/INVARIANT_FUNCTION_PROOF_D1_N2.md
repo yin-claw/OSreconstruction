@@ -37,6 +37,59 @@ Hence the proof target is intentionally the realizable/light-cone witnessed locu
 - without adding extra axioms,
 - and without detouring through unrelated d>=2 infrastructure.
 
+### Current intrinsic-core decomposition (Tail, 2026-03-04)
+Inside
+`blocker_d1N2InvariantKernelSwapEq_onSectionWitnessPair_invariantFunction_core_deferred`,
+the proof is now factored as:
+
+1. intrinsic witnessed domain `D ⊂ ℂ^4`,
+2. intrinsic swap-difference `g(q0,q1,p,s)`,
+3. direct reductions
+   - `hDiffD : DifferentiableOn ℂ g D`,
+   - `hPreD : IsPreconnected D`,
+   - `hCorrOnReal :` real-slice spacelike tuples imply `g = 0`.
+
+The remaining deferred step is only the analytic propagation:
+
+- from the three items above, derive `g = 0` on all of `D`.
+
+This is exactly where a boundary-identification/analytic-propagation bridge is
+still needed (quadric chart + totally-real identity route).
+
+Implemented chart helpers in `Tail.lean` for this route:
+- `d1N2QuadricChart`,
+- `d1N2QuadricChart_quadric`,
+- `d1N2QuadricChart_apply_of_quadric`,
+- `d1N2QuadricChart_differentiableAt`.
+
+Also added real-slice sign lemmas showing an intrinsic obstruction:
+
+- with both original and swapped witness inequalities, real tuples satisfy
+  `q0.re + q1.re - 2*p.re < 0`.
+
+So the real-spacelike correction anchors (`> 0`) do not directly lie in the
+witnessed domain, confirming that a separate boundary-identification /
+propagation bridge is still required.
+
+Tail now also has an explicit nontrivial witnessed-domain point
+(`d1N2InvariantWitnessedDomain_nontrivial_example`) with `q0 ≠ q1`, so this
+domain is not vacuous and the swap-difference target is genuinely nontrivial.
+
+A formal harness now also records a consistency obstruction:
+- `ProofHarness/D1N2InvariantCoreCounterexample.lean`
+- theorem `d1N2InvariantCore_counterexample_if_connected`.
+
+It shows that, under preconnectedness of the current witnessed domain, the
+present core theorem hypothesis shape (analyticity + connectedness + only
+real-spacelike correction `>0`) yields a contradiction. This confirms that an
+additional bridge/input is required for this route.
+
+Numerical check aligned with this sign fact:
+- random stress over `12000` sampled real-spacelike quadric tuples
+  (`q0.im=q1.im=p.im=s.im=0`, `q0+q1-2p>0`) with random complex witness search
+  (`4000` random `(v0,w0)` attempts per tuple) found `0` tuples satisfying both
+  intrinsic witness-inequality blocks simultaneously.
+
 ## New Formal Geometry Fact (Tail)
 `Tail.lean` now includes:
 
@@ -73,8 +126,9 @@ Correction statement lock:
   hypothesis `hBoundaryId`.
 - The false claim that this boundary-identification follows from
   `d1N2InvariantKernelSource` alone has been removed from `Tail.lean`; the
-  boundary-identification step is now kept as an explicit input at the source
-  wrapper / forward-witness stage.
+  unresolved bridge is now isolated as the explicit deferred theorem
+  `blocker_d1N2InvariantBoundaryIdentification_fromSource_deferred` and is
+  consumed as the `hBoundaryId` input downstream.
 - The existing formal counterexample harness records the key obstruction:
   source data alone does not constrain arbitrary off-image values of `f` on
   this real-spacelike set, so the bridge must include source-to-invariant

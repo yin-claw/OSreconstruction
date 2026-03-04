@@ -25,6 +25,7 @@ import numpy as np
 
 
 Complex4 = Tuple[complex, complex, complex, complex]
+Real4 = Tuple[float, float, float, float]
 
 
 def invariants_from_uv(u0: complex, v0: complex, u1: complex, v1: complex) -> Complex4:
@@ -103,24 +104,6 @@ def random_nonzero_complex_scale(rng: random.Random) -> complex:
     r = rng.uniform(0.2, 4.0)
     th = rng.uniform(-math.pi, math.pi)
     return cmath.rect(r, th)
-
-
-def lam_candidates(rng: random.Random, random_count: int) -> List[complex]:
-    out: List[complex] = []
-    fixed_r = [0.35, 0.6, 1.0, 1.7, 2.8]
-    fixed_th = [-2.6, -2.1, -1.6, -1.1, -0.6, 0.6, 1.1, 1.6, 2.1, 2.6]
-    for r in fixed_r:
-        for th in fixed_th:
-            out.append(cmath.rect(r, th))
-    for _ in range(random_count):
-        out.append(random_nonzero_complex_scale(rng))
-    return out
-
-
-def random_complex_with_pos_imag(
-    rng: random.Random, re_lo: float = -4.0, re_hi: float = 4.0, im_lo: float = 0.15, im_hi: float = 4.0
-) -> complex:
-    return complex(rng.uniform(re_lo, re_hi), rng.uniform(im_lo, im_hi))
 
 
 def close_inv(a: Complex4, b: Complex4, tol: float = 1e-7) -> bool:
@@ -241,6 +224,126 @@ def sample_real_spacelike_invariants(rng: random.Random) -> Complex4:
         u1, v1 = t1 + x1, t1 - x1
         q0, q1, p, s = invariants_from_uv(complex(u0), complex(v0), complex(u1), complex(v1))
         return (q0, q1, p, s)
+
+
+def sample_intrinsic_real_quadric_spacelike_invariant(
+    rng: random.Random, eps: float
+) -> Complex4 | None:
+    # Intrinsic sampler in (q0,q1,p,s): does not start from z-coordinates.
+    q0 = rng.uniform(-6.0, 6.0)
+    q1 = rng.uniform(-6.0, 6.0)
+    p = rng.uniform(-6.0, 6.0)
+    if q0 + q1 - 2.0 * p <= eps:
+        return None
+    delta = p * p - q0 * q1
+    if delta < -1e-12:
+        return None
+    s = 2.0 * math.sqrt(max(delta, 0.0))
+    if rng.random() < 0.5:
+        s = -s
+    return (complex(q0), complex(q1), complex(p), complex(s))
+
+
+def sample_intrinsic_real_quadric_spacelike_near_q0_zero(
+    rng: random.Random, eps: float
+) -> Complex4 | None:
+    # Edge sampler stressing q0≈0 branch in invariant->(u,v) reconstruction.
+    q0 = rng.uniform(-1e-7, 1e-7)
+    q1 = rng.uniform(-8.0, 8.0)
+    p = rng.uniform(-8.0, 8.0)
+    if q0 + q1 - 2.0 * p <= eps:
+        return None
+    delta = p * p - q0 * q1
+    if delta < -1e-12:
+        return None
+    s = 2.0 * math.sqrt(max(delta, 0.0))
+    if rng.random() < 0.5:
+        s = -s
+    return (complex(q0), complex(q1), complex(p), complex(s))
+
+
+def as_real4_if_close(inv: Complex4, tol: float = 1e-8) -> Real4 | None:
+    q0, q1, p, s = inv
+    if max(abs(q0.imag), abs(q1.imag), abs(p.imag), abs(s.imag)) > tol:
+        return None
+    return (q0.real, q1.real, p.real, s.real)
+
+
+def reconstruct_real_uv_from_invariants(inv: Real4, eps: float) -> Tuple[Real4, str] | None:
+    q0, q1, p, s = inv
+    a = -p + s / 2.0  # u0 * v1
+    b = -p - s / 2.0  # u1 * v0
+
+    # Prefer the numerically safer generic branch: divide by the larger of |q0|,|q1|.
+    branch_cut = max(1e-6, math.sqrt(max(eps, 1e-16)))
+    q0_good = abs(q0) > branch_cut
+    q1_good = abs(q1) > branch_cut
+    if q0_good or q1_good:
+        if abs(q0) >= abs(q1) and q0_good:
+            # Generic branch using q0 = -u0*v0 with u0 fixed.
+            u0 = 1.0
+            v0 = -q0
+            u1 = b / v0
+            v1 = a
+            return ((u0, v0, u1, v1), "q0_nonzero")
+        # Symmetric generic branch using q1 = -u1*v1 with u1 fixed.
+        u1 = 1.0
+        v1 = -q1
+        u0 = a / v1
+        v0 = b
+        return ((u0, v0, u1, v1), "q1_nonzero")
+
+    # Degenerate corner q0=q1=0. Then quadric implies a*b=0.
+    if abs(a) <= eps and abs(b) <= eps:
+        return ((0.0, 1.0, 1.0, 0.0), "degenerate_a0_b0")
+    if abs(a) <= eps:
+        return ((0.0, 1.0, b, 0.0), "degenerate_a0")
+    if abs(b) <= eps:
+        return ((a, 0.0, 0.0, 1.0), "degenerate_b0")
+    return None
+
+
+@dataclass
+class ReconstructionCheckStats:
+    checked: int
+    failures: int
+    max_invariant_error: float
+    nonreal_inputs: int
+    branch_counts: dict[str, int]
+
+
+def run_reconstruction_checks(
+    samples: Sequence[Complex4], eps: float, err_tol: float
+) -> ReconstructionCheckStats:
+    checked = 0
+    failures = 0
+    max_err = 0.0
+    nonreal = 0
+    branch_counts: dict[str, int] = {}
+    for inv in samples:
+        r = as_real4_if_close(inv)
+        if r is None:
+            nonreal += 1
+            continue
+        checked += 1
+        rec = reconstruct_real_uv_from_invariants(r, eps)
+        if rec is None:
+            failures += 1
+            continue
+        (u0, v0, u1, v1), branch = rec
+        branch_counts[branch] = branch_counts.get(branch, 0) + 1
+        inv_rec = invariants_from_uv(complex(u0), complex(v0), complex(u1), complex(v1))
+        err = max(abs(inv_rec[i] - inv[i]) for i in range(4))
+        max_err = max(max_err, err)
+        if err > err_tol:
+            failures += 1
+    return ReconstructionCheckStats(
+        checked=checked,
+        failures=failures,
+        max_invariant_error=max_err,
+        nonreal_inputs=nonreal,
+        branch_counts=branch_counts,
+    )
 
 
 def collect_samples(
@@ -448,6 +551,10 @@ def main() -> None:
     parser.add_argument("--fd-samples", type=int, default=180)
     parser.add_argument("--direct-real-correction-z-search-trials", type=int, default=30000)
     parser.add_argument("--report-threshold", type=float, default=1e-6)
+    parser.add_argument("--boundary-intrinsic-samples", type=int, default=30000)
+    parser.add_argument("--boundary-z-constructed-samples", type=int, default=30000)
+    parser.add_argument("--boundary-near-q0-zero-samples", type=int, default=12000)
+    parser.add_argument("--boundary-reconstruct-tol", type=float, default=1e-7)
     args = parser.parse_args()
 
     rng = random.Random(args.seed)
@@ -615,6 +722,71 @@ def main() -> None:
         + (
             "NO_NUMERIC_FALSIFIER_FOUND"
             if worst_forward <= args.report_threshold
+            else "POTENTIAL_FALSIFIER_FOUND"
+        )
+    )
+
+    # Test 6: BoundaryIdentification geometry core (real tuple -> real witness config).
+    # This checks the geometric existence content numerically:
+    # for real quadric+spacelike tuples, reconstruct real light-cone coordinates
+    # (u0,v0,u1,v1) and verify invariants close back to the input.
+    boundary_intrinsic = collect_samples(
+        lambda: sample_intrinsic_real_quadric_spacelike_invariant(rng, args.eps),
+        n=args.boundary_intrinsic_samples,
+        max_attempts=80 * args.boundary_intrinsic_samples,
+    )
+    boundary_near_q0 = collect_samples(
+        lambda: sample_intrinsic_real_quadric_spacelike_near_q0_zero(rng, args.eps),
+        n=args.boundary_near_q0_zero_samples,
+        max_attempts=120 * args.boundary_near_q0_zero_samples,
+    )
+    boundary_from_z = collect_samples(
+        lambda: sample_real_spacelike_invariant_from_phase_locked_z_family(rng, args.eps),
+        n=args.boundary_z_constructed_samples,
+        max_attempts=80 * args.boundary_z_constructed_samples,
+    )
+    stats_intrinsic = run_reconstruction_checks(
+        boundary_intrinsic, args.eps, args.boundary_reconstruct_tol
+    )
+    stats_near_q0 = run_reconstruction_checks(
+        boundary_near_q0, args.eps, args.boundary_reconstruct_tol
+    )
+    stats_from_z = run_reconstruction_checks(
+        boundary_from_z, args.eps, args.boundary_reconstruct_tol
+    )
+    total_checked = (
+        stats_intrinsic.checked + stats_near_q0.checked + stats_from_z.checked
+    )
+    total_failures = (
+        stats_intrinsic.failures + stats_near_q0.failures + stats_from_z.failures
+    )
+    overall_max_err = max(
+        stats_intrinsic.max_invariant_error,
+        stats_near_q0.max_invariant_error,
+        stats_from_z.max_invariant_error,
+    )
+    aggregate_branches: dict[str, int] = {}
+    for d in [stats_intrinsic.branch_counts, stats_near_q0.branch_counts, stats_from_z.branch_counts]:
+        for k, v in d.items():
+            aggregate_branches[k] = aggregate_branches.get(k, 0) + v
+    print("\n=== Test 6: BoundaryIdentification Geometry (Reconstruction) ===")
+    print(f"boundary_intrinsic_samples_collected={len(boundary_intrinsic)}")
+    print(f"boundary_near_q0_samples_collected={len(boundary_near_q0)}")
+    print(f"boundary_from_z_samples_collected={len(boundary_from_z)}")
+    print(f"boundary_reconstruction_checked={total_checked}")
+    print(f"boundary_reconstruction_failures={total_failures}")
+    print(f"boundary_max_invariant_reconstruction_error={overall_max_err:.6e}")
+    print(f"boundary_reconstruct_tol={args.boundary_reconstruct_tol:.1e}")
+    print(
+        "boundary_nonreal_inputs_skipped="
+        + str(stats_intrinsic.nonreal_inputs + stats_near_q0.nonreal_inputs + stats_from_z.nonreal_inputs)
+    )
+    print("boundary_reconstruction_branch_counts=" + str(aggregate_branches))
+    print(
+        "status="
+        + (
+            "NO_NUMERIC_FALSIFIER_FOUND"
+            if (total_checked > 0 and total_failures == 0 and overall_max_err <= args.boundary_reconstruct_tol)
             else "POTENTIAL_FALSIFIER_FOUND"
         )
     )
