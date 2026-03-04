@@ -74,6 +74,21 @@ def sample_real_ft_uv(rng: random.Random) -> Complex4:
     return (u0, v0, u1, v1)
 
 
+def sample_phase_locked_real_invariant_ft_uv(rng: random.Random) -> Complex4:
+    # Construct z in FT with invariants exactly real by phase-locked light-cone data:
+    # u_k = r_k e^{iθ}, v_k = -t_k e^{-iθ} with 0 < θ < π, r1 > r0, t1 > t0.
+    theta = rng.uniform(0.12, math.pi - 0.12)
+    r0 = rng.uniform(0.25, 3.5)
+    r1 = r0 + rng.uniform(0.2, 3.5)
+    t0 = rng.uniform(0.25, 3.5)
+    t1 = t0 + rng.uniform(0.2, 3.5)
+    u0 = r0 * cmath.exp(1j * theta)
+    u1 = r1 * cmath.exp(1j * theta)
+    v0 = -t0 * cmath.exp(-1j * theta)
+    v1 = -t1 * cmath.exp(-1j * theta)
+    return (u0, v0, u1, v1)
+
+
 def swap_then_lorentz_uv(
     u0: complex, v0: complex, u1: complex, v1: complex, lam: complex
 ) -> Complex4:
@@ -88,6 +103,18 @@ def random_nonzero_complex_scale(rng: random.Random) -> complex:
     r = rng.uniform(0.2, 4.0)
     th = rng.uniform(-math.pi, math.pi)
     return cmath.rect(r, th)
+
+
+def lam_candidates(rng: random.Random, random_count: int) -> List[complex]:
+    out: List[complex] = []
+    fixed_r = [0.35, 0.6, 1.0, 1.7, 2.8]
+    fixed_th = [-2.6, -2.1, -1.6, -1.1, -0.6, 0.6, 1.1, 1.6, 2.1, 2.6]
+    for r in fixed_r:
+        for th in fixed_th:
+            out.append(cmath.rect(r, th))
+    for _ in range(random_count):
+        out.append(random_nonzero_complex_scale(rng))
+    return out
 
 
 def random_complex_with_pos_imag(
@@ -170,6 +197,41 @@ def sample_real_witnessed_invariant(
         if swap_witness_cond(q1, p, s, w0, eps):
             return inv
     return None
+
+
+def sample_real_forwardizable_invariant_from_z_family(
+    rng: random.Random, eps: float, lam_trials: int
+) -> Complex4 | None:
+    # Real-slice tuples built from explicit z-coordinates, then requiring explicit
+    # swapped FT witness via swap+complex-Lorentz action.
+    z = sample_phase_locked_real_invariant_ft_uv(rng)
+    if not in_ft_uv(*z, eps):
+        return None
+    inv = invariants_from_uv(*z)
+    q0, q1, p, s = inv
+    if abs(q0) <= eps or abs(q1) <= eps:
+        return None
+    if max(abs(q0.imag), abs(q1.imag), abs(p.imag), abs(s.imag)) > 1e-8:
+        return None
+    for lam in lam_candidates(rng, max(0, lam_trials)):
+        y = swap_then_lorentz_uv(*z, lam)
+        if not in_ft_uv(*y, eps):
+            continue
+        inv_y = invariants_from_uv(*y)
+        target = (q1, q0, p, -s)
+        if close_inv(inv_y, target):
+            return inv
+    return None
+
+
+def direct_real_witness_hit_count_from_z_family(
+    rng: random.Random, eps: float, attempts: int, lam_trials: int
+) -> int:
+    hits = 0
+    for _ in range(attempts):
+        if sample_real_forwardizable_invariant_from_z_family(rng, eps, lam_trials) is not None:
+            hits += 1
+    return hits
 
 
 def direct_real_witness_hit_count(
@@ -414,6 +476,8 @@ def main() -> None:
     parser.add_argument("--fd-step", type=float, default=1e-6)
     parser.add_argument("--fd-samples", type=int, default=180)
     parser.add_argument("--direct-real-witness-search-trials", type=int, default=120000)
+    parser.add_argument("--direct-real-witness-z-search-trials", type=int, default=30000)
+    parser.add_argument("--real-z-lam-trials", type=int, default=60)
     parser.add_argument("--report-threshold", type=float, default=1e-6)
     args = parser.parse_args()
 
@@ -438,12 +502,22 @@ def main() -> None:
     print(f"source_real_spacelike_samples={len(source_real_spacelike)}")
     print(f"source_constraint_nullspace_dim={ns_source.shape[1]}")
 
-    # Real-slice witnessed tuples (D ∩ real slice), sampled through forwardizable witnesses.
-    real_witness = collect_samples(
+    # Real-slice witnessed tuples (D ∩ real slice), sampled by explicit z_i construction.
+    real_witness_from_z = collect_samples(
+        lambda: sample_real_forwardizable_invariant_from_z_family(
+            rng, args.eps, args.real_z_lam_trials
+        ),
+        n=args.real_witness_samples,
+        max_attempts=80 * args.real_witness_samples,
+    )
+
+    # Secondary intrinsic backup sampler for diagnostics.
+    real_witness_intrinsic = collect_samples(
         lambda: sample_real_witnessed_invariant(rng, args.eps),
         n=args.real_witness_samples,
-        max_attempts=60 * args.real_witness_samples,
+        max_attempts=40 * args.real_witness_samples,
     )
+    real_witness = real_witness_from_z + real_witness_intrinsic
 
     # Complex witnessed tuples in D.
     complex_domain = collect_samples(
@@ -455,19 +529,32 @@ def main() -> None:
     )
 
     print("\n=== Sampled Witnessed Domains ===")
-    print(f"real_witness_samples_collected={len(real_witness)}")
+    print(f"real_witness_from_z_samples_collected={len(real_witness_from_z)}")
+    print(f"real_witness_intrinsic_samples_collected={len(real_witness_intrinsic)}")
+    print(f"real_witness_total_samples_collected={len(real_witness)}")
     print(f"complex_domain_samples_collected={len(complex_domain)}")
+    print(
+        "complex_domain_construction="
+        + "z_in_FT + explicit swap_then_lorentz(z,lam) witness in FT"
+    )
     direct_hits = direct_real_witness_hit_count(
         rng, args.eps, args.direct_real_witness_search_trials
     )
+    direct_hits_z = direct_real_witness_hit_count_from_z_family(
+        rng, args.eps, args.direct_real_witness_z_search_trials, args.real_z_lam_trials
+    )
     print(
-        "direct_real_witness_hits="
+        "direct_real_witness_hits_intrinsic="
         + f"{direct_hits}/{args.direct_real_witness_search_trials}"
+    )
+    print(
+        "direct_real_witness_hits_from_z_family="
+        + f"{direct_hits_z}/{args.direct_real_witness_z_search_trials}"
     )
     if not real_witness:
         print(
             "warning=NO_REAL_WITNESSED_SAMPLES_FOUND "
-            "(real-slice witnessed set may be empty/sparse for this sampler)"
+            "(real-slice witnessed set may be empty/sparse for tested z_i constructions)"
         )
     if complex_domain:
         max_quadric = max(abs(quadric_residual(inv)) for inv in complex_domain)

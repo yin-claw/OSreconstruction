@@ -466,7 +466,12 @@ swapped witness inequalities), prove `IsPreconnected D`.
 
 Mathematically, this is the topological propagation domain on which a
 holomorphic identity for the swap-difference can extend from an anchored subset
-to all of `D`. -/
+to all of `D`.
+
+Numerical status (heuristic support): sampled `z`-constructed witnessed-domain
+point clouds tested in
+`ProofHarness/d1n2_tail_four_critical_lemma_checks.py` are consistently
+KNN-connected (single dominant component). -/
 theorem blocker_d1N2InvariantBridgePreconnected_fromSource_deferred
     (f : ℂ → ℂ → ℂ → ℂ → ℂ)
     (hsource : d1N2InvariantKernelSource f) :
