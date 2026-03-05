@@ -399,10 +399,6 @@ theorem paley_wiener_unique
     (F G : ℂ → ℂ)
     (hF : DifferentiableOn ℂ F upperHalfPlane)
     (hG : DifferentiableOn ℂ G upperHalfPlane)
-    (_hF_growth : ∀ η : ℝ, 0 < η →
-      HasPolynomialGrowthOnLine (fun x => F (↑x + ↑η * I)))
-    (_hG_growth : ∀ η : ℝ, 0 < η →
-      HasPolynomialGrowthOnLine (fun x => G (↑x + ↑η * I)))
     -- Same distributional boundary values
     (h_agree : ∀ (φ : SchwartzMap ℝ ℂ),
       Tendsto (fun η : ℝ => ∫ x : ℝ, (F (↑x + ↑η * I) - G (↑x + ↑η * I)) * φ x)
