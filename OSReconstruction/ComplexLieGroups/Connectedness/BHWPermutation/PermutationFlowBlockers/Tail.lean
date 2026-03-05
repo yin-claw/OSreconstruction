@@ -1555,15 +1555,105 @@ theorem blocker_d1N2InvariantBoundaryApproachFamilies_fromSource_deferred
   exact d1N2InvariantApproachPair_real_spacelike_impossible
     hq0im hq1im hpim hsim hsp hApprox
 
-/-- Source wrapper around the invariant-function reduction:
-the remaining blocker is to derive the invariant-function bridge hypotheses from
-`d1N2InvariantKernelSource f`:
-analyticity + witnessed-locus preconnectedness + real-slice witnessed
-spacelike correction. -/
-theorem blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred
+/-- Deferred source-to-boundary identification input (`d=1,n=2`):
+from source data, identify real-spacelike boundary invariant tuples with a real
+configuration witness carrying both source-value identifications.
+
+This is the missing ingredient not implied by source constraints alone in the
+nonvacuous finite-ansatz stress tests.
+
+Numerical stress note (2026-03-04, counterexample pattern):
+- choose probe tuple `(q0,q1,p,s) = (9,1,3,0)` (real, spacelike, quadric) and
+  spike model `f_probe = 1`, `f = 0` elsewhere;
+- real-boundary reconstruction exists exactly (invariant reconstruction error
+  `0.0`);
+- sampled source-image checks:
+  `200000` FT samples (`min distance to probe ≈ 3.43`) and `950` forwardizable
+  samples (`min distance to probe ≈ 4.85`) all satisfy sampled `f = 0`;
+- therefore sampled source compatibility can hold while boundary identification
+  at the probe fails (`f probe = 1` vs source-anchor value `0`), matching that
+  this theorem is the unresolved blocker. -/
+theorem blocker_d1N2InvariantBoundaryIdentification_fromSource_deferred
     (f : ℂ → ℂ → ℂ → ℂ → ℂ)
-    (hsource : d1N2InvariantKernelSource f) :
-    d1N2InvariantKernelDiffZeroOnForwardizableQuadric f := by
+    (hsource : d1N2InvariantKernelSource f)
+    (hBoundaryId :
+      ∀ q0 q1 p s : ℂ,
+        s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+        q0.im = 0 →
+        q1.im = 0 →
+        p.im = 0 →
+        s.im = 0 →
+        q0.re + q1.re - 2 * p.re > 0 →
+        ∃ x : Fin 2 → Fin (1 + 1) → ℝ,
+          d1InvariantQuad (realEmbed x) = (q0, q1, p, s) ∧
+          f q0 q1 p s = (Classical.choose hsource) (realEmbed x) ∧
+          f q1 q0 p (-s) =
+            (Classical.choose hsource)
+              (fun k μ => (x (Equiv.swap (0 : Fin 2) 1 k) μ : ℂ))) :
+    ∀ q0 q1 p s : ℂ,
+      s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+      q0.im = 0 →
+      q1.im = 0 →
+      p.im = 0 →
+      s.im = 0 →
+      q0.re + q1.re - 2 * p.re > 0 →
+      ∃ x : Fin 2 → Fin (1 + 1) → ℝ,
+        d1InvariantQuad (realEmbed x) = (q0, q1, p, s) ∧
+        f q0 q1 p s = (Classical.choose hsource) (realEmbed x) ∧
+        f q1 q0 p (-s) =
+          (Classical.choose hsource)
+            (fun k μ => (x (Equiv.swap (0 : Fin 2) 1 k) μ : ℂ)) := by
+  intro q0 q1 p s hquad hq0im hq1im hpim hsim hsp
+  exact hBoundaryId q0 q1 p s hquad hq0im hq1im hpim hsim hsp
+
+/-- Deferred source-to-witnessed swap bridge (`d=1,n=2`):
+from source data plus explicit boundary identification, derive the invariant
+witnessed-locus swap identity
+`f q0 q1 p s = f q1 q0 p (-s)` under:
+1. quadric relation;
+2. original witness inequalities;
+3. swapped witness inequalities.
+
+Numerical note (2026-03-04): nonvacuous finite-ansatz source-only stress can
+produce potential falsifiers; with explicit boundary-anchor constraints added,
+the same ansatz family shows no sampled falsifier in tested regimes.
+Stress run summary (seeds `20260300..20260310`, degree `9`):
+- source stage is nonvacuous on every seed (`source_nullspace_dim = 145` after
+  adaptive selection);
+- after adding sampled boundary-anchor constraints
+  (`1800 = 600 + 600 + 600` per seed), intersection nullspace dimension is `0`
+  on all `11/11` seeds;
+- probed on `900` sampled complex witnessed-domain tuples per seed, worst
+  sampled `|g| = 0` on all `11/11` seeds. -/
+theorem blocker_d1N2InvariantKernelSwapEq_onSectionWitnessPair_fromSource_deferred
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hsource : d1N2InvariantKernelSource f)
+    (hBoundaryId :
+      ∀ q0 q1 p s : ℂ,
+        s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+        q0.im = 0 →
+        q1.im = 0 →
+        p.im = 0 →
+        s.im = 0 →
+        q0.re + q1.re - 2 * p.re > 0 →
+        ∃ x : Fin 2 → Fin (1 + 1) → ℝ,
+          d1InvariantQuad (realEmbed x) = (q0, q1, p, s) ∧
+          f q0 q1 p s = (Classical.choose hsource) (realEmbed x) ∧
+          f q1 q0 p (-s) =
+            (Classical.choose hsource)
+              (fun k μ => (x (Equiv.swap (0 : Fin 2) 1 k) μ : ℂ))) :
+    ∀ q0 q1 p s : ℂ, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+      (∃ v0 : ℂ,
+        0 < v0.im ∧
+        0 < ((-q0) / v0).im ∧
+        0 < ((q0 - p - s / 2) / v0).im ∧
+        0 < (((p - s / 2 - q0) * v0 / q0).im)) →
+      (∃ w0 : ℂ,
+        0 < w0.im ∧
+        0 < ((-q1) / w0).im ∧
+        0 < ((q1 - p + s / 2) / w0).im ∧
+        0 < (((p + s / 2 - q1) * w0 / q1).im)) →
+      f q0 q1 p s = f q1 q0 p (-s) := by
   have hAnalytic :
       DifferentiableOn ℂ
         (fun t : ℂ × ℂ × ℂ × ℂ =>
@@ -1612,35 +1702,91 @@ theorem blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invaria
           f q0 q1 p s = (Classical.choose hsource) (realEmbed x) ∧
           f q1 q0 p (-s) =
             (Classical.choose hsource)
-              (fun k μ => (x (Equiv.swap (0 : Fin 2) 1 k) μ : ℂ)) := by
-      let _ := hquad
-      let _ := hq0im
-      let _ := hq1im
-      let _ := hpim
-      let _ := hsim
-      let _ := hsp
-      -- Remaining source-to-boundary identification input:
-      -- source data does not determine off-image invariant values of `f`
-      -- by itself, so this bridge needs an additional hypothesis/mechanism.
-      sorry
+              (fun k μ => (x (Equiv.swap (0 : Fin 2) 1 k) μ : ℂ)) :=
+      hBoundaryId q0 q1 p s hquad hq0im hq1im hpim hsim hsp
     exact blocker_d1N2InvariantBridgeCorrection_fromSource_deferred
       f hsource q0 q1 p s hquad hq0im hq1im hpim hsim hsp hBoundary
-  exact blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_invariantFunction_core_deferred
-    f hAnalytic hConnected hCorrection
+  exact
+    blocker_d1N2InvariantKernelSwapEq_onSectionWitnessPair_invariantFunction_core_deferred
+      f hAnalytic hConnected hCorrection
+
+/-- Intrinsic forwardizable reduction (`d=1,n=2`):
+if swap equality is known on the intrinsic witnessed quadric locus (in
+`(q0,q1,p,s)` variables only), then the forwardizable-kernel difference
+vanishes.
+
+This isolates the purely geometric reduction:
+forwardizable pair `⇒` original/swapped witness inequalities.
+
+Numerical support (2026-03-04):
+- direct sampled forwardizable-with-witness runs check the geometric step only
+  (no ansatz on `f`):
+  for seeds `20260300..20260305`, sampled forwardizable tuples per seed were
+  `{186, 213, 209, 238, 244, 213}`, and all sampled tuples satisfied both
+  intrinsic witness-inequality branches (`100%` pass on all 6 seeds). -/
+theorem blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred
+    (f : ℂ → ℂ → ℂ → ℂ → ℂ)
+    (hSwapEqOnWitnessed :
+      ∀ q0 q1 p s : ℂ, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+        (∃ v0 : ℂ,
+          0 < v0.im ∧
+          0 < ((-q0) / v0).im ∧
+          0 < ((q0 - p - s / 2) / v0).im ∧
+          0 < (((p - s / 2 - q0) * v0 / q0).im)) →
+        (∃ w0 : ℂ,
+          0 < w0.im ∧
+          0 < ((-q1) / w0).im ∧
+          0 < ((q1 - p + s / 2) / w0).im ∧
+          0 < (((p + s / 2 - q1) * w0 / q1).im)) →
+        f q0 q1 p s = f q1 q0 p (-s)) :
+    d1N2InvariantKernelDiffZeroOnForwardizableQuadric f := by
+  intro q0 q1 p s hquad hfw
+  have hpairReal :
+      d1N2InvariantRealizable q0 q1 p s ∧
+        d1N2InvariantRealizable q1 q0 p (-s) :=
+    d1N2InvariantRealizable_pair_of_forwardizable hfw
+  rcases hpairReal.1 with ⟨z, hz, hquadZ⟩
+  rcases hpairReal.2 with ⟨y, hy, hquadY⟩
+  have hOrigFT :
+      ∃ v0 : ℂ,
+        0 < v0.im ∧
+        0 < ((-q0) / v0).im ∧
+        0 < ((q0 - p - s / 2) / v0).im ∧
+        0 < (((p - s / 2 - q0) * v0 / q0).im) :=
+    d1N2InvariantOrigWitnessIneq_of_forwardInvariants hz hquadZ
+  have hSwapFT :
+      ∃ w0 : ℂ,
+        0 < w0.im ∧
+        0 < ((-q1) / w0).im ∧
+        0 < ((q1 - p + s / 2) / w0).im ∧
+        0 < (((p + s / 2 - q1) * w0 / q1).im) := by
+    rcases d1N2InvariantOrigWitnessIneq_of_forwardInvariants
+        (q0 := q1) (q1 := q0) (p := p) (s := -s) hy hquadY with
+      ⟨w0, hw0im, hw0a, hw0b, hw0c⟩
+    refine ⟨w0, hw0im, hw0a, ?_, ?_⟩
+    · have hB : q1 - p - (-s) / 2 = q1 - p + s / 2 := by ring
+      simpa [hB] using hw0b
+    · have hC : p - (-s) / 2 - q1 = p + s / 2 - q1 := by ring
+      simpa [hC] using hw0c
+  exact sub_eq_zero.mpr (hSwapEqOnWitnessed q0 q1 p s hquad hOrigFT hSwapFT)
 
 /-- Forward witness equality from the source package, reduced to the invariant
 forwardizable-kernel theorem at `d=1,n=2`.
 
-Numerical status (heuristic, 2026-03-04): in
-`ProofHarness/d1n2_tail_four_critical_lemma_checks.py` test 5, no finite-ansatz
-falsifier was found for this source-to-forwardizable implication on sampled
-domains.
-Stress summary:
-- deep single run: source constraints `4000`, complex forwardizable
-  samples `1800`, worst sampled `|g| = 0.0` (threshold `1e-6`);
-- multi-seed sweep (`20260300..20260305`): per seed source constraints `3700`,
-  complex forwardizable samples `3200`, all `6/6` seeds report
-  `NO_NUMERIC_FALSIFIER_FOUND`. -/
+Assertion-level numerical surrogate status (2026-03-04):
+- `ProofHarness/d1n2_tail_four_critical_lemma_checks.py`, test 5
+  (source-constrained forwardizable-domain equality probe);
+- seeds `20260440..20260445` (`6` runs), all nonvacuous
+  (`source_constraint_nullspace_dim = 13` each run);
+- per run: `complex_domain_samples=4000`, threshold `1e-9`;
+- status `NO_NUMERIC_FALSIFIER_FOUND` in `6/6` runs, with
+  `max worst_|g| = 2.876696e-11`.
+
+This theorem remains deferred because the source-only boundary-identification
+generation (`hBoundaryId`) is still open here; both test 8 and the formal
+counterexample harness indicate that source data alone is insufficient for that
+boundary-identification shape. Finite-sampling caveat: numerical support for
+test 5 is not a formal proof. -/
 theorem blocker_d1N2ForwardWitnessEq_field_deferred
     (F : (Fin 2 → Fin (1 + 1) → ℂ) → ℂ)
     (hF_holo : DifferentiableOn ℂ F (ForwardTube 1 2))
@@ -1665,10 +1811,40 @@ theorem blocker_d1N2ForwardWitnessEq_field_deferred
       F hF_holo hF_lorentz hF_bv hF_local with ⟨f, hf_onFT⟩
   have hsource : d1N2InvariantKernelSource f :=
     ⟨F, hF_holo, hF_lorentz, hF_bv, hF_local, hf_onFT⟩
+  have hBoundaryId :
+      ∀ q0 q1 p s : ℂ,
+        s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+        q0.im = 0 →
+        q1.im = 0 →
+        p.im = 0 →
+        s.im = 0 →
+        q0.re + q1.re - 2 * p.re > 0 →
+        ∃ x : Fin 2 → Fin (1 + 1) → ℝ,
+          d1InvariantQuad (realEmbed x) = (q0, q1, p, s) ∧
+          f q0 q1 p s = (Classical.choose hsource) (realEmbed x) ∧
+          f q1 q0 p (-s) =
+            (Classical.choose hsource)
+              (fun k μ => (x (Equiv.swap (0 : Fin 2) 1 k) μ : ℂ)) := by
+    sorry
+  have hSwapEqOnWitnessed :
+      ∀ q0 q1 p s : ℂ, s ^ 2 = 4 * (p ^ 2 - q0 * q1) →
+        (∃ v0 : ℂ,
+          0 < v0.im ∧
+          0 < ((-q0) / v0).im ∧
+          0 < ((q0 - p - s / 2) / v0).im ∧
+          0 < (((p - s / 2 - q0) * v0 / q0).im)) →
+        (∃ w0 : ℂ,
+          0 < w0.im ∧
+          0 < ((-q1) / w0).im ∧
+          0 < ((q1 - p + s / 2) / w0).im ∧
+          0 < (((p + s / 2 - q1) * w0 / q1).im)) →
+        f q0 q1 p s = f q1 q0 p (-s) :=
+    blocker_d1N2InvariantKernelSwapEq_onSectionWitnessPair_fromSource_deferred
+      f hsource hBoundaryId
   have hquadDiff :
       d1N2InvariantKernelDiffZeroOnForwardizableQuadric f :=
     blocker_d1N2InvariantKernelDiffZeroOnForwardizableQuadric_source_invariantOnly_core_deferred
-      f hsource
+      f hSwapEqOnWitnessed
   have hforward :
       ∀ z, z ∈ ForwardTube 1 2 →
         ∀ Γ : ComplexLorentzGroup 1,
@@ -1684,7 +1860,10 @@ theorem blocker_d1N2ForwardWitnessEq_field_deferred
 
 /-- Pointwise slice-anchor propagation at fixed `w` (`d=1,n=2`):
 if one anchor witness already matches `F w`, then every forwardizing witness
-gives the same value. -/
+gives the same value.
+
+Formal status: this declaration has no `sorry` dependency
+(`#print axioms` has no `sorryAx`). -/
 theorem d1N2ForwardEq_of_sliceAnchorAtPoint
     (F : (Fin 2 → Fin (1 + 1) → ℂ) → ℂ)
     (hF_holo : DifferentiableOn ℂ F (ForwardTube 1 2))
@@ -1730,7 +1909,10 @@ theorem d1N2ForwardEq_of_sliceAnchorAtPoint
     _ = F w := hΛ₀eq
 
 /-- On prepared neighborhoods (`d=1,n=2`), eventual slice-anchor existence and
-eventual fixed-witness forward equality are equivalent. -/
+eventual fixed-witness forward equality are equivalent.
+
+Formal status: this declaration has no `sorry` dependency
+(`#print axioms` has no `sorryAx`). -/
 theorem d1N2EventuallySliceAnchor_iff_eventuallyForwardEq_fixedWitness
     (F : (Fin 2 → Fin (1 + 1) → ℂ) → ℂ)
     (hF_holo : DifferentiableOn ℂ F (ForwardTube 1 2))
@@ -1768,7 +1950,22 @@ theorem d1N2EventuallySliceAnchor_iff_eventuallyForwardEq_fixedWitness
 
 /-- Deferred local fixed-witness forward equality core (`d=1,n=2`):
 on a prepared neighborhood with fixed witness `Γ`, prove eventual
-`F(Γ·(swap·w)) = F(w)`. -/
+`F(Γ·(swap·w)) = F(w)`.
+
+Assertion-level numerical stress (2026-03-04;
+`ProofHarness/d1n2_tail_four_critical_lemma_checks.py`, Test 7):
+- this test checks the hypothesis -> conclusion shape of this lemma directly
+  (not proof-internal steps);
+- seeds `20260410..20260421` (`12` runs), with nonvacuous source mode in all
+  runs (`source_constraint_nullspace_dim = 13`);
+- per seed: `local_nhd_centers=300`, `local_nhd_samples_per_center=300`,
+  so `local_points_checked = 90000`;
+- aggregate: `1080000` local points checked, `268` rejected by the preparation
+  filter;
+- threshold `1e-9`, worst sampled `|g| = 2.42557e-11`,
+  status `NO_NUMERIC_FALSIFIER_FOUND` in `12/12` runs.
+
+Finite-sampling caveat: strong support, not a formal proof. -/
 theorem blocker_d1N2LocalForwardEqNhd_core_deferred
     (F : (Fin 2 → Fin (1 + 1) → ℂ) → ℂ)
     (hF_holo : DifferentiableOn ℂ F (ForwardTube 1 2))

@@ -9,6 +9,21 @@ This lock file tracks only the active analytic blocker for the `d=1, n=2` route.
     support/falsification checks aligned with the exact theorem hypotheses.
   - Whether a lemma can be proved immediately in the current Lean
     infrastructure is secondary to first confirming the mathematical statement.
+  - Strategy lock (2026-03-04):
+    do **not** infer the mathematical breakpoint from the position of the last
+    `sorry`; instead, for any suspected downstream failure (including BHW),
+    test dependencies one-by-one from downstream to upstream and identify the
+    first dependency that is numerically falsified under aligned hypotheses.
+  - Numerical semantics lock (2026-03-04):
+    when this lock says "numerically test a lemma", it means test the lemma
+    assertion itself (its hypothesis-to-conclusion behavior), not internal
+    proof steps.
+  - Reporting lock (2026-03-04):
+    every numerical result must explicitly label assertion-level vs
+    proof-step-level testing; default in this lock is assertion-level.
+  - Finite-test disclosure lock (2026-03-04):
+    assertion-level reports must include ansatz family, sample sizes, and
+    thresholds to make finite-sampling scope explicit.
 
 - Hard-focus lock (2026-03-04):
   - Active proof work is restricted to `d=1, n=2` lemmas only.
