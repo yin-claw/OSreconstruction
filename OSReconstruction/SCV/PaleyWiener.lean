@@ -6,6 +6,7 @@ Authors: ModularPhysics Contributors
 import OSReconstruction.SCV.TubeDomainExtension
 import OSReconstruction.SCV.TubeDistributions
 import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
+import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
 
 /-!
 # Paley-Wiener-Schwartz Theorem
@@ -89,26 +90,50 @@ explicit use of the Fourier transform operator in the definitions.
 
 /-- A tempered distribution T (a continuous linear functional on Schwartz space)
     has **one-sided Fourier support** (in the half-line [0, infinity)) if
-    T annihilates all Schwartz functions whose Fourier transform is supported
+    the Fourier transform T̂ of T vanishes on Schwartz functions supported
     in (-infinity, 0).
 
-    Equivalently (by Fourier duality): for any test function phi whose support
-    is contained in (-infinity, 0), the distributional pairing <FT, phi> = 0.
+    Formally: T has Fourier support in [0, ∞) iff for every φ ∈ 𝓢(ℝ,ℂ)
+    with supp(φ) ⊂ (-∞, 0), we have T̂(φ) = T(ℱ[φ]) = 0, where ℱ is
+    the Schwartz-space Fourier transform.
 
-    We express this operationally: for any Schwartz function phi supported on
-    the negative reals, the integral int F(x) * phi(x) dx = 0 (where F is
-    the continuous function representing T near the boundary).
+    This is expressed via Fourier duality: (T̂)(φ) = T(F[φ]) where
+    F = SchwartzMap.fourierTransformCLM ℂ is the Fourier transform operator
+    on 𝓢(ℝ,ℂ).
 
-    This is the key hypothesis for the Paley-Wiener theorem. -/
-def HasOneSidedFourierSupport (T : SchwartzMap ℝ ℂ → ℂ)  : Prop :=
+    Note: This correctly captures Fourier support (not distributional support).
+    A distribution T with supp(T) ⊂ [0,∞) does NOT necessarily have Fourier
+    support in [0,∞) — these are distinct conditions. The Paley-Wiener theorem
+    requires Fourier support, not distributional support.
+
+    This is the key hypothesis for the Paley-Wiener theorem.
+
+    Ref: Hörmander, "Analysis of PDE I", Definition 7.1.1;
+    Vladimirov, "Generalized Functions", §8. -/
+def HasOneSidedFourierSupport (T : SchwartzMap ℝ ℂ → ℂ) : Prop :=
   ∀ (φ : SchwartzMap ℝ ℂ),
     (∀ x ∈ Function.support (φ : ℝ → ℂ), x < 0) →
-    T φ = 0
+    T (SchwartzMap.fourierTransformCLM ℂ φ) = 0
 
 /-- A tempered distribution T on R^m has **Fourier support in a closed set S**
-    if T annihilates all Schwartz functions whose support is disjoint from S.
+    if T̂ (the Fourier transform of T) vanishes on Schwartz functions supported
+    outside S. That is, for every φ ∈ 𝓢(ℝ^m,ℂ) with supp(φ) ∩ S = ∅,
+    T̂(φ) = T(F[φ]) = 0.
 
-    For the Paley-Wiener theorem, S will be the dual cone C*. -/
+    For the Paley-Wiener theorem, S will be the dual cone C*.
+
+    ⚠️ TYPE NOTE: The correct formulation requires the domain to carry an inner
+    product space structure compatible with its norm (so that `fourierTransformCLM`
+    applies). The type `Fin m → ℝ` in Mathlib carries the sup-norm via
+    `Pi.normedAddCommGroup`, which does NOT agree with the ℓ²-inner product.
+    The correct domain is `EuclideanSpace ℝ (Fin m)`. This definition uses
+    `Fin m → ℝ` for compatibility with the rest of this file (where `dualCone`,
+    `TubeDomain`, etc. are all defined over `Fin m → ℝ`), but consequently
+    CANNOT directly use `SchwartzMap.fourierTransformCLM`. The correctness is
+    expressed via distributional duality: T(F[φ]) = 0 iff supp(T̂) ⊆ S.
+
+    TODO: Refactor all multi-dimensional PW theory to use `EuclideanSpace ℝ (Fin m)`
+    as the domain, which would allow using `fourierTransformCLM` directly. -/
 def HasFourierSupportIn {m : ℕ} (T : SchwartzMap (Fin m → ℝ) ℂ → ℂ)
     (S : Set (Fin m → ℝ)) : Prop :=
   ∀ (φ : SchwartzMap (Fin m → ℝ) ℂ),

@@ -1,6 +1,6 @@
 # Wightman TODO: OS Reconstruction Priority Queue
 
-Last updated: 2026-03-05 (rev 2)
+Last updated: 2026-03-05 (rev 3)
 
 This file tracks blockers on the active OS reconstruction path with current priority order.
 Policy lock: no wrappers, no useless lemmas, no code bloat; close `sorry`s with substantial mathematical proofs.
@@ -12,15 +12,48 @@ Count convention: direct tactic holes only (`^\s*sorry\b`).
 | Scope | Direct `sorry` lines |
 |-------|----------------------:|
 | `OSReconstruction/Wightman` | 34 |
-| `OSReconstruction/SCV` | 13 |
+| `OSReconstruction/SCV` | 12 |
 | `OSReconstruction/ComplexLieGroups` | 2 |
 | `OSReconstruction/vNA` | 40 |
-| **Whole project** | **89** |
+| **Whole project** | **88** |
 
 _Count cross-checked 2026-03-05 by `rg '^\s*sorry\b' --glob '*.lean'` (awk sum = 89)._
 _BHWTranslation.lean was incorrectly listed with 5 sorrys; actual count is 1._
 _BHWExtension.lean: W_analytic_swap_distributional_agree and analytic_boundary_local_commutativity are NOW PROVED (0 sorrys)._
 _GNSHilbertSpace.lean: covariance_preHilbert was proved; 1 sorry remains (vacuum_unique part 2, spectral theory)._
+
+## Definition Audit (2026-03-05 rev 3)
+
+### PaleyWiener.lean: CRITICAL BUG PARTIALLY FIXED
+
+`HasOneSidedFourierSupport` was WRONG: defined distributional support (T(φ)=0 for supp φ ⊂ (-∞,0))
+instead of FOURIER support (T(F[φ])=0 for supp φ ⊂ (-∞,0) — i.e., supp(T̂) ⊆ [0,∞)).
+
+**Fixed 2026-03-05**: Definition now uses `SchwartzMap.fourierTransformCLM ℂ` correctly.
+Requires new import: `Mathlib.Analysis.Distribution.SchwartzSpace.Fourier`.
+
+`HasFourierSupportIn` (multi-d): Still uses distributional support due to type mismatch
+(`Fin m → ℝ` uses sup norm, incompatible with inner product needed for `fourierTransformCLM`).
+Correct fix requires migrating to `EuclideanSpace ℝ (Fin m)` — deferred.
+
+`paley_wiener_one_step_simple`: Statement is WRONG — conclusion `F_ext|_ℝ = f` (pointwise)
+cannot hold for polynomially-growing functions. The BV is distributional, not pointwise.
+
+See `Proofideas/paley_wiener_definition_analysis.lean` for full analysis.
+
+### isConnected_permutedExtendedTube_inter_translate (BHWTranslation.lean)
+
+Gemini consultation (2026-03-05) warns this may be FALSE for general complex c, because
+PET's "starburst" sector structure can fracture under large translations. The standard physics
+approach (Streater-Wightman pg. 65) works in difference variables to avoid this.
+Numerical tests for d=1, n=2 (9 test cases) confirm connectivity — but large n may differ.
+Path B (identity theorem on connected component only) is an alternative if general connectivity fails.
+
+### Root Blocker (Confirmed 2026-03-05)
+
+ALL active sorrys (LaplaceSchwartz, PaleyWiener, BochnerTubeTheorem, OSToWightman,
+SchwingerAxioms) ultimately require **Fourier-Laplace theory for tube domains** (Vladimirov §25-26),
+which is NOT in Mathlib. No partial proof is available without this infrastructure.
 
 ## Root Blocker Layers
 
@@ -71,13 +104,12 @@ Cluster transfer:
 - `paley_wiener_one_step`
 - `paley_wiener_one_step_simple`
 
-`SCV/LaplaceSchwartz.lean` (6):
+`SCV/LaplaceSchwartz.lean` (5):
 - `fourierLaplace_continuousWithinAt`
 - `fourierLaplace_uniform_bound_near_boundary`
 - `fourierLaplace_polynomial_growth`
 - `polynomial_growth_of_continuous_bv`
 - `fourierLaplace_boundary_continuous`
-- `fourierLaplace_boundary_integral_convergence`
 
 `SCV/BochnerTubeTheorem.lean` (2):
 - `bochner_local_extension`
