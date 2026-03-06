@@ -36,8 +36,9 @@ Requires new import: `Mathlib.Analysis.Distribution.SchwartzSpace.Fourier`.
 (`Fin m → ℝ` uses sup norm, incompatible with inner product needed for `fourierTransformCLM`).
 Correct fix requires migrating to `EuclideanSpace ℝ (Fin m)` — deferred.
 
-`paley_wiener_one_step_simple`: Statement is WRONG — conclusion `F_ext|_ℝ = f` (pointwise)
-cannot hold for polynomially-growing functions. The BV is distributional, not pointwise.
+`paley_wiener_one_step_simple`: Fixed 2026-03-06. The theorem now concludes
+distributional boundary-value recovery of the function-induced tempered distribution,
+not false pointwise boundary equality `F_ext|_ℝ = f`.
 
 See `Proofideas/paley_wiener_definition_analysis.lean` for full analysis.
 

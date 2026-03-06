@@ -11,10 +11,10 @@ Count convention in this file: direct tactic holes only, i.e.
 
 | Scope | Direct `sorry` lines |
 |---|---:|
-| `OSReconstruction/SCV` | 13 |
+| `OSReconstruction/SCV` | 12 |
 
 Breakdown:
-- `SCV/LaplaceSchwartz.lean`: 6
+- `SCV/LaplaceSchwartz.lean`: 5
 - `SCV/PaleyWiener.lean`: 5
 - `SCV/BochnerTubeTheorem.lean`: 2
 
@@ -28,14 +28,13 @@ These three are the main leverage points for unblocking downstream `Wightman/Rec
 
 ## Declaration-Level Blocker List
 
-### `SCV/LaplaceSchwartz.lean` (6)
+### `SCV/LaplaceSchwartz.lean` (5)
 
 - `fourierLaplace_continuousWithinAt`
 - `fourierLaplace_uniform_bound_near_boundary`
 - `fourierLaplace_polynomial_growth`
 - `polynomial_growth_of_continuous_bv`
 - `fourierLaplace_boundary_continuous`
-- `fourierLaplace_boundary_integral_convergence`
 
 ### `SCV/PaleyWiener.lean` (5)
 

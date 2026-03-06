@@ -378,33 +378,149 @@ theorem paley_wiener_one_step {m : ℕ}
 /-- **Simplified one-step extension for the inductive continuation (1D).**
 
     A cleaner version specialized to one complex variable: a continuous function
-    on the real line with polynomial growth whose distributional Fourier transform
-    is supported in [0, infinity) extends holomorphically to the upper half-plane.
+    on the real line with polynomial growth whose associated tempered distribution
+    has Fourier support in `[0, infinity)` extends holomorphically to the upper
+    half-plane.
+
+    The conclusion is stated in the correct distributional form: `F_ext` has the
+    continuous function `f` as its **distributional boundary value**, not as a
+    pointwise boundary trace on `ℝ`. Pointwise equality `F_ext x = f x` on the
+    real axis is not the right Paley-Wiener conclusion in this generality.
 
     This formulation directly matches what `inductive_analytic_continuation`
     needs when all but one variable are fixed: extend holomorphicity in one
-    coordinate from the real line to the upper half-plane.
+    coordinate from a real boundary distribution to the upper half-plane.
 
     Sorry blocked by: `paley_wiener_half_line` (which it essentially restates
-    for the special case where T is given by integration against a continuous function).
+    for the special case where the tempered distribution is given by integrating
+    against the continuous polynomially-growing function `f`).
 
     Ref: OS II, Theorem 4.1; Reed-Simon II, Theorem IX.16 -/
 theorem paley_wiener_one_step_simple
     (f : ℝ → ℂ) (hf_cont : Continuous f)
     -- Polynomial growth
     (hf_growth : HasPolynomialGrowthOnLine f)
-    -- One-sided Fourier support: for test functions supported on (-inf, 0),
-    -- the distributional pairing vanishes
-    (h_spectral : ∀ (φ : SchwartzMap ℝ ℂ),
-      (∀ x ∈ Function.support (φ : ℝ → ℂ), x < 0) →
-      ∫ t : ℝ, f t * φ t = 0) :
+    -- One-sided Fourier support of the tempered distribution T_f(φ) = ∫ f(t) φ(t) dt.
+    (h_spectral : HasOneSidedFourierSupport
+      (fun φ : SchwartzMap ℝ ℂ => ∫ t : ℝ, f t * φ t)) :
     ∃ (F_ext : ℂ → ℂ),
       DifferentiableOn ℂ F_ext upperHalfPlane ∧
-      (∀ x : ℝ, F_ext ↑x = f x) ∧
       -- Polynomial growth on horizontal lines
       (∀ η : ℝ, 0 < η →
-        HasPolynomialGrowthOnLine (fun x => F_ext (↑x + ↑η * I))) := by
-  sorry
+        HasPolynomialGrowthOnLine (fun x => F_ext (↑x + ↑η * I))) ∧
+      -- Distributional boundary value recovers the function-induced tempered distribution.
+      (∀ (φ : SchwartzMap ℝ ℂ),
+        Tendsto (fun η : ℝ => ∫ x : ℝ, F_ext (↑x + ↑η * I) * φ x)
+          (nhdsWithin 0 (Ioi 0))
+          (nhds (∫ t : ℝ, f t * φ t))) := by
+  rcases hf_growth with ⟨C_bound, N, hC_bound_pos, h_growth_bound⟩
+  let T : SchwartzMap ℝ ℂ → ℂ := fun φ => ∫ t : ℝ, f t * φ t
+  let M : ℕ := N + 2
+  let sem : SchwartzMap ℝ ℂ → ℝ :=
+    fun φ => (Finset.Iic (M, 0)).sup (schwartzSeminormFamily ℝ ℝ ℂ) φ
+  have h_decay_int : MeasureTheory.Integrable
+      (fun t : ℝ => (1 + ‖t‖) ^ (-(2 : ℝ))) MeasureTheory.volume :=
+    by
+      have : (Module.finrank ℝ ℝ : ℝ) < (2 : ℝ) := by norm_num
+      simpa using integrable_one_add_norm this
+  have h_decay_int_nat : MeasureTheory.Integrable
+      (fun t : ℝ => ((1 + ‖t‖) ^ 2)⁻¹) MeasureTheory.volume := by
+    simpa [Real.rpow_neg (by positivity : 0 ≤ (1 + ‖(0 : ℝ)‖)), Real.rpow_natCast] using
+      h_decay_int
+  have hsem_bound : ∀ (φ : SchwartzMap ℝ ℂ) (t : ℝ),
+      (1 + ‖t‖) ^ M * ‖φ t‖ ≤ 2 ^ M * sem φ := by
+    intro φ t
+    simpa [sem, M, norm_iteratedFDeriv_zero] using
+      (SchwartzMap.one_add_le_sup_seminorm_apply (𝕜 := ℝ)
+        (m := (M, 0)) (k := M) (n := 0) (le_rfl) (le_rfl) φ t)
+  have h_pointwise_bound : ∀ (φ : SchwartzMap ℝ ℂ) (t : ℝ),
+      ‖f t * φ t‖ ≤ C_bound * 2 ^ M * sem φ * ((1 + ‖t‖) ^ 2)⁻¹ := by
+    intro φ t
+    have h_growth_t : ‖f t‖ ≤ C_bound * (1 + ‖t‖) ^ N := by
+      simpa using h_growth_bound t
+    have h_pow_pos : 0 < (1 + ‖t‖) ^ 2 := by positivity
+    have h_decay_step : (1 + ‖t‖) ^ N * ‖φ t‖ ≤
+        2 ^ M * sem φ * ((1 + ‖t‖) ^ 2)⁻¹ := by
+      rw [le_mul_inv_iff₀ h_pow_pos]
+      calc
+        (1 + ‖t‖) ^ N * ‖φ t‖ * (1 + ‖t‖) ^ 2
+            = (1 + ‖t‖) ^ M * ‖φ t‖ := by
+                rw [show M = N + 2 by simp [M], pow_add]
+                ring
+        _ ≤ 2 ^ M * sem φ := hsem_bound φ t
+    have h_decay_mul :
+        C_bound * (1 + ‖t‖) ^ N * ‖φ t‖ ≤
+          C_bound * (2 ^ M * sem φ * ((1 + ‖t‖) ^ 2)⁻¹) := by
+      simpa [mul_assoc] using
+        (mul_le_mul_of_nonneg_left h_decay_step (le_of_lt hC_bound_pos))
+    calc
+      ‖f t * φ t‖ = ‖f t‖ * ‖φ t‖ := norm_mul _ _
+      _ ≤ C_bound * (1 + ‖t‖) ^ N * ‖φ t‖ :=
+        mul_le_mul_of_nonneg_right h_growth_t (norm_nonneg _)
+      _ ≤ C_bound * (2 ^ M * sem φ * ((1 + ‖t‖) ^ 2)⁻¹) := h_decay_mul
+      _ = C_bound * 2 ^ M * sem φ * ((1 + ‖t‖) ^ 2)⁻¹ := by ring
+  have h_integrable : ∀ φ : SchwartzMap ℝ ℂ,
+      MeasureTheory.Integrable (fun t : ℝ => f t * φ t) MeasureTheory.volume := by
+    intro φ
+    have h_majorant_int : MeasureTheory.Integrable
+        (fun t : ℝ => C_bound * 2 ^ M * sem φ * ((1 + ‖t‖) ^ 2)⁻¹)
+        MeasureTheory.volume :=
+      h_decay_int_nat.const_mul (C_bound * 2 ^ M * sem φ)
+    refine h_majorant_int.mono' ((hf_cont.mul φ.continuous).aestronglyMeasurable) ?_
+    exact Filter.Eventually.of_forall (h_pointwise_bound φ)
+  have hT_lin : IsLinearMap ℝ T := by
+    constructor
+    · intro φ ψ
+      simpa [T, mul_add] using
+        (MeasureTheory.integral_add
+          (f := fun t : ℝ => f t * φ t)
+          (g := fun t : ℝ => f t * ψ t)
+          (h_integrable φ) (h_integrable ψ))
+    · intro a φ
+      simpa [T, smul_eq_mul, mul_assoc, mul_left_comm, mul_comm] using
+        (MeasureTheory.integral_smul a (fun t : ℝ => f t * φ t))
+  have hT_cont : Continuous T := by
+    let I₂ : ℝ := ∫ t : ℝ, ((1 + ‖t‖) ^ 2)⁻¹
+    let A : SchwartzMap ℝ ℂ →L[ℝ] ℂ :=
+      SchwartzMap.mkCLMtoNormedSpace (𝕜 := ℝ) T
+        (fun φ ψ => by
+          simpa [T, mul_add] using
+            (MeasureTheory.integral_add
+              (f := fun t : ℝ => f t * φ t)
+              (g := fun t : ℝ => f t * ψ t)
+              (h_integrable φ) (h_integrable ψ)))
+        (fun a φ => by
+          simpa [T, smul_eq_mul, mul_assoc, mul_left_comm, mul_comm] using
+            (MeasureTheory.integral_smul a (fun t : ℝ => f t * φ t)))
+        (by
+          have hI₂_nonneg : 0 ≤ I₂ := by
+            unfold I₂
+            exact MeasureTheory.integral_nonneg fun _ => by positivity
+          refine ⟨Finset.Iic (M, 0), C_bound * 2 ^ M * I₂, ?_, ?_⟩
+          · exact mul_nonneg (mul_nonneg (le_of_lt hC_bound_pos) (by positivity)) hI₂_nonneg
+          · intro φ
+            calc
+              ‖T φ‖ = ‖∫ t : ℝ, f t * φ t‖ := by rfl
+              _ ≤ ∫ t : ℝ, ‖f t * φ t‖ :=
+                MeasureTheory.norm_integral_le_integral_norm _
+              _ ≤ ∫ t : ℝ, C_bound * 2 ^ M * sem φ * ((1 + ‖t‖) ^ 2)⁻¹ :=
+                MeasureTheory.integral_mono_ae (h_integrable φ).norm
+                  (h_decay_int_nat.const_mul (C_bound * 2 ^ M * sem φ))
+                  (Filter.Eventually.of_forall (h_pointwise_bound φ))
+              _ = C_bound * 2 ^ M * I₂ * sem φ := by
+                rw [show (∫ t : ℝ, C_bound * 2 ^ M * sem φ * ((1 + ‖t‖) ^ 2)⁻¹) =
+                    (C_bound * 2 ^ M * sem φ) * I₂ by
+                      simp [I₂, MeasureTheory.integral_const_mul]]
+                ring
+              _ = (C_bound * 2 ^ M * I₂) * (Finset.Iic (M, 0)).sup
+                  (schwartzSeminormFamily ℝ ℝ ℂ) φ := by
+                simp [sem, mul_assoc])
+    simpa [T] using A.continuous
+  obtain ⟨F_ext, hF_holo, hF_growth, hF_bv⟩ :=
+    paley_wiener_half_line T hT_lin hT_cont h_spectral
+  refine ⟨F_ext, hF_holo, hF_growth, ?_⟩
+  intro φ
+  simpa [T] using hF_bv φ
 
 /-! ### Uniqueness of Paley-Wiener extension -/
 

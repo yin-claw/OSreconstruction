@@ -146,7 +146,7 @@ theorem inductive_analytic_continuation {d : ℕ} [NeZero d]
   -- Step 1: For each fixed z' in C_k^(r), the r-th coordinate slice satisfies PW
   -- Step 2: The PW extension gives holomorphicity in the new coordinate
   -- Step 3: Osgood's lemma gives joint holomorphicity on C_k^(r+1)
-  -- Step 4: Agreement on C_k^(r) follows from PW agreement on the real line
+  -- Step 4: Agreement on C_k^(r) follows from equality of distributional boundary values
   --
   -- Each step depends on infrastructure from PaleyWiener.lean (which has sorry
   -- for paley_wiener_one_step_simple but is correctly typed).
