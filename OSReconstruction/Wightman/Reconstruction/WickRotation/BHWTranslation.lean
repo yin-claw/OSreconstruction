@@ -477,6 +477,78 @@ theorem forwardTube_inter_translate_nonempty {d n : ℕ} [NeZero d]
     · rw [him_diff_zc_zero k hk]; exact hMc_cone
     · rw [him_diff_zc_pos k hk, him_diff_z]; exact hMe0_cone
 
+/-- **BHW extension is translation-invariant when a common permutation witness exists.**
+
+    If z∘π ∈ FT and (z+c)∘π ∈ FT for the SAME permutation π, then F_ext(z+c) = F_ext(z).
+
+    The proof uses the chain:
+      F_ext(z+c) = F_ext((z+c)∘π)   [perm inv, since (z+c) ∈ PET from hzc_ft]
+               = W_analytic((z+c)∘π) [BHW prop 2, (z+c)∘π ∈ FT]
+               = W_analytic(z∘π)     [trans inv on FT: z∘π ∈ FT, (z∘π)+c ∈ FT]
+               = F_ext(z∘π)          [BHW prop 2, z∘π ∈ FT]
+               = F_ext(z)            [perm inv, since z ∈ PET from hz_ft]
+
+    This avoids needing D = PET ∩ (PET-c) to be connected, and applies directly
+    to the Euclidean case where the same ordering permutation works for both z and z+c.
+
+    Used in `F_ext_translation_invariant` for the Euclidean application. -/
+theorem bhw_translation_invariant_of_common_perm {d n : ℕ} [NeZero d]
+    (Wfn : WightmanFunctions d)
+    (c : Fin (d + 1) → ℂ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (π : Equiv.Perm (Fin n))
+    (hz_ft : (fun k => z (π k)) ∈ ForwardTube d n)
+    (hzc_ft : (fun k μ => z (π k) μ + c μ) ∈ ForwardTube d n) :
+    (W_analytic_BHW Wfn n).val (fun k μ => z k μ + c μ) =
+    (W_analytic_BHW Wfn n).val z := by
+  set F_ext := (W_analytic_BHW Wfn n).val with hF_ext_def
+  set W_analytic := (Wfn.spectrum_condition n).choose
+  -- hF_eq : F_ext z = W_analytic z for z ∈ FT
+  have hF_eq := (W_analytic_BHW Wfn n).property.2.1
+  -- hF_perm : F_ext (z ∘ π) = F_ext z for z ∈ PET
+  have hF_perm := (W_analytic_BHW Wfn n).property.2.2.2
+  -- Establish PET membership for z and z+c via PermutedForwardTube π ⊆ PET
+  -- Strategy: work in BHW namespace and use complexLorentzAction_one
+  have hz_pet : z ∈ PermutedExtendedTube d n := by
+    rw [← BHW_permutedExtendedTube_eq]
+    -- Show z ∈ BHW.PermutedExtendedTube: take π, Λ = 1, w = z
+    refine Set.mem_iUnion.mpr ⟨π, 1, z, ?_, (BHW.complexLorentzAction_one z).symm⟩
+    -- z ∈ BHW.PermutedForwardTube π: (fun k => z (π k)) ∈ BHW.ForwardTube
+    simp only [BHW.PermutedForwardTube, Set.mem_setOf_eq]
+    rwa [BHW_forwardTube_eq]
+  have hzc_pet : (fun k μ => z k μ + c μ) ∈ PermutedExtendedTube d n := by
+    rw [← BHW_permutedExtendedTube_eq]
+    -- Show (z+c) ∈ BHW.PermutedExtendedTube: take π, Λ = 1, w = (z+c)
+    refine Set.mem_iUnion.mpr ⟨π, 1, fun k μ => z k μ + c μ,
+      ?_, (BHW.complexLorentzAction_one _).symm⟩
+    -- (z+c) ∈ BHW.PermutedForwardTube π: (fun k => (z+c) (π k)) ∈ BHW.ForwardTube
+    simp only [BHW.PermutedForwardTube, Set.mem_setOf_eq]
+    rwa [BHW_forwardTube_eq]
+  -- Step 1: F_ext(z+c) = F_ext((z+c)∘π) by perm invariance
+  -- hF_perm π (z+c) hzc_pet : F_ext (fun k => (z+c) (π k)) = F_ext (z+c)
+  -- Note: (fun k => (fun k' μ => z k' μ + c μ) (π k)) = (fun k μ => z (π k) μ + c μ) by rfl
+  have h1 : F_ext (fun k μ => z k μ + c μ) = F_ext (fun k μ => z (π k) μ + c μ) :=
+    (hF_perm π (fun k μ => z k μ + c μ) hzc_pet).symm
+  -- Step 2: F_ext((z+c)∘π) = W_analytic((z+c)∘π) since (z+c)∘π ∈ FT
+  -- hF_eq gives F_ext w = W_analytic w for w ∈ FT
+  have h2 : F_ext (fun k μ => z (π k) μ + c μ) = W_analytic (fun k μ => z (π k) μ + c μ) :=
+    hF_eq (fun k μ => z (π k) μ + c μ) hzc_ft
+  -- Step 3: W_analytic((z+c)∘π) = W_analytic(z∘π) by translation invariance on FT
+  have h3 : W_analytic (fun k μ => z (π k) μ + c μ) = W_analytic (fun k => z (π k)) :=
+    W_analytic_translation_on_forwardTube Wfn c (fun k => z (π k)) hz_ft hzc_ft
+  -- Step 4: W_analytic(z∘π) = F_ext(z∘π) since z∘π ∈ FT
+  have h4 : W_analytic (fun k => z (π k)) = F_ext (fun k => z (π k)) :=
+    (hF_eq _ hz_ft).symm
+  -- Step 5: F_ext(z∘π) = F_ext(z) by perm invariance
+  have h5 : F_ext (fun k => z (π k)) = F_ext z :=
+    hF_perm π z hz_pet
+  calc F_ext (fun k μ => z k μ + c μ)
+      = F_ext (fun k μ => z (π k) μ + c μ) := h1
+    _ = W_analytic (fun k μ => z (π k) μ + c μ) := h2
+    _ = W_analytic (fun k => z (π k)) := h3
+    _ = F_ext (fun k => z (π k)) := h4
+    _ = F_ext z := h5
+
 /-- **Connectivity of the c-translated overlap domain of the permuted extended tube.**
 
     For any `c : Fin (d+1) → ℂ`, the set
