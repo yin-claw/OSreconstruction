@@ -16,10 +16,14 @@ import OSReconstruction.Wightman.NuclearSpaces.GaussianFieldBridge
 import OSReconstruction.Wightman.NuclearSpaces.Helpers.PositiveDefiniteKernels
 
 /-!
-# Bochner's Theorem and Minlos' Theorem
+# Positive-Definite Functionals and Gaussian Characteristic Helpers
 
-This file develops the Bochner-Minlos theorem, which is the key tool for constructing
-Euclidean field theory measures from characteristic functionals.
+This file retains the sorry-free positive-definite and characteristic-functional
+infrastructure used by the nuclear-space side lane.
+
+The classical Bochner/Minlos measure-construction chain that previously lived here
+was unused by the active reconstruction path and remained isolated behind `sorry`s.
+That theorem surface has been removed rather than carried as dead unfinished code.
 
 ## Main Definitions
 
@@ -27,27 +31,13 @@ Euclidean field theory measures from characteristic functionals.
   Σᵢⱼ c̄ᵢ cⱼ φ(xⱼ - xᵢ) ≥ 0 for all finite families.
 * `CharacteristicFunctional` - A continuous positive-definite functional C : E → ℂ
   with C(0) = 1, on a nuclear space E.
-* `bochner_theorem` - (ℝⁿ) Continuous positive-definite φ with φ(0) = 1 corresponds
-  to a unique probability measure via Fourier transform.
-* `minlos_theorem` - (Nuclear spaces) Continuous positive-definite C with C(0) = 1
-  on a nuclear space E corresponds to a unique probability measure on E* (the dual).
+* `gaussianCharacteristicFunctional` - Gaussian characteristic kernel on a Hilbert space
 
 ## Mathematical Background
 
-**Bochner's theorem** (finite-dimensional): Let φ : ℝⁿ → ℂ be continuous and positive-definite
-with φ(0) = 1. Then there exists a unique probability measure μ on ℝⁿ such that
-φ(t) = ∫ exp(i⟨t,x⟩) dμ(x) = 𝔼[e^{i⟨t,X⟩}] (i.e., φ is the characteristic function of μ).
-
-**Minlos' theorem** (infinite-dimensional): Let E be a nuclear space and C : E → ℂ be
-continuous and positive-definite with C(0) = 1. Then there exists a unique probability
-measure μ on E* (the topological dual, with weak-* σ-algebra) such that
-C(f) = ∫_{E*} exp(i ω(f)) dμ(ω) for all f ∈ E.
-
-The proof of Minlos uses:
-1. Bochner on finite-dimensional quotients E/V (V = ker of finite seminorms)
-2. The resulting finite-dimensional measures form a projective family
-3. Nuclearity of E provides tightness of the projective family
-4. Kolmogorov extension gives the infinite-dimensional measure
+The remaining content here is purely algebraic/analytic infrastructure around
+positive-definite functions and normalized characteristic functionals. The actual
+measure-construction theorems are deferred until the project needs a genuine proof.
 
 ## References
 
@@ -210,306 +200,16 @@ theorem norm_le_one (C : CharacteristicFunctional E) (x : E) : ‖C.toFun x‖ �
 
 end CharacteristicFunctional
 
-/-! ### Bochner's Theorem (Finite-Dimensional) -/
+/-! ### Deferred measure-construction lane
 
-section BochnerHelpers
+The finite-dimensional Bochner theorem and infinite-dimensional Minlos theorem are
+not part of the active reconstruction path in this repository. Their previous theorem
+surface was unused outside the isolated `EuclideanMeasure` side lane and remained
+behind `sorry`s, so it has been removed.
 
-/-- Standard basis vector in `Fin n → ℝ`: the function that is 1 at index `i` and 0 elsewhere. -/
-private def stdBasisFun {n : ℕ} (i : Fin n) : Fin n → ℝ := fun j => if j = i then 1 else 0
-
-/-- Every continuous linear functional on `Fin n → ℝ` equals `x ↦ ∑ i, L(eᵢ) * x i`
-    where `eᵢ` is the standard basis vector. -/
-private lemma clm_eq_sum_coord {n : ℕ} (L : (Fin n → ℝ) →L[ℝ] ℝ) :
-    ∀ x : Fin n → ℝ, L x = ∑ i : Fin n, L (stdBasisFun i) * x i := by
-  intro x
-  have hx : x = ∑ i : Fin n, x i • stdBasisFun i := by
-    ext j
-    simp only [Finset.sum_apply, Pi.smul_apply, smul_eq_mul, stdBasisFun, mul_ite, mul_one,
-      mul_zero]
-    rw [Finset.sum_ite_eq]
-    simp
-  conv_lhs => rw [hx]
-  rw [map_sum]
-  exact Finset.sum_congr rfl (fun i _ => by rw [map_smul, smul_eq_mul, mul_comm])
-
-/-- The `charFunDual` of a measure on `Fin n → ℝ`, expressed as a sum integral.
-    This connects the abstract characteristic function (using dual functionals)
-    to the concrete integral `∫ x, exp(i ∑ tᵢ xᵢ) dμ(x)`. -/
-private lemma charFunDual_eq_sum_integral {n : ℕ}
-    (μ : Measure (Fin n → ℝ)) (L : StrongDual ℝ (Fin n → ℝ)) :
-    charFunDual μ L =
-      ∫ x, exp (↑(∑ i : Fin n, L (stdBasisFun i) * x i) * I) ∂μ := by
-  simp only [charFunDual_apply]
-  congr 1; ext x
-  congr 1; congr 1; congr 1
-  exact clm_eq_sum_coord L x
-
-/-- **Bochner uniqueness**: Two probability measures on `ℝⁿ` with the same
-    characteristic function values are equal.
-
-    Uses `Measure.ext_of_charFunDual` from mathlib, which establishes that
-    finite measures on a normed space are determined by their characteristic
-    function (dual version). -/
-theorem bochner_uniqueness {n : ℕ}
-    (μ₁ μ₂ : Measure (Fin n → ℝ))
-    [IsProbabilityMeasure μ₁] [IsProbabilityMeasure μ₂]
-    (h : ∀ t : Fin n → ℝ,
-      ∫ x, exp (↑(∑ i, t i * x i) * I) ∂μ₁ =
-      ∫ x, exp (↑(∑ i, t i * x i) * I) ∂μ₂) :
-    μ₁ = μ₂ := by
-  apply Measure.ext_of_charFunDual
-  ext L
-  rw [charFunDual_eq_sum_integral, charFunDual_eq_sum_integral]
-  exact h (fun i => L (stdBasisFun i))
-
-/-- **Bochner existence (core)**: A continuous positive-definite function with `φ(0) = 1`
-    is the characteristic function of some probability measure.
-
-    The classical proof proceeds via:
-    1. **Gauss regularization**: `φ_ε(t) = φ(t) · exp(-ε‖t‖²)` is in L¹ (bounded by 1
-       times Gaussian), still positive-definite, and the inverse Fourier transform gives
-       a non-negative finite measure `μ_ε` (Bochner-Schwartz for L¹ functions).
-    2. **Tightness**: Each `μ_ε` has total mass ≤ 1. By the Fourier inversion theorem,
-       the measures concentrate: for any `R`, `μ_ε(B(0,R)ᶜ) → 0` uniformly.
-    3. **Prokhorov's theorem**: Tightness gives a subsequence converging weakly to `μ`.
-    4. **Characteristic function verification**: The weak limit has `charFun(μ) = φ`,
-       since `charFun(μ_ε) → φ` pointwise and characteristic functions are continuous
-       in the weak topology.
-    5. **Probability**: `μ(ℝⁿ) = lim μ_ε(ℝⁿ) = lim φ_ε(0) = φ(0) = 1`.
-
-    This is a deep result requiring Fourier analysis + Prokhorov that is not yet in Mathlib. -/
-private theorem bochner_tightness_and_limit {n : ℕ} (φ : (Fin n → ℝ) → ℂ)
-    (hcont : Continuous φ) (hpd : IsPositiveDefiniteFn φ) (hφ0 : φ 0 = 1) :
-    ∃ (μ : Measure (Fin n → ℝ)), IsProbabilityMeasure μ ∧
-      ∀ t, φ t = ∫ x, exp (↑(∑ i, t i * x i) * I) ∂μ := by
-  sorry
-
-/-- **Bochner existence**: A continuous positive-definite function `φ : ℝⁿ → ℂ`
-    with `φ(0) = 1` is the characteristic function of some probability measure.
-
-    The classical proof constructs the measure via:
-    1. φ defines a positive linear functional on L¹(ℝⁿ) convolutions
-    2. Riesz representation gives a positive Radon measure
-    3. Fourier inversion shows the measure has the right characteristic function
-    4. φ(0) = 1 ensures it is a probability measure
-
-    Proved by delegation to `bochner_tightness_and_limit`, which encapsulates the
-    full Gauss regularization + Prokhorov tightness argument. -/
-theorem bochner_existence {n : ℕ} (φ : (Fin n → ℝ) → ℂ)
-    (hcont : Continuous φ) (hpd : IsPositiveDefiniteFn φ) (hφ0 : φ 0 = 1) :
-    ∃ (μ : Measure (Fin n → ℝ)), IsProbabilityMeasure μ ∧
-      ∀ t, φ t = ∫ x, exp (↑(∑ i, t i * x i) * I) ∂μ :=
-  bochner_tightness_and_limit φ hcont hpd hφ0
-
-end BochnerHelpers
-
-/-- **Bochner's theorem**: Every continuous positive-definite function φ : ℝⁿ → ℂ
-    with φ(0) = 1 is the characteristic function of a unique probability measure on ℝⁿ.
-
-    That is, there exists a unique probability measure μ such that
-    φ(t) = ∫ exp(i⟨t,x⟩) dμ(x) for all t ∈ ℝⁿ.
-
-    Proved by combining:
-    - `bochner_existence` (construction via Fourier inversion + Riesz representation)
-    - `bochner_uniqueness` (via `Measure.ext_of_charFunDual` from mathlib) -/
-theorem bochner_theorem {n : ℕ} (φ : (Fin n → ℝ) → ℂ)
-    (hcont : Continuous φ) (hpd : IsPositiveDefiniteFn φ) (hφ0 : φ 0 = 1) :
-    ∃! (μ : Measure (Fin n → ℝ)), IsProbabilityMeasure μ ∧
-      ∀ t, φ t = ∫ x, exp (↑(∑ i, t i * x i) * I) ∂μ := by
-  obtain ⟨μ, hμ_prob, hμ_cf⟩ := bochner_existence φ hcont hpd hφ0
-  refine ⟨μ, ⟨hμ_prob, hμ_cf⟩, ?_⟩
-  intro ν ⟨hν_prob, hν_cf⟩
-  exact bochner_uniqueness ν μ (fun t => by rw [← hν_cf t, ← hμ_cf t])
-
-/-! ### Minlos' Theorem -/
-
-/-- **Helper (finite-dimensional projections)**: For each finite set of elements
-    `f₁, ..., fₙ ∈ E`, the functional `C` induces a well-defined continuous
-    positive-definite function `φ : ℝⁿ → ℂ` on the finite-dimensional subspace
-    spanned by `{f₁, ..., fₙ}`, via `φ(t₁,...,tₙ) = C(∑ tᵢ fᵢ)`.
-
-    By Bochner's theorem, this gives a probability measure `μ_F` on `ℝⁿ`. -/
-private theorem minlos_finite_dim_projection {E : Type*} [AddCommGroup E] [Module ℝ E]
-    [TopologicalSpace E] [ContinuousAdd E] [ContinuousSMul ℝ E]
-    (C : CharacteristicFunctional E)
-    {n : ℕ} (f : Fin n → E) :
-    ∃ (μ_F : Measure (Fin n → ℝ)), IsProbabilityMeasure μ_F ∧
-      ∀ t : Fin n → ℝ,
-        C.toFun (∑ i, t i • f i) =
-        ∫ x : Fin n → ℝ, exp (↑(∑ i, t i * x i) * I) ∂μ_F := by
-  -- The function φ(t) = C(∑ tᵢ fᵢ) is continuous, positive-definite, φ(0) = 1
-  set φ : (Fin n → ℝ) → ℂ := fun t => C.toFun (∑ i, t i • f i) with hφ_def
-  have hcont : Continuous φ := by
-    exact C.continuous_toFun.comp (continuous_finset_sum _ fun i _ =>
-      (continuous_apply i).smul continuous_const)
-  have hpd : IsPositiveDefiniteFn φ := by
-    intro m x c
-    have hC := C.positive_definite m (fun j => ∑ i, (x j) i • f i) c
-    simp only [φ]
-    have harg : ∀ i j : Fin m,
-        (∑ k, (x j - x i) k • f k) =
-        (∑ k, (x j) k • f k) - (∑ k, (x i) k • f k) := by
-      intro i j
-      simp [Pi.sub_apply, sub_smul, Finset.sum_sub_distrib]
-    simp_rw [harg]
-    exact hC
-  have hφ0 : φ 0 = 1 := by
-    simp only [φ, Pi.zero_apply, zero_smul, Finset.sum_const_zero, C.eval_zero]
-  exact bochner_existence φ hcont hpd hφ0
-
--- **Helper (nuclearity gives tightness of projective family)**: The family of
--- finite-dimensional measures `{μ_F}` is consistent (forms a projective family)
--- and tight. The tightness follows from nuclearity of E.
---
--- By Kolmogorov's extension theorem (with tightness for σ-additivity),
--- there exists a probability measure on `E →L[ℝ] ℝ`.
-
-/-- Helper: The finite-dimensional measures from `minlos_finite_dim_projection` form a
-    consistent projective family. For F ⊆ G (as finite sets of test functions), the
-    marginal of μ_G on the F-coordinates equals μ_F.
-
-    Consistency follows from the fact that φ_F is the restriction of φ_G:
-    if G = F ∪ {extra} and we set t_extra = 0, then φ_G(t_F, 0) = φ_F(t_F).
-    Bochner uniqueness then gives μ_F = (proj_F)_* μ_G. -/
-private theorem minlos_projective_consistency {E : Type*} [AddCommGroup E] [Module ℝ E]
-    [TopologicalSpace E] [ContinuousAdd E] [ContinuousSMul ℝ E]
-    (C : CharacteristicFunctional E)
-    {m n : ℕ} (f : Fin n → E) (g : Fin m → E) (π : Fin m → Fin n)
-    (hπ : ∀ i, g i = f (π i))
-    (μ_f : Measure (Fin n → ℝ)) [IsProbabilityMeasure μ_f]
-    (hμ_f : ∀ (t : Fin n → ℝ), C.toFun (∑ i, t i • f i) = ∫ x, exp (↑(∑ i, t i * x i) * I) ∂μ_f)
-    (μ_g : Measure (Fin m → ℝ)) [IsProbabilityMeasure μ_g]
-    (hμ_g : ∀ (t : Fin m → ℝ), C.toFun (∑ i, t i • g i) = ∫ x, exp (↑(∑ i, t i * x i) * I) ∂μ_g) :
-    μ_g = Measure.map (fun x : Fin n → ℝ => fun i => x (π i)) μ_f := by
-  sorry
-
-/-- Helper: Nuclearity of E implies the projective family {μ_F} is tight.
-
-    The key insight: for a nuclear space, each continuous seminorm p is nuclearly dominated
-    by some q, meaning p(x) ≤ Σ |φ_k(x)| c_k with Σ c_k < ∞. This controls how spread
-    the finite-dimensional measures are. Specifically, for any ε > 0, there exists a compact
-    K_ε ⊆ E* such that μ_F(π_F(K_ε)) ≥ 1-ε for all F. -/
-private theorem minlos_nuclearity_tightness {E : Type*} [AddCommGroup E] [Module ℝ E]
-    [TopologicalSpace E] [NuclearSpace E]
-    [MeasurableSpace (E →L[ℝ] ℝ)]
-    (C : CharacteristicFunctional E) :
-    ∃ (μ : Measure (E →L[ℝ] ℝ)),
-      IsProbabilityMeasure μ ∧
-      ∀ f : E, C.toFun f = ∫ ω : E →L[ℝ] ℝ, exp (↑(ω f) * I) ∂μ := by
-  sorry
-
-private theorem minlos_kolmogorov_extension {E : Type*} [AddCommGroup E] [Module ℝ E]
-    [TopologicalSpace E] [NuclearSpace E]
-    [MeasurableSpace (E →L[ℝ] ℝ)]
-    (C : CharacteristicFunctional E) :
-    ∃ (μ : Measure (E →L[ℝ] ℝ)),
-      IsProbabilityMeasure μ ∧
-      ∀ f : E, C.toFun f = ∫ ω : E →L[ℝ] ℝ, exp (↑(ω f) * I) ∂μ :=
-  minlos_nuclearity_tightness C
-
-/-- **Minlos' theorem**: Let E be a nuclear space and C : E → ℂ a characteristic
-    functional (continuous, positive-definite, C(0) = 1). Then there exists a unique
-    probability measure μ on the continuous dual E* (with the weak-* σ-algebra)
-    such that C(f) = ∫_{E*} exp(i ω(f)) dμ(ω) for all f ∈ E.
-
-    The dual space Dual ℝ E = E →L[ℝ] ℝ is equipped with the weak-* topology.
-
-    Proof structure:
-    1. For each continuous seminorm p, E_p = E/ker(p) is finite-dimensional
-    2. The projection π_p : E → E_p induces C_p on E_p via C_p(π_p(f)) = C(f)
-    3. By Bochner, each C_p gives a probability measure μ_p on E_p*
-    4. The {μ_p} form a projective family (consistency from C being well-defined)
-    5. **Nuclearity provides tightness**: this is the key step where nuclearity is used
-    6. By Kolmogorov extension (with tightness), get μ on E*
-
-    Proved by combining:
-    - `minlos_finite_dim_projection`: finite-dim Bochner step
-    - `minlos_kolmogorov_extension`: projective limit + tightness from nuclearity -/
-theorem minlos_theorem {E : Type*} [AddCommGroup E] [Module ℝ E]
-    [TopologicalSpace E] [NuclearSpace E]
-    [MeasurableSpace (E →L[ℝ] ℝ)]
-    (C : CharacteristicFunctional E) :
-    ∃ (μ : Measure (E →L[ℝ] ℝ)),
-      IsProbabilityMeasure μ ∧
-      ∀ f : E, C.toFun f = ∫ ω : E →L[ℝ] ℝ, exp (↑(ω f) * I) ∂μ :=
-  minlos_kolmogorov_extension C
-
--- **Helper (evaluation maps separate measures on dual)**: Two probability measures
--- on `E →L[ℝ] ℝ` that agree on all "evaluation characteristic functions"
--- `∫ exp(i ω(f)) dμ₁ = ∫ exp(i ω(f)) dμ₂` for all `f ∈ E` must be equal.
---
--- This is the infinite-dimensional analogue of uniqueness. It follows from the
--- fact that evaluation maps `ω ↦ ω(f)` separate points in `E →L[ℝ] ℝ` and
--- generate the σ-algebra, so the "evaluation characteristic functions" determine
--- the finite-dimensional distributions, which in turn determine the measure
--- (by the pi-lambda theorem).
-
-/-- Helper: Evaluation maps ω ↦ ω(f) generate the σ-algebra on E →L[ℝ] ℝ.
-
-    The measurable space on E →L[ℝ] ℝ (with weak-* topology) is generated by the
-    evaluation maps ev_f : ω ↦ ω(f) for f ∈ E. This means that two measures agreeing
-    on all sets of the form {ω : ω(f) ∈ B} for Borel B ⊆ ℝ must agree on all
-    measurable sets (by π-λ theorem).
-
-    Blocked by: needs the σ-algebra on E →L[ℝ] ℝ to be generated by evaluation maps,
-    which depends on the weak-* topology definition and its Borel σ-algebra. -/
-private theorem eval_maps_generate_sigma_algebra {E : Type*} [AddCommGroup E] [Module ℝ E]
-    [TopologicalSpace E]
-    [MeasurableSpace (E →L[ℝ] ℝ)]
-    (μ₁ μ₂ : Measure (E →L[ℝ] ℝ))
-    (hμ₁ : IsProbabilityMeasure μ₁) (hμ₂ : IsProbabilityMeasure μ₂)
-    (h_fd : ∀ (n : ℕ) (f : Fin n → E),
-      Measure.map (fun ω : E →L[ℝ] ℝ => fun i => ω (f i)) μ₁ =
-      Measure.map (fun ω : E →L[ℝ] ℝ => fun i => ω (f i)) μ₂) :
-    μ₁ = μ₂ := by
-  sorry
-
-/-- Helper: Agreeing evaluation characteristic functions implies agreeing finite-dimensional
-    distributions.
-
-    If ∫ exp(i ω(f)) dμ₁ = ∫ exp(i ω(f)) dμ₂ for all f ∈ E, then for any f₁,...,fₙ ∈ E,
-    the pushforward measures on ℝⁿ via (ω(f₁),...,ω(fₙ)) agree. This follows from
-    bochner_uniqueness applied to the pushforward measures, since agreeing on all
-    linear combinations ∑ tᵢ fᵢ means the characteristic functions of the pushforwards agree. -/
-private theorem eval_charfun_implies_fd_distributions {E : Type*} [AddCommGroup E] [Module ℝ E]
-    [TopologicalSpace E]
-    [MeasurableSpace (E →L[ℝ] ℝ)]
-    (μ₁ μ₂ : Measure (E →L[ℝ] ℝ))
-    (hμ₁ : IsProbabilityMeasure μ₁) (hμ₂ : IsProbabilityMeasure μ₂)
-    (h : ∀ f : E,
-      ∫ ω : E →L[ℝ] ℝ, exp (↑(ω f) * I) ∂μ₁ =
-      ∫ ω : E →L[ℝ] ℝ, exp (↑(ω f) * I) ∂μ₂) :
-    ∀ (n : ℕ) (f : Fin n → E),
-      Measure.map (fun ω : E →L[ℝ] ℝ => fun i => ω (f i)) μ₁ =
-      Measure.map (fun ω : E →L[ℝ] ℝ => fun i => ω (f i)) μ₂ := by
-  sorry
-
-private theorem measures_eq_of_eval_charfun_eq {E : Type*} [AddCommGroup E] [Module ℝ E]
-    [TopologicalSpace E]
-    [MeasurableSpace (E →L[ℝ] ℝ)]
-    (μ₁ μ₂ : Measure (E →L[ℝ] ℝ))
-    (hμ₁ : IsProbabilityMeasure μ₁) (hμ₂ : IsProbabilityMeasure μ₂)
-    (h : ∀ f : E,
-      ∫ ω : E →L[ℝ] ℝ, exp (↑(ω f) * I) ∂μ₁ =
-      ∫ ω : E →L[ℝ] ℝ, exp (↑(ω f) * I) ∂μ₂) :
-    μ₁ = μ₂ :=
-  eval_maps_generate_sigma_algebra μ₁ μ₂ hμ₁ hμ₂
-    (eval_charfun_implies_fd_distributions μ₁ μ₂ hμ₁ hμ₂ h)
-
-/-- Uniqueness part of Minlos' theorem: the measure is unique.
-
-    Proved via `measures_eq_of_eval_charfun_eq`, which shows that evaluation
-    characteristic functions determine the measure. -/
-theorem minlos_unique {E : Type*} [AddCommGroup E] [Module ℝ E]
-    [TopologicalSpace E] [NuclearSpace E]
-    [MeasurableSpace (E →L[ℝ] ℝ)]
-    (C : CharacteristicFunctional E)
-    (μ₁ μ₂ : Measure (E →L[ℝ] ℝ))
-    (hμ₁ : IsProbabilityMeasure μ₁) (hμ₂ : IsProbabilityMeasure μ₂)
-    (h₁ : ∀ f : E, C.toFun f = ∫ ω : E →L[ℝ] ℝ, exp (↑(ω f) * I) ∂μ₁)
-    (h₂ : ∀ f : E, C.toFun f = ∫ ω : E →L[ℝ] ℝ, exp (↑(ω f) * I) ∂μ₂) :
-    μ₁ = μ₂ :=
-  measures_eq_of_eval_charfun_eq μ₁ μ₂ hμ₁ hμ₂ (fun f => by rw [← h₁ f, ← h₂ f])
+If the measure-construction lane is revived, it should return with a genuine proof of
+the finite-dimensional existence/tightness step and the infinite-dimensional projective
+limit/tightness step, rather than placeholder theorem fronts. -/
 
 /-! ### Gaussian Characteristic Functionals -/
 

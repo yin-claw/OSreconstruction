@@ -305,44 +305,6 @@ well-known textbook theorem stated at greater generality than the specific
 instances used here.
 -/
 
-/-- Polynomial growth of a holomorphic function on a fixed interior slice of a tube domain.
-
-    If F is holomorphic on ForwardTube d n, has tempered distributional boundary
-    values, and ε > 0 with η ∈ V₊^n, then the
-    restriction x ↦ F(x + iεη) satisfies polynomial growth:
-    ‖F(x + iεη)‖ ≤ C · (1 + ‖x‖)^N for some C, N depending on F, ε, η.
-
-    Here this is obtained through `ForwardTubeDistributions`: convert Schwartz BV
-    data to flat-coordinate BV (`schwartz_bv_to_flat_bv`) and then apply
-    `polynomial_growth_forwardTube` on the compact singleton `{εη}`.
-
-    Current status:
-    this is still a weak placeholder theorem. Its previous proof relied on the
-    weak forward-tube boundary-value transport chain, which is now explicitly
-    reopened in `ForwardTubeDistributions`.
-
-    Ref: Vladimirov, "Methods of the Theory of Generalized Functions", Theorem 25.5 -/
-theorem polynomial_growth_on_slice {d n : ℕ} [NeZero d]
-    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
-    (hF : DifferentiableOn ℂ F (ForwardTube d n))
-    (h_bv : ∃ (T : SchwartzNPoint d n → ℂ), Continuous T ∧
-      ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
-        InForwardCone d n η →
-        Filter.Tendsto
-          (fun ε : ℝ => ∫ x : NPointDomain d n,
-            F (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
-          (nhdsWithin 0 (Set.Ioi 0))
-          (nhds (T f)))
-    (η : Fin n → Fin (d + 1) → ℝ) (hη : InForwardCone d n η)
-    (ε : ℝ) (hε : ε > 0) :
-    ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
-      ∀ (x : NPointDomain d n),
-        ‖F (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I)‖ ≤
-          C_bd * (1 + ‖x‖) ^ N := by
-  -- Blocked: the previous proof depended on the weak forward-tube BV transport
-  -- chain, which has now been reopened as honest placeholder interface.
-  sorry
-
 /-- Proved slice-growth theorem under regular flattened-tube Fourier-Laplace input. -/
 theorem polynomial_growth_on_slice_of_flatRegular {d n : ℕ} [NeZero d]
     (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
@@ -477,17 +439,13 @@ theorem forward_tube_slice_aestrongly_measurable {d n : ℕ} [NeZero d]
   -- Step 3: F is continuous on ForwardTube, compose with continuous affine map
   exact (hF.continuousOn.comp_continuous h_cont_affine h_in_tube).aestronglyMeasurable
 
-theorem forward_tube_bv_integrable {d n : ℕ} [NeZero d]
+/-- Rigorous forward-tube integrability under explicit regular flattened
+    Fourier-Laplace input. -/
+theorem forward_tube_bv_integrable_of_flatRegular {d n : ℕ} [NeZero d]
     (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
     (hF : DifferentiableOn ℂ F (ForwardTube d n))
-    (h_bv : ∃ (T : SchwartzNPoint d n → ℂ), Continuous T ∧
-      ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
-        InForwardCone d n η →
-        Filter.Tendsto
-          (fun ε : ℝ => ∫ x : NPointDomain d n,
-            F (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
-          (nhdsWithin 0 (Set.Ioi 0))
-          (nhds (T f)))
+    (hRegular : SCV.HasFourierLaplaceReprRegular (ForwardConeFlat d n)
+      (F ∘ (flattenCLEquiv n (d + 1)).symm))
     (f : SchwartzNPoint d n)
     (η : Fin n → Fin (d + 1) → ℝ) (hη : InForwardCone d n η)
     (ε : ℝ) (hε : ε > 0) :
@@ -495,10 +453,8 @@ theorem forward_tube_bv_integrable {d n : ℕ} [NeZero d]
       (fun x : NPointDomain d n =>
         F (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
       MeasureTheory.volume := by
-  -- Decompose via polynomial growth on the slice + Schwartz decay
-  obtain ⟨C_bd, N, hC, hgrowth⟩ := polynomial_growth_on_slice F hF h_bv η hη ε hε
-  -- Measurability: the slice map x ↦ F(x + εηi) is continuous since F is holomorphic
-  -- on the forward tube and the affine embedding maps into it
+  obtain ⟨C_bd, N, hC, hgrowth⟩ :=
+    polynomial_growth_on_slice_of_flatRegular F hF hRegular η hη ε hε
   have hg_meas : MeasureTheory.AEStronglyMeasurable
       (fun x : NPointDomain d n => F (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I))
       MeasureTheory.volume :=
@@ -743,105 +699,5 @@ theorem lorentz_covariant_distributional_bv {d n : ℕ} [NeZero d]
   rw [hlhs]
   exact integral_lorentz_eq_self Λ
     (fun y => F (fun k μ => ↑(y k μ) + ε * ↑(Λη k μ) * Complex.I) * (g y))
-
-/-- The set of Euclidean configurations whose Wick rotation does NOT lie in the
-    permuted extended tube has Lebesgue measure zero.
-
-    **Proof strategy (Jost's theorem):** A Wick-rotated configuration lies in
-    the PET whenever some permutation σ makes the consecutive differences satisfy
-    the Jost condition (spacelike with sufficient spatial spread for a complex
-    Lorentz boost). The complement — configurations where NO permutation works —
-    is contained in a finite union of proper algebraic subvarieties (coincident
-    or collinear point configurations). Each such subvariety has codimension >= 1
-    in ℝ^{n(d+1)}, hence Lebesgue measure zero (by induction on dimension + Fubini).
-
-    Blocked by: (1) Jost characterization of PET membership (`swap_jost_set_exists`),
-    and (2) Mathlib's algebraic-subvariety-measure-zero pipeline (not yet available).
-
-    Ref: Jost, "The General Theory of Quantized Fields" §IV.4, Theorem IV.4;
-    Streater-Wightman, Theorem 2-12 -/
-theorem wickRotation_not_in_PET_null {d n : ℕ} [NeZero d] :
-    MeasureTheory.volume
-      {x : NPointDomain d n |
-        (fun k => wickRotatePoint (x k)) ∉ PermutedExtendedTube d n} = 0 := by
-  sorry
-
-/-- **Almost every Euclidean Wick-rotated configuration lies in the permuted extended tube.**
-
-    For a.e. configuration x = (x₁, ..., xₙ) of Euclidean spacetime points,
-    the Wick-rotated configuration (iτ₁, x⃗₁, ..., iτₙ, x⃗ₙ) lies in the
-    permuted extended tube T''_n.
-
-    This is a consequence of Jost's theorem: the extended tube T'_n contains
-    all "Jost points" (real points where consecutive differences are spacelike).
-    The set of configurations that are NOT Jost points (after any permutation
-    and complex Lorentz transformation) has measure zero.
-
-    This suffices for all downstream uses: the Schwinger function properties
-    (translation invariance, rotation invariance, permutation symmetry) are
-    proved via integral identities that only need pointwise equality a.e.
-
-    Ref: Jost, "The General Theory of Quantized Fields" §IV.4, Theorem IV.4;
-    Streater-Wightman, Theorem 2-12 -/
-theorem ae_euclidean_points_in_permutedTube {d n : ℕ} [NeZero d] :
-    ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume,
-      (fun k => wickRotatePoint (x k)) ∈ PermutedExtendedTube d n := by
-  rw [Filter.Eventually, MeasureTheory.mem_ae_iff]
-  convert wickRotation_not_in_PET_null (d := d) (n := n) using 1
-
-/-- The distributional boundary values of z ↦ W_analytic(Λz) and z ↦ W_analytic(z)
-    agree, by Lorentz covariance of the Wightman distribution. -/
-theorem W_analytic_lorentz_bv_agree
-    (Wfn : WightmanFunctions d) (n : ℕ)
-    (Λ : LorentzGroup.Restricted (d := d)) :
-    ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
-      InForwardCone d n η →
-      Filter.Tendsto
-        (fun ε : ℝ => ∫ x : NPointDomain d n,
-          ((Wfn.spectrum_condition n).choose
-            (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * (↑(x k ν) + ε * ↑(η k ν) * Complex.I)) -
-           (Wfn.spectrum_condition n).choose
-            (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I)) * (f x))
-        (nhdsWithin 0 (Set.Ioi 0))
-        (nhds 0) := by
-  intro f η hη
-  -- Strategy: Show both terms converge to W_n(f) individually, so their difference → 0.
-  let W_a := (Wfn.spectrum_condition n).choose
-  have hW_hol := (Wfn.spectrum_condition n).choose_spec.1
-  have hW_bv := (Wfn.spectrum_condition n).choose_spec.2
-  -- Term 2 limit: ∫ W_analytic(x + iεη) f(x) dx → W_n(f) by spectrum_condition
-  have h_term2 : Filter.Tendsto
-      (fun ε : ℝ => ∫ x : NPointDomain d n,
-        W_a (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
-      (nhdsWithin 0 (Set.Ioi 0))
-      (nhds (Wfn.W n f)) := hW_bv f η hη
-  -- Term 1 limit: ∫ W_analytic(Λ(x + iεη)) f(x) dx → W_n(f)
-  -- by Lorentz covariance of distributional boundary values
-  have h_term1 : Filter.Tendsto
-      (fun ε : ℝ => ∫ x : NPointDomain d n,
-        W_a (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) *
-          (↑(x k ν) + ε * ↑(η k ν) * Complex.I)) * (f x))
-      (nhdsWithin 0 (Set.Ioi 0))
-      (nhds (Wfn.W n f)) :=
-    lorentz_covariant_distributional_bv (d := d) (n := n) Wfn W_a hW_hol hW_bv Λ f η hη
-  -- The difference of two sequences both converging to W_n(f) converges to 0
-  have hdiff := Filter.Tendsto.sub h_term1 h_term2
-  simp only [sub_self] at hdiff
-  -- Match the form: ∫ (F₁ - F₂) * f = ∫ F₁*f - ∫ F₂*f (using integral_sub for ε > 0)
-  refine hdiff.congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with ε (hε : ε ∈ Set.Ioi 0)
-  rw [← MeasureTheory.integral_sub]
-  · congr 1; ext x; ring
-  · exact forward_tube_bv_integrable
-      (fun z => W_a (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν))
-      (W_analytic_lorentz_holomorphic Wfn n Λ)
-      ⟨Wfn.W n, Wfn.tempered n, fun f' η' hη' =>
-        lorentz_covariant_distributional_bv (d := d) (n := n)
-          Wfn W_a hW_hol hW_bv Λ f' η' hη'⟩
-      f η hη ε (Set.mem_Ioi.mp hε)
-  · exact forward_tube_bv_integrable W_a hW_hol
-      ⟨Wfn.W n, Wfn.tempered n, hW_bv⟩
-      f η hη ε (Set.mem_Ioi.mp hε)
-
 
 end

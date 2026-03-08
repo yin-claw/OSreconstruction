@@ -3,12 +3,8 @@ Copyright (c) 2025 ModularPhysics Contributors. All rights reserved.
 Released under Apache 2.0 license.
 Authors: ModularPhysics Contributors
 -/
-import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
-import Mathlib.Analysis.Distribution.TemperedDistribution
-import Mathlib.Analysis.SpecialFunctions.Complex.Analytic
 import OSReconstruction.Wightman.Basic
 import OSReconstruction.Wightman.OperatorDistribution
-import OSReconstruction.Wightman.SchwartzTensorProduct
 
 /-!
 # Wightman Axioms
@@ -246,111 +242,14 @@ def TwoPointHermitian (qft : WightmanQFT d) : Prop :=
 
 end WightmanQFT
 
-/-! ### Wightman Functions as Distributions -/
+/-! ### Wightman n-point tube geometry
 
-/-- The n-point domain: n copies of (d+1)-dimensional spacetime.
-    Points are functions Fin n → Fin (d+1) → ℝ, i.e., n spacetime points. -/
-abbrev NPointSpacetime (d n : ℕ) := Fin n → Fin (d + 1) → ℝ
-
-/-- Schwartz space on n copies of spacetime -/
-abbrev SchwartzNPointSpace (d n : ℕ) := SchwartzMap (NPointSpacetime d n) ℂ
-
-/-- The Wightman n-point function on product test functions.
-
-    W_n(f₁, ..., fₙ) = ⟨Ω, φ(f₁)···φ(fₙ)Ω⟩
-
-    This is defined for factored test functions (f₁,...,fₙ) where each fᵢ ∈ 𝒮(ℝ^{d+1}).
-    Extension to general test functions F ∈ 𝒮(ℝ^{n(d+1)}) requires the nuclear
-    theorem for Schwartz spaces, which guarantees that the multilinear functional
-    on 𝒮(ℝ^{d+1})^⊗n extends uniquely to a continuous linear functional on
-    the completed projective tensor product 𝒮(ℝ^{n(d+1)}). -/
-def WightmanDistributionProduct (qft : WightmanQFT d) (n : ℕ) :
-    (Fin n → SchwartzSpacetime d) → ℂ :=
-  qft.wightmanFunction n
-
-/-- **Schwartz nuclear theorem (kernel theorem for Schwartz spaces).**
-
-    Given a separately continuous multilinear functional Phi on n copies of
-    S(R^{d+1}), there exists a unique continuous linear functional W on the
-    full Schwartz space S(R^{n(d+1)}) such that W agrees with Phi on product
-    test functions: W(f_1 tensor ... tensor f_n) = Phi(f_1,...,f_n).
-
-    The nuclear theorem guarantees that the multilinear Wightman n-point function
-    extends to a continuous linear functional on the full Schwartz space S(R^{n(d+1)}).
-
-    Since S(R^{d+1}) is nuclear (proved in SchwartzNuclear.lean),
-    the completed projective tensor product S(R^{d+1}) tensor_pi ... tensor_pi S(R^{d+1})
-    is isomorphic (as a topological vector space) to S(R^{n(d+1)}).
-
-    The proof requires:
-    1. Schwartz space is nuclear (proved in SchwartzNuclear.lean)
-    2. For nuclear spaces, the projective tensor product topology agrees with
-       the injective tensor product topology
-    3. S(R^{d+1}) tensor_pi ... tensor_pi S(R^{d+1}) = S(R^{n(d+1)}) as TVS
-    4. Separately continuous multilinear functionals on nuclear spaces extend
-       uniquely to continuous functionals on the completed tensor product
-
-    Ref: Gel'fand-Vilenkin, "Generalized Functions IV", Ch. I, 3;
-    Reed-Simon, "Methods of Modern Math Physics I", Theorem V.13;
-    Treves, "Topological Vector Spaces", Ch. 51 -/
-private theorem schwartz_nuclear_extension (d n : ℕ) [NeZero d]
-    (Phi : (Fin n → SchwartzSpacetime d) → ℂ)
-    (hPhi_sep : ∀ (i : Fin n) (fs : Fin n → SchwartzSpacetime d),
-      Continuous (fun f => Phi (Function.update fs i f))) :
-    ∃ (W : SchwartzNPointSpace d n →L[ℂ] ℂ),
-      ∀ fs : Fin n → SchwartzSpacetime d,
-        W (SchwartzMap.productTensor fs) = Phi fs := by
-  sorry
-
-/-- Helper: The Wightman n-point function (f₁,...,fₙ) ↦ ⟨Ω, φ(f₁)···φ(fₙ)Ω⟩ is
-    separately continuous in each test function argument.
-
-    Continuity in f_i follows from:
-    1. φ(f_i) : D → D is continuous from SchwartzSpacetime to operators (field is tempered)
-    2. The operators φ(f_j) for j ≠ i are fixed
-    3. The inner product ⟨·,·⟩ on the Hilbert space is continuous
-
-    More precisely: the map f_i ↦ φ(f₁)···φ(f_i)···φ(fₙ)Ω is a composition of
-    the continuous map f_i ↦ φ(f_i) (temperedness) with the fixed operators φ(f_j),
-    and ⟨Ω, ·⟩ is continuous.
-
-    Blocked by: need to express this composition formally using the WightmanQFT structure's
-    field operator domain/continuity properties. -/
-private theorem wightman_separately_continuous (qft : WightmanQFT d) (n : ℕ)
-    (i : Fin n) (fs : Fin n → SchwartzSpacetime d) :
-    Continuous (fun f => qft.wightmanFunction n (Function.update fs i f)) := by
-  sorry
-
-/-- **Wightman n-point functions extend to tempered distributions.**
-
-    The multilinear Wightman functional (f_1,...,f_n) -> Omega, phi(f_1)...phi(f_n) Omega
-    extends to a continuous linear functional on the full Schwartz space S(R^{n(d+1)}).
-
-    This uses the nuclear theorem (`schwartz_nuclear_extension`) together with
-    separate continuity of the Wightman functional in each test function argument.
-    Separate continuity follows from the field operators being tempered distributions
-    (continuous linear maps from S to operators on D) and the inner product being
-    separately continuous. -/
-theorem wightmanDistribution_extends (qft : WightmanQFT d) (n : ℕ) :
-    ∃ (W_n : SchwartzNPointSpace d n →L[ℂ] ℂ),
-      ∀ fs : Fin n → SchwartzSpacetime d,
-        W_n (SchwartzMap.productTensor fs) = qft.wightmanFunction n fs := by
-  -- Apply the nuclear theorem to the Wightman functional
-  apply schwartz_nuclear_extension
-  -- Need: separate continuity of the Wightman n-point function
-  -- f_i -> Omega, phi(f_1)...phi(f_i)...phi(f_n) Omega is continuous in f_i
-  -- because phi is an operator-valued tempered distribution and inner product is continuous.
-  intro i fs
-  exact wightman_separately_continuous (d := d) qft n i fs
-
-/-- Temperedness of Wightman functions: The multilinear Wightman n-point function
-    (f₁,...,fₙ) ↦ ⟨Ω, φ(f₁)···φ(fₙ)Ω⟩ is separately continuous in each argument.
-
-    Full temperedness (continuity of the extension to 𝒮(ℝ^{n(d+1)})) follows from
-    the nuclear theorem; see `wightmanDistribution_extends`. -/
-def WightmanTempered (qft : WightmanQFT d) (n : ℕ) : Prop :=
-  ∀ (i : Fin n) (fs : Fin n → SchwartzSpacetime d),
-    Continuous (fun f => qft.wightmanFunction n (Function.update fs i f))
+The active reconstruction files use only the geometric forward-tube definitions below.
+The earlier internal lane that tried to re-derive tempered extension and boundary-value
+existence directly inside `WightmanAxioms.lean` was unused downstream and has been
+removed. The live OS/Wick-rotation bridge now takes those stronger analytic inputs
+explicitly on the theorem surface instead of hiding them here.
+-/
 
 /-! ### Analytic Continuation -/
 
@@ -437,131 +336,4 @@ def ExtendedForwardTube (d n : ℕ) [NeZero d] : Set (Fin n → Fin (d + 1) → 
 def wickRotatePoint {d : ℕ} (x : Fin (d + 1) → ℝ) : Fin (d + 1) → ℂ :=
   fun μ => if μ = 0 then Complex.I * (x 0 : ℂ) else (x μ : ℂ)
 
-/-- The Wightman functions have analytic continuation to the forward tube.
-
-    The n-point Wightman function W_n(x₁,...,xₙ), initially defined as a
-    distribution on real spacetime points, extends to a holomorphic function
-    on the forward tube T_n.
-
-    By Lorentz covariance, it further extends to the extended forward tube T_n^{ext}.
-    The edge-of-the-wedge theorem (Bargmann-Hall-Wightman) shows this extension
-    is single-valued.
-
-    We define `analyticContinuation` on the full ambient space ℂ^{n(d+1)} and
-    constrain holomorphicity to the forward tube via `DifferentiableOn`. -/
-structure WightmanAnalyticity (qft : WightmanQFT d) where
-  /-- The analytic continuation of the n-point function, defined on all of ℂ^{n(d+1)}.
-      Only meaningful on the forward tube; values outside are auxiliary. -/
-  analyticContinuation : (n : ℕ) → (Fin n → Fin (d + 1) → ℂ) → ℂ
-  /-- The continuation is holomorphic on the forward tube -/
-  isHolomorphic : ∀ n : ℕ, DifferentiableOn ℂ (analyticContinuation n) (ForwardTube d n)
-
-/-- **Spectrum condition implies Fourier-Laplace distributional boundary values.**
-
-    If a Wightman QFT has an analytic continuation to the forward tube (holomorphic
-    on ForwardTube d n), and the QFT satisfies the spectrum condition, then the analytic
-    continuation has tempered distributional boundary values.
-
-    The boundary value distribution T is determined by the Wightman n-point function:
-    the spectrum condition constrains the Fourier transform of W_n to be supported in
-    the dual cone V_+^*, which is exactly the condition for W_n to be the distributional
-    boundary value of its Fourier-Laplace transform (the analytic continuation).
-
-    This is the fundamental connection between:
-    (a) The Wightman distribution W_n (tempered, defined via inner products)
-    (b) The analytic continuation (holomorphic on the forward tube)
-    (c) The Fourier-Laplace representation (connecting (a) and (b))
-
-    Ref: Streater-Wightman, Theorem 2-6; Vladimirov 25-26 -/
-private theorem spectrum_implies_distributional_bv {d n : ℕ} [NeZero d]
-    {F : (Fin n → Fin (d + 1) → ℂ) → ℂ}
-    (hF : DifferentiableOn ℂ F (ForwardTube d n))
-    (T : SchwartzNPointSpace d n → ℂ)
-    (hT_cont : Continuous T) :
-    ∀ (f : SchwartzNPointSpace d n) (η : Fin n → Fin (d + 1) → ℝ),
-      InForwardCone d n η →
-      Filter.Tendsto
-        (fun ε : ℝ => ∫ x : NPointSpacetime d n,
-          F (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
-        (nhdsWithin 0 (Set.Ioi 0))
-        (nhds (T f)) := by
-  sorry
-
-private theorem wightman_analyticity_distributional_bv (qft : WightmanQFT d)
-    (ha : WightmanAnalyticity d qft) (n : ℕ) :
-    ∃ (T : SchwartzNPointSpace d n → ℂ),
-      ∀ (f : SchwartzNPointSpace d n) (η : Fin n → Fin (d + 1) → ℝ),
-        InForwardCone d n η →
-        Filter.Tendsto
-          (fun ε : ℝ => ∫ x : NPointSpacetime d n,
-            ha.analyticContinuation n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
-          (nhdsWithin 0 (Set.Ioi 0))
-          (nhds (T f)) := by
-  -- Step 1: The Wightman distribution extends to a CLM on SchwartzNPointSpace
-  obtain ⟨W_n, hW_n⟩ := wightmanDistribution_extends d qft n
-  -- Step 2: T = W_n is tempered (continuous) and the distributional BV
-  -- The analytic continuation recovers W_n as its distributional boundary value
-  -- by the spectrum condition + Fourier-Laplace theory
-  exact ⟨W_n, spectrum_implies_distributional_bv (ha.isHolomorphic n) W_n W_n.cont⟩
-
-/-- **Pointwise boundary value existence for holomorphic functions on the forward tube
-    along V₊-component approach directions.**
-
-    Given a holomorphic function on the forward tube with distributional boundary values,
-    the pointwise limit along any direction η in ForwardConeAbs (successive diffs in V₊) exists.
-
-    The path `x + iε·η` stays in the forward tube for ε > 0
-    (the successive imaginary differences ε·(η_k - η_{k-1}) ∈ V₊).
-
-    The proof uses the Fourier-Laplace representation of the boundary value:
-    the distributional BV T is a tempered distribution whose Fourier transform has
-    support in the dual cone, giving polynomial decay of F(x + iε·η) that
-    allows extraction of the pointwise limit.
-
-    Ref: Vladimirov §26.2-26.3; Streater-Wightman, Theorem 3-7 -/
-private theorem pointwise_limit_along_forwardCone_direction {d n : ℕ} [NeZero d]
-    {F : (Fin n → Fin (d + 1) → ℂ) → ℂ}
-    (hF : DifferentiableOn ℂ F (ForwardTube d n))
-    (h_bv : ∃ (T : SchwartzNPointSpace d n → ℂ),
-      ∀ (f : SchwartzNPointSpace d n) (η : Fin n → Fin (d + 1) → ℝ),
-        InForwardCone d n η →
-        Filter.Tendsto
-          (fun ε : ℝ => ∫ x : NPointSpacetime d n,
-            F (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
-          (nhdsWithin 0 (Set.Ioi 0))
-          (nhds (T f)))
-    (x : Fin n → Fin (d + 1) → ℝ)
-    (η : Fin n → Fin (d + 1) → ℝ) (hη : InForwardCone d n η) :
-    ∃ (limit : ℂ), Filter.Tendsto
-      (fun ε : ℝ => F (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I))
-      (nhdsWithin 0 (Set.Ioi 0))
-      (nhds limit) := by
-  sorry
-
-/-- Boundary values of the analytic continuation recover Wightman functions.
-
-    For any approach direction η ∈ ForwardConeAbs (successive diffs in V₊) and any
-    real configuration x, the limit from within the forward tube exists:
-      lim_{ε→0⁺} W_analytic(x₁ + iε·η₁, ..., xₙ + iε·ηₙ) exists
-
-    Proved by combining `wightman_analyticity_distributional_bv` (the analytic
-    continuation has tempered distributional BVs) with
-    `pointwise_limit_along_forwardCone_direction` (distributional BVs + holomorphicity
-    imply pointwise limit existence along ForwardConeAbs directions).
-
-    Ref: Streater-Wightman, "PCT, Spin and Statistics", Theorem 3-7 -/
-theorem wightman_analyticity_boundary (qft : WightmanQFT d)
-    (ha : WightmanAnalyticity d qft) (n : ℕ)
-    (x : Fin n → Fin (d + 1) → ℝ)
-    (η : Fin n → Fin (d + 1) → ℝ) (hη : InForwardCone d n η) :
-    -- The limit of the analytic continuation from within the forward tube exists
-    ∃ (limit : ℂ), Filter.Tendsto
-      (fun ε : ℝ => ha.analyticContinuation n
-        (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I))
-      (nhdsWithin 0 (Set.Ioi 0))
-      (nhds limit) := by
-  exact pointwise_limit_along_forwardCone_direction (ha.isHolomorphic n)
-    (wightman_analyticity_distributional_bv d qft ha n) x η hη
-
 end
-

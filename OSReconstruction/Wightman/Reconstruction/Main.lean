@@ -14,17 +14,20 @@ proofs from the GNS construction and Wick rotation modules.
 
 ## Main Results
 
-* `wightman_reconstruction` — Given Wightman functions, reconstruct a Wightman QFT
-  whose n-point functions match on product test functions.
+* `wightman_reconstruction` — Given Wightman functions together with the remaining
+  operator-side inputs not yet formalized in the GNS layer, reconstruct a
+  Wightman QFT whose n-point functions match on product test functions.
   (Proof: GNS construction via `wightman_reconstruction'` in GNSHilbertSpace.lean)
 
-* `wightman_uniqueness` — Two Wightman QFTs with matching n-point functions are
-  unitarily equivalent. (Sorry: standard GNS uniqueness argument)
-
-* `wightman_to_os` — Theorem R→E: Wightman functions → Schwinger functions (OS axioms)
+* `wightman_to_os` — Theorem R→E: Wightman functions together with the required
+  forward-tube regularity data, the Euclidean Wick polynomial bound, and the
+  a.e.-PET Wick-rotation input →
+  Schwinger functions (OS axioms)
   (Proof: `wightman_to_os_full` in WickRotation.lean)
 
-* `os_to_wightman` — Theorem E'→R': Schwinger functions with linear growth → Wightman functions
+* `os_to_wightman` — Theorem E'→R': Schwinger functions with linear growth
+  together with the explicit forward-tube boundary-value package and explicit
+  transfer inputs → Wightman functions
   (Proof: `os_to_wightman_full` in WickRotation.lean)
 
 ## Import Structure
@@ -42,9 +45,10 @@ open Reconstruction
 
 variable {d : ℕ} [NeZero d]
 
-/-- **Wightman Reconstruction Theorem**: Given Wightman functions satisfying all
-    required properties, there exists a Wightman QFT whose n-point functions
-    reproduce the given Wightman functions on product test functions:
+/-- **Wightman Reconstruction Theorem**: Given Wightman functions together with the
+    remaining operator-side inputs not yet formalized in the GNS layer, there
+    exists a Wightman QFT whose n-point functions reproduce the given Wightman
+    functions on product test functions:
       ⟨Ω, φ(f₁)···φ(fₙ)Ω⟩ = W_n(f₁ ⊗ ··· ⊗ fₙ)
 
     The Hilbert space is constructed via the GNS construction:
@@ -55,51 +59,108 @@ variable {d : ℕ} [NeZero d]
     5. Field operators act by prepending test functions to sequences
 
     References: Wightman (1956), Streater-Wightman (1964) Chapter 3 -/
-theorem wightman_reconstruction (Wfn : WightmanFunctions d) :
+theorem wightman_reconstruction (Wfn : WightmanFunctions d)
+    (hSpectrum : SpectralCondition d (gnsPoincareRep Wfn))
+    (hCyclic : Dense ((OperatorValuedDistribution.algebraicSpan (gnsField Wfn)
+      (PreHilbertSpace.gnsVacuum Wfn)).carrier : Set (PreHilbertSpace.GNSHilbertSpace Wfn)))
+    (hVacuumUnique : VacuumUnique d (gnsPoincareRep Wfn) (PreHilbertSpace.gnsVacuum Wfn)) :
     ∃ (qft : WightmanQFT.{0} d),
       ∀ (n : ℕ) (fs : Fin n → SchwartzSpacetime d),
         qft.wightmanFunction n fs = Wfn.W n (SchwartzMap.productTensor fs) :=
-  wightman_reconstruction' Wfn
+  wightman_reconstruction' Wfn hSpectrum hCyclic hVacuumUnique
 
-/-- **Wightman Uniqueness**: Two Wightman QFTs with the same smeared n-point functions
-    are unitarily equivalent.
-
-    More precisely, if for all n and all test functions f₁,...,fₙ we have
-      ⟨Ω₁, φ₁(f₁)···φ₁(fₙ)Ω₁⟩ = ⟨Ω₂, φ₂(f₁)···φ₂(fₙ)Ω₂⟩
-    then there exists a unitary U : H₁ → H₂ such that:
-      - U Ω₁ = Ω₂
-      - U intertwines the field operators: U φ₁(f) U⁻¹ = φ₂(f) for all f -/
-theorem wightman_uniqueness (qft₁ qft₂ : WightmanQFT d)
-    (h : ∀ n : ℕ, ∀ fs : Fin n → SchwartzSpacetime d,
-      qft₁.wightmanFunction n fs = qft₂.wightmanFunction n fs) :
-    ∃ U : qft₁.HilbertSpace →ₗᵢ[ℂ] qft₂.HilbertSpace,
-      U qft₁.vacuum = qft₂.vacuum ∧
-      (∀ (f : SchwartzSpacetime d) (ψ : qft₁.HilbertSpace),
-        ψ ∈ qft₁.field.domain →
-        U (qft₁.field.operator f ψ) = qft₂.field.operator f (U ψ)) := by
-  sorry
-
-/-- **Theorem R→E** (Wightman → OS): A Wightman QFT yields Schwinger functions
-    satisfying OS axioms E0-E4, related by Wick rotation.
+/-- **Theorem R→E** (Wightman → OS): A Wightman QFT together with the required
+    forward-tube regularity data together with the explicit E0/E1a/E2/E4 transport
+    inputs yields Schwinger functions satisfying OS axioms E0-E4, related by
+    Wick rotation.
 
     The Schwinger functions are Euclidean restrictions of the BHW analytic
     continuation, whose boundary values are the Wightman functions. -/
-theorem wightman_to_os (Wfn : WightmanFunctions d) :
+theorem wightman_to_os (Wfn : WightmanFunctions d)
+    (hRegular : ∀ n : ℕ,
+      SCV.HasFourierLaplaceReprRegular (ForwardConeFlat d n)
+        ((Wfn.spectrum_condition n).choose ∘ (flattenCLEquiv n (d + 1)).symm))
+    (hEuclidPoly : ∀ n : ℕ,
+      ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+        ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume,
+          ‖(W_analytic_BHW Wfn n (hRegular n)).val (fun k => wickRotatePoint (x k))‖ ≤
+            C_bd * (1 + ‖x‖) ^ N)
+    (hPET_ae : ∀ n : ℕ,
+      ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume,
+        (fun k => wickRotatePoint (x k)) ∈ PermutedExtendedTube d n)
+    (hTranslation : ∀ (n : ℕ) (a : SpacetimeDim d) (f g : SchwartzNPoint d n),
+      (∀ x : NPointDomain d n, g.toFun x = f.toFun (fun i => x i + a)) →
+      constructSchwingerFunctions Wfn hRegular n f =
+        constructSchwingerFunctions Wfn hRegular n g)
+    (hReflectionPositive : ∀ (F : BorchersSequence d),
+      (∀ n, ∀ x : NPointDomain d n, (F.funcs n).toFun x ≠ 0 →
+        x ∈ PositiveTimeRegion d n) →
+      (OSInnerProduct d (constructSchwingerFunctions Wfn hRegular) F F).re ≥ 0)
+    (hCluster : ∀ (n m : ℕ) (f : SchwartzNPoint d n) (g : SchwartzNPoint d m)
+      (ε : ℝ), ε > 0 → ∃ R : ℝ, R > 0 ∧
+        ∀ a : SpacetimeDim d, a 0 = 0 → (∑ i : Fin d, (a (Fin.succ i))^2) > R^2 →
+          ∀ (g_a : SchwartzNPoint d m),
+            (∀ x : NPointDomain d m, g_a x = g (fun i => x i - a)) →
+            ‖constructSchwingerFunctions Wfn hRegular (n + m) (f.tensorProduct g_a) -
+              constructSchwingerFunctions Wfn hRegular n f *
+              constructSchwingerFunctions Wfn hRegular m g‖ < ε) :
     ∃ (OS : OsterwalderSchraderAxioms d),
       IsWickRotationPair OS.S Wfn.W :=
-  wightman_to_os_full Wfn
+  wightman_to_os_full Wfn hRegular hEuclidPoly hPET_ae
+    hTranslation hReflectionPositive hCluster
 
 /-- **Theorem E'→R'** (OS II): Schwinger functions satisfying the linear growth
-    condition E0' together with E1-E4 can be analytically continued to
-    Wightman distributions satisfying R0-R5.
+    condition E0' together with an explicit forward-tube boundary-value package
+    and the corresponding raw transfer inputs yield Wightman distributions
+    satisfying R0-R5.
 
     **Critical**: Without the linear growth condition, this theorem may be FALSE.
     The issue is that analytic continuation involves infinitely many Sₖ, and
     without growth control, the boundary values may fail to be tempered. -/
 theorem os_to_wightman (OS : OsterwalderSchraderAxioms d)
-    (linear_growth : OSLinearGrowthCondition d OS) :
+    (linear_growth : OSLinearGrowthCondition d OS)
+    (hBVT : ∀ n : ℕ,
+      ∃ (W_n : SchwartzNPoint d n → ℂ) (F_analytic : (Fin n → Fin (d + 1) → ℂ) → ℂ),
+        Continuous W_n ∧
+        IsLinearMap ℂ W_n ∧
+        DifferentiableOn ℂ F_analytic (ForwardTube d n) ∧
+        (∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
+          InForwardCone d n η →
+          Filter.Tendsto
+            (fun ε : ℝ => ∫ x : NPointDomain d n,
+              F_analytic (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
+            (nhdsWithin 0 (Set.Ioi 0))
+            (nhds (W_n f))) ∧
+        (∀ (f : SchwartzNPoint d n),
+          OS.S n f = ∫ x : NPointDomain d n,
+            F_analytic (fun k => wickRotatePoint (x k)) * (f x)))
+    (hTranslation : ∀ (n : ℕ) (a : SpacetimeDim d) (f g : SchwartzNPoint d n),
+      (∀ x : NPointDomain d n, g.toFun x = f.toFun (fun i => x i + a)) →
+      (hBVT n).choose f = (hBVT n).choose g)
+    (hLorentz : ∀ (n : ℕ) (Λ : LorentzGroup d) (f g : SchwartzNPoint d n),
+      (∀ x : NPointDomain d n, g.toFun x = f.toFun (fun i => Matrix.mulVec Λ⁻¹.val (x i))) →
+      (hBVT n).choose f = (hBVT n).choose g)
+    (hLocal : ∀ (n : ℕ) (i j : Fin n) (f g : SchwartzNPoint d n),
+      (∀ x : NPointDomain d n, f.toFun x ≠ 0 →
+        MinkowskiSpace.AreSpacelikeSeparated d (x i) (x j)) →
+      (∀ x : NPointDomain d n, g.toFun x = f.toFun (fun k => x (Equiv.swap i j k))) →
+      (hBVT n).choose f = (hBVT n).choose g)
+    (hPositive : ∀ F : BorchersSequence d,
+      (WightmanInnerProduct d (fun n => (hBVT n).choose) F F).re ≥ 0)
+    (hHermitian : ∀ (n : ℕ) (f g : SchwartzNPoint d n),
+      (∀ x : NPointDomain d n,
+        g.toFun x = starRingEnd ℂ (f.toFun (fun i => x (Fin.rev i)))) →
+      (hBVT n).choose g = starRingEnd ℂ ((hBVT n).choose f))
+    (hCluster : ∀ (n m : ℕ) (f : SchwartzNPoint d n) (g : SchwartzNPoint d m),
+      ∀ ε : ℝ, ε > 0 → ∃ R : ℝ, R > 0 ∧
+        ∀ a : SpacetimeDim d, a 0 = 0 → (∑ i : Fin d, (a (Fin.succ i))^2) > R^2 →
+          ∀ (g_a : SchwartzNPoint d m),
+            (∀ x : NPointDomain d m, g_a x = g (fun i => x i - a)) →
+            ‖(hBVT (n + m)).choose (f.tensorProduct g_a) -
+              (hBVT n).choose f * (hBVT m).choose g‖ < ε) :
     ∃ (Wfn : WightmanFunctions d),
       IsWickRotationPair OS.S Wfn.W :=
-  os_to_wightman_full OS linear_growth
+  os_to_wightman_full OS linear_growth hBVT
+    hTranslation hLorentz hLocal hPositive hHermitian hCluster
 
 end

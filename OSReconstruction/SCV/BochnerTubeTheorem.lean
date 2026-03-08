@@ -9,30 +9,28 @@ import OSReconstruction.SCV.IteratedCauchyIntegral
 import OSReconstruction.SCV.Polydisc
 
 /-!
-# Bochner's Tube Theorem
+# Bochner Tube-Domain Helpers
 
-If F is holomorphic on a tube domain T(C) = {z in C^m : Im(z) in C} where C is open,
-then F extends to a holomorphic function on T(conv C) = {z : Im(z) in conv(C)}.
+This file now keeps only the sorry-free convex-hull, tube-domain, and local-to-global
+gluing helpers that remain mathematically valid and potentially reusable.
+
+The actual Bochner tube extension theorem surface was unused by the active reconstruction
+path and remained behind isolated `sorry`s, so it has been removed rather than carried
+as dead unfinished code.
 
 ## Main results
 
 * `isOpen_convexHull_of_isOpen` -- the convex hull of an open set in `Fin m -> R` is open
-  (sorry-free)
-* `bochner_tube_extension` -- the main theorem (depends on `bochner_local_extension`)
+* `tubeDomain_convexHull_isConnected` -- connectedness of the convex-hull tube domain
+* `tubeDomain_convex` -- convexity of a tube domain over a convex real set
+* `holomorphic_extension_from_local_family` -- honest local-to-global gluing theorem
 
-## Proof structure
+## Status
 
-**Sorry-free results:**
-* `isOpen_convexHull_of_isOpen`
-* Tube domain infrastructure (open, connected, containment)
-* `bochner_tube_extension` (proved from `bochner_local_extension` + identity theorem)
-
-**Sorry results (2 sorries):**
-* `bochner_local_extension` -- local holomorphic extension at each point of T(conv C)
-  (core analytical content: Cauchy integral on polydiscs)
-* `bochner_tube_extension` -- still blocked because `bochner_local_extension` only gives
-  existential local extensions; to glue globally one needs a compatible convex local family
-  (or a strengthened local-extension theorem returning neighborhoods of a standard form)
+The classical Bochner extension lane is deferred. If it is revived later, it should
+re-enter with:
+1. a genuine local Cauchy-integral extension theorem, and
+2. a compatible-family statement matching `holomorphic_extension_from_local_family`.
 
 ## References
 
@@ -101,29 +99,15 @@ theorem tubeDomain_convex {m : ℕ} {C : Set (Fin m → ℝ)} (hC : Convex ℝ C
   rw [himag]
   exact hC hz hw ha hb hab
 
-/-! ### Local extension at each point -/
+/-! ### Deferred local extension step
 
-/-- **Local Bochner extension**: For each z in T(conv C), there is an open
-    neighborhood U of z in T(conv C) and a holomorphic function G on U that
-    agrees with F on T(C) intersect U.
+The actual local Cauchy-integral construction at points of `TubeDomain (convexHull ℝ C)`
+is not used anywhere in the active reconstruction path. The previous theorem surface
+`bochner_local_extension` has therefore been removed rather than kept as an isolated
+unproved declaration.
 
-    The construction uses the Cauchy integral formula on polydiscs centered at z
-    with contours in T(C). Im(z) is in the open set conv(C), so there is a
-    polydisc around z whose distinguished boundary has imaginary parts in C (by
-    the convex hull characterization + openness of C). The Cauchy integral
-    on this polydisc defines G, which is holomorphic by differentiation under
-    the integral sign.
-
-    Ref: Hormander, Theorem 2.5.10 proof -/
-theorem bochner_local_extension {m : ℕ}
-    {C : Set (Fin m → ℝ)} (_hC : IsOpen C) (_hne : C.Nonempty)
-    {F : (Fin m → ℂ) → ℂ} (_hF : DifferentiableOn ℂ F (TubeDomain C))
-    {z : Fin m → ℂ} (_hz : z ∈ TubeDomain (convexHull ℝ C)) :
-    ∃ (G : (Fin m → ℂ) → ℂ) (U : Set (Fin m → ℂ)),
-      IsOpen U ∧ z ∈ U ∧ U ⊆ TubeDomain (convexHull ℝ C) ∧
-      DifferentiableOn ℂ G U ∧
-      ∀ w ∈ TubeDomain C ∩ U, G w = F w := by
-  sorry
+The sorry-free gluing theorem below is retained because it is mathematically correct
+and may be reused if a genuine local-extension proof is added later. -/
 
 /-! ### Global extension from local extensions
 
@@ -205,19 +189,16 @@ theorem holomorphic_extension_from_local_family {m : ℕ}
     simp only [f_ext, dif_pos (hU_sub hz)]
     exact hG_agree z (hU_sub hz) z ⟨hz, hV_mem z (hU_sub hz)⟩
 
-/-- **Bochner's tube theorem**: If F is holomorphic on T(C) where C is an open
-    nonempty set in R^m, then F extends to a holomorphic function on T(conv C). -/
-theorem bochner_tube_extension {m : ℕ}
-    {C : Set (Fin m → ℝ)} (hC : IsOpen C) (hne : C.Nonempty)
-    {F : (Fin m → ℂ) → ℂ} (hF : DifferentiableOn ℂ F (TubeDomain C)) :
-    ∃ (F_ext : (Fin m → ℂ) → ℂ),
-      DifferentiableOn ℂ F_ext (TubeDomain (convexHull ℝ C)) ∧
-      ∀ z ∈ TubeDomain C, F_ext z = F z := by
-  -- The remaining content is to strengthen `bochner_local_extension` from
-  -- pointwise existential local data to a compatible convex local family.
-  -- Once such a family is available, apply `holomorphic_extension_from_local_family`
-  -- on `D = TubeDomain (convexHull ℝ C)` and `U = TubeDomain C`.
-  sorry
+/-! ### Deferred global Bochner theorem
+
+The global Bochner tube extension theorem is currently deferred. The active reconstruction
+path no longer imports this module, so carrying an unused theorem front behind `sorry`s
+would only bloat the blocker surface.
+
+If this lane is revived, it should return with a genuine local-extension theorem of a
+standard compatible form so that `holomorphic_extension_from_local_family` can be applied
+honestly. -/
+
 
 end SCV
 

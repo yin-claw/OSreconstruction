@@ -1059,8 +1059,8 @@ end Reconstruction
 
 /-! ### The Reconstruction Theorem -/
 
--- `wightman_reconstruction` and `wightman_uniqueness` moved to Reconstruction/Main.lean
--- (proved via GNS construction in GNSHilbertSpace.lean)
+-- `wightman_reconstruction` moved to Reconstruction/Main.lean
+-- (wired there from the explicit-input GNS construction in GNSHilbertSpace.lean)
 
 /-! ### Connection to Euclidean Field Theory
 
@@ -1378,6 +1378,10 @@ def IsWickRotationPair {d : ℕ} [NeZero d] (S : SchwingerFunctions d) (W : (n :
         F_analytic (fun k => wickRotatePoint (x k)) * (f x))
 
 -- `wightman_to_os` and `os_to_wightman` moved to Reconstruction/Main.lean
--- (proved via WickRotation.lean: wightman_to_os_full, os_to_wightman_full)
+-- (`wightman_to_os` now takes the explicit forward-tube regularity package,
+-- the Euclidean Wick polynomial bound, and the a.e.-PET Wick-rotation input
+-- used by the BHW/Schwinger chain;
+-- `os_to_wightman` is proved via WickRotation.lean and currently takes the
+-- explicit forward-tube boundary-value package used by that proof path)
 
 end

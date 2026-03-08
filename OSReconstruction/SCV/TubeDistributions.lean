@@ -6,7 +6,6 @@ Authors: ModularPhysics Contributors
 import OSReconstruction.SCV.TubeDomainExtension
 import OSReconstruction.SCV.IdentityTheorem
 import OSReconstruction.SCV.LaplaceSchwartz
-import OSReconstruction.SCV.BochnerTubeTheorem
 import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 
 /-!
@@ -198,35 +197,6 @@ theorem distributional_uniqueness_tube_of_regular {m : ℕ}
     rw [← hF_plus I ⟨hI_in_U, hI_UHP⟩]
     exact hF_zero_on_U I hI_in_U
   exact sub_eq_zero.mp hG_zero
-
-/-! ### Axiom 3: Bochner Tube Theorem -/
-
-/-- **Bochner's tube theorem (convex hull extension).**
-
-    If F is holomorphic on a tube domain T(C) = ℝᵐ + iC, then F extends to a
-    unique holomorphic function on T(conv C) = ℝᵐ + i(conv C), where conv C
-    is the convex hull of C.
-
-    This is a fundamental result in several complex variables: holomorphic functions
-    on tube domains automatically extend to the convex hull of the base.
-
-    In the OS reconstruction, this is used only after the relevant cone geometry
-    has been identified correctly. The current infrastructure proves Bochner's
-    theorem for a fixed tube base `C`; it does not supply the missing OS-specific
-    geometry. In particular, the naive "common SO-orbit of the positive orthant,
-    then convex hull" route is already too large in `d = 1`, `k = 1`, so some
-    different upstream geometric input is required.
-
-    Ref: Bochner, "A theorem on analytic continuation of functions in several
-    variables" (1938); Vladimirov §20.2; Hörmander, "An Introduction to Complex
-    Analysis in Several Variables", Theorem 2.5.10 -/
-theorem bochner_tube_theorem {m : ℕ}
-    {C : Set (Fin m → ℝ)} (hC : IsOpen C) (hne : C.Nonempty)
-    {F : (Fin m → ℂ) → ℂ} (hF : DifferentiableOn ℂ F (TubeDomain C)) :
-    ∃ (F_ext : (Fin m → ℂ) → ℂ),
-      DifferentiableOn ℂ F_ext (TubeDomain (convexHull ℝ C)) ∧
-      ∀ z ∈ TubeDomain C, F_ext z = F z :=
-  bochner_tube_extension hC hne hF
 
 end SCV
 
