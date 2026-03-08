@@ -1,6 +1,6 @@
 # Wightman TODO: OS Reconstruction Priority Queue
 
-Last updated: 2026-03-07
+Last updated: 2026-03-08
 
 This file tracks the active blocker picture on the OS reconstruction path.
 Policy lock: no wrappers, no useless lemmas, no code bloat; close `sorry`s with substantial mathematical proofs.
@@ -11,18 +11,38 @@ Count convention: direct tactic holes only (`^[[:space:]]*sorry([[:space:]]|$)`)
 
 | Scope | Direct `sorry` lines |
 |-------|----------------------:|
-| `OSReconstruction/Wightman` | 35 |
-| `OSReconstruction/SCV` | 4 |
+| `OSReconstruction/Wightman` | 33 |
+| `OSReconstruction/SCV` | 2 |
 | `OSReconstruction/ComplexLieGroups` | 2 |
 | `OSReconstruction/vNA` | 39 |
-| **Whole project** | **80** |
+| **Whole project** | **76** |
 
-Count cross-checked on 2026-03-07 with:
+Count cross-checked on 2026-03-08 with:
 ```bash
 rg -c '^[[:space:]]*sorry([[:space:]]|$)' OSReconstruction --glob '*.lean'
 ```
 
 ## Current Root Blockers
+
+## Priority Split In `Main.lean`
+
+There are two different lanes and they should not be conflated:
+
+1. Analyticity / Wick-rotation lane:
+   - `wightman_to_os`
+   - `os_to_wightman`
+   - critical file: `WickRotation/OSToWightman.lean`
+   - shared dependencies: `SCV/*`, `BHWExtension`, `BHWTranslation`, `ForwardTubeLorentz`, `SchwingerAxioms`
+
+2. Operator / GNS lane:
+   - `wightman_reconstruction`
+   - `wightman_uniqueness`
+   - critical files: `Reconstruction/GNSHilbertSpace.lean`, `Reconstruction/Main.lean`, `vNA/Unbounded/StoneTheorem.lean`
+
+Policy:
+- while the active target is OS analyticity, do not drift into Stone/self-adjoint-generator work unless it directly unblocks `OSToWightman`
+- `StoneTheorem` is not needed for the analyticity chain
+- Stone is needed later for the reconstructed `spectrum_condition` / `vacuum_unique` operator-theoretic branches
 
 ### 1. `WickRotation/OSToWightman.lean` (8)
 
@@ -71,26 +91,30 @@ Status:
 Status:
 - the old generic gluing theorem was too strong and has been replaced by the honest compatible-family theorem
 
-### 3. `Reconstruction/ForwardTubeDistributions.lean` (7)
+### 3. `Reconstruction/ForwardTubeDistributions.lean` (4)
 
 Current direct blockers:
-- `continuous_boundary_forwardTube`
-- `distributional_uniqueness_forwardTube`
-- `boundary_value_recovery_forwardTube`
-- `boundary_function_continuous_forwardTube`
-- `polynomial_growth_forwardTube`
-- `boundary_integral_convergence`
-- `schwartz_bv_to_flat_bv`
+- `continuous_boundary_forwardTube` — BLOCKED: needs Banach-Steinhaus
+- `distributional_uniqueness_forwardTube` — BLOCKED: needs Banach-Steinhaus
+- `boundary_value_recovery_forwardTube` — BLOCKED + statement issue (evaluates F at boundary)
+- `boundary_function_continuous_forwardTube` — BLOCKED: needs Banach-Steinhaus
+
+**ROOT BLOCKER**: All 4 sorrys trace to the same gap: bare distributional BV does NOT
+imply ContinuousWithinAt at boundary without polynomial growth bounds. Polynomial growth
+comes from Banach-Steinhaus for S'(ℝᵐ), which Mathlib does not have.
+
+New infrastructure (sorry-free, in `SCV/DistributionalUniqueness.lean`):
+- `SCV.uniqueness_of_boundary_zero`: factored 1D EOW slicing argument; takes
+  boundary=0 + ContinuousWithinAt directly (no `HasFourierLaplaceReprRegular`)
+- `SCV.translateSchwartz`: translate Schwartz function by fixed vector
 
 Status:
-- the previous proofs hid a weak-to-strong upgrade through SCV placeholder theorems
-- those hidden upgrades have been removed
-- the file now exposes the real forward-tube regularity gaps instead of pretending the weak route is settled
-- proved regular flattened-input transport theorems now exist for:
+- proved regular flattened-input transport theorems exist for:
   - boundary continuity of the real trace
   - boundary-value recovery
   - distributional uniqueness for a difference with zero flat boundary functional
   - polynomial growth on compact forward-cone slices
+- see `Proofideas/distributional_uniqueness_strategy.lean` for detailed gap analysis
 
 ### 4. Wick rotation downstream
 
@@ -127,6 +151,7 @@ Not on the shortest OS reconstruction lane:
 3. Use the repaired forward-tube boundary infrastructure to attack `boundary_values_tempered` in `OSToWightman.lean`.
 4. Then finish the six downstream transfer theorems in `OSToWightman.lean`.
 5. Only after that, return to `SchwingerAxioms`, `ForwardTubeLorentz`, and the remaining Wick-rotation plumbing.
+6. Defer `StoneTheorem` / GNS operator-theoretic work until the analyticity lane is materially settled.
 
 ## Commands
 

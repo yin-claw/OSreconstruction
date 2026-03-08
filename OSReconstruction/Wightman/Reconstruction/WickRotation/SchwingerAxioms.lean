@@ -327,6 +327,51 @@ theorem schwartz_polynomial_kernel_continuous {d n : ℕ} [NeZero d]
         _ = C_bd * 2 ^ M * I_D * sem f := by ring
         _ = C_sem * sem f := by rfl
 
+/-- A polynomial-growth kernel is integrable against every Schwartz function. -/
+theorem schwartz_polynomial_kernel_integrable {d n : ℕ} [NeZero d]
+    (K : NPointDomain d n → ℂ)
+    (hK_meas : MeasureTheory.AEStronglyMeasurable K MeasureTheory.volume)
+    (C_bd : ℝ) (N : ℕ) (hC : C_bd > 0)
+    (hK_bound : ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume,
+      ‖K x‖ ≤ C_bd * (1 + ‖x‖) ^ N) :
+    ∀ f : SchwartzNPoint d n,
+      MeasureTheory.Integrable (fun x => K x * f x) MeasureTheory.volume := by
+  -- This is the `hKf_int` argument from `schwartz_polynomial_kernel_continuous`.
+  haveI : MeasureTheory.Measure.IsAddHaarMeasure
+      (MeasureTheory.volume : MeasureTheory.Measure (NPointDomain d n)) :=
+    MeasureTheory.Measure.instIsAddHaarMeasureForallVolumeOfMeasurableAddOfSigmaFinite
+  have h_binom_ineq : ∀ (t : ℝ), 0 ≤ t → (1 + t) ^ N ≤ 2 ^ N * (1 + t ^ N) := by
+    intro t ht
+    have h2t : 1 + t ≤ 2 * max 1 t :=
+      calc 1 + t ≤ max 1 t + max 1 t := add_le_add (le_max_left _ _) (le_max_right _ _)
+        _ = 2 * max 1 t := by ring
+    calc (1 + t) ^ N
+        ≤ (2 * max 1 t) ^ N := pow_le_pow_left₀ (by positivity) h2t N
+      _ = 2 ^ N * (max 1 t) ^ N := by rw [mul_pow]
+      _ ≤ 2 ^ N * (1 + t ^ N) := by
+          apply mul_le_mul_of_nonneg_left _ (by positivity)
+          rcases le_total t 1 with h | h
+          · rw [max_eq_left h]; simp [one_pow]; linarith [pow_nonneg ht N]
+          · rw [max_eq_right h]; linarith [show (1 : ℝ) ^ N = 1 from one_pow N]
+  intro f
+  have hf_int := f.integrable (μ := MeasureTheory.volume)
+  have hf_pow_int := f.integrable_pow_mul MeasureTheory.volume N
+  have hg_int : MeasureTheory.Integrable
+      (fun x => C_bd * 2 ^ N * (‖(f : NPointDomain d n → ℂ) x‖ +
+        ‖x‖ ^ N * ‖(f : NPointDomain d n → ℂ) x‖)) MeasureTheory.volume :=
+    (hf_int.norm.add hf_pow_int).const_mul (C_bd * 2 ^ N)
+  apply hg_int.mono' (hK_meas.mul f.integrable.aestronglyMeasurable)
+  filter_upwards [hK_bound] with x hx
+  simp only [Pi.mul_apply, norm_mul]
+  calc ‖K x‖ * ‖(f : NPointDomain d n → ℂ) x‖
+      ≤ C_bd * (1 + ‖x‖) ^ N * ‖(f : NPointDomain d n → ℂ) x‖ :=
+        mul_le_mul_of_nonneg_right hx (norm_nonneg _)
+    _ ≤ C_bd * (2 ^ N * (1 + ‖x‖ ^ N)) * ‖(f : NPointDomain d n → ℂ) x‖ := by
+        apply mul_le_mul_of_nonneg_right _ (norm_nonneg _)
+        exact mul_le_mul_of_nonneg_left (h_binom_ineq ‖x‖ (norm_nonneg _)) (le_of_lt hC)
+    _ = C_bd * 2 ^ N * (‖(f : NPointDomain d n → ℂ) x‖ +
+          ‖x‖ ^ N * ‖(f : NPointDomain d n → ℂ) x‖) := by ring
+
 /-- **Continuity of Schwartz integration against a polynomially bounded kernel.**
 
     If K : D → ℂ is measurable and satisfies the a.e. polynomial bound
@@ -439,6 +484,34 @@ theorem wick_rotated_schwinger_tempered {d : ℕ} [NeZero d]
 theorem constructedSchwinger_tempered (Wfn : WightmanFunctions d) (n : ℕ) :
     Continuous (constructSchwingerFunctions Wfn n) := by
   exact wick_rotated_schwinger_tempered Wfn n
+
+/-- The Schwinger functionals constructed from Wightman functions are linear in
+    the test function argument. This is immediate from the defining integral. -/
+theorem constructedSchwinger_linear (Wfn : WightmanFunctions d) (n : ℕ) :
+    IsLinearMap ℂ (constructSchwingerFunctions Wfn n) := by
+  obtain ⟨C_bd, N, hC, hbound⟩ := bhw_euclidean_polynomial_bound (n := n) Wfn
+  have hmeas := bhw_euclidean_kernel_measurable (n := n) Wfn
+  set K : NPointDomain d n → ℂ :=
+    fun x => (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k))
+  have hK_int :
+      ∀ f : SchwartzNPoint d n,
+        MeasureTheory.Integrable (fun x => K x * f x) MeasureTheory.volume :=
+    schwartz_polynomial_kernel_integrable K hmeas C_bd N hC hbound
+  constructor
+  · intro f g
+    change ∫ x : NPointDomain d n, K x * (f x + g x) =
+        (∫ x : NPointDomain d n, K x * f x) + ∫ x : NPointDomain d n, K x * g x
+    simp_rw [mul_add]
+    exact MeasureTheory.integral_add (hK_int f) (hK_int g)
+  · intro c f
+    change ∫ x : NPointDomain d n, K x * (c * f x) = c * ∫ x : NPointDomain d n, K x * f x
+    have hmul :
+        (fun x : NPointDomain d n => K x * (c * f x)) =
+          fun x : NPointDomain d n => c * (K x * f x) := by
+      funext x
+      ring
+    rw [hmul]
+    exact MeasureTheory.integral_const_mul c _
 
 /-- The BHW extension F_ext inherits translation invariance from the Wightman
     distribution W_n.
@@ -582,6 +655,37 @@ theorem integral_orthogonal_eq_self (R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
       MeasureTheory.volume MeasureTheory.volume :=
     MeasureTheory.volume_preserving_pi (fun (_ : Fin n) => hmp_factor)
   exact hmp.integral_comp' h
+
+omit [NeZero d] in
+/-- Time reflection preserves Lebesgue measure on Euclidean `n`-point configurations. -/
+private theorem integral_timeReflection_eq_self (h : NPointDomain d n → ℂ) :
+    ∫ x : NPointDomain d n, h (timeReflectionN d x) =
+    ∫ x : NPointDomain d n, h x := by
+  let R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ :=
+    Matrix.diagonal (Function.update (fun _ : Fin (d + 1) => (1 : ℝ)) 0 (-1))
+  have hR : R.transpose * R = 1 := by
+    have hdiag :
+        R.transpose * R =
+          Matrix.diagonal (fun i =>
+            (Function.update (fun _ : Fin (d + 1) => (1 : ℝ)) 0 (-1) i) ^ 2) := by
+      simp [R, Matrix.diagonal_mul_diagonal, pow_two]
+    refine hdiag.trans ?_
+    ext i j
+    by_cases hij : i = j
+    · subst hij
+      by_cases hi0 : i = 0
+      · subst hi0; simp [Function.update]
+      · simp [Matrix.diagonal, Function.update]
+    · simp [Matrix.diagonal, hij]
+  have hTR : (fun x : NPointDomain d n => timeReflectionN d x) =
+      (fun x : NPointDomain d n => fun i => R.mulVec (x i)) := by
+    funext x
+    ext i μ
+    by_cases hμ : μ = 0
+    · subst hμ
+      simp [R, timeReflectionN, timeReflection, Matrix.mulVec_diagonal, Function.update]
+    · simp [R, timeReflectionN, timeReflection, Matrix.mulVec_diagonal, Function.update, hμ]
+  simpa [hTR] using integral_orthogonal_eq_self R hR h
 
 /-- The Schwinger functions satisfy rotation invariance (E1b).
 
@@ -767,6 +871,96 @@ theorem constructedSchwinger_symmetric (Wfn : WightmanFunctions d)
     _ = ∫ x : NPointDomain d n, K x * (f : NPointDomain d n → ℂ) x :=
         integral_perm_eq_self σ
           (fun x => K x * (f : NPointDomain d n → ℂ) x)
+
+/-- Euclidean-point Hermiticity of the BHW extension.
+
+    For Euclidean configurations, the BHW extension at `wick(x)` is related by
+    complex conjugation to the value at the time-reflected, reversed
+    configuration. This is the analytic Euclidean counterpart of the Wightman
+    Hermiticity axiom and is the genuine remaining input in
+    `constructedSchwinger_reality`. -/
+theorem bhw_euclidean_reality_ae (Wfn : WightmanFunctions d) (n : ℕ) :
+    ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume,
+      starRingEnd ℂ ((W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k))) =
+        (W_analytic_BHW Wfn n).val
+          (fun k => wickRotatePoint (timeReflection d (x (Fin.rev k)))) := by
+  sorry
+
+/-- The Schwinger functions constructed from Wightman functions satisfy the
+    standard reality condition `conj(S_n(f)) = S_n(conj f)`.
+
+    This is the Euclidean counterpart of Wightman Hermiticity together with the
+    BHW symmetry of the analytic continuation on Euclidean points. It is the
+    missing input needed for Hermiticity of the abstract OS form and for the
+    standard Laplace/spectral semigroup argument. -/
+theorem constructedSchwinger_reality (Wfn : WightmanFunctions d) (n : ℕ)
+    (f : SchwartzNPoint d n) :
+    starRingEnd ℂ (constructSchwingerFunctions Wfn n f) =
+      constructSchwingerFunctions Wfn n f.osConj := by
+  obtain ⟨C_bd, N, hC, hbound⟩ := bhw_euclidean_polynomial_bound (n := n) Wfn
+  have hmeas := bhw_euclidean_kernel_measurable (n := n) Wfn
+  set K : NPointDomain d n → ℂ :=
+    fun x => (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k))
+  have hK_int :
+      ∀ g : SchwartzNPoint d n,
+        MeasureTheory.Integrable (fun x => K x * g x) MeasureTheory.volume :=
+    schwartz_polynomial_kernel_integrable K hmeas C_bd N hC hbound
+  have hconj_int :
+      MeasureTheory.Integrable (fun x : NPointDomain d n => starRingEnd ℂ (K x * f x))
+        MeasureTheory.volume := by
+    simpa using
+      Complex.conjCLE.toContinuousLinearMap.integrable_comp (hK_int f)
+  let σ : Equiv.Perm (Fin n) := Fin.revPerm
+  let f_rev_osConj : SchwartzNPoint d n :=
+    SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
+      ((LinearEquiv.funCongrLeft ℝ (SpacetimeDim d) σ).toContinuousLinearEquiv)
+      f.osConj
+  change starRingEnd ℂ (∫ x : NPointDomain d n, K x * f x) =
+      ∫ x : NPointDomain d n, K x * f.osConj x
+  rw [← _root_.integral_conj]
+  simp only [map_mul, SchwartzNPoint.osConj_apply]
+  have hK_rev_ae : ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume,
+      starRingEnd ℂ (K x) = K (fun i => timeReflection d (x (σ i))) := by
+    simpa [K, σ] using bhw_euclidean_reality_ae (Wfn := Wfn) (n := n)
+  have htwist :
+      ∀ x : NPointDomain d n,
+        timeReflectionN d
+            ((LinearMap.funLeft ℝ (SpacetimeDim d) σ) (timeReflectionN d x)) =
+          fun i => x (σ i) := by
+    intro x
+    ext i μ
+    by_cases hμ : μ = 0
+    · subst hμ
+      simp [timeReflectionN, timeReflection, σ]
+    · simp [timeReflectionN, timeReflection, σ, hμ]
+  calc
+    ∫ x : NPointDomain d n, starRingEnd ℂ (K x) * starRingEnd ℂ (f x)
+        = ∫ x : NPointDomain d n,
+            K (fun i => timeReflection d (x (σ i))) * starRingEnd ℂ (f x) := by
+            exact MeasureTheory.integral_congr_ae
+              (hK_rev_ae.mono fun x hx => by simp [hx])
+    _ = ∫ x : NPointDomain d n,
+          K (timeReflectionN d x) *
+            starRingEnd ℂ (f (fun i => x (σ i))) := by
+          simpa [σ, timeReflectionN] using
+            integral_perm_eq_self (d := d) (n := n) σ
+              (fun y : NPointDomain d n =>
+                K (timeReflectionN d y) *
+                  starRingEnd ℂ (f (fun i => y (σ i))))
+    _ = ∫ x : NPointDomain d n, K x * f_rev_osConj x := by
+          simpa [f_rev_osConj, σ, timeReflection_timeReflection, htwist,
+            SchwartzNPoint.osConj_apply,
+            SchwartzMap.compCLMOfContinuousLinearEquiv_apply,
+            LinearEquiv.funCongrLeft_apply] using
+            integral_timeReflection_eq_self
+              (d := d) (n := n)
+              (fun y : NPointDomain d n => K y * f_rev_osConj y)
+    _ = constructSchwingerFunctions Wfn n f_rev_osConj := rfl
+    _ = constructSchwingerFunctions Wfn n f.osConj := by
+          symm
+          refine constructedSchwinger_symmetric (Wfn := Wfn) (n := n) σ f.osConj f_rev_osConj ?_
+          intro x
+          rfl
 
 /-- Pointwise cluster property of BHW extension at Euclidean points.
 

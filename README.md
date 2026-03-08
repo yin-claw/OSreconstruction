@@ -41,6 +41,11 @@ This will fetch Mathlib and all dependencies automatically. The first build may 
 The project builds cleanly with **zero `axiom` declarations**. Remaining work is tracked via direct
 `sorry` placeholders.
 
+Priority note:
+- The analyticity-critical path is `WickRotation/OSToWightman.lean` together with the SCV and Wick-rotation distributional infrastructure it depends on.
+- `StoneTheorem` and the broader `vNA` operator-theoretic lane are not on that critical path. They are needed later for the GNS/operator reconstruction theorem `wightman_reconstruction`, specifically the `spectrum_condition` and `vacuum_unique` branches of `gnsQFT`.
+- So, for the key OS reconstruction theorems in `Main.lean`, the immediate priorities are `wightman_to_os` and `os_to_wightman`, not Stone/self-adjoint-generator machinery.
+
 Snapshot (2026-03-07, counted with `rg -c '^\s*sorry\b' OSReconstruction --glob '*.lean'`):
 
 | Module | Direct `sorry` lines |
@@ -92,6 +97,11 @@ flowchart TD
 | `SCV/BochnerTubeTheorem.lean` | 2 | local-to-global tube extension |
 | `ComplexLieGroups/Connectedness/ComplexInvariance/Core.lean` | 1 | orbit-set preconnectedness (`hjoin` branch) |
 | `ComplexLieGroups/Connectedness/BHWPermutation/PermutationFlow.lean` | 1 | permutation overlap extension (`hExtPerm` branch) |
+
+Operator-theoretic side note:
+- `Main.wightman_reconstruction` is a separate GNS/operator lane.
+- The `StoneTheorem` file matters there, but not for the analyticity results in `OSToWightman`.
+- The minimal Stone-side targets for that lane are the generator density/self-adjointness results used to support reconstructed `spectrum_condition` and `vacuum_unique`.
 
 See also [`docs/development_plan_systematic.md`](docs/development_plan_systematic.md), [`OSReconstruction/Wightman/TODO.md`](OSReconstruction/Wightman/TODO.md), and [`OSReconstruction/ComplexLieGroups/TODO.md`](OSReconstruction/ComplexLieGroups/TODO.md) for the synchronized execution plan.
 

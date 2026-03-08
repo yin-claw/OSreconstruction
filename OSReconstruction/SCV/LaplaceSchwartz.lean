@@ -85,6 +85,15 @@ structure HasFourierLaplaceRepr {m : ℕ} (C : Set (Fin m → ℝ))
     (nhdsWithin 0 (Ioi 0))
     (nhds (dist f))
 
+/-- Restrict a weak Fourier-Laplace boundary-value package to a smaller cone. -/
+def HasFourierLaplaceRepr.restrict {m : ℕ}
+    {C D : Set (Fin m → ℝ)} {F : (Fin m → ℂ) → ℂ}
+    (hsub : D ⊆ C) (h : HasFourierLaplaceRepr C F) :
+    HasFourierLaplaceRepr D F where
+  dist := h.dist
+  dist_continuous := h.dist_continuous
+  boundary_value := fun f η hη => h.boundary_value f η (hsub hη)
+
 /-- A holomorphic function on a tube domain T(C) has a **regular Fourier-Laplace representation**
     if, in addition to the bare distributional boundary-value data in `HasFourierLaplaceRepr`,
     it satisfies the four quantitative regularity conditions proved in Vladimirov §25–26 for
@@ -123,6 +132,21 @@ structure HasFourierLaplaceReprRegular {m : ℕ} (C : Set (Fin m → ℝ))
   /-- Interior-to-boundary continuity within the tube (Vladimirov §26.2). -/
   tube_continuousWithinAt : ∀ (x : Fin m → ℝ),
     ContinuousWithinAt F (TubeDomain C) (realEmbed x)
+
+/-- Restrict a regular Fourier-Laplace package to a smaller cone. -/
+def HasFourierLaplaceReprRegular.restrict {m : ℕ}
+    {C D : Set (Fin m → ℝ)} {F : (Fin m → ℂ) → ℂ}
+    (hsub : D ⊆ C) (h : HasFourierLaplaceReprRegular C F) :
+    HasFourierLaplaceReprRegular D F where
+  toHasFourierLaplaceRepr := h.toHasFourierLaplaceRepr.restrict hsub
+  poly_growth := fun K hK hKD => h.poly_growth K hK (Set.Subset.trans hKD hsub)
+  uniform_bound := fun η hη => h.uniform_bound η (hsub hη)
+  boundary_continuous := h.boundary_continuous
+  tube_continuousWithinAt := fun x => by
+    have hTube : TubeDomain D ⊆ TubeDomain C := by
+      intro z hz
+      simpa [TubeDomain, Set.mem_setOf_eq] using hsub hz
+    exact ContinuousWithinAt.mono (h.tube_continuousWithinAt x) hTube
 
 /- The remaining missing theorem in this file should produce
     `HasFourierLaplaceReprRegular C F` from genuinely strong Fourier-Laplace input:
@@ -341,6 +365,142 @@ theorem fourierLaplace_boundary_recovery {m : ℕ}
   have h1 := hRegular.boundary_value f η hη
   have h2 := fourierLaplace_schwartz_integral_convergence hC hconv ⟨η, hη⟩ hcone hF hRegular f η hη
   exact tendsto_nhds_unique h1 h2
+
+/-- A regular Fourier-Laplace representation yields a polynomial bound on the real boundary.
+
+Fix any interior direction `η ∈ C`. The regularity field `uniform_bound` bounds
+`F(x + iεη)` uniformly for small `ε > 0`, and `tube_continuousWithinAt` gives
+convergence to `F(realEmbed x)` as `ε → 0+`. Since closed order intervals are closed,
+the same polynomial bound holds at the boundary itself. -/
+theorem fourierLaplace_boundary_polynomial_bound {m : ℕ}
+    {C : Set (Fin m → ℝ)} (hne : C.Nonempty)
+    (hcone : ∀ (t : ℝ), 0 < t → ∀ y ∈ C, t • y ∈ C)
+    {F : (Fin m → ℂ) → ℂ}
+    (hRegular : HasFourierLaplaceReprRegular C F) :
+    ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+      ∀ x : Fin m → ℝ, ‖F (realEmbed x)‖ ≤ C_bd * (1 + ‖x‖) ^ N := by
+  obtain ⟨η, hη⟩ := hne
+  obtain ⟨C_bd, N, δ, hC_pos, hδ_pos, hbd⟩ := hRegular.uniform_bound η hη
+  refine ⟨C_bd, N, hC_pos, ?_⟩
+  intro x
+  let path : ℝ → Fin m → ℂ := fun ε i => (x i : ℂ) + ↑ε * ↑(η i) * I
+  have h_path_cont : Continuous path := by
+    unfold path
+    exact continuous_pi fun i =>
+      continuous_const.add
+        ((Complex.continuous_ofReal.comp continuous_id).mul continuous_const |>.mul continuous_const)
+  have h_path_zero : path 0 = realEmbed x := by
+    ext i
+    simp [path, realEmbed]
+  have h_path_maps : Set.MapsTo path (Set.Ioi (0 : ℝ)) (TubeDomain C) := by
+    intro ε hε
+    simp only [TubeDomain, Set.mem_setOf_eq, path]
+    have him : (fun i : Fin m => (((x i : ℂ) + ↑ε * ↑(η i) * I)).im) = ε • η := by
+      ext i
+      simp [Complex.add_im, Complex.mul_im, Complex.I_im, Complex.I_re,
+        Complex.ofReal_im, Complex.ofReal_re]
+    rw [him]
+    exact hcone ε hε η hη
+  have h_path_tends :
+      Filter.Tendsto path (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+        (nhdsWithin (realEmbed x) (TubeDomain C)) := by
+    rw [tendsto_nhdsWithin_iff]
+    refine ⟨?_, Filter.eventually_of_mem self_mem_nhdsWithin h_path_maps⟩
+    have h :
+        Filter.Tendsto path (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+          (nhds (path 0)) :=
+      h_path_cont.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
+    rwa [h_path_zero] at h
+  have h_path_F :
+      Filter.Tendsto (fun ε : ℝ => F (path ε))
+        (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+        (nhds (F (realEmbed x))) :=
+    Filter.Tendsto.comp (hRegular.tube_continuousWithinAt x) h_path_tends
+  have hlim :
+      Filter.Tendsto (fun ε : ℝ => ‖F (path ε)‖)
+        (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+        (nhds ‖F (realEmbed x)‖) := by
+    exact continuous_norm.continuousAt.tendsto.comp h_path_F
+  have hconst :
+      Filter.Tendsto (fun _ : ℝ => C_bd * (1 + ‖x‖) ^ N)
+        (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+        (nhds (C_bd * (1 + ‖x‖) ^ N)) :=
+    tendsto_const_nhds
+  have h_mem : Set.Ioo (0 : ℝ) δ ∈ nhdsWithin (0 : ℝ) (Set.Ioi 0) :=
+    mem_nhdsWithin.mpr ⟨Set.Iio δ, isOpen_Iio, Set.mem_Iio.mpr hδ_pos,
+      fun ε hε => Set.mem_Ioo.mpr ⟨Set.mem_Ioi.mp hε.2, Set.mem_Iio.mp hε.1⟩⟩
+  have h_event :
+      ∀ᶠ ε : ℝ in nhdsWithin (0 : ℝ) (Set.Ioi 0),
+        ‖F (path ε)‖ ≤ C_bd * (1 + ‖x‖) ^ N := by
+    apply Filter.eventually_of_mem h_mem
+    intro ε hε
+    exact hbd x ε hε.1 hε.2
+  have hclosed : IsClosed (Set.Iic (C_bd * (1 + ‖x‖) ^ N)) := isClosed_Iic
+  exact hclosed.mem_of_tendsto hlim h_event
+
+/-- The real-boundary trace of a regular Fourier-Laplace representation is
+integrable against every Schwartz test function. -/
+theorem fourierLaplace_boundary_mul_schwartz_integrable {m : ℕ}
+    {C : Set (Fin m → ℝ)} (hne : C.Nonempty)
+    (hcone : ∀ (t : ℝ), 0 < t → ∀ y ∈ C, t • y ∈ C)
+    {F : (Fin m → ℂ) → ℂ}
+    (hRegular : HasFourierLaplaceReprRegular C F)
+    (f : SchwartzMap (Fin m → ℝ) ℂ) :
+    MeasureTheory.Integrable (fun x : Fin m → ℝ => F (realEmbed x) * f x) := by
+  obtain ⟨C_bd, N, hC_pos, hbound⟩ :=
+    fourierLaplace_boundary_polynomial_bound hne hcone hRegular
+  have hmeas :
+      MeasureTheory.AEStronglyMeasurable
+        (fun x : Fin m → ℝ => F (realEmbed x) * f x) := by
+    exact hRegular.boundary_continuous.aestronglyMeasurable.mul f.continuous.aestronglyMeasurable
+  have hint :
+      MeasureTheory.Integrable
+        (fun x : Fin m → ℝ => C_bd * (1 + ‖x‖) ^ N * ‖f x‖) := by
+    exact (schwartzMap_polynomial_norm_integrable f N).const_mul C_bd |>.congr
+      (ae_of_all _ fun x => by ring)
+  refine MeasureTheory.Integrable.mono' hint hmeas ?_
+  filter_upwards with x
+  rw [norm_mul]
+  exact mul_le_mul_of_nonneg_right (hbound x) (norm_nonneg _)
+
+/-- The boundary-value functional in a regular Fourier-Laplace package is additive. -/
+theorem fourierLaplace_dist_map_add {m : ℕ}
+    {C : Set (Fin m → ℝ)} (hC : IsOpen C) (hconv : Convex ℝ C) (hne : C.Nonempty)
+    (hcone : ∀ (t : ℝ), 0 < t → ∀ y ∈ C, t • y ∈ C)
+    {F : (Fin m → ℂ) → ℂ} (hF : DifferentiableOn ℂ F (TubeDomain C))
+    (hRegular : HasFourierLaplaceReprRegular C F)
+    (f g : SchwartzMap (Fin m → ℝ) ℂ) :
+    hRegular.dist (f + g) = hRegular.dist f + hRegular.dist g := by
+  rw [fourierLaplace_boundary_recovery hC hconv hne hcone hF hRegular (f + g),
+    fourierLaplace_boundary_recovery hC hconv hne hcone hF hRegular f,
+    fourierLaplace_boundary_recovery hC hconv hne hcone hF hRegular g]
+  have hf_int := fourierLaplace_boundary_mul_schwartz_integrable hne hcone hRegular f
+  have hg_int := fourierLaplace_boundary_mul_schwartz_integrable hne hcone hRegular g
+  simpa [SchwartzMap.add_apply, mul_add] using integral_add hf_int hg_int
+
+/-- The boundary-value functional in a regular Fourier-Laplace package is homogeneous. -/
+theorem fourierLaplace_dist_map_smul {m : ℕ}
+    {C : Set (Fin m → ℝ)} (hC : IsOpen C) (hconv : Convex ℝ C) (hne : C.Nonempty)
+    (hcone : ∀ (t : ℝ), 0 < t → ∀ y ∈ C, t • y ∈ C)
+    {F : (Fin m → ℂ) → ℂ} (hF : DifferentiableOn ℂ F (TubeDomain C))
+    (hRegular : HasFourierLaplaceReprRegular C F)
+    (c : ℂ) (f : SchwartzMap (Fin m → ℝ) ℂ) :
+    hRegular.dist (c • f) = c * hRegular.dist f := by
+  rw [fourierLaplace_boundary_recovery hC hconv hne hcone hF hRegular (c • f),
+    fourierLaplace_boundary_recovery hC hconv hne hcone hF hRegular f]
+  have hf_int := fourierLaplace_boundary_mul_schwartz_integrable hne hcone hRegular f
+  simpa [Pi.smul_apply, smul_eq_mul, mul_assoc, mul_left_comm, mul_comm]
+    using MeasureTheory.integral_const_mul c (fun x : Fin m → ℝ => F (realEmbed x) * f x)
+
+/-- The boundary-value functional in a regular Fourier-Laplace package is linear. -/
+theorem fourierLaplace_dist_isLinearMap {m : ℕ}
+    {C : Set (Fin m → ℝ)} (hC : IsOpen C) (hconv : Convex ℝ C) (hne : C.Nonempty)
+    (hcone : ∀ (t : ℝ), 0 < t → ∀ y ∈ C, t • y ∈ C)
+    {F : (Fin m → ℂ) → ℂ} (hF : DifferentiableOn ℂ F (TubeDomain C))
+    (hRegular : HasFourierLaplaceReprRegular C F) :
+    IsLinearMap ℂ hRegular.dist where
+  map_add := fourierLaplace_dist_map_add hC hconv hne hcone hF hRegular
+  map_smul := fourierLaplace_dist_map_smul hC hconv hne hcone hF hRegular
 
 /-- The distributional boundary-value functional of a fixed holomorphic tube function is unique
     once the tube base is nonempty. Any two boundary-value packages for the same `F` must agree,

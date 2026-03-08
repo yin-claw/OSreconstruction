@@ -52,6 +52,144 @@ structure EuclideanSemigroup (OS : OsterwalderSchraderAxioms d) where
   positive : ∀ t : ℝ, t > 0 → ∀ F : BorchersSequence d,
     (OSInnerProduct d OS.S F (T t F)).re ≥ 0
 
+abbrev timeShiftVec (d : ℕ) (t : ℝ) : SpacetimeDim d :=
+  fun μ => if μ = 0 then t else 0
+
+abbrev translateNPointDomain (a : SpacetimeDim d) {n : ℕ} :
+    NPointDomain d n → NPointDomain d n :=
+  fun x i => x i - a
+
+omit [NeZero d] in
+private theorem translateNPointDomain_antilipschitz (a : SpacetimeDim d) {n : ℕ} :
+    AntilipschitzWith 1 (translateNPointDomain (d := d) (n := n) a) := by
+  refine AntilipschitzWith.of_le_mul_dist ?_
+  intro x y
+  have hsub :
+      x - y = translateNPointDomain (d := d) (n := n) a x -
+        translateNPointDomain (d := d) (n := n) a y := by
+    ext i μ
+    simp [translateNPointDomain, sub_eq_add_neg]
+    abel_nf
+  simpa [one_mul, dist_eq_norm] using le_of_eq (congrArg norm hsub)
+
+omit [NeZero d] in
+private theorem translateNPointDomain_hasTemperateGrowth (a : SpacetimeDim d) {n : ℕ} :
+    Function.HasTemperateGrowth (translateNPointDomain (d := d) (n := n) a) := by
+  let c : NPointDomain d n := fun _ => -a
+  have hconst : Function.HasTemperateGrowth (fun _ : NPointDomain d n => c) :=
+    Function.HasTemperateGrowth.const c
+  have hid : Function.HasTemperateGrowth (fun x : NPointDomain d n => x) := by
+    simpa using (ContinuousLinearMap.id ℝ (NPointDomain d n)).hasTemperateGrowth
+  simpa [translateNPointDomain, c, sub_eq_add_neg, Pi.add_apply] using hid.add hconst
+
+abbrev translateSchwartzNPoint (a : SpacetimeDim d) {n : ℕ} :
+    SchwartzNPoint d n →L[ℂ] SchwartzNPoint d n :=
+  SchwartzMap.compCLMOfAntilipschitz ℂ
+    (translateNPointDomain_hasTemperateGrowth (d := d) (n := n) a)
+    (translateNPointDomain_antilipschitz (d := d) (n := n) a)
+
+omit [NeZero d] in
+@[simp] theorem translateSchwartzNPoint_apply (a : SpacetimeDim d) {n : ℕ}
+    (f : SchwartzNPoint d n) (x : NPointDomain d n) :
+    translateSchwartzNPoint (d := d) a f x = f (fun i => x i - a) := by
+  simp [translateSchwartzNPoint]
+
+abbrev timeShiftSchwartzNPoint (t : ℝ) {n : ℕ} :
+    SchwartzNPoint d n →L[ℂ] SchwartzNPoint d n :=
+  translateSchwartzNPoint (d := d) (timeShiftVec d t)
+
+omit [NeZero d] in
+@[simp] theorem timeShiftSchwartzNPoint_apply (t : ℝ) {n : ℕ}
+    (f : SchwartzNPoint d n) (x : NPointDomain d n) :
+    timeShiftSchwartzNPoint (d := d) t f x =
+      f (fun i => x i - timeShiftVec d t) := by
+  simp [timeShiftSchwartzNPoint, translateSchwartzNPoint_apply]
+
+abbrev timeShiftBorchers (t : ℝ) : BorchersSequence d → BorchersSequence d :=
+  fun F =>
+    { funcs := fun n => timeShiftSchwartzNPoint (d := d) t (F.funcs n)
+      bound := F.bound
+      bound_spec := by
+        intro n hn
+        simp [F.bound_spec n hn] }
+
+omit [NeZero d] in
+@[simp] theorem timeShiftBorchers_funcs (t : ℝ) (F : BorchersSequence d) (n : ℕ) :
+    (timeShiftBorchers (d := d) t F).funcs n = timeShiftSchwartzNPoint (d := d) t (F.funcs n) :=
+  rfl
+
+omit [NeZero d] in
+private theorem timeShift_preserves_positive_support (t : ℝ) (ht : 0 < t)
+    (F : BorchersSequence d)
+    (hF : ∀ n, ∀ x : NPointDomain d n, (F.funcs n).toFun x ≠ 0 → x ∈ PositiveTimeRegion d n) :
+    ∀ n, ∀ x : NPointDomain d n,
+      ((timeShiftBorchers (d := d) t F).funcs n).toFun x ≠ 0 → x ∈ PositiveTimeRegion d n := by
+  intro n x hx
+  have hx' : (F.funcs n).toFun (fun i => x i - timeShiftVec d t) ≠ 0 := by
+    simpa [timeShiftBorchers_funcs, timeShiftSchwartzNPoint_apply] using hx
+  have hpos := hF n (fun i => x i - timeShiftVec d t) hx'
+  intro i
+  have hi := hpos i
+  have htime : timeShiftVec d t 0 = t := by simp [timeShiftVec]
+  have : x i 0 - t > 0 := by simpa [PositiveTimeRegion, htime] using hi
+  linarith
+
+omit [NeZero d] in
+private theorem timeReflection_add_timeShiftVec (x : SpacetimeDim d) (t : ℝ) :
+    timeReflection d (x + timeShiftVec d t) = timeReflection d x - timeShiftVec d t := by
+  funext μ
+  by_cases hμ : μ = 0
+  · subst hμ
+    simp [timeReflection, timeShiftVec]
+    ring
+  · simp [timeReflection, timeShiftVec, hμ]
+
+private theorem shift_osConjTensorProduct_eq {n m : ℕ}
+    (f : SchwartzNPoint d n) (g : SchwartzNPoint d m) (s t : ℝ)
+    (x : NPointDomain d (n + m)) :
+    ((timeShiftSchwartzNPoint (d := d) t f).osConjTensorProduct
+      (timeShiftSchwartzNPoint (d := d) s g)) x =
+    (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) (t + s) g))
+      (fun i => x i + timeShiftVec d t) := by
+  simp only [SchwartzNPoint.osConjTensorProduct, SchwartzMap.tensorProduct_apply,
+    SchwartzNPoint.osConj_apply, timeShiftSchwartzNPoint_apply]
+  congr
+  · ext i μ
+    symm
+    simpa [timeReflectionN, splitFirst, sub_eq_add_neg] using
+      congrArg (fun y : SpacetimeDim d => y μ)
+        (timeReflection_add_timeShiftVec (d := d) (x := splitFirst n m x i) t)
+  · ext i μ
+    by_cases hμ : μ = 0
+    · subst hμ
+      simp [splitLast, timeShiftVec, sub_eq_add_neg]
+      ring
+    · simp [splitLast, timeShiftVec, hμ, sub_eq_add_neg]
+
+private theorem schwinger_shift_tensor_eq (OS : OsterwalderSchraderAxioms d)
+    {n m : ℕ} (f : SchwartzNPoint d n) (g : SchwartzNPoint d m) (s t : ℝ) :
+    OS.S (n + m)
+      ((timeShiftSchwartzNPoint (d := d) t f).osConjTensorProduct
+        (timeShiftSchwartzNPoint (d := d) s g)) =
+    OS.S (n + m)
+      (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) (t + s) g)) := by
+  symm
+  apply (OS.E1_translation_invariant (n + m) (timeShiftVec d t))
+  intro x
+  simpa using shift_osConjTensorProduct_eq (d := d) f g s t x
+
+private theorem OSInnerProduct_timeShift_eq (OS : OsterwalderSchraderAxioms d)
+    (F G : BorchersSequence d) (s t : ℝ) :
+    OSInnerProduct d OS.S (timeShiftBorchers (d := d) t F) (timeShiftBorchers (d := d) s G) =
+    OSInnerProduct d OS.S F (timeShiftBorchers (d := d) (t + s) G) := by
+  unfold OSInnerProduct
+  refine Finset.sum_congr rfl ?_
+  intro n hn
+  refine Finset.sum_congr rfl ?_
+  intro m hm
+  simpa [timeShiftBorchers_funcs] using
+    schwinger_shift_tensor_eq (d := d) OS (F.funcs n) (G.funcs m) s t
+
 /- Phase 3: Analytic continuation from Euclidean to Minkowski.
 
     The analytic continuation proceeds inductively. Starting from Schwinger functions
@@ -271,24 +409,24 @@ private theorem differentiableOn_of_toDiffFlat_acrone_holo {d k : ℕ} [NeZero d
     kernel" on `C_k^(0)`, which would be a stronger and less natural object than the
     reconstruction chain actually needs.
 
-    **Proof route**: The Schwinger function satisfies a Kallen-Lehmann/Laplace-type
-    representation coming from reflection positivity and the spectral condition. That
-    representation yields a holomorphic function on `C_k^(1)` whose Wick-rotated
-    pairing against Schwartz test functions reproduces `OS.S k`.
-
     In the current file, `C_k^(1)` has already been identified as a tube domain over
     the positive time-difference cone in flattened difference coordinates via
     `acr_one_iff_toDiffFlat_mem_tubeDomain_positiveTimeDiff`. So the remaining
-    content is not the geometry of the target domain, but the spectral slice-data
-    extraction that feeds the 1D Paley-Wiener theorem and the separate-to-joint
-    assembly on that tube.
+    content is not target-domain geometry.
 
-    Sorry blocked by: the spectral representation theorem for OS systems (the
-    Kallen-Lehmann decomposition for Schwinger functions from E2), which requires
-    the full GNS construction and positivity argument.
+    The real missing input is a spectral/Laplace representation theorem for the
+    Euclidean time-translation semigroup: for fixed spatial and test-function data,
+    the relevant time-difference slice should be representable as a Laplace transform
+    of a finite measure on `[0, ∞)`. That one-sided support is exactly what feeds the
+    1D Paley-Wiener theorem on the positive time-difference tube.
+
+    So this theorem is currently blocked by the positivity/spectral part of OS II
+    (reflection positivity + Euclidean time translations -> positive-energy slice
+    support), not by the tube-domain chart or the separate-to-joint holomorphicity
+    mechanism.
 
     Ref: OS II, Section IV (base case of induction); Reed-Simon II, Section X.7;
-    Streater-Wightman, §3 (Kallen-Lehmann representation) -/
+    Streater-Wightman, §3.2-§3.3. -/
 private theorem schwinger_continuation_base_step_of_flatWitness {d : ℕ} [NeZero d]
     (OS : OsterwalderSchraderAxioms d)
     (k : ℕ)
@@ -671,6 +809,104 @@ theorem full_analytic_continuation
   obtain ⟨S₁, hS₁_hol, hS₁_euclid⟩ := schwinger_continuation_base_step OS lgc k
   refine ⟨S₁, hS₁_hol.mono (forwardTube_subset_acr_one (d := d) (k := k)), hS₁_euclid⟩
 
+private theorem differentiableOn_flatten_forwardTube {d n : ℕ} [NeZero d]
+    {F : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+    (hF : DifferentiableOn ℂ F (ForwardTube d n)) :
+    DifferentiableOn ℂ (F ∘ (flattenCLEquiv n (d + 1)).symm)
+      (SCV.TubeDomain (ForwardConeFlat d n)) := by
+  rw [← forwardTube_flatten_eq_tubeDomain]
+  refine hF.comp (flattenCLEquiv n (d + 1)).symm.differentiableOn (fun w hw => ?_)
+  obtain ⟨z, hz, rfl⟩ := hw
+  convert hz using 1
+  exact (flattenCLEquiv n (d + 1)).symm_apply_apply z
+
+private theorem boundary_values_tempered_of_flatRegular {d : ℕ} [NeZero d]
+    (n : ℕ)
+    {F_analytic : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+    (hF_hol : DifferentiableOn ℂ F_analytic (ForwardTube d n))
+    (hRegular : SCV.HasFourierLaplaceReprRegular (ForwardConeFlat d n)
+      (F_analytic ∘ (flattenCLEquiv n (d + 1)).symm)) :
+    ∃ (W : SchwartzNPoint d n →L[ℂ] ℂ),
+      ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
+        InForwardCone d n η →
+        Filter.Tendsto
+          (fun ε : ℝ => ∫ x : NPointDomain d n,
+            F_analytic (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
+          (nhdsWithin 0 (Set.Ioi 0))
+          (nhds (W f)) := by
+  let e := flattenCLEquiv n (d + 1)
+  let eR := flattenCLEquivReal n (d + 1)
+  let G : (Fin (n * (d + 1)) → ℂ) → ℂ := F_analytic ∘ e.symm
+  let pushforward : SchwartzNPoint d n →L[ℂ]
+      SchwartzMap (Fin (n * (d + 1)) → ℝ) ℂ :=
+    SchwartzMap.compCLMOfContinuousLinearEquiv ℂ eR.symm
+  have hG_hol : DifferentiableOn ℂ G (SCV.TubeDomain (ForwardConeFlat d n)) :=
+    differentiableOn_flatten_forwardTube hF_hol
+  have hdist_lin :
+      IsLinearMap ℂ hRegular.dist :=
+    SCV.fourierLaplace_dist_isLinearMap
+      (forwardConeFlat_isOpen d n)
+      (forwardConeFlat_convex d n)
+      (forwardConeFlat_nonempty d n)
+      (forwardConeFlat_isCone d n)
+      hG_hol hRegular
+  let W : SchwartzNPoint d n →L[ℂ] ℂ :=
+    { toLinearMap :=
+        { toFun := fun f => hRegular.dist (pushforward f)
+          map_add' := fun f g => by
+            rw [map_add]
+            exact hdist_lin.map_add _ _
+          map_smul' := fun c f => by
+            rw [map_smul]
+            exact hdist_lin.map_smul _ _ }
+      cont := hRegular.dist_continuous.comp pushforward.continuous }
+  refine ⟨W, ?_⟩
+  intro f η hη
+  have hηflat : eR η ∈ ForwardConeFlat d n :=
+    ⟨η, (inForwardCone_iff_mem_forwardConeAbs η).mp hη, rfl⟩
+  have hflat :
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          ∫ x : Fin (n * (d + 1)) → ℝ,
+            G (fun i => ↑(x i) + ε * ↑(eR η i) * Complex.I) * (pushforward f x))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (hRegular.dist (pushforward f))) :=
+    hRegular.boundary_value (pushforward f) (eR η) hηflat
+  have hEq :
+      (fun ε : ℝ =>
+        ∫ x : Fin (n * (d + 1)) → ℝ,
+          G (fun i => ↑(x i) + ε * ↑(eR η i) * Complex.I) * (pushforward f x))
+      =
+      (fun ε : ℝ =>
+        ∫ y : NPointDomain d n,
+          F_analytic (fun k μ => ↑(y k μ) + ε * ↑(η k μ) * Complex.I) * (f y)) := by
+    funext ε
+    rw [integral_flatten_change_of_variables n (d + 1)
+      (fun x : Fin (n * (d + 1)) → ℝ =>
+        G (fun i => ↑(x i) + ε * ↑(eR η i) * Complex.I) * (pushforward f x))]
+    congr 1
+    ext y
+    have hFarg :
+        G (fun i => ↑(eR y i) + ε * ↑(eR η i) * Complex.I) =
+          F_analytic (fun k μ => ↑(y k μ) + ε * ↑(η k μ) * Complex.I) := by
+      change F_analytic (e.symm (fun i => ↑(eR y i) + ε * ↑(eR η i) * Complex.I)) =
+        F_analytic (fun k μ => ↑(y k μ) + ε * ↑(η k μ) * Complex.I)
+      congr 1
+      ext k μ
+      have hyk : eR y (finProdFinEquiv (k, μ)) = y k μ := by
+        simp [eR, flattenCLEquivReal_apply]
+      have hηk : eR η (finProdFinEquiv (k, μ)) = η k μ := by
+        simp [eR, flattenCLEquivReal_apply]
+      rw [show (e.symm (fun i => ↑(eR y i) + ε * ↑(eR η i) * Complex.I)) k μ =
+          (fun i => ↑(eR y i) + ε * ↑(eR η i) * Complex.I) (finProdFinEquiv (k, μ)) by
+            simp [e, flattenCLEquiv_symm_apply]]
+      simp [hyk, hηk]
+    have hfarg : pushforward f (eR y) = f y := by
+      simp [pushforward, eR]
+    rw [hFarg, hfarg]
+  rw [hEq] at hflat
+  simpa [W, G, pushforward] using hflat
+
 /-! ### Phase 4: Tempered boundary values
 
 **Critical**: E0' (linear growth condition) is essential for temperedness.
@@ -679,6 +915,17 @@ Without growth control, boundary values might fail to be tempered
 where C_n has at most factorial growth.
 
 Ref: OS II, Section VI -/
+
+/--
+The continuous-linear boundary-value witness is no longer the missing part of
+Phase 4. Once the flattened continuation carries a regular Fourier-Laplace
+boundary-value package, `boundary_values_tempered_of_flatRegular` transports it
+back to `NPointDomain` and constructs the required continuous linear functional.
+
+So the remaining content here is exactly the theorem producing that regular
+flattened package for the specific `F_analytic` supplied by
+`full_analytic_continuation`.
+-/
 
 theorem boundary_values_tempered
     (OS : OsterwalderSchraderAxioms d)
@@ -704,20 +951,16 @@ theorem boundary_values_tempered
         OS.S n f = ∫ x : NPointDomain d n,
           F_analytic (fun k => wickRotatePoint (x k)) * (f x)) := by
   obtain ⟨F_analytic, hF_hol, hF_euclid⟩ := full_analytic_continuation OS lgc n
-  -- Remaining content: construct the continuous linear boundary-value witness for
-  -- this specific analytic continuation. Once that witness is available, the
-  -- downstream reconstruction only needs continuity, linearity, the BV identity,
-  -- and the Euclidean pairing already supplied here.
-  obtain ⟨W, hW_bv⟩ :
-      ∃ (W : SchwartzNPoint d n →L[ℂ] ℂ),
-        ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
-          InForwardCone d n η →
-          Filter.Tendsto
-            (fun ε : ℝ => ∫ x : NPointDomain d n,
-              F_analytic (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
-            (nhdsWithin 0 (Set.Ioi 0))
-            (nhds (W f)) := by
+  -- Remaining content: produce the regular flattened Fourier-Laplace package
+  -- for this specific analytic continuation. Once that package is available,
+  -- the continuous linear boundary-value witness is obtained by transport
+  -- through `boundary_values_tempered_of_flatRegular`.
+  obtain hRegular :
+      SCV.HasFourierLaplaceReprRegular (ForwardConeFlat d n)
+        (F_analytic ∘ (flattenCLEquiv n (d + 1)).symm) := by
     sorry
+  obtain ⟨W, hW_bv⟩ :=
+    boundary_values_tempered_of_flatRegular (d := d) n hF_hol hRegular
   refine ⟨W, F_analytic, W.continuous, ?_, hF_hol, hW_bv, hF_euclid⟩
   constructor
   · intro f g
@@ -1162,6 +1405,8 @@ theorem wightman_to_os_full (Wfn : WightmanFunctions d) :
   -- Construct OS axioms from Wightman functions
   refine ⟨⟨constructSchwingerFunctions Wfn,
     constructedSchwinger_tempered Wfn,
+    constructedSchwinger_linear Wfn,
+    constructedSchwinger_reality Wfn,
     constructedSchwinger_translation_invariant Wfn,
     constructedSchwinger_rotation_invariant Wfn,
     constructedSchwinger_reflection_positive Wfn,

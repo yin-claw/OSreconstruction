@@ -44,3 +44,21 @@ Deferred:
 
 Use this file for current local status and line-level orientation, with
 `docs/BHW_STATUS.md` as the root canonical summary.
+
+## Numerical Validation Tactic
+
+For this blocker family, numerical tests are an accepted diagnostic tool for
+checking theorem assertions and isolating suspect deferred statements.
+
+Guideline:
+- test the assertion of the lemma itself (`hypotheses -> conclusion`), not a
+  proof step or implementation detail,
+- start from the downstream theorem of interest and move upstream through the
+  dependency chain one statement at a time,
+- if a sorry-free theorem appears numerically false, assume the numerics are
+  wrong and fix the test,
+- use numerical evidence to decide where formal attention should go next, not
+  as a substitute for proof.
+
+This was the operative tactic in the `PermutationFlowBlocker` investigation and
+should remain documented for later return to the deferred connectivity lemmas.

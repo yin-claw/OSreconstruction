@@ -1,6 +1,6 @@
 # SCV TODO: OS-Critical Analytic Continuation Chain
 
-Last updated: 2026-03-07
+Last updated: 2026-03-08
 
 This TODO tracks the remaining `SCV` blockers on the OS reconstruction path.
 
@@ -71,6 +71,41 @@ Status:
    from actual Fourier-Laplace input with the right dual-cone support.
 3. Return to `BochnerTubeTheorem.lean`.
 
+### `SCV/DistributionalUniqueness.lean` (0) — NEW
+
+New file with 0 sorrys providing:
+- `translateSchwartz`: translate a Schwartz function by a fixed vector (PROVED)
+- `uniqueness_of_boundary_zero`: if G is holomorphic on T(C), vanishes pointwise
+  on the real boundary, and has ContinuousWithinAt at all boundary points,
+  then G = 0 on T(C). This is the 1D EOW slicing argument factored out from
+  `distributional_uniqueness_tube_of_regular`. (PROVED)
+
+## ROOT BLOCKER: Banach-Steinhaus Gap
+
+The main blocker for closing `distributional_uniqueness_forwardTube`
+(in `Wightman/Reconstruction/ForwardTubeDistributions.lean`) is:
+
+**Bare distributional BV → ContinuousWithinAt at boundary**
+
+The distributional BV hypothesis says: for all Schwartz f and all η ∈ C,
+∫ G(x+iεη) f(x) dx → T(f) as ε → 0+. To get ContinuousWithinAt, one needs
+polynomial growth bounds on G(x+iy) as y → 0, which in the standard theory
+come from Banach-Steinhaus for the Fréchet space S'(ℝᵐ). Mathlib does not
+have Banach-Steinhaus for Fréchet spaces.
+
+Approaches considered:
+1. **Convolution/mollification** (Vladimirov §25): convolve G with Schwartz ψ
+   in real direction. G_ψ has vanishing distributional BV (Fubini at fixed ε,
+   no growth needed). But ContinuousWithinAt of G_ψ at boundary still needs
+   growth control → same gap.
+2. **Direct 1D reduction** (slice by lines through cone): 1D distributional
+   uniqueness has the same gap.
+3. **Distributional EOW** (edge-of-the-wedge with S'-convergence instead of
+   ContinuousWithinAt): would bypass the gap, but requires building a new EOW
+   variant for distributional boundary values.
+
+Documented in: `Proofideas/distributional_uniqueness_strategy.lean`
+
 ## Stable Completed Core
 
 - `Polydisc.lean`
@@ -81,5 +116,6 @@ Status:
 - `IdentityTheorem.lean`
 - `FourierLaplaceCore.lean`
 - `PaleyWiener.lean`
+- `DistributionalUniqueness.lean` — NEW
 
 `edge_of_the_wedge_theorem` is proved and axiom-free.

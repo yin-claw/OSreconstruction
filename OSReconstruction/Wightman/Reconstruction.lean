@@ -1246,6 +1246,233 @@ def OSInnerProduct (S : SchwingerFunctions d) (F G : BorchersSequence d) : ℂ :
     ∑ m ∈ Finset.range (G.bound + 1),
       S (n + m) ((F.funcs n).osConjTensorProduct (G.funcs m))
 
+/-! ### OS Inner Product Algebra
+
+The standard OS semigroup/spectral argument needs sesquilinearity of the
+reflection-positive form. Since `S n` is part of E0 and therefore a tempered
+distribution, the required linearity is part of the correct interface. The
+lemmas below mirror the existing `WightmanInnerProduct` algebra. -/
+
+/-- The OS inner product with explicit summation bounds. -/
+def OSInnerProductN (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+    (F G : BorchersSequence d) (N₁ N₂ : ℕ) : ℂ :=
+  ∑ n ∈ Finset.range N₁,
+    ∑ m ∈ Finset.range N₂,
+      S (n + m) ((F.funcs n).osConjTensorProduct (G.funcs m))
+
+/-- The standard OS inner product equals the naturally bounded version. -/
+theorem OSInnerProduct_eq_N (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+    (F G : BorchersSequence d) :
+    OSInnerProduct d S F G = OSInnerProductN d S F G (F.bound + 1) (G.bound + 1) :=
+  rfl
+
+@[simp]
+theorem SchwartzNPoint.osConj_zero {n : ℕ} :
+    (0 : SchwartzNPoint d n).osConj = 0 := by
+  ext x
+  simp [SchwartzNPoint.osConj]
+
+theorem SchwartzNPoint.osConj_add {n : ℕ} (f g : SchwartzNPoint d n) :
+    (f + g).osConj = f.osConj + g.osConj := by
+  ext x
+  simp [SchwartzNPoint.osConj]
+
+theorem SchwartzNPoint.osConj_smul {n : ℕ} (c : ℂ) (f : SchwartzNPoint d n) :
+    (c • f).osConj = starRingEnd ℂ c • f.osConj := by
+  ext x
+  simp [SchwartzNPoint.osConj, smul_eq_mul]
+
+@[simp]
+theorem SchwartzNPoint.osConjTensorProduct_zero_left {m k : ℕ}
+    (g : SchwartzNPoint d k) :
+    (0 : SchwartzNPoint d m).osConjTensorProduct g = 0 := by
+  simp [SchwartzNPoint.osConjTensorProduct, SchwartzNPoint.osConj_zero,
+    SchwartzMap.tensorProduct_zero_left]
+
+@[simp]
+theorem SchwartzNPoint.osConjTensorProduct_zero_right {m k : ℕ}
+    (f : SchwartzNPoint d m) :
+    f.osConjTensorProduct (0 : SchwartzNPoint d k) = 0 := by
+  simp [SchwartzNPoint.osConjTensorProduct, SchwartzMap.tensorProduct_zero_right]
+
+theorem SchwartzNPoint.osConjTensorProduct_add_right {m k : ℕ}
+    (f : SchwartzNPoint d m) (g₁ g₂ : SchwartzNPoint d k) :
+    f.osConjTensorProduct (g₁ + g₂) =
+      f.osConjTensorProduct g₁ + f.osConjTensorProduct g₂ := by
+  simp [SchwartzNPoint.osConjTensorProduct, SchwartzMap.tensorProduct_add_right]
+
+theorem SchwartzNPoint.osConjTensorProduct_add_left {m k : ℕ}
+    (f₁ f₂ : SchwartzNPoint d m) (g : SchwartzNPoint d k) :
+    (f₁ + f₂).osConjTensorProduct g =
+      f₁.osConjTensorProduct g + f₂.osConjTensorProduct g := by
+  simp [SchwartzNPoint.osConjTensorProduct, SchwartzNPoint.osConj_add,
+    SchwartzMap.tensorProduct_add_left]
+
+theorem SchwartzNPoint.osConjTensorProduct_smul_right {m k : ℕ}
+    (f : SchwartzNPoint d m) (c : ℂ) (g : SchwartzNPoint d k) :
+    f.osConjTensorProduct (c • g) = c • (f.osConjTensorProduct g) := by
+  simp [SchwartzNPoint.osConjTensorProduct, SchwartzMap.tensorProduct_smul_right]
+
+theorem SchwartzNPoint.osConjTensorProduct_smul_left {m k : ℕ}
+    (c : ℂ) (f : SchwartzNPoint d m) (g : SchwartzNPoint d k) :
+    (c • f).osConjTensorProduct g = starRingEnd ℂ c • (f.osConjTensorProduct g) := by
+  simp [SchwartzNPoint.osConjTensorProduct, SchwartzNPoint.osConj_smul,
+    SchwartzMap.tensorProduct_smul_left]
+
+/-- Pointwise block-swap identity for the OS-conjugated tensor product.
+
+    This is the OS analogue of `conjTP_eq_borchersConj_conjTP`: applying the
+    OS involution to `g.osConjTensorProduct f` swaps the two tensor blocks and
+    yields `f.osConjTensorProduct g` after the canonical `n + m = m + n`
+    reindexing. -/
+private theorem osConjTP_eq_osConj_osConjTP {d n m : ℕ} [NeZero d]
+    (f : SchwartzNPoint d m) (g : SchwartzNPoint d n)
+    (x : NPointDomain d (n + m)) :
+    ((g.osConjTensorProduct f).osConj) x =
+      (f.osConjTensorProduct g) (fun i => x (finAddFlip i)) := by
+  have hfarg :
+      splitLast n m (timeReflectionN d x) =
+        timeReflectionN d (splitFirst m n (fun i => x (finAddFlip i))) := by
+    ext k μ
+    by_cases hμ : μ = 0
+    · subst hμ
+      simp [splitFirst, splitLast, timeReflectionN, timeReflection,
+        finAddFlip_apply_castAdd]
+    · simp [splitFirst, splitLast, timeReflectionN, timeReflection, hμ,
+        finAddFlip_apply_castAdd]
+  have hgarg :
+      timeReflectionN d (splitFirst n m (timeReflectionN d x)) =
+        splitLast m n (fun i => x (finAddFlip i)) := by
+    ext k μ
+    by_cases hμ : μ = 0
+    · subst hμ
+      simp [splitFirst, splitLast, timeReflectionN, timeReflection,
+        finAddFlip_apply_natAdd]
+    · simp [splitFirst, splitLast, timeReflectionN, timeReflection, hμ,
+        finAddFlip_apply_natAdd]
+  simp only [SchwartzNPoint.osConj_apply, SchwartzNPoint.osConjTensorProduct,
+    SchwartzMap.tensorProduct_apply, map_mul, starRingEnd_self_apply]
+  rw [mul_comm]
+  rw [hfarg, hgarg]
+
+/-- Extending the second OS summation range does not change the value. -/
+theorem OSInnerProductN_extend_right (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+    (hlin : ∀ n, IsLinearMap ℂ (S n))
+    (F G : BorchersSequence d) (N₁ N₂ : ℕ)
+    (hN₂ : G.bound + 1 ≤ N₂) :
+    OSInnerProductN d S F G N₁ N₂ = OSInnerProductN d S F G N₁ (G.bound + 1) := by
+  unfold OSInnerProductN
+  apply Finset.sum_congr rfl
+  intro n _
+  symm
+  apply Finset.sum_subset (Finset.range_mono hN₂)
+  intro m hm₂ hm₁
+  have hm : G.bound < m := by
+    simp only [Finset.mem_range] at hm₁ hm₂
+    omega
+  rw [G.bound_spec m hm, SchwartzNPoint.osConjTensorProduct_zero_right, (hlin _).map_zero]
+
+/-- Extending the first OS summation range does not change the value. -/
+theorem OSInnerProductN_extend_left (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+    (hlin : ∀ n, IsLinearMap ℂ (S n))
+    (F G : BorchersSequence d) (N₁ N₂ : ℕ)
+    (hN₁ : F.bound + 1 ≤ N₁) :
+    OSInnerProductN d S F G N₁ N₂ = OSInnerProductN d S F G (F.bound + 1) N₂ := by
+  unfold OSInnerProductN
+  symm
+  apply Finset.sum_subset (Finset.range_mono hN₁)
+  intro n hn₂ hn₁
+  have hn : F.bound < n := by
+    simp only [Finset.mem_range] at hn₁ hn₂
+    omega
+  apply Finset.sum_eq_zero
+  intro m _
+  rw [F.bound_spec n hn, SchwartzNPoint.osConjTensorProduct_zero_left, (hlin _).map_zero]
+
+/-- The OS inner product can be computed using any sufficiently large bounds. -/
+theorem OSInnerProduct_eq_extended (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+    (hlin : ∀ n, IsLinearMap ℂ (S n))
+    (F G : BorchersSequence d) (N₁ N₂ : ℕ)
+    (hN₁ : F.bound + 1 ≤ N₁) (hN₂ : G.bound + 1 ≤ N₂) :
+    OSInnerProduct d S F G = OSInnerProductN d S F G N₁ N₂ := by
+  rw [OSInnerProduct_eq_N,
+    ← OSInnerProductN_extend_right d S hlin F G (F.bound + 1) N₂ hN₂,
+    ← OSInnerProductN_extend_left d S hlin F G N₁ N₂ hN₁]
+
+/-- The OS inner product is additive in the second argument. -/
+theorem OSInnerProduct_add_right (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+    (hlin : ∀ n, IsLinearMap ℂ (S n))
+    (F G₁ G₂ : BorchersSequence d) :
+    OSInnerProduct d S F (G₁ + G₂) =
+      OSInnerProduct d S F G₁ + OSInnerProduct d S F G₂ := by
+  have hN₁ : F.bound + 1 ≤ F.bound + 1 := le_rfl
+  have hN₂_sum : (G₁ + G₂).bound + 1 ≤ max G₁.bound G₂.bound + 1 := le_rfl
+  have hN₂_1 : G₁.bound + 1 ≤ max G₁.bound G₂.bound + 1 :=
+    Nat.succ_le_succ (le_max_left _ _)
+  have hN₂_2 : G₂.bound + 1 ≤ max G₁.bound G₂.bound + 1 :=
+    Nat.succ_le_succ (le_max_right _ _)
+  rw [OSInnerProduct_eq_extended d S hlin F (G₁ + G₂)
+        (F.bound + 1) (max G₁.bound G₂.bound + 1) hN₁ hN₂_sum,
+      OSInnerProduct_eq_extended d S hlin F G₁
+        (F.bound + 1) (max G₁.bound G₂.bound + 1) hN₁ hN₂_1,
+      OSInnerProduct_eq_extended d S hlin F G₂
+        (F.bound + 1) (max G₁.bound G₂.bound + 1) hN₁ hN₂_2]
+  simp only [OSInnerProductN, BorchersSequence.add_funcs,
+    SchwartzNPoint.osConjTensorProduct_add_right, (hlin _).map_add]
+  rw [← Finset.sum_add_distrib]
+  congr 1
+  ext n
+  rw [← Finset.sum_add_distrib]
+
+/-- The OS inner product is additive in the first argument. -/
+theorem OSInnerProduct_add_left (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+    (hlin : ∀ n, IsLinearMap ℂ (S n))
+    (F₁ F₂ G : BorchersSequence d) :
+    OSInnerProduct d S (F₁ + F₂) G =
+      OSInnerProduct d S F₁ G + OSInnerProduct d S F₂ G := by
+  have hN₁_sum : (F₁ + F₂).bound + 1 ≤ max F₁.bound F₂.bound + 1 := le_rfl
+  have hN₁_1 : F₁.bound + 1 ≤ max F₁.bound F₂.bound + 1 :=
+    Nat.succ_le_succ (le_max_left _ _)
+  have hN₁_2 : F₂.bound + 1 ≤ max F₁.bound F₂.bound + 1 :=
+    Nat.succ_le_succ (le_max_right _ _)
+  have hN₂ : G.bound + 1 ≤ G.bound + 1 := le_rfl
+  rw [OSInnerProduct_eq_extended d S hlin (F₁ + F₂) G
+        (max F₁.bound F₂.bound + 1) (G.bound + 1) hN₁_sum hN₂,
+      OSInnerProduct_eq_extended d S hlin F₁ G
+        (max F₁.bound F₂.bound + 1) (G.bound + 1) hN₁_1 hN₂,
+      OSInnerProduct_eq_extended d S hlin F₂ G
+        (max F₁.bound F₂.bound + 1) (G.bound + 1) hN₁_2 hN₂]
+  simp only [OSInnerProductN, BorchersSequence.add_funcs,
+    SchwartzNPoint.osConjTensorProduct_add_left, (hlin _).map_add]
+  rw [← Finset.sum_add_distrib]
+  congr 1
+  ext n
+  rw [← Finset.sum_add_distrib]
+
+/-- The OS inner product is linear in the second argument. -/
+theorem OSInnerProduct_smul_right (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+    (hlin : ∀ n, IsLinearMap ℂ (S n))
+    (c : ℂ) (F G : BorchersSequence d) :
+    OSInnerProduct d S F (c • G) = c * OSInnerProduct d S F G := by
+  simp only [OSInnerProduct, BorchersSequence.smul_funcs, BorchersSequence.smul_bound,
+    SchwartzNPoint.osConjTensorProduct_smul_right, (hlin _).map_smul, smul_eq_mul]
+  rw [Finset.mul_sum]
+  congr 1
+  ext n
+  rw [Finset.mul_sum]
+
+/-- The OS inner product is conjugate linear in the first argument. -/
+theorem OSInnerProduct_smul_left (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+    (hlin : ∀ n, IsLinearMap ℂ (S n))
+    (c : ℂ) (F G : BorchersSequence d) :
+    OSInnerProduct d S (c • F) G = starRingEnd ℂ c * OSInnerProduct d S F G := by
+  simp only [OSInnerProduct, BorchersSequence.smul_funcs, BorchersSequence.smul_bound,
+    SchwartzNPoint.osConjTensorProduct_smul_left, (hlin _).map_smul, smul_eq_mul]
+  rw [Finset.mul_sum]
+  congr 1
+  ext n
+  rw [Finset.mul_sum]
+
 /-- The Osterwalder-Schrader axioms E0-E4 for Euclidean field theory.
 
     From OS I (1973):
@@ -1263,6 +1490,19 @@ structure OsterwalderSchraderAxioms (d : ℕ) [NeZero d] where
   S : SchwingerFunctions d
   /-- E0: Temperedness - each Sₙ is a tempered distribution (continuous on Schwartz space) -/
   E0_tempered : ∀ n, Continuous (S n)
+  /-- E0 also includes linearity: each Schwinger functional is a tempered distribution,
+      i.e. a continuous complex-linear functional on Schwartz space. -/
+  E0_linear : ∀ n, IsLinearMap ℂ (S n)
+  /-- E0 also includes the Schwinger reality condition induced by Wightman
+      Hermiticity:
+      `conj (S_n(f)) = S_n(f.osConj)`.
+
+      Here `osConj` is time reflection followed by complex conjugation. This is
+      the natural Euclidean counterpart of the Wightman Hermiticity axiom and is
+      the input needed for Hermiticity of the OS form and for the standard
+      Laplace/spectral argument on Euclidean time shifts. -/
+  E0_reality : ∀ n (f : SchwartzNPoint d n),
+    starRingEnd ℂ (S n f) = S n f.osConj
   /-- E1a: Translation invariance.
       S_n(x₁+a,...,xₙ+a) = S_n(x₁,...,xₙ) for all a ∈ ℝ^{d+1}. -/
   E1_translation_invariant : ∀ (n : ℕ) (a : SpacetimeDim d) (f g : SchwartzNPoint d n),
@@ -1314,6 +1554,59 @@ structure OsterwalderSchraderAxioms (d : ℕ) [NeZero d] where
         ∀ (g_a : SchwartzNPoint d m),
           (∀ x : NPointDomain d m, g_a x = g (fun i => x i - a)) →
           ‖S (n + m) (f.tensorProduct g_a) - S n f * S m g‖ < ε
+
+/-- The abstract OS inner product is Hermitian.
+
+    This is the Euclidean analogue of `WightmanInnerProduct_hermitian`. The
+    proof uses only the corrected OS reality condition together with
+    permutation symmetry to swap the tensor blocks after applying the OS
+    involution. -/
+theorem OSInnerProduct_hermitian {d : ℕ} [NeZero d]
+    (OS : OsterwalderSchraderAxioms d) (F G : BorchersSequence d) :
+    OSInnerProduct d OS.S F G = starRingEnd ℂ (OSInnerProduct d OS.S G F) := by
+  simp only [OSInnerProduct, map_sum]
+  rw [Finset.sum_comm]
+  congr 1
+  ext n
+  congr 1
+  ext m
+  rw [OS.E0_reality (n + m) ((G.funcs n).osConjTensorProduct (F.funcs m))]
+  let A : SchwartzNPoint d (m + n) := (F.funcs m).osConjTensorProduct (G.funcs n)
+  let c : Fin (m + n) ≃ Fin (n + m) := finCongr (Nat.add_comm m n)
+  let Acast : SchwartzNPoint d (n + m) :=
+    SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
+      ((LinearEquiv.funCongrLeft ℝ (SpacetimeDim d) c).toContinuousLinearEquiv) A
+  let σ : Equiv.Perm (Fin (n + m)) := c.symm.trans finAddFlip
+  have hcast :
+      OS.S (m + n) A = OS.S (n + m) Acast := by
+    refine W_eq_of_cast OS.S (m + n) (n + m) (Nat.add_comm m n) A Acast ?_
+    intro x
+    have harg :
+        ((LinearEquiv.funCongrLeft ℝ (SpacetimeDim d) c)
+          (fun i => x (Fin.cast (Nat.add_comm n m) i))) = x := by
+      ext i μ
+      simp [LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply, c]
+    simpa [Acast, A, SchwartzMap.compCLMOfContinuousLinearEquiv_apply,
+      LinearEquiv.funCongrLeft_apply] using congrArg A harg
+  have hperm :
+      OS.S (n + m) Acast = OS.S (n + m) (((G.funcs n).osConjTensorProduct (F.funcs m)).osConj) := by
+    refine OS.E3_symmetric (n := n + m) (σ := σ) Acast
+      (((G.funcs n).osConjTensorProduct (F.funcs m)).osConj) ?_
+    intro x
+    symm
+    have hleft :
+        Acast.toFun (fun i => x (σ i)) = A (fun j : Fin (m + n) => x (finAddFlip j)) := by
+      have harg :
+          ((LinearEquiv.funCongrLeft ℝ (SpacetimeDim d) c) (fun i => x (σ i))) =
+            (fun j : Fin (m + n) => x (finAddFlip j)) := by
+        ext j μ
+        simp [LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply, σ, c]
+      simpa [Acast, SchwartzMap.compCLMOfContinuousLinearEquiv_apply,
+        LinearEquiv.funCongrLeft_apply] using congrArg A harg
+    exact hleft.trans <| by
+      simpa [A] using
+        (osConjTP_eq_osConj_osConjTP (f := F.funcs m) (g := G.funcs n) x).symm
+  exact hcast.trans hperm
 
 /-- The linear growth condition E0' from OS II (1975).
 
