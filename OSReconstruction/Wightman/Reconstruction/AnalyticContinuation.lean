@@ -692,17 +692,7 @@ theorem bargmann_hall_wightman (n : ℕ)
         MinkowskiSpace.minkowskiNormSq d
           (fun μ => x ⟨i.val + 1, hi⟩ μ - x i μ) > 0 →
         F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
-        F (fun k μ => (x k μ : ℂ)))
-    (hSeedConn_hd2 :
-      ∀ (σ : Equiv.Perm (Fin n)), σ ≠ 1 → ¬ n ≤ 1 → 2 ≤ d →
-        IsConnected (BHW.permSeedSet (d := d) n σ))
-    (hExtPerm_d1 :
-      d = 1 →
-      ∀ (σ : Equiv.Perm (Fin n)), σ ≠ 1 → ¬ n ≤ 1 →
-        ∀ (z : Fin n → Fin (d + 1) → ℂ),
-          z ∈ BHW.ExtendedTube d n →
-          (fun k => z (σ k)) ∈ BHW.ExtendedTube d n →
-          BHW.extendF F (fun k => z (σ k)) = BHW.extendF F z) :
+        F (fun k μ => (x k μ : ℂ))) :
     ∃ (F_ext : (Fin n → Fin (d + 1) → ℂ) → ℂ),
       DifferentiableOn ℂ F_ext (PermutedExtendedTube d n) ∧
       (∀ z ∈ ForwardTube d n, F_ext z = F z) ∧
@@ -741,7 +731,6 @@ theorem bargmann_hall_wightman (n : ℕ)
   -- Apply BHW theorem from Connectedness.lean
   obtain ⟨F_ext, h1, h2, h3, h4, h5⟩ :=
     BHW.bargmann_hall_wightman_theorem n F hF_holo' hF_lorentz' hF_bv' hF_local'
-      hSeedConn_hd2 hExtPerm_d1
   -- Convert the result back from BHW types to Wightman types
   refine ⟨F_ext, ?_, ?_, ?_, ?_, ?_⟩
   · -- DifferentiableOn on PermutedExtendedTube

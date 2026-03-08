@@ -44,11 +44,10 @@ All `sorry`s removed in `JostPoints.lean`.
 - `forwardJostSet_subset_jostSet` ✅ — ForwardJostSet ⊂ JostSet
 - `jostSet_nonempty`, `forwardJostSet_nonempty`, `forwardJostSet_isOpen` ✅
 
-### Connectedness/* — 0 sorrys ✓
-The former BHW permutation blockers were removed from the live proof graph.
-Their unresolved geometry now appears explicitly as hypotheses on:
-- `Connectedness/BHWPermutation/PermutationFlow.lean`
-- `Wightman/Reconstruction/AnalyticContinuation.lean`
+### Connectedness/* — 1 sorry
+| # | File | Line | Name | Status |
+|---|------|------|------|--------|
+| 1 | `Connectedness/BHWPermutation/PermutationFlow.lean` | 2156 | `iterated_eow_permutation_extension` | **1 local sorry hole** — remaining nontrivial permutation branch (`d > 0`, `n ≥ 2`, `σ ≠ 1`) via `hExtPerm` |
 
 ### GeodesicConvexity.lean — 0 sorrys ✓
 The prior placeholder theorems (`cartan_exp_embedding`, `polar_decomposition`)
@@ -172,7 +171,7 @@ Previously proved infrastructure:
 - `extendF`, `extendF_eq_on_forwardTube`, `extendF_preimage_eq`, etc.
 - BHW theorem statement with all hypotheses
 
-**Total: 0 sorrys across `ComplexLieGroups/`**
+**Total: 1 sorry across 1 file** (`PermutationFlow.lean`: 1)
 
 ---
 

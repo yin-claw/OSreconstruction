@@ -45,11 +45,11 @@ Snapshot (2026-03-07, counted with `rg -c '^\s*sorry\b' OSReconstruction --glob 
 
 | Module | Direct `sorry` lines |
 |--------|-----------------------|
-| `Wightman/` | 0 |
-| `SCV/` | 0 |
-| `ComplexLieGroups/` | 0 |
-| `vNA/` | 39 |
-| **Total** | **39** |
+| `Wightman/` | 30 |
+| `SCV/` | 11 |
+| `ComplexLieGroups/` | 2 |
+| `vNA/` | 40 |
+| **Total** | **83** |
 
 ### OS-Critical Sorry Flow Toward Reconstruction
 
@@ -57,41 +57,41 @@ Snapshot (2026-03-07, counted with `rg -c '^\s*sorry\b' OSReconstruction --glob 
 flowchart TD
   M["Wightman/Reconstruction/Main.lean"]
   M --> WR["wightman_reconstruction (proved)"]
-  M --> RE["wightman_to_os (with regularity + Euclidean poly + a.e.-PET input)"]
-  M --> ER["os_to_wightman (with BV package input)"]
+  M --> WU["wightman_uniqueness (1 sorry)"]
+  M --> RE["wightman_to_os"]
+  M --> ER["os_to_wightman"]
 
-  RE --> SA["WickRotation/SchwingerAxioms (0 sorrys)"]
-  SA --> BT["WickRotation/BHWTranslation (0)"]
+  RE --> SA["WickRotation/SchwingerAxioms (5 sorrys)"]
+  SA --> BT["WickRotation/BHWTranslation (1)"]
   BT --> BE["WickRotation/BHWExtension (0)"]
-  BE --> FL["WickRotation/ForwardTubeLorentz (0)"]
+  BE --> FL["WickRotation/ForwardTubeLorentz (1)"]
   FL --> AC["Reconstruction/AnalyticContinuation (0)"]
-  AC --> CL["ComplexLieGroups/Connectedness/* (0)"]
+  AC --> CL["ComplexLieGroups/Connectedness/* (2)"]
   AC --> JP["ComplexLieGroups/JostPoints (0)"]
 
-  ER --> OW["WickRotation/OSToWightman (0 sorrys)"]
+  ER --> OW["WickRotation/OSToWightman (8 sorrys)"]
   OW --> PW["SCV/PaleyWiener (0)"]
-  OW --> LS["SCV/LaplaceSchwartz (0)"]
-  OW --> BO["SCV/BochnerTubeTheorem (0)"]
+  OW --> LS["SCV/LaplaceSchwartz (7)"]
+  OW --> BO["SCV/BochnerTubeTheorem (2)"]
 ```
 
 ### Critical-Path Blockers (File Level)
 
 | File | Direct `sorry`s | Notes |
 |------|------------------|-------|
-| `Wightman/Reconstruction/Main.lean` | 0 | `wightman_reconstruction` now takes the remaining GNS inputs explicitly |
-| `Wightman/Reconstruction/GNSHilbertSpace.lean` | 0 | `gnsQFT` now takes spectrum/cyclicity/vacuum-uniqueness as explicit inputs |
-| `Wightman/WightmanAxioms.lean` | 0 | active continuation/BV side lane removed; live geometry retained |
-| `Wightman/NuclearSpaces/BochnerMinlos.lean` | 0 | unused theorem surface removed; only sorry-free positive-definite infrastructure retained |
-| `Wightman/NuclearSpaces/NuclearSpace.lean` | 0 | unused closure-property theorem chain removed |
-| `Wightman/Reconstruction/WickRotation/ForwardTubeLorentz.lean` | 0 | completed |
+| `Wightman/Reconstruction/Main.lean` | 1 | `wightman_uniqueness` |
+| `Wightman/Reconstruction/GNSHilbertSpace.lean` | 1 | `vacuum_unique` spectral-theory branch |
+| `Wightman/WightmanAxioms.lean` | 4 | nuclear extension + spectrum/BV infrastructure |
+| `Wightman/Reconstruction/WickRotation/ForwardTubeLorentz.lean` | 1 | growth / BV covariance plumbing |
 | `Wightman/Reconstruction/WickRotation/BHWExtension.lean` | 0 | completed |
-| `Wightman/Reconstruction/WickRotation/BHWTranslation.lean` | 0 | downstream Schwinger-construction surface retained, unused PET chain removed |
-| `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` | 0 | completed |
-| `Wightman/Reconstruction/WickRotation/OSToWightman.lean` | 0 | theorem surface now takes explicit boundary-value and transfer package |
+| `Wightman/Reconstruction/WickRotation/BHWTranslation.lean` | 1 | overlap-connectivity / translation geometry |
+| `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` | 5 | E0/E2/E4 hard analytic steps |
+| `Wightman/Reconstruction/WickRotation/OSToWightman.lean` | 8 | base-step continuation + BV transfer chain |
 | `SCV/PaleyWiener.lean` | 0 | sorry-free as of 2026-03-07 |
-| `SCV/LaplaceSchwartz.lean` | 0 | regular boundary-value layer now proved under explicit regular input |
-| `SCV/BochnerTubeTheorem.lean` | 0 | only sorry-free tube-domain helper infrastructure retained |
-| `ComplexLieGroups/Connectedness/*` | 0 | former permutation-geometry blockers are now explicit inputs on the live BHW theorem surfaces |
+| `SCV/LaplaceSchwartz.lean` | 7 | boundary growth/continuity/convergence |
+| `SCV/BochnerTubeTheorem.lean` | 2 | local-to-global tube extension |
+| `ComplexLieGroups/Connectedness/ComplexInvariance/Core.lean` | 1 | orbit-set preconnectedness (`hjoin` branch) |
+| `ComplexLieGroups/Connectedness/BHWPermutation/PermutationFlow.lean` | 1 | permutation overlap extension (`hExtPerm` branch) |
 
 See also [`docs/development_plan_systematic.md`](docs/development_plan_systematic.md), [`OSReconstruction/Wightman/TODO.md`](OSReconstruction/Wightman/TODO.md), and [`OSReconstruction/ComplexLieGroups/TODO.md`](OSReconstruction/ComplexLieGroups/TODO.md) for the synchronized execution plan.
 

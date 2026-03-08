@@ -14,28 +14,26 @@ import OSReconstruction.Wightman.NuclearSpaces.GaussianFieldBridge
 import OSReconstruction.Wightman.NuclearSpaces.SchwartzNuclear
 
 /-!
-# Euclidean Free-Field Quadratic and Moment Infrastructure
+# Euclidean Field Theory Measures via Minlos' Theorem
 
-This file develops the concrete free-field quadratic form and the measure-parameterized
-Gaussian moment identities used in the Euclidean side lane.
-
-The actual Minlos measure-construction theorem surface was unused by the active
-reconstruction path and has been removed rather than carried as isolated unfinished code.
+This file connects the nuclear space / Minlos infrastructure to the Osterwalder-Schrader
+reconstruction theorem, providing the measure-theoretic foundation for Euclidean QFT.
 
 ## Main Definitions
 
 * `freeFieldForm` - The quadratic form Q(f) = ∫ |f̂(k)|² / (|k|² + m²) dk, defined
   concretely using the Fourier transform.
-* `freeFieldCharacteristic` - C(f) = exp(-½ Q(f)), the free field characteristic kernel.
-* `schwingerTwoPoint` - Schwinger functions as moments of an explicit measure input.
+* `freeFieldCharacteristic` - C(f) = exp(-½ Q(f)), the free field characteristic functional.
+* `euclideanMeasure_exists` - Existence of the Gaussian probability measure on S'(ℝᵈ).
+* `schwingerTwoPoint` - Schwinger functions as moments of the Euclidean measure.
 
 ## Mathematical Background
 
 ### The Free Scalar Field Measure
 
-For a free scalar field of mass m > 0 in d Euclidean dimensions, an **Euclidean
+For a free scalar field of mass m > 0 in d Euclidean dimensions, the **Euclidean
 measure** is a Gaussian probability measure μ on the space of tempered distributions
-S'(ℝᵈ), characterized by its characteristic functional:
+S'(ℝᵈ). It is uniquely characterized by its characteristic functional:
 
   C(f) = ∫_{S'} exp(i φ(f)) dμ(φ) = exp(-½ ⟨f, (-Δ + m²)⁻¹ f⟩_{L²})
 
@@ -60,10 +58,10 @@ corresponding Wightman QFT.
 ### Why Nuclearity is Essential
 
 The measure μ lives on S'(ℝᵈ), which is the **dual** of the nuclear space S(ℝᵈ).
-Without nuclearity, a Minlos-type theorem would not apply and we could not construct μ
+Without nuclearity, Minlos' theorem would not apply and we could not construct μ
 from the characteristic functional C. This is why:
 - S(ℝᵈ) being nuclear (SchwartzNuclear.lean) is essential
-- A genuine Minlos theorem would provide the measure
+- The Minlos theorem (BochnerMinlos.lean) provides the measure
 - The nuclear operator theory (NuclearOperator.lean) and nuclear space definition
   (NuclearSpace.lean) provide the foundational infrastructure
 
@@ -78,7 +76,7 @@ from the characteristic functional C. This is why:
 noncomputable section
 
 open MeasureTheory ProbabilityTheory Complex SchwartzMap
-open scoped NNReal SchwartzMap FourierTransform
+open scoped SchwartzMap FourierTransform
 
 variable (d : ℕ) (m : ℝ)
 
@@ -690,16 +688,40 @@ theorem freeFieldCharacteristic_posdef (hm : 0 < m) :
   exact quadratic_exp_kernel_posdef (freeFieldForm d m) hpar x c
     (freeFieldBilinearForm_psd d m hm n x)
 
-/-! ### Deferred measure existence
+/-- The free field characteristic functional is a `CharacteristicFunctional`. -/
+def freeFieldCharacteristicFunctional (hm : 0 < m) :
+    CharacteristicFunctional (𝓢(EuclideanSpace ℝ (Fin d), ℝ)) where
+  toFun := freeFieldCharacteristic d m
+  continuous_toFun := freeFieldCharacteristic_continuous d m hm
+  positive_definite := freeFieldCharacteristic_posdef d m hm
+  eval_zero := freeFieldCharacteristic_zero d m
 
-The actual Minlos-based construction of a Euclidean measure from
-`freeFieldCharacteristic` is not part of the active reconstruction path in this
-repository. The old theorem surface `euclideanMeasure_exists` and its auxiliary
-`CharacteristicFunctional` packaging have therefore been removed rather than kept
-as isolated unfinished infrastructure.
+/-! ### Euclidean Measure via Minlos -/
 
-The remainder of this file works with an explicit measure input satisfying the
-expected characteristic-function identity. -/
+/-- The **Euclidean field theory measure** for the free scalar field.
+
+    By Minlos' theorem applied to the nuclear space S(ℝᵈ) and the
+    free field characteristic functional, there exists a unique probability
+    measure μ on the dual space S'(ℝᵈ) (= tempered distributions) such that:
+
+    C(f) = ∫_{S'(ℝᵈ)} exp(i φ(f)) dμ(φ) = exp(-½ Q(f))
+
+    This is a Gaussian measure (the "Euclidean free field measure").
+
+    In constructive QFT, this provides the starting point for:
+    1. Defining Schwinger functions as moments of μ
+    2. Verifying the OS axioms E0'-E4
+    3. Applying the OS reconstruction theorem to get a Wightman QFT -/
+theorem euclideanMeasure_exists (hm : 0 < m)
+    [inst : MeasurableSpace (𝓢(EuclideanSpace ℝ (Fin d), ℝ) →L[ℝ] ℝ)] :
+    ∃ (μ : Measure (𝓢(EuclideanSpace ℝ (Fin d), ℝ) →L[ℝ] ℝ)),
+      IsProbabilityMeasure μ ∧
+      ∀ (f : 𝓢(EuclideanSpace ℝ (Fin d), ℝ)),
+        freeFieldCharacteristic d m f =
+        ∫ ω, exp (↑(ω f) * I) ∂μ := by
+  haveI : NuclearSpace (𝓢(EuclideanSpace ℝ (Fin d), ℝ)) :=
+    SchwartzMap.instNuclearSpace d
+  exact minlos_theorem (freeFieldCharacteristicFunctional d m hm)
 
 /-! ### Schwinger Functions from the Euclidean Measure -/
 

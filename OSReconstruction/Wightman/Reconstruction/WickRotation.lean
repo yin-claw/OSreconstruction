@@ -9,11 +9,8 @@ import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightman
 # Wick Rotation and the OS Bridge Theorems
 
 This module develops the infrastructure for the Osterwalder-Schrader bridge theorems:
-- **Theorem R→E** (`wightman_to_os_full`): Wightman functions together with the
-  required forward-tube regularity package, the Euclidean Wick polynomial bound,
-  and the a.e.-PET Wick-rotation input → Schwinger functions (OS I, §5)
-- **Theorem E'→R'** (`os_to_wightman_full`): Schwinger functions together with the
-  explicit forward-tube boundary-value package → Wightman functions (OS II, §IV-V)
+- **Theorem R→E** (`wightman_to_os_full`): Wightman functions → Schwinger functions (OS I, §5)
+- **Theorem E'→R'** (`os_to_wightman_full`): Schwinger functions → Wightman functions (OS II, §IV-V)
 
 ## Module Structure
 

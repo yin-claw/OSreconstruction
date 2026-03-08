@@ -11,13 +11,13 @@ Count convention in this file: direct tactic holes only,
 
 | Scope | Direct `sorry` lines |
 |---|---:|
-| `OSReconstruction/SCV` | 0 |
+| `OSReconstruction/SCV` | 4 |
 
 Breakdown:
-- `SCV/BochnerTubeTheorem.lean`: 0
-- `SCV/PaleyWiener.lean`: 0
-- `SCV/LaplaceSchwartz.lean`: 0
+- `SCV/LaplaceSchwartz.lean`: 2
 - `SCV/TubeDistributions.lean`: 0
+- `SCV/BochnerTubeTheorem.lean`: 2
+- `SCV/PaleyWiener.lean`: 0
 
 ## Session Summary
 
@@ -27,7 +27,11 @@ Breakdown:
   - `HasFourierLaplaceReprRegular`
 - `TubeDistributions.lean` now keeps only the proved regular variants; the unused weak
   placeholder fronts were removed.
-- The fake weak-to-regular upgrade theorem and the unused weak theorem fronts are gone.
+- The unproved weak-to-regular upgrade theorem was removed.
+  Rationale: the singularity-free bound `‖F(x+iεη)‖ ≤ C(1+‖x‖)^N` is not
+  derivable from `poly_growth` alone (Phragmén-Lindelöf only gives
+  `C(1+‖x‖)^N/ε^k`), and the remaining Vladimirov §26.2 continuity upgrade
+  should not be hidden behind a fake interface.
 
 ## Load-Bearing Items
 
@@ -43,11 +47,15 @@ Meaning:
 - only the rigorous regular variants remain
 - the unused weak placeholder fronts were removed instead of being carried as public `sorry`s
 
-### `SCV/BochnerTubeTheorem.lean` (0)
+### `SCV/BochnerTubeTheorem.lean` (2)
 
-Status:
-- the unused Bochner theorem surface has been removed
-- the file now contains only sorry-free convex-hull/tube-domain helpers and the compatible-family gluing theorem
+Remaining blockers:
+- `bochner_local_extension`
+- `bochner_tube_extension`
+
+Meaning:
+- the old generic gluing theorem was too strong and has been removed
+- current work should build on the compatible-family gluing theorem instead
 
 ### `SCV/PaleyWiener.lean` (0)
 
@@ -58,9 +66,10 @@ Status:
 
 ## Execution Order
 
-1. `SCV` is currently sorry-free.
-2. If the measure-construction / stronger Fourier-Laplace lane is revived later,
-   reintroduce it with a genuine proof rather than a wrapper interface.
+1. Use the explicit regular package directly in downstream flattened-tube transport.
+2. Return to the real missing theorem: construct `HasFourierLaplaceReprRegular`
+   from actual Fourier-Laplace input with the right dual-cone support.
+3. Return to `BochnerTubeTheorem.lean`.
 
 ## Stable Completed Core
 

@@ -54,403 +54,42 @@ private theorem integral_swap_eq_self {d n : ℕ} [NeZero d]
                 (e := σ) x k)).symm
     _ = ∫ x : NPointDomain d n, h x := hEq
 
-private theorem one_add_norm_clm_le_mul_one_add_norm
-    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    [NormedAddCommGroup F] [NormedSpace ℝ F]
-    (L : E →L[ℝ] F) (x : E) :
-    1 + ‖L x‖ ≤ (‖L‖ + 1) * (1 + ‖x‖) := by
-  have hLx : ‖L x‖ ≤ ‖L‖ * ‖x‖ := L.le_opNorm x
-  have hLn : 0 ≤ ‖L‖ := norm_nonneg L
-  have hxn : 0 ≤ ‖x‖ := norm_nonneg x
-  nlinarith
-
-private theorem one_add_norm_pow_mono
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
-    (x : E) {m n : ℕ} (hmn : m ≤ n) :
-    (1 + ‖x‖) ^ m ≤ (1 + ‖x‖) ^ n := by
-  rcases Nat.exists_eq_add_of_le hmn with ⟨k, rfl⟩
-  have hx : 1 ≤ 1 + ‖x‖ := by
-    nlinarith [norm_nonneg x]
-  have hpow : 1 ≤ (1 + ‖x‖) ^ k := one_le_pow₀ hx
-  have hnonneg : 0 ≤ (1 + ‖x‖) ^ m := by
-    have hx0 : 0 ≤ 1 + ‖x‖ := by nlinarith [norm_nonneg x]
-    exact pow_nonneg hx0 m
-  calc
-    (1 + ‖x‖) ^ m ≤ (1 + ‖x‖) ^ m * (1 + ‖x‖) ^ k := by
-      nlinarith
-    _ = (1 + ‖x‖) ^ (m + k) := by rw [← pow_add]
-
 /-- W_analytic inherits real Lorentz invariance from the Wightman distribution.
 
     Both z ↦ W_analytic(z) and z ↦ W_analytic(Λz) are holomorphic on the forward tube
     with the same distributional boundary values (by Lorentz invariance of W_n).
-    The proof now runs through the explicit flattened regular Fourier-Laplace package and
-    `distributional_uniqueness_forwardTube_of_flatRegular_from_bvZero`.
+    By `distributional_uniqueness_forwardTube`, they agree on the forward tube.
 
     Ref: Streater-Wightman, §2.4 -/
-theorem W_analytic_lorentz_on_tube (Wfn : WightmanFunctions d) (n : ℕ)
-    (hRegular_W : SCV.HasFourierLaplaceReprRegular (ForwardConeFlat d n)
-      ((Wfn.spectrum_condition n).choose ∘ (flattenCLEquiv n (d + 1)).symm)) :
+theorem W_analytic_lorentz_on_tube (Wfn : WightmanFunctions d) (n : ℕ) :
     ∀ (Λ : LorentzGroup.Restricted (d := d))
       (z : Fin n → Fin (d + 1) → ℂ), z ∈ ForwardTube d n →
       (Wfn.spectrum_condition n).choose
         (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) =
       (Wfn.spectrum_condition n).choose z := by
   intro Λ z hz
-  let W_analytic := (Wfn.spectrum_condition n).choose
-  let F₁ : (Fin n → Fin (d + 1) → ℂ) → ℂ :=
-    fun z => W_analytic (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν)
-  have hF₁_holo : DifferentiableOn ℂ F₁ (ForwardTube d n) :=
-    W_analytic_lorentz_holomorphic Wfn n Λ
-  have hW_holo : DifferentiableOn ℂ W_analytic (ForwardTube d n) :=
+  -- Apply distributional uniqueness: two holomorphic functions on the forward tube
+  -- with the same distributional boundary values must agree.
+  have huniq := distributional_uniqueness_forwardTube
+    (W_analytic_lorentz_holomorphic Wfn n Λ)
     (Wfn.spectrum_condition n).choose_spec.1
-  have hW_bv := (Wfn.spectrum_condition n).choose_spec.2
-  let e := flattenCLEquiv n (d + 1)
-  let eR := flattenCLEquivReal n (d + 1)
-  let lorentzAbsR : NPointDomain d n →L[ℝ] NPointDomain d n :=
-    ContinuousLinearMap.pi fun k : Fin n =>
-      ((Matrix.mulVecLin Λ.val.val).toContinuousLinearMap).comp
-        (ContinuousLinearMap.proj (R := ℝ) (φ := fun _ : Fin n => Fin (d + 1) → ℝ) k)
-  let lorentzAbsC : (Fin n → Fin (d + 1) → ℂ) →L[ℂ] (Fin n → Fin (d + 1) → ℂ) :=
-    ContinuousLinearMap.pi fun k : Fin n =>
-      ((Matrix.mulVecLin (fun μ ν => (Λ.val.val μ ν : ℂ))).toContinuousLinearMap).comp
-        (ContinuousLinearMap.proj (R := ℂ) (φ := fun _ : Fin n => Fin (d + 1) → ℂ) k)
-  let LR : (Fin (n * (d + 1)) → ℝ) →L[ℝ] (Fin (n * (d + 1)) → ℝ) :=
-    eR.toContinuousLinearMap.comp (lorentzAbsR.comp eR.symm.toContinuousLinearMap)
-  let LC : (Fin (n * (d + 1)) → ℂ) →L[ℂ] (Fin (n * (d + 1)) → ℂ) :=
-    e.toContinuousLinearMap.comp (lorentzAbsC.comp e.symm.toContinuousLinearMap)
-  let G0 : (Fin (n * (d + 1)) → ℂ) → ℂ := W_analytic ∘ e.symm
-  let G₁ : (Fin (n * (d + 1)) → ℂ) → ℂ := F₁ ∘ e.symm
-  have hG₁_eq : G₁ = fun w => G0 (LC w) := by
-    funext w
-    change
-      W_analytic (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * (e.symm w) k ν) =
-        W_analytic (e.symm (LC w))
-    congr 1
-    ext k μ
-    change
-      ∑ ν, (Λ.val.val μ ν : ℂ) * w (finProdFinEquiv (k, ν)) =
-        (e.symm (LC w)) k μ
-    simp [e, LC, lorentzAbsC, Matrix.mulVec, dotProduct, flattenCLEquiv_symm_apply]
-  have hLR_maps_coneAbs :
-      Set.MapsTo lorentzAbsR (ForwardConeAbs d n) (ForwardConeAbs d n) := by
-    intro y hy k
-    let prev : Fin (d + 1) → ℝ := if h : k.val = 0 then 0 else y ⟨k.val - 1, by omega⟩
-    let diff_y : Fin (d + 1) → ℝ := fun μ => y k μ - prev μ
-    have hdiff : InOpenForwardCone d diff_y := by
-      simpa [diff_y, prev] using hy k
-    convert restricted_preserves_forward_cone Λ diff_y hdiff using 1
-    ext μ
-    split_ifs with h0
-    · simp [lorentzAbsR, diff_y, prev, h0, Matrix.mulVec, dotProduct]
-    · simp [lorentzAbsR, diff_y, prev, h0, Matrix.mulVec, dotProduct,
-        Finset.sum_sub_distrib, mul_sub]
-  have hLR_maps_cone :
-      Set.MapsTo LR (ForwardConeFlat d n) (ForwardConeFlat d n) := by
-    intro y hy
-    rcases hy with ⟨yAbs, hyAbs, rfl⟩
-    refine ⟨lorentzAbsR yAbs, hLR_maps_coneAbs hyAbs, ?_⟩
-    simp [LR, eR]
-  have hLC_maps_tube :
-      Set.MapsTo LC (SCV.TubeDomain (ForwardConeFlat d n))
-        (SCV.TubeDomain (ForwardConeFlat d n)) := by
-    intro w hw
-    rw [← forwardTube_flatten_eq_tubeDomain] at hw ⊢
-    rcases hw with ⟨z, hz, rfl⟩
-    refine ⟨fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν, restricted_preserves_forward_tube Λ z hz, ?_⟩
-    ext i
-    rcases finProdFinEquiv.symm i with ⟨k, μ⟩
-    simp [e, LC, lorentzAbsC, Matrix.mulVec, dotProduct, flattenCLEquiv_apply]
-  have hLC_split :
-      ∀ x y : Fin (n * (d + 1)) → ℝ,
-        LC (fun i => ↑(x i) + ↑(y i) * Complex.I) =
-          fun i => ↑((LR x) i) + ↑((LR y) i) * Complex.I := by
-    intro x y
-    ext i
-    rcases finProdFinEquiv.symm i with ⟨k, μ⟩
-    simp [LC, LR, e, eR, lorentzAbsC, lorentzAbsR, Matrix.mulVec, dotProduct,
-      flattenCLEquiv_apply, flattenCLEquivReal_apply, mul_add, Finset.sum_add_distrib,
-      Finset.sum_mul]
-    apply Finset.sum_congr rfl
-    intro j hj
-    ring
-  have hRegular_W' : SCV.HasFourierLaplaceReprRegular (ForwardConeFlat d n) G0 := by
-    simpa [G0, Function.comp] using hRegular_W
-  have hRegular_F₁ :
-      SCV.HasFourierLaplaceReprRegular (ForwardConeFlat d n) G₁ := by
-    refine
-      { toHasFourierLaplaceRepr := ?_
-        poly_growth := ?_
-        uniform_bound := ?_
-        boundary_continuous := ?_
-        tube_continuousWithinAt := ?_ }
-    · refine schwartz_bv_to_flat_repr hF₁_holo ?_
-      refine ⟨Wfn.W n, Wfn.tempered n, ?_⟩
-      intro f η hη
-      exact lorentz_covariant_distributional_bv (d := d) (n := n)
-        Wfn W_analytic hW_holo hW_bv Λ f η hη
-    · intro K hK hK_sub
-      let K' := LR '' K
-      have hK' : IsCompact K' := hK.image LR.continuous
-      have hK'_sub : K' ⊆ ForwardConeFlat d n := by
-        intro y hy
-        rcases hy with ⟨y0, hy0, rfl⟩
-        exact hLR_maps_cone (hK_sub hy0)
-      obtain ⟨C₁, N₁, hC₁_pos, hbound₁⟩ := hRegular_W'.poly_growth K' hK' hK'_sub
-      refine ⟨C₁ * (‖LR‖ + 1) ^ N₁, N₁, by positivity, ?_⟩
-      intro x y hy
-      have hy' : LR y ∈ K' := ⟨y, hy, rfl⟩
-      have hLR_norm :
-          (1 + ‖LR x‖) ^ N₁ ≤ (‖LR‖ + 1) ^ N₁ * (1 + ‖x‖) ^ N₁ := by
-        have hbase := one_add_norm_clm_le_mul_one_add_norm LR x
-        have hpow := pow_le_pow_left₀ (by positivity) hbase N₁
-        simpa [mul_pow] using hpow
-      have hG₁_val :
-          G₁ (fun i => ↑(x i) + ↑(y i) * Complex.I) =
-            G0 (fun i => ↑((LR x) i) + ↑((LR y) i) * Complex.I) := by
-        rw [hG₁_eq]
-        exact congrArg G0 (hLC_split x y)
-      calc
-        ‖G₁ (fun i => ↑(x i) + ↑(y i) * Complex.I)‖
-            = ‖G0 (fun i => ↑((LR x) i) + ↑((LR y) i) * Complex.I)‖ := by rw [hG₁_val]
-        _ ≤ C₁ * (1 + ‖LR x‖) ^ N₁ := hbound₁ (LR x) (LR y) hy'
-        _ ≤ C₁ * ((‖LR‖ + 1) ^ N₁ * (1 + ‖x‖) ^ N₁) := by
-              gcongr
-        _ = (C₁ * (‖LR‖ + 1) ^ N₁) * (1 + ‖x‖) ^ N₁ := by ring
-    · intro η hη
-      have hLRη : LR η ∈ ForwardConeFlat d n := hLR_maps_cone hη
-      obtain ⟨C₁, N₁, δ₁, hC₁_pos, hδ₁_pos, hbound₁⟩ :=
-        hRegular_W'.uniform_bound (LR η) hLRη
-      refine ⟨C₁ * (‖LR‖ + 1) ^ N₁, N₁, δ₁, by positivity, hδ₁_pos, ?_⟩
-      intro x ε hε_pos hεδ₁
-      have hLR_norm :
-          (1 + ‖LR x‖) ^ N₁ ≤ (‖LR‖ + 1) ^ N₁ * (1 + ‖x‖) ^ N₁ := by
-        have hbase := one_add_norm_clm_le_mul_one_add_norm LR x
-        have hpow := pow_le_pow_left₀ (by positivity) hbase N₁
-        simpa [mul_pow] using hpow
-      have hG₁_val :
-          G₁ (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I) =
-            G0 (fun i => ↑((LR x) i) + ↑ε * ↑((LR η) i) * Complex.I) := by
-        rw [hG₁_eq]
-        have hsplit := hLC_split x (ε • η)
-        exact congrArg G0 (by simpa [Pi.smul_apply, smul_eq_mul, mul_assoc] using hsplit)
-      calc
-        ‖G₁ (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I)‖
-            = ‖G0 (fun i => ↑((LR x) i) + ↑ε * ↑((LR η) i) * Complex.I)‖ := by rw [hG₁_val]
-        _ ≤ C₁ * (1 + ‖LR x‖) ^ N₁ := hbound₁ (LR x) ε hε_pos hεδ₁
-        _ ≤ C₁ * ((‖LR‖ + 1) ^ N₁ * (1 + ‖x‖) ^ N₁) := by
-              gcongr
-        _ = (C₁ * (‖LR‖ + 1) ^ N₁) * (1 + ‖x‖) ^ N₁ := by ring
-    ·
-      have hEq :
-          (fun x : Fin (n * (d + 1)) → ℝ => G₁ (SCV.realEmbed x)) =
-          (fun x : Fin (n * (d + 1)) → ℝ => G0 (SCV.realEmbed (LR x))) := by
-        funext x
-        have hpt : LC (SCV.realEmbed x) = SCV.realEmbed (LR x) := by
-          simpa [SCV.realEmbed] using hLC_split x 0
-        rw [hG₁_eq]
-        exact congrArg G0 hpt
-      rw [hEq]
-      exact hRegular_W'.boundary_continuous.comp LR.continuous
-    · intro x
-      have hbase :
-          ContinuousWithinAt G0 (SCV.TubeDomain (ForwardConeFlat d n))
-            (LC (SCV.realEmbed x)) := by
-        have hpt : LC (SCV.realEmbed x) = SCV.realEmbed (LR x) := by
-          simpa [SCV.realEmbed] using hLC_split x 0
-        simpa [hpt] using hRegular_W'.tube_continuousWithinAt (LR x)
-      have hcomp :
-          ContinuousWithinAt (fun z => G0 (LC z))
-            (SCV.TubeDomain (ForwardConeFlat d n)) (SCV.realEmbed x) :=
-        hbase.comp (f := LC) LC.continuous.continuousWithinAt hLC_maps_tube
-      simpa [hG₁_eq] using hcomp
-  have h_agree :
-      ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
-        InForwardCone d n η →
-        Filter.Tendsto
-          (fun ε : ℝ => ∫ x : NPointDomain d n,
-            ((F₁ (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I)) -
-             (W_analytic (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I))) * (f x))
-          (nhdsWithin 0 (Set.Ioi 0))
-          (nhds 0) := by
-    intro f η hη
-    have h_term2 : Filter.Tendsto
-        (fun ε : ℝ => ∫ x : NPointDomain d n,
-          W_analytic (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
-        (nhdsWithin 0 (Set.Ioi 0))
-        (nhds (Wfn.W n f)) := hW_bv f η hη
-    have h_term1 : Filter.Tendsto
-        (fun ε : ℝ => ∫ x : NPointDomain d n,
-          F₁ (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
-        (nhdsWithin 0 (Set.Ioi 0))
-        (nhds (Wfn.W n f)) :=
-      lorentz_covariant_distributional_bv (d := d) (n := n)
-        Wfn W_analytic hW_holo hW_bv Λ f η hη
-    have hdiff := Filter.Tendsto.sub h_term1 h_term2
-    simp only [sub_self] at hdiff
-    refine hdiff.congr' ?_
-    filter_upwards [self_mem_nhdsWithin] with ε hε
-    rw [← MeasureTheory.integral_sub]
-    · congr 1
-      ext x
-      ring
-    · exact forward_tube_bv_integrable_of_flatRegular
-        F₁ hF₁_holo hRegular_F₁ f η hη ε (Set.mem_Ioi.mp hε)
-    · exact forward_tube_bv_integrable_of_flatRegular
-        W_analytic hW_holo hRegular_W f η hη ε (Set.mem_Ioi.mp hε)
-  have hdiff_holo : DifferentiableOn ℂ (fun z => F₁ z - W_analytic z) (ForwardTube d n) :=
-    hF₁_holo.sub hW_holo
-  let h_zero_bv_ex :
-      ∃ (T : SchwartzNPoint d n → ℂ), Continuous T ∧
-        ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
-          InForwardCone d n η →
-          Filter.Tendsto
-            (fun ε : ℝ => ∫ x : NPointDomain d n,
-              ((F₁ (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I)) -
-               (W_analytic (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I))) * (f x))
-            (nhdsWithin 0 (Set.Ioi 0))
-            (nhds (T f)) := ⟨0, continuous_const, h_agree⟩
-  have hRegular_diff :
-      SCV.HasFourierLaplaceReprRegular (ForwardConeFlat d n) (fun w => G₁ w - G0 w) := by
-    refine
-      { toHasFourierLaplaceRepr := schwartz_bv_to_flat_repr hdiff_holo h_zero_bv_ex
-        poly_growth := ?_
-        uniform_bound := ?_
-        boundary_continuous := ?_
-        tube_continuousWithinAt := ?_ }
-    · intro K hK hK_sub
-      let K' := LR '' K
-      have hK' : IsCompact K' := hK.image LR.continuous
-      have hK'_sub : K' ⊆ ForwardConeFlat d n := by
-        intro y hy
-        rcases hy with ⟨y0, hy0, rfl⟩
-        exact hLR_maps_cone (hK_sub hy0)
-      obtain ⟨C₁, N₁, hC₁_pos, hbound₁⟩ := hRegular_W'.poly_growth K' hK' hK'_sub
-      obtain ⟨C₂, N₂, hC₂_pos, hbound₂⟩ := hRegular_W'.poly_growth K hK hK_sub
-      let N := max N₁ N₂
-      refine
-        ⟨C₁ * (‖LR‖ + 1) ^ N₁ + C₂, N, by positivity, ?_⟩
-      intro x y hy
-      have hy' : LR y ∈ K' := ⟨y, hy, rfl⟩
-      have hLR_norm :
-          (1 + ‖LR x‖) ^ N₁ ≤ (‖LR‖ + 1) ^ N₁ * (1 + ‖x‖) ^ N₁ := by
-        have hbase := one_add_norm_clm_le_mul_one_add_norm LR x
-        have hpow := pow_le_pow_left₀ (by positivity) hbase N₁
-        simpa [mul_pow] using hpow
-      have hmono₁ : (1 + ‖x‖) ^ N₁ ≤ (1 + ‖x‖) ^ N := one_add_norm_pow_mono x (Nat.le_max_left _ _)
-      have hmono₂ : (1 + ‖x‖) ^ N₂ ≤ (1 + ‖x‖) ^ N := one_add_norm_pow_mono x (Nat.le_max_right _ _)
-      have hG₁_val :
-          G₁ (fun i => ↑(x i) + ↑(y i) * Complex.I) =
-            G0 (fun i => ↑((LR x) i) + ↑((LR y) i) * Complex.I) := by
-        rw [hG₁_eq]
-        exact congrArg G0 (hLC_split x y)
-      calc
-        ‖(fun w => G₁ w - G0 w) (fun i => ↑(x i) + ↑(y i) * Complex.I)‖
-            = ‖G₁ (fun i => ↑(x i) + ↑(y i) * Complex.I) -
-                G0 (fun i => ↑(x i) + ↑(y i) * Complex.I)‖ := by rfl
-        _ ≤ ‖G₁ (fun i => ↑(x i) + ↑(y i) * Complex.I)‖ +
-              ‖G0 (fun i => ↑(x i) + ↑(y i) * Complex.I)‖ := norm_sub_le _ _
-        _ = ‖G0 (fun i => ↑((LR x) i) + ↑((LR y) i) * Complex.I)‖ +
-              ‖G0 (fun i => ↑(x i) + ↑(y i) * Complex.I)‖ := by rw [hG₁_val]
-        _ ≤ C₁ * (1 + ‖LR x‖) ^ N₁ + C₂ * (1 + ‖x‖) ^ N₂ := by
-              gcongr
-              · exact hbound₁ (LR x) (LR y) hy'
-              · exact hbound₂ x y hy
-        _ ≤ C₁ * ((‖LR‖ + 1) ^ N₁ * (1 + ‖x‖) ^ N₁) + C₂ * (1 + ‖x‖) ^ N₂ := by
-              gcongr
-        _ ≤ C₁ * ((‖LR‖ + 1) ^ N₁ * (1 + ‖x‖) ^ N) + C₂ * (1 + ‖x‖) ^ N := by
-              gcongr
-        _ = (C₁ * (‖LR‖ + 1) ^ N₁ + C₂) * (1 + ‖x‖) ^ N := by ring
-    · intro η hη
-      have hLRη : LR η ∈ ForwardConeFlat d n := hLR_maps_cone hη
-      obtain ⟨C₁, N₁, δ₁, hC₁_pos, hδ₁_pos, hbound₁⟩ :=
-        hRegular_W'.uniform_bound (LR η) hLRη
-      obtain ⟨C₂, N₂, δ₂, hC₂_pos, hδ₂_pos, hbound₂⟩ :=
-        hRegular_W'.uniform_bound η hη
-      let N := max N₁ N₂
-      let δ := min δ₁ δ₂
-      refine ⟨C₁ * (‖LR‖ + 1) ^ N₁ + C₂, N, δ, by positivity, by positivity, ?_⟩
-      intro x ε hε_pos hεδ
-      have hLR_norm :
-          (1 + ‖LR x‖) ^ N₁ ≤ (‖LR‖ + 1) ^ N₁ * (1 + ‖x‖) ^ N₁ := by
-        have hbase := one_add_norm_clm_le_mul_one_add_norm LR x
-        have hpow := pow_le_pow_left₀ (by positivity) hbase N₁
-        simpa [mul_pow] using hpow
-      have hmono₁ : (1 + ‖x‖) ^ N₁ ≤ (1 + ‖x‖) ^ N := one_add_norm_pow_mono x (Nat.le_max_left _ _)
-      have hmono₂ : (1 + ‖x‖) ^ N₂ ≤ (1 + ‖x‖) ^ N := one_add_norm_pow_mono x (Nat.le_max_right _ _)
-      have hεδ₁ : ε < δ₁ := lt_of_lt_of_le hεδ (min_le_left _ _)
-      have hεδ₂ : ε < δ₂ := lt_of_lt_of_le hεδ (min_le_right _ _)
-      have hG₁_val :
-          G₁ (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I) =
-            G0 (fun i => ↑((LR x) i) + ↑ε * ↑((LR η) i) * Complex.I) := by
-        rw [hG₁_eq]
-        have hsplit := hLC_split x (ε • η)
-        exact congrArg G0 (by simpa [Pi.smul_apply, smul_eq_mul, mul_assoc] using hsplit)
-      calc
-        ‖(fun w => G₁ w - G0 w) (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I)‖
-            = ‖G₁ (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I) -
-                G0 (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I)‖ := by rfl
-        _ ≤ ‖G₁ (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I)‖ +
-              ‖G0 (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I)‖ := norm_sub_le _ _
-        _ = ‖G0 (fun i => ↑((LR x) i) + ↑ε * ↑((LR η) i) * Complex.I)‖ +
-              ‖G0 (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I)‖ := by rw [hG₁_val]
-        _ ≤ C₁ * (1 + ‖LR x‖) ^ N₁ + C₂ * (1 + ‖x‖) ^ N₂ := by
-              gcongr
-              · exact hbound₁ (LR x) ε hε_pos hεδ₁
-              · exact hbound₂ x ε hε_pos hεδ₂
-        _ ≤ C₁ * ((‖LR‖ + 1) ^ N₁ * (1 + ‖x‖) ^ N₁) + C₂ * (1 + ‖x‖) ^ N₂ := by
-              gcongr
-        _ ≤ C₁ * ((‖LR‖ + 1) ^ N₁ * (1 + ‖x‖) ^ N) + C₂ * (1 + ‖x‖) ^ N := by
-              gcongr
-        _ = (C₁ * (‖LR‖ + 1) ^ N₁ + C₂) * (1 + ‖x‖) ^ N := by ring
-    ·
-      have hcont₁ : Continuous (fun x : Fin (n * (d + 1)) → ℝ => G₁ (SCV.realEmbed x)) := by
-        have hEq :
-            (fun x : Fin (n * (d + 1)) → ℝ => G₁ (SCV.realEmbed x)) =
-            (fun x : Fin (n * (d + 1)) → ℝ => G0 (SCV.realEmbed (LR x))) := by
-          funext x
-          have hpt : LC (SCV.realEmbed x) = SCV.realEmbed (LR x) := by
-            simpa [SCV.realEmbed] using hLC_split x 0
-          rw [hG₁_eq]
-          exact congrArg G0 hpt
-        rw [hEq]
-        exact hRegular_W'.boundary_continuous.comp LR.continuous
-      exact hcont₁.sub hRegular_W'.boundary_continuous
-    · intro x
-      have hcont₁ :
-          ContinuousWithinAt G₁ (SCV.TubeDomain (ForwardConeFlat d n)) (SCV.realEmbed x) := by
-        have hbase :
-            ContinuousWithinAt G0 (SCV.TubeDomain (ForwardConeFlat d n))
-              (LC (SCV.realEmbed x)) := by
-          have hpt : LC (SCV.realEmbed x) = SCV.realEmbed (LR x) := by
-            simpa [SCV.realEmbed] using hLC_split x 0
-          simpa [hpt] using hRegular_W'.tube_continuousWithinAt (LR x)
-        have hcomp :
-            ContinuousWithinAt (fun z => G0 (LC z))
-              (SCV.TubeDomain (ForwardConeFlat d n)) (SCV.realEmbed x) :=
-          hbase.comp (f := LC) LC.continuous.continuousWithinAt hLC_maps_tube
-        simpa [hG₁_eq] using hcomp
-      exact hcont₁.sub (hRegular_W'.tube_continuousWithinAt x)
-  have huniq :=
-    distributional_uniqueness_forwardTube_of_flatRegular_from_bvZero
-      hF₁_holo hW_holo hRegular_diff h_agree
+    (W_analytic_lorentz_bv_agree Wfn n Λ)
   exact huniq z hz
 
 /-- W_analytic extends continuously to the real boundary of the forward tube.
 
-    This is now routed through the proved explicit-regularity theorem on the
-    flattened forward tube.
+    Proved using `continuous_boundary_forwardTube`: the distributional boundary value
+    condition from `spectrum_condition` provides the hypothesis.
 
     Ref: Streater-Wightman, Theorem 2-9 -/
-theorem W_analytic_continuous_boundary (Wfn : WightmanFunctions d) (n : ℕ)
-    (hRegular_W : SCV.HasFourierLaplaceReprRegular (ForwardConeFlat d n)
-      ((Wfn.spectrum_condition n).choose ∘ (flattenCLEquiv n (d + 1)).symm)) :
+theorem W_analytic_continuous_boundary (Wfn : WightmanFunctions d) (n : ℕ) :
     ∀ (x : Fin n → Fin (d + 1) → ℝ),
       ContinuousWithinAt (Wfn.spectrum_condition n).choose
         (ForwardTube d n) (fun k μ => (x k μ : ℂ)) := by
   intro x
-  exact continuous_boundary_forwardTube_of_flatRegular
-    (d := d) (n := n) hRegular_W x
+  exact continuous_boundary_forwardTube (d := d) (n := n)
+    (Wfn.spectrum_condition n).choose_spec.1
+    ⟨Wfn.W n, Wfn.tempered n, (Wfn.spectrum_condition n).choose_spec.2⟩ x
 
 /-- Distributional swap-agreement on boundary values in test-function form.
 
@@ -464,10 +103,8 @@ theorem W_analytic_continuous_boundary (Wfn : WightmanFunctions d) (n : ℕ)
 theorem W_analytic_swap_distributional_agree {d n : ℕ} [NeZero d]
     (W_analytic : (Fin n → Fin (d + 1) → ℂ) → ℂ)
     (hW_hol : DifferentiableOn ℂ W_analytic (ForwardTube d n))
-    (hRegular : SCV.HasFourierLaplaceReprRegular (ForwardConeFlat d n)
-      (W_analytic ∘ (flattenCLEquiv n (d + 1)).symm))
     (W : (n' : ℕ) → SchwartzNPoint d n' → ℂ)
-    (_hW_cont : Continuous (W n))
+    (hW_cont : Continuous (W n))
     (hBV : ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
       InForwardCone d n η →
       Filter.Tendsto
@@ -521,24 +158,19 @@ theorem W_analytic_swap_distributional_agree {d n : ℕ} [NeZero d]
   · congr 1
     ext x
     ring
-  · exact forward_tube_bv_integrable_of_flatRegular
-      W_analytic hW_hol hRegular g η hη ε (Set.mem_Ioi.mp hε)
-  · exact forward_tube_bv_integrable_of_flatRegular
-      W_analytic hW_hol hRegular f η hη ε (Set.mem_Ioi.mp hε)
+  · exact forward_tube_bv_integrable
+      W_analytic hW_hol ⟨W n, hW_cont, hBV⟩ g η hη ε (Set.mem_Ioi.mp hε)
+  · exact forward_tube_bv_integrable
+      W_analytic hW_hol ⟨W n, hW_cont, hBV⟩ f η hη ε (Set.mem_Ioi.mp hε)
 
 /-- Boundary-pairing form of local commutativity for adjacent swaps.
 
     For test functions `f, g` related by adjacent swap on a spacelike support
     region, the real-boundary pairings of `W_analytic` coincide:
-    `∫ W_analytic(x) g(x) dx = ∫ W_analytic(x) f(x) dx`.
-
-    This now uses the explicit flattened regular Fourier-Laplace package
-    rather than the old weak forward-tube recovery placeholder. -/
+    `∫ W_analytic(x) g(x) dx = ∫ W_analytic(x) f(x) dx`. -/
 theorem W_analytic_swap_boundary_pairing_eq {d n : ℕ} [NeZero d]
     (W_analytic : (Fin n → Fin (d + 1) → ℂ) → ℂ)
     (hW_hol : DifferentiableOn ℂ W_analytic (ForwardTube d n))
-    (hRegular : SCV.HasFourierLaplaceReprRegular (ForwardConeFlat d n)
-      (W_analytic ∘ (flattenCLEquiv n (d + 1)).symm))
     (W : (n' : ℕ) → SchwartzNPoint d n' → ℂ)
     (hW_cont : Continuous (W n))
     (hBV : ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
@@ -562,13 +194,13 @@ theorem W_analytic_swap_boundary_pairing_eq {d n : ℕ} [NeZero d]
   have hg_pair :
       W n g =
         ∫ x : NPointDomain d n, W_analytic (fun k μ => (x k μ : ℂ)) * (g x) :=
-    boundary_value_recovery_forwardTube_of_flatRegular_from_bv
-      (d := d) (n := n) hW_hol hRegular hW_cont hBV g
+    boundary_value_recovery_forwardTube
+      (d := d) (n := n) hW_hol hW_cont hBV g
   have hf_pair :
       W n f =
         ∫ x : NPointDomain d n, W_analytic (fun k μ => (x k μ : ℂ)) * (f x) :=
-    boundary_value_recovery_forwardTube_of_flatRegular_from_bv
-      (d := d) (n := n) hW_hol hRegular hW_cont hBV f
+    boundary_value_recovery_forwardTube
+      (d := d) (n := n) hW_hol hW_cont hBV f
   calc
     (∫ x : NPointDomain d n, W_analytic (fun k μ => (x k μ : ℂ)) * (g x))
         = W n g := hg_pair.symm
@@ -587,15 +219,12 @@ theorem W_analytic_swap_boundary_pairing_eq {d n : ℕ} [NeZero d]
     as tube domains) and the distributional-to-pointwise bridge (from vanishing
     distributional boundary values on spacelike test supports to pointwise boundary
     equality at a fixed spacelike configuration). The distributional swap-agreement
-    itself is now provided by `W_analytic_swap_distributional_agree`, while the
-    boundary continuity input is routed through explicit flattened regularity.
+    itself is now provided by `W_analytic_swap_distributional_agree`.
 
     Ref: Streater-Wightman Thm 3-5; Jost §IV.3 -/
 theorem analytic_boundary_local_commutativity {d n : ℕ} [NeZero d]
     (W_analytic : (Fin n → Fin (d + 1) → ℂ) → ℂ)
     (hW_hol : DifferentiableOn ℂ W_analytic (ForwardTube d n))
-    (hRegular : SCV.HasFourierLaplaceReprRegular (ForwardConeFlat d n)
-      (W_analytic ∘ (flattenCLEquiv n (d + 1)).symm))
     (W : (n' : ℕ) → SchwartzNPoint d n' → ℂ)
     (hW_cont : Continuous (W n))
     (hBV : ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
@@ -614,13 +243,12 @@ theorem analytic_boundary_local_commutativity {d n : ℕ} [NeZero d]
   let j : Fin n := ⟨i.val + 1, hi⟩
   let σ : Equiv.Perm (Fin n) := Equiv.swap i j
   have _hSwapDist := W_analytic_swap_distributional_agree
-    (d := d) (n := n) W_analytic hW_hol hRegular W hW_cont hBV hLC i hi
+    (d := d) (n := n) W_analytic hW_hol W hW_cont hBV hLC i hi
   have hSwapBdry := W_analytic_swap_boundary_pairing_eq
-    (d := d) (n := n) W_analytic hW_hol hRegular W hW_cont hBV hLC i hi
+    (d := d) (n := n) W_analytic hW_hol W hW_cont hBV hLC i hi
   let B : NPointDomain d n → ℂ := fun y => W_analytic (fun k μ => (y k μ : ℂ))
   have hB_cont : Continuous B :=
-    boundary_function_continuous_forwardTube_of_flatRegular
-      (d := d) (n := n) hW_hol hRegular
+    boundary_function_continuous_forwardTube (d := d) (n := n) hW_hol hW_cont hBV
   have hBσ_cont : Continuous (fun y : NPointDomain d n => B (fun k => y (σ k))) :=
     hB_cont.comp (continuous_pi fun k => continuous_apply (σ k))
   let U : Set (NPointDomain d n) := {y : NPointDomain d n |
@@ -813,9 +441,7 @@ theorem analytic_boundary_local_commutativity {d n : ℕ} [NeZero d]
     the analytic continuation from `spectrum_condition`.
 
     Ref: Streater-Wightman, §3.3; Jost, §IV.3 -/
-theorem W_analytic_local_commutativity (Wfn : WightmanFunctions d) (n : ℕ)
-    (hRegular_W : SCV.HasFourierLaplaceReprRegular (ForwardConeFlat d n)
-      ((Wfn.spectrum_condition n).choose ∘ (flattenCLEquiv n (d + 1)).symm)) :
+theorem W_analytic_local_commutativity (Wfn : WightmanFunctions d) (n : ℕ) :
     ∀ (i : Fin n) (hi : i.val + 1 < n),
       ∀ (x : Fin n → Fin (d + 1) → ℝ),
         MinkowskiSpace.minkowskiNormSq d
@@ -827,7 +453,6 @@ theorem W_analytic_local_commutativity (Wfn : WightmanFunctions d) (n : ℕ)
   exact analytic_boundary_local_commutativity (d := d) (n := n)
     (Wfn.spectrum_condition n).choose
     (Wfn.spectrum_condition n).choose_spec.1
-    hRegular_W
     Wfn.W
     (Wfn.tempered n)
     (Wfn.spectrum_condition n).choose_spec.2
@@ -843,9 +468,7 @@ theorem W_analytic_local_commutativity (Wfn : WightmanFunctions d) (n : ℕ)
     - Local commutativity from `W_analytic_local_commutativity`
 
     Ref: Streater-Wightman, Theorem 2-11; Jost, Ch. IV -/
-noncomputable def W_analytic_BHW (Wfn : WightmanFunctions d) (n : ℕ)
-    (hRegular_W : SCV.HasFourierLaplaceReprRegular (ForwardConeFlat d n)
-      ((Wfn.spectrum_condition n).choose ∘ (flattenCLEquiv n (d + 1)).symm)) :
+noncomputable def W_analytic_BHW (Wfn : WightmanFunctions d) (n : ℕ) :
     { F_ext : (Fin n → Fin (d + 1) → ℂ) → ℂ //
       DifferentiableOn ℂ F_ext (PermutedExtendedTube d n) ∧
       (∀ z ∈ ForwardTube d n,
@@ -859,9 +482,9 @@ noncomputable def W_analytic_BHW (Wfn : WightmanFunctions d) (n : ℕ)
   let h := bargmann_hall_wightman n
       (Wfn.spectrum_condition n).choose
       (Wfn.spectrum_condition n).choose_spec.1
-      (W_analytic_lorentz_on_tube Wfn n hRegular_W)
-      (W_analytic_continuous_boundary Wfn n hRegular_W)
-      (W_analytic_local_commutativity Wfn n hRegular_W)
+      (W_analytic_lorentz_on_tube Wfn n)
+      (W_analytic_continuous_boundary Wfn n)
+      (W_analytic_local_commutativity Wfn n)
   exact ⟨h.choose, h.choose_spec.1, h.choose_spec.2.1, h.choose_spec.2.2.1,
     h.choose_spec.2.2.2.1⟩
 

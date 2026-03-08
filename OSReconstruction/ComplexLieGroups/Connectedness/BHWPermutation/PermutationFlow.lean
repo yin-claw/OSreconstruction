@@ -1,6 +1,7 @@
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.Adjacency
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.IndexSetD1
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.JostWitnessGeneralSigma
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.PermutationFlowBlocker
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SeedSlices
 import OSReconstruction.ComplexLieGroups.D1OrbitSet
 
@@ -2188,16 +2189,6 @@ private theorem iterated_eow_permutation_extension (n : ℕ)
           (x ⟨i.val + 1, hi⟩ μ - x i μ) ^ 2 > 0 →
         F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
         F (fun k μ => (x k μ : ℂ)))
-    (hSeedConn_hd2 :
-      ∀ (τ : Equiv.Perm (Fin n)), τ ≠ 1 → ¬ n ≤ 1 → 2 ≤ d →
-        IsConnected (permSeedSet (d := d) n τ))
-    (hExtPerm_d1 :
-      d = 1 →
-      ∀ (τ : Equiv.Perm (Fin n)), τ ≠ 1 → ¬ n ≤ 1 →
-        ∀ (z : Fin n → Fin (d + 1) → ℂ),
-          z ∈ ExtendedTube d n →
-          (fun k => z (τ k)) ∈ ExtendedTube d n →
-          extendF F (fun k => z (τ k)) = extendF F z)
     (σ : Equiv.Perm (Fin n)) :
     ∃ (U_σ : Set (Fin n → Fin (d + 1) → ℂ))
       (F_σ : (Fin n → Fin (d + 1) → ℂ) → ℂ),
@@ -2259,7 +2250,9 @@ private theorem iterated_eow_permutation_extension (n : ℕ)
               simpa using
                 JostWitnessGeneralSigma.jostWitness_exists (d := d) (n := n) hd2 σ
             have hseed_conn : IsConnected (permOrbitSeedSet (d := d) n σ) := by
-              simpa [permOrbitSeedSet] using hSeedConn_hd2 σ hσ hn hd2
+              simpa [permOrbitSeedSet] using
+                blocker_isConnected_permSeedSet_nontrivial
+                  (d := d) n σ hσ hn
             have hFwd_conn : IsConnected (permForwardOverlapSet (d := d) n σ) :=
               (isConnected_permOrbitSeedSet_iff_permForwardOverlapSet
                 (d := d) n σ).1 hseed_conn
@@ -2274,7 +2267,9 @@ private theorem iterated_eow_permutation_extension (n : ℕ)
           · have hd1 : 1 ≤ d := Nat.succ_le_of_lt (Nat.pos_of_ne_zero hd0)
             have hle : d ≤ 1 := Nat.not_lt.mp hd2
             have hd_eq1 : d = 1 := Nat.le_antisymm hle hd1
-            exact hExtPerm_d1 hd_eq1 σ hσ hn
+            subst hd_eq1
+            exact blocker_iterated_eow_hExtPerm_d1_nontrivial
+              n F hF_holo hF_lorentz hF_bv hF_local σ hσ hn
       exact iterated_eow_permutation_extension_of_extendF_perm n F hF_holo hF_lorentz
         hF_bv hF_local σ hExtPerm
 
@@ -2372,16 +2367,6 @@ private theorem eow_chain_adj_swap (n : ℕ)
           (x ⟨i.val + 1, hi⟩ μ - x i μ) ^ 2 > 0 →
         F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
         F (fun k μ => (x k μ : ℂ)))
-    (hSeedConn_hd2 :
-      ∀ (τ : Equiv.Perm (Fin n)), τ ≠ 1 → ¬ n ≤ 1 → 2 ≤ d →
-        IsConnected (permSeedSet (d := d) n τ))
-    (hExtPerm_d1 :
-      d = 1 →
-      ∀ (τ : Equiv.Perm (Fin n)), τ ≠ 1 → ¬ n ≤ 1 →
-        ∀ (z : Fin n → Fin (d + 1) → ℂ),
-          z ∈ ExtendedTube d n →
-          (fun k => z (τ k)) ∈ ExtendedTube d n →
-          extendF F (fun k => z (τ k)) = extendF F z)
     (σ₀ : Equiv.Perm (Fin n)) (i₀ : Fin n) (hi₀ : i₀.val + 1 < n)
     (_ih_σ : ∀ (w : Fin n → Fin (d + 1) → ℂ), w ∈ ForwardTube d n →
       ∀ (Γ : ComplexLorentzGroup d),
@@ -2398,8 +2383,7 @@ private theorem eow_chain_adj_swap (n : ℕ)
   -- Obtain the iterated EOW extension for τ
   obtain ⟨U_τ, F_τ, hU_open, hFT_sub, hτFT_sub, hF_τ_holo,
     hF_τ_eq_F, hF_τ_inv, hF_τ_eq_Fτ⟩ :=
-    iterated_eow_permutation_extension n F hF_holo hF_lorentz hF_bv hF_local
-      hSeedConn_hd2 hExtPerm_d1 τ
+    iterated_eow_permutation_extension n F hF_holo hF_lorentz hF_bv hF_local τ
   exact permInvariance_of_extensionData n F τ U_τ F_τ hFT_sub hτFT_sub
     hF_τ_eq_F hF_τ_inv hF_τ_eq_Fτ hw h
 
@@ -2417,16 +2401,6 @@ private theorem F_permutation_invariance (n : ℕ)
           (x ⟨i.val + 1, hi⟩ μ - x i μ) ^ 2 > 0 →
         F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
         F (fun k μ => (x k μ : ℂ)))
-    (hSeedConn_hd2 :
-      ∀ (σ : Equiv.Perm (Fin n)), σ ≠ 1 → ¬ n ≤ 1 → 2 ≤ d →
-        IsConnected (permSeedSet (d := d) n σ))
-    (hExtPerm_d1 :
-      d = 1 →
-      ∀ (σ : Equiv.Perm (Fin n)), σ ≠ 1 → ¬ n ≤ 1 →
-        ∀ (z : Fin n → Fin (d + 1) → ℂ),
-          z ∈ ExtendedTube d n →
-          (fun k => z (σ k)) ∈ ExtendedTube d n →
-          extendF F (fun k => z (σ k)) = extendF F z)
     {w : Fin n → Fin (d + 1) → ℂ} (hw : w ∈ ForwardTube d n)
     {τ : Equiv.Perm (Fin n)} {Γ : ComplexLorentzGroup d}
     (h : complexLorentzAction Γ (fun k => w (τ k)) ∈ ForwardTube d n) :
@@ -2467,7 +2441,7 @@ private theorem F_permutation_invariance (n : ℕ)
     -- tubes via iterated EOW, which is a substantial infrastructure gap.
     -- Bootstrap with a helper capturing this gap.
     exact eow_chain_adj_swap n F hF_holo hF_lorentz hF_bv hF_local
-      hSeedConn_hd2 hExtPerm_d1 σ₀ i₀ hi₀ ih_σ hw₀ h₀
+      σ₀ i₀ hi₀ ih_σ hw₀ h₀
 
 /-- Well-definedness: any two preimages of the same point give the same F-value.
     Reduces to `F_permutation_invariance` via the Lorentz-permutation commutation
@@ -2490,16 +2464,6 @@ private theorem fullExtendF_well_defined (n : ℕ)
           (x ⟨i.val + 1, hi⟩ μ - x i μ) ^ 2 > 0 →
         F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
         F (fun k μ => (x k μ : ℂ)))
-    (hSeedConn_hd2 :
-      ∀ (σ : Equiv.Perm (Fin n)), σ ≠ 1 → ¬ n ≤ 1 → 2 ≤ d →
-        IsConnected (permSeedSet (d := d) n σ))
-    (hExtPerm_d1 :
-      d = 1 →
-      ∀ (σ : Equiv.Perm (Fin n)), σ ≠ 1 → ¬ n ≤ 1 →
-        ∀ (z : Fin n → Fin (d + 1) → ℂ),
-          z ∈ ExtendedTube d n →
-          (fun k => z (σ k)) ∈ ExtendedTube d n →
-          extendF F (fun k => z (σ k)) = extendF F z)
     {w₁ w₂ : Fin n → Fin (d + 1) → ℂ}
     (hw₁ : w₁ ∈ ForwardTube d n) (hw₂ : w₂ ∈ ForwardTube d n)
     {π₁ π₂ : Equiv.Perm (Fin n)} {Λ₁ Λ₂ : ComplexLorentzGroup d}
@@ -2523,8 +2487,7 @@ private theorem fullExtendF_well_defined (n : ℕ)
     simp only [complexLorentzAction, Equiv.Perm.mul_apply]
   -- Step 2: Apply F_permutation_invariance
   rw [hw₁_eq]
-  exact F_permutation_invariance n F hF_holo hF_lorentz hF_bv hF_local
-    hSeedConn_hd2 hExtPerm_d1 hw₂ (hw₁_eq ▸ hw₁)
+  exact F_permutation_invariance n F hF_holo hF_lorentz hF_bv hF_local hw₂ (hw₁_eq ▸ hw₁)
 
 theorem bargmann_hall_wightman_theorem [NeZero d] (n : ℕ)
     (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
@@ -2542,17 +2505,7 @@ theorem bargmann_hall_wightman_theorem [NeZero d] (n : ℕ)
         ∑ μ, minkowskiSignature d μ *
           (x ⟨i.val + 1, hi⟩ μ - x i μ) ^ 2 > 0 →
         F (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ)) =
-        F (fun k μ => (x k μ : ℂ)))
-    (hSeedConn_hd2 :
-      ∀ (σ : Equiv.Perm (Fin n)), σ ≠ 1 → ¬ n ≤ 1 → 2 ≤ d →
-        IsConnected (permSeedSet (d := d) n σ))
-    (hExtPerm_d1 :
-      d = 1 →
-      ∀ (σ : Equiv.Perm (Fin n)), σ ≠ 1 → ¬ n ≤ 1 →
-        ∀ (z : Fin n → Fin (d + 1) → ℂ),
-          z ∈ ExtendedTube d n →
-          (fun k => z (σ k)) ∈ ExtendedTube d n →
-          extendF F (fun k => z (σ k)) = extendF F z) :
+        F (fun k μ => (x k μ : ℂ))) :
     ∃ (F_ext : (Fin n → Fin (d + 1) → ℂ) → ℂ),
       -- F_ext is holomorphic on the permuted extended tube
       DifferentiableOn ℂ F_ext (PermutedExtendedTube d n) ∧
@@ -2604,7 +2557,6 @@ theorem bargmann_hall_wightman_theorem [NeZero d] (n : ℕ)
         ⟨π₀⁻¹, Λ₀, ψ z, hz_V, hz_chart⟩
       rw [dif_pos hex]
       exact fullExtendF_well_defined n F hF_holo hF_lorentz hF_bv hF_local
-        hSeedConn_hd2 hExtPerm_d1
         hex.choose_spec.choose_spec.choose_spec.1 hz_V
         (hex.choose_spec.choose_spec.choose_spec.2.symm.trans hz_chart)
     have hFψ_diff : DifferentiableAt ℂ (fun z => F (ψ z)) z₀ :=
@@ -2626,8 +2578,7 @@ theorem bargmann_hall_wightman_theorem [NeZero d] (n : ℕ)
         (fun k => w_c (hex.choose k)) =
         complexLorentzAction 1 (fun k => z ((Equiv.refl (Fin n)) k)) := by
       rw [← hz_eq, complexLorentzAction_one]; rfl
-    exact fullExtendF_well_defined n F hF_holo hF_lorentz hF_bv hF_local
-      hSeedConn_hd2 hExtPerm_d1 hw_c hz h_eq
+    exact fullExtendF_well_defined n F hF_holo hF_lorentz hF_bv hF_local hw_c hz h_eq
   refine ⟨fullExtendF F, hProp1, hProp2, ?_, ?_, ?_⟩
   -- === Property 3: Complex Lorentz invariance ===
   -- If z = Λ'·w_p with w_p ∈ PermutedForwardTube π, then Λz = (ΛΛ')·w_p.
@@ -2666,7 +2617,6 @@ theorem bargmann_hall_wightman_theorem [NeZero d] (n : ℕ)
       rw [complexLorentzAction_mul, ← hz_eq']
       exact hΛz_eq.symm
     exact fullExtendF_well_defined n F hF_holo hF_lorentz hF_bv hF_local
-      hSeedConn_hd2 hExtPerm_d1
       hex_Λz.choose_spec.choose_spec.choose_spec.1
       hex_z.choose_spec.choose_spec.choose_spec.1 h_eq
   -- === Property 4: Permutation symmetry ===
@@ -2707,7 +2657,6 @@ theorem bargmann_hall_wightman_theorem [NeZero d] (n : ℕ)
         (fun k => hex_z.choose_spec.choose_spec.choose ((hex_z.choose * π) k)) :=
       hπz_eq.symm.trans h_zperm
     exact fullExtendF_well_defined n F hF_holo hF_lorentz hF_bv hF_local
-      hSeedConn_hd2 hExtPerm_d1
       hex_πz.choose_spec.choose_spec.choose_spec.1
       hex_z.choose_spec.choose_spec.choose_spec.1 h_eq
   -- === Property 5: Uniqueness ===
