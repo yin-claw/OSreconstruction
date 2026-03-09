@@ -193,36 +193,65 @@ Specifically:
   This needs JOINT convergence, not just convergence along vertical rays.
 - For holomorphic functions, vertical convergence to 0 at every real point
   does NOT imply ContinuousWithinAt (counterexamples exist without growth control).
-- Polynomial growth |G(x+iy)| ≤ C(1+‖x‖)^N/‖y‖^k would give dominated
-  convergence and hence ContinuousWithinAt. But polynomial growth comes from
-  Banach-Steinhaus for the Fréchet space S'(ℝᵐ), which Mathlib doesn't have.
 
-All approaches (convolution, 1D reduction, distributional EOW) hit this same gap.
+## UPDATE (2026-03-09): ROOT BLOCKER RESOLVED — Banach-Steinhaus built
 
-## What WAS Proved (2026-03-08):
+Path 1 (Banach-Steinhaus) was chosen and COMPLETED by Codex. The full pipeline
+is now proved, pending only assembly into the top-level theorem.
 
-1. `SCV.translateSchwartz` — translate Schwartz function by fixed vector.
-   PROVED, 0 sorrys. In `SCV/DistributionalUniqueness.lean`.
+### What is proved (all sorry-free, in SCV/):
 
-2. `SCV.uniqueness_of_boundary_zero` — if G is holomorphic on T(C), vanishes
-   pointwise on the boundary, and has ContinuousWithinAt at all boundary points,
-   then G = 0. PROVED, 0 sorrys. Factored out from `distributional_uniqueness_tube_of_regular`.
+**SchwartzComplete.lean** (Codex):
+1. `SchwartzMap.instCompleteSpace` — completeness of 𝓢(E, F)
+2. `SchwartzMap.instBarrelledSpace` — barrelledness (enables Banach-Steinhaus)
+3. `tempered_equicontinuous` — Banach-Steinhaus for tempered distributions
+4. `tempered_apply_tendsto_zero_of_tendsto` — sequence payoff: T_n→0 + u_n→f ⟹ T_n(u_n)→0
+5. `tempered_apply_tendsto_zero_of_tendsto_filter` — filter-generalized version
 
-## Possible Forward Paths:
+**DistributionalUniqueness.lean** (Codex):
+1. `translateSchwartz` / `translateSchwartzCLM` — Schwartz translation as CLM
+2. `tendsto_translateSchwartz_nhds_of_isCompactSupport` — translation continuity in 𝓢 topology
+3. `continuousOn_realMollify_upperHalfPlane` — M_ψ continuous on UHP
+4. `differentiableOn_realMollify_upperHalfPlane` — M_ψ holomorphic on UHP (1D)
+5. `tendsto_mollified_boundary_zero_of_clm_zero` — boundary trace M_ψ → 0
+   (uses Banach-Steinhaus to handle joint (x,ε)→(x₀,0) limit)
+6. `uniqueness_of_boundary_trace_zero` — G holomorphic + trace 0 ⟹ G = 0
+7. `eq_zero_on_open_of_compactSupport_schwartz_integral_zero` — du Bois-Reymond
 
-1. **Build Banach-Steinhaus for Fréchet spaces** (~300-500 lines). This would unlock:
-   - Distributional BV → polynomial growth
-   - Polynomial growth → ContinuousWithinAt (via dominated convergence)
-   - ContinuousWithinAt + boundary = 0 → G = 0 (via `uniqueness_of_boundary_zero`)
-   This is the most general and reusable approach.
+### Assembly plan (IN PROGRESS):
 
-2. **Build distributional EOW** (edge-of-the-wedge with S'-convergence instead of
-   ContinuousWithinAt). This bypasses polynomial growth entirely but requires a new
-   variant of the 1D EOW theorem.
+**Step A** (Codex building): Generalize `differentiableOn_realMollify_upperHalfPlane`
+to multi-dimensional tube domains using `hasFDerivAt_integral_of_dominated_of_fderiv_le`.
 
-3. **Use spectral information** from the Wightman axioms directly. The BV hypothesis
-   in the actual use case comes from `spectrum_condition`, which provides more than
-   bare distributional BV — it gives spectral support in the forward cone. This extra
-   structure might enable a direct construction of `HasFourierLaplaceReprRegular`
-   without going through the generic Banach-Steinhaus route.
+**Step B**: Assemble top-level theorem in SCV/DistributionalUniqueness.lean:
+```
+theorem distributional_uniqueness_tube_of_zero_bv {m : ℕ}
+    {C : Set (Fin m → ℝ)} (hC : IsOpen C) (hconv : Convex ℝ C) ...
+    {G : (Fin m → ℂ) → ℂ}
+    (hG_diff : DifferentiableOn ℂ G (TubeDomain C))
+    (hG_bv_zero : ∀ f η, η ∈ C → Tendsto (...) ... (nhds 0)) :
+    ∀ z ∈ TubeDomain C, G z = 0
+```
+Proof chain: mollify → holo (Step A) + boundary trace 0 (item 5) → M_ψ = 0 (item 6)
+→ G = 0 (item 7).
+
+**Step C**: One-line instantiation in ForwardTubeDistributions.lean:
+`distributional_uniqueness_forwardTube` = flatten via `flattenCLEquiv`,
+apply `distributional_uniqueness_tube_of_zero_bv` to `ForwardConeFlat`, unflatten.
+ForwardConeFlat satisfies open + convex + cone — no Lorentz/spectral structure needed.
+
+### Key insight: Why Banach-Steinhaus was needed
+
+The mollified function M_ψ(w) = ∫ G(w + realEmbed t) ψ(t) dt has boundary
+trace M_ψ(realEmbed x₀ + iεη) = T_ε(translate(-x₀) ψ) where T_ε(f) = ∫ G(realEmbed t + iεη) f(t) dt.
+
+The weak BV hypothesis gives T_ε(f) → 0 for each fixed f. But the
+`uniqueness_of_boundary_trace_zero` theorem needs the FULL nhdsWithin limit:
+as w → realEmbed(x₀) within the tube, M_ψ(w) → 0. In this limit, BOTH
+Im(w) → 0 (so ε → 0) AND Re(w) → x₀ (so the test function translate(-Re w) ψ
+varies). This is a joint limit where the operator AND the input both vary.
+
+Banach-Steinhaus (via `tempered_apply_tendsto_zero_of_tendsto_filter`) handles
+exactly this: if T_ε → 0 pointwise and translate(-Re w) ψ → translate(-x₀) ψ
+in 𝓢 topology, then T_ε(translate(-Re w) ψ) → 0.
 -/
