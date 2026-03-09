@@ -872,6 +872,132 @@ theorem constructedSchwinger_symmetric (Wfn : WightmanFunctions d)
         integral_perm_eq_self σ
           (fun x => K x * (f : NPointDomain d n → ℂ) x)
 
+private abbrev permuteSchwartz (σ : Equiv.Perm (Fin n)) (f : SchwartzNPoint d n) :
+    SchwartzNPoint d n :=
+  SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
+    ((LinearEquiv.funCongrLeft ℝ (SpacetimeDim d) σ).toContinuousLinearEquiv) f
+
+@[simp] private theorem permuteSchwartz_apply (σ : Equiv.Perm (Fin n))
+    (f : SchwartzNPoint d n) (x : NPointDomain d n) :
+    permuteSchwartz σ f x = f (fun i => x (σ i)) := by
+  rfl
+
+@[simp] private theorem permuteSchwartz_one (f : SchwartzNPoint d n) :
+    permuteSchwartz (1 : Equiv.Perm (Fin n)) f = f := by
+  ext x
+  simp [permuteSchwartz]
+
+@[simp] private theorem permuteSchwartz_mul (σ τ : Equiv.Perm (Fin n))
+    (f : SchwartzNPoint d n) :
+    permuteSchwartz (σ * τ) f = permuteSchwartz σ (permuteSchwartz τ f) := by
+  ext x
+  simp [permuteSchwartz]
+
+private theorem permute_support_jost (σ : Equiv.Perm (Fin n)) (f : SchwartzNPoint d n)
+    (hf : ∀ x : NPointDomain d n, f x ≠ 0 → x ∈ BHW.JostSet d n) :
+    ∀ x : NPointDomain d n, permuteSchwartz σ f x ≠ 0 → x ∈ BHW.JostSet d n := by
+  intro x hx
+  have hy : (fun i => x (σ i)) ∈ BHW.JostSet d n := hf _ hx
+  simpa using (BHW.jostSet_permutation_invariant (d := d) (n := n) σ.symm hy)
+
+private theorem areSpacelikeSeparated_of_jost_pair (x y : SpacetimeDim d)
+    (h : BHW.IsSpacelike d (fun μ => x μ - y μ)) :
+    MinkowskiSpace.AreSpacelikeSeparated d x y := by
+  unfold MinkowskiSpace.AreSpacelikeSeparated MinkowskiSpace.IsSpacelike
+  have hs :
+      MinkowskiSpace.minkowskiNormSq d (x - y)
+        =
+      (∑ μ, if μ = 0 then (y μ - x μ) * (x μ - y μ)
+             else (x μ - y μ) * (x μ - y μ)) := by
+    unfold MinkowskiSpace.minkowskiNormSq MinkowskiSpace.minkowskiInner
+    refine Finset.sum_congr rfl ?_
+    intro μ _
+    by_cases h0 : μ = 0
+    · subst h0
+      simp [MinkowskiSpace.metricSignature]
+    · simp [MinkowskiSpace.metricSignature, h0]
+  have ht :
+      (∑ μ, if μ = 0 then (y μ - x μ) * (x μ - y μ)
+             else (x μ - y μ) * (x μ - y μ))
+        =
+      (∑ μ, if μ = 0 then -((x μ - y μ) * (x μ - y μ))
+             else (x μ - y μ) * (x μ - y μ)) := by
+    refine Finset.sum_congr rfl ?_
+    intro μ _
+    by_cases h0 : μ = 0
+    · subst h0
+      ring_nf
+    · simp [h0]
+  rw [hs, ht]
+  simpa [BHW.IsSpacelike, LorentzLieGroup.minkowskiSignature, sq] using h
+
+private theorem wightman_perm_invariant_on_jost_support (Wfn : WightmanFunctions d)
+    (n : ℕ) (f : SchwartzNPoint d n)
+    (hf : ∀ x : NPointDomain d n, f x ≠ 0 → x ∈ BHW.JostSet d n)
+    (σ : Equiv.Perm (Fin n)) :
+    Wfn.W n (permuteSchwartz σ f) = Wfn.W n f := by
+  refine BHW.Fin.Perm.adjSwap_induction (n := n)
+    (motive := fun τ => Wfn.W n (permuteSchwartz τ f) = Wfn.W n f) ?_ ?_ σ
+  · simp [permuteSchwartz]
+  · intro τ i hi hτ
+    let gτ : SchwartzNPoint d n := permuteSchwartz τ f
+    have hsupp : ∀ x : NPointDomain d n, gτ x ≠ 0 →
+        MinkowskiSpace.AreSpacelikeSeparated d (x i) (x ⟨i.val + 1, hi⟩) := by
+      intro x hx
+      have hxJ : x ∈ BHW.JostSet d n :=
+        permute_support_jost (d := d) (n := n) τ f hf x hx
+      have hij : i ≠ ⟨i.val + 1, hi⟩ := by
+        intro hEq
+        have : i.val = i.val + 1 := by simpa using congrArg Fin.val hEq
+        omega
+      exact areSpacelikeSeparated_of_jost_pair (d := d) (x i) (x ⟨i.val + 1, hi⟩)
+        (hxJ.2 i ⟨i.val + 1, hi⟩ hij)
+    have hswap0 :
+        Wfn.W n gτ = Wfn.W n (permuteSchwartz (Equiv.swap i ⟨i.val + 1, hi⟩) gτ) := by
+      refine Wfn.locally_commutative n i ⟨i.val + 1, hi⟩ gτ
+        (permuteSchwartz (Equiv.swap i ⟨i.val + 1, hi⟩) gτ) hsupp ?_
+      intro x
+      change permuteSchwartz (Equiv.swap i ⟨i.val + 1, hi⟩) gτ x =
+        gτ (fun k => x ((Equiv.swap i ⟨i.val + 1, hi⟩) k))
+      rw [permuteSchwartz_apply]
+    calc
+      Wfn.W n (permuteSchwartz (Equiv.swap i ⟨i.val + 1, hi⟩ * τ) f)
+          = Wfn.W n (permuteSchwartz (Equiv.swap i ⟨i.val + 1, hi⟩) gτ) := by
+            simp [gτ, permuteSchwartz_mul]
+      _ = Wfn.W n gτ := hswap0.symm
+      _ = Wfn.W n f := hτ
+
+private theorem wightman_reverse_invariant_on_jost_support (Wfn : WightmanFunctions d)
+    (n : ℕ) (f : SchwartzNPoint d n)
+    (hf : ∀ x : NPointDomain d n, f x ≠ 0 → x ∈ BHW.JostSet d n) :
+    Wfn.W n f.reverse = Wfn.W n f := by
+  simpa [SchwartzMap.reverse, permuteSchwartz]
+    using wightman_perm_invariant_on_jost_support (d := d) Wfn n f hf Fin.revPerm
+
+/-- On real-valued Schwartz functions supported in the Jost set, the Wightman
+    pairing is real.
+
+    This is the distributional boundary counterpart of Euclidean BHW reality:
+    Jost-support reversal invariance plus Wightman Hermiticity force
+    `W_n(f) = conj(W_n(f))`. The remaining gap in `bhw_euclidean_reality_ae`
+    is to transfer this real-boundary statement to the Euclidean analytic
+    continuation. -/
+private theorem wightman_real_on_jost_support (Wfn : WightmanFunctions d)
+    (n : ℕ) (f : SchwartzNPoint d n)
+    (hf : ∀ x : NPointDomain d n, f x ≠ 0 → x ∈ BHW.JostSet d n)
+    (hreal : ∀ x : NPointDomain d n, starRingEnd ℂ (f x) = f x) :
+    starRingEnd ℂ (Wfn.W n f) = Wfn.W n f := by
+  have hherm :
+      Wfn.W n f.reverse = starRingEnd ℂ (Wfn.W n f) := by
+    refine Wfn.hermitian n f f.reverse ?_
+    intro x
+    rw [SchwartzMap.reverse]
+    symm
+    exact hreal (fun i => x i.rev)
+  calc
+    starRingEnd ℂ (Wfn.W n f) = Wfn.W n f.reverse := hherm.symm
+    _ = Wfn.W n f := wightman_reverse_invariant_on_jost_support (d := d) Wfn n f hf
+
 /-- Euclidean-point Hermiticity of the BHW extension.
 
     For Euclidean configurations, the BHW extension at `wick(x)` is related by
@@ -947,14 +1073,37 @@ theorem constructedSchwinger_reality (Wfn : WightmanFunctions d) (n : ℕ)
               (fun y : NPointDomain d n =>
                 K (timeReflectionN d y) *
                   starRingEnd ℂ (f (fun i => y (σ i))))
+    _ = ∫ x : NPointDomain d n,
+          K (timeReflectionN d x) *
+            starRingEnd ℂ (f (timeReflectionN d (fun i => timeReflectionN d x (σ i)))) := by
+          refine MeasureTheory.integral_congr_ae ?_
+          refine Filter.Eventually.of_forall ?_
+          intro x
+          have hx :
+              timeReflectionN d (fun i => timeReflectionN d x (σ i)) =
+                fun i => x (σ i) := by
+            ext i μ
+            by_cases hμ : μ = 0
+            · subst hμ
+              simp [timeReflectionN, timeReflection, σ]
+            · simp [timeReflectionN, timeReflection, σ, hμ]
+          simp [hx]
     _ = ∫ x : NPointDomain d n, K x * f_rev_osConj x := by
-          simpa [f_rev_osConj, σ, timeReflection_timeReflection, htwist,
-            SchwartzNPoint.osConj_apply,
-            SchwartzMap.compCLMOfContinuousLinearEquiv_apply,
-            LinearEquiv.funCongrLeft_apply] using
-            integral_timeReflection_eq_self
-              (d := d) (n := n)
-              (fun y : NPointDomain d n => K y * f_rev_osConj y)
+          calc
+            ∫ x : NPointDomain d n,
+                K (timeReflectionN d x) *
+                  starRingEnd ℂ (f (timeReflectionN d (fun i => timeReflectionN d x (σ i))))
+              = ∫ x : NPointDomain d n,
+                  K x * starRingEnd ℂ (f (timeReflectionN d (fun i => x (σ i)))) := by
+                    simpa using
+                      integral_timeReflection_eq_self
+                        (d := d) (n := n)
+                        (fun y : NPointDomain d n =>
+                          K y * starRingEnd ℂ (f (timeReflectionN d (fun i => y (σ i)))))
+            _ = ∫ x : NPointDomain d n, K x * f_rev_osConj x := by
+                  simp [f_rev_osConj, σ, SchwartzNPoint.osConj_apply,
+                    SchwartzMap.compCLMOfContinuousLinearEquiv_apply,
+                    LinearEquiv.funCongrLeft_apply]
     _ = constructSchwingerFunctions Wfn n f_rev_osConj := rfl
     _ = constructSchwingerFunctions Wfn n f.osConj := by
           symm
