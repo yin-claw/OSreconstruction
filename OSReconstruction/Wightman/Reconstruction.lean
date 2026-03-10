@@ -2047,6 +2047,46 @@ theorem VanishesToInfiniteOrderOnCoincidence.smul {d n : ℕ}
   change c • f ∈ zeroDiagonalSubmodule d n
   exact (zeroDiagonalSubmodule d n).smul_mem c hf
 
+private theorem mem_CoincidenceLocus_precomp_equiv {d k l : ℕ}
+    (σ : Fin k ≃ Fin l) {x : NPointDomain d l}
+    (hx : x ∈ CoincidenceLocus d l) :
+    (fun i => x (σ i)) ∈ CoincidenceLocus d k := by
+  rcases hx with ⟨i, j, hij, hEq⟩
+  refine ⟨σ.symm i, σ.symm j, ?_, ?_⟩
+  · intro h
+    apply hij
+    simpa using congrArg σ h
+  · simpa using hEq
+
+/-- Vanishing to infinite order on the coincidence locus is preserved by
+    reindexing the point variables by any finite equivalence. -/
+theorem VanishesToInfiniteOrderOnCoincidence.compCLMOfContinuousLinearEquiv
+    {d k l : ℕ} {f : SchwartzNPoint d k}
+    (hf : VanishesToInfiniteOrderOnCoincidence f) (σ : Fin k ≃ Fin l) :
+    VanishesToInfiniteOrderOnCoincidence
+      (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
+        ((LinearEquiv.funCongrLeft ℝ (SpacetimeDim d) σ).toContinuousLinearEquiv) f) := by
+  intro r x hx
+  let e : NPointDomain d l ≃L[ℝ] NPointDomain d k :=
+    (LinearEquiv.funCongrLeft ℝ (SpacetimeDim d) σ).toContinuousLinearEquiv
+  have hcomp :
+      iteratedFDeriv ℝ r
+          ((SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e f : SchwartzNPoint d l) :
+            NPointDomain d l → ℂ) x =
+        (iteratedFDeriv ℝ r (f : NPointDomain d k → ℂ) (e x)).compContinuousLinearMap
+          (fun _ : Fin r => e.toContinuousLinearMap) := by
+    simpa [e] using
+      e.toContinuousLinearMap.iteratedFDeriv_comp_right
+        (f := (f : NPointDomain d k → ℂ))
+        ((f : SchwartzNPoint d k).smooth r) (x := x) (i := r) le_rfl
+  have hzero :
+      iteratedFDeriv ℝ r (f : NPointDomain d k → ℂ) (e x) = 0 := by
+    exact hf r (e x) (by
+      simpa [e] using mem_CoincidenceLocus_precomp_equiv (d := d) (σ := σ) hx)
+  rw [hcomp, hzero]
+  ext u
+  simp
+
 @[simp]
 theorem ZeroDiagonalSchwartz.ofClassical_zero {d n : ℕ} :
     ZeroDiagonalSchwartz.ofClassical (0 : SchwartzNPoint d n) = 0 := by
