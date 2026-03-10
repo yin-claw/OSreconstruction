@@ -21,8 +21,8 @@ proofs from the GNS construction and Wick rotation modules.
 * `wightman_uniqueness` — Two Wightman QFTs with matching n-point functions are
   unitarily equivalent. (Sorry: standard GNS uniqueness argument)
 
-* `wightman_to_os` — Theorem R→E: Wightman functions → corrected OS axioms
-  on the Euclidean side
+* `wightman_to_os` — Theorem R→E: Wightman functions → honest zero-diagonal
+  Euclidean Schwinger family on the Euclidean side
   (Proof: `wightman_to_os_full` in WickRotation.lean)
 
 * `os_to_wightman` — Theorem E'→R': corrected OS axioms with linear growth →
@@ -34,7 +34,7 @@ proofs from the GNS construction and Wick rotation modules.
 This file exists to resolve circular import constraints:
 - `Reconstruction.lean` defines `WightmanFunctions`, `OsterwalderSchraderAxioms`, etc.
 - `GNSHilbertSpace.lean` imports `Reconstruction.lean` (needs `WightmanFunctions`)
-- `WickRotation.lean` imports `Reconstruction.lean` (needs `IsWickRotationPair`)
+-- `WickRotation.lean` imports `Reconstruction.lean` (needs `IsWickRotationPair`)
 - This file imports both and wires the proofs.
 -/
 
@@ -81,14 +81,20 @@ theorem wightman_uniqueness (qft₁ qft₂ : WightmanQFT d)
         U (qft₁.field.operator f ψ) = qft₂.field.operator f (U ψ)) := by
   sorry
 
-/-- **Theorem R→E** (Wightman → OS): A Wightman QFT yields Schwinger functions
-    satisfying OS axioms E0-E4, related by Wick rotation.
+/-- **Theorem R→E** (Wightman -> zero-diagonal Euclidean side): a Wightman QFT
+    yields an honest zero-diagonal Schwinger family, related to the Wightman
+    functions by Wick rotation.
 
-    The Schwinger functions are Euclidean restrictions of the BHW analytic
-    continuation, whose boundary values are the Wightman functions. -/
+    The Schwinger functionals are only packaged on `ZeroDiagonalSchwartz` in this
+    direction; no full-Schwartz OS-II extension is claimed here. This is
+    intentional: the natural Euclidean kernels may have inverse-power
+    coincidence singularities, and the honest general pairing surface is the
+    zero-diagonal test space. -/
 theorem wightman_to_os (Wfn : WightmanFunctions d) :
-    ∃ (OS : OsterwalderSchraderAxioms d),
-      IsWickRotationPair OS.S Wfn.W :=
+    ∃ (S : SchwingerFunctions d),
+      (∀ n, Continuous (S n)) ∧
+      (∀ n, IsLinearMap ℂ (S n)) ∧
+      IsWickRotationPair S Wfn.W :=
   wightman_to_os_full Wfn
 
 /-- **Theorem E'→R'** (OS II): Schwinger functions satisfying the linear growth
@@ -97,11 +103,21 @@ theorem wightman_to_os (Wfn : WightmanFunctions d) :
 
     **Critical**: Without the linear growth condition, this theorem may be FALSE.
     The issue is that analytic continuation involves infinitely many Sₖ, and
-    without growth control, the boundary values may fail to be tempered. -/
+    without growth control, the boundary values may fail to be tempered.
+
+    The input `OsterwalderSchraderAxioms` is already the corrected OS surface:
+    its E0 temperedness clause is only on `ZeroDiagonalSchwartz`. The extra
+    OS-II content used here is the linear growth condition, not a return to a
+    false full-Schwartz Euclidean axiom.
+
+    The main mathematical content is exactly the hard passage from Euclidean
+    Schwinger data on `ZeroDiagonalSchwartz` to full tempered Wightman
+    distributions on Schwartz space. If that passage were already built into the
+    Euclidean hypothesis, there would be little OS reconstruction left to prove. -/
 theorem os_to_wightman (OS : OsterwalderSchraderAxioms d)
     (linear_growth : OSLinearGrowthCondition d OS) :
     ∃ (Wfn : WightmanFunctions d),
-      IsWickRotationPair OS.S Wfn.W :=
+      IsWickRotationPair OS.schwinger Wfn.W :=
   os_to_wightman_full OS linear_growth
 
 end

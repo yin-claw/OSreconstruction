@@ -62,9 +62,14 @@ A configuration z ∈ ℂ^{n(d+1)} is **Euclidean** if z_k = (iτ_k, x⃗_k) wit
 the imaginary times ordered: τ_{π(1)} > τ_{π(2)} > ... > τ_{π(n)}, placing
 the permuted configuration in T_n.
 
-**Theorem**: All distinct Euclidean points lie in the permuted extended tube.
-This is what allows defining Schwinger functions by restricting the analytically
-continued Wightman functions to Euclidean points.
+Current formalized pointwise regimes:
+- distinct positive-time Euclidean configurations lie in the permuted extended tube;
+- more generally, distinct configurations lying in a common open half-space do too.
+
+For arbitrary Euclidean configurations, the current library uses the weaker but
+sufficient statement that Wick-rotated Euclidean points lie in PET **almost
+everywhere** (`ae_euclidean_points_in_permutedTube`), which is enough for the
+distributional/integral identities developed on the Schwinger side.
 
 ## References
 
@@ -864,7 +869,9 @@ theorem jost_lemma (z : Fin n → Fin (d + 1) → ℂ) (hz : IsJostPoint z) :
     for τ₁ > τ₂ > ... > τₙ > 0 (time-ordered Euclidean points lie in the forward tube).
 
     By the BHW theorem, the analytic continuation extends to the permuted extended tube,
-    making S_n well-defined and symmetric for all distinct Euclidean points. -/
+    making S_n pointwise well-defined on the currently formalized PET subregions
+    (notably positive-time and common-half-space Euclidean configurations), and
+    a.e. well-defined for general Euclidean configurations. -/
 def SchwingerFromWightman (d : ℕ) [NeZero d]
     (W_analytic : (n : ℕ) → (Fin n → Fin (d + 1) → ℂ) → ℂ) :
     (n : ℕ) → (Fin n → Fin (d + 1) → ℝ) → ℂ :=
@@ -1576,6 +1583,30 @@ lemma exists_rotation_distinct_positive_times {n : ℕ}
     simp only [û, div_mul_eq_mul_div]
     rw [← Finset.sum_div]
     exact div_pos (hu_pos i) hnorm_pos
+
+/-- Real configurations lying in a common open half-space Wick-rotate into PET.
+
+    The point is geometric:
+    1. a common open half-space lets us choose a Euclidean rotation sending all
+       first coordinates positive and pairwise distinct,
+    2. the rotated configuration is therefore in PET by
+       `euclidean_distinct_in_permutedTube`,
+    3. applying the inverse Euclidean rotation inside the complex Lorentz group
+       brings the original Wick-rotated configuration back into PET. -/
+theorem euclidean_commonHalfSpace_in_permutedTube {n : ℕ}
+    (x : Fin n → Fin (d + 1) → ℝ)
+    (hdistinct : ∀ i j : Fin n, i ≠ j → x i ≠ x j)
+    (hhs : ∃ v : Fin (d + 1) → ℝ, ∀ i : Fin n, ∑ μ, v μ * x i μ > 0) :
+    (fun k => wickRotatePoint (x k)) ∈ PermutedExtendedTube d n := by
+  obtain ⟨R, hR_det, hR_orth, hR_distinct, hR_pos⟩ :=
+    exists_rotation_distinct_positive_times (d := d) x hdistinct hhs
+  have hrot :
+      (fun k => wickRotatePoint (R.mulVec (x k))) ∈ PermutedExtendedTube d n :=
+    euclidean_distinct_in_permutedTube (d := d)
+      (xs := fun k => R.mulVec (x k))
+      (fun i j hij => hR_distinct i j hij)
+      (fun i => hR_pos i)
+  exact PermutedExtendedTube_euclidean_preimage (d := d) R hR_det hR_orth x hrot
 
 /-- Euclidean invariance of Schwinger functions follows from complex Lorentz
     invariance of the analytically continued Wightman functions.

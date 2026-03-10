@@ -870,16 +870,37 @@ theorem bhw_distributional_boundary_values {d n : ℕ} [NeZero d]
     on all Euclidean points (not just time-ordered ones), and carries the complex
     Lorentz invariance and permutation symmetry needed for E1b and E3.
 
-    Important: the corrected OS-I axiom surface does not claim that this raw total
-    pairing is tempered on all of `SchwartzNPoint`. In the current development,
-    the honest E0 statement is only continuity on `ZeroDiagonalSchwartz`; any
-    stronger full-Schwartz extension needs separate justification.
+    Important: this full-Schwartz pairing belongs to the Wightman side of the
+    story. Wightman functions are tempered distributions on all of
+    `SchwartzNPoint`, so there is no problem with a raw full-Schwartz pairing
+    appearing here.
+
+    What the corrected OS-I axiom surface forbids is interpreting this raw
+    Euclidean Wick-rotated formula as the honest Schwinger object. The honest
+    Euclidean Schwinger family of the project lives on `ZeroDiagonalSchwartz`.
+    So the present definition should be read as the raw Wightman-side
+    Wick-rotated boundary pairing, while `constructSchwingerFunctions` below is
+    the actual zero-diagonal Euclidean Schwinger family.
 
     Ref: OS I (1973), Section 5; Streater-Wightman, Chapter 3 -/
-def constructSchwingerFunctions (Wfn : WightmanFunctions d) :
-    SchwingerFunctions d :=
+def wickRotatedBoundaryPairing (Wfn : WightmanFunctions d) :
+    (n : ℕ) → SchwartzNPoint d n → ℂ :=
   fun n f =>
     ∫ x : NPointDomain d n,
       (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k)) * (f x)
+
+/-- The honest OS-I Euclidean family extracted from Wightman functions: the raw
+    Wick-rotated pairing restricted to `ZeroDiagonalSchwartz`.
+
+    This is the Euclidean Schwinger family that should appear in the OS axioms
+    and in the `R -> E` direction. -/
+def constructSchwingerFunctions (Wfn : WightmanFunctions d) :
+    SchwingerFunctions d :=
+  fun n f => wickRotatedBoundaryPairing Wfn n f.1
+
+/-- Auxiliary alias for the honest zero-diagonal Schwinger family. -/
+abbrev constructZeroDiagonalSchwingerFunctions (Wfn : WightmanFunctions d) :
+    ZeroDiagonalSchwingerFunctions d :=
+  constructSchwingerFunctions Wfn
 
 end

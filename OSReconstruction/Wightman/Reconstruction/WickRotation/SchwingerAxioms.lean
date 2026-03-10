@@ -20,6 +20,13 @@ satisfy the Osterwalder-Schrader axioms on the current corrected surface.
 - E2 (reflection positivity): Wick rotation of time-reflection = conjugation + R2
 - E3 (permutation symmetry): BHW permutation invariance
 - E4 (cluster): Wightman cluster axiom via analytic continuation
+
+The key sanity-check theorem in this file is
+`kernel_mul_zeroDiagonal_integrable_of_ae_infDist_mul_pow_le_polynomial`:
+if a Euclidean kernel has only finite-order coincidence singularities and at
+most polynomial growth at infinity, then it pairs integrably with every
+`ZeroDiagonalSchwartz` test function. This is the abstract reason the corrected
+OS-I temperedness surface is `°S` rather than full Schwartz space.
 -/
 
 open scoped Classical
@@ -101,6 +108,198 @@ theorem wick_rotated_kernel_mul_zeroDiagonal_integrable {d n : ℕ} [NeZero d]
           (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k)) * f.1 x)
         MeasureTheory.volume := by
   sorry
+
+/-- Compact-support cancellation theorem for zero-diagonal test functions.
+
+    This isolates the measure-theoretic heart of the corrected OS-I pairing:
+    if a kernel `K` has locally bounded product with a sufficiently high power of
+    `dist(x, CoincidenceLocus)`, then every compactly supported
+    `f ∈ ZeroDiagonalSchwartz` pairs integrably with `K`.
+
+    What remains open for the BHW kernel is therefore not the cancellation step,
+    but the analytic theorem asserting such a weighted local bound near the
+    Euclidean coincidence strata. -/
+theorem kernel_mul_zeroDiagonal_integrable_of_hasCompactSupport_of_infDist_mul_pow_bounded
+    {d n : ℕ} [NeZero d] (K : NPointDomain d n → ℂ)
+    (hK_meas : MeasureTheory.AEStronglyMeasurable K MeasureTheory.volume)
+    (f : ZeroDiagonalSchwartz d n)
+    (hcompact : HasCompactSupport ((f.1 : SchwartzNPoint d n) : NPointDomain d n → ℂ))
+    (m : ℕ) (hcoin : (CoincidenceLocus d n).Nonempty)
+    (hbound : ∃ C : ℝ, 0 ≤ C ∧
+      ∀ x ∈ tsupport (((f.1 : SchwartzNPoint d n) : NPointDomain d n → ℂ)),
+        ‖K x‖ * Metric.infDist x (CoincidenceLocus d n) ^ (m + 1) ≤ C) :
+    MeasureTheory.Integrable
+      (fun x : NPointDomain d n => K x * (f.1 : NPointDomain d n → ℂ) x)
+      MeasureTheory.volume := by
+  haveI : MeasureTheory.Measure.IsAddHaarMeasure
+      (MeasureTheory.volume : MeasureTheory.Measure (NPointDomain d n)) :=
+    MeasureTheory.Measure.instIsAddHaarMeasureForallVolumeOfMeasurableAddOfSigmaFinite
+  haveI : (MeasureTheory.volume : MeasureTheory.Measure (NPointDomain d n)).HasTemperateGrowth :=
+    inferInstance
+  let S : Set (NPointDomain d n) :=
+    tsupport (((f.1 : SchwartzNPoint d n) : NPointDomain d n → ℂ))
+  have hS_compact : IsCompact S := by
+    simpa [S] using hcompact.isCompact
+  have hS_meas : MeasurableSet S := hS_compact.isClosed.measurableSet
+  obtain ⟨Cf, hCf_nonneg, hCf⟩ :=
+    VanishesToInfiniteOrderOnCoincidence.norm_le_infDist_CoincidenceLocus_pow_succ_on_isCompact
+      (f := f.1) f.2 hS_compact m hcoin
+  obtain ⟨CK, hCK_nonneg, hCK⟩ := hbound
+  have h_on_S :
+      ∀ x ∈ S,
+        ‖K x * (f.1 : NPointDomain d n → ℂ) x‖ ≤ CK * Cf := by
+    intro x hx
+    calc
+      ‖K x * (f.1 : NPointDomain d n → ℂ) x‖ =
+          ‖K x‖ * ‖(f.1 : NPointDomain d n → ℂ) x‖ := norm_mul _ _
+      _ ≤ ‖K x‖ * (Cf * Metric.infDist x (CoincidenceLocus d n) ^ (m + 1)) := by
+          gcongr
+          exact hCf x hx
+      _ = Cf * (‖K x‖ * Metric.infDist x (CoincidenceLocus d n) ^ (m + 1)) := by ring
+      _ ≤ Cf * CK := by
+          exact mul_le_mul_of_nonneg_left (hCK x hx) hCf_nonneg
+      _ = CK * Cf := by ring
+  have h_int_on_S :
+      MeasureTheory.IntegrableOn
+        (fun x : NPointDomain d n => K x * (f.1 : NPointDomain d n → ℂ) x)
+        S MeasureTheory.volume := by
+    refine MeasureTheory.IntegrableOn.of_bound hS_compact.measure_lt_top
+      ((hK_meas.mul (f.1.integrable.aestronglyMeasurable)).restrict)
+      (CK * Cf) ?_
+    exact (MeasureTheory.ae_restrict_iff' hS_meas).2 <| Filter.Eventually.of_forall h_on_S
+  have h_zero_off_S :
+      Set.EqOn
+        (fun x : NPointDomain d n => K x * (f.1 : NPointDomain d n → ℂ) x)
+        (fun _ : NPointDomain d n => (0 : ℂ))
+        Sᶜ := by
+    intro x hx
+    have hx_support : x ∉ Function.support ((f.1 : SchwartzNPoint d n) : NPointDomain d n → ℂ) := by
+      intro hx'
+      exact hx (subset_tsupport _ hx')
+    have hfx : ((f.1 : SchwartzNPoint d n) : NPointDomain d n → ℂ) x = 0 := by
+      by_contra hne
+      exact hx_support (by simpa [Function.mem_support, hne])
+    simp [hfx]
+  have h_int_on_Sc :
+      MeasureTheory.IntegrableOn
+        (fun x : NPointDomain d n => K x * (f.1 : NPointDomain d n → ℂ) x)
+        Sᶜ MeasureTheory.volume := by
+    exact MeasureTheory.integrableOn_zero.congr_fun h_zero_off_S.symm hS_meas.compl
+  have h_int_univ :
+      MeasureTheory.IntegrableOn
+        (fun x : NPointDomain d n => K x * (f.1 : NPointDomain d n → ℂ) x)
+        Set.univ MeasureTheory.volume := by
+    simpa [S] using h_int_on_S.union h_int_on_Sc
+  exact (MeasureTheory.integrableOn_univ.mp h_int_univ)
+
+/-- Global reduction theorem for the corrected E0 lane.
+
+    If a measurable kernel has at most polynomial growth at infinity after being
+    weighted by a sufficiently high power of `dist(x, CoincidenceLocus)`, then it
+    pairs integrably with every zero-diagonal Schwartz test function. This is the
+    exact combination of the two genuine ingredients now available on the test-function
+    side:
+
+    1. infinite-order vanishing at the coincidence locus, and
+    2. Schwartz decay at spatial infinity.
+
+    This is the abstract sanity check behind the corrected OS-I axiom surface:
+    kernels that are analytic away from coincidence points and no worse than
+    inverse-power singular along the diagonal still define the honest Euclidean
+    pairing on `ZeroDiagonalSchwartz`.
+
+    For the actual BHW kernel, the remaining gap is therefore precisely the analytic
+    theorem asserting the displayed weighted polynomial bound. -/
+theorem kernel_mul_zeroDiagonal_integrable_of_ae_infDist_mul_pow_le_polynomial
+    {d n : ℕ} [NeZero d] (K : NPointDomain d n → ℂ)
+    (hK_meas : MeasureTheory.AEStronglyMeasurable K MeasureTheory.volume)
+    (f : ZeroDiagonalSchwartz d n)
+    (m M : ℕ) (hcoin : (CoincidenceLocus d n).Nonempty)
+    (C_bd : ℝ) (hC : 0 ≤ C_bd)
+    (hK_bound : ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume,
+      ‖K x‖ * Metric.infDist x (CoincidenceLocus d n) ^ (m + 1) ≤
+        C_bd * (1 + ‖x‖) ^ M) :
+    MeasureTheory.Integrable
+      (fun x : NPointDomain d n => K x * (f.1 : NPointDomain d n → ℂ) x)
+      MeasureTheory.volume := by
+  haveI : MeasureTheory.Measure.IsAddHaarMeasure
+      (MeasureTheory.volume : MeasureTheory.Measure (NPointDomain d n)) :=
+    MeasureTheory.Measure.instIsAddHaarMeasureForallVolumeOfMeasurableAddOfSigmaFinite
+  haveI : (MeasureTheory.volume : MeasureTheory.Measure (NPointDomain d n)).HasTemperateGrowth :=
+    inferInstance
+  set D := Module.finrank ℝ (NPointDomain d n)
+  have hD_lt : (D : ℝ) < ↑(D + 1) := by
+    push_cast
+    linarith
+  have htail_int :
+      MeasureTheory.Integrable
+        (fun x : NPointDomain d n => (1 + ‖x‖) ^ (-(↑(D + 1) : ℝ)))
+        MeasureTheory.volume :=
+    integrable_one_add_norm hD_lt
+  obtain ⟨Cf, hCf_nonneg, hCf⟩ :=
+    VanishesToInfiniteOrderOnCoincidence.one_add_norm_pow_mul_norm_le_infDist_CoincidenceLocus_pow_succ
+      (f := f.1) f.2 (M + D + 1) m hcoin
+  have hdom_int :
+      MeasureTheory.Integrable
+        (fun x : NPointDomain d n => C_bd * Cf * (1 + ‖x‖) ^ (-(↑(D + 1) : ℝ)))
+        MeasureTheory.volume :=
+    htail_int.const_mul (C_bd * Cf)
+  apply hdom_int.mono' (hK_meas.mul f.1.integrable.aestronglyMeasurable)
+  filter_upwards [hK_bound] with x hx
+  let δ : ℝ := Metric.infDist x (CoincidenceLocus d n)
+  have hδ_nonneg : 0 ≤ δ := Metric.infDist_nonneg
+  have hf_weighted :
+      (1 + ‖x‖) ^ (M + D + 1) * ‖(f.1 : NPointDomain d n → ℂ) x‖ ≤
+        Cf * δ ^ (m + 1) := by
+    simpa [δ] using hCf x
+  by_cases hδ : δ = 0
+  · have hprod_nonneg :
+        0 ≤ (1 + ‖x‖) ^ (M + D + 1) * ‖(f.1 : NPointDomain d n → ℂ) x‖ := by
+      positivity
+    have hprod_zero :
+        (1 + ‖x‖) ^ (M + D + 1) * ‖(f.1 : NPointDomain d n → ℂ) x‖ = 0 :=
+      le_antisymm (by simpa [hδ] using hf_weighted) hprod_nonneg
+    have hpow_ne : (1 + ‖x‖) ^ (M + D + 1) ≠ 0 := by positivity
+    have hnorm_zero : ‖(f.1 : NPointDomain d n → ℂ) x‖ = 0 := by
+      exact (mul_eq_zero.mp hprod_zero).resolve_left hpow_ne
+    have hfx : (f.1 : NPointDomain d n → ℂ) x = 0 := norm_eq_zero.mp hnorm_zero
+    calc
+      ‖K x * (f.1 : NPointDomain d n → ℂ) x‖ = 0 := by simp [hfx]
+      _ ≤ C_bd * Cf * (1 + ‖x‖) ^ (-(↑(D + 1) : ℝ)) := by
+        have htail_nonneg : 0 ≤ (1 + ‖x‖) ^ (-(↑(D + 1) : ℝ)) := by
+          apply Real.rpow_nonneg
+          positivity
+        exact mul_nonneg (mul_nonneg hC hCf_nonneg) htail_nonneg
+  · have hδ_pos : 0 < δ := lt_of_le_of_ne hδ_nonneg (Ne.symm hδ)
+    have hδpow_pos : 0 < δ ^ (m + 1) := pow_pos hδ_pos _
+    have hpow_pos : 0 < (1 + ‖x‖) ^ (M + D + 1) := by positivity
+    have hK' :
+        ‖K x‖ ≤ C_bd * (1 + ‖x‖) ^ M / δ ^ (m + 1) := by
+      rw [le_div_iff₀ hδpow_pos]
+      simpa [δ, mul_comm, mul_left_comm, mul_assoc] using hx
+    have hF' :
+        ‖(f.1 : NPointDomain d n → ℂ) x‖ ≤
+          Cf * δ ^ (m + 1) / (1 + ‖x‖) ^ (M + D + 1) := by
+      rw [le_div_iff₀ hpow_pos]
+      simpa [δ, mul_comm, mul_left_comm, mul_assoc] using hf_weighted
+    have hpow_split :
+        (1 + ‖x‖) ^ (M + D + 1) = (1 + ‖x‖) ^ M * (1 + ‖x‖) ^ (D + 1) := by
+      rw [show M + D + 1 = M + (D + 1) by omega, pow_add]
+    calc
+      ‖K x * (f.1 : NPointDomain d n → ℂ) x‖ =
+          ‖K x‖ * ‖(f.1 : NPointDomain d n → ℂ) x‖ := norm_mul _ _
+      _ ≤
+          (C_bd * (1 + ‖x‖) ^ M / δ ^ (m + 1)) *
+            (Cf * δ ^ (m + 1) / (1 + ‖x‖) ^ (M + D + 1)) := by
+              gcongr
+      _ = C_bd * Cf * ((1 + ‖x‖) ^ (D + 1))⁻¹ := by
+          rw [hpow_split]
+          have hδpow_ne : δ ^ (m + 1) ≠ 0 := by positivity
+          have hpowM_ne : (1 + ‖x‖) ^ M ≠ 0 := by positivity
+          have hpowD_ne : (1 + ‖x‖) ^ (D + 1) ≠ 0 := by positivity
+          field_simp [hδpow_ne, hpowM_ne, hpowD_ne]
+      _ = C_bd * Cf * (1 + ‖x‖) ^ (-(↑(D + 1) : ℝ)) := by
+          rw [Real.rpow_neg (by positivity), Real.rpow_natCast]
 
 /-- Helper: the integral of a polynomial-growth kernel against a Schwartz function defines
     a continuous linear functional on Schwartz space.
@@ -433,6 +632,303 @@ private theorem bhw_euclidean_kernel_bounded_on_compact_positiveOrdered
     BHW.forwardTube_subset_permutedExtendedTube hFT_BHW
   simpa [BHW_permutedExtendedTube_eq (d := d) (n := n)] using hPET_BHW
 
+/-- On compact Euclidean regions whose points stay pairwise distinct and lie in a
+    common open half-space, the BHW Euclidean kernel is uniformly bounded.
+
+    This packages the pointwise geometry now available in
+    `euclidean_commonHalfSpace_in_permutedTube`: after a suitable Euclidean
+    rotation, such configurations have distinct positive times, hence lie in PET. -/
+private theorem bhw_euclidean_kernel_bounded_on_compact_commonHalfSpace
+    {d n : ℕ} [NeZero d] (Wfn : WightmanFunctions d)
+    {K : Set (NPointDomain d n)} (hK : IsCompact K)
+    (hOmega : ∀ x ∈ K, x ∈ OmegaRegion d n)
+    (hhs : ∃ v : Fin (d + 1) → ℝ, ∀ x ∈ K, ∀ i : Fin n, ∑ μ, v μ * x i μ > 0) :
+    ∃ C : ℝ, ∀ x ∈ K,
+      ‖(W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k))‖ ≤ C := by
+  rcases hhs with ⟨v, hv⟩
+  refine bhw_euclidean_kernel_bounded_on_compact_in_permutedExtendedTube
+    (Wfn := Wfn) hK ?_
+  intro x hx
+  exact euclidean_commonHalfSpace_in_permutedTube (d := d) x (hOmega x hx) ⟨v, hv x hx⟩
+
+/-- The Wick-rotated BHW kernel is integrable against any compactly supported
+    Schwartz function whose topological support stays inside PET.
+
+    This isolates the genuinely easy half of the Euclidean pairing problem:
+    away from the PET boundary/diagonal singular strata, the kernel is continuous
+    and therefore bounded on the compact support. The unresolved part of
+    `wick_rotated_kernel_mul_zeroDiagonal_integrable` is exactly what happens
+    when the support approaches the coincidence strata. -/
+theorem wick_rotated_kernel_mul_schwartz_integrable_of_hasCompactSupport_of_tsupport_in_permutedTube
+    {d n : ℕ} [NeZero d] (Wfn : WightmanFunctions d) (f : SchwartzNPoint d n)
+    (hcompact : HasCompactSupport (f : NPointDomain d n → ℂ))
+    (hPET : ∀ x ∈ tsupport (f : NPointDomain d n → ℂ),
+      (fun k => wickRotatePoint (x k)) ∈ PermutedExtendedTube d n) :
+    MeasureTheory.Integrable
+      (fun x : NPointDomain d n =>
+        (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k)) * f x)
+      MeasureTheory.volume := by
+  haveI : MeasureTheory.Measure.IsAddHaarMeasure
+      (MeasureTheory.volume : MeasureTheory.Measure (NPointDomain d n)) :=
+    MeasureTheory.Measure.instIsAddHaarMeasureForallVolumeOfMeasurableAddOfSigmaFinite
+  haveI : (MeasureTheory.volume : MeasureTheory.Measure (NPointDomain d n)).HasTemperateGrowth :=
+    inferInstance
+  let K : NPointDomain d n → ℂ :=
+    fun x => (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k))
+  have hK_meas :
+      MeasureTheory.AEStronglyMeasurable K MeasureTheory.volume :=
+    bhw_euclidean_kernel_measurable (Wfn := Wfn)
+  obtain ⟨C, hC⟩ :=
+    bhw_euclidean_kernel_bounded_on_compact_in_permutedExtendedTube
+      (Wfn := Wfn) hcompact.isCompact hPET
+  let C' : ℝ := max C 0
+  have hf_int : MeasureTheory.Integrable (fun x : NPointDomain d n => f x) MeasureTheory.volume :=
+    f.integrable (μ := MeasureTheory.volume)
+  have hdom_int : MeasureTheory.Integrable (fun x : NPointDomain d n => C' * ‖f x‖)
+      MeasureTheory.volume :=
+    hf_int.norm.const_mul C'
+  apply hdom_int.mono' (hK_meas.mul hf_int.aestronglyMeasurable)
+  filter_upwards with x
+  by_cases hx : x ∈ tsupport (f : NPointDomain d n → ℂ)
+  · have hKx : ‖K x‖ ≤ C' := (hC x hx).trans (le_max_left _ _)
+    calc
+      ‖K x * f x‖ = ‖K x‖ * ‖f x‖ := norm_mul _ _
+      _ ≤ C' * ‖f x‖ := mul_le_mul_of_nonneg_right hKx (norm_nonneg _)
+  · have hx_support : x ∉ Function.support (f : NPointDomain d n → ℂ) := by
+      intro hx'
+      exact hx (subset_tsupport _ hx')
+    have hfx : f x = 0 := by
+      by_contra hne
+      exact hx_support (by simpa [Function.mem_support, hne])
+    calc
+      ‖K x * f x‖ = 0 := by simp [hfx]
+      _ ≤ C' * ‖f x‖ := by
+        exact mul_nonneg (le_max_right _ _) (norm_nonneg _)
+
+/-- The Wick-rotated BHW kernel is integrable against compactly supported
+    Schwartz functions supported on configurations that stay pairwise distinct
+    inside a common open half-space.
+
+    This is the intrinsic Euclidean version of the previous PET-support lemma:
+    the support hypothesis is stated on real configurations rather than directly
+    on their Wick images. The common-half-space geometry is exactly what lets the
+    Wick-rotated support sit inside PET pointwise. -/
+theorem wick_rotated_kernel_mul_schwartz_integrable_of_hasCompactSupport_of_tsupport_in_commonHalfSpace
+    {d n : ℕ} [NeZero d] (Wfn : WightmanFunctions d) (f : SchwartzNPoint d n)
+    (hcompact : HasCompactSupport (f : NPointDomain d n → ℂ))
+    (hOmega : tsupport (f : NPointDomain d n → ℂ) ⊆ OmegaRegion d n)
+    (hhs : ∃ v : Fin (d + 1) → ℝ,
+      ∀ x ∈ tsupport (f : NPointDomain d n → ℂ), ∀ i : Fin n, ∑ μ, v μ * x i μ > 0) :
+    MeasureTheory.Integrable
+      (fun x : NPointDomain d n =>
+        (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k)) * f x)
+      MeasureTheory.volume := by
+  let K : NPointDomain d n → ℂ :=
+    fun x => (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k))
+  have hK_meas :
+      MeasureTheory.AEStronglyMeasurable K MeasureTheory.volume :=
+    bhw_euclidean_kernel_measurable (Wfn := Wfn)
+  obtain ⟨C, hC⟩ :=
+    bhw_euclidean_kernel_bounded_on_compact_commonHalfSpace
+      (Wfn := Wfn) hcompact.isCompact
+      (fun x hx => hOmega hx)
+      hhs
+  haveI : MeasureTheory.Measure.IsAddHaarMeasure
+      (MeasureTheory.volume : MeasureTheory.Measure (NPointDomain d n)) :=
+    MeasureTheory.Measure.instIsAddHaarMeasureForallVolumeOfMeasurableAddOfSigmaFinite
+  haveI : (MeasureTheory.volume : MeasureTheory.Measure (NPointDomain d n)).HasTemperateGrowth :=
+    inferInstance
+  let C' : ℝ := max C 0
+  have hf_int : MeasureTheory.Integrable (fun x : NPointDomain d n => f x) MeasureTheory.volume :=
+    f.integrable (μ := MeasureTheory.volume)
+  have hdom_int : MeasureTheory.Integrable (fun x : NPointDomain d n => C' * ‖f x‖)
+      MeasureTheory.volume :=
+    hf_int.norm.const_mul C'
+  apply hdom_int.mono' (hK_meas.mul hf_int.aestronglyMeasurable)
+  filter_upwards with x
+  by_cases hx : x ∈ tsupport (f : NPointDomain d n → ℂ)
+  · have hKx : ‖K x‖ ≤ C' := (hC x hx).trans (le_max_left _ _)
+    calc
+      ‖K x * f x‖ = ‖K x‖ * ‖f x‖ := norm_mul _ _
+      _ ≤ C' * ‖f x‖ := mul_le_mul_of_nonneg_right hKx (norm_nonneg _)
+  · have hx_support : x ∉ Function.support (f : NPointDomain d n → ℂ) := by
+      intro hx'
+      exact hx (subset_tsupport _ hx')
+    have hfx : f x = 0 := by
+      by_contra hne
+      exact hx_support (by simpa [Function.mem_support, hne])
+    calc
+      ‖K x * f x‖ = 0 := by simp [hfx]
+      _ ≤ C' * ‖f x‖ := by
+        exact mul_nonneg (le_max_right _ _) (norm_nonneg _)
+
+omit [NeZero d] in
+private def translateNPointDomain (a : SpacetimeDim d) {n : ℕ} :
+    NPointDomain d n → NPointDomain d n :=
+  fun x i => x i - a
+
+omit [NeZero d] in
+private theorem translateNPointDomain_antilipschitz (a : SpacetimeDim d) {n : ℕ} :
+    AntilipschitzWith 1 (translateNPointDomain (d := d) (n := n) a) := by
+  refine AntilipschitzWith.of_le_mul_dist ?_
+  intro x y
+  have hsub :
+      x - y = translateNPointDomain (d := d) (n := n) a x -
+        translateNPointDomain (d := d) (n := n) a y := by
+    ext i μ
+    simp [translateNPointDomain, sub_eq_add_neg]
+    abel_nf
+  simpa [one_mul, dist_eq_norm] using le_of_eq (congrArg norm hsub)
+
+omit [NeZero d] in
+private theorem translateNPointDomain_hasTemperateGrowth (a : SpacetimeDim d) {n : ℕ} :
+    Function.HasTemperateGrowth (translateNPointDomain (d := d) (n := n) a) := by
+  let c : NPointDomain d n := fun _ => -a
+  have hconst : Function.HasTemperateGrowth (fun _ : NPointDomain d n => c) :=
+    Function.HasTemperateGrowth.const c
+  have hid : Function.HasTemperateGrowth (fun x : NPointDomain d n => x) := by
+    simpa using (ContinuousLinearMap.id ℝ (NPointDomain d n)).hasTemperateGrowth
+  simpa [translateNPointDomain, c, sub_eq_add_neg, Pi.add_apply] using hid.add hconst
+
+/-- Compactly supported coincidence-free Schwartz functions pair integrably with
+    the Wick-rotated BHW kernel.
+
+    This removes the remaining *local* singularity issue on compact sets away from
+    the coincidence locus. The proof shifts the compact support far enough in
+    Euclidean time so that every translated configuration lies in a common open
+    half-space, applies the previous common-half-space integrability theorem
+    there, and transports integrability back using measure-preserving translation
+    plus the a.e. Euclidean translation invariance of the BHW kernel. -/
+theorem wick_rotated_kernel_mul_schwartz_integrable_of_hasCompactSupport_of_tsupport_in_OmegaRegion
+    {d n : ℕ} [NeZero d] (Wfn : WightmanFunctions d) (f : SchwartzNPoint d n)
+    (hcompact : HasCompactSupport (f : NPointDomain d n → ℂ))
+    (hOmega : tsupport (f : NPointDomain d n → ℂ) ⊆ OmegaRegion d n) :
+    MeasureTheory.Integrable
+      (fun x : NPointDomain d n =>
+        (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k)) * f x)
+      MeasureTheory.volume := by
+  let K : NPointDomain d n → ℂ :=
+    fun x => (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k))
+  have hK_meas :
+      MeasureTheory.AEStronglyMeasurable K MeasureTheory.volume :=
+    bhw_euclidean_kernel_measurable (Wfn := Wfn)
+  haveI : MeasureTheory.Measure.IsAddHaarMeasure
+      (MeasureTheory.volume : MeasureTheory.Measure (NPointDomain d n)) :=
+    MeasureTheory.Measure.instIsAddHaarMeasureForallVolumeOfMeasurableAddOfSigmaFinite
+  haveI : (MeasureTheory.volume : MeasureTheory.Measure (NPointDomain d n)).HasTemperateGrowth :=
+    inferInstance
+  obtain ⟨C, hC⟩ :=
+    hcompact.isCompact.exists_bound_of_continuousOn
+      (f := fun x : NPointDomain d n => ‖x‖) continuous_norm.continuousOn
+  let T : ℝ := max C 0 + 1
+  let a : SpacetimeDim d := fun μ => if μ = 0 then T else 0
+  let aN : NPointDomain d n := fun _ => a
+  let τ : NPointDomain d n → NPointDomain d n := translateNPointDomain (d := d) (n := n) a
+  let g : SchwartzNPoint d n :=
+    SchwartzMap.compCLMOfAntilipschitz ℂ
+      (translateNPointDomain_hasTemperateGrowth (d := d) (n := n) a)
+      (translateNPointDomain_antilipschitz (d := d) (n := n) a) f
+  have hg_apply : ∀ x : NPointDomain d n, g x = f (τ x) := by
+    intro x
+    simp [g, τ]
+  have hg_compact : HasCompactSupport (g : NPointDomain d n → ℂ) := by
+    simpa [g, τ, translateNPointDomain, sub_eq_add_neg]
+      using hcompact.comp_homeomorph (Homeomorph.addRight (-aN))
+  have hτ_tsupport :
+      tsupport (g : NPointDomain d n → ℂ) =
+        (Homeomorph.addRight (-aN)) ⁻¹' tsupport (f : NPointDomain d n → ℂ) := by
+    simpa [g, τ, translateNPointDomain, aN, sub_eq_add_neg] using
+      (tsupport_comp_eq_preimage (g := (f : NPointDomain d n → ℂ))
+        (Homeomorph.addRight (-aN)))
+  have hτ_mem : ∀ x ∈ tsupport (g : NPointDomain d n → ℂ),
+      τ x ∈ tsupport (f : NPointDomain d n → ℂ) := by
+    intro x hx
+    simpa [hτ_tsupport, τ, translateNPointDomain, aN, sub_eq_add_neg] using hx
+  have hg_Omega : tsupport (g : NPointDomain d n → ℂ) ⊆ OmegaRegion d n := by
+    intro x hx i j hij
+    have hx' := hτ_mem x hx
+    have hdist := hOmega hx' i j hij
+    intro hEq
+    apply hdist
+    simpa [τ, translateNPointDomain, hEq]
+  have hT_pos : 0 < T := by
+    have : 0 ≤ max C 0 := le_max_right _ _
+    linarith
+  have hg_hs :
+      ∃ v : Fin (d + 1) → ℝ,
+        ∀ x ∈ tsupport (g : NPointDomain d n → ℂ), ∀ i : Fin n, ∑ μ, v μ * x i μ > 0 := by
+    refine ⟨fun μ => if μ = 0 then (1 : ℝ) else 0, ?_⟩
+    intro x hx i
+    have hx' := hτ_mem x hx
+    have hτ_norm : ‖τ x‖ ≤ C := by
+      simpa using hC (τ x) hx'
+    have hcoord_norm : ‖(τ x i) 0‖ ≤ ‖τ x‖ := by
+      exact (norm_le_pi_norm (τ x i) 0).trans (norm_le_pi_norm (τ x) i)
+    have hcoord_lower : -‖τ x‖ ≤ (τ x i) 0 := by
+      calc
+        -‖τ x‖ ≤ -‖(τ x i) 0‖ := by linarith
+        _ ≤ (τ x i) 0 := by
+          simpa [Real.norm_eq_abs] using neg_abs_le ((τ x i) 0)
+    have htime : 0 < x i 0 := by
+      have hx_eq : x i 0 = (τ x i) 0 + T := by
+        simp [τ, translateNPointDomain, a, T]
+      rw [hx_eq]
+      have hmax : C ≤ max C 0 := le_max_left _ _
+      linarith
+    simpa using htime
+  have hg_int :=
+    wick_rotated_kernel_mul_schwartz_integrable_of_hasCompactSupport_of_tsupport_in_commonHalfSpace
+      (Wfn := Wfn) g hg_compact hg_Omega hg_hs
+  have hg_add : ∀ x : NPointDomain d n, g (x + aN) = f x := by
+    intro x
+    rw [hg_apply]
+    congr 1
+    ext i μ
+    simp [τ, translateNPointDomain, aN, sub_eq_add_neg]
+  have hg_shift_int :
+      MeasureTheory.Integrable
+        (fun x : NPointDomain d n => K (x + aN) * f x) MeasureTheory.volume := by
+    have hEq :
+        (fun x : NPointDomain d n => K (x + aN) * f x) =
+          (fun x : NPointDomain d n => (K x * g x)) ∘ fun x => x + aN := by
+      funext x
+      simp [hg_add]
+    rw [hEq]
+    exact hg_int.comp_add_right aN
+  have hf_int : MeasureTheory.Integrable (fun x : NPointDomain d n => f x) MeasureTheory.volume :=
+    f.integrable (μ := MeasureTheory.volume)
+  let P : NPointDomain d n → Prop :=
+    fun x => (fun k => wickRotatePoint (x k)) ∈ PermutedExtendedTube d n
+  have hP_ae : ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume, P x :=
+    ae_euclidean_points_in_permutedTube
+  have hP_shift_ae : ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume, P (x + aN) := by
+    exact (MeasureTheory.eventually_add_right_iff
+      (μ := (MeasureTheory.volume : MeasureTheory.Measure (NPointDomain d n)))
+      (t := aN) (p := P)).2 hP_ae
+  have hK_ae : ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume, K x = K (x + aN) := by
+    filter_upwards [hP_ae, hP_shift_ae] with x hx hx_shift
+    have hx' : (fun k => wickRotatePoint (x k)) ∈ PermutedExtendedTube d n := by
+      simpa [P] using hx
+    have hx_shift0 : (fun k => wickRotatePoint (x k + a)) ∈ PermutedExtendedTube d n := by
+      simpa [P, aN] using hx_shift
+    have hwick_add :
+        (fun k => wickRotatePoint (x k + a)) =
+          (fun k μ => wickRotatePoint (x k) μ + wickRotatePoint a μ) := by
+      ext k μ
+      by_cases hμ : μ = 0
+      · subst hμ
+        simp [wickRotatePoint, mul_add]
+      · simp [wickRotatePoint, hμ]
+    have hx_shift' :
+        (fun k μ => wickRotatePoint (x k) μ + wickRotatePoint a μ) ∈
+          PermutedExtendedTube d n := by
+      simpa [hwick_add] using hx_shift0
+    simpa [K, aN, hwick_add] using
+      (bhw_translation_invariant Wfn (wickRotatePoint a)
+        (fun k => wickRotatePoint (x k)) hx' hx_shift').symm
+  exact hg_shift_int.congr <| hK_ae.mono fun x hx => by
+    simpa [K] using congrArg (fun z : ℂ => z * f x) hx.symm
+
 /-- The constructed Schwinger functional is continuous on the OS-I
     zero-diagonal test space.
 
@@ -440,19 +936,46 @@ private theorem bhw_euclidean_kernel_bounded_on_compact_positiveOrdered
     Unlike the deleted full-Schwartz theorem fronts, this matches the corrected
     OS-I axiom surface after the zero-diagonal repair. -/
 theorem constructedSchwinger_tempered_zeroDiagonal (Wfn : WightmanFunctions d) (n : ℕ) :
-    Continuous (fun f : ZeroDiagonalSchwartz d n => constructSchwingerFunctions Wfn n f.1) := by
+    Continuous (constructSchwingerFunctions Wfn n) := by
   sorry
 
-/-- The Schwinger functionals constructed from Wightman functions are linear in
-    the test function argument.
-
-    After the zero-diagonal repair, this is no longer justified by the deleted
-    full-Schwartz integrability theorem. The remaining honest proof has to treat
-    the total extension of `constructSchwingerFunctions` separately from the
-    OS-I zero-diagonal pairing. -/
-theorem constructedSchwinger_linear (Wfn : WightmanFunctions d) (n : ℕ) :
-    IsLinearMap ℂ (constructSchwingerFunctions Wfn n) := by
-  sorry
+/-- The Wick-rotated Schwinger functional is linear on the honest OS-I
+    zero-diagonal test space. This is the additive/homogeneous content that
+    survives the zero-diagonal repair without any false full-Schwartz claim. -/
+theorem constructedZeroDiagonalSchwinger_linear (Wfn : WightmanFunctions d) (n : ℕ) :
+    IsLinearMap ℂ (constructZeroDiagonalSchwingerFunctions Wfn n) := by
+  constructor
+  · intro f g
+    let K : NPointDomain d n → ℂ :=
+      fun x => (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k))
+    have hf_int := wick_rotated_kernel_mul_zeroDiagonal_integrable (Wfn := Wfn) f
+    have hg_int := wick_rotated_kernel_mul_zeroDiagonal_integrable (Wfn := Wfn) g
+    simp only [constructZeroDiagonalSchwingerFunctions, constructSchwingerFunctions,
+      wickRotatedBoundaryPairing]
+    have hfg :
+        (fun x : NPointDomain d n =>
+          K x * (((f + g : ZeroDiagonalSchwartz d n).1 : NPointDomain d n → ℂ) x)) =
+        (fun x : NPointDomain d n => K x * f.1 x + K x * g.1 x) := by
+      funext x
+      change K x * (f.1 x + g.1 x) = K x * f.1 x + K x * g.1 x
+      ring
+    rw [hfg]
+    exact MeasureTheory.integral_add hf_int hg_int
+  · intro c f
+    let K : NPointDomain d n → ℂ :=
+      fun x => (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k))
+    simp only [constructZeroDiagonalSchwingerFunctions, constructSchwingerFunctions,
+      wickRotatedBoundaryPairing]
+    change ∫ x : NPointDomain d n, K x * (c • f.1) x =
+        c • ∫ x : NPointDomain d n, K x * f.1 x
+    calc
+      ∫ x : NPointDomain d n, K x * (c • f.1) x
+          = ∫ x : NPointDomain d n, c • (K x * f.1 x) := by
+              refine MeasureTheory.integral_congr_ae ?_
+              filter_upwards with x
+              simp [smul_eq_mul, mul_assoc, mul_left_comm, mul_comm]
+      _ = c • ∫ x : NPointDomain d n, K x * f.1 x :=
+            MeasureTheory.integral_smul c (fun x : NPointDomain d n => K x * f.1 x)
 
 /-- The BHW extension F_ext inherits translation invariance from the Wightman
     distribution W_n.
@@ -489,11 +1012,11 @@ theorem F_ext_translation_invariant (Wfn : WightmanFunctions d) (n : ℕ)
     (fun k => wickRotatePoint (x k)) htube (by
       simpa [hwick_add] using htube_shift)).symm
 
-theorem constructedSchwinger_translation_invariant (Wfn : WightmanFunctions d)
+theorem wickRotatedBoundaryPairing_translation_invariant (Wfn : WightmanFunctions d)
     (n : ℕ) (a : SpacetimeDim d) (f g : SchwartzNPoint d n)
     (hfg : ∀ x, g.toFun x = f.toFun (fun i => x i + a)) :
-    constructSchwingerFunctions Wfn n f = constructSchwingerFunctions Wfn n g := by
-  simp only [constructSchwingerFunctions]
+    wickRotatedBoundaryPairing Wfn n f = wickRotatedBoundaryPairing Wfn n g := by
+  simp only [wickRotatedBoundaryPairing]
   have hfg' : ∀ x : NPointDomain d n,
       (g : NPointDomain d n → ℂ) x = (f : NPointDomain d n → ℂ) (fun i => x i + a) := hfg
   simp_rw [hfg']
@@ -756,13 +1279,13 @@ theorem ae_euclidean_points_in_permutedTube_overlap {d n : ℕ} [NeZero d] :
     Proof: Complex Lorentz invariance of W_analytic on the permuted extended tube,
     together with the fact that SO(d+1) ⊂ L₊(ℂ) preserves Euclidean points.
     The rotation R ∈ SO(d+1) acts on the forward tube via its embedding in L₊(ℂ). -/
-theorem constructedSchwinger_rotation_invariant (Wfn : WightmanFunctions d)
+theorem wickRotatedBoundaryPairing_rotation_invariant (Wfn : WightmanFunctions d)
     (n : ℕ) (R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
     (hR : R.transpose * R = 1) (hdet : R.det = 1)
     (f g : SchwartzNPoint d n)
     (hfg : ∀ x, g.toFun x = f.toFun (fun i => R.mulVec (x i))) :
-    constructSchwingerFunctions Wfn n f = constructSchwingerFunctions Wfn n g := by
-  simp only [constructSchwingerFunctions]
+    wickRotatedBoundaryPairing Wfn n f = wickRotatedBoundaryPairing Wfn n g := by
+  simp only [wickRotatedBoundaryPairing]
   have hfg' : ∀ x : NPointDomain d n,
       (g : NPointDomain d n → ℂ) x =
       (f : NPointDomain d n → ℂ) (fun i => R.mulVec (x i)) := hfg
@@ -1072,6 +1595,75 @@ private theorem hermitianReverseOverlap_pureImag_rapidity_invariant
       BHW.complexLorentzAction_mem_permutedExtendedTube hzhrPET
         (BHW.rapidityElementD1 (-((b : ℂ) * Complex.I)))
     simpa [BHW_permutedExtendedTube_eq (d := 1) (n := n)] using hrotPET
+
+/-- In `d = 1`, the rapidity element `θ = π i` acts as `-Id`. -/
+private theorem complexLorentzAction_rapidityElementD1_pi_I
+    {n : ℕ} (z : Fin n → Fin (1 + 1) → ℂ) :
+    BHW.complexLorentzAction (BHW.rapidityElementD1 ((Real.pi : ℂ) * Complex.I)) z =
+      fun k μ => -(z k μ) := by
+  ext k μ
+  fin_cases μ <;>
+    simp [BHW.complexLorentzAction, rapidityElementD1_val_zero_zero,
+      rapidityElementD1_val_zero_one, rapidityElementD1_val_one_zero,
+      rapidityElementD1_val_one_one, Complex.cosh_mul_I, Complex.sinh_mul_I,
+      Complex.cos_pi, Complex.sin_pi]
+
+/-- In `d = 1`, the pointwise involution `z ↦ -conj(z)` preserves the forward
+    tube because it leaves the imaginary parts of the light-cone coordinates
+    unchanged. -/
+private theorem neg_star_mem_forwardTube_d1
+    {n : ℕ} {z : Fin n → Fin (1 + 1) → ℂ}
+    (hz : z ∈ BHW.ForwardTube 1 n) :
+    (fun k μ => -starRingEnd ℂ (z k μ)) ∈ BHW.ForwardTube 1 n := by
+  intro k
+  change
+    BHW.InOpenForwardCone 1
+      (fun μ =>
+        ((fun i μ => -starRingEnd ℂ (z i μ)) k μ).im -
+          ((if h : k.val = 0 then 0 else
+              (fun i μ => -starRingEnd ℂ (z i μ)) ⟨k.val - 1, by omega⟩) μ).im)
+  have hEq :
+      (fun μ =>
+        ((fun i μ => -starRingEnd ℂ (z i μ)) k μ).im -
+          ((if h : k.val = 0 then 0 else
+              (fun i μ => -starRingEnd ℂ (z i μ)) ⟨k.val - 1, by omega⟩) μ).im) =
+      (fun μ =>
+        (z k μ).im -
+          ((if h : k.val = 0 then 0 else z ⟨k.val - 1, by omega⟩) μ).im) := by
+    ext μ
+    by_cases hk : k.val = 0 <;> simp [hk]
+  rw [hEq]
+  exact hz k
+
+/-- In `d = 1`, Hermitian reversal sends every forward-tube point into the
+    permuted extended tube. Concretely, after reversing the index order and
+    applying the Lorentz element `-Id = rapidityElementD1(π i)`, one lands back
+    in the forward tube via the map `z ↦ -conj z`. -/
+private theorem hermitianReverse_mem_permutedExtendedTube_of_mem_forwardTube_d1
+    {n : ℕ} {z : Fin n → Fin (1 + 1) → ℂ}
+    (hz : z ∈ BHW.ForwardTube 1 n) :
+    hermitianReverse z ∈ BHW.PermutedExtendedTube 1 n := by
+  let w : Fin n → Fin (1 + 1) → ℂ := fun k μ => -starRingEnd ℂ (z (Fin.rev k) μ)
+  have hw : w ∈ BHW.PermutedForwardTube 1 n Fin.revPerm := by
+    change (fun k => w (Fin.rev k)) ∈ BHW.ForwardTube 1 n
+    simpa [w] using neg_star_mem_forwardTube_d1 (n := n) hz
+  refine Set.mem_iUnion.mpr ⟨Fin.revPerm, ?_⟩
+  refine ⟨BHW.rapidityElementD1 ((Real.pi : ℂ) * Complex.I), w, hw, ?_⟩
+  rw [complexLorentzAction_rapidityElementD1_pi_I]
+  ext k μ
+  simp [w, hermitianReverse]
+
+/-- Consequently, in `d = 1` the forward tube is contained in the Hermitian
+    reverse overlap domain. -/
+private theorem forwardTube_subset_hermitianReverseOverlap_d1
+    {n : ℕ} :
+    BHW.ForwardTube 1 n ⊆ hermitianReverseOverlap (d := 1) (n := n) := by
+  intro z hz
+  refine ⟨?_, ?_⟩
+  · simpa [BHW_permutedExtendedTube_eq (d := 1) (n := n)] using
+      BHW.forwardTube_subset_permutedExtendedTube hz
+  · simpa [BHW_permutedExtendedTube_eq (d := 1) (n := n)] using
+      hermitianReverse_mem_permutedExtendedTube_of_mem_forwardTube_d1 (n := n) hz
 
 private theorem mixedWickPoint_rapidity_plus_im
     (x : SpacetimeDim 1) (a b : ℝ) :
@@ -2675,11 +3267,13 @@ private theorem hermitianRealOverlap_nonempty_of_two_le
     Blocked by: `boundary_values_tempered` and distributional BV infrastructure.
 
     Ref: OS I, Section 5; Streater-Wightman §3.4 -/
-theorem schwinger_os_term_eq_wightman_term (Wfn : WightmanFunctions d)
+theorem schwingerExtension_os_term_eq_wightman_term (Wfn : WightmanFunctions d)
     (n m : ℕ) (f_n : SchwartzNPoint d n) (f_m : SchwartzNPoint d m)
-    (hsupp_n : ∀ x, f_n.toFun x ≠ 0 → x ∈ OrderedPositiveTimeRegion d n)
-    (hsupp_m : ∀ x, f_m.toFun x ≠ 0 → x ∈ OrderedPositiveTimeRegion d m) :
-    constructSchwingerFunctions Wfn (n + m) (f_n.osConjTensorProduct f_m) =
+    (hsupp_n : tsupport ((f_n : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+      OrderedPositiveTimeRegion d n)
+    (hsupp_m : tsupport ((f_m : SchwartzNPoint d m) : NPointDomain d m → ℂ) ⊆
+      OrderedPositiveTimeRegion d m) :
+    wickRotatedBoundaryPairing Wfn (n + m) (f_n.osConjTensorProduct f_m) =
     Wfn.W (n + m) (f_n.conjTensorProduct f_m) := by
   sorry
 
@@ -2693,18 +3287,22 @@ theorem schwinger_os_term_eq_wightman_term (Wfn : WightmanFunctions d)
     (by `schwinger_os_term_eq_wightman_term`), so the sums are equal.
 
     Ref: OS I, Section 5 -/
-theorem os_inner_product_eq_wightman (Wfn : WightmanFunctions d)
+theorem schwingerExtension_os_inner_product_eq_wightman (Wfn : WightmanFunctions d)
     (F : BorchersSequence d)
-    (hsupp : ∀ n, ∀ x : NPointDomain d n, (F.funcs n).toFun x ≠ 0 →
-      x ∈ OrderedPositiveTimeRegion d n) :
+    (hsupp : ∀ n, tsupport ((F.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+      OrderedPositiveTimeRegion d n) :
     OSInnerProduct d (constructSchwingerFunctions Wfn) F F =
     WightmanInnerProduct d Wfn.W F F := by
+  have hzero : OSTensorAdmissible d F F :=
+    OSTensorAdmissible_of_tsupport_subset_orderedPositiveTimeRegion (d := d) F F hsupp hsupp
   simp only [OSInnerProduct, WightmanInnerProduct]
   congr 1
   ext n
   congr 1
   ext m
-  exact schwinger_os_term_eq_wightman_term Wfn n m (F.funcs n) (F.funcs m)
+  rw [ZeroDiagonalSchwartz.ofClassical_of_vanishes
+    (f := (F.funcs n).osConjTensorProduct (F.funcs m)) (hzero n m)]
+  exact schwingerExtension_os_term_eq_wightman_term Wfn n m (F.funcs n) (F.funcs m)
     (hsupp n) (hsupp m)
 
 /-- The OS inner product for Wick-rotated Schwinger functions reduces to
@@ -2715,20 +3313,20 @@ theorem os_inner_product_eq_wightman (Wfn : WightmanFunctions d)
     is non-negative by R2 (positive definiteness).
 
     Ref: OS I, Section 5 (proof that E2 follows from R2); Glimm-Jaffe Ch. 19 -/
-theorem os_inner_product_eq_wightman_positivity (Wfn : WightmanFunctions d)
+theorem schwingerExtension_os_inner_product_eq_wightman_positivity (Wfn : WightmanFunctions d)
     (F : BorchersSequence d)
-    (hsupp : ∀ n, ∀ x : NPointDomain d n, (F.funcs n).toFun x ≠ 0 →
-      x ∈ OrderedPositiveTimeRegion d n) :
+    (hsupp : ∀ n, tsupport ((F.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+      OrderedPositiveTimeRegion d n) :
     (OSInnerProduct d (constructSchwingerFunctions Wfn) F F).re ≥ 0 := by
-  rw [os_inner_product_eq_wightman Wfn F hsupp]
+  rw [schwingerExtension_os_inner_product_eq_wightman Wfn F hsupp]
   exact Wfn.positive_definite F
 
-theorem constructedSchwinger_reflection_positive (Wfn : WightmanFunctions d)
+theorem wickRotatedBoundaryPairing_reflection_positive (Wfn : WightmanFunctions d)
     (F : BorchersSequence d)
-    (hsupp : ∀ n, ∀ x : NPointDomain d n, (F.funcs n).toFun x ≠ 0 →
-      x ∈ OrderedPositiveTimeRegion d n) :
+    (hsupp : ∀ n, tsupport ((F.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+      OrderedPositiveTimeRegion d n) :
     (OSInnerProduct d (constructSchwingerFunctions Wfn) F F).re ≥ 0 :=
-  os_inner_product_eq_wightman_positivity Wfn F hsupp
+  schwingerExtension_os_inner_product_eq_wightman_positivity Wfn F hsupp
 
 /-- F_ext is invariant under permutations of arguments at all Euclidean points.
 
@@ -2761,11 +3359,11 @@ theorem integral_perm_eq_self (σ : Equiv.Perm (Fin n))
 
     Proof: BHW permutation invariance on the permuted extended tube,
     restricted to Euclidean points. -/
-theorem constructedSchwinger_symmetric (Wfn : WightmanFunctions d)
+theorem wickRotatedBoundaryPairing_symmetric (Wfn : WightmanFunctions d)
     (n : ℕ) (σ : Equiv.Perm (Fin n)) (f g : SchwartzNPoint d n)
     (hfg : ∀ x, g.toFun x = f.toFun (fun i => x (σ i))) :
-    constructSchwingerFunctions Wfn n f = constructSchwingerFunctions Wfn n g := by
-  simp only [constructSchwingerFunctions]
+    wickRotatedBoundaryPairing Wfn n f = wickRotatedBoundaryPairing Wfn n g := by
+  simp only [wickRotatedBoundaryPairing]
   have hfg' : ∀ x : NPointDomain d n,
       (g : NPointDomain d n → ℂ) x =
       (f : NPointDomain d n → ℂ) (fun i => x (σ i)) := hfg
@@ -3068,14 +3666,17 @@ theorem bhw_euclidean_reality_ae (Wfn : WightmanFunctions d) (n : ℕ) :
     by_cases hn2 : 2 ≤ n
     · have hV_empty : V = ∅ := by
         simpa [V] using hermitianRealOverlap_eq_empty_d1_of_two_le (n := n) hn2
-      -- Remaining low-dimensional gap: the old untwisted real-edge strategy is
-      -- now provably impossible for `d = 1`, `n ≥ 2`, because the anchor set
-      -- `hermitianRealOverlap` is empty. The mixed candidate slice `(t, i x)`
-      -- also cannot work here: `mixedWick_not_mem_permutedExtendedTube` shows
-      -- it never meets PET for nonempty configurations. So the live problem is
-      -- to find a different honest overlap/anchor geometry for the comparison
-      -- function, not just to extract one more witness on the existing surfaces.
+      have hFT_sub_D : BHW.ForwardTube 1 n ⊆ D := by
+        simpa [D] using forwardTube_subset_hermitianReverseOverlap_d1 (n := n)
+      -- Remaining low-dimensional gap: the old totally-real anchor strategy is
+      -- impossible for `d = 1`, `n ≥ 2`, because `hermitianRealOverlap` is empty.
+      -- But the geometry itself is no longer the blocker: `ForwardTube 1 n ⊆ D`
+      -- now holds via `hermitianReverse(FT) ⊆ PET`. So the live missing step is
+      -- the analytic propagation/uniqueness argument showing `H = 0` on that
+      -- forward-tube piece and then on the connected overlap component meeting
+      -- the relevant Euclidean Wick points.
       let _ := hV_empty
+      let _ := hFT_sub_D
       let _ := hH_holo
       let _ := hD_open
       let _ := hV_sub_D
@@ -3122,10 +3723,10 @@ theorem bhw_euclidean_reality_ae (Wfn : WightmanFunctions d) (n : ℕ) :
     full-Schwartz integrability theorem is no longer available. The remaining
     proof has to combine the Euclidean Hermiticity identity with a separate
     justification of the total-extension pairing. -/
-theorem constructedSchwinger_reality (Wfn : WightmanFunctions d) (n : ℕ)
+theorem wickRotatedBoundaryPairing_reality (Wfn : WightmanFunctions d) (n : ℕ)
     (f : SchwartzNPoint d n) :
-    starRingEnd ℂ (constructSchwingerFunctions Wfn n f) =
-      constructSchwingerFunctions Wfn n f.osConj := by
+    starRingEnd ℂ (wickRotatedBoundaryPairing Wfn n f) =
+      wickRotatedBoundaryPairing Wfn n f.osConj := by
   sorry
 
 /-- Pointwise cluster property of BHW extension at Euclidean points.
@@ -3195,18 +3796,18 @@ theorem W_analytic_cluster_integral (Wfn : WightmanFunctions d) (n m : ℕ)
     via the analytic continuation. The key input is `W_analytic_cluster_integral`,
     which combines the pointwise cluster property of W_analytic with
     dominated convergence using Schwartz function decay. -/
-theorem constructedSchwinger_cluster (Wfn : WightmanFunctions d)
+theorem wickRotatedBoundaryPairing_cluster (Wfn : WightmanFunctions d)
     (n m : ℕ) (f : SchwartzNPoint d n) (g : SchwartzNPoint d m)
     (ε : ℝ) (hε : ε > 0) :
     ∃ R : ℝ, R > 0 ∧
       ∀ a : SpacetimeDim d, a 0 = 0 → (∑ i : Fin d, (a (Fin.succ i))^2) > R^2 →
         ∀ (g_a : SchwartzNPoint d m),
           (∀ x : NPointDomain d m, g_a x = g (fun i => x i - a)) →
-          ‖constructSchwingerFunctions Wfn (n + m) (f.tensorProduct g_a) -
-            constructSchwingerFunctions Wfn n f *
-            constructSchwingerFunctions Wfn m g‖ < ε := by
-  -- Unfold constructSchwingerFunctions to expose the integrals
-  simp only [constructSchwingerFunctions]
+          ‖wickRotatedBoundaryPairing Wfn (n + m) (f.tensorProduct g_a) -
+            wickRotatedBoundaryPairing Wfn n f *
+            wickRotatedBoundaryPairing Wfn m g‖ < ε := by
+  -- Unfold the raw Wick-rotated full-Schwartz pairing to expose the integrals.
+  simp only [wickRotatedBoundaryPairing]
   exact W_analytic_cluster_integral Wfn n m f g ε hε
 
 

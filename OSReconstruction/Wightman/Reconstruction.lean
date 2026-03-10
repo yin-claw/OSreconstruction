@@ -5,6 +5,8 @@ Authors: ModularPhysics Contributors
 -/
 import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 import Mathlib.Analysis.Distribution.TemperedDistribution
+import Mathlib.Analysis.Calculus.MeanValue
+import Mathlib.Analysis.Calculus.Taylor
 import Mathlib.Analysis.InnerProductSpace.GramSchmidtOrtho
 import Mathlib.Topology.UniformSpace.Completion
 import OSReconstruction.Wightman.WightmanAxioms
@@ -1135,13 +1137,6 @@ References:
 - Glimm-Jaffe, "Quantum Physics: A Functional Integral Point of View", Chapter 19
 -/
 
-/-- Schwinger functions (Euclidean correlators).
-
-    At present this is the full Schwartz-space surface. OS I first formulates the
-    Euclidean theory on the zero-diagonal test space `°S`, with extension to the
-    full Schwartz space as a separate issue. -/
-def SchwingerFunctions (d : ℕ) := (n : ℕ) → SchwartzNPoint d n → ℂ
-
 /-- The positive Euclidean time region: n-point configurations with all τᵢ > 0. -/
 def PositiveTimeRegion (d n : ℕ) : Set (NPointDomain d n) :=
   { x | ∀ i : Fin n, x i 0 > 0 }
@@ -1152,6 +1147,10 @@ def PositiveTimeRegion (d n : ℕ) : Set (NPointDomain d n) :=
     test-function space `S^<_{+}` in OS I. -/
 def OrderedPositiveTimeRegion (d n : ℕ) : Set (NPointDomain d n) :=
   { x | ∀ i : Fin n, 0 < x i 0 ∧ ∀ j : Fin n, i < j → x i 0 < x j 0 }
+
+/-- The time-reflected ordered region: all times are negative and strictly decrease. -/
+def OrderedNegativeTimeRegion (d n : ℕ) : Set (NPointDomain d n) :=
+  { x | ∀ i : Fin n, x i 0 < 0 ∧ ∀ j : Fin n, i < j → x j 0 < x i 0 }
 
 theorem OrderedPositiveTimeRegion_subset_positiveTimeRegion (d n : ℕ) :
     OrderedPositiveTimeRegion d n ⊆ PositiveTimeRegion d n := by
@@ -1178,6 +1177,22 @@ theorem not_mem_CoincidenceLocus_of_mem_OrderedPositiveTimeRegion
       simpa using congrArg (fun y : SpacetimeDim d => y 0) hijEq.symm
     exact (lt_irrefl (x j 0)) (hEq0 ▸ htime)
 
+theorem not_mem_CoincidenceLocus_of_mem_OrderedNegativeTimeRegion
+    {d n : ℕ} {x : NPointDomain d n}
+    (hx : x ∈ OrderedNegativeTimeRegion d n) :
+    x ∉ CoincidenceLocus d n := by
+  intro hcoin
+  rcases hcoin with ⟨i, j, hij, hijEq⟩
+  rcases lt_or_gt_of_ne hij with hij_lt | hij_gt
+  · have htime : x j 0 < x i 0 := (hx i).2 j hij_lt
+    have hEq0 : x i 0 = x j 0 := by
+      simpa using congrArg (fun y : SpacetimeDim d => y 0) hijEq
+    exact (lt_irrefl (x j 0)) (hEq0 ▸ htime)
+  · have htime : x i 0 < x j 0 := (hx j).2 i hij_gt
+    have hEq0 : x j 0 = x i 0 := by
+      simpa using congrArg (fun y : SpacetimeDim d => y 0) hijEq.symm
+    exact (lt_irrefl (x i 0)) (hEq0 ▸ htime)
+
 /-- A Schwartz test function vanishes to infinite order on the coincidence locus
     if every iterated Fréchet derivative vanishes at every coincident configuration.
 
@@ -1188,14 +1203,904 @@ def VanishesToInfiniteOrderOnCoincidence {d n : ℕ} (f : SchwartzNPoint d n) : 
   ∀ k : ℕ, ∀ x : NPointDomain d n, x ∈ CoincidenceLocus d n →
     iteratedFDeriv ℝ k (f : NPointDomain d n → ℂ) x = 0
 
+theorem VanishesToInfiniteOrderOnCoincidence_of_tsupport_disjoint
+    {d n : ℕ} (f : SchwartzNPoint d n)
+    (hdisj : Disjoint (tsupport (f : NPointDomain d n → ℂ)) (CoincidenceLocus d n)) :
+    VanishesToInfiniteOrderOnCoincidence f := by
+  intro k x hxcoin
+  have hx_not_tsupport : x ∉ tsupport (f : NPointDomain d n → ℂ) := by
+    intro hxt
+    exact Set.disjoint_left.mp hdisj hxt hxcoin
+  have hx_not_support :
+      x ∉ Function.support (iteratedFDeriv ℝ k (f : NPointDomain d n → ℂ)) := by
+    intro hx
+    exact hx_not_tsupport
+      ((support_iteratedFDeriv_subset (𝕜 := ℝ) (n := k) (f := ⇑f)) hx)
+  by_contra hx_nonzero
+  exact hx_not_support (by simpa [Function.mem_support, hx_nonzero])
+
+omit [NeZero d] in
+private def coincidenceCollapse {n : ℕ} (i j : Fin n) (x : NPointDomain d n) :
+    NPointDomain d n :=
+  fun k => if k = i ∨ k = j then midpoint ℝ (x i) (x j) else x k
+
+omit [NeZero d] in
+private theorem continuous_coincidenceCollapse {n : ℕ} (i j : Fin n) :
+    Continuous (coincidenceCollapse (d := d) i j) := by
+  apply continuous_pi
+  intro k
+  by_cases hk : k = i ∨ k = j
+  · simpa [coincidenceCollapse, hk, midpoint_eq_smul_add] using
+      (((continuous_apply i : Continuous fun x : NPointDomain d n => x i)).add
+        (continuous_apply j : Continuous fun x : NPointDomain d n => x j)).const_smul
+        (⅟ (2 : ℝ))
+  · simpa [coincidenceCollapse, hk] using
+      (continuous_apply k : Continuous fun x : NPointDomain d n => x k)
+
+omit [NeZero d] in
+private theorem coincidenceCollapse_mem_CoincidenceLocus {n : ℕ}
+    (x : NPointDomain d n) (i j : Fin n) (hij : i ≠ j) :
+    coincidenceCollapse (d := d) i j x ∈ CoincidenceLocus d n := by
+  refine ⟨i, j, hij, ?_⟩
+  ext μ
+  simp [coincidenceCollapse, hij]
+
+omit [NeZero d] in
+private theorem norm_sub_coincidenceCollapse_le_pairDifference {n : ℕ}
+    (x : NPointDomain d n) (i j : Fin n) (hij : i ≠ j) :
+    ‖x - coincidenceCollapse (d := d) i j x‖ ≤ ‖x i - x j‖ := by
+  change ↑(Finset.univ.sup fun k => ‖(x - coincidenceCollapse (d := d) i j x) k‖₊) ≤ ‖x i - x j‖
+  have hdistNN :
+      Finset.univ.sup
+          (fun k => ‖(x - coincidenceCollapse (d := d) i j x) k‖₊) ≤
+        ‖x i - x j‖₊ := by
+    refine Finset.sup_le_iff.mpr ?_
+    intro k hk
+    by_cases hki : k = i
+    · subst k
+      have hkreal :
+          ‖(x - coincidenceCollapse (d := d) i j x) i‖ ≤ ‖x i - x j‖ := by
+        calc
+          ‖(x - coincidenceCollapse (d := d) i j x) i‖ =
+              ‖x i - midpoint ℝ (x i) (x j)‖ := by
+                simp [coincidenceCollapse, hij]
+          _ = ‖(⅟ (2 : ℝ)) • (x i - x j)‖ := by rw [left_sub_midpoint]
+          _ = ‖(⅟ (2 : ℝ))‖ * ‖x i - x j‖ := norm_smul _ _
+          _ ≤ 1 * ‖x i - x j‖ := by
+              gcongr
+              norm_num
+          _ = ‖x i - x j‖ := by ring
+      exact_mod_cast hkreal
+    · by_cases hkj : k = j
+      · subst k
+        have hkreal :
+            ‖(x - coincidenceCollapse (d := d) i j x) j‖ ≤ ‖x i - x j‖ := by
+          calc
+            ‖(x - coincidenceCollapse (d := d) i j x) j‖ =
+                ‖x j - midpoint ℝ (x i) (x j)‖ := by
+                  simp [coincidenceCollapse, hki]
+            _ = ‖(⅟ (2 : ℝ)) • (x j - x i)‖ := by rw [right_sub_midpoint]
+            _ = ‖(⅟ (2 : ℝ))‖ * ‖x j - x i‖ := norm_smul _ _
+            _ ≤ 1 * ‖x j - x i‖ := by
+                gcongr
+                norm_num
+            _ = ‖x i - x j‖ := by rw [norm_sub_rev, one_mul]
+        exact_mod_cast hkreal
+      · simp [coincidenceCollapse, hki, hkj]
+  exact_mod_cast hdistNN
+
+omit [NeZero d] in
+private def coincidenceCopy {n : ℕ} (src dst : Fin n) (x : NPointDomain d n) :
+    NPointDomain d n :=
+  fun k => if k = dst then x src else x k
+
+omit [NeZero d] in
+private theorem coincidenceCopy_mem_CoincidenceLocus {n : ℕ}
+    (x : NPointDomain d n) (src dst : Fin n) (hsrcdst : src ≠ dst) :
+    coincidenceCopy (d := d) src dst x ∈ CoincidenceLocus d n := by
+  refine ⟨src, dst, hsrcdst, ?_⟩
+  ext μ
+  simp [coincidenceCopy, hsrcdst]
+
+omit [NeZero d] in
+private theorem norm_sub_coincidenceCopy_eq_pairDifference {n : ℕ}
+    (x : NPointDomain d n) (src dst : Fin n) :
+    ‖x - coincidenceCopy (d := d) src dst x‖ = ‖x src - x dst‖ := by
+  change ↑(Finset.univ.sup
+      (fun k => ‖(x - coincidenceCopy (d := d) src dst x) k‖₊)) = ‖x src - x dst‖
+  have hsup_le :
+      Finset.univ.sup
+          (fun k => ‖(x - coincidenceCopy (d := d) src dst x) k‖₊) ≤
+        ‖x src - x dst‖₊ := by
+    refine Finset.sup_le_iff.mpr ?_
+    intro k hk
+    by_cases hkdst : k = dst
+    · subst k
+      have hEq :
+          ‖(x - coincidenceCopy (d := d) src dst x) dst‖₊ = ‖x src - x dst‖₊ := by
+        apply NNReal.coe_injective
+        simpa [coincidenceCopy, norm_sub_rev]
+      exact le_of_eq hEq
+    · simp [coincidenceCopy, hkdst]
+  have hsup_ge :
+      ‖x src - x dst‖₊ ≤
+        Finset.univ.sup
+          (fun k => ‖(x - coincidenceCopy (d := d) src dst x) k‖₊) := by
+    have hmem : dst ∈ Finset.univ := by simp
+    have hdst :
+        ‖x src - x dst‖₊ ≤ ‖(x - coincidenceCopy (d := d) src dst x) dst‖₊ := by
+      have hEq :
+          ‖(x - coincidenceCopy (d := d) src dst x) dst‖₊ = ‖x src - x dst‖₊ := by
+        apply NNReal.coe_injective
+        simpa [coincidenceCopy, norm_sub_rev]
+      exact le_of_eq hEq.symm
+    exact hdst.trans (Finset.le_sup (f := fun k =>
+      ‖(x - coincidenceCopy (d := d) src dst x) k‖₊) hmem)
+  have hEqNN :
+      Finset.univ.sup (fun k => ‖(x - coincidenceCopy (d := d) src dst x) k‖₊) =
+        ‖x src - x dst‖₊ := le_antisymm hsup_le hsup_ge
+  rw [show ‖x src - x dst‖ = (‖x src - x dst‖₊ : ℝ) by rfl]
+  exact congrArg (fun r : NNReal => (r : ℝ)) hEqNN
+
+omit [NeZero d] in
+private theorem norm_segment_coincidenceCopy_eq_norm {n : ℕ}
+    (x : NPointDomain d n) (src dst : Fin n) (hsrcdst : src ≠ dst)
+    (hmax : ‖x dst‖ ≤ ‖x src‖) (t : ℝ) (ht : t ∈ Set.Icc (0 : ℝ) 1) :
+    ‖coincidenceCopy (d := d) src dst x + t •
+        (x - coincidenceCopy (d := d) src dst x)‖ = ‖x‖ := by
+  let y : NPointDomain d n := coincidenceCopy (d := d) src dst x
+  let z : NPointDomain d n := y + t • (x - y)
+  have hz_upper :
+      ‖z‖ ≤ ‖x‖ := by
+    change ↑(Finset.univ.sup fun k => ‖z k‖₊) ≤ ‖x‖
+    have hsup :
+        Finset.univ.sup (fun k => ‖z k‖₊) ≤ ‖x‖₊ := by
+      refine Finset.sup_le_iff.mpr ?_
+      intro k hk
+      by_cases hkdst : k = dst
+      · subst k
+        have ht0 : 0 ≤ t := ht.1
+        have ht1 : t ≤ 1 := ht.2
+        have htnonneg : 0 ≤ 1 - t := by linarith
+        have hz_dst :
+            z dst = (1 - t) • x src + t • x dst := by
+          ext μ
+          simp [z, y, coincidenceCopy, sub_eq_add_neg]
+          ring
+        have hcoord :
+            ‖z dst‖ ≤ ‖x‖ := by
+          calc
+            ‖z dst‖ = ‖(1 - t) • x src + t • x dst‖ := by rw [hz_dst]
+            _ ≤ ‖(1 - t) • x src‖ + ‖t • x dst‖ := norm_add_le _ _
+            _ = |1 - t| * ‖x src‖ + |t| * ‖x dst‖ := by
+                rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
+            _ = (1 - t) * ‖x src‖ + t * ‖x dst‖ := by
+                rw [abs_of_nonneg htnonneg, abs_of_nonneg ht0]
+            _ ≤ (1 - t) * ‖x‖ + t * ‖x‖ := by
+                gcongr
+                · exact (norm_le_pi_norm x src)
+                · exact hmax.trans (norm_le_pi_norm x src)
+            _ = ‖x‖ := by ring
+        exact_mod_cast hcoord
+      · have hz_eq : z k = x k := by
+          simp [z, y, coincidenceCopy, hkdst]
+        have hcoord : ‖z k‖ ≤ ‖x‖ := by
+          rw [hz_eq]
+          exact norm_le_pi_norm x k
+        exact_mod_cast hcoord
+    exact_mod_cast hsup
+  have hx_le_z :
+      ‖x‖ ≤ ‖z‖ := by
+    change ↑(Finset.univ.sup fun k => ‖x k‖₊) ≤ ‖z‖
+    have hsup :
+        Finset.univ.sup (fun k => ‖x k‖₊) ≤ ‖z‖₊ := by
+      refine Finset.sup_le_iff.mpr ?_
+      intro k hk
+      by_cases hkdst : k = dst
+      · subst k
+        have hzsrc : z src = x src := by
+          simp [z, y, coincidenceCopy, hsrcdst]
+        have hcoord : ‖x dst‖ ≤ ‖z‖ := by
+          calc
+            ‖x dst‖ ≤ ‖x src‖ := hmax
+            _ = ‖z src‖ := by rw [hzsrc]
+            _ ≤ ‖z‖ := norm_le_pi_norm z src
+        exact_mod_cast hcoord
+      · have hz_eq : z k = x k := by
+          simp [z, y, coincidenceCopy, hkdst]
+        have hcoord : ‖x k‖ ≤ ‖z‖ := by
+          rw [← hz_eq]
+          exact norm_le_pi_norm z k
+        exact_mod_cast hcoord
+    exact_mod_cast hsup
+  exact le_antisymm hz_upper hx_le_z
+
+/-- The coincidence collapse gives a concrete diagonal point within pair-distance
+    `‖x i - x j‖` of `x`. -/
+theorem infDist_CoincidenceLocus_le_pairDifference {d n : ℕ}
+    (x : NPointDomain d n) (i j : Fin n) (hij : i ≠ j) :
+    Metric.infDist x (CoincidenceLocus d n) ≤ ‖x i - x j‖ := by
+  refine (Metric.infDist_le_dist_of_mem
+    (coincidenceCollapse_mem_CoincidenceLocus (d := d) x i j hij)).trans ?_
+  simpa [dist_eq_norm] using
+    norm_sub_coincidenceCollapse_le_pairDifference (d := d) x i j hij
+
+/-- The coincidence locus is closed: it is a finite union of pairwise-equality
+    hyperplanes `{x | x i = x j}`. -/
+theorem isClosed_CoincidenceLocus {d n : ℕ} :
+    IsClosed (CoincidenceLocus d n) := by
+  classical
+  have hEq :
+      CoincidenceLocus d n =
+        ⋃ i : Fin n, ⋃ j : Fin n,
+          if h : i = j then (∅ : Set (NPointDomain d n)) else {x | x i = x j} := by
+    ext x
+    simp [CoincidenceLocus]
+  rw [hEq]
+  apply isClosed_iUnion_of_finite
+  intro i
+  apply isClosed_iUnion_of_finite
+  intro j
+  by_cases h : i = j
+  · simp [h]
+  · simpa [h] using (isClosed_eq (continuous_apply i) (continuous_apply j))
+
+/-- If the coincidence locus is nonempty, some pair separation is controlled by
+    twice the distance to that locus. This is the converse metric comparison to
+    `infDist_CoincidenceLocus_le_pairDifference`. -/
+theorem exists_pairDifference_le_two_infDist_CoincidenceLocus {d n : ℕ}
+    (x : NPointDomain d n) (hcoin : (CoincidenceLocus d n).Nonempty) :
+    ∃ i j : Fin n, i ≠ j ∧
+      ‖x i - x j‖ ≤ 2 * Metric.infDist x (CoincidenceLocus d n) := by
+  have hclosed : IsClosed (CoincidenceLocus d n) := isClosed_CoincidenceLocus (d := d) (n := n)
+  obtain ⟨y, hyCoin, hyDist⟩ := hclosed.exists_infDist_eq_dist hcoin x
+  rcases hyCoin with ⟨i, j, hij, hEq⟩
+  refine ⟨i, j, hij, ?_⟩
+  have hi : ‖x i - y i‖ ≤ ‖x - y‖ := by
+    simpa [Pi.sub_apply] using (norm_le_pi_norm (x - y) i)
+  have hj : ‖x j - y j‖ ≤ ‖x - y‖ := by
+    simpa [Pi.sub_apply] using (norm_le_pi_norm (x - y) j)
+  calc
+    ‖x i - x j‖ = ‖(x i - y i) - (x j - y i)‖ := by
+      rw [sub_sub_sub_cancel_right]
+    _ = ‖(x i - y i) - (x j - y j)‖ := by simpa [hEq]
+    _ ≤ ‖x i - y i‖ + ‖x j - y j‖ := norm_sub_le _ _
+    _ ≤ ‖x - y‖ + ‖x - y‖ := add_le_add hi hj
+    _ = 2 * ‖x - y‖ := by ring
+    _ = 2 * Metric.infDist x (CoincidenceLocus d n) := by
+      rw [hyDist, dist_eq_norm]
+
+/-- On compact sets, a test function vanishing on the coincidence locus is
+    Lipschitz in each coincidence direction.
+
+    More precisely: fixing a pair of indices `i ≠ j`, the value of `f(x)` is
+    controlled by the separation `‖x i - x j‖` on any compact set. This is the
+    first quantitative consequence of the zero-diagonal condition and is the
+    order-1 prototype for the higher-power distance estimates still needed in
+    the Euclidean E0 integrability theorem. -/
+theorem VanishesToInfiniteOrderOnCoincidence.norm_le_pairDifference_on_isCompact
+    {d n : ℕ} {f : SchwartzNPoint d n}
+    (hf : VanishesToInfiniteOrderOnCoincidence f)
+    {K : Set (NPointDomain d n)} (hK : IsCompact K)
+    (i j : Fin n) (hij : i ≠ j) :
+    ∃ C : ℝ, 0 ≤ C ∧
+      ∀ x ∈ K, ‖f x‖ ≤ C * ‖x i - x j‖ := by
+  let c : NPointDomain d n → NPointDomain d n := coincidenceCollapse (d := d) i j
+  have hc_cont : Continuous c := continuous_coincidenceCollapse (d := d) i j
+  let Φ : NPointDomain d n × ℝ → NPointDomain d n :=
+    fun p => c p.1 + p.2 • (p.1 - c p.1)
+  have hΦ_cont : Continuous Φ := by
+    exact (hc_cont.comp continuous_fst).add <|
+      continuous_snd.smul <|
+        continuous_fst.sub (hc_cont.comp continuous_fst)
+  have hSegCompact :
+      IsCompact (Φ '' (K ×ˢ Set.Icc (0 : ℝ) 1)) :=
+    (hK.prod isCompact_Icc).image hΦ_cont
+  have hfd_cont :
+      Continuous fun x : NPointDomain d n => ‖fderiv ℝ (f : NPointDomain d n → ℂ) x‖ := by
+    exact (((f : SchwartzNPoint d n).smooth 1).continuous_fderiv one_ne_zero).norm
+  obtain ⟨C, hC⟩ :=
+    hSegCompact.exists_bound_of_continuousOn
+      (f := fun x : NPointDomain d n => ‖fderiv ℝ (f : NPointDomain d n → ℂ) x‖)
+      hfd_cont.continuousOn
+  let C' : ℝ := max C 0
+  refine ⟨C', le_max_right _ _, ?_⟩
+  intro x hx
+  have hx_seg :
+      segment ℝ (c x) x ⊆ Φ '' (K ×ˢ Set.Icc (0 : ℝ) 1) := by
+    intro z hz
+    rw [segment_eq_image_lineMap] at hz
+    rcases hz with ⟨t, ht, rfl⟩
+    refine ⟨(x, t), ⟨hx, ht⟩, ?_⟩
+    simp [Φ, AffineMap.lineMap_apply_module', add_comm]
+  have hbound_seg :
+      ∀ z ∈ segment ℝ (c x) x,
+        ‖fderiv ℝ (f : NPointDomain d n → ℂ) z‖ ≤ C' := by
+    intro z hz
+    have hz' : z ∈ Φ '' (K ×ˢ Set.Icc (0 : ℝ) 1) := hx_seg hz
+    have hzC : ‖fderiv ℝ (f : NPointDomain d n → ℂ) z‖ ≤ C := by
+      simpa using hC z hz'
+    exact hzC.trans (le_max_left _ _)
+  have hc_coin : c x ∈ CoincidenceLocus d n := by
+    simpa [c] using coincidenceCollapse_mem_CoincidenceLocus (d := d) x i j hij
+  have hc_zero : f (c x) = 0 := by
+    apply norm_eq_zero.mp
+    simpa [norm_iteratedFDeriv_zero] using
+      congrArg norm (hf 0 (c x) hc_coin)
+  have hmv :
+      ‖f x - f (c x)‖ ≤ C' * ‖x - c x‖ := by
+    exact Convex.norm_image_sub_le_of_norm_fderiv_le
+      (s := segment ℝ (c x) x)
+      (f := (f : NPointDomain d n → ℂ))
+      (x := c x) (y := x)
+      (hf := fun z _ => (f : SchwartzNPoint d n).differentiableAt)
+      hbound_seg
+      (convex_segment (c x) x)
+      (left_mem_segment ℝ (c x) x) (right_mem_segment ℝ (c x) x)
+  have hdist :
+      ‖x - c x‖ ≤ ‖x i - x j‖ := by
+    simpa [c] using norm_sub_coincidenceCollapse_le_pairDifference (d := d) x i j hij
+  calc
+    ‖f x‖ = ‖f x - f (c x)‖ := by simp [hc_zero]
+    _ ≤ C' * ‖x - c x‖ := hmv
+    _ ≤ C' * ‖x i - x j‖ := by gcongr
+
+/-- On compact sets, a test function vanishing to infinite order on the
+    coincidence locus vanishes to arbitrarily high finite order in each fixed
+    coincidence direction. -/
+theorem VanishesToInfiniteOrderOnCoincidence.norm_le_pairDifference_pow_succ_on_isCompact
+    {d n : ℕ} {f : SchwartzNPoint d n}
+    (hf : VanishesToInfiniteOrderOnCoincidence f)
+    {K : Set (NPointDomain d n)} (hK : IsCompact K)
+    (m : ℕ) (i j : Fin n) (hij : i ≠ j) :
+    ∃ C : ℝ, 0 ≤ C ∧
+      ∀ x ∈ K, ‖f x‖ ≤ C * ‖x i - x j‖ ^ (m + 1) := by
+  let c : NPointDomain d n → NPointDomain d n := coincidenceCollapse (d := d) i j
+  have hc_cont : Continuous c := continuous_coincidenceCollapse (d := d) i j
+  let Φ : NPointDomain d n × ℝ → NPointDomain d n :=
+    fun p => c p.1 + p.2 • (p.1 - c p.1)
+  have hΦ_cont : Continuous Φ := by
+    exact (hc_cont.comp continuous_fst).add <|
+      continuous_snd.smul <|
+        continuous_fst.sub (hc_cont.comp continuous_fst)
+  have hSegCompact :
+      IsCompact (Φ '' (K ×ˢ Set.Icc (0 : ℝ) 1)) :=
+    (hK.prod isCompact_Icc).image hΦ_cont
+  have hfd_cont :
+      Continuous fun x : NPointDomain d n =>
+        iteratedFDeriv ℝ (m + 1) (f : NPointDomain d n → ℂ) x := by
+    exact ((f : SchwartzNPoint d n).smooth (m + 1)).continuous_iteratedFDeriv'
+  obtain ⟨A, hA⟩ :=
+    hSegCompact.exists_bound_of_continuousOn
+      (f := fun x : NPointDomain d n =>
+        iteratedFDeriv ℝ (m + 1) (f : NPointDomain d n → ℂ) x)
+      hfd_cont.continuousOn
+  let A' : ℝ := max A 0
+  refine ⟨A' / ((Nat.factorial m : ℕ) : ℝ), div_nonneg (le_max_right _ _) (by positivity), ?_⟩
+  intro x hx
+  let v : NPointDomain d n := x - c x
+  let L : ℝ →L[ℝ] NPointDomain d n :=
+    ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) v
+  let g : ℝ → ℂ :=
+    (fun z : NPointDomain d n => (f : NPointDomain d n → ℂ) (z + c x)) ∘ L
+  have hshift_contDiff :
+      ∀ r : ℕ, ContDiff ℝ r (fun z : NPointDomain d n => (f : NPointDomain d n → ℂ) (z + c x)) :=
+    fun r => by
+      simpa using ((f : SchwartzNPoint d n).smooth r).comp (contDiff_id.add contDiff_const)
+  have hg_contDiff : ∀ r : ℕ, ContDiff ℝ r g := fun r => by
+    simpa [g] using (ContDiff.comp_continuousLinearMap (g := L) (hf := hshift_contDiff r))
+  have hc_coin : c x ∈ CoincidenceLocus d n := by
+    simpa [c] using coincidenceCollapse_mem_CoincidenceLocus (d := d) x i j hij
+  have hTaylor_zero :
+      taylorWithinEval g m (Set.Icc (0 : ℝ) 1) 0 1 = 0 := by
+    rw [taylor_within_apply]
+    apply Finset.sum_eq_zero
+    intro k hk
+    have hk_mem : k ∈ Finset.range (m + 1) := hk
+    have hk_lt : k < m + 1 := Finset.mem_range.mp hk_mem
+    have hk_zero :
+        iteratedDerivWithin k g (Set.Icc (0 : ℝ) 1) 0 = 0 := by
+      rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc (show (0 : ℝ) < 1 by norm_num))
+        ((hg_contDiff k).contDiffAt) (by simp), iteratedDeriv_eq_iteratedFDeriv]
+      have hcomp :
+          iteratedFDeriv ℝ k g 0 =
+            (iteratedFDeriv ℝ k (fun z : NPointDomain d n => (f : NPointDomain d n → ℂ) (z + c x))
+              (L 0)).compContinuousLinearMap fun _ : Fin k => L := by
+        simpa [g] using
+          L.iteratedFDeriv_comp_right
+            (f := fun z : NPointDomain d n => (f : NPointDomain d n → ℂ) (z + c x))
+            (hshift_contDiff k) (x := 0) (i := k) le_rfl
+      have hzeroF :
+          iteratedFDeriv ℝ k (f : NPointDomain d n → ℂ) (L 0 + c x) = 0 := by
+        simpa [L, ContinuousLinearMap.smulRight_apply] using hf k (c x) hc_coin
+      rw [hcomp, iteratedFDeriv_comp_add_right, hzeroF]
+      simp
+    simp [hk_zero]
+  have hderiv_bound :
+      ∀ t ∈ Set.Icc (0 : ℝ) 1,
+        ‖iteratedDerivWithin (m + 1) g (Set.Icc (0 : ℝ) 1) t‖ ≤
+          A' * ‖v‖ ^ (m + 1) := by
+    intro t ht
+    have ht_seg : c x + t • v ∈ Φ '' (K ×ˢ Set.Icc (0 : ℝ) 1) := by
+      refine ⟨(x, t), ⟨hx, ht⟩, ?_⟩
+      simp [Φ, c, v]
+    have hA' :
+        ‖iteratedFDeriv ℝ (m + 1) (f : NPointDomain d n → ℂ) (c x + t • v)‖ ≤ A' := by
+      exact (hA _ ht_seg).trans (le_max_left _ _)
+    have hL :
+        ‖L‖ ≤ ‖v‖ := by
+      refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun s => ?_
+      simpa [L, ContinuousLinearMap.smulRight_apply, Real.norm_eq_abs, norm_smul, mul_comm] using
+        (norm_smul s v)
+    rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc (show (0 : ℝ) < 1 by norm_num))
+      ((hg_contDiff (m + 1)).contDiffAt) ht, ← norm_iteratedFDeriv_eq_norm_iteratedDeriv]
+    have hcomp :
+        iteratedFDeriv ℝ (m + 1) g t =
+          (iteratedFDeriv ℝ (m + 1) (fun z : NPointDomain d n => (f : NPointDomain d n → ℂ)
+            (z + c x)) (L t)).compContinuousLinearMap fun _ : Fin (m + 1) => L := by
+      simpa [g] using
+        L.iteratedFDeriv_comp_right
+          (f := fun z : NPointDomain d n => (f : NPointDomain d n → ℂ) (z + c x))
+          (hshift_contDiff (m + 1)) (x := t) (i := m + 1) le_rfl
+    rw [hcomp, iteratedFDeriv_comp_add_right]
+    calc
+      ‖(iteratedFDeriv ℝ (m + 1) (f : NPointDomain d n → ℂ) (L t + c x)).compContinuousLinearMap
+          (fun _ : Fin (m + 1) => L)‖ ≤
+          ‖iteratedFDeriv ℝ (m + 1) (f : NPointDomain d n → ℂ) (L t + c x)‖ *
+            ∏ _ : Fin (m + 1), ‖L‖ := by
+              exact ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _
+      _ ≤ A' * ∏ _ : Fin (m + 1), ‖L‖ := by
+          gcongr
+          simpa [L, v, ContinuousLinearMap.smulRight_apply, add_comm] using hA'
+      _ = A' * ‖L‖ ^ (m + 1) := by simp
+      _ ≤ A' * ‖v‖ ^ (m + 1) := by
+          gcongr
+  have hrem :=
+    taylor_mean_remainder_bound (f := g) (a := (0 : ℝ)) (b := 1)
+      (C := A' * ‖v‖ ^ (m + 1)) (x := 1) (n := m) (by norm_num)
+      (hg_contDiff (m + 1)).contDiffOn (by simp) hderiv_bound
+  have hdist :
+      ‖v‖ ≤ ‖x i - x j‖ := by
+    simpa [v, c] using norm_sub_coincidenceCollapse_le_pairDifference (d := d) x i j hij
+  have hg_one : g 1 = f x := by
+    simp [g, L, v, ContinuousLinearMap.smulRight_apply]
+  calc
+    ‖f x‖ = ‖g 1 - taylorWithinEval g m (Set.Icc (0 : ℝ) 1) 0 1‖ := by
+      rw [hg_one]
+      simp [hTaylor_zero]
+    _ ≤ A' * ‖v‖ ^ (m + 1) * (1 - (0 : ℝ)) ^ (m + 1) / (((Nat.factorial m : ℕ) : ℝ)) := by
+      simpa [hTaylor_zero] using hrem
+    _ = (A' / (((Nat.factorial m : ℕ) : ℝ))) * ‖v‖ ^ (m + 1) := by
+      field_simp [Nat.cast_ne_zero]
+      ring
+    _ ≤ (A' / (((Nat.factorial m : ℕ) : ℝ))) * ‖x i - x j‖ ^ (m + 1) := by
+      gcongr
+
+/-- Global weighted flatness in a fixed pairwise separation: infinite-order vanishing
+    on the coincidence locus combined with Schwartz decay at spatial infinity. -/
+theorem VanishesToInfiniteOrderOnCoincidence.one_add_norm_pow_mul_norm_le_pairDifference_pow_succ
+    {d n : ℕ} {f : SchwartzNPoint d n}
+    (hf : VanishesToInfiniteOrderOnCoincidence f)
+    (N m : ℕ) (i j : Fin n) (hij : i ≠ j) :
+    ∃ C : ℝ, 0 ≤ C ∧
+      ∀ x, (1 + ‖x‖) ^ N * ‖f x‖ ≤ C * ‖x i - x j‖ ^ (m + 1) := by
+  let sem := (Finset.Iic (N, m + 1)).sup (schwartzSeminormFamily ℂ (NPointDomain d n) ℂ)
+  let A : ℝ := 2 ^ N * sem f
+  refine ⟨A / (((Nat.factorial m : ℕ) : ℝ)), by positivity, ?_⟩
+  intro x
+  let src : Fin n := if h : ‖x i‖ ≤ ‖x j‖ then j else i
+  let dst : Fin n := if h : ‖x i‖ ≤ ‖x j‖ then i else j
+  have hsrcdst : src ≠ dst := by
+    dsimp [src, dst]
+    split_ifs
+    · simpa using hij.symm
+    · simpa using hij
+  have hmax : ‖x dst‖ ≤ ‖x src‖ := by
+    dsimp [src, dst]
+    split_ifs with h
+    · simpa using h
+    · exact le_of_not_ge h
+  have hpair :
+      ‖x src - x dst‖ = ‖x i - x j‖ := by
+    dsimp [src, dst]
+    split_ifs <;> simp [norm_sub_rev]
+  let c : NPointDomain d n := coincidenceCopy (d := d) src dst x
+  let v : NPointDomain d n := x - c
+  let L : ℝ →L[ℝ] NPointDomain d n :=
+    ContinuousLinearMap.smulRight (1 : ℝ →L[ℝ] ℝ) v
+  let g : ℝ → ℂ :=
+    (fun z : NPointDomain d n => (f : NPointDomain d n → ℂ) (z + c)) ∘ L
+  have hshift_contDiff :
+      ∀ r : ℕ, ContDiff ℝ r (fun z : NPointDomain d n => (f : NPointDomain d n → ℂ) (z + c)) :=
+    fun r => by
+      simpa using ((f : SchwartzNPoint d n).smooth r).comp (contDiff_id.add contDiff_const)
+  have hg_contDiff : ∀ r : ℕ, ContDiff ℝ r g := fun r => by
+    simpa [g] using (ContDiff.comp_continuousLinearMap (g := L) (hf := hshift_contDiff r))
+  have hc_coin : c ∈ CoincidenceLocus d n := by
+    simpa [c] using coincidenceCopy_mem_CoincidenceLocus (d := d) x src dst hsrcdst
+  have hTaylor_zero :
+      taylorWithinEval g m (Set.Icc (0 : ℝ) 1) 0 1 = 0 := by
+    rw [taylor_within_apply]
+    apply Finset.sum_eq_zero
+    intro k hk
+    have hk_mem : k ∈ Finset.range (m + 1) := hk
+    have hk_zero :
+        iteratedDerivWithin k g (Set.Icc (0 : ℝ) 1) 0 = 0 := by
+      rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc (show (0 : ℝ) < 1 by norm_num))
+        ((hg_contDiff k).contDiffAt) (by simp), iteratedDeriv_eq_iteratedFDeriv]
+      have hcomp :
+          iteratedFDeriv ℝ k g 0 =
+            (iteratedFDeriv ℝ k (fun z : NPointDomain d n => (f : NPointDomain d n → ℂ) (z + c))
+              (L 0)).compContinuousLinearMap fun _ : Fin k => L := by
+        simpa [g] using
+          L.iteratedFDeriv_comp_right
+            (f := fun z : NPointDomain d n => (f : NPointDomain d n → ℂ) (z + c))
+            (hshift_contDiff k) (x := 0) (i := k) le_rfl
+      have hzeroF :
+          iteratedFDeriv ℝ k (f : NPointDomain d n → ℂ) (L 0 + c) = 0 := by
+        simpa [L, ContinuousLinearMap.smulRight_apply] using hf k c hc_coin
+      rw [hcomp, iteratedFDeriv_comp_add_right, hzeroF]
+      simp
+    simp [hk_zero]
+  have hderiv_bound :
+      ∀ t ∈ Set.Icc (0 : ℝ) 1,
+        ‖iteratedDerivWithin (m + 1) g (Set.Icc (0 : ℝ) 1) t‖ ≤
+          (A / (1 + ‖x‖) ^ N) * ‖v‖ ^ (m + 1) := by
+    intro t ht
+    have hsem_bound :
+        (1 + ‖L t + c‖) ^ N *
+            ‖iteratedFDeriv ℝ (m + 1) (f : NPointDomain d n → ℂ) (L t + c)‖ ≤ A := by
+      simpa [A, sem] using
+        (SchwartzMap.one_add_le_sup_seminorm_apply
+          (𝕜 := ℂ) (m := (N, m + 1)) (k := N) (n := m + 1)
+          le_rfl le_rfl f (L t + c))
+    have hnorm_seg : ‖L t + c‖ = ‖x‖ := by
+      simpa [L, v, c, ContinuousLinearMap.smulRight_apply, add_comm, add_left_comm, add_assoc]
+        using norm_segment_coincidenceCopy_eq_norm (d := d) x src dst hsrcdst hmax t ht
+    have hpow_pos : 0 < (1 + ‖x‖) ^ N := by positivity
+    have hA :
+        ‖iteratedFDeriv ℝ (m + 1) (f : NPointDomain d n → ℂ) (L t + c)‖ ≤
+          A / (1 + ‖x‖) ^ N := by
+      rw [le_div_iff₀ hpow_pos]
+      simpa [hnorm_seg, mul_comm, mul_left_comm, mul_assoc] using hsem_bound
+    have hL :
+        ‖L‖ ≤ ‖v‖ := by
+      refine ContinuousLinearMap.opNorm_le_bound _ (norm_nonneg _) fun s => ?_
+      simpa [L, ContinuousLinearMap.smulRight_apply, Real.norm_eq_abs, norm_smul, mul_comm] using
+        (norm_smul s v)
+    rw [iteratedDerivWithin_eq_iteratedDeriv (uniqueDiffOn_Icc (show (0 : ℝ) < 1 by norm_num))
+      ((hg_contDiff (m + 1)).contDiffAt) ht, ← norm_iteratedFDeriv_eq_norm_iteratedDeriv]
+    have hcomp :
+        iteratedFDeriv ℝ (m + 1) g t =
+          (iteratedFDeriv ℝ (m + 1) (fun z : NPointDomain d n => (f : NPointDomain d n → ℂ)
+            (z + c)) (L t)).compContinuousLinearMap fun _ : Fin (m + 1) => L := by
+      simpa [g] using
+        L.iteratedFDeriv_comp_right
+          (f := fun z : NPointDomain d n => (f : NPointDomain d n → ℂ) (z + c))
+          (hshift_contDiff (m + 1)) (x := t) (i := m + 1) le_rfl
+    rw [hcomp, iteratedFDeriv_comp_add_right]
+    calc
+      ‖(iteratedFDeriv ℝ (m + 1) (f : NPointDomain d n → ℂ) (L t + c)).compContinuousLinearMap
+          (fun _ : Fin (m + 1) => L)‖ ≤
+          ‖iteratedFDeriv ℝ (m + 1) (f : NPointDomain d n → ℂ) (L t + c)‖ *
+            ∏ _ : Fin (m + 1), ‖L‖ := by
+              exact ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _
+      _ ≤ (A / (1 + ‖x‖) ^ N) * ∏ _ : Fin (m + 1), ‖L‖ := by
+          gcongr
+      _ = (A / (1 + ‖x‖) ^ N) * ‖L‖ ^ (m + 1) := by simp
+      _ ≤ (A / (1 + ‖x‖) ^ N) * ‖v‖ ^ (m + 1) := by
+          gcongr
+  have hrem :=
+    taylor_mean_remainder_bound (f := g) (a := (0 : ℝ)) (b := 1)
+      (C := (A / (1 + ‖x‖) ^ N) * ‖v‖ ^ (m + 1)) (x := 1) (n := m) (by norm_num)
+      (hg_contDiff (m + 1)).contDiffOn (by simp) hderiv_bound
+  have hv :
+      ‖v‖ = ‖x i - x j‖ := by
+    simpa [v, c, hpair] using
+      norm_sub_coincidenceCopy_eq_pairDifference (d := d) x src dst
+  have hg_one : g 1 = f x := by
+    simp [g, L, v, c, ContinuousLinearMap.smulRight_apply, sub_eq_add_neg, add_comm, add_left_comm,
+      ]
+  have hpow_nonneg : 0 ≤ (1 + ‖x‖) ^ N := by positivity
+  calc
+    (1 + ‖x‖) ^ N * ‖f x‖ =
+        (1 + ‖x‖) ^ N * ‖g 1 - taylorWithinEval g m (Set.Icc (0 : ℝ) 1) 0 1‖ := by
+          rw [hg_one]
+          simp [hTaylor_zero]
+    _ ≤ (1 + ‖x‖) ^ N *
+          (((A / (1 + ‖x‖) ^ N) * ‖v‖ ^ (m + 1)) *
+            (1 - (0 : ℝ)) ^ (m + 1) / (((Nat.factorial m : ℕ) : ℝ))) := by
+          exact mul_le_mul_of_nonneg_left (by simpa [hTaylor_zero] using hrem) hpow_nonneg
+    _ = (A / (((Nat.factorial m : ℕ) : ℝ))) * ‖v‖ ^ (m + 1) := by
+          have hpow_ne : (1 + ‖x‖) ^ N ≠ 0 := by positivity
+          field_simp [hpow_ne, Nat.cast_ne_zero]
+          ring
+    _ = (A / (((Nat.factorial m : ℕ) : ℝ))) * ‖x i - x j‖ ^ (m + 1) := by
+          rw [hv]
+
+/-- Global weighted flatness in terms of actual distance to the coincidence locus. -/
+theorem VanishesToInfiniteOrderOnCoincidence.one_add_norm_pow_mul_norm_le_infDist_CoincidenceLocus_pow_succ
+    {d n : ℕ} {f : SchwartzNPoint d n}
+    (hf : VanishesToInfiniteOrderOnCoincidence f)
+    (N m : ℕ) (hcoin : (CoincidenceLocus d n).Nonempty) :
+    ∃ C : ℝ, 0 ≤ C ∧
+      ∀ x, (1 + ‖x‖) ^ N * ‖f x‖ ≤ C * Metric.infDist x (CoincidenceLocus d n) ^ (m + 1) := by
+  classical
+  let P : Type := {p : Fin n × Fin n // p.1 ≠ p.2}
+  have hP_nonempty : Nonempty P := by
+    rcases hcoin with ⟨x, hx⟩
+    rcases hx with ⟨i, j, hij, _⟩
+    exact ⟨⟨(i, j), hij⟩⟩
+  have hpair :
+      ∀ p : P, ∃ C : ℝ, 0 ≤ C ∧
+        ∀ x, (1 + ‖x‖) ^ N * ‖f x‖ ≤ C * ‖x p.1.1 - x p.1.2‖ ^ (m + 1) := by
+    intro p
+    exact
+      VanishesToInfiniteOrderOnCoincidence.one_add_norm_pow_mul_norm_le_pairDifference_pow_succ
+        hf N m p.1.1 p.1.2 p.2
+  choose C hC_nonneg hC_bound using hpair
+  let Cmax : ℝ := Finset.univ.sup' Finset.univ_nonempty C
+  have hC_le : ∀ p : P, C p ≤ Cmax := by
+    intro p
+    exact Finset.le_sup' (f := C) (Finset.mem_univ p)
+  let p0 : P := Classical.choice hP_nonempty
+  have hCmax_nonneg : 0 ≤ Cmax := le_trans (hC_nonneg p0) (hC_le p0)
+  refine ⟨Cmax * (2 : ℝ) ^ (m + 1), mul_nonneg hCmax_nonneg (pow_nonneg (by norm_num) _), ?_⟩
+  intro x
+  obtain ⟨i, j, hij, hijdist⟩ :=
+    exists_pairDifference_le_two_infDist_CoincidenceLocus (d := d) (n := n) x hcoin
+  let p : P := ⟨(i, j), hij⟩
+  calc
+    (1 + ‖x‖) ^ N * ‖f x‖ ≤ C p * ‖x i - x j‖ ^ (m + 1) := hC_bound p x
+    _ ≤ Cmax * ‖x i - x j‖ ^ (m + 1) := by
+        exact mul_le_mul_of_nonneg_right (hC_le p) (pow_nonneg (norm_nonneg _) _)
+    _ ≤ Cmax * (2 * Metric.infDist x (CoincidenceLocus d n)) ^ (m + 1) := by
+        gcongr
+    _ = (Cmax * (2 : ℝ) ^ (m + 1)) * Metric.infDist x (CoincidenceLocus d n) ^ (m + 1) := by
+        rw [mul_pow]
+        ring
+
+/-- Higher-order compact flatness in terms of actual distance to the coincidence
+    locus. This is the `N = m + 1` upgrade of the first-order `infDist` bound. -/
+theorem VanishesToInfiniteOrderOnCoincidence.norm_le_infDist_CoincidenceLocus_pow_succ_on_isCompact
+    {d n : ℕ} {f : SchwartzNPoint d n}
+    (hf : VanishesToInfiniteOrderOnCoincidence f)
+    {K : Set (NPointDomain d n)} (hK : IsCompact K)
+    (m : ℕ) (hcoin : (CoincidenceLocus d n).Nonempty) :
+    ∃ C : ℝ, 0 ≤ C ∧
+      ∀ x ∈ K, ‖f x‖ ≤ C * Metric.infDist x (CoincidenceLocus d n) ^ (m + 1) := by
+  classical
+  let P : Type := {p : Fin n × Fin n // p.1 ≠ p.2}
+  have hP_nonempty : Nonempty P := by
+    rcases hcoin with ⟨x, hx⟩
+    rcases hx with ⟨i, j, hij, _⟩
+    exact ⟨⟨(i, j), hij⟩⟩
+  have hpair :
+      ∀ p : P, ∃ C : ℝ, 0 ≤ C ∧
+        ∀ x ∈ K, ‖f x‖ ≤ C * ‖x p.1.1 - x p.1.2‖ ^ (m + 1) := by
+    intro p
+    exact
+      VanishesToInfiniteOrderOnCoincidence.norm_le_pairDifference_pow_succ_on_isCompact
+        hf hK m p.1.1 p.1.2 p.2
+  choose C hC_nonneg hC_bound using hpair
+  let Cmax : ℝ := Finset.univ.sup' Finset.univ_nonempty C
+  have hC_le : ∀ p : P, C p ≤ Cmax := by
+    intro p
+    exact Finset.le_sup' (f := C) (Finset.mem_univ p)
+  let p0 : P := Classical.choice hP_nonempty
+  have hCmax_nonneg : 0 ≤ Cmax := le_trans (hC_nonneg p0) (hC_le p0)
+  refine ⟨Cmax * (2 : ℝ) ^ (m + 1), mul_nonneg hCmax_nonneg (pow_nonneg (by norm_num) _), ?_⟩
+  intro x hx
+  obtain ⟨i, j, hij, hijdist⟩ :=
+    exists_pairDifference_le_two_infDist_CoincidenceLocus (d := d) (n := n) x hcoin
+  let p : P := ⟨(i, j), hij⟩
+  calc
+    ‖f x‖ ≤ C p * ‖x i - x j‖ ^ (m + 1) := hC_bound p x hx
+    _ ≤ Cmax * ‖x i - x j‖ ^ (m + 1) := by
+        exact mul_le_mul_of_nonneg_right (hC_le p) (pow_nonneg (norm_nonneg _) _)
+    _ ≤ Cmax * (2 * Metric.infDist x (CoincidenceLocus d n)) ^ (m + 1) := by
+        gcongr
+    _ = (Cmax * (2 : ℝ) ^ (m + 1)) * Metric.infDist x (CoincidenceLocus d n) ^ (m + 1) := by
+        rw [mul_pow]
+        ring
+
+/-- First-order compact flatness in terms of actual distance to the coincidence
+    locus. This packages the pairwise mean-value estimate using a nearest
+    coincidence point and a finite maximum over all pairs. -/
+theorem VanishesToInfiniteOrderOnCoincidence.norm_le_infDist_CoincidenceLocus_on_isCompact
+    {d n : ℕ} {f : SchwartzNPoint d n}
+    (hf : VanishesToInfiniteOrderOnCoincidence f)
+    {K : Set (NPointDomain d n)} (hK : IsCompact K)
+    (hcoin : (CoincidenceLocus d n).Nonempty) :
+    ∃ C : ℝ, 0 ≤ C ∧
+      ∀ x ∈ K, ‖f x‖ ≤ C * Metric.infDist x (CoincidenceLocus d n) := by
+  classical
+  let P : Type := {p : Fin n × Fin n // p.1 ≠ p.2}
+  have hP_nonempty : Nonempty P := by
+    rcases hcoin with ⟨x, hx⟩
+    rcases hx with ⟨i, j, hij, _⟩
+    exact ⟨⟨(i, j), hij⟩⟩
+  have hpair :
+      ∀ p : P, ∃ C : ℝ, 0 ≤ C ∧
+        ∀ x ∈ K, ‖f x‖ ≤ C * ‖x p.1.1 - x p.1.2‖ := by
+    intro p
+    exact VanishesToInfiniteOrderOnCoincidence.norm_le_pairDifference_on_isCompact
+      hf hK p.1.1 p.1.2 p.2
+  choose C hC_nonneg hC_bound using hpair
+  let Cmax : ℝ := Finset.univ.sup' Finset.univ_nonempty C
+  have hC_le : ∀ p : P, C p ≤ Cmax := by
+    intro p
+    exact Finset.le_sup' (f := C) (Finset.mem_univ p)
+  let p0 : P := Classical.choice hP_nonempty
+  have hCmax_nonneg : 0 ≤ Cmax := le_trans (hC_nonneg p0) (hC_le p0)
+  refine ⟨2 * Cmax, mul_nonneg (by norm_num) hCmax_nonneg, ?_⟩
+  intro x hx
+  obtain ⟨i, j, hij, hijdist⟩ :=
+    exists_pairDifference_le_two_infDist_CoincidenceLocus (d := d) (n := n) x hcoin
+  let p : P := ⟨(i, j), hij⟩
+  calc
+    ‖f x‖ ≤ C p * ‖x i - x j‖ := hC_bound p x hx
+    _ ≤ Cmax * ‖x i - x j‖ := by
+      exact mul_le_mul_of_nonneg_right (hC_le p) (norm_nonneg _)
+    _ ≤ Cmax * (2 * Metric.infDist x (CoincidenceLocus d n)) := by
+      gcongr
+    _ = (2 * Cmax) * Metric.infDist x (CoincidenceLocus d n) := by ring
+
+/-- The `ℂ`-submodule of Schwartz n-point functions vanishing to infinite order
+    on the coincidence locus. -/
+def zeroDiagonalSubmodule (d n : ℕ) : Submodule ℂ (SchwartzNPoint d n) where
+  carrier := { f | VanishesToInfiniteOrderOnCoincidence f }
+  zero_mem' := by
+    intro k x hx
+    by_cases hk : k = 0
+    · subst hk
+      ext m
+      simp
+    · change iteratedFDeriv ℝ k (fun _ : NPointDomain d n => (0 : ℂ)) x = 0
+      exact congrFun (iteratedFDeriv_const_of_ne (𝕜 := ℝ) hk (0 : ℂ)) x
+  add_mem' := by
+    intro f g hf hg k x hx
+    simpa using
+      (iteratedFDeriv_add_apply
+        ((f : SchwartzNPoint d n).smooth _).contDiffAt
+        ((g : SchwartzNPoint d n).smooth _).contDiffAt).trans
+        (by rw [hf k x hx, hg k x hx, zero_add])
+  smul_mem' := by
+    intro c f hf k x hx
+    simpa using
+      (iteratedFDeriv_const_smul_apply (𝕜 := ℝ) (a := c)
+        (((f : SchwartzNPoint d n).smooth _).contDiffAt)).trans
+        (by rw [hf k x hx, smul_zero])
+
 /-- The OS-I zero-diagonal Schwartz test space. -/
 def ZeroDiagonalSchwartz (d n : ℕ) :=
-  { f : SchwartzNPoint d n // VanishesToInfiniteOrderOnCoincidence f }
+  ↥(zeroDiagonalSubmodule d n)
+
+instance instAddCommMonoidZeroDiagonalSchwartz (d n : ℕ) :
+    AddCommMonoid (ZeroDiagonalSchwartz d n) := by
+  delta ZeroDiagonalSchwartz
+  infer_instance
+
+instance instModuleZeroDiagonalSchwartz (d n : ℕ) :
+    Module ℂ (ZeroDiagonalSchwartz d n) := by
+  delta ZeroDiagonalSchwartz
+  infer_instance
 
 instance instTopologicalSpaceZeroDiagonalSchwartz (d n : ℕ) :
     TopologicalSpace (ZeroDiagonalSchwartz d n) := by
   delta ZeroDiagonalSchwartz
   infer_instance
+
+/-- A classical promotion from a Schwartz test function to the zero-diagonal
+    subspace, with a junk zero fallback when the function is not in `°S`.
+
+    This keeps definitions such as `OSInnerProduct` total while ensuring that,
+    whenever a genuine zero-diagonal witness exists, the promoted term reduces
+    to the intended branch. -/
+noncomputable def ZeroDiagonalSchwartz.ofClassical {d n : ℕ}
+    (f : SchwartzNPoint d n) : ZeroDiagonalSchwartz d n := by
+  classical
+  by_cases h : VanishesToInfiniteOrderOnCoincidence f
+  · exact ⟨f, h⟩
+  · exact 0
+
+@[simp]
+theorem ZeroDiagonalSchwartz.ofClassical_of_vanishes {d n : ℕ}
+    (f : SchwartzNPoint d n) (h : VanishesToInfiniteOrderOnCoincidence f) :
+    ZeroDiagonalSchwartz.ofClassical f = ⟨f, h⟩ := by
+  classical
+  simp [ZeroDiagonalSchwartz.ofClassical, h]
+
+@[simp]
+theorem ZeroDiagonalSchwartz.coe_ofClassical_of_vanishes {d n : ℕ}
+    (f : SchwartzNPoint d n) (h : VanishesToInfiniteOrderOnCoincidence f) :
+    (ZeroDiagonalSchwartz.ofClassical f).1 = f := by
+  rw [ZeroDiagonalSchwartz.ofClassical_of_vanishes (f := f) h]
+
+@[simp]
+theorem ZeroDiagonalSchwartz.ofClassical_of_not_vanishes {d n : ℕ}
+    (f : SchwartzNPoint d n) (h : ¬ VanishesToInfiniteOrderOnCoincidence f) :
+    ZeroDiagonalSchwartz.ofClassical f = 0 := by
+  classical
+  simp [ZeroDiagonalSchwartz.ofClassical, h]
+
+@[simp]
+theorem VanishesToInfiniteOrderOnCoincidence.zero {d n : ℕ} :
+    VanishesToInfiniteOrderOnCoincidence (0 : SchwartzNPoint d n) := by
+  intro k x hx
+  exact congrFun
+    (iteratedFDeriv_zero_fun (𝕜 := ℝ) (n := k)
+      (E := NPointDomain d n) (F := ℂ)) x
+
+theorem VanishesToInfiniteOrderOnCoincidence.add {d n : ℕ}
+    {f g : SchwartzNPoint d n}
+    (hf : VanishesToInfiniteOrderOnCoincidence f)
+    (hg : VanishesToInfiniteOrderOnCoincidence g) :
+    VanishesToInfiniteOrderOnCoincidence (f + g) := by
+  change f + g ∈ zeroDiagonalSubmodule d n
+  exact (zeroDiagonalSubmodule d n).add_mem hf hg
+
+theorem VanishesToInfiniteOrderOnCoincidence.smul {d n : ℕ}
+    (c : ℂ) {f : SchwartzNPoint d n}
+    (hf : VanishesToInfiniteOrderOnCoincidence f) :
+    VanishesToInfiniteOrderOnCoincidence (c • f) := by
+  change c • f ∈ zeroDiagonalSubmodule d n
+  exact (zeroDiagonalSubmodule d n).smul_mem c hf
+
+@[simp]
+theorem ZeroDiagonalSchwartz.ofClassical_zero {d n : ℕ} :
+    ZeroDiagonalSchwartz.ofClassical (0 : SchwartzNPoint d n) = 0 := by
+  rw [ZeroDiagonalSchwartz.ofClassical_of_vanishes
+    (f := (0 : SchwartzNPoint d n))
+    (VanishesToInfiniteOrderOnCoincidence.zero (d := d) (n := n))]
+  rfl
+
+theorem ZeroDiagonalSchwartz.ofClassical_add_of_vanishes {d n : ℕ}
+    (f g : SchwartzNPoint d n)
+    (hf : VanishesToInfiniteOrderOnCoincidence f)
+    (hg : VanishesToInfiniteOrderOnCoincidence g) :
+    ZeroDiagonalSchwartz.ofClassical (f + g) =
+      ZeroDiagonalSchwartz.ofClassical f + ZeroDiagonalSchwartz.ofClassical g := by
+  have hfg : VanishesToInfiniteOrderOnCoincidence (f + g) := hf.add hg
+  rw [ZeroDiagonalSchwartz.ofClassical_of_vanishes (f := f + g) hfg,
+    ZeroDiagonalSchwartz.ofClassical_of_vanishes (f := f) hf,
+    ZeroDiagonalSchwartz.ofClassical_of_vanishes (f := g) hg]
+  rfl
+
+@[simp]
+theorem ZeroDiagonalSchwartz.ofClassical_smul {d n : ℕ}
+    (c : ℂ) (f : SchwartzNPoint d n) :
+    ZeroDiagonalSchwartz.ofClassical (c • f) =
+      c • ZeroDiagonalSchwartz.ofClassical f := by
+  classical
+  by_cases hc : c = 0
+  · subst hc
+    rw [show (0 : ℂ) • f = (0 : SchwartzNPoint d n) by simp,
+      ZeroDiagonalSchwartz.ofClassical_zero]
+    simp
+  · by_cases hf : VanishesToInfiniteOrderOnCoincidence f
+    · have hcf : VanishesToInfiniteOrderOnCoincidence (c • f) := hf.smul c
+      rw [ZeroDiagonalSchwartz.ofClassical_of_vanishes (f := c • f) hcf,
+        ZeroDiagonalSchwartz.ofClassical_of_vanishes (f := f) hf]
+      rfl
+    · have hcf : ¬ VanishesToInfiniteOrderOnCoincidence (c • f) := by
+        intro hcf
+        apply hf
+        simpa [smul_smul, hc] using hcf.smul c⁻¹
+      rw [ZeroDiagonalSchwartz.ofClassical_of_not_vanishes (f := c • f) hcf,
+        ZeroDiagonalSchwartz.ofClassical_of_not_vanishes (f := f) hf]
+      simp
+
+/-- Zero-diagonal Schwinger families, i.e. Euclidean correlation functionals
+    defined only on the OS-I test space `°S`. This is the honest Wightman -> OS-I
+    codomain before any separate extension to the full Schwartz space. -/
+def ZeroDiagonalSchwingerFunctions (d : ℕ) := (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ
+
+/-- Honest Schwinger functions (Euclidean correlators) on the corrected OS-I
+    test space `°S = ZeroDiagonalSchwartz`.
+
+    This is the notion that should be used for Schwinger data in the project. -/
+abbrev SchwingerFunctions (d : ℕ) := ZeroDiagonalSchwingerFunctions d
 
 /-- If a Schwartz test function is supported in the strict ordered positive-time
     region, then it vanishes to infinite order on the coincidence locus.
@@ -1338,6 +2243,193 @@ def SchwartzNPoint.osConjTensorProduct {m k : ℕ} (f : SchwartzNPoint d m)
     (g : SchwartzNPoint d k) : SchwartzNPoint d (m + k) :=
   f.osConj.tensorProduct g
 
+omit [NeZero d] in
+private theorem tsupport_precomp_subset {X Y α : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] [Zero α]
+    {f : Y → α} {h : X → Y} (hh : Continuous h) :
+    tsupport (fun x => f (h x)) ⊆ h ⁻¹' tsupport f := by
+  refine closure_minimal ?_ ((isClosed_tsupport _).preimage hh)
+  intro x hx
+  exact subset_closure (by simpa [Function.mem_support] using hx)
+
+omit [NeZero d] in
+private theorem continuous_timeReflectionN {n : ℕ} :
+    Continuous (timeReflectionN d (n := n)) := by
+  apply continuous_pi
+  intro i
+  apply continuous_pi
+  intro μ
+  by_cases hμ : μ = 0
+  · subst hμ
+    simpa [timeReflectionN, timeReflection] using
+      ((((continuous_apply 0 : Continuous fun y : SpacetimeDim d => y 0).comp
+          (continuous_apply i : Continuous fun x : NPointDomain d n => x i))).neg :
+        Continuous fun x : NPointDomain d n => -x i 0)
+  · simpa [timeReflectionN, timeReflection, hμ] using
+      ((continuous_apply μ : Continuous fun y : SpacetimeDim d => y μ).comp
+        (continuous_apply i : Continuous fun x : NPointDomain d n => x i) :
+        Continuous fun x : NPointDomain d n => x i μ)
+
+omit [NeZero d] in
+private theorem continuous_splitFirst {n m : ℕ} :
+    Continuous (splitFirst n m : NPointDomain d (n + m) → NPointDomain d n) := by
+  apply continuous_pi
+  intro i
+  simpa [splitFirst] using
+    (continuous_apply (Fin.castAdd m i) :
+      Continuous fun x : NPointDomain d (n + m) => x (Fin.castAdd m i))
+
+omit [NeZero d] in
+private theorem continuous_splitLast {n m : ℕ} :
+    Continuous (splitLast n m : NPointDomain d (n + m) → NPointDomain d m) := by
+  apply continuous_pi
+  intro i
+  simpa [splitLast] using
+    (continuous_apply (Fin.natAdd n i) :
+      Continuous fun x : NPointDomain d (n + m) => x (Fin.natAdd n i))
+
+/-- OS-conjugated tensor products of ordered positive-time test functions are
+    automatically zero-diagonal.
+
+    Geometrically, `f.osConj` is supported where all first-block times are
+    strictly negative and decreasing, while `g` stays on the ordered positive-time
+    region. Hence every configuration in the topological support of
+    `(θf̄) ⊗ g` has all time coordinates distinct, so the coincidence locus is
+    avoided before taking any derivatives. -/
+theorem VanishesToInfiniteOrderOnCoincidence_osConjTensorProduct_of_tsupport_subset_orderedPositiveTimeRegion
+    {n m : ℕ} (f : SchwartzNPoint d n) (g : SchwartzNPoint d m)
+    (hf : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (hg : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m) :
+    VanishesToInfiniteOrderOnCoincidence (f.osConjTensorProduct g) := by
+  let A : Set (NPointDomain d (n + m)) :=
+    { x | splitFirst n m x ∈ OrderedNegativeTimeRegion d n }
+  let B : Set (NPointDomain d (n + m)) :=
+    { x | splitLast n m x ∈ OrderedPositiveTimeRegion d m }
+  have hosConj :
+      tsupport ((f.osConj : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+        OrderedNegativeTimeRegion d n := by
+    intro x hx i
+    have hxpre :
+        timeReflectionN d x ∈ tsupport (f : NPointDomain d n → ℂ) := by
+      exact tsupport_precomp_subset (f := (f : NPointDomain d n → ℂ))
+        (h := timeReflectionN d) (continuous_timeReflectionN (d := d))
+        ((tsupport_comp_subset (g := starRingEnd ℂ) (map_zero _) (fun y : NPointDomain d n =>
+          f (timeReflectionN d y))) hx)
+    have hpos := hf hxpre
+    constructor
+    · have : 0 < timeReflectionN d x i 0 := (hpos i).1
+      simpa [timeReflectionN, timeReflection] using this
+    · intro j hij
+      have : timeReflectionN d x i 0 < timeReflectionN d x j 0 := (hpos i).2 j hij
+      simpa [timeReflectionN, timeReflection] using this
+  have hA :
+      tsupport (fun x : NPointDomain d (n + m) => f.osConj (splitFirst n m x)) ⊆ A := by
+    intro x hx
+    exact hosConj <|
+      tsupport_precomp_subset (f := ((f.osConj : SchwartzNPoint d n) : NPointDomain d n → ℂ))
+        (h := splitFirst n m) (continuous_splitFirst (d := d)) hx
+  have hB :
+      tsupport (fun x : NPointDomain d (n + m) => g (splitLast n m x)) ⊆ B := by
+    intro x hx
+    exact hg <|
+      tsupport_precomp_subset (f := (g : NPointDomain d m → ℂ))
+        (h := splitLast n m) (continuous_splitLast (d := d)) hx
+  have hsupport :
+      tsupport (((f.osConjTensorProduct g : SchwartzNPoint d (n + m)) :
+          NPointDomain d (n + m) → ℂ)) ⊆ A ∩ B := by
+    intro x hx
+    have hxprod :
+        x ∈ tsupport (fun y : NPointDomain d (n + m) =>
+          f.osConj (splitFirst n m y) * g (splitLast n m y)) := by
+      simpa [SchwartzNPoint.osConjTensorProduct, SchwartzMap.tensorProduct_apply] using hx
+    refine ⟨hA ((tsupport_mul_subset_left (f := fun y : NPointDomain d (n + m) =>
+      f.osConj (splitFirst n m y)) (g := fun y : NPointDomain d (n + m) =>
+      g (splitLast n m y))) hxprod), ?_⟩
+    exact hB ((tsupport_mul_subset_right (f := fun y : NPointDomain d (n + m) =>
+      f.osConj (splitFirst n m y)) (g := fun y : NPointDomain d (n + m) =>
+      g (splitLast n m y))) hxprod)
+  have hdisj : Disjoint (A ∩ B) (CoincidenceLocus d (n + m)) := by
+    refine Set.disjoint_left.mpr ?_
+    intro x hxAB hxcoin
+    rcases hxAB with ⟨hxA, hxB⟩
+    rcases hxcoin with ⟨i, j, hij, hijEq⟩
+    by_cases hi : i.1 < n
+    · by_cases hj : j.1 < n
+      · let i' : Fin n := ⟨i.1, hi⟩
+        let j' : Fin n := ⟨j.1, hj⟩
+        have hi_cast : Fin.castAdd m i' = i := by
+          ext
+          simp [i']
+        have hj_cast : Fin.castAdd m j' = j := by
+          ext
+          simp [j']
+        have hEq0 : splitFirst n m x i' 0 = splitFirst n m x j' 0 := by
+          simpa [splitFirst, hi_cast, hj_cast] using congrArg (fun y : SpacetimeDim d => y 0) hijEq
+        have hij' : i' ≠ j' := by
+          intro hij'
+          apply hij
+          simpa [hi_cast, hj_cast] using congrArg (fun t : Fin n => Fin.castAdd m t) hij'
+        rcases lt_or_gt_of_ne hij' with hij'_lt | hij'_gt
+        · have hlt : splitFirst n m x j' 0 < splitFirst n m x i' 0 := (hxA i').2 j' hij'_lt
+          exact (lt_irrefl (splitFirst n m x j' 0)) (hEq0 ▸ hlt)
+        · have hlt : splitFirst n m x i' 0 < splitFirst n m x j' 0 := (hxA j').2 i' hij'_gt
+          exact (lt_irrefl (splitFirst n m x i' 0)) (hEq0.symm ▸ hlt)
+      · let i' : Fin n := ⟨i.1, hi⟩
+        let j' : Fin m := ⟨j.1 - n, by omega⟩
+        have hi_cast : Fin.castAdd m i' = i := by
+          ext
+          simp [i']
+        have hj_cast : Fin.natAdd n j' = j := by
+          ext
+          simp [j']
+          omega
+        have hneg : splitFirst n m x i' 0 < 0 := (hxA i').1
+        have hpos : 0 < splitLast n m x j' 0 := (hxB j').1
+        have hEq0 : splitFirst n m x i' 0 = splitLast n m x j' 0 := by
+          simpa [splitFirst, splitLast, hi_cast, hj_cast] using
+            congrArg (fun y : SpacetimeDim d => y 0) hijEq
+        linarith
+    · by_cases hj : j.1 < n
+      · let i' : Fin m := ⟨i.1 - n, by omega⟩
+        let j' : Fin n := ⟨j.1, hj⟩
+        have hi_cast : Fin.natAdd n i' = i := by
+          ext
+          simp [i']
+          omega
+        have hj_cast : Fin.castAdd m j' = j := by
+          ext
+          simp [j']
+        have hpos : 0 < splitLast n m x i' 0 := (hxB i').1
+        have hneg : splitFirst n m x j' 0 < 0 := (hxA j').1
+        have hEq0 : splitLast n m x i' 0 = splitFirst n m x j' 0 := by
+          simpa [splitFirst, splitLast, hi_cast, hj_cast] using
+            congrArg (fun y : SpacetimeDim d => y 0) hijEq
+        linarith
+      · let i' : Fin m := ⟨i.1 - n, by omega⟩
+        let j' : Fin m := ⟨j.1 - n, by omega⟩
+        have hi_cast : Fin.natAdd n i' = i := by
+          ext
+          simp [i']
+          omega
+        have hj_cast : Fin.natAdd n j' = j := by
+          ext
+          simp [j']
+          omega
+        have hEq0 : splitLast n m x i' 0 = splitLast n m x j' 0 := by
+          simpa [splitLast, hi_cast, hj_cast] using
+            congrArg (fun y : SpacetimeDim d => y 0) hijEq
+        have hij' : i' ≠ j' := by
+          intro hij'
+          apply hij
+          simpa [hi_cast, hj_cast] using congrArg (fun t : Fin m => Fin.natAdd n t) hij'
+        rcases lt_or_gt_of_ne hij' with hij'_lt | hij'_gt
+        · have hlt : splitLast n m x i' 0 < splitLast n m x j' 0 := (hxB i').2 j' hij'_lt
+          exact (lt_irrefl (splitLast n m x i' 0)) (hEq0 ▸ hlt)
+        · have hlt : splitLast n m x j' 0 < splitLast n m x i' 0 := (hxB j').2 i' hij'_gt
+          exact (lt_irrefl (splitLast n m x j' 0)) (hEq0.symm ▸ hlt)
+  exact VanishesToInfiniteOrderOnCoincidence_of_tsupport_disjoint
+    (f := f.osConjTensorProduct g) (hdisj.mono_left hsupport)
+
 end TimeReflectSchwartz
 
 /-- The Osterwalder-Schrader inner product on Borchers sequences.
@@ -1354,27 +2446,43 @@ end TimeReflectSchwartz
 def OSInnerProduct (S : SchwingerFunctions d) (F G : BorchersSequence d) : ℂ :=
   ∑ n ∈ Finset.range (F.bound + 1),
     ∑ m ∈ Finset.range (G.bound + 1),
-      S (n + m) ((F.funcs n).osConjTensorProduct (G.funcs m))
+      S (n + m) (ZeroDiagonalSchwartz.ofClassical
+        ((F.funcs n).osConjTensorProduct (G.funcs m)))
 
 /-! ### OS Inner Product Algebra
 
 The standard OS semigroup/spectral argument needs sesquilinearity of the
 reflection-positive form. Since `S n` is part of E0 and therefore a tempered
 distribution, the required linearity is part of the correct interface. The
-lemmas below mirror the existing `WightmanInnerProduct` algebra. -/
+lemmas below mirror the existing `WightmanInnerProduct` algebra.
+
+Because `OSInnerProduct` is totalized via `ZeroDiagonalSchwartz.ofClassical`,
+additivity theorems must explicitly assume that the relevant OS tensor terms
+really lie in `°S`; otherwise the fallback zero branch can destroy algebraic
+identities. -/
 
 /-- The OS inner product with explicit summation bounds. -/
-def OSInnerProductN (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+def OSInnerProductN (S : (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ)
     (F G : BorchersSequence d) (N₁ N₂ : ℕ) : ℂ :=
   ∑ n ∈ Finset.range N₁,
     ∑ m ∈ Finset.range N₂,
-      S (n + m) ((F.funcs n).osConjTensorProduct (G.funcs m))
+      S (n + m) (ZeroDiagonalSchwartz.ofClassical
+        ((F.funcs n).osConjTensorProduct (G.funcs m)))
 
 /-- The standard OS inner product equals the naturally bounded version. -/
-theorem OSInnerProduct_eq_N (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+theorem OSInnerProduct_eq_N (S : (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ)
     (F G : BorchersSequence d) :
     OSInnerProduct d S F G = OSInnerProductN d S F G (F.bound + 1) (G.bound + 1) :=
   rfl
+
+/-- The genuine zero-diagonal compatibility condition for the OS tensor terms
+    appearing in `OSInnerProduct`.
+
+    This is the precise hypothesis needed for additive manipulations on the
+    Euclidean side after the hard cut to `ZeroDiagonalSchwartz`. -/
+def OSTensorAdmissible (F G : BorchersSequence d) : Prop :=
+  ∀ n m, VanishesToInfiniteOrderOnCoincidence
+    ((F.funcs n).osConjTensorProduct (G.funcs m))
 
 @[simp]
 theorem SchwartzNPoint.osConj_zero {n : ℕ} :
@@ -1429,6 +2537,61 @@ theorem SchwartzNPoint.osConjTensorProduct_smul_left {m k : ℕ}
   simp [SchwartzNPoint.osConjTensorProduct, SchwartzNPoint.osConj_smul,
     SchwartzMap.tensorProduct_smul_left]
 
+theorem OSTensorAdmissible.zero_right (F : BorchersSequence d) :
+    OSTensorAdmissible d F 0 := by
+  intro n m
+  simpa [BorchersSequence.zero_funcs] using
+    (VanishesToInfiniteOrderOnCoincidence.zero (d := d) (n := n + m))
+
+theorem OSTensorAdmissible.zero_left (G : BorchersSequence d) :
+    OSTensorAdmissible d (0 : BorchersSequence d) G := by
+  intro n m
+  simpa [BorchersSequence.zero_funcs] using
+    (VanishesToInfiniteOrderOnCoincidence.zero (d := d) (n := n + m))
+
+theorem OSTensorAdmissible.add_right {F G₁ G₂ : BorchersSequence d}
+    (hFG₁ : OSTensorAdmissible d F G₁)
+    (hFG₂ : OSTensorAdmissible d F G₂) :
+    OSTensorAdmissible d F (G₁ + G₂) := by
+  intro n m
+  simpa [BorchersSequence.add_funcs, SchwartzNPoint.osConjTensorProduct_add_right] using
+    (hFG₁ n m).add (hFG₂ n m)
+
+theorem OSTensorAdmissible.add_left {F₁ F₂ G : BorchersSequence d}
+    (hF₁G : OSTensorAdmissible d F₁ G)
+    (hF₂G : OSTensorAdmissible d F₂ G) :
+    OSTensorAdmissible d (F₁ + F₂) G := by
+  intro n m
+  simpa [BorchersSequence.add_funcs, SchwartzNPoint.osConjTensorProduct_add_left] using
+    (hF₁G n m).add (hF₂G n m)
+
+theorem OSTensorAdmissible.smul_right {F G : BorchersSequence d}
+    (hFG : OSTensorAdmissible d F G) (c : ℂ) :
+    OSTensorAdmissible d F (c • G) := by
+  intro n m
+  simpa [BorchersSequence.smul_funcs, SchwartzNPoint.osConjTensorProduct_smul_right] using
+    (hFG n m).smul c
+
+theorem OSTensorAdmissible.smul_left {F G : BorchersSequence d}
+    (hFG : OSTensorAdmissible d F G) (c : ℂ) :
+    OSTensorAdmissible d (c • F) G := by
+  intro n m
+  simpa [BorchersSequence.smul_funcs, SchwartzNPoint.osConjTensorProduct_smul_left] using
+    (hFG n m).smul (starRingEnd ℂ c)
+
+/-- Ordered positive-time topological support is enough to guarantee that every
+    OS tensor term of two Borchers sequences already lies in `°S`. -/
+theorem OSTensorAdmissible_of_tsupport_subset_orderedPositiveTimeRegion
+    (F G : BorchersSequence d)
+    (hF : ∀ n, tsupport ((F.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+      OrderedPositiveTimeRegion d n)
+    (hG : ∀ n, tsupport ((G.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+      OrderedPositiveTimeRegion d n) :
+    OSTensorAdmissible d F G := by
+  intro n m
+  exact VanishesToInfiniteOrderOnCoincidence_osConjTensorProduct_of_tsupport_subset_orderedPositiveTimeRegion
+    (d := d) (f := F.funcs n) (g := G.funcs m) (hF n) (hG m)
+
 /-- Pointwise block-swap identity for the OS-conjugated tensor product.
 
     This is the OS analogue of `conjTP_eq_borchersConj_conjTP`: applying the
@@ -1466,7 +2629,7 @@ private theorem osConjTP_eq_osConj_osConjTP {d n m : ℕ} [NeZero d]
   rw [hfarg, hgarg]
 
 /-- Extending the second OS summation range does not change the value. -/
-theorem OSInnerProductN_extend_right (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+theorem OSInnerProductN_extend_right (S : (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ)
     (hlin : ∀ n, IsLinearMap ℂ (S n))
     (F G : BorchersSequence d) (N₁ N₂ : ℕ)
     (hN₂ : G.bound + 1 ≤ N₂) :
@@ -1480,10 +2643,11 @@ theorem OSInnerProductN_extend_right (S : (n : ℕ) → SchwartzNPoint d n → �
   have hm : G.bound < m := by
     simp only [Finset.mem_range] at hm₁ hm₂
     omega
-  rw [G.bound_spec m hm, SchwartzNPoint.osConjTensorProduct_zero_right, (hlin _).map_zero]
+  rw [G.bound_spec m hm, SchwartzNPoint.osConjTensorProduct_zero_right,
+    ZeroDiagonalSchwartz.ofClassical_zero, (hlin _).map_zero]
 
 /-- Extending the first OS summation range does not change the value. -/
-theorem OSInnerProductN_extend_left (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+theorem OSInnerProductN_extend_left (S : (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ)
     (hlin : ∀ n, IsLinearMap ℂ (S n))
     (F G : BorchersSequence d) (N₁ N₂ : ℕ)
     (hN₁ : F.bound + 1 ≤ N₁) :
@@ -1497,10 +2661,11 @@ theorem OSInnerProductN_extend_left (S : (n : ℕ) → SchwartzNPoint d n → �
     omega
   apply Finset.sum_eq_zero
   intro m _
-  rw [F.bound_spec n hn, SchwartzNPoint.osConjTensorProduct_zero_left, (hlin _).map_zero]
+  rw [F.bound_spec n hn, SchwartzNPoint.osConjTensorProduct_zero_left,
+    ZeroDiagonalSchwartz.ofClassical_zero, (hlin _).map_zero]
 
 /-- The OS inner product can be computed using any sufficiently large bounds. -/
-theorem OSInnerProduct_eq_extended (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+theorem OSInnerProduct_eq_extended (S : (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ)
     (hlin : ∀ n, IsLinearMap ℂ (S n))
     (F G : BorchersSequence d) (N₁ N₂ : ℕ)
     (hN₁ : F.bound + 1 ≤ N₁) (hN₂ : G.bound + 1 ≤ N₂) :
@@ -1510,55 +2675,89 @@ theorem OSInnerProduct_eq_extended (S : (n : ℕ) → SchwartzNPoint d n → ℂ
     ← OSInnerProductN_extend_left d S hlin F G N₁ N₂ hN₁]
 
 /-- The OS inner product depends only on `funcs`, not on `bound`. -/
-theorem OSInnerProduct_congr_right (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+theorem OSInnerProduct_congr_right (S : (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ)
     (hlin : ∀ n, IsLinearMap ℂ (S n))
     (F G₁ G₂ : BorchersSequence d)
     (h : ∀ n, G₁.funcs n = G₂.funcs n) :
     OSInnerProduct d S F G₁ = OSInnerProduct d S F G₂ := by
-  let N₂ := max G₁.bound G₂.bound + 1
-  rw [OSInnerProduct_eq_extended d S hlin F G₁ (F.bound + 1) N₂ le_rfl
-        (by omega : G₁.bound + 1 ≤ N₂),
-      OSInnerProduct_eq_extended d S hlin F G₂ (F.bound + 1) N₂ le_rfl
-        (by omega : G₂.bound + 1 ≤ N₂)]
-  unfold OSInnerProductN
-  congr 1; ext n; congr 1; ext m; rw [h m]
+  rw [OSInnerProduct_eq_extended d S hlin F G₁
+        (F.bound + 1) (max G₁.bound G₂.bound + 1) le_rfl
+        (Nat.succ_le_succ (le_max_left _ _)),
+      OSInnerProduct_eq_extended d S hlin F G₂
+        (F.bound + 1) (max G₁.bound G₂.bound + 1) le_rfl
+        (Nat.succ_le_succ (le_max_right _ _))]
+  simp only [OSInnerProductN]
+  congr 1
+  ext n
+  congr 1
+  ext m
+  rw [h m]
 
 /-- The OS inner product depends only on `funcs`, not on `bound` (left argument). -/
-theorem OSInnerProduct_congr_left (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+theorem OSInnerProduct_congr_left (S : (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ)
     (hlin : ∀ n, IsLinearMap ℂ (S n))
     (F₁ F₂ G : BorchersSequence d)
     (h : ∀ n, F₁.funcs n = F₂.funcs n) :
     OSInnerProduct d S F₁ G = OSInnerProduct d S F₂ G := by
-  let N₁ := max F₁.bound F₂.bound + 1
-  rw [OSInnerProduct_eq_extended d S hlin F₁ G N₁ (G.bound + 1)
-        (by omega : F₁.bound + 1 ≤ N₁) le_rfl,
-      OSInnerProduct_eq_extended d S hlin F₂ G N₁ (G.bound + 1)
-        (by omega : F₂.bound + 1 ≤ N₁) le_rfl]
-  unfold OSInnerProductN
-  congr 1; ext n; congr 1; ext m; rw [h n]
+  rw [OSInnerProduct_eq_extended d S hlin F₁ G
+        (max F₁.bound F₂.bound + 1) (G.bound + 1)
+        (Nat.succ_le_succ (le_max_left _ _)) le_rfl,
+      OSInnerProduct_eq_extended d S hlin F₂ G
+        (max F₁.bound F₂.bound + 1) (G.bound + 1)
+        (Nat.succ_le_succ (le_max_right _ _)) le_rfl]
+  simp only [OSInnerProductN]
+  congr 1
+  ext n
+  congr 1
+  ext m
+  rw [h n]
 
 /-- The OS inner product with zero in the right argument vanishes. -/
-theorem OSInnerProduct_zero_right (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+theorem OSInnerProduct_zero_right (S : (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ)
     (hlin : ∀ n, IsLinearMap ℂ (S n))
     (F : BorchersSequence d) :
     OSInnerProduct d S F 0 = 0 := by
-  simp only [OSInnerProduct, BorchersSequence.zero_funcs,
-    SchwartzNPoint.osConjTensorProduct_zero_right, (hlin _).map_zero,
-    Finset.sum_const_zero]
+  unfold OSInnerProduct
+  apply Finset.sum_eq_zero
+  intro n _
+  apply Finset.sum_eq_zero
+  intro m _
+  have hzero :
+      ZeroDiagonalSchwartz.ofClassical
+        ((F.funcs n).osConjTensorProduct ((0 : BorchersSequence d).funcs m)) = 0 := by
+    rw [BorchersSequence.zero_funcs, SchwartzNPoint.osConjTensorProduct_zero_right,
+      ZeroDiagonalSchwartz.ofClassical_of_vanishes (f := (0 : SchwartzNPoint d (n + m)))
+        (VanishesToInfiniteOrderOnCoincidence.zero (d := d) (n := n + m))]
+    rfl
+  rw [hzero]
+  exact (hlin _).map_zero
 
 /-- The OS inner product with zero in the left argument vanishes. -/
-theorem OSInnerProduct_zero_left (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+theorem OSInnerProduct_zero_left (S : (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ)
     (hlin : ∀ n, IsLinearMap ℂ (S n))
     (G : BorchersSequence d) :
     OSInnerProduct d S 0 G = 0 := by
-  simp only [OSInnerProduct, BorchersSequence.zero_funcs,
-    SchwartzNPoint.osConjTensorProduct_zero_left, (hlin _).map_zero,
-    Finset.sum_const_zero]
+  unfold OSInnerProduct
+  apply Finset.sum_eq_zero
+  intro n _
+  apply Finset.sum_eq_zero
+  intro m _
+  have hzero :
+      ZeroDiagonalSchwartz.ofClassical
+        (((0 : BorchersSequence d).funcs n).osConjTensorProduct (G.funcs m)) = 0 := by
+    rw [BorchersSequence.zero_funcs, SchwartzNPoint.osConjTensorProduct_zero_left,
+      ZeroDiagonalSchwartz.ofClassical_of_vanishes (f := (0 : SchwartzNPoint d (n + m)))
+        (VanishesToInfiniteOrderOnCoincidence.zero (d := d) (n := n + m))]
+    rfl
+  rw [hzero]
+  exact (hlin _).map_zero
 
 /-- The OS inner product is additive in the second argument. -/
-theorem OSInnerProduct_add_right (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+theorem OSInnerProduct_add_right (S : (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ)
     (hlin : ∀ n, IsLinearMap ℂ (S n))
-    (F G₁ G₂ : BorchersSequence d) :
+    (F G₁ G₂ : BorchersSequence d)
+    (hFG₁ : OSTensorAdmissible d F G₁)
+    (hFG₂ : OSTensorAdmissible d F G₂) :
     OSInnerProduct d S F (G₁ + G₂) =
       OSInnerProduct d S F G₁ + OSInnerProduct d S F G₂ := by
   have hN₁ : F.bound + 1 ≤ F.bound + 1 := le_rfl
@@ -1573,17 +2772,27 @@ theorem OSInnerProduct_add_right (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
         (F.bound + 1) (max G₁.bound G₂.bound + 1) hN₁ hN₂_1,
       OSInnerProduct_eq_extended d S hlin F G₂
         (F.bound + 1) (max G₁.bound G₂.bound + 1) hN₁ hN₂_2]
-  simp only [OSInnerProductN, BorchersSequence.add_funcs,
-    SchwartzNPoint.osConjTensorProduct_add_right, (hlin _).map_add]
+  unfold OSInnerProductN
   rw [← Finset.sum_add_distrib]
-  congr 1
-  ext n
+  apply Finset.sum_congr rfl
+  intro n _
   rw [← Finset.sum_add_distrib]
+  apply Finset.sum_congr rfl
+  intro m _
+  have hsum :=
+    ZeroDiagonalSchwartz.ofClassical_add_of_vanishes
+      ((F.funcs n).osConjTensorProduct (G₁.funcs m))
+      ((F.funcs n).osConjTensorProduct (G₂.funcs m))
+      (hFG₁ n m) (hFG₂ n m)
+  rw [BorchersSequence.add_funcs,
+    SchwartzNPoint.osConjTensorProduct_add_right, hsum, (hlin _).map_add]
 
 /-- The OS inner product is additive in the first argument. -/
-theorem OSInnerProduct_add_left (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+theorem OSInnerProduct_add_left (S : (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ)
     (hlin : ∀ n, IsLinearMap ℂ (S n))
-    (F₁ F₂ G : BorchersSequence d) :
+    (F₁ F₂ G : BorchersSequence d)
+    (hF₁G : OSTensorAdmissible d F₁ G)
+    (hF₂G : OSTensorAdmissible d F₂ G) :
     OSInnerProduct d S (F₁ + F₂) G =
       OSInnerProduct d S F₁ G + OSInnerProduct d S F₂ G := by
   have hN₁_sum : (F₁ + F₂).bound + 1 ≤ max F₁.bound F₂.bound + 1 := le_rfl
@@ -1598,32 +2807,42 @@ theorem OSInnerProduct_add_left (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
         (max F₁.bound F₂.bound + 1) (G.bound + 1) hN₁_1 hN₂,
       OSInnerProduct_eq_extended d S hlin F₂ G
         (max F₁.bound F₂.bound + 1) (G.bound + 1) hN₁_2 hN₂]
-  simp only [OSInnerProductN, BorchersSequence.add_funcs,
-    SchwartzNPoint.osConjTensorProduct_add_left, (hlin _).map_add]
+  unfold OSInnerProductN
   rw [← Finset.sum_add_distrib]
-  congr 1
-  ext n
+  apply Finset.sum_congr rfl
+  intro n _
   rw [← Finset.sum_add_distrib]
+  apply Finset.sum_congr rfl
+  intro m _
+  have hsum :=
+    ZeroDiagonalSchwartz.ofClassical_add_of_vanishes
+      ((F₁.funcs n).osConjTensorProduct (G.funcs m))
+      ((F₂.funcs n).osConjTensorProduct (G.funcs m))
+      (hF₁G n m) (hF₂G n m)
+  rw [BorchersSequence.add_funcs,
+    SchwartzNPoint.osConjTensorProduct_add_left, hsum, (hlin _).map_add]
 
 /-- The OS inner product is linear in the second argument. -/
-theorem OSInnerProduct_smul_right (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+theorem OSInnerProduct_smul_right (S : (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ)
     (hlin : ∀ n, IsLinearMap ℂ (S n))
     (c : ℂ) (F G : BorchersSequence d) :
     OSInnerProduct d S F (c • G) = c * OSInnerProduct d S F G := by
-  simp only [OSInnerProduct, BorchersSequence.smul_funcs, BorchersSequence.smul_bound,
-    SchwartzNPoint.osConjTensorProduct_smul_right, (hlin _).map_smul, smul_eq_mul]
+  simp only [OSInnerProduct, BorchersSequence.smul_funcs, BorchersSequence.smul_bound]
+  simp_rw [SchwartzNPoint.osConjTensorProduct_smul_right,
+    ZeroDiagonalSchwartz.ofClassical_smul, (hlin _).map_smul, smul_eq_mul]
   rw [Finset.mul_sum]
   congr 1
   ext n
   rw [Finset.mul_sum]
 
 /-- The OS inner product is conjugate linear in the first argument. -/
-theorem OSInnerProduct_smul_left (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
+theorem OSInnerProduct_smul_left (S : (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ)
     (hlin : ∀ n, IsLinearMap ℂ (S n))
     (c : ℂ) (F G : BorchersSequence d) :
     OSInnerProduct d S (c • F) G = starRingEnd ℂ c * OSInnerProduct d S F G := by
-  simp only [OSInnerProduct, BorchersSequence.smul_funcs, BorchersSequence.smul_bound,
-    SchwartzNPoint.osConjTensorProduct_smul_left, (hlin _).map_smul, smul_eq_mul]
+  simp only [OSInnerProduct, BorchersSequence.smul_funcs, BorchersSequence.smul_bound]
+  simp_rw [SchwartzNPoint.osConjTensorProduct_smul_left,
+    ZeroDiagonalSchwartz.ofClassical_smul, (hlin _).map_smul, smul_eq_mul]
   rw [Finset.mul_sum]
   congr 1
   ext n
@@ -1640,33 +2859,44 @@ theorem OSInnerProduct_smul_left (S : (n : ℕ) → SchwartzNPoint d n → ℂ)
 
     **Important**: As shown in OS II (1975), these axioms alone may NOT be
     sufficient to reconstruct a Wightman QFT. The linear growth condition E0'
-    is needed. See `OSLinearGrowthCondition`. -/
+    is needed. See `OSLinearGrowthCondition`.
+
+    **Critical correction**: the heart of OS reconstruction is precisely the
+    passage from Euclidean data defined only on the zero-diagonal test space
+    `°S` to full tempered Wightman distributions on Schwartz space. The Euclidean
+    starting point must therefore be stated on `ZeroDiagonalSchwartz` itself,
+    not on a fictitious full-Schwartz Schwinger theory. -/
 structure OsterwalderSchraderAxioms (d : ℕ) [NeZero d] where
-  /-- The Schwinger functions -/
+  /-- The honest zero-diagonal Euclidean Schwinger family. -/
   S : SchwingerFunctions d
   /-- E0: Temperedness on the OS-I zero-diagonal test space `°S`.
 
       The literal OS-I Schwinger functions are distributions on the coincidence-free
       test space, not a priori on the full Schwartz space. Any later extension to
-      all of `SchwartzNPoint` is extra structure beyond this axiom surface. -/
-  E0_tempered : ∀ n, Continuous fun f : ZeroDiagonalSchwartz d n => S n f.1
-  /-- E0 also includes linearity: each Schwinger functional is a tempered distribution,
-      i.e. a continuous complex-linear functional on Schwartz space. -/
+      all of `SchwartzNPoint` is extra structure beyond this axiom surface.
+
+      The point is that inverse-power coincidence singularities are compatible
+      with `°S`: zero-diagonal test functions vanish to arbitrarily high order on
+      the coincidence locus, so kernels of finite singular order still define the
+      honest Euclidean pairing there. This is why the corrected OS axiom is stated
+      on `ZeroDiagonalSchwartz`, not on full Schwartz space. -/
+  E0_tempered : ∀ n, Continuous (S n)
+  /-- E0 also includes linearity on the honest Euclidean test space `°S`. -/
   E0_linear : ∀ n, IsLinearMap ℂ (S n)
   /-- E0 also includes the Schwinger reality condition induced by Wightman
       Hermiticity:
       `conj (S_n(f)) = S_n(f.osConj)`.
 
-      Here `osConj` is time reflection followed by complex conjugation. This is
-      the natural Euclidean counterpart of the Wightman Hermiticity axiom and is
-      the input needed for Hermiticity of the OS form and for the standard
-      Laplace/spectral argument on Euclidean time shifts. -/
-  E0_reality : ∀ n (f : SchwartzNPoint d n),
-    starRingEnd ℂ (S n f) = S n f.osConj
+      The transformed test function is supplied as a zero-diagonal witness rather
+      than by asserting a full-Schwartz Euclidean theory. -/
+  E0_reality : ∀ (n : ℕ) (f g : ZeroDiagonalSchwartz d n),
+    (∀ x, g.1 x = starRingEnd ℂ (f.1 (timeReflectionN d x))) →
+    starRingEnd ℂ (S n f) = S n g
   /-- E1a: Translation invariance.
       S_n(x₁+a,...,xₙ+a) = S_n(x₁,...,xₙ) for all a ∈ ℝ^{d+1}. -/
-  E1_translation_invariant : ∀ (n : ℕ) (a : SpacetimeDim d) (f g : SchwartzNPoint d n),
-    (∀ x, g.toFun x = f.toFun (fun i => x i + a)) →
+  E1_translation_invariant : ∀ (n : ℕ) (a : SpacetimeDim d)
+    (f g : ZeroDiagonalSchwartz d n),
+    (∀ x, g.1 x = f.1 (fun i => x i + a)) →
     S n f = S n g
   /-- E1b: Rotation invariance under SO(d+1).
       S_n(Rx₁,...,Rxₙ) = S_n(x₁,...,xₙ) for all R ∈ SO(d+1).
@@ -1675,11 +2905,11 @@ structure OsterwalderSchraderAxioms (d : ℕ) [NeZero d] where
       would require parity invariance, which is not implied by the Wightman axioms. -/
   E1_rotation_invariant : ∀ (n : ℕ) (R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ),
     R.transpose * R = 1 → R.det = 1 →
-    ∀ (f g : SchwartzNPoint d n),
-    (∀ x, g.toFun x = f.toFun (fun i => R.mulVec (x i))) →
+    ∀ (f g : ZeroDiagonalSchwartz d n),
+    (∀ x, g.1 x = f.1 (fun i => R.mulVec (x i))) →
     S n f = S n g
   /-- E2: Reflection positivity - the crucial axiom for Hilbert space construction.
-      For test functions supported in the OS-I ordered positive-time region
+      For test functions whose topological support lies in the OS-I ordered positive-time region
       `0 < x₁⁰ < ... < xₙ⁰`,
       `Σₙ,ₘ S_{n+m}(θf̄ₙ ⊗ fₘ) ≥ 0`
       where θ is time reflection θ(τ,x⃗) = (-τ,x⃗) and f̄ is complex conjugation.
@@ -1687,14 +2917,15 @@ structure OsterwalderSchraderAxioms (d : ℕ) [NeZero d] where
       inner product for the Euclidean framework.
       This ensures the reconstructed inner product is positive definite. -/
   E2_reflection_positive : ∀ (F : BorchersSequence d),
-    (∀ n, ∀ x : NPointDomain d n, (F.funcs n).toFun x ≠ 0 →
-      x ∈ OrderedPositiveTimeRegion d n) →
+    (∀ n, tsupport ((F.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+      OrderedPositiveTimeRegion d n) →
     (OSInnerProduct d S F F).re ≥ 0
   /-- E3: Permutation symmetry - Schwinger functions are symmetric under
       permutation of arguments: S_n(x_{σ(1)},...,x_{σ(n)}) = S_n(x₁,...,xₙ)
       for all permutations σ ∈ Sₙ. -/
-  E3_symmetric : ∀ (n : ℕ) (σ : Equiv.Perm (Fin n)) (f g : SchwartzNPoint d n),
-    (∀ x, g.toFun x = f.toFun (fun i => x (σ i))) →
+  E3_symmetric : ∀ (n : ℕ) (σ : Equiv.Perm (Fin n))
+    (f g : ZeroDiagonalSchwartz d n),
+    (∀ x, g.1 x = f.1 (fun i => x (σ i))) →
     S n f = S n g
   /-- E4: Cluster property - factorization at large separations.
       lim_{|a|→∞} S_{n+m}(x₁,...,xₙ,y₁+a,...,yₘ+a) = S_n(x₁,...,xₙ) · S_m(y₁,...,yₘ)
@@ -1703,7 +2934,7 @@ structure OsterwalderSchraderAxioms (d : ℕ) [NeZero d] where
       Expressed via the connected n-point functions: the connected part Sₙᶜ vanishes
       for n ≥ 2 at large separations. Equivalently, for product test functions
       with widely separated supports, S_{n+m} factorizes. -/
-  E4_cluster : ∀ (n m : ℕ) (f : SchwartzNPoint d n) (g : SchwartzNPoint d m),
+  E4_cluster : ∀ (n m : ℕ) (f : ZeroDiagonalSchwartz d n) (g : ZeroDiagonalSchwartz d m),
     -- Cluster property: as spatial separation increases, S_{n+m} factorizes.
     -- For any ε > 0, there exists R > 0 such that for spatial translation a with |a| > R,
     -- |S_{n+m}(f ⊗ τ_a g) - S_n(f) · S_m(g)| < ε
@@ -1713,9 +2944,12 @@ structure OsterwalderSchraderAxioms (d : ℕ) [NeZero d] where
     ∀ ε : ℝ, ε > 0 → ∃ R : ℝ, R > 0 ∧
       ∀ a : SpacetimeDim d, a 0 = 0 → (∑ i : Fin d, (a (Fin.succ i))^2) > R^2 →
         -- For any Schwartz function g_a that is the translation of g by a:
-        ∀ (g_a : SchwartzNPoint d m),
-          (∀ x : NPointDomain d m, g_a x = g (fun i => x i - a)) →
-          ‖S (n + m) (f.tensorProduct g_a) - S n f * S m g‖ < ε
+        ∀ (g_a : ZeroDiagonalSchwartz d m),
+          (∀ x : NPointDomain d m, g_a.1 x = g.1 (fun i => x i - a)) →
+          ∀ (fg_a : ZeroDiagonalSchwartz d (n + m)),
+            (∀ x : NPointDomain d (n + m),
+              fg_a.1 x = f.1 (splitFirst n m x) * g_a.1 (splitLast n m x)) →
+            ‖S (n + m) fg_a - S n f * S m g‖ < ε
 
 /-- The abstract OS inner product is Hermitian.
 
@@ -1724,51 +2958,11 @@ structure OsterwalderSchraderAxioms (d : ℕ) [NeZero d] where
     permutation symmetry to swap the tensor blocks after applying the OS
     involution. -/
 theorem OSInnerProduct_hermitian {d : ℕ} [NeZero d]
-    (OS : OsterwalderSchraderAxioms d) (F G : BorchersSequence d) :
+    (OS : OsterwalderSchraderAxioms d) (F G : BorchersSequence d)
+    (hFG : OSTensorAdmissible d F G)
+    (hGF : OSTensorAdmissible d G F) :
     OSInnerProduct d OS.S F G = starRingEnd ℂ (OSInnerProduct d OS.S G F) := by
-  simp only [OSInnerProduct, map_sum]
-  rw [Finset.sum_comm]
-  congr 1
-  ext n
-  congr 1
-  ext m
-  rw [OS.E0_reality (n + m) ((G.funcs n).osConjTensorProduct (F.funcs m))]
-  let A : SchwartzNPoint d (m + n) := (F.funcs m).osConjTensorProduct (G.funcs n)
-  let c : Fin (m + n) ≃ Fin (n + m) := finCongr (Nat.add_comm m n)
-  let Acast : SchwartzNPoint d (n + m) :=
-    SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
-      ((LinearEquiv.funCongrLeft ℝ (SpacetimeDim d) c).toContinuousLinearEquiv) A
-  let σ : Equiv.Perm (Fin (n + m)) := c.symm.trans finAddFlip
-  have hcast :
-      OS.S (m + n) A = OS.S (n + m) Acast := by
-    refine W_eq_of_cast OS.S (m + n) (n + m) (Nat.add_comm m n) A Acast ?_
-    intro x
-    have harg :
-        ((LinearEquiv.funCongrLeft ℝ (SpacetimeDim d) c)
-          (fun i => x (Fin.cast (Nat.add_comm n m) i))) = x := by
-      ext i μ
-      simp [LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply, c]
-    simpa [Acast, A, SchwartzMap.compCLMOfContinuousLinearEquiv_apply,
-      LinearEquiv.funCongrLeft_apply] using congrArg A harg
-  have hperm :
-      OS.S (n + m) Acast = OS.S (n + m) (((G.funcs n).osConjTensorProduct (F.funcs m)).osConj) := by
-    refine OS.E3_symmetric (n := n + m) (σ := σ) Acast
-      (((G.funcs n).osConjTensorProduct (F.funcs m)).osConj) ?_
-    intro x
-    symm
-    have hleft :
-        Acast.toFun (fun i => x (σ i)) = A (fun j : Fin (m + n) => x (finAddFlip j)) := by
-      have harg :
-          ((LinearEquiv.funCongrLeft ℝ (SpacetimeDim d) c) (fun i => x (σ i))) =
-            (fun j : Fin (m + n) => x (finAddFlip j)) := by
-        ext j μ
-        simp [LinearEquiv.funCongrLeft_apply, LinearMap.funLeft_apply, σ, c]
-      simpa [Acast, SchwartzMap.compCLMOfContinuousLinearEquiv_apply,
-        LinearEquiv.funCongrLeft_apply] using congrArg A harg
-    exact hleft.trans <| by
-      simpa [A] using
-        (osConjTP_eq_osConj_osConjTP (f := F.funcs m) (g := G.funcs n) x).symm
-  exact hcast.trans hperm
+  sorry
 
 /-- The linear growth condition E0' from OS II (1975).
 
@@ -1778,10 +2972,15 @@ theorem OSInnerProduct_hermitian {d : ℕ} [NeZero d]
 
     This condition controls the growth of the distribution order as n → ∞,
     which is essential for proving temperedness of the reconstructed
-    Wightman distributions. -/
+    Wightman distributions.
+
+    The key point is that this growth hypothesis belongs on the Euclidean side
+    before reconstruction; it does not erase the main difficulty. The theorem
+    still has to manufacture full tempered Wightman distributions starting only
+    from Schwinger data whose honest Euclidean test space is `°S`. -/
 structure OSLinearGrowthCondition (d : ℕ) [NeZero d] (OS : OsterwalderSchraderAxioms d) where
   /-- E0' normalization at zero points: `S₀(f) = f(0)`. -/
-  normalized_zero : ∀ f : SchwartzNPoint d 0, OS.S 0 f = f 0
+  normalized_zero : ∀ f : ZeroDiagonalSchwartz d 0, OS.S 0 f = f.1 0
   /-- The Sobolev index s -/
   sobolev_index : ℕ
   /-- Factorial growth bound constants: σₙ ≤ α · βⁿ · (n!)^γ -/
@@ -1797,24 +2996,32 @@ structure OSLinearGrowthCondition (d : ℕ) [NeZero d] (OS : OsterwalderSchrader
 
       This is equation (4.1) of OS II: |Sₙ(f)| ≤ σₙ |f|_s
       where |f|_s = SchwartzMap.seminorm ℝ s s (f). -/
-  growth_estimate : ∀ (n : ℕ) (f : SchwartzNPoint d n),
+  growth_estimate : ∀ (n : ℕ) (f : ZeroDiagonalSchwartz d n),
     ‖OS.S n f‖ ≤ alpha * beta ^ n * (n.factorial : ℝ) ^ gamma *
-      SchwartzMap.seminorm ℝ sobolev_index sobolev_index f
+      SchwartzMap.seminorm ℝ sobolev_index sobolev_index f.1
 
-/-- The relationship between Wightman and Schwinger functions:
-    the two sets of correlation functions are analytic continuations of each other.
+/-- The honest zero-diagonal Schwinger family underlying an OS package.
+
+    Public reconstruction theorems should be stated in terms of this actual
+    Euclidean datum on `ZeroDiagonalSchwartz`. -/
+def OsterwalderSchraderAxioms.schwinger {d : ℕ} [NeZero d]
+    (OS : OsterwalderSchraderAxioms d) : SchwingerFunctions d :=
+  OS.S
+
+/-- The zero-diagonal Wick-rotation relation between Wightman functions and their
+    honest OS-I Euclidean counterparts.
 
     Formally: there exists a holomorphic function on the forward tube
     (the "analytic continuation") that:
     1. Has distributional boundary values equal to the Wightman functions W_n
     2. When restricted to Euclidean points (via Wick rotation) and paired with
-       zero-diagonal test functions, reproduces the Schwinger functions S_n on
-       the corrected OS-I domain
+       zero-diagonal test functions, reproduces the Euclidean family S_n on `°S`
 
-    This is the mathematical content of the Wick rotation.
+    This is the honest Wightman -> OS-I surface.
 
     Ref: OS I (1973), Section 5; Streater-Wightman, Chapter 3 -/
-def IsWickRotationPair {d : ℕ} [NeZero d] (S : SchwingerFunctions d) (W : (n : ℕ) → SchwartzNPoint d n → ℂ) : Prop :=
+def IsWickRotationPair {d : ℕ} [NeZero d]
+    (S : SchwingerFunctions d) (W : (n : ℕ) → SchwartzNPoint d n → ℂ) : Prop :=
   ∀ (n : ℕ), ∃ (F_analytic : (Fin n → Fin (d + 1) → ℂ) → ℂ),
     -- F_analytic is holomorphic on the forward tube
     DifferentiableOn ℂ F_analytic (ForwardTube d n) ∧
@@ -1828,9 +3035,9 @@ def IsWickRotationPair {d : ℕ} [NeZero d] (S : SchwingerFunctions d) (W : (n :
           F_analytic (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
         (nhdsWithin 0 (Set.Ioi 0))
         (nhds (W n f))) ∧
-    -- Euclidean restriction gives S_n on the corrected zero-diagonal domain.
+    -- Euclidean restriction gives S_n on the zero-diagonal OS-I domain.
     (∀ (f : ZeroDiagonalSchwartz d n),
-      S n f.1 = ∫ x : NPointDomain d n,
+      S n f = ∫ x : NPointDomain d n,
         F_analytic (fun k => wickRotatePoint (x k)) * (f.1 x))
 
 -- `wightman_to_os` and `os_to_wightman` moved to Reconstruction/Main.lean

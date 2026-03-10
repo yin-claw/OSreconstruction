@@ -13,6 +13,12 @@ Analytic continuation from Euclidean to Minkowski: given Schwinger functions
 satisfying E0'-E4 (with the linear growth condition), reconstruct Wightman
 functions satisfying R0-R5.
 
+The critical point is that the Euclidean input is honest Schwinger data on the
+zero-diagonal test space `°S`, while the Wightman output is a full tempered
+distribution family on Schwartz space. That jump is the heart of OS
+reconstruction; it must not be smuggled into the Euclidean hypothesis by
+quietly assuming a full-Schwartz Schwinger theory from the start.
+
 The proof proceeds through phases:
 - Phase 2: Euclidean time translation semigroup
 - Phase 3: Inductive analytic continuation (OS II, Theorem 4.1-4.2)
@@ -59,6 +65,22 @@ abbrev timeShiftVec (d : ℕ) (t : ℝ) : SpacetimeDim d :=
 abbrev translateNPointDomain (a : SpacetimeDim d) {n : ℕ} :
     NPointDomain d n → NPointDomain d n :=
   fun x i => x i - a
+
+omit [NeZero d] in
+private theorem continuous_translateNPointDomain (a : SpacetimeDim d) {n : ℕ} :
+    Continuous (translateNPointDomain (d := d) (n := n) a) := by
+  apply continuous_pi
+  intro i
+  exact (continuous_apply i).sub continuous_const
+
+omit [NeZero d] in
+private theorem tsupport_precomp_subset {X Y α : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] [Zero α]
+    {f : Y → α} {h : X → Y} (hh : Continuous h) :
+    tsupport (fun x => f (h x)) ⊆ h ⁻¹' tsupport f := by
+  refine closure_minimal ?_ ((isClosed_tsupport _).preimage hh)
+  intro x hx
+  exact subset_closure (by simpa [Function.mem_support] using hx)
 
 omit [NeZero d] in
 private theorem translateNPointDomain_antilipschitz (a : SpacetimeDim d) {n : ℕ} :
@@ -120,17 +142,22 @@ omit [NeZero d] in
   rfl
 
 omit [NeZero d] in
-private theorem timeShift_preserves_ordered_positive_support (t : ℝ) (ht : 0 < t)
+private theorem timeShift_preserves_ordered_positive_tsupport (t : ℝ) (ht : 0 < t)
     (F : BorchersSequence d)
-    (hF : ∀ n, ∀ x : NPointDomain d n, (F.funcs n).toFun x ≠ 0 →
-      x ∈ OrderedPositiveTimeRegion d n) :
-    ∀ n, ∀ x : NPointDomain d n,
-      ((timeShiftBorchers (d := d) t F).funcs n).toFun x ≠ 0 →
-        x ∈ OrderedPositiveTimeRegion d n := by
+    (hF : ∀ n, tsupport ((F.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+      OrderedPositiveTimeRegion d n) :
+    ∀ n,
+      tsupport ((((timeShiftBorchers (d := d) t F).funcs n : SchwartzNPoint d n) :
+        NPointDomain d n → ℂ)) ⊆ OrderedPositiveTimeRegion d n := by
   intro n x hx
-  have hx' : (F.funcs n).toFun (fun i => x i - timeShiftVec d t) ≠ 0 := by
-    simpa [timeShiftBorchers_funcs, timeShiftSchwartzNPoint_apply] using hx
-  have hord := hF n (fun i => x i - timeShiftVec d t) hx'
+  have hxpre :
+      (fun i => x i - timeShiftVec d t) ∈
+        tsupport ((F.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) := by
+    exact tsupport_precomp_subset
+      (f := ((F.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ))
+      (h := translateNPointDomain (d := d) (n := n) (timeShiftVec d t))
+      (continuous_translateNPointDomain (d := d) (n := n) (timeShiftVec d t)) hx
+  have hord := hF n hxpre
   intro i
   constructor
   · have hi := (hord i).1
@@ -178,97 +205,191 @@ private theorem shift_osConjTensorProduct_eq {n m : ℕ}
     · simp [splitLast, timeShiftVec, hμ, sub_eq_add_neg]
 
 private theorem schwinger_shift_tensor_eq (OS : OsterwalderSchraderAxioms d)
-    {n m : ℕ} (f : SchwartzNPoint d n) (g : SchwartzNPoint d m) (s t : ℝ) :
-    OS.S (n + m)
+    {n m : ℕ} (f : SchwartzNPoint d n) (g : SchwartzNPoint d m) (s t : ℝ)
+    (hleft : VanishesToInfiniteOrderOnCoincidence
       ((timeShiftSchwartzNPoint (d := d) t f).osConjTensorProduct
-        (timeShiftSchwartzNPoint (d := d) s g)) =
-    OS.S (n + m)
-      (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) (t + s) g)) := by
+        (timeShiftSchwartzNPoint (d := d) s g)))
+    (hright : VanishesToInfiniteOrderOnCoincidence
+      (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) (t + s) g))) :
+    OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+      ((timeShiftSchwartzNPoint (d := d) t f).osConjTensorProduct
+        (timeShiftSchwartzNPoint (d := d) s g))) =
+    OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+      (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) (t + s) g))) := by
   symm
-  apply (OS.E1_translation_invariant (n + m) (timeShiftVec d t))
+  refine OS.E1_translation_invariant (n + m) (timeShiftVec d t)
+    (ZeroDiagonalSchwartz.ofClassical
+      (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) (t + s) g)))
+    (ZeroDiagonalSchwartz.ofClassical
+      ((timeShiftSchwartzNPoint (d := d) t f).osConjTensorProduct
+        (timeShiftSchwartzNPoint (d := d) s g))) ?_
   intro x
-  simpa using shift_osConjTensorProduct_eq (d := d) f g s t x
+  rw [ZeroDiagonalSchwartz.coe_ofClassical_of_vanishes
+      (f := (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) (t + s) g))) hright,
+    ZeroDiagonalSchwartz.coe_ofClassical_of_vanishes
+      (f := ((timeShiftSchwartzNPoint (d := d) t f).osConjTensorProduct
+        (timeShiftSchwartzNPoint (d := d) s g))) hleft]
+  exact shift_osConjTensorProduct_eq (d := d) f g s t x
 
 private theorem OSInnerProduct_timeShift_eq (OS : OsterwalderSchraderAxioms d)
-    (F G : BorchersSequence d) (s t : ℝ) :
+    (F G : BorchersSequence d) (s t : ℝ)
+    (hleft : OSTensorAdmissible d (timeShiftBorchers (d := d) t F)
+      (timeShiftBorchers (d := d) s G))
+    (hright : OSTensorAdmissible d F
+      (timeShiftBorchers (d := d) (t + s) G)) :
     OSInnerProduct d OS.S (timeShiftBorchers (d := d) t F) (timeShiftBorchers (d := d) s G) =
     OSInnerProduct d OS.S F (timeShiftBorchers (d := d) (t + s) G) := by
   unfold OSInnerProduct
-  refine Finset.sum_congr rfl ?_
+  apply Finset.sum_congr rfl
   intro n hn
-  refine Finset.sum_congr rfl ?_
+  apply Finset.sum_congr rfl
   intro m hm
   simpa [timeShiftBorchers_funcs] using
     schwinger_shift_tensor_eq (d := d) OS (F.funcs n) (G.funcs m) s t
+      (hleft n m) (hright n m)
+
+private theorem OSTensorAdmissible_linearCombo_right {ι : Type*} [DecidableEq ι]
+    (s : Finset ι) (c : ι → ℂ)
+    (F : BorchersSequence d) (G : ι → BorchersSequence d)
+    (hFG : ∀ i ∈ s, OSTensorAdmissible d F (G i)) :
+    OSTensorAdmissible d F (BorchersSequence.linearCombo s c G) := by
+  classical
+  revert hFG
+  refine Finset.induction_on s ?_ ?_
+  · intro hFG
+    simpa [BorchersSequence.linearCombo] using (OSTensorAdmissible.zero_right (d := d) F)
+  · intro a s ha ih hFG
+    intro n m
+    rw [BorchersSequence.linearCombo_insert (d := d) ha c G m,
+      BorchersSequence.add_funcs, BorchersSequence.smul_funcs,
+      SchwartzNPoint.osConjTensorProduct_add_right,
+      SchwartzNPoint.osConjTensorProduct_smul_right]
+    exact ((hFG a (Finset.mem_insert_self a s) n m).smul (c a)).add
+      (ih (fun i hi => hFG i (Finset.mem_insert_of_mem hi)) n m)
 
 /-- The OS inner product distributes over `linearCombo` in the right argument. -/
 private theorem OSInnerProduct_linearCombo_right (OS : OsterwalderSchraderAxioms d)
     {ι : Type*} [DecidableEq ι] (s : Finset ι) (c : ι → ℂ)
-    (F : BorchersSequence d) (G : ι → BorchersSequence d) :
+    (F : BorchersSequence d) (G : ι → BorchersSequence d)
+    (hFG : ∀ i ∈ s, OSTensorAdmissible d F (G i)) :
     OSInnerProduct d OS.S F (BorchersSequence.linearCombo s c G) =
       ∑ i ∈ s, c i • OSInnerProduct d OS.S F (G i) := by
-  induction s using Finset.induction_on with
-  | empty =>
-    simp only [Finset.sum_empty]
-    rw [OSInnerProduct_congr_right (d := d) OS.S OS.E0_linear _ _ _
-      (BorchersSequence.linearCombo_empty c G)]
-    exact OSInnerProduct_zero_right (d := d) _ OS.E0_linear _
-  | @insert a s ha ih =>
-    rw [Finset.sum_insert ha,
-      OSInnerProduct_congr_right (d := d) OS.S OS.E0_linear _ _ _
-        (BorchersSequence.linearCombo_insert ha c G),
-      OSInnerProduct_add_right (d := d) _ OS.E0_linear,
-      OSInnerProduct_smul_right (d := d) _ OS.E0_linear, ih, smul_eq_mul]
+  classical
+  revert hFG
+  refine Finset.induction_on s ?_ ?_
+  · intro hFG
+    rw [OSInnerProduct_congr_right (d := d) OS.S OS.E0_linear F
+      (BorchersSequence.linearCombo ∅ c G) 0 (fun n => BorchersSequence.linearCombo_empty (d := d) c G n)]
+    exact OSInnerProduct_zero_right (d := d) OS.S OS.E0_linear F
+  · intro a s ha ih hFG
+    rw [OSInnerProduct_congr_right (d := d) OS.S OS.E0_linear F
+      (BorchersSequence.linearCombo (insert a s) c G)
+      (c a • G a + BorchersSequence.linearCombo s c G)
+      (fun n => BorchersSequence.linearCombo_insert (d := d) ha c G n)]
+    rw [OSInnerProduct_add_right (d := d) OS.S OS.E0_linear F
+      (c a • G a) (BorchersSequence.linearCombo s c G)]
+    · rw [OSInnerProduct_smul_right (d := d) OS.S OS.E0_linear (c a) F (G a)]
+      rw [ih (fun i hi => hFG i (Finset.mem_insert_of_mem hi))]
+      simp [Finset.sum_insert, ha, smul_eq_mul, mul_assoc]
+    · exact OSTensorAdmissible.smul_right (d := d)
+        (hFG a (Finset.mem_insert_self a s)) (c a)
+    · exact OSTensorAdmissible_linearCombo_right (d := d) s c F G
+        (fun i hi => hFG i (Finset.mem_insert_of_mem hi))
+
+private theorem OSTensorAdmissible_linearCombo_left {ι : Type*} [DecidableEq ι]
+    (s : Finset ι) (c : ι → ℂ)
+    (F : ι → BorchersSequence d) (G : BorchersSequence d)
+    (hFG : ∀ i ∈ s, OSTensorAdmissible d (F i) G) :
+    OSTensorAdmissible d (BorchersSequence.linearCombo s c F) G := by
+  classical
+  revert hFG
+  refine Finset.induction_on s ?_ ?_
+  · intro hFG
+    simpa [BorchersSequence.linearCombo] using (OSTensorAdmissible.zero_left (d := d) G)
+  · intro a s ha ih hFG
+    intro n m
+    rw [BorchersSequence.linearCombo_insert (d := d) ha c F n,
+      BorchersSequence.add_funcs, BorchersSequence.smul_funcs,
+      SchwartzNPoint.osConjTensorProduct_add_left,
+      SchwartzNPoint.osConjTensorProduct_smul_left]
+    exact ((hFG a (Finset.mem_insert_self a s) n m).smul (starRingEnd ℂ (c a))).add
+      (ih (fun i hi => hFG i (Finset.mem_insert_of_mem hi)) n m)
 
 /-- The OS inner product distributes over `linearCombo` in the left argument. -/
 private theorem OSInnerProduct_linearCombo_left (OS : OsterwalderSchraderAxioms d)
     {ι : Type*} [DecidableEq ι] (s : Finset ι) (c : ι → ℂ)
-    (F : ι → BorchersSequence d) (G : BorchersSequence d) :
+    (F : ι → BorchersSequence d) (G : BorchersSequence d)
+    (hFG : ∀ i ∈ s, OSTensorAdmissible d (F i) G) :
     OSInnerProduct d OS.S (BorchersSequence.linearCombo s c F) G =
       ∑ i ∈ s, starRingEnd ℂ (c i) • OSInnerProduct d OS.S (F i) G := by
-  induction s using Finset.induction_on with
-  | empty =>
-    simp only [Finset.sum_empty]
-    rw [OSInnerProduct_congr_left (d := d) OS.S OS.E0_linear _ _ _
-      (BorchersSequence.linearCombo_empty c F)]
-    exact OSInnerProduct_zero_left (d := d) _ OS.E0_linear _
-  | @insert a s ha ih =>
-    rw [Finset.sum_insert ha,
-      OSInnerProduct_congr_left (d := d) OS.S OS.E0_linear _ _ _
-        (BorchersSequence.linearCombo_insert ha c F),
-      OSInnerProduct_add_left (d := d) _ OS.E0_linear,
-      OSInnerProduct_smul_left (d := d) _ OS.E0_linear, ih, smul_eq_mul]
+  classical
+  revert hFG
+  refine Finset.induction_on s ?_ ?_
+  · intro hFG
+    rw [OSInnerProduct_congr_left (d := d) OS.S OS.E0_linear
+      (BorchersSequence.linearCombo ∅ c F) 0 G (fun n => BorchersSequence.linearCombo_empty (d := d) c F n)]
+    exact OSInnerProduct_zero_left (d := d) OS.S OS.E0_linear G
+  · intro a s ha ih hFG
+    rw [OSInnerProduct_congr_left (d := d) OS.S OS.E0_linear
+      (BorchersSequence.linearCombo (insert a s) c F)
+      (c a • F a + BorchersSequence.linearCombo s c F) G
+      (fun n => BorchersSequence.linearCombo_insert (d := d) ha c F n)]
+    rw [OSInnerProduct_add_left (d := d) OS.S OS.E0_linear
+      (c a • F a) (BorchersSequence.linearCombo s c F) G]
+    · rw [OSInnerProduct_smul_left (d := d) OS.S OS.E0_linear (c a) (F a) G]
+      rw [ih (fun i hi => hFG i (Finset.mem_insert_of_mem hi))]
+      simp [Finset.sum_insert, ha, smul_eq_mul, mul_assoc]
+    · exact OSTensorAdmissible.smul_left (d := d)
+        (hFG a (Finset.mem_insert_self a s)) (c a)
+    · exact OSTensorAdmissible_linearCombo_left (d := d) s c F G
+        (fun i hi => hFG i (Finset.mem_insert_of_mem hi))
 
 omit [NeZero d] in
-private theorem timeShift_linearCombo_preserves_ordered_positive_support {ι : Type*} [DecidableEq ι]
+private theorem timeShift_linearCombo_preserves_ordered_positive_tsupport {ι : Type*} [DecidableEq ι]
     (s : Finset ι) (c : ι → ℂ) (t : ι → ℝ)
     (ht : ∀ i ∈ s, 0 < t i)
     (F : BorchersSequence d)
-    (hF : ∀ n, ∀ x : NPointDomain d n, (F.funcs n).toFun x ≠ 0 →
-      x ∈ OrderedPositiveTimeRegion d n) :
-    ∀ n, ∀ x : NPointDomain d n,
-      ((BorchersSequence.linearCombo s c
-          (fun i => timeShiftBorchers (d := d) (t i) F)).funcs n).toFun x ≠ 0 →
-        x ∈ OrderedPositiveTimeRegion d n := by
-  intro n x hx
-  by_contra hx_not_ord
-  apply hx
-  show ((BorchersSequence.linearCombo s c
-    (fun i => timeShiftBorchers (d := d) (t i) F)).funcs n).toFun x = 0
-  simp only [BorchersSequence.linearCombo_funcs]
-  -- Goal: (∑ i ∈ s, c i • ...).toFun x = 0
-  have : ∀ i ∈ s, (c i • (timeShiftBorchers (d := d) (t i) F).funcs n).toFun x = 0 := by
-    intro i hi
-    have h : ((timeShiftBorchers (d := d) (t i) F).funcs n).toFun x = 0 := by
-      by_contra hx_shift
-      exact hx_not_ord
-        (timeShift_preserves_ordered_positive_support (d := d) (t i) (ht i hi) F hF n x hx_shift)
-    change c i • ((timeShiftBorchers (d := d) (t i) F).funcs n).toFun x = 0
-    rw [h, smul_zero]
-  rw [show (∑ i ∈ s, c i • (timeShiftBorchers (d := d) (t i) F).funcs n).toFun x =
-    ∑ i ∈ s, (c i • (timeShiftBorchers (d := d) (t i) F).funcs n).toFun x from
-    SchwartzMap.sum_apply _ _ _]
-  exact Finset.sum_eq_zero this
+    (hF : ∀ n, tsupport ((F.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+      OrderedPositiveTimeRegion d n) :
+    ∀ n,
+      tsupport (((BorchersSequence.linearCombo s c
+          (fun i => timeShiftBorchers (d := d) (t i) F)).funcs n : SchwartzNPoint d n) :
+            NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n := by
+  classical
+  revert ht
+  refine Finset.induction_on s ?_ ?_
+  · intro ht n
+    simpa [BorchersSequence.linearCombo] using
+      (empty_subset (OrderedPositiveTimeRegion d n) : (∅ : Set (NPointDomain d n)) ⊆ _)
+  · intro a s ha ih ht n
+    rw [BorchersSequence.linearCombo_insert (d := d) ha c
+      (fun i => timeShiftBorchers (d := d) (t i) F) n]
+    intro x hx
+    have hx' :
+        x ∈ tsupport ((((c a • timeShiftBorchers (d := d) (t a) F).funcs n :
+          SchwartzNPoint d n) : NPointDomain d n → ℂ)) ∪
+          tsupport ((((BorchersSequence.linearCombo s c
+            (fun i => timeShiftBorchers (d := d) (t i) F)).funcs n :
+              SchwartzNPoint d n) : NPointDomain d n → ℂ)) := by
+      have hx'' := (tsupport_add
+        ((((c a • timeShiftBorchers (d := d) (t a) F).funcs n : SchwartzNPoint d n) :
+          NPointDomain d n → ℂ))
+        ((((BorchersSequence.linearCombo s c
+          (fun i => timeShiftBorchers (d := d) (t i) F)).funcs n : SchwartzNPoint d n) :
+            NPointDomain d n → ℂ))) hx
+      simpa [BorchersSequence.add_funcs] using hx''
+    rcases hx' with hxleft | hxright
+    · have hxshift :
+          x ∈ tsupport ((((timeShiftBorchers (d := d) (t a) F).funcs n :
+            SchwartzNPoint d n) : NPointDomain d n → ℂ)) := by
+        exact (tsupport_smul_subset_right
+          (fun _ : NPointDomain d n => c a)
+          ((((timeShiftBorchers (d := d) (t a) F).funcs n : SchwartzNPoint d n) :
+            NPointDomain d n → ℂ)))
+          (by simpa [BorchersSequence.smul_funcs] using hxleft)
+      exact timeShift_preserves_ordered_positive_tsupport (d := d) (t a)
+        (ht a (Finset.mem_insert_self a s)) F hF n hxshift
+    · exact ih (fun i hi => ht i (Finset.mem_insert_of_mem hi)) n hxright
 
 /-- Positivity of the Euclidean time-shift kernel on the OS side.
 
@@ -280,34 +401,76 @@ theorem OSInnerProduct_timeShift_kernel_nonneg (OS : OsterwalderSchraderAxioms d
     {ι : Type*} [DecidableEq ι] (s : Finset ι) (c : ι → ℂ) (t : ι → ℝ)
     (ht : ∀ i ∈ s, 0 < t i)
     (F : BorchersSequence d)
-    (hF : ∀ n, ∀ x : NPointDomain d n, (F.funcs n).toFun x ≠ 0 →
-      x ∈ OrderedPositiveTimeRegion d n) :
+    (hF : ∀ n, tsupport ((F.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+      OrderedPositiveTimeRegion d n) :
     0 ≤ (∑ i ∈ s, ∑ j ∈ s,
       starRingEnd ℂ (c i) * c j *
         OSInnerProduct d OS.S F (timeShiftBorchers (d := d) (t i + t j) F)).re := by
-  classical
-  let H : BorchersSequence d := BorchersSequence.linearCombo s c
-    (fun i => timeShiftBorchers (d := d) (t i) F)
-  have hH :
-      ∀ n, ∀ x : NPointDomain d n, (H.funcs n).toFun x ≠ 0 →
-        x ∈ OrderedPositiveTimeRegion d n :=
-    timeShift_linearCombo_preserves_ordered_positive_support (d := d) s c t ht F hF
-  have hpos : 0 ≤ (OSInnerProduct d OS.S H H).re := OS.E2_reflection_positive H hH
-  have hexpand :
+  let G : ι → BorchersSequence d := fun i => timeShiftBorchers (d := d) (t i) F
+  let H : BorchersSequence d := BorchersSequence.linearCombo s c G
+  have hGsupport : ∀ i ∈ s, ∀ n,
+      tsupport (((G i).funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+        OrderedPositiveTimeRegion d n := by
+    intro i hi
+    simpa [G] using
+      timeShift_preserves_ordered_positive_tsupport (d := d) (t i) (ht i hi) F hF
+  have hHsupport : ∀ n,
+      tsupport ((H.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+        OrderedPositiveTimeRegion d n := by
+    simpa [H, G] using
+      timeShift_linearCombo_preserves_ordered_positive_tsupport
+        (d := d) s c t ht F hF
+  have hOuterAdm : ∀ i ∈ s, OSTensorAdmissible d (G i) H := by
+    intro i hi
+    exact OSTensorAdmissible_of_tsupport_subset_orderedPositiveTimeRegion
+      (d := d) (G i) H (hGsupport i hi) hHsupport
+  have hPairAdm : ∀ i ∈ s, ∀ j ∈ s, OSTensorAdmissible d (G i) (G j) := by
+    intro i hi j hj
+    exact OSTensorAdmissible_of_tsupport_subset_orderedPositiveTimeRegion
+      (d := d) (G i) (G j) (hGsupport i hi) (hGsupport j hj)
+  have hShiftAdm : ∀ i ∈ s, ∀ j ∈ s,
+      OSTensorAdmissible d F (timeShiftBorchers (d := d) (t i + t j) F) := by
+    intro i hi j hj
+    exact OSTensorAdmissible_of_tsupport_subset_orderedPositiveTimeRegion
+      (d := d) F (timeShiftBorchers (d := d) (t i + t j) F) hF
+      (timeShift_preserves_ordered_positive_tsupport (d := d) (t i + t j)
+        (by linarith [ht i hi, ht j hj]) F hF)
+  have hpos : 0 ≤ (OSInnerProduct d OS.S H H).re :=
+    OS.E2_reflection_positive H hHsupport
+  have hExpandLeft :
+      OSInnerProduct d OS.S H H =
+        ∑ i ∈ s, starRingEnd ℂ (c i) * OSInnerProduct d OS.S (G i) H := by
+    simpa [H, G, smul_eq_mul] using
+      (OSInnerProduct_linearCombo_left (d := d) (OS := OS) (s := s) (c := c)
+        (F := G) (G := H) hOuterAdm)
+  have hExpandRight :
+      ∀ i ∈ s, OSInnerProduct d OS.S (G i) H =
+        ∑ j ∈ s, c j * OSInnerProduct d OS.S (G i) (G j) := by
+    intro i hi
+    simpa [H, G, smul_eq_mul] using
+      (OSInnerProduct_linearCombo_right (d := d) (OS := OS) (s := s) (c := c)
+        (F := G i) (G := G) (fun j hj => hPairAdm i hi j hj))
+  have hEq :
       OSInnerProduct d OS.S H H =
         ∑ i ∈ s, ∑ j ∈ s,
           starRingEnd ℂ (c i) * c j *
             OSInnerProduct d OS.S F (timeShiftBorchers (d := d) (t i + t j) F) := by
-    rw [show H = BorchersSequence.linearCombo s c
-      (fun i => timeShiftBorchers (d := d) (t i) F) from rfl]
-    rw [OSInnerProduct_linearCombo_left]
-    congr 1; ext i
-    rw [OSInnerProduct_linearCombo_right]
-    simp only [smul_eq_mul, Finset.mul_sum]
-    congr 1; ext j
-    rw [OSInnerProduct_timeShift_eq (OS := OS) (F := F) (G := F)]
-    ring
-  rwa [hexpand] at hpos
+    rw [hExpandLeft]
+    apply Finset.sum_congr rfl
+    intro i hi
+    rw [hExpandRight i hi, Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro j hj
+    have hshiftEq :
+        OSInnerProduct d OS.S (G i) (G j) =
+          OSInnerProduct d OS.S F (timeShiftBorchers (d := d) (t i + t j) F) := by
+      simpa [G] using
+        (OSInnerProduct_timeShift_eq (d := d) (OS := OS) (F := F) (G := F)
+          (s := t j) (t := t i) (hleft := hPairAdm i hi j hj)
+          (hright := hShiftAdm i hi j hj))
+    rw [mul_assoc]
+    rw [hshiftEq]
+  rwa [hEq] at hpos
 
 /- Phase 3: Analytic continuation from Euclidean to Minkowski.
 
@@ -551,14 +714,14 @@ private theorem schwinger_continuation_base_step_of_flatWitness {d : ℕ} [NeZer
     (k : ℕ)
     (G : (Fin (k * (d + 1)) → ℂ) → ℂ)
     (hG_holo : DifferentiableOn ℂ G (SCV.TubeDomain (FlatPositiveTimeDiffReal k d)))
-    (hG_euclid : ∀ (f : SchwartzNPoint d k),
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d k),
       OS.S k f = ∫ x : NPointDomain d k,
-        G (BHW.toDiffFlat k d (fun j => wickRotatePoint (x j))) * (f x)) :
+        G (BHW.toDiffFlat k d (fun j => wickRotatePoint (x j))) * (f.1 x)) :
     ∃ (S_ext : (Fin k → Fin (d + 1) → ℂ) → ℂ),
       DifferentiableOn ℂ S_ext (AnalyticContinuationRegion d k 1) ∧
-      (∀ (f : SchwartzNPoint d k),
+      (∀ (f : ZeroDiagonalSchwartz d k),
         OS.S k f = ∫ x : NPointDomain d k,
-          S_ext (fun j => wickRotatePoint (x j)) * (f x)) := by
+          S_ext (fun j => wickRotatePoint (x j)) * (f.1 x)) := by
   let S_ext : (Fin k → Fin (d + 1) → ℂ) → ℂ := fun z => G (BHW.toDiffFlat k d z)
   refine ⟨S_ext, ?_, ?_⟩
   · simpa [S_ext] using
@@ -572,17 +735,17 @@ theorem schwinger_continuation_base_step {d : ℕ} [NeZero d]
     (k : ℕ) :
     ∃ (S_ext : (Fin k → Fin (d + 1) → ℂ) → ℂ),
       DifferentiableOn ℂ S_ext (AnalyticContinuationRegion d k 1) ∧
-      (∀ (f : SchwartzNPoint d k),
+      (∀ (f : ZeroDiagonalSchwartz d k),
         OS.S k f = ∫ x : NPointDomain d k,
-          S_ext (fun j => wickRotatePoint (x j)) * (f x)) := by
+          S_ext (fun j => wickRotatePoint (x j)) * (f.1 x)) := by
   -- At this point the only missing content is to construct a holomorphic witness
   -- on the positive time-difference tube in flattened difference coordinates.
   obtain ⟨G, hG_holo, hG_euclid⟩ :
       ∃ (G : (Fin (k * (d + 1)) → ℂ) → ℂ),
         DifferentiableOn ℂ G (SCV.TubeDomain (FlatPositiveTimeDiffReal k d)) ∧
-        (∀ (f : SchwartzNPoint d k),
+        (∀ (f : ZeroDiagonalSchwartz d k),
           OS.S k f = ∫ x : NPointDomain d k,
-            G (BHW.toDiffFlat k d (fun j => wickRotatePoint (x j))) * (f x)) := by
+            G (BHW.toDiffFlat k d (fun j => wickRotatePoint (x j))) * (f.1 x)) := by
     sorry
   exact schwinger_continuation_base_step_of_flatWitness OS k G hG_holo hG_euclid
 
@@ -886,18 +1049,18 @@ theorem iterated_analytic_continuation
     (lgc : OSLinearGrowthCondition d OS) (k : ℕ) :
     ∃ (S_ext : (Fin k → Fin (d + 1) → ℂ) → ℂ),
       DifferentiableOn ℂ S_ext (AnalyticContinuationRegion d k (d + 1)) ∧
-      (∀ (f : SchwartzNPoint d k),
+      (∀ (f : ZeroDiagonalSchwartz d k),
         OS.S k f = ∫ x : NPointDomain d k,
-          S_ext (fun j => wickRotatePoint (x j)) * (f x)) := by
+          S_ext (fun j => wickRotatePoint (x j)) * (f.1 x)) := by
   obtain ⟨S₁, hS₁_hol, hS₁_rep⟩ := schwinger_continuation_base_step OS lgc k
   -- Invariant for r ≥ 1: holomorphicity on ACR(r) and preservation of the
   -- Euclidean pairing identity with OS.S.
   let P : ℕ → Prop := fun s =>
     ∃ (S_r : (Fin k → Fin (d + 1) → ℂ) → ℂ),
       DifferentiableOn ℂ S_r (AnalyticContinuationRegion d k (s + 1)) ∧
-      (∀ (f : SchwartzNPoint d k),
+      (∀ (f : ZeroDiagonalSchwartz d k),
         OS.S k f = ∫ x : NPointDomain d k,
-          S_r (fun j => wickRotatePoint (x j)) * (f x))
+          S_r (fun j => wickRotatePoint (x j)) * (f.1 x))
   have hP0 : P 0 := ⟨S₁, hS₁_hol, hS₁_rep⟩
   have hstep : ∀ s, s + 1 < d + 1 → P s → P (s + 1) := by
     intro s hs hPs
@@ -922,9 +1085,9 @@ theorem full_analytic_continuation
     (k : ℕ) :
     ∃ (W_analytic : (Fin k → Fin (d + 1) → ℂ) → ℂ),
       DifferentiableOn ℂ W_analytic (ForwardTube d k) ∧
-      (∀ (f : SchwartzNPoint d k),
+      (∀ (f : ZeroDiagonalSchwartz d k),
         OS.S k f = ∫ x : NPointDomain d k,
-          W_analytic (fun j => wickRotatePoint (x j)) * (f x)) := by
+          W_analytic (fun j => wickRotatePoint (x j)) * (f.1 x)) := by
   obtain ⟨S₁, hS₁_hol, hS₁_euclid⟩ := schwinger_continuation_base_step OS lgc k
   refine ⟨S₁, hS₁_hol.mono (forwardTube_subset_acr_one (d := d) (k := k)), hS₁_euclid⟩
 
@@ -939,11 +1102,11 @@ private theorem differentiableOn_flatten_forwardTube {d n : ℕ} [NeZero d]
   convert hz using 1
   exact (flattenCLEquiv n (d + 1)).symm_apply_apply z
 
-private theorem boundary_values_tempered_of_flatRegular {d : ℕ} [NeZero d]
+private theorem boundary_values_tempered_of_flatTempered {d : ℕ} [NeZero d]
     (n : ℕ)
     {F_analytic : (Fin n → Fin (d + 1) → ℂ) → ℂ}
     (hF_hol : DifferentiableOn ℂ F_analytic (ForwardTube d n))
-    (hRegular : SCV.HasFourierLaplaceReprRegular (ForwardConeFlat d n)
+    (hTempered : SCV.HasFourierLaplaceReprTempered (ForwardConeFlat d n)
       (F_analytic ∘ (flattenCLEquiv n (d + 1)).symm)) :
     ∃ (W : SchwartzNPoint d n →L[ℂ] ℂ),
       ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
@@ -962,23 +1125,23 @@ private theorem boundary_values_tempered_of_flatRegular {d : ℕ} [NeZero d]
   have hG_hol : DifferentiableOn ℂ G (SCV.TubeDomain (ForwardConeFlat d n)) :=
     differentiableOn_flatten_forwardTube hF_hol
   have hdist_lin :
-      IsLinearMap ℂ hRegular.dist :=
-    SCV.fourierLaplace_dist_isLinearMap
+      IsLinearMap ℂ hTempered.dist :=
+    SCV.fourierLaplace_dist_isLinearMap_tempered
       (forwardConeFlat_isOpen d n)
       (forwardConeFlat_convex d n)
       (forwardConeFlat_nonempty d n)
       (forwardConeFlat_isCone d n)
-      hG_hol hRegular
+      hG_hol hTempered
   let W : SchwartzNPoint d n →L[ℂ] ℂ :=
     { toLinearMap :=
-        { toFun := fun f => hRegular.dist (pushforward f)
+        { toFun := fun f => hTempered.dist (pushforward f)
           map_add' := fun f g => by
             rw [map_add]
             exact hdist_lin.map_add _ _
           map_smul' := fun c f => by
             rw [map_smul]
             exact hdist_lin.map_smul _ _ }
-      cont := hRegular.dist_continuous.comp pushforward.continuous }
+      cont := hTempered.dist_continuous.comp pushforward.continuous }
   refine ⟨W, ?_⟩
   intro f η hη
   have hηflat : eR η ∈ ForwardConeFlat d n :=
@@ -989,8 +1152,8 @@ private theorem boundary_values_tempered_of_flatRegular {d : ℕ} [NeZero d]
           ∫ x : Fin (n * (d + 1)) → ℝ,
             G (fun i => ↑(x i) + ε * ↑(eR η i) * Complex.I) * (pushforward f x))
         (nhdsWithin 0 (Set.Ioi 0))
-        (nhds (hRegular.dist (pushforward f))) :=
-    hRegular.boundary_value (pushforward f) (eR η) hηflat
+        (nhds (hTempered.dist (pushforward f))) :=
+    hTempered.boundary_value (pushforward f) (eR η) hηflat
   have hEq :
       (fun ε : ℝ =>
         ∫ x : Fin (n * (d + 1)) → ℝ,
@@ -1037,11 +1200,11 @@ Ref: OS II, Section VI -/
 
 /--
 The continuous-linear boundary-value witness is no longer the missing part of
-Phase 4. Once the flattened continuation carries a regular Fourier-Laplace
-boundary-value package, `boundary_values_tempered_of_flatRegular` transports it
+Phase 4. Once the flattened continuation carries an honest tempered Fourier-Laplace
+boundary-value package, `boundary_values_tempered_of_flatTempered` transports it
 back to `NPointDomain` and constructs the required continuous linear functional.
 
-So the remaining content here is exactly the theorem producing that regular
+So the remaining content here is exactly the theorem producing that honest tempered
 flattened package for the specific `F_analytic` supplied by
 `full_analytic_continuation`.
 -/
@@ -1064,23 +1227,49 @@ theorem boundary_values_tempered
           (fun ε : ℝ => ∫ x : NPointDomain d n,
             F_analytic (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
           (nhdsWithin 0 (Set.Ioi 0))
-          (nhds (W_n f))) ∧
-      -- Euclidean restriction of F_analytic gives S_n
-      (∀ (f : SchwartzNPoint d n),
+      (nhds (W_n f))) ∧
+      -- Euclidean restriction of F_analytic gives S_n on the corrected OS test space.
+      (∀ (f : ZeroDiagonalSchwartz d n),
         OS.S n f = ∫ x : NPointDomain d n,
-          F_analytic (fun k => wickRotatePoint (x k)) * (f x)) := by
+          F_analytic (fun k => wickRotatePoint (x k)) * (f.1 x)) := by
   obtain ⟨F_analytic, hF_hol, hF_euclid⟩ := full_analytic_continuation OS lgc n
-  -- Remaining content: produce the regular flattened Fourier-Laplace package
-  -- for this specific analytic continuation. Once that package is available,
-  -- the continuous linear boundary-value witness is obtained by transport
-  -- through `boundary_values_tempered_of_flatRegular`.
-  obtain hRegular :
-      SCV.HasFourierLaplaceReprRegular (ForwardConeFlat d n)
-        (F_analytic ∘ (flattenCLEquiv n (d + 1)).symm) := by
+  let G : (Fin (n * (d + 1)) → ℂ) → ℂ :=
+    F_analytic ∘ (flattenCLEquiv n (d + 1)).symm
+  have hG_hol : DifferentiableOn ℂ G (SCV.TubeDomain (ForwardConeFlat d n)) :=
+    differentiableOn_flatten_forwardTube hF_hol
+  -- Remaining content, now stated explicitly rather than hidden inside a structure:
+  -- construct the flattened boundary distribution together with the two honest
+  -- OS-II growth bounds. Those four fields are exactly what is needed to build
+  -- `HasFourierLaplaceReprTempered` and hence the tempered Wightman boundary value.
+  obtain ⟨Tflat, hTflat_cont, hBVflat, hpoly, hunif⟩ :
+      ∃ (Tflat : SchwartzMap (Fin (n * (d + 1)) → ℝ) ℂ → ℂ),
+        Continuous Tflat ∧
+        (∀ (f : SchwartzMap (Fin (n * (d + 1)) → ℝ) ℂ)
+            (η : Fin (n * (d + 1)) → ℝ), η ∈ ForwardConeFlat d n →
+            Filter.Tendsto (fun ε : ℝ =>
+              ∫ x : Fin (n * (d + 1)) → ℝ,
+                G (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I) * f x)
+              (nhdsWithin 0 (Set.Ioi 0))
+              (nhds (Tflat f))) ∧
+        (∀ (K : Set (Fin (n * (d + 1)) → ℝ)), IsCompact K → K ⊆ ForwardConeFlat d n →
+          ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+            ∀ (x y : Fin (n * (d + 1)) → ℝ), y ∈ K →
+              ‖G (fun i => ↑(x i) + ↑(y i) * Complex.I)‖ ≤ C_bd * (1 + ‖x‖) ^ N) ∧
+        (∀ (η : Fin (n * (d + 1)) → ℝ), η ∈ ForwardConeFlat d n →
+          ∃ (C_bd : ℝ) (N : ℕ) (δ : ℝ), C_bd > 0 ∧ δ > 0 ∧
+            ∀ (x : Fin (n * (d + 1)) → ℝ) (ε : ℝ), 0 < ε → ε < δ →
+              ‖G (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I)‖ ≤ C_bd * (1 + ‖x‖) ^ N) := by
     sorry
+  let hTempered :
+      SCV.HasFourierLaplaceReprTempered (ForwardConeFlat d n) G :=
+    SCV.exists_fourierLaplaceReprTempered
+      (forwardConeFlat_isOpen d n)
+      (forwardConeFlat_convex d n)
+      (forwardConeFlat_nonempty d n)
+      hG_hol hTflat_cont hBVflat hpoly hunif
   obtain ⟨W, hW_bv⟩ :=
-    boundary_values_tempered_of_flatRegular (d := d) n hF_hol hRegular
-  refine ⟨W, F_analytic, W.continuous, ?_, hF_hol, hW_bv, hF_euclid⟩
+    boundary_values_tempered_of_flatTempered (d := d) n hF_hol (by simpa [G] using hTempered)
+  refine ⟨W, F_analytic, W.continuous, ?_, hF_hol, hW_bv, fun f => hF_euclid f⟩
   constructor
   · intro f g
     exact map_add W f g
@@ -1148,9 +1337,9 @@ theorem bvt_boundary_values (OS : OsterwalderSchraderAxioms d)
 
 theorem bvt_euclidean_restriction (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) (n : ℕ) :
-    ∀ (f : SchwartzNPoint d n),
+    ∀ (f : ZeroDiagonalSchwartz d n),
       OS.S n f = ∫ x : NPointDomain d n,
-        bvt_F OS lgc n (fun k => wickRotatePoint (x k)) * (f x) :=
+        bvt_F OS lgc n (fun k => wickRotatePoint (x k)) * (f.1 x) :=
   (boundary_values_tempered OS lgc n).choose_spec.choose_spec.2.2.2.2
 
 /-! #### Helper lemmas for property transfer: OS axiom → F_analytic → W_n
@@ -1184,9 +1373,9 @@ theorem bv_zero_point_is_evaluation (OS : OsterwalderSchraderAxioms d)
           F_0 (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
         (nhdsWithin 0 (Set.Ioi 0))
         (nhds (W_0 f)))
-    (hEuclid : ∀ (f : SchwartzNPoint d 0),
+    (hEuclid : ∀ (f : ZeroDiagonalSchwartz d 0),
       OS.S 0 f = ∫ x : Fin 0 → Fin (d + 1) → ℝ,
-        F_0 (fun k => wickRotatePoint (x k)) * (f x)) :
+        F_0 (fun k => wickRotatePoint (x k)) * (f.1 x)) :
     ∀ f : SchwartzNPoint d 0, W_0 f = f 0 := by
   intro f
   let η0 : Fin 0 → Fin (d + 1) → ℝ := fun k => Fin.elim0 k
@@ -1216,10 +1405,14 @@ theorem bv_zero_point_is_evaluation (OS : OsterwalderSchraderAxioms d)
     tendsto_const_nhds
   have hW0 : W_0 f = I0 :=
     tendsto_nhds_unique hBV0 hI0
+  let f0 : ZeroDiagonalSchwartz d 0 := ⟨f, by
+    intro k x hx
+    rcases hx with ⟨i, _, _, _⟩
+    exact Fin.elim0 i⟩
   calc
     W_0 f = I0 := hW0
-    _ = OS.S 0 f := (hEuclid f).symm
-    _ = f 0 := lgc.normalized_zero f
+    _ = OS.S 0 f0 := by simpa [I0, f0] using (hEuclid f0).symm
+    _ = f 0 := lgc.normalized_zero f0
 
 /-- E2R translation: Translation invariance transfers from S_n (via E1) through
     the analytic continuation to the BV.
@@ -1241,11 +1434,11 @@ theorem bv_translation_invariance_transfer (OS : OsterwalderSchraderAxioms d)
           F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
         (nhdsWithin 0 (Set.Ioi 0))
         (nhds (W_n f)))
-    (hEuclid : ∀ (f : SchwartzNPoint d n),
+    (hEuclid : ∀ (f : ZeroDiagonalSchwartz d n),
       OS.S n f = ∫ x : NPointDomain d n,
-        F_n (fun k => wickRotatePoint (x k)) * (f x))
-    (hE1 : ∀ (a : SpacetimeDim d) (f g : SchwartzNPoint d n),
-      (∀ x, g.toFun x = f.toFun (fun i => x i + a)) →
+        F_n (fun k => wickRotatePoint (x k)) * (f.1 x))
+    (hE1 : ∀ (a : SpacetimeDim d) (f g : ZeroDiagonalSchwartz d n),
+      (∀ x, g.1 x = f.1 (fun i => x i + a)) →
       OS.S n f = OS.S n g) :
     ∀ (a : SpacetimeDim d) (f g : SchwartzNPoint d n),
       (∀ x, g.toFun x = f.toFun (fun i => x i + a)) →
@@ -1278,13 +1471,13 @@ theorem bv_lorentz_covariance_transfer (OS : OsterwalderSchraderAxioms d)
           F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
         (nhdsWithin 0 (Set.Ioi 0))
         (nhds (W_n f)))
-    (hEuclid : ∀ (f : SchwartzNPoint d n),
+    (hEuclid : ∀ (f : ZeroDiagonalSchwartz d n),
       OS.S n f = ∫ x : NPointDomain d n,
-        F_n (fun k => wickRotatePoint (x k)) * (f x))
+        F_n (fun k => wickRotatePoint (x k)) * (f.1 x))
     (hE1_rot : ∀ (R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ),
       R.transpose * R = 1 → R.det = 1 →
-      ∀ (f g : SchwartzNPoint d n),
-      (∀ x, g.toFun x = f.toFun (fun i => R.mulVec (x i))) →
+      ∀ (f g : ZeroDiagonalSchwartz d n),
+      (∀ x, g.1 x = f.1 (fun i => R.mulVec (x i))) →
       OS.S n f = OS.S n g) :
     ∀ (Λ : LorentzGroup d) (f g : SchwartzNPoint d n),
       (∀ x, g.toFun x = f.toFun (fun i => Matrix.mulVec Λ⁻¹.val (x i))) →
@@ -1310,8 +1503,8 @@ theorem bv_local_commutativity_transfer (OS : OsterwalderSchraderAxioms d)
           F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
         (nhdsWithin 0 (Set.Ioi 0))
         (nhds (W_n f)))
-    (hE3 : ∀ (σ : Equiv.Perm (Fin n)) (f g : SchwartzNPoint d n),
-      (∀ x, g.toFun x = f.toFun (fun i => x (σ i))) →
+    (hE3 : ∀ (σ : Equiv.Perm (Fin n)) (f g : ZeroDiagonalSchwartz d n),
+      (∀ x, g.1 x = f.1 (fun i => x (σ i))) →
       OS.S n f = OS.S n g) :
     ∀ (i j : Fin n) (f g : SchwartzNPoint d n),
       (∀ x, f.toFun x ≠ 0 →
@@ -1332,8 +1525,8 @@ theorem bv_positive_definiteness_transfer (OS : OsterwalderSchraderAxioms d)
     (W : (n : ℕ) → SchwartzNPoint d n → ℂ)
     (hW_eq : ∀ n, W n = bvt_W OS lgc n)
     (hE2 : ∀ (F : BorchersSequence d),
-      (∀ n, ∀ x : NPointDomain d n, (F.funcs n).toFun x ≠ 0 →
-        x ∈ OrderedPositiveTimeRegion d n) →
+      (∀ n, tsupport ((F.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+        OrderedPositiveTimeRegion d n) →
       (OSInnerProduct d OS.S F F).re ≥ 0) :
     ∀ F : BorchersSequence d, (WightmanInnerProduct d W F F).re ≥ 0 := by
   sorry
@@ -1356,9 +1549,9 @@ theorem bv_hermiticity_transfer (OS : OsterwalderSchraderAxioms d)
           F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
         (nhdsWithin 0 (Set.Ioi 0))
         (nhds (W_n f)))
-    (hEuclid : ∀ (f : SchwartzNPoint d n),
+    (hEuclid : ∀ (f : ZeroDiagonalSchwartz d n),
       OS.S n f = ∫ x : NPointDomain d n,
-        F_n (fun k => wickRotatePoint (x k)) * (f x)) :
+        F_n (fun k => wickRotatePoint (x k)) * (f.1 x)) :
     ∀ (f g : SchwartzNPoint d n),
       (∀ x : NPointDomain d n,
         g.toFun x = starRingEnd ℂ (f.toFun (fun i => x (Fin.rev i)))) →
@@ -1511,34 +1704,28 @@ def osPreHilbertSpace (OS : OsterwalderSchraderAxioms d)
 
 /-! ### The Bridge Theorems -/
 
--- `IsWickRotationPair` is defined in Reconstruction.lean (available via import).
+/-- **Theorem R→E**: Wightman functions produce the honest zero-diagonal
+    Euclidean Schwinger family on `°S`.
 
-/-- **Theorem R→E**: Wightman functions produce Schwinger functions satisfying
-    the corrected `OsterwalderSchraderAxioms`.
-
-    This uses the Euclidean/Wick-rotation construction on the Schwinger side, but
-    it is stated on the repaired axiom surface, not the original overstrong OS-I
-    theorem claim. In particular, the E0 conclusion here is only the current
-    zero-diagonal statement:
-    continuity on `ZeroDiagonalSchwartz`, not a full-Schwartz temperedness claim.
-    No `OSLinearGrowthCondition` is assumed in this direction. -/
+    This is intentionally weaker than the OS-II full-Schwartz surface:
+    the raw Wick-rotated pairing is only packaged on `ZeroDiagonalSchwartz`,
+    together with continuity there and the Wick-rotation relation to the
+    Wightman boundary values. No `OSLinearGrowthCondition` is assumed in this
+    direction. -/
 theorem wightman_to_os_full (Wfn : WightmanFunctions d) :
-    ∃ (OS : OsterwalderSchraderAxioms d),
-      -- The Schwinger functions are the Wick rotation of the Wightman functions
-      IsWickRotationPair OS.S Wfn.W := by
-  -- Construct OS axioms from Wightman functions
-  refine ⟨⟨constructSchwingerFunctions Wfn,
-    constructedSchwinger_tempered_zeroDiagonal Wfn,
-    constructedSchwinger_linear Wfn,
-    constructedSchwinger_reality Wfn,
-    constructedSchwinger_translation_invariant Wfn,
-    constructedSchwinger_rotation_invariant Wfn,
-    constructedSchwinger_reflection_positive Wfn,
-    constructedSchwinger_symmetric Wfn,
-    constructedSchwinger_cluster Wfn⟩, ?_⟩
-  -- Prove the Wick rotation pair property
+    ∃ (S : SchwingerFunctions d),
+      (∀ n, Continuous (S n)) ∧
+      (∀ n, IsLinearMap ℂ (S n)) ∧
+      IsWickRotationPair S Wfn.W := by
+  refine ⟨constructZeroDiagonalSchwingerFunctions Wfn, ?_, ?_, ?_⟩
+  · intro n
+    simpa [constructZeroDiagonalSchwingerFunctions] using
+      constructedSchwinger_tempered_zeroDiagonal Wfn n
+  · intro n
+    simpa [constructZeroDiagonalSchwingerFunctions] using
+      constructedZeroDiagonalSchwinger_linear Wfn n
   intro n
-  -- Use the BHW extension F_ext as the IsWickRotationPair witness.
+  -- Use the BHW extension F_ext as the zero-diagonal Wick-rotation witness.
   -- F_ext = BHW extension, holomorphic on PET (hence on the forward tube).
   -- Its boundary values agree with W_n since F_ext = W_analytic on the forward tube.
   refine ⟨(W_analytic_BHW Wfn n).val,
@@ -1561,14 +1748,16 @@ theorem wightman_to_os_full (Wfn : WightmanFunctions d) :
 theorem os_to_wightman_full (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) :
     ∃ (Wfn : WightmanFunctions d),
-      -- The Wightman functions are the Wick rotation of the Schwinger functions
-      IsWickRotationPair OS.S Wfn.W := by
+      -- The Wightman functions are the Wick rotation of the honest zero-diagonal
+      -- Schwinger family carried by `OS`.
+      IsWickRotationPair OS.schwinger Wfn.W := by
   refine ⟨constructWightmanFunctions OS lgc, fun n => ?_⟩
   -- The analytic continuation, boundary values, and euclidean restriction are
   -- exactly the fields constructed inside `boundary_values_tempered`.
   have h := (boundary_values_tempered OS lgc n).choose_spec.choose_spec
   exact ⟨(boundary_values_tempered OS lgc n).choose_spec.choose,
-    h.2.2.1, h.2.2.2.1, fun f => h.2.2.2.2 f.1⟩
+    h.2.2.1, h.2.2.2.1, fun f => by
+      simpa [OsterwalderSchraderAxioms.schwinger] using h.2.2.2.2 f⟩
 
 /-! ### Wired Corollaries
 

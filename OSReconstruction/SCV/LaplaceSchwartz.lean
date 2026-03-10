@@ -133,6 +133,35 @@ structure HasFourierLaplaceReprRegular {m : ℕ} (C : Set (Fin m → ℝ))
   tube_continuousWithinAt : ∀ (x : Fin m → ℝ),
     ContinuousWithinAt F (TubeDomain C) (realEmbed x)
 
+/-- A holomorphic function on a tube domain has a **tempered Fourier-Laplace boundary-value
+    package** if it carries the honest distributional boundary-value data together with the
+    growth estimates needed to control boundary approaches, but without any claim of pointwise
+    continuity on the real boundary.
+
+    This is the right abstraction for singular Wightman boundary values: the boundary object is
+    a tempered distribution, not in general a continuous function of the real variables. -/
+structure HasFourierLaplaceReprTempered {m : ℕ} (C : Set (Fin m → ℝ))
+    (F : (Fin m → ℂ) → ℂ) extends HasFourierLaplaceRepr C F where
+  /-- Polynomial growth on compact subsets of the cone. -/
+  poly_growth : ∀ (K : Set (Fin m → ℝ)), IsCompact K → K ⊆ C →
+    ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+      ∀ (x y : Fin m → ℝ), y ∈ K →
+        ‖F (fun i => ↑(x i) + ↑(y i) * I)‖ ≤ C_bd * (1 + ‖x‖) ^ N
+  /-- Uniform polynomial bound along fixed boundary rays. -/
+  uniform_bound : ∀ (η : Fin m → ℝ), η ∈ C →
+    ∃ (C_bd : ℝ) (N : ℕ) (δ : ℝ), C_bd > 0 ∧ δ > 0 ∧
+      ∀ (x : Fin m → ℝ) (ε : ℝ), 0 < ε → ε < δ →
+        ‖F (fun i => ↑(x i) + ↑ε * ↑(η i) * I)‖ ≤ C_bd * (1 + ‖x‖) ^ N
+
+/-- Restrict a tempered Fourier-Laplace package to a smaller cone. -/
+def HasFourierLaplaceReprTempered.restrict {m : ℕ}
+    {C D : Set (Fin m → ℝ)} {F : (Fin m → ℂ) → ℂ}
+    (hsub : D ⊆ C) (h : HasFourierLaplaceReprTempered C F) :
+    HasFourierLaplaceReprTempered D F where
+  toHasFourierLaplaceRepr := h.toHasFourierLaplaceRepr.restrict hsub
+  poly_growth := fun K hK hKD => h.poly_growth K hK (Set.Subset.trans hKD hsub)
+  uniform_bound := fun η hη => h.uniform_bound η (hsub hη)
+
 /-- Restrict a regular Fourier-Laplace package to a smaller cone. -/
 def HasFourierLaplaceReprRegular.restrict {m : ℕ}
     {C D : Set (Fin m → ℝ)} {F : (Fin m → ℂ) → ℂ}
@@ -463,6 +492,130 @@ theorem fourierLaplace_boundary_mul_schwartz_integrable {m : ℕ}
   rw [norm_mul]
   exact mul_le_mul_of_nonneg_right (hbound x) (norm_nonneg _)
 
+/-- Integrability of the interior boundary-ray pairing under a uniform polynomial bound. -/
+theorem fourierLaplace_ray_mul_schwartz_integrable_of_uniformBound {m : ℕ}
+    {C : Set (Fin m → ℝ)}
+    {F : (Fin m → ℂ) → ℂ} (hF : DifferentiableOn ℂ F (TubeDomain C))
+    (hcone : ∀ (t : ℝ), 0 < t → ∀ y ∈ C, t • y ∈ C)
+    (f : SchwartzMap (Fin m → ℝ) ℂ)
+    (η : Fin m → ℝ) (hη : η ∈ C)
+    {C_bd : ℝ} {N : ℕ} {δ : ℝ}
+    (hbd : ∀ (x : Fin m → ℝ) (ε : ℝ), 0 < ε → ε < δ →
+      ‖F (fun i => ↑(x i) + ↑ε * ↑(η i) * I)‖ ≤ C_bd * (1 + ‖x‖) ^ N)
+    {ε : ℝ} (hε_pos : 0 < ε) (hε_lt : ε < δ) :
+    MeasureTheory.Integrable
+      (fun x : Fin m → ℝ => F (fun i => ↑(x i) + ↑ε * ↑(η i) * I) * f x) := by
+  have hmeas :
+      MeasureTheory.AEStronglyMeasurable
+        (fun x : Fin m → ℝ => F (fun i => ↑(x i) + ↑ε * ↑(η i) * I) * f x) :=
+    fourierLaplace_integrand_aestronglyMeasurable hF η hη hcone (↑f)
+      (schwartzMap_integrable f) ε hε_pos
+  have hint :
+      MeasureTheory.Integrable
+        (fun x : Fin m → ℝ => C_bd * (1 + ‖x‖) ^ N * ‖f x‖) := by
+    exact (schwartzMap_polynomial_norm_integrable f N).const_mul C_bd |>.congr
+      (ae_of_all _ fun x => by ring)
+  refine MeasureTheory.Integrable.mono' hint hmeas ?_
+  filter_upwards with x
+  rw [norm_mul]
+  exact mul_le_mul_of_nonneg_right (hbd x ε hε_pos hε_lt) (norm_nonneg _)
+
+/-- Additivity of the boundary-value functional using only the distributional boundary-value
+    formula together with a uniform ray bound. This avoids any false claim that the holomorphic
+    function extends continuously to the real boundary pointwise. -/
+theorem fourierLaplace_dist_map_add_tempered {m : ℕ}
+    {C : Set (Fin m → ℝ)} (_hC : IsOpen C) (_hconv : Convex ℝ C) (hne : C.Nonempty)
+    (hcone : ∀ (t : ℝ), 0 < t → ∀ y ∈ C, t • y ∈ C)
+    {F : (Fin m → ℂ) → ℂ} (hF : DifferentiableOn ℂ F (TubeDomain C))
+    (hTempered : HasFourierLaplaceReprTempered C F)
+    (f g : SchwartzMap (Fin m → ℝ) ℂ) :
+    hTempered.dist (f + g) = hTempered.dist f + hTempered.dist g := by
+  obtain ⟨η, hη⟩ := hne
+  obtain ⟨C_bd, N, δ, _hC_bd_pos, hδ_pos, hbd⟩ := hTempered.uniform_bound η hη
+  have hfg :=
+    hTempered.boundary_value (f + g) η hη
+  have hf := hTempered.boundary_value f η hη
+  have hg := hTempered.boundary_value g η hη
+  have hsum :
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          (∫ x : Fin m → ℝ, F (fun i => ↑(x i) + ↑ε * ↑(η i) * I) * f x) +
+          (∫ x : Fin m → ℝ, F (fun i => ↑(x i) + ↑ε * ↑(η i) * I) * g x))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (hTempered.dist f + hTempered.dist g)) :=
+    hf.add hg
+  have hmem : Set.Ioo (0 : ℝ) δ ∈ nhdsWithin (0 : ℝ) (Set.Ioi 0) :=
+    mem_nhdsWithin.mpr ⟨Set.Iio δ, isOpen_Iio, Set.mem_Iio.mpr hδ_pos,
+      fun ε hε => Set.mem_Ioo.mpr ⟨Set.mem_Ioi.mp hε.2, Set.mem_Iio.mp hε.1⟩⟩
+  have hEq :
+      (fun ε : ℝ =>
+        ∫ x : Fin m → ℝ, F (fun i => ↑(x i) + ↑ε * ↑(η i) * I) * ((f + g) x))
+      =ᶠ[nhdsWithin 0 (Set.Ioi 0)]
+      (fun ε : ℝ =>
+        (∫ x : Fin m → ℝ, F (fun i => ↑(x i) + ↑ε * ↑(η i) * I) * f x) +
+        (∫ x : Fin m → ℝ, F (fun i => ↑(x i) + ↑ε * ↑(η i) * I) * g x)) := by
+    filter_upwards [hmem] with ε hε
+    obtain ⟨hε_pos, hε_lt⟩ := Set.mem_Ioo.mp hε
+    have hf_int :=
+      fourierLaplace_ray_mul_schwartz_integrable_of_uniformBound
+        hF hcone f η hη hbd hε_pos hε_lt
+    have hg_int :=
+      fourierLaplace_ray_mul_schwartz_integrable_of_uniformBound
+        hF hcone g η hη hbd hε_pos hε_lt
+    simpa [SchwartzMap.add_apply, mul_add] using
+      integral_add hf_int hg_int
+  exact tendsto_nhds_unique (Filter.Tendsto.congr' hEq hfg) hsum
+
+/-- Homogeneity of the boundary-value functional using only the distributional boundary-value
+    formula together with a uniform ray bound. -/
+theorem fourierLaplace_dist_map_smul_tempered {m : ℕ}
+    {C : Set (Fin m → ℝ)} (_hC : IsOpen C) (_hconv : Convex ℝ C) (hne : C.Nonempty)
+    (hcone : ∀ (t : ℝ), 0 < t → ∀ y ∈ C, t • y ∈ C)
+    {F : (Fin m → ℂ) → ℂ} (hF : DifferentiableOn ℂ F (TubeDomain C))
+    (hTempered : HasFourierLaplaceReprTempered C F)
+    (c : ℂ) (f : SchwartzMap (Fin m → ℝ) ℂ) :
+    hTempered.dist (c • f) = c * hTempered.dist f := by
+  obtain ⟨η, hη⟩ := hne
+  obtain ⟨C_bd, N, δ, _hC_bd_pos, hδ_pos, hbd⟩ := hTempered.uniform_bound η hη
+  have hcf := hTempered.boundary_value (c • f) η hη
+  have hf := hTempered.boundary_value f η hη
+  have hsmul :
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          c * ∫ x : Fin m → ℝ, F (fun i => ↑(x i) + ↑ε * ↑(η i) * I) * f x)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (c * hTempered.dist f)) :=
+    tendsto_const_nhds.mul hf
+  have hmem : Set.Ioo (0 : ℝ) δ ∈ nhdsWithin (0 : ℝ) (Set.Ioi 0) :=
+    mem_nhdsWithin.mpr ⟨Set.Iio δ, isOpen_Iio, Set.mem_Iio.mpr hδ_pos,
+      fun ε hε => Set.mem_Ioo.mpr ⟨Set.mem_Ioi.mp hε.2, Set.mem_Iio.mp hε.1⟩⟩
+  have hEq :
+      (fun ε : ℝ =>
+        ∫ x : Fin m → ℝ, F (fun i => ↑(x i) + ↑ε * ↑(η i) * I) * ((c • f) x))
+      =ᶠ[nhdsWithin 0 (Set.Ioi 0)]
+      (fun ε : ℝ =>
+        c * ∫ x : Fin m → ℝ, F (fun i => ↑(x i) + ↑ε * ↑(η i) * I) * f x) := by
+    filter_upwards [hmem] with ε hε
+    obtain ⟨hε_pos, hε_lt⟩ := Set.mem_Ioo.mp hε
+    have hf_int :=
+      fourierLaplace_ray_mul_schwartz_integrable_of_uniformBound
+        hF hcone f η hη hbd hε_pos hε_lt
+    simpa [Pi.smul_apply, smul_eq_mul, mul_assoc, mul_left_comm, mul_comm] using
+      MeasureTheory.integral_const_mul c
+        (fun x : Fin m → ℝ => F (fun i => ↑(x i) + ↑ε * ↑(η i) * I) * f x)
+  exact tendsto_nhds_unique (Filter.Tendsto.congr' hEq hcf) hsmul
+
+/-- Linearity of the distributional boundary-value functional under the honest tempered
+    boundary-value hypotheses. -/
+theorem fourierLaplace_dist_isLinearMap_tempered {m : ℕ}
+    {C : Set (Fin m → ℝ)} (hC : IsOpen C) (hconv : Convex ℝ C) (hne : C.Nonempty)
+    (hcone : ∀ (t : ℝ), 0 < t → ∀ y ∈ C, t • y ∈ C)
+    {F : (Fin m → ℂ) → ℂ} (hF : DifferentiableOn ℂ F (TubeDomain C))
+    (hTempered : HasFourierLaplaceReprTempered C F) :
+    IsLinearMap ℂ hTempered.dist where
+  map_add := fourierLaplace_dist_map_add_tempered hC hconv hne hcone hF hTempered
+  map_smul := fourierLaplace_dist_map_smul_tempered hC hconv hne hcone hF hTempered
+
 /-- The boundary-value functional in a regular Fourier-Laplace package is additive. -/
 theorem fourierLaplace_dist_map_add {m : ℕ}
     {C : Set (Fin m → ℝ)} (hC : IsOpen C) (hconv : Convex ℝ C) (hne : C.Nonempty)
@@ -562,6 +715,39 @@ def exists_fourierLaplaceRepr {m : ℕ}
     dist := T
     dist_continuous := hT_cont
     boundary_value := h_bv
+  }
+
+/-- Package explicit distributional boundary-value data together with the honest
+    polynomial-growth estimates into `HasFourierLaplaceReprTempered`.
+
+    This is just the transparent constructor for the tempered boundary-value
+    package. The real analytic work is still the production of the four inputs:
+    a continuous Schwartz functional, its boundary-value convergence, polynomial
+    growth on compact imaginary slices, and a uniform polynomial ray bound near
+    the real boundary. -/
+def exists_fourierLaplaceReprTempered {m : ℕ}
+    {C : Set (Fin m → ℝ)} (hC : IsOpen C) (hconv : Convex ℝ C) (hne : C.Nonempty)
+    {F : (Fin m → ℂ) → ℂ} (hF : DifferentiableOn ℂ F (TubeDomain C))
+    {T : SchwartzMap (Fin m → ℝ) ℂ → ℂ}
+    (hT_cont : Continuous T)
+    (h_bv : ∀ (f : SchwartzMap (Fin m → ℝ) ℂ) (η : Fin m → ℝ), η ∈ C →
+      Filter.Tendsto (fun ε : ℝ =>
+        ∫ x : Fin m → ℝ, F (fun i => ↑(x i) + ↑ε * ↑(η i) * I) * f x)
+      (nhdsWithin 0 (Ioi 0))
+      (nhds (T f)))
+    (hpoly : ∀ (K : Set (Fin m → ℝ)), IsCompact K → K ⊆ C →
+      ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+        ∀ (x y : Fin m → ℝ), y ∈ K →
+          ‖F (fun i => ↑(x i) + ↑(y i) * I)‖ ≤ C_bd * (1 + ‖x‖) ^ N)
+    (hunif : ∀ (η : Fin m → ℝ), η ∈ C →
+      ∃ (C_bd : ℝ) (N : ℕ) (δ : ℝ), C_bd > 0 ∧ δ > 0 ∧
+        ∀ (x : Fin m → ℝ) (ε : ℝ), 0 < ε → ε < δ →
+          ‖F (fun i => ↑(x i) + ↑ε * ↑(η i) * I)‖ ≤ C_bd * (1 + ‖x‖) ^ N) :
+    HasFourierLaplaceReprTempered C F := by
+  exact {
+    toHasFourierLaplaceRepr := exists_fourierLaplaceRepr hC hconv hne hF hT_cont h_bv
+    poly_growth := hpoly
+    uniform_bound := hunif
   }
 
 /-! ### Continuity of the Real Boundary Function -/
