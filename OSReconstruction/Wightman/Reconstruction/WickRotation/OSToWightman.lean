@@ -9,6 +9,7 @@ import OSReconstruction.SCV.DistributionalUniqueness
 import OSReconstruction.SCV.SemigroupBochner
 import OSReconstruction.SCV.MultipleReflection
 import OSReconstruction.vNA.Bochner.SemigroupRoots
+import OSReconstruction.vNA.Spectral.SelfAdjointFunctionalViaRMK
 import OSReconstruction.vNA.Unbounded.BoundedBridge
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
 import Mathlib.Analysis.InnerProductSpace.StarOrder
@@ -2582,6 +2583,138 @@ private theorem osTimeShiftHilbert_eq_nnrpow_of_isCompactSupport
     DenseRange.equalizer (f := fQ) denseRange_posRatCast hg hh hcomp
   exact congrFun hall ⟨t, ht⟩
 
+private def osTimeShiftHilbertSpectralMeasureDiagonal
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS) :
+    MeasureTheory.Measure
+      (spectrum ℝ (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)) :=
+  ContinuousLinearMap.selfAdjointSpectralMeasureDiagonal
+    (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+    (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+    x
+
+private theorem re_inner_nnrpow_osTimeShiftHilbert_eq_integral
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS) (t : ℝ) (ht : 0 < t) :
+    Complex.re
+      (@inner ℂ (OSHilbertSpace OS) _ x
+        ((CFC.nnrpow (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+          (Real.toNNReal t)) x)) =
+      ∫ y, (y : ℝ) ^ t ∂(osTimeShiftHilbertSpectralMeasureDiagonal (d := d) OS lgc x) := by
+  simpa [osTimeShiftHilbertSpectralMeasureDiagonal, Real.toNNReal_of_nonneg ht.le] using
+    (ContinuousLinearMap.re_inner_nnrpow_eq_integral_selfAdjointSpectralMeasureDiagonal
+      (A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+      (hA := osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+      (hA_nonneg := osTimeShiftHilbert_nonneg (d := d) OS lgc 1 one_pos)
+      (x := x)
+      (t := Real.toNNReal t)
+      (by simpa using ht))
+
+private def osTimeShiftHilbertSpectralMeasureDiagonalReal
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS) : MeasureTheory.Measure ℝ :=
+  ContinuousLinearMap.selfAdjointSpectralMeasureDiagonalReal
+    (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+    (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+    x
+
+private def osTimeShiftHilbertLaplaceMeasureDiagonal
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS) : MeasureTheory.Measure ℝ :=
+  BochnerLaplaceBridge.laplaceMeasurePos
+    (osTimeShiftHilbertSpectralMeasureDiagonalReal (d := d) OS lgc x)
+
+private def osTimeShiftHilbertLaplaceValueDiagonal
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS) (t : ℝ) : ℂ :=
+  (((∫ u, Real.exp (-t * u) ∂
+      osTimeShiftHilbertLaplaceMeasureDiagonal (d := d) OS lgc x) : ℝ) : ℂ)
+
+private def osTimeShiftHilbertLaplaceValueOffdiag
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x y : OSHilbertSpace OS) (t : ℝ) : ℂ :=
+  (1 / 4 : ℂ) *
+    (osTimeShiftHilbertLaplaceValueDiagonal (d := d) OS lgc (x + y) t -
+      osTimeShiftHilbertLaplaceValueDiagonal (d := d) OS lgc (x - y) t -
+      Complex.I * osTimeShiftHilbertLaplaceValueDiagonal (d := d) OS lgc
+        (x + Complex.I • y) t +
+      Complex.I * osTimeShiftHilbertLaplaceValueDiagonal (d := d) OS lgc
+        (x - Complex.I • y) t)
+
+private theorem osTimeShiftHilbertLaplaceMeasureDiagonal_nonnegSupport
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS) :
+    osTimeShiftHilbertLaplaceMeasureDiagonal (d := d) OS lgc x (Set.Iio 0) = 0 := by
+  haveI : MeasureTheory.IsFiniteMeasure
+      (osTimeShiftHilbertSpectralMeasureDiagonalReal (d := d) OS lgc x) := by
+    unfold osTimeShiftHilbertSpectralMeasureDiagonalReal
+    infer_instance
+  unfold osTimeShiftHilbertLaplaceMeasureDiagonal
+  exact BochnerLaplaceBridge.laplaceMeasurePos_nonnegSupport
+    (μ := osTimeShiftHilbertSpectralMeasureDiagonalReal (d := d) OS lgc x)
+    (hsupp_le_one :=
+      ContinuousLinearMap.selfAdjointSpectralMeasureDiagonalReal_Ioi_eq_zero_of_spectrum_subset_Icc
+        (A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+        (hA := osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+        (x := x)
+        (spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos))
+
+private theorem inner_osTimeShiftHilbert_eq_laplace_of_isCompactSupport
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F : PositiveTimeBorchersSequence d)
+    (hF_compact : ∀ n,
+      HasCompactSupport (((
+        F : BorchersSequence d).funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    @inner ℂ (OSHilbertSpace OS) _
+      (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))
+      ((osTimeShiftHilbert (d := d) OS lgc t ht)
+        (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))) =
+      osTimeShiftHilbertLaplaceValueDiagonal (d := d) OS lgc
+        (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS)) t := by
+  rw [osTimeShiftHilbert_eq_nnrpow_of_isCompactSupport (d := d) OS lgc F hF_compact t ht]
+  simpa [osTimeShiftHilbertLaplaceValueDiagonal, osTimeShiftHilbertLaplaceMeasureDiagonal,
+    osTimeShiftHilbertSpectralMeasureDiagonalReal, Real.toNNReal_of_nonneg ht.le,
+    mul_comm, mul_left_comm, mul_assoc] using
+    (ContinuousLinearMap.inner_nnrpow_eq_laplace_selfAdjointSpectralMeasureDiagonalReal
+      (A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+      (hA := osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+      (hA_nonneg := osTimeShiftHilbert_nonneg (d := d) OS lgc 1 one_pos)
+      (x := (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS)))
+      (hspec := spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos)
+      (t := Real.toNNReal t)
+      (by simpa using ht))
+
+private theorem inner_osTimeShiftHilbert_offdiag_eq_laplace_of_isCompactSupport
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS)
+    (F : PositiveTimeBorchersSequence d)
+    (y : OSHilbertSpace OS)
+    (hy : y = (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS)))
+    (hF_compact : ∀ n,
+      HasCompactSupport (((
+        F : BorchersSequence d).funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    @inner ℂ (OSHilbertSpace OS) _
+      x
+      ((osTimeShiftHilbert (d := d) OS lgc t ht) y) =
+      osTimeShiftHilbertLaplaceValueOffdiag (d := d) OS lgc x y t := by
+  subst y
+  rw [osTimeShiftHilbert_eq_nnrpow_of_isCompactSupport (d := d) OS lgc F hF_compact t ht]
+  simpa [osTimeShiftHilbertLaplaceValueOffdiag, osTimeShiftHilbertLaplaceValueDiagonal,
+    osTimeShiftHilbertLaplaceMeasureDiagonal,
+    osTimeShiftHilbertSpectralMeasureDiagonalReal, Real.toNNReal_of_nonneg ht.le,
+    mul_comm, mul_left_comm, mul_assoc] using
+    (ContinuousLinearMap.inner_nnrpow_eq_laplace_polarization
+      (A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+      (hA := osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+      (hA_nonneg := osTimeShiftHilbert_nonneg (d := d) OS lgc 1 one_pos)
+      (hspec := spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos)
+      (x := x)
+      (y := (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS)))
+      (t := Real.toNNReal t)
+      (by simpa using ht))
+
 private theorem inner_osTimeShiftLinear_isSemigroupPDKernel_of_isCompactSupport
     (OS : OsterwalderSchraderAxioms d)
     (F : PositiveTimeBorchersSequence d)
@@ -2829,18 +2962,26 @@ private theorem differentiableOn_of_toDiffFlat_acrone_holo {d k : ℕ} [NeZero d
     `acr_one_iff_toDiffFlat_mem_tubeDomain_positiveTimeDiff`. So the remaining
     content is not target-domain geometry.
 
-    The real missing input is a spectral/Laplace representation theorem for the
-    honest Euclidean time-translation semigroup on `OSPreHilbertSpace OS`: for fixed
-    Euclidean quotient vectors, the scalar kernel
-      `t ↦ ⟪x, T_t x⟫`
-    should be representable as a Laplace transform of a finite measure on
-    `[0, ∞)`. That one-sided support is exactly what feeds the 1D Paley-Wiener
-    theorem on the positive time-difference tube.
+    The one-variable spectral/Laplace representation gap has now been closed on
+    the compact-support positive-time OS core, both diagonally and off-diagonally:
+    for arbitrary `x` and compact-support core `y = [F]`, the matrix element
+      `t ↦ ⟪x, T_t y⟫`
+    is represented honestly by a polarized Laplace expression built from finite
+    measures on `[0, ∞)`.
 
-    So this theorem is currently blocked by the positivity/spectral part of OS II
-    (reflection positivity + Euclidean time translations -> positive-energy slice
-    support), not by the tube-domain chart or the separate-to-joint holomorphicity
-    mechanism.
+    So the live gap is now genuinely multivariable/interleaved. To finish the
+    base step, those one-variable matrix-element witnesses must still be assembled
+    into the flattened holomorphic witness `G` required here for the full
+    positive-time-difference tube. The unresolved theorem-level choice is:
+
+    1. assemble `G` from separate holomorphicity in each time-difference variable
+       plus continuity/Osgood bookkeeping for the interleaved operator product, or
+    2. build the deeper joint spectral / product-measure package for the interleaved
+       semigroup insertions directly.
+
+    So the blocker is no longer existence of a one-variable positive-energy measure
+    on the compact-support core, but the passage from those one-variable witnesses
+    to the full OS II flat continuation statement.
 
     Ref: OS II, Section IV (base case of induction); Reed-Simon II, Section X.7;
     Streater-Wightman, §3.2-§3.3. -/
@@ -2876,10 +3017,10 @@ theorem schwinger_continuation_base_step {d : ℕ} [NeZero d]
   -- The SCV side now has both the 1D and product-half-plane Laplace theorems:
   -- `SCV.laplaceTransform_differentiableOn_rightHalfPlane_of_nonnegSupport` and
   -- `SCV.multivariateLaplaceTransform_differentiableOn_rightHalfPlane_of_nonnegSupport`.
-  -- So the genuine remaining gap is not half-plane holomorphicity or Osgood assembly,
-  -- but the OS II semigroup/spectral step producing the required finite measure on
-  -- `[0, ∞)` (or equivalent positive-energy matrix-element representation) for the
-  -- flattened positive time-difference coordinates.
+  -- So the genuine remaining gap is not half-plane holomorphicity or Osgood assembly.
+  -- The compact-support diagonal Laplace witness is now available. What remains is to
+  -- convert it into the flattened continuation witness `G` required here, either by a
+  -- direct compact-support/time-difference argument or by an honest polarized upgrade.
   obtain ⟨G, hG_holo, hG_euclid⟩ :
       ∃ (G : (Fin (k * (d + 1)) → ℂ) → ℂ),
         DifferentiableOn ℂ G (SCV.TubeDomain (FlatPositiveTimeDiffReal k d)) ∧
