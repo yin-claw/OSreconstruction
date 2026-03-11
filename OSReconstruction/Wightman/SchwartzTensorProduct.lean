@@ -81,6 +81,21 @@ theorem SchwartzMap.conj_conj (f : 𝓢(E, ℂ)) :
   ext x
   simp [SchwartzMap.conj_apply]
 
+/-- Complex conjugation does not increase Schwartz seminorms. -/
+theorem SchwartzMap.seminorm_conj_le (k n : ℕ) (f : 𝓢(E, ℂ)) :
+    SchwartzMap.seminorm ℝ k n f.conj ≤ SchwartzMap.seminorm ℝ k n f := by
+  refine SchwartzMap.seminorm_le_bound ℝ k n f.conj (by positivity) ?_
+  intro x
+  change ‖x‖ ^ k * ‖iteratedFDeriv ℝ n (fun y => starRingEnd ℂ (f y)) x‖ ≤
+    SchwartzMap.seminorm ℝ k n f
+  have heq : (fun y => starRingEnd ℂ (f y)) = fun y => Complex.conjLIE (f y) := rfl
+  have hnorm :
+      ‖iteratedFDeriv ℝ n (fun y => Complex.conjLIE (f y)) x‖ =
+        ‖iteratedFDeriv ℝ n f x‖ := by
+    simpa using (Complex.conjLIE.norm_iteratedFDeriv_comp_left (𝕜 := ℝ) f x n)
+  rw [heq, hnorm]
+  exact SchwartzMap.le_seminorm ℝ k n f x
+
 /-! ### Argument Reversal for n-Point Functions -/
 
 /-- Reversal of argument order for Schwartz functions on Fin n → E.
@@ -640,6 +655,15 @@ private theorem seminorm_tensorProduct_le {m k : ℕ} (p l : ℕ)
            SchwartzMap.seminorm ℂ 0 i f * SchwartzMap.seminorm ℂ p (l - i) g)) :=
         Finset.sum_le_sum h_term
     _ = _ := by rw [← Finset.mul_sum]
+
+/-- Explicit Schwartz seminorm bound for the tensor product. -/
+theorem SchwartzMap.tensorProduct_seminorm_le {m k : ℕ} (p l : ℕ)
+    (f : 𝓢(Fin m → E, ℂ)) (g : 𝓢(Fin k → E, ℂ)) :
+    SchwartzMap.seminorm ℝ p l (f.tensorProduct g) ≤
+    2 ^ p * ∑ i ∈ Finset.range (l + 1), ↑(l.choose i) *
+      (SchwartzMap.seminorm ℝ p i f * SchwartzMap.seminorm ℝ 0 (l - i) g +
+       SchwartzMap.seminorm ℝ 0 i f * SchwartzMap.seminorm ℝ p (l - i) g) := by
+  simpa using seminorm_tensorProduct_le p l f g
 
 /-- The tensor product is jointly continuous as a bilinear map on Schwartz spaces.
     Uses sequential continuity (Schwartz space is first countable, hence sequential)

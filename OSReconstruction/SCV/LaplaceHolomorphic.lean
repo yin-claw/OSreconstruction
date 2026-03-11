@@ -256,10 +256,11 @@ private theorem sum_update_mul_eq {m : ℕ}
     (∑ j : Fin m, Function.update z i w j * (t j : ℂ)) =
         Function.update z i w i * (t i : ℂ) +
           Finset.sum (Finset.univ.erase i) (fun j => Function.update z i w j * (t j : ℂ)) := by
-      simpa [add_comm] using
-        (Finset.sum_erase_add (s := Finset.univ)
-          (f := fun j : Fin m => Function.update z i w j * (t j : ℂ))
-          (a := i) (by simp))
+      symm
+      rw [add_comm]
+      rw [Finset.sum_erase_add (s := Finset.univ)
+        (f := fun j : Fin m => Function.update z i w j * (t j : ℂ))
+        (a := i) (by simp)]
     _ = w * (t i : ℂ) +
           Finset.sum (Finset.univ.erase i) (fun j => z j * (t j : ℂ)) := by
       rw [Function.update_self]
@@ -273,10 +274,9 @@ private theorem sum_erase_mul_eq_sub {m : ℕ}
     Finset.sum (Finset.univ.erase i) (fun j => z j * (t j : ℂ)) =
       (∑ j : Fin m, z j * (t j : ℂ)) - z i * (t i : ℂ) := by
   rw [eq_sub_iff_add_eq]
-  simpa [add_comm, add_left_comm, add_assoc] using
-    (Finset.sum_erase_add (s := Finset.univ)
-      (f := fun j : Fin m => z j * (t j : ℂ))
-      (a := i) (by simp))
+  rw [Finset.sum_erase_add (s := Finset.univ)
+    (f := fun j : Fin m => z j * (t j : ℂ))
+    (a := i) (by simp)]
 
 private theorem exp_neg_sum_update_hasDerivAt {m : ℕ}
     (z : Fin m → ℂ) (i : Fin m) (t : Fin m → ℝ) (w₀ : ℂ) :

@@ -5,6 +5,7 @@ Authors: ModularPhysics Contributors
 -/
 
 import OSReconstruction.vNA.Unbounded.Basic
+import OSReconstruction.vNA.Unbounded.BoundedBridge
 import OSReconstruction.vNA.Unbounded.Spectral
 
 /-!

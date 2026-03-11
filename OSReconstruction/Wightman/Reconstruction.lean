@@ -2270,6 +2270,37 @@ theorem SchwartzNPoint.timeReflect_timeReflect {n : ℕ} (f : SchwartzNPoint d n
   ext x; simp only [SchwartzNPoint.timeReflect_apply]
   congr 1; funext i; exact timeReflection_timeReflection d (x i)
 
+/-- Time reflection does not increase Schwartz seminorms. -/
+theorem SchwartzNPoint.seminorm_timeReflect_le {n : ℕ} (k l : ℕ)
+    (f : SchwartzNPoint d n) :
+    SchwartzMap.seminorm ℝ k l f.timeReflect ≤ SchwartzMap.seminorm ℝ k l f := by
+  refine SchwartzMap.seminorm_le_bound ℝ k l f.timeReflect
+    (by positivity) ?_
+  intro x
+  let θLE : NPointDomain d n ≃ₗ[ℝ] NPointDomain d n :=
+    { toFun := timeReflectionN d
+      invFun := timeReflectionN d
+      left_inv := fun y => funext fun i => timeReflection_timeReflection d (y i)
+      right_inv := fun y => funext fun i => timeReflection_timeReflection d (y i)
+      map_add' := fun y z => by
+        funext i μ
+        simp only [timeReflectionN, timeReflection, Pi.add_apply]
+        split_ifs <;> ring
+      map_smul' := fun c y => by
+        funext i μ
+        simp only [timeReflectionN, timeReflection, Pi.smul_apply, smul_eq_mul,
+          RingHom.id_apply]
+        split_ifs <;> ring }
+  let θLIE : NPointDomain d n ≃ₗᵢ[ℝ] NPointDomain d n :=
+    { θLE with
+      norm_map' := fun y => timeReflectionN_norm_eq d y }
+  have hcomp : (fun y => f (timeReflectionN d y)) = f ∘ θLIE := rfl
+  rw [show ‖x‖ ^ k * ‖iteratedFDeriv ℝ l (⇑f.timeReflect) x‖ =
+      ‖x‖ ^ k * ‖iteratedFDeriv ℝ l (fun y => f (timeReflectionN d y)) x‖ by rfl]
+  rw [hcomp, θLIE.norm_iteratedFDeriv_comp_right (𝕜 := ℝ) f x l,
+    show ‖x‖ = ‖θLIE x‖ from (θLIE.norm_map x).symm]
+  exact SchwartzMap.le_seminorm ℝ k l f (θLIE x)
+
 /-- The Osterwalder-Schrader conjugation: time reflection + complex conjugation.
     (θf̄)(x₁,...,xₙ) = conj(f(θx₁,...,θxₙ))
 
@@ -2284,6 +2315,13 @@ def SchwartzNPoint.osConj {n : ℕ} (f : SchwartzNPoint d n) : SchwartzNPoint d 
 theorem SchwartzNPoint.osConj_apply {n : ℕ} (f : SchwartzNPoint d n)
     (x : NPointDomain d n) :
     f.osConj x = starRingEnd ℂ (f (timeReflectionN d x)) := rfl
+
+/-- The OS conjugation does not increase Schwartz seminorms. -/
+theorem SchwartzNPoint.seminorm_osConj_le {n : ℕ} (k l : ℕ)
+    (f : SchwartzNPoint d n) :
+    SchwartzMap.seminorm ℝ k l f.osConj ≤ SchwartzMap.seminorm ℝ k l f := by
+  exact (SchwartzMap.seminorm_conj_le k l f.timeReflect).trans
+    (SchwartzNPoint.seminorm_timeReflect_le (d := d) k l f)
 
 /-- The OS conjugated tensor product: (θf̄) ⊗ g.
     This is the pairing used in the OS inner product for Schwinger functions:
