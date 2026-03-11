@@ -12,7 +12,7 @@ This project formalizes the mathematical bridge between Euclidean and relativist
 
 - **`OSReconstruction.vNA`** — Von Neumann algebra foundations: cyclic/separating vectors, predual theory, Tomita-Takesaki modular theory, modular automorphism groups, KMS condition, spectral theory via Riesz-Markov-Kakutani, unbounded self-adjoint operators, and Stone's theorem.
 
-- **`OSReconstruction.SCV`** — Several complex variables infrastructure: polydiscs, iterated Cauchy integrals, Osgood's lemma, separately holomorphic implies jointly analytic (Hartogs), tube domain extension, identity theorems, distributional boundary values on tubes, Bochner tube theorem, Fourier-Laplace representation, and Paley-Wiener theorems. Core files (Polydisc through IdentityTheorem) are sorry-free; newer distribution theory files have sorrys at deep analytic steps.
+- **`OSReconstruction.SCV`** — Several complex variables infrastructure: polydiscs, iterated Cauchy integrals, Osgood's lemma, separately holomorphic implies jointly analytic (Hartogs), tube domain extension, identity theorems, distributional boundary values on tubes, Bochner tube theorem, Fourier-Laplace representation, and Paley-Wiener theorems. The boundary-value / Fourier-Laplace side is now largely sorry-free; the remaining SCV blocker is the local-to-global tube extension lane in `BochnerTubeTheorem.lean`.
 
 - **`OSReconstruction.ComplexLieGroups`** — Complex Lie group theory for the Bargmann-Hall-Wightman theorem: GL(n;C)/SL(n;C)/SO(n;C) path-connectedness, complex Lorentz group and its path-connectedness via Wick rotation, Jost's lemma (Wick rotation maps spacelike configurations into the extended tube), and the BHW theorem structure (extended tube, complex Lorentz invariance, permutation symmetry, uniqueness).
 
@@ -46,6 +46,11 @@ Priority note:
 - `StoneTheorem` and the broader `vNA` operator-theoretic lane are not on that critical path. They are needed later for the GNS/operator reconstruction theorem `wightman_reconstruction`, specifically the `spectrum_condition` and `vacuum_unique` branches of `gnsQFT`.
 - So, for the key OS reconstruction theorems in `Main.lean`, the immediate priorities are `wightman_to_os` and `os_to_wightman`, not Stone/self-adjoint-generator machinery.
 
+Recent progress (2026-03-11):
+- **The OS semigroup / spectral lane advanced substantially.** In `WickRotation/OSToWightman.lean`, the honest OS quotient/completion semigroup is now in place with contraction, positivity, self-adjointness, rational-time identification with functional-calculus powers, and the new positive-time continuity input from `vNA/Bochner/SemigroupRoots.lean`.
+- **Generic tempered boundary-value infrastructure was extracted into production SCV code.** `SCV/LaplaceSchwartz.lean` now contains reusable lemmas for polynomial-growth integrability against Schwartz tests, dominated convergence for boundary-ray integrals, and the resulting boundary-distribution bound. These close the DCT/integrability side of `boundary_values_tempered`.
+- **The live root blockers are now sharper.** On the E→R side they remain `schwinger_continuation_base_step` and `boundary_values_tempered`; on the R→E side the honest root gaps remain coincidence-singularity control and Euclidean reality/reflection.
+
 Recent progress (2026-03-10):
 - **Distributional EOW is complete.** The full chain from distributional boundary values through distributional uniqueness, distributional BHW swap equality, pointwise extraction, and connected-overlap propagation is proved with 0 sorrys. Key new files: `SCV/DistributionalUniqueness.lean` (0 sorrys), `SCV/SchwartzComplete.lean` (0 sorrys), `ComplexLieGroups/Connectedness/BHWPermutation/AdjacencyDistributional.lean` (0 sorrys).
 - **BHW permutation flow rewired to distributional hypotheses.** The entire BHW permutation chain (`PermutationFlow.lean`) now runs on distributional boundary-value data instead of pointwise boundary continuity — the honest interface.
@@ -53,15 +58,15 @@ Recent progress (2026-03-10):
 - **Euclidean Hermiticity is now localized to the true PET overlap problem.** `SchwingerAxioms.lean` now exposes the conjugate-reversal overlap domain and proves the reflected partner `z ↦ conj(F(conj-rev z))` is holomorphic there. The remaining gap in `bhw_euclidean_reality_ae` is exactly to prove equality of the two holomorphic functions on that overlap from `wightman_real_on_jost_support`.
 - **ForwardTubeDistributions.lean** is now sorry-free (was 4 sorrys).
 
-Snapshot (2026-03-10, counted with `rg -c '^\s*sorry\b' OSReconstruction --glob '*.lean'`):
+Snapshot (2026-03-11, counted with `rg -c '^[[:space:]]*sorry([[:space:]]|$)' OSReconstruction --glob '*.lean'`):
 
 | Module | Direct `sorry` lines |
 |--------|-----------------------|
-| `Wightman/` | 32 |
+| `Wightman/` | 30 |
 | `SCV/` | 2 |
 | `ComplexLieGroups/` | 2 |
-| `vNA/` | 40 |
-| **Total** | **76** |
+| `vNA/` | 39 |
+| **Total** | **73** |
 
 ### OS-Critical Sorry Flow Toward Reconstruction
 
@@ -100,12 +105,12 @@ flowchart TD
 | `Wightman/NuclearSpaces/NuclearSpace.lean` | 2 | nuclear space infrastructure |
 | `Wightman/Reconstruction/ForwardTubeDistributions.lean` | 0 | distributional uniqueness proved via EOW infrastructure |
 | `Wightman/Reconstruction/WickRotation/ForwardTubeLorentz.lean` | 2 | poly growth slice + PET measure zero |
-| `Wightman/Reconstruction/WickRotation/BHWExtension.lean` | 2 | boundary continuity + overstrong pointwise swap (bypassed by distributional chain) |
+| `Wightman/Reconstruction/WickRotation/BHWExtension.lean` | 0 | honest extendF/distributional adjacent-swap lane complete |
 | `Wightman/Reconstruction/WickRotation/BHWTranslation.lean` | 1 | PET intersection connectivity |
-| `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` | 6 | poly growth, reality, cluster, OS=W term |
-| `Wightman/Reconstruction/WickRotation/OSToWightman.lean` | 8 | FL regularity + base step + BV transfer chain |
+| `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` | 7 | coincidence singularities, reality/reflection, cluster, OS=W term |
+| `Wightman/Reconstruction/WickRotation/OSToWightman.lean` | 8 | base-step continuation, tempered BV package, transfer chain |
 | `SCV/PaleyWiener.lean` | 0 | sorry-free |
-| `SCV/LaplaceSchwartz.lean` | 0 | sorry-free |
+| `SCV/LaplaceSchwartz.lean` | 0 | sorry-free; generic tempered boundary-value lemmas extracted |
 | `SCV/TubeDistributions.lean` | 0 | sorry-free |
 | `SCV/BochnerTubeTheorem.lean` | 2 | local-to-global tube extension |
 | `ComplexLieGroups/Connectedness/BHWPermutation/PermutationFlowBlocker.lean` | 2 | permutation flow blockers |

@@ -8,6 +8,7 @@ import OSReconstruction.ComplexLieGroups.DifferenceCoordinatesSCV
 import OSReconstruction.SCV.DistributionalUniqueness
 import OSReconstruction.SCV.SemigroupBochner
 import OSReconstruction.SCV.MultipleReflection
+import OSReconstruction.vNA.Bochner.SemigroupRoots
 import OSReconstruction.vNA.Unbounded.BoundedBridge
 
 /-!
@@ -30,7 +31,7 @@ The proof proceeds through phases:
 - Phase 5: Property transfer (OS axioms → Wightman axioms)
 -/
 
-open scoped Classical
+open scoped Classical NNReal
 open BigOperators Finset
 
 noncomputable section
@@ -1798,6 +1799,14 @@ private def euclideanSemigroup_of_OSLinearGrowthCondition
 private abbrev OSHilbertSpace (OS : OsterwalderSchraderAxioms d) :=
   UniformSpace.Completion (OSPreHilbertSpace OS)
 
+private local instance instSemiringOSHilbertEnd (OS : OsterwalderSchraderAxioms d) :
+    Semiring (OSHilbertSpace OS →L[ℂ] OSHilbertSpace OS) :=
+  ContinuousLinearMap.semiring
+
+private local instance instAlgebraRealOSHilbertEnd (OS : OsterwalderSchraderAxioms d) :
+    Algebra ℝ (OSHilbertSpace OS →L[ℂ] OSHilbertSpace OS) :=
+  ContinuousLinearMap.algebra
+
 /-- The positive Euclidean shift as a bounded operator on the OS pre-Hilbert
 space. -/
 private noncomputable def osTimeShiftContinuous
@@ -1986,6 +1995,119 @@ private theorem osTimeShiftHilbert_unbounded_isPositive
     (osTimeShiftHilbert (d := d) OS lgc t ht)
     (fun x => (osTimeShiftHilbert_isPositive (d := d) OS lgc t ht).re_inner_nonneg_left x)
 
+private theorem osTimeShiftHilbert_nonneg
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (t : ℝ) (ht : 0 < t) :
+    0 ≤ osTimeShiftHilbert (d := d) OS lgc t ht := by
+  rw [ContinuousLinearMap.nonneg_iff_isPositive]
+  exact osTimeShiftHilbert_isPositive (d := d) OS lgc t ht
+
+private theorem osTimeShiftHilbert_reciprocal_eq_nnrpow
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) (hn : 0 < n) :
+    osTimeShiftHilbert (d := d) OS lgc ((n : ℝ)⁻¹)
+        (inv_pos.mpr (by exact_mod_cast hn)) =
+      CFC.nnrpow (osTimeShiftHilbert (d := d) OS lgc 1 one_pos) ((n : ℝ≥0)⁻¹) := by
+  simpa using ContinuousLinearMap.semigroup_reciprocal_eq_positive_qroot
+    (T := fun t ht => osTimeShiftHilbert (d := d) OS lgc t ht)
+    (hsemigroup := by
+      intro s hs t ht
+      simpa [show (HMul.hMul :
+          (OSHilbertSpace OS →L[ℂ] OSHilbertSpace OS) → _ → _) =
+          ContinuousLinearMap.comp from rfl] using
+        osTimeShiftHilbert_semigroup (d := d) OS lgc s t hs ht)
+    (hnonneg := osTimeShiftHilbert_nonneg (d := d) OS lgc)
+    n hn
+
+private theorem osTimeShiftHilbert_rational_eq_nnrpow
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (p q : ℕ) (hp : 0 < p) (hq : 0 < q) :
+    osTimeShiftHilbert (d := d) OS lgc ((p : ℝ) * (q : ℝ)⁻¹)
+        (mul_pos (by exact_mod_cast hp) (inv_pos.mpr (by exact_mod_cast hq))) =
+      CFC.nnrpow (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+        ((p : ℝ≥0) * (q : ℝ≥0)⁻¹) := by
+  simpa using ContinuousLinearMap.semigroup_rational_eq_positive_qroot
+    (T := fun t ht => osTimeShiftHilbert (d := d) OS lgc t ht)
+    (hsemigroup := by
+      intro s hs t ht
+      simpa [show (HMul.hMul :
+          (OSHilbertSpace OS →L[ℂ] OSHilbertSpace OS) → _ → _) =
+          ContinuousLinearMap.comp from rfl] using
+        osTimeShiftHilbert_semigroup (d := d) OS lgc s t hs ht)
+    (hnonneg := osTimeShiftHilbert_nonneg (d := d) OS lgc)
+    p q hp hq
+
+/-- For a contraction family indexed by positive times, scalar-kernel continuity
+at `0⁺` implies strong continuity at `0⁺`. This is the direct endpoint argument
+needed for the honest OS semigroup, and avoids the earlier `2t`/filter-plumbing
+route. -/
+private theorem tendsto_apply_nhdsWithin_zero_of_contraction_of_re_inner
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
+    (T : ∀ t : ℝ, 0 < t → E →ₗ[ℂ] E)
+    (hcontr : ∀ t : ℝ, ∀ ht : 0 < t, ∀ x : E, ‖(T t ht) x‖ ≤ ‖x‖)
+    (x : E)
+    (hkernel :
+      Filter.Tendsto
+        (fun t : ℝ =>
+          if ht : 0 < t then
+            RCLike.re (@inner ℂ E _ x ((T t ht) x))
+          else
+            RCLike.re (@inner ℂ E _ x x))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (RCLike.re (@inner ℂ E _ x x)))) :
+    Filter.Tendsto
+      (fun t : ℝ => if ht : 0 < t then (T t ht) x else x)
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds x) := by
+  have hxnorm : RCLike.re (@inner ℂ E _ x x) = ‖x‖ ^ 2 := by
+    simpa using (inner_self_eq_norm_sq (𝕜 := ℂ) x)
+  rw [Metric.tendsto_nhdsWithin_nhds]
+  intro ε hε
+  have hδ : (0 : ℝ) < ε ^ 2 / 2 := by positivity
+  rw [Metric.tendsto_nhdsWithin_nhds] at hkernel
+  obtain ⟨r, hr, hball⟩ := hkernel (ε ^ 2 / 2) hδ
+  refine ⟨r, hr, ?_⟩
+  intro t ht_pos ht_dist
+  have hpos : 0 < t := ht_pos
+  have hclose := hball ht_pos ht_dist
+  simp [hpos, Real.dist_eq] at hclose
+  have hgap :
+      ‖x‖ ^ 2 - RCLike.re (@inner ℂ E _ x ((T t hpos) x)) < ε ^ 2 / 2 := by
+    have hclose' :
+        |RCLike.re (@inner ℂ E _ x ((T t hpos) x)) - (↑(‖x‖ ^ 2) : ℂ).re| < ε ^ 2 / 2 := by
+      simpa [hpos] using hclose
+    rcases abs_lt.mp hclose' with ⟨hleft, hright⟩
+    have hleft' :
+        -(ε ^ 2 / 2) < RCLike.re (@inner ℂ E _ x ((T t hpos) x)) - ‖x‖ ^ 2 := by
+      have hcast : ((↑(‖x‖ ^ 2) : ℂ).re) = ‖x‖ ^ 2 := rfl
+      nlinarith [hleft, hcast]
+    nlinarith
+  have hcontr_sq : ‖(T t hpos) x‖ ^ 2 ≤ ‖x‖ ^ 2 := by
+    nlinarith [hcontr t hpos x, norm_nonneg ((T t hpos) x), norm_nonneg x]
+  have hexpand :
+      ‖(T t hpos) x - x‖ ^ 2 =
+        ‖(T t hpos) x‖ ^ 2 - 2 * RCLike.re (@inner ℂ E _ x ((T t hpos) x)) +
+          ‖x‖ ^ 2 := by
+    rw [@norm_sub_sq ℂ E _ _ _]
+    have hsym :
+        RCLike.re (@inner ℂ E _ ((T t hpos) x) x) =
+          RCLike.re (@inner ℂ E _ x ((T t hpos) x)) := by
+      simpa using inner_re_symm (𝕜 := ℂ) ((T t hpos) x) x
+    linarith
+  have hnsq : ‖(T t hpos) x - x‖ ^ 2 < ε ^ 2 := by
+    calc
+      ‖(T t hpos) x - x‖ ^ 2
+        = ‖(T t hpos) x‖ ^ 2 - 2 * RCLike.re (@inner ℂ E _ x ((T t hpos) x)) +
+            ‖x‖ ^ 2 := hexpand
+      _ ≤ 2 * (‖x‖ ^ 2 - RCLike.re (@inner ℂ E _ x ((T t hpos) x))) := by
+          linarith
+      _ < 2 * (ε ^ 2 / 2) := by nlinarith
+      _ = ε ^ 2 := by ring
+  rw [dist_eq_norm]
+  have hroot : ‖(T t hpos) x - x‖ < ε :=
+    lt_of_pow_lt_pow_left₀ 2 hε.le (by simpa using hnsq)
+  simpa [hpos] using hroot
+
 private theorem continuousOn_inner_osTimeShiftLinear_nonneg_of_isCompactSupport
     (OS : OsterwalderSchraderAxioms d)
     (F G : PositiveTimeBorchersSequence d)
@@ -2035,6 +2157,69 @@ private theorem continuousOn_inner_osTimeShiftLinear_nonneg_of_isCompactSupport
         (OSInnerProduct_right_timeShift_zero (d := d) (OS := OS)
           (F := (F : BorchersSequence d)) (G := (G : BorchersSequence d))).symm
   exact hraw.congr hEq
+
+private theorem tendsto_osTimeShiftLinear_nhdsWithin_zero_of_isCompactSupport
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F : PositiveTimeBorchersSequence d)
+    (hF_compact : ∀ n,
+      HasCompactSupport (((
+        F : BorchersSequence d).funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ)) :
+    Filter.Tendsto
+      (fun t : ℝ =>
+        if ht : 0 < t then
+          (osTimeShiftLinear (d := d) OS t ht) (⟦F⟧ : OSPreHilbertSpace OS)
+        else
+          (⟦F⟧ : OSPreHilbertSpace OS))
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds (⟦F⟧ : OSPreHilbertSpace OS)) := by
+  let x0 : OSPreHilbertSpace OS := (⟦F⟧ : OSPreHilbertSpace OS)
+  refine tendsto_apply_nhdsWithin_zero_of_contraction_of_re_inner
+    (T := fun t ht => osTimeShiftLinear (d := d) OS t ht)
+    (hcontr := fun t ht x => osTimeShiftLinear_contraction (d := d) OS lgc t ht x)
+    (x := x0) ?_
+  have hinner :=
+    tendsto_inner_osTimeShiftLinear_nhdsWithin_zero_of_isCompactSupport
+      (d := d) OS F F hF_compact
+  have hre0 :
+      Filter.Tendsto
+        (fun t : ℝ =>
+          Complex.re
+            (if ht : 0 < t then
+              @inner ℂ (OSPreHilbertSpace OS) (OSPreHilbertSpace.instInner OS)
+                x0
+                ((osTimeShiftLinear (d := d) OS t ht) x0)
+            else
+              (↑(‖x0‖ ^ 2) : ℂ)))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds ((↑(‖x0‖ ^ 2) : ℂ).re)) := by
+    simpa [x0, Function.comp] using
+      (Complex.continuous_re.continuousAt.tendsto.comp hinner)
+  have hEq :
+      (fun t : ℝ =>
+        Complex.re
+          (if ht : 0 < t then
+            @inner ℂ (OSPreHilbertSpace OS) (OSPreHilbertSpace.instInner OS)
+              x0
+              ((osTimeShiftLinear (d := d) OS t ht) x0)
+          else
+            (↑(‖x0‖ ^ 2) : ℂ))) =
+      (fun t : ℝ =>
+        if ht : 0 < t then
+          RCLike.re
+            (@inner ℂ (OSPreHilbertSpace OS) (OSPreHilbertSpace.instInner OS)
+              x0
+              ((osTimeShiftLinear (d := d) OS t ht) x0))
+        else
+            (↑(‖x0‖ ^ 2) : ℂ).re) := by
+    funext t
+    by_cases ht : 0 < t <;> simp [ht]
+  rw [hEq] at hre0
+  have hnorm :
+      (↑(‖x0‖ ^ 2) : ℂ).re =
+        RCLike.re
+          (@inner ℂ (OSPreHilbertSpace OS) (OSPreHilbertSpace.instInner OS) x0 x0) := by
+    simpa using (inner_self_eq_norm_sq (𝕜 := ℂ) x0).symm
+  simpa [hnorm] using hre0
 
 private theorem inner_osTimeShiftLinear_isSemigroupPDKernel_of_isCompactSupport
     (OS : OsterwalderSchraderAxioms d)

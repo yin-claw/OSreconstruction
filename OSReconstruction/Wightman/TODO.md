@@ -1,6 +1,6 @@
 # Wightman TODO: OS Reconstruction Priority Queue
 
-Last updated: 2026-03-10
+Last updated: 2026-03-11
 
 This file tracks the active blocker picture on the OS reconstruction path.
 Policy lock: no wrappers, no useless lemmas, no code bloat; close `sorry`s with substantial mathematical proofs.
@@ -11,13 +11,13 @@ Count convention: direct tactic holes only (`^[[:space:]]*sorry([[:space:]]|$)`)
 
 | Scope | Direct `sorry` lines |
 |-------|----------------------:|
-| `OSReconstruction/Wightman` | 34 |
+| `OSReconstruction/Wightman` | 30 |
 | `OSReconstruction/SCV` | 2 |
 | `OSReconstruction/ComplexLieGroups` | 2 |
-| `OSReconstruction/vNA` | 40 |
-| **Whole project** | **78** |
+| `OSReconstruction/vNA` | 39 |
+| **Whole project** | **73** |
 
-Count cross-checked on 2026-03-10 with:
+Count cross-checked on 2026-03-11 with:
 ```bash
 rg -c '^[[:space:]]*sorry([[:space:]]|$)' OSReconstruction --glob '*.lean'
 ```
@@ -58,10 +58,20 @@ Active upstream blockers:
 
 Current status:
 - the fake intermediate Bochner path is off the active chain
-- the active continuation chain now goes through the base-step witness and then the forward-tube analytic continuation already constructed
-- the real remaining work is base-step construction plus boundary-value existence, then the six transfer theorems
+- the active continuation chain goes through the honest OS quotient/Hilbert semigroup already built in this file
+- `OSLinearGrowthCondition` is already used upstream to prove polynomial growth of time-shift matrix elements and hence contraction of the Euclidean semigroup
+- the positive-time spectral-power continuity input is now landed in `vNA/Bochner/SemigroupRoots.lean`
+- the real remaining work is still:
+  - `schwinger_continuation_base_step`
+  - `boundary_values_tempered`
+  - the six transfer theorems
+  - `bvt_cluster`
 
-### 2. `SCV` load-bearing infrastructure (4)
+Immediate sharpened subgaps:
+- For `schwinger_continuation_base_step`: close the live semigroup/Laplace bridge on the OS side, rather than adding wrappers around spectral data.
+- For `boundary_values_tempered`: the generic DCT/integrability/tempered-boundary package is now in `SCV/LaplaceSchwartz.lean`; the genuine missing content is deriving the two growth hypotheses `hpoly` and `hunif` from the OS input.
+
+### 2. `SCV` load-bearing infrastructure (2)
 
 `SCV/PaleyWiener.lean`:
 - sorry-free
@@ -75,8 +85,14 @@ Status:
   - weak `HasFourierLaplaceRepr`
   - regular `HasFourierLaplaceReprRegular`
 - the fake weak-to-regular upgrade theorem has been removed
-- the real missing theorem is now explicit: construct `HasFourierLaplaceReprRegular`
-  from actual Fourier-Laplace input with the right dual-cone support
+- the generic boundary-distribution lemmas needed by `boundary_values_tempered`
+  are now extracted:
+  - `integrable_poly_weight_schwartz`
+  - `integrable_poly_growth_schwartz`
+  - `tendsto_boundary_integral`
+  - `boundary_distribution_bound`
+- the real missing theorem is now explicit: construct the growth inputs and/or
+  regular package from actual Fourier-Laplace input with the right dual-cone support
 
 `SCV/TubeDistributions.lean` (0):
 
@@ -106,7 +122,9 @@ Infrastructure (sorry-free):
 
 ### 4. Wick rotation downstream
 
-`WickRotation/SchwingerAxioms.lean` (6):
+`WickRotation/SchwingerAxioms.lean` (7):
+- `wick_rotated_kernel_mul_zeroDiagonal_integrable`
+- `constructedSchwinger_tempered_zeroDiagonal`
 - `polynomial_growth_forwardTube_full`
 - `polynomial_growth_on_PET`
 - `schwinger_os_term_eq_wightman_term`
@@ -141,6 +159,12 @@ New proved theorems (2026-03-10):
 - `analytic_extended_local_commutativity` — pointwise swap for `extendF` at real ET points
 - `analytic_boundary_local_commutativity_of_boundary_continuous` — raw W_analytic with honest ContinuousWithinAt hypotheses
 
+Current assessment:
+- `R→E` has two independent hard roots:
+  - coincidence-singularity / zero-diagonal integrability
+  - Euclidean reality / reflection
+- the `boundary_values_tempered` extraction work on the E→R side does not by itself close either of those; it mainly prepares the tempered Wightman boundary package after E→R continuation exists
+
 ## Secondary Blockers
 
 Not on the shortest OS reconstruction lane:
@@ -152,11 +176,16 @@ Not on the shortest OS reconstruction lane:
 
 ## Execution Order
 
-1. Use the explicit regular flattened-input theorems in the seven forward-tube boundary theorems in `ForwardTubeDistributions.lean`.
-2. Formalize the real strong-to-regular upgrade theorem in `SCV/LaplaceSchwartz.lean`.
-3. Use the repaired forward-tube boundary infrastructure to attack `boundary_values_tempered` in `OSToWightman.lean`.
-4. Then finish the six downstream transfer theorems in `OSToWightman.lean`.
-5. Only after that, return to `SchwingerAxioms`, `ForwardTubeLorentz`, and the remaining Wick-rotation plumbing.
+1. Finish the live E→R root blocker `schwinger_continuation_base_step` in `OSToWightman.lean`.
+   - keep the hard gap explicit
+   - use the existing honest semigroup/spectral/Laplace infrastructure
+   - do not add abstract wrappers that hide the remaining step
+2. Use the extracted SCV boundary-distribution lemmas to reduce `boundary_values_tempered` to the genuine missing growth inputs `hpoly` and `hunif`.
+3. Extract `seminorm_translateSchwartz_le` into the SCV translation infrastructure, since that is the most plausible next reusable ingredient for those growth bounds.
+4. After `boundary_values_tempered`, finish the six transfer theorems and `bvt_cluster` in `OSToWightman.lean`.
+5. In parallel or next, attack the two honest R→E roots in `SchwingerAxioms.lean`:
+   - coincidence-singularity / zero-diagonal integrability
+   - Euclidean reality / reflection
 6. Defer `StoneTheorem` / GNS operator-theoretic work until the analyticity lane is materially settled.
 
 ## Commands

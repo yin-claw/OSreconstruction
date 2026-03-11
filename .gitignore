@@ -17,5 +17,6 @@ mcp_gemini/
 claude_to_codex.md
 codex_to_claude.md
 agents_chat.md
+agents_chat_archive_*.md
 /PROGRESS_REPORT.md
 /PROOF_NOTES_*.md

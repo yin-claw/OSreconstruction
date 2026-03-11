@@ -164,4 +164,207 @@ theorem SpectralMeasure.functionalCalculus_smul (P : SpectralMeasure H) (c : ℂ
   simp_rw [Pi.smul_apply, smul_eq_mul]
   exact integral_const_mul c _
 
+/-! ### Power functions of the identity -/
+
+private theorem integrable_of_bounded_finite {μ : Measure ℝ} [IsFiniteMeasure μ]
+    {f : ℝ → ℂ} (hf_meas : AEStronglyMeasurable f μ)
+    (M : ℝ) (hf : ∀ t, ‖f t‖ ≤ M) :
+    Integrable f μ := by
+  exact ⟨hf_meas, HasFiniteIntegral.of_bounded
+    (Eventually.of_forall fun x => hf x)⟩
+
+private theorem measurable_ofReal_pow (n : ℕ) :
+    Measurable (fun t : ℝ => (t : ℂ) ^ n) :=
+  Complex.continuous_ofReal.measurable.pow_const n
+
+private theorem ofReal_pow_mul (n : ℕ) :
+    (fun t : ℝ => (t : ℂ) ^ n) * (fun t : ℝ => (t : ℂ)) =
+    (fun t : ℝ => (t : ℂ) ^ (n + 1)) := by
+  ext t
+  simp [pow_succ, mul_comm]
+
+private theorem pow_integrable_diag (P : SpectralMeasure H) (M : ℝ) (_hM : 0 ≤ M)
+    (hbnd : ∀ t : ℝ, ‖(t : ℂ)‖ ≤ M) (n : ℕ) (z : H) :
+    Integrable (fun t : ℝ => (t : ℂ) ^ n) (P.diagonalMeasure z) :=
+  integrable_of_bounded_finite
+    (measurable_ofReal_pow n).aestronglyMeasurable (M ^ n)
+    (fun t => by
+      rw [norm_pow]
+      exact pow_le_pow_left₀ (norm_nonneg _) (hbnd t) n)
+
+private theorem id_integrable_diag (P : SpectralMeasure H) (M : ℝ) (_hM : 0 ≤ M)
+    (hbnd : ∀ t : ℝ, ‖(t : ℂ)‖ ≤ M) (z : H) :
+    Integrable (fun t : ℝ => (t : ℂ)) (P.diagonalMeasure z) :=
+  integrable_of_bounded_finite
+    Complex.continuous_ofReal.measurable.aestronglyMeasurable M hbnd
+
+private theorem pow_bdd (M : ℝ) (hM : 0 ≤ M)
+    (hbnd : ∀ t : ℝ, ‖(t : ℂ)‖ ≤ M) (n : ℕ) :
+    ∃ M', 0 ≤ M' ∧ ∀ t : ℝ, ‖(t : ℂ) ^ n‖ ≤ M' :=
+  ⟨M ^ n, pow_nonneg hM n, fun t => by
+    rw [norm_pow]
+    exact pow_le_pow_left₀ (norm_nonneg _) (hbnd t) n⟩
+
+namespace SpectralMeasure
+
+/-- Integer powers of the spectral image of the identity coincide with the spectral
+image of the corresponding power function. This is the algebraic integer-time
+step behind the semigroup spectral representation. -/
+theorem functionalCalculus_pow_ofReal (P : SpectralMeasure H) (M : ℝ) (hM : 0 ≤ M)
+    (hbnd : ∀ t : ℝ, ‖(t : ℂ)‖ ≤ M)
+    (n : ℕ) (hn : 0 < n) :
+    (functionalCalculus P (fun t : ℝ => (t : ℂ))
+      (fun z => id_integrable_diag P M hM hbnd z)
+      ⟨M, hM, hbnd⟩) ^ n =
+    functionalCalculus P (fun t : ℝ => (t : ℂ) ^ n)
+      (fun z => pow_integrable_diag P M hM hbnd n z)
+      (pow_bdd M hM hbnd n) := by
+  induction n with
+  | zero =>
+      omega
+  | succ n ih =>
+      cases n with
+      | zero =>
+          rw [pow_one]
+          exact (functionalCalculus_congr P
+            (fun t : ℝ => (t : ℂ) ^ 1)
+            (fun t : ℝ => (t : ℂ))
+            (fun z => pow_integrable_diag P M hM hbnd 1 z)
+            (pow_bdd M hM hbnd 1)
+            (fun z => id_integrable_diag P M hM hbnd z)
+            ⟨M, hM, hbnd⟩
+            (fun t => by simp [pow_one])).symm
+      | succ n =>
+          have hn' : 0 < n + 1 := Nat.succ_pos n
+          rw [pow_succ (n := n + 1), ih hn']
+          have hmul := functionalCalculus_mul P
+            (fun t : ℝ => (t : ℂ) ^ (n + 1))
+            (fun t : ℝ => (t : ℂ))
+            (fun z => pow_integrable_diag P M hM hbnd (n + 1) z)
+            (pow_bdd M hM hbnd (n + 1))
+            (fun z => id_integrable_diag P M hM hbnd z)
+            ⟨M, hM, hbnd⟩
+            (by
+              rw [ofReal_pow_mul]
+              intro z
+              exact pow_integrable_diag P M hM hbnd (n + 2) z)
+            (by
+              rw [show (fun t : ℝ => (t : ℂ) ^ (n + 1)) * (fun t : ℝ => (t : ℂ)) =
+                  (fun t : ℝ => (t : ℂ) ^ (n + 2)) from ofReal_pow_mul (n + 1)]
+              exact pow_bdd M hM hbnd (n + 2))
+            Complex.continuous_ofReal.measurable
+          show functionalCalculus P (fun t : ℝ => (t : ℂ) ^ (n + 1)) _ _ *
+              functionalCalculus P (fun t : ℝ => (t : ℂ)) _ _ =
+            functionalCalculus P (fun t : ℝ => (t : ℂ) ^ (n + 2)) _ _
+          rw [show (HMul.hMul : (H →L[ℂ] H) → _ → _) = ContinuousLinearMap.comp from rfl]
+          rw [← hmul]
+          congr 1
+
+end SpectralMeasure
+
+/-! ### Strong-limit commutation and projection approximation -/
+
+omit [CompleteSpace H] in
+/-- If `A` commutes with each `Tₙ` and `Tₙ → T` strongly, then `A` commutes with `T`. -/
+theorem ContinuousLinearMap.comm_of_strong_limit (A : H →L[ℂ] H)
+    (Tₙ : ℕ → H →L[ℂ] H) (T : H →L[ℂ] H)
+    (hcomm : ∀ n, A ∘L Tₙ n = Tₙ n ∘L A)
+    (hlim : ∀ x, Tendsto (fun n => Tₙ n x) atTop (nhds (T x))) :
+    A ∘L T = T ∘L A := by
+  ext x
+  simp only [ContinuousLinearMap.comp_apply]
+  have h1 : Tendsto (fun n => A (Tₙ n x)) atTop (nhds (A (T x))) :=
+    (A.continuous.tendsto _).comp (hlim x)
+  have h2 : ∀ n, A (Tₙ n x) = Tₙ n (A x) := by
+    intro n
+    exact congr_fun (congrArg DFunLike.coe (hcomm n)) x
+  have h3 : Tendsto (fun n => Tₙ n (A x)) atTop (nhds (T (A x))) :=
+    hlim (A x)
+  simp_rw [h2] at h1
+  exact tendsto_nhds_unique h1 h3
+
+private theorem indicator_integrable (P : SpectralMeasure H) (E : Set ℝ) (hE : MeasurableSet E) :
+    ∀ z : H, Integrable (E.indicator (fun _ => (1 : ℂ))) (P.diagonalMeasure z) := by
+  intro z
+  haveI := P.diagonalMeasure_isFiniteMeasure z
+  exact (integrable_const (1 : ℂ)).indicator hE
+
+private theorem indicator_bdd (E : Set ℝ) :
+    ∃ M, 0 ≤ M ∧ ∀ t, ‖E.indicator (fun _ => (1 : ℂ)) t‖ ≤ M := by
+  refine ⟨1, zero_le_one, ?_⟩
+  intro t
+  by_cases ht : t ∈ E
+  · simp [Set.indicator_of_mem, ht]
+  · simp [Set.indicator_of_notMem, ht]
+
+private theorem indicator_measurable (E : Set ℝ) (hE : MeasurableSet E) :
+    Measurable (E.indicator (fun _ => (1 : ℂ))) :=
+  measurable_const.indicator hE
+
+private theorem indicator_norm_le_one (E : Set ℝ) :
+    ∀ t, ‖E.indicator (fun _ => (1 : ℂ)) t‖ ≤ 1 := by
+  intro t
+  by_cases ht : t ∈ E
+  · simp [Set.indicator_of_mem, ht]
+  · simp [Set.indicator_of_notMem, ht]
+
+private theorem one_sq_integrable (P : SpectralMeasure H) :
+    ∀ z : H, Integrable (fun _ : ℝ => ((1 : ℝ) ^ 2)) (P.diagonalMeasure z) := by
+  intro z
+  haveI := P.diagonalMeasure_isFiniteMeasure z
+  simpa using (integrable_const ((1 : ℝ) ^ 2))
+
+namespace SpectralMeasure
+
+/-- If bounded measurable functions converge pointwise to an indicator, then the
+corresponding spectral-calculus operators converge strongly to the spectral projection. -/
+theorem functionalCalculus_tendsto_projection_apply (P : SpectralMeasure H)
+    (E : Set ℝ) (hE : MeasurableSet E)
+    (f : ℕ → ℝ → ℂ)
+    (hf_tend : ∀ t, Tendsto (fun n => f n t) atTop (nhds (E.indicator (fun _ => (1 : ℂ)) t)))
+    (hf_bound : ∀ n t, ‖f n t‖ ≤ 1)
+    (hf_int : ∀ n z, Integrable (f n) (P.diagonalMeasure z))
+    (hf_bdd : ∀ n, ∃ M, 0 ≤ M ∧ ∀ t, ‖f n t‖ ≤ M)
+    (hf_meas : ∀ n, Measurable (f n))
+    (x : H) :
+    Tendsto (fun n => functionalCalculus P (f n) (hf_int n) (hf_bdd n) x)
+      atTop (nhds (P.proj E x)) := by
+  let χE : ℝ → ℂ := E.indicator (fun _ => (1 : ℂ))
+  have hχ_int : ∀ z : H, Integrable χE (P.diagonalMeasure z) :=
+    indicator_integrable P E hE
+  have hχ_bdd : ∃ M, 0 ≤ M ∧ ∀ t, ‖χE t‖ ≤ M := indicator_bdd E
+  have hχ_meas : Measurable χE := indicator_measurable E hE
+  have hlim :=
+    functionalCalculus_tendsto_SOT P f χE hf_tend
+      (fun _ => (1 : ℝ)) (fun _ => zero_le_one) hf_bound (indicator_norm_le_one E)
+      ⟨1, fun _ => le_rfl⟩ (one_sq_integrable P) hf_int hf_bdd hχ_int hχ_bdd hf_meas hχ_meas x
+  have hproj : functionalCalculus P χE hχ_int hχ_bdd = P.proj E :=
+    functionalCalculus_indicator P E hE hχ_int hχ_bdd
+  simp [χE, hproj] at hlim
+  exact hlim
+
+/-- If `A` commutes with a sequence of spectral-calculus approximants converging
+strongly to `P(E)`, then `A` commutes with the spectral projection `P(E)`. -/
+theorem commute_projection_of_commute_approximants (P : SpectralMeasure H)
+    (A : H →L[ℂ] H) (E : Set ℝ) (hE : MeasurableSet E)
+    (f : ℕ → ℝ → ℂ)
+    (hf_tend : ∀ t, Tendsto (fun n => f n t) atTop (nhds (E.indicator (fun _ => (1 : ℂ)) t)))
+    (hf_bound : ∀ n t, ‖f n t‖ ≤ 1)
+    (hf_int : ∀ n z, Integrable (f n) (P.diagonalMeasure z))
+    (hf_bdd : ∀ n, ∃ M, 0 ≤ M ∧ ∀ t, ‖f n t‖ ≤ M)
+    (hf_meas : ∀ n, Measurable (f n))
+    (hcomm : ∀ n,
+      A ∘L functionalCalculus P (f n) (hf_int n) (hf_bdd n) =
+        functionalCalculus P (f n) (hf_int n) (hf_bdd n) ∘L A) :
+    A ∘L P.proj E = P.proj E ∘L A := by
+  apply ContinuousLinearMap.comm_of_strong_limit A
+    (fun n => functionalCalculus P (f n) (hf_int n) (hf_bdd n))
+    (P.proj E)
+  · exact hcomm
+  · intro x
+    exact P.functionalCalculus_tendsto_projection_apply E hE f
+      hf_tend hf_bound hf_int hf_bdd hf_meas x
+
+end SpectralMeasure
+
 end

@@ -33,6 +33,87 @@ noncomputable section
 
 namespace SCV
 
+/-- The change-of-variable map `s ↦ -log s` used to pass from spectral variables
+in `(0,1]` to Laplace variables in `[0,∞)`. -/
+def negLogMap : ℝ → ℝ := fun s => -Real.log s
+
+/-- Measurability of `s ↦ -log s`. -/
+theorem negLogMap_measurable : Measurable negLogMap := by
+  exact Real.measurable_log.neg
+
+/-- Pushforward of a measure under `s ↦ -log s`, the basic spectral-to-Laplace
+change of variables. -/
+def laplaceMeasure (μ : Measure ℝ) : Measure ℝ := μ.map negLogMap
+
+instance laplaceMeasure_isFinite (μ : Measure ℝ) [IsFiniteMeasure μ] :
+    IsFiniteMeasure (laplaceMeasure μ) := by
+  unfold laplaceMeasure
+  exact ⟨by
+    rw [Measure.map_apply negLogMap_measurable MeasurableSet.univ, Set.preimage_univ]
+    exact measure_lt_top μ Set.univ⟩
+
+/-- Rewrite a positive real power as an exponential of a logarithm. -/
+theorem rpow_eq_exp_log (s : ℝ) (hs : 0 < s) (t : ℝ) :
+    s ^ t = Real.exp (t * Real.log s) := by
+  rw [Real.rpow_def_of_pos hs]
+  ring_nf
+
+/-- Rewrite `s^t` for `s > 0` in the Laplace form `exp (-t * (-log s))`. -/
+theorem rpow_eq_exp_neg_neglog (s : ℝ) (hs : 0 < s) (t : ℝ) :
+    s ^ t = Real.exp (-t * negLogMap s) := by
+  unfold negLogMap
+  rw [rpow_eq_exp_log s hs t]
+  congr 1
+  ring
+
+/-- For a finite measure supported in `(0,∞)`, the `s^t` integral equals the
+Laplace integral after the change of variables `u = -log s`. -/
+theorem spectral_integral_eq_laplace
+    (μ : Measure ℝ) [IsFiniteMeasure μ]
+    (hsupp : μ (Set.Iic 0) = 0)
+    (t : ℝ) (_ht : 0 ≤ t)
+    (_hint : Integrable (fun s => (s : ℝ) ^ t) μ) :
+    ∫ s, (s : ℝ) ^ t ∂μ =
+    ∫ u, Real.exp (-t * u) ∂(laplaceMeasure μ) := by
+  unfold laplaceMeasure
+  have hmeas : AEStronglyMeasurable (fun u => Real.exp (-t * u))
+      (Measure.map negLogMap μ) := by
+    have hcont : Continuous (fun u : ℝ => Real.exp (-(t * u))) := by
+      exact Real.continuous_exp.comp (continuous_const.mul continuous_id).neg
+    simpa [neg_mul] using hcont.aestronglyMeasurable
+  rw [MeasureTheory.integral_map negLogMap_measurable.aemeasurable hmeas]
+  apply integral_congr_ae
+  have hae : ∀ᵐ s ∂μ, 0 < s := by
+    rw [ae_iff]
+    simp only [not_lt]
+    exact hsupp
+  filter_upwards [hae] with s hs
+  exact rpow_eq_exp_neg_neglog s hs t
+
+/-- If a finite measure is supported in `(0,1]`, then its `-log` pushforward is
+supported in `[0,∞)`. -/
+theorem laplaceMeasure_nonneg_support (μ : Measure ℝ) [IsFiniteMeasure μ]
+    (_hsupp_pos : μ (Set.Iic 0) = 0)
+    (hsupp_le1 : μ (Set.Ioi 1) = 0) :
+    (laplaceMeasure μ) (Set.Iio 0) = 0 := by
+  unfold laplaceMeasure
+  rw [Measure.map_apply negLogMap_measurable measurableSet_Iio]
+  have hsub : negLogMap ⁻¹' Set.Iio 0 ⊆ Set.Ioi 1 ∪ Set.Iic 0 := by
+    intro s hs
+    simp only [Set.mem_preimage, Set.mem_Iio, negLogMap, neg_lt, neg_zero] at hs
+    simp only [Set.mem_union, Set.mem_Ioi, Set.mem_Iic]
+    by_contra h
+    push_neg at h
+    obtain ⟨h1, h2⟩ := h
+    have : Real.log s ≤ 0 := Real.log_nonpos h2.le h1
+    linarith
+  have hle : μ (negLogMap ⁻¹' Set.Iio 0) ≤ 0 := by
+    calc
+      μ (negLogMap ⁻¹' Set.Iio 0) ≤ μ (Set.Ioi 1 ∪ Set.Iic 0) := measure_mono hsub
+      _ ≤ μ (Set.Ioi 1) + μ (Set.Iic 0) := measure_union_le _ _
+      _ = 0 := by rw [hsupp_le1, _hsupp_pos, add_zero]
+  exact le_antisymm hle (zero_le _)
+
 /-- For `t ≥ 0` and `Re(z) > 0`, the Laplace kernel has norm at most `1`. -/
 theorem exp_neg_mul_norm_le (z : ℂ) (hz : 0 < z.re) (t : ℝ) (ht : 0 ≤ t) :
     ‖Complex.exp (-z * (t : ℂ))‖ ≤ 1 := by

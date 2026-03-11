@@ -1,6 +1,6 @@
 # Systematic Development Plan (OS Reconstruction Critical Path)
 
-Last updated: 2026-03-05
+Last updated: 2026-03-11
 
 This is the active execution plan for closing `sorry`s on the OS reconstruction path.
 It supersedes the earlier BHW-first ordering.
@@ -22,43 +22,57 @@ Counts verified with:
 
 | Scope | Sorrys |
 |---|---:|
-| `OSReconstruction/Wightman` | 40 |
-| `OSReconstruction/SCV` | 13 |
+| `OSReconstruction/Wightman` | 30 |
+| `OSReconstruction/SCV` | 2 |
 | `OSReconstruction/ComplexLieGroups` | 2 |
-| `OSReconstruction/vNA` | 40 |
-| **Total** | **95** |
+| `OSReconstruction/vNA` | 39 |
+| **Total** | **73** |
 
 ## 3. Primary Priority Stack
 
-### A) E -> R direction (`OSToWightman.lean`, 12 sorrys)
+### A) E -> R direction (`OSToWightman.lean`, 8 sorrys)
 
 Clusters:
-1. Analytic continuation infrastructure (4 core obligations):
-   - `inductive_analytic_continuation`
-   - `schwinger_holomorphic_on_base_region`
-   - `extend_to_forward_tube_via_bochner`
-   - `full_analytic_continuation` (rotation-invariance step)
-2. Boundary-value existence (1):
-   - `forward_tube_bv_tempered` / `boundary_values_tempered` chain
-3. Axiom transfer chain (7):
+1. Root continuation blocker:
+   - `schwinger_continuation_base_step`
+2. Boundary-value existence:
+   - `boundary_values_tempered`
+3. Axiom transfer chain:
    - transfer of W0-W5-style properties through holomorphic extension + boundary values
-4. Cluster property (2):
+4. Cluster property:
    - `bvt_cluster` and companion transport lemma
 
-### B) R -> E wick-rotation submodules (13 sorrys total)
+Live status:
+- the OS quotient/Hilbert semigroup infrastructure is already built
+- `OSLinearGrowthCondition` is already used upstream in proved production lemmas to get polynomial growth of Euclidean time-shift matrix elements and hence contraction
+- rational-time identification with positive functional-calculus powers is in place
+- positive-time continuity of `t ↦ CFC.nnrpow A t` is now in `vNA/Bochner/SemigroupRoots.lean`
+- the remaining hard content is no longer generic semigroup packaging; it is the theorem-level bridge into analytic continuation and tempered boundary values
 
-1. `SchwingerAxioms.lean` (5)
-2. `BHWTranslation.lean` (5)
-3. `BHWExtension.lean` (2)
-4. `ForwardTubeLorentz.lean` (1)
+### B) R -> E wick-rotation submodules (10 sorrys total on the active path)
 
-### C) Shared SCV infrastructure (13 sorrys total, deepest dependency)
+1. `SchwingerAxioms.lean`:
+   - coincidence-singularity / zero-diagonal integrability
+   - Euclidean reality / reflection
+   - downstream cluster / OS=W term
+2. `BHWTranslation.lean`:
+   - PET overlap connectivity
+3. `ForwardTubeLorentz.lean`:
+   - slice polynomial growth
+   - null exceptional set for PET entry
 
-1. `PaleyWiener.lean` (5)
-2. `LaplaceSchwartz.lean` (6)
-3. `BochnerTubeTheorem.lean` (2)
+### C) Shared SCV infrastructure (2 sorrys total, but still load-bearing)
 
-These SCV blockers are root dependencies for both E -> R and R -> E analytic continuation chains.
+1. `LaplaceSchwartz.lean` is now sorry-free and contains the generic tempered
+   boundary-value lemmas needed for `boundary_values_tempered`.
+2. `PaleyWiener.lean` is sorry-free; no live multivariable Paley-Wiener theorem is
+   on the immediate critical path.
+3. `BochnerTubeTheorem.lean` (2) remains open, but it is no longer the first
+   blocker to attack.
+
+The honest remaining SCV-facing gap in the E -> R lane is not generic DCT or
+integrability anymore; it is deriving the growth hypotheses (`hpoly`, `hunif`)
+from the OS data.
 
 ## 4. Secondary / Standalone Blockers
 
@@ -70,11 +84,15 @@ These SCV blockers are root dependencies for both E -> R and R -> E analytic con
 
 ## 5. Execution Order
 
-1. Close SCV load-bearing lemmas (`LaplaceSchwartz` -> `PaleyWiener` -> `Bochner`).
-2. Close `OSToWightman.lean` analytic continuation + BV existence core.
-3. Close axiom-transfer and cluster-transfer chain in `OSToWightman.lean`.
-4. Close R -> E wick-rotation plumbing (`ForwardTubeLorentz`, `BHWExtension`, `BHWTranslation`, `SchwingerAxioms`).
-5. Finish final wiring (`wightman_uniqueness`, remaining `GNSHilbertSpace`, residual `WightmanAxioms` blockers).
+1. Close `schwinger_continuation_base_step` in `OSToWightman.lean`.
+2. Use the extracted SCV boundary-distribution lemmas to reduce
+   `boundary_values_tempered` to the genuine OS-side growth inputs.
+3. Extract the next reusable translation-growth lemma
+   (`seminorm_translateSchwartz_le`) into SCV.
+4. Close the transfer and cluster chain in `OSToWightman.lean`.
+5. In parallel or next, attack the two independent R -> E roots in
+   `SchwingerAxioms.lean`: coincidence-singularity control and Euclidean reality.
+6. Finish final wiring (`wightman_uniqueness`, remaining `GNSHilbertSpace`, residual `WightmanAxioms` blockers).
 
 ## 6. Deprioritized Work (Unless It Unblocks the Above)
 

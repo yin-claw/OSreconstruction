@@ -520,6 +520,107 @@ theorem fourierLaplace_ray_mul_schwartz_integrable_of_uniformBound {m : ℕ}
   rw [norm_mul]
   exact mul_le_mul_of_nonneg_right (hbd x ε hε_pos hε_lt) (norm_nonneg _)
 
+/-- Polynomial weight integrability for Schwartz functions, restated with the
+boundary-value naming used in the reconstruction files. -/
+theorem integrable_poly_weight_schwartz {m : ℕ}
+    (N : ℕ) (f : SchwartzMap (Fin m → ℝ) ℂ) :
+    MeasureTheory.Integrable
+      (fun x : Fin m → ℝ => (1 + ‖x‖) ^ N * ‖f x‖) :=
+  schwartzMap_polynomial_norm_integrable f N
+
+/-- A measurable function with polynomial growth is integrable against any
+Schwartz test function. This is the basic domination step used in
+distributional boundary-value arguments. -/
+theorem integrable_poly_growth_schwartz {m : ℕ}
+    (G : (Fin m → ℝ) → ℂ)
+    (hG_meas : MeasureTheory.AEStronglyMeasurable G MeasureTheory.MeasureSpace.volume)
+    (C_bd : ℝ) (N : ℕ)
+    (hG_bound : ∀ x : Fin m → ℝ, ‖G x‖ ≤ C_bd * (1 + ‖x‖) ^ N)
+    (f : SchwartzMap (Fin m → ℝ) ℂ) :
+    MeasureTheory.Integrable (fun x => G x * f x) := by
+  refine MeasureTheory.Integrable.mono'
+    ((integrable_poly_weight_schwartz N f).const_mul C_bd)
+    (hG_meas.mul f.continuous.aestronglyMeasurable)
+    (Filter.Eventually.of_forall fun x => ?_)
+  rw [norm_mul]
+  calc
+    ‖G x‖ * ‖f x‖ ≤ C_bd * (1 + ‖x‖) ^ N * ‖f x‖ :=
+      mul_le_mul_of_nonneg_right (hG_bound x) (norm_nonneg _)
+    _ = C_bd * ((1 + ‖x‖) ^ N * ‖f x‖) := by ring
+
+/-- Dominated convergence for boundary ray integrals under a uniform polynomial
+growth bound. This is the generic distributional boundary-value lemma used
+before any Fourier-Laplace support theorem is invoked. -/
+theorem tendsto_boundary_integral {m : ℕ}
+    (G : (Fin m → ℂ) → ℂ) (η : Fin m → ℝ)
+    (C_bd : ℝ) (N : ℕ) (δ : ℝ) (hδ : 0 < δ)
+    (hG_bound : ∀ (x : Fin m → ℝ) (ε : ℝ), 0 < ε → ε < δ →
+      ‖G (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I)‖ ≤ C_bd * (1 + ‖x‖) ^ N)
+    (hG_meas : ∀ (ε : ℝ), 0 < ε → ε < δ →
+      MeasureTheory.AEStronglyMeasurable
+        (fun x : Fin m → ℝ => G (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I))
+        MeasureTheory.MeasureSpace.volume)
+    (T : (Fin m → ℝ) → ℂ)
+    (hT : ∀ x : Fin m → ℝ, Filter.Tendsto
+      (fun ε : ℝ => G (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I))
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds (T x)))
+    (f : SchwartzMap (Fin m → ℝ) ℂ) :
+    Filter.Tendsto
+      (fun ε : ℝ => ∫ x : Fin m → ℝ,
+        G (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I) * f x)
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds (∫ x : Fin m → ℝ, T x * f x)) := by
+  set bound := fun x : Fin m → ℝ => C_bd * ((1 + ‖x‖) ^ N * ‖f x‖)
+  have hε_both :
+      ∀ᶠ ε in nhdsWithin (0 : ℝ) (Set.Ioi 0), 0 < ε ∧ ε < δ := by
+    filter_upwards [self_mem_nhdsWithin, nhdsWithin_le_nhds (Iio_mem_nhds hδ)] with ε hpos hlt
+    exact ⟨hpos, hlt⟩
+  apply MeasureTheory.tendsto_integral_filter_of_dominated_convergence bound
+  · exact hε_both.mono fun ε hε =>
+      (hG_meas ε hε.1 hε.2).mul f.continuous.aestronglyMeasurable
+  · exact hε_both.mono fun ε hε =>
+      Filter.Eventually.of_forall fun x => by
+        simp only [bound]
+        rw [norm_mul]
+        calc
+          ‖G (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I)‖ * ‖f x‖
+              ≤ C_bd * (1 + ‖x‖) ^ N * ‖f x‖ :=
+            mul_le_mul_of_nonneg_right (hG_bound x ε hε.1 hε.2) (norm_nonneg _)
+          _ = C_bd * ((1 + ‖x‖) ^ N * ‖f x‖) := by ring
+  · exact (integrable_poly_weight_schwartz N f).const_mul C_bd
+  · exact Filter.Eventually.of_forall fun x =>
+      (hT x).mul tendsto_const_nhds
+
+/-- Polynomial growth bound for the boundary distribution obtained by pairing a
+pointwise boundary function with Schwartz tests. This is the quantitative
+temperedness estimate used to package a boundary-value functional as a
+continuous Schwartz functional. -/
+theorem boundary_distribution_bound {m : ℕ}
+    (T : (Fin m → ℝ) → ℂ)
+    (C_bd : ℝ) (N : ℕ)
+    (hT_bound : ∀ x : Fin m → ℝ, ‖T x‖ ≤ C_bd * (1 + ‖x‖) ^ N)
+    (f : SchwartzMap (Fin m → ℝ) ℂ) :
+    ‖∫ x : Fin m → ℝ, T x * f x‖ ≤
+      C_bd * ∫ x : Fin m → ℝ, (1 + ‖x‖) ^ N * ‖f x‖ := by
+  calc
+    ‖∫ x, T x * f x‖ ≤ ∫ x, ‖T x * f x‖ := norm_integral_le_integral_norm _
+    _ = ∫ x, ‖T x‖ * ‖f x‖ := by
+      congr 1
+      ext x
+      exact norm_mul _ _
+    _ ≤ ∫ x, C_bd * ((1 + ‖x‖) ^ N * ‖f x‖) := by
+      apply integral_mono_of_nonneg
+      · exact Filter.Eventually.of_forall fun x =>
+          mul_nonneg (norm_nonneg _) (norm_nonneg _)
+      · exact (integrable_poly_weight_schwartz N f).const_mul C_bd
+      · exact Filter.Eventually.of_forall fun x => by
+          calc
+            ‖T x‖ * ‖f x‖ ≤ C_bd * (1 + ‖x‖) ^ N * ‖f x‖ :=
+              mul_le_mul_of_nonneg_right (hT_bound x) (norm_nonneg _)
+            _ = C_bd * ((1 + ‖x‖) ^ N * ‖f x‖) := by ring
+    _ = C_bd * ∫ x, (1 + ‖x‖) ^ N * ‖f x‖ := by rw [integral_const_mul]
+
 /-- Additivity of the boundary-value functional using only the distributional boundary-value
     formula together with a uniform ray bound. This avoids any false claim that the holomorphic
     function extends continuously to the real boundary pointwise. -/
