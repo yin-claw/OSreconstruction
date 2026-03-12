@@ -9,6 +9,7 @@ import OSReconstruction.SCV.DistributionalUniqueness
 import OSReconstruction.SCV.SemigroupBochner
 import OSReconstruction.SCV.MultipleReflection
 import OSReconstruction.vNA.Bochner.SemigroupRoots
+import OSReconstruction.vNA.Spectral.ComplexSemigroup
 import OSReconstruction.vNA.Spectral.SelfAdjointFunctionalViaRMK
 import OSReconstruction.vNA.Unbounded.BoundedBridge
 import Mathlib.Analysis.CStarAlgebra.ContinuousFunctionalCalculus.Order
@@ -1831,7 +1832,7 @@ private def euclideanSemigroup_of_OSLinearGrowthCondition
   positive := fun t ht x => osTimeShiftLinear_positive (d := d) OS t ht x
 
 /-- The Hilbert completion of the honest OS pre-Hilbert quotient. -/
-private abbrev OSHilbertSpace (OS : OsterwalderSchraderAxioms d) :=
+abbrev OSHilbertSpace (OS : OsterwalderSchraderAxioms d) :=
   UniformSpace.Completion (OSPreHilbertSpace OS)
 
 private local instance instSemiringOSHilbertEnd (OS : OsterwalderSchraderAxioms d) :
@@ -2747,6 +2748,124 @@ private theorem inner_osTimeShiftHilbert_offdiag_eq_laplace_of_isCompactSupport
       (t := Real.toNNReal t)
       (by simpa using ht))
 
+def osTimeShiftHilbertComplex
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (z : ℂ) : OSHilbertSpace OS →L[ℂ] OSHilbertSpace OS :=
+  ContinuousLinearMap.spectralSemigroupComplex
+    (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+    (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+    (osTimeShiftHilbert_nonneg (d := d) OS lgc 1 one_pos)
+    (spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos)
+    z
+
+theorem osTimeShiftHilbertComplex_inner_eq
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x y : OSHilbertSpace OS) (z : ℂ) (hz : 0 < z.re) :
+    @inner ℂ (OSHilbertSpace OS) _ x
+      (osTimeShiftHilbertComplex (d := d) OS lgc z y) =
+      ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag
+        (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+        (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+        x y z := by
+  simpa [osTimeShiftHilbertComplex] using
+    (ContinuousLinearMap.spectralSemigroupComplex_inner_eq
+      (A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+      (hA := osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+      (hA_nonneg := osTimeShiftHilbert_nonneg (d := d) OS lgc 1 one_pos)
+      (hspec := spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos)
+      (x := x) (y := y) (z := z) hz)
+
+theorem differentiableOn_inner_osTimeShiftHilbertComplex
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x y : OSHilbertSpace OS) :
+    DifferentiableOn ℂ
+      (fun z => @inner ℂ (OSHilbertSpace OS) _ x
+        (osTimeShiftHilbertComplex (d := d) OS lgc z y))
+      {z : ℂ | 0 < z.re} := by
+  simpa [osTimeShiftHilbertComplex] using
+    (ContinuousLinearMap.spectralSemigroupComplex_differentiableOn
+      (A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+      (hA := osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+      (hA_nonneg := osTimeShiftHilbert_nonneg (d := d) OS lgc 1 one_pos)
+      (hspec := spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos)
+      (x := x) (y := y))
+
+theorem continuousOn_osTimeShiftHilbertComplex
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS) :
+    ContinuousOn (fun z => osTimeShiftHilbertComplex (d := d) OS lgc z)
+      {z : ℂ | 0 < z.re} := by
+  simpa [osTimeShiftHilbertComplex] using
+    (ContinuousLinearMap.spectralSemigroupComplex_continuousOn
+      (A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+      (hA := osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+      (hA_nonneg := osTimeShiftHilbert_nonneg (d := d) OS lgc 1 one_pos)
+      (hspec := spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos))
+
+theorem continuousOn_osTimeShiftHilbertComplex_apply
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (y : OSHilbertSpace OS) :
+    ContinuousOn (fun z => osTimeShiftHilbertComplex (d := d) OS lgc z y)
+      {z : ℂ | 0 < z.re} := by
+  simpa [osTimeShiftHilbertComplex] using
+    (ContinuousLinearMap.spectralSemigroupComplex_strongContinuousOn
+      (A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+      (hA := osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+      (hA_nonneg := osTimeShiftHilbert_nonneg (d := d) OS lgc 1 one_pos)
+      (hspec := spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos)
+      (y := y))
+
+theorem continuousOn_osTimeShiftHilbertComplex_jointly
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS) :
+    ContinuousOn
+      (fun p : ℂ × OSHilbertSpace OS =>
+        osTimeShiftHilbertComplex (d := d) OS lgc p.1 p.2)
+      ({z : ℂ | 0 < z.re} ×ˢ Set.univ) := by
+  simpa [osTimeShiftHilbertComplex] using
+    (ContinuousLinearMap.spectralSemigroupComplex_jointlyContinuousOn
+      (A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+      (hA := osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+      (hA_nonneg := osTimeShiftHilbert_nonneg (d := d) OS lgc 1 one_pos)
+      (hspec := spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos))
+
+theorem osTimeShiftHilbertComplex_norm_le
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (z : ℂ) (hz : 0 < z.re) :
+    ‖osTimeShiftHilbertComplex (d := d) OS lgc z‖ ≤ 2 := by
+  simpa [osTimeShiftHilbertComplex] using
+    (ContinuousLinearMap.spectralSemigroupComplex_norm_le
+      (A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+      (hA := osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+      (hA_nonneg := osTimeShiftHilbert_nonneg (d := d) OS lgc 1 one_pos)
+      (hspec := spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos)
+      (z := z) hz)
+
+theorem osTimeShiftHilbertComplex_ofReal_eq_nnrpow
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (t : ℝ) (ht : 0 < t) :
+    osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ) =
+      CFC.nnrpow (osTimeShiftHilbert (d := d) OS lgc 1 one_pos) (Real.toNNReal t) := by
+  simpa [osTimeShiftHilbertComplex] using
+    (ContinuousLinearMap.spectralSemigroupComplex_ofReal_eq_nnrpow
+      (A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+      (hA := osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+      (hA_nonneg := osTimeShiftHilbert_nonneg (d := d) OS lgc 1 one_pos)
+      (hspec := spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos)
+      (t := t) ht)
+
+theorem osTimeShiftHilbertComplex_ofReal_eq_of_isCompactSupport
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F : PositiveTimeBorchersSequence d)
+    (hF_compact : ∀ n,
+      HasCompactSupport (((
+        F : BorchersSequence d).funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    (osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+      (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS)) =
+      (osTimeShiftHilbert (d := d) OS lgc t ht)
+        (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS)) := by
+  rw [osTimeShiftHilbertComplex_ofReal_eq_nnrpow (d := d) OS lgc t ht,
+    osTimeShiftHilbert_eq_nnrpow_of_isCompactSupport (d := d) OS lgc F hF_compact t ht]
+
 /-- The diagonal one-variable holomorphic extension of the OS time-shift matrix element. -/
 private def osTimeShiftHilbertHolomorphicValueDiagonal
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
@@ -2764,6 +2883,15 @@ private def osTimeShiftHilbertHolomorphicValueOffdiag
     (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
     (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
     x y z
+
+private theorem osTimeShiftHilbertComplex_inner_eq_holomorphicValueOffdiag
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x y : OSHilbertSpace OS) (z : ℂ) (hz : 0 < z.re) :
+    @inner ℂ (OSHilbertSpace OS) _ x
+      (osTimeShiftHilbertComplex (d := d) OS lgc z y) =
+      osTimeShiftHilbertHolomorphicValueOffdiag (d := d) OS lgc x y z := by
+  simpa [osTimeShiftHilbertHolomorphicValueOffdiag] using
+    osTimeShiftHilbertComplex_inner_eq (d := d) OS lgc x y z hz
 
 private theorem differentiableOn_osTimeShiftHilbertHolomorphicValueDiagonal
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
@@ -2856,12 +2984,27 @@ private theorem osTimeShiftHilbertHolomorphicValueOffdiag_ofReal_eq_inner_of_isC
       (t := t) ht)
 
 /-- Raw OS pairing version of the one-variable holomorphic extension for Euclidean time shift. -/
-private def OSInnerProductTimeShiftHolomorphicValue
+def OSInnerProductTimeShiftHolomorphicValue
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     (F G : PositiveTimeBorchersSequence d) (z : ℂ) : ℂ :=
   osTimeShiftHilbertHolomorphicValueOffdiag (d := d) OS lgc
     (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))
     (((show OSPreHilbertSpace OS from (⟦G⟧)) : OSHilbertSpace OS)) z
+
+private theorem OSInnerProductTimeShiftHolomorphicValue_eq_inner_osTimeShiftHilbertComplex
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d) (z : ℂ) (hz : 0 < z.re) :
+    OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F G z =
+      @inner ℂ (OSHilbertSpace OS) _
+        (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))
+        ((osTimeShiftHilbertComplex (d := d) OS lgc z)
+          (((show OSPreHilbertSpace OS from (⟦G⟧)) : OSHilbertSpace OS))) := by
+  symm
+  exact osTimeShiftHilbertComplex_inner_eq_holomorphicValueOffdiag
+    (d := d) OS lgc
+    (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))
+    (((show OSPreHilbertSpace OS from (⟦G⟧)) : OSHilbertSpace OS))
+    z hz
 
 private theorem differentiableOn_OSInnerProductTimeShiftHolomorphicValue
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
@@ -2976,7 +3119,7 @@ private theorem OSInnerProduct_right_single_timeShift
   rw [hright, zero_add, BorchersSequence.single_funcs_eq]
 
 /-- Simple-tensor specialization of the one-variable OS holomorphic bridge. -/
-private theorem OSInnerProductTimeShiftHolomorphicValue_ofReal_eq_single
+theorem OSInnerProductTimeShiftHolomorphicValue_ofReal_eq_single
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     {n m : ℕ}
     (f : SchwartzNPoint d n)
@@ -3014,7 +3157,7 @@ private theorem OSInnerProductTimeShiftHolomorphicValue_ofReal_eq_single
 
 /-- One-variable holomorphic OS time-shift with a concentrated right factor. On positive
 real points it recovers the explicit finite sum over the left Borchers components. -/
-private theorem OSInnerProductTimeShiftHolomorphicValue_ofReal_eq_right_single
+theorem OSInnerProductTimeShiftHolomorphicValue_ofReal_eq_right_single
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     (F : PositiveTimeBorchersSequence d)
     {m : ℕ}

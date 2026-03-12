@@ -1364,6 +1364,32 @@ theorem SchwartzMap.prependField_continuous_right {n : ℕ} (f : 𝓢(E, ℂ)) :
   congr 1; congr 1; ext j
   simp [splitLast, Homeomorph.piCongrLeft, Equiv.piCongrLeft, Equiv.piCongrLeft']
 
+/-- The prependField operation is jointly continuous in both arguments. -/
+theorem SchwartzMap.prependField_continuous {n : ℕ} :
+    Continuous (fun p : 𝓢(E, ℂ) × 𝓢(Fin n → E, ℂ) => p.1.prependField p.2) := by
+  let toOnePt : 𝓢(E, ℂ) →L[ℂ] 𝓢(Fin 1 → E, ℂ) :=
+    SchwartzMap.compCLMOfContinuousLinearEquiv ℂ (ContinuousLinearEquiv.funUnique (Fin 1) ℝ E)
+  let castCLE : (Fin (n + 1) → E) ≃L[ℝ] (Fin (1 + n) → E) :=
+    ContinuousLinearEquiv.piCongrLeft ℝ (fun _ : Fin (1 + n) => E) (finCongr (Nat.add_comm n 1))
+  let reindex : 𝓢(Fin (1 + n) → E, ℂ) →L[ℂ] 𝓢(Fin (n + 1) → E, ℂ) :=
+    SchwartzMap.compCLMOfContinuousLinearEquiv ℂ castCLE
+  have hcont :
+      Continuous
+        (fun p : 𝓢(E, ℂ) × 𝓢(Fin n → E, ℂ) =>
+          reindex ((toOnePt p.1).tensorProduct p.2)) :=
+    reindex.continuous.comp <|
+      SchwartzMap.tensorProduct_continuous.comp <|
+        (toOnePt.continuous.comp continuous_fst).prodMk continuous_snd
+  refine hcont.congr ?_
+  intro p
+  ext x
+  simp only [reindex, toOnePt, castCLE, SchwartzMap.compCLMOfContinuousLinearEquiv_apply,
+    SchwartzMap.tensorProduct_apply, SchwartzMap.prependField_apply,
+    ContinuousLinearEquiv.coe_funUnique, Function.eval, Function.comp,
+    splitFirst, ContinuousLinearEquiv.piCongrLeft]
+  congr 1; congr 1; ext j
+  simp [splitLast, Homeomorph.piCongrLeft, Equiv.piCongrLeft, Equiv.piCongrLeft']
+
 /-- `prependField` as a continuous linear map in the left argument, for fixed tail test. -/
 def SchwartzMap.prependFieldCLMLeft {n : ℕ} (g : 𝓢(Fin n → E, ℂ)) :
     𝓢(E, ℂ) →L[ℂ] 𝓢(Fin (n + 1) → E, ℂ) where
@@ -1569,6 +1595,57 @@ theorem SchwartzMap.productTensor_continuous_arg {E : Type*}
           simp [hhead, htail_eq]
         rw [hEq]
         exact (SchwartzMap.prependField_continuous_right (f := fs 0)).comp htail
+
+/-- The product tensor is jointly continuous in all tensor factors. -/
+theorem SchwartzMap.productTensor_continuous {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] :
+    ∀ {n : ℕ}, Continuous (fun fs : Fin n → 𝓢(E, ℂ) => SchwartzMap.productTensor fs)
+  | 0 => continuous_const
+  | n + 1 => by
+      let tailMap : (Fin (n + 1) → 𝓢(E, ℂ)) → (Fin n → 𝓢(E, ℂ)) := fun fs i => fs i.succ
+      have htail : Continuous tailMap :=
+        continuous_pi fun i => continuous_apply i.succ
+      have hrec : Continuous (fun gs : Fin n → 𝓢(E, ℂ) => SchwartzMap.productTensor gs) :=
+        SchwartzMap.productTensor_continuous
+      have hpair :
+          Continuous
+            (fun fs : Fin (n + 1) → 𝓢(E, ℂ) =>
+              (fs 0, SchwartzMap.productTensor (tailMap fs))) :=
+        (continuous_apply 0).prodMk (hrec.comp htail)
+      refine (SchwartzMap.prependField_continuous.comp hpair).congr ?_
+      intro fs
+      ext x
+      simp [tailMap]
+
+/-- The n-fold product tensor as a continuous multilinear map. -/
+def SchwartzMap.productTensorMLM {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] (n : ℕ) :
+    ContinuousMultilinearMap ℂ (fun _ : Fin n => 𝓢(E, ℂ)) (𝓢(Fin n → E, ℂ)) where
+  toMultilinearMap :=
+    { toFun := fun fs => SchwartzMap.productTensor fs
+      map_update_add' := by
+        intro hdec m i x y
+        letI := hdec
+        ext z
+        have h :=
+          congrArg (fun F : 𝓢(Fin n → E, ℂ) => F z)
+            (SchwartzMap.productTensor_update_add (E := E) (n := n) i m x y)
+        simpa [SchwartzMap.productTensor_apply, Function.update] using h
+      map_update_smul' := by
+        intro hdec m i c x
+        letI := hdec
+        ext z
+        have h :=
+          congrArg (fun F : 𝓢(Fin n → E, ℂ) => F z)
+            (SchwartzMap.productTensor_update_smul (E := E) (n := n) i m c x)
+        simpa [SchwartzMap.productTensor_apply, Function.update, smul_eq_mul] using h }
+  cont := SchwartzMap.productTensor_continuous
+
+@[simp]
+theorem SchwartzMap.productTensorMLM_apply {E : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℝ E] {n : ℕ}
+    (fs : Fin n → 𝓢(E, ℂ)) :
+    SchwartzMap.productTensorMLM (E := E) n fs = SchwartzMap.productTensor fs := rfl
 
 /-- The product tensor as a continuous linear map in a chosen argument, with all other
     tensor factors fixed. -/

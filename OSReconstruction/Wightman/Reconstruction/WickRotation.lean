@@ -3,6 +3,7 @@ Copyright (c) 2025 ModularPhysics Contributors. All rights reserved.
 Released under Apache 2.0 license.
 Authors: Michael Douglas, ModularPhysics Contributors
 -/
+import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanKernel
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBoundaryValues
 
 /-!
@@ -39,6 +40,8 @@ The implementation is split across several files in the `WickRotation/` subfolde
   Schwinger-side analytic gaps
 - `OSToWightmanSemigroup.lean`: E'→R' OS Hilbert-space semigroup and one-variable
   holomorphic bridge
+- `OSToWightmanKernel.lean`: operator-valued complex semigroup and first interleaved
+  sandwich kernel lemmas
 - `OSToWightman.lean`: E'→R' analytic-continuation core and live base-step blocker
 - `OSToWightmanBoundaryValues.lean`: boundary-value package, axiom transfer,
   and bridge theorems

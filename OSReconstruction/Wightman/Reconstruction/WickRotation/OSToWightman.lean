@@ -165,6 +165,117 @@ private theorem isOpen_flatPositiveTimeDiffReal (k d : ℕ) :
   exact isOpen_iInter_of_finite (fun i : Fin k =>
     isOpen_lt continuous_const (continuous_apply (finProdFinEquiv (i, 0))))
 
+/-- Membership in the first-step flattened tube depends only on the imaginary parts
+of the time-difference coordinates. -/
+private theorem mem_tubeDomain_flatPositiveTimeDiffReal_iff {k d : ℕ}
+    (z : Fin (k * (d + 1)) → ℂ) :
+    z ∈ SCV.TubeDomain (FlatPositiveTimeDiffReal k d) ↔
+      ∀ i : Fin k, 0 < (z (finProdFinEquiv (i, (0 : Fin (d + 1))))).im := by
+  change (fun p => (z p).im) ∈ FlatPositiveTimeDiffReal k d ↔ _
+  simp [FlatPositiveTimeDiffReal]
+
+/-- If all other flattened time-difference coordinates are already admissible, then
+varying the `i`-th time-difference coordinate sees exactly the upper half-plane. -/
+private theorem preimage_update_time_tubeDomain_flatPositiveTimeDiffReal {k d : ℕ}
+    (z : Fin (k * (d + 1)) → ℂ)
+    (hz : z ∈ SCV.TubeDomain (FlatPositiveTimeDiffReal k d))
+    (i : Fin k) :
+    (Function.update z (finProdFinEquiv (i, (0 : Fin (d + 1))))) ⁻¹'
+        SCV.TubeDomain (FlatPositiveTimeDiffReal k d) =
+      {w : ℂ | 0 < w.im} := by
+  ext w
+  constructor
+  · intro hw
+    change Function.update z (finProdFinEquiv (i, (0 : Fin (d + 1)))) w ∈
+      SCV.TubeDomain (FlatPositiveTimeDiffReal k d) at hw
+    rw [mem_tubeDomain_flatPositiveTimeDiffReal_iff] at hw
+    simpa using hw i
+  · intro hw
+    change Function.update z (finProdFinEquiv (i, (0 : Fin (d + 1)))) w ∈
+      SCV.TubeDomain (FlatPositiveTimeDiffReal k d)
+    rw [mem_tubeDomain_flatPositiveTimeDiffReal_iff] at hz ⊢
+    intro j
+    by_cases hji : j = i
+    · subst hji
+      simpa using hw
+    · have hneq :
+          finProdFinEquiv (j, (0 : Fin (d + 1))) ≠
+            finProdFinEquiv (i, (0 : Fin (d + 1))) := by
+        intro h
+        apply hji
+        exact congrArg Prod.fst (finProdFinEquiv.injective h)
+      simpa [Function.update, hneq] using hz j
+
+/-- Spatial flattened coordinates are unconstrained in the first-step tube: updating
+one of them never changes tube-domain membership. -/
+private theorem preimage_update_spatial_tubeDomain_flatPositiveTimeDiffReal {k d : ℕ}
+    (z : Fin (k * (d + 1)) → ℂ)
+    (hz : z ∈ SCV.TubeDomain (FlatPositiveTimeDiffReal k d))
+    (i : Fin k) (μ : Fin (d + 1)) (hμ : μ ≠ 0) :
+    (Function.update z (finProdFinEquiv (i, μ))) ⁻¹'
+        SCV.TubeDomain (FlatPositiveTimeDiffReal k d) =
+      Set.univ := by
+  ext w
+  constructor
+  · intro _
+    simp
+  · intro _
+    change Function.update z (finProdFinEquiv (i, μ)) w ∈
+      SCV.TubeDomain (FlatPositiveTimeDiffReal k d)
+    rw [mem_tubeDomain_flatPositiveTimeDiffReal_iff] at hz ⊢
+    intro j
+    have hneq : finProdFinEquiv (j, (0 : Fin (d + 1))) ≠ finProdFinEquiv (i, μ) := by
+      intro h
+      apply hμ
+      exact (congrArg Prod.snd (finProdFinEquiv.injective h)).symm
+    simpa [Function.update, hneq] using hz j
+
+/-- Domain-specific Osgood assembly for the first-step flattened tube.
+
+Time-difference coordinates see the upper half-plane, while spatial coordinates are
+unconstrained. So a continuous function on `TubeDomain (FlatPositiveTimeDiffReal k d)`
+is jointly holomorphic once those two classes of one-variable slices are known to be
+holomorphic on their natural one-dimensional domains. -/
+private theorem differentiableOn_tubeDomain_flatPositiveTimeDiffReal_of_slices {k d : ℕ}
+    (G : (Fin (k * (d + 1)) → ℂ) → ℂ)
+    (hcont : ContinuousOn G (SCV.TubeDomain (FlatPositiveTimeDiffReal k d)))
+    (htime : ∀ z ∈ SCV.TubeDomain (FlatPositiveTimeDiffReal k d), ∀ i : Fin k,
+      DifferentiableOn ℂ
+        (fun w => G (Function.update z (finProdFinEquiv (i, (0 : Fin (d + 1)))) w))
+        {w : ℂ | 0 < w.im})
+    (hspatial : ∀ z ∈ SCV.TubeDomain (FlatPositiveTimeDiffReal k d),
+      ∀ i : Fin k, ∀ μ : Fin (d + 1), μ ≠ 0 →
+        DifferentiableOn ℂ (fun w => G (Function.update z (finProdFinEquiv (i, μ)) w))
+          Set.univ) :
+    DifferentiableOn ℂ G (SCV.TubeDomain (FlatPositiveTimeDiffReal k d)) := by
+  have hopen : IsOpen (SCV.TubeDomain (FlatPositiveTimeDiffReal k d)) :=
+    SCV.tubeDomain_isOpen (isOpen_flatPositiveTimeDiffReal k d)
+  apply SCV.osgood_lemma hopen
+  · exact hcont
+  · intro z hz p
+    let q : Fin k × Fin (d + 1) := finProdFinEquiv.symm p
+    let i : Fin k := q.1
+    let μ : Fin (d + 1) := q.2
+    have hp : p = finProdFinEquiv (i, μ) := by
+      simpa [i, μ, q] using (finProdFinEquiv.apply_symm_apply p).symm
+    by_cases hμ : μ = (0 : Fin (d + 1))
+    · have hz_time : 0 < (z (finProdFinEquiv (i, (0 : Fin (d + 1))))).im := by
+        rw [mem_tubeDomain_flatPositiveTimeDiffReal_iff] at hz
+        exact hz i
+      have hdiff :
+          DifferentiableAt ℂ
+            (fun w => G (Function.update z (finProdFinEquiv (i, (0 : Fin (d + 1)))) w))
+            (z (finProdFinEquiv (i, (0 : Fin (d + 1))))) := by
+        exact (htime z hz i _ hz_time).differentiableAt
+          ((isOpen_lt continuous_const Complex.continuous_im).mem_nhds hz_time)
+      simpa [hp, hμ] using hdiff
+    · have hdiff :
+          DifferentiableAt ℂ
+            (fun w => G (Function.update z (finProdFinEquiv (i, μ)) w))
+            (z (finProdFinEquiv (i, μ))) := by
+        exact (hspatial z hz i μ hμ _ (by simp)).differentiableAt (by simp)
+      simpa [hp] using hdiff
+
 /-- `C_k^(1)` is exactly the tube over the positive time-difference cone in
     flattened difference coordinates. -/
 private theorem acr_one_iff_toDiffFlat_mem_tubeDomain_positiveTimeDiff {d k : ℕ} [NeZero d]
@@ -894,6 +1005,143 @@ private theorem schwinger_simpleTensor_timeShift_eq_xiShift {n m : ℕ}
         exact simpleTensor_timeShift_integral_eq_xiShift
           (d := d) (n := n) (m := m) (hm := hm) (f := f) (g := g) (t := t) (Ψ := Ψ)
 
+/-- Concentrated-right-factor finite-sum Euclidean recovery. For a fixed split point
+`m > 0`, the positive-real restriction of the one-variable OS holomorphic matrix
+element against a concentrated right factor is the finite sum of the corresponding
+`ξ`-shifted Euclidean witnesses over the left Borchers components. This is the first
+genuine finite-sum upgrade of `schwinger_simpleTensor_timeShift_eq_xiShift`. -/
+private theorem OSInnerProductTimeShiftHolomorphicValue_ofReal_eq_right_single_xiShift_sum
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (Ψ : (N : ℕ) → (Fin N → Fin (d + 1) → ℂ) → ℂ)
+    (hΨ_euclid : ∀ (N : ℕ) (h : ZeroDiagonalSchwartz d N),
+      OS.S N h = ∫ x : NPointDomain d N,
+        Ψ N (fun i => wickRotatePoint (x i)) * (h.1 x))
+    (F : PositiveTimeBorchersSequence d)
+    {m : ℕ} (hm : 0 < m)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hg_compact : HasCompactSupport (g : NPointDomain d m → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F
+        (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ) =
+      ∑ n ∈ Finset.range (((F : BorchersSequence d).bound) + 1),
+        ∫ y : NPointDomain d (n + m),
+          Ψ (n + m)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+            (((F : BorchersSequence d).funcs n).osConjTensorProduct g) y := by
+  rw [OSInnerProductTimeShiftHolomorphicValue_ofReal_eq_right_single
+    (d := d) (OS := OS) (lgc := lgc) (F := F)
+    (g := g) (hg_ord := hg_ord) (hg_compact := hg_compact) (t := t) ht]
+  refine Finset.sum_congr rfl ?_
+  intro n hn
+  exact schwinger_simpleTensor_timeShift_eq_xiShift
+    (d := d) (OS := OS) (hm := hm) (Ψ := Ψ (n + m))
+    (hΨ_euclid := hΨ_euclid (n + m))
+    (f := ((F : BorchersSequence d).funcs n))
+    (hf_ord := F.ordered_tsupport n)
+    (g := g) (hg_ord := hg_ord) (t := t) ht
+
+/-- Single-split Euclidean recovery before the `ξ`-shift rewrite. On positive real
+points, the concentrated `ExpandBoth` term agrees with the direct Euclidean integral
+against the time-shifted simple tensor. This branch is needed in the `m = 0` case,
+where there is no split time-difference variable to shift. -/
+private theorem OSInnerProductTimeShiftHolomorphicValueExpandBoth_single_eq_euclid
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ}
+    (Ψ : (Fin (n + m) → Fin (d + 1) → ℂ) → ℂ)
+    (hΨ_euclid : ∀ (h : ZeroDiagonalSchwartz d (n + m)),
+      OS.S (n + m) h = ∫ x : NPointDomain d (n + m),
+        Ψ (fun i => wickRotatePoint (x i)) * (h.1 x))
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hg_compact : HasCompactSupport (g : NPointDomain d m → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    OSInnerProductTimeShiftHolomorphicValueExpandBoth (d := d) OS lgc
+        (PositiveTimeBorchersSequence.single n f hf_ord)
+        (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ) =
+      ∫ x : NPointDomain d (n + m),
+        Ψ (fun i => wickRotatePoint (x i)) *
+          (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) x := by
+  have hreal :
+      OSInnerProductTimeShiftHolomorphicValueExpandBoth (d := d) OS lgc
+          (PositiveTimeBorchersSequence.single n f hf_ord)
+          (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ) =
+        OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+          (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g))) := by
+    rw [OSInnerProductTimeShiftHolomorphicValueExpandBoth_ofReal_eq_of_isCompactSupport
+      (d := d) (OS := OS) (lgc := lgc)
+      (F := PositiveTimeBorchersSequence.single n f hf_ord)
+      (G := PositiveTimeBorchersSequence.single m g hg_ord)
+      (hG_compact := by
+        intro k
+        by_cases hk : k = m
+        · subst hk
+          simpa [PositiveTimeBorchersSequence.single_toBorchersSequence] using hg_compact
+        · have hzero :
+            ((((PositiveTimeBorchersSequence.single m g hg_ord : PositiveTimeBorchersSequence d) :
+                BorchersSequence d).funcs k : SchwartzNPoint d k) :
+              NPointDomain d k → ℂ) = 0 := by
+            simp [PositiveTimeBorchersSequence.single_toBorchersSequence,
+              BorchersSequence.single, hk]
+          rw [hzero]
+          simpa using (HasCompactSupport.zero :
+            HasCompactSupport (0 : NPointDomain d k → ℂ)))
+      (t := t) ht]
+    simp only [PositiveTimeBorchersSequence.single_toBorchersSequence]
+    have hshift_single :
+        ∀ k,
+          (timeShiftBorchers (d := d) t (BorchersSequence.single m g)).funcs k =
+            (BorchersSequence.single m (timeShiftSchwartzNPoint (d := d) t g)).funcs k := by
+      intro k
+      by_cases hk : k = m
+      · subst hk
+        simp [BorchersSequence.single]
+      · simp [BorchersSequence.single, hk]
+    calc
+      OSInnerProduct d OS.S (BorchersSequence.single n f)
+          (timeShiftBorchers (d := d) t (BorchersSequence.single m g)) =
+        OSInnerProduct d OS.S (BorchersSequence.single n f)
+          (BorchersSequence.single m (timeShiftSchwartzNPoint (d := d) t g)) := by
+            exact OSInnerProduct_congr_right d OS.S OS.E0_linear
+              (BorchersSequence.single n f)
+              (timeShiftBorchers (d := d) t (BorchersSequence.single m g))
+              (BorchersSequence.single m (timeShiftSchwartzNPoint (d := d) t g))
+              hshift_single
+      _ = OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+            (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g))) := by
+            simpa using
+              (OSInnerProduct_single_single d OS.S OS.E0_linear n m f
+                (timeShiftSchwartzNPoint (d := d) t g))
+  have hg_shift_ord :
+      tsupport ((timeShiftSchwartzNPoint (d := d) t g : SchwartzNPoint d m) :
+        NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m := by
+    exact timeShiftSchwartzNPoint_preserves_ordered_positive_tsupport
+      (d := d) t ht g hg_ord
+  have hvanish_shift :
+      VanishesToInfiniteOrderOnCoincidence
+        (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) := by
+    exact VanishesToInfiniteOrderOnCoincidence_osConjTensorProduct_of_tsupport_subset_orderedPositiveTimeRegion
+      (f := f) (g := timeShiftSchwartzNPoint (d := d) t g) hf_ord hg_shift_ord
+  calc
+    OSInnerProductTimeShiftHolomorphicValueExpandBoth (d := d) OS lgc
+        (PositiveTimeBorchersSequence.single n f hf_ord)
+        (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ) =
+      OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+        (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g))) := hreal
+    _ = ∫ x : NPointDomain d (n + m),
+          Ψ (fun i => wickRotatePoint (x i)) *
+            ((ZeroDiagonalSchwartz.ofClassical
+              (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g))).1 x) := by
+        exact hΨ_euclid (ZeroDiagonalSchwartz.ofClassical
+          (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)))
+    _ = ∫ x : NPointDomain d (n + m),
+          Ψ (fun i => wickRotatePoint (x i)) *
+            (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) x := by
+        simp [hvanish_shift]
+
 /-- Single-split bridge from the semigroup-side holomorphic term to the Euclidean
 ξ-shift witness. On positive real points, the public `ExpandBoth` value for
 concentrated left/right Borchers sequences matches the corresponding shifted
@@ -975,6 +1223,125 @@ private theorem OSInnerProductTimeShiftHolomorphicValueExpandBoth_single_eq_xiSh
     schwinger_simpleTensor_timeShift_eq_xiShift (d := d) (OS := OS)
       (hm := hm) (Ψ := Ψ) (hΨ_euclid := hΨ_euclid)
       (f := f) (hf_ord := hf_ord) (g := g) (hg_ord := hg_ord) (t := t) ht
+
+/-- Finite double-sum Euclidean recovery for `ExpandBoth` on positive real points.
+Each summand is rewritten honestly according to whether the right block contributes
+a genuine time-difference variable (`m > 0`) or is the vacuum branch (`m = 0`). -/
+private theorem OSInnerProductTimeShiftHolomorphicValueExpandBoth_ofReal_eq_piecewise_xiShift
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (Ψ : (N : ℕ) → (Fin N → Fin (d + 1) → ℂ) → ℂ)
+    (hΨ_euclid : ∀ (N : ℕ) (h : ZeroDiagonalSchwartz d N),
+      OS.S N h = ∫ x : NPointDomain d N,
+        Ψ N (fun i => wickRotatePoint (x i)) * (h.1 x))
+    (F G : PositiveTimeBorchersSequence d)
+    (hG_compact : ∀ n,
+      HasCompactSupport (((
+        G : BorchersSequence d).funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    OSInnerProductTimeShiftHolomorphicValueExpandBoth (d := d) OS lgc F G (t : ℂ) =
+      ∑ n ∈ Finset.range (((F : BorchersSequence d).bound) + 1),
+        ∑ m ∈ Finset.range (((G : BorchersSequence d).bound) + 1),
+          if hm : 0 < m then
+            ∫ y : NPointDomain d (n + m),
+              Ψ (n + m)
+                  (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                    (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+                (((F : BorchersSequence d).funcs n).osConjTensorProduct
+                  ((G : BorchersSequence d).funcs m)) y
+          else
+            ∫ y : NPointDomain d (n + m),
+              Ψ (n + m) (fun i => wickRotatePoint (y i)) *
+                (((F : BorchersSequence d).funcs n).osConjTensorProduct
+                  (timeShiftSchwartzNPoint (d := d) t ((G : BorchersSequence d).funcs m))) y := by
+  unfold OSInnerProductTimeShiftHolomorphicValueExpandBoth
+  simp only [Finset.sum_apply]
+  refine Finset.sum_congr rfl ?_
+  intro n hn
+  refine Finset.sum_congr rfl ?_
+  intro m hm_range
+  by_cases hm : 0 < m
+  · simp [hm]
+    calc
+      OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+          (PositiveTimeBorchersSequence.single n (((F : BorchersSequence d).funcs n))
+            (F.ordered_tsupport n))
+          (PositiveTimeBorchersSequence.single m (((G : BorchersSequence d).funcs m))
+            (G.ordered_tsupport m)) (t : ℂ) =
+        OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+          ((((F : BorchersSequence d).funcs n).osConjTensorProduct
+            (timeShiftSchwartzNPoint (d := d) t ((G : BorchersSequence d).funcs m))))) := by
+            exact OSInnerProductTimeShiftHolomorphicValue_ofReal_eq_single
+              (d := d) (OS := OS) (lgc := lgc)
+              (f := ((F : BorchersSequence d).funcs n))
+              (hf_ord := F.ordered_tsupport n)
+              (g := ((G : BorchersSequence d).funcs m))
+              (hg_ord := G.ordered_tsupport m)
+              (hg_compact := hG_compact m)
+              (t := t) ht
+      _ = ∫ y : NPointDomain d (n + m),
+            Ψ (n + m)
+                (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                  (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+              (((F : BorchersSequence d).funcs n).osConjTensorProduct
+                ((G : BorchersSequence d).funcs m)) y := by
+            exact schwinger_simpleTensor_timeShift_eq_xiShift
+              (d := d) (OS := OS) (hm := hm) (Ψ := Ψ (n + m))
+              (hΨ_euclid := hΨ_euclid (n + m))
+              (f := ((F : BorchersSequence d).funcs n))
+              (hf_ord := F.ordered_tsupport n)
+              (g := ((G : BorchersSequence d).funcs m))
+              (hg_ord := G.ordered_tsupport m)
+              (t := t) ht
+  · have hm0 : m = 0 := Nat.eq_zero_of_not_pos hm
+    subst hm0
+    simp
+    have hg_shift_ord :
+        tsupport
+            ((timeShiftSchwartzNPoint (d := d) t ((G : BorchersSequence d).funcs 0) :
+                SchwartzNPoint d 0) : NPointDomain d 0 → ℂ) ⊆
+          OrderedPositiveTimeRegion d 0 := by
+      exact timeShiftSchwartzNPoint_preserves_ordered_positive_tsupport
+        (d := d) t ht ((G : BorchersSequence d).funcs 0) (G.ordered_tsupport 0)
+    have hvanish_shift :
+        VanishesToInfiniteOrderOnCoincidence
+          (((F : BorchersSequence d).funcs n).osConjTensorProduct
+            (timeShiftSchwartzNPoint (d := d) t ((G : BorchersSequence d).funcs 0))) := by
+      exact
+        VanishesToInfiniteOrderOnCoincidence_osConjTensorProduct_of_tsupport_subset_orderedPositiveTimeRegion
+          (f := ((F : BorchersSequence d).funcs n))
+          (g := timeShiftSchwartzNPoint (d := d) t ((G : BorchersSequence d).funcs 0))
+          (F.ordered_tsupport n) hg_shift_ord
+    calc
+      OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+          (PositiveTimeBorchersSequence.single n (((F : BorchersSequence d).funcs n))
+            (F.ordered_tsupport n))
+          (PositiveTimeBorchersSequence.single 0 (((G : BorchersSequence d).funcs 0))
+            (G.ordered_tsupport 0)) (t : ℂ) =
+        OS.S n (ZeroDiagonalSchwartz.ofClassical
+          ((((F : BorchersSequence d).funcs n).osConjTensorProduct
+            (timeShiftSchwartzNPoint (d := d) t ((G : BorchersSequence d).funcs 0))))) := by
+            simpa using OSInnerProductTimeShiftHolomorphicValue_ofReal_eq_single
+              (d := d) (OS := OS) (lgc := lgc)
+              (f := ((F : BorchersSequence d).funcs n))
+              (hf_ord := F.ordered_tsupport n)
+              (g := ((G : BorchersSequence d).funcs 0))
+              (hg_ord := G.ordered_tsupport 0)
+              (hg_compact := hG_compact 0)
+              (t := t) ht
+      _ = ∫ y : NPointDomain d n,
+            Ψ n (fun i => wickRotatePoint (y i)) *
+              ((ZeroDiagonalSchwartz.ofClassical
+                ((((F : BorchersSequence d).funcs n).osConjTensorProduct
+                  (timeShiftSchwartzNPoint (d := d) t ((G : BorchersSequence d).funcs 0))))).1 y) := by
+            exact hΨ_euclid n
+              (ZeroDiagonalSchwartz.ofClassical
+                ((((F : BorchersSequence d).funcs n).osConjTensorProduct
+                  (timeShiftSchwartzNPoint (d := d) t ((G : BorchersSequence d).funcs 0)))))
+      _ = ∫ y : NPointDomain d n,
+            Ψ n (fun i => wickRotatePoint (y i)) *
+              ((((F : BorchersSequence d).funcs n).osConjTensorProduct
+                (timeShiftSchwartzNPoint (d := d) t ((G : BorchersSequence d).funcs 0))) y) := by
+            simp [hvanish_shift]
 
 /-- For r ≥ 1, the ξ-shift stays in C_k^(r). The shift only modifies column r,
     and C_k^(r) only constrains columns with μ.val ≤ r-1. -/

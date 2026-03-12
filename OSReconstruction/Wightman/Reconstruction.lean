@@ -2168,6 +2168,49 @@ theorem ZeroDiagonalSchwartz.ofClassical_smul {d n : ℕ}
         ZeroDiagonalSchwartz.ofClassical_of_not_vanishes (f := f) hf]
       simp
 
+/-- If varying one factor of a product tensor always stays in the OS zero-diagonal
+subspace, then that slot defines a continuous linear map into
+`ZeroDiagonalSchwartz`. -/
+def ZeroDiagonalSchwartz.productTensorUpdateCLM {d n : ℕ} [NeZero d]
+    (i : Fin n) (fs : Fin n → SchwartzSpacetime d)
+    (hvanish : ∀ f : SchwartzSpacetime d,
+      VanishesToInfiniteOrderOnCoincidence
+        (SchwartzMap.productTensor (Function.update fs i f))) :
+    SchwartzSpacetime d →L[ℂ] ZeroDiagonalSchwartz d n where
+  toLinearMap :=
+    { toFun := fun f =>
+        ⟨SchwartzMap.productTensor (Function.update fs i f), hvanish f⟩
+      map_add' := by
+        intro f g
+        apply Subtype.ext
+        change
+          SchwartzMap.productTensor (Function.update fs i (f + g)) =
+            SchwartzMap.productTensor (Function.update fs i f) +
+              SchwartzMap.productTensor (Function.update fs i g)
+        simp [SchwartzMap.productTensor_update_add]
+      map_smul' := by
+        intro c f
+        apply Subtype.ext
+        change
+          SchwartzMap.productTensor (Function.update fs i (c • f)) =
+            c • SchwartzMap.productTensor (Function.update fs i f)
+        simp [SchwartzMap.productTensor_update_smul] }
+  cont := by
+    let hbase : Continuous (fun f : SchwartzSpacetime d =>
+      SchwartzMap.productTensor (Function.update fs i f)) :=
+      SchwartzMap.productTensor_continuous_arg i fs
+    exact hbase.subtype_mk (fun f => hvanish f)
+
+@[simp]
+theorem ZeroDiagonalSchwartz.productTensorUpdateCLM_apply {d n : ℕ} [NeZero d]
+    (i : Fin n) (fs : Fin n → SchwartzSpacetime d)
+    (hvanish : ∀ f : SchwartzSpacetime d,
+      VanishesToInfiniteOrderOnCoincidence
+        (SchwartzMap.productTensor (Function.update fs i f)))
+    (f : SchwartzSpacetime d) :
+    ZeroDiagonalSchwartz.productTensorUpdateCLM (d := d) i fs hvanish f =
+      ⟨SchwartzMap.productTensor (Function.update fs i f), hvanish f⟩ := rfl
+
 /-- Zero-diagonal Schwinger families, i.e. Euclidean correlation functionals
     defined only on the OS-I test space `°S`. This is the honest Wightman -> OS-I
     codomain before any separate extension to the full Schwartz space. -/
@@ -3295,6 +3338,119 @@ structure OsterwalderSchraderAxioms (d : ℕ) [NeZero d] where
             (∀ x : NPointDomain d (n + m),
               fg_a.1 x = f.1 (splitFirst n m x) * g_a.1 (splitLast n m x)) →
             ‖S (n + m) fg_a - S n f * S m g‖ < ε
+
+/-- The Schwinger functional packaged as a continuous linear map on the honest
+zero-diagonal test space. -/
+def OsterwalderSchraderAxioms.schwingerCLM
+    (OS : OsterwalderSchraderAxioms d) (n : ℕ) :
+    ZeroDiagonalSchwartz d n →L[ℂ] ℂ where
+  toLinearMap :=
+    { toFun := OS.S n
+      map_add' := (OS.E0_linear n).map_add
+      map_smul' := (OS.E0_linear n).map_smul }
+  cont := OS.E0_tempered n
+
+/-- Varying one factor of a product tensor and then evaluating the Schwinger
+functional gives a continuous linear functional in that slot, provided the
+updated product tensors remain zero-diagonal. -/
+def OsterwalderSchraderAxioms.productTensorSlotCLM
+    (OS : OsterwalderSchraderAxioms d) {n : ℕ}
+    (i : Fin n) (fs : Fin n → SchwartzSpacetime d)
+    (hvanish : ∀ f : SchwartzSpacetime d,
+      VanishesToInfiniteOrderOnCoincidence
+        (SchwartzMap.productTensor (Function.update fs i f))) :
+    SchwartzSpacetime d →L[ℂ] ℂ :=
+  (OsterwalderSchraderAxioms.schwingerCLM (d := d) OS n).comp
+    (ZeroDiagonalSchwartz.productTensorUpdateCLM (d := d) i fs hvanish)
+
+@[simp]
+theorem OsterwalderSchraderAxioms.productTensorSlotCLM_apply
+    (OS : OsterwalderSchraderAxioms d) {n : ℕ}
+    (i : Fin n) (fs : Fin n → SchwartzSpacetime d)
+    (hvanish : ∀ f : SchwartzSpacetime d,
+      VanishesToInfiniteOrderOnCoincidence
+        (SchwartzMap.productTensor (Function.update fs i f)))
+    (f : SchwartzSpacetime d) :
+    OsterwalderSchraderAxioms.productTensorSlotCLM (d := d) OS i fs hvanish f =
+      OS.S n ⟨SchwartzMap.productTensor (Function.update fs i f), hvanish f⟩ := by
+  rfl
+
+/-- On factorized tests that stay in the zero-diagonal subspace, the Schwinger
+functional is jointly continuous in all tensor factors. -/
+theorem OsterwalderSchraderAxioms.productTensorContinuous
+    (OS : OsterwalderSchraderAxioms d) {n : ℕ}
+    (hvanish : ∀ fs : Fin n → SchwartzSpacetime d,
+      VanishesToInfiniteOrderOnCoincidence (SchwartzMap.productTensor fs)) :
+    Continuous (fun fs : Fin n → SchwartzSpacetime d =>
+      OS.S n ⟨SchwartzMap.productTensor fs, hvanish fs⟩) := by
+  let tensorMap : (Fin n → SchwartzSpacetime d) → ZeroDiagonalSchwartz d n :=
+    fun fs => ⟨SchwartzMap.productTensor fs, hvanish fs⟩
+  have htensor : Continuous tensorMap := by
+    exact (SchwartzMap.productTensor_continuous (E := SpacetimeDim d)).subtype_mk _
+  exact (OsterwalderSchraderAxioms.schwingerCLM (d := d) OS n).continuous.comp htensor
+
+/-- If all n-fold product tensors lie in the zero-diagonal subspace, they form a
+continuous multilinear map into `ZeroDiagonalSchwartz`. -/
+def ZeroDiagonalSchwartz.productTensorMLM {d n : ℕ}
+    (hvanish : ∀ fs : Fin n → SchwartzSpacetime d,
+      VanishesToInfiniteOrderOnCoincidence (SchwartzMap.productTensor fs)) :
+    ContinuousMultilinearMap ℂ (fun _ : Fin n => SchwartzSpacetime d)
+      (ZeroDiagonalSchwartz d n) where
+  toMultilinearMap :=
+    { toFun := fun fs => ⟨SchwartzMap.productTensor fs, hvanish fs⟩
+      map_update_add' := by
+        intro hdec m i x y
+        letI := hdec
+        apply Subtype.ext
+        change SchwartzMap.productTensor (Function.update m i (x + y)) =
+          SchwartzMap.productTensor (Function.update m i x) +
+            SchwartzMap.productTensor (Function.update m i y)
+        ext z
+        have h :=
+          congrArg (fun F : SchwartzNPoint d n => F z)
+            (SchwartzMap.productTensor_update_add
+              (E := SpacetimeDim d) (n := n) i m x y)
+        simpa [SchwartzMap.productTensor_apply, Function.update] using h
+      map_update_smul' := by
+        intro hdec m i c x
+        letI := hdec
+        apply Subtype.ext
+        change SchwartzMap.productTensor (Function.update m i (c • x)) =
+          c • SchwartzMap.productTensor (Function.update m i x)
+        ext z
+        have h :=
+          congrArg (fun F : SchwartzNPoint d n => F z)
+            (SchwartzMap.productTensor_update_smul
+              (E := SpacetimeDim d) (n := n) i m c x)
+        simpa [SchwartzMap.productTensor_apply, Function.update, smul_eq_mul] using h }
+  cont := (SchwartzMap.productTensor_continuous (E := SpacetimeDim d)).subtype_mk _
+
+@[simp]
+theorem ZeroDiagonalSchwartz.productTensorMLM_apply {d n : ℕ}
+    (hvanish : ∀ fs : Fin n → SchwartzSpacetime d,
+      VanishesToInfiniteOrderOnCoincidence (SchwartzMap.productTensor fs))
+    (fs : Fin n → SchwartzSpacetime d) :
+    ZeroDiagonalSchwartz.productTensorMLM (d := d) hvanish fs =
+      ⟨SchwartzMap.productTensor fs, hvanish fs⟩ := rfl
+
+/-- On admissible factorized tests, the Schwinger functional is a continuous
+multilinear form in the individual Schwartz factors. -/
+def OsterwalderSchraderAxioms.productTensorSchwingerMLM
+    (OS : OsterwalderSchraderAxioms d) {n : ℕ}
+    (hvanish : ∀ fs : Fin n → SchwartzSpacetime d,
+      VanishesToInfiniteOrderOnCoincidence (SchwartzMap.productTensor fs)) :
+    ContinuousMultilinearMap ℂ (fun _ : Fin n => SchwartzSpacetime d) ℂ :=
+  (OsterwalderSchraderAxioms.schwingerCLM (d := d) OS n).compContinuousMultilinearMap
+    (ZeroDiagonalSchwartz.productTensorMLM (d := d) hvanish)
+
+@[simp]
+theorem OsterwalderSchraderAxioms.productTensorSchwingerMLM_apply
+    (OS : OsterwalderSchraderAxioms d) {n : ℕ}
+    (hvanish : ∀ fs : Fin n → SchwartzSpacetime d,
+      VanishesToInfiniteOrderOnCoincidence (SchwartzMap.productTensor fs))
+    (fs : Fin n → SchwartzSpacetime d) :
+    OsterwalderSchraderAxioms.productTensorSchwingerMLM (d := d) OS hvanish fs =
+      OS.S n ⟨SchwartzMap.productTensor fs, hvanish fs⟩ := rfl
 
 /-- The abstract OS inner product is Hermitian.
 

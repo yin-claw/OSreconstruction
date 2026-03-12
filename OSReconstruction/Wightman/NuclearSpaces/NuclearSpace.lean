@@ -544,6 +544,43 @@ theorem product_nuclear (ι : Type*) [Countable ι]
             exact (Finset.sum_congr rfl fun i _ => rfl).symm
         _ ≤ ∑' n, ‖f n x‖ * c n := hsum_bound x
 
+/-- Nuclearity is preserved by continuous linear equivalence. -/
+theorem of_continuousLinearEquiv
+    {E F : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [IsTopologicalAddGroup E] [ContinuousSMul ℝ E]
+    [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    [IsTopologicalAddGroup F] [ContinuousSMul ℝ F]
+    (e : E ≃L[ℝ] F) [NuclearSpace F] : NuclearSpace E where
+  nuclear_dominance p hp := by
+    let pF : Seminorm ℝ F := p.comp e.symm.toLinearMap
+    have hpF : Continuous pF := hp.comp e.symm.continuous
+    obtain ⟨q, hq_cont, hq_ge, f, c, hc_nn, hc_sum, hf_bound, hp_bound⟩ :=
+      NuclearSpace.nuclear_dominance pF hpF
+    refine ⟨q.comp e.toLinearMap, hq_cont.comp e.continuous, ?_,
+      fun n => (f n).comp e.toContinuousLinearMap, c,
+      hc_nn, hc_sum, ?_, ?_⟩
+    · intro x
+      simpa [pF] using hq_ge (e x)
+    · intro n x
+      simpa using hf_bound n (e x)
+    · intro x
+      simpa [pF] using hp_bound (e x)
+
+/-- Nuclearity is invariant under continuous linear equivalence. -/
+theorem continuousLinearEquiv_iff
+    {E F : Type*} [AddCommGroup E] [Module ℝ E] [TopologicalSpace E]
+    [IsTopologicalAddGroup E] [ContinuousSMul ℝ E]
+    [AddCommGroup F] [Module ℝ F] [TopologicalSpace F]
+    [IsTopologicalAddGroup F] [ContinuousSMul ℝ F]
+    (e : E ≃L[ℝ] F) : NuclearSpace E ↔ NuclearSpace F := by
+  constructor
+  · intro hE
+    letI := hE
+    exact of_continuousLinearEquiv e.symm
+  · intro hF
+    letI := hF
+    exact of_continuousLinearEquiv e
+
 end NuclearSpace
 
 /-! ### Helper: Linear Functional Continuity from Seminorm Bound -/
