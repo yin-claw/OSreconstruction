@@ -230,6 +230,30 @@ theorem linearCombo_insert {ι : Type*} [DecidableEq ι]
       (c a • G a + linearCombo s c G).funcs n := by
   simp [linearCombo_funcs, Finset.sum_insert ha, add_funcs, smul_funcs]
 
+/-- The Borchers sequence concentrated in degree `n` with component `f`. -/
+def single (n : ℕ) (f : SchwartzNPoint d n) : BorchersSequence d where
+  funcs m := by
+    by_cases h : m = n
+    · subst h
+      exact f
+    · exact 0
+  bound := n
+  bound_spec m hm := by
+    by_cases h : m = n
+    · omega
+    · simp [h]
+
+@[simp] theorem single_bound (n : ℕ) (f : SchwartzNPoint d n) :
+    (single n f).bound = n := rfl
+
+@[simp] theorem single_funcs_eq (n : ℕ) (f : SchwartzNPoint d n) :
+    (single n f).funcs n = f := by
+  simp [single]
+
+@[simp] theorem single_funcs_ne {n m : ℕ} (h : m ≠ n) (f : SchwartzNPoint d n) :
+    (single n f).funcs m = 0 := by
+  simp [single, h]
+
 end BorchersSequence
 
 /-! ### Wightman Inner Product -/
@@ -2696,6 +2720,23 @@ namespace PositiveTimeBorchersSequence
 
 variable {d : ℕ}
 
+/-- The positive-time Borchers sequence concentrated in degree `n` with component `f`. -/
+def single (n : ℕ) (f : SchwartzNPoint d n)
+    (hf : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n) :
+    PositiveTimeBorchersSequence d where
+  toBorchersSequence := BorchersSequence.single n f
+  ordered_tsupport m := by
+    by_cases h : m = n
+    · subst h
+      simpa using hf
+    · have hzero :
+        (((BorchersSequence.single n f).funcs m : SchwartzNPoint d m) :
+          NPointDomain d m → ℂ) = 0 := by
+        simp [BorchersSequence.single, h]
+      rw [hzero]
+      simpa using (empty_subset (OrderedPositiveTimeRegion d m) :
+        (∅ : Set (NPointDomain d m)) ⊆ OrderedPositiveTimeRegion d m)
+
 instance : Coe (PositiveTimeBorchersSequence d) (BorchersSequence d) :=
   ⟨PositiveTimeBorchersSequence.toBorchersSequence⟩
 
@@ -2775,6 +2816,11 @@ instance : Sub (PositiveTimeBorchersSequence d) where
 @[simp] theorem sub_toBorchersSequence (F G : PositiveTimeBorchersSequence d) :
     ((F - G : PositiveTimeBorchersSequence d) : BorchersSequence d) =
       (F : BorchersSequence d) - (G : BorchersSequence d) := rfl
+
+@[simp] theorem single_toBorchersSequence (n : ℕ) (f : SchwartzNPoint d n)
+    (hf : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n) :
+    ((single n f hf : PositiveTimeBorchersSequence d) : BorchersSequence d) =
+      BorchersSequence.single n f := rfl
 
 /-- On the honest positive-time Euclidean Borchers algebra, OS tensor terms are
     automatically zero-diagonal admissible. -/
@@ -2867,6 +2913,40 @@ theorem OSInnerProduct_eq_extended (S : (n : ℕ) → ZeroDiagonalSchwartz d n �
   rw [OSInnerProduct_eq_N,
     ← OSInnerProductN_extend_right d S hlin F G (F.bound + 1) N₂ hN₂,
     ← OSInnerProductN_extend_left d S hlin F G N₁ N₂ hN₁]
+
+/-- For concentrated Borchers sequences, the OS inner product reduces to the
+single tensor term. -/
+theorem OSInnerProduct_single_single (S : (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ)
+    (hlin : ∀ n, IsLinearMap ℂ (S n))
+    (n m : ℕ) (f : SchwartzNPoint d n) (g : SchwartzNPoint d m) :
+    OSInnerProduct d S (BorchersSequence.single n f) (BorchersSequence.single m g) =
+      S (n + m) (ZeroDiagonalSchwartz.ofClassical (f.osConjTensorProduct g)) := by
+  unfold OSInnerProduct
+  rw [BorchersSequence.single_bound, BorchersSequence.single_bound, Finset.sum_range_succ]
+  have hleft :
+      ∑ i ∈ Finset.range n,
+        ∑ j ∈ Finset.range (m + 1),
+          S (i + j) (ZeroDiagonalSchwartz.ofClassical
+            (((BorchersSequence.single n f).funcs i).osConjTensorProduct
+              ((BorchersSequence.single m g).funcs j))) = 0 := by
+    refine Finset.sum_eq_zero ?_
+    intro i hi
+    have hi_ne : i ≠ n := Nat.ne_of_lt (Finset.mem_range.mp hi)
+    apply Finset.sum_eq_zero
+    intro j hj
+    rw [BorchersSequence.single_funcs_ne hi_ne, SchwartzNPoint.osConjTensorProduct_zero_left,
+      ZeroDiagonalSchwartz.ofClassical_zero, (hlin _).map_zero]
+  rw [hleft, zero_add, BorchersSequence.single_funcs_eq, Finset.sum_range_succ]
+  have hright :
+      ∑ j ∈ Finset.range m,
+        S (n + j) (ZeroDiagonalSchwartz.ofClassical
+          (f.osConjTensorProduct ((BorchersSequence.single m g).funcs j))) = 0 := by
+    refine Finset.sum_eq_zero ?_
+    intro j hj
+    have hj_ne : j ≠ m := Nat.ne_of_lt (Finset.mem_range.mp hj)
+    rw [BorchersSequence.single_funcs_ne hj_ne, SchwartzNPoint.osConjTensorProduct_zero_right,
+      ZeroDiagonalSchwartz.ofClassical_zero, (hlin _).map_zero]
+  rw [hright, zero_add, BorchersSequence.single_funcs_eq]
 
 /-- The OS inner product depends only on `funcs`, not on `bound`. -/
 theorem OSInnerProduct_congr_right (S : (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ)

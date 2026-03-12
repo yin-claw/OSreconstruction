@@ -4,6 +4,7 @@ import Mathlib.Analysis.CStarAlgebra.ContinuousLinearMap
 import Mathlib.Analysis.InnerProductSpace.StarOrder
 import Mathlib.MeasureTheory.Integral.RieszMarkovKakutani.Real
 import Mathlib.Topology.ContinuousMap.CompactlySupported
+import OSReconstruction.SCV.LaplaceHolomorphic
 import OSReconstruction.vNA.Bochner.LaplaceBridge
 
 /-!
@@ -427,5 +428,137 @@ theorem inner_nnrpow_eq_laplace_polarization
             rw [ContinuousLinearMap.inner_nnrpow_eq_laplace_selfAdjointSpectralMeasureDiagonalReal
               (A := A) (hA := hA) (hA_nonneg := hA_nonneg) (x := x - Complex.I • y)
               (hspec := hspec) (t := t) ht]
+
+/-- The complex Laplace transform of the diagonal scalar measure attached to a bounded
+nonnegative self-adjoint operator. -/
+def selfAdjointSpectralLaplaceDiagonal
+    (A : H →L[ℂ] H) (hA : IsSelfAdjoint A) (x : H) (z : ℂ) : ℂ :=
+  ∫ u, Complex.exp (-(z * (u : ℂ))) ∂
+    BochnerLaplaceBridge.laplaceMeasurePos
+      (selfAdjointSpectralMeasureDiagonalReal A hA x)
+
+/-- The polarized complex Laplace transform encoding off-diagonal matrix elements. -/
+def selfAdjointSpectralLaplaceOffdiag
+    (A : H →L[ℂ] H) (hA : IsSelfAdjoint A) (x y : H) (z : ℂ) : ℂ :=
+  (1 / 4 : ℂ) *
+    (selfAdjointSpectralLaplaceDiagonal A hA (x + y) z -
+      selfAdjointSpectralLaplaceDiagonal A hA (x - y) z -
+      Complex.I * selfAdjointSpectralLaplaceDiagonal A hA (x + Complex.I • y) z +
+      Complex.I * selfAdjointSpectralLaplaceDiagonal A hA (x - Complex.I • y) z)
+
+/-- The diagonal scalar Laplace transform is holomorphic on the right half-plane once the
+operator spectrum lies in `[0,1]`. -/
+theorem differentiableOn_selfAdjointSpectralLaplaceDiagonal
+    (A : H →L[ℂ] H) (hA : IsSelfAdjoint A)
+    (hspec : spectrum ℝ A ⊆ Set.Icc 0 1) (x : H) :
+    DifferentiableOn ℂ (selfAdjointSpectralLaplaceDiagonal A hA x) {z : ℂ | 0 < z.re} := by
+  haveI : IsFiniteMeasure (selfAdjointSpectralMeasureDiagonalReal A hA x) := by
+    infer_instance
+  simpa [selfAdjointSpectralLaplaceDiagonal] using
+    (SCV.laplaceTransform_differentiableOn_rightHalfPlane_of_nonnegSupport
+      (μ := BochnerLaplaceBridge.laplaceMeasurePos
+        (selfAdjointSpectralMeasureDiagonalReal A hA x))
+      (hsupp := BochnerLaplaceBridge.laplaceMeasurePos_nonnegSupport
+        (μ := selfAdjointSpectralMeasureDiagonalReal A hA x)
+        (hsupp_le_one :=
+          selfAdjointSpectralMeasureDiagonalReal_Ioi_eq_zero_of_spectrum_subset_Icc
+            (A := A) (hA := hA) (x := x) hspec)))
+
+/-- The polarized scalar Laplace transform is holomorphic on the right half-plane once the
+operator spectrum lies in `[0,1]`. -/
+theorem differentiableOn_selfAdjointSpectralLaplaceOffdiag
+    (A : H →L[ℂ] H) (hA : IsSelfAdjoint A)
+    (hspec : spectrum ℝ A ⊆ Set.Icc 0 1) (x y : H) :
+    DifferentiableOn ℂ (selfAdjointSpectralLaplaceOffdiag A hA x y) {z : ℂ | 0 < z.re} := by
+  have hxy := differentiableOn_selfAdjointSpectralLaplaceDiagonal
+    (A := A) (hA := hA) (hspec := hspec) (x := x + y)
+  have hmxy := differentiableOn_selfAdjointSpectralLaplaceDiagonal
+    (A := A) (hA := hA) (hspec := hspec) (x := x - y)
+  have hi1 := differentiableOn_selfAdjointSpectralLaplaceDiagonal
+    (A := A) (hA := hA) (hspec := hspec) (x := x + Complex.I • y)
+  have hi2 := differentiableOn_selfAdjointSpectralLaplaceDiagonal
+    (A := A) (hA := hA) (hspec := hspec) (x := x - Complex.I • y)
+  convert
+    (DifferentiableOn.const_mul
+      ((hxy.add (DifferentiableOn.const_mul hmxy (-1 : ℂ))).add
+        ((DifferentiableOn.const_mul hi1 (-Complex.I)).add
+          (DifferentiableOn.const_mul hi2 Complex.I)))
+      (1 / 4 : ℂ)) using 1
+  ext z
+  simp [selfAdjointSpectralLaplaceOffdiag, sub_eq_add_neg, add_assoc, add_left_comm, add_comm]
+
+/-- At positive real points, the diagonal complex Laplace extension agrees with the
+diagonal matrix element of the semigroup powers. -/
+theorem selfAdjointSpectralLaplaceDiagonal_ofReal_eq_inner_nnrpow
+    (A : H →L[ℂ] H) (hA : IsSelfAdjoint A) (hA_nonneg : 0 ≤ A) (x : H)
+    (hspec : spectrum ℝ A ⊆ Set.Icc 0 1)
+    (t : ℝ) (ht : 0 < t) :
+    selfAdjointSpectralLaplaceDiagonal A hA x (t : ℂ) =
+      @inner ℂ H _ x ((CFC.nnrpow A (Real.toNNReal t)) x) := by
+  calc
+    selfAdjointSpectralLaplaceDiagonal A hA x (t : ℂ)
+      = (((∫ u, Real.exp (-t * u) ∂
+          BochnerLaplaceBridge.laplaceMeasurePos
+            (selfAdjointSpectralMeasureDiagonalReal A hA x)) : ℝ) : ℂ) := by
+            rw [selfAdjointSpectralLaplaceDiagonal]
+            calc
+              ∫ u, Complex.exp (-((t : ℂ) * (u : ℂ))) ∂
+                  BochnerLaplaceBridge.laplaceMeasurePos
+                    (selfAdjointSpectralMeasureDiagonalReal A hA x)
+                = ∫ u, ((Real.exp (-t * u) : ℝ) : ℂ) ∂
+                    BochnerLaplaceBridge.laplaceMeasurePos
+                      (selfAdjointSpectralMeasureDiagonalReal A hA x) := by
+                        apply integral_congr_ae
+                        filter_upwards with u
+                        rw [show -((t : ℂ) * (u : ℂ)) = ((-t * u : ℝ) : ℂ) by simp]
+                        rw [← Complex.ofReal_exp]
+              _ = (((∫ u, Real.exp (-t * u) ∂
+                    BochnerLaplaceBridge.laplaceMeasurePos
+                      (selfAdjointSpectralMeasureDiagonalReal A hA x)) : ℝ) : ℂ) := by
+                        rw [_root_.integral_complex_ofReal]
+    _ = @inner ℂ H _ x ((CFC.nnrpow A (Real.toNNReal t)) x) := by
+          simpa [Real.toNNReal_of_nonneg ht.le, mul_comm, mul_left_comm, mul_assoc] using
+            (inner_nnrpow_eq_laplace_selfAdjointSpectralMeasureDiagonalReal
+              (A := A) (hA := hA) (hA_nonneg := hA_nonneg) (x := x)
+              (hspec := hspec) (t := Real.toNNReal t) (by simpa using ht)).symm
+
+/-- At positive real points, the polarized complex Laplace extension agrees with the
+off-diagonal matrix element of the semigroup powers. -/
+theorem selfAdjointSpectralLaplaceOffdiag_ofReal_eq_inner_nnrpow
+    (A : H →L[ℂ] H) (hA : IsSelfAdjoint A) (hA_nonneg : 0 ≤ A)
+    (hspec : spectrum ℝ A ⊆ Set.Icc 0 1)
+    (x y : H) (t : ℝ) (ht : 0 < t) :
+    selfAdjointSpectralLaplaceOffdiag A hA x y (t : ℂ) =
+      @inner ℂ H _ x ((CFC.nnrpow A (Real.toNNReal t)) y) := by
+  calc
+    selfAdjointSpectralLaplaceOffdiag A hA x y (t : ℂ)
+      = (1 / 4 : ℂ) *
+          (selfAdjointSpectralLaplaceDiagonal A hA (x + y) (t : ℂ) -
+            selfAdjointSpectralLaplaceDiagonal A hA (x - y) (t : ℂ) -
+            Complex.I * selfAdjointSpectralLaplaceDiagonal A hA (x + Complex.I • y) (t : ℂ) +
+            Complex.I * selfAdjointSpectralLaplaceDiagonal A hA (x - Complex.I • y) (t : ℂ)) := by
+            rfl
+    _ = (1 / 4 : ℂ) *
+          (@inner ℂ H _ (x + y) ((CFC.nnrpow A (Real.toNNReal t)) (x + y)) -
+            @inner ℂ H _ (x - y) ((CFC.nnrpow A (Real.toNNReal t)) (x - y)) -
+            Complex.I * @inner ℂ H _ (x + Complex.I • y)
+              ((CFC.nnrpow A (Real.toNNReal t)) (x + Complex.I • y)) +
+            Complex.I * @inner ℂ H _ (x - Complex.I • y)
+              ((CFC.nnrpow A (Real.toNNReal t)) (x - Complex.I • y))) := by
+            rw [selfAdjointSpectralLaplaceDiagonal_ofReal_eq_inner_nnrpow
+              (A := A) (hA := hA) (hA_nonneg := hA_nonneg) (x := x + y)
+              (hspec := hspec) (t := t) ht]
+            rw [selfAdjointSpectralLaplaceDiagonal_ofReal_eq_inner_nnrpow
+              (A := A) (hA := hA) (hA_nonneg := hA_nonneg) (x := x - y)
+              (hspec := hspec) (t := t) ht]
+            rw [selfAdjointSpectralLaplaceDiagonal_ofReal_eq_inner_nnrpow
+              (A := A) (hA := hA) (hA_nonneg := hA_nonneg) (x := x + Complex.I • y)
+              (hspec := hspec) (t := t) ht]
+            rw [selfAdjointSpectralLaplaceDiagonal_ofReal_eq_inner_nnrpow
+              (A := A) (hA := hA) (hA_nonneg := hA_nonneg) (x := x - Complex.I • y)
+              (hspec := hspec) (t := t) ht]
+    _ = @inner ℂ H _ x ((CFC.nnrpow A (Real.toNNReal t)) y) := by
+          simpa [Real.toNNReal_of_nonneg ht.le] using
+            (inner_polarization_clm_local (A := CFC.nnrpow A (Real.toNNReal t)) x y)
 
 end ContinuousLinearMap

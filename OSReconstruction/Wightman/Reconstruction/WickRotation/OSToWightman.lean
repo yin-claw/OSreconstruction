@@ -2715,6 +2715,454 @@ private theorem inner_osTimeShiftHilbert_offdiag_eq_laplace_of_isCompactSupport
       (t := Real.toNNReal t)
       (by simpa using ht))
 
+/-- The diagonal one-variable holomorphic extension of the OS time-shift matrix element. -/
+private def osTimeShiftHilbertHolomorphicValueDiagonal
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS) (z : ℂ) : ℂ :=
+  ContinuousLinearMap.selfAdjointSpectralLaplaceDiagonal
+    (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+    (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+    x z
+
+/-- The polarized one-variable holomorphic extension of the OS time-shift matrix element. -/
+private def osTimeShiftHilbertHolomorphicValueOffdiag
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x y : OSHilbertSpace OS) (z : ℂ) : ℂ :=
+  ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag
+    (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+    (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+    x y z
+
+private theorem differentiableOn_osTimeShiftHilbertHolomorphicValueDiagonal
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS) :
+    DifferentiableOn ℂ (osTimeShiftHilbertHolomorphicValueDiagonal (d := d) OS lgc x)
+      {z : ℂ | 0 < z.re} := by
+  simpa [osTimeShiftHilbertHolomorphicValueDiagonal] using
+    (ContinuousLinearMap.differentiableOn_selfAdjointSpectralLaplaceDiagonal
+      (A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+      (hA := osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+      (hspec := spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos)
+      (x := x))
+
+private theorem differentiableOn_osTimeShiftHilbertHolomorphicValueOffdiag
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x y : OSHilbertSpace OS) :
+    DifferentiableOn ℂ (osTimeShiftHilbertHolomorphicValueOffdiag (d := d) OS lgc x y)
+      {z : ℂ | 0 < z.re} := by
+  simpa [osTimeShiftHilbertHolomorphicValueOffdiag] using
+    (ContinuousLinearMap.differentiableOn_selfAdjointSpectralLaplaceOffdiag
+      (A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+      (hA := osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+      (hspec := spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos)
+      (x := x) (y := y))
+
+private theorem continuousOn_osTimeShiftHilbertHolomorphicValueDiagonal
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS) :
+    ContinuousOn (osTimeShiftHilbertHolomorphicValueDiagonal (d := d) OS lgc x)
+      {z : ℂ | 0 < z.re} :=
+  (differentiableOn_osTimeShiftHilbertHolomorphicValueDiagonal
+    (d := d) OS lgc x).continuousOn
+
+private theorem continuousOn_osTimeShiftHilbertHolomorphicValueOffdiag
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x y : OSHilbertSpace OS) :
+    ContinuousOn (osTimeShiftHilbertHolomorphicValueOffdiag (d := d) OS lgc x y)
+      {z : ℂ | 0 < z.re} :=
+  (differentiableOn_osTimeShiftHilbertHolomorphicValueOffdiag
+    (d := d) OS lgc x y).continuousOn
+
+private theorem osTimeShiftHilbertHolomorphicValueDiagonal_ofReal_eq_inner_of_isCompactSupport
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F : PositiveTimeBorchersSequence d)
+    (hF_compact : ∀ n,
+      HasCompactSupport (((
+        F : BorchersSequence d).funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    osTimeShiftHilbertHolomorphicValueDiagonal (d := d) OS lgc
+        (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))
+        (t : ℂ) =
+      @inner ℂ (OSHilbertSpace OS) _
+        (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))
+        ((osTimeShiftHilbert (d := d) OS lgc t ht)
+          (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))) := by
+  rw [osTimeShiftHilbert_eq_nnrpow_of_isCompactSupport (d := d) OS lgc F hF_compact t ht]
+  simpa [osTimeShiftHilbertHolomorphicValueDiagonal, Real.toNNReal_of_nonneg ht.le] using
+    (ContinuousLinearMap.selfAdjointSpectralLaplaceDiagonal_ofReal_eq_inner_nnrpow
+      (A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+      (hA := osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+      (hA_nonneg := osTimeShiftHilbert_nonneg (d := d) OS lgc 1 one_pos)
+      (x := (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS)))
+      (hspec := spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos)
+      (t := t) ht)
+
+private theorem osTimeShiftHilbertHolomorphicValueOffdiag_ofReal_eq_inner_of_isCompactSupport
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS)
+    (F : PositiveTimeBorchersSequence d)
+    (y : OSHilbertSpace OS)
+    (hy : y = (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS)))
+    (hF_compact : ∀ n,
+      HasCompactSupport (((
+        F : BorchersSequence d).funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    osTimeShiftHilbertHolomorphicValueOffdiag (d := d) OS lgc x y (t : ℂ) =
+      @inner ℂ (OSHilbertSpace OS) _
+        x
+        ((osTimeShiftHilbert (d := d) OS lgc t ht) y) := by
+  subst y
+  rw [osTimeShiftHilbert_eq_nnrpow_of_isCompactSupport (d := d) OS lgc F hF_compact t ht]
+  simpa [osTimeShiftHilbertHolomorphicValueOffdiag, Real.toNNReal_of_nonneg ht.le] using
+    (ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag_ofReal_eq_inner_nnrpow
+      (A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+      (hA := osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+      (hA_nonneg := osTimeShiftHilbert_nonneg (d := d) OS lgc 1 one_pos)
+      (hspec := spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos)
+      (x := x)
+      (y := (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS)))
+      (t := t) ht)
+
+/-- Raw OS pairing version of the one-variable holomorphic extension for Euclidean time shift. -/
+private def OSInnerProductTimeShiftHolomorphicValue
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d) (z : ℂ) : ℂ :=
+  osTimeShiftHilbertHolomorphicValueOffdiag (d := d) OS lgc
+    (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))
+    (((show OSPreHilbertSpace OS from (⟦G⟧)) : OSHilbertSpace OS)) z
+
+private theorem differentiableOn_OSInnerProductTimeShiftHolomorphicValue
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d) :
+    DifferentiableOn ℂ (OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F G)
+      {z : ℂ | 0 < z.re} := by
+  simpa [OSInnerProductTimeShiftHolomorphicValue] using
+    differentiableOn_osTimeShiftHilbertHolomorphicValueOffdiag
+      (d := d) OS lgc
+      (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))
+      (((show OSPreHilbertSpace OS from (⟦G⟧)) : OSHilbertSpace OS))
+
+private theorem continuousOn_OSInnerProductTimeShiftHolomorphicValue
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d) :
+    ContinuousOn (OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F G)
+      {z : ℂ | 0 < z.re} := by
+  simpa [OSInnerProductTimeShiftHolomorphicValue] using
+    continuousOn_osTimeShiftHilbertHolomorphicValueOffdiag
+      (d := d) OS lgc
+      (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))
+      (((show OSPreHilbertSpace OS from (⟦G⟧)) : OSHilbertSpace OS))
+
+private theorem OSInnerProductTimeShiftHolomorphicValue_ofReal_eq_of_isCompactSupport
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d)
+    (hG_compact : ∀ n,
+      HasCompactSupport (((
+        G : BorchersSequence d).funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F G (t : ℂ) =
+      OSInnerProduct d OS.S (F : BorchersSequence d)
+        (timeShiftBorchers (d := d) t (G : BorchersSequence d)) := by
+  rw [OSInnerProductTimeShiftHolomorphicValue]
+  rw [osTimeShiftHilbertHolomorphicValueOffdiag_ofReal_eq_inner_of_isCompactSupport
+      (d := d) (OS := OS) (lgc := lgc)
+      (x := (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS)))
+      (F := G)
+      (y := (((show OSPreHilbertSpace OS from (⟦G⟧)) : OSHilbertSpace OS)))
+      (hy := rfl)
+      (hF_compact := hG_compact)
+      (t := t) ht]
+  rw [osTimeShiftHilbert_coe (d := d) (OS := OS) (lgc := lgc) (t := t) (ht := ht)
+      (x := (⟦G⟧ : OSPreHilbertSpace OS))]
+  rw [UniformSpace.Completion.inner_coe]
+  simp [osTimeShiftLinear, osTimeShift, PositiveTimeBorchersSequence.osInner,
+    timeShiftPositiveTimeBorchers]
+
+/-- Real Euclidean time shift of a concentrated OS tensor term. -/
+private theorem OSInnerProduct_single_right_timeShift
+    (OS : OsterwalderSchraderAxioms d)
+    {n m : ℕ} (f : SchwartzNPoint d n) (g : SchwartzNPoint d m) (t : ℝ) :
+    OSInnerProduct d OS.S (BorchersSequence.single n f)
+        (timeShiftBorchers (d := d) t (BorchersSequence.single m g)) =
+      OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+        (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g))) := by
+  have hshift_single :
+      ∀ k,
+        (timeShiftBorchers (d := d) t (BorchersSequence.single m g)).funcs k =
+          (BorchersSequence.single m (timeShiftSchwartzNPoint (d := d) t g)).funcs k := by
+    intro k
+    by_cases hk : k = m
+    · subst hk
+      simp [BorchersSequence.single]
+    · simp [BorchersSequence.single, hk]
+  rw [OSInnerProduct_congr_right d OS.S OS.E0_linear
+      (BorchersSequence.single n f)
+      (timeShiftBorchers (d := d) t (BorchersSequence.single m g))
+      (BorchersSequence.single m (timeShiftSchwartzNPoint (d := d) t g))
+      hshift_single]
+  simpa using
+    (OSInnerProduct_single_single d OS.S OS.E0_linear n m f
+      (timeShiftSchwartzNPoint (d := d) t g))
+
+/-- Real Euclidean time shift against a concentrated right factor reduces to a finite
+sum over the left Borchers components. -/
+private theorem OSInnerProduct_right_single_timeShift
+    (OS : OsterwalderSchraderAxioms d)
+    (F : BorchersSequence d)
+    {m : ℕ} (g : SchwartzNPoint d m) (t : ℝ) :
+    OSInnerProduct d OS.S F (timeShiftBorchers (d := d) t (BorchersSequence.single m g)) =
+      ∑ n ∈ Finset.range (F.bound + 1),
+        OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+          ((F.funcs n).osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g))) := by
+  have hshift_single :
+      ∀ k,
+        (timeShiftBorchers (d := d) t (BorchersSequence.single m g)).funcs k =
+          (BorchersSequence.single m (timeShiftSchwartzNPoint (d := d) t g)).funcs k := by
+    intro k
+    by_cases hk : k = m
+    · subst hk
+      simp [BorchersSequence.single]
+    · simp [BorchersSequence.single, hk]
+  rw [OSInnerProduct_congr_right d OS.S OS.E0_linear F
+      (timeShiftBorchers (d := d) t (BorchersSequence.single m g))
+      (BorchersSequence.single m (timeShiftSchwartzNPoint (d := d) t g))
+      hshift_single]
+  unfold OSInnerProduct
+  apply Finset.sum_congr rfl
+  intro n hn
+  rw [BorchersSequence.single_bound, Finset.sum_range_succ]
+  have hright :
+      ∑ j ∈ Finset.range m,
+        OS.S (n + j) (ZeroDiagonalSchwartz.ofClassical
+          ((F.funcs n).osConjTensorProduct
+            ((BorchersSequence.single m (timeShiftSchwartzNPoint (d := d) t g)).funcs j))) = 0 := by
+    refine Finset.sum_eq_zero ?_
+    intro j hj
+    have hj_ne : j ≠ m := Nat.ne_of_lt (Finset.mem_range.mp hj)
+    rw [BorchersSequence.single_funcs_ne hj_ne, SchwartzNPoint.osConjTensorProduct_zero_right,
+      ZeroDiagonalSchwartz.ofClassical_zero, (OS.E0_linear _).map_zero]
+  rw [hright, zero_add, BorchersSequence.single_funcs_eq]
+
+/-- Simple-tensor specialization of the one-variable OS holomorphic bridge. -/
+private theorem OSInnerProductTimeShiftHolomorphicValue_ofReal_eq_single
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ}
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hg_compact : HasCompactSupport (g : NPointDomain d m → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+        (PositiveTimeBorchersSequence.single n f hf_ord)
+        (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ) =
+      OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+        (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g))) := by
+  rw [OSInnerProductTimeShiftHolomorphicValue_ofReal_eq_of_isCompactSupport
+      (d := d) (OS := OS) (lgc := lgc)
+      (F := PositiveTimeBorchersSequence.single n f hf_ord)
+      (G := PositiveTimeBorchersSequence.single m g hg_ord)
+      (hG_compact := by
+        intro k
+        by_cases hk : k = m
+        · subst hk
+          simpa [PositiveTimeBorchersSequence.single_toBorchersSequence] using hg_compact
+        · have hzero :
+            ((((PositiveTimeBorchersSequence.single m g hg_ord : PositiveTimeBorchersSequence d) :
+                BorchersSequence d).funcs k : SchwartzNPoint d k) :
+              NPointDomain d k → ℂ) = 0 := by
+            simp [PositiveTimeBorchersSequence.single_toBorchersSequence,
+              BorchersSequence.single, hk]
+          rw [hzero]
+          simpa using (HasCompactSupport.zero :
+            HasCompactSupport (0 : NPointDomain d k → ℂ)))
+      (t := t) ht]
+  simpa [PositiveTimeBorchersSequence.single_toBorchersSequence] using
+    (OSInnerProduct_single_right_timeShift (d := d) OS f g t)
+
+/-- One-variable holomorphic OS time-shift with a concentrated right factor. On positive
+real points it recovers the explicit finite sum over the left Borchers components. -/
+private theorem OSInnerProductTimeShiftHolomorphicValue_ofReal_eq_right_single
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F : PositiveTimeBorchersSequence d)
+    {m : ℕ}
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hg_compact : HasCompactSupport (g : NPointDomain d m → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F
+        (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ) =
+      ∑ n ∈ Finset.range (((F : BorchersSequence d).bound) + 1),
+        OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+          ((((F : BorchersSequence d).funcs n).osConjTensorProduct
+            (timeShiftSchwartzNPoint (d := d) t g)))) := by
+  rw [OSInnerProductTimeShiftHolomorphicValue_ofReal_eq_of_isCompactSupport
+      (d := d) (OS := OS) (lgc := lgc)
+      (F := F)
+      (G := PositiveTimeBorchersSequence.single m g hg_ord)
+      (hG_compact := by
+        intro k
+        by_cases hk : k = m
+        · subst hk
+          simpa [PositiveTimeBorchersSequence.single_toBorchersSequence] using hg_compact
+        · have hzero :
+            ((((PositiveTimeBorchersSequence.single m g hg_ord : PositiveTimeBorchersSequence d) :
+                BorchersSequence d).funcs k : SchwartzNPoint d k) :
+              NPointDomain d k → ℂ) = 0 := by
+            simp [PositiveTimeBorchersSequence.single_toBorchersSequence,
+              BorchersSequence.single, hk]
+          rw [hzero]
+          simpa using (HasCompactSupport.zero :
+            HasCompactSupport (0 : NPointDomain d k → ℂ)))
+      (t := t) ht]
+  simpa [PositiveTimeBorchersSequence.single_toBorchersSequence] using
+    (OSInnerProduct_right_single_timeShift (d := d) (OS := OS)
+      (F := (F : BorchersSequence d)) (g := g) (t := t))
+
+/-- Finite-sum holomorphic expansion obtained by decomposing the right Borchers sequence
+into its concentrated components. -/
+private def OSInnerProductTimeShiftHolomorphicValueExpandRight
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d) : ℂ → ℂ :=
+  ∑ m ∈ Finset.range (((G : BorchersSequence d).bound) + 1),
+    OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F
+      (PositiveTimeBorchersSequence.single m (((G : BorchersSequence d).funcs m))
+        (G.ordered_tsupport m))
+
+private theorem differentiableOn_OSInnerProductTimeShiftHolomorphicValueExpandRight
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d) :
+    DifferentiableOn ℂ (OSInnerProductTimeShiftHolomorphicValueExpandRight
+      (d := d) OS lgc F G) {z : ℂ | 0 < z.re} := by
+  classical
+  unfold OSInnerProductTimeShiftHolomorphicValueExpandRight
+  exact DifferentiableOn.sum (u := Finset.range (((G : BorchersSequence d).bound) + 1))
+    (A := fun m =>
+      OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F
+        (PositiveTimeBorchersSequence.single m (((G : BorchersSequence d).funcs m))
+          (G.ordered_tsupport m)))
+    (s := {z : ℂ | 0 < z.re}) (fun m hm =>
+      differentiableOn_OSInnerProductTimeShiftHolomorphicValue
+        (d := d) OS lgc F
+        (PositiveTimeBorchersSequence.single m (((G : BorchersSequence d).funcs m))
+          (G.ordered_tsupport m)))
+
+private theorem continuousOn_OSInnerProductTimeShiftHolomorphicValueExpandRight
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d) :
+    ContinuousOn (OSInnerProductTimeShiftHolomorphicValueExpandRight
+      (d := d) OS lgc F G) {z : ℂ | 0 < z.re} :=
+  (differentiableOn_OSInnerProductTimeShiftHolomorphicValueExpandRight
+    (d := d) OS lgc F G).continuousOn
+
+private theorem OSInnerProductTimeShiftHolomorphicValueExpandRight_ofReal_eq_of_isCompactSupport
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d)
+    (hG_compact : ∀ n,
+      HasCompactSupport (((
+        G : BorchersSequence d).funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    OSInnerProductTimeShiftHolomorphicValueExpandRight (d := d) OS lgc F G (t : ℂ) =
+      OSInnerProduct d OS.S (F : BorchersSequence d)
+        (timeShiftBorchers (d := d) t (G : BorchersSequence d)) := by
+  classical
+  rw [OSInnerProduct]
+  rw [Finset.sum_comm]
+  unfold OSInnerProductTimeShiftHolomorphicValueExpandRight
+  simp only [Finset.sum_apply]
+  refine Finset.sum_congr rfl ?_
+  intro m hm
+  rw [OSInnerProductTimeShiftHolomorphicValue_ofReal_eq_right_single
+    (d := d) (OS := OS) (lgc := lgc) (F := F)
+    (g := ((G : BorchersSequence d).funcs m))
+    (hg_ord := G.ordered_tsupport m)
+    (hg_compact := hG_compact m)
+    (t := t) ht]
+
+/-- Finite double-sum holomorphic expansion obtained by decomposing both Borchers
+sequences into concentrated components. -/
+private def OSInnerProductTimeShiftHolomorphicValueExpandBoth
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d) : ℂ → ℂ :=
+  ∑ n ∈ Finset.range (((F : BorchersSequence d).bound) + 1),
+    ∑ m ∈ Finset.range (((G : BorchersSequence d).bound) + 1),
+      OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+        (PositiveTimeBorchersSequence.single n (((F : BorchersSequence d).funcs n))
+          (F.ordered_tsupport n))
+        (PositiveTimeBorchersSequence.single m (((G : BorchersSequence d).funcs m))
+          (G.ordered_tsupport m))
+
+private theorem differentiableOn_OSInnerProductTimeShiftHolomorphicValueExpandBoth
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d) :
+    DifferentiableOn ℂ (OSInnerProductTimeShiftHolomorphicValueExpandBoth
+      (d := d) OS lgc F G) {z : ℂ | 0 < z.re} := by
+  classical
+  unfold OSInnerProductTimeShiftHolomorphicValueExpandBoth
+  refine DifferentiableOn.sum
+      (u := Finset.range (((F : BorchersSequence d).bound) + 1))
+      (A := fun n =>
+        ∑ m ∈ Finset.range (((G : BorchersSequence d).bound) + 1),
+          OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+            (PositiveTimeBorchersSequence.single n (((F : BorchersSequence d).funcs n))
+              (F.ordered_tsupport n))
+            (PositiveTimeBorchersSequence.single m (((G : BorchersSequence d).funcs m))
+              (G.ordered_tsupport m)))
+      (s := {z : ℂ | 0 < z.re}) ?_
+  intro n hn
+  refine DifferentiableOn.sum
+      (u := Finset.range (((G : BorchersSequence d).bound) + 1))
+      (A := fun m =>
+        OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+          (PositiveTimeBorchersSequence.single n (((F : BorchersSequence d).funcs n))
+            (F.ordered_tsupport n))
+          (PositiveTimeBorchersSequence.single m (((G : BorchersSequence d).funcs m))
+            (G.ordered_tsupport m)))
+      (s := {z : ℂ | 0 < z.re}) ?_
+  intro m hm
+  exact differentiableOn_OSInnerProductTimeShiftHolomorphicValue
+    (d := d) OS lgc
+    (PositiveTimeBorchersSequence.single n (((F : BorchersSequence d).funcs n))
+      (F.ordered_tsupport n))
+    (PositiveTimeBorchersSequence.single m (((G : BorchersSequence d).funcs m))
+      (G.ordered_tsupport m))
+
+private theorem continuousOn_OSInnerProductTimeShiftHolomorphicValueExpandBoth
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d) :
+    ContinuousOn (OSInnerProductTimeShiftHolomorphicValueExpandBoth
+      (d := d) OS lgc F G) {z : ℂ | 0 < z.re} :=
+  (differentiableOn_OSInnerProductTimeShiftHolomorphicValueExpandBoth
+    (d := d) OS lgc F G).continuousOn
+
+private theorem OSInnerProductTimeShiftHolomorphicValueExpandBoth_ofReal_eq_of_isCompactSupport
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d)
+    (hG_compact : ∀ n,
+      HasCompactSupport (((
+        G : BorchersSequence d).funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    OSInnerProductTimeShiftHolomorphicValueExpandBoth (d := d) OS lgc F G (t : ℂ) =
+      OSInnerProduct d OS.S (F : BorchersSequence d)
+        (timeShiftBorchers (d := d) t (G : BorchersSequence d)) := by
+  classical
+  rw [OSInnerProduct]
+  unfold OSInnerProductTimeShiftHolomorphicValueExpandBoth
+  simp only [Finset.sum_apply]
+  refine Finset.sum_congr rfl ?_
+  intro n hn
+  refine Finset.sum_congr rfl ?_
+  intro m hm
+  simpa [timeShiftBorchers_funcs] using
+    (OSInnerProductTimeShiftHolomorphicValue_ofReal_eq_single
+      (d := d) (OS := OS) (lgc := lgc)
+      (f := ((F : BorchersSequence d).funcs n))
+      (hf_ord := F.ordered_tsupport n)
+      (g := ((G : BorchersSequence d).funcs m))
+      (hg_ord := G.ordered_tsupport m)
+      (hg_compact := hG_compact m)
+      (t := t) ht)
+
 private theorem inner_osTimeShiftLinear_isSemigroupPDKernel_of_isCompactSupport
     (OS : OsterwalderSchraderAxioms d)
     (F : PositiveTimeBorchersSequence d)
