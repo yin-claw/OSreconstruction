@@ -242,8 +242,7 @@ the tracked production tree, not as a complete file listing.
 │       ├── Spectral/                     # bounded spectral-theorem via RMK lane
 │       ├── Unbounded/                    # unbounded operators, spectral theorem, Stone
 │       └── MeasureTheory/                # spectral integrals, Stieltjes, Caratheodory
-├── docs/                                 # synchronized development plans
-└── agents_chat.md                        # cross-agent coordination log
+└── docs/                                 # synchronized development plans
 ```
 
 Two navigation notes:
