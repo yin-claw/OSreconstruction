@@ -335,6 +335,26 @@ def xiShift {k d : ℕ} (j : Fin k) (r : Fin (d + 1))
     (z : Fin k → Fin (d + 1) → ℂ) (t : ℂ) : Fin k → Fin (d + 1) → ℂ :=
   fun i μ => if j.val ≤ i.val ∧ μ = r then z i μ + t else z i μ
 
+/-- Shifting a cumulative-difference slice by zero does nothing. -/
+private theorem xiShift_zero {k d : ℕ}
+    (j : Fin k) (r : Fin (d + 1))
+    (z : Fin k → Fin (d + 1) → ℂ) :
+    xiShift j r z 0 = z := by
+  ext i μ
+  by_cases h : j ≤ i ∧ μ = r
+  · simp [xiShift, h]
+  · simp [xiShift, h]
+
+/-- Successive ξ-shifts in the same cumulative-difference coordinate add. -/
+private theorem xiShift_add_same {k d : ℕ}
+    (j : Fin k) (r : Fin (d + 1))
+    (z : Fin k → Fin (d + 1) → ℂ) (s t : ℂ) :
+    xiShift j r (xiShift j r z s) t = xiShift j r z (s + t) := by
+  ext i μ
+  by_cases h : j ≤ i ∧ μ = r
+  · simp [xiShift, h, add_assoc]
+  · simp [xiShift, h]
+
 /-- In flattened difference coordinates, `xiShift` changes exactly one coordinate:
 the `(j,r)` difference variable is translated by `t`, and all other difference
 coordinates stay fixed. This is the concrete bookkeeping fact behind the
@@ -703,6 +723,258 @@ private theorem simpleTensor_flatUpdate_integral_eq {n m : ℕ}
           (f.osConjTensorProduct g) y *
             Φ (BHW.toDiffFlat (n + m) d (fun i => wickRotatePoint (y i))) := by
         rfl
+
+/-- Configuration-space form of `simpleTensor_flatUpdate_integral_eq`: composing
+the flat update with `fromDiffFlat` yields the same Euclidean slice identity. -/
+private theorem simpleTensor_fromDiffFlatUpdate_integral_eq {n m : ℕ}
+    (hm : 0 < m)
+    (f : SchwartzNPoint d n) (g : SchwartzNPoint d m) (t : ℝ)
+    (Ψ : (Fin (n + m) → Fin (d + 1) → ℂ) → ℂ) :
+    ∫ x : NPointDomain d (n + m),
+      (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) x *
+        Ψ (BHW.fromDiffFlat (n + m) d
+          (Function.update
+            (BHW.toDiffFlat (n + m) d (fun i => wickRotatePoint (x i)))
+            (finProdFinEquiv (⟨n, Nat.lt_add_of_pos_right hm⟩, 0))
+            (BHW.toDiffFlat (n + m) d (fun i => wickRotatePoint (x i))
+              (finProdFinEquiv (⟨n, Nat.lt_add_of_pos_right hm⟩, 0)) - (t : ℂ) * Complex.I))) =
+      ∫ y : NPointDomain d (n + m),
+        (f.osConjTensorProduct g) y * Ψ (fun i => wickRotatePoint (y i)) := by
+  simpa [Function.comp_apply, BHW.fromDiffFlat_toDiffFlat] using
+    (simpleTensor_flatUpdate_integral_eq (d := d) (n := n) (m := m)
+      (hm := hm) (f := f) (g := g) (t := t)
+      (Φ := Ψ ∘ BHW.fromDiffFlat (n + m) d))
+
+/-- Integrated ξ-shift form of the simple-tensor slice identity. A flat update by
+`- t * I` in the split time-difference coordinate is exactly the same Euclidean
+integral as the positive right-factor time shift. -/
+private theorem simpleTensor_xiShift_integral_eq {n m : ℕ}
+    (hm : 0 < m)
+    (f : SchwartzNPoint d n) (g : SchwartzNPoint d m) (t : ℝ)
+    (Ψ : (Fin (n + m) → Fin (d + 1) → ℂ) → ℂ) :
+    ∫ x : NPointDomain d (n + m),
+      (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) x *
+        Ψ (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+          (fun i => wickRotatePoint (x i)) (-(t : ℂ) * Complex.I)) =
+      ∫ y : NPointDomain d (n + m),
+        (f.osConjTensorProduct g) y * Ψ (fun i => wickRotatePoint (y i)) := by
+  let j : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+  have hslice :
+      ∀ x : NPointDomain d (n + m),
+        BHW.fromDiffFlat (n + m) d
+          (Function.update
+            (BHW.toDiffFlat (n + m) d (fun i => wickRotatePoint (x i)))
+            (finProdFinEquiv (j, 0))
+            (BHW.toDiffFlat (n + m) d (fun i => wickRotatePoint (x i))
+              (finProdFinEquiv (j, 0)) - (t : ℂ) * Complex.I)) =
+          xiShift j 0 (fun i => wickRotatePoint (x i)) (-(t : ℂ) * Complex.I) := by
+    intro x
+    let u : Fin ((n + m) * (d + 1)) → ℂ :=
+      BHW.toDiffFlat (n + m) d (fun i => wickRotatePoint (x i))
+    simpa [u, sub_eq_add_neg, BHW.fromDiffFlat_toDiffFlat] using
+      (fromDiffFlat_update_eq_xiShift (j := j) (r := (0 : Fin (d + 1)))
+        (u := u) (t := -(t : ℂ) * Complex.I))
+  calc
+    ∫ x : NPointDomain d (n + m),
+        (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) x *
+          Ψ (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun i => wickRotatePoint (x i)) (-(t : ℂ) * Complex.I)) =
+      ∫ x : NPointDomain d (n + m),
+        (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) x *
+          Ψ (BHW.fromDiffFlat (n + m) d
+            (Function.update
+              (BHW.toDiffFlat (n + m) d (fun i => wickRotatePoint (x i)))
+              (finProdFinEquiv (j, 0))
+              (BHW.toDiffFlat (n + m) d (fun i => wickRotatePoint (x i))
+                (finProdFinEquiv (j, 0)) - (t : ℂ) * Complex.I))) := by
+        refine MeasureTheory.integral_congr_ae ?_
+        filter_upwards with x
+        rw [hslice x]
+    _ = ∫ y : NPointDomain d (n + m),
+          (f.osConjTensorProduct g) y * Ψ (fun i => wickRotatePoint (y i)) := by
+        simpa [j] using
+          (simpleTensor_fromDiffFlatUpdate_integral_eq (d := d) (n := n) (m := m)
+            (hm := hm) (f := f) (g := g) (t := t) (Ψ := Ψ))
+
+/-- Witness-side version of `simpleTensor_xiShift_integral_eq`: moving the positive
+right-factor time shift from the Schwartz tensor term to the Euclidean witness
+changes the witness by `+ t * I` in the split time-difference coordinate. -/
+private theorem simpleTensor_timeShift_integral_eq_xiShift {n m : ℕ}
+    (hm : 0 < m)
+    (f : SchwartzNPoint d n) (g : SchwartzNPoint d m) (t : ℝ)
+    (Ψ : (Fin (n + m) → Fin (d + 1) → ℂ) → ℂ) :
+    ∫ x : NPointDomain d (n + m),
+      Ψ (fun i => wickRotatePoint (x i)) *
+        (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) x =
+      ∫ y : NPointDomain d (n + m),
+        Ψ (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+          (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+          (f.osConjTensorProduct g) y := by
+  let j : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+  have hcancel : (-(t : ℂ) * Complex.I) + (t : ℂ) * Complex.I = 0 := by
+    ring
+  calc
+    ∫ x : NPointDomain d (n + m),
+        Ψ (fun i => wickRotatePoint (x i)) *
+          (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) x =
+      ∫ x : NPointDomain d (n + m),
+        (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) x *
+          Ψ (fun i => wickRotatePoint (x i)) := by
+        refine MeasureTheory.integral_congr_ae ?_
+        filter_upwards with x
+        simp [mul_comm]
+    _ = ∫ y : NPointDomain d (n + m),
+          (f.osConjTensorProduct g) y *
+            Ψ (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+              (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) := by
+        simpa [j, xiShift_add_same, xiShift_zero, hcancel] using
+          (simpleTensor_xiShift_integral_eq (d := d) (n := n) (m := m)
+            (hm := hm) (f := f) (g := g) (t := t)
+            (Ψ := fun z =>
+              Ψ (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0 z
+                ((t : ℂ) * Complex.I))))
+    _ = ∫ y : NPointDomain d (n + m),
+          Ψ (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+            (f.osConjTensorProduct g) y := by
+        refine MeasureTheory.integral_congr_ae ?_
+        filter_upwards with y
+        simp [mul_comm]
+
+/-- If a Euclidean witness `Ψ` recovers `OS.S (n+m)` on zero-diagonal tests, then
+the positive right-factor time shift of a simple tensor is recovered by the same
+witness evaluated on the `+ t * I` ξ-shifted Euclidean configuration. This is the
+direct `OS.S`-level slice identity needed before the finite-sum `ExpandBoth`
+assembly in `schwinger_continuation_base_step`. -/
+private theorem schwinger_simpleTensor_timeShift_eq_xiShift {n m : ℕ}
+    (OS : OsterwalderSchraderAxioms d)
+    (hm : 0 < m)
+    (Ψ : (Fin (n + m) → Fin (d + 1) → ℂ) → ℂ)
+    (hΨ_euclid : ∀ (h : ZeroDiagonalSchwartz d (n + m)),
+      OS.S (n + m) h = ∫ x : NPointDomain d (n + m),
+        Ψ (fun i => wickRotatePoint (x i)) * (h.1 x))
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (t : ℝ) (ht : 0 < t) :
+    OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+      (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g))) =
+      ∫ y : NPointDomain d (n + m),
+        Ψ (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+          (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+          (f.osConjTensorProduct g) y := by
+  have hg_shift_ord :
+      tsupport ((timeShiftSchwartzNPoint (d := d) t g : SchwartzNPoint d m) :
+        NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m := by
+    exact timeShiftSchwartzNPoint_preserves_ordered_positive_tsupport
+      (d := d) t ht g hg_ord
+  have hvanish_shift :
+      VanishesToInfiniteOrderOnCoincidence
+        (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) := by
+    exact VanishesToInfiniteOrderOnCoincidence_osConjTensorProduct_of_tsupport_subset_orderedPositiveTimeRegion
+      (f := f) (g := timeShiftSchwartzNPoint (d := d) t g) hf_ord hg_shift_ord
+  calc
+    OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+        (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g))) =
+      ∫ x : NPointDomain d (n + m),
+        Ψ (fun i => wickRotatePoint (x i)) *
+          ((ZeroDiagonalSchwartz.ofClassical
+            (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g))).1 x) := by
+        exact hΨ_euclid (ZeroDiagonalSchwartz.ofClassical
+          (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)))
+    _ = ∫ x : NPointDomain d (n + m),
+          Ψ (fun i => wickRotatePoint (x i)) *
+            (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) x := by
+        simp [ZeroDiagonalSchwartz.coe_ofClassical_of_vanishes, hvanish_shift]
+    _ = ∫ y : NPointDomain d (n + m),
+          Ψ (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+            (f.osConjTensorProduct g) y := by
+        exact simpleTensor_timeShift_integral_eq_xiShift
+          (d := d) (n := n) (m := m) (hm := hm) (f := f) (g := g) (t := t) (Ψ := Ψ)
+
+/-- Single-split bridge from the semigroup-side holomorphic term to the Euclidean
+ξ-shift witness. On positive real points, the public `ExpandBoth` value for
+concentrated left/right Borchers sequences matches the corresponding shifted
+simple-tensor Schwinger term, which is then rewritten by
+`schwinger_simpleTensor_timeShift_eq_xiShift`. This is the first production theorem
+that directly connects the one-variable OS holomorphic family to the Euclidean
+slice witness used in `schwinger_continuation_base_step`. -/
+private theorem OSInnerProductTimeShiftHolomorphicValueExpandBoth_single_eq_xiShift
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (Ψ : (Fin (n + m) → Fin (d + 1) → ℂ) → ℂ)
+    (hΨ_euclid : ∀ (h : ZeroDiagonalSchwartz d (n + m)),
+      OS.S (n + m) h = ∫ x : NPointDomain d (n + m),
+        Ψ (fun i => wickRotatePoint (x i)) * (h.1 x))
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hg_compact : HasCompactSupport (g : NPointDomain d m → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    OSInnerProductTimeShiftHolomorphicValueExpandBoth (d := d) OS lgc
+        (PositiveTimeBorchersSequence.single n f hf_ord)
+        (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ) =
+      ∫ y : NPointDomain d (n + m),
+        Ψ (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+          (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+          (f.osConjTensorProduct g) y := by
+  have hreal :
+      OSInnerProductTimeShiftHolomorphicValueExpandBoth (d := d) OS lgc
+          (PositiveTimeBorchersSequence.single n f hf_ord)
+          (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ) =
+        OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+          (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g))) := by
+    rw [OSInnerProductTimeShiftHolomorphicValueExpandBoth_ofReal_eq_of_isCompactSupport
+      (d := d) (OS := OS) (lgc := lgc)
+      (F := PositiveTimeBorchersSequence.single n f hf_ord)
+      (G := PositiveTimeBorchersSequence.single m g hg_ord)
+      (hG_compact := by
+        intro k
+        by_cases hk : k = m
+        · subst hk
+          simpa [PositiveTimeBorchersSequence.single_toBorchersSequence] using hg_compact
+        · have hzero :
+            ((((PositiveTimeBorchersSequence.single m g hg_ord : PositiveTimeBorchersSequence d) :
+                BorchersSequence d).funcs k : SchwartzNPoint d k) :
+              NPointDomain d k → ℂ) = 0 := by
+            simp [PositiveTimeBorchersSequence.single_toBorchersSequence,
+              BorchersSequence.single, hk]
+          rw [hzero]
+          simpa using (HasCompactSupport.zero :
+            HasCompactSupport (0 : NPointDomain d k → ℂ)))
+      (t := t) ht]
+    simp only [PositiveTimeBorchersSequence.single_toBorchersSequence]
+    have hshift_single :
+        ∀ k,
+          (timeShiftBorchers (d := d) t (BorchersSequence.single m g)).funcs k =
+            (BorchersSequence.single m (timeShiftSchwartzNPoint (d := d) t g)).funcs k := by
+      intro k
+      by_cases hk : k = m
+      · subst hk
+        simp [BorchersSequence.single]
+      · simp [BorchersSequence.single, hk]
+    calc
+      OSInnerProduct d OS.S (BorchersSequence.single n f)
+          (timeShiftBorchers (d := d) t (BorchersSequence.single m g)) =
+        OSInnerProduct d OS.S (BorchersSequence.single n f)
+          (BorchersSequence.single m (timeShiftSchwartzNPoint (d := d) t g)) := by
+            exact OSInnerProduct_congr_right d OS.S OS.E0_linear
+              (BorchersSequence.single n f)
+              (timeShiftBorchers (d := d) t (BorchersSequence.single m g))
+              (BorchersSequence.single m (timeShiftSchwartzNPoint (d := d) t g))
+              hshift_single
+      _ = OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+            (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g))) := by
+            simpa using
+              (OSInnerProduct_single_single d OS.S OS.E0_linear n m f
+                (timeShiftSchwartzNPoint (d := d) t g))
+  exact hreal.trans <|
+    schwinger_simpleTensor_timeShift_eq_xiShift (d := d) (OS := OS)
+      (hm := hm) (Ψ := Ψ) (hΨ_euclid := hΨ_euclid)
+      (f := f) (hf_ord := hf_ord) (g := g) (hg_ord := hg_ord) (t := t) ht
 
 /-- For r ≥ 1, the ξ-shift stays in C_k^(r). The shift only modifies column r,
     and C_k^(r) only constrains columns with μ.val ≤ r-1. -/

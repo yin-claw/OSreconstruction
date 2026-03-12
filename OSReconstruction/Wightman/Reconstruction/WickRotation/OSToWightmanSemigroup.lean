@@ -815,7 +815,7 @@ private theorem timeShiftSchwartzNPoint_preserves_ordered_positive_tsupport_nonn
     linarith
 
 omit [NeZero d] in
-private theorem timeShiftSchwartzNPoint_preserves_ordered_positive_tsupport
+theorem timeShiftSchwartzNPoint_preserves_ordered_positive_tsupport
     {n : ℕ} (t : ℝ) (ht : 0 < t) (f : SchwartzNPoint d n)
     (hf : tsupport ((f : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
       OrderedPositiveTimeRegion d n) :
@@ -3113,7 +3113,7 @@ private theorem OSInnerProductTimeShiftHolomorphicValueExpandRight_ofReal_eq_of_
 
 /-- Finite double-sum holomorphic expansion obtained by decomposing both Borchers
 sequences into concentrated components. -/
-private def OSInnerProductTimeShiftHolomorphicValueExpandBoth
+def OSInnerProductTimeShiftHolomorphicValueExpandBoth
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     (F G : PositiveTimeBorchersSequence d) : ℂ → ℂ :=
   ∑ n ∈ Finset.range (((F : BorchersSequence d).bound) + 1),
@@ -3124,7 +3124,7 @@ private def OSInnerProductTimeShiftHolomorphicValueExpandBoth
         (PositiveTimeBorchersSequence.single m (((G : BorchersSequence d).funcs m))
           (G.ordered_tsupport m))
 
-private theorem differentiableOn_OSInnerProductTimeShiftHolomorphicValueExpandBoth
+theorem differentiableOn_OSInnerProductTimeShiftHolomorphicValueExpandBoth
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     (F G : PositiveTimeBorchersSequence d) :
     DifferentiableOn ℂ (OSInnerProductTimeShiftHolomorphicValueExpandBoth
@@ -3159,7 +3159,7 @@ private theorem differentiableOn_OSInnerProductTimeShiftHolomorphicValueExpandBo
     (PositiveTimeBorchersSequence.single m (((G : BorchersSequence d).funcs m))
       (G.ordered_tsupport m))
 
-private theorem continuousOn_OSInnerProductTimeShiftHolomorphicValueExpandBoth
+theorem continuousOn_OSInnerProductTimeShiftHolomorphicValueExpandBoth
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     (F G : PositiveTimeBorchersSequence d) :
     ContinuousOn (OSInnerProductTimeShiftHolomorphicValueExpandBoth
@@ -3167,7 +3167,7 @@ private theorem continuousOn_OSInnerProductTimeShiftHolomorphicValueExpandBoth
   (differentiableOn_OSInnerProductTimeShiftHolomorphicValueExpandBoth
     (d := d) OS lgc F G).continuousOn
 
-private theorem OSInnerProductTimeShiftHolomorphicValueExpandBoth_ofReal_eq_of_isCompactSupport
+theorem OSInnerProductTimeShiftHolomorphicValueExpandBoth_ofReal_eq_of_isCompactSupport
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     (F G : PositiveTimeBorchersSequence d)
     (hG_compact : ∀ n,
