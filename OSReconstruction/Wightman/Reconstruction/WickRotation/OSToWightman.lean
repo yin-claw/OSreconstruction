@@ -1103,6 +1103,38 @@ private theorem timeReflection_add_timeShiftVec (x : SpacetimeDim d) (t : ℝ) :
     ring
   · simp [timeReflection, timeShiftVec, hμ]
 
+/-- Pointwise form of a right-block Euclidean time shift inside the OS tensor
+product. Shifting the right Schwartz factor by `t` is the same as evaluating the
+unshifted tensor product on the combined configuration whose last block is
+translated by `- timeShiftVec d t`, while the first block stays fixed. -/
+private theorem osConjTensorProduct_timeShift_eq_tailShift {n m : ℕ}
+    (f : SchwartzNPoint d n) (g : SchwartzNPoint d m) (t : ℝ)
+    (x : NPointDomain d (n + m)) :
+    (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) x =
+      (f.osConjTensorProduct g)
+        (fun i => if h : n ≤ i.val then x i - timeShiftVec d t else x i) := by
+  let y : NPointDomain d (n + m) :=
+    fun i => if h : n ≤ i.val then x i - timeShiftVec d t else x i
+  have hsplitFirst : splitFirst n m y = splitFirst n m x := by
+    ext i μ
+    have hi : ¬ n ≤ (Fin.castAdd m i).val := by
+      simpa using (not_le_of_gt i.isLt)
+    change (if n ≤ (Fin.castAdd m i).val then x (Fin.castAdd m i) - timeShiftVec d t
+      else x (Fin.castAdd m i)) μ = x (Fin.castAdd m i) μ
+    rw [if_neg hi]
+  have hsplitLast :
+      splitLast n m y = fun i => x (Fin.natAdd n i) - timeShiftVec d t := by
+    ext i μ
+    have hi : n ≤ (Fin.natAdd n i).val := by
+      simp [Fin.natAdd]
+    change (if n ≤ (Fin.natAdd n i).val then x (Fin.natAdd n i) - timeShiftVec d t
+      else x (Fin.natAdd n i)) μ = (x (Fin.natAdd n i) - timeShiftVec d t) μ
+    rw [if_pos hi]
+  simp only [SchwartzNPoint.osConjTensorProduct, SchwartzMap.tensorProduct_apply,
+    SchwartzNPoint.osConj_apply, timeShiftSchwartzNPoint_apply]
+  rw [hsplitFirst, hsplitLast]
+  rfl
+
 private theorem shift_osConjTensorProduct_eq {n m : ℕ}
     (f : SchwartzNPoint d n) (g : SchwartzNPoint d m) (s t : ℝ)
     (x : NPointDomain d (n + m)) :
@@ -3495,6 +3527,375 @@ theorem schwinger_continuation_base_step {d : ℕ} [NeZero d]
 def xiShift {k d : ℕ} (j : Fin k) (r : Fin (d + 1))
     (z : Fin k → Fin (d + 1) → ℂ) (t : ℂ) : Fin k → Fin (d + 1) → ℂ :=
   fun i μ => if j.val ≤ i.val ∧ μ = r then z i μ + t else z i μ
+
+/-- In flattened difference coordinates, `xiShift` changes exactly one coordinate:
+the `(j,r)` difference variable is translated by `t`, and all other difference
+coordinates stay fixed. This is the concrete bookkeeping fact behind the
+one-variable slice picture used in analytic continuation. -/
+private theorem toDiffFlat_xiShift_eq_update {k d : ℕ}
+    (j : Fin k) (r : Fin (d + 1))
+    (z : Fin k → Fin (d + 1) → ℂ) (t : ℂ) :
+    BHW.toDiffFlat k d (xiShift j r z t) =
+      Function.update (BHW.toDiffFlat k d z) (finProdFinEquiv (j, r))
+        (BHW.toDiffFlat k d z (finProdFinEquiv (j, r)) + t) := by
+  ext p
+  obtain ⟨q, rfl⟩ := finProdFinEquiv.surjective p
+  rcases q with ⟨i, μ⟩
+  simp only [BHW.toDiffFlat, BHW.flattenCfg]
+  simp only [finProdFinEquiv.symm_apply_apply]
+  have hflat :
+      BHW.flattenCfg k d (BHW.diffCoordEquiv k d z) (finProdFinEquiv (i, μ)) =
+        BHW.diffCoordEquiv k d z i μ := by
+    simp [BHW.flattenCfg]
+  by_cases hμ : μ = r
+  · subst hμ
+    by_cases hij : i = j
+    · subst hij
+      by_cases hi0 : i.val = 0
+      · simp [Function.update, BHW.diffCoordEquiv_apply, xiShift, hi0]
+      · have hpred_not : ¬ i.val ≤ i.val - 1 := by omega
+        simp [Function.update, BHW.diffCoordEquiv_apply, xiShift, hi0, hpred_not]
+        ring
+    · by_cases hij_lt : i.val < j.val
+      · have hneq : finProdFinEquiv (i, μ) ≠ finProdFinEquiv (j, μ) := by
+          intro h
+          apply hij
+          exact congrArg Prod.fst (finProdFinEquiv.injective h)
+        have hj_not_le : ¬ j.val ≤ i.val := not_le.mpr hij_lt
+        by_cases hi0 : i.val = 0
+        · have hj0 : j.val ≠ 0 := by omega
+          simp [Function.update, hneq]
+          rw [hflat]
+          simp [BHW.diffCoordEquiv_apply, xiShift, hi0, hj0]
+        · have hpred_not : ¬ j.val ≤ i.val - 1 := by omega
+          simp [Function.update, hneq]
+          rw [hflat]
+          simp [BHW.diffCoordEquiv_apply, xiShift, hi0, hj_not_le, hpred_not]
+      · have hj_le : j.val ≤ i.val := le_of_not_gt hij_lt
+        by_cases hi0 : i.val = 0
+        · have : False := by
+            apply hij
+            exact Fin.ext (by omega)
+          exact False.elim this
+        · have hneq : finProdFinEquiv (i, μ) ≠ finProdFinEquiv (j, μ) := by
+            intro h
+            apply hij
+            exact congrArg Prod.fst (finProdFinEquiv.injective h)
+          have hpred : j.val ≤ i.val - 1 := by omega
+          simp [Function.update, hneq]
+          rw [hflat]
+          simp [BHW.diffCoordEquiv_apply, xiShift, hi0, hj_le, hpred]
+  · have hneq : finProdFinEquiv (i, μ) ≠ finProdFinEquiv (j, r) := by
+      intro h
+      apply hμ
+      exact congrArg Prod.snd (finProdFinEquiv.injective h)
+    by_cases hi0 : i.val = 0
+    · simp [Function.update, hneq]
+      rw [hflat]
+      simp [BHW.diffCoordEquiv_apply, xiShift, hi0, hμ]
+    · by_cases hj_le : j.val ≤ i.val
+      · by_cases hpred : j.val ≤ i.val - 1
+        · simp [Function.update, hneq]
+          rw [hflat]
+          simp [BHW.diffCoordEquiv_apply, xiShift, hi0, hμ, hj_le, hpred]
+        · have hji : j = i := by
+            apply Fin.ext
+            omega
+          subst hji
+          simp [Function.update, hneq]
+          rw [hflat]
+          simp [BHW.diffCoordEquiv_apply, xiShift, hi0, hμ]
+      · simp [Function.update, hneq]
+        rw [hflat]
+        simp [BHW.diffCoordEquiv_apply, xiShift, hi0, hj_le, hμ]
+
+/-- Inverse-chart form of `toDiffFlat_xiShift_eq_update`: updating exactly the
+flattened difference coordinate `(j,r)` by `+ t` reconstructs the configuration
+obtained from `xiShift j r` by the same increment. -/
+private theorem fromDiffFlat_update_eq_xiShift {k d : ℕ}
+    (j : Fin k) (r : Fin (d + 1))
+    (u : Fin (k * (d + 1)) → ℂ) (t : ℂ) :
+    BHW.fromDiffFlat k d
+        (Function.update u (finProdFinEquiv (j, r))
+          (u (finProdFinEquiv (j, r)) + t)) =
+      xiShift j r (BHW.fromDiffFlat k d u) t := by
+  have hinj : Function.Injective (BHW.toDiffFlat k d) := by
+    intro z₁ z₂ h
+    simpa [BHW.fromDiffFlat_toDiffFlat (n := k) (d := d) z₁,
+      BHW.fromDiffFlat_toDiffFlat (n := k) (d := d) z₂] using
+      congrArg (BHW.fromDiffFlat k d) h
+  apply hinj
+  rw [BHW.toDiffFlat_fromDiffFlat]
+  rw [toDiffFlat_xiShift_eq_update]
+  simp [BHW.toDiffFlat_fromDiffFlat]
+
+/-- Affine version of `fromDiffFlat_update_eq_xiShift`: replacing the flattened
+coordinate `(j,r)` by an arbitrary value `w` corresponds to `xiShift` by the
+increment `w - u(j,r)`. This is the form used by one-variable slice maps
+written with `Function.update`. -/
+private theorem fromDiffFlat_update_eq_xiShift_sub {k d : ℕ}
+    (j : Fin k) (r : Fin (d + 1))
+    (u : Fin (k * (d + 1)) → ℂ) (w : ℂ) :
+    BHW.fromDiffFlat k d
+        (Function.update u (finProdFinEquiv (j, r)) w) =
+      xiShift j r (BHW.fromDiffFlat k d u)
+        (w - u (finProdFinEquiv (j, r))) := by
+  rw [← fromDiffFlat_update_eq_xiShift (j := j) (r := r) (u := u)
+    (t := w - u (finProdFinEquiv (j, r)))]
+  congr 1
+  ext q
+  by_cases hq : q = finProdFinEquiv (j, r)
+  · subst hq
+    simp [Function.update]
+  · simp [Function.update, hq]
+
+/-- Tail Euclidean time shift starting at index `j`: points with index `i ≥ j`
+are shifted by the real time vector `timeShiftVec d t`, earlier points are fixed. -/
+private def tailTimeShiftConfig {d k : ℕ} (j : Fin k) (t : ℝ)
+    (x : NPointDomain d k) : NPointDomain d k :=
+  fun i => if j.val ≤ i.val then x i + timeShiftVec d t else x i
+
+/-- Sign-correct inverse form of `osConjTensorProduct_timeShift_eq_tailShift`.
+A positive tail shift of the right block corresponds to a negative time shift on
+the right Schwartz factor. This fixes the sign convention needed when a flat
+coordinate update by `+ t * I` is converted back to the OS semigroup picture. -/
+private theorem osConjTensorProduct_tailTimeShift_eq_timeShift {n m : ℕ}
+    (f : SchwartzNPoint d n) (g : SchwartzNPoint d m) (hm : 0 < m) (t : ℝ)
+    (x : NPointDomain d (n + m)) :
+    (f.osConjTensorProduct g)
+        (tailTimeShiftConfig (d := d) ⟨n, by omega⟩ t x) =
+      (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) (-t) g)) x := by
+  have htail :=
+    osConjTensorProduct_timeShift_eq_tailShift (d := d) f g (-t) x
+  have hneg_shift : -timeShiftVec d (-t) = timeShiftVec d t := by
+    ext μ
+    by_cases hμ : μ = 0
+    · subst hμ
+      simp [timeShiftVec]
+    · simp [timeShiftVec, hμ]
+  have hcfg :
+      (fun i => if h : n ≤ i.val then x i - timeShiftVec d (-t) else x i) =
+        tailTimeShiftConfig (d := d) ⟨n, by omega⟩ t x := by
+    funext i
+    by_cases hi : n ≤ i.val
+    · simp [tailTimeShiftConfig, hi, sub_eq_add_neg, hneg_shift]
+    · simp [tailTimeShiftConfig, hi]
+  rw [hcfg] at htail
+  exact htail.symm
+
+/-- Forward form of `osConjTensorProduct_tailTimeShift_eq_timeShift`: a positive
+time shift on the right Schwartz factor is evaluation of the unshifted tensor
+product on the configuration with the right block shifted by `- timeShiftVec d t`.
+Written with `tailTimeShiftConfig`, this is the form that matches a flat update
+by `- t * I`. -/
+private theorem osConjTensorProduct_timeShift_eq_tailTimeShift {n m : ℕ}
+    (f : SchwartzNPoint d n) (g : SchwartzNPoint d m) (hm : 0 < m) (t : ℝ)
+    (x : NPointDomain d (n + m)) :
+    (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) x =
+      (f.osConjTensorProduct g)
+        (tailTimeShiftConfig (d := d) ⟨n, by omega⟩ (-t) x) := by
+  simpa using
+    (osConjTensorProduct_tailTimeShift_eq_timeShift
+      (d := d) (f := f) (g := g) (hm := hm) (t := -t) (x := x)).symm
+
+/-- Translation in Euclidean spacetime preserves Lebesgue measure. -/
+private theorem translate_spacetime_measurePreserving (a : SpacetimeDim d) :
+    MeasureTheory.MeasurePreserving
+      (fun x : SpacetimeDim d => x - a) MeasureTheory.volume MeasureTheory.volume := by
+  simpa [sub_eq_add_neg] using
+    (MeasureTheory.measurePreserving_add_right
+      (MeasureTheory.volume : MeasureTheory.Measure (SpacetimeDim d)) (-a))
+
+/-- Tail translation of the right block preserves Lebesgue measure on configuration
+space. This is the change-of-variables ingredient for converting the sign-correct
+flat-update slice picture back to the Euclidean integral. -/
+private theorem rightBlockTailShift_measurePreserving {n m : ℕ}
+    (hm : 0 < m) (t : ℝ) :
+    MeasureTheory.MeasurePreserving
+      (tailTimeShiftConfig (d := d) ⟨n, Nat.lt_add_of_pos_right hm⟩ t)
+      MeasureTheory.volume MeasureTheory.volume := by
+  classical
+  rw [show tailTimeShiftConfig (d := d) ⟨n, Nat.lt_add_of_pos_right hm⟩ t =
+      (fun (x : NPointDomain d (n + m)) (i : Fin (n + m)) =>
+        (if h : n ≤ i.val then fun y : SpacetimeDim d => y + timeShiftVec d t else id) (x i)) by
+      funext x i
+      by_cases h : n ≤ i.val <;> simp [tailTimeShiftConfig, h]]
+  exact MeasureTheory.volume_preserving_pi
+    (fun i : Fin (n + m) => by
+      by_cases h : n ≤ i.val
+      · simpa [h] using
+          (MeasureTheory.measurePreserving_add_right
+            (MeasureTheory.volume : MeasureTheory.Measure (SpacetimeDim d))
+            (timeShiftVec d t))
+      · simpa [h] using
+          (MeasureTheory.MeasurePreserving.id
+            (MeasureTheory.volume : MeasureTheory.Measure (SpacetimeDim d))))
+
+/-- The right-block tail shift is a measurable equivalence, with inverse given by
+shifting the same tail by `-t`. This packages the change of variables needed in
+the Euclidean integral form of the slice identity. -/
+private def rightBlockTailShiftMeasurableEquiv {n m : ℕ}
+    (hm : 0 < m) (t : ℝ) :
+    NPointDomain d (n + m) ≃ᵐ NPointDomain d (n + m) where
+  toEquiv :=
+    { toFun := tailTimeShiftConfig (d := d) ⟨n, Nat.lt_add_of_pos_right hm⟩ t
+      invFun := tailTimeShiftConfig (d := d) ⟨n, Nat.lt_add_of_pos_right hm⟩ (-t)
+      left_inv := by
+        intro x
+        ext i μ
+        by_cases hi : n ≤ i.val
+        · by_cases hμ : μ = 0
+          · subst hμ
+            simp [tailTimeShiftConfig, hi, timeShiftVec]
+          · simp [tailTimeShiftConfig, hi, timeShiftVec, hμ]
+        · simp [tailTimeShiftConfig, hi]
+      right_inv := by
+        intro x
+        ext i μ
+        by_cases hi : n ≤ i.val
+        · by_cases hμ : μ = 0
+          · subst hμ
+            simp [tailTimeShiftConfig, hi, timeShiftVec]
+          · simp [tailTimeShiftConfig, hi, timeShiftVec, hμ]
+        · simp [tailTimeShiftConfig, hi] }
+  measurable_toFun := by
+    unfold tailTimeShiftConfig
+    exact measurable_pi_lambda _ (fun i => by
+      by_cases h : n ≤ i.val
+      · simp [h]
+        exact (measurable_pi_apply i).add measurable_const
+      · simpa [h] using (measurable_pi_apply i))
+  measurable_invFun := by
+    unfold tailTimeShiftConfig
+    exact measurable_pi_lambda _ (fun i => by
+      by_cases h : n ≤ i.val
+      · simp [h]
+        exact (measurable_pi_apply i).add measurable_const
+      · simpa [h] using (measurable_pi_apply i))
+
+/-- Change of variables under the right-block tail shift. Combined with the
+sign-correct pointwise bridge lemmas above, this is the generic integral shell
+needed for the remaining `schwinger_continuation_base_step` slice theorem. -/
+private theorem integral_comp_rightBlockTailShift {n m : ℕ}
+    (hm : 0 < m) (t : ℝ)
+    {e : NPointDomain d (n + m) → ℂ} :
+    ∫ x, e (tailTimeShiftConfig (d := d) ⟨n, Nat.lt_add_of_pos_right hm⟩ t x) =
+      ∫ x, e x := by
+  let Ψ := rightBlockTailShiftMeasurableEquiv (d := d) (n := n) (m := m) hm t
+  have hmp : MeasureTheory.MeasurePreserving
+      (Ψ : NPointDomain d (n + m) → NPointDomain d (n + m))
+      MeasureTheory.volume MeasureTheory.volume := by
+    simpa [Ψ] using rightBlockTailShift_measurePreserving (d := d) (n := n) (m := m) hm t
+  exact hmp.integral_comp' (f := Ψ) e
+
+/-- On Wick-rotated Euclidean configurations, the complex ξ-shift in the time
+difference coordinate `(j,0)` is exactly the Wick rotation of a real tail time
+shift on the underlying Euclidean configuration. -/
+private theorem xiShift_wickRotate_eq_tailTimeShift {d k : ℕ}
+    (j : Fin k) (x : NPointDomain d k) (t : ℝ) :
+    xiShift j 0 (fun i => wickRotatePoint (x i)) ((t : ℂ) * Complex.I) =
+      fun i => wickRotatePoint (tailTimeShiftConfig (d := d) j t x i) := by
+  ext i μ
+  by_cases hji : j.val ≤ i.val
+  · by_cases hμ : μ = 0
+    · subst hμ
+      simp [xiShift, tailTimeShiftConfig, hji, wickRotatePoint, timeShiftVec]
+      ring
+    · simp [xiShift, tailTimeShiftConfig, hji, wickRotatePoint, timeShiftVec, hμ]
+  · by_cases hμ : μ = 0
+    · subst hμ
+      simp [xiShift, tailTimeShiftConfig, hji, wickRotatePoint]
+    · simp [xiShift, tailTimeShiftConfig, hji, wickRotatePoint, hμ]
+
+/-- Flattened-difference form of `xiShift_wickRotate_eq_tailTimeShift`: a flat
+update by `+ t I` in the `(j,0)` coordinate is exactly the Wick-rotated tail
+time shift on Euclidean configurations. This is the coordinate bridge from flat
+slice updates back to the OS semigroup picture. -/
+private theorem toDiffFlat_wickRotate_tailTimeShift_eq_update {d k : ℕ}
+    (j : Fin k) (x : NPointDomain d k) (t : ℝ) :
+    BHW.toDiffFlat k d (fun i => wickRotatePoint (tailTimeShiftConfig (d := d) j t x i)) =
+      Function.update
+        (BHW.toDiffFlat k d (fun i => wickRotatePoint (x i)))
+        (finProdFinEquiv (j, 0))
+        (BHW.toDiffFlat k d (fun i => wickRotatePoint (x i))
+          (finProdFinEquiv (j, 0)) + (t : ℂ) * Complex.I) := by
+  rw [← xiShift_wickRotate_eq_tailTimeShift (d := d) (j := j) (x := x) (t := t)]
+  simpa using
+    toDiffFlat_xiShift_eq_update (j := j) (r := (0 : Fin (d + 1)))
+      (z := fun i => wickRotatePoint (x i)) (t := (t : ℂ) * Complex.I)
+
+/-- Sign-correct specialization of `toDiffFlat_wickRotate_tailTimeShift_eq_update`:
+shifting the Euclidean tail by `-t` corresponds to updating the flattened time
+difference coordinate by `- t * I`. This is the form aligned with the positive
+OS semigroup parameter in `timeShiftSchwartzNPoint t`. -/
+private theorem toDiffFlat_wickRotate_tailTimeShift_eq_update_sub {d k : ℕ}
+    (j : Fin k) (x : NPointDomain d k) (t : ℝ) :
+    BHW.toDiffFlat k d (fun i => wickRotatePoint (tailTimeShiftConfig (d := d) j (-t) x i)) =
+      Function.update
+        (BHW.toDiffFlat k d (fun i => wickRotatePoint (x i)))
+        (finProdFinEquiv (j, 0))
+        (BHW.toDiffFlat k d (fun i => wickRotatePoint (x i))
+          (finProdFinEquiv (j, 0)) - (t : ℂ) * Complex.I) := by
+  simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc] using
+    toDiffFlat_wickRotate_tailTimeShift_eq_update (d := d) (j := j) (x := x) (-t)
+
+/-- Generic simple-tensor slice identity under the Euclidean integral. A positive
+time shift on the right Schwartz factor is converted into a flat update by
+`- t * I` in the split time-difference coordinate, with the intervening tail
+translation absorbed by `integral_comp_rightBlockTailShift`. This is the core
+integral shell for the remaining `schwinger_continuation_base_step` assembly. -/
+private theorem simpleTensor_flatUpdate_integral_eq {n m : ℕ}
+    (hm : 0 < m)
+    (f : SchwartzNPoint d n) (g : SchwartzNPoint d m) (t : ℝ)
+    (Φ : (Fin ((n + m) * (d + 1)) → ℂ) → ℂ) :
+    ∫ x : NPointDomain d (n + m),
+      (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) x *
+        Φ (Function.update
+          (BHW.toDiffFlat (n + m) d (fun i => wickRotatePoint (x i)))
+          (finProdFinEquiv (⟨n, Nat.lt_add_of_pos_right hm⟩, 0))
+          (BHW.toDiffFlat (n + m) d (fun i => wickRotatePoint (x i))
+            (finProdFinEquiv (⟨n, Nat.lt_add_of_pos_right hm⟩, 0)) - (t : ℂ) * Complex.I)) =
+      ∫ y : NPointDomain d (n + m),
+        (f.osConjTensorProduct g) y *
+          Φ (BHW.toDiffFlat (n + m) d (fun i => wickRotatePoint (y i))) := by
+  let j : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+  let e : NPointDomain d (n + m) → ℂ := fun y =>
+    (f.osConjTensorProduct g) y *
+      Φ (BHW.toDiffFlat (n + m) d (fun i => wickRotatePoint (y i)))
+  have hshell :
+      ∀ x : NPointDomain d (n + m),
+        e (tailTimeShiftConfig (d := d) j (-t) x) =
+          (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) x *
+            Φ (Function.update
+              (BHW.toDiffFlat (n + m) d (fun i => wickRotatePoint (x i)))
+              (finProdFinEquiv (j, 0))
+              (BHW.toDiffFlat (n + m) d (fun i => wickRotatePoint (x i))
+                (finProdFinEquiv (j, 0)) - (t : ℂ) * Complex.I)) := by
+    intro x
+    unfold e
+    rw [toDiffFlat_wickRotate_tailTimeShift_eq_update_sub (d := d) (j := j) (x := x) (t := t)]
+    rw [osConjTensorProduct_timeShift_eq_tailTimeShift
+      (d := d) (f := f) (g := g) (hm := hm) (t := t) (x := x)]
+  calc
+    ∫ x : NPointDomain d (n + m),
+        (f.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) x *
+          Φ (Function.update
+            (BHW.toDiffFlat (n + m) d (fun i => wickRotatePoint (x i)))
+            (finProdFinEquiv (⟨n, Nat.lt_add_of_pos_right hm⟩, 0))
+            (BHW.toDiffFlat (n + m) d (fun i => wickRotatePoint (x i))
+              (finProdFinEquiv (⟨n, Nat.lt_add_of_pos_right hm⟩, 0)) - (t : ℂ) * Complex.I)) =
+      ∫ x : NPointDomain d (n + m), e (tailTimeShiftConfig (d := d) j (-t) x) := by
+        refine MeasureTheory.integral_congr_ae ?_
+        filter_upwards with x
+        simpa [j] using (hshell x).symm
+    _ = ∫ x : NPointDomain d (n + m), e x := by
+        simpa [j] using
+          (integral_comp_rightBlockTailShift (d := d) (n := n) (m := m) (hm := hm)
+            (t := -t) (e := e))
+    _ = ∫ y : NPointDomain d (n + m),
+          (f.osConjTensorProduct g) y *
+            Φ (BHW.toDiffFlat (n + m) d (fun i => wickRotatePoint (y i))) := by
+        rfl
 
 /-- For r ≥ 1, the ξ-shift stays in C_k^(r). The shift only modifies column r,
     and C_k^(r) only constrains columns with μ.val ≤ r-1. -/

@@ -42,6 +42,11 @@ lemma toDiffFlat_fromDiffFlat (n d : ℕ) (u : Fin (n * (d + 1)) → ℂ) :
   unfold toDiffFlat fromDiffFlat
   simp [flatten_unflatten_cfg]
 
+lemma fromDiffFlat_toDiffFlat (n d : ℕ) (z : Fin n → Fin (d + 1) → ℂ) :
+    fromDiffFlat n d (toDiffFlat n d z) = z := by
+  unfold toDiffFlat fromDiffFlat
+  simp [unflatten_flatten_cfg]
+
 private theorem differentiable_unflattenCfg (n d : ℕ) :
     Differentiable ℂ (unflattenCfg n d :
       (Fin (n * (d + 1)) → ℂ) → (Fin n → Fin (d + 1) → ℂ)) := by
