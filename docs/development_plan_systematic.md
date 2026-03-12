@@ -1,6 +1,6 @@
 # Systematic Development Plan (OS Reconstruction Critical Path)
 
-Last updated: 2026-03-11
+Last updated: 2026-03-12
 
 This is the active execution plan for closing `sorry`s on the OS reconstruction path.
 It supersedes the earlier BHW-first ordering.
@@ -22,32 +22,36 @@ Counts verified with:
 
 | Scope | Sorrys |
 |---|---:|
-| `OSReconstruction/Wightman` | 30 |
+| `OSReconstruction/Wightman` | 29 |
 | `OSReconstruction/SCV` | 2 |
 | `OSReconstruction/ComplexLieGroups` | 2 |
 | `OSReconstruction/vNA` | 39 |
-| **Total** | **73** |
+| **Total** | **72** |
 
 ## 3. Primary Priority Stack
 
-### A) E -> R direction (`OSToWightman.lean`, 8 sorrys)
+### A) E -> R direction (`OSToWightman*`, 8 sorrys)
 
 Clusters:
 1. Root continuation blocker:
-   - `schwinger_continuation_base_step`
+   - `OSToWightman.lean`: `schwinger_continuation_base_step`
 2. Boundary-value existence:
-   - `boundary_values_tempered`
+   - `OSToWightmanBoundaryValues.lean`: `boundary_values_tempered`
 3. Axiom transfer chain:
-   - transfer of W0-W5-style properties through holomorphic extension + boundary values
+   - `OSToWightmanBoundaryValues.lean`: transfer of W0-W5-style properties through holomorphic extension + boundary values
 4. Cluster property:
-   - `bvt_cluster` and companion transport lemma
+   - `OSToWightmanBoundaryValues.lean`: `bvt_cluster` and companion transport lemma
 
 Live status:
-- the OS quotient/Hilbert semigroup infrastructure is already built
+- the OS quotient/Hilbert semigroup infrastructure is already built in `OSToWightmanSemigroup.lean`
 - `OSLinearGrowthCondition` is already used upstream in proved production lemmas to get polynomial growth of Euclidean time-shift matrix elements and hence contraction
 - rational-time identification with positive functional-calculus powers is in place
 - positive-time continuity of `t ↦ CFC.nnrpow A t` is now in `vNA/Bochner/SemigroupRoots.lean`
+- `Wightman/SchwartzTensorProduct.lean` now contains explicit product-test insertion operators (`productTensorUpdateCLM`, `prependFieldCLMLeft/Right`) for the kernel-extension lane
 - the remaining hard content is no longer generic semigroup packaging; it is the theorem-level bridge into analytic continuation and tempered boundary values
+- the current live choice for `schwinger_continuation_base_step` is still between:
+  - an OS-side interleaved operator representation theorem, or
+  - a genuine Schwartz kernel-extension theorem built on the new tensor infrastructure
 
 ### B) R -> E wick-rotation submodules (10 sorrys total on the active path)
 
@@ -86,10 +90,11 @@ from the OS data.
 
 1. Close `schwinger_continuation_base_step` in `OSToWightman.lean`.
 2. Use the extracted SCV boundary-distribution lemmas to reduce
-   `boundary_values_tempered` to the genuine OS-side growth inputs.
-3. Extract the next reusable translation-growth lemma
-   (`seminorm_translateSchwartz_le`) into SCV.
-4. Close the transfer and cluster chain in `OSToWightman.lean`.
+   `boundary_values_tempered` in `OSToWightmanBoundaryValues.lean` to the genuine OS-side growth inputs.
+3. If the continuation blocker truly requires the Schwartz kernel theorem, continue strengthening
+   `Wightman/SchwartzTensorProduct.lean` and then attack `Wightman/WightmanAxioms.lean`'s
+   `schwartz_nuclear_extension` honestly.
+4. Close the transfer and cluster chain in `OSToWightmanBoundaryValues.lean`.
 5. In parallel or next, attack the two independent R -> E roots in
    `SchwingerAxioms.lean`: coincidence-singularity control and Euclidean reality.
 6. Finish final wiring (`wightman_uniqueness`, remaining `GNSHilbertSpace`, residual `WightmanAxioms` blockers).

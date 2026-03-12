@@ -42,14 +42,18 @@ The project builds cleanly with **zero `axiom` declarations**. Remaining work is
 `sorry` placeholders.
 
 Priority note:
-- The analyticity-critical path is `WickRotation/OSToWightman.lean` together with the SCV and Wick-rotation distributional infrastructure it depends on.
+- The analyticity-critical path is the split `WickRotation/OSToWightmanSemigroup.lean` + `WickRotation/OSToWightman.lean` + `WickRotation/OSToWightmanBoundaryValues.lean` stack, together with the SCV and Wick-rotation distributional infrastructure it depends on.
 - `StoneTheorem` and the broader `vNA` operator-theoretic lane are not on that critical path. They are needed later for the GNS/operator reconstruction theorem `wightman_reconstruction`, specifically the `spectrum_condition` and `vacuum_unique` branches of `gnsQFT`.
 - So, for the key OS reconstruction theorems in `Main.lean`, the immediate priorities are `wightman_to_os` and `os_to_wightman`, not Stone/self-adjoint-generator machinery.
 
+Recent progress (2026-03-12):
+- **The former monolithic `OSToWightman.lean` is now split by mathematical role.** `OSToWightmanSemigroup.lean` carries the OS semigroup / spectral / Laplace and one-variable holomorphic infrastructure, `OSToWightman.lean` isolates the flat-witness continuation core and the live `schwinger_continuation_base_step`, and `OSToWightmanBoundaryValues.lean` carries the tempered boundary-value and transfer layer.
+- **The Schwartz tensor route now has real insertion operators.** `Wightman/SchwartzTensorProduct.lean` now proves the explicit pointwise formula for `productTensor` and packages both slot insertion and recursive head insertion as honest continuous linear maps. This is groundwork for a genuine Schwartz kernel/nuclear-extension theorem rather than a wrapper around continuity.
+
 Recent progress (2026-03-11):
-- **The OS semigroup / spectral lane advanced substantially.** In `WickRotation/OSToWightman.lean`, the honest OS quotient/completion semigroup is now in place with contraction, positivity, self-adjointness, rational-time identification with functional-calculus powers, and the new positive-time continuity input from `vNA/Bochner/SemigroupRoots.lean`.
+- **The OS semigroup / spectral lane advanced substantially.** In `WickRotation/OSToWightmanSemigroup.lean`, the honest OS quotient/completion semigroup is now in place with contraction, positivity, self-adjointness, rational-time identification with functional-calculus powers, and the positive-time continuity input from `vNA/Bochner/SemigroupRoots.lean`.
 - **Generic tempered boundary-value infrastructure was extracted into production SCV code.** `SCV/LaplaceSchwartz.lean` now contains reusable lemmas for polynomial-growth integrability against Schwartz tests, dominated convergence for boundary-ray integrals, and the resulting boundary-distribution bound. These close the DCT/integrability side of `boundary_values_tempered`.
-- **The live root blockers are now sharper.** On the E→R side they remain `schwinger_continuation_base_step` and `boundary_values_tempered`; on the R→E side the honest root gaps remain coincidence-singularity control and Euclidean reality/reflection.
+- **The live root blockers are now sharper.** On the E→R side they are split between `schwinger_continuation_base_step` in `OSToWightman.lean` and `boundary_values_tempered` plus the transfer chain in `OSToWightmanBoundaryValues.lean`; on the R→E side the honest root gaps remain coincidence-singularity control and Euclidean reality/reflection.
 
 Recent progress (2026-03-10):
 - **Distributional EOW is complete.** The full chain from distributional boundary values through distributional uniqueness, distributional BHW swap equality, pointwise extraction, and connected-overlap propagation is proved with 0 sorrys. Key new files: `SCV/DistributionalUniqueness.lean` (0 sorrys), `SCV/SchwartzComplete.lean` (0 sorrys), `ComplexLieGroups/Connectedness/BHWPermutation/AdjacencyDistributional.lean` (0 sorrys).
@@ -58,15 +62,15 @@ Recent progress (2026-03-10):
 - **Euclidean Hermiticity is now localized to the true PET overlap problem.** `SchwingerAxioms.lean` now exposes the conjugate-reversal overlap domain and proves the reflected partner `z ↦ conj(F(conj-rev z))` is holomorphic there. The remaining gap in `bhw_euclidean_reality_ae` is exactly to prove equality of the two holomorphic functions on that overlap from `wightman_real_on_jost_support`.
 - **ForwardTubeDistributions.lean** is now sorry-free (was 4 sorrys).
 
-Snapshot (2026-03-11, counted with `rg -c '^[[:space:]]*sorry([[:space:]]|$)' OSReconstruction --glob '*.lean'`):
+Snapshot (2026-03-12, tracked production tree):
 
 | Module | Direct `sorry` lines |
 |--------|-----------------------|
-| `Wightman/` | 30 |
+| `Wightman/` | 29 |
 | `SCV/` | 2 |
 | `ComplexLieGroups/` | 2 |
 | `vNA/` | 39 |
-| **Total** | **73** |
+| **Total** | **72** |
 
 ### OS-Critical Sorry Flow Toward Reconstruction
 
@@ -107,8 +111,10 @@ flowchart TD
 | `Wightman/Reconstruction/WickRotation/ForwardTubeLorentz.lean` | 2 | poly growth slice + PET measure zero |
 | `Wightman/Reconstruction/WickRotation/BHWExtension.lean` | 0 | honest extendF/distributional adjacent-swap lane complete |
 | `Wightman/Reconstruction/WickRotation/BHWTranslation.lean` | 1 | PET intersection connectivity |
-| `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` | 7 | coincidence singularities, reality/reflection, cluster, OS=W term |
-| `Wightman/Reconstruction/WickRotation/OSToWightman.lean` | 8 | base-step continuation, tempered BV package, transfer chain |
+| `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` | 6 | coincidence singularities, reality/reflection, cluster, OS=W term |
+| `Wightman/Reconstruction/WickRotation/OSToWightmanSemigroup.lean` | 0 | OS semigroup, spectral/Laplace bridge, one-variable holomorphic infrastructure |
+| `Wightman/Reconstruction/WickRotation/OSToWightman.lean` | 1 | base-step continuation / flat witness assembly |
+| `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | 7 | tempered boundary values, transfer chain, cluster |
 | `SCV/PaleyWiener.lean` | 0 | sorry-free |
 | `SCV/LaplaceSchwartz.lean` | 0 | sorry-free; generic tempered boundary-value lemmas extracted |
 | `SCV/TubeDistributions.lean` | 0 | sorry-free |
@@ -167,7 +173,9 @@ OSReconstruction/
 │       │   ├── BHWExtension.lean         # BHW extension definition
 │       │   ├── BHWTranslation.lean       # Translation invariance
 │       │   ├── SchwingerAxioms.lean      # E0-E4 axiom proofs
-│       │   └── OSToWightman.lean         # E'→R' + bridge theorems
+│       │   ├── OSToWightmanSemigroup.lean # OS semigroup + spectral/Laplace bridge
+│       │   ├── OSToWightman.lean          # E'→R' base-step continuation core
+│       │   └── OSToWightmanBoundaryValues.lean # boundary values + axiom transfer
 │       ├── Main.lean             # Top-level theorem wiring
 │       └── Helpers/              # EdgeOfWedge, SeparatelyAnalytic
 ├── SCV/                          # Several complex variables
