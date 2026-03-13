@@ -2839,6 +2839,39 @@ theorem SchwartzNPoint.osConj_smul {n : ℕ} (c : ℂ) (f : SchwartzNPoint d n) 
   ext x
   simp [SchwartzNPoint.osConj, smul_eq_mul]
 
+/-- The OS conjugation as a continuous real-linear map. This is the honest
+topological form of sesquilinearity on complex Schwartz space. -/
+def SchwartzNPoint.osConjRLM {n : ℕ} :
+    SchwartzNPoint d n →L[ℝ] SchwartzNPoint d n where
+  toLinearMap :=
+    { toFun := SchwartzNPoint.osConj (d := d)
+      map_add' := SchwartzNPoint.osConj_add (d := d)
+      map_smul' := by
+        intro c f
+        simpa using (SchwartzNPoint.osConj_smul (d := d) (c : ℂ) f) }
+  cont := by
+    let L : SchwartzNPoint d n →ₗ[ℝ] SchwartzNPoint d n :=
+      { toFun := SchwartzNPoint.osConj (d := d)
+        map_add' := SchwartzNPoint.osConj_add (d := d)
+        map_smul' := by
+          intro c f
+          simpa using (SchwartzNPoint.osConj_smul (d := d) (c : ℂ) f) }
+    apply Seminorm.continuous_from_bounded
+      (schwartz_withSeminorms ℝ (NPointDomain d n) ℂ)
+      (schwartz_withSeminorms ℝ (NPointDomain d n) ℂ)
+      L
+    intro q
+    rcases q with ⟨k, l⟩
+    refine ⟨{(k, l)}, 1, ?_⟩
+    intro f
+    simpa [Finset.sup_singleton] using
+      (SchwartzNPoint.seminorm_osConj_le (d := d) k l f)
+
+/-- The OS conjugation is continuous on Schwartz n-point space. -/
+theorem SchwartzNPoint.osConj_continuous {n : ℕ} :
+    Continuous (fun f : SchwartzNPoint d n => f.osConj) :=
+  (SchwartzNPoint.osConjRLM (d := d) : SchwartzNPoint d n →L[ℝ] SchwartzNPoint d n).continuous
+
 @[simp]
 theorem SchwartzNPoint.osConjTensorProduct_zero_left {m k : ℕ}
     (g : SchwartzNPoint d k) :
@@ -2875,6 +2908,17 @@ theorem SchwartzNPoint.osConjTensorProduct_smul_left {m k : ℕ}
     (c • f).osConjTensorProduct g = starRingEnd ℂ c • (f.osConjTensorProduct g) := by
   simp [SchwartzNPoint.osConjTensorProduct, SchwartzNPoint.osConj_smul,
     SchwartzMap.tensorProduct_smul_left]
+
+/-- The OS conjugated tensor product is jointly continuous in both tensor
+blocks. The left slot continuity is only topological, not complex linear. -/
+theorem SchwartzNPoint.osConjTensorProduct_continuous {n m : ℕ} :
+    Continuous (fun fg : SchwartzNPoint d n × SchwartzNPoint d m =>
+      fg.1.osConjTensorProduct fg.2) := by
+  have hos : Continuous (fun fg : SchwartzNPoint d n × SchwartzNPoint d m =>
+      (fg.1.osConj, fg.2)) :=
+    (SchwartzNPoint.osConj_continuous (d := d)).prodMap continuous_id
+  simpa [SchwartzNPoint.osConjTensorProduct] using
+    (SchwartzMap.tensorProduct_continuous (E := SpacetimeDim d)).comp hos
 
 theorem OSTensorAdmissible.zero_right (F : BorchersSequence d) :
     OSTensorAdmissible d F 0 := by
@@ -3172,6 +3216,46 @@ theorem OSInnerProduct_single_single (S : (n : ℕ) → ZeroDiagonalSchwartz d n
     rw [BorchersSequence.single_funcs_ne hj_ne, SchwartzNPoint.osConjTensorProduct_zero_right,
       ZeroDiagonalSchwartz.ofClassical_zero, (hlin _).map_zero]
   rw [hright, zero_add, BorchersSequence.single_funcs_eq]
+
+/-- For an arbitrary left Borchers vector, the OS inner product against a concentrated
+right factor reduces to the single tensor term in each left component. -/
+theorem OSInnerProduct_right_single (S : (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ)
+    (hlin : ∀ n, IsLinearMap ℂ (S n))
+    (F : BorchersSequence d)
+    {m : ℕ} (g : SchwartzNPoint d m) :
+    OSInnerProduct d S F (BorchersSequence.single m g) =
+      ∑ n ∈ Finset.range (F.bound + 1),
+        S (n + m) (ZeroDiagonalSchwartz.ofClassical
+          ((F.funcs n).osConjTensorProduct g)) := by
+  unfold OSInnerProduct
+  apply Finset.sum_congr rfl
+  intro n hn
+  rw [BorchersSequence.single_bound, Finset.sum_range_succ]
+  have hright :
+      ∑ j ∈ Finset.range m,
+        S (n + j) (ZeroDiagonalSchwartz.ofClassical
+          ((F.funcs n).osConjTensorProduct ((BorchersSequence.single m g).funcs j))) = 0 := by
+    refine Finset.sum_eq_zero ?_
+    intro j hj
+    have hj_ne : j ≠ m := Nat.ne_of_lt (Finset.mem_range.mp hj)
+    rw [BorchersSequence.single_funcs_ne hj_ne, SchwartzNPoint.osConjTensorProduct_zero_right,
+      ZeroDiagonalSchwartz.ofClassical_zero, (hlin _).map_zero]
+  rw [hright, zero_add, BorchersSequence.single_funcs_eq]
+
+/-- The OS inner product against an arbitrary right Borchers vector is the finite sum
+of its concentrated right components. -/
+theorem OSInnerProduct_eq_sum_right_singles (S : (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ)
+    (hlin : ∀ n, IsLinearMap ℂ (S n))
+    (F G : BorchersSequence d) :
+    OSInnerProduct d S F G =
+      ∑ m ∈ Finset.range (G.bound + 1),
+        OSInnerProduct d S F (BorchersSequence.single m (G.funcs m)) := by
+  unfold OSInnerProduct
+  rw [Finset.sum_comm]
+  apply Finset.sum_congr rfl
+  intro m hm
+  simpa [OSInnerProduct] using
+    (OSInnerProduct_right_single (d := d) S hlin F (g := G.funcs m)).symm
 
 /-- The OS inner product depends only on `funcs`, not on `bound`. -/
 theorem OSInnerProduct_congr_right (S : (n : ℕ) → ZeroDiagonalSchwartz d n → ℂ)
@@ -3903,6 +3987,22 @@ theorem null_osInner_zero (OS : OsterwalderSchraderAxioms d)
     rw [hIw, hIw_re] at hre_Z
     linarith
   exact Complex.ext hre him
+
+/-- The honest positive-time OS form against an arbitrary right factor is the finite
+sum of its concentrated right components. -/
+theorem osInner_eq_sum_right_singles (OS : OsterwalderSchraderAxioms d)
+    (F G : PositiveTimeBorchersSequence d) :
+    osInner OS F G =
+      ∑ m ∈ Finset.range (((G : BorchersSequence d).bound + 1)),
+        osInner OS F
+          (PositiveTimeBorchersSequence.single m (((G : BorchersSequence d).funcs m))
+            (G.ordered_tsupport m)) := by
+  unfold osInner
+  rw [OSInnerProduct_eq_sum_right_singles (d := d) OS.S OS.E0_linear
+    (F := (F : BorchersSequence d)) (G := (G : BorchersSequence d))]
+  apply Finset.sum_congr rfl
+  intro m hm
+  simp [PositiveTimeBorchersSequence.single_toBorchersSequence]
 
 theorem osInner_expand_diff (OS : OsterwalderSchraderAxioms d)
     (F G : PositiveTimeBorchersSequence d) :
