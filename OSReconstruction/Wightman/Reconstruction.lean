@@ -3,6 +3,7 @@ import OSReconstruction.Wightman.Reconstruction.Poincare1D
 import OSReconstruction.Wightman.Reconstruction.SliceIntegral
 import OSReconstruction.Wightman.Reconstruction.ZeroMeanFourierTransport
 import OSReconstruction.Wightman.Reconstruction.SchwingerOS
+import OSReconstruction.Wightman.Reconstruction.WightmanTwoPoint
 
 /-!
 # Wightman Reconstruction

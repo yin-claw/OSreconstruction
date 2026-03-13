@@ -5,6 +5,7 @@ Authors: Michael Douglas, ModularPhysics Contributors
 -/
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanKernel
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBoundaryValues
+import OSReconstruction.Wightman.Reconstruction.WickRotation.HermitianBoundaryPairing
 
 /-!
 # Wick Rotation and the OS Bridge Theorems

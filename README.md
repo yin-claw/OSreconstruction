@@ -188,12 +188,18 @@ the tracked production tree, not as a complete file listing.
 │   │   ├── WightmanAxioms.lean           # Wightman function axioms and extension surfaces
 │   │   ├── OperatorDistribution.lean     # operator-valued distributions
 │   │   ├── SchwartzTensorProduct.lean    # Schwartz tensor products and insertion CLMs
-│   │   ├── Reconstruction.lean           # shared core OS/Wightman reconstruction objects
+│   │   ├── Reconstruction.lean           # stable reconstruction barrel
 │   │   ├── ReconstructionBridge.lean     # wires WickRotation to theorem surface
 │   │   ├── Groups/                       # Lorentz and Poincare groups
 │   │   ├── Spacetime/                    # Minkowski geometry and metric
 │   │   ├── NuclearSpaces/                # nuclear-space, Minlos, and gaussian-field bridge
 │   │   └── Reconstruction/
+│   │       ├── Core.lean                 # shared core OS/Wightman reconstruction objects
+│   │       ├── SchwingerOS.lean          # Schwinger-side / zero-diagonal OS layer
+│   │       ├── Poincare1D.lean           # 1D Schwartz Poincare lemma
+│   │       ├── SliceIntegral.lean        # Schwartz slice-integral infrastructure
+│   │       ├── ZeroMeanFourierTransport.lean # zero-mean transport infrastructure
+│   │       ├── WightmanTwoPoint.lean     # two-point Wightman center/difference reduction
 │   │       ├── GNSConstruction.lean      # GNS construction
 │   │       ├── GNSHilbertSpace.lean      # reconstructed Hilbert space and field action
 │   │       ├── PoincareAction.lean       # Poincare action on test-function sequences
@@ -206,6 +212,7 @@ the tracked production tree, not as a complete file listing.
 │   │           ├── ForwardTubeLorentz.lean      # Lorentz covariance on the tube
 │   │           ├── BHWExtension.lean            # BHW extension / adjacent-swap layer
 │   │           ├── BHWTranslation.lean          # translation-invariance transfer
+│   │           ├── HermitianBoundaryPairing.lean # rapidity-reduced partner BV pairing
 │   │           ├── SchwingerAxioms.lean         # R -> E Wick-rotation axioms
 │   │           ├── OSToWightmanSemigroup.lean   # OS semigroup, spectral/Laplace, 1-variable holomorphy
 │   │           ├── OSToWightman.lean            # flat-witness continuation core
@@ -246,9 +253,11 @@ the tracked production tree, not as a complete file listing.
 ```
 
 Two navigation notes:
-- `Wightman/Reconstruction.lean` is the shared core definitions file. It is not
-  the same thing as `Wightman/Reconstruction/Main.lean`, which only wires the
-  top-level theorems.
+- `Wightman/Reconstruction.lean` is now the stable reconstruction barrel. The
+  shared core definitions live in `Wightman/Reconstruction/Core.lean`, and the
+  Schwinger/OS-side reduction layer lives in
+  `Wightman/Reconstruction/SchwingerOS.lean`.
+- `Wightman/Reconstruction/Main.lean` only wires the top-level theorems.
 - The old monolithic `OSToWightman` layer no longer exists as a single file.
   The live `E -> R` lane is intentionally split across `OSToWightmanSemigroup.lean`,
   `OSToWightman.lean`, and `OSToWightmanBoundaryValues.lean`.
