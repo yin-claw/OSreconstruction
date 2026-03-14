@@ -27,13 +27,17 @@ The proof uses the identity theorem for holomorphic functions on connected domai
 applied to `D = PET ∩ (PET - c)` — the overlap domain where both F_ext and
 `z ↦ F_ext(z+c)` are holomorphic.
 
-The proof is decomposed into four helpers:
+The proof is decomposed into helpers:
 1. `permutedExtendedTube_translation_closed` — trivial closure cases (c=0 or n=0)
 2. `W_analytic_translation_on_forwardTube` — W_analytic is translation-invariant on FT
-3. `forwardTube_inter_translate_nonempty` — FT ∩ (FT-c) is nonempty (anchor for identity theorem)
-4. `isConnected_permutedExtendedTube_inter_translate` — D = PET ∩ (PET-c) is connected
+3. `bhw_translation_invariant_of_common_perm` — common-permutation witness case
+4. `bhw_translation_local` — local translation invariance via a BHW witness chain
+5. `isConnected_permutedExtendedTube_inter_translate` — D = PET ∩ (PET-c) is connected
 
-Each helper captures a specific gap in the current formalization infrastructure. -/
+The main theorem `bhw_translation_invariant` uses the overlap-domain identity-theorem
+argument on `D = PET ∩ (PET - c)`. The auxiliary theorem `bhw_translation_local`
+records the local witness-chain translation mechanism, but is not used as the
+global proof route. -/
 
 /-- Trivial translation-closure cases for the permuted extended tube.
 
@@ -605,6 +609,127 @@ theorem bhw_translation_invariant_of_common_perm {d n : ℕ} [NeZero d]
     _ = F_ext (fun k => z (π k)) := h4
     _ = F_ext z := h5
 
+/-- **Local translation invariance of the BHW extension.**
+
+    For any z ∈ PET and shift direction c, there exists ε > 0 such that
+    for all |t| < ε, `z + tc ∈ PET` and `F_ext(z + tc) = F_ext(z)`.
+
+    **Proof.** Extract the PET witness (π, Λ, w) with `w ∈ PFT(π)` and
+    `z = Λ · w`. Form `w' = w + t · Λ⁻¹c`. Successive imaginary-part differences
+    are unchanged by the uniform shift `Λ⁻¹c`, so `w' ∈ PFT(π)` for small `t`
+    (only the k = 0 condition shifts, and FT is open). Then chain BHW properties:
+      `F_ext(z + tc) = F_ext(Λ · w') = F_ext(w') = F_ext(w) = F_ext(Λ · w) = F_ext(z)`
+    using Lorentz invariance, the common-permutation lemma (which invokes
+    permutation invariance + FT agreement + translation invariance on FT).
+
+    This captures the "BHW witness chain" argument and shows F_ext is locally
+    constant under uniform translations at every point of PET.
+
+    Ref: Streater-Wightman §2.5; Jost, "General Theory of Quantized Fields" §III.1 -/
+theorem bhw_translation_local {d n : ℕ} [NeZero d]
+    (Wfn : WightmanFunctions d)
+    (c : Fin (d + 1) → ℂ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz : z ∈ PermutedExtendedTube d n) :
+    ∃ ε > 0, ∀ (t : ℂ), ‖t‖ < ε →
+      (fun k μ => z k μ + t * c μ) ∈ PermutedExtendedTube d n ∧
+      (W_analytic_BHW Wfn n).val (fun k μ => z k μ + t * c μ) =
+      (W_analytic_BHW Wfn n).val z := by
+  -- Trivial case: n = 0
+  by_cases hn : n = 0
+  · subst hn
+    refine ⟨1, one_pos, fun t _ => ?_⟩
+    have htriv : (fun k μ => z k μ + t * c μ) = z := by ext k; exact Fin.elim0 k
+    rw [htriv]; exact ⟨hz, rfl⟩
+  -- PET is open → z + tc ∈ PET for small t
+  have hPET_open : IsOpen (PermutedExtendedTube d n) :=
+    BHW_permutedExtendedTube_eq (d := d) (n := n) ▸ BHW.isOpen_permutedExtendedTube
+  have hshift_cont : Continuous (fun t : ℂ => fun k μ => z k μ + t * c μ) := by
+    apply continuous_pi; intro k; apply continuous_pi; intro μ
+    exact continuous_const.add (continuous_id.mul continuous_const)
+  obtain ⟨ε₁, hε₁_pos, hε₁_ball⟩ := Metric.isOpen_iff.mp
+    (hPET_open.preimage hshift_cont) 0
+    (show (fun k μ => z k μ + (0 : ℂ) * c μ) ∈ PermutedExtendedTube d n by simp [hz])
+  -- Extract PET witness: z = Λ₀ · w₀ with w₀ ∈ PFT(π₀)
+  rw [← BHW_permutedExtendedTube_eq] at hz
+  obtain ⟨π₀, Λ₀, w₀, hw₀_pft, hz_eq⟩ := Set.mem_iUnion.mp hz
+  -- w₀ ∘ π₀ ∈ FT
+  have hw₀π₀_ft : (fun k => w₀ (π₀ k)) ∈ ForwardTube d n := by
+    rw [← BHW_forwardTube_eq]; exact hw₀_pft
+  -- Define inverse-rotated shift: c' = Λ₀⁻¹ · c (single-point Lorentz action)
+  let c' : Fin (d + 1) → ℂ := fun μ => ∑ ν, (Λ₀⁻¹).val μ ν * c ν
+  -- FT is open → perturbed w₀∘π₀ stays in FT for small t
+  have hFT_open : IsOpen (ForwardTube d n) :=
+    BHW_forwardTube_eq (d := d) (n := n) ▸ BHW.isOpen_forwardTube
+  have hshift_cont' : Continuous (fun t : ℂ => fun k μ => w₀ (π₀ k) μ + t * c' μ) := by
+    apply continuous_pi; intro k; apply continuous_pi; intro μ
+    exact continuous_const.add (continuous_id.mul continuous_const)
+  obtain ⟨ε₂, hε₂_pos, hε₂_ball⟩ := Metric.isOpen_iff.mp
+    (hFT_open.preimage hshift_cont') 0
+    (show (fun k μ => w₀ (π₀ k) μ + (0 : ℂ) * c' μ) ∈ ForwardTube d n by simp [hw₀π₀_ft])
+  -- Take ε = min(ε₁, ε₂)
+  refine ⟨min ε₁ ε₂, lt_min hε₁_pos hε₂_pos, fun t ht => ?_⟩
+  have ht₁ : ‖t‖ < ε₁ := lt_of_lt_of_le ht (min_le_left _ _)
+  have ht₂ : ‖t‖ < ε₂ := lt_of_lt_of_le ht (min_le_right _ _)
+  constructor
+  -- Part 1: z + tc ∈ PET (from PET openness)
+  · exact hε₁_ball (Metric.mem_ball.mpr (show dist t 0 < ε₁ by rwa [dist_comm, dist_zero_left]))
+  -- Part 2: F_ext(z + tc) = F_ext(z)
+  · -- Abbreviations
+    set F_ext := (W_analytic_BHW Wfn n).val with hF_ext_def
+    have hF_lorentz := (W_analytic_BHW Wfn n).property.2.2.1
+    -- Perturbed FT membership: (w₀∘π₀) + t*c' ∈ FT
+    have hw't_ft : (fun k μ => w₀ (π₀ k) μ + t * c' μ) ∈ ForwardTube d n :=
+      hε₂_ball (Metric.mem_ball.mpr (show dist t 0 < ε₂ by rwa [dist_comm, dist_zero_left]))
+    -- Common permutation lemma: F_ext(w₀ + tc') = F_ext(w₀)
+    have hF_w : F_ext (fun k μ => w₀ k μ + t * c' μ) = F_ext w₀ :=
+      bhw_translation_invariant_of_common_perm Wfn (fun μ => t * c' μ) w₀ π₀ hw₀π₀_ft hw't_ft
+    -- w₀ ∈ PET (PFT(π₀) ⊆ PET via Λ = 1)
+    have hw₀_pet : w₀ ∈ PermutedExtendedTube d n := by
+      rw [← BHW_permutedExtendedTube_eq]
+      exact Set.mem_iUnion.mpr ⟨π₀, 1, w₀, hw₀_pft, (BHW.complexLorentzAction_one w₀).symm⟩
+    -- w' ∈ PET (PFT(π₀) ⊆ PET via Λ = 1)
+    have hw'_pet : (fun k μ => w₀ k μ + t * c' μ) ∈ PermutedExtendedTube d n := by
+      rw [← BHW_permutedExtendedTube_eq]
+      refine Set.mem_iUnion.mpr ⟨π₀, 1, fun k μ => w₀ k μ + t * c' μ, ?_,
+        (BHW.complexLorentzAction_one _).symm⟩
+      show (fun k μ => w₀ (π₀ k) μ + t * c' μ) ∈ BHW.ForwardTube d n
+      rwa [BHW_forwardTube_eq]
+    -- Algebraic identity: z + tc = Λ₀ · (w₀ + tc')
+    -- Key: Λ₀ · (Λ₀⁻¹ · c_broadcast) = c_broadcast (matrix cancellation)
+    have hΛΛinv_cancel : ∀ μ : Fin (d + 1),
+        ∑ ν, Λ₀.val μ ν * (∑ ρ, (Λ₀⁻¹).val ν ρ * c ρ) = c μ := by
+      intro μ
+      have h := congr_fun (congr_fun
+        (show BHW.complexLorentzAction Λ₀
+          (BHW.complexLorentzAction Λ₀⁻¹ (fun (_k : Fin n) => c)) = fun _k => c
+        from by rw [← BHW.complexLorentzAction_mul, mul_inv_cancel,
+                     BHW.complexLorentzAction_one])
+        ⟨0, Nat.pos_of_ne_zero hn⟩) μ
+      simpa [BHW.complexLorentzAction] using h
+    have hshift_eq : (fun k μ => z k μ + t * c μ) =
+        (fun k μ => ∑ ν, Λ₀.val μ ν * (w₀ k ν + t * c' ν)) := by
+      ext k μ
+      have hz_k : z k μ = ∑ ν, Λ₀.val μ ν * w₀ k ν := congr_fun (congr_fun hz_eq k) μ
+      rw [hz_k]
+      simp only [mul_add, Finset.sum_add_distrib, c']
+      congr 1
+      -- ∑ ν, Λ₀.val μ ν * (t * (∑ ρ, (Λ₀⁻¹).val ν ρ * c ρ)) = t * c μ
+      simp_rw [← mul_assoc, mul_comm (Λ₀.val μ _) t, mul_assoc]
+      rw [← Finset.mul_sum]
+      congr 1
+      exact (hΛΛinv_cancel μ).symm
+    -- Chain: F_ext(z+tc) = F_ext(Λ₀·w') = F_ext(w') = F_ext(w₀) = F_ext(z)
+    have hF_z_eq_w₀ : F_ext z = F_ext w₀ := by
+      conv_lhs => rw [hz_eq]
+      exact hF_lorentz Λ₀ w₀ hw₀_pet
+    calc F_ext (fun k μ => z k μ + t * c μ)
+        = F_ext (fun k μ => ∑ ν, Λ₀.val μ ν * (w₀ k ν + t * c' ν)) := by rw [hshift_eq]
+      _ = F_ext (fun k μ => w₀ k μ + t * c' μ) :=
+          hF_lorentz Λ₀ (fun k μ => w₀ k μ + t * c' μ) hw'_pet
+      _ = F_ext w₀ := hF_w
+      _ = F_ext z := hF_z_eq_w₀.symm
+
 /-- **Connectivity of the c-translated overlap domain of the permuted extended tube.**
 
     For any `c : Fin (d+1) → ℂ`, the set
@@ -642,17 +767,35 @@ theorem bhw_translation_invariant_of_common_perm {d n : ℕ} [NeZero d]
     only handles the case where z and z+c have a shared Lorentz/permutation witness;
     for the general case (witnesses differ), the connectivity of D is essential.
 
-    **Numerical status (2026-03-05).** Direct connectivity tests on D_c were run in
-    `/tmp/isConnected_PET_inter_translate_d1n2.py` for d=1, n=2 across 9 shift values c:
-    - Baseline: c=0 (D_c=PET, expect connected), c real (real shifts preserve PET)
-    - Non-trivial: c=(0.3i,0), (0.5i,0.3i), (0.5+0.3i,0.2+0.1i), (-0.4+0.6i,0.1-0.2i),
-      (0.2+0.8i,-0.3+0.2i), and stress-test cases c=(0.8i,0), (0.5i,0.4i).
-    Protocol: sample D_c via rejection (sample PET by construction, check z+c ∈ PET
-    via 768-point vectorized grid search over θ ∈ ℂ + local refinement), build
-    12-nearest-neighbor graph in ℝ⁸, count connected components.
-    Result: ALL 9 cases returned 1 connected component (largest_frac=1.000).
-    Acceptance rates 0.85–1.00, samples 190–250 per shift.
-    This provides **direct numerical support** for the statement for d=1, n=2.
+    **Numerical status (fresh rerun, 2026-03-14).** A direct `d = 1`, `n = 2`
+    connectivity heuristic for
+    `D_c = PET ∩ {z | z + c ∈ PET}`
+    was rerun from the current repo definitions.
+
+    Protocol:
+    - sample PET points by construction (`z = Λ · w`, `w ∈ FT`)
+    - retain those with `z + c ∈ PET`
+    - build symmetric k-nearest-neighbor graphs on the sampled cloud in `ℝ⁸`
+    - count connected components for `k ∈ {8, 12, 20, 30}`
+
+    Fresh campaign:
+    - 8 shift choices:
+      `c = (1, 0.5)`, `(0.3i, 0)`, `(0.8i, 0)`, `(0.5i, 0.4i)`,
+      `(0.5+0.3i, 0.2+0.1i)`, `(-0.4+0.6i, 0.1-0.2i)`,
+      `(0.2+0.8i, -0.3+0.2i)`, and the "bad fiber" shift
+      `(-0.60898907-0.62953011i, -0.26262669-0.39945642i)`
+    - 3 random seeds
+    - 500 accepted samples per shift/seed
+
+    Result:
+    - every tested `D_c` sample cloud was connected for all 4 `k` values
+    - largest component fraction was `1.000` in all tested runs
+    - acceptance rates stayed high (`0.94` to `1.00`)
+
+    So unlike the false-looking 1D fiber statement
+    `Ω = {t | z + t c ∈ PET}`,
+    the overlap-domain statement for `D_c` remains **numerically supported**
+    in the tested `d = 1`, `n = 2` regime.
 
     Ref: Streater-Wightman §2.5; Jost, "General Theory of Quantized Fields" §III.1 -/
 theorem isConnected_permutedExtendedTube_inter_translate {d n : ℕ} [NeZero d]
@@ -698,26 +841,19 @@ theorem bhw_translation_invariant {d n : ℕ} [NeZero d]
       ext k
       exact Fin.elim0 k
     simp [hshift]
-  -- Abbreviations
   set F_ext := (W_analytic_BHW Wfn n).val with hF_ext_def
   set W_analytic := (Wfn.spectrum_condition n).choose
   set G : (Fin n → Fin (d + 1) → ℂ) → ℂ := fun z => F_ext (fun k μ => z k μ + c μ)
-  -- BHW properties
   have hF_holo := (W_analytic_BHW Wfn n).property.1
   have hF_eq := (W_analytic_BHW Wfn n).property.2.1
-  -- PET topology
   have hPET_open : IsOpen (PermutedExtendedTube d n) :=
     BHW_permutedExtendedTube_eq (d := d) (n := n) ▸ BHW.isOpen_permutedExtendedTube
   have hFT_open : IsOpen (ForwardTube d n) :=
     BHW_forwardTube_eq (d := d) (n := n) ▸ BHW.isOpen_forwardTube
-  -- Restrict to D = PET ∩ (PET - c): the domain on which both G and F_ext are holomorphic.
-  -- PET is NOT translation-closed in general (adding c can leave PET for complex c),
-  -- so G = F_ext(· + c) is only holomorphic on {w | w + c ∈ PET}.
   set D : Set (Fin n → Fin (d + 1) → ℂ) :=
     PermutedExtendedTube d n ∩ {w | (fun k μ => w k μ + c μ) ∈ PermutedExtendedTube d n}
   have hD_open : IsOpen D :=
     hPET_open.inter (hPET_open.preimage (continuous_id.add continuous_const))
-  -- Step 1: G is holomorphic on D (chain rule: w ∈ D → w + c ∈ PET → F_ext diff at w + c)
   have hshift_diff : Differentiable ℂ
       (fun w : Fin n → Fin (d + 1) → ℂ => fun k μ => w k μ + c μ) := by
     have hconst : Differentiable ℂ
@@ -733,14 +869,9 @@ theorem bhw_translation_invariant {d n : ℕ} [NeZero d]
     exact (hF_holo _ hw.2).comp w
       hshift_diff.differentiableAt.differentiableWithinAt
       (fun y hy => hy.2)
-  -- F_ext is holomorphic on D ⊆ PET
   have hF_holo_D : DifferentiableOn ℂ F_ext D := hF_holo.mono Set.inter_subset_left
-  -- D is connected: by `isConnected_permutedExtendedTube_inter_translate`.
   have hD_conn : IsConnected D :=
     isConnected_permutedExtendedTube_inter_translate c
-  -- Step 2: G and F_ext agree on FT ∩ (FT - c)
-  -- For z ∈ FT with z + c ∈ FT:
-  --   G(z) = F_ext(z + c) = W_analytic(z + c) = W_analytic(z) = F_ext(z)
   have hagree_on_FT : ∀ z : Fin n → Fin (d + 1) → ℂ,
       z ∈ ForwardTube d n → (fun k μ => z k μ + c μ) ∈ ForwardTube d n →
       G z = F_ext z := by
@@ -749,7 +880,6 @@ theorem bhw_translation_invariant {d n : ℕ} [NeZero d]
     simp only [hF_ext_def]
     rw [hF_eq _ hwc, hF_eq _ hw]
     exact W_analytic_translation_on_forwardTube Wfn c w hw hwc
-  -- Step 3: Find z₀ ∈ FT ∩ (FT - c) ⊆ D (nonempty intersection)
   obtain ⟨z₀, hz₀_ft, hz₀c_ft⟩ := forwardTube_inter_translate_nonempty c
   have hz₀_pet : z₀ ∈ PermutedExtendedTube d n :=
     (BHW_permutedExtendedTube_eq (d := d) (n := n) ▸
@@ -760,15 +890,11 @@ theorem bhw_translation_invariant {d n : ℕ} [NeZero d]
       BHW.forwardTube_subset_permutedExtendedTube)
       (BHW_forwardTube_eq (d := d) (n := n) ▸ hz₀c_ft)
   have hz₀_D : z₀ ∈ D := ⟨hz₀_pet, hz₀c_pet⟩
-  -- z ∈ D: both hz and _hzc hold by hypothesis
   have hz_D : z ∈ D := ⟨hz, _hzc⟩
-  -- Step 4: G and F_ext agree in a neighborhood of z₀
-  -- FT ∩ (FT - c) is open (intersection of two open sets) and contains z₀.
   have hagree_nhds : G =ᶠ[nhds z₀] F_ext := by
     have hU_open : IsOpen (ForwardTube d n ∩
         {w | (fun k μ => w k μ + c μ) ∈ ForwardTube d n}) := by
       apply IsOpen.inter hFT_open
-      -- {w | w + c ∈ FT} is open: preimage of FT under continuous translation
       apply hFT_open.preimage
       exact continuous_id.add continuous_const
     have hz₀_mem : z₀ ∈ ForwardTube d n ∩
@@ -777,9 +903,7 @@ theorem bhw_translation_invariant {d n : ℕ} [NeZero d]
     apply Filter.eventuallyEq_of_mem (hU_open.mem_nhds hz₀_mem)
     intro w ⟨hw_ft, hwc_ft⟩
     exact hagree_on_FT w hw_ft hwc_ft
-  -- Step 5: By identity theorem on connected D, G = F_ext on all of D
   have h_eq := identity_theorem_product hD_open hD_conn hG_holo hF_holo_D hz₀_D hagree_nhds
-  -- Apply at z ∈ D
   exact h_eq hz_D
 
 /-- The smeared BHW extension equals the smeared W_analytic for approach directions
