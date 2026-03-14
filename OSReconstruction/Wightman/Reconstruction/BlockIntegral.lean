@@ -1,5 +1,6 @@
 import OSReconstruction.Wightman.Reconstruction.Core
 import OSReconstruction.Wightman.Reconstruction.SliceIntegral
+import Mathlib.MeasureTheory.Constructions.Pi
 
 /-!
 # Block Integration on Schwartz Space
@@ -118,6 +119,10 @@ abbrev reindexSchwartzFin (h : a = b) :
     (F : SchwartzMap (Fin a → ℝ) ℂ) (x : Fin b → ℝ) :
     reindexSchwartzFin h F x = F ((castFinCLE h).symm x) := rfl
 
+@[simp] theorem castFinCLE_symm_apply (h : a = b)
+    (x : Fin b → ℝ) (i : Fin a) :
+    (castFinCLE h).symm x i = x ((finCongr h) i) := rfl
+
 theorem integral_reindexSchwartzFin (h : a = b)
     (F : SchwartzMap (Fin a → ℝ) ℂ) :
     (SchwartzMap.integralCLM ℂ
@@ -137,6 +142,26 @@ theorem integral_reindexSchwartzFin (h : a = b)
   simpa [reindexSchwartzFin, castFinCLE, e, MeasurableEquiv.piCongrLeft,
     ContinuousLinearEquiv.piCongrLeft] using
     (he.integral_comp' (f := e) (g := fun y : Fin a → ℝ => F y))
+
+/-- Slice integration is additive on Schwartz functions. -/
+theorem sliceIntegral_add {n : ℕ}
+    (F G : SchwartzMap (Fin (n + 1) → ℝ) ℂ) :
+    sliceIntegral (F + G) = sliceIntegral F + sliceIntegral G := by
+  ext y
+  change sliceIntegralRaw (F + G) y = sliceIntegralRaw F y + sliceIntegralRaw G y
+  rw [sliceIntegralRaw, sliceIntegralRaw, sliceIntegralRaw]
+  simpa using MeasureTheory.integral_add
+    (integrable_sliceSection F y) (integrable_sliceSection G y)
+
+/-- Slice integration commutes with subtraction on Schwartz functions. -/
+theorem sliceIntegral_sub {n : ℕ}
+    (F G : SchwartzMap (Fin (n + 1) → ℝ) ℂ) :
+    sliceIntegral (F - G) = sliceIntegral F - sliceIntegral G := by
+  ext y
+  change sliceIntegralRaw (F - G) y = sliceIntegralRaw F y - sliceIntegralRaw G y
+  rw [sliceIntegralRaw, sliceIntegralRaw, sliceIntegralRaw]
+  simpa using MeasureTheory.integral_sub
+    (integrable_sliceSection F y) (integrable_sliceSection G y)
 
 /-- Flatten an `n`-point Schwartz test to an ordinary Schwartz function on
 `Fin (n * (d + 1)) -> R`. -/
@@ -216,6 +241,28 @@ noncomputable def integrateHeadBlock :
       let G : SchwartzMap (Fin (m + n) → ℝ) ℂ := sliceIntegral F'
       exact integrateHeadBlock (m := m) (n := n) G
 
+/-- Block integration is additive on Schwartz functions. -/
+theorem integrateHeadBlock_add :
+    {m n : ℕ} -> (F G : SchwartzMap (Fin (m + n) → ℝ) ℂ) ->
+      integrateHeadBlock (m := m) (n := n) (F + G) =
+        integrateHeadBlock (m := m) (n := n) F +
+          integrateHeadBlock (m := m) (n := n) G
+  | 0, n, F, G => by
+      simp [integrateHeadBlock]
+  | m + 1, n, F, G => by
+      simp [integrateHeadBlock, integrateHeadBlock_add, sliceIntegral_add]
+
+/-- Block integration commutes with subtraction. -/
+theorem integrateHeadBlock_sub :
+    {m n : ℕ} -> (F G : SchwartzMap (Fin (m + n) → ℝ) ℂ) ->
+      integrateHeadBlock (m := m) (n := n) (F - G) =
+        integrateHeadBlock (m := m) (n := n) F -
+          integrateHeadBlock (m := m) (n := n) G
+  | 0, n, F, G => by
+      simp [integrateHeadBlock]
+  | m + 1, n, F, G => by
+      simp [integrateHeadBlock, integrateHeadBlock_sub, sliceIntegral_sub]
+
 /-- Iterated block integration preserves total Lebesgue integration. -/
 theorem integral_integrateHeadBlock :
     {m n : ℕ} -> (F : SchwartzMap (Fin (m + n) → ℝ) ℂ) ->
@@ -248,5 +295,504 @@ theorem integral_integrateHeadBlock :
           (SchwartzMap.integralCLM ℂ
             (MeasureTheory.volume : MeasureTheory.Measure (Fin ((m + 1) + n) → ℝ))) F := by
               simpa [F'] using integral_reindexSchwartzFin (Nat.succ_add m n) F
+
+private theorem splitFirst_castFinCLE_succ_add_symm_cons {m n : ℕ}
+    (t : ℝ) (x : Fin (m + n) → ℝ) :
+    splitFirst (m + 1) n ((castFinCLE (Nat.succ_add m n)).symm (Fin.cons t x)) =
+      Fin.cons t (splitFirst m n x) := by
+  ext i
+  refine Fin.cases ?_ ?_ i
+  · have hcast :
+        Fin.cast (Nat.succ_add m n) (Fin.castAdd n (0 : Fin (m + 1))) = 0 := by
+          apply Fin.ext
+          simp
+    simp [splitFirst, hcast]
+  · intro i
+    have hcast :
+        Fin.cast (Nat.succ_add m n) (Fin.castAdd n i.succ) = (Fin.castAdd n i).succ := by
+          apply Fin.ext
+          simp
+    simp [splitFirst, hcast]
+
+private theorem splitLast_castFinCLE_succ_add_symm_cons {m n : ℕ}
+    (t : ℝ) (x : Fin (m + n) → ℝ) :
+    splitLast (m + 1) n ((castFinCLE (Nat.succ_add m n)).symm (Fin.cons t x)) =
+      splitLast m n x := by
+  ext j
+  have hcast :
+      Fin.cast (Nat.succ_add m n) (Fin.natAdd (m + 1) j) = (Fin.natAdd m j).succ := by
+        apply Fin.ext
+        simp
+        omega
+  simp [splitLast, hcast]
+
+private theorem splitFirst_castFinCLE_zero_add_symm {n : ℕ}
+    (x : Fin n → ℝ) :
+    splitFirst 0 n ((castFinCLE (Nat.zero_add n)).symm x) = default := by
+  ext i
+  exact Fin.elim0 i
+
+private theorem splitLast_castFinCLE_zero_add_symm {n : ℕ}
+    (x : Fin n → ℝ) :
+    splitLast 0 n ((castFinCLE (Nat.zero_add n)).symm x) = x := by
+  ext j
+  simp [splitLast]
+
+/-- Projection from a block `Fin (m + n) → ℝ` to its tail block of size `n`. -/
+noncomputable def tailBlockCLM (m n : ℕ) :
+    (Fin (m + n) → ℝ) →L[ℝ] (Fin n → ℝ) :=
+  ContinuousLinearMap.pi fun j =>
+    ContinuousLinearMap.proj (R := ℝ) (ι := Fin (m + n)) (φ := fun _ => ℝ) (Fin.natAdd m j)
+
+@[simp] theorem tailBlockCLM_apply (m n : ℕ)
+    (x : Fin (m + n) → ℝ) :
+    tailBlockCLM m n x = splitLast m n x := by
+  ext j
+  simp [tailBlockCLM, splitLast]
+
+/-- Slice integration commutes with multiplying by a Schwartz factor depending
+only on the tail block. This is the one-step compatibility needed to push
+center/difference descent through tail-only kernels. -/
+theorem sliceIntegral_reindex_smulTail {m n : ℕ}
+    (g : SchwartzMap (Fin n → ℝ) ℂ) (F : SchwartzMap (Fin ((m + 1) + n) → ℝ) ℂ) :
+    sliceIntegral
+        (reindexSchwartzFin (Nat.succ_add m n)
+          (SchwartzMap.smulLeftCLM ℂ
+            (fun x : Fin ((m + 1) + n) → ℝ => g (splitLast (m + 1) n x)) F)) =
+      SchwartzMap.smulLeftCLM ℂ
+        (fun x : Fin (m + n) → ℝ => g (splitLast m n x))
+        (sliceIntegral (reindexSchwartzFin (Nat.succ_add m n) F)) := by
+  let htempSucc : (fun x : Fin ((m + 1) + n) → ℝ => g (splitLast (m + 1) n x)).HasTemperateGrowth := by
+    simpa [tailBlockCLM_apply] using g.hasTemperateGrowth.comp (tailBlockCLM (m + 1) n).hasTemperateGrowth
+  let htemp : (fun x : Fin (m + n) → ℝ => g (splitLast m n x)).HasTemperateGrowth := by
+    simpa [tailBlockCLM_apply] using g.hasTemperateGrowth.comp (tailBlockCLM m n).hasTemperateGrowth
+  ext x
+  rw [sliceIntegral_apply, sliceIntegralRaw]
+  rw [SchwartzMap.smulLeftCLM_apply_apply htemp]
+  rw [sliceIntegral_apply, sliceIntegralRaw]
+  have hfun :
+      (fun t : ℝ =>
+        (reindexSchwartzFin (Nat.succ_add m n)
+          (SchwartzMap.smulLeftCLM ℂ
+            (fun y : Fin ((m + 1) + n) → ℝ => g (splitLast (m + 1) n y)) F))
+            (Fin.cons t x)) =
+      (fun t : ℝ =>
+        g (splitLast m n x) *
+          (reindexSchwartzFin (Nat.succ_add m n) F) (Fin.cons t x)) := by
+    funext t
+    rw [reindexSchwartzFin_apply, SchwartzMap.smulLeftCLM_apply_apply htempSucc,
+      splitLast_castFinCLE_succ_add_symm_cons (m := m) (n := n) t x]
+    simp [reindexSchwartzFin_apply]
+  rw [hfun, smul_eq_mul, MeasureTheory.integral_const_mul]
+
+/-- Block integration commutes with multiplying by a tail-only Schwartz factor.
+This upgrades the one-step slice statement to the full iterated head-block
+descent. -/
+theorem integrateHeadBlock_smulTail :
+    {m n : ℕ} -> (g : SchwartzMap (Fin n → ℝ) ℂ) ->
+      (F : SchwartzMap (Fin (m + n) → ℝ) ℂ) ->
+      integrateHeadBlock (m := m) (n := n)
+          (SchwartzMap.smulLeftCLM ℂ
+            (fun x : Fin (m + n) → ℝ => g (splitLast m n x)) F) =
+        SchwartzMap.smulLeftCLM ℂ g (integrateHeadBlock (m := m) (n := n) F)
+  | 0, n, g, F => by
+      let htemp0 : (fun x : Fin (0 + n) → ℝ => g (splitLast 0 n x)).HasTemperateGrowth := by
+        simpa [tailBlockCLM_apply] using g.hasTemperateGrowth.comp (tailBlockCLM 0 n).hasTemperateGrowth
+      ext x
+      rw [integrateHeadBlock, reindexSchwartzFin_apply, SchwartzMap.smulLeftCLM_apply_apply htemp0,
+        splitLast_castFinCLE_zero_add_symm, integrateHeadBlock, SchwartzMap.smulLeftCLM_apply_apply g.hasTemperateGrowth]
+      simp
+  | m + 1, n, g, F => by
+      calc
+        integrateHeadBlock (m := m + 1) (n := n)
+            (SchwartzMap.smulLeftCLM ℂ
+              (fun x : Fin ((m + 1) + n) → ℝ => g (splitLast (m + 1) n x)) F)
+          =
+            integrateHeadBlock (m := m) (n := n)
+              (sliceIntegral
+                (reindexSchwartzFin (Nat.succ_add m n)
+                  (SchwartzMap.smulLeftCLM ℂ
+                    (fun x : Fin ((m + 1) + n) → ℝ => g (splitLast (m + 1) n x)) F))) := by
+                      simp [integrateHeadBlock]
+        _ =
+            integrateHeadBlock (m := m) (n := n)
+              (SchwartzMap.smulLeftCLM ℂ
+                (fun x : Fin (m + n) → ℝ => g (splitLast m n x))
+                (sliceIntegral (reindexSchwartzFin (Nat.succ_add m n) F))) := by
+                  rw [sliceIntegral_reindex_smulTail]
+        _ =
+            SchwartzMap.smulLeftCLM ℂ g
+              (integrateHeadBlock (m := m) (n := n)
+                (sliceIntegral (reindexSchwartzFin (Nat.succ_add m n) F))) := by
+                  simpa using integrateHeadBlock_smulTail (m := m) (n := n) g
+                    (sliceIntegral (reindexSchwartzFin (Nat.succ_add m n) F))
+        _ =
+            SchwartzMap.smulLeftCLM ℂ g (integrateHeadBlock (m := m + 1) (n := n) F) := by
+              simp [integrateHeadBlock]
+
+/-- Integrating the head coordinate of a reindexed tensor product acts only on
+the left tensor factor. This is the one-step descent formula behind block
+integration of center/difference shells. -/
+theorem sliceIntegral_reindex_tensorProduct {m n : ℕ}
+    (f : SchwartzMap (Fin (m + 1) → ℝ) ℂ) (g : SchwartzMap (Fin n → ℝ) ℂ) :
+    sliceIntegral (reindexSchwartzFin (Nat.succ_add m n) (f.tensorProduct g)) =
+      (sliceIntegral f).tensorProduct g := by
+  ext x
+  rw [sliceIntegral_apply, sliceIntegralRaw, SchwartzMap.tensorProduct_apply,
+    sliceIntegral_apply, sliceIntegralRaw]
+  have hleft :
+      (fun t : ℝ => ((reindexSchwartzFin (Nat.succ_add m n) (f.tensorProduct g))
+        (Fin.cons t x))) =
+      (fun t : ℝ => f (Fin.cons t (splitFirst m n x)) * g (splitLast m n x)) := by
+    funext t
+    rw [reindexSchwartzFin_apply, SchwartzMap.tensorProduct_apply]
+    rw [splitFirst_castFinCLE_succ_add_symm_cons (m := m) (n := n) t x,
+      splitLast_castFinCLE_succ_add_symm_cons (m := m) (n := n) t x]
+  rw [hleft, MeasureTheory.integral_mul_const]
+
+/-- Integrating out the full left block of a tensor product leaves the right
+tensor factor, scaled by the total integral of the left factor. -/
+theorem integrateHeadBlock_tensorProduct :
+    {m n : ℕ} -> (f : SchwartzMap (Fin m → ℝ) ℂ) -> (g : SchwartzMap (Fin n → ℝ) ℂ) ->
+      integrateHeadBlock (m := m) (n := n) (f.tensorProduct g) =
+        ((SchwartzMap.integralCLM ℂ
+          (MeasureTheory.volume : MeasureTheory.Measure (Fin m → ℝ))) f) • g
+  | 0, n, f, g => by
+      have hvol :
+          (MeasureTheory.volume : MeasureTheory.Measure (Fin 0 → ℝ)) =
+            MeasureTheory.Measure.dirac default := by
+        simpa using
+          (MeasureTheory.Measure.volume_pi_eq_dirac
+            (ι := Fin 0) (α := fun _ => ℝ) (x := default))
+      have h_int :
+          (SchwartzMap.integralCLM ℂ
+            (MeasureTheory.volume : MeasureTheory.Measure (Fin 0 → ℝ))) f =
+          f default := by
+        rw [SchwartzMap.integralCLM_apply]
+        rw [hvol, MeasureTheory.integral_dirac]
+      ext x
+      rw [integrateHeadBlock, reindexSchwartzFin_apply, SchwartzMap.tensorProduct_apply,
+        splitFirst_castFinCLE_zero_add_symm, splitLast_castFinCLE_zero_add_symm, h_int]
+      simp
+  | m + 1, n, f, g => by
+      calc
+        integrateHeadBlock (m := m + 1) (n := n) (f.tensorProduct g)
+            =
+          integrateHeadBlock (m := m) (n := n) ((sliceIntegral f).tensorProduct g) := by
+              simp [integrateHeadBlock, sliceIntegral_reindex_tensorProduct]
+        _ =
+          ((SchwartzMap.integralCLM ℂ
+            (MeasureTheory.volume : MeasureTheory.Measure (Fin m → ℝ))) (sliceIntegral f)) • g := by
+              simpa using integrateHeadBlock_tensorProduct (m := m) (n := n) (sliceIntegral f) g
+        _ =
+          ((SchwartzMap.integralCLM ℂ
+            (MeasureTheory.volume : MeasureTheory.Measure (Fin (m + 1) → ℝ))) f) • g := by
+              rw [integral_sliceIntegral]
+
+/-- Integrating the head coordinate commutes with translating only the tail
+coordinates. This is the one-step tail-translation invariance needed for the
+two-point center/difference descent operator. -/
+theorem sliceIntegral_translateSchwartz_cons_zero {n : ℕ}
+    (a : Fin n → ℝ) (F : SchwartzMap (Fin (n + 1) → ℝ) ℂ) :
+    sliceIntegral (SCV.translateSchwartz (Fin.cons 0 a) F) =
+      SCV.translateSchwartz a (sliceIntegral F) := by
+  ext y
+  rw [sliceIntegral_apply, sliceIntegralRaw, SCV.translateSchwartz_apply,
+    sliceIntegral_apply, sliceIntegralRaw]
+  have hfun :
+      (fun x : ℝ => (SCV.translateSchwartz (Fin.cons 0 a) F) (Fin.cons x y)) =
+        (fun x : ℝ => F (Fin.cons x (y + a))) := by
+          funext x
+          rw [SCV.translateSchwartz_apply]
+          congr 1
+          ext j
+          refine Fin.cases ?_ ?_ j
+          · simp [Pi.add_apply]
+          · intro i
+            simp [Pi.add_apply]
+  rw [hfun]
+
+/-- Integrating the head coordinate is invariant under translating only that
+coordinate. This is the one-step head-translation invariance needed to factor
+head-translation-invariant functionals through block descent. -/
+theorem sliceIntegral_translateSchwartz_head {n : ℕ}
+    (a : ℝ) (F : SchwartzMap (Fin (n + 1) → ℝ) ℂ) :
+    sliceIntegral (SCV.translateSchwartz (Fin.cons a 0) F) =
+      sliceIntegral F := by
+  ext y
+  rw [sliceIntegral_apply, sliceIntegralRaw, sliceIntegral_apply, sliceIntegralRaw]
+  have hfun :
+      (fun x : ℝ => (SCV.translateSchwartz (Fin.cons a 0) F) (Fin.cons x y)) =
+        (fun x : ℝ => F (Fin.cons (x + a) y)) := by
+          funext x
+          rw [SCV.translateSchwartz_apply]
+          congr 1
+          ext j
+          refine Fin.cases ?_ ?_ j
+          · simp [Pi.add_apply]
+          · intro i
+            simp [Pi.add_apply]
+  rw [hfun]
+  simpa [add_comm, add_left_comm, add_assoc] using
+    (MeasureTheory.integral_add_right_eq_self
+      (μ := (MeasureTheory.volume : MeasureTheory.Measure ℝ))
+      (fun x : ℝ => F (Fin.cons x y)) a)
+
+/-- Insert a pure tail translation vector into a block `Fin (m + n) -> ℝ` by
+padding the head block with zeros. -/
+def zeroHeadBlockShift : {m n : ℕ} -> (Fin n → ℝ) -> Fin (m + n) → ℝ
+  | 0, n, a => (castFinCLE (Nat.zero_add n)).symm a
+  | m + 1, n, a =>
+      (castFinCLE (Nat.succ_add m n)).symm
+        (Fin.cons 0 (zeroHeadBlockShift (m := m) (n := n) a))
+
+/-- Insert a pure head translation vector into a block `Fin (m + n) → ℝ` by
+padding the tail block with zeros. -/
+def zeroTailBlockShift : {m n : ℕ} -> (Fin m → ℝ) -> Fin (m + n) → ℝ
+  | 0, n, a => by
+      exact 0
+  | m + 1, n, a =>
+      (castFinCLE (Nat.succ_add m n)).symm
+        (Fin.cons (a 0) (zeroTailBlockShift (m := m) (n := n) (fun i => a i.succ)))
+
+@[simp] theorem splitFirst_add {m n : ℕ}
+    (x y : Fin (m + n) → ℝ) :
+    splitFirst m n (x + y) = splitFirst m n x + splitFirst m n y := by
+  ext i
+  simp [splitFirst, Pi.add_apply]
+
+@[simp] theorem splitLast_add {m n : ℕ}
+    (x y : Fin (m + n) → ℝ) :
+    splitLast m n (x + y) = splitLast m n x + splitLast m n y := by
+  ext j
+  simp [splitLast, Pi.add_apply]
+
+@[simp] theorem splitFirst_zeroHeadBlockShift_eq_zero {m n : ℕ}
+    (a : Fin n → ℝ) :
+    splitFirst m n (zeroHeadBlockShift (m := m) (n := n) a) = 0 := by
+  induction m generalizing a with
+  | zero =>
+      ext i
+      exact Fin.elim0 i
+  | succ m ihm =>
+      rw [zeroHeadBlockShift, splitFirst_castFinCLE_succ_add_symm_cons]
+      ext i
+      refine Fin.cases ?_ ?_ i
+      · simp
+      · intro i
+        simpa using congrArg (fun z : Fin m → ℝ => z i) (ihm a)
+
+@[simp] theorem splitLast_zeroHeadBlockShift_eq {m n : ℕ}
+    (a : Fin n → ℝ) :
+    splitLast m n (zeroHeadBlockShift (m := m) (n := n) a) = a := by
+  induction m generalizing a with
+  | zero =>
+      ext j
+      simp [splitLast, zeroHeadBlockShift]
+  | succ m ihm =>
+      rw [zeroHeadBlockShift, splitLast_castFinCLE_succ_add_symm_cons]
+      simpa using ihm a
+
+@[simp] theorem splitFirst_zeroTailBlockShift_eq {m n : ℕ}
+    (a : Fin m → ℝ) :
+    splitFirst m n (zeroTailBlockShift (m := m) (n := n) a) = a := by
+  induction m with
+  | zero =>
+      ext i
+      exact Fin.elim0 i
+  | succ m ihm =>
+      rw [zeroTailBlockShift, splitFirst_castFinCLE_succ_add_symm_cons]
+      ext i
+      refine Fin.cases ?_ ?_ i
+      · simp
+      · intro i
+        simpa using congrArg (fun z : Fin m → ℝ => z i) (ihm (fun j => a j.succ))
+
+@[simp] theorem splitLast_zeroTailBlockShift_eq_zero {m n : ℕ}
+    (a : Fin m → ℝ) :
+    splitLast m n (zeroTailBlockShift (m := m) (n := n) a) = 0 := by
+  induction m with
+  | zero =>
+      ext j
+      simp [splitLast, zeroTailBlockShift]
+  | succ m ihm =>
+      rw [zeroTailBlockShift, splitLast_castFinCLE_succ_add_symm_cons]
+      simpa using ihm (fun i => a i.succ)
+
+@[simp] theorem splitFirst_zeroHeadBlockShift {m n : ℕ}
+    (a : Fin n → ℝ) (x : Fin (m + n) → ℝ) :
+    splitFirst m n (x + zeroHeadBlockShift (m := m) (n := n) a) =
+      splitFirst m n x := by
+  simp
+
+@[simp] theorem splitLast_zeroHeadBlockShift {m n : ℕ}
+    (a : Fin n → ℝ) (x : Fin (m + n) → ℝ) :
+    splitLast m n (x + zeroHeadBlockShift (m := m) (n := n) a) =
+      splitLast m n x + a := by
+  simp
+
+@[simp] theorem splitFirst_zeroTailBlockShift {m n : ℕ}
+    (a : Fin m → ℝ) (x : Fin (m + n) → ℝ) :
+    splitFirst m n (x + zeroTailBlockShift (m := m) (n := n) a) =
+      splitFirst m n x + a := by
+  simp
+
+@[simp] theorem splitLast_zeroTailBlockShift {m n : ℕ}
+    (a : Fin m → ℝ) (x : Fin (m + n) → ℝ) :
+    splitLast m n (x + zeroTailBlockShift (m := m) (n := n) a) =
+      splitLast m n x := by
+  simp
+
+private theorem reindex_translate_zeroHeadBlockShift_succ {m n : ℕ}
+    (a : Fin n → ℝ) (F : SchwartzMap (Fin ((m + 1) + n) → ℝ) ℂ) :
+    reindexSchwartzFin (Nat.succ_add m n)
+        (SCV.translateSchwartz (zeroHeadBlockShift (m := m + 1) (n := n) a) F) =
+      SCV.translateSchwartz (Fin.cons 0 (zeroHeadBlockShift (m := m) (n := n) a))
+        (reindexSchwartzFin (Nat.succ_add m n) F) := by
+  ext x
+  rw [reindexSchwartzFin_apply, SCV.translateSchwartz_apply,
+    SCV.translateSchwartz_apply, reindexSchwartzFin_apply]
+  congr 1
+
+private theorem reindex_translate_zeroTailBlockShift_succ {m n : ℕ}
+    (a : Fin (m + 1) → ℝ) (F : SchwartzMap (Fin ((m + 1) + n) → ℝ) ℂ) :
+    reindexSchwartzFin (Nat.succ_add m n)
+        (SCV.translateSchwartz (zeroTailBlockShift (m := m + 1) (n := n) a) F) =
+      SCV.translateSchwartz
+        (Fin.cons (a 0) (zeroTailBlockShift (m := m) (n := n) (fun i => a i.succ)))
+        (reindexSchwartzFin (Nat.succ_add m n) F) := by
+  ext x
+  simp [reindexSchwartzFin_apply, SCV.translateSchwartz_apply, zeroTailBlockShift]
+
+/-- Block integration commutes with translating only the tail block. -/
+theorem integrateHeadBlock_translateSchwartz_tail :
+    {m n : ℕ} -> (a : Fin n → ℝ) -> (F : SchwartzMap (Fin (m + n) → ℝ) ℂ) ->
+      integrateHeadBlock (m := m) (n := n)
+          (SCV.translateSchwartz (zeroHeadBlockShift (m := m) (n := n) a) F) =
+        SCV.translateSchwartz a (integrateHeadBlock (m := m) (n := n) F)
+  | 0, n, a, F => by
+      ext x
+      rw [integrateHeadBlock, reindexSchwartzFin_apply, integrateHeadBlock]
+      simp [SCV.translateSchwartz_apply, zeroHeadBlockShift]
+  | m + 1, n, a, F => by
+      calc
+        integrateHeadBlock (m := m + 1) (n := n)
+            (SCV.translateSchwartz (zeroHeadBlockShift (m := m + 1) (n := n) a) F)
+          =
+            integrateHeadBlock (m := m) (n := n)
+              (sliceIntegral
+                (reindexSchwartzFin (Nat.succ_add m n)
+                  (SCV.translateSchwartz (zeroHeadBlockShift (m := m + 1) (n := n) a) F))) := by
+                    simp [integrateHeadBlock]
+        _ =
+            integrateHeadBlock (m := m) (n := n)
+              (SCV.translateSchwartz
+                (zeroHeadBlockShift (m := m) (n := n) a)
+                (sliceIntegral (reindexSchwartzFin (Nat.succ_add m n) F))) := by
+                  congr 1
+                  calc
+                    sliceIntegral
+                        (reindexSchwartzFin (Nat.succ_add m n)
+                          (SCV.translateSchwartz
+                            (zeroHeadBlockShift (m := m + 1) (n := n) a) F))
+                      =
+                        sliceIntegral
+                          (SCV.translateSchwartz
+                            (Fin.cons 0 (zeroHeadBlockShift (m := m) (n := n) a))
+                            (reindexSchwartzFin (Nat.succ_add m n) F)) := by
+                              simpa using congrArg sliceIntegral
+                                (reindex_translate_zeroHeadBlockShift_succ
+                                  (m := m) (n := n) a F)
+                    _ =
+                        SCV.translateSchwartz
+                          (zeroHeadBlockShift (m := m) (n := n) a)
+                          (sliceIntegral (reindexSchwartzFin (Nat.succ_add m n) F)) := by
+                              simpa using
+                                sliceIntegral_translateSchwartz_cons_zero
+                                  (a := zeroHeadBlockShift (m := m) (n := n) a)
+                                  (F := reindexSchwartzFin (Nat.succ_add m n) F)
+        _ =
+            SCV.translateSchwartz a
+              (integrateHeadBlock (m := m) (n := n)
+                (sliceIntegral (reindexSchwartzFin (Nat.succ_add m n) F))) := by
+                  simpa using integrateHeadBlock_translateSchwartz_tail
+                    (m := m) (n := n) a
+                    (sliceIntegral (reindexSchwartzFin (Nat.succ_add m n) F))
+        _ = SCV.translateSchwartz a (integrateHeadBlock (m := m + 1) (n := n) F) := by
+              simp [integrateHeadBlock]
+
+/-- Block integration is invariant under translating only the head block. -/
+theorem integrateHeadBlock_translateSchwartz_head :
+    {m n : ℕ} -> (a : Fin m → ℝ) -> (F : SchwartzMap (Fin (m + n) → ℝ) ℂ) ->
+      integrateHeadBlock (m := m) (n := n)
+          (SCV.translateSchwartz (zeroTailBlockShift (m := m) (n := n) a) F) =
+        integrateHeadBlock (m := m) (n := n) F
+  | 0, n, a, F => by
+      ext x
+      simp [integrateHeadBlock, zeroTailBlockShift]
+  | m + 1, n, a, F => by
+      calc
+        integrateHeadBlock (m := m + 1) (n := n)
+            (SCV.translateSchwartz (zeroTailBlockShift (m := m + 1) (n := n) a) F)
+          =
+            integrateHeadBlock (m := m) (n := n)
+              (sliceIntegral
+                (reindexSchwartzFin (Nat.succ_add m n)
+                  (SCV.translateSchwartz (zeroTailBlockShift (m := m + 1) (n := n) a) F))) := by
+                    simp [integrateHeadBlock]
+        _ =
+            integrateHeadBlock (m := m) (n := n)
+              (SCV.translateSchwartz
+                (zeroTailBlockShift (m := m) (n := n) (fun i => a i.succ))
+                (sliceIntegral (reindexSchwartzFin (Nat.succ_add m n) F))) := by
+                  congr 1
+                  exact
+                    calc
+                      sliceIntegral
+                          (reindexSchwartzFin (Nat.succ_add m n)
+                            (SCV.translateSchwartz
+                              (zeroTailBlockShift (m := m + 1) (n := n) a) F))
+                      =
+                        sliceIntegral
+                          (SCV.translateSchwartz
+                            (Fin.cons (a 0)
+                              (zeroTailBlockShift (m := m) (n := n) (fun i => a i.succ)))
+                            (reindexSchwartzFin (Nat.succ_add m n) F)) := by
+                              simpa using congrArg sliceIntegral
+                                (reindex_translate_zeroTailBlockShift_succ
+                                  (m := m) (n := n) a F)
+                    _ =
+                        SCV.translateSchwartz
+                          (zeroTailBlockShift (m := m) (n := n) (fun i => a i.succ))
+                          (sliceIntegral (reindexSchwartzFin (Nat.succ_add m n) F)) := by
+                              let ashift : Fin (m + n) → ℝ :=
+                                zeroTailBlockShift (m := m) (n := n) (fun i => a i.succ)
+                              let F' : SchwartzMap (Fin ((m + n) + 1) → ℝ) ℂ :=
+                                reindexSchwartzFin (Nat.succ_add m n) F
+                              have hsplit :
+                                  SCV.translateSchwartz (Fin.cons (a 0) ashift) F' =
+                                    SCV.translateSchwartz (Fin.cons 0 ashift)
+                                      (SCV.translateSchwartz (Fin.cons (a 0) 0) F') := by
+                                ext x
+                                rw [SCV.translateSchwartz_apply, SCV.translateSchwartz_apply,
+                                  SCV.translateSchwartz_apply]
+                                congr 1
+                                ext j
+                                refine Fin.cases ?_ ?_ j
+                                · simp [Pi.add_apply]
+                                · intro i
+                                  simp [Pi.add_apply, add_left_comm, add_comm]
+                              rw [hsplit, sliceIntegral_translateSchwartz_cons_zero]
+                              exact congrArg (SCV.translateSchwartz ashift)
+                                (sliceIntegral_translateSchwartz_head
+                                  (a := a 0) (F := F'))
+        _ =
+            integrateHeadBlock (m := m) (n := n)
+              (sliceIntegral (reindexSchwartzFin (Nat.succ_add m n) F)) := by
+                simpa using integrateHeadBlock_translateSchwartz_head
+                  (m := m) (n := n) (fun i => a i.succ)
+                  (sliceIntegral (reindexSchwartzFin (Nat.succ_add m n) F))
+        _ = integrateHeadBlock (m := m + 1) (n := n) F := by
+              simp [integrateHeadBlock]
 
 end OSReconstruction

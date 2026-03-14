@@ -57,6 +57,28 @@ private theorem reindex_flatten_twoPointCenterShell
     reindex_flattenSchwartzNPoint_two_apply
       (d := d) (f := χ.prependField (onePointToFin1CLM d h)) x
 
+private theorem reindex_flatten_twoPointProductShell_apply
+    (χ g : SchwartzSpacetime d) (x : Fin ((d + 1) + (d + 1)) → ℝ) :
+    reindexSchwartzFin (by ring)
+        (flattenSchwartzNPoint (d := d)
+          (twoPointCenterDiffSchwartzCLM (d := d) (twoPointProductLift χ g))) x =
+      χ (splitFirst (d + 1) (d + 1) x) *
+        g (splitFirst (d + 1) (d + 1) x + splitLast (d + 1) (d + 1) x) := by
+  rw [reindex_flattenSchwartzNPoint_two_apply]
+  let y : NPointDomain d 2 :=
+    fun i =>
+      Fin.cases (splitFirst (d + 1) (d + 1) x)
+        (fun _ => splitLast (d + 1) (d + 1) x) i
+  have h0 : y 0 = splitFirst (d + 1) (d + 1) x := by
+    simp [y]
+  have h1 : y 1 = splitLast (d + 1) (d + 1) x := by
+    change Fin.cases (splitFirst (d + 1) (d + 1) x)
+        (fun _ => splitLast (d + 1) (d + 1) x) (Fin.succ 0) =
+      splitLast (d + 1) (d + 1) x
+    rfl
+  simpa [y, h0, h1] using
+    twoPointCenterDiffSchwartzCLM_twoPointProductLift_apply (d := d) χ g y
+
 /-- The basic two-point center descent map: rewrite in center/difference
 coordinates, flatten to ordinary Euclidean Schwartz space, and integrate out
 the full center block of `d + 1` real coordinates. -/
@@ -69,6 +91,13 @@ noncomputable def twoPointCenterDescent
     reindexSchwartzFin (by ring) Fflat
   exact integrateHeadBlock (m := d + 1) (n := d + 1) Fflat'
 
+/-- Two-point center descent commutes with subtraction. -/
+theorem twoPointCenterDescent_sub
+    (F G : SchwartzNPoint d 2) :
+    twoPointCenterDescent (d := d) (F - G) =
+      twoPointCenterDescent (d := d) F - twoPointCenterDescent (d := d) G := by
+  simp [twoPointCenterDescent, integrateHeadBlock_sub]
+
 /-- On the admissible two-point center/difference shell, center descent is
 exactly repeated block integration of the tensor product `χ(u) h(ξ)` after the
 correct center/difference rewrite. This isolates the remaining gap to a single
@@ -79,6 +108,139 @@ theorem twoPointCenterDescent_twoPointDifferenceLift
       integrateHeadBlock (m := d + 1) (n := d + 1) (χ.tensorProduct h) := by
   simp [twoPointCenterDescent, twoPointCenterDiffSchwartzCLM_twoPointDifferenceLift,
     reindex_flatten_twoPointCenterShell]
+
+/-- On the admissible two-point center/difference shell, integrating out the
+full center block leaves exactly the difference-variable Schwartz test scaled
+by the center integral. This is the blocker-facing form of two-point descent. -/
+theorem twoPointCenterDescent_twoPointDifferenceLift_eq_integral_smul
+    (χ h : SchwartzSpacetime d) :
+    twoPointCenterDescent (d := d) (twoPointDifferenceLift χ h) =
+      (∫ u : SpacetimeDim d, χ u) • h := by
+  rw [twoPointCenterDescent_twoPointDifferenceLift]
+  simpa [SchwartzMap.integralCLM_apply] using
+    integrateHeadBlock_tensorProduct (m := d + 1) (n := d + 1) χ h
+
+/-- The semigroup-side center-shear shell descends to a genuine difference
+variable Schwartz test. This is the canonical admissible representative
+associated to the product shell `(u, ξ) ↦ χ(u) g(u + ξ)`. -/
+abbrev twoPointCenterShearDescent
+    (χ g : SchwartzSpacetime d) : SchwartzSpacetime d :=
+  twoPointCenterDescent (d := d) (twoPointProductLift χ g)
+
+@[simp] theorem twoPointCenterShearDescent_eq
+    (χ g : SchwartzSpacetime d) :
+    twoPointCenterShearDescent (d := d) χ g =
+      twoPointCenterDescent (d := d) (twoPointProductLift χ g) := rfl
+
+/-- A normalized center cutoff gives a genuine section of two-point center
+descent on the admissible shell. -/
+theorem twoPointCenterDescent_twoPointDifferenceLift_eq_self
+    (χ h : SchwartzSpacetime d)
+    (hχ : ∫ u : SpacetimeDim d, χ u = 1) :
+    twoPointCenterDescent (d := d) (twoPointDifferenceLift χ h) = h := by
+  simpa [hχ] using
+    twoPointCenterDescent_twoPointDifferenceLift_eq_integral_smul (d := d) χ h
+
+/-- For a normalized center cutoff, the semigroup-side center-shear shell and
+its canonical admissible representative have the same descent. This isolates
+the remaining `E -> R` two-point gap to proving that the relevant witness
+depends only on the descended difference-variable Schwartz test. -/
+theorem twoPointCenterDescent_twoPointProductLift_eq_differenceRepresentative
+    (χ g : SchwartzSpacetime d)
+    (hχ : ∫ u : SpacetimeDim d, χ u = 1) :
+    twoPointCenterDescent (d := d) (twoPointProductLift χ g) =
+      twoPointCenterDescent (d := d)
+        (twoPointDifferenceLift χ (twoPointCenterShearDescent (d := d) χ g)) := by
+  rw [twoPointCenterShearDescent_eq]
+  symm
+  exact twoPointCenterDescent_twoPointDifferenceLift_eq_self
+    (d := d) χ (twoPointCenterShearDescent (d := d) χ g) hχ
+
+/-- The canonical residual between the semigroup/product shell and its
+normalized admissible representative. The remaining two-point `E -> R` gap is
+exactly to prove that the relevant witness annihilates this kernel element. -/
+abbrev twoPointCenterShearResidual
+    (χ g : SchwartzSpacetime d) : SchwartzNPoint d 2 :=
+  twoPointProductLift χ g -
+    twoPointDifferenceLift χ (twoPointCenterShearDescent (d := d) χ g)
+
+@[simp] theorem twoPointCenterDiffSchwartzCLM_twoPointCenterShearResidual_apply
+    (χ g : SchwartzSpacetime d) (x : NPointDomain d 2) :
+    twoPointCenterDiffSchwartzCLM (d := d) (twoPointCenterShearResidual (d := d) χ g) x =
+      χ (x 0) * g (x 0 + x 1) -
+        χ (x 0) * (twoPointCenterShearDescent (d := d) χ g) (x 1) := by
+  rw [twoPointCenterShearResidual]
+  change
+    twoPointCenterDiffSchwartzCLM (d := d) (twoPointProductLift χ g) x -
+      twoPointCenterDiffSchwartzCLM (d := d)
+        (twoPointDifferenceLift χ (twoPointCenterShearDescent (d := d) χ g)) x =
+      χ (x 0) * g (x 0 + x 1) -
+        χ (x 0) * (twoPointCenterShearDescent (d := d) χ g) (x 1)
+  rw [twoPointCenterDiffSchwartzCLM_twoPointProductLift_apply]
+  simp [twoPointCenterShearDescent_eq,
+    twoPointCenterDiffSchwartzCLM_twoPointDifferenceLift, SchwartzMap.prependField_apply,
+    onePointToFin1CLM_apply]
+
+/-- For a normalized center cutoff, the canonical center-shear residual lies in
+the kernel of two-point center descent. -/
+theorem twoPointCenterDescent_twoPointCenterShearResidual_eq_zero
+    (χ g : SchwartzSpacetime d)
+    (hχ : ∫ u : SpacetimeDim d, χ u = 1) :
+    twoPointCenterDescent (d := d) (twoPointCenterShearResidual (d := d) χ g) = 0 := by
+  rw [twoPointCenterShearResidual, twoPointCenterDescent_sub]
+  exact sub_eq_zero.2
+    (twoPointCenterDescent_twoPointProductLift_eq_differenceRepresentative
+      (d := d) χ g hχ)
+
+/-- Translating the one-point test on the semigroup/product shell translates
+the descended difference-variable representative by the same amount. This makes
+`twoPointCenterShearDescent` behave like the expected convolution operator in
+the difference variable. -/
+theorem twoPointCenterShearDescent_translate_right
+    (χ g : SchwartzSpacetime d) (a : SpacetimeDim d) :
+    twoPointCenterShearDescent (d := d) χ (SCV.translateSchwartz a g) =
+      SCV.translateSchwartz a (twoPointCenterShearDescent (d := d) χ g) := by
+  let F : SchwartzMap (Fin ((d + 1) + (d + 1)) → ℝ) ℂ :=
+    reindexSchwartzFin (by ring)
+      (flattenSchwartzNPoint (d := d)
+        (twoPointCenterDiffSchwartzCLM (d := d) (twoPointProductLift χ g)))
+  let F' : SchwartzMap (Fin ((d + 1) + (d + 1)) → ℝ) ℂ :=
+    reindexSchwartzFin (by ring)
+      (flattenSchwartzNPoint (d := d)
+        (twoPointCenterDiffSchwartzCLM (d := d)
+          (twoPointProductLift χ (SCV.translateSchwartz a g))))
+  have hF' :
+      F' =
+        SCV.translateSchwartz
+          (zeroHeadBlockShift (m := d + 1) (n := d + 1) a) F := by
+    ext x
+    unfold F F'
+    rw [reindex_flatten_twoPointProductShell_apply]
+    have htranslate :
+        (SCV.translateSchwartz
+            (zeroHeadBlockShift (m := d + 1) (n := d + 1) a)
+            (reindexSchwartzFin (by ring)
+              (flattenSchwartzNPoint (d := d)
+                (twoPointCenterDiffSchwartzCLM (d := d) (twoPointProductLift χ g))))) x =
+          (reindexSchwartzFin (by ring)
+            (flattenSchwartzNPoint (d := d)
+              (twoPointCenterDiffSchwartzCLM (d := d) (twoPointProductLift χ g))))
+            (x + zeroHeadBlockShift (m := d + 1) (n := d + 1) a) := by
+      rfl
+    rw [htranslate]
+    have hshifted :=
+      reindex_flatten_twoPointProductShell_apply (d := d) χ g
+        (x + zeroHeadBlockShift (m := d + 1) (n := d + 1) a)
+    simpa [splitFirst_zeroHeadBlockShift, splitLast_zeroHeadBlockShift, add_assoc] using
+      hshifted.symm
+  rw [twoPointCenterShearDescent_eq, twoPointCenterShearDescent_eq,
+    twoPointCenterDescent, twoPointCenterDescent]
+  change integrateHeadBlock (m := d + 1) (n := d + 1) F' =
+    SCV.translateSchwartz a (integrateHeadBlock (m := d + 1) (n := d + 1) F)
+  rw [hF']
+  simpa using
+    integrateHeadBlock_translateSchwartz_tail
+      (m := d + 1) (n := d + 1) a F
 
 private theorem integral_twoPointCenterDiffSchwartz
     (F : SchwartzNPoint d 2) :

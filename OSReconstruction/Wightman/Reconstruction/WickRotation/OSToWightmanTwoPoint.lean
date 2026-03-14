@@ -3,6 +3,7 @@ Copyright (c) 2025 ModularPhysics Contributors. All rights reserved.
 Released under Apache 2.0 license.
 Authors: Michael Douglas, ModularPhysics Contributors
 -/
+import OSReconstruction.Wightman.Reconstruction.TwoPointDescent
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightman
 
 /-!
@@ -2636,6 +2637,157 @@ theorem twoPointDifferenceLift_timeShift_holomorphicValue_semigroupMatrix_center
           (onePointToFin1CLM d g : SchwartzNPoint d 1)
           hg_pos))
       hmatchMatrix
+
+/-- Canonical center-shear version of the semigroup-matrix criterion. For a
+normalized cutoff `χ₀`, the remaining two-point `E -> R` gap can be phrased
+using the canonical admissible representative
+`twoPointCenterShearDescent χ₀ g` rather than an arbitrary difference-shell
+test `h`. So the only missing input is now the real-axis matching of the
+product shell against this canonical representative. -/
+theorem twoPointDifferenceLift_timeShift_holomorphicValue_semigroupMatrix_canonicalCenterShear_centerValue
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (Ψ : (Fin 2 → Fin (d + 1) → ℂ) → ℂ)
+    (hΨ_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        Ψ (fun i => wickRotatePoint (x i)) * (f.1 x))
+    (χ₀ χ g : SchwartzSpacetime d)
+    (hχ₀_pos : tsupport (((SchwartzNPoint.osConj (d := d) (n := 1)
+        (onePointToFin1CLM d χ₀ : SchwartzNPoint d 1) : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (hg_pos : tsupport (((onePointToFin1CLM d g : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (hg_compact : HasCompactSupport (g : SpacetimeDim d → ℂ))
+    (hdesc_pos : tsupport ((OSReconstruction.twoPointCenterShearDescent χ₀ g :
+        SchwartzSpacetime d) : SpacetimeDim d → ℂ) ⊆
+          {x : SpacetimeDim d | 0 < x 0})
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (hmatch : ∀ t : ℝ, 0 < t →
+      ∫ z : NPointDomain d 2,
+        Ψ (xiShift ⟨1, by omega⟩ 0
+          (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i))
+          ((t : ℂ) * Complex.I)) *
+          (χ₀ (z 0) * g (z 0 + z 1)) =
+      ∫ z : NPointDomain d 2,
+        Ψ (xiShift ⟨1, by omega⟩ 0
+          (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i))
+          ((t : ℂ) * Complex.I)) *
+          (χ₀ (z 0) * (OSReconstruction.twoPointCenterShearDescent χ₀ g) (z 1))) :
+    DifferentiableOn ℂ
+      (fun z : ℂ =>
+        (∫ u : SpacetimeDim d, χ u) *
+          OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+            ((show PositiveTimeBorchersSequence d from
+              PositiveTimeBorchersSequence.single 1
+                (SchwartzNPoint.osConj (d := d) (n := 1)
+                  (onePointToFin1CLM d χ₀ : SchwartzNPoint d 1))
+                hχ₀_pos))
+            ((show PositiveTimeBorchersSequence d from
+              PositiveTimeBorchersSequence.single 1
+                (onePointToFin1CLM d g : SchwartzNPoint d 1)
+                hg_pos))
+            z)
+      {z : ℂ | 0 < z.re} ∧
+    ∀ t : ℝ, 0 < t →
+      ((∫ u : SpacetimeDim d, χ u) *
+          OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+            ((show PositiveTimeBorchersSequence d from
+              PositiveTimeBorchersSequence.single 1
+                (SchwartzNPoint.osConj (d := d) (n := 1)
+                  (onePointToFin1CLM d χ₀ : SchwartzNPoint d 1))
+                hχ₀_pos))
+            ((show PositiveTimeBorchersSequence d from
+              PositiveTimeBorchersSequence.single 1
+                (onePointToFin1CLM d g : SchwartzNPoint d 1)
+                hg_pos))
+            (t : ℂ)) =
+        OS.S 2
+          (ZeroDiagonalSchwartz.ofClassical
+            (twoPointDifferenceLift χ
+              (SCV.translateSchwartz (- timeShiftVec d t)
+                (OSReconstruction.twoPointCenterShearDescent χ₀ g)))) := by
+  simpa using
+    twoPointDifferenceLift_timeShift_holomorphicValue_semigroupMatrix_centerShear_centerValue
+      (d := d) (OS := OS) (lgc := lgc) (Ψ := Ψ) (hΨ_euclid := hΨ_euclid)
+      (χ₀ := χ₀) (χ := χ) (g := g)
+      (h := OSReconstruction.twoPointCenterShearDescent χ₀ g)
+      hχ₀_pos hg_pos hg_compact hdesc_pos hχ₀ hmatch
+
+/-- Residual-annihilation version of the canonical center-shear semigroup
+matrix criterion. The remaining two-point `E -> R` gap is exactly that the
+`ξ`-shift pairing kills the canonical center-shear residual, i.e. the
+difference between the semigroup/product shell and its descended admissible
+representative. Once this scalar annihilation is known for one normalized
+cutoff `χ₀`, the continuation is the explicit semigroup matrix element. -/
+theorem twoPointDifferenceLift_timeShift_holomorphicValue_semigroupMatrix_canonicalCenterShear_of_residual_annihilation
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (Ψ : (Fin 2 → Fin (d + 1) → ℂ) → ℂ)
+    (hΨ_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        Ψ (fun i => wickRotatePoint (x i)) * (f.1 x))
+    (χ₀ χ g : SchwartzSpacetime d)
+    (hχ₀_pos : tsupport (((SchwartzNPoint.osConj (d := d) (n := 1)
+        (onePointToFin1CLM d χ₀ : SchwartzNPoint d 1) : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (hg_pos : tsupport (((onePointToFin1CLM d g : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (hg_compact : HasCompactSupport (g : SpacetimeDim d → ℂ))
+    (hdesc_pos : tsupport ((OSReconstruction.twoPointCenterShearDescent χ₀ g :
+        SchwartzSpacetime d) : SpacetimeDim d → ℂ) ⊆
+          {x : SpacetimeDim d | 0 < x 0})
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (hresid : ∀ t : ℝ, 0 < t →
+      (∫ z : NPointDomain d 2,
+        Ψ (xiShift ⟨1, by omega⟩ 0
+          (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i))
+          ((t : ℂ) * Complex.I)) *
+          (χ₀ (z 0) * g (z 0 + z 1))) -
+      (∫ z : NPointDomain d 2,
+        Ψ (xiShift ⟨1, by omega⟩ 0
+          (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i))
+          ((t : ℂ) * Complex.I)) *
+          (χ₀ (z 0) * (OSReconstruction.twoPointCenterShearDescent χ₀ g) (z 1))) = 0) :
+    DifferentiableOn ℂ
+      (fun z : ℂ =>
+        (∫ u : SpacetimeDim d, χ u) *
+          OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+            ((show PositiveTimeBorchersSequence d from
+              PositiveTimeBorchersSequence.single 1
+                (SchwartzNPoint.osConj (d := d) (n := 1)
+                  (onePointToFin1CLM d χ₀ : SchwartzNPoint d 1))
+                hχ₀_pos))
+            ((show PositiveTimeBorchersSequence d from
+              PositiveTimeBorchersSequence.single 1
+                (onePointToFin1CLM d g : SchwartzNPoint d 1)
+                hg_pos))
+            z)
+      {z : ℂ | 0 < z.re} ∧
+    ∀ t : ℝ, 0 < t →
+      ((∫ u : SpacetimeDim d, χ u) *
+          OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+            ((show PositiveTimeBorchersSequence d from
+              PositiveTimeBorchersSequence.single 1
+                (SchwartzNPoint.osConj (d := d) (n := 1)
+                  (onePointToFin1CLM d χ₀ : SchwartzNPoint d 1))
+                hχ₀_pos))
+            ((show PositiveTimeBorchersSequence d from
+              PositiveTimeBorchersSequence.single 1
+                (onePointToFin1CLM d g : SchwartzNPoint d 1)
+                hg_pos))
+            (t : ℂ)) =
+        OS.S 2
+          (ZeroDiagonalSchwartz.ofClassical
+            (twoPointDifferenceLift χ
+              (SCV.translateSchwartz (- timeShiftVec d t)
+                (OSReconstruction.twoPointCenterShearDescent χ₀ g)))) := by
+  refine
+    twoPointDifferenceLift_timeShift_holomorphicValue_semigroupMatrix_canonicalCenterShear_centerValue
+      (d := d) (OS := OS) (lgc := lgc) (Ψ := Ψ) (hΨ_euclid := hΨ_euclid)
+      (χ₀ := χ₀) (χ := χ) (g := g)
+      hχ₀_pos hg_pos hg_compact hdesc_pos hχ₀ ?_
+  intro t ht
+  exact sub_eq_zero.mp (hresid t ht)
 
 /-- Concrete sufficient criterion for the remaining two-point holomorphic
 existence problem. If one can find a positive-time compact-support product-shell
