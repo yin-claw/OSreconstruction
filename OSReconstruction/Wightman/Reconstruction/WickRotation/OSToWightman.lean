@@ -476,6 +476,70 @@ theorem schwinger_twoPointDifferenceLift_eq_centerWitnessIntegral
             ∫ y : SpacetimeDim d, χ y := by
           rw [hχ₀_eval]
 
+/-- The same two-point witness identity rewritten in center/difference
+coordinates `(u, ξ) ↦ (u, u + ξ)`. This is the first production theorem that
+puts the `k = 2` witness directly into the coordinates natural for the
+difference-variable continuation problem. -/
+theorem schwinger_twoPointDifferenceLift_eq_centerDiffWitnessIntegral
+    (OS : OsterwalderSchraderAxioms d)
+    (Ψ : (Fin 2 → Fin (d + 1) → ℂ) → ℂ)
+    (hΨ_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        Ψ (fun i => wickRotatePoint (x i)) * (f.1 x))
+    (h : SchwartzSpacetime d)
+    (h0 : (0 : SpacetimeDim d) ∉ tsupport (h : SpacetimeDim d → ℂ))
+    (χ₀ : SchwartzSpacetime d)
+    (hχ₀ : ∫ x : SpacetimeDim d, χ₀ x = 1)
+    (χ : SchwartzSpacetime d) :
+    OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)) =
+      (∫ z : NPointDomain d 2,
+          Ψ (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i)) *
+            (χ₀ (z 0) * h (z 1))) *
+        ∫ y : SpacetimeDim d, χ y := by
+  calc
+    OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h))
+        = (∫ x : NPointDomain d 2,
+            Ψ (fun i => wickRotatePoint (x i)) * (twoPointDifferenceLift χ₀ h) x) *
+          ∫ y : SpacetimeDim d, χ y := by
+            exact schwinger_twoPointDifferenceLift_eq_centerWitnessIntegral
+              (d := d) OS Ψ hΨ_euclid h h0 χ₀ hχ₀ χ
+    _ = (∫ z : NPointDomain d 2,
+          Ψ (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i)) *
+            (χ₀ (z 0) * h (z 1))) *
+          ∫ y : SpacetimeDim d, χ y := by
+          congr 1
+          simpa using
+            (integral_mul_twoPointDifferenceLift_eq_centerDiff (d := d)
+              (Ψ := fun x => Ψ (fun i => wickRotatePoint (x i))) (χ := χ₀) (h := h))
+
+/-- The normalized two-point center/difference witness value is independent of
+the choice of center cutoff `χ₀` with integral `1`. This is the first honest
+cutoff-independence statement for the `k = 2` witness on the `E -> R` path. -/
+theorem schwinger_twoPoint_centerDiffWitness_eq_of_centerIntegral_one
+    (OS : OsterwalderSchraderAxioms d)
+    (Ψ : (Fin 2 → Fin (d + 1) → ℂ) → ℂ)
+    (hΨ_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        Ψ (fun i => wickRotatePoint (x i)) * (f.1 x))
+    (h : SchwartzSpacetime d)
+    (h0 : (0 : SpacetimeDim d) ∉ tsupport (h : SpacetimeDim d → ℂ))
+    (χ₀ χ₁ : SchwartzSpacetime d)
+    (hχ₀ : ∫ x : SpacetimeDim d, χ₀ x = 1)
+    (hχ₁ : ∫ x : SpacetimeDim d, χ₁ x = 1) :
+    (∫ z : NPointDomain d 2,
+        Ψ (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i)) *
+          (χ₀ (z 0) * h (z 1))) =
+      ∫ z : NPointDomain d 2,
+        Ψ (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i)) *
+          (χ₁ (z 0) * h (z 1)) := by
+  have h₀ :=
+    schwinger_twoPointDifferenceLift_eq_centerDiffWitnessIntegral
+      (d := d) OS Ψ hΨ_euclid h h0 χ₀ hχ₀ χ₀
+  have h₁ :=
+    schwinger_twoPointDifferenceLift_eq_centerDiffWitnessIntegral
+      (d := d) OS Ψ hΨ_euclid h h0 χ₁ hχ₁ χ₀
+  simpa [hχ₀] using h₀.symm.trans h₁
+
 /-- **ξ-shift: the correct one-variable perturbation in the cumulative-sum structure.**
 
     In the cumulative-sum parametrization, the j-th new variable at level r is
