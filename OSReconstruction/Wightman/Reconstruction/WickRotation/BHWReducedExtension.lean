@@ -91,92 +91,17 @@ structure ReducedBHWExtensionData (d n : ℕ)
   perm_invariant :
     IsReducedPermutationInvariant (d := d) (n := n) toFun
 
-/-- Axiomatic reduced BHW theorem surface for Route 1.
+/-! #### Reduced BHW extension infrastructure
 
-This is the reduced analogue of the absolute Bargmann-Hall-Wightman theorem:
-starting from a holomorphic function on the reduced forward tube that already
-has the correct reduced Lorentz and reduced permutation symmetries on that tube,
-one obtains a holomorphic extension to reduced PET with the same symmetries.
+The raw `reduced_bargmann_hall_wightman` axiom (taking generic `F` with `hF_perm`
+on the reduced forward tube) was **removed** because its `hF_perm` hypothesis is
+vacuously true: non-trivial permutations send `V₊` to `−V₊`, so the premise
+`permOnReducedDiff π η ∈ ReducedForwardTube` is always false.
 
-The reduced proof should eventually be derived by adapting the absolute BHW
-permutation-flow argument to the induced action `permOnReducedDiff`. For now it
-is kept axiomatic so the Route 1 pullback architecture can be built against its
-final interface. -/
-axiom reduced_bargmann_hall_wightman
-    [NeZero d] (n : ℕ)
-    (F : ReducedConfig d n → ℂ)
-    (hF_holo : DifferentiableOn ℂ F (ReducedForwardTube d n))
-    (hF_lorentz :
-      ∀ (Λ : ComplexLorentzGroup d) (η : ReducedConfig d n),
-        η ∈ ReducedForwardTube d n →
-        complexLorentzAction Λ η ∈ ReducedForwardTube d n →
-        F (complexLorentzAction Λ η) = F η)
-    (hF_perm :
-      ∀ (π : Equiv.Perm (Fin n)) (η : ReducedConfig d n),
-        η ∈ ReducedForwardTube d n →
-        permOnReducedDiff (d := d) (n := n) π η ∈ ReducedForwardTube d n →
-        F (permOnReducedDiff (d := d) (n := n) π η) = F η) :
-    ∃ (F_ext : ReducedConfig d n → ℂ),
-      DifferentiableOn ℂ F_ext (reducedPermutedExtendedTube d n) ∧
-      (∀ η ∈ ReducedForwardTube d n, F_ext η = F η) ∧
-      IsReducedLorentzInvariant (d := d) (n := n) F_ext ∧
-      IsReducedPermutationInvariant (d := d) (n := n) F_ext ∧
-      (∀ (G : ReducedConfig d n → ℂ),
-        DifferentiableOn ℂ G (reducedPermutedExtendedTube d n) →
-        (∀ η ∈ ReducedForwardTube d n, G η = F η) →
-        ∀ η ∈ reducedPermutedExtendedTube d n, G η = F_ext η)
-
-/-- Chosen reduced BHW extension for a reduced forward-tube function. -/
-noncomputable def W_analytic_BHW_reduced
-    [NeZero d] (n : ℕ)
-    (F : ReducedConfig d n → ℂ)
-    (hF_holo : DifferentiableOn ℂ F (ReducedForwardTube d n))
-    (hF_lorentz :
-      ∀ (Λ : ComplexLorentzGroup d) (η : ReducedConfig d n),
-        η ∈ ReducedForwardTube d n →
-        complexLorentzAction Λ η ∈ ReducedForwardTube d n →
-        F (complexLorentzAction Λ η) = F η)
-    (hF_perm :
-      ∀ (π : Equiv.Perm (Fin n)) (η : ReducedConfig d n),
-        η ∈ ReducedForwardTube d n →
-        permOnReducedDiff (d := d) (n := n) π η ∈ ReducedForwardTube d n →
-        F (permOnReducedDiff (d := d) (n := n) π η) = F η) :
-    { F_ext : ReducedConfig d n → ℂ //
-      DifferentiableOn ℂ F_ext (reducedPermutedExtendedTube d n) ∧
-      (∀ η ∈ ReducedForwardTube d n, F_ext η = F η) ∧
-      IsReducedLorentzInvariant (d := d) (n := n) F_ext ∧
-      IsReducedPermutationInvariant (d := d) (n := n) F_ext } := by
-  let h := reduced_bargmann_hall_wightman (d := d) n F hF_holo hF_lorentz hF_perm
-  exact ⟨h.choose, h.choose_spec.1, h.choose_spec.2.1, h.choose_spec.2.2.1,
-    h.choose_spec.2.2.2.1⟩
-
-/-- Uniqueness of the chosen reduced BHW extension. -/
-theorem W_analytic_BHW_reduced_unique
-    [NeZero d] (n : ℕ)
-    (F : ReducedConfig d n → ℂ)
-    (hF_holo : DifferentiableOn ℂ F (ReducedForwardTube d n))
-    (hF_lorentz :
-      ∀ (Λ : ComplexLorentzGroup d) (η : ReducedConfig d n),
-        η ∈ ReducedForwardTube d n →
-        complexLorentzAction Λ η ∈ ReducedForwardTube d n →
-        F (complexLorentzAction Λ η) = F η)
-    (hF_perm :
-      ∀ (π : Equiv.Perm (Fin n)) (η : ReducedConfig d n),
-        η ∈ ReducedForwardTube d n →
-        permOnReducedDiff (d := d) (n := n) π η ∈ ReducedForwardTube d n →
-        F (permOnReducedDiff (d := d) (n := n) π η) = F η)
-    (G : ReducedConfig d n → ℂ)
-    (hG_holo : DifferentiableOn ℂ G (reducedPermutedExtendedTube d n))
-    (hG_eq : ∀ η ∈ ReducedForwardTube d n, G η = F η) :
-    ∀ η ∈ reducedPermutedExtendedTube d n,
-      G η = (W_analytic_BHW_reduced (d := d) n F hF_holo hF_lorentz hF_perm).val η := by
-  let h := reduced_bargmann_hall_wightman (d := d) n F hF_holo hF_lorentz hF_perm
-  have hchosen :
-      (W_analytic_BHW_reduced (d := d) n F hF_holo hF_lorentz hF_perm).val = h.choose := by
-    rfl
-  intro η hη
-  rw [hchosen]
-  exact h.choose_spec.2.2.2.2 G hG_holo hG_eq η hη
+The correct axiom is `reduced_bargmann_hall_wightman_of_input`, which takes the
+full Wightman bundle `Wfn` and a cutoff `χ`. Permutation symmetry is derived
+from local commutativity of the Wightman functions, not from a forward-tube
+hypothesis. -/
 
 /-- Pull a reduced analytic function back to absolute coordinates along the
 reduced difference map. -/
@@ -965,8 +890,8 @@ still needs the reduced local-commutativity / permutation-flow argument, which
 does not belong to the raw forward-tube input. We keep that bridge axiomatic
 for now. -/
 axiom reduced_bargmann_hall_wightman_of_input
-    [NeZero d] {Wred : (m : ℕ) → SchwartzNPoint d m → ℂ} {m : ℕ}
-    (hInput : ReducedForwardTubeInput Wred m) :
+    [NeZero d] (Wfn : WightmanFunctions d) (χ : NormalizedBasepointCutoff d) (m : ℕ)
+    (hInput : Route1ReducedAnalyticInput Wfn χ m) :
     ∃ (F_ext : ReducedNPointConfig d m → ℂ),
       DifferentiableOn ℂ F_ext (ReducedPermutedExtendedTubeN d m) ∧
       (∀ η ∈ ReducedForwardTubeN d m, F_ext η = hInput.toFun η) ∧
@@ -980,10 +905,10 @@ axiom reduced_bargmann_hall_wightman_of_input
 /-- Chosen reduced BHW extension associated to a bundled reduced forward-tube
 datum. -/
 noncomputable def W_analytic_BHW_reduced_of_input
-    [NeZero d] {Wred : (m : ℕ) → SchwartzNPoint d m → ℂ} {m : ℕ}
-    (hInput : ReducedForwardTubeInput Wred m) :
+    [NeZero d] (Wfn : WightmanFunctions d) (χ : NormalizedBasepointCutoff d) {m : ℕ}
+    (hInput : Route1ReducedAnalyticInput Wfn χ m) :
     ReducedBHWExtensionData (d := d) (n := m + 1) hInput.toFun := by
-  let h := reduced_bargmann_hall_wightman_of_input (d := d) hInput
+  let h := reduced_bargmann_hall_wightman_of_input (d := d) Wfn χ m hInput
   exact
     { toFun := h.choose
       holomorphic := by
@@ -996,16 +921,16 @@ noncomputable def W_analytic_BHW_reduced_of_input
 /-- Uniqueness of the chosen reduced BHW extension associated to a bundled
 reduced forward-tube datum. -/
 theorem W_analytic_BHW_reduced_of_input_unique
-    [NeZero d] {Wred : (m : ℕ) → SchwartzNPoint d m → ℂ} {m : ℕ}
-    (hInput : ReducedForwardTubeInput Wred m)
+    [NeZero d] (Wfn : WightmanFunctions d) (χ : NormalizedBasepointCutoff d) {m : ℕ}
+    (hInput : Route1ReducedAnalyticInput Wfn χ m)
     (G : ReducedNPointConfig d m → ℂ)
     (hG_holo : DifferentiableOn ℂ G (ReducedPermutedExtendedTubeN d m))
     (hG_eq : ∀ η ∈ ReducedForwardTubeN d m, G η = hInput.toFun η) :
     ∀ η ∈ ReducedPermutedExtendedTubeN d m,
-      G η = (W_analytic_BHW_reduced_of_input (d := d) hInput).toFun η := by
-  let h := reduced_bargmann_hall_wightman_of_input (d := d) hInput
+      G η = (W_analytic_BHW_reduced_of_input (d := d) Wfn χ hInput).toFun η := by
+  let h := reduced_bargmann_hall_wightman_of_input (d := d) Wfn χ m hInput
   have hchosen :
-      (W_analytic_BHW_reduced_of_input (d := d) hInput).toFun = h.choose := by
+      (W_analytic_BHW_reduced_of_input (d := d) Wfn χ hInput).toFun = h.choose := by
     rfl
   intro η hη
   rw [hchosen]
@@ -1018,7 +943,7 @@ noncomputable def route1ReducedBHWExtension
     (χ : NormalizedBasepointCutoff d) {m : ℕ}
     (hInput : Route1ReducedAnalyticInput Wfn χ m) :
     ReducedBHWExtensionData (d := d) (n := m + 1) hInput.toFun :=
-  W_analytic_BHW_reduced_of_input (d := d) hInput
+  W_analytic_BHW_reduced_of_input (d := d) Wfn χ hInput
 
 /-- The Route 1 absolute extension obtained by pulling a bundled reduced
 analytic datum back along `reducedDiffMap`. This is the form that should later
@@ -1060,7 +985,8 @@ variables to the real full-difference chart, whose Jacobian is `1`, and then
 splitting the integral into basepoint and reduced-difference variables. This is
 the remaining measure/Fubini input for Route 1. -/
 axiom integral_realDiffCoord_change_variables
-    [NeZero d] (m : ℕ) (G : NPointDomain d (m + 1) → ℂ) :
+    [NeZero d] (m : ℕ) (G : NPointDomain d (m + 1) → ℂ)
+    (hG : MeasureTheory.Integrable G) :
     ∫ x, G x =
       ∫ ξ : NPointDomain d m, ∫ x₀ : SpacetimeDim d,
         G ((realDiffCoordCLE (m + 1) d).symm (prependBasepointReal d m x₀ ξ))
@@ -1087,7 +1013,9 @@ theorem route1ReducedBoundaryIntegral_eq_absoluteBoundaryIntegral
     (Wfn.spectrum_condition (m + 1)).choose
       (fun k μ => (x k μ : ℂ) + ε * (absoluteDirectionOfReduced d m η k μ : ℂ) * Complex.I) *
       reducedTestLift m d χ f x
-  rw [integral_realDiffCoord_change_variables (d := d) m G]
+  have hG_int : MeasureTheory.Integrable G := by
+    sorry
+  rw [integral_realDiffCoord_change_variables (d := d) m G hG_int]
   simp_rw [G]
   have hfactor :
       ∀ (ξ : NPointDomain d m) (x₀ : SpacetimeDim d),
@@ -1190,68 +1118,5 @@ theorem route1AbsoluteBHWExtensionCanonical_translate
       route1AbsoluteBHWExtensionCanonical (d := d) Wfn χ m z := by
   exact route1AbsoluteBHWExtension_translate (d := d) Wfn χ
     (route1ReducedAnalyticInputExists (d := d) Wfn χ m) z c
-
-/-- The absolute Route 1 extension obtained by pulling the reduced BHW extension
-back along `reducedDiffMap`. -/
-noncomputable def W_analytic_BHW_abs_from_reduced
-    [NeZero d] (n : ℕ)
-    (F : ReducedConfig d n → ℂ)
-    (hF_holo : DifferentiableOn ℂ F (ReducedForwardTube d n))
-    (hF_lorentz :
-      ∀ (Λ : ComplexLorentzGroup d) (η : ReducedConfig d n),
-        η ∈ ReducedForwardTube d n →
-        complexLorentzAction Λ η ∈ ReducedForwardTube d n →
-        F (complexLorentzAction Λ η) = F η)
-    (hF_perm :
-      ∀ (π : Equiv.Perm (Fin n)) (η : ReducedConfig d n),
-        η ∈ ReducedForwardTube d n →
-        permOnReducedDiff (d := d) (n := n) π η ∈ ReducedForwardTube d n →
-        F (permOnReducedDiff (d := d) (n := n) π η) = F η) :
-    (Fin n → Fin (d + 1) → ℂ) → ℂ :=
-  pullbackReducedExtension (d := d) (n := n)
-    (W_analytic_BHW_reduced (d := d) n F hF_holo hF_lorentz hF_perm).val
-
-@[simp] theorem W_analytic_BHW_abs_from_reduced_apply
-    [NeZero d] (n : ℕ)
-    (F : ReducedConfig d n → ℂ)
-    (hF_holo : DifferentiableOn ℂ F (ReducedForwardTube d n))
-    (hF_lorentz :
-      ∀ (Λ : ComplexLorentzGroup d) (η : ReducedConfig d n),
-        η ∈ ReducedForwardTube d n →
-        complexLorentzAction Λ η ∈ ReducedForwardTube d n →
-        F (complexLorentzAction Λ η) = F η)
-    (hF_perm :
-      ∀ (π : Equiv.Perm (Fin n)) (η : ReducedConfig d n),
-        η ∈ ReducedForwardTube d n →
-        permOnReducedDiff (d := d) (n := n) π η ∈ ReducedForwardTube d n →
-        F (permOnReducedDiff (d := d) (n := n) π η) = F η)
-    (z : Fin n → Fin (d + 1) → ℂ) :
-    W_analytic_BHW_abs_from_reduced (d := d) n F hF_holo hF_lorentz hF_perm z =
-      (W_analytic_BHW_reduced (d := d) n F hF_holo hF_lorentz hF_perm).val
-        (reducedDiffMap n d z) := by
-  rfl
-
-/-- Route 1 translation invariance in its intended final form. -/
-theorem bhw_translation_invariant_from_reduced
-    [NeZero d] (n : ℕ)
-    (F : ReducedConfig d n → ℂ)
-    (hF_holo : DifferentiableOn ℂ F (ReducedForwardTube d n))
-    (hF_lorentz :
-      ∀ (Λ : ComplexLorentzGroup d) (η : ReducedConfig d n),
-        η ∈ ReducedForwardTube d n →
-        complexLorentzAction Λ η ∈ ReducedForwardTube d n →
-        F (complexLorentzAction Λ η) = F η)
-    (hF_perm :
-      ∀ (π : Equiv.Perm (Fin n)) (η : ReducedConfig d n),
-        η ∈ ReducedForwardTube d n →
-        permOnReducedDiff (d := d) (n := n) π η ∈ ReducedForwardTube d n →
-        F (permOnReducedDiff (d := d) (n := n) π η) = F η)
-    (z : Fin n → Fin (d + 1) → ℂ) (c : Fin (d + 1) → ℂ) :
-    W_analytic_BHW_abs_from_reduced (d := d) n F hF_holo hF_lorentz hF_perm
-        (fun k μ => z k μ + c μ) =
-      W_analytic_BHW_abs_from_reduced (d := d) n F hF_holo hF_lorentz hF_perm z := by
-  exact reduced_pullback_translation_invariant
-    (d := d) (n := n)
-    (W_analytic_BHW_reduced (d := d) n F hF_holo hF_lorentz hF_perm).val z c
 
 end BHW
