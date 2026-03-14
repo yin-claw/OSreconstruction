@@ -558,6 +558,88 @@ private theorem twoPointCenterDiff_toDiffFlat_wickRotate
     · simp [BHW.toDiffFlat, BHW.flattenCfg, BHW.diffCoordEquiv_apply,
         twoPointCenterDiffCLE, twoPointCenterDiffLinearEquiv, wickRotatePoint, hμ]
 
+/-- Direct two-point Euclidean recovery in center/difference coordinates. For
+an admissible difference-variable test `h`, the flat witness for `OS.S 2`
+already evaluates the lifted test `χ(u) h(ξ)` with the same center cutoff `χ`,
+not just through a normalized center family. -/
+theorem schwinger_twoPointDifferenceLift_eq_flatCenterDiffWitnessIntegral_sameCenter
+    (OS : OsterwalderSchraderAxioms d)
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
+    (h : SchwartzSpacetime d)
+    (h0 : (0 : SpacetimeDim d) ∉ tsupport (h : SpacetimeDim d → ℂ))
+    (χ : SchwartzSpacetime d) :
+    OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)) =
+      ∫ z : NPointDomain d 2,
+        G (BHW.flattenCfg 2 d (fun i => wickRotatePoint (z i))) *
+          (χ (z 0) * h (z 1)) := by
+  have hχ_vanish :
+      VanishesToInfiniteOrderOnCoincidence (twoPointDifferenceLift χ h) :=
+    twoPointDifferenceLift_vanishes_of_zero_not_mem_tsupport χ h h0
+  calc
+    OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h))
+        = ∫ x : NPointDomain d 2,
+            G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) *
+              (twoPointDifferenceLift χ h) x := by
+            rw [hG_euclid (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h))]
+            simp [hχ_vanish]
+    _ = ∫ z : NPointDomain d 2,
+          (fun x => G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))))
+            ((twoPointCenterDiffCLE d) z) * (χ (z 0) * h (z 1)) := by
+          simpa using
+            (integral_mul_twoPointDifferenceLift_eq_centerDiff (d := d)
+              (Ψ := fun x => G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))))
+              (χ := χ) (h := h))
+    _ = ∫ z : NPointDomain d 2,
+          G (BHW.flattenCfg 2 d (fun i => wickRotatePoint (z i))) *
+            (χ (z 0) * h (z 1)) := by
+          refine MeasureTheory.integral_congr_ae ?_
+          filter_upwards with z
+          rw [twoPointCenterDiff_toDiffFlat_wickRotate]
+
+/-- Witness-side center-value formula for the two-point flat center/difference
+integral. Once a normalized center cutoff `χ₀` is fixed, every admissible
+center cutoff `χ` is recovered by multiplying the normalized witness value by
+`∫ χ`. -/
+theorem schwinger_twoPoint_flatCenterDiffWitness_eq_centerValue
+    (OS : OsterwalderSchraderAxioms d)
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
+    (h : SchwartzSpacetime d)
+    (h0 : (0 : SpacetimeDim d) ∉ tsupport (h : SpacetimeDim d → ℂ))
+    (χ₀ : SchwartzSpacetime d)
+    (hχ₀ : ∫ x : SpacetimeDim d, χ₀ x = 1)
+    (χ : SchwartzSpacetime d) :
+    ∫ z : NPointDomain d 2,
+      G (BHW.flattenCfg 2 d (fun i => wickRotatePoint (z i))) *
+        (χ (z 0) * h (z 1)) =
+      (∫ z : NPointDomain d 2,
+        G (BHW.flattenCfg 2 d (fun i => wickRotatePoint (z i))) *
+          (χ₀ (z 0) * h (z 1))) *
+        ∫ y : SpacetimeDim d, χ y := by
+  calc
+    ∫ z : NPointDomain d 2,
+        G (BHW.flattenCfg 2 d (fun i => wickRotatePoint (z i))) *
+          (χ (z 0) * h (z 1))
+      = OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)) := by
+          symm
+          exact schwinger_twoPointDifferenceLift_eq_flatCenterDiffWitnessIntegral_sameCenter
+            (d := d) OS G hG_euclid h h0 χ
+    _ = OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)) *
+          ∫ y : SpacetimeDim d, χ y := by
+          exact OsterwalderSchraderAxioms.twoPointDifferenceLift_eq_centerValue
+            (d := d) (OS := OS) h h0 χ₀ hχ₀ χ
+    _ = (∫ z : NPointDomain d 2,
+          G (BHW.flattenCfg 2 d (fun i => wickRotatePoint (z i))) *
+            (χ₀ (z 0) * h (z 1))) *
+          ∫ y : SpacetimeDim d, χ y := by
+          rw [schwinger_twoPointDifferenceLift_eq_flatCenterDiffWitnessIntegral_sameCenter
+            (d := d) OS G hG_euclid h h0 χ₀]
+
 /-- Two-point payoff in the actual flattened-difference witness coordinates used
 by `schwinger_continuation_base_step`. If `G` is a flat witness for `OS.S 2`,
 then on center/difference test functions the witness depends on `(u, ξ)` only
