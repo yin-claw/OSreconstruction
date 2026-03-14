@@ -6,6 +6,9 @@ Authors: Michael Douglas, ModularPhysics Contributors
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanKernel
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanTwoPoint
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBoundaryValues
+import OSReconstruction.Wightman.Reconstruction.WickRotation.BHWReduced
+import OSReconstruction.Wightman.Reconstruction.WickRotation.BHWTranslationCore
+import OSReconstruction.Wightman.Reconstruction.WickRotation.BHWReducedExtension
 import OSReconstruction.Wightman.Reconstruction.WickRotation.HermitianBoundaryPairing
 
 /-!
@@ -36,8 +39,14 @@ The implementation is split across several files in the `WickRotation/` subfolde
 - `ForwardTubeLorentz.lean`: Forward tube preservation, Lorentz invariance,
   distributional boundary value covariance
 - `BHWExtension.lean`: Bargmann-Hall-Wightman extension definition and properties
-- `BHWTranslation.lean`: Translation invariance proof chain, raw and zero-diagonal
-  Schwinger function constructions
+- `BHWTranslationCore.lean`: Core forward-tube translation invariance, PET
+  connectivity, forward-tube translate nonemptiness
+- `BHWReduced.lean`: Reduced `(n-1)`-difference test-lift and cutoff-independence
+  shell for the Route 1 translation refactor
+- `BHWReducedExtension.lean`: Reduced BHW extension shell and algebraic pullback
+  interface for the Route 1 translation refactor
+- `BHWTranslation.lean`: Translation invariance proof (Route 1 via reduced
+  difference coordinates), base-fiber infrastructure, Schwinger function constructions
 - `SchwingerAxioms.lean`: zero-diagonal Euclidean-side proofs and remaining
   Schwinger-side analytic gaps
 - `OSToWightmanSemigroup.lean`: E'→R' OS Hilbert-space semigroup and one-variable
