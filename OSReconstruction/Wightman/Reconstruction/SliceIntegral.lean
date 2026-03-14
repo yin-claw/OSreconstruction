@@ -2,6 +2,8 @@ import OSReconstruction.Wightman.SchwartzTensorProduct
 import Mathlib.Analysis.Calculus.ParametricIntegral
 import Mathlib.Analysis.SpecialFunctions.JapaneseBracket
 import Mathlib.Analysis.SpecialFunctions.ImproperIntegrals
+import Mathlib.MeasureTheory.Integral.IntervalIntegral.FundThmCalculus
+import Mathlib.MeasureTheory.Integral.IntegralEqImproper
 import Mathlib.MeasureTheory.Integral.Prod
 
 /-
@@ -798,5 +800,151 @@ theorem integral_sliceIntegral {n : ℕ}
     (SchwartzMap.integralCLM ℂ
       (MeasureTheory.volume : MeasureTheory.Measure (Fin (n + 1) → ℝ))) F := by
   simp [SchwartzMap.integralCLM_apply, integral_sliceIntegralRaw]
+
+/-- For a fixed tail variable, the head slice of a Schwartz function is
+integrable on `ℝ`. This is the basic analytic input for the fiberwise
+antiderivative construction. -/
+theorem integrable_sliceSection {n : ℕ}
+    (F : SchwartzMap (Fin (n + 1) → ℝ) ℂ) (y : Fin n → ℝ) :
+    Integrable (fun x : ℝ => F (Fin.cons x y))
+      (MeasureTheory.volume : MeasureTheory.Measure ℝ) := by
+  let C : ℝ :=
+    (4 : ℝ) * ((Finset.Iic (2, 0)).sup
+      (schwartzSeminormFamily ℝ (Fin (n + 1) → ℝ) ℂ)) F
+  have hmajor_int :
+      Integrable (fun x : ℝ => C * (1 + x ^ 2)⁻¹)
+        (MeasureTheory.volume : MeasureTheory.Measure ℝ) := by
+    simpa [C, mul_comm, mul_left_comm, mul_assoc] using
+      (integrable_inv_one_add_sq.const_mul C)
+  have hcons_cont : Continuous (fun x : ℝ => (Fin.cons x y : Fin (n + 1) → ℝ)) := by
+    classical
+    refine continuous_pi ?_
+    intro j
+    refine Fin.cases ?_ ?_ j
+    · simpa using (continuous_id : Continuous fun x : ℝ => x)
+    · intro i
+      simpa using (continuous_const : Continuous fun _ : ℝ => y i)
+  refine hmajor_int.mono' ?_ ?_
+  · exact (F.continuous.comp hcons_cont).aestronglyMeasurable
+  · filter_upwards [Filter.Eventually.of_forall
+      (norm_sliceSection_le_inv_one_add_sq (F := F) (y := y))] with x hx
+    exact hx
+
+/-- The improper integral over `(-∞, x]` has derivative equal to the integrand,
+for continuous integrable functions. This is the scalar FTC input needed for the
+head-direction derivative of the fiberwise antiderivative. -/
+theorem hasDerivAt_integral_Iic {f : ℝ → ℂ}
+    (hf_cont : Continuous f)
+    (hf_int : Integrable f (MeasureTheory.volume : MeasureTheory.Measure ℝ))
+    (a : ℝ) :
+    HasDerivAt (fun x => ∫ t in Set.Iic x, f t) (f a) a := by
+  have hsplit :
+      ∀ x : ℝ,
+        ∫ t in Set.Iic x, f t
+          = (∫ t in (0 : ℝ)..x, f t) + ∫ t in Set.Iic (0 : ℝ), f t := by
+    intro x
+    have hIic_x :
+        Filter.Tendsto (fun r => ∫ t in r..x, f t) Filter.atBot
+          (nhds (∫ t in Set.Iic x, f t)) :=
+      intervalIntegral_tendsto_integral_Iic x hf_int.integrableOn Filter.tendsto_id
+    have hIic_zero :
+        Filter.Tendsto (fun r => ∫ t in r..(0 : ℝ), f t) Filter.atBot
+          (nhds (∫ t in Set.Iic (0 : ℝ), f t)) :=
+      intervalIntegral_tendsto_integral_Iic 0 hf_int.integrableOn Filter.tendsto_id
+    have hadd :
+        ∀ r : ℝ,
+          ∫ t in r..x, f t =
+            (∫ t in r..(0 : ℝ), f t) + ∫ t in (0 : ℝ)..x, f t := by
+      intro r
+      exact (intervalIntegral.integral_add_adjacent_intervals
+        hf_int.intervalIntegrable hf_int.intervalIntegrable).symm
+    have hlim :=
+      hIic_zero.add_const (∫ t in (0 : ℝ)..x, f t)
+    have heq_lim :
+        Filter.Tendsto (fun r => ∫ t in r..x, f t) Filter.atBot
+          (nhds ((∫ t in Set.Iic (0 : ℝ), f t) + ∫ t in (0 : ℝ)..x, f t)) :=
+      Filter.Tendsto.congr' (Filter.Eventually.of_forall fun r => (hadd r).symm) hlim
+    rw [tendsto_nhds_unique hIic_x heq_lim, add_comm]
+  have heq :
+      (fun x => ∫ t in Set.Iic x, f t)
+        = fun x => (∫ t in (0 : ℝ)..x, f t) + ∫ t in Set.Iic (0 : ℝ), f t := by
+    funext x
+    exact hsplit x
+  rw [heq]
+  have hinterval :
+      HasDerivAt (fun x => ∫ t in (0 : ℝ)..x, f t) (f a) a :=
+    intervalIntegral.integral_hasDerivAt_right
+      hf_int.intervalIntegrable
+      (hf_cont.measurable.stronglyMeasurable.stronglyMeasurableAtFilter)
+      hf_cont.continuousAt
+  let c : ℂ := ∫ t in Set.Iic (0 : ℝ), f t
+  have hsum :
+      HasDerivAt
+        (fun x => (∫ t in (0 : ℝ)..x, f t) + c)
+        (f a) a := by
+    simpa [c] using hinterval.add_const c
+  simpa [c] using hsum
+
+/-- Fiberwise antiderivative along the head coordinate. For fixed tail variables,
+integrate the head slice over `(-∞, x₀]`. This is the raw construction behind
+the multi-dimensional Schwartz Poincare lemma. -/
+def fiberwiseAntiderivRaw {n : ℕ}
+    (F : SchwartzMap (Fin (n + 1) → ℝ) ℂ) :
+    (Fin (n + 1) → ℝ) → ℂ :=
+  fun v => ∫ t in Set.Iic (v 0), F (Fin.cons t (Fin.tail v))
+
+/-- Differentiating the raw fiberwise antiderivative in the head direction
+recovers the original Schwartz function. -/
+theorem lineDeriv_fiberwiseAntiderivRaw {n : ℕ}
+    (F : SchwartzMap (Fin (n + 1) → ℝ) ℂ)
+    (v : Fin (n + 1) → ℝ) :
+    lineDeriv ℝ (fiberwiseAntiderivRaw F) v (Pi.single 0 1) = F v := by
+  set e0 : Fin (n + 1) → ℝ := Pi.single 0 1 with he0
+  set y : Fin n → ℝ := Fin.tail v with hy
+  set G : ℝ → ℂ := fun s => F (Fin.cons s y) with hG
+  have hG_cont : Continuous G := by
+    rw [hG]
+    have hcons_cont : Continuous (fun s : ℝ => (Fin.cons s y : Fin (n + 1) → ℝ)) := by
+      classical
+      refine continuous_pi ?_
+      intro j
+      refine Fin.cases ?_ ?_ j
+      · simpa using (continuous_id : Continuous fun s : ℝ => s)
+      · intro i
+        simpa using (continuous_const : Continuous fun _ : ℝ => y i)
+    exact F.continuous.comp hcons_cont
+  have hG_int : Integrable G (MeasureTheory.volume : MeasureTheory.Measure ℝ) := by
+    rw [hG]
+    simpa [hy] using integrable_sliceSection (F := F) (y := Fin.tail v)
+  have hFTC : HasDerivAt (fun x => ∫ s in Set.Iic x, G s) (G (v 0)) (v 0) :=
+    hasDerivAt_integral_Iic hG_cont hG_int (v 0)
+  have hcomp : HasDerivAt (fun t => ∫ s in Set.Iic (v 0 + t), G s) (G (v 0)) 0 := by
+    have hFTC' : HasDerivAt (fun x => ∫ s in Set.Iic x, G s) (G (v 0)) (v 0 + 0) := by
+      simpa using hFTC
+    simpa using hFTC'.comp_const_add (v 0) 0
+  have heq :
+      ∀ t : ℝ,
+        fiberwiseAntiderivRaw F (v + t • e0)
+          = ∫ s in Set.Iic (v 0 + t), G s := by
+    intro t
+    rw [fiberwiseAntiderivRaw, hG]
+    have hhead : (v + t • e0) 0 = v 0 + t := by
+      simp [e0, Pi.add_apply, Pi.smul_apply, Pi.single_eq_same, mul_one]
+    have htail :
+        Fin.tail (v + t • e0) = y := by
+      ext i
+      simpa [Fin.tail, e0, hy, Pi.add_apply, Pi.smul_apply]
+    rw [hhead, htail]
+  have hline : HasLineDerivAt ℝ (fiberwiseAntiderivRaw F) (G (v 0)) v e0 := by
+    show HasDerivAt (fun t => fiberwiseAntiderivRaw F (v + t • e0)) (G (v 0)) 0
+    have hfun :
+        (fun t => fiberwiseAntiderivRaw F (v + t • e0))
+          = fun t => ∫ s in Set.Iic (v 0 + t), G s := by
+      funext t
+      exact heq t
+    rw [hfun]
+    exact hcomp
+  rw [hline.lineDeriv]
+  simp [hG, hy, Fin.cons_self_tail]
 
 end OSReconstruction
