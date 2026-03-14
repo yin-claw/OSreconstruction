@@ -947,4 +947,140 @@ theorem lineDeriv_fiberwiseAntiderivRaw {n : ℕ}
   rw [hline.lineDeriv]
   simp [hG, hy, Fin.cons_self_tail]
 
+/-- If a Schwartz function has compact support and each head slice has integral
+zero, then the raw fiberwise antiderivative is compactly supported as well. -/
+theorem hasCompactSupport_fiberwiseAntiderivRaw {n : ℕ}
+    (F : SchwartzMap (Fin (n + 1) → ℝ) ℂ)
+    (hF : HasCompactSupport F)
+    (hzero :
+      ∀ y : Fin n → ℝ, ∫ t : ℝ, F (Fin.cons t y) = 0) :
+    HasCompactSupport (fiberwiseAntiderivRaw F) := by
+  rcases hF.isCompact.isBounded.subset_closedBall (0 : Fin (n + 1) → ℝ) with ⟨R, hR⟩
+  refine HasCompactSupport.of_support_subset_isCompact
+    (isCompact_closedBall (0 : Fin (n + 1) → ℝ) R) ?_
+  intro v hv
+  by_contra hvR
+  have hv_gt : R < ‖v‖ := by
+    simpa [Metric.mem_closedBall, dist_eq_norm, not_le] using hvR
+  have hhead_or_tail : R < ‖v 0‖ ∨ R < ‖Fin.tail v‖ := by
+    by_contra hsplit
+    push_neg at hsplit
+    have hcoord : ∀ j : Fin (n + 1), ‖v j‖ ≤ R := by
+      intro j
+      refine Fin.cases ?_ ?_ j
+      · exact hsplit.1
+      · intro i
+        exact le_trans (norm_le_pi_norm (Fin.tail v) i) hsplit.2
+    have hv_le : ‖v‖ ≤ R := by
+      have hRnonneg : 0 ≤ R := le_trans (norm_nonneg _) (hcoord 0)
+      exact (pi_norm_le_iff_of_nonneg hRnonneg).2 hcoord
+    exact not_lt_of_ge hv_le hv_gt
+  cases hhead_or_tail with
+  | inr htail =>
+      have hzero_slice :
+          fiberwiseAntiderivRaw F v = 0 := by
+        rw [fiberwiseAntiderivRaw, ← MeasureTheory.integral_indicator measurableSet_Iic]
+        have hind :
+            Set.indicator (Set.Iic (v 0))
+              (fun t : ℝ => F (Fin.cons t (Fin.tail v))) = 0 := by
+          funext t
+          by_cases ht : t ∈ Set.Iic (v 0)
+          · have hnorm_gt :
+                R < ‖Fin.cons t (Fin.tail v)‖ := by
+              calc
+                R < ‖Fin.tail v‖ := htail
+                _ ≤ ‖Fin.cons t (Fin.tail v)‖ := by
+                    calc
+                      ‖Fin.tail v‖ = ‖tailCLM n (E := ℝ) (Fin.cons t (Fin.tail v))‖ := by
+                          simp [tailCLM_apply]
+                      _ ≤ ‖tailCLM n (E := ℝ)‖ * ‖Fin.cons t (Fin.tail v)‖ := by
+                          exact ContinuousLinearMap.le_opNorm _ _
+                      _ ≤ 1 * ‖Fin.cons t (Fin.tail v)‖ := by
+                          gcongr
+                          exact tailCLM_opNorm_le (E := ℝ) n
+                      _ = ‖Fin.cons t (Fin.tail v)‖ := by ring
+            have hnot : (Fin.cons t (Fin.tail v) : Fin (n + 1) → ℝ) ∉ tsupport F := by
+              intro htF
+              have hball : ‖Fin.cons t (Fin.tail v)‖ ≤ R := by
+                simpa [Metric.mem_closedBall, dist_eq_norm] using hR htF
+              exact not_lt_of_ge hball hnorm_gt
+            simp [ht, image_eq_zero_of_notMem_tsupport hnot]
+          · simp [ht]
+        rw [hind]
+        simp
+      exact hv hzero_slice
+  | inl hhead =>
+      by_cases hhead_pos : R < v 0
+      · have hEq :
+            fiberwiseAntiderivRaw F v = ∫ t : ℝ, F (Fin.cons t (Fin.tail v)) := by
+          rw [fiberwiseAntiderivRaw, ← MeasureTheory.integral_indicator measurableSet_Iic]
+          refine MeasureTheory.integral_congr_ae ?_
+          refine Filter.Eventually.of_forall ?_
+          intro t
+          by_cases ht : t ∈ Set.Iic (v 0)
+          · simp [ht]
+          · have ht_gt : v 0 < t := by simpa [Set.mem_Iic, not_le] using ht
+            have hnorm_gt :
+                R < ‖Fin.cons t (Fin.tail v)‖ := by
+              have hRt : R < ‖t‖ := by
+                by_cases ht_nonneg : 0 ≤ t
+                · calc
+                    R < t := by linarith [hhead_pos, ht_gt]
+                    _ = ‖t‖ := by simp [Real.norm_of_nonneg ht_nonneg]
+                · have ht_neg : t < 0 := lt_of_not_ge ht_nonneg
+                  have hRneg : R < 0 := by linarith [hhead_pos, ht_gt, ht_neg]
+                  exact lt_of_lt_of_le hRneg (norm_nonneg _)
+              exact lt_of_lt_of_le hRt <|
+                by simpa using
+                  (norm_le_pi_norm (Fin.cons t (Fin.tail v) : Fin (n + 1) → ℝ) 0)
+            have hnot : (Fin.cons t (Fin.tail v) : Fin (n + 1) → ℝ) ∉ tsupport F := by
+              intro htF
+              have hball : ‖Fin.cons t (Fin.tail v)‖ ≤ R := by
+                simpa [Metric.mem_closedBall, dist_eq_norm] using hR htF
+              exact not_lt_of_ge hball hnorm_gt
+            simp [ht, image_eq_zero_of_notMem_tsupport hnot]
+        have hv0 : fiberwiseAntiderivRaw F v = 0 := by
+          rw [hEq, hzero]
+        exact hv hv0
+      · have hhead_neg : v 0 < -R := by
+          have hv0neg : v 0 < 0 := by
+            by_contra hv0nonneg
+            have hv0nonneg' : 0 ≤ v 0 := le_of_not_gt hv0nonneg
+            have : R < v 0 := by
+              calc
+                R < ‖v 0‖ := hhead
+                _ = v 0 := by simp [Real.norm_of_nonneg hv0nonneg']
+            exact hhead_pos this
+          have hnorm : ‖v 0‖ = -v 0 := by
+            simp [Real.norm_of_nonpos (le_of_lt hv0neg)]
+          linarith [hhead]
+        have hzero_slice :
+            fiberwiseAntiderivRaw F v = 0 := by
+          rw [fiberwiseAntiderivRaw, ← MeasureTheory.integral_indicator measurableSet_Iic]
+          have hind :
+              Set.indicator (Set.Iic (v 0))
+                (fun t : ℝ => F (Fin.cons t (Fin.tail v))) = 0 := by
+            funext t
+            by_cases ht : t ∈ Set.Iic (v 0)
+            · have ht_le : t ≤ v 0 := by simpa [Set.mem_Iic] using ht
+              have ht_neg : t < -R := by linarith
+              have hnorm_gt :
+                  R < ‖Fin.cons t (Fin.tail v)‖ := by
+                have ht_nonpos : t ≤ 0 := by linarith
+                calc
+                  R < -t := by linarith
+                  _ = ‖t‖ := by simp [Real.norm_of_nonpos ht_nonpos]
+                  _ ≤ ‖Fin.cons t (Fin.tail v)‖ := by
+                      simpa using (norm_le_pi_norm (Fin.cons t (Fin.tail v) : Fin (n + 1) → ℝ) 0)
+              have hnot : (Fin.cons t (Fin.tail v) : Fin (n + 1) → ℝ) ∉ tsupport F := by
+                intro htF
+                have hball : ‖Fin.cons t (Fin.tail v)‖ ≤ R := by
+                  simpa [Metric.mem_closedBall, dist_eq_norm] using hR htF
+                exact not_lt_of_ge hball hnorm_gt
+              simp [ht, image_eq_zero_of_notMem_tsupport hnot]
+            · simp [ht]
+          rw [hind]
+          simp
+        exact hv hzero_slice
+
 end OSReconstruction
