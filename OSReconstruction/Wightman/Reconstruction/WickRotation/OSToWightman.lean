@@ -1935,6 +1935,49 @@ center cutoff and the right one-point factor as a compactly supported
 difference-variable test produces a holomorphic function on the right
 half-plane whose positive-real restriction is the explicit `ξ`-shifted
 Euclidean two-point integral. -/
+theorem exists_singleSplit_xiShift_holomorphicValue
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (Ψ : (Fin (n + m) → Fin (d + 1) → ℂ) → ℂ)
+    (hΨ_euclid : ∀ (h : ZeroDiagonalSchwartz d (n + m)),
+      OS.S (n + m) h = ∫ x : NPointDomain d (n + m),
+        Ψ (fun i => wickRotatePoint (x i)) * (h.1 x))
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hg_compact : HasCompactSupport (g : NPointDomain d m → ℂ)) :
+    ∃ H : ℂ → ℂ,
+      DifferentiableOn ℂ H {z : ℂ | 0 < z.re} ∧
+      ∀ t : ℝ, 0 < t →
+        H (t : ℂ) =
+          ∫ y : NPointDomain d (n + m),
+            Ψ (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+              (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+              (f.osConjTensorProduct g) y := by
+  let F : PositiveTimeBorchersSequence d :=
+    PositiveTimeBorchersSequence.single n f hf_ord
+  let G : PositiveTimeBorchersSequence d :=
+    PositiveTimeBorchersSequence.single m g hg_ord
+  refine ⟨OSInnerProductTimeShiftHolomorphicValueExpandBoth (d := d) OS lgc F G, ?_, ?_⟩
+  · simpa [F, G] using
+      differentiableOn_OSInnerProductTimeShiftHolomorphicValueExpandBoth
+        (d := d) OS lgc F G
+  · intro t ht
+    simpa [F, G, PositiveTimeBorchersSequence.single_toBorchersSequence] using
+      (OSInnerProductTimeShiftHolomorphicValueExpandBoth_single_eq_xiShift
+        (d := d) (OS := OS) (lgc := lgc) (hm := hm)
+        (Ψ := Ψ) (hΨ_euclid := hΨ_euclid)
+        (f := f) (hf_ord := hf_ord)
+        (g := g) (hg_ord := hg_ord) (hg_compact := hg_compact)
+        (t := t) ht)
+
+/-- A first honest `k = 2` continuation statement from the one-variable OS
+holomorphic bridge. Choosing the left one-point factor as an OS-conjugated
+center cutoff and the right one-point factor as a compactly supported
+difference-variable test produces a holomorphic function on the right
+half-plane whose positive-real restriction is the explicit `ξ`-shifted
+Euclidean two-point integral. -/
 theorem exists_twoPoint_xiShift_holomorphicValue
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     (Ψ : (Fin 2 → Fin (d + 1) → ℂ) → ℂ)
@@ -1999,6 +2042,228 @@ theorem exists_twoPoint_xiShift_holomorphicValue
             refine MeasureTheory.integral_congr_ae ?_
             filter_upwards with y
             rw [onePoint_osConjTensorProduct_apply (d := d) χ h y]
+
+omit [NeZero d] in
+private theorem tsupport_precomp_subset_proj0
+    (χ : SchwartzSpacetime d) :
+    tsupport (fun x : NPointDomain d 2 => χ (x 0)) ⊆
+      (fun x : NPointDomain d 2 => x 0) ⁻¹' tsupport (χ : SpacetimeDim d → ℂ) := by
+  refine closure_minimal ?_ ((isClosed_tsupport _).preimage (continuous_apply 0))
+  intro x hx
+  exact subset_closure (by simpa [Function.mem_support] using hx)
+
+omit [NeZero d] in
+private theorem tsupport_twoPointDifferenceLift_subset_proj0_preimage
+    (χ h : SchwartzSpacetime d) :
+    tsupport ((twoPointDifferenceLift χ h : SchwartzNPoint d 2) :
+        NPointDomain d 2 → ℂ) ⊆
+      (fun x : NPointDomain d 2 => x 0) ⁻¹' tsupport (χ : SpacetimeDim d → ℂ) := by
+  refine (tsupport_mul_subset_left
+    (f := fun x : NPointDomain d 2 => χ (x 0))
+    (g := fun x : NPointDomain d 2 => h (x 1 - x 0))).trans ?_
+  exact tsupport_precomp_subset_proj0 (d := d) χ
+
+private theorem tsupport_twoPointDifferenceLift_subset_orderedPositiveTimeRegion
+    (χ h : SchwartzSpacetime d)
+    (hχ_pos : tsupport (χ : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0}) :
+    tsupport ((twoPointDifferenceLift χ h : SchwartzNPoint d 2) :
+        NPointDomain d 2 → ℂ) ⊆ OrderedPositiveTimeRegion d 2 := by
+  intro x hx
+  have hx0 : x 0 ∈ tsupport (χ : SpacetimeDim d → ℂ) := by
+    exact (tsupport_twoPointDifferenceLift_subset_proj0_preimage (d := d) χ h hx)
+  have hdiff : x 1 - x 0 ∈ tsupport (h : SpacetimeDim d → ℂ) := by
+    exact (tsupport_twoPointDifferenceLift_subset_diff_preimage χ h hx)
+  have hx0_pos : 0 < (x 0) 0 := hχ_pos hx0
+  have hdiff_pos : 0 < (x 1 - x 0) 0 := hh_pos hdiff
+  intro i
+  fin_cases i
+  · refine ⟨hx0_pos, ?_⟩
+    intro j hij
+    fin_cases j
+    · exact (lt_irrefl _ hij).elim
+    · simpa [sub_eq_add_neg] using hdiff_pos
+  · refine ⟨?_, ?_⟩
+    · have hcoord : (x 1 - x 0) 0 = x 1 0 - x 0 0 := by
+        simp
+      have hx1_eq : x 1 0 = x 0 0 + (x 1 - x 0) 0 := by
+        linarith
+      have hx1_pos : 0 < x 1 0 := by
+        nlinarith [hx1_eq, hx0_pos, hdiff_pos]
+      simpa using hx1_pos
+    · intro j hij
+      fin_cases j
+      · exact (Fin.not_lt_zero _ hij).elim
+      · exact (lt_irrefl _ hij).elim
+
+omit [NeZero d] in
+private theorem timeShiftSchwartzNPoint_twoPointDifferenceLift_eq
+    (χ h : SchwartzSpacetime d) (t : ℝ) :
+    timeShiftSchwartzNPoint (d := d) t (twoPointDifferenceLift χ h) =
+      twoPointDifferenceLift (SCV.translateSchwartz (- timeShiftVec d t) χ) h := by
+  ext x
+  have hdiff :
+      (x 1 - timeShiftVec d t) - (x 0 - timeShiftVec d t) = x 1 - x 0 := by
+    ext μ
+    by_cases hμ : μ = 0
+    · subst hμ
+      simp [timeShiftVec]
+    · simp [timeShiftVec, hμ]
+  rw [timeShiftSchwartzNPoint_apply, twoPointDifferenceLift_apply,
+    twoPointDifferenceLift_apply, SCV.translateSchwartz_apply]
+  congr 1
+  simpa [sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using congrArg h hdiff
+
+private theorem schwinger_twoPointDifferenceLift_baseTime_eq_constant_of_positiveSupport
+    (OS : OsterwalderSchraderAxioms d)
+    (Ψ : (Fin 2 → Fin (d + 1) → ℂ) → ℂ)
+    (hΨ_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        Ψ (fun i => wickRotatePoint (x i)) * (f.1 x))
+    (χ h : SchwartzSpacetime d)
+    (hχ_pos : tsupport (χ : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    (t : ℝ) (ht : 0 < t) :
+    ∫ y : NPointDomain d 2,
+      Ψ (xiShift 0 0 (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+        (twoPointDifferenceLift χ h) y =
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)) := by
+  let f0fun : NPointDomain d 0 → ℂ := fun _ => 1
+  have hf0_compact : HasCompactSupport f0fun := by
+    refine HasCompactSupport.of_support_subset_isCompact
+      (K := (Set.univ : Set (NPointDomain d 0))) ?_ ?_
+    · exact Set.Subsingleton.isCompact Set.subsingleton_univ
+    · intro x hx
+      simp
+  have hf0_smooth : ContDiff ℝ (((⊤ : ℕ∞) : WithTop ℕ∞)) f0fun := by
+    simpa [f0fun] using
+      (contDiff_const :
+        ContDiff ℝ (((⊤ : ℕ∞) : WithTop ℕ∞))
+          (fun _ : NPointDomain d 0 => (1 : ℂ)))
+  let f0 : SchwartzNPoint d 0 := hf0_compact.toSchwartzMap hf0_smooth
+  have hf0_apply : ∀ x : NPointDomain d 0, f0 x = 1 := by
+    intro x
+    rfl
+  have hf0_ord :
+      tsupport (f0 : NPointDomain d 0 → ℂ) ⊆ OrderedPositiveTimeRegion d 0 := by
+    intro x hx
+    simp [OrderedPositiveTimeRegion]
+  have hg_ord :
+      tsupport (((twoPointDifferenceLift χ h : SchwartzNPoint d 2) :
+          NPointDomain d 2 → ℂ)) ⊆ OrderedPositiveTimeRegion d 2 :=
+    tsupport_twoPointDifferenceLift_subset_orderedPositiveTimeRegion
+      (d := d) χ h hχ_pos hh_pos
+  have h0 :
+      (0 : SpacetimeDim d) ∉ tsupport (h : SpacetimeDim d → ℂ) := by
+    intro h0mem
+    have hnot : ¬ 0 < ((0 : SpacetimeDim d) 0) := by
+      simp
+    exact hnot (hh_pos h0mem)
+  have hshift :
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical
+        (timeShiftSchwartzNPoint (d := d) t (twoPointDifferenceLift χ h))) =
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)) := by
+    rw [timeShiftSchwartzNPoint_twoPointDifferenceLift_eq (d := d) χ h t]
+    exact (OsterwalderSchraderAxioms.schwinger_twoPointDifferenceLift_translation_invariant
+      (d := d) (OS := OS) (a := -timeShiftVec d t) (χ := χ) (h := h) h0).symm
+  calc
+    ∫ y : NPointDomain d 2,
+        Ψ (xiShift 0 0 (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+          (twoPointDifferenceLift χ h) y
+      = OS.S 2 (ZeroDiagonalSchwartz.ofClassical
+          (f0.osConjTensorProduct
+            (timeShiftSchwartzNPoint (d := d) t (twoPointDifferenceLift χ h)))) := by
+          symm
+          have hosconj0 : SchwartzNPoint.osConj (d := d) (n := 0) f0 = f0 := by
+            ext x
+            simp [SchwartzNPoint.osConj_apply, hf0_apply]
+          have htensor :
+              f0.osConjTensorProduct (twoPointDifferenceLift χ h) =
+                twoPointDifferenceLift χ h := by
+            ext y
+            have hsplit : splitLast 0 2 y = y := by
+              ext i
+              simp [splitLast]
+            calc
+              (f0.osConjTensorProduct (twoPointDifferenceLift χ h)) y
+                  = ((f0.tensorProduct (twoPointDifferenceLift χ h)) y) := by
+                      simp [SchwartzNPoint.osConjTensorProduct, hosconj0]
+              _ = f0 (splitFirst 0 2 y) * (twoPointDifferenceLift χ h) (splitLast 0 2 y) := by
+                    rw [SchwartzMap.tensorProduct_apply]
+              _ = 1 * (twoPointDifferenceLift χ h) y := by
+                    simp [hf0_apply, hsplit]
+              _ = (twoPointDifferenceLift χ h) y := by simp
+          simpa [htensor] using
+            (schwinger_simpleTensor_timeShift_eq_xiShift
+              (d := d) (OS := OS) (n := 0) (m := 2) (hm := by omega)
+              (Ψ := Ψ) (hΨ_euclid := hΨ_euclid)
+              (f := f0) (hf_ord := hf0_ord)
+              (g := twoPointDifferenceLift χ h) (hg_ord := hg_ord)
+              (t := t) ht)
+    _ = OS.S 2 (ZeroDiagonalSchwartz.ofClassical
+          (timeShiftSchwartzNPoint (d := d) t (twoPointDifferenceLift χ h))) := by
+          have htensor_shift :
+              f0.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t
+                (twoPointDifferenceLift χ h)) =
+                timeShiftSchwartzNPoint (d := d) t (twoPointDifferenceLift χ h) := by
+            ext y
+            have hosconj0 : SchwartzNPoint.osConj (d := d) (n := 0) f0 = f0 := by
+              ext x
+              simp [SchwartzNPoint.osConj_apply, hf0_apply]
+            have hsplit : splitLast 0 2 y = y := by
+              ext i
+              simp [splitLast]
+            calc
+              (f0.osConjTensorProduct (timeShiftSchwartzNPoint (d := d) t
+                  (twoPointDifferenceLift χ h))) y
+                  = ((f0.tensorProduct (timeShiftSchwartzNPoint (d := d) t
+                      (twoPointDifferenceLift χ h))) y) := by
+                        simp [SchwartzNPoint.osConjTensorProduct, hosconj0]
+              _ = f0 (splitFirst 0 2 y) *
+                    (timeShiftSchwartzNPoint (d := d) t (twoPointDifferenceLift χ h))
+                      (splitLast 0 2 y) := by
+                    rw [SchwartzMap.tensorProduct_apply]
+              _ = 1 *
+                    (timeShiftSchwartzNPoint (d := d) t (twoPointDifferenceLift χ h)) y := by
+                    simp [hf0_apply, hsplit]
+              _ = (timeShiftSchwartzNPoint (d := d) t (twoPointDifferenceLift χ h)) y := by
+                    simp
+          simp [htensor_shift]
+    _ = OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)) := hshift
+
+/-- On the admissible two-point shell with positive-time center and
+positive-time difference support, the base-time `ξ`-shift variable already has
+the trivial holomorphic continuation: the constant Schwinger value. So the live
+two-point `E -> R` obstruction really is the difference-time variable, not the
+center-time one. -/
+theorem exists_twoPoint_baseTime_holomorphicValue_constant
+    (OS : OsterwalderSchraderAxioms d)
+    (Ψ : (Fin 2 → Fin (d + 1) → ℂ) → ℂ)
+    (hΨ_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        Ψ (fun i => wickRotatePoint (x i)) * (f.1 x))
+    (χ h : SchwartzSpacetime d)
+    (hχ_pos : tsupport (χ : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    :
+    ∃ H : ℂ → ℂ,
+      DifferentiableOn ℂ H {z : ℂ | 0 < z.re} ∧
+      ∀ t : ℝ, 0 < t →
+        H (t : ℂ) =
+          ∫ y : NPointDomain d 2,
+            Ψ (xiShift 0 0 (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+              (twoPointDifferenceLift χ h) y := by
+  refine ⟨fun _ => OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)),
+    by
+      simpa using
+        (differentiableOn_const :
+          DifferentiableOn ℂ
+            (fun _ : ℂ => OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)))
+            {z : ℂ | 0 < z.re}), ?_⟩
+  intro t ht
+  exact (schwinger_twoPointDifferenceLift_baseTime_eq_constant_of_positiveSupport
+    (d := d) (OS := OS) (Ψ := Ψ) (hΨ_euclid := hΨ_euclid)
+    χ h hχ_pos hh_pos t ht).symm
 
 /-- Real-axis bridge on the actual two-point center/difference shell. Shifting
 the difference test by positive Euclidean time is exactly the same as updating
