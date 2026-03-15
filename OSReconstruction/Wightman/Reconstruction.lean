@@ -4,6 +4,7 @@ import OSReconstruction.Wightman.Reconstruction.Poincare1D
 import OSReconstruction.Wightman.Reconstruction.SliceIntegral
 import OSReconstruction.Wightman.Reconstruction.HeadTranslationInvariant
 import OSReconstruction.Wightman.Reconstruction.HeadBlockTranslationInvariant
+import OSReconstruction.Wightman.Reconstruction.CenterSpatialTranslationInvariant
 import OSReconstruction.Wightman.Reconstruction.BlockIntegral
 import OSReconstruction.Wightman.Reconstruction.SchwartzCutoff
 import OSReconstruction.Wightman.Reconstruction.ZeroMeanFourierTransport

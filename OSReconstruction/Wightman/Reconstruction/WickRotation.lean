@@ -7,6 +7,7 @@ import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanKernel
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanTwoPoint
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBoundaryValues
 import OSReconstruction.Wightman.Reconstruction.WickRotation.HermitianBoundaryPairing
+import OSReconstruction.Wightman.Reconstruction.WickRotation.WickRotationBridge
 
 /-!
 # Wick Rotation and the OS Bridge Theorems
@@ -51,6 +52,8 @@ The implementation is split across several files in the `WickRotation/` subfolde
   reduction ladder
 - `OSToWightmanBoundaryValues.lean`: boundary-value package, axiom transfer,
   and bridge theorems
+- `WickRotationBridge.lean`: one-variable Wick-rotation identities transporting
+  `{Re z > 0}` holomorphicity to `{Im u > 0}`
 
 ## References
 
