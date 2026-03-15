@@ -471,6 +471,81 @@ private theorem twoPointTimeDiffFlatWitness_apply_wickRotate
       (H := OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F G)
       z
 
+/-- The explicit fixed-time `k = 2` semigroup kernel coming from
+`twoPointTimeDiffFlatWitness` is invariant under translating only the
+center-spatial variables in center/difference coordinates. -/
+private theorem twoPointFixedTimeKernel_twoPointTimeDiffFlatWitness_centerSpatialInvariant
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d)
+    (t : ℂ) (a : Fin d → ℝ) (z : NPointDomain d 2) :
+    OSReconstruction.twoPointFixedTimeKernel
+        (G := twoPointTimeDiffFlatWitness (d := d) OS lgc F G) t
+        (OSReconstruction.twoPointCenterSpatialTranslate (d := d) a z) =
+    OSReconstruction.twoPointFixedTimeKernel
+        (G := twoPointTimeDiffFlatWitness (d := d) OS lgc F G) t z := by
+  have htime :
+      (((twoPointCenterDiffCLE d)
+          (OSReconstruction.twoPointCenterSpatialTranslate (d := d) a z))
+          ⟨1, by omega⟩ 0 : ℂ) =
+        (((twoPointCenterDiffCLE d) z) ⟨1, by omega⟩ 0 : ℂ) := by
+    change
+      (((OSReconstruction.twoPointCenterSpatialTranslate (d := d) a z) 0 +
+          (OSReconstruction.twoPointCenterSpatialTranslate (d := d) a z) 1) 0 : ℂ) =
+        ((z 0 + z 1) 0 : ℂ)
+    rw [OSReconstruction.twoPointCenterSpatialTranslate_zero,
+      OSReconstruction.twoPointCenterSpatialTranslate_one]
+    simp [OSReconstruction.centerSpatialVec]
+  have hwick :
+      wickRotatePoint
+          (((twoPointCenterDiffCLE d)
+            (OSReconstruction.twoPointCenterSpatialTranslate (d := d) a z))
+            ⟨1, by omega⟩) 0 =
+        wickRotatePoint (((twoPointCenterDiffCLE d) z) ⟨1, by omega⟩) 0 := by
+    simpa [wickRotatePoint] using htime
+  simpa [OSReconstruction.twoPointFixedTimeKernel, twoPointTimeDiffFlatWitness, BHW.flattenCfg]
+    using congrArg
+      (fun s : ℂ =>
+        OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F G
+          (-(Complex.I * (s + t))))
+      hwick
+
+/-- Once the explicit fixed-time witness kernel has a polynomial-growth package,
+its induced flattened Schwartz functional is center-spatial translation
+invariant. This is the CLM-level input needed for the reduced OS-II-style
+extension seam. -/
+private theorem twoPointFlatKernelCLM_twoPointTimeDiffFlatWitness_centerSpatialInvariant
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d)
+    (t : ℂ)
+    (hK_meas :
+      MeasureTheory.AEStronglyMeasurable
+        (OSReconstruction.twoPointFixedTimeKernel
+          (G := twoPointTimeDiffFlatWitness (d := d) OS lgc F G) t)
+        MeasureTheory.volume)
+    (C_bd : ℝ) (N : ℕ) (hC : 0 < C_bd)
+    (hK_bound : ∀ᵐ x : NPointDomain d 2 ∂MeasureTheory.volume,
+      ‖OSReconstruction.twoPointFixedTimeKernel
+          (G := twoPointTimeDiffFlatWitness (d := d) OS lgc F G) t x‖
+        ≤ C_bd * (1 + ‖x‖) ^ N) :
+    OSReconstruction.IsCenterSpatialTranslationInvariantSchwartzCLM d
+      (OSReconstruction.twoPointFlatKernelCLM
+        (d := d)
+        (OSReconstruction.twoPointFixedTimeKernel
+          (G := twoPointTimeDiffFlatWitness (d := d) OS lgc F G) t)
+        hK_meas C_bd N hC hK_bound) := by
+  refine
+    OSReconstruction.twoPointFlatKernelCLM_centerSpatialInvariant
+      (d := d)
+      (K := OSReconstruction.twoPointFixedTimeKernel
+        (G := twoPointTimeDiffFlatWitness (d := d) OS lgc F G) t)
+      hK_meas C_bd N hC hK_bound ?_
+  intro a z
+  simpa using
+    twoPointFixedTimeKernel_twoPointTimeDiffFlatWitness_centerSpatialInvariant
+      (d := d) OS lgc F G t a z
+
 /-- **Base step of analytic continuation (r = 0 → r = 1).**
 
     Produces the first genuinely holomorphic witness on `C_k^(1)` directly from the

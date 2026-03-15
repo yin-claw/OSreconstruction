@@ -220,6 +220,163 @@ theorem twoPointFlatKernelCLM_apply_reindex_flatten
     simp
   simp [twoPointFlatKernelCLM, hreindex, hunflat_flat]
 
+private def twoPointRealFlatten (z : NPointDomain d 2) :
+    Fin ((d + 1) + (d + 1)) → ℝ :=
+  Fin.addCases (z 0) (z 1)
+
+@[simp] private theorem splitFirst_twoPointRealFlatten
+    (z : NPointDomain d 2) :
+    splitFirst (d + 1) (d + 1) (twoPointRealFlatten (d := d) z) = z 0 := by
+  ext μ
+  simp [twoPointRealFlatten, splitFirst]
+
+@[simp] private theorem splitLast_twoPointRealFlatten
+    (z : NPointDomain d 2) :
+    splitLast (d + 1) (d + 1) (twoPointRealFlatten (d := d) z) = z 1 := by
+  ext μ
+  rw [splitLast, twoPointRealFlatten]
+  simpa using (Fin.append_right (z 0) (z 1) μ)
+
+private theorem unflatten_reindex_twoPoint_apply
+    (F : SchwartzMap (Fin ((d + 1) + (d + 1)) → ℝ) ℂ)
+    (z : NPointDomain d 2) :
+    F (twoPointRealFlatten (d := d) z) =
+      unflattenSchwartzNPoint (d := d)
+        (reindexSchwartzFin (show (d + 1) + (d + 1) = 2 * (d + 1) by ring) F) z := by
+  let e : (d + 1) + (d + 1) = 2 * (d + 1) := by ring
+  let H : SchwartzNPoint d 2 :=
+    unflattenSchwartzNPoint (d := d) (reindexSchwartzFin e F)
+  have hflatten : reindexSchwartzFin e.symm (flattenSchwartzNPoint (d := d) H) = F := by
+    ext x
+    change reindexSchwartzFin e.symm
+        (flattenSchwartzNPoint (d := d)
+          (unflattenSchwartzNPoint (d := d) (reindexSchwartzFin e F))) x = F x
+    rw [reindexSchwartzFin_apply, flattenSchwartzNPoint_apply, unflattenSchwartzNPoint_apply,
+      reindexSchwartzFin_apply]
+    congr 1
+    ext i
+    simp
+  have happly :=
+    reindex_flattenSchwartzNPoint_two_apply (d := d) H (twoPointRealFlatten (d := d) z)
+  rw [hflatten] at happly
+  have hz :
+      (fun i =>
+        Fin.cases
+          (splitFirst (d + 1) (d + 1) (twoPointRealFlatten (d := d) z))
+          (fun _ => splitLast (d + 1) (d + 1) (twoPointRealFlatten (d := d) z)) i) = z := by
+    ext i μ
+    fin_cases i
+    · simpa using congrArg (fun v : SpacetimeDim d => v μ)
+          (splitFirst_twoPointRealFlatten (d := d) z)
+    · change splitLast (d + 1) (d + 1) (twoPointRealFlatten (d := d) z) μ = z 1 μ
+      simpa using congrArg (fun v : SpacetimeDim d => v μ)
+        (splitLast_twoPointRealFlatten (d := d) z)
+  calc
+    F (twoPointRealFlatten (d := d) z)
+      = H
+          (fun i =>
+            Fin.cases
+              (splitFirst (d + 1) (d + 1) (twoPointRealFlatten (d := d) z))
+              (fun _ => splitLast (d + 1) (d + 1) (twoPointRealFlatten (d := d) z)) i) := by
+            simpa using happly
+    _ = H z := by rw [hz]
+
+private theorem twoPointRealFlatten_centerSpatialTranslate
+    (a : Fin d → ℝ) (z : NPointDomain d 2) :
+    twoPointRealFlatten (d := d) (twoPointCenterSpatialTranslate (d := d) a z) =
+      twoPointRealFlatten (d := d) z + centerSpatialShift d a := by
+  ext p
+  cases p using Fin.addCases with
+  | left μ =>
+      cases μ using Fin.cases with
+      | zero =>
+          simp [twoPointRealFlatten, twoPointCenterSpatialTranslate, centerSpatialShift_eq_addCases,
+            centerSpatialVec]
+      | succ j =>
+          simp [twoPointRealFlatten, twoPointCenterSpatialTranslate, centerSpatialShift_eq_addCases,
+            centerSpatialVec]
+  | right μ =>
+      calc
+        Fin.addCases (z 0 + centerSpatialVec (d := d) a) (z 1) (Fin.natAdd (d + 1) μ)
+          = z 1 μ := by
+              simpa using
+                (Fin.append_right (z 0 + centerSpatialVec (d := d) a) (z 1) μ)
+        _ = (twoPointRealFlatten (d := d) z + centerSpatialShift d a) (Fin.natAdd (d + 1) μ) := by
+              calc
+                z 1 μ = z 1 μ + 0 := by simp
+                _ = Fin.addCases (z 0) (z 1) (Fin.natAdd (d + 1) μ) +
+                      Fin.addCases (centerSpatialVec (d := d) a) (fun _ : Fin (d + 1) => 0)
+                        (Fin.natAdd (d + 1) μ) := by
+                      congr
+                      · symm
+                        simpa using (Fin.append_right (z 0) (z 1) μ)
+                      · symm
+                        simpa using
+                          (Fin.append_right (centerSpatialVec (d := d) a)
+                            (fun _ : Fin (d + 1) => (0 : ℝ)) μ)
+                _ = (twoPointRealFlatten (d := d) z + centerSpatialShift d a) (Fin.natAdd (d + 1) μ) := by
+                      simp [twoPointRealFlatten, centerSpatialShift_eq_addCases]
+
+@[simp] private theorem unflatten_reindex_translate_centerSpatialShift_apply
+    (a : Fin d → ℝ)
+    (F : SchwartzMap (Fin ((d + 1) + (d + 1)) → ℝ) ℂ)
+    (z : NPointDomain d 2) :
+    unflattenSchwartzNPoint (d := d)
+        (reindexSchwartzFin (show (d + 1) + (d + 1) = 2 * (d + 1) by ring)
+          (SCV.translateSchwartz (centerSpatialShift d a) F)) z =
+      unflattenSchwartzNPoint (d := d)
+        (reindexSchwartzFin (show (d + 1) + (d + 1) = 2 * (d + 1) by ring) F)
+          (twoPointCenterSpatialTranslate (d := d) a z) := by
+  rw [← unflatten_reindex_twoPoint_apply, ← unflatten_reindex_twoPoint_apply]
+  simp [SCV.translateSchwartz_apply, twoPointRealFlatten_centerSpatialTranslate]
+
+/-- Pointwise invariance of a two-point kernel under center-spatial
+translations lifts to center-spatial translation invariance of the induced
+flattened Schwartz functional. -/
+theorem twoPointFlatKernelCLM_centerSpatialInvariant
+    (K : NPointDomain d 2 → ℂ)
+    (hK_meas : AEStronglyMeasurable K volume)
+    (C_bd : ℝ) (N : ℕ) (hC : 0 < C_bd)
+    (hK_bound : ∀ᵐ x : NPointDomain d 2 ∂volume,
+      ‖K x‖ ≤ C_bd * (1 + ‖x‖) ^ N)
+    (hK_inv : ∀ (a : Fin d → ℝ) (z : NPointDomain d 2),
+      K (twoPointCenterSpatialTranslate (d := d) a z) = K z) :
+    OSReconstruction.IsCenterSpatialTranslationInvariantSchwartzCLM d
+      (twoPointFlatKernelCLM (d := d) K hK_meas C_bd N hC hK_bound) := by
+  intro a
+  ext F
+  let eflat : (d + 1) + (d + 1) = 2 * (d + 1) := by ring
+  let H : SchwartzNPoint d 2 :=
+    unflattenSchwartzNPoint (d := d) (reindexSchwartzFin eflat F)
+  let e : NPointDomain d 2 ≃ᵐ NPointDomain d 2 :=
+    twoPointCenterSpatialTranslate_measurableEquiv (d := d) a
+  have hmp : MeasureTheory.MeasurePreserving e MeasureTheory.volume MeasureTheory.volume :=
+    twoPointCenterSpatialTranslate_measurePreserving (d := d) a
+  calc
+    twoPointFlatKernelCLM (d := d) K hK_meas C_bd N hC hK_bound
+        (SCV.translateSchwartzCLM (centerSpatialShift d a) F)
+      = ∫ z : NPointDomain d 2,
+          K z *
+            unflattenSchwartzNPoint (d := d)
+              (reindexSchwartzFin eflat
+                (SCV.translateSchwartz (centerSpatialShift d a) F)) z := by
+            simp [twoPointFlatKernelCLM]
+    _ = ∫ z : NPointDomain d 2,
+          K z * H (twoPointCenterSpatialTranslate (d := d) a z) := by
+            refine MeasureTheory.integral_congr_ae ?_
+            filter_upwards with z
+            rw [unflatten_reindex_translate_centerSpatialShift_apply]
+    _ = ∫ z : NPointDomain d 2,
+          (fun x : NPointDomain d 2 => K x * H x) (e z) := by
+            refine MeasureTheory.integral_congr_ae ?_
+            filter_upwards with z
+            simp [e, hK_inv a z, H]
+    _ = ∫ z : NPointDomain d 2, K z * H z := by
+            exact hmp.integral_comp'
+              (f := e) (g := fun x : NPointDomain d 2 => K x * H x)
+    _ = twoPointFlatKernelCLM (d := d) K hK_meas C_bd N hC hK_bound F := by
+            simp [twoPointFlatKernelCLM, H]
+
 theorem twoPointZeroDiagonalKernelCLM_apply
     (K : NPointDomain d 2 → ℂ)
     (hK_meas : AEStronglyMeasurable K volume)

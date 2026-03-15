@@ -1,4 +1,5 @@
 import OSReconstruction.Wightman.Reconstruction.HeadBlockTranslationInvariant
+import OSReconstruction.Wightman.Reconstruction.DenseCLM
 
 open scoped SchwartzMap
 
@@ -330,5 +331,56 @@ theorem map_eq_headTranslationDescentCLM_sliceIntegral_integrateCenterSpatial
         simpa [headTranslationDescentCLM] using
           map_eq_headTranslationDescentCLM_sliceIntegral_of_headTranslationInvariant
             (centerSpatialDescentCLM d T φ) hTred ψ hψ (integrateCenterSpatial d F)
+
+/-- To identify two full flattened two-point functionals, it is enough to
+identify their reduced `(u_time, ξ)` descended functionals on a dense subset.
+This is the clean quotient-level equality principle behind the OS-II-style
+"integrate center-spatial variables first, then the active time variable"
+route. -/
+theorem eq_of_eq_on_dense_headTranslationDescentCLM_centerSpatial
+    (d : ℕ)
+    (T U : SchwartzMap (Fin ((d + 1) + (d + 1)) → ℝ) ℂ →L[ℂ] ℂ)
+    (hT : IsCenterSpatialTranslationInvariantSchwartzCLM d T)
+    (hU : IsCenterSpatialTranslationInvariantSchwartzCLM d U)
+    (φ : SchwartzMap (Fin d → ℝ) ℂ)
+    (hφ : ∫ x : Fin d → ℝ, φ x = 1)
+    (ψ : SchwartzMap ℝ ℂ)
+    (hψ : ∫ t : ℝ, ψ t = 1)
+    (hTred : IsHeadTranslationInvariantSchwartzCLM (centerSpatialDescentCLM d T φ))
+    (hUred : IsHeadTranslationInvariantSchwartzCLM (centerSpatialDescentCLM d U φ))
+    {S : Set (SchwartzMap (Fin (d + 1) → ℝ) ℂ)}
+    (hS : Dense S)
+    (hEq : ∀ f ∈ S,
+      headTranslationDescentCLM (centerSpatialDescentCLM d T φ) ψ f =
+        headTranslationDescentCLM (centerSpatialDescentCLM d U φ) ψ f) :
+    T = U := by
+  have hdescEq :
+      headTranslationDescentCLM (centerSpatialDescentCLM d T φ) ψ =
+        headTranslationDescentCLM (centerSpatialDescentCLM d U φ) ψ :=
+    ContinuousLinearMap.eq_of_eq_on_dense
+      (headTranslationDescentCLM (centerSpatialDescentCLM d T φ) ψ)
+      (headTranslationDescentCLM (centerSpatialDescentCLM d U φ) ψ)
+      hS (by
+        intro f hf
+        exact hEq f hf)
+  ext F
+  calc
+    T F =
+        headTranslationDescentCLM (centerSpatialDescentCLM d T φ) ψ
+          (sliceIntegral (integrateCenterSpatial d F)) := by
+            exact
+              map_eq_headTranslationDescentCLM_sliceIntegral_integrateCenterSpatial
+                d T hT φ hφ ψ hψ hTred F
+    _ =
+        headTranslationDescentCLM (centerSpatialDescentCLM d U φ) ψ
+          (sliceIntegral (integrateCenterSpatial d F)) := by
+            simpa using congrArg
+              (fun R : SchwartzMap (Fin (d + 1) → ℝ) ℂ →L[ℂ] ℂ =>
+                R (sliceIntegral (integrateCenterSpatial d F))) hdescEq
+    _ = U F := by
+            symm
+            exact
+              map_eq_headTranslationDescentCLM_sliceIntegral_integrateCenterSpatial
+                d U hU φ hφ ψ hψ hUred F
 
 end OSReconstruction
