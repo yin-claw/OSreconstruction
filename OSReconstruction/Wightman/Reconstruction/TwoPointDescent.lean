@@ -263,6 +263,104 @@ theorem twoPointCenterShearDescent_translate_right
     integrateHeadBlock_translateSchwartz_tail
       (m := d + 1) (n := d + 1) a F
 
+/-- Translating the center cutoff on the raw product shell is equivalent, after
+descent, to translating the right factor in the opposite direction. This is the
+honest center-shear identity behind the product-shell mismatch in the `E -> R`
+two-point reduction. -/
+theorem twoPointCenterShearDescent_translate_left
+    (χ g : SchwartzSpacetime d) (a : SpacetimeDim d) :
+    twoPointCenterShearDescent (d := d) (SCV.translateSchwartz a χ) g =
+      twoPointCenterShearDescent (d := d) χ (SCV.translateSchwartz (-a) g) := by
+  let F : SchwartzMap (Fin ((d + 1) + (d + 1)) → ℝ) ℂ :=
+    reindexSchwartzFin (by ring)
+      (flattenSchwartzNPoint (d := d)
+        (twoPointCenterDiffSchwartzCLM (d := d)
+          (twoPointProductLift χ (SCV.translateSchwartz (-a) g))))
+  let F' : SchwartzMap (Fin ((d + 1) + (d + 1)) → ℝ) ℂ :=
+    reindexSchwartzFin (by ring)
+      (flattenSchwartzNPoint (d := d)
+        (twoPointCenterDiffSchwartzCLM (d := d)
+          (twoPointProductLift (SCV.translateSchwartz a χ) g)))
+  have hF' :
+      F' =
+        SCV.translateSchwartz
+          (zeroTailBlockShift (m := d + 1) (n := d + 1) a) F := by
+    ext x
+    unfold F F'
+    have htranslate :
+        (SCV.translateSchwartz
+            (zeroTailBlockShift (m := d + 1) (n := d + 1) a)
+            (reindexSchwartzFin (by ring)
+              (flattenSchwartzNPoint (d := d)
+                (twoPointCenterDiffSchwartzCLM (d := d)
+                  (twoPointProductLift χ (SCV.translateSchwartz (-a) g)))))) x =
+          (reindexSchwartzFin (by ring)
+            (flattenSchwartzNPoint (d := d)
+              (twoPointCenterDiffSchwartzCLM (d := d)
+                (twoPointProductLift χ (SCV.translateSchwartz (-a) g)))))
+            (x + zeroTailBlockShift (m := d + 1) (n := d + 1) a) := by
+      rfl
+    rw [htranslate]
+    have hshifted :=
+      reindex_flatten_twoPointProductShell_apply (d := d) χ
+        (SCV.translateSchwartz (-a) g)
+        (x + zeroTailBlockShift (m := d + 1) (n := d + 1) a)
+    have hleft :
+        (reindexSchwartzFin (by ring)
+            (flattenSchwartzNPoint (d := d)
+              (twoPointCenterDiffSchwartzCLM (d := d)
+                (twoPointProductLift (SCV.translateSchwartz a χ) g)))) x =
+          χ (splitFirst (d + 1) (d + 1) x + a) *
+            g (splitFirst (d + 1) (d + 1) x + splitLast (d + 1) (d + 1) x) := by
+      rw [reindex_flatten_twoPointProductShell_apply]
+      simp [SCV.translateSchwartz_apply]
+    have hright :
+        (reindexSchwartzFin (by ring)
+            (flattenSchwartzNPoint (d := d)
+              (twoPointCenterDiffSchwartzCLM (d := d)
+                (twoPointProductLift χ (SCV.translateSchwartz (-a) g)))))
+            (x + zeroTailBlockShift (m := d + 1) (n := d + 1) a) =
+          χ (splitFirst (d + 1) (d + 1) x + a) *
+            g (splitFirst (d + 1) (d + 1) x + splitLast (d + 1) (d + 1) x) := by
+      calc
+        (reindexSchwartzFin (by ring)
+            (flattenSchwartzNPoint (d := d)
+              (twoPointCenterDiffSchwartzCLM (d := d)
+                (twoPointProductLift χ (SCV.translateSchwartz (-a) g)))))
+            (x + zeroTailBlockShift (m := d + 1) (n := d + 1) a)
+          = χ
+              (splitFirst (d + 1) (d + 1)
+                (x + zeroTailBlockShift (m := d + 1) (n := d + 1) a)) *
+              (SCV.translateSchwartz (-a) g)
+                (splitFirst (d + 1) (d + 1)
+                    (x + zeroTailBlockShift (m := d + 1) (n := d + 1) a) +
+                  splitLast (d + 1) (d + 1)
+                    (x + zeroTailBlockShift (m := d + 1) (n := d + 1) a)) := by
+                exact hshifted
+        _ = χ (splitFirst (d + 1) (d + 1) x + a) *
+              g (splitFirst (d + 1) (d + 1) x + splitLast (d + 1) (d + 1) x) := by
+                rw [splitFirst_zeroTailBlockShift, splitLast_zeroTailBlockShift]
+                rw [SCV.translateSchwartz_apply]
+                have hg :
+                    g
+                        ((splitFirst (d + 1) (d + 1) x + a +
+                            splitLast (d + 1) (d + 1) x) +
+                          -a) =
+                      g
+                        (splitFirst (d + 1) (d + 1) x +
+                          splitLast (d + 1) (d + 1) x) := by
+                  congr 1
+                  ext i
+                  simp
+                  abel_nf
+                rw [hg]
+    exact hleft.trans hright.symm
+  have hInt :=
+    congrArg (integrateHeadBlock (m := d + 1) (n := d + 1)) hF'
+  rw [integrateHeadBlock_translateSchwartz_head
+      (m := d + 1) (n := d + 1) a F] at hInt
+  simpa [twoPointCenterShearDescent_eq, twoPointCenterDescent, F, F'] using hInt
+
 private theorem integral_twoPointCenterDiffSchwartz
     (F : SchwartzNPoint d 2) :
     ∫ x : NPointDomain d 2, twoPointCenterDiffSchwartzCLM (d := d) F x =
