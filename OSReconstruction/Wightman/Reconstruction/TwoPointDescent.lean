@@ -361,6 +361,18 @@ theorem twoPointCenterShearDescent_translate_left
       (m := d + 1) (n := d + 1) a F] at hInt
   simpa [twoPointCenterShearDescent_eq, twoPointCenterDescent, F, F'] using hInt
 
+/-- Translating the center cutoff acts on the descended center-shear parameter
+by the opposite translation in the difference variable. This is the practical
+covariance form of the product-shell shear identity. -/
+theorem twoPointCenterShearDescent_translate_center
+    (χ g : SchwartzSpacetime d) (a : SpacetimeDim d) :
+    twoPointCenterShearDescent (d := d) (SCV.translateSchwartz a χ) g =
+      SCV.translateSchwartz (-a) (twoPointCenterShearDescent (d := d) χ g) := by
+  rw [twoPointCenterShearDescent_translate_left]
+  simpa using
+    twoPointCenterShearDescent_translate_right
+      (d := d) χ g (-a)
+
 private theorem integral_twoPointCenterDiffSchwartz
     (F : SchwartzNPoint d 2) :
     ∫ x : NPointDomain d 2, twoPointCenterDiffSchwartzCLM (d := d) F x =
