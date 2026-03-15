@@ -3,6 +3,8 @@ Copyright (c) 2025 ModularPhysics Contributors. All rights reserved.
 Released under Apache 2.0 license.
 Authors: Michael Douglas, ModularPhysics Contributors
 -/
+import OSReconstruction.Wightman.Reconstruction.WickRotation.WickRotationBridge
+import OSReconstruction.Wightman.Reconstruction.DenseCLM
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanSemigroup
 
 /-!
@@ -350,6 +352,124 @@ private theorem differentiableOn_of_toDiffFlat_acrone_holo {d k : ℕ} [NeZero d
       ((SCV.tubeDomain_isOpen (isOpen_flatPositiveTimeDiffReal k d)).mem_nhds hu)
   exact (hG_at.comp z (differentiable_toDiffFlat_local k d z)).differentiableWithinAt
 
+/-- For the two-point flat witness, a one-variable holomorphic semigroup family
+pulls back along the Wick-rotated time-difference coordinate. -/
+private theorem differentiableOn_twoPoint_timeDiffFlatWitness
+    (H : ℂ → ℂ)
+    (hH : DifferentiableOn ℂ H {z : ℂ | 0 < z.re}) :
+    DifferentiableOn ℂ
+      (fun u : Fin (2 * (d + 1)) → ℂ =>
+        H (-Complex.I * u (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))))
+      (SCV.TubeDomain (FlatPositiveTimeDiffReal 2 d)) := by
+  refine
+    (OSReconstruction.differentiableOn_H_neg_I_coord
+      (N := 2 * (d + 1))
+      (j := finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))
+      (H := H) hH).mono ?_
+  intro u hu
+  rw [mem_tubeDomain_flatPositiveTimeDiffReal_iff] at hu
+  exact hu ⟨1, by omega⟩
+
+/-- On the Euclidean two-point center/difference section, the Wick-rotated
+time-difference coordinate collapses back to the real time difference. -/
+private theorem neg_I_mul_flattenCfg_wickRotate_secondTime_eq
+    (z : NPointDomain d 2) :
+    -Complex.I *
+        (BHW.flattenCfg 2 d (fun i => wickRotatePoint (z i))
+          (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))) =
+      (z ⟨1, by omega⟩ 0 : ℂ) := by
+  simpa [BHW.flattenCfg, wickRotatePoint] using
+    (OSReconstruction.neg_I_mul_I_mul (z ⟨1, by omega⟩ 0 : ℂ))
+
+/-- Evaluating the two-point flat time-difference witness on the Euclidean
+center/difference section reduces to the real time-difference argument. -/
+private theorem twoPoint_timeDiffFlatWitness_apply_wickRotate
+    (H : ℂ → ℂ)
+    (z : NPointDomain d 2) :
+    (fun u : Fin (2 * (d + 1)) → ℂ =>
+      H (-Complex.I * u (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))))
+      (BHW.flattenCfg 2 d (fun i => wickRotatePoint (z i))) =
+      H (z ⟨1, by omega⟩ 0) := by
+  change
+    H (-Complex.I *
+      (BHW.flattenCfg 2 d (fun i => wickRotatePoint (z i))
+        (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1)))))) =
+      H (z ⟨1, by omega⟩ 0)
+  rw [neg_I_mul_flattenCfg_wickRotate_secondTime_eq]
+
+/-- Local one-variable holomorphicity of the semigroup matrix element, used to
+build the explicit `k = 2` flat witness candidate inside this file. -/
+private theorem differentiableOn_OSInnerProductTimeShiftHolomorphicValue_local
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d) :
+    DifferentiableOn ℂ (OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F G)
+      {z : ℂ | 0 < z.re} := by
+  let A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos
+  let x : OSHilbertSpace OS := (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))
+  let y : OSHilbertSpace OS := (((show OSPreHilbertSpace OS from (⟦G⟧)) : OSHilbertSpace OS))
+  refine
+    (ContinuousLinearMap.differentiableOn_selfAdjointSpectralLaplaceOffdiag
+      (A := A)
+      (hA := osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+      (hspec := spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos)
+      (x := x) (y := y)).congr ?_
+  intro z hz
+  simpa [A, x, y] using
+    (OSInnerProductTimeShiftHolomorphicValue_eq_selfAdjointSpectralLaplaceOffdiag
+      (d := d) OS lgc F G z hz).symm
+
+/-- The canonical `k = 2` flat witness candidate coming from the one-variable
+semigroup holomorphic family. It depends only on the Wick-rotated time
+difference coordinate. -/
+private def twoPointTimeDiffFlatWitness
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d) :
+    (Fin (2 * (d + 1)) → ℂ) → ℂ :=
+  fun u =>
+    OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F G
+      (-Complex.I * u (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1)))))
+
+/-- The semigroup-based `k = 2` flat witness candidate is holomorphic on the
+positive-time-difference tube. This isolates the remaining gap in the base-step
+to Euclidean reproduction, not tube holomorphicity. -/
+private theorem differentiableOn_twoPointTimeDiffFlatWitness
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d) :
+    DifferentiableOn ℂ
+      (twoPointTimeDiffFlatWitness (d := d) OS lgc F G)
+      (SCV.TubeDomain (FlatPositiveTimeDiffReal 2 d)) := by
+  change DifferentiableOn ℂ
+    (fun u : Fin (2 * (d + 1)) → ℂ =>
+      OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F G
+        (-Complex.I * u (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))))
+    (SCV.TubeDomain (FlatPositiveTimeDiffReal 2 d))
+  exact
+    differentiableOn_twoPoint_timeDiffFlatWitness
+      (d := d)
+      (H := OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F G)
+      (differentiableOn_OSInnerProductTimeShiftHolomorphicValue_local
+        (d := d) OS lgc F G)
+
+/-- On the Euclidean center/difference section, the semigroup-based `k = 2`
+flat witness evaluates at the real time-difference argument. -/
+private theorem twoPointTimeDiffFlatWitness_apply_wickRotate
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d)
+    (z : NPointDomain d 2) :
+    twoPointTimeDiffFlatWitness (d := d) OS lgc F G
+        (BHW.flattenCfg 2 d (fun i => wickRotatePoint (z i))) =
+      OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F G
+        (z ⟨1, by omega⟩ 0) := by
+  simpa [twoPointTimeDiffFlatWitness] using
+    twoPoint_timeDiffFlatWitness_apply_wickRotate
+      (d := d)
+      (H := OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F G)
+      z
+
 /-- **Base step of analytic continuation (r = 0 → r = 1).**
 
     Produces the first genuinely holomorphic witness on `C_k^(1)` directly from the
@@ -429,6 +549,73 @@ theorem schwinger_continuation_base_step {d : ℕ} [NeZero d]
             G (BHW.toDiffFlat k d (fun j => wickRotatePoint (x j))) * (f.1 x)) := by
     sorry
   exact schwinger_continuation_base_step_of_flatWitness OS k G hG_holo hG_euclid
+
+/-- Honest `k = 2` reduction for the explicit semigroup time-difference
+candidate. Once the Euclidean reproduction identity is proved for
+`twoPointTimeDiffFlatWitness`, the two-point base-step follows immediately. -/
+private theorem schwinger_continuation_base_step_twoPoint_of_timeDiffFlatWitness
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d)
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        twoPointTimeDiffFlatWitness (d := d) OS lgc F G
+          (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) * (f.1 x)) :
+    ∃ (S_ext : (Fin 2 → Fin (d + 1) → ℂ) → ℂ),
+      DifferentiableOn ℂ S_ext (AnalyticContinuationRegion d 2 1) ∧
+      (∀ (f : ZeroDiagonalSchwartz d 2),
+        OS.S 2 f = ∫ x : NPointDomain d 2,
+          S_ext (fun j => wickRotatePoint (x j)) * (f.1 x)) := by
+  exact
+    schwinger_continuation_base_step_of_flatWitness
+      (d := d) (OS := OS) (k := 2)
+      (G := twoPointTimeDiffFlatWitness (d := d) OS lgc F G)
+      (differentiableOn_twoPointTimeDiffFlatWitness
+        (d := d) OS lgc F G)
+      hG_euclid
+
+/-- Dense-set reduction for the explicit `k = 2` semigroup flat witness. If a
+continuous linear functional `L` is represented by the witness integral on all
+tests and agrees with `OS.S 2` on a dense subset, then the two-point base-step
+already follows. This isolates the remaining blocker to continuity of the
+witness integral plus a genuine density theorem. -/
+private theorem schwinger_continuation_base_step_twoPoint_of_timeDiffFlatWitnessCLM
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d)
+    (L : ZeroDiagonalSchwartz d 2 →L[ℂ] ℂ)
+    {S : Set (ZeroDiagonalSchwartz d 2)}
+    (hS : Dense S)
+    (hEq_dense : ∀ f ∈ S, L f = OS.S 2 f)
+    (hL : ∀ f : ZeroDiagonalSchwartz d 2,
+      L f = ∫ x : NPointDomain d 2,
+        twoPointTimeDiffFlatWitness (d := d) OS lgc F G
+          (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) * (f.1 x)) :
+    ∃ (S_ext : (Fin 2 → Fin (d + 1) → ℂ) → ℂ),
+      DifferentiableOn ℂ S_ext (AnalyticContinuationRegion d 2 1) ∧
+      (∀ (f : ZeroDiagonalSchwartz d 2),
+        OS.S 2 f = ∫ x : NPointDomain d 2,
+          S_ext (fun j => wickRotatePoint (x j)) * (f.1 x)) := by
+  have hL_eq_S :
+      L = OsterwalderSchraderAxioms.schwingerCLM (d := d) OS 2 := by
+    exact ContinuousLinearMap.eq_of_eq_on_dense
+      L (OsterwalderSchraderAxioms.schwingerCLM (d := d) OS 2) (S := S) hS
+        (by intro f hf; exact hEq_dense f hf)
+  have hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        twoPointTimeDiffFlatWitness (d := d) OS lgc F G
+          (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) * (f.1 x) := by
+    intro f
+    have hf := congrArg (fun T : ZeroDiagonalSchwartz d 2 →L[ℂ] ℂ => T f) hL_eq_S
+    calc
+      OS.S 2 f = L f := by
+        simpa [OsterwalderSchraderAxioms.schwingerCLM] using hf.symm
+      _ = ∫ x : NPointDomain d 2,
+            twoPointTimeDiffFlatWitness (d := d) OS lgc F G
+              (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) * (f.1 x) := hL f
+  exact
+    schwinger_continuation_base_step_twoPoint_of_timeDiffFlatWitness
+      (d := d) OS lgc F G hG_euclid
 
 /-- Two-point payoff from any explicit Euclidean witness. Once a center cutoff
 `χ₀` with integral `1` is fixed, the admissible Schwinger two-point family

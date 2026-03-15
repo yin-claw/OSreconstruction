@@ -3272,6 +3272,17 @@ private theorem differentiableOn_OSInnerProductTimeShiftHolomorphicValue
       (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))
       (((show OSPreHilbertSpace OS from (⟦G⟧)) : OSHilbertSpace OS))
 
+/-- The semigroup matrix element is holomorphic on the right half-plane. This
+is the one-variable OS input used when Wick-rotating into the two-point flat
+tube witness. -/
+theorem OSInnerProductTimeShiftHolomorphicValue_differentiableOn
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d) :
+    DifferentiableOn ℂ (OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F G)
+      {z : ℂ | 0 < z.re} :=
+  differentiableOn_OSInnerProductTimeShiftHolomorphicValue
+    (d := d) OS lgc F G
+
 private theorem continuousOn_OSInnerProductTimeShiftHolomorphicValue
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     (F G : PositiveTimeBorchersSequence d) :
