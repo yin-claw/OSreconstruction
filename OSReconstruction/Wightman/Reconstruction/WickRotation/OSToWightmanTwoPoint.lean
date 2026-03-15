@@ -120,6 +120,47 @@ private theorem twoPointCenterDiff_toDiffFlat_wickRotate
     · simp [BHW.toDiffFlat, BHW.flattenCfg, BHW.diffCoordEquiv_apply,
         twoPointCenterDiffCLE, twoPointCenterDiffLinearEquiv, wickRotatePoint, hμ]
 
+omit [NeZero d] in
+private theorem twoPointCenterDiff_xiShift_secondTime_toDiffFlat_eq_update
+    (z : NPointDomain d 2) (t : ℂ) :
+    BHW.toDiffFlat 2 d
+        (xiShift ⟨1, by omega⟩ 0
+          (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i))
+          t) =
+      Function.update
+        (BHW.flattenCfg 2 d (fun i => wickRotatePoint (z i)))
+        (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))
+        (BHW.flattenCfg 2 d (fun i => wickRotatePoint (z i))
+          (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1)))) + t) := by
+  let zc : Fin 2 → Fin (d + 1) → ℂ :=
+    fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i)
+  have hfrom :
+      BHW.fromDiffFlat 2 d
+          (Function.update
+            (BHW.toDiffFlat 2 d zc)
+            (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))
+            (BHW.toDiffFlat 2 d zc
+              (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1)))) + t)) =
+        xiShift ⟨1, by omega⟩ 0 zc t := by
+    simpa [zc, sub_eq_add_neg, BHW.fromDiffFlat_toDiffFlat] using
+      (fromDiffFlat_update_eq_xiShift_sub
+        (k := 2) (d := d)
+        (j := ⟨1, by omega⟩) (r := (0 : Fin (d + 1)))
+        (u := BHW.toDiffFlat 2 d zc)
+        (w := BHW.toDiffFlat 2 d zc
+          (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1)))) + t))
+  have hflat :
+      Function.update
+          (BHW.toDiffFlat 2 d zc)
+          (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))
+          (BHW.toDiffFlat 2 d zc
+            (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1)))) + t) =
+        BHW.toDiffFlat 2 d
+          (xiShift ⟨1, by omega⟩ 0 zc t) := by
+    simpa [BHW.toDiffFlat_fromDiffFlat] using
+      congrArg (BHW.toDiffFlat 2 d) hfrom
+  simpa [zc, twoPointCenterDiff_toDiffFlat_wickRotate] using hflat.symm
+
 private theorem schwinger_twoPointDifferenceLift_baseTime_eq_constant_of_positiveSupport
     (OS : OsterwalderSchraderAxioms d)
     (Ψ : (Fin 2 → Fin (d + 1) → ℂ) → ℂ)
@@ -514,6 +555,267 @@ theorem schwinger_twoPointDifferenceLift_timeShift_eq_xiShift_of_positiveSupport
                     (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1)))) +
                   (t : ℂ) * Complex.I))
         exact congrArg (fun z => Ψ z * (χ (y 0) * h (y 1))) hslice
+
+private theorem selfAdjointSpectralLaplaceOffdiag_onePoint_pair_eq_flatUpdate_centerShear
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
+    (χ g : SchwartzSpacetime d)
+    (hχ_pos : tsupport (((SchwartzNPoint.osConj (d := d) (n := 1)
+        (onePointToFin1CLM d χ : SchwartzNPoint d 1) : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (hg_pos : tsupport (((onePointToFin1CLM d g : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (hg_compact : HasCompactSupport (g : SpacetimeDim d → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag
+        (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+        (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+        (((show OSPreHilbertSpace OS from
+            (⟦PositiveTimeBorchersSequence.single 1
+                (SchwartzNPoint.osConj (d := d) (n := 1)
+                  (onePointToFin1CLM d χ : SchwartzNPoint d 1))
+                hχ_pos⟧)) : OSHilbertSpace OS))
+        (((show OSPreHilbertSpace OS from
+            (⟦PositiveTimeBorchersSequence.single 1
+                (onePointToFin1CLM d g : SchwartzNPoint d 1)
+                hg_pos⟧)) : OSHilbertSpace OS))
+        (t : ℂ) =
+      ∫ z : NPointDomain d 2,
+        G (Function.update
+            (BHW.flattenCfg 2 d (fun i => wickRotatePoint (z i)))
+            (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))
+            (BHW.flattenCfg 2 d (fun i => wickRotatePoint (z i))
+              (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1)))) +
+              (t : ℂ) * Complex.I)) *
+          (χ (z 0) * g (z 0 + z 1)) := by
+  let Ψ : (Fin 2 → Fin (d + 1) → ℂ) → ℂ := fun z => G (BHW.toDiffFlat 2 d z)
+  have hΨ_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        Ψ (fun i => wickRotatePoint (x i)) * (f.1 x) := by
+    intro f
+    simpa [Ψ, Function.comp_apply] using hG_euclid f
+  calc
+    ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag
+        (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+        (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+        (((show OSPreHilbertSpace OS from
+            (⟦PositiveTimeBorchersSequence.single 1
+                (SchwartzNPoint.osConj (d := d) (n := 1)
+                  (onePointToFin1CLM d χ : SchwartzNPoint d 1))
+                hχ_pos⟧)) : OSHilbertSpace OS))
+        (((show OSPreHilbertSpace OS from
+            (⟦PositiveTimeBorchersSequence.single 1
+                (onePointToFin1CLM d g : SchwartzNPoint d 1)
+                hg_pos⟧)) : OSHilbertSpace OS))
+        (t : ℂ)
+      =
+        ∫ y : NPointDomain d 2,
+          Ψ (xiShift ⟨1, by omega⟩ 0
+            (fun i => wickRotatePoint (y i))
+            ((t : ℂ) * Complex.I)) *
+            (χ (y 0) * g (y 1)) := by
+          exact selfAdjointSpectralLaplaceOffdiag_onePoint_pair_eq_xiShift
+            (d := d) (OS := OS) (lgc := lgc) (Ψ := Ψ) (hΨ_euclid := hΨ_euclid)
+            χ g hχ_pos hg_pos hg_compact t ht
+    _ =
+        ∫ z : NPointDomain d 2,
+          Ψ (xiShift ⟨1, by omega⟩ 0
+            (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i))
+            ((t : ℂ) * Complex.I)) *
+            (χ (z 0) * g (z 0 + z 1)) := by
+          simpa [twoPointProductLift_apply] using
+            (integral_mul_twoPointProductLift_eq_centerShear
+              (d := d)
+              (Ψ := fun y : NPointDomain d 2 =>
+                Ψ (xiShift ⟨1, by omega⟩ 0
+                  (fun i => wickRotatePoint (y i))
+                  ((t : ℂ) * Complex.I)))
+              χ g)
+    _ =
+        ∫ z : NPointDomain d 2,
+          G (Function.update
+              (BHW.flattenCfg 2 d (fun i => wickRotatePoint (z i)))
+              (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))
+              (BHW.flattenCfg 2 d (fun i => wickRotatePoint (z i))
+                (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1)))) +
+                (t : ℂ) * Complex.I)) *
+            (χ (z 0) * g (z 0 + z 1)) := by
+          refine MeasureTheory.integral_congr_ae ?_
+          filter_upwards with z
+          have hcfg :=
+            twoPointCenterDiff_xiShift_secondTime_toDiffFlat_eq_update
+              (d := d) (z := z) (t := (t : ℂ) * Complex.I)
+          exact congrArg
+            (fun u =>
+              G u * (χ (z 0) * g (z 0 + z 1))) hcfg
+
+private theorem OSInnerProductTimeShiftHolomorphicValue_onePoint_pair_eq_flatUpdate_centerShear
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
+    (χ g : SchwartzSpacetime d)
+    (hχ_pos : tsupport (((SchwartzNPoint.osConj (d := d) (n := 1)
+        (onePointToFin1CLM d χ : SchwartzNPoint d 1) : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (hg_pos : tsupport (((onePointToFin1CLM d g : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (hg_compact : HasCompactSupport (g : SpacetimeDim d → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+        ((show PositiveTimeBorchersSequence d from
+          PositiveTimeBorchersSequence.single 1
+            (SchwartzNPoint.osConj (d := d) (n := 1)
+              (onePointToFin1CLM d χ : SchwartzNPoint d 1))
+            hχ_pos))
+        ((show PositiveTimeBorchersSequence d from
+          PositiveTimeBorchersSequence.single 1
+            (onePointToFin1CLM d g : SchwartzNPoint d 1)
+            hg_pos))
+        (t : ℂ) =
+      ∫ z : NPointDomain d 2,
+        G (Function.update
+            (BHW.flattenCfg 2 d (fun i => wickRotatePoint (z i)))
+            (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))
+            (BHW.flattenCfg 2 d (fun i => wickRotatePoint (z i))
+              (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1)))) +
+              (t : ℂ) * Complex.I)) *
+          (χ (z 0) * g (z 0 + z 1)) := by
+  rw [OSInnerProductTimeShiftHolomorphicValue_eq_selfAdjointSpectralLaplaceOffdiag
+    (d := d) (OS := OS) (lgc := lgc)
+    ((show PositiveTimeBorchersSequence d from
+      PositiveTimeBorchersSequence.single 1
+        (SchwartzNPoint.osConj (d := d) (n := 1)
+          (onePointToFin1CLM d χ : SchwartzNPoint d 1))
+        hχ_pos))
+    ((show PositiveTimeBorchersSequence d from
+      PositiveTimeBorchersSequence.single 1
+        (onePointToFin1CLM d g : SchwartzNPoint d 1)
+        hg_pos))
+    (t : ℂ) (by simpa using ht)]
+  exact selfAdjointSpectralLaplaceOffdiag_onePoint_pair_eq_flatUpdate_centerShear
+    (d := d) (OS := OS) (lgc := lgc) (G := G) (hG_euclid := hG_euclid)
+    χ g hχ_pos hg_pos hg_compact t ht
+
+private theorem selfAdjointSpectralLaplaceOffdiag_onePoint_pair_eq_xiShift_centerShear
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (Ψ : (Fin 2 → Fin (d + 1) → ℂ) → ℂ)
+    (hΨ_euclid : ∀ (h : ZeroDiagonalSchwartz d 2),
+      OS.S 2 h = ∫ x : NPointDomain d 2,
+        Ψ (fun i => wickRotatePoint (x i)) * (h.1 x))
+    (χ g : SchwartzSpacetime d)
+    (hχ_pos : tsupport (((SchwartzNPoint.osConj (d := d) (n := 1)
+        (onePointToFin1CLM d χ : SchwartzNPoint d 1) : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (hg_pos : tsupport (((onePointToFin1CLM d g : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (hg_compact : HasCompactSupport (g : SpacetimeDim d → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag
+        (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+        (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+        (((show OSPreHilbertSpace OS from
+            (⟦PositiveTimeBorchersSequence.single 1
+                (SchwartzNPoint.osConj (d := d) (n := 1)
+                  (onePointToFin1CLM d χ : SchwartzNPoint d 1))
+                hχ_pos⟧)) : OSHilbertSpace OS))
+        (((show OSPreHilbertSpace OS from
+            (⟦PositiveTimeBorchersSequence.single 1
+                (onePointToFin1CLM d g : SchwartzNPoint d 1)
+                hg_pos⟧)) : OSHilbertSpace OS))
+        (t : ℂ) =
+      ∫ z : NPointDomain d 2,
+        Ψ (xiShift ⟨1, by omega⟩ 0
+          (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i))
+          ((t : ℂ) * Complex.I)) *
+          (χ (z 0) * g (z 0 + z 1)) := by
+  calc
+    ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag
+        (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+        (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+        (((show OSPreHilbertSpace OS from
+            (⟦PositiveTimeBorchersSequence.single 1
+                (SchwartzNPoint.osConj (d := d) (n := 1)
+                  (onePointToFin1CLM d χ : SchwartzNPoint d 1))
+                hχ_pos⟧)) : OSHilbertSpace OS))
+        (((show OSPreHilbertSpace OS from
+            (⟦PositiveTimeBorchersSequence.single 1
+                (onePointToFin1CLM d g : SchwartzNPoint d 1)
+                hg_pos⟧)) : OSHilbertSpace OS))
+        (t : ℂ)
+      =
+        ∫ y : NPointDomain d 2,
+          Ψ (xiShift ⟨1, by omega⟩ 0
+            (fun i => wickRotatePoint (y i))
+            ((t : ℂ) * Complex.I)) *
+            (χ (y 0) * g (y 1)) := by
+          exact selfAdjointSpectralLaplaceOffdiag_onePoint_pair_eq_xiShift
+            (d := d) (OS := OS) (lgc := lgc) (Ψ := Ψ) (hΨ_euclid := hΨ_euclid)
+            χ g hχ_pos hg_pos hg_compact t ht
+    _ =
+        ∫ z : NPointDomain d 2,
+          Ψ (xiShift ⟨1, by omega⟩ 0
+            (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i))
+            ((t : ℂ) * Complex.I)) *
+            (χ (z 0) * g (z 0 + z 1)) := by
+          simpa [twoPointProductLift_apply] using
+            (integral_mul_twoPointProductLift_eq_centerShear
+              (d := d)
+              (Ψ := fun y : NPointDomain d 2 =>
+                Ψ (xiShift ⟨1, by omega⟩ 0
+                  (fun i => wickRotatePoint (y i))
+                  ((t : ℂ) * Complex.I)))
+              χ g)
+
+private theorem OSInnerProductTimeShiftHolomorphicValue_onePoint_pair_eq_xiShift_centerShear
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (Ψ : (Fin 2 → Fin (d + 1) → ℂ) → ℂ)
+    (hΨ_euclid : ∀ (h : ZeroDiagonalSchwartz d 2),
+      OS.S 2 h = ∫ x : NPointDomain d 2,
+        Ψ (fun i => wickRotatePoint (x i)) * (h.1 x))
+    (χ g : SchwartzSpacetime d)
+    (hχ_pos : tsupport (((SchwartzNPoint.osConj (d := d) (n := 1)
+        (onePointToFin1CLM d χ : SchwartzNPoint d 1) : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (hg_pos : tsupport (((onePointToFin1CLM d g : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (hg_compact : HasCompactSupport (g : SpacetimeDim d → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+        ((show PositiveTimeBorchersSequence d from
+          PositiveTimeBorchersSequence.single 1
+            (SchwartzNPoint.osConj (d := d) (n := 1)
+              (onePointToFin1CLM d χ : SchwartzNPoint d 1))
+            hχ_pos))
+        ((show PositiveTimeBorchersSequence d from
+          PositiveTimeBorchersSequence.single 1
+            (onePointToFin1CLM d g : SchwartzNPoint d 1)
+            hg_pos))
+        (t : ℂ) =
+      ∫ z : NPointDomain d 2,
+        Ψ (xiShift ⟨1, by omega⟩ 0
+          (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i))
+          ((t : ℂ) * Complex.I)) *
+          (χ (z 0) * g (z 0 + z 1)) := by
+  rw [OSInnerProductTimeShiftHolomorphicValue_eq_selfAdjointSpectralLaplaceOffdiag
+    (d := d) (OS := OS) (lgc := lgc)
+    ((show PositiveTimeBorchersSequence d from
+      PositiveTimeBorchersSequence.single 1
+        (SchwartzNPoint.osConj (d := d) (n := 1)
+          (onePointToFin1CLM d χ : SchwartzNPoint d 1))
+        hχ_pos))
+    ((show PositiveTimeBorchersSequence d from
+      PositiveTimeBorchersSequence.single 1
+        (onePointToFin1CLM d g : SchwartzNPoint d 1)
+        hg_pos))
+    (t : ℂ) (by simpa using ht)]
+  exact selfAdjointSpectralLaplaceOffdiag_onePoint_pair_eq_xiShift_centerShear
+    (d := d) (OS := OS) (lgc := lgc) (Ψ := Ψ) (hΨ_euclid := hΨ_euclid)
+    χ g hχ_pos hg_pos hg_compact t ht
 
 theorem exists_twoPointDifferenceLift_timeShift_holomorphicValue_iff_xiShiftWitness_of_positiveSupport
     (OS : OsterwalderSchraderAxioms d)
@@ -2449,28 +2751,14 @@ private theorem exists_twoPointDifferenceLift_timeShift_holomorphicValue_of_cent
                   hg_pos⟧)) : OSHilbertSpace OS))
           (t : ℂ)
         =
-          ∫ y : NPointDomain d 2,
-            Ψ (xiShift ⟨1, by omega⟩ 0
-              (fun i => wickRotatePoint (y i))
-              ((t : ℂ) * Complex.I)) *
-              (χ₀ (y 0) * g (y 1)) := by
-            exact selfAdjointSpectralLaplaceOffdiag_onePoint_pair_eq_xiShift
-              (d := d) (OS := OS) (lgc := lgc) (Ψ := Ψ) (hΨ_euclid := hΨ_euclid)
-              χ₀ g hχ₀_pos hg_pos hg_compact t ht
-      _ =
           ∫ z : NPointDomain d 2,
             Ψ (xiShift ⟨1, by omega⟩ 0
               (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i))
               ((t : ℂ) * Complex.I)) *
               (χ₀ (z 0) * g (z 0 + z 1)) := by
-            simpa [twoPointProductLift_apply] using
-              (integral_mul_twoPointProductLift_eq_centerShear
-                (d := d)
-                (Ψ := fun y : NPointDomain d 2 =>
-                  Ψ (xiShift ⟨1, by omega⟩ 0
-                    (fun i => wickRotatePoint (y i))
-                    ((t : ℂ) * Complex.I)))
-                χ₀ g)
+          exact selfAdjointSpectralLaplaceOffdiag_onePoint_pair_eq_xiShift_centerShear
+            (d := d) (OS := OS) (lgc := lgc) (Ψ := Ψ) (hΨ_euclid := hΨ_euclid)
+            χ₀ g hχ₀_pos hg_pos hg_compact t ht
       _ =
           ∫ z : NPointDomain d 2,
             Ψ (xiShift ⟨1, by omega⟩ 0
@@ -2583,40 +2871,14 @@ private theorem twoPointDifferenceLift_timeShift_holomorphicValue_semigroupMatri
               hg_pos))
           (t : ℂ)
         =
-          ∫ y : NPointDomain d 2,
-            Ψ (xiShift ⟨1, by omega⟩ 0
-              (fun i => wickRotatePoint (y i))
-              ((t : ℂ) * Complex.I)) *
-              (χ₀ (y 0) * g (y 1)) := by
-            rw [OSInnerProductTimeShiftHolomorphicValue_eq_selfAdjointSpectralLaplaceOffdiag
-              (d := d) (OS := OS) (lgc := lgc)
-              ((show PositiveTimeBorchersSequence d from
-                PositiveTimeBorchersSequence.single 1
-                  (SchwartzNPoint.osConj (d := d) (n := 1)
-                    (onePointToFin1CLM d χ₀ : SchwartzNPoint d 1))
-                  hχ₀_pos))
-              ((show PositiveTimeBorchersSequence d from
-                PositiveTimeBorchersSequence.single 1
-                  (onePointToFin1CLM d g : SchwartzNPoint d 1)
-                  hg_pos))
-              (t : ℂ) (by simpa using ht)]
-            exact selfAdjointSpectralLaplaceOffdiag_onePoint_pair_eq_xiShift
-              (d := d) (OS := OS) (lgc := lgc) (Ψ := Ψ) (hΨ_euclid := hΨ_euclid)
-              χ₀ g hχ₀_pos hg_pos hg_compact t ht
-      _ =
           ∫ z : NPointDomain d 2,
             Ψ (xiShift ⟨1, by omega⟩ 0
               (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i))
               ((t : ℂ) * Complex.I)) *
               (χ₀ (z 0) * g (z 0 + z 1)) := by
-            simpa [twoPointProductLift_apply] using
-              (integral_mul_twoPointProductLift_eq_centerShear
-                (d := d)
-                (Ψ := fun y : NPointDomain d 2 =>
-                  Ψ (xiShift ⟨1, by omega⟩ 0
-                    (fun i => wickRotatePoint (y i))
-                    ((t : ℂ) * Complex.I)))
-                χ₀ g)
+          exact OSInnerProductTimeShiftHolomorphicValue_onePoint_pair_eq_xiShift_centerShear
+            (d := d) (OS := OS) (lgc := lgc) (Ψ := Ψ) (hΨ_euclid := hΨ_euclid)
+            χ₀ g hχ₀_pos hg_pos hg_compact t ht
       _ =
           ∫ z : NPointDomain d 2,
             Ψ (xiShift ⟨1, by omega⟩ 0
