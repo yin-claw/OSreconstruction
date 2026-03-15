@@ -880,7 +880,7 @@ theorem contDiffOn_headCoordCoeff_off_hyperplane {n : ℕ}
   refine hmul.congr ?_
   intro x hx
   rw [headCoordCoeff_eq_inv_smul_of_ne_zero F hF x hx]
-  simp [fInv, Complex.real_smul, mul_comm]
+  simp [fInv]
 
 /-- Translation-invariant continuous Schwartz functionals. -/
 def IsTranslationInvariantSchwartzCLM {m : ℕ}
@@ -1152,7 +1152,7 @@ theorem fderiv_headCoordCoeffPow_apply_tail {n r : ℕ}
             · simp [v, headCoordSegmentCLM_apply, tailInsertCLM_apply]
             · intro i
               simp [v, headCoordSegmentCLM_apply, tailInsertCLM_apply]
-          simp [ContinuousLinearMap.comp_apply, hsegv]
+          simp [hsegv]
     _ = ∫ s in (0 : ℝ)..1,
           ((s : ℝ) ^ r : ℂ) *
             (∂_{e0} (∂_{v} F)) (headCoordSegmentCLM n s x) := by
@@ -1468,7 +1468,7 @@ theorem exists_seminorm_diffQuotient_translateSchwartz_sub_lineDeriv_le {m : ℕ
           ((SCV.translateSchwartz ((s * t) • v) g).smooth n).contDiffAt
           (g.smooth n).neg.contDiffAt]
       rw [show (fun z => -(⇑g z)) = -⇑g by rfl, iteratedFDeriv_neg_apply]
-      simpa [K, hshift, sub_eq_add_neg]
+      simp [K, hshift, sub_eq_add_neg]
     have hpoint :
         ‖x‖ ^ k * ‖K (x + s • (t • v)) - K x‖ ≤ C * |s * t| := by
       calc
@@ -1514,7 +1514,7 @@ theorem exists_seminorm_diffQuotient_translateSchwartz_sub_lineDeriv_le {m : ℕ
       rw [iteratedFDeriv_add_apply ((SCV.translateSchwartz (t • v) f).smooth n).contDiffAt
           (f.smooth n).neg.contDiffAt]
       rw [show (fun z => -(⇑f z)) = -⇑f by rfl, iteratedFDeriv_neg_apply]
-      simpa [H, hshift, sub_eq_add_neg]
+      simp [H, hshift, sub_eq_add_neg]
     change
       iteratedFDeriv ℝ n
         (⇑(t⁻¹ • (SCV.translateSchwartz (t • v) f - f)) + fun z => -((g : (Fin m → ℝ) → ℂ) z)) x =
@@ -1533,7 +1533,7 @@ theorem exists_seminorm_diffQuotient_translateSchwartz_sub_lineDeriv_le {m : ℕ
       simpa [K] using
         (iteratedFDeriv_neg_apply (𝕜 := ℝ) (i := n) (f := (g : (Fin m → ℝ) → ℂ)) (x := x))
     rw [hsc, hneg, hshift_sub]
-    simp [sub_eq_add_neg, smul_sub, add_assoc, add_left_comm, add_comm]
+    simp [sub_eq_add_neg, add_left_comm, add_comm]
   have hψ0 : ψ 0 = 0 := by
     ext u
     simp [ψ]
@@ -1545,7 +1545,7 @@ theorem exists_seminorm_diffQuotient_translateSchwartz_sub_lineDeriv_le {m : ℕ
               (Fin m → ℝ) → ℂ) x := by
     rw [show ψ 1 =
           ‖x‖ ^ k • (t⁻¹ • (H (x + t • v) - H x) - K x) by
-            simp [ψ, sub_eq_add_neg, add_assoc, add_left_comm, add_comm]]
+            simp [ψ, sub_eq_add_neg, add_left_comm, add_comm]]
     rw [htarget]
   calc
     ‖x‖ ^ k *
@@ -1579,7 +1579,7 @@ theorem unitBumpSchwartz_zero : unitBumpSchwartz 0 = 1 := by
       (HasCompactSupport.toSchwartzMap_toFun hf_compact hf_smooth 0)
   rw [happly]
   have hball : (0 : ℝ) ∈ Metric.closedBall (0 : ℝ) (1 : ℝ) := by
-    simp [Metric.mem_closedBall, dist_eq_norm]
+    simp [Metric.mem_closedBall]
   exact congrArg (fun r : ℝ => (r : ℂ)) (b.one_of_mem_closedBall hball)
 
 noncomputable def unitBallBumpSchwartzPi (m : ℕ) :
@@ -1619,6 +1619,75 @@ theorem hasCompactSupport_unitBallBumpSchwartzPi (m : ℕ) :
     b.hasCompactSupport.comp_left Complex.ofReal_zero
   simpa [unitBallBumpSchwartzPi, b, f] using hf_compact
 
+/-- The unit-ball Schwartz bump rescaled to radius `R`. -/
+noncomputable def unitBallBumpSchwartzPiRadius (m : ℕ) (R : ℝ) (hR : 0 < R) :
+    SchwartzMap (Fin m → ℝ) ℂ :=
+  SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
+    (ContinuousLinearEquiv.smulLeft (Units.mk0 R hR.ne')).symm
+    (unitBallBumpSchwartzPi m)
+
+@[simp] theorem unitBallBumpSchwartzPiRadius_apply {m : ℕ} (R : ℝ) (hR : 0 < R)
+    (x : Fin m → ℝ) :
+    unitBallBumpSchwartzPiRadius m R hR x =
+      unitBallBumpSchwartzPi m (R⁻¹ • x) := by
+  rw [unitBallBumpSchwartzPiRadius, SchwartzMap.compCLMOfContinuousLinearEquiv_apply]
+  have hsmul :
+      (((ContinuousLinearEquiv.smulLeft (R₁ := ℝ) (M₁ := Fin m → ℝ)
+          (Units.mk0 R hR.ne')).symm) x) = R⁻¹ • x := by
+    rw [show (((ContinuousLinearEquiv.smulLeft (R₁ := ℝ) (M₁ := Fin m → ℝ)
+          (Units.mk0 R hR.ne')).symm) x) = ((↑((Units.mk0 R hR.ne')⁻¹) : ℝ) • x) by rfl]
+    simp [Units.val_inv_eq_inv_val]
+  simpa [Function.comp] using congrArg (unitBallBumpSchwartzPi m) hsmul
+
+theorem unitBallBumpSchwartzPiRadius_one_of_mem_closedBall {m : ℕ}
+    {R : ℝ} (hR : 0 < R) {x : Fin m → ℝ}
+    (hx : x ∈ Metric.closedBall (0 : Fin m → ℝ) R) :
+    unitBallBumpSchwartzPiRadius m R hR x = 1 := by
+  rw [unitBallBumpSchwartzPiRadius_apply]
+  apply unitBallBumpSchwartzPi_one_of_mem_closedBall
+  rw [Metric.mem_closedBall, dist_eq_norm] at hx ⊢
+  have hx' : ‖x‖ ≤ R := by simpa using hx
+  have hscaled : R⁻¹ * ‖x‖ ≤ 1 := by
+    rw [inv_mul_le_iff₀ hR]
+    simpa using hx'
+  have hRinv_nonneg : 0 ≤ R⁻¹ := inv_nonneg.mpr hR.le
+  simpa [norm_smul, Real.norm_of_nonneg hRinv_nonneg] using hscaled
+
+theorem norm_one_sub_unitBallBumpSchwartzPiRadius_le_one {m : ℕ}
+    (R : ℝ) (hR : 0 < R) (x : Fin m → ℝ) :
+    ‖(1 : ℂ) - unitBallBumpSchwartzPiRadius m R hR x‖ ≤ 1 := by
+  rw [unitBallBumpSchwartzPiRadius_apply]
+  let b : ContDiffBump (0 : Fin m → ℝ) := ⟨1, 2, zero_lt_one, one_lt_two⟩
+  let f : (Fin m → ℝ) → ℂ := fun y => (b y : ℂ)
+  have hf_smooth : ContDiff ℝ (⊤ : ENat) f := by
+    exact (Complex.ofRealCLM.contDiff.of_le le_top).comp b.contDiff
+  have hf_compact : HasCompactSupport f :=
+    b.hasCompactSupport.comp_left Complex.ofReal_zero
+  have happly :
+      unitBallBumpSchwartzPi m (R⁻¹ • x) = f (R⁻¹ • x) := by
+    simpa [unitBallBumpSchwartzPi, b, f] using
+      (HasCompactSupport.toSchwartzMap_toFun hf_compact hf_smooth (R⁻¹ • x))
+  rw [happly]
+  change ‖(1 : ℂ) - ((b (R⁻¹ • x) : ℝ) : ℂ)‖ ≤ 1
+  have h0 : 0 ≤ b (R⁻¹ • x) := b.nonneg
+  have h1 : b (R⁻¹ • x) ≤ 1 := b.le_one
+  have hsub : 0 ≤ 1 - b (R⁻¹ • x) := sub_nonneg.mpr h1
+  have hnorm : ‖((1 - b (R⁻¹ • x) : ℝ) : ℂ)‖ ≤ 1 := by
+    rw [Complex.norm_real, Real.norm_of_nonneg hsub]
+    linarith
+  have hcast :
+      (1 : ℂ) - ((b (R⁻¹ • x) : ℝ) : ℂ) = (((1 - b (R⁻¹ • x) : ℝ)) : ℂ) := by
+    simp
+  rw [hcast]
+  exact hnorm
+
+theorem hasCompactSupport_unitBallBumpSchwartzPiRadius (m : ℕ) (R : ℝ) (hR : 0 < R) :
+    HasCompactSupport ((unitBallBumpSchwartzPiRadius m R hR :
+      SchwartzMap (Fin m → ℝ) ℂ) : (Fin m → ℝ) → ℂ) := by
+  simpa [unitBallBumpSchwartzPiRadius, Units.smul_def] using
+    (hasCompactSupport_unitBallBumpSchwartzPi m).comp_homeomorph
+      ((Homeomorph.smulOfNeZero R hR.ne').symm)
+
 theorem hasCompactSupport_cutoff_mul {m : ℕ}
     (f : SchwartzMap (Fin m → ℝ) ℂ) :
     HasCompactSupport
@@ -1639,9 +1708,354 @@ theorem cutoff_compl_eq_zero_on_closedBall {m : ℕ}
   have hsmul :
       (SchwartzMap.smulLeftCLM ℂ (unitBallBumpSchwartzPi m) f) x = f x := by
     rw [SchwartzMap.smulLeftCLM_apply_apply]
-    · simp [hψ, Complex.real_smul, mul_comm]
+    · simp [hψ]
     · exact (unitBallBumpSchwartzPi m).hasTemperateGrowth
   simp [hsmul]
+
+theorem hasCompactSupport_cutoff_mul_radius {m : ℕ}
+    (R : ℝ) (hR : 0 < R) (f : SchwartzMap (Fin m → ℝ) ℂ) :
+    HasCompactSupport
+      ((SchwartzMap.smulLeftCLM ℂ (unitBallBumpSchwartzPiRadius m R hR)
+        f : SchwartzMap (Fin m → ℝ) ℂ) : (Fin m → ℝ) → ℂ) := by
+  refine HasCompactSupport.of_support_subset_isCompact
+    (hasCompactSupport_unitBallBumpSchwartzPiRadius m R hR).isCompact ?_
+  intro x hx
+  exact (SchwartzMap.tsupport_smulLeftCLM_subset
+    (g := unitBallBumpSchwartzPiRadius m R hR) (f := f) (subset_tsupport _ hx)).2
+
+theorem cutoff_compl_eq_zero_on_closedBall_radius {m : ℕ}
+    (R : ℝ) (hR : 0 < R) (f : SchwartzMap (Fin m → ℝ) ℂ)
+    {x : Fin m → ℝ} (hx : x ∈ Metric.closedBall (0 : Fin m → ℝ) R) :
+    (f - SchwartzMap.smulLeftCLM ℂ (unitBallBumpSchwartzPiRadius m R hR) f) x = 0 := by
+  have hψ : unitBallBumpSchwartzPiRadius m R hR x = 1 :=
+    unitBallBumpSchwartzPiRadius_one_of_mem_closedBall hR hx
+  have hsmul :
+      (SchwartzMap.smulLeftCLM ℂ (unitBallBumpSchwartzPiRadius m R hR) f) x = f x := by
+    rw [SchwartzMap.smulLeftCLM_apply_apply]
+    · simp [hψ]
+    · exact (unitBallBumpSchwartzPiRadius m R hR).hasTemperateGrowth
+  simp [hsmul]
+
+theorem norm_cutoff_compl_radius_le {m : ℕ}
+    (R : ℝ) (hR : 0 < R) (f : SchwartzMap (Fin m → ℝ) ℂ)
+    (x : Fin m → ℝ) :
+    ‖(f - SchwartzMap.smulLeftCLM ℂ (unitBallBumpSchwartzPiRadius m R hR) f) x‖ ≤ ‖f x‖ := by
+  have hsmul :
+      (SchwartzMap.smulLeftCLM ℂ (unitBallBumpSchwartzPiRadius m R hR) f) x
+        = unitBallBumpSchwartzPiRadius m R hR x * f x := by
+    simpa [smul_eq_mul] using
+      (SchwartzMap.smulLeftCLM_apply_apply
+        (F := ℂ) (g := unitBallBumpSchwartzPiRadius m R hR)
+        (unitBallBumpSchwartzPiRadius m R hR).hasTemperateGrowth f x)
+  calc
+    ‖(f - SchwartzMap.smulLeftCLM ℂ (unitBallBumpSchwartzPiRadius m R hR) f) x‖
+        = ‖f x - unitBallBumpSchwartzPiRadius m R hR x * f x‖ := by simp [hsmul]
+    _ = ‖((1 : ℂ) - unitBallBumpSchwartzPiRadius m R hR x) * f x‖ := by ring_nf
+    _ = ‖(1 : ℂ) - unitBallBumpSchwartzPiRadius m R hR x‖ * ‖f x‖ := norm_mul _ _
+    _ ≤ 1 * ‖f x‖ := by
+          gcongr
+          exact norm_one_sub_unitBallBumpSchwartzPiRadius_le_one R hR x
+    _ = ‖f x‖ := by ring
+
+theorem iteratedFDeriv_cutoff_compl_radius_add_one_eq_zero_on_closedBall {m l : ℕ}
+    (R : ℝ) (hR : 0 < R) (f : SchwartzMap (Fin m → ℝ) ℂ)
+    {x : Fin m → ℝ} (hx : x ∈ Metric.closedBall (0 : Fin m → ℝ) R) :
+    iteratedFDeriv ℝ l
+      (⇑(f - SchwartzMap.smulLeftCLM ℂ
+        (unitBallBumpSchwartzPiRadius m (R + 1) (add_pos hR zero_lt_one)) f)) x = 0 := by
+  let g : (Fin m → ℝ) → ℂ :=
+    ⇑(f - SchwartzMap.smulLeftCLM ℂ
+      (unitBallBumpSchwartzPiRadius m (R + 1) (add_pos hR zero_lt_one)) f)
+  have hEq : g =ᶠ[𝓝 x] fun _ : Fin m → ℝ => (0 : ℂ) := by
+    refine Filter.mem_of_superset
+      (Metric.ball_mem_nhds x (show 0 < (1 : ℝ) / 2 by positivity)) ?_
+    intro y hy
+    have hy_norm : ‖y‖ ≤ R + 1 := by
+      have hy_dist : ‖y - x‖ < (1 : ℝ) / 2 := by
+        simpa [Metric.mem_ball, dist_eq_norm] using hy
+      have hx_norm : ‖x‖ ≤ R := by
+        simpa [Metric.mem_closedBall, dist_eq_norm] using hx
+      have htri : ‖y‖ ≤ ‖y - x‖ + ‖x‖ := by
+        simpa [sub_eq_add_neg, add_comm, add_left_comm, add_assoc] using norm_add_le (y - x) x
+      linarith
+    have hy_ball : y ∈ Metric.closedBall (0 : Fin m → ℝ) (R + 1) := by
+      simpa [Metric.mem_closedBall, dist_eq_norm] using hy_norm
+    exact cutoff_compl_eq_zero_on_closedBall_radius (R := R + 1) (hR := add_pos hR zero_lt_one)
+      (f := f) hy_ball
+  have hx0 : g x = 0 := hEq.eq_of_nhds
+  have hiter :
+      iteratedFDeriv ℝ l g x = 0 := by
+    have hiterWithin :
+        iteratedFDerivWithin ℝ l g Set.univ x =
+          iteratedFDerivWithin ℝ l (fun _ : Fin m → ℝ => (0 : ℂ)) Set.univ x :=
+      (hEq.filter_mono inf_le_left).iteratedFDerivWithin_eq hx0 l
+    simpa [iteratedFDerivWithin_univ, iteratedFDeriv_zero_fun] using hiterWithin
+  simpa [g] using hiter
+
+private theorem norm_iteratedFDeriv_cutoff_compl_radius_le_uniform {m n : ℕ} :
+    ∃ (a : ℕ) (C : ℝ), 0 ≤ C ∧
+      ∀ (R : ℝ) (hR : 0 < R) (N : ℕ), N ≤ n → ∀ x : Fin m → ℝ,
+        ‖iteratedFDeriv ℝ N
+          (fun y : Fin m → ℝ =>
+            (1 : ℂ) - unitBallBumpSchwartzPiRadius m (R + 1) (add_pos hR zero_lt_one) y) x‖ ≤
+          C * (1 + ‖x‖) ^ a := by
+  let ψ : (Fin m → ℝ) → ℂ := fun y => (1 : ℂ) - unitBallBumpSchwartzPi m y
+  have hψ : ψ.HasTemperateGrowth := by
+    simpa [ψ] using
+      (Function.HasTemperateGrowth.const (1 : ℂ)).sub
+        (unitBallBumpSchwartzPi m).hasTemperateGrowth
+  obtain ⟨a, C, hC, hψbound⟩ := hψ.norm_iteratedFDeriv_le_uniform n
+  refine ⟨a, C, hC, ?_⟩
+  intro R hR N hN x
+  let ρ : ℝ := R + 1
+  have hρ : 0 < ρ := add_pos hR zero_lt_one
+  let e :
+      (Fin m → ℝ) →L[ℝ] (Fin m → ℝ) :=
+    (((ContinuousLinearEquiv.smulLeft (R₁ := ℝ) (M₁ := Fin m → ℝ)
+      (Units.mk0 ρ hρ.ne')).symm) : (Fin m → ℝ) ≃L[ℝ] (Fin m → ℝ)).toContinuousLinearMap
+  have he_apply (y : Fin m → ℝ) : e y = ρ⁻¹ • y := by
+    change
+      (((ContinuousLinearEquiv.smulLeft (R₁ := ℝ) (M₁ := Fin m → ℝ)
+        (Units.mk0 ρ hρ.ne')).symm) y) = ρ⁻¹ • y
+    rw [show
+      (((ContinuousLinearEquiv.smulLeft (R₁ := ℝ) (M₁ := Fin m → ℝ)
+        (Units.mk0 ρ hρ.ne')).symm) y) =
+        ((↑((Units.mk0 ρ hρ.ne')⁻¹) : ℝ) • y) by rfl]
+    simp [Units.val_inv_eq_inv_val]
+  have he_norm_le : ‖e‖ ≤ 1 := by
+    refine ContinuousLinearMap.opNorm_le_bound e zero_le_one ?_
+    intro y
+    calc
+      ‖e y‖ = ‖ρ⁻¹ • y‖ := by rw [he_apply]
+      _ = ‖ρ⁻¹‖ * ‖y‖ := norm_smul _ _
+      _ ≤ 1 * ‖y‖ := by
+            gcongr
+            · rw [Real.norm_of_nonneg (inv_nonneg.mpr hρ.le)]
+              exact inv_le_one_of_one_le₀ (by linarith : 1 ≤ ρ)
+  have hcomp :
+      (fun y : Fin m → ℝ =>
+        (1 : ℂ) - unitBallBumpSchwartzPiRadius m ρ hρ y) = ψ ∘ e := by
+    funext y
+    simp [ψ, unitBallBumpSchwartzPiRadius_apply, he_apply, Function.comp]
+  have hitercomp :
+      iteratedFDeriv ℝ N (ψ ∘ e) x =
+        (iteratedFDeriv ℝ N ψ (e x)).compContinuousLinearMap (fun _ : Fin N => e) := by
+    simpa using e.iteratedFDeriv_comp_right
+      (f := ψ) hψ.1 (x := x) (i := N) (by exact_mod_cast le_top)
+  rw [hcomp, hitercomp]
+  have hprod_le : ∏ _ : Fin N, ‖e‖ ≤ 1 := by
+    simpa [Finset.prod_const] using Finset.prod_le_one (s := (Finset.univ : Finset (Fin N)))
+      (fun _ _ => norm_nonneg _)
+      (fun _ _ => he_norm_le)
+  calc
+    ‖(iteratedFDeriv ℝ N ψ (e x)).compContinuousLinearMap (fun _ : Fin N => e)‖
+        ≤ ‖iteratedFDeriv ℝ N ψ (e x)‖ * ∏ _ : Fin N, ‖e‖ := by
+          exact ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _
+    _ ≤ ‖iteratedFDeriv ℝ N ψ (e x)‖ * 1 := by
+          exact mul_le_mul_of_nonneg_left hprod_le (norm_nonneg _)
+    _ = ‖iteratedFDeriv ℝ N ψ (e x)‖ := by ring
+    _ ≤ C * (1 + ‖e x‖) ^ a := hψbound N hN (e x)
+    _ ≤ C * (1 + ‖x‖) ^ a := by
+          gcongr
+          calc
+            ‖e x‖ = ‖ρ⁻¹ • x‖ := by rw [he_apply]
+            _ = ‖ρ⁻¹‖ * ‖x‖ := norm_smul _ _
+            _ ≤ 1 * ‖x‖ := by
+                  gcongr
+                  · rw [Real.norm_of_nonneg (inv_nonneg.mpr hρ.le)]
+                    exact inv_le_one_of_one_le₀ (by linarith : 1 ≤ ρ)
+            _ = ‖x‖ := by ring
+
+/-- Uniform Schwartz seminorm bound for the cutoff complements `f - χ_R f`. -/
+theorem smulLeftCLM_cutoff_compl_uniform_seminorm_bound {m : ℕ}
+    (f : SchwartzMap (Fin m → ℝ) ℂ) (k l : ℕ) :
+    ∃ M : ℝ, 0 ≤ M ∧ ∀ (R : ℝ) (hR : 0 < R),
+      (SchwartzMap.seminorm ℝ k l)
+        (f - SchwartzMap.smulLeftCLM ℂ
+          (unitBallBumpSchwartzPiRadius m (R + 1) (add_pos hR zero_lt_one)) f) ≤ M := by
+  obtain ⟨a, C, hC, hψbound⟩ :=
+    norm_iteratedFDeriv_cutoff_compl_radius_le_uniform (m := m) (n := l)
+  let M : ℝ :=
+    (((l : ℝ) + 1) * (Nat.choose l (l / 2) : ℝ) * (C * 2 ^ (a + k))) *
+      (Finset.Iic (a + k, l)).sup (schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ) f
+  refine ⟨M, by positivity, ?_⟩
+  intro R hR
+  let ψR : (Fin m → ℝ) → ℂ := fun y =>
+    (1 : ℂ) - unitBallBumpSchwartzPiRadius m (R + 1) (add_pos hR zero_lt_one) y
+  have hψR_temp : ψR.HasTemperateGrowth := by
+    simpa [ψR] using
+      (Function.HasTemperateGrowth.const (1 : ℂ)).sub
+        (unitBallBumpSchwartzPiRadius m (R + 1) (add_pos hR zero_lt_one)).hasTemperateGrowth
+  have hEq :
+      f - SchwartzMap.smulLeftCLM ℂ
+        (unitBallBumpSchwartzPiRadius m (R + 1) (add_pos hR zero_lt_one)) f =
+      SchwartzMap.smulLeftCLM ℂ ψR f := by
+    ext x
+    have hleft :
+        (SchwartzMap.smulLeftCLM ℂ
+          (unitBallBumpSchwartzPiRadius m (R + 1) (add_pos hR zero_lt_one)) f) x =
+          unitBallBumpSchwartzPiRadius m (R + 1) (add_pos hR zero_lt_one) x * f x := by
+      simpa [smul_eq_mul] using
+        (SchwartzMap.smulLeftCLM_apply_apply
+          (unitBallBumpSchwartzPiRadius m (R + 1) (add_pos hR zero_lt_one)).hasTemperateGrowth
+          f x)
+    have hright :
+        (SchwartzMap.smulLeftCLM ℂ ψR f) x = ψR x * f x := by
+      simpa [smul_eq_mul] using
+        (SchwartzMap.smulLeftCLM_apply_apply hψR_temp f x)
+    calc
+      (f - SchwartzMap.smulLeftCLM ℂ
+        (unitBallBumpSchwartzPiRadius m (R + 1) (add_pos hR zero_lt_one)) f) x
+          = f x - unitBallBumpSchwartzPiRadius m (R + 1) (add_pos hR zero_lt_one) x * f x := by
+              simp [hleft]
+      _ = ψR x * f x := by
+            simp [ψR]
+            ring
+      _ = (SchwartzMap.smulLeftCLM ℂ ψR f) x := hright.symm
+  rw [hEq]
+  refine SchwartzMap.seminorm_le_bound ℝ k l (SchwartzMap.smulLeftCLM ℂ ψR f)
+    (M := M) (by positivity) ?_
+  intro x
+  have hmul :=
+    norm_iteratedFDeriv_smul_le (𝕜 := ℝ) hψR_temp.1 (f.smooth ⊤) x
+      (n := l) (by exact_mod_cast le_top)
+  calc
+    ‖x‖ ^ k * ‖iteratedFDeriv ℝ l (⇑(SchwartzMap.smulLeftCLM ℂ ψR f)) x‖
+        = ‖x‖ ^ k * ‖iteratedFDeriv ℝ l (fun y => ψR y * f y) x‖ := by
+            simp [SchwartzMap.smulLeftCLM_apply hψR_temp, smul_eq_mul]
+    _ ≤ ‖x‖ ^ k *
+        ∑ i ∈ Finset.range (l + 1),
+          (l.choose i : ℝ) * ‖iteratedFDeriv ℝ i ψR x‖ *
+            ‖iteratedFDeriv ℝ (l - i) (⇑f) x‖ := by
+              exact mul_le_mul_of_nonneg_left hmul (by positivity)
+    _ ≤ M := by
+      rw [Finset.mul_sum]
+      let B : ℝ :=
+        (Nat.choose l (l / 2) : ℝ) * (C * 2 ^ (a + k)) *
+          (Finset.Iic (a + k, l)).sup (schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ) f
+      have hsum :
+          ∑ i ∈ Finset.range (l + 1),
+            ‖x‖ ^ k * ((l.choose i : ℝ) * ‖iteratedFDeriv ℝ i ψR x‖ *
+              ‖iteratedFDeriv ℝ (l - i) (⇑f) x‖) ≤
+            ∑ _i ∈ Finset.range (l + 1), B := by
+        refine Finset.sum_le_sum fun i hi => ?_
+        rw [Finset.mem_range_succ_iff] at hi
+        specialize hψbound R hR i hi x
+        have hpow :
+            ‖x‖ ^ k * (1 + ‖x‖) ^ a ≤ (1 + ‖x‖) ^ (a + k) := by
+          have hbase : ‖x‖ ≤ 1 + ‖x‖ := by
+            nlinarith [norm_nonneg x]
+          have hpowk : ‖x‖ ^ k ≤ (1 + ‖x‖) ^ k := by
+            exact pow_le_pow_left₀ (norm_nonneg x) hbase k
+          calc
+            ‖x‖ ^ k * (1 + ‖x‖) ^ a ≤ (1 + ‖x‖) ^ k * (1 + ‖x‖) ^ a := by
+              exact mul_le_mul_of_nonneg_right hpowk (by positivity)
+            _ = (1 + ‖x‖) ^ a * (1 + ‖x‖) ^ k := by ring
+            _ = (1 + ‖x‖) ^ (a + k) := by rw [pow_add]
+        have hsup :
+            (1 + ‖x‖) ^ (a + k) * ‖iteratedFDeriv ℝ (l - i) (⇑f) x‖ ≤
+              2 ^ (a + k) *
+                (Finset.Iic (a + k, l)).sup
+                  (schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ) f :=
+          SchwartzMap.one_add_le_sup_seminorm_apply
+            (𝕜 := ℝ) (m := (a + k, l)) (k := a + k) (n := l - i)
+            le_rfl (by omega) f x
+        have hmain :
+            ‖x‖ ^ k * ‖iteratedFDeriv ℝ i ψR x‖ *
+                ‖iteratedFDeriv ℝ (l - i) (⇑f) x‖ ≤
+              (C * 2 ^ (a + k)) *
+                (Finset.Iic (a + k, l)).sup
+                  (schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ) f := by
+          calc
+            ‖x‖ ^ k * ‖iteratedFDeriv ℝ i ψR x‖ *
+                ‖iteratedFDeriv ℝ (l - i) (⇑f) x‖
+                = (‖x‖ ^ k * ‖iteratedFDeriv ℝ (l - i) (⇑f) x‖) *
+                    ‖iteratedFDeriv ℝ i ψR x‖ := by ring
+            _ ≤ (‖x‖ ^ k * ‖iteratedFDeriv ℝ (l - i) (⇑f) x‖) *
+                (C * (1 + ‖x‖) ^ a) := by
+                  exact mul_le_mul_of_nonneg_left hψbound (by positivity)
+            _ = C * ((‖x‖ ^ k * (1 + ‖x‖) ^ a) *
+                ‖iteratedFDeriv ℝ (l - i) (⇑f) x‖) := by ring
+            _ ≤ C * ((1 + ‖x‖) ^ (a + k) *
+                ‖iteratedFDeriv ℝ (l - i) (⇑f) x‖) := by
+                  exact mul_le_mul_of_nonneg_left
+                    (mul_le_mul_of_nonneg_right hpow
+                      (norm_nonneg (iteratedFDeriv ℝ (l - i) (⇑f) x)))
+                    hC
+            _ ≤ C * (2 ^ (a + k) *
+                (Finset.Iic (a + k, l)).sup
+                  (schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ) f) := by
+                    exact mul_le_mul_of_nonneg_left hsup hC
+            _ = (C * 2 ^ (a + k)) *
+                (Finset.Iic (a + k, l)).sup
+                  (schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ) f := by ring
+        calc
+          ‖x‖ ^ k * ((l.choose i : ℝ) * ‖iteratedFDeriv ℝ i ψR x‖ *
+              ‖iteratedFDeriv ℝ (l - i) (⇑f) x‖)
+              = (l.choose i : ℝ) *
+                  (‖x‖ ^ k * ‖iteratedFDeriv ℝ i ψR x‖ *
+                    ‖iteratedFDeriv ℝ (l - i) (⇑f) x‖) := by ring
+          _ ≤ (Nat.choose l (l / 2) : ℝ) *
+              (‖x‖ ^ k * ‖iteratedFDeriv ℝ i ψR x‖ *
+                ‖iteratedFDeriv ℝ (l - i) (⇑f) x‖) := by
+                  exact mul_le_mul_of_nonneg_right
+                    (by exact_mod_cast i.choose_le_middle l) (by positivity)
+          _ ≤ (Nat.choose l (l / 2) : ℝ) *
+              ((C * 2 ^ (a + k)) *
+                (Finset.Iic (a + k, l)).sup
+                  (schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ) f) := by
+                    exact mul_le_mul_of_nonneg_left hmain (by positivity)
+          _ = B := by simp [B, mul_assoc, mul_left_comm]
+      refine hsum.trans ?_
+      simp [B, M, mul_assoc, mul_left_comm, mul_comm]
+
+/-- On the tail `‖x‖ ≥ 1`, the weighted Schwartz seminorm is bounded by a `1 / ‖x‖²` decay
+coming from the `(k + 2, l)` Schwartz bound. -/
+theorem _root_.SchwartzMap.seminorm_tail_le_div_sq
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (f : SchwartzMap E ℂ) (k l : ℕ) :
+    ∃ C : ℝ, 0 ≤ C ∧ ∀ x : E, 1 ≤ ‖x‖ →
+      ‖x‖ ^ k * ‖iteratedFDeriv ℝ l (⇑f) x‖ ≤ C / ‖x‖ ^ 2 := by
+  obtain ⟨C, hC⟩ := f.decay' (k + 2) l
+  refine ⟨C, ?_, fun x hx => ?_⟩
+  · have h0 := hC 0
+    simp at h0
+    linarith [norm_nonneg (iteratedFDeriv ℝ l (⇑f) 0)]
+  · have hx_pos : 0 < ‖x‖ := lt_of_lt_of_le one_pos hx
+    have hx_sq_pos : 0 < ‖x‖ ^ 2 := pow_pos hx_pos 2
+    rw [le_div_iff₀ hx_sq_pos]
+    calc
+      ‖x‖ ^ k * ‖iteratedFDeriv ℝ l (⇑f) x‖ * ‖x‖ ^ 2
+          = ‖x‖ ^ (k + 2) * ‖iteratedFDeriv ℝ l (⇑f) x‖ := by ring
+      _ ≤ C := hC x
+
+/-- Every Schwartz seminorm becomes uniformly small sufficiently far out on the tail. -/
+theorem _root_.SchwartzMap.seminorm_tail_small
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    (f : SchwartzMap E ℂ) (k l : ℕ) (ε : ℝ) (hε : 0 < ε) :
+    ∃ R : ℝ, 0 < R ∧ ∀ x : E, R < ‖x‖ →
+      ‖x‖ ^ k * ‖iteratedFDeriv ℝ l (⇑f) x‖ < ε := by
+  obtain ⟨C, hC_nn, hC⟩ := f.seminorm_tail_le_div_sq k l
+  refine ⟨Real.sqrt (C / ε) + 1, by positivity, fun x hx => ?_⟩
+  have hx_ge_one : 1 ≤ ‖x‖ := by
+    linarith [Real.sqrt_nonneg (C / ε)]
+  have hx_pos : 0 < ‖x‖ := lt_of_lt_of_le one_pos hx_ge_one
+  calc
+    ‖x‖ ^ k * ‖iteratedFDeriv ℝ l (⇑f) x‖ ≤ C / ‖x‖ ^ 2 := hC x hx_ge_one
+    _ < ε := by
+      rw [div_lt_iff₀ (pow_pos hx_pos 2)]
+      have hR_sq : C / ε < ‖x‖ ^ 2 := by
+        calc
+          C / ε ≤ (Real.sqrt (C / ε)) ^ 2 := by
+            rw [Real.sq_sqrt (div_nonneg hC_nn hε.le)]
+          _ < (Real.sqrt (C / ε) + 1) ^ 2 := by
+            nlinarith [Real.sqrt_nonneg (C / ε)]
+          _ ≤ ‖x‖ ^ 2 := by
+            apply sq_le_sq'
+            · linarith [Real.sqrt_nonneg (C / ε), norm_nonneg x]
+            · exact hx.le
+      have := (div_lt_iff₀ hε).mp hR_sq
+      linarith
 
 theorem hasCompactSupport_prependField {n : ℕ}
     (φ : SchwartzMap ℝ ℂ) (g : SchwartzMap (Fin n → ℝ) ℂ)
@@ -1764,7 +2178,7 @@ theorem exists_eq_sum_coord_smul_of_zero_of_hasCompactSupport :
                   rw [SchwartzMap.smulLeftCLM_apply_apply hcoordTail]
                   rw [SchwartzMap.smulLeftCLM_apply_apply (hcoordSucc i),
                     SchwartzMap.prependField_apply]
-                  simp [Complex.real_smul, mul_assoc, mul_left_comm, mul_comm]
+                  simp [Complex.real_smul, mul_left_comm]
       have hsum_decomp :
           (∑ i : Fin (n + 1),
             (SchwartzMap.smulLeftCLM ℂ (fun y : Fin (n + 1) → ℝ => y i)
@@ -1971,7 +2385,7 @@ theorem exists_eq_sum_coord_smul_of_vanishes_closedBall
           ext i
           exact (hm.false i).elim
         apply hx
-        simpa [hx0]
+        simp [hx0]
       · have hnotall : ¬ ∀ i : Fin m, ‖x i‖ ≤ 1 := by
           intro hall
           have hnorm_le : ‖x‖ ≤ 1 := by
@@ -2063,7 +2477,7 @@ theorem exists_eq_sum_coord_smul_of_zero_of_ball_factor :
   let away : SchwartzMap (Fin m → ℝ) ℂ := f - near
   have hnear0 : near 0 = 0 := by
     rw [SchwartzMap.smulLeftCLM_apply_apply]
-    · simp [near, hf0]
+    · simp [hf0]
     · exact (unitBallBumpSchwartzPi m).hasTemperateGrowth
   have hnearcs : HasCompactSupport near := by
     simpa [near] using hasCompactSupport_cutoff_mul f
@@ -2092,7 +2506,7 @@ theorem exists_eq_sum_coord_smul_of_zero_of_ball_factor :
           (fun x : Fin m → ℝ => x i) (gNear i + gAway i) := by
             refine Finset.sum_congr rfl ?_
             intro i hi
-            simp [SchwartzMap.smulLeftCLM_add]
+            simp
 
 
 /-- Translation difference quotients converge to the directional derivative in
@@ -2242,7 +2656,7 @@ theorem exists_eq_const_integralCLM_of_translationInvariant {m : ℕ}
     SchwartzMap.integralCLM ℂ (MeasureTheory.volume : MeasureTheory.Measure (Fin m → ℝ))
   by_cases hT0 : T = 0
   · refine ⟨0, ?_⟩
-    simp [hT0, I]
+    simp [hT0]
   · classical
     have hTne : ∃ φ : SchwartzMap (Fin m → ℝ) ℂ, T φ ≠ 0 := by
       by_contra hnone

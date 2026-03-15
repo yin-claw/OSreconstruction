@@ -5,6 +5,7 @@ Authors: Michael Douglas, ModularPhysics Contributors
 -/
 import OSReconstruction.Wightman.Reconstruction.WickRotation.WickRotationBridge
 import OSReconstruction.Wightman.Reconstruction.DenseCLM
+import OSReconstruction.Wightman.Reconstruction.TwoPointKernelFunctional
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanSemigroup
 
 /-!
@@ -616,6 +617,60 @@ private theorem schwinger_continuation_base_step_twoPoint_of_timeDiffFlatWitness
   exact
     schwinger_continuation_base_step_twoPoint_of_timeDiffFlatWitness
       (d := d) OS lgc F G hG_euclid
+
+/-- Concrete `k = 2` dense-set reduction for the explicit semigroup witness:
+if the Euclidean kernel induced by `twoPointTimeDiffFlatWitness` has polynomial
+growth and its induced zero-diagonal CLM agrees with `OS.S 2` on a dense set,
+then the two-point base-step follows. This is the cleanest current production
+surface for the remaining blocker. -/
+private theorem schwinger_continuation_base_step_twoPoint_of_timeDiffFlatWitnessKernelCLM
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d)
+    (K : NPointDomain d 2 → ℂ)
+    (hK : ∀ x : NPointDomain d 2,
+      K x =
+        twoPointTimeDiffFlatWitness (d := d) OS lgc F G
+          (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))))
+    (hK_meas : MeasureTheory.AEStronglyMeasurable K MeasureTheory.volume)
+    (C_bd : ℝ) (N : ℕ) (hC : 0 < C_bd)
+    (hK_bound : ∀ᵐ x : NPointDomain d 2 ∂MeasureTheory.volume,
+      ‖K x‖ ≤ C_bd * (1 + ‖x‖) ^ N)
+    {S : Set (ZeroDiagonalSchwartz d 2)}
+    (hS : Dense S)
+    (hEq_dense : ∀ f ∈ S,
+      OSReconstruction.twoPointZeroDiagonalKernelCLM K hK_meas C_bd N hC hK_bound f = OS.S 2 f) :
+    ∃ (S_ext : (Fin 2 → Fin (d + 1) → ℂ) → ℂ),
+      DifferentiableOn ℂ S_ext (AnalyticContinuationRegion d 2 1) ∧
+      (∀ (f : ZeroDiagonalSchwartz d 2),
+        OS.S 2 f = ∫ x : NPointDomain d 2,
+          S_ext (fun j => wickRotatePoint (x j)) * (f.1 x)) := by
+  let L : ZeroDiagonalSchwartz d 2 →L[ℂ] ℂ :=
+    OSReconstruction.twoPointZeroDiagonalKernelCLM K hK_meas C_bd N hC hK_bound
+  have hL :
+      ∀ f : ZeroDiagonalSchwartz d 2,
+        L f = ∫ x : NPointDomain d 2,
+          twoPointTimeDiffFlatWitness (d := d) OS lgc F G
+            (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) * (f.1 x) := by
+    intro f
+    calc
+      L f = ∫ x : NPointDomain d 2, K x * (f.1 x) := by
+        simpa [L] using
+          OSReconstruction.twoPointZeroDiagonalKernelCLM_apply
+            (K := K) hK_meas C_bd N hC hK_bound f
+      _ = ∫ x : NPointDomain d 2,
+            twoPointTimeDiffFlatWitness (d := d) OS lgc F G
+              (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) * (f.1 x) := by
+        refine MeasureTheory.integral_congr_ae ?_
+        filter_upwards with x
+        simp [hK x]
+  exact
+    schwinger_continuation_base_step_twoPoint_of_timeDiffFlatWitnessCLM
+      (d := d) OS lgc F G L hS
+      (by
+        intro f hf
+        exact hEq_dense f hf)
+      hL
 
 /-- Two-point payoff from any explicit Euclidean witness. Once a center cutoff
 `χ₀` with integral `1` is fixed, the admissible Schwinger two-point family
