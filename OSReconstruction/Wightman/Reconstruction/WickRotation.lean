@@ -44,8 +44,10 @@ The implementation is split across several files in the `WickRotation/` subfolde
   for the base-fiber connectedness route
 - `BHWTranslation.lean`: Translation invariance proof chain, raw and zero-diagonal
   Schwinger function constructions
-- `SchwingerAxioms.lean`: zero-diagonal Euclidean-side proofs and remaining
-  Schwinger-side analytic gaps
+- `SchwingerTemperedness.lean`: the E0 / zero-diagonal pairing front, including
+  the remaining temperedness and continuity gaps on the honest OS-I surface
+- `SchwingerAxioms.lean`: the later Euclidean-side axioms after the temperedness
+  lane has been split out
 - `OSToWightmanSemigroup.lean`: E'→R' OS Hilbert-space semigroup and one-variable
   holomorphic bridge
 - `OSToWightmanKernel.lean`: operator-valued complex semigroup and first interleaved
