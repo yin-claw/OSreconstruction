@@ -1,38 +1,19 @@
 # OSReconstruction
 
-## Route 1 Translation Invariance Status (2026-03-16)
-
-**Date**: 2026-03-16
-
-The Route 1 refactor proves `bhw_translation_invariant` (BHW extension is
-translation-invariant on the permuted extended tube) via reduced difference
-coordinates and the Identity Theorem, replacing the logically false D(c)
-overlap-connectivity approach.
-
-| Metric | Count |
-|--------|-------|
-| `bhw_translation_invariant` sorry | **0** (proved) |
-| Route 1 axioms remaining | **1** (`reduced_bargmann_hall_wightman_of_input`) |
-| Axioms eliminated this session | 3 (`integral_realDiffCoord_change_variables`, `realDiffCoordCLE_symm_measurePreserving`, `schwartzTranslationClassification`) |
-| Old-route residual sorry in `BHWTranslation` | 1 (`isPreconnected_baseFiber`) |
-
-The sole remaining axiom is the **reduced BHW theorem** — the Bargmann-Hall-Wightman
-envelope of holomorphy executed natively in (n-1) reduced difference coordinates.
-This requires porting the permutation flow (Edge of the Wedge + Lorentz sweeping)
-to the quotient geometry. See [`docs/ROUTE1_AXIOM_STATUS.md`](docs/ROUTE1_AXIOM_STATUS.md)
-for the Route 1 status note and
-[`docs/reduced_bhw_bridge_and_numerics.md`](docs/reduced_bhw_bridge_and_numerics.md)
-for the intended absolute-to-reduced bridge and numerical diagnostics.
-Globally, the tracked production tree now contains **3** axiom declarations;
-only **1** of them belongs to the Route 1 lane.
-
-The pre-existing `isPreconnected_baseFiber` sorry in `BHWTranslation.lean`
-remains in the tree as an old-route residual theorem, but it is no longer
-needed to prove `bhw_translation_invariant` on the merged `R -> E` path.
-
----
-
 A Lean 4 formalization of the **Osterwalder-Schrader reconstruction theorem** and supporting infrastructure in **von Neumann algebra theory**, built on [Mathlib](https://github.com/leanprover-community/mathlib4).
+
+## Current Axiom Inventory
+
+The tracked production tree currently contains **4 explicit axioms**:
+- `schwartz_nuclear_extension` in `Wightman/WightmanAxioms.lean`
+- `exists_continuousMultilinear_ofSeparatelyContinuous` in `Wightman/WightmanAxioms.lean`
+- `vladimirov_tillmann` in `SCV/VladimirovTillmann.lean`
+- `reduced_bargmann_hall_wightman_of_input` in `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean`
+
+The first two are pure functional-analysis axioms on the Wightman/Schwartz side.
+The third is the Vladimirov-Tillmann tube-growth theorem on the SCV side.
+The fourth is the reduced-coordinate Bargmann-Hall-Wightman bridge on the Route 1
+translation-invariance lane.
 
 ## Overview
 
@@ -89,15 +70,17 @@ This fetches Mathlib and dependencies automatically on first build.
 
 ## Project Status
 
-The tracked production tree currently includes **3 explicit `axiom`
+The tracked production tree currently includes **4 explicit `axiom`
 declarations**:
 - `schwartz_nuclear_extension` in `Wightman/WightmanAxioms.lean`
 - `exists_continuousMultilinear_ofSeparatelyContinuous` in `Wightman/WightmanAxioms.lean`
+- `vladimirov_tillmann` in `SCV/VladimirovTillmann.lean`
 - `reduced_bargmann_hall_wightman_of_input` in `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean`
 
 The first two are pure functional-analysis axioms on the Wightman/Schwartz side
 (Schwartz kernel theorem and Banach-Steinhaus for finite multilinear maps). The
-third is the deferred reduced-BHW bridge on the Route 1 translation-invariance
+third is the Vladimirov-Tillmann tube-growth theorem on the SCV side. The
+fourth is the deferred reduced-BHW bridge on the Route 1 translation-invariance
 lane. Remaining work outside these deferred surfaces is represented by explicit
 theorem-level `sorry` placeholders.
 The snapshot below counts only tracked production files; local scratch under
@@ -170,8 +153,8 @@ Current blocker map:
   inputs must come from `OSLinearGrowthCondition`.
 - On the merged `R -> E` path, the theorem-level front blockers have moved
   downstream past `BHWTranslation.lean`. The live front is now the
-  zero-diagonal integrability / continuity pair in
-  `SchwingerTemperedness.lean`.
+  zero-diagonal continuity theorem in `SchwingerTemperedness.lean`; the
+  integrability side is now discharged via the VT axiom.
 - After that, the remaining theorem-level `R -> E` blockers are the analytic
   ones in `SchwingerAxioms.lean`, especially the OS=W term, Euclidean
   reality/reflection, and the cluster bridge.
@@ -195,25 +178,26 @@ Current blocker map:
   even after that base-step closes, `OSToWightmanBoundaryValues.lean` still
   carries the tempered boundary-value and transfer chain.
 - `R -> E`:
-  the front blocker is the base-fiber connectivity theorem in
-  `BHWTranslation.lean`; it is geometric, not just local algebra.
+  the live front is the zero-diagonal continuity theorem in
+  `SchwingerTemperedness.lean`; the integrability side now uses the VT axiom.
 - `R -> E` downstream:
   `SchwingerAxioms.lean` still contains the remaining analytic Wick-rotation
-  obligations after the BHW geometry is available.
+  obligations after temperedness is in place.
 
 Snapshot (2026-03-16, tracked production tree):
 
 | Module | Direct `sorry` lines |
 |--------|-----------------------|
-| `Wightman/` | 33 |
+| `Wightman/` | 28 |
 | `SCV/` | 2 |
 | `ComplexLieGroups/` | 2 |
 | `vNA/` | 40 |
-| **Total** | **77** |
+| **Total** | **72** |
 
-Tracked production tree also contains `3` explicit axioms:
+Tracked production tree also contains `4` explicit axioms:
 - `schwartz_nuclear_extension`
 - `exists_continuousMultilinear_ofSeparatelyContinuous`
+- `vladimirov_tillmann`
 - `reduced_bargmann_hall_wightman_of_input`
 
 ### OS-Critical Sorry Flow Toward Reconstruction
@@ -227,7 +211,8 @@ flowchart TD
   M --> ER["os_to_wightman"]
 
   RE --> SA["WickRotation/SchwingerAxioms (4)"]
-  SA --> ST["WickRotation/SchwingerTemperedness (2)"]
+  SA --> ST["WickRotation/SchwingerTemperedness (1)"]
+  ST --> VT["SCV/VladimirovTillmann (1 axiom)"]
   SA --> BT["WickRotation/BHWTranslation (1 residual)"]
   BT --> BR["WickRotation/BHWReducedExtension (1 axiom)"]
   BR --> BE["WickRotation/BHWExtension (0)"]
@@ -239,7 +224,7 @@ flowchart TD
   AC --> JP["ComplexLieGroups/JostPoints (0)"]
 
   ER --> OWS["WickRotation/OSToWightmanSemigroup (0)"]
-  OWS --> OWC["WickRotation/OSToWightman (1)"]
+  OWS --> OWC["WickRotation/OSToWightman (2)"]
   OWC --> OWT["WickRotation/OSToWightmanTwoPoint (0)"]
   OWT --> OWB["WickRotation/OSToWightmanBoundaryValues (7)"]
   OWC --> LS["SCV/LaplaceSchwartz (0)"]
@@ -252,7 +237,8 @@ flowchart TD
 | File | Direct `sorry`s | Notes |
 |------|------------------|-------|
 | `Wightman/Reconstruction/Main.lean` | 1 | `wightman_uniqueness` |
-| `Wightman/WightmanAxioms.lean` | 4 | nuclear extension + spectrum/BV infrastructure |
+| `Wightman/WightmanAxioms.lean` | 0 + 2 axioms | Schwartz kernel theorem + Banach-Steinhaus bridge are now explicit axioms |
+| `SCV/VladimirovTillmann.lean` | 0 + 1 axiom | Vladimirov-Tillmann tube-growth theorem |
 | `Wightman/NuclearSpaces/BochnerMinlos.lean` | 5 | Bochner-Minlos measure construction |
 | `Wightman/NuclearSpaces/NuclearSpace.lean` | 2 | nuclear space infrastructure |
 | `Wightman/Reconstruction/ForwardTubeDistributions.lean` | 0 | distributional uniqueness / boundary-value lane complete |
@@ -260,7 +246,7 @@ flowchart TD
 | `Wightman/Reconstruction/WickRotation/BHWExtension.lean` | 0 | honest distributional adjacent-swap lane complete |
 | `Wightman/Reconstruction/WickRotation/BHWTranslation.lean` | 1 | old-route base-fiber residual; merged path uses Route 1 reduced coordinates |
 | `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean` | 0 + 1 axiom | deferred reduced BHW bridge theorem |
-| `Wightman/Reconstruction/WickRotation/SchwingerTemperedness.lean` | 2 | zero-diagonal integrability / continuity front |
+| `Wightman/Reconstruction/WickRotation/SchwingerTemperedness.lean` | 1 | zero-diagonal continuity front; integrability now uses the VT axiom |
 | `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` | 4 | OS=W term, reality/reflection, cluster |
 | `Wightman/Reconstruction/WickRotation/OSToWightmanSemigroup.lean` | 0 | OS semigroup, spectral/Laplace bridge, one-variable holomorphic infrastructure |
 | `Wightman/Reconstruction/WickRotation/OSToWightman.lean` | 2 | time-parametric base step + legacy spatial upgrade |
@@ -273,7 +259,7 @@ flowchart TD
 | `ComplexLieGroups/Connectedness/BHWPermutation/PermutationFlowBlocker.lean` | 2 | permutation-flow blockers |
 | `vNA/MeasureTheory/CaratheodoryExtension.lean` | 11 | measure-theoretic extension lane |
 | `vNA/KMS.lean` | 10 | KMS/modular theory lane |
-| `vNA/ModularAutomorphism.lean` | 6 | modular automorphism theory |
+| `vNA/ModularAutomorphism.lean` | 7 | modular automorphism theory |
 | `vNA/ModularTheory.lean` | 6 | Tomita-Takesaki core |
 | `vNA/Unbounded/StoneTheorem.lean` | 2 | Stone/self-adjoint generator lane |
 | `vNA/Unbounded/SpectralPowers.lean` | 2 | positive powers / unitary-group lane |
@@ -333,37 +319,57 @@ the tracked production tree, not as a complete file listing.
 │   │       ├── HeadBlockTranslationInvariant.lean # block factorization through integrateHeadBlock
 │   │       ├── CenterSpatialTranslationInvariant.lean # center-spatial descent to reduced (u_time, ξ)
 │   │       ├── TwoPointDescent.lean      # center/difference descent for two-point Schwartz tests
+│   │       ├── TwoPointKernelFunctional.lean # kernel CLM on the reduced two-point lane
 │   │       ├── WightmanTwoPoint.lean     # two-point Wightman center/difference reduction
 │   │       ├── GNSConstruction.lean      # GNS construction
 │   │       ├── GNSHilbertSpace.lean      # reconstructed Hilbert space and field action
 │   │       ├── PoincareAction.lean       # Poincare action on test-function sequences
 │   │       ├── PoincareRep.lean          # n-point Poincare representations
 │   │       ├── AnalyticContinuation.lean # forward tube, BHW, EOW abstract surface
+│   │       ├── DenseCLM.lean             # dense-set extension lemmas for continuous linear maps
 │   │       ├── ForwardTubeDistributions.lean # distributional forward-tube boundary values
+│   │       ├── PartialToTotal.lean       # partial-to-total extension helpers
+│   │       ├── ProductStoneWeierstrass.lean # compact product density via Stone-Weierstrass
+│   │       ├── SchwartzCutoff.lean       # cutoff / vanishing-on-ball Schwartz estimates
+│   │       ├── SchwartzDensity.lean      # compact-support Schwartz density tools
+│   │       ├── SchwartzPartialEval.lean  # continuity of Schwartz partial evaluation
 │   │       ├── Main.lean                 # top-level theorem wiring
+│   │       ├── WickRotation.lean         # barrel for Wick-rotation bridge files
 │   │       ├── Helpers/                  # auxiliary separately-analytic / EOW helpers
 │   │       └── WickRotation/
+│   │           ├── BEGTrigonometric.lean       # trigonometric-side BEG support lemmas
 │   │           ├── ForwardTubeLorentz.lean      # Lorentz covariance on the tube
+│   │           ├── BHWReduced.lean             # reduced-coordinate Route 1 infrastructure
+│   │           ├── BHWReducedExtension.lean    # reduced BHW bridge theorem surface
 │   │           ├── BaseFiberInflation.lean      # forward-tube/Lorentz inflation helpers
 │   │           ├── BHWExtension.lean            # BHW extension / adjacent-swap layer
 │   │           ├── BHWTranslation.lean          # translation-invariance transfer
+│   │           ├── BHWTranslationCore.lean      # shared Route 1 translation core
 │   │           ├── HermitianBoundaryPairing.lean # rapidity-reduced partner BV pairing
 │   │           ├── SchwingerAxioms.lean         # R -> E Wick-rotation axioms
 │   │           ├── OSToWightmanSemigroup.lean   # OS semigroup, spectral/Laplace, 1-variable holomorphy
 │   │           ├── OSToWightman.lean            # flat-witness continuation core
+│   │           ├── OSToWightmanKernel.lean      # interleaved kernel / sandwich witness layer
 │   │           ├── OSToWightmanTwoPoint.lean    # specialized two-point reduction ladder
+│   │           ├── SchwingerTemperedness.lean   # zero-diagonal temperedness front; VT-backed growth/integrability
 │   │           ├── WickRotationBridge.lean      # small Wick-rotation differentiability helpers
 │   │           └── OSToWightmanBoundaryValues.lean # tempered BV package and axiom transfer
 │   ├── SCV/
+│   │   ├── Analyticity.lean             # basic analyticity lemmas and wrappers
 │   │   ├── Polydisc.lean                 # polydisc geometry
 │   │   ├── IteratedCauchyIntegral.lean   # multivariable Cauchy integrals
 │   │   ├── Osgood.lean                   # Osgood's lemma
 │   │   ├── SeparatelyAnalytic.lean       # separate -> joint analytic infrastructure
 │   │   ├── EdgeOfWedge.lean              # 1D EOW infrastructure
 │   │   ├── EOWMultiDim.lean              # multidimensional EOW helpers
+│   │   ├── FourierLaplaceCore.lean       # core Fourier-Laplace transforms on tubes
+│   │   ├── IdentityTheorem.lean          # identity theorem infrastructure
 │   │   ├── TubeDomainExtension.lean      # tube-domain extension results
 │   │   ├── TubeDistributions.lean        # distributional boundary values on tubes
 │   │   ├── DistributionalUniqueness.lean # tube uniqueness from zero boundary value
+│   │   ├── MultipleReflection.lean       # reflection identities for boundary values
+│   │   ├── SchwartzComplete.lean         # completeness / Fréchet-side Schwartz facts
+│   │   ├── SemigroupBochner.lean         # semigroup-positive-definite kernel infrastructure
 │   │   ├── TotallyRealIdentity.lean      # totally-real identity / Schwarz-reflection tools
 │   │   ├── LaplaceHolomorphic.lean       # half-plane Laplace holomorphy
 │   │   ├── LaplaceSchwartz.lean          # tempered boundary-value/Fourier-Laplace package
@@ -398,10 +404,10 @@ Two navigation notes:
   `CenterSpatialTranslationInvariant.lean`, and `TwoPointDescent.lean` so the
   Wick-rotation files do not keep absorbing low-level coordinate bookkeeping.
 - `Wightman/Reconstruction/Main.lean` only wires the top-level theorems.
-- The old monolithic `OSToWightman` layer no longer exists as a single file.
-  The live `E -> R` lane is intentionally split across
+- The live `E -> R` lane is intentionally split across
   `OSToWightmanSemigroup.lean`, `OSToWightman.lean`,
-  `OSToWightmanTwoPoint.lean`, and `OSToWightmanBoundaryValues.lean`.
+  `OSToWightmanKernel.lean`, `OSToWightmanTwoPoint.lean`, and
+  `OSToWightmanBoundaryValues.lean`.
 
 ## References
 
