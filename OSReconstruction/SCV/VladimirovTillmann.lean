@@ -42,6 +42,17 @@ noncomputable section
 def IsCone {E : Type*} [SMul ℝ E] (C : Set E) : Prop :=
   ∀ y ∈ C, ∀ t : ℝ, 0 < t → t • y ∈ C
 
+/-- A cone is salient (or pointed) if its closure contains no complete line.
+    Equivalently: the only element whose negation also lies in the closure is 0.
+    This rules out cones like `{ y | y₁ > 0 }` where the `y₂` direction is
+    unconstrained.
+
+    For the Vladimirov-Tillmann theorem, salience ensures the dual cone has
+    nonempty interior, which is needed for the Fourier-Laplace representation
+    to yield global growth bounds. -/
+def IsSalientCone {E : Type*} [AddCommGroup E] [TopologicalSpace E] (C : Set E) : Prop :=
+  ∀ y, y ∈ closure C → -y ∈ closure C → y = 0
+
 /-- The tube domain T(C) = { z | Im(z) ∈ C } for the nested Pi type
     used by the Wightman forward tube. -/
 def TubeDomainSetPi {n d : ℕ} (C : Set (Fin n → Fin (d + 1) → ℝ)) :
@@ -58,7 +69,7 @@ def TubeDomainSetPi {n d : ℕ} (C : Set (Fin n → Fin (d + 1) → ℝ)) :
 
     **Hypotheses:**
     - C is an open convex cone (closed under positive scaling)
-    - C is proper (Cᶜ ≠ ∅, ruling out C = full space)
+    - C is salient (its closure contains no complete line)
     - F is holomorphic on T(C)
     - The smeared boundary values converge to a tempered distribution W
 
@@ -72,7 +83,7 @@ def TubeDomainSetPi {n d : ℕ} (C : Set (Fin n → Fin (d + 1) → ℝ)) :
 axiom vladimirov_tillmann {n d : ℕ}
     (C : Set (Fin n → Fin (d + 1) → ℝ))
     (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
-    (hC_cone : IsCone C) (hC_proper : Cᶜ.Nonempty)
+    (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
     (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
     (hF_holo : DifferentiableOn ℂ F (TubeDomainSetPi C))
     (W : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ →L[ℂ] ℂ)
