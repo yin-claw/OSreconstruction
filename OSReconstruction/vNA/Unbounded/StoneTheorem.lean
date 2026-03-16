@@ -3,7 +3,7 @@ Copyright (c) 2025 ModularPhysics Contributors. All rights reserved.
 Released under Apache 2.0 license.
 Authors: ModularPhysics Contributors
 -/
-import OSReconstruction.vNA.Unbounded.Spectral
+import OSReconstruction.vNA.Unbounded.SpectralPowers
 import Mathlib.Topology.MetricSpace.Basic
 import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 import Mathlib.Analysis.InnerProductSpace.Calculus

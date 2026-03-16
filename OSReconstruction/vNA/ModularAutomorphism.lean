@@ -4,7 +4,7 @@ Released under Apache 2.0 license.
 Authors: ModularPhysics Contributors
 -/
 import OSReconstruction.vNA.ModularTheory
-import OSReconstruction.vNA.Unbounded.Spectral
+import OSReconstruction.vNA.Unbounded.SpectralPowers
 
 /-!
 # Modular Automorphism Group

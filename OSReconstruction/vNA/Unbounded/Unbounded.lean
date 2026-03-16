@@ -6,7 +6,7 @@ Authors: ModularPhysics Contributors
 
 import OSReconstruction.vNA.Unbounded.Basic
 import OSReconstruction.vNA.Unbounded.BoundedBridge
-import OSReconstruction.vNA.Unbounded.Spectral
+import OSReconstruction.vNA.Unbounded.SpectralPowers
 
 /-!
 # Unbounded Operator Theory
@@ -17,7 +17,8 @@ Tomita-Takesaki modular theory.
 ## Contents
 
 * `Basic` - Basic definitions: unbounded operators, domains, graphs, adjoints
-* `Spectral` - Spectral theory: spectral measures, functional calculus, powers
+* `Spectral` - core spectral measures and functional calculus
+* `SpectralPowers` - powers of positive operators and unitary groups
 
 ## Applications to Modular Theory
 
