@@ -1,8 +1,8 @@
 # OSReconstruction
 
-## Route 1 Translation Invariance Status (2026-03-14)
+## Route 1 Translation Invariance Status (2026-03-16)
 
-**Date**: 2026-03-14
+**Date**: 2026-03-16
 
 The Route 1 refactor proves `bhw_translation_invariant` (BHW extension is
 translation-invariant on the permuted extended tube) via reduced difference
@@ -14,7 +14,7 @@ overlap-connectivity approach.
 | `bhw_translation_invariant` sorry | **0** (proved) |
 | Route 1 axioms remaining | **1** (`reduced_bargmann_hall_wightman_of_input`) |
 | Axioms eliminated this session | 3 (`integral_realDiffCoord_change_variables`, `realDiffCoordCLE_symm_measurePreserving`, `schwartzTranslationClassification`) |
-| Pre-existing sorrys (not Route 1) | 1 (`isPreconnected_baseFiber`) |
+| Old-route residual sorry in `BHWTranslation` | 1 (`isPreconnected_baseFiber`) |
 
 The sole remaining axiom is the **reduced BHW theorem** — the Bargmann-Hall-Wightman
 envelope of holomorphy executed natively in (n-1) reduced difference coordinates.
@@ -23,6 +23,10 @@ to the quotient geometry. See [`docs/ROUTE1_AXIOM_STATUS.md`](docs/ROUTE1_AXIOM_
 for the Route 1 status note and
 [`docs/reduced_bhw_bridge_and_numerics.md`](docs/reduced_bhw_bridge_and_numerics.md)
 for the intended absolute-to-reduced bridge and numerical diagnostics.
+
+The pre-existing `isPreconnected_baseFiber` sorry in `BHWTranslation.lean`
+remains in the tree as an old-route residual theorem, but it is no longer
+needed to prove `bhw_translation_invariant` on the merged `R -> E` path.
 
 ---
 
@@ -97,6 +101,18 @@ Current blocker map:
   `WickRotation/OSToWightman.lean` ->
   `WickRotation/OSToWightmanTwoPoint.lean` ->
   `WickRotation/OSToWightmanBoundaryValues.lean`.
+- The zero-diagonal `R -> E` temperedness front has been split out of the old
+  `SchwingerAxioms.lean` monolith into
+  `WickRotation/SchwingerTemperedness.lean`, so the live E0 `sorry`s now sit in
+  a small dedicated file rather than in a >3000-line axiom file.
+- Route 1 translation invariance is now merged in production:
+  `bhw_translation_invariant` is proved in `WickRotation/BHWTranslation.lean`,
+  backed by one deferred reduced-BHW bridge axiom in
+  `WickRotation/BHWReducedExtension.lean`.
+- The same cleanup has been applied on the `vNA` side: the open positive-power /
+  unitary-group lane has been split from `vNA/Unbounded/Spectral.lean` into
+  `vNA/Unbounded/SpectralPowers.lean`, leaving the core spectral-construction
+  file sorry-free on the moved tail.
 - `OSToWightmanSemigroup.lean` is the established OS semigroup/spectral/Laplace
   and one-variable holomorphic layer.
 - The live root `E -> R` blocker is
@@ -144,14 +160,18 @@ Current blocker map:
 - The next `E -> R` blocker after that is `boundary_values_tempered` and the
   transfer chain in `OSToWightmanBoundaryValues.lean`, where the genuine growth
   inputs must come from `OSLinearGrowthCondition`.
-- On the `R -> E` side, the first geometric blocker is still
-  `isPreconnected_baseFiber` in `WickRotation/BHWTranslation.lean`. That is the
-  Bros-Epstein-Glaser/Jost connectedness step needed before the later analytic
-  gaps in `SchwingerAxioms.lean` become the front blockers.
-- After that geometric step, the remaining `R -> E` gaps are the later analytic
-  ones in `SchwingerAxioms.lean`, especially coincidence-singularity control,
-  Euclidean reality/reflection, and the remaining cluster/integrability bridge
-  steps.
+- On the merged `R -> E` path, the theorem-level front blockers have moved
+  downstream past `BHWTranslation.lean`. The live front is now the
+  zero-diagonal integrability / continuity pair in
+  `SchwingerTemperedness.lean`.
+- After that, the remaining theorem-level `R -> E` blockers are the analytic
+  ones in `SchwingerAxioms.lean`, especially the OS=W term, Euclidean
+  reality/reflection, and the cluster bridge.
+- `isPreconnected_baseFiber` remains in `WickRotation/BHWTranslation.lean` as
+  an old-route residual theorem, but it is no longer the blocker used to obtain
+  `bhw_translation_invariant` on the merged path.
+- `ForwardTubeLorentz.lean` still carries the two upstream analytic-geometry
+  `sorry`s needed by the BHW/Wick-rotation lane.
 - `StoneTheorem` and the broader `vNA` operator lane matter for the separate
   GNS/operator reconstruction theorem `wightman_reconstruction`, but not for the
   current Wick-rotation critical path.
@@ -173,15 +193,18 @@ Current blocker map:
   `SchwingerAxioms.lean` still contains the remaining analytic Wick-rotation
   obligations after the BHW geometry is available.
 
-Snapshot (2026-03-12, tracked production tree):
+Snapshot (2026-03-16, tracked production tree):
 
 | Module | Direct `sorry` lines |
 |--------|-----------------------|
-| `Wightman/` | 29 |
+| `Wightman/` | 33 |
 | `SCV/` | 2 |
 | `ComplexLieGroups/` | 2 |
-| `vNA/` | 39 |
-| **Total** | **72** |
+| `vNA/` | 40 |
+| **Total** | **77** |
+
+Tracked production tree also contains `1` explicit axiom:
+`reduced_bargmann_hall_wightman_of_input`.
 
 ### OS-Critical Sorry Flow Toward Reconstruction
 
@@ -193,10 +216,12 @@ flowchart TD
   M --> RE["wightman_to_os"]
   M --> ER["os_to_wightman"]
 
-  RE --> SA["WickRotation/SchwingerAxioms (6)"]
-  SA --> BT["WickRotation/BHWTranslation (1)"]
-  BT --> BE["WickRotation/BHWExtension (0)"]
-  BE --> FL["WickRotation/ForwardTubeLorentz (2)"]
+  RE --> SA["WickRotation/SchwingerAxioms (4)"]
+  SA --> ST["WickRotation/SchwingerTemperedness (2)"]
+  SA --> BT["WickRotation/BHWTranslation (1 residual)"]
+  BT --> BR["WickRotation/BHWReducedExtension (1 axiom)"]
+  BR --> BE["WickRotation/BHWExtension (0)"]
+  SA --> FL["WickRotation/ForwardTubeLorentz (2)"]
   FL --> FTD["ForwardTubeDistributions (0)"]
   FTD --> DU["SCV/DistributionalUniqueness (0)"]
   FL --> AC["Reconstruction/AnalyticContinuation (0)"]
@@ -223,10 +248,12 @@ flowchart TD
 | `Wightman/Reconstruction/ForwardTubeDistributions.lean` | 0 | distributional uniqueness / boundary-value lane complete |
 | `Wightman/Reconstruction/WickRotation/ForwardTubeLorentz.lean` | 2 | polynomial growth slice + PET measure-zero step |
 | `Wightman/Reconstruction/WickRotation/BHWExtension.lean` | 0 | honest distributional adjacent-swap lane complete |
-| `Wightman/Reconstruction/WickRotation/BHWTranslation.lean` | 1 | PET intersection connectivity |
-| `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` | 6 | coincidence singularities, reality/reflection, cluster, OS=W term |
+| `Wightman/Reconstruction/WickRotation/BHWTranslation.lean` | 1 | old-route base-fiber residual; merged path uses Route 1 reduced coordinates |
+| `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean` | 0 + 1 axiom | deferred reduced BHW bridge theorem |
+| `Wightman/Reconstruction/WickRotation/SchwingerTemperedness.lean` | 2 | zero-diagonal integrability / continuity front |
+| `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` | 4 | OS=W term, reality/reflection, cluster |
 | `Wightman/Reconstruction/WickRotation/OSToWightmanSemigroup.lean` | 0 | OS semigroup, spectral/Laplace bridge, one-variable holomorphic infrastructure |
-| `Wightman/Reconstruction/WickRotation/OSToWightman.lean` | 1 | base-step continuation / flat witness assembly |
+| `Wightman/Reconstruction/WickRotation/OSToWightman.lean` | 2 | time-parametric base step + legacy spatial upgrade |
 | `Wightman/Reconstruction/WickRotation/OSToWightmanTwoPoint.lean` | 0 | specialized `k = 2` spectral / holomorphic reduction ladder |
 | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | 7 | tempered boundary values, transfer chain, cluster |
 | `SCV/LaplaceSchwartz.lean` | 0 | generic tempered boundary-value lemmas extracted |
@@ -239,7 +266,7 @@ flowchart TD
 | `vNA/ModularAutomorphism.lean` | 6 | modular automorphism theory |
 | `vNA/ModularTheory.lean` | 6 | Tomita-Takesaki core |
 | `vNA/Unbounded/StoneTheorem.lean` | 2 | Stone/self-adjoint generator lane |
-| `vNA/Unbounded/Spectral.lean` | 2 | unbounded spectral theory |
+| `vNA/Unbounded/SpectralPowers.lean` | 2 | positive powers / unitary-group lane |
 | `vNA/Predual.lean` | 2 | normal functionals, sigma-weak topology |
 
 Operator-theoretic side note:

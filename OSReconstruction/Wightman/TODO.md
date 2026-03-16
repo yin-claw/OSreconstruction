@@ -1,6 +1,6 @@
 # Wightman TODO: OS Reconstruction Priority Queue
 
-Last updated: 2026-03-12
+Last updated: 2026-03-16
 
 This file tracks the active blocker picture on the OS reconstruction path.
 Policy lock: no wrappers, no useless lemmas, no code bloat; close `sorry`s with substantial mathematical proofs.
@@ -11,16 +11,20 @@ Count convention: direct tactic holes only (`^[[:space:]]*sorry([[:space:]]|$)`)
 
 | Scope | Direct `sorry` lines |
 |-------|----------------------:|
-| `OSReconstruction/Wightman` | 29 |
+| `OSReconstruction/Wightman` | 33 |
 | `OSReconstruction/SCV` | 2 |
 | `OSReconstruction/ComplexLieGroups` | 2 |
-| `OSReconstruction/vNA` | 39 |
-| **Whole project** | **72** |
+| `OSReconstruction/vNA` | 40 |
+| **Whole project** | **77** |
 
-Count cross-checked on 2026-03-11 with:
+Count cross-checked on 2026-03-16 with:
 ```bash
 rg -c '^[[:space:]]*sorry([[:space:]]|$)' OSReconstruction --glob '*.lean'
 ```
+
+Tracked production tree also currently contains one explicit Route 1 axiom:
+`reduced_bargmann_hall_wightman_of_input` in
+`Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean`.
 
 ## Current Root Blockers
 
@@ -71,7 +75,9 @@ Current status:
   - `bvt_cluster` in `OSToWightmanBoundaryValues.lean`
 
 Immediate sharpened subgaps:
-- For `schwinger_continuation_base_step`: the honest remaining choice is between an OS-side interleaved operator representation and a deeper Schwartz kernel-extension theorem. The new tensor insertion maps only support the latter; they do not close the blocker by themselves.
+- For `schwinger_continuation_base_step`: the next active target is the original 2-point Schwinger case, i.e. one difference variable after translation reduction. This must be stated on the honest Schwinger-side domain (`ZeroDiagonalSchwartz d 2` or an explicitly admissible Euclidean subspace promoted into it), not on ambient full Schwartz space.
+- For `schwinger_continuation_base_step`: no more active effort on the original 1-point case; it is mathematically trivial from translation invariance and not a blocker.
+- For `schwinger_continuation_base_step`: the honest remaining choice is between a concrete Schwinger-side two-point/difference-variable reduction and, only if forced later, a deeper Schwartz kernel-extension theorem. The tensor insertion maps do not close the blocker by themselves.
 - For `boundary_values_tempered`: the generic DCT/integrability/tempered-boundary package is now in `SCV/LaplaceSchwartz.lean`; the genuine missing content is deriving the two growth hypotheses `hpoly` and `hunif` from the OS input.
 
 ### 2. `SCV` load-bearing infrastructure (2)
@@ -125,11 +131,11 @@ Infrastructure (sorry-free):
 
 ### 4. Wick rotation downstream
 
-`WickRotation/SchwingerAxioms.lean` (7):
+`WickRotation/SchwingerTemperedness.lean` (2):
 - `wick_rotated_kernel_mul_zeroDiagonal_integrable`
 - `constructedSchwinger_tempered_zeroDiagonal`
-- `polynomial_growth_forwardTube_full`
-- `polynomial_growth_on_PET`
+
+`WickRotation/SchwingerAxioms.lean` (4):
 - `schwinger_os_term_eq_wightman_term`
 - `bhw_euclidean_reality_ae`
 - `bhw_pointwise_cluster_euclidean`
@@ -150,7 +156,23 @@ Current blocker sharpening (2026-03-10):
 - `wickRotation_not_in_PET_null`
 
 `WickRotation/BHWTranslation.lean` (1):
-- `isConnected_permutedExtendedTube_inter_translate`
+- `isPreconnected_baseFiber` (base-variable fiber connectivity in PET)
+  - STATUS ON MERGED PATH: no longer needed to prove `bhw_translation_invariant`
+  - CURRENT ROLE: old-route residual theorem, kept as a separate geometric target
+  - ROOT CAUSE: our ForwardTube k=0 condition `Im(z₀) ∈ V⁺` breaks translation invariance
+  - MATHEMATICAL PROOF: PET is a domain of holomorphy (BEG 1967). baseFiber = PET ∩ (complex affine subspace). Intersection of DOH with complex affine subspace is connected (standard SCV).
+  - Alternative proof: fiber bundle over contractible base (tailDiffPermSector is convex) with connected fiber (stabilizer in SO(d+1;ℂ) is connected). See Proofideas/baseFiber_inflation_proof.lean.
+  - PROVED helpers (0 sorrys): inOpenForwardCone_add_time, forwardTube_add_broadcast_iTime, complexLorentzAction_add_broadcast, lorentz_action_inflation_dir (in test/proofideas_baseFiber_inflation.lean)
+  - Production reduction: baseFiber_isPreconnected_of_index_and_active_geometry reduces to index set connectivity + sector overlap
+  - FORMALIZATION GAP: needs SCV domain-of-holomorphy infrastructure OR Lie group fiber bundle theory, neither in Mathlib
+
+`WickRotation/BHWReducedExtension.lean` (axiom 1):
+- `reduced_bargmann_hall_wightman_of_input`
+  - accepted as a strategically deferred reduced-coordinate BHW bridge
+  - this is the Route 1 replacement for the old base-fiber route on the merged path
+  - intended future discharge: descend the absolute BHW theorem through
+    translation invariance / quotient geometry
+  - see `docs/reduced_bhw_bridge_and_numerics.md`
 
 `WickRotation/BHWExtension.lean` (0):
 - Honest extendF-level adjacent-swap theorems are complete.
@@ -183,13 +205,32 @@ Not on the shortest OS reconstruction lane:
    - keep the hard gap explicit
    - use the existing honest semigroup/spectral/Laplace infrastructure
    - do not add abstract wrappers that hide the remaining step
+   - first close the nontrivial 2-point Schwinger reduction on `ZeroDiagonalSchwartz d 2` / an admissible Euclidean subspace
+   - do not spend active effort on one-point classification or ambient full-Schwartz surrogate theorems
 2. Use the extracted SCV boundary-distribution lemmas to reduce `boundary_values_tempered` in `OSToWightmanBoundaryValues.lean` to the genuine missing growth inputs `hpoly` and `hunif`.
 3. Keep the new tensor insertion infrastructure in `Wightman/SchwartzTensorProduct.lean` in mind if the continuation blocker turns into a genuine Schwartz kernel-extension theorem, but do not confuse that groundwork with closure of the live blocker.
 4. After `boundary_values_tempered`, finish the six transfer theorems and `bvt_cluster` in `OSToWightmanBoundaryValues.lean`.
-5. In parallel or next, attack the two honest R→E roots in `SchwingerAxioms.lean`:
-   - coincidence-singularity / zero-diagonal integrability
-   - Euclidean reality / reflection
+5. In parallel or next, attack the live R→E front after the Route 1 merge:
+   - `SchwingerTemperedness.lean`: coincidence-singularity / zero-diagonal continuity
+   - `SchwingerAxioms.lean`: Euclidean reality / reflection, OS=W term, cluster
+   - `BHWTranslation.isPreconnected_baseFiber` is now optional old-route cleanup, not required for the merged proof path
 6. Defer `StoneTheorem` / GNS operator-theoretic work until the analyticity lane is materially settled.
+
+## Recently Completed (2026-03-14)
+
+### Fiberwise antiderivative chain — COMPLETE (0 sorrys in test file)
+- `contDiff_fiberwiseAntiderivRaw` — C^∞ smoothness
+- `decay_fiberwiseAntiderivRaw` — Schwartz decay at all orders (induction on p)
+- `fiberwiseAntideriv` — SchwartzMap packaging
+- `lineDeriv_fiberwiseAntideriv` — head derivative recovers F
+- Ready for production extraction to `SliceIntegral.lean` (~165 lines)
+
+### Production extractions landed
+- `PartialToTotal.lean` — partial → total HasFDerivAt (0 sorrys)
+- `SchwartzCutoff.lean` — schwartz_tail_decay (0 sorrys)
+- `BEGTrigonometric.lean` — sinusoidal_pos_of_endpoints_pos (0 sorrys)
+- `SliceIntegral.lean` — iicZeroSlice chain + intervalPiece chain + fiberwiseAntiderivRaw (0 sorrys, 1990 lines total)
+- `TwoPointDescent.lean` — integral identities + center-shear translation (0 sorrys)
 
 ## Commands
 

@@ -888,10 +888,47 @@ def route1ReducedInputOfBoundary
     (route1ReducedPreInputFromSpectrumCondition (d := d) Wfn m).real_lorentz_invariant
   boundary_values := hBv
 
-/-- Upgrading a bundled reduced forward-tube input to a reduced BHW extension
-still needs the reduced local-commutativity / permutation-flow argument, which
-does not belong to the raw forward-tube input. We keep that bridge axiomatic
-for now. -/
+/-- Reduced-coordinate Bargmann-Hall-Wightman bridge.
+
+This is the quotient-space form of the ordinary BHW theorem: starting from a
+holomorphic reduced forward-tube input with reduced real Lorentz covariance and
+the correct reduced boundary values, produce a unique holomorphic extension on
+the reduced permuted extended tube, together with reduced Lorentz and
+permutation invariance.
+
+The intended future discharge is to derive this from the absolute BHW theorem
+plus translation descent:
+1. apply absolute BHW on absolute configurations,
+2. prove the absolute extension is constant on fibers of `reducedDiffMap`,
+3. descend through the translation quotient,
+4. identify the descended domain with `ReducedPermutedExtendedTubeN`,
+5. transport Lorentz invariance, permutation invariance, and uniqueness.
+
+Part of that bridge already exists in production:
+- `AbsoluteForwardTubeInput`,
+- `descendAbsoluteForwardTubeInput`,
+- `route1ReducedBoundaryValuesFromSpectrumCondition`.
+
+What is still missing is the generic PET-level quotient descent, or an inverse
+bridge lifting generic reduced input back to an absolute BHW input while
+preserving the boundary-value theorem.
+
+Numerical diagnostics were run as sanity checks for the reduced geometry behind
+this axiom. In randomized low-dimensional samples they confirmed:
+- uniform translations are invisible to `reducedDiffMap`,
+- `reducedDiffSection` is a right inverse,
+- `safeSection` lands in the absolute forward tube,
+- reduced permutation actions agree with absolute permutation followed by
+  quotienting,
+- adjacent transpositions match the expected `A_(n-1)` formulas.
+
+The most informative negative test also behaved as expected: naive evaluation on
+an arbitrary absolute representative is not well-defined unless the absolute
+function is already translation-invariant.
+
+These diagnostics support the quotient/permutation scaffolding but do not prove
+holomorphic extension, edge-of-the-wedge continuation, permutation invariance
+from locality, or uniqueness. We therefore keep the bridge axiomatic for now. -/
 axiom reduced_bargmann_hall_wightman_of_input
     [NeZero d] (Wfn : WightmanFunctions d) (χ : NormalizedBasepointCutoff d) (m : ℕ)
     (hInput : Route1ReducedAnalyticInput Wfn χ m) :

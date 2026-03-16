@@ -1,6 +1,6 @@
 # Systematic Development Plan (OS Reconstruction Critical Path)
 
-Last updated: 2026-03-12
+Last updated: 2026-03-16
 
 This is the active execution plan for closing `sorry`s on the OS reconstruction path.
 It supersedes the earlier BHW-first ordering.
@@ -22,11 +22,16 @@ Counts verified with:
 
 | Scope | Sorrys |
 |---|---:|
-| `OSReconstruction/Wightman` | 29 |
+| `OSReconstruction/Wightman` | 33 |
 | `OSReconstruction/SCV` | 2 |
 | `OSReconstruction/ComplexLieGroups` | 2 |
-| `OSReconstruction/vNA` | 39 |
-| **Total** | **72** |
+| `OSReconstruction/vNA` | 40 |
+| **Total** | **77** |
+
+Tracked production axioms:
+- `1` explicit axiom on the Route 1 reduced-BHW lane:
+  `reduced_bargmann_hall_wightman_of_input` in
+  `WickRotation/BHWReducedExtension.lean`
 
 ## 3. Primary Priority Stack
 
@@ -49,19 +54,30 @@ Live status:
 - positive-time continuity of `t ↦ CFC.nnrpow A t` is now in `vNA/Bochner/SemigroupRoots.lean`
 - `Wightman/SchwartzTensorProduct.lean` now contains explicit product-test insertion operators (`productTensorUpdateCLM`, `prependFieldCLMLeft/Right`) for the kernel-extension lane
 - the remaining hard content is no longer generic semigroup packaging; it is the theorem-level bridge into analytic continuation and tempered boundary values
-- the current live choice for `schwinger_continuation_base_step` is still between:
-  - an OS-side interleaved operator representation theorem, or
-  - a genuine Schwartz kernel-extension theorem built on the new tensor infrastructure
+- the immediate active target inside `schwinger_continuation_base_step` is the original 2-point Schwinger case:
+  - one difference variable after translation reduction,
+  - stated on `ZeroDiagonalSchwartz d 2` or an explicitly admissible Euclidean subspace,
+  - not on ambient full Schwartz space
+- the original 1-point Schwinger case is mathematically trivial from translation invariance and is no longer an active development lane
+- only after the 2-point Schwinger reduction is exposed cleanly should we choose between:
+  - a concrete Schwinger-side interleaved/operator kernel theorem, or
+  - a genuine Schwartz kernel-extension theorem built on the tensor infrastructure
 
-### B) R -> E wick-rotation submodules (10 sorrys total on the active path)
+### B) R -> E wick-rotation submodules (9 sorrys + 1 deferred axiom on the active path)
 
-1. `SchwingerAxioms.lean`:
-   - coincidence-singularity / zero-diagonal integrability
+1. `SchwingerTemperedness.lean`:
+   - zero-diagonal integrability / temperedness
+2. `SchwingerAxioms.lean`:
    - Euclidean reality / reflection
    - downstream cluster / OS=W term
-2. `BHWTranslation.lean`:
-   - PET overlap connectivity
-3. `ForwardTubeLorentz.lean`:
+3. `BHWTranslation.lean`:
+   - old-route base-fiber connectivity on PET
+   - no longer needed to obtain `bhw_translation_invariant` on the merged Route 1 path
+4. `BHWReducedExtension.lean`:
+   - deferred reduced BHW bridge theorem
+   - intended future discharge: descend the absolute BHW extension through
+     translation fibers / quotient geometry
+5. `ForwardTubeLorentz.lean`:
    - slice polynomial growth
    - null exceptional set for PET entry
 
@@ -89,14 +105,19 @@ from the OS data.
 ## 5. Execution Order
 
 1. Close `schwinger_continuation_base_step` in `OSToWightman.lean`.
+   - first attack the original 2-point Schwinger reduction on the honest Schwinger domain
+   - avoid one-point classification detours and avoid ambient full-Schwartz theorem surfaces
 2. Use the extracted SCV boundary-distribution lemmas to reduce
    `boundary_values_tempered` in `OSToWightmanBoundaryValues.lean` to the genuine OS-side growth inputs.
 3. If the continuation blocker truly requires the Schwartz kernel theorem, continue strengthening
    `Wightman/SchwartzTensorProduct.lean` and then attack `Wightman/WightmanAxioms.lean`'s
    `schwartz_nuclear_extension` honestly.
 4. Close the transfer and cluster chain in `OSToWightmanBoundaryValues.lean`.
-5. In parallel or next, attack the two independent R -> E roots in
-   `SchwingerAxioms.lean`: coincidence-singularity control and Euclidean reality.
+5. In parallel or next, attack the live R -> E theorem-level front:
+   - `SchwingerTemperedness.lean`: coincidence-singularity / zero-diagonal continuity
+   - `SchwingerAxioms.lean`: Euclidean reality, OS=W term, and cluster
+   - keep `isPreconnected_baseFiber` in `BHWTranslation.lean` as an old-route residual,
+     not as the merged-path blocker
 6. Finish final wiring (`wightman_uniqueness`, remaining `GNSHilbertSpace`, residual `WightmanAxioms` blockers).
 
 ## 6. Deprioritized Work (Unless It Unblocks the Above)

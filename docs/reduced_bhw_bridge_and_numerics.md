@@ -6,6 +6,11 @@ This note records why the reduced-coordinate BHW theorem surface is being
 treated as acceptable for merge, what bridge is intended from the absolute BHW
 theorem, and what numerical diagnostics were run.
 
+On the merged `R -> E` path, this deferred reduced-BHW bridge replaces the old
+`isPreconnected_baseFiber` route as the ingredient used to obtain
+`bhw_translation_invariant`. The base-fiber theorem remains in the tree only as
+an old-route residual geometric target.
+
 ## Current theorem surface
 
 Mike's PR introduces a reduced-coordinate BHW interface on successive

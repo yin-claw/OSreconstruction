@@ -1,7 +1,7 @@
 # Route 1 Translation Invariance: Axiom and Sorry Status
 
-**Date**: 2026-03-14
-**Branch**: `route1-translation-invariance`
+**Date**: 2026-03-16
+**Branch**: `main` (merged Route 1 state)
 
 ## Summary
 
@@ -11,16 +11,19 @@ reduced difference coordinates. The main theorem `bhw_translation_invariant`
 is now proved (no sorry) using the Identity Theorem: the Route 1 extension
 agrees with the standard BHW extension on the forward tube, both are
 holomorphic on the permuted extended tube, therefore they agree everywhere,
-and translation invariance transfers algebraically. The remaining trust surface
-is the single reduced-BHW axiom recorded below.
+and translation invariance transfers algebraically.
+
+On the merged path, this means `isPreconnected_baseFiber` is no longer needed
+to prove `bhw_translation_invariant`. The remaining trust surface is the single
+reduced-BHW axiom recorded below.
 
 ### Current inventory
 
 | File | Item | Type | Status |
 |------|------|------|--------|
-| `BHWReducedExtension.lean` | `reduced_bargmann_hall_wightman_of_input` | axiom | **Open** |
+| `BHWReducedExtension.lean:932` | `reduced_bargmann_hall_wightman_of_input` | axiom | **Open** |
 | `BHWReduced.lean` | `schwartzTranslationClassification` | ~~axiom~~ theorem | **Closed** (wired to `TranslationInvariantSchwartz.lean`) |
-| `BHWTranslation.lean:1123` | `isPreconnected_baseFiber` | sorry | **Open** (pre-existing, not Route 1) |
+| `BHWTranslation.lean:1124` | `isPreconnected_baseFiber` | sorry | **Open** (pre-existing old-route residual; not needed on merged path) |
 
 ### What was eliminated in this session
 
@@ -35,7 +38,7 @@ is the single reduced-BHW axiom recorded below.
 
 ## Axiom 1: `reduced_bargmann_hall_wightman_of_input`
 
-**File**: `BHWReducedExtension.lean:895`
+**File**: `BHWReducedExtension.lean:932`
 
 **Statement**: Given a `Route1ReducedAnalyticInput` (holomorphic on the reduced
 forward tube, Lorentz-covariant, with distributional boundary values), produce
@@ -148,27 +151,27 @@ integral 1 produce the same reduced functional.
 
 ---
 
-## Sorry: `isPreconnected_baseFiber`
+## Residual Sorry: `isPreconnected_baseFiber`
 
-**File**: `BHWTranslation.lean:1120`
+**File**: `BHWTranslation.lean:1124`
 
 **Statement**: The base fiber `{z_0 in C^{d+1} : Im(z_0) in V+ and
 (z_0, zeta_1, ..., zeta_m) in PET}` is preconnected.
 
-**Status**: Pre-existing sorry, not introduced by Route 1. This is a geometric
-fact about the complex forward cone intersected with Lorentz-orbit constraints.
-It is used in the Schwinger function construction downstream of
-`bhw_translation_invariant` but does not affect the translation invariance
-proof itself.
+**Status**: Pre-existing sorry, not introduced by Route 1. On the merged path
+it is no longer needed for translation invariance and is not part of the active
+`R -> E` proof route. It remains as a geometric cleanup target for the old
+base-fiber argument.
 
 ---
 
 ## Strategic Assessment
 
 The Route 1 refactor has achieved its structural goal: **translation invariance
-is now proved without any sorry**, using a clean algebraic argument via reduced
-difference coordinates and the identity theorem. The remaining technical debt
-is quarantined into exactly **one axiom**:
+is now proved on the merged path without using any `sorry` theorem**, using a
+clean algebraic argument via reduced difference coordinates and the identity
+theorem. The remaining technical debt on that path is quarantined into exactly
+**one axiom**:
 
 1. **`reduced_bargmann_hall_wightman_of_input`**: The correct reduced-coordinate
    BHW theorem. This is the *only* path forward (the converse-lift alternative
