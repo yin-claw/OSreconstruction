@@ -252,6 +252,19 @@ def extractDiffSpatialRe {d : ℕ}
     (u : Fin (2 * (d + 1)) → ℂ) : Fin d → ℝ :=
   fun i => (u (finProdFinEquiv (⟨1, by omega⟩, i.succ))).re
 
+/-- There exists a compactly-supported Schwartz function on spacetime with
+positive-time support and nonzero integral. This is the basic bump
+construction needed to define admissible semigroup test functions. -/
+theorem exists_positive_time_compact_schwartz {d : ℕ} [NeZero d] :
+    ∃ (g : SchwartzSpacetime d),
+      HasCompactSupport (g : SpacetimeDim d → ℂ) ∧
+      tsupport (g : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0} ∧
+      ∫ u : SpacetimeDim d, g u ≠ 0 := by
+  -- Use ContDiffBump centered at (1, 0, ..., 0) with radius 1/2.
+  -- Support ⊆ closedBall((1,0,...), 1/2) ⊆ {x₀ > 1/2} ⊆ {x₀ > 0}.
+  -- Integral nonzero because bump is nonneg with positive integral.
+  sorry
+
 /-- The spatially-parameterized `k = 2` semigroup witness. This isolates the
 dependence on the complex time parameter `z` and the real spatial-difference
 parameter `y`. -/
@@ -1325,6 +1338,10 @@ theorem schwinger_twoPoint_holomorphic_kernel {d : ℕ} [NeZero d]
       (∀ (f : ZeroDiagonalSchwartz d 2),
         OS.S 2 f = ∫ x : NPointDomain d 2,
           G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) * (f.1 x)) := by
+  -- Step 1: Pick admissible (χ₀, g) to define the witness
+  -- Need: χ₀ with positive-time osConj support, ∫ χ₀ = 1
+  -- Need: g with positive-time support, compact support
+  -- These exist by construction (bump functions with positive-time support)
   sorry
 
 /-- `k = 2` special case of the time-parametric base-step theorem.
