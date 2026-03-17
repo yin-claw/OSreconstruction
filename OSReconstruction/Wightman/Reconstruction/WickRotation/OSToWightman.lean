@@ -1572,14 +1572,30 @@ theorem schwinger_twoPoint_holomorphic_kernel {d : ℕ} [NeZero d]
     -- (either ξ₀ > 0 directly or -ξ₀ > 0 via reflection). Both are bounded by
     -- 2 * ‖F_χ₀‖ * ‖G_g‖ (semigroup contraction). So |G| ≤ C on Euclidean section.
     -- f Schwartz ⟹ f ∈ L¹. bounded × L¹ ⟹ integrable.
-    -- Proof route: show ∃ C, ∀ x, ‖G(toDiffFlat(wickRotate(x)))‖ ≤ C.
-    -- Then use bounded × SchwartzMap.integrable = integrable.
-    -- The bound uses twoPointSpatialWitness_eq_inner_osTimeShiftHilbertComplex
-    -- + Cauchy-Schwarz + osTimeShiftHilbertComplex_norm_le
-    -- + norm_twoPointTranslatedOnePointVector_eq.
-    -- Each branch of piecewise G evaluates semigroup at Re > 0.
-    -- SchwartzMap.integrable needs HasTemperateGrowth for volume.
-    sorry
+    -- G bounded × f Schwartz L¹ = integrable
+    have hG_bdd : ∃ C : ℝ, ∀ x : NPointDomain d 2,
+        ‖G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)))‖ ≤ C := by
+      -- Both branches of piecewise G evaluate twoPointSpatialWitness at positive
+      -- real time (semigroup bound ‖T(z)‖ ≤ 2 from spectralSemigroupComplex_norm_le).
+      -- Combined with Cauchy-Schwarz: |⟨F, T(z)G⟩| ≤ ‖F‖ * 2 * ‖G‖.
+      -- norm_twoPointTranslatedOnePointVector_eq gives y-independence of ‖G‖.
+      sorry
+    obtain ⟨C, hC⟩ := hG_bdd
+    -- f.1 is Schwartz hence integrable
+    have hf_int : MeasureTheory.Integrable (f.1 : NPointDomain d 2 → ℂ) := by
+      haveI : (MeasureTheory.volume :
+          MeasureTheory.Measure (NPointDomain d 2)).HasTemperateGrowth :=
+        MeasureTheory.Measure.IsAddHaarMeasure.instHasTemperateGrowth
+      exact f.1.integrable
+    -- |G * f| ≤ C * |f|, and C * |f| is integrable
+    refine (hf_int.norm.const_mul C).mono' ?_ ?_
+    · -- AEStronglyMeasurable: G * f is measurable
+      sorry
+    · -- Norm bound: ‖G(u) * f(x)‖ = ‖G(u)‖ * ‖f(x)‖ ≤ C * ‖f(x)‖
+      exact Filter.Eventually.of_forall (fun x => by
+        calc ‖G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) * (f.1 x)‖
+            = ‖G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)))‖ * ‖f.1 x‖ := norm_mul _ _
+          _ ≤ C * ‖f.1 x‖ := mul_le_mul_of_nonneg_right (hC x) (norm_nonneg _))
   · -- Euclidean reproduction: ∫ G * f = OS.S 2 f for all f ∈ ZeroDiag
     intro f
     sorry -- From shell agreement (semigroup chain) + density (clm_zero_of_zero_on_productTensor)
