@@ -1568,11 +1568,17 @@ theorem schwinger_twoPoint_holomorphic_kernel {d : ℕ} [NeZero d]
       exact (hG_pos_holo.2 u hu i).congr hslice_eq
   · -- Integrability: G bounded × f Schwartz (L¹) → G*f integrable
     intro f
-    -- G bounded on positive-time Euclidean section (semigroup ‖T(z)‖ ≤ 2).
-    -- For negative time: the Laplace integral defining G may diverge, but
-    -- the E3 symmetry of OS.S 2 means the negative-time contribution equals
-    -- the positive-time contribution (via x₁ ↔ x₂ swap).
-    -- Integrability follows from: G bounded on half-space × f Schwartz L¹.
+    -- Both branches of piecewise G use twoPointSpatialWitness at positive real time
+    -- (either ξ₀ > 0 directly or -ξ₀ > 0 via reflection). Both are bounded by
+    -- 2 * ‖F_χ₀‖ * ‖G_g‖ (semigroup contraction). So |G| ≤ C on Euclidean section.
+    -- f Schwartz ⟹ f ∈ L¹. bounded × L¹ ⟹ integrable.
+    -- Proof route: show ∃ C, ∀ x, ‖G(toDiffFlat(wickRotate(x)))‖ ≤ C.
+    -- Then use bounded × SchwartzMap.integrable = integrable.
+    -- The bound uses twoPointSpatialWitness_eq_inner_osTimeShiftHilbertComplex
+    -- + Cauchy-Schwarz + osTimeShiftHilbertComplex_norm_le
+    -- + norm_twoPointTranslatedOnePointVector_eq.
+    -- Each branch of piecewise G evaluates semigroup at Re > 0.
+    -- SchwartzMap.integrable needs HasTemperateGrowth for volume.
     sorry
   · -- Euclidean reproduction: ∫ G * f = OS.S 2 f for all f ∈ ZeroDiag
     intro f
