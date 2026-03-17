@@ -391,6 +391,88 @@ theorem twoPointZeroDiagonalKernelCLM_apply
     twoPointFlatKernelCLM_apply_reindex_flatten
       (d := d) (K := K) hK_meas C_bd N hC hK_bound f.1
 
+/-- A uniform `ae` bound is a special case of the polynomial-growth bound
+required by `twoPointZeroDiagonalKernelCLM`. -/
+theorem ae_const_bound_to_poly_bound
+    (K : NPointDomain d 2 → ℂ)
+    (C : ℝ)
+    (hK_bdd : ∀ᵐ x : NPointDomain d 2 ∂volume, ‖K x‖ ≤ C) :
+    ∀ᵐ x : NPointDomain d 2 ∂volume, ‖K x‖ ≤ (|C| + 1) * (1 + ‖x‖) ^ (0 : ℕ) := by
+  filter_upwards [hK_bdd] with x hx
+  have hC : C ≤ |C| + 1 := by
+    have : C ≤ |C| := le_abs_self C
+    linarith
+  have hpow : (1 + ‖x‖) ^ (0 : ℕ) = (1 : ℝ) := by simp
+  rw [hpow]
+  simpa using le_trans hx hC
+
+/-- A measurable, uniformly `ae` bounded two-point kernel induces a continuous
+linear functional on `ZeroDiagonalSchwartz d 2`. -/
+noncomputable def zeroDiagKernelCLM_of_const_bound
+    (K : NPointDomain d 2 → ℂ)
+    (hK_meas : AEStronglyMeasurable K volume)
+    (C : ℝ)
+    (hK_bdd : ∀ᵐ x : NPointDomain d 2 ∂volume, ‖K x‖ ≤ C) :
+    ZeroDiagonalSchwartz d 2 →L[ℂ] ℂ :=
+  twoPointZeroDiagonalKernelCLM (d := d) K hK_meas (|C| + 1) 0
+    (by positivity)
+    (ae_const_bound_to_poly_bound (d := d) K C hK_bdd)
+
+/-- The induced constant-bound kernel CLM evaluates by the expected Euclidean
+integral formula. -/
+theorem zeroDiagKernelCLM_of_const_bound_apply
+    (K : NPointDomain d 2 → ℂ)
+    (hK_meas : AEStronglyMeasurable K volume)
+    (C : ℝ)
+    (hK_bdd : ∀ᵐ x : NPointDomain d 2 ∂volume, ‖K x‖ ≤ C)
+    (f : ZeroDiagonalSchwartz d 2) :
+    zeroDiagKernelCLM_of_const_bound (d := d) K hK_meas C hK_bdd f =
+      ∫ x : NPointDomain d 2, K x * (f.1 x) := by
+  simpa [zeroDiagKernelCLM_of_const_bound] using
+    twoPointZeroDiagonalKernelCLM_apply (d := d) K hK_meas (|C| + 1) 0
+      (by positivity)
+      (ae_const_bound_to_poly_bound (d := d) K C hK_bdd) f
+
+/-- If a measurable, uniformly `ae` bounded two-point kernel agrees with
+`OS.S 2` on a dense family of positive-time difference shells, then the induced
+zero-diagonal kernel CLM is exactly the Schwinger CLM. -/
+theorem zeroDiagKernelCLM_of_const_bound_eq_schwinger_of_shell_agreement
+    (OS : OsterwalderSchraderAxioms d)
+    (K : NPointDomain d 2 → ℂ)
+    (hK_meas : AEStronglyMeasurable K volume)
+    (C : ℝ)
+    (hK_bdd : ∀ᵐ x : NPointDomain d 2 ∂volume, ‖K x‖ ≤ C)
+    (hShell : ∀ χ h : SchwartzSpacetime d,
+      tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0} →
+      HasCompactSupport (h : SpacetimeDim d → ℂ) →
+        ∫ x : NPointDomain d 2, K x * (twoPointDifferenceLift χ h x) =
+          OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)))
+    (hDense : Dense {f : ZeroDiagonalSchwartz d 2 |
+      ∃ (χ h : SchwartzSpacetime d),
+        tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0} ∧
+        HasCompactSupport (h : SpacetimeDim d → ℂ) ∧
+        f = ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)}) :
+    zeroDiagKernelCLM_of_const_bound (d := d) K hK_meas C hK_bdd =
+      OsterwalderSchraderAxioms.schwingerCLM (d := d) OS 2 := by
+  apply ContinuousLinearMap.eq_of_eq_on_dense
+    (zeroDiagKernelCLM_of_const_bound (d := d) K hK_meas C hK_bdd)
+    (OsterwalderSchraderAxioms.schwingerCLM (d := d) OS 2)
+    hDense
+  intro f hf
+  rcases hf with ⟨χ, h, hh_pos, hh_compact, rfl⟩
+  have hzero_not_mem : (0 : SpacetimeDim d) ∉ tsupport (h : SpacetimeDim d → ℂ) := by
+    intro hmem
+    have := hh_pos hmem
+    simpa using this
+  have hvanish :
+      VanishesToInfiniteOrderOnCoincidence (twoPointDifferenceLift χ h) :=
+    twoPointDifferenceLift_vanishes_of_zero_not_mem_tsupport χ h hzero_not_mem
+  rw [zeroDiagKernelCLM_of_const_bound_apply (d := d) K hK_meas C hK_bdd
+      (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h))]
+  rw [ZeroDiagonalSchwartz.coe_ofClassical_of_vanishes
+      (f := twoPointDifferenceLift χ h) hvanish]
+  exact hShell χ h hh_pos hh_compact
+
 /-- Evaluate a flat witness kernel on a two-point center/difference
 configuration after fixing the time-difference coordinate by `t`. -/
 def twoPointFixedTimeKernel
