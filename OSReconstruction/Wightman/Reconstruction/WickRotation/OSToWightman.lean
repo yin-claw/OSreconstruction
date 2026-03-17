@@ -1500,70 +1500,21 @@ theorem schwinger_twoPoint_holomorphic_kernel {d : ℕ} [NeZero d]
   -- Step 4: Get osConj and onePoint support conditions
   have hχ₀_pos := osConj_onePointToFin1_tsupport_orderedPositiveTime χ₀ hχ₀_compact hχ₀_neg_time
   have hg_pos := onePointToFin1_tsupport_orderedPositiveTime g hg_pos_time
-  -- Step 5: Define G = symmetrized corrected witness
-  -- G uses the semigroup value at positive time (Im(u_{(1,0)}) > 0 ↔ Re(-I*u) > 0)
-  -- and the REFLECTED semigroup value at negative time (K(ξ) = K(-ξ) from E3)
-  -- On the tube: only the positive branch matters (Im > 0 ⟹ Re(-I*u) > 0)
-  let G_pos := twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-  let G : (Fin (2 * (d + 1)) → ℂ) → ℂ := fun u =>
-    if 0 < (-Complex.I * u (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))).re then
-      G_pos u
-    else
-      G_pos (Function.update u (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))
-        (-u (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))))
+  -- Step 5: Define G = twoPointCorrectedWitness (no symmetrization needed!)
+  -- G is bounded EVERYWHERE: on the tube by semigroup bound ‖T(z)‖ ≤ 2,
+  -- outside the tube by CFC default (cfc_apply_of_not_continuousOn gives 0)
+  let G := twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
   refine ⟨G, ?_, ?_, ?_⟩
-  · -- IsTimeHolomorphic: G = G_pos on the tube (if-branch always true on tube)
-    -- then transfer from isTimeHolomorphic of G_pos
-    have hG_pos_holo := isTimeHolomorphicFlatPositiveTimeDiffWitness_twoPointCorrectedWitness_of_continuousOn
+  · -- IsTimeHolomorphic: direct from existing theorem
+    exact isTimeHolomorphicFlatPositiveTimeDiffWitness_twoPointCorrectedWitness_of_continuousOn
       (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
       (continuousOn_twoPointCorrectedWitness (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact)
-    -- On tube: Im(u_{(1,0)}) > 0 ⟹ Re(-I*u_{(1,0)}) = Im(u_{(1,0)}) > 0 ⟹ G = G_pos
-    have hRe_eq : ∀ z : ℂ, (-Complex.I * z).re = z.im := by
-      intro z; simp [Complex.mul_re, Complex.I_re, Complex.I_im]
-    have hG_eq : ∀ u ∈ SCV.TubeDomain (FlatPositiveTimeDiffReal 2 d), G u = G_pos u := by
-      intro u hu; simp only [G]; rw [if_pos]; rw [hRe_eq]
-      exact (mem_tubeDomain_flatPositiveTimeDiffReal_iff (k := 2) (d := d) u).mp hu ⟨1, by omega⟩
-    constructor
-    · -- ContinuousOn: G = G_pos on tube
-      exact hG_pos_holo.1.congr (fun u hu => by show G u = G_pos u; exact hG_eq u hu)
-    · -- DifferentiableOn in each time slice
-      intro u hu i
-      -- G(update u (i,0) w) = G_pos(update u (i,0) w) for Im(w) > 0
-      -- because update preserves tube membership, so if-branch is true
-      apply DifferentiableOn.congr (hG_pos_holo.2 u hu i)
-      · -- Pointwise equality on {Im w > 0}
-        intro w hw
-        show G (Function.update u (finProdFinEquiv (i, 0)) w) =
-          G_pos (Function.update u (finProdFinEquiv (i, 0)) w)
-        simp only [G]; rw [if_pos]
-        -- Re(-I * (update u (i,0) w)_{(1,0)}) > 0
-        -- Case i = 0: update at (0,0), the (1,0) slot is unchanged = u_{(1,0)} with Im > 0
-        -- Case i = 1: update at (1,0) with w, so slot = w with Im > 0
-        rw [hRe_eq]
-        rcases i with ⟨i, hi⟩
-        interval_cases i
-        · -- i = 0: updated slot is (0,0), the (1,0) slot is u_{(1,0)} unchanged
-          simp [finProdFinEquiv, Function.update, Fin.ext_iff]
-          -- u_{(1,0)} unchanged by update at (0,0), Im > 0 from tube
-          convert (mem_tubeDomain_flatPositiveTimeDiffReal_iff (k := 2) (d := d) u).mp hu ⟨1, by omega⟩
-          simp [finProdFinEquiv]
-        · -- i = 1: updated slot IS (1,0), so value is w with Im > 0
-          simp [finProdFinEquiv, Function.update, Fin.ext_iff]
-          exact hw
   · -- Integrability: G bounded × f Schwartz (L¹) → G*f integrable
     intro f
-    -- G = twoPointCorrectedWitness is a Hilbert space inner product of bounded
-    -- Both branches of G give bounded values (semigroup contraction ‖T(z)‖ ≤ 2)
-    -- so |G(u)| ≤ C for all u on the Euclidean section.
-    -- f Schwartz ⟹ f ∈ L¹. bounded × L¹ ⟹ integrable.
-    have hG_bdd : ∃ C : ℝ, ∀ x : NPointDomain d 2,
-        ‖G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)))‖ ≤ C := by
-      -- G_pos = twoPointCorrectedWitness = ⟨F, T(z) G⟩ with ‖T(z)‖ ≤ 2
-      -- Both branches of G use G_pos (possibly with negated time), so both bounded
-      sorry
-    obtain ⟨C, hC⟩ := hG_bdd
-    -- f.1 is Schwartz hence integrable (need HasTemperateGrowth for volume)
-    -- Use: bounded × integrable = integrable via Integrable.of_norm_le
+    -- At Euclidean points: -I * wickRotate(x)_time = real time difference ξ₀.
+    -- For ξ₀ > 0: G = semigroup inner product, bounded by ‖T(ξ₀)‖ ≤ 2 (contraction)
+    -- For ξ₀ ≤ 0: G = CFC of discontinuous function = 0 (cfc_apply_of_not_continuousOn)
+    -- So |G| bounded on Euclidean section. f Schwartz ⟹ f ∈ L¹. bounded × L¹ ⟹ integrable.
     sorry
   · -- Euclidean reproduction: ∫ G * f = OS.S 2 f for all f ∈ ZeroDiag
     intro f
