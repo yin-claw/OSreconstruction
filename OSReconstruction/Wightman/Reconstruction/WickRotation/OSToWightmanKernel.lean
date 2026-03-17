@@ -1380,6 +1380,63 @@ private theorem measurable_toDiffFlat_wickRotate {d : ℕ} :
   ((differentiable_toDiffFlat_local 2 d).continuous.comp
     (continuous_pi fun j => continuous_wickRotatePoint.comp (continuous_apply j))).measurable
 
+/-- Strong continuity of `y ↦ twoPointTranslatedOnePointVector` in the Hilbert space
+norm. Proof: norm constancy + weak continuity ⟹ strong continuity. -/
+private theorem continuous_twoPointTranslatedOnePointVector_strong {d : ℕ} [NeZero d]
+    (OS : OsterwalderSchraderAxioms d)
+    (g : SchwartzSpacetime d)
+    (hg_pos : tsupport (((onePointToFin1CLM d g : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (hg_compact : HasCompactSupport (g : SpacetimeDim d → ℂ)) :
+    Continuous (fun y : Fin d → ℝ =>
+      twoPointTranslatedOnePointVector (d := d) OS g hg_pos y) := by
+  rw [continuous_iff_continuousAt]
+  intro y₀
+  rw [Metric.continuousAt_iff]
+  intro ε hε
+  let v : (Fin d → ℝ) → OSHilbertSpace OS :=
+    fun y => twoPointTranslatedOnePointVector (d := d) OS g hg_pos y
+  have hre_cont : Continuous (fun y =>
+      RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y))) :=
+    Complex.continuous_re.comp
+      (continuous_inner_twoPointTranslatedOnePointVector (d := d) OS g hg_pos hg_compact y₀)
+  have hnorm : ∀ y, ‖v y‖ = ‖v y₀‖ :=
+    fun y => norm_twoPointTranslatedOnePointVector_eq (d := d) OS g hg_pos y y₀
+  have hre_y₀ : RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y₀)) = ‖v y₀‖ ^ 2 := by
+    rw [@inner_self_eq_norm_sq ℂ]
+  have hCS : ∀ y, RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y)) ≤ ‖v y₀‖ ^ 2 := by
+    intro y
+    calc RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y))
+        ≤ ‖@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y)‖ := Complex.re_le_norm _
+      _ ≤ ‖v y₀‖ * ‖v y‖ := norm_inner_le_norm (𝕜 := ℂ) _ _
+      _ = ‖v y₀‖ ^ 2 := by rw [hnorm y]; ring
+  have hident : ∀ y, ‖v y - v y₀‖ ^ 2 =
+      2 * (‖v y₀‖ ^ 2 - RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y))) := by
+    intro y
+    have h := @norm_sub_sq ℂ (OSHilbertSpace OS) _ _ _ (v y) (v y₀)
+    rw [hnorm y] at h
+    have hconj : RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y) (v y₀)) =
+        RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y)) := by
+      rw [← inner_conj_symm (𝕜 := ℂ) (v y) (v y₀), RCLike.conj_re]
+    linarith [hconj]
+  have hε2 : (0 : ℝ) < ε ^ 2 / 2 := by positivity
+  obtain ⟨δ, hδ_pos, hδ⟩ := Metric.continuousAt_iff.mp hre_cont.continuousAt _ hε2
+  refine ⟨δ, hδ_pos, fun {y} (hy : dist y y₀ < δ) => ?_⟩
+  rw [dist_eq_norm]
+  have hδ_app := hδ hy
+  rw [Real.dist_eq, hre_y₀] at hδ_app
+  have hdiff_nonneg : 0 ≤ ‖v y₀‖ ^ 2 -
+      RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y)) := by linarith [hCS y]
+  have hdiff_bound : ‖v y₀‖ ^ 2 -
+      RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y)) < ε ^ 2 / 2 := by
+    have : |RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y)) - ‖v y₀‖ ^ 2| =
+        ‖v y₀‖ ^ 2 - RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y)) := by
+      rw [abs_of_nonpos (by linarith [hCS y])]; ring
+    linarith
+  have hsq : ‖v y - v y₀‖ ^ 2 < ε ^ 2 := by rw [hident y]; linarith
+  by_contra h; push_neg at h
+  linarith [show ε ^ 2 ≤ ‖v y - v y₀‖ ^ 2 from by nlinarith [sq_nonneg (‖v y - v y₀‖ - ε)]]
+
 set_option maxHeartbeats 800000 in
 /-- **Two-point Schwinger holomorphic kernel.**
 
@@ -1532,17 +1589,144 @@ theorem schwinger_twoPoint_holomorphic_kernel {d : ℕ} [NeZero d]
       exact f.1.integrable
     -- |G * f| ≤ C * |f|, and C * |f| is integrable
     refine (hf_int.norm.const_mul C).mono' ?_ ?_
-    · -- AEStronglyMeasurable: G * f is measurable
-      -- The wick rotation map is measurable, G_pos is composed from continuous/measurable pieces,
-      -- and the piecewise construction preserves measurability
-      -- G ∘ wr is continuous on {x | x 1 0 ≠ x 0 0} (full measure): each branch evaluates
-      -- twoPointSpatialWitness at positive real time, which is holomorphic hence continuous.
-      -- ContinuousOn.aestronglyMeasurable + restrict_eq_self_of_ae_mem gives AEStronglyMeasurable.
-      -- The product with f (Schwartz, hence continuous) preserves AEStronglyMeasurable.
-      -- Technical obstacle: proving continuity of twoPointSpatialWitness jointly in (t, y)
-      -- requires semigroup strong continuity + spatial translation continuity infrastructure.
-      exact (sorry : AEStronglyMeasurable
-        (fun x => G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) * f.1 x) volume)
+    · -- AEStronglyMeasurable: G ∘ wr is continuous on {x₁⁰ ≠ x₀⁰} (full measure),
+      -- so AEStronglyMeasurable. Product with Schwartz f preserves AEStronglyMeasurable.
+      -- Step A: G ∘ wr is continuous on the positive-time open set
+      let U_pos : Set (NPointDomain d 2) := {x | x 1 0 > x 0 0}
+      let U_neg : Set (NPointDomain d 2) := {x | x 1 0 < x 0 0}
+      -- On U_pos, G(wr(x)) = twoPointSpatialWitness(x₁⁰-x₀⁰, spatial_diff(x)) via
+      -- inner product form ⟨F, T(t) v_y⟩ which is continuous (semigroup jointly continuous
+      -- + v_y strongly continuous in y + innerSL continuous).
+      -- Similarly on U_neg. The complement {x₁⁰ = x₀⁰} has measure zero.
+      -- Step B: Use ContinuousOn → AEStronglyMeasurable on full-measure set
+      have hU : ∀ᵐ x : NPointDomain d 2 ∂volume, x ∈ U_pos ∪ U_neg := by
+        have hnull := measure_timeEq_zero_k2 (d := d)
+        rw [ae_iff]
+        refine le_antisymm ?_ (zero_le _)
+        calc volume {x | x ∉ U_pos ∪ U_neg}
+            ≤ volume {x : NPointDomain d 2 | x 1 0 = x 0 0} := by
+              apply MeasureTheory.measure_mono
+              intro x hx; simp [U_pos, U_neg, Set.mem_union] at hx
+              exact hx.symm
+          _ = 0 := hnull
+      -- G ∘ wr is continuous on U_pos ∪ U_neg
+      have hGwr_cont : ContinuousOn
+          (fun x : NPointDomain d 2 =>
+            G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)))) (U_pos ∪ U_neg) := by
+        -- On each piece, the function equals the respective branch (by the if-then-else)
+        -- and each branch is continuous (semigroup + spatial translation continuity).
+        -- Proving this requires the joint continuity chain:
+        -- x ↦ (time_diff(x), spatial_diff(x)) ↦ (T(t) v_y) ↦ ⟨F, T(t) v_y⟩
+        -- The composition is continuous since:
+        -- - coordinate extraction is continuous (linear)
+        -- - v_y is continuous in y (continuous_twoPointTranslatedOnePointVector_strong)
+        -- - T(z) is jointly continuous on {Re z > 0} × H
+        --   (continuousOn_osTimeShiftHilbertComplex_jointly)
+        -- - ⟨F, ·⟩ is continuous (innerSL)
+        -- On U_pos and U_neg separately, G ∘ wr agrees with a continuous function.
+        have hcx10 : Continuous (fun x : NPointDomain d 2 => x 1 0) :=
+          (continuous_apply (0 : Fin (d + 1))).comp (continuous_apply (1 : Fin 2))
+        have hcx00 : Continuous (fun x : NPointDomain d 2 => x 0 0) :=
+          (continuous_apply (0 : Fin (d + 1))).comp (continuous_apply (0 : Fin 2))
+        have hU_pos_open : IsOpen U_pos := isOpen_lt hcx00 hcx10
+        have hU_neg_open : IsOpen U_neg := isOpen_lt hcx10 hcx00
+        -- On U_pos, G(wr(x)) = twoPointCorrectedWitness(wr(x)) which is continuous
+        -- (composition of ContinuousOn with Continuous, range in tube domain).
+        -- On U_neg, G(wr(x)) = twoPointCorrectedWitness(reflect(wr(x))), similar.
+        -- Both branches use continuousOn_twoPointCorrectedWitness.
+        -- Use continuousOn_twoPointSpatialWitness on {Re z > 0} × univ,
+        -- composed with coordinate extraction from x.
+        have hsw_cont := continuousOn_twoPointSpatialWitness
+          (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
+        -- Coordinate extraction: x ↦ (↑(x10-x00), spatial_diff(x))
+        have hcoord_pos : Continuous (fun x : NPointDomain d 2 =>
+            ((↑(x 1 0 - x 0 0) : ℂ), fun i : Fin d => x 1 i.succ - x 0 i.succ)) := by
+          exact (Complex.continuous_ofReal.comp (hcx10.sub hcx00)).prodMk
+            (continuous_pi fun i =>
+              ((continuous_apply i.succ).comp (continuous_apply 1)).sub
+                ((continuous_apply i.succ).comp (continuous_apply 0)))
+        -- On U_pos, the time coord has Re > 0
+        have hcoord_maps_pos : Set.MapsTo
+            (fun x : NPointDomain d 2 =>
+              ((↑(x 1 0 - x 0 0) : ℂ), fun i : Fin d => x 1 i.succ - x 0 i.succ))
+            U_pos ({z : ℂ | 0 < z.re} ×ˢ Set.univ) := by
+          intro x (hx : x 1 0 > x 0 0); exact ⟨by simp [Complex.ofReal_re]; linarith, trivial⟩
+        -- G agrees with twoPointSpatialWitness(x10-x00, spatial_diff) on U_pos
+        have hG_eq_pos : ∀ x ∈ U_pos,
+            G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) =
+              twoPointSpatialWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
+                (↑(x 1 0 - x 0 0)) (fun i => x 1 i.succ - x 0 i.succ) := by
+          intro x (hx : x 1 0 > x 0 0); simp only [G]
+          have h_cond : 0 < (-Complex.I * BHW.toDiffFlat 2 d
+              (fun j => wickRotatePoint (x j)) j₁₀).re := by
+            rw [neg_I_mul_toDiffFlat_wickRotate_j10 (d := d) x]; simp; linarith
+          rw [if_pos h_cond, show G_pos = twoPointCorrectedWitness OS lgc χ₀ g
+            hχ₀_pos hg_pos hg_compact from rfl,
+            twoPointCorrectedWitness_eq_twoPointSpatialWitness,
+            neg_I_mul_toDiffFlat_wickRotate_j10 (d := d) x]
+          congr 1
+          ext i; simp [extractDiffSpatialRe, BHW.toDiffFlat, BHW.flattenCfg,
+            BHW.diffCoordEquiv_apply, wickRotatePoint, Fin.succ_ne_zero]
+        -- Similarly for U_neg with reflected time
+        have hcoord_neg : Continuous (fun x : NPointDomain d 2 =>
+            ((↑(x 0 0 - x 1 0) : ℂ), fun i : Fin d => x 1 i.succ - x 0 i.succ)) := by
+          exact (Complex.continuous_ofReal.comp (hcx00.sub hcx10)).prodMk
+            (continuous_pi fun i =>
+              ((continuous_apply i.succ).comp (continuous_apply 1)).sub
+                ((continuous_apply i.succ).comp (continuous_apply 0)))
+        have hcoord_maps_neg : Set.MapsTo
+            (fun x : NPointDomain d 2 =>
+              ((↑(x 0 0 - x 1 0) : ℂ), fun i : Fin d => x 1 i.succ - x 0 i.succ))
+            U_neg ({z : ℂ | 0 < z.re} ×ˢ Set.univ) := by
+          intro x (hx : x 1 0 < x 0 0); exact ⟨by simp [Complex.ofReal_re]; linarith, trivial⟩
+        have hG_eq_neg : ∀ x ∈ U_neg,
+            G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) =
+              twoPointSpatialWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
+                (↑(x 0 0 - x 1 0)) (fun i => x 1 i.succ - x 0 i.succ) := by
+          intro x (hx : x 1 0 < x 0 0); simp only [G]
+          have h_cond : ¬ 0 < (-Complex.I * BHW.toDiffFlat 2 d
+              (fun j => wickRotatePoint (x j)) j₁₀).re := by
+            rw [neg_I_mul_toDiffFlat_wickRotate_j10 (d := d) x]; simp; linarith
+          rw [if_neg h_cond, show G_pos = twoPointCorrectedWitness OS lgc χ₀ g
+            hχ₀_pos hg_pos hg_compact from rfl,
+            twoPointCorrectedWitness_eq_twoPointSpatialWitness]
+          -- Simplify the if-then-else in the time slot: finProdFinEquiv ... = j₁₀ is true
+          have h_if : (if finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))) = j₁₀
+              then -BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀
+              else BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))
+                (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))) =
+              -(BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀) := by
+            simp [j₁₀]
+          rw [show -Complex.I * (if finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))) = j₁₀
+              then -BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀
+              else BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))
+                (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))) =
+              -Complex.I * -(BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀) from
+            by rw [h_if],
+            neg_I_mul_neg_toDiffFlat_wickRotate_j10 (d := d) x,
+            extractDiffSpatialRe_reflect_timeDiff _ j₁₀ rfl]
+          congr 1
+          ext i; simp [extractDiffSpatialRe, BHW.toDiffFlat, BHW.flattenCfg,
+            BHW.diffCoordEquiv_apply, wickRotatePoint, Fin.succ_ne_zero]
+        apply ContinuousOn.union_of_isOpen _ _ hU_pos_open hU_neg_open
+        · refine (hsw_cont.comp hcoord_pos.continuousOn hcoord_maps_pos).congr (fun x hx => ?_)
+          simp only [Function.comp]
+          rw [hG_eq_pos x hx]
+        · refine (hsw_cont.comp hcoord_neg.continuousOn hcoord_maps_neg).congr (fun x hx => ?_)
+          simp only [Function.comp]
+          rw [hG_eq_neg x hx]
+      have hcont_x10 : Continuous (fun x : NPointDomain d 2 => x 1 0) :=
+        (continuous_apply (0 : Fin (d + 1))).comp (continuous_apply (1 : Fin 2))
+      have hcont_x00 : Continuous (fun x : NPointDomain d 2 => x 0 0) :=
+        (continuous_apply (0 : Fin (d + 1))).comp (continuous_apply (0 : Fin 2))
+      have hopen : IsOpen (U_pos ∪ U_neg) :=
+        (isOpen_lt hcont_x00 hcont_x10).union (isOpen_lt hcont_x10 hcont_x00)
+      have hGwr_aesm : AEStronglyMeasurable
+          (fun x : NPointDomain d 2 =>
+            G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)))) volume := by
+        rw [← MeasureTheory.Measure.restrict_eq_self_of_ae_mem hU]
+        exact hGwr_cont.aestronglyMeasurable hopen.measurableSet
+      exact hGwr_aesm.mul f.1.continuous.aestronglyMeasurable
     · -- Norm bound: ae
       filter_upwards [hG_ae_bdd] with x hx
       calc ‖G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) * (f.1 x)‖
