@@ -1500,13 +1500,38 @@ theorem schwinger_twoPoint_holomorphic_kernel {d : ℕ} [NeZero d]
   -- Step 4: Get osConj and onePoint support conditions
   have hχ₀_pos := osConj_onePointToFin1_tsupport_orderedPositiveTime χ₀ hχ₀_compact hχ₀_neg_time
   have hg_pos := onePointToFin1_tsupport_orderedPositiveTime g hg_pos_time
-  -- Step 5: Define G = twoPointCorrectedWitness
-  let G := twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
+  -- Step 5: Define G = symmetrized corrected witness
+  -- G uses the semigroup value at positive time (Im(u_{(1,0)}) > 0 ↔ Re(-I*u) > 0)
+  -- and the REFLECTED semigroup value at negative time (K(ξ) = K(-ξ) from E3)
+  -- On the tube: only the positive branch matters (Im > 0 ⟹ Re(-I*u) > 0)
+  let G_pos := twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
+  let G : (Fin (2 * (d + 1)) → ℂ) → ℂ := fun u =>
+    if 0 < (-Complex.I * u (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))).re then
+      G_pos u
+    else
+      G_pos (Function.update u (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))
+        (-u (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))))
   refine ⟨G, ?_, ?_, ?_⟩
-  · -- IsTimeHolomorphic: from existing theorem
-    exact isTimeHolomorphicFlatPositiveTimeDiffWitness_twoPointCorrectedWitness_of_continuousOn
+  · -- IsTimeHolomorphic: G = G_pos on the tube (if-branch always true on tube)
+    -- then transfer from isTimeHolomorphic of G_pos
+    have hG_pos_holo := isTimeHolomorphicFlatPositiveTimeDiffWitness_twoPointCorrectedWitness_of_continuousOn
       (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
       (continuousOn_twoPointCorrectedWitness (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact)
+    -- On tube: Im(u_{(1,0)}) > 0 ⟹ Re(-I*u_{(1,0)}) = Im(u_{(1,0)}) > 0 ⟹ G = G_pos
+    have hRe_eq : ∀ z : ℂ, (-Complex.I * z).re = z.im := by
+      intro z; simp [Complex.mul_re, Complex.I_re, Complex.I_im]
+    have hG_eq : ∀ u ∈ SCV.TubeDomain (FlatPositiveTimeDiffReal 2 d), G u = G_pos u := by
+      intro u hu; simp only [G]; rw [if_pos]; rw [hRe_eq]
+      exact (mem_tubeDomain_flatPositiveTimeDiffReal_iff (k := 2) (d := d) u).mp hu ⟨1, by omega⟩
+    constructor
+    · -- ContinuousOn: G = G_pos on tube
+      exact hG_pos_holo.1.congr (fun u hu => by show G u = G_pos u; exact hG_eq u hu)
+    · -- DifferentiableOn in each time slice
+      intro u hu i
+      -- G = G_pos on tube, update preserves tube membership for Im(w) > 0
+      -- so G(update u (i,0) w) = G_pos(update u (i,0) w) on {Im w > 0}
+      -- Transfer DifferentiableOn from G_pos to G via pointwise equality
+      sorry
   · -- Integrability: G bounded × f Schwartz (L¹) → G*f integrable
     intro f
     -- G = twoPointCorrectedWitness is a Hilbert space inner product of bounded
