@@ -1637,8 +1637,9 @@ theorem schwinger_twoPoint_holomorphic_kernel {d : ℕ} [NeZero d]
         rw [twoPointCorrectedWitness_eq_twoPointSpatialWitness]
         -- -I*u_{j₁₀} = (↑(x₂₀-x₁₀) : ℂ) at Euclidean points (from Wick rotation)
         -- h_pos gives x₂₀-x₁₀ > 0, so hC applies
-        -- The computation: toDiffFlat(wickRotate(x))_{j₁₀} = I*(x₂₀-x₁₀),
-        -- so -I*I*(x₂₀-x₁₀) = x₂₀-x₁₀ (real). Uses neg_I_mul_I_mul from WickRotationBridge.
+        -- Need: -I * toDiffFlat(wickRotate(x))_{j₁₀} = ↑(x 1 0 - x 0 0) (coordinate computation)
+        -- Then: h_pos gives x 1 0 - x 0 0 > 0, apply hC
+        -- The coordinate computation requires diffCoordLinearEquiv + wickRotatePoint unfolding
         sorry
       · -- Negative branch: unfold G_pos at reflected u and apply hC
         rename_i h_neg
