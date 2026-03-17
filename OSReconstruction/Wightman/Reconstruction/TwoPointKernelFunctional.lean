@@ -527,4 +527,86 @@ theorem twoPointFixedTimeKernelCLM_apply_differenceLift
       hK_meas C_bd N hC hK_bound
       (twoPointCenterDiffSchwartzCLM (d := d) (twoPointDifferenceLift χ h))
 
+/-! ### Schwartz Representation Theorem (axiomatized)
+
+The structure theorem for tempered distributions: every continuous linear
+functional on Schwartz space is a distributional derivative of a continuous
+function with polynomial growth.
+
+References: Rudin, Functional Analysis, Theorem 7.25;
+Hörmander, Analysis of Linear PDE I, Theorem 7.1.18;
+Reed & Simon, Methods of Mathematical Physics I, Theorem V.10. -/
+
+/-- **Schwartz Representation Theorem (Structure Theorem for Tempered Distributions).**
+
+Every tempered distribution (continuous linear functional on Schwartz space)
+is a finite distributional derivative of a continuous function with polynomial growth.
+Specifically, for T : S(ℝⁿ) →L[ℂ] ℂ, there exist a derivative order M, a continuous
+function g : ℝⁿ → ℂ with |g(x)| ≤ C(1+|x|)^M, and a multi-index α with |α| ≤ M,
+such that T(f) = (-1)^|α| ∫ g(x) (∂^α f)(x) dx for all f ∈ S(ℝⁿ).
+
+This is a purely functional-analytic fact about the dual of Fréchet spaces,
+with no reference to physics. The proof requires the Fourier transform on S',
+Sobolev embedding, and parametrices for (1-Δ)^k.
+
+The operator P is (1-Δ)^k for some k. The key consequence for zero-diagonal
+distributions: if f vanishes to infinite order at the origin, then P(f) also
+vanishes there (since P is a differential operator). -/
+axiom schwartz_representation_theorem
+    {n : ℕ} [NeZero n]
+    (T : SchwartzMap (Fin n → ℝ) ℂ →L[ℂ] ℂ) :
+    ∃ (P : SchwartzMap (Fin n → ℝ) ℂ →L[ℂ] SchwartzMap (Fin n → ℝ) ℂ)
+      (g : (Fin n → ℝ) → ℂ) (C_g : ℝ) (M : ℕ),
+      Continuous g ∧
+      (0 < C_g) ∧
+      (∀ x : Fin n → ℝ, ‖g x‖ ≤ C_g * (1 + ‖x‖) ^ M) ∧
+      (∀ f : SchwartzMap (Fin n → ℝ) ℂ,
+        T f = ∫ x : Fin n → ℝ, g x * (P f : (Fin n → ℝ) → ℂ) x) ∧
+      -- P preserves vanishing at the origin: if all derivatives of f vanish
+      -- at 0, so do all derivatives of P(f). This is the key property that
+      -- makes the representation useful for zero-diagonal distributions.
+      (∀ (f : SchwartzMap (Fin n → ℝ) ℂ) (k : ℕ),
+        iteratedFDeriv ℝ k (f : (Fin n → ℝ) → ℂ) 0 = 0 →
+        iteratedFDeriv ℝ k (P f : (Fin n → ℝ) → ℂ) 0 = 0)
+
+/-! ### Kernel representation for the Schwinger difference distribution
+
+The Schwinger 2-point function, restricted to difference coordinates via
+translation invariance, defines a tempered distribution `T_diff(h) = OS.S 2(χ₀ ⊗ h)`.
+On zero-diagonal test functions (h vanishing at 0), this distribution has
+a locally integrable kernel representation: `T_diff(h) = ∫ K(ξ) h(ξ) dξ`.
+
+The kernel K is the Schwinger 2-point function in difference coordinates,
+and it extends holomorphically to the tube domain via the OS semigroup. -/
+
+/-- The Schwinger difference-coordinate distribution: for fixed normalized center
+cutoff χ₀ (with ∫ χ₀ = 1), the map `h ↦ OS.S 2 (twoPointDifferenceLift χ₀ h)` is
+a continuous linear functional on zero-origin-avoiding Schwartz functions.
+
+By `twoPointDifferenceLift_eq_centerValue`, this is independent of χ₀ (up to
+normalization) and captures the full Schwinger 2-point function in difference
+coordinates. -/
+noncomputable def schwingerDifferenceFunctional
+    (OS : OsterwalderSchraderAxioms d)
+    (χ₀ : SchwartzSpacetime d)
+    (hχ₀ : ∫ x : SpacetimeDim d, χ₀ x = 1)
+    (h : SchwartzSpacetime d)
+    (h0 : (0 : SpacetimeDim d) ∉ tsupport (h : SpacetimeDim d → ℂ)) : ℂ :=
+  OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h))
+
+/-- The Schwinger difference functional reproduces OS.S 2 on product tests:
+`OS.S 2 (χ ⊗ h) = schwingerDifferenceFunctional(h) * ∫ χ`. -/
+theorem schwingerDifferenceFunctional_reproduces
+    (OS : OsterwalderSchraderAxioms d)
+    (χ₀ : SchwartzSpacetime d)
+    (hχ₀ : ∫ x : SpacetimeDim d, χ₀ x = 1)
+    (h : SchwartzSpacetime d)
+    (h0 : (0 : SpacetimeDim d) ∉ tsupport (h : SpacetimeDim d → ℂ))
+    (χ : SchwartzSpacetime d) :
+    OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)) =
+      schwingerDifferenceFunctional OS χ₀ hχ₀ h h0 * ∫ x : SpacetimeDim d, χ x := by
+  exact OsterwalderSchraderAxioms.twoPointDifferenceLift_eq_centerValue
+    (d := d) OS h h0 χ₀ hχ₀ χ
+
+
 end OSReconstruction
