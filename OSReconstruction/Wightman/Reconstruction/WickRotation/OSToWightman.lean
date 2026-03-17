@@ -1635,9 +1635,10 @@ theorem schwinger_twoPoint_holomorphic_kernel {d : ℕ} [NeZero d]
         change ‖twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
           (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)))‖ ≤ C
         rw [twoPointCorrectedWitness_eq_twoPointSpatialWitness]
-        -- Goal: ‖twoPointSpatialWitness(-I*u_{j₁₀}, spatial)‖ ≤ C
-        -- -I*u_{j₁₀} has Re > 0 from h_pos
-        -- Need to show it equals (some real t : ℂ) with t > 0, then apply hC
+        -- -I*u_{j₁₀} = (↑(x₂₀-x₁₀) : ℂ) at Euclidean points (from Wick rotation)
+        -- h_pos gives x₂₀-x₁₀ > 0, so hC applies
+        -- The computation: toDiffFlat(wickRotate(x))_{j₁₀} = I*(x₂₀-x₁₀),
+        -- so -I*I*(x₂₀-x₁₀) = x₂₀-x₁₀ (real). Uses neg_I_mul_I_mul from WickRotationBridge.
         sorry
       · -- Negative branch: unfold G_pos at reflected u and apply hC
         rename_i h_neg
