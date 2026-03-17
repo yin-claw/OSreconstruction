@@ -1356,113 +1356,51 @@ theorem map_productLift_and_differenceLift_of_eq_on_twoPointDifferenceShell_fixe
                 (d := d) G t hK_meas C_bd N hC hK_bound χ g
   · exact hEq χ h
 
-/-- Fixed-time reduced-comparison package for the concrete corrected `k = 2`
-witness. For each positive Euclidean time `t`, the remaining root packaging gap
-is to produce a full flattened CLM `T_t` together with the center-spatial and
-head-translation invariance data needed by the reduced kernel-comparison route,
-and to show that the descended reduced functional already agrees with the
-concrete fixed-time kernel on compactly supported reduced tests in the positive
-head half-space. -/
-theorem exists_twoPointCorrectedWitness_fixedTime_positiveCompactReducedPackage
+/-- **Corrected universalization** for `k = 2` (ZeroDiag-native).
+
+The Schwinger functional `OS.S 2` lives on `ZeroDiagonalSchwartz d 2` — it
+cannot be extended to the full Schwartz space because the Schwinger kernel has
+diagonal singularities. Two CLMs on `ZeroDiagonalSchwartz` that agree on a
+dense set of difference shells are equal. -/
+theorem twoPointWitnessKernelCLM_eq_schwinger_of_shell_agreement
     {d : ℕ} [NeZero d]
     (OS : OsterwalderSchraderAxioms d)
-    (lgc : OSLinearGrowthCondition d OS)
-    (χ₀ g : SchwartzSpacetime d)
-    (hχ₀_pos : tsupport (((SchwartzNPoint.osConj (d := d) (n := 1)
-        (onePointToFin1CLM d χ₀ : SchwartzNPoint d 1) : SchwartzNPoint d 1) :
-        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
-    (hg_pos : tsupport (((onePointToFin1CLM d g : SchwartzNPoint d 1) :
-        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
-    (hg_compact : HasCompactSupport (g : SpacetimeDim d → ℂ))
-    (t : ℝ) (ht : 0 < t)
-    (hK_meas : MeasureTheory.AEStronglyMeasurable
-      (OSReconstruction.twoPointFixedTimeKernel (d := d)
-        (twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact) (t : ℂ))
-        MeasureTheory.volume)
-    (C_bd : ℝ) (N : ℕ) (hC : 0 < C_bd)
-    (hK_bound : ∀ᵐ x : NPointDomain d 2 ∂MeasureTheory.volume,
-      ‖OSReconstruction.twoPointFixedTimeKernel (d := d)
-          (twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact) (t : ℂ) x‖ ≤
-        C_bd * (1 + ‖x‖) ^ N) :
-    ∃ (T : SchwartzMap (Fin ((d + 1) + (d + 1)) → ℝ) ℂ →L[ℂ] ℂ)
-        (φ : SchwartzMap (Fin d → ℝ) ℂ)
-        (ψ : SchwartzMap ℝ ℂ),
-      (∫ u : Fin d → ℝ, φ u = 1) ∧
-      (∫ s : ℝ, ψ s = 1) ∧
-      HasCompactSupport ψ ∧
-      OSReconstruction.IsCenterSpatialTranslationInvariantSchwartzCLM d T ∧
-      OSReconstruction.IsHeadTranslationInvariantSchwartzCLM
-        (OSReconstruction.centerSpatialDescentCLM d T φ) ∧
-      OSReconstruction.IsCenterSpatialTranslationInvariantSchwartzCLM d
-        (OSReconstruction.twoPointFlatKernelCLM (d := d)
-          (OSReconstruction.twoPointFixedTimeKernel (d := d)
-            (twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact) (t : ℂ))
-          hK_meas C_bd N hC hK_bound) ∧
-      OSReconstruction.IsHeadTranslationInvariantSchwartzCLM
-        (OSReconstruction.centerSpatialDescentCLM d
-          (OSReconstruction.twoPointFlatKernelCLM (d := d)
-            (OSReconstruction.twoPointFixedTimeKernel (d := d)
-              (twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact) (t : ℂ))
-            hK_meas C_bd N hC hK_bound) φ) ∧
-      (∀ H : SchwartzMap (Fin (d + 2) → ℝ) ℂ,
-        HasCompactSupport (H : (Fin (d + 2) → ℝ) → ℂ) →
-        tsupport (H : (Fin (d + 2) → ℝ) → ℂ) ⊆ {x : Fin (d + 2) → ℝ | 0 < x 0} →
-        OSReconstruction.centerSpatialDescentCLM d T φ H =
-          OSReconstruction.centerSpatialDescentCLM d
-            (OSReconstruction.twoPointFlatKernelCLM (d := d)
-              (OSReconstruction.twoPointFixedTimeKernel (d := d)
-                (twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact) (t : ℂ))
-              hK_meas C_bd N hC hK_bound) φ H) := by
-  sorry
+    (L : ZeroDiagonalSchwartz d 2 →L[ℂ] ℂ)
+    (hShell : ∀ χ h : SchwartzSpacetime d,
+      tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0} →
+      HasCompactSupport (h : SpacetimeDim d → ℂ) →
+        L (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)) =
+          OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)))
+    (hDense : Dense {f : ZeroDiagonalSchwartz d 2 |
+      ∃ (χ h : SchwartzSpacetime d),
+        tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0} ∧
+        HasCompactSupport (h : SpacetimeDim d → ℂ) ∧
+        f = ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)}) :
+    L = OsterwalderSchraderAxioms.schwingerCLM (d := d) OS 2 :=
+  ContinuousLinearMap.eq_of_eq_on_dense L
+    (OsterwalderSchraderAxioms.schwingerCLM (d := d) OS 2) hDense
+    (fun f ⟨χ, h, hh_pos, hh_compact, hf_eq⟩ => by
+      rw [hf_eq]; exact hShell χ h hh_pos hh_compact)
 
-/-- Fixed-time payoff from the previous reduced-comparison package: once the
-concrete corrected witness has been upgraded to a center-spatial/head-quotient
-CLM package at time `t`, the positive-compact reduced wrapper gives a single
-flattened CLM `T_t` whose values on every two-point product shell and every
-two-point difference shell are the expected fixed-time kernel integrals. -/
-theorem exists_twoPointCorrectedWitness_fixedTime_productDifferenceWitness
-    {d : ℕ} [NeZero d]
-    (OS : OsterwalderSchraderAxioms d)
-    (lgc : OSLinearGrowthCondition d OS)
-    (χ₀ g : SchwartzSpacetime d)
-    (hχ₀_pos : tsupport (((SchwartzNPoint.osConj (d := d) (n := 1)
-        (onePointToFin1CLM d χ₀ : SchwartzNPoint d 1) : SchwartzNPoint d 1) :
-        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
-    (hg_pos : tsupport (((onePointToFin1CLM d g : SchwartzNPoint d 1) :
-        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
-    (hg_compact : HasCompactSupport (g : SpacetimeDim d → ℂ))
-    (t : ℝ) (ht : 0 < t)
-    (hK_meas : MeasureTheory.AEStronglyMeasurable
-      (OSReconstruction.twoPointFixedTimeKernel (d := d)
-        (twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact) (t : ℂ))
-        MeasureTheory.volume)
-    (C_bd : ℝ) (N : ℕ) (hC : 0 < C_bd)
-    (hK_bound : ∀ᵐ x : NPointDomain d 2 ∂MeasureTheory.volume,
-      ‖OSReconstruction.twoPointFixedTimeKernel (d := d)
-          (twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact) (t : ℂ) x‖ ≤
-        C_bd * (1 + ‖x‖) ^ N) :
-    ∃ T : SchwartzMap (Fin ((d + 1) + (d + 1)) → ℝ) ℂ →L[ℂ] ℂ,
-      ∀ χ g' h : SchwartzSpacetime d,
-        T (OSReconstruction.reindexSchwartzFin (by ring)
-            (OSReconstruction.flattenSchwartzNPoint (d := d)
-              (OSReconstruction.twoPointCenterDiffSchwartzCLM (d := d)
-                (twoPointProductLift χ g')))) =
-          ∫ z : NPointDomain d 2,
-            OSReconstruction.twoPointFixedTimeKernel (d := d)
-              (twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact) (t : ℂ) z *
-              (χ (z 0) * g' (z 0 + z 1)) ∧
-        T (OSReconstruction.reindexSchwartzFin (by ring)
-            (OSReconstruction.flattenSchwartzNPoint (d := d)
-              (OSReconstruction.twoPointCenterDiffSchwartzCLM (d := d)
-                (twoPointDifferenceLift χ h)))) =
-          ∫ z : NPointDomain d 2,
-            OSReconstruction.twoPointFixedTimeKernel (d := d)
-              (twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact) (t : ℂ) z *
-              (χ (z 0) * h (z 1)) := by
-  sorry
+/-- `k = 2` special case of the time-parametric base-step theorem.
 
-/-- `k = 2` special case of the time-parametric base-step theorem. This is the
-current production stepping stone for the root `E -> R` blocker. -/
+**Architecture (2026-03-16):** The proof requires two independent ingredients:
+
+**(A) CLM universalization (Steps 1-3):**
+1. Φ(f₁, f₂) = OSInnerProduct(OS.S, single(θf₁), single(f₂)) — continuous
+   bilinear on all products (uses ofClassical for non-zero-diagonal)
+2. Nuclear axiom → CLM W on SchwartzNPointSpace with W(f₁⊗f₂) = Φ(f₁,f₂)
+3. W|_{ZeroDiag} = OS.S 2 (by `twoPointWitnessKernelCLM_eq_schwinger_of_shell_agreement`)
+
+**(B) Pointwise kernel extraction (Step 4, separate obligation):**
+4. Extract a pointwise function G from the CLM W such that W(f) = ∫ G * f.
+   This is NOT automatic from (A) — W is a tempered distribution, and
+   distribution → pointwise kernel requires separate justification
+   (e.g., from the semigroup giving G as a genuine pointwise function
+   at positive Euclidean time, or from Schwartz kernel representation).
+
+**(C) Time holomorphicity (Step 5):**
+5. G is time-holomorphic — from semigroup differentiableOn, once G is defined. -/
 theorem schwinger_continuation_base_step_timeParametric_twoPoint {d : ℕ} [NeZero d]
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) :
