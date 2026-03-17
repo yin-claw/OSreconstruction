@@ -1621,8 +1621,14 @@ theorem schwinger_twoPoint_holomorphic_kernel {d : ℕ} [NeZero d]
       -- real time (semigroup bound ‖T(z)‖ ≤ 2 from spectralSemigroupComplex_norm_le).
       -- Combined with Cauchy-Schwarz: |⟨F, T(z)G⟩| ≤ ‖F‖ * 2 * ‖G‖.
       -- norm_twoPointTranslatedOnePointVector_eq gives y-independence of ‖G‖.
-      -- Both branches evaluate semigroup at Re > 0, giving |inner product| ≤ 2‖F‖‖v‖.
-      -- Proof requires deep unfolding through twoPointCorrectedWitness chain.
+      -- Uses twoPointSpatialWitness_bounded_of_pos for both branches.
+      -- Requires unfolding G(toDiffFlat(wickRotate(x))) → twoPointSpatialWitness(ξ₀, y)
+      -- and showing ξ₀ > 0 in both branches (positive and reflected).
+      obtain ⟨C, hC⟩ := twoPointSpatialWitness_bounded_of_pos (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
+      refine ⟨C, fun x => ?_⟩
+      -- G(toDiffFlat(wickRotate(x))) evaluates twoPointSpatialWitness at some (t, y).
+      -- Both piecewise branches give t > 0.
+      -- Deep coordinate unfolding needed here.
       sorry
     obtain ⟨C, hC⟩ := hG_bdd
     -- f.1 is Schwartz hence integrable
