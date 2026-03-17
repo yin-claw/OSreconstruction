@@ -1382,28 +1382,19 @@ theorem twoPointWitnessKernelCLM_eq_schwinger_of_shell_agreement
     (fun f ⟨χ, h, hh_pos, hh_compact, hf_eq⟩ => by
       rw [hf_eq]; exact hShell χ h hh_pos hh_compact)
 
-/-- **Semigroup kernel regularity** for the two-point Schwinger function.
+/-- **Schwinger kernel regularity.**
 
-The OS Schwinger function S₂ is a regular distribution on ZeroDiagonalSchwartz:
-it is given by integration against a pointwise smooth kernel K(ξ) for ξ₀ > 0.
-The kernel K is the semigroup matrix element (heat kernel of the Hamiltonian H).
+The n-point Schwinger function Sₙ is a regular distribution on
+`ZeroDiagonalSchwartz`: there exists a measurable kernel K such that
+`Sₙ(f) = ∫ K * f` for all zero-diagonal test functions f.
 
-This is a standard consequence of:
-- The semigroup e^{-tH} is trace class for t > 0 (from H ≥ 0 + compact resolvent)
-- Trace class operators have smooth integral kernels (Reed-Simon IV, Thm XIII.52)
-- The Schwinger function is the integral of K against test functions
+K is smooth at non-coincident points and may have inverse-power singularity
+at coincidence. The zero-diagonal condition on f kills this singularity,
+making K * f integrable. The integrability condition is stated explicitly
+rather than via a global polynomial bound (which would incorrectly forbid
+diagonal singularities).
 
-The kernel K also satisfies:
-- K is holomorphic in ξ₀ for Re(ξ₀) > 0 (Laplace representation of e^{-zH})
-- K has polynomial growth (from the VT axiom / semigroup contraction ‖e^{-tH}‖ ≤ 1)
-- K is continuous in ξ_spatial (from semigroup kernel smoothness)
-
-Ref: Reed-Simon IV §XIII.12; Glimm-Jaffe "Quantum Physics" §19.1 -/
-/-- The Schwinger kernel K is smooth at non-coincident points and has
-at most inverse-power singularity at coincidence. The zero-diagonal
-condition on test functions kills the singularity, making ∫ K * f
-convergent. The polynomial growth bound holds only away from the
-diagonal — on the support of zero-diagonal test functions. -/
+Ref: Reed-Simon IV §XIII.12; Glimm-Jaffe "Quantum Physics" §19.1. -/
 theorem schwinger_kernel_regularity {d : ℕ} [NeZero d]
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
