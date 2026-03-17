@@ -252,6 +252,23 @@ def extractDiffSpatialRe {d : ℕ}
     (u : Fin (2 * (d + 1)) → ℂ) : Fin d → ℝ :=
   fun i => (u (finProdFinEquiv (⟨1, by omega⟩, i.succ))).re
 
+/-- Bridge: positive-time support of g on spacetime implies ordered positive-time
+support of its one-point wrapping. -/
+theorem onePointToFin1_tsupport_orderedPositiveTime {d : ℕ} [NeZero d]
+    (g : SchwartzSpacetime d)
+    (hg_pos : tsupport (g : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0}) :
+    tsupport (((onePointToFin1CLM d g : SchwartzNPoint d 1) :
+      NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1 := by
+  intro v hv i
+  refine ⟨?_, fun j hij => absurd hij (by omega)⟩
+  rw [Fin.eq_zero i]
+  -- v ∈ tsupport(onePointToFin1(g)) ⟹ v 0 ∈ tsupport(g) ⟹ 0 < (v 0) 0
+  have hv0 : v 0 ∈ tsupport (g : SpacetimeDim d → ℂ) := by
+    have := tsupport_comp_subset_preimage (g : SpacetimeDim d → ℂ)
+      (f := fun v : Fin 1 → SpacetimeDim d => v 0) (continuous_apply 0) hv
+    exact this
+  exact Set.mem_setOf.mp (hg_pos hv0)
+
 /-- There exists a compactly-supported Schwartz function on spacetime with
 positive-time support and nonzero integral. This is the basic bump
 construction needed to define admissible semigroup test functions. -/
