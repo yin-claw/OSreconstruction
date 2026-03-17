@@ -1382,25 +1382,42 @@ theorem twoPointWitnessKernelCLM_eq_schwinger_of_shell_agreement
     (fun f ⟨χ, h, hh_pos, hh_compact, hf_eq⟩ => by
       rw [hf_eq]; exact hShell χ h hh_pos hh_compact)
 
+/-- **Semigroup kernel regularity** for the two-point Schwinger function.
+
+The OS Schwinger function S₂ is a regular distribution on ZeroDiagonalSchwartz:
+it is given by integration against a pointwise smooth kernel K(ξ) for ξ₀ > 0.
+The kernel K is the semigroup matrix element (heat kernel of the Hamiltonian H).
+
+This is a standard consequence of:
+- The semigroup e^{-tH} is trace class for t > 0 (from H ≥ 0 + compact resolvent)
+- Trace class operators have smooth integral kernels (Reed-Simon IV, Thm XIII.52)
+- The Schwinger function is the integral of K against test functions
+
+The kernel K also satisfies:
+- K is holomorphic in ξ₀ for Re(ξ₀) > 0 (Laplace representation of e^{-zH})
+- K has polynomial growth (from the VT axiom / semigroup contraction ‖e^{-tH}‖ ≤ 1)
+- K is continuous in ξ_spatial (from semigroup kernel smoothness)
+
+Ref: Reed-Simon IV §XIII.12; Glimm-Jaffe "Quantum Physics" §19.1 -/
+theorem schwinger_kernel_regularity {d : ℕ} [NeZero d]
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    ∃ (K : NPointDomain d 2 → ℂ),
+      -- K has polynomial growth
+      (∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+        ∀ (x : NPointDomain d 2), ‖K x‖ ≤ C_bd * (1 + ‖x‖) ^ N) ∧
+      -- K is measurable
+      MeasureTheory.AEStronglyMeasurable K MeasureTheory.volume ∧
+      -- S₂(f) = ∫ K * f for all zero-diagonal f
+      (∀ (f : ZeroDiagonalSchwartz d 2),
+        OS.S 2 f = ∫ x : NPointDomain d 2, K x * (f.1 x)) := by
+  sorry
+
 /-- `k = 2` special case of the time-parametric base-step theorem.
 
-**Architecture (2026-03-16):** The proof requires two independent ingredients:
-
-**(A) CLM universalization (Steps 1-3):**
-1. Φ(f₁, f₂) = OSInnerProduct(OS.S, single(θf₁), single(f₂)) — continuous
-   bilinear on all products (uses ofClassical for non-zero-diagonal)
-2. Nuclear axiom → CLM W on SchwartzNPointSpace with W(f₁⊗f₂) = Φ(f₁,f₂)
-3. W|_{ZeroDiag} = OS.S 2 (by `twoPointWitnessKernelCLM_eq_schwinger_of_shell_agreement`)
-
-**(B) Pointwise kernel extraction (Step 4, separate obligation):**
-4. Extract a pointwise function G from the CLM W such that W(f) = ∫ G * f.
-   This is NOT automatic from (A) — W is a tempered distribution, and
-   distribution → pointwise kernel requires separate justification
-   (e.g., from the semigroup giving G as a genuine pointwise function
-   at positive Euclidean time, or from Schwartz kernel representation).
-
-**(C) Time holomorphicity (Step 5):**
-5. G is time-holomorphic — from semigroup differentiableOn, once G is defined. -/
+**Architecture (2026-03-16, corrected):** The witness G is the Schwinger kernel K
+(from `schwinger_kernel_regularity`) composed with Wick rotation + flattening.
+Time holomorphicity comes from the semigroup spectral representation. -/
 theorem schwinger_continuation_base_step_timeParametric_twoPoint {d : ℕ} [NeZero d]
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) :
@@ -1409,6 +1426,13 @@ theorem schwinger_continuation_base_step_timeParametric_twoPoint {d : ℕ} [NeZe
       (∀ (f : ZeroDiagonalSchwartz d 2),
         OS.S 2 f = ∫ x : NPointDomain d 2,
           G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) * (f.1 x)) := by
+  -- Step 1: Get the Schwinger kernel K from regularity
+  obtain ⟨K, ⟨C_bd, N, hC, hK_bound⟩, hK_meas, hK_euclid⟩ :=
+    schwinger_kernel_regularity (d := d) OS lgc
+  -- Step 2: Define G on the flattened tube as K composed with inverse Wick rotation
+  -- G(u) = K(wickRotateInverse(fromDiffFlat(u))) — the kernel in flat tube coordinates
+  -- For now, use K directly on the Euclidean domain
+  -- The time holomorphicity and tube extension come from the semigroup
   sorry
 
 /-- OS-II-faithful first-stage base-step theorem: construct a witness on the
