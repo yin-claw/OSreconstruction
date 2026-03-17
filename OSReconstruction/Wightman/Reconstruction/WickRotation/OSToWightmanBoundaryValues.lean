@@ -134,6 +134,46 @@ where C_n has at most factorial growth.
 
 Ref: OS II, Section VI -/
 
+/-- The remaining analytic work behind `boundary_values_tempered` is to package
+the flattened continuation `G` into an honest tempered Fourier-Laplace
+boundary-value datum on `ForwardConeFlat`.
+
+This isolates the missing flat-tempered package from the already-formalized
+transport back to `SchwartzNPoint d n` in
+`boundary_values_tempered_of_flatTempered`.
+
+Unlike the generic transport theorem below, this phase-4 surface is only about
+the specific analytic continuation produced by `full_analytic_continuation OS lgc n`.
+Tempered boundary values are not claimed for an arbitrary holomorphic forward-tube
+function. -/
+private theorem full_analytic_continuation_flat_tempered_package
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) :
+    let F_analytic : (Fin n → Fin (d + 1) → ℂ) → ℂ :=
+      (full_analytic_continuation OS lgc n).choose
+    let G : (Fin (n * (d + 1)) → ℂ) → ℂ :=
+      F_analytic ∘ (flattenCLEquiv n (d + 1)).symm
+    ∃ (Tflat : SchwartzMap (Fin (n * (d + 1)) → ℝ) ℂ → ℂ),
+      Continuous Tflat ∧
+      (∀ (f : SchwartzMap (Fin (n * (d + 1)) → ℝ) ℂ)
+          (η : Fin (n * (d + 1)) → ℝ), η ∈ ForwardConeFlat d n →
+          Filter.Tendsto (fun ε : ℝ =>
+            ∫ x : Fin (n * (d + 1)) → ℝ,
+              G (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I) * f x)
+            (nhdsWithin 0 (Set.Ioi 0))
+            (nhds (Tflat f))) ∧
+      (∀ (K : Set (Fin (n * (d + 1)) → ℝ)), IsCompact K → K ⊆ ForwardConeFlat d n →
+        ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+          ∀ (x y : Fin (n * (d + 1)) → ℝ), y ∈ K →
+            ‖G (fun i => ↑(x i) + ↑(y i) * Complex.I)‖ ≤ C_bd * (1 + ‖x‖) ^ N) ∧
+      (∀ (η : Fin (n * (d + 1)) → ℝ), η ∈ ForwardConeFlat d n →
+        ∃ (C_bd : ℝ) (N : ℕ) (δ : ℝ), C_bd > 0 ∧ δ > 0 ∧
+          ∀ (x : Fin (n * (d + 1)) → ℝ) (ε : ℝ), 0 < ε → ε < δ →
+            ‖G (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I)‖ ≤
+              C_bd * (1 + ‖x‖) ^ N) := by
+  sorry
+
 /--
 The continuous-linear boundary-value witness is no longer the missing part of
 Phase 4. Once the flattened continuation carries an honest tempered Fourier-Laplace
@@ -162,7 +202,13 @@ theorem boundary_values_tempered
       (∀ (f : ZeroDiagonalSchwartz d n),
         OS.S n f = ∫ x : NPointDomain d n,
           F_analytic (fun k => wickRotatePoint (x k)) * (f.1 x)) := by
-  obtain ⟨F_analytic, hF_hol, hF_euclid⟩ := full_analytic_continuation OS lgc n
+  let hcont := full_analytic_continuation OS lgc n
+  let F_analytic : (Fin n → Fin (d + 1) → ℂ) → ℂ := hcont.choose
+  have hF_hol : DifferentiableOn ℂ F_analytic (ForwardTube d n) := hcont.choose_spec.1
+  have hF_euclid :
+      ∀ (f : ZeroDiagonalSchwartz d n),
+        OS.S n f = ∫ x : NPointDomain d n,
+          F_analytic (fun k => wickRotatePoint (x k)) * (f.1 x) := hcont.choose_spec.2
   let G : (Fin (n * (d + 1)) → ℂ) → ℂ :=
     F_analytic ∘ (flattenCLEquiv n (d + 1)).symm
   have hG_hol : DifferentiableOn ℂ G (SCV.TubeDomain (ForwardConeFlat d n)) :=
@@ -185,7 +231,8 @@ theorem boundary_values_tempered
           ∃ (C_bd : ℝ) (N : ℕ) (δ : ℝ), C_bd > 0 ∧ δ > 0 ∧
             ∀ (x : Fin (n * (d + 1)) → ℝ) (ε : ℝ), 0 < ε → ε < δ →
               ‖G (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I)‖ ≤ C_bd * (1 + ‖x‖) ^ N) := by
-    sorry
+    simpa [G] using
+      full_analytic_continuation_flat_tempered_package (d := d) OS lgc n
   let hTempered :
       SCV.HasFourierLaplaceReprTempered (ForwardConeFlat d n) G :=
     SCV.exists_fourierLaplaceReprTempered
