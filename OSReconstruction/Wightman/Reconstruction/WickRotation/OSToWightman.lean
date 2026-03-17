@@ -1487,7 +1487,7 @@ theorem schwinger_twoPoint_holomorphic_kernel {d : ℕ} [NeZero d]
   let χ₀ : SchwartzSpacetime d := (∫ u, χ_raw u)⁻¹ • χ_raw
   have hχ₀_int : ∫ u : SpacetimeDim d, χ₀ u = 1 := by
     simp only [χ₀, SchwartzMap.smul_apply]
-    sorry -- integral_smul + inv_mul_cancel₀
+    rw [MeasureTheory.integral_smul, smul_eq_mul, inv_mul_cancel₀ hχ_int_ne]
   -- Step 3: χ₀ inherits negative-time support and compact support
   have hχ₀_compact : HasCompactSupport (χ₀ : SpacetimeDim d → ℂ) := by
     simp only [χ₀, SchwartzMap.smul_apply]
