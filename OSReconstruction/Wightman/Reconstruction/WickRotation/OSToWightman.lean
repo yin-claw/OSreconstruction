@@ -289,6 +289,74 @@ theorem exists_negative_time_compact_schwartz {d : ℕ} [NeZero d] :
     rw [integral_complex_ofReal]
     exact Complex.ofReal_ne_zero.mpr (ne_of_gt b.integral_pos)
 
+/-- Bridge: negative-time support of χ implies osConj(onePointToFin1 χ) has
+ordered positive-time support (time reflection maps negative → positive). -/
+theorem osConj_onePointToFin1_tsupport_orderedPositiveTime {d : ℕ} [NeZero d]
+    (χ : SchwartzSpacetime d)
+    (hχ_compact : HasCompactSupport (χ : SpacetimeDim d → ℂ))
+    (hχ_neg : tsupport (χ : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | x 0 < 0}) :
+    tsupport (((SchwartzNPoint.osConj (d := d) (n := 1)
+      (onePointToFin1CLM d χ : SchwartzNPoint d 1) : SchwartzNPoint d 1) :
+      NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1 := by
+  intro v hv i
+  refine ⟨?_, fun j hij => absurd hij (by omega)⟩
+  rw [Fin.eq_zero i]
+  -- Direct: if v 0 0 ≤ 0 then timeReflectionN(v) 0 0 = -(v 0 0) ≥ 0
+  -- ⟹ timeReflectionN(v) 0 ∉ tsupport χ (since tsupport χ ⊆ {x₀ < 0})
+  -- ⟹ χ(timeReflectionN(v) 0) = 0 in a neighborhood
+  -- ⟹ osConj(onePointToFin1 χ)(w) = 0 for w near v
+  -- ⟹ v ∉ tsupport(osConj(onePointToFin1 χ)), contradiction
+  sorry
+/-  by_contra h_neg; push_neg at h_neg
+  -- Compact tsupport ⊆ {x₀ < 0} ⟹ ∃ δ > 0, tsupport ⊆ {x₀ ≤ -δ}
+  -- Then osConj vanishes when w 0 0 < δ. Ball of radius δ around v works.
+  have ⟨δ, hδ_pos, hδ⟩ : ∃ δ : ℝ, 0 < δ ∧
+      tsupport (χ : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | x 0 ≤ -δ} := by
+    have hK := hχ_compact.isCompact_tsupport
+    by_cases hempty : tsupport (χ : SpacetimeDim d → ℂ) = ∅
+    · exact ⟨1, one_pos, by simp [hempty]⟩
+    · have hne := Set.nonempty_iff_ne_empty.mpr hempty
+      let M := sSup ((fun x : SpacetimeDim d => x 0) '' tsupport (χ : SpacetimeDim d → ℂ))
+      have hM_lt : M < 0 := by
+        apply Real.sSup_lt_iff_of_nonempty (hne.image _) |>.mpr
+        intro b hb
+        obtain ⟨x, hx_mem, rfl⟩ := hb
+        exact (hχ_neg hx_mem)
+      exact ⟨-M / 2, by linarith, fun x hx => by
+        have := le_csSup (hK.image (continuous_apply 0)).bddAbove ⟨x, hx, rfl⟩
+        simp only [Set.mem_setOf_eq]; linarith⟩
+  -- osConj vanishes when -(w 0 0) ≤ -δ, i.e., w 0 0 ≥ δ... wait, need opposite
+  -- osConj(f)(w) = conj(f(timeReflect(w))). f = 0 when (timeReflect(w) 0) 0 ≥ -δ
+  -- (timeReflect(w) 0) 0 = -(w 0 0). So need -(w 0 0) > -δ, i.e., w 0 0 < δ.
+  have h_vanish : ∀ w : NPointDomain d 1, w 0 0 < δ →
+      ((SchwartzNPoint.osConj (d := d) (n := 1)
+        (onePointToFin1CLM d χ)) : NPointDomain d 1 → ℂ) w = 0 := by
+    intro w hw
+    simp only [SchwartzNPoint.osConj_apply, onePointToFin1CLM_apply]
+    have h_not_supp : timeReflectionN d w 0 ∉ tsupport (χ : SpacetimeDim d → ℂ) := by
+      intro hmem
+      have h1 := hδ hmem
+      simp only [Set.mem_setOf_eq, timeReflectionN, timeReflection] at h1
+      simp only [ite_true] at h1
+      linarith
+    simp only [Function.nmem_support.mp (not_mem_tsupport_iff_eventually_eq.mp h_not_supp |>.self_of_nhds)]
+    simp
+  have h_not_tsupport : v ∉ tsupport (((SchwartzNPoint.osConj (d := d) (n := 1)
+      (onePointToFin1CLM d χ)) : NPointDomain d 1 → ℂ)) := by
+    rw [notMem_tsupport_iff_eventuallyEq]
+    refine Filter.mem_of_superset (Metric.ball_mem_nhds v (show (0:ℝ) < δ from hδ_pos)) ?_
+    intro w hw
+    exact h_vanish w (by
+      have h_dist := Metric.mem_ball.mp hw
+      have h0 : |w 0 0 - v 0 0| ≤ ‖w - v‖ := by
+        calc |w 0 0 - v 0 0| = ‖(w - v) 0 0‖ := by
+              simp [Pi.sub_apply, Real.norm_eq_abs]
+          _ ≤ ‖(w - v) 0‖ := norm_le_pi_norm _ 0
+          _ ≤ ‖w - v‖ := norm_le_pi_norm _ 0
+      rw [dist_eq_norm] at h_dist
+      linarith [abs_le.mp (h0.trans h_dist.le)])
+  exact h_not_tsupport hv -/
+
 /-- Bridge: positive-time support of g on spacetime implies ordered positive-time
 support of its one-point wrapping. -/
 theorem onePointToFin1_tsupport_orderedPositiveTime {d : ℕ} [NeZero d]
