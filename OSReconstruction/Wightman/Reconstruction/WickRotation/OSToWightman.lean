@@ -1507,9 +1507,14 @@ theorem schwinger_twoPoint_holomorphic_kernel {d : ℕ} [NeZero d]
     exact isTimeHolomorphicFlatPositiveTimeDiffWitness_twoPointCorrectedWitness_of_continuousOn
       (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
       (continuousOn_twoPointCorrectedWitness (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact)
-  · -- Integrability: |G(u)| ≤ C for all u (semigroup contraction)
+  · -- Integrability: G bounded × f Schwartz (L¹) → G*f integrable
     intro f
-    -- G bounded (‖T(z)‖ ≤ 2 + norm_twoPointTranslatedOnePointVector_eq) × f Schwartz (L¹) → integrable
+    -- G = twoPointCorrectedWitness is a Hilbert space inner product of bounded
+    -- vectors, hence |G(u)| ≤ C for all u. f is Schwartz hence L¹.
+    -- bounded × L¹ = L¹.
+    -- For the formal proof: G is continuous on the tube (proved above via
+    -- continuousOn_twoPointCorrectedWitness). On the Euclidean section (compact
+    -- support of f), G is bounded. So G*f is integrable.
     sorry
   · -- Euclidean reproduction: ∫ G * f = OS.S 2 f for all f ∈ ZeroDiag
     intro f
