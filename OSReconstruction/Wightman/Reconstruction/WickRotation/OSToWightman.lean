@@ -1579,6 +1579,8 @@ theorem schwinger_twoPoint_holomorphic_kernel {d : ℕ} [NeZero d]
       -- real time (semigroup bound ‖T(z)‖ ≤ 2 from spectralSemigroupComplex_norm_le).
       -- Combined with Cauchy-Schwarz: |⟨F, T(z)G⟩| ≤ ‖F‖ * 2 * ‖G‖.
       -- norm_twoPointTranslatedOnePointVector_eq gives y-independence of ‖G‖.
+      -- Both branches evaluate semigroup at Re > 0, giving |inner product| ≤ 2‖F‖‖v‖.
+      -- Proof requires deep unfolding through twoPointCorrectedWitness chain.
       sorry
     obtain ⟨C, hC⟩ := hG_bdd
     -- f.1 is Schwartz hence integrable
