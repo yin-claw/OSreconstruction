@@ -527,51 +527,18 @@ theorem twoPointFixedTimeKernelCLM_apply_differenceLift
       hK_meas C_bd N hC hK_bound
       (twoPointCenterDiffSchwartzCLM (d := d) (twoPointDifferenceLift χ h))
 
-/-! ### Schwartz Representation Theorem (axiomatized)
-
-The structure theorem for tempered distributions: every continuous linear
-functional on Schwartz space is a distributional derivative of a continuous
-function with polynomial growth.
-
-References: Rudin, Functional Analysis, Theorem 7.25;
-Hörmander, Analysis of Linear PDE I, Theorem 7.1.18;
-Reed & Simon, Methods of Mathematical Physics I, Theorem V.10. -/
-
-/-- **Schwartz Representation Theorem (Structure Theorem for Tempered Distributions).**
-
-Every tempered distribution (continuous linear functional on Schwartz space)
-is a finite distributional derivative of a continuous function with polynomial growth.
-Specifically, for T : S(ℝⁿ) →L[ℂ] ℂ, there exist a derivative order M, a continuous
-function g : ℝⁿ → ℂ with |g(x)| ≤ C(1+|x|)^M, and a multi-index α with |α| ≤ M,
-such that T(f) = (-1)^|α| ∫ g(x) (∂^α f)(x) dx for all f ∈ S(ℝⁿ).
-
-This is a purely functional-analytic fact about the dual of Fréchet spaces,
-with no reference to physics. The proof requires the Fourier transform on S',
-Sobolev embedding, and parametrices for (1-Δ)^k.
-
-Concretely: T = (1-Δ)^M g in distributional sense, so
-T(f) = ∫ g(x) · ((1-Δ)^M f)(x) dx for all f ∈ S(ℝⁿ). -/
-axiom schwartz_representation_theorem
-    {n : ℕ} [NeZero n]
-    (T : SchwartzMap (Fin n → ℝ) ℂ →L[ℂ] ℂ) :
-    ∃ (M : ℕ) (g : (Fin n → ℝ) → ℂ) (C_g : ℝ),
-      Continuous g ∧
-      (0 < C_g) ∧
-      (∀ x : Fin n → ℝ, ‖g x‖ ≤ C_g * (1 + ‖x‖) ^ M) ∧
-      -- T(f) = ∫ g(x) · ((1-Δ)^M f)(x) dx, expressed via a CLM P = (1-Δ)^M : S → S
-      (∃ P : SchwartzMap (Fin n → ℝ) ℂ →L[ℂ] SchwartzMap (Fin n → ℝ) ℂ,
-        ∀ f : SchwartzMap (Fin n → ℝ) ℂ,
-          T f = ∫ x : Fin n → ℝ, g x * (P f : (Fin n → ℝ) → ℂ) x)
-
-/-! ### Kernel representation for the Schwinger difference distribution
+/-! ### Schwinger difference distribution
 
 The Schwinger 2-point function, restricted to difference coordinates via
-translation invariance, defines a tempered distribution `T_diff(h) = OS.S 2(χ₀ ⊗ h)`.
-On zero-diagonal test functions (h vanishing at 0), this distribution has
-a locally integrable kernel representation: `T_diff(h) = ∫ K(ξ) h(ξ) dξ`.
+translation invariance, defines a functional `T_diff(h) = OS.S 2(χ₀ ⊗ h)`.
+By `twoPointDifferenceLift_eq_centerValue`, this is independent of χ₀ (up to
+normalization) and captures the full Schwinger 2-point function in difference
+coordinates.
 
-The kernel K is the Schwinger 2-point function in difference coordinates,
-and it extends holomorphically to the tube domain via the OS semigroup. -/
+The kernel representation of T_diff (identifying it as integration against a
+locally integrable kernel) requires the spectral theory of the Hamiltonian
+(Källén-Lehmann representation). This is the same infrastructure needed for
+`spectrum_condition` and `vacuum_unique` in GNSHilbertSpace. -/
 
 /-- The Schwinger difference-coordinate distribution: for fixed normalized center
 cutoff χ₀ (with ∫ χ₀ = 1), the map `h ↦ OS.S 2 (twoPointDifferenceLift χ₀ h)` is
