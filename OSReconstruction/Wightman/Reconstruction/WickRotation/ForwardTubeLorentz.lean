@@ -6,6 +6,7 @@ Authors: Michael Douglas, ModularPhysics Contributors
 import OSReconstruction.Wightman.Reconstruction
 import OSReconstruction.Wightman.Reconstruction.AnalyticContinuation
 import OSReconstruction.Wightman.Reconstruction.ForwardTubeDistributions
+import OSReconstruction.SCV.VladimirovTillmann
 
 /-!
 # Forward Tube Lorentz Action
@@ -305,6 +306,149 @@ well-known textbook theorem stated at greater generality than the specific
 instances used here.
 -/
 
+/-- The forward cone is salient: its closure contains no complete line. -/
+theorem forwardConeAbs_salient (d n : ℕ) [NeZero d] :
+    IsSalientCone (ForwardConeAbs d n) := by
+  intro y hy hny
+  have h_time_diff_zero : ∀ j : Fin n,
+      y j 0 - (if h : j.val = 0 then 0 else y ⟨j.val - 1, by omega⟩ 0) = 0 := by
+    intro j
+    have hδ_cont : Continuous (fun w : Fin n → Fin (d + 1) → ℝ =>
+        w j 0 - if h : j.val = 0 then 0 else w (⟨j.val - 1, by omega⟩ : Fin n) 0) := by
+      apply Continuous.sub ((continuous_apply (0 : Fin (d + 1))).comp (continuous_apply j))
+      split_ifs with h
+      · exact continuous_const
+      · exact (continuous_apply (0 : Fin (d + 1))).comp
+          (continuous_apply (⟨j.val - 1, by omega⟩ : Fin n))
+    have hprev_eq : ∀ (w : Fin n → Fin (d + 1) → ℝ) (ν : Fin (d + 1)),
+        (if h : j.val = 0 then (0 : Fin (d + 1) → ℝ) else w (⟨j.val - 1, by omega⟩ : Fin n)) ν =
+        (if h : j.val = 0 then 0 else w (⟨j.val - 1, by omega⟩ : Fin n) ν) := by
+      intro w ν
+      split_ifs <;> simp
+    have h_nonneg : 0 ≤ y j 0 - (if h : j.val = 0 then 0 else y ⟨j.val - 1, by omega⟩ 0) := by
+      have hForward_sub : ForwardConeAbs d n ⊆
+          {w : Fin n → Fin (d + 1) → ℝ | (0 : ℝ) <
+            w j 0 - if h : j.val = 0 then 0 else w (⟨j.val - 1, by omega⟩ : Fin n) 0} := by
+        intro w hw
+        have h1 := (hw j).1
+        simp only [hprev_eq] at h1
+        exact h1
+      exact (closure_lt_subset_le continuous_const hδ_cont) (closure_mono hForward_sub hy)
+    have h_nonpos : y j 0 - (if h : j.val = 0 then 0 else y ⟨j.val - 1, by omega⟩ 0) ≤ 0 := by
+      have hForward_sub : ForwardConeAbs d n ⊆
+          {w : Fin n → Fin (d + 1) → ℝ | (0 : ℝ) <
+            w j 0 - if h : j.val = 0 then 0 else w (⟨j.val - 1, by omega⟩ : Fin n) 0} := by
+        intro w hw
+        have h1 := (hw j).1
+        simp only [hprev_eq] at h1
+        exact h1
+      have h1 : 0 ≤ (-y) j 0 - (if h : j.val = 0 then 0 else (-y) (⟨j.val - 1, by omega⟩ : Fin n) 0) :=
+        (closure_lt_subset_le continuous_const hδ_cont) (closure_mono hForward_sub hny)
+      have heq :
+          (-y) j 0 - (if h : j.val = 0 then 0 else (-y) (⟨j.val - 1, by omega⟩ : Fin n) 0) =
+            -(y j 0 - (if h : j.val = 0 then 0 else y ⟨j.val - 1, by omega⟩ 0)) := by
+        simp only [Pi.neg_apply]
+        split_ifs <;> ring
+      linarith [heq ▸ h1]
+    linarith
+  have h_all_diff_zero : ∀ j : Fin n, ∀ μ : Fin (d + 1),
+      y j μ - (if h : j.val = 0 then 0 else y ⟨j.val - 1, by omega⟩ μ) = 0 := by
+    intro j μ
+    by_cases hμ : μ = 0
+    · subst hμ
+      exact h_time_diff_zero j
+    · let spatial_sq_sum : (Fin n → Fin (d + 1) → ℝ) → ℝ := fun w =>
+        ∑ i : Fin d, (w j (Fin.succ i) -
+          (if h : j.val = 0 then 0 else w (⟨j.val - 1, by omega⟩ : Fin n) (Fin.succ i))) ^ 2
+      have hS_cont : Continuous spatial_sq_sum := by
+        apply continuous_finset_sum
+        intro i _
+        apply Continuous.pow
+        apply Continuous.sub
+        · exact (continuous_apply (Fin.succ i)).comp (continuous_apply j)
+        · split_ifs with h
+          · exact continuous_const
+          · exact (continuous_apply (Fin.succ i)).comp
+              (continuous_apply (⟨j.val - 1, by omega⟩ : Fin n))
+      have h_spatial_nonpos : spatial_sq_sum y ≤ 0 := by
+        let time_sq : (Fin n → Fin (d + 1) → ℝ) → ℝ := fun w =>
+          (w j 0 - (if h : j.val = 0 then 0 else w (⟨j.val - 1, by omega⟩ : Fin n) 0)) ^ 2
+        have hT_cont : Continuous time_sq := by
+          apply Continuous.pow
+          apply Continuous.sub
+          · exact (continuous_apply (0 : Fin (d + 1))).comp (continuous_apply j)
+          · split_ifs with h
+            · exact continuous_const
+            · exact (continuous_apply (0 : Fin (d + 1))).comp
+                (continuous_apply (⟨j.val - 1, by omega⟩ : Fin n))
+        have h_on_cone : ∀ w ∈ ForwardConeAbs d n, spatial_sq_sum w ≤ time_sq w := by
+          intro w hw
+          have hj := hw j
+          have hQ := MinkowskiSpace.minkowskiNormSq_eq d
+            (fun ν => w j ν - (if h : j.val = 0 then 0 else w (⟨j.val - 1, by omega⟩ : Fin n) ν))
+          simp only [MinkowskiSpace.timeComponent, MinkowskiSpace.spatialComponents] at hQ
+          have hfun_eq :
+              (fun μ => w j μ -
+                (if h : j.val = 0 then (0 : Fin (d + 1) → ℝ) else
+                  w (⟨j.val - 1, by omega⟩ : Fin n)) μ) =
+              (fun ν => w j ν - if h : j.val = 0 then 0 else
+                w (⟨j.val - 1, by omega⟩ : Fin n) ν) := by
+            ext ν
+            split_ifs <;> simp [Pi.zero_apply]
+          have hj2 : MinkowskiSpace.minkowskiNormSq d
+              (fun ν => w j ν - (if h : j.val = 0 then 0 else
+                w (⟨j.val - 1, by omega⟩ : Fin n) ν)) < 0 := by
+            rw [← hfun_eq]
+            exact hj.2
+          linarith [hj2, hQ]
+        have h_le : spatial_sq_sum y ≤ time_sq y :=
+          closure_minimal h_on_cone (isClosed_le hS_cont hT_cont) hy
+        have h_time_sq_zero : time_sq y = 0 := by
+          show (y j 0 - (if h : j.val = 0 then 0 else y ⟨j.val - 1, by omega⟩ 0)) ^ 2 = 0
+          rw [h_time_diff_zero j]
+          ring
+        linarith
+      have h_each_zero : ∀ i : Fin d,
+          (y j (Fin.succ i) -
+            (if h : j.val = 0 then 0 else y ⟨j.val - 1, by omega⟩ (Fin.succ i))) ^ 2 = 0 :=
+        fun i => le_antisymm
+          (le_trans
+            (Finset.single_le_sum
+              (fun k _ => sq_nonneg (y j (Fin.succ k) -
+                (if h : j.val = 0 then 0 else y ⟨j.val - 1, by omega⟩ (Fin.succ k))))
+              (Finset.mem_univ i))
+            h_spatial_nonpos)
+          (sq_nonneg _)
+      have hμ_pos : 0 < μ := Fin.pos_of_ne_zero hμ
+      have hμ_pred : μ = Fin.succ ⟨μ.val - 1, by omega⟩ := by
+        ext
+        simp
+        omega
+      rw [hμ_pred]
+      have := h_each_zero ⟨μ.val - 1, by omega⟩
+      rwa [sq_eq_zero_iff] at this
+  ext k μ
+  suffices ∀ m : ℕ, ∀ k : Fin n, k.val = m → y k μ = 0 by
+    exact this k.val k rfl
+  intro m
+  induction m with
+  | zero =>
+      intro k hk
+      have := h_all_diff_zero k μ
+      have hk0 : k.val = 0 := hk
+      simp only [hk0, ↓reduceDIte] at this
+      linarith
+  | succ m ih =>
+      intro k hk
+      have hkv : ¬k.val = 0 := by omega
+      have hd := h_all_diff_zero k μ
+      simp only [hkv, ↓reduceDIte] at hd
+      have hpred_lt : k.val - 1 < n := by omega
+      have hprev : y ⟨k.val - 1, hpred_lt⟩ μ = 0 :=
+        ih ⟨k.val - 1, hpred_lt⟩
+          (show (⟨k.val - 1, hpred_lt⟩ : Fin n).val = m by simp; omega)
+      linarith
+
 /-- Polynomial growth of a holomorphic function on a fixed interior slice of a tube domain.
 
     If F is holomorphic on ForwardTube d n, has tempered distributional boundary
@@ -325,23 +469,53 @@ instances used here.
 theorem polynomial_growth_on_slice {d n : ℕ} [NeZero d]
     (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
     (hF : DifferentiableOn ℂ F (ForwardTube d n))
-    (h_bv : ∃ (T : SchwartzNPoint d n → ℂ), Continuous T ∧
+    (h_bv : ∃ (W : SchwartzNPoint d n →L[ℂ] ℂ),
       ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
         InForwardCone d n η →
         Filter.Tendsto
           (fun ε : ℝ => ∫ x : NPointDomain d n,
             F (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
           (nhdsWithin 0 (Set.Ioi 0))
-          (nhds (T f)))
+          (nhds (W f)))
     (η : Fin n → Fin (d + 1) → ℝ) (hη : InForwardCone d n η)
     (ε : ℝ) (hε : ε > 0) :
     ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
       ∀ (x : NPointDomain d n),
         ‖F (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I)‖ ≤
           C_bd * (1 + ‖x‖) ^ N := by
-  -- Blocked: the previous proof depended on the weak forward-tube BV transport
-  -- chain, which has now been reopened as honest placeholder interface.
-  sorry
+  rcases h_bv with ⟨W, hW_bv⟩
+  have hC_open : IsOpen (ForwardConeAbs d n) := forwardConeAbs_isOpen d n
+  have hC_conv : Convex ℝ (ForwardConeAbs d n) := forwardConeAbs_convex d n
+  have hC_cone : IsCone (ForwardConeAbs d n) := by
+    intro y hy t ht
+    exact forwardConeAbs_smul d n t ht y hy
+  have hC_salient : IsSalientCone (ForwardConeAbs d n) := forwardConeAbs_salient d n
+  have hF_vt : DifferentiableOn ℂ F (TubeDomainSetPi (ForwardConeAbs d n)) := by
+    simpa [TubeDomainSetPi, forwardTube_eq_imPreimage] using hF
+  have hW_bv :
+      ∀ (η' : Fin n → Fin (d + 1) → ℝ), η' ∈ ForwardConeAbs d n →
+        ∀ (φ : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ),
+          Filter.Tendsto
+            (fun ε' : ℝ => ∫ x : Fin n → Fin (d + 1) → ℝ,
+              F (fun k μ => ↑(x k μ) + ε' * ↑(η' k μ) * Complex.I) * φ x)
+            (nhdsWithin 0 (Set.Ioi 0)) (nhds (W φ)) := by
+    intro η' hη' φ
+    exact hW_bv φ η' ((inForwardCone_iff_mem_forwardConeAbs (d := d) (n := n) η').2 hη')
+  obtain ⟨hpoly, -⟩ :=
+    vladimirov_tillmann (ForwardConeAbs d n) hC_open hC_conv hC_cone hC_salient F hF_vt W hW_bv
+  have hη_abs : η ∈ ForwardConeAbs d n :=
+    (inForwardCone_iff_mem_forwardConeAbs (d := d) (n := n) η).1 hη
+  let y0 : Fin n → Fin (d + 1) → ℝ := ε • η
+  have hy0_mem : y0 ∈ ForwardConeAbs d n := forwardConeAbs_smul d n ε hε η hη_abs
+  have hK_sub : ({y0} : Set (Fin n → Fin (d + 1) → ℝ)) ⊆ ForwardConeAbs d n := by
+    intro y hy
+    rcases Set.mem_singleton_iff.mp hy with rfl
+    exact hy0_mem
+  obtain ⟨C_bd, N, hC_pos, hbound⟩ := hpoly {y0} isCompact_singleton hK_sub
+  refine ⟨C_bd, N, hC_pos, ?_⟩
+  intro x
+  simpa [y0, smul_eq_mul, mul_assoc, mul_left_comm, mul_comm]
+    using hbound x y0 (by simp)
 
 /-- Proved slice-growth theorem under regular flattened-tube Fourier-Laplace input. -/
 theorem polynomial_growth_on_slice_of_flatRegular {d n : ℕ} [NeZero d]
@@ -480,14 +654,14 @@ theorem forward_tube_slice_aestrongly_measurable {d n : ℕ} [NeZero d]
 theorem forward_tube_bv_integrable {d n : ℕ} [NeZero d]
     (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
     (hF : DifferentiableOn ℂ F (ForwardTube d n))
-    (h_bv : ∃ (T : SchwartzNPoint d n → ℂ), Continuous T ∧
+    (h_bv : ∃ (W : SchwartzNPoint d n →L[ℂ] ℂ),
       ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
         InForwardCone d n η →
         Filter.Tendsto
           (fun ε : ℝ => ∫ x : NPointDomain d n,
             F (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
           (nhdsWithin 0 (Set.Ioi 0))
-          (nhds (T f)))
+          (nhds (W f)))
     (f : SchwartzNPoint d n)
     (η : Fin n → Fin (d + 1) → ℝ) (hη : InForwardCone d n η)
     (ε : ℝ) (hε : ε > 0) :
@@ -835,12 +1009,14 @@ theorem W_analytic_lorentz_bv_agree
   · exact forward_tube_bv_integrable
       (fun z => W_a (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν))
       (W_analytic_lorentz_holomorphic Wfn n Λ)
-      ⟨Wfn.W n, Wfn.tempered n, fun f' η' hη' =>
+      ⟨{ toLinearMap := ⟨⟨Wfn.W n, (Wfn.linear n).map_add⟩, (Wfn.linear n).map_smul⟩,
+         cont := Wfn.tempered n }, fun f' η' hη' =>
         lorentz_covariant_distributional_bv (d := d) (n := n)
           Wfn W_a hW_hol hW_bv Λ f' η' hη'⟩
       f η hη ε (Set.mem_Ioi.mp hε)
   · exact forward_tube_bv_integrable W_a hW_hol
-      ⟨Wfn.W n, Wfn.tempered n, hW_bv⟩
+      ⟨{ toLinearMap := ⟨⟨Wfn.W n, (Wfn.linear n).map_add⟩, (Wfn.linear n).map_smul⟩,
+         cont := Wfn.tempered n }, hW_bv⟩
       f η hη ε (Set.mem_Ioi.mp hε)
 
 

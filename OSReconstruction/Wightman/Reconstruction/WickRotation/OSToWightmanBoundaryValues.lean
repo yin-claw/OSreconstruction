@@ -410,6 +410,9 @@ theorem bv_local_commutativity_transfer (OS : OsterwalderSchraderAxioms d)
           F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
         (nhdsWithin 0 (Set.Ioi 0))
         (nhds (W_n f)))
+    (hEuclid : ∀ (f : ZeroDiagonalSchwartz d n),
+      OS.S n f = ∫ x : NPointDomain d n,
+        F_n (fun k => wickRotatePoint (x k)) * (f.1 x))
     (hE3 : ∀ (σ : Equiv.Perm (Fin n)) (f g : ZeroDiagonalSchwartz d n),
       (∀ x, g.1 x = f.1 (fun i => x (σ i))) →
       OS.S n f = OS.S n g) :
@@ -445,7 +448,10 @@ theorem bv_hermiticity_transfer (OS : OsterwalderSchraderAxioms d)
         (nhds (W_n f)))
     (hEuclid : ∀ (f : ZeroDiagonalSchwartz d n),
       OS.S n f = ∫ x : NPointDomain d n,
-        F_n (fun k => wickRotatePoint (x k)) * (f.1 x)) :
+        F_n (fun k => wickRotatePoint (x k)) * (f.1 x))
+    (hE0_real : ∀ (f g : ZeroDiagonalSchwartz d n),
+      (∀ x, g.1 x = starRingEnd ℂ (f.1 (timeReflectionN d x))) →
+      starRingEnd ℂ (OS.S n f) = OS.S n g) :
     ∀ (f g : SchwartzNPoint d n),
       (∀ x : NPointDomain d n,
         g.toFun x = starRingEnd ℂ (f.toFun (fun i => x (Fin.rev i)))) →
@@ -499,6 +505,7 @@ theorem bvt_locally_commutative (OS : OsterwalderSchraderAxioms d)
     (bvt_F OS lgc n)
     (bvt_F_holomorphic OS lgc n)
     (bvt_boundary_values OS lgc n)
+    (bvt_euclidean_restriction OS lgc n)
     (OS.E3_symmetric n)
     i j f g hsupp hswap
 
@@ -523,6 +530,7 @@ theorem bvt_hermitian (OS : OsterwalderSchraderAxioms d)
     (bvt_F_holomorphic OS lgc n)
     (bvt_boundary_values OS lgc n)
     (bvt_euclidean_restriction OS lgc n)
+    (OS.E0_reality n)
     f g hfg
 
 theorem bvt_cluster (OS : OsterwalderSchraderAxioms d)

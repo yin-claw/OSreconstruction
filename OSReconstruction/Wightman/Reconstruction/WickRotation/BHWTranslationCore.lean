@@ -210,7 +210,10 @@ theorem W_analytic_translation_on_forwardTube {d n : ℕ} [NeZero d]
           W_analytic (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (g x)
         have hInt_hεg : MeasureTheory.Integrable hεg := by
           exact forward_tube_bv_integrable
-            W_analytic hW_holo ⟨Wfn.W n, Wfn.tempered n, hW_bv⟩ g η hη ε (Set.mem_Ioi.mp hε)
+            W_analytic hW_holo
+            ⟨{ toLinearMap := ⟨⟨Wfn.W n, (Wfn.linear n).map_add⟩, (Wfn.linear n).map_smul⟩,
+               cont := Wfn.tempered n }, hW_bv⟩
+            g η hη ε (Set.mem_Ioi.mp hε)
         have hEq :
             (fun x : NPointDomain d n =>
               F₁ (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x)) =
@@ -232,7 +235,10 @@ theorem W_analytic_translation_on_forwardTube {d n : ℕ} [NeZero d]
       have hInt_Wf : MeasureTheory.Integrable (fun x : NPointDomain d n =>
           W_analytic (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x)) := by
         exact forward_tube_bv_integrable
-          W_analytic hW_holo ⟨Wfn.W n, Wfn.tempered n, hW_bv⟩ f η hη ε (Set.mem_Ioi.mp hε)
+          W_analytic hW_holo
+          ⟨{ toLinearMap := ⟨⟨Wfn.W n, (Wfn.linear n).map_add⟩, (Wfn.linear n).map_smul⟩,
+             cont := Wfn.tempered n }, hW_bv⟩
+          f η hη ε (Set.mem_Ioi.mp hε)
       rw [← MeasureTheory.integral_sub hInt_F₁f hInt_Wf]
       congr 1
       ext x
@@ -266,7 +272,10 @@ theorem W_analytic_translation_on_forwardTube {d n : ℕ} [NeZero d]
             W_analytic (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (g x)
           have hInt_hεg : MeasureTheory.Integrable hεg := by
             exact forward_tube_bv_integrable
-              W_analytic hW_holo ⟨Wfn.W n, Wfn.tempered n, hW_bv⟩ g η hη ε hε
+              W_analytic hW_holo
+              ⟨{ toLinearMap := ⟨⟨Wfn.W n, (Wfn.linear n).map_add⟩, (Wfn.linear n).map_smul⟩,
+                 cont := Wfn.tempered n }, hW_bv⟩
+              g η hη ε hε
           have hEq :
               (fun x : NPointDomain d n =>
                 F₁ (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x)) =
@@ -288,7 +297,10 @@ theorem W_analytic_translation_on_forwardTube {d n : ℕ} [NeZero d]
         have hInt_Wf : MeasureTheory.Integrable (fun x : NPointDomain d n =>
             W_analytic (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x)) := by
           exact forward_tube_bv_integrable
-            W_analytic hW_holo ⟨Wfn.W n, Wfn.tempered n, hW_bv⟩ f η hη ε hε
+            W_analytic hW_holo
+            ⟨{ toLinearMap := ⟨⟨Wfn.W n, (Wfn.linear n).map_add⟩, (Wfn.linear n).map_smul⟩,
+               cont := Wfn.tempered n }, hW_bv⟩
+            f η hη ε hε
         simpa [sub_mul] using hInt_F₁f.sub hInt_Wf)
       h_agree
     exact huniq w hw

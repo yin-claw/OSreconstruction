@@ -1181,7 +1181,9 @@ theorem route1ReducedBoundaryIntegral_eq_absoluteBoundaryIntegral
     exact forward_tube_bv_integrable
       (Wfn.spectrum_condition (m + 1)).choose
       (Wfn.spectrum_condition (m + 1)).choose_spec.1
-      ⟨Wfn.W (m + 1), Wfn.tempered (m + 1),
+      ⟨{ toLinearMap := ⟨⟨Wfn.W (m + 1), (Wfn.linear (m + 1)).map_add⟩,
+           (Wfn.linear (m + 1)).map_smul⟩,
+         cont := Wfn.tempered (m + 1) },
         (Wfn.spectrum_condition (m + 1)).choose_spec.2⟩
       (reducedTestLift m d χ f)
       (absoluteDirectionOfReduced d m η)
