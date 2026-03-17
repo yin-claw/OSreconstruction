@@ -1399,18 +1399,24 @@ The kernel K also satisfies:
 - K is continuous in ξ_spatial (from semigroup kernel smoothness)
 
 Ref: Reed-Simon IV §XIII.12; Glimm-Jaffe "Quantum Physics" §19.1 -/
+/-- The Schwinger kernel K is smooth at non-coincident points and has
+at most inverse-power singularity at coincidence. The zero-diagonal
+condition on test functions kills the singularity, making ∫ K * f
+convergent. The polynomial growth bound holds only away from the
+diagonal — on the support of zero-diagonal test functions. -/
 theorem schwinger_kernel_regularity {d : ℕ} [NeZero d]
     (OS : OsterwalderSchraderAxioms d)
-    (lgc : OSLinearGrowthCondition d OS) :
-    ∃ (K : NPointDomain d 2 → ℂ),
-      -- K has polynomial growth
-      (∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
-        ∀ (x : NPointDomain d 2), ‖K x‖ ≤ C_bd * (1 + ‖x‖) ^ N) ∧
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) :
+    ∃ (K : NPointDomain d n → ℂ),
       -- K is measurable
       MeasureTheory.AEStronglyMeasurable K MeasureTheory.volume ∧
-      -- S₂(f) = ∫ K * f for all zero-diagonal f
-      (∀ (f : ZeroDiagonalSchwartz d 2),
-        OS.S 2 f = ∫ x : NPointDomain d 2, K x * (f.1 x)) := by
+      -- K * f is integrable for all zero-diagonal f
+      (∀ (f : ZeroDiagonalSchwartz d n),
+        MeasureTheory.Integrable (fun x => K x * (f.1 x)) MeasureTheory.volume) ∧
+      -- Sₙ(f) = ∫ K * f for all zero-diagonal f
+      (∀ (f : ZeroDiagonalSchwartz d n),
+        OS.S n f = ∫ x : NPointDomain d n, K x * (f.1 x)) := by
   sorry
 
 /-- `k = 2` special case of the time-parametric base-step theorem.
@@ -1427,8 +1433,8 @@ theorem schwinger_continuation_base_step_timeParametric_twoPoint {d : ℕ} [NeZe
         OS.S 2 f = ∫ x : NPointDomain d 2,
           G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) * (f.1 x)) := by
   -- Step 1: Get the Schwinger kernel K from regularity
-  obtain ⟨K, ⟨C_bd, N, hC, hK_bound⟩, hK_meas, hK_euclid⟩ :=
-    schwinger_kernel_regularity (d := d) OS lgc
+  obtain ⟨K, hK_meas, hK_int, hK_euclid⟩ :=
+    schwinger_kernel_regularity (d := d) OS lgc 2
   -- Step 2: Define G on the flattened tube as K composed with inverse Wick rotation
   -- G(u) = K(wickRotateInverse(fromDiffFlat(u))) — the kernel in flat tube coordinates
   -- For now, use K directly on the Euclidean domain
