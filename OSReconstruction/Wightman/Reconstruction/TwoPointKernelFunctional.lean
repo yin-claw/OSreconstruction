@@ -569,6 +569,262 @@ theorem schwingerDifferenceFunctional_reproduces
   exact OsterwalderSchraderAxioms.twoPointDifferenceLift_eq_centerValue
     (d := d) OS h h0 χ₀ hχ₀ χ
 
+/-- Compactly supported reduced tests are dense in the canonical zero-origin-avoiding
+Schwartz test space. The usual bump truncations preserve the support-away-from-zero
+condition because they only cut off at infinity. -/
+theorem zeroOriginAvoidingSubmodule_dense_hasCompactSupport :
+    Dense {h : zeroOriginAvoidingSubmodule d |
+      HasCompactSupport ((h : SchwartzSpacetime d) : SpacetimeDim d → ℂ)} := by
+  intro h
+  rw [mem_closure_iff_seq_limit]
+  let f0 : SchwartzSpacetime d := (h : SchwartzSpacetime d)
+  let u : ℕ → zeroOriginAvoidingSubmodule d := fun n =>
+    ⟨bumpTruncationRadius f0 n, by
+      let ψ : SpacetimeDim d → ℂ :=
+        unitBallBumpSchwartzPiRadius (d + 1)
+          (bumpTruncationRadiusValue n) (bumpTruncationRadiusValue_pos n)
+      have h0 : (0 : SpacetimeDim d) ∉ tsupport (f0 : SpacetimeDim d → ℂ) := by
+        change (0 : SpacetimeDim d) ∉
+          tsupport ((((h : zeroOriginAvoidingSubmodule d) : SchwartzSpacetime d) :
+            SpacetimeDim d → ℂ))
+        exact h.property
+      intro hmem
+      have hx' :
+          (0 : SpacetimeDim d) ∈ tsupport (fun y : SpacetimeDim d => ψ y * f0 y) := by
+        change (0 : SpacetimeDim d) ∈
+          tsupport (((bumpTruncationRadius f0 n : SchwartzSpacetime d) :
+            SpacetimeDim d → ℂ)) at hmem
+        have hfun :
+            (((bumpTruncationRadius f0 n : SchwartzSpacetime d) :
+                SpacetimeDim d → ℂ)) =
+              (fun y : SpacetimeDim d => ψ y * f0 y) := by
+          have hψtemp : ψ.HasTemperateGrowth := by
+            simpa [ψ] using
+              (unitBallBumpSchwartzPiRadius (d + 1)
+                (bumpTruncationRadiusValue n)
+                (bumpTruncationRadiusValue_pos n)).hasTemperateGrowth
+          funext y
+          rw [bumpTruncationRadius, SchwartzMap.smulLeftCLM_apply_apply hψtemp]
+          simp [ψ, f0, unitBallBumpSchwartzPiRadius_apply]
+        simpa [hfun] using hmem
+      have hsubset :=
+        tsupport_mul_subset_right
+          (f := ψ)
+          (g := (f0 : SpacetimeDim d → ℂ))
+      exact h0 (hsubset hx')⟩
+  refine ⟨u, ?_, ?_⟩
+  · intro n
+    change HasCompactSupport (((u n : zeroOriginAvoidingSubmodule d) : SchwartzSpacetime d) :
+      SpacetimeDim d → ℂ)
+    simpa [u, f0, bumpTruncationRadius] using
+      (hasCompactSupport_cutoff_mul_radius (bumpTruncationRadiusValue n)
+        (bumpTruncationRadiusValue_pos n)
+        f0)
+  · rw [tendsto_subtype_rng]
+    simpa [u, f0] using SchwartzMap.tendsto_bump_truncation_nhds f0
+
+/-- Continuous linear maps on the canonical reduced Schwinger test space are determined by
+their values on compactly supported tests. -/
+theorem ContinuousLinearMap.eq_of_eq_on_zeroOriginAvoiding_compactSupport
+    (L₁ L₂ : zeroOriginAvoidingSubmodule d →L[ℂ] ℂ)
+    (hEq : ∀ h : zeroOriginAvoidingSubmodule d,
+      HasCompactSupport (((h : zeroOriginAvoidingSubmodule d) : SchwartzSpacetime d) :
+        SpacetimeDim d → ℂ) →
+        L₁ h = L₂ h) :
+    L₁ = L₂ := by
+  apply ContinuousLinearMap.eq_of_eq_on_dense L₁ L₂
+    (zeroOriginAvoidingSubmodule_dense_hasCompactSupport (d := d))
+  intro h hh
+  exact hEq h hh
+
+/-- A measurable, uniformly `ae` bounded one-variable kernel pairs integrably
+with every Schwartz test. -/
+theorem integrable_mul_schwartz_of_const_bound
+    (K : SpacetimeDim d → ℂ)
+    (hK_meas : AEStronglyMeasurable K volume)
+    (C : ℝ)
+    (hK_bdd : ∀ᵐ x : SpacetimeDim d ∂volume, ‖K x‖ ≤ C)
+    (f : SchwartzSpacetime d) :
+    Integrable (fun x : SpacetimeDim d => K x * f x) volume := by
+  haveI : (volume : MeasureTheory.Measure (SpacetimeDim d)).HasTemperateGrowth :=
+    MeasureTheory.Measure.IsAddHaarMeasure.instHasTemperateGrowth
+  have hf_int : Integrable (fun x : SpacetimeDim d => ‖f x‖) volume := by
+    simpa using SchwartzMap.integrable_pow_mul
+      (μ := (volume : MeasureTheory.Measure (SpacetimeDim d))) f 0
+  have hCf_int : Integrable (fun x : SpacetimeDim d => |C| * ‖f x‖) volume := by
+    simpa [smul_eq_mul, mul_comm, mul_left_comm, mul_assoc] using hf_int.const_mul |C|
+  refine hCf_int.mono' (hK_meas.mul f.continuous.aestronglyMeasurable) ?_
+  filter_upwards [hK_bdd] with x hx
+  have hC_nonneg : 0 ≤ C := le_trans (norm_nonneg _) hx
+  calc
+    ‖K x * f x‖ = ‖K x‖ * ‖f x‖ := norm_mul _ _
+    _ ≤ C * ‖f x‖ := by
+          exact mul_le_mul_of_nonneg_right hx (norm_nonneg _)
+    _ = |C| * ‖f x‖ := by simp [abs_of_nonneg hC_nonneg]
+
+/- A measurable, uniformly `ae` bounded one-variable kernel induces a
+continuous linear functional on Schwartz space. -/
+set_option maxHeartbeats 800000
+noncomputable def schwartzKernelCLM_of_const_bound
+    (K : SpacetimeDim d → ℂ)
+    (hK_meas : AEStronglyMeasurable K volume)
+    (C : ℝ)
+    (hK_bdd : ∀ᵐ x : SpacetimeDim d ∂volume, ‖K x‖ ≤ C) :
+    SchwartzSpacetime d →L[ℂ] ℂ := by
+  haveI : (volume : MeasureTheory.Measure (SpacetimeDim d)).HasTemperateGrowth :=
+    MeasureTheory.Measure.IsAddHaarMeasure.instHasTemperateGrowth
+  refine SchwartzMap.mkCLMtoNormedSpace (𝕜 := ℂ)
+      (fun f : SchwartzSpacetime d => ∫ x : SpacetimeDim d, K x * f x) ?_ ?_ ?_
+  · intro f g
+    simp only [SchwartzMap.add_apply, mul_add]
+    exact MeasureTheory.integral_add
+      (integrable_mul_schwartz_of_const_bound (d := d) K hK_meas C hK_bdd f)
+      (integrable_mul_schwartz_of_const_bound (d := d) K hK_meas C hK_bdd g)
+  · intro a f
+    simp only [SchwartzMap.smul_apply, smul_eq_mul, RingHom.id_apply]
+    simp_rw [show ∀ x : SpacetimeDim d, K x * (a * f x) = a * (K x * f x) from
+      fun x => by ring]
+    exact MeasureTheory.integral_const_mul a _
+  ·
+    let P : ℕ := (volume : MeasureTheory.Measure (SpacetimeDim d)).integrablePower
+    let I : ℝ := ∫ x : SpacetimeDim d, (1 + ‖x‖) ^ (-(P : ℝ))
+    let A : ℝ := 2 ^ P * I
+    let s : Finset (ℕ × ℕ) := {(0, 0), (P, 0)}
+    refine ⟨s, |C| * (2 * A), ?_, ?_⟩
+    · have hI_nonneg : 0 ≤ I := by
+        dsimp [I]
+        refine MeasureTheory.integral_nonneg ?_
+        intro x
+        positivity
+      have hA_nonneg : 0 ≤ A := by
+        dsimp [A]
+        positivity
+      nlinarith [abs_nonneg C, hA_nonneg]
+    · intro f
+      have hf_int : Integrable (fun x : SpacetimeDim d => ‖f x‖) volume := by
+        simpa using SchwartzMap.integrable_pow_mul
+          (μ := (volume : MeasureTheory.Measure (SpacetimeDim d))) f 0
+      have hInt :
+          ∫ x : SpacetimeDim d, ‖f x‖ ≤
+            A * (SchwartzMap.seminorm ℂ 0 0 f + SchwartzMap.seminorm ℂ P 0 f) := by
+        simpa [P, I, A] using
+          (SchwartzMap.integral_pow_mul_iteratedFDeriv_le
+            (𝕜 := ℂ)
+            (μ := (volume : MeasureTheory.Measure (SpacetimeDim d)))
+            (f := f) 0 0)
+      calc
+        ‖∫ x : SpacetimeDim d, K x * f x‖
+            ≤ ∫ x : SpacetimeDim d, ‖K x * f x‖ := MeasureTheory.norm_integral_le_integral_norm _
+        _ ≤ ∫ x : SpacetimeDim d, |C| * ‖f x‖ := by
+              refine MeasureTheory.integral_mono_ae ?_ ?_ ?_
+              · exact
+                  (integrable_mul_schwartz_of_const_bound
+                    (d := d) K hK_meas C hK_bdd f).norm
+              · simpa [smul_eq_mul, mul_comm, mul_left_comm, mul_assoc] using
+                  Integrable.const_mul hf_int |C|
+              filter_upwards [hK_bdd] with x hx
+              calc
+                ‖K x * f x‖ = ‖K x‖ * ‖f x‖ := norm_mul _ _
+                _ ≤ C * ‖f x‖ := by
+                      exact mul_le_mul_of_nonneg_right hx (norm_nonneg _)
+                _ = |C| * ‖f x‖ := by
+                      have hC_nonneg : 0 ≤ C := le_trans (norm_nonneg _) hx
+                      simp [abs_of_nonneg hC_nonneg]
+        _ = |C| * ∫ x : SpacetimeDim d, ‖f x‖ := by
+              rw [MeasureTheory.integral_const_mul]
+        _ ≤ |C| * (A * (SchwartzMap.seminorm ℂ 0 0 f + SchwartzMap.seminorm ℂ P 0 f)) := by
+              gcongr
+        _ ≤ |C| * (A * (2 * s.sup (schwartzSeminormFamily ℂ (SpacetimeDim d) ℂ) f)) := by
+              have h00 :
+                  SchwartzMap.seminorm ℂ 0 0 f ≤
+                    s.sup (schwartzSeminormFamily ℂ (SpacetimeDim d) ℂ) f := by
+                exact Seminorm.le_def.1
+                  (Finset.le_sup
+                    (f := schwartzSeminormFamily ℂ (SpacetimeDim d) ℂ)
+                    (by
+                      change (0, 0) ∈ ({(0, 0), (P, 0)} : Finset (ℕ × ℕ))
+                      simp)) f
+              have hP0 :
+                  SchwartzMap.seminorm ℂ P 0 f ≤
+                    s.sup (schwartzSeminormFamily ℂ (SpacetimeDim d) ℂ) f := by
+                exact Seminorm.le_def.1
+                  (Finset.le_sup
+                    (f := schwartzSeminormFamily ℂ (SpacetimeDim d) ℂ)
+                    (by
+                      change (P, 0) ∈ ({(0, 0), (P, 0)} : Finset (ℕ × ℕ))
+                      simp)) f
+              have hsum :
+                  SchwartzMap.seminorm ℂ 0 0 f + SchwartzMap.seminorm ℂ P 0 f ≤
+                    2 * s.sup (schwartzSeminormFamily ℂ (SpacetimeDim d) ℂ) f := by
+                nlinarith
+              have hI_nonneg : 0 ≤ I := by
+                dsimp [I]
+                refine MeasureTheory.integral_nonneg ?_
+                intro x
+                positivity
+              have hA_nonneg : 0 ≤ A := by
+                dsimp [A]
+                positivity
+              exact mul_le_mul_of_nonneg_left
+                (mul_le_mul_of_nonneg_left hsum hA_nonneg) (abs_nonneg C)
+        _ = (|C| * (2 * A)) * s.sup
+              (schwartzSeminormFamily ℂ (SpacetimeDim d) ℂ) f := by
+              ring
+
+/-- The induced one-variable kernel CLM evaluates by the expected Euclidean
+integral formula. -/
+theorem schwartzKernelCLM_of_const_bound_apply
+    (K : SpacetimeDim d → ℂ)
+    (hK_meas : AEStronglyMeasurable K volume)
+    (C : ℝ)
+    (hK_bdd : ∀ᵐ x : SpacetimeDim d ∂volume, ‖K x‖ ≤ C)
+    (f : SchwartzSpacetime d) :
+    schwartzKernelCLM_of_const_bound (d := d) K hK_meas C hK_bdd f =
+      ∫ x : SpacetimeDim d, K x * f x := by
+  rfl
+
+/-- Restrict the one-variable constant-bound kernel CLM to the canonical
+reduced domain of Schwartz tests whose support avoids the origin. -/
+noncomputable def zeroOriginKernelCLM_of_const_bound
+    (K : SpacetimeDim d → ℂ)
+    (hK_meas : AEStronglyMeasurable K volume)
+    (C : ℝ)
+    (hK_bdd : ∀ᵐ x : SpacetimeDim d ∂volume, ‖K x‖ ≤ C) :
+    zeroOriginAvoidingSubmodule d →L[ℂ] ℂ :=
+  (schwartzKernelCLM_of_const_bound (d := d) K hK_meas C hK_bdd).comp
+    (zeroOriginAvoidingValCLM d)
+
+@[simp] theorem zeroOriginKernelCLM_of_const_bound_apply
+    (K : SpacetimeDim d → ℂ)
+    (hK_meas : AEStronglyMeasurable K volume)
+    (C : ℝ)
+    (hK_bdd : ∀ᵐ x : SpacetimeDim d ∂volume, ‖K x‖ ≤ C)
+    (h : zeroOriginAvoidingSubmodule d) :
+    zeroOriginKernelCLM_of_const_bound (d := d) K hK_meas C hK_bdd h =
+      ∫ x : SpacetimeDim d, K x * (h : SchwartzSpacetime d) x := by
+  simp [zeroOriginKernelCLM_of_const_bound, schwartzKernelCLM_of_const_bound_apply]
+
+/-- Restrict the one-variable constant-bound kernel CLM to the positive-time
+compact-support reduced domain. -/
+noncomputable def positiveTimeKernelCLM_of_const_bound
+    (K : SpacetimeDim d → ℂ)
+    (hK_meas : AEStronglyMeasurable K volume)
+    (C : ℝ)
+    (hK_bdd : ∀ᵐ x : SpacetimeDim d ∂volume, ‖K x‖ ≤ C) :
+    positiveTimeCompactSupportSubmodule d →L[ℂ] ℂ :=
+  (schwartzKernelCLM_of_const_bound (d := d) K hK_meas C hK_bdd).comp
+    (positiveTimeCompactSupportValCLM d)
+
+@[simp] theorem positiveTimeKernelCLM_of_const_bound_apply
+    (K : SpacetimeDim d → ℂ)
+    (hK_meas : AEStronglyMeasurable K volume)
+    (C : ℝ)
+    (hK_bdd : ∀ᵐ x : SpacetimeDim d ∂volume, ‖K x‖ ≤ C)
+    (h : positiveTimeCompactSupportSubmodule d) :
+    positiveTimeKernelCLM_of_const_bound (d := d) K hK_meas C hK_bdd h =
+      ∫ x : SpacetimeDim d, K x * (h : SchwartzSpacetime d) x := by
+  simp [positiveTimeKernelCLM_of_const_bound, schwartzKernelCLM_of_const_bound_apply]
+
 /-- A two-point Euclidean kernel depending only on the difference variable. -/
 def twoPointDifferenceKernel
     (K : SpacetimeDim d → ℂ) : NPointDomain d 2 → ℂ :=
@@ -672,6 +928,41 @@ theorem twoPointDifferenceKernel_eq_schwinger_on_differenceShell_of_reduced_pair
             (d := d) (OS := OS) h hzero_not_mem χ₀ hχ₀ χ]
           ring
 
+/-- Canonical reduced-domain version of the previous shell theorem: if a
+difference kernel reproduces the honest two-point Schwinger difference CLM on
+the natural zero-origin-avoiding test space, then it already reproduces the
+full admissible two-point difference shell for every difference test supported
+away from `0`. -/
+theorem twoPointDifferenceKernel_eq_schwinger_on_differenceShell_of_zeroOriginCLM_pairing
+    (OS : OsterwalderSchraderAxioms d)
+    (χ₀ : SchwartzSpacetime d)
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (K : SpacetimeDim d → ℂ)
+    (hK : ∀ h : zeroOriginAvoidingSubmodule d,
+      ∫ ξ : SpacetimeDim d, K ξ * (h : SchwartzSpacetime d) ξ =
+        (OsterwalderSchraderAxioms.schwingerDifferenceZeroOriginCLM (d := d) OS χ₀) h)
+    (χ h : SchwartzSpacetime d)
+    (h0 : (0 : SpacetimeDim d) ∉ tsupport (h : SpacetimeDim d → ℂ)) :
+    ∫ x : NPointDomain d 2,
+      twoPointDifferenceKernel (d := d) K x * (twoPointDifferenceLift χ h x) =
+        OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)) := by
+  let hmem : zeroOriginAvoidingSubmodule d := ⟨h, h0⟩
+  calc
+    ∫ x : NPointDomain d 2,
+        twoPointDifferenceKernel (d := d) K x * (twoPointDifferenceLift χ h x)
+      = (∫ u : SpacetimeDim d, χ u) *
+          ∫ ξ : SpacetimeDim d, K ξ * h ξ := by
+            exact integral_twoPointDifferenceKernel_mul_differenceLift_factorizes
+              (d := d) K χ h
+    _ = (∫ u : SpacetimeDim d, χ u) *
+          (OsterwalderSchraderAxioms.schwingerDifferenceZeroOriginCLM (d := d) OS χ₀) hmem := by
+            rw [hK hmem]
+    _ = OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)) := by
+          symm
+          rw [OsterwalderSchraderAxioms.schwingerDifferenceZeroOriginCLM_eq_centerValue
+            (d := d) (OS := OS) χ₀ hχ₀ χ hmem]
+          ring
+
 /-- Reduced-domain version of the previous shell theorem: once a difference
 kernel reproduces the honest reduced Schwinger functional on the positive-time
 compact-support test space, it reproduces the full admissible two-point
@@ -698,6 +989,48 @@ theorem twoPointDifferenceKernel_eq_schwinger_on_differenceShell_of_positiveCLM_
     ⟨h', hh'_pos, hh'_compact⟩
   simpa [hmem, OsterwalderSchraderAxioms.schwingerDifferencePositiveCLM_apply]
     using hK hmem
+
+/-- Continuous-linear packaging of the canonical reduced-domain route: once a
+difference-only Euclidean kernel reproduces the natural zero-origin-avoiding
+Schwinger difference CLM, the induced zero-diagonal kernel CLM is determined by
+agreement on compactly supported difference shells away from the origin. -/
+theorem zeroDiagKernelCLM_of_differenceKernel_eq_schwinger_of_zeroOrigin_pairing
+    (OS : OsterwalderSchraderAxioms d)
+    (χ₀ : SchwartzSpacetime d)
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (K : SpacetimeDim d → ℂ)
+    (hK_meas : AEStronglyMeasurable (twoPointDifferenceKernel (d := d) K) volume)
+    (C : ℝ)
+    (hK_bdd : ∀ᵐ x : NPointDomain d 2 ∂volume,
+      ‖twoPointDifferenceKernel (d := d) K x‖ ≤ C)
+    (hReduced : ∀ h : zeroOriginAvoidingSubmodule d,
+      ∫ ξ : SpacetimeDim d, K ξ * (h : SchwartzSpacetime d) ξ =
+        (OsterwalderSchraderAxioms.schwingerDifferenceZeroOriginCLM (d := d) OS χ₀) h)
+    (hDense : Dense {f : ZeroDiagonalSchwartz d 2 |
+      ∃ (χ h : SchwartzSpacetime d),
+        (0 : SpacetimeDim d) ∉ tsupport (h : SpacetimeDim d → ℂ) ∧
+        HasCompactSupport (h : SpacetimeDim d → ℂ) ∧
+        f = ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)}) :
+    zeroDiagKernelCLM_of_const_bound
+        (d := d) (twoPointDifferenceKernel (d := d) K) hK_meas C hK_bdd =
+      OsterwalderSchraderAxioms.schwingerCLM (d := d) OS 2 := by
+  apply ContinuousLinearMap.eq_of_eq_on_dense
+    (zeroDiagKernelCLM_of_const_bound
+      (d := d) (twoPointDifferenceKernel (d := d) K) hK_meas C hK_bdd)
+    (OsterwalderSchraderAxioms.schwingerCLM (d := d) OS 2)
+    hDense
+  intro f hf
+  rcases hf with ⟨χ, h, h0, hh_compact, rfl⟩
+  have hvanish :
+      VanishesToInfiniteOrderOnCoincidence (twoPointDifferenceLift χ h) :=
+    twoPointDifferenceLift_vanishes_of_zero_not_mem_tsupport χ h h0
+  rw [zeroDiagKernelCLM_of_const_bound_apply
+      (d := d) (twoPointDifferenceKernel (d := d) K) hK_meas C hK_bdd
+      (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h))]
+  rw [ZeroDiagonalSchwartz.coe_ofClassical_of_vanishes
+      (f := twoPointDifferenceLift χ h) hvanish]
+  exact twoPointDifferenceKernel_eq_schwinger_on_differenceShell_of_zeroOriginCLM_pairing
+    (d := d) OS χ₀ hχ₀ K hReduced χ h h0
 
 /-- Continuous-linear packaging of the reduced-pairing route: once a
 difference-only Euclidean kernel reproduces the normalized reduced pairing and

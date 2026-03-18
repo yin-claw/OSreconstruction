@@ -1,5 +1,7 @@
 import OSReconstruction.Wightman.Reconstruction.Core
 import OSReconstruction.Wightman.Reconstruction.TranslationInvariantSchwartz
+import Mathlib.Analysis.Convolution
+import Mathlib.Analysis.Calculus.ContDiff.Convolution
 
 /-!
 # Schwinger/OS Reconstruction Layer
@@ -13,6 +15,8 @@ reduction shell.
 noncomputable section
 
 open scoped SchwartzMap
+open scoped Convolution
+open scoped Pointwise
 open Topology
 
 variable (d : ℕ) [NeZero d]
@@ -1090,6 +1094,67 @@ def positiveTimeCompactSupportValCLM (d : ℕ) :
   toLinearMap := (positiveTimeCompactSupportSubmodule d).subtype
   cont := continuous_subtype_val
 
+@[simp] theorem positiveTimeCompactSupportValCLM_apply {d : ℕ}
+    (h : positiveTimeCompactSupportSubmodule d) :
+    (positiveTimeCompactSupportValCLM d h : SchwartzSpacetime d) =
+      (h : SchwartzSpacetime d) := by
+  rfl
+
+/-- The convolution of two reduced positive-time compact-support Schwartz tests
+again lies in the same reduced domain. This is the natural one-variable
+smoothing operator on the honest Schwinger difference-test space. -/
+def positiveTimeCompactSupportConvolution {d : ℕ}
+    (g h : positiveTimeCompactSupportSubmodule d) :
+    positiveTimeCompactSupportSubmodule d := by
+  let fconv : SpacetimeDim d → ℂ :=
+    ((g : SchwartzSpacetime d) : SpacetimeDim d → ℂ) ⋆[ContinuousLinearMap.lsmul ℝ ℂ, MeasureTheory.volume]
+      ((h : SchwartzSpacetime d) : SpacetimeDim d → ℂ)
+  have hconv_compact : HasCompactSupport fconv := by
+    simpa [fconv] using
+      (g.property.2.convolution (L := ContinuousLinearMap.lsmul ℝ ℂ) h.property.2)
+  have hconv_smooth : ContDiff ℝ (⊤ : ℕ∞) fconv := by
+    have hg_loc :
+        MeasureTheory.LocallyIntegrable
+          ((g : SchwartzSpacetime d) : SpacetimeDim d → ℂ) MeasureTheory.volume := by
+      haveI : (MeasureTheory.volume : MeasureTheory.Measure (SpacetimeDim d)).HasTemperateGrowth :=
+        MeasureTheory.Measure.IsAddHaarMeasure.instHasTemperateGrowth
+      exact ((g : SchwartzSpacetime d).integrable (μ := MeasureTheory.volume)).locallyIntegrable
+    simpa [fconv] using
+      h.property.2.contDiff_convolution_right
+        (L := ContinuousLinearMap.lsmul ℝ ℂ) (μ := MeasureTheory.volume) hg_loc
+        ((h : SchwartzSpacetime d).smooth' :
+          ContDiff ℝ (⊤ : ℕ∞) ((h : SchwartzSpacetime d) : SpacetimeDim d → ℂ))
+  let convS : SchwartzSpacetime d := hconv_compact.toSchwartzMap hconv_smooth
+  have hconv_eq : (convS : SpacetimeDim d → ℂ) = fconv := by
+    ext x
+    simpa [convS] using HasCompactSupport.toSchwartzMap_toFun hconv_compact hconv_smooth x
+  refine ⟨convS, ?_⟩
+  constructor
+  · intro x hx
+    have hx' : x ∈ tsupport fconv := by
+      simpa [hconv_eq] using hx
+    have hsum_closed : IsClosed
+        (tsupport ((g : SchwartzSpacetime d) : SpacetimeDim d → ℂ) +
+          tsupport ((h : SchwartzSpacetime d) : SpacetimeDim d → ℂ)) := by
+      exact (g.property.2.isCompact.add h.property.2.isCompact).isClosed
+    have htsupp_subset :
+        tsupport fconv ⊆
+          tsupport ((g : SchwartzSpacetime d) : SpacetimeDim d → ℂ) +
+            tsupport ((h : SchwartzSpacetime d) : SpacetimeDim d → ℂ) := by
+      refine closure_minimal ?_ hsum_closed
+      exact (MeasureTheory.support_convolution_subset
+        (L := ContinuousLinearMap.lsmul ℝ ℂ)).trans
+        (Set.add_subset_add subset_closure subset_closure)
+    have hxsum :
+        x ∈ tsupport ((g : SchwartzSpacetime d) : SpacetimeDim d → ℂ) +
+          tsupport ((h : SchwartzSpacetime d) : SpacetimeDim d → ℂ) := by
+      exact htsupp_subset hx'
+    rcases hxsum with ⟨u, hu, v, hv, rfl⟩
+    have hu_pos : 0 < u 0 := g.property.1 hu
+    have hv_pos : 0 < v 0 := h.property.1 hv
+    simpa using add_pos hu_pos hv_pos
+  · simpa [hconv_eq] using hconv_compact
+
 /-- The natural reduced one-variable Schwartz test space for the two-point
 Schwinger difference distribution: functions whose support avoids the origin.
 This is exactly the condition needed for `twoPointDifferenceLift χ h` to lie in
@@ -1117,6 +1182,12 @@ def zeroOriginAvoidingValCLM (d : ℕ) :
     zeroOriginAvoidingSubmodule d →L[ℂ] SchwartzSpacetime d where
   toLinearMap := (zeroOriginAvoidingSubmodule d).subtype
   cont := continuous_subtype_val
+
+@[simp] theorem zeroOriginAvoidingValCLM_apply {d : ℕ}
+    (h : zeroOriginAvoidingSubmodule d) :
+    (zeroOriginAvoidingValCLM d h : SchwartzSpacetime d) =
+      (h : SchwartzSpacetime d) := by
+  rfl
 
 /-- Positive-time compactly supported reduced tests automatically lie in the
 zero-origin-avoiding reduced test space. -/
@@ -1425,6 +1496,90 @@ theorem OsterwalderSchraderAxioms.schwingerDifferencePositiveCLM_eq_centerValue
   rw [OsterwalderSchraderAxioms.schwingerDifferencePositiveCLM_apply]
   exact OsterwalderSchraderAxioms.twoPointDifferenceLift_eq_centerValue
     (d := d) OS (h : SchwartzSpacetime d) h0 χ₀ hχ₀ χ
+
+/-- The two-point difference lift after swapping the two Euclidean arguments.
+Pointwise this is the negative-difference shell `χ(x₁) * h(x₀ - x₁)`. -/
+def twoPointSwappedDifferenceLift
+    (χ h : SchwartzSpacetime d) : SchwartzNPoint d 2 :=
+  reindexSchwartz (d := d) (Equiv.swap (0 : Fin 2) (1 : Fin 2))
+    (twoPointDifferenceLift χ h)
+
+/-- The swapped two-point difference shell, packaged on the honest
+zero-diagonal test space. -/
+def twoPointSwappedDifferenceLiftZeroDiag
+    (χ h : SchwartzSpacetime d)
+    (h0 : (0 : SpacetimeDim d) ∉ tsupport (h : SpacetimeDim d → ℂ)) :
+    ZeroDiagonalSchwartz d 2 :=
+  ⟨twoPointSwappedDifferenceLift (d := d) χ h,
+    VanishesToInfiniteOrderOnCoincidence.compCLMOfContinuousLinearEquiv
+      (d := d)
+      (f := twoPointDifferenceLift χ h)
+      (twoPointDifferenceLift_vanishes_of_zero_not_mem_tsupport χ h h0)
+      (Equiv.swap (0 : Fin 2) (1 : Fin 2))⟩
+
+@[simp] theorem twoPointSwappedDifferenceLift_apply
+    (χ h : SchwartzSpacetime d) (x : NPointDomain d 2) :
+    twoPointSwappedDifferenceLift (d := d) χ h x =
+      χ (x 1) * h (x 0 - x 1) := by
+  simp [twoPointSwappedDifferenceLift, twoPointDifferenceLift_apply]
+
+@[simp] theorem twoPointSwappedDifferenceLift_centerDiff_apply
+    (χ h : SchwartzSpacetime d) (z : NPointDomain d 2) :
+    twoPointSwappedDifferenceLift (d := d) χ h ((twoPointCenterDiffCLE d) z) =
+      χ (z 0 + z 1) * h (-z 1) := by
+  simp [twoPointSwappedDifferenceLift, twoPointDifferenceLift_apply,
+    twoPointCenterDiffCLE, twoPointCenterDiffLinearEquiv]
+
+/-- Specialized `E3` for the two-point difference shell: swapping the two
+Euclidean arguments turns `χ(x₀) h(x₁ - x₀)` into the negative-difference shell
+`χ(x₁) h(x₀ - x₁)` without changing the Schwinger value. -/
+theorem OsterwalderSchraderAxioms.schwinger_twoPointDifferenceLift_eq_swapped
+    (OS : OsterwalderSchraderAxioms d)
+    (χ h : SchwartzSpacetime d)
+    (h0 : (0 : SpacetimeDim d) ∉ tsupport (h : SpacetimeDim d → ℂ)) :
+    OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)) =
+      OS.S 2 (twoPointSwappedDifferenceLiftZeroDiag (d := d) χ h h0) := by
+  let hf :
+      VanishesToInfiniteOrderOnCoincidence (twoPointDifferenceLift χ h) :=
+    twoPointDifferenceLift_vanishes_of_zero_not_mem_tsupport χ h h0
+  let fZ : ZeroDiagonalSchwartz d 2 :=
+    ⟨twoPointDifferenceLift χ h, hf⟩
+  let gZ : ZeroDiagonalSchwartz d 2 :=
+    twoPointSwappedDifferenceLiftZeroDiag (d := d) χ h h0
+  have hE3 :
+      OS.S 2 fZ = OS.S 2 gZ := by
+    refine OS.E3_symmetric (n := 2) (σ := Equiv.swap (0 : Fin 2) (1 : Fin 2)) fZ gZ ?_
+    intro x
+    simp [fZ, gZ, twoPointSwappedDifferenceLiftZeroDiag, twoPointSwappedDifferenceLift]
+  rw [ZeroDiagonalSchwartz.ofClassical_of_vanishes
+      (f := twoPointDifferenceLift χ h) hf]
+  simpa [fZ, gZ] using hE3
+
+/-- The swapped negative-difference shell satisfies the same center-value
+reduction as the positive-difference shell, by combining the standard
+two-point center-value theorem with `E3`. -/
+theorem OsterwalderSchraderAxioms.schwinger_twoPointSwappedDifferenceLift_eq_centerValue
+    (OS : OsterwalderSchraderAxioms d)
+    (h : SchwartzSpacetime d)
+    (h0 : (0 : SpacetimeDim d) ∉ tsupport (h : SpacetimeDim d → ℂ))
+    (χ₀ : SchwartzSpacetime d)
+    (hχ₀ : ∫ x : SpacetimeDim d, χ₀ x = 1)
+    (χ : SchwartzSpacetime d) :
+    OS.S 2 (twoPointSwappedDifferenceLiftZeroDiag (d := d) χ h h0) =
+      OS.S 2 (twoPointSwappedDifferenceLiftZeroDiag (d := d) χ₀ h h0) *
+        ∫ x : SpacetimeDim d, χ x := by
+  calc
+    OS.S 2 (twoPointSwappedDifferenceLiftZeroDiag (d := d) χ h h0)
+      = OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)) := by
+          symm
+          exact OS.schwinger_twoPointDifferenceLift_eq_swapped (d := d) χ h h0
+    _ = OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)) *
+          ∫ x : SpacetimeDim d, χ x := by
+            exact OS.twoPointDifferenceLift_eq_centerValue
+              (d := d) h h0 χ₀ hχ₀ χ
+    _ = OS.S 2 (twoPointSwappedDifferenceLiftZeroDiag (d := d) χ₀ h h0) *
+          ∫ x : SpacetimeDim d, χ x := by
+            rw [OS.schwinger_twoPointDifferenceLift_eq_swapped (d := d) χ₀ h h0]
 
 /-- Varying one factor of a product tensor and then evaluating the Schwinger
 functional gives a continuous linear functional in that slot, provided the

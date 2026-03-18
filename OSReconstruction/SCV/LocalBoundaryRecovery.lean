@@ -174,4 +174,82 @@ theorem fourierLaplace_boundary_recovery_on_open_of_tempered {m : ℕ}
   -- By uniqueness of limits
   exact tendsto_nhds_unique h_dist h_int
 
+/-- If two kernels agree on an open set `U`, then any compact-support
+Schwartz integral representation on `U` can be transferred from one kernel to
+the other. -/
+theorem kernel_eq_distribution_of_agree_on_open {m : ℕ}
+    (K₁ K₂ : (Fin m → ℝ) → ℂ)
+    (U : Set (Fin m → ℝ))
+    (hAgree : Set.EqOn K₁ K₂ U)
+    (T : SchwartzMap (Fin m → ℝ) ℂ → ℂ)
+    (hK₂_repr : ∀ f : SchwartzMap (Fin m → ℝ) ℂ,
+      tsupport (f : (Fin m → ℝ) → ℂ) ⊆ U →
+      HasCompactSupport (f : (Fin m → ℝ) → ℂ) →
+        T f = ∫ x, K₂ x * f x) :
+    ∀ f : SchwartzMap (Fin m → ℝ) ℂ,
+      tsupport (f : (Fin m → ℝ) → ℂ) ⊆ U →
+      HasCompactSupport (f : (Fin m → ℝ) → ℂ) →
+        T f = ∫ x, K₁ x * f x := by
+  intro f hf_supp hf_compact
+  rw [hK₂_repr f hf_supp hf_compact]
+  congr 1
+  ext x
+  by_cases hx : x ∈ U
+  · simp [hAgree hx]
+  · have hf0 : (f : (Fin m → ℝ) → ℂ) x = 0 :=
+      schwartz_eq_zero_of_not_mem_tsupport f U hf_supp x hx
+    simp [hf0]
+
+/-- Local boundary recovery plus pointwise agreement on `U` upgrades a concrete
+kernel to the integral representation of the tempered boundary-value
+distribution on compactly supported Schwartz tests supported in `U`. -/
+theorem kernel_integral_eq_distribution_via_boundary_recovery {m : ℕ}
+    {C : Set (Fin m → ℝ)} (hC : IsOpen C) (hconv : Convex ℝ C) (hne : C.Nonempty)
+    (hcone : ∀ (t : ℝ), 0 < t → ∀ y ∈ C, t • y ∈ C)
+    {F : (Fin m → ℂ) → ℂ} (hF : DifferentiableOn ℂ F (TubeDomain C))
+    (hTempered : HasFourierLaplaceReprTempered C F)
+    (U : Set (Fin m → ℝ)) (hU : IsOpen U)
+    (hcontU : ∀ x ∈ U, ContinuousWithinAt F (TubeDomain C) (realEmbed x))
+    (K : (Fin m → ℝ) → ℂ)
+    (hK_agree : Set.EqOn K (fun x => F (realEmbed x)) U) :
+    ∀ f : SchwartzMap (Fin m → ℝ) ℂ,
+      tsupport (f : (Fin m → ℝ) → ℂ) ⊆ U →
+      HasCompactSupport (f : (Fin m → ℝ) → ℂ) →
+        hTempered.dist f = ∫ x, K x * f x := by
+  refine kernel_eq_distribution_of_agree_on_open
+    K (fun x => F (realEmbed x)) U hK_agree hTempered.dist ?_
+  intro f hf_supp hf_compact
+  exact fourierLaplace_boundary_recovery_on_open_of_tempered
+    hC hconv hne hcone hF hTempered U hU hcontU f hf_supp hf_compact
+
+/-- If the tempered boundary-value distribution agrees with a target functional
+`S` on compactly supported Schwartz tests supported in `U`, then any kernel
+agreeing with the boundary trace on `U` reproduces that same target on those
+tests. -/
+theorem kernel_reproduces_target_via_boundary_recovery {m : ℕ}
+    {C : Set (Fin m → ℝ)} (hC : IsOpen C) (hconv : Convex ℝ C) (hne : C.Nonempty)
+    (hcone : ∀ (t : ℝ), 0 < t → ∀ y ∈ C, t • y ∈ C)
+    {F : (Fin m → ℂ) → ℂ} (hF : DifferentiableOn ℂ F (TubeDomain C))
+    (hTempered : HasFourierLaplaceReprTempered C F)
+    (U : Set (Fin m → ℝ)) (hU : IsOpen U)
+    (hcontU : ∀ x ∈ U, ContinuousWithinAt F (TubeDomain C) (realEmbed x))
+    (K : (Fin m → ℝ) → ℂ)
+    (hK_agree : Set.EqOn K (fun x => F (realEmbed x)) U)
+    (S : SchwartzMap (Fin m → ℝ) ℂ → ℂ)
+    (hS : ∀ f : SchwartzMap (Fin m → ℝ) ℂ,
+      tsupport (f : (Fin m → ℝ) → ℂ) ⊆ U →
+      HasCompactSupport (f : (Fin m → ℝ) → ℂ) →
+        hTempered.dist f = S f) :
+    ∀ f : SchwartzMap (Fin m → ℝ) ℂ,
+      tsupport (f : (Fin m → ℝ) → ℂ) ⊆ U →
+      HasCompactSupport (f : (Fin m → ℝ) → ℂ) →
+        ∫ x, K x * f x = S f := by
+  intro f hf_supp hf_compact
+  calc
+    ∫ x, K x * f x = hTempered.dist f := by
+      symm
+      exact kernel_integral_eq_distribution_via_boundary_recovery
+        hC hconv hne hcone hF hTempered U hU hcontU K hK_agree f hf_supp hf_compact
+    _ = S f := hS f hf_supp hf_compact
+
 end SCV
