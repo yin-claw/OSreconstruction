@@ -6,6 +6,8 @@ Authors: ModularPhysics Contributors
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanSpatialMomentum
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBase
 import OSReconstruction.SCV.SemigroupGroupBochner
+import Mathlib.Analysis.Calculus.ParametricIntegral
+import Mathlib.Analysis.SpecialFunctions.ExpDeriv
 
 /-!
 # `k = 2` Base-Step Decomposition
@@ -251,6 +253,18 @@ def laplaceFourierKernel
     Complex.exp (-(↑(ξ 0 * p.1) : ℂ)) *
       Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * ξ (Fin.succ i))) ∂μ
 
+private lemma mul_exp_neg_bound_local (c t : ℝ) (hc : 0 < c) :
+    t * Real.exp (-c * t) ≤ Real.exp (-1) / c := by
+  rw [le_div_iff₀ hc]
+  calc
+    t * Real.exp (-c * t) * c = c * t * Real.exp (-c * t) := by ring
+    _ ≤ Real.exp (c * t - 1) * Real.exp (-c * t) := by
+      apply mul_le_mul_of_nonneg_right _ (Real.exp_nonneg _)
+      linarith [Real.add_one_le_exp (c * t - 1)]
+    _ = Real.exp (-1) := by
+      rw [← Real.exp_add]
+      ring_nf
+
 /-- Smearing removal for the approximate-identity/Bochner route: the limit
 Laplace-Fourier kernel reproduces the normalized-center two-point Schwinger
 difference shell on positive-time compact-support tests. -/
@@ -284,7 +298,123 @@ theorem limit_kernel_time_holomorphic
       (∀ (t : ℝ) (ξ_s : Fin d → ℝ), 0 < t →
         K_ext (t : ℂ) ξ_s =
           laplaceFourierKernel (d := d) μ (Fin.cons t (fun i => ξ_s i))) := by
-  sorry
+  let phase : (Fin d → ℝ) → (ℝ × (Fin d → ℝ)) → ℂ := fun ξ_s p =>
+    Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * ξ_s i))
+  let F : (Fin d → ℝ) → ℂ → (ℝ × (Fin d → ℝ)) → ℂ := fun ξ_s z p =>
+    Complex.exp (-(z * ↑p.1)) * phase ξ_s p
+  let F' : (Fin d → ℝ) → ℂ → (ℝ × (Fin d → ℝ)) → ℂ := fun ξ_s z p =>
+    F ξ_s z p * -(↑p.1 : ℂ)
+  refine ⟨fun z ξ_s => ∫ p, F ξ_s z p ∂μ, ?_, ?_⟩
+  · intro ξ_s z₀ hz₀
+    simp only [Set.mem_setOf_eq] at hz₀
+    apply DifferentiableAt.differentiableWithinAt
+    set δ : ℝ := z₀.re / 2 with hδ_def
+    have hδ : 0 < δ := by
+      linarith
+    set c : ℝ := z₀.re - δ with hc_def
+    have hc : 0 < c := by
+      linarith
+    have hsum_cont : Continuous (fun p : ℝ × (Fin d → ℝ) => ∑ i : Fin d, p.2 i * ξ_s i) := by
+      refine continuous_finset_sum _ fun i _hi => ?_
+      exact (((continuous_apply i).comp continuous_snd) : Continuous fun p : ℝ × (Fin d → ℝ) => p.2 i).mul
+        (continuous_const : Continuous fun _ : ℝ × (Fin d → ℝ) => ξ_s i)
+    have hphase_cont : Continuous (phase ξ_s) := by
+      show Continuous (fun p : ℝ × (Fin d → ℝ) =>
+        Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * ξ_s i)))
+      exact Complex.continuous_exp.comp
+        (continuous_const.mul (Complex.continuous_ofReal.comp hsum_cont))
+    have hF_cont : ∀ z : ℂ, Continuous (F ξ_s z) := by
+      intro z
+      show Continuous (fun p : ℝ × (Fin d → ℝ) =>
+        Complex.exp (-(z * ↑p.1)) * phase ξ_s p)
+      exact
+        (Complex.continuous_exp.comp
+          ((continuous_const.mul (Complex.continuous_ofReal.comp continuous_fst)).neg)).mul
+          hphase_cont
+    have hF'_cont : ∀ z : ℂ, Continuous (F' ξ_s z) := by
+      intro z
+      show Continuous (fun p : ℝ × (Fin d → ℝ) => F ξ_s z p * -(↑p.1 : ℂ))
+      exact (hF_cont z).mul ((Complex.continuous_ofReal.comp continuous_fst).neg)
+    have hF_meas : ∀ᶠ z in 𝓝 z₀, AEStronglyMeasurable (F ξ_s z) μ := by
+      exact Filter.Eventually.of_forall fun z => (hF_cont z).aestronglyMeasurable
+    have hF_int : Integrable (F ξ_s z₀) μ := by
+      apply Integrable.mono' (integrable_const (1 : ℝ))
+      · exact
+          (hF_cont z₀).aestronglyMeasurable
+      · rw [ae_iff]
+        apply measure_mono_null _ hsupp
+        intro p hp
+        refine Set.mem_prod.mpr ?_
+        constructor
+        · by_contra hp_nonneg
+          apply hp
+          have hp_nonneg' : 0 ≤ p.1 := le_of_not_gt hp_nonneg
+          have hphase : (Complex.I * ↑(∑ i : Fin d, p.2 i * ξ_s i) : ℂ).re = 0 := by
+            simp
+          have hre : (-(z₀ * ↑p.1) : ℂ).re = -z₀.re * p.1 := by
+            simp [Complex.mul_re, Complex.neg_re, Complex.ofReal_re, Complex.ofReal_im]
+          rw [show ‖F ξ_s z₀ p‖ =
+              ‖Complex.exp (-(z₀ * ↑p.1)) * phase ξ_s p‖ by rfl]
+          rw [Complex.norm_mul, Complex.norm_exp, Complex.norm_exp, hphase,
+            Real.exp_zero, mul_one, hre, Real.exp_le_one_iff]
+          nlinarith [hz₀, hp_nonneg']
+        · exact Set.mem_univ _
+    have hF'_meas : AEStronglyMeasurable (F' ξ_s z₀) μ := by
+      exact (hF'_cont z₀).aestronglyMeasurable
+    have h_bound :
+        ∀ᵐ p ∂μ, ∀ z ∈ Metric.ball z₀ δ, ‖F' ξ_s z p‖ ≤ Real.exp (-1) / c := by
+      rw [ae_iff]
+      apply measure_mono_null _ hsupp
+      intro p hp
+      refine Set.mem_prod.mpr ?_
+      constructor
+      · by_contra hp_nonneg
+        apply hp
+        intro z hzball
+        have hp_nonneg' : 0 ≤ p.1 := by
+          exact le_of_not_gt hp_nonneg
+        have hzre : z₀.re - δ ≤ z.re := by
+          rw [Metric.mem_ball, dist_eq_norm] at hzball
+          have habs : |z.re - z₀.re| ≤ ‖z - z₀‖ := by
+            simpa [Complex.sub_re] using Complex.abs_re_le_norm (z - z₀)
+          linarith [neg_abs_le (z.re - z₀.re)]
+        have hphase : (Complex.I * ↑(∑ i : Fin d, p.2 i * ξ_s i) : ℂ).re = 0 := by
+          simp
+        have hre : (-(z * ↑p.1) : ℂ).re = -z.re * p.1 := by
+          simp [Complex.mul_re, Complex.neg_re, Complex.ofReal_re, Complex.ofReal_im]
+        rw [show ‖F' ξ_s z p‖ =
+            ‖Complex.exp (-(z * ↑p.1)) * phase ξ_s p * -(↑p.1 : ℂ)‖ by rfl]
+        rw [Complex.norm_mul, Complex.norm_mul, Complex.norm_exp, Complex.norm_exp,
+          hphase, Real.exp_zero, mul_one, hre]
+        have hnormp : ‖-(↑p.1 : ℂ)‖ = p.1 := by
+          have hcast : (-(↑p.1 : ℂ)) = (((-p.1 : ℝ)) : ℂ) := by simp
+          rw [hcast, Complex.norm_real, Real.norm_of_nonpos]
+          · ring
+          · linarith
+        rw [hnormp]
+        have hmain : Real.exp (-z.re * p.1) * p.1 ≤ Real.exp (-1) / c := by
+          have h1 : p.1 * Real.exp (-z.re * p.1) ≤ p.1 * Real.exp (-(z₀.re - δ) * p.1) := by
+            apply mul_le_mul_of_nonneg_left ?_ hp_nonneg'
+            apply Real.exp_le_exp.mpr
+            nlinarith
+          simpa [mul_comm] using h1.trans (mul_exp_neg_bound_local c p.1 hc)
+        exact hmain
+      · exact Set.mem_univ _
+    have h_bound_int : Integrable (fun _ : ℝ × (Fin d → ℝ) => (Real.exp (-1) / c : ℝ)) μ := by
+      simpa using (integrable_const (Real.exp (-1) / c : ℝ))
+    have h_diff : ∀ᵐ p ∂μ, ∀ z ∈ Metric.ball z₀ δ, HasDerivAt (F ξ_s · p) (F' ξ_s z p) z := by
+      exact Filter.Eventually.of_forall fun p => by
+        intro z hz
+        have hlin : HasDerivAt (fun z : ℂ => -(z * ↑p.1)) (-(↑p.1 : ℂ)) z := by
+          simpa [neg_mul] using (((hasDerivAt_id z).mul_const (↑p.1 : ℂ)).neg)
+        simpa [F, F', phase, mul_assoc, mul_left_comm, mul_comm] using
+          (hlin.cexp.mul_const (phase ξ_s p))
+    exact (hasDerivAt_integral_of_dominated_loc_of_deriv_le
+      (μ := μ) (s := Metric.ball z₀ δ) (bound := fun _ => (Real.exp (-1) / c : ℝ))
+      (F := F ξ_s) (F' := F' ξ_s) (Metric.ball_mem_nhds z₀ hδ)
+      hF_meas hF_int hF'_meas h_bound h_bound_int h_diff).2.differentiableAt
+  · intro t ξ_s ht
+    simp [laplaceFourierKernel, F, phase, Fin.cons_zero, Fin.cons_succ]
 
 /-- The `k = 2` time-parametric base step obtained by assembling the previous
 sub-lemmas. -/
