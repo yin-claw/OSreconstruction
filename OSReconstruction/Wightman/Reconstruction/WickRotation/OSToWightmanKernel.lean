@@ -14,8 +14,6 @@ Schwinger function, split from `OSToWightman.lean` for maintainability.
 
 ## Main results
 
-* `schwinger_twoPoint_holomorphic_kernel` - the bundled holomorphic kernel theorem
-* `schwinger_continuation_base_step_timeParametric_twoPoint` - k=2 base step
 * `twoPointSpatialWitness_bounded_of_pos` - semigroup bound on spatial witness
 * Bridge lemmas for admissible test functions (bump constructions, tsupport transfers)
 -/
@@ -2209,9 +2207,64 @@ theorem integral_twoPointDifferenceWitnessKernel_eq_shiftedSingleReducedPairing
     integral_twoPointDifferenceWitnessKernel_eq_shifted_single_pairing
       (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact h
 
+/-- The current `g`-dependent reduced pairing is exactly the integral of the
+translated two-point product-shell Schwinger values. This is the sharp honest
+formula produced by the semigroup construction before any canonical reduced
+comparison is imposed. -/
+theorem shiftedSingleReducedPairing_eq_translatedProductShellPairing
+    {d : ℕ} [NeZero d]
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (χ₀ g : SchwartzSpacetime d)
+    (hχ₀_pos : tsupport (((SchwartzNPoint.osConj (d := d) (n := 1)
+        (onePointToFin1CLM d χ₀ : SchwartzNPoint d 1) : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (hg_pos : tsupport (((onePointToFin1CLM d g : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (hg_pos_time : tsupport (g : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    (hg_compact : HasCompactSupport (g : SpacetimeDim d → ℂ))
+    (h : positiveTimeCompactSupportSubmodule d) :
+    shiftedSingleReducedPairing (d := d) OS χ₀ g h =
+      ∫ ξ : SpacetimeDim d,
+        (if hξ : 0 < ξ 0 then
+          OS.S 2 (ZeroDiagonalSchwartz.ofClassical
+            (twoPointProductLift χ₀ (SCV.translateSchwartz (-ξ) g)))
+        else 0) * ((h : SchwartzSpacetime d) ξ) := by
+  calc
+    shiftedSingleReducedPairing (d := d) OS χ₀ g h
+      = ∫ ξ : SpacetimeDim d,
+          twoPointDifferenceWitnessKernel OS lgc χ₀ g hχ₀_pos hg_pos hg_compact ξ *
+            ((h : SchwartzSpacetime d) ξ) := by
+              symm
+              exact integral_twoPointDifferenceWitnessKernel_eq_shiftedSingleReducedPairing
+                (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact h
+    _ = ∫ ξ : SpacetimeDim d,
+          (if hξ : 0 < ξ 0 then
+            schwingerProductPositiveCLM (d := d) OS χ₀ hχ₀_pos
+              (translatedPositiveTimeCompactSupport (d := d) g hg_pos_time hg_compact ξ hξ)
+          else 0) * ((h : SchwartzSpacetime d) ξ) := by
+            exact integral_twoPointDifferenceWitnessKernel_eq_translatedProductPositiveCLM_pairing
+              (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_pos_time hg_compact h
+    _ = ∫ ξ : SpacetimeDim d,
+          (if hξ : 0 < ξ 0 then
+            OS.S 2 (ZeroDiagonalSchwartz.ofClassical
+              (twoPointProductLift χ₀ (SCV.translateSchwartz (-ξ) g)))
+          else 0) * ((h : SchwartzSpacetime d) ξ) := by
+            refine MeasureTheory.integral_congr_ae ?_
+            filter_upwards with ξ
+            by_cases hξ : 0 < ξ 0
+            · have hprod :=
+                schwingerProductPositiveCLM_apply_translated
+                  (d := d) OS χ₀ hχ₀_pos g hg_pos_time hg_compact ξ hξ
+              simpa [hξ] using
+                congrArg (fun z : ℂ => z * ((h : SchwartzSpacetime d) ξ)) hprod
+            · simp [hξ]
+
 /-- The Hilbert-space orbit underlying the positive reduced shell of the current
-`k = 2` semigroup witness. -/
-private def twoPointDifferenceWitnessOrbit {d : ℕ} [NeZero d]
+`k = 2` semigroup witness. This is public because the final closure seam is now
+most naturally stated as a comparison between its Bochner integral and the
+Schwinger reduced functional. -/
+def twoPointDifferenceWitnessOrbit {d : ℕ} [NeZero d]
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
     (g : SchwartzSpacetime d)
@@ -2480,654 +2533,3 @@ theorem integral_twoPointDifferenceWitnessKernel_eq_inner_integral_orbit
     (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact h]
   exact shiftedSingleReducedPairing_eq_inner_integral_orbit
     (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact h
-
-/-- The equal-time hyperplane has measure zero. -/
-private theorem measure_timeEq_zero_k2 {d : ℕ} [NeZero d] :
-    MeasureTheory.volume {x : NPointDomain d 2 | x 1 0 = x 0 0} = 0 := by
-  let L : NPointDomain d 2 →ₗ[ℝ] ℝ :=
-    { toFun := fun x => x 1 0 - x 0 0
-      map_add' := fun x y => by simp; ring
-      map_smul' := fun a x => by simp; ring }
-  have hset :
-      {x : NPointDomain d 2 | x 1 0 = x 0 0} = (LinearMap.ker L : Set (NPointDomain d 2)) := by
-    ext x; simp [L, LinearMap.mem_ker, sub_eq_zero]
-  have hker_ne_top : LinearMap.ker L ≠ ⊤ := by
-    intro htop
-    have hzero : L = 0 := LinearMap.ker_eq_top.mp htop
-    have hval : L (fun k μ => if k = (1 : Fin 2) ∧ μ = 0 then (1 : ℝ) else 0) = 0 := by
-      simpa using congrArg
-        (fun f => f (fun k μ => if k = (1 : Fin 2) ∧ μ = 0 then (1 : ℝ) else 0)) hzero
-    simp [L] at hval
-  rw [hset]
-  exact MeasureTheory.Measure.addHaar_submodule MeasureTheory.volume (LinearMap.ker L) hker_ne_top
-
-/-- The one-variable equal-time hyperplane `{ξ | ξ₀ = 0}` has measure zero. -/
-private theorem measure_timeZero_spacetime {d : ℕ} [NeZero d] :
-    MeasureTheory.volume {ξ : SpacetimeDim d | ξ 0 = 0} = 0 := by
-  let L : SpacetimeDim d →ₗ[ℝ] ℝ :=
-    { toFun := fun ξ => ξ 0
-      map_add' := by intro x y; simp
-      map_smul' := by intro a x; simp }
-  have hset :
-      {ξ : SpacetimeDim d | ξ 0 = 0} = (LinearMap.ker L : Set (SpacetimeDim d)) := by
-    ext ξ
-    simp [L, LinearMap.mem_ker]
-  have hker_ne_top : LinearMap.ker L ≠ ⊤ := by
-    intro htop
-    have hzero : L = 0 := LinearMap.ker_eq_top.mp htop
-    let e0 : SpacetimeDim d := fun μ => if μ = 0 then (1 : ℝ) else 0
-    have hval : L e0 = 0 := by
-      simpa [e0] using congrArg (fun f => f e0) hzero
-    have : (1 : ℝ) = 0 := by
-      simpa [L, e0] using hval
-    norm_num at this
-  rw [hset]
-  exact MeasureTheory.Measure.addHaar_submodule MeasureTheory.volume (LinearMap.ker L) hker_ne_top
-
-set_option maxHeartbeats 4000000
-
-/-- The one-variable difference witness kernel is `ae` strongly measurable on
-spacetime. The only possible issue is the time-zero hyperplane, which has
-measure zero. -/
-private theorem aestronglyMeasurable_twoPointDifferenceWitnessKernel
-    {d : ℕ} [NeZero d]
-    (OS : OsterwalderSchraderAxioms d)
-    (lgc : OSLinearGrowthCondition d OS)
-    (χ₀ g : SchwartzSpacetime d)
-    (hχ₀_pos : tsupport (((SchwartzNPoint.osConj (d := d) (n := 1)
-        (onePointToFin1CLM d χ₀ : SchwartzNPoint d 1) : SchwartzNPoint d 1) :
-        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
-    (hg_pos : tsupport (((onePointToFin1CLM d g : SchwartzNPoint d 1) :
-        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
-    (hg_compact : HasCompactSupport (g : SpacetimeDim d → ℂ)) :
-    AEStronglyMeasurable
-      (twoPointDifferenceWitnessKernel OS lgc χ₀ g hχ₀_pos hg_pos hg_compact)
-      MeasureTheory.volume := by
-  let Kpos : SpacetimeDim d → ℂ := fun ξ =>
-    twoPointSpatialWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-      (ξ 0 : ℂ) (fun i => ξ i.succ)
-  let Kneg : SpacetimeDim d → ℂ := fun ξ =>
-    twoPointSpatialWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-      (-(ξ 0) : ℂ) (fun i => ξ i.succ)
-  let Upos : Set (SpacetimeDim d) := {ξ | 0 < ξ 0}
-  let Uneg : Set (SpacetimeDim d) := {ξ | ξ 0 < 0}
-  have hUpos_meas : MeasurableSet Upos := by
-    simpa [Upos] using (isOpen_lt continuous_const (continuous_apply 0)).measurableSet
-  have hUneg_meas : MeasurableSet Uneg := by
-    simpa [Uneg] using (isOpen_lt (continuous_apply 0) continuous_const).measurableSet
-  have hKpos_cont : ContinuousOn Kpos Upos := by
-    let Φpos : SpacetimeDim d → ℂ × (Fin d → ℝ) := fun ξ =>
-      ((ξ 0 : ℂ), fun i => ξ i.succ)
-    have hΦpos_cont : Continuous Φpos := by
-      refine Continuous.prodMk ?_ ?_
-      · exact Complex.continuous_ofReal.comp (continuous_apply 0)
-      · exact continuous_pi fun i => continuous_apply i.succ
-    have hΦpos_maps : Set.MapsTo Φpos Upos ({z : ℂ | 0 < z.re} ×ˢ Set.univ) := by
-      intro ξ hξ
-      exact ⟨by simpa [Φpos, Complex.ofReal_re] using hξ, trivial⟩
-    simpa [Kpos, Φpos] using
-      (continuousOn_twoPointSpatialWitness
-        (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact).comp
-        hΦpos_cont.continuousOn hΦpos_maps
-  have hKneg_cont : ContinuousOn Kneg Uneg := by
-    let Φneg : SpacetimeDim d → ℂ × (Fin d → ℝ) := fun ξ =>
-      ((-(ξ 0) : ℂ), fun i => ξ i.succ)
-    have hΦneg_cont : Continuous Φneg := by
-      refine Continuous.prodMk ?_ ?_
-      · simpa [Complex.ofReal_neg] using
-          (Complex.continuous_ofReal.comp (continuous_apply 0)).neg
-      · exact continuous_pi fun i => continuous_apply i.succ
-    have hΦneg_maps : Set.MapsTo Φneg Uneg ({z : ℂ | 0 < z.re} ×ˢ Set.univ) := by
-      intro ξ hξ
-      have hξ' : ξ 0 < 0 := by
-        simpa [Uneg] using hξ
-      exact ⟨by simpa [Φneg, Complex.ofReal_re] using neg_pos.mpr hξ', trivial⟩
-    simpa [Kneg, Φneg] using
-      (continuousOn_twoPointSpatialWitness
-        (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact).comp
-        hΦneg_cont.continuousOn hΦneg_maps
-  have hKpos_ind_aesm :
-      AEStronglyMeasurable (Upos.indicator Kpos) MeasureTheory.volume := by
-    refine (aestronglyMeasurable_indicator_iff hUpos_meas).2 ?_
-    exact hKpos_cont.aestronglyMeasurable hUpos_meas
-  have hKneg_ind_aesm :
-      AEStronglyMeasurable (Uneg.indicator Kneg) MeasureTheory.volume := by
-    refine (aestronglyMeasurable_indicator_iff hUneg_meas).2 ?_
-    exact hKneg_cont.aestronglyMeasurable hUneg_meas
-  have hpiece_aesm :
-      AEStronglyMeasurable
-        (fun ξ : SpacetimeDim d =>
-          if ξ ∈ Upos then Kpos ξ else if ξ ∈ Uneg then Kneg ξ else 0)
-        MeasureTheory.volume := by
-    have hpiece :
-        (fun ξ : SpacetimeDim d =>
-          if ξ ∈ Upos then Kpos ξ else if ξ ∈ Uneg then Kneg ξ else 0) =
-        fun ξ : SpacetimeDim d => Upos.indicator Kpos ξ + Uneg.indicator Kneg ξ := by
-      funext ξ
-      by_cases hξpos : ξ ∈ Upos
-      · have hξnotneg : ξ ∉ Uneg := by
-          intro hξneg
-          have hpos : 0 < ξ 0 := by
-            simpa [Upos] using hξpos
-          have hneg : ξ 0 < 0 := by
-            simpa [Uneg] using hξneg
-          linarith
-        simp [hξpos, hξnotneg, Set.indicator_of_mem, Set.indicator_of_notMem]
-      · by_cases hξneg : ξ ∈ Uneg
-        · simp [hξpos, hξneg, Set.indicator_of_mem, Set.indicator_of_notMem]
-        · simp [hξpos, hξneg, Set.indicator_of_notMem]
-    rw [hpiece]
-    exact hKpos_ind_aesm.add hKneg_ind_aesm
-  have hneq0_ae : ∀ᵐ ξ : SpacetimeDim d ∂MeasureTheory.volume, ξ 0 ≠ 0 := by
-    rw [ae_iff]
-    simpa using measure_timeZero_spacetime (d := d)
-  refine hpiece_aesm.congr ?_
-  filter_upwards [hneq0_ae] with ξ hξ0
-  have hlt_or_gt := lt_or_gt_of_ne hξ0
-  rcases hlt_or_gt with hξneg | hξpos
-  · have hξnotpos : ¬ 0 < ξ 0 := by linarith
-    simp [Upos, Uneg, Kpos, Kneg, twoPointDifferenceWitnessKernel, hξnotpos, hξneg]
-  · simp [Upos, Uneg, Kpos, Kneg, twoPointDifferenceWitnessKernel, hξpos, not_lt.mpr (le_of_lt hξpos)]
-
-/-- Away from the time-zero hyperplane, the one-variable difference witness
-kernel is uniformly bounded by the same constant as the positive-time spatial
-witness. -/
-private theorem ae_bounded_twoPointDifferenceWitnessKernel
-    {d : ℕ} [NeZero d]
-    (OS : OsterwalderSchraderAxioms d)
-    (lgc : OSLinearGrowthCondition d OS)
-    (χ₀ g : SchwartzSpacetime d)
-    (hχ₀_pos : tsupport (((SchwartzNPoint.osConj (d := d) (n := 1)
-        (onePointToFin1CLM d χ₀ : SchwartzNPoint d 1) : SchwartzNPoint d 1) :
-        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
-    (hg_pos : tsupport (((onePointToFin1CLM d g : SchwartzNPoint d 1) :
-        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
-    (hg_compact : HasCompactSupport (g : SpacetimeDim d → ℂ))
-    {C : ℝ}
-    (hC : ∀ (t : ℝ), 0 < t → ∀ (y : Fin d → ℝ),
-      ‖twoPointSpatialWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact (t : ℂ) y‖ ≤ C) :
-    ∀ᵐ ξ : SpacetimeDim d ∂MeasureTheory.volume,
-      ‖twoPointDifferenceWitnessKernel OS lgc χ₀ g hχ₀_pos hg_pos hg_compact ξ‖ ≤ C := by
-  have hneq0_ae : ∀ᵐ ξ : SpacetimeDim d ∂MeasureTheory.volume, ξ 0 ≠ 0 := by
-    rw [ae_iff]
-    simpa using measure_timeZero_spacetime (d := d)
-  filter_upwards [hneq0_ae] with ξ hξ0
-  rcases lt_or_gt_of_ne hξ0 with hξneg | hξpos
-  · rw [twoPointDifferenceWitnessKernel_apply_of_not_pos
-        (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact ξ (by linarith)]
-    simpa using hC (-(ξ 0)) (by linarith) (fun i => ξ i.succ)
-  · rw [twoPointDifferenceWitnessKernel_apply_of_pos
-        (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact ξ hξpos]
-    exact hC (ξ 0) hξpos (fun i => ξ i.succ)
-
-/-- `wickRotatePoint` is continuous. -/
-private theorem continuous_wickRotatePoint {d : ℕ} :
-    Continuous (fun x : Fin (d + 1) → ℝ => wickRotatePoint x) := by
-  apply continuous_pi
-  intro μ
-  by_cases hμ : μ = 0
-  · subst hμ
-    simp only [wickRotatePoint, ite_true]
-    exact continuous_const.mul (Complex.continuous_ofReal.comp (continuous_apply 0))
-  · simp only [wickRotatePoint, hμ, ite_false]
-    exact Complex.continuous_ofReal.comp (continuous_apply μ)
-
-/-- The composition `x ↦ toDiffFlat(wickRotate(x))` is measurable. -/
-private theorem measurable_toDiffFlat_wickRotate {d : ℕ} :
-    Measurable (fun x : NPointDomain d 2 =>
-      BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) :=
-  ((differentiable_toDiffFlat_local 2 d).continuous.comp
-    (continuous_pi fun j => continuous_wickRotatePoint.comp (continuous_apply j))).measurable
-
-/-- Strong continuity of `y ↦ twoPointTranslatedOnePointVector` in the Hilbert space
-norm. Proof: norm constancy + weak continuity ⟹ strong continuity. -/
-private theorem continuous_twoPointTranslatedOnePointVector_strong {d : ℕ} [NeZero d]
-    (OS : OsterwalderSchraderAxioms d)
-    (g : SchwartzSpacetime d)
-    (hg_pos : tsupport (((onePointToFin1CLM d g : SchwartzNPoint d 1) :
-        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
-    (hg_compact : HasCompactSupport (g : SpacetimeDim d → ℂ)) :
-    Continuous (fun y : Fin d → ℝ =>
-      twoPointTranslatedOnePointVector (d := d) OS g hg_pos y) := by
-  rw [continuous_iff_continuousAt]
-  intro y₀
-  rw [Metric.continuousAt_iff]
-  intro ε hε
-  let v : (Fin d → ℝ) → OSHilbertSpace OS :=
-    fun y => twoPointTranslatedOnePointVector (d := d) OS g hg_pos y
-  have hre_cont : Continuous (fun y =>
-      RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y))) :=
-    Complex.continuous_re.comp
-      (continuous_inner_twoPointTranslatedOnePointVector (d := d) OS g hg_pos hg_compact y₀)
-  have hnorm : ∀ y, ‖v y‖ = ‖v y₀‖ :=
-    fun y => norm_twoPointTranslatedOnePointVector_eq (d := d) OS g hg_pos y y₀
-  have hre_y₀ : RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y₀)) = ‖v y₀‖ ^ 2 := by
-    rw [@inner_self_eq_norm_sq ℂ]
-  have hCS : ∀ y, RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y)) ≤ ‖v y₀‖ ^ 2 := by
-    intro y
-    calc RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y))
-        ≤ ‖@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y)‖ := Complex.re_le_norm _
-      _ ≤ ‖v y₀‖ * ‖v y‖ := norm_inner_le_norm (𝕜 := ℂ) _ _
-      _ = ‖v y₀‖ ^ 2 := by rw [hnorm y]; ring
-  have hident : ∀ y, ‖v y - v y₀‖ ^ 2 =
-      2 * (‖v y₀‖ ^ 2 - RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y))) := by
-    intro y
-    have h := @norm_sub_sq ℂ (OSHilbertSpace OS) _ _ _ (v y) (v y₀)
-    rw [hnorm y] at h
-    have hconj : RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y) (v y₀)) =
-        RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y)) := by
-      rw [← inner_conj_symm (𝕜 := ℂ) (v y) (v y₀), RCLike.conj_re]
-    linarith [hconj]
-  have hε2 : (0 : ℝ) < ε ^ 2 / 2 := by positivity
-  obtain ⟨δ, hδ_pos, hδ⟩ := Metric.continuousAt_iff.mp hre_cont.continuousAt _ hε2
-  refine ⟨δ, hδ_pos, fun {y} (hy : dist y y₀ < δ) => ?_⟩
-  rw [dist_eq_norm]
-  have hδ_app := hδ hy
-  rw [Real.dist_eq, hre_y₀] at hδ_app
-  have hdiff_nonneg : 0 ≤ ‖v y₀‖ ^ 2 -
-      RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y)) := by linarith [hCS y]
-  have hdiff_bound : ‖v y₀‖ ^ 2 -
-      RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y)) < ε ^ 2 / 2 := by
-    have : |RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y)) - ‖v y₀‖ ^ 2| =
-        ‖v y₀‖ ^ 2 - RCLike.re (@inner ℂ (OSHilbertSpace OS) _ (v y₀) (v y)) := by
-      rw [abs_of_nonpos (by linarith [hCS y])]; ring
-    linarith
-  have hsq : ‖v y - v y₀‖ ^ 2 < ε ^ 2 := by rw [hident y]; linarith
-  by_contra h; push_neg at h
-  linarith [show ε ^ 2 ≤ ‖v y - v y₀‖ ^ 2 from by nlinarith [sq_nonneg (‖v y - v y₀‖ - ε)]]
-
-set_option maxHeartbeats 800000 in
-/-- **Two-point Schwinger holomorphic kernel.**
-
-The two-point Schwinger function has a holomorphic kernel representation
-on the flat positive-time-difference tube. This combines kernel regularity
-(the Schwinger distribution is given by integration against a kernel) with
-holomorphic extension (the kernel extends holomorphically in time via the
-semigroup). These two obligations are bundled because the holomorphic
-extension is needed to define the witness G on the tube. -/
-theorem schwinger_twoPoint_holomorphic_kernel {d : ℕ} [NeZero d]
-    (OS : OsterwalderSchraderAxioms d)
-    (lgc : OSLinearGrowthCondition d OS) :
-    ∃ (G : (Fin (2 * (d + 1)) → ℂ) → ℂ),
-      IsTimeHolomorphicFlatPositiveTimeDiffWitness G ∧
-      (∀ (f : ZeroDiagonalSchwartz d 2),
-        MeasureTheory.Integrable
-          (fun x => G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) * (f.1 x))
-          MeasureTheory.volume) ∧
-      (∀ (f : ZeroDiagonalSchwartz d 2),
-        OS.S 2 f = ∫ x : NPointDomain d 2,
-          G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) * (f.1 x)) := by
-  -- Step 1: Get admissible test functions
-  obtain ⟨g, hg_compact, hg_pos_time, hg_int_ne⟩ :=
-    exists_positive_time_compact_schwartz (d := d)
-  obtain ⟨χ_raw, hχ_compact, hχ_neg_time, hχ_int_ne⟩ :=
-    exists_negative_time_compact_schwartz (d := d)
-  -- Step 2: Normalize χ to ∫ χ₀ = 1
-  let χ₀ : SchwartzSpacetime d := (∫ u, χ_raw u)⁻¹ • χ_raw
-  have hχ₀_int : ∫ u : SpacetimeDim d, χ₀ u = 1 := by
-    simp only [χ₀, SchwartzMap.smul_apply]
-    rw [MeasureTheory.integral_smul, smul_eq_mul, inv_mul_cancel₀ hχ_int_ne]
-  -- Step 3: χ₀ inherits negative-time support and compact support
-  have hχ₀_compact : HasCompactSupport (χ₀ : SpacetimeDim d → ℂ) := by
-    simp only [χ₀, SchwartzMap.smul_apply]
-    exact hχ_compact.smul_left
-  have hχ₀_neg_time : tsupport (χ₀ : SpacetimeDim d → ℂ) ⊆
-      {x : SpacetimeDim d | x 0 < 0} := by
-    intro x hx
-    apply hχ_neg_time
-    exact closure_mono (Function.support_const_smul_subset ((∫ u, χ_raw u)⁻¹) _) hx
-  -- Step 4: Get osConj and onePoint support conditions
-  have hχ₀_pos := osConj_onePointToFin1_tsupport_orderedPositiveTime χ₀ hχ₀_compact hχ₀_neg_time
-  have hg_pos := onePointToFin1_tsupport_orderedPositiveTime g hg_pos_time
-  -- Step 5: Define G with E3 piecewise extension
-  -- Positive time (Re(-I*u_time) > 0): semigroup value
-  -- Negative time: use E3 (K(ξ) = K(-ξ)) to reflect to positive time
-  -- On the tube: the if-branch is always true (Im > 0 ⟹ Re(-I*z) > 0)
-  let G_pos := twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-  let j₁₀ : Fin (2 * (d + 1)) := finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1)))
-  let G : (Fin (2 * (d + 1)) → ℂ) → ℂ :=
-    twoPointPiecewiseWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-  obtain ⟨C, hC⟩ := twoPointSpatialWitness_bounded_of_pos
-    (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-  have hG_pos_bnd : ∀ x : NPointDomain d 2, 0 < x 1 0 - x 0 0 →
-      ‖G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)))‖ ≤ C := by
-    intro x hx_pos
-    have h_cond : 0 < (-Complex.I * BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀).re := by
-      have hre : (-Complex.I * BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))
-          (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))).re = x 1 0 - x 0 0 := by
-        rw [neg_I_mul_toDiffFlat_wickRotate_j10]; simp
-      rwa [hre]
-    have hbranch :
-        ‖(if 0 < (-Complex.I * BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀).re then
-            twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-              (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)))
-          else
-            twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-              (fun j =>
-                if j = j₁₀ then
-                  -BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀
-                else BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j))‖ ≤ C := by
-      rw [if_pos h_cond]
-      change ‖twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact _‖ ≤ C
-      rw [twoPointCorrectedWitness_eq_twoPointSpatialWitness]
-      conv_lhs => rw [neg_I_mul_toDiffFlat_wickRotate_j10 (d := d) x]
-      exact hC (x 1 0 - x 0 0) hx_pos (extractDiffSpatialRe _)
-    simpa [G, twoPointPiecewiseWitness, Complex.mul_re, Complex.I_re, Complex.I_im] using hbranch
-  have hG_neg_bnd : ∀ x : NPointDomain d 2, x 1 0 < x 0 0 →
-      ‖G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)))‖ ≤ C := by
-    intro x hx_neg
-    have h_cond : ¬ 0 < (-Complex.I * BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀).re := by
-      have hre : (-Complex.I * BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))
-          (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))).re = x 1 0 - x 0 0 := by
-        rw [neg_I_mul_toDiffFlat_wickRotate_j10]; simp
-      rw [hre]; linarith
-    have hbranch :
-        ‖(if 0 < (-Complex.I * BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀).re then
-            twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-              (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)))
-          else
-            twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-              (fun j =>
-                if j = j₁₀ then
-                  -BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀
-                else BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j))‖ ≤ C := by
-      rw [if_neg h_cond]
-      change ‖twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact _‖ ≤ C
-      rw [twoPointCorrectedWitness_eq_twoPointSpatialWitness]
-      have h_if_j : (fun j => if j = j₁₀ then
-            -BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀
-            else BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j)
-          (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1)))) =
-          -(BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀) := by
-        simp [j₁₀]
-      conv_lhs =>
-        rw [show -Complex.I * (fun j => if j = j₁₀ then
-              -BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀
-              else BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j)
-            (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1)))) =
-            ↑(x 0 0 - x 1 0) from by rw [h_if_j, neg_I_mul_neg_toDiffFlat_wickRotate_j10]]
-      rw [extractDiffSpatialRe_reflect_timeDiff _ j₁₀ rfl]
-      exact hC (x 0 0 - x 1 0) (by linarith) (extractDiffSpatialRe _)
-    simpa [G, twoPointPiecewiseWitness, Complex.mul_re, Complex.I_re, Complex.I_im] using hbranch
-  have hG_ae_bdd : ∀ᵐ x : NPointDomain d 2 ∂volume,
-      ‖G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)))‖ ≤ C := by
-    have hnull : volume {x : NPointDomain d 2 | x 1 0 = x 0 0} = 0 :=
-      measure_timeEq_zero_k2 (d := d)
-    have hneq_ae : ∀ᵐ x : NPointDomain d 2 ∂volume, x 1 0 ≠ x 0 0 := by
-      rw [ae_iff]; simpa using hnull
-    filter_upwards [hneq_ae] with x hxneq
-    rcases lt_or_gt_of_ne hxneq with hlt | hgt
-    · exact hG_neg_bnd x hlt
-    · exact hG_pos_bnd x (by linarith)
-  let U_pos : Set (NPointDomain d 2) := {x | x 1 0 > x 0 0}
-  let U_neg : Set (NPointDomain d 2) := {x | x 1 0 < x 0 0}
-  have hU : ∀ᵐ x : NPointDomain d 2 ∂volume, x ∈ U_pos ∪ U_neg := by
-    have hnull := measure_timeEq_zero_k2 (d := d)
-    rw [ae_iff]
-    refine le_antisymm ?_ (zero_le _)
-    calc volume {x | x ∉ U_pos ∪ U_neg}
-        ≤ volume {x : NPointDomain d 2 | x 1 0 = x 0 0} := by
-            apply MeasureTheory.measure_mono
-            intro x hx; simp [U_pos, U_neg, Set.mem_union] at hx
-            exact hx.symm
-      _ = 0 := hnull
-  have hGwr_cont : ContinuousOn
-      (fun x : NPointDomain d 2 =>
-        G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)))) (U_pos ∪ U_neg) := by
-    have hcx10 : Continuous (fun x : NPointDomain d 2 => x 1 0) :=
-      (continuous_apply (0 : Fin (d + 1))).comp (continuous_apply (1 : Fin 2))
-    have hcx00 : Continuous (fun x : NPointDomain d 2 => x 0 0) :=
-      (continuous_apply (0 : Fin (d + 1))).comp (continuous_apply (0 : Fin 2))
-    have hU_pos_open : IsOpen U_pos := isOpen_lt hcx00 hcx10
-    have hU_neg_open : IsOpen U_neg := isOpen_lt hcx10 hcx00
-    have hsw_cont := continuousOn_twoPointSpatialWitness
-      (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-    have hcoord_pos : Continuous (fun x : NPointDomain d 2 =>
-        ((↑(x 1 0 - x 0 0) : ℂ), fun i : Fin d => x 1 i.succ - x 0 i.succ)) := by
-      exact (Complex.continuous_ofReal.comp (hcx10.sub hcx00)).prodMk
-        (continuous_pi fun i =>
-          ((continuous_apply i.succ).comp (continuous_apply 1)).sub
-            ((continuous_apply i.succ).comp (continuous_apply 0)))
-    have hcoord_maps_pos : Set.MapsTo
-        (fun x : NPointDomain d 2 =>
-          ((↑(x 1 0 - x 0 0) : ℂ), fun i : Fin d => x 1 i.succ - x 0 i.succ))
-        U_pos ({z : ℂ | 0 < z.re} ×ˢ Set.univ) := by
-      intro x (hx : x 1 0 > x 0 0); exact ⟨by simp [Complex.ofReal_re]; linarith, trivial⟩
-    have hG_eq_pos : ∀ x ∈ U_pos,
-        G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) =
-          twoPointSpatialWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-            (↑(x 1 0 - x 0 0)) (fun i => x 1 i.succ - x 0 i.succ) := by
-      intro x (hx : x 1 0 > x 0 0)
-      have h_cond : 0 < (-Complex.I * BHW.toDiffFlat 2 d
-          (fun j => wickRotatePoint (x j)) j₁₀).re := by
-        rw [neg_I_mul_toDiffFlat_wickRotate_j10 (d := d) x]; simp; linarith
-      have hbranch :
-          (if 0 < (-Complex.I * BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀).re then
-            twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-              (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)))
-          else
-            twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-              (fun j =>
-                if j = j₁₀ then
-                  -BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀
-                else BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j)) =
-          twoPointSpatialWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-            (↑(x 1 0 - x 0 0)) (fun i => x 1 i.succ - x 0 i.succ) := by
-        rw [if_pos h_cond, twoPointCorrectedWitness_eq_twoPointSpatialWitness,
-          neg_I_mul_toDiffFlat_wickRotate_j10 (d := d) x]
-        congr 1
-        ext i
-        simp [extractDiffSpatialRe, BHW.toDiffFlat, BHW.flattenCfg,
-          BHW.diffCoordEquiv_apply, wickRotatePoint, Fin.succ_ne_zero]
-      simpa [G, twoPointPiecewiseWitness, Complex.mul_re, Complex.I_re, Complex.I_im] using hbranch
-    have hcoord_neg : Continuous (fun x : NPointDomain d 2 =>
-        ((↑(x 0 0 - x 1 0) : ℂ), fun i : Fin d => x 1 i.succ - x 0 i.succ)) := by
-      exact (Complex.continuous_ofReal.comp (hcx00.sub hcx10)).prodMk
-        (continuous_pi fun i =>
-          ((continuous_apply i.succ).comp (continuous_apply 1)).sub
-            ((continuous_apply i.succ).comp (continuous_apply 0)))
-    have hcoord_maps_neg : Set.MapsTo
-        (fun x : NPointDomain d 2 =>
-          ((↑(x 0 0 - x 1 0) : ℂ), fun i : Fin d => x 1 i.succ - x 0 i.succ))
-        U_neg ({z : ℂ | 0 < z.re} ×ˢ Set.univ) := by
-      intro x (hx : x 1 0 < x 0 0); exact ⟨by simp [Complex.ofReal_re]; linarith, trivial⟩
-    have hG_eq_neg : ∀ x ∈ U_neg,
-        G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) =
-          twoPointSpatialWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-            (↑(x 0 0 - x 1 0)) (fun i => x 1 i.succ - x 0 i.succ) := by
-      intro x (hx : x 1 0 < x 0 0)
-      have h_cond : ¬ 0 < (-Complex.I * BHW.toDiffFlat 2 d
-          (fun j => wickRotatePoint (x j)) j₁₀).re := by
-        rw [neg_I_mul_toDiffFlat_wickRotate_j10 (d := d) x]; simp; linarith
-      have hbranch :
-          (if 0 < (-Complex.I * BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀).re then
-            twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-              (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)))
-          else
-            twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-              (fun j =>
-                if j = j₁₀ then
-                  -BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀
-                else BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j)) =
-          twoPointSpatialWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-            (↑(x 0 0 - x 1 0)) (fun i => x 1 i.succ - x 0 i.succ) := by
-        rw [if_neg h_cond, twoPointCorrectedWitness_eq_twoPointSpatialWitness]
-        have h_if : (if finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))) = j₁₀
-            then -BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀
-            else BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))
-              (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))) =
-            -(BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀) := by
-          simp [j₁₀]
-        rw [show -Complex.I * (if finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))) = j₁₀
-            then -BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀
-            else BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))
-              (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))) =
-            -Complex.I * -(BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)) j₁₀) from
-          by rw [h_if],
-          neg_I_mul_neg_toDiffFlat_wickRotate_j10 (d := d) x,
-          extractDiffSpatialRe_reflect_timeDiff _ j₁₀ rfl]
-        congr 1
-        ext i
-        simp [extractDiffSpatialRe, BHW.toDiffFlat, BHW.flattenCfg,
-          BHW.diffCoordEquiv_apply, wickRotatePoint, Fin.succ_ne_zero]
-      simpa [G, twoPointPiecewiseWitness, Complex.mul_re, Complex.I_re, Complex.I_im] using hbranch
-    apply ContinuousOn.union_of_isOpen _ _ hU_pos_open hU_neg_open
-    · refine (hsw_cont.comp hcoord_pos.continuousOn hcoord_maps_pos).congr (fun x hx => ?_)
-      simp only [Function.comp]
-      rw [hG_eq_pos x hx]
-    · refine (hsw_cont.comp hcoord_neg.continuousOn hcoord_maps_neg).congr (fun x hx => ?_)
-      simp only [Function.comp]
-      rw [hG_eq_neg x hx]
-  have hopen : IsOpen (U_pos ∪ U_neg) := by
-    have hcont_x10 : Continuous (fun x : NPointDomain d 2 => x 1 0) :=
-      (continuous_apply (0 : Fin (d + 1))).comp (continuous_apply (1 : Fin 2))
-    have hcont_x00 : Continuous (fun x : NPointDomain d 2 => x 0 0) :=
-      (continuous_apply (0 : Fin (d + 1))).comp (continuous_apply (0 : Fin 2))
-    exact (isOpen_lt hcont_x00 hcont_x10).union (isOpen_lt hcont_x10 hcont_x00)
-  have hGwr_aesm : AEStronglyMeasurable
-      (fun x : NPointDomain d 2 =>
-        G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)))) volume := by
-    rw [← MeasureTheory.Measure.restrict_eq_self_of_ae_mem hU]
-    exact hGwr_cont.aestronglyMeasurable hopen.measurableSet
-  refine ⟨G, ?_, ?_, ?_⟩
-  · -- IsTimeHolomorphic: On tube, Re(-I*u_{(1,0)}) = Im(u_{(1,0)}) > 0, so if-branch
-    -- is true and G = G_pos. Transfer from G_pos holomorphicity.
-    have hG_pos_holo := isTimeHolomorphicFlatPositiveTimeDiffWitness_twoPointCorrectedWitness_of_continuousOn
-      (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-      (continuousOn_twoPointCorrectedWitness (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact)
-    -- G = G_pos on tube (if-branch true)
-    have hG_eq_on_tube : ∀ u ∈ SCV.TubeDomain (FlatPositiveTimeDiffReal 2 d), G u = G_pos u := by
-      intro u hu
-      have hcond : 0 < (-Complex.I * u j₁₀).re := by
-        have := (mem_tubeDomain_flatPositiveTimeDiffReal_iff (k := 2) (d := d) u).mp hu ⟨1, by omega⟩
-        rwa [show (-Complex.I * u j₁₀).re = (u j₁₀).im from by
-          simp [Complex.mul_re, Complex.I_re, Complex.I_im]]
-      have hbranch :
-          (if 0 < (-Complex.I * u j₁₀).re then
-            twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact u
-          else
-            twoPointCorrectedWitness OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-              (fun j => if j = j₁₀ then -u j₁₀ else u j)) =
-          G_pos u := by
-        rw [if_pos hcond]
-      simpa [G, twoPointPiecewiseWitness, G_pos, Complex.mul_re, Complex.I_re, Complex.I_im] using hbranch
-    constructor
-    · -- ContinuousOn: G = G_pos on tube
-      exact hG_pos_holo.1.congr (fun u hu => by show G u = G_pos u; exact hG_eq_on_tube u hu)
-    · -- DifferentiableOn: for each time slice, G = G_pos on {Im w > 0}
-      intro u hu i
-      have hslice_eq : ∀ w ∈ ({w : ℂ | 0 < w.im} : Set ℂ),
-          G (Function.update u (finProdFinEquiv (i, 0)) w) =
-          G_pos (Function.update u (finProdFinEquiv (i, 0)) w) := by
-        intro w hw
-        apply hG_eq_on_tube
-        rw [mem_tubeDomain_flatPositiveTimeDiffReal_iff]
-        intro k
-        rcases i with ⟨i, hi⟩
-        by_cases hki : k = ⟨i, hi⟩
-        · subst hki; simp [Function.update_self]; exact hw
-        · have hne : finProdFinEquiv (k, (0 : Fin (d+1))) ≠ finProdFinEquiv (⟨i, hi⟩, (0 : Fin (d+1))) := by
-            intro h; exact hki (by
-              have := congr_arg (fun x => (finProdFinEquiv.symm x).1) h
-              simp at this; exact this)
-          simp [Function.update_of_ne hne]
-          exact (mem_tubeDomain_flatPositiveTimeDiffReal_iff (k := 2) (d := d) u).mp hu k
-      exact (hG_pos_holo.2 u hu i).congr hslice_eq
-  · -- Integrability: G ae-bounded × f Schwartz (L¹) → G*f integrable
-    intro f
-    -- f.1 is Schwartz hence integrable
-    have hf_int : MeasureTheory.Integrable (f.1 : NPointDomain d 2 → ℂ) := by
-      haveI : (MeasureTheory.volume :
-          MeasureTheory.Measure (NPointDomain d 2)).HasTemperateGrowth :=
-        MeasureTheory.Measure.IsAddHaarMeasure.instHasTemperateGrowth
-      exact f.1.integrable
-    -- |G * f| ≤ C * |f|, and C * |f| is integrable
-    refine (hf_int.norm.const_mul C).mono' ?_ ?_
-    · exact hGwr_aesm.mul f.1.continuous.aestronglyMeasurable
-    · -- Norm bound: ae
-      filter_upwards [hG_ae_bdd] with x hx
-      calc ‖G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) * (f.1 x)‖
-          = ‖G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)))‖ * ‖f.1 x‖ := norm_mul _ _
-        _ ≤ C * ‖f.1 x‖ := mul_le_mul_of_nonneg_right hx (norm_nonneg _)
-  · -- Euclidean reproduction: ∫ G * f = OS.S 2 f for all f ∈ ZeroDiag
-    intro f
-    let K : SpacetimeDim d → ℂ :=
-      twoPointDifferenceWitnessKernel OS lgc χ₀ g hχ₀_pos hg_pos hg_compact
-    have hK_meas : AEStronglyMeasurable
-        (OSReconstruction.twoPointDifferenceKernel (d := d) K) volume := by
-      refine hGwr_aesm.congr ?_
-      filter_upwards with x
-      simpa [G, K] using
-        (twoPointPiecewiseWitness_euclidean_eq_differenceKernel
-          (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact x)
-    have hK_bdd : ∀ᵐ x : NPointDomain d 2 ∂volume,
-        ‖OSReconstruction.twoPointDifferenceKernel (d := d) K x‖ ≤ C := by
-      filter_upwards [hG_ae_bdd] with x hx
-      have hEq :
-          OSReconstruction.twoPointDifferenceKernel (d := d) K x =
-            G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) := by
-        simpa [G, K] using
-          (twoPointPiecewiseWitness_euclidean_eq_differenceKernel
-            (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact x).symm
-      calc
-        ‖OSReconstruction.twoPointDifferenceKernel (d := d) K x‖
-            = ‖G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j)))‖ := by
-                rw [hEq]
-        _ ≤ C := hx
-    have hCLM :
-        OSReconstruction.zeroDiagKernelCLM_of_const_bound
-            (d := d) (OSReconstruction.twoPointDifferenceKernel (d := d) K)
-            hK_meas C hK_bdd =
-          OsterwalderSchraderAxioms.schwingerCLM (d := d) OS 2 := by
-      -- Remaining genuine gap: identify the current `g`-dependent reduced
-      -- pairing with the canonical Schwinger reduced functional on a shell
-      -- family large enough to determine the full zero-diagonal CLM.
-      --
-      -- Concretely, after the reductions already proved in this file and in
-      -- `TwoPointKernelFunctional.lean`, it is enough to supply:
-      -- 1. a correct reduced-shell comparison theorem for the kernel `K`, and
-      -- 2. a correct density/generation theorem for the resulting shell family.
-      --
-      -- Once those are available, the packaging theorem
-      -- `OSReconstruction.zeroDiagKernelCLM_of_differenceKernel_eq_schwinger_of_reduced_pairing`
-      -- closes the CLM identification immediately.
-      sorry
-    have happly := congrArg
-      (fun L : ZeroDiagonalSchwartz d 2 →L[ℂ] ℂ => L f) hCLM
-    calc
-      OS.S 2 f = (OsterwalderSchraderAxioms.schwingerCLM (d := d) OS 2) f := by
-        rfl
-      _ = OSReconstruction.zeroDiagKernelCLM_of_const_bound
-            (d := d) (OSReconstruction.twoPointDifferenceKernel (d := d) K)
-            hK_meas C hK_bdd f := by
-              simpa [OsterwalderSchraderAxioms.schwingerCLM] using happly.symm
-      _ = ∫ x : NPointDomain d 2,
-            OSReconstruction.twoPointDifferenceKernel (d := d) K x * (f.1 x) := by
-              rw [OSReconstruction.zeroDiagKernelCLM_of_const_bound_apply
-                (d := d) (OSReconstruction.twoPointDifferenceKernel (d := d) K)
-                hK_meas C hK_bdd]
-      _ = ∫ x : NPointDomain d 2,
-            G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) * (f.1 x) := by
-              refine MeasureTheory.integral_congr_ae ?_
-              filter_upwards with x
-              have hEq :
-                  OSReconstruction.twoPointDifferenceKernel (d := d) K x =
-                    G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) := by
-                simpa [G, K] using
-                  (twoPointPiecewiseWitness_euclidean_eq_differenceKernel
-                    (d := d) OS lgc χ₀ g hχ₀_pos hg_pos hg_compact x).symm
-              rw [hEq]
-
-/-- `k = 2` special case of the time-parametric base-step theorem.
-Follows directly from `schwinger_twoPoint_holomorphic_kernel`. -/
-theorem schwinger_continuation_base_step_timeParametric_twoPoint {d : ℕ} [NeZero d]
-    (OS : OsterwalderSchraderAxioms d)
-    (lgc : OSLinearGrowthCondition d OS) :
-    ∃ (G : (Fin (2 * (d + 1)) → ℂ) → ℂ),
-      IsTimeHolomorphicFlatPositiveTimeDiffWitness G ∧
-      (∀ (f : ZeroDiagonalSchwartz d 2),
-        OS.S 2 f = ∫ x : NPointDomain d 2,
-          G (BHW.toDiffFlat 2 d (fun j => wickRotatePoint (x j))) * (f.1 x)) := by
-  obtain ⟨G, hG_holo, _, hG_euclid⟩ :=
-    schwinger_twoPoint_holomorphic_kernel (d := d) OS lgc
-  exact ⟨G, hG_holo, hG_euclid⟩

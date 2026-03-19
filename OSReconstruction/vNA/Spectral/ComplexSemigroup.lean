@@ -380,6 +380,29 @@ theorem spectralSemigroupComplex_ofReal_eq_nnrpow
   rw [spectralSemigroupComplex_inner_eq A hA hA_nonneg hspec x y _ (by simp [ht]),
     selfAdjointSpectralLaplaceOffdiag_ofReal_eq_inner_nnrpow A hA hA_nonneg hspec x y t ht]
 
+/-- At positive real points, `spectralSemigroupComplex` satisfies the semigroup law. -/
+theorem spectralSemigroupComplex_ofReal_add
+    (A : H →L[ℂ] H) (hA : IsSelfAdjoint A)
+    (hA_nonneg : 0 ≤ A)
+    (hspec : spectrum ℝ A ⊆ Set.Icc 0 1)
+    (s t : ℝ) (hs : 0 < s) (ht : 0 < t) :
+    spectralSemigroupComplex A hA hA_nonneg hspec ((s + t : ℝ) : ℂ) =
+      (spectralSemigroupComplex A hA hA_nonneg hspec (s : ℂ)).comp
+        (spectralSemigroupComplex A hA hA_nonneg hspec (t : ℂ)) := by
+  sorry
+
+/-- Any bounded operator commuting with `A` also commutes with the complex spectral semigroup
+whenever `Re(z) > 0`. -/
+theorem Commute.spectralSemigroupComplex
+    {A B : H →L[ℂ] H}
+    (hBA : Commute B A)
+    (hA : IsSelfAdjoint A)
+    (hA_nonneg : 0 ≤ A)
+    (hspec : spectrum ℝ A ⊆ Set.Icc 0 1)
+    (z : ℂ) (hz : 0 < z.re) :
+    Commute B (spectralSemigroupComplex A hA hA_nonneg hspec z) := by
+  sorry
+
 /-! ### Holomorphicity of matrix elements -/
 
 /-- `z ↦ ⟨x, T(z)(y)⟩` is holomorphic on `{z | Re(z) > 0}`. -/

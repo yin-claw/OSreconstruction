@@ -602,6 +602,23 @@ theorem generator_U_commute (s : ℝ) (x : H) (hx : x ∈ 𝒰.generatorDomain) 
     rw [map_smul, ContinuousLinearMap.map_smul_of_tower, map_sub, hgroup]
   exact tendsto_nhds_unique hAx_lim hAx2
 
+/-- If a bounded operator commutes with the whole one-parameter group, then it
+preserves the generator domain. -/
+theorem generatorDomain_mem_of_commutes (A : H →L[ℂ] H)
+    (hcomm : ∀ t : ℝ, A ∘L 𝒰.U t = 𝒰.U t ∘L A) :
+    ∀ x : H, x ∈ 𝒰.generatorDomain → A x ∈ 𝒰.generatorDomain := by
+  sorry
+
+/-- If a bounded operator commutes with the whole one-parameter group, then it
+commutes with the infinitesimal generator on the generator domain. -/
+theorem generatorApply_commute_of_commutes (A : H →L[ℂ] H)
+    (hcomm : ∀ t : ℝ, A ∘L 𝒰.U t = 𝒰.U t ∘L A) :
+    ∀ x (hx : x ∈ 𝒰.generatorDomain),
+      𝒰.generatorApply (A x)
+        (𝒰.generatorDomain_mem_of_commutes A hcomm x hx) =
+      A (𝒰.generatorApply x hx) := by
+  sorry
+
 /-- U(t) preserves dom(A*) and commutes with A*:
     For v ∈ dom(A*), U(t)v ∈ dom(A*) and A*(U(t)v) = U(t)(A*v). -/
 theorem generator_U_adjoint_invariant (s : ℝ) (v : H)

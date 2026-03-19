@@ -1155,6 +1155,26 @@ def positiveTimeCompactSupportConvolution {d : ℕ}
     simpa using add_pos hu_pos hv_pos
   · simpa [hconv_eq] using hconv_compact
 
+@[simp] theorem positiveTimeCompactSupportConvolution_apply {d : ℕ}
+    (g h : positiveTimeCompactSupportSubmodule d) (x : SpacetimeDim d) :
+    ((positiveTimeCompactSupportConvolution g h : positiveTimeCompactSupportSubmodule d) :
+        SchwartzSpacetime d) x =
+      MeasureTheory.convolution (L := ContinuousLinearMap.lsmul ℝ ℂ)
+        (μ := MeasureTheory.volume)
+        (((g : SchwartzSpacetime d) : SpacetimeDim d → ℂ))
+        (((h : SchwartzSpacetime d) : SpacetimeDim d → ℂ)) x := by
+  rfl
+
+theorem positiveTimeCompactSupportConvolution_apply_eq_integral_translate {d : ℕ}
+    (h g : positiveTimeCompactSupportSubmodule d) (x : SpacetimeDim d) :
+    ((positiveTimeCompactSupportConvolution h g : positiveTimeCompactSupportSubmodule d) :
+        SchwartzSpacetime d) x =
+      ∫ ξ : SpacetimeDim d,
+        ((h : SchwartzSpacetime d) ξ) *
+          (SCV.translateSchwartz (-ξ) (g : SchwartzSpacetime d)) x := by
+  rw [positiveTimeCompactSupportConvolution_apply]
+  simp [MeasureTheory.convolution, SCV.translateSchwartz_apply, sub_eq_add_neg]
+
 /-- The natural reduced one-variable Schwartz test space for the two-point
 Schwinger difference distribution: functions whose support avoids the origin.
 This is exactly the condition needed for `twoPointDifferenceLift χ h` to lie in
