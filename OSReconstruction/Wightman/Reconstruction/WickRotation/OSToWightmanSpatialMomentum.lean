@@ -1551,6 +1551,287 @@ theorem continuous_osSpatialTranslateHilbert_axis
     simpa [v] using hzero.comp hshift
   exact hmain.congr' (Filter.Eventually.of_forall fun s => (hEq s).symm)
 
+private theorem norm_sub_osSpatialTranslateHilbert_le_sum_axes
+    (OS : OsterwalderSchraderAxioms d)
+    (x : OSHilbertSpace OS)
+    (a : Fin d → ℝ) :
+    ‖(osSpatialTranslateHilbert (d := d) OS a) x - x‖ ≤
+      ∑ i : Fin d,
+        ‖(osSpatialTranslateHilbert (d := d) OS
+            ((a i) • (Pi.single i (1 : ℝ) : Fin d → ℝ))) x - x‖ := by
+  classical
+  let e : Fin d → Fin d → ℝ := fun i => (Pi.single i (1 : ℝ) : Fin d → ℝ)
+  have hs :
+      ∀ s : Finset (Fin d),
+        ‖(osSpatialTranslateHilbert (d := d) OS
+              (Finset.sum s (fun i => (a i) • e i)) ) x - x‖ ≤
+          Finset.sum s (fun i =>
+            ‖(osSpatialTranslateHilbert (d := d) OS
+                ((a i) • e i)) x - x‖) := by
+    intro s
+    refine Finset.induction_on s ?_ ?_
+    · simpa [osSpatialTranslateHilbert_zero]
+    · intro i s hi hs_ind
+      let b : Fin d → ℝ := Finset.sum s (fun j => (a j) • e j)
+      have hcomp :
+          (osSpatialTranslateHilbert (d := d) OS (b + (a i) • e i)) x =
+            (osSpatialTranslateHilbert (d := d) OS b)
+              ((osSpatialTranslateHilbert (d := d) OS
+                  ((a i) • e i)) x) := by
+        simpa [ContinuousLinearMap.comp_apply] using
+          (congrArg (fun f : OSHilbertSpace OS →L[ℂ] OSHilbertSpace OS => f x)
+            (osSpatialTranslateHilbert_comp (d := d) OS b
+              ((a i) • e i))).symm
+      have hdecomp :
+          (osSpatialTranslateHilbert (d := d) OS (b + (a i) • e i)) x - x =
+            (osSpatialTranslateHilbert (d := d) OS b)
+                ((osSpatialTranslateHilbert (d := d) OS
+                    ((a i) • e i)) x - x) +
+              ((osSpatialTranslateHilbert (d := d) OS b) x - x) := by
+        calc
+          (osSpatialTranslateHilbert (d := d) OS (b + (a i) • e i)) x - x
+              = (osSpatialTranslateHilbert (d := d) OS b)
+                  ((osSpatialTranslateHilbert (d := d) OS
+                      ((a i) • e i)) x) - x := by
+                  rw [hcomp]
+          _ =
+              ((osSpatialTranslateHilbert (d := d) OS b)
+                  ((osSpatialTranslateHilbert (d := d) OS
+                      ((a i) • e i)) x) -
+                (osSpatialTranslateHilbert (d := d) OS b) x) +
+                ((osSpatialTranslateHilbert (d := d) OS b) x - x) := by
+                  abel_nf
+          _ =
+              (osSpatialTranslateHilbert (d := d) OS b)
+                  ((osSpatialTranslateHilbert (d := d) OS
+                      ((a i) • e i)) x - x) +
+                ((osSpatialTranslateHilbert (d := d) OS b) x - x) := by
+                  rw [ContinuousLinearMap.map_sub]
+      have hmain :
+          ‖(osSpatialTranslateHilbert (d := d) OS
+                (Finset.sum (insert i s) (fun j => (a j) • e j))) x - x‖ ≤
+            ‖(osSpatialTranslateHilbert (d := d) OS ((a i) • e i)) x - x‖ +
+              ‖(osSpatialTranslateHilbert (d := d) OS b) x - x‖ := by
+        calc
+          ‖(osSpatialTranslateHilbert (d := d) OS
+                (Finset.sum (insert i s)
+                  (fun j => (a j) • e j))) x - x‖
+              = ‖(osSpatialTranslateHilbert (d := d) OS (b + (a i) • e i)) x - x‖ := by
+                  congr 1
+                  simp [b, e, hi, Finset.sum_insert, add_comm, add_left_comm, add_assoc]
+          _ = ‖(osSpatialTranslateHilbert (d := d) OS b)
+                  ((osSpatialTranslateHilbert (d := d) OS
+                      ((a i) • e i)) x - x) +
+                ((osSpatialTranslateHilbert (d := d) OS b) x - x)‖ := by
+                  rw [hdecomp]
+          _ ≤ ‖(osSpatialTranslateHilbert (d := d) OS b)
+                  ((osSpatialTranslateHilbert (d := d) OS
+                      ((a i) • e i)) x - x)‖ +
+                ‖(osSpatialTranslateHilbert (d := d) OS b) x - x‖ := by
+                  exact norm_add_le _ _
+          _ = ‖(osSpatialTranslateHilbert (d := d) OS
+                  ((a i) • e i)) x - x‖ +
+                ‖(osSpatialTranslateHilbert (d := d) OS b) x - x‖ := by
+                  congr 1
+                  exact osSpatialTranslateHilbert_norm_eq (d := d) OS b
+                    ((osSpatialTranslateHilbert (d := d) OS
+                        ((a i) • e i)) x - x)
+      have hsum :
+          ‖(osSpatialTranslateHilbert (d := d) OS ((a i) • e i)) x - x‖ +
+              ‖(osSpatialTranslateHilbert (d := d) OS b) x - x‖ ≤
+            Finset.sum (insert i s) (fun j =>
+              ‖(osSpatialTranslateHilbert (d := d) OS
+                  ((a j) • e j)) x - x‖) := by
+        calc
+          ‖(osSpatialTranslateHilbert (d := d) OS ((a i) • e i)) x - x‖ +
+              ‖(osSpatialTranslateHilbert (d := d) OS b) x - x‖
+              ≤ ‖(osSpatialTranslateHilbert (d := d) OS
+                    ((a i) • e i)) x - x‖ +
+                  Finset.sum s (fun j =>
+                    ‖(osSpatialTranslateHilbert (d := d) OS
+                        ((a j) • e j)) x - x‖) := by
+                    gcongr
+          _ = Finset.sum (insert i s) (fun j =>
+                ‖(osSpatialTranslateHilbert (d := d) OS
+                    ((a j) • e j)) x - x‖) := by
+                  simp [e, hi, Finset.sum_insert, add_comm]
+      exact le_trans hmain hsum
+  calc
+    ‖(osSpatialTranslateHilbert (d := d) OS a) x - x‖
+        = ‖(osSpatialTranslateHilbert (d := d) OS
+              (∑ i : Fin d, (a i) • (Pi.single i (1 : ℝ) : Fin d → ℝ))) x - x‖ := by
+              rw [← pi_eq_sum_univ' a]
+    _ ≤ ∑ i : Fin d,
+          ‖(osSpatialTranslateHilbert (d := d) OS
+              ((a i) • e i)) x - x‖ := hs Finset.univ
+
+private theorem continuousAt_zero_osSpatialTranslateHilbert
+    (OS : OsterwalderSchraderAxioms d)
+    (x : OSHilbertSpace OS) :
+    ContinuousAt (fun a : Fin d → ℝ => osSpatialTranslateHilbert (d := d) OS a x) 0 := by
+  rw [Metric.continuousAt_iff]
+  intro ε hε
+  have hd_pos_nat : 0 < d := Nat.pos_of_ne_zero (NeZero.ne d)
+  let η : ℝ := ε / d
+  have hη : 0 < η := by
+    dsimp [η]
+    positivity
+  choose δ hδ_pos hδ using
+    fun i : Fin d =>
+      (Metric.continuousAt_iff.mp
+        ((continuous_osSpatialTranslateHilbert_axis (d := d) OS i x).continuousAt)) η hη
+  let ρ : ℝ := Finset.univ.inf' Finset.univ_nonempty δ
+  have hρ_pos : 0 < ρ := by
+    dsimp [ρ]
+    exact (Finset.lt_inf'_iff _).2 (fun i _ => hδ_pos i)
+  refine ⟨ρ, hρ_pos, ?_⟩
+  intro a ha
+  have hcoord :
+      ∀ i : Fin d,
+        ‖(osSpatialTranslateHilbert (d := d) OS
+            ((a i) • (Pi.single i (1 : ℝ) : Fin d → ℝ))) x - x‖ < η := by
+    intro i
+    have hρ_le : ρ ≤ δ i := by
+      dsimp [ρ]
+      exact Finset.inf'_le _ (Finset.mem_univ i)
+    have hdist_i : dist (a i) 0 < δ i := by
+      calc
+        dist (a i) 0 = ‖a i‖ := by simp [dist_eq_norm]
+        _ ≤ ‖a‖ := norm_le_pi_norm a i
+        _ < ρ := by simpa [dist_eq_norm] using ha
+        _ ≤ δ i := hρ_le
+    have hi := hδ i hdist_i
+    simpa [dist_eq_norm, osSpatialTranslateHilbert_zero] using hi
+  calc
+    dist ((osSpatialTranslateHilbert (d := d) OS a) x)
+        ((osSpatialTranslateHilbert (d := d) OS 0) x)
+        = ‖(osSpatialTranslateHilbert (d := d) OS a) x - x‖ := by
+            simp [dist_eq_norm, osSpatialTranslateHilbert_zero]
+    _ ≤ ∑ i : Fin d,
+          ‖(osSpatialTranslateHilbert (d := d) OS
+              ((a i) • (Pi.single i (1 : ℝ) : Fin d → ℝ))) x - x‖ :=
+          norm_sub_osSpatialTranslateHilbert_le_sum_axes (d := d) OS x a
+    _ < ∑ _i : Fin d, η := by
+          exact Finset.sum_lt_sum_of_nonempty Finset.univ_nonempty (fun i _ => hcoord i)
+    _ = ε := by
+          have hd_ne : (d : ℝ) ≠ 0 := by
+            exact_mod_cast (NeZero.ne d)
+          calc
+            (∑ _i : Fin d, η) = (d : ℝ) * η := by simp
+            _ = (d : ℝ) * (ε / d) := by rfl
+            _ = ε := by field_simp [hd_ne]
+
+/-- Strong continuity of the full spatial translation action on the Hilbert
+completion. -/
+theorem continuous_osSpatialTranslateHilbert
+    (OS : OsterwalderSchraderAxioms d)
+    (x : OSHilbertSpace OS) :
+    Continuous (fun a : Fin d → ℝ =>
+      osSpatialTranslateHilbert (d := d) OS a x) := by
+  refine continuous_iff_continuousAt.2 ?_
+  intro a
+  have hzero :=
+    continuousAt_zero_osSpatialTranslateHilbert (d := d) OS
+      ((osSpatialTranslateHilbert (d := d) OS a) x)
+  have hshift : ContinuousAt (fun b : Fin d → ℝ => b - a) a := by
+    have hcont : Continuous (fun b : Fin d → ℝ => b - a) := by
+      fun_prop
+    simpa using (hcont.continuousAt : ContinuousAt (fun b : Fin d → ℝ => b - a) a)
+  have hEq :
+      ∀ b : Fin d → ℝ,
+        osSpatialTranslateHilbert (d := d) OS b x =
+          osSpatialTranslateHilbert (d := d) OS (b - a)
+            ((osSpatialTranslateHilbert (d := d) OS a) x) := by
+    intro b
+    have hadd : (b - a) + a = b := by
+      ext j
+      simp [sub_eq_add_neg]
+    calc
+      osSpatialTranslateHilbert (d := d) OS b x
+          = osSpatialTranslateHilbert (d := d) OS (((b - a) + a)) x := by
+              rw [hadd]
+      _ = ((osSpatialTranslateHilbert (d := d) OS (b - a)).comp
+            (osSpatialTranslateHilbert (d := d) OS a)) x := by
+              rw [← osSpatialTranslateHilbert_comp (d := d) OS (b - a) a]
+      _ = osSpatialTranslateHilbert (d := d) OS (b - a)
+            ((osSpatialTranslateHilbert (d := d) OS a) x) := rfl
+  have hcomp :
+      ContinuousAt (fun b : Fin d → ℝ =>
+        osSpatialTranslateHilbert (d := d) OS (b - a)
+          ((osSpatialTranslateHilbert (d := d) OS a) x)) a := by
+    simpa [Function.comp] using
+      (ContinuousAt.comp_of_eq hzero hshift (by simp))
+  have hEqfun :
+      (fun b : Fin d → ℝ => osSpatialTranslateHilbert (d := d) OS b x) =
+        (fun b : Fin d → ℝ =>
+          osSpatialTranslateHilbert (d := d) OS (b - a)
+            ((osSpatialTranslateHilbert (d := d) OS a) x)) := by
+    funext b
+    exact hEq b
+  simpa [hEqfun] using hcomp
+
+/-- Joint continuity of the spatial translation action on the OS Hilbert space. -/
+theorem continuous_osSpatialTranslateHilbert_jointly
+    (OS : OsterwalderSchraderAxioms d) :
+    Continuous (fun p : (Fin d → ℝ) × OSHilbertSpace OS =>
+      osSpatialTranslateHilbert (d := d) OS p.1 p.2) := by
+  refine continuous_iff_continuousAt.2 ?_
+  intro p0
+  rcases p0 with ⟨a0, x0⟩
+  have hcontx0 : ContinuousAt
+      (fun a : Fin d → ℝ => osSpatialTranslateHilbert (d := d) OS a x0) a0 :=
+    (continuous_osSpatialTranslateHilbert (d := d) OS x0).continuousAt
+  rw [Metric.continuousAt_iff]
+  intro ε hε
+  have hhalf : 0 < ε / 2 := by positivity
+  rcases (Metric.continuousAt_iff.mp hcontx0) (ε / 2) hhalf with
+    ⟨δ1, hδ1, hδ1prop⟩
+  refine ⟨min δ1 (ε / 2), by positivity, ?_⟩
+  intro p hp
+  rcases p with ⟨b, y⟩
+  rw [Prod.dist_eq] at hp
+  have hp' := max_lt_iff.mp hp
+  have hb : dist b a0 < δ1 := by
+    exact lt_of_lt_of_le hp'.1 (min_le_left _ _)
+  have hy : dist y x0 < ε / 2 := by
+    exact lt_of_lt_of_le hp'.2 (min_le_right _ _)
+  have hU : osSpatialTranslateHilbert (d := d) OS b ∈
+      unitary (OSHilbertSpace OS →L[ℂ] OSHilbertSpace OS) := by
+    constructor
+    · exact osSpatialTranslateHilbert_unitary_left (d := d) OS b
+    · exact osSpatialTranslateHilbert_unitary_right (d := d) OS b
+  have hdecomp :
+      osSpatialTranslateHilbert (d := d) OS b y -
+          osSpatialTranslateHilbert (d := d) OS a0 x0 =
+        (osSpatialTranslateHilbert (d := d) OS b) (y - x0) +
+          ((osSpatialTranslateHilbert (d := d) OS b) x0 -
+            (osSpatialTranslateHilbert (d := d) OS a0) x0) := by
+    rw [map_sub]
+    abel_nf
+  calc
+    dist (osSpatialTranslateHilbert (d := d) OS b y)
+        (osSpatialTranslateHilbert (d := d) OS a0 x0) =
+          ‖osSpatialTranslateHilbert (d := d) OS b y -
+            osSpatialTranslateHilbert (d := d) OS a0 x0‖ := by
+            simp [dist_eq_norm]
+    _ = ‖(osSpatialTranslateHilbert (d := d) OS b) (y - x0) +
+          ((osSpatialTranslateHilbert (d := d) OS b) x0 -
+            (osSpatialTranslateHilbert (d := d) OS a0) x0)‖ := by
+            rw [hdecomp]
+    _ ≤ ‖(osSpatialTranslateHilbert (d := d) OS b) (y - x0)‖ +
+          ‖(osSpatialTranslateHilbert (d := d) OS b) x0 -
+            (osSpatialTranslateHilbert (d := d) OS a0) x0‖ := by
+            exact norm_add_le _ _
+    _ < ε / 2 + ε / 2 := by
+            refine add_lt_add ?_ ?_
+            · have hnorm :=
+                ContinuousLinearMap.norm_map_of_mem_unitary
+                  (u := osSpatialTranslateHilbert (d := d) OS b) hU (y - x0)
+              rw [hnorm]
+              simpa [dist_eq_norm] using hy
+            · simpa [dist_eq_norm] using hδ1prop hb
+    _ = ε := by ring
+
 /-- Spatial translation commutes with the positive Euclidean time shift on the
 honest OS quotient. -/
 private theorem osSpatialTranslateLinear_commutes_osTimeShiftLinear
@@ -1814,6 +2095,72 @@ theorem osSemigroupGroupMatrixElement_eq_translated_pair
               ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
                 ((osSpatialTranslateHilbert (d := d) OS b) x))
 
+/-- Mixed semigroup-group matrix element with the time evolution moved to the left
+translated vector. -/
+theorem osSemigroupGroupMatrixElement_eq_inner_timeShift_left
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS)
+    (a b : Fin d → ℝ) (t : ℝ) (ht : 0 < t) :
+    osSemigroupGroupMatrixElement (d := d) OS lgc x t (b - a) =
+      @inner ℂ (OSHilbertSpace OS) _
+        ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+          ((osSpatialTranslateHilbert (d := d) OS a) x))
+        ((osSpatialTranslateHilbert (d := d) OS b) x) := by
+  rw [osSemigroupGroupMatrixElement_eq_translated_pair
+    (d := d) OS lgc x a b t ht]
+  rw [← osTimeShiftHilbertComplex_inner_eq (d := d) OS lgc
+    ((osSpatialTranslateHilbert (d := d) OS a) x)
+    ((osSpatialTranslateHilbert (d := d) OS b) x)
+    (t : ℂ) ht]
+  have hsa := osTimeShiftHilbertComplex_isSelfAdjoint (d := d) OS lgc t ht
+  have hsa' :
+      ContinuousLinearMap.adjoint
+        (osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ)) =
+      osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ) := by
+    simpa [IsSelfAdjoint, ContinuousLinearMap.star_eq_adjoint] using hsa
+  simpa [hsa'] using
+    (ContinuousLinearMap.adjoint_inner_right
+      (osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+      ((osSpatialTranslateHilbert (d := d) OS a) x)
+      ((osSpatialTranslateHilbert (d := d) OS b) x))
+
+/-- Mixed semigroup-group matrix element with the time evolution moved to the right
+translated vector. -/
+theorem osSemigroupGroupMatrixElement_eq_inner_timeShift_right
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS)
+    (a b : Fin d → ℝ) (t : ℝ) (ht : 0 < t) :
+    osSemigroupGroupMatrixElement (d := d) OS lgc x t (b - a) =
+      @inner ℂ (OSHilbertSpace OS) _
+        ((osSpatialTranslateHilbert (d := d) OS a) x)
+        ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+          ((osSpatialTranslateHilbert (d := d) OS b) x)) := by
+  rw [osSemigroupGroupMatrixElement_eq_translated_pair
+    (d := d) OS lgc x a b t ht]
+  rw [← osTimeShiftHilbertComplex_inner_eq (d := d) OS lgc
+    ((osSpatialTranslateHilbert (d := d) OS a) x)
+    ((osSpatialTranslateHilbert (d := d) OS b) x)
+    (t : ℂ) ht]
+
+/-- Positive-time semigroup-group matrix element split across two time evolutions. -/
+theorem osSemigroupGroupMatrixElement_eq_inner_timeShift_add
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS)
+    (a b : Fin d → ℝ) (s t : ℝ) (hs : 0 < s) (ht : 0 < t) :
+    osSemigroupGroupMatrixElement (d := d) OS lgc x (s + t) (b - a) =
+      @inner ℂ (OSHilbertSpace OS) _
+        ((osTimeShiftHilbertComplex (d := d) OS lgc (s : ℂ))
+          ((osSpatialTranslateHilbert (d := d) OS a) x))
+        ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+          ((osSpatialTranslateHilbert (d := d) OS b) x)) := by
+  rw [osSemigroupGroupMatrixElement_eq_translated_pair
+    (d := d) OS lgc x a b (s + t) (add_pos hs ht)]
+  exact selfAdjointSpectralLaplaceOffdiag_spatialTranslate_add
+    (d := d) OS lgc x a b s t hs ht
+
 /-- The spatially translated real-time matrix kernel of the OS semigroup is
 positive semidefinite. This is the first operator-theoretic positivity input on
 the OS/Stone route toward a semigroup-group Bochner theorem. -/
@@ -1971,5 +2318,814 @@ theorem exists_measure_osSemigroupGroupMatrixElement
   exact SCV.semigroupGroup_bochner d
     (osSemigroupGroupMatrixElement (d := d) OS lgc x)
     hcont hbdd hpd
+
+/-- Continuity of the positive-time semigroup-group matrix kernel. -/
+theorem continuousOn_osSemigroupGroupMatrixElement_Ioi
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS) :
+    ContinuousOn (fun p : ℝ × (Fin d → ℝ) =>
+      osSemigroupGroupMatrixElement (d := d) OS lgc x p.1 p.2)
+      (Set.Ioi (0 : ℝ) ×ˢ Set.univ) := by
+  intro p hp
+  have hp1 : 0 < p.1 := hp.1
+  let g : ℝ × (Fin d → ℝ) → ℂ × OSHilbertSpace OS := fun q =>
+    ((q.1 : ℂ), (osSpatialTranslateHilbert (d := d) OS q.2 x))
+  have hg : ContinuousAt g p := by
+    refine ContinuousAt.prodMk ?_ ?_
+    · exact (Complex.continuous_ofReal.comp continuous_fst).continuousAt
+    · exact ((continuous_osSpatialTranslateHilbert (d := d) OS x).comp continuous_snd).continuousAt
+  have hAt : ContinuousAt (fun q : ℝ × (Fin d → ℝ) =>
+      osTimeShiftHilbertComplex (d := d) OS lgc (q.1 : ℂ)
+        ((osSpatialTranslateHilbert (d := d) OS q.2 x))) p := by
+    have hp' : g p ∈ ({z : ℂ | 0 < z.re} ×ˢ Set.univ) := by
+      constructor
+      · simpa [g] using hp1
+      · simp [g]
+    have hp'_nhds : ({z : ℂ | 0 < z.re} ×ˢ Set.univ) ∈ nhds (g p) := by
+      exact IsOpen.mem_nhds
+        ((isOpen_lt continuous_const continuous_re).prod isOpen_univ)
+        hp'
+    have h0 :
+        ContinuousAt (fun z : ℂ × OSHilbertSpace OS =>
+          osTimeShiftHilbertComplex (d := d) OS lgc z.1 z.2) (g p) := by
+      exact (continuousOn_osTimeShiftHilbertComplex_jointly
+        (d := d) OS lgc).continuousAt hp'_nhds
+    exact h0.comp hg
+  have hInner :
+      ContinuousAt (fun q : ℝ × (Fin d → ℝ) =>
+        @inner ℂ (OSHilbertSpace OS) _ x
+          (osTimeShiftHilbertComplex (d := d) OS lgc (q.1 : ℂ)
+            ((osSpatialTranslateHilbert (d := d) OS q.2 x)))) p := by
+    exact continuous_inner.continuousAt.comp (continuous_const.continuousAt.prodMk hAt)
+  refine (hInner.congr_of_eventuallyEq ?_).continuousWithinAt
+  filter_upwards [prod_mem_nhds (Ioi_mem_nhds hp1) Filter.univ_mem] with q hq
+  have hq' : 0 < q.1 := hq.1
+  rw [osSemigroupGroupMatrixElement, ← osTimeShiftHilbertComplex_inner_eq
+    (d := d) OS lgc x
+    ((osSpatialTranslateHilbert (d := d) OS q.2 x))
+    (q.1 : ℂ) hq']
+
+/-- The semigroup-group matrix kernel extends continuously to `t = 0` on
+compactly supported positive-time vectors by freezing the semigroup factor to
+the identity at the boundary. -/
+theorem continuous_osSemigroupGroupMatrixElement_extension_of_isCompactSupport
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : PositiveTimeBorchersSequence d)
+    (hF_compact : ∀ n,
+      HasCompactSupport ((((F : BorchersSequence d).funcs n : SchwartzNPoint d n) :
+        NPointDomain d n → ℂ))) :
+    Continuous (fun p : ℝ × (Fin d → ℝ) =>
+      if hp : 0 < p.1 then
+        osSemigroupGroupMatrixElement (d := d) OS lgc
+          (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS)) p.1 p.2
+      else
+        @inner ℂ (OSHilbertSpace OS) _
+          (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))
+          ((osSpatialTranslateHilbert (d := d) OS p.2)
+            (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS)))) := by
+  let x : OSHilbertSpace OS := (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))
+  let Fext : ℝ × (Fin d → ℝ) → ℂ := fun p =>
+    if hp : 0 < p.1 then
+      osSemigroupGroupMatrixElement (d := d) OS lgc x p.1 p.2
+    else
+      @inner ℂ (OSHilbertSpace OS) _ x ((osSpatialTranslateHilbert (d := d) OS p.2) x)
+  refine continuous_iff_continuousAt.2 ?_
+  intro p0
+  rcases p0 with ⟨t0, a0⟩
+  by_cases ht0 : 0 < t0
+  · have hposWithin :
+        ContinuousWithinAt (fun p : ℝ × (Fin d → ℝ) =>
+          osSemigroupGroupMatrixElement (d := d) OS lgc x p.1 p.2)
+          (Set.Ioi (0 : ℝ) ×ˢ Set.univ) (t0, a0) :=
+        (continuousOn_osSemigroupGroupMatrixElement_Ioi (d := d) OS lgc x)
+          (t0, a0) ⟨ht0, by simp⟩
+    have hposAt : ContinuousAt (fun p : ℝ × (Fin d → ℝ) =>
+        osSemigroupGroupMatrixElement (d := d) OS lgc x p.1 p.2) (t0, a0) := by
+      exact hposWithin.continuousAt
+        (by simpa using prod_mem_nhds (Ioi_mem_nhds ht0) Filter.univ_mem)
+    refine hposAt.congr_of_eventuallyEq ?_
+    filter_upwards [prod_mem_nhds (Ioi_mem_nhds ht0) Filter.univ_mem] with q hq
+    have hq1 : 0 < q.1 := hq.1
+    show (if hp : 0 < q.1 then
+        osSemigroupGroupMatrixElement (d := d) OS lgc x q.1 q.2
+      else
+        @inner ℂ (OSHilbertSpace OS) _ x
+          ((osSpatialTranslateHilbert (d := d) OS q.2) x)) =
+      osSemigroupGroupMatrixElement (d := d) OS lgc x q.1 q.2
+    simp [Fext, hq1]
+  · by_cases hneg0 : t0 < 0
+    · have hnegCont : Continuous (fun p : ℝ × (Fin d → ℝ) =>
+          @inner ℂ (OSHilbertSpace OS) _ x
+            ((osSpatialTranslateHilbert (d := d) OS p.2) x)) := by
+        exact continuous_const.inner
+          ((continuous_osSpatialTranslateHilbert (d := d) OS x).comp continuous_snd)
+      have hnegAt : ContinuousAt (fun p : ℝ × (Fin d → ℝ) =>
+          @inner ℂ (OSHilbertSpace OS) _ x
+            ((osSpatialTranslateHilbert (d := d) OS p.2) x)) (t0, a0) :=
+        hnegCont.continuousAt
+      refine hnegAt.congr_of_eventuallyEq ?_
+      filter_upwards [prod_mem_nhds (Iio_mem_nhds hneg0) Filter.univ_mem] with q hq
+      have hq1 : ¬ 0 < q.1 := by exact not_lt_of_gt hq.1
+      simpa [x, Fext, hq1]
+    · have ht0_eq : t0 = 0 := by
+        exact le_antisymm (le_of_not_gt ht0) (le_of_not_gt hneg0)
+      subst ht0_eq
+      rw [Metric.continuousAt_iff]
+      intro ε hε
+      let x0 : OSHilbertSpace OS := x
+      let M : ℝ := ‖x0‖ + 1
+      have hM : 0 < M := by
+        dsimp [M]
+        positivity
+      let η : ℝ := ε / (2 * M)
+      have hη : 0 < η := by
+        dsimp [η]
+        positivity
+      have hsp : ContinuousAt (fun a : Fin d → ℝ =>
+          @inner ℂ (OSHilbertSpace OS) _ x0
+            ((osSpatialTranslateHilbert (d := d) OS a) x0)) a0 := by
+        have hcont : Continuous (fun a : Fin d → ℝ =>
+            @inner ℂ (OSHilbertSpace OS) _ x0
+              ((osSpatialTranslateHilbert (d := d) OS a) x0)) := by
+          exact continuous_const.inner
+            (continuous_osSpatialTranslateHilbert (d := d) OS x0)
+        simpa using (hcont.continuousAt : ContinuousAt _ a0)
+      rcases (Metric.continuousAt_iff.mp hsp) (η * M) (by positivity) with
+        ⟨δa, hδa, hδaprop⟩
+      have htime :
+          Filter.Tendsto
+            (fun t : ℝ =>
+              if ht : 0 < t then
+                (osTimeShiftHilbert (d := d) OS lgc t ht) x0
+              else x0)
+            (nhdsWithin 0 (Set.Ioi 0))
+            (nhds x0) := by
+        simpa [x0] using
+          tendsto_osTimeShiftHilbert_nhdsWithin_zero_of_isCompactSupport
+            (d := d) OS lgc F hF_compact
+      rcases (Metric.tendsto_nhdsWithin_nhds.mp htime) η hη with
+        ⟨δt, hδt, hδtprop⟩
+      refine ⟨min δa δt, by positivity, ?_⟩
+      intro p hp
+      rcases p with ⟨t, a⟩
+      rw [Prod.dist_eq] at hp
+      have hp' := max_lt_iff.mp hp
+      have ha : dist a a0 < δa := by
+        exact lt_of_lt_of_le hp'.2 (min_le_left _ _)
+      have htd : dist t 0 < δt := by
+        exact lt_of_lt_of_le hp'.1 (min_le_right _ _)
+      have hF0 : Fext (0, a0) =
+          @inner ℂ (OSHilbertSpace OS) _ x0
+            ((osSpatialTranslateHilbert (d := d) OS a0) x0) := by
+        simpa [x, Fext, x0]
+      by_cases htp : 0 < t
+      · have htimeNorm : ‖(osTimeShiftHilbert (d := d) OS lgc t htp) x0 - x0‖ < η := by
+          have hδtprop' :
+              dist (if ht : 0 < t then (osTimeShiftHilbert (d := d) OS lgc t ht) x0 else x0) x0 < η :=
+            hδtprop (show t ∈ Set.Ioi 0 from htp) htd
+          simpa [htp, dist_eq_norm] using hδtprop'
+        have hU : osSpatialTranslateHilbert (d := d) OS a ∈
+            unitary (OSHilbertSpace OS →L[ℂ] OSHilbertSpace OS) := by
+          constructor
+          · exact osSpatialTranslateHilbert_unitary_left (d := d) OS a
+          · exact osSpatialTranslateHilbert_unitary_right (d := d) OS a
+        have hFpos : Fext (t, a) =
+            @inner ℂ (OSHilbertSpace OS) _ x0
+              ((osSpatialTranslateHilbert (d := d) OS a)
+                ((osTimeShiftHilbert (d := d) OS lgc t htp) x0)) := by
+          simp [Fext, htp, x0]
+          rw [osSemigroupGroupMatrixElement]
+          rw [← osTimeShiftHilbertComplex_inner_eq
+            (d := d) OS lgc x0
+            ((osSpatialTranslateHilbert (d := d) OS a) x0)
+            (t : ℂ) htp]
+          have hcomm0 :
+              (osSpatialTranslateHilbert (d := d) OS a)
+                  ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ)) x0) =
+                (osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+                  ((osSpatialTranslateHilbert (d := d) OS a) x0) := by
+            exact congrArg (fun f => f x0)
+              (osSpatialTranslateHilbert_commutes_osTimeShiftHilbertComplex_ofReal
+                (d := d) OS lgc a t htp)
+          calc
+            @inner ℂ (OSHilbertSpace OS) _ x0
+                ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+                  ((osSpatialTranslateHilbert (d := d) OS a) x0))
+                =
+              @inner ℂ (OSHilbertSpace OS) _ x0
+                ((osSpatialTranslateHilbert (d := d) OS a)
+                  ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ)) x0)) := by
+                    rw [← hcomm0]
+            _ =
+              @inner ℂ (OSHilbertSpace OS) _ x
+                ((osSpatialTranslateHilbert (d := d) OS a)
+                  ((osTimeShiftHilbert (d := d) OS lgc t htp) x)) := by
+                    rw [osTimeShiftHilbertComplex_ofReal_eq_of_isCompactSupport
+                      (d := d) OS lgc F hF_compact t htp]
+        have hsplit :
+            @inner ℂ (OSHilbertSpace OS) _ x0
+              ((osSpatialTranslateHilbert (d := d) OS a)
+                ((osTimeShiftHilbert (d := d) OS lgc t htp) x0)) -
+              @inner ℂ (OSHilbertSpace OS) _ x0
+                ((osSpatialTranslateHilbert (d := d) OS a0) x0) =
+            @inner ℂ (OSHilbertSpace OS) _ x0
+              ((osSpatialTranslateHilbert (d := d) OS a)
+                (((osTimeShiftHilbert (d := d) OS lgc t htp) x0) - x0)) +
+            (@inner ℂ (OSHilbertSpace OS) _ x0
+              ((osSpatialTranslateHilbert (d := d) OS a) x0) -
+             @inner ℂ (OSHilbertSpace OS) _ x0
+              ((osSpatialTranslateHilbert (d := d) OS a0) x0)) := by
+          calc
+            @inner ℂ (OSHilbertSpace OS) _ x0
+                ((osSpatialTranslateHilbert (d := d) OS a)
+                  ((osTimeShiftHilbert (d := d) OS lgc t htp) x0)) -
+              @inner ℂ (OSHilbertSpace OS) _ x0
+                ((osSpatialTranslateHilbert (d := d) OS a0) x0)
+                =
+              (@inner ℂ (OSHilbertSpace OS) _ x0
+                ((osSpatialTranslateHilbert (d := d) OS a)
+                  ((osTimeShiftHilbert (d := d) OS lgc t htp) x0)) -
+               @inner ℂ (OSHilbertSpace OS) _ x0
+                ((osSpatialTranslateHilbert (d := d) OS a) x0)) +
+              (@inner ℂ (OSHilbertSpace OS) _ x0
+                ((osSpatialTranslateHilbert (d := d) OS a) x0) -
+               @inner ℂ (OSHilbertSpace OS) _ x0
+                ((osSpatialTranslateHilbert (d := d) OS a0) x0)) := by ring
+            _ =
+              @inner ℂ (OSHilbertSpace OS) _ x0
+                ((osSpatialTranslateHilbert (d := d) OS a)
+                  (((osTimeShiftHilbert (d := d) OS lgc t htp) x0) - x0)) +
+              (@inner ℂ (OSHilbertSpace OS) _ x0
+                ((osSpatialTranslateHilbert (d := d) OS a) x0) -
+               @inner ℂ (OSHilbertSpace OS) _ x0
+                ((osSpatialTranslateHilbert (d := d) OS a0) x0)) := by
+                  rw [← inner_sub_right, ← map_sub]
+        calc
+          dist (Fext (t, a)) (Fext (0, a0)) = ‖Fext (t, a) - Fext (0, a0)‖ := by
+                simp [dist_eq_norm]
+          _ =
+              ‖@inner ℂ (OSHilbertSpace OS) _ x0
+                  ((osSpatialTranslateHilbert (d := d) OS a)
+                    ((osTimeShiftHilbert (d := d) OS lgc t htp) x0)) -
+                @inner ℂ (OSHilbertSpace OS) _ x0
+                  ((osSpatialTranslateHilbert (d := d) OS a0) x0)‖ := by
+                  rw [hFpos, hF0]
+          _ =
+              ‖@inner ℂ (OSHilbertSpace OS) _ x0
+                  ((osSpatialTranslateHilbert (d := d) OS a)
+                    (((osTimeShiftHilbert (d := d) OS lgc t htp) x0) - x0)) +
+                (@inner ℂ (OSHilbertSpace OS) _ x0
+                  ((osSpatialTranslateHilbert (d := d) OS a) x0) -
+                 @inner ℂ (OSHilbertSpace OS) _ x0
+                  ((osSpatialTranslateHilbert (d := d) OS a0) x0))‖ := by
+                  rw [hsplit]
+          _ ≤
+              ‖@inner ℂ (OSHilbertSpace OS) _ x0
+                  ((osSpatialTranslateHilbert (d := d) OS a)
+                    (((osTimeShiftHilbert (d := d) OS lgc t htp) x0) - x0))‖ +
+              ‖(@inner ℂ (OSHilbertSpace OS) _ x0
+                  ((osSpatialTranslateHilbert (d := d) OS a) x0) -
+                 @inner ℂ (OSHilbertSpace OS) _ x0
+                  ((osSpatialTranslateHilbert (d := d) OS a0) x0))‖ := by
+                  exact norm_add_le _ _
+          _ < η * M + η * M := by
+                  refine add_lt_add ?_ ?_
+                  · have hnormU :=
+                      ContinuousLinearMap.norm_map_of_mem_unitary
+                        (u := osSpatialTranslateHilbert (d := d) OS a) hU
+                        (((osTimeShiftHilbert (d := d) OS lgc t htp) x0) - x0)
+                    calc
+                      ‖@inner ℂ (OSHilbertSpace OS) _ x0
+                          ((osSpatialTranslateHilbert (d := d) OS a)
+                            (((osTimeShiftHilbert (d := d) OS lgc t htp) x0) - x0))‖
+                          ≤ ‖x0‖ *
+                              ‖(osSpatialTranslateHilbert (d := d) OS a)
+                                  (((osTimeShiftHilbert (d := d) OS lgc t htp) x0) - x0)‖ := by
+                                  exact norm_inner_le_norm _ _
+                      _ = ‖x0‖ *
+                            ‖((osTimeShiftHilbert (d := d) OS lgc t htp) x0) - x0‖ := by
+                            rw [hnormU]
+                      _ ≤ ‖x0‖ * η := by
+                            exact mul_le_mul_of_nonneg_left (le_of_lt htimeNorm) (norm_nonneg _)
+                      _ < M * η := by
+                            have hx_lt : ‖x0‖ < M := by
+                              dsimp [M]
+                              linarith
+                            exact mul_lt_mul_of_pos_right hx_lt hη
+                      _ = η * M := by ring
+                  · simpa [dist_eq_norm] using hδaprop ha
+          _ = ε := by
+                  dsimp [η, M]
+                  field_simp
+                  ring
+      · have hnegEq : Fext (t, a) =
+            @inner ℂ (OSHilbertSpace OS) _ x0
+              ((osSpatialTranslateHilbert (d := d) OS a) x0) := by
+          simpa [x, x0, Fext, htp]
+        calc
+          dist (Fext (t, a)) (Fext (0, a0)) =
+              dist (@inner ℂ (OSHilbertSpace OS) _ x0
+                      ((osSpatialTranslateHilbert (d := d) OS a) x0))
+                    (@inner ℂ (OSHilbertSpace OS) _ x0
+                      ((osSpatialTranslateHilbert (d := d) OS a0) x0)) := by
+                        rw [hnegEq, hF0]
+          _ < η * M := hδaprop ha
+          _ < ε := by
+                have hEqHalf : η * M = ε / 2 := by
+                  dsimp [η]
+                  have hMne : M ≠ 0 := by linarith [hM]
+                  field_simp [hMne]
+                rw [hEqHalf]
+                linarith
+
+/- Full semigroup-group positive-definiteness of the compact-support extension
+of the OS matrix kernel. -/
+section semigroupGroupPDExtension
+
+set_option maxHeartbeats 1600000 in
+theorem isSemigroupGroupPD_osSemigroupGroupMatrixElement_extension
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : PositiveTimeBorchersSequence d) :
+    SCV.IsSemigroupGroupPD d
+      (fun t a =>
+        if ht : 0 < t then
+          osSemigroupGroupMatrixElement (d := d) OS lgc
+            (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS)) t a
+        else
+          @inner ℂ (OSHilbertSpace OS) _
+            (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))
+            ((osSpatialTranslateHilbert (d := d) OS a)
+              (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS)))) := by
+  classical
+  let x : OSHilbertSpace OS := (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))
+  intro n c ts as hts
+  let q : ℂ := ∑ i : Fin n, ∑ j : Fin n,
+      starRingEnd ℂ (c i) * c j *
+        (if ht : 0 < ts i + ts j then
+          osSemigroupGroupMatrixElement (d := d) OS lgc x (ts i + ts j) (as j - as i)
+        else
+          @inner ℂ (OSHilbertSpace OS) _ x
+            ((osSpatialTranslateHilbert (d := d) OS (as j - as i)) x))
+  change q.im = 0 ∧ 0 ≤ q.re
+  let v : Fin n → OSHilbertSpace OS := fun i =>
+    if hti : 0 < ts i then
+      c i • (osTimeShiftHilbertComplex (d := d) OS lgc ((ts i : ℝ) : ℂ))
+        ((osSpatialTranslateHilbert (d := d) OS (as i)) x)
+    else
+      c i • ((osSpatialTranslateHilbert (d := d) OS (as i)) x)
+  have hpair : ∀ i j : Fin n,
+      (if ht : 0 < ts i + ts j then
+        osSemigroupGroupMatrixElement (d := d) OS lgc x (ts i + ts j) (as j - as i)
+      else
+        @inner ℂ (OSHilbertSpace OS) _ x
+          ((osSpatialTranslateHilbert (d := d) OS (as j - as i)) x)) =
+      @inner ℂ (OSHilbertSpace OS) _
+        (if hti : 0 < ts i then
+          (osTimeShiftHilbertComplex (d := d) OS lgc ((ts i : ℝ) : ℂ))
+            ((osSpatialTranslateHilbert (d := d) OS (as i)) x)
+        else
+          ((osSpatialTranslateHilbert (d := d) OS (as i)) x))
+        (if htj : 0 < ts j then
+          (osTimeShiftHilbertComplex (d := d) OS lgc ((ts j : ℝ) : ℂ))
+            ((osSpatialTranslateHilbert (d := d) OS (as j)) x)
+        else
+          ((osSpatialTranslateHilbert (d := d) OS (as j)) x)) := by
+    intro i j
+    by_cases hi : 0 < ts i
+    · by_cases hj : 0 < ts j
+      · have hij : 0 < ts i + ts j := add_pos hi hj
+        simpa [hi, hj, hij] using
+          osSemigroupGroupMatrixElement_eq_inner_timeShift_add
+            (d := d) OS lgc x (as i) (as j) (ts i) (ts j) hi hj
+      · have htsj0 : ts j = 0 := by
+          exact le_antisymm (le_of_not_gt hj) (hts j)
+        have hij : 0 < ts i + ts j := by
+          simpa [htsj0] using hi
+        simp [hi, hj, hij, htsj0]
+        simpa [htsj0, add_zero] using
+          osSemigroupGroupMatrixElement_eq_inner_timeShift_left
+            (d := d) OS lgc x (as i) (as j) (ts i) hi
+    · have htsi0 : ts i = 0 := by
+        exact le_antisymm (le_of_not_gt hi) (hts i)
+      by_cases hj : 0 < ts j
+      · have hij : 0 < ts i + ts j := by
+          simpa [htsi0] using hj
+        simp [hi, hj, hij, htsi0]
+        simpa [htsi0, zero_add] using
+          osSemigroupGroupMatrixElement_eq_inner_timeShift_right
+            (d := d) OS lgc x (as i) (as j) (ts j) hj
+      · have htsj0 : ts j = 0 := by
+          exact le_antisymm (le_of_not_gt hj) (hts j)
+        simp [hi, hj, htsi0, htsj0]
+        have htrans :
+          @inner ℂ (OSHilbertSpace OS) _ x
+              ((osSpatialTranslateHilbert (d := d) OS (as j - as i)) x) =
+            @inner ℂ (OSHilbertSpace OS) _
+              ((osSpatialTranslateHilbert (d := d) OS (as i)) x)
+              ((osSpatialTranslateHilbert (d := d) OS (as j)) x) := by
+                calc
+                  @inner ℂ (OSHilbertSpace OS) _ x
+                      ((osSpatialTranslateHilbert (d := d) OS (as j - as i)) x) =
+                    @inner ℂ (OSHilbertSpace OS) _ x
+                      (((osSpatialTranslateHilbert (d := d) OS (-as i)).comp
+                        (osSpatialTranslateHilbert (d := d) OS (as j))) x) := by
+                          congr 1
+                          rw [osSpatialTranslateHilbert_comp (d := d) OS (-as i) (as j)]
+                          simp [sub_eq_add_neg, add_comm, add_left_comm, add_assoc]
+                  _ =
+                    @inner ℂ (OSHilbertSpace OS) _ x
+                      ((osSpatialTranslateHilbert (d := d) OS (-as i))
+                        ((osSpatialTranslateHilbert (d := d) OS (as j)) x)) := by
+                          rfl
+                  _ =
+                    @inner ℂ (OSHilbertSpace OS) _
+                      ((osSpatialTranslateHilbert (d := d) OS (as i)) x)
+                      ((osSpatialTranslateHilbert (d := d) OS (as j)) x) := by
+                        rw [← osSpatialTranslateHilbert_adjoint (d := d) OS (as i)]
+                        exact ContinuousLinearMap.adjoint_inner_right
+                          (osSpatialTranslateHilbert (d := d) OS (as i))
+                          x
+                          ((osSpatialTranslateHilbert (d := d) OS (as j)) x)
+        exact htrans
+  have hq : q = ↑‖∑ i : Fin n, v i‖ ^ 2 := by
+    dsimp [q]
+    calc
+      ∑ i : Fin n, ∑ j : Fin n,
+          starRingEnd ℂ (c i) * c j *
+            (if ht : 0 < ts i + ts j then
+              osSemigroupGroupMatrixElement (d := d) OS lgc x (ts i + ts j) (as j - as i)
+            else
+              @inner ℂ (OSHilbertSpace OS) _ x
+                ((osSpatialTranslateHilbert (d := d) OS (as j - as i)) x))
+          =
+        ∑ i : Fin n, ∑ j : Fin n,
+          starRingEnd ℂ (c i) * c j * @inner ℂ (OSHilbertSpace OS) _
+            (if hti : 0 < ts i then
+              (osTimeShiftHilbertComplex (d := d) OS lgc ((ts i : ℝ) : ℂ))
+                ((osSpatialTranslateHilbert (d := d) OS (as i)) x)
+            else
+              ((osSpatialTranslateHilbert (d := d) OS (as i)) x))
+            (if htj : 0 < ts j then
+              (osTimeShiftHilbertComplex (d := d) OS lgc ((ts j : ℝ) : ℂ))
+                ((osSpatialTranslateHilbert (d := d) OS (as j)) x)
+            else
+              ((osSpatialTranslateHilbert (d := d) OS (as j)) x)) := by
+                refine Finset.sum_congr rfl ?_
+                intro i hi
+                refine Finset.sum_congr rfl ?_
+                intro j hj
+                exact congrArg
+                  (fun z => starRingEnd ℂ (c i) * c j * z)
+                  (hpair i j)
+      _ = ∑ i : Fin n, ∑ j : Fin n, @inner ℂ (OSHilbertSpace OS) _ (v i) (v j) := by
+            refine Finset.sum_congr rfl ?_
+            intro i hi
+            refine Finset.sum_congr rfl ?_
+            intro j hj
+            by_cases hti : 0 < ts i
+            · by_cases htj : 0 < ts j
+              · simp [v, hti, htj, inner_smul_left, inner_smul_right,
+                  mul_assoc, mul_left_comm, mul_comm]
+              · simp [v, hti, htj, inner_smul_left, inner_smul_right,
+                  mul_assoc, mul_left_comm, mul_comm]
+            · by_cases htj : 0 < ts j
+              · simp [v, hti, htj, inner_smul_left, inner_smul_right,
+                  mul_assoc, mul_left_comm, mul_comm]
+              · simp [v, hti, htj, inner_smul_left, inner_smul_right,
+                  mul_assoc, mul_left_comm, mul_comm]
+      _ = @inner ℂ (OSHilbertSpace OS) _ (∑ i : Fin n, v i) (∑ i : Fin n, v i) := by
+            symm
+            rw [inner_sum]
+            simp_rw [sum_inner]
+            exact
+              (Finset.sum_comm
+                (f := fun x i : Fin n => @inner ℂ (OSHilbertSpace OS) _ (v i) (v x)))
+      _ = ↑‖∑ i : Fin n, v i‖ ^ 2 := by
+            rw [inner_self_eq_norm_sq_to_K]
+            rfl
+  constructor
+  · rw [hq]
+    simp [pow_two]
+  · rw [hq]
+    exact_mod_cast sq_nonneg ‖∑ i : Fin n, v i‖
+
+end semigroupGroupPDExtension
+
+theorem exists_approx_identity_schwartz
+    (ε : ℝ) (hε : 0 < ε) :
+    ∃ (φ : SchwartzSpacetime d),
+      (∀ x : SpacetimeDim d, 0 ≤ (φ x).re) ∧
+      (∀ x : SpacetimeDim d, (φ x).im = 0) ∧
+      (∫ x : SpacetimeDim d, φ x = 1) ∧
+      HasCompactSupport (φ : SpacetimeDim d → ℂ) ∧
+      tsupport (φ : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0} ∧
+      tsupport (φ : SpacetimeDim d → ℂ) ⊆ Metric.ball 0 ε := by
+  let c : SpacetimeDim d := Fin.cons (ε / 2) 0
+  let b : ContDiffBump c := ⟨ε / 8, ε / 4, by linarith, by linarith⟩
+  let f : SpacetimeDim d → ℂ := fun x => (b x : ℂ)
+  have hf_smooth : ContDiff ℝ (↑(⊤ : ℕ∞)) f :=
+    (Complex.ofRealCLM.contDiff.of_le le_top).comp b.contDiff
+  have hf_compact : HasCompactSupport f :=
+    b.hasCompactSupport.comp_left Complex.ofReal_zero
+  let g₀ := HasCompactSupport.toSchwartzMap hf_compact hf_smooth
+  have hg₀_int_ne : ∫ x : SpacetimeDim d, g₀ x ≠ 0 := by
+    change ∫ x, (↑(b x) : ℂ) ≠ 0
+    rw [integral_complex_ofReal]
+    exact Complex.ofReal_ne_zero.mpr (ne_of_gt b.integral_pos)
+  let φ := (∫ x : SpacetimeDim d, g₀ x)⁻¹ • g₀
+  refine ⟨φ, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · intro x
+    simp only [φ, SchwartzMap.smul_apply, smul_eq_mul]
+    rw [Complex.mul_re]
+    have hg₀_im : (g₀ x).im = 0 := Complex.ofReal_im (b x)
+    have hg₀_re : 0 ≤ (g₀ x).re := Complex.ofReal_re (b x) ▸ b.nonneg
+    have hint_im : (∫ u : SpacetimeDim d, g₀ u).im = 0 := by
+      rw [show (fun u => g₀ u) = (fun u => (↑(b u) : ℂ)) from rfl]
+      rw [integral_complex_ofReal]
+      simp
+    have hinv_im : ((∫ u : SpacetimeDim d, g₀ u)⁻¹).im = 0 := by
+      rw [Complex.inv_im, hint_im]
+      ring_nf
+    rw [hg₀_im, hinv_im]
+    ring_nf
+    apply mul_nonneg _ hg₀_re
+    rw [Complex.inv_re]
+    apply div_nonneg
+    · change 0 ≤ (∫ u, (↑(b u) : ℂ)).re
+      rw [integral_complex_ofReal]
+      simp only [Complex.ofReal_re]
+      exact le_of_lt b.integral_pos
+    · exact Complex.normSq_nonneg _
+  · intro x
+    simp only [φ, SchwartzMap.smul_apply, smul_eq_mul]
+    rw [Complex.mul_im]
+    have hg₀_im : (g₀ x).im = 0 := Complex.ofReal_im (b x)
+    have hint_im : (∫ u : SpacetimeDim d, g₀ u).im = 0 := by
+      rw [show (fun u => g₀ u) = (fun u => (↑(b u) : ℂ)) from rfl]
+      rw [integral_complex_ofReal]
+      simp
+    have hinv_im : ((∫ u : SpacetimeDim d, g₀ u)⁻¹).im = 0 := by
+      rw [Complex.inv_im, hint_im]
+      ring_nf
+    rw [hg₀_im, hinv_im]
+    ring_nf
+  · simp only [φ, SchwartzMap.smul_apply, smul_eq_mul]
+    rw [MeasureTheory.integral_const_mul]
+    exact inv_mul_cancel₀ hg₀_int_ne
+  · exact hf_compact.smul_left
+  · intro x hx
+    simp only [Set.mem_setOf_eq]
+    have hsubset : tsupport (φ : SpacetimeDim d → ℂ) ⊆ tsupport (g₀ : SpacetimeDim d → ℂ) := by
+      exact tsupport_smul_subset_right
+        (fun _ : SpacetimeDim d => (∫ u : SpacetimeDim d, g₀ u)⁻¹)
+        (g₀ : SpacetimeDim d → ℂ)
+    have hx_supp : x ∈ Metric.closedBall c (ε / 4 : ℝ) := by
+      have h_tsup_f : tsupport f ⊆ Metric.closedBall c (ε / 4) := by
+        intro y hy
+        rw [← b.tsupport_eq]
+        exact tsupport_comp_subset Complex.ofReal_zero _ hy
+      exact h_tsup_f (hsubset hx)
+    rw [Metric.mem_closedBall] at hx_supp
+    have h0 : |x 0 - ε / 2| ≤ ε / 4 := by
+      calc
+        |x 0 - ε / 2| = |x 0 - c 0| := by simp [c]
+        _ = ‖(x - c) 0‖ := by simp [Pi.sub_apply, Real.norm_eq_abs]
+        _ ≤ ‖x - c‖ := norm_le_pi_norm _ 0
+        _ = dist x c := by rw [dist_eq_norm]
+        _ ≤ ε / 4 := hx_supp
+    have h0' := abs_le.mp h0
+    linarith
+  · intro x hx
+    have hsubset : tsupport (φ : SpacetimeDim d → ℂ) ⊆ tsupport (g₀ : SpacetimeDim d → ℂ) := by
+      exact tsupport_smul_subset_right
+        (fun _ : SpacetimeDim d => (∫ u : SpacetimeDim d, g₀ u)⁻¹)
+        (g₀ : SpacetimeDim d → ℂ)
+    have hx_supp : x ∈ Metric.closedBall c (ε / 4 : ℝ) := by
+      have h_tsup_f : tsupport f ⊆ Metric.closedBall c (ε / 4) := by
+        intro y hy
+        rw [← b.tsupport_eq]
+        exact tsupport_comp_subset Complex.ofReal_zero _ hy
+      exact h_tsup_f (hsubset hx)
+    rw [Metric.mem_ball]
+    have hc : dist c (0 : SpacetimeDim d) ≤ ε / 2 := by
+      rw [dist_eq_norm]
+      exact (pi_norm_le_iff_of_nonneg (by positivity)).mpr (fun i => by
+        refine Fin.cases ?_ ?_ i
+        · simp [c, Real.norm_eq_abs, abs_of_pos hε]
+        · intro j
+          simpa [c, Fin.cons_succ] using (show (0 : ℝ) ≤ ε / 2 by linarith))
+    have hx' : dist x c ≤ ε / 4 := by
+      simpa [Metric.mem_closedBall] using hx_supp
+    linarith [dist_triangle x c 0]
+
+/-- The Fourier-Laplace transform of a nonnegative normalized positive-time
+Schwartz function is bounded by `1` in absolute value for nonnegative energy. -/
+theorem fourierLaplace_nonneg_normalized_le_one
+    (φ : SchwartzSpacetime d)
+    (hφ_nonneg : ∀ x : SpacetimeDim d, 0 ≤ (φ x).re)
+    (hφ_real : ∀ x : SpacetimeDim d, (φ x).im = 0)
+    (hφ_int : ∫ x : SpacetimeDim d, φ x = 1)
+    (hφ_pos_time : tsupport (φ : SpacetimeDim d → ℂ) ⊆ {x | 0 ≤ x 0})
+    (E : ℝ) (hE : 0 ≤ E) (p : Fin d → ℝ) :
+    ‖∫ x : SpacetimeDim d, φ x * Complex.exp (-(↑(x 0 * E) : ℂ) +
+        Complex.I * ↑(∑ i : Fin d, p i * x (Fin.succ i)))‖ ≤ 1 := by
+  calc ‖∫ x, φ x * Complex.exp (-↑(x 0 * E) + Complex.I * ↑(∑ i, p i * x (Fin.succ i)))‖
+      ≤ ∫ x, ‖φ x * Complex.exp (-↑(x 0 * E) + Complex.I * ↑(∑ i, p i * x (Fin.succ i)))‖ :=
+        norm_integral_le_integral_norm _
+    _ ≤ ∫ x, ‖φ x‖ := by
+        apply MeasureTheory.integral_mono_of_nonneg
+        · exact Filter.Eventually.of_forall (fun _ => norm_nonneg _)
+        · exact (SchwartzMap.integrable φ).norm
+        · apply Filter.Eventually.of_forall
+          intro x
+          show ‖φ x * Complex.exp (-↑(x 0 * E) + Complex.I * ↑(∑ i, p i * x (Fin.succ i)))‖
+            ≤ ‖φ x‖
+          by_cases hx : (φ : SpacetimeDim d → ℂ) x = 0
+          · simp [hx]
+          · rw [norm_mul]
+            have hx_mem : x ∈ tsupport (φ : SpacetimeDim d → ℂ) :=
+              subset_tsupport _ (by rwa [Function.mem_support])
+            have hx0 : 0 ≤ x 0 := hφ_pos_time hx_mem
+            calc ‖φ x‖ * ‖Complex.exp (-↑(x 0 * E) + Complex.I * ↑(∑ i, p i * x (Fin.succ i)))‖
+                ≤ ‖φ x‖ * 1 := by
+                  gcongr
+                  rw [Complex.norm_exp, Real.exp_le_one_iff]
+                  simp only [Complex.add_re, Complex.neg_re, Complex.ofReal_re,
+                    Complex.mul_re, Complex.I_re, Complex.I_im, Complex.ofReal_im]
+                  ring_nf
+                  nlinarith [mul_nonneg hx0 hE]
+              _ = ‖φ x‖ := mul_one _
+    _ = ‖∫ x, φ x‖ := by
+        rw [hφ_int]
+        simp
+        have hnorm_re : ∀ x : SpacetimeDim d, ‖φ x‖ = (φ x).re := by
+          intro x
+          rw [← Complex.re_eq_norm.mpr ⟨hφ_nonneg x, (hφ_real x).symm⟩]
+        simp_rw [hnorm_re]
+        rw [show (fun x => (φ x).re) = (fun x => RCLike.re (φ x)) from rfl]
+        rw [integral_re (SchwartzMap.integrable φ)]
+        have := congrArg Complex.re hφ_int
+        simpa using this
+    _ = 1 := by
+        rw [hφ_int]
+        simp
+
+/-- If a normalized real nonnegative Schwartz sequence has support shrinking to
+the origin, then its Fourier-Laplace transform converges pointwise to `1`. -/
+theorem fourierLaplace_approx_identity_tendsto_one
+    (φ_seq : ℕ → SchwartzSpacetime d)
+    (hφ_nonneg : ∀ n x, 0 ≤ (φ_seq n x).re)
+    (hφ_real : ∀ n x, (φ_seq n x).im = 0)
+    (hφ_int : ∀ n, ∫ x : SpacetimeDim d, φ_seq n x = 1)
+    (hφ_support : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆
+        Metric.ball (0 : SpacetimeDim d) (1 / (n + 1 : ℝ)))
+    (E : ℝ) (p : Fin d → ℝ) :
+    Filter.Tendsto (fun n => ∫ x : SpacetimeDim d,
+        φ_seq n x * Complex.exp (-(↑(x 0 * E) : ℂ) +
+          Complex.I * ↑(∑ i : Fin d, p i * x (Fin.succ i))))
+      Filter.atTop (nhds 1) := by
+  let ψ : SpacetimeDim d → ℂ := fun x =>
+    Complex.exp (-(↑(x 0 * E) : ℂ) +
+      Complex.I * ↑(∑ i : Fin d, p i * x (Fin.succ i)))
+  have hψ_cont : Continuous ψ := by
+    continuity
+  have hψ0 : ψ 0 = 1 := by
+    simp [ψ]
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  have hε2 : 0 < ε / 2 := by
+    linarith
+  have hψ_cont0 : ContinuousAt ψ 0 := hψ_cont.continuousAt
+  rw [Metric.continuousAt_iff] at hψ_cont0
+  obtain ⟨δ, hδpos, hδ⟩ := hψ_cont0 (ε / 2) hε2
+  have hsmall : ∀ᶠ n : ℕ in Filter.atTop, 1 / (n + 1 : ℝ) < δ := by
+    rcases exists_nat_one_div_lt hδpos with ⟨N, hN⟩
+    filter_upwards [Filter.eventually_ge_atTop N] with n hn
+    have hmono : 1 / (n + 1 : ℝ) ≤ 1 / (N + 1 : ℝ) := by
+      have hNle : (N + 1 : ℝ) ≤ n + 1 := by
+        exact_mod_cast Nat.succ_le_succ hn
+      exact one_div_le_one_div_of_le (by positivity) hNle
+    exact lt_of_le_of_lt hmono hN
+  filter_upwards [hsmall] with n hn
+  have hnorm_int : ∫ x : SpacetimeDim d, ‖φ_seq n x‖ = 1 := by
+    have hnorm_re : ∀ x : SpacetimeDim d, ‖φ_seq n x‖ = (φ_seq n x).re := by
+      intro x
+      rw [← Complex.re_eq_norm.mpr ⟨hφ_nonneg n x, (hφ_real n x).symm⟩]
+    simp_rw [hnorm_re]
+    rw [show (fun x => (φ_seq n x).re) = (fun x => RCLike.re (φ_seq n x)) from rfl]
+    rw [integral_re (SchwartzMap.integrable (φ_seq n))]
+    have := congrArg Complex.re (hφ_int n)
+    simpa using this
+  have hbound : ∀ x : SpacetimeDim d,
+      ‖φ_seq n x * (ψ x - 1)‖ ≤ (ε / 2) * ‖φ_seq n x‖ := by
+    intro x
+    by_cases hx : x ∈ tsupport (φ_seq n : SpacetimeDim d → ℂ)
+    · have hxball : x ∈ Metric.ball (0 : SpacetimeDim d) (1 / (n + 1 : ℝ)) := hφ_support n hx
+      have hxdist : dist x 0 < δ := by
+        have : dist x 0 < 1 / (n + 1 : ℝ) := by
+          simpa [Metric.mem_ball] using hxball
+        exact lt_of_lt_of_le this hn.le
+      have hψx : ‖ψ x - ψ 0‖ < ε / 2 := by
+        simpa [dist_eq_norm] using hδ hxdist
+      calc
+        ‖φ_seq n x * (ψ x - 1)‖ = ‖φ_seq n x‖ * ‖ψ x - 1‖ := by
+          rw [norm_mul]
+        _ ≤ ‖φ_seq n x‖ * (ε / 2) := by
+          gcongr
+          simpa [hψ0] using hψx.le
+        _ = (ε / 2) * ‖φ_seq n x‖ := by
+          ring
+    · have hx0 : φ_seq n x = 0 := by
+        by_contra hx0
+        exact hx (subset_tsupport _ (Function.mem_support.mpr hx0))
+      simp [hx0]
+  have hmeas : AEStronglyMeasurable (fun x => φ_seq n x * (ψ x - 1)) := by
+    exact ((SchwartzMap.continuous (φ_seq n)).mul (hψ_cont.sub continuous_const)).aestronglyMeasurable
+  have hIntDiff : Integrable (fun x => φ_seq n x * (ψ x - 1)) := by
+    refine Integrable.mono' (((SchwartzMap.integrable (φ_seq n)).norm).const_mul (ε / 2)) hmeas ?_
+    exact Filter.Eventually.of_forall hbound
+  have hIntProd : Integrable (fun x => φ_seq n x * ψ x) := by
+    have hEq : (fun x => φ_seq n x * ψ x) = fun x => φ_seq n x * (ψ x - 1) + φ_seq n x := by
+      funext x
+      ring
+    rw [hEq]
+    exact hIntDiff.add (SchwartzMap.integrable (φ_seq n))
+  have hEqInt :
+      (∫ x : SpacetimeDim d, φ_seq n x * ψ x) - 1 =
+        ∫ x : SpacetimeDim d, φ_seq n x * (ψ x - 1) := by
+    calc
+      (∫ x : SpacetimeDim d, φ_seq n x * ψ x) - 1
+          = (∫ x : SpacetimeDim d, φ_seq n x * ψ x) - ∫ x : SpacetimeDim d, φ_seq n x := by
+              rw [hφ_int n]
+      _ = ∫ x : SpacetimeDim d, ((φ_seq n x * ψ x) - φ_seq n x) := by
+            rw [← MeasureTheory.integral_sub hIntProd (SchwartzMap.integrable (φ_seq n))]
+      _ = ∫ x : SpacetimeDim d, φ_seq n x * (ψ x - 1) := by
+            congr with x
+            ring
+  calc
+    dist (∫ x : SpacetimeDim d, φ_seq n x * ψ x) 1
+        = ‖(∫ x : SpacetimeDim d, φ_seq n x * ψ x) - 1‖ := by
+            rw [dist_eq_norm]
+    _ = ‖∫ x : SpacetimeDim d, φ_seq n x * (ψ x - 1)‖ := by
+          rw [hEqInt]
+    _ ≤ ∫ x : SpacetimeDim d, ‖φ_seq n x * (ψ x - 1)‖ := by
+          exact norm_integral_le_integral_norm _
+    _ ≤ ∫ x : SpacetimeDim d, (ε / 2) * ‖φ_seq n x‖ := by
+          apply MeasureTheory.integral_mono_of_nonneg
+          · exact Filter.Eventually.of_forall (fun _ => norm_nonneg _)
+          · exact (((SchwartzMap.integrable (φ_seq n)).norm).const_mul (ε / 2))
+          · exact Filter.Eventually.of_forall hbound
+    _ = (ε / 2) * ∫ x : SpacetimeDim d, ‖φ_seq n x‖ := by
+          rw [MeasureTheory.integral_const_mul]
+    _ = ε / 2 := by
+          simp [hnorm_int]
+    _ < ε := by
+          linarith
+
+/-- The Laplace-Fourier kernel of a finite measure on `[0,∞) × ℝ^d` is bounded
+by the total mass of the measure on positive Euclidean time. -/
+theorem laplaceFourier_kernel_bounded
+    (μ : Measure (ℝ × (Fin d → ℝ)))
+    [hfin : IsFiniteMeasure μ]
+    (hsupp : μ (Set.prod (Set.Iio 0) Set.univ) = 0)
+    (ξ : SpacetimeDim d) (hξ : 0 < ξ 0) :
+    ‖∫ p : ℝ × (Fin d → ℝ),
+        Complex.exp (-(↑(ξ 0 * p.1) : ℂ)) *
+          Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * ξ (Fin.succ i)))
+        ∂μ‖ ≤ (μ Set.univ).toReal := by
+  calc ‖∫ p, Complex.exp (-(↑(ξ 0 * p.1) : ℂ)) *
+          Complex.exp (Complex.I * ↑(∑ i, p.2 i * ξ (Fin.succ i))) ∂μ‖
+      ≤ ∫ p, ‖Complex.exp (-(↑(ξ 0 * p.1) : ℂ)) *
+          Complex.exp (Complex.I * ↑(∑ i, p.2 i * ξ (Fin.succ i)))‖ ∂μ :=
+        norm_integral_le_integral_norm _
+    _ ≤ ∫ _ : ℝ × (Fin d → ℝ), (1 : ℝ) ∂μ := by
+        apply MeasureTheory.integral_mono_of_nonneg
+        · exact Filter.Eventually.of_forall (fun _ => norm_nonneg _)
+        · exact integrable_const 1
+        · have hae_nonneg : ∀ᵐ (a : ℝ × (Fin d → ℝ)) ∂μ, 0 ≤ a.1 := by
+            rw [Filter.Eventually, MeasureTheory.mem_ae_iff]
+            suffices h : {x : ℝ × (Fin d → ℝ) | 0 ≤ x.1}ᶜ ⊆ (Set.Iio 0).prod Set.univ by
+              exact le_antisymm (le_trans (μ.mono h) (le_of_eq hsupp)) (zero_le _)
+            intro x hx
+            rcases x with ⟨E, p⟩
+            simp only [Set.mem_compl_iff, Set.mem_setOf_eq, not_le] at hx
+            exact Set.mk_mem_prod hx (Set.mem_univ _)
+          exact hae_nonneg.mono (fun a hE => by
+            rcases a with ⟨E, p⟩
+            show ‖Complex.exp (-(↑(ξ 0 * E) : ℂ)) *
+              Complex.exp (Complex.I * ↑(∑ i, p i * ξ (Fin.succ i)))‖ ≤ 1
+            rw [norm_mul, Complex.norm_exp, Complex.norm_exp]
+            simp only [Complex.neg_re, Complex.ofReal_re,
+              Complex.mul_re, Complex.I_re, Complex.I_im, Complex.ofReal_im]
+            ring_nf
+            simp only [Real.exp_zero, mul_one]
+            rw [Real.exp_le_one_iff]
+            nlinarith [mul_nonneg (le_of_lt hξ) hE])
+    _ = (μ Set.univ).toReal := by
+        rw [MeasureTheory.integral_const]
+        simp [MeasureTheory.Measure.real_def]
 
 end

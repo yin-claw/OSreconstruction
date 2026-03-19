@@ -4,6 +4,7 @@ Released under Apache 2.0 license.
 Authors: Michael Douglas, ModularPhysics Contributors
 -/
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBase
+import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2BaseStep
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanKernel
 
 /-!
@@ -22,6 +23,72 @@ open BigOperators Finset
 
 variable {d : ℕ} [NeZero d]
 
+/-- First general-`k` ACR(1) subproblem: construct a scalar holomorphic witness on
+admissible factorized tests.
+
+This is the honest OS II one-slice/Osgood problem above the `k = 2` Bochner core:
+produce a single scalar function on `C_k^(1)` whose Euclidean pairing already
+reproduces the Schwinger functional on zero-diagonal product tensors. -/
+private theorem exists_acrOne_productTensor_witness {d : ℕ} [NeZero d]
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (k : ℕ) :
+    ∃ (S_prod : (Fin k → Fin (d + 1) → ℂ) → ℂ),
+      DifferentiableOn ℂ S_prod (AnalyticContinuationRegion d k 1) ∧
+      (∀ (fs : Fin k → SchwartzSpacetime d)
+          (hvanish : VanishesToInfiniteOrderOnCoincidence (SchwartzMap.productTensor fs)),
+        OS.S k ⟨SchwartzMap.productTensor fs, hvanish⟩ =
+          ∫ x : NPointDomain d k,
+            S_prod (fun j => wickRotatePoint (x j)) *
+              (SchwartzMap.productTensor fs) x) := by
+  sorry
+
+/-- Second general-`k` ACR(1) subproblem: upgrade the product-tensor witness to
+the full zero-diagonal Schwartz space.
+
+This is the density / nuclear-extension step: once a scalar witness reproduces
+the Schwinger functional on admissible factorized tests, show the same witness
+reproduces `OS.S k` on every zero-diagonal Schwartz test. -/
+private theorem acrOne_productTensor_witness_extends_zeroDiagonal {d : ℕ} [NeZero d]
+    (OS : OsterwalderSchraderAxioms d)
+    (k : ℕ)
+    (S_prod : (Fin k → Fin (d + 1) → ℂ) → ℂ)
+    (hS_prod_holo : DifferentiableOn ℂ S_prod (AnalyticContinuationRegion d k 1))
+    (hS_prod_prod :
+      ∀ (fs : Fin k → SchwartzSpacetime d)
+        (hvanish : VanishesToInfiniteOrderOnCoincidence (SchwartzMap.productTensor fs)),
+        OS.S k ⟨SchwartzMap.productTensor fs, hvanish⟩ =
+          ∫ x : NPointDomain d k,
+            S_prod (fun j => wickRotatePoint (x j)) *
+              (SchwartzMap.productTensor fs) x) :
+    ∀ (f : ZeroDiagonalSchwartz d k),
+      OS.S k f = ∫ x : NPointDomain d k,
+        S_prod (fun j => wickRotatePoint (x j)) * (f.1 x) := by
+  sorry
+
+/-- General-`k` OS-II first-step assembly on `ACR(1)`.
+
+This is the honest several-complex-variables gap above the `k = 2` Bochner core:
+assemble the one-slice semigroup continuation data into a jointly holomorphic
+function on the first continuation region `C_k^(1)` with the Euclidean
+reproduction identity. The intended proof route is the OS II equation `(5.4)`
+slice theorem plus nuclear extension and Osgood/Hartogs assembly. -/
+private theorem schwinger_continuation_base_step_acrOne_assembly {d : ℕ} [NeZero d]
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (k : ℕ) :
+    ∃ (S_ext : (Fin k → Fin (d + 1) → ℂ) → ℂ),
+      DifferentiableOn ℂ S_ext (AnalyticContinuationRegion d k 1) ∧
+      (∀ (f : ZeroDiagonalSchwartz d k),
+        OS.S k f = ∫ x : NPointDomain d k,
+          S_ext (fun j => wickRotatePoint (x j)) * (f.1 x)) := by
+  obtain ⟨S_prod, hS_prod_holo, hS_prod_prod⟩ :=
+    exists_acrOne_productTensor_witness (d := d) OS lgc k
+  refine ⟨S_prod, hS_prod_holo, ?_⟩
+  exact
+    acrOne_productTensor_witness_extends_zeroDiagonal
+      (d := d) OS k S_prod hS_prod_holo hS_prod_prod
+
 /-- OS-II-faithful first-stage base-step theorem: construct a witness on the flattened
 positive-time-difference tube that is holomorphic in the time-difference variables
 and continuous in the remaining variables, together with the Euclidean
@@ -38,29 +105,53 @@ theorem schwinger_continuation_base_step_timeParametric {d : ℕ} [NeZero d]
       (∀ (f : ZeroDiagonalSchwartz d k),
         OS.S k f = ∫ x : NPointDomain d k,
           G (BHW.toDiffFlat k d (fun j => wickRotatePoint (x j))) * (f.1 x)) := by
-  sorry
-
-/-- Second subproblem for the base step: upgrade the OS-II time-parametric witness to
-the legacy fully holomorphic surface currently consumed by the downstream
-restriction chain.
-
-This theorem isolates the statement-design issue at the root blocker. If that
-full-holomorphic surface is not the right OS-II endpoint, then this is exactly the
-place where the continuation chain should be refactored instead of smuggled. -/
-private theorem schwinger_continuation_spatial_upgrade_of_timeWitness {d : ℕ} [NeZero d]
-    (OS : OsterwalderSchraderAxioms d)
-    (k : ℕ)
-    (G : (Fin (k * (d + 1)) → ℂ) → ℂ)
-    (hG_time : IsTimeHolomorphicFlatPositiveTimeDiffWitness G)
-    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d k),
-      OS.S k f = ∫ x : NPointDomain d k,
-        G (BHW.toDiffFlat k d (fun j => wickRotatePoint (x j))) * (f.1 x)) :
-    ∃ (S_ext : (Fin k → Fin (d + 1) → ℂ) → ℂ),
-      DifferentiableOn ℂ S_ext (AnalyticContinuationRegion d k 1) ∧
-      (∀ (f : ZeroDiagonalSchwartz d k),
-        OS.S k f = ∫ x : NPointDomain d k,
-          S_ext (fun j => wickRotatePoint (x j)) * (f.1 x)) := by
-  sorry
+  obtain ⟨S₁, hS₁_hol, hS₁_euclid⟩ :=
+    schwinger_continuation_base_step_acrOne_assembly (d := d) OS lgc k
+  let G : (Fin (k * (d + 1)) → ℂ) → ℂ := fun u => S₁ (BHW.fromDiffFlat k d u)
+  refine ⟨G, ?_, ?_⟩
+  · refine ⟨?_, ?_⟩
+    · intro u hu
+      have hfrom_maps :
+          Set.MapsTo (BHW.fromDiffFlat k d)
+            (SCV.TubeDomain (FlatPositiveTimeDiffReal k d))
+            (AnalyticContinuationRegion d k 1) := by
+        intro v hv
+        rw [acr_one_iff_toDiffFlat_mem_tubeDomain_positiveTimeDiff]
+        simpa [BHW.toDiffFlat_fromDiffFlat] using hv
+      have hS₁_cont : ContinuousOn S₁ (AnalyticContinuationRegion d k 1) := hS₁_hol.continuousOn
+      have hG_cont : ContinuousOn G (SCV.TubeDomain (FlatPositiveTimeDiffReal k d)) :=
+        hS₁_cont.comp (differentiable_fromDiffFlat_local k d).continuous.continuousOn hfrom_maps
+      exact hG_cont u hu
+    · intro z hz i
+      let idx : Fin (k * (d + 1)) := finProdFinEquiv (i, (0 : Fin (d + 1)))
+      let φ : ℂ → (Fin k → Fin (d + 1) → ℂ) := fun w =>
+        BHW.fromDiffFlat k d (Function.update z idx w)
+      have hupdate_diff : Differentiable ℂ (fun w : ℂ => Function.update z idx w) := by
+        rw [differentiable_pi]
+        intro j
+        by_cases hj : j = idx
+        · subst hj
+          simpa using differentiable_id
+        · simpa [Function.update, hj] using differentiable_const (z j)
+      have hφ_maps :
+          Set.MapsTo φ {w : ℂ | 0 < w.im} (AnalyticContinuationRegion d k 1) := by
+        intro w hw
+        rw [acr_one_iff_toDiffFlat_mem_tubeDomain_positiveTimeDiff]
+        rw [BHW.toDiffFlat_fromDiffFlat]
+        rw [mem_tubeDomain_flatPositiveTimeDiffReal_iff]
+        intro j
+        by_cases hj : j = i
+        · subst hj
+          simpa [φ, idx]
+        · have hzj :=
+            (mem_tubeDomain_flatPositiveTimeDiffReal_iff (z := z)).mp hz j
+          simpa [φ, idx, Function.update, hj] using hzj
+      simpa [G, φ, idx] using
+        (hS₁_hol.comp
+          ((differentiable_fromDiffFlat_local k d).comp hupdate_diff).differentiableOn
+          hφ_maps)
+  · intro f
+    simpa [G, BHW.fromDiffFlat_toDiffFlat] using hS₁_euclid f
 
 /-- Public OS-II-faithful base-step theorem: produce a witness on the flattened
 positive-time-difference tube that is holomorphic in the time-difference variables
@@ -80,8 +171,8 @@ theorem schwinger_continuation_base_step {d : ℕ} [NeZero d]
 /-- Legacy full-holomorphic `ACR(1)` version of the base step.
 
 This is the theorem currently consumed by the downstream restriction chain.
-Mathematically, it should now be read as "time-parametric base step + a separate
-spatial-upgrade step", not as the primary OS-II base-step statement. -/
+Mathematically, it should now be read as the explicit `ACR(1)` assembly theorem
+underlying the public flattened time-parametric surface. -/
 private theorem schwinger_continuation_base_step_full {d : ℕ} [NeZero d]
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
@@ -91,11 +182,7 @@ private theorem schwinger_continuation_base_step_full {d : ℕ} [NeZero d]
       (∀ (f : ZeroDiagonalSchwartz d k),
         OS.S k f = ∫ x : NPointDomain d k,
           S_ext (fun j => wickRotatePoint (x j)) * (f.1 x)) := by
-  obtain ⟨G, hG_time, hG_euclid⟩ :=
-    schwinger_continuation_base_step_timeParametric (d := d) OS lgc k
-  exact
-    schwinger_continuation_spatial_upgrade_of_timeWitness
-      (d := d) OS k G hG_time hG_euclid
+  exact schwinger_continuation_base_step_acrOne_assembly (d := d) OS lgc k
 
 /-- Two-point payoff from any explicit Euclidean witness. Once a center cutoff
 `χ₀` with integral `1` is fixed, the admissible Schwinger two-point family

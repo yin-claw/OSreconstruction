@@ -5,6 +5,7 @@ Authors: Michael Douglas, ModularPhysics Contributors
 -/
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBase
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanSpatialMomentum
+import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2BaseStep
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanKernel
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightman
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanTwoPoint

@@ -659,30 +659,6 @@ private theorem selfAdjointSpectralLaplaceOffdiag_onePoint_pair_eq_flatUpdate_ce
             (fun u =>
               G u * (χ (z 0) * g (z 0 + z 1))) hcfg
 
-private theorem selfAdjointSpectralLaplaceOffdiag_spatialTranslate_add
-    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
-    (x : OSHilbertSpace OS) (a b : Fin d → ℝ)
-    (s t : ℝ) (hs : 0 < s) (ht : 0 < t) :
-    ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag
-        (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
-        (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
-        ((osSpatialTranslateHilbert (d := d) OS a) x)
-        ((osSpatialTranslateHilbert (d := d) OS b) x)
-        (((s + t : ℝ) : ℂ)) =
-      @inner ℂ (OSHilbertSpace OS) _
-        ((osTimeShiftHilbertComplex (d := d) OS lgc (s : ℂ))
-          ((osSpatialTranslateHilbert (d := d) OS a) x))
-        ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
-          ((osSpatialTranslateHilbert (d := d) OS b) x)) := by
-  rw [← osTimeShiftHilbertComplex_inner_eq
-    (d := d) OS lgc
-    ((osSpatialTranslateHilbert (d := d) OS a) x)
-    ((osSpatialTranslateHilbert (d := d) OS b) x)
-    (((s + t : ℝ) : ℂ))
-    (by exact add_pos hs ht)]
-  exact inner_osSpatialTranslateHilbert_osTimeShiftHilbertComplex_add
-    (d := d) OS lgc s t hs ht a b x
-
 private theorem OSInnerProductTimeShiftHolomorphicValue_onePoint_pair_eq_flatUpdate_centerShear
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)

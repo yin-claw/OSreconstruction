@@ -2532,6 +2532,61 @@ private theorem tendsto_osTimeShiftLinear_nhdsWithin_zero_of_isCompactSupport
     simpa using (inner_self_eq_norm_sq (𝕜 := ℂ) x0).symm
   simpa [hnorm] using hre0
 
+/-- Strong continuity at `0⁺` of the Euclidean time semigroup on the Hilbert
+completion, for compactly supported positive-time Borchers vectors. -/
+theorem tendsto_osTimeShiftHilbert_nhdsWithin_zero_of_isCompactSupport
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F : PositiveTimeBorchersSequence d)
+    (hF_compact : ∀ n,
+      HasCompactSupport (((
+        F : BorchersSequence d).funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ)) :
+    Filter.Tendsto
+      (fun t : ℝ =>
+        if ht : 0 < t then
+          osTimeShiftHilbert (d := d) OS lgc t ht
+            (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))
+        else
+          (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS)))
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))) := by
+  let x0 : OSPreHilbertSpace OS := (⟦F⟧ : OSPreHilbertSpace OS)
+  have hpre :=
+    tendsto_osTimeShiftLinear_nhdsWithin_zero_of_isCompactSupport
+      (d := d) OS lgc F hF_compact
+  have hcoer :
+      Filter.Tendsto
+        (fun y : OSPreHilbertSpace OS => ((y : OSPreHilbertSpace OS) : OSHilbertSpace OS))
+        (nhds x0)
+        (nhds (x0 : OSHilbertSpace OS)) :=
+    (UniformSpace.Completion.toComplL : OSPreHilbertSpace OS →L[ℂ] OSHilbertSpace OS).continuous.tendsto x0
+  have hpre' :
+      Filter.Tendsto
+        (fun t : ℝ =>
+          (((if ht : 0 < t then
+              (osTimeShiftLinear (d := d) OS t ht) x0
+            else
+              x0) : OSPreHilbertSpace OS) : OSHilbertSpace OS))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (x0 : OSHilbertSpace OS)) :=
+    hcoer.comp hpre
+  have hEq :
+      (fun t : ℝ =>
+        (((if ht : 0 < t then
+            (osTimeShiftLinear (d := d) OS t ht) x0
+          else
+            x0) : OSPreHilbertSpace OS) : OSHilbertSpace OS))
+        =ᶠ[nhdsWithin 0 (Set.Ioi 0)]
+      (fun t : ℝ =>
+        if ht : 0 < t then
+          osTimeShiftHilbert (d := d) OS lgc t ht (x0 : OSHilbertSpace OS)
+        else
+          (x0 : OSHilbertSpace OS)) := by
+    filter_upwards with t
+    by_cases ht : 0 < t
+    · simp [ht, x0, osTimeShiftHilbert_coe]
+    · simp [ht, x0]
+  exact Filter.Tendsto.congr' hEq hpre'
+
 private theorem continuousOn_osTimeShiftLinear_of_isCompactSupport
     (OS : OsterwalderSchraderAxioms d)
     (F : PositiveTimeBorchersSequence d)
