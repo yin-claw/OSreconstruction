@@ -253,6 +253,139 @@ def laplaceFourierKernel
     Complex.exp (-(↑(ξ 0 * p.1) : ℂ)) *
       Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * ξ (Fin.succ i))) ∂μ
 
+/-- Fubini bridge for the finite-measure Laplace-Fourier kernel: pairing the
+kernel against a positive-time compact Schwartz test is the same as integrating
+the pointwise Fourier-Laplace transform of that test against the measure. This
+is the exact first rewrite needed in theorem 3. -/
+private theorem integral_laplaceFourierKernel_mul_eq
+    (μ : Measure (ℝ × (Fin d → ℝ)))
+    [IsFiniteMeasure μ]
+    (hsupp : μ (Set.prod (Set.Iio 0) Set.univ) = 0)
+    (h : SchwartzSpacetime d)
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x | 0 < x 0})
+    (hh_compact : HasCompactSupport (h : SpacetimeDim d → ℂ)) :
+    ∫ ξ : SpacetimeDim d, laplaceFourierKernel (d := d) μ ξ * h ξ ∂volume =
+      ∫ p : ℝ × (Fin d → ℝ),
+        ∫ ξ : SpacetimeDim d,
+          Complex.exp (-(↑(ξ 0 * p.1) : ℂ)) *
+            Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * ξ (Fin.succ i))) *
+            h ξ ∂volume ∂μ := by
+  let f : SpacetimeDim d → (ℝ × (Fin d → ℝ)) → ℂ := fun ξ p =>
+    Complex.exp (-(↑(ξ 0 * p.1) : ℂ)) *
+      Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * ξ (Fin.succ i))) *
+      h ξ
+  let G : SpacetimeDim d × (ℝ × (Fin d → ℝ)) → ℂ := fun z => f z.1 z.2
+  have hf_meas :
+      AEStronglyMeasurable (Function.uncurry f) (volume.prod μ) := by
+    have hcont_sum :
+        Continuous (fun z : SpacetimeDim d × (ℝ × (Fin d → ℝ)) =>
+          ∑ i : Fin d, z.2.2 i * z.1 (Fin.succ i)) := by
+      refine continuous_finset_sum _ fun i _hi => ?_
+      exact
+        (((continuous_apply i).comp (continuous_snd.comp continuous_snd)) : Continuous
+          fun z : SpacetimeDim d × (ℝ × (Fin d → ℝ)) => z.2.2 i).mul
+          (((continuous_apply (Fin.succ i)).comp continuous_fst) : Continuous
+            fun z : SpacetimeDim d × (ℝ × (Fin d → ℝ)) => z.1 (Fin.succ i))
+    have hcont :
+        Continuous G := by
+      change Continuous (fun z : SpacetimeDim d × (ℝ × (Fin d → ℝ)) =>
+        Complex.exp (-(↑(z.1 0 * z.2.1) : ℂ)) *
+          Complex.exp (Complex.I * ↑(∑ i : Fin d, z.2.2 i * z.1 (Fin.succ i))) *
+          h z.1)
+      have h1base : Continuous (fun z : SpacetimeDim d × (ℝ × (Fin d → ℝ)) =>
+          -((z.1 0) * z.2.1)) := by
+        exact
+          ((((continuous_apply (0 : Fin (d + 1))).comp continuous_fst) : Continuous
+              fun z : SpacetimeDim d × (ℝ × (Fin d → ℝ)) => z.1 0).mul
+            (((continuous_fst.comp continuous_snd) : Continuous
+              fun z : SpacetimeDim d × (ℝ × (Fin d → ℝ)) => z.2.1))).neg
+      have h1 : Continuous (fun z : SpacetimeDim d × (ℝ × (Fin d → ℝ)) =>
+          Complex.exp (-(↑(z.1 0 * z.2.1) : ℂ))) := by
+        have h1' : Continuous (fun z : SpacetimeDim d × (ℝ × (Fin d → ℝ)) =>
+            Complex.exp (↑(-((z.1 0) * z.2.1)) : ℂ)) := by
+          exact Complex.continuous_exp.comp (Complex.continuous_ofReal.comp h1base)
+        simpa using h1'
+      have h2 : Continuous (fun z : SpacetimeDim d × (ℝ × (Fin d → ℝ)) =>
+          Complex.exp (Complex.I * ↑(∑ i : Fin d, z.2.2 i * z.1 (Fin.succ i)))) := by
+        exact
+          Complex.continuous_exp.comp
+            (continuous_const.mul (Complex.continuous_ofReal.comp hcont_sum))
+      have h3 : Continuous (fun z : SpacetimeDim d × (ℝ × (Fin d → ℝ)) => h z.1) := by
+        exact (SchwartzMap.continuous h).comp continuous_fst
+      simpa [G, f, mul_assoc] using h1.mul (h2.mul h3)
+    simpa [Function.uncurry, f, G] using hcont.aestronglyMeasurable
+  have hbound :
+      ∀ᵐ z : SpacetimeDim d × (ℝ × (Fin d → ℝ)) ∂(volume.prod μ),
+        ‖Function.uncurry f z‖ ≤ ‖h z.1‖ := by
+    have h_nonneg_p : ∀ᵐ p : ℝ × (Fin d → ℝ) ∂μ, 0 ≤ p.1 := by
+      rw [Filter.Eventually, MeasureTheory.mem_ae_iff]
+      suffices
+          {p : ℝ × (Fin d → ℝ) | ¬ 0 ≤ p.1} ⊆ Set.prod (Set.Iio 0) Set.univ by
+        exact le_antisymm (le_trans (μ.mono this) (le_of_eq hsupp)) (zero_le _)
+      intro p hp
+      rcases p with ⟨E, q⟩
+      simp only [Set.mem_setOf_eq, not_le] at hp
+      exact Set.mk_mem_prod hp (Set.mem_univ q)
+    have h_nonneg_prod :
+        ∀ᵐ z : SpacetimeDim d × (ℝ × (Fin d → ℝ)) ∂(volume.prod μ), 0 ≤ z.2.1 := by
+      have hmeas :
+          MeasurableSet {z : SpacetimeDim d × (ℝ × (Fin d → ℝ)) | 0 ≤ z.2.1} := by
+        let g : SpacetimeDim d × (ℝ × (Fin d → ℝ)) → ℝ := fun z => z.2.1
+        have hg : Measurable g := by
+          exact (((continuous_fst.comp continuous_snd) : Continuous g).measurable)
+        exact hg measurableSet_Ici
+      rw [MeasureTheory.Measure.ae_prod_iff_ae_ae hmeas]
+      exact Filter.Eventually.of_forall fun _ => h_nonneg_p
+    filter_upwards [h_nonneg_prod] with z hz
+    rcases z with ⟨ξ, p⟩
+    have hp_nonneg : 0 ≤ p.1 := hz
+    by_cases hhξ : h ξ = 0
+    · simp [f, hhξ]
+    · have hξ_pos : 0 < ξ 0 := by
+        exact hh_pos (subset_tsupport (h : SpacetimeDim d → ℂ)
+          (by rwa [Function.mem_support]))
+      have hphase :
+          (Complex.I * ↑(∑ i : Fin d, p.2 i * ξ (Fin.succ i))).re = 0 := by
+        simp [Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im]
+      have hexp_le_one :
+          Real.exp (-(ξ 0 * p.1)) ≤ 1 := by
+        apply Real.exp_le_one_iff.mpr
+        nlinarith [hξ_pos, hp_nonneg]
+      calc
+        ‖Function.uncurry f (ξ, p)‖
+            = ‖Complex.exp (-(↑(ξ 0 * p.1) : ℂ)) *
+                Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * ξ (Fin.succ i)))‖ *
+              ‖h ξ‖ := by
+                simp [f, mul_assoc]
+        _ = Real.exp (-(ξ 0 * p.1)) * ‖h ξ‖ := by
+              rw [norm_mul, Complex.norm_exp, Complex.norm_exp, hphase, Real.exp_zero, mul_one]
+              simp
+        _ ≤ 1 * ‖h ξ‖ := by
+              gcongr
+        _ = ‖h ξ‖ := by ring
+  have hh_int :
+      Integrable (fun z : SpacetimeDim d × (ℝ × (Fin d → ℝ)) => h z.1) (volume.prod μ) := by
+    simpa using ((h.integrable (μ := volume)).comp_fst μ)
+  have hf_int : Integrable (Function.uncurry f) (volume.prod μ) := by
+    exact (hh_int.norm).mono' hf_meas hbound
+  calc
+    ∫ ξ : SpacetimeDim d, laplaceFourierKernel (d := d) μ ξ * h ξ
+        = ∫ ξ : SpacetimeDim d,
+            ∫ p : ℝ × (Fin d → ℝ),
+              f ξ p ∂μ := by
+            congr 1
+            ext ξ
+            rw [laplaceFourierKernel, ← MeasureTheory.integral_mul_const]
+    _ = ∫ p : ℝ × (Fin d → ℝ),
+          ∫ ξ : SpacetimeDim d, f ξ p ∂volume ∂μ := by
+            exact MeasureTheory.integral_integral_swap (f := f) hf_int
+    _ = ∫ p : ℝ × (Fin d → ℝ),
+          ∫ ξ : SpacetimeDim d,
+            Complex.exp (-(↑(ξ 0 * p.1) : ℂ)) *
+              Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * ξ (Fin.succ i))) *
+              h ξ ∂volume ∂μ := by
+            simp [f]
+
 private lemma mul_exp_neg_bound_local (c t : ℝ) (hc : 0 < c) :
     t * Real.exp (-c * t) ≤ Real.exp (-1) / c := by
   rw [le_div_iff₀ hc]
@@ -264,6 +397,182 @@ private lemma mul_exp_neg_bound_local (c t : ℝ) (hc : 0 < c) :
     _ = Real.exp (-1) := by
       rw [← Real.exp_add]
       ring_nf
+
+/-- Dominated convergence for real weights converging pointwise to `1`. This is
+the exact smearing-removal engine needed for the approximate-identity Bochner
+route: once the weighted spectral factors stay in `[0,1]`, any integrable test
+function can be pushed through the limit. -/
+private theorem tendsto_integral_mul_of_realWeights_to_one
+    {α : Type} [MeasurableSpace α]
+    (ρ : Measure α) [IsFiniteMeasure ρ]
+    (f : α → ℂ) (hf : Integrable f ρ)
+    (w : ℕ → α → ℝ)
+    (hw_meas : ∀ n, Measurable (w n))
+    (hw_nonneg : ∀ n x, 0 ≤ w n x)
+    (hw_le : ∀ n x, w n x ≤ 1)
+    (hw_lim : ∀ x, Tendsto (fun n => w n x) atTop (nhds 1)) :
+    Tendsto (fun n => ∫ x, f x * (w n x : ℂ) ∂ρ) atTop (nhds (∫ x, f x ∂ρ)) := by
+  let F : ℕ → α → ℂ := fun n x => f x * (w n x : ℂ)
+  have hF_meas : ∀ n, AEStronglyMeasurable (F n) ρ := by
+    intro n
+    exact hf.aestronglyMeasurable.mul
+      ((Complex.continuous_ofReal.measurable.comp (hw_meas n)).aestronglyMeasurable)
+  have h_bound : ∀ n, ∀ᵐ x ∂ρ, ‖F n x‖ ≤ ‖f x‖ := by
+    intro n
+    exact Filter.Eventually.of_forall fun x => by
+      dsimp [F]
+      rw [norm_mul, Complex.norm_real, Real.norm_of_nonneg (hw_nonneg n x)]
+      have hle : ‖f x‖ * w n x ≤ ‖f x‖ * 1 := by
+        exact mul_le_mul_of_nonneg_left (hw_le n x) (norm_nonneg _)
+      simpa using hle
+  have h_lim : ∀ᵐ x ∂ρ, Tendsto (fun n => F n x) atTop (nhds (f x)) := by
+    exact Filter.Eventually.of_forall fun x => by
+      have hwc : Tendsto (fun n => ((w n x : ℝ) : ℂ)) atTop (nhds (1 : ℂ)) :=
+        Complex.continuous_ofReal.continuousAt.tendsto.comp (hw_lim x)
+      have hmul :
+          Tendsto (fun n => f x * ((w n x : ℝ) : ℂ)) atTop (nhds (f x * (1 : ℂ))) :=
+        Filter.Tendsto.const_mul (f x) hwc
+      simpa [F] using hmul
+  simpa [F] using
+    (MeasureTheory.tendsto_integral_of_dominated_convergence (fun x => ‖f x‖)
+      hF_meas hf.norm h_bound h_lim)
+
+/-- Spectral bridge, step A: once a finite Bochner measure represents the
+semigroup-group matrix element, pairing its Laplace-Fourier kernel against a
+positive-time compact Schwartz test is the same as pairing the OS matrix element
+itself against that test. -/
+private theorem bochner_kernel_integral_eq_semigroup_integral
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (v : OSHilbertSpace OS)
+    (μ : Measure (ℝ × (Fin d → ℝ)))
+    [IsFiniteMeasure μ]
+    (hsupp : μ (Set.prod (Set.Iio 0) Set.univ) = 0)
+    (hμ_repr : ∀ t a, 0 < t →
+      osSemigroupGroupMatrixElement (d := d) OS lgc v t a =
+        ∫ p, Complex.exp (-(↑(t * p.1) : ℂ)) *
+          Complex.exp (Complex.I * ↑(∑ i, p.2 i * a i)) ∂μ)
+    (h : SchwartzSpacetime d)
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x | 0 < x 0})
+    (hh_compact : HasCompactSupport (h : SpacetimeDim d → ℂ)) :
+    ∫ ξ : SpacetimeDim d, laplaceFourierKernel (d := d) μ ξ * h ξ =
+      ∫ ξ : SpacetimeDim d,
+        osSemigroupGroupMatrixElement (d := d) OS lgc v (ξ 0) (fun i => ξ (Fin.succ i)) *
+          h ξ := by
+  congr 1
+  ext ξ
+  by_cases hξ : (h : SpacetimeDim d → ℂ) ξ = 0
+  · simp [hξ]
+  · have hξ_pos : 0 < ξ 0 :=
+      hh_pos (subset_tsupport (h : SpacetimeDim d → ℂ) (by rwa [Function.mem_support]))
+    congr 1
+    rw [hμ_repr (ξ 0) (fun i => ξ (Fin.succ i)) hξ_pos]
+    simp [laplaceFourierKernel]
+
+/-- Spectral bridge, step B: the semigroup-group matrix-element integral
+attached to the one-point vector generated by `φ` is exactly the two-point
+Schwinger value of the corresponding product-shell test. -/
+private theorem semigroup_integral_eq_schwinger_productShell
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (φ : SchwartzSpacetime d)
+    (hφ_int : ∫ u : SpacetimeDim d, φ u = 1)
+    (hφ_compact : HasCompactSupport (φ : SpacetimeDim d → ℂ))
+    (hφ_pos : tsupport (((SchwartzNPoint.osConj (d := d) (n := 1)
+        (onePointToFin1CLM d φ : SchwartzNPoint d 1) : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (h : SchwartzSpacetime d)
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x | 0 < x 0})
+    (hh_compact : HasCompactSupport (h : SpacetimeDim d → ℂ)) :
+    ∫ ξ : SpacetimeDim d,
+        osSemigroupGroupMatrixElement (d := d) OS lgc
+          (((show OSPreHilbertSpace OS from
+            ⟦PositiveTimeBorchersSequence.single 1
+              (SchwartzNPoint.osConj (d := d) (n := 1)
+                (onePointToFin1CLM d φ : SchwartzNPoint d 1))
+              hφ_pos⟧) : OSHilbertSpace OS))
+          (ξ 0) (fun i => ξ (Fin.succ i)) * h ξ =
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointProductLift φ h)) := by
+  sorry
+
+/-- Spectral bridge, step C: once the center factor has unit integral, the
+product-shell pairing differs from the canonical difference lift by a single
+explicit error term. -/
+private theorem productShell_eq_differenceLift_plus_error
+    (OS : OsterwalderSchraderAxioms d)
+    (φ χ₀ h : SchwartzSpacetime d)
+    (hφ_int : ∫ u : SpacetimeDim d, φ u = 1)
+    (hχ₀_int : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x | 0 < x 0}) :
+    OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointProductLift φ h)) =
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)) +
+        (OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointProductLift φ h)) -
+          OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift φ h))) := by
+  have h0 : (0 : SpacetimeDim d) ∉ tsupport (h : SpacetimeDim d → ℂ) := by
+    intro hz
+    have hz' := hh_pos hz
+    simpa using hz'
+  have hcenter :
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift φ h)) =
+        OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)) := by
+    rw [OsterwalderSchraderAxioms.twoPointDifferenceLift_eq_centerValue
+      (d := d) OS h h0 χ₀ hχ₀_int φ]
+    simp [hφ_int]
+  calc
+    OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointProductLift φ h))
+        =
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift φ h)) +
+        (OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointProductLift φ h)) -
+          OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift φ h))) := by
+            ring
+    _ =
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)) +
+        (OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointProductLift φ h)) -
+          OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift φ h))) := by
+            rw [hcenter]
+
+/-- Spectral bridge, step D: after replacing the Bochner measures by the scalar
+spectral measure and removing the `|φ̂_n|²` weight by dominated convergence, the
+approximate-identity kernel pairings converge to the canonical Schwinger
+difference functional. This is the key smearing-removal step from OS II. -/
+private theorem schwinger_error_tendsto_zero
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (φ_seq : ℕ → SchwartzSpacetime d)
+    (hφ_nonneg : ∀ n x, 0 ≤ (φ_seq n x).re)
+    (hφ_real : ∀ n x, (φ_seq n x).im = 0)
+    (hφ_int : ∀ n, ∫ x : SpacetimeDim d, φ_seq n x = 1)
+    (hφ_compact : ∀ n, HasCompactSupport (φ_seq n : SpacetimeDim d → ℂ))
+    (hφ_support : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆
+        Metric.ball (0 : SpacetimeDim d) (1 / (n + 1 : ℝ)))
+    (hφ_pos : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆ {x | 0 < x 0})
+    (hφ_onePoint_pos : ∀ n,
+      tsupport (((SchwartzNPoint.osConj (d := d) (n := 1)
+          (onePointToFin1CLM d (φ_seq n) : SchwartzNPoint d 1) : SchwartzNPoint d 1) :
+          NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (χ₀ : SchwartzSpacetime d) (hχ₀_int : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (h : SchwartzSpacetime d)
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x | 0 < x 0})
+    (hh_compact : HasCompactSupport (h : SpacetimeDim d → ℂ))
+    (μ_seq : ℕ → Measure (ℝ × (Fin d → ℝ)))
+    (hμ_fin : ∀ n, IsFiniteMeasure (μ_seq n))
+    (hμ_supp : ∀ n, (μ_seq n) (Set.prod (Set.Iio 0) Set.univ) = 0)
+    (hμ_repr : ∀ n t a, 0 < t →
+      osSemigroupGroupMatrixElement (d := d) OS lgc
+        (((show OSPreHilbertSpace OS from
+          ⟦PositiveTimeBorchersSequence.single 1
+            (SchwartzNPoint.osConj (d := d) (n := 1)
+              (onePointToFin1CLM d (φ_seq n) : SchwartzNPoint d 1))
+            (hφ_onePoint_pos n)⟧) : OSHilbertSpace OS))
+        t a =
+          ∫ p, Complex.exp (-(↑(t * p.1) : ℂ)) *
+            Complex.exp (Complex.I * ↑(∑ i, p.2 i * a i)) ∂(μ_seq n)) :
+    Tendsto (fun n => ∫ ξ : SpacetimeDim d,
+        laplaceFourierKernel (d := d) (μ_seq n) ξ * h ξ)
+      atTop
+      (nhds
+        (OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)))) := by
+  sorry
 
 /-- Smearing removal for the approximate-identity/Bochner route: the limit
 Laplace-Fourier kernel reproduces the normalized-center two-point Schwinger
