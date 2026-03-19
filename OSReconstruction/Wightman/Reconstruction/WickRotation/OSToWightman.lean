@@ -1507,6 +1507,181 @@ theorem onePoint_osConjTensorProduct_apply
           rw [SchwartzMap.tensorProduct_apply]
           simp [onePointToFin1CLM_apply, splitFirst, splitLast]
 
+/-- The two-point Schwinger product shell is exactly the OS Hilbert inner
+product of the corresponding one-point vectors. This is the canonical bilinear
+bridge behind the nuclear-extension route for `k = 2`. -/
+theorem schwinger_twoPointProductLift_eq_onePointInner
+    (OS : OsterwalderSchraderAxioms d)
+    (χ h : SchwartzSpacetime d)
+    (hχ_pos : tsupport (((SchwartzNPoint.osConj (d := d) (n := 1)
+        (onePointToFin1CLM d χ : SchwartzNPoint d 1) : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (hh_pos : tsupport (((onePointToFin1CLM d h : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1) :
+    OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointProductLift χ h)) =
+      @inner ℂ (OSHilbertSpace OS) _
+        (((show OSPreHilbertSpace OS from
+          ⟦PositiveTimeBorchersSequence.single 1
+            (SchwartzNPoint.osConj (d := d) (n := 1)
+              (onePointToFin1CLM d χ))
+            hχ_pos⟧) : OSHilbertSpace OS))
+        (((show OSPreHilbertSpace OS from
+          ⟦PositiveTimeBorchersSequence.single 1
+            (onePointToFin1CLM d h)
+            hh_pos⟧) : OSHilbertSpace OS)) := by
+  have hleft_vanish :
+      VanishesToInfiniteOrderOnCoincidence
+        ((SchwartzNPoint.osConj (d := d) (n := 1)
+          (onePointToFin1CLM d χ)).osConjTensorProduct
+          (onePointToFin1CLM d h)) :=
+    VanishesToInfiniteOrderOnCoincidence_osConjTensorProduct_of_tsupport_subset_orderedPositiveTimeRegion
+      (d := d)
+      (f := SchwartzNPoint.osConj (d := d) (n := 1)
+        (onePointToFin1CLM d χ : SchwartzNPoint d 1))
+      (g := onePointToFin1CLM d h)
+      hχ_pos hh_pos
+  have hright_vanish :
+      VanishesToInfiniteOrderOnCoincidence (twoPointProductLift χ h) := by
+    have hprod_eq :
+        (SchwartzNPoint.osConj (d := d) (n := 1)
+            (onePointToFin1CLM d χ)).osConjTensorProduct
+          (onePointToFin1CLM d h) =
+        twoPointProductLift χ h := by
+      ext x
+      exact onePoint_osConjTensorProduct_apply (d := d) χ h x
+    simpa [hprod_eq] using hleft_vanish
+  have hzeroeq :
+      ZeroDiagonalSchwartz.ofClassical (twoPointProductLift χ h) =
+        ZeroDiagonalSchwartz.ofClassical
+          ((SchwartzNPoint.osConj (d := d) (n := 1)
+            (onePointToFin1CLM d χ)).osConjTensorProduct
+            (onePointToFin1CLM d h)) := by
+    rw [ZeroDiagonalSchwartz.ofClassical_of_vanishes
+      (f := twoPointProductLift χ h) hright_vanish]
+    rw [ZeroDiagonalSchwartz.ofClassical_of_vanishes
+      (f := ((SchwartzNPoint.osConj (d := d) (n := 1)
+        (onePointToFin1CLM d χ)).osConjTensorProduct
+        (onePointToFin1CLM d h))) hleft_vanish]
+    apply Subtype.ext
+    ext x
+    symm
+    exact onePoint_osConjTensorProduct_apply (d := d) χ h x
+  have hos :
+      OSInnerProduct d OS.S
+        (BorchersSequence.single 1
+          (SchwartzNPoint.osConj (d := d) (n := 1)
+            (onePointToFin1CLM d χ : SchwartzNPoint d 1)))
+        (BorchersSequence.single 1 (onePointToFin1CLM d h : SchwartzNPoint d 1)) =
+      OS.S 2
+        ⟨((SchwartzNPoint.osConj (d := d) (n := 1)
+            (onePointToFin1CLM d χ)).osConjTensorProduct
+            (onePointToFin1CLM d h)), hleft_vanish⟩ := by
+    rw [OSInnerProduct_single_single (d := d) (S := OS.S) (hlin := OS.E0_linear)
+      (n := 1) (m := 1)
+      (f := SchwartzNPoint.osConj (d := d) (n := 1)
+        (onePointToFin1CLM d χ : SchwartzNPoint d 1))
+      (g := onePointToFin1CLM d h)]
+    rw [ZeroDiagonalSchwartz.ofClassical_of_vanishes
+      (f := ((SchwartzNPoint.osConj (d := d) (n := 1)
+        (onePointToFin1CLM d χ)).osConjTensorProduct
+        (onePointToFin1CLM d h))) hleft_vanish]
+  calc
+    OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointProductLift χ h))
+      = OS.S 2 (ZeroDiagonalSchwartz.ofClassical
+          ((SchwartzNPoint.osConj (d := d) (n := 1)
+            (onePointToFin1CLM d χ)).osConjTensorProduct
+            (onePointToFin1CLM d h))) := by rw [hzeroeq]
+    _ = @inner ℂ (OSHilbertSpace OS) _
+          (((show OSPreHilbertSpace OS from
+            ⟦PositiveTimeBorchersSequence.single 1
+              (SchwartzNPoint.osConj (d := d) (n := 1)
+                (onePointToFin1CLM d χ))
+              hχ_pos⟧) : OSHilbertSpace OS))
+          (((show OSPreHilbertSpace OS from
+            ⟦PositiveTimeBorchersSequence.single 1
+              (onePointToFin1CLM d h)
+              hh_pos⟧) : OSHilbertSpace OS)) := by
+          rw [ZeroDiagonalSchwartz.ofClassical_of_vanishes
+            (f := ((SchwartzNPoint.osConj (d := d) (n := 1)
+              (onePointToFin1CLM d χ)).osConjTensorProduct
+              (onePointToFin1CLM d h))) hleft_vanish]
+          rw [UniformSpace.Completion.inner_coe, OSPreHilbertSpace.inner_eq]
+          rw [PositiveTimeBorchersSequence.osInner]
+          simpa using hos.symm
+
+/-- For a fixed admissible left factor `χ`, the two-point Schwinger product-shell
+pairing is continuous in the honest positive-time compact-support right factor. -/
+theorem schwinger_twoPointProductLift_continuous_right_on_positive
+    (OS : OsterwalderSchraderAxioms d)
+    (χ : SchwartzSpacetime d)
+    (hχ_pos : tsupport (((SchwartzNPoint.osConj (d := d) (n := 1)
+        (onePointToFin1CLM d χ : SchwartzNPoint d 1) : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1) :
+    Continuous (fun h : positiveTimeCompactSupportSubmodule d =>
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical
+        (twoPointProductLift χ (h : SchwartzSpacetime d)))) := by
+  let raw :
+      positiveTimeCompactSupportSubmodule d →L[ℂ] SchwartzNPoint d 2 :=
+    (SchwartzMap.prependFieldCLMRight (E := SpacetimeDim d) χ).comp
+      ((onePointToFin1CLM d).comp (positiveTimeCompactSupportValCLM d))
+  have hraw :
+      ∀ h : positiveTimeCompactSupportSubmodule d,
+        raw h = twoPointProductLift χ (h : SchwartzSpacetime d) := by
+    intro h
+    rfl
+  have hvanish :
+      ∀ h : positiveTimeCompactSupportSubmodule d,
+        VanishesToInfiniteOrderOnCoincidence
+          (twoPointProductLift χ (h : SchwartzSpacetime d)) := by
+    intro h
+    have hh_pos :
+        tsupport (((onePointToFin1CLM d (h : SchwartzSpacetime d) :
+            SchwartzNPoint d 1) : NPointDomain d 1 → ℂ)) ⊆
+          OrderedPositiveTimeRegion d 1 := by
+      exact onePointToFin1_tsupport_orderedPositiveTime (d := d)
+        (h : SchwartzSpacetime d) h.property.1
+    have hos :
+        VanishesToInfiniteOrderOnCoincidence
+          ((SchwartzNPoint.osConj (d := d) (n := 1)
+              (onePointToFin1CLM d χ : SchwartzNPoint d 1)).osConjTensorProduct
+            ((onePointToFin1CLM d (h : SchwartzSpacetime d)) : SchwartzNPoint d 1)) :=
+      VanishesToInfiniteOrderOnCoincidence_osConjTensorProduct_of_tsupport_subset_orderedPositiveTimeRegion
+        (d := d)
+        (f := SchwartzNPoint.osConj (d := d) (n := 1)
+          (onePointToFin1CLM d χ : SchwartzNPoint d 1))
+        (g := ((onePointToFin1CLM d (h : SchwartzSpacetime d)) : SchwartzNPoint d 1))
+        hχ_pos hh_pos
+    have hEq :
+        ((SchwartzNPoint.osConj (d := d) (n := 1)
+            (onePointToFin1CLM d χ : SchwartzNPoint d 1)).osConjTensorProduct
+          ((onePointToFin1CLM d (h : SchwartzSpacetime d)) : SchwartzNPoint d 1)) =
+        twoPointProductLift χ (h : SchwartzSpacetime d) := by
+      ext x
+      exact onePoint_osConjTensorProduct_apply (d := d) χ
+        (h : SchwartzSpacetime d) x
+    rw [hEq] at hos
+    exact hos
+  let tensorMap :
+      positiveTimeCompactSupportSubmodule d → ZeroDiagonalSchwartz d 2 :=
+    fun h => ⟨raw h, by
+      rw [hraw h]
+      exact hvanish h⟩
+  have htensor : Continuous tensorMap := by
+    exact raw.continuous.subtype_mk _
+  have hF :
+      (fun h : positiveTimeCompactSupportSubmodule d =>
+        OS.S 2 (ZeroDiagonalSchwartz.ofClassical
+          (twoPointProductLift χ (h : SchwartzSpacetime d)))) =
+      (fun h => OS.S 2 (tensorMap h)) := by
+    funext h
+    rw [show tensorMap h = ⟨twoPointProductLift χ (h : SchwartzSpacetime d), hvanish h⟩ by
+      apply Subtype.ext
+      simpa [tensorMap] using hraw h]
+    rw [ZeroDiagonalSchwartz.ofClassical_of_vanishes
+      (f := twoPointProductLift χ (h : SchwartzSpacetime d)) (hvanish h)]
+  simpa [hF] using
+    ((OsterwalderSchraderAxioms.schwingerCLM (d := d) OS 2).continuous.comp htensor)
+
 theorem onePoint_osConjTensorProduct_timeShift_apply
     (χ h : SchwartzSpacetime d) (t : ℝ)
     (y : NPointDomain d 2) :

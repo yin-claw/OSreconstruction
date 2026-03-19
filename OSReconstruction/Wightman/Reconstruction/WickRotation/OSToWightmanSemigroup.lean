@@ -3088,6 +3088,42 @@ theorem osTimeShiftHilbertComplex_ofReal_eq_nnrpow
       (hspec := spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos)
       (t := t) ht)
 
+theorem osTimeShiftHilbertComplex_comp
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (s t : ℝ) (hs : 0 < s) (ht : 0 < t) :
+    osTimeShiftHilbertComplex (d := d) OS lgc ((s + t : ℝ) : ℂ) =
+      (osTimeShiftHilbertComplex (d := d) OS lgc (s : ℂ)).comp
+        (osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ)) := by
+  let h1 : 0 < (1 : ℝ) := one_pos
+  rw [osTimeShiftHilbertComplex_ofReal_eq_nnrpow (d := d) OS lgc (s + t)
+      (add_pos hs ht)]
+  rw [osTimeShiftHilbertComplex_ofReal_eq_nnrpow (d := d) OS lgc s hs]
+  rw [osTimeShiftHilbertComplex_ofReal_eq_nnrpow (d := d) OS lgc t ht]
+  have hs' : (0 : ℝ≥0) < Real.toNNReal s := by
+    exact Real.toNNReal_pos.mpr hs
+  have ht' : (0 : ℝ≥0) < Real.toNNReal t := by
+    exact Real.toNNReal_pos.mpr ht
+  simpa [show (HMul.hMul :
+      (OSHilbertSpace OS →L[ℂ] OSHilbertSpace OS) → _ → _) =
+      ContinuousLinearMap.comp from rfl,
+    Real.toNNReal_of_nonneg hs.le,
+    Real.toNNReal_of_nonneg ht.le,
+    Real.toNNReal_of_nonneg (add_nonneg hs.le ht.le)] using
+      (CFC.nnrpow_add
+        (a := osTimeShiftHilbert (d := d) OS lgc 1 h1)
+        hs' ht')
+
+theorem osTimeShiftHilbertComplex_isSelfAdjoint
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (t : ℝ) (ht : 0 < t) :
+    IsSelfAdjoint (osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ)) := by
+  let h1 : 0 < (1 : ℝ) := one_pos
+  rw [osTimeShiftHilbertComplex_ofReal_eq_nnrpow (d := d) OS lgc t ht]
+  exact
+    (CFC.nnrpow_nonneg
+      (a := osTimeShiftHilbert (d := d) OS lgc 1 h1)
+      (x := Real.toNNReal t)).isSelfAdjoint
+
 theorem osTimeShiftHilbertComplex_ofReal_eq_of_isCompactSupport
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     (F : PositiveTimeBorchersSequence d)

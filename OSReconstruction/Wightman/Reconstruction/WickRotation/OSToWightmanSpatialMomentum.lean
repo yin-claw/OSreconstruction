@@ -1,3 +1,4 @@
+import OSReconstruction.SCV.SemigroupGroupBochner
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanSemigroup
 
 /-!
@@ -16,8 +17,7 @@ mathematical gaps on the OS/Stone route:
 
 - weak continuity of axis slices on the dense compact-support domain,
 - strong continuity at `0` on that dense domain,
-- strong continuity on the Hilbert completion,
-- commutation of spatial translations with the Euclidean time semigroup.
+- strong continuity on the Hilbert completion.
 -/
 
 noncomputable section
@@ -976,5 +976,377 @@ theorem osSpatialTranslateHilbert_commutes_osTimeShiftHilbert
       (congrArg (fun f => f x)
         (osSpatialTranslateLinear_commutes_osTimeShiftLinear
           (d := d) OS a t ht))
+
+/-- Spatial translation commutes with the positive-real restriction of the
+complex Euclidean time semigroup. -/
+theorem osSpatialTranslateHilbert_commutes_osTimeShiftHilbertComplex_ofReal
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (a : Fin d → ℝ) (t : ℝ) (ht : 0 < t) :
+    (osSpatialTranslateHilbert (d := d) OS a).comp
+      (osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ)) =
+    (osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ)).comp
+      (osSpatialTranslateHilbert (d := d) OS a) := by
+  have hcommA :
+      Commute
+        (osSpatialTranslateHilbert (d := d) OS a)
+        (osTimeShiftHilbert (d := d) OS lgc 1 one_pos) := by
+    change
+      (osSpatialTranslateHilbert (d := d) OS a).comp
+        (osTimeShiftHilbert (d := d) OS lgc 1 one_pos) =
+      (osTimeShiftHilbert (d := d) OS lgc 1 one_pos).comp
+        (osSpatialTranslateHilbert (d := d) OS a)
+    simpa using
+      osSpatialTranslateHilbert_commutes_osTimeShiftHilbert
+        (d := d) OS lgc a 1 one_pos
+  have hcommComplex :
+      Commute
+        (osSpatialTranslateHilbert (d := d) OS a)
+        (osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ)) := by
+    simpa [osTimeShiftHilbertComplex] using
+      (ContinuousLinearMap.Commute.spectralSemigroupComplex
+        (H := OSHilbertSpace OS)
+        (A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+        (B := osSpatialTranslateHilbert (d := d) OS a)
+        hcommA
+        (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+        (osTimeShiftHilbert_nonneg (d := d) OS lgc 1 one_pos)
+        (spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos)
+        (t : ℂ) (by simpa using ht))
+  change
+    (osSpatialTranslateHilbert (d := d) OS a).comp
+      (osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ)) =
+    (osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ)).comp
+      (osSpatialTranslateHilbert (d := d) OS a)
+  exact hcommComplex.eq
+
+/-- Real positive-time matrix elements of the complex OS semigroup factor through
+two shorter time steps, even after spatial translation of the input vectors. -/
+theorem inner_osSpatialTranslateHilbert_osTimeShiftHilbertComplex_add
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (s t : ℝ) (hs : 0 < s) (ht : 0 < t)
+    (a b : Fin d → ℝ) (x : OSHilbertSpace OS) :
+    @inner ℂ (OSHilbertSpace OS) _
+      ((osSpatialTranslateHilbert (d := d) OS a) x)
+      ((osTimeShiftHilbertComplex (d := d) OS lgc ((s + t : ℝ) : ℂ))
+        ((osSpatialTranslateHilbert (d := d) OS b) x)) =
+    @inner ℂ (OSHilbertSpace OS) _
+      ((osTimeShiftHilbertComplex (d := d) OS lgc (s : ℂ))
+        ((osSpatialTranslateHilbert (d := d) OS a) x))
+      ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+        ((osSpatialTranslateHilbert (d := d) OS b) x)) := by
+  rw [osTimeShiftHilbertComplex_comp (d := d) OS lgc s t hs ht]
+  rw [ContinuousLinearMap.comp_apply]
+  have hsa := osTimeShiftHilbertComplex_isSelfAdjoint (d := d) OS lgc s hs
+  have hsa' :
+      ContinuousLinearMap.adjoint
+        (osTimeShiftHilbertComplex (d := d) OS lgc (s : ℂ)) =
+      osTimeShiftHilbertComplex (d := d) OS lgc (s : ℂ) := by
+    simpa [IsSelfAdjoint, ContinuousLinearMap.star_eq_adjoint] using hsa
+  calc
+    @inner ℂ (OSHilbertSpace OS) _
+        ((osSpatialTranslateHilbert (d := d) OS a) x)
+        ((osTimeShiftHilbertComplex (d := d) OS lgc (s : ℂ))
+          ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+            ((osSpatialTranslateHilbert (d := d) OS b) x)))
+      =
+        @inner ℂ (OSHilbertSpace OS) _
+          ((osSpatialTranslateHilbert (d := d) OS a) x)
+          ((ContinuousLinearMap.adjoint
+              (osTimeShiftHilbertComplex (d := d) OS lgc (s : ℂ)))
+            ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+              ((osSpatialTranslateHilbert (d := d) OS b) x))) := by
+            rw [hsa']
+    _ =
+        @inner ℂ (OSHilbertSpace OS) _
+          ((osTimeShiftHilbertComplex (d := d) OS lgc (s : ℂ))
+            ((osSpatialTranslateHilbert (d := d) OS a) x))
+          ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+            ((osSpatialTranslateHilbert (d := d) OS b) x)) := by
+            exact ContinuousLinearMap.adjoint_inner_right
+              (osTimeShiftHilbertComplex (d := d) OS lgc (s : ℂ))
+              ((osSpatialTranslateHilbert (d := d) OS a) x)
+              ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+                ((osSpatialTranslateHilbert (d := d) OS b) x))
+
+/-- The off-diagonal spectral Laplace matrix element for spatially translated
+vectors factors across positive real times. -/
+theorem selfAdjointSpectralLaplaceOffdiag_spatialTranslate_add
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS) (a b : Fin d → ℝ)
+    (s t : ℝ) (hs : 0 < s) (ht : 0 < t) :
+    ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag
+        (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+        (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+        ((osSpatialTranslateHilbert (d := d) OS a) x)
+        ((osSpatialTranslateHilbert (d := d) OS b) x)
+        (((s + t : ℝ) : ℂ)) =
+      @inner ℂ (OSHilbertSpace OS) _
+        ((osTimeShiftHilbertComplex (d := d) OS lgc (s : ℂ))
+          ((osSpatialTranslateHilbert (d := d) OS a) x))
+        ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+          ((osSpatialTranslateHilbert (d := d) OS b) x)) := by
+  rw [← osTimeShiftHilbertComplex_inner_eq
+    (d := d) OS lgc
+    ((osSpatialTranslateHilbert (d := d) OS a) x)
+    ((osSpatialTranslateHilbert (d := d) OS b) x)
+    (((s + t : ℝ) : ℂ))
+    (by exact add_pos hs ht)]
+  exact inner_osSpatialTranslateHilbert_osTimeShiftHilbertComplex_add
+    (d := d) OS lgc s t hs ht a b x
+
+/-- The scalar semigroup-group matrix kernel attached to the OS Hilbert vector
+`x`: Euclidean time in the semigroup direction and spatial translation in the
+group direction. -/
+def osSemigroupGroupMatrixElement
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS) :
+    ℝ → (Fin d → ℝ) → ℂ :=
+  fun t a =>
+    ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag
+      (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+      (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+      x
+      ((osSpatialTranslateHilbert (d := d) OS a) x)
+      (t : ℂ)
+
+/-- On positive real times, the semigroup-group kernel depends on the spatial
+variables only through the difference `b - a`, exactly as expected from the
+unitary spatial translation representation. -/
+theorem osSemigroupGroupMatrixElement_eq_translated_pair
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS)
+    (a b : Fin d → ℝ) (t : ℝ) (ht : 0 < t) :
+    osSemigroupGroupMatrixElement (d := d) OS lgc x t (b - a) =
+      ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag
+        (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+        (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+        ((osSpatialTranslateHilbert (d := d) OS a) x)
+        ((osSpatialTranslateHilbert (d := d) OS b) x)
+        (t : ℂ) := by
+  rw [osSemigroupGroupMatrixElement]
+  rw [← osTimeShiftHilbertComplex_inner_eq
+    (d := d) OS lgc x
+    ((osSpatialTranslateHilbert (d := d) OS (b - a)) x)
+    (t : ℂ) ht]
+  rw [← osTimeShiftHilbertComplex_inner_eq
+    (d := d) OS lgc
+    ((osSpatialTranslateHilbert (d := d) OS a) x)
+    ((osSpatialTranslateHilbert (d := d) OS b) x)
+    (t : ℂ) ht]
+  have hcomm :
+      (osSpatialTranslateHilbert (d := d) OS (-a))
+          ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+            ((osSpatialTranslateHilbert (d := d) OS b) x)) =
+        (osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+          ((osSpatialTranslateHilbert (d := d) OS (b - a)) x) := by
+    calc
+      (osSpatialTranslateHilbert (d := d) OS (-a))
+          ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+            ((osSpatialTranslateHilbert (d := d) OS b) x))
+        =
+          (osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+            ((osSpatialTranslateHilbert (d := d) OS (-a))
+              ((osSpatialTranslateHilbert (d := d) OS b) x)) := by
+              exact congrArg (fun f => f ((osSpatialTranslateHilbert (d := d) OS b) x))
+                (osSpatialTranslateHilbert_commutes_osTimeShiftHilbertComplex_ofReal
+                  (d := d) OS lgc (-a) t ht)
+      _ =
+          (osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+            (((osSpatialTranslateHilbert (d := d) OS (-a)).comp
+              (osSpatialTranslateHilbert (d := d) OS b)) x) := by
+              rfl
+      _ =
+          (osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+            ((osSpatialTranslateHilbert (d := d) OS ((-a) + b)) x) := by
+              rw [osSpatialTranslateHilbert_comp (d := d) OS (-a) b]
+      _ =
+          (osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+            ((osSpatialTranslateHilbert (d := d) OS (b - a)) x) := by
+              simp [sub_eq_add_neg, add_comm, add_left_comm, add_assoc]
+  calc
+    @inner ℂ (OSHilbertSpace OS) _
+        x
+        ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+          ((osSpatialTranslateHilbert (d := d) OS (b - a)) x))
+      =
+        @inner ℂ (OSHilbertSpace OS) _
+          x
+          ((osSpatialTranslateHilbert (d := d) OS (-a))
+            ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+              ((osSpatialTranslateHilbert (d := d) OS b) x))) := by
+            rw [hcomm.symm]
+    _ =
+        @inner ℂ (OSHilbertSpace OS) _
+          ((osSpatialTranslateHilbert (d := d) OS a) x)
+          ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+            ((osSpatialTranslateHilbert (d := d) OS b) x)) := by
+            rw [← osSpatialTranslateHilbert_adjoint (d := d) OS a]
+            exact ContinuousLinearMap.adjoint_inner_right
+              (osSpatialTranslateHilbert (d := d) OS a)
+              x
+              ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ))
+                ((osSpatialTranslateHilbert (d := d) OS b) x))
+
+/-- The spatially translated real-time matrix kernel of the OS semigroup is
+positive semidefinite. This is the first operator-theoretic positivity input on
+the OS/Stone route toward a semigroup-group Bochner theorem. -/
+theorem spatialTranslate_timeShift_matrix_posSemidef
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS)
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (c : ι → ℂ) (τ : ι → Set.Ioi (0 : ℝ)) (a : ι → Fin d → ℝ) :
+    let q := ∑ i : ι, ∑ j : ι,
+      starRingEnd ℂ (c i) * c j *
+        ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag
+          (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+          (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+          ((osSpatialTranslateHilbert (d := d) OS (a i)) x)
+          ((osSpatialTranslateHilbert (d := d) OS (a j)) x)
+          (((((τ i : ℝ) + (τ j : ℝ)) : ℝ) : ℂ))
+    q.im = 0 ∧ 0 ≤ q.re := by
+  classical
+  let v : ι → OSHilbertSpace OS := fun i =>
+    c i • (osTimeShiftHilbertComplex (d := d) OS lgc ((τ i : ℝ) : ℂ))
+      ((osSpatialTranslateHilbert (d := d) OS (a i)) x)
+  have hq :
+      (∑ i : ι, ∑ j : ι,
+        starRingEnd ℂ (c i) * c j *
+          ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag
+            (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+            (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+            ((osSpatialTranslateHilbert (d := d) OS (a i)) x)
+            ((osSpatialTranslateHilbert (d := d) OS (a j)) x)
+            (((((τ i : ℝ) + (τ j : ℝ)) : ℝ) : ℂ)))
+        = ↑‖∑ i : ι, v i‖ ^ 2 := by
+    calc
+      (∑ i : ι, ∑ j : ι,
+        starRingEnd ℂ (c i) * c j *
+          ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag
+            (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+            (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+            ((osSpatialTranslateHilbert (d := d) OS (a i)) x)
+            ((osSpatialTranslateHilbert (d := d) OS (a j)) x)
+            (((((τ i : ℝ) + (τ j : ℝ)) : ℝ) : ℂ)))
+          =
+        ∑ i : ι, ∑ j : ι,
+          starRingEnd ℂ (c i) * c j *
+            @inner ℂ (OSHilbertSpace OS) _
+              ((osTimeShiftHilbertComplex (d := d) OS lgc ((τ i : ℝ) : ℂ))
+                ((osSpatialTranslateHilbert (d := d) OS (a i)) x))
+              ((osTimeShiftHilbertComplex (d := d) OS lgc ((τ j : ℝ) : ℂ))
+                ((osSpatialTranslateHilbert (d := d) OS (a j)) x)) := by
+            refine Finset.sum_congr rfl ?_
+            intro i hi
+            refine Finset.sum_congr rfl ?_
+            intro j hj
+            rw [selfAdjointSpectralLaplaceOffdiag_spatialTranslate_add
+              (d := d) (OS := OS) (lgc := lgc) (x := x) (a := a i) (b := a j)
+              (s := (τ i : ℝ)) (t := (τ j : ℝ)) (τ i).2 (τ j).2]
+      _ = @inner ℂ (OSHilbertSpace OS) _ (∑ i : ι, v i) (∑ i : ι, v i) := by
+            calc
+              ∑ i : ι, ∑ j : ι,
+                  starRingEnd ℂ (c i) * c j *
+                    @inner ℂ (OSHilbertSpace OS) _
+                      ((osTimeShiftHilbertComplex (d := d) OS lgc ((τ i : ℝ) : ℂ))
+                        ((osSpatialTranslateHilbert (d := d) OS (a i)) x))
+                      ((osTimeShiftHilbertComplex (d := d) OS lgc ((τ j : ℝ) : ℂ))
+                        ((osSpatialTranslateHilbert (d := d) OS (a j)) x))
+                = ∑ i : ι, ∑ j : ι,
+                    @inner ℂ (OSHilbertSpace OS) _ (v i) (v j) := by
+                      refine Finset.sum_congr rfl ?_
+                      intro i hi
+                      refine Finset.sum_congr rfl ?_
+                      intro j hj
+                      simp [v, inner_smul_left, inner_smul_right]
+                      ring
+              _ = @inner ℂ (OSHilbertSpace OS) _ (∑ i : ι, v i) (∑ i : ι, v i) := by
+                    symm
+                    rw [inner_sum]
+                    simp_rw [sum_inner]
+                    simpa using
+                      (Finset.sum_comm
+                        (f := fun x i : ι =>
+                          @inner ℂ (OSHilbertSpace OS) _ (v i) (v x)))
+      _ = ↑‖∑ i : ι, v i‖ ^ 2 := by
+            rw [inner_self_eq_norm_sq_to_K]
+            rfl
+  constructor
+  · rw [hq]
+    simpa [pow_two]
+  · rw [hq]
+    simpa [pow_two] using sq_nonneg ‖∑ i : ι, v i‖
+
+/-- Strict positive-time positive-definiteness of the scalar semigroup-group
+matrix kernel attached to a single OS Hilbert vector. This is the direct
+positive-time precursor to the full `IsSemigroupGroupPD` hypothesis needed by
+`semigroupGroup_bochner`. -/
+theorem osSemigroupGroupMatrixElement_posSemidef_Ioi
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS)
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (c : ι → ℂ) (τ : ι → Set.Ioi (0 : ℝ)) (a : ι → Fin d → ℝ) :
+    let q := ∑ i : ι, ∑ j : ι,
+      starRingEnd ℂ (c i) * c j *
+        osSemigroupGroupMatrixElement (d := d) OS lgc x
+          ((τ i : ℝ) + (τ j : ℝ)) (a j - a i)
+    q.im = 0 ∧ 0 ≤ q.re := by
+  classical
+  have hq :
+      (∑ i : ι, ∑ j : ι,
+        starRingEnd ℂ (c i) * c j *
+          osSemigroupGroupMatrixElement (d := d) OS lgc x
+            ((τ i : ℝ) + (τ j : ℝ)) (a j - a i))
+        =
+      ∑ i : ι, ∑ j : ι,
+        starRingEnd ℂ (c i) * c j *
+          ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag
+            (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+            (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+            ((osSpatialTranslateHilbert (d := d) OS (a i)) x)
+            ((osSpatialTranslateHilbert (d := d) OS (a j)) x)
+            (((((τ i : ℝ) + (τ j : ℝ)) : ℝ) : ℂ)) := by
+    refine Finset.sum_congr rfl ?_
+    intro i hi
+    refine Finset.sum_congr rfl ?_
+    intro j hj
+    rw [osSemigroupGroupMatrixElement_eq_translated_pair
+      (d := d) OS lgc x (a i) (a j) ((τ i : ℝ) + (τ j : ℝ))
+      (add_pos (τ i).2 (τ j).2)]
+  rw [hq]
+  exact spatialTranslate_timeShift_matrix_posSemidef
+    (d := d) OS lgc x c τ a
+
+/-- Bochner measure for the OS semigroup-group matrix kernel, once continuity,
+boundedness, and full semigroup-group positive-definiteness have been
+established. This is the exact point where the abstract semigroup-group Bochner
+theorem enters the OS/Stone route. -/
+theorem exists_measure_osSemigroupGroupMatrixElement
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (x : OSHilbertSpace OS)
+    (hcont : Continuous (fun p : ℝ × (Fin d → ℝ) =>
+      osSemigroupGroupMatrixElement (d := d) OS lgc x p.1 p.2))
+    (hbdd : ∃ C : ℝ, ∀ t a,
+      ‖osSemigroupGroupMatrixElement (d := d) OS lgc x t a‖ ≤ C)
+    (hpd : SCV.IsSemigroupGroupPD d
+      (osSemigroupGroupMatrixElement (d := d) OS lgc x)) :
+    ∃ (μ : Measure (ℝ × (Fin d → ℝ))),
+      IsFiniteMeasure μ ∧
+      μ (Set.prod (Set.Iio 0) Set.univ) = 0 ∧
+      ∀ (t : ℝ) (a : Fin d → ℝ), 0 ≤ t →
+        osSemigroupGroupMatrixElement (d := d) OS lgc x t a =
+          ∫ p : ℝ × (Fin d → ℝ),
+            Complex.exp (-(↑(t * p.1) : ℂ)) *
+              Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * a i))
+            ∂μ := by
+  exact SCV.semigroupGroup_bochner d
+    (osSemigroupGroupMatrixElement (d := d) OS lgc x)
+    hcont hbdd hpd
 
 end
