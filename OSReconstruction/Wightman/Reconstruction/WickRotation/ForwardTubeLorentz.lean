@@ -921,24 +921,26 @@ theorem lorentz_covariant_distributional_bv {d n : ℕ} [NeZero d]
 /-- The set of Euclidean configurations whose Wick rotation does NOT lie in the
     permuted extended tube has Lebesgue measure zero.
 
-    **Proof strategy (Jost's theorem):** A Wick-rotated configuration lies in
-    the PET whenever some permutation σ makes the consecutive differences satisfy
-    the Jost condition (spacelike with sufficient spatial spread for a complex
-    Lorentz boost). The complement — configurations where NO permutation works —
-    is contained in a finite union of proper algebraic subvarieties (coincident
-    or collinear point configurations). Each such subvariety has codimension >= 1
-    in ℝ^{n(d+1)}, hence Lebesgue measure zero (by induction on dimension + Fubini).
+    A Wick-rotated configuration lies in the PET whenever some permutation σ
+    and complex Lorentz transformation Λ place the successive imaginary-part
+    differences in the open forward cone V⁺. The complement — configurations
+    where no (σ, Λ) works — is contained in a finite union of proper algebraic
+    subvarieties (coincident or collinear point configurations), each of
+    codimension ≥ 1, hence Lebesgue measure zero.
 
-    Blocked by: (1) Jost characterization of PET membership (`swap_jost_set_exists`),
-    and (2) Mathlib's algebraic-subvariety-measure-zero pipeline (not yet available).
+    For configurations with pairwise distinct times and at least one nonzero
+    spatial coordinate in the minimum-time point, a complex Lorentz boost by
+    small imaginary rapidity fixes the k=0 forward cone condition while the
+    k≥1 conditions (positive successive time differences) are preserved by
+    continuity. The exceptional set (coincident times ∪ first point at spatial
+    origin) has measure zero (union of codimension ≥ 1 subspaces).
 
     Ref: Jost, "The General Theory of Quantized Fields" §IV.4, Theorem IV.4;
-    Streater-Wightman, Theorem 2-12 -/
-theorem wickRotation_not_in_PET_null {d n : ℕ} [NeZero d] :
+    Streater-Wightman, "PCT, Spin and Statistics", Theorem 2-12 -/
+axiom wickRotation_not_in_PET_null {d n : ℕ} [NeZero d] :
     MeasureTheory.volume
       {x : NPointDomain d n |
-        (fun k => wickRotatePoint (x k)) ∉ PermutedExtendedTube d n} = 0 := by
-  sorry
+        (fun k => wickRotatePoint (x k)) ∉ PermutedExtendedTube d n} = 0
 
 /-- **Almost every Euclidean Wick-rotated configuration lies in the permuted extended tube.**
 

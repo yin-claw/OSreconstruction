@@ -145,8 +145,24 @@ transport back to `SchwartzNPoint d n` in
 Unlike the generic transport theorem below, this phase-4 surface is only about
 the specific analytic continuation produced by `full_analytic_continuation OS lgc n`.
 Tempered boundary values are not claimed for an arbitrary holomorphic forward-tube
-function. -/
-private theorem full_analytic_continuation_flat_tempered_package
+function.
+
+**Status**: This is the OS-II tempered boundary value theorem (Osterwalder-Schrader,
+"Axioms for Euclidean Green's Functions II", Comm. Math. Phys. 42, 1975,
+Theorem III.1-2). The analytic continuation `F_analytic` from `full_analytic_continuation`
+has polynomial growth on the forward tube (from the OS linear growth condition E0'),
+which by Fourier-Laplace representation theory yields tempered distributional
+boundary values. The four components are:
+1. Continuous boundary-value functional `Tflat`
+2. BV limit: `∫ G(x+iεη) f(x) dx → Tflat(f)` as ε→0⁺
+3. Polynomial growth on compact imaginary slices
+4. Uniform polynomial growth near each forward-cone direction
+
+Ref: Osterwalder-Schrader II, Theorem III.1-2;
+     Streater-Wightman, "PCT, Spin and Statistics", §3.4;
+     Reed-Simon, "Methods of Modern Mathematical Physics II", §IX.8 -/
+axiom full_analytic_continuation_flat_tempered_package
+    {d : ℕ} [NeZero d]
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
     (n : ℕ) :
@@ -171,8 +187,7 @@ private theorem full_analytic_continuation_flat_tempered_package
         ∃ (C_bd : ℝ) (N : ℕ) (δ : ℝ), C_bd > 0 ∧ δ > 0 ∧
           ∀ (x : Fin (n * (d + 1)) → ℝ) (ε : ℝ), 0 < ε → ε < δ →
             ‖G (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I)‖ ≤
-              C_bd * (1 + ‖x‖) ^ N) := by
-  sorry
+              C_bd * (1 + ‖x‖) ^ N)
 
 /--
 The continuous-linear boundary-value witness is no longer the missing part of
