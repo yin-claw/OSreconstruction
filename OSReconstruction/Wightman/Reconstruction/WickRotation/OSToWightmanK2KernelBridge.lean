@@ -31,6 +31,39 @@ open scoped Pointwise SchwartzMap LineDeriv
 
 variable {d : ℕ} [NeZero d]
 
+/-- Multiplying a zero-diagonal Schwartz test by an arbitrary Schwartz cutoff on
+the ambient two-point space preserves vanishing to infinite order on the
+coincidence locus. -/
+private theorem VanishesToInfiniteOrderOnCoincidence.smulLeft_schwartzNPoint
+    {n : ℕ} {ψ f : SchwartzNPoint d n}
+    (hf : VanishesToInfiniteOrderOnCoincidence f) :
+    VanishesToInfiniteOrderOnCoincidence (SchwartzMap.smulLeftCLM ℂ ψ f) := by
+  intro k x hx
+  have hle :=
+    norm_iteratedFDeriv_smul_le (𝕜 := ℝ) (ψ.smooth ⊤) (f.smooth ⊤) x
+      (n := k) (by exact_mod_cast le_top)
+  have hsum_zero :
+      ∑ i ∈ Finset.range (k + 1),
+        (k.choose i : ℝ) * ‖iteratedFDeriv ℝ i (ψ : NPointDomain d n → ℂ) x‖ *
+          ‖iteratedFDeriv ℝ (k - i) (f : NPointDomain d n → ℂ) x‖ = 0 := by
+    refine Finset.sum_eq_zero ?_
+    intro i hi
+    have hfi :
+        iteratedFDeriv ℝ (k - i) (f : NPointDomain d n → ℂ) x = 0 := hf (k - i) x hx
+    simp [hfi]
+  have hnonneg :
+      0 ≤ ‖iteratedFDeriv ℝ k
+        (((SchwartzMap.smulLeftCLM ℂ ψ f : SchwartzNPoint d n) :
+          NPointDomain d n → ℂ)) x‖ := norm_nonneg _
+  have hzero_norm :
+      ‖iteratedFDeriv ℝ k
+        (((SchwartzMap.smulLeftCLM ℂ ψ f : SchwartzNPoint d n) :
+          NPointDomain d n → ℂ)) x‖ = 0 := by
+    apply le_antisymm
+    · simpa [hsum_zero] using hle
+    · exact hnonneg
+  exact norm_eq_zero.mp hzero_norm
+
 /-- First local step in the cutoff half of the density seam: if a difference
 lift lies in `ZeroDiagonalSchwartz`, then the difference factor vanishes at the
 origin. -/
@@ -2242,6 +2275,67 @@ private theorem twoPointCenterDiffInv_diffBlockCutoff_mem_topologicalClosure_fla
     rw [closure_subtype]
     simpa [coeZ] using hfull
   simpa [x] using hxclosure
+
+private theorem dense_hasCompactSupport_zeroDiagonal :
+    Dense {F : ZeroDiagonalSchwartz d 2 |
+      HasCompactSupport ((F : ZeroDiagonalSchwartz d 2).1 : NPointDomain d 2 → ℂ)} := by
+  intro F
+  rw [mem_closure_iff_seq_limit]
+  let ψ : ℕ → SchwartzNPoint d 2 := fun n =>
+    unflattenSchwartzNPoint (d := d)
+      (unitBallBumpSchwartzPiRadius (2 * (d + 1))
+        (bumpTruncationRadiusValue n) (bumpTruncationRadiusValue_pos n))
+  let v : ℕ → SchwartzNPoint d 2 := fun n =>
+    unflattenSchwartzNPoint (d := d) (bumpTruncationRadius (flattenSchwartzNPoint (d := d) F.1) n)
+  have hv_eq :
+      ∀ n, v n = SchwartzMap.smulLeftCLM ℂ (ψ n) F.1 := by
+    intro n
+    ext x
+    rw [show v n x =
+      (bumpTruncationRadius (flattenSchwartzNPoint (d := d) F.1) n)
+        ((flattenCLEquivRealBlock 2 (d + 1)) x) by
+        rfl]
+    rw [bumpTruncationRadius, SchwartzMap.smulLeftCLM_apply_apply
+      (g := ((unitBallBumpSchwartzPiRadius (2 * (d + 1))
+        (bumpTruncationRadiusValue n) (bumpTruncationRadiusValue_pos n) :
+          SchwartzMap (Fin (2 * (d + 1)) → ℝ) ℂ) :
+            (Fin (2 * (d + 1)) → ℝ) → ℂ))
+      (unitBallBumpSchwartzPiRadius (2 * (d + 1))
+        (bumpTruncationRadiusValue n) (bumpTruncationRadiusValue_pos n)).hasTemperateGrowth
+      (flattenSchwartzNPoint (d := d) F.1) ((flattenCLEquivRealBlock 2 (d + 1)) x)]
+    rw [SchwartzMap.smulLeftCLM_apply_apply
+      (g := ((ψ n : SchwartzNPoint d 2) : NPointDomain d 2 → ℂ))
+      (ψ n).hasTemperateGrowth F.1 x]
+    simp [ψ, flattenSchwartzNPoint_apply, smul_eq_mul, mul_comm, mul_left_comm, mul_assoc]
+  have hv_vanish :
+      ∀ n, VanishesToInfiniteOrderOnCoincidence (v n) := by
+    intro n
+    rw [hv_eq n]
+    exact F.2.smulLeft_schwartzNPoint
+  let u : ℕ → ZeroDiagonalSchwartz d 2 := fun n => ⟨v n, hv_vanish n⟩
+  refine ⟨u, ?_, ?_⟩
+  · intro n
+    have hflat_compact :
+        HasCompactSupport
+          (((bumpTruncationRadius (flattenSchwartzNPoint (d := d) F.1) n :
+            SchwartzMap (Fin (2 * (d + 1)) → ℝ) ℂ)) :
+            (Fin (2 * (d + 1)) → ℝ) → ℂ) := by
+      simpa [bumpTruncationRadius, bumpTruncationRadiusValue] using
+        hasCompactSupport_cutoff_mul_radius
+          (m := 2 * (d + 1)) (R := bumpTruncationRadiusValue n)
+          (bumpTruncationRadiusValue_pos n) (flattenSchwartzNPoint (d := d) F.1)
+    have hv_compact :
+        HasCompactSupport ((v n : SchwartzNPoint d 2) : NPointDomain d 2 → ℂ) := by
+      simpa [v, unflattenSchwartzNPoint_apply] using
+        hflat_compact.comp_homeomorph (flattenCLEquivRealBlock 2 (d + 1)).toHomeomorph
+    simpa [u] using hv_compact
+  · rw [tendsto_subtype_rng]
+    have hv_tendsto :
+        Filter.Tendsto v Filter.atTop (nhds F.1) := by
+      exact ((unflattenSchwartzNPoint (d := d)).continuous.tendsto
+        (flattenSchwartzNPoint (d := d) F.1)).comp
+          (SchwartzMap.tendsto_bump_truncation_nhds (flattenSchwartzNPoint (d := d) F.1))
+    simpa [u] using hv_tendsto
 
 private theorem flatOrigin_differenceShell_span_dense_zeroDiagonal :
     Dense (((Submodule.span ℂ
