@@ -171,6 +171,39 @@ private theorem differenceLift_in_ZDS_implies_h_vanishes_at_zero
   have hu_zero : (LineDeriv.iteratedLineDerivOp u h) 0 = 0 := (mul_eq_zero.mp hmul).resolve_left hx₀
   simpa [SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv] using hu_zero
 
+/-- If a Schwartz function vanishes on a neighborhood of `x`, then every
+iterated Fréchet derivative vanishes at `x`. -/
+private theorem iteratedFDeriv_eq_zero_of_notMem_tsupport
+    (h : SchwartzSpacetime d) {x : SpacetimeDim d}
+    (hx : x ∉ tsupport (h : SpacetimeDim d → ℂ)) :
+    ∀ k : ℕ, iteratedFDeriv ℝ k (h : SpacetimeDim d → ℂ) x = 0 := by
+  intro k
+  have hev : (h : SpacetimeDim d → ℂ) =ᶠ[𝓝 x] 0 := by
+    simpa [notMem_tsupport_iff_eventuallyEq] using hx
+  rw [Filter.eventuallyEq_iff_exists_mem] at hev
+  obtain ⟨s, hs_mem, hs_eq⟩ := hev
+  rw [mem_nhds_iff] at hs_mem
+  obtain ⟨t, ht_sub, ht_open, hxt⟩ := hs_mem
+  have hEqOn : Set.EqOn (h : SpacetimeDim d → ℂ) 0 t := by
+    intro y hy
+    exact hs_eq (ht_sub hy)
+  have hderivEqWithin :
+      iteratedFDerivWithin ℝ k (h : SpacetimeDim d → ℂ) t x =
+        iteratedFDerivWithin ℝ k (fun _ : SpacetimeDim d => (0 : ℂ)) t x := by
+    simpa using
+      (iteratedFDerivWithin_congr
+        (f₁ := (h : SpacetimeDim d → ℂ))
+        (f := fun _ : SpacetimeDim d => (0 : ℂ))
+        (s := t) hEqOn hxt k)
+  have hderivEq :
+      iteratedFDeriv ℝ k (h : SpacetimeDim d → ℂ) x =
+        iteratedFDeriv ℝ k (fun _ : SpacetimeDim d => (0 : ℂ)) x := by
+    rw [← iteratedFDerivWithin_of_isOpen k ht_open hxt,
+      hderivEqWithin, iteratedFDerivWithin_of_isOpen k ht_open hxt]
+  rw [hderivEq]
+  ext u
+  simp
+
 /-- The standard compact radial bump on spacetime, rescaled to radius `R`. -/
 private abbrev spacetimeUnitBallBumpRadius (R : ℝ) (hR : 0 < R) : SchwartzSpacetime d :=
   unitBallBumpSchwartzPiRadius (d + 1) R hR
@@ -1706,6 +1739,91 @@ private theorem twoPointDifferenceLift_vanishes_of_h_vanishes_at_zero
       (hsmall ‖iteratedFDeriv ℝ k ((T h : SchwartzNPoint d 2) : NPointDomain d 2 → ℂ) x‖ hpos)
   simpa [hT_eq h] using hzero_target
 
+/-- A zero-diagonal two-point Schwartz test stays flat after passing to
+center/difference coordinates: every iterated derivative vanishes whenever the
+difference variable is `0`. -/
+private theorem twoPointCenterDiffSchwartzCLM_vanishes_on_diff_zero
+    (F : ZeroDiagonalSchwartz d 2) :
+    ∀ k : ℕ, ∀ z : NPointDomain d 2, z 1 = 0 →
+      iteratedFDeriv ℝ k
+        ((twoPointCenterDiffSchwartzCLM (d := d) F.1 : SchwartzNPoint d 2) :
+          NPointDomain d 2 → ℂ) z = 0 := by
+  intro k z hz
+  have hcomp :
+      iteratedFDeriv ℝ k
+          (((twoPointCenterDiffSchwartzCLM (d := d) F.1 : SchwartzNPoint d 2) :
+            NPointDomain d 2 → ℂ)) z =
+        (iteratedFDeriv ℝ k ((F.1 : SchwartzNPoint d 2) : NPointDomain d 2 → ℂ)
+          ((twoPointCenterDiffCLE d) z)).compContinuousLinearMap
+            (fun _ : Fin k => (twoPointCenterDiffCLE d).toContinuousLinearMap) := by
+    simpa [twoPointCenterDiffSchwartzCLM] using
+      (twoPointCenterDiffCLE d).toContinuousLinearMap.iteratedFDeriv_comp_right
+        (f := ((F.1 : SchwartzNPoint d 2) : NPointDomain d 2 → ℂ))
+        ((F.1 : SchwartzNPoint d 2).smooth k) (x := z) (i := k) le_rfl
+  have hcoin : (twoPointCenterDiffCLE d z) ∈ CoincidenceLocus d 2 := by
+    refine ⟨0, 1, by decide, ?_⟩
+    simp [twoPointCenterDiffCLE, twoPointCenterDiffLinearEquiv, hz]
+  have hzero :
+      iteratedFDeriv ℝ k ((F.1 : SchwartzNPoint d 2) : NPointDomain d 2 → ℂ)
+        ((twoPointCenterDiffCLE d) z) = 0 :=
+    F.2 k ((twoPointCenterDiffCLE d) z) hcoin
+  rw [hcomp, hzero]
+  ext u
+  simp
+
+/-- On compact sets, a two-point Schwartz test whose iterated derivatives all
+vanish on the `ξ = 0` subspace vanishes to arbitrarily high finite order in
+the difference variable. -/
+private theorem norm_le_diff_zero_pow_succ_on_isCompact
+    (f : SchwartzNPoint d 2)
+    (hf : ∀ k : ℕ, ∀ z : NPointDomain d 2, z 1 = 0 →
+      iteratedFDeriv ℝ k (f : NPointDomain d 2 → ℂ) z = 0)
+    {K : Set (NPointDomain d 2)} (hK : IsCompact K)
+    (m : ℕ) :
+    ∃ C : ℝ, 0 ≤ C ∧
+      ∀ x ∈ K, ‖f x‖ ≤ C * ‖x 1‖ ^ (m + 1) := by
+  let g : SchwartzNPoint d 2 :=
+    (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ (twoPointCenterDiffCLE d).symm) f
+  have hg_vanish : VanishesToInfiniteOrderOnCoincidence g := by
+    intro k x hx
+    have hcomp :
+        iteratedFDeriv ℝ k
+            ((g : SchwartzNPoint d 2) : NPointDomain d 2 → ℂ) x =
+          (iteratedFDeriv ℝ k (f : NPointDomain d 2 → ℂ) ((twoPointCenterDiffCLE d).symm x)).compContinuousLinearMap
+            (fun _ : Fin k => (twoPointCenterDiffCLE d).symm.toContinuousLinearMap) := by
+      simpa [g] using
+        (twoPointCenterDiffCLE d).symm.toContinuousLinearMap.iteratedFDeriv_comp_right
+          (f := (f : NPointDomain d 2 → ℂ))
+          (f.smooth k) (x := x) (i := k) le_rfl
+    have hdiff0 : ((twoPointCenterDiffCLE d).symm x) 1 = 0 := by
+      rcases hx with ⟨i, j, hij, hijEq⟩
+      fin_cases i <;> fin_cases j
+      · exact (hij rfl).elim
+      · simpa using sub_eq_zero.mpr hijEq.symm
+      · simpa using sub_eq_zero.mpr hijEq
+      · exact (hij rfl).elim
+    have hzero :
+        iteratedFDeriv ℝ k (f : NPointDomain d 2 → ℂ)
+          ((twoPointCenterDiffCLE d).symm x) = 0 := hf k _ hdiff0
+    rw [hcomp, hzero]
+    ext u
+    simp
+  let K' : Set (NPointDomain d 2) := (twoPointCenterDiffCLE d) '' K
+  have hK' : IsCompact K' := hK.image (twoPointCenterDiffCLE d).continuous
+  obtain ⟨C, hC_nonneg, hC⟩ :=
+    VanishesToInfiniteOrderOnCoincidence.norm_le_pairDifference_pow_succ_on_isCompact
+      (d := d) (n := 2) (f := g) hg_vanish hK' m 1 0 (by decide)
+  refine ⟨C, hC_nonneg, ?_⟩
+  intro x hx
+  have hx' : (twoPointCenterDiffCLE d) x ∈ K' := ⟨x, hx, rfl⟩
+  calc
+    ‖f x‖ = ‖g ((twoPointCenterDiffCLE d) x)‖ := by
+      simp [g]
+    _ ≤ C * ‖((twoPointCenterDiffCLE d) x) 1 - ((twoPointCenterDiffCLE d) x) 0‖ ^ (m + 1) :=
+      hC ((twoPointCenterDiffCLE d) x) hx'
+    _ = C * ‖x 1‖ ^ (m + 1) := by
+      simp [twoPointCenterDiffCLE, twoPointCenterDiffLinearEquiv]
+
 /-- Projection onto the difference-variable block in center/difference
 coordinates. -/
 private abbrev diffProjCLM : NPointDomain d 2 →L[ℝ] SpacetimeDim d :=
@@ -1733,6 +1851,50 @@ private theorem diffBlockCutoff_productTensor
   rw [SchwartzMap.smulLeftCLM_apply_apply
     (g := ((ψ : SchwartzSpacetime d) : SpacetimeDim d → ℂ)) ψ.hasTemperateGrowth h (x 1)]
   simp [smul_eq_mul, mul_assoc, mul_left_comm, mul_comm]
+
+/-- A sufficiently large difference-block bump is exactly `1` on the support of
+a compactly supported two-point Schwartz test, hence acts by the identity. -/
+private theorem exists_large_diffBlockCutoff_eq_self_of_hasCompactSupport
+    (F : SchwartzNPoint d 2)
+    (hF_compact : HasCompactSupport ((F : SchwartzNPoint d 2) : NPointDomain d 2 → ℂ)) :
+    ∃ (R : ℝ) (hR : 0 < R),
+      diffBlockCutoffCLM (d := d) (spacetimeUnitBallBumpRadius (d := d) R hR) F = F := by
+  let S : Set (SpacetimeDim d) :=
+    (diffProjCLM (d := d)) '' tsupport ((F : SchwartzNPoint d 2) : NPointDomain d 2 → ℂ)
+  have hS_compact : IsCompact S := hF_compact.image (diffProjCLM (d := d)).continuous
+  obtain ⟨R0, hR0⟩ :=
+    (Metric.isBounded_iff_subset_closedBall (0 : SpacetimeDim d)).1 hS_compact.isBounded
+  let R : ℝ := max R0 1
+  have hR : 0 < R := by
+    have hR_ge : (1 : ℝ) ≤ R := le_max_right _ _
+    linarith
+  refine ⟨R, hR, ?_⟩
+  ext x
+  by_cases hx : F x = 0
+  · have htemp :
+        (fun y : NPointDomain d 2 =>
+          spacetimeUnitBallBumpRadius (d := d) R hR (diffProjCLM (d := d) y)).HasTemperateGrowth := by
+      fun_prop
+    rw [diffBlockCutoffCLM, SchwartzMap.smulLeftCLM_apply_apply htemp, hx]
+    simp
+  · have hxt : x ∈ tsupport ((F : SchwartzNPoint d 2) : NPointDomain d 2 → ℂ) :=
+      subset_tsupport _ (by simpa [Function.mem_support] using hx)
+    have hxS : diffProjCLM (d := d) x ∈ S := ⟨x, hxt, rfl⟩
+    have hcutoff_one :
+        spacetimeUnitBallBumpRadius (d := d) R hR (diffProjCLM (d := d) x) = 1 := by
+      have hx_ballR0 : diffProjCLM (d := d) x ∈ Metric.closedBall (0 : SpacetimeDim d) R0 :=
+        hR0 hxS
+      have hx_ballR : diffProjCLM (d := d) x ∈ Metric.closedBall (0 : SpacetimeDim d) R := by
+        rw [Metric.mem_closedBall, dist_eq_norm] at hx_ballR0 ⊢
+        exact le_trans hx_ballR0 (le_max_left _ _)
+      simpa [spacetimeUnitBallBumpRadius] using
+        (unitBallBumpSchwartzPiRadius_one_of_mem_closedBall (m := d + 1) hR hx_ballR)
+    have htemp :
+        (fun y : NPointDomain d 2 =>
+          spacetimeUnitBallBumpRadius (d := d) R hR (diffProjCLM (d := d) y)).HasTemperateGrowth := by
+      fun_prop
+    rw [diffBlockCutoffCLM, SchwartzMap.smulLeftCLM_apply_apply htemp, hcutoff_one]
+    simp [smul_eq_mul]
 
 /-- Any Schwartz cutoff vanishing on a neighborhood of the origin forces all
 derivatives of the product `ψ · h` to vanish at the origin. -/
