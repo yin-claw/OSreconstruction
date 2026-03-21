@@ -2090,114 +2090,6 @@ private theorem flatOrigin_differenceShell_span_dense_zeroDiagonal :
         Submodule ℂ (ZeroDiagonalSchwartz d 2)) : Set (ZeroDiagonalSchwartz d 2)) := by
   sorry
 
-private theorem admissible_differenceShell_span_dense_zeroDiagonal :
-    Dense (((Submodule.span ℂ
-      {f : ZeroDiagonalSchwartz d 2 |
-        ∃ (χ h : SchwartzSpacetime d)
-          (hvanish : VanishesToInfiniteOrderOnCoincidence
-            (twoPointDifferenceLift χ h)),
-          f = ⟨twoPointDifferenceLift χ h, hvanish⟩}) :
-        Submodule ℂ (ZeroDiagonalSchwartz d 2)) : Set (ZeroDiagonalSchwartz d 2)) := by
-  let S_flat : Set (ZeroDiagonalSchwartz d 2) :=
-    {f : ZeroDiagonalSchwartz d 2 |
-      ∃ (χ h : SchwartzSpacetime d)
-        (hzero : ∀ k : ℕ, iteratedFDeriv ℝ k (h : SpacetimeDim d → ℂ) 0 = 0),
-        f = ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)}
-  let S_adm : Set (ZeroDiagonalSchwartz d 2) :=
-    {f : ZeroDiagonalSchwartz d 2 |
-      ∃ (χ h : SchwartzSpacetime d)
-        (hvanish : VanishesToInfiniteOrderOnCoincidence
-          (twoPointDifferenceLift χ h)),
-        f = ⟨twoPointDifferenceLift χ h, hvanish⟩}
-  let A : Submodule ℂ (ZeroDiagonalSchwartz d 2) := Submodule.span ℂ S_flat
-  let B : Submodule ℂ (ZeroDiagonalSchwartz d 2) := Submodule.span ℂ S_adm
-  have hA_dense : Dense (A : Set (ZeroDiagonalSchwartz d 2)) := by
-    simpa [A, S_flat] using flatOrigin_differenceShell_span_dense_zeroDiagonal (d := d)
-  have hA_le : A ≤ B := by
-    refine Submodule.span_le.mpr ?_
-    intro f hf
-    rcases hf with ⟨χ, h, hzero, rfl⟩
-    refine Submodule.subset_span ?_
-    let hvanish : VanishesToInfiniteOrderOnCoincidence (twoPointDifferenceLift χ h) :=
-      twoPointDifferenceLift_vanishes_of_h_vanishes_at_zero (d := d) χ h hzero
-    refine ⟨χ, h, hvanish, ?_⟩
-    rw [ZeroDiagonalSchwartz.ofClassical_of_vanishes
-      (f := twoPointDifferenceLift χ h) hvanish]
-  have hB_dense : Dense (B : Set (ZeroDiagonalSchwartz d 2)) := by
-    exact hA_dense.mono hA_le
-  exact hB_dense
-
-private theorem unrestricted_differenceShell_span_dense_zeroDiagonal :
-    Dense (((Submodule.span ℂ
-      {f : ZeroDiagonalSchwartz d 2 |
-        ∃ (χ h : SchwartzSpacetime d),
-          f = ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)}) :
-        Submodule ℂ (ZeroDiagonalSchwartz d 2)) : Set (ZeroDiagonalSchwartz d 2)) := by
-  let S_adm : Set (ZeroDiagonalSchwartz d 2) :=
-    {f : ZeroDiagonalSchwartz d 2 |
-      ∃ (χ h : SchwartzSpacetime d)
-        (hvanish : VanishesToInfiniteOrderOnCoincidence
-          (twoPointDifferenceLift χ h)),
-        f = ⟨twoPointDifferenceLift χ h, hvanish⟩}
-  let S_all : Set (ZeroDiagonalSchwartz d 2) :=
-    {f : ZeroDiagonalSchwartz d 2 |
-      ∃ (χ h : SchwartzSpacetime d),
-        f = ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)}
-  let A : Submodule ℂ (ZeroDiagonalSchwartz d 2) := Submodule.span ℂ S_adm
-  let B : Submodule ℂ (ZeroDiagonalSchwartz d 2) := Submodule.span ℂ S_all
-  have hA_dense : Dense (A : Set (ZeroDiagonalSchwartz d 2)) := by
-    simpa [A, S_adm] using admissible_differenceShell_span_dense_zeroDiagonal (d := d)
-  have hA_le : A ≤ B := by
-    refine Submodule.span_le.mpr ?_
-    intro f hf
-    rcases hf with ⟨χ, h, hvanish, rfl⟩
-    refine Submodule.subset_span ?_
-    exact ⟨χ, h, by
-      rw [ZeroDiagonalSchwartz.ofClassical_of_vanishes
-        (f := twoPointDifferenceLift χ h) hvanish]⟩
-  have hB_dense : Dense (B : Set (ZeroDiagonalSchwartz d 2)) := by
-    refine hA_dense.mono ?_
-    exact hA_le
-  exact hB_dense
-
-private theorem zeroOrigin_differenceShell_span_dense_zeroDiagonal :
-    Dense (((Submodule.span ℂ
-      {f : ZeroDiagonalSchwartz d 2 |
-        ∃ (χ h : SchwartzSpacetime d),
-          (0 : SpacetimeDim d) ∉ tsupport (h : SpacetimeDim d → ℂ) ∧
-          HasCompactSupport (h : SpacetimeDim d → ℂ) ∧
-          f = ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)}) :
-        Submodule ℂ (ZeroDiagonalSchwartz d 2)) : Set (ZeroDiagonalSchwartz d 2)) := by
-  let S_all : Set (ZeroDiagonalSchwartz d 2) :=
-    {f : ZeroDiagonalSchwartz d 2 |
-      ∃ (χ h : SchwartzSpacetime d),
-        f = ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)}
-  let S_zero : Set (ZeroDiagonalSchwartz d 2) :=
-    {f : ZeroDiagonalSchwartz d 2 |
-      ∃ (χ h : SchwartzSpacetime d),
-        (0 : SpacetimeDim d) ∉ tsupport (h : SpacetimeDim d → ℂ) ∧
-        HasCompactSupport (h : SpacetimeDim d → ℂ) ∧
-        f = ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)}
-  let A : Submodule ℂ (ZeroDiagonalSchwartz d 2) := Submodule.span ℂ S_all
-  let B : Submodule ℂ (ZeroDiagonalSchwartz d 2) := Submodule.span ℂ S_zero
-  have hA_dense : Dense (A : Set (ZeroDiagonalSchwartz d 2)) := by
-    simpa [A, S_all] using unrestricted_differenceShell_span_dense_zeroDiagonal (d := d)
-  have hA_closure : A.topologicalClosure = ⊤ := by
-    exact (Submodule.dense_iff_topologicalClosure_eq_top).mp hA_dense
-  have hA_le : A ≤ B.topologicalClosure := by
-    refine Submodule.span_le.mpr ?_
-    intro g hg
-    rcases hg with ⟨χ, h, rfl⟩
-    simpa [B, S_zero] using
-      differenceShell_mem_topologicalClosure_zeroOrigin_span (d := d) χ h
-  have hAclosure_le : A.topologicalClosure ≤ B.topologicalClosure :=
-    Submodule.topologicalClosure_minimal A hA_le B.isClosed_topologicalClosure
-  have htop : B.topologicalClosure = ⊤ := by
-    apply top_unique
-    rw [← hA_closure]
-    exact hAclosure_le
-  exact (Submodule.dense_iff_topologicalClosure_eq_top).mpr (by simpa [B, S_zero] using htop)
-
 /-- Scalar difference-kernel form of the two-point regularity input. This is the
 honest theorem underlying the pair-kernel statement below: a single
 polynomial-growth difference kernel, continuous away from the origin, already
@@ -2280,6 +2172,65 @@ theorem schwinger_twoPoint_kernel_repr_offDiagonal
   rcases exists_twoPointDifferenceKernel_zeroOrigin_pairing_offOrigin OS with
     ⟨χ₀, hχ₀, Kd, hKd_cont, hKd_meas, hKd_bound', hZero⟩
   rcases hKd_bound' with ⟨N, C_bd, hC_bd, hKd_bound⟩
+  have hSpanDense :
+      Dense (((Submodule.span ℂ S : Submodule ℂ (ZeroDiagonalSchwartz d 2)) :
+        Set (ZeroDiagonalSchwartz d 2))) := by
+    let S_flat : Set (ZeroDiagonalSchwartz d 2) :=
+      {f : ZeroDiagonalSchwartz d 2 |
+        ∃ (χ h : SchwartzSpacetime d)
+          (hzero : ∀ k : ℕ, iteratedFDeriv ℝ k (h : SpacetimeDim d → ℂ) 0 = 0),
+          f = ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)}
+    let S_adm : Set (ZeroDiagonalSchwartz d 2) :=
+      {f : ZeroDiagonalSchwartz d 2 |
+        ∃ (χ h : SchwartzSpacetime d)
+          (hvanish : VanishesToInfiniteOrderOnCoincidence
+            (twoPointDifferenceLift χ h)),
+          f = ⟨twoPointDifferenceLift χ h, hvanish⟩}
+    let S_all : Set (ZeroDiagonalSchwartz d 2) :=
+      {f : ZeroDiagonalSchwartz d 2 |
+        ∃ (χ h : SchwartzSpacetime d),
+          f = ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)}
+    let A : Submodule ℂ (ZeroDiagonalSchwartz d 2) := Submodule.span ℂ S_flat
+    let B : Submodule ℂ (ZeroDiagonalSchwartz d 2) := Submodule.span ℂ S_adm
+    let C : Submodule ℂ (ZeroDiagonalSchwartz d 2) := Submodule.span ℂ S_all
+    let D : Submodule ℂ (ZeroDiagonalSchwartz d 2) := Submodule.span ℂ S
+    have hA_dense : Dense (A : Set (ZeroDiagonalSchwartz d 2)) := by
+      simpa [A, S_flat] using flatOrigin_differenceShell_span_dense_zeroDiagonal (d := d)
+    have hA_le_B : A ≤ B := by
+      refine Submodule.span_le.mpr ?_
+      intro f hf
+      rcases hf with ⟨χ, h, hzero, rfl⟩
+      refine Submodule.subset_span ?_
+      let hvanish : VanishesToInfiniteOrderOnCoincidence (twoPointDifferenceLift χ h) :=
+        twoPointDifferenceLift_vanishes_of_h_vanishes_at_zero (d := d) χ h hzero
+      refine ⟨χ, h, hvanish, ?_⟩
+      rw [ZeroDiagonalSchwartz.ofClassical_of_vanishes
+        (f := twoPointDifferenceLift χ h) hvanish]
+    have hB_dense : Dense (B : Set (ZeroDiagonalSchwartz d 2)) := hA_dense.mono hA_le_B
+    have hB_le_C : B ≤ C := by
+      refine Submodule.span_le.mpr ?_
+      intro f hf
+      rcases hf with ⟨χ, h, hvanish, rfl⟩
+      refine Submodule.subset_span ?_
+      exact ⟨χ, h, by
+        rw [ZeroDiagonalSchwartz.ofClassical_of_vanishes
+          (f := twoPointDifferenceLift χ h) hvanish]⟩
+    have hC_dense : Dense (C : Set (ZeroDiagonalSchwartz d 2)) := hB_dense.mono hB_le_C
+    have hC_closure : C.topologicalClosure = ⊤ := by
+      exact (Submodule.dense_iff_topologicalClosure_eq_top).mp hC_dense
+    have hC_le_Dclosure : C ≤ D.topologicalClosure := by
+      refine Submodule.span_le.mpr ?_
+      intro g hg
+      rcases hg with ⟨χ, h, rfl⟩
+      simpa [D, S] using
+        differenceShell_mem_topologicalClosure_zeroOrigin_span (d := d) χ h
+    have hCclosure_le : C.topologicalClosure ≤ D.topologicalClosure :=
+      Submodule.topologicalClosure_minimal C hC_le_Dclosure D.isClosed_topologicalClosure
+    have htop : D.topologicalClosure = ⊤ := by
+      apply top_unique
+      rw [← hC_closure]
+      exact hCclosure_le
+    exact (Submodule.dense_iff_topologicalClosure_eq_top).mpr (by simpa [D, S] using htop)
   have hCLM :
       OSReconstruction.twoPointZeroDiagonalKernelCLM
           (d := d) (OSReconstruction.twoPointDifferenceKernel (d := d) Kd)
@@ -2333,7 +2284,7 @@ theorem schwinger_twoPoint_kernel_repr_offDiagonal
         (d := d) (OSReconstruction.twoPointDifferenceKernel (d := d) Kd)
         hKd_meas C_bd N hC_bd hKd_bound)
       (OsterwalderSchraderAxioms.schwingerCLM (d := d) OS 2)
-      zeroOrigin_differenceShell_span_dense_zeroDiagonal
+      hSpanDense
     intro f hf
     exact hOnSpan f hf
   let K : SpacetimeDim d → SpacetimeDim d → ℂ := fun x₀ x₁ => Kd (x₁ - x₀)
