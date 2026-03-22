@@ -1865,6 +1865,190 @@ private theorem twoPointCenterDiffSchwartzCLM_vanishes_on_diff_zero
   ext u
   simp
 
+private theorem iteratedFDeriv_lineDeriv_eq_snoc_npoint {n : ℕ}
+    (f : SchwartzNPoint d 2)
+    (v x : NPointDomain d 2)
+    (u : Fin n → NPointDomain d 2) :
+    iteratedFDeriv ℝ n (((∂_{v} f : SchwartzNPoint d 2) : NPointDomain d 2 → ℂ)) x u =
+      iteratedFDeriv ℝ (n + 1) ((f : SchwartzNPoint d 2) : NPointDomain d 2 → ℂ) x
+        (Fin.snoc u v) := by
+  have hsucc :
+      (∂^{Fin.snoc u v} f : SchwartzNPoint d 2) = ∂^{u} (∂_{v} f) := by
+    simpa using (LineDeriv.iteratedLineDerivOp_succ_right (m := Fin.snoc u v) (f := f))
+  have hsucc_apply := congrArg (fun g : SchwartzNPoint d 2 => g x) hsucc
+  simpa [SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv
+      (f := f) (m := Fin.snoc u v) (x := x),
+    SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv
+      (f := (∂_{v} f : SchwartzNPoint d 2)) (m := u) (x := x)] using hsucc_apply.symm
+
+private theorem lineDerivOp_comm_npoint
+    (f : SchwartzNPoint d 2)
+    (v w : NPointDomain d 2) :
+    ∂_{v} ((∂_{w} f : SchwartzNPoint d 2)) =
+      ∂_{w} ((∂_{v} f : SchwartzNPoint d 2)) := by
+  ext x
+  have hsym :=
+    (f.contDiffAt (2 : ℕ∞) (x := x)).isSymmSndFDerivAt
+      (n := (2 : WithTop ℕ∞)) (by simp)
+  calc
+    (∂_{v} ((∂_{w} f : SchwartzNPoint d 2))) x = (∂^{![v, w]} f) x := by
+      simp [LineDeriv.iteratedLineDerivOp_succ_left]
+    _ = iteratedFDeriv ℝ 2 (f : NPointDomain d 2 → ℂ) x ![v, w] := by
+      simpa using
+        (SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv
+          (f := f) (m := ![v, w]) (x := x))
+    _ = iteratedFDeriv ℝ 2 (f : NPointDomain d 2 → ℂ) x ![w, v] := by
+      exact hsym.iteratedFDeriv_cons
+    _ = (∂^{![w, v]} f) x := by
+      simpa using
+        (SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv
+          (f := f) (m := ![w, v]) (x := x)).symm
+    _ = (∂_{w} ((∂_{v} f : SchwartzNPoint d 2))) x := by
+      simp [LineDeriv.iteratedLineDerivOp_succ_left]
+
+private theorem lineDerivOp_iterated_comm_npoint {n : ℕ}
+    (f : SchwartzNPoint d 2)
+    (v : NPointDomain d 2) (u : Fin n → NPointDomain d 2) :
+    ∂_{v} (∂^{u} f) = ∂^{u} (∂_{v} f) := by
+  induction n generalizing f with
+  | zero =>
+      ext x
+      simp [LineDeriv.iteratedLineDerivOp_fin_zero]
+  | succ n ih =>
+      rw [LineDeriv.iteratedLineDerivOp_succ_right,
+        LineDeriv.iteratedLineDerivOp_succ_right]
+      rw [ih (f := ∂_{u (Fin.last n)} f)]
+      congr 1
+      exact lineDerivOp_comm_npoint f v (u (Fin.last n))
+
+private theorem fderiv_iteratedFDeriv_eq_iteratedFDeriv_lineDeriv_npoint {n : ℕ}
+    (f : SchwartzNPoint d 2)
+    (v x : NPointDomain d 2) :
+    fderiv ℝ (iteratedFDeriv ℝ n (f : NPointDomain d 2 → ℂ)) x v =
+      iteratedFDeriv ℝ n (((∂_{v} f : SchwartzNPoint d 2) : NPointDomain d 2 → ℂ)) x := by
+  ext u
+  calc
+    (fderiv ℝ (iteratedFDeriv ℝ n (f : NPointDomain d 2 → ℂ)) x v) u
+        = iteratedFDeriv ℝ (n + 1) (f : NPointDomain d 2 → ℂ) x (Fin.cons v u) := by
+            simp [iteratedFDeriv_succ_apply_left]
+    _ = (∂^{Fin.cons v u} f) x := by
+            symm
+            simpa using
+              (SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv
+                (f := f) (m := Fin.cons v u) (x := x))
+    _ = (∂_{v} (∂^{u} f)) x := by
+            simpa using (congrArg (fun g : SchwartzNPoint d 2 => g x)
+              (LineDeriv.iteratedLineDerivOp_succ_left (m := Fin.cons v u) (f := f)))
+    _ = (∂^{u} (∂_{v} f)) x := by
+            rw [lineDerivOp_iterated_comm_npoint (f := f) (v := v) (u := u)]
+    _ = iteratedFDeriv ℝ n
+          (((∂_{v} f : SchwartzNPoint d 2) : NPointDomain d 2 → ℂ)) x u := by
+            simpa using
+              (SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv
+                (f := (∂_{v} f : SchwartzNPoint d 2)) (m := u) (x := x))
+
+/-- Diff-zero flatness is preserved under iterated line derivatives on the
+ambient two-point Schwartz space. -/
+private theorem iteratedLineDeriv_preserves_diff_zero_flatness
+    (f : SchwartzNPoint d 2)
+    (hf : ∀ k : ℕ, ∀ z : NPointDomain d 2, z 1 = 0 →
+      iteratedFDeriv ℝ k (f : NPointDomain d 2 → ℂ) z = 0)
+    {j : ℕ} (u : Fin j → NPointDomain d 2) :
+    ∀ k : ℕ, ∀ z : NPointDomain d 2, z 1 = 0 →
+      iteratedFDeriv ℝ k ((∂^{u} f : SchwartzNPoint d 2) : NPointDomain d 2 → ℂ) z = 0 := by
+  induction j generalizing f with
+  | zero =>
+      intro k z hz
+      simpa [LineDeriv.iteratedLineDerivOp_fin_zero] using hf k z hz
+  | succ j ih =>
+      intro k z hz
+      have hu : u = Fin.snoc (Fin.init u) (u (Fin.last j)) := by
+        simpa using Fin.snoc_init_self u
+      rw [hu, LineDeriv.iteratedLineDerivOp_succ_right]
+      simp only [Fin.init_snoc, Fin.snoc_last]
+      let g : SchwartzNPoint d 2 := ∂_{u (Fin.last j)} f
+      have hg :
+          ∀ m : ℕ, ∀ y : NPointDomain d 2, y 1 = 0 →
+            iteratedFDeriv ℝ m (g : NPointDomain d 2 → ℂ) y = 0 := by
+        intro m y hy
+        ext w
+        have hzero := hf (m + 1) y hy
+        have hzero_apply :
+            iteratedFDeriv ℝ (m + 1) (f : NPointDomain d 2 → ℂ) y
+              (Fin.snoc w (u (Fin.last j))) = 0 := by
+          simpa using congrArg
+            (fun T : ContinuousMultilinearMap ℝ (fun _ : Fin (m + 1) => NPointDomain d 2) ℂ =>
+              T (Fin.snoc w (u (Fin.last j)))) hzero
+        simpa [g] using
+          (iteratedFDeriv_lineDeriv_eq_snoc_npoint
+            (f := f) (v := u (Fin.last j)) (x := y) (u := w)).trans hzero_apply
+      simpa [g] using ih (f := g) (hf := hg) (u := Fin.init u) k z hz
+
+private theorem seminorm_zero_lineDeriv_le_npoint
+    (f : SchwartzNPoint d 2) (v : NPointDomain d 2) (n : ℕ) :
+    SchwartzMap.seminorm ℝ 0 n (LineDeriv.lineDerivOp v f : SchwartzNPoint d 2) ≤
+      ‖v‖ * SchwartzMap.seminorm ℝ 0 (n + 1) f := by
+  refine SchwartzMap.seminorm_le_bound ℝ 0 n
+    (LineDeriv.lineDerivOp v f : SchwartzNPoint d 2) (by positivity) ?_
+  intro x
+  calc
+    ‖x‖ ^ 0 *
+        ‖iteratedFDeriv ℝ n
+            (((LineDeriv.lineDerivOp v f : SchwartzNPoint d 2) : SchwartzNPoint d 2) :
+              NPointDomain d 2 → ℂ) x‖
+        =
+      ‖iteratedFDeriv ℝ n
+          (((LineDeriv.lineDerivOp v f : SchwartzNPoint d 2) : SchwartzNPoint d 2) :
+            NPointDomain d 2 → ℂ) x‖ := by
+            simp
+    _ = ‖fderiv ℝ (iteratedFDeriv ℝ n (f : NPointDomain d 2 → ℂ)) x v‖ := by
+          rw [← fderiv_iteratedFDeriv_eq_iteratedFDeriv_lineDeriv_npoint]
+    _ ≤ ‖fderiv ℝ (iteratedFDeriv ℝ n (f : NPointDomain d 2 → ℂ)) x‖ * ‖v‖ := by
+          exact ContinuousLinearMap.le_opNorm _ _
+    _ = ‖iteratedFDeriv ℝ (n + 1) (f : NPointDomain d 2 → ℂ) x‖ * ‖v‖ := by
+          rw [norm_fderiv_iteratedFDeriv]
+    _ ≤ (SchwartzMap.seminorm ℝ 0 (n + 1) f) * ‖v‖ := by
+          gcongr
+          exact SchwartzMap.norm_iteratedFDeriv_le_seminorm ℂ f (n + 1) x
+    _ = ‖v‖ * SchwartzMap.seminorm ℝ 0 (n + 1) f := by
+          ring
+
+private theorem iteratedLineDeriv_seminorm_zero_le_npoint
+    (f : SchwartzNPoint d 2) (j n : ℕ) :
+    ∀ u : Fin j → NPointDomain d 2,
+      SchwartzMap.seminorm ℝ 0 n (LineDeriv.iteratedLineDerivOp u f : SchwartzNPoint d 2) ≤
+        (∏ i, ‖u i‖) * SchwartzMap.seminorm ℝ 0 (n + j) f := by
+  induction j generalizing f n with
+  | zero =>
+      intro u
+      simp [LineDeriv.iteratedLineDerivOp_fin_zero]
+  | succ j ih =>
+      intro u
+      rw [LineDeriv.iteratedLineDerivOp_succ_left]
+      calc
+        SchwartzMap.seminorm ℝ 0 n (∂_{u 0} (∂^{Fin.tail u} f) : SchwartzNPoint d 2)
+            ≤ ‖u 0‖ * SchwartzMap.seminorm ℝ 0 (n + 1) (∂^{Fin.tail u} f : SchwartzNPoint d 2) := by
+              exact seminorm_zero_lineDeriv_le_npoint (f := ∂^{Fin.tail u} f) (v := u 0) (n := n)
+        _ ≤ ‖u 0‖ *
+              ((∏ i, ‖Fin.tail u i‖) * SchwartzMap.seminorm ℝ 0 (n + 1 + j) f) := by
+              gcongr
+              exact ih (f := f) (n := n + 1) (u := Fin.tail u)
+        _ = (∏ i, ‖u i‖) * SchwartzMap.seminorm ℝ 0 (n + (j + 1)) f := by
+              rw [Fin.prod_univ_succ, add_assoc]
+              have htail : (∏ i : Fin j, ‖Fin.tail u i‖) = ∏ i : Fin j, ‖u i.succ‖ := rfl
+              rw [htail]
+              ring
+
+private theorem norm_iteratedFDeriv_iteratedLineDeriv_le_npoint
+    (f : SchwartzNPoint d 2) (j n : ℕ) :
+    ∀ (u : Fin j → NPointDomain d 2) (x : NPointDomain d 2),
+      ‖iteratedFDeriv ℝ n ((LineDeriv.iteratedLineDerivOp u f : SchwartzNPoint d 2) :
+          NPointDomain d 2 → ℂ) x‖ ≤
+        (∏ i, ‖u i‖) * SchwartzMap.seminorm ℝ 0 (n + j) f := by
+  intro u x
+  exact le_trans (SchwartzMap.norm_iteratedFDeriv_le_seminorm ℂ (∂^{u} f) n x)
+    (iteratedLineDeriv_seminorm_zero_le_npoint (f := f) (j := j) (n := n) u)
+
 /-- On compact sets, a two-point Schwartz test whose iterated derivatives all
 vanish on the `ξ = 0` subspace vanishes to arbitrarily high finite order in
 the difference variable. -/
@@ -2664,19 +2848,19 @@ private theorem flatOrigin_differenceShell_span_dense_zeroDiagonal :
                 rw [sub_mul, sub_add_cancel]
           _ = G.1 x := hψR_apply x
       calc
-        ZeroDiagonalSchwartz.ofClassical annulus +
-            ZeroDiagonalSchwartz.ofClassical small
-            =
-          ZeroDiagonalSchwartz.ofClassical (annulus + small) := by
-            symm
-            exact ZeroDiagonalSchwartz.ofClassical_add_of_vanishes
-              annulus small hannulus_vanish hsmall_vanish'
-        _ = ZeroDiagonalSchwartz.ofClassical G.1 := by
-            congr 1
-            ext x
-            exact hsum_apply x
-        _ = G := by
-            simpa using (ZeroDiagonalSchwartz.ofClassical_of_vanishes (f := G.1) G.2)
+          ZeroDiagonalSchwartz.ofClassical annulus +
+              ZeroDiagonalSchwartz.ofClassical small
+              =
+            ZeroDiagonalSchwartz.ofClassical (annulus + small) := by
+              symm
+              exact ZeroDiagonalSchwartz.ofClassical_add_of_vanishes
+                annulus small hannulus_vanish hsmall_vanish'
+          _ = ZeroDiagonalSchwartz.ofClassical G.1 := by
+              congr 1
+              ext x
+              exact hsum_apply x
+          _ = G := by
+              simpa using (ZeroDiagonalSchwartz.ofClassical_of_vanishes (f := G.1) G.2)
     -- Remaining compact-support gap:
     -- For every `δ < R`, the annular term already lies in the target closure by
     -- `hannulus_mem`, and `G = annulus + small` by `hsplit`. The only
