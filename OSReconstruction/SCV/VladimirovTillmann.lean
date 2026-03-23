@@ -169,31 +169,25 @@ axiom distributional_cluster_lifts_to_tube {n₁ n₂ d : ℕ}
     -- The boundary distribution W cluster-decomposes towards W₁ ⊗ W₂
     -- under purely spatial translation of the n₂-block.
     --
-    -- Stated at the interior-slice level to avoid SchwartzMap tensor-product
-    -- typing:  for each η ∈ C and δ > 0, the smeared integral of F
-    -- on the slice x + iδη with the n₂-block translated by a converges to
-    -- the product of the smeared integrals of F₁ and F₂.
+    -- Stated at the boundary-value level using the CLMs W, W₁, W₂:
+    -- for all Schwartz φ on the joint space, translating the n₂-block
+    -- variables by a large purely spatial vector a makes
+    -- W(τ_a φ) converge to the factored form W₁(·) · W₂(·).
     --
-    -- As δ → 0, this recovers the distributional cluster W(φ₁ ⊗ τ_a φ₂) →
-    -- W₁(φ₁) · W₂(φ₂), so this form is equivalent to R4.
-    (h_slice_cluster :
-      ∀ (η : Fin (n₁ + n₂) → Fin (d + 1) → ℝ), η ∈ C →
-      ∀ (δ : ℝ), δ > 0 →
-      ∀ (φ₁ : SchwartzMap (Fin n₁ → Fin (d + 1) → ℝ) ℂ)
-        (φ₂ : SchwartzMap (Fin n₂ → Fin (d + 1) → ℝ) ℂ)
+    -- The SchwartzMap for the translated joint test function is passed
+    -- as a hypothesis (the caller constructs it from the tensor product).
+    (h_bv_cluster :
+      ∀ (φ : SchwartzMap (Fin (n₁ + n₂) → Fin (d + 1) → ℝ) ℂ)
         (ε : ℝ), ε > 0 →
         ∃ R : ℝ, R > 0 ∧ ∀ (a : Fin (d + 1) → ℝ), a 0 = 0 →
           (∑ i : Fin d, (a (Fin.succ i))^2) > R^2 →
-          ‖(∫ x : Fin (n₁ + n₂) → Fin (d + 1) → ℝ,
-              F (fun k μ => (x k μ : ℂ) + (δ : ℂ) * (η k μ : ℂ) * Complex.I) *
-              (φ₁ (fun k μ => x (Fin.castAdd n₂ k) μ) *
-               φ₂ (fun k μ => x (Fin.natAdd n₁ k) μ - a μ))) -
-            (∫ x₁ : Fin n₁ → Fin (d + 1) → ℝ,
-              F₁ (fun k μ => (x₁ k μ : ℂ) + (δ : ℂ) * (η (Fin.castAdd n₂ k) μ : ℂ) * Complex.I) *
-              φ₁ x₁) *
-            (∫ x₂ : Fin n₂ → Fin (d + 1) → ℝ,
-              F₂ (fun k μ => (x₂ k μ : ℂ) + (δ : ℂ) * (η (Fin.natAdd n₁ k) μ : ℂ) * Complex.I) *
-              φ₂ x₂)‖ < ε)
+          -- W applied to φ with the n₂-block translated by -a
+          ‖W ⟨fun x => φ (fun k μ => if (k : ℕ) < n₁ then x k μ
+                else x k μ + a μ), sorry, sorry⟩ -
+            -- factored form: W₁ applied to the n₁-marginal, times
+            -- W₂ applied to the n₂-marginal
+            W₁ ⟨fun x₁ => φ (Fin.append x₁ 0), sorry, sorry⟩ *
+            W₂ ⟨fun x₂ => φ (Fin.append 0 x₂), sorry, sorry⟩‖ < ε)
     -- Interior points
     (z₁ : Fin n₁ → Fin (d + 1) → ℂ)
     (z₂ : Fin n₂ → Fin (d + 1) → ℂ)

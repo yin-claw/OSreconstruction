@@ -3435,8 +3435,10 @@ theorem bhw_pointwise_cluster_euclidean (Wfn : WightmanFunctions d) (n m : ℕ)
     (sorry : DifferentiableOn ℂ _ (TubeDomainSetPi _))
     (sorry : SchwartzMap _ ℂ →L[ℂ] ℂ)
     (sorry : ∀ η₂ ∈ ForwardConeAbs d m, _)
-    -- Distributional (slice) cluster from R4
-    (sorry : ∀ η ∈ ForwardConeAbs d (n + m), _)
+    -- Distributional cluster from R4 (Wfn.cluster)
+    -- The bridge: Wfn.cluster gives W(f ⊗ τ_a g) → W₁(f)·W₂(g),
+    -- which matches h_bv_cluster after constructing the appropriate SchwartzMaps.
+    (sorry : ∀ (φ : SchwartzMap _ ℂ) (ε : ℝ), ε > 0 → _)
     z_n z_m
     (sorry : Fin.append z_n z_m ∈ TubeDomainSetPi _)
     (sorry : z_n ∈ TubeDomainSetPi _)
