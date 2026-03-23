@@ -4,13 +4,23 @@ A Lean 4 formalization of the **Osterwalder-Schrader reconstruction theorem** an
 
 ## Changes in this fork (mrdouglasny) relative to [xiyin137/OSreconstruction](https://github.com/xiyin137/OSreconstruction)
 
-### Cluster property (R->E direction): statement fix + new SCV axiom
+### Cluster property (R->E direction): bug fix, new axiom, sorry closure
 
 **Bug fix in `SchwingerAxioms.lean`:** The statement of `bhw_pointwise_cluster_euclidean`
 had an imaginary spatial shift (`↑(a μ) * Complex.I`) where a real shift (`↑(a μ)`)
 was needed. The imaginary version breaks PET membership for large |a| and doesn't match
 the downstream consumer `W_analytic_cluster_integral`. Fixed to real shift, with
-`PermutedForwardTube` hypothesis added for tube membership.
+`ForwardTube` hypotheses for the joint and sub-block configurations.
+
+**`bhw_pointwise_cluster_euclidean` is now sorry-free** (modulo the new axiom below).
+The proof:
+1. Packages `Wfn.W` as CLMs via linearity + continuity
+2. Bridges `ForwardTube` ↔ `TubeDomainSetPi (ForwardConeAbs)` via `forwardTube_eq_imPreimage`
+3. Bridges `spectrum_condition` BV convergence to `ForwardConeAbs` form
+4. Supplies `h_bv_cluster` directly from `Wfn.cluster` (R4) — the axiom's tensor-product
+   hypothesis matches R4 exactly
+5. Proves shifted config ∈ ForwardTube via `forwardTube_add_real_pointwise`
+6. Bridges `W_analytic_BHW` = `spectrum_condition.choose` on ForwardTube (BHW property 2)
 
 **New proved lemmas in `SchwingerAxioms.lean`:**
 - `isEuclidean_realSpatialShift` -- Euclidean configs stay Euclidean under real spatial shift
@@ -19,16 +29,17 @@ the downstream consumer `W_analytic_cluster_integral`. Fixed to real shift, with
 - `append_realSpatialShift_mem_PET_of_permutedForwardTube` -- block shift preserves PET
 
 **New axiom `distributional_cluster_lifts_to_tube` in `VladimirovTillmann.lean`:**
-Distributional cluster on the boundary of a tube domain lifts to pointwise cluster on
-the interior. Hypotheses: holomorphicity of F, F1, F2 on tube domains with distributional
-boundary values W, W1, W2, plus the interior-slice cluster condition (equivalent to R4).
-Conclusion: pointwise factorization F(z1, z2 + a) -> F1(z1) * F2(z2) as |a| -> infinity.
+Distributional cluster (R4) on the boundary of a tube domain lifts to pointwise cluster
+on the interior. Hypotheses: holomorphicity of F, F₁, F₂ on tube domains with
+distributional boundary values W, W₁, W₂, plus R4-format tensor-product cluster condition.
+Conclusion: pointwise factorization F(z₁, z₂ + a) → F₁(z₁) · F₂(z₂) as |a| → ∞.
 Based on the Poisson integral representation (Vladimirov Thm 25.1) and the
 Riemann-Lebesgue lemma (`Mathlib.Analysis.Fourier.RiemannLebesgueLemma`).
 Vetted by Gemini Deep Think.
 
-`bhw_pointwise_cluster_euclidean` is now wired to this axiom; remaining sorrys
-are namespace bridges (ForwardTube <-> ForwardConeAbs), not new mathematics.
+**Remaining sorry-using declarations** in `SchwingerAxioms.lean`:
+- `schwingerExtension_os_term_eq_wightman_term` (pre-existing, E2 reflection positivity)
+- `W_analytic_cluster_integral` (integral-level cluster via dominated convergence)
 
 ## Current Axiom Inventory
 
