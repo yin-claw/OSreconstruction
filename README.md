@@ -2,12 +2,41 @@
 
 A Lean 4 formalization of the **Osterwalder-Schrader reconstruction theorem** and supporting infrastructure in **von Neumann algebra theory**, built on [Mathlib](https://github.com/leanprover-community/mathlib4).
 
+## Changes in this fork (mrdouglasny) relative to [xiyin137/OSreconstruction](https://github.com/xiyin137/OSreconstruction)
+
+### Cluster property (R->E direction): statement fix + new SCV axiom
+
+**Bug fix in `SchwingerAxioms.lean`:** The statement of `bhw_pointwise_cluster_euclidean`
+had an imaginary spatial shift (`↑(a μ) * Complex.I`) where a real shift (`↑(a μ)`)
+was needed. The imaginary version breaks PET membership for large |a| and doesn't match
+the downstream consumer `W_analytic_cluster_integral`. Fixed to real shift, with
+`PermutedForwardTube` hypothesis added for tube membership.
+
+**New proved lemmas in `SchwingerAxioms.lean`:**
+- `isEuclidean_realSpatialShift` -- Euclidean configs stay Euclidean under real spatial shift
+- `forwardTube_add_real_pointwise` -- forward tube closed under pointwise real shifts
+- `permutedForwardTube_add_real_pointwise` -- lifts to permuted forward tube
+- `append_realSpatialShift_mem_PET_of_permutedForwardTube` -- block shift preserves PET
+
+**New axiom `distributional_cluster_lifts_to_tube` in `VladimirovTillmann.lean`:**
+Distributional cluster on the boundary of a tube domain lifts to pointwise cluster on
+the interior. Hypotheses: holomorphicity of F, F1, F2 on tube domains with distributional
+boundary values W, W1, W2, plus the interior-slice cluster condition (equivalent to R4).
+Conclusion: pointwise factorization F(z1, z2 + a) -> F1(z1) * F2(z2) as |a| -> infinity.
+Based on the Poisson integral representation (Vladimirov Thm 25.1) and the
+Riemann-Lebesgue lemma (`Mathlib.Analysis.Fourier.RiemannLebesgueLemma`).
+Vetted by Gemini Deep Think.
+
+`bhw_pointwise_cluster_euclidean` is now wired to this axiom; remaining sorrys
+are namespace bridges (ForwardTube <-> ForwardConeAbs), not new mathematics.
+
 ## Current Axiom Inventory
 
-The tracked production tree currently contains **4 explicit axioms**:
+The tracked production tree currently contains **5 explicit axioms**:
 - `schwartz_nuclear_extension` in `Wightman/WightmanAxioms.lean` — **partially proved**: nuclearity of Schwartz space is now proved in the [`gaussian-field`](https://github.com/or-n/gaussian-field) library; the remaining gap is importing the instance and deriving the kernel theorem
 - `exists_continuousMultilinear_ofSeparatelyContinuous` in `Wightman/WightmanAxioms.lean`
 - `vladimirov_tillmann` in `SCV/VladimirovTillmann.lean`
+- `distributional_cluster_lifts_to_tube` in `SCV/VladimirovTillmann.lean` — distributional cluster on tube boundary lifts to pointwise cluster on tube interior (Poisson integral + Riemann-Lebesgue)
 - `reduced_bargmann_hall_wightman_of_input` in `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean`
 
 The first two are pure functional-analysis axioms on the Wightman/Schwartz side.
