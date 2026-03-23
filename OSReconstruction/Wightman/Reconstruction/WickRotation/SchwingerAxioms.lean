@@ -3372,7 +3372,7 @@ theorem append_realSpatialShift_mem_PET_of_permutedForwardTube {n m : ℕ}
     into a product of the n-point and m-point values.
 
     The shift is a **real** spatial translation: z_m k μ + ↑(a μ) with a 0 = 0.
-    This keeps the configuration Euclidean and in PET (imaginary parts unchanged).
+    This keeps the configuration in the forward tube (imaginary parts unchanged).
 
     **Proof:** By `schwartz_kernel_eval_tube` (axiom), the interior evaluation
     of W_analytic on the forward tube equals the distributional boundary value W
@@ -3390,7 +3390,7 @@ theorem append_realSpatialShift_mem_PET_of_permutedForwardTube {n m : ℕ}
     Streater-Wightman, §2.4 and Theorem 3-5 -/
 theorem bhw_pointwise_cluster_euclidean (Wfn : WightmanFunctions d) (n m : ℕ)
     (z_n : Fin n → Fin (d + 1) → ℂ) (z_m : Fin m → Fin (d + 1) → ℂ)
-    (hz_n : IsEuclidean z_n) (hz_m : IsEuclidean z_m)
+    (_hz_n : IsEuclidean z_n) (_hz_m : IsEuclidean z_m)
     (hmem : Fin.append z_n z_m ∈ ForwardTube d (n + m))
     (hmem_n : z_n ∈ ForwardTube d n)
     (hmem_m : z_m ∈ ForwardTube d m)

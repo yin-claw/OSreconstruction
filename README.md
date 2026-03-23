@@ -158,11 +158,12 @@ This fetches Mathlib and dependencies automatically on first build.
 
 ## Project Status
 
-The tracked production tree currently includes **4 explicit `axiom`
+The tracked production tree currently includes **5 explicit `axiom`
 declarations**:
 - `schwartz_nuclear_extension` in `Wightman/WightmanAxioms.lean`
 - `exists_continuousMultilinear_ofSeparatelyContinuous` in `Wightman/WightmanAxioms.lean`
 - `vladimirov_tillmann` in `SCV/VladimirovTillmann.lean`
+- `distributional_cluster_lifts_to_tube` in `SCV/VladimirovTillmann.lean`
 - `reduced_bargmann_hall_wightman_of_input` in `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean`
 
 The first two are pure functional-analysis axioms on the Wightman/Schwartz side
@@ -280,10 +281,11 @@ Snapshot (2026-03-16, tracked production tree):
 | `vNA/` | 40 |
 | **Total** | **72** |
 
-Tracked production tree also contains `4` explicit axioms:
+Tracked production tree also contains `5` explicit axioms:
 - `schwartz_nuclear_extension`
 - `exists_continuousMultilinear_ofSeparatelyContinuous`
 - `vladimirov_tillmann`
+- `distributional_cluster_lifts_to_tube`
 - `reduced_bargmann_hall_wightman_of_input`
 
 ### OS-Critical Sorry Flow Toward Reconstruction
@@ -298,7 +300,7 @@ flowchart TD
 
   RE --> SA["WickRotation/SchwingerAxioms (4)"]
   SA --> ST["WickRotation/SchwingerTemperedness (1)"]
-  ST --> VT["SCV/VladimirovTillmann (1 axiom)"]
+  ST --> VT["SCV/VladimirovTillmann (2 axioms)"]
   SA --> BT["WickRotation/BHWTranslation (1 residual)"]
   BT --> BR["WickRotation/BHWReducedExtension (1 axiom)"]
   BR --> BE["WickRotation/BHWExtension (0)"]
@@ -323,7 +325,7 @@ flowchart TD
 |------|------------------|-------|
 | `Wightman/Reconstruction/Main.lean` | 1 | `wightman_uniqueness` |
 | `Wightman/WightmanAxioms.lean` | 0 + 2 axioms | Schwartz kernel theorem + Banach-Steinhaus bridge are now explicit axioms |
-| `SCV/VladimirovTillmann.lean` | 0 + 1 axiom | Vladimirov-Tillmann tube-growth theorem |
+| `SCV/VladimirovTillmann.lean` | 0 + 2 axioms | Vladimirov-Tillmann tube-growth theorem + distributional cluster lifts to tube |
 | `Wightman/NuclearSpaces/BochnerMinlos.lean` | 5 | Bochner-Minlos measure construction |
 | `Wightman/NuclearSpaces/NuclearSpace.lean` | 2 | nuclear space infrastructure |
 | `Wightman/Reconstruction/ForwardTubeDistributions.lean` | 0 | distributional uniqueness / boundary-value lane complete |
