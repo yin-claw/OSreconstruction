@@ -6,6 +6,8 @@ A Lean 4 formalization of the **Osterwalder-Schrader reconstruction theorem** an
 
 ### Cluster property (R->E direction): bug fix, new axiom, sorry closure
 
+> **Detailed analysis:** [docs/cluster_property_analysis.md](docs/cluster_property_analysis.md)
+
 **Bug fix in `SchwingerAxioms.lean`:** The statement of `bhw_pointwise_cluster_euclidean`
 had an imaginary spatial shift (`↑(a μ) * Complex.I`) where a real shift (`↑(a μ)`)
 was needed. The imaginary version breaks PET membership for large |a| and doesn't match
@@ -39,7 +41,38 @@ Vetted by Gemini Deep Think.
 
 **Remaining sorry-using declarations** in `SchwingerAxioms.lean`:
 - `schwingerExtension_os_term_eq_wightman_term` (pre-existing, E2 reflection positivity)
-- `W_analytic_cluster_integral` (integral-level cluster via dominated convergence)
+- `W_analytic_cluster_integral` (integral-level cluster, see note below)
+
+### Status of `W_analytic_cluster_integral` and E4
+
+`W_analytic_cluster_integral` (the integral-level Schwinger cluster) and its
+wrapper `wickRotatedBoundaryPairing_cluster` (E4) are **leaf theorems** — they
+are not consumed by `wightman_to_os_full` or any other upstream proof.  The
+R→E bridge theorem `wightman_to_os` only requires continuity, linearity, and
+`IsWickRotationPair`; it does not require E4.
+
+The remaining sorry has a genuine mathematical subtlety beyond plumbing:
+`bhw_pointwise_cluster_euclidean` gives pointwise cluster for configs in
+`ForwardTube` (a specific time-ordering where the n-block comes before the
+m-block).  But the Schwinger integral `∫ W_BHW(wick(x)) * f(x) dx` runs
+over ALL x, including configs where m-block times precede n-block times.
+On those sectors (~half the integration domain), the ForwardTube hypothesis
+fails and the pointwise result doesn't directly apply.
+
+Possible resolutions:
+1. **Strengthen the axiom** to give pointwise cluster on the full
+   PermutedExtendedTube (not just ForwardTube/TubeDomainSetPi).  This is
+   mathematically sound (the Poisson integral argument works on each
+   permuted tube sector) but requires stating the axiom for PET rather
+   than a single tube domain.
+2. **Sector decomposition**: split the integral by time-ordering, apply
+   BHW permutation invariance on each sector, and sum.  The product
+   W\_BHW(n)(z\_n) · W\_BHW(m)(z\_m) is the same on each sector (by
+   permutation invariance of the individual factors), so the contributions
+   add up correctly.
+3. **Direct distributional proof**: prove Schwinger cluster from Wightman
+   cluster (R4) without going through pointwise cluster, using the
+   relationship between boundary values and interior integrals.
 
 ## Current Axiom Inventory
 
