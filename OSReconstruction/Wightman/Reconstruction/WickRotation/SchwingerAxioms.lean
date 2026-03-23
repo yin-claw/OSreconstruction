@@ -3470,11 +3470,21 @@ theorem bhw_pointwise_cluster_euclidean (Wfn : WightmanFunctions d) (n m : ℕ)
         have := (Wfn.spectrum_condition m).choose_spec.2 φ₂ η₂
           ((inForwardCone_iff_mem_forwardConeAbs η₂).2 hη₂)
         exact this)
-    -- h_bv_cluster: bridge from Wfn.cluster
+    -- h_bv_cluster: bridge from Wfn.cluster.
+    -- R4 gives cluster for tensor-product test functions f₁ ⊗ τ_a f₂.
+    -- The axiom asks for cluster for ALL joint-space φ, which follows by
+    -- density of tensor products in the joint Schwartz space + continuity of W.
+    -- The SchwartzMap.tensorProduct from SchwartzTensorProduct.lean provides
+    -- the tensor product construction.
     (sorry : ∀ (φ : SchwartzMap _ ℂ) (ε : ℝ), ε > 0 → _)
     z_n z_m hz_mem
-    (sorry : z_n ∈ TubeDomainSetPi _)
-    (sorry : z_m ∈ TubeDomainSetPi _)
+    -- z_n ∈ sub-tube: the n-block imaginary parts satisfy the forward cone.
+    -- Follows from hz_mem (joint membership) by projecting to the n-block.
+    (by show (fun k μ => (z_n k μ).im) ∈ ForwardConeAbs d n
+        have hj := hz_mem; rw [← hFT_eq] at hj; sorry)
+    -- z_m ∈ sub-tube: similarly for the m-block.
+    (by show (fun k μ => (z_m k μ).im) ∈ ForwardConeAbs d m
+        have hj := hz_mem; rw [← hFT_eq] at hj; sorry)
     ε hε
   -- Bridge the conclusion: axiom gives cluster for spectrum_condition.choose,
   -- but we need it for W_analytic_BHW.  On the forward tube these agree
