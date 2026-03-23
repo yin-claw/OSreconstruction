@@ -3558,19 +3558,21 @@ theorem W_analytic_cluster_integral (Wfn : WightmanFunctions d) (n m : ℕ)
             (∫ x : NPointDomain d m,
               (W_analytic_BHW Wfn m).val
                 (fun k => wickRotatePoint (x k)) * g x)‖ < ε := by
-  -- The proof reduces to `bhw_pointwise_cluster_euclidean` + dominated convergence.
-  -- After change of variables in the m-block, the integrand involves
-  --   H(x, a) := W_BHW(n+m)(wickRotate(x_n), wickRotate(x_m) + ↑a) − product
-  -- which goes to 0 pointwise (a.e.) by `bhw_pointwise_cluster_euclidean`.
-  -- The dominating function is C(1+‖x‖)^N · |f(x_n)| · |g(x_m)| which is integrable
-  -- (polynomial growth × Schwartz, via `polynomial_growth_mul_schwartz_integrable`).
-  -- The constants C, N are independent of a (imaginary parts unchanged by real shift).
+  -- The proof uses bhw_pointwise_cluster_euclidean + dominated convergence.
+  -- Apply R4 directly via bhw_pointwise_cluster_euclidean at the integral level.
   --
-  -- Formal proof requires:
-  --   (a) Fubini to split the (n+m)-point integral into n-block and m-block
-  --   (b) Change of variables x_m ↦ x_m + a in the m-block
-  --   (c) Dominated convergence via `bhw_wickRotate_polynomial_growth_uniform`
-  -- Each step is standard measure theory but requires ~30 lines of Lean plumbing.
+  -- Key steps (all standard measure theory, no new mathematical content):
+  -- (a) For a.e. x with time-ordered distinct times, the Wick-rotated config
+  --     is in ForwardTube, so bhw_pointwise_cluster_euclidean applies pointwise.
+  -- (b) The integrand |W_BHW(wick(x))| * |f(x_n)| * |g(x_m)| is dominated by
+  --     C(1+‖x‖)^N / infDist^q · |f| · |g| (from HasForwardTubeGrowth),
+  --     which is integrable (Schwartz decay absorbs polynomial growth +
+  --     coincidence singularity). The bound is independent of a.
+  -- (c) Apply tendsto_integral_of_dominated_convergence.
+  --
+  -- Blocked by: wickRotation_not_in_PET_null (a.e. ForwardTube membership,
+  -- itself sorry'd in ForwardTubeLorentz.lean) and the Fubini decomposition
+  -- of Fin(n+m)-indexed integrals into n-block × m-block products.
   sorry
 
 /-- The Schwinger functions satisfy clustering (E4).
