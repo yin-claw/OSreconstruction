@@ -2,83 +2,11 @@
 
 A Lean 4 formalization of the **Osterwalder-Schrader reconstruction theorem** and supporting infrastructure in **von Neumann algebra theory**, built on [Mathlib](https://github.com/leanprover-community/mathlib4).
 
-## Changes in this fork (mrdouglasny) relative to [xiyin137/OSreconstruction](https://github.com/xiyin137/OSreconstruction)
-
-### Cluster property (R->E direction): bug fix, new axiom, sorry closure
-
-> **Detailed analysis:** [docs/cluster_property_analysis.md](docs/cluster_property_analysis.md)
-
-**Bug fix in `SchwingerAxioms.lean`:** The statement of `bhw_pointwise_cluster_forwardTube`
-had an imaginary spatial shift (`↑(a μ) * Complex.I`) where a real shift (`↑(a μ)`)
-was needed. The imaginary version breaks PET membership for large |a| and doesn't match
-the downstream consumer `W_analytic_cluster_integral`. Fixed to real shift, with
-`ForwardTube` hypotheses for the joint and sub-block configurations.
-
-**`bhw_pointwise_cluster_forwardTube` is now sorry-free** (modulo the new axiom below).
-The proof:
-1. Packages `Wfn.W` as CLMs via linearity + continuity
-2. Bridges `ForwardTube` ↔ `TubeDomainSetPi (ForwardConeAbs)` via `forwardTube_eq_imPreimage`
-3. Bridges `spectrum_condition` BV convergence to `ForwardConeAbs` form
-4. Supplies `h_bv_cluster` directly from `Wfn.cluster` (R4) — the axiom's tensor-product
-   hypothesis matches R4 exactly
-5. Proves shifted config ∈ ForwardTube via `forwardTube_add_real_pointwise`
-6. Bridges `W_analytic_BHW` = `spectrum_condition.choose` on ForwardTube (BHW property 2)
-
-**New proved lemmas in `SchwingerAxioms.lean`:**
-- `isEuclidean_realSpatialShift` -- Euclidean configs stay Euclidean under real spatial shift
-- `forwardTube_add_real_pointwise` -- forward tube closed under pointwise real shifts
-- `permutedForwardTube_add_real_pointwise` -- lifts to permuted forward tube
-- `append_realSpatialShift_mem_PET_of_permutedForwardTube` -- block shift preserves PET
-
-**New axiom `distributional_cluster_lifts_to_tube` in `VladimirovTillmann.lean`:**
-Distributional cluster (R4) on the boundary of a tube domain lifts to pointwise cluster
-on the interior. Hypotheses: holomorphicity of F, F₁, F₂ on tube domains with
-distributional boundary values W, W₁, W₂, plus R4-format tensor-product cluster condition.
-Conclusion: pointwise factorization F(z₁, z₂ + a) → F₁(z₁) · F₂(z₂) as |a| → ∞.
-Based on the Poisson integral representation (Vladimirov Thm 25.1) and the
-Riemann-Lebesgue lemma (`Mathlib.Analysis.Fourier.RiemannLebesgueLemma`).
-Vetted by Gemini Deep Think.
-
-**Remaining sorry-using declarations** in `SchwingerAxioms.lean`:
-- `schwingerExtension_os_term_eq_wightman_term` (pre-existing, E2 reflection positivity)
-- `W_analytic_cluster_integral` (integral-level cluster, see note below)
-
-### Status of `W_analytic_cluster_integral` and E4
-
-`W_analytic_cluster_integral` (the integral-level Schwinger cluster) and its
-wrapper `wickRotatedBoundaryPairing_cluster` (E4) are **leaf theorems** — they
-are not consumed by `wightman_to_os_full` or any other upstream proof.  The
-R→E bridge theorem `wightman_to_os` only requires continuity, linearity, and
-`IsWickRotationPair`; it does not require E4.
-
-The remaining sorry has a genuine mathematical subtlety beyond plumbing:
-`bhw_pointwise_cluster_forwardTube` gives pointwise cluster for configs in
-`ForwardTube` (a specific time-ordering where the n-block comes before the
-m-block).  But the Schwinger integral `∫ W_BHW(wick(x)) * f(x) dx` runs
-over ALL x, including configs where m-block times precede n-block times.
-On those sectors (~half the integration domain), the ForwardTube hypothesis
-fails and the pointwise result doesn't directly apply.
-
-Possible resolutions:
-1. **Strengthen the axiom** to give pointwise cluster on the full
-   PermutedExtendedTube (not just ForwardTube/TubeDomainSetPi).  This is
-   mathematically sound (the Poisson integral argument works on each
-   permuted tube sector) but requires stating the axiom for PET rather
-   than a single tube domain.
-2. **Sector decomposition**: split the integral by time-ordering, apply
-   BHW permutation invariance on each sector, and sum.  The product
-   W\_BHW(n)(z\_n) · W\_BHW(m)(z\_m) is the same on each sector (by
-   permutation invariance of the individual factors), so the contributions
-   add up correctly.
-3. **Direct distributional proof**: prove Schwinger cluster from Wightman
-   cluster (R4) without going through pointwise cluster, using the
-   relationship between boundary values and interior integrals.
-
 ## Current Axiom Inventory
 
 The tracked production tree currently contains **5 explicit axioms**:
 - `schwartz_nuclear_extension` in `Wightman/WightmanAxioms.lean` — **partially proved**: nuclearity of Schwartz space is now proved in the [`gaussian-field`](https://github.com/or-n/gaussian-field) library; the remaining gap is importing the instance and deriving the kernel theorem
-- `exists_continuousMultilinear_ofSeparatelyContinuous` in `Wightman/WightmanAxioms.lean`
+- `exists_continuousMultilinear_ofSeparatelyContinuous` in `Wightman/WightmanAxioms.lean` — **proved** in [`gaussian-field`](https://github.com/mrdouglasny/gaussian-field) (`GeneralResults/SeparatelyContMultilinear.lean`, extension branch); remaining gap is importing the theorem
 - `vladimirov_tillmann` in `SCV/VladimirovTillmann.lean`
 - `distributional_cluster_lifts_to_tube` in `SCV/VladimirovTillmann.lean` — distributional cluster on tube boundary lifts to pointwise cluster on tube interior (Poisson integral + Riemann-Lebesgue)
 - `reduced_bargmann_hall_wightman_of_input` in `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean`
@@ -161,7 +89,7 @@ This fetches Mathlib and dependencies automatically on first build.
 The tracked production tree currently includes **5 explicit `axiom`
 declarations**:
 - `schwartz_nuclear_extension` in `Wightman/WightmanAxioms.lean`
-- `exists_continuousMultilinear_ofSeparatelyContinuous` in `Wightman/WightmanAxioms.lean`
+- `exists_continuousMultilinear_ofSeparatelyContinuous` in `Wightman/WightmanAxioms.lean` — **proved** in [`gaussian-field`](https://github.com/mrdouglasny/gaussian-field) (`GeneralResults/SeparatelyContMultilinear.lean`, extension branch); remaining gap is importing the theorem
 - `vladimirov_tillmann` in `SCV/VladimirovTillmann.lean`
 - `distributional_cluster_lifts_to_tube` in `SCV/VladimirovTillmann.lean`
 - `reduced_bargmann_hall_wightman_of_input` in `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean`
