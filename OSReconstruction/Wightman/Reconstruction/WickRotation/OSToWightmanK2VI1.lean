@@ -226,6 +226,68 @@ private theorem weighted_measure_tendsto_of_approx_identity_local
         Filter.Tendsto.const_mul (f p) hw_c
       simpa using hmul
 
+/-- Once a VI.1 pairing is rewritten against a fixed finite spectral measure
+with approximate-identity weights, the convergence step is immediate from the
+weighted dominated-convergence lemma above. This isolates the remaining first
+`sorry` to producing the weighted spectral representation, not the scalar limit
+argument itself. -/
+private theorem tendsto_of_weighted_measure_representation_local
+    (ρ : Measure (ℝ × (Fin d → ℝ)))
+    [IsFiniteMeasure ρ]
+    (w_seq : ℕ → (ℝ × (Fin d → ℝ)) → ℝ)
+    (hw_le : ∀ n p, w_seq n p ≤ 1)
+    (hw_nonneg : ∀ n p, 0 ≤ w_seq n p)
+    (hw_meas : ∀ n, Measurable (w_seq n))
+    (hw_tendsto : ∀ p, Filter.Tendsto (fun n => w_seq n p) Filter.atTop (𝓝 1))
+    (f : BoundedContinuousFunction (ℝ × (Fin d → ℝ)) ℂ)
+    (L : ℂ)
+    (hL : L = ∫ p, f p ∂ρ)
+    (a_seq : ℕ → ℂ)
+    (ha : ∀ n, a_seq n = ∫ p, f p * ↑(w_seq n p) ∂ρ) :
+    Filter.Tendsto a_seq Filter.atTop (𝓝 L) := by
+  have hmain :=
+    weighted_measure_tendsto_of_approx_identity_local
+      (d := d) ρ w_seq hw_le hw_nonneg hw_meas hw_tendsto f
+  have hL' : ∫ p, f p ∂ρ = L := hL.symm
+  have hmain' :
+      Filter.Tendsto
+        (fun n => ∫ p, f p * ↑(w_seq n p) ∂ρ)
+        Filter.atTop
+        (𝓝 L) := by
+    simpa [hL'] using hmain
+  convert hmain' using 1
+  ext n
+  exact ha n
+
+/-- Schwinger-target specialization of the fixed-measure VI.1 convergence step.
+
+Once the remaining probe-dependent spectral representation is supplied, this is
+the exact theorem that closes the first active `k = 2` blocker. -/
+private theorem tendsto_to_schwingerDifferencePositive_of_weighted_measure_representation_local
+    (OS : OsterwalderSchraderAxioms d)
+    (χ₀ : SchwartzSpacetime d)
+    (h : positiveTimeCompactSupportSubmodule d)
+    (ρ : Measure (ℝ × (Fin d → ℝ)))
+    [IsFiniteMeasure ρ]
+    (w_seq : ℕ → (ℝ × (Fin d → ℝ)) → ℝ)
+    (hw_le : ∀ n p, w_seq n p ≤ 1)
+    (hw_nonneg : ∀ n p, 0 ≤ w_seq n p)
+    (hw_meas : ∀ n, Measurable (w_seq n))
+    (hw_tendsto : ∀ p, Filter.Tendsto (fun n => w_seq n p) Filter.atTop (𝓝 1))
+    (f : BoundedContinuousFunction (ℝ × (Fin d → ℝ)) ℂ)
+    (a_seq : ℕ → ℂ)
+    (ha : ∀ n, a_seq n = ∫ p, f p * ↑(w_seq n p) ∂ρ)
+    (htarget :
+      (OsterwalderSchraderAxioms.schwingerDifferencePositiveCLM
+        (d := d) OS χ₀) h = ∫ p, f p ∂ρ) :
+    Filter.Tendsto a_seq Filter.atTop
+      (𝓝 ((OsterwalderSchraderAxioms.schwingerDifferencePositiveCLM
+        (d := d) OS χ₀) h)) := by
+  exact tendsto_of_weighted_measure_representation_local
+    (d := d) ρ w_seq hw_le hw_nonneg hw_meas hw_tendsto f
+    ((OsterwalderSchraderAxioms.schwingerDifferencePositiveCLM
+      (d := d) OS χ₀) h) htarget a_seq ha
+
 /-- Swap the two Euclidean arguments of a two-point configuration. -/
 private def swapTwoPoint_local (x : NPointDomain d 2) : NPointDomain d 2 :=
   fun i => x (Equiv.swap (0 : Fin 2) (1 : Fin 2) i)
@@ -1399,18 +1461,192 @@ private theorem integral_k2DifferenceKernel_real_eq_probe_pairing_descended_cent
               integral_translatedProductShell_boundary_eq_reduced_differenceKernel_pairing_of_negativeApproxIdentity_local
                 (d := d) OS lgc φ_seq hφ_real hφ_compact hφ_neg μ_seq _hμfin hsupp hμrepr n h
     _ =
+    ∫ x : NPointDomain d 2,
+      k2TimeParametricKernel (d := d)
+          (k2ProbeWitness_local (d := d) OS lgc
+            (φ_seq n) (hφ_compact n) (hφ_neg n)) x *
+        twoPointDifferenceLift
+          (OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+            (reflectedSchwartzSpacetime (φ_seq n)))
+          (h : SchwartzSpacetime d) x := by
+      simpa using
+      integral_translatedProductShell_boundary_eq_probe_pairing_descended_center_local
+        (d := d) OS lgc φ_seq hφ_nonneg hφ_real hφ_int hφ_ball
+        hφ_compact hφ_neg hpair n h
+
+/-- Pre-limit descended-center package for the reduced `k = 2` VI.1 theorem.
+
+This packages exactly the already-proved data sitting underneath the first
+remaining `sorry`:
+- the descended normalized center sequence `χ_n`,
+- identification of the reduced one-variable kernel pairing with the descended
+  probe pairing,
+- and the exact Schwinger target value on the same descended shell.
+
+With this package available, the remaining open theorem is honestly just the
+VI.1 convergence step on the descended shell. -/
+private theorem exists_k2_VI1_descended_reduced_pairing_package_local
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (χ₀ : SchwartzSpacetime d)
+    (hχ₀ : ∫ x : SpacetimeDim d, χ₀ x = 1)
+    (φ_seq : ℕ → SchwartzSpacetime d)
+    (hφ_nonneg : ∀ n x, 0 ≤ (φ_seq n x).re)
+    (hφ_real : ∀ n x, (φ_seq n x).im = 0)
+    (hφ_int : ∀ n, ∫ x : SpacetimeDim d, φ_seq n x = 1)
+    (hφ_compact : ∀ n, HasCompactSupport (φ_seq n : SpacetimeDim d → ℂ))
+    (hφ_neg : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆
+      {x : SpacetimeDim d | x 0 < 0})
+    (hφ_ball : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆
+      Metric.ball (0 : SpacetimeDim d) (1 / (n + 1 : ℝ)))
+    (μ_seq : ℕ → Measure (ℝ × (Fin d → ℝ)))
+    (_hμfin : ∀ n, IsFiniteMeasure (μ_seq n))
+    (hsupp : ∀ n, μ_seq n (Set.prod (Set.Iio 0) Set.univ) = 0)
+    (hμrepr : ∀ n (t : ℝ) (a : Fin d → ℝ), 0 < t →
+      osSemigroupGroupMatrixElement (d := d) OS lgc
+        (((show OSPreHilbertSpace OS from
+          ⟦PositiveTimeBorchersSequence.single 1
+            (SchwartzNPoint.osConj (d := d) (n := 1)
+              (onePointToFin1CLM d (φ_seq n) : SchwartzNPoint d 1))
+            (osConj_onePointToFin1_tsupport_orderedPositiveTime_local
+              (d := d) (φ_seq n) (hφ_compact n) (hφ_neg n))⟧) : OSHilbertSpace OS))
+        t a =
+          ∫ p : ℝ × (Fin d → ℝ),
+            Complex.exp (-(↑(t * p.1) : ℂ)) *
+              Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * a i)) ∂(μ_seq n))
+    (hpair : ∀ n (χ : SchwartzSpacetime d) (h : positiveTimeCompactSupportSubmodule d),
+      ∫ x : NPointDomain d 2,
+        k2TimeParametricKernel (d := d)
+            (k2ProbeWitness_local (d := d) OS lgc
+              (φ_seq n) (hφ_compact n) (hφ_neg n)) x *
+          twoPointDifferenceLift χ (h : SchwartzSpacetime d) x =
+        (∫ u : SpacetimeDim d, χ u) *
+          ∫ ξ : SpacetimeDim d,
+            (if hξ : 0 < ξ 0 then
+              OS.S 2 (ZeroDiagonalSchwartz.ofClassical
+                (twoPointProductLift (φ_seq n)
+                  (SCV.translateSchwartz (-ξ)
+                    (reflectedSchwartzSpacetime (φ_seq n)))))
+            else 0) * ((h : SchwartzSpacetime d) ξ)) :
+    ∀ h : positiveTimeCompactSupportSubmodule d,
+      ∃ χ_seq : ℕ → SchwartzSpacetime d,
+        (∀ n,
+          ∫ ξ : SpacetimeDim d,
+            k2DifferenceKernel_real_local (d := d) (μ_seq n) ξ *
+              (h : SchwartzSpacetime d) ξ =
+          ∫ x : NPointDomain d 2,
+            k2TimeParametricKernel (d := d)
+                (k2ProbeWitness_local (d := d) OS lgc
+                  (φ_seq n) (hφ_compact n) (hφ_neg n)) x *
+              twoPointDifferenceLift (χ_seq n) (h : SchwartzSpacetime d) x) ∧
+        (∀ n,
+          OS.S 2 (ZeroDiagonalSchwartz.ofClassical
+              (twoPointDifferenceLift (χ_seq n) (h : SchwartzSpacetime d))) =
+            (OsterwalderSchraderAxioms.schwingerDifferencePositiveCLM
+              (d := d) OS χ₀) h) := by
+  intro h
+  obtain ⟨χ_seq, hχ_seq_desc, hχ_seq_nonneg, hχ_seq_real, hχ_seq_int,
+      _hχ_seq_translate, _hχ_seq_ball⟩ :=
+    exists_k2_VI1_descended_center_package_local
+      (d := d) φ_seq hφ_nonneg hφ_real hφ_int hφ_ball
+  refine ⟨χ_seq, ?_, ?_⟩
+  · intro n
+    simpa [hχ_seq_desc n] using
+      integral_k2DifferenceKernel_real_eq_probe_pairing_descended_center_local
+        (d := d) OS lgc φ_seq hφ_nonneg hφ_int hφ_ball hφ_real hφ_compact hφ_neg
+        μ_seq _hμfin hsupp hμrepr hpair n h
+  · intro n
+    exact schwingerDifferencePositiveCLM_eq_of_normalized_center_local
+      (d := d) OS χ₀ hχ₀ (χ_seq n) (hχ_seq_int n) h
+
+private theorem k2Probe_pairing_tendsto_schwingerDifferencePositive_of_descended_center_package_local
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (χ₀ : SchwartzSpacetime d)
+    (hχ₀ : ∫ x : SpacetimeDim d, χ₀ x = 1)
+    (φ_seq : ℕ → SchwartzSpacetime d)
+    (hφ_nonneg : ∀ n x, 0 ≤ (φ_seq n x).re)
+    (hφ_real : ∀ n x, (φ_seq n x).im = 0)
+    (hφ_int : ∀ n, ∫ x : SpacetimeDim d, φ_seq n x = 1)
+    (hφ_compact : ∀ n, HasCompactSupport (φ_seq n : SpacetimeDim d → ℂ))
+    (hφ_neg : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆
+      {x : SpacetimeDim d | x 0 < 0})
+    (hφ_ball : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆
+      Metric.ball (0 : SpacetimeDim d) (1 / (n + 1 : ℝ)))
+    (μ_seq : ℕ → Measure (ℝ × (Fin d → ℝ)))
+    (_hμfin : ∀ n, IsFiniteMeasure (μ_seq n))
+    (hsupp : ∀ n, μ_seq n (Set.prod (Set.Iio 0) Set.univ) = 0)
+    (hμrepr : ∀ n (t : ℝ) (a : Fin d → ℝ), 0 < t →
+      osSemigroupGroupMatrixElement (d := d) OS lgc
+        (((show OSPreHilbertSpace OS from
+          ⟦PositiveTimeBorchersSequence.single 1
+            (SchwartzNPoint.osConj (d := d) (n := 1)
+              (onePointToFin1CLM d (φ_seq n) : SchwartzNPoint d 1))
+            (osConj_onePointToFin1_tsupport_orderedPositiveTime_local
+              (d := d) (φ_seq n) (hφ_compact n) (hφ_neg n))⟧) : OSHilbertSpace OS))
+        t a =
+          ∫ p : ℝ × (Fin d → ℝ),
+            Complex.exp (-(↑(t * p.1) : ℂ)) *
+              Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * a i)) ∂(μ_seq n))
+    (hpair : ∀ n (χ : SchwartzSpacetime d) (h : positiveTimeCompactSupportSubmodule d),
+      ∫ x : NPointDomain d 2,
+        k2TimeParametricKernel (d := d)
+            (k2ProbeWitness_local (d := d) OS lgc
+              (φ_seq n) (hφ_compact n) (hφ_neg n)) x *
+          twoPointDifferenceLift χ (h : SchwartzSpacetime d) x =
+        (∫ u : SpacetimeDim d, χ u) *
+          ∫ ξ : SpacetimeDim d,
+            (if hξ : 0 < ξ 0 then
+              OS.S 2 (ZeroDiagonalSchwartz.ofClassical
+                (twoPointProductLift (φ_seq n)
+                  (SCV.translateSchwartz (-ξ)
+                    (reflectedSchwartzSpacetime (φ_seq n)))))
+            else 0) * ((h : SchwartzSpacetime d) ξ)) :
+    ∀ h : positiveTimeCompactSupportSubmodule d,
+      (χ_seq : ℕ → SchwartzSpacetime d) →
+      (∀ n,
+        ∫ ξ : SpacetimeDim d,
+          k2DifferenceKernel_real_local (d := d) (μ_seq n) ξ *
+            (h : SchwartzSpacetime d) ξ =
         ∫ x : NPointDomain d 2,
           k2TimeParametricKernel (d := d)
               (k2ProbeWitness_local (d := d) OS lgc
                 (φ_seq n) (hφ_compact n) (hφ_neg n)) x *
-            twoPointDifferenceLift
-              (OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
-                (reflectedSchwartzSpacetime (φ_seq n)))
-              (h : SchwartzSpacetime d) x := by
-          simpa using
-            integral_translatedProductShell_boundary_eq_probe_pairing_descended_center_local
-              (d := d) OS lgc φ_seq hφ_nonneg hφ_real hφ_int hφ_ball
-              hφ_compact hφ_neg hpair n h
+            twoPointDifferenceLift (χ_seq n) (h : SchwartzSpacetime d) x) →
+      (∀ n,
+        OS.S 2 (ZeroDiagonalSchwartz.ofClassical
+            (twoPointDifferenceLift (χ_seq n) (h : SchwartzSpacetime d))) =
+          (OsterwalderSchraderAxioms.schwingerDifferencePositiveCLM
+            (d := d) OS χ₀) h) →
+      Filter.Tendsto
+        (fun n =>
+          ∫ x : NPointDomain d 2,
+            k2TimeParametricKernel (d := d)
+                (k2ProbeWitness_local (d := d) OS lgc
+                  (φ_seq n) (hφ_compact n) (hφ_neg n)) x *
+              twoPointDifferenceLift (χ_seq n) (h : SchwartzSpacetime d) x)
+        Filter.atTop
+        (𝓝 ((OsterwalderSchraderAxioms.schwingerDifferencePositiveCLM
+          (d := d) OS χ₀) h)) := by
+  intro h χ_seq hpair_probe htarget_descended
+  /-
+  This is now the honest remaining OS II VI.1 convergence theorem:
+
+  * the descended normalized center sequence `χ_seq` has already been built;
+  * the probe pairing on `twoPointDifferenceLift (χ_seq n) h` is the exact
+    semigroup-side object produced by the regularization package;
+  * `htarget_descended` identifies the Schwinger value on the same descended
+    shell.
+
+  The remaining content is to show that these probe pairings converge to the
+  common Schwinger target as `n → ∞`. Concretely, the scalar limit step is
+  already packaged by
+  `tendsto_to_schwingerDifferencePositive_of_weighted_measure_representation_local`;
+  what is still missing here is the honest OS II VI.1 representation of these
+  probe pairings against a fixed spectral measure with approximate-identity
+  weights.
+  -/
+  sorry
 
 private theorem k2DifferenceKernel_real_pairing_tendsto_schwingerDifferencePositive_of_negativeApproxIdentity_local
     (OS : OsterwalderSchraderAxioms d)
@@ -1428,10 +1664,6 @@ private theorem k2DifferenceKernel_real_pairing_tendsto_schwingerDifferencePosit
       Metric.ball (0 : SpacetimeDim d) (1 / (n + 1 : ℝ)))
     (μ_seq : ℕ → Measure (ℝ × (Fin d → ℝ)))
     (_hμfin : ∀ n, IsFiniteMeasure (μ_seq n))
-    (hhol : ∀ n,
-      IsTimeHolomorphicFlatPositiveTimeDiffWitness
-        (k2ProbeWitness_local (d := d) OS lgc
-          (φ_seq n) (hφ_compact n) (hφ_neg n)))
     (hsupp : ∀ n, μ_seq n (Set.prod (Set.Iio 0) Set.univ) = 0)
     (hμrepr : ∀ n (t : ℝ) (a : Fin d → ℝ), 0 < t →
       osSemigroupGroupMatrixElement (d := d) OS lgc
@@ -1445,11 +1677,6 @@ private theorem k2DifferenceKernel_real_pairing_tendsto_schwingerDifferencePosit
           ∫ p : ℝ × (Fin d → ℝ),
             Complex.exp (-(↑(t * p.1) : ℂ)) *
               Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * a i)) ∂(μ_seq n))
-    (hkernel : ∀ n (x : NPointDomain d 2), x 0 0 < x 1 0 →
-      k2TimeParametricKernel (d := d)
-          (k2ProbeWitness_local (d := d) OS lgc
-            (φ_seq n) (hφ_compact n) (hφ_neg n)) x =
-        laplaceFourierKernel (d := d) (μ_seq n) (fun i => x 1 i - x 0 i))
     (hpair : ∀ n (χ : SchwartzSpacetime d) (h : positiveTimeCompactSupportSubmodule d),
       ∫ x : NPointDomain d 2,
         k2TimeParametricKernel (d := d)
@@ -1474,97 +1701,17 @@ private theorem k2DifferenceKernel_real_pairing_tendsto_schwingerDifferencePosit
         (𝓝 ((OsterwalderSchraderAxioms.schwingerDifferencePositiveCLM
           (d := d) OS χ₀) h)) := by
   intro h
-  obtain ⟨χ_seq, hχ_seq_desc, hχ_seq_nonneg, hχ_seq_real, hχ_seq_int,
-      hχ_seq_translate, hχ_seq_ball⟩ :=
-    exists_k2_VI1_descended_center_package_local
-      (d := d) φ_seq hφ_nonneg hφ_real hφ_int hφ_ball
-  have hcenter :
-      ∀ n ξ,
-        OS.S 2 (ZeroDiagonalSchwartz.ofClassical
-            (twoPointDifferenceLift (SCV.translateSchwartz (-ξ) (χ_seq n))
-              (h : SchwartzSpacetime d))) =
-          (OsterwalderSchraderAxioms.schwingerDifferencePositiveCLM
-            (d := d) OS χ₀) h := by
-    intro n ξ
-    simpa [hχ_seq_desc n] using
-      schwingerDifferencePositiveCLM_eq_of_descended_center_package_local
-        (d := d) OS χ₀ hχ₀ φ_seq hφ_nonneg hφ_real hφ_int hφ_ball n ξ h
-  have hpair_descended :
-      ∀ n,
-        ∫ ξ : SpacetimeDim d,
-          (if hξ : 0 < ξ 0 then
-            OS.S 2 (ZeroDiagonalSchwartz.ofClassical
-              (twoPointProductLift (φ_seq n)
-                (SCV.translateSchwartz (-ξ)
-                  (reflectedSchwartzSpacetime (φ_seq n)))))
-          else 0) * ((h : SchwartzSpacetime d) ξ) =
-        ∫ x : NPointDomain d 2,
-          k2TimeParametricKernel (d := d)
-              (k2ProbeWitness_local (d := d) OS lgc
-                (φ_seq n) (hφ_compact n) (hφ_neg n)) x *
-            twoPointDifferenceLift (χ_seq n) (h : SchwartzSpacetime d) x := by
-    intro n
-    simpa [hχ_seq_desc n] using
-      integral_translatedProductShell_boundary_eq_probe_pairing_descended_center_local
-        (d := d) OS lgc φ_seq hφ_nonneg hφ_real hφ_int hφ_ball
-        hφ_compact hφ_neg hpair n h
-  have hpair_reduced :
-      ∀ n,
-        ∫ ξ : SpacetimeDim d,
-          (if hξ : 0 < ξ 0 then
-            OS.S 2 (ZeroDiagonalSchwartz.ofClassical
-              (twoPointProductLift (φ_seq n)
-                (SCV.translateSchwartz (-ξ)
-                  (reflectedSchwartzSpacetime (φ_seq n)))))
-          else 0) * ((h : SchwartzSpacetime d) ξ) =
-        ∫ ξ : SpacetimeDim d,
-          k2DifferenceKernel_real_local (d := d) (μ_seq n) ξ *
-            (h : SchwartzSpacetime d) ξ := by
-    intro n
-    exact
-      integral_translatedProductShell_boundary_eq_reduced_differenceKernel_pairing_of_negativeApproxIdentity_local
-        (d := d) OS lgc φ_seq hφ_real hφ_compact hφ_neg μ_seq _hμfin hsupp hμrepr n h
-  have hpair_probe :
-      ∀ n,
-        ∫ ξ : SpacetimeDim d,
-          k2DifferenceKernel_real_local (d := d) (μ_seq n) ξ *
-            (h : SchwartzSpacetime d) ξ =
-        ∫ x : NPointDomain d 2,
-          k2TimeParametricKernel (d := d)
-              (k2ProbeWitness_local (d := d) OS lgc
-                (φ_seq n) (hφ_compact n) (hφ_neg n)) x *
-            twoPointDifferenceLift (χ_seq n) (h : SchwartzSpacetime d) x := by
-    intro n
-    simpa [hχ_seq_desc n] using
-      integral_k2DifferenceKernel_real_eq_probe_pairing_descended_center_local
-        (d := d) OS lgc φ_seq hφ_nonneg hφ_int hφ_ball hφ_real hφ_compact hφ_neg
-        μ_seq _hμfin hsupp hμrepr hpair n h
-  have htarget_descended :
-      ∀ n,
-        OS.S 2 (ZeroDiagonalSchwartz.ofClassical
-            (twoPointDifferenceLift (χ_seq n) (h : SchwartzSpacetime d))) =
-          (OsterwalderSchraderAxioms.schwingerDifferencePositiveCLM
-            (d := d) OS χ₀) h := by
-    intro n
-    have htrans0 := hcenter n (0 : SpacetimeDim d)
-    have hleft0 : SCV.translateSchwartz (0 : SpacetimeDim d) (χ_seq n) = χ_seq n := by
-      ext x
-      simp [SCV.translateSchwartz_apply]
-    simpa [hleft0] using htrans0
-  /-
-  Honest remaining OS II VI.1 step:
-
-  * regularize the reduced boundary object with the shrinking negative
-    approximate identity sequence `φ_seq`;
-  * work directly on the honest reduced one-variable surface given by the
-    pairings `∫ k2DifferenceKernel_real_local (μ_seq n) * h`;
-  * keep the descended normalized center sequence `χ_seq` and the exact
-    Schwinger value on the same descended shell available through
-    `hpair_probe` and `htarget_descended`;
-  * use the VI.1 mean-value / positivity estimates to show that difference
-    tends to `0`.
-  -/
-  sorry
+  obtain ⟨χ_seq, hpair_probe, htarget_descended⟩ :=
+    exists_k2_VI1_descended_reduced_pairing_package_local
+      (d := d) OS lgc χ₀ hχ₀ φ_seq hφ_nonneg hφ_real hφ_int hφ_compact hφ_neg
+      hφ_ball μ_seq _hμfin hsupp hμrepr hpair h
+  have hprobe :=
+    k2Probe_pairing_tendsto_schwingerDifferencePositive_of_descended_center_package_local
+      (d := d) OS lgc χ₀ hχ₀ φ_seq hφ_nonneg hφ_real hφ_int hφ_compact hφ_neg
+      hφ_ball μ_seq _hμfin hsupp hμrepr hpair h χ_seq hpair_probe htarget_descended
+  refine Filter.Tendsto.congr' ?_ hprobe
+  filter_upwards with n
+  exact hpair_probe n |>.symm
 
 private theorem translatedProductShell_boundary_tendsto_schwingerDifferencePositive_of_negativeApproxIdentity_local
     (OS : OsterwalderSchraderAxioms d)
@@ -1582,10 +1729,6 @@ private theorem translatedProductShell_boundary_tendsto_schwingerDifferencePosit
       Metric.ball (0 : SpacetimeDim d) (1 / (n + 1 : ℝ)))
     (μ_seq : ℕ → Measure (ℝ × (Fin d → ℝ)))
     (_hμfin : ∀ n, IsFiniteMeasure (μ_seq n))
-    (hhol : ∀ n,
-      IsTimeHolomorphicFlatPositiveTimeDiffWitness
-        (k2ProbeWitness_local (d := d) OS lgc
-          (φ_seq n) (hφ_compact n) (hφ_neg n)))
     (hsupp : ∀ n, μ_seq n (Set.prod (Set.Iio 0) Set.univ) = 0)
     (hμrepr : ∀ n (t : ℝ) (a : Fin d → ℝ), 0 < t →
       osSemigroupGroupMatrixElement (d := d) OS lgc
@@ -1599,11 +1742,6 @@ private theorem translatedProductShell_boundary_tendsto_schwingerDifferencePosit
           ∫ p : ℝ × (Fin d → ℝ),
             Complex.exp (-(↑(t * p.1) : ℂ)) *
               Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * a i)) ∂(μ_seq n))
-    (hkernel : ∀ n (x : NPointDomain d 2), x 0 0 < x 1 0 →
-      k2TimeParametricKernel (d := d)
-          (k2ProbeWitness_local (d := d) OS lgc
-            (φ_seq n) (hφ_compact n) (hφ_neg n)) x =
-        laplaceFourierKernel (d := d) (μ_seq n) (fun i => x 1 i - x 0 i))
     (hpair : ∀ n (χ : SchwartzSpacetime d) (h : positiveTimeCompactSupportSubmodule d),
       ∫ x : NPointDomain d 2,
         k2TimeParametricKernel (d := d)
@@ -1635,7 +1773,7 @@ private theorem translatedProductShell_boundary_tendsto_schwingerDifferencePosit
   have hred :=
     k2DifferenceKernel_real_pairing_tendsto_schwingerDifferencePositive_of_negativeApproxIdentity_local
       (d := d) OS lgc χ₀ hχ₀ φ_seq hφ_nonneg hφ_real hφ_int hφ_compact hφ_neg
-      hφ_ball μ_seq _hμfin hhol hsupp hμrepr hkernel hpair h
+      hφ_ball μ_seq _hμfin hsupp hμrepr hpair h
   refine Filter.Tendsto.congr' ?_ hred
   filter_upwards with n
   exact
