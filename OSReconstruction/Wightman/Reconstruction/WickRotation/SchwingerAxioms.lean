@@ -3265,44 +3265,280 @@ theorem wickRotatedBoundaryPairing_reality (Wfn : WightmanFunctions d) (n : ℕ)
     _ = wickRotatedBoundaryPairing Wfn n frev.osConj := hpair_rev
     _ = wickRotatedBoundaryPairing Wfn n f.osConj := hsymm
 
-/-- Pointwise cluster property of BHW extension at Euclidean points.
+omit [NeZero d] in
+/-- **Euclidean real-spatial shift preserves IsEuclidean.**
 
-    For Euclidean points z = (iτ₁, x⃗₁, ..., iτₙ, x⃗ₙ) with strictly increasing τ,
-    the BHW extension satisfies the cluster decomposition: as the spatial separation
-    between the first n and last m points grows, the (n+m)-point function factorizes.
+    If a Euclidean configuration lies in PET and we apply a real purely-spatial
+    shift (a 0 = 0, spatial components real) uniformly to a block of points,
+    the result stays Euclidean.  The shift does not change any imaginary part
+    (time imaginary parts come from Wick rotation, spatial imaginary parts
+    are zero for Euclidean configs and stay zero under real shift). -/
+theorem isEuclidean_realSpatialShift {n : ℕ}
+    (z : Fin n → Fin (d + 1) → ℂ) (hz : IsEuclidean z)
+    (a : SpacetimeDim d) (ha0 : a 0 = 0) :
+    IsEuclidean (fun k μ => z k μ + ↑(a μ)) := by
+  constructor
+  · intro k
+    simp only [Complex.add_re, Complex.ofReal_re]
+    rw [hz.1 k, ha0, zero_add]
+  · intro k μ hμ
+    simp only [Complex.add_im, Complex.ofReal_im, add_zero]
+    exact hz.2 k μ hμ
 
-    This follows from the Wightman cluster property (axiom R4) via analytic continuation:
-    the cluster property holds as a distributional identity, and by uniqueness of analytic
-    continuation it lifts to the holomorphic extension.
+/-- Adding a pointwise real shift to a forward-tube configuration preserves
+    forward-tube membership.  The forward-tube condition depends only on
+    imaginary parts of successive differences, which are unchanged by
+    adding real vectors (Im(↑r) = 0). -/
+private theorem forwardTube_add_real_pointwise {p : ℕ}
+    (z : Fin p → Fin (d + 1) → ℂ) (c : Fin p → Fin (d + 1) → ℝ)
+    (hz : z ∈ ForwardTube d p) :
+    (fun k μ => z k μ + ↑(c k μ)) ∈ ForwardTube d p := by
+  -- Adding real vectors does not change imaginary parts, so the
+  -- forward-cone condition (which only depends on Im of differences) is preserved.
+  -- This follows the same pattern as `forwardTube_add_real_shift` in BHWTranslationCore.
+  intro k
+  by_cases hk : (k : ℕ) = 0
+  · simpa [hk, Complex.add_im, Complex.ofReal_im] using hz k
+  · simpa [hk, Complex.sub_im, Complex.add_im, Complex.ofReal_im] using hz k
 
-    Blocked by: the Wightman cluster property at the analytic level (requires BHW
-    multiplicativity for product configurations) and the dominated convergence argument
-    (requires polynomial growth bounds on the BHW extension). -/
-theorem bhw_pointwise_cluster_euclidean (Wfn : WightmanFunctions d) (n m : ℕ)
+/-- Adding a pointwise real shift to a PermutedForwardTube config preserves
+    membership (just applies `forwardTube_add_real_pointwise` to the
+    permuted config). -/
+private theorem permutedForwardTube_add_real_pointwise {p : ℕ}
+    (z : Fin p → Fin (d + 1) → ℂ) (c : Fin p → Fin (d + 1) → ℝ)
+    (π : Equiv.Perm (Fin p))
+    (hz : z ∈ PermutedForwardTube d p π) :
+    (fun k μ => z k μ + ↑(c k μ)) ∈ PermutedForwardTube d p π := by
+  -- PermutedForwardTube means: (fun k => z (π k)) ∈ ForwardTube
+  -- After shift: (fun k => (z + c) (π k)) = (fun k => z(π k) + c(π k))
+  -- which is in ForwardTube by forwardTube_add_real_pointwise
+  show (fun k => (fun k' μ => z k' μ + ↑(c k' μ)) (π k)) ∈ ForwardTube d p
+  exact forwardTube_add_real_pointwise
+    (fun k => z (π k)) (fun k => c (π k)) hz
+
+/-- Appending two Euclidean configurations with a real spatial shift on the
+    second block stays in PET, provided the unshifted append is already in PET.
+
+    Since the shift ↑(a μ) is real and a 0 = 0, it does not alter any imaginary
+    part.  The forward-cone condition on successive imaginary-part differences
+    is therefore identical to that of the unshifted configuration.
+
+    **Scope limitation:** This theorem requires the stronger `PermutedForwardTube`
+    hypothesis (not general PET membership). For PET members that arise through
+    a nontrivial complex Lorentz transformation Λ, the argument would require
+    showing that real block shifts can be absorbed into the Λ-orbit, which is
+    not handled here. -/
+theorem append_realSpatialShift_mem_PET_of_permutedForwardTube {n m : ℕ}
     (z_n : Fin n → Fin (d + 1) → ℂ) (z_m : Fin m → Fin (d + 1) → ℂ)
-    (hz_n : IsEuclidean z_n) (hz_m : IsEuclidean z_m)
+    (a : SpacetimeDim d)
+    (π : Equiv.Perm (Fin (n + m)))
+    (hmem : Fin.append z_n z_m ∈ PermutedForwardTube d (n + m) π) :
+    Fin.append z_n (fun k μ => z_m k μ + ↑(a μ)) ∈ PermutedExtendedTube d (n + m) := by
+  -- The shifted config has the same imaginary parts as the original (real shift),
+  -- so its permuted version is also in ForwardTube.  We prove this directly.
+  -- Step 1: Show the shifted config is in PermutedForwardTube d (n+m) π
+  -- Define the pointwise real shift on the permuted config
+  let c : Fin (n + m) → Fin (d + 1) → ℝ := fun k μ =>
+    if n ≤ (π k).val then a μ else 0
+  -- The permuted original config is in ForwardTube (by definition of PermutedForwardTube)
+  -- Adding the real shift c preserves ForwardTube membership
+  have hshift_ft := forwardTube_add_real_pointwise
+    (fun k => Fin.append z_n z_m (π k)) c hmem
+  -- The shifted permuted config equals the permuted shifted config
+  have hpft : Fin.append z_n (fun k μ => z_m k μ + ↑(a μ)) ∈
+      PermutedForwardTube d (n + m) π := by
+    show (fun k => Fin.append z_n (fun k μ => z_m k μ + ↑(a μ)) (π k)) ∈ ForwardTube d (n + m)
+    convert hshift_ft using 1
+    ext k μ
+    simp only [c, Fin.append, Fin.addCases]
+    split_ifs with h1 h2
+    · -- (π k) in n-block AND n ≤ (π k): contradiction
+      omega
+    · -- (π k) in n-block, shift = 0
+      simp [Complex.ofReal_zero]
+    · -- (π k) in m-block, shift = ↑(a μ)
+      simp
+    · -- (π k) NOT in n-block AND NOT n ≤ (π k): contradiction
+      omega
+  -- Step 2: PermutedForwardTube ⊂ PET (via Λ = 1)
+  rw [← BHW_permutedExtendedTube_eq]
+  rw [← BHW_permutedForwardTube_eq] at hpft
+  exact permutedForwardTube_subset_permutedExtendedTube_BHW π hpft
+
+/-- **Pointwise cluster property of BHW extension on the forward tube.**
+
+    For points z_n, z_m in the forward tube whose concatenation is also in
+    the forward tube, the BHW extension satisfies cluster decomposition:
+    as the real spatial separation between the two groups grows, the (n+m)-point
+    function factorizes into a product of the n-point and m-point values.
+
+    The shift is a **real** spatial translation: z_m k μ + ↑(a μ) with a 0 = 0.
+    This keeps the configuration in the forward tube (imaginary parts unchanged).
+
+    **Note:** The Euclidean hypotheses `_hz_n`, `_hz_m` are currently unused;
+    the theorem is proved purely from the ForwardTube hypotheses. They are
+    retained for downstream compatibility (the intended application is at
+    Euclidean configurations).
+
+    **Proof:** Uses `distributional_cluster_lifts_to_tube` (axiom): the
+    distributional boundary-value cluster (R4) lifts to pointwise cluster
+    on the tube interior via the Poisson integral representation.
+
+    Ref: Vladimirov, "Methods of the Theory of Generalized Functions" §25;
+    Streater-Wightman, §2.4 and Theorem 3-5 -/
+theorem bhw_pointwise_cluster_forwardTube (Wfn : WightmanFunctions d) (n m : ℕ)
+    (z_n : Fin n → Fin (d + 1) → ℂ) (z_m : Fin m → Fin (d + 1) → ℂ)
+    (_hz_n : IsEuclidean z_n) (_hz_m : IsEuclidean z_m)
+    (hmem : Fin.append z_n z_m ∈ ForwardTube d (n + m))
+    (hmem_n : z_n ∈ ForwardTube d n)
+    (hmem_m : z_m ∈ ForwardTube d m)
     (ε : ℝ) (hε : ε > 0) :
     ∃ R : ℝ, R > 0 ∧
       ∀ a : SpacetimeDim d, a 0 = 0 → (∑ i : Fin d, (a (Fin.succ i))^2) > R^2 →
         ‖(W_analytic_BHW Wfn (n + m)).val
-            (Fin.append z_n (fun k μ => z_m k μ + ↑(a μ) * Complex.I)) -
+            (Fin.append z_n (fun k μ => z_m k μ + ↑(a μ))) -
           (W_analytic_BHW Wfn n).val z_n *
           (W_analytic_BHW Wfn m).val z_m‖ < ε := by
-  sorry
+  -- Apply the SCV axiom `distributional_cluster_lifts_to_tube`:
+  -- the distributional cluster (R4) lifts to pointwise cluster on the
+  -- tube interior, via the Poisson integral representation.
+  --
+  -- Instantiation: C = ForwardConeAbs, F = W_analytic for (n+m) points,
+  -- F₁ = W_analytic for n points, F₂ = W_analytic for m points.
+  -- The distributional cluster is Wfn.cluster (axiom R4).
+  --
+  -- The remaining plumbing (namespace bridge ForwardTube ↔ ForwardConeAbs,
+  -- BHW extension = spectrum_condition on forward tube, etc.) is sorry'd
+  -- here but is purely definitional — no new mathematical content.
+  -- Key bridge: ForwardTube = TubeDomainSetPi (ForwardConeAbs)
+  have hFT_eq : ∀ p, ForwardTube d p =
+      TubeDomainSetPi (ForwardConeAbs d p) := fun p => by
+    rw [forwardTube_eq_imPreimage]; rfl
+  -- Package Wfn.W as CLMs (linear + continuous → CLM)
+  let mkCLM : ∀ p, SchwartzMap (NPointDomain d p) ℂ →L[ℂ] ℂ := fun p =>
+    { toLinearMap := {
+        toFun := Wfn.W p
+        map_add' := (Wfn.linear p).1
+        map_smul' := (Wfn.linear p).2 }
+      cont := Wfn.tempered p }
+  -- DifferentiableOn bridges
+  have hF_holo : DifferentiableOn ℂ (Wfn.spectrum_condition (n + m)).choose
+      (TubeDomainSetPi (ForwardConeAbs d (n + m))) :=
+    (hFT_eq (n + m)) ▸ (Wfn.spectrum_condition (n + m)).choose_spec.1
+  have hF₁_holo : DifferentiableOn ℂ (Wfn.spectrum_condition n).choose
+      (TubeDomainSetPi (ForwardConeAbs d n)) :=
+    (hFT_eq n) ▸ (Wfn.spectrum_condition n).choose_spec.1
+  have hF₂_holo : DifferentiableOn ℂ (Wfn.spectrum_condition m).choose
+      (TubeDomainSetPi (ForwardConeAbs d m)) :=
+    (hFT_eq m) ▸ (Wfn.spectrum_condition m).choose_spec.1
+  -- Tube membership bridges
+  -- Tube membership: direct from hmem + namespace bridge
+  have hz_mem : Fin.append z_n z_m ∈
+      TubeDomainSetPi (ForwardConeAbs d (n + m)) := by
+    rw [← hFT_eq]; exact hmem
+  have hz_n_mem : z_n ∈ TubeDomainSetPi (ForwardConeAbs d n) := by
+    rw [← hFT_eq]; exact hmem_n
+  have hz_m_mem : z_m ∈ TubeDomainSetPi (ForwardConeAbs d m) := by
+    rw [← hFT_eq]; exact hmem_m
+  -- Apply the axiom
+  have h := distributional_cluster_lifts_to_tube
+    (ForwardConeAbs d (n + m))
+    (forwardConeAbs_isOpen d (n + m))
+    (forwardConeAbs_convex d (n + m))
+    (fun y hy t ht => forwardConeAbs_smul d (n + m) t ht y hy)
+    (forwardConeAbs_salient d (n + m))
+    (Wfn.spectrum_condition (n + m)).choose
+    hF_holo
+    -- W = Wfn.W (n+m) as CLM, with BV convergence from spectrum_condition
+    (mkCLM (n + m))
+    (by -- BV convergence: spectrum condition in ForwardConeAbs form
+      intro η hη φ
+      have hη' := (inForwardCone_iff_mem_forwardConeAbs η).2 hη
+      have := (Wfn.spectrum_condition (n + m)).choose_spec.2 φ η hη'
+      exact this)
+    (ForwardConeAbs d n) (ForwardConeAbs d m)
+    -- F₁ with W₁ = Wfn.W n
+    (Wfn.spectrum_condition n).choose hF₁_holo
+    (mkCLM n)
+    (by intro η₁ hη₁ φ₁
+        have := (Wfn.spectrum_condition n).choose_spec.2 φ₁ η₁
+          ((inForwardCone_iff_mem_forwardConeAbs η₁).2 hη₁)
+        exact this)
+    -- F₂ with W₂ = Wfn.W m
+    (Wfn.spectrum_condition m).choose hF₂_holo
+    (mkCLM m)
+    (by intro η₂ hη₂ φ₂
+        have := (Wfn.spectrum_condition m).choose_spec.2 φ₂ η₂
+          ((inForwardCone_iff_mem_forwardConeAbs η₂).2 hη₂)
+        exact this)
+    -- h_bv_cluster: directly from Wfn.cluster (R4).
+    -- The axiom's hypothesis now matches R4 exactly (tensor-product test functions).
+    (fun f₁ f₂ ε' hε' => by
+      obtain ⟨R', hR', hclust⟩ := Wfn.cluster n m f₁ f₂ ε' hε'
+      exact ⟨R', hR', fun a ha0 ha_large f₂_a hf₂_a => by
+        have := hclust a ha0 ha_large f₂_a hf₂_a
+        -- Bridge: mkCLM evaluates to Wfn.W
+        simp only [mkCLM] at this ⊢; exact this⟩)
+    z_n z_m hz_mem hz_n_mem hz_m_mem
+    ε hε
+  -- Bridge the conclusion: axiom gives cluster for spectrum_condition.choose,
+  -- but we need it for W_analytic_BHW.  On the forward tube these agree
+  -- (by W_analytic_BHW property 2: ∀ z ∈ ForwardTube, F_ext z = W_analytic z).
+  obtain ⟨R, hR, hcluster⟩ := h
+  refine ⟨R, hR, fun a ha0 ha_large => ?_⟩
+  have hh := hcluster a ha0 ha_large
+  -- Bridge: W_analytic_BHW = spectrum_condition.choose on ForwardTube ⊆ PET
+  -- Use W_analytic_BHW property 2: ∀ z ∈ ForwardTube, F_ext z = W_analytic z
+  -- All three evaluation points are in ForwardTube (hence in PET).
+  have hBHW_eq := (W_analytic_BHW Wfn (n + m)).property.2.1
+  have hBHW_n_eq := (W_analytic_BHW Wfn n).property.2.1
+  have hBHW_m_eq := (W_analytic_BHW Wfn m).property.2.1
+  -- The shifted joint config is in ForwardTube (real shift preserves Im)
+  have hmem_shift : Fin.append z_n (fun k μ => z_m k μ + ↑(a μ)) ∈
+      ForwardTube d (n + m) := by
+    -- Block shift by real a preserves ForwardTube (Im unchanged).
+    -- Express as pointwise real shift + show Fin.append equality.
+    have hpw := forwardTube_add_real_pointwise (Fin.append z_n z_m)
+      (fun k μ => if n ≤ k.val then a μ else 0) hmem
+    convert hpw using 1
+    ext k μ
+    simp only [Fin.append, Fin.addCases]
+    split_ifs with h1 h2
+    · omega
+    · simp [Complex.ofReal_zero]
+    · simp
+    · omega
+  -- Rewrite BHW values to spectrum_condition values (property 2: on ForwardTube)
+  rw [hBHW_eq _ hmem_shift, hBHW_n_eq _ hmem_n, hBHW_m_eq _ hmem_m]
+  exact hh
 
 /-- Cluster property of W_analytic at the integral level: when the (n+m)-point
     analytic Wightman function is integrated against a tensor product f ⊗ g_a
     where g_a is g translated by a large purely spatial vector a (a 0 = 0),
     the result approaches the product S_n(f) * S_m(g).
 
-    This is the analytic continuation of the Wightman cluster decomposition
-    property, which follows from uniqueness of the vacuum (the mass gap
-    ensures exponential decay of the truncated correlation functions).
-    The Schwartz decay of f and g provides the domination needed for
-    dominated convergence.
+    The shift on the test function corresponds to a **real** spatial shift
+    on the BHW evaluation point (since wickRotatePoint is additive and
+    preserves real spatial components).
+
+    **Proof strategy:**  Change variables in the m-block integral to absorb the
+    translation into the BHW argument.  The integrand then involves the
+    truncated function H(x, a) = W_BHW(n+m)(z_n(x_n), z_m(x_m) + a) − product,
+    which goes to 0 pointwise by `bhw_pointwise_cluster_forwardTube` (for a.e. x
+    with distinct times).  Dominated convergence applies because W_BHW has
+    polynomial growth uniform in the spatial shift, and f, g are Schwartz.
 
     Ref: Streater-Wightman, Theorem 3.5 (cluster decomposition);
     Glimm-Jaffe, Chapter 19 -/
+-- **Weighted polynomial growth of W_BHW at Wick-rotated points.**
+--
+-- The forward-tube growth condition `HasForwardTubeGrowth` gives
+--   ‖W_analytic(wick(x))‖ * infDist(x, coincidence)^(q+1) ≤ C(1+‖x‖)^N
+-- which is enough for integrability against Schwartz functions (the test
+-- function decay absorbs both polynomial growth and coincidence singularity).
+-- This bound is independent of any spatial shift (imaginary parts unchanged).
+-- Available from `hasForwardTubeGrowth_of_wightman` (SchwingerTemperedness.lean).
+
 theorem W_analytic_cluster_integral (Wfn : WightmanFunctions d) (n m : ℕ)
     (f : SchwartzNPoint d n) (g : SchwartzNPoint d m)
     (ε : ℝ) (hε : ε > 0) :
@@ -3320,10 +3556,25 @@ theorem W_analytic_cluster_integral (Wfn : WightmanFunctions d) (n m : ℕ)
             (∫ x : NPointDomain d m,
               (W_analytic_BHW Wfn m).val
                 (fun k => wickRotatePoint (x k)) * g x)‖ < ε := by
-  -- The proof combines the pointwise cluster property with dominated convergence.
-  -- Step 1: Use bhw_pointwise_cluster_euclidean for the pointwise estimate
-  -- Step 2: Use Schwartz decay of f, g to dominate the integrand
-  -- Step 3: Apply dominated convergence
+  -- Strategy: bhw_pointwise_cluster_forwardTube + dominated convergence.
+  --
+  -- Key steps:
+  -- (a) For a.e. x, the Wick-rotated config is in ForwardTube
+  --     (needs `wickRotation_not_in_PET_null`, sorry'd in ForwardTubeLorentz.lean).
+  --     Note: bhw_pointwise_cluster_forwardTube requires ForwardTube hypotheses,
+  --     not just PET membership — so the a.e. set must be refined to time-ordered
+  --     configurations where the specific (identity) permutation works.
+  -- (b) The integrand is dominated by C(1+‖x‖)^N / infDist^q · |f| · |g|
+  --     (from HasForwardTubeGrowth), independent of a.
+  -- (c) Apply tendsto_integral_of_dominated_convergence.
+  -- (d) Factor the integral over Fin(n+m) into n-block × m-block products.
+  --
+  -- Blocked by:
+  -- (1) wickRotation_not_in_PET_null (a.e. ForwardTube membership;
+  --     sorry in ForwardTubeLorentz.lean — algebraic measure-zero step is
+  --     NOW PROVED in GeneralResults/PolynomialMeasureZeroProof.lean,
+  --     remaining gap is the Jost characterization)
+  -- (2) Fubini decomposition of Fin(n+m)-indexed integrals
   sorry
 
 /-- The Schwinger functions satisfy clustering (E4).
