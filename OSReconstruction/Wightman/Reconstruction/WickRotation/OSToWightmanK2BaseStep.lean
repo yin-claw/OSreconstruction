@@ -4208,6 +4208,25 @@ theorem schwingerDifferencePositiveCLM_eq_of_normalized_center_local
 fixed normalized negative-time probe. This exposes the one-variable
 Laplace-Fourier pairing needed by the isolated VI.1 file without reopening the
 larger witness package. -/
+theorem integral_laplaceFourierKernel_mul_eq_measure_integral_local
+    (μ : Measure (ℝ × (Fin d → ℝ)))
+    [IsFiniteMeasure μ]
+    (hsupp : μ (Set.prod (Set.Iio 0) Set.univ) = 0)
+    (h : SchwartzSpacetime d)
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x | 0 < x 0})
+    (hh_compact : HasCompactSupport (h : SpacetimeDim d → ℂ)) :
+    ∫ ξ : SpacetimeDim d, laplaceFourierKernel (d := d) μ ξ * h ξ ∂volume =
+      ∫ p : ℝ × (Fin d → ℝ),
+        ∫ ξ : SpacetimeDim d,
+          Complex.exp (-(↑(ξ 0 * p.1) : ℂ)) *
+            Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * ξ (Fin.succ i))) *
+            h ξ ∂volume ∂μ := by
+  exact integral_laplaceFourierKernel_mul_eq (d := d) μ hsupp h hh_pos hh_compact
+
+/-- Public reduced positive-time pairing identity for the Bochner measure of a
+fixed normalized negative-time probe. This exposes the one-variable
+Laplace-Fourier pairing needed by the isolated VI.1 file without reopening the
+larger witness package. -/
 theorem integral_laplaceFourierKernel_mul_eq_translatedProductShell_integral_local
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
