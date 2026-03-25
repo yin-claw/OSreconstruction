@@ -1710,11 +1710,41 @@ theorem timeEvolution_generator (Ham : UnboundedOperator H) (hHam : Ham.IsDensel
     -- hslope2 : lim t⁻¹(U(t)v - v) = I • Ham v
     -- hz : lim I⁻¹ • t⁻¹ • (U(t)v - v) = z (generator value)
     -- So z = I⁻¹ • I • Ham v = Ham v
-    -- z = Ham v follows from uniqueness of limits:
-    -- lim t⁻¹(U(t)v - v) = I•z (from generator) = I•Ham_v (from spectral axiom)
-    -- The rest is definitional plumbing (generator operator = generatorApply,
-    -- UnboundedOperator graph membership).
-    sorry
+    -- z = Ham v: multiply hz by I to get lim t⁻¹(U(t)v - v) = I•z,
+    -- then by uniqueness with hslope2: I•z = I•Ham_v, so z = Ham_v.
+    have hz_smul : Filter.Tendsto
+        (fun t : ℝ => t⁻¹ • (unitaryGroup Ham hHam hsa t (y : H) - (y : H)))
+        (nhdsWithin 0 {(0 : ℝ)}ᶜ) (nhds (Complex.I • z)) := by
+      have := hz.const_smul Complex.I
+      simp only [smul_smul, mul_comm Complex.I Complex.I⁻¹,
+        inv_mul_cancel₀ Complex.I_ne_zero, one_smul, timeEvolution] at this
+      exact this
+    have hIz_eq : Complex.I • z = Complex.I • Ham ⟨(y : H), hv_dom⟩ :=
+      tendsto_nhds_unique hz_smul hslope2
+    have hz_eq : z = Ham ⟨(y : H), hv_dom⟩ := by
+      have := congr_arg (Complex.I⁻¹ • ·) hIz_eq
+      simp only [smul_smul, inv_mul_cancel₀ Complex.I_ne_zero, one_smul] at this
+      exact this
+    -- Now: need (v, generator y) ∈ graph(Ham), i.e., ∃ x ∈ dom(Ham), x.val = v ∧ Ham x = gen y
+    -- generator y (as UnboundedOperator applied to y) = generatorApply y = z = Ham v
+    have hgen_z : (timeEvolution Ham hHam hsa).generatorApply (y : H) ⟨z, hz⟩ = z :=
+      tendsto_nhds_unique
+        ((timeEvolution Ham hHam hsa).generatorApply_spec (y : H) ⟨z, hz⟩) hz
+    -- The generator UnboundedOperator at y equals generatorApply y
+    -- graph(Ham) membership: (y.val, Ham y) where y ∈ dom(Ham)
+    refine ⟨⟨(y : H), hv_dom⟩, rfl, ?_⟩
+    -- Need: Ham ⟨y, hv_dom⟩ = generator.toFun ⟨y, y.2⟩
+    -- = generatorApply y _ = z = Ham ⟨y, hv_dom⟩. ✓
+    show Ham ⟨(y : H), hv_dom⟩ = (timeEvolution Ham hHam hsa).generator ⟨(y : H), y.2⟩
+    rw [show (timeEvolution Ham hHam hsa).generator ⟨(y : H), y.2⟩ =
+        (timeEvolution Ham hHam hsa).generatorApply (y : H)
+          ((timeEvolution Ham hHam hsa).generatorDomainSubmodule_carrier ▸ y.2) from rfl]
+    rw [show (timeEvolution Ham hHam hsa).generatorApply (y : H)
+        ((timeEvolution Ham hHam hsa).generatorDomainSubmodule_carrier ▸ y.2) = z from
+      tendsto_nhds_unique
+        ((timeEvolution Ham hHam hsa).generatorApply_spec (y : H)
+          ((timeEvolution Ham hHam hsa).generatorDomainSubmodule_carrier ▸ y.2)) hz]
+    exact hz_eq.symm
   · -- graph(Ham) ⊆ graph(generator): for v ∈ dom(Ham) with Ham v = w,
     -- show v ∈ generatorDomain with generator v = w.
     intro ⟨y, hy1, hy2⟩
