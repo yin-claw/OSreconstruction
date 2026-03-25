@@ -572,6 +572,30 @@ axiom unitaryGroup_hasDerivAt_dom (T : UnboundedOperator H) (hT : T.IsDenselyDef
     HasDerivAt (fun s => unitaryGroup T hT hsa s (x : H))
       (Complex.I • unitaryGroup T hT hsa t (T x)) t
 
+/-- The spectral unitary group preserves the domain of T.
+
+    **Proof sketch (not formalized):**
+    U(t) = ∫ exp(itλ) dP(λ) and dom(T) = {x : ∫ λ² d⟨P(λ)x, x⟩ < ∞}.
+    Since |exp(itλ)| = 1, U(t) commutes with P(E) for every Borel E,
+    so ∫ λ² d⟨P(λ)U(t)x, U(t)x⟩ = ∫ λ² d⟨P(λ)x, x⟩ < ∞.
+    Hence U(t)x ∈ dom(T). -/
+axiom unitaryGroup_preserves_domain (T : UnboundedOperator H) (hT : T.IsDenselyDefined)
+    (hsa : T.IsSelfAdjoint hT) (x : T.domain) (t : ℝ) :
+    unitaryGroup T hT hsa t (x : H) ∈ T.domain
+
+/-- The spectral unitary group commutes with T on dom(T):
+    T(U(t)x) = U(t)(Tx) for x ∈ dom(T).
+
+    **Proof sketch (not formalized):**
+    Both T and U(t) are functions of the spectral measure P:
+    T = ∫ λ dP(λ), U(t) = ∫ exp(itλ) dP(λ).
+    Functional calculus gives f(T)g(T) = (fg)(T),
+    so U(t)T = T U(t) on dom(T). -/
+axiom unitaryGroup_commutes_with_generator (T : UnboundedOperator H) (hT : T.IsDenselyDefined)
+    (hsa : T.IsSelfAdjoint hT) (x : T.domain) (t : ℝ) :
+    T ⟨unitaryGroup T hT hsa t (x : H), unitaryGroup_preserves_domain T hT hsa x t⟩ =
+    unitaryGroup T hT hsa t (T x)
+
 /-- Norm preservation for the spectral unitary group:
     ‖unitaryGroup T hT hsa t x‖ = ‖x‖ -/
 theorem unitaryGroup_norm_preserving (T : UnboundedOperator H) (hT : T.IsDenselyDefined)
