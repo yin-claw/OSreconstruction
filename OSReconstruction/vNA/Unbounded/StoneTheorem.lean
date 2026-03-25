@@ -1496,8 +1496,23 @@ theorem unique_from_generator
     (hgen : 𝒰.generator = A)
     (t : ℝ) :
     𝒰.U t = unitaryGroup A hA hsa t := by
-  -- 1. Both U and V are continuous, so it suffices to agree on dom(A).
-  -- 2. For x ∈ dom(A), the ODE uniqueness (analytic vector argument) gives equality.
+  -- Proof sketch: for x ∈ dom(A), define g(s) = ⟨U(-s)(V(s)x), y⟩
+  -- where V = unitaryGroup A. Show g' = 0 by cancellation of the iA terms
+  -- (generator_hasDerivAt for U, unitaryGroup_hasDerivAt_dom for V).
+  -- Then g is constant, g(t) = g(0) = ⟨x, y⟩, giving ⟨V(t)x, U(t)y⟩ = ⟨x, y⟩.
+  -- Since U(t)* = U(-t), this gives ⟨V(t)x, y⟩ = ⟨U(t)x, y⟩ for all y.
+  -- So V(t)x = U(t)x on dom(A), and density extends to all x.
+  --
+  -- The key ingredients:
+  -- 1. unitaryGroup_hasDerivAt_dom (axiom): d/ds V(s)x = iA·V(s)x
+  -- 2. generator_hasDerivAt (proved): d/ds U(s)z = iA·U(s)z for z ∈ dom(A)
+  -- 3. hgen: the generators are the same
+  -- 4. Product rule + inner product differentiation
+  -- 5. Constant function has equal values: g(t) = g(0)
+  -- 6. Density of dom(A)
+  --
+  -- Fully formal proof requires careful chain-rule / product-rule bookkeeping
+  -- with the spectral axiom. The mathematical content is standard ODE uniqueness.
   sorry
 
 /-- Stone's theorem: Every strongly continuous one-parameter unitary group has

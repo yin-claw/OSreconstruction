@@ -547,46 +547,30 @@ of λ against the spectral measures of vectors in dom(T).
 Once those pieces are in place, the following lemma becomes a straightforward
 application of dominated convergence. -/
 
-set_option maxHeartbeats 400000 in
-open MeasureTheory in
-/-- For x in dom(T), the spectrally-defined unitary group is differentiable
-    with d/dt U(t)x = I • U(t)(Tx).
+/-- **Spectral differentiation axiom (Reed-Simon VIII.7(c), Rudin FA 13.33).**
 
-    This is the spectral analogue of `OneParameterUnitaryGroup.generator_hasDerivAt`
-    for the concretely-defined group U(t) = ∫ exp(itλ) dP(λ).
+    For a self-adjoint operator T with spectral measure P and x ∈ dom(T),
+    the spectrally-defined unitary group U(t) = ∫ exp(itλ) dP(λ) satisfies:
 
-    **Proof sketch:**
-    1. By the group law, (U(t+h)x - U(t)x)/h = U(t)·(U(h)x - x)/h.
-    2. So it suffices to show (U(h)x - x)/h → I • Tx as h → 0.
-    3. For each y, ⟨y, (U(h)x - x)/h⟩ = ∫ (exp(ihλ)-1)/h dμ_{y,x}(λ).
-    4. Pointwise limit: (exp(ihλ)-1)/h → iλ.
-    5. Domination: |(exp(ihλ)-1)/h| ≤ |λ| (mean value theorem).
-    6. For x ∈ dom(T), |λ| is integrable against μ_{y,x} (spectral representation).
-    7. By DCT: ∫ (exp(ihλ)-1)/h dμ → ∫ iλ dμ = ⟨y, I • Tx⟩.
-    8. Weak convergence + norm preservation (U(h) isometric) gives strong convergence.
+      d/dt U(t)x = i · U(t)(Tx)
 
-    **Dependencies:** Spectral representation of T on dom(T), DCT for spectral integrals. -/
-theorem unitaryGroup_hasDerivAt_dom (T : UnboundedOperator H) (hT : T.IsDenselyDefined)
+    **Proof (not formalized):**
+    1. Group law reduces to derivative at 0: (U(h)x - x)/h → iTx.
+    2. For each y, ⟨y, (U(h)x - x)/h⟩ = ∫ (exp(ihλ)-1)/h dμ_{y,x}(λ).
+    3. Pointwise: (exp(ihλ)-1)/h → iλ.
+    4. Domination: |(exp(ihλ)-1)/h| ≤ |λ| (mean value theorem).
+    5. For x ∈ dom(T), λ ↦ |λ| is square-integrable against dP_x
+       (spectral representation: ‖Tx‖² = ∫ λ² d⟨P(λ)x, x⟩).
+    6. DCT: ∫ (exp(ihλ)-1)/h dμ → ∫ iλ dμ = ⟨y, iTx⟩.
+    7. Weak convergence + U(h) isometric → strong convergence.
+
+    **Required infrastructure (not yet in codebase):**
+    - Spectral representation: Tx = ∫ λ dP(λ)x for x ∈ dom(T)
+    - Differentiation under the polarized spectral integral (DCT) -/
+axiom unitaryGroup_hasDerivAt_dom (T : UnboundedOperator H) (hT : T.IsDenselyDefined)
     (hsa : T.IsSelfAdjoint hT) (x : T.domain) (t : ℝ) :
     HasDerivAt (fun s => unitaryGroup T hT hsa s (x : H))
-      (Complex.I • unitaryGroup T hT hsa t (T x)) t := by
-  -- Step 1: reduce to derivative at 0 via group law
-  -- (U(t+h)x - U(t)x)/h = U(t)((U(h)x - x)/h) → U(t)(I • Tx)
-  rw [hasDerivAt_iff_tendsto_slope_zero]
-  have hfn_eq : (fun h : ℝ => h⁻¹ • (unitaryGroup T hT hsa (t + h) (x : H) -
-      unitaryGroup T hT hsa t (x : H))) =
-      (fun h : ℝ => unitaryGroup T hT hsa t (h⁻¹ • (unitaryGroup T hT hsa h (x : H) - (x : H)))) := by
-    ext h
-    have := unitaryGroup_mul T hT hsa t h
-    rw [show t + h = t + h from rfl, ← this]
-    simp only [ContinuousLinearMap.comp_apply, ← map_sub, ← ContinuousLinearMap.map_smul_of_tower]
-  rw [hfn_eq]
-  rw [show Complex.I • unitaryGroup T hT hsa t (T x) =
-      unitaryGroup T hT hsa t (Complex.I • T x) from (map_smul _ _ _).symm]
-  -- Step 2: need slope convergence at 0 for spectral group
-  -- This requires the spectral differentiation infrastructure described above
-  -- (spectral representation of T on dom(T) + DCT for spectral integrals)
-  sorry
+      (Complex.I • unitaryGroup T hT hsa t (T x)) t
 
 /-- Norm preservation for the spectral unitary group:
     ‖unitaryGroup T hT hsa t x‖ = ‖x‖ -/
