@@ -1570,39 +1570,152 @@ theorem unique_from_generator
     --   generator_hasDerivAt (generator derivative),
     --   unitaryGroup_preserves_domain + unitaryGroup_commutes_with_generator (commutation),
     --   strong continuity of U, and norm preservation.
-    have hf_deriv : ∀ s : ℝ, HasDerivAt f 0 s := by
-      intro s
-      -- f(s) = U(-s)(V(s)x). Use HasDerivAt.inner to show ⟨f(s), y⟩ is constant.
-      -- Alternative: direct HasDerivAt via the bilinear product rule.
-      -- f = (s ↦ U(-s)) applied to (s ↦ V(s)x).
-      -- Derivative of V(s)x: I • V(s)(Ax) [unitaryGroup_hasDerivAt_dom axiom]
-      have hV_deriv : HasDerivAt (fun s => V s x) (Complex.I • V s (A x_A)) s :=
-        unitaryGroup_hasDerivAt_dom A hA hsa x_A s
-      -- Derivative of U(-s)(z) for fixed z ∈ dom(A):
-      -- d/ds U(-s)z = -I • U(-s)(Az) [generator_hasDerivAt with chain rule]
-      -- V(s)x ∈ dom(A) by unitaryGroup_preserves_domain
-      have hVx_indom := hVx_gen s
-      have hU_deriv_at_Vx : HasDerivAt (fun s => 𝒰.U (-s) (V s x))
-          ((-Complex.I • 𝒰.U (-s) (𝒰.generatorApply (V s x) (hVx_gen s))) +
-           𝒰.U (-s) (Complex.I • V s (A x_A))) s := by
-        -- Bilinear product rule: d/ds [U(-s)(V(s)x)] = U'(-s)(V(s)x) + U(-s)(V'(s)x)
-        -- Use HasDerivAt.clm_apply with ℝ-restricted scalars.
-        -- This requires HasDerivAt for s ↦ U(-s) as a CLM-valued function and
-        -- HasDerivAt for s ↦ V(s)x as a vector-valued function.
-        -- The vector part is hV_deriv. The CLM part needs the generator derivative
-        -- lifted to the operator level (not just pointwise).
-        sorry
-      -- The two terms cancel: generatorApply(V(s)x) = V(s)(Ax) by hgenApply_Vx
-      have hcancel : (-Complex.I • 𝒰.U (-s) (𝒰.generatorApply (V s x) (hVx_gen s))) +
-          𝒰.U (-s) (Complex.I • V s (A x_A)) = 0 := by
-        rw [hgenApply_Vx s, (𝒰.U (-s)).map_smul]
-        simp [neg_add_cancel]
-      rwa [hcancel] at hU_deriv_at_Vx
-    -- f differentiable with zero derivative, hence constant
+    -- f is constant: prove ⟨f(s), y⟩ = ⟨f(0), y⟩ for all y via inner product ODE.
+    -- For y ∈ dom(A): ⟨f(s), y⟩ = ⟨V(s)x, U(s)y⟩ (since U(-s)* = U(s)).
+    -- Define g_y(s) = ⟨V(s)x, U(s)y⟩. By HasDerivAt.inner:
+    -- g_y'(s) = ⟨V'(s)x, U(s)y⟩ + ⟨V(s)x, U'(s)y⟩
+    --         = ⟨I•V(s)(Ax), U(s)y⟩ + ⟨V(s)x, I•U(s)(Ay)⟩
+    --         = -I⟨V(s)(Ax), U(s)y⟩ + I⟨V(s)x, U(s)(Ay)⟩
+    -- By unitarity: = -I⟨Ax, y⟩ + I⟨x, Ay⟩
+    -- By symmetry: = (-I + I)⟨Ax, y⟩ = 0. ✓
+    -- So g_y constant → ⟨f(s), y⟩ = ⟨x, y⟩ for y ∈ dom(A).
+    -- Dense dom(A) + continuity: ⟨f(s), y⟩ = ⟨x, y⟩ for all y → f(s) = x.
     have hf_const : ∀ s₁ s₂ : ℝ, f s₁ = f s₂ := by
-      have hdiff : Differentiable ℝ f := fun s => (hf_deriv s).differentiableAt
-      have hderiv0 : ∀ s, deriv f s = 0 := fun s => (hf_deriv s).deriv
-      exact is_const_of_deriv_eq_zero hdiff hderiv0
+      -- Strategy: show V(s)x = U(s)x for all s via energy method,
+      -- then f(s) = U(-s)(U(s)x) = x is constant.
+      -- Define w(s) = V(s)x - U(s)x, show ⟨w(s), w(s)⟩ has zero derivative
+      -- (by symmetry of A), hence is constant = ⟨w(0), w(0)⟩ = 0.
+      --
+      -- Step 0: U(s)x ∈ generatorDomain and A.domain
+      have hUx_gen : ∀ s : ℝ, 𝒰.U s x ∈ 𝒰.generatorDomain :=
+        fun s => 𝒰.generator_U_mem s x hx_gen
+      have hUx_dom : ∀ s : ℝ, 𝒰.U s x ∈ A.domain := by
+        intro s
+        have : 𝒰.U s x ∈ 𝒰.generatorDomain := hUx_gen s
+        rw [← 𝒰.generatorDomainSubmodule_carrier] at this
+        show 𝒰.U s x ∈ (A.domain : Set H)
+        rwa [← congrArg SetLike.coe hdom_eq]
+      -- Step 0b: A(U(s)x) = U(s)(Ax) (commutation of U with A via generator)
+      have hA_Ux : ∀ s : ℝ, A ⟨𝒰.U s x, hUx_dom s⟩ = 𝒰.U s (A x_A) := by
+        intro s
+        -- generator(U(s)x) = generatorApply(U(s)x, _) = U(s)(generatorApply(x, _)) = U(s)(Ax)
+        -- Since generator = A, this gives A(U(s)x) = U(s)(Ax)
+        have h_genApp : 𝒰.generatorApply (𝒰.U s x) (hUx_gen s) = 𝒰.U s (A x_A) := by
+          rw [𝒰.generator_U_commute s x hx_gen, hgen_eq]
+        -- Connect generatorApply to A
+        have h_eq : A ⟨𝒰.U s x, hUx_dom s⟩ = 𝒰.generatorApply (𝒰.U s x) (hUx_gen s) := by
+          have h1 : 𝒰.generator ⟨𝒰.U s x, hdom_eq ▸ hUx_dom s⟩ =
+              𝒰.generatorApply (𝒰.U s x) (hUx_gen s) := by
+            show 𝒰.generatorApply (⟨𝒰.U s x, hdom_eq ▸ hUx_dom s⟩ :
+                𝒰.generator.domain).1 _ =
+              𝒰.generatorApply (𝒰.U s x) (hUx_gen s)
+            congr 1
+          have h2 : 𝒰.generator ⟨𝒰.U s x, hdom_eq ▸ hUx_dom s⟩ =
+              A ⟨𝒰.U s x, hUx_dom s⟩ := by
+            have : A = 𝒰.generator := hgen.symm; subst this; rfl
+          rw [← h2, h1]
+        rw [h_eq, h_genApp]
+      -- Step 1: HasDerivAt for V(s)x and U(s)x
+      have hV_deriv : ∀ s : ℝ,
+          HasDerivAt (fun s => V s x) (Complex.I • V s (A x_A)) s :=
+        fun s => unitaryGroup_hasDerivAt_dom A hA hsa x_A s
+      have hU_deriv : ∀ s : ℝ,
+          HasDerivAt (fun s => 𝒰.U s x) (Complex.I • 𝒰.U s (A x_A)) s := by
+        intro s
+        have h := 𝒰.generator_hasDerivAt x hx_gen s
+        rwa [hgen_eq] at h
+      -- Step 2: HasDerivAt for w(s) = V(s)x - U(s)x
+      set w : ℝ → H := fun s => V s x - 𝒰.U s x
+      have hw_deriv : ∀ s : ℝ,
+          HasDerivAt w (Complex.I • V s (A x_A) - Complex.I • 𝒰.U s (A x_A)) s :=
+        fun s => (hV_deriv s).sub (hU_deriv s)
+      -- Step 3: HasDerivAt for φ(s) = ⟨w(s), w(s)⟩ via HasDerivAt.inner
+      set φ : ℝ → ℂ := fun s => @inner ℂ H _ (w s) (w s)
+      have hφ_deriv : ∀ s : ℝ, HasDerivAt φ 0 s := by
+        intro s
+        set ws := w s
+        set dw := Complex.I • V s (A x_A) - Complex.I • 𝒰.U s (A x_A)
+        have h_inner_deriv : HasDerivAt (fun s => @inner ℂ H _ (w s) (w s))
+            (@inner ℂ H _ ws dw + @inner ℂ H _ dw ws) s :=
+          HasDerivAt.inner (𝕜 := ℂ) (hw_deriv s) (hw_deriv s)
+        -- Show the derivative @inner ℂ H _ ws dw + @inner ℂ H _ dw ws = 0
+        suffices h_zero : @inner ℂ H _ ws dw + @inner ℂ H _ dw ws = 0 by
+          convert h_inner_deriv using 1; exact h_zero.symm
+        -- Factor out I from dw = I • (V s (Ax) - U s (Ax))
+        set Aw := V s (A x_A) - 𝒰.U s (A x_A)
+        have hdw_eq : dw = Complex.I • Aw := by
+          show Complex.I • V s (A x_A) - Complex.I • 𝒰.U s (A x_A) =
+            Complex.I • (V s (A x_A) - 𝒰.U s (A x_A))
+          rw [smul_sub]
+        rw [hdw_eq]
+        rw [inner_smul_right, inner_smul_left]
+        -- Now: I * ⟨ws, Aw⟩ + conj(I) * ⟨Aw, ws⟩ = 0
+        -- By symmetry of A: ⟨Aw, ws⟩ = ⟨ws, Aw⟩
+        -- (where Aw = A(w_dom) and ws = (w_dom : H) for w_dom : A.domain)
+        have hsym : A.IsSymmetric := A.selfadjoint_symmetric hA hsa
+        -- Construct w(s) as a domain element
+        have hw_mem : w s ∈ A.domain := A.domain.sub_mem (hV_pres s) (hUx_dom s)
+        set w_dom : A.domain := ⟨w s, hw_mem⟩
+        -- A(w_dom) = A(v_dom) - A(u_dom) = V(s)(Ax) - U(s)(Ax) = Aw
+        have hAw_eq : A w_dom = Aw := by
+          show A ⟨V s x - 𝒰.U s x, hw_mem⟩ =
+            V s (A x_A) - 𝒰.U s (A x_A)
+          -- A is linear on its domain: A(a - b) = A(a) - A(b)
+          have h_sub : (⟨V s x - 𝒰.U s x, hw_mem⟩ : A.domain) =
+              ⟨V s x, hV_pres s⟩ - ⟨𝒰.U s x, hUx_dom s⟩ := by
+            ext; simp
+          rw [h_sub]
+          -- map_sub via map_add' and map_smul'
+          have h_lin : A (⟨V s x, hV_pres s⟩ - ⟨𝒰.U s x, hUx_dom s⟩) =
+              A ⟨V s x, hV_pres s⟩ - A ⟨𝒰.U s x, hUx_dom s⟩ := by
+            have h1 : (⟨V s x, hV_pres s⟩ : A.domain) - ⟨𝒰.U s x, hUx_dom s⟩ =
+                ⟨V s x, hV_pres s⟩ + (-1 : ℂ) • ⟨𝒰.U s x, hUx_dom s⟩ := by
+              simp only [neg_smul, one_smul, sub_eq_add_neg]
+            rw [h1, A.map_add', A.map_smul', neg_one_smul, ← sub_eq_add_neg]
+          rw [h_lin, hV_comm s, hA_Ux s]
+        -- Apply symmetry: ⟨A w_dom, (w_dom : H)⟩ = ⟨(w_dom : H), A w_dom⟩
+        have h_sym := hsym w_dom w_dom
+        -- h_sym : ⟨A w_dom, (w_dom : H)⟩ = ⟨(w_dom : H), A w_dom⟩
+        -- Rewrite in terms of Aw and ws
+        rw [hAw_eq] at h_sym
+        -- h_sym : ⟨Aw, ws⟩ = ⟨ws, Aw⟩
+        change Complex.I * @inner ℂ H _ ws Aw +
+          (starRingEnd ℂ) Complex.I * @inner ℂ H _ Aw ws = 0
+        rw [Complex.conj_I, h_sym]
+        ring
+      -- Step 4: φ is constant by is_const_of_deriv_eq_zero
+      have hφ_const : ∀ s₁ s₂ : ℝ, φ s₁ = φ s₂ := by
+        have hdiff : Differentiable ℝ φ :=
+          fun s => (hφ_deriv s).differentiableAt
+        have hderiv0 : ∀ s, deriv φ s = 0 :=
+          fun s => (hφ_deriv s).deriv
+        exact is_const_of_deriv_eq_zero hdiff hderiv0
+      -- Step 5: φ(s) = φ(0) = 0 for all s
+      have hφ_zero : ∀ s : ℝ, φ s = 0 := by
+        intro s
+        have h0 := hφ_const s 0
+        -- φ 0 = ⟨w 0, w 0⟩ = ⟨V 0 x - U 0 x, ...⟩ = ⟨x - x, x - x⟩ = 0
+        simp only [φ, w, 𝒰.zero, ContinuousLinearMap.one_apply,
+          show V 0 = 1 from unitaryGroup_zero A hA hsa,
+          sub_self, inner_zero_left] at h0
+        exact h0
+      -- Step 6: w(s) = 0, i.e., V(s)x = U(s)x
+      have hw_zero : ∀ s : ℝ, V s x = 𝒰.U s x := by
+        intro s
+        have h := hφ_zero s
+        simp only [φ] at h
+        -- h : @inner ℂ H _ (w s) (w s) = 0
+        rw [inner_self_eq_zero] at h
+        -- h : w s = 0, i.e., V s x - U s x = 0
+        exact sub_eq_zero.mp h
+      -- Step 7: f(s) = U(-s)(U(s)x) = x for all s, hence f constant
+      intro s₁ s₂
+      show 𝒰.U (-s₁) (V s₁ x) = 𝒰.U (-s₂) (V s₂ x)
+      rw [hw_zero s₁, hw_zero s₂]
+      -- Now: U(-s₁)(U(s₁)x) = U(-s₂)(U(s₂)x)
+      -- Both equal x by U(-s)(U(s)x) = U(0)x = x
+      simp only [← ContinuousLinearMap.comp_apply, ← 𝒰.add,
+        neg_add_cancel, 𝒰.zero, ContinuousLinearMap.one_apply]
     -- f(t) = f(0): U(-t)(V(t)x) = U(0)(V(0)x) = x
     have hf_eq : 𝒰.U (-t) (V t x) = x := by
       have := hf_const t 0
