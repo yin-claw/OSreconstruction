@@ -1456,6 +1456,50 @@ structure StoneData (𝒰 : OneParameterUnitaryGroup H) where
   /-- U(t) = exp(itA) via the spectral calculus -/
   generates : ∀ t : ℝ, 𝒰.U t = unitaryGroup A dense selfadj t
 
+/-! ### Uniqueness of generators
+
+Two strongly continuous one-parameter unitary groups with the same self-adjoint
+generator must be equal.  This is the central uniqueness ingredient for the
+forward direction of Stone's theorem.
+
+**Proof sketch (analytic vectors).**
+
+Let U, V be strongly continuous one-parameter unitary groups with the same
+generator A.  By `generator_integral_formula` / `unitaryGroup_hasDerivAt_dom`:
+
+  U(t)x - x = ∫₀ᵗ I • U(s)(Ax) ds,   V(t)x - x = ∫₀ᵗ I • V(s)(Ax) ds
+
+for x ∈ dom(A).  Subtracting and taking norms:
+
+  ‖(U(t) − V(t))x‖ ≤ |t| · sup_s ‖(U(s) − V(s))(Ax)‖.
+
+Iterating for x ∈ dom(Aⁿ) for all n (the analytic vectors) gives
+‖(U(t) − V(t))x‖ ≤ (2|t|)ⁿ/n! · ‖Aⁿx‖ → 0 for small t.
+The group law extends to all t, and density of analytic vectors extends to all x.
+
+**Gap:** This proof requires:
+1. `unitaryGroup_hasDerivAt_dom` (spectral differentiation — one sorry)
+2. Density of analytic vectors for self-adjoint operators
+3. Iterated integral estimates
+
+Once these pieces are available, the uniqueness theorem is proved, and
+`Stone.generates` follows immediately. -/
+
+/-- Two strongly continuous one-parameter unitary groups with the same generator
+    must be equal.  This is the key uniqueness result for Stone's theorem.
+
+    For now this is marked sorry pending the analytic-vector infrastructure;
+    it depends on `unitaryGroup_hasDerivAt_dom` and density of analytic vectors. -/
+theorem unique_from_generator
+    (A : UnboundedOperator H)
+    (hA : A.IsDenselyDefined) (hsa : A.IsSelfAdjoint hA)
+    (hgen : 𝒰.generator = A)
+    (t : ℝ) :
+    𝒰.U t = unitaryGroup A hA hsa t := by
+  -- 1. Both U and V are continuous, so it suffices to agree on dom(A).
+  -- 2. For x ∈ dom(A), the ODE uniqueness (analytic vector argument) gives equality.
+  sorry
+
 /-- Stone's theorem: Every strongly continuous one-parameter unitary group has
     a unique self-adjoint generator. -/
 theorem Stone (𝒰 : OneParameterUnitaryGroup H) : ∃ data : StoneData 𝒰, True := by
@@ -1466,7 +1510,9 @@ theorem Stone (𝒰 : OneParameterUnitaryGroup H) : ∃ data : StoneData 𝒰, T
     A := 𝒰.generator
     dense := 𝒰.generator_densely_defined
     selfadj := 𝒰.generator_selfadjoint
-    generates := fun t => by sorry
+    generates := fun t =>
+      𝒰.unique_from_generator 𝒰.generator 𝒰.generator_densely_defined
+        𝒰.generator_selfadjoint rfl t
   }
 
 end OneParameterUnitaryGroup
@@ -1493,12 +1539,37 @@ def timeEvolution (Ham : UnboundedOperator H) (hHam : Ham.IsDenselyDefined)
   continuous := fun x => by
     exact (unitaryGroup_continuous Ham hHam hsa x).comp continuous_neg
 
-/-- The generator of time evolution is the Hamiltonian (up to a factor of i) -/
+/-- The generator of time evolution is the *negation* of the Hamiltonian.
+
+    The sign arises from the interplay of two conventions:
+    - `timeEvolution Ham` defines U(t) = exp(−itH), i.e., `unitaryGroup Ham (−t)`.
+    - The generator is defined as A x = lim_{t→0} I⁻¹ · t⁻¹ · (U(t)x − x).
+
+    Computing:  U(ε)x ≈ x − iεHx  (first order in ε)
+    so  I⁻¹ · ε⁻¹ · (U(ε)x − x) ≈ (−i)(−iH)x = −Hx.
+
+    Therefore the generator of exp(−itH) with this convention is −H, not H.
+
+    **Note:** The original statement claimed the generator equals `Ham`.
+    That is a sign error.  The mathematically correct conclusion is
+    `(timeEvolution Ham hHam hsa).generator = -Ham` (negation of the unbounded
+    operator).  This declaration is kept (with sorry) to avoid breaking
+    downstream imports until the sign convention is resolved project-wide.
+
+    **Resolution options:**
+    1. Change `timeEvolution` to use `unitaryGroup Ham hHam hsa t` (not `(-t)`),
+       making U(t) = exp(+itH).  Then the generator IS Ham.
+    2. Define `UnboundedOperator.neg` and change the conclusion to
+       `(timeEvolution Ham hHam hsa).generator = Ham.neg`.
+    3. Change the generator convention to `Ax = lim_{t→0} (-I⁻¹) • t⁻¹ • (U(t)x-x)`,
+       absorbing the sign into the definition. -/
 theorem timeEvolution_generator (Ham : UnboundedOperator H) (hHam : Ham.IsDenselyDefined)
     (hsa : Ham.IsSelfAdjoint hHam) :
     (timeEvolution Ham hHam hsa).generator = Ham := by
-  -- The generator of U(t) = exp(-itH) is H (not -H because of our sign convention
-  -- in the definition of the generator: Ax = lim (U(t)x - x)/(it))
+  -- SIGN ERROR: The mathematically correct conclusion is .generator = -Ham.
+  -- The generator of exp(-itH) with the convention Ax = lim I⁻¹t⁻¹(U(t)x-x) is -H.
+  -- Proof: d/dt exp(-itH)x|_{t=0} = -iHx, so I⁻¹·(-iHx) = (-i)(-i)Hx = -Hx.
+  -- This sorry cannot be filled as stated. See the docstring for resolution options.
   sorry
 
 end

@@ -531,4 +531,82 @@ theorem unitaryGroup_continuous (T : UnboundedOperator H) (hT : T.IsDenselyDefin
   rw [dist_eq_norm]
   exact lt_of_pow_lt_pow_left₀ 2 (le_of_lt hε) h_bound
 
+/-! ### Spectral differentiation of the unitary group
+
+The spectrally-defined unitary group U(t) = ∫ exp(itλ) dP(λ) satisfies the ODE
+d/dt U(t)x = i U(t)(Tx) for x in dom(T).  This is proved by differentiating under
+the spectral integral using dominated convergence.  The dominating function comes
+from the mean-value-theorem bound |(exp(ihλ) - 1)/h| ≤ |λ|, and the integrability
+of λ against the spectral measures of vectors in dom(T).
+
+**Gap:** The codebase currently lacks:
+1. The spectral representation Tx = ∫ λ dP(λ) x for x ∈ dom(T) (connecting
+   the abstract operator defined via the Cayley transform to the spectral integral).
+2. Differentiation under the polarized spectral integral.
+
+Once those pieces are in place, the following lemma becomes a straightforward
+application of dominated convergence. -/
+
+set_option maxHeartbeats 400000 in
+open MeasureTheory in
+/-- For x in dom(T), the spectrally-defined unitary group is differentiable
+    with d/dt U(t)x = I • U(t)(Tx).
+
+    This is the spectral analogue of `OneParameterUnitaryGroup.generator_hasDerivAt`
+    for the concretely-defined group U(t) = ∫ exp(itλ) dP(λ).
+
+    **Proof sketch:**
+    1. By the group law, (U(t+h)x - U(t)x)/h = U(t)·(U(h)x - x)/h.
+    2. So it suffices to show (U(h)x - x)/h → I • Tx as h → 0.
+    3. For each y, ⟨y, (U(h)x - x)/h⟩ = ∫ (exp(ihλ)-1)/h dμ_{y,x}(λ).
+    4. Pointwise limit: (exp(ihλ)-1)/h → iλ.
+    5. Domination: |(exp(ihλ)-1)/h| ≤ |λ| (mean value theorem).
+    6. For x ∈ dom(T), |λ| is integrable against μ_{y,x} (spectral representation).
+    7. By DCT: ∫ (exp(ihλ)-1)/h dμ → ∫ iλ dμ = ⟨y, I • Tx⟩.
+    8. Weak convergence + norm preservation (U(h) isometric) gives strong convergence.
+
+    **Dependencies:** Spectral representation of T on dom(T), DCT for spectral integrals. -/
+theorem unitaryGroup_hasDerivAt_dom (T : UnboundedOperator H) (hT : T.IsDenselyDefined)
+    (hsa : T.IsSelfAdjoint hT) (x : T.domain) (t : ℝ) :
+    HasDerivAt (fun s => unitaryGroup T hT hsa s (x : H))
+      (Complex.I • unitaryGroup T hT hsa t (T x)) t := by
+  -- Step 1: reduce to derivative at 0 via group law
+  -- (U(t+h)x - U(t)x)/h = U(t)((U(h)x - x)/h) → U(t)(I • Tx)
+  rw [hasDerivAt_iff_tendsto_slope_zero]
+  have hfn_eq : (fun h : ℝ => h⁻¹ • (unitaryGroup T hT hsa (t + h) (x : H) -
+      unitaryGroup T hT hsa t (x : H))) =
+      (fun h : ℝ => unitaryGroup T hT hsa t (h⁻¹ • (unitaryGroup T hT hsa h (x : H) - (x : H)))) := by
+    ext h
+    have := unitaryGroup_mul T hT hsa t h
+    rw [show t + h = t + h from rfl, ← this]
+    simp only [ContinuousLinearMap.comp_apply, ← map_sub, ← ContinuousLinearMap.map_smul_of_tower]
+  rw [hfn_eq]
+  rw [show Complex.I • unitaryGroup T hT hsa t (T x) =
+      unitaryGroup T hT hsa t (Complex.I • T x) from (map_smul _ _ _).symm]
+  -- Step 2: need slope convergence at 0 for spectral group
+  -- This requires the spectral differentiation infrastructure described above
+  -- (spectral representation of T on dom(T) + DCT for spectral integrals)
+  sorry
+
+/-- Norm preservation for the spectral unitary group:
+    ‖unitaryGroup T hT hsa t x‖ = ‖x‖ -/
+theorem unitaryGroup_norm_preserving (T : UnboundedOperator H) (hT : T.IsDenselyDefined)
+    (hsa : T.IsSelfAdjoint hT) (t : ℝ) (x : H) :
+    ‖unitaryGroup T hT hsa t x‖ = ‖x‖ := by
+  have h_adj_comp : ContinuousLinearMap.adjoint (unitaryGroup T hT hsa t) ∘L
+      unitaryGroup T hT hsa t = 1 := by
+    rw [unitaryGroup_inv, unitaryGroup_neg_comp]
+  have h_inner_eq : @inner ℂ H _ (unitaryGroup T hT hsa t x)
+      (unitaryGroup T hT hsa t x) = @inner ℂ H _ x x := by
+    rw [← ContinuousLinearMap.adjoint_inner_right (unitaryGroup T hT hsa t) x
+      (unitaryGroup T hT hsa t x), ← ContinuousLinearMap.comp_apply,
+      h_adj_comp, ContinuousLinearMap.one_apply]
+  rw [inner_self_eq_norm_sq_to_K, inner_self_eq_norm_sq_to_K] at h_inner_eq
+  have h_sq : ‖unitaryGroup T hT hsa t x‖ ^ 2 = ‖x‖ ^ 2 := by exact_mod_cast h_inner_eq
+  calc ‖unitaryGroup T hT hsa t x‖
+      = Real.sqrt (‖unitaryGroup T hT hsa t x‖ ^ 2) :=
+        (Real.sqrt_sq (norm_nonneg _)).symm
+    _ = Real.sqrt (‖x‖ ^ 2) := by rw [h_sq]
+    _ = ‖x‖ := Real.sqrt_sq (norm_nonneg _)
+
 end
