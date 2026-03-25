@@ -4,17 +4,21 @@ A Lean 4 formalization of the **Osterwalder-Schrader reconstruction theorem** an
 
 ## Current Axiom Inventory
 
-The tracked production tree currently contains **5 explicit axioms**:
+The tracked production tree currently contains **7 explicit axioms**:
 - `schwartz_nuclear_extension` in `Wightman/WightmanAxioms.lean` — **partially proved**: nuclearity of Schwartz space is now proved in the [`gaussian-field`](https://github.com/or-n/gaussian-field) library; the remaining gap is importing the instance and deriving the kernel theorem
 - `exists_continuousMultilinear_ofSeparatelyContinuous` in `Wightman/WightmanAxioms.lean` — **proved** in [`gaussian-field`](https://github.com/mrdouglasny/gaussian-field) (`GeneralResults/SeparatelyContMultilinear.lean`, extension branch); remaining gap is importing the theorem
+- `semigroupGroup_bochner` in `SCV/SemigroupGroupBochner.lean` — joint semigroup-group Bochner representation on `[0,\infty) x R^d`
+- `laplaceFourier_measure_unique` in `SCV/SemigroupGroupBochner.lean` — uniqueness of supported finite measures from their joint Laplace-Fourier transform
 - `vladimirov_tillmann` in `SCV/VladimirovTillmann.lean`
 - `distributional_cluster_lifts_to_tube` in `SCV/VladimirovTillmann.lean` — distributional cluster on tube boundary lifts to pointwise cluster on tube interior (Poisson integral + Riemann-Lebesgue)
 - `reduced_bargmann_hall_wightman_of_input` in `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean`
 
 The first two are pure functional-analysis axioms on the Wightman/Schwartz side.
-The third is the Vladimirov-Tillmann tube-growth theorem on the SCV side.
-The fourth is the reduced-coordinate Bargmann-Hall-Wightman bridge on the Route 1
-translation-invariance lane.
+The next two are pure harmonic-analysis / complex-analysis axioms on the SCV side:
+joint semigroup-group Bochner existence and its supported Laplace-Fourier uniqueness clause.
+The fifth and sixth are the Vladimirov-Tillmann tube-growth and cluster-lifting
+axioms on the SCV side. The seventh is the reduced-coordinate
+Bargmann-Hall-Wightman bridge on the Route 1 translation-invariance lane.
 
 ## Overview
 
@@ -86,20 +90,23 @@ This fetches Mathlib and dependencies automatically on first build.
 
 ## Project Status
 
-The tracked production tree currently includes **5 explicit `axiom`
+The tracked production tree currently includes **7 explicit `axiom`
 declarations**:
 - `schwartz_nuclear_extension` in `Wightman/WightmanAxioms.lean`
 - `exists_continuousMultilinear_ofSeparatelyContinuous` in `Wightman/WightmanAxioms.lean` — **proved** in [`gaussian-field`](https://github.com/mrdouglasny/gaussian-field) (`GeneralResults/SeparatelyContMultilinear.lean`, extension branch); remaining gap is importing the theorem
+- `semigroupGroup_bochner` in `SCV/SemigroupGroupBochner.lean`
+- `laplaceFourier_measure_unique` in `SCV/SemigroupGroupBochner.lean`
 - `vladimirov_tillmann` in `SCV/VladimirovTillmann.lean`
 - `distributional_cluster_lifts_to_tube` in `SCV/VladimirovTillmann.lean`
 - `reduced_bargmann_hall_wightman_of_input` in `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean`
 
 The first two are pure functional-analysis axioms on the Wightman/Schwartz side
 (Schwartz kernel theorem and Banach-Steinhaus for finite multilinear maps). The
-third is the Vladimirov-Tillmann tube-growth theorem on the SCV side. The
-fourth is the deferred reduced-BHW bridge on the Route 1 translation-invariance
-lane. Remaining work outside these deferred surfaces is represented by explicit
-theorem-level `sorry` placeholders.
+next two are pure semigroup/Fourier-Laplace functional-analysis axioms on the
+SCV side. The fifth and sixth are the Vladimirov-Tillmann tube-growth and
+cluster-lifting axioms on the SCV side. The seventh is the deferred reduced-BHW
+bridge on the Route 1 translation-invariance lane. Remaining work outside these
+deferred surfaces is represented by explicit theorem-level `sorry` placeholders.
 The snapshot below counts only tracked production files; local scratch under
 `Proofideas/` and other untracked experiments are intentionally excluded.
 
@@ -199,7 +206,7 @@ Current blocker map:
   `SchwingerAxioms.lean` still contains the remaining analytic Wick-rotation
   obligations after temperedness is in place.
 
-Snapshot (2026-03-16, tracked production tree):
+Snapshot (2026-03-25, tracked production tree):
 
 | Module | Direct `sorry` lines |
 |--------|-----------------------|
@@ -209,9 +216,11 @@ Snapshot (2026-03-16, tracked production tree):
 | `vNA/` | 40 |
 | **Total** | **72** |
 
-Tracked production tree also contains `5` explicit axioms:
+Tracked production tree also contains `7` explicit axioms:
 - `schwartz_nuclear_extension`
 - `exists_continuousMultilinear_ofSeparatelyContinuous`
+- `semigroupGroup_bochner`
+- `laplaceFourier_measure_unique`
 - `vladimirov_tillmann`
 - `distributional_cluster_lifts_to_tube`
 - `reduced_bargmann_hall_wightman_of_input`
@@ -363,6 +372,10 @@ the tracked production tree, not as a complete file listing.
 │   │           ├── SchwingerAxioms.lean         # R -> E Wick-rotation axioms
 │   │           ├── OSToWightmanSemigroup.lean   # OS semigroup, spectral/Laplace, 1-variable holomorphy
 │   │           ├── OSToWightman.lean            # flat-witness continuation core
+│   │           ├── OSToWightmanK2BaseStep.lean  # specialized k=2 base-step infrastructure
+│   │           ├── OSToWightmanSpatialMomentum.lean # one-point semigroup-group spectral bridge
+│   │           ├── OSToWightmanK2VI1Support.lean # proved support stack for the k=2 VI.1 frontier
+│   │           ├── OSToWightmanK2VI1.lean       # small live k=2 VI.1 frontier file
 │   │           ├── SchwingerTemperedness.lean   # zero-diagonal temperedness front; VT-backed growth/integrability
 │   │           ├── WickRotationBridge.lean      # small Wick-rotation differentiability helpers
 │   │           └── OSToWightmanBoundaryValues.lean # tempered BV package and axiom transfer
@@ -382,6 +395,7 @@ the tracked production tree, not as a complete file listing.
 │   │   ├── MultipleReflection.lean       # reflection identities for boundary values
 │   │   ├── SchwartzComplete.lean         # completeness / Fréchet-side Schwartz facts
 │   │   ├── SemigroupBochner.lean         # semigroup-positive-definite kernel infrastructure
+│   │   ├── SemigroupGroupBochner.lean    # joint semigroup-group Bochner existence + uniqueness
 │   │   ├── TotallyRealIdentity.lean      # totally-real identity / Schwarz-reflection tools
 │   │   ├── LaplaceHolomorphic.lean       # half-plane Laplace holomorphy
 │   │   ├── LaplaceSchwartz.lean          # tempered boundary-value/Fourier-Laplace package

@@ -49,4 +49,54 @@ axiom semigroupGroup_bochner (d : ℕ)
             Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * a i))
           ∂μ
 
+/-- **Laplace-Fourier uniqueness** on `[0,∞) × ℝ^d`.
+
+Finite positive measures supported on nonnegative energy are determined by
+their joint Laplace-Fourier transform on `t > 0`. This is the uniqueness clause
+behind the semigroup-group Bochner theorem and is the exact FA input needed
+when an explicit weighted candidate measure must be identified with an
+existence-produced Bochner measure. -/
+axiom laplaceFourier_measure_unique {d : ℕ}
+    (μ₁ μ₂ : Measure (ℝ × (Fin d → ℝ)))
+    [IsFiniteMeasure μ₁] [IsFiniteMeasure μ₂]
+    (h₁ : μ₁ (Set.prod (Set.Iio 0) Set.univ) = 0)
+    (h₂ : μ₂ (Set.prod (Set.Iio 0) Set.univ) = 0)
+    (heq : ∀ (t : ℝ), 0 < t → ∀ (a : Fin d → ℝ),
+      ∫ p : ℝ × (Fin d → ℝ),
+        Complex.exp (-(↑(t * p.1) : ℂ)) *
+          Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * a i)) ∂μ₁ =
+      ∫ p : ℝ × (Fin d → ℝ),
+        Complex.exp (-(↑(t * p.1) : ℂ)) *
+          Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * a i)) ∂μ₂) :
+    μ₁ = μ₂
+
+/-- Uniqueness corollary for `semigroupGroup_bochner`.
+
+When two supported finite measures both represent the same bounded continuous
+semigroup-group positive-definite kernel, they coincide. Keeping this as a
+derived theorem avoids changing the older existence surface while exposing the
+uniqueness principle needed downstream. -/
+theorem semigroupGroup_bochner_unique {d : ℕ}
+    (F : ℝ → (Fin d → ℝ) → ℂ)
+    (_hcont : Continuous (fun p : ℝ × (Fin d → ℝ) => F p.1 p.2))
+    (_hbdd : ∃ C : ℝ, ∀ t a, ‖F t a‖ ≤ C)
+    (_hpd : IsSemigroupGroupPD d F)
+    (μ₁ μ₂ : Measure (ℝ × (Fin d → ℝ)))
+    [IsFiniteMeasure μ₁] [IsFiniteMeasure μ₂]
+    (h₁ : μ₁ (Set.prod (Set.Iio 0) Set.univ) = 0)
+    (h₂ : μ₂ (Set.prod (Set.Iio 0) Set.univ) = 0)
+    (hrepr₁ : ∀ (t : ℝ) (a : Fin d → ℝ), 0 ≤ t →
+      F t a =
+        ∫ p : ℝ × (Fin d → ℝ),
+          Complex.exp (-(↑(t * p.1) : ℂ)) *
+            Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * a i)) ∂μ₁)
+    (hrepr₂ : ∀ (t : ℝ) (a : Fin d → ℝ), 0 ≤ t →
+      F t a =
+        ∫ p : ℝ × (Fin d → ℝ),
+          Complex.exp (-(↑(t * p.1) : ℂ)) *
+            Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * a i)) ∂μ₂) :
+    μ₁ = μ₂ := by
+  exact laplaceFourier_measure_unique μ₁ μ₂ h₁ h₂
+    (fun t ht a => by rw [← hrepr₁ t a ht.le, ← hrepr₂ t a ht.le])
+
 end SCV

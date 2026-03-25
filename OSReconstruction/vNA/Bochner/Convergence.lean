@@ -180,6 +180,79 @@ theorem functionalCalculus_norm_sq' (P : SpectralMeasure H) (f : ℝ → ℂ)
         _ = M ^ 2 := (sq M).symm⟩
   exact functionalCalculus_norm_sq P f hf_int hf_bdd hsf_int hsf_bdd hff_int hff_bdd hf_meas x
 
+/-- Diagonal spectral measure of `f(T)x`, tested against `g`, is obtained by
+weighting the diagonal measure of `x` by `|f|^2`.
+
+This is the generic spectral identity behind the fixed-measure / varying-weight
+route: once a family of vectors is realized as `f_n(T)x` over a fixed spectral
+measure, all pairings against another bounded Borel symbol `g` become scalar
+integrals against the fixed diagonal measure with weights `‖f_n‖^2`. -/
+theorem diagonalMeasure_functionalCalculus_weighted_integral
+    (P : SpectralMeasure H)
+    (f g : ℝ → ℂ)
+    (hf_int : ∀ z : H, Integrable f (P.diagonalMeasure z))
+    (hf_bdd : ∃ M, 0 ≤ M ∧ ∀ t, ‖f t‖ ≤ M)
+    (hsf_int : ∀ z : H, Integrable (star ∘ f) (P.diagonalMeasure z))
+    (hsf_bdd : ∃ M, 0 ≤ M ∧ ∀ t, ‖(star ∘ f) t‖ ≤ M)
+    (hg_int : ∀ z : H, Integrable g (P.diagonalMeasure z))
+    (hg_bdd : ∃ M, 0 ≤ M ∧ ∀ t, ‖g t‖ ≤ M)
+    (hgf_int : ∀ z : H, Integrable (g * f) (P.diagonalMeasure z))
+    (hgf_bdd : ∃ M, 0 ≤ M ∧ ∀ t, ‖(g * f) t‖ ≤ M)
+    (hsgff_int : ∀ z : H, Integrable ((star ∘ f) * (g * f)) (P.diagonalMeasure z))
+    (hsgff_bdd : ∃ M, 0 ≤ M ∧ ∀ t, ‖((star ∘ f) * (g * f)) t‖ ≤ M)
+    (hf_meas : Measurable f)
+    (hg_meas : Measurable g)
+    (x : H) :
+    ∫ t, g t ∂(P.diagonalMeasure (functionalCalculus P f hf_int hf_bdd x)) =
+      ∫ t, g t * (↑(‖f t‖ ^ 2) : ℂ) ∂(P.diagonalMeasure x) := by
+  let fT := functionalCalculus P f hf_int hf_bdd
+  let gT := functionalCalculus P g hg_int hg_bdd
+  let fx := fT x
+  have hmul_gf :
+      functionalCalculus P (g * f) hgf_int hgf_bdd = gT ∘L fT := by
+    simpa [fT, gT] using
+      (functionalCalculus_mul P g f hg_int hg_bdd hf_int hf_bdd hgf_int hgf_bdd hf_meas)
+  have hstar :
+      ContinuousLinearMap.adjoint fT = functionalCalculus P (star ∘ f) hsf_int hsf_bdd := by
+    simpa [fT] using
+      (functionalCalculus_star P f hf_int hf_bdd hsf_int hsf_bdd)
+  have hmul_sgff :
+      functionalCalculus P ((star ∘ f) * (g * f)) hsgff_int hsgff_bdd =
+        (functionalCalculus P (star ∘ f) hsf_int hsf_bdd) ∘L
+          (functionalCalculus P (g * f) hgf_int hgf_bdd) := by
+    have hgf_meas : Measurable (g * f) := hg_meas.mul hf_meas
+    simpa using
+      (functionalCalculus_mul P (star ∘ f) (g * f)
+        hsf_int hsf_bdd hgf_int hgf_bdd hsgff_int hsgff_bdd hgf_meas)
+  calc
+    ∫ t, g t ∂(P.diagonalMeasure fx)
+      = @inner ℂ H _ fx (gT fx) := by
+          symm
+          exact functionalCalculus_inner_self P g hg_int hg_bdd fx
+    _ = @inner ℂ H _ x (ContinuousLinearMap.adjoint fT (gT (fT x))) := by
+          exact (ContinuousLinearMap.adjoint_inner_right fT x (gT (fT x))).symm
+    _ = @inner ℂ H _ x
+          ((functionalCalculus P (star ∘ f) hsf_int hsf_bdd) (gT (fT x))) := by
+          rw [hstar]
+    _ = @inner ℂ H _ x
+          (((functionalCalculus P (star ∘ f) hsf_int hsf_bdd) ∘L
+              (functionalCalculus P (g * f) hgf_int hgf_bdd)) x) := by
+          rw [hmul_gf]
+          simp [ContinuousLinearMap.comp_apply, fT, gT]
+    _ = @inner ℂ H _ x
+          (functionalCalculus P ((star ∘ f) * (g * f)) hsgff_int hsgff_bdd x) := by
+          rw [← hmul_sgff]
+    _ = ∫ t, ((star ∘ f) * (g * f)) t ∂(P.diagonalMeasure x) := by
+          exact functionalCalculus_inner_self P ((star ∘ f) * (g * f)) hsgff_int hsgff_bdd x
+    _ = ∫ t, g t * (↑(‖f t‖ ^ 2) : ℂ) ∂(P.diagonalMeasure x) := by
+          refine integral_congr_ae ?_
+          filter_upwards with t
+          have hnorm_sq : starRingEnd ℂ (f t) * f t = (↑(‖f t‖ ^ 2) : ℂ) := by
+            rw [mul_comm, ← @RCLike.inner_apply ℂ, inner_self_eq_norm_sq_to_K]
+            norm_cast
+          simpa [Pi.mul_apply, mul_assoc, mul_left_comm, mul_comm] using
+            congrArg (fun z : ℂ => g t * z) hnorm_sq
+
 /-! ### Dominated convergence for spectral integrals -/
 
 /-- Dominated convergence in the strong operator topology for spectral integrals:

@@ -9,8 +9,8 @@ import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1Su
 # OS to Wightman `k = 2` VI.1 Frontier
 
 This file now contains only the surviving OS II Section VI.1 `k = 2` frontier:
-the common-measure/common-density spectral seam behind the probe limit, the
-limit wrappers above it, and the final distributional assembly theorem.
+the weighted diagonal spectral seam behind the probe limit, the limit wrappers
+above it, and the final distributional assembly theorem.
 
 All proved support infrastructure has been moved to `OSToWightmanK2VI1Support.lean` so that the hard `sorry`s stay on a small, readable theorem surface.
 -/
@@ -28,15 +28,84 @@ set_option linter.unusedVariables false
 
 variable {d : ℕ} [NeZero d]
 
-/-- Honest remaining OS II VI.1 spectral factorization seam.
+/-- Honest remaining OS II VI.1 weighted transform seam.
 
-For each fixed positive-time test `h`, the per-probe pairings are already known
-to admit per-`n` supported-symbol representations. The real remaining content
-is to factor those per-probe families through one common supported positive-
-energy control measure `ρ`, one bounded measurable density `s`, and the explicit
-reflected approximate-identity weights. Once that common factorization exists,
-the actual convergence is immediate from the proved weighted DCT layer in the
-support file. -/
+After the new uniqueness helper in the support file, the remaining content is
+best stated as follows: for each fixed positive-time test `h`, produce one
+supported finite target measure `ν` whose unweighted supported-symbol integral
+is the Schwinger target, and whose reflected-weighted transforms recover the
+per-probe measures `μ_seq n`. The exact weighted supported-symbol formulas then
+follow formally from Laplace-Fourier uniqueness. -/
+private theorem exists_weighted_transform_target_measure_of_perProbe_family_local
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (χ₀ : SchwartzSpacetime d)
+    (φ_seq : ℕ → SchwartzSpacetime d)
+    (hφ_nonneg : ∀ n x, 0 ≤ (φ_seq n x).re)
+    (hφ_real : ∀ n x, (φ_seq n x).im = 0)
+    (hφ_int : ∀ n, ∫ x : SpacetimeDim d, φ_seq n x = 1)
+    (hφ_compact : ∀ n, HasCompactSupport (φ_seq n : SpacetimeDim d → ℂ))
+    (hφ_neg : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆
+      {x : SpacetimeDim d | x 0 < 0})
+    (hφ_ball : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆
+      Metric.ball (0 : SpacetimeDim d) (1 / (n + 1 : ℝ)))
+    (μ_seq : ℕ → Measure (ℝ × (Fin d → ℝ)))
+    (_hμfin : ∀ n, IsFiniteMeasure (μ_seq n))
+    (hsupp : ∀ n, μ_seq n (Set.prod (Set.Iio 0) Set.univ) = 0)
+    (hμrepr : ∀ n (t : ℝ) (a : Fin d → ℝ), 0 < t →
+      osSemigroupGroupMatrixElement (d := d) OS lgc
+        (((show OSPreHilbertSpace OS from
+          ⟦PositiveTimeBorchersSequence.single 1
+            (SchwartzNPoint.osConj (d := d) (n := 1)
+              (onePointToFin1CLM d (φ_seq n) : SchwartzNPoint d 1))
+            (osConj_onePointToFin1_tsupport_orderedPositiveTime_local
+              (d := d) (φ_seq n) (hφ_compact n) (hφ_neg n))⟧) : OSHilbertSpace OS))
+        t a =
+          ∫ p : ℝ × (Fin d → ℝ),
+            Complex.exp (-(↑(t * p.1) : ℂ)) *
+              Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * a i)) ∂(μ_seq n)) :
+    ∀ h : positiveTimeCompactSupportSubmodule d,
+      ∃ (ν : Measure (ℝ × (Fin d → ℝ))) (_hνfin : IsFiniteMeasure ν),
+        ν (Set.prod (Set.Iio 0) Set.univ) = 0 ∧
+        ((OsterwalderSchraderAxioms.schwingerDifferencePositiveCLM
+          (d := d) OS χ₀) h =
+            ∫ p,
+              supported_positiveTimeCompactSupportLaplaceSymbol_local (d := d) h p ∂ν) ∧
+        (∀ n (t : ℝ) (a : Fin d → ℝ), 0 < t →
+          ∫ p : ℝ × (Fin d → ℝ),
+            Complex.exp (-(↑(t * p.1) : ℂ)) *
+              Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * a i)) ∂(μ_seq n) =
+          ∫ p : ℝ × (Fin d → ℝ),
+            (Complex.exp (-(↑(t * p.1) : ℂ)) *
+              Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * a i))) *
+                ↑(reflected_negativeApproxIdentity_weight_global_local
+                    (d := d) φ_seq n p) ∂ν) := by
+  intro h
+  obtain ⟨ν_seq, hνfin, hsuppν, hνrepr⟩ :=
+    exists_perProbe_supported_symbol_formula_family_of_fixed_target_local
+      (d := d) OS lgc φ_seq hφ_real hφ_compact hφ_neg μ_seq _hμfin hsupp hμrepr
+  /-
+  Honest remaining spectral VI.1 content, now exposed in context:
+
+  * `ν_seq n` is the already-proved per-probe fixed supported measure from
+    `exists_perProbe_supported_symbol_formula_family_of_fixed_target_local`;
+  * `reflected_negativeApproxIdentity_weight_global_local φ_seq n` is the
+    explicit `[0,1]`-valued weight sequence with pointwise limit `1`.
+
+  What remains is the genuinely new across-`n` step: upgrade the per-probe
+  family `ν_seq` to one fixed supported finite measure whose weighted formulas
+  recover the per-probe transforms, and whose unweighted formula gives the
+  Schwinger target. Once this transform statement is proved, the exact weighted
+  supported-symbol formulas follow formally from
+  `supported_symbol_formula_of_laplaceFourier_eq_reflected_weight_local`.
+  -/
+  sorry
+
+/-- Honest remaining OS II VI.1 weighted spectral seam.
+
+With the transform-identification theorem above available, the exact weighted
+supported-symbol formulas are now a formal consequence of the support file's
+Laplace-Fourier uniqueness consumer. -/
 private theorem exists_supported_symbol_weighted_measure_representation_of_perProbe_family_local
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
@@ -66,36 +135,46 @@ private theorem exists_supported_symbol_weighted_measure_representation_of_perPr
             Complex.exp (-(↑(t * p.1) : ℂ)) *
               Complex.exp (Complex.I * ↑(∑ i : Fin d, p.2 i * a i)) ∂(μ_seq n)) :
     ∀ h : positiveTimeCompactSupportSubmodule d,
-      ∃ (ρ : Measure (ℝ × (Fin d → ℝ))) (_hρfin : IsFiniteMeasure ρ)
-        (s : (ℝ × (Fin d → ℝ)) → ℂ) (C : ℝ)
-        (w_seq : ℕ → (ℝ × (Fin d → ℝ)) → ℝ),
-        ρ (Set.prod (Set.Iio 0) Set.univ) = 0 ∧
-        AEStronglyMeasurable s ρ ∧
-        0 ≤ C ∧
-        (∀ᵐ p ∂ρ, ‖s p‖ ≤ C) ∧
-        (∀ n p, 0 ≤ w_seq n p) ∧
-        (∀ n p, w_seq n p ≤ 1) ∧
-        (∀ n, Measurable (w_seq n)) ∧
-        (∀ p, Filter.Tendsto (fun n => w_seq n p) Filter.atTop (𝓝 1)) ∧
+      ∃ (ν : Measure (ℝ × (Fin d → ℝ))) (_hνfin : IsFiniteMeasure ν),
+        ν (Set.prod (Set.Iio 0) Set.univ) = 0 ∧
         (∀ n,
           ∫ ξ : SpacetimeDim d,
             k2DifferenceKernel_real_local (μ_seq n) ξ *
               (h : SchwartzSpacetime d) ξ =
-            ∫ p, supported_positiveTimeCompactSupportLaplaceSymbol_local (d := d) h p *
-              s p * ↑(w_seq n p) ∂ρ) ∧
+            ∫ p,
+              supported_positiveTimeCompactSupportLaplaceSymbol_local (d := d) h p *
+                ↑(reflected_negativeApproxIdentity_weight_global_local
+                    (d := d) φ_seq n p) ∂ν) ∧
         ((OsterwalderSchraderAxioms.schwingerDifferencePositiveCLM
           (d := d) OS χ₀) h =
-            ∫ p, supported_positiveTimeCompactSupportLaplaceSymbol_local (d := d) h p *
-              s p ∂ρ) := by
-  /-
-  Honest remaining spectral VI.1 content:
-
-  the support file proves that each probe-dependent measure `μ_n` already has
-  its own supported-symbol family representation. What is still open is the
-  across-`n` factorization through one common `ρ` and one common density `s`
-  against the explicit reflected-probe weights.
-  -/
-  sorry
+            ∫ p,
+              supported_positiveTimeCompactSupportLaplaceSymbol_local (d := d) h p ∂ν) := by
+  intro h
+  obtain ⟨ν, hνfin, hsuppν, htarget_repr, htransform⟩ :=
+    exists_weighted_transform_target_measure_of_perProbe_family_local
+      (d := d) OS lgc χ₀ φ_seq hφ_nonneg hφ_real hφ_int hφ_compact hφ_neg hφ_ball
+      μ_seq _hμfin hsupp hμrepr h
+  refine ⟨ν, hνfin, hsuppν, ?_, htarget_repr⟩
+  intro n
+  letI : IsFiniteMeasure ν := hνfin
+  have hsymb :=
+    supported_symbol_formula_of_laplaceFourier_eq_reflected_weight_local
+      (d := d) φ_seq hφ_nonneg hφ_real hφ_int hφ_neg hφ_ball hφ_compact
+      (μ_seq n) ν (hsupp n) hsuppν n (fun t ht a => htransform n t a ht) h
+  calc
+    ∫ ξ : SpacetimeDim d,
+      k2DifferenceKernel_real_local (μ_seq n) ξ *
+        (h : SchwartzSpacetime d) ξ
+        =
+      ∫ p : ℝ × (Fin d → ℝ),
+        positiveTimeCompactSupportLaplaceSymbol_local (d := d) h p ∂(μ_seq n) := by
+          exact integral_k2DifferenceKernel_real_mul_eq_measure_symbol_local
+            (d := d) (μ := μ_seq n) (hsupp := hsupp n) h
+    _ =
+      ∫ p,
+        supported_positiveTimeCompactSupportLaplaceSymbol_local (d := d) h p *
+          ↑(reflected_negativeApproxIdentity_weight_global_local
+              (d := d) φ_seq n p) ∂ν := hsymb
 
 private theorem k2DifferenceKernel_real_pairing_tendsto_schwingerDifferencePositive_of_negativeApproxIdentity_local
     (OS : OsterwalderSchraderAxioms d)
@@ -150,23 +229,24 @@ private theorem k2DifferenceKernel_real_pairing_tendsto_schwingerDifferencePosit
         (𝓝 ((OsterwalderSchraderAxioms.schwingerDifferencePositiveCLM
           (d := d) OS χ₀) h)) := by
   intro h
-  obtain ⟨ρ, hρfin, s, C, w_seq, hsuppρ, hs_meas, hC, hs_bound,
-      hw_nonneg, hw_le, hw_meas, hw_tendsto, hrepr, htarget⟩ :=
+  obtain ⟨ν, hνfin, hsuppν, hpair_repr, htarget_repr⟩ :=
     exists_supported_symbol_weighted_measure_representation_of_perProbe_family_local
       OS lgc χ₀ φ_seq hφ_nonneg hφ_real hφ_int hφ_compact hφ_neg hφ_ball
       μ_seq _hμfin hsupp hμrepr h
-  letI : IsFiniteMeasure ρ := hρfin
+  obtain ⟨hw_nonneg, hw_le, hw_meas, hw_tendsto⟩ :=
+    reflected_negativeApproxIdentity_weight_global_package_local
+      (d := d) φ_seq hφ_nonneg hφ_real hφ_int hφ_neg hφ_ball hφ_compact
+  letI : IsFiniteMeasure ν := hνfin
   exact
-    tendsto_to_schwingerDifferencePositive_of_supported_symbol_density_representation_local
-      (d := d) OS χ₀ h ρ
-      w_seq
+    tendsto_to_schwingerDifferencePositive_of_supported_symbol_representation_local
+      (d := d) OS χ₀ h ν
+      (fun n => reflected_negativeApproxIdentity_weight_global_local (d := d) φ_seq n)
       hw_le hw_nonneg hw_meas hw_tendsto
-      s hs_meas C hC hs_bound
       (fun n =>
         ∫ ξ : SpacetimeDim d,
           k2DifferenceKernel_real_local (μ_seq n) ξ *
             (h : SchwartzSpacetime d) ξ)
-      hrepr htarget
+      hpair_repr htarget_repr
 
 private theorem translatedProductShell_boundary_tendsto_schwingerDifferencePositive_of_negativeApproxIdentity_local
     (OS : OsterwalderSchraderAxioms d)
