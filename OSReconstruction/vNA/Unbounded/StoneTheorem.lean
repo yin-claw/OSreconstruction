@@ -607,7 +607,28 @@ preserves the generator domain. -/
 theorem generatorDomain_mem_of_commutes (A : H →L[ℂ] H)
     (hcomm : ∀ t : ℝ, A ∘L 𝒰.U t = 𝒰.U t ∘L A) :
     ∀ x : H, x ∈ 𝒰.generatorDomain → A x ∈ 𝒰.generatorDomain := by
-  sorry
+  intro x ⟨Gx, hGx⟩
+  -- Need: lim_{t→0⁺} (U(t)(Ax) - Ax)/(it) exists.
+  -- Since A commutes with U(t): U(t)(Ax) = A(U(t)x).
+  -- So (U(t)(Ax) - Ax)/(it) = A((U(t)x - x)/(it)) → A(Gx).
+  use A Gx
+  have hcomm_pt : ∀ t : ℝ, 𝒰.U t (A x) = A (𝒰.U t x) := by
+    intro t
+    have := ContinuousLinearMap.ext_iff.mp (hcomm t) x
+    simp only [ContinuousLinearMap.comp_apply] at this
+    exact this.symm
+  -- The generator limit for Ax: I⁻¹ • t⁻¹ • (U(t)(Ax) - Ax) → A(Gx)
+  -- Since A commutes with U(t) and is continuous linear:
+  -- A(I⁻¹ • t⁻¹ • (U(t)x - x)) → A(Gx) by continuity of A
+  have hA_cont : Filter.Tendsto
+      (fun t : ℝ => A (Complex.I⁻¹ • t⁻¹ • (𝒰.U t x - x)))
+      (nhdsWithin 0 {(0 : ℝ)}ᶜ) (nhds (A Gx)) :=
+    A.cont.continuousAt.tendsto.comp hGx
+  refine hA_cont.congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with t _
+  -- Goal: A(I⁻¹ • t⁻¹ • (U(t)x - x)) = I⁻¹ • t⁻¹ • (U(t)(Ax) - Ax)
+  show A (Complex.I⁻¹ • (t⁻¹ • (𝒰.U t x - x))) = _
+  rw [A.map_smul, A.map_smul_of_tower, A.map_sub, hcomm_pt]
 
 /-- If a bounded operator commutes with the whole one-parameter group, then it
 commutes with the infinitesimal generator on the generator domain. -/
@@ -617,7 +638,31 @@ theorem generatorApply_commute_of_commutes (A : H →L[ℂ] H)
       𝒰.generatorApply (A x)
         (𝒰.generatorDomain_mem_of_commutes A hcomm x hx) =
       A (𝒰.generatorApply x hx) := by
-  sorry
+  intro x hx
+  -- generatorApply is the unique limit of (U(t)y - y)/(it).
+  -- For y = Ax: the limit is A(Gx) (proved in generatorDomain_mem_of_commutes).
+  -- For y = x: the limit is Gx, so A(Gx) is what we want.
+  -- Both are determined by tendsto_nhds_unique.
+  have hGx := 𝒰.generatorApply_spec x hx
+  have hGAx := 𝒰.generatorApply_spec (A x) (𝒰.generatorDomain_mem_of_commutes A hcomm x hx)
+  -- A(Gx) is also a limit of (U(t)(Ax) - Ax)/(it) by continuity of A
+  have hcomm_pt : ∀ t : ℝ, 𝒰.U t (A x) = A (𝒰.U t x) := by
+    intro t
+    have := ContinuousLinearMap.ext_iff.mp (hcomm t) x
+    simp only [ContinuousLinearMap.comp_apply] at this
+    exact this.symm
+  have hA_limit : Filter.Tendsto
+      (fun t : ℝ => Complex.I⁻¹ • (t⁻¹ • (𝒰.U t (A x) - A x)))
+      (nhdsWithin 0 {(0 : ℝ)}ᶜ) (nhds (A (𝒰.generatorApply x hx))) := by
+    have : Filter.Tendsto
+        (fun t : ℝ => A (Complex.I⁻¹ • (t⁻¹ • (𝒰.U t x - x))))
+        (nhdsWithin 0 {(0 : ℝ)}ᶜ) (nhds (A (𝒰.generatorApply x hx))) :=
+      A.cont.continuousAt.tendsto.comp hGx
+    refine this.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with t _
+    show A (Complex.I⁻¹ • (t⁻¹ • (𝒰.U t x - x))) = _
+    rw [A.map_smul, A.map_smul_of_tower, A.map_sub, hcomm_pt]
+  exact tendsto_nhds_unique hGAx hA_limit
 
 /-- U(t) preserves dom(A*) and commutes with A*:
     For v ∈ dom(A*), U(t)v ∈ dom(A*) and A*(U(t)v) = U(t)(A*v). -/
