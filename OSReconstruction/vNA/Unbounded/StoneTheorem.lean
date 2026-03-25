@@ -1055,14 +1055,334 @@ theorem generator_selfadjoint : 𝒰.generator.IsSelfAdjoint 𝒰.generator_dens
         𝒰.generator.adjointApply 𝒰.generator_densely_defined
           ⟨w, hw⟩ = Complex.I • w → w = 0 :=
       fun w hw heq => hker_ode Complex.I (Or.inl rfl) w hw heq
-    -- Step 3: Ran(A - i) is dense
-    -- Ran(A - i)⊥ ⊆ ker(A* + i) = {0}
-    -- Step 4: A is closed (uses integral formula from generator_hasDerivAt)
-    -- Step 5: ‖(A - i)x‖² = ‖Ax‖² + ‖x‖² (bounded below, from symmetry)
-    -- Step 6: Ran(A - i) is closed (A closed + bounded below)
-    -- Step 7: Ran(A - i) = H (dense + closed)
-    -- Step 8: For y ∈ dom(A*), find z ∈ dom(A) with (A-i)z = (A*-i)y, then y = z ∈ dom(A)
-    sorry
+    -- Save the coercion and adjoint value before `set` changes types
+    set yH := (y : H) with hyH_def
+    set Astar_y := (𝒰.generator.adjoint 𝒰.generator_densely_defined) y
+      with hAstar_y_def
+    have hy_mem_adj : yH ∈ 𝒰.generator.adjointDomain := by rw [hyH_def]; exact y.2
+    have hhy1 : yH = p.1 := hy1
+    have hhy2 : Astar_y = p.2 := hy2
+    set A := 𝒰.generator with hA_def
+    -- Bounded-below: ‖(A-iI)x‖ ≥ ‖x‖ (cross terms cancel by symmetry)
+    have hbelow : ∀ x : A.domain,
+        ‖(x : H)‖ ≤ ‖A x - Complex.I • (x : H)‖ := by
+      intro x
+      have hreal := A.symmetric_inner_real 𝒰.generator_symmetric x
+      have hcross : RCLike.re (@inner ℂ H _ (A x) (Complex.I • (x : H))) = 0 := by
+        rw [inner_smul_right]
+        simp only [RCLike.re_eq_complex_re, Complex.mul_re, Complex.I_re, Complex.I_im]
+        rw [hreal]; ring
+      have hnorm_ix : ‖Complex.I • (x : H)‖ = ‖(x : H)‖ := by
+        rw [norm_smul, Complex.norm_I, one_mul]
+      have hexpand : ‖A x - Complex.I • (x : H)‖ ^ 2 =
+          ‖A x‖ ^ 2 + ‖(x : H)‖ ^ 2 := by
+        rw [@norm_sub_sq ℂ, hcross, hnorm_ix]; ring
+      have hge : ‖(x : H)‖ ^ 2 ≤ ‖A x - Complex.I • (x : H)‖ ^ 2 := by
+        rw [hexpand]; linarith [sq_nonneg ‖A x‖]
+      nlinarith [sq_nonneg ‖(x : H)‖,
+                 sq_nonneg ‖A x - Complex.I • (x : H)‖,
+                 norm_nonneg (x : H),
+                 norm_nonneg (A x - Complex.I • (x : H))]
+    -- ran(A-iI) is closed (bounded below + generator_seq_closed)
+    have hran_closed :
+        IsClosed (Set.range (fun x : A.domain => A x - Complex.I • (x : H))) := by
+      rw [← isSeqClosed_iff_isClosed]
+      intro seq w hseq_mem hseq_lim
+      choose xseq hxseq using fun n => hseq_mem n
+      -- Cauchy by bounded-below
+      have hcauchy : CauchySeq (fun n => (xseq n : H)) := by
+        rw [Metric.cauchySeq_iff]
+        intro ε hε
+        have hseq_cauchy : CauchySeq seq := hseq_lim.cauchySeq
+        rw [Metric.cauchySeq_iff] at hseq_cauchy
+        obtain ⟨N, hN⟩ := hseq_cauchy ε hε
+        use N
+        intro n hn m hm
+        have hminus : A (xseq n) - A (xseq m) =
+            A (xseq n - xseq m) := by
+          have hsub : xseq n - xseq m = xseq n + (-1 : ℂ) • xseq m := by
+            simp only [neg_one_smul, sub_eq_add_neg]
+          rw [hsub, A.map_add', A.map_smul']
+          simp only [neg_one_smul, sub_eq_add_neg]
+        have hexpand : (A (xseq n) - A (xseq m)) -
+            Complex.I • ((xseq n : H) - (xseq m : H)) =
+            (A (xseq n) - Complex.I • (xseq n : H)) -
+            (A (xseq m) - Complex.I • (xseq m : H)) := by
+          simp only [smul_sub, sub_sub_sub_comm]
+        calc dist ((xseq n : H)) ((xseq m : H))
+            = ‖(xseq n : H) - (xseq m : H)‖ := dist_eq_norm _ _
+          _ ≤ ‖A (xseq n - xseq m) -
+                Complex.I • ((xseq n : H) - (xseq m : H))‖ := by
+              have := hbelow (xseq n - xseq m)
+              simp only [Submodule.coe_sub] at this; exact this
+          _ = ‖(A (xseq n) - A (xseq m)) -
+                Complex.I • ((xseq n : H) - (xseq m : H))‖ := by
+              rw [hminus]
+          _ = ‖(A (xseq n) - Complex.I • (xseq n : H)) -
+                (A (xseq m) - Complex.I • (xseq m : H))‖ := by
+              rw [hexpand]
+          _ = ‖seq n - seq m‖ := by
+              congr 1; rw [← hxseq n, ← hxseq m]
+          _ = dist (seq n) (seq m) := (dist_eq_norm _ _).symm
+          _ < ε := hN n hn m hm
+      obtain ⟨x_lim, hx_lim⟩ := cauchySeq_tendsto_of_complete hcauchy
+      -- Axₙ = seq n + i•xₙ → w + i•x_lim
+      have hTx_lim : Tendsto (fun n => A (xseq n)) atTop
+          (𝓝 (w + Complex.I • x_lim)) := by
+        have h1 : ∀ n, A (xseq n) = seq n + Complex.I • (xseq n : H) := by
+          intro n
+          have h := hxseq n
+          -- h: A (xseq n) - I•(xseq n : H) = seq n
+          -- => A (xseq n) = seq n + I•(xseq n : H)
+          have := sub_eq_iff_eq_add.mp h
+          exact this
+        simp only [h1]
+        exact hseq_lim.add (Tendsto.const_smul hx_lim Complex.I)
+      -- Use generator_seq_closed to get x_lim ∈ dom(A)
+      have hxseq_dom : ∀ n, (xseq n : H) ∈ 𝒰.generatorDomain := by
+        intro n; rw [← 𝒰.generatorDomainSubmodule_carrier]; exact (xseq n).2
+      have hgen_lim : Tendsto
+          (fun n => 𝒰.generatorApply (xseq n : H) (hxseq_dom n)) atTop
+          (𝓝 (w + Complex.I • x_lim)) := by
+        convert hTx_lim using 1
+      have hx_dom : x_lim ∈ 𝒰.generatorDomain :=
+        𝒰.generator_seq_closed hxseq_dom hx_lim hgen_lim
+      have hx_mem : x_lim ∈ A.domain := by
+        change x_lim ∈ (𝒰.generatorDomainSubmodule : Set H)
+        rw [𝒰.generatorDomainSubmodule_carrier]; exact hx_dom
+      -- Az = w + iz by uniqueness of limits
+      have hAz_eq : A ⟨x_lim, hx_mem⟩ = w + Complex.I • x_lim := by
+        -- generatorApply_spec gives the defining limit
+        have h1 := 𝒰.generatorApply_spec x_lim hx_dom
+        -- Build convergence to w + I•x_lim from the sequence
+        -- The defining limit and the sequence limit are both limits of
+        -- I⁻¹ • (t⁻¹ • (U(t)x - x)) as t → 0. The generator_seq_closed
+        -- proof used `use (w + I•x_lim)` to witness the existential,
+        -- so the defining limit converges to w + I•x_lim.
+        -- generatorApply picks the unique limit. We use tendsto_nhds_unique.
+        -- Actually, the simplest route: show the generator_seq_closed proof
+        -- gives us a convergence proof we can use directly.
+        -- Note: A ⟨x_lim, hx_mem⟩ = generatorApply x_lim hx_dom by definition
+        -- (up to propositional equality of the membership proof).
+        -- generatorApply x_lim hx_dom = Classical.choose hx_dom
+        -- hx_dom was proved by generator_seq_closed using `use (w + I•x_lim)`
+        -- followed by showing the limit is (w + I•x_lim).
+        -- The Classical.choose picks the unique y for which the limit holds,
+        -- and by uniqueness of limits, this must be (w + I•x_lim).
+        -- We formalize this: we know Tendsto ... (nhds (A ⟨x_lim, hx_mem⟩))
+        -- (from generatorApply_spec) and we need to show
+        -- Tendsto ... (nhds (w + I•x_lim)). Then unique_lim gives equality.
+        -- For the second convergence, we replicate the key argument from
+        -- generator_seq_closed: the limit of I⁻¹•t⁻¹•(U(t)x_lim - x_lim)
+        -- equals w + I•x_lim. This follows from:
+        -- U(t)x_lim - x_lim = I • G(t) where G(t) = ∫₀ᵗ U(s)(w + I•x_lim) ds
+        -- and G'(0) = w + I•x_lim.
+        -- But that's reproving generator_seq_closed. Instead, let's use the
+        -- inner product characterization with density.
+        -- For all v ∈ dom(A), ⟨Ax_lim, v⟩ = ⟨x_lim, Av⟩ = lim ⟨xₙ, Av⟩ = lim ⟨Axₙ, v⟩
+        -- and lim ⟨Axₙ, v⟩ = ⟨w + I•x_lim, v⟩.
+        -- So ⟨Ax_lim, v⟩ = ⟨w + I•x_lim, v⟩ for all v in dense domain.
+        -- By density, Ax_lim = w + I•x_lim.
+        have hsym := 𝒰.generator_symmetric
+        -- ⟨Ax_lim - (w + I•x_lim), v⟩ = 0 for all v ∈ dom(A)
+        suffices hdiff : ∀ v : A.domain,
+            @inner ℂ H _ (A ⟨x_lim, hx_mem⟩ - (w + Complex.I • x_lim)) (v : H) = 0 by
+          have horth : A ⟨x_lim, hx_mem⟩ - (w + Complex.I • x_lim) ∈
+              A.domain.orthogonal := by
+            rw [Submodule.mem_orthogonal]
+            intro u hu
+            have h := hdiff ⟨u, hu⟩
+            -- h: ⟨diff, u⟩ = 0, need ⟨u, diff⟩ = 0
+            rwa [← inner_eq_zero_symm]
+          have horth_bot : A.domain.orthogonal = ⊥ :=
+            Submodule.topologicalClosure_eq_top_iff.mp 𝒰.generator_densely_defined
+          rw [horth_bot, Submodule.mem_bot] at horth
+          exact sub_eq_zero.mp horth
+        intro v
+        -- ⟨A x_lim, v⟩ = ⟨x_lim, Av⟩ (by symmetry)
+        have h_sym_val := hsym ⟨x_lim, hx_mem⟩ v
+        -- ⟨xₙ, Av⟩ → ⟨x_lim, Av⟩
+        have h_lim_inner : Tendsto (fun n => @inner ℂ H _ (xseq n : H) (A v))
+            atTop (𝓝 (@inner ℂ H _ x_lim (A v))) :=
+          Tendsto.inner hx_lim tendsto_const_nhds
+        -- ⟨Axₙ, v⟩ = ⟨xₙ, Av⟩ (by symmetry for each n)
+        have h_eq_n : ∀ n, @inner ℂ H _ (A (xseq n)) (v : H) =
+            @inner ℂ H _ (xseq n : H) (A v) :=
+          fun n => hsym (xseq n) v
+        -- ⟨Axₙ, v⟩ → ⟨w + I•x_lim, v⟩
+        have h_lim_Ax : Tendsto (fun n => @inner ℂ H _ (A (xseq n)) (v : H))
+            atTop (𝓝 (@inner ℂ H _ (w + Complex.I • x_lim) (v : H))) :=
+          Tendsto.inner hTx_lim tendsto_const_nhds
+        -- By uniqueness: ⟨x_lim, Av⟩ = ⟨w + I•x_lim, v⟩
+        have huniq := tendsto_nhds_unique
+          (h_lim_Ax.congr (fun n => h_eq_n n)) h_lim_inner
+        -- So ⟨A x_lim, v⟩ = ⟨w + I•x_lim, v⟩
+        rw [inner_sub_left, h_sym_val, huniq, sub_self]
+      -- (A-iI)x_lim = w
+      exact ⟨⟨x_lim, hx_mem⟩, by
+        show A ⟨x_lim, hx_mem⟩ - Complex.I • x_lim = w
+        rw [hAz_eq]; abel⟩
+    -- ran(A-iI)⊥ = {0} (from hker_add: ker(A* + iI) = {0})
+    have hran_perp : ∀ w : H,
+        (∀ x : A.domain, @inner ℂ H _ (A x - Complex.I • (x : H)) w = 0) →
+        w = 0 := by
+      intro w hw_orth
+      have hadj_rel : ∀ x : A.domain,
+          @inner ℂ H _ (A x) w = @inner ℂ H _ (x : H) (-Complex.I • w) := by
+        intro x
+        have h := hw_orth x
+        rw [inner_sub_left] at h
+        -- ⟨Ax, w⟩ = ⟨I•x, w⟩ = conj(I)*⟨x, w⟩ = -I*⟨x, w⟩
+        -- ⟨x, -I•w⟩ = (-I)*⟨x, w⟩
+        have hix_w : @inner ℂ H _ (Complex.I • (x : H)) w =
+            @inner ℂ H _ (x : H) (-Complex.I • w) := by
+          rw [inner_smul_left, inner_smul_right, Complex.conj_I]
+        -- h: ⟨Ax, w⟩ - ⟨I•x, w⟩ = 0 => ⟨Ax, w⟩ = ⟨I•x, w⟩ = ⟨x, -I•w⟩
+        have := sub_eq_zero.mp h
+        rw [this, hix_w]
+      have hw_adj : w ∈ A.adjointDomain := by
+        use ‖w‖
+        intro x
+        rw [hadj_rel x]
+        calc ‖@inner ℂ H _ (x : H) (-Complex.I • w)‖
+            ≤ ‖(x : H)‖ * ‖-Complex.I • w‖ := norm_inner_le_norm _ _
+          _ = ‖(x : H)‖ * ‖w‖ := by
+              rw [norm_smul, norm_neg, Complex.norm_I, one_mul]
+          _ = ‖w‖ * ‖(x : H)‖ := mul_comm _ _
+      have hadj_val : A.adjointApply 𝒰.generator_densely_defined ⟨w, hw_adj⟩ =
+          -Complex.I • w := by
+        apply A.adjoint_unique 𝒰.generator_densely_defined w
+        · exact A.adjointApply_spec 𝒰.generator_densely_defined ⟨w, hw_adj⟩
+        · exact hadj_rel
+      exact hker_add w hw_adj hadj_val
+    -- ran(A-iI) = H: closed subspace with trivial orthogonal complement
+    have hran_surj : ∀ w : H, ∃ x : A.domain,
+        A x - Complex.I • (x : H) = w := by
+      intro w
+      by_contra h_not_surj
+      push_neg at h_not_surj
+      -- Build ran(A-iI) as a submodule
+      let S_sub : Submodule ℂ H := {
+        carrier := Set.range (fun x : A.domain => A x - Complex.I • (x : H))
+        add_mem' := fun {a b} ha hb => by
+          obtain ⟨xa, rfl⟩ := ha
+          obtain ⟨xb, rfl⟩ := hb
+          exact ⟨xa + xb, by
+            show A (xa + xb) - Complex.I • ((xa : H) + (xb : H)) =
+              (A xa - Complex.I • (xa : H)) + (A xb - Complex.I • (xb : H))
+            rw [A.map_add', smul_add]; abel⟩
+        zero_mem' := by
+          use ⟨0, A.domain.zero_mem⟩
+          show A ⟨0, A.domain.zero_mem⟩ - Complex.I • (0 : H) = 0
+          have : (⟨0, A.domain.zero_mem⟩ : A.domain) = (0 : ℂ) • ⟨0, A.domain.zero_mem⟩ := by
+            ext; simp
+          rw [this, A.map_smul']; simp
+        smul_mem' := fun c a ha => by
+          obtain ⟨xa, rfl⟩ := ha
+          exact ⟨c • xa, by
+            show A (c • xa) - Complex.I • (c • (xa : H)) =
+              c • (A xa - Complex.I • (xa : H))
+            rw [A.map_smul', smul_sub, smul_comm]⟩
+      }
+      have hS_closed : S_sub.topologicalClosure = S_sub := by
+        apply le_antisymm
+        · intro v hv
+          exact hran_closed.closure_subset
+            (Submodule.topologicalClosure_coe S_sub ▸ hv)
+        · exact S_sub.le_topologicalClosure
+      have hS_ne_top : S_sub ≠ ⊤ := by
+        intro htop
+        have hmem : w ∈ (S_sub : Set H) := by rw [htop]; exact Submodule.mem_top
+        -- hmem : w ∈ Set.range ..., i.e. ∃ x, A x - I•x = w
+        obtain ⟨x, hx⟩ := hmem
+        exact h_not_surj x hx
+      have hperp_ne : S_sub.orthogonal ≠ ⊥ := by
+        rwa [ne_eq, ← Submodule.topologicalClosure_eq_top_iff, hS_closed]
+      obtain ⟨v, hv_mem, hv_ne⟩ := Submodule.exists_mem_ne_zero_of_ne_bot hperp_ne
+      have hv_orth : ∀ x : A.domain,
+          @inner ℂ H _ (A x - Complex.I • (x : H)) v = 0 := by
+        intro x
+        have hmem : A x - Complex.I • (x : H) ∈ (S_sub : Set H) := ⟨x, rfl⟩
+        exact (Submodule.mem_orthogonal _ _).mp hv_mem _ hmem
+      exact hv_ne (hran_perp v hv_orth)
+    -- Final step: for yH ∈ dom(A*), find z ∈ dom(A) with (A-i)z = (A*-i)yH,
+    -- then yH - z ∈ ker(A*-i) = {0}.
+    obtain ⟨z, hz_eq⟩ := hran_surj (Astar_y - Complex.I • yH)
+    -- z ∈ dom(A*) (since symmetric: dom(A) ⊆ dom(A*))
+    have hz_adj : (z : H) ∈ A.adjointDomain := by
+      use ‖A z‖
+      intro x
+      rw [𝒰.generator_symmetric x z]
+      calc ‖@inner ℂ H _ (x : H) (A z)‖
+          ≤ ‖(x : H)‖ * ‖A z‖ := norm_inner_le_norm _ _
+        _ = ‖A z‖ * ‖(x : H)‖ := mul_comm _ _
+    let z' : A.adjointDomainSubmodule := ⟨(z : H), hz_adj⟩
+    -- A*z = Az (by symmetry)
+    have hAstar_z : A.adjointApply 𝒰.generator_densely_defined z' = A z := by
+      apply A.adjoint_unique 𝒰.generator_densely_defined (z : H)
+      · exact A.adjointApply_spec 𝒰.generator_densely_defined z'
+      · exact fun x => 𝒰.generator_symmetric x z
+    -- yH - z ∈ dom(A*)
+    have hy_sub_z_adj : yH - (z : H) ∈ A.adjointDomain :=
+      A.adjointDomainSubmodule.sub_mem hy_mem_adj hz_adj
+    let yz' : A.adjointDomainSubmodule := ⟨yH - (z : H), hy_sub_z_adj⟩
+    -- A*(yH - z) = I•(yH - z) (from hz_eq: Az - iz = Astar_y - iyH)
+    have hker_eq : A.adjointApply 𝒰.generator_densely_defined yz' =
+        Complex.I • (yH - (z : H)) := by
+      -- A*(yH-z) = A*yH - A*z = Astar_y - Az (by linearity and hAstar_z)
+      -- From hz_eq: Az - I•z = Astar_y - I•yH
+      -- => Astar_y = Az - I•z + I•yH = Az + I•(yH - z)
+      -- => Astar_y - Az = I•(yH - z)
+      -- => A*(yH-z) = Astar_y - Az = I•(yH - z)
+      -- Compute via linearity: A*(yH-z) = A*yH - A*z = Astar_y - Az
+      -- Use the UnboundedOperator structure of the adjoint
+      have hyz_decomp : yz' = ⟨yH, hy_mem_adj⟩ + (-1 : ℂ) • z' := by
+        ext; simp [yz', z', sub_eq_add_neg]
+      show (A.adjoint 𝒰.generator_densely_defined).toFun yz' =
+        Complex.I • (yH - (z : H))
+      rw [show (yz' : A.adjointDomainSubmodule) =
+        ⟨yH, hy_mem_adj⟩ + (-1 : ℂ) • z' from hyz_decomp]
+      rw [(A.adjoint 𝒰.generator_densely_defined).map_add',
+          (A.adjoint 𝒰.generator_densely_defined).map_smul']
+      -- Goal: (A.adjoint ..).toFun ⟨yH, _⟩ + (-1) • (A.adjoint ..).toFun z' = I•(yH - z)
+      -- (A.adjoint ..).toFun ⟨yH, _⟩ = Astar_y by definition
+      -- (A.adjoint ..).toFun z' = A z by hAstar_z
+      have h_yH : (A.adjoint 𝒰.generator_densely_defined).toFun
+          ⟨yH, hy_mem_adj⟩ = Astar_y := rfl
+      have h_z : (A.adjoint 𝒰.generator_densely_defined).toFun z' = A z :=
+        hAstar_z
+      rw [h_yH, h_z]
+      simp only [neg_one_smul]
+      -- Goal: Astar_y - A z = I•(yH - (z:H))
+      -- From hz_eq: A z - I•(z:H) = Astar_y - I•yH
+      have h : Astar_y = A z - Complex.I • (z : H) + Complex.I • yH := by
+        -- hz_eq: A z - I•z = Astar_y - I•yH
+        -- => Astar_y - I•yH = A z - I•z
+        -- => Astar_y = (A z - I•z) + I•yH
+        exact sub_eq_iff_eq_add.mp hz_eq.symm
+      rw [h, smul_sub]; abel
+    -- yH - z = 0 (from hker_sub)
+    have hyz_zero : yH - (z : H) = 0 :=
+      hker_sub _ hy_sub_z_adj hker_eq
+    have hy_eq_z : yH = (z : H) := sub_eq_zero.mp hyz_zero
+    -- Graph membership: (z, Az) ∈ graph(A) with z = yH and Az = Astar_y
+    use z
+    refine ⟨hy_eq_z ▸ hhy1, ?_⟩
+    rw [← hhy2]
+    -- A z = Astar_y
+    have hAstar_yH : A.adjointApply 𝒰.generator_densely_defined
+        ⟨yH, hy_mem_adj⟩ = Astar_y := rfl
+    have h1 : A.adjointApply 𝒰.generator_densely_defined yz' = 0 := by
+      rw [hker_eq, hyz_zero, smul_zero]
+    have h2 : (⟨yH, hy_mem_adj⟩ : A.adjointDomainSubmodule) = yz' + z' := by
+      ext; simp [yz', z', sub_add_cancel]
+    -- A z = Astar_y = A*(⟨yH, _⟩) = A*(yz' + z') = A*(yz') + A*(z') = 0 + Az
+    show A z = (A.adjoint 𝒰.generator_densely_defined).toFun ⟨yH, hy_mem_adj⟩
+    rw [h2, (A.adjoint 𝒰.generator_densely_defined).map_add']
+    -- Goal: A z = (adjoint).toFun yz' + (adjoint).toFun z'
+    change A z = A.adjointApply 𝒰.generator_densely_defined yz' +
+      A.adjointApply 𝒰.generator_densely_defined z'
+    rw [h1, hAstar_z, zero_add]
 
 /-! ### Stone's theorem -/
 
