@@ -1801,18 +1801,18 @@ theorem timeEvolution_generator (Ham : UnboundedOperator H) (hHam : Ham.IsDensel
     have hy_gen : (y : H) ∈ (timeEvolution Ham hHam hsa).generatorDomain :=
       (timeEvolution Ham hHam hsa).generatorDomainSubmodule_carrier ▸ y.2
     obtain ⟨z, hz⟩ := hy_gen
-    -- The slope limit exists: lim t⁻¹(U(t)v - v) = I • z
-    have hslope : ∃ w : H, Filter.Tendsto
-        (fun t : ℝ => t⁻¹ • (unitaryGroup Ham hHam hsa t (y : H) - (y : H)))
-        (nhdsWithin 0 {(0 : ℝ)}ᶜ) (nhds w) := by
+    -- The derivative at 0 exists: HasDerivAt (U · v) (I • z) 0
+    have hderiv_exists : ∃ w : H, HasDerivAt
+        (fun t => unitaryGroup Ham hHam hsa t (y : H)) w 0 := by
       use Complex.I • z
+      rw [hasDerivAt_iff_tendsto_slope_zero]
       have := hz.const_smul Complex.I
       simp only [smul_smul, mul_comm Complex.I Complex.I⁻¹,
         inv_mul_cancel₀ Complex.I_ne_zero, one_smul, timeEvolution] at this
-      exact this
+      simpa [unitaryGroup_zero, ContinuousLinearMap.one_apply] using this
     -- By unitaryGroup_generator_domain_eq: v ∈ dom(Ham)
     have hv_dom : (y : H) ∈ Ham.domain :=
-      unitaryGroup_generator_domain_eq Ham hHam hsa (y : H) hslope
+      unitaryGroup_generator_domain_eq Ham hHam hsa (y : H) hderiv_exists
     -- Ham v = generator v: both are determined by the same limit.
     -- The forward direction (already proved below) shows that for v ∈ dom(Ham),
     -- the generator limit equals Ham v. By uniqueness, generator v = Ham v.

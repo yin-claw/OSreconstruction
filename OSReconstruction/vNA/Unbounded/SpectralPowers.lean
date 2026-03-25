@@ -634,9 +634,7 @@ theorem unitaryGroup_norm_preserving (T : UnboundedOperator H) (hT : T.IsDensely
     Ref: Reed-Simon, Theorem VIII.7(d); Rudin FA 13.33 -/
 axiom unitaryGroup_generator_domain_eq (T : UnboundedOperator H) (hT : T.IsDenselyDefined)
     (hsa : T.IsSelfAdjoint hT) (x : H)
-    (hx : ∃ y : H, Filter.Tendsto
-      (fun t : ℝ => t⁻¹ • (unitaryGroup T hT hsa t x - x))
-      (nhdsWithin 0 {(0 : ℝ)}ᶜ) (nhds y)) :
+    (hx : ∃ y : H, HasDerivAt (fun t => unitaryGroup T hT hsa t x) y 0) :
     x ∈ T.domain
 
 end
