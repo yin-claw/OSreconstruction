@@ -195,6 +195,49 @@ The remaining obligations are isolated in `PermutationFlowBlocker.lean`:
 
 Both are numerically supported with no falsifiers detected.
 
+## Difficulty Assessment and Formalization Effort
+
+| Sorry | Difficulty | Est. effort | Used by |
+|-------|-----------|-------------|---------|
+| `blocker_isConnected_permSeedSet_nontrivial` | Hard | 3-5 months | Both d ≥ 2 and d = 1 branches |
+| `blocker_iterated_eow_hExtPerm_d1_nontrivial` | Medium-Hard | 2-4 months | d = 1 branch only |
+
+### `blocker_isConnected_permSeedSet_nontrivial` — Hard
+
+This is a purely geometric/topological statement — no analytic data involved. But the geometry
+is intricate:
+- The extended tube ET is the union of complex Lorentz orbits of the forward tube
+- The intersection `permSeedSet = ET ∩ σ⁻¹-PermutedForwardTube` is a semi-algebraic subset
+  of high-dimensional complex space
+- Connectedness requires showing path-connectedness through this intersection
+
+Proof approach would involve:
+1. Showing the extended tube is path-connected (known: complex Lorentz group is connected)
+2. Showing the intersection with the permuted forward tube is "thick enough" to remain connected
+   — requires understanding the geometry of Lorentz orbits and how permutations interact with
+   the cone structure
+3. The numerical validation supports the assertion for d=1, n=2 but the general case needs a
+   geometric argument
+
+This is the **higher-priority** blocker since it is shared by both the d ≥ 2 and d = 1 branches.
+
+### `blocker_iterated_eow_hExtPerm_d1_nontrivial` — Medium-Hard
+
+This is specifically the d = 1 case of permutation invariance of the BHW extension. For d ≥ 2
+this is handled by the Jost-point argument (real spacelike points in ET where local commutativity
+applies directly). For d = 1 the Jost-point approach breaks down because:
+- In 1+1 dimensions, the spatial part is 1-dimensional, so spacelike separation is weaker
+- The complex Lorentz group SO⁺(1,1;ℂ) ≅ ℂ* is abelian, changing the orbit geometry
+- The proof likely needs a direct analytic continuation argument specific to the d = 1 rapidity
+  parametrization
+
+### Comparison with Other Modules
+
+These are qualitatively different from the SCV axioms — they are geometric/combinatorial arguments
+about complex Lorentz orbits and tube domains, not deep functional analysis theorems. They do not
+require new Mathlib infrastructure; the challenge is purely in the geometric reasoning about
+high-dimensional semi-algebraic sets.
+
 ## Execution Order
 
 1. **PermutationFlowBlocker.lean** — close the 2 remaining sorries (geometric obligations)

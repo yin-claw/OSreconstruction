@@ -260,6 +260,60 @@ is not on the critical path.
 
 Groups A, B, C, and D are all independent of each other.
 
+## Difficulty Assessment and Formalization Effort
+
+### Critical Path (2 sorries) — Easy
+
+| Sorry | Difficulty | Est. effort | Key insight |
+|-------|-----------|-------------|-------------|
+| `spectralSemigroupComplex_ofReal_add` | Easy | ~1-2 weeks | CFC multiplicativity: λ^{s+t} = λ^s · λ^t |
+| `Commute.spectralSemigroupComplex` | Easy | ~1 week | `Commute.cfc` in Mathlib handles this |
+
+Both are straightforward CFC algebraic identities. All required Mathlib infrastructure exists.
+
+**`spectralSemigroupComplex_ofReal_add`** (ComplexSemigroup.lean:392):
+T(s+t) = T(s) ∘ T(t) for real s, t > 0. The key identity is λ^{s+t} = λ^s · λ^t for λ ∈ [0,1].
+Since T(z) = cfc(fRe_z, A) + I·cfc(fIm_z, A), this reduces to:
+- `cfc(f_{s+t}) = cfc(f_s · f_t)` by pointwise identity of the functions
+- `cfc(f_s) ∘ cfc(f_t) = cfc(f_s · f_t)` by CFC homomorphism (`cfc_mul`)
+The subtlety is decomposing the complex product into real/imaginary parts and recombining.
+
+**`Commute.spectralSemigroupComplex`** (ComplexSemigroup.lean:404):
+If B commutes with A, then B commutes with T(z). Since T(z) = cfc(fRe, A) + I·cfc(fIm, A),
+and Mathlib provides `Commute.cfc` (B commutes with A implies B commutes with cfc(f, A)),
+commutativity with each piece follows directly, and sums/scalar multiples preserve commutativity.
+
+### Off Critical Path — Grouped by Difficulty
+
+| Group | Sorries | Difficulty | Est. effort | Notes |
+|-------|---------|-----------|-------------|-------|
+| B: Complex semigroup | 2 | **Easy** | 2-3 weeks | **On critical path** — see above |
+| A: Spectral powers | 2 | Medium | 1-2 months | Isolated, superseded by exp(itλ) approach |
+| C: Caratheodory extension | ~16 | Medium | 2-3 months | Measure extension infrastructure |
+| D: Modular theory | 26 | Hard | 6-12 months | Deep Tomita-Takesaki theory |
+
+**Group A** (`SpectralPowers.lean`): `power_zero` needs a spectral support argument
+(P((-∞,0]) = 0 for positive T). `power_imaginary_unitary` depends on it. Both are superseded —
+`unitaryGroup` now uses exp(itλ) directly.
+
+**Group C** (`CaratheodoryExtension.lean`): Standard measure extension from premeasures on intervals.
+Mathlib has `MeasureTheory.OuterMeasure.caratheodory` but the bridge from interval premeasures to
+Borel σ-algebra needs manual work. Medium difficulty, no conceptual obstacles.
+
+**Group D** (ModularTheory + ModularAutomorphism + KMS): Deep functional analysis — Tomita-Takesaki
+modular theory, Connes cocycle, KMS states. These are future infrastructure for thermal QFT
+applications. The 26 sorries span fundamental results like σ_t preserving M (requires the full
+Tomita-Takesaki theorem), Connes' Radon-Nikodym theorem, and KMS uniqueness for factor states.
+Each is a significant theorem in its own right. Not consumed by any reconstruction file.
+
+### Priority Ordering
+
+1. **`spectralSemigroupComplex_ofReal_add`** + **`Commute.spectralSemigroupComplex`** — on critical
+   path, easy, should be done first (~2-3 weeks)
+2. **CaratheodoryExtension** — useful infrastructure, medium difficulty (~2-3 months)
+3. **SpectralPowers** — isolated, low priority
+4. **Modular theory chain** — future infrastructure, not yet consumed
+
 ## Sorry Summary by File
 
 | File | Sorrys | Category | On critical path? |

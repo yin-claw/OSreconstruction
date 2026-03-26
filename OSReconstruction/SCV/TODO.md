@@ -148,6 +148,90 @@ Full chain:
    - `analytic_boundary_local_commutativity_of_boundary_continuous` — PROVED
 6. `PermutationFlow.lean` fully rewired to distributional hypotheses (0 sorrys)
 
+## Difficulty Assessment and Formalization Effort
+
+### Axioms — Difficulty Ranking
+
+| Axiom | Difficulty | Est. effort | Mathlib coverage | Key blocker |
+|-------|-----------|-------------|-----------------|-------------|
+| `semigroupGroup_bochner` | Very Hard | 9-15 months | ~15% | Classical Bochner theorem (not formalized in any proof assistant) |
+| `vladimirov_tillmann` | Hard | 4-6 months | ~10% | Distribution structure theorem, Fourier-Laplace on cones |
+| `distributional_cluster_lifts_to_tube` | Medium-Hard | 2.5-4 months | ~15% | Poisson integral for tube domains |
+| `laplaceFourier_measure_unique` | Medium-Hard | 2-4 months | ~45% | Laplace uniqueness on [0,∞) |
+
+**Shared infrastructure:** `vladimirov_tillmann` and `distributional_cluster_lifts_to_tube` both
+depend on the Poisson integral / Fourier-Laplace representation for tube domains (Vladimirov §25).
+Proving them as a package would be ~5-7 months rather than 6.5-10 months independently.
+
+#### `semigroupGroup_bochner` (BCR Theorem 4.1.13) — Very Hard
+
+The joint semigroup-group Bochner theorem requires a deep dependency chain absent from Mathlib:
+1. **Classical Bochner theorem for R^d** (~3-5 months): positive-definite functions are Fourier
+   transforms of measures. Requires GNS construction + Riesz-Markov-Kakutani + Fourier inversion.
+   Not formalized in Lean, Coq, Isabelle, or HOL Light.
+2. **Bernstein-Widder theorem** (~2-3 months): completely monotone functions on [0,∞) are Laplace
+   transforms. No Laplace transform theory in Mathlib.
+3. **BCR product semigroup gluing** (~2-3 months): tensor product measure theory, consistency.
+
+Mathlib has `Measure.ext_of_charFun` (uniqueness direction only), Riesz-Markov-Kakutani, Fourier
+inversion, and Riemann-Lebesgue. The existence direction (positive-definite → representing measure)
+is entirely missing.
+
+#### `laplaceFourier_measure_unique` — Medium-Hard
+
+Mathlib is closer here: `Measure.ext_of_charFun` handles the spatial Fourier uniqueness. The gap is:
+1. **Laplace uniqueness on [0,∞)** (~1-2 months): via analytic continuation or Post-Widder inversion.
+2. **Joint product uniqueness** (~0.5-1 month): Fubini/disintegration to combine Fourier + Laplace.
+
+This is the most tractable axiom to eliminate if Mathlib's characteristic function infrastructure
+continues to grow.
+
+#### `vladimirov_tillmann` — Hard
+
+The proof requires (per Vladimirov Theorem 14.1 / §25):
+1. **Structure theorem for tempered distributions** — not in Mathlib
+2. **Fourier support in the dual cone** from boundary-value convergence
+3. **Fourier-Laplace representation** F(z) = ∫_{C*} Ŵ(p) e^{iz·p} dp
+4. **Growth estimates** from the Laplace integral over the dual cone
+
+The structure theorem for tempered distributions is the main bottleneck — Mathlib has `SchwartzMap`
+and continuous linear functionals on it, but none of the deep structural results.
+
+#### `distributional_cluster_lifts_to_tube` — Medium-Hard
+
+Proof strategy (outlined in VladimirovTillmann.lean lines 123-131):
+1. **Poisson integral representation** (~1.5-2.5 months): F(z) = W(K_z) for Schwartz kernel K_z.
+   Overlaps heavily with `vladimirov_tillmann` prerequisites.
+2. **Kernel factorization** (~0.5-1 month): for product tubes, K factors.
+3. **Riemann-Lebesgue decay** (~0.5 month): Mathlib has this (`tendsto_integral_exp_smul_cocompact`).
+
+If `vladimirov_tillmann` is proved first, this becomes ~1-2 months of incremental work.
+
+### Sorries — Difficulty Ranking
+
+| Sorry | Difficulty | Est. effort | On critical path? |
+|-------|-----------|-------------|-------------------|
+| `bochner_local_extension` | Medium | 1-2 months | No (not consumed downstream) |
+| `bochner_tube_extension` | Medium | 0.5-1 month (after local) | No (not consumed downstream) |
+
+#### `bochner_local_extension` + `bochner_tube_extension` — Medium
+
+These are **not on the main proof chain** — `bochner_tube_theorem` in `TubeDistributions.lean` is
+defined but has no downstream consumers. The reconstruction route uses BHW + forward tube geometry
+rather than abstract tube convexification.
+
+The local extension uses Cauchy integrals on polydiscs (infrastructure already imported). The global
+extension needs strengthening local patches to convex neighborhoods that meet T(C), then the
+already-proved `holomorphic_extension_from_local_family` handles gluing.
+
+### Priority Ordering
+
+1. **`laplaceFourier_measure_unique`** — most tractable axiom, ~45% Mathlib coverage
+2. **`distributional_cluster_lifts_to_tube`** — shares infrastructure with (3)
+3. **`vladimirov_tillmann`** — package with (2) for efficiency
+4. **`semigroupGroup_bochner`** — hardest, requires classical Bochner theorem from scratch
+5. **`bochner_local_extension`/`bochner_tube_extension`** — not on critical path, lowest priority
+
 ## Execution Order
 
 1. Use the explicit regular package directly in downstream flattened-tube transport.
