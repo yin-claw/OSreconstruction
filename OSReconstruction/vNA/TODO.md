@@ -83,10 +83,17 @@ which removes the positivity requirement and makes U(0)=1 trivially true.
 
 | File | Status | Sorrys |
 |------|--------|--------|
-| `Unbounded/SpectralPowers.lean` | Isolated | 2 |
+| `Unbounded/SpectralPowers.lean` | Isolated | 2 sorries + 4 axioms |
 
+**Sorries (2):**
 - `power_zero` — requires spectral support argument: P((-∞,0]) = 0 for positive T
 - `power_imaginary_unitary` — depends on `power_zero`
+
+**Axiom declarations (4):**
+- `unitaryGroup_hasDerivAt_dom` — spectral differentiation (Reed-Simon VIII.7(c))
+- `unitaryGroup_preserves_domain` — U(t) preserves dom(T)
+- `unitaryGroup_commutes_with_generator` — U(t) commutes with T on dom(T)
+- `unitaryGroup_generator_domain_eq` — generator domain characterization
 
 These are **not referenced** by any file outside `SpectralPowers.lean`. They were superseded
 when `unitaryGroup` was redefined to use `exp(itλ)` directly.
@@ -122,12 +129,18 @@ when `unitaryGroup` was redefined to use `exp(itλ)` directly.
 
 | File | Status | Sorrys |
 |------|--------|--------|
-| `Spectral/ComplexSemigroup.lean` | In Progress | 2 |
+| `Spectral/ComplexSemigroup.lean` | **Complete** | 0 |
 
-- `spectralSemigroupComplex` semigroup law: T(s+t) = T(s)∘T(t)
+All results fully proved:
+- `spectralSemigroupComplex_inner_eq`: defining property
+- `spectralSemigroupComplex_ofReal_eq_nnrpow`: agrees with CFC.nnrpow at real points
+- `spectralSemigroupComplex_ofReal_add`: semigroup law T(s+t) = T(s)∘T(t) at real points
 - `Commute.spectralSemigroupComplex`: operators commuting with A commute with semigroup
-
-Both are used by `OSToWightmanSemigroup.lean` in the E→R direction.
+- `spectralSemigroupComplex_differentiableOn`: matrix element holomorphicity
+- `spectralSemigroupComplex_continuousOn`: operator norm continuity
+- `spectralSemigroupComplex_strongContinuousOn`: strong operator continuity
+- `spectralSemigroupComplex_norm_le`: ‖T(z)‖ ≤ 2
+- `spectralSemigroupComplex_jointlyContinuousOn`: joint continuity
 
 ### von Neumann Algebra Basics
 
@@ -140,8 +153,8 @@ Both are used by `OSToWightmanSemigroup.lean` in the E→R direction.
 
 | File | Status | Sorrys |
 |------|--------|--------|
-| `ModularTheory.lean` | In Progress | 6 (Ω_in_domain, fixed point, JΔJ=Δ⁻¹, J reverses flow, σ_t preserves M, uniqueness) |
-| `ModularAutomorphism.lean` | In Progress | 8 (preserves_algebra, multiplicativity, star, continuity, state_invariant, cocycle, Radon-Nikodym) |
+| `ModularTheory.lean` | In Progress | 6 (JΔJ=Δ⁻¹, J reverses flow, tomita_fundamental, σ_t preserves M, positiveCone_self_dual, uniqueness) |
+| `ModularAutomorphism.lean` | In Progress | 8 (preserves_algebra, cocycle_in_algebra, cocycle_identity, modular_relation, modular_inner_iff ×3, approximately_inner) |
 | `KMS.lean` | In Progress | 10 (strip_boundary, modular_state_is_KMS, uniqueness, invariance, factor uniqueness, temperature limits, passivity) |
 
 ### Bochner Integration — Sorry-Free Helper Infrastructure
@@ -209,27 +222,27 @@ Spectral Theory (sorry-free chain)
 ├── MeasureTheory
 │   ├── SpectralIntegral ✅
 │   ├── SpectralStieltjes ✅
-│   └── CaratheodoryExtension (~16 sorrys, measure extension infrastructure)
+│   └── CaratheodoryExtension (~16 sorrys, measure extension infrastructure, not on critical path)
 │
 ├── Unbounded Operators
 │   ├── Basic ✅, Graph ✅
 │   ├── Spectral ✅ (fully sorry-free)
-│   ├── SpectralPowers (2 sorrys: power_zero, power_imaginary_unitary — isolated, not used)
+│   ├── SpectralPowers (2 sorrys + 4 axioms: power_zero, power_imaginary_unitary — isolated, not used)
 │   └── StoneTheorem ✅ (1 sorry: timeEvolution_generator — not used in main chain)
 │       │
 │       ▼
 ├── Modular Theory (future infrastructure, not yet consumed by reconstruction)
 │   ├── Basic ✅
 │   ├── Predual (2 sorrys: sigmaWeak_convergence_iff, kaplansky_density)
-│   ├── ModularTheory (6 sorrys: Ω_in_domain, fixed point, JΔJ=Δ⁻¹, J reverses flow,
-│   │                            σ_t preserves M, uniqueness)
-│   ├── ModularAutomorphism (8 sorrys: preserves_algebra, multiplicativity, star,
-│   │                        continuity, state_invariant, cocycle, Radon-Nikodym)
+│   ├── ModularTheory (6 sorrys: JΔJ=Δ⁻¹, J reverses flow, tomita_fundamental,
+│   │                            σ_t preserves M, positiveCone_self_dual, uniqueness)
+│   ├── ModularAutomorphism (8 sorrys: preserves_algebra, cocycle_in_algebra,
+│   │                        cocycle_identity, modular_relation, modular_inner_iff ×3, approximately_inner)
 │   └── KMS (10 sorrys: strip_boundary, modular_state_is_KMS, uniqueness,
 │            invariance, factor uniqueness, temperature limits, passivity)
 │
 ├── Complex Spectral Semigroup (used by OSToWightmanSemigroup)
-│   └── ComplexSemigroup (2 sorrys: semigroup law, commutativity)
+│   └── ComplexSemigroup ✅
 │
 └── Bochner Integration (sorry-free helper infrastructure)
     ├── CfcInfrastructure ✅
@@ -243,58 +256,38 @@ Spectral Theory (sorry-free chain)
 
 ```
 Spectral (sorry-free) → StoneTheorem ✅ → OperatorDistribution (momentum operators)
-                                        → GNSHilbertSpace (spectrum condition — 1 sorry)
+                                        → GNSHilbertSpace (3 sorrys: spectrum condition, cyclicity, vacuum uniqueness)
 
-ComplexSemigroup (2 sorrys) → OSToWightmanSemigroup (E→R contraction semigroup)
+ComplexSemigroup ✅ → OSToWightmanSemigroup (E→R contraction semigroup)
 ```
 
-Stone's theorem is no longer a bottleneck. The remaining sorry (`timeEvolution_generator`)
+The vNA module's critical path is now **fully sorry-free**. Stone's theorem and
+ComplexSemigroup are both complete. The remaining sorry (`timeEvolution_generator`)
 is not on the critical path.
-
-### Parallel Work Streams
-
-- **Group A** (spectral powers): power_zero + power_imaginary_unitary (isolated, 2 sorrys, not used)
-- **Group B** (complex semigroup): semigroup law + commutativity (2 sorrys, used by E→R)
-- **Group C** (measure theory): CaratheodoryExtension sorrys (~16, infrastructure)
-- **Group D** (modular theory): 26 sorrys, future infrastructure not yet consumed
-
-Groups A, B, C, and D are all independent of each other.
 
 ## Difficulty Assessment and Formalization Effort
 
-### Critical Path (2 sorries) — Easy
+### Critical Path — ✅ Complete (0 sorries)
 
-| Sorry | Difficulty | Est. effort | Key insight |
-|-------|-----------|-------------|-------------|
-| `spectralSemigroupComplex_ofReal_add` | Easy | ~1-2 weeks | CFC multiplicativity: λ^{s+t} = λ^s · λ^t |
-| `Commute.spectralSemigroupComplex` | Easy | ~1 week | `Commute.cfc` in Mathlib handles this |
-
-Both are straightforward CFC algebraic identities. All required Mathlib infrastructure exists.
-
-**`spectralSemigroupComplex_ofReal_add`** (ComplexSemigroup.lean:392):
-T(s+t) = T(s) ∘ T(t) for real s, t > 0. The key identity is λ^{s+t} = λ^s · λ^t for λ ∈ [0,1].
-Since T(z) = cfc(fRe_z, A) + I·cfc(fIm_z, A), this reduces to:
-- `cfc(f_{s+t}) = cfc(f_s · f_t)` by pointwise identity of the functions
-- `cfc(f_s) ∘ cfc(f_t) = cfc(f_s · f_t)` by CFC homomorphism (`cfc_mul`)
-The subtlety is decomposing the complex product into real/imaginary parts and recombining.
-
-**`Commute.spectralSemigroupComplex`** (ComplexSemigroup.lean:404):
-If B commutes with A, then B commutes with T(z). Since T(z) = cfc(fRe, A) + I·cfc(fIm, A),
-and Mathlib provides `Commute.cfc` (B commutes with A implies B commutes with cfc(f, A)),
-commutativity with each piece follows directly, and sums/scalar multiples preserve commutativity.
+The critical path through the vNA module is now **fully sorry-free**:
+- `spectralSemigroupComplex_ofReal_add`: semigroup law via `CFC.nnrpow_add`
+- `Commute.spectralSemigroupComplex`: commutativity via `Commute.cfc_real`
 
 ### Off Critical Path — Grouped by Difficulty
 
 | Group | Sorries | Difficulty | Est. effort | Notes |
 |-------|---------|-----------|-------------|-------|
-| B: Complex semigroup | 2 | **Easy** | 2-3 weeks | **On critical path** — see above |
-| A: Spectral powers | 2 | Medium | 1-2 months | Isolated, superseded by exp(itλ) approach |
+| B: Complex semigroup | ✅ 0 | — | Done | Was on critical path, now complete |
+| A: Spectral powers | 2 sorries + 4 axioms | Medium | 1-2 months | Isolated, superseded by exp(itλ) approach |
 | C: Caratheodory extension | ~16 | Medium | 2-3 months | Measure extension infrastructure |
 | D: Modular theory | 26 | Hard | 6-12 months | Deep Tomita-Takesaki theory |
 
 **Group A** (`SpectralPowers.lean`): `power_zero` needs a spectral support argument
 (P((-∞,0]) = 0 for positive T). `power_imaginary_unitary` depends on it. Both are superseded —
-`unitaryGroup` now uses exp(itλ) directly.
+`unitaryGroup` now uses exp(itλ) directly. Additionally has 4 `axiom` declarations for unitary
+group properties (`unitaryGroup_hasDerivAt_dom`, `unitaryGroup_preserves_domain`,
+`unitaryGroup_commutes_with_generator`, `unitaryGroup_generator_domain_eq`) — these are also
+isolated and not referenced outside this file.
 
 **Group C** (`CaratheodoryExtension.lean`): Standard measure extension from premeasures on intervals.
 Mathlib has `MeasureTheory.OuterMeasure.caratheodory` but the bridge from interval premeasures to
@@ -308,8 +301,7 @@ Each is a significant theorem in its own right. Not consumed by any reconstructi
 
 ### Priority Ordering
 
-1. **`spectralSemigroupComplex_ofReal_add`** + **`Commute.spectralSemigroupComplex`** — on critical
-   path, easy, should be done first (~2-3 weeks)
+1. ~~**`spectralSemigroupComplex_ofReal_add`** + **`Commute.spectralSemigroupComplex`**~~ — ✅ Done
 2. **CaratheodoryExtension** — useful infrastructure, medium difficulty (~2-3 months)
 3. **SpectralPowers** — isolated, low priority
 4. **Modular theory chain** — future infrastructure, not yet consumed
@@ -320,8 +312,8 @@ Each is a significant theorem in its own right. Not consumed by any reconstructi
 |------|--------|----------|-------------------|
 | `Unbounded/Spectral.lean` | 0 | — | — |
 | `Unbounded/StoneTheorem.lean` | 1 | `timeEvolution_generator` | **No** |
-| `Unbounded/SpectralPowers.lean` | 2 | power_zero + power_imaginary_unitary | **No** (isolated) |
-| `Spectral/ComplexSemigroup.lean` | 2 | Semigroup law + commutativity | **Yes** (E→R) |
+| `Unbounded/SpectralPowers.lean` | 2 sorries + 4 axioms | power_zero + power_imaginary_unitary | **No** (isolated) |
+| `Spectral/ComplexSemigroup.lean` | 0 | ✅ Complete | **Yes** (E→R) — sorry-free |
 | `MeasureTheory/SpectralStieltjes.lean` | 0 | — | — |
 | `MeasureTheory/CaratheodoryExtension.lean` | ~16 | Measure extension infrastructure | No |
 | `Basic.lean` | 0 | — | — |
@@ -329,7 +321,7 @@ Each is a significant theorem in its own right. Not consumed by any reconstructi
 | `ModularTheory.lean` | 6 | Tomita-Takesaki fundamentals | No (future) |
 | `ModularAutomorphism.lean` | 8 | Automorphism group + Connes cocycle | No (future) |
 | `KMS.lean` | 10 | KMS states + passivity | No (future) |
-| **Total** | **~47** | | **2 on critical path** |
+| **Total** | **45 sorries + 4 axioms** | | **0 on critical path** |
 
 ### Sorry-Free Key Results
 - `spectral_theorem_pvm`: PVM existence
