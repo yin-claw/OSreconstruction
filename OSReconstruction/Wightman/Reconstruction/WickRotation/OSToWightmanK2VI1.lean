@@ -4,7 +4,7 @@ Released under Apache 2.0 license.
 Authors: Michael Douglas, ModularPhysics Contributors
 -/
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1Support
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAReflected
+import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputA
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1DCT
 
 /-!
@@ -30,9 +30,11 @@ set_option linter.unusedVariables false
 
 variable {d : ℕ} [NeZero d]
 
-private theorem exists_fixed_strip_common_reflected_kernel_local
+private theorem exists_fixed_strip_common_difference_kernel_local
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
+    (χ₀ : SchwartzSpacetime d)
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
     (φ_seq : ℕ → SchwartzSpacetime d)
     (hφ_compact : ∀ n, HasCompactSupport (φ_seq n : SpacetimeDim d → ℂ))
     (hφ_neg : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆
@@ -46,25 +48,31 @@ private theorem exists_fixed_strip_common_reflected_kernel_local
           (((show OSPreHilbertSpace OS from
               (⟦PositiveTimeBorchersSequence.single 1
                   (SchwartzNPoint.osConj (d := d) (n := 1)
-                    (onePointToFin1CLM d (φ_seq n) : SchwartzNPoint d 1))
+                  (onePointToFin1CLM d (φ_seq n) : SchwartzNPoint d 1))
                   (osConj_onePointToFin1_tsupport_orderedPositiveTime_local
                     (d := d) (φ_seq n) (hφ_compact n) (hφ_neg n))⟧)) :
               OSHilbertSpace OS))
-        osSemigroupGroupMatrixElement (d := d) OS lgc xφ (s + s) (0 : Fin d → ℝ) =
-          ∫ ξ : SpacetimeDim d,
-            K_s ξ * reflectedSchwartzSpacetime (φ_seq n) ξ) := by
+      osSemigroupGroupMatrixElement (d := d) OS lgc xφ (s + s) (0 : Fin d → ℝ) =
+          ∫ x : NPointDomain d 2,
+            OSReconstruction.twoPointDifferenceKernel K_s x *
+              (twoPointDifferenceLift χ₀
+                (OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+                  (reflectedSchwartzSpacetime (φ_seq n))) x)) := by
   /-
   Genuine remaining Input A seam:
 
-  for fixed strip time `2s`, identify a single continuous one-variable kernel
-  `K_s`, independent of `n`, whose pairing against the reflected approximate
-  identity already recovers the diagonal matrix element `I_n(2s, 0)`.
+  for fixed strip time `2s`, identify a single continuous one-variable
+  difference kernel `K_s`, independent of `n`, whose pairing against the
+  descended center-shear regularizers recovers the diagonal matrix element
+  `I_n(2s, 0)`.
   -/
   sorry
 
 private theorem exists_fixed_strip_diagonal_limit_local
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
+    (χ₀ : SchwartzSpacetime d)
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
     (φ_seq : ℕ → SchwartzSpacetime d)
     (hφ_nonneg : ∀ n x, 0 ≤ (φ_seq n x).re)
     (hφ_real : ∀ n x, (φ_seq n x).im = 0)
@@ -91,11 +99,11 @@ private theorem exists_fixed_strip_diagonal_limit_local
         Filter.atTop
         (nhds z) := by
   obtain ⟨K_s, hK_cont, hpair⟩ :=
-    exists_fixed_strip_common_reflected_kernel_local
-      OS lgc φ_seq hφ_compact hφ_neg s hs
+    exists_fixed_strip_common_difference_kernel_local
+      OS lgc χ₀ hχ₀ φ_seq hφ_compact hφ_neg s hs
   exact
-    OSReconstruction.exists_fixed_strip_diagonal_limit_of_reflected_kernel_pairing_local
-      (d := d) OS lgc φ_seq hφ_nonneg hφ_real hφ_int
+    OSReconstruction.exists_fixed_strip_diagonal_limit_of_difference_kernel_pairing_local
+      (d := d) OS lgc χ₀ hχ₀ φ_seq hφ_nonneg hφ_real hφ_int
       hφ_compact hφ_neg hφ_ball s hs K_s hK_cont hpair
 
 private theorem exists_shell_pointwise_limit_function_local
@@ -190,8 +198,8 @@ private theorem k2Probe_pairing_fixed_normalized_center_tendsto_schwingerDiffere
     linarith
   obtain ⟨z, hdiag⟩ :=
     exists_fixed_strip_diagonal_limit_local
-      (d := d) OS lgc φ_seq hφ_nonneg hφ_real hφ_int hφ_compact hφ_neg hφ_ball
-      (ε / 4) hs
+      (d := d) OS lgc χ₀ hχ₀ φ_seq hφ_nonneg hφ_real hφ_int
+      hφ_compact hφ_neg hφ_ball (ε / 4) hs
   obtain ⟨g, hpointwise, htarget⟩ :=
     exists_shell_pointwise_limit_function_local
       (d := d) OS lgc χ₀ hχ₀ φ_seq hφ_nonneg hφ_real hφ_int hφ_compact hφ_neg
