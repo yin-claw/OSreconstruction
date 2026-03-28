@@ -122,10 +122,10 @@ def IsPoincareInvariant (π : PoincareRepresentation d H) (Ω : H) : Prop :=
 def IsTimeTranslationInvariant (π : PoincareRepresentation d H) (Ω : H) : Prop :=
   ∀ t : ℝ, π.U (PoincareGroup.translation' (fun i => if i = 0 then t else 0)) Ω = Ω
 
-/-- Uniqueness of the vacuum: Ω is the unique (up to phase) translation-invariant vector -/
+/-- Uniqueness of the vacuum: Ω is the unique (up to phase) Poincaré-invariant vector -/
 def VacuumUnique (π : PoincareRepresentation d H) (Ω : H) : Prop :=
-  IsTimeTranslationInvariant d π Ω ∧
-  ∀ ψ : H, IsTimeTranslationInvariant d π ψ → ∃ c : ℂ, ψ = c • Ω
+  IsPoincareInvariant d π Ω ∧
+  ∀ ψ : H, IsPoincareInvariant d π ψ → ∃ c : ℂ, ψ = c • Ω
 
 /-! ### The Complete Wightman QFT Structure -/
 

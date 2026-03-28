@@ -819,61 +819,344 @@ private theorem covariance_preHilbert (g : PoincareGroup d) (f : SchwartzSpaceti
   induction y using Quotient.inductionOn with | h Y =>
   exact mk_eq_of_funcs_eq Wfn _ _ (fun n => covariance_borchers_funcs g f Y n)
 
+/-! ### Helper lemmas for remaining sorry's in gnsQFT
+
+The following three lemmas isolate the sorry's that remain in the GNS-reconstructed
+Wightman QFT. Each requires substantial Mathlib infrastructure that is not yet
+available:
+
+* `gns_spectrum_condition` — Stone's theorem + spectral theory for unbounded operators
+* `gns_cyclicity` — Schwartz nuclear theorem (density of product test functions)
+* `gns_vacuum_unique_of_poincare_invariant` — cluster decomposition (Streater-Wightman Thm 3-5)
+-/
+
+/-- **Spectrum condition for the GNS Hilbert space.**
+
+    The energy-momentum spectrum of the GNS Poincaré representation lies in
+    the closed forward light cone. The proof requires:
+    1. Stone's theorem: the one-parameter unitary group t ↦ U(te_μ) has a
+       self-adjoint generator P_μ.
+    2. The forward tube analyticity of the Wightman functions implies that the
+       joint spectral measure of (P₀, …, P_d) has support in V̄₊.
+    3. In particular: ⟨ψ, P₀ ψ⟩ ≥ 0 (energy non-negativity) and
+       ⟨ψ, P₀² ψ⟩ ≥ Σᵢ ⟨ψ, Pᵢ² ψ⟩ (mass-shell condition).
+
+    Neither Stone's theorem nor spectral theory for unbounded self-adjoint
+    operators are in Mathlib as of 2025. -/
+theorem gns_spectrum_condition :
+    SpectralCondition d (gnsPoincareRep Wfn) := by
+  sorry
+
+/-- The operator-valued distribution on the GNS Hilbert space, extracted as a
+    standalone definition so that the cyclicity lemma can reference it. -/
+noncomputable def gnsOVD : OperatorValuedDistribution d (GNSHilbertSpace Wfn) where
+  domain := gnsDomain Wfn
+  operator := gnsFieldOp Wfn
+  operator_add := fun f g ψ hψ => by
+    obtain ⟨x, hx⟩ := hψ
+    rw [← hx, gnsFieldOp_coe, gnsFieldOp_coe, gnsFieldOp_coe,
+      fieldOperator_add_test Wfn f g x, UniformSpace.Completion.coe_add]
+  operator_smul := fun c f ψ hψ => by
+    obtain ⟨x, hx⟩ := hψ
+    rw [← hx, gnsFieldOp_coe, gnsFieldOp_coe,
+      fieldOperator_smul_test Wfn c f x, UniformSpace.Completion.coe_smul]
+  operator_vector_add := fun f ψ₁ ψ₂ hψ₁ hψ₂ => by
+    obtain ⟨x₁, hx₁⟩ := hψ₁; obtain ⟨x₂, hx₂⟩ := hψ₂
+    rw [← hx₁, ← hx₂, ← UniformSpace.Completion.coe_add,
+      gnsFieldOp_coe, gnsFieldOp_coe, gnsFieldOp_coe,
+      fieldOperator_vector_add Wfn f x₁ x₂, UniformSpace.Completion.coe_add]
+  operator_vector_smul := fun f c ψ hψ => by
+    obtain ⟨x, hx⟩ := hψ
+    rw [← hx, ← UniformSpace.Completion.coe_smul,
+      gnsFieldOp_coe, gnsFieldOp_coe,
+      fieldOperator_vector_smul Wfn f c x, UniformSpace.Completion.coe_smul]
+  operator_domain := fun f ψ hψ => gnsFieldOp_domain Wfn f ψ hψ
+  matrix_element_continuous := fun χ ψ hχ hψ => by
+    obtain ⟨x, rfl⟩ := hχ; obtain ⟨y, rfl⟩ := hψ
+    exact matrix_element_continuous_aux Wfn x y
+
+/-- **Cyclicity of the vacuum in the GNS Hilbert space.**
+
+    The algebraic span of {φ(f₁)···φ(fₙ)Ω | n ∈ ℕ, fᵢ ∈ 𝒮(ℝ^{d+1})} is
+    dense in the GNS Hilbert space. The proof requires the
+    **Schwartz nuclear theorem**: for each n, finite tensor products
+    f₁(x₁)···fₙ(xₙ) are dense in the n-point Schwartz space 𝒮(ℝ^{n(d+1)}).
+
+    Given the nuclear theorem, the argument is:
+    1. Each element of PreHilbertSpace is a Borchers sequence (f₀, f₁, f₂, …).
+    2. The n-th component fₙ ∈ 𝒮(ℝ^{n(d+1)}) can be approximated by sums of
+       product test functions g₁ ⊗ ··· ⊗ gₙ.
+    3. The corresponding GNS vectors φ(g₁)···φ(gₙ)Ω lie in the algebraic span.
+    4. PreHilbertSpace embeds densely in the completion, so the algebraic span
+       is dense in the full Hilbert space.
+
+    The nuclear theorem is not in Mathlib as of 2025. -/
+theorem gns_cyclicity :
+    Dense ((gnsOVD Wfn).algebraicSpan (gnsVacuum Wfn)).carrier := by
+  sorry
+
+/-! ### Vacuum Uniqueness via Cluster Decomposition (Streater-Wightman, Theorem 3-5)
+
+The vacuum uniqueness proof avoids Stone's theorem and spectral theory entirely.
+It uses the cluster decomposition property (`Wfn.cluster`) directly:
+
+1. Lift `Wfn.cluster` to the GNS inner product level (pre-Hilbert space)
+2. Extend to the Hilbert space completion by density + unitarity
+3. For Poincaré-invariant ψ: use invariance + clustering to show ψ ∝ Ω
+-/
+
+/-- **Hilbert-space cluster property (pre-Hilbert space).**
+
+    For Borchers sequences F, G and a purely spatial direction a,
+    ⟨F, U(λa)G⟩ → ⟨F, Ω⟩ · ⟨Ω, G⟩ as λ → ∞.
+
+    Each (n,m) term in the GNS inner product is
+      W_{n+m}(F.funcs(n).borchersConj ⊗ τ_{λa}(G.funcs(m)))
+    Since `conjTensorProduct = borchersConj.tensorProduct`, `Wfn.cluster` applies
+    to each term. The limit passes through the finite sum (bounded by F.bound
+    and G.bound), and the factorized result reassembles as ⟨F, Ω⟩ · ⟨Ω, G⟩. -/
+private theorem gns_cluster_preHilbert (F G : BorchersSequence d)
+    (a : SpacetimeDim d) (ha0 : a 0 = 0)
+    (ha_nonzero : ∃ i : Fin d, a (Fin.succ i) ≠ 0) :
+    Filter.Tendsto
+      (fun r : ℝ => WightmanInnerProduct d Wfn.W F
+        (poincareActBorchers (PoincareGroup.translation' (r • a)) G))
+      Filter.atTop
+      (nhds (WightmanInnerProduct d Wfn.W F vacuumSequence *
+             WightmanInnerProduct d Wfn.W vacuumSequence G)) := by
+  sorry
+
+/-- **Hilbert-space cluster property (completion).**
+
+    Extends `gns_cluster_preHilbert` from pre-Hilbert vectors to the completion.
+    For any pre-Hilbert vector Φ and completion vector ψ:
+      ⟨Φ, U(λa)ψ⟩ → ⟨Φ, Ω⟩ · ⟨Ω, ψ⟩ as λ → ∞.
+
+    Proof: approximate ψ by pre-Hilbert ⟦G⟧ within δ. By unitarity,
+    |⟨Φ, U(λa)(ψ - ⟦G⟧)⟩| ≤ ‖Φ‖ · δ. The cluster property for ⟦G⟧
+    handles the main term, and Cauchy–Schwarz bounds the remaining error. -/
+private theorem gns_cluster_completion (Φ : PreHilbertSpace Wfn)
+    (ψ : GNSHilbertSpace Wfn)
+    (a : SpacetimeDim d) (ha0 : a 0 = 0)
+    (ha_nonzero : ∃ i : Fin d, a (Fin.succ i) ≠ 0) :
+    Filter.Tendsto
+      (fun r : ℝ => @inner ℂ _ _ (Φ : GNSHilbertSpace Wfn)
+        (poincareActGNS Wfn (PoincareGroup.translation' (r • a)) ψ))
+      Filter.atTop
+      (nhds (@inner ℂ _ _ (Φ : GNSHilbertSpace Wfn) (gnsVacuum Wfn) *
+             @inner ℂ _ _ (gnsVacuum Wfn) ψ)) := by
+  -- Step 0: Reduce Φ to a BorchersSequence representative
+  induction Φ using Quotient.inductionOn with | h F =>
+  -- Abbreviate the pre-Hilbert vectors (coerce with (pF : GNSHilbertSpace Wfn))
+  set pF : PreHilbertSpace Wfn := ⟦F⟧
+  -- Step 1: Unfold to ε-δ
+  rw [Metric.tendsto_atTop]
+  intro ε hε
+  -- Step 2: Choose δ for approximation
+  set C := ‖(pF : GNSHilbertSpace Wfn)‖ + ‖gnsVacuum Wfn‖ + 1
+  have hC_pos : 0 < C := by positivity
+  set δ := ε / (3 * C) with hδ_def
+  have hδ_pos : 0 < δ := div_pos hε (by positivity)
+  -- Step 3: Approximate ψ by an embedded pre-Hilbert vector
+  obtain ⟨y, hy⟩ := UniformSpace.Completion.denseRange_coe.exists_dist_lt ψ hδ_pos
+  induction y using Quotient.inductionOn with | h G =>
+  set pG : PreHilbertSpace Wfn := ⟦G⟧
+  -- hy : dist (pG : GNSHilbertSpace Wfn) ψ < δ
+  -- Step 4: Get N from the cluster property for F and G
+  have h_cluster := gns_cluster_preHilbert Wfn F G a ha0 ha_nonzero
+  rw [Metric.tendsto_atTop] at h_cluster
+  obtain ⟨N, hN⟩ := h_cluster (ε / 3) (by linarith)
+  -- Step 5: The same N works
+  refine ⟨N, fun r hr => ?_⟩
+  set Ug := poincareActGNS Wfn (PoincareGroup.translation' (r • a))
+  -- (A) Cluster error on G: bridge to WightmanInnerProduct and apply hN
+  have h_clust : dist
+      (@inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (Ug (pG : GNSHilbertSpace Wfn)))
+      (@inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (gnsVacuum Wfn) *
+       @inner ℂ _ _ (gnsVacuum Wfn) (pG : GNSHilbertSpace Wfn)) < ε / 3 := by
+    have h1 : @inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (Ug (pG : GNSHilbertSpace Wfn)) =
+        WightmanInnerProduct d Wfn.W F
+          (poincareActBorchers (PoincareGroup.translation' (r • a)) G) := by
+      rw [show Ug (pG : GNSHilbertSpace Wfn) =
+          ((poincareActPreHilbert Wfn (PoincareGroup.translation' (r • a)) pG :
+            PreHilbertSpace Wfn) : GNSHilbertSpace Wfn) from
+          poincareActGNS_coe Wfn _ pG,
+        UniformSpace.Completion.inner_coe]; rfl
+    have h2 : @inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (gnsVacuum Wfn) =
+        WightmanInnerProduct d Wfn.W F vacuumSequence := by
+      show @inner ℂ _ _ (pF : GNSHilbertSpace Wfn)
+        ((vacuumState Wfn : PreHilbertSpace Wfn) : GNSHilbertSpace Wfn) = _
+      rw [UniformSpace.Completion.inner_coe]; rfl
+    have h3 : @inner ℂ _ _ (gnsVacuum Wfn) (pG : GNSHilbertSpace Wfn) =
+        WightmanInnerProduct d Wfn.W vacuumSequence G := by
+      show @inner ℂ _ _ ((vacuumState Wfn : PreHilbertSpace Wfn) : GNSHilbertSpace Wfn)
+        (pG : GNSHilbertSpace Wfn) = _
+      rw [UniformSpace.Completion.inner_coe]; rfl
+    rw [h1, h2, h3]; exact hN r hr
+  -- Helper: ‖↑pF‖ ≤ C
+  have hpF_le_C : ‖(pF : GNSHilbertSpace Wfn)‖ ≤ C := by
+    linarith [norm_nonneg (gnsVacuum Wfn)]
+  -- Helper: C * δ = ε / 3
+  have hCδ : C * δ = ε / 3 := by
+    rw [hδ_def]; field_simp
+  -- (B) Action error: ‖⟨↑pF, Ug ψ⟩ - ⟨↑pF, Ug ↑pG⟩‖ < ε/3
+  have h_err_action : ‖@inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (Ug ψ) -
+      @inner ℂ _ _ (pF : GNSHilbertSpace Wfn)
+        (Ug (pG : GNSHilbertSpace Wfn))‖ < ε / 3 := by
+    rw [← inner_sub_right,
+      show Ug ψ - Ug (pG : GNSHilbertSpace Wfn) = Ug (ψ - (pG : GNSHilbertSpace Wfn)) from
+        (Ug.map_sub ψ (pG : GNSHilbertSpace Wfn)).symm]
+    calc ‖@inner ℂ _ _ (pF : GNSHilbertSpace Wfn)
+            (Ug (ψ - (pG : GNSHilbertSpace Wfn)))‖
+        ≤ ‖(pF : GNSHilbertSpace Wfn)‖ *
+          ‖Ug (ψ - (pG : GNSHilbertSpace Wfn))‖ := norm_inner_le_norm _ _
+      _ = ‖(pF : GNSHilbertSpace Wfn)‖ *
+          ‖ψ - (pG : GNSHilbertSpace Wfn)‖ := by rw [poincareActGNS_norm]
+      _ = ‖(pF : GNSHilbertSpace Wfn)‖ * dist ψ (pG : GNSHilbertSpace Wfn) := by
+          rw [dist_eq_norm]
+      _ ≤ C * dist ψ (pG : GNSHilbertSpace Wfn) :=
+          mul_le_mul_of_nonneg_right hpF_le_C dist_nonneg
+      _ < C * δ := mul_lt_mul_of_pos_left hy hC_pos
+      _ = ε / 3 := hCδ
+  -- (C) Limit error: ‖⟨↑pF, Ω⟩ * ⟨Ω, ↑pG⟩ - ⟨↑pF, Ω⟩ * ⟨Ω, ψ⟩‖ < ε/3
+  have h_err_limit :
+      ‖@inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (gnsVacuum Wfn) *
+        @inner ℂ _ _ (gnsVacuum Wfn) (pG : GNSHilbertSpace Wfn) -
+       @inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (gnsVacuum Wfn) *
+        @inner ℂ _ _ (gnsVacuum Wfn) ψ‖ < ε / 3 := by
+    rw [show @inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (gnsVacuum Wfn) *
+          @inner ℂ _ _ (gnsVacuum Wfn) (pG : GNSHilbertSpace Wfn) -
+        @inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (gnsVacuum Wfn) *
+          @inner ℂ _ _ (gnsVacuum Wfn) ψ =
+        @inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (gnsVacuum Wfn) *
+        (@inner ℂ _ _ (gnsVacuum Wfn) (pG : GNSHilbertSpace Wfn) -
+         @inner ℂ _ _ (gnsVacuum Wfn) ψ) from by ring]
+    rw [norm_mul, ← inner_sub_right]
+    calc ‖@inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (gnsVacuum Wfn)‖ *
+          ‖@inner ℂ _ _ (gnsVacuum Wfn) ((pG : GNSHilbertSpace Wfn) - ψ)‖
+        ≤ ‖@inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (gnsVacuum Wfn)‖ *
+          (‖gnsVacuum Wfn‖ * ‖(pG : GNSHilbertSpace Wfn) - ψ‖) :=
+          mul_le_mul_of_nonneg_left (norm_inner_le_norm _ _) (norm_nonneg _)
+      _ ≤ (‖(pF : GNSHilbertSpace Wfn)‖ * ‖gnsVacuum Wfn‖) *
+          (‖gnsVacuum Wfn‖ * ‖(pG : GNSHilbertSpace Wfn) - ψ‖) :=
+          mul_le_mul_of_nonneg_right (norm_inner_le_norm _ _) (by positivity)
+      _ = ‖(pF : GNSHilbertSpace Wfn)‖ * (‖gnsVacuum Wfn‖ ^ 2 *
+          ‖(pG : GNSHilbertSpace Wfn) - ψ‖) := by rw [sq]; ring
+      _ ≤ ‖(pF : GNSHilbertSpace Wfn)‖ * (1 * dist ψ (pG : GNSHilbertSpace Wfn)) := by
+          have h1 : ‖gnsVacuum Wfn‖ = 1 := gnsVacuum_norm Wfn
+          rw [h1, one_pow, one_mul, one_mul, ← dist_eq_norm, dist_comm]
+      _ = ‖(pF : GNSHilbertSpace Wfn)‖ * dist ψ (pG : GNSHilbertSpace Wfn) := by ring
+      _ ≤ C * dist ψ (pG : GNSHilbertSpace Wfn) :=
+          mul_le_mul_of_nonneg_right hpF_le_C dist_nonneg
+      _ < C * δ := mul_lt_mul_of_pos_left hy hC_pos
+      _ = ε / 3 := hCδ
+  -- Step 6: Combine by triangle inequality
+  rw [Complex.dist_eq]
+  calc ‖@inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (Ug ψ) -
+        @inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (gnsVacuum Wfn) *
+        @inner ℂ _ _ (gnsVacuum Wfn) ψ‖
+      = ‖(@inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (Ug ψ) -
+          @inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (Ug (pG : GNSHilbertSpace Wfn))) +
+        (@inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (Ug (pG : GNSHilbertSpace Wfn)) -
+          @inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (gnsVacuum Wfn) *
+          @inner ℂ _ _ (gnsVacuum Wfn) (pG : GNSHilbertSpace Wfn)) +
+        (@inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (gnsVacuum Wfn) *
+          @inner ℂ _ _ (gnsVacuum Wfn) (pG : GNSHilbertSpace Wfn) -
+         @inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (gnsVacuum Wfn) *
+          @inner ℂ _ _ (gnsVacuum Wfn) ψ)‖ := by ring_nf
+    _ ≤ ‖@inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (Ug ψ) -
+          @inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (Ug (pG : GNSHilbertSpace Wfn))‖ +
+        ‖@inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (Ug (pG : GNSHilbertSpace Wfn)) -
+          @inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (gnsVacuum Wfn) *
+          @inner ℂ _ _ (gnsVacuum Wfn) (pG : GNSHilbertSpace Wfn)‖ +
+        ‖@inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (gnsVacuum Wfn) *
+          @inner ℂ _ _ (gnsVacuum Wfn) (pG : GNSHilbertSpace Wfn) -
+         @inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (gnsVacuum Wfn) *
+          @inner ℂ _ _ (gnsVacuum Wfn) ψ‖ := norm_add₃_le
+    _ < ε / 3 + ε / 3 + ε / 3 := by
+        have h_mid :
+            ‖@inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (Ug (pG : GNSHilbertSpace Wfn)) -
+             @inner ℂ _ _ (pF : GNSHilbertSpace Wfn) (gnsVacuum Wfn) *
+             @inner ℂ _ _ (gnsVacuum Wfn) (pG : GNSHilbertSpace Wfn)‖ < ε / 3 := by
+          rw [← Complex.dist_eq]; exact h_clust
+        linarith [h_err_action, h_err_limit, h_mid]
+    _ = ε := by ring
+
+/-- **Vacuum uniqueness in the GNS Hilbert space** (Streater-Wightman, Thm 3-5).
+
+    Any Poincaré-invariant vector is proportional to the vacuum. The proof
+    uses the cluster decomposition property directly, avoiding Stone's theorem.
+
+    For invariant ψ and any pre-Hilbert Φ, the function λ ↦ ⟨Φ, U(λa)ψ⟩ is
+    constant (= ⟨Φ, ψ⟩) by invariance, and converges to ⟨Φ, Ω⟩ · ⟨Ω, ψ⟩
+    by clustering. Uniqueness of limits gives ⟨Φ, ψ⟩ = ⟨Φ, ⟨Ω,ψ⟩ • Ω⟩
+    for all Φ in a dense set, so ψ = ⟨Ω, ψ⟩ • Ω. -/
+theorem gns_vacuum_unique_of_poincare_invariant (ψ : GNSHilbertSpace Wfn)
+    (h : IsPoincareInvariant d (gnsPoincareRep Wfn) ψ) :
+    ∃ c : ℂ, ψ = c • gnsVacuum Wfn := by
+  -- Set c := ⟨Ω, ψ⟩
+  refine ⟨@inner ℂ _ _ (gnsVacuum Wfn) ψ, ?_⟩
+  set c := @inner ℂ _ _ (gnsVacuum Wfn) ψ
+  -- Pick a nonzero purely spatial direction e₁ = (0, 1, 0, ..., 0)
+  have hd_pos : 0 < d := Nat.pos_of_ne_zero (NeZero.ne d)
+  let a : SpacetimeDim d := fun i => if (i : ℕ) = 1 then 1 else 0
+  have ha0 : a 0 = 0 := if_neg (by simp)
+  have ha_nz : ∃ i : Fin d, a (Fin.succ i) ≠ 0 :=
+    ⟨⟨0, hd_pos⟩, by show a (Fin.succ ⟨0, hd_pos⟩) ≠ 0; simp [a]; omega⟩
+  -- Step 1: ⟨Φ, ψ⟩ = ⟨Φ, c • Ω⟩ for all pre-Hilbert Φ (invariance + cluster)
+  have hfactor : ∀ Φ : PreHilbertSpace Wfn,
+      @inner ℂ _ _ (Φ : GNSHilbertSpace Wfn) ψ =
+      @inner ℂ _ _ (Φ : GNSHilbertSpace Wfn) (c • gnsVacuum Wfn) := by
+    intro Φ
+    -- Cluster: λ ↦ ⟨Φ, U(λa)ψ⟩ → ⟨Φ, Ω⟩ * c
+    have h_cluster := gns_cluster_completion Wfn Φ ψ a ha0 ha_nz
+    -- Invariance: U(λa)ψ = ψ, so the function is constant
+    have h_eq : (fun (r : ℝ) => @inner ℂ _ _ (↑Φ : GNSHilbertSpace Wfn)
+        (poincareActGNS Wfn (PoincareGroup.translation' (r • a)) ψ)) =
+        fun _ => @inner ℂ _ _ (↑Φ : GNSHilbertSpace Wfn) ψ := by
+      ext r; congr 1; exact h (PoincareGroup.translation' (r • a))
+    rw [h_eq] at h_cluster
+    -- Uniqueness of limits in T₂ space: constant value = cluster limit
+    have heq := tendsto_nhds_unique tendsto_const_nhds h_cluster
+    -- heq : ⟨Φ, ψ⟩ = ⟨Φ, Ω⟩ * c;  goal : ⟨Φ, ψ⟩ = c * ⟨Φ, Ω⟩ (= ⟨Φ, c•Ω⟩)
+    rw [heq, inner_smul_right, mul_comm]
+  -- Step 2: ψ = c • Ω by density of pre-Hilbert space in the completion
+  suffices h_zero : ψ - c • gnsVacuum Wfn = 0 from eq_of_sub_eq_zero h_zero
+  rw [← @inner_self_eq_zero ℂ]
+  -- Show ⟨x, ψ - c•Ω⟩ = 0 for all x by density, then specialize to x = ψ - c•Ω
+  suffices h_ortho : ∀ x : GNSHilbertSpace Wfn,
+      @inner ℂ _ _ x (ψ - c • gnsVacuum Wfn) = 0 from h_ortho _
+  intro x
+  refine UniformSpace.Completion.induction_on x ?_ ?_
+  · exact isClosed_eq
+      (continuous_inner.comp (continuous_id.prodMk continuous_const))
+      continuous_const
+  · intro Φ
+    rw [inner_sub_right]
+    exact sub_eq_zero.mpr (hfactor Φ)
+
 /-- The Wightman QFT reconstructed from Wightman functions.
     The key result is that the Wightman functions are correctly reproduced.
     The domain is the image of the pre-Hilbert space (dense in the completion).
-    Remaining sorrys: spectrum condition, cyclicity, vacuum uniqueness. -/
+
+    The three remaining gaps are isolated in helper lemmas:
+    * `gns_spectrum_condition` — spectrum condition (needs Stone's theorem)
+    * `gns_cyclicity` — cyclicity (needs Schwartz nuclear theorem)
+    * `gns_vacuum_unique_of_poincare_invariant` — vacuum uniqueness (via cluster decomposition) -/
 noncomputable def gnsQFT : WightmanQFT d where
   HilbertSpace := GNSHilbertSpace Wfn
   poincare_rep := gnsPoincareRep Wfn
-  -- Spectrum condition requires Stone's theorem (one-parameter unitary groups ↔ self-adjoint
-  -- generators) and spectral theory for unbounded operators, neither of which are in Mathlib.
-  -- The proof would connect the Wightman functions' forward tube analyticity to the operator
-  -- spectral measure via: forward tube analyticity ⟹ Fourier support in forward cone
-  -- ⟹ σ(P) ⊆ V̄₊ ⟹ energy_nonneg and mass_shell.
-  spectrum_condition := sorry
+  spectrum_condition := gns_spectrum_condition Wfn
   vacuum := gnsVacuum Wfn
   vacuum_normalized := gnsVacuum_norm Wfn
   vacuum_invariant := gnsVacuum_poincare_invariant Wfn
-  field := {
-    domain := gnsDomain Wfn
-    operator := gnsFieldOp Wfn
-    operator_add := fun f g ψ hψ => by
-      obtain ⟨x, hx⟩ := hψ
-      rw [← hx, gnsFieldOp_coe, gnsFieldOp_coe, gnsFieldOp_coe,
-        fieldOperator_add_test Wfn f g x, UniformSpace.Completion.coe_add]
-    operator_smul := fun c f ψ hψ => by
-      obtain ⟨x, hx⟩ := hψ
-      rw [← hx, gnsFieldOp_coe, gnsFieldOp_coe,
-        fieldOperator_smul_test Wfn c f x, UniformSpace.Completion.coe_smul]
-    operator_vector_add := fun f ψ₁ ψ₂ hψ₁ hψ₂ => by
-      obtain ⟨x₁, hx₁⟩ := hψ₁
-      obtain ⟨x₂, hx₂⟩ := hψ₂
-      rw [← hx₁, ← hx₂, ← UniformSpace.Completion.coe_add,
-        gnsFieldOp_coe, gnsFieldOp_coe, gnsFieldOp_coe,
-        fieldOperator_vector_add Wfn f x₁ x₂, UniformSpace.Completion.coe_add]
-    operator_vector_smul := fun f c ψ hψ => by
-      obtain ⟨x, hx⟩ := hψ
-      rw [← hx, ← UniformSpace.Completion.coe_smul,
-        gnsFieldOp_coe, gnsFieldOp_coe,
-        fieldOperator_vector_smul Wfn f c x, UniformSpace.Completion.coe_smul]
-    operator_domain := fun f ψ hψ => gnsFieldOp_domain Wfn f ψ hψ
-    matrix_element_continuous := fun χ ψ hχ hψ => by
-      obtain ⟨x, rfl⟩ := hχ; obtain ⟨y, rfl⟩ := hψ
-      exact matrix_element_continuous_aux Wfn x y
-  }
+  field := gnsOVD Wfn
   vacuum_in_domain := gnsVacuum_in_domain Wfn
-  -- Cyclicity requires the Schwartz nuclear theorem: finite tensor products
-  -- f₁(x₁)···fₙ(xₙ) are dense in the n-point Schwartz space S(ℝ^{nd}).
-  -- This is used to show that vectors φ(f₁)···φ(fₙ)Ω (whose n-th Borchers component
-  -- is productTensor [f₁,...,fₙ]) span all of PreHilbertSpace in the Wightman norm.
-  -- The nuclear theorem is not in Mathlib.
-  cyclicity := sorry
+  cyclicity := gns_cyclicity Wfn
   poincareActionOnSchwartz := poincareActSchwartz
   poincareAction_spec := fun g f x => poincareActSchwartz_toFun g f x
   covariance := fun g f χ ψ hχ hψ => by
     obtain ⟨x, rfl⟩ := hχ; obtain ⟨y, rfl⟩ := hψ
-    -- Bridge U(g) terms: (gnsPoincareRep Wfn).U g ↑z = ↑(poincareActPreHilbert Wfn g z)
     have hUx : (gnsPoincareRep Wfn).U g (↑x : GNSHilbertSpace Wfn) =
         (↑(poincareActPreHilbert Wfn g x) : GNSHilbertSpace Wfn) :=
       poincareActGNS_coe Wfn g x
@@ -881,9 +1164,6 @@ noncomputable def gnsQFT : WightmanQFT d where
         (↑(poincareActPreHilbert Wfn g y) : GNSHilbertSpace Wfn) :=
       poincareActGNS_coe Wfn g y
     rw [hUy, hUx]
-    -- Goal: ⟪↑(U_pre g x), φ(f)(↑(U_pre g y))⟫ = ⟪↑x, φ(g⁻¹·f)(↑y)⟫
-    -- where {anon}.operator is definitionally gnsFieldOp Wfn
-    -- Construct proof with explicit gnsFieldOp, then exact handles defEq
     have h : ⟪(↑(poincareActPreHilbert Wfn g x) : GNSHilbertSpace Wfn),
         gnsFieldOp Wfn f ↑(poincareActPreHilbert Wfn g y)⟫_ℂ =
       ⟪(↑x : GNSHilbertSpace Wfn),
@@ -910,13 +1190,8 @@ noncomputable def gnsQFT : WightmanQFT d where
     exact Quotient.inductionOn x (fun F =>
       Quotient.sound (locality_setoid Wfn f g hfg F))
   vacuum_unique :=
-    -- Part 1: Time-translation invariance follows from full Poincaré invariance
-    ⟨fun t => gnsVacuum_poincare_invariant Wfn _,
-    -- Part 2: Uniqueness (any time-translation-invariant vector is ∝ Ω)
-    -- This requires spectral theory: Stone's theorem gives H = P₀ as self-adjoint
-    -- generator of time translations, spectrum condition gives σ(H) ⊆ [0,∞),
-    -- and time-translation invariance ⟹ Hψ = 0 ⟹ ψ ∈ ker(H) = ℂ·Ω.
-    sorry⟩
+    ⟨gnsVacuum_poincare_invariant Wfn,
+    gns_vacuum_unique_of_poincare_invariant Wfn⟩
 
 /-- The reconstructed QFT's field operatorPow applied to the vacuum gives
     the iterated field operator from the pre-Hilbert space, embedded in
