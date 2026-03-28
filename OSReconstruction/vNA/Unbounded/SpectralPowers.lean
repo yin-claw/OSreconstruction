@@ -70,39 +70,6 @@ def UnboundedOperator.power (T : UnboundedOperator H) (hT : T.IsDenselyDefined)
         rw [hre, Real.exp_zero]
       · simp)
 
-/-- T^0 = 1 for strictly positive T.
-
-    **Note:** This requires strict positivity (T injective), not just positivity.
-    For a merely positive T, `power 0` gives `P((0,∞))` (the projection onto ker(T)⊥),
-    which equals 1 only when T has trivial kernel. Counterexample: T = 0.
-    See Issue #4.
-
-    **Proof:** The function f(λ) = λ^0 = 1 for λ > 0 (and 0 elsewhere).
-    For strictly positive T, P({0}) = 0 (since 0 is not an eigenvalue),
-    so P((0,∞)) = P([0,∞)) = P(ℝ) = 1, giving ∫ f dP = 1.
-    Depends on: spectral support argument (P((-∞, 0]) = 0 for positive T). -/
-theorem UnboundedOperator.power_zero (T : UnboundedOperator H) (hT : T.IsDenselyDefined)
-    (hsa : T.IsSelfAdjoint hT) (hpos : T.IsPositive)
-    (hstrict : T.IsStrictlyPositive) :
-    T.power hT hsa hpos 0 (by simp [Complex.zero_re]) = 1 := by
-  /-
-  PROOF STRUCTURE:
-
-  1. The power function is: f(λ) = if λ > 0 then exp(0 * log λ) else 0
-  2. For λ > 0: exp(0 * log λ) = exp(0) = 1
-  3. So f(λ) = χ_{(0,∞)}(λ) (indicator of positive reals)
-
-  For a strictly positive operator T:
-  - The spectrum is contained in [0, ∞) (by positivity)
-  - P({0}) = 0 (by strict positivity / injectivity)
-  - Therefore P((0, ∞)) = P([0, ∞)) = P(ℝ) = 1
-  - And ∫ χ_{(0,∞)} dP = P((0,∞)) = 1
-
-  FOUNDATIONAL: Requires showing P((-∞, 0]) = 0 for strictly positive T
-  and that the functional calculus of the constant 1 on support is the identity.
-  -/
-  sorry
-
 /-- T^(s+t) = T^s ∘ T^t
 
     **Proof:** Uses `functionalCalculus_mul`. The function λ^(s+t) = λ^s · λ^t pointwise,
@@ -183,50 +150,6 @@ theorem UnboundedOperator.power_add (T : UnboundedOperator H) (hT : T.IsDenselyD
     _ = functionalCalculus P f_s (power_int s hs) ⟨1, zero_le_one, power_norm_le s hs⟩ ∘L
         functionalCalculus P f_t (power_int t ht) ⟨1, zero_le_one, power_norm_le t ht⟩ := hmul
     _ = T.power hT hsa hpos s hs ∘L T.power hT hsa hpos t ht := rfl
-
-/-- For real t, T^{it} is unitary (requires strict positivity).
-
-    **Note:** Like `power_zero`, this requires strict positivity (T injective).
-    For a merely positive T, T^0 = P((0,∞)) ≠ 1, so u* ∘ u = T^0 ≠ 1.
-    Counterexample: T = 0 gives T^{it} = 0 for all t, which is not unitary.
-
-    **Proof:** Uses `functionalCalculus_star`. For real t:
-    - (T^{it})* = ∫ conj(λ^{it}) dP = ∫ λ^{-it} dP = T^{-it}
-    - T^{it} ∘ T^{-it} = T^0 = 1 (by `power_add` and `power_zero`)
-    Depends on: `functionalCalculus_star`, `power_add`, `power_zero`. -/
-theorem UnboundedOperator.power_imaginary_unitary (T : UnboundedOperator H)
-    (hT : T.IsDenselyDefined) (hsa : T.IsSelfAdjoint hT) (hpos : T.IsPositive)
-    (hstrict : T.IsStrictlyPositive) (t : ℝ) :
-    let hs : (Complex.I * ↑t).re = 0 := by
-      simp [Complex.mul_re, Complex.I_re, Complex.I_im, Complex.ofReal_re, Complex.ofReal_im]
-    let u := T.power hT hsa hpos (Complex.I * t) hs
-    ContinuousLinearMap.adjoint u ∘L u = 1 ∧ u ∘L ContinuousLinearMap.adjoint u = 1 := by
-  /-
-  PROOF STRUCTURE:
-
-  Let u = T^{it} where the power function is:
-    f_{it}(x) = if x > 0 then exp(it * log x) else 0
-
-  **Step 1: Compute u* using functionalCalculus_star**
-  u* = (∫ f_{it} dP)* = ∫ (star ∘ f_{it}) dP
-  where (star ∘ f_{it})(x) = conj(f_{it}(x))
-
-  For x > 0:
-    conj(exp(it * log x)) = exp(conj(it * log x))
-                          = exp(-it * log x)  [since log x ∈ ℝ for x > 0]
-                          = exp((-it) * log x)
-
-  So (star ∘ f_{it}) = f_{-it}, hence u* = T^{-it}
-
-  **Step 2: Use power_add and power_zero**
-  u* ∘ u = T^{-it} ∘ T^{it} = T^{-it + it} = T^0 = 1
-  u ∘ u* = T^{it} ∘ T^{-it} = T^{it + (-it)} = T^0 = 1
-  -/
-  -- Depends on functionalCalculus_star (proven), power_add (proven), power_zero (sorry'd).
-  -- Inherits the bug from power_zero: false for non-injective positive operators.
-  -- For T = 0: u = T^{it} = functionalCalculus P (indicator_Ioi) = P(Ioi 0) = 0,
-  -- so u* ∘ u = 0 ≠ 1. Fix power definition first (see power_zero comment).
-  sorry
 
 /-! ### One-parameter unitary groups
 
@@ -1857,13 +1780,152 @@ theorem mem_domain_iff_square_integrable (T : UnboundedOperator H) (hT : T.IsDen
       -- integrability/boundedness witnesses. Each step uses proved infrastructure.
       intro n
       have hR_eq := resolvent_eq_functionalCalculus T hT hsa
-      -- The key identity follows from:
-      -- 1. k_n = g * (f_n + const_i) pointwise
-      -- 2. fc(g * h) = fc(g) ∘L fc(h) by functionalCalculus_mul
-      -- 3. fc(g) = R.inv by resolvent_eq_functionalCalculus
-      -- 4. fc(f_n + const_i) = T_n + I•1 by functionalCalculus_add/smul/const_one
-      -- The detailed proof-witness matching is mechanical.
-      sorry
+      have hfn_meas : Measurable (f_n n) :=
+        (Complex.continuous_ofReal.measurable).mul
+          (measurable_const.indicator measurableSet_Icc)
+      have hfn_norm : ∀ s : ℝ, ‖f_n n s‖ ≤ n := by
+        intro s
+        simp only [f_n, Set.indicator_apply]
+        split_ifs with hs
+        · simp only [mul_one, Complex.norm_real]
+          exact abs_le.mpr (Set.mem_Icc.mp hs)
+        · simp [Nat.cast_nonneg]
+      have hfn_int : ∀ z : H, MeasureTheory.Integrable (f_n n) (P.diagonalMeasure z) := by
+        intro z
+        haveI := P.diagonalMeasure_isFiniteMeasure z
+        exact (MeasureTheory.integrable_const ((n : ℂ))).mono
+          hfn_meas.aestronglyMeasurable
+          (by
+            filter_upwards with s
+            simp only [Complex.norm_natCast]
+            exact hfn_norm s)
+      have hfn_bdd : ∃ M, 0 ≤ M ∧ ∀ t, ‖f_n n t‖ ≤ M :=
+        ⟨n, Nat.cast_nonneg n, hfn_norm⟩
+      let constI : ℝ → ℂ := fun _ => Complex.I
+      have hconstI_int : ∀ z : H, MeasureTheory.Integrable constI (P.diagonalMeasure z) := by
+        intro z
+        haveI := P.diagonalMeasure_isFiniteMeasure z
+        simpa [constI] using MeasureTheory.integrable_const (Complex.I : ℂ)
+      have hconstI_bdd : ∃ M, 0 ≤ M ∧ ∀ t, ‖constI t‖ ≤ M := by
+        refine ⟨1, zero_le_one, ?_⟩
+        intro t
+        simp [constI]
+      have hsum_meas : Measurable (fun s : ℝ => f_n n s + Complex.I) :=
+        hfn_meas.add measurable_const
+      have hsum_int : ∀ z : H, MeasureTheory.Integrable (fun s : ℝ => f_n n s + Complex.I)
+          (P.diagonalMeasure z) := by
+        intro z
+        exact (hfn_int z).add (hconstI_int z)
+      have hsum_bdd : ∃ M, 0 ≤ M ∧ ∀ t, ‖f_n n t + Complex.I‖ ≤ M := by
+        refine ⟨n + 1, by positivity, ?_⟩
+        intro t
+        calc
+          ‖f_n n t + Complex.I‖ ≤ ‖f_n n t‖ + ‖Complex.I‖ := norm_add_le _ _
+          _ ≤ n + 1 := by
+              have ht := hfn_norm t
+              simp at ht ⊢
+              linarith
+      have hconstI_as_smul : constI = Complex.I • (fun _ : ℝ => (1 : ℂ)) := by
+        funext s
+        simp [constI]
+      have hconstI_smul_int :
+          ∀ z : H, MeasureTheory.Integrable (Complex.I • (fun _ : ℝ => (1 : ℂ)))
+            (P.diagonalMeasure z) := by
+        intro z
+        haveI := P.diagonalMeasure_isFiniteMeasure z
+        change MeasureTheory.Integrable (fun _ : ℝ => Complex.I * (1 : ℂ)) (P.diagonalMeasure z)
+        simpa using (MeasureTheory.integrable_const (μ := P.diagonalMeasure z) (Complex.I : ℂ))
+      have hconstI_smul_bdd :
+          ∃ M, 0 ≤ M ∧ ∀ t, ‖(Complex.I • (fun _ : ℝ => (1 : ℂ))) t‖ ≤ M := by
+        refine ⟨1, zero_le_one, ?_⟩
+        intro t
+        simp
+      have hfc_constI :
+          functionalCalculus P constI hconstI_int hconstI_bdd =
+            Complex.I • (1 : H →L[ℂ] H) := by
+        calc
+          functionalCalculus P constI hconstI_int hconstI_bdd
+              = functionalCalculus P (Complex.I • (fun _ : ℝ => (1 : ℂ)))
+                  hconstI_smul_int hconstI_smul_bdd := by
+                    exact functionalCalculus_congr' P hconstI_as_smul _ _ _ _
+          _ = Complex.I • (1 : H →L[ℂ] H) := by
+                rw [P.functionalCalculus_smul Complex.I (fun _ : ℝ => (1 : ℂ))
+                  h_one_int ⟨1, zero_le_one, fun s => by simp⟩
+                  hconstI_smul_int hconstI_smul_bdd]
+                rw [functionalCalculus_const_one_eq_id P]
+      have hk_eq : k_n n = g * (fun s : ℝ => f_n n s + Complex.I) := by
+        ext s
+        simp only [k_n, Pi.mul_apply]
+        ring
+      have hmul :
+          functionalCalculus P (g * (fun s : ℝ => f_n n s + Complex.I))
+            (by
+              intro z
+              rw [← hk_eq]
+              exact h_kn_int n z)
+            (by
+              rw [← hk_eq]
+              exact ⟨2, by norm_num, h_kn_bound n⟩) =
+          functionalCalculus P g (resolvent_function_integrable P)
+            ⟨1, zero_le_one, resolvent_function_norm⟩ ∘L
+            functionalCalculus P (fun s : ℝ => f_n n s + Complex.I) hsum_int hsum_bdd :=
+        functionalCalculus_mul P g (fun s : ℝ => f_n n s + Complex.I)
+          (resolvent_function_integrable P) ⟨1, zero_le_one, resolvent_function_norm⟩
+          hsum_int hsum_bdd
+          (by
+            intro z
+            rw [← hk_eq]
+            exact h_kn_int n z)
+          (by
+            rw [← hk_eq]
+            exact ⟨2, by norm_num, h_kn_bound n⟩)
+          hsum_meas
+      have hfc_sum :
+          functionalCalculus P (fun s : ℝ => f_n n s + Complex.I) hsum_int hsum_bdd x =
+            spectralTruncation T hT hsa n x + Complex.I • x := by
+        have hsum_eq : f_n n + constI = (fun s : ℝ => f_n n s + Complex.I) := by
+          ext s
+          simp [constI]
+        have hadd := P.functionalCalculus_add (f_n n) constI hfn_int hfn_bdd
+          hconstI_int hconstI_bdd hsum_int hsum_bdd
+        calc
+          functionalCalculus P (fun s : ℝ => f_n n s + Complex.I) hsum_int hsum_bdd x
+              = functionalCalculus P (f_n n + constI)
+                  (by
+                    intro z
+                    rw [hsum_eq]
+                    exact hsum_int z)
+                  (by
+                    rw [hsum_eq]
+                    exact hsum_bdd) x := by
+                      symm
+                      exact congrFun (congrArg DFunLike.coe
+                        (functionalCalculus_congr' P hsum_eq _ _ _ _)) x
+          _ = (spectralTruncation T hT hsa n x) + Complex.I • x := by
+                rw [hadd, show spectralTruncation T hT hsa n =
+                  functionalCalculus P (f_n n) hfn_int hfn_bdd from rfl, hfc_constI]
+                simp [ContinuousLinearMap.smul_apply, constI]
+      calc
+        functionalCalculus P (k_n n) (h_kn_int n) ⟨2, by norm_num, h_kn_bound n⟩ x
+            = functionalCalculus P (g * (fun s : ℝ => f_n n s + Complex.I))
+                (by
+                  intro z
+                  rw [← hk_eq]
+                  exact h_kn_int n z)
+                (by
+                  rw [← hk_eq]
+                  exact ⟨2, by norm_num, h_kn_bound n⟩) x := by
+                    exact congrFun (congrArg DFunLike.coe
+                      (functionalCalculus_congr' P hk_eq _ _ _ _)) x
+        _ = (functionalCalculus P g (resolvent_function_integrable P)
+              ⟨1, zero_le_one, resolvent_function_norm⟩ ∘L
+              functionalCalculus P (fun s : ℝ => f_n n s + Complex.I) hsum_int hsum_bdd) x := by
+                rw [hmul]
+        _ = R.inv (spectralTruncation T hT hsa n x + Complex.I • x) := by
+              rw [ContinuousLinearMap.comp_apply, hfc_sum]
+              simpa [R, g] using
+                (congrFun (congrArg DFunLike.coe hR_eq)
+                  (spectralTruncation T hT hsa n x + Complex.I • x)).symm
     -- Step D: Limits match → ∃ w, R.inv w = x
     -- T_n x → y, so T_n x + I•x → y + I•x
     -- R.inv continuous: R.inv(T_n x + I•x) → R.inv(y + I•x)
@@ -2173,6 +2235,117 @@ theorem inner_apply_tendsto_spectral_integral (T : UnboundedOperator H)
   exact ((continuous_inner.comp (Continuous.prodMk continuous_const continuous_id)).continuousAt.tendsto).comp
     (spectralTruncation_tendsto T hT hsa x)
 
+open MeasureTheory in
+private lemma proj_mem_domain_of_subset_Icc (T : UnboundedOperator H) (hT : T.IsDenselyDefined)
+    (hsa : T.IsSelfAdjoint hT) (E : Set ℝ) (hE : MeasurableSet E) {M : ℝ} (hM : 0 ≤ M)
+    (hsubset : E ⊆ Set.Icc (-M) M) (x : H) :
+    ((T.spectralMeasure hT hsa).proj E x) ∈ T.domain := by
+  set P := T.spectralMeasure hT hsa
+  rw [mem_domain_iff_square_integrable T hT hsa (P.proj E x)]
+  haveI := P.diagonalMeasure_isFiniteMeasure (P.proj E x)
+  have hsq_meas : Measurable (fun s : ℝ => ((s : ℂ) ^ 2)) :=
+    Complex.continuous_ofReal.measurable.pow_const 2
+  have h_ae_mem : ∀ᵐ s ∂(P.diagonalMeasure (P.proj E x)), s ∈ E := by
+    rw [ae_iff]
+    simpa using P.diagonalMeasure_proj_compl_eq_zero E hE x
+  exact (MeasureTheory.integrable_const ((M ^ 2 : ℝ) : ℂ)).mono
+    hsq_meas.aestronglyMeasurable
+    (h_ae_mem.mono fun s hs => by
+      have hsIcc := hsubset hs
+      rw [show ((s : ℂ) ^ 2) = ((s ^ 2 : ℝ) : ℂ) from by
+            push_cast
+            ring, Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg s)]
+      simp [Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg M)]
+      nlinarith [hsIcc.1, hsIcc.2, hM])
+
+open MeasureTheory in
+private lemma proj_id_integrable_of_subset_Icc (T : UnboundedOperator H) (hT : T.IsDenselyDefined)
+    (hsa : T.IsSelfAdjoint hT) (E : Set ℝ) (hE : MeasurableSet E) {M : ℝ} (hM : 0 ≤ M)
+    (hsubset : E ⊆ Set.Icc (-M) M) (x : H) :
+    MeasureTheory.Integrable (fun s : ℝ => s)
+      (((T.spectralMeasure hT hsa).diagonalMeasure (((T.spectralMeasure hT hsa).proj E x)))) := by
+  set P := T.spectralMeasure hT hsa
+  haveI := P.diagonalMeasure_isFiniteMeasure (P.proj E x)
+  have hid_meas : Measurable (fun s : ℝ => s) := measurable_id
+  have h_ae_mem : ∀ᵐ s ∂(P.diagonalMeasure (P.proj E x)), s ∈ E := by
+    rw [ae_iff]
+    simpa using P.diagonalMeasure_proj_compl_eq_zero E hE x
+  exact (MeasureTheory.integrable_const (M : ℝ)).mono
+    hid_meas.aestronglyMeasurable
+    (h_ae_mem.mono fun s hs => by
+      have hsIcc := hsubset hs
+      simpa [Real.norm_eq_abs, abs_of_nonneg hM] using (abs_le.mpr hsIcc))
+
+open MeasureTheory in
+private lemma inner_apply_proj_eq_integral_of_subset_Icc (T : UnboundedOperator H)
+    (hT : T.IsDenselyDefined) (hsa : T.IsSelfAdjoint hT) (E : Set ℝ) (hE : MeasurableSet E)
+    {M : ℝ} (hM : 0 ≤ M) (hsubset : E ⊆ Set.Icc (-M) M) (x : H) :
+    let P := T.spectralMeasure hT hsa
+    let v := P.proj E x
+    let hv := proj_mem_domain_of_subset_Icc T hT hsa E hE hM hsubset x
+    (@inner ℂ H _ v (T ⟨v, hv⟩)).re = ∫ s : ℝ, s ∂(P.diagonalMeasure v) := by
+  intro P v hv
+  set μ := P.diagonalMeasure v
+  have h_re_tend :
+      Tendsto (fun n => (@inner ℂ H _ v (spectralTruncation T hT hsa n v)).re)
+        atTop (nhds ((@inner ℂ H _ v (T ⟨v, hv⟩)).re)) :=
+    Complex.continuous_re.continuousAt.tendsto.comp
+      (inner_apply_tendsto_spectral_integral T hT hsa ⟨v, hv⟩ v)
+  have hid_int : MeasureTheory.Integrable (fun s : ℝ => s) μ := by
+    simpa [P, v, μ] using proj_id_integrable_of_subset_Icc T hT hsa E hE hM hsubset x
+  obtain ⟨N, hN⟩ := exists_nat_ge M
+  have h_ae_mem : ∀ᵐ s ∂μ, s ∈ E := by
+    rw [ae_iff]
+    simpa [μ, v] using P.diagonalMeasure_proj_compl_eq_zero E hE x
+  have h_eventually_eq :
+      (fun n => (@inner ℂ H _ v (spectralTruncation T hT hsa n v)).re) =ᶠ[atTop]
+        (fun _ => ∫ s : ℝ, s ∂μ) := by
+    filter_upwards [Filter.Ici_mem_atTop N] with n hn
+    let f_n : ℝ → ℂ := fun s =>
+      (↑s : ℂ) * Set.indicator (Set.Icc (-(n : ℝ)) n) (fun _ => (1 : ℂ)) s
+    have hf_norm : ∀ s : ℝ, ‖f_n s‖ ≤ n := by
+      intro s
+      simp only [f_n, Set.indicator_apply]
+      split_ifs with hs
+      · simp only [mul_one, Complex.norm_real]
+        exact abs_le.mpr (Set.mem_Icc.mp hs)
+      · simp
+    have hf_meas : Measurable f_n :=
+      (Complex.continuous_ofReal.measurable).mul
+        (measurable_const.indicator measurableSet_Icc)
+    have hf_int : ∀ z : H, MeasureTheory.Integrable f_n (P.diagonalMeasure z) := by
+      intro z
+      haveI := P.diagonalMeasure_isFiniteMeasure z
+      exact (MeasureTheory.integrable_const ((n : ℂ))).mono
+        hf_meas.aestronglyMeasurable
+        (by
+          filter_upwards with s
+          simp only [Complex.norm_natCast]
+          exact hf_norm s)
+    have hf_bdd : ∃ C, 0 ≤ C ∧ ∀ s, ‖f_n s‖ ≤ C := ⟨n, Nat.cast_nonneg n, hf_norm⟩
+    have h_complex_eq : @inner ℂ H _ v (spectralTruncation T hT hsa n v) = ∫ s, (s : ℂ) ∂μ := by
+      rw [show spectralTruncation T hT hsa n = functionalCalculus P f_n hf_int hf_bdd from rfl]
+      rw [functionalCalculus_inner_self P f_n hf_int hf_bdd v]
+      show ∫ s, f_n s ∂μ = ∫ s, (s : ℂ) ∂μ
+      refine integral_congr_ae ?_
+      exact h_ae_mem.mono fun s hs => by
+        have hsIcc := hsubset hs
+        have hs_mem_n : s ∈ Set.Icc (-(n : ℝ)) n := by
+          constructor
+          · linarith [hsIcc.1, show M ≤ (n : ℝ) from hN.trans (Nat.cast_le.mpr hn)]
+          · linarith [hsIcc.2, show M ≤ (n : ℝ) from hN.trans (Nat.cast_le.mpr hn)]
+        simp [f_n, Set.indicator_of_mem hs_mem_n]
+    have h_ofReal : (∫ s, (s : ℂ) ∂μ) = ((∫ s : ℝ, s ∂μ : ℝ) : ℂ) := integral_ofReal
+    have h_complex_re : (@inner ℂ H _ v (spectralTruncation T hT hsa n v)).re = ∫ s : ℝ, s ∂μ := by
+      rw [h_complex_eq]
+      simpa using congrArg Complex.re h_ofReal
+    exact h_complex_re
+  have h_const_tend :
+      Tendsto (fun n => (@inner ℂ H _ v (spectralTruncation T hT hsa n v)).re)
+        atTop (nhds (∫ s : ℝ, s ∂μ)) :=
+    (tendsto_const_nhds.congr' h_eventually_eq.symm)
+  exact tendsto_nhds_unique h_re_tend h_const_tend
+
 set_option maxHeartbeats 800000 in
 open MeasureTheory in
 /-- The norm-squared identity for the spectral representation:
@@ -2244,6 +2417,356 @@ theorem norm_sq_domain_eq_integral (T : UnboundedOperator H) (hT : T.IsDenselyDe
       (fun n => (∫ s, g_n n s ∂μ).re) := funext h_eq_n
   rw [h_eq_seq] at h_norm_tend
   exact tendsto_nhds_unique h_norm_tend h_re_tend
+
+open MeasureTheory in
+private lemma proj_eq_zero_of_subset_Icc_neg (T : UnboundedOperator H) (hT : T.IsDenselyDefined)
+    (hsa : T.IsSelfAdjoint hT) (hpos : T.IsPositive) (E : Set ℝ) (hE : MeasurableSet E)
+    {a b : ℝ} (hsubset : E ⊆ Set.Icc a b) (ha0 : a ≤ 0) (hb : b < 0) (x : H) :
+    ((T.spectralMeasure hT hsa).proj E x) = 0 := by
+  set P := T.spectralMeasure hT hsa
+  set M : ℝ := max (-a) b
+  have hM : 0 ≤ M := by
+    refine le_trans ?_ (le_max_left _ _)
+    linarith
+  have hsubset_symm : E ⊆ Set.Icc (-M) M := by
+    intro s hs
+    have hsab := hsubset hs
+    constructor
+    · have hneg : -M ≤ a := by
+        have htmp : -a ≤ M := le_max_left _ _
+        linarith
+      exact le_trans hneg hsab.1
+    · exact le_trans hsab.2 (le_max_right _ _)
+  set v := P.proj E x
+  have hv : v ∈ T.domain := proj_mem_domain_of_subset_Icc T hT hsa E hE hM hsubset_symm x
+  have hsym := UnboundedOperator.selfadjoint_symmetric T hT hsa
+  have h_nonneg : 0 ≤ (@inner ℂ H _ v (T ⟨v, hv⟩)).re := by
+    rw [← hsym ⟨v, hv⟩ ⟨v, hv⟩]
+    exact hpos ⟨v, hv⟩
+  set μ := P.diagonalMeasure v
+  have hid_int : Integrable (fun s : ℝ => s) μ := by
+    simpa [P, v, μ] using proj_id_integrable_of_subset_Icc T hT hsa E hE hM hsubset_symm x
+  have h_ae_mem : ∀ᵐ s ∂μ, s ∈ E := by
+    rw [ae_iff]
+    simpa [μ, v] using P.diagonalMeasure_proj_compl_eq_zero E hE x
+  have h_ae_le_b : ∀ᵐ s ∂μ, s ≤ b := h_ae_mem.mono fun s hs => (hsubset hs).2
+  have h_upper : (@inner ℂ H _ v (T ⟨v, hv⟩)).re ≤ b * ‖v‖ ^ 2 := by
+    rw [inner_apply_proj_eq_integral_of_subset_Icc T hT hsa E hE hM hsubset_symm x]
+    calc
+      ∫ s : ℝ, s ∂μ ≤ ∫ _ : ℝ, b ∂μ := by
+        exact MeasureTheory.integral_mono_ae hid_int (MeasureTheory.integrable_const b) h_ae_le_b
+      _ = b * ‖v‖ ^ 2 := by
+        rw [MeasureTheory.integral_const]
+        simpa [μ, mul_comm] using congrArg (fun r : ℝ => r * b) (P.diagonalMeasure_real_univ v)
+  have hnorm_sq_zero : ‖v‖ ^ 2 = 0 := by
+    have hnorm_sq_nonneg : 0 ≤ ‖v‖ ^ 2 := sq_nonneg ‖v‖
+    have hb_mul_neg : b * ‖v‖ ^ 2 ≤ 0 := by
+      exact mul_nonpos_of_nonpos_of_nonneg (le_of_lt hb) hnorm_sq_nonneg
+    by_contra hne
+    have hnorm_sq_pos : 0 < ‖v‖ ^ 2 := lt_of_le_of_ne hnorm_sq_nonneg (Ne.symm hne)
+    have hb_mul_lt : b * ‖v‖ ^ 2 < 0 := mul_neg_of_neg_of_pos hb hnorm_sq_pos
+    linarith
+  have hnorm_zero : ‖v‖ = 0 := by
+    nlinarith
+  simpa [v] using norm_eq_zero.mp hnorm_zero
+
+open MeasureTheory in
+private lemma proj_Iio_zero_eq_zero (T : UnboundedOperator H) (hT : T.IsDenselyDefined)
+    (hsa : T.IsSelfAdjoint hT) (hpos : T.IsPositive) (x : H) :
+    ((T.spectralMeasure hT hsa).proj (Set.Iio (0 : ℝ)) x) = 0 := by
+  set P := T.spectralMeasure hT hsa
+  let F : ℕ → Set ℝ := fun n => Set.Icc (-(n + 1 : ℝ)) (-(1 / ((n : ℝ) + 1)))
+  have hF_meas : ∀ n, MeasurableSet (F n) := fun _ => measurableSet_Icc
+  have hF_zero : ∀ n, P.proj (F n) x = 0 := by
+    intro n
+    refine proj_eq_zero_of_subset_Icc_neg T hT hsa hpos (F n) (hF_meas n) (Set.Subset.rfl) ?_ ?_ x
+    · have : (0 : ℝ) ≤ (n : ℝ) + 1 := by positivity
+      linarith
+    · have : 0 < (1 : ℝ) / ((n : ℝ) + 1) := by positivity
+      linarith
+  have hF_cover : (⋃ n, F n) = Set.Iio (0 : ℝ) := by
+    ext s
+    constructor
+    · intro hs
+      rcases Set.mem_iUnion.mp hs with ⟨n, hn⟩
+      have hright := (Set.mem_Icc.mp hn).2
+      have hneg_right : -((1 : ℝ) / ((n : ℝ) + 1)) < 0 := by
+        have : 0 < (1 : ℝ) / ((n : ℝ) + 1) := by positivity
+        linarith
+      exact lt_of_le_of_lt hright hneg_right
+    · intro hs
+      have hslt : s < 0 := hs
+      have hsneg : 0 < -s := by linarith
+      obtain ⟨N, hN⟩ := exists_nat_gt (max (-s) (1 / (-s)))
+      refine Set.mem_iUnion.mpr ⟨N, ?_⟩
+      refine Set.mem_Icc.mpr ?_
+      constructor
+      · have h1 : -s < (N : ℝ) := by
+          exact lt_of_le_of_lt (le_max_left _ _) hN
+        linarith
+      · have h2 : 1 / (-s) < (N : ℝ) := by
+          exact lt_of_le_of_lt (le_max_right _ _) hN
+        have hNpos : 0 < (N : ℝ) + 1 := by positivity
+        have hspos : 0 < -s := hsneg
+        have hfrac : 1 / ((N : ℝ) + 1) < -s := by
+          have hN1 : (N : ℝ) < (N : ℝ) + 1 := by linarith
+          have h3 : 1 / (-s) < (N : ℝ) + 1 := lt_trans h2 hN1
+          exact (one_div_lt hspos hNpos).mp h3
+        linarith
+  have hμ_zero : P.diagonalMeasure x (Set.Iio (0 : ℝ)) = 0 := by
+    rw [← hF_cover, MeasureTheory.measure_iUnion_null]
+    intro n
+    have htoReal : (P.diagonalMeasure x (F n)).toReal = 0 := by
+      rw [P.diagonalMeasure_apply_norm_sq x (F n) (hF_meas n), hF_zero n]
+      simp
+    have hzero_or_top := (ENNReal.toReal_eq_zero_iff _).mp htoReal
+    exact hzero_or_top.resolve_right (measure_ne_top _ _)
+  have hnorm_toReal : (P.diagonalMeasure x (Set.Iio (0 : ℝ))).toReal = 0 := by
+    simp [hμ_zero]
+  have hnorm_sq : ‖P.proj (Set.Iio (0 : ℝ)) x‖ ^ 2 = 0 := by
+    rw [← P.diagonalMeasure_apply_norm_sq x (Set.Iio (0 : ℝ)) measurableSet_Iio]
+    exact hnorm_toReal
+  have hnorm_zero : ‖P.proj (Set.Iio (0 : ℝ)) x‖ = 0 := by
+    nlinarith
+  exact norm_eq_zero.mp hnorm_zero
+
+open MeasureTheory in
+private lemma proj_singleton_zero_eq_zero (T : UnboundedOperator H) (hT : T.IsDenselyDefined)
+    (hsa : T.IsSelfAdjoint hT) (hstrict : T.IsStrictlyPositive) (x : H) :
+    ((T.spectralMeasure hT hsa).proj ({0} : Set ℝ) x) = 0 := by
+  set P := T.spectralMeasure hT hsa
+  set v := P.proj ({0} : Set ℝ) x
+  have hv : v ∈ T.domain := by
+    have hsubset : ({0} : Set ℝ) ⊆ Set.Icc (-(0 : ℝ)) 0 := by
+      intro s hs
+      simpa using hs
+    simpa [P, v] using
+      (proj_mem_domain_of_subset_Icc T hT hsa ({0} : Set ℝ) (measurableSet_singleton 0)
+        (show 0 ≤ (0 : ℝ) by simp) hsubset x)
+  have h_ae_zero : ∀ᵐ s ∂(P.diagonalMeasure v), s ∈ ({0} : Set ℝ) := by
+    rw [ae_iff]
+    simpa [v] using P.diagonalMeasure_proj_compl_eq_zero ({0} : Set ℝ) (measurableSet_singleton 0) x
+  have htrunc_zero : ∀ n, spectralTruncation T hT hsa n v = 0 := by
+    intro n
+    have hnorm_sq := spectralTruncation_norm_sq T hT hsa n v
+    have h_int_zero :
+        (∫ s : ℝ, ((s : ℂ) ^ 2) *
+          Set.indicator (Set.Icc (-(n : ℝ)) n) (fun _ => (1 : ℂ)) s
+            ∂(P.diagonalMeasure v)).re = 0 := by
+      have h_integral :
+          ∫ s : ℝ, ((s : ℂ) ^ 2) *
+            Set.indicator (Set.Icc (-(n : ℝ)) n) (fun _ => (1 : ℂ)) s
+              ∂(P.diagonalMeasure v) = 0 := by
+        calc
+          ∫ s : ℝ, ((s : ℂ) ^ 2) *
+              Set.indicator (Set.Icc (-(n : ℝ)) n) (fun _ => (1 : ℂ)) s
+                ∂(P.diagonalMeasure v)
+            = ∫ _ : ℝ, (0 : ℂ) ∂(P.diagonalMeasure v) := by
+                refine integral_congr_ae ?_
+                exact h_ae_zero.mono fun s hs => by
+                  have hs0 : s = 0 := by simpa using hs
+                  simp [hs0]
+        _ = 0 := by simp
+      simpa [h_integral]
+    rw [h_int_zero] at hnorm_sq
+    have hnorm_zero : ‖spectralTruncation T hT hsa n v‖ = 0 := by
+      nlinarith
+    exact norm_eq_zero.mp hnorm_zero
+  have hlimit : Tendsto (fun n => spectralTruncation T hT hsa n v) atTop (nhds (T ⟨v, hv⟩)) :=
+    spectralTruncation_tendsto T hT hsa ⟨v, hv⟩
+  have hconst : Tendsto (fun n => spectralTruncation T hT hsa n v) atTop (nhds (0 : H)) := by
+    have hseq : (fun n => spectralTruncation T hT hsa n v) = fun _ => (0 : H) := funext htrunc_zero
+    rw [hseq]
+    exact tendsto_const_nhds
+  have hTv_zero : T ⟨v, hv⟩ = 0 := tendsto_nhds_unique hlimit hconst
+  by_cases hv0 : v = 0
+  · simpa [v] using hv0
+  · have hlt : 0 < (@inner ℂ H _ (T ⟨v, hv⟩) v).re := hstrict ⟨v, hv⟩ hv0
+    exfalso
+    rw [hTv_zero] at hlt
+    simp at hlt
+
+open MeasureTheory in
+private lemma proj_Iic_zero_eq_zero (T : UnboundedOperator H) (hT : T.IsDenselyDefined)
+    (hsa : T.IsSelfAdjoint hT) (hpos : T.IsPositive) (hstrict : T.IsStrictlyPositive) (x : H) :
+    ((T.spectralMeasure hT hsa).proj (Set.Iic (0 : ℝ)) x) = 0 := by
+  set P := T.spectralMeasure hT hsa
+  have h_union : Set.Iic (0 : ℝ) = Set.Iio (0 : ℝ) ∪ ({0} : Set ℝ) := by
+    ext s; simp
+  have hadd := P.additive_disjoint (Set.Iio (0 : ℝ)) ({0} : Set ℝ)
+    measurableSet_Iio (measurableSet_singleton 0) (Set.disjoint_left.mpr fun s hs h0 => by
+      exact hs.ne h0)
+  rw [← h_union] at hadd
+  have hneg : P.proj (Set.Iio (0 : ℝ)) x = 0 := by
+    simpa [P] using proj_Iio_zero_eq_zero T hT hsa hpos x
+  have hzero : P.proj ({0} : Set ℝ) x = 0 := by
+    simpa [P] using proj_singleton_zero_eq_zero T hT hsa hstrict x
+  have happly := congrArg (fun A : H →L[ℂ] H => A x) hadd
+  simpa [hneg, hzero] using happly
+
+set_option maxHeartbeats 400000 in
+open MeasureTheory in
+theorem UnboundedOperator.power_zero (T : UnboundedOperator H) (hT : T.IsDenselyDefined)
+    (hsa : T.IsSelfAdjoint hT) (hpos : T.IsPositive)
+    (hstrict : T.IsStrictlyPositive) :
+    T.power hT hsa hpos 0 (by simp [Complex.zero_re]) = 1 := by
+  set P := T.spectralMeasure hT hsa
+  let χ : ℝ → ℂ := (Set.Ioi (0 : ℝ)).indicator (fun _ => (1 : ℂ))
+  have hχ_int : ∀ z : H, Integrable χ (P.diagonalMeasure z) := by
+    intro z
+    haveI := P.diagonalMeasure_isFiniteMeasure z
+    exact (MeasureTheory.integrable_const (1 : ℂ)).mono
+      ((measurable_const.indicator measurableSet_Ioi).aestronglyMeasurable)
+      (by
+        filter_upwards with s
+        by_cases hs : 0 < s
+        · simp [χ, hs]
+        · simp [χ, hs])
+  have hχ_bdd : ∃ M, 0 ≤ M ∧ ∀ s, ‖χ s‖ ≤ M := by
+    refine ⟨1, zero_le_one, ?_⟩
+    intro s
+    by_cases hs : 0 < s
+    · simp [χ, hs]
+    · simp [χ, hs]
+  have hpow_eq :
+      T.power hT hsa hpos 0 (by simp [Complex.zero_re]) = functionalCalculus P χ hχ_int hχ_bdd := by
+    refine functionalCalculus_congr P
+      (fun x : ℝ => if x > 0 then Complex.exp (0 * Complex.log x) else 0) χ
+      (by
+        intro z
+        haveI := P.diagonalMeasure_isFiniteMeasure z
+        exact (MeasureTheory.integrable_const (1 : ℂ)).mono
+          (Measurable.aestronglyMeasurable (by
+            apply Measurable.ite measurableSet_Ioi
+            · exact Complex.continuous_exp.measurable.comp
+                (measurable_const.mul
+                  (Complex.measurable_log.comp Complex.continuous_ofReal.measurable))
+            · exact measurable_const))
+          (by
+            filter_upwards with x
+            by_cases hx : x > 0
+            · simp [hx, Complex.exp_zero]
+            · simp [hx]))
+      ⟨1, zero_le_one, fun x => by
+        by_cases hx : x > 0
+        · simp [hx, Complex.exp_zero]
+        · simp [hx]⟩
+      hχ_int hχ_bdd
+      (fun x => by
+        by_cases hx : x > 0
+        · simp [χ, hx, Complex.exp_zero]
+        · simp [χ, hx])
+  rw [hpow_eq, functionalCalculus_indicator P (Set.Ioi (0 : ℝ)) measurableSet_Ioi hχ_int hχ_bdd]
+  have hIic_zero : P.proj (Set.Iic (0 : ℝ)) = 0 := by
+    ext x
+    exact proj_Iic_zero_eq_zero T hT hsa hpos hstrict x
+  have hadd := P.additive_disjoint (Set.Iic (0 : ℝ)) (Set.Ioi (0 : ℝ))
+    measurableSet_Iic measurableSet_Ioi (Set.disjoint_left.mpr fun s hs ht => by
+      exact not_lt_of_ge (show s ≤ 0 from hs) (show 0 < s from ht))
+  rw [Set.Iic_union_Ioi, P.univ, hIic_zero, zero_add] at hadd
+  exact hadd.symm
+
+set_option maxHeartbeats 400000 in
+open MeasureTheory in
+theorem UnboundedOperator.power_imaginary_unitary (T : UnboundedOperator H)
+    (hT : T.IsDenselyDefined) (hsa : T.IsSelfAdjoint hT) (hpos : T.IsPositive)
+    (hstrict : T.IsStrictlyPositive) (t : ℝ) :
+    let hs : (Complex.I * ↑t).re = 0 := by
+      simp [Complex.mul_re, Complex.I_re, Complex.I_im, Complex.ofReal_re, Complex.ofReal_im]
+    let u := T.power hT hsa hpos (Complex.I * t) hs
+    ContinuousLinearMap.adjoint u ∘L u = 1 ∧ u ∘L ContinuousLinearMap.adjoint u = 1 := by
+  set P := T.spectralMeasure hT hsa
+  let s : ℂ := Complex.I * (t : ℂ)
+  have hs : s.re = 0 := by
+    simp [s, Complex.mul_re, Complex.I_re, Complex.I_im, Complex.ofReal_re, Complex.ofReal_im]
+  have hsneg : (-s).re = 0 := by simp [hs]
+  let f : ℝ → ℂ := fun x => if x > 0 then Complex.exp (s * Complex.log x) else 0
+  let g : ℝ → ℂ := fun x => if x > 0 then Complex.exp ((-s) * Complex.log x) else 0
+  have power_norm_le : ∀ (u : ℂ), u.re = 0 → ∀ x : ℝ,
+      ‖(if x > 0 then Complex.exp (u * Complex.log ↑x) else 0 : ℂ)‖ ≤ 1 := by
+    intro u hu x
+    by_cases hx : x > 0
+    · rw [if_pos hx, Complex.norm_exp,
+        show Complex.log (↑x : ℂ) = ↑(Real.log x) from (Complex.ofReal_log (le_of_lt hx)).symm]
+      have hre : (u * ↑(Real.log x)).re = 0 := by
+        simp [Complex.mul_re, Complex.ofReal_re, Complex.ofReal_im, hu]
+      rw [hre, Real.exp_zero]
+    · simp [hx]
+  have power_meas : ∀ (u : ℂ), Measurable (fun x : ℝ =>
+      if x > 0 then Complex.exp (u * Complex.log ↑x) else (0 : ℂ)) := by
+    intro u
+    apply Measurable.ite measurableSet_Ioi
+    · exact Complex.continuous_exp.measurable.comp
+        (measurable_const.mul (Complex.measurable_log.comp Complex.continuous_ofReal.measurable))
+    · exact measurable_const
+  have power_int : ∀ (u : ℂ), u.re = 0 → ∀ z : H,
+      Integrable (fun x : ℝ => if x > 0 then Complex.exp (u * Complex.log ↑x) else 0)
+        (P.diagonalMeasure z) := by
+    intro u hu z
+    haveI := P.diagonalMeasure_isFiniteMeasure z
+    exact (MeasureTheory.integrable_const (1 : ℂ)).mono
+      ((power_meas u).aestronglyMeasurable)
+      (by
+        filter_upwards with x
+        simpa using power_norm_le u hu x)
+  have hstar_eq : star ∘ f = g := by
+    funext x
+    by_cases hx : x > 0
+    · calc
+        (star ∘ f) x = star (Complex.exp (s * Complex.log ↑x)) := by simp [f, hx]
+        _ = Complex.exp (star (s * Complex.log ↑x)) := by
+              simpa using (Complex.exp_conj (s * Complex.log (x : ℂ))).symm
+        _ = Complex.exp ((-s) * Complex.log ↑x) := by
+              congr 1
+              have hlog' : Complex.log (x : ℂ) = (Real.log x : ℂ) :=
+                (Complex.ofReal_log (le_of_lt hx)).symm
+              have hlog : star (Complex.log (x : ℂ)) = Complex.log (x : ℂ) := by
+                calc
+                  star (Complex.log (x : ℂ)) = star ((Real.log x : ℂ)) := by rw [hlog']
+                  _ = (Real.log x : ℂ) := by simp
+                  _ = Complex.log (x : ℂ) := hlog'.symm
+              have hmul : star (s * Complex.log ↑x) = star s * star (Complex.log ↑x) := by
+                simp
+              rw [hmul]
+              rw [hlog]
+              simp [s]
+        _ = g x := by simp [g, hx]
+    · simp [f, g, hx]
+  have hstar_int : ∀ z : H, Integrable (star ∘ f) (P.diagonalMeasure z) := by
+    intro z
+    rw [hstar_eq]
+    exact power_int (-s) hsneg z
+  have hstar_bdd : ∃ M, 0 ≤ M ∧ ∀ x, ‖(star ∘ f) x‖ ≤ M := by
+    rw [hstar_eq]
+    exact ⟨1, zero_le_one, power_norm_le (-s) hsneg⟩
+  let u := T.power hT hsa hpos s hs
+  have hu_adj : ContinuousLinearMap.adjoint u = T.power hT hsa hpos (-s) hsneg := by
+    show ContinuousLinearMap.adjoint (functionalCalculus P f (power_int s hs) ⟨1, zero_le_one, power_norm_le s hs⟩) =
+        functionalCalculus P g (power_int (-s) hsneg) ⟨1, zero_le_one, power_norm_le (-s) hsneg⟩
+    calc
+      ContinuousLinearMap.adjoint (functionalCalculus P f (power_int s hs) ⟨1, zero_le_one, power_norm_le s hs⟩)
+          = functionalCalculus P (star ∘ f) hstar_int hstar_bdd := by
+              exact functionalCalculus_star P f (power_int s hs) ⟨1, zero_le_one, power_norm_le s hs⟩
+                hstar_int hstar_bdd
+      _ = functionalCalculus P g (power_int (-s) hsneg) ⟨1, zero_le_one, power_norm_le (-s) hsneg⟩ := by
+            exact functionalCalculus_congr P (star ∘ f) g hstar_int hstar_bdd
+              (power_int (-s) hsneg) ⟨1, zero_le_one, power_norm_le (-s) hsneg⟩
+              (fun x => by simpa using congrArg (fun h : ℝ → ℂ => h x) hstar_eq)
+  have hmul_left := T.power_add hT hsa hpos (-s) s hsneg hs
+  have hmul_right := T.power_add hT hsa hpos s (-s) hs hsneg
+  refine ⟨?_, ?_⟩
+  · calc
+      ContinuousLinearMap.adjoint u ∘L u = T.power hT hsa hpos (-s) hsneg ∘L u := by rw [hu_adj]
+      _ = T.power hT hsa hpos ((-s) + s) (by simp [hs, hsneg]) := by
+            simpa [u] using hmul_left.symm
+      _ = 1 := by
+            simpa using (T.power_zero hT hsa hpos hstrict)
+  · calc
+      u ∘L ContinuousLinearMap.adjoint u = u ∘L T.power hT hsa hpos (-s) hsneg := by rw [hu_adj]
+      _ = T.power hT hsa hpos (s + (-s)) (by simp [hs, hsneg]) := by
+            simpa [u] using hmul_right.symm
+      _ = 1 := by
+            simpa using (T.power_zero hT hsa hpos hstrict)
 
 /-- The diagonal spectral measure is invariant under the unitary group:
     for every Borel set E, ‖P(E)(U(t)x)‖² = ‖P(E)x‖².
@@ -2467,10 +2990,46 @@ private lemma unitaryGroup_hasDerivAt_zero (T : UnboundedOperator H) (hT : T.IsD
   -- Choose n so that norm(T_n x - Tx) < c/2 via spectralTruncation_tendsto
   have h_tend := spectralTruncation_tendsto T hT hsa x
   rw [Metric.tendsto_atTop] at h_tend
-  obtain ⟨N, hN⟩ := h_tend (c / 2) (half_pos hc)
-  set n := N
+  obtain ⟨Ntrunc, hNtrunc⟩ := h_tend (c / 2) (half_pos hc)
+  set μ := P.diagonalMeasure (x : H)
+  have hsq_int_complex : Integrable (fun s : ℝ => ((s : ℂ) ^ 2)) μ :=
+    (mem_domain_iff_square_integrable T hT hsa (x : H)).mp x.2
+  have hsq_int : Integrable (fun s : ℝ => s ^ 2) μ := by
+    convert hsq_int_complex.norm using 1
+    ext s
+    simp [Complex.norm_real, sq_abs]
+  let tail : ℕ → ℝ → ℝ := fun N s =>
+    s ^ 2 * Set.indicator (Set.Icc (-(N : ℝ)) N)ᶜ (fun _ => (1 : ℝ)) s
+  have htail_meas : ∀ N, AEStronglyMeasurable (tail N) μ := by
+    intro N
+    exact ((measurable_id.pow_const 2).mul
+      (measurable_const.indicator (measurableSet_Icc.compl))).aestronglyMeasurable
+  have htail_dom : ∀ N, ∀ᵐ s ∂μ, ‖tail N s‖ ≤ s ^ 2 := by
+    intro N
+    filter_upwards with s
+    by_cases hs : s ∈ Set.Icc (-(N : ℝ)) N
+    · simp [tail, hs, sq_nonneg s]
+    · simp [tail, hs, sq_nonneg s]
+  have htail_pw : ∀ s : ℝ, Tendsto (fun N => tail N s) atTop (nhds 0) := by
+    intro s
+    have h_ev : ∀ᶠ N in atTop, tail N s = 0 := by
+      obtain ⟨N, hN⟩ := exists_nat_ge |s|
+      filter_upwards [Filter.Ici_mem_atTop N] with m hm
+      have hs_mem : s ∈ Set.Icc (-(m : ℝ)) (m : ℝ) := by
+        constructor <;> linarith [abs_nonneg s, neg_abs_le s, le_abs_self s,
+          show (N : ℝ) ≤ (m : ℝ) from Nat.cast_le.mpr hm]
+      simp [tail, hs_mem]
+    exact tendsto_nhds_of_eventually_eq h_ev
+  have htail_tend :
+      Tendsto (fun N => ∫ s : ℝ, tail N s ∂μ) atTop (nhds 0) := by
+    simpa using
+      (MeasureTheory.tendsto_integral_of_dominated_convergence
+        (fun s : ℝ => s ^ 2) htail_meas hsq_int htail_dom (Eventually.of_forall htail_pw))
+  rw [Metric.tendsto_atTop] at htail_tend
+  obtain ⟨Ntail, hNtail⟩ := htail_tend ((c / 4) ^ 2) (by positivity)
+  set n := max Ntrunc Ntail
   have h_trunc_close : ‖spectralTruncation T hT hsa n (x : H) - T x‖ < c / 2 := by
-    have := hN n le_rfl; rwa [dist_eq_norm] at this
+    have := hNtrunc n (le_max_left _ _); rwa [dist_eq_norm] at this
   set T_n := spectralTruncation T hT hsa n
   -- Key spectral estimate for fixed n: the truncated error is o(h).
   -- U(h)x - x - h*(I*T_n x) = fc(g_{h,n})(x)
@@ -2481,17 +3040,335 @@ private lemma unitaryGroup_hasDerivAt_zero (T : UnboundedOperator H) (hT : T.IsD
   -- So norm(error) <= |h|*sqrt(h^2*C + tail_n) <= (c/2)*|h| for small h.
   have h_spectral_littleO : ∀ᶠ h in nhds (0 : ℝ),
       ‖U h (x : H) - (x : H) - h • (Complex.I • T_n (x : H))‖ ≤ c / 2 * ‖h‖ := by
-    -- The error is fc(g_h)(x) where g_h(s) = exp(ihs) - 1 - ih·s·χ_{[-n,n]}(s).
-    -- ‖fc(g_h)(x)‖² = ∫ |g_h|² dμ_x by functionalCalculus_norm_sq'.
-    -- On [-n,n]: |g_h(s)| ≤ h²s²/2 (Taylor), so |g_h|² ≤ h⁴n⁴/4.
-    -- On |s|>n: |g_h(s)| = |exp(ihs)-1| ≤ |h|·|s| (mean value), so |g_h|² ≤ h²s².
-    -- Combined: ∫ |g_h|² ≤ h⁴·C + h²·D where C = n⁴·μ(ℝ)/4 and D = ∫_{|s|>n} s² dμ_x.
-    -- So ‖error‖ ≤ |h|·√(h²C + D).
-    -- Since D < (c/2)² (from h_trunc_close + norm_sq identity), for small h:
-    -- √(h²C + D) < c/2, giving ‖error‖ ≤ (c/2)·|h|.
-    -- The formal proof uses functionalCalculus_sub/norm_sq' + pointwise Taylor bound
-    -- + arithmetic with the tail integral. All ingredients are available.
-    sorry
+    let I : Set ℝ := Set.Icc (-(n : ℝ)) n
+    let f_n : ℝ → ℂ := fun s =>
+      (↑s : ℂ) * Set.indicator I (fun _ => (1 : ℂ)) s
+    have hf_norm : ∀ s : ℝ, ‖f_n s‖ ≤ n := by
+      intro s
+      simp only [f_n, I, Set.indicator_apply]
+      split_ifs with hs
+      · simp only [mul_one, Complex.norm_real]
+        exact abs_le.mpr (Set.mem_Icc.mp hs)
+      · simp
+    have hf_meas : Measurable f_n :=
+      (Complex.continuous_ofReal.measurable).mul
+        (measurable_const.indicator measurableSet_Icc)
+    have hf_int : ∀ z : H, Integrable f_n (P.diagonalMeasure z) := by
+      intro z
+      haveI := P.diagonalMeasure_isFiniteMeasure z
+      exact (MeasureTheory.integrable_const ((n : ℂ))).mono
+        hf_meas.aestronglyMeasurable
+        (by
+          filter_upwards with s
+          simp only [Complex.norm_natCast]
+          exact hf_norm s)
+    have hf_bdd : ∃ M, 0 ≤ M ∧ ∀ s, ‖f_n s‖ ≤ M := ⟨n, Nat.cast_nonneg n, hf_norm⟩
+    have htail_small : ∫ s : ℝ, tail n s ∂μ < (c / 4) ^ 2 := by
+      have htail_nonneg : 0 ≤ ∫ s : ℝ, tail n s ∂μ := by
+        refine MeasureTheory.integral_nonneg_of_ae ?_
+        filter_upwards with s
+        by_cases hs : s ∈ Set.Icc (-(n : ℝ)) n
+        · simp [tail, hs]
+        · simp [tail, hs]
+          exact sq_nonneg s
+      have htail_dist := hNtail n (le_max_right _ _)
+      rw [Real.dist_eq, sub_zero, abs_of_nonneg htail_nonneg] at htail_dist
+      exact htail_dist
+    let quot0 : ℝ → ℝ → ℂ := fun h s =>
+      if h = 0 then Complex.I * (s : ℂ)
+      else (Complex.exp (Complex.I * ↑h * ↑s) - 1) / (h : ℂ)
+    let Q : ℝ → ℝ → ℝ := fun h s =>
+      ‖quot0 h s - Complex.I * f_n s‖ ^ 2
+    have hquot0_tend : ∀ s : ℝ,
+        Tendsto (fun h => quot0 h s) (nhds 0) (nhds (Complex.I * (s : ℂ))) := by
+      intro s
+      rw [tendsto_iff_norm_sub_tendsto_zero]
+      have hbound :
+          ∀ᶠ h in nhds (0 : ℝ),
+            ‖quot0 h s - Complex.I * (s : ℂ)‖ ≤ ‖h‖ * s ^ 2 := by
+        let δ : ℝ := (max ‖s‖ 1)⁻¹
+        have hδpos : 0 < δ := by
+          unfold δ
+          positivity
+        filter_upwards [Metric.ball_mem_nhds (0 : ℝ) hδpos] with h hh
+        by_cases h0 : h = 0
+        · simp [quot0, h0]
+        · have hh' : ‖h‖ < δ := by
+            simpa [Metric.mem_ball, Real.dist_eq, abs_sub_comm] using hh
+          have hz_lt : ‖Complex.I * ↑h * ↑s‖ < 1 := by
+            have hs_le : ‖s‖ ≤ max ‖s‖ 1 := le_max_left _ _
+            have hδ_eq : δ * max ‖s‖ 1 = 1 := by
+              unfold δ
+              field_simp [show (max ‖s‖ 1 : ℝ) ≠ 0 by positivity]
+            calc
+              ‖Complex.I * ↑h * ↑s‖ = ‖h‖ * ‖s‖ := by
+                simp [norm_mul]
+              _ ≤ ‖h‖ * max ‖s‖ 1 := mul_le_mul_of_nonneg_left hs_le (norm_nonneg _)
+              _ < δ * max ‖s‖ 1 := by gcongr
+              _ = 1 := hδ_eq
+          have hz : ‖Complex.I * ↑h * ↑s‖ ≤ 1 := hz_lt.le
+          have hrem := Complex.norm_exp_sub_one_sub_id_le (x := Complex.I * ↑h * ↑s) hz
+          have hcalc :
+              ‖quot0 h s - Complex.I * (s : ℂ)‖
+                = ‖Complex.exp (Complex.I * ↑h * ↑s) - 1 - Complex.I * ↑h * ↑s‖ / ‖h‖ := by
+            rw [show quot0 h s = (Complex.exp (Complex.I * ↑h * ↑s) - 1) / (h : ℂ) by
+              simp [quot0, h0]]
+            have : (Complex.exp (Complex.I * ↑h * ↑s) - 1) / (h : ℂ) - Complex.I * (s : ℂ) =
+                (Complex.exp (Complex.I * ↑h * ↑s) - 1 - Complex.I * ↑h * ↑s) / (h : ℂ) := by
+              field_simp [h0]
+            rw [this, norm_div]
+            simp
+          rw [hcalc]
+          calc
+            ‖Complex.exp (Complex.I * ↑h * ↑s) - 1 - Complex.I * ↑h * ↑s‖ / ‖h‖
+                ≤ ‖Complex.I * ↑h * ↑s‖ ^ 2 / ‖h‖ := by
+                  exact div_le_div_of_nonneg_right hrem (norm_nonneg _)
+            _ = ‖h‖ * s ^ 2 := by
+                  have hsq : ‖Complex.I * ↑h * ↑s‖ = ‖h‖ * ‖s‖ := by
+                    simp [norm_mul]
+                  have hh_pos : 0 < ‖h‖ := norm_pos_iff.mpr h0
+                  rw [hsq]
+                  calc
+                    (‖h‖ * ‖s‖) ^ 2 / ‖h‖ = ‖h‖ * ‖s‖ ^ 2 := by
+                      field_simp [hh_pos.ne']
+                    _ = ‖h‖ * s ^ 2 := by
+                      congr 1
+                      simpa [Real.norm_eq_abs] using (sq_abs s)
+      have h_rhs : Tendsto (fun h : ℝ => ‖h‖ * s ^ 2) (nhds 0) (nhds 0) := by
+        simpa using ((continuous_norm.mul continuous_const).continuousAt.tendsto :
+          Tendsto (fun h : ℝ => ‖h‖ * s ^ 2) (nhds 0) (nhds (‖(0 : ℝ)‖ * s ^ 2)))
+      exact squeeze_zero' (Eventually.of_forall fun h => norm_nonneg _) hbound h_rhs
+    have hQ_meas : ∀ᶠ h in nhds (0 : ℝ), AEStronglyMeasurable (Q h) μ := by
+      filter_upwards with h
+      have hquot_meas : Measurable (quot0 h) := by
+        by_cases h0 : h = 0
+        · simpa [quot0, h0] using (continuous_const.mul Complex.continuous_ofReal).measurable
+        · simpa [quot0, h0] using (((expI_measurable h).sub measurable_const).div_const (h : ℂ))
+      exact ((hquot_meas.sub (measurable_const.mul hf_meas)).norm.pow_const 2).aestronglyMeasurable
+    have hQ_bound : ∀ᶠ h in nhds (0 : ℝ), ∀ᵐ s ∂μ, ‖Q h s‖ ≤ 4 * s ^ 2 := by
+      filter_upwards with h
+      filter_upwards with s
+      have hquot_le :
+          ‖quot0 h s‖ ≤ ‖s‖ := by
+        by_cases h0 : h = 0
+        · simp [quot0, h0]
+        · rw [show quot0 h s = (Complex.exp (Complex.I * ↑h * ↑s) - 1) / (h : ℂ) by
+              simp [quot0, h0]]
+          calc
+            ‖(Complex.exp (Complex.I * ↑h * ↑s) - 1) / (h : ℂ)‖
+                = ‖Complex.exp (Complex.I * ↑h * ↑s) - 1‖ / ‖(h : ℂ)‖ := by rw [norm_div]
+            _ ≤ ‖Complex.I * ↑h * ↑s‖ / ‖(h : ℂ)‖ := by
+                  gcongr
+                  simpa [mul_assoc, mul_comm, mul_left_comm] using
+                    Real.norm_exp_I_mul_ofReal_sub_one_le (x := h * s)
+            _ = ‖s‖ := by
+                  have hh_nonzero : ‖(h : ℂ)‖ ≠ 0 := by simp [h0]
+                  rw [show ‖Complex.I * ↑h * ↑s‖ = ‖(h : ℂ)‖ * ‖s‖ by
+                    simp [norm_mul, mul_assoc, mul_comm, mul_left_comm]]
+                  field_simp [hh_nonzero]
+      have hf_le : ‖Complex.I * f_n s‖ ≤ ‖s‖ := by
+        calc
+          ‖Complex.I * f_n s‖ = ‖f_n s‖ := by simp [norm_mul]
+          _ ≤ ‖s‖ := by
+            by_cases hs : s ∈ I
+            · simp [f_n, hs, I]
+            · simp [f_n, hs, I]
+      have hsum : ‖quot0 h s - Complex.I * f_n s‖ ≤ 2 * ‖s‖ := by
+        calc
+          ‖quot0 h s - Complex.I * f_n s‖ ≤ ‖quot0 h s‖ + ‖Complex.I * f_n s‖ := norm_sub_le _ _
+          _ ≤ ‖s‖ + ‖s‖ := add_le_add hquot_le hf_le
+          _ = 2 * ‖s‖ := by ring
+      have hnonneg : 0 ≤ ‖quot0 h s - Complex.I * f_n s‖ := norm_nonneg _
+      calc
+        ‖Q h s‖ = ‖quot0 h s - Complex.I * f_n s‖ ^ 2 := by simp [Q]
+        _ ≤ (2 * ‖s‖) ^ 2 := by gcongr
+        _ = 4 * s ^ 2 := by
+          have hsq : ‖s‖ ^ 2 = s ^ 2 := by
+            simpa [Real.norm_eq_abs] using (sq_abs s)
+          nlinarith
+    have hQ_int :
+        Tendsto (fun h : ℝ => ∫ s : ℝ, Q h s ∂μ) (nhds 0)
+          (nhds (∫ s : ℝ, Q 0 s ∂μ)) :=
+      MeasureTheory.tendsto_integral_filter_of_dominated_convergence
+        (fun s : ℝ => 4 * s ^ 2) hQ_meas hQ_bound
+        (hsq_int.const_mul 4) <|
+          Eventually.of_forall fun s =>
+            by
+              have hcont : Continuous fun z : ℂ => ‖z - Complex.I * f_n s‖ ^ 2 :=
+                (continuous_norm.comp (continuous_id.sub continuous_const)).pow 2
+              simpa [Q, quot0] using hcont.continuousAt.tendsto.comp (hquot0_tend s)
+    have hQ0_eq_tail : (∫ s : ℝ, Q 0 s ∂μ) = ∫ s : ℝ, tail n s ∂μ := by
+      refine integral_congr_ae ?_
+      filter_upwards with s
+      by_cases hs : s ∈ I
+      · simp [Q, quot0, tail, f_n, hs, I]
+      · simp [Q, quot0, tail, f_n, hs, I, Complex.norm_I, sq_abs]
+    have hQ_ev : ∀ᶠ h in nhds (0 : ℝ), ∫ s : ℝ, Q h s ∂μ < (c / 2) ^ 2 := by
+      rw [hQ0_eq_tail] at hQ_int
+      have hlim_small : ∫ s : ℝ, tail n s ∂μ < (c / 2) ^ 2 := by
+        have hq : (c / 4) ^ 2 < (c / 2) ^ 2 := by
+          rw [sq_lt_sq₀ (by positivity) (by positivity)]
+          linarith
+        exact lt_of_lt_of_le htail_small hq.le
+      let ε : ℝ := (c / 2) ^ 2 - ∫ s : ℝ, tail n s ∂μ
+      have hεpos : 0 < ε := by
+        dsimp [ε]
+        linarith
+      have hQ_ball := hQ_int (Metric.ball_mem_nhds _ hεpos)
+      filter_upwards [hQ_ball] with h hh
+      have hh' : |∫ s : ℝ, Q h s ∂μ - ∫ s : ℝ, tail n s ∂μ| < ε := by
+        simpa [Metric.mem_ball, Real.dist_eq, abs_sub_comm, ε] using hh
+      have hle : ∫ s : ℝ, Q h s ∂μ - ∫ s : ℝ, tail n s ∂μ < ε := by
+        exact (abs_lt.mp hh').2
+      dsimp [ε] at hle ⊢
+      linarith
+    filter_upwards [hQ_ev] with h hQh
+    by_cases h0 : h = 0
+    · simpa [h0, hU0]
+    · let e_h : ℝ → ℂ := fun s => Complex.exp (Complex.I * ↑h * ↑s)
+      let g_h : ℝ → ℂ := fun s => (e_h s - 1) - ((((h : ℂ) * Complex.I) • f_n) s)
+      have he_int : ∀ z : H, Integrable e_h (P.diagonalMeasure z) := fun z => expI_integrable P h z
+      have he_bdd : ∃ M, 0 ≤ M ∧ ∀ s, ‖e_h s‖ ≤ M := ⟨1, zero_le_one, expI_norm_le h⟩
+      have h1_int : ∀ z : H, Integrable (fun _ : ℝ => (1 : ℂ)) (P.diagonalMeasure z) := by
+        intro z
+        haveI := P.diagonalMeasure_isFiniteMeasure z
+        exact MeasureTheory.integrable_const 1
+      have h1_bdd : ∃ M : ℝ, 0 ≤ M ∧ ∀ s : ℝ, ‖(1 : ℂ)‖ ≤ M := by
+        refine ⟨1, zero_le_one, ?_⟩
+        intro s
+        simp
+      have hcf_int : ∀ z : H, Integrable ((((h : ℂ) * Complex.I) • f_n)) (P.diagonalMeasure z) := by
+        intro z
+        exact (hf_int z).const_mul (((h : ℂ) * Complex.I))
+      have hcf_bdd : ∃ M, 0 ≤ M ∧ ∀ s, ‖((((h : ℂ) * Complex.I) • f_n) s)‖ ≤ M := by
+        refine ⟨‖(h : ℂ) * Complex.I‖ * n, mul_nonneg (norm_nonneg _) (Nat.cast_nonneg n), ?_⟩
+        intro s
+        calc
+          ‖((((h : ℂ) * Complex.I) • f_n) s)‖ = ‖(h : ℂ) * Complex.I‖ * ‖f_n s‖ := by
+            simp [Pi.smul_apply, norm_mul]
+          _ ≤ ‖(h : ℂ) * Complex.I‖ * n :=
+            mul_le_mul_of_nonneg_left (hf_norm s) (norm_nonneg _)
+      have hsub1_int : ∀ z : H, Integrable (fun s => e_h s - 1) (P.diagonalMeasure z) := by
+        intro z
+        exact (he_int z).sub (h1_int z)
+      have hg_int : ∀ z : H, Integrable g_h (P.diagonalMeasure z) := by
+        intro z
+        have htmp : Integrable (((fun s => e_h s - 1) - (((h : ℂ) * Complex.I) • f_n)))
+            (P.diagonalMeasure z) := (hsub1_int z).sub (hcf_int z)
+        simpa [g_h] using htmp
+      have hg_bdd : ∃ M, 0 ≤ M ∧ ∀ s, ‖g_h s‖ ≤ M := by
+        refine ⟨2 + ‖(h : ℂ) * Complex.I‖ * n, by positivity, ?_⟩
+        intro s
+        have hfle := hf_norm s
+        calc
+          ‖g_h s‖ ≤ ‖e_h s‖ + ‖(1 : ℂ) + (((h : ℂ) * Complex.I) * f_n s)‖ := by
+            simpa [g_h, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using
+              (norm_sub_le (e_h s) ((1 : ℂ) + (((h : ℂ) * Complex.I) * f_n s)))
+          _ ≤ ‖e_h s‖ + (‖(1 : ℂ)‖ + ‖(((h : ℂ) * Complex.I) * f_n s)‖) := by
+            gcongr
+            exact norm_add_le _ _
+          _ ≤ 1 + (1 + ‖(h : ℂ) * Complex.I‖ * n) := by
+            gcongr
+            · exact expI_norm_le h s
+            · simp
+            · calc
+                ‖(((h : ℂ) * Complex.I) * f_n s)‖ = ‖(h : ℂ) * Complex.I‖ * ‖f_n s‖ := by
+                  simp [norm_mul]
+                _ ≤ ‖(h : ℂ) * Complex.I‖ * n :=
+                  mul_le_mul_of_nonneg_left hfle (norm_nonneg _)
+          _ = 2 + ‖(h : ℂ) * Complex.I‖ * n := by ring
+      have hg_meas : Measurable g_h := by
+        have htmp : Measurable (fun s : ℝ => e_h s - 1 - (((h : ℂ) * Complex.I) • f_n) s) :=
+          ((expI_measurable h).sub measurable_const).sub (measurable_const.mul hf_meas)
+        simpa [g_h, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using htmp
+      have hsub1_bdd : ∃ M, 0 ≤ M ∧ ∀ s, ‖e_h s - 1‖ ≤ M := by
+        refine ⟨2, by positivity, ?_⟩
+        intro s
+        calc ‖e_h s - 1‖ ≤ ‖e_h s‖ + ‖(1 : ℂ)‖ := norm_sub_le _ _
+          _ ≤ 1 + 1 := by
+              gcongr
+              · exact expI_norm_le h s
+              · simp
+          _ = 2 := by ring
+      have hfc_sub1 := P.functionalCalculus_sub e_h (fun _ : ℝ => (1 : ℂ))
+        he_int he_bdd h1_int h1_bdd hsub1_int hsub1_bdd
+      have hfc_smul := P.functionalCalculus_smul (((h : ℂ) * Complex.I)) f_n
+        hf_int hf_bdd hcf_int hcf_bdd
+      have hfc_g := P.functionalCalculus_sub (fun s => e_h s - 1) ((((h : ℂ) * Complex.I) • f_n))
+        hsub1_int hsub1_bdd hcf_int hcf_bdd hg_int hg_bdd
+      have herr_apply :
+          functionalCalculus P g_h hg_int hg_bdd x =
+            U h (x : H) - (x : H) - h • (Complex.I • T_n (x : H)) := by
+        have hfc_sub1_apply :
+            functionalCalculus P (fun s => e_h s - 1) hsub1_int hsub1_bdd x =
+              U h (x : H) - (x : H) := by
+          simpa [unitaryGroup_zero, functionalCalculus_const_one_eq_id P,
+            ContinuousLinearMap.sub_apply] using
+            congrArg (fun A : H →L[ℂ] H => A x) hfc_sub1
+        have hfc_smul_apply :
+            functionalCalculus P (((h : ℂ) * Complex.I) • f_n) hcf_int hcf_bdd x =
+              h • (Complex.I • T_n (x : H)) := by
+          calc
+            functionalCalculus P (((h : ℂ) * Complex.I) • f_n) hcf_int hcf_bdd x
+                = ((h : ℂ) * Complex.I) • functionalCalculus P f_n hf_int hf_bdd x := by
+                    simpa using congrArg (fun A : H →L[ℂ] H => A x) hfc_smul
+            _ = ((h : ℂ) * Complex.I) • T_n (x : H) := by
+                  rfl
+            _ = (h • Complex.I) • T_n (x : H) := by
+                  simp [Algebra.smul_def]
+            _ = h • (Complex.I • T_n (x : H)) := by
+                  simpa using (smul_assoc h Complex.I (T_n (x : H)))
+        have hfc_g_apply :
+            functionalCalculus P (((fun s => e_h s - 1) - (((h : ℂ) * Complex.I) • f_n))) hg_int hg_bdd x =
+              functionalCalculus P (fun s => e_h s - 1) hsub1_int hsub1_bdd x -
+                functionalCalculus P (((h : ℂ) * Complex.I) • f_n) hcf_int hcf_bdd x := by
+          simpa [ContinuousLinearMap.sub_apply] using congrArg (fun A : H →L[ℂ] H => A x) hfc_g
+        calc
+          functionalCalculus P g_h hg_int hg_bdd x
+              = functionalCalculus P (((fun s => e_h s - 1) - (((h : ℂ) * Complex.I) • f_n))) hg_int hg_bdd x := by
+                  rfl
+          _ = functionalCalculus P (fun s => e_h s - 1) hsub1_int hsub1_bdd x -
+                functionalCalculus P (((h : ℂ) * Complex.I) • f_n) hcf_int hcf_bdd x := hfc_g_apply
+          _ = U h (x : H) - (x : H) - h • (Complex.I • T_n (x : H)) := by
+                rw [hfc_sub1_apply, hfc_smul_apply]
+      have hnorm_sq := functionalCalculus_norm_sq' P g_h hg_int hg_bdd hg_meas (x : H)
+      rw [herr_apply] at hnorm_sq
+      have hQ_eq :
+          ∫ s : ℝ, ‖g_h s‖ ^ 2 ∂μ = ‖h‖ ^ 2 * ∫ s : ℝ, Q h s ∂μ := by
+        calc
+          ∫ s : ℝ, ‖g_h s‖ ^ 2 ∂μ = ∫ s : ℝ, (‖h‖ ^ 2) * Q h s ∂μ := by
+            refine integral_congr_ae ?_
+            filter_upwards with s
+            have hgfac :
+                g_h s = (h : ℂ) * (quot0 h s - Complex.I * f_n s) := by
+              rw [show quot0 h s = (Complex.exp (Complex.I * ↑h * ↑s) - 1) / (h : ℂ) by
+                    simp [quot0, h0]]
+              simp [g_h, e_h]
+              field_simp [h0]
+            rw [hgfac, norm_mul]
+            simp [Q]
+            have hh_sq : ‖h‖ ^ 2 = h ^ 2 := by
+              simpa [Real.norm_eq_abs] using (sq_abs h)
+            calc
+              (‖h‖ * ‖quot0 h s - Complex.I * f_n s‖) ^ 2
+                  = ‖h‖ ^ 2 * ‖quot0 h s - Complex.I * f_n s‖ ^ 2 := by ring
+              _ = h ^ 2 * ‖quot0 h s - Complex.I * f_n s‖ ^ 2 := by rw [hh_sq]
+          _ = ‖h‖ ^ 2 * ∫ s : ℝ, Q h s ∂μ := by
+              rw [MeasureTheory.integral_const_mul]
+      rw [hQ_eq] at hnorm_sq
+      have hnorm_le_sq : ‖U h (x : H) - (x : H) - h • (Complex.I • T_n (x : H))‖ ^ 2
+          < (c / 2 * ‖h‖) ^ 2 := by
+        calc
+          ‖U h (x : H) - (x : H) - h • (Complex.I • T_n (x : H))‖ ^ 2
+              = ‖h‖ ^ 2 * ∫ s : ℝ, Q h s ∂μ := hnorm_sq
+          _ < ‖h‖ ^ 2 * (c / 2) ^ 2 := by
+              have hhpos : 0 < ‖h‖ ^ 2 := by
+                positivity
+              exact mul_lt_mul_of_pos_left hQh hhpos
+          _ = (c / 2 * ‖h‖) ^ 2 := by ring
+      have hnonneg_left : 0 ≤ ‖U h (x : H) - (x : H) - h • (Complex.I • T_n (x : H))‖ := norm_nonneg _
+      have hnonneg_right : 0 ≤ c / 2 * ‖h‖ := by positivity
+      exact le_of_lt ((sq_lt_sq₀ hnonneg_left hnonneg_right).mp hnorm_le_sq)
   -- Combine: triangle inequality + spectral truncation approximation
   filter_upwards [h_spectral_littleO] with h h_bound1
   have h_decomp : U h (x : H) - (x : H) - h • (Complex.I • T x) =
