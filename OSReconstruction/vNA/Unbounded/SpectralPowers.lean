@@ -1400,20 +1400,152 @@ private lemma square_integrable_of_resolvent_preimage (T : UnboundedOperator H)
   -- Key: ‖T_n x‖ ≤ ‖y‖ via T_n x = fc(h_n n)(y) and operator norm bound
   have h_trunc_bound : ∀ n, ‖spectralTruncation T hT hsa n x‖ ≤ ‖y‖ := by
     intro n
-    -- T_n x = fc(f_n n)(x) and x = R.inv y = fc(g)(y)
-    -- fc(f_n n)(fc(g)(y)) = fc(f_n n · g)(y) = fc(h_n n)(y) by functionalCalculus_mul
-    -- ‖fc(h_n n)(y)‖ ≤ ‖h_n n‖_∞ · ‖y‖ ≤ 1 · ‖y‖ by functionalCalculus_opNorm_le
-    -- spectralTruncation = functionalCalculus definitionally
-    -- T_n x = fc(h_n n)(y) and ‖fc(h_n n)‖ ≤ 1 by opNorm bound
-    -- Proved in spectralTruncation_tendsto (line ~1700) via the same technique.
-    -- The formal proof uses functionalCalculus_mul + functionalCalculus_opNorm_le.
-    sorry
-  -- The rest of the proof uses h_trunc_bound to establish:
-  -- (1) Bochner integral bound: Re(integral s^2 * chi dmu_x) <= ||y||^2
-  -- (2) lintegral bound via ofReal_integral_eq_lintegral_ofReal
-  -- (3) lintegral_iSup for monotone convergence
-  -- This is standard measure theory; see proof outline above.
-  sorry
+    have hstepA : spectralTruncation T hT hsa n x =
+        functionalCalculus P (h_n n) (h_hn_int n) ⟨1, zero_le_one, h_hn_bound n⟩ y := by
+      conv_lhs => rw [show x = R.inv y from hxy]
+      have hR_apply :
+          R.inv y = functionalCalculus P g (resolvent_function_integrable P)
+            ⟨1, zero_le_one, resolvent_function_norm⟩ y := by
+        simpa [R, g] using congrFun (congrArg DFunLike.coe hR_eq) y
+      rw [hR_apply]
+      have hfn_meas : Measurable (f_n n) :=
+        (Complex.continuous_ofReal.measurable).mul
+          (measurable_const.indicator measurableSet_Icc)
+      have hfng_eq : f_n n * g = h_n n := by
+        ext s
+        simp only [Pi.mul_apply, h_n]
+      have hmul := functionalCalculus_mul P (f_n n) g (hfn_int n) (hfn_bdd n)
+        (resolvent_function_integrable P) ⟨1, zero_le_one, resolvent_function_norm⟩
+        (by rw [hfng_eq]; exact h_hn_int n)
+        (by rw [hfng_eq]; exact ⟨1, zero_le_one, h_hn_bound n⟩)
+        resolvent_function_measurable
+      rw [show spectralTruncation T hT hsa n
+        = functionalCalculus P (f_n n) (hfn_int n) (hfn_bdd n) from rfl]
+      rw [← ContinuousLinearMap.comp_apply, ← hmul]
+      exact congrFun (congrArg DFunLike.coe (functionalCalculus_congr' P hfng_eq _ _ _ _)) y
+    rw [hstepA]
+    calc
+      ‖functionalCalculus P (h_n n) (h_hn_int n) ⟨1, zero_le_one, h_hn_bound n⟩ y‖
+          ≤ ‖functionalCalculus P (h_n n) (h_hn_int n) ⟨1, zero_le_one, h_hn_bound n⟩‖ * ‖y‖ :=
+            ContinuousLinearMap.le_opNorm _ _
+      _ ≤ 1 * ‖y‖ := by
+          gcongr
+          exact functionalCalculus_opNorm_le P (h_n n) (h_hn_int n)
+            ⟨1, zero_le_one, h_hn_bound n⟩ (h_hn_meas n) 1 zero_le_one (h_hn_bound n)
+      _ = ‖y‖ := by ring
+  -- Step 1: ‖T_n x‖² = Re(∫ s²·χ_{[-n,n]} dμ_x)  (from spectralTruncation_norm_sq)
+  have h_norm_sq_eq : ∀ (n : ℕ), ‖spectralTruncation T hT hsa n x‖ ^ 2 =
+      (∫ s, ((s : ℂ) ^ 2) * Set.indicator (Set.Icc (-(n : ℝ)) n) (fun _ => (1 : ℂ)) s ∂μ).re :=
+    fun n => spectralTruncation_norm_sq T hT hsa n x
+  -- Step 2: Re(∫ s²·χ dμ) ≤ ‖y‖²
+  have h_int_bound : ∀ (n : ℕ), (∫ s, ((s : ℂ) ^ 2) * Set.indicator (Set.Icc (-(n : ℝ)) n) (fun _ => (1 : ℂ)) s ∂μ).re ≤ ‖y‖ ^ 2 := by
+    intro n
+    rw [← h_norm_sq_eq]
+    exact sq_le_sq' (by linarith [norm_nonneg (spectralTruncation T hT hsa n x), h_trunc_bound n])
+      (h_trunc_bound n)
+  -- Step 3: Show integrability via integrable_of_tendsto (ℝ → ℝ route)
+  let G : ℕ → ℝ → ℝ := fun n s => s ^ 2 * Set.indicator (Set.Icc (-(n : ℝ)) n) (fun _ => (1 : ℝ)) s
+  have hGf : ∀ᵐ s ∂μ, Filter.Tendsto (fun n => G n s) Filter.atTop (nhds (s ^ 2)) := by
+    filter_upwards with s
+    have : ∀ᶠ n in Filter.atTop, G n s = s ^ 2 := by
+      obtain ⟨N, hN⟩ := exists_nat_ge |s|
+      filter_upwards [Filter.Ici_mem_atTop N] with n hn
+      simp only [G]
+      have hs_mem : s ∈ Set.Icc (-(n : ℝ)) n := by
+        constructor <;> linarith [abs_nonneg s, neg_abs_le s, le_abs_self s,
+                                   show (N : ℝ) ≤ (n : ℝ) from Nat.cast_le.mpr hn]
+      rw [Set.indicator_of_mem hs_mem]; ring
+    exact tendsto_nhds_of_eventually_eq this
+  have hG_meas_strong : ∀ n, Measurable (G n) := by
+    intro n
+    exact (measurable_id.pow_const 2).mul (measurable_const.indicator measurableSet_Icc)
+  have hG_meas : ∀ n, MeasureTheory.AEStronglyMeasurable (G n) μ := by
+    intro n; exact (hG_meas_strong n).aestronglyMeasurable
+  have hG_nonneg : ∀ n, 0 ≤ᵐ[μ] G n := by
+    intro n; filter_upwards with s
+    simp only [G, Set.indicator_apply]
+    split_ifs <;> positivity
+  have hG_norm_le : ∀ n (s : ℝ), ‖G n s‖ ≤ (n : ℝ) ^ 2 := by
+    intro n s; simp only [G, Set.indicator_apply, Real.norm_eq_abs]
+    split_ifs with h
+    · rw [abs_of_nonneg (by positivity), mul_one]
+      exact sq_le_sq' (by linarith [(Set.mem_Icc.mp h).1]) (by exact (Set.mem_Icc.mp h).2)
+    · simp [sq_nonneg]
+  have hG_int : ∀ n, MeasureTheory.Integrable (G n) μ := by
+    intro n
+    exact (MeasureTheory.integrable_const ((n : ℝ) ^ 2)).mono (hG_meas n)
+      (Eventually.of_forall fun s => by
+        calc ‖G n s‖ ≤ (n : ℝ) ^ 2 := hG_norm_le n s
+          _ = ‖((n : ℝ) ^ 2)‖ := by rw [Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)])
+  -- Connect Re(∫ (s:ℂ)²·χ dμ) to ∫ s²·χ dμ (real Bochner)
+  have h_sq_chi_norm : ∀ (n : ℕ) (s : ℝ),
+      ‖((s : ℂ) ^ 2) * Set.indicator (Set.Icc (-(n : ℝ)) n) (fun _ => (1 : ℂ)) s‖ ≤ (n : ℝ) ^ 2 := by
+    intro n s; simp only [Set.indicator_apply]
+    split_ifs with h
+    · rw [norm_mul, norm_one, mul_one,
+          show (s : ℂ) ^ 2 = ((s ^ 2 : ℝ) : ℂ) from by push_cast; ring, Complex.norm_real,
+          Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+      exact sq_le_sq' (by linarith [(Set.mem_Icc.mp h).1]) (by exact (Set.mem_Icc.mp h).2)
+    · simp [sq_nonneg]
+  have h_sq_chi_int : ∀ (n : ℕ), MeasureTheory.Integrable
+      (fun s : ℝ => ((s : ℂ) ^ 2) * Set.indicator (Set.Icc (-(n : ℝ)) n) (fun _ => (1 : ℂ)) s) μ := by
+    intro n
+    have hmeas : Measurable (fun s : ℝ => ((s : ℂ) ^ 2) * Set.indicator (Set.Icc (-(n : ℝ)) n) (fun _ => (1 : ℂ)) s) :=
+      (Complex.continuous_ofReal.measurable.pow_const 2).mul
+        (measurable_const.indicator measurableSet_Icc)
+    refine (MeasureTheory.integrable_const ((n : ℝ) ^ 2 : ℂ)).mono
+      hmeas.aestronglyMeasurable
+      (Eventually.of_forall fun s => ?_)
+    calc ‖((s : ℂ) ^ 2) * Set.indicator (Set.Icc (-(n : ℝ)) n) (fun _ => (1 : ℂ)) s‖
+        ≤ (n : ℝ) ^ 2 := h_sq_chi_norm n s
+      _ = ‖((n : ℝ) ^ 2 : ℂ)‖ := by
+          rw [show ((n : ℝ) ^ 2 : ℂ) = ((n ^ 2 : ℝ) : ℂ) from by push_cast; ring,
+            Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg (sq_nonneg _)]
+  have h_re_eq_real : ∀ (n : ℕ), (∫ s, ((s : ℂ) ^ 2) * Set.indicator (Set.Icc (-(n : ℝ)) n) (fun _ => (1 : ℂ)) s ∂μ).re = ∫ s, G n s ∂μ := by
+    intro n
+    -- Re(∫ f dμ) = ∫ Re(f) dμ by integral_re
+    -- Re((s:ℂ)² · χ) = s² · χ = G n s
+    have h_eq_fns : (fun s : ℝ => RCLike.re (((s : ℂ) ^ 2) * Set.indicator (Set.Icc (-(n : ℝ)) n) (fun _ => (1 : ℂ)) s)) = G n := by
+      ext s; simp only [G, Set.indicator_apply]
+      split_ifs
+      · simp only [mul_one]
+        show ((s : ℂ) ^ 2).re = s ^ 2
+        rw [show (s : ℂ) ^ 2 = ((s ^ 2 : ℝ) : ℂ) from by push_cast; ring]
+        exact Complex.ofReal_re _
+      · simp
+    -- (∫ f dμ).re = ∫ (Re ∘ f) dμ = ∫ G n dμ  (by integral_re)
+    rw [show (∫ s, ((s : ℂ) ^ 2) * Set.indicator (Set.Icc (-(n : ℝ)) n) (fun _ => (1 : ℂ)) s ∂μ).re = RCLike.re (∫ s, ((s : ℂ) ^ 2) * Set.indicator (Set.Icc (-(n : ℝ)) n) (fun _ => (1 : ℂ)) s ∂μ) from rfl,
+        ← integral_re (h_sq_chi_int n), h_eq_fns]
+  -- ∫ G n dμ ≤ ‖y‖²
+  have h_real_bound : ∀ (n : ℕ), ∫ s, G n s ∂μ ≤ ‖y‖ ^ 2 := by
+    intro n; rw [← h_re_eq_real]; exact h_int_bound n
+  -- Convert Bochner integral bound to lintegral bound
+  have h_lint_bound : ∀ (n : ℕ), ∫⁻ s, ‖G n s‖ₑ ∂μ ≤ ENNReal.ofReal (‖y‖ ^ 2) := by
+    intro n
+    have h_lintegral_eq : ∫⁻ s, ‖G n s‖ₑ ∂μ = ∫⁻ s, ENNReal.ofReal (G n s) ∂μ := by
+      congr 1; ext s
+      rw [show ‖G n s‖ₑ = ENNReal.ofReal ‖G n s‖ from (ofReal_norm_eq_enorm (G n s)).symm,
+          Real.norm_eq_abs,
+          abs_of_nonneg (show 0 ≤ G n s from by
+            simp only [G, Set.indicator_apply]; split_ifs <;> positivity)]
+    rw [h_lintegral_eq, ← MeasureTheory.ofReal_integral_eq_lintegral_ofReal (hG_int n) (hG_nonneg n)]
+    exact ENNReal.ofReal_le_ofReal (h_real_bound n)
+  -- liminf is bounded, hence ≠ ⊤
+  have h_liminf_ne_top : Filter.liminf (fun n => ∫⁻ s, ‖G n s‖ₑ ∂μ) Filter.atTop ≠ ⊤ := by
+    apply ne_top_of_le_ne_top ENNReal.ofReal_ne_top
+    calc Filter.liminf (fun n => ∫⁻ s, ‖G n s‖ₑ ∂μ) Filter.atTop
+        ≤ Filter.limsup (fun n => ∫⁻ s, ‖G n s‖ₑ ∂μ) Filter.atTop :=
+          Filter.liminf_le_limsup
+      _ ≤ ENNReal.ofReal (‖y‖ ^ 2) :=
+          Filter.limsup_le_of_le (h := Eventually.of_forall h_lint_bound)
+  -- Apply integrable_of_tendsto to get Integrable (fun s => s²) μ
+  have h_sq_int_real : MeasureTheory.Integrable (fun s : ℝ => s ^ 2) μ :=
+    MeasureTheory.integrable_of_tendsto hGf hG_meas h_liminf_ne_top
+  -- Convert: (s : ℂ)^2 = ((s^2 : ℝ) : ℂ)
+  have h_eq_fn : (fun s : ℝ => ((s : ℂ) ^ 2)) = (fun s : ℝ => ((s ^ 2 : ℝ) : ℂ)) := by
+    ext s; push_cast; ring
+  rw [h_eq_fn]
+  exact h_sq_int_real.ofReal
 
 /-- The spectral domain characterization: x ∈ dom(T) iff ∫ λ² d⟨P(λ)x,x⟩ < ∞.
 
@@ -1517,7 +1649,19 @@ theorem mem_domain_iff_square_integrable (T : UnboundedOperator H) (hT : T.IsDen
       · -- f_n n s = 0, so k_n n s = i/(s+i), |k_n| = |i/(s+i)| ≤ 1 ≤ 2
         simp only [Set.indicator_apply, hs, ite_false, Complex.ofReal_zero]
         -- |i/(s+i)| ≤ 1 ≤ 2
-        sorry
+        have hsimp :
+            (↑s * 0 + Complex.I) * (1 / (↑s + Complex.I)) =
+              Complex.I * (1 / ((s : ℂ) + Complex.I)) := by
+          simp
+        rw [hsimp]
+        calc
+          ‖Complex.I * (1 / ((s : ℂ) + Complex.I))‖
+              = ‖Complex.I‖ * ‖1 / ((s : ℂ) + Complex.I)‖ := norm_mul _ _
+          _ = 1 * ‖1 / ((s : ℂ) + Complex.I)‖ := by simp
+          _ ≤ 1 * 1 := by
+              gcongr
+              exact resolvent_function_norm s
+          _ ≤ 2 := by norm_num
     -- fc(k_n)(x) → fc(1)(x) = x by functionalCalculus_tendsto_SOT
     -- This shows x is the limit of fc(k_n)(x), and each fc(k_n)(x) = R.inv(T_n x + i·x).
     -- For large n, fc(k_n)(x) = R.inv(T_n x + i·x) → R.inv(y + i·x) = x.
@@ -1533,6 +1677,74 @@ theorem mem_domain_iff_square_integrable (T : UnboundedOperator H) (hT : T.IsDen
     -- Then R.inv(y + ix) = x (from the resolvent convergence fc(k_n)(x) → x).
     -- Since this requires the Cauchy argument + DCT, we isolate it.
     suffices hw : ∃ w : H, R.inv w = x from hw.choose_spec ▸ R.maps_to_domain _
+    -- Step A: fc(k_n)(x) → fc(1)(x) = x  (by functionalCalculus_tendsto_SOT with constant bound 2)
+    have h_kn_meas : ∀ n, Measurable (k_n n) := by
+      intro n; simp only [k_n, f_n, g]
+      exact ((Complex.continuous_ofReal.measurable.mul
+        (measurable_const.indicator measurableSet_Icc)).add measurable_const).mul
+        (measurable_const.div (Complex.continuous_ofReal.measurable.add measurable_const))
+    have h_kn_int : ∀ n (z : H), MeasureTheory.Integrable (k_n n) (P.diagonalMeasure z) := by
+      intro n z; haveI := P.diagonalMeasure_isFiniteMeasure z
+      exact (MeasureTheory.integrable_const (2 : ℂ)).mono
+        (h_kn_meas n).aestronglyMeasurable
+        (Eventually.of_forall fun s => by
+          calc ‖k_n n s‖ ≤ 2 := h_kn_bound n s
+            _ = ‖(2 : ℂ)‖ := by simp [Complex.norm_ofNat])
+    have h_one_int : ∀ (z : H), MeasureTheory.Integrable (fun _ : ℝ => (1 : ℂ)) (P.diagonalMeasure z) := by
+      intro z; haveI := P.diagonalMeasure_isFiniteMeasure z
+      exact MeasureTheory.integrable_const (1 : ℂ)
+    have h_one_meas : Measurable (fun _ : ℝ => (1 : ℂ)) := measurable_const
+    have h_fc_kn_tend : Tendsto (fun n => functionalCalculus P (k_n n)
+        (h_kn_int n) ⟨2, by norm_num, h_kn_bound n⟩ x) atTop
+        (nhds (functionalCalculus P (fun _ => (1 : ℂ)) h_one_int ⟨1, zero_le_one, fun s => by simp⟩ x)) :=
+      functionalCalculus_tendsto_SOT P k_n (fun _ => 1) h_kn_tend
+        (fun _ => 2) (fun _ => by norm_num) h_kn_bound (fun _ => by simp) ⟨2, fun _ => le_refl 2⟩
+        (fun z => by haveI := P.diagonalMeasure_isFiniteMeasure z; simp [MeasureTheory.integrable_const])
+        h_kn_int (fun n => ⟨2, by norm_num, h_kn_bound n⟩)
+        h_one_int ⟨1, zero_le_one, fun s => by simp⟩
+        h_kn_meas h_one_meas x
+    -- fc(1) = 1, so fc(1)(x) = x
+    have h_fc_one_eq : functionalCalculus P (fun _ => (1 : ℂ)) h_one_int ⟨1, zero_le_one, fun s => by simp⟩ = 1 :=
+      functionalCalculus_const_one_eq_id P
+    rw [h_fc_one_eq, ContinuousLinearMap.one_apply] at h_fc_kn_tend
+    -- Step B: fc(k_n)(x) = R.inv(spectralTruncation n x + I•x)
+    -- k_n = (f_n + I) * g, and fc(f_n + I)(x) = fc(f_n)(x) + I•x = T_n x + I•x
+    -- fc(k_n) = fc((f_n + I) * g) = fc(f_n + I) ∘L fc(g) ... but this is getting complicated
+    -- Actually: fc(k_n)(x) = fc((f_n + i)·g)(x), and (f_n+i)·g = f_n·g + i·g
+    -- fc(f_n·g) = fc(f_n) ∘L fc(g) = T_n ∘L R.inv
+    -- fc(i·g) = i · fc(g) = i · R.inv
+    -- So fc(k_n)(x) = (T_n + i)(R.inv(x))... wait, this goes the wrong way.
+    -- Actually, k_n(s) = (f_n(s) + i) / (s+i).
+    -- We need fc(k_n)(x) to relate to R.inv applied to something involving T_n x.
+    -- Better approach: just use the limit directly.
+    -- We know fc(k_n)(x) → x. We also know that fc(k_n)(x) is in range(R.inv)
+    -- because we can write k_n = (f_n + i_const) * g and then
+    -- fc(k_n) = fc(f_n + i_const) ∘L fc(g) by functionalCalculus_mul,
+    -- and fc(g) = R.inv, so fc(k_n)(x) = fc(f_n + i_const)(R.inv(x)... hmm
+    -- This doesn't help because R.inv(x) isn't what we want.
+    --
+    -- Alternatively: since h_fc_kn_tend shows fc(k_n)(x) → x, and each
+    -- fc(k_n)(x) = R.inv(w_n) for some w_n (namely w_n = fc(f_n+i_const)(x)),
+    -- if w_n → w for some w, then R.inv(w_n) → R.inv(w) by continuity,
+    -- and by uniqueness x = R.inv(w).
+    --
+    -- w_n = T_n x + I•x. If T_n x converges (call the limit y), then w_n → y + I•x.
+    -- The convergence of T_n x follows from the Cauchy argument via hint.
+    --
+    -- But this requires establishing fc(k_n)(x) = R.inv(T_n x + I•x), which
+    -- itself requires the functional calculus composition argument.
+    -- This is a long proof. Let's use the direct limit approach instead.
+    --
+    -- Actually the simplest route: fc(k_n)(x) → x. Since R.inv is continuous
+    -- and surjective-to-domain, and fc(k_n)(x) = R.inv(something_n), where
+    -- something_n = fc(f_n + I)(x) = T_n(x) + I•x,
+    -- if we can show T_n(x) is Cauchy (hence convergent), say to y,
+    -- then R.inv(y + I•x) = lim R.inv(T_n x + I•x) = lim fc(k_n)(x) = x.
+    -- So w = y + I•x.
+    -- The Cauchy argument for T_n x is the key remaining piece.
+    -- By spectralTruncation_norm_sq: ‖T_m x - T_n x‖² relates to a spectral integral
+    -- of a tail function, which vanishes by integrability.
+    -- This is a standard but technically involved argument.
     sorry
 
 /-- For x ∈ dom(T), the spectral truncations T_n x converge to Tx.
@@ -2410,7 +2622,168 @@ theorem unitaryGroup_generator_domain_eq (T : UnboundedOperator H) (hT : T.IsDen
   --   - unitaryGroup_diff_norm_sq gives the Parseval identity (step 2)
   --   - MeasureTheory.lintegral_liminf_le gives Fatou's lemma (step 5)
   --   - The pointwise convergence is elementary complex analysis (step 6)
-  -- The remaining formalization is converting between lintegral and Bochner integral.
-  sorry
+  -- Step 2-7: Use Parseval + Fatou via integrable_of_tendsto
+  -- Define h_n = 1/(n+1) → 0
+  let h_seq : ℕ → ℝ := fun n => 1 / ((n : ℝ) + 1)
+  have h_seq_pos : ∀ n, 0 < h_seq n := by
+    intro n; simp only [h_seq]; positivity
+  have h_seq_ne_zero : ∀ n, h_seq n ≠ 0 := fun n => ne_of_gt (h_seq_pos n)
+  -- G_n(s) = ‖exp(i·h_n·s) - 1‖² / h_n²
+  let G : ℕ → ℝ → ℝ := fun n s =>
+    ‖Complex.exp (Complex.I * ↑(h_seq n) * ↑s) - 1‖ ^ 2 / (h_seq n) ^ 2
+  -- G_n → s² pointwise
+  have hGf : ∀ᵐ s ∂μ, Filter.Tendsto (fun n => G n s) Filter.atTop (nhds (s ^ 2)) := by
+    filter_upwards with s
+    simp only [G]
+    -- We need: ‖exp(I*h_n*s) - 1‖²/h_n² → s²
+    -- Key: (exp(I*h*s) - 1)/h → I*s as h → 0 (derivative of exp(I·s·t) at t=0)
+    -- Then ‖(exp(I*h*s)-1)/h‖² → ‖I*s‖² = s²
+    -- Step 1: (exp(I*h*s) - 1)/h → I*s
+    -- This is a standard consequence of exp'(0) = 1, composed with linear maps.
+    -- Proof: exp(I*h*s) = 1 + I*h*s + O(h²), so (exp(I*h*s)-1)/h = I*s + O(h) → I*s
+    have h_quot_tend : Tendsto (fun n => (Complex.exp (Complex.I * ↑(h_seq n) * ↑s) - 1) / ↑(h_seq n))
+        atTop (nhds (Complex.I * ↑s)) := by
+      -- HasDerivAt for exp at 0: (exp(h)-1)/h → 1 as h → 0
+      -- Substituting h = I*s*t: (exp(I*s*t)-1)/(I*s*t) → 1
+      -- So (exp(I*s*t)-1)/t → I*s
+      -- Use hasDerivAt_exp composition with linear map.
+      -- f(t) = exp(I*s*t), f(0) = 1, f'(0) = I*s (by chain rule)
+      -- HasDerivAt.tendsto_slope gives Tendsto (slope f 0) (𝓝[≠] 0) (𝓝 (I*s))
+      -- slope f 0 h = (f(h) - f(0))/(h-0) = (exp(I*s*h)-1)/h
+      -- Compose with h_seq_tend via ofReal cast
+      let c := Complex.I * (↑s : ℂ)
+      -- Step 1: HasDerivAt (fun t : ℂ => exp(c*t)) c 0
+      have hd : HasDerivAt (fun t : ℂ => Complex.exp (c * t)) c 0 := by
+        have h1 : HasDerivAt (fun t : ℂ => c * t) c 0 :=
+          (hasDerivAt_id (0 : ℂ)).const_mul c |>.congr_deriv (by ring)
+        exact (Complex.hasDerivAt_exp (c * 0)).comp 0 h1 |>.congr_deriv (by
+          simp [mul_zero, Complex.exp_zero])
+      -- Step 2: tendsto slope at 0
+      have h_slope := hd.tendsto_slope
+      -- h_slope : Tendsto (slope (fun t => exp(c*t)) 0) (𝓝[≠] 0) (𝓝 c)
+      -- slope (fun t => exp(c*t)) 0 h = (exp(c*h) - exp(0)) / (h - 0) = (exp(c*h) - 1) / h
+      -- Step 3: compose with h_seq cast to ℂ
+      -- h_seq_tend defined later; need to prove here that h_seq n → 0
+      have h_seq_tend_local : Tendsto h_seq atTop (nhds 0) := by
+        simp only [h_seq, one_div]
+        exact tendsto_inv_atTop_zero.comp
+          (tendsto_atTop_add_const_right _ 1 tendsto_natCast_atTop_atTop)
+      have h_ofReal_tend : Tendsto (fun n => (↑(h_seq n) : ℂ)) atTop (nhds (0 : ℂ)) :=
+        (Complex.continuous_ofReal.tendsto 0).comp h_seq_tend_local
+      -- h_seq n ≠ 0, so (↑(h_seq n) : ℂ) ∈ {0}ᶜ
+      have h_ne : ∀ n, (↑(h_seq n) : ℂ) ≠ 0 := by
+        intro n; exact Complex.ofReal_ne_zero.mpr (h_seq_ne_zero n)
+      have h_map : Filter.map (fun n => (↑(h_seq n) : ℂ)) atTop ≤ 𝓝[≠] (0 : ℂ) := by
+        rw [nhdsWithin]
+        refine le_inf h_ofReal_tend (le_principal_iff.mpr ?_)
+        simp only [Filter.mem_map, Set.preimage_compl, Set.preimage_singleton_eq_empty]
+        filter_upwards with n
+        exact h_ne n
+      have h_comp := h_slope.mono_left h_map
+      -- Rewrite slope to match the goal
+      refine h_comp.congr (fun n => ?_)
+      simp only [slope, c, Function.comp, mul_zero, Complex.exp_zero, vsub_eq_sub, sub_zero]
+      -- Slope rewriting: slope(f,0)(h) = (f(h)-f(0))/(h-0) vs (exp(I*h*s)-1)/h
+      -- These differ only in commutativity I*s*h vs I*h*s and format of division
+      sorry
+    -- Step 2: ‖(exp(I*h_n*s)-1)/h_n‖² → ‖I*s‖² = s²
+    have h_norm_sq_tend : Tendsto (fun n => ‖(Complex.exp (Complex.I * ↑(h_seq n) * ↑s) - 1) / ↑(h_seq n)‖ ^ 2)
+        atTop (nhds (‖Complex.I * ↑s‖ ^ 2)) :=
+      (continuous_pow 2 |>.continuousAt.tendsto.comp
+        (continuous_norm.continuousAt.tendsto.comp h_quot_tend))
+    have h_norm_Is : ‖Complex.I * (↑s : ℂ)‖ ^ 2 = s ^ 2 := by
+      rw [norm_mul, Complex.norm_I, one_mul, Complex.norm_real, Real.norm_eq_abs, sq_abs]
+    rw [h_norm_Is] at h_norm_sq_tend
+    -- Step 3: ‖(exp-1)/h‖² = ‖exp-1‖²/h²
+    have h_eq_G : ∀ n, ‖(Complex.exp (Complex.I * ↑(h_seq n) * ↑s) - 1) / ↑(h_seq n)‖ ^ 2 =
+        ‖Complex.exp (Complex.I * ↑(h_seq n) * ↑s) - 1‖ ^ 2 / (h_seq n) ^ 2 := by
+      intro n
+      rw [norm_div, Complex.norm_real, Real.norm_eq_abs, abs_of_pos (h_seq_pos n), div_pow]
+    simp_rw [h_eq_G] at h_norm_sq_tend
+    exact h_norm_sq_tend
+  -- G_n is AEStronglyMeasurable
+  have hG_meas : ∀ n, MeasureTheory.AEStronglyMeasurable (G n) μ := by
+    intro n
+    exact ((((Complex.continuous_exp.comp
+      ((continuous_const.mul Complex.continuous_ofReal))).sub continuous_const).norm.pow 2).div_const _).measurable.aestronglyMeasurable
+  -- Bochner bound: ∫ G_n dμ ≤ C²
+  -- By unitaryGroup_diff_norm_sq: ‖U(h_n)x - x‖² = ∫ ‖exp(i·h_n·s) - 1‖² dμ
+  -- By hC (eventually): ‖U(h_n)x - x‖ ≤ C · ‖h_n‖ for large n
+  -- So ∫ ‖exp(i·h_n·s) - 1‖² dμ ≤ C² · h_n²
+  -- Thus ∫ G_n dμ = (1/h_n²) · ∫ ‖exp(i·h_n·s) - 1‖² dμ ≤ C²
+  have hG_nonneg : ∀ n, 0 ≤ᵐ[μ] G n := by
+    intro n; filter_upwards with s
+    simp only [G]; positivity
+  have hG_int : ∀ n, MeasureTheory.Integrable (G n) μ := by
+    intro n
+    have h_norm_sq_int : MeasureTheory.Integrable
+        (fun s : ℝ => ‖Complex.exp (Complex.I * ↑(h_seq n) * ↑s) - 1‖ ^ 2) μ := by
+      have : MeasureTheory.Integrable (fun s : ℝ => (2 : ℝ) ^ 2) μ :=
+        MeasureTheory.integrable_const _
+      exact this.mono
+        ((((Complex.continuous_exp.comp
+          ((continuous_const.mul Complex.continuous_ofReal))).sub continuous_const).norm.pow 2).measurable.aestronglyMeasurable)
+        (Eventually.of_forall fun s => by
+          simp only [Real.norm_eq_abs]
+          rw [abs_of_nonneg (sq_nonneg _), abs_of_nonneg (sq_nonneg _)]
+          calc ‖Complex.exp (Complex.I * ↑(h_seq n) * ↑s) - 1‖ ^ 2
+              ≤ (‖Complex.exp (Complex.I * ↑(h_seq n) * ↑s)‖ + ‖(1 : ℂ)‖) ^ 2 := by
+                gcongr; exact norm_sub_le _ _
+            _ ≤ (1 + 1) ^ 2 := by
+                gcongr
+                · exact expI_norm_le (h_seq n) s
+                · simp
+            _ = 2 ^ 2 := by ring)
+    exact h_norm_sq_int.div_const _
+  -- Bound on ∫ G_n dμ: for large n, ∫ G_n ≤ C²
+  have h_parseval : ∀ n, ∫ s, G n s ∂μ =
+      ‖unitaryGroup T hT hsa (h_seq n) x - x‖ ^ 2 / (h_seq n) ^ 2 := by
+    intro n
+    simp only [G, h_seq]
+    rw [MeasureTheory.integral_div]
+    congr 1
+    exact (unitaryGroup_diff_norm_sq T hT hsa x (h_seq n)).symm
+  -- For large n, ‖U(h_n)x - x‖ ≤ C·|h_n|, so ‖U(h_n)x - x‖²/h_n² ≤ C²
+  -- hC : ∀ᶠ h in nhds 0, ‖U(h)x - x‖ ≤ C * ‖h‖
+  -- h_seq n → 0
+  have h_seq_tend : Filter.Tendsto h_seq Filter.atTop (nhds 0) := by
+    simp only [h_seq, one_div]
+    exact tendsto_inv_atTop_zero.comp
+      (tendsto_atTop_add_const_right _ 1 tendsto_natCast_atTop_atTop)
+  have h_real_bound : ∀ᶠ n in Filter.atTop, ∫ s, G n s ∂μ ≤ C ^ 2 := by
+    have h_ev := h_seq_tend.eventually hC
+    filter_upwards [h_ev] with n hn
+    rw [h_parseval]
+    have h_pos := h_seq_pos n
+    calc ‖unitaryGroup T hT hsa (h_seq n) x - x‖ ^ 2 / (h_seq n) ^ 2
+        ≤ (C * ‖h_seq n‖) ^ 2 / (h_seq n) ^ 2 := by
+          apply div_le_div_of_nonneg_right _ (sq_nonneg _)
+          exact sq_le_sq' (by linarith [norm_nonneg (unitaryGroup T hT hsa (h_seq n) x - x)]) hn
+      _ = C ^ 2 := by
+          rw [mul_pow, Real.norm_eq_abs, sq_abs, mul_div_cancel_right₀]
+          exact pow_ne_zero 2 (ne_of_gt h_pos)
+  -- liminf bound
+  have h_lint_bound : ∀ᶠ n in Filter.atTop, ∫⁻ s, ‖G n s‖ₑ ∂μ ≤ ENNReal.ofReal (C ^ 2) := by
+    filter_upwards [h_real_bound] with n hn
+    have h_lintegral_eq : ∫⁻ s, ‖G n s‖ₑ ∂μ = ∫⁻ s, ENNReal.ofReal (G n s) ∂μ := by
+      congr 1; ext s
+      rw [show ‖G n s‖ₑ = ENNReal.ofReal ‖G n s‖ from (ofReal_norm_eq_enorm (G n s)).symm,
+          Real.norm_eq_abs,
+          abs_of_nonneg (show 0 ≤ G n s from by simp only [G]; positivity)]
+    rw [h_lintegral_eq, ← MeasureTheory.ofReal_integral_eq_lintegral_ofReal (hG_int n) (hG_nonneg n)]
+    exact ENNReal.ofReal_le_ofReal hn
+  have h_liminf_ne_top : Filter.liminf (fun n => ∫⁻ s, ‖G n s‖ₑ ∂μ) Filter.atTop ≠ ⊤ := by
+    apply ne_top_of_le_ne_top ENNReal.ofReal_ne_top
+    calc Filter.liminf (fun n => ∫⁻ s, ‖G n s‖ₑ ∂μ) Filter.atTop
+        ≤ Filter.limsup (fun n => ∫⁻ s, ‖G n s‖ₑ ∂μ) Filter.atTop :=
+          Filter.liminf_le_limsup
+      _ ≤ ENNReal.ofReal (C ^ 2) :=
+          Filter.limsup_le_of_le (h := h_lint_bound)
+  have h_sq_int_real : MeasureTheory.Integrable (fun s : ℝ => s ^ 2) μ :=
+    MeasureTheory.integrable_of_tendsto hGf hG_meas h_liminf_ne_top
+  have h_eq_fn : (fun s : ℝ => ((s : ℂ) ^ 2)) = (fun s : ℝ => ((s ^ 2 : ℝ) : ℂ)) := by
+    ext s; push_cast; ring
+  rw [h_eq_fn]
+  exact h_sq_int_real.ofReal
 
 end
