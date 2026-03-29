@@ -230,6 +230,50 @@ theorem aestronglyMeasurable_piecewise_commonLiftedDifferenceSliceKernel_local
     exact Measurable.comp hK_meas (continuous_apply (1 : Fin 2)).measurable
   simpa [S, Set.piecewise] using hcomp.aestronglyMeasurable
 
+/-- Pointwise equality of the common fixed-time kernel with the lifted common
+slice on the positive strip is enough to identify their reflected product-shell
+pairings for any compact negative-time probe. -/
+theorem commonLiftedDifferenceSlice_productShell_pairing_of_boundary_eq_local
+    (φ : SchwartzSpacetime d)
+    (hφ_compact : HasCompactSupport (φ : SpacetimeDim d → ℂ))
+    (hφ_neg : tsupport (φ : SpacetimeDim d → ℂ) ⊆
+      {x : SpacetimeDim d | x 0 < 0})
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (s : ℝ)
+    (hboundary :
+      ∀ z : NPointDomain d 2, 0 < z 1 0 →
+        twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((((s + s) : ℂ) * Complex.I)) z =
+        commonLiftedDifferenceSliceKernel_local (d := d) G s (z 1)) :
+    ∫ z : NPointDomain d 2,
+      twoPointFixedTimeCenterDiffKernel_local
+        (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+        (φ (z 0) * reflectedSchwartzSpacetime (d := d) φ (z 0 + z 1)) =
+    ∫ z : NPointDomain d 2,
+      commonLiftedDifferenceSliceKernel_local (d := d) G s (z 1) *
+        (φ (z 0) * reflectedSchwartzSpacetime (d := d) φ (z 0 + z 1)) := by
+  have hsupp_pos :
+      Function.support
+        (fun z : NPointDomain d 2 =>
+          φ (z 0) * reflectedSchwartzSpacetime (d := d) φ (z 0 + z 1))
+      ⊆ {z : NPointDomain d 2 | 0 < z 1 0} := by
+    exact
+      (reflected_productShell_compactSupport_support_subset_positiveStrip_local
+        (d := d) φ hφ_compact hφ_neg).2
+  refine integral_congr_ae ?_
+  filter_upwards with z
+  by_cases hz :
+      φ (z 0) * reflectedSchwartzSpacetime (d := d) φ (z 0 + z 1) = 0
+  · rw [hz]
+    simp
+  · have hz_mem :
+        z ∈ Function.support
+          (fun z : NPointDomain d 2 =>
+            φ (z 0) * reflectedSchwartzSpacetime (d := d) φ (z 0 + z 1)) := by
+        exact Function.mem_support.mpr hz
+    have hz_pos : 0 < z 1 0 := hsupp_pos hz_mem
+    rw [hboundary z hz_pos]
+
 /-- Product-shell-only common-boundary route for the VI.1 diagonal-limit proof. -/
 theorem exists_fixed_strip_diagonal_limit_of_common_boundary_difference_package_of_productShell_pairing_eq_local
     (OS : OsterwalderSchraderAxioms d)
