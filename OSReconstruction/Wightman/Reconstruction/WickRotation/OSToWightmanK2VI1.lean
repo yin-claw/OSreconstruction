@@ -8,6 +8,11 @@ import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1In
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAInvariance
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAKernelReduction
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAFixedTime
+import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAFixedTimeInvariance
+import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAHdescReduction
+import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAHeadBlockTransport
+import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAOneVariableUniqueness
+import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAShiftedRepresentative
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAWitness
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1DCT
 
@@ -34,108 +39,283 @@ set_option linter.unusedVariables false
 
 variable {d : ℕ} [NeZero d]
 
-private theorem exists_fixed_strip_fixedTimeKernel_constBound_package_local
+private theorem exists_fixed_strip_compactSupport_positiveStrip_pairing_local
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
-    (s : ℝ)
-    (hs : 0 < s)
-    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
-    (hG_holo : IsTimeHolomorphicFlatPositiveTimeDiffWitness G)
-    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
-      OS.S 2 f = ∫ x : NPointDomain d 2,
-        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x)) :
-    let K := OSReconstruction.twoPointFixedTimeKernel G (((s + s) : ℂ) * Complex.I)
-    Continuous K ∧
-      ∃ (C_bd : ℝ),
-        ∃ hC : 0 < C_bd,
-          ∃ hK_meas : AEStronglyMeasurable K volume,
-            ∀ᵐ x : NPointDomain d 2 ∂volume,
-              ‖K x‖ ≤ C_bd := by
-  /-
-  Genuine remaining Input A seam after the fixed-strip product-shell theorem:
-
-  establish the analytic control of the standard fixed-time kernel on the real
-  positive-time section, with the common Euclidean witness `G` still exposed on
-  the surface.
-
-  Once this smaller real-section package is available, the verified transport
-  theorem in `OSToWightmanK2VI1InputAFixedTime.lean` upgrades it formally to the
-  center/difference polynomial package required by the kernel-reduction layer.
-  -/
-  sorry
-
-private theorem exists_fixed_strip_fixedTimeCenterDiff_headBlockInvariant_local
-    (OS : OsterwalderSchraderAxioms d)
-    (χc : SchwartzSpacetime d)
-    (hχc : ∫ u : SpacetimeDim d, χc u = 1)
-    (s : ℝ)
-    (hs : 0 < s)
     (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
     (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
       OS.S 2 f = ∫ x : NPointDomain d 2,
         G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
-    (hK_meas : AEStronglyMeasurable
-      (OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
-        (d := d) G ((((s + s) : ℂ) * Complex.I))) volume)
-    (C_bd : ℝ)
-    (N : ℕ)
-    (hC : 0 < C_bd)
-    (hK_bound : ∀ᵐ x : NPointDomain d 2 ∂volume,
-      ‖OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
-        (d := d) G ((((s + s) : ℂ) * Complex.I)) x‖ ≤
-          C_bd * (1 + ‖x‖) ^ N) :
-    OSReconstruction.IsHeadBlockTranslationInvariantSchwartzCLM
-      (m := d + 1) (n := d + 1)
-      (OSReconstruction.twoPointFlatKernelCLM
-        (OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
-          (d := d) G ((((s + s) : ℂ) * Complex.I)))
-        hK_meas C_bd N hC hK_bound) := by
+    (φ_seq : ℕ → SchwartzSpacetime d)
+    (hφ_compact : ∀ n, HasCompactSupport (φ_seq n : SpacetimeDim d → ℂ))
+    (hφ_neg : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆
+      {x : SpacetimeDim d | x 0 < 0})
+    (t : ℝ) :
+    ∀ n (f : SchwartzMap (NPointDomain d 2) ℂ),
+      HasCompactSupport (f : NPointDomain d 2 → ℂ) →
+      Function.support (f : NPointDomain d 2 → ℂ) ⊆
+        {z : NPointDomain d 2 | 0 < z 1 0} →
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((t : ℂ) * Complex.I) z * f z =
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d)
+          (k2ProbeWitness_local (d := d) OS lgc
+            (φ_seq n) (hφ_compact n) (hφ_neg n))
+          ((t : ℂ) * Complex.I) z * f z := by
   /-
-  Honest remaining Input A invariance seam:
+  Honest root Input A seam on the common-witness side:
 
-  for the concrete fixed-strip fixed-time center/difference kernel attached to
-  the Euclidean witness `G`, prove head-block translation invariance of the
-  induced flattened CLM. This is the exact `E1` payoff needed to identify the
-  product shell with its canonical descended difference shell.
+  prove equality of the common fixed-time kernel and the per-probe fixed-time
+  kernel on compactly supported tests whose support lies in the positive strip
+  `0 < ξ₀`, using the actual Euclidean witness identity for `G`.
+
+  The downstream Input-A support files already turn this one theorem into the
+  two concrete shell bridges actually consumed later, so keeping the frontier at
+  this strip-pairing level is now both smaller and more honest than carrying a
+  separate product-shell and same-center shell blocker.
   -/
   sorry
 
-private theorem fixed_strip_fixedTimeCenterDiff_productShell_to_difference_of_headBlockInvariant_local
+private theorem exists_shifted_realDifference_productShell_to_same_center_local
     (φ_seq : ℕ → SchwartzSpacetime d)
-    (hφ_int : ∀ n, ∫ u : SpacetimeDim d, φ_seq n u = 1)
-    (K₂ : NPointDomain d 2 → ℂ)
-    (hK_meas : AEStronglyMeasurable K₂ volume)
-    (C_bd : ℝ)
-    (N : ℕ)
-    (hC : 0 < C_bd)
-    (hK_bound : ∀ᵐ x : NPointDomain d 2 ∂volume,
-      ‖K₂ x‖ ≤ C_bd * (1 + ‖x‖) ^ N)
-    (hTinv : OSReconstruction.IsHeadBlockTranslationInvariantSchwartzCLM
-      (m := d + 1) (n := d + 1)
-      (OSReconstruction.twoPointFlatKernelCLM (d := d) K₂ hK_meas C_bd N hC hK_bound)) :
+    (hφ_int : ∀ n, ∫ x : SpacetimeDim d, φ_seq n x = 1)
+    (t : ℝ)
+    (_ht : 0 < t)
+    (μ_seq : ℕ → Measure (ℝ × (Fin d → ℝ)))
+    (hKpkg : ∀ n,
+      ∃ (C_bd : ℝ) (N : ℕ), 0 < C_bd ∧
+        AEStronglyMeasurable
+          (fun z : NPointDomain d 2 =>
+            k2DifferenceKernel_real_local (d := d) (μ_seq n) (z 1 + timeShiftVec d t))
+          volume ∧
+        (∀ᵐ z : NPointDomain d 2 ∂volume,
+          ‖k2DifferenceKernel_real_local (d := d) (μ_seq n) (z 1 + timeShiftVec d t)‖ ≤
+            C_bd * (1 + ‖z‖) ^ N)) :
     ∀ n,
-      let T : SchwartzMap (Fin ((d + 1) + (d + 1)) → ℝ) ℂ →L[ℂ] ℂ :=
-        OSReconstruction.twoPointFlatKernelCLM K₂ hK_meas C_bd N hC hK_bound
-      T (OSReconstruction.reindexSchwartzFin
-            (show 2 * (d + 1) = (d + 1) + (d + 1) by ring)
-            (OSReconstruction.flattenSchwartzNPoint (d := d)
-              (OSReconstruction.twoPointCenterDiffSchwartzCLM (d := d)
-                (twoPointProductLift (φ_seq n)
-                  (reflectedSchwartzSpacetime (φ_seq n)))))) =
-        T (OSReconstruction.reindexSchwartzFin
-            (show 2 * (d + 1) = (d + 1) + (d + 1) by ring)
-            (OSReconstruction.flattenSchwartzNPoint (d := d)
-              (OSReconstruction.twoPointCenterDiffSchwartzCLM (d := d)
-                (twoPointDifferenceLift (φ_seq n)
-                  (OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
-                    (reflectedSchwartzSpacetime (φ_seq n))))))) := by
+      ∫ z : NPointDomain d 2,
+        k2DifferenceKernel_real_local (d := d) (μ_seq n) (z 1 + timeShiftVec d t) *
+          ((φ_seq n) (z 0) *
+            reflectedSchwartzSpacetime (φ_seq n) (z 0 + z 1)) =
+      ∫ z : NPointDomain d 2,
+        k2DifferenceKernel_real_local (d := d) (μ_seq n) (z 1 + timeShiftVec d t) *
+          ((φ_seq n) (z 0) *
+            (OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+              (reflectedSchwartzSpacetime (φ_seq n))) (z 1)) := by
+  /-
+  Honest shifted-representative shell seam:
+
+  because the explicit shifted real-difference representative depends only on
+  the difference variable, it should pair equally with the reflected product
+  shell and with its descended same-center representative.
+  -/
   intro n
-  let T : SchwartzMap (Fin ((d + 1) + (d + 1)) → ℝ) ℂ →L[ℂ] ℂ :=
-    OSReconstruction.twoPointFlatKernelCLM K₂ hK_meas C_bd N hC hK_bound
-  simpa [T, OSReconstruction.twoPointCenterShearDescent_eq,
-    OSReconstruction.twoPointCenterDiffSchwartzCLM_twoPointDifferenceLift_eq_productTensor] using
-    (OSReconstruction.map_twoPointProductShell_eq_canonicalDifferenceLift_of_headBlockTranslationInvariant
-      (d := d) T hTinv (φ_seq n) (hφ_int n) (reflectedSchwartzSpacetime (φ_seq n)))
+  rcases hKpkg n with ⟨C_bd, N, hC, hK_meas, hK_bound⟩
+  exact
+    OSReconstruction.shifted_realDifferenceKernel_productShell_to_same_center_of_package_local
+      (d := d) (μ := μ_seq n) (t := t) hK_meas C_bd N hC hK_bound
+      (φ_seq n) (hφ_int n) (reflectedSchwartzSpacetime (d := d) (φ_seq n))
+
+private theorem exists_fixed_strip_aux_center_pairing_local
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (χc : SchwartzSpacetime d)
+    (hχc : ∫ u : SpacetimeDim d, χc u = 1)
+    (hχc_compact : HasCompactSupport (χc : SpacetimeDim d → ℂ))
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
+    (φ_seq : ℕ → SchwartzSpacetime d)
+    (hφ_nonneg : ∀ n x, 0 ≤ (φ_seq n x).re)
+    (hφ_real : ∀ n x, (φ_seq n x).im = 0)
+    (hφ_int : ∀ n, ∫ u : SpacetimeDim d, φ_seq n u = 1)
+    (hφ_compact : ∀ n, HasCompactSupport (φ_seq n : SpacetimeDim d → ℂ))
+    (hφ_neg : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆
+      {x : SpacetimeDim d | x 0 < 0})
+    (hdesc_compact : ∀ n,
+      HasCompactSupport
+        (((OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+          (reflectedSchwartzSpacetime (φ_seq n))) : SchwartzSpacetime d) :
+          SpacetimeDim d → ℂ))
+    (s : ℝ)
+    (hs : 0 < s)
+    (hprod : ∀ n,
+      let xφ : OSHilbertSpace OS :=
+        (((show OSPreHilbertSpace OS from
+            (⟦PositiveTimeBorchersSequence.single 1
+                (SchwartzNPoint.osConj (d := d) (n := 1)
+                  (onePointToFin1CLM d (φ_seq n) : SchwartzNPoint d 1))
+                (osConj_onePointToFin1_tsupport_orderedPositiveTime_local
+                  (d := d) (φ_seq n) (hφ_compact n) (hφ_neg n))⟧)) :
+            OSHilbertSpace OS))
+      osSemigroupGroupMatrixElement (d := d) OS lgc xφ (s + s) (0 : Fin d → ℝ) =
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+            ((φ_seq n) (z 0) *
+              reflectedSchwartzSpacetime (φ_seq n) (z 0 + z 1))) :
+    ∀ n,
+      let xφ : OSHilbertSpace OS :=
+        (((show OSPreHilbertSpace OS from
+            (⟦PositiveTimeBorchersSequence.single 1
+                (SchwartzNPoint.osConj (d := d) (n := 1)
+                  (onePointToFin1CLM d (φ_seq n) : SchwartzNPoint d 1))
+                (osConj_onePointToFin1_tsupport_orderedPositiveTime_local
+                  (d := d) (φ_seq n) (hφ_compact n) (hφ_neg n))⟧)) :
+            OSHilbertSpace OS))
+      let hdesc_n : SchwartzSpacetime d :=
+        OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+          (reflectedSchwartzSpacetime (φ_seq n))
+      osSemigroupGroupMatrixElement (d := d) OS lgc xφ (s + s) (0 : Fin d → ℝ) =
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+            (χc (z 0) * hdesc_n (z 1)) := by
+  obtain ⟨hcommon_probe_prod, hcommon_probe_fixed_center⟩ :=
+    OSReconstruction.exists_common_probe_shell_bridges_of_compactSupport_positiveStrip_pairing_eq_local
+      (d := d) OS lgc χc hχc_compact G φ_seq hφ_compact hφ_neg hdesc_compact (s + s)
+      (exists_fixed_strip_compactSupport_positiveStrip_pairing_local
+        OS lgc G hG_euclid φ_seq hφ_compact hφ_neg (s + s))
+  obtain ⟨μ_seq, _hμfin, hrepr, hshifted_pkg_all⟩ :=
+    OSReconstruction.exists_probeSeq_fixedTimeCenterDiffKernel_eq_and_shifted_realDifference_package_local
+      (d := d) OS lgc φ_seq hφ_nonneg hφ_real hφ_int hφ_compact hφ_neg
+  have hcommon_shifted_prod :
+      ∀ n,
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+            ((φ_seq n) (z 0) *
+              reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1)) =
+        ∫ z : NPointDomain d 2,
+          k2DifferenceKernel_real_local (d := d) (μ_seq n) (z 1 + timeShiftVec d (s + s)) *
+            ((φ_seq n) (z 0) *
+              reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1)) := by
+    simpa [Complex.ofReal_add] using
+      OSReconstruction.common_shifted_realDifference_productShell_of_common_probe_productShell_bridge_of_repr_local
+        (d := d) OS lgc G φ_seq hφ_compact hφ_neg (s + s) (add_pos hs hs) μ_seq
+        (fun n z hz => hrepr n (s + s) z (add_pos hs hs) hz)
+        hcommon_probe_prod
+  have hcommon_shifted_same_center :
+      ∀ n,
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+            ((φ_seq n) (z 0) *
+              (OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+                (reflectedSchwartzSpacetime (d := d) (φ_seq n))) (z 1)) =
+        ∫ z : NPointDomain d 2,
+          k2DifferenceKernel_real_local (d := d) (μ_seq n) (z 1 + timeShiftVec d (s + s)) *
+            ((φ_seq n) (z 0) *
+              (OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+                (reflectedSchwartzSpacetime (d := d) (φ_seq n))) (z 1)) := by
+    simpa [Complex.ofReal_add] using
+      OSReconstruction.common_shifted_realDifference_same_center_of_common_probe_fixed_center_bridge_of_repr_local
+        (d := d) OS lgc χc hχc G hG_euclid φ_seq hφ_int hφ_compact hφ_neg
+        (s + s) (add_pos hs hs) μ_seq
+        (fun n z hz => hrepr n (s + s) z (add_pos hs hs) hz)
+        hcommon_probe_fixed_center
+  have hshifted_pkg :
+      ∀ n,
+        ∃ (C_bd : ℝ) (N : ℕ), 0 < C_bd ∧
+          AEStronglyMeasurable
+            (fun z : NPointDomain d 2 =>
+              k2DifferenceKernel_real_local (d := d) (μ_seq n) (z 1 + timeShiftVec d (s + s)))
+            volume ∧
+          (∀ᵐ z : NPointDomain d 2 ∂volume,
+            ‖k2DifferenceKernel_real_local (d := d) (μ_seq n) (z 1 + timeShiftVec d (s + s))‖ ≤
+              C_bd * (1 + ‖z‖) ^ N) := by
+    intro n
+    simpa using hshifted_pkg_all n (s + s)
+  have hshifted_prod_to_same_center :=
+    exists_shifted_realDifference_productShell_to_same_center_local
+      (d := d) φ_seq hφ_int (s + s) (add_pos hs hs) μ_seq hshifted_pkg
+  have htime : (((s + s) : ℂ) * Complex.I) = ((↑s + ↑s) * Complex.I) := by
+    ring
+  intro n
+  let hdesc_n : SchwartzSpacetime d :=
+    OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+      (reflectedSchwartzSpacetime (φ_seq n))
+  have hdesc_pos :
+      tsupport (hdesc_n : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0} := by
+    dsimp [hdesc_n]
+    exact OSReconstruction.twoPointCenterShearDescent_reflected_tsupport_pos_local
+      (d := d) (φ_seq n) (hφ_compact n) (hφ_neg n)
+  obtain ⟨c, hc⟩ :=
+    OSReconstruction.schwinger_twoPoint_fixedTimeCenterDiffKernel_exists_const_local
+      (d := d) OS G hG_euclid hdesc_n hdesc_pos (s + s) (add_pos hs hs)
+  have hcommon_center_n :
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+          ((φ_seq n) (z 0) * hdesc_n (z 1)) =
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+          (χc (z 0) * hdesc_n (z 1)) := by
+    calc
+      ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+            ((φ_seq n) (z 0) * hdesc_n (z 1))
+        = c * ∫ u : SpacetimeDim d, φ_seq n u := by
+            simpa [hdesc_n] using hc (φ_seq n)
+      _ = c * ∫ u : SpacetimeDim d, χc u := by rw [hφ_int n, hχc]
+      _ =
+      ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+            (χc (z 0) * hdesc_n (z 1)) := by
+              simpa [hdesc_n] using (hc χc).symm
+  have hpair_aux_n :
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+          ((φ_seq n) (z 0) *
+            reflectedSchwartzSpacetime (φ_seq n) (z 0 + z 1)) =
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+          (χc (z 0) * hdesc_n (z 1)) := by
+    exact
+      OSReconstruction.fixedTimeCenterDiff_productShell_to_difference_of_shifted_realDifference_via_common_shell_invariance_local
+        (d := d)
+        (K := OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((((s + s) : ℂ) * Complex.I)))
+        (μ := μ_seq n)
+        (t := s + s)
+        (χ := φ_seq n)
+        (χ₀ := χc)
+        (g := reflectedSchwartzSpacetime (φ_seq n))
+        (by simpa [htime] using hcommon_shifted_prod n)
+        (by simpa using hshifted_prod_to_same_center n)
+        (by simpa [hdesc_n, htime] using hcommon_shifted_same_center n)
+        hcommon_center_n
+  calc
+    osSemigroupGroupMatrixElement (d := d) OS lgc
+        (((show OSPreHilbertSpace OS from
+            (⟦PositiveTimeBorchersSequence.single 1
+                (SchwartzNPoint.osConj (d := d) (n := 1)
+                  (onePointToFin1CLM d (φ_seq n) : SchwartzNPoint d 1))
+                (osConj_onePointToFin1_tsupport_orderedPositiveTime_local
+                  (d := d) (φ_seq n) (hφ_compact n) (hφ_neg n))⟧)) :
+            OSHilbertSpace OS))
+        (s + s) (0 : Fin d → ℝ)
+      =
+    ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+          ((φ_seq n) (z 0) *
+            reflectedSchwartzSpacetime (φ_seq n) (z 0 + z 1)) := by
+            simpa using hprod n
+    _ =
+    ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+          (χc (z 0) *
+            (OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+              (reflectedSchwartzSpacetime (φ_seq n))) (z 1)) := hpair_aux_n
 
 private theorem exists_fixed_strip_common_difference_kernel_local
     (OS : OsterwalderSchraderAxioms d)
@@ -143,6 +323,7 @@ private theorem exists_fixed_strip_common_difference_kernel_local
     (χ₀ : SchwartzSpacetime d)
     (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
     (φ_seq : ℕ → SchwartzSpacetime d)
+    (hφ_nonneg : ∀ n x, 0 ≤ (φ_seq n x).re)
     (hφ_real : ∀ n x, (φ_seq n x).im = 0)
     (hφ_int : ∀ n, ∫ x : SpacetimeDim d, φ_seq n x = 1)
     (hφ_compact : ∀ n, HasCompactSupport (φ_seq n : SpacetimeDim d → ℂ))
@@ -151,7 +332,7 @@ private theorem exists_fixed_strip_common_difference_kernel_local
     (s : ℝ)
     (hs : 0 < s) :
     ∃ K_s : SpacetimeDim d → ℂ,
-      Continuous K_s ∧
+      ContinuousOn K_s {ξ : SpacetimeDim d | -(s + s) < ξ 0} ∧
       (∀ n,
         let xφ : OSHilbertSpace OS :=
           (((show OSPreHilbertSpace OS from
@@ -167,132 +348,20 @@ private theorem exists_fixed_strip_common_difference_kernel_local
               (twoPointDifferenceLift χ₀
                 (OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
                   (reflectedSchwartzSpacetime (φ_seq n))) x)) := by
-  obtain ⟨G, hG_holo, hG_euclid, hprod⟩ :=
+  obtain ⟨G, _hG_holo, hG_euclid, hprod⟩ :=
     OSReconstruction.exists_common_fixed_strip_fixedTimeCenterDiff_productShell_pairing_with_witness_local
       (d := d) OS lgc φ_seq hφ_real hφ_compact hφ_neg (s + s) (add_pos hs hs)
-  obtain ⟨hK_fixed_cont, C0, hC0, hK_fixed_meas, hK_fixed_bdd⟩ :=
-    exists_fixed_strip_fixedTimeKernel_constBound_package_local
-      (d := d) OS lgc s hs G hG_holo hG_euclid
-  obtain ⟨hK_cont, C_bd, N, hC, hK_meas, hK_bound⟩ :=
-    OSReconstruction.exists_polyBound_package_twoPointFixedTimeCenterDiffKernel_of_constBound_local
-      (d := d) G (((s + s) : ℂ) * Complex.I) hK_fixed_cont hK_fixed_meas C0 hC0 hK_fixed_bdd
+  obtain ⟨μ_seq_pkg, _hμfin_pkg, hrepr_pkg, hKpkg⟩ :=
+    OSReconstruction.exists_probeSeq_fixedTimeCenterDiffKernel_eq_and_shifted_realDifference_package_local
+      (d := d) OS lgc φ_seq hφ_nonneg hφ_real hφ_int hφ_compact hφ_neg
+  obtain ⟨_Gcont, μ_seq_cont, _hGcont_holo, _hGcont_euclid, _hμfin_cont,
+      _hprod_cont, _hrepr_cont, hcont_cont⟩ :=
+    OSReconstruction.exists_common_fixed_strip_fixedTimeCenterDiff_with_probe_realDifference_continuous_package_local
+      (d := d) OS lgc φ_seq hφ_nonneg hφ_real hφ_int hφ_compact hφ_neg
+      (s + s) (add_pos hs hs)
   obtain ⟨χc_seq, _hχc_nonneg, _hχc_real, hχc_int, hχc_compact, _hχc_neg, _hχc_ball⟩ :=
     exists_negative_approx_identity_sequence (d := d)
   let χc : SchwartzSpacetime d := χc_seq 0
-  have hTinv :
-      OSReconstruction.IsHeadBlockTranslationInvariantSchwartzCLM
-        (m := d + 1) (n := d + 1)
-        (OSReconstruction.twoPointFlatKernelCLM
-          (OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
-            (d := d) G ((((s + s) : ℂ) * Complex.I)))
-          hK_meas C_bd N hC hK_bound) :=
-    exists_fixed_strip_fixedTimeCenterDiff_headBlockInvariant_local
-      (d := d) OS χc (hχc_int 0) s hs G hG_euclid hK_meas C_bd N hC hK_bound
-  have hdesc :
-      ∀ n,
-        let T : SchwartzMap (Fin ((d + 1) + (d + 1)) → ℝ) ℂ →L[ℂ] ℂ :=
-          OSReconstruction.twoPointFlatKernelCLM
-            (OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
-              (d := d) G ((((s + s) : ℂ) * Complex.I)))
-            hK_meas C_bd N hC hK_bound
-        T (OSReconstruction.reindexSchwartzFin
-              (show 2 * (d + 1) = (d + 1) + (d + 1) by ring)
-              (OSReconstruction.flattenSchwartzNPoint (d := d)
-                (OSReconstruction.twoPointCenterDiffSchwartzCLM (d := d)
-                  (twoPointProductLift (φ_seq n)
-                    (reflectedSchwartzSpacetime (φ_seq n)))))) =
-            T (OSReconstruction.reindexSchwartzFin
-              (show 2 * (d + 1) = (d + 1) + (d + 1) by ring)
-              (OSReconstruction.flattenSchwartzNPoint (d := d)
-                (OSReconstruction.twoPointCenterDiffSchwartzCLM (d := d)
-                  (twoPointDifferenceLift (φ_seq n)
-                    (OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
-                      (reflectedSchwartzSpacetime (φ_seq n))))))) :=
-    fixed_strip_fixedTimeCenterDiff_productShell_to_difference_of_headBlockInvariant_local
-      (d := d) φ_seq hφ_int
-      (OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
-        (d := d) G ((((s + s) : ℂ) * Complex.I))) hK_meas C_bd N hC hK_bound hTinv
-  have hcenter :
-      ∀ n,
-        let T : SchwartzMap (Fin ((d + 1) + (d + 1)) → ℝ) ℂ →L[ℂ] ℂ :=
-          OSReconstruction.twoPointFlatKernelCLM
-            (OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
-              (d := d) G ((((s + s) : ℂ) * Complex.I)))
-            hK_meas C_bd N hC hK_bound
-        T (OSReconstruction.reindexSchwartzFin
-              (show 2 * (d + 1) = (d + 1) + (d + 1) by ring)
-              (OSReconstruction.flattenSchwartzNPoint (d := d)
-                (OSReconstruction.twoPointCenterDiffSchwartzCLM (d := d)
-                  (twoPointDifferenceLift (φ_seq n)
-                    (OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
-                      (reflectedSchwartzSpacetime (φ_seq n))))))) =
-            T (OSReconstruction.reindexSchwartzFin
-              (show 2 * (d + 1) = (d + 1) + (d + 1) by ring)
-              (OSReconstruction.flattenSchwartzNPoint (d := d)
-                (OSReconstruction.twoPointCenterDiffSchwartzCLM (d := d)
-                  (twoPointDifferenceLift χc
-                    (OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
-                      (reflectedSchwartzSpacetime (φ_seq n))))))) := by
-    intro n
-    let t2 : ℂ := (((s + s) : ℂ) * Complex.I)
-    let T : SchwartzMap (Fin ((d + 1) + (d + 1)) → ℝ) ℂ →L[ℂ] ℂ :=
-      OSReconstruction.twoPointFlatKernelCLM
-        (OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
-          (d := d) G t2)
-        hK_meas C_bd N hC hK_bound
-    let hdesc_n : SchwartzSpacetime d :=
-      OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
-        (reflectedSchwartzSpacetime (φ_seq n))
-    have hdesc_pos :
-        tsupport (hdesc_n : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0} := by
-      dsimp [hdesc_n]
-      exact OSReconstruction.twoPointCenterShearDescent_reflected_tsupport_pos_local
-        (d := d) (φ_seq n) (hφ_compact n) (hφ_neg n)
-    obtain ⟨c, hc⟩ :=
-      OSReconstruction.schwinger_twoPoint_fixedTimeCenterDiffKernel_exists_const_local
-        (d := d) OS G hG_euclid hdesc_n hdesc_pos (s + s) (add_pos hs hs)
-    calc
-      T (OSReconstruction.reindexSchwartzFin
-            (show 2 * (d + 1) = (d + 1) + (d + 1) by ring)
-            (OSReconstruction.flattenSchwartzNPoint (d := d)
-              (OSReconstruction.twoPointCenterDiffSchwartzCLM (d := d)
-                (twoPointDifferenceLift (φ_seq n) hdesc_n))))
-        = ∫ z : NPointDomain d 2,
-            OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
-              (d := d) G t2 z *
-              ((φ_seq n) (z 0) * hdesc_n (z 1)) := by
-            simpa [T, hdesc_n,
-              OSReconstruction.twoPointCenterDiffSchwartzCLM_twoPointDifferenceLift] using
-              (OSReconstruction.twoPointFlatKernelCLM_apply_reindex_flatten
-                (d := d)
-                (K := OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
-                  (d := d) G t2)
-                hK_meas C_bd N hC hK_bound
-                (OSReconstruction.twoPointCenterDiffSchwartzCLM (d := d)
-                  (twoPointDifferenceLift (φ_seq n) hdesc_n)))
-      _ = c * ∫ y : SpacetimeDim d, φ_seq n y := by
-            simpa [t2] using hc (φ_seq n)
-      _ = c * ∫ y : SpacetimeDim d, χc y := by rw [hφ_int n, hχc_int 0]
-      _ = ∫ z : NPointDomain d 2,
-            OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
-              (d := d) G t2 z * (χc (z 0) * hdesc_n (z 1)) := by
-            symm
-            simpa [t2] using hc χc
-      _ = T (OSReconstruction.reindexSchwartzFin
-            (show 2 * (d + 1) = (d + 1) + (d + 1) by ring)
-            (OSReconstruction.flattenSchwartzNPoint (d := d)
-              (OSReconstruction.twoPointCenterDiffSchwartzCLM (d := d)
-                (twoPointDifferenceLift χc hdesc_n)))) := by
-            symm
-            simpa [T, hdesc_n,
-              OSReconstruction.twoPointCenterDiffSchwartzCLM_twoPointDifferenceLift] using
-              (OSReconstruction.twoPointFlatKernelCLM_apply_reindex_flatten
-                (d := d)
-                (K := OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
-                  (d := d) G t2)
-                hK_meas C_bd N hC hK_bound
-                (OSReconstruction.twoPointCenterDiffSchwartzCLM (d := d)
-                  (twoPointDifferenceLift χc hdesc_n)))
   let I : ℕ → ℂ := fun n =>
     let xφ : OSHilbertSpace OS :=
       (((show OSPreHilbertSpace OS from
@@ -303,6 +372,8 @@ private theorem exists_fixed_strip_common_difference_kernel_local
                 (d := d) (φ_seq n) (hφ_compact n) (hφ_neg n))⟧)) :
           OSHilbertSpace OS))
     osSemigroupGroupMatrixElement (d := d) OS lgc xφ (s + s) (0 : Fin d → ℝ)
+  have htime : (((s + s) : ℂ) * Complex.I) = ((↑s + ↑s) * Complex.I) := by
+    ring
   have hdesc_compact : ∀ n,
       HasCompactSupport
         (((OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
@@ -349,7 +420,7 @@ private theorem exists_fixed_strip_common_difference_kernel_local
     exact HasCompactSupport.of_support_subset_isCompact
       (isCompact_closedBall (0 : SpacetimeDim d) (Rφ'' + Rψ''))
       (fun x hx => hclosed (subset_tsupport _ hx))
-  have hpair : ∀ n,
+  have hpair_prod_common : ∀ n,
       I n =
         ∫ z : NPointDomain d 2,
           OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
@@ -358,13 +429,353 @@ private theorem exists_fixed_strip_common_difference_kernel_local
               reflectedSchwartzSpacetime (φ_seq n) (z 0 + z 1)) := by
     intro n
     simpa [I] using hprod n
-  exact OSReconstruction.exists_common_difference_kernel_of_common_productShell_pairing_local
-    (d := d) χc (hχc_int 0) (hχc_compact 0) χ₀ hχ₀
-    (OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
-      (d := d) G ((((s + s) : ℂ) * Complex.I)))
-    hK_cont hK_meas C_bd N hC hK_bound
-    φ_seq (fun n => reflectedSchwartzSpacetime (φ_seq n)) hφ_int hdesc_compact
-    hdesc hcenter I hpair
+  have hpair_eq_pkg_cont :
+      ∀ n (h : SchwartzSpacetime d),
+        HasCompactSupport (h : SpacetimeDim d → ℂ) →
+        tsupport (h : SpacetimeDim d → ℂ) ⊆ {ξ : SpacetimeDim d | 0 < ξ 0} →
+        ∫ ξ : SpacetimeDim d,
+          k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n) (ξ + timeShiftVec d (s + s)) * h ξ =
+        ∫ ξ : SpacetimeDim d,
+          k2DifferenceKernel_real_local (d := d) (μ_seq_cont 0) (ξ + timeShiftVec d (s + s)) * h ξ := by
+    intro n h hh_compact hh_pos
+    let f : SchwartzMap (NPointDomain d 2) ℂ :=
+      OSReconstruction.twoPointCenterDiffSchwartzCLM (d := d) (twoPointDifferenceLift χc h)
+    have hf_compact : HasCompactSupport (f : NPointDomain d 2 → ℂ) := by
+      have hprod_eq :
+          (SchwartzMap.productTensor ![χc, h] : SchwartzNPoint d 2) =
+            twoPointProductLift χc h := by
+        ext z
+        simp [SchwartzMap.productTensor_apply, twoPointProductLift_apply]
+      rw [show f = (twoPointProductLift χc h : SchwartzNPoint d 2) by
+            rw [show f = SchwartzMap.productTensor ![χc, h] by
+                  simp [f]]
+            exact hprod_eq]
+      exact OSReconstruction.hasCompactSupport_twoPointProductLift_for_reflected_local
+        (d := d) χc h (hχc_compact 0) hh_compact
+    have hf_support :
+        Function.support (f : NPointDomain d 2 → ℂ) ⊆
+          {z : NPointDomain d 2 | 0 < z 1 0} := by
+      intro z hz
+      rw [Function.mem_support] at hz
+      have hmul : χc (z 0) * h (z 1) ≠ 0 := by
+        simpa [f, OSReconstruction.twoPointCenterDiffSchwartzCLM_twoPointDifferenceLift] using hz
+      have hz1_mem : z 1 ∈ tsupport (h : SpacetimeDim d → ℂ) :=
+        subset_tsupport _ (Function.mem_support.mpr (right_ne_zero_of_mul hmul))
+      exact hh_pos hz1_mem
+    have hcommon_n :
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((((s + s) : ℂ) * Complex.I)) z * f z =
+        ∫ ξ : SpacetimeDim d,
+          k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n) (ξ + timeShiftVec d (s + s)) * h ξ := by
+      calc
+        ∫ z : NPointDomain d 2,
+            OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+              (d := d) G ((((s + s) : ℂ) * Complex.I)) z * f z
+          =
+        ∫ z : NPointDomain d 2,
+            OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+              (d := d)
+              (k2ProbeWitness_local (d := d) OS lgc
+                (φ_seq n) (hφ_compact n) (hφ_neg n))
+              ((((s + s) : ℂ) * Complex.I)) z * f z := by
+                simpa [htime] using
+                  exists_fixed_strip_compactSupport_positiveStrip_pairing_local
+                    (d := d) OS lgc G hG_euclid φ_seq hφ_compact hφ_neg (s + s) n f hf_compact hf_support
+        _ =
+        ∫ z : NPointDomain d 2,
+            k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n) (z 1 + timeShiftVec d (s + s)) *
+              f z := by
+                refine integral_congr_ae ?_
+                filter_upwards with z
+                by_cases hz : f z = 0
+                · simp [hz]
+                · have hz_mem : z ∈ Function.support (f : NPointDomain d 2 → ℂ) :=
+                    Function.mem_support.mpr hz
+                  have hz_pos : 0 < z 1 0 := hf_support hz_mem
+                  have hz_strip : -(s + s) < z 1 0 := by
+                    have hneg : -(s + s) < 0 := by linarith
+                    exact lt_trans hneg hz_pos
+                  rw [show OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+                        (d := d)
+                        (k2ProbeWitness_local (d := d) OS lgc
+                          (φ_seq n) (hφ_compact n) (hφ_neg n))
+                        ((((s + s) : ℂ) * Complex.I)) z =
+                        k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n)
+                          (z 1 + timeShiftVec d (s + s)) by
+                        simpa [htime] using hrepr_pkg n (s + s) z (add_pos hs hs) hz_strip]
+        _ = (∫ u : SpacetimeDim d, χc u) *
+            ∫ ξ : SpacetimeDim d,
+              k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n) (ξ + timeShiftVec d (s + s)) *
+                h ξ := by
+                  simpa [f, OSReconstruction.twoPointCenterDiffSchwartzCLM_twoPointDifferenceLift] using
+                    OSReconstruction.integral_centerDiff_differenceOnly_kernel_factorizes
+                    (d := d)
+                    (fun ξ : SpacetimeDim d =>
+                      k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n)
+                        (ξ + timeShiftVec d (s + s)))
+                    χc h
+        _ =
+        ∫ ξ : SpacetimeDim d,
+          k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n) (ξ + timeShiftVec d (s + s)) *
+            h ξ := by
+              rw [hχc_int 0]
+              ring
+    have hcommon0 :
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((((s + s) : ℂ) * Complex.I)) z * f z =
+        ∫ ξ : SpacetimeDim d,
+          k2DifferenceKernel_real_local (d := d) (μ_seq_cont 0) (ξ + timeShiftVec d (s + s)) * h ξ := by
+      calc
+        ∫ z : NPointDomain d 2,
+            OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+              (d := d) G ((((s + s) : ℂ) * Complex.I)) z * f z
+          =
+        ∫ z : NPointDomain d 2,
+            OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+              (d := d)
+              (k2ProbeWitness_local (d := d) OS lgc
+                (φ_seq 0) (hφ_compact 0) (hφ_neg 0))
+              ((((s + s) : ℂ) * Complex.I)) z * f z := by
+                simpa [htime] using
+                  exists_fixed_strip_compactSupport_positiveStrip_pairing_local
+                    (d := d) OS lgc G hG_euclid φ_seq hφ_compact hφ_neg (s + s) 0 f hf_compact hf_support
+        _ =
+        ∫ z : NPointDomain d 2,
+            k2DifferenceKernel_real_local (d := d) (μ_seq_cont 0) (z 1 + timeShiftVec d (s + s)) *
+              f z := by
+                refine integral_congr_ae ?_
+                filter_upwards with z
+                by_cases hz : f z = 0
+                · simp [hz]
+                · have hz_mem : z ∈ Function.support (f : NPointDomain d 2 → ℂ) :=
+                    Function.mem_support.mpr hz
+                  have hz_pos : 0 < z 1 0 := hf_support hz_mem
+                  have hz_strip : -(s + s) < z 1 0 := by
+                    have hneg : -(s + s) < 0 := by linarith
+                    exact lt_trans hneg hz_pos
+                  rw [show OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+                        (d := d)
+                        (k2ProbeWitness_local (d := d) OS lgc
+                          (φ_seq 0) (hφ_compact 0) (hφ_neg 0))
+                        ((((s + s) : ℂ) * Complex.I)) z =
+                        k2DifferenceKernel_real_local (d := d) (μ_seq_cont 0)
+                          (z 1 + timeShiftVec d (s + s)) by
+                        simpa [htime] using (_hrepr_cont 0) z hz_strip]
+        _ = (∫ u : SpacetimeDim d, χc u) *
+            ∫ ξ : SpacetimeDim d,
+              k2DifferenceKernel_real_local (d := d) (μ_seq_cont 0) (ξ + timeShiftVec d (s + s)) *
+                h ξ := by
+                  simpa [f, OSReconstruction.twoPointCenterDiffSchwartzCLM_twoPointDifferenceLift] using
+                    OSReconstruction.integral_centerDiff_differenceOnly_kernel_factorizes
+                    (d := d)
+                    (fun ξ : SpacetimeDim d =>
+                      k2DifferenceKernel_real_local (d := d) (μ_seq_cont 0)
+                        (ξ + timeShiftVec d (s + s)))
+                    χc h
+        _ =
+        ∫ ξ : SpacetimeDim d,
+          k2DifferenceKernel_real_local (d := d) (μ_seq_cont 0) (ξ + timeShiftVec d (s + s)) *
+            h ξ := by
+              rw [hχc_int 0]
+              ring
+    exact hcommon_n.symm.trans hcommon0
+  have hK0_strip :
+      ContinuousOn
+        (fun ξ : SpacetimeDim d =>
+          k2DifferenceKernel_real_local (d := d) (μ_seq_cont 0) (ξ + timeShiftVec d (s + s)))
+        {ξ : SpacetimeDim d | -(s + s) < ξ 0} := by
+    let emb : SpacetimeDim d → NPointDomain d 2 := fun ξ => ![(0 : SpacetimeDim d), ξ]
+    have hemb : Continuous emb := by
+      refine continuous_pi ?_
+      intro i
+      fin_cases i
+      · simpa [emb] using (continuous_const : Continuous fun _ : SpacetimeDim d => (0 : SpacetimeDim d))
+      · simpa [emb] using (continuous_id : Continuous fun ξ : SpacetimeDim d => ξ)
+    have hmaps :
+        Set.MapsTo emb
+          {ξ : SpacetimeDim d | -(s + s) < ξ 0}
+          {z : NPointDomain d 2 | -(s + s) < z 1 0} := by
+      intro ξ hξ
+      simpa [emb] using hξ
+    refine (hcont_cont 0).comp hemb.continuousOn hmaps |>.congr ?_
+    intro ξ hξ
+    simp [emb]
+  let K_s : SpacetimeDim d → ℂ := fun ξ =>
+    k2DifferenceKernel_real_local (d := d) (μ_seq_cont 0) (ξ + timeShiftVec d (s + s))
+  have hK_cont0 : ContinuousAt K_s 0 := by
+    exact OSReconstruction.continuousAt_zero_of_continuousOn_fixedStrip_local
+      (d := d) (s + s) (add_pos hs hs) hK0_strip
+  have hfactor :
+      ∀ n,
+        I n =
+          ∫ ξ : SpacetimeDim d,
+            k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n) (ξ + timeShiftVec d (s + s)) *
+              (OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+                (reflectedSchwartzSpacetime (d := d) (φ_seq n))) ξ := by
+    intro n
+    let hdesc_n : SchwartzSpacetime d :=
+      OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+        (reflectedSchwartzSpacetime (d := d) (φ_seq n))
+    have hcommon_probe_prod :
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+            ((φ_seq n) (z 0) *
+              reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1)) =
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d)
+            (k2ProbeWitness_local (d := d) OS lgc
+              (φ_seq n) (hφ_compact n) (hφ_neg n))
+            ((((s + s) : ℂ) * Complex.I)) z *
+            ((φ_seq n) (z 0) *
+              reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1)) := by
+      let f : SchwartzMap (NPointDomain d 2) ℂ :=
+        OSReconstruction.twoPointCenterDiffSchwartzCLM (d := d)
+          (twoPointProductLift (φ_seq n)
+            (reflectedSchwartzSpacetime (d := d) (φ_seq n)))
+      have hpack :=
+        OSReconstruction.reflected_productShell_compactSupport_support_subset_positiveStrip_local
+          (d := d) (φ_seq n) (hφ_compact n) (hφ_neg n)
+      simpa [f, OSReconstruction.twoPointCenterDiffSchwartzCLM_twoPointProductLift_apply, htime] using
+        (exists_fixed_strip_compactSupport_positiveStrip_pairing_local
+          (d := d) OS lgc G hG_euclid φ_seq hφ_compact hφ_neg (s + s) n f hpack.1 hpack.2)
+    have hcommon_shifted_prod :
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+            ((φ_seq n) (z 0) *
+              reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1)) =
+        ∫ z : NPointDomain d 2,
+          k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n) (z 1 + timeShiftVec d (s + s)) *
+            ((φ_seq n) (z 0) *
+              reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1)) := by
+      calc
+        ∫ z : NPointDomain d 2,
+            OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+              (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+              ((φ_seq n) (z 0) *
+                reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1))
+          =
+        ∫ z : NPointDomain d 2,
+            OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+              (d := d)
+              (k2ProbeWitness_local (d := d) OS lgc
+                (φ_seq n) (hφ_compact n) (hφ_neg n))
+              ((((s + s) : ℂ) * Complex.I)) z *
+              ((φ_seq n) (z 0) *
+                reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1)) := hcommon_probe_prod
+        _ =
+        ∫ z : NPointDomain d 2,
+            k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n) (z 1 + timeShiftVec d (s + s)) *
+              ((φ_seq n) (z 0) *
+                reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1)) := by
+              refine integral_congr_ae ?_
+              filter_upwards with z
+              by_cases hz :
+                  (φ_seq n) (z 0) *
+                    reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1) = 0
+              · rw [hz]
+                simp
+              · have hz0_neg : z 0 0 < 0 := by
+                  exact hφ_neg n <|
+                    subset_tsupport _ (Function.mem_support.mpr (left_ne_zero_of_mul hz))
+                have hzsum_pos : 0 < (z 0 + z 1) 0 := by
+                  exact reflectedSchwartzSpacetime_tsupport_pos (d := d) (φ_seq n) (hφ_neg n) <|
+                    subset_tsupport _ (Function.mem_support.mpr (right_ne_zero_of_mul hz))
+                have hzsum : (z 0 + z 1) 0 = z 0 0 + z 1 0 := by simp
+                rw [hzsum] at hzsum_pos
+                have hz1_pos : 0 < z 1 0 := by
+                  linarith
+                have hz_strip : -(s + s) < z 1 0 := by
+                  have hneg : -(s + s) < 0 := by linarith
+                  exact lt_trans hneg hz1_pos
+                rw [show OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+                      (d := d)
+                      (k2ProbeWitness_local (d := d) OS lgc
+                        (φ_seq n) (hφ_compact n) (hφ_neg n))
+                      ((((s + s) : ℂ) * Complex.I)) z =
+                      k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n)
+                        (z 1 + timeShiftVec d (s + s)) by
+                      simpa [htime] using hrepr_pkg n (s + s) z (add_pos hs hs) hz_strip]
+    have hshifted_prod_to_same_center :
+        ∫ z : NPointDomain d 2,
+          k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n) (z 1 + timeShiftVec d (s + s)) *
+            ((φ_seq n) (z 0) *
+              reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1)) =
+        ∫ z : NPointDomain d 2,
+          k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n) (z 1 + timeShiftVec d (s + s)) *
+            ((φ_seq n) (z 0) * hdesc_n (z 1)) := by
+      rcases hKpkg n (s + s) with ⟨C_bd, N, hC, hK_meas, hK_bound⟩
+      simpa [hdesc_n] using
+        exists_shifted_realDifference_productShell_to_same_center_local
+          (d := d) φ_seq hφ_int (s + s) (add_pos hs hs) μ_seq_pkg
+          (fun m => by
+            rcases hKpkg m (s + s) with ⟨C', N', hC', hK_meas', hK_bound'⟩
+            exact ⟨C', N', hC', hK_meas', hK_bound'⟩) n
+    calc
+      I n = ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+            ((φ_seq n) (z 0) *
+              reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1)) := hpair_prod_common n
+      _ = ∫ z : NPointDomain d 2,
+            k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n) (z 1 + timeShiftVec d (s + s)) *
+              ((φ_seq n) (z 0) *
+                reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1)) := hcommon_shifted_prod
+      _ = ∫ z : NPointDomain d 2,
+            k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n) (z 1 + timeShiftVec d (s + s)) *
+              ((φ_seq n) (z 0) * hdesc_n (z 1)) := hshifted_prod_to_same_center
+      _ = (∫ u : SpacetimeDim d, φ_seq n u) *
+            ∫ ξ : SpacetimeDim d,
+              k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n) (ξ + timeShiftVec d (s + s)) *
+                hdesc_n ξ := by
+              exact OSReconstruction.integral_centerDiff_differenceOnly_kernel_factorizes
+                (d := d)
+                (fun ξ : SpacetimeDim d =>
+                  k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n)
+                    (ξ + timeShiftVec d (s + s)))
+                (φ_seq n) hdesc_n
+      _ = ∫ ξ : SpacetimeDim d,
+            k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n) (ξ + timeShiftVec d (s + s)) *
+              hdesc_n ξ := by
+            rw [hφ_int n]
+            ring
+  refine ⟨K_s, hK0_strip, ?_⟩
+  intro n
+  let hdesc_n : SchwartzSpacetime d :=
+    OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+      (reflectedSchwartzSpacetime (d := d) (φ_seq n))
+  have hdesc_pos :
+      tsupport (hdesc_n : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0} := by
+    dsimp [hdesc_n]
+    exact OSReconstruction.twoPointCenterShearDescent_reflected_tsupport_pos_local
+      (d := d) (φ_seq n) (hφ_compact n) (hφ_neg n)
+  have hsame :
+      ∫ ξ : SpacetimeDim d,
+        k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n) (ξ + timeShiftVec d (s + s)) *
+          hdesc_n ξ =
+      ∫ ξ : SpacetimeDim d,
+        K_s ξ * hdesc_n ξ := by
+    exact hpair_eq_pkg_cont n hdesc_n (hdesc_compact n) hdesc_pos
+  calc
+    I n = ∫ ξ : SpacetimeDim d,
+          k2DifferenceKernel_real_local (d := d) (μ_seq_pkg n) (ξ + timeShiftVec d (s + s)) *
+            hdesc_n ξ := hfactor n
+    _ = ∫ ξ : SpacetimeDim d, K_s ξ * hdesc_n ξ := hsame
+    _ = (∫ u : SpacetimeDim d, χ₀ u) *
+          ∫ ξ : SpacetimeDim d, K_s ξ * hdesc_n ξ := by
+          rw [hχ₀]
+          ring
+    _ =
+        ∫ x : NPointDomain d 2,
+          OSReconstruction.twoPointDifferenceKernel K_s x *
+            (twoPointDifferenceLift χ₀ hdesc_n x) := by
+          symm
+          exact OSReconstruction.integral_twoPointDifferenceKernel_mul_differenceLift_factorizes
+            (d := d) K_s χ₀ hdesc_n
 
 private theorem exists_fixed_strip_diagonal_limit_local
     (OS : OsterwalderSchraderAxioms d)
@@ -396,13 +807,13 @@ private theorem exists_fixed_strip_diagonal_limit_local
           osSemigroupGroupMatrixElement (d := d) OS lgc xφ (s + s) (0 : Fin d → ℝ))
         Filter.atTop
         (nhds z) := by
-  obtain ⟨K_s, hK_cont, hpair⟩ :=
+  obtain ⟨K_s, hK_strip, hpair⟩ :=
     exists_fixed_strip_common_difference_kernel_local
-      OS lgc χ₀ hχ₀ φ_seq hφ_real hφ_int hφ_compact hφ_neg s hs
-  exact
-    OSReconstruction.exists_fixed_strip_diagonal_limit_of_difference_kernel_pairing_local
+      OS lgc χ₀ hχ₀ φ_seq hφ_nonneg hφ_real hφ_int hφ_compact hφ_neg s hs
+  simpa using
+    OSReconstruction.exists_fixed_strip_diagonal_limit_of_difference_kernel_pairing_on_fixedStrip_local
       (d := d) OS lgc χ₀ hχ₀ φ_seq hφ_nonneg hφ_real hφ_int
-      hφ_compact hφ_neg hφ_ball s hs K_s hK_cont hpair
+      hφ_compact hφ_neg hφ_ball s hs K_s hK_strip hpair
 
 private theorem exists_shell_pointwise_limit_function_local
     (OS : OsterwalderSchraderAxioms d)
