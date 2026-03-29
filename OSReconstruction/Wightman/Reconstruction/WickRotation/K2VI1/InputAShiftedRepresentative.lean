@@ -719,6 +719,44 @@ theorem exists_probeSeq_shifted_realDifferenceKernel_continuousOn_strip_local
   symm
   exact hrepr n t z ht hz
 
+/-- Probe-side continuous strip package: for a shrinking normalized negative
+approximate identity, one may choose the same shifted real-difference
+representatives together with both their fixed-time strip identification and
+their strip continuity. This is the exact probe-only package consumed by the
+current Input-A frontier. -/
+theorem exists_probeSeq_fixedTimeCenterDiff_with_shifted_realDifference_continuous_package_local
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (φ_seq : ℕ → SchwartzSpacetime d)
+    (hφ_nonneg : ∀ n x, 0 ≤ (φ_seq n x).re)
+    (hφ_real : ∀ n x, (φ_seq n x).im = 0)
+    (hφ_int : ∀ n, ∫ x : SpacetimeDim d, φ_seq n x = 1)
+    (hφ_compact : ∀ n, HasCompactSupport (φ_seq n : SpacetimeDim d → ℂ))
+    (hφ_neg : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆
+      {x : SpacetimeDim d | x 0 < 0}) :
+    ∃ μ_seq : ℕ → Measure (ℝ × (Fin d → ℝ)),
+      (∀ n, IsFiniteMeasure (μ_seq n)) ∧
+      (∀ n (t : ℝ) (z : NPointDomain d 2), 0 < t → -t < z 1 0 →
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d)
+          (k2ProbeWitness_local (d := d) OS lgc
+            (φ_seq n) (hφ_compact n) (hφ_neg n))
+          ((t : ℂ) * Complex.I) z =
+        k2DifferenceKernel_real_local (d := d) (μ_seq n) (z 1 + timeShiftVec d t)) ∧
+      (∀ n (t : ℝ), 0 < t →
+        ContinuousOn
+          (fun z : NPointDomain d 2 =>
+            k2DifferenceKernel_real_local (d := d) (μ_seq n) (z 1 + timeShiftVec d t))
+          {z : NPointDomain d 2 | -t < z 1 0}) := by
+  obtain ⟨μ_seq, hμfin, hrepr⟩ :=
+    exists_probeSeq_fixedTimeCenterDiffKernel_eq_shifted_realDifferenceKernel_on_strip_local
+      (d := d) OS lgc φ_seq hφ_nonneg hφ_real hφ_int hφ_compact hφ_neg
+  refine ⟨μ_seq, hμfin, hrepr, ?_⟩
+  intro n t ht
+  exact shifted_realDifferenceKernel_continuousOn_strip_of_probe_repr_local
+    (d := d) OS lgc φ_seq hφ_compact hφ_neg μ_seq t ht
+    (fun m z hz => hrepr m t z ht hz) n
+
 /-- The fixed-time center/difference shell pairing of each probe witness
 factorizes through the shifted real one-variable difference kernel on the fixed
 strip. -/
