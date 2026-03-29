@@ -1,5 +1,5 @@
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1DampedNorm
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1OrbitBridge
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.DampedNorm
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.OrbitBridge
 
 noncomputable section
 

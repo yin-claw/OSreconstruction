@@ -1,5 +1,5 @@
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAWitness
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAFlatUpdate
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAWitness
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAFlatUpdate
 
 noncomputable section
 

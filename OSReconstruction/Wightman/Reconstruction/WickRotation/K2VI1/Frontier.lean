@@ -3,18 +3,18 @@ Copyright (c) 2025 ModularPhysics Contributors. All rights reserved.
 Released under Apache 2.0 license.
 Authors: Michael Douglas, ModularPhysics Contributors
 -/
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1Support
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputA
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAInvariance
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAKernelReduction
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAFixedTime
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAFixedTimeInvariance
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAHdescReduction
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAHeadBlockTransport
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAOneVariableUniqueness
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAShiftedRepresentative
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAWitness
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1DCT
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.Support
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputA
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAInvariance
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAKernelReduction
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAFixedTime
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAFixedTimeInvariance
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAHdescReduction
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAHeadBlockTransport
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAOneVariableUniqueness
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAShiftedRepresentative
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAWitness
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.DCT
 
 /-!
 # OS to Wightman `k = 2` VI.1 Frontier
@@ -23,7 +23,7 @@ This file now contains only the surviving OS II Section VI.1 `k = 2` frontier:
 the direct descended-shell convergence seam behind the probe limit and the
 final distributional assembly theorem.
 
-All proved support infrastructure has been moved to `OSToWightmanK2VI1Support.lean` so that the hard `sorry`s stay on a small, readable theorem surface.
+All proved support infrastructure has been moved to `K2VI1/Support.lean` so that the hard `sorry`s stay on a small, readable theorem surface.
 -/
 
 noncomputable section
@@ -851,7 +851,7 @@ private theorem exists_shell_pointwise_limit_function_local
   identify the pointwise almost-everywhere shell limit and the corresponding
   target integral. The intended direct OS route is again a descended-center
   approximate-identity argument on the positive-time shell, using the orbit
-  continuity layer from `OSToWightmanK2VI1OrbitBridge.lean`.
+  continuity layer from `K2VI1/OrbitBridge.lean`.
   -/
   sorry
 

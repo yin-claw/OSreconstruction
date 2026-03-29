@@ -1,6 +1,6 @@
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2BaseStep
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAXiShift
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1Support
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAXiShift
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.Support
 
 noncomputable section
 

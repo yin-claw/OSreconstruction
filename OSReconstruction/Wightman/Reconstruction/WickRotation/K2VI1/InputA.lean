@@ -1,6 +1,6 @@
 import OSReconstruction.Wightman.Reconstruction.TwoPointKernelFunctional
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAOneVariableUniqueness
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1Support
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAOneVariableUniqueness
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.Support
 
 noncomputable section
 

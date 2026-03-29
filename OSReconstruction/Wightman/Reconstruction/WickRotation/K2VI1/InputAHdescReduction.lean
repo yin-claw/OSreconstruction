@@ -1,7 +1,7 @@
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAFixedTime
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAKernelReduction
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAShiftedRepresentative
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1Support
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAFixedTime
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAKernelReduction
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAShiftedRepresentative
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.Support
 
 noncomputable section
 

@@ -1,7 +1,7 @@
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1Support
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.Support
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2BaseStep
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAFixedTime
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAHeadBlockTransport
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAFixedTime
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAHeadBlockTransport
 import OSReconstruction.Wightman.Reconstruction.TwoPointKernelFunctional
 
 noncomputable section

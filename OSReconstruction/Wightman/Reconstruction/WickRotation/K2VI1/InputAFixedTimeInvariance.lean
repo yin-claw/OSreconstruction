@@ -1,5 +1,5 @@
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAInvariance
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanK2VI1InputAFixedTime
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAInvariance
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAFixedTime
 import OSReconstruction.Wightman.Reconstruction.TranslationInvariantSchwartz
 
 noncomputable section
