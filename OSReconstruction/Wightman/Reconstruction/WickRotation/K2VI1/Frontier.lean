@@ -14,6 +14,7 @@ import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAHeadBlo
 import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAOneVariableUniqueness
 import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAShiftedRepresentative
 import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAWitness
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputACommonBoundary
 import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.DCT
 
 /-!
@@ -95,7 +96,11 @@ private theorem hasCompactSupport_twoPointCenterShearDescent_reflected_local
     (isCompact_closedBall (0 : SpacetimeDim d) (Rφ'' + Rψ''))
     (fun x hx => hclosed (subset_tsupport _ hx))
 
-private theorem exists_probeSeq_euclid_local
+/- Legacy probe-Euclid route retained only for archeology while the common-`G`
+repair is being completed. This block is no longer part of the active
+production path. -/
+
+/- private theorem exists_probeSeq_euclid_local
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
     (φ_seq : ℕ → SchwartzSpacetime d)
@@ -928,7 +933,45 @@ private theorem exists_fixed_strip_common_difference_kernel_local
             (twoPointDifferenceLift χ₀ hdesc_n x) := by
           symm
           exact OSReconstruction.integral_twoPointDifferenceKernel_mul_differenceLift_factorizes
-            (d := d) K_s χ₀ hdesc_n
+            (d := d) K_s χ₀ hdesc_n -/
+
+private theorem exists_common_lifted_difference_slice_productShell_package_local
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (φ_seq : ℕ → SchwartzSpacetime d)
+    (hφ_real : ∀ n x, (φ_seq n x).im = 0)
+    (hφ_compact : ∀ n, HasCompactSupport (φ_seq n : SpacetimeDim d → ℂ))
+    (hφ_neg : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆
+      {x : SpacetimeDim d | x 0 < 0})
+    (s : ℝ)
+    (hs : 0 < s) :
+    ∃ (G : (Fin (2 * (d + 1)) → ℂ) → ℂ) (C_bd : ℝ) (N : ℕ),
+      IsTimeHolomorphicFlatPositiveTimeDiffWitness G ∧
+      (∀ (f : ZeroDiagonalSchwartz d 2),
+        OS.S 2 f = ∫ x : NPointDomain d 2,
+          G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x)) ∧
+      0 < C_bd ∧
+      (∀ z : NPointDomain d 2, -(s + s) < z 1 0 →
+        ‖OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s (z 1)‖ ≤
+          C_bd * (1 + ‖z‖) ^ N) ∧
+      (∀ n,
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+            ((φ_seq n) (z 0) *
+              reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1)) =
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s (z 1) *
+            ((φ_seq n) (z 0) *
+              reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1))) := by
+  /-
+  Honest root Input A seam after removing the false probe-Euclid route:
+
+  construct a common holomorphic witness `G`, together with a strip polynomial
+  bound for its lifted interior slice and product-shell pairing equality
+  between the common fixed-time kernel and that lifted slice.
+  -/
+  sorry
 
 private theorem exists_fixed_strip_diagonal_limit_local
     (OS : OsterwalderSchraderAxioms d)
@@ -960,13 +1003,13 @@ private theorem exists_fixed_strip_diagonal_limit_local
           osSemigroupGroupMatrixElement (d := d) OS lgc xφ (s + s) (0 : Fin d → ℝ))
         Filter.atTop
         (nhds z) := by
-  obtain ⟨K_s, hK_strip, hpair⟩ :=
-    exists_fixed_strip_common_difference_kernel_local
-      OS lgc χ₀ hχ₀ φ_seq hφ_nonneg hφ_real hφ_int hφ_compact hφ_neg s hs
-  simpa using
-    OSReconstruction.exists_fixed_strip_diagonal_limit_of_difference_kernel_pairing_on_fixedStrip_local
-      (d := d) OS lgc χ₀ hχ₀ φ_seq hφ_nonneg hφ_real hφ_int
-      hφ_compact hφ_neg hφ_ball s hs K_s hK_strip hpair
+  obtain hpkg :=
+    exists_common_lifted_difference_slice_productShell_package_local
+      (d := d) OS lgc φ_seq hφ_real hφ_compact hφ_neg s hs
+  exact
+    OSReconstruction.exists_fixed_strip_diagonal_limit_of_common_lifted_difference_slice_productShell_package_local
+      (d := d) OS lgc χ₀ hχ₀ φ_seq hφ_nonneg hφ_real hφ_int hφ_ball
+      hφ_compact hφ_neg s hs hpkg
 
 private theorem exists_shell_pointwise_limit_function_local
     (OS : OsterwalderSchraderAxioms d)
