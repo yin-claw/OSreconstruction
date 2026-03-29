@@ -10,6 +10,48 @@ namespace OSReconstruction
 
 variable {d : ℕ} [NeZero d]
 
+/-- Density upgrade for the active `k = 2` witness route.
+
+Once a real Euclidean kernel `k2TimeParametricKernel G` has the standard
+measurable/poly-bound package and agrees with `OS.S 2` on the flat-origin
+difference-shell generators, the existing density theorem upgrades that
+agreement to all of `ZeroDiagonalSchwartz d 2`. This packages the exact
+`hG_euclid` surface needed to feed the fixed-time witness route. -/
+theorem k2TimeParametricKernel_euclid_of_flatOrigin_differenceShell_agreement_local
+    (OS : OsterwalderSchraderAxioms d)
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hK_meas : AEStronglyMeasurable
+      (k2TimeParametricKernel (d := d) G) volume)
+    (C_bd : ℝ) (N : ℕ) (hC : 0 < C_bd)
+    (hK_bound : ∀ᵐ x : NPointDomain d 2 ∂volume,
+      ‖k2TimeParametricKernel (d := d) G x‖ ≤ C_bd * (1 + ‖x‖) ^ N)
+    (hShell :
+      ∀ (χ h : SchwartzSpacetime d)
+        (_hzero : ∀ k : ℕ, iteratedFDeriv ℝ k (h : SpacetimeDim d → ℂ) 0 = 0),
+        OSReconstruction.twoPointZeroDiagonalKernelCLM
+            (d := d) (k2TimeParametricKernel (d := d) G)
+            hK_meas C_bd N hC hK_bound
+            (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h)) =
+          OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ h))) :
+    ∀ f : ZeroDiagonalSchwartz d 2,
+      OS.S 2 f =
+        ∫ x : NPointDomain d 2,
+          G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x) := by
+  have hEq :
+      OSReconstruction.twoPointZeroDiagonalKernelCLM
+          (d := d) (k2TimeParametricKernel (d := d) G)
+          hK_meas C_bd N hC hK_bound =
+        OsterwalderSchraderAxioms.schwingerCLM (d := d) OS 2 :=
+    zeroDiagKernelCLM_eq_schwinger_of_flatOrigin_differenceShell_agreement
+      (d := d) OS
+      (k2TimeParametricKernel (d := d) G)
+      hK_meas C_bd N hC hK_bound hShell
+  intro f
+  have happly :=
+    congrArg (fun L : ZeroDiagonalSchwartz d 2 →L[ℂ] ℂ => L f) hEq
+  simpa [k2TimeParametricKernel, OSReconstruction.twoPointZeroDiagonalKernelCLM_apply]
+    using happly.symm
+
 /-- Witness-exposed version of the fixed-strip `xiShift` product-shell package.
 
 This is the same common fixed-strip pairing as

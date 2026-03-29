@@ -419,6 +419,28 @@ theorem schwinger_twoPoint_fixedTimeCenterDiffKernel_exists_const_local
     schwinger_twoPoint_flatUpdateWitness_exists_const_local
       (d := d) OS G hG_euclid h hh_pos t ht
 
+/-- Rewriting the previous theorem with the kernel pairing on the left gives the
+exact fixed-center shell value needed on the common-witness side of Input A. -/
+theorem fixedTimeCenterDiffKernel_fixed_center_pairing_eq_schwinger_timeShift_local
+    (OS : OsterwalderSchraderAxioms d)
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
+    (χ h : SchwartzSpacetime d)
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    (t : ℝ) (ht : 0 < t) :
+    ∫ z : NPointDomain d 2,
+      OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+        (d := d) G ((t : ℂ) * Complex.I) z *
+        (χ (z 0) * h (z 1)) =
+      OS.S 2
+        (ZeroDiagonalSchwartz.ofClassical
+          (twoPointDifferenceLift χ (SCV.translateSchwartz (- timeShiftVec d t) h))) := by
+  symm
+  exact schwinger_twoPointDifferenceLift_timeShift_eq_fixedTimeCenterDiffKernel_of_positiveSupport_local
+    (d := d) OS G hG_euclid χ h hh_pos t ht
+
 /-- The descended center-shear shell attached to a compact negative-time probe
 and its reflected companion is itself strictly positive-time supported. This is
 the admissibility input needed to apply the fixed-time center-value theorem to
@@ -463,6 +485,139 @@ theorem twoPointCenterShearDescent_reflected_tsupport_pos_local
 kernel route. This is the same content as the existing `xiShift` witness
 package, but expressed directly through the fixed-time center/difference
 kernel. -/
+theorem fixedTimeCenterDiff_productShell_pairing_eq_matrixElement_of_euclid_local
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
+    (φ : SchwartzSpacetime d)
+    (hφ_real : ∀ x, (φ x).im = 0)
+    (hφ_compact : HasCompactSupport (φ : SpacetimeDim d → ℂ))
+    (hφ_neg : tsupport (φ : SpacetimeDim d → ℂ) ⊆
+      {x : SpacetimeDim d | x 0 < 0})
+    (t : ℝ) (ht : 0 < t) :
+    let xφ : OSHilbertSpace OS :=
+      (((show OSPreHilbertSpace OS from
+          (⟦PositiveTimeBorchersSequence.single 1
+              (SchwartzNPoint.osConj (d := d) (n := 1)
+                (onePointToFin1CLM d φ : SchwartzNPoint d 1))
+              (osConj_onePointToFin1_tsupport_orderedPositiveTime_local
+                (d := d) φ hφ_compact hφ_neg)⟧)) :
+          OSHilbertSpace OS))
+    osSemigroupGroupMatrixElement (d := d) OS lgc xφ t (0 : Fin d → ℝ) =
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((t : ℂ) * Complex.I) z *
+          (φ (z 0) * reflectedSchwartzSpacetime (d := d) φ (z 0 + z 1)) := by
+  let Ψ : (Fin 2 → Fin (d + 1) → ℂ) → ℂ := fun z => G (BHW.toDiffFlat 2 d z)
+  let hφ_pos :=
+    osConj_onePointToFin1_tsupport_orderedPositiveTime_local
+      (d := d) φ hφ_compact hφ_neg
+  let ψ : SchwartzSpacetime d := reflectedSchwartzSpacetime φ
+  let hψ_pos_time := reflectedSchwartzSpacetime_tsupport_pos (d := d) φ hφ_neg
+  let hψ_pos :=
+    onePointToFin1_tsupport_orderedPositiveTime_vi1_local (d := d) ψ hψ_pos_time
+  let hψ_compact := reflectedSchwartzSpacetime_hasCompactSupport (d := d) φ hφ_compact
+  let xφ : OSHilbertSpace OS :=
+    (((show OSPreHilbertSpace OS from
+        (⟦PositiveTimeBorchersSequence.single 1
+            (SchwartzNPoint.osConj (d := d) (n := 1)
+              (onePointToFin1CLM d φ : SchwartzNPoint d 1))
+            hφ_pos⟧)) : OSHilbertSpace OS))
+  let xψ : OSHilbertSpace OS :=
+    (((show OSPreHilbertSpace OS from
+        (⟦PositiveTimeBorchersSequence.single 1
+            (onePointToFin1CLM d ψ : SchwartzNPoint d 1)
+            hψ_pos⟧)) : OSHilbertSpace OS))
+  have hx_eq_pre :
+      (⟦PositiveTimeBorchersSequence.single 1
+          (SchwartzNPoint.osConj (d := d) (n := 1)
+            (onePointToFin1CLM d φ : SchwartzNPoint d 1))
+          hφ_pos⟧ : OSPreHilbertSpace OS) =
+        (⟦PositiveTimeBorchersSequence.single 1
+            (onePointToFin1CLM d ψ : SchwartzNPoint d 1)
+            hψ_pos⟧ : OSPreHilbertSpace OS) :=
+    mk_single_osConj_onePoint_eq_mk_single_reflected_of_real_local
+      (d := d) OS φ hφ_real hφ_compact hφ_neg
+  have hx_eq : xφ = xψ := by
+    exact congrArg (fun z : OSPreHilbertSpace OS => (z : OSHilbertSpace OS)) hx_eq_pre
+  calc
+    osSemigroupGroupMatrixElement (d := d) OS lgc xφ t (0 : Fin d → ℝ)
+        = @inner ℂ (OSHilbertSpace OS) _
+            xφ
+            ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ)) xφ) := by
+              simpa [osSpatialTranslateHilbert_zero]
+                using
+                  (osSemigroupGroupMatrixElement_eq_inner_timeShift_right
+                    (d := d) OS lgc xφ (0 : Fin d → ℝ) (0 : Fin d → ℝ) t ht)
+    _ = @inner ℂ (OSHilbertSpace OS) _
+          xφ
+          ((osTimeShiftHilbertComplex (d := d) OS lgc (t : ℂ)) xψ) := by
+            rw [hx_eq]
+    _ =
+        ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag
+          (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+          (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+          xφ xψ (t : ℂ) := by
+            exact osTimeShiftHilbertComplex_inner_eq (d := d) OS lgc xφ xψ (t : ℂ) ht
+    _ =
+        ∫ y : NPointDomain d 2,
+          Ψ (xiShift ⟨1, by omega⟩ 0
+            (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+            (φ (y 0) * ψ (y 1)) := by
+              exact selfAdjointSpectralLaplaceOffdiag_onePoint_pair_eq_xiShift
+                (d := d) (OS := OS) (lgc := lgc) (Ψ := Ψ)
+                (hΨ_euclid := by
+                  intro f
+                  simpa [Ψ] using hG_euclid f)
+                φ ψ hφ_pos hψ_pos hψ_compact t ht
+    _ =
+        ∫ z : NPointDomain d 2,
+          Ψ (xiShift ⟨1, by omega⟩ 0
+            (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i))
+            ((t : ℂ) * Complex.I)) *
+            (φ (z 0) * ψ (z 0 + z 1)) := by
+              simpa [ψ] using
+                (integral_mul_twoPointProductLift_eq_centerShear
+                  (d := d)
+                  (Ψ := fun y : NPointDomain d 2 =>
+                    Ψ (xiShift ⟨1, by omega⟩ 0
+                      (fun i => wickRotatePoint (y i))
+                      ((t : ℂ) * Complex.I)))
+                  φ ψ)
+    _ =
+        ∫ z : NPointDomain d 2,
+          G (BHW.toDiffFlat 2 d
+            (xiShift ⟨1, by omega⟩ 0
+              (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i))
+              ((t : ℂ) * Complex.I))) *
+            (φ (z 0) * reflectedSchwartzSpacetime (d := d) φ (z 0 + z 1)) := by
+              rfl
+    _ =
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((t : ℂ) * Complex.I) z *
+            (φ (z 0) * reflectedSchwartzSpacetime (d := d) φ (z 0 + z 1)) := by
+              refine integral_congr_ae ?_
+              filter_upwards with z
+              have hk :
+                  G (BHW.toDiffFlat 2 d
+                    (xiShift ⟨1, by omega⟩ 0
+                      (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i))
+                      ((t : ℂ) * Complex.I))) =
+                    twoPointFixedTimeCenterDiffKernel_local (d := d) G ((t : ℂ) * Complex.I) z := by
+                simpa [twoPointXiShiftKernel_local] using
+                  congrArg (fun K : NPointDomain d 2 → ℂ => K z)
+                    (twoPointXiShiftKernel_eq_twoPointFixedTimeCenterDiffKernel_local
+                      (d := d) G t)
+              rw [hk]
+
+/-- Witness-exposed fixed-time product-shell package for the Input A common
+kernel route. This is the same content as the existing `xiShift` witness
+package, but expressed directly through the fixed-time center/difference
+kernel. -/
 theorem exists_common_fixed_strip_fixedTimeCenterDiff_productShell_pairing_with_witness_local
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
@@ -497,28 +652,8 @@ theorem exists_common_fixed_strip_fixedTimeCenterDiff_productShell_pairing_with_
       (d := d) OS lgc φ_seq hφ_real hφ_compact hφ_neg t ht
   refine ⟨G, hG_holo, hG_euclid, ?_⟩
   intro n
-  calc
-    osSemigroupGroupMatrixElement (d := d) OS lgc
-        (((show OSPreHilbertSpace OS from
-            (⟦PositiveTimeBorchersSequence.single 1
-                (SchwartzNPoint.osConj (d := d) (n := 1)
-                  (onePointToFin1CLM d (φ_seq n) : SchwartzNPoint d 1))
-                (osConj_onePointToFin1_tsupport_orderedPositiveTime_local
-                  (d := d) (φ_seq n) (hφ_compact n) (hφ_neg n))⟧)) :
-            OSHilbertSpace OS)) t (0 : Fin d → ℝ)
-      = ∫ z : NPointDomain d 2,
-          OSReconstruction.twoPointXiShiftKernel_local
-              (d := d) (fun z => G (BHW.toDiffFlat 2 d z)) t z *
-            ((φ_seq n) (z 0) *
-              reflectedSchwartzSpacetime (φ_seq n) (z 0 + z 1)) := hprod n
-    _ = ∫ z : NPointDomain d 2,
-          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
-              (d := d) G ((t : ℂ) * Complex.I) z *
-            ((φ_seq n) (z 0) *
-              reflectedSchwartzSpacetime (φ_seq n) (z 0 + z 1)) := by
-            refine integral_congr_ae ?_
-            filter_upwards with z
-            rw [twoPointXiShiftKernel_eq_twoPointFixedTimeCenterDiffKernel_local
-              (d := d) G t]
+  simpa using
+    fixedTimeCenterDiff_productShell_pairing_eq_matrixElement_of_euclid_local
+      (d := d) OS lgc G hG_euclid (φ_seq n) (hφ_real n) (hφ_compact n) (hφ_neg n) t ht
 
 end OSReconstruction

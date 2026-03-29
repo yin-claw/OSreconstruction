@@ -3961,7 +3961,7 @@ theorem k2TimeParametricKernel_norm_le_of_pos_local
 pairing to the reduced one-variable Laplace-Fourier pairing on the positive-time
 difference cone. This is the exact bridge needed before the final OS-II
 boundary-value identification step. -/
-private theorem integral_k2ProbeWitness_mul_differenceLift_eq_reduced_pairing_local
+theorem integral_k2ProbeWitness_mul_differenceLift_eq_reduced_pairing_local
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
     (φ : SchwartzSpacetime d)
@@ -4027,7 +4027,7 @@ private theorem integral_k2ProbeWitness_mul_differenceLift_eq_reduced_pairing_lo
 /-- Combining the reduced pairing bridge with the packaged Bochner identity: the
 canonical probe witness already reproduces the weighted translated product-shell
 boundary functional on every positive-time compact-support difference shell. -/
-private theorem integral_k2ProbeWitness_mul_differenceLift_eq_translatedProductShell_pairing_local
+theorem integral_k2ProbeWitness_mul_differenceLift_eq_translatedProductShell_pairing_local
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
     (φ : SchwartzSpacetime d)
@@ -4091,7 +4091,7 @@ identification, and the descended difference-shell pairing formula are all
 available before the VI.1 regularization step. This is the per-probe version of
 the later existential package, and is the right input for a shrinking
 approximate-identity sequence. -/
-private theorem exists_k2_positiveTime_shell_package_of_negative_probe_local
+theorem exists_k2_positiveTime_shell_package_of_negative_probe_local
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
     (φ : SchwartzSpacetime d)
