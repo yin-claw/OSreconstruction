@@ -83,20 +83,17 @@ which removes the positivity requirement and makes U(0)=1 trivially true.
 
 | File | Status | Sorrys |
 |------|--------|--------|
-| `Unbounded/SpectralPowers.lean` | Isolated | 2 sorries + 4 axioms |
+| `Unbounded/SpectralPowers.lean` | ✅ Proved | 0 sorries, 0 axioms |
 
-**Sorries (2):**
-- `power_zero` — requires spectral support argument: P((-∞,0]) = 0 for positive T
-- `power_imaginary_unitary` — depends on `power_zero`
-
-**Axiom declarations (4):**
+**All 4 former axioms are now fully proved theorems:**
 - `unitaryGroup_hasDerivAt_dom` — spectral differentiation (Reed-Simon VIII.7(c))
 - `unitaryGroup_preserves_domain` — U(t) preserves dom(T)
 - `unitaryGroup_commutes_with_generator` — U(t) commutes with T on dom(T)
 - `unitaryGroup_generator_domain_eq` — generator domain characterization
 
-These are **not referenced** by any file outside `SpectralPowers.lean`. They were superseded
-when `unitaryGroup` was redefined to use `exp(itλ)` directly.
+These are now fully proved using the spectral domain characterization
+(`mem_domain_iff_square_integrable`) and the resolvent-functional calculus
+connection (`resolvent_eq_functionalCalculus`).
 
 ### Stone's Theorem — Nearly Complete
 
@@ -227,7 +224,7 @@ Spectral Theory (sorry-free chain)
 ├── Unbounded Operators
 │   ├── Basic ✅, Graph ✅
 │   ├── Spectral ✅ (fully sorry-free)
-│   ├── SpectralPowers (2 sorrys + 4 axioms: power_zero, power_imaginary_unitary — isolated, not used)
+│   ├── SpectralPowers ✅ (0 sorrys, 0 axioms — all 4 spectral axioms proved)
 │   └── StoneTheorem ✅ (1 sorry: timeEvolution_generator — not used in main chain)
 │       │
 │       ▼
