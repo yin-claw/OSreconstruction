@@ -101,6 +101,30 @@ This is the strengthened upstream surface needed by the `k = 2` diff-block
 route: once `S₁` is chosen as a globally translation-invariant analytic
 continuation witness, the flattened witness `G := S₁ ∘ fromDiffFlat` becomes
 diff-block-dependent automatically. -/
+theorem schwinger_continuation_base_step_acrOne_productTensor_assembly_with_translationInvariant
+    {d : ℕ} [NeZero d]
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (k : ℕ) :
+    ∃ (S_prod : (Fin k → Fin (d + 1) → ℂ) → ℂ),
+      DifferentiableOn ℂ S_prod (AnalyticContinuationRegion d k 1) ∧
+      (∀ (fs : Fin k → SchwartzSpacetime d)
+          (hvanish : VanishesToInfiniteOrderOnCoincidence (SchwartzMap.productTensor fs)),
+        OS.S k ⟨SchwartzMap.productTensor fs, hvanish⟩ =
+          ∫ x : NPointDomain d k,
+            S_prod (fun j => wickRotatePoint (x j)) *
+              (SchwartzMap.productTensor fs) x) ∧
+      (∀ (z : Fin k → Fin (d + 1) → ℂ) (a : Fin (d + 1) → ℂ),
+        S_prod (fun j => z j + a) = S_prod z) := by
+  exact exists_acrOne_productTensor_witness (d := d) OS lgc k
+
+/-- `ACR(1)` assembly together with the common complex translation invariance
+of the chosen witness.
+
+This is the strengthened upstream surface needed by the `k = 2` diff-block
+route: once `S₁` is chosen as a globally translation-invariant analytic
+continuation witness, the flattened witness `G := S₁ ∘ fromDiffFlat` becomes
+diff-block-dependent automatically. -/
 theorem schwinger_continuation_base_step_acrOne_assembly_with_translationInvariant
     {d : ℕ} [NeZero d]
     (OS : OsterwalderSchraderAxioms d)

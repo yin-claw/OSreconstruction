@@ -964,8 +964,35 @@ probe-Euclid route with the strengthened upstream translation-invariant
 common witness.
 
 At this point the witness, Euclidean reproduction, and diff-block dependence
-are already fixed in production. The only remaining analytic content is the
-strip polynomial bound for the lifted common slice attached to that witness. -/
+are already fixed in production. The only remaining analytic content is a
+polynomial bound for the ordinary `k = 2` time-parametric kernel of that
+witness on the explicit zero-center shifted section `![(0), ξ + 2s e₀]`. -/
+private theorem exists_common_k2TimeParametricKernel_zeroCenterShift_bound_local
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (s : ℝ)
+    (hs : 0 < s) :
+    ∃ (C_bd : ℝ) (N : ℕ),
+      0 < C_bd ∧
+      (∀ ξ : SpacetimeDim d, -(s + s) < ξ 0 →
+        ‖k2TimeParametricKernel (d := d)
+            (commonDiffWitness_local (d := d) OS lgc)
+            (![(0 : SpacetimeDim d), ξ + timeShiftVec d (s + s)] : NPointDomain d 2)‖ ≤
+          C_bd * (1 + ‖ξ‖) ^ N) := by
+  /-
+  This is the genuine remaining analytic gap in the corrected Input A route.
+  The witness is now fixed by the strengthened upstream theorem and already
+  carries the needed Euclidean reproduction plus diff-block dependence. What
+  remains is only the strip polynomial bound for the ordinary common witness
+  evaluated on the explicit zero-center shifted section.
+  -/
+  sorry
+
+/-- Derived lifted-slice strip bound for the strengthened common witness.
+
+Once the common witness is bounded on the explicit zero-center shifted section,
+the current lifted-slice strip estimate follows formally from the existing
+diff-block support theorem. -/
 private theorem exists_common_lifted_difference_slice_strip_bound_local
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
@@ -977,13 +1004,20 @@ private theorem exists_common_lifted_difference_slice_strip_bound_local
         ‖OSReconstruction.commonLiftedDifferenceSliceKernel_local
             (d := d) (commonDiffWitness_local (d := d) OS lgc) s (z 1)‖ ≤
           C_bd * (1 + ‖z‖) ^ N) := by
-  /-
-  This is the genuine remaining analytic gap in the corrected Input A route.
-  The witness is now fixed by the strengthened upstream theorem and already
-  carries the needed Euclidean reproduction plus diff-block dependence.
-  What remains is only the strip polynomial bound for the lifted common slice.
-  -/
-  sorry
+  have hGpkg := by
+    simpa [commonDiffWitness_local] using
+      (Classical.choose_spec
+        (OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_local
+          (d := d) OS lgc))
+  rcases hGpkg with ⟨_hG_holo, _hG_euclid, hG_diff⟩
+  obtain ⟨C_bd, N, hC, hK_bound⟩ :=
+    exists_common_k2TimeParametricKernel_zeroCenterShift_bound_local
+      (d := d) OS lgc s hs
+  exact
+    OSReconstruction.exists_common_lifted_difference_slice_strip_bound_of_k2TimeParametricKernel_zeroCenterShift_bound_of_diffBlockDependence_local
+      (d := d)
+      (commonDiffWitness_local (d := d) OS lgc)
+      hG_diff s C_bd N hC hK_bound
 
 /-- Honest remaining common-`G` Input A seam after replacing the false
 probe-Euclid route.

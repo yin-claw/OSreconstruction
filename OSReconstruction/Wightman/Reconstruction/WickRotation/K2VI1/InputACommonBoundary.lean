@@ -125,6 +125,103 @@ theorem commonLiftedDifferenceSliceKernel_continuousOn_local
   intro ξ hξ
   exact mapsTo_commonLiftedDifferenceSliceArg_tube_local (d := d) s hξ
 
+private theorem commonLiftedDifferenceSliceArg_im_mem_flatPositiveTimeDiffReal_local
+    (s : ℝ) {ξ : SpacetimeDim d}
+    (hξ : -(s + s) < ξ 0) :
+    (fun i => (commonLiftedDifferenceSliceArg_local (d := d) s ξ i).im) ∈
+      FlatPositiveTimeDiffReal 2 d := by
+  change commonLiftedDifferenceSliceArg_local (d := d) s ξ ∈
+    SCV.TubeDomain (FlatPositiveTimeDiffReal 2 d)
+  exact mapsTo_commonLiftedDifferenceSliceArg_tube_local (d := d) s hξ
+
+private theorem norm_re_commonLiftedDifferenceSliceArg_le_local
+    (s : ℝ) (ξ : SpacetimeDim d) :
+    ‖fun i => (commonLiftedDifferenceSliceArg_local (d := d) s ξ i).re‖ ≤ ‖ξ‖ := by
+  refine (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 ?_
+  intro p
+  obtain ⟨q, rfl⟩ := finProdFinEquiv.surjective p
+  rcases q with ⟨i, μ⟩
+  fin_cases i
+  · by_cases hμ : μ = 0
+    · subst hμ
+      simp [commonLiftedDifferenceSliceArg_local, commonCenterTimeSlot_local]
+    · have hzero : (commonLiftedDifferenceSliceArg_local (d := d) s ξ
+        (finProdFinEquiv (⟨0, by omega⟩, μ))).re = 0 := by
+        simp [commonLiftedDifferenceSliceArg_local, commonCenterTimeSlot_local,
+          commonDiffTimeSlot_local, BHW.flattenCfg, wickRotatePoint, hμ]
+      rw [hzero, Real.norm_eq_abs, abs_zero]
+      exact norm_nonneg _
+  · by_cases hμ : μ = 0
+    · subst hμ
+      have hzero : (commonLiftedDifferenceSliceArg_local (d := d) s ξ
+        (finProdFinEquiv (⟨1, by omega⟩, (0 : Fin (d + 1))))).re = 0 := by
+        simp [commonLiftedDifferenceSliceArg_local, commonCenterTimeSlot_local,
+          commonDiffTimeSlot_local, BHW.flattenCfg, wickRotatePoint]
+      rw [hzero, Real.norm_eq_abs, abs_zero]
+      exact norm_nonneg _
+    · cases μ using Fin.cases with
+      | zero =>
+          exfalso
+          exact hμ rfl
+      | succ j =>
+          have hcoord :
+              (commonLiftedDifferenceSliceArg_local (d := d) s ξ
+                (finProdFinEquiv (⟨1, by omega⟩, j.succ))).re = ξ j.succ := by
+            simp [commonLiftedDifferenceSliceArg_local, commonCenterTimeSlot_local,
+              commonDiffTimeSlot_local, BHW.flattenCfg, wickRotatePoint]
+          rw [hcoord]
+          exact norm_le_pi_norm ξ j.succ
+
+/-- Direct common-witness temperedness reduction.
+
+If the flattened common witness `G` satisfies a global polynomial bound on the
+flat positive-time-difference tube, measured against the real part of the flat
+coordinates, then the current Input-A strip bound for the lifted common slice
+follows formally. This isolates the remaining honest common-side task from all
+comparison-kernel scaffolding. -/
+theorem exists_common_lifted_difference_slice_strip_bound_of_flat_tempered_global_local
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (s : ℝ)
+    (C_bd : ℝ) (N : ℕ)
+    (hC : 0 < C_bd)
+    (hflat_bound :
+      ∀ (x y : Fin (2 * (d + 1)) → ℝ),
+        y ∈ FlatPositiveTimeDiffReal 2 d →
+        ‖G (fun i => (x i : ℂ) + (y i : ℂ) * Complex.I)‖ ≤
+          C_bd * (1 + ‖x‖) ^ N) :
+    ∃ (C_bd' : ℝ) (N' : ℕ),
+      0 < C_bd' ∧
+      ∀ z : NPointDomain d 2, -(s + s) < z 1 0 →
+        ‖commonLiftedDifferenceSliceKernel_local (d := d) G s (z 1)‖ ≤
+          C_bd' * (1 + ‖z‖) ^ N' := by
+  refine ⟨C_bd, N, hC, ?_⟩
+  intro z hz
+  let xre : Fin (2 * (d + 1)) → ℝ := fun i =>
+    (commonLiftedDifferenceSliceArg_local (d := d) s (z 1) i).re
+  let yim : Fin (2 * (d + 1)) → ℝ := fun i =>
+    (commonLiftedDifferenceSliceArg_local (d := d) s (z 1) i).im
+  have hyim : yim ∈ FlatPositiveTimeDiffReal 2 d := by
+    simpa [yim] using
+      commonLiftedDifferenceSliceArg_im_mem_flatPositiveTimeDiffReal_local
+        (d := d) s hz
+  have hrepr :
+      commonLiftedDifferenceSliceArg_local (d := d) s (z 1) =
+        fun i => (xre i : ℂ) + (yim i : ℂ) * Complex.I := by
+    ext i
+    simp [xre, yim, Complex.ext_iff]
+  have hbase :
+      ‖commonLiftedDifferenceSliceKernel_local (d := d) G s (z 1)‖ ≤
+        C_bd * (1 + ‖xre‖) ^ N := by
+    rw [commonLiftedDifferenceSliceKernel_local, hrepr]
+    exact hflat_bound xre yim hyim
+  have hxre : ‖xre‖ ≤ ‖z 1‖ := by
+    simpa [xre] using
+      norm_re_commonLiftedDifferenceSliceArg_le_local (d := d) s (z 1)
+  have hz1 : ‖z 1‖ ≤ ‖z‖ := norm_le_pi_norm z 1
+  exact le_trans hbase <| by
+    gcongr
+    exact hxre.trans hz1
+
 /-- Generic difference-only shell identity for a fixed-strip kernel `K_s`. -/
 theorem differenceOnlyKernel_productShell_to_same_center_of_package_local
     (K_s : SpacetimeDim d → ℂ)

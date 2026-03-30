@@ -184,6 +184,47 @@ theorem exists_common_lifted_difference_slice_strip_bound_of_k2TimeParametricKer
   exact le_trans hsec <| by
     gcongr
 
+/-- Conditional strip-bound transfer from the concrete zero-center section to
+an arbitrary comparison kernel on the positive strip.
+
+This theorem is intentionally neutral about the source of the comparison
+kernel. It isolates the genuinely reusable logical step: once the common
+zero-center section is pointwise identified with some one-variable comparison
+kernel that already has a strip polynomial bound, the common lifted slice
+inherits the same bound under diff-block dependence. -/
+theorem exists_common_lifted_difference_slice_strip_bound_of_zeroCenterShift_eq_comparison_local
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_diff :
+      ∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (diffSlot_local (d := d) μ) = v (diffSlot_local (d := d) μ)) →
+        G u = G v)
+    (K_cmp : SpacetimeDim d → ℂ)
+    (s : ℝ)
+    (C_bd : ℝ) (N : ℕ)
+    (hC : 0 < C_bd)
+    (hK_bound : ∀ ξ : SpacetimeDim d, -(s + s) < ξ 0 →
+      ‖K_cmp ξ‖ ≤ C_bd * (1 + ‖ξ‖) ^ N)
+    (hsec_eq : ∀ ξ : SpacetimeDim d, -(s + s) < ξ 0 →
+      k2TimeParametricKernel (d := d) G
+          ![(0 : SpacetimeDim d), ξ + timeShiftVec d (s + s)] =
+        K_cmp ξ) :
+    ∃ (C_bd : ℝ) (N : ℕ),
+      0 < C_bd ∧
+      ∀ z : NPointDomain d 2, -(s + s) < z 1 0 →
+        ‖commonLiftedDifferenceSliceKernel_local (d := d) G s (z 1)‖ ≤
+          C_bd * (1 + ‖z‖) ^ N := by
+  have hsection_bound :
+      ∀ ξ : SpacetimeDim d, -(s + s) < ξ 0 →
+        ‖k2TimeParametricKernel (d := d) G
+            ![(0 : SpacetimeDim d), ξ + timeShiftVec d (s + s)]‖ ≤
+          C_bd * (1 + ‖ξ‖) ^ N := by
+    intro ξ hz
+    simpa [hsec_eq ξ hz] using hK_bound ξ hz
+  exact
+    exists_common_lifted_difference_slice_strip_bound_of_k2TimeParametricKernel_zeroCenterShift_bound_of_diffBlockDependence_local
+      (d := d) G hG_diff s C_bd N hC hsection_bound
+
 /-- A continuous kernel that is bounded almost everywhere by a constant is in
 fact bounded everywhere by the same constant. We use this to upgrade the
 standard fixed-time kernel bound package to a pointwise strip bound after
@@ -215,6 +256,53 @@ private theorem norm_le_of_continuous_ae_const_bound_local
   have hx_notU : x ∉ U := by
     simpa [hU_eq_empty]
   exact hx_notU hxU
+
+/-- Direct zero-center-section payoff from the ordinary fixed-time kernel
+const-bound package.
+
+This matches the sharpened frontier surface exactly: once the common witness has
+the standard fixed-time kernel continuity/measurability/constant-bound package
+at time `2s`, the remaining root Input-A theorem is paid on the explicit
+section `![(0), ξ + 2s e₀]` without any additional slice geometry. -/
+theorem exists_common_k2TimeParametricKernel_zeroCenterShift_bound_of_twoPointFixedTimeKernel_constBound_local
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (s : ℝ)
+    (C_bd : ℝ)
+    (hC : 0 < C_bd)
+    (hK_cont : Continuous
+      (twoPointFixedTimeKernel (d := d) G ((((s + s) : ℂ) * Complex.I))))
+    (hK_meas : AEStronglyMeasurable
+      (twoPointFixedTimeKernel (d := d) G ((((s + s) : ℂ) * Complex.I))) volume)
+    (hK_bound : ∀ᵐ x : NPointDomain d 2 ∂volume,
+      ‖twoPointFixedTimeKernel (d := d) G ((((s + s) : ℂ) * Complex.I)) x‖ ≤ C_bd) :
+    ∃ (C_bd' : ℝ) (N : ℕ),
+      0 < C_bd' ∧
+      ∀ ξ : SpacetimeDim d, -(s + s) < ξ 0 →
+        ‖k2TimeParametricKernel (d := d) G
+            (![(0 : SpacetimeDim d), ξ + timeShiftVec d (s + s)] : NPointDomain d 2)‖ ≤
+          C_bd' * (1 + ‖ξ‖) ^ N := by
+  obtain ⟨hK₂_cont, _hK₂_meas, hK₂_bound_ae⟩ :=
+    exists_constBound_package_twoPointFixedTimeCenterDiffKernel_local
+      (d := d) G ((((s + s) : ℂ) * Complex.I)) hK_cont hK_meas C_bd hK_bound
+  have hK₂_bound :
+      ∀ z : NPointDomain d 2,
+        ‖twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((((s + s) : ℂ) * Complex.I)) z‖ ≤ C_bd :=
+    norm_le_of_continuous_ae_const_bound_local
+      (d := d)
+      (twoPointFixedTimeCenterDiffKernel_local
+        (d := d) G ((((s + s) : ℂ) * Complex.I)))
+      hK₂_cont C_bd hK₂_bound_ae
+  refine ⟨C_bd, 0, hC, ?_⟩
+  intro ξ _hξ
+  have hbase :
+      ‖twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((((s + s) : ℂ) * Complex.I))
+          (![(0 : SpacetimeDim d), ξ] : NPointDomain d 2)‖ ≤ C_bd :=
+    hK₂_bound ![(0 : SpacetimeDim d), ξ]
+  rw [k2TimeParametricKernel_eq_twoPointFixedTimeCenterDiffKernel_on_zeroCenterSection_local
+      (d := d) G (s + s) ξ]
+  simpa using hbase
 
 /-- If the common witness already depends only on the full diff block, then the
 common-`G` root Input-A seam reduces to the strip bound alone: the reflected
@@ -350,6 +438,64 @@ theorem exists_common_lifted_difference_slice_productShell_package_of_diffBlockD
   exact
     commonLiftedDifferenceSlice_productShell_pairing_of_diffBlockDependence_local
       (d := d) (φ_seq n) (hφ_compact n) (hφ_neg n) G hG_diff s
+
+/-- Direct common-side packaging of the corrected Input-A route.
+
+Once the chosen diff-block-dependent common witness carries a global
+flat-tempered polynomial bound on the positive-time-difference tube, the whole
+current common-`G` package follows automatically: the strip bound is provided by
+`InputACommonBoundary`, and the reflected product-shell pairing is then derived
+formally from diff-block dependence. -/
+theorem exists_common_lifted_difference_slice_productShell_package_of_flat_tempered_global_and_diffBlockDependence_local
+    (OS : OsterwalderSchraderAxioms d)
+    (φ_seq : ℕ → SchwartzSpacetime d)
+    (hφ_compact : ∀ n, HasCompactSupport (φ_seq n : SpacetimeDim d → ℂ))
+    (hφ_neg : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆
+      {x : SpacetimeDim d | x 0 < 0})
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_holo : IsTimeHolomorphicFlatPositiveTimeDiffWitness G)
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
+    (hG_diff :
+      ∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (diffSlot_local (d := d) μ) = v (diffSlot_local (d := d) μ)) →
+        G u = G v)
+    (s : ℝ)
+    (C_bd : ℝ) (N : ℕ)
+    (hC : 0 < C_bd)
+    (hflat_bound :
+      ∀ (x y : Fin (2 * (d + 1)) → ℝ),
+        y ∈ FlatPositiveTimeDiffReal 2 d →
+        ‖G (fun i => (x i : ℂ) + (y i : ℂ) * Complex.I)‖ ≤
+          C_bd * (1 + ‖x‖) ^ N) :
+    ∃ (G' : (Fin (2 * (d + 1)) → ℂ) → ℂ) (C_bd' : ℝ) (N' : ℕ),
+      IsTimeHolomorphicFlatPositiveTimeDiffWitness G' ∧
+      (∀ (f : ZeroDiagonalSchwartz d 2),
+        OS.S 2 f = ∫ x : NPointDomain d 2,
+          G' (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x)) ∧
+      0 < C_bd' ∧
+      (∀ z : NPointDomain d 2, -(s + s) < z 1 0 →
+        ‖commonLiftedDifferenceSliceKernel_local (d := d) G' s (z 1)‖ ≤
+          C_bd' * (1 + ‖z‖) ^ N') ∧
+      (∀ n,
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G' ((((s + s) : ℂ) * Complex.I)) z *
+            ((φ_seq n) (z 0) *
+              reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1)) =
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G' s (z 1) *
+            ((φ_seq n) (z 0) *
+              reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1))) := by
+  obtain ⟨C_bd', N', hC', hK_bound⟩ :=
+    exists_common_lifted_difference_slice_strip_bound_of_flat_tempered_global_local
+      (d := d) G s C_bd N hC hflat_bound
+  exact
+    exists_common_lifted_difference_slice_productShell_package_of_diffBlockDependence_local
+      (d := d) OS φ_seq hφ_compact hφ_neg G hG_holo hG_euclid hG_diff s
+      C_bd' N' hC' hK_bound
 
 /-- If a diff-block-dependent witness has the standard fixed-time kernel
 continuity/measurability/constant-bound package, then the full common-`G`
