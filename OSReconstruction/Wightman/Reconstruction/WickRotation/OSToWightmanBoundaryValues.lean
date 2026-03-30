@@ -13,7 +13,7 @@ This file continues the `E'→R'` reconstruction chain after
 
 - tempered boundary values on the forward tube
 - transfer of the Wightman axioms from the OS side
-- the bridge theorems `wightman_to_os_full` and `os_to_wightman_full`
+- the honest bridge theorem `os_to_wightman_boundary_values`
 
 The semigroup and analytic-continuation stack now lives across
 `OSToWightmanSemigroup.lean`, `OSToWightmanBase.lean`, and
@@ -533,6 +533,39 @@ theorem bvt_hermitian (OS : OsterwalderSchraderAxioms d)
     (OS.E0_reality n)
     f g hfg
 
+/-- Cluster-free Wightman-side package extracted from the OS boundary values.
+
+This keeps exactly the structure already justified by the current formalized
+boundary-value and transfer chain. The full `WightmanFunctions` record still
+requires the separate cluster theorem `bvt_cluster`, so it is intentionally not
+constructed here. -/
+structure BoundaryValueWightmanData (d : ℕ) [NeZero d] where
+  W : (n : ℕ) → SchwartzNPoint d n → ℂ
+  linear : ∀ n, IsLinearMap ℂ (W n)
+  tempered : ∀ n, Continuous (W n)
+  normalized : IsNormalized d W
+  translation_invariant : IsTranslationInvariantWeak d W
+  lorentz_covariant : IsLorentzCovariantWeak d W
+  spectrum_condition : ∀ (n : ℕ),
+    ∃ (W_analytic : (Fin n → Fin (d + 1) → ℂ) → ℂ),
+      DifferentiableOn ℂ W_analytic (ForwardTube d n) ∧
+      (∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
+        InForwardCone d n η →
+        Filter.Tendsto
+          (fun ε : ℝ => ∫ x : NPointDomain d n,
+            W_analytic (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
+          (nhdsWithin 0 (Set.Ioi 0))
+          (nhds (W n f)))
+  locally_commutative : IsLocallyCommutativeWeak d W
+  positive_definite : IsPositiveDefinite d W
+  hermitian : ∀ (n : ℕ) (f g : SchwartzNPoint d n),
+    (∀ x : NPointDomain d n,
+      g.toFun x = starRingEnd ℂ (f.toFun (fun i => x (Fin.rev i)))) →
+    W n g = starRingEnd ℂ (W n f)
+
+/-- The full cluster transfer remains the only missing theorem needed to upgrade
+`BoundaryValueWightmanData` to `WightmanFunctions`. It is kept as an explicit
+frontier theorem rather than being silently packaged into a false export. -/
 theorem bvt_cluster (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) :
     ∀ (n m : ℕ) (f : SchwartzNPoint d n) (g : SchwartzNPoint d m),
@@ -544,9 +577,9 @@ theorem bvt_cluster (OS : OsterwalderSchraderAxioms d)
               bvt_W OS lgc n f * bvt_W OS lgc m g‖ < ε := by
   sorry
 
-def constructWightmanFunctions (OS : OsterwalderSchraderAxioms d)
+def constructBoundaryValueWightmanData (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) :
-    WightmanFunctions d where
+    BoundaryValueWightmanData d where
   W := bvt_W OS lgc
   linear := fun n => (boundary_values_tempered OS lgc n).choose_spec.choose_spec.2.1
   tempered := fun n => (boundary_values_tempered OS lgc n).choose_spec.choose_spec.1
@@ -561,7 +594,6 @@ def constructWightmanFunctions (OS : OsterwalderSchraderAxioms d)
   locally_commutative := bvt_locally_commutative OS lgc
   positive_definite := bvt_positive_definite OS lgc
   hermitian := bvt_hermitian OS lgc
-  cluster := bvt_cluster OS lgc
 
 /-- The OS pre-Hilbert space constructed from the Wightman functions obtained
     data. -/
@@ -591,11 +623,19 @@ theorem wightman_to_os_full (Wfn : WightmanFunctions d) :
   · intro f η hη
     exact bhw_distributional_boundary_values Wfn f η hη
 
-theorem os_to_wightman_full (OS : OsterwalderSchraderAxioms d)
+/-- Honest current `E'→R'` export surface.
+
+The updated upstream `k = 2` VI.1 route now lands the Euclidean-restriction and
+boundary-value package via the common-witness seam, so the false probe-root
+dependency is gone. What still remains downstream is the separate cluster
+transport theorem `bvt_cluster`. Until that theorem is proved, the mathematically
+honest public output is the cluster-free boundary-value package together with the
+Wick-rotation pairing, not a full `WightmanFunctions` record. -/
+theorem os_to_wightman_boundary_values (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) :
-    ∃ (Wfn : WightmanFunctions d),
-      IsWickRotationPair OS.schwinger Wfn.W := by
-  refine ⟨constructWightmanFunctions OS lgc, fun n => ?_⟩
+    ∃ (Wdata : BoundaryValueWightmanData d),
+      IsWickRotationPair OS.schwinger Wdata.W := by
+  refine ⟨constructBoundaryValueWightmanData OS lgc, fun n => ?_⟩
   have h := (boundary_values_tempered OS lgc n).choose_spec.choose_spec
   exact ⟨(boundary_values_tempered OS lgc n).choose_spec.choose,
     h.2.2.1, h.2.2.2.1, fun f => by

@@ -2448,6 +2448,7 @@ def IsWickRotationPair {d : ℕ} [NeZero d]
         F_analytic (fun k => wickRotatePoint (x k)) * (f.1 x))
 
 -- `wightman_to_os` and `os_to_wightman` moved to Reconstruction/Main.lean
--- (proved via WickRotation.lean: wightman_to_os_full, os_to_wightman_full)
+-- (proved via WickRotation.lean: wightman_to_os_full,
+--   os_to_wightman_boundary_values)
 
 end

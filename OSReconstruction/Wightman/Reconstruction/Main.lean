@@ -25,9 +25,10 @@ proofs from the GNS construction and Wick rotation modules.
   Euclidean Schwinger family on the Euclidean side
   (Proof: `wightman_to_os_full` in WickRotation.lean)
 
-* `os_to_wightman` — Theorem E'→R': corrected OS axioms with linear growth →
-  Wightman functions
-  (Proof: `os_to_wightman_full` in WickRotation.lean)
+* `os_to_wightman` — Honest current E'→R' export: corrected OS axioms with
+  linear growth → cluster-free Wightman-side boundary-value package plus the
+  Wick-rotation pairing
+  (Proof: `os_to_wightman_boundary_values` in WickRotation.lean)
 
 ## Import Structure
 
@@ -100,9 +101,10 @@ theorem wightman_to_os (Wfn : WightmanFunctions d) :
       IsWickRotationPair S Wfn.W :=
   wightman_to_os_full Wfn
 
-/-- **Theorem E'→R'** (OS II): Schwinger functions satisfying the linear growth
-    condition E0' together with E1-E4 can be analytically continued to
-    Wightman distributions satisfying R0-R5.
+/-- Honest current **E'→R'** export: Schwinger functions satisfying the linear
+    growth condition E0' together with E1-E4 can be analytically continued to a
+    cluster-free Wightman-side boundary-value package, plus the Wick-rotation
+    pairing on the zero-diagonal Euclidean side.
 
     **Critical**: Without the linear growth condition, this theorem may be FALSE.
     The issue is that analytic continuation involves infinitely many Sₖ, and
@@ -114,13 +116,15 @@ theorem wightman_to_os (Wfn : WightmanFunctions d) :
     false full-Schwartz Euclidean axiom.
 
     The main mathematical content is exactly the hard passage from Euclidean
-    Schwinger data on `ZeroDiagonalSchwartz` to full tempered Wightman
-    distributions on Schwartz space. If that passage were already built into the
-    Euclidean hypothesis, there would be little OS reconstruction left to prove. -/
+    Schwinger data on `ZeroDiagonalSchwartz` to tempered Minkowski boundary
+    values on Schwartz space, together with the transferred Wightman-side
+    axioms that do not require clustering. The remaining gap to a full
+    `WightmanFunctions` record is the downstream cluster export, which is
+    intentionally not claimed here until `bvt_cluster` is actually proved. -/
 theorem os_to_wightman (OS : OsterwalderSchraderAxioms d)
     (linear_growth : OSLinearGrowthCondition d OS) :
-    ∃ (Wfn : WightmanFunctions d),
-      IsWickRotationPair OS.schwinger Wfn.W :=
-  os_to_wightman_full OS linear_growth
+    ∃ (Wdata : BoundaryValueWightmanData d),
+      IsWickRotationPair OS.schwinger Wdata.W :=
+  os_to_wightman_boundary_values OS linear_growth
 
 end

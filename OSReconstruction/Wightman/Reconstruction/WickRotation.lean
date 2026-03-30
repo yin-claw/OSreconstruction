@@ -23,8 +23,9 @@ import OSReconstruction.Wightman.Reconstruction.WickRotation.WickRotationBridge
 This module develops the infrastructure for the Osterwalder-Schrader bridge theorems:
 - **Theorem R→E** (`wightman_to_os_full`): Wightman functions → honest
   zero-diagonal Euclidean Schwinger family via Wick rotation
-- **Theorem E'→R'** (`os_to_wightman_full`): OS axioms + linear growth →
-  Wightman functions (the corrected OS II reconstruction surface)
+- **Honest current E'→R' export** (`os_to_wightman_boundary_values`): OS axioms
+  + linear growth → cluster-free Wightman-side boundary-value package
+  together with the Wick-rotation pairing
 
 The correction to keep in mind throughout this folder is that Euclidean kernels
 may have genuine coincidence singularities. The honest OS-I pairing is therefore
@@ -73,8 +74,9 @@ The implementation is split across several files in the `WickRotation/` subfolde
 - `K2VI1/Frontier.lean`: isolated OS II VI.1 regularization /
   boundary-identification frontier for the remaining `k = 2` base step
 - `OSToWightman.lean`: general E'→R' continuation core and base-step wrappers
-- `OSToWightmanBoundaryValues.lean`: boundary-value package, axiom transfer,
-  and bridge theorems
+- `OSToWightmanBoundaryValues.lean`: cluster-free boundary-value export,
+  transferred Wightman-side axioms, the explicit `bvt_cluster` frontier, and
+  the honest current E'→R' export theorem
 - `WickRotationBridge.lean`: one-variable Wick-rotation identities transporting
   `{Re z > 0}` holomorphicity to `{Im u > 0}`
 
