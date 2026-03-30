@@ -15,6 +15,7 @@ import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAOneVari
 import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAShiftedRepresentative
 import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAWitness
 import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputACommonBoundary
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputADiffBlock
 import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.DCT
 
 /-!
@@ -935,60 +936,66 @@ private theorem exists_fixed_strip_common_difference_kernel_local
           exact OSReconstruction.integral_twoPointDifferenceKernel_mul_differenceLift_factorizes
             (d := d) K_s χ₀ hdesc_n -/
 
-private theorem exists_common_lifted_difference_slice_strip_bound_and_productShell_pairing_local
+private def commonDiffWitness_local
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    (Fin (2 * (d + 1)) → ℂ) → ℂ :=
+  Classical.choose
+    (OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_local
+      (d := d) OS lgc)
+
+private theorem commonDiffWitness_spec_local
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    IsTimeHolomorphicFlatPositiveTimeDiffWitness
+        (commonDiffWitness_local (d := d) OS lgc) ∧
+      (∀ (f : ZeroDiagonalSchwartz d 2),
+        OS.S 2 f = ∫ x : NPointDomain d 2,
+          commonDiffWitness_local (d := d) OS lgc
+            (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x)) := by
+  have hspec := Classical.choose_spec
+      (OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_local
+        (d := d) OS lgc)
+  exact ⟨by simpa [commonDiffWitness_local] using hspec.1,
+    by simpa [commonDiffWitness_local] using hspec.2.1⟩
+
+/-- Honest remaining common-`G` Input A seam after replacing the false
+probe-Euclid route with the strengthened upstream translation-invariant
+common witness.
+
+At this point the witness, Euclidean reproduction, and diff-block dependence
+are already fixed in production. The only remaining analytic content is the
+strip polynomial bound for the lifted common slice attached to that witness. -/
+private theorem exists_common_lifted_difference_slice_strip_bound_local
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
-    (φ_seq : ℕ → SchwartzSpacetime d)
-    (hφ_real : ∀ n x, (φ_seq n x).im = 0)
-    (hφ_compact : ∀ n, HasCompactSupport (φ_seq n : SpacetimeDim d → ℂ))
-    (hφ_neg : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆
-      {x : SpacetimeDim d | x 0 < 0})
-    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
-    (hG_holo : IsTimeHolomorphicFlatPositiveTimeDiffWitness G)
-    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
-      OS.S 2 f = ∫ x : NPointDomain d 2,
-        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
     (s : ℝ)
     (hs : 0 < s) :
     ∃ (C_bd : ℝ) (N : ℕ),
       0 < C_bd ∧
       (∀ z : NPointDomain d 2, -(s + s) < z 1 0 →
-        ‖OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s (z 1)‖ ≤
-          C_bd * (1 + ‖z‖) ^ N) ∧
-      (∀ n,
-        ∫ z : NPointDomain d 2,
-          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
-            (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
-            ((φ_seq n) (z 0) *
-              reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1)) =
-        ∫ z : NPointDomain d 2,
-          OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s (z 1) *
-            ((φ_seq n) (z 0) *
-              reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1))) := by
+        ‖OSReconstruction.commonLiftedDifferenceSliceKernel_local
+            (d := d) (commonDiffWitness_local (d := d) OS lgc) s (z 1)‖ ≤
+          C_bd * (1 + ‖z‖) ^ N) := by
   /-
   This is the genuine remaining analytic gap in the corrected Input A route.
-  The witness `G` and the fixed-time product-shell representation are already
-  available; what remains is to transfer the common witness to the lifted
-  difference-only slice with the strip bound needed for the CLM package.
+  The witness is now fixed by the strengthened upstream theorem and already
+  carries the needed Euclidean reproduction plus diff-block dependence.
+  What remains is only the strip polynomial bound for the lifted common slice.
   -/
   sorry
 
-/-- Honest remaining common-`G` Input A seam after removing the false
+/-- Honest remaining common-`G` Input A seam after replacing the false
 probe-Euclid route.
 
-Once the global common witness `G` is fixed, the only remaining content is:
-1. a strip polynomial bound for the lifted common slice;
-2. product-shell pairing equality between the common fixed-time kernel and that
-   lifted slice.
-
-The common witness itself and the fixed-time product-shell formula already come
-from the existing production theorem
-`exists_common_fixed_strip_fixedTimeCenterDiff_productShell_pairing_with_witness_local`. -/
+The strengthened upstream witness now already carries the `k = 2` diff-block
+dependence needed to identify the reflected product-shell pairing. So the root
+analytic work has been reduced to the strip bound alone, and the product-shell
+pairing is derived formally from `InputADiffBlock`. -/
 private theorem exists_common_lifted_difference_slice_productShell_package_local
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
     (φ_seq : ℕ → SchwartzSpacetime d)
-    (hφ_real : ∀ n x, (φ_seq n x).im = 0)
     (hφ_compact : ∀ n, HasCompactSupport (φ_seq n : SpacetimeDim d → ℂ))
     (hφ_neg : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆
       {x : SpacetimeDim d | x 0 < 0})
@@ -1013,13 +1020,22 @@ private theorem exists_common_lifted_difference_slice_productShell_package_local
           OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s (z 1) *
             ((φ_seq n) (z 0) *
               reflectedSchwartzSpacetime (d := d) (φ_seq n) (z 0 + z 1))) := by
-  obtain ⟨G, hG_holo, hG_euclid, _hprod_fixed⟩ :=
-    OSReconstruction.exists_common_fixed_strip_fixedTimeCenterDiff_productShell_pairing_with_witness_local
-      (d := d) OS lgc φ_seq hφ_real hφ_compact hφ_neg (s + s) (add_pos hs hs)
-  obtain ⟨C_bd, N, hC, hK_bound, hprod_pair⟩ :=
-    exists_common_lifted_difference_slice_strip_bound_and_productShell_pairing_local
-      (d := d) OS lgc φ_seq hφ_real hφ_compact hφ_neg G hG_holo hG_euclid s hs
-  exact ⟨G, C_bd, N, hG_holo, hG_euclid, hC, hK_bound, hprod_pair⟩
+  have hspec := commonDiffWitness_spec_local (d := d) OS lgc
+  rcases hspec with ⟨hG_holo, hG_euclid⟩
+  have hGpkg := by
+    simpa [commonDiffWitness_local] using
+      (Classical.choose_spec
+        (OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_local
+          (d := d) OS lgc))
+  rcases hGpkg with ⟨_hG_holo', _hG_euclid', hG_diff⟩
+  obtain ⟨C_bd, N, hC, hK_bound⟩ :=
+    exists_common_lifted_difference_slice_strip_bound_local
+      (d := d) OS lgc s hs
+  exact
+    OSReconstruction.exists_common_lifted_difference_slice_productShell_package_of_diffBlockDependence_local
+      (d := d) OS φ_seq hφ_compact hφ_neg
+      (commonDiffWitness_local (d := d) OS lgc)
+      hG_holo hG_euclid hG_diff s C_bd N hC hK_bound
 
 private theorem exists_fixed_strip_diagonal_limit_local
     (OS : OsterwalderSchraderAxioms d)
@@ -1053,7 +1069,7 @@ private theorem exists_fixed_strip_diagonal_limit_local
         (nhds z) := by
   obtain hpkg :=
     exists_common_lifted_difference_slice_productShell_package_local
-      (d := d) OS lgc φ_seq hφ_real hφ_compact hφ_neg s hs
+      (d := d) OS lgc φ_seq hφ_compact hφ_neg s hs
   exact
     OSReconstruction.exists_fixed_strip_diagonal_limit_of_common_lifted_difference_slice_productShell_package_local
       (d := d) OS lgc χ₀ hχ₀ φ_seq hφ_nonneg hφ_real hφ_int hφ_ball

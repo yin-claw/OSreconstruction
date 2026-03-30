@@ -43,7 +43,9 @@ private theorem exists_acrOne_productTensor_witness {d : ℕ} [NeZero d]
         OS.S k ⟨SchwartzMap.productTensor fs, hvanish⟩ =
           ∫ x : NPointDomain d k,
             S_prod (fun j => wickRotatePoint (x j)) *
-              (SchwartzMap.productTensor fs) x) := by
+              (SchwartzMap.productTensor fs) x) ∧
+      (∀ (z : Fin k → Fin (d + 1) → ℂ) (a : Fin (d + 1) → ℂ),
+        S_prod (fun j => z j + a) = S_prod z) := by
   sorry
 
 /-- Second general-`k` ACR(1) subproblem: upgrade the product-tensor witness to
@@ -85,9 +87,35 @@ private theorem schwinger_continuation_base_step_acrOne_assembly {d : ℕ} [NeZe
       (∀ (f : ZeroDiagonalSchwartz d k),
         OS.S k f = ∫ x : NPointDomain d k,
           S_ext (fun j => wickRotatePoint (x j)) * (f.1 x)) := by
-  obtain ⟨S_prod, hS_prod_holo, hS_prod_prod⟩ :=
+  obtain ⟨S_prod, hS_prod_holo, hS_prod_prod, _hS_prod_trans⟩ :=
     exists_acrOne_productTensor_witness (d := d) OS lgc k
   refine ⟨S_prod, hS_prod_holo, ?_⟩
+  exact
+    acrOne_productTensor_witness_extends_zeroDiagonal
+      (d := d) OS k S_prod hS_prod_holo hS_prod_prod
+
+/-- `ACR(1)` assembly together with the common complex translation invariance
+of the chosen witness.
+
+This is the strengthened upstream surface needed by the `k = 2` diff-block
+route: once `S₁` is chosen as a globally translation-invariant analytic
+continuation witness, the flattened witness `G := S₁ ∘ fromDiffFlat` becomes
+diff-block-dependent automatically. -/
+theorem schwinger_continuation_base_step_acrOne_assembly_with_translationInvariant
+    {d : ℕ} [NeZero d]
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (k : ℕ) :
+    ∃ (S_ext : (Fin k → Fin (d + 1) → ℂ) → ℂ),
+      DifferentiableOn ℂ S_ext (AnalyticContinuationRegion d k 1) ∧
+      (∀ (f : ZeroDiagonalSchwartz d k),
+        OS.S k f = ∫ x : NPointDomain d k,
+          S_ext (fun j => wickRotatePoint (x j)) * (f.1 x)) ∧
+      (∀ (z : Fin k → Fin (d + 1) → ℂ) (a : Fin (d + 1) → ℂ),
+        S_ext (fun j => z j + a) = S_ext z) := by
+  obtain ⟨S_prod, hS_prod_holo, hS_prod_prod, hS_prod_trans⟩ :=
+    exists_acrOne_productTensor_witness (d := d) OS lgc k
+  refine ⟨S_prod, hS_prod_holo, ?_, hS_prod_trans⟩
   exact
     acrOne_productTensor_witness_extends_zeroDiagonal
       (d := d) OS k S_prod hS_prod_holo hS_prod_prod
