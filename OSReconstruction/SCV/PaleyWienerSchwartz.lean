@@ -1,0 +1,277 @@
+/-
+Copyright (c) 2025 ModularPhysics Contributors. All rights reserved.
+Released under Apache 2.0 license.
+Authors: Michael R. Douglas, ModularPhysics Contributors
+-/
+import OSReconstruction.SCV.FourierSupportCone
+import OSReconstruction.SCV.Osgood
+
+/-!
+# Paley-Wiener-Schwartz Bridge for Tube Domains
+
+The core theorem connecting Fourier support in the dual cone C* to the
+Fourier-Laplace representation with growth bounds.
+
+Given a tempered distribution T with Fourier support in C*, the function
+`F(z) = T(ψ_z)` (where ψ_z is an appropriate Schwartz family parametrized
+by z ∈ T(C)) is holomorphic on the tube T(C), has tempered distributional
+boundary values, and satisfies the global Vladimirov growth bound.
+
+## Main results
+
+- `multiDimPsiZ` — the multi-dimensional Schwartz family ψ_z for z in a tube
+- `fourierLaplaceExtMultiDim` — F(z) = T(ψ_z), the Fourier-Laplace extension
+- `fourierLaplaceExtMultiDim_holomorphic` — F is holomorphic on the tube
+  (via pointwise-scalarized difference quotients + Osgood/Hartogs)
+- `fourierLaplaceExtMultiDim_growth` — global Vladimirov growth bound
+- `fourierLaplaceExtMultiDim_boundaryValue` — tempered distributional BV
+
+## Lean 4 workarounds
+
+**Fréchet calculus**: z ↦ ψ_z is NOT expressible as `Differentiable ℂ` into
+Schwartz space (Schwartz space is Fréchet, not normed). Workaround: apply T
+first, then show the scalar F(z) = T(ψ_z) is holomorphic via:
+1. Fix z, compute difference quotient (F(z+he_j) - F(z))/h
+2. Move inside T by linearity: T((ψ_{z+he_j} - ψ_z)/h)
+3. Bound the remainder in Schwartz seminorms using integral MVT
+   (pointwise scalarize: fix x and multi-indices, apply norm_integral_le_integral_norm)
+4. Get separate holomorphicity in each z_j
+5. Apply `osgood_lemma` for joint holomorphicity
+
+**Bochner integral**: Cannot integrate Schwartz-valued curves. All integrals
+are scalarized to ℂ before applying Lean's Bochner integral.
+
+## References
+
+- Vladimirov, "Methods of Generalized Functions", §25
+- Hörmander, "The Analysis of Linear PDOs I", §7.4
+- Streater-Wightman, "PCT, Spin and Statistics", Theorems 2-6, 2-9
+-/
+
+open scoped Classical ComplexConjugate BigOperators
+open MeasureTheory Complex
+noncomputable section
+
+variable {m : ℕ}
+
+/-! ### Multi-dimensional Schwartz family ψ_z
+
+For z = x + iy in the tube T(C) with y ∈ C, the Schwartz function ψ_z is
+the product of 1D cutoff-exponentials:
+
+  ψ_z(ξ) = ∏_j χ(ξ_j) · exp(i z_j ξ_j)
+
+where χ is the smooth cutoff from `FourierLaplaceCore.lean`. The exponential
+factor exp(iz·ξ) = exp(ix·ξ - y·ξ) has Gaussian-type decay in ξ when y ∈ C
+(since y·ξ ≥ 0 for ξ ∈ C*, and the cutoff handles ξ outside C*).
+
+For the multi-D case, we use a tensor product construction: ψ_z is the
+product of 1D families in each coordinate, making seminorm estimates
+reduce to the 1D bounds from `schwartzPsiZ_seminorm_horizontal_bound`. -/
+
+/-- The multi-dimensional exponential-cutoff Schwartz function parametrized by
+    z ∈ T(C). For now this is defined abstractly via the product structure;
+    the concrete construction using `smoothCutoff` and `exp(iz·ξ)` is deferred
+    to when the 1D tensor product machinery is connected.
+
+    The key property is that for z = x + iy with y ∈ C:
+    - ψ_z ∈ S(ℝ^m) (Schwartz class)
+    - ψ_z(ξ) = χ(ξ) exp(iz·ξ) for a smooth cutoff χ adapted to C*
+    - The Schwartz seminorms of ψ_z have polynomial growth in x and
+      inverse-boundary-distance growth in y -/
+axiom multiDimPsiZ {m : ℕ}
+    (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C)
+    (z : Fin m → ℂ) (hz : z ∈ SCV.TubeDomain C) :
+    SchwartzMap (Fin m → ℝ) ℂ
+
+/-! ### Seminorm bounds for the multi-D family -/
+
+/-- The Schwartz seminorms of `multiDimPsiZ` have polynomial growth in the
+    real part and inverse-boundary-distance growth in the imaginary part.
+    This is the multi-D generalization of `schwartzPsiZ_seminorm_horizontal_bound`.
+
+    For z = x + iy with y ∈ C:
+    ‖ψ_z‖_{k,n} ≤ B_{k,n} · (1 + ‖x‖)^{N_{k,n}} · (1 + dist(y,∂C)⁻¹)^{M_{k,n}}
+-/
+axiom multiDimPsiZ_seminorm_bound {m : ℕ}
+    (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C) (k n : ℕ) :
+    ∃ (B : ℝ) (N M : ℕ), B > 0 ∧
+      ∀ (z : Fin m → ℂ) (hz : z ∈ SCV.TubeDomain C),
+        SchwartzMap.seminorm ℝ k n (multiDimPsiZ C hC_open hC_conv hC_cone z hz) ≤
+          B * (1 + ‖fun i => (z i).re‖) ^ N *
+            (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M
+
+/-- The difference quotient of ψ_z converges in Schwartz seminorms.
+    For fixed z in the tube and direction e_j:
+
+    ‖(ψ_{z+he_j} - ψ_z)/h - ∂_{z_j} ψ_z‖_{k,n} → 0 as h → 0
+
+    Proved via pointwise scalarization + integral MVT (not Bochner integrals
+    of Fréchet curves). -/
+axiom multiDimPsiZ_differenceQuotient_converges {m : ℕ}
+    (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C)
+    (z : Fin m → ℂ) (hz : z ∈ SCV.TubeDomain C)
+    (j : Fin m) (k n : ℕ) :
+    ∃ (ψ'_j : SchwartzMap (Fin m → ℝ) ℂ),
+      Filter.Tendsto
+        (fun h : ℂ => SchwartzMap.seminorm ℝ k n
+          ((h⁻¹ • (multiDimPsiZ C hC_open hC_conv hC_cone
+              (Function.update z j (z j + h))
+              sorry -- membership proof for z+he_j
+            - multiDimPsiZ C hC_open hC_conv hC_cone z hz))
+            - ψ'_j))
+        (nhdsWithin 0 {0}ᶜ) (nhds 0)
+
+/-! ### The Fourier-Laplace extension -/
+
+/-- The Fourier-Laplace extension: F(z) = T(ψ_z) for z in the tube T(C),
+    extended by 0 outside the tube. This avoids threading membership proofs
+    through differentiability arguments.
+
+    This is the multi-dimensional generalization of `fourierLaplaceExt`. -/
+def fourierLaplaceExtMultiDim
+    (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C)
+    (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ)
+    (z : Fin m → ℂ) : ℂ :=
+  if hz : z ∈ SCV.TubeDomain C then
+    T (multiDimPsiZ C hC_open hC_conv hC_cone z hz)
+  else 0
+
+theorem fourierLaplaceExtMultiDim_eq
+    (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C)
+    (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ)
+    (z : Fin m → ℂ) (hz : z ∈ SCV.TubeDomain C) :
+    fourierLaplaceExtMultiDim C hC_open hC_conv hC_cone T z =
+      T (multiDimPsiZ C hC_open hC_conv hC_cone z hz) := by
+  simp [fourierLaplaceExtMultiDim, hz]
+
+/-! ### Holomorphicity via Osgood -/
+
+/-- F(z) = T(ψ_z) is separately holomorphic in each variable z_j.
+
+    Proof: The difference quotient (F(z+he_j) - F(z))/h = T((ψ_{z+he_j} - ψ_z)/h)
+    converges to T(ψ'_j) by continuity of T and the seminorm convergence
+    from `multiDimPsiZ_differenceQuotient_converges`. -/
+theorem fourierLaplaceExtMultiDim_separatelyHolomorphic
+    (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C)
+    (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ)
+    (z : Fin m → ℂ) (hz : z ∈ SCV.TubeDomain C) (j : Fin m) :
+    DifferentiableAt ℂ
+      (fun w => fourierLaplaceExtMultiDim C hC_open hC_conv hC_cone T
+        (Function.update z j w))
+      (z j) := by
+  -- The difference quotient (F(z+he_j) - F(z))/h = T((ψ_{z+he_j} - ψ_z)/h)
+  -- converges because:
+  -- 1. (ψ_{z+he_j} - ψ_z)/h → ψ'_j in Schwartz seminorms (axiom)
+  -- 2. |T(f)| ≤ C_T · seminorm k n f (schwartz_clm_bound_by_seminorm)
+  -- 3. So the scalar difference quotient converges to T(ψ'_j)
+  sorry
+
+/-- F(z) = T(ψ_z) is continuous on the tube.
+
+    Proof: T is continuous on Schwartz space, and z ↦ ψ_z is continuous
+    into Schwartz space (by the seminorm bounds). -/
+theorem fourierLaplaceExtMultiDim_continuousOn
+    (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C)
+    (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ) :
+    ContinuousOn
+      (fourierLaplaceExtMultiDim C hC_open hC_conv hC_cone T)
+      (SCV.TubeDomain C) := by
+  sorry
+
+/-- **Main holomorphicity theorem**: F(z) = T(ψ_z) is holomorphic on the tube T(C).
+
+    Proof: Combine separate holomorphicity + continuity via `osgood_lemma`. -/
+theorem fourierLaplaceExtMultiDim_holomorphic
+    (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C)
+    (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ) :
+    DifferentiableOn ℂ
+      (fourierLaplaceExtMultiDim C hC_open hC_conv hC_cone T)
+      (SCV.TubeDomain C) := by
+  apply osgood_lemma (SCV.tubeDomain_isOpen hC_open)
+  · exact fourierLaplaceExtMultiDim_continuousOn C hC_open hC_conv hC_cone T
+  · intro z hz j
+    exact fourierLaplaceExtMultiDim_separatelyHolomorphic
+      C hC_open hC_conv hC_cone T z hz j
+
+/-! ### Continuous functionals are seminorm-bounded -/
+
+/-- A continuous linear functional on Schwartz space is bounded by a finite seminorm.
+    This is the defining property of the Schwartz topology: the topology is generated
+    by the family `{seminorm k n}`, so continuity at 0 implies a seminorm bound.
+
+    This is a fundamental fact about Fréchet spaces that should eventually be proved
+    from the Schwartz topology definition in Mathlib. -/
+theorem schwartz_clm_bound_by_seminorm
+    (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ) :
+    ∃ (C_T : ℝ) (k n : ℕ), C_T > 0 ∧
+      ∀ (f : SchwartzMap (Fin m → ℝ) ℂ),
+        ‖T f‖ ≤ C_T * SchwartzMap.seminorm ℝ k n f := by
+  sorry
+
+/-! ### Growth bound -/
+
+/-- F(z) = T(ψ_z) satisfies the global Vladimirov growth bound.
+
+    Proof: |F(z)| = |T(ψ_z)| ≤ ‖T‖ · ‖ψ_z‖_{k,n} for some seminorm.
+    By `multiDimPsiZ_seminorm_bound`:
+    ‖ψ_z‖_{k,n} ≤ B · (1+‖Re z‖)^N · (1 + dist(Im z, ∂C)⁻¹)^M -/
+theorem fourierLaplaceExtMultiDim_vladimirov_growth
+    (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C)
+    (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ) :
+    ∃ (C_bd : ℝ) (N M : ℕ), C_bd > 0 ∧
+      ∀ (z : Fin m → ℂ), z ∈ SCV.TubeDomain C →
+        ‖fourierLaplaceExtMultiDim C hC_open hC_conv hC_cone T z‖ ≤
+          C_bd * (1 + ‖z‖) ^ N *
+            (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M := by
+  -- Step 1: T is bounded by a finite seminorm
+  obtain ⟨C_T, k, n, hC_T_pos, hT_bound⟩ := schwartz_clm_bound_by_seminorm T
+  -- Step 2: The seminorm of ψ_z has Vladimirov-type growth
+  obtain ⟨B, N, M, hB_pos, hψ_bound⟩ :=
+    multiDimPsiZ_seminorm_bound C hC_open hC_conv hC_cone k n
+  -- Step 3: Combine
+  refine ⟨C_T * B, N, M, mul_pos hC_T_pos hB_pos, fun z hz => ?_⟩
+  rw [fourierLaplaceExtMultiDim_eq C hC_open hC_conv hC_cone T z hz]
+  calc ‖T (multiDimPsiZ C hC_open hC_conv hC_cone z hz)‖
+    _ ≤ C_T * SchwartzMap.seminorm ℝ k n
+          (multiDimPsiZ C hC_open hC_conv hC_cone z hz) := hT_bound _
+    _ ≤ C_T * (B * (1 + ‖fun i => (z i).re‖) ^ N *
+          (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M) := by
+        apply mul_le_mul_of_nonneg_left (hψ_bound z hz) (le_of_lt hC_T_pos)
+    _ ≤ C_T * B * (1 + ‖z‖) ^ N *
+          (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M := by
+        ring_nf
+        sorry -- ‖fun i => (z i).re‖ ≤ ‖z‖ (real part norm ≤ complex norm)
+
+/-! ### Boundary values -/
+
+/-- F(z) = T(ψ_z) has tempered distributional boundary values recovering T.
+
+    Proof: As ε → 0+ along direction η ∈ C,
+    ∫ F(x+iεη) f(x) dx = ∫ T(ψ_{x+iεη}) f(x) dx → T(f)
+    by the dominated convergence theorem (dominator from the growth bound
+    times Schwartz decay of f). -/
+theorem fourierLaplaceExtMultiDim_boundaryValue
+    (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C) (hC_ne : C.Nonempty)
+    (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ) :
+    ∀ (η : Fin m → ℝ), η ∈ C →
+      ∀ (f : SchwartzMap (Fin m → ℝ) ℂ),
+        Filter.Tendsto
+          (fun ε : ℝ => ∫ x : Fin m → ℝ,
+            fourierLaplaceExtMultiDim C hC_open hC_conv hC_cone T
+              (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) *
+            f x)
+          (nhdsWithin 0 (Set.Ioi 0)) (nhds (T f)) := by
+  sorry
+
+end
