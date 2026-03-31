@@ -20,6 +20,8 @@ import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputBPointwi
 import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputCReduced
 import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputCKernelPackage
 import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputCCollarSplit
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputCDuBoisAE
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputCDuBoisPosAE
 import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.DCT
 
 /-!
@@ -1582,13 +1584,20 @@ private theorem exists_k2_timeParametric_distributional_assembly_of_commonZeroOr
     (lgc : OSLinearGrowthCondition d OS)
     (χ₀ : SchwartzSpacetime d)
     (hχ₀ : ∫ x : SpacetimeDim d, χ₀ x = 1)
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_holo : IsTimeHolomorphicFlatPositiveTimeDiffWitness G)
+    (hG_diff :
+      ∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (finProdFinEquiv (⟨1, by omega⟩, μ)) =
+            v (finProdFinEquiv (⟨1, by omega⟩, μ))) →
+        G u = G v)
     (C_bd : ℝ) (N : ℕ) (hC : 0 < C_bd)
     (hK_meas : AEStronglyMeasurable
-      (OSReconstruction.commonK2TimeParametricKernel_real_local
-        (commonDiffWitness_local (d := d) OS lgc)) volume)
+      (OSReconstruction.commonK2TimeParametricKernel_real_local (d := d) G) volume)
     (hK_bound : ∀ᵐ x : NPointDomain d 2 ∂volume,
       ‖OSReconstruction.commonK2TimeParametricKernel_real_local
-          (commonDiffWitness_local (d := d) OS lgc) x‖ ≤
+          (d := d) G x‖ ≤
         C_bd * (1 + ‖x‖) ^ N)
     (hShell₀ :
       ∀ h : zeroOriginAvoidingSubmodule d,
@@ -1597,7 +1606,7 @@ private theorem exists_k2_timeParametric_distributional_assembly_of_commonZeroOr
               OSReconstruction.twoPointZeroDiagonalKernelCLM
                   (d := d)
                   (OSReconstruction.commonK2TimeParametricKernel_real_local
-                    (commonDiffWitness_local (d := d) OS lgc))
+                    (d := d) G)
                   hK_meas C_bd N hC hK_bound
               (ZeroDiagonalSchwartz.ofClassical
                 (twoPointDifferenceLift χ₀ (h : SchwartzSpacetime d))) =
@@ -1613,38 +1622,21 @@ private theorem exists_k2_timeParametric_distributional_assembly_of_commonZeroOr
           (fun i => x ((Equiv.swap (0 : Fin 2) (1 : Fin 2)) i))) ∧
       (∀ (f : ZeroDiagonalSchwartz d 2),
         OS.S 2 f = ∫ x : NPointDomain d 2, K x * (f.1 x)) := by
-  have hspec := Classical.choose_spec
-      (OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_and_posSectionBound_local
-        (d := d) OS lgc)
-  rcases hspec with ⟨hG_holo_raw, _hG_euclid_raw, hG_diff_raw, _hG_bound_raw⟩
-  have hG_holo :
-      IsTimeHolomorphicFlatPositiveTimeDiffWitness
-        (commonDiffWitness_local (d := d) OS lgc) := by
-    simpa [commonDiffWitness_local] using hG_holo_raw
-  have hG_diff :
-      ∀ u v : Fin (2 * (d + 1)) → ℂ,
-        (∀ μ : Fin (d + 1),
-          u (finProdFinEquiv (⟨1, by omega⟩, μ)) =
-            v (finProdFinEquiv (⟨1, by omega⟩, μ))) →
-        commonDiffWitness_local (d := d) OS lgc u =
-          commonDiffWitness_local (d := d) OS lgc v := by
-    simpa [commonDiffWitness_local] using hG_diff_raw
   refine
-    ⟨commonDiffWitness_local (d := d) OS lgc,
-      OSReconstruction.commonK2TimeParametricKernel_real_local
-        (commonDiffWitness_local (d := d) OS lgc),
+    ⟨G, OSReconstruction.commonK2TimeParametricKernel_real_local (d := d) G,
       hG_holo, ?_, ?_, ?_⟩
   · intro x hx
-    exact OSReconstruction.commonK2TimeParametricKernel_real_eq_of_pos_local
-      (d := d) (commonDiffWitness_local (d := d) OS lgc) hG_diff x hx
+    exact
+      OSReconstruction.commonK2TimeParametricKernel_real_eq_of_pos_local
+        (d := d) G hG_diff x hx
   · intro x hx
-    exact OSReconstruction.commonK2TimeParametricKernel_real_eq_of_neg_local
-      (d := d) (commonDiffWitness_local (d := d) OS lgc) hG_diff x hx
+    exact
+      OSReconstruction.commonK2TimeParametricKernel_real_eq_of_neg_local
+        (d := d) G hG_diff x hx
   · intro f
     exact
       k2_distributional_reproduction_of_zeroOriginCompactFixedCenter_local
-        OS χ₀ hχ₀
-        (commonDiffWitness_local (d := d) OS lgc)
+        OS χ₀ hχ₀ G
         C_bd N hC hK_meas hK_bound hShell₀ f
 
 private theorem exists_k2_timeParametric_distributional_assembly
@@ -1668,66 +1660,68 @@ private theorem exists_k2_timeParametric_distributional_assembly
   let χ₀ : SchwartzSpacetime d := χ_seq 0
   have hχ₀ : ∫ x : SpacetimeDim d, χ₀ x = 1 := by
     simpa [χ₀] using hχ_int 0
-  have hspec := Classical.choose_spec
-      (OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_and_posSectionBound_local
-        (d := d) OS lgc)
-  rcases hspec with ⟨hG_holo_raw, hG_euclid_raw, hG_diff_raw, hG_bound_raw⟩
-  have hG_holo :
-      IsTimeHolomorphicFlatPositiveTimeDiffWitness
-        (commonDiffWitness_local (d := d) OS lgc) := by
-    simpa [commonDiffWitness_local] using hG_holo_raw
-  have hG_euclid :
-      ∀ (f : ZeroDiagonalSchwartz d 2),
-        OS.S 2 f = ∫ x : NPointDomain d 2,
-          commonDiffWitness_local (d := d) OS lgc
-            (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x) := by
-    simpa [commonDiffWitness_local] using hG_euclid_raw
-  have hG_diff :
-      ∀ u v : Fin (2 * (d + 1)) → ℂ,
-        (∀ μ : Fin (d + 1),
-          u (finProdFinEquiv (⟨1, by omega⟩, μ)) =
-            v (finProdFinEquiv (⟨1, by omega⟩, μ))) →
-        commonDiffWitness_local (d := d) OS lgc u =
-          commonDiffWitness_local (d := d) OS lgc v := by
-    simpa [commonDiffWitness_local] using hG_diff_raw
-  rcases hG_bound_raw with ⟨C_bd, N, hC, hG_bound⟩
+  obtain ⟨G, hG_holo, hG_euclid, hG_diff, hG_bound_pkg, hΔ_pos⟩ :=
+    OSReconstruction.exists_commonDiffWitness_swapDelta_ae_zero_on_pos_local
+      (d := d) OS lgc
+  rcases hG_bound_pkg with ⟨C_bd, N, hC, hG_bound⟩
   obtain ⟨C_real, hC_real, hK_meas, hK_bound⟩ :=
     OSReconstruction.exists_commonK2TimeParametricKernel_real_package_local
-      (d := d)
-      (commonDiffWitness_local (d := d) OS lgc)
-      hG_holo hG_diff C_bd N hC hG_bound
+      (d := d) G hG_holo hG_diff C_bd N hC hG_bound
   refine
     exists_k2_timeParametric_distributional_assembly_of_commonZeroOriginCompactFixedCenter_local
-      (d := d) OS lgc χ₀ hχ₀ C_real N hC_real hK_meas hK_bound ?_
+      (d := d) OS lgc χ₀ hχ₀ G hG_holo hG_diff C_real N hC_real hK_meas hK_bound ?_
   /-
-  Honest remaining assembly step after the collar split:
+  Honest remaining assembly step:
 
-  prove the fixed-center compact origin-avoiding shell theorem only on the
-  equal-time collar `|ξ₀| ≤ 1` for the canonical common sectorwise kernel at
-  the chosen normalized cutoff `χ₀`:
+  prove that the raw swap difference of the chosen common witness vanishes
+  almost everywhere on the positive time-ordering sector:
 
-    ∀ h : zeroOriginAvoidingSubmodule d,
-      HasCompactSupport (((h : zeroOriginAvoidingSubmodule d) :
-        SchwartzSpacetime d) : SpacetimeDim d → ℂ) →
-      tsupport (((h : zeroOriginAvoidingSubmodule d) :
-        SchwartzSpacetime d) : SpacetimeDim d → ℂ) ⊆
-        {ξ : SpacetimeDim d | |ξ 0| ≤ 1} →
-        twoPointZeroDiagonalKernelCLM(commonK2TimeParametricKernel_real_local
-          (commonDiffWitness_local OS lgc))(differenceLift χ₀ h)
-        = OS.S 2(differenceLift χ₀ h).
+    ∀ᵐ x, x ∈ posTimeSector_local →
+      swapDelta_local (commonDiffWitness_local OS lgc) x = 0.
 
-  `InputCCollarSplit` now pays the positive-time and negative-time pieces
-  formally, so the final seam is genuinely localized to the equal-time collar.
+  `InputCDuBoisAE` now pays the rest formally:
+  from this a.e. positive-sector vanishing, the canonical common sectorwise
+  kernel agrees a.e. with the raw Euclidean witness kernel, hence reproduces
+  `OS.S 2` on every zero-diagonal test. The fixed-center compact-shell theorem
+  used by the final assembly wrapper is then immediate.
   -/
   intro h hh_compact
-  refine
-    OSReconstruction.commonK2TimeParametricKernel_real_eq_schwinger_on_differenceShell_of_zeroOriginCompactFixedCenter_of_timeCollar_local
-      (d := d) OS χ₀ hχ₀
-      (commonDiffWitness_local (d := d) OS lgc)
-      hG_euclid hG_diff hK_meas C_real N hC_real hK_bound
-      1 (by norm_num) ?_ h hh_compact
-  intro h hh_compact hh_collar
-  sorry
+  have hG_euclid_k2 :
+      ∀ (f : ZeroDiagonalSchwartz d 2),
+        OS.S 2 f = ∫ x : NPointDomain d 2,
+          k2TimeParametricKernel (d := d) G x * (f.1 x) := by
+    intro f
+    simpa [k2TimeParametricKernel] using hG_euclid f
+  have hv :
+      VanishesToInfiniteOrderOnCoincidence
+        (twoPointDifferenceLift χ₀ (h : SchwartzSpacetime d)) := by
+    exact twoPointDifferenceLift_vanishes_of_zero_not_mem_tsupport χ₀
+      (h : SchwartzSpacetime d) h.property
+  calc
+    OSReconstruction.twoPointZeroDiagonalKernelCLM
+        (d := d)
+        (OSReconstruction.commonK2TimeParametricKernel_real_local (d := d) G)
+        hK_meas C_real N hC_real hK_bound
+        (ZeroDiagonalSchwartz.ofClassical
+          (twoPointDifferenceLift χ₀ (h : SchwartzSpacetime d))) =
+      ∫ x : NPointDomain d 2,
+        OSReconstruction.commonK2TimeParametricKernel_real_local
+            (d := d) G x *
+          twoPointDifferenceLift χ₀ (h : SchwartzSpacetime d) x := by
+            rw [OSReconstruction.twoPointZeroDiagonalKernelCLM_apply]
+            rw [ZeroDiagonalSchwartz.coe_ofClassical_of_vanishes
+              (f := twoPointDifferenceLift χ₀ (h : SchwartzSpacetime d)) hv]
+    _ =
+      OS.S 2
+        (ZeroDiagonalSchwartz.ofClassical
+          (twoPointDifferenceLift χ₀ (h : SchwartzSpacetime d))) := by
+            have hsch :=
+              OSReconstruction.commonK2TimeParametricKernel_real_eq_schwinger_of_swapDelta_ae_zero_on_pos_local
+                (d := d) OS G hG_euclid_k2 hG_diff hΔ_pos
+                (ZeroDiagonalSchwartz.ofClassical
+                  (twoPointDifferenceLift χ₀ (h : SchwartzSpacetime d)))
+            simpa [ZeroDiagonalSchwartz.coe_ofClassical_of_vanishes
+              (f := twoPointDifferenceLift χ₀ (h : SchwartzSpacetime d)) hv] using hsch
 
 /-- The `k = 2` time-parametric base step on the honest OS route.
 

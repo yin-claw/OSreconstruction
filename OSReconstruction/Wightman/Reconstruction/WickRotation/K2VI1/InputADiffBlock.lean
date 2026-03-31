@@ -740,13 +740,6 @@ private theorem norm_zeroAnchorSectionShiftedToAcr_le_local
               norm_unitImagTimeShift_le_local (d := d)]
       _ = 1 + ‖ξ‖ := by ring
 
-/-- Strengthened `k = 2` payoff of the upstream translation-invariant `ACR(1)`
-witness surface.
-
-Besides the old Euclidean reproduction and diff-block dependence package, this
-version also exports the direct positive-time bound on the zero-anchor section
-`ξ ↦ k2TimeParametricKernel G ![(0), ξ]`. This is the exact input needed to
-close the live Input A frontier bound after a simple time-shift specialization. -/
 theorem schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_and_posSectionBound_local
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) :
@@ -780,9 +773,9 @@ theorem schwinger_continuation_base_step_timeParametric_of_translationInvariant_
   have hS₁_trans :
       ∀ (z : Fin 2 → Fin (d + 1) → ℂ) (a : Fin (d + 1) → ℂ),
         S₁ (fun j => z j + a) = S₁ z :=
-    (Classical.choose_spec hS_pack).2.2.1
+    (Classical.choose_spec hS_pack).2.2.2.1
   obtain ⟨C₁, N, hC₁, hS₁_growth⟩ :=
-    (Classical.choose_spec hS_pack).2.2.2
+    (Classical.choose_spec hS_pack).2.2.2.2
   let G : (Fin (2 * (d + 1)) → ℂ) → ℂ := fun u => S₁ (BHW.fromDiffFlat 2 d u)
   have hG_holo : IsTimeHolomorphicFlatPositiveTimeDiffWitness G := by
     refine ⟨?_, ?_⟩
@@ -879,6 +872,178 @@ theorem schwinger_continuation_base_step_timeParametric_of_translationInvariant_
       _ = (C₁ * (2 : ℝ) ^ N) * (1 + ‖ξ‖) ^ N := by
             rw [mul_assoc, mul_pow]
       _ = (C₁ * (2 : ℝ) ^ N) * (1 + ‖ξ‖) ^ N := rfl
+
+/-- Stable `k = 2` common-witness package together with the upstream E3 swap
+symmetry transported to the raw Euclidean section.
+
+This companion theorem keeps the older pos-section-bound surface intact while
+exposing one genuinely new fact needed only by the final DuBois endgame:
+the chosen common witness is pointwise invariant under swapping the two raw
+Euclidean arguments. -/
+theorem schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_and_posSectionBound_and_swapEq_local
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    ∃ G : (Fin (2 * (d + 1)) → ℂ) → ℂ,
+      IsTimeHolomorphicFlatPositiveTimeDiffWitness G ∧
+      (∀ (f : ZeroDiagonalSchwartz d 2),
+        OS.S 2 f = ∫ x : NPointDomain d 2,
+          G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x)) ∧
+      (∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (diffSlot_local (d := d) μ) = v (diffSlot_local (d := d) μ)) →
+        G u = G v) ∧
+      (∃ (C_bd : ℝ) (N : ℕ),
+        0 < C_bd ∧
+        ∀ ξ : SpacetimeDim d, 0 < ξ 0 →
+          ‖k2TimeParametricKernel (d := d) G
+              (![(0 : SpacetimeDim d), ξ] : NPointDomain d 2)‖ ≤
+            C_bd * (1 + ‖ξ‖) ^ N) ∧
+      (∀ x : NPointDomain d 2,
+        k2TimeParametricKernel (d := d) G
+          (fun i => x ((Equiv.swap (0 : Fin 2) (1 : Fin 2)) i)) =
+        k2TimeParametricKernel (d := d) G x) := by
+  let hS_pack :=
+    _root_.schwinger_continuation_base_step_acrOne_assembly_with_translationInvariant
+      (d := d) OS lgc 2
+  let S₁ : (Fin 2 → Fin (d + 1) → ℂ) → ℂ := Classical.choose hS_pack
+  have hS₁_hol :
+      DifferentiableOn ℂ S₁ (AnalyticContinuationRegion d 2 1) :=
+    (Classical.choose_spec hS_pack).1
+  have hS₁_euclid :
+      ∀ (f : ZeroDiagonalSchwartz d 2),
+        OS.S 2 f = ∫ x : NPointDomain d 2,
+          S₁ (fun j => wickRotatePoint (x j)) * (f.1 x) :=
+    (Classical.choose_spec hS_pack).2.1
+  have hS₁_perm :
+      ∀ (σ : Equiv.Perm (Fin 2)) (z : Fin 2 → Fin (d + 1) → ℂ),
+        S₁ (fun j => z (σ j)) = S₁ z :=
+    (Classical.choose_spec hS_pack).2.2.1
+  have hS₁_trans :
+      ∀ (z : Fin 2 → Fin (d + 1) → ℂ) (a : Fin (d + 1) → ℂ),
+        S₁ (fun j => z j + a) = S₁ z :=
+    (Classical.choose_spec hS_pack).2.2.2.1
+  obtain ⟨C₁, N, hC₁, hS₁_growth⟩ :=
+    (Classical.choose_spec hS_pack).2.2.2.2
+  let G : (Fin (2 * (d + 1)) → ℂ) → ℂ := fun u => S₁ (BHW.fromDiffFlat 2 d u)
+  have hG_holo : IsTimeHolomorphicFlatPositiveTimeDiffWitness G := by
+    refine ⟨?_, ?_⟩
+    · intro u hu
+      have hfrom_maps :
+          Set.MapsTo (BHW.fromDiffFlat 2 d)
+            (SCV.TubeDomain (FlatPositiveTimeDiffReal 2 d))
+            (AnalyticContinuationRegion d 2 1) := by
+        intro v hv
+        rw [acr_one_iff_toDiffFlat_mem_tubeDomain_positiveTimeDiff]
+        simpa [BHW.toDiffFlat_fromDiffFlat] using hv
+      have hS₁_cont : ContinuousOn S₁ (AnalyticContinuationRegion d 2 1) :=
+        hS₁_hol.continuousOn
+      have hG_cont : ContinuousOn G (SCV.TubeDomain (FlatPositiveTimeDiffReal 2 d)) :=
+        hS₁_cont.comp (differentiable_fromDiffFlat_local 2 d).continuous.continuousOn hfrom_maps
+      exact hG_cont u hu
+    · intro z hz i
+      let idx : Fin (2 * (d + 1)) := finProdFinEquiv (i, (0 : Fin (d + 1)))
+      let φ : ℂ → (Fin 2 → Fin (d + 1) → ℂ) := fun w =>
+        BHW.fromDiffFlat 2 d (Function.update z idx w)
+      have hupdate_diff : Differentiable ℂ (fun w : ℂ => Function.update z idx w) := by
+        rw [differentiable_pi]
+        intro j
+        by_cases hj : j = idx
+        · subst hj
+          simpa using differentiable_id
+        · simpa [Function.update, hj] using differentiable_const (z j)
+      have hφ_maps :
+          Set.MapsTo φ {w : ℂ | 0 < w.im} (AnalyticContinuationRegion d 2 1) := by
+        intro w hw
+        rw [acr_one_iff_toDiffFlat_mem_tubeDomain_positiveTimeDiff]
+        rw [BHW.toDiffFlat_fromDiffFlat]
+        rw [mem_tubeDomain_flatPositiveTimeDiffReal_iff]
+        intro j
+        by_cases hj : j = i
+        · subst hj
+          simpa [φ, idx]
+        · have hzj :=
+            (mem_tubeDomain_flatPositiveTimeDiffReal_iff (z := z)).mp hz j
+          simpa [φ, idx, Function.update, hj] using hzj
+      simpa [G, φ, idx] using
+        (hS₁_hol.comp
+          ((differentiable_fromDiffFlat_local 2 d).comp hupdate_diff).differentiableOn
+          hφ_maps)
+  have hG_euclid :
+      ∀ (f : ZeroDiagonalSchwartz d 2),
+        OS.S 2 f = ∫ x : NPointDomain d 2,
+          G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x) := by
+    intro f
+    simpa [G, BHW.fromDiffFlat_toDiffFlat] using hS₁_euclid f
+  have hG_diff :
+      ∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (diffSlot_local (d := d) μ) = v (diffSlot_local (d := d) μ)) →
+        G u = G v := by
+    simpa [G] using
+      (diffBlockDependence_of_fromDiffFlat_translationInvariant_local
+        (d := d) S₁ hS₁_trans)
+  have hG_bound :
+      ∀ ξ : SpacetimeDim d, 0 < ξ 0 →
+        ‖k2TimeParametricKernel (d := d) G
+            (![(0 : SpacetimeDim d), ξ] : NPointDomain d 2)‖ ≤
+          (C₁ * (2 : ℝ) ^ N) * (1 + ‖ξ‖) ^ N := by
+    intro ξ hξ
+    let zShifted : Fin 2 → Fin (d + 1) → ℂ := zeroAnchorSectionShiftedToAcr_local (d := d) ξ
+    have hz_mem : zShifted ∈ AnalyticContinuationRegion d 2 1 :=
+      zeroAnchorSectionShiftedToAcr_mem_local (d := d) ξ hξ
+    have hz_norm : ‖zShifted‖ ≤ 1 + ‖ξ‖ :=
+      norm_zeroAnchorSectionShiftedToAcr_le_local (d := d) ξ
+    have htrans_eq :
+        k2TimeParametricKernel (d := d) G
+            (![(0 : SpacetimeDim d), ξ] : NPointDomain d 2) = S₁ zShifted := by
+      calc
+        k2TimeParametricKernel (d := d) G
+            (![(0 : SpacetimeDim d), ξ] : NPointDomain d 2)
+            = S₁ (fun i => wickRotatePoint (![(0 : SpacetimeDim d), ξ] i)) := by
+                simp [G, k2TimeParametricKernel, BHW.fromDiffFlat_toDiffFlat]
+        _ = S₁ zShifted := by
+            symm
+            simpa [zShifted, zeroAnchorSectionShiftedToAcr_local, unitImagTimeShift_local] using
+              hS₁_trans
+                (fun i => wickRotatePoint (![(0 : SpacetimeDim d), ξ] i))
+                (unitImagTimeShift_local (d := d))
+    have hbound0 : ‖S₁ zShifted‖ ≤ C₁ * (1 + ‖zShifted‖) ^ N :=
+      hS₁_growth zShifted hz_mem
+    calc
+      ‖k2TimeParametricKernel (d := d) G
+          (![(0 : SpacetimeDim d), ξ] : NPointDomain d 2)‖
+          = ‖S₁ zShifted‖ := by rw [htrans_eq]
+      _ ≤ C₁ * (1 + ‖zShifted‖) ^ N := hbound0
+      _ ≤ C₁ * (1 + (1 + ‖ξ‖)) ^ N := by
+            gcongr
+      _ = C₁ * (2 + ‖ξ‖) ^ N := by ring
+      _ ≤ C₁ * ((2 : ℝ) * (1 + ‖ξ‖)) ^ N := by
+            apply mul_le_mul_of_nonneg_left ?_ (le_of_lt hC₁)
+            exact pow_le_pow_left₀ (by positivity) (by nlinarith [norm_nonneg ξ]) N
+      _ = (C₁ * (2 : ℝ) ^ N) * (1 + ‖ξ‖) ^ N := by
+            rw [mul_assoc, mul_pow]
+      _ = (C₁ * (2 : ℝ) ^ N) * (1 + ‖ξ‖) ^ N := rfl
+  have hswap_eq :
+      ∀ x : NPointDomain d 2,
+        k2TimeParametricKernel (d := d) G
+          (fun i => x ((Equiv.swap (0 : Fin 2) (1 : Fin 2)) i)) =
+        k2TimeParametricKernel (d := d) G x := by
+    intro x
+    calc
+      k2TimeParametricKernel (d := d) G
+          (fun i => x ((Equiv.swap (0 : Fin 2) (1 : Fin 2)) i))
+          = S₁ (fun j =>
+              wickRotatePoint ((fun i => x ((Equiv.swap (0 : Fin 2) (1 : Fin 2)) i)) j)) := by
+                simp [G, k2TimeParametricKernel, BHW.fromDiffFlat_toDiffFlat]
+      _ = S₁ (fun j => wickRotatePoint (x ((Equiv.swap (0 : Fin 2) (1 : Fin 2)) j))) := by rfl
+      _ = S₁ (fun j => wickRotatePoint (x j)) := by
+            simpa using
+              (hS₁_perm (Equiv.swap (0 : Fin 2) (1 : Fin 2))
+                (fun j => wickRotatePoint (x j)))
+      _ = k2TimeParametricKernel (d := d) G x := by
+            simp [G, k2TimeParametricKernel, BHW.fromDiffFlat_toDiffFlat]
+  refine ⟨G, hG_holo, hG_euclid, hG_diff, ⟨C₁ * (2 : ℝ) ^ N, N, ?_, hG_bound⟩, hswap_eq⟩
+  positivity
 
 /-- Exact `k = 2` payoff of the strengthened upstream `ACR(1)` witness surface.
 

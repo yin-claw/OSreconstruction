@@ -419,12 +419,16 @@ theorem schwinger_continuation_base_step_timeParametric_of_translationInvariant_
         OS.S 2 f = ∫ x : NPointDomain d 2,
           S₁ (fun j => wickRotatePoint (x j)) * (f.1 x) :=
     (Classical.choose_spec hS_pack).2.1
+  have _hS₁_perm :
+      ∀ (σ : Equiv.Perm (Fin 2)) (z : Fin 2 → Fin (d + 1) → ℂ),
+        S₁ (fun j => z (σ j)) = S₁ z :=
+    (Classical.choose_spec hS_pack).2.2.1
   have hS₁_trans :
       ∀ (z : Fin 2 → Fin (d + 1) → ℂ) (a : Fin (d + 1) → ℂ),
         S₁ (fun j => z j + a) = S₁ z :=
-    (Classical.choose_spec hS_pack).2.2.1
+    (Classical.choose_spec hS_pack).2.2.2.1
   obtain ⟨C₁, N, hC₁, hS₁_growth⟩ :=
-    (Classical.choose_spec hS_pack).2.2.2
+    (Classical.choose_spec hS_pack).2.2.2.2
   let G : (Fin (2 * (d + 1)) → ℂ) → ℂ := fun u => S₁ (BHW.fromDiffFlat 2 d u)
   have hG_euclid :
       ∀ (f : ZeroDiagonalSchwartz d 2),
