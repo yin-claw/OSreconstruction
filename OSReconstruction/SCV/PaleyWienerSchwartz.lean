@@ -48,7 +48,7 @@ are scalarized to ℂ before applying Lean's Bochner integral.
 - Streater-Wightman, "PCT, Spin and Statistics", Theorems 2-6, 2-9
 -/
 
-open scoped Classical ComplexConjugate BigOperators
+open scoped Classical ComplexConjugate BigOperators NNReal
 open MeasureTheory Complex
 noncomputable section
 
@@ -204,21 +204,36 @@ theorem fourierLaplaceExtMultiDim_holomorphic
 
 /-! ### Continuous functionals are seminorm-bounded -/
 
-/-- A continuous linear functional on Schwartz space is bounded by a finite seminorm.
-    This is the defining property of the Schwartz topology: the topology is generated
-    by the family `{seminorm k n}`, so continuity at 0 implies a seminorm bound.
+/-- Version with finset sup: a continuous linear functional on Schwartz space
+    is bounded by a finite sup of Schwartz seminorms. This follows directly
+    from `Seminorm.bound_of_continuous` applied to `schwartz_withSeminorms`. -/
+theorem schwartz_clm_bound_by_finset_sup
+    (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ) :
+    ∃ (s : Finset (ℕ × ℕ)) (C : ℝ≥0), C ≠ 0 ∧
+      ∀ (f : SchwartzMap (Fin m → ℝ) ℂ),
+        ‖T f‖ ≤ (C : ℝ) * (s.sup (schwartzSeminormFamily ℂ (Fin m → ℝ) ℂ)) f := by
+  let q : Seminorm ℂ (SchwartzMap (Fin m → ℝ) ℂ) :=
+    (normSeminorm ℂ ℂ).comp T.toLinearMap
+  have hq_cont : Continuous q := continuous_norm.comp T.continuous
+  obtain ⟨s, C, hC_ne, hbound⟩ :=
+    Seminorm.bound_of_continuous (schwartz_withSeminorms ℂ (Fin m → ℝ) ℂ) q hq_cont
+  refine ⟨s, C, hC_ne, fun f => ?_⟩
+  calc ‖T f‖ = q f := rfl
+    _ ≤ (C • s.sup (schwartzSeminormFamily ℂ (Fin m → ℝ) ℂ)) f := hbound f
+    _ = (C : ℝ) * (s.sup (schwartzSeminormFamily ℂ (Fin m → ℝ) ℂ)) f := by
+        rfl
 
-    This is a fundamental fact about Fréchet spaces that should eventually be proved
-    from the Schwartz topology definition in Mathlib. -/
+/-- A continuous linear functional on Schwartz space is bounded by a single seminorm.
+    Derived from `schwartz_clm_bound_by_finset_sup` by bounding the finset sup. -/
 theorem schwartz_clm_bound_by_seminorm
     (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ) :
     ∃ (C_T : ℝ) (k n : ℕ), C_T > 0 ∧
       ∀ (f : SchwartzMap (Fin m → ℝ) ℂ),
         ‖T f‖ ≤ C_T * SchwartzMap.seminorm ℝ k n f := by
-  -- The norm of T(f) is a continuous seminorm on Schwartz space.
-  -- By Seminorm.bound_of_continuous (Mathlib), it's bounded by a finite sup of
-  -- Schwartz seminorms. Then we bound the finset sup by a single (k,n) using
-  -- monotonicity of Schwartz seminorms in both indices.
+  -- From schwartz_clm_bound_by_finset_sup: ‖T f‖ ≤ C * (s.sup seminorms) f
+  -- The finset sup of seminorms is bounded by a single large-index seminorm
+  -- (requires Schwartz seminorm monotonicity, which needs sup_{x} ‖x‖^k1 * ‖D^n1 f‖
+  --  ≤ sup_{x} ‖x‖^k2 * ‖D^n2 f‖ for appropriate k2, n2 ≥ k1, n1 + dimension correction)
   sorry
 
 /-! ### Growth bound -/
