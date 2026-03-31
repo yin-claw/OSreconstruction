@@ -45,7 +45,11 @@ private theorem exists_acrOne_productTensor_witness {d : ℕ} [NeZero d]
             S_prod (fun j => wickRotatePoint (x j)) *
               (SchwartzMap.productTensor fs) x) ∧
       (∀ (z : Fin k → Fin (d + 1) → ℂ) (a : Fin (d + 1) → ℂ),
-        S_prod (fun j => z j + a) = S_prod z) := by
+        S_prod (fun j => z j + a) = S_prod z) ∧
+      ∃ (C_bd : ℝ) (N : ℕ),
+        0 < C_bd ∧
+        ∀ z ∈ AnalyticContinuationRegion d k 1,
+          ‖S_prod z‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
   sorry
 
 /-- Second general-`k` ACR(1) subproblem: upgrade the product-tensor witness to
@@ -87,7 +91,7 @@ private theorem schwinger_continuation_base_step_acrOne_assembly {d : ℕ} [NeZe
       (∀ (f : ZeroDiagonalSchwartz d k),
         OS.S k f = ∫ x : NPointDomain d k,
           S_ext (fun j => wickRotatePoint (x j)) * (f.1 x)) := by
-  obtain ⟨S_prod, hS_prod_holo, hS_prod_prod, _hS_prod_trans⟩ :=
+  obtain ⟨S_prod, hS_prod_holo, hS_prod_prod, _hS_prod_trans, _hS_prod_growth⟩ :=
     exists_acrOne_productTensor_witness (d := d) OS lgc k
   refine ⟨S_prod, hS_prod_holo, ?_⟩
   exact
@@ -115,7 +119,11 @@ theorem schwinger_continuation_base_step_acrOne_productTensor_assembly_with_tran
             S_prod (fun j => wickRotatePoint (x j)) *
               (SchwartzMap.productTensor fs) x) ∧
       (∀ (z : Fin k → Fin (d + 1) → ℂ) (a : Fin (d + 1) → ℂ),
-        S_prod (fun j => z j + a) = S_prod z) := by
+        S_prod (fun j => z j + a) = S_prod z) ∧
+      ∃ (C_bd : ℝ) (N : ℕ),
+        0 < C_bd ∧
+        ∀ z ∈ AnalyticContinuationRegion d k 1,
+          ‖S_prod z‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
   exact exists_acrOne_productTensor_witness (d := d) OS lgc k
 
 /-- `ACR(1)` assembly together with the common complex translation invariance
@@ -136,10 +144,14 @@ theorem schwinger_continuation_base_step_acrOne_assembly_with_translationInvaria
         OS.S k f = ∫ x : NPointDomain d k,
           S_ext (fun j => wickRotatePoint (x j)) * (f.1 x)) ∧
       (∀ (z : Fin k → Fin (d + 1) → ℂ) (a : Fin (d + 1) → ℂ),
-        S_ext (fun j => z j + a) = S_ext z) := by
-  obtain ⟨S_prod, hS_prod_holo, hS_prod_prod, hS_prod_trans⟩ :=
+        S_ext (fun j => z j + a) = S_ext z) ∧
+      ∃ (C_bd : ℝ) (N : ℕ),
+        0 < C_bd ∧
+        ∀ z ∈ AnalyticContinuationRegion d k 1,
+          ‖S_ext z‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
+  obtain ⟨S_prod, hS_prod_holo, hS_prod_prod, hS_prod_trans, hS_prod_growth⟩ :=
     exists_acrOne_productTensor_witness (d := d) OS lgc k
-  refine ⟨S_prod, hS_prod_holo, ?_, hS_prod_trans⟩
+  refine ⟨S_prod, hS_prod_holo, ?_, hS_prod_trans, hS_prod_growth⟩
   exact
     acrOne_productTensor_witness_extends_zeroDiagonal
       (d := d) OS k S_prod hS_prod_holo hS_prod_prod

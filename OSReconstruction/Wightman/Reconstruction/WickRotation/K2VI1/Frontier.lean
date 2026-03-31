@@ -941,7 +941,7 @@ private def commonDiffWitness_local
     (lgc : OSLinearGrowthCondition d OS) :
     (Fin (2 * (d + 1)) → ℂ) → ℂ :=
   Classical.choose
-    (OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_local
+    (OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_and_posSectionBound_local
       (d := d) OS lgc)
 
 private theorem commonDiffWitness_spec_local
@@ -954,10 +954,21 @@ private theorem commonDiffWitness_spec_local
           commonDiffWitness_local (d := d) OS lgc
             (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x)) := by
   have hspec := Classical.choose_spec
-      (OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_local
+      (OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_and_posSectionBound_local
         (d := d) OS lgc)
-  exact ⟨by simpa [commonDiffWitness_local] using hspec.1,
-    by simpa [commonDiffWitness_local] using hspec.2.1⟩
+  rcases hspec with ⟨hG_holo, hG_euclid, _hG_diff, _hG_bound⟩
+  exact ⟨by simpa [commonDiffWitness_local] using hG_holo,
+    by simpa [commonDiffWitness_local] using hG_euclid⟩
+
+private theorem norm_timeShiftVec_le_abs_local
+    (t : ℝ) :
+    ‖timeShiftVec d t‖ ≤ |t| := by
+  rw [pi_norm_le_iff_of_nonneg (abs_nonneg t)]
+  intro μ
+  by_cases hμ0 : μ = 0
+  · subst hμ0
+    simp [timeShiftVec]
+  · simp [timeShiftVec, hμ0]
 
 /-- Honest remaining common-`G` Input A seam after replacing the false
 probe-Euclid route with the strengthened upstream translation-invariant
@@ -979,14 +990,59 @@ private theorem exists_common_k2TimeParametricKernel_zeroCenterShift_bound_local
             (commonDiffWitness_local (d := d) OS lgc)
             (![(0 : SpacetimeDim d), ξ + timeShiftVec d (s + s)] : NPointDomain d 2)‖ ≤
           C_bd * (1 + ‖ξ‖) ^ N) := by
-  /-
-  This is the genuine remaining analytic gap in the corrected Input A route.
-  The witness is now fixed by the strengthened upstream theorem and already
-  carries the needed Euclidean reproduction plus diff-block dependence. What
-  remains is only the strip polynomial bound for the ordinary common witness
-  evaluated on the explicit zero-center shifted section.
-  -/
-  sorry
+  have hspec := by
+    simpa [commonDiffWitness_local] using
+      (Classical.choose_spec
+        (OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_and_posSectionBound_local
+          (d := d) OS lgc))
+  rcases hspec with ⟨_hG_holo, _hG_euclid, _hG_diff, hbound⟩
+  rcases hbound with ⟨C₀, hC₀, N, hpos_bound⟩
+  refine ⟨C₀ * (1 + (s + s)) ^ N, N, ?_, ?_⟩
+  · positivity
+  · intro ξ hξ
+    change
+      ‖k2TimeParametricKernel (d := d)
+          (Classical.choose
+            (OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_and_posSectionBound_local
+              (d := d) OS lgc))
+          (![(0 : SpacetimeDim d), ξ + timeShiftVec d (s + s)] : NPointDomain d 2)‖ ≤
+        (C₀ * (1 + (s + s)) ^ N) * (1 + ‖ξ‖) ^ N
+    have hshift_pos : 0 < (ξ + timeShiftVec d (s + s)) 0 := by
+      simp [timeShiftVec]
+      linarith
+    have hbase := hpos_bound (ξ + timeShiftVec d (s + s)) hshift_pos
+    have hbase' :
+        ‖k2TimeParametricKernel (d := d)
+            (Classical.choose
+              (OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_and_posSectionBound_local
+                (d := d) OS lgc))
+            (![(0 : SpacetimeDim d), ξ + timeShiftVec d (s + s)] : NPointDomain d 2)‖ ≤
+          C₀ * (1 + ‖ξ + timeShiftVec d (s + s)‖) ^ N := by
+      simpa using hbase
+    have hshift_norm : ‖timeShiftVec d (s + s)‖ ≤ s + s := by
+      calc
+        ‖timeShiftVec d (s + s)‖ ≤ |s + s| :=
+          norm_timeShiftVec_le_abs_local (d := d) (s + s)
+        _ = s + s := by rw [abs_of_nonneg (by linarith : 0 ≤ s + s)]
+    have harg :
+        1 + ‖ξ + timeShiftVec d (s + s)‖ ≤
+          (1 + (s + s)) * (1 + ‖ξ‖) := by
+      have htri : ‖ξ + timeShiftVec d (s + s)‖ ≤ ‖ξ‖ + ‖timeShiftVec d (s + s)‖ :=
+        norm_add_le _ _
+      nlinarith [htri, hshift_norm, norm_nonneg ξ]
+    calc
+      ‖k2TimeParametricKernel (d := d)
+          (Classical.choose
+            (OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_and_posSectionBound_local
+              (d := d) OS lgc))
+          (![(0 : SpacetimeDim d), ξ + timeShiftVec d (s + s)] : NPointDomain d 2)‖
+          ≤ C₀ * (1 + ‖ξ + timeShiftVec d (s + s)‖) ^ N := hbase'
+      _ ≤ C₀ * ((1 + (s + s)) * (1 + ‖ξ‖)) ^ N := by
+            apply mul_le_mul_of_nonneg_left ?_ (le_of_lt hC₀)
+            exact pow_le_pow_left₀ (by positivity) harg N
+      _ = (C₀ * (1 + (s + s)) ^ N) * (1 + ‖ξ‖) ^ N := by
+            rw [mul_assoc, mul_pow]
+      _ = (C₀ * (1 + (s + s)) ^ N) * (1 + ‖ξ‖) ^ N := rfl
 
 /-- Derived lifted-slice strip bound for the strengthened common witness.
 
@@ -1007,9 +1063,9 @@ private theorem exists_common_lifted_difference_slice_strip_bound_local
   have hGpkg := by
     simpa [commonDiffWitness_local] using
       (Classical.choose_spec
-        (OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_local
+        (OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_and_posSectionBound_local
           (d := d) OS lgc))
-  rcases hGpkg with ⟨_hG_holo, _hG_euclid, hG_diff⟩
+  rcases hGpkg with ⟨_hG_holo, _hG_euclid, hG_diff, _hG_bound⟩
   obtain ⟨C_bd, N, hC, hK_bound⟩ :=
     exists_common_k2TimeParametricKernel_zeroCenterShift_bound_local
       (d := d) OS lgc s hs
@@ -1059,9 +1115,9 @@ private theorem exists_common_lifted_difference_slice_productShell_package_local
   have hGpkg := by
     simpa [commonDiffWitness_local] using
       (Classical.choose_spec
-        (OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_local
+        (OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_and_posSectionBound_local
           (d := d) OS lgc))
-  rcases hGpkg with ⟨_hG_holo', _hG_euclid', hG_diff⟩
+  rcases hGpkg with ⟨_hG_holo', _hG_euclid', hG_diff, _hG_bound⟩
   obtain ⟨C_bd, N, hC, hK_bound⟩ :=
     exists_common_lifted_difference_slice_strip_bound_local
       (d := d) OS lgc s hs

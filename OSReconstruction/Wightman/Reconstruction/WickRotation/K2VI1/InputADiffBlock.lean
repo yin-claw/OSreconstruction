@@ -658,13 +658,96 @@ theorem exists_common_lifted_difference_slice_strip_bound_and_productShell_pairi
       (d := d) φ_seq hφ_compact hφ_neg G hG_diff s C_bd N hC ?_
   simpa [G] using hK_bound
 
-/-- Exact `k = 2` payoff of the strengthened upstream `ACR(1)` witness surface.
+/-- Fixed imaginary-time shift used to move the zero-anchor Euclidean section
+strictly into `ACR(1)` without changing the common witness value. -/
+private def unitImagTimeShift_local : Fin (d + 1) → ℂ :=
+  fun μ => if μ = 0 then Complex.I else 0
 
-If the chosen `ACR(1)` witness is exported together with common complex
-translation invariance, then the corresponding flattened time-parametric
-witness already satisfies the global diff-block dependence needed by the
-current common-boundary fallback. -/
-theorem schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_local
+/-- The zero-anchor Euclidean section translated by a common imaginary time
+shift. This is the interior configuration on which the upstream `ACR(1)` growth
+bound is applied. -/
+private def zeroAnchorSectionShiftedToAcr_local
+    (ξ : SpacetimeDim d) : Fin 2 → Fin (d + 1) → ℂ :=
+  fun i => wickRotatePoint (![(0 : SpacetimeDim d), ξ] i) + unitImagTimeShift_local (d := d)
+
+private theorem wickRotatePoint_component_norm_eq_local
+    (x : SpacetimeDim d) (μ : Fin (d + 1)) :
+    ‖wickRotatePoint x μ‖ = ‖x μ‖ := by
+  by_cases hμ : μ = 0
+  · subst hμ
+    rw [wickRotatePoint, if_pos rfl, Complex.norm_mul, Complex.norm_I, one_mul, Complex.norm_real]
+  · rw [wickRotatePoint, if_neg hμ, Complex.norm_real]
+
+private theorem wickRotatePoint_zero_local :
+    wickRotatePoint (0 : SpacetimeDim d) = 0 := by
+  ext μ
+  by_cases hμ : μ = 0
+  · subst hμ
+    simp [wickRotatePoint]
+  · simp [wickRotatePoint, hμ]
+
+private theorem norm_wickRotatePoint_le_local
+    (ξ : SpacetimeDim d) :
+    ‖wickRotatePoint ξ‖ ≤ ‖ξ‖ := by
+  rw [pi_norm_le_iff_of_nonneg (norm_nonneg ξ)]
+  intro μ
+  rw [wickRotatePoint_component_norm_eq_local (d := d)]
+  exact norm_le_pi_norm ξ μ
+
+private theorem norm_unitImagTimeShift_le_local :
+    ‖unitImagTimeShift_local (d := d)‖ ≤ 1 := by
+  rw [pi_norm_le_iff_of_nonneg (by positivity : (0 : ℝ) ≤ 1)]
+  intro μ
+  by_cases hμ0 : μ = 0
+  · subst hμ0
+    simp [unitImagTimeShift_local]
+  · simp [unitImagTimeShift_local, hμ0]
+
+private theorem zeroAnchorSectionShiftedToAcr_mem_local
+    (ξ : SpacetimeDim d) (hξ : 0 < ξ 0) :
+    zeroAnchorSectionShiftedToAcr_local (d := d) ξ ∈
+      AnalyticContinuationRegion d 2 1 := by
+  simp only [AnalyticContinuationRegion, Set.mem_setOf_eq]
+  intro i μ hμ
+  have hμ0 : μ = 0 := Fin.ext (Nat.eq_zero_of_le_zero hμ)
+  subst hμ0
+  fin_cases i
+  · simp [zeroAnchorSectionShiftedToAcr_local, unitImagTimeShift_local, wickRotatePoint]
+  · simp [zeroAnchorSectionShiftedToAcr_local, unitImagTimeShift_local, wickRotatePoint]
+    simpa using hξ
+
+private theorem norm_zeroAnchorSectionShiftedToAcr_le_local
+    (ξ : SpacetimeDim d) :
+    ‖zeroAnchorSectionShiftedToAcr_local (d := d) ξ‖ ≤ 1 + ‖ξ‖ := by
+  rw [pi_norm_le_iff_of_nonneg (by positivity : (0 : ℝ) ≤ 1 + ‖ξ‖)]
+  intro i
+  fin_cases i
+  ·
+    calc
+      ‖zeroAnchorSectionShiftedToAcr_local (d := d) ξ 0‖
+          = ‖unitImagTimeShift_local (d := d)‖ := by
+              simp [zeroAnchorSectionShiftedToAcr_local, wickRotatePoint_zero_local]
+      _ ≤ 1 := norm_unitImagTimeShift_le_local (d := d)
+      _ ≤ 1 + ‖ξ‖ := by nlinarith [norm_nonneg ξ]
+  ·
+    calc
+      ‖zeroAnchorSectionShiftedToAcr_local (d := d) ξ 1‖
+          = ‖wickRotatePoint ξ + unitImagTimeShift_local (d := d)‖ := by
+              simp [zeroAnchorSectionShiftedToAcr_local]
+      _ ≤ ‖wickRotatePoint ξ‖ + ‖unitImagTimeShift_local (d := d)‖ := norm_add_le _ _
+      _ ≤ ‖ξ‖ + 1 := by
+            nlinarith [norm_wickRotatePoint_le_local (d := d) ξ,
+              norm_unitImagTimeShift_le_local (d := d)]
+      _ = 1 + ‖ξ‖ := by ring
+
+/-- Strengthened `k = 2` payoff of the upstream translation-invariant `ACR(1)`
+witness surface.
+
+Besides the old Euclidean reproduction and diff-block dependence package, this
+version also exports the direct positive-time bound on the zero-anchor section
+`ξ ↦ k2TimeParametricKernel G ![(0), ξ]`. This is the exact input needed to
+close the live Input A frontier bound after a simple time-shift specialization. -/
+theorem schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_and_posSectionBound_local
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) :
     ∃ G : (Fin (2 * (d + 1)) → ℂ) → ℂ,
@@ -675,10 +758,31 @@ theorem schwinger_continuation_base_step_timeParametric_of_translationInvariant_
       (∀ u v : Fin (2 * (d + 1)) → ℂ,
         (∀ μ : Fin (d + 1),
           u (diffSlot_local (d := d) μ) = v (diffSlot_local (d := d) μ)) →
-        G u = G v) := by
-  obtain ⟨S₁, hS₁_hol, hS₁_euclid, hS₁_trans⟩ :=
+        G u = G v) ∧
+      ∃ (C_bd : ℝ) (N : ℕ),
+        0 < C_bd ∧
+        ∀ ξ : SpacetimeDim d, 0 < ξ 0 →
+          ‖k2TimeParametricKernel (d := d) G
+              (![(0 : SpacetimeDim d), ξ] : NPointDomain d 2)‖ ≤
+            C_bd * (1 + ‖ξ‖) ^ N := by
+  let hS_pack :=
     _root_.schwinger_continuation_base_step_acrOne_assembly_with_translationInvariant
       (d := d) OS lgc 2
+  let S₁ : (Fin 2 → Fin (d + 1) → ℂ) → ℂ := Classical.choose hS_pack
+  have hS₁_hol :
+      DifferentiableOn ℂ S₁ (AnalyticContinuationRegion d 2 1) :=
+    (Classical.choose_spec hS_pack).1
+  have hS₁_euclid :
+      ∀ (f : ZeroDiagonalSchwartz d 2),
+        OS.S 2 f = ∫ x : NPointDomain d 2,
+          S₁ (fun j => wickRotatePoint (x j)) * (f.1 x) :=
+    (Classical.choose_spec hS_pack).2.1
+  have hS₁_trans :
+      ∀ (z : Fin 2 → Fin (d + 1) → ℂ) (a : Fin (d + 1) → ℂ),
+        S₁ (fun j => z j + a) = S₁ z :=
+    (Classical.choose_spec hS_pack).2.2.1
+  obtain ⟨C₁, N, hC₁, hS₁_growth⟩ :=
+    (Classical.choose_spec hS_pack).2.2.2
   let G : (Fin (2 * (d + 1)) → ℂ) → ℂ := fun u => S₁ (BHW.fromDiffFlat 2 d u)
   have hG_holo : IsTimeHolomorphicFlatPositiveTimeDiffWitness G := by
     refine ⟨?_, ?_⟩
@@ -737,6 +841,65 @@ theorem schwinger_continuation_base_step_timeParametric_of_translationInvariant_
     simpa [G] using
       (diffBlockDependence_of_fromDiffFlat_translationInvariant_local
         (d := d) S₁ hS₁_trans)
+  refine ⟨G, hG_holo, hG_euclid, hG_diff, C₁ * (2 : ℝ) ^ N, N, ?_, ?_⟩
+  · positivity
+  · intro ξ hξ
+    let zShifted : Fin 2 → Fin (d + 1) → ℂ := zeroAnchorSectionShiftedToAcr_local (d := d) ξ
+    have hz_mem : zShifted ∈ AnalyticContinuationRegion d 2 1 :=
+      zeroAnchorSectionShiftedToAcr_mem_local (d := d) ξ hξ
+    have hz_norm : ‖zShifted‖ ≤ 1 + ‖ξ‖ :=
+      norm_zeroAnchorSectionShiftedToAcr_le_local (d := d) ξ
+    have htrans_eq :
+        k2TimeParametricKernel (d := d) G
+            (![(0 : SpacetimeDim d), ξ] : NPointDomain d 2) = S₁ zShifted := by
+      calc
+        k2TimeParametricKernel (d := d) G
+            (![(0 : SpacetimeDim d), ξ] : NPointDomain d 2)
+            = S₁ (fun i => wickRotatePoint (![(0 : SpacetimeDim d), ξ] i)) := by
+                simp [G, k2TimeParametricKernel, BHW.fromDiffFlat_toDiffFlat]
+        _ = S₁ zShifted := by
+            symm
+            simpa [zShifted, zeroAnchorSectionShiftedToAcr_local, unitImagTimeShift_local] using
+              hS₁_trans
+                (fun i => wickRotatePoint (![(0 : SpacetimeDim d), ξ] i))
+                (unitImagTimeShift_local (d := d))
+    have hbound0 : ‖S₁ zShifted‖ ≤ C₁ * (1 + ‖zShifted‖) ^ N :=
+      hS₁_growth zShifted hz_mem
+    calc
+      ‖k2TimeParametricKernel (d := d) G
+          (![(0 : SpacetimeDim d), ξ] : NPointDomain d 2)‖
+          = ‖S₁ zShifted‖ := by rw [htrans_eq]
+      _ ≤ C₁ * (1 + ‖zShifted‖) ^ N := hbound0
+      _ ≤ C₁ * (1 + (1 + ‖ξ‖)) ^ N := by
+            gcongr
+      _ = C₁ * (2 + ‖ξ‖) ^ N := by ring
+      _ ≤ C₁ * ((2 : ℝ) * (1 + ‖ξ‖)) ^ N := by
+            apply mul_le_mul_of_nonneg_left ?_ (le_of_lt hC₁)
+            exact pow_le_pow_left₀ (by positivity) (by nlinarith [norm_nonneg ξ]) N
+      _ = (C₁ * (2 : ℝ) ^ N) * (1 + ‖ξ‖) ^ N := by
+            rw [mul_assoc, mul_pow]
+      _ = (C₁ * (2 : ℝ) ^ N) * (1 + ‖ξ‖) ^ N := rfl
+
+/-- Exact `k = 2` payoff of the strengthened upstream `ACR(1)` witness surface.
+
+This is the older interface used downstream: witness, Euclidean reproduction,
+and diff-block dependence. It is now obtained by forgetting the additional
+positive-time section bound proved above. -/
+theorem schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_local
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    ∃ G : (Fin (2 * (d + 1)) → ℂ) → ℂ,
+      IsTimeHolomorphicFlatPositiveTimeDiffWitness G ∧
+      (∀ (f : ZeroDiagonalSchwartz d 2),
+        OS.S 2 f = ∫ x : NPointDomain d 2,
+          G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x)) ∧
+      (∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (diffSlot_local (d := d) μ) = v (diffSlot_local (d := d) μ)) →
+        G u = G v) := by
+  obtain ⟨G, hG_holo, hG_euclid, hG_diff, _hG_bound⟩ :=
+    schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_and_posSectionBound_local
+      (d := d) OS lgc
   exact ⟨G, hG_holo, hG_euclid, hG_diff⟩
 
 end OSReconstruction
