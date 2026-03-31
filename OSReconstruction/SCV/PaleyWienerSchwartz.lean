@@ -215,6 +215,10 @@ theorem schwartz_clm_bound_by_seminorm
     ∃ (C_T : ℝ) (k n : ℕ), C_T > 0 ∧
       ∀ (f : SchwartzMap (Fin m → ℝ) ℂ),
         ‖T f‖ ≤ C_T * SchwartzMap.seminorm ℝ k n f := by
+  -- The norm of T(f) is a continuous seminorm on Schwartz space.
+  -- By Seminorm.bound_of_continuous (Mathlib), it's bounded by a finite sup of
+  -- Schwartz seminorms. Then we bound the finset sup by a single (k,n) using
+  -- monotonicity of Schwartz seminorms in both indices.
   sorry
 
 /-! ### Growth bound -/
@@ -249,8 +253,10 @@ theorem fourierLaplaceExtMultiDim_vladimirov_growth
         apply mul_le_mul_of_nonneg_left (hψ_bound z hz) (le_of_lt hC_T_pos)
     _ ≤ C_T * B * (1 + ‖z‖) ^ N *
           (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M := by
-        ring_nf
-        sorry -- ‖fun i => (z i).re‖ ≤ ‖z‖ (real part norm ≤ complex norm)
+        -- Follows from ‖fun i => (z i).re‖ ≤ ‖z‖ (Pi sup norm of real parts
+        -- ≤ Pi sup norm of complex values, since |re(z_i)| ≤ |z_i|),
+        -- which gives (1 + ‖Re z‖)^N ≤ (1 + ‖z‖)^N, then multiply through.
+        sorry
 
 /-! ### Boundary values -/
 
