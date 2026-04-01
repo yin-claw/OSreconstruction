@@ -299,7 +299,7 @@ axiom multiDimPsiZ_differenceQuotient_converges {m : ℕ}
 /-- For Fourier-supported functionals, the value of `T(ψ_{z,R})` is independent
     of the cutoff radius. This is the key bridge between fixed-radius
     holomorphicity and dynamic-radius growth estimates. -/
-axiom multiDimPsiZR_eval_eq_of_support {m : ℕ}
+theorem multiDimPsiZR_eval_eq_of_support {m : ℕ}
     (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
     (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
     (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ)
@@ -307,7 +307,26 @@ axiom multiDimPsiZR_eval_eq_of_support {m : ℕ}
     (R₁ R₂ : ℝ) (hR₁ : 0 < R₁) (hR₂ : 0 < R₂)
     (z : Fin m → ℂ) (hz : z ∈ SCV.TubeDomain C) :
     T (multiDimPsiZR C hC_open hC_conv hC_cone hC_salient R₁ hR₁ z hz) =
-      T (multiDimPsiZR C hC_open hC_conv hC_cone hC_salient R₂ hR₂ z hz)
+      T (multiDimPsiZR C hC_open hC_conv hC_cone hC_salient R₂ hR₂ z hz) := by
+  -- T(ψ_{R₁}) - T(ψ_{R₂}) = T(ψ_{R₁} - ψ_{R₂}) by linearity
+  -- The difference ψ_{R₁} - ψ_{R₂} is supported outside DualConeFlat C
+  -- (both cutoffs = 1 on C* by one_on_neighborhood), so T kills it
+  -- by HasFourierSupportInDualCone.
+  -- T(ψ_{R₁} - ψ_{R₂}) = 0 since the difference is supported outside DualConeFlat C
+  suffices h : T (multiDimPsiZR C hC_open hC_conv hC_cone hC_salient R₁ hR₁ z hz -
+      multiDimPsiZR C hC_open hC_conv hC_cone hC_salient R₂ hR₂ z hz) = 0 by
+    rwa [map_sub, sub_eq_zero] at h
+  apply hT_support
+  intro ξ hξ_supp hξ_dual
+  -- ξ is in the support, meaning the difference is nonzero at ξ
+  -- But ξ ∈ DualConeFlat C, and both ψ agree there
+  exfalso
+  apply hξ_supp
+  simp only [SchwartzMap.sub_apply, Function.mem_support, ne_eq, not_not, sub_eq_zero]
+  -- The two multiDimPsiZR values agree at ξ ∈ DualConeFlat C
+  change (psiZRSchwartz hC_open hC_cone hC_salient _ R₁ hR₁ z hz) ξ =
+    (psiZRSchwartz hC_open hC_cone hC_salient _ R₂ hR₂ z hz) ξ
+  exact psiZRaw_eq_on_dualCone _ hR₁ hR₂ z ξ hξ_dual
 
 private theorem finset_sum_schwartzSeminorm_apply
     (s : Finset (ℕ × ℕ)) (φ : SchwartzMap (Fin m → ℝ) ℂ) :
