@@ -11,11 +11,10 @@ Count convention in this file: direct tactic holes only,
 
 | Scope | Direct `sorry` lines |
 |---|---:|
-| `OSReconstruction/SCV` | 3 |
+| `OSReconstruction/SCV` | 2 |
 
 Breakdown:
 - `SCV/BochnerTubeTheorem.lean`: 2
-- `SCV/TubeBoundaryValues.lean`: 1
 - All other SCV files: 0
 
 ## Axiom Census
@@ -24,7 +23,8 @@ Breakdown:
 |------|--------|-------|
 | `SCV/SemigroupGroupBochner.lean` | 2 | `semigroupGroup_bochner`, `laplaceFourier_measure_unique` |
 | `SCV/VladimirovTillmann.lean` | 2 | `vladimirov_tillmann`, `distributional_cluster_lifts_to_tube` |
-| **Total** | **4** | |
+| `SCV/TubeBoundaryValues.lean` | 1 | `tube_boundaryValueData_of_polyGrowth` |
+| **Total** | **5** | |
 
 ### Axiom Details
 
@@ -43,6 +43,11 @@ Used by `OSToWightmanBoundaryValues.lean`.
 **`distributional_cluster_lifts_to_tube`**: Cluster property from distributional boundary
 values lifts to pointwise factorization in the tube interior. Used for the cluster
 decomposition axiom transfer.
+
+**`tube_boundaryValueData_of_polyGrowth`**: Vladimirov-style boundary-value existence
+for holomorphic functions on tube domains with a global polynomial-growth bound.
+This is a pure SCV / functional-analytic axiom replacing the invalid
+`uniform_bound`-based route on the active OS path.
 
 ## Usage in the Main Proof Chain
 
@@ -93,14 +98,13 @@ The SCV module provides analytic continuation infrastructure consumed by:
 | File | Sorrys | Names |
 |------|--------|-------|
 | `BochnerTubeTheorem.lean` | 2 | `bochner_local_extension`, `bochner_tube_extension` |
-| `TubeBoundaryValues.lean` | 1 | `tube_boundaryValueData_of_polyGrowth` |
-
 ### Files with Axioms (no sorries)
 
 | File | Axioms | Names |
 |------|--------|-------|
 | `SemigroupGroupBochner.lean` | 2 | `semigroupGroup_bochner`, `laplaceFourier_measure_unique` |
 | `VladimirovTillmann.lean` | 2 | `vladimirov_tillmann`, `distributional_cluster_lifts_to_tube` |
+| `TubeBoundaryValues.lean` | 1 | `tube_boundaryValueData_of_polyGrowth` |
 
 ## Load-Bearing Items
 
@@ -113,20 +117,18 @@ Remaining blockers:
 The old generic gluing theorem was too strong and has been removed.
 Current work should build on the compatible-family gluing theorem instead.
 
-### `SCV/TubeBoundaryValues.lean` (1 sorry)
+### `SCV/TubeBoundaryValues.lean` (1 axiom)
 
-Remaining blocker:
-- `tube_boundaryValueData_of_polyGrowth`
-
-This is the honest pure SCV theorem now used by the active OS boundary-values
-route:
+`tube_boundaryValueData_of_polyGrowth` is now the explicit pure SCV theorem
+used by the active OS boundary-values route:
 - holomorphic on a tube domain over an open convex salient cone
 - global polynomial growth on that tube
 - conclude existence of a continuous Schwartz boundary-value functional with
   raywise convergence
 
 The old OS-local boundary-value blocker has been reduced to a wrapper around
-this theorem, so issue #48 is now localized to the correct SCV layer.
+this theorem, so issue #48 is now isolated to an honest pure SCV trust
+boundary rather than the false `uniform_bound` abstraction.
 
 ### `SCV/LaplaceSchwartz.lean` (0 sorries)
 

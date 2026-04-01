@@ -309,6 +309,41 @@ theorem bvt_F_translationInvariant (OS : OsterwalderSchraderAxioms d)
       bvt_F OS lgc n (fun j => z j + a) = bvt_F OS lgc n z :=
   (boundary_values_tempered OS lgc n).choose_spec.choose_spec.2.2.2.2.2.2
 
+private def canonicalForwardConeDirection (n : ℕ) : Fin n → Fin (d + 1) → ℝ :=
+  fun k μ => if μ = 0 then (↑(k : ℕ) + 1 : ℝ) else 0
+
+private theorem canonicalForwardConeDirection_mem (n : ℕ) :
+    InForwardCone d n (canonicalForwardConeDirection (d := d) n) := by
+  let η₀ : Fin (d + 1) → ℝ := fun μ => if μ = 0 then 1 else 0
+  have hη₀ : InOpenForwardCone d η₀ := by
+    constructor
+    · simp [η₀]
+    · simp only [MinkowskiSpace.minkowskiNormSq, MinkowskiSpace.minkowskiInner, η₀,
+        Pi.single_apply]
+      have : ∀ i : Fin (d + 1), (MinkowskiSpace.metricSignature d i *
+          (if i = 0 then (1 : ℝ) else 0)) * (if i = 0 then 1 else 0) =
+          if i = 0 then -1 else 0 := by
+        intro i
+        split_ifs with h <;> simp [MinkowskiSpace.metricSignature, h]
+      simp only [this, Finset.sum_ite_eq', Finset.mem_univ, ite_true]
+      norm_num
+  rw [inForwardCone_iff_mem_forwardConeAbs]
+  intro k
+  simp only []
+  convert hη₀ using 1
+  ext μ
+  split_ifs with h
+  · simp [canonicalForwardConeDirection, η₀, h]
+  · by_cases hμ : μ = 0
+    · simp [canonicalForwardConeDirection, η₀, hμ]
+      have hk_pos : (k : ℕ) ≥ 1 := Nat.one_le_iff_ne_zero.mpr h
+      have : (↑(↑k - 1 : ℕ) : ℝ) = (↑(k : ℕ) : ℝ) - 1 := by
+        rw [Nat.cast_sub hk_pos]
+        simp
+      rw [this]
+      ring
+    · simp [canonicalForwardConeDirection, η₀, hμ]
+
 /-! #### Helper lemmas for property transfer: OS axiom → F_analytic → W_n -/
 
 theorem bv_zero_point_is_evaluation (OS : OsterwalderSchraderAxioms d)
@@ -367,11 +402,11 @@ private theorem boundary_ray_translation_invariant_of_F_invariant
     (n : ℕ)
     (F_n : (Fin n → Fin (d + 1) → ℂ) → ℂ)
     (hF_inv : ∀ (a : SpacetimeDim d) (x : NPointDomain d n)
-        (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ),
+        (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ), 0 < ε →
       F_n (fun k μ => ↑(x k μ - a μ) + ε * ↑(η k μ) * Complex.I) =
         F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I))
     (a : SpacetimeDim d) (f : SchwartzNPoint d n)
-    (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ) :
+    (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ) (hε : 0 < ε) :
     ∫ x : NPointDomain d n,
       F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) *
         f (fun i => x i + a) =
@@ -399,7 +434,7 @@ private theorem boundary_ray_translation_invariant_of_F_invariant
   simp only [gfun]
   congr 1
   ext x
-  exact congrArg (fun z : ℂ => z * f x) (hF_inv a x η ε)
+  exact congrArg (fun z : ℂ => z * f x) (hF_inv a x η ε hε)
 
 private theorem bv_translation_invariance_transfer_of_F_invariant
     (n : ℕ)
@@ -413,7 +448,7 @@ private theorem bv_translation_invariance_transfer_of_F_invariant
         (nhdsWithin 0 (Set.Ioi 0))
         (nhds (W_n f)))
     (hF_inv : ∀ (a : SpacetimeDim d) (x : NPointDomain d n)
-        (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ),
+        (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ), 0 < ε →
       F_n (fun k μ => ↑(x k μ - a μ) + ε * ↑(η k μ) * Complex.I) =
         F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I)) :
     ∀ (a : SpacetimeDim d) (f g : SchwartzNPoint d n),
@@ -433,8 +468,7 @@ private theorem bv_translation_invariance_transfer_of_F_invariant
       (fun ε : ℝ =>
         ∫ x : NPointDomain d n,
           F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x)) := by
-    refine Filter.Eventually.of_forall ?_
-    intro ε
+    filter_upwards [self_mem_nhdsWithin] with ε hε
     have hrewrite :
         (∫ x : NPointDomain d n,
           F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (g x)) =
@@ -457,7 +491,7 @@ private theorem bv_translation_invariance_transfer_of_F_invariant
       _ =
         ∫ x : NPointDomain d n,
           F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x) :=
-        boundary_ray_translation_invariant_of_F_invariant (d := d) n F_n hF_inv a f η ε
+        boundary_ray_translation_invariant_of_F_invariant (d := d) n F_n hF_inv a f η ε hε
   have hg_as_f : Filter.Tendsto
       (fun ε : ℝ =>
         ∫ x : NPointDomain d n,
@@ -467,12 +501,9 @@ private theorem bv_translation_invariance_transfer_of_F_invariant
     Filter.Tendsto.congr' hEq hg
   exact tendsto_nhds_unique hf hg_as_f
 
-theorem bv_translation_invariance_transfer (OS : OsterwalderSchraderAxioms d)
-    (lgc : OSLinearGrowthCondition d OS) (n : ℕ)
+theorem bv_translation_invariance_transfer (n : ℕ)
     (W_n : SchwartzNPoint d n → ℂ)
-    (hW_cont : Continuous W_n)
     (F_n : (Fin n → Fin (d + 1) → ℂ) → ℂ)
-    (hF_hol : DifferentiableOn ℂ F_n (ForwardTube d n))
     (hBV : ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
       InForwardCone d n η →
       Filter.Tendsto
@@ -480,28 +511,133 @@ theorem bv_translation_invariance_transfer (OS : OsterwalderSchraderAxioms d)
           F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
         (nhdsWithin 0 (Set.Ioi 0))
         (nhds (W_n f)))
-    (hEuclid : ∀ (f : ZeroDiagonalSchwartz d n),
-      OS.S n f = ∫ x : NPointDomain d n,
-        F_n (fun k => wickRotatePoint (x k)) * (f.1 x))
-    (hE1 : ∀ (a : SpacetimeDim d) (f g : ZeroDiagonalSchwartz d n),
-      (∀ x, g.1 x = f.1 (fun i => x i + a)) →
-      OS.S n f = OS.S n g) :
+    (hF_inv :
+      ∀ (a : SpacetimeDim d) (x : NPointDomain d n)
+        (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ), 0 < ε →
+        F_n (fun k μ => ↑(x k μ - a μ) + ε * ↑(η k μ) * Complex.I) =
+          F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I)) :
     ∀ (a : SpacetimeDim d) (f g : SchwartzNPoint d n),
       (∀ x, g.toFun x = f.toFun (fun i => x i + a)) →
       W_n f = W_n g := by
-  have hF_inv :
-      ∀ (a : SpacetimeDim d) (x : NPointDomain d n)
-        (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ),
-        F_n (fun k μ => ↑(x k μ - a μ) + ε * ↑(η k μ) * Complex.I) =
-          F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) := by
-    sorry
   exact bv_translation_invariance_transfer_of_F_invariant (d := d) n W_n F_n hBV hF_inv
 
-theorem bv_lorentz_covariance_transfer (OS : OsterwalderSchraderAxioms d)
-    (lgc : OSLinearGrowthCondition d OS) (n : ℕ)
+private theorem integral_lorentz_eq_self_full {n : ℕ}
+    (Λ : LorentzGroup d)
+    (h : NPointDomain d n → ℂ) :
+    ∫ x : NPointDomain d n, h (fun i => Matrix.mulVec Λ.val (x i)) =
+    ∫ x : NPointDomain d n, h x := by
+  have habs : |Λ.val.det| = 1 := by
+    rcases LorentzGroup.det_eq_pm_one Λ with hdet | hdet
+    · rw [hdet]
+      simp
+    · rw [hdet]
+      simp
+  have hdet_ne : Λ.val.det ≠ 0 := by
+    intro hzero
+    rw [hzero] at habs
+    norm_num at habs
+  have hΛ_mul_inv : Λ.val * Λ⁻¹.val = 1 := by
+    have h1 := LorentzGroup.ext_iff.mp (mul_inv_cancel Λ)
+    rw [show (Λ * Λ⁻¹).val = Λ.val * Λ⁻¹.val from rfl] at h1
+    rw [show (1 : LorentzGroup d).val = (1 : Matrix _ _ ℝ) from rfl] at h1
+    exact h1
+  have hΛinv_mul : Λ⁻¹.val * Λ.val = 1 := by
+    have h1 := LorentzGroup.ext_iff.mp (inv_mul_cancel Λ)
+    rw [show (Λ⁻¹ * Λ).val = Λ⁻¹.val * Λ.val from rfl] at h1
+    rw [show (1 : LorentzGroup d).val = (1 : Matrix _ _ ℝ) from rfl] at h1
+    exact h1
+  have hmv : (fun v => Λ.val.mulVec v) = Matrix.toLin' Λ.val := by
+    ext v
+    simp [Matrix.toLin'_apply]
+  have hcont_Λ : Continuous (Matrix.toLin' Λ.val) :=
+    LinearMap.continuous_of_finiteDimensional _
+  have hcont_Λinv : Continuous (Matrix.toLin' Λ⁻¹.val) :=
+    LinearMap.continuous_of_finiteDimensional _
+  have hmp_factor : MeasureTheory.MeasurePreserving
+      (fun v : Fin (d + 1) → ℝ => Λ.val.mulVec v)
+      MeasureTheory.volume MeasureTheory.volume := by
+    rw [hmv]
+    constructor
+    · exact hcont_Λ.measurable
+    · rw [Real.map_matrix_volume_pi_eq_smul_volume_pi hdet_ne]
+      simp [habs]
+  let e : (Fin n → Fin (d + 1) → ℝ) ≃ᵐ (Fin n → Fin (d + 1) → ℝ) :=
+    { toEquiv := {
+        toFun := fun a i => Λ.val.mulVec (a i)
+        invFun := fun a i => Λ⁻¹.val.mulVec (a i)
+        left_inv := fun a => by
+          ext i j
+          simp [Matrix.mulVec_mulVec, hΛinv_mul]
+        right_inv := fun a => by
+          ext i j
+          simp [Matrix.mulVec_mulVec, hΛ_mul_inv] }
+      measurable_toFun :=
+        measurable_pi_lambda _ fun i => hcont_Λ.measurable.comp (measurable_pi_apply i)
+      measurable_invFun :=
+        measurable_pi_lambda _ fun i => hcont_Λinv.measurable.comp (measurable_pi_apply i) }
+  have hmp : MeasureTheory.MeasurePreserving e MeasureTheory.volume MeasureTheory.volume :=
+    MeasureTheory.volume_preserving_pi (fun (_ : Fin n) => hmp_factor)
+  exact hmp.integral_comp' h
+
+private theorem boundary_ray_lorentz_invariant_of_F_invariant
+    (n : ℕ)
+    (F_n : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF_lorentz :
+      ∀ (Λ : LorentzGroup d) (x : NPointDomain d n)
+        (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ), 0 < ε →
+        F_n (fun k μ => ↑((Matrix.mulVec Λ.val (x k)) μ) + ε * ↑(η k μ) * Complex.I) =
+          F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I))
+    (Λ : LorentzGroup d)
+    (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ) (hε : 0 < ε) :
+    ∫ x : NPointDomain d n,
+      F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) *
+        f (fun i => Matrix.mulVec Λ⁻¹.val (x i))
+      =
+    ∫ x : NPointDomain d n,
+      F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * f x := by
+  have hΛinv_mul : Λ⁻¹.val * Λ.val = 1 := by
+    have h1 := LorentzGroup.ext_iff.mp (inv_mul_cancel Λ)
+    rw [show (Λ⁻¹ * Λ).val = Λ⁻¹.val * Λ.val from rfl] at h1
+    rw [show (1 : LorentzGroup d).val = (1 : Matrix _ _ ℝ) from rfl] at h1
+    exact h1
+  have hcov :
+      ∫ x : NPointDomain d n,
+        F_n (fun k μ => ↑((Matrix.mulVec Λ.val (x k)) μ) + ε * ↑(η k μ) * Complex.I) *
+          f x
+      =
+      ∫ x : NPointDomain d n,
+        F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) *
+          f (fun i => Matrix.mulVec Λ⁻¹.val (x i)) := by
+    simpa [Matrix.mulVec_mulVec, hΛinv_mul] using
+      (integral_lorentz_eq_self_full (d := d) (n := n) Λ
+        (fun y : NPointDomain d n =>
+          F_n (fun k μ => ↑(y k μ) + ε * ↑(η k μ) * Complex.I) *
+            f (fun i => Matrix.mulVec Λ⁻¹.val (y i))))
+  have hrewrite :
+      ∫ x : NPointDomain d n,
+        F_n (fun k μ => ↑((Matrix.mulVec Λ.val (x k)) μ) + ε * ↑(η k μ) * Complex.I) *
+          f x
+      =
+      ∫ x : NPointDomain d n,
+        F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * f x := by
+    refine MeasureTheory.integral_congr_ae ?_
+    filter_upwards [Filter.Eventually.of_forall fun x => hF_lorentz Λ x η ε hε] with x hx
+    simp [hx]
+  calc
+    ∫ x : NPointDomain d n,
+      F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) *
+        f (fun i => Matrix.mulVec Λ⁻¹.val (x i))
+        =
+      ∫ x : NPointDomain d n,
+        F_n (fun k μ => ↑((Matrix.mulVec Λ.val (x k)) μ) + ε * ↑(η k μ) * Complex.I) *
+          f x := hcov.symm
+    _ =
+      ∫ x : NPointDomain d n,
+        F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * f x := hrewrite
+
+theorem bv_lorentz_covariance_transfer (n : ℕ)
     (W_n : SchwartzNPoint d n → ℂ)
     (F_n : (Fin n → Fin (d + 1) → ℂ) → ℂ)
-    (hF_hol : DifferentiableOn ℂ F_n (ForwardTube d n))
     (hBV : ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
       InForwardCone d n η →
       Filter.Tendsto
@@ -509,28 +645,54 @@ theorem bv_lorentz_covariance_transfer (OS : OsterwalderSchraderAxioms d)
           F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
         (nhdsWithin 0 (Set.Ioi 0))
         (nhds (W_n f)))
-    (hEuclid : ∀ (f : ZeroDiagonalSchwartz d n),
-      OS.S n f = ∫ x : NPointDomain d n,
-        F_n (fun k => wickRotatePoint (x k)) * (f.1 x))
-    (hE1_rot : ∀ (R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ),
-      R.transpose * R = 1 → R.det = 1 →
-      ∀ (f g : ZeroDiagonalSchwartz d n),
-      (∀ x, g.1 x = f.1 (fun i => R.mulVec (x i))) →
-      OS.S n f = OS.S n g) :
+    (hF_lorentz_pairing :
+      ∀ (Λ : LorentzGroup d) (f g : SchwartzNPoint d n) (ε : ℝ), 0 < ε →
+        (∀ x, g.toFun x = f.toFun (fun i => Matrix.mulVec Λ⁻¹.val (x i))) →
+        ∫ x : NPointDomain d n,
+          F_n (fun k μ =>
+            ↑(x k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (g x)
+          =
+        ∫ x : NPointDomain d n,
+          F_n (fun k μ =>
+            ↑(x k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (f x)) :
     ∀ (Λ : LorentzGroup d) (f g : SchwartzNPoint d n),
       (∀ x, g.toFun x = f.toFun (fun i => Matrix.mulVec Λ⁻¹.val (x i))) →
       W_n f = W_n g := by
-  sorry
+  intro Λ f g hfg
+  let η := canonicalForwardConeDirection (d := d) n
+  have hη : InForwardCone d n η := canonicalForwardConeDirection_mem (d := d) n
+  have hf := hBV f η hη
+  have hg := hBV g η hη
+  have hEq :
+      (fun ε : ℝ =>
+        ∫ x : NPointDomain d n,
+          F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (g x))
+      =ᶠ[nhdsWithin 0 (Set.Ioi 0)]
+      (fun ε : ℝ =>
+        ∫ x : NPointDomain d n,
+          F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x)) := by
+    filter_upwards [self_mem_nhdsWithin] with ε hε
+    simpa [η] using hF_lorentz_pairing Λ f g ε hε hfg
+  have hg_as_f : Filter.Tendsto
+      (fun ε : ℝ =>
+        ∫ x : NPointDomain d n,
+          F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds (W_n g)) :=
+    Filter.Tendsto.congr' hEq hg
+  exact tendsto_nhds_unique hf hg_as_f
 
 private theorem boundary_ray_permutation_invariant_of_F_invariant
     (n : ℕ)
     (F_n : (Fin n → Fin (d + 1) → ℂ) → ℂ)
     (hF_perm : ∀ (σ : Equiv.Perm (Fin n)) (x : NPointDomain d n)
-        (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ),
+        (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ), 0 < ε →
       F_n (fun k μ => ↑(x (σ k) μ) + ε * ↑(η k μ) * Complex.I) =
         F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I))
     (σ : Equiv.Perm (Fin n))
-    (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ) :
+    (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ) (hε : 0 < ε) :
     ∫ x : NPointDomain d n,
       F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) *
         f (fun i => x (σ i))
@@ -546,7 +708,7 @@ private theorem boundary_ray_permutation_invariant_of_F_invariant
         F_n (fun k μ => ↑(x (σ k) μ) + ε * ↑(η k μ) * Complex.I) *
           f (fun i => x (σ i)) := by
             refine MeasureTheory.integral_congr_ae ?_
-            filter_upwards [Filter.Eventually.of_forall fun x => hF_perm σ x η ε] with x hx
+            filter_upwards [Filter.Eventually.of_forall fun x => hF_perm σ x η ε hε] with x hx
             simp [hx]
   _ =
       ∫ x : NPointDomain d n,
@@ -569,7 +731,7 @@ private theorem bv_local_commutativity_transfer_of_F_invariant
         (nhdsWithin 0 (Set.Ioi 0))
         (nhds (W_n f)))
     (hF_perm : ∀ (σ : Equiv.Perm (Fin n)) (x : NPointDomain d n)
-        (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ),
+        (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ), 0 < ε →
       F_n (fun k μ => ↑(x (σ k) μ) + ε * ↑(η k μ) * Complex.I) =
         F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I)) :
     ∀ (σ : Equiv.Perm (Fin n)) (f g : SchwartzNPoint d n),
@@ -589,8 +751,7 @@ private theorem bv_local_commutativity_transfer_of_F_invariant
       (fun ε : ℝ =>
         ∫ x : NPointDomain d n,
           F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x)) := by
-    refine Filter.Eventually.of_forall ?_
-    intro ε
+    filter_upwards [self_mem_nhdsWithin] with ε hε
     have hrewrite :
         (∫ x : NPointDomain d n,
           F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (g x)) =
@@ -613,7 +774,7 @@ private theorem bv_local_commutativity_transfer_of_F_invariant
       _ =
         ∫ x : NPointDomain d n,
           F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x) :=
-        boundary_ray_permutation_invariant_of_F_invariant (d := d) n F_n hF_perm σ f η ε
+        boundary_ray_permutation_invariant_of_F_invariant (d := d) n F_n hF_perm σ f η ε hε
   have hg_as_f : Filter.Tendsto
       (fun ε : ℝ =>
         ∫ x : NPointDomain d n,
@@ -623,11 +784,9 @@ private theorem bv_local_commutativity_transfer_of_F_invariant
     Filter.Tendsto.congr' hEq hg
   exact tendsto_nhds_unique hf hg_as_f
 
-theorem bv_local_commutativity_transfer (OS : OsterwalderSchraderAxioms d)
-    (lgc : OSLinearGrowthCondition d OS) (n : ℕ)
+theorem bv_local_commutativity_transfer (n : ℕ)
     (W_n : SchwartzNPoint d n → ℂ)
     (F_n : (Fin n → Fin (d + 1) → ℂ) → ℂ)
-    (hF_hol : DifferentiableOn ℂ F_n (ForwardTube d n))
     (hBV : ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
       InForwardCone d n η →
       Filter.Tendsto
@@ -635,37 +794,48 @@ theorem bv_local_commutativity_transfer (OS : OsterwalderSchraderAxioms d)
           F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
         (nhdsWithin 0 (Set.Ioi 0))
         (nhds (W_n f)))
-    (hEuclid : ∀ (f : ZeroDiagonalSchwartz d n),
-      OS.S n f = ∫ x : NPointDomain d n,
-        F_n (fun k => wickRotatePoint (x k)) * (f.1 x))
-    (hE3 : ∀ (σ : Equiv.Perm (Fin n)) (f g : ZeroDiagonalSchwartz d n),
-      (∀ x, g.1 x = f.1 (fun i => x (σ i))) →
-      OS.S n f = OS.S n g) :
+    (hF_swap_pairing :
+      ∀ (i j : Fin n) (f g : SchwartzNPoint d n) (ε : ℝ), 0 < ε →
+        (∀ x, f.toFun x ≠ 0 →
+          MinkowskiSpace.AreSpacelikeSeparated d (x i) (x j)) →
+        (∀ x, g.toFun x = f.toFun (fun k => x (Equiv.swap i j k))) →
+        ∫ x : NPointDomain d n,
+          F_n (fun k μ =>
+            ↑(x k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (g x)
+          =
+        ∫ x : NPointDomain d n,
+          F_n (fun k μ =>
+            ↑(x k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (f x)) :
     ∀ (i j : Fin n) (f g : SchwartzNPoint d n),
       (∀ x, f.toFun x ≠ 0 →
         MinkowskiSpace.AreSpacelikeSeparated d (x i) (x j)) →
       (∀ x, g.toFun x = f.toFun (fun k => x (Equiv.swap i j k))) →
       W_n f = W_n g := by
-  have hF_perm :
-      ∀ (σ : Equiv.Perm (Fin n)) (x : NPointDomain d n)
-        (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ),
-        F_n (fun k μ => ↑(x (σ k) μ) + ε * ↑(η k μ) * Complex.I) =
-          F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) := by
-    sorry
   intro i j f g hsupp hswap
-  exact bv_local_commutativity_transfer_of_F_invariant (d := d) n W_n F_n hBV hF_perm
-    (Equiv.swap i j) f g hswap
-
-theorem bv_positive_definiteness_transfer (OS : OsterwalderSchraderAxioms d)
-    (lgc : OSLinearGrowthCondition d OS)
-    (W : (n : ℕ) → SchwartzNPoint d n → ℂ)
-    (hW_eq : ∀ n, W n = bvt_W OS lgc n)
-    (hE2 : ∀ (F : BorchersSequence d),
-      (∀ n, tsupport ((F.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
-        OrderedPositiveTimeRegion d n) →
-      (OSInnerProduct d OS.S F F).re ≥ 0) :
-    ∀ F : BorchersSequence d, (WightmanInnerProduct d W F F).re ≥ 0 := by
-  sorry
+  let η := canonicalForwardConeDirection (d := d) n
+  have hη : InForwardCone d n η := canonicalForwardConeDirection_mem (d := d) n
+  have hf := hBV f η hη
+  have hg := hBV g η hη
+  have hEq :
+      (fun ε : ℝ =>
+        ∫ x : NPointDomain d n,
+          F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (g x))
+      =ᶠ[nhdsWithin 0 (Set.Ioi 0)]
+      (fun ε : ℝ =>
+        ∫ x : NPointDomain d n,
+          F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x)) := by
+    filter_upwards [self_mem_nhdsWithin] with ε hε
+    simpa [η] using hF_swap_pairing i j f g ε hε hsupp hswap
+  have hg_as_f : Filter.Tendsto
+      (fun ε : ℝ =>
+        ∫ x : NPointDomain d n,
+          F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds (W_n g)) :=
+    Filter.Tendsto.congr' hEq hg
+  exact tendsto_nhds_unique hf hg_as_f
 
 private theorem bv_hermiticity_transfer_of_F_reflect
     (n : ℕ)
@@ -679,6 +849,7 @@ private theorem bv_hermiticity_transfer_of_F_reflect
         (nhdsWithin 0 (Set.Ioi 0))
         (nhds (W_n f)))
     (hF_reflect : ∀ (x : NPointDomain d n) (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ),
+      0 < ε →
       starRingEnd ℂ (F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I)) =
         F_n (fun k μ => ↑(x (Fin.rev k) μ) + ε * ↑(η k μ) * Complex.I)) :
     ∀ (f g : SchwartzNPoint d n),
@@ -713,8 +884,7 @@ private theorem bv_hermiticity_transfer_of_F_reflect
         starRingEnd ℂ
           (∫ x : NPointDomain d n,
             F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))) := by
-    refine Filter.Eventually.of_forall ?_
-    intro ε
+    filter_upwards [self_mem_nhdsWithin] with ε hε
     have hrewrite :
         (∫ x : NPointDomain d n,
           F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (g x)) =
@@ -734,7 +904,7 @@ private theorem bv_hermiticity_transfer_of_F_reflect
             F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) *
               starRingEnd ℂ (f (Ψ x)) := by
       simpa [Ψ, Ψfun] using
-        (SCV.bv_reality_pattern (μ := MeasureTheory.volume)
+          (SCV.bv_reality_pattern (μ := MeasureTheory.volume)
           (F := fun x : NPointDomain d n =>
             F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I))
           (f := f) (Ψ := Ψ)
@@ -742,7 +912,7 @@ private theorem bv_hermiticity_transfer_of_F_reflect
           (fun x => by simpa [Ψ] using hΨ_invol x)
           (Filter.Eventually.of_forall <| by
             intro x
-            simpa [Ψ, Ψfun] using hF_reflect x η ε))
+            simpa [Ψ, Ψfun] using hF_reflect x η ε hε))
     exact hrewrite.trans hpattern.symm
   have hstar :
       Filter.Tendsto
@@ -764,11 +934,9 @@ private theorem bv_hermiticity_transfer_of_F_reflect
     Filter.Tendsto.congr' hEq hg
   simpa using (tendsto_nhds_unique hstar hg_as_star).symm
 
-theorem bv_hermiticity_transfer (OS : OsterwalderSchraderAxioms d)
-    (lgc : OSLinearGrowthCondition d OS) (n : ℕ)
+theorem bv_hermiticity_transfer (n : ℕ)
     (W_n : SchwartzNPoint d n → ℂ)
     (F_n : (Fin n → Fin (d + 1) → ℂ) → ℂ)
-    (hF_hol : DifferentiableOn ℂ F_n (ForwardTube d n))
     (hBV : ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
       InForwardCone d n η →
       Filter.Tendsto
@@ -776,22 +944,72 @@ theorem bv_hermiticity_transfer (OS : OsterwalderSchraderAxioms d)
           F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
         (nhdsWithin 0 (Set.Ioi 0))
         (nhds (W_n f)))
-    (hEuclid : ∀ (f : ZeroDiagonalSchwartz d n),
-      OS.S n f = ∫ x : NPointDomain d n,
-        F_n (fun k => wickRotatePoint (x k)) * (f.1 x))
-    (hE0_real : ∀ (f g : ZeroDiagonalSchwartz d n),
-      (∀ x, g.1 x = starRingEnd ℂ (f.1 (timeReflectionN d x))) →
-      starRingEnd ℂ (OS.S n f) = OS.S n g) :
+    (hF_reflect_pairing :
+      ∀ (f g : SchwartzNPoint d n) (ε : ℝ), 0 < ε →
+        (∀ x : NPointDomain d n,
+          g.toFun x = starRingEnd ℂ (f.toFun (fun i => x (Fin.rev i)))) →
+        ∫ x : NPointDomain d n,
+          F_n (fun k μ =>
+            ↑(x k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (g x)
+          =
+        starRingEnd ℂ
+          (∫ x : NPointDomain d n,
+            F_n (fun k μ =>
+              ↑(x k μ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (f x))) :
     ∀ (f g : SchwartzNPoint d n),
       (∀ x : NPointDomain d n,
         g.toFun x = starRingEnd ℂ (f.toFun (fun i => x (Fin.rev i)))) →
       W_n g = starRingEnd ℂ (W_n f) := by
-  have hF_reflect :
-      ∀ (x : NPointDomain d n) (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ),
-        starRingEnd ℂ (F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I)) =
-          F_n (fun k μ => ↑(x (Fin.rev k) μ) + ε * ↑(η k μ) * Complex.I) := by
-    sorry
-  exact bv_hermiticity_transfer_of_F_reflect (d := d) n W_n F_n hBV hF_reflect
+  let η := canonicalForwardConeDirection (d := d) n
+  have hη : InForwardCone d n η := canonicalForwardConeDirection_mem (d := d) n
+  intro f g hfg
+  have hf := hBV f η hη
+  have hg := hBV g η hη
+  let Ψfun : NPointDomain d n → NPointDomain d n := fun x i => x (Fin.rev i)
+  have hΨ_invol : Function.Involutive Ψfun := by
+    intro x
+    ext i μ
+    simp [Ψfun]
+  let Ψ : NPointDomain d n ≃ᵐ NPointDomain d n :=
+    { toEquiv :=
+        { toFun := Ψfun
+          invFun := Ψfun
+          left_inv := hΨ_invol
+          right_inv := hΨ_invol }
+      measurable_toFun := (reverseNPoint_measurePreserving (d := d) (n := n)).measurable
+      measurable_invFun := (reverseNPoint_measurePreserving (d := d) (n := n)).measurable }
+  have hEq :
+      (fun ε : ℝ =>
+        ∫ x : NPointDomain d n,
+          F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (g x))
+      =ᶠ[nhdsWithin 0 (Set.Ioi 0)]
+      (fun ε : ℝ =>
+        starRingEnd ℂ
+          (∫ x : NPointDomain d n,
+            F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))) := by
+    filter_upwards [self_mem_nhdsWithin] with ε hε
+    simpa [η] using hF_reflect_pairing f g ε hε hfg
+  have hstar :
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          starRingEnd ℂ
+            (∫ x : NPointDomain d n,
+              F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x)))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (starRingEnd ℂ (W_n f))) :=
+    (continuous_star.tendsto (W_n f)).comp hf
+  have hg_as_star :
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          starRingEnd ℂ
+            (∫ x : NPointDomain d n,
+              F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x)))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (W_n g)) :=
+    Filter.Tendsto.congr' hEq hg
+  simpa using (tendsto_nhds_unique hstar hg_as_star).symm
 
 theorem bvt_normalized (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) :
@@ -810,10 +1028,10 @@ theorem bvt_translation_invariant (OS : OsterwalderSchraderAxioms d)
   intro n a f g hfg
   have hF_inv :
       ∀ (a : SpacetimeDim d) (x : NPointDomain d n)
-        (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ),
+        (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ), 0 < ε →
         bvt_F OS lgc n (fun k μ => ↑(x k μ - a μ) + ε * ↑(η k μ) * Complex.I) =
           bvt_F OS lgc n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) := by
-    intro a x η ε
+    intro a x η ε _hε
     let aNeg : Fin (d + 1) → ℂ := fun μ => -(a μ : ℂ)
     have hz :
         (fun j => (fun μ => ↑(x j μ) + ε * ↑(η j μ) * Complex.I) + aNeg) =
@@ -828,7 +1046,7 @@ theorem bvt_translation_invariant (OS : OsterwalderSchraderAxioms d)
             simpa [aNeg] using
               bvt_F_translationInvariant (d := d) OS lgc n
                 (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) aNeg
-  exact bv_translation_invariance_transfer_of_F_invariant (d := d) n
+  exact bv_translation_invariance_transfer (d := d) n
     (bvt_W OS lgc n)
     (bvt_F OS lgc n)
     (bvt_boundary_values OS lgc n)
@@ -837,36 +1055,60 @@ theorem bvt_translation_invariant (OS : OsterwalderSchraderAxioms d)
 theorem bvt_lorentz_covariant (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) :
     IsLorentzCovariantWeak d (bvt_W OS lgc) := by
+  have hF_lorentz_pairing :
+      ∀ (n : ℕ) (Λ : LorentzGroup d) (f g : SchwartzNPoint d n) (ε : ℝ), 0 < ε →
+        (∀ x, g.toFun x = f.toFun (fun i => Matrix.mulVec Λ⁻¹.val (x i))) →
+        ∫ x : NPointDomain d n,
+          bvt_F OS lgc n (fun k μ =>
+            ↑(x k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (g x)
+          =
+        ∫ x : NPointDomain d n,
+          bvt_F OS lgc n (fun k μ =>
+            ↑(x k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (f x) := by
+    sorry
   intro n Λ f g hfg
-  exact bv_lorentz_covariance_transfer OS lgc n
+  exact bv_lorentz_covariance_transfer (d := d) n
     (bvt_W OS lgc n)
     (bvt_F OS lgc n)
-    (bvt_F_holomorphic OS lgc n)
     (bvt_boundary_values OS lgc n)
-    (bvt_euclidean_restriction OS lgc n)
-    (OS.E1_rotation_invariant n)
+    (hF_lorentz_pairing n)
     Λ f g hfg
 
 theorem bvt_locally_commutative (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) :
     IsLocallyCommutativeWeak d (bvt_W OS lgc) := by
+  have hF_swap_pairing :
+      ∀ (n : ℕ) (i j : Fin n) (f g : SchwartzNPoint d n) (ε : ℝ), 0 < ε →
+        (∀ x, f.toFun x ≠ 0 →
+          MinkowskiSpace.AreSpacelikeSeparated d (x i) (x j)) →
+        (∀ x, g.toFun x = f.toFun (fun k => x (Equiv.swap i j k))) →
+        ∫ x : NPointDomain d n,
+          bvt_F OS lgc n (fun k μ =>
+            ↑(x k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (g x)
+          =
+        ∫ x : NPointDomain d n,
+          bvt_F OS lgc n (fun k μ =>
+            ↑(x k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (f x) := by
+    sorry
   intro n i j f g hsupp hswap
-  exact bv_local_commutativity_transfer OS lgc n
+  exact bv_local_commutativity_transfer (d := d) n
     (bvt_W OS lgc n)
     (bvt_F OS lgc n)
-    (bvt_F_holomorphic OS lgc n)
     (bvt_boundary_values OS lgc n)
-    (bvt_euclidean_restriction OS lgc n)
-    (OS.E3_symmetric n)
+    (hF_swap_pairing n)
     i j f g hsupp hswap
 
 theorem bvt_positive_definite (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) :
     IsPositiveDefinite d (bvt_W OS lgc) := by
-  exact bv_positive_definiteness_transfer OS lgc
-    (bvt_W OS lgc)
-    (fun _ => rfl)
-    OS.E2_reflection_positive
+  have hW_pos : ∀ F : BorchersSequence d,
+      (WightmanInnerProduct d (bvt_W OS lgc) F F).re ≥ 0 := by
+    sorry
+  exact hW_pos
 
 theorem bvt_hermitian (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) :
@@ -874,14 +1116,27 @@ theorem bvt_hermitian (OS : OsterwalderSchraderAxioms d)
       (∀ x : NPointDomain d n,
         g.toFun x = starRingEnd ℂ (f.toFun (fun i => x (Fin.rev i)))) →
       bvt_W OS lgc n g = starRingEnd ℂ (bvt_W OS lgc n f) := by
+  have hF_reflect_pairing :
+      ∀ (n : ℕ) (f g : SchwartzNPoint d n) (ε : ℝ), 0 < ε →
+        (∀ x : NPointDomain d n,
+          g.toFun x = starRingEnd ℂ (f.toFun (fun i => x (Fin.rev i)))) →
+        ∫ x : NPointDomain d n,
+          bvt_F OS lgc n (fun k μ =>
+            ↑(x k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (g x)
+          =
+        starRingEnd ℂ
+          (∫ x : NPointDomain d n,
+            bvt_F OS lgc n (fun k μ =>
+              ↑(x k μ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (f x)) := by
+    sorry
   intro n f g hfg
-  exact bv_hermiticity_transfer OS lgc n
+  exact bv_hermiticity_transfer (d := d) n
     (bvt_W OS lgc n)
     (bvt_F OS lgc n)
-    (bvt_F_holomorphic OS lgc n)
     (bvt_boundary_values OS lgc n)
-    (bvt_euclidean_restriction OS lgc n)
-    (OS.E0_reality n)
+    (hF_reflect_pairing n)
     f g hfg
 
 theorem bvt_cluster (OS : OsterwalderSchraderAxioms d)

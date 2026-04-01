@@ -4,21 +4,23 @@ A Lean 4 formalization of the **Osterwalder-Schrader reconstruction theorem** an
 
 ## Current Axiom Inventory
 
-The tracked production tree currently contains **7 explicit axioms**:
+The tracked production tree currently contains **8 explicit axioms**:
 - `schwartz_nuclear_extension` in `Wightman/WightmanAxioms.lean` — **partially proved**: nuclearity of Schwartz space is now proved in the [`gaussian-field`](https://github.com/or-n/gaussian-field) library; the remaining gap is importing the instance and deriving the kernel theorem
 - `exists_continuousMultilinear_ofSeparatelyContinuous` in `Wightman/WightmanAxioms.lean` — **proved** in [`gaussian-field`](https://github.com/mrdouglasny/gaussian-field) (`GeneralResults/SeparatelyContMultilinear.lean`, extension branch); remaining gap is importing the theorem
 - `semigroupGroup_bochner` in `SCV/SemigroupGroupBochner.lean` — joint semigroup-group Bochner representation on `[0,\infty) x R^d`
 - `laplaceFourier_measure_unique` in `SCV/SemigroupGroupBochner.lean` — uniqueness of supported finite measures from their joint Laplace-Fourier transform
 - `vladimirov_tillmann` in `SCV/VladimirovTillmann.lean`
 - `distributional_cluster_lifts_to_tube` in `SCV/VladimirovTillmann.lean` — distributional cluster on tube boundary lifts to pointwise cluster on tube interior (Poisson integral + Riemann-Lebesgue)
+- `tube_boundaryValueData_of_polyGrowth` in `SCV/TubeBoundaryValues.lean` — Vladimirov-style boundary-value existence on tube domains from global polynomial growth
 - `reduced_bargmann_hall_wightman_of_input` in `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean`
 
 The first two are pure functional-analysis axioms on the Wightman/Schwartz side.
 The next two are pure harmonic-analysis / complex-analysis axioms on the SCV side:
 joint semigroup-group Bochner existence and its supported Laplace-Fourier uniqueness clause.
-The fifth and sixth are the Vladimirov-Tillmann tube-growth and cluster-lifting
-axioms on the SCV side. The seventh is the reduced-coordinate
-Bargmann-Hall-Wightman bridge on the Route 1 translation-invariance lane.
+The fifth through seventh are pure SCV / complex-analytic axioms on the tube-domain
+side: Vladimirov-Tillmann growth, cluster lifting, and boundary-value existence from
+global polynomial growth. The eighth is the reduced-coordinate Bargmann-Hall-Wightman
+bridge on the Route 1 translation-invariance lane.
 
 ## Overview
 
@@ -49,7 +51,7 @@ route itself as closely as possible:
 
 - **`OSReconstruction.vNA`** — Von Neumann algebra foundations: cyclic/separating vectors, predual theory, Tomita-Takesaki modular theory, modular automorphism groups, KMS condition, spectral theory via Riesz-Markov-Kakutani, unbounded self-adjoint operators, and Stone's theorem.
 
-- **`OSReconstruction.SCV`** — Several complex variables infrastructure: polydiscs, iterated Cauchy integrals, Osgood's lemma, separately holomorphic implies jointly analytic (Hartogs), tube domain extension, identity theorems, distributional boundary values on tubes, Bochner tube theorem, Fourier-Laplace representation, and Paley-Wiener theorems. The boundary-value / Fourier-Laplace side is now largely sorry-free; the remaining SCV blocker is the local-to-global tube extension lane in `BochnerTubeTheorem.lean`.
+- **`OSReconstruction.SCV`** — Several complex variables infrastructure: polydiscs, iterated Cauchy integrals, Osgood's lemma, separately holomorphic implies jointly analytic (Hartogs), tube domain extension, identity theorems, distributional boundary values on tubes, Bochner tube theorem, Fourier-Laplace representation, and Paley-Wiener theorems. The issue-48 boundary-value blocker is now isolated as a pure SCV axiom in `TubeBoundaryValues.lean`; the remaining SCV theorem-level blocker is the local-to-global tube extension lane in `BochnerTubeTheorem.lean`.
 
 - **`OSReconstruction.ComplexLieGroups`** — Complex Lie group theory for the Bargmann-Hall-Wightman theorem: GL(n;C)/SL(n;C)/SO(n;C) path-connectedness, complex Lorentz group and its path-connectedness via Wick rotation, Jost's lemma (Wick rotation maps spacelike configurations into the extended tube), and the BHW theorem structure (extended tube, complex Lorentz invariance, permutation symmetry, uniqueness).
 
@@ -90,7 +92,7 @@ This fetches Mathlib and dependencies automatically on first build.
 
 ## Project Status
 
-The tracked production tree currently includes **7 explicit `axiom`
+The tracked production tree currently includes **8 explicit `axiom`
 declarations**:
 - `schwartz_nuclear_extension` in `Wightman/WightmanAxioms.lean`
 - `exists_continuousMultilinear_ofSeparatelyContinuous` in `Wightman/WightmanAxioms.lean` — **proved** in [`gaussian-field`](https://github.com/mrdouglasny/gaussian-field) (`GeneralResults/SeparatelyContMultilinear.lean`, extension branch); remaining gap is importing the theorem
@@ -98,13 +100,14 @@ declarations**:
 - `laplaceFourier_measure_unique` in `SCV/SemigroupGroupBochner.lean`
 - `vladimirov_tillmann` in `SCV/VladimirovTillmann.lean`
 - `distributional_cluster_lifts_to_tube` in `SCV/VladimirovTillmann.lean`
+- `tube_boundaryValueData_of_polyGrowth` in `SCV/TubeBoundaryValues.lean`
 - `reduced_bargmann_hall_wightman_of_input` in `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean`
 
 The first two are pure functional-analysis axioms on the Wightman/Schwartz side
 (Schwartz kernel theorem and Banach-Steinhaus for finite multilinear maps). The
 next two are pure semigroup/Fourier-Laplace functional-analysis axioms on the
-SCV side. The fifth and sixth are the Vladimirov-Tillmann tube-growth and
-cluster-lifting axioms on the SCV side. The seventh is the deferred reduced-BHW
+SCV side. The fifth through seventh are pure SCV tube-domain axioms: growth,
+cluster lifting, and boundary-value existence. The eighth is the deferred reduced-BHW
 bridge on the Route 1 translation-invariance lane. Remaining work outside these
 deferred surfaces is represented by explicit theorem-level `sorry` placeholders.
 The snapshot below counts only tracked production files; local scratch under
@@ -195,13 +198,14 @@ Snapshot (2026-03-25, tracked production tree):
 | `vNA/` | 40 |
 | **Total** | **72** |
 
-Tracked production tree also contains `7` explicit axioms:
+Tracked production tree also contains `8` explicit axioms:
 - `schwartz_nuclear_extension`
 - `exists_continuousMultilinear_ofSeparatelyContinuous`
 - `semigroupGroup_bochner`
 - `laplaceFourier_measure_unique`
 - `vladimirov_tillmann`
 - `distributional_cluster_lifts_to_tube`
+- `tube_boundaryValueData_of_polyGrowth`
 - `reduced_bargmann_hall_wightman_of_input`
 
 ### OS-Critical Sorry Flow Toward Reconstruction
