@@ -190,10 +190,20 @@ theorem multiDimPsiZDynamic_seminorm_bound {m : ℕ}
         SchwartzMap.seminorm ℝ k n (multiDimPsiZDynamic C hC_open hC_conv hC_cone hC_salient z hz) ≤
           B * (1 + ‖z‖) ^ N *
             (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M := by
-  -- Uses schwartz_seminorm_cutoff_exp_bound with L(ξ) = I*z·ξ, R = 1/(1+‖y‖)
-  -- The chain rule gives R^{-n} = (1+‖y‖)^n ≤ (1+‖z‖)^n
-  -- The exponential cap gives exp(‖y‖R) ≤ e (constant)
-  -- Combined: seminorm ≤ B * (1+‖z‖)^N (take M=0)
+  -- The concrete multiDimPsiZDynamic is psiZRSchwartz with R = 1/(1+‖y‖).
+  -- psiZRaw χ R z ξ = χ(ξ/R) * exp(iz·ξ).
+  -- The (k,n) seminorm = sup_ξ ‖ξ‖^k * ‖D^n[χ(·/R)*exp(iz·)]ξ‖.
+  --
+  -- By schwartz_seminorm_cutoff_exp_bound applied to:
+  --   χ_R(ξ) = χ(ξ/R) with deriv bounds R^{-j}C_j = (1+‖y‖)^j C_j
+  --   L(ξ) = I * ∑ z_i ξ_i with ‖L‖ ≤ ‖z‖
+  --   c > 0 from dualConeFlat_coercivity
+  --
+  -- The bound: B_cutoff * (1+‖L‖)^n where B_cutoff absorbs the scaled
+  -- derivative bounds. Since R^{-j} ≤ (1+‖z‖)^j, we get
+  -- B * (1+‖z‖)^{n+n} overall. Take M=0 (no dist⁻¹ needed for dynamic R).
+  refine ⟨sorry, sorry, 0, sorry, fun z hz => ?_⟩
+  simp only [pow_zero, mul_one]
   sorry
 
 /-- Finset-sup version of `multiDimPsiZDynamic_seminorm_bound`. -/
