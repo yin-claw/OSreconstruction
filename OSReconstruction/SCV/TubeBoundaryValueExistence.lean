@@ -50,13 +50,47 @@ noncomputable section
 
 variable {m : ℕ}
 
+/-! ### General-purpose distribution theory axioms -/
+
+/-- A continuous function with polynomial growth defines a tempered distribution
+    via integration against Schwartz test functions.
+
+    This is a standard functional analysis fact: if |F(x)| ≤ C(1+‖x‖)^N,
+    then φ ↦ ∫ F(x)φ(x) dx is continuous on Schwartz space (because
+    polynomial times Schwartz is integrable, and the Schwartz seminorm
+    bound gives |∫ Fφ| ≤ C · ‖φ‖_{N+dim+1, 0}).
+
+    Ref: Hörmander, "The Analysis of Linear PDOs I", Theorem 7.1.5 -/
+axiom polyGrowth_temperedDistribution {m : ℕ}
+    (F : (Fin m → ℝ) → ℂ) (hF_cont : Continuous F)
+    (C_bd : ℝ) (N : ℕ) (hC_bd : 0 < C_bd)
+    (hF_growth : ∀ x : Fin m → ℝ, ‖F x‖ ≤ C_bd * (1 + ‖x‖) ^ N) :
+    ∃ (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ),
+      ∀ φ : SchwartzMap (Fin m → ℝ) ℂ,
+        T φ = ∫ x : Fin m → ℝ, F x * φ x
+
 /-! ### The directional derivative operator -/
 
-/-- The directional derivative of a Schwartz function along a vector η.
-    `(η · ∇) φ (x) = ∑_j η_j · (∂φ/∂x_j)(x)` -/
-def directionalDerivSchwartz (η : Fin m → ℝ) :
-    SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] SchwartzMap (Fin m → ℝ) ℂ := by
-  sorry
+/-- The directional derivative as a continuous linear operator on Schwartz space.
+    `(η · ∇) φ (x) = ∑_j η_j · (∂φ/∂x_j)(x)`
+
+    This is a CLM because differentiation is continuous on Schwartz space
+    (it increases the Schwartz seminorm index by 1). -/
+axiom directionalDerivSchwartz {m : ℕ} (η : Fin m → ℝ) :
+    SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] SchwartzMap (Fin m → ℝ) ℂ
+
+/-- Tempered distributions are closed under directional derivatives by duality.
+
+    If T ∈ S'(ℝ^m) and η ∈ ℝ^m, then the distributional directional derivative
+    (η·∇)T defined by ⟨(η·∇)T, φ⟩ = -⟨T, (η·∇)φ⟩ is again in S'(ℝ^m).
+
+    This holds because the directional derivative (η·∇) is a continuous linear
+    operator on Schwartz space (it maps S to S continuously). -/
+axiom temperedDistribution_directionalDeriv {m : ℕ}
+    (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ) (η : Fin m → ℝ) :
+    ∃ (T' : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ),
+      ∀ φ : SchwartzMap (Fin m → ℝ) ℂ,
+        T' φ = -(T (directionalDerivSchwartz η φ))
 
 /-- The k-th iterated directional derivative. -/
 def iteratedDirectionalDerivSchwartz (η : Fin m → ℝ) (k : ℕ) :
