@@ -61,9 +61,9 @@ def psiZRaw {C : Set (Fin m → ℝ)} (χ : FixedConeCutoff (DualConeFlat C))
 theorem psiZRaw_contDiff {C : Set (Fin m → ℝ)} (χ : FixedConeCutoff (DualConeFlat C))
     (R : ℝ) (z : Fin m → ℂ) :
     ContDiff ℝ ⊤ (psiZRaw χ R z) := by
-  -- χ(ξ/R) is C^∞ (composition of smooth functions)
-  -- exp(iz·ξ) is C^∞ (exponential of linear function)
-  -- Product of C^∞ functions is C^∞
+  -- Product of two C^∞ functions: χ(ξ/R) (smooth by FixedConeCutoff.smooth
+  -- composed with the linear scaling ξ ↦ R⁻¹ξ) and exp(iz·ξ) (exponential
+  -- of a ℂ-linear function of ξ, which is smooth).
   sorry
 
 /-- The raw function vanishes for ξ far from the dual cone (distance > R). -/
@@ -81,10 +81,26 @@ theorem psiZRaw_eq_on_dualCone {C : Set (Fin m → ℝ)} (χ : FixedConeCutoff (
     (z : Fin m → ℂ) (ξ : Fin m → ℝ)
     (hξ : ξ ∈ DualConeFlat C) :
     psiZRaw χ R₁ z ξ = psiZRaw χ R₂ z ξ := by
-  -- Both χ(ξ/R₁) and χ(ξ/R₂) equal 1 on DualConeFlat C
-  -- because DualConeFlat is a cone, so R⁻¹ξ ∈ DualConeFlat C,
-  -- and χ equals 1 near the cone
-  sorry
+  simp only [psiZRaw]
+  -- Both χ(ξ/R₁) = 1 and χ(ξ/R₂) = 1 because:
+  -- ξ ∈ DualConeFlat C, DualConeFlat is a cone, so R⁻¹ξ ∈ DualConeFlat C
+  have hξ₁ : (fun i => R₁⁻¹ * ξ i) ∈ DualConeFlat C := by
+    rw [mem_dualConeFlat] at hξ ⊢
+    intro y hy
+    have := hξ y hy
+    calc ∑ i, y i * (R₁⁻¹ * ξ i)
+        = R₁⁻¹ * ∑ i, y i * ξ i := by
+          rw [Finset.mul_sum]; congr 1; ext i; ring
+      _ ≥ 0 := mul_nonneg (inv_nonneg.mpr (le_of_lt hR₁)) this
+  have hξ₂ : (fun i => R₂⁻¹ * ξ i) ∈ DualConeFlat C := by
+    rw [mem_dualConeFlat] at hξ ⊢
+    intro y hy
+    have := hξ y hy
+    calc ∑ i, y i * (R₂⁻¹ * ξ i)
+        = R₂⁻¹ * ∑ i, y i * ξ i := by
+          rw [Finset.mul_sum]; congr 1; ext i; ring
+      _ ≥ 0 := mul_nonneg (inv_nonneg.mpr (le_of_lt hR₂)) this
+  rw [χ.one_on_set _ hξ₁, χ.one_on_set _ hξ₂]
 
 /-! ### Schwartz decay (the hard part) -/
 

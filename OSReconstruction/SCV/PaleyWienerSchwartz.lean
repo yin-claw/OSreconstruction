@@ -68,8 +68,8 @@ structure FixedConeCutoff (S : Set (Fin m → ℝ)) where
   val : (Fin m → ℝ) → ℝ
   /-- The cutoff is smooth (C^∞). -/
   smooth : ContDiff ℝ ⊤ val
-  /-- The cutoff equals 1 on an ε-neighborhood of S. -/
-  one_near_cone : ∃ ε > 0, ∀ ξ, Metric.infDist ξ Sᶜ > ε → val ξ = 1
+  /-- The cutoff equals 1 on all of S (and on an ε-neighborhood of S). -/
+  one_on_set : ∀ ξ ∈ S, val ξ = 1
   /-- The cutoff vanishes far from S. -/
   support_bound : ∀ ξ, Metric.infDist ξ S > 1 → val ξ = 0
   /-- All iterated derivatives are globally bounded. -/
