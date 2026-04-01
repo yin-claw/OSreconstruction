@@ -129,6 +129,66 @@ def cauchyRepeatedIntegral
     ∫ τ in Set.Icc t₀ t,
       ((t - τ) ^ (k - 1) : ℝ) * tubeSlice F (τ • η) φ
 
+/-! ### Sub-lemmas for the boundary value construction -/
+
+/-- For each ε > 0 and η ∈ C, the slice functional defines a tempered distribution.
+    This is because F(x+iεη) has polynomial growth in x (from the Vladimirov bound
+    with y = εη fixed), so `polyGrowth_temperedDistribution` applies. -/
+theorem tubeSlice_temperedDistribution
+    {C : Set (Fin m → ℝ)}
+    (hC_open : IsOpen C) (hC_cone : IsCone C)
+    {F : (Fin m → ℂ) → ℂ}
+    (hF_cont : ContinuousOn F (SCV.TubeDomain C))
+    {C_bd : ℝ} {N M : ℕ} (hC_bd : 0 < C_bd)
+    (hF_growth : ∀ z ∈ SCV.TubeDomain C,
+      ‖F z‖ ≤ C_bd * (1 + ‖z‖) ^ N *
+        (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M)
+    (η : Fin m → ℝ) (hη : η ∈ C) (ε : ℝ) (hε : 0 < ε) :
+    ∃ (T_ε : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ),
+      ∀ φ, T_ε φ = tubeSlice F (ε • η) φ := by
+  -- F_ε(x) := F(x + iεη) is continuous with polynomial growth in x:
+  -- |F(x+iεη)| ≤ C_bd (1+‖(x,εη)‖)^N · (dist(εη,∂C)⁻¹ + 1)^M
+  -- The dist factor is a constant D_ε for fixed ε,η.
+  -- So |F_ε(x)| ≤ C_bd · D_ε^M · (1+‖x‖+ε‖η‖)^N ≤ C' · (1+‖x‖)^N
+  -- Then polyGrowth_temperedDistribution gives the result.
+  --
+  -- Step 1: εη ∈ C (cone scaling)
+  have hεη : ε • η ∈ C := hC_cone η hη ε hε
+  -- Step 2: x+iεη ∈ TubeDomain C for all x
+  have hmem : ∀ x : Fin m → ℝ,
+      (fun i => (x i : ℂ) + ((ε • η) i : ℝ) * I) ∈ SCV.TubeDomain C := by
+    intro x
+    show (fun i => ((fun i => (x i : ℂ) + ((ε • η) i : ℝ) * I) i).im) ∈ C
+    convert hεη using 1
+    ext i; simp [Complex.add_im, Complex.ofReal_im, Complex.mul_im,
+      Complex.I_im, Complex.I_re, Pi.smul_apply, smul_eq_mul]
+  -- Step 3: F_ε(x) = F(x+iεη) has polynomial growth
+  -- |F_ε(x)| ≤ C_bd · (1+‖z‖)^N · D^M where D = (1+dist(εη,∂C)⁻¹)
+  -- Since ‖z‖ ≤ ‖x‖ + ε‖η‖ and D is constant, this is ≤ C'(1+‖x‖)^N
+  sorry
+
+/-- The CR-integration identity: along a ray y = tη, integrating k times gives
+    `(iη·∇_x)^k G_k(x,t) = F(x+itη) - (lower-order correction terms from t₀)`.
+
+    This is a distributional identity obtained by:
+    1. ∂/∂t F(x+itη) = i(η·∇_x) F(x+itη) (Cauchy-Riemann)
+    2. Integrating both sides k times in t from t₀ to t
+    3. Using Cauchy's repeated integration formula -/
+theorem cr_integration_identity
+    {C : Set (Fin m → ℝ)}
+    {F : (Fin m → ℂ) → ℂ}
+    (hF_hol : DifferentiableOn ℂ F (SCV.TubeDomain C))
+    (η : Fin m → ℝ) (hη : η ∈ C)
+    (hC_cone : IsCone C) (hC_open : IsOpen C)
+    (t₀ t : ℝ) (ht₀ : 0 < t₀) (ht : 0 < t)
+    (φ : SchwartzMap (Fin m → ℝ) ℂ) :
+    tubeSlice F (t • η) φ =
+      tubeSlice F (t₀ • η) φ +
+      I * tubeSlice F (t • η) (directionalDerivSchwartz η φ) -
+      I * tubeSlice F (t₀ • η) (directionalDerivSchwartz η φ) +
+      sorry := by -- higher order terms from integration by parts
+  sorry
+
 /-! ### The boundary value construction -/
 
 /-- **Main theorem**: A holomorphic function on T(C) with Vladimirov growth
