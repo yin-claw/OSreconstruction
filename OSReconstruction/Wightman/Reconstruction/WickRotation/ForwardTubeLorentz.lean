@@ -204,6 +204,138 @@ theorem restricted_preserves_forward_cone
     simp_rw [hstep]
     simp only [ite_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
 
+/-- An orthochronous Lorentz transformation preserves the open forward light cone.
+
+This is the same geometric argument as `restricted_preserves_forward_cone`, but
+it only uses the Lorentz condition together with `Λ₀₀ ≥ 1`; properness is not
+needed. -/
+theorem orthochronous_preserves_forward_cone
+    (Λ : LorentzGroup d)
+    (hΛ_ortho : LorentzGroup.IsOrthochronous Λ)
+    (η : Fin (d + 1) → ℝ) (hη : InOpenForwardCone d η) :
+    InOpenForwardCone d (fun μ => ∑ ν, Λ.val μ ν * η ν) := by
+  obtain ⟨hη0_pos, hη_neg⟩ := hη
+  constructor
+  · have hΛ_lorentz := Λ.property
+    have hΛ00 : Λ.val 0 0 ≥ 1 := hΛ_ortho
+    have hrow := IsLorentzMatrix.first_row_timelike Λ.val hΛ_lorentz
+    have hη_timelike : MinkowskiSpace.minkowskiNormSq d η < 0 := hη_neg
+    have hη_time_dom : (η 0) ^ 2 > MinkowskiSpace.spatialNormSq d η :=
+      MinkowskiSpace.timelike_time_dominates_space d η hη_timelike
+    have hsplit : (∑ ν : Fin (d + 1), Λ.val 0 ν * η ν) =
+        Λ.val 0 0 * η 0 + ∑ j ∈ Finset.univ.filter (· ≠ 0), Λ.val 0 j * η j := by
+      rw [← Finset.sum_filter_add_sum_filter_not Finset.univ (· = (0 : Fin (d + 1)))]
+      simp [Finset.filter_eq', Finset.mem_univ]
+    show (∑ ν : Fin (d + 1), Λ.val 0 ν * η ν) > 0
+    rw [hsplit]
+    set SΛ := ∑ j ∈ Finset.univ.filter (· ≠ 0), Λ.val 0 j ^ 2
+    set Sη := MinkowskiSpace.spatialNormSq d η
+    have hSΛ_eq : SΛ = Λ.val 0 0 ^ 2 - 1 := by linarith [hrow]
+    have hSΛ_nonneg : SΛ ≥ 0 := Finset.sum_nonneg (fun j _ => sq_nonneg _)
+    have hSη_nonneg : Sη ≥ 0 := MinkowskiSpace.spatialNormSq_nonneg d η
+    have hCS_sq : (∑ j ∈ Finset.univ.filter (· ≠ 0), Λ.val 0 j * η j) ^ 2 ≤ SΛ * Sη := by
+      have hSη_eq : Sη = ∑ j ∈ Finset.univ.filter (· ≠ (0 : Fin (d + 1))), η j ^ 2 := by
+        show MinkowskiSpace.spatialNormSq d η = _
+        unfold MinkowskiSpace.spatialNormSq
+        apply Finset.sum_nbij Fin.succ
+        · intro i _; simp [Finset.mem_filter, Fin.succ_ne_zero]
+        · intro i _ j _ hij; exact Fin.succ_injective _ hij
+        · intro j hj
+          have hj_ne : j ≠ 0 := by simpa using hj
+          exact ⟨j.pred hj_ne, by simp, Fin.succ_pred j hj_ne⟩
+        · intro i _; rfl
+      rw [hSη_eq]
+      exact Finset.sum_mul_sq_le_sq_mul_sq _ _ _
+    have hCS : |∑ j ∈ Finset.univ.filter (· ≠ 0), Λ.val 0 j * η j| ≤
+        Real.sqrt SΛ * Real.sqrt Sη := by
+      rw [← Real.sqrt_mul hSΛ_nonneg Sη, ← Real.sqrt_sq_eq_abs]
+      exact Real.sqrt_le_sqrt hCS_sq
+    have hbound : -(Real.sqrt SΛ * Real.sqrt Sη) ≤
+        ∑ j ∈ Finset.univ.filter (· ≠ 0), Λ.val 0 j * η j := by
+      linarith [neg_abs_le (∑ j ∈ Finset.univ.filter (· ≠ 0), Λ.val 0 j * η j), hCS]
+    have hη0_sq_pos : (η 0) ^ 2 > Sη := hη_time_dom
+    have hη0_pos' : η 0 > 0 := hη0_pos
+    have hSη_lt_η0sq : Real.sqrt Sη < η 0 := by
+      rw [← Real.sqrt_sq (le_of_lt hη0_pos')]
+      exact Real.sqrt_lt_sqrt hSη_nonneg hη0_sq_pos
+    have hΛ_hyp : Λ.val 0 0 - Real.sqrt (Λ.val 0 0 ^ 2 - 1) > 0 := by
+      have h1 : Λ.val 0 0 ^ 2 - 1 ≥ 0 := by nlinarith
+      have h2 : Λ.val 0 0 > 0 := by linarith
+      have h3 : Real.sqrt (Λ.val 0 0 ^ 2 - 1) < Λ.val 0 0 := by
+        calc Real.sqrt (Λ.val 0 0 ^ 2 - 1)
+            < Real.sqrt (Λ.val 0 0 ^ 2) := Real.sqrt_lt_sqrt h1 (by linarith)
+          _ = Λ.val 0 0 := Real.sqrt_sq (le_of_lt h2)
+      linarith
+    have key : Λ.val 0 0 * η 0 +
+        ∑ j ∈ Finset.univ.filter (· ≠ 0), Λ.val 0 j * η j > 0 := by
+      have h_sqrt_SΛ_eq : Real.sqrt SΛ = Real.sqrt (Λ.val 0 0 ^ 2 - 1) := by
+        congr 1
+      have h1 : ∑ j ∈ Finset.univ.filter (· ≠ 0), Λ.val 0 j * η j ≥
+          -(Real.sqrt SΛ * η 0) := by
+        calc ∑ j ∈ Finset.univ.filter (· ≠ 0), Λ.val 0 j * η j
+            ≥ -(Real.sqrt SΛ * Real.sqrt Sη) := hbound
+          _ ≥ -(Real.sqrt SΛ * η 0) := by
+              apply neg_le_neg
+              exact mul_le_mul_of_nonneg_left (le_of_lt hSη_lt_η0sq) (Real.sqrt_nonneg _)
+      have h2 : Λ.val 0 0 * η 0 - Real.sqrt SΛ * η 0 > 0 := by
+        rw [← sub_mul, h_sqrt_SΛ_eq]
+        exact mul_pos hΛ_hyp hη0_pos'
+      linarith
+    exact key
+  · have hΛ := Λ.property
+    show MinkowskiSpace.minkowskiNormSq d (fun μ => ∑ ν, Λ.val μ ν * η ν) < 0
+    suffices hnorm_eq : MinkowskiSpace.minkowskiNormSq d (fun μ => ∑ ν, Λ.val μ ν * η ν) =
+        MinkowskiSpace.minkowskiNormSq d η by
+      rw [hnorm_eq]
+      exact hη_neg
+    unfold MinkowskiSpace.minkowskiNormSq MinkowskiSpace.minkowskiInner
+    simp only [MinkowskiSpace.metricSignature]
+    have hentry : ∀ ν ρ : Fin (d + 1),
+        ∑ μ : Fin (d + 1), (if μ = 0 then (-1 : ℝ) else 1) * Λ.val μ ν * Λ.val μ ρ =
+        if ν = ρ then (if ν = 0 then (-1 : ℝ) else 1) else 0 := by
+      intro ν ρ
+      have h1 : (Λ.val.transpose * minkowskiMatrix d * Λ.val) ν ρ =
+          (minkowskiMatrix d) ν ρ := by rw [hΛ]
+      simp only [Matrix.mul_apply, minkowskiMatrix, Matrix.diagonal_apply,
+        Matrix.transpose_apply, MinkowskiSpace.metricSignature] at h1
+      convert h1 using 1
+      apply Finset.sum_congr rfl
+      intro μ _
+      rw [Finset.sum_eq_single μ]
+      · by_cases hμ : μ = 0 <;> simp [hμ]
+      · intro k _ hk; simp [hk]
+      · simp
+    have hlhs : ∀ μ : Fin (d + 1),
+        ((if μ = 0 then (-1:ℝ) else 1) * ∑ ν, Λ.val μ ν * η ν) *
+        (∑ ρ, Λ.val μ ρ * η ρ) =
+        ∑ ν, ∑ ρ, (if μ = 0 then (-1:ℝ) else 1) * Λ.val μ ν * Λ.val μ ρ *
+          η ν * η ρ := by
+      intro μ
+      simp_rw [Finset.mul_sum, Finset.sum_mul]
+      apply Finset.sum_congr rfl
+      intro ν _
+      apply Finset.sum_congr rfl
+      intro ρ _
+      ring
+    simp_rw [hlhs]
+    rw [Finset.sum_comm]
+    apply Finset.sum_congr rfl
+    intro ν _
+    rw [Finset.sum_comm]
+    have hstep : ∀ ρ : Fin (d + 1),
+        ∑ μ, (if μ = 0 then (-1:ℝ) else 1) * Λ.val μ ν * Λ.val μ ρ * η ν * η ρ =
+        ((if ν = ρ then (if ν = 0 then (-1:ℝ) else 1) else 0) * η ν * η ρ) := by
+      intro ρ
+      have hfactor : ∀ μ : Fin (d + 1),
+          (if μ = 0 then (-1:ℝ) else 1) * Λ.val μ ν * Λ.val μ ρ * η ν * η ρ =
+          ((if μ = 0 then (-1:ℝ) else 1) * Λ.val μ ν * Λ.val μ ρ) * (η ν * η ρ) := by
+        intro μ
+        ring
+      simp_rw [hfactor, ← Finset.sum_mul, hentry ν ρ]
+      ring
+    simp_rw [hstep]
+    simp only [ite_mul, zero_mul, Finset.sum_ite_eq, Finset.mem_univ, ite_true]
+
 /-- A restricted Lorentz transformation preserves the forward tube.
 
     If Λ ∈ SO⁺(1,d) and z ∈ ForwardTube, then Λz ∈ ForwardTube.
