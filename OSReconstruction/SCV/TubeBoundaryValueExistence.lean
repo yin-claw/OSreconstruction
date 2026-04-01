@@ -309,23 +309,30 @@ theorem tubeSlice_temperedDistribution
   intro φ
   simpa [Fε, tubeSlice] using hT_ε φ
 
-/-- The Cauchy-Riemann ray-integration identity. The full higher-order correction
-    terms require the Phase 4 repeated-integration formalization, so we expose
-    only the interface statement here. -/
+/-- The Cauchy-Riemann ray-integration identity (1D FTC along a ray in the cone).
+
+    For F holomorphic on T(C) and η ∈ C, the function
+    `g(τ) = tubeSlice F (τ • η) φ` satisfies
+    `g'(τ) = -i · tubeSlice F (τ • η) (directionalDerivSchwartz η φ)`
+    (CR equations + integration by parts).
+
+    Integrating from t₀ to t gives the FTC identity:
+    `g(t) - g(t₀) = -i ∫_{t₀}^{t} tubeSlice F (τ•η) (η·∇φ) dτ`
+
+    Proof needs: `hasDerivAt_integral_of_dominated_loc_of_deriv_le` to push
+    d/dτ inside the integral, CR equations, integration by parts. -/
 axiom cr_integration_identity
     {C : Set (Fin m → ℝ)}
     {F : (Fin m → ℂ) → ℂ}
     (hF_hol : DifferentiableOn ℂ F (SCV.TubeDomain C))
+    (hF_cont : ContinuousOn F (SCV.TubeDomain C))
     (η : Fin m → ℝ) (hη : η ∈ C)
     (hC_cone : IsCone C) (hC_open : IsOpen C)
     (t₀ t : ℝ) (ht₀ : 0 < t₀) (ht : 0 < t)
     (φ : SchwartzMap (Fin m → ℝ) ℂ) :
-    ∃ correction : ℂ,
-      tubeSlice F (t • η) φ =
-        tubeSlice F (t₀ • η) φ +
-        I * tubeSlice F (t • η) (directionalDerivSchwartz η φ) -
-        I * tubeSlice F (t₀ • η) (directionalDerivSchwartz η φ) +
-        correction
+    tubeSlice F (t • η) φ - tubeSlice F (t₀ • η) φ =
+      -I * ∫ τ in Set.Icc t₀ t,
+        tubeSlice F (τ • η) (directionalDerivSchwartz η φ)
 
 /-! ### The boundary value construction -/
 
