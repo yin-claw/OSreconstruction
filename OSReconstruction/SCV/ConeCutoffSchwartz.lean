@@ -174,6 +174,62 @@ theorem psiZRaw_eq_on_dualCone {C : Set (Fin m → ℝ)} (χ : FixedConeCutoff (
       _ ≥ 0 := mul_nonneg (inv_nonneg.mpr (le_of_lt hR₂)) this
   rw [χ.one_on_set _ hξ₁, χ.one_on_set _ hξ₂]
 
+/-! ### Cone-coercivity lemma -/
+
+/-- **Strict positivity**: For y in an open cone C and ξ ∈ DualConeFlat(C) \ {0},
+    the pairing y·ξ is strictly positive.
+
+    Proof: If y·ξ₀ = 0 for some ξ₀ ∈ C* \ {0}, then since C is open, there exists
+    w ∈ C near y with w·ξ₀ < 0 (perturb y in the -ξ₀ direction). This contradicts
+    ξ₀ ∈ C* = {ξ : ∀ w ∈ C, w·ξ ≥ 0}. -/
+theorem dualConeFlat_pairing_pos_of_open
+    {C : Set (Fin m → ℝ)} (hC_open : IsOpen C)
+    {y : Fin m → ℝ} (hy : y ∈ C) {ξ : Fin m → ℝ} (hξ : ξ ∈ DualConeFlat C)
+    (hξ_ne : ξ ≠ 0) :
+    0 < ∑ i, y i * ξ i := by
+  by_contra h
+  push_neg at h
+  have h_nn := hξ y hy
+  have h_zero : ∑ i, y i * ξ i = 0 := le_antisymm h h_nn
+  -- Since C is open and y ∈ C, there exists ε > 0 with B(y,ε) ∩ C nonempty
+  -- In particular, y - t•ξ ∈ C for small t > 0
+  rw [Metric.isOpen_iff] at hC_open
+  obtain ⟨ε, hε, hball⟩ := hC_open y hy
+  -- ξ ≠ 0 so ‖ξ‖ > 0
+  have hξ_norm : 0 < ‖ξ‖ := norm_pos_iff.mpr hξ_ne
+  -- Choose t = ε / (2 * ‖ξ‖), so ‖t • ξ‖ = t * ‖ξ‖ = ε/2 < ε
+  set t := ε / (2 * ‖ξ‖) with ht_def
+  have ht_pos : 0 < t := div_pos hε (mul_pos two_pos hξ_norm)
+  have ht_small : ‖t • ξ‖ < ε := by
+    rw [norm_smul, Real.norm_of_nonneg ht_pos.le, ht_def]
+    calc ε / (2 * ‖ξ‖) * ‖ξ‖ = ε / 2 := by field_simp
+      _ < ε := half_lt_self hε
+  -- y - t•ξ ∈ C (within the ε-ball)
+  have hw_mem : y - t • ξ ∈ C := by
+    apply hball
+    rw [Metric.mem_ball, dist_eq_norm]
+    simp [ht_small]
+  -- But (y - t•ξ)·ξ = y·ξ - t*‖ξ‖² = 0 - t*‖ξ‖² < 0
+  have hw_neg : ∑ i, (y - t • ξ) i * ξ i < 0 := by
+    -- (y - tξ)·ξ = y·ξ - t(ξ·ξ) = 0 - t‖ξ‖² < 0
+    sorry
+  -- This contradicts ξ ∈ DualConeFlat C
+  exact absurd (hξ (y - t • ξ) hw_mem) (not_le.mpr hw_neg)
+
+/-- **Cone-coercivity**: For y in an open cone C, there exists c > 0 such that
+    y·ξ ≥ c * ‖ξ‖ for all ξ ∈ DualConeFlat(C).
+
+    Proof: The function ξ ↦ y·ξ is continuous and strictly positive on the
+    compact set C* ∩ S^{m-1}. Its minimum c on this set is > 0.
+    For general ξ ∈ C*, y·ξ = ‖ξ‖ · (y · ξ/‖ξ‖) ≥ ‖ξ‖ · c. -/
+theorem dualConeFlat_coercivity
+    {C : Set (Fin m → ℝ)} (hC_open : IsOpen C) (hC_cone : IsCone C)
+    {y : Fin m → ℝ} (hy : y ∈ C)
+    (hC_star_ne : (DualConeFlat C).Nonempty)
+    (hC_star_closed : IsClosed (DualConeFlat C)) :
+    ∃ c > 0, ∀ ξ ∈ DualConeFlat C, ∑ i, y i * ξ i ≥ c * ‖ξ‖ := by
+  sorry
+
 /-! ### Schwartz decay (the hard part) -/
 
 /-- The raw function has Schwartz decay when the cone is salient.
