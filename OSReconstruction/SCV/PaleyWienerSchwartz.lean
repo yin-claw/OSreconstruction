@@ -198,14 +198,10 @@ theorem fourierLaplaceExtMultiDim_continuousOn
     ContinuousOn
       (fourierLaplaceExtMultiDim C hC_open hC_conv hC_cone T)
       (SCV.TubeDomain C) := by
-  -- F(z) = T(ψ_z) is continuous because:
-  -- 1. T is bounded by a finite sup of seminorms (schwartz_clm_bound_by_finset_sup)
-  -- 2. z ↦ ψ_z is continuous in each Schwartz seminorm (multiDimPsiZ_seminorm_continuous)
-  -- 3. So z ↦ T(ψ_z) is continuous (ε/δ argument composing 1+2)
-  --
-  -- The ε/δ: given ε > 0, pick C_T and finset s from step 1.
-  -- For each (k,n) ∈ s, pick δ_{k,n} from step 2 with threshold ε/(C_T * |s|).
-  -- Take δ = min of δ_{k,n}. Then ‖T(ψ_z) - T(ψ_{z₀})‖ ≤ C_T * Σ seminorm(ψ_z-ψ_{z₀}) < ε.
+  -- Proof: T is continuous Schwartz → ℂ.  z ↦ ψ_z is continuous ℂ^m → Schwartz
+  -- (by multiDimPsiZ_seminorm_continuous + WithSeminorms.tendsto_nhds).
+  -- The composition T ∘ ψ is continuous on the open tube.
+  -- The `dite` in the definition resolves to T(ψ_z) on the tube since it's open.
   sorry
 
 /-- **Main holomorphicity theorem**: F(z) = T(ψ_z) is holomorphic on the tube T(C).
