@@ -149,8 +149,12 @@ theorem multiDimPsiZ_finset_sup_bound {m : ℕ}
                 (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ (max M₁ M₂) :=
               pow_le_pow_right₀ hy1 (le_max_right _ _)
             have hB : B₂ ≤ max B₁ B₂ := le_max_right _ _
-            -- B₂ ≤ max B, x^N₂ ≤ x^(max N), y^M₂ ≤ y^(max M); multiply through
-            sorry
+            exact mul_le_mul
+              (mul_le_mul hB hxN (pow_nonneg (le_trans zero_le_one hx1) _)
+                (le_trans (le_of_lt hB₂) hB))
+              hyM (pow_nonneg (le_trans zero_le_one hy1) _)
+              (mul_nonneg (le_trans (le_of_lt hB₂) hB)
+                (pow_nonneg (le_trans zero_le_one hx1) _))
     · -- The old finset s: sup ≤ B₁ * growth ≤ max B * growth'
       calc (s.sup (schwartzSeminormFamily ℂ (Fin m → ℝ) ℂ))
               (multiDimPsiZ C hC_open hC_conv hC_cone z hz)
@@ -168,8 +172,12 @@ theorem multiDimPsiZ_finset_sup_bound {m : ℕ}
                 (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ (max M₁ M₂) :=
               pow_le_pow_right₀ hy1 (le_max_left _ _)
             have hB : B₁ ≤ max B₁ B₂ := le_max_left _ _
-            -- B₁ ≤ max B, x^N₁ ≤ x^(max N), y^M₁ ≤ y^(max M); multiply through
-            sorry
+            exact mul_le_mul
+              (mul_le_mul hB hxN (pow_nonneg (le_trans zero_le_one hx1) _)
+                (le_trans (le_of_lt hB₁) hB))
+              hyM (pow_nonneg (le_trans zero_le_one hy1) _)
+              (mul_nonneg (le_trans (le_of_lt hB₁) hB)
+                (pow_nonneg (le_trans zero_le_one hx1) _))
 
 /-- z ↦ ψ_z is continuous into Schwartz space: for each seminorm (k,n),
     `z ↦ seminorm k n (ψ_{z'} - ψ_z) → 0` as `z' → z` in the tube.
