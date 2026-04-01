@@ -79,18 +79,27 @@ axiom polyGrowth_temperedDistribution {m : ℕ}
 axiom directionalDerivSchwartz {m : ℕ} (η : Fin m → ℝ) :
     SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] SchwartzMap (Fin m → ℝ) ℂ
 
-/-- Tempered distributions are closed under directional derivatives by duality.
+/-- The distributional directional derivative of a tempered distribution.
+    Defined by duality: ⟨(η·∇)T, φ⟩ = -⟨T, (η·∇)φ⟩.
 
-    If T ∈ S'(ℝ^m) and η ∈ ℝ^m, then the distributional directional derivative
-    (η·∇)T defined by ⟨(η·∇)T, φ⟩ = -⟨T, (η·∇)φ⟩ is again in S'(ℝ^m).
-
-    This holds because the directional derivative (η·∇) is a continuous linear
-    operator on Schwartz space (it maps S to S continuously). -/
-axiom temperedDistribution_directionalDeriv {m : ℕ}
+    This is NOT an axiom — it's just `-(T.comp (directionalDerivSchwartz η))`,
+    which is automatically a CLM by `ContinuousLinearMap.comp` + `Neg`. -/
+def distribDirectionalDeriv {m : ℕ}
     (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ) (η : Fin m → ℝ) :
-    ∃ (T' : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ),
-      ∀ φ : SchwartzMap (Fin m → ℝ) ℂ,
-        T' φ = -(T (directionalDerivSchwartz η φ))
+    SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ :=
+  -(T.comp (directionalDerivSchwartz η))
+
+theorem distribDirectionalDeriv_apply {m : ℕ}
+    (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ) (η : Fin m → ℝ)
+    (φ : SchwartzMap (Fin m → ℝ) ℂ) :
+    distribDirectionalDeriv T η φ = -(T (directionalDerivSchwartz η φ)) := by
+  simp [distribDirectionalDeriv]
+
+/-- The k-th iterated distributional directional derivative. -/
+def iteratedDistribDirectionalDeriv {m : ℕ}
+    (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ) (η : Fin m → ℝ) (k : ℕ) :
+    SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ :=
+  ((-1 : ℂ) ^ k) • (T.comp ((directionalDerivSchwartz η) ^ k))
 
 /-- The k-th iterated directional derivative. -/
 def iteratedDirectionalDerivSchwartz (η : Fin m → ℝ) (k : ℕ) :
