@@ -248,10 +248,11 @@ private theorem bvt_F_reflectCanonical
           ↑(x (Fin.rev k) μ) +
             ε * ↑(η k μ) * Complex.I) := hperm
 
-private theorem bvt_F_lorentz_ortho_wick
+private theorem bvt_F_lorentz_nonproper_ortho_wick
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) :
     ∀ (n : ℕ) (Λ : LorentzGroup d), LorentzGroup.IsOrthochronous Λ →
+      ¬ LorentzGroup.IsProper Λ →
       ∀ φ : SchwartzNPoint d n,
         HasCompactSupport (φ : NPointDomain d n → ℂ) →
         tsupport (φ : NPointDomain d n → ℂ) ⊆
@@ -482,135 +483,6 @@ private theorem bvt_W_cluster
     (bvt_F_clusterCanonicalEventually (d := d) OS lgc n m)
     f g ε hε
 
-private theorem bvt_F_lorentz_orthoCanonical
-    (OS : OsterwalderSchraderAxioms d)
-    (lgc : OSLinearGrowthCondition d OS) :
-    ∀ (n : ℕ) (Λ : LorentzGroup d), LorentzGroup.IsOrthochronous Λ →
-      ∀ (x : NPointDomain d n) (ε : ℝ), 0 < ε →
-        bvt_F OS lgc n (fun k μ =>
-          ∑ ν, (Λ.val μ ν : ℂ) *
-            (↑(x k ν) + ε *
-              ↑(canonicalForwardConeDirection (d := d) n k ν) * Complex.I)) =
-        bvt_F OS lgc n (fun k μ =>
-          ↑(x k μ) +
-            ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) := by
-  intro n Λ hΛ x ε hε
-  let η := canonicalForwardConeDirection (d := d) n
-  let ΛinvC : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ := fun μ ν => ↑((Λ⁻¹).val μ ν)
-  let ΛC : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ := fun μ ν => ↑(Λ.val μ ν)
-  let FInv : (Fin n → Fin (d + 1) → ℂ) → ℂ := fun z =>
-    bvt_F OS lgc n (fun k => Matrix.mulVec ΛinvC (z k))
-  have hFInv_hol : DifferentiableOn ℂ FInv (ForwardTube d n) := by
-    apply DifferentiableOn.comp (bvt_F_holomorphic OS lgc n)
-    · intro z _hz
-      apply DifferentiableAt.differentiableWithinAt
-      apply differentiableAt_pi.mpr
-      intro k
-      apply differentiableAt_pi.mpr
-      intro μ
-      have hcoord : ∀ (k : Fin n) (ν : Fin (d + 1)),
-          DifferentiableAt ℂ (fun w : Fin n → Fin (d + 1) → ℂ => w k ν) z :=
-        fun k' ν' =>
-          differentiableAt_pi.mp (differentiableAt_pi.mp differentiableAt_id k') ν'
-      suffices h :
-          ∀ (s : Finset (Fin (d + 1))),
-            DifferentiableAt ℂ
-              (fun w : Fin n → Fin (d + 1) → ℂ =>
-                ∑ ν ∈ s, ΛinvC μ ν * w k ν) z by
-        simpa [FInv, ΛinvC, Matrix.mulVec, dotProduct] using h Finset.univ
-      intro s
-      induction s using Finset.induction with
-      | empty =>
-          simp [differentiableAt_const]
-      | @insert ν s hν ih =>
-          simp only [Finset.sum_insert hν]
-          exact ((differentiableAt_const _).mul (hcoord k ν)).add ih
-    · intro z hz
-      exact orthochronous_preserves_forward_tube (d := d) Λ⁻¹
-        (LorentzGroup.IsOrthochronous.inv hΛ) z hz
-  have hint_inv :
-      ∀ φ : SchwartzNPoint d n,
-        HasCompactSupport (φ : NPointDomain d n → ℂ) →
-        tsupport (φ : NPointDomain d n → ℂ) ⊆
-          {x : NPointDomain d n | (fun k => wickRotatePoint (x k)) ∈ ForwardTube d n} →
-        ∫ x : NPointDomain d n,
-            FInv (fun k => wickRotatePoint (x k)) *
-              (((ZeroDiagonalSchwartz.ofClassical φ).1 : NPointDomain d n → ℂ) x)
-          =
-        ∫ x : NPointDomain d n,
-            bvt_F OS lgc n (fun k => wickRotatePoint (x k)) *
-              (((ZeroDiagonalSchwartz.ofClassical φ).1 : NPointDomain d n → ℂ) x) := by
-    intro φ hφ_compact hφ_tsupport
-    simpa [FInv, ΛinvC, Matrix.mulVec, dotProduct] using
-      bvt_F_lorentz_ortho_wick (d := d) OS lgc n Λ hΛ φ hφ_compact hφ_tsupport
-  have hpoint :=
-    forwardTube_orthochronousLorentz_point_eq_of_zeroDiagonal_distributional_wickSection_eq
-      (d := d) (n := n) FInv (bvt_F OS lgc n)
-      hFInv_hol (bvt_F_holomorphic OS lgc n) hint_inv
-      Λ hΛ x η (canonicalForwardConeDirection_mem (d := d) n) ε hε
-  have hmul : (Λ⁻¹).val * Λ.val = (1 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) := by
-    have h1 := LorentzGroup.ext_iff.mp (inv_mul_cancel Λ)
-    rw [show (Λ⁻¹ * Λ).val = Λ⁻¹.val * Λ.val from rfl] at h1
-    rw [show (1 : LorentzGroup d).val = (1 : Matrix _ _ ℝ) from rfl] at h1
-    exact h1
-  have hmulC : ΛinvC * ΛC = (1 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) := by
-    ext μ ρ
-    have hentry :
-        ((Λ⁻¹).val * Λ.val) μ ρ = (1 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) μ ρ :=
-      congrArg (fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ => M μ ρ) hmul
-    calc
-      (ΛinvC * ΛC) μ ρ
-        = ↑(((Λ⁻¹).val * Λ.val) μ ρ) := by
-            simp [ΛinvC, ΛC, Matrix.mul_apply]
-      _ = ↑((1 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) μ ρ) := by
-            exact congrArg (fun r : ℝ => (r : ℂ)) hentry
-      _ = (1 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) μ ρ := by
-            by_cases hμρ : μ = ρ <;> simp [Matrix.one_apply, hμρ]
-  have hleft :
-      FInv (fun k μ =>
-        ∑ ν, (↑(Λ.val μ ν) : ℂ) * (↑(x k ν) + ε * ↑(η k ν) * Complex.I))
-        =
-      bvt_F OS lgc n (fun k μ =>
-        ↑(x k μ) + ε * ↑(η k μ) * Complex.I) := by
-    unfold FInv
-    congr 1
-    ext k μ
-    have hk :
-        Matrix.mulVec ΛinvC
-            (Matrix.mulVec ΛC (fun ν =>
-              ↑(x k ν) + ε * ↑(η k ν) * Complex.I))
-          =
-        (fun ν => ↑(x k ν) + ε * ↑(η k ν) * Complex.I) := by
-      rw [Matrix.mulVec_mulVec]
-      rw [hmulC, Matrix.one_mulVec]
-    simpa [ΛC, Matrix.mulVec, dotProduct] using congrFun hk μ
-  exact hpoint.symm.trans hleft
-
-theorem bvt_lorentz_covariant_orthochronous
-    (OS : OsterwalderSchraderAxioms d)
-    (lgc : OSLinearGrowthCondition d OS) :
-    ∀ (n : ℕ) (Λ : LorentzGroup d), LorentzGroup.IsOrthochronous Λ →
-      ∀ (f g : SchwartzNPoint d n),
-        (∀ x, g.toFun x = f.toFun (fun i => Matrix.mulVec Λ⁻¹.val (x i))) →
-        bvt_W OS lgc n f = bvt_W OS lgc n g := by
-  intro n Λ hΛ f g hfg
-  exact bv_lorentz_covariance_transfer_orthochronous_of_tube_covariance (d := d) n
-    (bvt_W OS lgc n)
-    (bvt_F OS lgc n)
-    (bvt_boundary_values OS lgc n)
-    (bvt_F_lorentz_orthoCanonical (d := d) OS lgc n)
-    Λ hΛ f g hfg
-
-theorem bvt_lorentz_covariant_restricted
-    (OS : OsterwalderSchraderAxioms d)
-    (lgc : OSLinearGrowthCondition d OS) :
-    ∀ (n : ℕ) (Λ : LorentzGroup.Restricted (d := d))
-      (f g : SchwartzNPoint d n),
-        (∀ x, g.toFun x = f.toFun (fun i => Matrix.mulVec Λ.val⁻¹.val (x i))) →
-        bvt_W OS lgc n f = bvt_W OS lgc n g := by
-  intro n Λ f g hfg
-  exact bvt_lorentz_covariant_orthochronous (d := d) OS lgc n Λ.val Λ.property.2 f g hfg
-
 private theorem bvt_F_lorentz_restricted_wick
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) :
@@ -719,6 +591,170 @@ private theorem bvt_F_lorentz_proper_orthoCanonical
   let Λr : LorentzGroup.Restricted (d := d) := ⟨Λ, ⟨hΛ_proper, hΛ_ortho⟩⟩
   simpa [Λr] using
     bvt_F_lorentz_restrictedCanonical (d := d) OS lgc n Λr x ε hε
+
+private theorem bvt_F_lorentz_ortho_wick
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    ∀ (n : ℕ) (Λ : LorentzGroup d), LorentzGroup.IsOrthochronous Λ →
+      ∀ φ : SchwartzNPoint d n,
+        HasCompactSupport (φ : NPointDomain d n → ℂ) →
+        tsupport (φ : NPointDomain d n → ℂ) ⊆
+          {x : NPointDomain d n | (fun k => wickRotatePoint (x k)) ∈ ForwardTube d n} →
+        ∫ x : NPointDomain d n,
+            bvt_F OS lgc n (fun k μ =>
+              ∑ ν, (↑((Λ⁻¹).val μ ν) : ℂ) * wickRotatePoint (x k) ν) *
+                (((ZeroDiagonalSchwartz.ofClassical φ).1 : NPointDomain d n → ℂ) x)
+          =
+        ∫ x : NPointDomain d n,
+            bvt_F OS lgc n (fun k => wickRotatePoint (x k)) *
+              (((ZeroDiagonalSchwartz.ofClassical φ).1 : NPointDomain d n → ℂ) x) := by
+  intro n Λ hΛ φ hφ_compact hφ_tsupport
+  by_cases hΛ_proper : LorentzGroup.IsProper Λ
+  · have hproper :=
+      bvt_F_lorentz_proper_ortho_wick (d := d) OS lgc n Λ hΛ_proper hΛ
+        φ hφ_compact hφ_tsupport
+    simpa [ZeroDiagonalSchwartz.coe_ofClassical_of_tsupport_subset_wickForwardTubeSection
+      (d := d) φ hφ_tsupport] using hproper
+  · exact
+      bvt_F_lorentz_nonproper_ortho_wick (d := d) OS lgc n Λ hΛ hΛ_proper
+        φ hφ_compact hφ_tsupport
+
+private theorem bvt_F_lorentz_orthoCanonical
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    ∀ (n : ℕ) (Λ : LorentzGroup d), LorentzGroup.IsOrthochronous Λ →
+      ∀ (x : NPointDomain d n) (ε : ℝ), 0 < ε →
+        bvt_F OS lgc n (fun k μ =>
+          ∑ ν, (Λ.val μ ν : ℂ) *
+            (↑(x k ν) + ε *
+              ↑(canonicalForwardConeDirection (d := d) n k ν) * Complex.I)) =
+        bvt_F OS lgc n (fun k μ =>
+          ↑(x k μ) +
+            ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) := by
+  intro n Λ hΛ x ε hε
+  let η := canonicalForwardConeDirection (d := d) n
+  let ΛinvC : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ := fun μ ν => ↑((Λ⁻¹).val μ ν)
+  let ΛC : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ := fun μ ν => ↑(Λ.val μ ν)
+  let FInv : (Fin n → Fin (d + 1) → ℂ) → ℂ := fun z =>
+    bvt_F OS lgc n (fun k => Matrix.mulVec ΛinvC (z k))
+  have hFInv_hol : DifferentiableOn ℂ FInv (ForwardTube d n) := by
+    apply DifferentiableOn.comp (bvt_F_holomorphic OS lgc n)
+    · intro z _hz
+      apply DifferentiableAt.differentiableWithinAt
+      apply differentiableAt_pi.mpr
+      intro k
+      apply differentiableAt_pi.mpr
+      intro μ
+      have hcoord : ∀ (k : Fin n) (ν : Fin (d + 1)),
+          DifferentiableAt ℂ (fun w : Fin n → Fin (d + 1) → ℂ => w k ν) z :=
+        fun k' ν' =>
+          differentiableAt_pi.mp (differentiableAt_pi.mp differentiableAt_id k') ν'
+      suffices h :
+          ∀ (s : Finset (Fin (d + 1))),
+            DifferentiableAt ℂ
+              (fun w : Fin n → Fin (d + 1) → ℂ =>
+                ∑ ν ∈ s, ΛinvC μ ν * w k ν) z by
+        simpa [FInv, ΛinvC, Matrix.mulVec, dotProduct] using h Finset.univ
+      intro s
+      induction s using Finset.induction with
+      | empty =>
+          simp [differentiableAt_const]
+      | @insert ν s hν ih =>
+          simp only [Finset.sum_insert hν]
+          exact ((differentiableAt_const _).mul (hcoord k ν)).add ih
+    · intro z hz
+      exact orthochronous_preserves_forward_tube (d := d) Λ⁻¹
+        (LorentzGroup.IsOrthochronous.inv hΛ) z hz
+  have hint_inv :
+      ∀ φ : SchwartzNPoint d n,
+        HasCompactSupport (φ : NPointDomain d n → ℂ) →
+        tsupport (φ : NPointDomain d n → ℂ) ⊆
+          {x : NPointDomain d n | (fun k => wickRotatePoint (x k)) ∈ ForwardTube d n} →
+        ∫ x : NPointDomain d n,
+            FInv (fun k => wickRotatePoint (x k)) *
+              (((ZeroDiagonalSchwartz.ofClassical φ).1 : NPointDomain d n → ℂ) x)
+          =
+        ∫ x : NPointDomain d n,
+            bvt_F OS lgc n (fun k => wickRotatePoint (x k)) *
+              (((ZeroDiagonalSchwartz.ofClassical φ).1 : NPointDomain d n → ℂ) x) := by
+    intro φ hφ_compact hφ_tsupport
+    by_cases hΛ_proper : LorentzGroup.IsProper Λ
+    · have hproper :=
+        bvt_F_lorentz_proper_ortho_wick (d := d) OS lgc n Λ hΛ_proper hΛ
+          φ hφ_compact hφ_tsupport
+      simpa [FInv, ΛinvC, Matrix.mulVec, dotProduct,
+        ZeroDiagonalSchwartz.coe_ofClassical_of_tsupport_subset_wickForwardTubeSection
+          (d := d) φ hφ_tsupport] using hproper
+    · simpa [FInv, ΛinvC, Matrix.mulVec, dotProduct] using
+        bvt_F_lorentz_nonproper_ortho_wick (d := d) OS lgc n Λ hΛ hΛ_proper
+          φ hφ_compact hφ_tsupport
+  have hpoint :=
+    forwardTube_orthochronousLorentz_point_eq_of_zeroDiagonal_distributional_wickSection_eq
+      (d := d) (n := n) FInv (bvt_F OS lgc n)
+      hFInv_hol (bvt_F_holomorphic OS lgc n) hint_inv
+      Λ hΛ x η (canonicalForwardConeDirection_mem (d := d) n) ε hε
+  have hmul : (Λ⁻¹).val * Λ.val = (1 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) := by
+    have h1 := LorentzGroup.ext_iff.mp (inv_mul_cancel Λ)
+    rw [show (Λ⁻¹ * Λ).val = Λ⁻¹.val * Λ.val from rfl] at h1
+    rw [show (1 : LorentzGroup d).val = (1 : Matrix _ _ ℝ) from rfl] at h1
+    exact h1
+  have hmulC : ΛinvC * ΛC = (1 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) := by
+    ext μ ρ
+    have hentry :
+        ((Λ⁻¹).val * Λ.val) μ ρ = (1 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) μ ρ :=
+      congrArg (fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ => M μ ρ) hmul
+    calc
+      (ΛinvC * ΛC) μ ρ
+        = ↑(((Λ⁻¹).val * Λ.val) μ ρ) := by
+            simp [ΛinvC, ΛC, Matrix.mul_apply]
+      _ = ↑((1 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) μ ρ) := by
+            exact congrArg (fun r : ℝ => (r : ℂ)) hentry
+      _ = (1 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) μ ρ := by
+            by_cases hμρ : μ = ρ <;> simp [Matrix.one_apply, hμρ]
+  have hleft :
+      FInv (fun k μ =>
+        ∑ ν, (↑(Λ.val μ ν) : ℂ) * (↑(x k ν) + ε * ↑(η k ν) * Complex.I))
+        =
+      bvt_F OS lgc n (fun k μ =>
+        ↑(x k μ) + ε * ↑(η k μ) * Complex.I) := by
+    unfold FInv
+    congr 1
+    ext k μ
+    have hk :
+        Matrix.mulVec ΛinvC
+            (Matrix.mulVec ΛC (fun ν =>
+              ↑(x k ν) + ε * ↑(η k ν) * Complex.I))
+          =
+        (fun ν => ↑(x k ν) + ε * ↑(η k ν) * Complex.I) := by
+      rw [Matrix.mulVec_mulVec]
+      rw [hmulC, Matrix.one_mulVec]
+    simpa [ΛC, Matrix.mulVec, dotProduct] using congrFun hk μ
+  exact hpoint.symm.trans hleft
+
+theorem bvt_lorentz_covariant_orthochronous
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    ∀ (n : ℕ) (Λ : LorentzGroup d), LorentzGroup.IsOrthochronous Λ →
+      ∀ (f g : SchwartzNPoint d n),
+        (∀ x, g.toFun x = f.toFun (fun i => Matrix.mulVec Λ⁻¹.val (x i))) →
+        bvt_W OS lgc n f = bvt_W OS lgc n g := by
+  intro n Λ hΛ f g hfg
+  exact bv_lorentz_covariance_transfer_orthochronous_of_tube_covariance (d := d) n
+    (bvt_W OS lgc n)
+    (bvt_F OS lgc n)
+    (bvt_boundary_values OS lgc n)
+    (bvt_F_lorentz_orthoCanonical (d := d) OS lgc n)
+    Λ hΛ f g hfg
+
+theorem bvt_lorentz_covariant_restricted
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    ∀ (n : ℕ) (Λ : LorentzGroup.Restricted (d := d))
+      (f g : SchwartzNPoint d n),
+        (∀ x, g.toFun x = f.toFun (fun i => Matrix.mulVec Λ.val⁻¹.val (x i))) →
+        bvt_W OS lgc n f = bvt_W OS lgc n g := by
+  intro n Λ f g hfg
+  exact bvt_lorentz_covariant_orthochronous (d := d) OS lgc n Λ.val Λ.property.2 f g hfg
 
 /-- The reconstructed boundary-value witness already satisfies the abstract
 absolute forward-tube input interface used by the reduced BHW route. This keeps
