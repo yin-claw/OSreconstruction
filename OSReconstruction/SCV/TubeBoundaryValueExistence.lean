@@ -74,10 +74,12 @@ axiom polyGrowth_temperedDistribution {m : ℕ}
 /-- The directional derivative as a continuous linear operator on Schwartz space.
     `(η · ∇) φ (x) = ∑_j η_j · (∂φ/∂x_j)(x)`
 
-    This is a CLM because differentiation is continuous on Schwartz space
-    (it increases the Schwartz seminorm index by 1). -/
-axiom directionalDerivSchwartz {m : ℕ} (η : Fin m → ℝ) :
-    SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] SchwartzMap (Fin m → ℝ) ℂ
+    This is `lineDerivOpCLM` from Mathlib's `SchwartzMap.Deriv`, which is
+    `evalCLM m ∘L fderivCLM` — the composition of the Fréchet derivative
+    (a CLM 𝓢(E,F) →L 𝓢(E, E →L F)) with evaluation at direction η. -/
+def directionalDerivSchwartz {m : ℕ} (η : Fin m → ℝ) :
+    SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] SchwartzMap (Fin m → ℝ) ℂ :=
+  LineDeriv.lineDerivOpCLM ℂ (SchwartzMap (Fin m → ℝ) ℂ) η
 
 /-- The distributional directional derivative of a tempered distribution.
     Defined by duality: ⟨(η·∇)T, φ⟩ = -⟨T, (η·∇)φ⟩.
