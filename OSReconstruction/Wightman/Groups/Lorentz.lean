@@ -595,6 +595,64 @@ def timeReversal : LorentzGroup d := ⟨
           rw [← MinkowskiMatrix.mul_self d]; rfl
       _ = diagonal (MinkowskiSpace.metricSignature d) := one_mul _⟩
 
+@[simp] theorem timeReversal_mul_timeReversal :
+    timeReversal (d := d) * timeReversal (d := d) = 1 := by
+  ext i j
+  change ((diagonal (fun i : Fin (d + 1) => if i = 0 then (-1 : ℝ) else 1) *
+      diagonal (fun i : Fin (d + 1) => if i = 0 then (-1 : ℝ) else 1)) i j) =
+    ((1 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) i j)
+  rw [diagonal_mul_diagonal]
+  by_cases hij : i = j
+  · subst hij
+    by_cases h0 : i = 0 <;> simp [h0]
+  · simp [hij]
+
+@[simp] theorem inv_timeReversal :
+    (timeReversal (d := d))⁻¹ = timeReversal (d := d) := by
+  apply inv_eq_of_mul_eq_one_left
+  simpa using timeReversal_mul_timeReversal (d := d)
+
+/-- The time component of any Lorentz transformation has absolute value at least 1. -/
+theorem time_zero_zero_sq_ge_one (Λ : LorentzGroup d) :
+    (Λ.val 0 0) ^ 2 ≥ 1 := by
+  let S := ∑ j ∈ Finset.univ.filter (· ≠ (0 : Fin (d + 1))), Λ.val 0 j ^ 2
+  have hrow := IsLorentzMatrix.first_row_timelike Λ.val Λ.2
+  have hS_nonneg : S ≥ 0 := Finset.sum_nonneg (fun j _ => sq_nonneg _)
+  have hS_eq : S = Λ.val 0 0 ^ 2 - 1 := by
+    simp only [S]
+    linarith
+  nlinarith [hS_nonneg, hS_eq]
+
+/-- Every Lorentz transformation is either orthochronous already, or becomes
+orthochronous after composing with time reversal. This isolates the genuinely
+non-orthochronous component to the single discrete generator `T`. -/
+theorem orthochronous_or_timeReversal_mul_orthochronous (Λ : LorentzGroup d) :
+    IsOrthochronous Λ ∨ IsOrthochronous (timeReversal (d := d) * Λ) := by
+  by_cases hΛ : IsOrthochronous Λ
+  · exact Or.inl hΛ
+  · right
+    have hnot_ge : ¬ Λ.val 0 0 ≥ 1 := by
+      simpa [IsOrthochronous] using hΛ
+    have hlt1 : Λ.val 0 0 < 1 := lt_of_not_ge hnot_ge
+    have hsq : (Λ.val 0 0) ^ 2 ≥ 1 := time_zero_zero_sq_ge_one (d := d) Λ
+    have hle_neg : Λ.val 0 0 ≤ -1 := by
+      nlinarith
+    show (timeReversal (d := d) * Λ).val 0 0 ≥ 1
+    have hentry : (timeReversal (d := d) * Λ).val 0 0 = -Λ.val 0 0 := by
+      change
+        (((timeReversal (d := d)).val * Λ.val) 0 0) = -Λ.val 0 0
+      rw [show (timeReversal (d := d)).val =
+          diagonal (fun i => if i = 0 then (-1 : ℝ) else 1) from rfl]
+      rw [Matrix.mul_apply]
+      rw [Finset.sum_eq_single 0]
+      · simp
+      · intro k _ hk
+        have h0k : (0 : Fin (d + 1)) ≠ k := by simpa using hk.symm
+        simp [Matrix.diagonal, h0k]
+      · simp [timeReversal]
+    rw [hentry]
+    linarith
+
 /-- PT = diag(-1, -1, ..., -1) = -I, the total inversion.
     Action: (t, x) ↦ (-t, -x). -/
 theorem parity_mul_timeReversal : parity (d := d) * timeReversal = ⟨-1, by
@@ -623,4 +681,3 @@ end LorentzGroup
 abbrev Lorentz4 := LorentzGroup 3
 
 end
-

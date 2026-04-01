@@ -395,6 +395,48 @@ theorem restricted_preserves_forward_tube
       simp [prev_z, h0, Complex.sub_im]
   exact restricted_preserves_forward_cone Λ η_k (by exact hk)
 
+/-- An orthochronous Lorentz transformation preserves the forward tube.
+
+This is the same forward-tube geometry as `restricted_preserves_forward_tube`,
+but only uses preservation of the open forward cone, so properness is not
+needed. -/
+theorem orthochronous_preserves_forward_tube
+    (Λ : LorentzGroup d) (hΛ_ortho : LorentzGroup.IsOrthochronous Λ)
+    (z : Fin n → Fin (d + 1) → ℂ) (hz : z ∈ ForwardTube d n) :
+    (fun k μ => ∑ ν, (Λ.val μ ν : ℂ) * z k ν) ∈ ForwardTube d n := by
+  intro k
+  let prev_z := if h : k.val = 0 then (0 : Fin (d + 1) → ℂ) else z ⟨k.val - 1, by omega⟩
+  have hk := hz k
+  let η_k : Fin (d + 1) → ℝ := fun μ => (z k μ - prev_z μ).im
+  suffices h : InOpenForwardCone d (fun μ => ∑ ν, Λ.val μ ν * η_k ν) by
+    have him_linear : ∀ (w : Fin (d + 1) → ℂ) (μ : Fin (d + 1)),
+        (∑ ν, (Λ.val μ ν : ℂ) * w ν).im = ∑ ν, Λ.val μ ν * (w ν).im := by
+      intro w μ
+      rw [Complex.im_sum]
+      apply Finset.sum_congr rfl
+      intro ν _
+      exact Complex.im_ofReal_mul _ _
+    convert h using 1
+    ext μ
+    simp only [Complex.sub_im]
+    rw [him_linear (z k) μ]
+    split_ifs with h0
+    · simp only [Pi.zero_apply, Complex.zero_im, sub_zero]
+      apply Finset.sum_congr rfl
+      intro ν _
+      congr 1
+      show (z k ν).im = (z k ν - prev_z ν).im
+      simp [prev_z, h0]
+    · rw [him_linear (z ⟨k.val - 1, by omega⟩) μ]
+      rw [← Finset.sum_sub_distrib]
+      apply Finset.sum_congr rfl
+      intro ν _
+      rw [← mul_sub]
+      congr 1
+      show (z k ν).im - (z ⟨k.val - 1, by omega⟩ ν).im = (z k ν - prev_z ν).im
+      simp [prev_z, h0, Complex.sub_im]
+  exact orthochronous_preserves_forward_cone (d := d) Λ hΛ_ortho η_k hk
+
 /-- The composition z ↦ W_analytic(Λz) is holomorphic on the forward tube
     when Λ ∈ SO⁺(1,d), since z ↦ Λz is ℂ-linear and preserves the forward tube. -/
 theorem W_analytic_lorentz_holomorphic
@@ -945,6 +987,100 @@ This combines three standard results:
 
 General form: applies to any holomorphic F on T_n whose BVs equal W_n,
 not just the specific analytic continuation from spectrum_condition. -/
+theorem lorentz_covariant_distributional_bv_of_restrictedCovariance
+    {d n : ℕ} [NeZero d]
+    (W_n : SchwartzNPoint d n → ℂ)
+    (_hW_linear : IsLinearMap ℂ W_n)
+    (_hW_cont : Continuous W_n)
+    (hW_lorentz :
+      ∀ (Λ : LorentzGroup.Restricted (d := d)) (f g : SchwartzNPoint d n),
+        (∀ x : NPointDomain d n,
+          g.toFun x = f.toFun (fun i => Matrix.mulVec Λ.val⁻¹.val (x i))) →
+        W_n f = W_n g)
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (_hF_hol : DifferentiableOn ℂ F (ForwardTube d n))
+    (hF_bv : ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
+      InForwardCone d n η →
+      Filter.Tendsto
+        (fun ε : ℝ => ∫ x : NPointDomain d n,
+          F (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (W_n f)))
+    (Λ : LorentzGroup.Restricted (d := d))
+    (f : SchwartzNPoint d n)
+    (η : Fin n → Fin (d + 1) → ℝ) (hη : InForwardCone d n η) :
+    Filter.Tendsto
+      (fun ε : ℝ => ∫ x : NPointDomain d n,
+        F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) *
+          (↑(x k ν) + ε * ↑(η k ν) * Complex.I)) * (f x))
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds (W_n f)) := by
+  let Λη : Fin n → Fin (d + 1) → ℝ := fun k μ => ∑ ν, Λ.val.val μ ν * η k ν
+  let g : SchwartzNPoint d n := lorentzCompSchwartz Λ f
+  have hΛη : InForwardCone d n Λη := by
+    intro k
+    have hk := hη k
+    let diff_η : Fin (d + 1) → ℝ := fun μ => η k μ -
+      (if h : k.val = 0 then (0 : Fin (d + 1) → ℝ) else η ⟨k.val - 1, by omega⟩) μ
+    have hdiff : InOpenForwardCone d diff_η := hk
+    have hΛdiff := restricted_preserves_forward_cone Λ diff_η hdiff
+    convert hΛdiff using 1
+    ext μ
+    simp only [Λη, diff_η]
+    split_ifs with h
+    · simp [sub_zero]
+    · rw [← Finset.sum_sub_distrib]
+      congr 1
+      ext ν
+      ring
+  have hbv_g := hF_bv g Λη hΛη
+  have hWfg : W_n f = W_n g := by
+    apply hW_lorentz Λ f g
+    exact fun x => lorentzCompSchwartz_apply Λ f x
+  suffices heq : ∀ ε : ℝ,
+      ∫ x : NPointDomain d n,
+        F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) *
+          (↑(x k ν) + ε * ↑(η k ν) * Complex.I)) * (f x) =
+      ∫ y : NPointDomain d n,
+        F (fun k μ => ↑(y k μ) + ε * ↑(Λη k μ) * Complex.I) * (g y) by
+    rw [hWfg]
+    exact Filter.Tendsto.congr (fun ε => (heq ε).symm) hbv_g
+  intro ε
+  have hlin : ∀ x : NPointDomain d n,
+      (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) *
+        (↑(x k ν) + ε * ↑(η k ν) * Complex.I)) =
+      (fun k μ => ↑((fun i => Λ.val.val.mulVec (x i)) k μ) +
+        ε * ↑(Λη k μ) * Complex.I) := by
+    intro x
+    funext k μ
+    simp only [Λη, Matrix.mulVec]
+    push_cast
+    simp only [mul_add, Finset.sum_add_distrib]
+    congr 1
+    · simp only [dotProduct]
+      push_cast
+      rfl
+    · conv_lhs =>
+        arg 2
+        ext ν
+        rw [show (↑(Λ.val.val μ ν) : ℂ) * (↑ε * ↑(η k ν) * Complex.I) =
+            ↑ε * (↑(Λ.val.val μ ν) * ↑(η k ν)) * Complex.I from by ring]
+      rw [← Finset.sum_mul, ← Finset.mul_sum]
+  have hlhs : (∫ x : NPointDomain d n,
+      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) *
+        (↑(x k ν) + ε * ↑(η k ν) * Complex.I)) * (f x)) =
+    ∫ x : NPointDomain d n,
+      (fun y => F (fun k μ => ↑(y k μ) + ε * ↑(Λη k μ) * Complex.I) * (g y))
+        (fun i => Λ.val.val.mulVec (x i)) := by
+    congr 1
+    ext x
+    rw [hlin x]
+    congr 1
+    exact (lorentzCompSchwartz_comp_lorentz Λ f x).symm
+  rw [hlhs]
+  exact integral_lorentz_eq_self Λ
+    (fun y => F (fun k μ => ↑(y k μ) + ε * ↑(Λη k μ) * Complex.I) * (g y))
+
 theorem lorentz_covariant_distributional_bv {d n : ℕ} [NeZero d]
     (Wfn : WightmanFunctions d)
     (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
@@ -964,91 +1100,12 @@ theorem lorentz_covariant_distributional_bv {d n : ℕ} [NeZero d]
         F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) *
           (↑(x k ν) + ε * ↑(η k ν) * Complex.I)) * (f x))
       (nhdsWithin 0 (Set.Ioi 0))
-      (nhds (Wfn.W n f)) := by
-  -- Define the Lorentz-rotated direction and test function
-  let Λη : Fin n → Fin (d + 1) → ℝ := fun k μ => ∑ ν, Λ.val.val μ ν * η k ν
-  let g : SchwartzNPoint d n := lorentzCompSchwartz Λ f
-  -- Λη is in the forward cone (successive differences preserved by Lorentz)
-  have hΛη : InForwardCone d n Λη := by
-    intro k
-    -- The successive difference of Λη at k equals Λ applied to the successive difference of η
-    have hk := hη k
-    -- hk : InOpenForwardCone d (fun μ => η k μ - (if k.val = 0 then 0 else η ⟨k.val - 1, ..⟩) μ)
-    -- Goal: InOpenForwardCone d (fun μ => Λη k μ - (if k.val = 0 then 0 else Λη ⟨k.val - 1, ..⟩) μ)
-    -- Key: Λη k μ - prev μ = ∑ ν, Λ_μν * (η k ν - prev_η ν) by linearity of sum
-    -- So the result follows from restricted_preserves_forward_cone
-    let diff_η : Fin (d + 1) → ℝ := fun μ => η k μ -
-      (if h : k.val = 0 then (0 : Fin (d + 1) → ℝ) else η ⟨k.val - 1, by omega⟩) μ
-    have hdiff : InOpenForwardCone d diff_η := hk
-    have hΛdiff := restricted_preserves_forward_cone Λ diff_η hdiff
-    -- Now show the goal matches Λ · diff_η
-    convert hΛdiff using 1
-    ext μ
-    simp only [Λη, diff_η]
-    -- Goal: (∑ ν, Λ_μν * η k ν) - (if k.val = 0 then 0 else ∑ ν, Λ_μν * η ⟨k.val-1,..⟩ ν) =
-    --       ∑ ν, Λ_μν * (η k ν - (if k.val = 0 then 0 else η ⟨k.val-1,..⟩) ν)
-    split_ifs with h
-    · simp [sub_zero]
-    · rw [← Finset.sum_sub_distrib]
-      congr 1; ext ν; ring
-  -- Apply hF_bv with test function g and direction Λη
-  have hbv_g := hF_bv g Λη hΛη
-  -- By Lorentz covariance (R5), W n f = W n g
-  have hWfg : Wfn.W n f = Wfn.W n g := by
-    apply Wfn.lorentz_covariant n Λ.val f g
-    exact fun x => lorentzCompSchwartz_apply Λ f x
-  -- Show the integrals agree after COV
-  suffices heq : ∀ ε : ℝ,
-      ∫ x : NPointDomain d n,
-        F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) *
-          (↑(x k ν) + ε * ↑(η k ν) * Complex.I)) * (f x) =
-      ∫ y : NPointDomain d n,
-        F (fun k μ => ↑(y k μ) + ε * ↑(Λη k μ) * Complex.I) * (g y) by
-    rw [hWfg]
-    exact Filter.Tendsto.congr (fun ε => (heq ε).symm) hbv_g
-  intro ε
-  -- Step 1: Rewrite integrand by distributing Λ over the sum
-  -- F(Λ(x + iεη)) = F(Λx + iεΛη)
-  have hlin : ∀ x : NPointDomain d n,
-      (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) *
-        (↑(x k ν) + ε * ↑(η k ν) * Complex.I)) =
-      (fun k μ => ↑((fun i => Λ.val.val.mulVec (x i)) k μ) +
-        ε * ↑(Λη k μ) * Complex.I) := by
-    intro x; funext k μ
-    simp only [Λη, Matrix.mulVec]
-    push_cast
-    simp only [mul_add, Finset.sum_add_distrib]
-    congr 1
-    · -- ∑ ↑(Λ μ ν) * ↑(x k ν) = ↑((Λ μ ·) ⬝ᵥ x k)
-      simp only [dotProduct]
-      push_cast
-      rfl
-    · -- Pull ε * I out of the sum
-      -- Goal: ∑ x, ↑(Λ μ x) * (↑ε * ↑(η k x) * I) = (↑ε * ∑ x, ↑(Λ μ x) * ↑(η k x)) * I
-      conv_lhs =>
-        arg 2; ext ν
-        rw [show (↑(Λ.val.val μ ν) : ℂ) * (↑ε * ↑(η k ν) * Complex.I) =
-            ↑ε * (↑(Λ.val.val μ ν) * ↑(η k ν)) * Complex.I from by ring]
-      rw [← Finset.sum_mul, ← Finset.mul_sum]
-  -- Step 2: Apply COV via integral_lorentz_eq_self (backwards direction)
-  -- integral_lorentz_eq_self says: ∫ x, h(Λx) = ∫ x, h(x)
-  -- We use this with h(y) = F(↑y + iεΛη) · g(y)
-  -- Then h(Λx) = F(↑(Λx) + iεΛη) · g(Λx) = F(↑(Λx) + iεΛη) · f(x)
-  -- So: ∫ x, F(↑(Λx) + iεΛη) · f(x) = ∫ x, h(Λx) = ∫ y, h(y) = ∫ y, F(↑y + iεΛη) · g(y)
-  -- Rewrite integrand using hlin
-  have hlhs : (∫ x : NPointDomain d n,
-      F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) *
-        (↑(x k ν) + ε * ↑(η k ν) * Complex.I)) * (f x)) =
-    ∫ x : NPointDomain d n,
-      (fun y => F (fun k μ => ↑(y k μ) + ε * ↑(Λη k μ) * Complex.I) * (g y))
-        (fun i => Λ.val.val.mulVec (x i)) := by
-    congr 1; ext x
-    rw [hlin x]
-    congr 1
-    exact (lorentzCompSchwartz_comp_lorentz Λ f x).symm
-  rw [hlhs]
-  exact integral_lorentz_eq_self Λ
-    (fun y => F (fun k μ => ↑(y k μ) + ε * ↑(Λη k μ) * Complex.I) * (g y))
+      (nhds (Wfn.W n f)) :=
+  lorentz_covariant_distributional_bv_of_restrictedCovariance
+    (d := d) (n := n)
+    (Wfn.W n) (Wfn.linear n) (Wfn.tempered n)
+    (fun Λ f g hfg => Wfn.lorentz_covariant n Λ.val f g hfg)
+    F _hF_hol hF_bv Λ f η hη
 
 /-- The set of Euclidean configurations whose Wick rotation does NOT lie in the
     permuted extended tube has Lebesgue measure zero.
@@ -1096,6 +1153,106 @@ theorem ae_euclidean_points_in_permutedTube {d n : ℕ} [NeZero d] :
   rw [Filter.Eventually, MeasureTheory.mem_ae_iff]
   convert wickRotation_not_in_PET_null (d := d) (n := n) using 1
 
+/-- Restricted Lorentz covariance of the boundary distribution implies that the
+boundary values of `z ↦ F(Λ z)` and `z ↦ F(z)` agree distributionally. This is
+the generic restricted-subgroup version of the usual Wightman boundary-value
+comparison. -/
+theorem W_analytic_lorentz_bv_agree_of_restrictedCovariance
+    {d n : ℕ} [NeZero d]
+    (W_n : SchwartzNPoint d n → ℂ)
+    (hW_linear : IsLinearMap ℂ W_n)
+    (hW_cont : Continuous W_n)
+    (hW_lorentz :
+      ∀ (Λ : LorentzGroup.Restricted (d := d)) (f g : SchwartzNPoint d n),
+        (∀ x : NPointDomain d n,
+          g.toFun x = f.toFun (fun i => Matrix.mulVec Λ.val⁻¹.val (x i))) →
+        W_n f = W_n g)
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF_hol : DifferentiableOn ℂ F (ForwardTube d n))
+    (hF_bv : ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
+      InForwardCone d n η →
+      Filter.Tendsto
+        (fun ε : ℝ => ∫ x : NPointDomain d n,
+          F (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (W_n f)))
+    (Λ : LorentzGroup.Restricted (d := d)) :
+    ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
+      InForwardCone d n η →
+      Filter.Tendsto
+        (fun ε : ℝ => ∫ x : NPointDomain d n,
+          (F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) *
+              (↑(x k ν) + ε * ↑(η k ν) * Complex.I)) -
+           F (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I)) * (f x))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds 0) := by
+  intro f η hη
+  have h_term2 : Filter.Tendsto
+      (fun ε : ℝ => ∫ x : NPointDomain d n,
+        F (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds (W_n f)) := hF_bv f η hη
+  have h_term1 : Filter.Tendsto
+      (fun ε : ℝ => ∫ x : NPointDomain d n,
+        F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) *
+          (↑(x k ν) + ε * ↑(η k ν) * Complex.I)) * (f x))
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds (W_n f)) :=
+    lorentz_covariant_distributional_bv_of_restrictedCovariance
+      (d := d) (n := n) W_n hW_linear hW_cont hW_lorentz
+      F hF_hol hF_bv Λ f η hη
+  have hdiff := Filter.Tendsto.sub h_term1 h_term2
+  simp only [sub_self] at hdiff
+  refine hdiff.congr' ?_
+  filter_upwards [self_mem_nhdsWithin] with ε (hε : ε ∈ Set.Ioi 0)
+  have hF_lor_hol :
+      DifferentiableOn ℂ
+        (fun z => F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν))
+        (ForwardTube d n) := by
+    apply DifferentiableOn.comp hF_hol
+    · intro z _hz
+      apply DifferentiableAt.differentiableWithinAt
+      apply differentiableAt_pi.mpr
+      intro k
+      apply differentiableAt_pi.mpr
+      intro μ
+      have hcoord : ∀ (k : Fin n) (ν : Fin (d + 1)),
+          DifferentiableAt ℂ (fun x : Fin n → Fin (d + 1) → ℂ => x k ν) z :=
+        fun k' ν' =>
+          differentiableAt_pi.mp (differentiableAt_pi.mp differentiableAt_id k') ν'
+      suffices h :
+          ∀ (s : Finset (Fin (d + 1))),
+            DifferentiableAt ℂ
+              (fun x : Fin n → Fin (d + 1) → ℂ =>
+                ∑ ν ∈ s, (↑(Λ.val.val μ ν) : ℂ) * x k ν) z by
+        exact h Finset.univ
+      intro s
+      induction s using Finset.induction with
+      | empty =>
+          simp [differentiableAt_const]
+      | @insert ν s hν ih =>
+          simp only [Finset.sum_insert hν]
+          exact ((differentiableAt_const _).mul (hcoord k ν)).add ih
+    · intro z hz
+      exact restricted_preserves_forward_tube Λ z hz
+  rw [← MeasureTheory.integral_sub]
+  · congr 1
+    ext x
+    ring
+  · exact forward_tube_bv_integrable
+      (fun z => F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν))
+      hF_lor_hol
+      ⟨{ toLinearMap := ⟨⟨W_n, hW_linear.map_add⟩, hW_linear.map_smul⟩, cont := hW_cont },
+        fun f' η' hη' =>
+          lorentz_covariant_distributional_bv_of_restrictedCovariance
+            (d := d) (n := n) W_n hW_linear hW_cont hW_lorentz
+            F hF_hol hF_bv Λ f' η' hη'⟩
+      f η hη ε (Set.mem_Ioi.mp hε)
+  · exact forward_tube_bv_integrable F hF_hol
+      ⟨{ toLinearMap := ⟨⟨W_n, hW_linear.map_add⟩, hW_linear.map_smul⟩, cont := hW_cont },
+        hF_bv⟩
+      f η hη ε (Set.mem_Ioi.mp hε)
+
 /-- The distributional boundary values of z ↦ W_analytic(Λz) and z ↦ W_analytic(z)
     agree, by Lorentz covariance of the Wightman distribution. -/
 theorem W_analytic_lorentz_bv_agree
@@ -1110,47 +1267,15 @@ theorem W_analytic_lorentz_bv_agree
            (Wfn.spectrum_condition n).choose
             (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I)) * (f x))
         (nhdsWithin 0 (Set.Ioi 0))
-        (nhds 0) := by
-  intro f η hη
-  -- Strategy: Show both terms converge to W_n(f) individually, so their difference → 0.
-  let W_a := (Wfn.spectrum_condition n).choose
-  have hW_hol := (Wfn.spectrum_condition n).choose_spec.1
-  have hW_bv := (Wfn.spectrum_condition n).choose_spec.2
-  -- Term 2 limit: ∫ W_analytic(x + iεη) f(x) dx → W_n(f) by spectrum_condition
-  have h_term2 : Filter.Tendsto
-      (fun ε : ℝ => ∫ x : NPointDomain d n,
-        W_a (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
-      (nhdsWithin 0 (Set.Ioi 0))
-      (nhds (Wfn.W n f)) := hW_bv f η hη
-  -- Term 1 limit: ∫ W_analytic(Λ(x + iεη)) f(x) dx → W_n(f)
-  -- by Lorentz covariance of distributional boundary values
-  have h_term1 : Filter.Tendsto
-      (fun ε : ℝ => ∫ x : NPointDomain d n,
-        W_a (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) *
-          (↑(x k ν) + ε * ↑(η k ν) * Complex.I)) * (f x))
-      (nhdsWithin 0 (Set.Ioi 0))
-      (nhds (Wfn.W n f)) :=
-    lorentz_covariant_distributional_bv (d := d) (n := n) Wfn W_a hW_hol hW_bv Λ f η hη
-  -- The difference of two sequences both converging to W_n(f) converges to 0
-  have hdiff := Filter.Tendsto.sub h_term1 h_term2
-  simp only [sub_self] at hdiff
-  -- Match the form: ∫ (F₁ - F₂) * f = ∫ F₁*f - ∫ F₂*f (using integral_sub for ε > 0)
-  refine hdiff.congr' ?_
-  filter_upwards [self_mem_nhdsWithin] with ε (hε : ε ∈ Set.Ioi 0)
-  rw [← MeasureTheory.integral_sub]
-  · congr 1; ext x; ring
-  · exact forward_tube_bv_integrable
-      (fun z => W_a (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν))
-      (W_analytic_lorentz_holomorphic Wfn n Λ)
-      ⟨{ toLinearMap := ⟨⟨Wfn.W n, (Wfn.linear n).map_add⟩, (Wfn.linear n).map_smul⟩,
-         cont := Wfn.tempered n }, fun f' η' hη' =>
-        lorentz_covariant_distributional_bv (d := d) (n := n)
-          Wfn W_a hW_hol hW_bv Λ f' η' hη'⟩
-      f η hη ε (Set.mem_Ioi.mp hε)
-  · exact forward_tube_bv_integrable W_a hW_hol
-      ⟨{ toLinearMap := ⟨⟨Wfn.W n, (Wfn.linear n).map_add⟩, (Wfn.linear n).map_smul⟩,
-         cont := Wfn.tempered n }, hW_bv⟩
-      f η hη ε (Set.mem_Ioi.mp hε)
+        (nhds 0) :=
+  W_analytic_lorentz_bv_agree_of_restrictedCovariance
+    (d := d) (n := n)
+    (Wfn.W n) (Wfn.linear n) (Wfn.tempered n)
+    (fun Λ f g hfg => Wfn.lorentz_covariant n Λ.val f g hfg)
+    (Wfn.spectrum_condition n).choose
+    (Wfn.spectrum_condition n).choose_spec.1
+    (Wfn.spectrum_condition n).choose_spec.2
+    Λ
 
 
 end

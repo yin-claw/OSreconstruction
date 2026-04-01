@@ -49,6 +49,14 @@ private theorem exists_acrOne_productTensor_witness {d : ℕ} [NeZero d]
         S_prod (fun j => z (σ j)) = S_prod z) ∧
       (∀ (z : Fin k → Fin (d + 1) → ℂ) (a : Fin (d + 1) → ℂ),
         S_prod (fun j => z j + a) = S_prod z) ∧
+      (∀ (x : NPointDomain d k) (ε : ℝ), 0 < ε →
+        starRingEnd ℂ
+          (S_prod (fun j μ =>
+            ↑(x j μ) +
+              ε * ↑(if μ = 0 then (↑(j : ℕ) + 1 : ℝ) else 0) * Complex.I)) =
+        S_prod (fun j μ =>
+          ↑(x j μ) -
+            ε * ↑(if μ = 0 then (↑(j : ℕ) + 1 : ℝ) else 0) * Complex.I)) ∧
       ∃ (C_bd : ℝ) (N : ℕ),
         0 < C_bd ∧
         ∀ z ∈ AnalyticContinuationRegion d k 1,
@@ -442,7 +450,8 @@ private theorem schwinger_continuation_base_step_acrOne_assembly {d : ℕ} [NeZe
       (∀ (f : ZeroDiagonalSchwartz d k),
         OS.S k f = ∫ x : NPointDomain d k,
           S_ext (fun j => wickRotatePoint (x j)) * (f.1 x)) := by
-  obtain ⟨S_prod, hS_prod_holo, hS_prod_prod, hS_prod_perm, hS_prod_trans, hS_prod_growth⟩ :=
+  obtain ⟨S_prod, hS_prod_holo, hS_prod_prod, hS_prod_perm, hS_prod_trans,
+    _hS_prod_negCanonical, hS_prod_growth⟩ :=
     exists_acrOne_productTensor_witness (d := d) OS lgc k
   refine ⟨S_prod, hS_prod_holo, ?_⟩
   exact
@@ -473,6 +482,14 @@ theorem schwinger_continuation_base_step_acrOne_productTensor_assembly_with_tran
         S_prod (fun j => z (σ j)) = S_prod z) ∧
       (∀ (z : Fin k → Fin (d + 1) → ℂ) (a : Fin (d + 1) → ℂ),
         S_prod (fun j => z j + a) = S_prod z) ∧
+      (∀ (x : NPointDomain d k) (ε : ℝ), 0 < ε →
+        starRingEnd ℂ
+          (S_prod (fun j μ =>
+            ↑(x j μ) +
+              ε * ↑(if μ = 0 then (↑(j : ℕ) + 1 : ℝ) else 0) * Complex.I)) =
+        S_prod (fun j μ =>
+          ↑(x j μ) -
+            ε * ↑(if μ = 0 then (↑(j : ℕ) + 1 : ℝ) else 0) * Complex.I)) ∧
       ∃ (C_bd : ℝ) (N : ℕ),
         0 < C_bd ∧
         ∀ z ∈ AnalyticContinuationRegion d k 1,
@@ -500,13 +517,23 @@ theorem schwinger_continuation_base_step_acrOne_assembly_with_translationInvaria
         S_ext (fun j => z (σ j)) = S_ext z) ∧
       (∀ (z : Fin k → Fin (d + 1) → ℂ) (a : Fin (d + 1) → ℂ),
         S_ext (fun j => z j + a) = S_ext z) ∧
+      (∀ (x : NPointDomain d k) (ε : ℝ), 0 < ε →
+        starRingEnd ℂ
+          (S_ext (fun j μ =>
+            ↑(x j μ) +
+              ε * ↑(if μ = 0 then (↑(j : ℕ) + 1 : ℝ) else 0) * Complex.I)) =
+        S_ext (fun j μ =>
+          ↑(x j μ) -
+            ε * ↑(if μ = 0 then (↑(j : ℕ) + 1 : ℝ) else 0) * Complex.I)) ∧
       ∃ (C_bd : ℝ) (N : ℕ),
         0 < C_bd ∧
         ∀ z ∈ AnalyticContinuationRegion d k 1,
           ‖S_ext z‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
-  obtain ⟨S_prod, hS_prod_holo, hS_prod_prod, hS_prod_perm, hS_prod_trans, hS_prod_growth⟩ :=
+  obtain ⟨S_prod, hS_prod_holo, hS_prod_prod, hS_prod_perm, hS_prod_trans,
+    hS_prod_negCanonical, hS_prod_growth⟩ :=
     exists_acrOne_productTensor_witness (d := d) OS lgc k
-  refine ⟨S_prod, hS_prod_holo, ?_, hS_prod_perm, hS_prod_trans, hS_prod_growth⟩
+  refine ⟨S_prod, hS_prod_holo, ?_, hS_prod_perm, hS_prod_trans,
+    hS_prod_negCanonical, hS_prod_growth⟩
   exact
     acrOne_productTensor_witness_extends_zeroDiagonal
       (d := d) OS k S_prod hS_prod_holo hS_prod_prod hS_prod_perm hS_prod_trans hS_prod_growth
@@ -2373,15 +2400,24 @@ theorem full_analytic_continuation_with_symmetry_growth
         W_analytic (fun j => z (σ j)) = W_analytic z) ∧
       (∀ (z : Fin k → Fin (d + 1) → ℂ) (a : Fin (d + 1) → ℂ),
         W_analytic (fun j => z j + a) = W_analytic z) ∧
+      (∀ (x : NPointDomain d k) (ε : ℝ), 0 < ε →
+        starRingEnd ℂ
+          (W_analytic (fun j μ =>
+            ↑(x j μ) +
+              ε * ↑(if μ = 0 then (↑(j : ℕ) + 1 : ℝ) else 0) * Complex.I)) =
+        W_analytic (fun j μ =>
+          ↑(x j μ) -
+            ε * ↑(if μ = 0 then (↑(j : ℕ) + 1 : ℝ) else 0) * Complex.I)) ∧
       ∃ (C_bd : ℝ) (N : ℕ),
         0 < C_bd ∧
         ∀ z ∈ ForwardTube d k,
           ‖W_analytic z‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
-  obtain ⟨S₁, hS₁_hol, hS₁_euclid, hS₁_perm, hS₁_trans, C_bd, N, hC, hgrowth⟩ :=
+  obtain ⟨S₁, hS₁_hol, hS₁_euclid, hS₁_perm, hS₁_trans, hS₁_negCanonical,
+    C_bd, N, hC, hgrowth⟩ :=
     schwinger_continuation_base_step_acrOne_assembly_with_translationInvariant
       (d := d) OS lgc k
   refine ⟨S₁, hS₁_hol.mono (forwardTube_subset_acr_one (d := d) (k := k)), hS₁_euclid,
-    hS₁_perm, hS₁_trans, C_bd, N, hC, ?_⟩
+    hS₁_perm, hS₁_trans, hS₁_negCanonical, C_bd, N, hC, ?_⟩
   intro z hz
   exact hgrowth z ((forwardTube_subset_acr_one (d := d) (k := k)) hz)
 
@@ -2404,7 +2440,8 @@ theorem full_analytic_continuation_with_growth
         0 < C_bd ∧
         ∀ z ∈ ForwardTube d k,
           ‖W_analytic z‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
-  obtain ⟨S₁, hS₁_hol, hS₁_euclid, _hS₁_perm, _hS₁_trans, C_bd, N, hC, hgrowth⟩ :=
+  obtain ⟨S₁, hS₁_hol, hS₁_euclid, _hS₁_perm, _hS₁_trans, _hS₁_negCanonical,
+    C_bd, N, hC, hgrowth⟩ :=
     full_analytic_continuation_with_symmetry_growth OS lgc k
   refine ⟨S₁, hS₁_hol, hS₁_euclid, C_bd, N, hC, hgrowth⟩
 

@@ -453,3 +453,68 @@ theorem forwardTube_restrictedLorentz_point_eq_of_zeroDiagonal_distributional_wi
   rw [hlin]
   exact forwardTube_point_eq_of_zeroDiagonal_distributional_wickSection_eq
     (d := d) (n := n) F G hF hG hint Λx Λη hΛη ε hε
+
+/-- The same compact-support Wick-section identity theorem, evaluated after an
+orthochronous Lorentz transformation of the forward-tube point. This is the
+largest transformed-domain case justified directly from forward-tube geometry:
+orthochronous Lorentz transformations preserve the open forward cone, so they
+preserve `ForwardTube` even though they may not lie in the restricted subgroup. -/
+theorem forwardTube_orthochronousLorentz_point_eq_of_zeroDiagonal_distributional_wickSection_eq
+    (F G : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF : DifferentiableOn ℂ F (ForwardTube d n))
+    (hG : DifferentiableOn ℂ G (ForwardTube d n))
+    (hint :
+      ∀ φ : SchwartzNPoint d n,
+        HasCompactSupport (φ : NPointDomain d n → ℂ) →
+        tsupport (φ : NPointDomain d n → ℂ) ⊆
+          {x : NPointDomain d n | (fun k => wickRotatePoint (x k)) ∈ ForwardTube d n} →
+        ∫ x : NPointDomain d n,
+            F (fun k => wickRotatePoint (x k)) *
+              (((ZeroDiagonalSchwartz.ofClassical φ).1 : NPointDomain d n → ℂ) x) =
+          ∫ x : NPointDomain d n,
+            G (fun k => wickRotatePoint (x k)) *
+              (((ZeroDiagonalSchwartz.ofClassical φ).1 : NPointDomain d n → ℂ) x))
+    (Λ : LorentzGroup d)
+    (hΛ_ortho : LorentzGroup.IsOrthochronous Λ)
+    (x : NPointDomain d n)
+    (η : Fin n → Fin (d + 1) → ℝ) (hη : InForwardCone d n η)
+    (ε : ℝ) (hε : 0 < ε) :
+    F (fun k μ => ∑ ν, (Λ.val μ ν : ℂ) * (↑(x k ν) + ε * ↑(η k ν) * Complex.I)) =
+      G (fun k μ => ∑ ν, (Λ.val μ ν : ℂ) * (↑(x k ν) + ε * ↑(η k ν) * Complex.I)) := by
+  let Λx : NPointDomain d n := fun k => Matrix.mulVec Λ.val (x k)
+  let Λη : Fin n → Fin (d + 1) → ℝ := fun k μ => ∑ ν, Λ.val μ ν * η k ν
+  have hΛη : InForwardCone d n Λη := by
+    intro k
+    let diffη : Fin (d + 1) → ℝ := fun μ => η k μ -
+      (if h : k.val = 0 then (0 : Fin (d + 1) → ℝ) else η ⟨k.val - 1, by omega⟩) μ
+    have hk : InOpenForwardCone d diffη := hη k
+    have hΛdiff := orthochronous_preserves_forward_cone (d := d) Λ hΛ_ortho diffη hk
+    convert hΛdiff using 1
+    ext μ
+    simp only [Λη, diffη]
+    split_ifs with hk0
+    · simp [sub_zero]
+    · rw [← Finset.sum_sub_distrib]
+      congr 1
+      ext ν
+      ring
+  have hlin :
+      (fun k μ => ∑ ν, (Λ.val μ ν : ℂ) * (↑(x k ν) + ε * ↑(η k ν) * Complex.I)) =
+        (fun k μ => ↑(Λx k μ) + ε * ↑(Λη k μ) * Complex.I) := by
+    funext k μ
+    simp only [Λx, Λη, Matrix.mulVec]
+    push_cast
+    simp only [mul_add, Finset.sum_add_distrib]
+    congr 1
+    · simp only [dotProduct]
+      push_cast
+      rfl
+    · conv_lhs =>
+        arg 2
+        ext ν
+        rw [show (↑(Λ.val μ ν) : ℂ) * (↑ε * ↑(η k ν) * Complex.I) =
+            ↑ε * (↑(Λ.val μ ν) * ↑(η k ν)) * Complex.I from by ring]
+      rw [← Finset.sum_mul, ← Finset.mul_sum]
+  rw [hlin]
+  exact forwardTube_point_eq_of_zeroDiagonal_distributional_wickSection_eq
+    (d := d) (n := n) F G hF hG hint Λx Λη hΛη ε hε

@@ -641,6 +641,40 @@ theorem osSpatialTranslateHilbert_single_onePoint_eq
   · simp [PositiveTimeBorchersSequence.single_toBorchersSequence,
       BorchersSequence.single, spatialTranslatePositiveTimeBorchers_funcs, hn]
 
+/-- Spatial translation of a concentrated positive-time vector is represented by
+the corresponding spatially translated single Schwartz test. -/
+theorem osSpatialTranslateHilbert_single_eq
+    (OS : OsterwalderSchraderAxioms d)
+    {n : ℕ}
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport ((f : SchwartzNPoint d n) :
+        NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (a : Fin d → ℝ) :
+    let a0 : SpacetimeDim d := Fin.cons 0 a
+    let f_translated := translateSchwartzNPoint (d := d) a0 f
+    let hf_translated_ord :
+        tsupport (((f_translated : SchwartzNPoint d n) :
+          NPointDomain d n → ℂ)) ⊆ OrderedPositiveTimeRegion d n :=
+      translateSchwartzNPoint_preserves_ordered_positive_tsupport_spatial
+        (d := d) a0 (by simp [a0]) f hf_ord
+    (osSpatialTranslateHilbert (d := d) OS a)
+        (((show OSPreHilbertSpace OS from
+          ⟦PositiveTimeBorchersSequence.single n f hf_ord⟧) : OSHilbertSpace OS)) =
+      (((show OSPreHilbertSpace OS from
+          ⟦PositiveTimeBorchersSequence.single n f_translated hf_translated_ord⟧) :
+            OSHilbertSpace OS)) := by
+  dsimp
+  rw [osSpatialTranslateHilbert_coe (d := d) OS a]
+  apply congrArg (fun z : OSPreHilbertSpace OS => (z : OSHilbertSpace OS))
+  apply OSPreHilbertSpace.mk_eq_of_funcs_eq
+  intro m
+  by_cases hm : m = n
+  · subst hm
+    simp [PositiveTimeBorchersSequence.single_toBorchersSequence,
+      BorchersSequence.single, spatialTranslatePositiveTimeBorchers_funcs]
+  · simp [PositiveTimeBorchersSequence.single_toBorchersSequence,
+      BorchersSequence.single, spatialTranslatePositiveTimeBorchers_funcs, hm]
+
 /-- The Hilbert-space spatial translations form an additive representation. -/
 theorem osSpatialTranslateHilbert_comp
     (OS : OsterwalderSchraderAxioms d)
