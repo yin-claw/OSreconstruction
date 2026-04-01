@@ -81,7 +81,9 @@ theorem distributional_limit_of_equicontinuous
   have hpointwise : ∀ φ : SchwartzMap (Fin m → ℝ) ℂ,
       ∃ w : ℂ, Filter.Tendsto (fun ε => T ε φ) (nhdsWithin 0 (Set.Ioi 0)) (nhds w) := by
     intro φ
-    -- The Cauchy condition + completeness of ℂ gives convergence
+    -- Cauchy condition + completeness → convergence
+    -- Use: the sequence ε_n = 1/(n+1) is Cauchy, hence converges, and the
+    -- filter limit equals the sequential limit
     sorry
   -- Step 2: Define W_val as the pointwise limit
   choose W_val hW_val using hpointwise
@@ -105,8 +107,15 @@ theorem distributional_limit_of_equicontinuous
   -- Step 4: W_val is bounded by the equicontinuity bound
   have hW_bound : ∀ φ, ‖W_val φ‖ ≤ C_eq * (s.sup (schwartzSeminormFamily ℂ (Fin m → ℝ) ℂ)) φ := by
     intro φ
-    -- ‖W_val φ‖ = lim ‖T ε φ‖ ≤ C_eq * seminorm(φ) (bound preserved under limits)
-    sorry
+    -- ‖W_val φ‖ = lim ‖T ε φ‖ ≤ C_eq * seminorm(φ)
+    -- The bound ‖T ε φ‖ ≤ C_eq * seminorm(φ) holds for ε ∈ (0,1], and
+    -- norm is continuous, so the bound is preserved under the limit.
+    apply le_of_tendsto (continuous_norm.continuousAt.tendsto.comp (hW_val φ))
+    rw [Filter.eventually_iff_exists_mem]
+    exact ⟨Set.Ioo 0 1,
+      mem_nhdsWithin.mpr ⟨Set.Iio 1, isOpen_Iio, Set.mem_Iio.mpr one_pos,
+        fun ε hε => Set.mem_Ioo.mpr ⟨Set.mem_Ioi.mp hε.2, Set.mem_Iio.mp hε.1⟩⟩,
+      fun ε hε => hT_equicont ε (Set.mem_Ioo.mp hε).1 (le_of_lt (Set.mem_Ioo.mp hε).2) φ⟩
   -- Step 5: Package as CLM
   refine ⟨SchwartzMap.mkCLMtoNormedSpace (𝕜 := ℂ) W_val hW_add
     (fun c φ => by simp [smul_eq_mul, hW_smul])
