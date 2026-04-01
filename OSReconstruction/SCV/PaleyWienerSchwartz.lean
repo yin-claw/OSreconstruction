@@ -134,10 +134,23 @@ theorem multiDimPsiZ_finset_sup_bound {m : ℕ}
             simp [schwartzSeminormFamily]
         _ ≤ B₂ * (1 + ‖fun i => (z i).re‖) ^ N₂ *
               (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M₂ := by
-            sorry -- need seminorm ℂ = seminorm ℝ, then apply h₂
+            -- seminorm ℂ k n f = seminorm ℝ k n f (the value doesn't depend on 𝕜)
+            simp only [SchwartzMap.seminorm_apply] at h₂ ⊢
+            exact h₂ z hz
         _ ≤ max B₁ B₂ * (1 + ‖fun i => (z i).re‖) ^ (max N₁ N₂) *
               (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ (max M₁ M₂) := by
-            sorry -- B₂ ≤ max B, pow monotone in exponent for base ≥ 1
+            have hx1 : 1 ≤ 1 + ‖fun i => (z i).re‖ := le_add_of_nonneg_right (norm_nonneg _)
+            have hy1 : 1 ≤ 1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹ :=
+              le_add_of_nonneg_right (inv_nonneg.mpr Metric.infDist_nonneg)
+            have hxN : (1 + ‖fun i => (z i).re‖) ^ N₂ ≤
+                (1 + ‖fun i => (z i).re‖) ^ (max N₁ N₂) :=
+              pow_le_pow_right₀ hx1 (le_max_right _ _)
+            have hyM : (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M₂ ≤
+                (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ (max M₁ M₂) :=
+              pow_le_pow_right₀ hy1 (le_max_right _ _)
+            have hB : B₂ ≤ max B₁ B₂ := le_max_right _ _
+            -- B₂ ≤ max B, x^N₂ ≤ x^(max N), y^M₂ ≤ y^(max M); multiply through
+            sorry
     · -- The old finset s: sup ≤ B₁ * growth ≤ max B * growth'
       calc (s.sup (schwartzSeminormFamily ℂ (Fin m → ℝ) ℂ))
               (multiDimPsiZ C hC_open hC_conv hC_cone z hz)
@@ -145,7 +158,18 @@ theorem multiDimPsiZ_finset_sup_bound {m : ℕ}
               (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M₁ := h₁ z hz
         _ ≤ max B₁ B₂ * (1 + ‖fun i => (z i).re‖) ^ (max N₁ N₂) *
               (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ (max M₁ M₂) := by
-            sorry -- B₁ ≤ max B, pow monotone in exponent for base ≥ 1
+            have hx1 : 1 ≤ 1 + ‖fun i => (z i).re‖ := le_add_of_nonneg_right (norm_nonneg _)
+            have hy1 : 1 ≤ 1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹ :=
+              le_add_of_nonneg_right (inv_nonneg.mpr Metric.infDist_nonneg)
+            have hxN : (1 + ‖fun i => (z i).re‖) ^ N₁ ≤
+                (1 + ‖fun i => (z i).re‖) ^ (max N₁ N₂) :=
+              pow_le_pow_right₀ hx1 (le_max_left _ _)
+            have hyM : (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M₁ ≤
+                (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ (max M₁ M₂) :=
+              pow_le_pow_right₀ hy1 (le_max_left _ _)
+            have hB : B₁ ≤ max B₁ B₂ := le_max_left _ _
+            -- B₁ ≤ max B, x^N₁ ≤ x^(max N), y^M₁ ≤ y^(max M); multiply through
+            sorry
 
 /-- z ↦ ψ_z is continuous into Schwartz space: for each seminorm (k,n),
     `z ↦ seminorm k n (ψ_{z'} - ψ_z) → 0` as `z' → z` in the tube.
