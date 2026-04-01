@@ -103,6 +103,21 @@ axiom multiDimPsiZ_seminorm_bound {m : ℕ}
           B * (1 + ‖fun i => (z i).re‖) ^ N *
             (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M
 
+/-- Finset-sup version of `multiDimPsiZ_seminorm_bound`: for a finite set of
+    seminorm indices, the sup has Vladimirov-type growth. This follows from
+    `multiDimPsiZ_seminorm_bound` applied to each index and taking the max
+    of the constants. -/
+theorem multiDimPsiZ_finset_sup_bound {m : ℕ}
+    (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C) (s : Finset (ℕ × ℕ)) :
+    ∃ (B : ℝ) (N M : ℕ), B > 0 ∧
+      ∀ (z : Fin m → ℂ) (hz : z ∈ SCV.TubeDomain C),
+        (s.sup (schwartzSeminormFamily ℂ (Fin m → ℝ) ℂ))
+          (multiDimPsiZ C hC_open hC_conv hC_cone z hz) ≤
+          B * (1 + ‖fun i => (z i).re‖) ^ N *
+            (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M := by
+  sorry
+
 /-- z ↦ ψ_z is continuous into Schwartz space: for each seminorm (k,n),
     `z ↦ seminorm k n (ψ_{z'} - ψ_z) → 0` as `z' → z` in the tube.
 
@@ -270,20 +285,24 @@ theorem fourierLaplaceExtMultiDim_vladimirov_growth
         ‖fourierLaplaceExtMultiDim C hC_open hC_conv hC_cone T z‖ ≤
           C_bd * (1 + ‖z‖) ^ N *
             (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M := by
-  -- Step 1: T is bounded by a finite seminorm
-  obtain ⟨C_T, k, n, hC_T_pos, hT_bound⟩ := schwartz_clm_bound_by_seminorm T
-  -- Step 2: The seminorm of ψ_z has Vladimirov-type growth
+  -- Step 1: T is bounded by a finset sup of seminorms (PROVED, no sorry)
+  obtain ⟨s, C_T, hC_T_ne, hT_bound⟩ := schwartz_clm_bound_by_finset_sup T
+  have hC_T_pos : (0 : ℝ) < C_T := by
+    rcases eq_or_lt_of_le C_T.coe_nonneg with h | h
+    · exact absurd (NNReal.coe_eq_zero.mp h.symm) hC_T_ne
+    · exact h
+  -- Step 2: The finset sup of seminorms of ψ_z has Vladimirov-type growth
   obtain ⟨B, N, M, hB_pos, hψ_bound⟩ :=
-    multiDimPsiZ_seminorm_bound C hC_open hC_conv hC_cone k n
+    multiDimPsiZ_finset_sup_bound C hC_open hC_conv hC_cone s
   -- Step 3: Combine
   refine ⟨C_T * B, N, M, mul_pos hC_T_pos hB_pos, fun z hz => ?_⟩
   rw [fourierLaplaceExtMultiDim_eq C hC_open hC_conv hC_cone T z hz]
   calc ‖T (multiDimPsiZ C hC_open hC_conv hC_cone z hz)‖
-    _ ≤ C_T * SchwartzMap.seminorm ℝ k n
+    _ ≤ C_T * (s.sup (schwartzSeminormFamily ℂ (Fin m → ℝ) ℂ))
           (multiDimPsiZ C hC_open hC_conv hC_cone z hz) := hT_bound _
     _ ≤ C_T * (B * (1 + ‖fun i => (z i).re‖) ^ N *
           (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M) := by
-        apply mul_le_mul_of_nonneg_left (hψ_bound z hz) (le_of_lt hC_T_pos)
+        apply mul_le_mul_of_nonneg_left (hψ_bound z hz) (by exact_mod_cast C_T.coe_nonneg)
     _ ≤ C_T * B * (1 + ‖z‖) ^ N *
           (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M := by
         have hre_le : ‖fun i => (z i).re‖ ≤ ‖z‖ := by
