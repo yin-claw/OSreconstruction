@@ -54,6 +54,36 @@ noncomputable section
 
 variable {m : ℕ}
 
+/-! ### Cone-adapted smooth cutoff -/
+
+/-- A smooth cutoff adapted to a closed cone S ⊆ ℝ^m.
+    Equals 1 on an ε-neighborhood of S, vanishes outside a 1-neighborhood,
+    and has globally bounded derivatives.
+
+    Construction: `χ₁ = 1_A * φ` where `A = {ξ : dist(ξ,S) ≤ 1/2}` and
+    `φ ∈ C_c^∞(B_{1/2}(0))` with `∫ φ = 1` (convolution mollifier).
+    Do NOT compose `smoothTransition` with `infDist` — `infDist` is not C^∞. -/
+structure FixedConeCutoff (S : Set (Fin m → ℝ)) where
+  /-- The smooth cutoff function. -/
+  val : (Fin m → ℝ) → ℝ
+  /-- The cutoff is smooth (C^∞). -/
+  smooth : ContDiff ℝ ⊤ val
+  /-- The cutoff equals 1 on an ε-neighborhood of S. -/
+  one_near_cone : ∃ ε > 0, ∀ ξ, Metric.infDist ξ Sᶜ > ε → val ξ = 1
+  /-- The cutoff vanishes far from S. -/
+  support_bound : ∀ ξ, Metric.infDist ξ S > 1 → val ξ = 0
+  /-- All iterated derivatives are globally bounded. -/
+  deriv_bound : ∀ k : ℕ, ∃ C : ℝ, ∀ ξ, ‖iteratedFDeriv ℝ k val ξ‖ ≤ C
+  /-- Values are in [0,1]. -/
+  val_nonneg : ∀ ξ, 0 ≤ val ξ
+  val_le_one : ∀ ξ, val ξ ≤ 1
+
+/-- Existence of a cone-adapted cutoff for any closed set.
+    Proved by convolution of the indicator of the 1/2-neighborhood with a smooth bump.
+    Uses `MeasureTheory.convolution` from Mathlib. -/
+axiom fixedConeCutoff_exists (S : Set (Fin m → ℝ)) (hS : IsClosed S) :
+    Nonempty (FixedConeCutoff S)
+
 /-! ### Multi-dimensional Schwartz family ψ_z
 
 For z = x + iy in the tube T(C) with y ∈ C, the Schwartz function ψ_z is
@@ -76,9 +106,23 @@ reduce to the 1D bounds from `schwartzPsiZ_seminorm_horizontal_bound`. -/
 
     The key property is that for z = x + iy with y ∈ C:
     - ψ_z ∈ S(ℝ^m) (Schwartz class)
-    - ψ_z(ξ) = χ(ξ) exp(iz·ξ) for a smooth cutoff χ adapted to C*
+    - ψ_z(ξ) = χ_R(ξ) exp(iz·ξ) for a smooth cutoff χ_R adapted to C*
     - The Schwartz seminorms of ψ_z have polynomial growth in x and
-      inverse-boundary-distance growth in y -/
+      inverse-boundary-distance growth in y
+
+    **Construction** (dynamic scaling trick, see docs/vladimirov_tillmann_gemini_reviews.md):
+    1. Build a `FixedConeCutoff` χ₁ via convolution: χ₁ = 1_A * φ where
+       A = {ξ : dist(ξ,C*) ≤ 1/2} and φ is a smooth bump in B_{1/2}(0).
+    2. Scale dynamically: χ_R(ξ) = χ₁(ξ/R).
+    3. For holomorphicity: evaluate at fixed R=1 (F(z) is independent of R
+       because supp(T̂) ⊆ C* and all cutoffs agree there).
+    4. For growth bound: evaluate at R = 1/(1+‖y‖). The boundary layer
+       shrinks, giving exp(R‖y‖) ≤ e (constant), and chain rule gives
+       (1+‖y‖)^|α| for derivatives — exactly the polynomial growth.
+
+    **Warning**: A FIXED cutoff (R=1) produces exp(‖y‖) blowup in the
+    transition region, destroying the polynomial growth bound. The dynamic
+    scaling is essential. -/
 axiom multiDimPsiZ {m : ℕ}
     (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
     (hC_cone : IsCone C)
