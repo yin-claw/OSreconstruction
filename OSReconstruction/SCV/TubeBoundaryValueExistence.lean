@@ -4,6 +4,8 @@ Released under Apache 2.0 license.
 Authors: Michael R. Douglas, ModularPhysics Contributors
 -/
 import OSReconstruction.SCV.VladimirovTillmann
+import OSReconstruction.GeneralResults.DistributionalLimit
+import OSReconstruction.GeneralResults.DiffUnderIntegralSchwartz
 import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 import Mathlib.MeasureTheory.Integral.IntegrableOn
 
@@ -428,11 +430,13 @@ theorem tube_boundaryValueData_of_polyGrowth'
   -- an open convex cone, the distributional boundary value exists. This is
   -- Hörmander's Theorem 3.1.15 / Vladimirov §25.
   --
-  -- Full proof route: use the Cauchy repeated integration formula
-  -- (cauchyRepeatedIntegral) with k > 0 to "regularize" the boundary
-  -- approach, showing the (k-1)-th primitive of the slice functional
-  -- extends continuously to ε = 0, then define W as the k-th distributional
-  -- derivative of the resulting continuous-function distribution.
+  -- For M=0, use distributional_limit_of_equicontinuous:
+  -- Step 1: Define T_ε via tubeSlice_temperedDistribution (proved)
+  -- Step 2: Equicontinuity from uniform polynomial growth (proved)
+  -- Step 3: Cauchy from cr_integration_identity (which shows |T_{ε₁}-T_{ε₂}| ≤ C|ε₁-ε₂|)
+  --
+  -- The key chain: M=0 polynomial growth → uniform bound on d/dε T_ε(φ)
+  -- → Lipschitz in ε → Cauchy → distributional_limit gives W
   sorry
 
 end

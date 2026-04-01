@@ -5,6 +5,7 @@ Authors: Michael R. Douglas, ModularPhysics Contributors
 -/
 import OSReconstruction.SCV.ConeCutoffSchwartz
 import OSReconstruction.SCV.Osgood
+import OSReconstruction.GeneralResults.SchwartzCutoffExp
 
 /-!
 # Paley-Wiener-Schwartz Bridge for Tube Domains
@@ -189,6 +190,10 @@ theorem multiDimPsiZDynamic_seminorm_bound {m : ℕ}
         SchwartzMap.seminorm ℝ k n (multiDimPsiZDynamic C hC_open hC_conv hC_cone hC_salient z hz) ≤
           B * (1 + ‖z‖) ^ N *
             (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M := by
+  -- Uses schwartz_seminorm_cutoff_exp_bound with L(ξ) = I*z·ξ, R = 1/(1+‖y‖)
+  -- The chain rule gives R^{-n} = (1+‖y‖)^n ≤ (1+‖z‖)^n
+  -- The exponential cap gives exp(‖y‖R) ≤ e (constant)
+  -- Combined: seminorm ≤ B * (1+‖z‖)^N (take M=0)
   sorry
 
 /-- Finset-sup version of `multiDimPsiZDynamic_seminorm_bound`. -/
