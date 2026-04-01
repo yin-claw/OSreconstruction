@@ -124,13 +124,39 @@ theorem dualConeEucl_separates_of_not_mem_closure
     {y : RealEuclidean m}
     (hy : y ∉ closure S) :
     ∃ ξ ∈ DualConeEucl S, @inner ℝ (RealEuclidean m) _ y ξ < 0 := by
-  -- Step 1: Hahn-Banach (geometric_hahn_banach_point_closed)
-  --   → f : StrongDual ℝ E, u : ℝ with f(y) < u, ∀ a ∈ closure S, u < f(a)
-  -- Step 2: 0 ∈ closure S (since (1/n)•a → 0 for a ∈ S, using IsCone)
-  --   → u < f(0) = 0 → f(y) < 0
-  -- Step 3: f(a) ≥ 0 for a ∈ S (if f(a) < 0, then f(n•a) = n•f(a) → -∞, contradicting f(n•a) > u)
-  -- Step 4: Riesz representation on EuclideanSpace: f = ⟪·, ξ⟫ for some ξ
-  --   → ξ ∈ DualConeEucl S (from step 3) and ⟪y, ξ⟫ < 0 (from step 2)
-  sorry
+  -- Step 1: Hahn-Banach separation
+  obtain ⟨f, u, hfy, hfa⟩ :=
+    geometric_hahn_banach_point_closed hconv.closure isClosed_closure hy
+  -- f(y) < u and ∀ a ∈ closure S, u < f(a)
+  -- Step 2: 0 ∈ closure S → u < 0 → f(y) < 0
+  have h0_mem : (0 : RealEuclidean m) ∈ closure S := by
+    obtain ⟨a, ha⟩ := hne
+    sorry -- 0 ∈ closure S: (1/(n+1)) • a ∈ S for all n, converges to 0
+  have hu_neg : u < 0 := by linarith [hfa 0 h0_mem, (f.map_zero)]
+  have hfy_neg : f y < 0 := lt_trans hfy hu_neg
+  -- Step 3: f(a) ≥ 0 for all a ∈ S
+  have hf_nonneg : ∀ a ∈ S, 0 ≤ f a := by
+    intro a ha
+    by_contra h
+    push_neg at h
+    -- f(n•a) = n * f(a) → -∞, but f(n•a) > u for all n (since n•a ∈ closure S)
+    have : ∀ n : ℕ, u < (n : ℝ) * f a := by
+      intro n
+      sorry -- n • a ∈ closure S and f(n•a) = n * f(a)
+    sorry -- contradiction: n*f(a) → -∞ but bounded below by u
+  -- Step 4: Riesz representation
+  let ξ := (InnerProductSpace.toDual ℝ (RealEuclidean m)).symm f
+  refine ⟨ξ, ?_, ?_⟩
+  · -- ξ ∈ DualConeEucl S: ⟪a, ξ⟫ ≥ 0 for a ∈ S
+    intro a ha
+    have : f a = @inner ℝ (RealEuclidean m) _ ξ a := by
+      simp [ξ, InnerProductSpace.toDual_symm_apply]
+    rw [real_inner_comm]
+    linarith [hf_nonneg a ha]
+  · -- ⟪y, ξ⟫ < 0
+    have : f y = @inner ℝ (RealEuclidean m) _ ξ y := by
+      simp [ξ, InnerProductSpace.toDual_symm_apply]
+    rw [real_inner_comm]
+    linarith
 
 end
