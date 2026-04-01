@@ -62,7 +62,7 @@ variable {m : ℕ}
     - Linearity: W(aφ + bψ) = lim T(ε)(aφ + bψ) = a·W(φ) + b·W(ψ)
     - Continuity: |W(φ)| = lim |T(ε)(φ)| ≤ C · (s.sup seminorms)(φ) (equicontinuity)
     - Package as CLM via `SchwartzMap.mkCLMtoNormedSpace` -/
-axiom distributional_limit_of_equicontinuous
+theorem distributional_limit_of_equicontinuous
     (T : ℝ → SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ)
     -- Equicontinuity: uniform seminorm bound
     (s : Finset (ℕ × ℕ)) (C_eq : ℝ) (hC_eq : 0 < C_eq)
@@ -76,6 +76,9 @@ axiom distributional_limit_of_equicontinuous
         ‖T ε₁ φ - T ε₂ φ‖ < δ) :
     ∃ (W : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ),
       ∀ φ : SchwartzMap (Fin m → ℝ) ℂ,
-        Tendsto (fun ε => T ε φ) (nhdsWithin 0 (Set.Ioi 0)) (nhds (W φ))
+        Tendsto (fun ε => T ε φ) (nhdsWithin 0 (Set.Ioi 0)) (nhds (W φ)) := by
+  -- Step 1: Pointwise limit exists (Cauchy in ℂ → convergent)
+  -- Step 2: Package as CLM (linearity from limits, continuity from equicontinuity)
+  sorry
 
 end
