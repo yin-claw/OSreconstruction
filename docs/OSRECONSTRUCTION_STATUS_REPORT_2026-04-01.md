@@ -51,6 +51,156 @@ A concise way to state the current status is:
 
 ---
 
+## 0.5. Dependency graph (project-wide and lane-specific)
+
+This section is intentionally schematic rather than pretending to be a complete import DAG dump. The goal is to show the **mathematical** dependency graph and the current **critical paths**.
+
+### A. High-level project graph
+
+```text
+WightmanFunctions / WightmanAxioms
+    ├── Analytic continuation / forward-tube infrastructure
+    │     ├── ForwardTubeLorentz
+    │     ├── BHWReduced / BHWReducedExtension / BHWTranslationCore
+    │     ├── WickRotationBridge / BaseFiberInflation / HermitianBoundaryPairing
+    │     └── SchwingerTemperedness / SchwingerAxioms
+    │
+    ├── OS → Wightman lane (E→R)
+    │     ├── OSToWightmanBase
+    │     ├── OSToWightmanK2Density
+    │     ├── OSToWightmanK2BaseStep
+    │     ├── K2VI1.Frontier
+    │     ├── OSToWightman
+    │     └── OSToWightmanBoundaryValues
+    │
+    └── Reconstruction / GNS lane
+          ├── GNSConstruction
+          ├── GNSHilbertSpace
+          ├── PoincareAction / PoincareRep
+          └── Reconstruction.Main
+```
+
+### B. Import-level WickRotation spine
+
+The import spine recorded in `WickRotation.lean` is:
+
+```text
+OSToWightmanBase
+OSToWightmanSpatialMomentum
+OSToWightmanK2Density
+OSToWightmanK2BaseStep
+K2VI1.Frontier
+OSToWightman
+OSToWightmanBoundaryValues
+BHWReduced
+BHWTranslationCore
+BHWReducedExtension
+HermitianBoundaryPairing
+BaseFiberInflation
+WickRotationBridge
+```
+
+Interpretation:
+- the `k = 2` density/base-step/frontier files are now support layers feeding `OSToWightman.lean`;
+- `OSToWightmanBoundaryValues.lean` is the active conversion of continuation data into Wightman data;
+- the BHW / translation / bridge files remain part of the larger Wick-rotation ecosystem but are no longer the shortest active front.
+
+### C. E→R critical path (current best reconstruction)
+
+```text
+OS axioms + linear growth
+    ↓
+OSToWightmanBase
+    ↓
+OSToWightmanK2Density + OSToWightmanK2BaseStep + K2VI1.Frontier
+    ↓
+OSToWightman.lean
+    ├── exists_acrOne_productTensor_witness        (root blocker)
+    ├── acrOne_productTensor_witness_euclidKernelPackage
+    └── dense extension to ZeroDiagonalSchwartz
+    ↓
+full_analytic_continuation / boundary-value datum
+    ↓
+OSToWightmanBoundaryValues.lean
+    ├── boundary_values_tempered
+    ├── bvt_lorentz_covariant
+    ├── bvt_locally_commutative
+    ├── bvt_positive_definite
+    ├── bvt_hermitian
+    └── bvt_cluster
+    ↓
+os_to_wightman_full
+```
+
+Current live blockers on this path:
+- `OSToWightman.lean` — 3 sorrys, especially `exists_acrOne_productTensor_witness`
+- `OSToWightmanBoundaryValues.lean` — 5 sorrys (`bv_*`, `bvt_cluster` front)
+
+### D. R→E critical path
+
+```text
+WightmanFunctions
+    ↓
+Forward-tube/BHW analytic continuation infrastructure
+    ↓
+SchwingerTemperedness
+    ↓
+SchwingerAxioms.lean
+    ├── translation / rotation / reflection / permutation side
+    ├── Euclidean reality
+    └── cluster-related Euclidean statements
+    ↓
+constructZeroDiagonalSchwingerFunctions / constructed OS family
+    ↓
+wightman_to_os / wightman_to_os_full
+```
+
+Current visible blockers most relevant to this lane:
+- `SchwingerAxioms.lean` — 2 sorrys
+- `ForwardTubeLorentz.lean` — 1 sorry
+- some BHW/translation-route residuals remain, but are not currently the shortest active seam
+
+### E. GNS / operator-theoretic critical path
+
+```text
+WightmanFunctions
+    ↓
+GNSConstruction
+    ↓
+PreHilbertSpace quotient / algebraic lifting
+    ↓
+GNSHilbertSpace.lean
+    ├── inner-product / normed-space completion details
+    ├── vacuum / field operators on completion
+    └── Hilbert-space representation package
+    ↓
+Reconstruction.Main
+    ├── wightman_reconstruction
+    └── wightman_uniqueness
+```
+
+Current visible blockers most relevant to this lane:
+- `GNSHilbertSpace.lean` — 3 sorrys
+- `Reconstruction/Main.lean` — `wightman_uniqueness`
+
+### F. How the three lanes interact
+
+```text
+R→E lane:   Wightman → Euclidean Schwinger family
+E→R lane:   OS axioms + growth → Wightman family
+GNS lane:   Wightman family → Hilbert-space QFT reconstruction
+```
+
+These are not interchangeable tasks.
+
+- R→E is about analytic continuation and Euclidean-side axioms.
+- E→R is about continuation from OS data and boundary-value reconstruction.
+- GNS is about operator/Hilbert-space realization after Wightman data exist.
+
+The current repo is healthiest when these are kept conceptually separate.
+
+---
+
 ## 1. Current sorry census
 
 Direct tactic-hole count (`^[[:space:]]*sorry([[:space:]]|$)`):
