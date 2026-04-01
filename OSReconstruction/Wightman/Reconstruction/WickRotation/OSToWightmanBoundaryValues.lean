@@ -645,7 +645,24 @@ theorem bv_lorentz_covariance_transfer (n : ℕ)
           F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
         (nhdsWithin 0 (Set.Ioi 0))
         (nhds (W_n f)))
-    (hF_lorentz_pairing :
+    (hF_lorentz :
+      ∀ (Λ : LorentzGroup d) (x : NPointDomain d n)
+        (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ), 0 < ε →
+        F_n (fun k μ =>
+          ↑((Matrix.mulVec Λ.val (x k)) μ) +
+            ε * ↑(η k μ) * Complex.I) =
+        F_n (fun k μ =>
+          ↑(x k μ) +
+            ε * ↑(η k μ) * Complex.I)) :
+    ∀ (Λ : LorentzGroup d) (f g : SchwartzNPoint d n),
+      (∀ x, g.toFun x = f.toFun (fun i => Matrix.mulVec Λ⁻¹.val (x i))) →
+      W_n f = W_n g := by
+  intro Λ f g hfg
+  let η := canonicalForwardConeDirection (d := d) n
+  have hη : InForwardCone d n η := canonicalForwardConeDirection_mem (d := d) n
+  have hf := hBV f η hη
+  have hg := hBV g η hη
+  have hcanonical_pairing :
       ∀ (Λ : LorentzGroup d) (f g : SchwartzNPoint d n) (ε : ℝ), 0 < ε →
         (∀ x, g.toFun x = f.toFun (fun i => Matrix.mulVec Λ⁻¹.val (x i))) →
         ∫ x : NPointDomain d n,
@@ -656,15 +673,47 @@ theorem bv_lorentz_covariance_transfer (n : ℕ)
         ∫ x : NPointDomain d n,
           F_n (fun k μ =>
             ↑(x k μ) +
-              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (f x)) :
-    ∀ (Λ : LorentzGroup d) (f g : SchwartzNPoint d n),
-      (∀ x, g.toFun x = f.toFun (fun i => Matrix.mulVec Λ⁻¹.val (x i))) →
-      W_n f = W_n g := by
-  intro Λ f g hfg
-  let η := canonicalForwardConeDirection (d := d) n
-  have hη : InForwardCone d n η := canonicalForwardConeDirection_mem (d := d) n
-  have hf := hBV f η hη
-  have hg := hBV g η hη
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (f x) := by
+    intro Λ f g ε hε hfg
+    have hrewrite :
+        ∫ x : NPointDomain d n,
+          F_n (fun k μ =>
+            ↑(x k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (g x)
+        =
+        ∫ x : NPointDomain d n,
+          F_n (fun k μ =>
+            ↑(x k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) *
+            f (fun i => Matrix.mulVec Λ⁻¹.val (x i)) := by
+      congr 1
+      ext x
+      exact congrArg
+        (fun z : ℂ =>
+          F_n (fun k μ =>
+            ↑(x k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * z)
+        (hfg x)
+    calc
+      ∫ x : NPointDomain d n,
+        F_n (fun k μ =>
+          ↑(x k μ) +
+            ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (g x)
+          =
+        ∫ x : NPointDomain d n,
+          F_n (fun k μ =>
+            ↑(x k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) *
+            f (fun i => Matrix.mulVec Λ⁻¹.val (x i)) := hrewrite
+      _ =
+        ∫ x : NPointDomain d n,
+          F_n (fun k μ =>
+            ↑(x k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (f x) := by
+          simpa [η] using
+            boundary_ray_lorentz_invariant_of_F_invariant (d := d) n F_n
+              hF_lorentz
+              Λ f η ε hε
   have hEq :
       (fun ε : ℝ =>
         ∫ x : NPointDomain d n,
@@ -674,7 +723,7 @@ theorem bv_lorentz_covariance_transfer (n : ℕ)
         ∫ x : NPointDomain d n,
           F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x)) := by
     filter_upwards [self_mem_nhdsWithin] with ε hε
-    simpa [η] using hF_lorentz_pairing Λ f g ε hε hfg
+    simpa [η] using hcanonical_pairing Λ f g ε hε hfg
   have hg_as_f : Filter.Tendsto
       (fun ε : ℝ =>
         ∫ x : NPointDomain d n,
@@ -836,6 +885,146 @@ theorem bv_local_commutativity_transfer (n : ℕ)
       (nhds (W_n g)) :=
     Filter.Tendsto.congr' hEq hg
   exact tendsto_nhds_unique hf hg_as_f
+
+private theorem boundary_ray_hermitian_pairing_of_F_negCanonical
+    (n : ℕ)
+    (F_n : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF_perm : ∀ (σ : Equiv.Perm (Fin n)) (z : Fin n → Fin (d + 1) → ℂ),
+      F_n (fun j => z (σ j)) = F_n z)
+    (hF_trans : ∀ (z : Fin n → Fin (d + 1) → ℂ) (a : Fin (d + 1) → ℂ),
+      F_n (fun j => z j + a) = F_n z)
+    (hF_neg :
+      ∀ (x : NPointDomain d n) (ε : ℝ), 0 < ε →
+        starRingEnd ℂ
+          (F_n (fun k μ =>
+            ↑(x k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I)) =
+        F_n (fun k μ =>
+          ↑(x k μ) -
+            ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I)) :
+    ∀ (f g : SchwartzNPoint d n) (ε : ℝ), 0 < ε →
+      (∀ x : NPointDomain d n,
+        g.toFun x = starRingEnd ℂ (f.toFun (fun i => x (Fin.rev i)))) →
+      ∫ x : NPointDomain d n,
+        F_n (fun k μ =>
+          ↑(x k μ) +
+            ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (g x)
+        =
+      starRingEnd ℂ
+        (∫ x : NPointDomain d n,
+          F_n (fun k μ =>
+            ↑(x k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (f x)) := by
+  let η := canonicalForwardConeDirection (d := d) n
+  intro f g ε hε hfg
+  let Ψfun : NPointDomain d n → NPointDomain d n := fun x i => x (Fin.rev i)
+  let Ψ : NPointDomain d n ≃ᵐ NPointDomain d n :=
+    { toEquiv :=
+        { toFun := Ψfun
+          invFun := Ψfun
+          left_inv := by
+            intro x
+            ext i μ
+            simp [Ψfun]
+          right_inv := by
+            intro x
+            ext i μ
+            simp [Ψfun] }
+      measurable_toFun := (reverseNPoint_measurePreserving (d := d) (n := n)).measurable
+      measurable_invFun := (reverseNPoint_measurePreserving (d := d) (n := n)).measurable }
+  have hreflect :
+      ∀ x : NPointDomain d n,
+        starRingEnd ℂ
+          (F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I))
+          =
+        F_n (fun k μ => ↑(x (Fin.rev k) μ) + ε * ↑(η k μ) * Complex.I) := by
+    intro x
+    let a : Fin (d + 1) → ℂ := fun μ =>
+      if μ = 0 then (((n : ℝ) + 1) * ε : ℂ) * Complex.I else 0
+    let zrev : Fin n → Fin (d + 1) → ℂ := fun k μ =>
+      ↑(x k μ) + ε * ↑(η (Fin.rev k) μ) * Complex.I
+    have hshift :
+        F_n (fun k μ => ↑(x k μ) - ε * ↑(η k μ) * Complex.I) =
+          F_n zrev := by
+      have hzrev :
+          (fun j => (fun k μ =>
+            ↑(x k μ) - ε * ↑(η k μ) * Complex.I) j + a) = zrev := by
+        funext k
+        funext μ
+        by_cases hμ : μ = 0
+        · subst hμ
+          simp [a, zrev, η, canonicalForwardConeDirection, Fin.val_rev]
+          ring_nf
+        · simp [a, zrev, η, canonicalForwardConeDirection, hμ]
+      calc
+        F_n (fun k μ => ↑(x k μ) - ε * ↑(η k μ) * Complex.I)
+            =
+          F_n (fun j => (fun k μ =>
+            ↑(x k μ) - ε * ↑(η k μ) * Complex.I) j + a) := by
+              symm
+              exact hF_trans _ a
+        _ = F_n zrev := by rw [hzrev]
+    have hperm :
+        F_n zrev =
+          F_n (fun k μ => ↑(x (Fin.rev k) μ) + ε * ↑(η k μ) * Complex.I) := by
+      simpa [zrev] using (hF_perm Fin.revPerm zrev).symm
+    calc
+      starRingEnd ℂ
+          (F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I))
+          =
+        F_n (fun k μ => ↑(x k μ) - ε * ↑(η k μ) * Complex.I) := hF_neg x ε hε
+      _ = F_n zrev := hshift
+      _ = F_n (fun k μ => ↑(x (Fin.rev k) μ) + ε * ↑(η k μ) * Complex.I) := hperm
+  let h : NPointDomain d n → ℂ := fun x =>
+    F_n (fun k μ => ↑((Ψfun x) k μ) + ε * ↑(η k μ) * Complex.I) * starRingEnd ℂ (f x)
+  have hrewrite :
+      ∫ x : NPointDomain d n,
+        F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (g x)
+        =
+      ∫ x : NPointDomain d n, h x := by
+    calc
+      ∫ x : NPointDomain d n,
+        F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (g x)
+          =
+        ∫ x : NPointDomain d n, h (Ψ x) := by
+          refine MeasureTheory.integral_congr_ae ?_
+          filter_upwards [Filter.Eventually.of_forall hfg] with x _hxg
+          have hxg : g x = starRingEnd ℂ (f (fun i => x (Fin.rev i))) := by
+            simpa using hfg x
+          rw [hxg]
+          simp [h, Ψ, Ψfun]
+      _ = ∫ x : NPointDomain d n, h x := by
+        simpa [h, Ψ, Ψfun] using
+          ((reverseNPoint_measurePreserving (d := d) (n := n)).integral_comp'
+            (f := Ψ) (g := h))
+  calc
+    ∫ x : NPointDomain d n,
+      F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (g x)
+        =
+      ∫ x : NPointDomain d n,
+        starRingEnd ℂ
+          (F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * f x) := by
+            rw [hrewrite]
+            refine MeasureTheory.integral_congr_ae ?_
+            filter_upwards [Filter.Eventually.of_forall hreflect] with x hx
+            have hx' :
+                F_n (fun k μ => ↑(Ψfun x k μ) + ε * ↑(η k μ) * Complex.I) =
+                  starRingEnd ℂ (F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I)) := by
+              simpa [Ψfun] using hx.symm
+            calc
+              h x =
+                starRingEnd ℂ (F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I)) *
+                  starRingEnd ℂ (f x) := by
+                    simp [h, Ψfun, hx']
+              _ =
+                starRingEnd ℂ
+                  ((F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I)) * f x) := by
+                    simp [map_mul, mul_comm]
+    _ =
+      starRingEnd ℂ
+        (∫ x : NPointDomain d n,
+          F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x)) := by
+            rw [← _root_.integral_conj]
 
 private theorem bv_hermiticity_transfer_of_F_reflect
     (n : ℕ)
@@ -1055,25 +1244,22 @@ theorem bvt_translation_invariant (OS : OsterwalderSchraderAxioms d)
 theorem bvt_lorentz_covariant (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) :
     IsLorentzCovariantWeak d (bvt_W OS lgc) := by
-  have hF_lorentz_pairing :
-      ∀ (n : ℕ) (Λ : LorentzGroup d) (f g : SchwartzNPoint d n) (ε : ℝ), 0 < ε →
-        (∀ x, g.toFun x = f.toFun (fun i => Matrix.mulVec Λ⁻¹.val (x i))) →
-        ∫ x : NPointDomain d n,
-          bvt_F OS lgc n (fun k μ =>
-            ↑(x k μ) +
-              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (g x)
-          =
-        ∫ x : NPointDomain d n,
-          bvt_F OS lgc n (fun k μ =>
-            ↑(x k μ) +
-              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (f x) := by
+  have hF_lorentz :
+      ∀ (n : ℕ) (Λ : LorentzGroup d) (x : NPointDomain d n)
+        (η : Fin n → Fin (d + 1) → ℝ) (ε : ℝ), 0 < ε →
+        bvt_F OS lgc n (fun k μ =>
+          ↑((Matrix.mulVec Λ.val (x k)) μ) +
+            ε * ↑(η k μ) * Complex.I) =
+        bvt_F OS lgc n (fun k μ =>
+          ↑(x k μ) +
+            ε * ↑(η k μ) * Complex.I) := by
     sorry
   intro n Λ f g hfg
   exact bv_lorentz_covariance_transfer (d := d) n
     (bvt_W OS lgc n)
     (bvt_F OS lgc n)
     (bvt_boundary_values OS lgc n)
-    (hF_lorentz_pairing n)
+    (hF_lorentz n)
     Λ f g hfg
 
 theorem bvt_locally_commutative (OS : OsterwalderSchraderAxioms d)
@@ -1116,6 +1302,17 @@ theorem bvt_hermitian (OS : OsterwalderSchraderAxioms d)
       (∀ x : NPointDomain d n,
         g.toFun x = starRingEnd ℂ (f.toFun (fun i => x (Fin.rev i)))) →
       bvt_W OS lgc n g = starRingEnd ℂ (bvt_W OS lgc n f) := by
+  have hF_neg :
+      ∀ (n : ℕ) (x : NPointDomain d n) (ε : ℝ), 0 < ε →
+        starRingEnd ℂ
+          (bvt_F OS lgc n (fun k μ =>
+            ↑(x k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I))
+          =
+        bvt_F OS lgc n (fun k μ =>
+          ↑(x k μ) -
+            ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) := by
+    sorry
   have hF_reflect_pairing :
       ∀ (n : ℕ) (f g : SchwartzNPoint d n) (ε : ℝ), 0 < ε →
         (∀ x : NPointDomain d n,
@@ -1130,7 +1327,13 @@ theorem bvt_hermitian (OS : OsterwalderSchraderAxioms d)
             bvt_F OS lgc n (fun k μ =>
               ↑(x k μ) +
                 ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (f x)) := by
-    sorry
+    intro n f g ε hε hfg
+    exact boundary_ray_hermitian_pairing_of_F_negCanonical (d := d) n
+      (bvt_F OS lgc n)
+      (bvt_F_perm OS lgc n)
+      (bvt_F_translationInvariant OS lgc n)
+      (hF_neg n)
+      f g ε hε hfg
   intro n f g hfg
   exact bv_hermiticity_transfer (d := d) n
     (bvt_W OS lgc n)
