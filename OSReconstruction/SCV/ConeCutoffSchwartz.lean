@@ -49,6 +49,23 @@ noncomputable section
 
 variable {m : ℕ}
 
+/-! ### Cone-scaling of infDist -/
+
+/-- For a set S closed under positive scaling (a cone), the infDist scales:
+    `infDist (a • ξ) S = |a| * infDist ξ S` for a > 0.
+    Proof: inf_{η ∈ S} ‖aξ - η‖ = inf_{η ∈ S} ‖a(ξ - η/a)‖ = |a| * inf_{η' ∈ S} ‖ξ - η'‖
+    where η' = η/a ranges over S. -/
+theorem infDist_smul_cone {S : Set (Fin m → ℝ)}
+    (hS_cone : ∀ (y : Fin m → ℝ), y ∈ S → ∀ (t : ℝ), 0 < t → t • y ∈ S)
+    {a : ℝ} (ha : 0 < a) (ξ : Fin m → ℝ) :
+    Metric.infDist (a • ξ) S = a * Metric.infDist ξ S := by
+  -- infDist(aξ, S) = inf_{η ∈ S} ‖aξ - η‖
+  -- Since S is a cone, {η ∈ S} = {aη' | η' ∈ S} (bijection via scaling by a)
+  -- So inf_{η ∈ S} ‖aξ - η‖ = inf_{η' ∈ S} ‖aξ - aη'‖ = a * inf_{η' ∈ S} ‖ξ - η'‖
+  rw [Metric.infDist, Metric.infDist]
+  -- Need: iInf_{η ∈ S} dist(aξ, η) = a * iInf_{η ∈ S} dist(ξ, η)
+  sorry
+
 /-! ### The raw function (not yet a SchwartzMap) -/
 
 /-- The raw cone-adapted exponential-cutoff function.
@@ -74,9 +91,27 @@ theorem psiZRaw_support {C : Set (Fin m → ℝ)} (χ : FixedConeCutoff (DualCon
   simp only [psiZRaw]
   have hχ_zero : χ.val (fun i => R⁻¹ * ξ i) = 0 := by
     apply χ.support_bound
-    -- Need: infDist (R⁻¹ • ξ) (DualConeFlat C) > 1
-    -- Since DualConeFlat C is a cone: infDist(R⁻¹ξ, S) = R⁻¹ * infDist(ξ, S)
-    sorry
+    -- infDist(R⁻¹ξ, DualConeFlat C) = R⁻¹ * infDist(ξ, DualConeFlat C) > R⁻¹ * R = 1
+    -- DualConeFlat C is a cone (scaling-closed)
+    have hS_cone : ∀ (y : Fin m → ℝ), y ∈ DualConeFlat C →
+        ∀ (t : ℝ), 0 < t → t • y ∈ DualConeFlat C := by
+      intro y hy t ht
+      rw [mem_dualConeFlat] at hy ⊢
+      intro w hw
+      have := hy w hw
+      simp [Pi.smul_apply, smul_eq_mul]
+      calc ∑ i, w i * (t * y i) = t * ∑ i, w i * y i := by
+            rw [Finset.mul_sum]; congr 1; ext i; ring
+        _ ≥ 0 := mul_nonneg (le_of_lt ht) this
+    have hscale : Metric.infDist (R⁻¹ • ξ) (DualConeFlat C) =
+        R⁻¹ * Metric.infDist ξ (DualConeFlat C) :=
+      infDist_smul_cone hS_cone (inv_pos.mpr hR) ξ
+    show Metric.infDist (fun i => R⁻¹ * ξ i) (DualConeFlat C) > 1
+    simp only [show (fun i => R⁻¹ * ξ i) = R⁻¹ • ξ from rfl]
+    rw [hscale]
+    calc 1 = R⁻¹ * R := by rw [inv_mul_cancel₀ (ne_of_gt hR)]
+      _ < R⁻¹ * Metric.infDist ξ (DualConeFlat C) := by
+          apply mul_lt_mul_of_pos_left hξ (inv_pos.mpr hR)
   simp [hχ_zero]
 
 /-- Two cutoff radii give the same function on the dual cone itself. -/
