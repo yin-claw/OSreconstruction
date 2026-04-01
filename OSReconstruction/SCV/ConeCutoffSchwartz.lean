@@ -59,12 +59,31 @@ theorem infDist_smul_cone {S : Set (Fin m → ℝ)}
     (hS_cone : ∀ (y : Fin m → ℝ), y ∈ S → ∀ (t : ℝ), 0 < t → t • y ∈ S)
     {a : ℝ} (ha : 0 < a) (ξ : Fin m → ℝ) :
     Metric.infDist (a • ξ) S = a * Metric.infDist ξ S := by
-  -- infDist(aξ, S) = inf_{η ∈ S} ‖aξ - η‖
-  -- Since S is a cone, {η ∈ S} = {aη' | η' ∈ S} (bijection via scaling by a)
-  -- So inf_{η ∈ S} ‖aξ - η‖ = inf_{η' ∈ S} ‖aξ - aη'‖ = a * inf_{η' ∈ S} ‖ξ - η'‖
-  rw [Metric.infDist, Metric.infDist]
-  -- Need: iInf_{η ∈ S} dist(aξ, η) = a * iInf_{η ∈ S} dist(ξ, η)
-  sorry
+  have ha_inv : 0 < a⁻¹ := inv_pos.mpr ha
+  let e : ↥S ≃ ↥S :=
+    { toFun := fun y => ⟨a • y.1, hS_cone y.1 y.2 a ha⟩
+      invFun := fun y => ⟨a⁻¹ • y.1, hS_cone y.1 y.2 a⁻¹ ha_inv⟩
+      left_inv := by
+        intro y
+        ext i
+        simp [Pi.smul_apply]
+        rw [← mul_assoc, inv_mul_cancel₀ ha.ne', one_mul]
+      right_inv := by
+        intro y
+        ext i
+        simp [Pi.smul_apply]
+        rw [← mul_assoc, mul_inv_cancel₀ ha.ne', one_mul] }
+  rw [Metric.infDist_eq_iInf, Metric.infDist_eq_iInf]
+  calc
+    (⨅ y : S, dist (a • ξ) y) = ⨅ y : S, dist (a • ξ) (e y) := by
+      symm
+      exact Equiv.iInf_congr e fun _ => rfl
+    _ = ⨅ y : S, a * dist ξ y := by
+      congr with y
+      change ‖a • ξ - a • (y : Fin m → ℝ)‖ = a * ‖ξ - y‖
+      rw [← smul_sub, norm_smul, Real.norm_of_nonneg ha.le]
+    _ = a * ⨅ y : S, dist ξ y := by
+      rw [← Real.mul_iInf_of_nonneg ha.le]
 
 /-! ### The raw function (not yet a SchwartzMap) -/
 
@@ -78,10 +97,24 @@ def psiZRaw {C : Set (Fin m → ℝ)} (χ : FixedConeCutoff (DualConeFlat C))
 theorem psiZRaw_contDiff {C : Set (Fin m → ℝ)} (χ : FixedConeCutoff (DualConeFlat C))
     (R : ℝ) (z : Fin m → ℂ) :
     ContDiff ℝ ⊤ (psiZRaw χ R z) := by
-  -- Product of two C^∞ functions: χ(ξ/R) (smooth by FixedConeCutoff.smooth
-  -- composed with the linear scaling ξ ↦ R⁻¹ξ) and exp(iz·ξ) (exponential
-  -- of a ℂ-linear function of ξ, which is smooth).
-  sorry
+  unfold psiZRaw
+  have hscale : ContDiff ℝ ⊤ (fun ξ : Fin m → ℝ => fun i => R⁻¹ * ξ i) := by
+    refine contDiff_pi.2 fun i => ?_
+    simpa [Pi.smul_apply, smul_eq_mul] using
+      (((R⁻¹ : ℝ) •
+        (ContinuousLinearMap.proj (R := ℝ) (ι := Fin m) (φ := fun _ => ℝ) i)).contDiff :
+        ContDiff ℝ ⊤ ((R⁻¹ : ℝ) •
+          (ContinuousLinearMap.proj (R := ℝ) (ι := Fin m) (φ := fun _ => ℝ) i)))
+  have hcutoff : ContDiff ℝ ⊤
+      (fun ξ : Fin m → ℝ => (χ.val (fun i => R⁻¹ * ξ i) : ℂ)) := by
+    exact Complex.ofRealCLM.contDiff.comp (χ.smooth.comp hscale)
+  have hexpArg : ContDiff ℝ ⊤
+      (fun ξ : Fin m → ℝ => I * ∑ i, z i * (ξ i : ℂ)) := by
+    refine contDiff_const.mul <| ContDiff.sum fun i _ => ?_
+    exact contDiff_const.mul <|
+      Complex.ofRealCLM.contDiff.comp
+        ((ContinuousLinearMap.proj (R := ℝ) (ι := Fin m) (φ := fun _ => ℝ) i).contDiff)
+  exact hcutoff.mul (Complex.contDiff_exp.comp hexpArg)
 
 /-- The raw function vanishes for ξ far from the dual cone (distance > R). -/
 theorem psiZRaw_support {C : Set (Fin m → ℝ)} (χ : FixedConeCutoff (DualConeFlat C))
@@ -171,7 +204,8 @@ def psiZRSchwartz
     (z : Fin m → ℂ) (hz : z ∈ SCV.TubeDomain C) :
     SchwartzMap (Fin m → ℝ) ℂ where
   toFun := psiZRaw χ R z
-  smooth' := sorry -- psiZRaw_contDiff χ R z (universe level mismatch)
+  smooth' := by
+    exact (psiZRaw_contDiff χ R z).of_le (by simp)
   decay' := by
     intro k n
     -- Need: ∃ C, ∀ ξ, ‖ξ‖^k * ‖iteratedFDeriv ℝ n (psiZRaw χ R z) ξ‖ ≤ C
