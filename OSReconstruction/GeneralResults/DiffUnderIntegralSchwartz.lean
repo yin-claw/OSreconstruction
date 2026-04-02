@@ -51,7 +51,25 @@ theorem integrable_polyGrowth_mul_schwartz {m : ℕ}
     (hg_growth : ∀ x : Fin m → ℝ, ‖g x‖ ≤ C * (1 + ‖x‖) ^ N)
     (φ : SchwartzMap (Fin m → ℝ) ℂ) :
     Integrable (fun x => g x * φ x) := by
-  sorry
+  -- Dominator: (1+‖x‖)^{-n} * (C * 2^{N+n} * seminorm(φ)), integrable by integrablePower
+  let n := (volume : Measure (Fin m → ℝ)).integrablePower
+  let s : Finset (ℕ × ℕ) := Finset.Iic (N + n, 0)
+  have hdom : Integrable (fun x : Fin m → ℝ => (1 + ‖x‖) ^ (-(n : ℝ))) :=
+    MeasureTheory.Measure.integrable_pow_neg_integrablePower (μ := volume)
+  have hK : 0 ≤ C * (2 ^ (N + n) * (s.sup (schwartzSeminormFamily ℂ (Fin m → ℝ) ℂ)) φ) := by
+    apply mul_nonneg (le_of_lt hC)
+    exact mul_nonneg (pow_nonneg (by norm_num) _) (apply_nonneg _ _)
+  refine Integrable.mono' (hdom.mul_const (C * (2 ^ (N + n) *
+      (s.sup (schwartzSeminormFamily ℂ (Fin m → ℝ) ℂ)) φ)))
+    (hg_meas.mul φ.continuous.aestronglyMeasurable)
+    (Filter.Eventually.of_forall fun x => ?_)
+  rw [Complex.norm_mul]
+  calc ‖g x‖ * ‖(φ : (Fin m → ℝ) → ℂ) x‖
+      ≤ C * (1 + ‖x‖) ^ N * ‖(φ : (Fin m → ℝ) → ℂ) x‖ := by
+        exact mul_le_mul_of_nonneg_right (hg_growth x) (norm_nonneg _)
+    _ ≤ (1 + ‖x‖) ^ (-(n : ℝ)) *
+          (C * (2 ^ (N + n) * (s.sup (schwartzSeminormFamily ℂ (Fin m → ℝ) ℂ)) φ)) := by
+      sorry -- Rearrangement: rpow_neg + pow_add + one_add_le_sup_seminorm_apply
 
 /-- **Differentiation under the integral sign for Schwartz test functions.**
 
