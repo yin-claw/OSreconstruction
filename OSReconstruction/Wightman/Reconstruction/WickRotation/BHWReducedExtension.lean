@@ -51,8 +51,9 @@ variable {d n : ℕ}
 abbrev ReducedConfig (d n : ℕ) := Fin (n - 1) → Fin (d + 1) → ℂ
 
 /-- Reduced configuration space indexed by the number of difference variables.
-`ReducedNPointConfig d m` is the complex domain for an `m`-variable reduced
-Wightman object, corresponding to absolute arity `m + 1`. -/
+
+`ReducedNPointConfig d m` is the internal Route 1 reduced complex domain for an
+`m`-variable object descended from the public literal `(m + 1)`-point family. -/
 abbrev ReducedNPointConfig (d m : ℕ) := ReducedConfig d (m + 1)
 
 /-- Reduced PET at reduced arity `m`, i.e. the image of absolute PET for
@@ -79,9 +80,12 @@ def IsReducedPermutationInvariant (F : ReducedConfig d n → ℂ) : Prop :=
     permOnReducedDiff (d := d) (n := n) π η ∈ reducedPermutedExtendedTube d n →
     F (permOnReducedDiff (d := d) (n := n) π η) = F η
 
-/-- Route 1 reduced BHW extension package. This mirrors the absolute
-`W_analytic_BHW` interface, but lives natively on reduced `(n - 1)`-difference
-coordinates and uses the induced `S_n` action on differences. -/
+/-- Route 1 reduced BHW extension package.
+
+This mirrors the absolute `W_analytic_BHW` interface, but lives natively on
+reduced `(n - 1)`-difference coordinates and uses the induced `S_n` action on
+differences. It is internal reduced infrastructure below the public literal
+`n`-point API. -/
 structure ReducedBHWExtensionData (d n : ℕ)
     (F : ReducedConfig d n → ℂ) where
   toFun : ReducedConfig d n → ℂ
@@ -107,7 +111,8 @@ from local commutativity of the Wightman functions, not from a forward-tube
 hypothesis. -/
 
 /-- Pull a reduced analytic function back to absolute coordinates along the
-reduced difference map. -/
+reduced difference map. This is one direction of the internal reduced/absolute
+Route 1 bridge. -/
 def pullbackReducedExtension (F : ReducedConfig d n → ℂ) :
     (Fin n → Fin (d + 1) → ℂ) → ℂ :=
   pullbackReducedComplex n d F
@@ -335,9 +340,11 @@ def HasAbsoluteBoundaryValues
       (nhdsWithin 0 (Set.Ioi 0))
       (nhds (Wabs f))
 
-/-- The absolute forward-tube witness data Route 1 descends to reduced
-coordinates. This is the concrete theorem surface exposed by
-`Wfn.spectrum_condition (m + 1)`. -/
+/-- Absolute forward-tube witness data at public arity `m + 1` that Route 1
+later descends to reduced arity `m`.
+
+This is the concrete theorem surface exposed by `Wfn.spectrum_condition
+(m + 1)` before any reduced-coordinate quotient step is taken. -/
 structure AbsoluteForwardTubeInput
     [NeZero d] (m : ℕ) (Wabs : SchwartzNPoint d (m + 1) → ℂ) where
   toFun : (Fin (m + 1) → Fin (d + 1) → ℂ) → ℂ
@@ -359,8 +366,11 @@ private theorem bhwForwardTube_eq_rootForwardTube {d n : ℕ} [NeZero d] :
   simp only [ForwardTube]
   exact forall_congr' fun _ => inOpenForwardCone_iff _
 
-/-- The spectrum-condition witness gives a canonical absolute forward-tube
-input at arity `m + 1`. -/
+/-- Canonical absolute forward-tube input at public arity `m + 1` extracted
+from `Wfn.spectrum_condition (m + 1)`.
+
+This remains on the public absolute-coordinate side. The reduced arity `m`
+objects are obtained only later by descent. -/
 noncomputable def spectrumConditionAbsoluteInput
     [NeZero d] (Wfn : WightmanFunctions d) (m : ℕ) :
     AbsoluteForwardTubeInput (d := d) m (Wfn.W (m + 1)) where
@@ -866,7 +876,8 @@ structure ReducedForwardTubeInput
     HasReducedBoundaryValues (d := d) Wred m toFun
 
 /-- Specialized Route 1 reduced analytic datum built against the canonical
-reduced Wightman family descended from `Wfn` using a normalized cutoff. -/
+reduced Wightman family descended from the public literal `(m + 1)`-point
+data of `Wfn` using a normalized cutoff. -/
 abbrev Route1ReducedAnalyticInput
     [NeZero d] (Wfn : WightmanFunctions d)
     (χ : NormalizedBasepointCutoff d) (m : ℕ) :=

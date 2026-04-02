@@ -543,8 +543,14 @@ def IsNormalized (W : (n : ℕ) → SchwartzNPoint d n → ℂ) : Prop :=
 
 /-! ### Wightman Functions Structure -/
 
-/-- A collection of Wightman functions satisfying all required properties.
-    This is the input data for the reconstruction theorem. -/
+/-- A collection of public literal `n`-point Wightman functions satisfying the
+    reconstruction-side axioms.
+
+    The field `W n` is the public literal `n`-point family on Schwartz test
+    functions. Internal reduced-coordinate constructions later descend from
+    these public `n`-point objects to reduced `(m + 1) -> m` data when needed,
+    but that internal Route 1 bridge does not change the public meaning of
+    `W n`. -/
 structure WightmanFunctions (d : ℕ) [NeZero d] where
   /-- The n-point functions as tempered distributions -/
   W : (n : ℕ) → SchwartzNPoint d n → ℂ
@@ -558,23 +564,28 @@ structure WightmanFunctions (d : ℕ) [NeZero d] where
   translation_invariant : IsTranslationInvariantWeak d W
   /-- Lorentz covariance (weak form) -/
   lorentz_covariant : IsLorentzCovariantWeak d W
-  /-- Spectral condition: the Fourier transform of W_n has support in the product
-      of forward light cones.
+  /-- Spectral-condition package used by the current reconstruction formalization.
 
-      More precisely, W̃_n(p₁,...,pₙ) (the Fourier transform) vanishes unless
-      p₁ + ... + pₖ ∈ V̄₊ for all k = 1,...,n, where V̄₊ is the closed forward cone.
+      For the public literal `n`-point family `W n`, we currently package the
+      analytic side as holomorphic continuation to the repo's `ForwardTube d n`
+      together with distributional boundary-value recovery of `W n`.
 
-      This is equivalent to the energy-momentum spectrum lying in the forward cone.
+      The important convention point is that `ForwardTube d n` is the current
+      repo forward tube, which includes the extra basepoint condition
+      `Im(z₀) ∈ V₊` in addition to the successive-difference conditions.
+      Therefore this is slightly stronger than the minimal literal `n`-point
+      tube often used in the standard literature.
 
-      The condition is expressed via analytic continuation: W_n extends to a
-      holomorphic function on the forward tube T_n. By the Bargmann-Hall-Wightman
-      theorem, this is equivalent to the spectral support condition.
+      This field is the public absolute-coordinate input used by the
+      reconstruction files. The internal Route 1 reduced layer later descends
+      from the arity `m + 1` witness here to reduced arity `m` difference
+      variables when building the reduced BHW bridge.
 
-      We require:
-      1. Existence of an analytic continuation W_analytic to the forward tube
-      2. Holomorphicity (differentiability in each complex variable)
-      3. Boundary values recover W_n: as Im(z) → 0⁺ from within the tube,
-         W_analytic approaches the distribution W_n in the sense of distributions -/
+      Concretely we require:
+      1. existence of an analytic continuation `W_analytic` on `ForwardTube d n`;
+      2. holomorphicity on that current repo tube;
+      3. distributional boundary values recovering the public literal
+         `n`-point functional `W n`. -/
   spectrum_condition : ∀ (n : ℕ),
     ∃ (W_analytic : (Fin n → Fin (d + 1) → ℂ) → ℂ),
       -- Holomorphicity on the forward tube (DifferentiableOn avoids subtype issues)

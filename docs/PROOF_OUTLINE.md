@@ -129,7 +129,10 @@ Complete axiomatization of relativistic QFT in the Wightman framework.
 
 **Key definitions:**
 - `wightmanFunction n` — n-point function W_n(f₁,…,f_n) = ⟨Ω, φ(f₁)···φ(f_n)Ω⟩
-- `ForwardTube n` — tube domain T_n = {z ∈ ℂ^{nd} : Im(ξ_j) ∈ V₊}
+- `ForwardTube n` — current repo forward tube for the public literal `n`-point
+  family: an absolute-coordinate tube with `Im(z₀) ∈ V₊` and
+  `Im(z_k - z_{k-1}) ∈ V₊` for `k ≥ 1`; this is slightly stronger than the
+  minimal standard literal `n`-point tube
 - `ExtendedForwardTube n` — T'_n = ∪_Λ Λ·T_n (complex Lorentz orbit)
 
 **Sorrys (not on critical path):**
