@@ -24,8 +24,10 @@ infrastructure modules.
 * `minkowskiSignature_eq_metricSignature` — the metric signature functions agree
 * `lorentzGroupEquiv` — equivalence between `LorentzLieGroup.FullLorentzGroup`
   and `FullLorentzGroup`
-* `restrictedLorentzGroupToWightman` — compatibility conversion for the connected
+* `lorentzGroupToWightman` — preferred conversion for the default connected
   Lorentz group on the `LorentzLieGroup` side
+* `restrictedLorentzGroupToWightman` — compatibility wrapper around the same
+  connected-group conversion
 * `inOpenForwardCone_iff` — forward cone conditions agree
 * `complexLorentzGroup_metric_compat` — ComplexLorentzGroup satisfies the Wightman metric condition
 
@@ -108,34 +110,51 @@ theorem isOrthochronous_iff (Λ : LorentzLieGroup.FullLorentzGroup d) :
 /-! ### Connected Lorentz group conversion -/
 
 /-- Convert from the default connected `LorentzGroup` on the `LorentzLieGroup`
-    side to the default connected `LorentzGroup` in the Wightman layer.
-    The name is kept for compatibility with existing imports. -/
-def restrictedLorentzGroupToWightman
+    side to the default connected `LorentzGroup` in the Wightman layer. -/
+def lorentzGroupToWightman
     (Λ : LorentzLieGroup.LorentzGroup d) :
-    LorentzGroup.Restricted (d := d) :=
-  ⟨⟨Λ.val.val,
-      (isLorentzMatrix_iff Λ.val.val).mp Λ.val.prop,
-      (isProperLorentz_iff_isProper Λ.val).mp Λ.prop.1,
-      (isOrthochronous_iff Λ.val).mp Λ.prop.2⟩,
-    by simp [LorentzGroup.Restricted]⟩
+    LorentzGroup d :=
+  ⟨Λ.val.val,
+    (isLorentzMatrix_iff Λ.val.val).mp Λ.val.prop,
+    (isProperLorentz_iff_isProper Λ.val).mp Λ.prop.1,
+    (isOrthochronous_iff Λ.val).mp Λ.prop.2⟩
 
 /-- Convert from the new default connected `LorentzGroup` (Wightman) to
-    the default connected `LorentzGroup` on the `LorentzLieGroup` side.
-    The name is kept for compatibility with existing imports. -/
-def wightmanToRestrictedLorentzGroup
-    (Λ : LorentzGroup.Restricted (d := d)) :
+    the default connected `LorentzGroup` on the `LorentzLieGroup` side. -/
+def wightmanToLorentzGroup
+    (Λ : LorentzGroup d) :
     LorentzLieGroup.LorentzGroup d :=
-  ⟨lorentzGroupEquiv.symm Λ.val.toFull,
+  ⟨lorentzGroupEquiv.symm Λ.toFull,
     (isProperLorentz_iff_isProper _).mpr (by
       rw [Equiv.apply_symm_apply]
-      exact LorentzGroup.det_eq_one Λ.val),
+      exact LorentzGroup.det_eq_one Λ),
     (isOrthochronous_iff _).mpr (by
       rw [Equiv.apply_symm_apply]
-      exact LorentzGroup.zero_zero_ge_one Λ.val)⟩
+      exact LorentzGroup.zero_zero_ge_one Λ)⟩
+
+/-- Compatibility wrapper exposing the old restricted-name conversion on the
+Wightman side. Since `LorentzGroup.Restricted = ⊤`, this is just the connected
+group conversion packaged into the legacy subgroup surface. -/
+abbrev restrictedLorentzGroupToWightman
+    (Λ : LorentzLieGroup.LorentzGroup d) :
+    LorentzGroup.Restricted (d := d) :=
+  ⟨lorentzGroupToWightman Λ, by simp [LorentzGroup.Restricted]⟩
+
+/-- Compatibility wrapper exposing the old restricted-name conversion on the
+`LorentzLieGroup` side. -/
+abbrev wightmanToRestrictedLorentzGroup
+    (Λ : LorentzGroup.Restricted (d := d)) :
+    LorentzLieGroup.LorentzGroup d :=
+  wightmanToLorentzGroup Λ.val
 
 /-- The underlying matrix is preserved by the conversion. -/
 @[simp]
-theorem restrictedLorentzGroupToWightman_val_val
+theorem lorentzGroupToWightman_val_val
+    (Λ : LorentzLieGroup.LorentzGroup d) :
+    (lorentzGroupToWightman Λ).val = Λ.val.val := rfl
+
+/-- Compatibility alias for the old restricted-name matrix preservation lemma. -/
+@[simp] theorem restrictedLorentzGroupToWightman_val_val
     (Λ : LorentzLieGroup.LorentzGroup d) :
     (restrictedLorentzGroupToWightman Λ).val.val = Λ.val.val := rfl
 
@@ -246,10 +265,11 @@ In `AnalyticContinuation.lean`:
      exact forall_congr' fun k => inOpenForwardCone_iff _
    ```
 4. Convert between the default connected Lorentz groups on the two sides:
-   Use `wightmanToRestrictedLorentzGroup` / `restrictedLorentzGroupToWightman`.
-   The names are compatibility holdovers; both maps now target the default
-   proper-orthochronous `LorentzGroup`.
-   The underlying matrices are preserved (`restrictedLorentzGroupToWightman_val_val`).
+   Use `wightmanToLorentzGroup` / `lorentzGroupToWightman`.
+   The older names
+   `wightmanToRestrictedLorentzGroup` / `restrictedLorentzGroupToWightman`
+   remain as compatibility wrappers around these connected-group conversions.
+   The underlying matrices are preserved (`lorentzGroupToWightman_val_val`).
 5. Convert between the two `ComplexLorentzGroup` types:
    Use `complexLorentzGroup_metric_compat` to build elements of the Wightman
    `ComplexLorentzGroup` from our `ComplexLorentzGroup`.

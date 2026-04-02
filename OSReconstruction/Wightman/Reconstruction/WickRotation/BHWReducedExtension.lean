@@ -6,6 +6,7 @@ Authors: ModularPhysics Contributors
 import OSReconstruction.Wightman.Reconstruction.WickRotation.BHWReduced
 import OSReconstruction.Wightman.Reconstruction.WickRotation.BHWTranslationCore
 import OSReconstruction.ComplexLieGroups.Connectedness.ReducedPermutedTube
+import OSReconstruction.Bridge.AxiomBridge
 import Mathlib.LinearAlgebra.Charpoly.Basic
 import Mathlib.LinearAlgebra.Eigenspace.Zero
 import Mathlib.MeasureTheory.Measure.Lebesgue.EqHaar
@@ -351,10 +352,10 @@ structure AbsoluteForwardTubeInput
   holomorphic :
     DifferentiableOn ℂ toFun (ForwardTube d (m + 1))
   real_lorentz_invariant :
-    ∀ (Λ : LorentzGroup.Restricted (d := d))
+    ∀ (Λ : LorentzGroup d)
       (z : Fin (m + 1) → Fin (d + 1) → ℂ),
       z ∈ ForwardTube d (m + 1) →
-      toFun (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = toFun z
+      toFun (fun k μ => ∑ ν, (Λ.val μ ν : ℂ) * z k ν) = toFun z
   translation_invariant :
     IsForwardTubeTranslationInvariant d m toFun
   boundary_values :
@@ -383,7 +384,8 @@ noncomputable def spectrumConditionAbsoluteInput
     have hft_eq : ForwardTube d (m + 1) = _root_.ForwardTube d (m + 1) :=
       bhwForwardTube_eq_rootForwardTube (d := d) (n := m + 1)
     intro Λ z hz
-    exact W_analytic_lorentz_on_tube (d := d) Wfn (m + 1) Λ z (hft_eq ▸ hz)
+    let Λr : LorentzGroup.Restricted (d := d) := ⟨Λ, trivial⟩
+    exact W_analytic_lorentz_on_tube (d := d) Wfn (m + 1) Λr z (hft_eq ▸ hz)
   translation_invariant := by
     have hft_eq : ForwardTube d (m + 1) = _root_.ForwardTube d (m + 1) :=
       bhwForwardTube_eq_rootForwardTube (d := d) (n := m + 1)
@@ -397,14 +399,14 @@ part of the reduced symmetry that can already be descended directly from the
 absolute forward-tube witness. -/
 def IsReducedRealLorentzInvariantOnTube [NeZero d]
     (F : ReducedNPointConfig d m → ℂ) : Prop :=
-  ∀ (Λ : LorentzGroup.Restricted (d := d)) (η : ReducedNPointConfig d m),
+  ∀ (Λ : LorentzGroup d) (η : ReducedNPointConfig d m),
     η ∈ ReducedForwardTubeN d m →
     complexLorentzAction
-        (ComplexLorentzGroup.ofReal (wightmanToRestrictedLorentzGroup Λ)) η ∈
+        (ComplexLorentzGroup.ofReal (wightmanToLorentzGroup Λ)) η ∈
       ReducedForwardTubeN d m →
     F
         (complexLorentzAction
-          (ComplexLorentzGroup.ofReal (wightmanToRestrictedLorentzGroup Λ)) η) =
+          (ComplexLorentzGroup.ofReal (wightmanToLorentzGroup Λ)) η) =
       F η
 
 /-- The part of the reduced forward-tube input that can be obtained immediately
@@ -450,7 +452,7 @@ noncomputable def descendAbsoluteForwardTubeInput
       (descendAlongSafeSection d m hAbs.toFun)
     intro Λ η hη hΛη
     let Λc : ComplexLorentzGroup d :=
-      ComplexLorentzGroup.ofReal (wightmanToRestrictedLorentzGroup Λ)
+      ComplexLorentzGroup.ofReal (wightmanToLorentzGroup Λ)
     let z₁ : Fin (m + 1) → Fin (d + 1) → ℂ :=
       safeSection d m (complexLorentzAction Λc η)
     let z₂ : Fin (m + 1) → Fin (d + 1) → ℂ :=
@@ -463,15 +465,15 @@ noncomputable def descendAbsoluteForwardTubeInput
       constructor
       · have hbase :
             (fun μ => (z₂ 0 μ).im) =
-              fun μ => ∑ ν, Λ.val.val μ ν * safeBasepointVec d ν := by
+              fun μ => ∑ ν, Λ.val μ ν * safeBasepointVec d ν := by
           ext μ
           calc
             (z₂ 0 μ).im
-                = ∑ ν, Λ.val.val μ ν * (safeSection d m η 0 ν).im := by
+                = ∑ ν, Λ.val μ ν * (safeSection d m η 0 ν).im := by
                     simpa [z₂, complexLorentzAction] using
-                      ofReal_im_action (wightmanToRestrictedLorentzGroup Λ)
+                      ofReal_im_action (wightmanToLorentzGroup Λ)
                         (fun ν => safeSection d m η 0 ν) μ
-            _ = ∑ ν, Λ.val.val μ ν * safeBasepointVec d ν := by
+            _ = ∑ ν, Λ.val μ ν * safeBasepointVec d ν := by
                   have hzero : ∀ ν : Fin (d + 1),
                       ((reducedDiffSection (m + 1) d η 0 ν).im) = 0 := by
                     intro ν
@@ -480,18 +482,19 @@ noncomputable def descendAbsoluteForwardTubeInput
                     rw [hz0]
                     simp
                   calc
-                    ∑ x, Λ.val.val μ x * (safeSection d m η 0 x).im
-                        = ∑ x, Λ.val.val μ x * (((reducedDiffSection (m + 1) d η 0 x).im) +
+                    ∑ x, Λ.val μ x * (safeSection d m η 0 x).im
+                        = ∑ x, Λ.val μ x * (((reducedDiffSection (m + 1) d η 0 x).im) +
                             safeBasepointVec d x) := by
                               simp [safeSection, safeUniformShift]
-                    _ = ∑ x, Λ.val.val μ x * (0 + safeBasepointVec d x) := by
+                    _ = ∑ x, Λ.val μ x * (0 + safeBasepointVec d x) := by
                           congr with x
                           rw [hzero x]
-                    _ = ∑ ν, Λ.val.val μ ν * safeBasepointVec d ν := by
+                    _ = ∑ ν, Λ.val μ ν * safeBasepointVec d ν := by
                           simp
         rw [hbase]
         exact (inOpenForwardCone_iff _).2 <|
-          restricted_preserves_forward_cone Λ (safeBasepointVec d)
+          orthochronous_preserves_forward_cone Λ (LorentzGroup.zero_zero_ge_one Λ)
+            (safeBasepointVec d)
             ((inOpenForwardCone_iff _).1 (safeBasepointVec_mem_forwardCone (d := d)))
       · have hz₂red :
             reducedDiffMap (m + 1) d z₂ =
@@ -526,7 +529,7 @@ noncomputable def descendAbsoluteForwardTubeInput
             rw [hc]
             exact hAbs.translation_invariant z₂ c hz₂ (hc ▸ hz₁)
       _ = hAbs.toFun (safeSection d m η) := by
-            simpa [z₂, complexLorentzAction] using
+            simpa [z₂, Λc, complexLorentzAction] using
               hAbs.real_lorentz_invariant Λ (safeSection d m η) hzsafe
       _ = descendAlongSafeSection d m hAbs.toFun η := rfl
 

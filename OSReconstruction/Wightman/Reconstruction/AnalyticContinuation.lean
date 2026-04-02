@@ -92,9 +92,11 @@ from `OSReconstruction.ComplexLieGroups.Complexification` (via `Connectedness`).
 uses `LorentzLieGroup.minkowskiSignature`, which equals `MinkowskiSpace.metricSignature` by `rfl`
 (see `minkowskiSignature_eq_metricSignature` in `AxiomBridge.lean`).
 
-The imported `ComplexLorentzGroup.ofReal` takes `RestrictedLorentzGroup d` (from LorentzLieGroup).
-To construct from `LorentzGroup.Restricted`, use `wightmanToRestrictedLorentzGroup` from
-`AxiomBridge.lean`.
+The imported `ComplexLorentzGroup.ofReal` takes the connected real Lorentz group
+from `LorentzLieGroup`. The preferred bridge from the Wightman-side connected
+group is `wightmanToLorentzGroup` from `AxiomBridge.lean`; the older
+`wightmanToRestrictedLorentzGroup` name remains as a compatibility wrapper for
+the legacy `LorentzGroup.Restricted` surface.
 -/
 
 /-! ### Extended Tube via Complex Lorentz Group -/

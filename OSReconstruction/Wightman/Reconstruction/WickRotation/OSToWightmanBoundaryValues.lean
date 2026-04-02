@@ -673,46 +673,6 @@ private theorem bvt_F_lorentz_restrictedCanonical
     (bvt_boundary_values OS lgc n)
     Λ z hz
 
-private theorem bvt_F_lorentz_proper_ortho_wick
-    (OS : OsterwalderSchraderAxioms d)
-    (lgc : OSLinearGrowthCondition d OS) :
-    ∀ (n : ℕ) (Λ : LorentzGroup d),
-      LorentzGroup.IsProper Λ →
-      LorentzGroup.IsOrthochronous Λ →
-      ∀ φ : SchwartzNPoint d n,
-        HasCompactSupport (φ : NPointDomain d n → ℂ) →
-        tsupport (φ : NPointDomain d n → ℂ) ⊆
-          {x : NPointDomain d n | (fun k => wickRotatePoint (x k)) ∈ ForwardTube d n} →
-        ∫ x : NPointDomain d n,
-            bvt_F OS lgc n (fun k μ =>
-              ∑ ν, (↑((Λ⁻¹).val μ ν) : ℂ) * wickRotatePoint (x k) ν) * (φ x)
-          =
-        ∫ x : NPointDomain d n,
-            bvt_F OS lgc n (fun k => wickRotatePoint (x k)) * (φ x) := by
-  intro n Λ hΛ_proper hΛ_ortho φ hφ_compact hφ_tsupport
-  let Λr : LorentzGroup.Restricted (d := d) := ⟨Λ, trivial⟩
-  simpa [Λr] using
-    bvt_F_lorentz_restricted_wick (d := d) OS lgc n Λr φ hφ_compact hφ_tsupport
-
-private theorem bvt_F_lorentz_proper_orthoCanonical
-    (OS : OsterwalderSchraderAxioms d)
-    (lgc : OSLinearGrowthCondition d OS) :
-    ∀ (n : ℕ) (Λ : LorentzGroup d),
-      LorentzGroup.IsProper Λ →
-      LorentzGroup.IsOrthochronous Λ →
-      ∀ (x : NPointDomain d n) (ε : ℝ), 0 < ε →
-        bvt_F OS lgc n (fun k μ =>
-          ∑ ν, (Λ.val μ ν : ℂ) *
-            (↑(x k ν) +
-              ε * ↑(canonicalForwardConeDirection (d := d) n k ν) * Complex.I)) =
-        bvt_F OS lgc n (fun k μ =>
-          ↑(x k μ) +
-            ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) := by
-  intro n Λ hΛ_proper hΛ_ortho x ε hε
-  let Λr : LorentzGroup.Restricted (d := d) := ⟨Λ, trivial⟩
-  simpa [Λr] using
-    bvt_F_lorentz_restrictedCanonical (d := d) OS lgc n Λr x ε hε
-
 /-- The reconstructed boundary-value witness already satisfies the abstract
 absolute forward-tube input interface used by the reduced BHW route. This keeps
 the restricted/proper-orthochronous covariance lane theorem-based, rather than
@@ -727,6 +687,7 @@ noncomputable def bvt_absoluteForwardTubeInput
       (bvt_F_holomorphic OS lgc (m + 1))
   real_lorentz_invariant := by
     intro Λ z hz
+    let Λr : LorentzGroup.Restricted (d := d) := ⟨Λ, trivial⟩
     exact W_analytic_lorentz_on_tube_of_restrictedCovariance
       (d := d) (n := m + 1)
       (bvt_W OS lgc (m + 1))
@@ -737,7 +698,7 @@ noncomputable def bvt_absoluteForwardTubeInput
       (bvt_F OS lgc (m + 1))
       (bvt_F_holomorphic OS lgc (m + 1))
       (bvt_boundary_values OS lgc (m + 1))
-      Λ z ((BHW_forwardTube_eq (d := d) (n := m + 1)) ▸ hz)
+      Λr z ((BHW_forwardTube_eq (d := d) (n := m + 1)) ▸ hz)
   translation_invariant := by
     intro z c hz hzc
     exact bvt_F_translationInvariant OS lgc (m + 1) z c
