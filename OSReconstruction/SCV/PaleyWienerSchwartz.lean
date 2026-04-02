@@ -725,19 +725,17 @@ theorem fourierLaplaceExtMultiDim_vladimirov_growth
 
 /-! ### Boundary values -/
 
-/-- F(z) = T(ψ_z) has tempered distributional boundary values.
+/-- The inverse Fourier transform on `Fin m → ℝ` using the explicit dot product
+    `∑ i, x i * ξ i`. This avoids the `InnerProductSpace` requirement of
+    Mathlib's `fourierTransformCLM` while staying in the flat coordinate type
+    used throughout the SCV library.
 
-    The limit of ∫ F(x+iεη) f(x) dx as ε → 0+ recovers the inverse Fourier
-    transform of T applied to f:
-    `lim_{ε→0} ∫ F(x+iεη) f(x) dx = T(FourierTransform⁻¹(f))`
+    `(inverseFourierFlat f)(ξ) = ∫ x, exp(2πi ∑ x_j ξ_j) f(x) dx`
 
-    This is because F(z) = T(ψ_z) acts on the momentum variable ξ,
-    and integrating against f(x) over x passes the inverse Fourier
-    transform onto f by Parseval's theorem.
+    (The sign convention matches Mathlib's `𝓕⁻¹`.) -/
+axiom inverseFourierFlatCLM {m : ℕ} :
+    SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] SchwartzMap (Fin m → ℝ) ℂ
 
-    **Note**: The previous version claimed the limit is `T(f)`, which is
-    mathematically incorrect (type error: T acts on momentum, f is spatial).
-    Fixed per Gemini review. -/
 axiom fourierLaplaceExtMultiDim_boundaryValue
     (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
     (hC_cone : IsCone C) (hC_salient : IsSalientCone C) (hC_ne : C.Nonempty)
@@ -751,21 +749,6 @@ axiom fourierLaplaceExtMultiDim_boundaryValue
               (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) *
             f x)
           (nhdsWithin 0 (Set.Ioi 0))
-          -- NOTE: The mathematically correct RHS is T(FourierTransform⁻¹(f)),
-          -- but fourierTransformCLM requires InnerProductSpace on Fin m → ℝ
-          -- (which has Pi.normedSpace, not InnerProductSpace.toNormedSpace).
-          -- This type mismatch needs resolution via EuclideanSpace or PiLp.
-          -- For now we use T(f) as a placeholder — the axiom is FALSE as stated
-          -- but documents the correct interface.
-          --
-          -- TODO: Fix the Fourier type mismatch. The correct statement should use
-          -- T(FT⁻¹(f)) on the RHS, which requires either:
-          -- (a) Working in EuclideanSpace/PiLp to get InnerProductSpace, or
-          -- (b) Defining a custom Fourier transform for Fin m → ℝ without
-          --     InnerProductSpace.
-          -- The RHS T(f) is a PLACEHOLDER — mathematically the limit is T(FT⁻¹(f)).
-          -- Once the Fourier infrastructure is fixed, this becomes provable from
-          -- DCT + the concrete ψ_z construction.
-          (nhds (T f))
+          (nhds (T (inverseFourierFlatCLM f)))
 
 end
