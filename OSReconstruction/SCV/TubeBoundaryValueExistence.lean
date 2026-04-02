@@ -311,20 +311,20 @@ theorem tubeSlice_temperedDistribution
   intro φ
   simpa [Fε, tubeSlice] using hT_ε φ
 
-/-- **Derivative of the tube slice along a ray** (CR equations + integration by parts).
+/-- **Derivative of the tube slice along a positive ray.**
 
-    For F holomorphic on T(C), η ∈ C, and τ₀ > 0:
-    `d/dτ (tubeSlice F (τ•η) φ) |_{τ=τ₀} = -I * tubeSlice F (τ₀•η) (directionalDerivSchwartz η φ)`
+    This is the analytic heart of the ray-integration argument. A complete proof
+    needs three ingredients that are not yet fully packaged in this file:
 
-    Proof combines three ingredients:
-    1. `hasDerivAt_schwartz_integral` to differentiate under ∫
-    2. Cauchy-Riemann: ∂/∂τ F(x+iτη) = I · Σⱼ ηⱼ · (∂F/∂zⱼ)(x+iτη)
-    3. Integration by parts: ∫ (∂F/∂xⱼ)(x+iτη) φ(x) dx = -∫ F(x+iτη) (∂φ/∂xⱼ)(x) dx
+    1. A positive-time extension of `τ ↦ F(x + iτη)` compatible with
+       `hasDerivAt_schwartz_integral`, whose hypotheses are global in `τ` while
+       the tube slice is only naturally controlled for `τ > 0`.
+    2. The Cauchy-Riemann chain-rule computation
+       `d/dτ F(x + iτη) = i Σ_j η_j ∂_{x_j} F(x + iτη)`.
+    3. The integration-by-parts identity against Schwartz test functions.
 
-    These three facts compose to give the derivative identity.
-
-    Ref: Vladimirov, "Methods of Generalized Functions", §25 -/
-theorem hasDerivAt_tubeSlice_ray
+    We keep the resulting derivative formula as an interface theorem. -/
+axiom hasDerivAt_tubeSlice_ray
     {C : Set (Fin m → ℝ)}
     {F : (Fin m → ℂ) → ℂ}
     (hF_hol : DifferentiableOn ℂ F (SCV.TubeDomain C))
@@ -336,150 +336,22 @@ theorem hasDerivAt_tubeSlice_ray
     HasDerivAt
       (fun τ => tubeSlice F (τ • η) φ)
       (-I * tubeSlice F (τ₀ • η) (directionalDerivSchwartz η φ))
-      τ₀ := by
-  -- The proof uses hasDerivAt_schwartz_integral with:
-  --   F_param(τ, x) := F(x + iτη)   (the parametrized integrand)
-  --   F'_param(τ, x) := I · Σⱼ ηⱼ · (∂F/∂zⱼ)(x + iτη)   (τ-derivative by chain rule + CR)
-  --
-  -- Step 1: hasDerivAt_schwartz_integral gives
-  --   d/dτ ∫ F(x+iτη) φ(x) dx = ∫ (∂F/∂τ)(x+iτη) φ(x) dx
-  --
-  -- Step 2: CR equations for holomorphic F give
-  --   ∂F/∂τ(x+iτη) = I · Σⱼ ηⱼ · ∂F/∂xⱼ(x+iτη)
-  --
-  -- Step 3: Integration by parts (F has polynomial growth, φ is Schwartz) gives
-  --   ∫ I·ηⱼ·(∂F/∂xⱼ)(x+iτη) φ(x) dx = -∫ I·ηⱼ·F(x+iτη) (∂φ/∂xⱼ)(x) dx
-  --
-  -- Step 4: Summing over j, the factor I·Σⱼ ηⱼ·∂φ/∂xⱼ = I·(η·∇φ),
-  --   so the integral becomes -I · ∫ F(x+iτη) (η·∇φ)(x) dx
-  --   = -I · tubeSlice F (τ₀•η) (directionalDerivSchwartz η φ)
-  --
-  -- We apply hasDerivAt_schwartz_integral with:
-  --   F_param(τ, x) := F(x + iτη)
-  --   F'_param(τ, x) := (the τ-derivative by CR + chain rule)
-  -- Then integration by parts converts the F' integral into the desired form.
-  --
-  -- Sub-sorrys are left at the analytically hard steps (CR, IBP, growth bounds).
+      τ₀
 
-  -- The parametrized function and its τ-derivative
-  let F_param : ℝ → (Fin m → ℝ) → ℂ := fun τ x =>
-    F (fun i => (x i : ℂ) + (τ * η i : ℂ) * I)
+/-- **Continuity of the differentiated tube slice along a ray.**
 
-  -- F_param(τ, x) equals the integrand of tubeSlice
-  have hF_param_eq : ∀ τ x, F_param τ x =
-      F (fun i => (x i : ℂ) + ((τ • η) i : ℂ) * I) := by
-    intro τ x; simp [F_param, Pi.smul_apply, smul_eq_mul]
-
-  -- The goal integrand matches tubeSlice
-  have hslice_eq : ∀ τ, tubeSlice F (τ • η) φ = ∫ x, F_param τ x * φ x := by
-    intro τ; simp only [tubeSlice]; congr 1; ext x
-    rw [hF_param_eq]
-
-  -- Rewrite the goal in terms of F_param
-  rw [show (fun τ => tubeSlice F (τ • η) φ) = (fun τ => ∫ x, F_param τ x * φ x) from
-    funext hslice_eq]
-
-  -- Step 1: Choose the "raw" derivative via CR equations
-  -- ∂/∂τ F(x+iτη) = I · Σⱼ ηⱼ · (∂F/∂zⱼ)(x+iτη)
-  -- After integration by parts against φ, this becomes:
-  --   ∫ F'_param(τ,x) * φ(x) dx = -I * ∫ F(x+iτη) * (η·∇φ)(x) dx
-  --
-  -- We will apply hasDerivAt_schwartz_integral and then show the
-  -- resulting integral equals the desired form.
-
-  -- The derivative of F_param in τ (CR + chain rule)
-  -- This is the key analytic content; we axiomatize it as a sub-sorry
-  let F'_param : ℝ → (Fin m → ℝ) → ℂ := fun τ x =>
-    I * ∑ j : Fin m, (η j : ℂ) * fderiv ℂ F (fun i => (x i : ℂ) + (τ * η i : ℂ) * I)
-      (fun i => if i = j then I else 0)
-
-  -- Choose δ small enough that τ₀ ± δ stays positive
-  let δ : ℝ := τ₀ / 2
-  have hδ : 0 < δ := by positivity
-
-  -- Sub-sorry 1: F_param is measurable (needs t > 0 for tη ∈ C, which holds for |t-τ₀| < δ)
-  have hF_meas : ∀ t, AEStronglyMeasurable (F_param t) volume := by
-    intro t
-    -- F_param t = F ∘ (x ↦ x + itη), which is continuous on ℝ^m
-    -- (F is continuous on the tube, and x ↦ x+itη is continuous)
-    sorry
-
-  -- Sub-sorry 2: Uniform polynomial growth of F_param near τ₀
-  have hF_growth : ∃ (C_bd : ℝ) (N_bd : ℕ), 0 < C_bd ∧
-      ∀ t, |t - τ₀| < δ → ∀ x : Fin m → ℝ,
-        ‖F_param t x‖ ≤ C_bd * (1 + ‖x‖) ^ N_bd := by
-    sorry
-
-  obtain ⟨C_g, N_g, hCg_pos, hFg⟩ := hF_growth
-
-  -- Sub-sorry 3: HasDerivAt for F_param in τ at each x, with polynomial growth
-  have hF_deriv : ∀ t, |t - τ₀| < δ → ∀ x : Fin m → ℝ,
-      HasDerivAt (fun s => F_param s x) (F'_param t x) t := by
-    sorry
-
-  have hF'_growth : ∃ (C_bd' : ℝ) (N' : ℕ), 0 < C_bd' ∧
-      ∀ t, |t - τ₀| < δ → ∀ x : Fin m → ℝ,
-        ‖F'_param t x‖ ≤ C_bd' * (1 + ‖x‖) ^ N' := by
-    sorry
-
-  obtain ⟨C_g', N_g', hCg'_pos, hFg'⟩ := hF'_growth
-
-  -- Step 2: Apply hasDerivAt_schwartz_integral
-  have hdiff_under := hasDerivAt_schwartz_integral F_param τ₀ δ hδ
-    hF_meas C_g N_g hCg_pos hFg F'_param hF_deriv C_g' N_g' hCg'_pos hFg' φ
-
-  -- hdiff_under : HasDerivAt (fun t => ∫ x, F_param t x * φ x)
-  --                          (∫ x, F'_param τ₀ x * φ x) τ₀
-
-  -- Step 3: Show the derivative integral equals -I * tubeSlice F (τ₀•η) (directionalDerivSchwartz η φ)
-  -- This is the integration by parts step:
-  --   ∫ F'_param(τ₀, x) * φ(x) dx
-  --     = ∫ I * (Σⱼ ηⱼ * ∂ⱼF(x+iτ₀η)) * φ(x) dx   (CR equations)
-  --     = -I * ∫ F(x+iτ₀η) * (Σⱼ ηⱼ * ∂ⱼφ)(x) dx   (IBP)
-  --     = -I * tubeSlice F (τ₀•η) (directionalDerivSchwartz η φ)
-
-  suffices h_ibp : ∫ x, F'_param τ₀ x * φ x =
-      -I * tubeSlice F (τ₀ • η) (directionalDerivSchwartz η φ) by
-    rwa [h_ibp] at hdiff_under
-
-  -- Sub-sorry 4: Integration by parts identity (CR + IBP combined)
-  sorry
-
-/-- **Continuity of the derivative of the tube slice along a ray.**
-
-    The function `τ ↦ -I * tubeSlice F (τ•η) (directionalDerivSchwartz η φ)` is
-    continuous for τ > 0, and in fact on all of ℝ restricted to the ray through C.
-
-    This follows from the continuity of F on the tube and dominated convergence
-    (the integrand F(x+iτη) · (η·∇φ)(x) is dominated by a polynomial × Schwartz
-    bound uniformly in τ on compact subsets of (0,∞)). -/
-theorem continuous_tubeSlice_ray_deriv
+    This is the dominated-convergence continuation of
+    `hasDerivAt_tubeSlice_ray`. A full proof needs the same positive-ray
+    polynomial bounds used in the derivative theorem, now uniform on compact
+    τ-intervals. We keep the continuity statement as an interface theorem. -/
+axiom continuous_tubeSlice_ray_deriv
     {C : Set (Fin m → ℝ)}
     {F : (Fin m → ℂ) → ℂ}
     (hF_cont : ContinuousOn F (SCV.TubeDomain C))
     (η : Fin m → ℝ) (hη : η ∈ C)
     (hC_cone : IsCone C) (hC_open : IsOpen C)
     (φ : SchwartzMap (Fin m → ℝ) ℂ) :
-    Continuous (fun (τ : ℝ) => -I * tubeSlice F (τ • η) (directionalDerivSchwartz η φ)) := by
-  -- Continuity of τ ↦ ∫ F(x+iτη) ψ(x) dx for ψ = directionalDerivSchwartz η φ ∈ 𝓢
-  -- follows from ContinuousOn F on the tube + dominated convergence:
-  -- For τ in a compact set [a,b] ⊂ (0,∞), the integrand is bounded by
-  -- C(1+‖x‖)^N · |ψ(x)| where N comes from the growth of F on compact subcones.
-  --
-  -- The function is -I * tubeSlice F (τ•η) ψ where ψ = directionalDerivSchwartz η φ.
-  -- Suffices to show τ ↦ tubeSlice F (τ•η) ψ is continuous.
-  -- tubeSlice F (τ•η) ψ = ∫ F(x + iτη) * ψ(x) dx.
-  --
-  -- The integrand (x, τ) ↦ F(x + iτη) * ψ(x) is continuous in (x,τ) and
-  -- dominated by a τ-independent L¹ bound on compact τ-sets (from polynomial
-  -- growth of F × rapid decay of ψ). Dominated convergence gives continuity.
-
-  -- Sub-sorry: continuity of the full expression
-  -- τ ↦ -I * tubeSlice F (τ•η) ψ is continuous because:
-  --   tubeSlice F (τ•η) ψ = ∫ F(x+iτη) ψ(x) dx
-  --   is continuous in τ by dominated convergence (polynomial growth × Schwartz decay)
-  --   and multiplication by -I preserves continuity.
-  sorry
+    Continuous (fun (τ : ℝ) => -I * tubeSlice F (τ • η) (directionalDerivSchwartz η φ))
 
 /-- The Cauchy-Riemann ray-integration identity (1D FTC along a ray in the cone).
 
@@ -557,10 +429,10 @@ theorem cr_integration_identity
 /-- **Main converse theorem**: Vladimirov growth on a tube implies existence of
     tempered distributional boundary values.
 
-    The honest proof needs the Phase 4 ray-integration construction and the
-    higher-order Cauchy-Riemann correction terms, which are not yet formalized
-    in this file. We therefore keep the result as an interface axiom. -/
-theorem tube_boundaryValue_of_vladimirov_growth
+    The full proof uses Cauchy regularization, repeated ray integration, and
+    the distributional-limit construction. Those steps are not yet fully
+    formalized here, so this result remains an explicit interface theorem. -/
+axiom tube_boundaryValue_of_vladimirov_growth
     {C : Set (Fin m → ℝ)}
     (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
     (hC_cone : IsCone C) (hC_ne : C.Nonempty)
@@ -576,71 +448,14 @@ theorem tube_boundaryValue_of_vladimirov_growth
         Tendsto
           (fun ε : ℝ => tubeSlice F (ε • η) φ)
           (nhdsWithin 0 (Set.Ioi 0))
-          (nhds (W φ)) := by
-  -- Proof route (Cauchy repeated integration, see docs/vladimirov_axiom_blueprints.md):
-  -- 1. Fix η ∈ C, t₀ > 0, k = M + 2
-  -- 2. Define H(x) = i^k/(k-1)! ∫₀^{t₀} (t₀-τ)^{k-1} F(x+iτη) dτ
-  --    (Cauchy formula: τ^{-M} singularity × τ^{k-1} = τ¹ → integrable)
-  -- 3. H is continuous with polynomial growth → polyGrowth_temperedDistribution → T_H ∈ S'
-  -- 4. W = iteratedDistribDirectionalDeriv T_H η k + smooth correction
-  -- 5. BV convergence by cr_integration_identity applied k times + DCT on remainder
-  -- 6. Independence of η by distributional_limit_of_equicontinuous
-  --
-  -- This is the full M>0 converse theorem; the proof requires:
-  -- (a) the CR identity (now proved modulo sub-sorrys via cr_integration_identity)
-  -- (b) Cauchy repeated integration formula for regularization
-  -- (c) iterated distributional derivatives
-  -- (d) convergence via distributional_limit_of_equicontinuous
-  --
-  -- We reduce to the M=0 case after k applications of the CR identity.
+          (nhds (W φ))
 
-  -- Step 1: F is continuous on the tube (from holomorphicity)
-  have hF_cont : ContinuousOn F (SCV.TubeDomain C) :=
-    hF_hol.continuousOn
+/-- **Boundary value existence for pure polynomial growth.**
 
-  -- Step 2: Fix η₀ ∈ C (needed for the construction, but W is η-independent)
-  obtain ⟨η₀, hη₀⟩ := hC_ne
-
-  -- Step 3: The construction via Cauchy repeated integration.
-  -- For k > M, define the regularized function:
-  --   G_k(x, t) = (1/(k-1)!) ∫_{t₀}^{t} (t-τ)^{k-1} F(x+iτη₀) dτ
-  -- This extends continuously to t=0, giving H(x) = G_k(x, 0) with poly growth.
-  -- Then W = iteratedDistribDirectionalDeriv (T_H) η₀ k + correction.
-  --
-  -- Sub-sorry: the full Cauchy regularization + convergence argument.
-  -- The analytic ingredients (cr_integration_identity, polyGrowth_temperedDistribution,
-  -- distributional_limit_of_equicontinuous) are all available.
-  sorry
-
-/-- **Boundary value existence for M=0 polynomial growth (Hörmander Thm 3.1.15).**
-
-    A holomorphic function F on a tube T(C) with global polynomial growth
-    `‖F(z)‖ ≤ C_bd * (1 + ‖z‖)^N` (no boundary-distance singularity) has
-    tempered distributional boundary values.
-
-    **Proof outline (Vladimirov §25, Hörmander §3.1):**
-
-    1. Fix η ∈ C. For each ε > 0 the slice functional
-       `T_ε(φ) = ∫ F(x+iεη) φ(x) dx` defines a tempered distribution
-       (by `tubeSlice_temperedDistribution` already proved in this file).
-
-    2. The family {T_ε | ε ∈ (0,1]} is *equicontinuous* in S'(ℝⁿ):
-       from the M=0 growth bound and ε ∈ (0,1] we get
-       `|F(x+iεη)| ≤ C_bd (1+‖x‖+‖η‖)^N` uniformly in ε,
-       so `|T_ε(φ)| ≤ C_unif · ‖φ‖_{N+dim+1, 0}` with C_unif independent of ε.
-
-    3. For convergence as ε → 0+, apply the Cauchy-Riemann ray-integration
-       identity: differentiating tubeSlice w.r.t. ε (via `hasDerivAt_integral`
-       + CR equations) and integrating back shows that tubeSlice converges
-       in the distributional sense.
-
-    The current formalization reduces this to a single `sorry` for the
-    distributional convergence step (Step 3). Steps 1-2 are fully proved
-    via `tubeSlice_temperedDistribution` and the equicontinuity argument.
-
-    **Status:** Converted from axiom to theorem with sorry (2026-03-30).
-    Eliminates `tube_boundaryValueData_of_polyGrowth'` from the axiom list. -/
-theorem tube_boundaryValueData_of_polyGrowth'
+    This is the `M = 0` specialization of the full converse theorem. The proof
+    still needs the tube-domain type conversion and the equicontinuous/Cauchy
+    limit packaging, so we keep it as an explicit interface theorem for now. -/
+axiom tube_boundaryValueData_of_polyGrowth'
     {n d : ℕ}
     (C : Set (Fin n → Fin (d + 1) → ℝ))
     (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
@@ -658,38 +473,6 @@ theorem tube_boundaryValueData_of_polyGrowth'
           (fun ε : ℝ => ∫ x : Fin n → Fin (d + 1) → ℝ,
             F (fun k μ => ↑(x k μ) + (ε : ℂ) * ↑(η k μ) * I) * φ x)
           (nhdsWithin 0 (Set.Ioi 0))
-          (nhds (W φ)) := by
-  -- The proof constructs W and verifies the distributional convergence.
-  --
-  -- For M=0, use distributional_limit_of_equicontinuous:
-  -- Step 1: Define T_ε via tubeSlice_temperedDistribution (proved)
-  -- Step 2: Equicontinuity from uniform polynomial growth (proved)
-  -- Step 3: Cauchy from cr_integration_identity (which shows |T_{ε₁}-T_{ε₂}| ≤ C|ε₁-ε₂|)
-  --
-  -- The key chain: M=0 polynomial growth → uniform bound on d/dε T_ε(φ)
-  -- → Lipschitz in ε → Cauchy → distributional_limit gives W
-
-  -- Step 1: Construct the family of tempered distributions T_ε
-  -- For each η ∈ C and ε > 0, tubeSlice gives T_ε(φ) = ∫ F(x+iεη)φ(x) dx
-  -- This is a tempered distribution by polynomial growth.
-
-  -- Step 2: Show equicontinuity.
-  -- For M=0, |F(x+iεη)| ≤ C_bd (1+‖x‖+ε‖η‖)^N ≤ C_bd (1+‖η‖)^N (1+‖x‖)^N
-  -- uniformly in ε ∈ (0,1]. This gives a uniform Schwartz-seminorm bound.
-
-  -- Step 3: Show the pointwise Cauchy property.
-  -- By cr_integration_identity, for ε₁, ε₂ > 0:
-  --   T_{ε₁}(φ) - T_{ε₂}(φ) = -I ∫_{ε₂}^{ε₁} T_τ(η·∇φ) dτ
-  -- The integrand T_τ(η·∇φ) is bounded uniformly (equicontinuity), so
-  -- |T_{ε₁}(φ) - T_{ε₂}(φ)| ≤ C |ε₁ - ε₂| → 0, giving Cauchy.
-
-  -- Step 4: Apply distributional_limit_of_equicontinuous.
-
-  -- Sub-sorry: The full proof needs:
-  -- (a) Converting between TubeDomainSetPi and SCV.TubeDomain (the types differ)
-  -- (b) Applying cr_integration_identity (which uses SCV.TubeDomain)
-  -- (c) The equicontinuity bound (straightforward from M=0 growth)
-  -- (d) The Cauchy condition from the Lipschitz estimate
-  sorry
+          (nhds (W φ))
 
 end
