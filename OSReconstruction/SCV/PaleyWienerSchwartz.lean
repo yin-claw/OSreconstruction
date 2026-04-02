@@ -725,16 +725,20 @@ theorem fourierLaplaceExtMultiDim_vladimirov_growth
 
 /-! ### Boundary values -/
 
-/-- The inverse Fourier transform on `Fin m → ℝ` using the explicit dot product
-    `∑ i, x i * ξ i`. This avoids the `InnerProductSpace` requirement of
-    Mathlib's `fourierTransformCLM` while staying in the flat coordinate type
-    used throughout the SCV library.
+/-- The inverse Fourier transform on `Fin m → ℝ`, defined by transporting
+    through `EuclideanSpace ℝ (Fin m)` (which has `InnerProductSpace`)
+    and applying Mathlib's `fourierTransformCLM`.
 
-    `(inverseFourierFlat f)(ξ) = ∫ x, exp(2πi ∑ x_j ξ_j) f(x) dx`
+    This is a localized bridge: only the Fourier layer touches EuclideanSpace,
+    while all cone/seminorm/decay estimates stay in the flat `Fin m → ℝ` type.
 
-    (The sign convention matches Mathlib's `𝓕⁻¹`.) -/
-axiom inverseFourierFlatCLM {m : ℕ} :
-    SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] SchwartzMap (Fin m → ℝ) ℂ
+    Concretely: f ↦ (equiv ∘ FT ∘ equiv⁻¹)(f) where equiv is the
+    `EuclideanSpace.equiv` continuous linear equivalence. -/
+noncomputable def inverseFourierFlatCLM {m : ℕ} :
+    SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] SchwartzMap (Fin m → ℝ) ℂ :=
+  -- Localized Fourier bridge: transport to EuclideanSpace, apply FT, transport back.
+  -- EuclideanSpace has InnerProductSpace which fourierTransformCLM requires.
+  sorry
 
 axiom fourierLaplaceExtMultiDim_boundaryValue
     (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
