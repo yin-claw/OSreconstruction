@@ -272,8 +272,22 @@ private theorem lorentzTimeReversal_mulVec_eq_timeReflection_local
   ext μ
   by_cases hμ : μ = 0
   · subst hμ
-    simp [LorentzGroup.timeReversal, timeReflection, Matrix.mulVec_diagonal]
-  · simp [LorentzGroup.timeReversal, timeReflection, Matrix.mulVec_diagonal, hμ]
+    simp [Matrix.mulVec, dotProduct, LorentzGroup.timeReversal, FullLorentzGroup.timeReversal,
+      timeReflection]
+    rw [Finset.sum_eq_single 0]
+    · simp
+    · intro ν _ hν0
+      have h0ν : (0 : Fin (d + 1)) ≠ ν := by simpa using hν0.symm
+      simp [Matrix.diagonal, h0ν]
+    · simp
+  · simp [Matrix.mulVec, dotProduct, LorentzGroup.timeReversal, FullLorentzGroup.timeReversal,
+      timeReflection, hμ]
+    rw [Finset.sum_eq_single μ]
+    · simp [hμ]
+    · intro ν _ hνμ
+      have hμν : μ ≠ ν := by simpa using hνμ.symm
+      simp [Matrix.diagonal, hμν]
+    · simp [hμ]
 
 private theorem lorentzTimeReversalN_eq_timeReflectionN_local
     {n : ℕ} (x : NPointDomain d n) :
@@ -587,7 +601,8 @@ theorem bvt_lorentz_covariant_restricted
         (∀ x, g.toFun x = f.toFun (fun i => Matrix.mulVec Λ.val⁻¹.val (x i))) →
         bvt_W OS lgc n f = bvt_W OS lgc n g := by
   intro n Λ f g hfg
-  exact bvt_lorentz_covariant_orthochronous (d := d) OS lgc n Λ.val Λ.property.2 f g hfg
+  exact bvt_lorentz_covariant_orthochronous (d := d) OS lgc n Λ.val
+    (LorentzGroup.zero_zero_ge_one Λ.val) f g hfg
 
 private theorem bvt_F_lorentz_restricted_wick
     (OS : OsterwalderSchraderAxioms d)
@@ -675,7 +690,7 @@ private theorem bvt_F_lorentz_proper_ortho_wick
         ∫ x : NPointDomain d n,
             bvt_F OS lgc n (fun k => wickRotatePoint (x k)) * (φ x) := by
   intro n Λ hΛ_proper hΛ_ortho φ hφ_compact hφ_tsupport
-  let Λr : LorentzGroup.Restricted (d := d) := ⟨Λ, ⟨hΛ_proper, hΛ_ortho⟩⟩
+  let Λr : LorentzGroup.Restricted (d := d) := ⟨Λ, trivial⟩
   simpa [Λr] using
     bvt_F_lorentz_restricted_wick (d := d) OS lgc n Λr φ hφ_compact hφ_tsupport
 
@@ -694,7 +709,7 @@ private theorem bvt_F_lorentz_proper_orthoCanonical
           ↑(x k μ) +
             ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) := by
   intro n Λ hΛ_proper hΛ_ortho x ε hε
-  let Λr : LorentzGroup.Restricted (d := d) := ⟨Λ, ⟨hΛ_proper, hΛ_ortho⟩⟩
+  let Λr : LorentzGroup.Restricted (d := d) := ⟨Λ, trivial⟩
   simpa [Λr] using
     bvt_F_lorentz_restrictedCanonical (d := d) OS lgc n Λr x ε hε
 

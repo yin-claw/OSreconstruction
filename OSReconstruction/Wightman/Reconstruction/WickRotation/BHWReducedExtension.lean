@@ -399,8 +399,13 @@ def IsReducedRealLorentzInvariantOnTube [NeZero d]
     (F : ReducedNPointConfig d m → ℂ) : Prop :=
   ∀ (Λ : LorentzGroup.Restricted (d := d)) (η : ReducedNPointConfig d m),
     η ∈ ReducedForwardTubeN d m →
-    complexLorentzAction (ComplexLorentzGroup.ofReal Λ) η ∈ ReducedForwardTubeN d m →
-    F (complexLorentzAction (ComplexLorentzGroup.ofReal Λ) η) = F η
+    complexLorentzAction
+        (ComplexLorentzGroup.ofReal (wightmanToRestrictedLorentzGroup Λ)) η ∈
+      ReducedForwardTubeN d m →
+    F
+        (complexLorentzAction
+          (ComplexLorentzGroup.ofReal (wightmanToRestrictedLorentzGroup Λ)) η) =
+      F η
 
 /-- The part of the reduced forward-tube input that can be obtained immediately
 from the absolute witness by safe-section descent, before solving the reduced
@@ -444,10 +449,12 @@ noncomputable def descendAbsoluteForwardTubeInput
     show IsReducedRealLorentzInvariantOnTube (d := d) (m := m)
       (descendAlongSafeSection d m hAbs.toFun)
     intro Λ η hη hΛη
+    let Λc : ComplexLorentzGroup d :=
+      ComplexLorentzGroup.ofReal (wightmanToRestrictedLorentzGroup Λ)
     let z₁ : Fin (m + 1) → Fin (d + 1) → ℂ :=
-      safeSection d m (complexLorentzAction (ComplexLorentzGroup.ofReal Λ) η)
+      safeSection d m (complexLorentzAction Λc η)
     let z₂ : Fin (m + 1) → Fin (d + 1) → ℂ :=
-      complexLorentzAction (ComplexLorentzGroup.ofReal Λ) (safeSection d m η)
+      complexLorentzAction Λc (safeSection d m η)
     have hz₁ : z₁ ∈ ForwardTube d (m + 1) := by
       exact safeSection_mem_forwardTube (d := d) m _ hΛη
     have hz₂ : z₂ ∈ ForwardTube d (m + 1) := by
@@ -462,7 +469,8 @@ noncomputable def descendAbsoluteForwardTubeInput
             (z₂ 0 μ).im
                 = ∑ ν, Λ.val.val μ ν * (safeSection d m η 0 ν).im := by
                     simpa [z₂, complexLorentzAction] using
-                      ofReal_im_action Λ (fun ν => safeSection d m η 0 ν) μ
+                      ofReal_im_action (wightmanToRestrictedLorentzGroup Λ)
+                        (fun ν => safeSection d m η 0 ν) μ
             _ = ∑ ν, Λ.val.val μ ν * safeBasepointVec d ν := by
                   have hzero : ∀ ν : Fin (d + 1),
                       ((reducedDiffSection (m + 1) d η 0 ν).im) = 0 := by
@@ -487,9 +495,9 @@ noncomputable def descendAbsoluteForwardTubeInput
             ((inOpenForwardCone_iff _).1 (safeBasepointVec_mem_forwardCone (d := d)))
       · have hz₂red :
             reducedDiffMap (m + 1) d z₂ =
-              complexLorentzAction (ComplexLorentzGroup.ofReal Λ) η := by
+              complexLorentzAction Λc η := by
           have hact := reducedDiffMap_action (n := m + 1) (d := d)
-              (ComplexLorentzGroup.ofReal Λ) (safeSection d m η)
+              Λc (safeSection d m η)
           rw [reducedDiffMap_safeSection] at hact
           simpa [z₂] using hact
         rw [hz₂red]
@@ -498,21 +506,21 @@ noncomputable def descendAbsoluteForwardTubeInput
         reducedDiffMap (m + 1) d z₂ = reducedDiffMap (m + 1) d z₁ := by
       calc
         reducedDiffMap (m + 1) d z₂
-            = complexLorentzAction (ComplexLorentzGroup.ofReal Λ) η := by
+            = complexLorentzAction Λc η := by
                 have hact := reducedDiffMap_action (n := m + 1) (d := d)
-                    (ComplexLorentzGroup.ofReal Λ) (safeSection d m η)
+                    Λc (safeSection d m η)
                 rw [reducedDiffMap_safeSection] at hact
                 simpa [z₂] using hact
         _ = reducedDiffMap (m + 1) d z₁ := by
               simpa [z₁] using (reducedDiffMap_safeSection (d := d) (m := m)
-                (complexLorentzAction (ComplexLorentzGroup.ofReal Λ) η)).symm
+                (complexLorentzAction Λc η)).symm
     obtain ⟨c, hc⟩ := exists_uniformShift_eq_of_reducedDiffMap_eq
       (d := d) (n := m + 1) z₂ z₁ hred_eq
     have hzsafe : safeSection d m η ∈ ForwardTube d (m + 1) :=
       safeSection_mem_forwardTube (d := d) m η hη
     calc
       descendAlongSafeSection d m hAbs.toFun
-          (complexLorentzAction (ComplexLorentzGroup.ofReal Λ) η)
+          (complexLorentzAction Λc η)
           = hAbs.toFun z₁ := rfl
       _ = hAbs.toFun z₂ := by
             rw [hc]

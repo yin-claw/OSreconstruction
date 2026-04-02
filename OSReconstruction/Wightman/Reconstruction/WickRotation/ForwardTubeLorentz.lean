@@ -59,8 +59,8 @@ theorem restricted_preserves_forward_cone
     -- Since η ∈ V₊: η₀² > Σ ηⱼ² (from minkowskiNormSq < 0)
     -- And Λ₀₀ ≥ 1 (orthochronous)
     -- So (Λη)₀ ≥ η₀(Λ₀₀ - √(Λ₀₀² - 1)) > 0
-    have hΛ_lorentz := Λ.val.property
-    have hΛ_ortho : LorentzGroup.IsOrthochronous Λ.val := Λ.property.2
+    have hΛ_lorentz := Λ.val.property.1
+    have hΛ_ortho : LorentzGroup.IsOrthochronous Λ.val := LorentzGroup.zero_zero_ge_one Λ.val
     have hΛ00 : Λ.val.val 0 0 ≥ 1 := hΛ_ortho
     have hrow := IsLorentzMatrix.first_row_timelike Λ.val.val hΛ_lorentz
     -- η is timelike: η₀² > spatial norm
@@ -149,7 +149,7 @@ theorem restricted_preserves_forward_cone
     exact key
   · -- Part (a): Metric preservation -- minkowskiNormSq(Lη) = minkowskiNormSq(η) < 0
     -- Uses the defining Lorentz property to show the Minkowski norm is preserved.
-    have hΛ := Λ.val.property
+    have hΛ := Λ.val.property.1
     have hmetric : Λ.val.val.transpose * minkowskiMatrix d * Λ.val.val = minkowskiMatrix d := hΛ
     show MinkowskiSpace.minkowskiNormSq d (fun μ => ∑ ν, Λ.val.val μ ν * η ν) < 0
     -- The norm of Λη equals that of η by the Lorentz condition
@@ -216,7 +216,7 @@ theorem orthochronous_preserves_forward_cone
     InOpenForwardCone d (fun μ => ∑ ν, Λ.val μ ν * η ν) := by
   obtain ⟨hη0_pos, hη_neg⟩ := hη
   constructor
-  · have hΛ_lorentz := Λ.property
+  · have hΛ_lorentz := Λ.property.1
     have hΛ00 : Λ.val 0 0 ≥ 1 := hΛ_ortho
     have hrow := IsLorentzMatrix.first_row_timelike Λ.val hΛ_lorentz
     have hη_timelike : MinkowskiSpace.minkowskiNormSq d η < 0 := hη_neg
@@ -282,7 +282,7 @@ theorem orthochronous_preserves_forward_cone
         exact mul_pos hΛ_hyp hη0_pos'
       linarith
     exact key
-  · have hΛ := Λ.property
+  · have hΛ := Λ.property.1
     show MinkowskiSpace.minkowskiNormSq d (fun μ => ∑ ν, Λ.val μ ν * η ν) < 0
     suffices hnorm_eq : MinkowskiSpace.minkowskiNormSq d (fun μ => ∑ ν, Λ.val μ ν * η ν) =
         MinkowskiSpace.minkowskiNormSq d η by
@@ -882,13 +882,11 @@ theorem integral_lorentz_eq_self {d n : ℕ} [NeZero d]
     ∫ x : NPointDomain d n, h (fun i => Matrix.mulVec Λ.val.val (x i)) =
     ∫ x : NPointDomain d n, h x := by
   have hdet_ne : Λ.val.val.det ≠ 0 := by
-    have hp := Λ.property.1
-    simp only [LorentzGroup.IsProper] at hp
-    rw [hp]; exact one_ne_zero
+    rw [LorentzGroup.det_eq_one Λ.val]
+    exact one_ne_zero
   have habs : |Λ.val.val.det| = 1 := by
-    have hp := Λ.property.1
-    simp only [LorentzGroup.IsProper] at hp
-    rw [hp]; simp
+    rw [LorentzGroup.det_eq_one Λ.val]
+    simp
   have hΛ_mul_inv := lorentz_mul_inv_eq_one Λ
   have hΛinv_mul := lorentz_inv_mul_eq_one Λ
   have hmv : (fun v => Λ.val.val.mulVec v) = Matrix.toLin' Λ.val.val := by

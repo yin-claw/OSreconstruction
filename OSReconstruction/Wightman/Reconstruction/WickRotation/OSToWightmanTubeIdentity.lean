@@ -129,7 +129,7 @@ private theorem continuous_wickRotateRealConfig :
     by_cases hμ : μ = 0
     · subst hμ
       rw [Finset.sum_eq_single 0]
-      · simp [LorentzGroup.timeReversal]
+      · simp [LorentzGroup.timeReversal, FullLorentzGroup.timeReversal]
       · intro ν hν
         intro hν0
         have hentry :
@@ -139,9 +139,9 @@ private theorem continuous_wickRotateRealConfig :
           · exact False.elim (hν0 h0ν.symm)
           · simp [Matrix.diagonal, h0ν]
         simp [hentry]
-      · simp [LorentzGroup.timeReversal]
+      · simp [LorentzGroup.timeReversal, FullLorentzGroup.timeReversal]
     · rw [Finset.sum_eq_single μ]
-      · simp [LorentzGroup.timeReversal, hμ]
+      · simp [LorentzGroup.timeReversal, FullLorentzGroup.timeReversal, hμ]
       · intro ν hν
         intro hνμ
         have hentry :

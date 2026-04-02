@@ -9,21 +9,21 @@ import Mathlib.Algebra.Group.Subgroup.Basic
 import OSReconstruction.Wightman.Spacetime.Metric
 
 /-!
-# The Lorentz Group O(1,d)
+# The Full and Connected Lorentz Groups
 
 This file defines the Lorentz group O(1,d) as the group of linear transformations
 preserving the Minkowski metric.
 
 ## Main Definitions
 
-* `LorentzGroup d` - The indefinite orthogonal group O(1,d) ⊂ GL(d+1, ℝ)
-* `LorentzGroup.IsProper` - Proper Lorentz transformations (det = 1)
-* `LorentzGroup.IsOrthochronous` - Orthochronous transformations (Λ₀₀ ≥ 1)
-* `LorentzGroup.Restricted` - The restricted Lorentz group SO⁺(1,d)
+* `FullLorentzGroup d` - The indefinite orthogonal group O(1,d) ⊂ GL(d+1, ℝ)
+* `LorentzGroup d` - The connected proper orthochronous group SO⁺(1,d)
+* `FullLorentzGroup.IsProper` - Proper Lorentz transformations (det = 1)
+* `FullLorentzGroup.IsOrthochronous` - Orthochronous transformations (Λ₀₀ ≥ 1)
 
 ## Mathematical Background
 
-The Lorentz group O(1,d) consists of all real (d+1)×(d+1) matrices Λ satisfying:
+The full Lorentz group O(1,d) consists of all real (d+1)×(d+1) matrices Λ satisfying:
   Λᵀ η Λ = η
 where η = diag(-1, +1, ..., +1) is the Minkowski metric.
 
@@ -31,7 +31,9 @@ The group has four connected components, characterized by:
 - det(Λ) = ±1 (proper vs improper)
 - Λ₀₀ ≥ 1 or Λ₀₀ ≤ -1 (orthochronous vs non-orthochronous)
 
-The restricted Lorentz group SO⁺(1,d) is the identity component (proper orthochronous).
+The proper orthochronous Lorentz group SO⁺(1,d) is the identity component.
+This file now uses `LorentzGroup d` for that connected component, while
+`FullLorentzGroup d` denotes the full disconnected group.
 
 ## References
 
@@ -270,12 +272,14 @@ theorem abs_zero_zero_ge_one (Λ : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) (h : 
 
 end IsLorentzMatrix
 
-/-- The Lorentz group O(1,d) as matrices preserving the Minkowski metric.
+/-- The full Lorentz group O(1,d) as matrices preserving the Minkowski metric.
     This is the indefinite orthogonal group. -/
-def LorentzGroup (d : ℕ) [NeZero d] :=
+def FullLorentzGroup (d : ℕ) [NeZero d] :=
   { Λ : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ // IsLorentzMatrix d Λ }
 
-namespace LorentzGroup
+namespace FullLorentzGroup
+
+local notation "LorentzGroup" => FullLorentzGroup
 
 variable {d : ℕ} [NeZero d]
 
@@ -531,7 +535,7 @@ theorem inv {Λ : LorentzGroup d} (h : IsOrthochronous Λ) : IsOrthochronous Λ�
 
 end IsOrthochronous
 
-/-- The restricted Lorentz group SO⁺(1,d) consists of proper orthochronous transformations -/
+/-- The proper orthochronous subgroup SO⁺(1,d) inside the full Lorentz group. -/
 def Restricted : Subgroup (LorentzGroup d) where
   carrier := { Λ | IsProper Λ ∧ IsOrthochronous Λ }
   mul_mem' ha hb := ⟨IsProper.mul ha.1 hb.1, IsOrthochronous.mul ha.2 hb.2⟩
@@ -673,11 +677,128 @@ theorem parity_mul_timeReversal : parity (d := d) * timeReversal = ⟨-1, by
     by_cases h0 : i = 0 <;> simp [h0]
   · simp [hij]
 
+end FullLorentzGroup
+
+/-- The connected proper orthochronous Lorentz group SO⁺(1,d).
+
+This is the default physics-facing Lorentz group in the Wightman/OS layers. -/
+def LorentzGroup (d : ℕ) [NeZero d] :=
+  { Λ : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ //
+      IsLorentzMatrix d Λ ∧ Λ.det = 1 ∧ Λ 0 0 ≥ 1 }
+
+namespace LorentzGroup
+
+variable {d : ℕ} [NeZero d]
+
+instance : Coe (LorentzGroup d) (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) := ⟨Subtype.val⟩
+
+/-- Forget the connectedness conditions and view a connected Lorentz element as
+an element of the full Lorentz group. -/
+def toFull (Λ : LorentzGroup d) : FullLorentzGroup d := ⟨Λ.val, Λ.prop.1⟩
+
+instance : Coe (LorentzGroup d) (FullLorentzGroup d) := ⟨toFull⟩
+
+@[ext]
+theorem ext {Λ₁ Λ₂ : LorentzGroup d} (h : Λ₁.val = Λ₂.val) : Λ₁ = Λ₂ :=
+  Subtype.ext h
+
+/-- Coercion to matrix -/
+theorem toMatrix (Λ : LorentzGroup d) : (Λ : Matrix _ _ ℝ) = Λ.val := rfl
+
+/-- Extensionality for matrix entries -/
+theorem ext_entries {Λ₁ Λ₂ : LorentzGroup d} :
+    Λ₁ = Λ₂ ↔ ∀ i j, Λ₁.val i j = Λ₂.val i j :=
+  ⟨fun h _ _ => by rw [h], fun h => ext (Matrix.ext fun i j => h i j)⟩
+
+instance : Group (LorentzGroup d) where
+  mul Λ₁ Λ₂ := ⟨Λ₁.val * Λ₂.val, by
+    refine ⟨IsLorentzMatrix.mul Λ₁.2.1 Λ₂.2.1, ?_, ?_⟩
+    · simp [Matrix.det_mul, Λ₁.2.2.1, Λ₂.2.2.1]
+    · simpa [FullLorentzGroup.IsOrthochronous] using
+        (FullLorentzGroup.IsOrthochronous.mul (d := d)
+          (Λ₁ := toFull Λ₁) (Λ₂ := toFull Λ₂) Λ₁.2.2.2 Λ₂.2.2.2)⟩
+  one := ⟨1, ⟨IsLorentzMatrix.one, by simp, by simp⟩⟩
+  inv Λ := ⟨(toFull Λ)⁻¹.val, by
+    refine ⟨(toFull Λ)⁻¹.2, ?_, ?_⟩
+    · exact FullLorentzGroup.IsProper.inv (d := d) (Λ := toFull Λ) Λ.2.2.1
+    · exact FullLorentzGroup.IsOrthochronous.inv (d := d) (Λ := toFull Λ) Λ.2.2.2⟩
+  mul_assoc a b c := ext (Matrix.mul_assoc _ _ _)
+  one_mul a := ext (Matrix.one_mul _)
+  mul_one a := ext (Matrix.mul_one _)
+  inv_mul_cancel a := by
+    apply ext
+    exact FullLorentzGroup.lorentz_inv_mul (d := d) a.2.1
+
+/-- A connected Lorentz transformation is automatically proper. -/
+def IsProper (Λ : LorentzGroup d) : Prop := Λ.val.det = 1
+
+/-- A connected Lorentz transformation is automatically orthochronous. -/
+def IsOrthochronous (Λ : LorentzGroup d) : Prop := Λ.val 0 0 ≥ 1
+
+theorem det_eq_one (Λ : LorentzGroup d) : Λ.val.det = 1 := Λ.2.2.1
+
+theorem zero_zero_ge_one (Λ : LorentzGroup d) : Λ.val 0 0 ≥ 1 := Λ.2.2.2
+
+theorem det_eq_pm_one (Λ : LorentzGroup d) : Λ.val.det = 1 ∨ Λ.val.det = -1 := by
+  left
+  exact det_eq_one Λ
+
+namespace IsProper
+
+theorem one : IsProper (1 : LorentzGroup d) := det_eq_one 1
+
+theorem mul {Λ₁ Λ₂ : LorentzGroup d} (h₁ : IsProper Λ₁) (h₂ : IsProper Λ₂) :
+    IsProper (Λ₁ * Λ₂) := by
+  exact det_eq_one (Λ₁ * Λ₂)
+
+theorem inv {Λ : LorentzGroup d} (h : IsProper Λ) : IsProper Λ⁻¹ := by
+  simpa [IsProper] using (FullLorentzGroup.IsProper.inv (d := d) (Λ := Λ.toFull) h)
+
+end IsProper
+
+namespace IsOrthochronous
+
+theorem one : IsOrthochronous (1 : LorentzGroup d) := zero_zero_ge_one 1
+
+theorem mul {Λ₁ Λ₂ : LorentzGroup d} (h₁ : IsOrthochronous Λ₁) (h₂ : IsOrthochronous Λ₂) :
+    IsOrthochronous (Λ₁ * Λ₂) := by
+  exact zero_zero_ge_one (Λ₁ * Λ₂)
+
+theorem inv {Λ : LorentzGroup d} (h : IsOrthochronous Λ) : IsOrthochronous Λ⁻¹ := by
+  exact zero_zero_ge_one (Λ⁻¹)
+
+end IsOrthochronous
+
+/-- Compatibility alias during the connected-component migration: the old
+`LorentzGroup.Restricted` surface now refers to the whole default connected
+Lorentz group. -/
+def Restricted : Subgroup (LorentzGroup d) := ⊤
+
+/-- Compatibility alias for the full parity element. -/
+abbrev parity (d : ℕ) [NeZero d] : FullLorentzGroup d := FullLorentzGroup.parity (d := d)
+
+/-- Compatibility alias for the full time-reversal element. -/
+abbrev timeReversal (d : ℕ) [NeZero d] : FullLorentzGroup d := FullLorentzGroup.timeReversal (d := d)
+
+/-- Compatibility alias for the full time-reversal involution theorem. -/
+theorem timeReversal_mul_timeReversal (d : ℕ) [NeZero d] :
+    timeReversal (d := d) * timeReversal (d := d) = 1 :=
+  FullLorentzGroup.timeReversal_mul_timeReversal (d := d)
+
+/-- Compatibility alias for the full-group orthochronous/time-reversal split. -/
+theorem orthochronous_or_timeReversal_mul_orthochronous (Λ : FullLorentzGroup d) :
+    FullLorentzGroup.IsOrthochronous Λ ∨
+      FullLorentzGroup.IsOrthochronous (timeReversal (d := d) * Λ) :=
+  FullLorentzGroup.orthochronous_or_timeReversal_mul_orthochronous (d := d) Λ
+
 end LorentzGroup
 
 /-! ### Notation -/
 
-/-- Standard notation for the 3+1 dimensional Lorentz group -/
+/-- Standard notation for the 3+1 dimensional full Lorentz group -/
+abbrev FullLorentz4 := FullLorentzGroup 3
+
+/-- Standard notation for the 3+1 dimensional connected Lorentz group -/
 abbrev Lorentz4 := LorentzGroup 3
 
 end

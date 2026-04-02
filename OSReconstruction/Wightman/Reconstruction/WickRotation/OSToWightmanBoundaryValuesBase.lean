@@ -2464,12 +2464,12 @@ theorem bv_translation_invariance_transfer (n : ℕ)
   exact bv_translation_invariance_transfer_of_F_invariant (d := d) n W_n F_n hBV hF_inv
 
 theorem integral_lorentz_eq_self_full {n : ℕ}
-    (Λ : LorentzGroup d)
+    (Λ : FullLorentzGroup d)
     (h : NPointDomain d n → ℂ) :
     ∫ x : NPointDomain d n, h (fun i => Matrix.mulVec Λ.val (x i)) =
     ∫ x : NPointDomain d n, h x := by
   have habs : |Λ.val.det| = 1 := by
-    rcases LorentzGroup.det_eq_pm_one Λ with hdet | hdet
+    rcases FullLorentzGroup.det_eq_pm_one Λ with hdet | hdet
     · rw [hdet]
       simp
     · rw [hdet]
@@ -2479,14 +2479,14 @@ theorem integral_lorentz_eq_self_full {n : ℕ}
     rw [hzero] at habs
     norm_num at habs
   have hΛ_mul_inv : Λ.val * Λ⁻¹.val = 1 := by
-    have h1 := LorentzGroup.ext_iff.mp (mul_inv_cancel Λ)
+    have h1 := FullLorentzGroup.ext_iff.mp (mul_inv_cancel Λ)
     rw [show (Λ * Λ⁻¹).val = Λ.val * Λ⁻¹.val from rfl] at h1
-    rw [show (1 : LorentzGroup d).val = (1 : Matrix _ _ ℝ) from rfl] at h1
+    rw [show (1 : FullLorentzGroup d).val = (1 : Matrix _ _ ℝ) from rfl] at h1
     exact h1
   have hΛinv_mul : Λ⁻¹.val * Λ.val = 1 := by
-    have h1 := LorentzGroup.ext_iff.mp (inv_mul_cancel Λ)
+    have h1 := FullLorentzGroup.ext_iff.mp (inv_mul_cancel Λ)
     rw [show (Λ⁻¹ * Λ).val = Λ⁻¹.val * Λ.val from rfl] at h1
-    rw [show (1 : LorentzGroup d).val = (1 : Matrix _ _ ℝ) from rfl] at h1
+    rw [show (1 : FullLorentzGroup d).val = (1 : Matrix _ _ ℝ) from rfl] at h1
     exact h1
   have hmv : (fun v => Λ.val.mulVec v) = Matrix.toLin' Λ.val := by
     ext v
@@ -2529,6 +2529,8 @@ private noncomputable def lorentzInvCLEquivFull
     rw [show (Λ⁻¹ * Λ).val = Λ⁻¹.val * Λ.val from rfl] at h1
     rw [show (1 : LorentzGroup d).val = (1 : Matrix _ _ ℝ) from rfl] at h1
     exact h1
+  have hΛinv_mul_full : Λ⁻¹.val * Λ.toFull.val = 1 := by
+    simpa using hΛinv_mul
   have hΛ_mul_inv : Λ.val * Λ⁻¹.val = 1 := by
     have h1 := LorentzGroup.ext_iff.mp (mul_inv_cancel Λ)
     rw [show (Λ * Λ⁻¹).val = Λ.val * Λ⁻¹.val from rfl] at h1
@@ -2591,6 +2593,8 @@ private theorem boundary_ray_lorentz_invariant_of_F_invariant
     rw [show (Λ⁻¹ * Λ).val = Λ⁻¹.val * Λ.val from rfl] at h1
     rw [show (1 : LorentzGroup d).val = (1 : Matrix _ _ ℝ) from rfl] at h1
     exact h1
+  have hΛinv_mul_full : Λ⁻¹.val * Λ.toFull.val = 1 := by
+    simpa using hΛinv_mul
   have hcov :
       ∫ x : NPointDomain d n,
         F_n (fun k μ =>
@@ -2603,7 +2607,7 @@ private theorem boundary_ray_lorentz_invariant_of_F_invariant
           ↑(x k μ) +
             ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) *
           f (fun i => Matrix.mulVec Λ⁻¹.val (x i)) := by
-    simpa [Matrix.mulVec_mulVec, hΛinv_mul] using
+    simpa [Matrix.mulVec_mulVec, hΛinv_mul_full] using
       (integral_lorentz_eq_self_full (d := d) (n := n) Λ
         (fun y : NPointDomain d n =>
           F_n (fun k μ =>
@@ -2804,6 +2808,8 @@ theorem bv_lorentz_covariance_transfer_of_fixed_tube_covariance
             rw [show (Λ⁻¹ * Λ).val = Λ⁻¹.val * Λ.val from rfl] at h1
             rw [show (1 : LorentzGroup d).val = (1 : Matrix _ _ ℝ) from rfl] at h1
             exact h1
+          have hΛinv_mul_full : Λ⁻¹.val * Λ.toFull.val = 1 := by
+            simpa using hΛinv_mul
           have hcov :
               ∫ x : NPointDomain d n,
                 F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) *
@@ -2815,7 +2821,7 @@ theorem bv_lorentz_covariance_transfer_of_fixed_tube_covariance
                     ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) *
                   (f x) := by
             symm
-            simpa [η, Matrix.mulVec_mulVec, hΛinv_mul] using
+            simpa [η, Matrix.mulVec_mulVec, hΛinv_mul_full] using
               (integral_lorentz_eq_self_full (d := d) (n := n) Λ
                 (fun y : NPointDomain d n =>
                   F_n (fun k μ => ↑(y k μ) + ε * ↑(η k μ) * Complex.I) *
@@ -2917,6 +2923,8 @@ private theorem bv_lorentz_covariance_transfer_orthochronous
             rw [show (Λ⁻¹ * Λ).val = Λ⁻¹.val * Λ.val from rfl] at h1
             rw [show (1 : LorentzGroup d).val = (1 : Matrix _ _ ℝ) from rfl] at h1
             exact h1
+          have hΛinv_mul_full : Λ⁻¹.val * Λ.toFull.val = 1 := by
+            simpa using hΛinv_mul
           have hcov :
               ∫ x : NPointDomain d n,
                 F_n (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) *
@@ -2928,7 +2936,7 @@ private theorem bv_lorentz_covariance_transfer_orthochronous
                     ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) *
                   (f x) := by
             symm
-            simpa [η, Matrix.mulVec_mulVec, hΛinv_mul] using
+            simpa [η, Matrix.mulVec_mulVec, hΛinv_mul_full] using
               (integral_lorentz_eq_self_full (d := d) (n := n) Λ
                 (fun y : NPointDomain d n =>
                   F_n (fun k μ => ↑(y k μ) + ε * ↑(η k μ) * Complex.I) *
@@ -3166,6 +3174,8 @@ theorem bv_lorentz_covariance_transfer_orthochronous_of_tube_covariance
       rw [show (Λ⁻¹ * Λ).val = Λ⁻¹.val * Λ.val from rfl] at h1
       rw [show (1 : LorentzGroup d).val = (1 : Matrix _ _ ℝ) from rfl] at h1
       exact h1
+    have hΛinv_mul_full : Λ⁻¹.val * Λ.toFull.val = 1 := by
+      simpa using hΛinv_mul
     have hcov :
         ∫ x : NPointDomain d n,
           F_n (fun k μ => ↑(x k μ) + ε * ↑(Λη k μ) * Complex.I) *
@@ -3175,7 +3185,7 @@ theorem bv_lorentz_covariance_transfer_orthochronous_of_tube_covariance
           F_n (fun k μ => ∑ ν, (Λ.val μ ν : ℂ) *
             (↑(x k ν) + ε * ↑(η k ν) * Complex.I)) * (f x) := by
       symm
-      simpa [hlin, Matrix.mulVec_mulVec, hΛinv_mul] using
+      simpa [hlin, Matrix.mulVec_mulVec, hΛinv_mul_full] using
         (integral_lorentz_eq_self_full (d := d) (n := n) Λ
           (fun y : NPointDomain d n =>
             F_n (fun k μ => ↑(y k μ) + ε * ↑(Λη k μ) * Complex.I) *
@@ -3208,7 +3218,7 @@ theorem lorentz_covariance_of_orthochronous_and_timeReversal
         ∀ (f g : SchwartzNPoint d n),
           (∀ x, g.toFun x = f.toFun (fun i => Matrix.mulVec Λ⁻¹.val (x i))) →
           W_n f = W_n g)
-    (hW_timeReversal :
+    (_hW_timeReversal :
       ∀ (f g : SchwartzNPoint d n),
         (∀ x, g.toFun x =
           f.toFun (fun i =>
@@ -3218,34 +3228,7 @@ theorem lorentz_covariance_of_orthochronous_and_timeReversal
       (∀ x, g.toFun x = f.toFun (fun i => Matrix.mulVec Λ⁻¹.val (x i))) →
       W_n f = W_n g := by
   intro Λ f g hfg
-  rcases LorentzGroup.orthochronous_or_timeReversal_mul_orthochronous (d := d) Λ with
-    hΛ_ortho | hTΛ_ortho
-  · exact hW_ortho Λ hΛ_ortho f g hfg
-  · let Λo : LorentzGroup d := LorentzGroup.timeReversal (d := d) * Λ
-    let h : SchwartzNPoint d n := lorentzCompSchwartzFull (d := d) Λo f
-    have hf_h : W_n f = W_n h := by
-      apply hW_ortho Λo hTΛ_ortho f h
-      intro x
-      simpa [Λo] using lorentzCompSchwartzFull_apply (d := d) Λo f x
-    have hg_rel :
-        ∀ x, g.toFun x =
-          h.toFun (fun i =>
-            Matrix.mulVec (LorentzGroup.timeReversal (d := d)).val (x i)) := by
-      intro x
-      rw [hfg x, lorentzCompSchwartzFull_apply]
-      congr 1
-      ext i j
-      have hmul :
-          Λo⁻¹.val * (LorentzGroup.timeReversal (d := d)).val = Λ⁻¹.val := by
-        have hgrp : Λo⁻¹ * LorentzGroup.timeReversal (d := d) = Λ⁻¹ := by
-          dsimp [Λo]
-          rw [mul_inv_rev]
-          simp [mul_assoc]
-        change ((Λo⁻¹ * LorentzGroup.timeReversal (d := d)).val : Matrix _ _ ℝ) = Λ⁻¹.val
-        simpa using congrArg (fun Γ : LorentzGroup d => Γ.val) hgrp
-      simpa [Matrix.mulVec_mulVec, hmul]
-    have hh_g : W_n h = W_n g := hW_timeReversal h g hg_rel
-    exact hf_h.trans hh_g
+  exact hW_ortho Λ (LorentzGroup.zero_zero_ge_one Λ) f g hfg
 
 private theorem boundary_ray_permutation_invariant_of_F_invariant
     (n : ℕ)
@@ -3875,14 +3858,14 @@ theorem boundary_ray_timeReversal_pairing_of_F_timeReversalCanonical
       (LorentzGroup.timeReversal (d := d)).val *
           (LorentzGroup.timeReversal (d := d)).val
         = 1 := by
-    have h1 := LorentzGroup.ext_iff.mp
-      (LorentzGroup.timeReversal_mul_timeReversal (d := d))
-    rw [show ((LorentzGroup.timeReversal (d := d)) *
-        LorentzGroup.timeReversal (d := d)).val =
-          (LorentzGroup.timeReversal (d := d)).val *
-            (LorentzGroup.timeReversal (d := d)).val from rfl] at h1
-    rw [show (1 : LorentzGroup d).val = (1 : Matrix _ _ ℝ) from rfl] at h1
-    exact h1
+    change Matrix.diagonal (fun i : Fin (d + 1) => if i = 0 then (-1 : ℝ) else 1) *
+        Matrix.diagonal (fun i : Fin (d + 1) => if i = 0 then (-1 : ℝ) else 1) = 1
+    rw [Matrix.diagonal_mul_diagonal]
+    ext i j
+    by_cases hij : i = j
+    · subst hij
+      by_cases hi0 : i = 0 <;> simp [Matrix.diagonal, hi0]
+    · simp [Matrix.diagonal, hij]
   have hcov :
       ∫ x : NPointDomain d n,
         F_n (fun k μ =>

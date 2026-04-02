@@ -22,8 +22,10 @@ infrastructure modules.
 ## Key equivalences
 
 * `minkowskiSignature_eq_metricSignature` — the metric signature functions agree
-* `lorentzGroupEquiv` — equivalence between the two LorentzGroup types
-* `restrictedLorentzGroupToWightman` — conversion for restricted Lorentz groups
+* `lorentzGroupEquiv` — equivalence between `LorentzLieGroup.FullLorentzGroup`
+  and `FullLorentzGroup`
+* `restrictedLorentzGroupToWightman` — compatibility conversion for the connected
+  Lorentz group on the `LorentzLieGroup` side
 * `inOpenForwardCone_iff` — forward cone conditions agree
 * `complexLorentzGroup_metric_compat` — ComplexLorentzGroup satisfies the Wightman metric condition
 
@@ -33,7 +35,8 @@ This file imports from:
 - `ComplexLieGroups/` (via Connectedness.lean) — no `[NeZero d]` required
 - `SCV/` (via TubeDomainExtension.lean) — tube domain definitions
 - `Wightman/Spacetime/Metric.lean` — lightweight, defines `metricSignature`, `minkowskiNormSq`
-- `Wightman/Groups/Lorentz.lean` — lightweight, defines `LorentzGroup`, `Restricted`
+- `Wightman/Groups/Lorentz.lean` — lightweight, defines `FullLorentzGroup`,
+  the default connected `LorentzGroup`, and compatibility aliases
 
 It does NOT import `AnalyticContinuation.lean` (which contains the axioms and
 heavy dependencies on distributions/Schwartz space), avoiding circular imports.
@@ -69,10 +72,10 @@ theorem isLorentzMatrix_iff (Λ : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
 
 /-! ### LorentzGroup equivalence -/
 
-/-- Equivalence between the `LorentzGroup` from `LorentzLieGroup` (no `[NeZero d]`)
-    and the one from `Wightman/Groups/Lorentz` (with `[NeZero d]`).
+/-- Equivalence between the ambient full Lorentz groups from `LorentzLieGroup`
+    and `Wightman/Groups/Lorentz`.
     The underlying matrices are identical. -/
-def lorentzGroupEquiv : LorentzLieGroup.LorentzGroup d ≃ LorentzGroup d where
+def lorentzGroupEquiv : LorentzLieGroup.FullLorentzGroup d ≃ FullLorentzGroup d where
   toFun Λ := ⟨Λ.val, (isLorentzMatrix_iff Λ.val).mp Λ.prop⟩
   invFun Λ := ⟨Λ.val, (isLorentzMatrix_iff Λ.val).mpr Λ.prop⟩
   left_inv _ := Subtype.ext rfl
@@ -80,54 +83,60 @@ def lorentzGroupEquiv : LorentzLieGroup.LorentzGroup d ≃ LorentzGroup d where
 
 /-- The equivalence preserves the underlying matrix. -/
 @[simp]
-theorem lorentzGroupEquiv_val (Λ : LorentzLieGroup.LorentzGroup d) :
+ theorem lorentzGroupEquiv_val (Λ : LorentzLieGroup.FullLorentzGroup d) :
     (lorentzGroupEquiv Λ).val = Λ.val := rfl
 
 /-- The inverse equivalence preserves the underlying matrix. -/
 @[simp]
-theorem lorentzGroupEquiv_symm_val (Λ : LorentzGroup d) :
+theorem lorentzGroupEquiv_symm_val (Λ : FullLorentzGroup d) :
     (lorentzGroupEquiv.symm Λ).val = Λ.val := rfl
 
 /-! ### IsProper and IsOrthochronous compatibility -/
 
-/-- `IsProperLorentz` from LorentzLieGroup corresponds to `IsProper` from Wightman. -/
-theorem isProperLorentz_iff_isProper (Λ : LorentzLieGroup.LorentzGroup d) :
+/-- `IsProperLorentz` from `LorentzLieGroup` corresponds to `IsProper` from Wightman. -/
+theorem isProperLorentz_iff_isProper (Λ : LorentzLieGroup.FullLorentzGroup d) :
     LorentzLieGroup.IsProperLorentz d Λ ↔
-    LorentzGroup.IsProper (lorentzGroupEquiv Λ) := by
-  simp [LorentzLieGroup.IsProperLorentz, LorentzGroup.IsProper]
+    FullLorentzGroup.IsProper (lorentzGroupEquiv Λ) := by
+  simp [LorentzLieGroup.IsProperLorentz, FullLorentzGroup.IsProper]
 
 /-- `IsOrthochronous` from LorentzLieGroup corresponds to `IsOrthochronous` from Wightman. -/
-theorem isOrthochronous_iff (Λ : LorentzLieGroup.LorentzGroup d) :
+theorem isOrthochronous_iff (Λ : LorentzLieGroup.FullLorentzGroup d) :
     LorentzLieGroup.IsOrthochronous d Λ ↔
-    LorentzGroup.IsOrthochronous (lorentzGroupEquiv Λ) := by
-  simp [LorentzLieGroup.IsOrthochronous, LorentzGroup.IsOrthochronous]
+    FullLorentzGroup.IsOrthochronous (lorentzGroupEquiv Λ) := by
+  simp [LorentzLieGroup.IsOrthochronous, FullLorentzGroup.IsOrthochronous]
 
-/-! ### Restricted Lorentz group conversion -/
+/-! ### Connected Lorentz group conversion -/
 
-/-- Convert from `RestrictedLorentzGroup` (LorentzLieGroup) to
-    `LorentzGroup.Restricted` (Wightman). -/
+/-- Convert from the default connected `LorentzGroup` on the `LorentzLieGroup`
+    side to the default connected `LorentzGroup` in the Wightman layer.
+    The name is kept for compatibility with existing imports. -/
 def restrictedLorentzGroupToWightman
-    (Λ : LorentzLieGroup.RestrictedLorentzGroup d) :
+    (Λ : LorentzLieGroup.LorentzGroup d) :
     LorentzGroup.Restricted (d := d) :=
-  ⟨lorentzGroupEquiv Λ.val,
-    (isProperLorentz_iff_isProper Λ.val).mp Λ.prop.1,
-    (isOrthochronous_iff Λ.val).mp Λ.prop.2⟩
+  ⟨⟨Λ.val.val,
+      (isLorentzMatrix_iff Λ.val.val).mp Λ.val.prop,
+      (isProperLorentz_iff_isProper Λ.val).mp Λ.prop.1,
+      (isOrthochronous_iff Λ.val).mp Λ.prop.2⟩,
+    by simp [LorentzGroup.Restricted]⟩
 
-/-- Convert from `LorentzGroup.Restricted` (Wightman) to
-    `RestrictedLorentzGroup` (LorentzLieGroup). -/
+/-- Convert from the new default connected `LorentzGroup` (Wightman) to
+    the default connected `LorentzGroup` on the `LorentzLieGroup` side.
+    The name is kept for compatibility with existing imports. -/
 def wightmanToRestrictedLorentzGroup
     (Λ : LorentzGroup.Restricted (d := d)) :
-    LorentzLieGroup.RestrictedLorentzGroup d :=
-  ⟨lorentzGroupEquiv.symm Λ.val,
+    LorentzLieGroup.LorentzGroup d :=
+  ⟨lorentzGroupEquiv.symm Λ.val.toFull,
     (isProperLorentz_iff_isProper _).mpr (by
-      rw [Equiv.apply_symm_apply]; exact Λ.prop.1),
+      rw [Equiv.apply_symm_apply]
+      exact LorentzGroup.det_eq_one Λ.val),
     (isOrthochronous_iff _).mpr (by
-      rw [Equiv.apply_symm_apply]; exact Λ.prop.2)⟩
+      rw [Equiv.apply_symm_apply]
+      exact LorentzGroup.zero_zero_ge_one Λ.val)⟩
 
 /-- The underlying matrix is preserved by the conversion. -/
 @[simp]
 theorem restrictedLorentzGroupToWightman_val_val
-    (Λ : LorentzLieGroup.RestrictedLorentzGroup d) :
+    (Λ : LorentzLieGroup.LorentzGroup d) :
     (restrictedLorentzGroupToWightman Λ).val.val = Λ.val.val := rfl
 
 /-! ### InOpenForwardCone equivalence -/
@@ -236,8 +245,10 @@ In `AnalyticContinuation.lean`:
      ext z; simp only [BHW.ForwardTube, ForwardTube, Set.mem_setOf_eq]
      exact forall_congr' fun k => inOpenForwardCone_iff _
    ```
-4. Convert between `LorentzGroup.Restricted` ↔ `RestrictedLorentzGroup`:
+4. Convert between the default connected Lorentz groups on the two sides:
    Use `wightmanToRestrictedLorentzGroup` / `restrictedLorentzGroupToWightman`.
+   The names are compatibility holdovers; both maps now target the default
+   proper-orthochronous `LorentzGroup`.
    The underlying matrices are preserved (`restrictedLorentzGroupToWightman_val_val`).
 5. Convert between the two `ComplexLorentzGroup` types:
    Use `complexLorentzGroup_metric_compat` to build elements of the Wightman
