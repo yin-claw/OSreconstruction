@@ -44,6 +44,15 @@ noncomputable section
 
 variable {m : ℕ}
 
+/-- Polynomial growth × Schwartz is integrable. -/
+theorem integrable_polyGrowth_mul_schwartz {m : ℕ}
+    (g : (Fin m → ℝ) → ℂ) (hg_meas : AEStronglyMeasurable g volume)
+    (C : ℝ) (N : ℕ) (hC : 0 < C)
+    (hg_growth : ∀ x : Fin m → ℝ, ‖g x‖ ≤ C * (1 + ‖x‖) ^ N)
+    (φ : SchwartzMap (Fin m → ℝ) ℂ) :
+    Integrable (fun x => g x * φ x) := by
+  sorry
+
 /-- **Differentiation under the integral sign for Schwartz test functions.**
 
     If `F : ℝ → (Fin m → ℝ) → ℂ` is a family with:
@@ -56,7 +65,9 @@ variable {m : ℕ}
 
     **Proof sketch**: Apply `hasDerivAt_integral_of_dominated_loc_of_deriv_le`
     with the dominator `C * (1+‖x‖)^N * |φ(x)|`, which is integrable
-    because polynomial × Schwartz is in L¹. -/
+    because polynomial × Schwartz is in L¹.
+
+    See `integrable_polyGrowth_mul_schwartz` for the key integrability fact. -/
 theorem hasDerivAt_schwartz_integral
     (F : ℝ → (Fin m → ℝ) → ℂ)
     (t₀ : ℝ) (δ : ℝ) (hδ : 0 < δ)
@@ -93,7 +104,8 @@ theorem hasDerivAt_schwartz_integral
     (Filter.Eventually.of_forall fun t =>
       (hF_meas t).mul φ.continuous.aestronglyMeasurable)
     -- G integrable at t₀
-    (sorry) -- F(t₀,·)*φ(·) integrable: polynomial growth × Schwartz
+    (integrable_polyGrowth_mul_schwartz (F t₀) (hF_meas t₀) C_bd N hC_bd
+      (hF_growth t₀ (by simp [abs_of_pos hδ, hδ])) φ)
     -- G' measurable at t₀
     ((sorry : AEStronglyMeasurable (F' t₀) volume).mul
       φ.continuous.aestronglyMeasurable) -- F'(t₀,·) measurable * φ continuous
@@ -105,7 +117,9 @@ theorem hasDerivAt_schwartz_integral
         exact mul_le_mul_of_nonneg_right
           (hF'_growth t (Metric.mem_ball.mp ht) x) (norm_nonneg _))
     -- Bound integrable
-    (sorry) -- C'*(1+‖x‖)^N'*‖φ(x)‖ integrable: polynomial × Schwartz
+    (by -- bnd(x) = C'*(1+‖x‖)^N'*‖φ(x)‖ integrable
+      show Integrable (fun x => C_bd' * (1 + ‖x‖) ^ N' * ‖(φ : (Fin m → ℝ) → ℂ) x‖)
+      sorry)
     -- G differentiable
     (Filter.Eventually.of_forall fun x =>
       fun t ht => (hF_deriv t (Metric.mem_ball.mp ht) x).mul_const (φ x))).2
