@@ -187,16 +187,17 @@ theorem update_mem_tubeDomain_of_small {m : ℕ}
     (k,n)-seminorm has polynomial growth in ‖z‖.
 
     See Vladimirov, "Methods of Generalized Functions", §25, Lemma 25.1. -/
-axiom psiZRSchwartz_seminorm_polyBound
+axiom psiZRSchwartz_seminorm_vladimirovBound
     {m : ℕ} {C : Set (Fin m → ℝ)}
     (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
     (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
     (k n : ℕ) :
-    ∃ (B : ℝ) (N : ℕ), B > 0 ∧
+    ∃ (B : ℝ) (N M : ℕ), B > 0 ∧
       ∀ (z : Fin m → ℂ) (hz : z ∈ SCV.TubeDomain C),
         SchwartzMap.seminorm ℝ k n
           (multiDimPsiZDynamic C hC_open hC_conv hC_cone hC_salient z hz) ≤
-            B * (1 + ‖z‖) ^ N
+            B * (1 + ‖z‖) ^ N *
+              (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M
 
 /-- **Axiom: Lipschitz-type seminorm bound for multiDimPsiZ difference.**
 
@@ -251,9 +252,9 @@ theorem multiDimPsiZDynamic_seminorm_bound {m : ℕ}
         SchwartzMap.seminorm ℝ k n (multiDimPsiZDynamic C hC_open hC_conv hC_cone hC_salient z hz) ≤
           B * (1 + ‖z‖) ^ N *
             (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M := by
-  obtain ⟨B₀, N₀, hB₀, hpoly⟩ :=
-    psiZRSchwartz_seminorm_polyBound hC_open hC_conv hC_cone hC_salient k n
-  exact ⟨B₀, N₀, 0, hB₀, fun z hz => by simpa using hpoly z hz⟩
+  obtain ⟨B₀, N₀, M₀, hB₀, hbound⟩ :=
+    psiZRSchwartz_seminorm_vladimirovBound hC_open hC_conv hC_cone hC_salient k n
+  exact ⟨B₀, N₀, M₀, hB₀, hbound⟩
 
 /-- Finset-sup version of `multiDimPsiZDynamic_seminorm_bound`. -/
 theorem multiDimPsiZDynamic_finset_sup_bound {m : ℕ}
