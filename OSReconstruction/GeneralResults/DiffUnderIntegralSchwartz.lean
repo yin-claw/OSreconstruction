@@ -95,7 +95,8 @@ theorem hasDerivAt_schwartz_integral
     -- G integrable at t₀
     (sorry) -- F(t₀,·)*φ(·) integrable: polynomial growth × Schwartz
     -- G' measurable at t₀
-    (sorry) -- F'(t₀,·)*φ(·) measurable
+    ((sorry : AEStronglyMeasurable (F' t₀) volume).mul
+      φ.continuous.aestronglyMeasurable) -- F'(t₀,·) measurable * φ continuous
     -- Bound on G'
     (Filter.Eventually.of_forall fun x =>
       fun t ht => by
