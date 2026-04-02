@@ -737,8 +737,20 @@ theorem fourierLaplaceExtMultiDim_vladimirov_growth
 noncomputable def inverseFourierFlatCLM {m : ℕ} :
     SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] SchwartzMap (Fin m → ℝ) ℂ :=
   -- Localized Fourier bridge: transport to EuclideanSpace, apply FT, transport back.
-  -- EuclideanSpace has InnerProductSpace which fourierTransformCLM requires.
-  sorry
+  -- compCLMOfContinuousLinearEquiv g : 𝓢(E,F) →L 𝓢(D,F) via f ↦ f ∘ g
+  -- So g : D ≃L[ℝ] E gives 𝓢(E) → 𝓢(D), i.e., "pullback by g"
+  let e : EuclideanSpace ℝ (Fin m) ≃L[ℝ] (Fin m → ℝ) :=
+    EuclideanSpace.equiv (Fin m) ℝ
+  -- toEuc: 𝓢(Fin m → ℝ) → 𝓢(EuclideanSpace) needs g : Euc ≃L (Fin m → ℝ) = e
+  let toEuc : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] SchwartzMap (EuclideanSpace ℝ (Fin m)) ℂ :=
+    SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e
+  -- fromEuc: 𝓢(EuclideanSpace) → 𝓢(Fin m → ℝ) needs g : (Fin m → ℝ) ≃L Euc = e.symm
+  let fromEuc : SchwartzMap (EuclideanSpace ℝ (Fin m)) ℂ →L[ℂ] SchwartzMap (Fin m → ℝ) ℂ :=
+    SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e.symm
+  let ft : SchwartzMap (EuclideanSpace ℝ (Fin m)) ℂ →L[ℂ]
+      SchwartzMap (EuclideanSpace ℝ (Fin m)) ℂ :=
+    SchwartzMap.fourierTransformCLM ℂ
+  fromEuc.comp (ft.comp toEuc)
 
 axiom fourierLaplaceExtMultiDim_boundaryValue
     (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
