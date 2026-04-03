@@ -107,6 +107,64 @@ private theorem boundary_values_from_flatBoundaryData {d : ℕ} [NeZero d]
   rw [hEq] at hflat
   simpa [W, G, pushforward] using hflat
 
+/-! ### Positive-time inner-product reductions
+
+These lemmas isolate the purely algebraic part of the BV positivity lane.
+If a candidate Wightman family agrees termwise with the Euclidean OS tensor
+terms on ordered positive-time pairs, then positivity on the honest
+positive-time Borchers algebra is formal from reflection positivity. The
+remaining content is therefore the termwise comparison itself, plus any later
+reduction from arbitrary Borchers data to the positive-time sector. -/
+
+/-- If a candidate Wightman family agrees termwise with the Euclidean OS tensor
+terms on ordered positive-time test pairs, then its Borchers inner product
+agrees with the honest OS inner product on the positive-time Borchers algebra. -/
+theorem wightmanInner_eq_osInner_of_orderedPositive_termwise
+    (OS : OsterwalderSchraderAxioms d)
+    (W : (n : ℕ) → SchwartzNPoint d n → ℂ)
+    (hterm :
+      ∀ (n m : ℕ) (f : SchwartzNPoint d n) (g : SchwartzNPoint d m),
+        tsupport ((f : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+          OrderedPositiveTimeRegion d n →
+        tsupport ((g : SchwartzNPoint d m) : NPointDomain d m → ℂ) ⊆
+          OrderedPositiveTimeRegion d m →
+        W (n + m) (f.conjTensorProduct g) =
+          OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical (f.osConjTensorProduct g)))
+    (F G : PositiveTimeBorchersSequence d) :
+    WightmanInnerProduct d W (F : BorchersSequence d) (G : BorchersSequence d) =
+      PositiveTimeBorchersSequence.osInner OS F G := by
+  unfold WightmanInnerProduct PositiveTimeBorchersSequence.osInner OSInnerProduct
+  refine Finset.sum_congr rfl ?_
+  intro n hn
+  refine Finset.sum_congr rfl ?_
+  intro m hm
+  simpa using
+    hterm n m
+      (((F : BorchersSequence d).funcs n) : SchwartzNPoint d n)
+      (((G : BorchersSequence d).funcs m) : SchwartzNPoint d m)
+      (F.ordered_tsupport n)
+      (G.ordered_tsupport m)
+
+/-- Under the same ordered positive-time termwise comparison, positivity on the
+honest positive-time Borchers algebra transfers immediately from OS reflection
+positivity. -/
+theorem wightmanInner_nonneg_self_of_orderedPositive_termwise
+    (OS : OsterwalderSchraderAxioms d)
+    (W : (n : ℕ) → SchwartzNPoint d n → ℂ)
+    (hterm :
+      ∀ (n m : ℕ) (f : SchwartzNPoint d n) (g : SchwartzNPoint d m),
+        tsupport ((f : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+          OrderedPositiveTimeRegion d n →
+        tsupport ((g : SchwartzNPoint d m) : NPointDomain d m → ℂ) ⊆
+          OrderedPositiveTimeRegion d m →
+        W (n + m) (f.conjTensorProduct g) =
+          OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical (f.osConjTensorProduct g)))
+    (F : PositiveTimeBorchersSequence d) :
+    0 ≤ (WightmanInnerProduct d W (F : BorchersSequence d) (F : BorchersSequence d)).re := by
+  rw [wightmanInner_eq_osInner_of_orderedPositive_termwise
+    (d := d) OS W hterm F F]
+  exact PositiveTimeBorchersSequence.osInner_nonneg_self OS F
+
 /-! ### Phase 4: Tempered boundary values
 
 **Critical**: E0' (linear growth condition) is essential for temperedness.
@@ -304,6 +362,30 @@ theorem bvt_W_linear (OS : OsterwalderSchraderAxioms d)
   · intro c f
     exact map_smul (full_analytic_continuation_boundaryValueData (d := d) OS lgc n).choose c f
 
+/-- Boundary-value specialization of the ordered positive-time positivity
+reduction. If the reconstructed boundary-value family agrees termwise with the
+Euclidean OS tensor terms on ordered positive-time pairs, then positivity
+already holds on the honest positive-time Borchers algebra. -/
+theorem bvt_positiveTime_wightmanInner_nonneg_of_orderedPositive_termwise
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (hterm :
+      ∀ (n m : ℕ) (f : SchwartzNPoint d n) (g : SchwartzNPoint d m),
+        tsupport ((f : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+          OrderedPositiveTimeRegion d n →
+        tsupport ((g : SchwartzNPoint d m) : NPointDomain d m → ℂ) ⊆
+          OrderedPositiveTimeRegion d m →
+        bvt_W OS lgc (n + m) (f.conjTensorProduct g) =
+          OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical (f.osConjTensorProduct g)))
+    (F : PositiveTimeBorchersSequence d) :
+    0 ≤ (WightmanInnerProduct d (bvt_W OS lgc)
+      (F : BorchersSequence d) (F : BorchersSequence d)).re := by
+  exact wightmanInner_nonneg_self_of_orderedPositive_termwise
+    (d := d) OS (bvt_W OS lgc) hterm F
+
+/-- On the exact compact ordered positive-time shell where the BV `xiShift`
+comparison theorem applies, the reconstructed Wightman inner product of two
+concentrated Borchers vectors already agrees with the honest OS inner product. -/
 theorem bvt_F_holomorphic (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) (n : ℕ) :
     DifferentiableOn ℂ (bvt_F OS lgc n) (ForwardTube d n) :=
@@ -1258,6 +1340,518 @@ theorem bvt_tendsto_singleSplit_xiShift_translate_spatial_right_nhdsWithin_zero
     Filter.Tendsto.congr' hEq.symm hinner_tendsto
   simpa [xF, xG, xGa, Ff, Gga, a0, g_translated, hg_translated_ord, hshift] using hfinal
 
+/-- The translated-right canonical `xiShift` shell therefore converges at
+`t = 0⁺` to the corresponding Euclidean Schwinger tensor term. This packages
+the OS-semigroup continuity theorem above into the exact Schwinger-form limit
+that the ordered positive-time comparison route wants. -/
+theorem bvt_tendsto_singleSplit_xiShift_translate_spatial_right_nhdsWithin_zero_schwinger
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (n m : ℕ) (hm : 0 < m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport ((f : SchwartzNPoint d n) :
+        NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (hf_compact : HasCompactSupport ((f : SchwartzNPoint d n) :
+        NPointDomain d n → ℂ))
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport ((g : SchwartzNPoint d m) :
+        NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hg_compact : HasCompactSupport ((g : SchwartzNPoint d m) :
+        NPointDomain d m → ℂ))
+    (a : Fin d → ℝ) :
+    Filter.Tendsto
+      (fun t : ℝ =>
+        ∫ y : NPointDomain d (n + m),
+          bvt_F OS lgc (n + m)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+            ((f.osConjTensorProduct
+              (translateSchwartzNPoint (d := d) (Fin.cons 0 a) g)) y))
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds
+        (OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+          (f.osConjTensorProduct
+            (translateSchwartzNPoint (d := d) (Fin.cons 0 a) g))))) := by
+  let xF : OSHilbertSpace OS := (((show OSPreHilbertSpace OS from
+    ⟦PositiveTimeBorchersSequence.single n f hf_ord⟧) : OSHilbertSpace OS))
+  let xG : OSHilbertSpace OS := (((show OSPreHilbertSpace OS from
+    ⟦PositiveTimeBorchersSequence.single m g hg_ord⟧) : OSHilbertSpace OS))
+  have hbase :=
+    bvt_tendsto_singleSplit_xiShift_translate_spatial_right_nhdsWithin_zero
+      (d := d) OS lgc n m hm f hf_ord hf_compact g hg_ord hg_compact a
+  have hEq :
+      (fun t : ℝ =>
+        ∫ y : NPointDomain d (n + m),
+          bvt_F OS lgc (n + m)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+            ((f.osConjTensorProduct
+              (translateSchwartzNPoint (d := d) (Fin.cons 0 a) g)) y))
+      =ᶠ[nhdsWithin 0 (Set.Ioi 0)]
+      (fun t : ℝ =>
+        if ht : 0 < t then
+          ∫ y : NPointDomain d (n + m),
+            bvt_F OS lgc (n + m)
+                (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                  (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+              ((f.osConjTensorProduct
+                (translateSchwartzNPoint (d := d) (Fin.cons 0 a) g)) y)
+        else
+          @inner ℂ (OSHilbertSpace OS) _ xF
+            ((osSpatialTranslateHilbert OS a) xG)) := by
+    filter_upwards [self_mem_nhdsWithin] with t ht
+    have ht_pos : 0 < t := ht
+    simp [ht_pos]
+  have hbase' :
+      Filter.Tendsto
+        (fun t : ℝ =>
+          ∫ y : NPointDomain d (n + m),
+            bvt_F OS lgc (n + m)
+                (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                  (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+              ((f.osConjTensorProduct
+                (translateSchwartzNPoint (d := d) (Fin.cons 0 a) g)) y))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (@inner ℂ (OSHilbertSpace OS) _ xF
+            ((osSpatialTranslateHilbert OS a) xG))) :=
+    Filter.Tendsto.congr' hEq.symm hbase
+  simpa [xF, xG, osInner_single_translate_spatial_right_eq_schwinger_local
+    (d := d) OS f hf_ord g hg_ord a] using hbase'
+
+/-- If the same translated-right single-split `xiShift` shell also tends to the
+corresponding reconstructed boundary-value functional, then the ordered
+positive-time BV-vs-Schwinger comparison follows immediately by uniqueness of
+the limit. This isolates the remaining comparison content to the BV-side
+small-`t` limit alone. -/
+theorem bvt_eq_schwinger_of_tendsto_singleSplit_xiShift_translate_spatial_right_nhdsWithin_zero
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (n m : ℕ) (hm : 0 < m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport ((f : SchwartzNPoint d n) :
+        NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (hf_compact : HasCompactSupport ((f : SchwartzNPoint d n) :
+        NPointDomain d n → ℂ))
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport ((g : SchwartzNPoint d m) :
+        NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hg_compact : HasCompactSupport ((g : SchwartzNPoint d m) :
+        NPointDomain d m → ℂ))
+    (a : Fin d → ℝ)
+    (hWlimit :
+      Filter.Tendsto
+        (fun t : ℝ =>
+          ∫ y : NPointDomain d (n + m),
+            bvt_F OS lgc (n + m)
+                (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                  (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+              ((f.osConjTensorProduct
+                (translateSchwartzNPoint (d := d) (Fin.cons 0 a) g)) y))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (bvt_W OS lgc (n + m)
+            (f.conjTensorProduct
+              (translateSchwartzNPoint (d := d) (Fin.cons 0 a) g))))) :
+    bvt_W OS lgc (n + m)
+      (f.conjTensorProduct
+        (translateSchwartzNPoint (d := d) (Fin.cons 0 a) g))
+    =
+    OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+      (f.osConjTensorProduct
+        (translateSchwartzNPoint (d := d) (Fin.cons 0 a) g))) := by
+  have hSlimit :=
+    bvt_tendsto_singleSplit_xiShift_translate_spatial_right_nhdsWithin_zero_schwinger
+      (d := d) (OS := OS) (lgc := lgc) n m hm
+      f hf_ord hf_compact g hg_ord hg_compact a
+  exact tendsto_nhds_unique hWlimit hSlimit
+
+/-- Zero-translation specialization of
+`bvt_eq_schwinger_of_tendsto_singleSplit_xiShift_translate_spatial_right_nhdsWithin_zero`.
+This is the exact ordered positive-time comparison shape needed by the
+positivity lane: once the BV-side `xiShift` shell is shown to converge to the
+reconstructed `bvt_W` term, the Euclidean Schwinger identity follows
+formally. -/
+theorem bvt_eq_schwinger_of_tendsto_singleSplit_xiShift_nhdsWithin_zero
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (n m : ℕ) (hm : 0 < m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport ((f : SchwartzNPoint d n) :
+        NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (hf_compact : HasCompactSupport ((f : SchwartzNPoint d n) :
+        NPointDomain d n → ℂ))
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport ((g : SchwartzNPoint d m) :
+        NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hg_compact : HasCompactSupport ((g : SchwartzNPoint d m) :
+        NPointDomain d m → ℂ))
+    (hWlimit :
+      Filter.Tendsto
+        (fun t : ℝ =>
+          ∫ y : NPointDomain d (n + m),
+            bvt_F OS lgc (n + m)
+                (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                  (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+              ((f.osConjTensorProduct g) y))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (bvt_W OS lgc (n + m) (f.conjTensorProduct g)))) :
+    bvt_W OS lgc (n + m) (f.conjTensorProduct g)
+      =
+    OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+      (f.osConjTensorProduct g)) := by
+  have ha0_zero : (Fin.cons 0 (0 : Fin d → ℝ) : SpacetimeDim d) = 0 := by
+    funext μ
+    refine Fin.cases ?_ ?_ μ
+    · simp
+    · intro i
+      simp
+  have htranslate_zero :
+      translateSchwartzNPoint (d := d) (Fin.cons 0 (0 : Fin d → ℝ)) g = g := by
+    ext x
+    simp [translateSchwartzNPoint_apply, ha0_zero]
+  have hWlimit' :
+      Filter.Tendsto
+        (fun t : ℝ =>
+          ∫ y : NPointDomain d (n + m),
+            bvt_F OS lgc (n + m)
+                (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                  (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+              ((f.osConjTensorProduct
+                (translateSchwartzNPoint (d := d) (Fin.cons 0 (0 : Fin d → ℝ)) g)) y))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (bvt_W OS lgc (n + m)
+            (f.conjTensorProduct
+              (translateSchwartzNPoint (d := d) (Fin.cons 0 (0 : Fin d → ℝ)) g)))) := by
+    simpa [htranslate_zero] using hWlimit
+  simpa [htranslate_zero] using
+    bvt_eq_schwinger_of_tendsto_singleSplit_xiShift_translate_spatial_right_nhdsWithin_zero
+      (d := d) (OS := OS) (lgc := lgc) n m hm
+      f hf_ord hf_compact g hg_ord hg_compact (0 : Fin d → ℝ) hWlimit'
+
+/-- On the exact compact ordered positive-time shell where the BV `xiShift`
+comparison theorem applies, the reconstructed Wightman inner product of two
+concentrated Borchers vectors already agrees with the honest OS inner product. -/
+theorem bvt_wightmanInner_single_single_eq_osInner_of_tendsto_singleSplit_xiShift_nhdsWithin_zero
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (n m : ℕ) (hm : 0 < m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport ((f : SchwartzNPoint d n) :
+        NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (hf_compact : HasCompactSupport ((f : SchwartzNPoint d n) :
+        NPointDomain d n → ℂ))
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport ((g : SchwartzNPoint d m) :
+        NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hg_compact : HasCompactSupport ((g : SchwartzNPoint d m) :
+        NPointDomain d m → ℂ))
+    (hWlimit :
+      Filter.Tendsto
+        (fun t : ℝ =>
+          ∫ y : NPointDomain d (n + m),
+            bvt_F OS lgc (n + m)
+                (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                  (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+              ((f.osConjTensorProduct g) y))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (bvt_W OS lgc (n + m) (f.conjTensorProduct g)))) :
+    WightmanInnerProduct d (bvt_W OS lgc)
+        (BorchersSequence.single n f) (BorchersSequence.single m g) =
+      PositiveTimeBorchersSequence.osInner OS
+        (PositiveTimeBorchersSequence.single n f hf_ord)
+        (PositiveTimeBorchersSequence.single m g hg_ord) := by
+  calc
+    WightmanInnerProduct d (bvt_W OS lgc)
+        (BorchersSequence.single n f) (BorchersSequence.single m g)
+      =
+        bvt_W OS lgc (n + m) (f.conjTensorProduct g) := by
+          simpa using
+            WightmanInnerProduct_single_single (d := d) (W := bvt_W OS lgc)
+              (bvt_W_linear (d := d) OS lgc) n m f g
+    _ =
+        OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+          (f.osConjTensorProduct g)) := by
+            exact
+              bvt_eq_schwinger_of_tendsto_singleSplit_xiShift_nhdsWithin_zero
+                (d := d) (OS := OS) (lgc := lgc) n m hm
+                f hf_ord hf_compact g hg_ord hg_compact hWlimit
+    _ =
+        OSInnerProduct d OS.S
+          (BorchersSequence.single n f) (BorchersSequence.single m g) := by
+            symm
+            simpa using
+              OSInnerProduct_single_single (d := d) OS.S OS.E0_linear n m f g
+    _ =
+        PositiveTimeBorchersSequence.osInner OS
+          (PositiveTimeBorchersSequence.single n f hf_ord)
+          (PositiveTimeBorchersSequence.single m g hg_ord) := by
+            simp [PositiveTimeBorchersSequence.osInner]
+
+/-- In the self-pair case, the same compact ordered positive-time shell
+comparison already yields nonnegativity of the reconstructed singleton
+Wightman norm from OS reflection positivity. -/
+theorem bvt_wightmanInner_single_self_nonneg_of_tendsto_singleSplit_xiShift_nhdsWithin_zero
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) (hn : 0 < n)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport ((f : SchwartzNPoint d n) :
+        NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (hf_compact : HasCompactSupport ((f : SchwartzNPoint d n) :
+        NPointDomain d n → ℂ))
+    (hWlimit :
+      Filter.Tendsto
+        (fun t : ℝ =>
+          ∫ y : NPointDomain d (n + n),
+            bvt_F OS lgc (n + n)
+                (xiShift ⟨n, Nat.lt_add_of_pos_right hn⟩ 0
+                  (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+              ((f.osConjTensorProduct f) y))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (bvt_W OS lgc (n + n) (f.conjTensorProduct f)))) :
+    0 ≤ (WightmanInnerProduct d (bvt_W OS lgc)
+      (BorchersSequence.single n f) (BorchersSequence.single n f)).re := by
+  rw [bvt_wightmanInner_single_single_eq_osInner_of_tendsto_singleSplit_xiShift_nhdsWithin_zero
+    (d := d) (OS := OS) (lgc := lgc) n n hn
+    f hf_ord hf_compact f hf_ord hf_compact hWlimit]
+  exact PositiveTimeBorchersSequence.osInner_nonneg_self OS
+    (PositiveTimeBorchersSequence.single n f hf_ord)
+
+/-- If each compact ordered positive-time component of a left Borchers vector
+admits the same `xiShift` boundary-value comparison against a compact ordered
+positive-time right singleton, then the full reconstructed Wightman inner
+product against that singleton already agrees with the honest OS inner
+product. -/
+theorem bvt_wightmanInner_right_single_eq_osInner_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F : PositiveTimeBorchersSequence d)
+    (hF_compact :
+      ∀ n,
+        HasCompactSupport ((((F : BorchersSequence d).funcs n : SchwartzNPoint d n) :
+          NPointDomain d n → ℂ)))
+    (m : ℕ) (hm : 0 < m)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport ((g : SchwartzNPoint d m) :
+        NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hg_compact : HasCompactSupport ((g : SchwartzNPoint d m) :
+        NPointDomain d m → ℂ))
+    (hWlimit :
+      ∀ n,
+        Filter.Tendsto
+          (fun t : ℝ =>
+            ∫ y : NPointDomain d (n + m),
+              bvt_F OS lgc (n + m)
+                  (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                    (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+                ((((F : BorchersSequence d).funcs n).osConjTensorProduct g) y))
+          (nhdsWithin 0 (Set.Ioi 0))
+          (nhds
+            (bvt_W OS lgc (n + m)
+              ((((F : BorchersSequence d).funcs n).conjTensorProduct g))))) :
+    WightmanInnerProduct d (bvt_W OS lgc) (F : BorchersSequence d)
+        (BorchersSequence.single m g) =
+      PositiveTimeBorchersSequence.osInner OS F
+        (PositiveTimeBorchersSequence.single m g hg_ord) := by
+  unfold WightmanInnerProduct
+  rw [PositiveTimeBorchersSequence.osInner]
+  calc
+    ∑ n ∈ Finset.range (((F : BorchersSequence d).bound) + 1),
+        ∑ m_1 ∈ Finset.range ((BorchersSequence.single m g).bound + 1),
+          bvt_W OS lgc (n + m_1)
+            (((F : BorchersSequence d).funcs n).conjTensorProduct
+              ((BorchersSequence.single m g).funcs m_1))
+      =
+        ∑ n ∈ Finset.range (((F : BorchersSequence d).bound) + 1),
+          OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+            (((F : BorchersSequence d).funcs n).osConjTensorProduct g)) := by
+              apply Finset.sum_congr rfl
+              intro n hn
+              rw [BorchersSequence.single_bound, Finset.sum_range_succ]
+              have hrightW :
+                  ∑ j ∈ Finset.range m,
+                    bvt_W OS lgc (n + j)
+                      (((F : BorchersSequence d).funcs n).conjTensorProduct
+                        ((BorchersSequence.single m g).funcs j)) = 0 := by
+                refine Finset.sum_eq_zero ?_
+                intro j hj
+                have hj_ne : j ≠ m := Nat.ne_of_lt (Finset.mem_range.mp hj)
+                rw [BorchersSequence.single_funcs_ne hj_ne,
+                  SchwartzMap.conjTensorProduct_zero_right,
+                  (bvt_W_linear (d := d) OS lgc _).map_zero]
+              rw [hrightW, zero_add, BorchersSequence.single_funcs_eq]
+              exact bvt_eq_schwinger_of_tendsto_singleSplit_xiShift_nhdsWithin_zero
+                (d := d) (OS := OS) (lgc := lgc) n m hm
+                (((F : BorchersSequence d).funcs n))
+                (F.ordered_tsupport n) (hF_compact n)
+                g hg_ord hg_compact (hWlimit n)
+    _ = OSInnerProduct d OS.S (F : BorchersSequence d)
+          (BorchersSequence.single m g) := by
+            symm
+            exact OSInnerProduct_right_single (d := d) OS.S OS.E0_linear
+              (F := (F : BorchersSequence d)) (g := g)
+    _ = OSInnerProduct d OS.S (F : BorchersSequence d)
+          ((PositiveTimeBorchersSequence.single m g hg_ord : PositiveTimeBorchersSequence d) :
+            BorchersSequence d) := by
+            rfl
+
+/-- Summing the right-single comparison over all positive-degree right
+components reduces the full compact ordered positive-time inner-product
+comparison to a single remaining `m = 0` term. The active `xiShift` shell
+machinery therefore already pays for every positive-degree right component. -/
+theorem bvt_wightmanInner_eq_osInner_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d)
+    (hF_compact :
+      ∀ n,
+        HasCompactSupport ((((F : BorchersSequence d).funcs n : SchwartzNPoint d n) :
+          NPointDomain d n → ℂ)))
+    (hG_compact :
+      ∀ m,
+        HasCompactSupport ((((G : BorchersSequence d).funcs m : SchwartzNPoint d m) :
+          NPointDomain d m → ℂ)))
+    (hzero :
+      ∀ n,
+        bvt_W OS lgc n
+          ((((F : BorchersSequence d).funcs n).conjTensorProduct
+            ((G : BorchersSequence d).funcs 0))) =
+          OS.S n (ZeroDiagonalSchwartz.ofClassical
+            ((((F : BorchersSequence d).funcs n).osConjTensorProduct
+              ((G : BorchersSequence d).funcs 0)))))
+    (hWlimit :
+      ∀ n m (hm : 0 < m),
+        Filter.Tendsto
+          (fun t : ℝ =>
+            ∫ y : NPointDomain d (n + m),
+              bvt_F OS lgc (n + m)
+                  (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                    (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+                ((((F : BorchersSequence d).funcs n).osConjTensorProduct
+                  ((G : BorchersSequence d).funcs m)) y))
+          (nhdsWithin 0 (Set.Ioi 0))
+          (nhds
+            (bvt_W OS lgc (n + m)
+              ((((F : BorchersSequence d).funcs n).conjTensorProduct
+                ((G : BorchersSequence d).funcs m)))))) :
+    WightmanInnerProduct d (bvt_W OS lgc) (F : BorchersSequence d) (G : BorchersSequence d) =
+      PositiveTimeBorchersSequence.osInner OS F G := by
+  rw [WightmanInnerProduct_eq_sum_right_singles (d := d) (W := bvt_W OS lgc)
+    (bvt_W_linear (d := d) OS lgc) (F := (F : BorchersSequence d))
+    (G := (G : BorchersSequence d))]
+  rw [PositiveTimeBorchersSequence.osInner_eq_sum_right_singles (d := d) OS F G]
+  apply Finset.sum_congr rfl
+  intro m hm
+  by_cases hm0 : m = 0
+  · subst hm0
+    calc
+      WightmanInnerProduct d (bvt_W OS lgc) (F : BorchersSequence d)
+          (BorchersSequence.single 0 ((G : BorchersSequence d).funcs 0))
+        =
+          ∑ n ∈ Finset.range (((F : BorchersSequence d).bound) + 1),
+            bvt_W OS lgc n
+              ((((F : BorchersSequence d).funcs n).conjTensorProduct
+                ((G : BorchersSequence d).funcs 0))) := by
+              simpa using
+                WightmanInnerProduct_right_single (d := d) (W := bvt_W OS lgc)
+                  (bvt_W_linear (d := d) OS lgc) (F := (F : BorchersSequence d))
+                  (g := ((G : BorchersSequence d).funcs 0))
+      _ =
+          ∑ n ∈ Finset.range (((F : BorchersSequence d).bound) + 1),
+            OS.S n (ZeroDiagonalSchwartz.ofClassical
+              ((((F : BorchersSequence d).funcs n).osConjTensorProduct
+                ((G : BorchersSequence d).funcs 0)))) := by
+              apply Finset.sum_congr rfl
+              intro n hn
+              simpa using hzero n
+      _ =
+          OSInnerProduct d OS.S (F : BorchersSequence d)
+            (BorchersSequence.single 0 ((G : BorchersSequence d).funcs 0)) := by
+              symm
+              simpa using
+                OSInnerProduct_right_single (d := d) OS.S OS.E0_linear
+                  (F := (F : BorchersSequence d))
+                  (g := ((G : BorchersSequence d).funcs 0))
+      _ =
+          PositiveTimeBorchersSequence.osInner OS F
+            (PositiveTimeBorchersSequence.single 0 (((G : BorchersSequence d).funcs 0))
+              (G.ordered_tsupport 0)) := by
+              rfl
+  · have hm_pos : 0 < m := Nat.pos_of_ne_zero hm0
+    simpa using
+      bvt_wightmanInner_right_single_eq_osInner_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero
+        (d := d) (OS := OS) (lgc := lgc) F hF_compact m hm_pos
+        (((G : BorchersSequence d).funcs m))
+        (G.ordered_tsupport m) (hG_compact m) (fun n => hWlimit n m hm_pos)
+
+/-- If the right positive-time Borchers vector has vanishing degree-zero
+component, the positive-degree `xiShift` shell comparisons already determine
+the full compact ordered positive-time Wightman inner product. -/
+theorem bvt_wightmanInner_eq_osInner_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero_of_zero_right
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d)
+    (hF_compact :
+      ∀ n,
+        HasCompactSupport ((((F : BorchersSequence d).funcs n : SchwartzNPoint d n) :
+          NPointDomain d n → ℂ)))
+    (hG_compact :
+      ∀ m,
+        HasCompactSupport ((((G : BorchersSequence d).funcs m : SchwartzNPoint d m) :
+          NPointDomain d m → ℂ)))
+    (hG0 : ((G : BorchersSequence d).funcs 0) = 0)
+    (hWlimit :
+      ∀ n m (hm : 0 < m),
+        Filter.Tendsto
+          (fun t : ℝ =>
+            ∫ y : NPointDomain d (n + m),
+              bvt_F OS lgc (n + m)
+                  (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                    (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+                ((((F : BorchersSequence d).funcs n).osConjTensorProduct
+                  ((G : BorchersSequence d).funcs m)) y))
+          (nhdsWithin 0 (Set.Ioi 0))
+          (nhds
+            (bvt_W OS lgc (n + m)
+              ((((F : BorchersSequence d).funcs n).conjTensorProduct
+                ((G : BorchersSequence d).funcs m)))))) :
+    WightmanInnerProduct d (bvt_W OS lgc) (F : BorchersSequence d) (G : BorchersSequence d) =
+      PositiveTimeBorchersSequence.osInner OS F G := by
+  apply
+    bvt_wightmanInner_eq_osInner_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero
+      (d := d) (OS := OS) (lgc := lgc) F G hF_compact hG_compact
+  · intro n
+    rw [hG0, SchwartzMap.conjTensorProduct_zero_right,
+      SchwartzNPoint.osConjTensorProduct_zero_right,
+      ZeroDiagonalSchwartz.ofClassical_zero,
+      (bvt_W_linear (d := d) OS lgc _).map_zero, (OS.E0_linear _).map_zero]
+  · exact hWlimit
+
+/-- In the self-pair case, the same hypotheses yield positivity for compact
+ordered positive-time Borchers vectors with vanishing degree-zero component. -/
+theorem bvt_wightmanInner_self_nonneg_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero_of_zero
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F : PositiveTimeBorchersSequence d)
+    (hF_compact :
+      ∀ n,
+        HasCompactSupport ((((F : BorchersSequence d).funcs n : SchwartzNPoint d n) :
+          NPointDomain d n → ℂ)))
+    (hF0 : ((F : BorchersSequence d).funcs 0) = 0)
+    (hWlimit :
+      ∀ n m (hm : 0 < m),
+        Filter.Tendsto
+          (fun t : ℝ =>
+            ∫ y : NPointDomain d (n + m),
+              bvt_F OS lgc (n + m)
+                  (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                    (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+                ((((F : BorchersSequence d).funcs n).osConjTensorProduct
+                  ((F : BorchersSequence d).funcs m)) y))
+          (nhdsWithin 0 (Set.Ioi 0))
+          (nhds
+            (bvt_W OS lgc (n + m)
+              ((((F : BorchersSequence d).funcs n).conjTensorProduct
+                ((F : BorchersSequence d).funcs m)))))) :
+    0 ≤ (WightmanInnerProduct d (bvt_W OS lgc)
+      (F : BorchersSequence d) (F : BorchersSequence d)).re := by
+  rw [bvt_wightmanInner_eq_osInner_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero_of_zero_right
+    (d := d) (OS := OS) (lgc := lgc) F F hF_compact hF_compact hF0 hWlimit]
+  exact PositiveTimeBorchersSequence.osInner_nonneg_self OS F
+
 /-- The translated-right canonical `xiShift` cluster estimate is already formal
 once the large-spatial translated OS Hilbert matrix element is controlled. The
 small-`t` continuity leg has been fully paid by
@@ -1972,6 +2566,421 @@ theorem bv_zero_point_is_evaluation (OS : OsterwalderSchraderAxioms d)
     W_0 f = I0 := hW0
     _ = OS.S 0 f0 := by simpa [I0, f0] using (hEuclid f0).symm
     _ = f 0 := lgc.normalized_zero f0
+
+/-- If the left factor is concentrated in degree `0`, the full compact ordered
+positive-time comparison against an arbitrary right Borchers vector is already
+formal: the `m = 0` term is normalization, and every `m > 0` term is the
+singleton/singleton `xiShift` comparison already established above. -/
+theorem bvt_wightmanInner_zero_left_eq_osInner_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (g : SchwartzNPoint d 0)
+    (hg_ord : tsupport ((g : SchwartzNPoint d 0) :
+        NPointDomain d 0 → ℂ) ⊆ OrderedPositiveTimeRegion d 0)
+    (hg_compact : HasCompactSupport ((g : SchwartzNPoint d 0) :
+        NPointDomain d 0 → ℂ))
+    (G : PositiveTimeBorchersSequence d)
+    (hG_compact :
+      ∀ m,
+        HasCompactSupport ((((G : BorchersSequence d).funcs m : SchwartzNPoint d m) :
+          NPointDomain d m → ℂ)))
+    (hWlimit :
+      ∀ m (hm : 0 < m),
+        Filter.Tendsto
+          (fun t : ℝ =>
+            ∫ y : NPointDomain d (0 + m),
+              bvt_F OS lgc (0 + m)
+                  (xiShift ⟨0, Nat.lt_add_of_pos_right hm⟩ 0
+                    (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+                ((g.osConjTensorProduct ((G : BorchersSequence d).funcs m)) y))
+          (nhdsWithin 0 (Set.Ioi 0))
+          (nhds
+            (bvt_W OS lgc (0 + m)
+              (g.conjTensorProduct ((G : BorchersSequence d).funcs m))))) :
+    WightmanInnerProduct d (bvt_W OS lgc)
+      (BorchersSequence.single 0 g) (G : BorchersSequence d)
+      =
+    PositiveTimeBorchersSequence.osInner OS
+      (PositiveTimeBorchersSequence.single 0 g hg_ord) G := by
+  rw [WightmanInnerProduct_eq_sum_right_singles (d := d) (W := bvt_W OS lgc)
+    (bvt_W_linear (d := d) OS lgc) (F := BorchersSequence.single 0 g)
+    (G := (G : BorchersSequence d))]
+  rw [PositiveTimeBorchersSequence.osInner_eq_sum_right_singles (d := d) OS
+    (PositiveTimeBorchersSequence.single 0 g hg_ord) G]
+  apply Finset.sum_congr rfl
+  intro m hm
+  by_cases hm0 : m = 0
+  · subst hm0
+    let x0 : NPointDomain d 0 := 0
+    have hconj0 : g.borchersConj = g.osConj := by
+      ext x
+      have hx : x = x0 := by
+        funext i
+        exact Fin.elim0 i
+      subst hx
+      have harg : (fun i => x0 (Fin.rev i)) = timeReflectionN d x0 := by
+        ext i μ
+        exact Fin.elim0 i
+      rw [SchwartzMap.borchersConj_apply, SchwartzNPoint.osConj_apply]
+      simpa [harg]
+    have hvanish0 :
+        VanishesToInfiniteOrderOnCoincidence
+          (g.osConjTensorProduct ((G : BorchersSequence d).funcs 0)) := by
+      intro k x hx
+      rcases hx with ⟨i, _, _, _⟩
+      exact Fin.elim0 i
+    have hW0_eval :
+        bvt_W OS lgc 0 (g.conjTensorProduct ((G : BorchersSequence d).funcs 0))
+          =
+        (g.conjTensorProduct ((G : BorchersSequence d).funcs 0)) x0 := by
+      simpa [x0] using
+        bv_zero_point_is_evaluation (d := d) OS lgc
+          (bvt_W OS lgc 0) (bvt_F OS lgc 0)
+          (bvt_boundary_values OS lgc 0)
+          (bvt_euclidean_restriction (d := d) OS lgc 0)
+          (g.conjTensorProduct ((G : BorchersSequence d).funcs 0))
+    calc
+      WightmanInnerProduct d (bvt_W OS lgc)
+          (BorchersSequence.single 0 g)
+          (BorchersSequence.single 0 ((G : BorchersSequence d).funcs 0))
+        =
+          bvt_W OS lgc 0
+            (g.conjTensorProduct ((G : BorchersSequence d).funcs 0)) := by
+              simpa using
+                WightmanInnerProduct_single_single (d := d) (W := bvt_W OS lgc)
+                  (bvt_W_linear (d := d) OS lgc) 0 0 g ((G : BorchersSequence d).funcs 0)
+      _ =
+          (g.conjTensorProduct ((G : BorchersSequence d).funcs 0)) x0 := by
+            exact hW0_eval
+      _ =
+          (g.osConjTensorProduct ((G : BorchersSequence d).funcs 0)) x0 := by
+            simpa [SchwartzMap.conjTensorProduct, SchwartzNPoint.osConjTensorProduct, hconj0]
+      _ =
+          (ZeroDiagonalSchwartz.ofClassical
+            (g.osConjTensorProduct ((G : BorchersSequence d).funcs 0))).1 x0 := by
+              simpa using congrArg
+                (fun h : SchwartzNPoint d 0 => h x0)
+                (ZeroDiagonalSchwartz.coe_ofClassical_of_vanishes
+                  (f := g.osConjTensorProduct ((G : BorchersSequence d).funcs 0)) hvanish0).symm
+      _ =
+          OS.S 0
+            (ZeroDiagonalSchwartz.ofClassical
+              (g.osConjTensorProduct ((G : BorchersSequence d).funcs 0))) := by
+                symm
+                simpa [x0] using lgc.normalized_zero
+                  (ZeroDiagonalSchwartz.ofClassical
+                    (g.osConjTensorProduct ((G : BorchersSequence d).funcs 0)))
+      _ =
+          OSInnerProduct d OS.S
+            (BorchersSequence.single 0 g)
+            (BorchersSequence.single 0 ((G : BorchersSequence d).funcs 0)) := by
+              symm
+              simpa using
+                OSInnerProduct_single_single (d := d) OS.S OS.E0_linear
+                  0 0 g ((G : BorchersSequence d).funcs 0)
+      _ =
+          PositiveTimeBorchersSequence.osInner OS
+            (PositiveTimeBorchersSequence.single 0 g hg_ord)
+            (PositiveTimeBorchersSequence.single 0 ((G : BorchersSequence d).funcs 0)
+              (G.ordered_tsupport 0)) := by
+              rfl
+  · have hm_pos : 0 < m := Nat.pos_of_ne_zero hm0
+    simpa using
+      bvt_wightmanInner_single_single_eq_osInner_of_tendsto_singleSplit_xiShift_nhdsWithin_zero
+        (d := d) (OS := OS) (lgc := lgc) 0 m hm_pos
+        g hg_ord hg_compact
+        (((G : BorchersSequence d).funcs m))
+        (G.ordered_tsupport m) (hG_compact m)
+        (hWlimit m hm_pos)
+
+/-- The new degree-`0`-on-the-left comparison can be flipped to the missing
+degree-`0`-on-the-right pointwise comparison once Hermiticity of `bvt_W` is
+available. This is the exact shape needed for the remaining `m = 0` positivity
+seam. -/
+theorem bvt_eq_schwinger_of_tendsto_singleSplit_xiShift_nhdsWithin_zero_zeroRight_of_hermitian
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (hherm :
+      ∀ (n : ℕ) (f g : SchwartzNPoint d n),
+        (∀ x : NPointDomain d n,
+          g.toFun x = starRingEnd ℂ (f.toFun (fun i => x (Fin.rev i)))) →
+        bvt_W OS lgc n g = starRingEnd ℂ (bvt_W OS lgc n f))
+    (n : ℕ) (hn : 0 < n)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport ((f : SchwartzNPoint d n) :
+        NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (hf_compact : HasCompactSupport ((f : SchwartzNPoint d n) :
+        NPointDomain d n → ℂ))
+    (g : SchwartzNPoint d 0)
+    (hg_ord : tsupport ((g : SchwartzNPoint d 0) :
+        NPointDomain d 0 → ℂ) ⊆ OrderedPositiveTimeRegion d 0)
+    (hg_compact : HasCompactSupport ((g : SchwartzNPoint d 0) :
+        NPointDomain d 0 → ℂ))
+    (hWlimit :
+      Filter.Tendsto
+        (fun t : ℝ =>
+          ∫ y : NPointDomain d (0 + n),
+            bvt_F OS lgc (0 + n)
+                (xiShift ⟨0, Nat.lt_add_of_pos_right hn⟩ 0
+                  (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+              ((g.osConjTensorProduct f) y))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (bvt_W OS lgc (0 + n)
+            (g.conjTensorProduct f)))) :
+    bvt_W OS lgc n (f.conjTensorProduct g) =
+      OS.S n (ZeroDiagonalSchwartz.ofClassical (f.osConjTensorProduct g)) := by
+  let Fn : PositiveTimeBorchersSequence d := PositiveTimeBorchersSequence.single n f hf_ord
+  have hFn_compact :
+      ∀ m,
+        HasCompactSupport ((((Fn : BorchersSequence d).funcs m : SchwartzNPoint d m) :
+          NPointDomain d m → ℂ)) := by
+    intro m
+    by_cases hm : m = n
+    · subst hm
+      simpa [Fn] using hf_compact
+    · simpa [Fn, BorchersSequence.single_funcs_ne hm] using
+        (HasCompactSupport.zero : HasCompactSupport (0 : NPointDomain d m → ℂ))
+  have hFn_limit :
+      ∀ m (hm : 0 < m),
+        Filter.Tendsto
+          (fun t : ℝ =>
+            ∫ y : NPointDomain d (0 + m),
+              bvt_F OS lgc (0 + m)
+                  (xiShift ⟨0, Nat.lt_add_of_pos_right hm⟩ 0
+                    (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+                ((g.osConjTensorProduct ((Fn : BorchersSequence d).funcs m)) y))
+          (nhdsWithin 0 (Set.Ioi 0))
+          (nhds
+            (bvt_W OS lgc (0 + m)
+              (g.conjTensorProduct ((Fn : BorchersSequence d).funcs m)))) := by
+    intro m hm
+    by_cases hmn : m = n
+    · subst hmn
+      simpa [Fn] using hWlimit
+    · have hfunc0 : ((Fn : BorchersSequence d).funcs m) = 0 := by
+        simpa [Fn] using (BorchersSequence.single_funcs_ne hmn f)
+      rw [hfunc0, SchwartzNPoint.osConjTensorProduct_zero_right]
+      have htarget :
+          bvt_W OS lgc (0 + m) (g.conjTensorProduct (0 : SchwartzNPoint d m)) = 0 := by
+        rw [SchwartzMap.conjTensorProduct_zero_right,
+          (bvt_W_linear (d := d) OS lgc (0 + m)).map_zero]
+      rw [htarget]
+      simpa using
+        (tendsto_const_nhds : Filter.Tendsto (fun _ : ℝ => (0 : ℂ))
+          (nhdsWithin 0 (Set.Ioi 0)) (nhds 0))
+  have hleft :
+      WightmanInnerProduct d (bvt_W OS lgc)
+          (BorchersSequence.single 0 g) (Fn : BorchersSequence d)
+        =
+      PositiveTimeBorchersSequence.osInner OS
+        (PositiveTimeBorchersSequence.single 0 g hg_ord) Fn := by
+    exact
+      bvt_wightmanInner_zero_left_eq_osInner_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero
+        (d := d) (OS := OS) (lgc := lgc) g hg_ord hg_compact Fn hFn_compact hFn_limit
+  have hright :
+      WightmanInnerProduct d (bvt_W OS lgc)
+          (BorchersSequence.single n f) (BorchersSequence.single 0 g)
+        =
+      PositiveTimeBorchersSequence.osInner OS Fn
+        (PositiveTimeBorchersSequence.single 0 g hg_ord) := by
+    calc
+      WightmanInnerProduct d (bvt_W OS lgc)
+          (BorchersSequence.single n f) (BorchersSequence.single 0 g)
+        =
+      starRingEnd ℂ
+        (WightmanInnerProduct d (bvt_W OS lgc)
+          (BorchersSequence.single 0 g) (BorchersSequence.single n f)) := by
+            simpa using
+              WightmanInnerProduct_hermitian_of (d := d) (W := bvt_W OS lgc)
+                hherm (BorchersSequence.single n f) (BorchersSequence.single 0 g)
+      _ =
+      starRingEnd ℂ
+        (PositiveTimeBorchersSequence.osInner OS
+          (PositiveTimeBorchersSequence.single 0 g hg_ord) Fn) := by
+            simpa [Fn] using congrArg (starRingEnd ℂ) hleft
+      _ =
+      PositiveTimeBorchersSequence.osInner OS Fn
+        (PositiveTimeBorchersSequence.single 0 g hg_ord) := by
+            simpa [Fn] using
+              (PositiveTimeBorchersSequence.osInner_hermitian OS Fn
+                (PositiveTimeBorchersSequence.single 0 g hg_ord)).symm
+  calc
+    bvt_W OS lgc n (f.conjTensorProduct g)
+      =
+    WightmanInnerProduct d (bvt_W OS lgc)
+      (BorchersSequence.single n f) (BorchersSequence.single 0 g) := by
+        symm
+        simpa using
+          WightmanInnerProduct_single_single (d := d) (W := bvt_W OS lgc)
+            (bvt_W_linear (d := d) OS lgc) n 0 f g
+    _ =
+      PositiveTimeBorchersSequence.osInner OS Fn
+        (PositiveTimeBorchersSequence.single 0 g hg_ord) := hright
+    _ =
+      OSInnerProduct d OS.S (Fn : BorchersSequence d)
+        (BorchersSequence.single 0 g) := by
+          rfl
+    _ = OS.S n (ZeroDiagonalSchwartz.ofClassical (f.osConjTensorProduct g)) := by
+          simpa [Fn] using
+            OSInnerProduct_single_single (d := d) OS.S OS.E0_linear n 0 f g
+
+/-- For compact ordered positive-time Borchers vectors, the componentwise
+single-split `xiShift` shell comparisons imply the full self-pair comparison
+once the remaining degree-`0` right component is discharged using Hermiticity.
+This packages the exact repair used by the active positivity lane. -/
+theorem bvt_wightmanInner_self_eq_osInner_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero_of_hermitian
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (hherm :
+      ∀ (n : ℕ) (f g : SchwartzNPoint d n),
+        (∀ x : NPointDomain d n,
+          g.toFun x = starRingEnd ℂ (f.toFun (fun i => x (Fin.rev i)))) →
+        bvt_W OS lgc n g = starRingEnd ℂ (bvt_W OS lgc n f))
+    (F : PositiveTimeBorchersSequence d)
+    (hF_compact :
+      ∀ n,
+        HasCompactSupport ((((F : BorchersSequence d).funcs n : SchwartzNPoint d n) :
+          NPointDomain d n → ℂ)))
+    (hWlimit :
+      ∀ n m (hm : 0 < m),
+        Filter.Tendsto
+          (fun t : ℝ =>
+            ∫ y : NPointDomain d (n + m),
+              bvt_F OS lgc (n + m)
+                  (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                    (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+                ((((F : BorchersSequence d).funcs n).osConjTensorProduct
+                  ((F : BorchersSequence d).funcs m)) y))
+          (nhdsWithin 0 (Set.Ioi 0))
+          (nhds
+            (bvt_W OS lgc (n + m)
+              ((((F : BorchersSequence d).funcs n).conjTensorProduct
+                ((F : BorchersSequence d).funcs m)))))) :
+    WightmanInnerProduct d (bvt_W OS lgc)
+      (F : BorchersSequence d) (F : BorchersSequence d) =
+      PositiveTimeBorchersSequence.osInner OS F F := by
+  have hzero :
+      ∀ n,
+        bvt_W OS lgc n
+          ((((F : BorchersSequence d).funcs n).conjTensorProduct
+            ((F : BorchersSequence d).funcs 0))) =
+          OS.S n (ZeroDiagonalSchwartz.ofClassical
+            ((((F : BorchersSequence d).funcs n).osConjTensorProduct
+              ((F : BorchersSequence d).funcs 0)))) := by
+    intro n
+    by_cases hn0 : n = 0
+    · subst hn0
+      let x0 : NPointDomain d 0 := 0
+      have hconj0 :
+          ((F : BorchersSequence d).funcs 0).borchersConj =
+            ((F : BorchersSequence d).funcs 0).osConj := by
+        ext x
+        have hx : x = x0 := by
+          funext i
+          exact Fin.elim0 i
+        subst hx
+        have harg : (fun i => x0 (Fin.rev i)) = timeReflectionN d x0 := by
+          ext i μ
+          exact Fin.elim0 i
+        rw [SchwartzMap.borchersConj_apply, SchwartzNPoint.osConj_apply]
+        simpa [harg]
+      have hvanish0 :
+          VanishesToInfiniteOrderOnCoincidence
+            (((F : BorchersSequence d).funcs 0).osConjTensorProduct
+              ((F : BorchersSequence d).funcs 0)) := by
+        intro k x hx
+        rcases hx with ⟨i, _, _, _⟩
+        exact Fin.elim0 i
+      have hW0_eval :
+          bvt_W OS lgc 0
+            (((F : BorchersSequence d).funcs 0).conjTensorProduct
+              ((F : BorchersSequence d).funcs 0))
+            =
+          ((((F : BorchersSequence d).funcs 0).conjTensorProduct
+            ((F : BorchersSequence d).funcs 0))) x0 := by
+        simpa [x0] using
+          bv_zero_point_is_evaluation (d := d) OS lgc
+            (bvt_W OS lgc 0) (bvt_F OS lgc 0)
+            (bvt_boundary_values OS lgc 0)
+            (bvt_euclidean_restriction (d := d) OS lgc 0)
+            ((((F : BorchersSequence d).funcs 0).conjTensorProduct
+              ((F : BorchersSequence d).funcs 0)))
+      calc
+        bvt_W OS lgc 0
+            (((F : BorchersSequence d).funcs 0).conjTensorProduct
+              ((F : BorchersSequence d).funcs 0))
+          =
+            ((((F : BorchersSequence d).funcs 0).conjTensorProduct
+              ((F : BorchersSequence d).funcs 0))) x0 := hW0_eval
+        _ =
+            ((((F : BorchersSequence d).funcs 0).osConjTensorProduct
+              ((F : BorchersSequence d).funcs 0))) x0 := by
+                simpa [SchwartzMap.conjTensorProduct, SchwartzNPoint.osConjTensorProduct, hconj0]
+        _ =
+            (ZeroDiagonalSchwartz.ofClassical
+              (((F : BorchersSequence d).funcs 0).osConjTensorProduct
+                ((F : BorchersSequence d).funcs 0))).1 x0 := by
+                  simpa using congrArg
+                    (fun h : SchwartzNPoint d 0 => h x0)
+                    (ZeroDiagonalSchwartz.coe_ofClassical_of_vanishes
+                      (f := ((F : BorchersSequence d).funcs 0).osConjTensorProduct
+                        ((F : BorchersSequence d).funcs 0)) hvanish0).symm
+        _ =
+            OS.S 0 (ZeroDiagonalSchwartz.ofClassical
+              ((((F : BorchersSequence d).funcs 0).osConjTensorProduct
+                ((F : BorchersSequence d).funcs 0)))) := by
+                  symm
+                  simpa [x0] using lgc.normalized_zero
+                    (ZeroDiagonalSchwartz.ofClassical
+                      ((((F : BorchersSequence d).funcs 0).osConjTensorProduct
+                        ((F : BorchersSequence d).funcs 0))))
+    · have hn : 0 < n := Nat.pos_of_ne_zero hn0
+      exact
+        bvt_eq_schwinger_of_tendsto_singleSplit_xiShift_nhdsWithin_zero_zeroRight_of_hermitian
+          (d := d) (OS := OS) (lgc := lgc) hherm
+          n hn
+          (((F : BorchersSequence d).funcs n))
+          (F.ordered_tsupport n) (hF_compact n)
+          (((F : BorchersSequence d).funcs 0))
+          (F.ordered_tsupport 0) (hF_compact 0)
+          (hWlimit 0 n hn)
+  exact
+    bvt_wightmanInner_eq_osInner_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero
+      (d := d) (OS := OS) (lgc := lgc) F F hF_compact hF_compact hzero hWlimit
+
+/-- In the self-pair case, the same compact ordered positive-time hypotheses
+yield positivity once the degree-`0` right component is repaired via
+Hermiticity. -/
+theorem bvt_wightmanInner_self_nonneg_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero_of_hermitian
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (hherm :
+      ∀ (n : ℕ) (f g : SchwartzNPoint d n),
+        (∀ x : NPointDomain d n,
+          g.toFun x = starRingEnd ℂ (f.toFun (fun i => x (Fin.rev i)))) →
+        bvt_W OS lgc n g = starRingEnd ℂ (bvt_W OS lgc n f))
+    (F : PositiveTimeBorchersSequence d)
+    (hF_compact :
+      ∀ n,
+        HasCompactSupport ((((F : BorchersSequence d).funcs n : SchwartzNPoint d n) :
+          NPointDomain d n → ℂ)))
+    (hWlimit :
+      ∀ n m (hm : 0 < m),
+        Filter.Tendsto
+          (fun t : ℝ =>
+            ∫ y : NPointDomain d (n + m),
+              bvt_F OS lgc (n + m)
+                  (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                    (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+                ((((F : BorchersSequence d).funcs n).osConjTensorProduct
+                  ((F : BorchersSequence d).funcs m)) y))
+          (nhdsWithin 0 (Set.Ioi 0))
+          (nhds
+            (bvt_W OS lgc (n + m)
+              ((((F : BorchersSequence d).funcs n).conjTensorProduct
+                ((F : BorchersSequence d).funcs m)))))) :
+    0 ≤ (WightmanInnerProduct d (bvt_W OS lgc)
+      (F : BorchersSequence d) (F : BorchersSequence d)).re := by
+  rw [bvt_wightmanInner_self_eq_osInner_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero_of_hermitian
+    (d := d) (OS := OS) (lgc := lgc) hherm F hF_compact hWlimit]
+  exact PositiveTimeBorchersSequence.osInner_nonneg_self OS F
 
 private theorem bvt_F_one_eq_zero_local
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
