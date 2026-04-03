@@ -6,6 +6,7 @@ Authors: Michael R. Douglas, ModularPhysics Contributors
 import OSReconstruction.SCV.VladimirovTillmann
 import OSReconstruction.GeneralResults.DistributionalLimit
 import OSReconstruction.GeneralResults.DiffUnderIntegralSchwartz
+import OSReconstruction.Wightman.Reconstruction.ForwardTubeDistributions
 import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 import Mathlib.Analysis.Complex.Schwarz
 import Mathlib.MeasureTheory.Integral.IntegrableOn
@@ -312,7 +313,7 @@ theorem tubeSlice_temperedDistribution
   intro φ
   simpa [Fε, tubeSlice] using hT_ε φ
 
-set_option maxHeartbeats 250000 in
+set_option maxHeartbeats 400000 in
 /-- **Derivative of the tube slice along a positive ray.**
 
     The slice map is differentiated by applying
@@ -1088,9 +1089,27 @@ axiom tube_boundaryValue_of_vladimirov_growth
 /-- **Boundary value existence for pure polynomial growth.**
 
     This is the `M = 0` specialization of the full converse theorem. The proof
-    still needs the tube-domain type conversion and the equicontinuous/Cauchy
-    limit packaging, so we keep it as an explicit interface theorem for now. -/
-axiom tube_boundaryValueData_of_polyGrowth'
+    is obtained by flattening `Fin n → Fin (d + 1)` to `Fin (n * (d + 1))`,
+    applying the flat-space theorem `tube_boundaryValue_of_vladimirov_growth`,
+    and transporting the resulting boundary functional back to the product
+    Schwartz space. -/
+private theorem flattenCLEquiv_norm_eq (n d : ℕ) (z : Fin n → Fin d → ℂ) :
+    ‖flattenCLEquiv n d z‖ = ‖z‖ := by
+  simp only [Pi.norm_def]
+  congr 1
+  simp only [Pi.nnnorm_def, flattenCLEquiv_apply]
+  apply le_antisymm
+  · apply Finset.sup_le
+    intro b _
+    exact Finset.le_sup_of_le (Finset.mem_univ (finProdFinEquiv.symm b).1)
+      (Finset.le_sup_of_le (Finset.mem_univ (finProdFinEquiv.symm b).2) (by simp))
+  · apply Finset.sup_le
+    intro i _
+    apply Finset.sup_le
+    intro j _
+    exact Finset.le_sup_of_le (Finset.mem_univ (finProdFinEquiv (i, j))) (by simp)
+
+theorem tube_boundaryValueData_of_polyGrowth'
     {n d : ℕ}
     (C : Set (Fin n → Fin (d + 1) → ℝ))
     (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
@@ -1108,6 +1127,101 @@ axiom tube_boundaryValueData_of_polyGrowth'
           (fun ε : ℝ => ∫ x : Fin n → Fin (d + 1) → ℝ,
             F (fun k μ => ↑(x k μ) + (ε : ℂ) * ↑(η k μ) * I) * φ x)
           (nhdsWithin 0 (Set.Ioi 0))
-          (nhds (W φ))
+          (nhds (W φ)) := by
+  let e := flattenCLEquiv n (d + 1)
+  let eR := flattenCLEquivReal n (d + 1)
+  let Cflat : Set (Fin (n * (d + 1)) → ℝ) := eR '' C
+  let G : (Fin (n * (d + 1)) → ℂ) → ℂ := F ∘ e.symm
+  have hCflat_open : IsOpen Cflat := by
+    exact eR.toHomeomorph.isOpenMap _ hC_open
+  have hCflat_conv : Convex ℝ Cflat := by
+    exact hC_conv.linear_image eR.toLinearEquiv.toLinearMap
+  have hCflat_cone : IsCone Cflat := by
+    intro y hy t ht
+    rcases hy with ⟨y', hy', rfl⟩
+    refine ⟨t • y', hC_cone y' hy' t ht, ?_⟩
+    simpa using eR.map_smul t y'
+  have hCflat_ne : Cflat.Nonempty := by
+    rcases hC_ne with ⟨y, hy⟩
+    exact ⟨eR y, ⟨y, hy, rfl⟩⟩
+  have hmem_flat : ∀ z : Fin (n * (d + 1)) → ℂ,
+      z ∈ SCV.TubeDomain Cflat → e.symm z ∈ TubeDomainSetPi C := by
+    intro z hz
+    change (fun i => (z i).im) ∈ Cflat at hz
+    dsimp [Cflat] at hz
+    change (fun k μ => ((e.symm z) k μ).im) ∈ C
+    rcases hz with ⟨y, hy, hyw⟩
+    convert hy using 1
+    ext k μ
+    have hcomp := congr_fun hyw (finProdFinEquiv (k, μ))
+    simpa [e, eR, flattenCLEquiv_symm_apply, flattenCLEquivReal_apply] using hcomp.symm
+  have hG_hol : DifferentiableOn ℂ G (SCV.TubeDomain Cflat) := by
+    refine hF_hol.comp e.symm.differentiableOn ?_
+    intro z hz
+    exact hmem_flat z hz
+  have hG_growth : ∀ z ∈ SCV.TubeDomain Cflat,
+      ‖G z‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
+    intro z hz
+    have hz' : e.symm z ∈ TubeDomainSetPi C := hmem_flat z hz
+    have hflat := hF_growth (e.symm z) hz'
+    have hnorm : ‖e.symm z‖ = ‖z‖ := by
+      simpa [e] using (flattenCLEquiv_norm_eq n (d + 1) (e.symm z)).symm
+    simpa [G, hnorm] using hflat
+  obtain ⟨Tflat, hBVflat⟩ :=
+    tube_boundaryValue_of_vladimirov_growth
+      hCflat_open hCflat_conv hCflat_cone hCflat_ne hG_hol
+      (M := 0) hC
+      (fun z hz => by
+        simpa using hG_growth z hz)
+  let pushforward : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ →L[ℂ]
+      SchwartzMap (Fin (n * (d + 1)) → ℝ) ℂ :=
+    SchwartzMap.compCLMOfContinuousLinearEquiv ℂ eR.symm
+  let W : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ →L[ℂ] ℂ :=
+    Tflat.comp pushforward
+  refine ⟨W, ?_⟩
+  intro φ η hη
+  have hηflat : eR η ∈ Cflat := ⟨η, hη, rfl⟩
+  have hflat :
+      Tendsto
+        (fun ε : ℝ =>
+          ∫ x : Fin (n * (d + 1)) → ℝ,
+            G (fun i => ↑(x i) + (ε : ℂ) * ↑(eR η i) * I) * (pushforward φ x))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (Tflat (pushforward φ))) := by
+    simpa [tubeSlice, G] using hBVflat (pushforward φ) (eR η) hηflat
+  have hEq :
+      (fun ε : ℝ =>
+        ∫ x : Fin (n * (d + 1)) → ℝ,
+          G (fun i => ↑(x i) + (ε : ℂ) * ↑(eR η i) * I) * (pushforward φ x))
+      =
+      (fun ε : ℝ =>
+        ∫ y : Fin n → Fin (d + 1) → ℝ,
+          F (fun k μ => ↑(y k μ) + (ε : ℂ) * ↑(η k μ) * I) * φ y) := by
+    funext ε
+    rw [integral_flatten_change_of_variables n (d + 1)
+      (fun x : Fin (n * (d + 1)) → ℝ =>
+        G (fun i => ↑(x i) + (ε : ℂ) * ↑(eR η i) * I) * (pushforward φ x))]
+    congr 1
+    ext y
+    have hFarg :
+        G (fun i => ↑(eR y i) + (ε : ℂ) * ↑(eR η i) * I) =
+          F (fun k μ => ↑(y k μ) + (ε : ℂ) * ↑(η k μ) * I) := by
+      change F (e.symm (fun i => ↑(eR y i) + (ε : ℂ) * ↑(eR η i) * I)) =
+        F (fun k μ => ↑(y k μ) + (ε : ℂ) * ↑(η k μ) * I)
+      congr 1
+      ext k μ
+      have hyk : eR y (finProdFinEquiv (k, μ)) = y k μ := by
+        simp [eR, flattenCLEquivReal_apply]
+      have hηk : eR η (finProdFinEquiv (k, μ)) = η k μ := by
+        simp [eR, flattenCLEquivReal_apply]
+      rw [show (e.symm (fun i => ↑(eR y i) + (ε : ℂ) * ↑(eR η i) * I)) k μ =
+          (fun i => ↑(eR y i) + (ε : ℂ) * ↑(eR η i) * I) (finProdFinEquiv (k, μ)) by
+            simp [e, flattenCLEquiv_symm_apply]]
+      simp [hyk, hηk]
+    have hφarg : pushforward φ (eR y) = φ y := by
+      simp [pushforward, eR]
+    rw [hFarg, hφarg]
+  rw [hEq] at hflat
+  simpa [W, pushforward] using hflat
 
 end
