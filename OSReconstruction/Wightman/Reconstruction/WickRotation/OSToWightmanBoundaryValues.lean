@@ -3,14 +3,14 @@ Copyright (c) 2025 ModularPhysics Contributors. All rights reserved.
 Released under Apache 2.0 license.
 Authors: Michael Douglas, ModularPhysics Contributors
 -/
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBoundaryValuesBase
+import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBoundaryValuesComparison
 import OSReconstruction.Wightman.Reconstruction.WightmanTwoPoint
 
 /-!
 # OS to Wightman Boundary Values and Transfers
 
 Public frontier for the boundary-value transfer layer after the large support
-infrastructure has been moved to `OSToWightmanBoundaryValuesBase.lean`.
+infrastructure now lives across `OSToWightmanBoundaryValuesBase.lean` and `OSToWightmanBoundaryValuesComparison.lean`.
 -/
 
 open scoped Classical NNReal
