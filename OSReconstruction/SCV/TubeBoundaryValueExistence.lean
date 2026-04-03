@@ -827,7 +827,7 @@ theorem hasDerivAt_tubeSlice_ray
     **Previous version was underassumed**: ContinuousOn alone doesn't guarantee
     integrability of F(x+iτη)ψ(x) — e.g., F(z) = exp(z²) is entire but
     |F(x+iτη)| = exp(x²-τ²) grows too fast for Schwartz test functions. -/
-axiom continuous_tubeSlice_ray_deriv
+theorem continuous_tubeSlice_ray_deriv
     {C : Set (Fin m → ℝ)}
     {F : (Fin m → ℂ) → ℂ}
     (hF_cont : ContinuousOn F (SCV.TubeDomain C))
@@ -838,7 +838,150 @@ axiom continuous_tubeSlice_ray_deriv
     (hF_growth : ∀ z ∈ SCV.TubeDomain C, ‖F z‖ ≤ C_bd * (1 + ‖z‖) ^ N)
     (φ : SchwartzMap (Fin m → ℝ) ℂ) :
     ContinuousOn (fun (τ : ℝ) => -I * tubeSlice F (τ • η) (directionalDerivSchwartz η φ))
-      (Set.Ioi 0)
+      (Set.Ioi 0) := by
+  let ψ : SchwartzMap (Fin m → ℝ) ℂ := directionalDerivSchwartz η φ
+  have hcont_slice : ContinuousOn (fun τ : ℝ => tubeSlice F (τ • η) ψ) (Set.Ioi 0) := by
+    refine (isOpen_Ioi.continuousOn_iff).2 ?_
+    intro τ₀ hτ₀
+    let δ : ℝ := τ₀ / 2
+    have hδ : 0 < δ := by
+      dsimp [δ]
+      exact half_pos (Set.mem_Ioi.mp hτ₀)
+    let slice : ℝ → (Fin m → ℝ) → (Fin m → ℂ) :=
+      fun τ x i => (x i : ℂ) + ((τ • η) i : ℝ) * I
+    have hslice_mem :
+        ∀ {τ : ℝ}, |τ - τ₀| < δ → ∀ x : Fin m → ℝ, slice τ x ∈ SCV.TubeDomain C := by
+      intro τ hτ x
+      rcases abs_lt.mp hτ with ⟨hτ_lo, _⟩
+      have hτ_pos : 0 < τ := by
+        have hτ₀_pos : 0 < τ₀ := Set.mem_Ioi.mp hτ₀
+        dsimp [δ] at hτ_lo
+        linarith
+      have hτη : τ • η ∈ C := hC_cone η hη τ hτ_pos
+      show (fun i => (slice τ x i).im) ∈ C
+      convert hτη using 1
+      ext i
+      simp [slice, Complex.add_im, Complex.ofReal_im, Complex.mul_im, Complex.I_re,
+        Complex.I_im, Pi.smul_apply, smul_eq_mul]
+    let Kτ : ℝ := (3 * τ₀ / 2) * ‖η‖
+    have hτ_bound : ∀ {τ : ℝ}, |τ - τ₀| < δ → ‖τ • η‖ ≤ Kτ := by
+      intro τ hτ
+      rcases abs_lt.mp hτ with ⟨hτ_lo, hτ_hi⟩
+      have hτ_nonneg : 0 ≤ τ := by
+        have hτ₀_pos : 0 < τ₀ := Set.mem_Ioi.mp hτ₀
+        dsimp [δ] at hτ_lo
+        linarith
+      have hτ_le : τ ≤ 3 * τ₀ / 2 := by
+        dsimp [δ] at hτ_hi
+        linarith
+      calc
+        ‖τ • η‖ = ‖τ‖ * ‖η‖ := by rw [norm_smul]
+        _ = τ * ‖η‖ := by simp [abs_of_nonneg hτ_nonneg]
+        _ ≤ (3 * τ₀ / 2) * ‖η‖ := by gcongr
+    let gB : (Fin m → ℝ) → ℂ :=
+      fun x => (((C_bd * (1 + Kτ) ^ N) * (1 + ‖x‖) ^ N : ℝ) : ℂ)
+    let B : (Fin m → ℝ) → ℝ := fun x => ‖gB x * ψ x‖
+    have hpoint_cont :
+        ∀ x : Fin m → ℝ, ContinuousAt (fun τ : ℝ => F (slice τ x) * ψ x) τ₀ := by
+      intro x
+      have hτ0 : |τ₀ - τ₀| < δ := by
+        simpa [δ] using hδ
+      have hF_at : ContinuousAt F (slice τ₀ x) := by
+        exact hF_cont.continuousAt
+          ((SCV.tubeDomain_isOpen hC_open).mem_nhds (hslice_mem hτ0 x))
+      have hslice_at : ContinuousAt (fun τ : ℝ => slice τ x) τ₀ := by
+        exact (by fun_prop : Continuous fun τ : ℝ => slice τ x).continuousAt
+      have hcomp : ContinuousAt (fun τ : ℝ => F (slice τ x)) τ₀ := by
+        simpa [Function.comp] using (ContinuousAt.comp (f := fun τ : ℝ => slice τ x) (x := τ₀) hF_at hslice_at :
+          ContinuousAt (F ∘ fun τ : ℝ => slice τ x) τ₀)
+      exact hcomp.mul_const (ψ x)
+    have hmeas :
+        ∀ᶠ τ in nhds τ₀,
+          AEStronglyMeasurable (fun x : Fin m → ℝ => F (slice τ x) * ψ x) volume := by
+      filter_upwards [Metric.ball_mem_nhds τ₀ hδ] with τ hτ
+      have hτ' : |τ - τ₀| < δ := Metric.mem_ball.mp hτ
+      have hcontF : Continuous fun x : Fin m → ℝ => F (slice τ x) := by
+        exact hF_cont.comp_continuous (by fun_prop) (hslice_mem hτ')
+      exact (hcontF.mul ψ.continuous).aestronglyMeasurable
+    have hgB_meas : AEStronglyMeasurable gB volume := by
+      exact (by fun_prop : Continuous gB).aestronglyMeasurable
+    have hKτ_pos : 0 < 1 + Kτ := by
+      have hτ₀_pos : 0 < τ₀ := Set.mem_Ioi.mp hτ₀
+      dsimp [Kτ]
+      nlinarith [norm_nonneg η]
+    have hgB_norm : ∀ x : Fin m → ℝ,
+        ‖gB x‖ = (C_bd * (1 + Kτ) ^ N) * (1 + ‖x‖) ^ N := by
+      intro x
+      have hcoeff_nonneg : 0 ≤ (C_bd * (1 + Kτ) ^ N) * (1 + ‖x‖) ^ N := by
+        positivity
+      unfold gB
+      rw [Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg hcoeff_nonneg]
+    have hgB_growth : ∀ x : Fin m → ℝ, ‖gB x‖ ≤ (C_bd * (1 + Kτ) ^ N) * (1 + ‖x‖) ^ N := by
+      intro x
+      rw [hgB_norm]
+    have hB_int_complex : Integrable (fun x : Fin m → ℝ => gB x * ψ x) := by
+      exact integrable_polyGrowth_mul_schwartz gB hgB_meas
+        (C_bd * (1 + Kτ) ^ N) N
+        (mul_pos hC_bd (pow_pos hKτ_pos _))
+        hgB_growth ψ
+    have hB_int : Integrable B := by
+      simpa [B] using hB_int_complex.norm
+    have hbound_event :
+        ∀ᶠ τ in nhds τ₀,
+          ∀ x : Fin m → ℝ, ‖F (slice τ x) * ψ x‖ ≤ B x := by
+      filter_upwards [Metric.ball_mem_nhds τ₀ hδ] with τ hτ x
+      have hτ' : |τ - τ₀| < δ := Metric.mem_ball.mp hτ
+      have hgrowth := hF_growth (slice τ x) (hslice_mem hτ' x)
+      have hreal_le : ‖fun i => (x i : ℂ)‖ ≤ ‖x‖ := by
+        rw [pi_norm_le_iff_of_nonneg (norm_nonneg x)]
+        intro i
+        simpa using (norm_le_pi_norm x i)
+      have himag_le : ‖fun i => (((τ • η) i : ℝ) * I : ℂ)‖ ≤ ‖τ • η‖ := by
+        rw [pi_norm_le_iff_of_nonneg (norm_nonneg (τ • η))]
+        intro i
+        simpa [Complex.norm_mul, Complex.norm_I] using (norm_le_pi_norm (τ • η) i)
+      have hnorm_le : ‖slice τ x‖ ≤ ‖x‖ + ‖τ • η‖ := by
+        calc
+          ‖slice τ x‖
+              ≤ ‖fun i => (x i : ℂ)‖ + ‖fun i => (((τ • η) i : ℝ) * I : ℂ)‖ := norm_add_le _ _
+          _ ≤ ‖x‖ + ‖τ • η‖ := add_le_add hreal_le himag_le
+      have hbase_le : 1 + ‖slice τ x‖ ≤ (1 + Kτ) * (1 + ‖x‖) := by
+        have hKτ_nonneg : 0 ≤ Kτ := by
+          have hτ₀_pos : 0 < τ₀ := Set.mem_Ioi.mp hτ₀
+          dsimp [Kτ]
+          nlinarith [norm_nonneg η]
+        have htauK : ‖τ • η‖ ≤ Kτ := hτ_bound hτ'
+        nlinarith [hnorm_le, htauK, norm_nonneg x, hKτ_nonneg]
+      have hpow_le :
+          (1 + ‖slice τ x‖) ^ N ≤ ((1 + Kτ) * (1 + ‖x‖)) ^ N := by
+        exact pow_le_pow_left₀ (by positivity) hbase_le N
+      rw [norm_mul]
+      calc
+        ‖F (slice τ x)‖ * ‖ψ x‖ ≤ (C_bd * (1 + ‖slice τ x‖) ^ N) * ‖ψ x‖ := by
+          exact mul_le_mul_of_nonneg_right hgrowth (norm_nonneg _)
+        _ ≤ (C_bd * (((1 + Kτ) * (1 + ‖x‖)) ^ N)) * ‖ψ x‖ := by
+          gcongr
+        _ = ((C_bd * (1 + Kτ) ^ N) * (1 + ‖x‖) ^ N) * ‖ψ x‖ := by
+          rw [mul_pow]
+          ring
+        _ = ‖gB x‖ * ‖ψ x‖ := by rw [hgB_norm]
+        _ = ‖gB x * ψ x‖ := by rw [norm_mul]
+        _ = B x := rfl
+    have hlim :
+        ∀ᵐ x : Fin m → ℝ ∂volume,
+          Tendsto (fun τ : ℝ => F (slice τ x) * ψ x) (nhds τ₀) (nhds (F (slice τ₀ x) * ψ x)) := by
+      exact Filter.Eventually.of_forall fun x => (hpoint_cont x).tendsto
+    have hbound_event_ae :
+        ∀ᶠ τ in nhds τ₀, ∀ᵐ x : Fin m → ℝ ∂volume, ‖F (slice τ x) * ψ x‖ ≤ B x := by
+      filter_upwards [hbound_event] with τ hτ
+      exact Filter.Eventually.of_forall hτ
+    have htend :
+        Tendsto (fun τ : ℝ => ∫ x : Fin m → ℝ, F (slice τ x) * ψ x)
+          (nhds τ₀) (nhds (∫ x : Fin m → ℝ, F (slice τ₀ x) * ψ x)) := by
+      exact MeasureTheory.tendsto_integral_filter_of_dominated_convergence
+        B hmeas hbound_event_ae hB_int hlim
+    simpa [tubeSlice, slice, Pi.smul_apply, smul_eq_mul] using htend
+  exact continuousOn_const.mul hcont_slice
 
 /-- The Cauchy-Riemann ray-integration identity (1D FTC along a ray in the cone).
 
