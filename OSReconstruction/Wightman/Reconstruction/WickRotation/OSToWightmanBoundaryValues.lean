@@ -4,6 +4,7 @@ Released under Apache 2.0 license.
 Authors: Michael Douglas, ModularPhysics Contributors
 -/
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBoundaryValuesBase
+import OSReconstruction.Wightman.Reconstruction.WightmanTwoPoint
 
 /-!
 # OS to Wightman Boundary Values and Transfers
@@ -664,39 +665,6 @@ theorem bvt_hermitian (OS : OsterwalderSchraderAxioms d)
     (bvt_boundary_values OS lgc n)
     (hF_reflect_pairing n)
     f g hfg
-
-/-- For compact ordered positive-time Borchers vectors, the componentwise
-single-split `xiShift` shell comparisons now already imply self-pair
-positivity with no separate degree-`0` vanishing assumption. The remaining
-degree-`0` obstruction is discharged by combining the left-degree-`0`
-comparison with Hermitian symmetry. -/
-private theorem bvt_wightmanInner_self_nonneg_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero
-    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
-    (F : PositiveTimeBorchersSequence d)
-    (hF_compact :
-      ∀ n,
-        HasCompactSupport ((((F : BorchersSequence d).funcs n : SchwartzNPoint d n) :
-          NPointDomain d n → ℂ)))
-    (hWlimit :
-      ∀ n m (hm : 0 < m),
-        Filter.Tendsto
-          (fun t : ℝ =>
-            ∫ y : NPointDomain d (n + m),
-              bvt_F OS lgc (n + m)
-                  (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
-                    (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
-                ((((F : BorchersSequence d).funcs n).osConjTensorProduct
-                  ((F : BorchersSequence d).funcs m)) y))
-          (nhdsWithin 0 (Set.Ioi 0))
-          (nhds
-            (bvt_W OS lgc (n + m)
-              ((((F : BorchersSequence d).funcs n).conjTensorProduct
-                ((F : BorchersSequence d).funcs m)))))) :
-    0 ≤ (WightmanInnerProduct d (bvt_W OS lgc)
-      (F : BorchersSequence d) (F : BorchersSequence d)).re := by
-  rw [bvt_wightmanInner_self_eq_osInner_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero_of_hermitian
-    (d := d) (OS := OS) (lgc := lgc) (bvt_hermitian OS lgc) F hF_compact hWlimit]
-  exact PositiveTimeBorchersSequence.osInner_nonneg_self OS F
 
 theorem bvt_cluster (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) :

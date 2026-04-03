@@ -8,6 +8,8 @@ import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanSpatial
 import OSReconstruction.Wightman.Reconstruction.WickRotation.ForwardTubeLorentz
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanTubeIdentity
 import OSReconstruction.Wightman.Reconstruction.WickRotation.BHWReducedExtension
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAFixedTime
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAXiShift
 import OSReconstruction.SCV.TubeBoundaryValues
 
 /-!
@@ -144,26 +146,6 @@ theorem wightmanInner_eq_osInner_of_orderedPositive_termwise
       (((G : BorchersSequence d).funcs m) : SchwartzNPoint d m)
       (F.ordered_tsupport n)
       (G.ordered_tsupport m)
-
-/-- Under the same ordered positive-time termwise comparison, positivity on the
-honest positive-time Borchers algebra transfers immediately from OS reflection
-positivity. -/
-theorem wightmanInner_nonneg_self_of_orderedPositive_termwise
-    (OS : OsterwalderSchraderAxioms d)
-    (W : (n : ℕ) → SchwartzNPoint d n → ℂ)
-    (hterm :
-      ∀ (n m : ℕ) (f : SchwartzNPoint d n) (g : SchwartzNPoint d m),
-        tsupport ((f : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
-          OrderedPositiveTimeRegion d n →
-        tsupport ((g : SchwartzNPoint d m) : NPointDomain d m → ℂ) ⊆
-          OrderedPositiveTimeRegion d m →
-        W (n + m) (f.conjTensorProduct g) =
-          OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical (f.osConjTensorProduct g)))
-    (F : PositiveTimeBorchersSequence d) :
-    0 ≤ (WightmanInnerProduct d W (F : BorchersSequence d) (F : BorchersSequence d)).re := by
-  rw [wightmanInner_eq_osInner_of_orderedPositive_termwise
-    (d := d) OS W hterm F F]
-  exact PositiveTimeBorchersSequence.osInner_nonneg_self OS F
 
 /-! ### Phase 4: Tempered boundary values
 
@@ -362,27 +344,6 @@ theorem bvt_W_linear (OS : OsterwalderSchraderAxioms d)
   · intro c f
     exact map_smul (full_analytic_continuation_boundaryValueData (d := d) OS lgc n).choose c f
 
-/-- Boundary-value specialization of the ordered positive-time positivity
-reduction. If the reconstructed boundary-value family agrees termwise with the
-Euclidean OS tensor terms on ordered positive-time pairs, then positivity
-already holds on the honest positive-time Borchers algebra. -/
-theorem bvt_positiveTime_wightmanInner_nonneg_of_orderedPositive_termwise
-    (OS : OsterwalderSchraderAxioms d)
-    (lgc : OSLinearGrowthCondition d OS)
-    (hterm :
-      ∀ (n m : ℕ) (f : SchwartzNPoint d n) (g : SchwartzNPoint d m),
-        tsupport ((f : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
-          OrderedPositiveTimeRegion d n →
-        tsupport ((g : SchwartzNPoint d m) : NPointDomain d m → ℂ) ⊆
-          OrderedPositiveTimeRegion d m →
-        bvt_W OS lgc (n + m) (f.conjTensorProduct g) =
-          OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical (f.osConjTensorProduct g)))
-    (F : PositiveTimeBorchersSequence d) :
-    0 ≤ (WightmanInnerProduct d (bvt_W OS lgc)
-      (F : BorchersSequence d) (F : BorchersSequence d)).re := by
-  exact wightmanInner_nonneg_self_of_orderedPositive_termwise
-    (d := d) OS (bvt_W OS lgc) hterm F
-
 /-- On the exact compact ordered positive-time shell where the BV `xiShift`
 comparison theorem applies, the reconstructed Wightman inner product of two
 concentrated Borchers vectors already agrees with the honest OS inner product. -/
@@ -466,6 +427,122 @@ theorem bvt_exists_twoPoint_xiShift_holomorphicValue
       (χ := χ) (h := h)
       (hχ_pos := hχ_pos) (hh_pos := hh_pos) (hh_compact := hh_compact)
 
+/-- Fixed-time two-point `xiShift` pairings for the actual BV witness already
+depend on the center test only through its integral. This is the concrete
+`k = 2` fixed-time shell-collapse statement on the production witness `bvt_F`,
+obtained by specializing the K2 Input A theorem rather than introducing a new
+auxiliary kernel. -/
+theorem bvt_twoPoint_xiShiftWitness_eq_centerValue_of_positiveSupport_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (h : SchwartzSpacetime d)
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    (t : ℝ) (ht : 0 < t)
+    (χ₀ : SchwartzSpacetime d)
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (χ : SchwartzSpacetime d) :
+    ∫ y : NPointDomain d 2,
+      bvt_F OS lgc 2
+          (xiShift ⟨1, by omega⟩ 0
+            (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) y) i))
+            ((t : ℂ) * Complex.I)) *
+        (χ (y 0) * h (y 1))
+      =
+    (∫ y : NPointDomain d 2,
+      bvt_F OS lgc 2
+          (xiShift ⟨1, by omega⟩ 0
+            (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) y) i))
+            ((t : ℂ) * Complex.I)) *
+        (χ₀ (y 0) * h (y 1))) *
+      ∫ u : SpacetimeDim d, χ u := by
+  simpa using
+    OSReconstruction.schwinger_twoPoint_xiShiftWitness_eq_centerValue_of_positiveSupport_local
+      (d := d) (OS := OS) (Ψ := bvt_F OS lgc 2)
+      (hΨ_euclid := bvt_euclidean_restriction (d := d) OS lgc 2)
+      (h := h) (hh_pos := hh_pos) (t := t) ht
+      (χ₀ := χ₀) (hχ₀ := hχ₀) (χ := χ)
+
+/-- Production-witness center-collapse on the actual shifted Schwinger shell:
+once one normalized center cutoff is fixed, every other two-point
+`twoPointDifferenceLift χ (translate (-timeShiftVec t) h)` value is obtained by
+scaling with `∫ χ`. This is the exact production specialization of the K2
+fixed-time shell reduction, and it shrinks the live comparison problem to one
+normalized center cutoff. -/
+theorem bvt_twoPointDifferenceLift_timeShift_eq_centerValue_of_positiveSupport_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (h : SchwartzSpacetime d)
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    (t : ℝ) (ht : 0 < t)
+    (χ₀ : SchwartzSpacetime d)
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (χ : SchwartzSpacetime d) :
+    OS.S 2
+      (ZeroDiagonalSchwartz.ofClassical
+        (twoPointDifferenceLift χ
+          (SCV.translateSchwartz (- timeShiftVec d t) h))) =
+      (∫ y : NPointDomain d 2,
+        bvt_F OS lgc 2
+          (xiShift ⟨1, by omega⟩ 0
+            (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) y) i))
+            ((t : ℂ) * Complex.I)) *
+          (χ₀ (y 0) * h (y 1))) *
+        ∫ u : SpacetimeDim d, χ u := by
+  calc
+    OS.S 2
+      (ZeroDiagonalSchwartz.ofClassical
+        (twoPointDifferenceLift χ
+          (SCV.translateSchwartz (- timeShiftVec d t) h))) =
+      ∫ y : NPointDomain d 2,
+        bvt_F OS lgc 2
+          (xiShift ⟨1, by omega⟩ 0
+            (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) y) i))
+            ((t : ℂ) * Complex.I)) *
+          (χ (y 0) * h (y 1)) := by
+            exact OSReconstruction.schwinger_twoPointDifferenceLift_timeShift_eq_xiShift_of_positiveSupport_local
+              (d := d) (OS := OS) (Ψ := bvt_F OS lgc 2)
+              (hΨ_euclid := bvt_euclidean_restriction (d := d) OS lgc 2)
+              χ h hh_pos t ht
+    _ =
+      (∫ y : NPointDomain d 2,
+        bvt_F OS lgc 2
+          (xiShift ⟨1, by omega⟩ 0
+            (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) y) i))
+            ((t : ℂ) * Complex.I)) *
+          (χ₀ (y 0) * h (y 1))) *
+        ∫ u : SpacetimeDim d, χ u := by
+            exact bvt_twoPoint_xiShiftWitness_eq_centerValue_of_positiveSupport_local
+              (d := d) (OS := OS) (lgc := lgc)
+              h hh_pos t ht χ₀ hχ₀ χ
+
+/-- The shifted two-point Schwinger shell on a positive-support difference test
+already has a concrete fixed-time center/difference kernel representation
+coming from the `k = 2` base-step witness. This is the correct K2-facing
+replacement for the discarded direct-holomorphic-family claim: it exposes the
+actual fixed-time kernel on the live two-point route without conflating the
+center/difference witness with the direct product-shell `xiShift` family. -/
+theorem bvt_exists_twoPointDifferenceLift_timeShift_fixedTimeCenterDiffKernel_of_positiveSupport_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (χ h : SchwartzSpacetime d)
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    (t : ℝ) (ht : 0 < t) :
+    ∃ G : (Fin (2 * (d + 1)) → ℂ) → ℂ,
+      IsTimeHolomorphicFlatPositiveTimeDiffWitness G ∧
+      (∀ (f : ZeroDiagonalSchwartz d 2),
+        OS.S 2 f = ∫ x : NPointDomain d 2,
+          G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x)) ∧
+      OS.S 2
+        (ZeroDiagonalSchwartz.ofClassical
+          (twoPointDifferenceLift χ
+            (SCV.translateSchwartz (- timeShiftVec d t) h))) =
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((t : ℂ) * Complex.I) z *
+            (χ (z 0) * h (z 1)) := by
+  obtain ⟨G, hG_holo, hG_euclid⟩ := schwinger_continuation_base_step (d := d) OS lgc 2
+  refine ⟨G, hG_holo, hG_euclid, ?_⟩
+  exact
+    OSReconstruction.schwinger_twoPointDifferenceLift_timeShift_eq_fixedTimeCenterDiffKernel_of_positiveSupport_local
+      (d := d) OS G hG_euclid χ h hh_pos t ht
+
 /-- The concrete one-point spectral Laplace shell specialized to `bvt_F`. This
 is the direct BV-side bridge from the reconstructed witness to the OS Hilbert
 semigroup data on positive real times. -/
@@ -505,6 +582,90 @@ theorem bvt_selfAdjointSpectralLaplaceOffdiag_onePoint_pair_eq_xiShift
       (χ := χ) (g := g)
       (hχ_pos := hχ_pos) (hg_pos := hg_pos)
       (hg_compact := hg_compact) (t := t) ht
+
+/-- The one-point OS time-shift matrix element can already be written directly
+on the two-point center/difference shell. This exposes the semigroup side on
+the same geometric coordinates as the live `k = 2` two-point route, without
+claiming it is yet the shifted admissible difference shell. -/
+theorem bvt_OSInnerProductTimeShiftHolomorphicValue_onePoint_pair_eq_xiShift_centerShear_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (χ g : SchwartzSpacetime d)
+    (hχ_pos : tsupport (((SchwartzNPoint.osConj (d := d) (n := 1)
+        (onePointToFin1CLM d χ : SchwartzNPoint d 1) : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (hg_pos : tsupport (((onePointToFin1CLM d g : SchwartzNPoint d 1) :
+        NPointDomain d 1 → ℂ)) ⊆ OrderedPositiveTimeRegion d 1)
+    (hg_compact : HasCompactSupport (g : SpacetimeDim d → ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+        ((show PositiveTimeBorchersSequence d from
+          PositiveTimeBorchersSequence.single 1
+            (SchwartzNPoint.osConj (d := d) (n := 1)
+              (onePointToFin1CLM d χ : SchwartzNPoint d 1))
+            hχ_pos))
+        ((show PositiveTimeBorchersSequence d from
+          PositiveTimeBorchersSequence.single 1
+            (onePointToFin1CLM d g : SchwartzNPoint d 1)
+            hg_pos))
+        (t : ℂ) =
+      ∫ z : NPointDomain d 2,
+        bvt_F OS lgc 2
+          (xiShift ⟨1, by omega⟩ 0
+            (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i))
+            ((t : ℂ) * Complex.I)) *
+          (χ (z 0) * g (z 0 + z 1)) := by
+  rw [OSInnerProductTimeShiftHolomorphicValue_eq_selfAdjointSpectralLaplaceOffdiag
+    (d := d) (OS := OS) (lgc := lgc)
+    ((show PositiveTimeBorchersSequence d from
+      PositiveTimeBorchersSequence.single 1
+        (SchwartzNPoint.osConj (d := d) (n := 1)
+          (onePointToFin1CLM d χ : SchwartzNPoint d 1))
+        hχ_pos))
+    ((show PositiveTimeBorchersSequence d from
+      PositiveTimeBorchersSequence.single 1
+        (onePointToFin1CLM d g : SchwartzNPoint d 1)
+        hg_pos))
+    (t : ℂ) (by simpa using ht)]
+  calc
+    ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag
+        (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+        (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+        (((show OSPreHilbertSpace OS from
+            (⟦PositiveTimeBorchersSequence.single 1
+                (SchwartzNPoint.osConj (d := d) (n := 1)
+                  (onePointToFin1CLM d χ : SchwartzNPoint d 1))
+                hχ_pos⟧)) : OSHilbertSpace OS))
+        (((show OSPreHilbertSpace OS from
+            (⟦PositiveTimeBorchersSequence.single 1
+                (onePointToFin1CLM d g : SchwartzNPoint d 1)
+                hg_pos⟧)) : OSHilbertSpace OS))
+        (t : ℂ)
+      =
+        ∫ y : NPointDomain d 2,
+          bvt_F OS lgc 2
+              (xiShift ⟨1, by omega⟩ 0
+                (fun i => wickRotatePoint (y i))
+                ((t : ℂ) * Complex.I)) *
+              (χ (y 0) * g (y 1)) := by
+          exact bvt_selfAdjointSpectralLaplaceOffdiag_onePoint_pair_eq_xiShift
+            (d := d) (OS := OS) (lgc := lgc)
+            χ g hχ_pos hg_pos hg_compact t ht
+    _ =
+        ∫ z : NPointDomain d 2,
+          bvt_F OS lgc 2
+            (xiShift ⟨1, by omega⟩ 0
+              (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) z) i))
+              ((t : ℂ) * Complex.I)) *
+            (χ (z 0) * g (z 0 + z 1)) := by
+          simpa [twoPointProductLift_apply] using
+            (integral_mul_twoPointProductLift_eq_centerShear
+              (d := d)
+              (Ψ := fun y : NPointDomain d 2 =>
+                bvt_F OS lgc 2
+                  (xiShift ⟨1, by omega⟩ 0
+                    (fun i => wickRotatePoint (y i))
+                    ((t : ℂ) * Complex.I)))
+              χ g)
 
 private theorem onePointToFin1_translate_spatial_tsupport_subset_orderedPositiveTime_local
     (g : SchwartzSpacetime d)
@@ -2945,42 +3106,6 @@ theorem bvt_wightmanInner_self_eq_osInner_of_componentwise_tendsto_singleSplit_x
   exact
     bvt_wightmanInner_eq_osInner_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero
       (d := d) (OS := OS) (lgc := lgc) F F hF_compact hF_compact hzero hWlimit
-
-/-- In the self-pair case, the same compact ordered positive-time hypotheses
-yield positivity once the degree-`0` right component is repaired via
-Hermiticity. -/
-theorem bvt_wightmanInner_self_nonneg_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero_of_hermitian
-    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
-    (hherm :
-      ∀ (n : ℕ) (f g : SchwartzNPoint d n),
-        (∀ x : NPointDomain d n,
-          g.toFun x = starRingEnd ℂ (f.toFun (fun i => x (Fin.rev i)))) →
-        bvt_W OS lgc n g = starRingEnd ℂ (bvt_W OS lgc n f))
-    (F : PositiveTimeBorchersSequence d)
-    (hF_compact :
-      ∀ n,
-        HasCompactSupport ((((F : BorchersSequence d).funcs n : SchwartzNPoint d n) :
-          NPointDomain d n → ℂ)))
-    (hWlimit :
-      ∀ n m (hm : 0 < m),
-        Filter.Tendsto
-          (fun t : ℝ =>
-            ∫ y : NPointDomain d (n + m),
-              bvt_F OS lgc (n + m)
-                  (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
-                    (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
-                ((((F : BorchersSequence d).funcs n).osConjTensorProduct
-                  ((F : BorchersSequence d).funcs m)) y))
-          (nhdsWithin 0 (Set.Ioi 0))
-          (nhds
-            (bvt_W OS lgc (n + m)
-              ((((F : BorchersSequence d).funcs n).conjTensorProduct
-                ((F : BorchersSequence d).funcs m)))))) :
-    0 ≤ (WightmanInnerProduct d (bvt_W OS lgc)
-      (F : BorchersSequence d) (F : BorchersSequence d)).re := by
-  rw [bvt_wightmanInner_self_eq_osInner_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero_of_hermitian
-    (d := d) (OS := OS) (lgc := lgc) hherm F hF_compact hWlimit]
-  exact PositiveTimeBorchersSequence.osInner_nonneg_self OS F
 
 private theorem bvt_F_one_eq_zero_local
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
