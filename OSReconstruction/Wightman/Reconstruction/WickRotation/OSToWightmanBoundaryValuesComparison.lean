@@ -14,6 +14,18 @@ infrastructure needed by `OSToWightmanBoundaryValues.lean`.
 The previous two-point same-shell comparison route has been removed. In
 particular, this file does not contain any theorem family comparing `bvt_W`
 and `OS.S` on the same test shell.
+
+The surviving conditional comparison chain uses the standard OS bridge shape:
+
+- the Wightman side is paired against `f.conjTensorProduct g`, i.e. the
+  Borchers adjoint tensor on Minkowski test functions;
+- the OS side is paired against `f.osConjTensorProduct g`, i.e. the Euclidean
+  time-reflected tensor appearing in `OSInnerProduct`.
+
+So the live comparison surface in this file is an ordered-positive-time
+isometry statement, not a same-shell identity. The remaining unresolved content
+is the `xiShift` boundary-value convergence hypothesis, not the theorem shape
+itself.
 -/
 
 open scoped Classical NNReal
@@ -284,7 +296,13 @@ theorem bvt_wightmanInner_zero_left_eq_osInner_of_componentwise_tendsto_singleSp
 /-- The new degree-`0`-on-the-left comparison can be flipped to the missing
 degree-`0`-on-the-right pointwise comparison once Hermiticity of `bvt_W` is
 available. This is the exact shape needed for the remaining `m = 0` positivity
-seam. -/
+seam.
+
+Important: this is still the standard OS bridge surface
+
+`bvt_W (f.conjTensorProduct g) = OS.S (ofClassical (f.osConjTensorProduct g))`
+
+and not a deleted same-shell identity. -/
 theorem bvt_eq_schwinger_of_tendsto_singleSplit_xiShift_nhdsWithin_zero_zeroRight_of_hermitian
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     (hherm :
