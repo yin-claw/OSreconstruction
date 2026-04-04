@@ -969,6 +969,37 @@ theorem bvt_twoPointDifferenceLift_eq_schwinger_of_tendsto_commonLiftedDifferenc
       (d := d) (OS := OS) (lgc := lgc) χ₀ h hχ₀ hh_compact hh_pos G hG_euclid hG_diff
       hcanon
 
+/-- Rewriting the lifted common slice at half-strip time as the zero-center
+section evaluated on the real difference variable shifted by the same total
+time translation. This is the exact geometric identity behind both the
+pointwise `t → 0+` kernel limit and the compact-support DCT upgrade. -/
+theorem commonLiftedDifferenceSliceKernel_half_eq_commonZeroCenterShiftSection_shift_local
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_diff :
+      ∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (finProdFinEquiv (⟨1, by omega⟩, μ)) =
+            v (finProdFinEquiv (⟨1, by omega⟩, μ))) →
+        G u = G v)
+    (t : ℝ)
+    (ξ : SpacetimeDim d) :
+    OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2) ξ =
+      OSReconstruction.commonZeroCenterShiftSection_local (d := d) G 0
+        (ξ + timeShiftVec d t) := by
+  rw [OSReconstruction.commonLiftedDifferenceSliceKernel_eq_k2TimeParametricKernel_on_zeroCenterShift_of_diffBlockDependence_local
+    (d := d) G hG_diff (t / 2) ξ]
+  have hshift_half : timeShiftVec d ((t / 2) + (t / 2)) = timeShiftVec d t := by
+    ext μ
+    by_cases hμ : μ = 0
+    · subst hμ
+      simp [timeShiftVec]
+    · simp [timeShiftVec, hμ]
+  simpa [OSReconstruction.commonZeroCenterShiftSection_local, timeShiftVec_zero_local] using
+    congrArg
+      (fun v : SpacetimeDim d =>
+        k2TimeParametricKernel (d := d) G (![(0 : SpacetimeDim d), ξ + v] : NPointDomain d 2))
+      hshift_half
+
 /-- On the positive-time region, the common lifted slice approaches the common
 real difference kernel pointwise as the strip parameter tends to `0+`.
 
@@ -1057,22 +1088,9 @@ theorem tendsto_commonLiftedDifferenceSliceKernel_to_commonDifferenceKernel_at_p
         OSReconstruction.commonZeroCenterShiftSection_local (d := d) G 0
           (ξ + timeShiftVec d t)) := by
     filter_upwards [self_mem_nhdsWithin] with t ht
-    rw [OSReconstruction.commonLiftedDifferenceSliceKernel_eq_k2TimeParametricKernel_on_zeroCenterShift_of_diffBlockDependence_local
-      (d := d) G hG_diff (t / 2) ξ]
-    have hshift_half : timeShiftVec d ((t / 2) + (t / 2)) = timeShiftVec d t := by
-      ext μ
-      by_cases hμ : μ = 0
-      · subst hμ
-        simp [timeShiftVec]
-      · simp [timeShiftVec, hμ]
-    have harg :
-        ξ + timeShiftVec d ((t / 2) + (t / 2)) = ξ + timeShiftVec d t := by
-      simpa [hshift_half]
-    simpa [OSReconstruction.commonZeroCenterShiftSection_local, timeShiftVec_zero_local] using
-      congrArg
-        (fun v : SpacetimeDim d =>
-          k2TimeParametricKernel (d := d) G (![(0 : SpacetimeDim d), ξ + v] : NPointDomain d 2))
-        hshift_half
+    simpa using
+      commonLiftedDifferenceSliceKernel_half_eq_commonZeroCenterShiftSection_shift_local
+        (d := d) G hG_diff t ξ
   have htarget :
       OSReconstruction.commonZeroCenterShiftSection_local (d := d) G 0 ξ =
         OSReconstruction.commonDifferenceKernel_real_local (d := d) G ξ := by
@@ -1083,6 +1101,277 @@ theorem tendsto_commonLiftedDifferenceSliceKernel_to_commonDifferenceKernel_at_p
       _ = OSReconstruction.commonDifferenceKernel_real_local (d := d) G ξ := by
             simp [OSReconstruction.commonDifferenceKernel_real_local, hξ]
   simpa [htarget] using Filter.Tendsto.congr' hEq.symm hzero_tend
+
+/-- Dominated-convergence upgrade of the positive-time common lifted slice:
+for compact support away from time `0`, the pairing against the lifted slice
+converges to the pairing against the common real difference kernel as the strip
+parameter tends to `0+`. This is the missing integral-level `hcommon` input for
+the two-point BV/Schwinger comparison route. -/
+theorem tendsto_commonLiftedDifferenceSliceKernel_pairing_to_commonDifferenceKernel_of_compact_positiveSupport_local
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_holo : IsTimeHolomorphicFlatPositiveTimeDiffWitness G)
+    (hG_diff :
+      ∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (finProdFinEquiv (⟨1, by omega⟩, μ)) =
+            v (finProdFinEquiv (⟨1, by omega⟩, μ))) →
+        G u = G v)
+    (h : SchwartzSpacetime d)
+    (hh_compact : HasCompactSupport (h : SpacetimeDim d → ℂ))
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {ξ : SpacetimeDim d | 0 < ξ 0}) :
+    Filter.Tendsto
+      (fun t : ℝ =>
+        ∫ ξ : SpacetimeDim d,
+          OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2) ξ * h ξ)
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds
+        (∫ ξ : SpacetimeDim d,
+          OSReconstruction.commonDifferenceKernel_real_local (d := d) G ξ * h ξ)) := by
+  let hpt : positiveTimeCompactSupportSubmodule d := ⟨h, ⟨hh_pos, hh_compact⟩⟩
+  obtain ⟨δ, hδ_pos, hmargin⟩ :=
+    exists_positive_time_margin_of_mem_positiveTimeCompactSupport_local (d := d) hpt
+  let K : Set (SpacetimeDim d) := tsupport (h : SpacetimeDim d → ℂ)
+  let S : Set (SpacetimeDim d) := {ξ : SpacetimeDim d | δ / 2 < ξ 0}
+  let shiftMap : SpacetimeDim d × ℝ → SpacetimeDim d := fun p => p.1 + timeShiftVec d p.2
+  let q : SpacetimeDim d × ℝ → ℝ := fun p =>
+    ‖OSReconstruction.commonZeroCenterShiftSection_local (d := d) G 0 (shiftMap p)‖
+  have hK_compact : IsCompact K := by
+    simpa [K, HasCompactSupport] using hh_compact
+  have hS_meas : MeasurableSet S := by
+    have hS_open : IsOpen S := by
+      simpa [S] using
+        isOpen_lt (continuous_const : Continuous fun _ : SpacetimeDim d => δ / 2)
+          (continuous_apply (0 : Fin (d + 1)))
+    exact hS_open.measurableSet
+  have htsupport_sub_S : K ⊆ S := by
+    intro ξ hξ
+    have hξ_pos : δ < ξ 0 := hmargin hξ
+    show δ / 2 < ξ 0
+    linarith
+  have hshiftMap_cont : Continuous shiftMap := by
+    refine continuous_fst.add ?_
+    refine continuous_pi ?_
+    intro μ
+    by_cases hμ : μ = 0
+    · subst hμ
+      simpa [timeShiftVec] using (continuous_snd : Continuous fun p : SpacetimeDim d × ℝ => p.2)
+    · simp [timeShiftVec, hμ]
+      exact continuous_const
+  have hshiftMap_maps :
+      Set.MapsTo shiftMap (K ×ˢ Set.Icc (0 : ℝ) (δ / 2)) {η : SpacetimeDim d | 0 < η 0} := by
+    intro p hp
+    rcases hp with ⟨hpK, hpIcc⟩
+    have hp_pos : δ < p.1 0 := hmargin hpK
+    have hp0_pos : 0 < p.1 0 := by linarith
+    have ht_nonneg : 0 ≤ p.2 := hpIcc.1
+    change 0 < p.1 0 + p.2
+    simpa [shiftMap, timeShiftVec] using add_pos_of_pos_of_nonneg hp0_pos ht_nonneg
+  have hsection_cont :
+      ContinuousOn
+        (OSReconstruction.commonZeroCenterShiftSection_local (d := d) G 0)
+        {η : SpacetimeDim d | 0 < η 0} := by
+    simpa using
+      OSReconstruction.continuousOn_commonZeroCenterShiftSection_on_fixedStrip_local
+        (d := d) G hG_holo hG_diff 0
+  have hq_cont :
+      ContinuousOn q (K ×ˢ Set.Icc (0 : ℝ) (δ / 2)) := by
+    simpa [q, shiftMap] using
+      (hsection_cont.norm.comp hshiftMap_cont.continuousOn hshiftMap_maps)
+  have hcompact_q : IsCompact (K ×ˢ Set.Icc (0 : ℝ) (δ / 2)) := by
+    exact hK_compact.prod isCompact_Icc
+  obtain ⟨C, hC⟩ := hcompact_q.exists_bound_of_continuousOn (f := q) hq_cont
+  let C0 : ℝ := max C 0
+  have hC0_nonneg : 0 ≤ C0 := le_max_right _ _
+  have hq_bound :
+      ∀ p ∈ K ×ˢ Set.Icc (0 : ℝ) (δ / 2), q p ≤ C0 := by
+    intro p hp
+    have hp_nonneg : 0 ≤ q p := by
+      exact norm_nonneg _
+    have hp_le_C : q p ≤ C := by
+      simpa [Real.norm_of_nonneg hp_nonneg] using hC p hp
+    exact le_trans hp_le_C (le_max_left _ _)
+  have hsmall :
+      Set.Ioo (0 : ℝ) (δ / 2) ∈ nhdsWithin (0 : ℝ) (Set.Ioi 0) := by
+    apply mem_nhdsWithin.mpr
+    refine ⟨Set.Iio (δ / 2), isOpen_Iio, ?_, ?_⟩
+    · have hδ_half : 0 < δ / 2 := by linarith
+      exact Set.mem_Iio.mpr hδ_half
+    · intro t ht
+      exact Set.mem_Ioo.mpr ⟨Set.mem_Ioi.mp ht.2, Set.mem_Iio.mp ht.1⟩
+  apply MeasureTheory.tendsto_integral_filter_of_dominated_convergence
+    (bound := fun ξ : SpacetimeDim d => C0 * ‖h ξ‖)
+  · apply Filter.eventually_of_mem hsmall
+    intro t ht
+    obtain ⟨ht_pos, ht_lt⟩ := Set.mem_Ioo.mp ht
+    have hkernel_contS :
+        ContinuousOn
+          (OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2))
+          S := by
+      refine
+        (OSReconstruction.commonLiftedDifferenceSliceKernel_continuousOn_local
+          (d := d) G hG_holo (t / 2)).mono ?_
+      intro ξ hξ
+      have hξS : δ / 2 < ξ 0 := hξ
+      have hstrip : -((t / 2) + (t / 2)) < ξ 0 := by
+        have hneg : -t < δ / 2 := by linarith
+        linarith
+      simpa using hstrip
+    have hpiece_meas :
+        Measurable
+          (S.piecewise
+            (OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2))
+            (fun _ : SpacetimeDim d => (0 : ℂ))) := by
+      exact hkernel_contS.measurable_piecewise continuous_zero.continuousOn hS_meas
+    have hpiece_ae :
+        MeasureTheory.AEStronglyMeasurable
+          (fun ξ : SpacetimeDim d =>
+            S.piecewise
+              (OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2))
+              (fun _ : SpacetimeDim d => (0 : ℂ)) ξ * h ξ)
+          MeasureTheory.MeasureSpace.volume := by
+      exact hpiece_meas.aestronglyMeasurable.mul (SchwartzMap.continuous h).aestronglyMeasurable
+    have hEq_fun :
+        (fun ξ : SpacetimeDim d =>
+          S.piecewise
+            (OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2))
+            (fun _ : SpacetimeDim d => (0 : ℂ)) ξ * h ξ)
+        =
+        (fun ξ : SpacetimeDim d =>
+          OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2) ξ * h ξ) := by
+      funext ξ
+      by_cases hξS : ξ ∈ S
+      · simp [S, hξS]
+      · have hξ_not_tsupport : ξ ∉ K := by
+          intro hξK
+          exact hξS (htsupport_sub_S hξK)
+        have hξ_zero : h ξ = 0 := by
+          simpa [K] using image_eq_zero_of_notMem_tsupport hξ_not_tsupport
+        simp [S, hξS, hξ_zero]
+    simpa [hEq_fun] using hpiece_ae
+  · apply Filter.eventually_of_mem hsmall
+    intro t ht
+    obtain ⟨ht_pos, ht_lt⟩ := Set.mem_Ioo.mp ht
+    apply Filter.Eventually.of_forall
+    intro ξ
+    by_cases hzero : h ξ = 0
+    · simp [hzero, C0, hC0_nonneg]
+    · have hξK : ξ ∈ K := subset_tsupport _ (Function.mem_support.mpr hzero)
+      have hq_le :
+          q (ξ, t) ≤ C0 := by
+        exact hq_bound (ξ, t) ⟨hξK, Set.mem_Icc.mpr ⟨le_of_lt ht_pos, le_of_lt ht_lt⟩⟩
+      have hkernel_eq :
+          OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2) ξ =
+            OSReconstruction.commonZeroCenterShiftSection_local (d := d) G 0
+              (ξ + timeShiftVec d t) := by
+        simpa using
+          commonLiftedDifferenceSliceKernel_half_eq_commonZeroCenterShiftSection_shift_local
+            (d := d) G hG_diff t ξ
+      rw [norm_mul]
+      calc
+        ‖OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2) ξ‖ * ‖h ξ‖
+            = q (ξ, t) * ‖h ξ‖ := by
+                simp [q, shiftMap, hkernel_eq]
+        _ ≤ C0 * ‖h ξ‖ := mul_le_mul_of_nonneg_right hq_le (norm_nonneg _)
+  · simpa [C0] using (((SchwartzMap.integrable h).norm).const_mul C0)
+  · refine Filter.Eventually.of_forall ?_
+    intro ξ
+    by_cases hzero : h ξ = 0
+    · simpa [hzero] using (Filter.tendsto_const_nhds : Filter.Tendsto (fun _ : ℝ => (0 : ℂ))
+        (nhdsWithin 0 (Set.Ioi 0)) (nhds 0))
+    · have hξK : ξ ∈ K := subset_tsupport _ (Function.mem_support.mpr hzero)
+      have hξ : 0 < ξ 0 := hh_pos hξK
+      simpa [hzero] using
+        (tendsto_commonLiftedDifferenceSliceKernel_to_commonDifferenceKernel_at_positiveTime_local
+          (d := d) G hG_holo hG_diff ξ hξ).mul tendsto_const_nhds
+
+/-- For compact positive-time test functions, the fixed-strip pairing equality
+alone is already enough to identify the canonical BV kernel limit with the
+common real difference kernel: the lifted-slice limit `hcommon` is now supplied
+by the DCT theorem above. -/
+theorem tendsto_twoPointCanonicalDifferenceKernel_to_common_of_pairing_eq_commonLiftedDifferenceSlice_of_compact_positiveSupport_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (h : SchwartzSpacetime d)
+    (hh_compact : HasCompactSupport (h : SpacetimeDim d → ℂ))
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {ξ : SpacetimeDim d | 0 < ξ 0})
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_holo : IsTimeHolomorphicFlatPositiveTimeDiffWitness G)
+    (hG_diff :
+      ∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (finProdFinEquiv (⟨1, by omega⟩, μ)) =
+            v (finProdFinEquiv (⟨1, by omega⟩, μ))) →
+        G u = G v)
+    (hpair :
+      ∀ t : ℝ, 0 < t →
+        ∫ ξ : SpacetimeDim d,
+          bvt_twoPointCanonicalDifferenceKernel_local OS lgc t ξ * h ξ =
+        ∫ ξ : SpacetimeDim d,
+          OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2) ξ * h ξ) :
+    Filter.Tendsto
+      (fun ε : ℝ =>
+        ∫ ξ : SpacetimeDim d,
+          bvt_twoPointCanonicalDifferenceKernel_local OS lgc ε ξ * h ξ)
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds
+        (∫ ξ : SpacetimeDim d,
+          OSReconstruction.commonDifferenceKernel_real_local (d := d) G ξ * h ξ)) := by
+  have hcommon :
+      Filter.Tendsto
+        (fun t : ℝ =>
+          ∫ ξ : SpacetimeDim d,
+            OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2) ξ * h ξ)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (∫ ξ : SpacetimeDim d,
+            OSReconstruction.commonDifferenceKernel_real_local (d := d) G ξ * h ξ)) :=
+    tendsto_commonLiftedDifferenceSliceKernel_pairing_to_commonDifferenceKernel_of_compact_positiveSupport_local
+      (d := d) G hG_holo hG_diff h hh_compact hh_pos
+  exact
+    tendsto_twoPointCanonicalDifferenceKernel_to_common_of_pairing_eq_commonLiftedDifferenceSlice_local
+      (d := d) (OS := OS) (lgc := lgc) h G hpair hcommon
+
+/-- Compact positive-time support removes the `hcommon` assumption from the
+common-lifted-slice two-point comparison route. After the DCT upgrade, the
+remaining live seam is exactly the fixed-strip pairing equality `hpair`. -/
+theorem bvt_twoPointDifferenceLift_eq_schwinger_of_pairing_eq_commonLiftedDifferenceSlice_of_compact_positiveSupport_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (χ₀ h : SchwartzSpacetime d)
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (hh_compact : HasCompactSupport (h : SpacetimeDim d → ℂ))
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_holo : IsTimeHolomorphicFlatPositiveTimeDiffWitness G)
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
+    (hG_diff : ∀ u v : Fin (2 * (d + 1)) → ℂ,
+      (∀ μ : Fin (d + 1),
+        u (finProdFinEquiv (⟨1, by omega⟩, μ)) =
+          v (finProdFinEquiv (⟨1, by omega⟩, μ))) →
+      G u = G v)
+    (hpair :
+      ∀ t : ℝ, 0 < t →
+        ∫ ξ : SpacetimeDim d,
+          bvt_twoPointCanonicalDifferenceKernel_local OS lgc t ξ * h ξ =
+        ∫ ξ : SpacetimeDim d,
+          OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2) ξ * h ξ) :
+    bvt_W OS lgc 2 (twoPointDifferenceLift χ₀ h) =
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)) := by
+  have hcanon :
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          ∫ ξ : SpacetimeDim d,
+            bvt_twoPointCanonicalDifferenceKernel_local OS lgc ε ξ * h ξ)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (∫ ξ : SpacetimeDim d,
+            OSReconstruction.commonDifferenceKernel_real_local (d := d) G ξ * h ξ)) :=
+    tendsto_twoPointCanonicalDifferenceKernel_to_common_of_pairing_eq_commonLiftedDifferenceSlice_of_compact_positiveSupport_local
+      (d := d) (OS := OS) (lgc := lgc) h hh_compact hh_pos G hG_holo hG_diff hpair
+  exact
+    bvt_twoPointDifferenceLift_eq_schwinger_of_tendsto_canonicalDifferenceKernel_to_common_of_positiveSupport_local
+      (d := d) (OS := OS) (lgc := lgc) χ₀ h hχ₀ hh_compact hh_pos G hG_euclid hG_diff
+      hcanon
 
 theorem bvt_F_negCanonical (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) (n : ℕ) :
