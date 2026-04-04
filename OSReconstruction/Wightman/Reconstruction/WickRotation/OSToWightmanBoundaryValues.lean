@@ -9,8 +9,9 @@ import OSReconstruction.Wightman.Reconstruction.WightmanTwoPoint
 /-!
 # OS to Wightman Boundary Values and Transfers
 
-Public frontier for the boundary-value transfer layer after the large support
-infrastructure now lives across `OSToWightmanBoundaryValuesBase.lean` and `OSToWightmanBoundaryValuesComparison.lean`.
+Public frontier for the boundary-value transfer layer. The valid support
+infrastructure now lives across `OSToWightmanBoundaryValuesBase.lean` and the
+slimmed `OSToWightmanBoundaryValuesComparison.lean`.
 -/
 
 open scoped Classical NNReal
