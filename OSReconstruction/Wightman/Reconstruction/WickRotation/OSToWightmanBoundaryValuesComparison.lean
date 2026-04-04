@@ -5,6 +5,7 @@ Authors: Michael Douglas, ModularPhysics Contributors
 -/
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBoundaryValuesBase
 import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputCAssembly
+import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAShiftedRepresentative
 import OSReconstruction.Wightman.Reconstruction.WickRotation.K2VI1.InputAStripUniqueness
 
 /-!
@@ -505,6 +506,398 @@ def bvt_twoPointCanonicalDifferenceKernel_local
       if h0 : k = 0 then 0
       else if μ = 0 then ↑(ξ μ) + (ε : ℂ) * Complex.I else ↑(ξ μ))
 
+private theorem bvt_twoPointCanonicalDifferenceKernel_eq_shifted_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (ε : ℝ) (ξ : SpacetimeDim d) :
+    bvt_twoPointCanonicalDifferenceKernel_local OS lgc ε ξ =
+      bvt_F OS lgc 2
+        (fun k μ =>
+          ↑((![0, ξ] : NPointDomain d 2) k μ) +
+            ε * ↑(canonicalForwardConeDirection (d := d) 2 k μ) * Complex.I) := by
+  let a : Fin (d + 1) → ℂ := fun μ => if μ = 0 then (ε : ℂ) * Complex.I else 0
+  let f : Fin 2 → Fin (d + 1) → ℂ := fun k μ =>
+    if h0 : k = 0 then 0
+    else if μ = 0 then ↑(ξ μ) + (ε : ℂ) * Complex.I else ↑(ξ μ)
+  have htrans :=
+    bvt_F_translationInvariant (d := d) OS lgc 2
+      f
+      a
+  have hcfg :
+      (fun k => f k + a) =
+        (fun k μ =>
+          ↑((![0, ξ] : NPointDomain d 2) k μ) +
+            ε * ↑(canonicalForwardConeDirection (d := d) 2 k μ) * Complex.I) := by
+    ext k μ
+    fin_cases k
+    · by_cases hμ : μ = 0
+      · subst hμ
+        simp [f, a, canonicalForwardConeDirection]
+      · simp [f, a, canonicalForwardConeDirection, hμ]
+    · by_cases hμ : μ = 0
+      · subst hμ
+        simp [f, a, canonicalForwardConeDirection]
+        ring
+      · simp [f, a, canonicalForwardConeDirection, hμ]
+  calc
+    bvt_twoPointCanonicalDifferenceKernel_local OS lgc ε ξ = bvt_F OS lgc 2 f := by
+      simp [bvt_twoPointCanonicalDifferenceKernel_local, f]
+    _ = bvt_F OS lgc 2 (fun k => f k + a) := htrans.symm
+    _ = bvt_F OS lgc 2
+          (fun k μ =>
+            ↑((![0, ξ] : NPointDomain d 2) k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) 2 k μ) * Complex.I) := by
+            simpa using congrArg (bvt_F OS lgc 2) hcfg
+
+/-- For each positive strip time `ε`, the canonical two-point BV kernel is a
+continuous one-variable function. The proof uses the shifted representation
+above, which places the whole affine slice inside the forward tube without any
+extra condition on the real difference variable. -/
+theorem continuous_bvt_twoPointCanonicalDifferenceKernel_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (ε : ℝ) (hε : 0 < ε) :
+    Continuous (bvt_twoPointCanonicalDifferenceKernel_local OS lgc ε) := by
+  let Kcfg : SpacetimeDim d → Fin 2 → Fin (d + 1) → ℂ := fun ξ k μ =>
+    if h0 : k = 0 then
+      if μ = 0 then (ε : ℂ) * Complex.I else 0
+    else if μ = 0 then ↑(ξ μ) + (2 * ε : ℂ) * Complex.I else ↑(ξ μ)
+  let Kshift : SpacetimeDim d → ℂ := fun ξ => bvt_F OS lgc 2 (Kcfg ξ)
+  have hηε : InOpenForwardCone d (fun μ : Fin (d + 1) => if μ = 0 then ε else 0) := by
+    constructor
+    · simp [hε]
+    · have hε_ne : ε ≠ 0 := by linarith
+      simp [MinkowskiSpace.minkowskiNormSq, MinkowskiSpace.minkowskiInner, hε_ne]
+  have h_in_tube :
+      ∀ ξ : SpacetimeDim d,
+        Kcfg ξ ∈ ForwardTube d 2 := by
+    intro ξ
+    intro k
+    fin_cases k
+    · convert hηε using 1
+      ext μ
+      by_cases hμ : μ = 0
+      · subst hμ
+        simp [Kcfg, Complex.mul_im, Complex.I_re, Complex.I_im,
+          Complex.ofReal_re, Complex.ofReal_im]
+      · simp [Kcfg, hμ, Complex.mul_im, Complex.I_re, Complex.I_im,
+          Complex.ofReal_re, Complex.ofReal_im]
+    · convert hηε using 1
+      ext μ
+      by_cases hμ : μ = 0
+      · subst hμ
+        simp [Kcfg]
+        ring
+      · simp [Kcfg, hμ]
+  have hcfg_cont :
+      Continuous Kcfg := by
+    apply continuous_pi
+    intro k
+    apply continuous_pi
+    intro μ
+    by_cases hk : k = 0
+    · by_cases hμ : μ = 0
+      · subst hμ
+        simpa [Kcfg, hk] using
+          (continuous_const : Continuous fun _ : SpacetimeDim d => (ε : ℂ) * Complex.I)
+      · simpa [Kcfg, hk, hμ] using
+          (continuous_const : Continuous fun _ : SpacetimeDim d => (0 : ℂ))
+    · by_cases hμ : μ = 0
+      · subst hμ
+        simpa [Kcfg, hk] using
+          (Complex.continuous_ofReal.comp (continuous_apply (0 : Fin (d + 1)))).add
+            (continuous_const : Continuous fun _ : SpacetimeDim d => (2 * ε : ℂ) * Complex.I)
+      · simpa [Kcfg, hk, hμ] using
+          (Complex.continuous_ofReal.comp (continuous_apply μ))
+  have hKshift_cont :
+      Continuous Kshift := by
+    exact
+      (bvt_F_holomorphic (d := d) OS lgc 2).continuousOn.comp_continuous hcfg_cont h_in_tube
+  refine hKshift_cont.congr ?_
+  intro ξ
+  have hKcfg :
+      Kcfg ξ =
+        (fun k μ =>
+          ↑((![0, ξ] : NPointDomain d 2) k μ) +
+            ε * ↑(canonicalForwardConeDirection (d := d) 2 k μ) * Complex.I) := by
+    ext k μ
+    fin_cases k
+    · by_cases hμ : μ = 0
+      · subst hμ
+        simp [Kcfg, canonicalForwardConeDirection]
+      · simp [Kcfg, canonicalForwardConeDirection, hμ]
+    · by_cases hμ : μ = 0
+      · subst hμ
+        simp [Kcfg, canonicalForwardConeDirection]
+        ring
+      · simp [Kcfg, canonicalForwardConeDirection, hμ]
+  calc
+    Kshift ξ = bvt_F OS lgc 2 (Kcfg ξ) := rfl
+    _ = bvt_F OS lgc 2
+          (fun k μ =>
+            ↑((![0, ξ] : NPointDomain d 2) k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) 2 k μ) * Complex.I) := by
+            simpa using congrArg (bvt_F OS lgc 2) hKcfg
+    _ = bvt_twoPointCanonicalDifferenceKernel_local OS lgc ε ξ := by
+          symm
+          exact bvt_twoPointCanonicalDifferenceKernel_eq_shifted_local
+            (OS := OS) (lgc := lgc) ε ξ
+
+/-- If the common fixed-time center/difference kernel agrees with the canonical
+BV one-variable kernel on all normalized fixed-center shell pairings inside a
+strip, then strip uniqueness upgrades that shell comparison to pointwise
+equality of the descended common lifted slice with the canonical BV kernel on
+the whole strip. This is the exact Input A reduction behind the current
+two-point comparison frontier. -/
+theorem bvt_twoPointCanonicalDifferenceKernel_eq_commonLiftedDifferenceSlice_on_fixedStrip_of_fixedCenter_pairing_eq_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_holo : IsTimeHolomorphicFlatPositiveTimeDiffWitness G)
+    (hG_diff :
+      ∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (finProdFinEquiv (⟨1, by omega⟩, μ)) =
+            v (finProdFinEquiv (⟨1, by omega⟩, μ))) →
+        G u = G v)
+    (s : ℝ) (hs : 0 < s)
+    (χc : SchwartzSpacetime d)
+    (hχc : ∫ u : SpacetimeDim d, χc u = 1)
+    (hcenter_eq : ∀ h : SchwartzSpacetime d,
+      HasCompactSupport (h : SpacetimeDim d → ℂ) →
+      tsupport (h : SpacetimeDim d → ℂ) ⊆ {ξ : SpacetimeDim d | -(s + s) < ξ 0} →
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+          (χc (z 0) * h (z 1)) =
+      ∫ z : NPointDomain d 2,
+        bvt_twoPointCanonicalDifferenceKernel_local OS lgc (s + s) (z 1) *
+          (χc (z 0) * h (z 1))) :
+    Set.EqOn
+      (bvt_twoPointCanonicalDifferenceKernel_local OS lgc (s + s))
+      (OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s)
+      {ξ : SpacetimeDim d | -(s + s) < ξ 0} := by
+  have hpair_zero :
+      ∀ h : SchwartzSpacetime d,
+        HasCompactSupport (h : SpacetimeDim d → ℂ) →
+        tsupport (h : SpacetimeDim d → ℂ) ⊆ {ξ : SpacetimeDim d | -(s + s) < ξ 0} →
+        ∫ ξ : SpacetimeDim d,
+          OSReconstruction.commonZeroCenterShiftSection_local (d := d) G s ξ * h ξ =
+        ∫ ξ : SpacetimeDim d,
+          bvt_twoPointCanonicalDifferenceKernel_local OS lgc (s + s) ξ * h ξ :=
+    OSReconstruction.compactSupport_pairing_eq_comparison_of_fixedCenter_pairing_eq_of_diffBlockDependence_local
+      (d := d) (G := G) hG_diff
+      (K_cmp := bvt_twoPointCanonicalDifferenceKernel_local OS lgc (s + s))
+      (s := s) (χc := χc) hχc hcenter_eq
+  have hK_cont :
+      ContinuousOn
+        (bvt_twoPointCanonicalDifferenceKernel_local OS lgc (s + s))
+        {ξ : SpacetimeDim d | -(s + s) < ξ 0} := by
+    exact
+      (continuous_bvt_twoPointCanonicalDifferenceKernel_local
+        (d := d) OS lgc (s + s) (add_pos hs hs)).continuousOn
+  have hzero_eq :
+      Set.EqOn
+        (OSReconstruction.commonZeroCenterShiftSection_local (d := d) G s)
+        (bvt_twoPointCanonicalDifferenceKernel_local OS lgc (s + s))
+        {ξ : SpacetimeDim d | -(s + s) < ξ 0} := by
+    exact
+      OSReconstruction.zeroCenterShift_eq_comparison_of_compactSupport_pairing_eq_local
+        (d := d) (G := G) hG_holo hG_diff
+        (K_cmp := bvt_twoPointCanonicalDifferenceKernel_local OS lgc (s + s))
+        (s := s) hK_cont hpair_zero
+  intro ξ hξ
+  calc
+    bvt_twoPointCanonicalDifferenceKernel_local OS lgc (s + s) ξ
+      = OSReconstruction.commonZeroCenterShiftSection_local (d := d) G s ξ := by
+          exact (hzero_eq hξ).symm
+    _ = OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s ξ := by
+          symm
+          exact
+            OSReconstruction.commonLiftedDifferenceSliceKernel_eq_k2TimeParametricKernel_on_zeroCenterShift_of_diffBlockDependence_local
+              (d := d) G hG_diff s ξ
+
+/-- Fixed-center shell equality already gives the corresponding compact-support
+one-variable pairing equality between the canonical BV kernel and the common
+lifted slice on the same strip. -/
+theorem bvt_twoPointCanonicalDifferenceKernel_pairing_eq_commonLiftedDifferenceSlice_of_fixedCenter_pairing_eq_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_holo : IsTimeHolomorphicFlatPositiveTimeDiffWitness G)
+    (hG_diff :
+      ∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (finProdFinEquiv (⟨1, by omega⟩, μ)) =
+            v (finProdFinEquiv (⟨1, by omega⟩, μ))) →
+        G u = G v)
+    (s : ℝ) (hs : 0 < s)
+    (χc : SchwartzSpacetime d)
+    (hχc : ∫ u : SpacetimeDim d, χc u = 1)
+    (hcenter_eq : ∀ h : SchwartzSpacetime d,
+      HasCompactSupport (h : SpacetimeDim d → ℂ) →
+      tsupport (h : SpacetimeDim d → ℂ) ⊆ {ξ : SpacetimeDim d | -(s + s) < ξ 0} →
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+          (χc (z 0) * h (z 1)) =
+      ∫ z : NPointDomain d 2,
+        bvt_twoPointCanonicalDifferenceKernel_local OS lgc (s + s) (z 1) *
+          (χc (z 0) * h (z 1)))
+    (h : SchwartzSpacetime d)
+    (hh_strip : tsupport (h : SpacetimeDim d → ℂ) ⊆ {ξ : SpacetimeDim d | -(s + s) < ξ 0}) :
+    ∫ ξ : SpacetimeDim d,
+      bvt_twoPointCanonicalDifferenceKernel_local OS lgc (s + s) ξ * h ξ =
+    ∫ ξ : SpacetimeDim d,
+      OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s ξ * h ξ := by
+  have hEq :
+      Set.EqOn
+        (bvt_twoPointCanonicalDifferenceKernel_local OS lgc (s + s))
+        (OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s)
+        {ξ : SpacetimeDim d | -(s + s) < ξ 0} :=
+    bvt_twoPointCanonicalDifferenceKernel_eq_commonLiftedDifferenceSlice_on_fixedStrip_of_fixedCenter_pairing_eq_local
+      (d := d) (OS := OS) (lgc := lgc) (G := G) hG_holo hG_diff s hs χc hχc hcenter_eq
+  refine MeasureTheory.integral_congr_ae ?_
+  filter_upwards with ξ
+  by_cases hzero : h ξ = 0
+  · simp [hzero]
+  · have hξ : ξ ∈ tsupport (h : SpacetimeDim d → ℂ) :=
+      subset_tsupport _ (Function.mem_support.mpr hzero)
+    rw [hEq (hh_strip hξ)]
+
+/-- For one fixed test `h`, a fixed-center shell equality already implies the
+corresponding one-variable pairing equality between the common lifted slice and
+the comparison kernel. Unlike the strip-uniqueness route above, this needs no
+compact-support family of test functions: both shell integrals factor directly
+through the same one-variable pairings. -/
+theorem commonLiftedDifferenceSliceKernel_pairing_eq_comparison_of_fixedCenter_pairing_eq_of_diffBlockDependence_local
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_diff :
+      ∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (finProdFinEquiv (⟨1, by omega⟩, μ)) =
+            v (finProdFinEquiv (⟨1, by omega⟩, μ))) →
+        G u = G v)
+    (K_cmp : SpacetimeDim d → ℂ)
+    (s : ℝ)
+    (χc : SchwartzSpacetime d)
+    (hχc : ∫ u : SpacetimeDim d, χc u = 1)
+    (h : SchwartzSpacetime d)
+    (hcenter_eq :
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+          (χc (z 0) * h (z 1)) =
+      ∫ z : NPointDomain d 2,
+        K_cmp (z 1) * (χc (z 0) * h (z 1))) :
+    ∫ ξ : SpacetimeDim d,
+      OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s ξ * h ξ =
+    ∫ ξ : SpacetimeDim d, K_cmp ξ * h ξ := by
+  have hslice_factor :
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s (z 1) *
+          (χc (z 0) * h (z 1)) =
+      ∫ ξ : SpacetimeDim d,
+        OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s ξ * h ξ := by
+    calc
+      ∫ z : NPointDomain d 2,
+          OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s (z 1) *
+            (χc (z 0) * h (z 1)) =
+        (∫ u : SpacetimeDim d, χc u) *
+          ∫ ξ : SpacetimeDim d,
+            OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s ξ * h ξ := by
+              exact
+                OSReconstruction.integral_centerDiff_differenceOnly_kernel_factorizes
+                  (d := d)
+                  (OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s)
+                  χc h
+      _ = ∫ ξ : SpacetimeDim d,
+            OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s ξ * h ξ := by
+              rw [hχc, one_mul]
+  have hcmp_factor :
+      ∫ z : NPointDomain d 2,
+        K_cmp (z 1) * (χc (z 0) * h (z 1)) =
+      ∫ ξ : SpacetimeDim d, K_cmp ξ * h ξ := by
+    calc
+      ∫ z : NPointDomain d 2, K_cmp (z 1) * (χc (z 0) * h (z 1)) =
+        (∫ u : SpacetimeDim d, χc u) * ∫ ξ : SpacetimeDim d, K_cmp ξ * h ξ := by
+          exact
+            OSReconstruction.integral_centerDiff_differenceOnly_kernel_factorizes
+              (d := d) K_cmp χc h
+      _ = ∫ ξ : SpacetimeDim d, K_cmp ξ * h ξ := by
+            rw [hχc, one_mul]
+  have hfixed_eq_slice :
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+          (χc (z 0) * h (z 1)) =
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s (z 1) *
+          (χc (z 0) * h (z 1)) := by
+    refine MeasureTheory.integral_congr_ae ?_
+    filter_upwards with z
+    rw [OSReconstruction.twoPointFixedTimeCenterDiffKernel_eq_commonLiftedDifferenceSlice_of_diffBlockDependence_local
+      (d := d) G hG_diff s z]
+  calc
+    ∫ ξ : SpacetimeDim d,
+        OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s ξ * h ξ =
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G s (z 1) *
+          (χc (z 0) * h (z 1)) := by
+            symm
+            exact hslice_factor
+    _ =
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((((s + s) : ℂ) * Complex.I)) z *
+          (χc (z 0) * h (z 1)) := by
+            symm
+            exact hfixed_eq_slice
+    _ =
+      ∫ z : NPointDomain d 2,
+        K_cmp (z 1) * (χc (z 0) * h (z 1)) := hcenter_eq
+    _ = ∫ ξ : SpacetimeDim d, K_cmp ξ * h ξ := hcmp_factor
+
+/-- One-test version of the fixed-center shell reduction for the canonical
+two-point BV kernel. For the actual compact positive-time target `h`, it is
+enough to identify the fixed-center shell pairing against `χc(z₀) * h(z₁)`;
+there is no need to supply a whole family of strip-supported tests. -/
+theorem bvt_twoPointCanonicalDifferenceKernel_pairing_eq_commonLiftedDifferenceSlice_of_fixedCenter_pairing_for_target_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_diff :
+      ∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (finProdFinEquiv (⟨1, by omega⟩, μ)) =
+            v (finProdFinEquiv (⟨1, by omega⟩, μ))) →
+        G u = G v)
+    (t : ℝ)
+    (χc : SchwartzSpacetime d)
+    (hχc : ∫ u : SpacetimeDim d, χc u = 1)
+    (h : SchwartzSpacetime d)
+    (hcenter_eq :
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((t : ℂ) * Complex.I) z *
+          (χc (z 0) * h (z 1)) =
+      ∫ z : NPointDomain d 2,
+        bvt_twoPointCanonicalDifferenceKernel_local OS lgc t (z 1) *
+          (χc (z 0) * h (z 1))) :
+    ∫ ξ : SpacetimeDim d,
+      bvt_twoPointCanonicalDifferenceKernel_local OS lgc t ξ * h ξ =
+    ∫ ξ : SpacetimeDim d,
+      OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2) ξ * h ξ := by
+  have hcoef :
+      ((((t / 2 : ℝ) + (t / 2 : ℝ)) : ℂ) * Complex.I) = ((t : ℂ) * Complex.I) := by
+    have hsumR : (t / 2 : ℝ) + (t / 2 : ℝ) = t := by
+      ring
+    have hsum : ((((t / 2 : ℝ) + (t / 2 : ℝ)) : ℂ)) = (t : ℂ) := by
+      exact_mod_cast hsumR
+    rw [hsum]
+  have hpair :=
+    commonLiftedDifferenceSliceKernel_pairing_eq_comparison_of_fixedCenter_pairing_eq_of_diffBlockDependence_local
+      (d := d) (G := G) hG_diff
+      (K_cmp := bvt_twoPointCanonicalDifferenceKernel_local OS lgc t)
+      (s := t / 2) (χc := χc) hχc h
+      (by simpa [hcoef, show (t / 2 : ℝ) + (t / 2 : ℝ) = t by ring] using hcenter_eq)
+  simpa [show (t / 2 : ℝ) + (t / 2 : ℝ) = t by ring] using hpair.symm
+
 /-- On the canonical two-point boundary ray, the center variable already factors
 out by complex translation invariance of `bvt_F`. The resulting fixed-`ε`
 pairing is therefore a one-variable difference-kernel pairing scaled by
@@ -667,6 +1060,78 @@ theorem bvt_tendsto_twoPointCanonicalDifferenceKernel_of_normalizedCenter_local
       (OS := OS) (lgc := lgc) (χ := χ₀) (h := h) (ε := ε)]
     simp [hχ₀]
   exact Filter.Tendsto.congr' hEq hBV
+
+/-- For a diff-block-dependent common witness, the lifted common slice pairing
+at strip time `t / 2` is exactly the shifted Schwinger two-point shell at time
+`t`. This removes the arbitrary common witness from the fixed-strip comparison
+seam: on the common side, every positive strip time is already identified with
+the honest shifted Euclidean shell. -/
+theorem commonLiftedDifferenceSliceKernel_pairing_eq_schwinger_timeShift_of_positiveSupport_local
+    (OS : OsterwalderSchraderAxioms d)
+    (χ₀ h : SchwartzSpacetime d)
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
+    (hG_diff : ∀ u v : Fin (2 * (d + 1)) → ℂ,
+      (∀ μ : Fin (d + 1),
+        u (finProdFinEquiv (⟨1, by omega⟩, μ)) =
+          v (finProdFinEquiv (⟨1, by omega⟩, μ))) →
+      G u = G v)
+    (t : ℝ) (ht : 0 < t) :
+    ∫ ξ : SpacetimeDim d,
+      OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2) ξ * h ξ =
+      OS.S 2
+        (ZeroDiagonalSchwartz.ofClassical
+          (twoPointDifferenceLift χ₀
+            (SCV.translateSchwartz (- timeShiftVec d t) h))) := by
+  calc
+    ∫ ξ : SpacetimeDim d,
+        OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2) ξ * h ξ
+      = (∫ u : SpacetimeDim d, χ₀ u) *
+          ∫ ξ : SpacetimeDim d,
+            OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2) ξ * h ξ := by
+            rw [hχ₀]
+            ring
+    _ =
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2) (z 1) *
+            (χ₀ (z 0) * h (z 1)) := by
+          exact
+            (OSReconstruction.integral_centerDiff_differenceOnly_kernel_factorizes
+              (d := d)
+              (OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2))
+              χ₀ h).symm
+    _ =
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+              (d := d) G ((t : ℂ) * Complex.I) z *
+            (χ₀ (z 0) * h (z 1)) := by
+          refine MeasureTheory.integral_congr_ae ?_
+          filter_upwards with z
+          have hkernel :=
+            OSReconstruction.twoPointFixedTimeCenterDiffKernel_eq_commonLiftedDifferenceSlice_of_diffBlockDependence_local
+              (d := d) G hG_diff (t / 2) z
+          have hkernel' :
+              OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+                  (d := d) G ((t : ℂ) * Complex.I) z =
+                OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2) (z 1) := by
+            simpa using hkernel
+          exact
+            (congrArg
+              (fun w =>
+                w * (χ₀ (z 0) * h (z 1)))
+              hkernel').symm
+    _ =
+        OS.S 2
+          (ZeroDiagonalSchwartz.ofClassical
+            (twoPointDifferenceLift χ₀
+              (SCV.translateSchwartz (- timeShiftVec d t) h))) := by
+          exact
+            OSReconstruction.fixedTimeCenterDiffKernel_fixed_center_pairing_eq_schwinger_timeShift_local
+              (d := d) OS G hG_euclid χ₀ h hh_pos t ht
 
 /-- If the canonical two-point BV kernel pairing agrees, for every positive
 strip time, with the corresponding common lifted slice pairing, then any
@@ -1372,6 +1837,742 @@ theorem bvt_twoPointDifferenceLift_eq_schwinger_of_pairing_eq_commonLiftedDiffer
     bvt_twoPointDifferenceLift_eq_schwinger_of_tendsto_canonicalDifferenceKernel_to_common_of_positiveSupport_local
       (d := d) (OS := OS) (lgc := lgc) χ₀ h hχ₀ hh_compact hh_pos G hG_euclid hG_diff
       hcanon
+
+/-- The compact positive-time two-point comparison can be paid on the more
+Input-A-shaped fixed-center shell surface. Once the common fixed-time kernel
+agrees with the canonical BV kernel on every strip-supported normalized shell,
+the existing strip-uniqueness reduction supplies the old `hpair` automatically. -/
+theorem bvt_twoPointDifferenceLift_eq_schwinger_of_fixedCenter_pairing_eq_of_compact_positiveSupport_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (χ₀ h : SchwartzSpacetime d)
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (hh_compact : HasCompactSupport (h : SpacetimeDim d → ℂ))
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_holo : IsTimeHolomorphicFlatPositiveTimeDiffWitness G)
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
+    (hG_diff :
+      ∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (finProdFinEquiv (⟨1, by omega⟩, μ)) =
+            v (finProdFinEquiv (⟨1, by omega⟩, μ))) →
+        G u = G v)
+    (χc : SchwartzSpacetime d)
+    (hχc : ∫ u : SpacetimeDim d, χc u = 1)
+    (hcenter_eq :
+      ∀ t : ℝ, 0 < t →
+        ∀ h' : SchwartzSpacetime d,
+          HasCompactSupport (h' : SpacetimeDim d → ℂ) →
+          tsupport (h' : SpacetimeDim d → ℂ) ⊆ {ξ : SpacetimeDim d | -t < ξ 0} →
+          ∫ z : NPointDomain d 2,
+            OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+              (d := d) G ((t : ℂ) * Complex.I) z *
+              (χc (z 0) * h' (z 1)) =
+          ∫ z : NPointDomain d 2,
+            bvt_twoPointCanonicalDifferenceKernel_local OS lgc t (z 1) *
+              (χc (z 0) * h' (z 1))) :
+    bvt_W OS lgc 2 (twoPointDifferenceLift χ₀ h) =
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)) := by
+  have hpair :
+      ∀ t : ℝ, 0 < t →
+        ∫ ξ : SpacetimeDim d,
+          bvt_twoPointCanonicalDifferenceKernel_local OS lgc t ξ * h ξ =
+        ∫ ξ : SpacetimeDim d,
+          OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2) ξ * h ξ := by
+    intro t ht
+    have hh_strip :
+        tsupport (h : SpacetimeDim d → ℂ) ⊆
+          {ξ : SpacetimeDim d | -((t / 2) + (t / 2)) < ξ 0} := by
+      intro ξ hξ
+      have hξ_pos : 0 < ξ 0 := hh_pos hξ
+      have hstrip : -((t / 2) + (t / 2)) < ξ 0 := by
+        have ht' : 0 < t := ht
+        nlinarith
+      exact hstrip
+    have hcenter_half :
+        ∀ h' : SchwartzSpacetime d,
+          HasCompactSupport (h' : SpacetimeDim d → ℂ) →
+          tsupport (h' : SpacetimeDim d → ℂ) ⊆
+            {ξ : SpacetimeDim d | -((t / 2) + (t / 2)) < ξ 0} →
+          ∫ z : NPointDomain d 2,
+            OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+              (d := d) G (((↑(t / 2) + ↑(t / 2)) * Complex.I)) z *
+              (χc (z 0) * h' (z 1)) =
+          ∫ z : NPointDomain d 2,
+            bvt_twoPointCanonicalDifferenceKernel_local OS lgc ((t / 2) + (t / 2)) (z 1) *
+              (χc (z 0) * h' (z 1)) := by
+      intro h' hh'_compact hh'_strip
+      have hh'_strip' :
+          tsupport (h' : SpacetimeDim d → ℂ) ⊆ {ξ : SpacetimeDim d | -t < ξ 0} := by
+        simpa [show -t = -((t / 2) + (t / 2)) by ring] using hh'_strip
+      have hsumC : ((↑(t / 2) : ℂ) + ↑(t / 2)) = (t : ℂ) := by
+        norm_num
+      have hcoef : (((↑(t / 2) + ↑(t / 2)) * Complex.I) : ℂ) = ((t : ℂ) * Complex.I) := by
+        rw [hsumC]
+      simpa [hcoef,
+        show (t / 2) + (t / 2) = t by ring]
+        using hcenter_eq t ht h' hh'_compact hh'_strip'
+    simpa [show (t / 2) + (t / 2) = t by ring] using
+      bvt_twoPointCanonicalDifferenceKernel_pairing_eq_commonLiftedDifferenceSlice_of_fixedCenter_pairing_eq_local
+        (d := d) (OS := OS) (lgc := lgc) (G := G) hG_holo hG_diff (t / 2) (half_pos ht)
+        χc hχc hcenter_half h hh_strip
+  exact
+    bvt_twoPointDifferenceLift_eq_schwinger_of_pairing_eq_commonLiftedDifferenceSlice_of_compact_positiveSupport_local
+      (d := d) (OS := OS) (lgc := lgc) χ₀ h hχ₀ hh_compact hh_pos G hG_holo hG_euclid hG_diff
+      hpair
+
+/-- Target-specific version of the previous reduction. For the actual compact
+positive-time comparison problem, it is enough to know the fixed-center shell
+equality for the final test `h` itself; one does not need a universal family of
+strip-supported shell identities. -/
+theorem bvt_twoPointDifferenceLift_eq_schwinger_of_fixedCenter_pairing_eq_for_target_of_compact_positiveSupport_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (χ₀ h : SchwartzSpacetime d)
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (hh_compact : HasCompactSupport (h : SpacetimeDim d → ℂ))
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_holo : IsTimeHolomorphicFlatPositiveTimeDiffWitness G)
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
+    (hG_diff :
+      ∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (finProdFinEquiv (⟨1, by omega⟩, μ)) =
+            v (finProdFinEquiv (⟨1, by omega⟩, μ))) →
+        G u = G v)
+    (χc : SchwartzSpacetime d)
+    (hχc : ∫ u : SpacetimeDim d, χc u = 1)
+    (hcenter_eq_target :
+      ∀ t : ℝ, 0 < t →
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((t : ℂ) * Complex.I) z *
+            (χc (z 0) * h (z 1)) =
+        ∫ z : NPointDomain d 2,
+          bvt_twoPointCanonicalDifferenceKernel_local OS lgc t (z 1) *
+            (χc (z 0) * h (z 1))) :
+    bvt_W OS lgc 2 (twoPointDifferenceLift χ₀ h) =
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)) := by
+  have hpair :
+      ∀ t : ℝ, 0 < t →
+        ∫ ξ : SpacetimeDim d,
+          bvt_twoPointCanonicalDifferenceKernel_local OS lgc t ξ * h ξ =
+        ∫ ξ : SpacetimeDim d,
+          OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2) ξ * h ξ := by
+    intro t ht
+    exact
+      bvt_twoPointCanonicalDifferenceKernel_pairing_eq_commonLiftedDifferenceSlice_of_fixedCenter_pairing_for_target_local
+        (d := d) (OS := OS) (lgc := lgc) (G := G) hG_diff t χc hχc h
+        (hcenter_eq_target t ht)
+  exact
+    bvt_twoPointDifferenceLift_eq_schwinger_of_pairing_eq_commonLiftedDifferenceSlice_of_compact_positiveSupport_local
+      (d := d) (OS := OS) (lgc := lgc) χ₀ h hχ₀ hh_compact hh_pos G hG_holo hG_euclid hG_diff
+      hpair
+
+/-- For one fixed target test `h`, any fixed-center shell identity through a
+difference-only kernel already reduces to the corresponding one-variable pairing
+identity. This is the exact algebraic bridge used to turn Input A fixed-center
+packages into the production two-point comparison theorem. -/
+theorem fixedCenter_pairing_eq_comparison_of_differenceOnly_pairing_for_target_local
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (τ : ℂ)
+    (K_diff K_cmp : SpacetimeDim d → ℂ)
+    (χc h : SchwartzSpacetime d)
+    (hχc : ∫ u : SpacetimeDim d, χc u = 1)
+    (hfixed_diff :
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G τ z * (χc (z 0) * h (z 1)) =
+      ∫ z : NPointDomain d 2,
+        K_diff (z 1) * (χc (z 0) * h (z 1)))
+    (hpair :
+      ∫ ξ : SpacetimeDim d, K_diff ξ * h ξ =
+      ∫ ξ : SpacetimeDim d, K_cmp ξ * h ξ) :
+    ∫ z : NPointDomain d 2,
+      OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+        (d := d) G τ z * (χc (z 0) * h (z 1)) =
+    ∫ z : NPointDomain d 2,
+      K_cmp (z 1) * (χc (z 0) * h (z 1)) := by
+  have hdiff_factor :
+      ∫ z : NPointDomain d 2,
+        K_diff (z 1) * (χc (z 0) * h (z 1)) =
+      ∫ ξ : SpacetimeDim d, K_diff ξ * h ξ := by
+    calc
+      ∫ z : NPointDomain d 2,
+          K_diff (z 1) * (χc (z 0) * h (z 1)) =
+        (∫ u : SpacetimeDim d, χc u) *
+          ∫ ξ : SpacetimeDim d, K_diff ξ * h ξ := by
+            exact
+              OSReconstruction.integral_centerDiff_differenceOnly_kernel_factorizes
+                (d := d) K_diff χc h
+      _ = ∫ ξ : SpacetimeDim d, K_diff ξ * h ξ := by
+            rw [hχc, one_mul]
+  have hcmp_factor :
+      ∫ z : NPointDomain d 2,
+        K_cmp (z 1) * (χc (z 0) * h (z 1)) =
+      ∫ ξ : SpacetimeDim d, K_cmp ξ * h ξ := by
+    calc
+      ∫ z : NPointDomain d 2,
+          K_cmp (z 1) * (χc (z 0) * h (z 1)) =
+        (∫ u : SpacetimeDim d, χc u) *
+          ∫ ξ : SpacetimeDim d, K_cmp ξ * h ξ := by
+            exact
+              OSReconstruction.integral_centerDiff_differenceOnly_kernel_factorizes
+                (d := d) K_cmp χc h
+      _ = ∫ ξ : SpacetimeDim d, K_cmp ξ * h ξ := by
+            rw [hχc, one_mul]
+  calc
+    ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G τ z * (χc (z 0) * h (z 1))
+      =
+    ∫ z : NPointDomain d 2,
+        K_diff (z 1) * (χc (z 0) * h (z 1)) := hfixed_diff
+    _ = ∫ ξ : SpacetimeDim d, K_diff ξ * h ξ := hdiff_factor
+    _ = ∫ ξ : SpacetimeDim d, K_cmp ξ * h ξ := hpair
+    _ =
+      ∫ z : NPointDomain d 2,
+        K_cmp (z 1) * (χc (z 0) * h (z 1)) := hcmp_factor.symm
+
+/-- Target-specific variant of the production two-point comparison theorem,
+where the remaining input is only a one-variable pairing equality against a
+difference-only comparison family. This is the natural interface for the Input
+A shifted-real-difference package. -/
+theorem bvt_twoPointDifferenceLift_eq_schwinger_of_differenceOnly_pairing_eq_for_target_of_compact_positiveSupport_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (χ₀ h : SchwartzSpacetime d)
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (hh_compact : HasCompactSupport (h : SpacetimeDim d → ℂ))
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_holo : IsTimeHolomorphicFlatPositiveTimeDiffWitness G)
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
+    (hG_diff :
+      ∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (finProdFinEquiv (⟨1, by omega⟩, μ)) =
+            v (finProdFinEquiv (⟨1, by omega⟩, μ))) →
+        G u = G v)
+    (χc : SchwartzSpacetime d)
+    (hχc : ∫ u : SpacetimeDim d, χc u = 1)
+    (K_shift : ℝ → SpacetimeDim d → ℂ)
+    (hfixed_target :
+      ∀ t : ℝ, 0 < t →
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((t : ℂ) * Complex.I) z *
+            (χc (z 0) * h (z 1)) =
+        ∫ z : NPointDomain d 2,
+          K_shift t (z 1) * (χc (z 0) * h (z 1)))
+    (hpair_target :
+      ∀ t : ℝ, 0 < t →
+        ∫ ξ : SpacetimeDim d, K_shift t ξ * h ξ =
+        ∫ ξ : SpacetimeDim d,
+          bvt_twoPointCanonicalDifferenceKernel_local OS lgc t ξ * h ξ) :
+    bvt_W OS lgc 2 (twoPointDifferenceLift χ₀ h) =
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)) := by
+  refine
+    bvt_twoPointDifferenceLift_eq_schwinger_of_fixedCenter_pairing_eq_for_target_of_compact_positiveSupport_local
+      (d := d) (OS := OS) (lgc := lgc) χ₀ h hχ₀ hh_compact hh_pos G hG_holo hG_euclid hG_diff
+      χc hχc ?_
+  intro t ht
+  exact
+    fixedCenter_pairing_eq_comparison_of_differenceOnly_pairing_for_target_local
+      (d := d) (G := G) (((t : ℂ) * Complex.I))
+      (K_diff := K_shift t)
+      (K_cmp := bvt_twoPointCanonicalDifferenceKernel_local OS lgc t)
+      χc h hχc
+      (hfixed_target t ht) (hpair_target t ht)
+
+/-- Shifted-real-difference version of the previous theorem. This is the exact
+interface expected from the Input A shell package after the fixed-center shell
+bridge has been paid. -/
+theorem bvt_twoPointDifferenceLift_eq_schwinger_of_shiftedRealDifference_pairing_eq_for_target_of_compact_positiveSupport_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (χ₀ h : SchwartzSpacetime d)
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (hh_compact : HasCompactSupport (h : SpacetimeDim d → ℂ))
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_holo : IsTimeHolomorphicFlatPositiveTimeDiffWitness G)
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
+    (hG_diff :
+      ∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (finProdFinEquiv (⟨1, by omega⟩, μ)) =
+            v (finProdFinEquiv (⟨1, by omega⟩, μ))) →
+        G u = G v)
+    (χc : SchwartzSpacetime d)
+    (hχc : ∫ u : SpacetimeDim d, χc u = 1)
+    (μ_shift : ℝ → MeasureTheory.Measure (ℝ × (Fin d → ℝ)))
+    (hfixed_target :
+      ∀ t : ℝ, 0 < t →
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((t : ℂ) * Complex.I) z *
+            (χc (z 0) * h (z 1)) =
+        ∫ z : NPointDomain d 2,
+          k2DifferenceKernel_real_local (d := d) (μ_shift t) (z 1 + timeShiftVec d t) *
+            (χc (z 0) * h (z 1)))
+    (hpair_target :
+      ∀ t : ℝ, 0 < t →
+        ∫ ξ : SpacetimeDim d,
+          k2DifferenceKernel_real_local (d := d) (μ_shift t) (ξ + timeShiftVec d t) * h ξ =
+        ∫ ξ : SpacetimeDim d,
+          bvt_twoPointCanonicalDifferenceKernel_local OS lgc t ξ * h ξ) :
+    bvt_W OS lgc 2 (twoPointDifferenceLift χ₀ h) =
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)) := by
+  refine
+    bvt_twoPointDifferenceLift_eq_schwinger_of_differenceOnly_pairing_eq_for_target_of_compact_positiveSupport_local
+      (d := d) (OS := OS) (lgc := lgc) χ₀ h hχ₀ hh_compact hh_pos G hG_holo hG_euclid hG_diff
+      χc hχc
+      (K_shift := fun t ξ =>
+        k2DifferenceKernel_real_local (d := d) (μ_shift t) (ξ + timeShiftVec d t))
+      hfixed_target hpair_target
+
+/-- Existentially packaged shifted-real-difference version of the previous
+theorem. For the production two-point comparison, it is enough to know that for
+each `t > 0` there exists some shifted real-difference representative paying
+both:
+
+1. the target fixed-center shell comparison, and
+2. the target one-variable pairing with the canonical BV kernel.
+
+This matches the actual Input A witness packages more naturally than requiring
+a prechosen global family `μ_shift`. -/
+theorem bvt_twoPointDifferenceLift_eq_schwinger_of_exists_shiftedRealDifference_pairing_eq_for_target_of_compact_positiveSupport_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (χ₀ h : SchwartzSpacetime d)
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (hh_compact : HasCompactSupport (h : SpacetimeDim d → ℂ))
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_holo : IsTimeHolomorphicFlatPositiveTimeDiffWitness G)
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
+    (hG_diff :
+      ∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (finProdFinEquiv (⟨1, by omega⟩, μ)) =
+            v (finProdFinEquiv (⟨1, by omega⟩, μ))) →
+        G u = G v)
+    (χc : SchwartzSpacetime d)
+    (hχc : ∫ u : SpacetimeDim d, χc u = 1)
+    (hexact :
+      ∀ t : ℝ, 0 < t →
+        ∃ μ : MeasureTheory.Measure (ℝ × (Fin d → ℝ)),
+          (∫ z : NPointDomain d 2,
+            OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+              (d := d) G ((t : ℂ) * Complex.I) z *
+              (χc (z 0) * h (z 1)) =
+          ∫ z : NPointDomain d 2,
+            k2DifferenceKernel_real_local (d := d) μ (z 1 + timeShiftVec d t) *
+              (χc (z 0) * h (z 1))) ∧
+          (∫ ξ : SpacetimeDim d,
+            k2DifferenceKernel_real_local (d := d) μ (ξ + timeShiftVec d t) * h ξ =
+          ∫ ξ : SpacetimeDim d,
+            bvt_twoPointCanonicalDifferenceKernel_local OS lgc t ξ * h ξ)) :
+    bvt_W OS lgc 2 (twoPointDifferenceLift χ₀ h) =
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)) := by
+  classical
+  let μ_shift : ℝ → MeasureTheory.Measure (ℝ × (Fin d → ℝ)) :=
+    fun t => if ht : 0 < t then Classical.choose (hexact t ht) else 0
+  have hfixed_target :
+      ∀ t : ℝ, 0 < t →
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((t : ℂ) * Complex.I) z *
+            (χc (z 0) * h (z 1)) =
+        ∫ z : NPointDomain d 2,
+          k2DifferenceKernel_real_local (d := d) (μ_shift t) (z 1 + timeShiftVec d t) *
+            (χc (z 0) * h (z 1)) := by
+    intro t ht
+    simpa [μ_shift, ht] using (Classical.choose_spec (hexact t ht)).1
+  have hpair_target :
+      ∀ t : ℝ, 0 < t →
+        ∫ ξ : SpacetimeDim d,
+          k2DifferenceKernel_real_local (d := d) (μ_shift t) (ξ + timeShiftVec d t) * h ξ =
+        ∫ ξ : SpacetimeDim d,
+          bvt_twoPointCanonicalDifferenceKernel_local OS lgc t ξ * h ξ := by
+    intro t ht
+    simpa [μ_shift, ht] using (Classical.choose_spec (hexact t ht)).2
+  exact
+    bvt_twoPointDifferenceLift_eq_schwinger_of_shiftedRealDifference_pairing_eq_for_target_of_compact_positiveSupport_local
+      (d := d) (OS := OS) (lgc := lgc) χ₀ h hχ₀ hh_compact hh_pos G hG_holo hG_euclid
+      hG_diff χc hχc μ_shift hfixed_target hpair_target
+
+/-- Extraction theorem for the Input A shifted-real-difference package on the
+descended shells `hdesc_n`.
+
+For each fixed strip time `t > 0`, the existing Input A common/probe/shifted
+package already provides a witness `μ` paying the first half of the new
+existential comparison interface on `χc(z₀) * hdesc_n(z₁)`. This packages only
+the fixed-center shell equality; the remaining one-variable pairing equality to
+the canonical BV kernel is still the live seam. -/
+theorem exists_shiftedRealDifference_fixedCenter_pairing_for_descendedShell_of_compactSupport_positiveStrip_pairing_eq_local
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (χc : SchwartzSpacetime d)
+    (hχc : ∫ u : SpacetimeDim d, χc u = 1)
+    (hχc_compact : HasCompactSupport (χc : SpacetimeDim d → ℂ))
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
+    (φ_seq : ℕ → SchwartzSpacetime d)
+    (hφ_nonneg : ∀ n x, 0 ≤ (φ_seq n x).re)
+    (hφ_real : ∀ n x, (φ_seq n x).im = 0)
+    (hφ_int : ∀ n, ∫ x : SpacetimeDim d, φ_seq n x = 1)
+    (hφ_compact : ∀ n, HasCompactSupport (φ_seq n : SpacetimeDim d → ℂ))
+    (hφ_neg : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆
+      {x : SpacetimeDim d | x 0 < 0})
+    (hdesc_compact : ∀ n,
+      HasCompactSupport
+        (((OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+          (reflectedSchwartzSpacetime (d := d) (φ_seq n))) :
+            SchwartzSpacetime d) :
+          SpacetimeDim d → ℂ))
+    (n : ℕ)
+    (t : ℝ) (ht : 0 < t)
+    (hint_pair : ∀ n' (f : SchwartzMap (NPointDomain d 2) ℂ),
+      HasCompactSupport (f : NPointDomain d 2 → ℂ) →
+      Function.support (f : NPointDomain d 2 → ℂ) ⊆ {z : NPointDomain d 2 | 0 < z 1 0} →
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((t : ℂ) * Complex.I) z * f z =
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d)
+          (k2ProbeWitness_local (d := d) OS lgc
+            (φ_seq n') (hφ_compact n') (hφ_neg n'))
+          ((t : ℂ) * Complex.I) z * f z) :
+    ∃ μ : MeasureTheory.Measure (ℝ × (Fin d → ℝ)),
+      ∫ z : NPointDomain d 2,
+        OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+          (d := d) G ((t : ℂ) * Complex.I) z *
+          (χc (z 0) *
+            (OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+              (reflectedSchwartzSpacetime (d := d) (φ_seq n))) (z 1)) =
+      ∫ z : NPointDomain d 2,
+        k2DifferenceKernel_real_local (d := d) μ (z 1 + timeShiftVec d t) *
+          (χc (z 0) *
+            (OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+              (reflectedSchwartzSpacetime (d := d) (φ_seq n))) (z 1)) := by
+  obtain ⟨μ_seq, _hμfin, _hprod_pkg, hfixed_pkg⟩ :=
+    OSReconstruction.exists_common_shifted_realDifference_product_and_fixed_center_package_of_compactSupport_positiveStrip_pairing_eq_local
+      (d := d) OS lgc χc hχc hχc_compact G hG_euclid φ_seq hφ_nonneg hφ_real hφ_int
+      hφ_compact hφ_neg hdesc_compact t ht hint_pair
+  exact ⟨μ_seq n, hfixed_pkg n⟩
+
+/-- Specialization of the existential shifted-real-difference comparison to the
+Input A descended shells `hdesc_n`.
+
+The new Input A fixed-center package already supplies, for each `t > 0`, a
+chosen shifted-real-difference witness `μ` paying the fixed-center shell
+comparison on `χc(z₀) * hdesc_n(z₁)`. Therefore the production two-point
+comparison for `twoPointDifferenceLift χ₀ hdesc_n` only needs the remaining
+one-variable pairing equality for that chosen witness. -/
+theorem bvt_twoPointDifferenceLift_eq_schwinger_of_chosen_shiftedRealDifference_pairing_for_descendedShell_of_compactSupport_positiveStrip_pairing_eq_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (χ₀ χc : SchwartzSpacetime d)
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (hχc : ∫ u : SpacetimeDim d, χc u = 1)
+    (hχc_compact : HasCompactSupport (χc : SpacetimeDim d → ℂ))
+    (G : (Fin (2 * (d + 1)) → ℂ) → ℂ)
+    (hG_holo : IsTimeHolomorphicFlatPositiveTimeDiffWitness G)
+    (hG_euclid : ∀ (f : ZeroDiagonalSchwartz d 2),
+      OS.S 2 f = ∫ x : NPointDomain d 2,
+        G (BHW.toDiffFlat 2 d (fun i => wickRotatePoint (x i))) * (f.1 x))
+    (hG_diff :
+      ∀ u v : Fin (2 * (d + 1)) → ℂ,
+        (∀ μ : Fin (d + 1),
+          u (finProdFinEquiv (⟨1, by omega⟩, μ)) =
+            v (finProdFinEquiv (⟨1, by omega⟩, μ))) →
+        G u = G v)
+    (φ_seq : ℕ → SchwartzSpacetime d)
+    (hφ_nonneg : ∀ n x, 0 ≤ (φ_seq n x).re)
+    (hφ_real : ∀ n x, (φ_seq n x).im = 0)
+    (hφ_int : ∀ n, ∫ x : SpacetimeDim d, φ_seq n x = 1)
+    (hφ_compact : ∀ n, HasCompactSupport (φ_seq n : SpacetimeDim d → ℂ))
+    (hφ_neg : ∀ n, tsupport (φ_seq n : SpacetimeDim d → ℂ) ⊆
+      {x : SpacetimeDim d | x 0 < 0})
+    (hdesc_compact : ∀ n,
+      HasCompactSupport
+        (((OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+          (reflectedSchwartzSpacetime (d := d) (φ_seq n))) :
+            SchwartzSpacetime d) :
+          SpacetimeDim d → ℂ))
+    (n : ℕ)
+    (hint_pair : ∀ t : ℝ, 0 < t →
+      ∀ n' (f : SchwartzMap (NPointDomain d 2) ℂ),
+        HasCompactSupport (f : NPointDomain d 2 → ℂ) →
+        Function.support (f : NPointDomain d 2 → ℂ) ⊆ {z : NPointDomain d 2 | 0 < z 1 0} →
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d) G ((t : ℂ) * Complex.I) z * f z =
+        ∫ z : NPointDomain d 2,
+          OSReconstruction.twoPointFixedTimeCenterDiffKernel_local
+            (d := d)
+            (k2ProbeWitness_local (d := d) OS lgc
+              (φ_seq n') (hφ_compact n') (hφ_neg n'))
+            ((t : ℂ) * Complex.I) z * f z)
+    (hpair_desc :
+      ∀ t : ℝ, (ht : 0 < t) →
+        let μ :=
+          Classical.choose
+            (exists_shiftedRealDifference_fixedCenter_pairing_for_descendedShell_of_compactSupport_positiveStrip_pairing_eq_local
+              (d := d) OS lgc χc hχc hχc_compact G hG_euclid φ_seq hφ_nonneg hφ_real
+              hφ_int hφ_compact hφ_neg hdesc_compact n t ht (hint_pair t ht))
+        let hdesc_n : SchwartzSpacetime d :=
+          OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+            (reflectedSchwartzSpacetime (d := d) (φ_seq n))
+        ∫ ξ : SpacetimeDim d,
+          k2DifferenceKernel_real_local (d := d) μ (ξ + timeShiftVec d t) * hdesc_n ξ =
+        ∫ ξ : SpacetimeDim d,
+          bvt_twoPointCanonicalDifferenceKernel_local OS lgc t ξ * hdesc_n ξ) :
+    let hdesc_n : SchwartzSpacetime d :=
+      OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+        (reflectedSchwartzSpacetime (d := d) (φ_seq n))
+    bvt_W OS lgc 2 (twoPointDifferenceLift χ₀ hdesc_n) =
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ hdesc_n)) := by
+  let hdesc_n : SchwartzSpacetime d :=
+    OSReconstruction.twoPointCenterShearDescent (d := d) (φ_seq n)
+      (reflectedSchwartzSpacetime (d := d) (φ_seq n))
+  have hdesc_pos :
+      tsupport (hdesc_n : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0} := by
+    dsimp [hdesc_n]
+    exact OSReconstruction.twoPointCenterShearDescent_reflected_tsupport_pos_local
+      (d := d) (φ_seq n) (hφ_compact n) (hφ_neg n)
+  refine
+    bvt_twoPointDifferenceLift_eq_schwinger_of_exists_shiftedRealDifference_pairing_eq_for_target_of_compact_positiveSupport_local
+      (d := d) (OS := OS) (lgc := lgc) χ₀ hdesc_n hχ₀ (hdesc_compact n) hdesc_pos G hG_holo
+      hG_euclid hG_diff χc hχc ?_
+  intro t ht
+  let μ : MeasureTheory.Measure (ℝ × (Fin d → ℝ)) :=
+    Classical.choose
+      (exists_shiftedRealDifference_fixedCenter_pairing_for_descendedShell_of_compactSupport_positiveStrip_pairing_eq_local
+        (d := d) OS lgc χc hχc hχc_compact G hG_euclid φ_seq hφ_nonneg hφ_real hφ_int
+        hφ_compact hφ_neg hdesc_compact n t ht (hint_pair t ht))
+  refine ⟨μ, ?_, ?_⟩
+  · simpa [μ] using
+      (Classical.choose_spec
+        (exists_shiftedRealDifference_fixedCenter_pairing_for_descendedShell_of_compactSupport_positiveStrip_pairing_eq_local
+          (d := d) OS lgc χc hχc hχc_compact G hG_euclid φ_seq hφ_nonneg hφ_real
+          hφ_int hφ_compact hφ_neg hdesc_compact n t ht (hint_pair t ht)))
+  · simpa [μ, hdesc_n] using hpair_desc t ht
+
+/-- The shifted Schwinger two-point shell on a compact positive-time difference
+test tends back to the unshifted shell as `t → 0+`. We prove this through the
+current K2/common-witness lane, so the result is available without assuming a
+separate continuity theorem for time translation on Schwartz space. -/
+theorem tendsto_schwinger_twoPointDifferenceLift_timeShift_of_compact_positiveSupport_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (χ₀ h : SchwartzSpacetime d)
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (hh_compact : HasCompactSupport (h : SpacetimeDim d → ℂ))
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0}) :
+    Filter.Tendsto
+      (fun t : ℝ =>
+        OS.S 2
+          (ZeroDiagonalSchwartz.ofClassical
+            (twoPointDifferenceLift χ₀
+              (SCV.translateSchwartz (- timeShiftVec d t) h))))
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds
+        (OS.S 2
+          (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)))) := by
+  obtain ⟨G, hG_holo, hG_euclid, hG_diff⟩ :=
+    OSReconstruction.schwinger_continuation_base_step_timeParametric_of_translationInvariant_acrOne_local
+      OS lgc
+  let hpt : positiveTimeCompactSupportSubmodule d := ⟨h, ⟨hh_pos, hh_compact⟩⟩
+  have hcommon :
+      Filter.Tendsto
+        (fun t : ℝ =>
+          ∫ ξ : SpacetimeDim d,
+            OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2) ξ * h ξ)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (∫ ξ : SpacetimeDim d,
+            OSReconstruction.commonDifferenceKernel_real_local (d := d) G ξ * h ξ)) :=
+    tendsto_commonLiftedDifferenceSliceKernel_pairing_to_commonDifferenceKernel_of_compact_positiveSupport_local
+      (d := d) G hG_holo hG_diff h hh_compact hh_pos
+  have hEq :
+      (fun t : ℝ =>
+        OS.S 2
+          (ZeroDiagonalSchwartz.ofClassical
+            (twoPointDifferenceLift χ₀
+              (SCV.translateSchwartz (- timeShiftVec d t) h))))
+      =ᶠ[nhdsWithin 0 (Set.Ioi 0)]
+      (fun t : ℝ =>
+        ∫ ξ : SpacetimeDim d,
+          OSReconstruction.commonLiftedDifferenceSliceKernel_local (d := d) G (t / 2) ξ * h ξ) := by
+    filter_upwards [self_mem_nhdsWithin] with t ht
+    exact
+      (commonLiftedDifferenceSliceKernel_pairing_eq_schwinger_timeShift_of_positiveSupport_local
+        (d := d) (OS := OS) χ₀ h hχ₀ hh_pos G hG_euclid hG_diff t ht).symm
+  have hlimit_common :
+      Filter.Tendsto
+        (fun t : ℝ =>
+          OS.S 2
+            (ZeroDiagonalSchwartz.ofClassical
+              (twoPointDifferenceLift χ₀
+                (SCV.translateSchwartz (- timeShiftVec d t) h))))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (∫ ξ : SpacetimeDim d,
+            OSReconstruction.commonDifferenceKernel_real_local (d := d) G ξ * h ξ)) :=
+    Filter.Tendsto.congr' hEq.symm hcommon
+  have hcommon_pair :
+      ∫ ξ : SpacetimeDim d,
+        OSReconstruction.commonDifferenceKernel_real_local (d := d) G ξ * h ξ =
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)) := by
+    calc
+      ∫ ξ : SpacetimeDim d,
+          OSReconstruction.commonDifferenceKernel_real_local (d := d) G ξ * h ξ
+        = (∫ u : SpacetimeDim d, χ₀ u) *
+            ∫ ξ : SpacetimeDim d,
+              OSReconstruction.commonDifferenceKernel_real_local (d := d) G ξ * h ξ := by
+              rw [hχ₀]
+              ring
+      _ =
+          ∫ x : NPointDomain d 2,
+            OSReconstruction.commonK2TimeParametricKernel_real_local (d := d) G x *
+              twoPointDifferenceLift χ₀ h x := by
+                symm
+                simpa [OSReconstruction.commonK2TimeParametricKernel_real_local] using
+                  (OSReconstruction.integral_twoPointDifferenceKernel_mul_differenceLift_factorizes
+                    (d := d)
+                    (OSReconstruction.commonDifferenceKernel_real_local (d := d) G)
+                    χ₀ h)
+      _ =
+          OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)) := by
+            simpa using
+              OSReconstruction.commonK2TimeParametricKernel_real_eq_schwinger_on_differenceShell_of_positiveSupport_local
+                (d := d) OS χ₀ hχ₀ G hG_euclid hG_diff χ₀ hpt
+  simpa [hcommon_pair] using hlimit_common
+
+/-- After the common-witness half is discharged, the remaining compact
+positive-time two-point comparison seam is purely canonical: it is enough to
+identify the canonical BV kernel pairing with the shifted Schwinger shell for
+each positive strip time. The arbitrary K2 witness no longer appears in the
+statement. -/
+theorem bvt_twoPointDifferenceLift_eq_schwinger_of_pairing_eq_shiftedSchwingerTimeShift_of_compact_positiveSupport_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (χ₀ h : SchwartzSpacetime d)
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (hh_compact : HasCompactSupport (h : SpacetimeDim d → ℂ))
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    (hcanon_shift :
+      ∀ t : ℝ, 0 < t →
+        ∫ ξ : SpacetimeDim d,
+          bvt_twoPointCanonicalDifferenceKernel_local OS lgc t ξ * h ξ =
+        OS.S 2
+          (ZeroDiagonalSchwartz.ofClassical
+            (twoPointDifferenceLift χ₀
+              (SCV.translateSchwartz (- timeShiftVec d t) h)))) :
+    bvt_W OS lgc 2 (twoPointDifferenceLift χ₀ h) =
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)) := by
+  have hBV :
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          ∫ ξ : SpacetimeDim d,
+            bvt_twoPointCanonicalDifferenceKernel_local OS lgc ε ξ * h ξ)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (bvt_W OS lgc 2 (twoPointDifferenceLift χ₀ h))) :=
+    bvt_tendsto_twoPointCanonicalDifferenceKernel_of_normalizedCenter_local
+      (d := d) (OS := OS) (lgc := lgc) χ₀ h hχ₀
+  have hshift :
+      Filter.Tendsto
+        (fun t : ℝ =>
+          OS.S 2
+            (ZeroDiagonalSchwartz.ofClassical
+              (twoPointDifferenceLift χ₀
+                (SCV.translateSchwartz (- timeShiftVec d t) h))))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (OS.S 2
+            (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)))) :=
+    tendsto_schwinger_twoPointDifferenceLift_timeShift_of_compact_positiveSupport_local
+      (d := d) (OS := OS) (lgc := lgc) χ₀ h hχ₀ hh_compact hh_pos
+  have hEq :
+      (fun ε : ℝ =>
+        ∫ ξ : SpacetimeDim d,
+          bvt_twoPointCanonicalDifferenceKernel_local OS lgc ε ξ * h ξ)
+      =ᶠ[nhdsWithin 0 (Set.Ioi 0)]
+      (fun t : ℝ =>
+        OS.S 2
+          (ZeroDiagonalSchwartz.ofClassical
+            (twoPointDifferenceLift χ₀
+              (SCV.translateSchwartz (- timeShiftVec d t) h)))) := by
+    filter_upwards [self_mem_nhdsWithin] with t ht
+    exact hcanon_shift t ht
+  have hcanon :
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          ∫ ξ : SpacetimeDim d,
+            bvt_twoPointCanonicalDifferenceKernel_local OS lgc ε ξ * h ξ)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (OS.S 2
+            (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)))) :=
+    Filter.Tendsto.congr' hEq.symm hshift
+  exact tendsto_nhds_unique hBV hcanon
+
+/-- The remaining compact positive-time two-point seam can be stated entirely
+inside the actual production witness family `bvt_F`: it is enough to identify
+the canonical one-variable BV pairing with the normalized `xiShift` shell
+pairing for each positive strip time. The Schwinger-side time-shifted shell is
+then automatic from the existing Input A fixed-time reduction. -/
+theorem bvt_twoPointDifferenceLift_eq_schwinger_of_pairing_eq_xiShiftWitness_of_compact_positiveSupport_local
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (χ₀ h : SchwartzSpacetime d)
+    (hχ₀ : ∫ u : SpacetimeDim d, χ₀ u = 1)
+    (hh_compact : HasCompactSupport (h : SpacetimeDim d → ℂ))
+    (hh_pos : tsupport (h : SpacetimeDim d → ℂ) ⊆ {x : SpacetimeDim d | 0 < x 0})
+    (hcanon_xi :
+      ∀ t : ℝ, 0 < t →
+        ∫ ξ : SpacetimeDim d,
+          bvt_twoPointCanonicalDifferenceKernel_local OS lgc t ξ * h ξ =
+        ∫ y : NPointDomain d 2,
+          bvt_F OS lgc 2
+            (xiShift ⟨1, by omega⟩ 0
+              (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) y) i))
+              ((t : ℂ) * Complex.I)) *
+            (χ₀ (y 0) * h (y 1))) :
+    bvt_W OS lgc 2 (twoPointDifferenceLift χ₀ h) =
+      OS.S 2 (ZeroDiagonalSchwartz.ofClassical (twoPointDifferenceLift χ₀ h)) := by
+  refine
+    bvt_twoPointDifferenceLift_eq_schwinger_of_pairing_eq_shiftedSchwingerTimeShift_of_compact_positiveSupport_local
+      (d := d) (OS := OS) (lgc := lgc) χ₀ h hχ₀ hh_compact hh_pos ?_
+  intro t ht
+  calc
+    ∫ ξ : SpacetimeDim d,
+        bvt_twoPointCanonicalDifferenceKernel_local OS lgc t ξ * h ξ
+      =
+        ∫ y : NPointDomain d 2,
+          bvt_F OS lgc 2
+            (xiShift ⟨1, by omega⟩ 0
+              (fun i => wickRotatePoint (((twoPointCenterDiffCLE d) y) i))
+              ((t : ℂ) * Complex.I)) *
+            (χ₀ (y 0) * h (y 1)) := hcanon_xi t ht
+    _ =
+        OS.S 2
+          (ZeroDiagonalSchwartz.ofClassical
+            (twoPointDifferenceLift χ₀
+              (SCV.translateSchwartz (- timeShiftVec d t) h))) := by
+          symm
+          simpa [hχ₀] using
+            bvt_twoPointDifferenceLift_timeShift_eq_centerValue_of_positiveSupport_local
+              (d := d) (OS := OS) (lgc := lgc) h hh_pos t ht χ₀ hχ₀ χ₀
 
 theorem bvt_F_negCanonical (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) (n : ℕ) :
