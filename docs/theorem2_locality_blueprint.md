@@ -844,6 +844,20 @@ the locality proof closer to the actual existing BHW package:
 3. use the existing ET hypotheses accepted by the pairing theorem,
 4. avoid overclaiming global `ForwardJostSet` membership.
 
+This preference should be treated as part of the implementation guidance, not
+as a casual remark:
+
+1. **Primary route**: Route B through an explicit real open edge `V` and ET
+   support, because that is the theorem surface already consumed by
+   `AdjacencyDistributional.lean`.
+2. **Fallback route only**: Route A through `ForwardJostSet`, to be used only
+   if a clean theorem upgrading the current hypothesis to global forward-Jost
+   membership is actually proved under an exact production name.
+
+So if the later Lean port begins without any new geometric breakthrough, it
+should start on Route B immediately. It should not spend time trying to rescue
+Route A first.
+
 ### 15.4.1. Exact Route-B theorem package on the real open edge
 
 Route B should itself be written as a small theorem package, not as the vague
@@ -880,6 +894,39 @@ pairing theorem surface in `AdjacencyDistributional.lean` directly:
 1. actual open real edge,
 2. actual ET embedding of that edge,
 3. support inclusion of both test functions into that edge.
+
+### 15.4.2. Exact proof transcript for the primary Route-B geometry package
+
+The later Lean file should implement Route B in the following explicit order.
+
+1. Start from the support hypothesis on the adjacent pair.
+2. For each support point `x`, choose a small real neighborhood `V_x` on which
+   the same adjacent spacelike inequality remains true by openness of the
+   spacelike region.
+3. Use compactness of `tsupport f` to extract finitely many such neighborhoods.
+4. Define `V := ⋃_{r=1}^N V_{x_r}`.
+5. Prove `V` is open and contains `tsupport f`.
+6. Prove every point of `V` still lies in the BHW extended tube after real
+   embedding.
+7. Use the swap hypothesis to prove `tsupport g ⊆ swap(i,j) ⁻¹' V`.
+8. Prove that swapped open edge also embeds into the extended tube.
+9. Feed those two ET-support statements to the already-proved distributional
+   locality theorem.
+
+So the Route-B theorem slots should be read operationally as:
+
+```lean
+lemma local_spacelike_open_edge_around_support_point
+lemma compact_support_finite_open_edge_cover
+lemma finite_open_edge_union_embeds_in_extendedTube
+lemma swapped_support_lies_in_swapped_open_edge
+lemma swapped_open_edge_embeds_in_extendedTube
+theorem raw_boundary_locality_from_primary_open_edge_route
+```
+
+This is the actual proof mechanism that makes Route B preferable: it is local,
+compact-support-based, and uses openness of the spacelike relation, rather
+than a global combinatorial Jost-set upgrade.
 
 ### 15.5. Estimated Lean size for the subtlety-aware geometry package
 

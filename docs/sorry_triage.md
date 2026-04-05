@@ -389,3 +389,55 @@ The graph above should guide later implementation order:
    it names has an honest implementation route;
 3. do not let reverse-direction cleanup drag the active theorem-2/3/4 route off
    paper.
+
+### 12.4. Complete-project phased execution plan
+
+If later Lean work resumes against the whole remaining project rather than just
+the public OS-route frontier, the docs should enforce the following phases.
+
+#### Phase 1. Public `E -> R` completion
+
+1. `W2` theorem 3 positivity,
+2. `W3` theorem 4 cluster,
+3. `W1` theorem 2 locality.
+
+#### Phase 2. Immediate `E -> R` support cleanup
+
+1. `W4-W6` in `OSToWightman.lean`,
+2. `W7` in `K2VI1/Frontier.lean`.
+
+#### Phase 3. Generalization / SCV support
+
+1. `S1-S2` Bochner tube extension,
+2. general `k > 2` OS II package from
+   [general_k_continuation_blueprint.md](/Users/xiyin/OSReconstruction/docs/general_k_continuation_blueprint.md).
+
+#### Phase 4. Reverse-direction strengthening
+
+1. honest `R -> E` transport packages from
+   [r_to_e_blueprint.md](/Users/xiyin/OSReconstruction/docs/r_to_e_blueprint.md),
+2. quarantine/remove the false reverse-direction positivity chain.
+
+#### Phase 5. GNS / kernel / uniqueness side lane
+
+1. nuclear-space and kernel-theorem packages,
+2. GNS matrix-coefficient bridge,
+3. cyclicity,
+4. `wightman_uniqueness`.
+
+#### Phase 6. Peripheral geometric backlogs
+
+1. BHW permutation blockers,
+2. historical PET / reverse-direction residuals.
+
+#### Phase 7. vNA / operator-algebra backlog
+
+1. measure extension,
+2. Stone/generator,
+3. Tomita/modular,
+4. KMS,
+5. predual.
+
+This seven-phase plan is the strongest global execution order currently
+documented in the repo. Later implementation should justify any deviation from
+it in the local proof docs first.

@@ -273,6 +273,48 @@ This package is deliberately smaller than the full tube-boundary theorem. The
 future Lean port should prove it first if theorem 2 / GNS resume before the
 full SCV boundary-value package is complete.
 
+### 12.1. Exact proof transcript for the one-point forward-tube bridge
+
+The later Lean proof should not leave the one-point package as a mere trio of
+consumer theorem names. The exact mathematical route should be:
+
+1. start from a one-point tempered distribution `u` with forward support,
+2. take its Fourier transform `û`,
+3. use forward support to prove `supp û` lies in the closed dual forward cone,
+4. define the candidate holomorphic extension on the one-point forward tube by
+   the Fourier-Laplace integral
+   `F(z) := ∫ e^{-i⟨p,z⟩} dû(p)`,
+5. prove the integral is absolutely/convergently well-defined for
+   `Im z ∈ ForwardCone`,
+6. prove holomorphy by differentiating under the integral,
+7. prove the boundary value along `z = x + i ε y` tends to `u` in tempered
+   distribution sense as `ε -> 0+`,
+8. prove uniqueness by applying the one-variable tube identity theorem to the
+   difference of two candidate extensions with the same boundary value.
+
+So the real theorem-slot inventory should be:
+
+```lean
+lemma onePoint_distribution_supports_dual_forwardCone
+lemma onePoint_fourierLaplace_integral_converges
+lemma onePoint_fourierLaplace_integral_holomorphic
+def onePoint_forwardTube_extension
+lemma onePoint_forward_support_to_flatRegular
+lemma onePoint_boundary_value_recovery
+lemma onePoint_zero_boundaryValue_implies_zero
+lemma onePoint_forwardTube_uniqueness
+```
+
+The proof discipline should be:
+
+1. support theorem first,
+2. explicit Fourier-Laplace construction second,
+3. boundary-value recovery third,
+4. uniqueness last.
+
+That is the route both theorem 2 and the GNS matrix-coefficient bridge should
+consume. Neither should build its own one-point SCV theory.
+
 ## 13. Exact proof transcript for Vladimirov-Tillmann
 
 Package B should be written as a four-stage chain, not a single theorem.

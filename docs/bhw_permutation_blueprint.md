@@ -65,6 +65,57 @@ For `d ≥ 2`, the existing general-σ Jost witness should be the basepoint inpu
 For `d = 1`, the route should pass through the dedicated orbit-set geometry in
 `IndexSetD1.lean`.
 
+### 3.1. Exact proof transcript for the `d ≥ 2` branch
+
+The later Lean proof should be written as a literal chain:
+
+1. use `JostWitnessGeneralSigma.lean` to choose one nontrivial base point
+   `z₀ ∈ permSeedSet`,
+2. identify the local seed slice through `z₀`,
+3. prove every point of `permSeedSet` lies in some seed slice,
+4. prove any two seed slices in the same combinatorial adjacency class overlap
+   nontrivially,
+5. build a finite adjacency chain from any point to the base slice,
+6. conclude path connectedness by concatenating paths inside slices and across
+   overlaps,
+7. convert path connectedness to connectedness.
+
+So the theorem slots should be thought of more concretely as:
+
+```lean
+lemma permSeedSet_basepoint_from_jostWitness
+lemma mem_seedSlice_of_mem_permSeedSet
+lemma seedSlice_overlap_of_adjacency
+lemma seedSlice_chain_to_basepoint
+lemma permSeedSet_pathConnected_of_seedSlice_chain
+theorem blocker_isConnected_permSeedSet_nontrivial
+```
+
+The important implementation point is that the global connectedness theorem
+should be the consumer; the real work lives in the slice-overlap combinatorics.
+
+### 3.2. Exact proof transcript for the `d = 1` geometric side
+
+The `d = 1` branch should not try to reuse the `d ≥ 2` Jost-witness geometry
+verbatim. The correct route is:
+
+1. translate `permSeedSet` membership into the one-dimensional orbit/index-set
+   description from `IndexSetD1.lean`,
+2. prove the relevant orbit-set is an interval or finite union of adjacent
+   intervals in the line-order model,
+3. prove the interval chain is connected,
+4. transport that connectedness back to `permSeedSet`.
+
+This means the later file should isolate:
+
+```lean
+lemma d1_permSeedSet_to_orbitIndexSet
+lemma d1_orbitIndexSet_interval_connected
+lemma d1_permSeedSet_connected
+```
+
+before mixing the result into permutation-flow endgame code.
+
 ## 4. Blocker B: the `d = 1` overlap-invariance bridge
 
 The theorem
@@ -97,6 +148,32 @@ lemma d1_extendF_perm_eq_on_overlap
 theorem blocker_iterated_eow_hExtPerm_d1_nontrivial
 ```
 
+### 4.1. Exact proof transcript for the overlap-invariance bridge
+
+The later Lean proof should be written in the following exact order:
+
+1. fix `z` with both `z` and `σ • z` in the extended tube,
+2. place both points in the same connected forward-overlap component using the
+   `d = 1` index-set geometry,
+3. invoke the already-proved adjacent-swap extension theorem along that
+   connected component,
+4. obtain equality of `extendF` at the two endpoints,
+5. repackage the equality in the exact `hExtPerm` record shape needed by
+   `PermutationFlow.lean`.
+
+So the consumer theorem slots should be:
+
+```lean
+lemma d1_points_lie_in_common_forwardOverlap_component
+lemma d1_adjacentSwap_chain_preserves_extendF
+lemma d1_extendF_perm_eq_on_overlap
+theorem blocker_iterated_eow_hExtPerm_d1_nontrivial
+```
+
+The implementation should resist the temptation to prove a stronger global
+permutation invariance theorem first. The blocker only needs the overlap
+statement.
+
 ## 5. Exact dependency order
 
 The later Lean implementation should proceed as:
@@ -106,6 +183,17 @@ The later Lean implementation should proceed as:
 3. close `iterated_eow_permutation_extension`,
 4. then re-evaluate whether any downstream permutation theorem still needs its
    own wrapper.
+
+### 5.1. Micro-order inside the later Lean implementation
+
+The exact order should be:
+
+1. `d ≥ 2` slice-overlap connectedness lemmas,
+2. `d = 1` orbit/index-set connectedness lemmas,
+3. shared `permSeedSet` connectedness theorem,
+4. `d = 1` common-component theorem for overlap points,
+5. `d = 1` overlap-invariance theorem,
+6. final `iterated_eow_permutation_extension` consumer step.
 
 ## 6. Lean-style endgame pseudocode
 
@@ -142,4 +230,14 @@ This blueprint should be considered ready only when:
 4. the endgame theorem `iterated_eow_permutation_extension` has a visible
    dependency chain from the blockers.
 
-This note now records all four.
+## 9. Recommended implementation size
+
+Rough expected size:
+
+1. connectedness blocker (`d ≥ 2` + `d = 1` geometry): 180-260 lines,
+2. `d = 1` overlap-invariance blocker: 120-180 lines,
+3. endgame consumer cleanup in `PermutationFlow.lean`: 20-50 lines.
+
+This blueprint is implementation-ready once those three chunks are treated as
+the literal work units and no extra permutation wrapper theorem is inserted in
+between.

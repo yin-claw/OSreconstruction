@@ -74,6 +74,20 @@ lemma uniquenessUnitary_intertwines_field
 theorem wightman_uniqueness
 ```
 
+The later implementation should also isolate the dense-core bookkeeping
+explicitly:
+
+```lean
+lemma cyclicWordVector_mem_domain
+def cyclicWordSpan (qft : WightmanQFT d) : Submodule ℂ qft.HilbertSpace
+lemma cyclicWordSpan_eq_vacuum_algebraicSpan
+lemma cyclicWordSpan_dense
+lemma uniquenessDenseMap_maps_cyclicWord
+```
+
+Without these helper theorems, the later proof will keep rediscovering the same
+domain and density facts.
+
 ## 5. Exact proof decomposition
 
 ### 5.1. Well-definedness
@@ -89,6 +103,59 @@ To prove the map on cyclic words is well-defined:
 The proof should not invoke abstract operator-algebra uniqueness theorems at
 this stage. It should use the repo’s explicit Wightman-function interface.
 
+### 5.1.1. Exact quotient/descent mechanism
+
+The implementation should not leave the descent step implicit. The correct
+order is:
+
+1. define a pre-map on the free finite span of cyclic words,
+2. prove that if `ξ` has zero norm in `qft₁`, then its image has zero norm in
+   `qft₂`,
+3. descend from the pre-Hilbert quotient by the null space,
+4. only then package the descended map as `uniquenessDenseMap`.
+
+So the actual theorem slots should be thought of as:
+
+```lean
+def uniquenessPreMap :
+    FreeCyclicWordSpan qft₁ →ₗ[ℂ] FreeCyclicWordSpan qft₂
+
+lemma uniquenessPreMap_inner_formula
+lemma uniquenessPreMap_null_of_null
+def uniquenessDenseMap :
+    CyclicDenseSubspace qft₁ →ₗ[ℂ] CyclicDenseSubspace qft₂
+```
+
+The key proof of `uniquenessPreMap_null_of_null` is:
+
+1. assume `‖ξ‖ = 0` in the quotient on the `qft₁` side,
+2. rewrite `‖ξ‖²` as `⟪ξ, ξ⟫`,
+3. rewrite that inner product using the vacuum `(n+m)`-point expansion,
+4. transfer the value to the `qft₂` side by `h`,
+5. conclude the image also has norm square zero.
+
+This is the only non-formal descent step. Once it is proved, the quotient map
+is honest.
+
+### 5.1.2. Exact cyclic-word inner-product formula
+
+The implementation should explicitly prove the formula:
+
+```lean
+lemma cyclicWordVector_inner_cyclicWordVector
+    (Fs : List (SchwartzSpacetime d)) (Gs : List (SchwartzSpacetime d)) :
+    ⟪cyclicWordVector qft Fs, cyclicWordVector qft Gs⟫_ℂ
+      =
+    qft.wightmanFunction (Fs.length + Gs.length)
+      (joinedConjugatedTestFamily Fs Gs)
+```
+
+The proof is by induction on `Fs`, pushing adjoints across the vacuum and using
+the Wightman hermiticity/domain axioms already packaged in `WightmanQFT`.
+
+That theorem is the real heart of uniqueness. All later inner-product
+preservation statements should be short corollaries of it.
+
 ### 5.2. Isometry
 
 Once well-definedness is proved, isometry is formal:
@@ -96,6 +163,17 @@ Once well-definedness is proved, isometry is formal:
 1. the map preserves inner products on the dense cyclic subspaces,
 2. hence it preserves norms,
 3. hence it extends uniquely to an isometry on the Hilbert completion.
+
+The later Lean file should split that into:
+
+```lean
+lemma uniquenessDenseMap_inner_preserving
+lemma uniquenessDenseMap_norm_preserving
+lemma uniquenessDenseMap_isometry
+```
+
+so that the completion-extension theorem can consume the isometry theorem
+directly, with no hidden algebra.
 
 ### 5.3. Surjectivity / unitary
 
@@ -108,6 +186,29 @@ There are two standard routes:
 The documentation-standard route should use (2), because it avoids building a
 second abstract map.
 
+### 5.3.1. Exact dense-range proof
+
+The dense-range proof should be written literally as:
+
+1. every cyclic word vector in `qft₂` is the image of the corresponding cyclic
+   word vector in `qft₁`,
+2. therefore `cyclicWordSpan qft₂` is contained in the range of
+   `uniquenessDenseMap`,
+3. `cyclicWordSpan qft₂` is dense by cyclicity,
+4. hence the range of `uniquenessDenseMap` is dense,
+5. an isometry with dense range extends to a unitary.
+
+This avoids ever needing a second inverse construction.
+
+The theorem slots should therefore be:
+
+```lean
+lemma cyclicWord_in_range_of_uniquenessDenseMap
+lemma cyclicWordSpan_le_range_uniquenessDenseMap
+lemma uniquenessDenseMap_denseRange
+lemma uniquenessDenseMap_extends_to_unitary
+```
+
 ### 5.4. Intertwining the field
 
 The field intertwining theorem should be proved only after the unitary exists.
@@ -116,6 +217,29 @@ Exact route:
 
 1. first prove the intertwining identity on cyclic vectors in the field domain,
 2. then lift it to the stated domain theorem in `Main.lean`.
+
+### 5.4.1. Exact field-domain proof transcript
+
+The later Lean proof should not try to prove intertwining on an arbitrary
+domain vector first. The correct order is:
+
+1. prove
+   `U (fieldWordAction qft₁ f ξ) = fieldWordAction qft₂ f (U ξ)`
+   on the cyclic-word span,
+2. identify the cyclic-word span as a core inside `qft₁.field.domain`,
+3. use closedness/continuity of the field operators on their domains to extend
+   the intertwining identity from the core to every `ψ ∈ qft₁.field.domain`.
+
+So the actual theorem-slot inventory should include:
+
+```lean
+lemma uniquenessUnitary_intertwines_field_on_cyclic_core
+lemma cyclicWordSpan_is_field_core
+lemma uniquenessUnitary_intertwines_field
+```
+
+This keeps the domain argument honest and prevents the final theorem from
+hiding an unproved graph-closure step.
 
 ## 6. Lean-style pseudocode
 
@@ -156,4 +280,23 @@ This uniqueness blueprint should be considered ready only when:
 4. the field intertwining is documented as a post-unitary theorem, not hidden
    in the existence proof.
 
-This note now records all four.
+## 9. Recommended implementation order and size
+
+The later Lean work should attack this file in the following order:
+
+1. cyclic-word core definitions and domain lemmas,
+2. cyclic-word inner-product formula,
+3. pre-map and quotient descent,
+4. dense-range/unitary extension,
+5. field-core intertwining,
+6. final assembly theorem.
+
+Rough expected size:
+
+1. cyclic-word core and density: 120-180 lines,
+2. inner-product formula and descent: 120-180 lines,
+3. unitary extension and intertwining: 80-140 lines,
+4. final assembly theorem: 20-40 lines.
+
+This note is implementation-ready once those six steps are read as the literal
+construction order rather than as a high-level summary.

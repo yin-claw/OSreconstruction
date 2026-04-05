@@ -618,6 +618,35 @@ the proof should never jump directly from "one-variable continuations in finitel
 many directions" to "holomorphic on a polydisc" without a named overlap/gluing
 theorem in between.
 
+### 5.4.1. Exact gluing mechanism behind `malgrange_zerner_glue_directional_pieces`
+
+The later Lean proof should also record *how* the gluing theorem is supposed to
+work, not just what sublemmas it uses.
+
+1. Each directional continuation produces a holomorphic function `F_μ` on a
+   flat tube `U_μ`.
+2. For each pair `μ, ν`, the intersection `U_μ ∩ U_ν` contains a real slice
+   segment through the basepoint where both continuations are already known to
+   agree with the same original Schwinger function.
+3. Because `U_μ ∩ U_ν` is connected and open, the identity theorem upgrades
+   equality on that real slice segment to equality on the whole overlap.
+4. Those overlap equalities make the family `{F_μ}` a compatible holomorphic
+   local family on the union `⋃_μ U_μ`.
+5. The general local-gluing theorem for holomorphic functions on compatible
+   open covers then yields one holomorphic function on the union.
+6. The quantitative cone-angle geometry is used only after gluing, to show a
+   concrete local polydisc lies inside that union.
+
+So the later file should not need to "discover" the gluing mechanism. It is:
+
+1. real-slice agreement,
+2. identity theorem on overlaps,
+3. compatible-family gluing on the union,
+4. geometric inclusion of the target polydisc.
+
+That is the exact mathematical content of the Malgrange-Zerner step needed by
+OS II in this repo.
+
 ## 5.5. Envelope-of-holomorphy implementation plan
 
 The `(P_N) -> (A_{N+1})` step uses two distinct SCV inputs:
@@ -1356,23 +1385,28 @@ following are explicitly pinned in the docs:
 
 This blueprint now records all six.
 
-## 19. What still needs thickening before this doc matches theorem-3 detail
+## 19. Final fixed implementation choices for the general-k port
 
-The general-k blueprint should now be treated as close to implementation-ready,
-but the following parts still deserve theorem-3-level cross-checking before any
-later Lean port actually begins:
+The purpose of this section is to remove the last planning ambiguity before a
+later Lean port begins. The choices below should be treated as fixed
+documentation guidance, not as optional cross-checks to be reinvented during
+implementation.
 
-1. the exact domain definitions used in the Malgrange-Zerner overlap step,
-2. the exact generator-indexing scheme for the `(P_N) -> (A_{N+1})` union,
-3. the exact SCV theorem statement chosen for
-   `generatingUnion_envelope_eq_Ck_next`,
-4. the exact theorem-name interface from the SCV blueprint for the one-variable
-   tube boundary-value constructor,
-5. the exact import boundaries for the seven planned Lean files.
+The fixed choices are:
 
-Those are no longer route ambiguities. They are now implementation-shape
-choices that should be fixed before coding, and they are precisely the sort of
-choices that this documentation pass is meant to make explicit.
+1. use the `GeneratorIndex` structure below for the `(P_N) -> (A_{N+1})`
+   generating union,
+2. keep `generatingUnion_envelope_eq_Ck_next` and
+   `gluedScalarCandidate_extends_to_Ck_next` as two separate declarations,
+3. use the one-point SCV interface from
+   `docs/scv_infrastructure_blueprint.md` as the only allowed boundary-value
+   input to VI.1,
+4. keep the seven-file split and import boundaries from Section 5.1/5.2 unless
+   an exact compile failure later forces a local adjustment.
+
+There is therefore no remaining route ambiguity at the documentation level. A
+later implementation may still discover theorem-proof difficulty, but it should
+not need to rediscover the package shape.
 
 ### 19.1. Recommended exact indexing scheme for the generating union
 
@@ -1471,3 +1505,80 @@ can also be fixed more concretely:
 
 So even the import graph is now close to fixed. The remaining work is mostly to
 realize those boundaries in Lean, not to decide them from scratch.
+
+### 19.4. Recommended first theorem to implement in each future file
+
+The later port should not open all seven files and then decide locally where to
+start. The first theorem in each file should already be fixed by the docs:
+
+1. `OS2ChapterV1LocalAnalyticity.lean`
+   starts with
+   `dual_cone_direction_exists_for_each_time_gap`,
+   because every later slice/domain theorem depends on having the admissible
+   directional basis in hand.
+2. `OS2BaseStep.lean`
+   starts with
+   `scalar_pairing_eq_os_semigroup_formula`,
+   because the base-step vector reconstruction is pointless until the scalar
+   candidate is identified.
+3. `OS2InductionLadder.lean`
+   starts with
+   `mixed_domain_scalar_family_defined`,
+   because every later Taylor/vector theorem in that file is downstream of the
+   scalar family itself.
+4. `OS2DomainGrowth.lean`
+   starts with
+   `recursive_angle_sequence_defined`,
+   because the stage-membership induction and Corollary 5.3 both depend on that
+   sequence package.
+5. `OS2VI1Regularization.lean`
+   starts with
+   `regularizer_h_exists`,
+   because every later estimate in VI.1 depends on support/normalization of the
+   mollifier.
+6. `OS2VI2Renormalized.lean`
+   starts with
+   `normalized_family_defined`,
+   because suppressing `S_{k,ε}` is exactly what the docs are trying to forbid.
+7. `OS2AppendixE0Prime.lean`
+   starts with
+   `hermite_projection_defined`,
+   or whatever exact local theorem name is chosen for the Hermite-expansion
+   basis package behind `E0'' => E0'`.
+
+That means a later implementation can begin each file with one theorem that is
+mathematically first, rather than re-deciding the local entry point.
+
+### 19.5. Package-by-package exit criteria for the future OS II port
+
+The later Lean work should consider a package complete only when the following
+end-of-file conditions hold:
+
+1. `OS2ChapterV1LocalAnalyticity.lean`
+   ends with
+   `local_polydisc_of_real_positive_time`.
+2. `OS2BaseStep.lean`
+   ends with
+   `A0_to_P0`.
+3. `OS2InductionLadder.lean`
+   ends with
+   `AN_to_PN`.
+4. `OS2DomainGrowth.lean`
+   ends with
+   `stage_selection_for_given_positive_time`.
+5. `OS2VI1Regularization.lean`
+   ends with
+   `regularized_real_domain_estimate`.
+6. `OS2VI2Renormalized.lean`
+   ends with
+   `general_k_temperedness_and_boundary_values`.
+7. `OS2AppendixE0Prime.lean`
+   ends with the exact `E0'' => E0'` theorem slot documented in
+   [os2_detailed_proof_audit.md](/Users/xiyin/OSReconstruction/docs/os2_detailed_proof_audit.md).
+
+The docs should therefore be read as giving each future file both:
+
+1. a fixed first theorem to write,
+2. a fixed final theorem whose proof closes the package.
+
+That is the strongest project-level protection against future route drift.

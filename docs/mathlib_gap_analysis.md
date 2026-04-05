@@ -75,6 +75,15 @@ Decision:
 2. do not wait for Mathlib,
 3. later upstreaming is plausible once the proof is isolated from QFT.
 
+Exact implementation consequence:
+
+1. **Primary route**: import/wrap the theorem from the local
+   `gaussian-field` dependency if the exact statement matches;
+2. **Fallback route**: prove the Frechet-space Banach-Steinhaus package locally
+   under the theorem slots listed in
+   [nuclear_spaces_blueprint.md](/Users/xiyin/OSReconstruction/docs/nuclear_spaces_blueprint.md);
+3. do not block GNS/kernel-theorem work on opening a Mathlib issue first.
+
 ### 3.2. Schwartz nuclear / kernel theorem
 
 Current repo surface:
@@ -92,6 +101,17 @@ Decision:
 1. prove locally with import-compatible interfaces if possible,
 2. treat `gaussian-field` as the first place to look for reusable lemmas,
 3. do not make GNS cyclicity depend on waiting for a future upstream package.
+
+Exact implementation consequence:
+
+1. **Primary route**: import the local `gaussian-field` nuclear/Schwartz facts
+   and derive the repo-facing theorem
+   `schwartz_nuclear_extension`;
+2. **Fallback route**: prove the tensor-extension package locally via the
+   intermediate theorem slots listed in
+   [nuclear_spaces_blueprint.md](/Users/xiyin/OSReconstruction/docs/nuclear_spaces_blueprint.md);
+3. the consumer-facing GNS/Wightman files should only see the repo theorem
+   surface, never the import-path details.
 
 ### 3.3. Bochner-Minlos
 
@@ -202,6 +222,18 @@ Decision:
 2. document it as a repo theorem, not as a missing upstream theorem,
 3. do not open a Mathlib issue for this until the local formulation has
    stabilized.
+
+Exact implementation consequence:
+
+1. theorem 2 and the GNS matrix-coefficient bridge should both consume the same
+   one-point package documented in
+   [scv_infrastructure_blueprint.md](/Users/xiyin/OSReconstruction/docs/scv_infrastructure_blueprint.md),
+2. the constructor
+   `flatRegular_of_boundary_distribution_and_polyGrowth`
+   should be treated as a repo-local flattening/adapter theorem above that
+   one-point SCV package,
+3. neither theorem 2 nor GNS should invent its own custom boundary-value
+   constructor route.
 
 ## 6. Operator-theory gaps
 

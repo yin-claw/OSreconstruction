@@ -162,7 +162,91 @@ These are rough but now useful estimates:
 6. `Predual.lean`:
    `80-160` Lean lines.
 
-## 6. What not to do
+## 6. Exact package decomposition inside the `vNA` backlog
+
+The `vNA` subtree should not be resumed as 36 unrelated theorems. The later
+implementation should attack it as six packages:
+
+1. **measure-extension package**
+   in `CaratheodoryExtension.lean`,
+2. **Stone/generator package**
+   centered on `timeEvolution_generator`,
+3. **Tomita-core package**
+   in `ModularTheory.lean`,
+4. **modular-automorphism package**
+   in `ModularAutomorphism.lean`,
+5. **KMS strip package**
+   in `KMS.lean`,
+6. **predual/topology package**
+   in `Predual.lean`.
+
+Each package should be regarded as complete only when its terminal theorem from
+`docs/vna_infrastructure_blueprint.md` is honest.
+
+## 7. Exact first theorem to implement in each `vNA` file
+
+The later implementation should not reopen a file and then improvise the local
+starting point. The first theorem in each file should be:
+
+1. `MeasureTheory/CaratheodoryExtension.lean`
+   - `toOuterMeasure_Icc`
+2. `Unbounded/StoneTheorem.lean`
+   - the first local lemma supporting
+     `unique_from_generator_via_domain_ode`
+     in the Stone blueprint, not the public theorem directly
+3. `ModularTheory.lean`
+   - `conjugates_modular_operator`
+4. `ModularAutomorphism.lean`
+   - `preserves_algebra`
+5. `KMS.lean`
+   - the first `modular_state_is_kms` line block
+6. `Predual.lean`
+   - `sigmaWeak_convergence_iff`
+
+This order ensures every file starts at the earliest honest dependency point
+rather than at a later consumer theorem.
+
+## 8. Exact completion criterion for each `vNA` file
+
+The file-level exit criteria should be:
+
+1. `CaratheodoryExtension.lean`
+   finishes when the spectral-premeasure block is honest.
+2. `StoneTheorem.lean`
+   finishes when `timeEvolution_generator` is honest.
+3. `ModularTheory.lean`
+   finishes when `tomita_fundamental` is honest, with the standard-form
+   results optionally left for a second pass.
+4. `ModularAutomorphism.lean`
+   finishes when `approximately_inner` is honest.
+5. `KMS.lean`
+   finishes when `passive_stable_implies_kms` is honest.
+6. `Predual.lean`
+   finishes when `kaplansky_density` is honest.
+
+Those file endings should be treated as the real package closures when later
+implementation begins.
+
+## 9. Exact micro-order inside the modular/KMS lane
+
+The later implementation should keep the modular chain explicit:
+
+1. Carathéodory extension first,
+2. Stone/generator theorem second,
+3. `conjugates_modular_operator`,
+4. `reverses_modular_flow`,
+5. `tomita_fundamental`,
+6. `preserves_algebra`,
+7. cocycle theorems,
+8. modular relation / innerness criteria,
+9. `modular_state_is_kms`,
+10. `kms_characterizes_modular`,
+11. later KMS corollaries.
+
+This prevents future work from proving late KMS statements while the modular
+base is still partially opaque.
+
+## 10. What not to do
 
 1. Do not start with KMS.
 2. Do not start with `Predual.lean`.
@@ -170,7 +254,7 @@ These are rough but now useful estimates:
 4. Do not let `StoneTheorem.lean` quietly depend on unfinished measure
    extension results without documenting that dependency.
 
-## 7. Route consequence for current OS work
+## 11. Route consequence for current OS work
 
 This file exists so that operator-algebra work remains documented without
 stealing focus from the live theorem-2/3/4 route. Unless the user explicitly

@@ -78,6 +78,32 @@ theorem continuous_translate_npoint_schwartz
 This should be proved by seminorm control, not by appealing to an abstract
 Lie-group action theorem.
 
+### 3.1. Exact proof transcript for translation continuity
+
+The later Lean proof should be written at the seminorm level:
+
+1. fix a Schwartz seminorm `p_{α,β}`,
+2. compute the derivative and polynomial-weight effect of translation on
+   `poincareActNPoint (translationInDirection μ t) f`,
+3. prove a uniform bound
+   `p_{α,β}(translate_t f) ≤ C_{α,β} * Σ_{γ≤β} p_{α,γ}(f)`,
+4. prove `translate_t f -> f` in each seminorm as `t -> 0`,
+5. package seminorm convergence into continuity in the Schwartz topology.
+
+So the theorem slots should really be read as:
+
+```lean
+lemma derivative_of_npoint_translation
+lemma polynomial_weight_under_translation
+lemma seminorm_translate_bound
+lemma seminorm_translate_tendsto_self
+lemma translate_npoint_schwartz_continuous
+theorem continuous_translate_npoint_schwartz
+```
+
+This keeps Package A entirely on the explicit Schwartz-analysis surface already
+used elsewhere in the repo.
+
 ## 4. Package B: Strong continuity on the pre-Hilbert level
 
 The second remaining package is:
@@ -107,6 +133,34 @@ theorem gns_stronglyContinuous_preHilbert
 
 The later Lean file should not treat this as a spectral theorem argument. It is
 just a continuity-of-the-inner-product argument.
+
+### 4.1. Exact proof transcript for pre-Hilbert strong continuity
+
+The later Lean proof should use the following literal norm-square identity:
+
+```lean
+‖U(t)ξ - ξ‖² = ⟪U(t)ξ, U(t)ξ⟫ - ⟪U(t)ξ, ξ⟫ - ⟪ξ, U(t)ξ⟫ + ⟪ξ, ξ⟫
+```
+
+and then proceed as:
+
+1. reduce to algebraic pre-Hilbert vectors represented by Borchers sequences,
+2. rewrite each inner-product term as a finite sum of Wightman pairings,
+3. invoke Package A on each translated test-function term,
+4. conclude continuity of the norm square at `0`,
+5. deduce continuity of the norm,
+6. extend from `0` to all `t` using the group law.
+
+The theorem slots should therefore be:
+
+```lean
+lemma algebraic_preHilbert_translation_inner_formula
+lemma continuous_wip_translate
+lemma norm_sq_translate_difference_formula
+lemma prehilbert_translation_continuous_at_zero
+lemma prehilbert_translation_continuous
+theorem gns_stronglyContinuous_preHilbert
+```
 
 ## 5. Package C: Matrix-coefficient holomorphic bridge
 
@@ -244,6 +298,33 @@ theorem gns_cyclicity
 The honest blocker here is not GNS algebra. It is the Schwartz nuclear/kernel
 theorem documented in `docs/nuclear_spaces_blueprint.md`.
 
+### 6.1. Exact proof transcript for cyclicity
+
+The later Lean proof should be written as:
+
+1. use the kernel theorem to identify product tensors as a dense subspace of
+   the full joint Schwartz space,
+2. prove every product tensor corresponds to a finite field word applied to the
+   vacuum,
+3. prove every Borchers class in the pre-Hilbert quotient is a finite sum of
+   such single/product-tensor vectors,
+4. use the completion map to transport density from the algebraic quotient to
+   the Hilbert space,
+5. conclude density of the vacuum algebraic span.
+
+So the theorem slots should be read more literally as:
+
+```lean
+lemma productTensor_dense_in_joint_schwartz
+lemma productTensor_singlePH_representation
+lemma quotient_vector_eq_finite_sum_of_singlePH
+lemma cyclic_span_contains_dense_borchers_subspace
+theorem gns_cyclicity
+```
+
+This theorem is therefore a kernel-theorem consumer plus a quotient-density
+argument; no new QFT-specific analysis should be hiding in it.
+
 ## 7. Assembly into `gnsQFT`
 
 Once Packages A-D are in place, the later assembly should become mechanical.
@@ -299,4 +380,20 @@ following are explicit:
 5. the separation of reconstruction-critical work from the standalone
    uniqueness theorem.
 
-This note now records all five.
+## 11. Recommended implementation size
+
+Rough expected size for the later GNS pass:
+
+1. Package A translation continuity:
+   `80-140` lines,
+2. Package B pre-Hilbert strong continuity:
+   `60-120` lines,
+3. Package C matrix-coefficient bridge:
+   `180-280` lines once the SCV one-point package exists,
+4. Package D cyclicity:
+   `90-170` lines once the kernel theorem is honest,
+5. final `gnsQFT` assembly:
+   `20-40` lines.
+
+This blueprint is implementation-ready once those five chunks are read as the
+literal work units and not as one monolithic “finish GNS” task.

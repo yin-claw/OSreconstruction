@@ -75,12 +75,66 @@ the recommended order is:
 This order keeps the mathematically reusable packages ahead of the mostly
 historical or side-lane blockers.
 
+### 6.1. Exact package grouping inside that order
+
+The later implementation should not attack the peripheral backlog as isolated
+single sorries. The correct grouping is:
+
+1. **GNS holomorphic / cyclicity lane**
+   - `gns_matrix_coefficient_holomorphic_axiom`
+   - the imported/consumer nuclear theorems from
+     `docs/nuclear_spaces_blueprint.md`
+   - `gns_cyclicity`
+2. **Standalone GNS uniqueness lane**
+   - `wightman_uniqueness`
+   - only after the GNS cyclic span package is honest
+3. **Measure/nuclear lane**
+   - `gauge_dominates_on_subspace_of_convex_nhd`
+   - `product_seminorm_dominated`
+   - `bochner_tightness_and_limit`
+   - `minlos_projective_consistency`
+   - `minlos_nuclearity_tightness`
+   - `eval_maps_generate_sigma_algebra`
+   - `eval_charfun_implies_fd_distributions`
+4. **SCV local-extension lane**
+   - `bochner_local_extension`
+   - `bochner_tube_extension`
+5. **BHW permutation lane**
+   - `blocker_isConnected_permSeedSet_nontrivial`
+   - `blocker_iterated_eow_hExtPerm_d1_nontrivial`
+6. **Historical reverse-direction residuals**
+   - only after the reusable infrastructure above is clean.
+
+This grouping matters because several of these “peripheral” theorems are only
+peripheral relative to the current OS theorem-2/3/4 frontier. They are still
+best implemented as coherent packages rather than as individual isolated fixes.
+
+### 6.2. Rough implementation-size estimates
+
+The later backlog should be budgeted approximately as:
+
+1. GNS holomorphic bridge plus cyclicity consumers:
+   `220-360` lines beyond imported nuclear/SCV support,
+2. standalone uniqueness:
+   `80-180` lines once cyclicity is honest,
+3. nuclear / Bochner-Minlos lane:
+   `600-1000` lines across several files,
+4. SCV Bochner tube lane:
+   `140-240` lines,
+5. BHW permutation lane:
+   `300-440` lines,
+6. historical reverse-direction cleanup:
+   highly variable, and not recommended before the reusable packages above.
+
 ## 7. What not to do
 
 1. Do not let peripheral work re-contaminate the theorem-2/3/4 route.
 2. Do not reopen the false reverse-direction positivity chain.
 3. Do not treat all peripheral blockers as equal priority; GNS/nuclear work is
    much more central than old-route PET connectivity.
+4. Do not resume the quarantined false reverse-direction positivity chain as if
+   it were a valid proof route. If any part of it is reused, it must first be
+   rewritten under the theorem packages documented in `docs/r_to_e_blueprint.md`.
 
 ## 8. Why this file exists
 

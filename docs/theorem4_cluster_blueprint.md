@@ -668,6 +668,40 @@ The documentation point is that this public adapter should consume only:
 
 It should not contain any new analytic-continuation content.
 
+### 12.4.2. Exact proof transcript for the public canonical-shell adapter
+
+The later Lean implementation should write the public adapter as an explicit
+three-stage rewrite/transport package:
+
+1. rewrite the public canonical cluster integrand into the positive-time
+   single-split shell using the existing canonical-direction / `xiShift`
+   comparison lemmas,
+2. rewrite the translated right factor into the single-split positive-time form
+   used by
+   `bvt_cluster_positiveTime_singleSplit_core`,
+3. transport the eventual/limit statement through those two rewrites and then
+   apply the already-proved positive-time core theorem.
+
+So the actual theorem slots should be read as:
+
+```lean
+lemma canonical_cluster_integrand_eq_singleSplit_integrand
+lemma canonical_translate_factor_eq_singleSplit_translate_factor
+lemma canonical_cluster_eventually_of_singleSplit_core
+theorem bvt_cluster_canonical_from_positiveTime_core
+```
+
+The proof order should be:
+
+1. integrand-level rewrite,
+2. pairing/integral-level rewrite,
+3. `Filter.Eventually` transport,
+4. final theorem application.
+
+That is why this adapter is a wrapper package and not a new analytic theorem.
+If the later Lean proof starts introducing contour or boundary-value arguments
+here, it has drifted below the current documentation standard.
+
 ## 12.5. Exact hidden normalization identities
 
 The theorem-4 doc should also make explicit the small identities that are easy
