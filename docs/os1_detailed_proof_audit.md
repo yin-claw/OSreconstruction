@@ -548,6 +548,9 @@ The internal proof shape is:
 So cluster is a *consumer* of the isometry/positivity theorem, not a substitute
 for it.
 
+For the exact implementation ledger of the current theorem-4 frontier on
+`main`, see `docs/theorem4_cluster_blueprint.md`.
+
 ### 8.1. Detailed proof chain of Section 4.4
 
 The paper's displayed vector identity `(4.29)` is the whole proof in condensed
@@ -590,6 +593,9 @@ The proof package can be restated more concretely:
 This is why locality should not be mixed into theorem 3:
 - theorem 3 is about positivity/isometry through the semigroup bridge;
 - theorem 2 is about permutation symmetry plus analytic continuation.
+
+For the exact implementation ledger of the current theorem-2 frontier on
+`main`, see `docs/theorem2_locality_blueprint.md`.
 
 ### 9.1. Detailed proof chain of Section 4.5
 
@@ -640,6 +646,9 @@ This is why the repo's `R -> E` side should continue to center
 `IsWickRotationPair`, `constructSchwingerFunctions`, and the BHW extension
 lane, rather than inventing Euclidean surfaces detached from the analytic
 continuation.
+
+For the exact implementation ledger of the current reverse-direction theorem
+surface on `main`, see `docs/r_to_e_blueprint.md`.
 
 ### 10.1. Detailed proof chain for `E0`
 
@@ -910,6 +919,54 @@ Similarly, when cluster is imported from Section 4.4, the content is:
 
 Thus the reverse-direction cluster proof is conceptually trivial only because
 the Hilbert-space bridge is already built.
+
+### 10.3.3. Exact theorem-slot inventory for Section 4.4 reuse
+
+The reverse-direction cluster step should now be recorded as an explicit
+four-layer transport package rather than a slogan.
+
+```lean
+lemma euclidean_cluster_on_positive_core
+    (F G : PositiveTimeEuclideanData) :
+    Tendsto
+      (fun a => osPairingTranslated F G a)
+      spatialInfinity
+      (nhds (osPairing F unit * osPairing unit G)) := by
+  -- the Euclidean cluster axiom on the positive-time core
+
+lemma euclidean_cluster_rewritten_as_hilbert_vector_limit
+    (F G : PositiveTimeEuclideanData) :
+    Tendsto
+      (fun a => inner (u F) (translateVector a (u G)))
+      spatialInfinity
+      (nhds (inner (u F) Ω * inner Ω (u G))) := by
+  -- rewrite the Euclidean cluster axiom in the Hilbert-space model
+
+lemma hilbert_vector_cluster_to_wightman_cluster_on_core
+    (F G : PositiveTimeMinkowskiData) :
+    Tendsto
+      (fun a => WightmanPairingTranslated F G a)
+      spatialInfinity
+      (nhds (WightmanPairing F unit * WightmanPairing unit G)) := by
+  -- use the Section 4.3 pairing identity on the core and rewrite back into
+  -- Wightman language
+
+lemma wightman_cluster_extended_by_density
+    (F G : BorchersSequence d) :
+    Tendsto
+      (fun a => WightmanPairingTranslated F G a)
+      spatialInfinity
+      (nhds (WightmanPairing F unit * WightmanPairing unit G)) := by
+  -- extend the core theorem by the same continuity/density package used in
+  -- Section 4.3
+```
+
+So Section 4.4 is not just "cluster after positivity." It is:
+
+1. Euclidean cluster on a positive-time core,
+2. Hilbert-space rewriting,
+3. Wightman rewriting on the same core,
+4. density/continuity extension.
 
 ## 11. Section 8: Technical Lemmas and the Failure Point
 
@@ -1375,3 +1432,22 @@ The point of naming both theorem slots is:
 Without the second name, a future implementation would still have to rediscover
 how the abstract one-variable theorem plugs into the concrete OS I formula
 `(4.23) -> (4.24)`.
+
+### A.6. Exact dependency DAG for later Lean work on OS I
+
+The audit should also keep the implementation order explicit:
+
+1. Section 4.1 Hilbert-space construction,
+2. Section 4.2 one-gap semigroup theorem,
+3. Section 4.3 positivity transport,
+4. Section 4.4 cluster transport,
+5. Section 5 reverse-direction Wick restriction,
+6. Section 8 one-variable Fourier-Laplace bridge only as support input for
+   Lemma 4.2 and Section 5.
+
+The later Lean port should not invert that order. In particular:
+
+1. Section 5 positivity must depend on Section 4.3,
+2. Section 5 cluster must depend on Section 4.4,
+3. Section 8 does not replace Sections 4.3/4.4; it only supplies the hidden
+   analytic input for the one-gap interchange theorem.

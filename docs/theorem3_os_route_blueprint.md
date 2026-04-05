@@ -15,6 +15,9 @@ This note assumes familiarity with:
 - `docs/os1_detailed_proof_audit.md`
 - `docs/os2_detailed_proof_audit.md`
 - `docs/os_reconstruction_reading_notes.md`
+- `docs/theorem4_cluster_blueprint.md` for the downstream cluster consumer of
+  the theorem-3 comparison package
+- `docs/theorem2_locality_blueprint.md` for the separate PET/BHW locality lane
 
 For the rest of this note, the two domain names that matter are:
 
@@ -45,6 +48,23 @@ The important interpretation is:
 - none of them is itself the OS II positivity theorem,
 - the real remaining content is the explicit shell comparison sitting behind the
   compact-approximation reduction.
+
+At the level of named production theorems there are currently six conditional
+wrapper surfaces if one counts both `hHlimit` entry points separately:
+
+1. the direct compact ordered-shell `hHlimit` theorem in
+   `OSToWightmanBoundaryValueLimits.lean`,
+2. the compact-approximation `hHlimit` theorem in
+   `OSToWightmanBoundaryValuesCompactApprox.lean`,
+3. the `hkernel` theorem,
+4. the `hreal` theorem,
+5. the `hschw` theorem,
+6. the final boundary-ray / `xiShift` theorem.
+
+Mathematically, however, those still collapse to five genuine layers, because
+the two `hHlimit` theorems are the same limit seam viewed before and after the
+compact-approximation package. The docs therefore count five mathematical
+layers even though the exact file graph currently exposes six named wrappers.
 
 So the implementation task is not "invent another reduction theorem." It is:
 - fill the current shell-comparison bridge honestly.
@@ -1014,9 +1034,9 @@ After Task 3, production wiring should become straightforward:
 theorem compact_approx_componentwise_schwinger_eq_bvtW_timeShift
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
-    (F : BorchersSequence d) :
+    (F : PositiveTimeBorchersSequence d) :
     ∀ N n m (hm : 0 < m) (t : ℝ), 0 < t →
-      let F_N := compactApproxPositiveTimeBorchers F N
+      let F_N : PositiveTimeBorchersSequence d := compactApproxPositiveTimeBorchers F N
       OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
         ((((F_N : BorchersSequence d).funcs n).osConjTensorProduct
           (timeShiftSchwartzNPoint (d := d) t
@@ -1029,8 +1049,8 @@ theorem compact_approx_componentwise_schwinger_eq_bvtW_timeShift
   -- one-variable time-shift parameter,
   -- rewrite the common-kernel side back to the K2 fixed-time shell,
   -- rewrite the explicit side to the `bvt_F` semigroup shell,
-  -- then apply the existing production theorem
-  -- `schwinger_eq_bvt_W_conjTensorProduct_timeShift_of_boundary_ray_eq_xiShift`
+  -- and stop exactly at the positive-real shell equality. This theorem is the
+  -- `hschw` input expected by the existing compact-approximation package.
 ```
 
 This is the first place where production reduction theorems should be revisited.
@@ -1059,12 +1079,23 @@ Concrete rewrite inventory:
   - `commonFixedTimeCenterDiffKernel_eq_descendedAbsoluteInput_pairing_of_positiveSupport`
   - `commonZeroCenterShiftSection_pairing_eq_descendedAbsoluteInput_of_positiveSupport`
 - production packaging target:
-  - `schwinger_eq_bvt_W_conjTensorProduct_timeShift_of_boundary_ray_eq_xiShift`
-  - `bvt_wightmanInner_compactApprox_timeShift_eq_osInner_of_componentwise_schwinger_eq_bvt_W_conjTensorProduct_timeShift_of_hermitian`
+  - `bvt_wightmanInner_self_nonneg_of_compactApprox_componentwise_schwinger_eq_bvt_W_conjTensorProduct_timeShift_of_hermitian`
+  - `bvt_positiveTime_self_nonneg_of_compactApprox_componentwise_schwinger_eq_bvt_W_conjTensorProduct_timeShift`
 
 The documentation-level test for this task is:
 - after all rewrites, no unnamed semantic jump should remain between the
   common-kernel side and the production `hschw` hypothesis.
+
+Type discipline note:
+
+- Task 4 is already inside the positive-time compact-approximation lane.
+- Therefore the theorem surface above must quantify over
+  `F : PositiveTimeBorchersSequence d`, not an arbitrary `BorchersSequence d`.
+- The later public theorem `bvt_W_positive` is where the general
+  `BorchersSequence d` quantifier reappears.
+- Any documentation or pseudocode that places a general Borchers sequence in
+  Task 4 is conflating the positive-time analytic core with the final public
+  reduction and should be corrected before coding starts.
 
 Clarification on the previously unnamed step
 "shifted real-difference representative -> explicit descended absolute
@@ -1109,9 +1140,9 @@ The current best candidate rewrite path is:
    and
    `integral_descendedAbsoluteInput_twoPoint_eq_semigroupShell_of_positiveSupport`
    rewrite the explicit descended side to the semigroup shell.
-6. The production theorem
-   `schwinger_eq_bvt_W_conjTensorProduct_timeShift_of_boundary_ray_eq_xiShift`
-   is the final bridge from shell identity to `hschw`.
+6. The theorem proved in Task 4 is itself the exact `hschw` hypothesis expected
+   by
+   `bvt_wightmanInner_self_nonneg_of_compactApprox_componentwise_schwinger_eq_bvt_W_conjTensorProduct_timeShift_of_hermitian`.
 
 This list is intentionally redundant. Later implementation should collapse it
 only after every semantic step has been checked.
@@ -1149,9 +1180,9 @@ orientation is:
    :
    descended-absolute-input pairing `→`
    semigroup-shell pairing.
-8. `schwinger_eq_bvt_W_conjTensorProduct_timeShift_of_boundary_ray_eq_xiShift`
+8. `compact_approx_componentwise_schwinger_eq_bvtW_timeShift`
    :
-   boundary-ray equality `→`
+   kernel equality `→`
    the positive-real Schwinger/Wightman shell equality expected by production.
 
 If one of those theorem statements in the actual Lean files is oriented the
@@ -1169,10 +1200,8 @@ The intended order is:
 
 1. Task 4 proves the positive-real shell equality
    `OS.S(...) = bvt_W(... timeShift ...)`;
-2. the existing theorem
-   `schwinger_eq_bvt_W_conjTensorProduct_timeShift_of_boundary_ray_eq_xiShift`
-   turns the shell equality into the boundary-ray identification expected by
-   the limit package;
+2. that theorem is already the exact `hschw` input of the compact-approximation
+   positivity package;
 3. the existing theorem
    `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`
    discharges the `nhdsWithin 0` limit obligation;
@@ -1313,11 +1342,14 @@ The exact compact-approximation closure package already present in
    replaces the positive-real shell equality by the current live `hpath`
    boundary-ray equality.
 
-So once the direct `hpath` theorem is proved for a positive-time sequence,
-positivity is already formal inside the compact-approximation package. The
-remaining work is not "find yet another reduction theorem," but:
+So the production code still exposes one further boundary-ray wrapper, but the
+preferred implementation target should stop one step earlier at item 5. In
+other words, once the direct positive-real shell equality is proved for a
+positive-time sequence, positivity is already formal inside the
+compact-approximation package. The remaining work is not "find yet another
+reduction theorem," but:
 
-1. prove the direct `hpath` componentwise shell equality,
+1. prove the direct `hschw` componentwise shell equality,
 2. instantiate the already existing compact-approximation closure theorem,
 3. then deal honestly with the final general-sequence reduction if the public
    frontier still quantifies over arbitrary `BorchersSequence d`.
@@ -1557,11 +1589,20 @@ large production edit proceeds:
 If any one of these eleven slots is still blank, the documentation should say so
 explicitly and the proof should not be described as "essentially done".
 
-As of the current documentation state, all eleven slots now have an explicit
-semantic description, and slot 11 also has a paper-faithful theorem-slot
-inventory. The remaining incompleteness is no longer "what must be proved" but
-"which exact local lemmas in the repo should carry each slot name when the Lean
-port begins."
+As of the current documentation state:
+
+1. slots 1-10 are tied either to exact existing production theorem names or to
+   one-line local adapter statements whose input and output theorem surfaces are
+   already fixed;
+2. slot 11 is tied to a paper-faithful Section 4.3 transport/density theorem
+   inventory rather than to pre-existing production theorem names;
+3. the remaining work is therefore no longer to discover the theorem shape, but
+   to decide which concrete future Lean declarations will realize the Section
+   4.3 transport layer.
+
+The theorem-3 docs should therefore be treated as implementation-ready for the
+analytic/core route, while still honestly recording that the final public
+general-sequence layer has not yet been written in production.
 
 ## 7.4. What counts as a complete theorem-3 documentation state
 
@@ -1580,7 +1621,348 @@ all of the following are written down explicitly:
    general-to-positive-time reduction or whether that bridge has already been
    isolated elsewhere in production.
 
-Until then, the theorem-3 note should be treated as still under construction.
+The current note now meets that checklist for the analytic/core route. The only
+remaining incompleteness is the absence of already-existing production theorem
+names for the final Section 4.3 transport layer, not any ambiguity about the
+mathematical content of that layer.
+
+## 7.5. Concrete proof strategy for `general_borchers_to_positiveTime_reduction`
+
+The placeholder
+
+```lean
+general_borchers_to_positiveTime_reduction
+```
+
+should now be treated as a theorem package with one preferred proof route and
+one fallback bookkeeping route.
+
+### Preferred route: OS I Section 4.3 transport plus density
+
+This is the paper-faithful route and should be considered the default target.
+
+1. Define the Section 4.3 transport map from Minkowski Borchers data to the OS
+   Hilbert space on an explicit dense initial core.
+2. Prove that on that core, the reconstructed Wightman quadratic form equals
+   the OS Hilbert norm square.
+3. Prove continuity of the quadratic form and of the transport map.
+4. Extend the equality from the core to all Borchers sequences by density.
+5. Read off positivity from Hilbert-space positivity.
+
+The theorem-slot inventory should therefore be understood as:
+
+```lean
+def bvtInitialCore
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    Submodule ℂ (BorchersSequence d)
+
+lemma positiveTime_single_mem_bvtInitialCore
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n) :
+    PositiveTimeBorchersSequence.single n f hf_ord ∈ bvtInitialCore (d := d) OS lgc
+
+lemma bvtInitialCore_isSubspace_of_positiveTime_span
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    bvtInitialCore (d := d) OS lgc ≤
+      Submodule.span ℂ
+        (Set.range
+          (fun p : Σ n : ℕ, {f : SchwartzNPoint d n //
+              tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n} =>
+            (PositiveTimeBorchersSequence.single p.1 p.2.1 p.2.2 : BorchersSequence d)))
+
+lemma bvtInitialCore_dense
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    Dense (bvtInitialCore (d := d) OS lgc : Set (BorchersSequence d))
+
+def bvt_minkowski_to_os_vector_on_core
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    bvtInitialCore (d := d) OS lgc →ₗ[ℂ] OSHilbertSpace OS
+
+lemma bvt_minkowski_to_os_vector_on_core_continuous
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    Continuous (bvt_minkowski_to_os_vector_on_core (d := d) OS lgc)
+
+lemma bvt_wightman_quadratic_form_eq_vector_norm_sq_on_core
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    ∀ F : bvtInitialCore (d := d) OS lgc,
+      WightmanInnerProduct d (bvt_W OS lgc) F.1 F.1 =
+        inner
+          (bvt_minkowski_to_os_vector_on_core (d := d) OS lgc F)
+          (bvt_minkowski_to_os_vector_on_core (d := d) OS lgc F)
+
+lemma continuous_re_bvt_wightman_self
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    Continuous (fun F : BorchersSequence d =>
+      (WightmanInnerProduct d (bvt_W OS lgc) F F).re)
+
+lemma bvt_nonneg_on_dense_core
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    ∀ F : bvtInitialCore (d := d) OS lgc,
+      0 ≤ (WightmanInnerProduct d (bvt_W OS lgc) F.1 F.1).re
+
+theorem general_borchers_to_positiveTime_reduction
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BorchersSequence d)
+    (hpos :
+      ∀ G : PositiveTimeBorchersSequence d,
+        0 ≤ (WightmanInnerProduct d (bvt_W OS lgc)
+          (G : BorchersSequence d) (G : BorchersSequence d)).re) :
+    0 ≤ (WightmanInnerProduct d (bvt_W OS lgc) F F).re
+```
+
+### Preferred literal definition of `bvtInitialCore`
+
+To avoid any later drift back to an abstract placeholder, the recommended
+actual definition of `bvtInitialCore` should be written down now:
+
+```lean
+def bvtInitialCore
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    Submodule ℂ (BorchersSequence d) :=
+  Submodule.span ℂ
+    (Set.range
+      (fun p : Σ n : ℕ, {f : SchwartzNPoint d n //
+          tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n} =>
+        (PositiveTimeBorchersSequence.single p.1 p.2.1 p.2.2 : BorchersSequence d)))
+```
+
+This is the paper-faithful choice:
+
+1. it keeps the core algebraic rather than completed,
+2. it says exactly which generators Section 4.3 uses before density,
+3. it avoids hiding the core behind a future transport map definition.
+
+With this choice, the later transport map
+`bvt_minkowski_to_os_vector_on_core` should be built by
+`Submodule.span_induction`, sending each positive-time single generator to the
+corresponding OS Hilbert vector already supplied by the Tasks 1-4 route.
+
+So the later remaining work is:
+
+1. continuity of the quadratic form,
+2. density of the positive-time span,
+3. extension from the explicit algebraic core,
+
+not the discovery of what `bvtInitialCore` is supposed to mean.
+
+The crucial documentation point is that `hpos` above is only the **consumer**
+interface. The actual proof of `general_borchers_to_positiveTime_reduction`
+should not pattern-match directly on an arbitrary `BorchersSequence d` and try
+to rewrite it by ad hoc positive-time cutoffs. It should:
+
+1. prove nonnegativity on `bvtInitialCore`,
+2. show the core is dense,
+3. extend the nonnegativity of the continuous real quadratic form.
+
+### Fallback route: finite Borchers decomposition plus positive-time generators
+
+This is allowed only if the Section 4.3 transport theorem has already been
+implemented under exact names. The fallback is **not** a separate mathematical
+route. It is just the last algebraic packaging step.
+
+The admissible fallback theorem slots are:
+
+```lean
+lemma borchers_eq_sum_single_components
+    (F : BorchersSequence d) :
+    F =
+      ∑ n ∈ Finset.range (F.bound + 1),
+        BorchersSequence.single n (F.funcs n)
+
+lemma positiveTime_span_dense_in_bvtInitialCore
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    Dense
+      (Submodule.span ℂ
+        (Set.range
+          (fun p : Σ n : ℕ, {f : SchwartzNPoint d n //
+              tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n} =>
+            (PositiveTimeBorchersSequence.single p.1 p.2.1 p.2.2 : BorchersSequence d)))
+          : Set (BorchersSequence d))
+
+lemma nonneg_on_positiveTime_generators
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    ∀ p : Σ n : ℕ, {f : SchwartzNPoint d n //
+        tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n},
+      0 ≤ (WightmanInnerProduct d (bvt_W OS lgc)
+        ((PositiveTimeBorchersSequence.single p.1 p.2.1 p.2.2 : PositiveTimeBorchersSequence d)
+          : BorchersSequence d)
+        ((PositiveTimeBorchersSequence.single p.1 p.2.1 p.2.2 : PositiveTimeBorchersSequence d)
+          : BorchersSequence d)).re
+```
+
+This fallback only becomes honest once the transport layer has already proved
+that those positive-time generators sit inside the initial core and therefore
+inherit the Hilbert-space norm-square identity.
+
+### Exact closure script for the final public theorem
+
+The later implementation should be able to follow the script below almost
+verbatim.
+
+```lean
+theorem general_borchers_to_positiveTime_reduction
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BorchersSequence d)
+    (hpos :
+      ∀ G : PositiveTimeBorchersSequence d,
+        0 ≤ (WightmanInnerProduct d (bvt_W OS lgc)
+          (G : BorchersSequence d) (G : BorchersSequence d)).re) :
+    0 ≤ (WightmanInnerProduct d (bvt_W OS lgc) F F).re := by
+  have hcore_dense := bvtInitialCore_dense (d := d) OS lgc
+  have hcont := continuous_re_bvt_wightman_self (d := d) OS lgc
+  have hcore_nonneg :
+      ∀ G : bvtInitialCore (d := d) OS lgc,
+        0 ≤ (WightmanInnerProduct d (bvt_W OS lgc) G.1 G.1).re := by
+    intro G
+    exact bvt_nonneg_on_dense_core (d := d) OS lgc G
+  exact
+    nonneg_of_continuousOn_dense_core
+      (f := fun G : BorchersSequence d =>
+        (WightmanInnerProduct d (bvt_W OS lgc) G G).re)
+      hcont hcore_dense hcore_nonneg F
+```
+
+### Estimated Lean line counts for the final theorem-3 public layer
+
+The final public layer is no longer mathematically ambiguous, so the remaining
+implementation cost can be estimated fairly concretely:
+
+1. `bvtInitialCore` definition and basic lemmas:
+   roughly `40-80` lines.
+2. `positiveTime_single_mem_bvtInitialCore` and span lemmas:
+   roughly `60-120` lines.
+3. continuity of the real quadratic form:
+   roughly `25-50` lines, assuming the sesquilinear continuity package is
+   already available.
+4. dense-core nonnegativity theorem:
+   roughly `40-90` lines once the transport map is explicit.
+5. final closure theorem
+   `general_borchers_to_positiveTime_reduction`:
+   roughly `20-40` lines.
+
+So the remaining theorem-3 public layer should be thought of as roughly
+`185-380` honest Lean lines, almost all of them in the Section 4.3
+transport/density package rather than in the analytic `hschw` core.
+
+## 7.6. Exact continuity-and-density extension package
+
+The final theorem-3 public layer depends on one small but crucial analysis
+package: extending a nonnegativity theorem from a dense core to the whole
+Borchers space. The docs should now spell that package out instead of treating
+it as implicit folklore.
+
+### 7.6.1. Exact theorem slots
+
+```lean
+lemma WightmanInnerProduct_continuous_left
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (G : BorchersSequence d) :
+    Continuous (fun F : BorchersSequence d =>
+      WightmanInnerProduct d (bvt_W OS lgc) F G)
+
+lemma WightmanInnerProduct_continuous_right
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BorchersSequence d) :
+    Continuous (fun G : BorchersSequence d =>
+      WightmanInnerProduct d (bvt_W OS lgc) F G)
+
+lemma WightmanInnerProduct_self_continuous
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    Continuous (fun F : BorchersSequence d =>
+      WightmanInnerProduct d (bvt_W OS lgc) F F)
+
+lemma re_WightmanInnerProduct_self_continuous
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    Continuous (fun F : BorchersSequence d =>
+      (WightmanInnerProduct d (bvt_W OS lgc) F F).re)
+
+lemma nonneg_closed_under_continuous_limit
+    {α : Type*} [TopologicalSpace α]
+    (f : α → ℝ) (hf : Continuous f) :
+    IsClosed {x | 0 ≤ f x}
+
+lemma nonneg_of_dense_core
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (S : Set (BorchersSequence d))
+    (hS_dense : Dense S)
+    (hS_nonneg : ∀ F ∈ S, 0 ≤ (WightmanInnerProduct d (bvt_W OS lgc) F F).re) :
+    ∀ F : BorchersSequence d,
+      0 ≤ (WightmanInnerProduct d (bvt_W OS lgc) F F).re
+```
+
+### 7.6.2. Why this package is mathematically necessary
+
+Without these lemmas, the final theorem-3 layer risks collapsing back into the
+same vague sentence:
+
+> "extend by continuity and density."
+
+The whole point of the current documentation pass is to eliminate that kind of
+hidden step. The later Lean port should therefore implement the topological
+closure argument under explicit theorem names before the final positivity
+wrapper is attempted.
+
+### 7.6.3. Lean-style proof sketch
+
+```lean
+lemma nonneg_of_dense_core
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (S : Set (BorchersSequence d))
+    (hS_dense : Dense S)
+    (hS_nonneg : ∀ F ∈ S, 0 ≤ (WightmanInnerProduct d (bvt_W OS lgc) F F).re) :
+    ∀ F : BorchersSequence d,
+      0 ≤ (WightmanInnerProduct d (bvt_W OS lgc) F F).re := by
+  intro F
+  let A : Set (BorchersSequence d) :=
+    {G | 0 ≤ (WightmanInnerProduct d (bvt_W OS lgc) G G).re}
+  have hA_closed : IsClosed A := by
+    simpa [A] using
+      nonneg_closed_under_continuous_limit
+        (fun G : BorchersSequence d =>
+          (WightmanInnerProduct d (bvt_W OS lgc) G G).re)
+        (re_WightmanInnerProduct_self_continuous (d := d) OS lgc)
+  have hS_subset : S ⊆ A := by
+    intro G hG
+    exact hS_nonneg G hG
+  have hclosure : closure S ⊆ A := hA_closed.closure_subset_iff.mpr hS_subset
+  have hF : F ∈ closure S := by simpa [hS_dense.closure_eq]
+  exact hclosure hF
+```
+
+### 7.6.4. Estimated Lean size
+
+This topological package should be modest:
+
+1. separate continuity lemmas for `WightmanInnerProduct`:
+   `30-70` lines.
+2. self-map continuity and real-part continuity:
+   `15-35` lines.
+3. dense-core closure theorem:
+   `20-45` lines.
+
+So the later port should expect roughly `65-150` lines of purely topological
+closure work inside the final theorem-3 public layer.
 
 ## 8. Minimal Lean pseudocode for the whole closure
 
@@ -1633,9 +2015,9 @@ theorem common_eq_explicit_descended_on_positive_domain
 theorem compact_approx_componentwise_schwinger_eq_bvtW_timeShift
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
-    (F : BorchersSequence d) :
+    (F : PositiveTimeBorchersSequence d) :
     ∀ N n m (hm : 0 < m) (t : ℝ), 0 < t →
-      let F_N := compactApproxPositiveTimeBorchers F N
+      let F_N : PositiveTimeBorchersSequence d := compactApproxPositiveTimeBorchers F N
       OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
         ((((F_N : BorchersSequence d).funcs n).osConjTensorProduct
           (timeShiftSchwartzNPoint (d := d) t
@@ -1648,33 +2030,27 @@ theorem compact_approx_componentwise_schwinger_eq_bvtW_timeShift
   -- rewrite the explicit kernel to the semigroup shell,
   -- invoke the existing production bridge theorem
 
-/- Step E1: close the positive-time theorem through the existing wrappers. -/
-theorem bvt_positiveTime_self_nonneg_from_hpath
+/- Step E1: close the positive-time theorem through the `hschw` wrapper. -/
+theorem bvt_positiveTime_self_nonneg_from_hschw
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
     (F : PositiveTimeBorchersSequence d)
-    (hpath :
-      ∀ N n m (hm : 0 < m) (t ε : ℝ), 0 < t → 0 < ε →
+    (hschw :
+      ∀ N n m (hm : 0 < m) (t : ℝ), 0 < t →
         let F_N : PositiveTimeBorchersSequence d := compactApproxPositiveTimeBorchers F N;
-          ∫ x : NPointDomain d (n + m),
-            bvt_F OS lgc (n + m) (fun k μ =>
-              ↑(x k μ) +
-                ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) * Complex.I) *
-              ((((F_N : BorchersSequence d).funcs n).conjTensorProduct
-                (timeShiftSchwartzNPoint (d := d) t
-                  ((F_N : BorchersSequence d).funcs m))) x)
-            =
-          ∫ y : NPointDomain d (n + m),
-            bvt_F OS lgc (n + m)
-                (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
-                  (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
-              ((((F_N : BorchersSequence d).funcs n).osConjTensorProduct
-                ((F_N : BorchersSequence d).funcs m)) y)) :
+        OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical
+          ((((F_N : BorchersSequence d).funcs n).osConjTensorProduct
+            (timeShiftSchwartzNPoint (d := d) t
+              ((F_N : BorchersSequence d).funcs m))))) =
+          bvt_W OS lgc (n + m)
+            ((((F_N : BorchersSequence d).funcs n).conjTensorProduct
+              (timeShiftSchwartzNPoint (d := d) t
+                ((F_N : BorchersSequence d).funcs m))))) :
     0 ≤ (WightmanInnerProduct d (bvt_W OS lgc)
       (F : BorchersSequence d) (F : BorchersSequence d)).re := by
   exact
-    bvt_positiveTime_self_nonneg_of_compactApprox_componentwise_boundary_ray_eq_xiShift
-      (d := d) (OS := OS) (lgc := lgc) F hpath
+    bvt_positiveTime_self_nonneg_of_compactApprox_componentwise_schwinger_eq_bvt_W_conjTensorProduct_timeShift
+      (d := d) (OS := OS) (lgc := lgc) F hschw
 
 /- Step E2: only after Step E1 should the public frontier be closed. -/
 private theorem bvt_W_positive
@@ -1690,7 +2066,7 @@ private theorem bvt_W_positive
   exact
     general_borchers_to_positiveTime_reduction
       (d := d) (OS := OS) (lgc := lgc) F
-      bvt_positiveTime_self_nonneg_from_hpath
+      bvt_positiveTime_self_nonneg_from_hschw
 ```
 
 That pseudocode should be treated as a goal, not as a statement that the

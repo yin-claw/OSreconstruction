@@ -1502,6 +1502,62 @@ statement, the paper:
 So the final estimate `(6.31)` is not an abstract consequence of the induction.
 It depends quantitatively on the explicit domain-growth control from Chapter V.
 
+### 11.4.1. Exact recovery chain from the normalized family back to the
+original distributions
+
+The phrase "undo the renormalization" hides a real theorem package. A later
+Lean port should expose the following exact recovery chain:
+
+```lean
+lemma normalized_family_agrees_with_original_on_stage
+    (ζ : CkN N) (ε : ℝ) (hε : 0 < ε) :
+    S_{k,ε} ζ = renormFactor k ε ζ * S_k (stageShift ε ζ)
+
+lemma normalized_family_estimate_imported_from_VI1
+    (ζ : CkN N) :
+    ‖S_{k,ε} ζ‖ ≤ stageBound k N ζ
+
+lemma stage_selection_for_target_configuration
+    (ζ : CPlus k) :
+    ∃ N, ζ ∈ CkN N
+
+lemma estimate_descends_from_selected_stage
+    (ζ : CPlus k) :
+    ‖S_{k,ε} ζ‖ ≤ selectedStageBound k ζ
+
+lemma epsilon_limit_exists_for_normalized_family
+    (ζ : CPlus k) :
+    Tendsto (fun ε : ℝ => S_{k,ε} ζ) (nhdsWithin 0 (Set.Ioi 0))
+      (nhds (boundaryCandidate k ζ))
+
+lemma epsilon_limit_matches_original_distribution
+    (ζ : CPlus k) :
+    Tendsto (fun ε : ℝ => renormFactor k ε ζ * S_k (stageShift ε ζ))
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds (boundaryCandidate k ζ))
+
+lemma recovered_boundary_value_is_tempered
+    (k : ℕ) :
+    TemperedDistributionBoundaryValue (boundaryCandidate k)
+
+theorem vi2_temperedness_and_boundary_recovery
+    (k : ℕ) :
+    FinalChapterVI2Conclusion k
+```
+
+The roles are:
+
+1. algebraic comparison with the original family,
+2. import the fixed-stage estimate,
+3. choose a stage using Corollary 5.3,
+4. remove the visible `N`-dependence,
+5. take the `ε -> 0` boundary limit,
+6. identify the limit with the original distributions,
+7. package the result as tempered boundary-value recovery.
+
+Without those items, VI.2 is still only a proof sketch. With them, the later
+Lean file can be organized as an explicit recovery package.
+
 ### 11.5. Why VI.2 is still tied to Chapter V
 
 VI.2 may look like a pure estimate-propagation theorem, but it still depends on
@@ -1728,6 +1784,9 @@ The main architectural rules are:
 Those rules should be treated as binding route guidance for the Lean
 formalization until a fully proved alternative theorem surface exists in the
 repository.
+
+For the implementation dependency graph extracted from these theorem-slot
+inventories, see `docs/general_k_continuation_blueprint.md`.
 
 ## Appendix A. Lean-Pseudocode Skeletons for OS II
 
@@ -2145,6 +2204,35 @@ This is the exact structure of VI.1:
 5. glued local bound,
 6. real-domain estimate.
 
+### A.5.1. Exact dependency chain for `(6.12)`-`(6.18)`
+
+The later Lean port should treat the displayed VI.1 inequalities as a genuine
+dependency chain rather than as one large estimate:
+
+```lean
+lemma support_bound_implies_test_function_localization
+lemma localization_implies_E0prime_applicable
+lemma E0prime_applied_to_regularized_test_functions
+lemma regularized_vector_norm_bound_from_E0prime
+lemma scalar_pairing_bound_from_vector_norms
+lemma directional_bound_from_scalar_pairing_bound
+lemma local_polydisc_bound_from_directional_maximum_principle
+lemma real_domain_bound_from_mean_value_identity
+```
+
+The mathematical order is:
+
+1. `(6.17)`-`(6.18)` localize the explicit test functions;
+2. localization allows the `E0'` seminorm estimate;
+3. `E0'` bounds `‖Ψ₁‖` and `‖Ψ₂‖`;
+4. Cauchy-Schwarz bounds the scalar pairing `T_k`;
+5. directional bounds feed the maximum-principle step;
+6. the mean-value identity converts the regularized bound into the raw bound.
+
+If a later Lean proof skips any one of those arrows, the docs should be
+updated first rather than letting the hidden step reappear inside a large proof
+term.
+
 ### A.6. The current theorem-3 lesson extracted from OS II
 
 For the repo's current `k = 2` frontier, the paper suggests the following
@@ -2161,12 +2249,14 @@ theorem k2_fixed_time_boundary_value_bridge
     (hexplicit_cont : ContinuousOn explicitKernel positiveTimeRegion)
     (hpair :
       ∀ h : SchwartzSpacetime d,
+        HasCompactSupport (h : Spacetime d → ℂ) →
         tsupport (h : Spacetime d → ℂ) ⊆ positiveTimeRegion →
           ∫ ξ, commonKernel ξ * h ξ =
           ∫ ξ, explicitKernel ξ * h ξ) :
     EqOn commonKernel explicitKernel positiveTimeRegion := by
-  -- apply the one-variable compact-support uniqueness theorem on the open set
-  -- `{ξ | 0 < ξ 0}` after proving:
+  -- apply
+  -- `eqOn_positiveTime_of_compactSupport_schwartz_integral_eq_continuousOn_local`
+  -- on the open set `{ξ | 0 < ξ 0}` after proving:
   -- 1. both kernels are restrictions of genuinely defined strip kernels,
   -- 2. both are continuous there,
   -- 3. the pairing theorem quantifies over all compactly supported tests in
