@@ -49,7 +49,7 @@ are scalarized to ℂ before applying Lean's Bochner integral.
 - Streater-Wightman, "PCT, Spin and Statistics", Theorems 2-6, 2-9
 -/
 
-open scoped Classical ComplexConjugate BigOperators NNReal
+open scoped Classical ComplexConjugate BigOperators NNReal ContDiff
 open MeasureTheory Complex
 noncomputable section
 
@@ -278,6 +278,113 @@ theorem psiZRSchwartz_seminorm_vladimirovBound
       exact pow_nonneg (by linarith [norm_nonneg z]) _
     · exact pow_nonneg hdist_nn _
   exact SchwartzMap.seminorm_le_bound ℝ k n f hMnn (hpw z hz)
+
+private def multiDimPsiExpCLM {m : ℕ} (z : Fin m → ℂ) :
+    (Fin m → ℝ) →L[ℝ] ℂ :=
+  ∑ i : Fin m, ((I * z i) : ℂ) •
+    (Complex.ofRealCLM.comp
+      (ContinuousLinearMap.proj (R := ℝ) (ι := Fin m) (φ := fun _ => ℝ) i))
+
+private lemma multiDimPsiExpCLM_apply {m : ℕ} (z : Fin m → ℂ) (ξ : Fin m → ℝ) :
+    multiDimPsiExpCLM z ξ = I * ∑ i, z i * (ξ i : ℂ) := by
+  simp only [multiDimPsiExpCLM, ContinuousLinearMap.coe_sum', Finset.sum_apply,
+    ContinuousLinearMap.coe_smul', Pi.smul_apply, ContinuousLinearMap.coe_comp',
+    Function.comp_apply, smul_eq_mul]
+  rw [Finset.mul_sum]
+  congr with i
+  simp
+  ring
+
+private lemma multiDimPsiExpCLM_norm_le {m : ℕ} (z : Fin m → ℂ) :
+    ‖multiDimPsiExpCLM z‖ ≤ (Fintype.card (Fin m) : ℝ) * ‖z‖ := by
+  apply ContinuousLinearMap.opNorm_le_bound _ (by positivity)
+  intro ξ
+  calc
+    ‖multiDimPsiExpCLM z ξ‖ = ‖∑ i : Fin m, z i * (ξ i : ℂ)‖ := by
+      rw [multiDimPsiExpCLM_apply]
+      simp
+    _ ≤ ∑ i : Fin m, ‖z i * (ξ i : ℂ)‖ := norm_sum_le _ _
+    _ = ∑ i : Fin m, ‖z i‖ * ‖ξ i‖ := by
+      simp [norm_mul]
+    _ ≤ ∑ _i : Fin m, ‖z‖ * ‖ξ‖ := by
+      apply Finset.sum_le_sum
+      intro i hi
+      gcongr
+      · exact norm_le_pi_norm z i
+      · exact norm_le_pi_norm ξ i
+    _ = (Fintype.card (Fin m) : ℝ) * (‖z‖ * ‖ξ‖) := by
+      simp [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+    _ = ((Fintype.card (Fin m) : ℝ) * ‖z‖) * ‖ξ‖ := by ring
+
+private lemma imag_norm_sub_le {m : ℕ} (z z₀ : Fin m → ℂ) :
+    ‖(fun i => (z i).im) - fun i => (z₀ i).im‖ ≤ ‖z - z₀‖ := by
+  refine (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 ?_
+  intro i
+  calc
+    ‖((fun i => (z i).im) - fun i => (z₀ i).im) i‖ = ‖((z - z₀) i).im‖ := by
+      simp [Pi.sub_apply]
+    _ ≤ ‖(z - z₀) i‖ := by
+      simpa [Real.norm_eq_abs] using Complex.abs_im_le_norm ((z - z₀) i)
+    _ ≤ ‖z - z₀‖ := norm_le_pi_norm (z - z₀) i
+
+private lemma pairing_abs_le_card_sq {m : ℕ} (y ξ : Fin m → ℝ) :
+    |∑ i, y i * ξ i| ≤ ((Fintype.card (Fin m) : ℝ) ^ 2) * ‖y‖ * ‖ξ‖ := by
+  have hy_sum :
+      ∑ i, ‖y i‖ ≤ (Fintype.card (Fin m) : ℝ) * ‖y‖ := by
+    simpa [nsmul_eq_mul] using (Pi.sum_norm_apply_le_norm y)
+  have hξ_sum :
+      ∑ i, ‖ξ i‖ ≤ (Fintype.card (Fin m) : ℝ) * ‖ξ‖ := by
+    simpa [nsmul_eq_mul] using (Pi.sum_norm_apply_le_norm ξ)
+  have hnorm :
+      ‖∑ i, y i * ξ i‖ ≤ ((Fintype.card (Fin m) : ℝ) ^ 2) * ‖y‖ * ‖ξ‖ := by
+    calc
+      ‖∑ i, y i * ξ i‖ ≤ ∑ i, ‖y i * ξ i‖ := norm_sum_le _ _
+      _ = ∑ i, ‖y i‖ * ‖ξ i‖ := by simp [norm_mul]
+      _ ≤ ∑ i, ∑ j, ‖y i‖ * ‖ξ j‖ := by
+          refine Finset.sum_le_sum ?_
+          intro i hi
+          exact Finset.single_le_sum
+            (s := Finset.univ)
+            (f := fun j : Fin m => ‖y i‖ * ‖ξ j‖)
+            (fun j hj => mul_nonneg (norm_nonneg _) (norm_nonneg _))
+            (Finset.mem_univ i)
+      _ = (∑ i, ‖y i‖) * ∑ j, ‖ξ j‖ := by rw [Finset.sum_mul_sum]
+      _ ≤ ((Fintype.card (Fin m) : ℝ) * ‖y‖) * ((Fintype.card (Fin m) : ℝ) * ‖ξ‖) := by
+          gcongr
+      _ = ((Fintype.card (Fin m) : ℝ) ^ 2) * ‖y‖ * ‖ξ‖ := by ring
+  simpa [Real.norm_eq_abs] using hnorm
+
+private lemma dualConeFlat_coercivity_perturb
+    {m : ℕ} {C : Set (Fin m → ℝ)} {y₀ y : Fin m → ℝ} {c₀ : ℝ}
+    (hc₀ : ∀ ξ ∈ DualConeFlat C, ∑ i, y₀ i * ξ i ≥ c₀ * ‖ξ‖)
+    (hy : ((Fintype.card (Fin m) : ℝ) ^ 2) * ‖y - y₀‖ ≤ c₀ / 2) :
+    ∀ ξ ∈ DualConeFlat C, ∑ i, y i * ξ i ≥ (c₀ / 2) * ‖ξ‖ := by
+  intro ξ hξ
+  have herrabs : |∑ i, (y - y₀) i * ξ i| ≤
+      ((Fintype.card (Fin m) : ℝ) ^ 2) * ‖y - y₀‖ * ‖ξ‖ :=
+    pairing_abs_le_card_sq (y - y₀) ξ
+  have herr :
+      -(((Fintype.card (Fin m) : ℝ) ^ 2) * ‖y - y₀‖ * ‖ξ‖) ≤
+        ∑ i, (y - y₀) i * ξ i := by
+    nlinarith [abs_le.mp herrabs |>.1]
+  have herr' :
+      ((Fintype.card (Fin m) : ℝ) ^ 2) * ‖y - y₀‖ * ‖ξ‖ ≤ (c₀ / 2) * ‖ξ‖ := by
+    exact mul_le_mul_of_nonneg_right hy (norm_nonneg ξ)
+  calc
+    ∑ i, y i * ξ i = ∑ i, ((y₀ i + (y - y₀) i) * ξ i) := by
+      congr with i
+      have hyi : y i = y₀ i + (y - y₀) i := by
+        simp [Pi.sub_apply, sub_eq_add_neg, add_assoc]
+      rw [hyi]
+    _ = ∑ i, (y₀ i * ξ i + (y - y₀) i * ξ i) := by
+      congr with i
+      ring
+    _ = ∑ i, y₀ i * ξ i + ∑ i, (y - y₀) i * ξ i := by
+      rw [Finset.sum_add_distrib]
+    _ ≥ c₀ * ‖ξ‖ - (((Fintype.card (Fin m) : ℝ) ^ 2) * ‖y - y₀‖ * ‖ξ‖) := by
+      nlinarith [hc₀ ξ hξ, herr]
+    _ ≥ (c₀ / 2) * ‖ξ‖ := by
+      nlinarith [herr']
 
 /-- **Local fixed-radius uniform seminorm bound for `multiDimPsiZ`.**
 

@@ -501,7 +501,7 @@ theorem psiZRaw_schwartz_decay
 /-- **Exponential bound on the support region**: For `z ∈ T(C)` with coercivity constant `c`,
     when `infDist(ξ, DualConeFlat C) ≤ R`, the complex exponential satisfies
     `‖cexp(iz·ξ)‖ ≤ exp(A·R) · exp(-c·‖ξ‖)` where `A = c + m² · ‖Im(z)‖`. -/
-private theorem cexp_bound_on_support
+theorem cexp_bound_on_support
     {C : Set (Fin m → ℝ)}
     (hC_open : IsOpen C) (hC_cone : IsCone C)
     {z : Fin m → ℂ} (hz : z ∈ SCV.TubeDomain C)
