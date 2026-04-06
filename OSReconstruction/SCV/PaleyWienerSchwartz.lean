@@ -279,6 +279,145 @@ theorem psiZRSchwartz_seminorm_vladimirovBound
     · exact pow_nonneg hdist_nn _
   exact SchwartzMap.seminorm_le_bound ℝ k n f hMnn (hpw z hz)
 
+/-- **Local fixed-radius uniform seminorm bound for `multiDimPsiZ`.**
+
+    For each base point `z₀ ∈ T(C)` and each Schwartz seminorm `(k,n)`, there is
+    a tube neighborhood of `z₀` on which the radius-`1` family `multiDimPsiZ`
+    is uniformly bounded in that seminorm.
+
+    This is the local compactness/uniformity input needed for the quantitative
+    difference and difference-quotient estimates below. -/
+theorem multiDimPsiZ_local_uniform_seminorm_bound
+    {m : ℕ} {C : Set (Fin m → ℝ)}
+    (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
+    (k n : ℕ)
+    (z₀ : Fin m → ℂ) (hz₀ : z₀ ∈ SCV.TubeDomain C) :
+    ∃ (B δ₀ : ℝ), 0 < B ∧ 0 < δ₀ ∧
+      ∀ (z : Fin m → ℂ) (hz : z ∈ SCV.TubeDomain C),
+        ‖z - z₀‖ < δ₀ →
+          SchwartzMap.seminorm ℝ k n
+            (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz) ≤ B := by
+  sorry
+
+/-- **Local uniform seminorm bound after multiplying by a coordinate monomial.**
+
+    For fixed coordinate `j` and power `r`, the coordinate-weighted family
+    `ξ ↦ (ξ_j)^r ψ_z(ξ)` is uniformly bounded in every Schwartz seminorm for
+    `z` in a sufficiently small tube neighborhood of `z₀`.
+
+    This is the local uniformity input needed for the Taylor remainder kernel in
+    the difference-quotient estimate (`r = 2`) and for the first-order expansion
+    used in the difference estimate (`r = 1`). -/
+theorem multiDimPsiZ_local_uniform_coordPow_seminorm_bound
+    {m : ℕ} {C : Set (Fin m → ℝ)}
+    (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
+    (j : Fin m) (r k n : ℕ)
+    (z₀ : Fin m → ℂ) (hz₀ : z₀ ∈ SCV.TubeDomain C) :
+    ∃ (B δ₀ : ℝ), 0 < B ∧ 0 < δ₀ ∧
+      ∀ (z : Fin m → ℂ) (hz : z ∈ SCV.TubeDomain C),
+        ‖z - z₀‖ < δ₀ →
+          SchwartzMap.seminorm ℝ k n
+            (SchwartzMap.smulLeftCLM ℂ
+              (fun ξ : Fin m → ℝ => (((ξ j) ^ r : ℝ) : ℂ))
+              (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz)) ≤ B := by
+  let L : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] SchwartzMap (Fin m → ℝ) ℂ :=
+    SchwartzMap.smulLeftCLM ℂ (fun ξ : Fin m → ℝ => (((ξ j) ^ r : ℝ) : ℂ))
+  let q : Seminorm ℝ (SchwartzMap (Fin m → ℝ) ℂ) :=
+    (schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ (k, n)).comp
+      (L.restrictScalars ℝ).toLinearMap
+  have hq_cont : Continuous q := by
+    change Continuous (fun g : SchwartzMap (Fin m → ℝ) ℂ =>
+      schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ (k, n) (L g))
+    exact ((schwartz_withSeminorms ℝ (Fin m → ℝ) ℂ).continuous_seminorm (k, n)).comp
+      L.continuous
+  obtain ⟨s, C_L, hC_L_ne, hbound_L⟩ :=
+    Seminorm.bound_of_continuous (schwartz_withSeminorms ℝ (Fin m → ℝ) ℂ) q hq_cont
+  have hC_L_pos : 0 < (C_L : ℝ) := by
+    rcases eq_or_lt_of_le C_L.coe_nonneg with h | h
+    · exact absurd (NNReal.coe_eq_zero.mp h.symm) hC_L_ne
+    · exact h
+  have hsum :
+      ∀ s : Finset (ℕ × ℕ),
+        ∃ (B_sum δ_sum : ℝ), 0 < B_sum ∧ 0 < δ_sum ∧
+          ∀ (z : Fin m → ℂ) (hz : z ∈ SCV.TubeDomain C), ‖z - z₀‖ < δ_sum →
+            ∑ p ∈ s, SchwartzMap.seminorm ℝ p.1 p.2
+              (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz) ≤ B_sum := by
+    intro s
+    induction s using Finset.induction_on with
+    | empty =>
+        refine ⟨1, 1, zero_lt_one, zero_lt_one, ?_⟩
+        intro z hz hzdist
+        simp
+    | insert p s hp ih =>
+        obtain ⟨B_s, δ_s, hB_s, hδ_s, hs_bound⟩ := ih
+        obtain ⟨B_p, δ_p, hB_p, hδ_p, hp_bound⟩ :=
+          multiDimPsiZ_local_uniform_seminorm_bound
+            hC_open hC_conv hC_cone hC_salient p.1 p.2 z₀ hz₀
+        refine ⟨B_p + B_s, min δ_s δ_p, add_pos hB_p hB_s, lt_min hδ_s hδ_p, ?_⟩
+        intro z hz hzdist
+        rw [Finset.sum_insert hp]
+        exact add_le_add
+          (hp_bound z hz (lt_of_lt_of_le hzdist (min_le_right _ _)))
+          (hs_bound z hz (lt_of_lt_of_le hzdist (min_le_left _ _)))
+  obtain ⟨B_sum, δ_sum, hB_sum, hδ_sum, hsum_bound⟩ := hsum s
+  refine ⟨(C_L : ℝ) * B_sum, δ_sum, mul_pos hC_L_pos hB_sum, hδ_sum, ?_⟩
+  intro z hz hzdist
+  have hsum_apply :
+      ∀ s : Finset (ℕ × ℕ),
+        (∑ i ∈ s, schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ i)
+            (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz) =
+          ∑ p ∈ s,
+            (schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ p)
+              (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz) := by
+    intro s
+    induction s using Finset.induction_on with
+    | empty =>
+        simp
+    | insert a s ha ih =>
+        simp [ha, Seminorm.add_apply, ih]
+  have hsup :
+      (s.sup (schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ))
+          (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz) ≤
+        ∑ p ∈ s,
+          (schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ p)
+            (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz) := by
+      calc
+      (s.sup (schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ))
+          (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz)
+        ≤ (∑ i ∈ s, schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ i)
+            (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz) :=
+          Seminorm.le_def.mp
+            (Seminorm.finset_sup_le_sum (schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ) s)
+            (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz)
+      _ = ∑ p ∈ s,
+            (schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ p)
+              (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz) := hsum_apply s
+  calc
+    SchwartzMap.seminorm ℝ k n
+        (SchwartzMap.smulLeftCLM ℂ
+          (fun ξ : Fin m → ℝ => (((ξ j) ^ r : ℝ) : ℂ))
+          (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz))
+      = q (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz) := by
+          rfl
+    _ ≤ (C_L • s.sup (schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ))
+          (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz) :=
+          hbound_L _
+    _ = (C_L : ℝ) *
+          (s.sup (schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ))
+            (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz) := by
+          rfl
+    _ ≤ (C_L : ℝ) * ∑ p ∈ s,
+          (schwartzSeminormFamily ℝ (Fin m → ℝ) ℂ p)
+            (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz) := by
+          exact mul_le_mul_of_nonneg_left hsup C_L.coe_nonneg
+    _ = (C_L : ℝ) * ∑ p ∈ s, SchwartzMap.seminorm ℝ p.1 p.2
+          (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz) := by
+          simp [schwartzSeminormFamily]
+    _ ≤ (C_L : ℝ) * B_sum := by
+          apply mul_le_mul_of_nonneg_left (hsum_bound z hz hzdist) C_L.coe_nonneg
+
 /-- **Lipschitz-type seminorm bound for multiDimPsiZ difference.**
 
     For z near z₀ in the tube, the Schwartz (k,n)-seminorm of ψ_z - ψ_{z₀}

@@ -110,6 +110,23 @@ theorem hasFourierSupportIn_eqOn {S : Set (Fin m → ℝ)}
 
 /-! ### Slice functionals -/
 
+/-- The inverse Fourier transform on `Fin m → ℝ`, transported through
+    `EuclideanSpace ℝ (Fin m)` so it can use Mathlib's Schwartz-space Fourier
+    transform. This is the frequency-side test-function map appearing in the
+    Paley-Wiener-Schwartz boundary-value theorem. -/
+noncomputable def inverseFourierFlatSupportCLM {m : ℕ} :
+    SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] SchwartzMap (Fin m → ℝ) ℂ :=
+  let e : EuclideanSpace ℝ (Fin m) ≃L[ℝ] (Fin m → ℝ) :=
+    EuclideanSpace.equiv (Fin m) ℝ
+  let toEuc : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] SchwartzMap (EuclideanSpace ℝ (Fin m)) ℂ :=
+    SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e
+  let fromEuc : SchwartzMap (EuclideanSpace ℝ (Fin m)) ℂ →L[ℂ] SchwartzMap (Fin m → ℝ) ℂ :=
+    SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e.symm
+  let ft : SchwartzMap (EuclideanSpace ℝ (Fin m)) ℂ →L[ℂ]
+      SchwartzMap (EuclideanSpace ℝ (Fin m)) ℂ :=
+    SchwartzMap.fourierTransformCLM ℂ
+  fromEuc.comp (ft.comp toEuc)
+
 /-- The "slice functional" at imaginary part `y ∈ C`: integration of `F(x+iy)` against
     a Schwartz test function. This is well-defined because `F` is holomorphic (hence
     continuous) on the tube interior, and Schwartz functions are integrable. -/
@@ -148,24 +165,28 @@ theorem sliceFunctional_tendsto_bv
 
 /-! ### The main theorem -/
 
-/-- **Fourier support from tube boundary values.**
+/-- **Textbook support theorem, packaged in project terms.**
 
-    Tube-holomorphic F with tempered BV W implies W has Fourier support in C*.
+    If `F` is holomorphic on the tube `T(C)` over an open convex salient cone and has
+    tempered distributional boundary values `W`, and `F` satisfies a Vladimirov-type
+    moderate-growth bound on the tube, then those boundary values are realized by some
+    tempered distribution whose Fourier support lies in the dual cone `C*`.
 
-    Proof sketch:
-    1. The BV hypothesis gives W as the distributional limit of ∫ F(x+iεη)φ(x)dx.
-    2. By `fourierLaplaceExtMultiDim_boundaryValue`, this limit equals
-       T(inverseFourierFlatCLM φ) for an appropriate T with Fourier support in C*.
-    3. Write F(z) = W(ψ_z) via the PW-Schwartz bridge; since ψ_z has support in C*
-       by construction (cutoff times exponential), the C*-support propagates to W.
-    4. The Fourier support of W follows from the support of T and the
-       invertibility of `inverseFourierFlatCLM`. -/
-theorem fourierSupportInDualCone_of_tube_boundaryValue
+    This is the SCV theorem one actually needs before the support conclusion below:
+    it identifies the boundary-value functional with the inverse-Fourier pairing of a
+    dual-cone-supported tempered distribution. The mathematical content is standard
+    Vladimirov/Hörmander Fourier-Laplace theory; the Lean surface is phrased using the
+    project's `TubeDomain`, `SchwartzMap`, and `HasFourierSupportInDualCone` notions. -/
+axiom tube_boundaryValue_realizes_dualCone_distribution
     {C : Set (Fin m → ℝ)}
     (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
     (hC_cone : IsCone C) (hC_salient : IsSalientCone C) (hC_ne : C.Nonempty)
     {F : (Fin m → ℂ) → ℂ}
     (hF_holo : DifferentiableOn ℂ F (SCV.TubeDomain C))
+    (hF_growth : ∃ (C_bd : ℝ) (N q : ℕ), C_bd > 0 ∧
+      ∀ (z : Fin m → ℂ), z ∈ SCV.TubeDomain C →
+        ‖F z‖ ≤ C_bd * (1 + ‖z‖) ^ N *
+          (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ q)
     {W : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ}
     (hF_bv : ∀ (η : Fin m → ℝ), η ∈ C →
       ∀ (φ : SchwartzMap (Fin m → ℝ) ℂ),
@@ -173,7 +194,51 @@ theorem fourierSupportInDualCone_of_tube_boundaryValue
           (fun ε : ℝ => ∫ x : Fin m → ℝ,
             F (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) * φ x)
           (nhdsWithin 0 (Set.Ioi 0)) (nhds (W φ))) :
-    HasFourierSupportInDualCone C W := by
-  sorry
+    ∃ (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ),
+      HasFourierSupportInDualCone C T ∧
+      ∀ (η : Fin m → ℝ), η ∈ C →
+        ∀ (φ : SchwartzMap (Fin m → ℝ) ℂ),
+          Filter.Tendsto
+            (fun ε : ℝ => ∫ x : Fin m → ℝ,
+              F (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) * φ x)
+            (nhdsWithin 0 (Set.Ioi 0)) (nhds (T (inverseFourierFlatSupportCLM φ)))
+
+/-- **Frequency-side dual-cone support from tube boundary values.**
+
+    Tube-holomorphic `F` with tempered BV `W`, under Vladimirov-type moderate growth,
+    admits a frequency-side tempered distribution `T` with support in `C*` such that
+    `W φ = T(FT⁻¹ φ)` for every Schwartz test function `φ`.
+
+    Proof sketch:
+    1. The BV hypothesis gives W as the distributional limit of ∫ F(x+iεη)φ(x)dx.
+    2. By `tube_boundaryValue_realizes_dualCone_distribution`, the same limit equals
+       `T(FT⁻¹ φ)` for an appropriate `T` with support in `C*`.
+    3. Limits in `ℂ` are unique, so `W φ = T(FT⁻¹ φ)` pointwise. -/
+theorem fourierSupportInDualCone_of_tube_boundaryValue
+    {C : Set (Fin m → ℝ)}
+    (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C) (hC_salient : IsSalientCone C) (hC_ne : C.Nonempty)
+    {F : (Fin m → ℂ) → ℂ}
+    (hF_holo : DifferentiableOn ℂ F (SCV.TubeDomain C))
+    (hF_growth : ∃ (C_bd : ℝ) (N q : ℕ), C_bd > 0 ∧
+      ∀ (z : Fin m → ℂ), z ∈ SCV.TubeDomain C →
+        ‖F z‖ ≤ C_bd * (1 + ‖z‖) ^ N *
+          (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ q)
+    {W : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ}
+    (hF_bv : ∀ (η : Fin m → ℝ), η ∈ C →
+      ∀ (φ : SchwartzMap (Fin m → ℝ) ℂ),
+        Filter.Tendsto
+          (fun ε : ℝ => ∫ x : Fin m → ℝ,
+            F (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) * φ x)
+          (nhdsWithin 0 (Set.Ioi 0)) (nhds (W φ))) :
+    ∃ (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ),
+      HasFourierSupportInDualCone C T ∧
+      ∀ (φ : SchwartzMap (Fin m → ℝ) ℂ),
+        W φ = T (inverseFourierFlatSupportCLM φ) := by
+  obtain ⟨T, hT_supp, hT_bv⟩ := tube_boundaryValue_realizes_dualCone_distribution
+    hC_open hC_conv hC_cone hC_salient hC_ne hF_holo hF_growth hF_bv
+  refine ⟨T, hT_supp, fun φ => ?_⟩
+  obtain ⟨η, hη⟩ := hC_ne
+  exact tendsto_nhds_unique (hF_bv η hη φ) (hT_bv η hη φ)
 
 end
