@@ -209,9 +209,11 @@ theorem schwartz_seminorm_cutoff_exp_bound
     have hterms : ∀ i ∈ Finset.range (n + 1),
         (n.choose i : ℝ) * ‖iteratedFDeriv ℝ i f ξ‖ * ‖iteratedFDeriv ℝ (n - i) g ξ‖ ≤
         (n.choose i : ℝ) * C * ((n - i).factorial * ‖cexp (L ξ)‖ * ‖L‖ ^ (n - i)) := by
-      intro i hi; gcongr
-      · exact hfC i (Nat.lt_succ_of_mem_range hi |>.le) ξ
-      · exact norm_iteratedFDeriv_cexp_comp_clm L ξ (n - i)
+      intro i hi
+      have hi_le : i ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
+      calc _ ≤ (n.choose i : ℝ) * C * ‖iteratedFDeriv ℝ (n - i) g ξ‖ := by
+            gcongr; exact hfC i hi_le ξ
+        _ ≤ _ := by gcongr; exact norm_iteratedFDeriv_cexp_comp_clm L ξ (n - i)
     -- Sum bound
     have hS : ‖iteratedFDeriv ℝ n (fun ξ => f ξ * g ξ) ξ‖ ≤
         C * ‖cexp (L ξ)‖ *
@@ -222,7 +224,8 @@ theorem schwartz_seminorm_cutoff_exp_bound
               (n.choose i : ℝ) * C * ((n - i).factorial * ‖cexp (L ξ)‖ * ‖L‖ ^ (n - i)) :=
             Finset.sum_le_sum hterms
         _ = C * ‖cexp (L ξ)‖ * ∑ i ∈ Finset.range (n + 1),
-              (n.choose i : ℝ) * (n - i).factorial * ‖L‖ ^ (n - i) := by ring_nf
+              (n.choose i : ℝ) * (n - i).factorial * ‖L‖ ^ (n - i) := by
+            rw [Finset.mul_sum]; congr 1; ext i; ring
     -- Combinatorial sum bound: Σ C(n,i)*(n-i)!*‖L‖^{n-i} ≤ n!*(n+1)*(1+‖L‖)^n
     have hComb : ∑ i ∈ Finset.range (n + 1),
         (n.choose i : ℝ) * (n - i).factorial * ‖L‖ ^ (n - i) ≤
@@ -231,18 +234,14 @@ theorem schwartz_seminorm_cutoff_exp_bound
               (n.choose i : ℝ) * (n - i).factorial * ‖L‖ ^ (n - i)
           ≤ ∑ _ ∈ Finset.range (n + 1), ((n.factorial : ℝ) * (1 + ‖L‖) ^ n) := by
             apply Finset.sum_le_sum; intro i hi
-            have hi_le := Nat.lt_succ_of_mem_range hi |>.le
+            have hi_le := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
             have h1 : (n.choose i : ℝ) * (n - i).factorial ≤ n.factorial := by
-              rw [Nat.cast_le]
-              calc n.choose i * (n - i)! = n ! / i ! := by
-                    rw [Nat.choose_eq_factorial_div_factorial hi_le, Nat.div_mul_cancel]
-                    exact Nat.factorial_dvd_factorial_mul_factorial hi_le
-                _ ≤ n ! := Nat.div_le_self _ _
+              exact_mod_cast (show n.choose i * (n - i).factorial ≤ n.factorial by
+                nlinarith [Nat.choose_mul_factorial_mul_factorial hi_le,
+                  Nat.one_le_iff_ne_zero.mpr (Nat.factorial_ne_zero i)])
             have h2 : ‖L‖ ^ (n - i) ≤ (1 + ‖L‖) ^ n :=
-              calc ‖L‖ ^ (n - i) ≤ (1 + ‖L‖) ^ (n - i) :=
-                    pow_le_pow_left (norm_nonneg _) (le_add_of_nonneg_left one_pos.le) _
-                _ ≤ (1 + ‖L‖) ^ n :=
-                    pow_le_pow_right (by linarith [norm_nonneg L]) (Nat.sub_le n i)
+              (pow_le_pow_left₀ (norm_nonneg _) (le_add_of_nonneg_left one_pos.le) _).trans
+                (pow_le_pow_right₀ (by linarith [norm_nonneg L]) (Nat.sub_le n i))
             exact mul_le_mul h1 h2 (pow_nonneg (norm_nonneg _) _) (Nat.cast_nonneg _)
         _ = (↑n + 1) * ((n.factorial : ℝ) * (1 + ‖L‖) ^ n) := by
             simp [Finset.sum_const, Finset.card_range]
@@ -252,21 +251,22 @@ theorem schwartz_seminorm_cutoff_exp_bound
         = ‖ξ‖ ^ k * ‖iteratedFDeriv ℝ n (fun ξ => f ξ * g ξ) ξ‖ := rfl
       _ ≤ ‖ξ‖ ^ k * (C * ‖cexp (L ξ)‖ * ∑ i ∈ Finset.range (n + 1),
             (n.choose i : ℝ) * (n - i).factorial * ‖L‖ ^ (n - i)) := by
-          gcongr; exact hS
+          apply mul_le_mul_of_nonneg_left hS (pow_nonneg (norm_nonneg _) _)
       _ ≤ ‖ξ‖ ^ k * (C * Real.exp (-c * ‖ξ‖) *
             (n.factorial * (↑n + 1) * (1 + ‖L‖) ^ n)) := by
-          gcongr
-          exact mul_le_mul_of_nonneg_left hexp_bd (le_of_lt hC_pos)
+          apply mul_le_mul_of_nonneg_left _ (pow_nonneg (norm_nonneg _) _)
+          apply mul_le_mul (mul_le_mul_of_nonneg_left hexp_bd (le_of_lt hC_pos))
+            hComb (Finset.sum_nonneg (fun i _ => by positivity)) (by positivity)
       _ = (‖ξ‖ ^ k * Real.exp (-c * ‖ξ‖)) *
             (C * ↑n.factorial * (↑n + 1)) * (1 + ‖L‖) ^ n := by ring
       _ ≤ M * (C * ↑n.factorial * (↑n + 1)) * (1 + ‖L‖) ^ n := by
           gcongr; exact hM ‖ξ‖ (norm_nonneg _)
       _ = (M * C * ↑n.factorial * (↑n + 1)) * (1 + ‖L‖) ^ n := by ring
-      _ ≤ B * (1 + ‖L‖) ^ n := by
-          gcongr; linarith
-  · -- Outside closure(supp χ)
-    rw [iteratedFDeriv_eq_zero_of_eventuallyEq_zero
-      (product_zero_outside_closure χ (fun x => cexp (L x)) ξ hξ) n]
-    simp; exact mul_nonneg (by positivity) (pow_nonneg (by linarith [norm_nonneg L]) _)
+      _ ≤ B * (1 + ‖L‖) ^ n := by gcongr; linarith
+  · -- Outside closure(supp χ): product = 0 nearby, so all derivatives vanish
+    have h0 : iteratedFDeriv ℝ n (fun ξ => (χ ξ : ℂ) * cexp (L ξ)) ξ = 0 :=
+      iteratedFDeriv_eq_zero_of_eventuallyEq_zero
+        (product_zero_outside_closure χ (fun x => cexp (L x)) ξ hξ) n
+    simp [h0]; exact mul_nonneg (by positivity) (pow_nonneg (by linarith [norm_nonneg L]) _)
 
 end
