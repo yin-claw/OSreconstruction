@@ -902,7 +902,20 @@ noncomputable def inverseFourierFlatCLM {m : ℕ} :
     SchwartzMap.fourierTransformCLM ℂ
   fromEuc.comp (ft.comp toEuc)
 
-axiom fourierLaplaceExtMultiDim_boundaryValue
+/-- **Boundary value convergence for the Fourier-Laplace extension.**
+
+    For T with Fourier support in C* and F(z) = fourierLaplaceExtMultiDim T z,
+    the distributional boundary value ∫ F(x+iεη)f(x)dx → T(FT⁻¹(f)) as ε→0⁺.
+
+    Proof sketch:
+    - For fixed η ∈ C and f ∈ S, define g(ε) = ∫ F(x+iεη)f(x)dx = T(ψ_{·+iεη})
+      applied to f via Fubini.
+    - As ε→0⁺, ψ_{x+iεη} → FT⁻¹(δ_x) in S-topology.
+    - Use equicontinuity of {T ∘ ψ_ε} (from Vladimirov growth) + distributional
+      limit to conclude convergence.
+    - The key identity is T(ψ_z) = ∫ exp(iz·ξ) χ(ξ) dμ_T(ξ) where μ_T is the
+      Fourier support measure, so the boundary limit recovers T(FT⁻¹(f)). -/
+theorem fourierLaplaceExtMultiDim_boundaryValue
     (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
     (hC_cone : IsCone C) (hC_salient : IsSalientCone C) (hC_ne : C.Nonempty)
     (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ)
@@ -915,6 +928,7 @@ axiom fourierLaplaceExtMultiDim_boundaryValue
               (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) *
             f x)
           (nhdsWithin 0 (Set.Ioi 0))
-          (nhds (T (inverseFourierFlatCLM f)))
+          (nhds (T (inverseFourierFlatCLM f))) := by
+  sorry
 
 end

@@ -1062,13 +1062,19 @@ theorem cr_integration_identity
 
 /-! ### The boundary value construction -/
 
-/-- **Main converse theorem**: Vladimirov growth on a tube implies existence of
-    tempered distributional boundary values.
+/-- **Main converse theorem (Cauchy regularization)**: Vladimirov growth on a tube
+    implies existence of tempered distributional boundary values.
 
-    The full proof uses Cauchy regularization, repeated ray integration, and
-    the distributional-limit construction. Those steps are not yet fully
-    formalized here, so this result remains an explicit interface theorem. -/
-axiom tube_boundaryValue_of_vladimirov_growth
+    Proof sketch:
+    - Define H(x) = i^k / (k-1)! ∫₀^{t₀} (t₀-τ)^{k-1} F(x+iτη) dτ with k = M+2.
+    - The singularity τ^{-M} from Vladimirov growth integrates against the
+      τ^{M+1} factor from (t₀-τ)^{k-1}, making H well-defined and continuous.
+    - H has polynomial growth in x, hence defines a tempered distribution.
+    - The boundary value W is recovered as the k-th iterated distributional
+      directional derivative of H plus a polynomial correction term.
+    - Uses `cr_integration_identity` (proved) applied k times together with DCT
+      to pass ε→0⁺ inside the integral. -/
+theorem tube_boundaryValue_of_vladimirov_growth
     {C : Set (Fin m → ℝ)}
     (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
     (hC_cone : IsCone C) (hC_ne : C.Nonempty)
@@ -1084,7 +1090,8 @@ axiom tube_boundaryValue_of_vladimirov_growth
         Tendsto
           (fun ε : ℝ => tubeSlice F (ε • η) φ)
           (nhdsWithin 0 (Set.Ioi 0))
-          (nhds (W φ))
+          (nhds (W φ)) := by
+  sorry
 
 /-- **Boundary value existence for pure polynomial growth.**
 

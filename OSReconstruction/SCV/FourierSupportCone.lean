@@ -148,19 +148,19 @@ theorem sliceFunctional_tendsto_bv
 
 /-! ### The main theorem -/
 
-/-- The distributional boundary value of a holomorphic function on a tube domain
-    over an open convex cone has Fourier support in the dual cone.
+/-- **Fourier support from tube boundary values.**
 
-    This is the forward direction of the Vladimirov characterization:
-    tube-holomorphic + tempered BV → Fourier support in C*.
+    Tube-holomorphic F with tempered BV W implies W has Fourier support in C*.
 
-    The honest proof does not come from the naive scalarized slice functional
-    alone: it requires the Phase 3 Paley-Wiener-Schwartz bridge identifying the
-    tube-holomorphic function with a Fourier-Laplace transform of its boundary
-    value, and then reading off the Fourier support from that representation.
-    We therefore keep this as an interface axiom until that infrastructure is
-    imported here. -/
-axiom fourierSupportInDualCone_of_tube_boundaryValue
+    Proof sketch:
+    1. The BV hypothesis gives W as the distributional limit of ∫ F(x+iεη)φ(x)dx.
+    2. By `fourierLaplaceExtMultiDim_boundaryValue`, this limit equals
+       T(inverseFourierFlatCLM φ) for an appropriate T with Fourier support in C*.
+    3. Write F(z) = W(ψ_z) via the PW-Schwartz bridge; since ψ_z has support in C*
+       by construction (cutoff times exponential), the C*-support propagates to W.
+    4. The Fourier support of W follows from the support of T and the
+       invertibility of `inverseFourierFlatCLM`. -/
+theorem fourierSupportInDualCone_of_tube_boundaryValue
     {C : Set (Fin m → ℝ)}
     (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
     (hC_cone : IsCone C) (hC_salient : IsSalientCone C) (hC_ne : C.Nonempty)
@@ -173,12 +173,7 @@ axiom fourierSupportInDualCone_of_tube_boundaryValue
           (fun ε : ℝ => ∫ x : Fin m → ℝ,
             F (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) * φ x)
           (nhdsWithin 0 (Set.Ioi 0)) (nhds (W φ))) :
-    HasFourierSupportInDualCone C W
-  -- Proof route (now unblocked by inverseFourierFlatCLM):
-  -- 1. The BV hypothesis gives W as the distributional limit of ∫ F(x+iεη)φ(x)dx.
-  -- 2. By fourierLaplaceExtMultiDim_boundaryValue, this limit equals
-  --    T(inverseFourierFlatCLM φ) for an appropriate T with Fourier support in C*.
-  -- 3. The Fourier support of W follows from the support of T and the
-  --    invertibility of inverseFourierFlatCLM.
+    HasFourierSupportInDualCone C W := by
+  sorry
 
 end
