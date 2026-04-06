@@ -3,8 +3,10 @@ Copyright (c) 2025 ModularPhysics Contributors. All rights reserved.
 Released under Apache 2.0 license.
 Authors: Michael R. Douglas, ModularPhysics Contributors
 -/
+import OSReconstruction.Mathlib429Compat
 import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 import Mathlib.Analysis.Calculus.IteratedDeriv.Defs
+import Mathlib.Analysis.Calculus.ContDiff.RestrictScalars
 
 /-!
 # Quantitative Schwartz Seminorm Bounds for Cutoff × Exponential
@@ -115,13 +117,19 @@ is the multilinear map `(h₁,...,hₙ) ↦ exp(z) · h₁ · ... · hₙ`, whic
 operator norm `‖exp(z)‖` by submultiplicativity in `ℂ`. -/
 private lemma norm_iteratedFDeriv_cexp_le (z : ℂ) (i : ℕ) :
     ‖iteratedFDeriv ℝ i cexp z‖ ≤ ‖cexp z‖ := by
-  induction i with
-  | zero => simp
-  | succ n _ih =>
-    -- D^{n+1}[exp](z) = D^n[exp'](z) = D^n[exp](z) since exp' = exp.
-    -- Formalizing this requires the power series / analytic machinery for cexp
-    -- and restriction of scalars ℂ → ℝ. The mathematical fact is elementary.
-    sorry
+  have hiter_deriv : iteratedDeriv i (Complex.exp) z = cexp z := by
+    rw [iteratedDeriv_eq_iterate]
+    simp [Complex.iter_deriv_exp]
+  have hComplex_norm : ‖iteratedFDeriv ℂ i cexp z‖ = ‖cexp z‖ := by
+    rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv]
+    exact congrArg _ hiter_deriv
+  have hSmooth : ContDiffAt ℂ (i : ℕ∞) cexp z := by
+    exact (Complex.contDiff_exp (n := (i : ℕ∞))).contDiffAt
+  have hRestrict : ((ContinuousMultilinearMap.restrictScalars ℝ) ∘
+      iteratedFDeriv ℂ i cexp) z = iteratedFDeriv ℝ i cexp z :=
+    hSmooth.restrictScalars_iteratedFDeriv (𝕜 := ℝ)
+  rw [← hRestrict, Function.comp_apply,
+    ContinuousMultilinearMap.norm_restrictScalars, hComplex_norm]
 
 /-- `‖D^n[cexp ∘ L](ξ)‖ ≤ n! · ‖cexp(Lξ)‖ · ‖L‖^n` by Faa di Bruno. -/
 private lemma norm_iteratedFDeriv_cexp_comp_clm

@@ -36,6 +36,70 @@ noncomputable section
 
 variable {m : ℕ}
 
+set_option linter.unusedVariables false in
+private lemma convolution_left_iteratedFDeriv_bounded :
+    ∀ k : ℕ,
+    ∀ {X : Type*} [NormedAddCommGroup X] [NormedSpace ℝ X] [CompleteSpace X]
+      (L : X →L[ℝ] ℝ →L[ℝ] X) (hL : ‖L‖ ≤ 1)
+      (f : (Fin m → ℝ) → X) (g : (Fin m → ℝ) → ℝ)
+      (hf_supp : HasCompactSupport f)
+      (hf_smooth : ContDiff ℝ (↑(⊤ : ℕ∞)) f)
+      (hg_li : LocallyIntegrable g volume)
+      (hg_bound : ∀ x, ‖g x‖ ≤ 1),
+      ∃ C : ℝ, ∀ ξ, ‖iteratedFDeriv ℝ k (f ⋆[L, volume] g) ξ‖ ≤ C
+  | 0, X, _, _, _, L, hL, f, g, hf_supp, hf_smooth, hg_li, hg_bound => by
+      refine ⟨∫ t, ‖f t‖, ?_⟩
+      intro ξ
+      have hcont : Continuous f := hf_smooth.continuous
+      have hf_int : Integrable (fun t => ‖f t‖) volume :=
+        (hcont.norm).integrable_of_hasCompactSupport hf_supp.norm
+      have h0 : ‖(f ⋆[L, volume] g) ξ‖ ≤ ∫ t, ‖f t‖ ∂volume := by
+        calc
+          ‖(f ⋆[L, volume] g) ξ‖ = ‖∫ t, L (f t) (g (ξ - t)) ∂volume‖ := by
+            simp [MeasureTheory.convolution]
+          _ ≤ ∫ t, ‖f t‖ ∂volume := by
+            refine norm_integral_le_of_norm_le hf_int ?_
+            filter_upwards with t
+            have ht_nonneg : 0 ≤ ‖f t‖ := norm_nonneg _
+            have hprod_nonneg : 0 ≤ ‖f t‖ * ‖g (ξ - t)‖ :=
+              mul_nonneg (norm_nonneg _) (norm_nonneg _)
+            have hgt : ‖g (ξ - t)‖ ≤ 1 := hg_bound (ξ - t)
+            have hm : ‖f t‖ * ‖g (ξ - t)‖ ≤ ‖f t‖ := by
+              calc
+                ‖f t‖ * ‖g (ξ - t)‖ ≤ ‖f t‖ * 1 := by
+                  exact mul_le_mul_of_nonneg_left hgt ht_nonneg
+                _ = ‖f t‖ := by ring
+            calc
+              ‖L (f t) (g (ξ - t))‖ ≤ ‖L‖ * ‖f t‖ * ‖g (ξ - t)‖ := L.le_opNorm₂ _ _
+              _ ≤ 1 * (‖f t‖ * ‖g (ξ - t)‖) := by
+                rw [mul_assoc]
+                exact mul_le_mul_of_nonneg_right hL hprod_nonneg
+              _ = ‖f t‖ * ‖g (ξ - t)‖ := by ring
+              _ ≤ ‖f t‖ := hm
+      simpa using h0
+  | k + 1, X, _, _, _, L, hL, f, g, hf_supp, hf_smooth, hg_li, hg_bound => by
+      letI := ContinuousLinearMap.hasOpNorm (𝕜 := ℝ) (𝕜₂ := ℝ)
+        (E := (Fin m → ℝ) →L[ℝ] X)
+        (F := ℝ →L[ℝ] (Fin m → ℝ) →L[ℝ] X) (σ₁₂ := RingHom.id ℝ)
+      have hf1 : ContDiff ℝ 1 f := hf_smooth.of_le (by simp)
+      have hfderiv_eq : fderiv ℝ (f ⋆[L, volume] g) =
+          fun x => ((fderiv ℝ f) ⋆[L.precompL (Fin m → ℝ), volume] g) x := by
+        funext x
+        exact (hf_supp.hasFDerivAt_convolution_left (L := L) hf1 hg_li x).fderiv
+      have hL' : ‖L.precompL (Fin m → ℝ)‖ ≤ 1 :=
+        le_trans (ContinuousLinearMap.norm_precompL_le (Fin m → ℝ) L) hL
+      have hfderiv_smooth : ContDiff ℝ (↑(⊤ : ℕ∞)) (fderiv ℝ f) := by
+        fun_prop
+      rcases convolution_left_iteratedFDeriv_bounded k
+          (X := (Fin m → ℝ) →L[ℝ] X)
+          (L.precompL (Fin m → ℝ)) hL' (fderiv ℝ f) g
+          (hf_supp.fderiv (𝕜 := ℝ)) hfderiv_smooth hg_li hg_bound with
+        ⟨C, hC⟩
+      refine ⟨C, ?_⟩
+      intro ξ
+      rw [← norm_iteratedFDeriv_fderiv, hfderiv_eq]
+      exact hC ξ
+
 /-- **Existence of smooth cutoff adapted to a closed set.**
 
     For any closed set S ⊆ ℝ^m, there exists `χ : ℝ^m → ℝ` with:
@@ -169,7 +233,9 @@ theorem exists_smooth_cutoff_of_closed
   -- continuous with compact support, hence integrable).
   have h_deriv : ∀ k : ℕ, ∃ C : ℝ, ∀ ξ, ‖iteratedFDeriv ℝ k χ ξ‖ ≤ C := by
     intro k
-    sorry
+    simpa [χ] using convolution_left_iteratedFDeriv_bounded (m := m) k
+      (L := lsmul ℝ ℝ) (ContinuousLinearMap.opNorm_lsmul_le (𝕜 := ℝ) (R := ℝ) (E := ℝ))
+      (φ.normed μ) g φ.hasCompactSupport_normed φ.contDiff_normed hg_li hg_bound
   exact ⟨χ, h_smooth, h_one, h_zero, h_deriv, h_nn, h_le⟩
 
 end
