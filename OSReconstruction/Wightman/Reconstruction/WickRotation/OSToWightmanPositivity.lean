@@ -6,6 +6,7 @@ Authors: Michael Douglas, ModularPhysics Contributors
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBoundaryValues
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanSemigroup
 import OSReconstruction.SCV.PaleyWiener
+import OSReconstruction.SCV.PartialFourierSpatial
 import OSReconstruction.Mathlib429Compat
 import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 import Mathlib.MeasureTheory.Integral.IntegralEqImproper
@@ -244,6 +245,38 @@ def toPositiveTimeSingle
   PositiveTimeBorchersSequence.single n f.1 f.2
 
 end EuclideanPositiveTimeComponent
+
+/-! ### One-point positive-time slice support -/
+
+/-- A one-point Euclidean Schwartz test supported in strictly positive time has
+every fixed-spatial slice supported in nonnegative time. This is the exact
+support input needed by the one-variable Section 4.3 Paley-Wiener supplier. -/
+private theorem tsupport_spatialSlice_subset_Ici_of_timePositive
+    (f : SchwartzSpacetime d)
+    (hf_pos : tsupport (f : SpacetimeDim d → ℂ) ⊆ {x | 0 < x 0})
+    (y : Fin d → ℝ) :
+    tsupport (fun t : ℝ => f (Fin.cons t y)) ⊆ Set.Ici 0 := by
+  intro t ht
+  by_contra ht_neg
+  have ht_lt : t < 0 := by
+    simpa [Set.mem_Ici, not_le] using ht_neg
+  have ht_not : t ∉ tsupport (fun s : ℝ => f (Fin.cons s y)) := by
+    rw [notMem_tsupport_iff_eventuallyEq]
+    have hball : Metric.ball t (-t / 2) ∈ 𝓝 t := by
+      apply Metric.ball_mem_nhds
+      linarith
+    filter_upwards [hball] with s hs
+    have hsabs : |s - t| < -t / 2 := by
+      simpa [Metric.mem_ball, Real.dist_eq] using hs
+    have hs_lt : s < 0 := by
+      linarith [(abs_lt.mp hsabs).2, ht_lt]
+    have hs_not_mem : (Fin.cons s y : SpacetimeDim d) ∉ tsupport (f : SpacetimeDim d → ℂ) := by
+      intro hs_mem
+      have hs_pos : 0 < (Fin.cons s y : SpacetimeDim d) 0 := hf_pos hs_mem
+      have : 0 < s := by simpa using hs_pos
+      linarith
+    exact image_eq_zero_of_notMem_tsupport hs_not_mem
+  exact ht_not ht
 
 /-! ### One-variable Section 4.3 Fourier-Laplace supplier -/
 
@@ -982,10 +1015,15 @@ noncomputable def euclideanPositiveTimeSingleVector
 /-- The current-code realization of the degree-`n` Section 4.3 Fourier-Laplace
 transport map.
 
-The corrected theorem surface lands in the full Schwartz space on the
-Minkowski side: the Section 4.3 transform is first defined on the
-positive-energy half-space and then interpreted via a Schwartz extension, not
-via a support restriction `tsupport ⊆ {q^0 ≥ 0}`. -/
+Current route note:
+
+* the theorem-surface codomain is under migration to the corrected half-space
+  Section-4.3 object from the blueprint;
+* the current type signature remains a temporary placeholder while branch `3b`
+  builds the concrete partial-spatial-Fourier infrastructure;
+* do **not** read this placeholder signature as endorsing the withdrawn
+  full-Schwartz / Seeley-extension route from Iteration B.
+-/
 noncomputable def os1TransportComponent
     (d n : ℕ) [NeZero d] :
     euclideanPositiveTimeSubmodule (d := d) n →L[ℂ] SchwartzNPoint d n := by
@@ -1019,7 +1057,15 @@ noncomputable def positiveTimeBorchersTransport
 inputs, the reconstructed Wightman pairing agrees with the honest OS Hilbert
 space inner product. This is the theorem surface needed to expose the
 cross-degree terms in `WightmanInnerProduct` and feed the final positivity
-closure. -/
+closure.
+
+Because `os1TransportComponent` lands in full `SchwartzNPoint d n` via a
+non-canonical Seeley extension, the proof of this bridge must be phrased so it
+does not depend on the chosen extension. Concretely, only the half-space trace
+of the Section 4.3 transform is mathematically meaningful, and any two Schwartz
+extensions of that same half-space data differ by a function whose half-space
+trace vanishes. The bridge proof must use only Wightman smearings that are
+insensitive to that difference. -/
 theorem bvt_W_eq_inner_on_positiveTimeTransport
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     (F G : PositiveTimeBorchersSequence d) :
