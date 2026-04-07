@@ -216,6 +216,13 @@ theorem norm_iteratedFDeriv_cexp_comp_clm_le
       n.factorial * ‖cexp (L ξ)‖ * ‖L‖ ^ n :=
   norm_iteratedFDeriv_cexp_comp_clm L ξ n
 
+/-- Public wrapper for the explicit polynomial-vs-exponential bound. -/
+theorem pow_mul_exp_neg_bounded_explicit_le (k : ℕ) :
+    ∃ M : ℝ, 0 < M ∧
+      ∀ c : ℝ, 0 < c → ∀ x : ℝ, 0 ≤ x →
+        x ^ k * Real.exp (-c * x) ≤ M * c⁻¹ ^ k :=
+  pow_mul_exp_neg_bounded_explicit k
+
 /-- Affine decay on the support extends to the closure of the support. -/
 theorem affineDecay_on_closure_support_le
     (χ : (Fin m → ℝ) → ℝ)

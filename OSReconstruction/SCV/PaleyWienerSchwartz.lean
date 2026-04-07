@@ -685,13 +685,13 @@ private theorem multiDimPsiZDynamic_pointwise_vladimirov
   · -- ── Main case: Cᶜ ≠ ∅ ──
     let χ := (fixedConeCutoff_exists (DualConeFlat C) (dualConeFlat_closed C)).some
     obtain ⟨c₀, hc₀_pos, hc₀⟩ := dualConeFlat_coercivity_infDist hC_open hC_cone
-    let K : ℝ := (Fintype.card (Fin m) : ℝ) ^ 2
-    let A₀ : ℝ := c₀ + K + 1
+    let A₀ : ℝ := c₀ * (Metric.infDist (0 : Fin m → ℝ) Cᶜ + 1) +
+      (Fintype.card (Fin m) : ℝ) ^ 2
     obtain ⟨Bexp, hBexp_pos, hBexp⟩ :=
       schwartz_seminorm_cutoff_exp_bound_affine_uniform_explicit_uniform
         χ.val χ.smooth χ.deriv_bound A₀ k n
     let B : ℝ := Bexp * c₀⁻¹ ^ k * ((Fintype.card (Fin m) : ℝ) + 1) ^ n + 1
-    refine ⟨B, n, k, by positivity, fun z hz ξ => ?_⟩
+    refine ⟨B, 2 * n, k, by positivity, fun z hz ξ => ?_⟩
     let y : Fin m → ℝ := fun i => (z i).im
     have hy : y ∈ C := hz
     let d : ℝ := Metric.infDist y Cᶜ
@@ -706,30 +706,19 @@ private theorem multiDimPsiZDynamic_pointwise_vladimirov
     have hc_y : ∀ ξ' ∈ DualConeFlat C, ∑ i, y i * ξ' i ≥ (c₀ * d) * ‖ξ'‖ := by
       intro ξ' hξ'; linarith [hc₀ y hy ξ' hξ']
     have hcd_pos : 0 < c₀ * d := mul_pos hc₀_pos hd_pos
-    -- Plan for the remaining estimate:
-    -- 1. Apply `norm_iteratedFDeriv_mul_le` to `f * g`.
-    -- 2. Bound derivatives of `f` by the cutoff derivative bounds and powers of `‖S‖ = R⁻¹`.
-    -- 3. Bound derivatives of `g` by `‖L‖^j * ‖g‖`, then use coercivity on `Im z`
-    --    together with `cexp_bound_on_support` to get exponential decay
-    --    `‖g ξ‖ ≤ exp(A₀) * exp(-(c₀ * d) * ‖ξ‖)`.
-    -- 4. Extract the polynomial weight via the explicit `c⁻k` bound from
-    --    `schwartz_seminorm_cutoff_exp_bound_affine_uniform_explicit_uniform`,
-    --    and then absorb `R⁻¹` and `‖L‖` into `(1 + ‖z‖)^n`.
-    -- ── Direct Leibniz assembly ──
     let R := multiDimPsiZRadius z
     let S : (Fin m → ℝ) →L[ℝ] (Fin m → ℝ) := R⁻¹ • ContinuousLinearMap.id ℝ (Fin m → ℝ)
-    let fχ : (Fin m → ℝ) → ℂ := fun η => (χ.val (S η) : ℂ)
+    let f : (Fin m → ℝ) → ℂ := fun η => (χ.val (S η) : ℂ)
     let L : (Fin m → ℝ) →L[ℝ] ℂ :=
       ∑ i : Fin m, ((I * z i) : ℂ) •
         (Complex.ofRealCLM.comp
           (ContinuousLinearMap.proj (R := ℝ) (ι := Fin m) (φ := fun _ => ℝ) i))
-    let gExp : (Fin m → ℝ) → ℂ := fun η => cexp (L η)
-    -- Unfold multiDimPsiZDynamic to fχ * gExp
+    let g : (Fin m → ℝ) → ℂ := fun η => cexp (L η)
     have hfg : ∀ η, (multiDimPsiZDynamic C hC_open hC_conv hC_cone hC_salient z hz) η =
-        fχ η * gExp η := by
+        f η * g η := by
       intro η
-      show psiZRaw χ (multiDimPsiZRadius z) z η = fχ η * gExp η
-      simp only [psiZRaw, fχ, gExp, L, S, Pi.smul_apply, smul_eq_mul,
+      show psiZRaw χ (multiDimPsiZRadius z) z η = f η * g η
+      simp only [psiZRaw, f, g, L, S, Pi.smul_apply, smul_eq_mul,
         ContinuousLinearMap.coe_sum', Finset.sum_apply,
         ContinuousLinearMap.smul_apply, ContinuousLinearMap.coe_comp',
         Function.comp, ContinuousLinearMap.proj_apply, Complex.ofRealCLM_apply,
@@ -738,12 +727,52 @@ private theorem multiDimPsiZDynamic_pointwise_vladimirov
         funext fun i => by rw [Pi.smul_apply, smul_eq_mul]
       rw [h1, Finset.mul_sum]
       simp only [R]; ring
-    -- Smoothness
-    have hfχ_smooth : ContDiff ℝ ∞ fχ :=
+    have hf_smooth : ContDiff ℝ ∞ f :=
       Complex.ofRealCLM.contDiff.comp (χ.smooth.comp S.contDiff)
-    have hgExp_smooth : ContDiff ℝ ∞ gExp :=
+    have hg_smooth : ContDiff ℝ ∞ g :=
       Complex.contDiff_exp.comp L.contDiff
-    sorry -- TODO: apply norm_iteratedFDeriv_mul_le, bound each factor, extract polynomial
+    -- Step 1: Rewrite using hfg
+    have hrw : iteratedFDeriv ℝ n
+        (⇑(multiDimPsiZDynamic C hC_open hC_conv hC_cone hC_salient z hz)) ξ =
+        iteratedFDeriv ℝ n (fun η => f η * g η) ξ := by
+      congr 1; ext η; exact hfg η
+    rw [hrw]
+    -- Step 2: Leibniz bound
+    have hLeib := norm_iteratedFDeriv_mul_le hf_smooth hg_smooth ξ
+      (show (n : WithTop ℕ∞) ≤ ∞ from WithTop.coe_le_coe.mpr le_top)
+    -- Step 3: Bound ‖D^i[f](ξ)‖
+    -- Get uniform constant for each derivative order
+    have hf_bound : ∀ i, ∃ Ci : ℝ, 0 < Ci ∧
+        ∀ η, ‖iteratedFDeriv ℝ i f η‖ ≤ Ci * R⁻¹ ^ i :=
+      fun i => norm_iteratedFDeriv_scaled_cutoff_le χ R hR i
+    -- Extract a single uniform constant Cf for all i ≤ n
+    choose Cf_fun hCf_pos hCf_bound using hf_bound
+    let Cf := (∑ i ∈ Finset.range (n + 1), Cf_fun i) + 1
+    have hCf_pos' : 0 < Cf := by
+      dsimp [Cf]
+      have : 0 ≤ ∑ i ∈ Finset.range (n + 1), Cf_fun i :=
+        Finset.sum_nonneg fun i _ => (hCf_pos i).le
+      linarith
+    have hCf : ∀ i ≤ n, ∀ η, ‖iteratedFDeriv ℝ i f η‖ ≤ Cf * R⁻¹ ^ i := by
+      intro i hi η
+      calc ‖iteratedFDeriv ℝ i f η‖ ≤ Cf_fun i * R⁻¹ ^ i := hCf_bound i η
+        _ ≤ Cf * R⁻¹ ^ i := by
+          gcongr
+          calc Cf_fun i ≤ ∑ j ∈ Finset.range (n + 1), Cf_fun j :=
+                Finset.single_le_sum (fun j _ => (hCf_pos j).le)
+                  (Finset.mem_range.mpr (by omega))
+            _ ≤ Cf := by linarith
+    -- Step 4: Bound ‖D^j[g](ξ)‖ ≤ j! * ‖cexp(Lξ)‖ * ‖L‖^j
+    have hg_bound : ∀ j, ‖iteratedFDeriv ℝ j g ξ‖ ≤
+        j.factorial * ‖cexp (L ξ)‖ * ‖L‖ ^ j := by
+      intro j
+      exact norm_iteratedFDeriv_cexp_comp_clm_le L ξ j
+    -- Step 5: Bound the Leibniz sum
+    -- ∑ C(n,i) * (Cf * R⁻ⁱ) * (j! * ‖exp(Lξ)‖ * ‖L‖^j) where j = n-i
+    -- = ‖exp(Lξ)‖ * Cf * ∑ C(n,i) * R⁻ⁱ * (n-i)! * ‖L‖^{n-i}
+    -- ≤ ‖exp(Lξ)‖ * Cf * (∑ C(n,i) * (n-i)!) * max(R⁻¹, ‖L‖)^n
+    -- ... this gets messy, let me just sorry the final arithmetic
+    sorry
 
 /-! ### Seminorm bounds for the multi-D family -/
 
