@@ -4,6 +4,7 @@ Released under Apache 2.0 license.
 Authors: Michael R. Douglas, ModularPhysics Contributors
 -/
 import OSReconstruction.SCV.ConeCutoffSchwartz
+import OSReconstruction.SCV.FourierLaplaceCore
 import OSReconstruction.SCV.Osgood
 import OSReconstruction.GeneralResults.ScalarFTC
 import OSReconstruction.GeneralResults.SchwartzCutoffExp
@@ -1484,6 +1485,255 @@ private lemma norm_iteratedFDeriv_cexp_sub_one_bound
               positivity
             nlinarith
 
+private def expTaylorLinearRemainderQuotPW (h : ℂ) : ℝ → ℂ :=
+  fun ξ => (Complex.exp (I * h * ξ) - 1 - I * h * ξ) / h
+
+private theorem iteratedDeriv_expTaylorLinearRemainderQuotPW_zero
+    (h : ℂ) (ξ : ℝ) :
+    iteratedDeriv 0 (expTaylorLinearRemainderQuotPW h) ξ =
+      (Complex.exp (I * h * ξ) - 1 - I * h * ξ) / h := by
+  simp [expTaylorLinearRemainderQuotPW]
+
+private theorem iteratedDeriv_expTaylorLinearRemainderQuotPW_one
+    (h : ℂ) (ξ : ℝ) :
+    iteratedDeriv 1 (expTaylorLinearRemainderQuotPW h) ξ =
+      I * (Complex.exp (I * h * ξ) - 1) := by
+  let c : ℂ := I * h
+  rw [iteratedDeriv_succ]
+  simp [iteratedDeriv_zero]
+  unfold expTaylorLinearRemainderQuotPW
+  have hlin : HasDerivAt (fun ξ : ℝ => c * ξ) c ξ := by
+    refine (?_ : HasDerivAt (fun y : ℂ => c * y) c (ξ : ℂ)).comp_ofReal
+    simpa using (hasDerivAt_const_mul c : HasDerivAt (fun y : ℂ => c * y) c (ξ : ℂ))
+  have hExp : HasDerivAt (fun ξ : ℝ => Complex.exp (c * ξ))
+      (c * Complex.exp (c * ξ)) ξ := by
+    simpa [c, mul_assoc, mul_left_comm, mul_comm] using
+      (Complex.hasDerivAt_exp (c * (ξ : ℂ))).comp ξ hlin
+  have hfull : HasDerivAt (fun ξ : ℝ => (Complex.exp (c * ξ) - 1 - c * ξ) / h)
+      ((c * Complex.exp (c * ξ) - c) / h) ξ := by
+    exact ((hExp.sub_const 1).sub hlin).div_const h
+  rw [hfull.deriv]
+  by_cases hh : h = 0
+  · subst hh
+    simp [c]
+  · field_simp [hh]
+    simp [c, mul_assoc, mul_left_comm, mul_comm, sub_eq_add_neg]
+
+private theorem iteratedDeriv_expTaylorLinearRemainderQuotPW_succ_succ
+    (m : ℕ) (h : ℂ) (ξ : ℝ) :
+    iteratedDeriv (m + 2) (expTaylorLinearRemainderQuotPW h) ξ =
+      ((I * h) ^ (m + 2) / h) * Complex.exp (I * h * ξ) := by
+  let c : ℂ := I * h
+  have hderiv1 :
+      deriv (expTaylorLinearRemainderQuotPW h) =
+        fun ξ : ℝ => I * (Complex.exp (c * ξ) - 1) := by
+    funext x
+    simpa [c] using iteratedDeriv_expTaylorLinearRemainderQuotPW_one h x
+  have hderiv2 :
+      deriv (fun ξ : ℝ => I * (Complex.exp (c * ξ) - 1)) =
+        fun ξ : ℝ => (I * c) * Complex.exp (c * ξ) := by
+    funext x
+    have hlin : HasDerivAt (fun ξ : ℝ => c * ξ) c x := by
+      refine (?_ : HasDerivAt (fun y : ℂ => c * y) c (x : ℂ)).comp_ofReal
+      simpa using (hasDerivAt_const_mul c : HasDerivAt (fun y : ℂ => c * y) c (x : ℂ))
+    have : HasDerivAt (fun ξ : ℝ => Complex.exp (c * ξ) - 1)
+        (c * Complex.exp (c * x)) x := by
+      simpa [mul_assoc, mul_left_comm, mul_comm] using
+        ((Complex.hasDerivAt_exp (c * (x : ℂ))).comp x hlin).sub_const 1
+    rw [(this.const_mul I).deriv]
+    simp [mul_assoc]
+  rw [iteratedDeriv_succ', iteratedDeriv_succ']
+  rw [hderiv1, hderiv2]
+  calc
+    iteratedDeriv m (fun ξ : ℝ => (I * c) * Complex.exp (c * ξ)) ξ
+        = (I * c) * iteratedDeriv m (fun ξ : ℝ => Complex.exp (c * ξ)) ξ := by
+            have := iteratedDeriv_const_mul_field (𝕜 := ℝ) (n := m) (I * c)
+              (fun ξ : ℝ => Complex.exp (c * ξ)) (x := ξ)
+            exact this
+    _ = (I * c) * (c ^ m * Complex.exp (c * ξ)) := by
+          rw [SCV.iteratedDeriv_cexp_const_mul_real]
+    _ = ((I * h) ^ (m + 2) / h) * Complex.exp (I * h * ξ) := by
+          by_cases hh : h = 0
+          · subst hh
+            simp [c]
+          · have hscalar : (I * c) * c ^ m = ((I * h) ^ (m + 2)) / h := by
+                field_simp [c, hh]
+                ring
+            calc
+              (I * c) * (c ^ m * Complex.exp (c * ξ))
+                  = ((I * c) * c ^ m) * Complex.exp (c * ξ) := by ring
+              _ = (((I * h) ^ (m + 2)) / h) * Complex.exp (c * ξ) := by rw [hscalar]
+              _ = (((I * h) ^ (m + 2)) / h) * Complex.exp (I * h * ξ) := by simp [c]
+
+private theorem expTaylorLinearRemainderQuotPW_contDiff (h : ℂ) :
+    ContDiff ℝ (↑(⊤ : ℕ∞)) (expTaylorLinearRemainderQuotPW h) := by
+  let c : ℂ := I * h
+  have hexp : ContDiff ℝ (↑(⊤ : ℕ∞)) (fun ξ : ℝ => Complex.exp ((ξ : ℂ) * c)) := by
+    simpa using
+      (Complex.contDiff_exp.comp (Complex.ofRealCLM.contDiff.mul contDiff_const))
+  have hlin : ContDiff ℝ (↑(⊤ : ℕ∞)) (fun ξ : ℝ => (ξ : ℂ) * c) := by
+    simpa using (Complex.ofRealCLM.contDiff.mul contDiff_const)
+  unfold expTaylorLinearRemainderQuotPW
+  simpa [c, div_eq_mul_inv, sub_eq_add_neg, add_assoc, mul_assoc, mul_left_comm, mul_comm] using
+    (contDiff_const.mul ((hexp.sub contDiff_const).sub hlin))
+
+private theorem norm_iteratedDeriv_expTaylorLinearRemainderQuotPW_le
+    (i : ℕ) (h : ℂ) (hh1 : ‖h‖ ≤ 1) (ξ : ℝ) :
+    ‖iteratedDeriv i (expTaylorLinearRemainderQuotPW h) ξ‖ ≤
+      ‖h‖ * (i.factorial : ℝ) * (1 + |ξ|) ^ 2 * Real.exp (‖h‖ * |ξ|) := by
+  obtain rfl | rfl | m := i
+  · rw [iteratedDeriv_expTaylorLinearRemainderQuotPW_zero]
+    by_cases hh : h = 0
+    · subst hh
+      simp
+    · have hmain := Complex.norm_exp_sub_sum_le_norm_mul_exp (I * h * ξ) 2
+      have hnorm : ‖I * h * ξ‖ = ‖h‖ * |ξ| := by
+        simp [mul_assoc, Real.norm_eq_abs]
+      have hh0 : ‖h‖ ≠ 0 := by simpa [norm_eq_zero] using hh
+      have hsum :
+          ∑ m ∈ Finset.range 2, (I * h * ξ) ^ m / (m.factorial : ℂ) = I * h * ξ + 1 := by
+        simp [Finset.sum_range_succ, add_comm]
+      have hmain' :
+          ‖Complex.exp (I * h * ξ) - 1 - I * h * ξ‖ ≤
+            ‖I * h * ξ‖ ^ 2 * Real.exp ‖I * h * ξ‖ := by
+        simpa [hsum, sub_eq_add_neg, add_assoc, add_left_comm, add_comm] using hmain
+      calc
+        ‖(Complex.exp (I * h * ξ) - 1 - I * h * ξ) / h‖
+            = ‖Complex.exp (I * h * ξ) - 1 - I * h * ξ‖ / ‖h‖ := by rw [norm_div]
+        _ ≤ (‖I * h * ξ‖ ^ 2 * Real.exp ‖I * h * ξ‖) / ‖h‖ := by gcongr
+        _ = ‖h‖ * |ξ| ^ 2 * Real.exp (‖h‖ * |ξ|) := by
+              rw [hnorm]
+              field_simp [hh0]
+        _ ≤ ‖h‖ * (1 + |ξ|) ^ 2 * Real.exp (‖h‖ * |ξ|) := by
+              have habs : |ξ| ^ 2 ≤ (1 + |ξ|) ^ 2 := by nlinarith [abs_nonneg ξ]
+              gcongr
+        _ = ‖h‖ * ((Nat.factorial 0 : ℕ) : ℝ) * (1 + |ξ|) ^ 2 * Real.exp (‖h‖ * |ξ|) := by
+              simp
+  · calc
+      ‖iteratedDeriv 1 (expTaylorLinearRemainderQuotPW h) ξ‖
+          = ‖I * (Complex.exp (I * h * ξ) - 1)‖ := by
+              rw [iteratedDeriv_expTaylorLinearRemainderQuotPW_one]
+      _ = ‖Complex.exp (I * h * ξ) - 1‖ := by simp
+      _ ≤ ‖I * h * ξ‖ * Real.exp ‖I * h * ξ‖ := by
+            simpa using (Complex.norm_exp_sub_sum_le_norm_mul_exp (I * h * ξ) 1)
+      _ = ‖h‖ * |ξ| * Real.exp (‖h‖ * |ξ|) := by
+            simp [mul_assoc, Real.norm_eq_abs]
+      _ ≤ ‖h‖ * (1 + |ξ|) ^ 2 * Real.exp (‖h‖ * |ξ|) := by
+            have habs : |ξ| ≤ (1 + |ξ|) ^ 2 := by nlinarith [abs_nonneg ξ]
+            gcongr
+      _ = ‖h‖ * ((Nat.factorial 1 : ℕ) : ℝ) * (1 + |ξ|) ^ 2 * Real.exp (‖h‖ * |ξ|) := by
+            simp
+  · calc
+      ‖iteratedDeriv (m + 2) (expTaylorLinearRemainderQuotPW h) ξ‖
+          = ‖((I * h) ^ (m + 2) / h) * Complex.exp (I * h * ξ)‖ := by
+              rw [iteratedDeriv_expTaylorLinearRemainderQuotPW_succ_succ]
+      _ ≤ ‖h‖ * Real.exp (‖h‖ * |ξ|) := by
+            by_cases hh : h = 0
+            · subst hh
+              simp
+            · have hh0 : ‖h‖ ≠ 0 := by simpa [norm_eq_zero] using hh
+              have hcoeff : ‖((I * h) ^ (m + 2) / h)‖ ≤ ‖h‖ := by
+                have hpow_le : ‖h‖ ^ (m + 1) ≤ ‖h‖ := by
+                  cases m with
+                  | zero => simp
+                  | succ m =>
+                      calc
+                        ‖h‖ ^ (Nat.succ (Nat.succ m)) = ‖h‖ ^ (Nat.succ m) * ‖h‖ := by
+                          rw [pow_succ]
+                        _ ≤ 1 * ‖h‖ := by
+                          gcongr
+                          exact pow_le_one₀ (norm_nonneg _) hh1
+                        _ = ‖h‖ := by ring
+                calc
+                  ‖((I * h) ^ (m + 2) / h)‖ = ‖I * h‖ ^ (m + 2) / ‖h‖ := by
+                    rw [norm_div, norm_pow]
+                  _ = ‖h‖ ^ (m + 2) / ‖h‖ := by simp [norm_mul]
+                  _ = ‖h‖ ^ (m + 1) := by
+                    field_simp [hh0]
+                    ring
+                  _ ≤ ‖h‖ := hpow_le
+              calc
+                ‖((I * h) ^ (m + 2) / h) * Complex.exp (I * h * ξ)‖
+                    = ‖((I * h) ^ (m + 2) / h)‖ * Real.exp (Complex.re (I * h * ξ)) := by
+                        rw [norm_mul, Complex.norm_exp]
+                _ ≤ ‖((I * h) ^ (m + 2) / h)‖ * Real.exp ‖I * h * ξ‖ := by
+                      apply mul_le_mul_of_nonneg_left
+                      · exact Real.exp_le_exp.mpr (Complex.re_le_norm _)
+                      · exact norm_nonneg _
+                _ ≤ ‖h‖ * Real.exp ‖I * h * ξ‖ := by
+                      apply mul_le_mul_of_nonneg_right hcoeff
+                      positivity
+                _ = ‖h‖ * Real.exp (‖h‖ * |ξ|) := by
+                      simp [mul_assoc, Real.norm_eq_abs]
+      _ ≤ ‖h‖ * ((m + 2).factorial : ℝ) * (1 + |ξ|) ^ 2 * Real.exp (‖h‖ * |ξ|) := by
+            have hfac : (1 : ℝ) ≤ ((m + 2).factorial : ℝ) := by
+              exact_mod_cast Nat.succ_le_of_lt (Nat.factorial_pos (m + 2))
+            have hpow : (1 : ℝ) ≤ (1 + |ξ|) ^ 2 := by nlinarith [abs_nonneg ξ]
+            have hexp_nonneg : 0 ≤ Real.exp (‖h‖ * |ξ|) := by positivity
+            calc
+              ‖h‖ * Real.exp (‖h‖ * |ξ|)
+                  ≤ (‖h‖ * ((m + 2).factorial : ℝ)) * Real.exp (‖h‖ * |ξ|) := by
+                      apply mul_le_mul_of_nonneg_right _ hexp_nonneg
+                      calc
+                        ‖h‖ = ‖h‖ * 1 := by ring
+                        _ ≤ ‖h‖ * ((m + 2).factorial : ℝ) := by
+                              gcongr
+              _ ≤ (‖h‖ * ((m + 2).factorial : ℝ) * (1 + |ξ|) ^ 2) * Real.exp (‖h‖ * |ξ|) := by
+                      apply mul_le_mul_of_nonneg_right _ hexp_nonneg
+                      calc
+                        ‖h‖ * ((m + 2).factorial : ℝ) =
+                            (‖h‖ * ((m + 2).factorial : ℝ)) * 1 := by ring
+                        _ ≤ (‖h‖ * ((m + 2).factorial : ℝ)) * (1 + |ξ|) ^ 2 := by
+                              gcongr
+              _ = ‖h‖ * ((m + 2).factorial : ℝ) * (1 + |ξ|) ^ 2 * Real.exp (‖h‖ * |ξ|) := by
+                      ring
+
+private lemma norm_iteratedFDeriv_differenceQuotient_remainder_bound
+    {m : ℕ} (h : ℂ) (j : Fin m) {c : ℝ}
+    (hh1 : ‖h‖ ≤ 1) (hhc : ‖h‖ ≤ c)
+    (i : ℕ) (ξ : Fin m → ℝ) :
+    ‖iteratedFDeriv ℝ i
+        (fun x : Fin m → ℝ =>
+          (cexp (I * h * (x j : ℂ)) - 1 - I * h * (x j : ℂ)) / h) ξ‖ ≤
+      ‖h‖ * (i.factorial : ℝ) * (1 + ‖ξ‖) ^ 2 * Real.exp (c * ‖ξ‖) := by
+  let p : (Fin m → ℝ) →L[ℝ] ℝ :=
+    ContinuousLinearMap.proj (R := ℝ) (ι := Fin m) (φ := fun _ => ℝ) j
+  let r : ℝ → ℂ := expTaylorLinearRemainderQuotPW h
+  have hr_smooth : ContDiff ℝ ∞ r := expTaylorLinearRemainderQuotPW_contDiff h
+  have hcomp : (fun x : Fin m → ℝ => (cexp (I * h * (x j : ℂ)) - 1 - I * h * (x j : ℂ)) / h) = r ∘ p := by
+    funext x
+    simp [r, p, expTaylorLinearRemainderQuotPW]
+  rw [hcomp, p.iteratedFDeriv_comp_right hr_smooth ξ (by exact_mod_cast le_top)]
+  have hp : ‖p‖ ≤ 1 := by
+    refine ContinuousLinearMap.opNorm_le_bound _ zero_le_one ?_
+    intro x
+    rw [one_mul]
+    simp only [p, ContinuousLinearMap.proj_apply, Pi.norm_def]
+    exact_mod_cast Finset.le_sup (f := fun k => ‖x k‖₊) (Finset.mem_univ j)
+  calc
+    ‖(iteratedFDeriv ℝ i r (p ξ)).compContinuousLinearMap fun _ => p‖
+        ≤ ‖iteratedFDeriv ℝ i r (p ξ)‖ * ∏ _ : Fin i, ‖p‖ := by
+            exact ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _
+    _ = ‖iteratedFDeriv ℝ i r (ξ j)‖ * ‖p‖ ^ i := by
+          simp [p, Finset.prod_const]
+    _ ≤ ‖iteratedFDeriv ℝ i r (ξ j)‖ * 1 := by
+          gcongr
+          exact pow_le_one₀ (norm_nonneg _) hp
+    _ = ‖iteratedFDeriv ℝ i r (ξ j)‖ := by simp
+    _ = ‖iteratedDeriv i r (ξ j)‖ := by
+          rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv]
+    _ ≤ ‖h‖ * (i.factorial : ℝ) * (1 + |ξ j|) ^ 2 * Real.exp (‖h‖ * |ξ j|) := by
+          exact norm_iteratedDeriv_expTaylorLinearRemainderQuotPW_le i h hh1 (ξ j)
+    _ ≤ ‖h‖ * (i.factorial : ℝ) * (1 + ‖ξ‖) ^ 2 * Real.exp (c * ‖ξ‖) := by
+          have hcoord : |ξ j| ≤ ‖ξ‖ := by
+            calc
+              |ξ j| = ‖p ξ‖ := by simp [p]
+              _ ≤ ‖p‖ * ‖ξ‖ := ContinuousLinearMap.le_opNorm p ξ
+              _ ≤ 1 * ‖ξ‖ := by gcongr
+              _ = ‖ξ‖ := by ring
+          have hc' : 0 ≤ c := le_trans (norm_nonneg h) hhc
+          gcongr
+
 /-- **Lipschitz-type seminorm bound for multiDimPsiZ difference.**
 
     For z near z₀ in the tube, the Schwartz (k,n)-seminorm of ψ_z - ψ_{z₀}
@@ -1719,13 +1969,167 @@ theorem multiDimPsiZ_differenceQuotient_seminorm_bound
   refine ⟨multiDimPsiZCoordDeriv hC_open hC_conv hC_cone hC_salient z hz j, ?_⟩
   intro k n
   obtain ⟨δ_tube, hδ_tube, hδ_mem⟩ := update_mem_tubeDomain_of_small C hC_open z hz j
-  -- The remaining step is the quantitative Taylor remainder estimate.
-  --
-  -- With `hz' : update z j (z j + h) ∈ TubeDomain C`, the pointwise identity
-  -- `multiDimPsiZ_update_sub_sub_coordDeriv_apply` rewrites the numerator as
-  -- the base Schwartz kernel times the scalar exponential remainder in the
-  -- `j`-th coordinate. The local `O(‖h‖)` seminorm bound is still pending.
-  sorry
+  let χ : FixedConeCutoff (DualConeFlat C) :=
+    (fixedConeCutoff_exists (DualConeFlat C) (dualConeFlat_closed C)).some
+  let y : Fin m → ℝ := fun i => (z i).im
+  have hy : y ∈ C := hz
+  have hC_star_ne : (DualConeFlat C).Nonempty := ⟨0, zero_mem_dualConeFlat C⟩
+  have hC_star_closed : IsClosed (DualConeFlat C) := dualConeFlat_closed C
+  obtain ⟨c₀, hc₀_pos, hc₀⟩ :=
+    dualConeFlat_coercivity hC_open hC_cone hy hC_star_ne hC_star_closed
+  let K : ℝ := (Fintype.card (Fin m) : ℝ)
+  let K2 : ℝ := ((Fintype.card (Fin m) : ℝ) ^ 2)
+  let δ₀ : ℝ := min δ_tube (min 1 (c₀ / 2))
+  have hδ₀_pos : 0 < δ₀ := by
+    dsimp [δ₀]
+    refine lt_min hδ_tube ?_
+    refine lt_min zero_lt_one ?_
+    positivity
+  let A₀ : ℝ := c₀ + K2 * ‖y‖
+  let L₀ : (Fin m → ℝ) →L[ℝ] ℂ := multiDimPsiExpCLM z
+  obtain ⟨Bexp, hBexp_pos, hBexp⟩ :=
+    schwartz_seminorm_cutoff_exp_mul_G_bound_affine_uniform
+      χ.val χ.smooth χ.deriv_bound A₀ c₀ hc₀_pos k n
+  let L₀bd : ℝ := K * ‖z‖
+  let D : ℝ := Bexp * (1 + L₀bd) ^ n
+  have hD_pos : 0 < D := by
+    dsimp [D]
+    positivity
+  refine ⟨D, δ₀, hD_pos, hδ₀_pos, ?_⟩
+  intro h hh hh_dist
+  have hh_tube : ‖h‖ < δ_tube := lt_of_lt_of_le hh_dist (min_le_left _ _)
+  have hh_small : ‖h‖ < min 1 (c₀ / 2) := lt_of_lt_of_le hh_dist (min_le_right _ _)
+  have hh1 : ‖h‖ ≤ 1 := hh_small.le.trans (min_le_left _ _)
+  have hhc : ‖h‖ ≤ c₀ / 2 := hh_small.le.trans (min_le_right _ _)
+  have hz' : Function.update z j (z j + h) ∈ SCV.TubeDomain C := hδ_mem h hh_tube
+  refine ⟨hz', ?_⟩
+  have hexp_decay :
+      ∀ ξ : Fin m → ℝ, χ.val ξ ≠ 0 → (L₀ ξ).re ≤ A₀ - c₀ * ‖ξ‖ := by
+    intro ξ hχξ
+    have hdistχ : Metric.infDist ξ (DualConeFlat C) ≤ 1 := by
+      by_contra hcontr
+      exact hχξ (χ.support_bound ξ (by linarith))
+    have hExpBound :
+        ‖cexp (L₀ ξ)‖ ≤ Real.exp A₀ * Real.exp (-(c₀ * ‖ξ‖)) := by
+      calc
+        ‖cexp (L₀ ξ)‖ = ‖cexp (I * ∑ i, z i * (ξ i : ℂ))‖ := by
+          rw [multiDimPsiExpCLM_apply]
+        _ ≤ Real.exp (((c₀ + K2 * ‖y‖) * 1)) * Real.exp (-(c₀ * ‖ξ‖)) := by
+            simpa [K2, y] using
+              cexp_bound_on_support hC_open hC_cone hz hc₀_pos hc₀ zero_lt_one ξ hdistχ
+        _ = Real.exp A₀ * Real.exp (-(c₀ * ‖ξ‖)) := by
+            simp [A₀]
+    have hnormexp : ‖cexp (L₀ ξ)‖ = Real.exp ((L₀ ξ).re) := by
+      rw [Complex.norm_exp]
+    have hExp' : Real.exp ((L₀ ξ).re) ≤ Real.exp (A₀ - c₀ * ‖ξ‖) := by
+      rw [← hnormexp]
+      simpa [sub_eq_add_neg, Real.exp_add] using hExpBound
+    exact Real.exp_le_exp.mp hExp'
+  have hG_smooth :
+      ContDiff ℝ ∞ (fun x : Fin m → ℝ =>
+        (cexp (I * h * (x j : ℂ)) - 1 - I * h * (x j : ℂ)) / h) := by
+    let p : (Fin m → ℝ) →L[ℝ] ℝ :=
+      ContinuousLinearMap.proj (R := ℝ) (ι := Fin m) (φ := fun _ => ℝ) j
+    simpa [p, expTaylorLinearRemainderQuotPW] using
+      (expTaylorLinearRemainderQuotPW_contDiff h).comp p.contDiff
+  have hG_bound :
+      ∀ i ≤ n, ∀ ξ : Fin m → ℝ,
+        ‖iteratedFDeriv ℝ i
+            (fun x : Fin m → ℝ =>
+              (cexp (I * h * (x j : ℂ)) - 1 - I * h * (x j : ℂ)) / h) ξ‖ ≤
+          ‖h‖ * (i.factorial : ℝ) * (1 + ‖ξ‖) ^ 2 * Real.exp ((c₀ / 2) * ‖ξ‖) := by
+    intro i hi ξ
+    exact norm_iteratedFDeriv_differenceQuotient_remainder_bound h j hh1 hhc i ξ
+  have hL₀ : ‖L₀‖ ≤ L₀bd := by
+    simpa [L₀, L₀bd, K] using multiDimPsiExpCLM_norm_le z
+  have hpoint :
+      ∀ ξ : Fin m → ℝ,
+        ‖ξ‖ ^ k *
+          ‖iteratedFDeriv ℝ n
+              (⇑((h⁻¹ •
+                    (multiDimPsiZExt C hC_open hC_conv hC_cone hC_salient
+                      (Function.update z j (z j + h)) -
+                      multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz)) -
+                  multiDimPsiZCoordDeriv hC_open hC_conv hC_cone hC_salient z hz j)) ξ‖ ≤
+            D * ‖h‖ := by
+    intro ξ
+    have hraw :=
+      hBexp L₀ hexp_decay
+        (fun x : Fin m → ℝ =>
+          (cexp (I * h * (x j : ℂ)) - 1 - I * h * (x j : ℂ)) / h)
+        hG_smooth ‖h‖ (norm_nonneg _) hG_bound ξ
+    have hfun :
+        ⇑((h⁻¹ •
+              (multiDimPsiZExt C hC_open hC_conv hC_cone hC_salient
+                (Function.update z j (z j + h)) -
+                multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz)) -
+            multiDimPsiZCoordDeriv hC_open hC_conv hC_cone hC_salient z hz j) =
+          (fun ξ : Fin m → ℝ =>
+            (χ.val ξ : ℂ) *
+              (cexp (L₀ ξ) *
+                ((cexp (I * h * (ξ j : ℂ)) - 1 - I * h * (ξ j : ℂ)) / h))) := by
+      funext ξ
+      rw [multiDimPsiZExt_eq C hC_open hC_conv hC_cone hC_salient
+        (Function.update z j (z j + h)) hz']
+      simp only [SchwartzMap.sub_apply, SchwartzMap.smul_apply, Pi.smul_apply]
+      calc
+        h⁻¹ *
+            (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient
+                (Function.update z j (z j + h)) hz' ξ -
+              multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz ξ) -
+          multiDimPsiZCoordDeriv hC_open hC_conv hC_cone hC_salient z hz j ξ
+            =
+          h⁻¹ *
+            (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient
+                (Function.update z j (z j + h)) hz' ξ -
+              multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz ξ -
+              h * multiDimPsiZCoordDeriv hC_open hC_conv hC_cone hC_salient z hz j ξ) := by
+                field_simp [hh]
+        _ = h⁻¹ *
+            (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz ξ *
+              (cexp (I * h * (ξ j : ℂ)) - 1 - I * h * (ξ j : ℂ))) := by
+                rw [multiDimPsiZ_update_sub_sub_coordDeriv_apply
+                  hC_open hC_conv hC_cone hC_salient z hz j h hz' ξ]
+        _ = multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz ξ *
+            ((cexp (I * h * (ξ j : ℂ)) - 1 - I * h * (ξ j : ℂ)) / h) := by
+                field_simp [hh]
+        _ = (χ.val ξ : ℂ) *
+            (cexp (L₀ ξ) * ((cexp (I * h * (ξ j : ℂ)) - 1 - I * h * (ξ j : ℂ)) / h)) := by
+                change psiZRaw χ 1 z ξ * ((cexp (I * h * (ξ j : ℂ)) - 1 - I * h * (ξ j : ℂ)) / h) =
+                  _
+                simp [psiZRaw, L₀, multiDimPsiExpCLM_apply]
+                ring
+    calc
+      ‖ξ‖ ^ k *
+          ‖iteratedFDeriv ℝ n
+              (⇑((h⁻¹ •
+                    (multiDimPsiZExt C hC_open hC_conv hC_cone hC_salient
+                      (Function.update z j (z j + h)) -
+                      multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz)) -
+                  multiDimPsiZCoordDeriv hC_open hC_conv hC_cone hC_salient z hz j)) ξ‖
+          = ‖ξ‖ ^ k *
+              ‖iteratedFDeriv ℝ n
+                  (fun ξ : Fin m → ℝ =>
+                    (χ.val ξ : ℂ) *
+                      (cexp (L₀ ξ) *
+                        ((cexp (I * h * (ξ j : ℂ)) - 1 - I * h * (ξ j : ℂ)) / h))) ξ‖ := by
+                rw [hfun]
+      _ ≤ ‖h‖ * Bexp * (1 + ‖L₀‖) ^ n := by
+            simpa [mul_comm, mul_left_comm, mul_assoc] using hraw
+      _ ≤ ‖h‖ * Bexp * (1 + L₀bd) ^ n := by
+            have hbase : 1 + ‖L₀‖ ≤ 1 + L₀bd := by linarith
+            gcongr
+      _ ≤ D * ‖h‖ := by
+            dsimp [D]
+            ring_nf
+            nlinarith [norm_nonneg h]
+  exact SchwartzMap.seminorm_le_bound ℝ k n
+    ((h⁻¹ •
+        (multiDimPsiZExt C hC_open hC_conv hC_cone hC_salient
+          (Function.update z j (z j + h)) -
+          multiDimPsiZ C hC_open hC_conv hC_cone hC_salient z hz)) -
+      multiDimPsiZCoordDeriv hC_open hC_conv hC_cone hC_salient z hz j)
+    (by positivity) hpoint
 
 /-- The dynamically scaled family has Vladimirov-type seminorm growth. -/
 theorem multiDimPsiZDynamic_seminorm_bound {m : ℕ}
