@@ -56,6 +56,142 @@ noncomputable section
 
 variable {m : ℕ}
 
+private theorem iteratedFDeriv_partialEval_eq_compContinuousLinearMap_inl_of_contDiff
+    {E₁ E₂ F : Type*}
+    [NormedAddCommGroup E₁] [NormedSpace ℝ E₁]
+    [NormedAddCommGroup E₂] [NormedSpace ℝ E₂]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (f : E₁ × E₂ → F) (hf : ContDiff ℝ ∞ f) (y : E₂) (l : ℕ) (x : E₁) :
+    iteratedFDeriv ℝ l (fun x' => f (x', y)) x =
+      (iteratedFDeriv ℝ l f (x, y)).compContinuousLinearMap
+        (fun _ => ContinuousLinearMap.inl ℝ E₁ E₂) := by
+  have htranslate : ∀ x',
+      iteratedFDeriv ℝ l (fun z : E₁ × E₂ => f (z + (0, y))) (x', (0 : E₂)) =
+        iteratedFDeriv ℝ l f (x' + 0, (0 : E₂) + y) := by
+    intro x'
+    rw [iteratedFDeriv_comp_add_right' l (0, y)]
+    simp [Prod.add_def]
+  have hcomp : ContDiff ℝ ∞ (fun z : E₁ × E₂ => f (z + ((0 : E₁), y))) :=
+    hf.comp ((contDiff_id.add contDiff_const).of_le le_top)
+  have hinl_comp := ContinuousLinearMap.iteratedFDeriv_comp_right
+    (ContinuousLinearMap.inl ℝ E₁ E₂) hcomp x (by exact_mod_cast le_top (a := (l : ℕ∞)))
+  have hlhs :
+      (fun x' => f (x', y)) =
+        (fun z : E₁ × E₂ => f (z + (0, y))) ∘ (ContinuousLinearMap.inl ℝ E₁ E₂) := by
+    ext x'
+    simp [ContinuousLinearMap.inl_apply]
+  rw [hlhs, hinl_comp]
+  exact congrArg
+    (fun A : ContinuousMultilinearMap ℝ (fun _ : Fin l => E₁ × E₂) F =>
+      A.compContinuousLinearMap (fun _ => ContinuousLinearMap.inl ℝ E₁ E₂))
+    (by simpa [ContinuousLinearMap.inl_apply] using htranslate x)
+
+private theorem hasFDerivAt_iteratedFDeriv_partialEval₂_of_contDiff
+    {E₁ E₂ F : Type*}
+    [NormedAddCommGroup E₁] [NormedSpace ℝ E₁]
+    [NormedAddCommGroup E₂] [NormedSpace ℝ E₂]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (f : E₁ × E₂ → F) (hf : ContDiff ℝ ∞ f) (l : ℕ) (x : E₁) (y : E₂) :
+    HasFDerivAt
+      (fun y' => iteratedFDeriv ℝ l (fun x' => f (x', y')) x)
+      ((ContinuousMultilinearMap.compContinuousLinearMapL (F := _)
+          (fun _ => ContinuousLinearMap.inl ℝ E₁ E₂)).comp
+        ((fderiv ℝ (iteratedFDeriv ℝ l f) (x, y)).comp
+          (ContinuousLinearMap.inr ℝ E₁ E₂)))
+      y := by
+  let A :
+      ContinuousMultilinearMap ℝ (fun _ : Fin l => E₁ × E₂) F →L[ℝ]
+        ContinuousMultilinearMap ℝ (fun _ : Fin l => E₁) F :=
+    ContinuousMultilinearMap.compContinuousLinearMapL (F := _)
+      (fun _ => ContinuousLinearMap.inl ℝ E₁ E₂)
+  let H :
+      E₂ → ContinuousMultilinearMap ℝ (fun _ : Fin l => E₁ × E₂) F :=
+    fun y' => iteratedFDeriv ℝ l f (x, y')
+  have hH :
+      HasFDerivAt H
+        ((fderiv ℝ (iteratedFDeriv ℝ l f) (x, y)).comp
+          (ContinuousLinearMap.inr ℝ E₁ E₂))
+        y := by
+    have hfull :
+        HasFDerivAt (iteratedFDeriv ℝ l f)
+          (fderiv ℝ (iteratedFDeriv ℝ l f) (x, y)) (x, y) := by
+      have hf' : ContDiff ℝ (l + 1) f := hf.of_le (by exact_mod_cast le_top)
+      exact
+        hf'.differentiable_iteratedFDeriv
+          (by exact_mod_cast Nat.lt_succ_self l) (x, y) |>.hasFDerivAt
+    simpa [H] using hfull.comp y (hasFDerivAt_prodMk_right x y)
+  have hEq :
+      (fun y' => iteratedFDeriv ℝ l (fun x' => f (x', y')) x) = A ∘ H := by
+    funext y'
+    simp [A, H, iteratedFDeriv_partialEval_eq_compContinuousLinearMap_inl_of_contDiff,
+      hf]
+  rw [hEq]
+  exact A.hasFDerivAt.comp y hH
+
+private theorem norm_fderiv_iteratedFDeriv_partialEval₂_le_of_contDiff
+    {E₁ E₂ F : Type*}
+    [NormedAddCommGroup E₁] [NormedSpace ℝ E₁]
+    [NormedAddCommGroup E₂] [NormedSpace ℝ E₂]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    (f : E₁ × E₂ → F) (hf : ContDiff ℝ ∞ f) (l : ℕ) (x : E₁) (y : E₂) :
+    ‖fderiv ℝ (fun y' => iteratedFDeriv ℝ l (fun x' => f (x', y')) x) y‖ ≤
+      ‖iteratedFDeriv ℝ (l + 1) f (x, y)‖ := by
+  let A :
+      ContinuousMultilinearMap ℝ (fun _ : Fin l => E₁ × E₂) F →L[ℝ]
+        ContinuousMultilinearMap ℝ (fun _ : Fin l => E₁) F :=
+    ContinuousMultilinearMap.compContinuousLinearMapL (F := _)
+      (fun _ => ContinuousLinearMap.inl ℝ E₁ E₂)
+  calc
+    ‖fderiv ℝ (fun y' => iteratedFDeriv ℝ l (fun x' => f (x', y')) x) y‖
+      = ‖A.comp
+          ((fderiv ℝ (iteratedFDeriv ℝ l f) (x, y)).comp
+            (ContinuousLinearMap.inr ℝ E₁ E₂))‖ := by
+          rw [show
+              fderiv ℝ (fun y' => iteratedFDeriv ℝ l (fun x' => f (x', y')) x) y =
+                A.comp
+                  ((fderiv ℝ (iteratedFDeriv ℝ l f) (x, y)).comp
+                    (ContinuousLinearMap.inr ℝ E₁ E₂)) by
+              simpa [A] using
+                (hasFDerivAt_iteratedFDeriv_partialEval₂_of_contDiff f hf l x y).fderiv]
+    _ ≤ ‖A‖ *
+          ‖(fderiv ℝ (iteratedFDeriv ℝ l f) (x, y)).comp
+            (ContinuousLinearMap.inr ℝ E₁ E₂)‖ := by
+          exact ContinuousLinearMap.opNorm_comp_le _ _
+    _ ≤ 1 *
+          ‖(fderiv ℝ (iteratedFDeriv ℝ l f) (x, y)).comp
+            (ContinuousLinearMap.inr ℝ E₁ E₂)‖ := by
+          have hA :
+              ‖A‖ ≤ ∏ _ : Fin l, ‖ContinuousLinearMap.inl ℝ E₁ E₂‖ := by
+            simpa [A] using
+              (ContinuousMultilinearMap.norm_compContinuousLinearMapL_le
+                (𝕜 := ℝ) (ι := Fin l)
+                (E := fun _ : Fin l => E₁)
+                (E₁ := fun _ : Fin l => E₁ × E₂)
+                (G := _)
+                (fun _ => ContinuousLinearMap.inl ℝ E₁ E₂))
+          have hone_prod : ∏ _ : Fin l, ‖ContinuousLinearMap.inl ℝ E₁ E₂‖ ≤ (1 : ℝ) := by
+            apply Finset.prod_le_one
+            · intro i hi
+              exact norm_nonneg _
+            · intro i hi
+              exact ContinuousLinearMap.norm_inl_le_one ℝ E₁ E₂
+          have hA1 : ‖A‖ ≤ (1 : ℝ) := hA.trans hone_prod
+          nlinarith [hA1, norm_nonneg
+            ((fderiv ℝ (iteratedFDeriv ℝ l f) (x, y)).comp
+              (ContinuousLinearMap.inr ℝ E₁ E₂))]
+    _ = ‖(fderiv ℝ (iteratedFDeriv ℝ l f) (x, y)).comp
+          (ContinuousLinearMap.inr ℝ E₁ E₂)‖ := by simp
+    _ ≤ ‖fderiv ℝ (iteratedFDeriv ℝ l f) (x, y)‖ *
+          ‖ContinuousLinearMap.inr ℝ E₁ E₂‖ := by
+          exact ContinuousLinearMap.opNorm_comp_le _ _
+    _ ≤ ‖fderiv ℝ (iteratedFDeriv ℝ l f) (x, y)‖ * 1 := by
+          have hinr : ‖ContinuousLinearMap.inr ℝ E₁ E₂‖ ≤ (1 : ℝ) :=
+            ContinuousLinearMap.norm_inr_le_one ℝ E₁ E₂
+          nlinarith [hinr, norm_nonneg (fderiv ℝ (iteratedFDeriv ℝ l f) (x, y))]
+    _ = ‖fderiv ℝ (iteratedFDeriv ℝ l f) (x, y)‖ := by simp
+    _ = ‖iteratedFDeriv ℝ (l + 1) f (x, y)‖ := by
+          exact norm_fderiv_iteratedFDeriv
+
 -- FixedConeCutoff and fixedConeCutoff_exists are now in DualCone.lean
 
 /-! ### Multi-dimensional Schwartz family ψ_z
@@ -179,6 +315,27 @@ theorem update_mem_tubeDomain_of_small {m : ℕ}
         · subst hij; simp [Function.update_self]
         · simp [Function.update_of_ne hij, sub_self]
     _ < ε := hh
+
+private lemma update_mem_tubeDomain_of_small_segment {m : ℕ}
+    (C : Set (Fin m → ℝ)) (hC_open : IsOpen C)
+    (z : Fin m → ℂ) (hz : z ∈ SCV.TubeDomain C) (j : Fin m) :
+    ∃ δ > 0, ∀ h : ℂ, ‖h‖ < δ → ∀ s ∈ Set.Icc (0 : ℝ) 1,
+      Function.update z j (z j + (s : ℂ) * h) ∈ SCV.TubeDomain C := by
+  obtain ⟨δ, hδ, hδ_mem⟩ := update_mem_tubeDomain_of_small C hC_open z hz j
+  refine ⟨δ, hδ, ?_⟩
+  intro h hh s hs
+  apply hδ_mem
+  calc
+    ‖(s : ℂ) * h‖ = |s| * ‖h‖ := by
+      rw [norm_mul, Complex.norm_real, Real.norm_eq_abs]
+    _ ≤ 1 * ‖h‖ := by
+      gcongr
+      have hs0 : 0 ≤ s := hs.1
+      have hs1 : s ≤ 1 := hs.2
+      rw [abs_of_nonneg hs0]
+      exact hs1
+    _ = ‖h‖ := by ring
+    _ < δ := hh
 
 /-! ### Quantitative pointwise bounds -/
 
@@ -1030,6 +1187,113 @@ private lemma multiDimPsiZ_update_sub_sub_coordDeriv_apply
   rw [multiDimPsiZ_update_apply_eq_mul_cexp hC_open hC_conv hC_cone hC_salient z hz j h hz' ξ,
     multiDimPsiZCoordDeriv_apply hC_open hC_conv hC_cone hC_salient z hz j ξ]
   ring
+
+private lemma hasDerivAt_psiZRaw_update_apply
+    {m : ℕ} {C : Set (Fin m → ℝ)}
+    (χ : FixedConeCutoff (DualConeFlat C))
+    (z : Fin m → ℂ) (j : Fin m) (h : ℂ) (ξ : Fin m → ℝ) (s : ℝ) :
+    HasDerivAt
+      (fun t : ℝ => psiZRaw χ 1 (Function.update z j (z j + (t : ℂ) * h)) ξ)
+      (((I * h * (ξ j : ℂ)) : ℂ) *
+        psiZRaw χ 1 (Function.update z j (z j + (s : ℂ) * h)) ξ)
+      s := by
+  have hcoord :
+      HasDerivAt (fun t : ℝ => z j + (t : ℂ) * h) h s := by
+    simpa [one_mul] using (Complex.ofRealCLM.hasDerivAt.mul_const h).const_add (z j)
+  have hsum :
+      HasDerivAt
+        (fun t : ℝ => ∑ i, Function.update z j (z j + (t : ℂ) * h) i * (ξ i : ℂ))
+        (h * (ξ j : ℂ))
+        s := by
+    have hsum' :
+        HasDerivAt
+          (fun t : ℝ => ∑ i : Fin m,
+            Function.update z j (z j + (t : ℂ) * h) i * (ξ i : ℂ))
+          (∑ i : Fin m, if i = j then h * (ξ j : ℂ) else 0)
+          s := by
+      let hsum'' :=
+        (HasDerivAt.sum (u := Finset.univ)
+          (A := fun i : Fin m => fun t : ℝ =>
+            Function.update z j (z j + (t : ℂ) * h) i * (ξ i : ℂ))
+          (A' := fun i : Fin m => if i = j then h * (ξ j : ℂ) else 0)
+          (x := s)
+          (fun i _ => by
+            by_cases hij : i = j
+            · subst hij
+              simpa [Function.update_self] using hcoord.mul_const ((ξ i : ℂ))
+            · simpa [Function.update_of_ne hij, hij] using
+                (hasDerivAt_const s (z i * (ξ i : ℂ)))))
+      convert hsum'' using 1
+      · ext t
+        simp
+    simpa using hsum'
+  have hexp :
+      HasDerivAt
+        (fun t : ℝ =>
+          cexp (I * ∑ i, Function.update z j (z j + (t : ℂ) * h) i * (ξ i : ℂ)))
+        (cexp (I * ∑ i, Function.update z j (z j + (s : ℂ) * h) i * (ξ i : ℂ)) *
+          (I * (h * (ξ j : ℂ))))
+        s := by
+    simpa [mul_assoc] using (hsum.const_mul I).cexp
+  have hmul := hexp.const_mul ((χ.val ξ : ℂ))
+  simpa [psiZRaw, mul_assoc, mul_left_comm, mul_comm] using hmul
+
+private lemma hasDerivAt_psiZRaw_update_coordDeriv_apply
+    {m : ℕ} {C : Set (Fin m → ℝ)}
+    (χ : FixedConeCutoff (DualConeFlat C))
+    (z : Fin m → ℂ) (j : Fin m) (h : ℂ) (ξ : Fin m → ℝ) (s : ℝ) :
+    HasDerivAt
+      (fun t : ℝ =>
+        ((I * h * (ξ j : ℂ)) : ℂ) *
+          psiZRaw χ 1 (Function.update z j (z j + (t : ℂ) * h)) ξ)
+      ((((I * h * (ξ j : ℂ)) : ℂ) ^ 2) *
+        psiZRaw χ 1 (Function.update z j (z j + (s : ℂ) * h)) ξ)
+      s := by
+  simpa [pow_two, mul_assoc, mul_left_comm, mul_comm] using
+    (hasDerivAt_psiZRaw_update_apply χ z j h ξ s).const_mul ((I * h * (ξ j : ℂ)) : ℂ)
+
+private lemma hasDerivAt_multiDimPsiZ_update_apply
+    {m : ℕ} {C : Set (Fin m → ℝ)}
+    (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
+    (z : Fin m → ℂ) (j : Fin m) (h : ℂ) (ξ : Fin m → ℝ)
+    (hzCurve : ∀ t : ℝ, Function.update z j (z j + (t : ℂ) * h) ∈ SCV.TubeDomain C)
+    (s : ℝ) :
+    HasDerivAt
+      (fun t : ℝ =>
+        multiDimPsiZ C hC_open hC_conv hC_cone hC_salient
+          (Function.update z j (z j + (t : ℂ) * h))
+          (hzCurve t) ξ)
+      (((I * h * (ξ j : ℂ)) : ℂ) *
+        multiDimPsiZ C hC_open hC_conv hC_cone hC_salient
+          (Function.update z j (z j + (s : ℂ) * h)) (hzCurve s) ξ)
+      s := by
+  let χ : FixedConeCutoff (DualConeFlat C) :=
+    (fixedConeCutoff_exists (DualConeFlat C) (dualConeFlat_closed C)).some
+  simpa [multiDimPsiZ, multiDimPsiZR, χ] using
+    hasDerivAt_psiZRaw_update_apply χ z j h ξ s
+
+private lemma hasDerivAt_multiDimPsiZ_update_coordDeriv_apply
+    {m : ℕ} {C : Set (Fin m → ℝ)}
+    (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
+    (z : Fin m → ℂ) (j : Fin m) (h : ℂ) (ξ : Fin m → ℝ)
+    (hzCurve : ∀ t : ℝ, Function.update z j (z j + (t : ℂ) * h) ∈ SCV.TubeDomain C)
+    (s : ℝ) :
+    HasDerivAt
+      (fun t : ℝ =>
+        ((I * h * (ξ j : ℂ)) : ℂ) *
+          multiDimPsiZ C hC_open hC_conv hC_cone hC_salient
+            (Function.update z j (z j + (t : ℂ) * h))
+            (hzCurve t) ξ)
+      ((((I * h * (ξ j : ℂ)) : ℂ) ^ 2) *
+        multiDimPsiZ C hC_open hC_conv hC_cone hC_salient
+          (Function.update z j (z j + (s : ℂ) * h)) (hzCurve s) ξ)
+      s := by
+  let χ : FixedConeCutoff (DualConeFlat C) :=
+    (fixedConeCutoff_exists (DualConeFlat C) (dualConeFlat_closed C)).some
+  simpa [multiDimPsiZ, multiDimPsiZR, χ] using
+    hasDerivAt_psiZRaw_update_coordDeriv_apply χ z j h ξ s
 
 private lemma multiDimPsiZ_update_sub_apply
     {m : ℕ} {C : Set (Fin m → ℝ)}
