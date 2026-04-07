@@ -664,6 +664,7 @@ private lemma norm_iteratedFDeriv_scaled_cutoff_le
                 _ ≤ Ci := by linarith
           _ = Ci * R⁻¹ ^ i := by rw [Finset.prod_const, Finset.card_fin]
 
+set_option maxHeartbeats 800000 in
 private theorem multiDimPsiZDynamic_pointwise_vladimirov
     {m : ℕ} {C : Set (Fin m → ℝ)}
     (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
@@ -685,12 +686,16 @@ private theorem multiDimPsiZDynamic_pointwise_vladimirov
   · -- ── Main case: Cᶜ ≠ ∅ ──
     let χ := (fixedConeCutoff_exists (DualConeFlat C) (dualConeFlat_closed C)).some
     obtain ⟨c₀, hc₀_pos, hc₀⟩ := dualConeFlat_coercivity_infDist hC_open hC_cone
+    let K : ℝ := (Fintype.card (Fin m) : ℝ) ^ 2
     let A₀ : ℝ := c₀ * (Metric.infDist (0 : Fin m → ℝ) Cᶜ + 1) +
-      (Fintype.card (Fin m) : ℝ) ^ 2
-    obtain ⟨Bexp, hBexp_pos, hBexp⟩ :=
-      schwartz_seminorm_cutoff_exp_bound_affine_uniform_explicit_uniform
-        χ.val χ.smooth χ.deriv_bound A₀ k n
-    let B : ℝ := Bexp * c₀⁻¹ ^ k * ((Fintype.card (Fin m) : ℝ) + 1) ^ n + 1
+      K
+    let K1 : ℝ := (Fintype.card (Fin m) : ℝ) + 1
+    choose Cχ0 hCχ0 using χ.deriv_bound
+    let Cχ : ℕ → ℝ := fun i => |Cχ0 i| + 1
+    obtain ⟨Mexp, hMexp_pos, hMexp⟩ := pow_mul_exp_neg_bounded_explicit_le k
+    let LeibConst : ℝ := ∑ i ∈ Finset.range (n + 1),
+      (n.choose i : ℝ) * Cχ i * (n - i).factorial * K1 ^ n
+    let B : ℝ := LeibConst * Real.exp A₀ * Mexp * c₀⁻¹ ^ k + 1
     refine ⟨B, 2 * n, k, by positivity, fun z hz ξ => ?_⟩
     let y : Fin m → ℝ := fun i => (z i).im
     have hy : y ∈ C := hz
@@ -741,46 +746,335 @@ private theorem multiDimPsiZDynamic_pointwise_vladimirov
     have hLeib := norm_iteratedFDeriv_mul_le hf_smooth hg_smooth ξ
       (show (n : WithTop ℕ∞) ≤ ∞ from WithTop.coe_le_coe.mpr le_top)
     -- Step 3: Bound ‖D^i[f](ξ)‖
-    -- Get uniform constant for each derivative order
-    have hf_bound : ∀ i, ∃ Ci : ℝ, 0 < Ci ∧
-        ∀ η, ‖iteratedFDeriv ℝ i f η‖ ≤ Ci * R⁻¹ ^ i :=
-      fun i => norm_iteratedFDeriv_scaled_cutoff_le χ R hR i
-    -- Extract a single uniform constant Cf for all i ≤ n
-    choose Cf_fun hCf_pos hCf_bound using hf_bound
-    let Cf := (∑ i ∈ Finset.range (n + 1), Cf_fun i) + 1
-    have hCf_pos' : 0 < Cf := by
-      dsimp [Cf]
-      have : 0 ≤ ∑ i ∈ Finset.range (n + 1), Cf_fun i :=
-        Finset.sum_nonneg fun i _ => (hCf_pos i).le
-      linarith
-    have hCf : ∀ i ≤ n, ∀ η, ‖iteratedFDeriv ℝ i f η‖ ≤ Cf * R⁻¹ ^ i := by
-      intro i hi η
-      calc ‖iteratedFDeriv ℝ i f η‖ ≤ Cf_fun i * R⁻¹ ^ i := hCf_bound i η
-        _ ≤ Cf * R⁻¹ ^ i := by
-          gcongr
-          calc Cf_fun i ≤ ∑ j ∈ Finset.range (n + 1), Cf_fun j :=
-                Finset.single_le_sum (fun j _ => (hCf_pos j).le)
-                  (Finset.mem_range.mpr (by omega))
-            _ ≤ Cf := by linarith
+    have hCχ_pos : ∀ i, 0 < Cχ i := by
+      intro i
+      dsimp [Cχ]
+      positivity
+    have hCf : ∀ i, ∀ η, ‖iteratedFDeriv ℝ i f η‖ ≤ Cχ i * R⁻¹ ^ i := by
+      intro i η
+      let S0 : (Fin m → ℝ) →L[ℝ] (Fin m → ℝ) := R⁻¹ • ContinuousLinearMap.id ℝ (Fin m → ℝ)
+      have hS0_norm : ‖S0‖ ≤ R⁻¹ := by
+        calc ‖S0‖ ≤ ‖(R⁻¹ : ℝ)‖ * ‖ContinuousLinearMap.id ℝ (Fin m → ℝ)‖ :=
+              ContinuousLinearMap.opNorm_smul_le _ _
+          _ ≤ R⁻¹ * 1 := by
+              gcongr
+              · exact le_of_eq (Real.norm_of_nonneg (inv_nonneg.mpr hR.le))
+              · exact ContinuousLinearMap.norm_id_le
+          _ = R⁻¹ := mul_one _
+      have hχS_smooth : ContDiff ℝ ∞ (χ.val ∘ ⇑S0) := χ.smooth.comp S0.contDiff
+      have hfact : (fun η => (χ.val (R⁻¹ • η) : ℂ)) =
+          (Complex.ofRealLI : ℝ →ₗᵢ[ℝ] ℂ) ∘ (χ.val ∘ ⇑S0) := by
+        ext η'
+        simp [S0]
+      have h_eq_f : f = (fun η => (χ.val (R⁻¹ • η) : ℂ)) := by
+        ext η'
+        simp [f, S]
+      rw [h_eq_f, hfact]
+      have h_li := Complex.ofRealLI.norm_iteratedFDeriv_comp_left
+        (contDiff_infty.mp hχS_smooth i).contDiffAt le_rfl (x := η)
+      rw [h_li]
+      have hcomp := S0.iteratedFDeriv_comp_right χ.smooth η
+        (show (i : WithTop ℕ∞) ≤ ∞ from WithTop.coe_le_coe.mpr le_top)
+      rw [hcomp]
+      calc
+        ‖(iteratedFDeriv ℝ i χ.val (S0 η)).compContinuousLinearMap fun _ => S0‖
+            ≤ ‖iteratedFDeriv ℝ i χ.val (S0 η)‖ * ∏ _ : Fin i, ‖S0‖ :=
+              ContinuousMultilinearMap.norm_compContinuousLinearMap_le _ _
+        _ = ‖iteratedFDeriv ℝ i χ.val (S0 η)‖ * ‖S0‖ ^ i := by
+              rw [Finset.prod_const, Finset.card_fin]
+        _ ≤ |Cχ0 i| * ‖S0‖ ^ i := by
+              gcongr
+              calc ‖iteratedFDeriv ℝ i χ.val (S0 η)‖ ≤ Cχ0 i := hCχ0 i (S0 η)
+                _ ≤ |Cχ0 i| := le_abs_self _
+        _ ≤ Cχ i * R⁻¹ ^ i := by
+              have habs : |Cχ0 i| ≤ Cχ i := by
+                dsimp [Cχ]
+                linarith
+              have hpow : ‖S0‖ ^ i ≤ R⁻¹ ^ i := by
+                exact pow_le_pow_left₀ (norm_nonneg _) hS0_norm i
+              gcongr
     -- Step 4: Bound ‖D^j[g](ξ)‖ ≤ j! * ‖cexp(Lξ)‖ * ‖L‖^j
     have hg_bound : ∀ j, ‖iteratedFDeriv ℝ j g ξ‖ ≤
         j.factorial * ‖cexp (L ξ)‖ * ‖L‖ ^ j := by
       intro j
       exact norm_iteratedFDeriv_cexp_comp_clm_le L ξ j
-    -- Step 5: Bound the Leibniz sum
-    -- ∑ C(n,i) * (Cf * R⁻ⁱ) * (j! * ‖exp(Lξ)‖ * ‖L‖^j) where j = n-i
-    -- = ‖exp(Lξ)‖ * Cf * ∑ C(n,i) * R⁻ⁱ * (n-i)! * ‖L‖^{n-i}
-    -- ≤ ‖exp(Lξ)‖ * Cf * (∑ C(n,i) * (n-i)!) * max(R⁻¹, ‖L‖)^n
-    -- Use transitivity: bound ‖D^n[f·g]‖ first, then multiply by ‖ξ‖^k
-    calc ‖ξ‖ ^ k * ‖iteratedFDeriv ℝ n (fun η => f η * g η) ξ‖
-        ≤ ‖ξ‖ ^ k * ∑ i ∈ Finset.range (n + 1),
-            (n.choose i : ℝ) * ‖iteratedFDeriv ℝ i f ξ‖ *
-              ‖iteratedFDeriv ℝ (n - i) g ξ‖ := by
-          gcongr; exact hLeib
-      _ ≤ B * (1 + ‖z‖) ^ (2 * n) *
-            (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ k := by
-          sorry -- arithmetic: substitute hCf, hg_bound, bound exp via coercivity,
-                -- extract polynomial, combine constants
+    have hL_apply : ∀ η : Fin m → ℝ, L η = I * ∑ i, z i * (η i : ℂ) := by
+      intro η
+      simp only [L, ContinuousLinearMap.coe_sum', Finset.sum_apply,
+        ContinuousLinearMap.coe_smul', Pi.smul_apply, ContinuousLinearMap.coe_comp',
+        Function.comp_apply, smul_eq_mul]
+      rw [Finset.mul_sum]
+      congr with i
+      simp
+      ring
+    have hL_bound : ‖L‖ ≤ (Fintype.card (Fin m) : ℝ) * ‖z‖ := by
+      apply ContinuousLinearMap.opNorm_le_bound _ (by positivity)
+      intro η
+      calc
+        ‖L η‖ = ‖∑ i : Fin m, z i * (η i : ℂ)‖ := by
+          rw [hL_apply]
+          simp
+        _ ≤ ∑ i : Fin m, ‖z i * (η i : ℂ)‖ := norm_sum_le _ _
+        _ = ∑ i : Fin m, ‖z i‖ * ‖η i‖ := by simp [norm_mul]
+        _ ≤ ∑ _i : Fin m, ‖z‖ * ‖η‖ := by
+          apply Finset.sum_le_sum
+          intro i hi
+          gcongr
+          · exact norm_le_pi_norm z i
+          · exact norm_le_pi_norm η i
+        _ = (Fintype.card (Fin m) : ℝ) * (‖z‖ * ‖η‖) := by
+          simp [Finset.sum_const, Finset.card_univ, nsmul_eq_mul]
+        _ = ((Fintype.card (Fin m) : ℝ) * ‖z‖) * ‖η‖ := by ring
+    have hy_norm_le : ‖y‖ ≤ ‖z‖ := by
+      refine (pi_norm_le_iff_of_nonneg (norm_nonneg _)).2 ?_
+      intro i
+      calc
+        ‖y i‖ = ‖(z i).im‖ := rfl
+        _ ≤ ‖z i‖ := by
+          simpa [Real.norm_eq_abs] using Complex.abs_im_le_norm (z i)
+        _ ≤ ‖z‖ := norm_le_pi_norm z i
+    have hRinv : R⁻¹ ≤ 1 + ‖z‖ := by
+      calc
+        R⁻¹ = 1 + ‖y‖ := by
+          dsimp [R, y, multiDimPsiZRadius]
+          field_simp
+        _ ≤ 1 + ‖z‖ := by
+          gcongr
+    have hK1_nonneg : 0 ≤ K1 := by
+      dsimp [K1]
+      positivity
+    have hLdom : ‖L‖ ≤ K1 * (1 + ‖z‖) := by
+      dsimp [K1]
+      nlinarith [hL_bound, show (0 : ℝ) ≤ ‖z‖ by positivity]
+    have hS_cone : ∀ (η : Fin m → ℝ), η ∈ DualConeFlat C →
+        ∀ (t : ℝ), 0 < t → t • η ∈ DualConeFlat C := by
+      intro η hη t ht
+      rw [mem_dualConeFlat] at hη ⊢
+      intro w hw
+      have := hη w hw
+      simp [Pi.smul_apply, smul_eq_mul]
+      calc
+        ∑ i, w i * (t * η i) = t * ∑ i, w i * η i := by
+          rw [Finset.mul_sum]
+          congr 1
+          ext i
+          ring
+        _ ≥ 0 := mul_nonneg (le_of_lt ht) this
+    have hsupp_sub : Function.support (fun η : Fin m → ℝ => χ.val (S η)) ⊆
+        {η | Metric.infDist η (DualConeFlat C) ≤ R} := by
+      intro η hη
+      simp only [Function.mem_support] at hη
+      by_contra hfar
+      have hfar' : R < Metric.infDist η (DualConeFlat C) := lt_of_not_ge hfar
+      have hscale :
+          Metric.infDist (R⁻¹ • η) (DualConeFlat C) =
+            R⁻¹ * Metric.infDist η (DualConeFlat C) :=
+        infDist_smul_cone hS_cone (inv_pos.mpr hR) η
+      have hmul : R⁻¹ * R < R⁻¹ * Metric.infDist η (DualConeFlat C) :=
+        mul_lt_mul_of_pos_left hfar' (inv_pos.mpr hR)
+      have hgt : 1 < Metric.infDist (R⁻¹ • η) (DualConeFlat C) := by
+        have hgt' : 1 < R⁻¹ * Metric.infDist η (DualConeFlat C) := by
+          have hmul' : R / R < R⁻¹ * Metric.infDist η (DualConeFlat C) := by
+            simpa [div_eq_mul_inv, mul_comm] using hmul
+          have hRR : R / R = 1 := div_self (ne_of_gt hR)
+          calc
+            1 = R / R := hRR.symm
+            _ < R⁻¹ * Metric.infDist η (DualConeFlat C) := hmul'
+        simpa [hscale] using hgt'
+      exact hη (χ.support_bound (R⁻¹ • η) hgt)
+    have hclosed_region :
+        IsClosed {η : Fin m → ℝ | Metric.infDist η (DualConeFlat C) ≤ R} :=
+      isClosed_le (Metric.continuous_infDist_pt (s := DualConeFlat C)) continuous_const
+    have hclosure_sub :
+        closure (Function.support (fun η : Fin m → ℝ => χ.val (S η))) ⊆
+          {η : Fin m → ℝ | Metric.infDist η (DualConeFlat C) ≤ R} :=
+      closure_minimal hsupp_sub hclosed_region
+    by_cases hfar : Metric.infDist ξ (DualConeFlat C) > R
+    · have hξ_not_closure :
+          ξ ∉ closure (Function.support (fun η : Fin m → ℝ => χ.val (S η))) := by
+        intro hξ
+        exact not_le_of_gt hfar (hclosure_sub hξ)
+      have hzeroEv :=
+        (product_zero_outside_closure_support
+          (fun η : Fin m → ℝ => χ.val (S η)) g ξ hξ_not_closure).iteratedFDeriv ℝ n
+      have hzero : iteratedFDeriv ℝ n (fun η : Fin m → ℝ => f η * g η) ξ = 0 := by
+        rw [hzeroEv.eq_of_nhds]
+        ext η
+        simp [f]
+      calc
+        ‖ξ‖ ^ k * ‖iteratedFDeriv ℝ n (fun η : Fin m → ℝ => f η * g η) ξ‖ = 0 := by
+          simp [hzero]
+        _ ≤ B * (1 + ‖z‖) ^ (2 * n) *
+              (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ k := by positivity
+    · have hdist : Metric.infDist ξ (DualConeFlat C) ≤ R := le_of_not_gt hfar
+      have hsum_bound :
+          ∑ i ∈ Finset.range (n + 1),
+              (n.choose i : ℝ) * ‖iteratedFDeriv ℝ i f ξ‖ *
+                ‖iteratedFDeriv ℝ (n - i) g ξ‖
+            ≤ LeibConst * ‖g ξ‖ * (1 + ‖z‖) ^ (2 * n) := by
+        calc
+          ∑ i ∈ Finset.range (n + 1),
+              (n.choose i : ℝ) * ‖iteratedFDeriv ℝ i f ξ‖ *
+                ‖iteratedFDeriv ℝ (n - i) g ξ‖
+              ≤ ∑ i ∈ Finset.range (n + 1),
+                  (n.choose i : ℝ) * (Cχ i * R⁻¹ ^ i) *
+                    ((n - i).factorial * ‖g ξ‖ * ‖L‖ ^ (n - i)) := by
+                  apply Finset.sum_le_sum
+                  intro i hi
+                  have hf_i := hCf i ξ
+                  have hg_i := hg_bound (n - i)
+                  calc
+                    (n.choose i : ℝ) * ‖iteratedFDeriv ℝ i f ξ‖ *
+                        ‖iteratedFDeriv ℝ (n - i) g ξ‖
+                        ≤ (n.choose i : ℝ) * (Cχ i * R⁻¹ ^ i) *
+                            ‖iteratedFDeriv ℝ (n - i) g ξ‖ := by
+                              gcongr
+                    _ ≤ (n.choose i : ℝ) * (Cχ i * R⁻¹ ^ i) *
+                          ((n - i).factorial * ‖g ξ‖ * ‖L‖ ^ (n - i)) := by
+                              gcongr
+          _ ≤ ∑ i ∈ Finset.range (n + 1),
+                ((n.choose i : ℝ) * Cχ i * (n - i).factorial * K1 ^ n) *
+                  (‖g ξ‖ * (1 + ‖z‖) ^ (2 * n)) := by
+                apply Finset.sum_le_sum
+                intro i hi
+                have hi_le : i ≤ n := Nat.lt_succ_iff.mp (Finset.mem_range.mp hi)
+                have hbase1 : 1 ≤ 1 + ‖z‖ := by nlinarith [norm_nonneg z]
+                have hRi : R⁻¹ ^ i ≤ (1 + ‖z‖) ^ n := by
+                  calc
+                    R⁻¹ ^ i ≤ (1 + ‖z‖) ^ i := by
+                      exact pow_le_pow_left₀ (by positivity) hRinv i
+                    _ ≤ (1 + ‖z‖) ^ n := by
+                      exact pow_le_pow_right₀ hbase1 hi_le
+                have hbase2 : 1 ≤ K1 * (1 + ‖z‖) := by
+                  dsimp [K1]
+                  have hz0 : 0 ≤ ‖z‖ := norm_nonneg z
+                  nlinarith
+                have hLi : ‖L‖ ^ (n - i) ≤ K1 ^ n * (1 + ‖z‖) ^ n := by
+                  calc
+                    ‖L‖ ^ (n - i) ≤ (K1 * (1 + ‖z‖)) ^ (n - i) := by
+                      exact pow_le_pow_left₀ (by positivity) hLdom (n - i)
+                    _ ≤ (K1 * (1 + ‖z‖)) ^ n := by
+                      exact pow_le_pow_right₀ hbase2 (Nat.sub_le n i)
+                    _ = K1 ^ n * (1 + ‖z‖) ^ n := by rw [mul_pow]
+                calc
+                  (n.choose i : ℝ) * (Cχ i * R⁻¹ ^ i) *
+                      ((n - i).factorial * ‖g ξ‖ * ‖L‖ ^ (n - i))
+                    ≤ (n.choose i : ℝ) * (Cχ i * (1 + ‖z‖) ^ n) *
+                        ((n - i).factorial * ‖g ξ‖ * ‖L‖ ^ (n - i)) := by
+                          gcongr
+                  _ ≤ (n.choose i : ℝ) * (Cχ i * (1 + ‖z‖) ^ n) *
+                        ((n - i).factorial * ‖g ξ‖ * (K1 ^ n * (1 + ‖z‖) ^ n)) := by
+                          gcongr
+                  _ = ((n.choose i : ℝ) * Cχ i * (n - i).factorial * K1 ^ n) *
+                        (‖g ξ‖ * (1 + ‖z‖) ^ (2 * n)) := by
+                          ring_nf
+          _ = LeibConst * ‖g ξ‖ * (1 + ‖z‖) ^ (2 * n) := by
+                rw [← Finset.sum_mul]
+                simp [LeibConst]
+                ring
+      set_option maxHeartbeats 400000 in
+      have hExpBound : ‖g ξ‖ ≤ Real.exp A₀ * Real.exp (-((c₀ * d) * ‖ξ‖)) := by
+        calc
+          ‖g ξ‖ = ‖cexp (I * ∑ i, z i * (ξ i : ℂ))‖ := by
+            rw [show g ξ = cexp (L ξ) by rfl, hL_apply]
+          _ ≤ Real.exp ((((c₀ * d) + K * ‖y‖) * R)) *
+                Real.exp (-((c₀ * d) * ‖ξ‖)) := by
+              simpa [K, y, mul_add, add_mul, mul_assoc, mul_left_comm, mul_comm]
+                using cexp_bound_on_support hC_open hC_cone hz hcd_pos hc_y hR ξ hdist
+          _ ≤ Real.exp A₀ * Real.exp (-((c₀ * d) * ‖ξ‖)) := by
+              have hRle : R ≤ 1 := by
+                change (1 + ‖fun i => (z i).im‖)⁻¹ ≤ 1
+                have hden : 0 < 1 + ‖fun i => (z i).im‖ := by positivity
+                have hone : (1 : ℝ) ≤ 1 + ‖fun i => (z i).im‖ := by
+                  exact le_add_of_nonneg_right (norm_nonneg _)
+                exact (inv_le_one₀ hden).2 hone
+              have hRy : R * ‖y‖ ≤ 1 := radius_mul_im_norm_le_one z
+              have hdR : d * R ≤ Metric.infDist (0 : Fin m → ℝ) Cᶜ + 1 := by
+                calc
+                  d * R ≤ (Metric.infDist (0 : Fin m → ℝ) Cᶜ + ‖y‖) * R := by
+                    have hd_le : d ≤ Metric.infDist (0 : Fin m → ℝ) Cᶜ + ‖y‖ :=
+                      infDist_compl_le_infDist_zero_add_norm y
+                    exact mul_le_mul_of_nonneg_right hd_le hR.le
+                  _ = Metric.infDist (0 : Fin m → ℝ) Cᶜ * R + ‖y‖ * R := by ring
+                  _ ≤ Metric.infDist (0 : Fin m → ℝ) Cᶜ * 1 + 1 := by
+                    have h0 : 0 ≤ Metric.infDist (0 : Fin m → ℝ) Cᶜ := Metric.infDist_nonneg
+                    have hleft :
+                        Metric.infDist (0 : Fin m → ℝ) Cᶜ * R ≤
+                          Metric.infDist (0 : Fin m → ℝ) Cᶜ * 1 :=
+                      mul_le_mul_of_nonneg_left hRle h0
+                    have hright : ‖y‖ * R ≤ 1 := by
+                      simpa [mul_comm] using hRy
+                    exact add_le_add hleft hright
+                  _ = Metric.infDist (0 : Fin m → ℝ) Cᶜ + 1 := by ring
+              have hterm1 : c₀ * d * R ≤ c₀ * (Metric.infDist (0 : Fin m → ℝ) Cᶜ + 1) := by
+                have := mul_le_mul_of_nonneg_left hdR hc₀_pos.le
+                simpa [mul_assoc] using this
+              have hterm2 : K * ‖y‖ * R ≤ K := by
+                calc
+                  K * ‖y‖ * R = K * (R * ‖y‖) := by ring
+                  _ ≤ K * 1 := by gcongr
+                  _ = K := by ring
+              have hA0bound : ((c₀ * d) + K * ‖y‖) * R ≤ A₀ := by
+                calc
+                  ((c₀ * d) + K * ‖y‖) * R
+                      = c₀ * d * R + K * ‖y‖ * R := by ring
+                  _ ≤ c₀ * (Metric.infDist (0 : Fin m → ℝ) Cᶜ + 1) + K := by
+                      gcongr
+                  _ = A₀ := by dsimp [A₀]
+              have hExpA : Real.exp ((((c₀ * d) + K * ‖y‖) * R)) ≤ Real.exp A₀ :=
+                Real.exp_le_exp.mpr hA0bound
+              exact mul_le_mul_of_nonneg_right hExpA (Real.exp_pos _).le
+      have hscaled :
+          ‖ξ‖ ^ k * Real.exp (-((c₀ * d) * ‖ξ‖)) ≤ Mexp * (c₀ * d)⁻¹ ^ k := by
+        simpa [mul_comm] using hMexp (c₀ * d) hcd_pos ‖ξ‖ (norm_nonneg _)
+      set_option maxHeartbeats 400000 in
+      have hdinv :
+          (c₀ * d)⁻¹ ^ k ≤ c₀⁻¹ ^ k * (1 + d⁻¹) ^ k := by
+        have hdpow : d⁻¹ ^ k ≤ (1 + d⁻¹) ^ k := by
+          have : d⁻¹ ≤ 1 + d⁻¹ := by linarith
+          exact pow_le_pow_left₀ (by positivity) this k
+        have hcd_eq : (c₀ * d)⁻¹ ^ k = c₀⁻¹ ^ k * d⁻¹ ^ k := by
+          rw [show (c₀ * d)⁻¹ = c₀⁻¹ * d⁻¹ by
+                rw [mul_inv_rev, mul_comm], mul_pow]
+        calc
+          (c₀ * d)⁻¹ ^ k = c₀⁻¹ ^ k * d⁻¹ ^ k := hcd_eq
+          _ ≤ c₀⁻¹ ^ k * (1 + d⁻¹) ^ k := by
+            exact mul_le_mul_of_nonneg_left hdpow (by positivity)
+      calc
+        ‖ξ‖ ^ k * ‖iteratedFDeriv ℝ n (fun η => f η * g η) ξ‖
+            ≤ ‖ξ‖ ^ k *
+                ∑ i ∈ Finset.range (n + 1),
+                  (n.choose i : ℝ) * ‖iteratedFDeriv ℝ i f ξ‖ *
+                    ‖iteratedFDeriv ℝ (n - i) g ξ‖ := by
+              gcongr
+              exact hLeib
+        _ ≤ ‖ξ‖ ^ k * (LeibConst * ‖g ξ‖ * (1 + ‖z‖) ^ (2 * n)) := by
+              gcongr
+        _ = LeibConst * (1 + ‖z‖) ^ (2 * n) * (‖ξ‖ ^ k * ‖g ξ‖) := by ring
+        _ ≤ LeibConst * (1 + ‖z‖) ^ (2 * n) *
+              (‖ξ‖ ^ k * (Real.exp A₀ * Real.exp (-((c₀ * d) * ‖ξ‖)))) := by
+              apply mul_le_mul_of_nonneg_left _ (by positivity)
+              exact mul_le_mul_of_nonneg_left hExpBound (by positivity)
+        _ = LeibConst * Real.exp A₀ * (1 + ‖z‖) ^ (2 * n) *
+              (‖ξ‖ ^ k * Real.exp (-((c₀ * d) * ‖ξ‖))) := by ring
+        _ ≤ LeibConst * Real.exp A₀ * (1 + ‖z‖) ^ (2 * n) *
+              (Mexp * (c₀ * d)⁻¹ ^ k) := by
+              gcongr
+        _ ≤ LeibConst * Real.exp A₀ * (1 + ‖z‖) ^ (2 * n) *
+              (Mexp * (c₀⁻¹ ^ k * (1 + d⁻¹) ^ k)) := by
+              gcongr
+        _ = (LeibConst * Real.exp A₀ * Mexp * c₀⁻¹ ^ k) *
+              (1 + ‖z‖) ^ (2 * n) * (1 + d⁻¹) ^ k := by ring
+        _ ≤ B * (1 + ‖z‖) ^ (2 * n) *
+              (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ k := by
+              have hcoeff : LeibConst * Real.exp A₀ * Mexp * c₀⁻¹ ^ k ≤ B := by
+                have hnonneg : 0 ≤ LeibConst * Real.exp A₀ * Mexp * c₀⁻¹ ^ k := by positivity
+                calc
+                  LeibConst * Real.exp A₀ * Mexp * c₀⁻¹ ^ k
+                      ≤ LeibConst * Real.exp A₀ * Mexp * c₀⁻¹ ^ k + 1 := by linarith
+                  _ = B := by dsimp [B]
+              exact mul_le_mul_of_nonneg_right
+                (mul_le_mul_of_nonneg_right hcoeff (by positivity)) (by positivity)
 
 /-! ### Seminorm bounds for the multi-D family -/
 
