@@ -715,7 +715,35 @@ private theorem multiDimPsiZDynamic_pointwise_vladimirov
     -- 4. Extract the polynomial weight via the explicit `c⁻k` bound from
     --    `schwartz_seminorm_cutoff_exp_bound_affine_uniform_explicit_uniform`,
     --    and then absorb `R⁻¹` and `‖L‖` into `(1 + ‖z‖)^n`.
-    sorry -- Leibniz + exponential decay + polynomial extraction (Steps 1-4)
+    -- ── Direct Leibniz assembly ──
+    let R := multiDimPsiZRadius z
+    let S : (Fin m → ℝ) →L[ℝ] (Fin m → ℝ) := R⁻¹ • ContinuousLinearMap.id ℝ (Fin m → ℝ)
+    let fχ : (Fin m → ℝ) → ℂ := fun η => (χ.val (S η) : ℂ)
+    let L : (Fin m → ℝ) →L[ℝ] ℂ :=
+      ∑ i : Fin m, ((I * z i) : ℂ) •
+        (Complex.ofRealCLM.comp
+          (ContinuousLinearMap.proj (R := ℝ) (ι := Fin m) (φ := fun _ => ℝ) i))
+    let gExp : (Fin m → ℝ) → ℂ := fun η => cexp (L η)
+    -- Unfold multiDimPsiZDynamic to fχ * gExp
+    have hfg : ∀ η, (multiDimPsiZDynamic C hC_open hC_conv hC_cone hC_salient z hz) η =
+        fχ η * gExp η := by
+      intro η
+      show psiZRaw χ (multiDimPsiZRadius z) z η = fχ η * gExp η
+      simp only [psiZRaw, fχ, gExp, L, S, Pi.smul_apply, smul_eq_mul,
+        ContinuousLinearMap.coe_sum', Finset.sum_apply,
+        ContinuousLinearMap.smul_apply, ContinuousLinearMap.coe_comp',
+        Function.comp, ContinuousLinearMap.proj_apply, Complex.ofRealCLM_apply,
+        ContinuousLinearMap.coe_smul', ContinuousLinearMap.coe_id', id]
+      have h1 : (fun i => (multiDimPsiZRadius z)⁻¹ * η i) = (multiDimPsiZRadius z)⁻¹ • η :=
+        funext fun i => by rw [Pi.smul_apply, smul_eq_mul]
+      rw [h1, Finset.mul_sum]
+      simp only [R]; ring
+    -- Smoothness
+    have hfχ_smooth : ContDiff ℝ ∞ fχ :=
+      Complex.ofRealCLM.contDiff.comp (χ.smooth.comp S.contDiff)
+    have hgExp_smooth : ContDiff ℝ ∞ gExp :=
+      Complex.contDiff_exp.comp L.contDiff
+    sorry -- TODO: apply norm_iteratedFDeriv_mul_le, bound each factor, extract polynomial
 
 /-! ### Seminorm bounds for the multi-D family -/
 
