@@ -764,6 +764,47 @@ This is why locality should not be mixed into theorem 3:
 - theorem 3 is about positivity/isometry through the semigroup bridge;
 - theorem 2 is about permutation symmetry plus analytic continuation.
 
+For the current repo, that paper-level package is now frozen at a sharper
+implementation contract than older theorem-2 notes used.
+
+1. The geometry entry point is the explicit Route-B real-open-edge package,
+   not a vague "use Jost points somehow" instruction:
+   - `choose_real_open_edge_for_adjacent_swap`,
+   - `swapped_support_lies_in_swapped_open_edge`,
+   - `swapped_open_edge_embeds_in_extendedTube`.
+2. The raw-boundary equality is adjacent-step first. The checked public BHW
+   wrapper `W_analytic_swap_boundary_pairing_eq` still asks for a global
+   `IsLocallyCommutativeWeak` input, so theorem 2 cannot close by naively
+   instantiating it with `W := bvt_W OS lgc`.
+3. Therefore the theorem-2 lane must pass through the explicitly named
+   adjacent-only substitute consumer theorem
+   `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`, which closes
+   the raw-boundary pairing equality from:
+   - Route-B ET support,
+   - boundary continuity on the real support,
+   - and pointwise
+     `analytic_boundary_local_commutativity_of_boundary_continuous`.
+4. Only after that raw-boundary adjacent equality is in hand should later Lean
+   work pass to the canonical positive-imaginary shift using the checked
+   boundary-recovery theorem
+   `boundary_value_recovery_forwardTube_of_flatRegular_from_bv`, packaged on the
+   theorem-2 lane as:
+   - `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`, then
+   - `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`.
+5. The frontier theorem is still stated for a general transposition `swap i j`,
+   while the raw-boundary and canonical-shift theorem-2 core is adjacent-only.
+   So the final closure must visibly include the separate reducer
+   `bvt_F_swapCanonical_pairing_of_adjacent_chain`; the general-swap step must
+   not be hidden inside the last `sorry`.
+
+So the paper-level slogan
+
+`Euclidean symmetry -> common analytic continuation -> uniqueness -> boundary values`
+
+is correct, but in the current Lean tree it must be read through the exact
+Route-B/open-edge -> adjacent raw-boundary -> canonical-shift -> adjacent-chain
+package order fixed in `docs/theorem2_locality_blueprint.md`.
+
 For the exact implementation ledger of the current theorem-2 frontier on
 `main`, see `docs/theorem2_locality_blueprint.md`.
 

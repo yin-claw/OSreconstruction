@@ -1,8 +1,14 @@
 # Osterwalder-Schrader Reconstruction: Formal Proof Outline
 
-> Status note (2026-02-27): This file contains historical snapshots and stale counts.
-> For current blocker status, use `docs/development_plan_systematic.md`,
-> `OSReconstruction/Wightman/TODO.md`, and `OSReconstruction/ComplexLieGroups/TODO.md`.
+> Status note (2026-02-27, tightened 2026-04-08): this file mixes historical
+> snapshots with useful structural explanations. Do **not** use it as the live
+> blocker ledger or current file map unless a section explicitly says it has been
+> resynced. For current blocker status and checked file ownership, use
+> `docs/development_plan_systematic.md`, `docs/proof_docs_completion_plan.md`,
+> `docs/theorem2_locality_blueprint.md`,
+> `docs/theorem3_os_route_blueprint.md`,
+> `docs/theorem4_cluster_blueprint.md`, and
+> `OSReconstruction/Wightman/TODO.md`.
 
 A complete outline of the Lean 4 formalization of the OS reconstruction theorems,
 mapping the mathematical proof structure to the codebase.
@@ -38,14 +44,19 @@ The proof proceeds in two directions:
 | **R → E** (Wightman → OS) | `wightman_to_os` | Wick rotation t → it, verify E0–E4 |
 | **E → R** (OS → Wightman) | `os_to_wightman` | Analytic continuation back to Minkowski, GNS construction |
 
-**Current status:** 21 sorrys on the critical path (45 total across project), plus 2 named axioms
-(`edge_of_the_wedge` and `bargmann_hall_wightman`). Infrastructure layers (foundations, GNS,
-1D edge-of-wedge, Osgood's lemma, Cauchy integral parameter) are complete.
-The multi-D edge-of-the-wedge 1D slicing (`edge_of_the_wedge_slice`) is fully proved;
-the full multi-D theorem is promoted to a named axiom due to the gap-point problem
-(see [gap analysis](edge_of_the_wedge_gap_analysis.md)). The Bargmann-Hall-Wightman theorem
-is promoted to a named axiom due to missing complex Lie group infrastructure
-(see [BHW status](BHW_STATUS.md)).
+**Current status:** the numerical counts in this file are historical and should
+not be used operationally. The live production ledger now tracks a `63`-sorry /
+`6`-axiom theorem-2/3/4 frontier in the split production tree, plus a separate
+checked secondary `Wightman/NuclearSpaces/*` lane with 7 local `sorry`s kept
+outside that headline count. Infrastructure layers described below remain useful
+context, but the actual implementation surface is no longer the old monolithic
+`WickRotation.lean` story. In particular, the active `E -> R` route now runs
+through the split file family
+`OSToWightmanSemigroup.lean -> OStoWightman.lean -> OStoWightmanPositivity.lean
+-> OStoWightmanBoundaryValuesBase.lean -> OStoWightmanBoundaryValueLimits.lean
+-> OStoWightmanBoundaryValuesComparison.lean -> OStoWightmanBoundaryValues.lean`,
+and theorem-level work should be planned against those file contracts rather
+than against the historical monolith below.
 
 ---
 
@@ -113,7 +124,7 @@ External tensor product of Schwartz functions, essential for multi-point distrib
 
 ## Layer 1: Axiom Systems
 
-### WightmanAxioms.lean — Wightman axioms W0–W4 (2 sorrys, non-blocking)
+### WightmanAxioms.lean — Wightman axioms W0–W4 (2 downstream axiom surfaces)
 
 Complete axiomatization of relativistic QFT in the Wightman framework.
 
@@ -135,13 +146,24 @@ Complete axiomatization of relativistic QFT in the Wightman framework.
   minimal standard literal `n`-point tube
 - `ExtendedForwardTube n` — T'_n = ∪_Λ Λ·T_n (complex Lorentz orbit)
 
-**Sorrys (not on critical path):**
-- `wightmanDistribution_extends` (line 282) — Nuclear theorem extension
-- `wightman_analyticity_boundary` (line 361) — Boundary values recover W_n
+**Current downstream axiom / bridge surfaces:**
+- `schwartz_nuclear_extension` — downstream reconstruction-facing package for the nuclear-extension route; the supporting mathematics may live in the checked `Wightman/NuclearSpaces/*` subtree and/or imported `gaussian-field` results, but GNS-side consumers should treat this exported `WightmanAxioms.lean` surface as the contract point
+- `exists_continuousMultilinear_ofSeparatelyContinuous` — downstream reconstruction-facing package for the separate-to-joint continuity route; again, local NuclearSpaces work, imported support, and exported consumer surface must stay distinct in the docs and later Lean implementation
 
-### OS Axioms (defined in WickRotation.lean)
+So the implementation contract here is three-layered, not "WightmanAxioms only" and not "NuclearSpaces only":
+1. checked local support files under `Wightman/NuclearSpaces/*`,
+2. optional bridge/import packaging,
+3. downstream exported theorem surfaces in `Wightman/WightmanAxioms.lean` consumed by `GNSHilbertSpace.lean`.
+
+### OS Axioms (historically described under `WickRotation.lean`; now consumed via the split Wick-rotation family)
 
 The Euclidean axiom system, encoded as the `IsOsterwalderSchrader` structure:
+
+Implementation caution (current tree): this section is about the mathematical
+surface, not a claim that one checked file named `WickRotation.lean` still owns
+all production proof work. In the current repo the OS -> Wightman route is split
+across the `OSToWightman*` family listed above, and theorem-2/3/4 work must be
+attached to those explicit file owners rather than to the historical monolith.
 
 | Axiom | Field | Description |
 |-------|-------|-------------|
@@ -330,7 +352,14 @@ See [BHW status](BHW_STATUS.md) for current details.
 
 ## Layer 5: Wick Rotation Bridge
 
-### WickRotation.lean — 17 sorrys
+### Historical monolith view: `WickRotation.lean — 17 sorrys`
+
+This section is preserved as a historical blueprint for the mathematical route,
+not as the live file/blocker map. In the checked production tree, the work once
+lumped into `WickRotation.lean` has been split across the `BHW*`,
+`OSToWightman*`, `SchwingerTemperedness.lean`, and related support files. Read
+all count statements and sorry numbers in this section as historical labels
+unless they are restated in the canonical live docs.
 
 The heart of the reconstruction: translating between Wightman and OS axioms.
 
@@ -483,7 +512,37 @@ Layer 6: Main Theorems
        └── os_to_wightman (#22) ← #18
 ```
 
-**Critical path:** ~~#0a, #0b1~~ (proved), ~~#1~~ (proved theorem), ~~#2~~ (axiom) → #3-7 (R→E) and independently #8 → #9 → #10 → #11-17 → #18 → #22.
+**Historical critical path:** ~~#0a, #0b1~~ (proved), ~~#1~~ (proved theorem), ~~#2~~ (axiom) → #3-7 (R→E) and independently #8 → #9 → #10 → #11-17 → #18 → #22.
+
+**Current implementation reading:** the live theorem frontier should instead be
+read from the split contracts:
+- theorem 2 locality frontier in `docs/theorem2_locality_blueprint.md`, ending
+  at `OSToWightmanBoundaryValues.lean :: bvt_F_swapCanonical_pairing` but with
+  an explicit four-layer proof transcript that must stay split: Route-B
+  real-open-edge geometry in
+  `ComplexLieGroups/Connectedness/BHWPermutation/Adjacency.lean`, adjacent raw-
+  boundary distributional support on the
+  `AdjacencyDistributional.lean` / `BHWExtension.lean` seam, theorem-2-specific
+  canonical-shift recovery in `OSToWightmanBoundaryValueLimits.lean`, and only
+  then the final general-swap consumer in
+  `OSToWightmanBoundaryValues.lean`. In particular, theorem 2 does **not**
+  close by directly instantiating `BHWExtension.lean ::
+  W_analytic_swap_boundary_pairing_eq`: that public wrapper asks for
+  `IsLocallyCommutativeWeak d W`, so the non-circular route must first pass
+  through the planned adjacent-only substitute consumer
+  `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`, then the
+  theorem-2 wrapper `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`, and
+  only after that the canonical package
+  `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`
+  -> `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`
+  -> `bvt_F_swapCanonical_pairing_of_adjacent_chain`;
+- theorem 3 positivity frontier in `docs/theorem3_os_route_blueprint.md`, with
+  Section-4.3 transport/positivity work split between
+  `OSToWightmanPositivity.lean` and the final wrapper in
+  `OSToWightmanBoundaryValues.lean`;
+- theorem 4 cluster frontier in `docs/theorem4_cluster_blueprint.md`, with base
+  cluster reductions in `OSToWightmanBoundaryValuesBase.lean` and the remaining
+  transport/adapter package above them.
 
 ---
 
@@ -544,30 +603,61 @@ Layer 6: Main Theorems
 
 ## File Map
 
-```
+```text
 OSReconstruction/Wightman/
-├── Basic.lean                              ← Re-exports (0 sorrys)
-├── WightmanAxioms.lean                     ← Axiom definitions (2 sorrys, non-blocking)
-├── OperatorDistribution.lean               ← Operator distributions (1 sorry, non-blocking)
-├── SchwartzTensorProduct.lean              ← Schwartz tensor products (0 sorrys)
-├── Reconstruction.lean                     ← MAIN THEOREMS (4 sorrys: #19-22)
-├── Spacetime/
-│   ├── Metric.lean                         ← Minkowski metric (0 sorrys)
-│   └── MinkowskiGeometry.lean              ← Geometric lemmas (0 sorrys)
+├── Basic.lean                              ← re-exports
+├── WightmanAxioms.lean                     ← downstream exported FA/theorem surfaces used by reconstruction consumers
+├── OperatorDistribution.lean               ← operator-distribution layer
+├── SchwartzTensorProduct.lean              ← Schwartz tensor products
+├── Reconstruction.lean                     ← top-level umbrella import
 ├── Groups/
-│   ├── Lorentz.lean                        ← SO⁺(1,d) default, full O(1,d) explicit (0 sorrys)
-│   └── Poincare.lean                       ← ISO⁺(1,d) default, full ISO(1,d) explicit (0 sorrys)
+│   ├── Lorentz.lean                        ← Lorentz-group surfaces
+│   └── Poincare.lean                       ← Poincaré-group surfaces
+├── Spacetime/
+│   ├── Metric.lean                         ← Minkowski metric
+│   └── MinkowskiGeometry.lean              ← spacelike / cone geometry
 ├── Reconstruction/
-│   ├── GNSConstruction.lean                ← GNS construction (0 sorrys)
-│   ├── AnalyticContinuation.lean           ← Tube domains, EOW+BHW axioms (0 sorrys)
-│   ├── WickRotation.lean                   ← OS↔Wightman bridge (17 sorrys: #3-18)
-│   └── Helpers/
-│       ├── EdgeOfWedge.lean                ← 1D edge-of-wedge (0 sorrys)
-│       └── SeparatelyAnalytic.lean         ← Osgood's lemma, Cauchy param (0 sorrys)
-└── NuclearSpaces/                          ← NOT on critical path
-    ├── NuclearOperator.lean                ← (0 sorrys)
-    ├── NuclearSpace.lean                   ← (2 sorrys, deferred)
-    ├── BochnerMinlos.lean                  ← (3 sorrys, deferred)
-    ├── SchwartzNuclear.lean                ← (4 sorrys, deferred)
-    └── EuclideanMeasure.lean               ← (1 sorry, deferred)
+│   ├── Main.lean                           ← top-level theorem wiring
+│   ├── Core.lean                           ← shared reconstruction contracts
+│   ├── AnalyticContinuation.lean           ← tube-domain / continuation interfaces
+│   ├── GNSConstruction.lean                ← algebraic GNS layer
+│   ├── GNSHilbertSpace.lean                ← completion / cyclicity / spectrum consumers
+│   ├── SchwingerOS.lean                    ← Schwinger-side reduction layer
+│   ├── BlockIntegral.lean                  ← finite-block integral packaging
+│   ├── HeadBlockTranslationInvariant.lean  ← head-block descent invariance
+│   ├── CenterSpatialTranslationInvariant.lean ← center-variable descent invariance
+│   ├── TwoPointDescent.lean                ← specialized two-point descent helpers
+│   └── WickRotation/
+│       ├── BHWExtension.lean               ← checked public/raw-boundary BHW comparison surfaces
+│       ├── OSToWightmanSemigroup.lean      ← semigroup / finite-block route
+│       ├── OSToWightman.lean               ← main E -> R continuation route
+│       ├── OSToWightmanBoundaryValuesBase.lean ← theorem-4 base transport lane
+│       ├── OSToWightmanBoundaryValueLimits.lean ← theorem-3 live limit machinery; planned theorem-2 canonical-shift support sibling subsection
+│       ├── OSToWightmanBoundaryValuesComparison.lean ← theorem-2 downstream locality consumer bridge
+│       ├── OSToWightmanBoundaryValues.lean ← theorem-2/theorem-3 public boundary-value wrappers
+│       ├── OStoWightmanPositivity.lean     ← theorem-3 positivity transfer lane
+│       ├── SchwingerAxioms.lean            ← R -> E route
+│       └── K2VI1/*                         ← active theorem-1 local package
+└── NuclearSpaces/
+    ├── NuclearOperator.lean                ← checked local support
+    ├── NuclearSpace.lean                   ← checked local support (2 live sorrys)
+    ├── SchwartzNuclear.lean                ← checked local support
+    ├── GaussianFieldBridge.lean            ← checked local bridge/support layer
+    ├── BochnerMinlos.lean                  ← checked local support (5 live sorrys)
+    ├── EuclideanMeasure.lean               ← checked local support
+    └── ComplexSchwartz.lean                ← checked local support
 ```
+
+Implementation caution: the NuclearSpaces subtree is **not** a fake historical path and **not** the sole consumer surface either. The route contract for the GNS/nuclear lane is
+`Wightman/NuclearSpaces/*` -> optional bridge/import packaging -> `Wightman/WightmanAxioms.lean` -> `Wightman/Reconstruction/GNSHilbertSpace.lean`.
+Later Lean work should preserve that ownership split instead of proving ad hoc nuclearity facts directly inside `gns_cyclicity` or treating the downstream `WightmanAxioms.lean` exports as if they already identified their exact upstream implementation source.
+
+Second implementation caution for theorem 2: `OSToWightmanBoundaryValueLimits.lean`
+is a checked present file, but in the current tree its proved content is still
+on the theorem-3 `singleSplit_xiShift` limit lane. The theorem-2 names
+`bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`,
+`bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`, and
+`bvt_F_swapCanonical_pairing_of_adjacent_chain` are therefore planned support
+packages in an existing file, not already-available helper theorems. Later Lean
+work must add that sibling subsection explicitly rather than treating the
+existing theorem-3 shell as if it already owned theorem-2 raw-boundary closure.

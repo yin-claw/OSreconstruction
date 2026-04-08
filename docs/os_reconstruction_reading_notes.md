@@ -107,6 +107,52 @@ This is exactly the right mental model for our file split:
 - `OSToWightmanBoundaryValues.lean` and later growth control are about the
   analogue of Chapter VI.
 
+## 1.3. Current theorem-2 implementation boundary in the live file split
+
+Because this note is used as a high-level reading guide, it also needs one
+explicit implementation warning: theorem 2 is **not** a generic one-file
+"boundary values" task.
+
+In the live repo, theorem 2 now has a checked four-layer route:
+
+1. **Route-B geometry** in
+   `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/Adjacency.lean`.
+   The checked lower supplier already present there is
+   `exists_real_open_nhds_adjSwap`; the theorem-2-facing wrappers above it are
+   the planned geometry package
+   `choose_real_open_edge_for_adjacent_swap ->`
+   `swapped_support_lies_in_swapped_open_edge ->`
+   `swapped_open_edge_embeds_in_extendedTube`.
+2. **Adjacent-only raw-boundary closure** on the checked seam
+   `AdjacencyDistributional.lean` / `WickRotation/BHWExtension.lean`.
+   The statement home is the planned theorem slot
+   `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`, whose proof
+   transcript is fixed as
+   boundary continuity on the chosen open edge -> compact-support integrand
+   equality -> pairing equality.
+3. **Canonical-shift theorem-2 sibling subsection** in
+   `WickRotation/OSToWightmanBoundaryValueLimits.lean`, in the exact local
+   order
+   `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery ->`
+   `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality ->`
+   `bvt_F_swapCanonical_pairing_of_adjacent_chain`.
+4. **Only then** the final downstream comparison/frontier consumers in
+   `WickRotation/OSToWightmanBoundaryValuesComparison.lean` and
+   `WickRotation/OSToWightmanBoundaryValues.lean`.
+
+The implementation-critical anti-shortcut warning is now part of the contract:
+`WickRotation/BHWExtension.lean :: W_analytic_swap_boundary_pairing_eq` is not
+itself the theorem-2 closure surface for `W := bvt_W OS lgc`, because that
+public wrapper still asks for the global input
+`IsLocallyCommutativeWeak d W` and is therefore circular on the active theorem-2
+lane.
+
+So any later Lean implementation that describes theorem 2 only as "BHW
+locality" or only as "finish `OSToWightmanBoundaryValues.lean`" should be read
+as incomplete: the docs now require the route-B geometry layer, the adjacent
+raw-boundary layer, the canonical-shift layer, and the final frontier layer to
+remain separate.
+
 ## 2. OS I: the original `E -> R` mechanism
 
 In OS I, the `E -> R` proof is described in Section 4.
@@ -292,7 +338,7 @@ OS II states this very clearly in Chapter V:
 
 This matters directly for the current Lean blocker. The public theorem
 `schwinger_continuation_base_step` in
-[OSToWightman.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightman.lean)
+[OSToWightman.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightman.lean)
 has now been corrected to the safe OS II base-step reading:
 
 - time-difference holomorphicity,
@@ -782,7 +828,7 @@ The current production files now contain a fairly clean realization of the
 At the block-integration level:
 
 - `integrateHeadBlock_tensorProduct`
-  in [BlockIntegral.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/BlockIntegral.lean)
+  in [BlockIntegral.lean](../OSReconstruction/Wightman/Reconstruction/BlockIntegral.lean)
   says that integrating out the head block of a tensor-product Schwartz test
   gives exactly “integral of the head factor” times the tail factor.
 
@@ -795,7 +841,7 @@ At the block-integration level:
 At the two-point descent level:
 
 - `twoPointCenterDescent_twoPointDifferenceLift_eq_integral_smul`
-  in [TwoPointDescent.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/TwoPointDescent.lean)
+  in [TwoPointDescent.lean](../OSReconstruction/Wightman/Reconstruction/TwoPointDescent.lean)
   is the exact admissible-shell formula:
   `twoPointCenterDescent (twoPointDifferenceLift χ h) = (∫ χ) • h`.
 
@@ -822,13 +868,13 @@ side:
 - `OsterwalderSchraderAxioms.exists_const_twoPointDifferenceLift_eq_integral`
   and
   `OsterwalderSchraderAxioms.twoPointDifferenceLift_eq_centerValue`
-  in [SchwingerOS.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/SchwingerOS.lean)
+  in [SchwingerOS.lean](../OSReconstruction/Wightman/Reconstruction/SchwingerOS.lean)
   say that for admissible shells `χ(u) h(ξ)`, the two-point Schwinger value
   depends on the center cutoff only through `∫ χ`.
 
 - `schwinger_twoPoint_flatCenterDiffWitness_exists_const`
   and its corollaries in
-  [OSToWightman.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightman.lean)
+  [OSToWightman.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightman.lean)
   give the corresponding center-collapse statement for explicit flat witnesses.
 
 This is already quite close to what the OS papers need conceptually:
@@ -866,22 +912,22 @@ two-vector semigroup matrix element.
 The key current production statements are:
 
 - `OSInnerProductTimeShiftHolomorphicValue_eq_selfAdjointSpectralLaplaceOffdiag`
-  in [OSToWightmanSemigroup.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanSemigroup.lean),
+  in [OSToWightmanSemigroup.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanSemigroup.lean),
   which identifies the holomorphic semigroup matrix element with the spectral
   Laplace off-diagonal form.
 
 - `selfAdjointSpectralLaplaceOffdiag_onePoint_pair_eq_xiShift`
-  in [OSToWightmanTwoPoint.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanTwoPoint.lean),
+  in [OSToWightmanTwoPoint.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/deprecated/OSToWightmanTwoPoint.lean),
   which identifies that spectral object with the explicit `ξ`-shift Euclidean
   integral for one-point test pairs.
 
 - `twoPointDifferenceLift_timeShift_holomorphicValue_semigroupMatrix_centerShear_centerValue`
-  in [OSToWightmanTwoPoint.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanTwoPoint.lean),
+  in [OSToWightmanTwoPoint.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/deprecated/OSToWightmanTwoPoint.lean),
   which packages the two-point continuation directly in terms of the semigroup
   matrix element after the center-shear reduction.
 
 - the spatial-translation chain in
-  [OSToWightmanSemigroup.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanSemigroup.lean):
+  [OSToWightmanSemigroup.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanSemigroup.lean):
   `translateSchwartzNPoint_timeShiftSchwartzNPoint`,
   `timeShiftBorchers_translateBorchers`,
   `OSInnerProduct_translate_eq_of_spatial`,
@@ -911,7 +957,12 @@ descended parameter. So the current gap is better described as:
 At the current production state, the first option has become more precise.
 The spatial-translation part is no longer the blocker. What remains is the
 fixed-time extension theorem behind the private `headBlockExtension` surface in
-[OSToWightmanTwoPoint.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanTwoPoint.lean):
+[OSToWightmanTwoPoint.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/deprecated/OSToWightmanTwoPoint.lean):
+
+> Checked-tree note (2026-04-08): in this clone `OSToWightmanTwoPoint.lean`
+> still exists, but under `Wightman/Reconstruction/WickRotation/deprecated/`.
+> So this note should be read as historical route context / theorem-source
+> provenance, not as the active production file locus for theorem-2/3/4 work.
 
 - for each `t > 0`, construct a continuous head-block-translation-invariant
   Schwartz functional on the flattened center/difference space;
@@ -1160,9 +1211,9 @@ It is theorem-surface drift:
 Conversely, the current opportunity is good:
 
 - the descent package in
-  [BlockIntegral.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/BlockIntegral.lean)
+  [BlockIntegral.lean](../OSReconstruction/Wightman/Reconstruction/BlockIntegral.lean)
   and
-  [TwoPointDescent.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/TwoPointDescent.lean)
+  [TwoPointDescent.lean](../OSReconstruction/Wightman/Reconstruction/TwoPointDescent.lean)
   has already exposed the kernel element and the correct covariance properties;
 - the admissible-shell center-collapse theorem is already in production;
 - so the remaining step is now concentrated on the semigroup-side shell
@@ -1202,7 +1253,7 @@ So a more OS-II-shaped next target is:
 
 This is now reflected more directly in production than before.
 The file
-[CenterSpatialTranslationInvariant.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/CenterSpatialTranslationInvariant.lean)
+[CenterSpatialTranslationInvariant.lean](../OSReconstruction/Wightman/Reconstruction/CenterSpatialTranslationInvariant.lean)
 contains the explicit descended CLM
 `centerSpatialDescentCLM`, and now also the iterated factorization theorem
 `map_eq_headTranslationDescentCLM_sliceIntegral_integrateCenterSpatial`.

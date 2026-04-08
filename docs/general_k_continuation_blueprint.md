@@ -1574,7 +1574,7 @@ end-of-file conditions hold:
    `general_k_temperedness_and_boundary_values`.
 7. `OS2AppendixE0Prime.lean`
    ends with the exact `E0'' => E0'` theorem slot documented in
-   [os2_detailed_proof_audit.md](/Users/xiyin/OSReconstruction/docs/os2_detailed_proof_audit.md).
+   [os2_detailed_proof_audit.md](./os2_detailed_proof_audit.md).
 
 The docs should therefore be read as giving each future file both:
 

@@ -19,7 +19,7 @@ What is now true:
 What still remains external on this path:
 
 - the Vladimirov-Tillmann theorem in
-  [`OSReconstruction/SCV/VladimirovTillmann.lean`](/Users/mdouglas/Documents/GitHub/OSreconstruction/OSReconstruction/SCV/VladimirovTillmann.lean)
+  [`OSReconstruction/SCV/VladimirovTillmann.lean`](../OSReconstruction/SCV/VladimirovTillmann.lean)
 
 So the right headline is:
 
@@ -37,7 +37,7 @@ expected.
 
 That was fixed by separating the growth input into the proposition
 `HasForwardTubeGrowth` in
-[`Core.lean`](/Users/mdouglas/Documents/GitHub/OSreconstruction/OSReconstruction/Wightman/Reconstruction/Core.lean),
+[`Core.lean`](../OSReconstruction/Wightman/Reconstruction/Core.lean),
 with the weighted coincidence-locus bound as the real multi-point target.
 
 This kept the additional analytic burden local to the `R -> E` bridge instead
@@ -46,7 +46,7 @@ of changing the core `WightmanFunctions` structure.
 ### 2. The `n ≤ 1` cases were discharged correctly
 
 The easy low-point cases are now handled separately inside
-[`SchwingerAxioms.lean`](/Users/mdouglas/Documents/GitHub/OSreconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean):
+[`SchwingerAxioms.lean`](../OSReconstruction/Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean):
 
 - for `n ≤ 1`, the coincidence locus is empty, so the weighted statement
   collapses correctly,
@@ -70,7 +70,7 @@ This is the direct closure of the original `sorry:110` site.
 The key internal bridge
 `hasForwardTubeGrowth_of_wightman`
 is now proved in
-[`SchwingerAxioms.lean`](/Users/mdouglas/Documents/GitHub/OSreconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean).
+[`SchwingerAxioms.lean`](../OSReconstruction/Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean).
 
 That proof now:
 
@@ -92,7 +92,7 @@ During the bridge proof, a temporary geometric axiom was introduced:
 That axiom is no longer needed.
 
 The file
-[`UniversalProjection.lean`](/Users/mdouglas/Documents/GitHub/OSreconstruction/OSReconstruction/Wightman/Reconstruction/UniversalProjection.lean)
+[`UniversalProjection.lean`](../OSReconstruction/Wightman/Reconstruction/UniversalProjection.lean)
 now proves the full Ruelle-style statement:
 
 > for any finite configuration in `ℝ^(d+1)`, there exists `c > 0` and
@@ -100,7 +100,7 @@ now proves the full Ruelle-style statement:
 > least `c` times their full norm after applying `R`.
 
 In
-[`SchwingerAxioms.lean`](/Users/mdouglas/Documents/GitHub/OSreconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean),
+[`SchwingerAxioms.lean`](../OSReconstruction/Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean),
 the former private axiom has been replaced by a theorem wrapper around this
 proved result.
 
@@ -138,17 +138,17 @@ dependency graph before this work.
 
 The public theorem surface remains unchanged:
 
-- [`wightman_to_os`](/Users/mdouglas/Documents/GitHub/OSreconstruction/OSReconstruction/Wightman/Reconstruction/Main.lean)
+- [`wightman_to_os`](../OSReconstruction/Wightman/Reconstruction/Main.lean)
   is still exposed without adding a new user-facing growth hypothesis.
 
 The growth input is discharged internally through the now-proved bridge.
 
 ## Files materially involved
 
-- [`OSReconstruction/Wightman/Reconstruction/Core.lean`](/Users/mdouglas/Documents/GitHub/OSreconstruction/OSReconstruction/Wightman/Reconstruction/Core.lean)
-- [`OSReconstruction/Wightman/Reconstruction/UniversalProjection.lean`](/Users/mdouglas/Documents/GitHub/OSreconstruction/OSReconstruction/Wightman/Reconstruction/UniversalProjection.lean)
-- [`OSReconstruction/Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean`](/Users/mdouglas/Documents/GitHub/OSreconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean)
-- [`OSReconstruction/Wightman/Reconstruction/Main.lean`](/Users/mdouglas/Documents/GitHub/OSreconstruction/OSReconstruction/Wightman/Reconstruction/Main.lean)
+- [`OSReconstruction/Wightman/Reconstruction/Core.lean`](../OSReconstruction/Wightman/Reconstruction/Core.lean)
+- [`OSReconstruction/Wightman/Reconstruction/UniversalProjection.lean`](../OSReconstruction/Wightman/Reconstruction/UniversalProjection.lean)
+- [`OSReconstruction/Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean`](../OSReconstruction/Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean)
+- [`OSReconstruction/Wightman/Reconstruction/Main.lean`](../OSReconstruction/Wightman/Reconstruction/Main.lean)
 
 ## Build verification
 

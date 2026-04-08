@@ -81,7 +81,7 @@ Exact implementation consequence:
    `gaussian-field` dependency if the exact statement matches;
 2. **Fallback route**: prove the Frechet-space Banach-Steinhaus package locally
    under the theorem slots listed in
-   [nuclear_spaces_blueprint.md](/Users/xiyin/OSReconstruction/docs/nuclear_spaces_blueprint.md);
+   `docs/nuclear_spaces_blueprint.md`;
 3. do not block GNS/kernel-theorem work on opening a Mathlib issue first.
 
 ### 3.2. Schwartz nuclear / kernel theorem
@@ -109,7 +109,7 @@ Exact implementation consequence:
    `schwartz_nuclear_extension`;
 2. **Fallback route**: prove the tensor-extension package locally via the
    intermediate theorem slots listed in
-   [nuclear_spaces_blueprint.md](/Users/xiyin/OSReconstruction/docs/nuclear_spaces_blueprint.md);
+   `docs/nuclear_spaces_blueprint.md`;
 3. the consumer-facing GNS/Wightman files should only see the repo theorem
    surface, never the import-path details.
 
@@ -117,7 +117,11 @@ Exact implementation consequence:
 
 Current repo surface:
 
-1. `Wightman/NuclearSpaces/BochnerMinlos.lean` still has five direct sorries.
+1. older versions of this repo tracked a `Wightman/NuclearSpaces/BochnerMinlos.lean`
+   file with five direct sorries, but that file is not present in the current
+   checked tree of this clone; treat it as a historical/planned support locus
+   rather than a live file reference unless the file is restored or the docs
+   are rebound to a new checked location.
 
 Mathlib status:
 
@@ -227,7 +231,7 @@ Exact implementation consequence:
 
 1. theorem 2 and the GNS matrix-coefficient bridge should both consume the same
    one-point package documented in
-   [scv_infrastructure_blueprint.md](/Users/xiyin/OSReconstruction/docs/scv_infrastructure_blueprint.md),
+   `docs/scv_infrastructure_blueprint.md`,
 2. the constructor
    `flatRegular_of_boundary_distribution_and_polyGrowth`
    should be treated as a repo-local flattening/adapter theorem above that
@@ -239,7 +243,7 @@ Exact implementation consequence:
 
 Current repo surface:
 
-1. [`BorchersSequence`](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/Core.lean)
+1. `Wightman/Reconstruction/Core.lean :: BorchersSequence`
    is a bounded-record encoding of finitely supported Borchers data;
 2. the file provides raw pointwise operations (`Zero`, `Add`, `Neg`, `SMul`, `Sub`);
 3. it does **not** currently provide the full `AddCommMonoid` / `Module ℂ` /
@@ -255,7 +259,7 @@ Decision:
 2. do not open an upstream Mathlib issue for it,
 3. prefer the Section 4.3 transport-map / norm-square implementation route
    recorded in
-   [theorem3_os_route_blueprint.md](/Users/xiyin/OSReconstruction/docs/theorem3_os_route_blueprint.md)
+   `docs/theorem3_os_route_blueprint.md`
    before attempting to force a raw `Submodule` / topology layer onto
    `BorchersSequence d`.
 4. if a local continuity helper is wanted for legacy consumer theorems, keep it

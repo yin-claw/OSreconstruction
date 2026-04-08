@@ -36,15 +36,35 @@ Here "peripheral" does **not** mean mathematically unimportant. It means:
 
 ## 3. Nuclear-space / Bochner-Minlos side lane
 
+Checked-tree clarification (2026-04-08): this clone **does** contain a live
+checked `OSReconstruction/Wightman/NuclearSpaces/` subtree. The peripheral lane
+is therefore not just blueprint-only planning; it has real checked file
+ownership, but it remains peripheral relative to the current theorem-2/3/4 OS
+frontier.
+
+### 3.1. Checked local NuclearSpaces sorrys
+
 | File:line | Theorem | Why peripheral right now | Primary doc |
 |---|---|---|---|
-| `Wightman/NuclearSpaces/NuclearSpace.lean:234` | `gauge_dominates_on_subspace_of_convex_nhd` | infrastructure for GNS/Minlos, not theorem-2/3/4 | `docs/nuclear_spaces_blueprint.md` |
-| `Wightman/NuclearSpaces/NuclearSpace.lean:313` | `product_seminorm_dominated` | same | `docs/nuclear_spaces_blueprint.md` |
-| `Wightman/NuclearSpaces/BochnerMinlos.lean:285` | `bochner_tightness_and_limit` | Euclidean measure package | `docs/nuclear_spaces_blueprint.md` |
-| `Wightman/NuclearSpaces/BochnerMinlos.lean:384` | `minlos_projective_consistency` | Euclidean measure package | `docs/nuclear_spaces_blueprint.md` |
-| `Wightman/NuclearSpaces/BochnerMinlos.lean:399` | `minlos_nuclearity_tightness` | Euclidean measure package | `docs/nuclear_spaces_blueprint.md` |
-| `Wightman/NuclearSpaces/BochnerMinlos.lean:465` | `eval_maps_generate_sigma_algebra` | Euclidean measure package | `docs/nuclear_spaces_blueprint.md` |
-| `Wightman/NuclearSpaces/BochnerMinlos.lean:485` | `eval_charfun_implies_fd_distributions` | Euclidean measure package | `docs/nuclear_spaces_blueprint.md` |
+| `Wightman/NuclearSpaces/NuclearSpace.lean:534` | `gauge_dominates_on_subspace_of_convex_nhd` | local FA support theorem; not on theorem-2/3/4 route | `docs/nuclear_spaces_blueprint.md` |
+| `Wightman/NuclearSpaces/NuclearSpace.lean:576` | `product_seminorm_dominated` | same local nuclear-support lane | `docs/nuclear_spaces_blueprint.md` |
+| `Wightman/NuclearSpaces/BochnerMinlos.lean:558` | `bochner_tightness_and_limit` | local Bochner-Minlos support, downstream of nuclearity setup | `docs/nuclear_spaces_blueprint.md` |
+| `Wightman/NuclearSpaces/BochnerMinlos.lean:570` | `minlos_projective_consistency` | same | `docs/nuclear_spaces_blueprint.md` |
+| `Wightman/NuclearSpaces/BochnerMinlos.lean:596` | `minlos_nuclearity_tightness` | same | `docs/nuclear_spaces_blueprint.md` |
+| `Wightman/NuclearSpaces/BochnerMinlos.lean:604` | `eval_maps_generate_sigma_algebra` | same | `docs/nuclear_spaces_blueprint.md` |
+| `Wightman/NuclearSpaces/BochnerMinlos.lean:612` | `eval_charfun_implies_fd_distributions` | same | `docs/nuclear_spaces_blueprint.md` |
+
+### 3.2. Ownership split for this lane
+
+Later Lean work must keep three layers separate:
+
+1. checked local support files under `Wightman/NuclearSpaces/*`;
+2. downstream reconstruction-facing surfaces currently exported as axioms in
+   `Wightman/WightmanAxioms.lean`;
+3. the still-open integration/import wrapper route connecting (1) to (2).
+
+This lane is therefore peripheral by **execution order**, not by lack of live
+checked files.
 
 ## 4. SCV side infrastructure
 
@@ -55,10 +75,29 @@ Here "peripheral" does **not** mean mathematically unimportant. It means:
 
 ## 5. Complex-Lie-group permutation side lane
 
+This lane needs one extra scope discipline so later Lean work does not reopen a
+finished theorem-2 package by mistake.
+
+The two remaining blockers below are **only** the downstream nontrivial-
+permutation endgame in
+`ComplexLieGroups/Connectedness/BHWPermutation/PermutationFlow.lean`.
+They are peripheral right now not merely because they live in
+`ComplexLieGroups`, but because theorem 2 already hands off strictly earlier on
+the adjacent-swap seam
+
+`Adjacency.lean`
+-> `AdjacencyDistributional.lean`
+-> `WickRotation/BHWExtension.lean`
+-> `WickRotation/OSToWightmanBoundaryValueLimits.lean`.
+
+So this file should never be read as saying theorem 2 is blocked on
+`PermutationFlowBlocker.lean`; theorem 2 consumes only the adjacent-swap lane,
+while the blockers below belong to the later general-permutation closure.
+
 | File:line | Theorem | Why peripheral right now | Primary doc |
 |---|---|---|---|
-| `ComplexLieGroups/Connectedness/BHWPermutation/PermutationFlowBlocker.lean:55` | `blocker_isConnected_permSeedSet_nontrivial` | BHW permutation branch, not current theorem-2/3/4 route | `docs/bhw_permutation_blueprint.md` |
-| `ComplexLieGroups/Connectedness/BHWPermutation/PermutationFlowBlocker.lean:119` | `blocker_iterated_eow_hExtPerm_d1_nontrivial` | same | `docs/bhw_permutation_blueprint.md` |
+| `ComplexLieGroups/Connectedness/BHWPermutation/PermutationFlowBlocker.lean:55` | `blocker_isConnected_permSeedSet_nontrivial` | full nontrivial-permutation connectedness endgame, not the theorem-2 adjacent-swap handoff | `docs/bhw_permutation_blueprint.md` |
+| `ComplexLieGroups/Connectedness/BHWPermutation/PermutationFlowBlocker.lean:119` | `blocker_iterated_eow_hExtPerm_d1_nontrivial` | one-dimensional branch of that same full permutation-flow endgame, still downstream of theorem 2 | `docs/bhw_permutation_blueprint.md` |
 
 ## 6. Suggested execution order inside the peripheral backlog
 
@@ -100,8 +139,14 @@ single sorries. The correct grouping is:
    - `bochner_local_extension`
    - `bochner_tube_extension`
 5. **BHW permutation lane**
-   - `blocker_isConnected_permSeedSet_nontrivial`
-   - `blocker_iterated_eow_hExtPerm_d1_nontrivial`
+   - theorem-2 handoff is already below this lane on
+     `Adjacency.lean -> AdjacencyDistributional.lean -> BHWExtension.lean -> OStoWightmanBoundaryValueLimits.lean`
+   - open blockers here are only:
+     - `blocker_isConnected_permSeedSet_nontrivial`
+     - `blocker_iterated_eow_hExtPerm_d1_nontrivial`
+   - implementation must therefore start from the existing adjacent-swap
+     handoff and continue only the remaining general-permutation `PermutationFlow`
+     endgame
 6. **Historical reverse-direction residuals**
    - only after the reusable infrastructure above is clean.
 

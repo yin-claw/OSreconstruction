@@ -34,9 +34,9 @@ These are the blockers closest to the current public reconstruction lane.
 
 | ID | File:line | Theorem | Why it matters | Primary doc |
 |---|---|---|---|---|
-| W1 | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean:367` | `bvt_F_swapCanonical_pairing` | theorem 2 locality frontier | `docs/theorem2_locality_blueprint.md` |
-| W2 | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean:386` | `bvt_W_positive` | theorem 3 positivity frontier | `docs/theorem3_os_route_blueprint.md` |
-| W3 | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean:412` | `bvt_F_clusterCanonicalEventually_translate` | theorem 4 cluster frontier | `docs/theorem4_cluster_blueprint.md` |
+| W1 | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean:351` | `bvt_F_swapCanonical_pairing` | theorem 2 locality frontier; final consumer of the adjacent-only raw-boundary package plus the later canonical-shift / adjacent-chain closure layer | `docs/theorem2_locality_blueprint.md` |
+| W2 | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean:381` | `bvt_W_positive` | theorem 3 exported positivity wrapper; implementation seam lives below it in `OSToWightmanPositivity.lean` | `docs/theorem3_os_route_blueprint.md` |
+| W3 | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean:398` | `bvt_F_clusterCanonicalEventually_translate` | theorem 4 final cluster frontier; base reductions already exist below it in `OSToWightmanBoundaryValuesBase.lean` | `docs/theorem4_cluster_blueprint.md` |
 
 Everything else in this document should be interpreted relative to those three
 live public blockers.
@@ -44,6 +44,40 @@ live public blockers.
 ## 3. Wightman-side direct `sorry`s (20)
 
 ### 3.1. `E -> R` continuation and boundary-value lane
+
+The theorem-2 ledger in this section now uses a stricter ownership split.
+`W1 = bvt_F_swapCanonical_pairing` is only the frontier consumer in
+`OSToWightmanBoundaryValues.lean`; it is **not** the place where later Lean
+work should rediscover the whole locality proof. The checked/doc-planned route
+below it is now:
+
+1. Route-B open-edge / ET-support geometry on the checked adjacent-swap stack
+   `ComplexLieGroups/Connectedness/BHWPermutation/Adjacency.lean` /
+   `.../AdjacencyDistributional.lean`, starting from the checked-present lower
+   supplier `exists_real_open_nhds_adjSwap`;
+2. the flattened regular continuity package for `bvt_F` on
+   `Wightman/Reconstruction/ForwardTubeDistributions.lean`;
+3. the adjacent-only raw-boundary substitute consumer theorem
+   `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` on the
+   `WickRotation/BHWExtension.lean` / `AdjacencyDistributional.lean` seam,
+   closing via the checked pointwise theorem
+   `analytic_boundary_local_commutativity_of_boundary_continuous` rather than
+   by circularly calling a wrapper that assumes
+   `IsLocallyCommutativeWeak d (bvt_W OS lgc)`;
+4. the packaged adjacent raw-boundary equality
+   `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` on the same BHW
+   extension side;
+5. the canonical-shift recovery / gluing / adjacent-chain subsection in
+   `WickRotation/OSToWightmanBoundaryValueLimits.lean`, in the exact order
+   `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`
+   -> `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`
+   -> `bvt_F_swapCanonical_pairing_of_adjacent_chain`;
+6. only then the final frontier theorem `bvt_F_swapCanonical_pairing`.
+
+This distinction is implementation-critical: `OSToWightmanBoundaryValueLimits.lean`
+owns only the canonical-shift package above the already-closed adjacent
+raw-boundary theorem, while `BHWExtension.lean` / `AdjacencyDistributional.lean`
+own the adjacent raw-boundary closure itself.
 
 | ID | File:line | Theorem | Lane | Status |
 |---|---|---|---|---|
@@ -70,13 +104,30 @@ live public blockers.
 |---|---|---|---|---|
 | W12 | `Wightman/Reconstruction/GNSHilbertSpace.lean:1258` | `gns_matrix_coefficient_holomorphic_axiom` | GNS spectrum condition bridge | high, but not on current `E -> R` path |
 | W13 | `Wightman/Reconstruction/Main.lean:82` | `wightman_uniqueness` | standalone uniqueness theorem | medium |
-| W14 | `Wightman/NuclearSpaces/NuclearSpace.lean:234` | `gauge_dominates_on_subspace_of_convex_nhd` | nuclear-space infrastructure | medium |
-| W15 | `Wightman/NuclearSpaces/NuclearSpace.lean:313` | `product_seminorm_dominated` | nuclear-space infrastructure | medium |
-| W16 | `Wightman/NuclearSpaces/BochnerMinlos.lean:285` | `bochner_tightness_and_limit` | Bochner finite-dimensional existence | medium-low |
-| W17 | `Wightman/NuclearSpaces/BochnerMinlos.lean:384` | `minlos_projective_consistency` | Minlos projective family | medium-low |
-| W18 | `Wightman/NuclearSpaces/BochnerMinlos.lean:399` | `minlos_nuclearity_tightness` | Minlos tightness | medium-low |
-| W19 | `Wightman/NuclearSpaces/BochnerMinlos.lean:465` | `eval_maps_generate_sigma_algebra` | Minlos uniqueness | medium-low |
-| W20 | `Wightman/NuclearSpaces/BochnerMinlos.lean:485` | `eval_charfun_implies_fd_distributions` | Minlos uniqueness | medium-low |
+
+Checked-tree clarification (2026-04-08): the current repo tree under
+`OSReconstruction/Wightman/` **does** contain a live
+`Wightman/NuclearSpaces/` subtree. A direct checked-tree scan shows at least
+`NuclearSpace.lean`, `SchwartzNuclear.lean`, `GaussianFieldBridge.lean`,
+`BochnerMinlos.lean`, `EuclideanMeasure.lean`, and `ComplexSchwartz.lean`, and
+an exact direct-hole scan of that subtree gives **7** local `sorry`s:
+- `NuclearSpace.lean`: 2
+- `BochnerMinlos.lean`: 5
+
+The reason those files do not appear in the live `63`-sorry census is narrower:
+this triage note is presently tracking only the active OS-reconstruction / SCV /
+CLG / vNA headline buckets used by the current critical-path plan. The
+NuclearSpaces lane is therefore a **checked secondary lane** with real file
+ownership, but it is intentionally excluded from the headline count so the
+public theorem-2/3/4 execution ledger does not silently change shape.
+Whenever this policy is mentioned elsewhere, the docs should state both facts
+explicitly:
+1. the repo really has a checked `Wightman/NuclearSpaces/*` subtree with 7 live
+   local `sorry`s,
+2. the headline `63` count deliberately excludes that secondary lane, and
+3. downstream docs must still distinguish checked local support files,
+   downstream exported axioms in `Wightman/WightmanAxioms.lean`, and the
+   still-open integration route between those layers.
 
 ## 4. SCV direct `sorry`s (2)
 
@@ -274,22 +325,60 @@ Estimated remaining Lean size:
 ### 9.3. `bvt_F_swapCanonical_pairing`
 
 File:
-- `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean:367`
+- `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean:351`
 
-Concrete next packages:
+Checked-present supplier surfaces that the docs now freeze as the theorem-2
+source objects:
 
-1. flattened regular-input constructor from boundary data and growth,
-2. ET/open-edge support route,
-3. raw-boundary locality theorem,
-4. canonical-shell adapter.
+1. `ComplexLieGroups/Connectedness/BHWPermutation/Adjacency.lean ::
+   exists_real_open_nhds_adjSwap`
+2. `Wightman/Reconstruction/WickRotation/BHWExtension.lean ::
+   analytic_boundary_local_commutativity_of_boundary_continuous`
+3. `Wightman/Reconstruction/ForwardTubeDistributions.lean ::
+   boundary_function_continuous_forwardTube_of_flatRegular`
+4. `Wightman/Reconstruction/ForwardTubeDistributions.lean ::
+   boundary_value_recovery_forwardTube_of_flatRegular_from_bv`
+
+Concrete next packages, in the exact theorem-slot order later Lean work should
+consume them:
+
+1. `choose_real_open_edge_for_adjacent_swap`
+2. `swapped_support_lies_in_swapped_open_edge`
+3. `swapped_open_edge_embeds_in_extendedTube`
+4. `bvt_F_hasFlatRegularRepr`
+5. `bvt_F_boundary_continuous_at_real_support`
+6. `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`
+7. `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`
+8. `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`
+9. `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`
+10. `bvt_F_swapCanonical_pairing_of_adjacent_chain`
+11. `bvt_F_swapCanonical_pairing`
+
+Route/ownership clarification now enforced by this triage note:
+
+1. the adjacent raw-boundary closure belongs on the
+   `BHWExtension.lean` / `AdjacencyDistributional.lean` seam;
+2. `OSToWightmanBoundaryValueLimits.lean` begins only after that closure and
+   owns canonical-shift recovery, gluing, and adjacent-chain reduction;
+3. the frontier theorem in `OSToWightmanBoundaryValues.lean` should remain a
+   thin final consumer of those named packages.
 
 What should not happen:
 
 1. do not reopen edge-of-the-wedge,
-2. do not overclaim forward-Jost support from a too-weak hypothesis.
+2. do not overclaim forward-Jost support from a too-weak hypothesis,
+3. do not close theorem 2 by directly calling
+   `W_analytic_swap_boundary_pairing_eq` or
+   `extendF_adjSwap_pairing_eq_of_distributional_local_commutativity` on
+   `W := bvt_W OS lgc`, because both checked theorem surfaces still ask for the
+   circular global input `IsLocallyCommutativeWeak d W`,
+4. do not hide the general `swap i j` -> adjacent-chain reduction inside the
+   final frontier `sorry`.
 
 Estimated remaining Lean size:
-- `160-355` lines, depending on whether the safer open-edge route is used.
+- `160-355` lines, but now with the theorem-slot order and file ownership made
+  explicit enough that the remaining work should be executable as a staged
+  package rather than rediscovered ad hoc.
 
 ### 9.4. `gns_matrix_coefficient_holomorphic_axiom`
 
@@ -336,7 +425,11 @@ current theorem-2/3/4 execution order:
 2. `W_analytic_cluster_integral`
 3. `isPreconnected_baseFiber`
 4. `wickRotation_not_in_PET_null`
-5. all of `BochnerMinlos.lean`
+5. the checked nuclear / Bochner-Minlos secondary lane recorded in
+   `docs/nuclear_spaces_blueprint.md`, `docs/gns-pipeline-sorries.md`, and
+   `docs/peripheral_sorry_triage.md`, owned by the local
+   `Wightman/NuclearSpaces/*` support files and currently carrying 7 direct
+   `sorry`s outside the headline `63`-count policy
 6. all of the `vNA` backlog
 
 This note exists partly to keep that discipline explicit.

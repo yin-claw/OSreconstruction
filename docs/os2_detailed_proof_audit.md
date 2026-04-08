@@ -1703,6 +1703,37 @@ What OS II does not support is:
 - using continuity/uniqueness on too large a domain without first proving the
   correct local analyticity and extension package.
 
+For theorem 2 specifically, this now has a concrete documentation consequence.
+The locality lane is not allowed to stop at a high-level sentence like
+"BHW/edge-of-the-wedge gives the swap pairing." The current repo contract is:
+
+1. first close the explicit Route-B real-open-edge / ET-support package
+   (`choose_real_open_edge_for_adjacent_swap` ->
+   `swapped_support_lies_in_swapped_open_edge` ->
+   `swapped_open_edge_embeds_in_extendedTube`);
+2. then close boundary continuity of the actual analytic representative `bvt_F`
+   through the flattened regular Fourier-Laplace package;
+3. then prove the adjacent-only raw-boundary equality through the theorem-2
+   substitute consumer
+   `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`, rather than
+   by circularly instantiating a theorem surface that already asks for global
+   local commutativity of `bvt_W`;
+4. only after that pass to the canonical positive-imaginary shift via
+   `boundary_value_recovery_forwardTube_of_flatRegular_from_bv`, packaged as
+   `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` and
+   `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`;
+5. and only then reduce the general `swap i j` frontier to an adjacent chain by
+   the separate theorem package
+   `bvt_F_swapCanonical_pairing_of_adjacent_chain`.
+
+So OS II's prohibition on fake continuation shortcuts should be read locally as
+forbidding theorem-2 endgames of the form:
+- "invoke BHW locality somehow" with no explicit real-edge support package,
+- "use the checked public swap-pairing wrapper directly" when its theorem
+  surface is circular on `W := bvt_W OS lgc`,
+- or "rewrite to the canonical shift" without a named boundary-recovery
+  specialization.
+
 ### 13.4. Current theorem-3 state after the latest scratch corrections
 
 The most current scratch state in the repo is more modest than some recent
@@ -2267,3 +2298,21 @@ The note above is intentionally conditional. At the time of writing, the repo
 does not yet have all those hypotheses in trusted form for the current common
 kernel / descended-`bvt_F` comparison. That is exactly the remaining theorem-3
 work.
+
+A closely related theorem-2 discipline point should also be kept explicit here:
+when the `k = 2` lane later feeds the locality lane, the output is not yet the
+final public theorem-2 consumer surface. It is at most an adjacent-step raw or
+canonical pairing theorem. The docs should therefore keep four distinct layers
+separate:
+
+1. theorem-3 common-kernel / explicit-kernel comparison on the correct local
+   one-variable domain;
+2. theorem-2 adjacent raw-boundary pairing equality on the real trace;
+3. theorem-2 adjacent canonical-shift pairing equality after boundary-value
+   recovery;
+4. theorem-2 general-swap closure via an explicit adjacent-transposition chain.
+
+This separation matters because OS II's one-variable philosophy is compatible
+with theorem-2 only at the adjacent-step level first. Jumping directly from a
+local `k = 2` comparison theorem to the final general `swap i j` locality
+wrapper would again suppress a real proof package rather than documenting it.

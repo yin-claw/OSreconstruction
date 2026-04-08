@@ -14,6 +14,42 @@ for the remaining GNS-facing proof packages.
 
 ## 1. Live theorem surfaces
 
+Checked-tree clarification for this clone:
+
+1. the downstream GNS consumer files named below are checked-present;
+2. the repo tree also contains a checked `OSReconstruction/Wightman/NuclearSpaces/`
+   subtree (`NuclearSpace.lean`, `SchwartzNuclear.lean`,
+   `GaussianFieldBridge.lean`, `BochnerMinlos.lean`, `EuclideanMeasure.lean`,
+   `ComplexSchwartz.lean`, plus helpers), so the nuclear/kernel lane is **not**
+   merely historical in this clone;
+3. however, the reconstruction-critical consumer surface is still the pair of
+   axioms in `Wightman/WightmanAxioms.lean`, and later Lean work must keep
+   separate:
+   - checked support files that already exist under `Wightman/NuclearSpaces/`,
+   - theorem surfaces already exported as axioms in `Wightman/WightmanAxioms.lean`, and
+   - any still-planned integration/wrapper work needed to connect the two;
+4. the current policy-level sorry census also keeps that distinction explicit:
+   a direct checked-tree scan shows **7** local `sorry`s in the checked
+   `Wightman/NuclearSpaces/*` lane (`NuclearSpace.lean`: 2,
+   `BochnerMinlos.lean`: 5), but the headline repo-wide `63`-sorry ledger is
+   intentionally reserved for the theorem-2/3/4 critical-path tree and does
+   **not** absorb those secondary-lane support holes.
+
+So the GNS documentation contract in this clone is three-layered:
+
+1. local support ownership: `Wightman/NuclearSpaces/NuclearSpace.lean`,
+   `SchwartzNuclear.lean`, `GaussianFieldBridge.lean`,
+   `BochnerMinlos.lean`, `EuclideanMeasure.lean`, `ComplexSchwartz.lean`;
+2. downstream consumer ownership: `Wightman/WightmanAxioms.lean` exports
+   `exists_continuousMultilinear_ofSeparatelyContinuous` and
+   `schwartz_nuclear_extension`, then `Wightman/Reconstruction/GNSHilbertSpace.lean`
+   consumes the resulting `WightmanQFT` surface through `gns_cyclicity` and
+   `gnsQFT`;
+3. integration ownership: any future import/re-export/wrapper work that wires
+   the checked local NuclearSpaces lane into those downstream axiom surfaces
+   must be documented as bridge work rather than silently treated as if the
+   axioms had already been replaced in-place.
+
 The GNS pipeline currently feeds:
 
 1. `wightman_reconstruction` in
@@ -276,7 +312,23 @@ The theorem
 theorem gns_cyclicity
 ```
 
-should be treated as the first direct consumer of the nuclear-space package.
+should be treated as the first direct GNS consumer of the downstream
+nuclear-space theorem surface.
+
+More explicitly, the ownership chain for this package is:
+
+1. local support/theorem work belongs in the checked
+   `Wightman/NuclearSpaces/*` files and in the bridge/import layer described in
+   `docs/nuclear_spaces_blueprint.md`;
+2. the reconstruction-facing theorem surfaces remain
+   `Wightman/WightmanAxioms.lean ::
+   exists_continuousMultilinear_ofSeparatelyContinuous` and
+   `Wightman/WightmanAxioms.lean :: schwartz_nuclear_extension` until that
+   bridge is actually implemented;
+3. `Wightman/Reconstruction/GNSHilbertSpace.lean :: gns_cyclicity` is the
+   first theorem that should consume those downstream surfaces on the GNS side,
+   rather than reaching directly into a local NuclearSpaces file by ad hoc
+   imports or new wrapper surfaces.
 
 Exact route:
 
@@ -323,7 +375,27 @@ theorem gns_cyclicity
 ```
 
 This theorem is therefore a kernel-theorem consumer plus a quotient-density
-argument; no new QFT-specific analysis should be hiding in it.
+argument; no new QFT-specific analysis should be hiding in it. More sharply,
+in this clone the theorem should be read as consuming one of two checked support
+routes:
+
+1. imported/re-exported support already routed through the checked
+   `Wightman/NuclearSpaces/GaussianFieldBridge.lean` and companion files, or
+2. local support proved directly in the checked
+   `Wightman/NuclearSpaces/*` lane described in
+   `docs/nuclear_spaces_blueprint.md`.
+
+But whichever support route is chosen, the proof transcript for the GNS lane
+must still pass through the downstream exported surfaces in
+`Wightman/WightmanAxioms.lean` before it reaches
+`GNSHilbertSpace.lean :: gns_cyclicity`. In particular, later Lean work should
+not bypass the exported `exists_continuousMultilinear_ofSeparatelyContinuous`
+/ `schwartz_nuclear_extension` seam by importing a local helper directly into
+`gns_cyclicity` unless the docs are updated in the same pass to replace that
+consumer contract.
+
+What is *not* allowed is to talk as if theorem 2/3/4 or GNS cyclicity will be
+closed by an unspecified hidden package somewhere outside the checked tree.
 
 ## 7. Assembly into `gnsQFT`
 
@@ -354,7 +426,9 @@ The later Lean implementation should proceed in this order:
 1. `continuous_translate_npoint_schwartz`,
 2. `gns_stronglyContinuous_preHilbert`,
 3. the forward-tube / matrix-coefficient holomorphic bridge,
-4. the nuclear-space density theorem,
+4. the nuclear-space bridge in the exact ownership order
+   `Wightman/NuclearSpaces/*` support -> optional import/re-export bridge ->
+   downstream `Wightman/WightmanAxioms.lean` theorem surface,
 5. `gns_cyclicity`,
 6. final `gnsQFT` assembly,
 7. only then the standalone `wightman_uniqueness`.

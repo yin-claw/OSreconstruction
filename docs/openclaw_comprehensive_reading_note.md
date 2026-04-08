@@ -440,30 +440,61 @@ Given Wightman functions {W_n} satisfying positivity:
 
 ### 24. Module Map
 
+Checked-tree correction (2026-04-08): the table below is the live tracked-production
+census for this clone, not the older March snapshot. In particular:
+- the headline tracked-production census is now **63** direct `sorry`s,
+- the tracked production tree has **6** explicit axioms, not 7,
+- `semigroupGroup_bochner` and `laplaceFourier_measure_unique` are no longer
+  live axioms in this tree,
+- the checked `Wightman/NuclearSpaces/*` subtree exists, but its local
+  support-lane `sorry`s are intentionally kept outside this headline tracked
+  production census.
+
 | Module | Content | Sorrys | Axioms |
 |--------|---------|--------|--------|
-| Wightman/ | Axioms, GNS, Wick rotation bridge | 28 | 2 |
-| SCV/ | Edge-of-wedge, tube domains, Fourier-Laplace | 2 | 4 |
+| Wightman/ | Axioms, GNS, Wick rotation bridge | 23 | 3 |
+| SCV/ | Edge-of-the-wedge, tube domains, Fourier-Laplace | 2 | 3 |
 | ComplexLieGroups/ | BHW, complex Lorentz, Jost points | 2 | 0 |
-| vNA/ | Tomita-Takesaki, spectral theory, Stone | 40 | 0 |
-| Bridge/ | Axiom-replacement wiring | 0 | 1 |
-| **Total** | | **72** | **7** |
+| vNA/ | Tomita-Takesaki, spectral theory, Stone | 36 | 0 |
+| **Total tracked production tree** | | **63** | **6** |
+|
+
+The live explicit axioms are:
+1. `schwartz_nuclear_extension`
+2. `exists_continuousMultilinear_ofSeparatelyContinuous`
+3. `vladimirov_tillmann`
+4. `distributional_cluster_lifts_to_tube`
+5. `tube_boundaryValueData_of_polyGrowth`
+6. `reduced_bargmann_hall_wightman_of_input`
 
 ### 25. Critical Path Files and Their Paper Correspondence
 
+Checked-tree correction (2026-04-08): the live `E -> R` theorem-package split is
+sharper than the older summary below suggested. In particular, theorem 3 is not
+owned by `OSToWightmanBoundaryValues.lean`; its implementation seam is the
+Section-4.3 transport package in `OSToWightmanPositivity.lean`, while theorem 2
+and theorem 4 each have their own support-layer split below the final frontier
+consumers.
+
 | File | Paper Section | Content |
 |------|--------------|---------|
-| OSToWightmanSemigroup.lean | OS I §4, OS II Ch.V (semigroup) | Hilbert space, semigroup, holomorphic extension |
-| OSToWightman.lean | OS II Thms 4.1–4.3 | Inductive continuation base step |
-| OSToWightmanBoundaryValues.lean | OS II Ch.VI | Temperedness, boundary values, axiom transfer |
-| SchwingerAxioms.lean | OS I §5 (R→E) | E0–E4 from Wightman functions |
-| SchwingerTemperedness.lean | OS II Ch.VI (R→E) | Zero-diagonal temperedness |
-| BHWExtension.lean | Streater-Wightman Ch.2 | Adjacent-swap BHW extension |
-| BHWTranslation.lean | Route 1 | Translation invariance of BHW |
-| ForwardTubeLorentz.lean | BHW infrastructure | Lorentz covariance on tube |
-| GNSConstruction.lean | Wightman reconstruction | GNS from W_n (sorry-free) |
-| TubeDomainExtension.lean | Bogoliubov 1957 | Multi-D edge-of-the-wedge (sorry-free) |
-| SeparatelyAnalytic.lean | Osgood 1899 | Osgood's lemma (sorry-free) |
+| `OSToWightmanSemigroup.lean` | OS I §4, OS II Ch.V (semigroup) | Hilbert space, semigroup, holomorphic extension |
+| `OSToWightman.lean` | OS II Thms. 4.1–4.3 | upstream root continuation blocker (`schwinger_continuation_base_step`) |
+| `OSToWightmanPositivity.lean` | OS I §4.3 / Section-4.3 transport package | theorem-3 implementation locus (`bvt_W_eq_inner_on_positiveTimeTransport`, `bvt_W_positive_density_reduction`, `bvt_W_positive_direct`) |
+| `OSToWightmanBoundaryValuesBase.lean` | OS II Ch.VI boundary-data packaging | checked boundary-value existence and theorem-2/theorem-4 base suppliers |
+| `OSToWightmanBoundaryValueLimits.lean` | theorem-2/theorem-3 canonical-limit support layer | checked file currently used by theorem-3 `singleSplit_xiShift` limit machinery; theorem-2 may enter this file only **after** the adjacent-only raw-boundary closure is already available, and then only through the sibling-subsection chain `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery -> bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality -> bvt_F_swapCanonical_pairing_of_adjacent_chain` |
+| `OSToWightmanBoundaryValuesComparison.lean` | theorem-2 downstream consumer layer | `bv_local_commutativity_transfer_of_swap_pairing` and related comparison/transfer theorems; this file consumes the finished canonical-swap package rather than owning the raw-boundary theorem |
+| `OSToWightmanBoundaryValues.lean` | final E→R consumer/frontier wrappers | thin theorem-2 frontier consumer (`bvt_F_swapCanonical_pairing`) plus downstream transfer chain and final cluster wrapper; it should not absorb Route-B geometry or raw-boundary BHW work |
+| `SchwingerAxioms.lean` | OS I §5 (R→E) | E0–E4 from Wightman functions |
+| `SchwingerTemperedness.lean` | OS II Ch.VI (R→E) | zero-diagonal temperedness |
+| `BHWExtension.lean` | Streater-Wightman Ch. 2 | theorem-2 raw-boundary seam: statement home of the planned adjacent-only substitute consumer `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`; do **not** close theorem 2 by directly instantiating `W_analytic_swap_boundary_pairing_eq` |
+| `BHWReducedExtension.lean` | Route 1 reduced-coordinate bridge | deferred reduced-BHW bridge axiom surface |
+| `BHWTranslation.lean` | old-route residual geometry | residual base-fiber connectivity theorem, no longer the merged-path translation-invariance engine |
+| `ForwardTubeLorentz.lean` | BHW infrastructure | Lorentz covariance on the tube |
+| `ForwardTubeDistributions.lean` | forward-tube BV / flat-regular transport | theorem-2 continuity/recovery supplier layer |
+| `GNSConstruction.lean` | Wightman reconstruction | GNS from `W_n` (sorry-free) |
+| `TubeDomainExtension.lean` | Bogoliubov 1957 | multi-D edge-of-the-wedge (sorry-free) |
+| `SeparatelyAnalytic.lean` | Osgood 1899 | Osgood's lemma (sorry-free) |
 
 ### 26. Root E→R Blocker: schwinger_continuation_base_step
 
@@ -484,17 +515,26 @@ One difference variable, one time continuation. Partially implemented.
 G(ζ₁,...,ζ_{k−1}) = ⟨Ψ₁, T(ζ₁⁰) A₂ T(ζ₂⁰) ··· T(ζ_{k−1}⁰) Ψ_{k−1}⟩
 ```
 
-### 27. The 7 Axioms
+### 27. The 6 Live Tracked-Production Axioms
+
+Checked-tree correction (2026-04-08): the older 7-axiom list is stale. In the
+current tracked production tree the live explicit axioms are exactly:
 
 | # | Name | Mathematical Content | Type |
 |---|------|---------------------|------|
-| 1 | schwartz_nuclear_extension | Schwartz kernel theorem | Functional analysis |
-| 2 | exists_continuousMultilinear_ofSeparatelyContinuous | Banach-Steinhaus multilinear | Functional analysis |
-| 3 | semigroupGroup_bochner | Joint semigroup-group Bochner | Harmonic analysis |
-| 4 | laplaceFourier_measure_unique | Laplace-Fourier uniqueness | Harmonic analysis |
-| 5 | vladimirov_tillmann | Tube growth theorem | SCV |
-| 6 | distributional_cluster_lifts_to_tube | Cluster lifting to tube | SCV |
-| 7 | reduced_bargmann_hall_wightman_of_input | Reduced BHW theorem | Complex Lie groups |
+| 1 | `schwartz_nuclear_extension` | Schwartz kernel theorem / nuclear extension surface | Functional analysis |
+| 2 | `exists_continuousMultilinear_ofSeparatelyContinuous` | Banach-Steinhaus multilinear bridge | Functional analysis |
+| 3 | `vladimirov_tillmann` | tube growth theorem | SCV |
+| 4 | `distributional_cluster_lifts_to_tube` | cluster lifting from boundary data to tube interior | SCV |
+| 5 | `tube_boundaryValueData_of_polyGrowth` | tube boundary-value existence from polynomial growth | SCV |
+| 6 | `reduced_bargmann_hall_wightman_of_input` | reduced-coordinate BHW bridge | Complex Lie groups |
+
+Two former axioms no longer belong to this list:
+- `semigroupGroup_bochner`
+- `laplaceFourier_measure_unique`
+
+They were eliminated on the live tracked-production route and should not be
+cited as active axiom debt in follow-up docs.
 
 ---
 
@@ -515,7 +555,7 @@ G(ζ₁,...,ζ_{k−1}) = ⟨Ψ₁, T(ζ₁⁰) A₂ T(ζ₂⁰) ··· T(ζ_{k�
 
 ---
 
-**Last updated:** 2026-03-28 17:00 UTC
+**Last updated:** 2026-04-08 07:30 UTC
 
 ---
 
@@ -523,7 +563,26 @@ G(ζ₁,...,ζ_{k−1}) = ⟨Ψ₁, T(ζ₁⁰) A₂ T(ζ₂⁰) ··· T(ζ_{k�
 
 ### 28. Overall Scale
 
-The formalization comprises **142,800 lines** of Lean 4 code across 4 major modules with **71 sorrys** and **11 axioms** (7 OS-critical + 4 vNA-internal). This is an enormous formalization project.
+Checked-tree correction (2026-04-08): the older March snapshot in this note is
+now stale. The live tracked-production tree in this clone currently has:
+- **63** direct `sorry`s,
+- **6** explicit axioms,
+- theorem-2/3/4 ownership split across `OSToWightmanPositivity.lean`,
+  `OSToWightmanBoundaryValuesBase.lean`,
+  `OSToWightmanBoundaryValueLimits.lean`,
+  `OSToWightmanBoundaryValuesComparison.lean`, and
+  `OSToWightmanBoundaryValues.lean`.
+
+This note remains useful as a mathematical reading note, but any implementation
+work should prefer the live blocker ledger in:
+- `README.md`
+- `docs/development_plan_systematic.md`
+- `docs/proof_docs_completion_plan.md`
+- `docs/theorem2_locality_blueprint.md`
+- `docs/theorem3_os_route_blueprint.md`
+- `docs/theorem4_cluster_blueprint.md`
+
+when they disagree with the older snapshot language here.
 
 ### 29. What Is Fully Proved (Sorry-Free)
 
@@ -559,7 +618,11 @@ The following critical-path components are **completely proved**:
 
 **Total sorry-free critical-path code: ~34,000+ lines.** This represents an extraordinary amount of completed formalization.
 
-### 30. The OS-Critical Sorry Surface (32 sorrys + 7 axioms)
+### 30. The OS-Critical Sorry Surface (older reading-note snapshot; superseded by the live 63-sorry / 6-axiom tracked-production census)
+
+The detailed breakdown below is still useful as a mathematical decomposition,
+but it predates the current theorem-2/3/4 file split and axiom cleanup. Read it
+as historical route analysis unless it agrees with the live docs named above.
 
 Organized by proof-theoretic role:
 
@@ -639,19 +702,22 @@ The von Neumann algebra module is a **separate development lane** not on the OS-
 
 This lane matters for the separate GNS/operator reconstruction theorem (`wightman_reconstruction`), but NOT for the Wick-rotation critical path.
 
-### 32. The 7 OS-Critical Axioms: Assessment
+### 32. The Live Tracked-Production Axiom Surface: Assessment
+
+Checked-tree correction (2026-04-08): the live explicit-axiom surface is the
+6-item list from Section 27, not the older 7-item list.
 
 | Axiom | Difficulty to Close | Notes |
 |-------|-------------------|-------|
-| schwartz_nuclear_extension | Medium-Hard | Partially proved in gaussian-field library; gap is importing + deriving kernel theorem |
-| exists_continuousMultilinear_ofSeparatelyContinuous | Medium | Proved in gaussian-field; gap is importing |
-| semigroupGroup_bochner | Hard | Genuine harmonic analysis; joint semigroup-group Bochner on [0,∞) × R^d |
-| laplaceFourier_measure_unique | Medium | Uniqueness clause for Bochner; standard but technical |
-| vladimirov_tillmann | Hard | Deep SCV theorem (tube growth bounds) |
-| distributional_cluster_lifts_to_tube | Medium-Hard | Poisson integral + Riemann-Lebesgue argument |
-| reduced_bargmann_hall_wightman_of_input | Hard | Native reduced-coordinate BHW; requires porting complex Lie group connectedness |
+| `schwartz_nuclear_extension` | Medium-Hard | Partially proved in gaussian-field library; gap is importing + deriving kernel theorem |
+| `exists_continuousMultilinear_ofSeparatelyContinuous` | Medium | Proved in gaussian-field; gap is importing |
+| `vladimirov_tillmann` | Hard | deep SCV theorem (tube growth bounds) |
+| `distributional_cluster_lifts_to_tube` | Medium-Hard | Poisson integral + Riemann-Lebesgue argument |
+| `tube_boundaryValueData_of_polyGrowth` | Hard | SCV boundary-value existence theorem from polynomial growth |
+| `reduced_bargmann_hall_wightman_of_input` | Hard | native reduced-coordinate BHW; requires porting complex Lie group connectedness |
 
-Axioms 1–2 are the closest to closure (external library has the proofs, just needs import bridge).
+The two easiest closure candidates remain the functional-analysis imports from
+`gaussian-field`; the current SCV/BHW axioms are the deeper mathematical debt.
 
 ---
 
@@ -697,11 +763,22 @@ Based on the dependency structure and mathematical difficulty:
 - Depends on the k=2 base step (Priority 1) as proof of concept
 - For general k: requires the interleaved operator product from OS II eq. (5.3)
 
-**Priority 3: Close the boundary-value transfer chain.**
-- File: OSToWightmanBoundaryValues.lean (7 sorrys)
-- Once Priorities 1–2 give the holomorphic continuation with tempered bounds, each transfer theorem (translation invariance, Lorentz covariance, locality, positivity, hermiticity, cluster) follows conceptually from the corresponding OS axiom
-- Most are "straightforward but technical" — mechanical Lean work rather than deep mathematics
-- Exception: `bvt_cluster` (cluster property) requires more substantial argument
+**Priority 3: Close the boundary-value consumer chain in the *current* split file layout.**
+- Files/layers:
+  - `OSToWightmanPositivity.lean` for the theorem-3 Section-4.3 transport package,
+  - `OSToWightmanBoundaryValuesBase.lean` for checked boundary-data suppliers,
+  - `OSToWightmanBoundaryValueLimits.lean` for canonical-limit / theorem-2 closure support,
+  - `OSToWightmanBoundaryValuesComparison.lean` for downstream comparison consumers,
+  - `OSToWightmanBoundaryValues.lean` for the thin frontier/transfer wrappers.
+- Once Priorities 1–2 give the holomorphic continuation with tempered bounds, each transfer theorem still follows conceptually from the corresponding OS axiom, but the implementation work is **not** a single-file `OSToWightmanBoundaryValues.lean` task anymore.
+- Theorem 2 now has an implementation-critical four-layer order which this older note should name explicitly rather than compress into a generic “boundary-value chain”:
+  1. Route-B adjacent-swap geometry in `ComplexLieGroups/Connectedness/BHWPermutation/Adjacency.lean`, with checked lower supplier `exists_real_open_nhds_adjSwap` and theorem-2-facing wrappers above it;
+  2. adjacent-only raw-boundary closure on the `AdjacencyDistributional.lean` / `BHWExtension.lean` seam, with statement home fixed at the planned theorem slot `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` and proof transcript fixed as boundary continuity on the chosen edge -> compact-support integrand equality -> pairing equality;
+  3. theorem-2-specific canonical-shift sibling subsection in `OSToWightmanBoundaryValueLimits.lean`, in the exact local order `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery -> bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality -> bvt_F_swapCanonical_pairing_of_adjacent_chain`;
+  4. only then the final frontier consumer / transfer chain in `OSToWightmanBoundaryValuesComparison.lean` and `OSToWightmanBoundaryValues.lean`.
+- A direct implementation warning now needs to be recorded here too: `WickRotation/BHWExtension.lean :: W_analytic_swap_boundary_pairing_eq` is **not** the theorem-2 closure surface, because with `W := bvt_W OS lgc` it asks for the global input `IsLocallyCommutativeWeak d W` and is therefore circular on the active theorem-2 lane.
+- Theorem 3 should be treated as the Section-4.3 transport package, not as the exported wrapper `bvt_W_positive` alone.
+- Theorem 4 should be treated as the corrected bridge plus canonical-shell adapter above the final wrapper, not as the final wrapper `bvt_cluster` alone.
 
 **Priority 4: Close the R→E direction.**
 - Files: SchwingerAxioms.lean (2 sorrys), ForwardTubeLorentz.lean (1 sorry)
@@ -717,8 +794,8 @@ Based on the dependency structure and mathematical difficulty:
 **Priority 6: Address remaining axioms and standalone blockers.**
 - reduced BHW axiom (hard: needs native reduced-coordinate proof or PET descent)
 - Bochner tube theorem (2 sorrys, load-bearing but not immediate blocker)
-- semigroupGroup_bochner and vladimirov_tillmann (hard, genuine mathematical axioms)
-- wightman_uniqueness (1 sorry, mainly wiring)
+- SCV axiom surfaces `vladimirov_tillmann`, `distributional_cluster_lifts_to_tube`, and `tube_boundaryValueData_of_polyGrowth`
+- `wightman_uniqueness` (1 sorry, mainly wiring)
 
 **Deprioritized:** The vNA lane (40 sorrys) unless it unblocks something specific.
 
@@ -755,7 +832,7 @@ Based on the dependency structure and mathematical difficulty:
 
 **Risk 3: General k generalization.** The k=2 case uses a single semigroup parameter. General k requires interleaved operators and a multi-step induction. The jump from k=2 to general k is not mechanical — it requires the full (A_N)/(P_N) alternation machinery from OS II Chapter V. Plan this architecture before attempting the proof.
 
-**Risk 4: Axiom debt.** The 7 axioms represent genuine mathematical content that must eventually be proved. The two hardest are `semigroupGroup_bochner` (joint Bochner representation) and `vladimirov_tillmann` (tube growth theorem). These are deep results requiring substantial new infrastructure. Plan a separate workstream for axiom closure.
+**Risk 4: Axiom debt.** The live tracked-production axiom debt is the 6-item surface from Section 27, not the older 7-axiom list. The deepest remaining debt now sits on the SCV/BHW side — especially `vladimirov_tillmann`, `distributional_cluster_lifts_to_tube`, `tube_boundaryValueData_of_polyGrowth`, and `reduced_bargmann_hall_wightman_of_input`. The two functional-analysis axioms are closer to closure because the external proof source already exists in `gaussian-field`.
 
 ---
 
