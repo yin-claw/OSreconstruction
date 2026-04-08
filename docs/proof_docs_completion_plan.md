@@ -200,24 +200,54 @@ This doc is complete only when:
    `DenseRange` claim in full `SchwartzNPoint d n`;
 4. Package I has concrete theorem slots for the explicit `(4.19)`-`(4.20)`
    test-function transform, the transformed image, the half-space dense-range
-   paper theorem `os1TransportComponent_denseRange`, the kernel-zero theorem
-   `os1TransportComponent_eq_zero_iff` consumed by the well-definedness proof,
-   the transport map on that image, the quadratic identity there, and the
-   final public closure theorem;
+   paper theorem `os1TransportComponent_denseRange`, the kernel-zero theorems
+   `os1TransportOneVar_eq_zero_iff` and `os1TransportComponent_eq_zero_iff`
+   consumed by the on-image well-definedness proof, the transport map on that
+   image, the quadratic identity there, and the final public closure theorem;
+   the slot ledger must also say explicitly which checked-present
+   `SCV/PartialFourierSpatial.lean` suppliers each transport step may consume,
+   and in what order:
+   `partialFourierSpatial_fun`
+   -> `partialFourierSpatial_timeSliceSchwartz`
+   -> `partialFourierSpatial_timeSlice_hasPaleyWienerExtension`
+   -> `partialFourierSpatial_timeSliceCanonicalExtension`
+   -> `os1TransportOneVar`
+   -> `os1TransportOneVar_eq_zero_iff`
+   -> `os1TransportComponent`
+   -> `BvtTransportImageSequence`
+   -> `bvt_transport_to_osHilbert_onImage`
+   -> `bvt_wightmanInner_eq_transport_norm_sq_onImage`;
+   the completion standard here is not merely "name the support file" but
+   "freeze the Lean execution order above that file so later implementation
+   does not have to guess where the one-variable stage ends and the on-image
+   stage begins";
 5. the doc explicitly distinguishes the exported wrapper theorem
    `OSToWightmanBoundaryValues.lean :: bvt_W_positive` from the actual
-   implementation/theorem-package locus in `OSToWightmanPositivity.lean`
-   (`bvt_W_eq_inner_on_positiveTimeTransport`,
-   `bvt_W_positive_density_reduction`, `bvt_W_positive_direct`);
+   checked implementation/support locus in `OSToWightmanPositivity.lean`.
+   A source check against the live tree should now read that file as exposing
+   the landed support surfaces
+   `identity_theorem_right_halfplane`,
+   `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single`,
+   `positiveTimeBorchersVector_dense`, and
+   `euclideanPositiveTimeSingleVector`, while the fully split Section-4.3
+   transport/closure theorem names remain planned theorem-slot targets rather
+   than already-landed production theorem names;
 6. any surviving mention of Packages F/G/H is clearly marked as withdrawn /
    historical, not endorsed implementation guidance;
 7. the exact legacy-consumer status after Package C is named;
-8. the branch-`3b` support route is fixed at the concrete
-   `PartialFourierSpatial.lean` companion-file level rather than the withdrawn
-   abstract Schwartz-helper route;
-   if that support file is not yet present in the repo, the blueprint must say
-   so explicitly and treat it as planned support work rather than as an
-   already-available theorem package;
+8. the branch-`3b` support route is fixed at the concrete checked-present
+   `OSReconstruction/SCV/PartialFourierSpatial.lean` companion-file level
+   rather than the withdrawn abstract Schwartz-helper route;
+   the blueprint must name its live supplier surfaces explicitly — at minimum
+   the coordinate reshuffle `nPointTimeSpatialCLE`, the Fourier/time-slice
+   chain
+   `partialFourierSpatial_fun`
+   -> `partialFourierSpatial_timeSliceSchwartz`
+   -> `partialFourierSpatial_timeSlice_hasPaleyWienerExtension`
+   -> `partialFourierSpatial_timeSliceCanonicalExtension`,
+   and the already-landed continuity / derivative transport theorems there —
+   and must say that the remaining theorem-3 gap is the Section-4.3 packaging
+   above those suppliers, not discovery of a missing support file;
 9. the blueprint records the exact checked repo-relative theorem-3 production
    file inventory (`.../OSToWightmanPositivity.lean`,
    `.../OSToWightmanBoundaryValues*.lean`,
@@ -259,29 +289,37 @@ This doc is complete only when:
    `AdjacencyDistributional.lean` ownership split, so locality work cannot
    drift into the wrong file layer or collapse the continuity supplier and
    canonical-shift adapter back into one vague closing step;
+6a. the blueprint includes a compact slot ledger for the live Route-B theorem-2
+   package, and for each missing theorem slot it fixes four things explicitly:
+   file ownership, exact checked theorem surfaces consumed, exact output
+   theorem surface exported, and the next allowed downstream consumer;
 7. no section still treats continuity or geometry as abstract "candidate"
    choices;
-8. the raw-boundary locality route is fixed at the checked public theorem
-   surface `W_analytic_swap_boundary_pairing_eq`, with
-   `extendF_adjSwap_pairing_eq_of_distributional_local_commutativity` and
-   `analytic_boundary_local_commutativity_of_boundary_continuous` recorded only
-   as lower supplier theorems rather than competing theorem-2 endgames;
-8b. the blueprint must also record the checked theorem-surface mismatch there:
-   `W_analytic_swap_boundary_pairing_eq` itself asks for
-   `hLC : IsLocallyCommutativeWeak d W`, so the theorem-2 raw-boundary package
-   on `W := bvt_W OS lgc` is not implementation-ready unless the docs say
-   explicitly how that circularity is avoided. After checking the surrounding
-   live theorem surfaces, the endorsed theorem-2 route is now the adjacent-only
-   one: `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` must be
-   documented as a consumer of the explicitly named adjacent-only substitute
-   theorem `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`.
-   That theorem must be owned by `BHWExtension.lean` (with any lower helper
-   lemmas in `AdjacencyDistributional.lean`), and its transcript must freeze the
-   non-circular closure order:
+8. the raw-boundary locality route is fixed at the adjacent-only substitute
+   consumer theorem
+   `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`, with
+   statement/export ownership in `BHWExtension.lean` and any lower helper
+   lemmas in `AdjacencyDistributional.lean`; the theorem-2 docs must no longer
+   describe the checked public wrapper `W_analytic_swap_boundary_pairing_eq` as
+   the actual closure theorem on `W := bvt_W OS lgc`.
+8b. the blueprint must also record the checked theorem-surface mismatch that
+   forces that choice: both `W_analytic_swap_boundary_pairing_eq` and the lower
+   ET-support theorem
+   `extendF_adjSwap_pairing_eq_of_distributional_local_commutativity` ask for a
+   global `IsLocallyCommutativeWeak d W` input, so neither is directly the
+   theorem-2 raw-boundary closure theorem on `W := bvt_W OS lgc`. After source
+   checking the surrounding live theorem surfaces, the endorsed theorem-2 route
+   is therefore the adjacent-only one: `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`
+   must be documented as a consumer of the explicitly named substitute theorem
+   `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`, whose proof
+   transcript is frozen as
    pointwise `analytic_boundary_local_commutativity_of_boundary_continuous`
    on the chosen Route-B edge -> integrand equality on compact support ->
-   pairing equality by integral congruence. The docs may no longer leave open a
-   second endorsed route that first proves the stronger full-global theorem
+   pairing equality by integral congruence. `W_analytic_swap_boundary_pairing_eq`
+   and `extendF_adjSwap_pairing_eq_of_distributional_local_commutativity`
+   remain checked-present downstream/lower comparison surfaces, not competing
+   theorem-2 endgames. The docs may no longer leave open a second endorsed
+   route that first proves the stronger full-global theorem
    `IsLocallyCommutativeWeak d (bvt_W OS lgc)`;
 8a. the blueprint explicitly separates checked-present theorem surfaces from
    checked-missing planned theorem-package names, so later Lean work cannot
@@ -444,21 +482,41 @@ This doc is complete only when:
    names;
 2. `normalizedZeroDegreeRightVector` has a literal definition and structural
    lemmas;
-3. the corrected bridge theorem
+3. the theorem-4 slot ledger is explicit enough for direct Lean execution,
+   namely
+   `normalizedZeroDegreeRightVector`
+   -> `normalizedZeroDegreeRightVector_bound` / `..._funcs_zero` /
+      `..._funcs_pos`
+   -> `zeroDegree_right_single_wightman_extracts_factor`
+   -> `zeroDegree_right_single_os_extracts_factor`
+   -> `zero_degree_component_comparison_for_normalized_right_vector`
+   -> `cluster_left_factor_transport`
+   -> `cluster_right_factor_transport`
+   -> `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison`
+   -> `bvt_cluster_positiveTime_singleSplit_core`
+   -> `canonical_cluster_integrand_eq_singleSplit_integrand`
+   -> `canonical_translate_factor_eq_singleSplit_translate_factor`
+   -> `singleSplit_core_rewrites_to_canonical_shell`
+   -> `canonical_shell_limit_of_rewrite`
+   -> `bvt_cluster_canonical_from_positiveTime_core`
+   -> `bvt_F_clusterCanonicalEventually_translate`;
+4. the corrected bridge theorem
    `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison`
    is named explicitly as the replacement for the legacy same-shell
-   `...FactorComparison` surface;
-4. the canonical-shell adapter above the positive-time single-split core is
+   `...FactorComparison` surface, and the docs say unambiguously that
+   `bvt_F_clusterCanonicalEventually_translate_of_singleSplitFactorComparison`
+   is legacy-only support rather than an endorsed theorem-4 closure surface;
+5. the canonical-shell adapter above the positive-time single-split core is
    isolated under exact theorem slots instead of hidden in the final `sorry`,
    and those slots run in the forward consumption order
    `singleSplit core -> canonical shell rewrite -> canonical limit statement`;
-5. the blueprint explicitly distinguishes repo-present cluster reductions
+6. the blueprint explicitly distinguishes repo-present cluster reductions
    (`...singleSplitLargeSpatial`, `...singleSplitSchwingerLargeSpatial`,
    legacy `...singleSplitFactorComparison`, and the final private wrapper
    `OSToWightmanBoundaryValues.lean :: bvt_F_clusterCanonicalEventually_translate`)
    from still-missing named adapter theorems;
-6. theorem 4 is visibly pure consumer work after theorem 3;
-7. theorem-4 file ownership is fixed sharply enough for direct Lean execution:
+7. theorem 4 is visibly pure consumer work after theorem 3;
+8. theorem-4 file ownership is fixed sharply enough for direct Lean execution:
    one-factor transport extraction in `.../OSToWightmanPositivity.lean`, the
    repaired positive-time bridge in `.../OSToWightmanBoundaryValuesBase.lean`,
    and the public canonical-shell adapter plus final wrapper in

@@ -20,6 +20,11 @@ Later Lean work should read the lanes as follows:
   flattened-regular boundary-continuity package, the canonical-shift recovery
   package, or the final boundary-value frontier theorem. Those belong to
   `docs/theorem2_locality_blueprint.md` and the Wick-rotation docs.
+- **This file also does not own:** theorem-3 positivity packaging or theorem-4
+  cluster packaging. In particular, nothing in this file should be read as
+  assigning theorem-4 bridge or canonical-shell-adapter work to
+  `OSToWightmanBoundaryValueLimits.lean`; theorem-4 ownership lives in
+  `docs/theorem4_cluster_blueprint.md` and the theorem-4 status ledgers.
 
 So this note should no longer be read as if “the BHW blocker” were one opaque
 final theorem. The handoff is now a multi-file contract with explicit theorem
@@ -150,6 +155,37 @@ later Lean work should **not** collapse steps 3-7 into one closing theorem, and
 should **not** reopen the CLG geometry under `PermutationFlow.lean` or the
 umbrella barrel `BHWPermutation.lean` once the route has reached the
 boundary-pairing/canonical-shift layers.
+
+### 3.3 Slot-by-slot handoff ledger for the theorem-2 BHW seam
+
+The earlier sections fixed the correct file ownership and theorem-slot names,
+but later Lean work still had to reconstruct one crucial detail by hand: for
+each slot on the BHW seam, which exact checked surfaces must be consumed, what
+exact theorem surface is exported, and which later slot is allowed to consume
+it. This ledger now freezes that handoff contract in the secondary BHW status
+doc too, so this file no longer lags the core blueprint.
+
+| Slot | File ownership | Must consume exactly | Must prove / export exactly | Next allowed consumer |
+| --- | --- | --- | --- | --- |
+| `choose_real_open_edge_for_adjacent_swap` | `ComplexLieGroups/Connectedness/BHWPermutation/Adjacency.lean` (or a theorem-2-facing wrapper beside that checked helper layer) | checked `exists_real_open_nhds_adjSwap` plus theorem-2 support inclusion for `tsupport f` | one theorem-2-facing open real edge `V` with adjacent-swap compatibility on `V`, `tsupport f ⊆ V`, and the swapped-edge data needed downstream | `swapped_support_lies_in_swapped_open_edge`, `swapped_open_edge_embeds_in_extendedTube` |
+| `swapped_support_lies_in_swapped_open_edge` | same Route-B geometry layer | output of `choose_real_open_edge_for_adjacent_swap` plus the checked swap identity on real points | support transport only: the swapped test-function support lies in the swapped real open edge | `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` |
+| `swapped_open_edge_embeds_in_extendedTube` | same Route-B geometry layer | output of `choose_real_open_edge_for_adjacent_swap` | ET transport only: both the chosen edge and its swapped image lie in the required extended-tube domain | `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`, `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` |
+| `bvt_F_hasFlatRegularRepr` | `Wightman/Reconstruction/ForwardTubeDistributions.lean` | checked unflattened suppliers `bvt_F_holomorphic`, `bvt_boundary_values`, and the explicit growth field extracted from `full_analytic_continuation_with_symmetry_growth` | a theorem-2-specific flat-regular witness package for `bvt_F` | `bvt_F_boundary_continuous_at_real_support`, `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` |
+| `bvt_F_boundary_continuous_at_real_support` | `Wightman/Reconstruction/ForwardTubeDistributions.lean` | `bvt_F_hasFlatRegularRepr` plus checked `boundary_function_continuous_forwardTube_of_flatRegular` | boundary continuity of `bvt_F` on the real support/edge data used by theorem 2 | `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` |
+| `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` | statement home `Wightman/Reconstruction/WickRotation/BHWExtension.lean`; lower helper lemmas in `ComplexLieGroups/Connectedness/BHWPermutation/AdjacencyDistributional.lean` | Route-B open-edge package (`choose_real_open_edge_for_adjacent_swap`, `swapped_support_lies_in_swapped_open_edge`, `swapped_open_edge_embeds_in_extendedTube`) plus `bvt_F_boundary_continuous_at_real_support` and checked `analytic_boundary_local_commutativity_of_boundary_continuous` | the actual adjacent-only non-circular raw-boundary pairing equality for theorem 2 | `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` |
+| `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` | `Wightman/Reconstruction/WickRotation/BHWExtension.lean` / theorem-2 boundary-pairing layer | `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` plus the checked ET-support wrapper format expected by the Wick-rotation boundary side | theorem-2-facing adjacent raw-boundary equality in the exported boundary-pairing format | `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` |
+| `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | `bvt_F_hasFlatRegularRepr` plus checked `boundary_value_recovery_forwardTube_of_flatRegular_from_bv`, instantiated with checked `bvt_W`, `bvt_W_continuous`, `bvt_boundary_values`, and `canonicalForwardConeDirection` | the theorem-2-specific canonical-direction pairing recovery equality | `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` |
+| `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` plus two uses of `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` | adjacent canonical pairing equality for one adjacent transposition | `bvt_F_swapCanonical_pairing_of_adjacent_chain` |
+| `bvt_F_swapCanonical_pairing_of_adjacent_chain` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | explicit adjacent-transposition factorization data for `swap i j` plus repeated `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` | general `swap i j` canonical pairing equality, still below the frontier file | `bvt_F_swapCanonical_pairing` |
+| `bvt_F_swapCanonical_pairing` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | checked `bv_local_commutativity_transfer_of_swap_pairing` plus `bvt_F_swapCanonical_pairing_of_adjacent_chain` | the final theorem-2 frontier statement consumed by the transfer layer | downstream transfer / public locality consumers only |
+
+Two negative handoff rules are part of this ledger too:
+
+1. no slot above `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`
+   is allowed to consume global `IsLocallyCommutativeWeak d (bvt_W OS lgc)`;
+2. nothing in `OSToWightmanBoundaryValueLimits.lean` is allowed to reopen the
+   raw-boundary closure theorem after the `BHWExtension.lean` seam has closed
+   it.
 
 ## 4. Active `ComplexLieGroups` blockers
 

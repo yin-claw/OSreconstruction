@@ -45,13 +45,19 @@ The proof proceeds in two directions:
 | **E → R** (OS → Wightman) | `os_to_wightman` | Analytic continuation back to Minkowski, GNS construction |
 
 **Current status:** the numerical counts in this file are historical and should
-not be used operationally. The live production ledger now tracks a `63`-sorry /
-`6`-axiom theorem-2/3/4 frontier in the split production tree, plus a separate
-checked secondary `Wightman/NuclearSpaces/*` lane with 7 local `sorry`s kept
-outside that headline count. Infrastructure layers described below remain useful
-context, but the actual implementation surface is no longer the old monolithic
-`WickRotation.lean` story. In particular, the active `E -> R` route now runs
-through the split file family
+not be used operationally. The live production ledger now distinguishes:
+- a **headline `60`-sorry / `6`-axiom** theorem-2/3/4 frontier across the
+  currently tracked `Wightman + SCV + ComplexLieGroups + vNA` buckets used by
+  `docs/sorry_triage.md`, and
+- a separate checked secondary `Wightman/NuclearSpaces/*` lane with **7** local
+  `sorry`s that is intentionally kept outside that headline count.
+
+If a later doc needs the whole-project direct-hole number, it must say so
+explicitly rather than silently replacing the headline frontier count.
+Infrastructure layers described below remain useful context, but the actual
+implementation surface is no longer the old monolithic `WickRotation.lean`
+story. In particular, the active `E -> R` route now runs through the split file
+family
 `OSToWightmanSemigroup.lean -> OStoWightman.lean -> OStoWightmanPositivity.lean
 -> OStoWightmanBoundaryValuesBase.lean -> OStoWightmanBoundaryValueLimits.lean
 -> OStoWightmanBoundaryValuesComparison.lean -> OStoWightmanBoundaryValues.lean`,
@@ -535,14 +541,72 @@ read from the split contracts:
   only after that the canonical package
   `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`
   -> `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`
-  -> `bvt_F_swapCanonical_pairing_of_adjacent_chain`;
+  -> `bvt_F_swapCanonical_pairing_of_adjacent_chain`.
+
+  For later Lean execution, the same route is frozen here as a compact slot
+  ledger rather than only a prose file map:
+
+  | Slot | Ownership | Consumes | Exports | Next consumer |
+  |------|-----------|----------|---------|---------------|
+  | `choose_real_open_edge_for_adjacent_swap` | `ComplexLieGroups/Connectedness/BHWPermutation/Adjacency.lean` | checked `exists_real_open_nhds_adjSwap` plus theorem-2 compact-support/open-edge packaging data | a chosen Route-B real edge together with its swapped mate | `swapped_support_lies_in_swapped_open_edge`, `swapped_open_edge_embeds_in_extendedTube`, `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` |
+  | `bvt_F_boundary_continuous_at_real_support` | `Wightman/Reconstruction/ForwardTubeDistributions.lean` | theorem-2 flat-regular witness package above checked `boundary_function_continuous_forwardTube_of_flatRegular` | boundary continuity of `bvt_F` on the chosen real edge | `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` |
+  | `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` | statement home `Wightman/Reconstruction/WickRotation/BHWExtension.lean`; lower helper lemmas in `ComplexLieGroups/Connectedness/BHWPermutation/AdjacencyDistributional.lean` | Route-B geometry package + `bvt_F_boundary_continuous_at_real_support` + checked `analytic_boundary_local_commutativity_of_boundary_continuous` | the actual non-circular adjacent raw-boundary pairing equality for theorem 2 | `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` |
+  | `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` | `Wightman/Reconstruction/WickRotation/BHWExtension.lean` | `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` plus the checked ET-support wrapper shape | theorem-2-facing adjacent raw-boundary equality in exported boundary-pairing format | `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` |
+  | `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | theorem-2 flat-regular witness package + checked `boundary_value_recovery_forwardTube_of_flatRegular_from_bv` specialized using checked `bvt_W`, `bvt_W_continuous`, `bvt_boundary_values`, `canonicalForwardConeDirection` | canonical-direction pairing recovery equality | `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` |
+  | `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` | same theorem-2 sibling subsection in `OSToWightmanBoundaryValueLimits.lean` | `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` + two uses of `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` | adjacent canonical pairing equality for one adjacent transposition | `bvt_F_swapCanonical_pairing_of_adjacent_chain` |
+  | `bvt_F_swapCanonical_pairing_of_adjacent_chain` | same theorem-2 sibling subsection in `OSToWightmanBoundaryValueLimits.lean` | adjacent-step canonical theorem plus explicit adjacent-factor decomposition of `swap i j` | full canonical swap pairing equality | `OSToWightmanBoundaryValues.lean :: bvt_F_swapCanonical_pairing` |
 - theorem 3 positivity frontier in `docs/theorem3_os_route_blueprint.md`, with
-  Section-4.3 transport/positivity work split between
-  `OSToWightmanPositivity.lean` and the final wrapper in
-  `OSToWightmanBoundaryValues.lean`;
-- theorem 4 cluster frontier in `docs/theorem4_cluster_blueprint.md`, with base
-  cluster reductions in `OSToWightmanBoundaryValuesBase.lean` and the remaining
-  transport/adapter package above them.
+  an explicit ownership and slot ledger that later Lean work should read
+  literally rather than reconstructing from prose:
+
+  | Slot / layer | Ownership | Checked-present now | Planned next slot / consumer |
+  |------|-----------|---------------------|-------------------------------|
+  | one-variable identity support | `Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean` | `identity_theorem_right_halfplane`, `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` | theorem-3 `singleSplit_xiShift` support layer in `OSToWightmanBoundaryValueLimits.lean` |
+  | positive-time / Hilbert-density support | `Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean` | `positiveTimeBorchersVector_dense`, `euclideanPositiveTimeSingleVector`, and related norm identities | the transformed-image transport / quadratic-identity package |
+  | one-variable holomorphic/limit support | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | the checked `singleSplit_xiShift` holomorphic trace, its positive-real identification theorems, and its `t -> 0+` limit-transfer theorems used by theorem 3 | the one-variable Section-4.3 slots `os1TransportOneVar` then `os1TransportOneVar_eq_zero_iff` in `OSToWightmanPositivity.lean` |
+  | Section-4.3 transformed-image package | `Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean` | no landed theorem-slot names yet under the blueprint names `os1TransportOneVar`, `os1TransportOneVar_eq_zero_iff`, `os1TransportComponent`, `os1TransportComponent_eq_zero_iff`, `BvtTransportImageSequence`, `bvt_transport_to_osHilbert_onImage`, `bvt_wightmanInner_eq_transport_norm_sq_onImage`, `bvt_W_positive_of_transportImage_density`; the Lean execution order is frozen as `partialFourierSpatial_fun -> partialFourierSpatial_timeSliceSchwartz -> partialFourierSpatial_timeSlice_hasPaleyWienerExtension -> partialFourierSpatial_timeSliceCanonicalExtension -> os1TransportOneVar -> os1TransportOneVar_eq_zero_iff -> os1TransportComponent -> os1TransportComponent_eq_zero_iff -> BvtTransportImageSequence -> bvt_transport_to_osHilbert_onImage -> bvt_wightmanInner_eq_transport_norm_sq_onImage`, and the on-image transport stage must consume the explicit kernel-zero theorems rather than an unnamed injectivity slogan | `OSToWightmanBoundaryValues.lean :: bvt_W_positive` |
+  | exported frontier consumer | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | the private frontier theorem `bvt_W_positive` and downstream wrappers/transfer consumers | public reconstruction consumers only |
+
+  Two theorem-3 anti-drift rules are now part of that contract too:
+  1. the transformed-image / Section-4.3 package belongs entirely in
+     `OSToWightmanPositivity.lean`, not in
+     `OSToWightmanBoundaryValueLimits.lean` or
+     `OSToWightmanBoundaryValues.lean`; its first missing slot is packaging
+     work above the already-checked SCV foothold in
+     `OSReconstruction/SCV/PartialFourierSpatial.lean`, not discovery of a
+     missing companion support file;
+  2. `bvtTransportImage_dense` is **not** an endorsed active production slot;
+     if the paper Lemma-4.1 dense-range statement is formalized later, it must
+     appear as `os1TransportComponent_denseRange` on the corrected half-space
+     codomain and be kept separate from the live positivity-closure package.
+
+  Later positive-time / compact-approximation statements in
+  `OSToWightmanBoundaryValuesBase.lean`,
+  `OSToWightmanBoundaryValuesCompactApprox.lean`, and
+  `OSToWightmanBoundaryValues.lean` remain legacy consumers rather than the
+  endorsed theorem-3 route;
+- theorem 4 cluster frontier in `docs/theorem4_cluster_blueprint.md`, with a
+  fixed three-layer ownership split that later Lean work should read literally
+  rather than reconstructing from prose:
+
+  | Slot | Ownership | Consumes | Exports | Next consumer |
+  |------|-----------|----------|---------|---------------|
+  | `cluster_left_factor_transport` | `Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean` | theorem-3 Section-4.3 transport package, in particular the positive-time transformed-image / vector-comparison lane | left one-factor comparison between the positive-time Euclidean shell and the Wightman-side cluster factor | `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison` |
+  | `cluster_right_factor_transport` | `Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean` | same theorem-3 transport package plus the degree-zero/right-vector normalization bookkeeping used by theorem 4 | right one-factor comparison for the second cluster factor | `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison` |
+  | `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValuesBase.lean` | checked large-spatial reductions there (`...singleSplitLargeSpatial`, `...singleSplitSchwingerLargeSpatial`) plus `cluster_left_factor_transport` and `cluster_right_factor_transport` | corrected positive-time single-split cluster bridge with the exact one-factor transport inputs theorem 4 is allowed to use | `bvt_cluster_positiveTime_singleSplit_core` |
+  | `bvt_cluster_positiveTime_singleSplit_core` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValuesBase.lean` | `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison` | thin base-file wrapper exposing the repaired positive-time cluster core in the eventual-translate format | `bvt_cluster_canonical_from_positiveTime_core` |
+  | `canonical_cluster_integrand_eq_singleSplit_integrand` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | checked canonical-shell integrand definitions in the frontier file together with the explicit single-split shell produced by the base core | pointwise integrand rewrite from the public canonical shell to the single-split shell | `singleSplit_core_rewrites_to_canonical_shell` |
+  | `canonical_translate_factor_eq_singleSplit_translate_factor` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | the public translated canonical shell and the positive-time single-split translate factor | rewrite of the eventual translation parameter itself | `singleSplit_core_rewrites_to_canonical_shell` |
+  | `singleSplit_core_rewrites_to_canonical_shell` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | the two public rewrite lemmas above plus `bvt_cluster_positiveTime_singleSplit_core` | explicit identification of the public canonical-shell limit problem with the repaired positive-time single-split core | `canonical_shell_limit_of_rewrite` |
+  | `canonical_shell_limit_of_rewrite` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | `singleSplit_core_rewrites_to_canonical_shell` plus the eventual-limit statement exported by the base core | public eventual canonical-shell limit statement in the exact shape consumed by the frontier theorem | `bvt_cluster_canonical_from_positiveTime_core` |
+  | `bvt_cluster_canonical_from_positiveTime_core` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | `canonical_shell_limit_of_rewrite` | theorem-4-facing canonical-shell adapter theorem, still below the final private wrapper | `bvt_F_clusterCanonicalEventually_translate` |
+
+  Two route rules are now part of this outline too:
+  1. theorem 4 may not reopen theorem 3 analytically inside the cluster proof;
+     it must consume only the explicit one-factor transport theorems named
+     above;
+  2. `OSToWightmanBoundaryValueLimits.lean` is not part of the theorem-4 file
+     ownership chain under the current checked-tree contract.
 
 ---
 
@@ -632,9 +696,9 @@ OSReconstruction/Wightman/
 │       ├── OSToWightmanSemigroup.lean      ← semigroup / finite-block route
 │       ├── OSToWightman.lean               ← main E -> R continuation route
 │       ├── OSToWightmanBoundaryValuesBase.lean ← theorem-4 base transport lane
-│       ├── OSToWightmanBoundaryValueLimits.lean ← theorem-3 live limit machinery; planned theorem-2 canonical-shift support sibling subsection
+│       ├── OSToWightmanBoundaryValueLimits.lean ← theorem-3 `singleSplit_xiShift` holomorphic/limit support only; planned theorem-2 canonical-shift support sibling subsection
 │       ├── OSToWightmanBoundaryValuesComparison.lean ← theorem-2 downstream locality consumer bridge
-│       ├── OSToWightmanBoundaryValues.lean ← theorem-2/theorem-3 public boundary-value wrappers
+│       ├── OSToWightmanBoundaryValues.lean ← theorem-2 frontier wrapper + theorem-3 exported positivity wrapper + downstream transfer consumers
 │       ├── OStoWightmanPositivity.lean     ← theorem-3 positivity transfer lane
 │       ├── SchwingerAxioms.lean            ← R -> E route
 │       └── K2VI1/*                         ← active theorem-1 local package
@@ -661,3 +725,8 @@ on the theorem-3 `singleSplit_xiShift` limit lane. The theorem-2 names
 packages in an existing file, not already-available helper theorems. Later Lean
 work must add that sibling subsection explicitly rather than treating the
 existing theorem-3 shell as if it already owned theorem-2 raw-boundary closure.
+More sharply, this file is not allowed to absorb the earlier raw-boundary seam:
+its first theorem-2-owned import is the already-exported wrapper
+`bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`, not the Route-B geometry
+package and not the substitute consumer theorem
+`adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` itself.

@@ -74,13 +74,28 @@ As of the current local branch state:
    `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single`;
 3. Package C / `hschw` has now been settled as false at the exact theorem
    surface; see `agents_chat.md` Entries `#283`, `#285`, `#286`;
-4. the later positive-time / compact-approximation consumers still exist in
+4. the checked theorem-3 limit support in
+   `OSToWightmanBoundaryValueLimits.lean` is now explicit and finite:
+   `bvt_singleSplit_xiShiftHolomorphicValue`,
+   `differentiableOn_bvt_singleSplit_xiShiftHolomorphicValue`,
+   `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq_schwinger_timeShift`,
+   `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger`,
+   and
+   `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`;
+5. the checked theorem-3 consumer shell in
+   `OSToWightmanBoundaryValues.lean` is also explicit: the private frontier
+   theorem is still `bvt_W_positive`, while the checked downstream wrappers
+   already below it are
+   `bvt_positive_definite`,
+   `constructWightmanFunctions`, and
+   `os_to_wightman_full`;
+6. the later positive-time / compact-approximation consumers still exist in
    `OSToWightmanBoundaryValuesBase.lean`,
    `OSToWightmanBoundaryValuesCompactApprox.lean`, and
    `OSToWightmanBoundaryValues.lean`, but they are legacy consumers rather than
    endorsed theorem-3 route definitions;
-5. the live theorem-3 frontier is now the corrected Package-I theorem surface;
-6. the older raw theorem slogan
+7. the live theorem-3 frontier is now the corrected Package-I theorem surface;
+8. the older raw theorem slogan
    `WightmanInnerProduct(bvt_W)(F,F).re = ‖u(F)‖^2` for the same raw
    `BorchersSequence d` on both sides is not endorsed and is under
    correction.
@@ -89,10 +104,12 @@ So the current frontier is not “find a theorem-3 route.” The route is fixed.
 The current frontier is:
 
 1. keep Packages A-B as valid support infrastructure,
-2. stop treating Package C as a live theorem to prove,
-3. repair Package I to the actual Section 4.3 transformed-image theorem
-   surface,
-4. only then implement the resulting transport / density / closure package.
+2. treat the `singleSplit_xiShift` file as a checked limit-support layer only,
+3. treat `bvt_W_positive` in `OSToWightmanBoundaryValues.lean` as the exported
+   frontier shell only,
+4. repair Package I to the actual Section 4.3 transformed-image theorem
+   surface in `OSToWightmanPositivity.lean`,
+5. only then implement the resulting transport / density / closure package.
 
 ### 1.2. Iteration B retraction (2026-04-07)
 
@@ -898,22 +915,47 @@ The proof must be decomposed into the following local steps.
 
 2. Factor the implementation through a degreewise one-variable supplier.
    The production file should not define `os1TransportComponent` directly by one
-   giant `n`-variable integral. The correct local supplier package is:
+   giant `n`-variable integral. The correct local supplier package is a real
+   branch-`3b` theorem package whose theorem surfaces are now fixed, not merely
+   schematic:
 
    ```lean
+   /-- one-variable positive-time domain extracted from a fixed branch-`3b`
+   time slice -/
+   def EuclideanPositiveTimeTest1D := ...
+
+   /-- one-variable half-space codomain matching the `n = 1` Section-4.3
+   positive-energy side -/
+   def Section43PositiveEnergy1D := ...
+
+   /-- canonical one-variable Section-4.3 transport built from the actual
+   Paley-Wiener extension of the time slice -/
    noncomputable def os1TransportOneVar
        : EuclideanPositiveTimeTest1D →L[ℂ] Section43PositiveEnergy1D
 
+   /-- on the positive imaginary axis, the canonical extension agrees with the
+   raw one-sided Laplace transform of the slice -/
    theorem os1TransportOneVar_restrict_Ici_eq
        (f : EuclideanPositiveTimeTest1D) :
        ...
 
+   /-- paper Lemma 4.1 dense-image statement, but on the corrected one-variable
+   half-space codomain only -/
    theorem os1TransportOneVar_denseRange :
        DenseRange os1TransportOneVar
 
-   theorem os1TransportOneVar_injective :
-       Function.Injective os1TransportOneVar
+   /-- kernel-zero/injectivity statement consumed later by the on-image
+   well-definedness proof -/
+   theorem os1TransportOneVar_eq_zero_iff
+       (f : EuclideanPositiveTimeTest1D) :
+       os1TransportOneVar f = 0 ↔ f = 0
    ```
+
+   Implementation rule:
+   - `os1TransportOneVar_eq_zero_iff` is the actual branch-`3b` theorem surface
+     later consumed by `bvt_transport_to_osHilbert_onImage_wellDefined`;
+   - a separate theorem `Function.Injective os1TransportOneVar` may be derived
+     from it, but injectivity-by-name is not the contract-level supplier.
 
 3. The exact analytic suppliers for that one-variable package are:
    - `SCV.fourierLaplaceExt`,
@@ -939,8 +981,30 @@ The proof must be decomposed into the following local steps.
    - `OSReconstruction/SCV/PartialFourierSpatial.lean`,
    - `nPointTimeSpatialCLE`,
    - `partialFourierSpatial_fun`,
+   - `partialFourierSpatial_timeSliceSchwartz`,
+   - `partialFourierSpatial_timeSlice_hasPaleyWienerExtension`,
+   - `partialFourierSpatial_timeSliceCanonicalExtension`,
    - differentiation-under-the-integral and seminorm bounds there,
    - then the resulting CLM imported back into `OSToWightmanPositivity.lean`.
+
+   Exact current checked-present supplier surfaces in that companion file that
+   later Lean work may consume directly:
+   - `nPointTimeSpatialCLE`,
+   - `nPointTimeSpatialSchwartzCLE`,
+   - `partialFourierSpatial_fun`,
+   - `partialFourierSpatial_fun_eq_integral`,
+   - `continuous_partialFourierSpatial_fun`,
+   - `differentiableAt_partialFourierSpatial_fun_time`,
+   - `fderiv_partialFourierSpatial_fun_time_apply_eq_transport`,
+   - `contDiff_partialFourierSpatial_fun_joint`.
+
+   Exact current checked-present theorem-3-side supplier surfaces already in
+   `OSToWightmanPositivity.lean` and consumable by the branch-`3b` package:
+   - `tsupport_partialFourierSpatial_timeSlice_subset_Ici_of_orderedPositiveTime`,
+   - `partialFourierSpatial_timeSliceSchwartz`,
+   - `partialFourierSpatial_timeSlice_hasPaleyWienerExtension`,
+   - `partialFourierSpatial_timeSliceCanonicalExtension`,
+   - `partialFourierSpatial_timeSliceCanonicalExtension_eq_complexLaplaceTransform`.
 
 6. Step 1 of that branch-`3b` implementation must keep the paper's transform
    explicit: `(4.19)`-`(4.20)` define `\check f` by a concrete
@@ -977,6 +1041,10 @@ theorem os1TransportComponent_restrict_positiveEnergy
     (f : EuclideanPositiveTimeComponent d n) :
     ...
 
+theorem os1TransportComponent_eq_zero_iff
+    (f : EuclideanPositiveTimeComponent d n) :
+    os1TransportComponent d n f = 0 ↔ f = 0
+
 theorem os1TransportComponent_continuous :
     Continuous (os1TransportComponent d n)
 ```
@@ -984,7 +1052,8 @@ theorem os1TransportComponent_continuous :
 ### 5.9.2. Lemma 4.1 density: paper theorem, not the live positivity blocker
 
 The dense-image half of OS I Lemma 4.1 is still a real paper theorem, but it is
-not currently the live blocker for `bvt_W_positive_direct`.
+not currently the live blocker for the still-missing Section-4.3 public
+positivity closure theorem.
 
 What is settled:
 
@@ -1001,10 +1070,18 @@ What is settled:
    - continuity/closure on the `bvt_W` side.
 
 So `os1TransportComponent_denseRange` is now a paper-faithfulness side theorem,
-not part of the current minimal production route for `bvt_W_positive_direct`.
+not part of the current minimal production route for the still-missing
+Section-4.3 positivity closure theorem.
 
-The file should not attempt to prove `bvtTransportImage_dense` by separate
-topological arguments once `os1TransportComponent_denseRange` is available.
+Implementation rule:
+- do **not** introduce a separate active theorem slot
+  `bvtTransportImage_dense`;
+- if a later proof wants the paper Lemma-4.1 statement, it must use
+  `os1TransportComponent_denseRange` on the corrected half-space codomain and
+  then explain exactly how that paper-faithfulness result is being consumed;
+- the current theorem-3 production route closes positivity through the
+  transformed-image quadratic identity plus Hilbert-space density/continuity,
+  not through a second topological density theorem on the transformed image.
 
 ### 5.9.3. Detailed proof of the on-image transport map
 
@@ -1099,14 +1176,60 @@ The only continuity allowed here is the bounded finite-support continuity
 already documented in the repo. Rebuilding theorem 3 from a new global topology
 on raw `BorchersSequence d` remains off-route.
 
+To make later Lean execution deterministic rather than prose-driven, the live
+Package-I route is frozen here as a slot ledger:
+
+| Slot | File ownership | Must consume exactly | Must prove / export exactly | Next allowed consumer |
+| --- | --- | --- | --- | --- |
+| `identity_theorem_right_halfplane` | `Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean` | none | scalar identity theorem on `{z : ℂ | 0 < z.re}` | `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` |
+| `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` | same file | checked theorem-3 scalar holomorphic traces plus `identity_theorem_right_halfplane` | equality of the scalar theorem-3 holomorphic objects on the right half-plane for compact positive-time single/single data | theorem-3 `singleSplit_xiShift` support package in `OSToWightmanBoundaryValueLimits.lean` |
+| theorem-3 `singleSplit_xiShift` support layer | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | the chosen scalar holomorphic trace, its positive-real identification theorems, and its `t -> 0+` limit-transfer theorems | the only one-variable boundary/limit facts the Section-4.3 package may consume | `os1TransportComponent`, `bvt_wightmanInner_eq_transport_norm_sq_onImage` |
+| `positiveTimeBorchersVector_dense` | `Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean` | checked positive-time Hilbert-space completion infrastructure | density of positive-time vectors in `OSHilbertSpace OS` | `bvt_W_positive_of_transportImage_density` |
+| `euclideanPositiveTimeSingleVector` | same file | checked positive-time Hilbert-space support infrastructure | canonical OS Hilbert-space vector attached to one positive-time Euclidean component, with its norm identity | `bvt_transport_to_osHilbert_onImage`, `bvt_wightmanInner_eq_transport_norm_sq_onImage` |
+| `os1TransportComponent` | same file | theorem-3 `singleSplit_xiShift` support layer, the explicit Section-4.3 Fourier-Laplace formula `(4.19)`-`(4.20)` on the corrected half-space codomain, and the checked branch-`3b` partial-spatial-Fourier supplier chain (`PartialFourierSpatial.lean` + `partialFourierSpatial_timeSliceCanonicalExtension`) | degreewise Section-4.3 transport map together with its kernel-zero theorem `os1TransportComponent_eq_zero_iff` | `BvtTransportImageSequence`, `bvt_transport_to_osHilbert_onImage_wellDefined` |
+| `BvtTransportImageSequence` | same file | `os1TransportComponent` | transformed-image core object on which the quadratic identity is proved | `bvt_transport_to_osHilbert_onImage`, `bvt_wightmanInner_eq_transport_norm_sq_onImage` |
+| `bvt_transport_to_osHilbert_onImage` | same file | `BvtTransportImageSequence`, preimage choice, `os1TransportComponent_eq_zero_iff`, and the existing OS Hilbert-space construction | the OS Hilbert vector attached to transformed-image data | `bvt_wightmanInner_eq_transport_norm_sq_onImage` |
+| `bvt_wightmanInner_eq_transport_norm_sq_onImage` | same file | `BvtTransportImageSequence`, `bvt_transport_to_osHilbert_onImage`, and the repaired OS-II-backed `bvt_F` / `bvt_W` continuation kernel | the transformed-image quadratic identity on the image core only | `bvt_W_positive_of_transportImage_density` |
+| `bvt_W_positive_of_transportImage_density` | same file | `bvt_wightmanInner_eq_transport_norm_sq_onImage`, `positiveTimeBorchersVector_dense`, bounded finite-support continuity of `bvt_W`, and Hilbert-space closure | implementation-side theorem-3 positivity for arbitrary `BorchersSequence d` | `OSToWightmanBoundaryValues.lean :: bvt_W_positive` |
+| `bvt_W_positive` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | the implementation-side positivity theorem from `OSToWightmanPositivity.lean` | exported frontier theorem only | downstream wrappers / reconstruction consumers |
+
+Two anti-drift rules are part of that ledger now too:
+1. the transformed-image package belongs entirely in
+   `OSToWightmanPositivity.lean`; later Lean work should not grow it inside
+   `OSToWightmanBoundaryValueLimits.lean` or `OSToWightmanBoundaryValues.lean`;
+2. the closure theorem may consume Hilbert-space density and bounded finite-
+   support continuity only; it may not revive the withdrawn raw Schwartz-density
+   or raw-topology Packages F/G/H.
+
 Exact current implementation status:
 
 1. there is no current production theorem implementing Package I yet;
-2. the current production file `OSToWightmanPositivity.lean` now honestly
-   isolates Package I as one of the two remaining `sorry`s;
-3. the old raw same-input theorem slogan is withdrawn and must not be
+2. a direct source check of
+   `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean`
+   shows the checked-present theorem-3 support there is currently:
+   - `identity_theorem_right_halfplane`,
+   - `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single`,
+   - `positiveTimeBorchersVector_dense`,
+   - `euclideanPositiveTimeSingleVector`, and related positive-time Hilbert
+     norm identities;
+3. a direct source check of
+   `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean`
+   shows that file is still a theorem-3-side support layer only: it packages
+   the chosen `singleSplit_xiShift` holomorphic scalar and its `t -> 0+`
+   limit-transfers, but it does **not** own the final public positivity theorem
+   or any Section-4.3 transport-image definitions;
+4. a direct source check of
+   `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean`
+   shows the private theorem `bvt_W_positive` is still the frontier consumer
+   shell there, with downstream wrapper/export surfaces already below it; so
+   later Lean work should not try to grow the Section-4.3 transport package in
+   that file;
+5. the fully split Section-4.3 transport/closure theorem names in this
+   blueprint remain planned theorem-slot targets, not already-landed theorem
+   names in the file;
+6. the old raw same-input theorem slogan is withdrawn and must not be
    implemented literally;
-4. the theorem-3 blueprint now endorses only the transformed-image /
+7. the theorem-3 blueprint now endorses only the transformed-image /
    density-closure reading of Section 4.3.
 
 ## 6. Exact relation to the current production consumers
@@ -1148,39 +1271,20 @@ theorem bvt_xiShift_eq_osInnerProduct_holomorphicValue_single ... := by
   apply identity_theorem_right_halfplane
   ...
 
-/- Step C: withdrawn same-shell boundary pairing route (historical, false). -/
+/- Step C-E: historical false routes; do not implement theorem targets there. -/
 -- Do not implement `schwinger_timeShift_eq_bvt_W_conjTensorProduct_timeShift`.
--- The same-input shell identity is false and remains quarantined.
-
-/- Step D: withdrawn raw positive-time sesquilinear route (historical, false). -/
 -- Do not implement `bvt_wightmanInner_eq_osInner_of_positiveTime`.
-
-/- Step E: withdrawn raw positive-time positivity route (historical, false). -/
 -- Do not implement `bvt_positiveTime_self_nonneg_from_packageC`.
 
-/- Step F: withdrawn raw density route (historical, do not implement). -/
-theorem orderedPositiveTime_dense_schwartzNPoint ... := by
-  ...
+/- Step F-H: historical withdrawn density / approximation / topology routes. -/
+-- Do not implement `orderedPositiveTime_dense_schwartzNPoint`.
+-- Do not implement `exists_orderedPositiveTime_seq_tendsto`.
+-- Do not implement `exists_positiveTime_componentwise_approximation`.
+-- Do not implement `WightmanInnerProduct_tendsto_of_componentwise_tendsto`.
+-- Do not implement `re_WightmanInnerProduct_tendsto_of_componentwise_tendsto`.
 
-theorem exists_orderedPositiveTime_seq_tendsto ... := by
-  ...
-
-/- Step G: withdrawn approximation bundling route (historical, do not implement). -/
-theorem exists_positiveTime_componentwise_approximation ... := by
-  ...
-
-/- Step H: withdrawn continuity-after-density route (historical, do not implement). -/
-theorem WightmanInnerProduct_tendsto_of_componentwise_tendsto ... := by
-  ...
-
-theorem re_WightmanInnerProduct_tendsto_of_componentwise_tendsto ... := by
-  ...
-
-/- Step I: final theorem-3 closure via Section 4.3 transformed image. -/
-def bvtTransportImage ... := by
-  ...
-
-theorem bvtTransportImage_dense ... := by
+/- Step I: final theorem-3 closure via the Section 4.3 transformed image. -/
+noncomputable def os1TransportComponent ... := by
   ...
 
 def BvtTransportImageSequence ... := by
@@ -1208,7 +1312,11 @@ same-input names
 `bvt_wightmanInner_eq_osInner_of_positiveTime`,
 and `bvt_positiveTime_self_nonneg_from_packageC`
 are withdrawn historical names and should not be reintroduced as theorem
-targets.
+targets. Likewise, `bvtTransportImage_dense` is **not** an endorsed active
+production theorem slot on the current route; if the paper Lemma-4.1 dense-range
+statement is later formalized, it should live as
+`os1TransportComponent_denseRange` on the corrected half-space codomain and not
+as a second closure theorem inside the production theorem-3 package.
 
 ## 8. Representation-gap note
 
@@ -1253,13 +1361,18 @@ Theorem 3 is no longer a shell-comparison project.
 
 Theorem 3 is now exactly this:
 
-1. prove the positive-time semigroup bridge;
-2. prove positivity on `PositiveTimeBorchersSequence d`;
-3. define the Section 4.3 transformed Minkowski image and its OS Hilbert-space
-   transport map;
-4. identify the Wightman quadratic form with a Hilbert norm square on that
-   transformed-image core;
-5. extend positivity from the transformed-image core to arbitrary
-   `BorchersSequence d` by density/continuity.
+1. keep the checked one-variable A/B bridge
+   `identity_theorem_right_halfplane`
+   -> `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` as the entry;
+2. consume the checked theorem-3 `singleSplit_xiShift` support layer in
+   `OSToWightmanBoundaryValueLimits.lean` only as a one-variable supplier
+   layer;
+3. build the Section 4.3 transformed-image / transport package entirely inside
+   `OSToWightmanPositivity.lean`;
+4. prove the quadratic identity only on `BvtTransportImageSequence d`, not on
+   raw identical Borchers inputs on both sides;
+5. close the public theorem by Hilbert-space density and bounded finite-support
+   continuity, then export only the wrapper
+   `OSToWightmanBoundaryValues.lean :: bvt_W_positive`.
 
 That is the only theorem-3 route this note now endorses.

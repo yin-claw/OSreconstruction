@@ -30,6 +30,36 @@ Checked-present theorem-4 production files:
 - `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean`
 - `OSReconstruction/Wightman/Reconstruction/SchwingerOS.lean`
 
+Source-check note against the live repo tree (2026-04-08):
+
+- `OSToWightmanBoundaryValuesBase.lean` really does contain the checked base
+  reduction chain
+  `bvt_tendsto_singleSplit_xiShift_translate_spatial_right_nhdsWithin_zero`
+  -> `..._schwinger`
+  -> `bvt_eq_schwinger_of_tendsto_singleSplit_xiShift_translate_spatial_right_nhdsWithin_zero`
+  -> `schwinger_cluster_osConjTensorProduct_translate_spatial_right_local`
+  -> `osInner_single_translate_spatial_right_cluster_local`
+  -> `bvt_F_clusterCanonicalEventually_translate_of_singleSplitLargeSpatial`
+  -> `bvt_F_clusterCanonicalEventually_translate_of_singleSplitSchwingerLargeSpatial`
+  -> legacy
+     `bvt_F_clusterCanonicalEventually_translate_of_singleSplitFactorComparison`.
+- `OSToWightmanBoundaryValues.lean` really does contain only the final
+  theorem-4-facing consumer shell:
+  `bv_cluster_transfer_of_canonical_eventually`, private
+  `bvt_F_clusterCanonicalEventually_translate`, private
+  `bvt_F_clusterCanonicalEventually`, and private `bvt_W_cluster`.
+- `OSToWightmanPositivity.lean` is present and is still the designated theorem-3
+  consumer/supplier file for theorem 4, but a direct source check shows that it
+  does **not yet** contain any of the planned theorem-4 extraction names
+  `normalizedZeroDegreeRightVector`,
+  `zeroDegree_right_single_wightman_extracts_factor`,
+  `cluster_left_factor_transport`, or `cluster_right_factor_transport`.
+  So those names below are implementation-contract targets for that file, not
+  checked-present helpers.
+- `OSToWightmanBoundaryValueLimits.lean` is checked-present but remains a
+  theorem-2/theorem-3 support file; no theorem-4 adapter theorem names live
+  there in the current tree.
+
 Implementation rule for this blueprint:
 
 1. the positive-time single-split cluster core and the legacy large-spatial
@@ -62,8 +92,9 @@ contract.
 
 Checked-present consumer/support surfaces:
 
-- `OSToWightmanPositivity.lean` already owns the theorem-3 transport inputs
-  theorem 4 must consume.
+- `OSToWightmanPositivity.lean` is the checked file that should own the
+  theorem-3-derived bookkeeping consumed by theorem 4, but the theorem-4-facing
+  extraction package there is still missing under separate names.
 - `OSToWightmanBoundaryValuesBase.lean` already owns the positive-time
   single-split cluster reductions
   (`...singleSplitLargeSpatial`, `...singleSplitSchwingerLargeSpatial`, legacy
@@ -78,6 +109,10 @@ Checked-missing theorem-package ownership:
    transport inputs that theorem 4 consumes:
    `cluster_left_factor_transport` and
    `cluster_right_factor_transport`.
+   Current checked-tree status: these theorem names are **planned only**; they
+   are not yet present in the file, so later Lean work must add them there
+   explicitly rather than assuming they already exist behind the theorem-3
+   narrative.
 2. `OSToWightmanBoundaryValuesBase.lean` should own the repaired core-side
    replacement theorem
    `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison`
@@ -630,19 +665,39 @@ The later implementation should not invert that order.
 
 The theorem names that should appear in the eventual proof script are:
 
-1. `schwinger_cluster_osConjTensorProduct_translate_spatial_right_local`
-2. `osInner_single_translate_spatial_right_cluster_local`
-3. `bvt_tendsto_singleSplit_xiShift_translate_spatial_right_nhdsWithin_zero`
-4. `bvt_tendsto_singleSplit_xiShift_translate_spatial_right_nhdsWithin_zero_schwinger`
-5. `bvt_eq_schwinger_of_tendsto_singleSplit_xiShift_translate_spatial_right_nhdsWithin_zero`
-6. `bvt_eq_schwinger_of_tendsto_singleSplit_xiShift_nhdsWithin_zero`
-7. `bvt_F_clusterCanonicalEventually_translate_of_singleSplitLargeSpatial`
-8. `bvt_F_clusterCanonicalEventually_translate_of_singleSplitSchwingerLargeSpatial`
-9. `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison`
-10. `bvt_cluster_positiveTime_singleSplit_core`
-11. `bvt_cluster_canonical_from_positiveTime_core`
-12. `bvt_F_clusterCanonicalEventually`
-13. `bv_cluster_transfer_of_canonical_eventually`
+Checked-present today in the repo tree:
+
+1. `bvt_tendsto_singleSplit_xiShift_translate_spatial_right_nhdsWithin_zero`
+2. `bvt_tendsto_singleSplit_xiShift_translate_spatial_right_nhdsWithin_zero_schwinger`
+3. `bvt_eq_schwinger_of_tendsto_singleSplit_xiShift_translate_spatial_right_nhdsWithin_zero`
+4. `schwinger_cluster_osConjTensorProduct_translate_spatial_right_local`
+5. `osInner_single_translate_spatial_right_cluster_local`
+6. `bvt_F_clusterCanonicalEventually_translate_of_singleSplitLargeSpatial`
+7. `bvt_F_clusterCanonicalEventually_translate_of_singleSplitSchwingerLargeSpatial`
+8. `bv_cluster_transfer_of_canonical_eventually`
+9. private `bvt_F_clusterCanonicalEventually_translate`
+10. private `bvt_F_clusterCanonicalEventually`
+11. private `bvt_W_cluster`
+
+Planned theorem-4 package names that are **not yet checked-present** and must be
+implemented explicitly:
+
+1. `normalizedZeroDegreeRightVector`
+2. `normalizedZeroDegreeRightVector_bound`
+3. `normalizedZeroDegreeRightVector_funcs_zero`
+4. `normalizedZeroDegreeRightVector_funcs_pos`
+5. `zeroDegree_right_single_wightman_extracts_factor`
+6. `zeroDegree_right_single_os_extracts_factor`
+7. `zero_degree_component_comparison_for_normalized_right_vector`
+8. `cluster_left_factor_transport`
+9. `cluster_right_factor_transport`
+10. `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison`
+11. `bvt_cluster_positiveTime_singleSplit_core`
+12. `canonical_cluster_integrand_eq_singleSplit_integrand`
+13. `canonical_translate_factor_eq_singleSplit_translate_factor`
+14. `singleSplit_core_rewrites_to_canonical_shell`
+15. `canonical_shell_limit_of_rewrite`
+16. `bvt_cluster_canonical_from_positiveTime_core`
 
 `bvt_F_clusterCanonicalEventually_translate_of_singleSplitFactorComparison`
 may still appear only as a legacy source theorem reused while proving the new

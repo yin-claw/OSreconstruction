@@ -83,11 +83,14 @@ blurred.
      theorem-2 locality frontier `bvt_F_swapCanonical_pairing`, the
      downstream transfer chain, and the final cluster theorem wrapper
      `bvt_cluster`
-   - `OSToWightmanPositivity.lean`: the theorem-3 Section-4.3 positivity
-     package, in particular
-     `bvt_W_eq_inner_on_positiveTimeTransport`,
-     `bvt_W_positive_density_reduction`, and
-     `bvt_W_positive_direct`
+   - `OSToWightmanPositivity.lean`: the theorem-3 checked support locus.
+     A live source check now shows landed support surfaces
+     `identity_theorem_right_halfplane`,
+     `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single`,
+     `positiveTimeBorchersVector_dense`, and
+     `euclideanPositiveTimeSingleVector`; the fully split Section-4.3
+     transport/closure theorem names in the blueprint remain planned
+     theorem-slot targets rather than already-landed production lemmas
 2. **Theorem-blueprint contracts controlling those files**
    - `docs/theorem2_locality_blueprint.md`
    - `docs/theorem3_os_route_blueprint.md`
@@ -106,6 +109,23 @@ Clusters:
 3. Positivity / theorem-3 transport package:
    - implementation locus: `OSToWightmanPositivity.lean`
    - exported downstream wrapper: `OSToWightmanBoundaryValues.lean :: bvt_W_positive`
+   - source-check contract: do not infer landed theorem-3 closure names from
+     older planning prose. The checked file currently exposes the A/B bridge
+     and Hilbert-density support surfaces named above, plus a quarantined note
+     that the Section-4.3 transport block is still missing under separate
+     theorem names
+   - checked companion support file: `OSReconstruction/SCV/PartialFourierSpatial.lean`
+     is present in the live tree and already exposes the concrete supplier
+     chain
+     `partialFourierSpatial_fun`
+     -> `partialFourierSpatial_timeSliceSchwartz`
+     -> `partialFourierSpatial_timeSlice_hasPaleyWienerExtension`
+     -> `partialFourierSpatial_timeSliceCanonicalExtension`,
+     sitting above the coordinate reshuffle `nPointTimeSpatialCLE`, together
+     with checked continuity / derivative transport theorems for
+     `partialFourierSpatial_fun`; the open theorem-3 work is therefore the
+     Section-4.3 packaging above that checked chain, not the discovery of
+     whether a partial-spatial-Fourier support file exists at all
 4. Boundary-value existence and transfer:
    - `OSToWightmanBoundaryValuesBase.lean`:
      public theorem surfaces `boundary_values_tempered`,
@@ -146,13 +166,43 @@ Live status:
   Section-4.3 transformed-image route in `OSToWightmanPositivity.lean`, while
   `bvt_W_positive` in `OSToWightmanBoundaryValues.lean` is the exported
   consumer wrapper
+- theorem 3 should also no longer be described as if the Section-4.3 transport
+  still lacks a checked support-file foothold: `SCV/PartialFourierSpatial.lean`
+  is now a landed supplier layer, so the implementation ambiguity is not
+  "where does the partial Fourier analysis live?" but rather the sharper
+  Package-I transcript:
+  `partialFourierSpatial_fun`
+  -> `partialFourierSpatial_timeSliceSchwartz`
+  -> `partialFourierSpatial_timeSlice_hasPaleyWienerExtension`
+  -> `partialFourierSpatial_timeSliceCanonicalExtension`
+  -> one-variable theorem slot `os1TransportOneVar`
+  -> kernel-zero slot `os1TransportOneVar_eq_zero_iff`
+  -> degreewise slot `os1TransportComponent`
+  -> transformed-image bundle `BvtTransportImageSequence`
+  -> on-image transport map `bvt_transport_to_osHilbert_onImage`
+  -> on-image quadratic identity
+     `bvt_wightmanInner_eq_transport_norm_sq_onImage`,
+  with the well-definedness step required to consume explicit kernel-zero
+  surfaces `os1TransportOneVar_eq_zero_iff` and
+  `os1TransportComponent_eq_zero_iff` rather than an unnamed injectivity
+  slogan
 - theorem 4 should no longer be described only as the final private wrapper
   `bvt_cluster`: the checked repo already has the base reductions in
   `OSToWightmanBoundaryValuesBase.lean`, but the corrected bridge theorem
   `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison`
   and the public canonical-shell adapter package are still doc-level targets
   that must be introduced explicitly before the final wrapper proof is treated
-  as implementation-ready
+  as implementation-ready. Source-check against the live tree now fixes the
+  checked/planned split more sharply: `OSToWightmanBoundaryValuesBase.lean`
+  really contains `...singleSplitLargeSpatial`,
+  `...singleSplitSchwingerLargeSpatial`, and legacy
+  `...singleSplitFactorComparison`; `OSToWightmanBoundaryValues.lean` really
+  contains only the final consumer shell
+  (`bv_cluster_transfer_of_canonical_eventually`, private
+  `bvt_F_clusterCanonicalEventually_translate`, private
+  `bvt_F_clusterCanonicalEventually`, private `bvt_W_cluster`); and the
+  theorem-4 one-factor transport package in `OSToWightmanPositivity.lean`
+  remains planned support work rather than checked-present named lemmas.
 - theorem-4 file ownership is now fixed more sharply too:
   theorem-3-derived one-factor transport inputs
   (`cluster_left_factor_transport`, `cluster_right_factor_transport`) belong in

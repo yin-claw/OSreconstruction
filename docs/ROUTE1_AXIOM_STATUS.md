@@ -104,6 +104,44 @@ do mathematically. The existing absolute BHW proof in `BHWExtension.lean`
 already contains the heaviest Lean machinery (abstract EotW, analytic
 continuation along tubes, Lorentz sweeping).
 
+Implementation-facing correction (2026-04-08): this Route-1 axiom note must not
+be read as saying theorem 2 later closes by a generic “now do Jost/BHW” step.
+On the live proof-doc route, the reduced BHW axiom is only the upstream reduced
+permutation/continuation supplier. The theorem-2 locality lane downstream of
+that axiom is frozen much more sharply in `docs/theorem2_locality_blueprint.md`:
+
+1. Route-B adjacent-swap real-open-edge geometry on the checked
+   `Adjacency.lean` package, anchored at
+   `exists_real_open_nhds_adjSwap`;
+2. an adjacent-only raw-boundary closure on the
+   `AdjacencyDistributional.lean` / `BHWExtension.lean` seam, at the planned
+   theorem slot
+   `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`;
+3. only then the theorem-2 canonical-shift sibling subsection in
+   `OSToWightmanBoundaryValueLimits.lean`, in the explicit order
+   `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`
+   -> `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`
+   -> `bvt_F_swapCanonical_pairing_of_adjacent_chain`;
+4. only after that the thin frontier consumer
+   `OSToWightmanBoundaryValues.lean :: bvt_F_swapCanonical_pairing`.
+
+Two non-circularity cautions belong here too, because this older status note is
+otherwise easy to misread as an instruction to jump straight to a checked public
+BHW wrapper:
+- theorem 2 must **not** be documented as a direct use of
+  `WickRotation/BHWExtension.lean :: W_analytic_swap_boundary_pairing_eq`,
+  because at `W := bvt_W OS lgc` that theorem still asks for the global input
+  `IsLocallyCommutativeWeak d W`;
+- theorem 2 also must **not** stop at the lower checked theorem
+  `AdjacencyDistributional.lean ::
+  extendF_adjSwap_pairing_eq_of_distributional_local_commutativity`, because
+  that lower theorem still asks for the same global locality input.
+
+So the operational role of the Route-1 reduced BHW axiom is narrower than a
+historical Jost/BHW slogan: it supplies the reduced continuation side, but it
+does not erase the later theorem-2 open-edge / raw-boundary / canonical-shift
+split that Lean still has to implement explicitly.
+
 Porting the permutation flow to reduced coordinates is geometrically cleaner
 than the absolute version:
 
@@ -123,22 +161,36 @@ than the absolute version:
 
 ### Concrete steps to eliminate this axiom
 
-1. **Reduced Jost points**: Define the real region where `xi_k in R`,
-   `xi_k^2 < 0`, and `Im(xi_{j != k}) in V+`.
+1. **Reduced open-edge geometry package**: define the reduced adjacent-swap real
+   boundary region and its open neighborhoods in the reduced coordinates, in a
+   way that matches the later theorem-2 Route-B geometry contract rather than a
+   vague “Jost points somewhere” description.
 
-2. **Boundary agreement**: Prove the reduced Wightman distribution commutes
-   across this specific spacelike boundary (follows from the distributional
-   boundary values in `Route1ReducedAnalyticInput`).
+2. **Reduced raw-boundary agreement on that edge**: prove the reduced boundary
+   values agree across this specific adjacent spacelike seam, so the reduced
+   analogue of the later theorem-2 raw-boundary package is explicit before any
+   envelope/gluing step.
 
-3. **Reduced Edge of the Wedge**: Apply the existing abstract EotW theorem
-   across this boundary to glue `FT_red` and `sigma_k(FT_red)`.
+3. **Reduced Edge of the Wedge**: apply the existing abstract EotW theorem
+   across that chosen edge to glue `FT_red` and `sigma_k(FT_red)`.
 
-4. **Sweep and induct**: Apply the complex Lorentz group to sweep the glued
+4. **Sweep and induct**: apply the complex Lorentz group to sweep the glued
    domain, and induct over `S_n` (the permutation group).
+
+5. **Document the handoff boundary explicitly**: when this axiom is eventually
+   replaced by a theorem, its downstream consumer docs must still preserve the
+   theorem-2 execution split
+   `Adjacency.lean` Route-B geometry
+   -> `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`
+   -> canonical-shift package in `OSToWightmanBoundaryValueLimits.lean`
+   -> `bvt_F_swapCanonical_pairing`; eliminating the Route-1 axiom does not
+   license collapsing those later theorem-2 layers into one opaque “BHW done”
+   step.
 
 **Estimated difficulty**: Substantial but bounded. The abstract EotW and
 Lorentz-sweeping machinery already exists; the new work is defining the reduced
-Jost geometry and wiring the boundary-value argument.
+open-edge geometry and wiring the boundary-value argument without blurring the
+later theorem-2 file/layer split.
 
 See also `docs/reduced_bhw_bridge_and_numerics.md` for the intended bridge and
 for the numerical diagnostics that support the reduced-coordinate geometry.
@@ -202,12 +254,25 @@ zero-mean decomposition in `TranslationInvariantSchwartz.lean`.~~
 
 The sole remaining axiom is mathematically a textbook-level reduced-coordinate
 Bargmann-Hall-Wightman statement. It has been successfully isolated from the
-downstream theory, with the intended future bridge documented separately. The
-project is fully unblocked to proceed with Jost's Theorem, Spin-Statistics,
-and Osterwalder-Schrader Positivity.
+downstream theory, with the intended future bridge documented separately. But
+this should now be read with the live theorem-2 proof-doc contract in mind:
+removing the Route-1 axiom would unblock only the **reduced continuation /
+permutation supplier lane**, not the entire theorem-2 locality closure in one
+shot.
+
+More explicitly, the project is unblocked to proceed with the reduced BHW /
+permutation geometry side, but the later locality implementation still must run
+through the frozen Route-B adjacent-swap package, the planned adjacent-only
+raw-boundary theorem slot
+`adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`, and the
+canonical-shift / adjacent-chain layer before it reaches the frontier theorem
+`bvt_F_swapCanonical_pairing`. So this note should not be cited as evidence
+that theorem 2 becomes a generic “Jost's theorem is available, therefore
+locality follows” step.
 
 The Route 1 architecture correctly maps the boundary between what can be proved
 algebraically (translation invariance, via difference coordinates and the
 identity theorem) and what requires native SCV geometry (the reduced BHW
-envelope of holomorphy). All technical debt has been pushed into the right
-mathematical corner.
+envelope of holomorphy). The further theorem-2 documentation work now makes the
+next boundary explicit as well: reduced BHW support belongs upstream of, not in
+place of, the later open-edge / raw-boundary / canonical-shift locality stack.

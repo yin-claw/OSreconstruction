@@ -1762,30 +1762,69 @@ So the documentation-standard current reading is:
 
 ### 13.5. Exact theorem shape still missing for theorem 3
 
-Combining OS II with the current repo state, the missing theorem should be read
-as follows.
+Combining OS II with the current repo state, the missing theorem should **no
+longer** be summarized as a single unnamed kernel-identification theorem. The
+implementation gap is now a routed Package-I theorem stack with an explicit
+one-variable stage, explicit kernel-zero stages, and an explicit on-image OS
+Hilbert transport stage.
 
-Input:
-- a one-variable common kernel supplied by the strengthened `K2VI1` /
-  `InputA*` package;
-- the explicit descended `bvt_F` kernel already identified with the semigroup
-  shell on positive-support pairings.
+The missing theorem package should be read as follows.
 
-Goal:
-- prove the two kernels agree on the exact local positive-time domain where the
-  boundary-value reduction needs them.
+Stage A: one-variable supplier/transport lane
+- input: the one-variable common kernel supplied by the strengthened `K2VI1` /
+  `InputA*` package, together with the checked theorem-3 `singleSplit_xiShift`
+  positive-real / `t -> 0+` support package;
+- consume, in order, the checked SCV supplier chain
+  `partialFourierSpatial_fun`
+  -> `partialFourierSpatial_timeSliceSchwartz`
+  -> `partialFourierSpatial_timeSlice_hasPaleyWienerExtension`
+  -> `partialFourierSpatial_timeSliceCanonicalExtension`;
+- export the theorem slots `os1TransportOneVar` and
+  `os1TransportOneVar_eq_zero_iff`.
+
+Stage B: degreewise transformed-image lane
+- input: the Stage-A one-variable transport package plus the explicit Section
+  4.3 Fourier-Laplace formula `(4.19)`-`(4.20)`;
+- export the degreewise transformed-image slots `os1TransportComponent` and
+  `os1TransportComponent_eq_zero_iff`, then the bundled image object
+  `BvtTransportImageSequence`.
+
+Stage C: on-image Hilbert transport / quadratic identity lane
+- input: `BvtTransportImageSequence`, the existing OS-Hilbert construction,
+  and the repaired OS-II-backed `bvt_F` / `bvt_W` continuation kernel route;
+- define `bvt_transport_to_osHilbert_onImage` on image data only, with the
+  well-definedness proof required to consume the explicit kernel-zero theorem
+  `os1TransportComponent_eq_zero_iff` rather than an unnamed injectivity
+  slogan;
+- then prove `bvt_wightmanInner_eq_transport_norm_sq_onImage` on the image core
+  and close arbitrary-sequence positivity only afterward via the separate
+  density theorem `bvt_W_positive_of_transportImage_density`.
+
+So the exact theorem-3 ambiguity to avoid is now sharper:
+- do **not** treat the missing work as merely "show two kernels agree locally";
+- do **not** jump directly from the scalar bridge to a full `BorchersSequence`
+  positivity theorem;
+- do **not** hide the well-definedness step behind a derived
+  `Function.Injective ...` slogan when the blueprint now fixes the consumable
+  theorem surfaces as `os1TransportOneVar_eq_zero_iff` and
+  `os1TransportComponent_eq_zero_iff`.
 
 Acceptable proof shapes:
 1. a fixed-time / partial-boundary-value extension theorem on the common kernel,
+   but only as the supplier for the named Stage-A one-variable package;
 2. a uniqueness theorem on the correct one-variable domain, once continuity and
-   common pairing identities are fully established there,
+   common pairing identities are fully established there, again only as input
+   to `os1TransportOneVar` / `os1TransportOneVar_eq_zero_iff`;
 3. a direct instantiation of the existing `InputAHeadBlockTransport` style
-   machinery if it produces the same identification.
+   machinery if it lands inside that explicit Stage-A / Stage-B / Stage-C route
+   rather than bypassing it.
 
 Unacceptable proof shapes:
 - generic contour-shift slogans with unchanged test function,
 - direct operator equalities `e^{-tH} = e^{itH}` or similar circular rewrites,
-- further reduction lemmas that merely rename the same missing bridge.
+- further reduction lemmas that merely rename the same missing bridge,
+- any proof sketch that leaves unclear where the one-variable stage ends, where
+  kernel-zero is proved, or what theorem justifies the on-image transport map.
 
 ## 14. Recommended Operational Use
 
