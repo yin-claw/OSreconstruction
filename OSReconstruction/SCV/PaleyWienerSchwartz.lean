@@ -3102,19 +3102,45 @@ noncomputable def inverseFourierFlatCLM {m : ℕ} :
     SchwartzMap.fourierTransformCLM ℂ
   fromEuc.comp (ft.comp toEuc)
 
+/-- The point `x + iεη` lies in the tube domain `T(C)` when `ε > 0` and `η ∈ C`.
+
+    Proof: `Im(x + iεη)_j = ε * η_j`, so `Im(z) = ε • η ∈ C` by the cone property. -/
+private lemma realPlusIEpsEta_mem_tubeDomain
+    (C : Set (Fin m → ℝ)) (hC_cone : IsCone C)
+    (x : Fin m → ℝ) (η : Fin m → ℝ) (hη : η ∈ C)
+    (ε : ℝ) (hε : 0 < ε) :
+    (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) ∈ SCV.TubeDomain C := by
+  show (fun i => ((x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I).im) ∈ C
+  have hIm : (fun i => ((x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I).im) = ε • η := by
+    ext i
+    simp [Complex.add_im, Complex.ofReal_im, Complex.mul_im, Complex.ofReal_re,
+      Complex.I_im, Complex.I_re, Pi.smul_apply, smul_eq_mul]
+  rw [hIm]
+  exact hC_cone η hη ε hε
+
 /-- **Boundary value convergence for the Fourier-Laplace extension.**
 
     For T with Fourier support in C* and F(z) = fourierLaplaceExtMultiDim T z,
     the distributional boundary value ∫ F(x+iεη)f(x)dx → T(FT⁻¹(f)) as ε→0⁺.
 
-    Proof sketch:
-    - For fixed η ∈ C and f ∈ S, define g(ε) = ∫ F(x+iεη)f(x)dx = T(ψ_{·+iεη})
-      applied to f via Fubini.
-    - As ε→0⁺, ψ_{x+iεη} → FT⁻¹(δ_x) in S-topology.
-    - Use equicontinuity of {T ∘ ψ_ε} (from Vladimirov growth) + distributional
-      limit to conclude convergence.
-    - The key identity is T(ψ_z) = ∫ exp(iz·ξ) χ(ξ) dμ_T(ξ) where μ_T is the
-      Fourier support measure, so the boundary limit recovers T(FT⁻¹(f)). -/
+    **Proof structure** (Route A):
+    1. For ε > 0, the point x + iεη lies in tube T(C) by cone scaling.
+    2. F(x+iεη) = T(ψ_{x+iεη}) by definition of `fourierLaplaceExtMultiDim`.
+    3. Exchange T and ∫: ∫ T(ψ_{x+iεη}) f(x) dx = T(∫ ψ_{x+iεη} f(x) dx)
+       by continuity of T (Bochner integral exchange for CLM on Schwartz space).
+    4. Define Φ_ε(ξ) = ∫ ψ_{x+iεη}(ξ) f(x) dx.
+       Pointwise: Φ_ε(ξ) = χ(ξ) exp(-εη·ξ) ∫ exp(ix·ξ) f(x) dx
+                          = χ(ξ) exp(-εη·ξ) FT(f)(ξ).
+    5. As ε→0⁺, Φ_ε → χ · FT(f) in Schwartz topology
+       (uniform in ξ with all derivatives, from dominated convergence
+       using `multiDimPsiZ_seminorm_difference_bound`).
+    6. Since T has Fourier support in C* and χ = 1 on C*:
+       T(χ · FT(f)) = T(FT(f)) = T(FT⁻¹(f)) by the Fourier support property.
+    7. By continuity of T: T(Φ_ε) → T(FT⁻¹(f)).
+
+    **Current status**: The reduction to CLM-integral exchange + Schwartz
+    convergence (steps 3-5) is sorry'd. The tube domain membership (step 1)
+    and the unfolding F = T ∘ ψ (step 2) are fully proved. -/
 theorem fourierLaplaceExtMultiDim_boundaryValue
     (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
     (hC_cone : IsCone C) (hC_salient : IsSalientCone C) (hC_ne : C.Nonempty)
@@ -3129,6 +3155,48 @@ theorem fourierLaplaceExtMultiDim_boundaryValue
             f x)
           (nhdsWithin 0 (Set.Ioi 0))
           (nhds (T (inverseFourierFlatCLM f))) := by
+  intro η hη f
+  -- Step 1: For ε > 0, x + iεη ∈ T(C) by cone scaling.
+  have hmem : ∀ (x : Fin m → ℝ) (ε : ℝ), 0 < ε →
+      (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) ∈ SCV.TubeDomain C :=
+    fun x ε hε => realPlusIEpsEta_mem_tubeDomain C hC_cone x η hη ε hε
+  -- Step 2: Rewrite using fourierLaplaceExtMultiDim_eq_ext (no membership proofs).
+  -- F(z) = T(ψ^ext_z) for ALL z, where ψ^ext = 0 outside the tube.
+  have hF_rewrite : ∀ ε : ℝ,
+      (fun x : Fin m → ℝ =>
+        fourierLaplaceExtMultiDim C hC_open hC_conv hC_cone hC_salient T
+          (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) * f x) =
+      (fun x : Fin m → ℝ =>
+        T (multiDimPsiZExt C hC_open hC_conv hC_cone hC_salient
+          (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I)) * f x) := by
+    intro ε
+    ext x
+    rw [fourierLaplaceExtMultiDim_eq_ext]
+  -- Rewrite the integral to use multiDimPsiZExt.
+  simp_rw [fun ε => hF_rewrite ε]
+  -- Step 3: T is bounded by a finite sup of Schwartz seminorms (PROVED).
+  obtain ⟨s, C_T, _hC_T_ne, hT_bound⟩ := schwartz_clm_bound_by_finset_sup T
+  -- Steps 4-7 (sorry'd): CLM-integral exchange + Schwartz convergence.
+  --
+  -- After rewriting, we need:
+  --   ∫ T(ψ^ext_{x+iεη}) · f(x) dx → T(inverseFourierFlatCLM f) as ε→0⁺
+  --
+  -- The mathematical argument (Route A):
+  --   (a) ∫ T(ψ^ext_{x+iεη}) f(x) dx = T(∫ ψ^ext_{x+iεη} f(x) dx)  [Bochner exchange]
+  --   (b) = T(ξ ↦ χ(ξ) exp(-εη·ξ) FT(f)(ξ))                          [Fubini on ψ]
+  --   (c) → T(ξ ↦ χ(ξ) FT(f)(ξ)) as ε→0⁺                            [Schwartz convergence]
+  --   (d) = T(FT(f)) = T(inverseFourierFlatCLM f)                      [Fourier support]
+  --
+  -- Step (a) requires Schwartz-valued Bochner integration (not in Mathlib).
+  -- Step (b) uses ψ_{x+iεη}(ξ) = χ(ξ)exp(ix·ξ)exp(-εη·ξ) and x-integration.
+  -- Step (c) uses `multiDimPsiZ_seminorm_difference_bound` (PROVED) for seminorm control.
+  -- Step (d) uses `HasFourierSupportInDualCone` + `FixedConeCutoff.one_on_neighborhood`.
+  --
+  -- The proved infrastructure reduces the problem to the Bochner exchange (a),
+  -- specifically: Schwartz-valued Bochner integration theory, which is not in Mathlib.
+  -- Available alternatives:
+  --   - Direct seminorm argument bypassing Bochner (use hT_bound pointwise + DCT)
+  --   - Factor through `distributional_limit_of_equicontinuous` (PROVED)
   sorry
 
 end
