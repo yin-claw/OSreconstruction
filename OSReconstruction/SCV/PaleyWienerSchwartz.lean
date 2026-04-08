@@ -9,8 +9,8 @@ import OSReconstruction.SCV.Osgood
 import OSReconstruction.GeneralResults.ScalarFTC
 import OSReconstruction.GeneralResults.SchwartzCutoffExp
 import OSReconstruction.GeneralResults.SchwartzDamping
-import OSReconstruction.GeneralResults.PhysicsFourierEval
 import OSReconstruction.GeneralResults.SchwartzFubini
+import Mathlib.MeasureTheory.Measure.Haar.InnerProductSpace
 import Mathlib.Algebra.Order.Chebyshev
 
 /-!
@@ -3160,6 +3160,51 @@ noncomputable def physicsFourierFlatCLM {m : ℕ} :
     physicsFourierFlatCLM f ξ =
       inverseFourierFlatCLM f ((-(1 / (2 * Real.pi) : ℝ)) • ξ) := by
   simp [physicsFourierFlatCLM]
+
+-- Pointwise integral formula for the flat Fourier transform.
+private theorem fourierTransformFlat_eval
+    (f : SchwartzMap (Fin m → ℝ) ℂ) (ξ : Fin m → ℝ) :
+    (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
+        (EuclideanSpace.equiv (Fin m) ℝ).symm
+      ((SchwartzMap.fourierTransformCLM ℂ)
+        (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
+          (EuclideanSpace.equiv (Fin m) ℝ) f))) ξ =
+    ∫ x : Fin m → ℝ,
+      exp (-2 * ↑Real.pi * I * (∑ i, (x i : ℂ) * (ξ i : ℂ))) * f x := by
+  simp only [SchwartzMap.fourierTransformCLM_apply,
+    SchwartzMap.compCLMOfContinuousLinearEquiv_apply, Function.comp_apply]
+  rw [SchwartzMap.fourier_coe, Real.fourier_eq]
+  simp only [Real.fourierChar_apply, Circle.smul_def, mul_neg, neg_mul, smul_eq_mul]
+  have hcomp := ((PiLp.volume_preserving_toLp (ι := Fin m)).integral_comp
+      (MeasurableEquiv.toLp 2 (Fin m → ℝ)).measurableEmbedding
+      (fun x : EuclideanSpace ℝ (Fin m) =>
+        cexp (↑(-2 * Real.pi * inner ℝ x ((EuclideanSpace.equiv (Fin m) ℝ).symm ξ)) * I) *
+          ((SchwartzMap.compCLMOfContinuousLinearEquiv ℂ (EuclideanSpace.equiv (Fin m) ℝ)) f) x)).symm
+  calc
+    ∫ v : EuclideanSpace ℝ (Fin m),
+        cexp (↑(-(2 * Real.pi * inner ℝ v ((EuclideanSpace.equiv (Fin m) ℝ).symm ξ))) * I) *
+          ((SchwartzMap.compCLMOfContinuousLinearEquiv ℂ (EuclideanSpace.equiv (Fin m) ℝ)) f) v
+      = ∫ y : WithLp 2 (Fin m → ℝ),
+          cexp (↑(-(2 * Real.pi * inner ℝ y ((EuclideanSpace.equiv (Fin m) ℝ).symm ξ))) * I) * f y.ofLp := by
+            simp [PiLp.coe_continuousLinearEquiv]
+    _ = ∫ x : Fin m → ℝ,
+          cexp (↑(-(2 * Real.pi * inner ℝ (WithLp.toLp 2 x) ((EuclideanSpace.equiv (Fin m) ℝ).symm ξ))) * I) *
+            f ((EuclideanSpace.equiv (Fin m) ℝ) (WithLp.toLp 2 x)) := by
+            simpa [EuclideanSpace.equiv, PiLp.coe_continuousLinearEquiv] using hcomp
+    _ = ∫ x : Fin m → ℝ, cexp (-(2 * ↑Real.pi * I * (∑ i, (x i : ℂ) * (ξ i : ℂ)))) * f x := by
+          apply integral_congr_ae
+          filter_upwards with x
+          have hx : ((EuclideanSpace.equiv (Fin m) ℝ) (WithLp.toLp 2 x)) = x := by
+            ext i; simp [EuclideanSpace.equiv]
+          rw [hx]
+          have hinner : inner ℝ (WithLp.toLp 2 x) ((EuclideanSpace.equiv (Fin m) ℝ).symm ξ) =
+              ∑ i, x i * ξ i := by
+            rw [PiLp.inner_apply]
+            change ∑ i, ξ i * x i = ∑ i, x i * ξ i
+            simp_rw [mul_comm]
+          rw [hinner]
+          congr 1
+          simp [Finset.mul_sum, mul_assoc, mul_left_comm, mul_comm]
 
 private noncomputable def dualConeCutoff {m : ℕ} (C : Set (Fin m → ℝ)) :
     FixedConeCutoff (DualConeFlat C) :=
