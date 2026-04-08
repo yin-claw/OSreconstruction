@@ -8,6 +8,7 @@ import OSReconstruction.SCV.FourierLaplaceCore
 import OSReconstruction.SCV.Osgood
 import OSReconstruction.GeneralResults.ScalarFTC
 import OSReconstruction.GeneralResults.SchwartzCutoffExp
+import OSReconstruction.GeneralResults.SchwartzDamping
 import OSReconstruction.GeneralResults.SchwartzFubini
 import Mathlib.Algebra.Order.Chebyshev
 
@@ -3159,6 +3160,38 @@ noncomputable def physicsFourierFlatCLM {m : ℕ} :
       inverseFourierFlatCLM f ((-(1 / (2 * Real.pi) : ℝ)) • ξ) := by
   simp [physicsFourierFlatCLM]
 
+private noncomputable def dualConeCutoff {m : ℕ} (C : Set (Fin m → ℝ)) :
+    FixedConeCutoff (DualConeFlat C) :=
+  (fixedConeCutoff_exists (DualConeFlat C) (dualConeFlat_closed C)).some
+
+private def etaPairingCLM {m : ℕ} (η : Fin m → ℝ) : (Fin m → ℝ) →L[ℝ] ℝ :=
+  ∑ i, (η i) •
+    (ContinuousLinearMap.proj (R := ℝ) (ι := Fin m) (φ := fun _ => ℝ) i)
+
+@[simp] private lemma etaPairingCLM_apply {m : ℕ} (η ξ : Fin m → ℝ) :
+    etaPairingCLM η ξ = ∑ i, η i * ξ i := by
+  simp [etaPairingCLM]
+
+private lemma dualConeCutoff_hasTemperateGrowthComplex
+    {m : ℕ} {C : Set (Fin m → ℝ)} :
+    (fun ξ : Fin m → ℝ => ((dualConeCutoff C).val ξ : ℂ)).HasTemperateGrowth := by
+  refine ⟨?_, fun n => ?_⟩
+  · simpa [dualConeCutoff] using
+      (Complex.ofRealCLM.contDiff.comp (dualConeCutoff C).smooth)
+  · obtain ⟨Cn, hCn⟩ := (dualConeCutoff C).deriv_bound n
+    refine ⟨0, Cn, fun ξ => ?_⟩
+    have h_eq :
+        ‖iteratedFDeriv ℝ n (fun x : Fin m → ℝ => ((dualConeCutoff C).val x : ℂ)) ξ‖ =
+          ‖iteratedFDeriv ℝ n (dualConeCutoff C).val ξ‖ := by
+      rw [show (fun x : Fin m → ℝ => ((dualConeCutoff C).val x : ℂ)) =
+          (Complex.ofRealLI : ℝ →ₗᵢ[ℝ] ℂ) ∘ (dualConeCutoff C).val from rfl]
+      exact Complex.ofRealLI.norm_iteratedFDeriv_comp_left
+        ((contDiff_infty.mp (dualConeCutoff C).smooth n).contDiffAt) le_rfl
+    rw [h_eq]
+    calc
+      ‖iteratedFDeriv ℝ n (dualConeCutoff C).val ξ‖ ≤ Cn := hCn ξ
+      _ = Cn * (1 + ‖ξ‖) ^ (0 : ℕ) := by ring
+
 /-- A fixed cone cutoff is identically `1` on the dual cone itself. -/
 private lemma fixedConeCutoff_eq_one_on_dualCone
     {m : ℕ} {C : Set (Fin m → ℝ)}
@@ -3183,6 +3216,22 @@ private lemma realPlusIEpsEta_mem_tubeDomain
       Complex.I_im, Complex.I_re, Pi.smul_apply, smul_eq_mul]
   rw [hIm]
   exact hC_cone η hη ε hε
+
+/-- Pointwise identification of the Fubini-exchanged Schwartz kernel with the
+regularized physics Fourier transform. This is the remaining kernel-computation
+step in the boundary-value theorem. -/
+private axiom regularizedKernel_pointwise
+    {m : ℕ}
+    (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
+    (η : Fin m → ℝ) (hη : η ∈ C)
+    (f : SchwartzMap (Fin m → ℝ) ℂ) :
+    ∀ (ε : ℝ), 0 < ε → ∀ ξ : Fin m → ℝ,
+      (∫ x : Fin m → ℝ,
+        multiDimPsiZExt C hC_open hC_conv hC_cone hC_salient
+          (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) ξ * f x) =
+        Complex.exp (-(ε : ℂ) * (etaPairingCLM η ξ : ℂ)) *
+          (((dualConeCutoff C).val ξ : ℂ) * physicsFourierFlatCLM f ξ)
 
 /-- **Boundary value convergence for the Fourier-Laplace extension.**
 
@@ -3663,20 +3712,19 @@ theorem fourierLaplace_boundaryValue_recovery {m : ℕ}
   -- We isolate it as a single sorry with a precise mathematical statement.
   --
   -- Choose Φ_ε for each ε > 0 and rewrite the integral.
-  have hPhiExists : ∀ (ε : ℝ), 0 < ε →
-      ∃ (Φ : SchwartzMap (Fin m → ℝ) ℂ),
-        T Φ = ∫ x, T (g ε x) * f x := by
-    intro ε hε
-    obtain ⟨Φ, _, hTΦ⟩ := hFubini ε hε
-    exact ⟨Φ, hTΦ⟩
   -- Extract a definite choice function Φ_ε for ε > 0 via Classical.choose.
   let Φ : ℝ → SchwartzMap (Fin m → ℝ) ℂ := fun ε =>
-    if hε : 0 < ε then (hPhiExists ε hε).choose else 0
+    if hε : 0 < ε then (hFubini ε hε).choose else 0
+  have hΦ_pointwise : ∀ (ε : ℝ) (hε : 0 < ε) (ξ : Fin m → ℝ),
+      Φ ε ξ = ∫ x, g ε x ξ * f x := by
+    intro ε hε ξ
+    simp only [Φ, dif_pos hε]
+    exact (hFubini ε hε).choose_spec.1 ξ
   have hΦ_eq : ∀ (ε : ℝ) (hε : 0 < ε),
       T (Φ ε) = ∫ x, T (g ε x) * f x := by
     intro ε hε
     simp only [Φ, dif_pos hε]
-    exact (hPhiExists ε hε).choose_spec
+    exact (hFubini ε hε).choose_spec.2
   -- Rewrite: ∫ T(g ε x) f(x) dx = T(Φ_ε) for ε > 0.
   -- Suffice: T(Φ_ε) → T(physicsFourierFlatCLM f).
   suffices hTΦ_lim : Filter.Tendsto (fun ε => T (Φ ε))
@@ -3685,38 +3733,48 @@ theorem fourierLaplace_boundaryValue_recovery {m : ℕ}
     apply hTΦ_lim.congr'
     filter_upwards [self_mem_nhdsWithin] with ε hε
     exact hΦ_eq ε (Set.mem_Ioi.mp hε)
-  -- ════════════════════════════════════════════════════════════════════
-  -- Reduction to Schwartz convergence.
-  --
-  -- T is continuous (it is a ContinuousLinearMap), so it suffices to show
-  -- Φ_ε → physicsFourierFlatCLM f in Schwartz topology.
-  --
-  -- Mathematical content (Vladimirov §25):
-  -- Φ_ε(ξ) = ∫ ψ_{x+iεη}(ξ) f(x) dx
-  --         = χ(ξ) ∫ exp(i(x+iεη)·ξ) f(x) dx
-  --         = χ(ξ) exp(-εη·ξ) FT_phys(f)(ξ).
-  --
-  -- As ε→0⁺: exp(-εη·ξ) → 1 pointwise, dominated by 1 on DualConeFlat C
-  -- (where η·ξ ≥ 0 ⟹ exp(-εη·ξ) ≤ 1), and controlled by compact support
-  -- of χ outside the dual cone.
-  --
-  -- So Φ_ε → χ · FT_phys(f) in Schwartz topology.
-  --
-  -- Then T(χ · FT_phys(f)) = T(FT_phys(f)) = T(physicsFourierFlatCLM f)
-  -- by HasFourierSupportInDualCone (χ = 1 on C*, so (χ-1)·h is supported
-  -- outside C*, killed by T).
-  --
-  -- Formal proof requires:
-  --   (a) Schwartz seminorm estimates for (exp(-εη·ξ) - 1) × FT_phys(f)
-  --       (product rule, chain rule, dominated by Schwartz decay of FT(f))
-  --   (b) Dominated convergence in Schwartz topology (Schwartz DCT)
-  --   (c) The support identification T(χ · FT_phys(f)) = T(FT_phys(f))
-  -- All ingredients exist in the codebase but the assembly is nontrivial.
-  -- ════════════════════════════════════════════════════════════════════
-  sorry -- schwartz_damping_limit:
-        -- Φ_ε → physicsFourierFlatCLM f in Schwartz topology as ε→0⁺,
-        -- then T.continuous gives T(Φ_ε) → T(physicsFourierFlatCLM f).
-        -- Ref: Vladimirov §25, Hörmander §7.4.
+  let χ : FixedConeCutoff (DualConeFlat C) := dualConeCutoff C
+  have hχ_temp : (fun ξ : Fin m → ℝ => (χ.val ξ : ℂ)).HasTemperateGrowth := by
+    simpa [χ, dualConeCutoff] using
+      (dualConeCutoff_hasTemperateGrowthComplex (C := C))
+  let hχf : SchwartzMap (Fin m → ℝ) ℂ :=
+    SchwartzMap.smulLeftCLM ℂ (fun ξ : Fin m → ℝ => (χ.val ξ : ℂ))
+      (physicsFourierFlatCLM f)
+  let Lη : (Fin m → ℝ) →L[ℝ] ℝ := etaPairingCLM η
+  obtain ⟨hε, hhε_apply, hhε_tendsto⟩ := schwartz_exp_damping_tendsto hχf Lη
+  have hΦ_eq_hε : ∀ (ε : ℝ) (hε_pos : 0 < ε), Φ ε = hε ε := by
+    intro ε hε_pos
+    ext ξ
+    rw [hΦ_pointwise ε hε_pos ξ]
+    rw [regularizedKernel_pointwise C hC_open hC_conv hC_cone hC_salient η hη f ε hε_pos ξ]
+    rw [hhε_apply ε hε_pos ξ]
+    have hhχf :
+        hχf ξ = (((dualConeCutoff C).val ξ : ℂ) * physicsFourierFlatCLM f ξ) := by
+      dsimp [hχf, χ]
+      rw [SchwartzMap.smulLeftCLM_apply_apply
+        (dualConeCutoff_hasTemperateGrowthComplex (C := C))]
+      simp [smul_eq_mul]
+    simp only [Lη, etaPairingCLM_apply]
+    rw [hhχf]
+  have hThχf_eq : T hχf = T (physicsFourierFlatCLM f) := by
+    apply hasFourierSupportIn_eqOn hT_support
+    intro ξ hξ
+    rw [show hχf =
+        SchwartzMap.smulLeftCLM ℂ (fun ξ : Fin m → ℝ => (χ.val ξ : ℂ))
+          (physicsFourierFlatCLM f) from rfl]
+    rw [SchwartzMap.smulLeftCLM_apply_apply hχ_temp]
+    simp [smul_eq_mul, fixedConeCutoff_eq_one_on_dualCone χ hξ]
+  have hT_hε_tendsto : Filter.Tendsto (fun ε : ℝ => T (hε ε))
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds (T hχf)) := by
+    exact T.continuous.continuousAt.tendsto.comp hhε_tendsto
+  have hTΦ_lim_to_cutoff : Filter.Tendsto (fun ε : ℝ => T (Φ ε))
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds (T hχf)) := by
+    refine hT_hε_tendsto.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with ε hε_mem
+    rw [hΦ_eq_hε ε (Set.mem_Ioi.mp hε_mem)]
+  simpa [hThχf_eq] using hTΦ_lim_to_cutoff
 
 theorem fourierLaplaceExtMultiDim_boundaryValue
     (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
