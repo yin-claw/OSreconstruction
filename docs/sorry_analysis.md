@@ -1,7 +1,15 @@
 # Sorry Analysis: OS Reconstruction Bridge Theorems
 
-> Status note (2026-02-27): This analysis is stale and kept for history.
-> Canonical current plan and counts: `docs/development_plan_systematic.md`.
+> Status note (2026-02-27, tightened 2026-04-08): this analysis is stale and
+> kept for history only. Its monolithic `WickRotation.lean` decomposition,
+> counts, and axiom list do **not** match the current split production tree.
+> Canonical current plan and counts live in
+> `docs/development_plan_systematic.md`,
+> `docs/proof_docs_completion_plan.md`,
+> `docs/theorem2_locality_blueprint.md`,
+> `docs/theorem3_os_route_blueprint.md`,
+> `docs/theorem4_cluster_blueprint.md`, and
+> `OSReconstruction/Wightman/TODO.md`.
 
 *Updated 2026-02-20. Covers WickRotation.lean (18 sorrys), Reconstruction.lean (4 sorrys), and axioms.*
 

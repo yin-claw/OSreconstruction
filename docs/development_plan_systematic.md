@@ -120,7 +120,11 @@ Clusters:
      as the file that owns `boundary_values_tempered`
 4. Cluster property:
    - base reductions already in `OSToWightmanBoundaryValuesBase.lean`
-   - final wrapper in `OSToWightmanBoundaryValues.lean`
+   - one-factor transport inputs owned by `OSToWightmanPositivity.lean`
+   - repaired positive-time bridge owned by
+     `OSToWightmanBoundaryValuesBase.lean`
+   - public canonical-shell adapter plus final wrapper owned by
+     `OSToWightmanBoundaryValues.lean`
    - missing public adapter / corrected bridge package controlled by
      `docs/theorem4_cluster_blueprint.md`
 
@@ -149,6 +153,23 @@ Live status:
   and the public canonical-shell adapter package are still doc-level targets
   that must be introduced explicitly before the final wrapper proof is treated
   as implementation-ready
+- theorem-4 file ownership is now fixed more sharply too:
+  theorem-3-derived one-factor transport inputs
+  (`cluster_left_factor_transport`, `cluster_right_factor_transport`) belong in
+  `OSToWightmanPositivity.lean`; the repaired positive-time cluster bridge
+  `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison`
+  together with the thin wrapper
+  `bvt_cluster_positiveTime_singleSplit_core` belong in
+  `OSToWightmanBoundaryValuesBase.lean`; and the public canonical-shell adapter
+  package
+  `canonical_cluster_integrand_eq_singleSplit_integrand`
+  -> `canonical_translate_factor_eq_singleSplit_translate_factor`
+  -> `singleSplit_core_rewrites_to_canonical_shell`
+  -> `canonical_shell_limit_of_rewrite`
+  -> `bvt_cluster_canonical_from_positiveTime_core`
+  belongs in `OSToWightmanBoundaryValues.lean` immediately above the final
+  private wrapper. `OSToWightmanBoundaryValueLimits.lean` is not the theorem-4
+  home under the current checked-tree contract.
 - the immediate active target inside `schwinger_continuation_base_step` is the
   original 2-point Schwinger case:
   - one difference variable after translation reduction,
@@ -184,20 +205,27 @@ Live status:
   `AdjacencyDistributional.lean`; the checked raw-boundary theorem surface is
   adjacent-only (`i`, `i+1`), while the frontier theorem still uses general
   `swap i j`, so the theorem-2 proof transcript must run through the
-  flat-regular input, the
-  adjacent raw-boundary theorem, the theorem-2-specific canonical pairing
-  recovery specialization
+  flat-regular input, the adjacent-only substitute consumer theorem
+  `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` (statement
+  home in `BHWExtension.lean`, lower helper home in
+  `AdjacencyDistributional.lean`), the packaging theorem
+  `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`, the theorem-2-
+  specific canonical pairing recovery specialization
   `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` at
   `canonicalForwardConeDirection`, the separate gluing theorem
   `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`, and then a
   separate adjacent-chain reduction theorem
   `bvt_F_swapCanonical_pairing_of_adjacent_chain` before the final frontier
   theorem. `OSToWightmanBoundaryValueLimits.lean` is the checked file locus for
-  that planned theorem-2 closure package, but the current tree still uses that
-  file only for theorem-3 / `singleSplit_xiShift` limit machinery, so the
-  theorem-2 subsection there is still missing support work rather than an
-  already-present package to reuse. Those layers must not be hidden in one
-  closing `sorry`. Conversely, schematic pseudocode names for the internal
+  the canonical-shift / adjacent-chain part of that planned theorem-2 closure
+  package, but the current tree still uses that file only for theorem-3 /
+  `singleSplit_xiShift` limit machinery, so the theorem-2 subsection there is
+  still missing support work rather than an already-present package to reuse.
+  More sharply, that sibling subsection starts only after
+  `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` is already available;
+  it does not own the raw-boundary closure theorem itself. Those layers must
+  not be hidden in one closing `sorry`. Conversely, schematic pseudocode names
+  for the internal
   adjacent-step data of that reducer (for example
   `adjacentSwapFactorization` / `AdjacentCanonicalSwapPairingStepHolds`) are
   not themselves part of the theorem-slot contract unless a later doc pass
@@ -247,8 +275,32 @@ from the OS data.
 1. `Wightman/Reconstruction/Main.lean`: `wightman_uniqueness` (1)
 2. `Wightman/Reconstruction/GNSHilbertSpace.lean`: vacuum-uniqueness chain (1)
 3. `Wightman/WightmanAxioms.lean`: 4 infrastructural sorrys
-4. `Wightman/NuclearSpaces/*`: 7 sorrys (important but not critical-path)
+4. Nuclear-space / Bochner-Minlos lane: **checked local support lane, but not
+   yet integrated into downstream reconstruction consumers**
+   - the checked tree here does contain a live
+     `Wightman/NuclearSpaces/` subtree (`NuclearSpace.lean`,
+     `SchwartzNuclear.lean`, `GaussianFieldBridge.lean`,
+     `BochnerMinlos.lean`, `EuclideanMeasure.lean`, `ComplexSchwartz.lean`);
+   - implementation-facing work on this lane is therefore split between the
+     checked local support files above and the still-exported downstream axioms
+     `schwartz_nuclear_extension` and
+     `exists_continuousMultilinear_ofSeparatelyContinuous` in
+     `Wightman/WightmanAxioms.lean`;
+   - any future pass that changes whether a theorem package is owned by the
+     local support files, by gaussian-field import/re-export, or by the
+     downstream axiom surface must update this plan in the same pass.
 5. `ComplexLieGroups/*`: 2 remaining BHW-permutation blockers (maintained, not current top lane)
+   - exact scope caution: these are only the downstream full-permutation endgame
+     blockers in
+     `ComplexLieGroups/Connectedness/BHWPermutation/PermutationFlowBlocker.lean`
+     (`blocker_isConnected_permSeedSet_nontrivial`,
+     `blocker_iterated_eow_hExtPerm_d1_nontrivial`)
+   - theorem 2 is **not** blocked on that file; its implementation route stops
+     earlier on the adjacent-swap seam
+     `Adjacency.lean -> AdjacencyDistributional.lean -> BHWExtension.lean -> OStoWightmanBoundaryValueLimits.lean`
+   - any future pass that reprioritizes this lane must preserve that ownership
+     boundary instead of reopening theorem-2 raw-boundary packaging under the
+     permutation-flow banner
 
 ## 5. Execution Order
 
@@ -288,7 +340,8 @@ from the OS data.
 ## 6. Deprioritized Work (Unless It Unblocks the Above)
 
 1. Most of `vNA/*`
-2. Non-critical NuclearSpaces side development
+2. Historical/planned nuclear-space side development beyond the currently
+   checked `Wightman/WightmanAxioms.lean` axiom surfaces
 3. Additional CLG refactors not required by active OS reconstruction blockers
 
 ## 7. Verification Commands

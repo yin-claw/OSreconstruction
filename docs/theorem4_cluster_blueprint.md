@@ -45,8 +45,63 @@ Implementation rule for this blueprint:
    `.../OSToWightmanBoundaryValuesComparison.lean`, so theorem-4 work should
    not treat `BoundaryValues.lean` as the only consumer surface around the
    boundary-value transfer layer;
-5. if a future refactor moves any of these files, this blueprint must be
+5. the checked `.../OSToWightmanBoundaryValueLimits.lean` file is currently a
+   theorem-2/theorem-3 support file, not a theorem-4 home. The theorem-4 docs
+   may consume its already-proved `xiShift`/limit machinery, but later Lean
+   work should not quietly drift the cluster adapter into that file unless this
+   blueprint and the global plans are rewritten first;
+6. if a future refactor moves any of these files, this blueprint must be
    updated in the same pass.
+
+### 0.2. Fixed file ownership for the still-missing theorem-4 package
+
+The checked-present inventory above is not enough by itself, because the main
+remaining theorem-4 ambiguity was **which missing theorem package belongs in
+which file**. That ownership is now fixed as part of the implementation
+contract.
+
+Checked-present consumer/support surfaces:
+
+- `OSToWightmanPositivity.lean` already owns the theorem-3 transport inputs
+  theorem 4 must consume.
+- `OSToWightmanBoundaryValuesBase.lean` already owns the positive-time
+  single-split cluster reductions
+  (`...singleSplitLargeSpatial`, `...singleSplitSchwingerLargeSpatial`, legacy
+  `...singleSplitFactorComparison`).
+- `OSToWightmanBoundaryValues.lean` already owns the final wrapper
+  `bvt_F_clusterCanonicalEventually_translate`, its translated wrapper, and the
+  downstream public transfer theorem.
+
+Checked-missing theorem-package ownership:
+
+1. `OSToWightmanPositivity.lean` should export the theorem-3-derived one-factor
+   transport inputs that theorem 4 consumes:
+   `cluster_left_factor_transport` and
+   `cluster_right_factor_transport`.
+2. `OSToWightmanBoundaryValuesBase.lean` should own the repaired core-side
+   replacement theorem
+   `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison`
+   together with the thin positive-time wrapper
+   `bvt_cluster_positiveTime_singleSplit_core`. This is the same mathematical
+   layer as the already-present `singleSplitLargeSpatial` /
+   `singleSplitSchwingerLargeSpatial` reductions, so it belongs in the base
+   file rather than in the final wrapper file.
+3. `OSToWightmanBoundaryValues.lean` should own the public canonical-shell
+   adapter package
+   `canonical_cluster_integrand_eq_singleSplit_integrand`
+   -> `canonical_translate_factor_eq_singleSplit_translate_factor`
+   -> `singleSplit_core_rewrites_to_canonical_shell`
+   -> `canonical_shell_limit_of_rewrite`
+   -> `bvt_cluster_canonical_from_positiveTime_core`,
+   and then consume that package in the final private theorem
+   `bvt_F_clusterCanonicalEventually_translate`.
+4. `SchwingerOS.lean` remains only the source of the already-checked OS-side
+   positive-time/Hilbert-space algebra. It is not the place to hide theorem-4
+   wrapper glue.
+
+This ownership split is strict: later Lean work should not leave the theorem-4
+bridge theorem, the public canonical-shell adapter, and the final wrapper
+intermixed in one long `BoundaryValues.lean` proof block.
 
 ## 1. The live theorem and its consumers
 
@@ -637,8 +692,8 @@ point is that every real mathematical ingredient has already been named above.
 ## 12. Signature cross-checks and implementation contract
 
 The theorem-4 blueprint should now be explicit about which signatures have
-already been checked against production and which new local objects must be
-introduced exactly as documented below.
+already been checked against production, which new local objects must be
+introduced exactly as documented below, and which file owns each of them.
 
 ### 12.1. Confirmed existing theorem signatures
 
@@ -844,6 +899,11 @@ here, it has drifted below the current documentation standard.
 
 The theorem-4 doc should also make explicit the small identities that are easy
 to suppress in prose but will matter in the later Lean file.
+
+File-ownership note: these normalization lemmas should live beside the
+one-factor transport package in `OSToWightmanPositivity.lean` unless that file
+is explicitly split further. They are theorem-3-consumer bookkeeping for the
+transport comparison, not final-wrapper lemmas for `BoundaryValues.lean`.
 
 The normalized degree-zero vector only extracts the desired one-factor theorem
 if all of the following are written down as explicit lemmas:

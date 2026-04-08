@@ -90,8 +90,8 @@ as the default meaning of “Lorentz group” or “Poincare group.”
 
 The key files are:
 
-- [Lorentz.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Groups/Lorentz.lean)
-- [Poincare.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Groups/Poincare.lean)
+- [Lorentz.lean](../OSReconstruction/Wightman/Groups/Lorentz.lean)
+- [Poincare.lean](../OSReconstruction/Wightman/Groups/Poincare.lean)
 
 The main outcome is:
 
@@ -104,7 +104,7 @@ The main outcome is:
 
 The bridge file is:
 
-- [AxiomBridge.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Bridge/AxiomBridge.lean)
+- [AxiomBridge.lean](../OSReconstruction/Bridge/AxiomBridge.lean)
 
 The preferred conversion names are now:
 
@@ -118,15 +118,15 @@ Old restricted-wrapper bridge names were removed from the Wightman side.
 The following public theorem surfaces were normalized from old
 `Restricted`-typed statements to bare `LorentzGroup d`:
 
-- [WightmanAxioms.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/WightmanAxioms.lean)
-- [AnalyticContinuation.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/AnalyticContinuation.lean)
-- [BHWExtension.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/BHWExtension.lean)
-- [BHWReducedExtension.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean)
-- [ForwardTubeLorentz.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/ForwardTubeLorentz.lean)
-- [OSToWightmanTubeIdentity.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanTubeIdentity.lean)
-- [OSToWightmanBoundaryValuesBase.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValuesBase.lean)
-- [OSToWightmanBoundaryValues.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean)
-- [SchwingerAxioms.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean)
+- [WightmanAxioms.lean](../OSReconstruction/Wightman/WightmanAxioms.lean)
+- [AnalyticContinuation.lean](../OSReconstruction/Wightman/Reconstruction/AnalyticContinuation.lean)
+- [BHWExtension.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/BHWExtension.lean)
+- [BHWReducedExtension.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean)
+- [ForwardTubeLorentz.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/ForwardTubeLorentz.lean)
+- [OSToWightmanTubeIdentity.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanTubeIdentity.lean)
+- [OSToWightmanBoundaryValuesBase.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValuesBase.lean)
+- [OSToWightmanBoundaryValues.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean)
+- [SchwingerAxioms.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean)
 
 This is the main user-facing effect of the migration.
 

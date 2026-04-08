@@ -20,6 +20,38 @@ Core.lean  (WightmanFunctions, BorchersSequence, WightmanInnerProduct, PreHilber
 The upstream dependency `WightmanAxioms.lean` defines `WightmanQFT` and contains
 two axioms that the GNS output type depends on, so those are included too.
 
+Checked-tree ownership clarification for this clone:
+
+1. the repo contains a live checked `OSReconstruction/Wightman/NuclearSpaces/`
+   subtree (`NuclearSpace.lean`, `SchwartzNuclear.lean`,
+   `GaussianFieldBridge.lean`, `BochnerMinlos.lean`, `EuclideanMeasure.lean`,
+   `ComplexSchwartz.lean`, plus helpers);
+2. the reconstruction-critical downstream consumer surface is nevertheless still
+   the pair of axioms exported from `Wightman/WightmanAxioms.lean`
+   (`schwartz_nuclear_extension`,
+   `exists_continuousMultilinear_ofSeparatelyContinuous`);
+3. the honest open documentation problem is therefore an **integration split**,
+   not the absence of any checked nuclear-support lane. Later Lean work must
+   keep separate:
+   - checked local support files under `Wightman/NuclearSpaces/*`,
+   - downstream axiom/theorem surfaces already consumed by the GNS pipeline,
+   - and any remaining import / wrapper / bridge work needed to connect them;
+4. a direct checked-tree scan currently finds **7** local `sorry`s in the
+   checked `Wightman/NuclearSpaces/*` subtree (`NuclearSpace.lean`: 2,
+   `BochnerMinlos.lean`: 5), but those support-lane holes remain outside the
+   headline repo-wide `63`-sorry census because that headline is reserved for
+   the theorem-2/3/4 critical-path ledger.
+
+For the GNS lane, that means the implementation contract is:
+
+1. local theorem work may happen in the checked `Wightman/NuclearSpaces/*`
+   files;
+2. reconstruction-facing consumers still read the theorem surface from
+   `Wightman/WightmanAxioms.lean`;
+3. any import/re-export replacement of those axioms is bridge work and should
+   be tracked explicitly as such, not hidden as if `gns_cyclicity` already had
+   direct local NuclearSpaces ownership.
+
 ---
 
 ## Summary
@@ -49,7 +81,13 @@ two axioms that the GNS output type depends on, so those are included too.
 
 ### A1. `schwartz_nuclear_extension`
 
-**File:** `WightmanAxioms.lean:342`
+**Current downstream consumer surface:** `WightmanAxioms.lean:342`
+
+**Checked support lane cross-reference:**
+- `Wightman/NuclearSpaces/NuclearSpace.lean`
+- `Wightman/NuclearSpaces/SchwartzNuclear.lean`
+- `Wightman/NuclearSpaces/GaussianFieldBridge.lean`
+- `Wightman/NuclearSpaces/BochnerMinlos.lean`
 
 ```lean
 axiom schwartz_nuclear_extension (d n : ℕ)
@@ -64,11 +102,22 @@ multilinear functional on a product of Schwartz spaces extends uniquely to a
 continuous linear functional on the joint Schwartz space S(R^{nd}).
 
 **How it enters the GNS pipeline:** Used in the proof of
-`wightmanFunction_linear` (WightmanAxioms.lean), which shows that the
-Wightman n-point function `qft.wightmanFunction n` is a continuous linear
-functional on S(R^{nd}). This is needed to state `wightman_reconstruction`
-properly: the theorem says `qft.wightmanFunction n fs = W_n(productTensor fs)`,
-and `wightmanFunction` is defined using this axiom.
+`wightmanFunction_linear` in `Wightman/WightmanAxioms.lean`, which shows that
+`qft.wightmanFunction n` is a continuous linear functional on the joint
+Schwartz space. On the GNS side the consumer chain is explicit and should stay
+explicit:
+
+1. local NuclearSpaces support and/or gaussian-field import work produces the
+   theorem package;
+2. the reconstruction-facing export surface remains
+   `Wightman/WightmanAxioms.lean :: schwartz_nuclear_extension`;
+3. `Wightman/Reconstruction/GNSHilbertSpace.lean :: gns_cyclicity` and the
+   `gnsQFT` packaging consume that downstream surface rather than reaching
+   directly into a local support file.
+
+This is needed to state `wightman_reconstruction` properly: the theorem says
+`qft.wightmanFunction n fs = W_n(productTensor fs)`, and `wightmanFunction` is
+defined using this axiom.
 
 **Importance: Medium-High.**
 The axiom is mathematically uncontroversial (standard functional analysis,
@@ -91,7 +140,13 @@ functional analysis.
 
 ### A2. `exists_continuousMultilinear_ofSeparatelyContinuous`
 
-**File:** `WightmanAxioms.lean:504`
+**Current downstream consumer surface:** `WightmanAxioms.lean:504`
+
+**Checked support lane cross-reference:**
+- `Wightman/NuclearSpaces/NuclearSpace.lean`
+- `Wightman/NuclearSpaces/SchwartzNuclear.lean`
+- downstream bridge still exported as an axiom rather than imported from the
+  local checked support lane
 
 ```lean
 axiom exists_continuousMultilinear_ofSeparatelyContinuous {n : ℕ}
@@ -106,9 +161,19 @@ axiom exists_continuousMultilinear_ofSeparatelyContinuous {n : ℕ}
 **What it says:** Separately continuous multilinear maps on products of Schwartz
 spaces are jointly continuous (Banach-Steinhaus for Frechet spaces).
 
-**How it enters the GNS pipeline:** Used in `wightmanFunction_linear`
-(WightmanAxioms.lean) to upgrade the separately continuous n-point function
-to a jointly continuous one, so that A1 can be applied.
+**How it enters the GNS pipeline:** Used in
+`Wightman/WightmanAxioms.lean :: wightmanFunction_linear` to upgrade the
+separately continuous n-point function to a jointly continuous one, so that A1
+can be applied. The ownership split matters here too:
+
+1. Package-B work may live in the checked `Wightman/NuclearSpaces/*` lane or
+   arrive by gaussian-field import;
+2. until that bridge is actually implemented, the GNS lane should treat
+   `Wightman/WightmanAxioms.lean ::
+   exists_continuousMultilinear_ofSeparatelyContinuous` as the frozen consumer
+   surface;
+3. `gns_cyclicity` is downstream of that exported surface, not a place to
+   create a parallel local continuity theorem surface ad hoc.
 
 **Importance: Medium.**
 This is a stepping stone to A1. Like A1, it is pure functional analysis with
@@ -247,6 +312,14 @@ is dense in the GNS Hilbert space.
    `S(R^{n(d+1)})` in the topology induced by the Wightman inner product.
 3. This follows from the Schwartz nuclear theorem: product test functions are
    dense in the joint Schwartz space.
+4. In this clone the ownership order for that last step is part of the contract:
+   local NuclearSpaces support -> optional bridge/import layer -> downstream
+   `Wightman/WightmanAxioms.lean` theorem surfaces ->
+   `GNSHilbertSpace.lean :: gns_cyclicity`.
+
+So the GNS blocker is not merely “prove nuclearity somewhere”; it is “make the
+nuclear-support route explicit enough that `gns_cyclicity` knows exactly which
+exported theorem surface it consumes.”
 
 **Importance: High.**
 Cyclicity is a Wightman axiom (implicit in W2) and is essential for the
@@ -368,12 +441,20 @@ The mathematical heart of the GNS construction is completely clean:
 
 ### What remains
 
-| Blocker | Sorries it blocks | Mathematical area |
-|---------|-------------------|-------------------|
+| Blocker | Sorries / axioms it blocks | Mathematical area |
+|---------|----------------------------|-------------------|
 | Schwartz translation continuity | S1a, S1b | Analysis (seminorm estimation) |
 | Fourier-Laplace / boundary values | S1c | Complex analysis / distribution theory |
-| Schwartz nuclear theorem | S2 (and transitively A1, A2) | Functional analysis / nuclear spaces |
+| NuclearSpaces support -> bridge -> downstream reconstruction integration | S2 and transitively the downstream axiom surfaces A1, A2 | Functional analysis / nuclear spaces |
 | GNS uniqueness argument | S4 | Operator algebras |
+
+The third row is deliberately phrased as an **integration** blocker rather than
+"there is no nuclear-space lane". In this clone the local NuclearSpaces files
+already exist and contain real checked support; what remains open is pinning an
+exact ownership-respecting route
+`Wightman/NuclearSpaces/*` -> bridge/import layer ->
+`Wightman/WightmanAxioms.lean` -> `GNSHilbertSpace.lean`
+for the theorem surfaces used by the GNS pipeline.
 
 ### Difficulty ranking (hardest first)
 
@@ -381,9 +462,9 @@ The mathematical heart of the GNS construction is completely clean:
 
 2. **S2 (cyclicity)** -- Hard. Blocked by the nuclear theorem (A1). Once A1 is available, the proof is relatively straightforward.
 
-3. **A1 (Schwartz nuclear extension)** -- Hard. The nuclearity of Schwartz space exists in Lean 4 (`gaussian-field` library). Bridging to the kernel theorem is the remaining work.
+3. **A1 / A2 downstream integration route** -- Hard. The mathematical support is no longer just an external aspiration: this clone now also contains a checked `Wightman/NuclearSpaces/*` lane. The remaining work is to decide and implement the exact bridge from that local support lane and/or imported `gaussian-field` results into the downstream `WightmanAxioms.lean` consumer surfaces without duplicating theorem packaging.
 
-4. **A2 (separately continuous -> jointly continuous)** -- Moderate. Standard Frechet space result, but Mathlib's Frechet space coverage is limited.
+4. **A2 (separately continuous -> jointly continuous)** -- Moderate at the theorem level, but still part of the same documentation-level integration problem above: the local NuclearSpaces lane, any imported `gaussian-field` theorem, and the downstream axiom-export surface must be kept distinct until one exact bridge route is chosen.
 
 5. **S1a (Schwartz translation continuity)** -- Moderate. Standard seminorm estimation, partially available in the SCV module.
 

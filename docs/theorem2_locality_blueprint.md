@@ -42,12 +42,27 @@ Checked-present theorem-2 production files:
 - `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/Adjacency.lean`
 - `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/AdjacencyDistributional.lean`
 
+Checked-tree path correction:
+
+Earlier drafts of this blueprint sometimes shortened these to paths like
+`OSReconstruction/Wightman/Reconstruction/OSToWightmanBoundaryValueLimits.lean`
+or `OSReconstruction/WickRotation/BHWPermutation/Adjacency.lean`. Those paths
+are **not** the checked tree in this clone. The exact repo-relative paths above
+are the ones later Lean work should open.
+
 Checked-present theorem surfaces already in the current tree:
 
-- `WickRotation/BHWExtension.lean :: W_analytic_swap_boundary_pairing_eq`
+- `Wightman/Reconstruction/WickRotation/BHWExtension.lean ::
+  W_analytic_swap_boundary_pairing_eq`
 - `ComplexLieGroups/Connectedness/BHWPermutation/AdjacencyDistributional.lean ::
   extendF_adjSwap_pairing_eq_of_distributional_local_commutativity`
-- `WickRotation/BHWExtension.lean ::
+- `ComplexLieGroups/Connectedness/BHWPermutation/Adjacency.lean ::
+  exists_real_open_nhds_adjSwap`
+- `ComplexLieGroups/Connectedness/BHWPermutation/Adjacency.lean ::
+  extendF_adjSwap_eq_on_realOpen`
+- `ComplexLieGroups/Connectedness/BHWPermutation/AdjacencyDistributional.lean ::
+  extendF_adjSwap_eq_on_realOpen_of_distributional_local_commutativity`
+- `Wightman/Reconstruction/WickRotation/BHWExtension.lean ::
   analytic_boundary_local_commutativity_of_boundary_continuous`
 - `Wightman/Reconstruction/ForwardTubeDistributions.lean ::
   boundary_function_continuous_forwardTube_of_flatRegular`
@@ -55,7 +70,7 @@ Checked-present theorem surfaces already in the current tree:
   boundary_value_recovery_forwardTube_of_flatRegular`
 - `Wightman/Reconstruction/ForwardTubeDistributions.lean ::
   boundary_value_recovery_forwardTube_of_flatRegular_from_bv`
-- `WickRotation/OSToWightmanBoundaryValuesComparison.lean ::
+- `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValuesComparison.lean ::
   bv_local_commutativity_transfer_of_swap_pairing`
 
 Checked-missing planned theorem-package names introduced by this blueprint:
@@ -139,7 +154,18 @@ Implementation rule for this blueprint:
      surface should live in `AdjacencyDistributional.lean`; in either case,
      the package must close back onto
      `extendF_adjSwap_pairing_eq_of_distributional_local_commutativity` rather
-     than creating a competing theorem-2 endgame under the umbrella barrel;
+     than creating a competing theorem-2 endgame under the umbrella barrel.
+     More sharply, the checked tree already fixes the **lower** Route-B local
+     transcript in `Adjacency.lean`: `exists_real_open_nhds_adjSwap` is the
+     existing compactness/open-neighborhood package that builds an open real
+     edge carrying (i) adjacent spacelike persistence, (ii) ET membership of
+     the edge itself, and (iii) ET membership of the swapped edge. So later
+     Lean work should not rediscover the local cover argument from scratch
+     inside theorem 2. The documentation-level top package
+     `choose_real_open_edge_for_adjacent_swap` should be implemented as the
+     theorem-2-facing wrapper that consumes that checked helper plus support
+     inclusion for `tsupport f`; the compactness/open-neighborhood proof is
+     already assigned to `Adjacency.lean`.
    - `BHWPermutation.lean` itself should be treated only as the umbrella entry
      point for that CLG lane unless a later doc pass explicitly rewrites the
      file-locus contract;
@@ -309,38 +335,133 @@ under:
 1. adjacent spacelike separation on the support of `f`,
 2. `g = f ∘ swap(i,j)`.
 
-The BHW package already proves the analogous statement in a fixed order.
-The primary raw-boundary route is the packaged theorem
-`W_analytic_swap_boundary_pairing_eq`, which already sits on top of the
-ET-support distributional theorem
+The BHW package already proves the analogous adjacent-swap statement in a
+fixed order, but the theorem-surface story is sharper than older drafts
+claimed.
+
+The checked theorem `W_analytic_swap_boundary_pairing_eq` already packages the
+final raw-boundary pairing equality on the real trace, and it already sits on
+top of the ET-support distributional theorem
 `extendF_adjSwap_pairing_eq_of_distributional_local_commutativity`.
-Only if later work genuinely needs pointwise raw-value equality at real ET
-points should it drop down to the lower theorem
-`analytic_boundary_local_commutativity_of_boundary_continuous`.
+However, its checked theorem surface also asks for an input
+`hLC : IsLocallyCommutativeWeak d W` for the boundary functional `W`.
+That is fine when this BHW theorem is used downstream on a Wightman package
+whose locality is already known, but it is a real theorem-2 surface issue if
+one tries to instantiate it naively with `W := bvt_W OS lgc`: theorem 2 is
+precisely the step that is supposed to prove local commutativity of `bvt_W`, so
+feeding `bvt_locally_commutative` back into that theorem would be circular.
+
+So the current theorem-2 production route must distinguish **three** layers,
+not two:
+
+1. the checked ET-support / distributional pairing consumer theorem
+   `extendF_adjSwap_pairing_eq_of_distributional_local_commutativity` in
+   `AdjacencyDistributional.lean`;
+2. the checked public wrapper
+   `W_analytic_swap_boundary_pairing_eq`, which repackages that same theorem
+   surface on the BHW-extension side;
+3. the still-missing theorem-2-specific **non-circular supplier** for the input
+   `IsLocallyCommutativeWeak d (bvt_W OS lgc)` that both checked theorems still
+   demand.
+
+That third layer is the important correction. A direct source check shows that
+`extendF_adjSwap_pairing_eq_of_distributional_local_commutativity` itself still
+has an explicit hypothesis
+`hF_local_dist : IsLocallyCommutativeWeak d W`.
+So it is lower than `W_analytic_swap_boundary_pairing_eq` with respect to the
+ET-support geometry packaging, but it is **not by itself** the missing
+non-circular theorem-2 closure theorem.
+
+A second theorem-surface correction is now explicit too: the old doc slot name
+`bvt_W_adjacent_distributional_local_commutativity_input` was narrower in name
+than in statement. If that slot is written as a full theorem
+`IsLocallyCommutativeWeak d (bvt_W OS lgc)`, then theorem 2 is being asked to
+prove a much stronger global surface than its actual adjacent-step frontier
+needs.
+
+After checking the surrounding live theorem surfaces, this blueprint now fixes
+one unique closure choice:
+
+1. theorem 2 does **not** endorse a preliminary full theorem
+   `IsLocallyCommutativeWeak d (bvt_W OS lgc)` as part of its main route;
+2. instead, theorem 2 must introduce a **new adjacent-only substitute consumer
+   theorem** on the `AdjacencyDistributional.lean` / `BHWExtension.lean` seam;
+3. the documentation now freezes the contract-level name and locus of that
+   substitute consumer theorem:
+   `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`, with the
+   implementation home in
+   `OSReconstruction/Wightman/Reconstruction/WickRotation/BHWExtension.lean`
+   and any lower distributional helper lemmas it needs living in
+   `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/AdjacencyDistributional.lean`;
+4. that substitute consumer theorem should package only the fixed adjacent
+   `(n,i,i+1,f,g)` raw-boundary pairing equality needed by theorem 2, using the
+   already-assembled ET-support, swap, and boundary-continuity inputs, without
+   changing theorem 2 into a global Wightman-locality theorem upstream of its
+   own frontier.
+
+Why this choice is now frozen:
+
+1. the checked public wrapper `W_analytic_swap_boundary_pairing_eq` is already
+   adjacent-only in its geometric data but still asks for the full global input
+   `hLC : IsLocallyCommutativeWeak d W`;
+2. the lower theorem
+   `extendF_adjSwap_pairing_eq_of_distributional_local_commutativity` keeps the
+   same mismatch: adjacent ET-support geometry plus a global `hF_local_dist`
+   hypothesis;
+3. the live theorem-2 frontier below
+   `bvt_F_swapCanonical_pairing_of_adjacent_chain` is itself only an
+   adjacent-step package;
+4. therefore choosing the full-input route would force theorem 2 to overshoot
+   its own local frontier and bury a much stronger global theorem inside a lane
+   that is otherwise explicitly stepwise.
 
 So the current theorem-2 production route is:
 
 1. produce the ET-support package for `f` and its swapped partner `g`,
 2. produce the flattened-regular boundary-continuity package for `bvt_F`,
-3. identify the analytic representative with the `W_analytic` package used by
-   `W_analytic_swap_boundary_pairing_eq`,
-4. invoke `W_analytic_swap_boundary_pairing_eq` for the raw-boundary pairing,
-5. only then transport that equality to the canonical shifted BV pairing.
+3. identify the analytic representative with the `bvt_F` / `bvt_W` boundary
+   package,
+4. build the theorem-2-specific adjacent-only substitute consumer theorem
+   `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` at the
+   `AdjacencyDistributional.lean` / `BHWExtension.lean` seam; its exact
+   contract is now:
+   - inputs: `W_analytic`, `hW_hol`, `hW_real_inv`, the theorem-2 boundary
+     package `W := bvt_W OS lgc`, the checked boundary-value theorem `hBV`, an
+     adjacent index pair `(i, i+1)`, compact support for `f` and `g`, the swap
+     identity `hswap`, ET support for `f` and `g`, and the two boundary
+     continuity witnesses at real support points;
+   - output: the adjacent raw-boundary pairing equality on
+     `∫ extendF W_analytic (realEmbed x) * g x = ∫ extendF W_analytic (realEmbed x) * f x`;
+   - forbidden input: no hypothesis of the form
+     `IsLocallyCommutativeWeak d (bvt_W OS lgc)`.
+   Its proof transcript is also frozen:
+   (a) use the checked Route-B edge package to supply ET support;
+   (b) use `analytic_boundary_local_commutativity_of_boundary_continuous` pointwise on the chosen open edge;
+   (c) feed that pointwise equality into the already-checked integral/Schwartz transport machinery to close the compact-support pairing equality;
+   (d) export the result as the single adjacent-only consumer theorem used by theorem 2.
+5. feed that adjacent raw-boundary equality into the canonical-shift adapter.
 
-At the production surface, the remaining hypotheses to supply are therefore:
+At the production surface, the remaining hypotheses to supply are therefore no
+longer just ET support plus continuity. There is also one sharpened closure
+obligation:
 
 1. the support points lie in the extended tube,
 2. the swapped support points also lie in the extended tube,
 3. the relevant boundary values of the analytic representative are continuous
-   from the forward tube.
+   from the forward tube,
+4. the raw-boundary theorem must be closed by the new theorem-2-specific
+   adjacent-only substitute consumer theorem, rather than by silently feeding
+   theorem 2 back into `W_analytic_swap_boundary_pairing_eq` or by first
+   proving the stronger full-global theorem surface.
 
 So the remaining theorem-2 task is not "prove locality from scratch." It is:
 
 1. identify the exact analytic representative behind `bvt_F`,
-2. prove the support-to-ET geometry needed by `W_analytic_swap_boundary_pairing_eq`,
-3. prove the boundary continuity hypotheses on the canonical real support,
-4. instantiate the already-packaged raw-boundary swap pairing theorem on the
-   unshifted real trace,
+2. prove the support-to-ET geometry needed by the checked adjacent-swap
+   distributional theorem,
+3. prove the boundary continuity hypotheses on the raw real support,
+4. close the raw-boundary adjacent-swap pairing equality through the new
+   adjacent-only substitute consumer theorem on the theorem-2 lane,
 5. only then transport that equality to the canonical shifted BV pairing
    consumed by `bv_local_commutativity_transfer_of_swap_pairing`.
 
@@ -434,6 +555,65 @@ lemma bvt_F_boundary_continuous_at_real_support
         (fun k μ => (x k μ : ℂ)) := by
   -- boundary continuity of the analytic representative at the real support
 
+-- theorem-slot correction:
+-- the endorsed theorem-2 route is now frozen at an adjacent-only substitute
+-- consumer theorem on the `AdjacencyDistributional.lean` /
+-- `BHWExtension.lean` seam. Do **not** expand theorem 2 into a preliminary
+-- global theorem `IsLocallyCommutativeWeak d (bvt_W OS lgc)` just to reuse the
+-- checked distributional consumer literally; that would overshoot the actual
+-- adjacent-step frontier and blur the stepwise theorem-2 package structure.
+--
+-- So `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` should be read as
+-- consuming the frozen adjacent-only substitute theorem
+-- `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` beneath it,
+-- whose theorem surface is tailored to the fixed adjacent `(i,i+1,f,g)`
+-- theorem-2 instance.
+
+lemma adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility
+    (W_analytic : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hW_hol : DifferentiableOn ℂ W_analytic (ForwardTube d n))
+    (hW_real_inv : ∀ (Λ : LorentzLieGroup.LorentzGroup d)
+      (z : Fin n → Fin (d + 1) → ℂ), z ∈ ForwardTube d n →
+      W_analytic (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = W_analytic z)
+    (W : (m : ℕ) → SchwartzNPoint d m → ℂ)
+    (hBV : ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
+      InForwardCone d n η →
+      Filter.Tendsto
+        (fun ε : ℝ => ∫ x : NPointDomain d n,
+          W_analytic (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
+        (nhdsWithin 0 (Set.Ioi 0)) (nhds (W n f)))
+    (i : Fin n) (hi : i.val + 1 < n)
+    (f g : SchwartzNPoint d n)
+    (hf_compact : HasCompactSupport (f : NPointDomain d n → ℂ))
+    (hg_compact : HasCompactSupport (g : NPointDomain d n → ℂ))
+    (hswap : ∀ x : NPointDomain d n,
+      g x = f (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)))
+    (hf_ET : ∀ x ∈ tsupport (f : NPointDomain d n → ℂ),
+      BHW.realEmbed x ∈ BHWCore.ExtendedTube d n)
+    (hg_ET : ∀ x ∈ tsupport (g : NPointDomain d n → ℂ),
+      BHW.realEmbed x ∈ BHWCore.ExtendedTube d n)
+    (hcont_f : ∀ x ∈ tsupport (f : NPointDomain d n → ℂ),
+      ContinuousWithinAt W_analytic (ForwardTube d n) (fun k μ => (x k μ : ℂ)))
+    (hcont_g : ∀ x ∈ tsupport (g : NPointDomain d n → ℂ),
+      ContinuousWithinAt W_analytic (ForwardTube d n)
+        (fun k μ => (x (Equiv.swap i ⟨i.val + 1, hi⟩ k) μ : ℂ))) :
+    (∫ x : NPointDomain d n,
+      BHW.extendF W_analytic (BHW.realEmbed x) * (g x)) =
+    (∫ x : NPointDomain d n,
+      BHW.extendF W_analytic (BHW.realEmbed x) * (f x)) := by
+  -- File ownership contract:
+  -- * statement/export site: `BHWExtension.lean`
+  -- * any lower integral/edge helper extracted from the proof: `AdjacencyDistributional.lean`
+  -- Proof transcript contract:
+  -- 1. instantiate `analytic_boundary_local_commutativity_of_boundary_continuous`
+  --    pointwise on the chosen open edge for each real support point;
+  -- 2. convert that pointwise raw-boundary equality into equality of the
+  --    `extendF` integrands on the compactly supported supports of `f` and `g`;
+  -- 3. close the pairing equality by integral congruence / support restriction;
+  -- 4. do not call `W_analytic_swap_boundary_pairing_eq` or
+  --    `extendF_adjSwap_pairing_eq_of_distributional_local_commutativity` with a
+  --    global `IsLocallyCommutativeWeak` hypothesis on `W := bvt_W OS lgc`.
+
 theorem bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     (n : ℕ) (i : Fin n) (hi : i.val + 1 < n) :
@@ -448,11 +628,13 @@ theorem bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support
       =
       ∫ x : NPointDomain d n,
         bvt_F OS lgc n (fun k μ => (x k μ : ℂ)) * (f x) := by
-  -- instantiate the checked public raw-boundary theorem
-  -- `W_analytic_swap_boundary_pairing_eq`, whose checked production surface is
-  -- adjacent-only (`i`, `i+1`); the lower pointwise theorem
-  -- `analytic_boundary_local_commutativity_of_boundary_continuous`
-  -- is supplier-only and not a co-primary theorem-2 endgame
+  -- close the theorem-2 adjacent raw-boundary equality by calling the frozen
+  -- adjacent-only consumer theorem
+  -- `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`.
+  -- The checked public wrapper `W_analytic_swap_boundary_pairing_eq` remains
+  -- only the downstream/public comparison shape, but it is not directly
+  -- callable here on `W := bvt_W OS lgc` because that would reintroduce the
+  -- forbidden global `IsLocallyCommutativeWeak` input.
 ```
 
 The checked raw-boundary theorem surface is therefore *not yet* the live
@@ -468,13 +650,15 @@ Primary-route consumption order:
 3. `swapped_open_edge_embeds_in_extendedTube`,
 4. `bvt_F_hasFlatRegularRepr`,
 5. `bvt_F_boundary_continuous_at_real_support`,
-6. `W_analytic_swap_boundary_pairing_eq` instantiated on the identified
-   analytic representative of `bvt_F`, producing
-   `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`,
-7. `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`,
-8. `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`,
-9. `bvt_F_swapCanonical_pairing_of_adjacent_chain`,
-10. `bvt_F_swapCanonical_pairing`.
+6. the explicitly named adjacent-only substitute consumer theorem
+   `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`
+   (implemented in `BHWExtension.lean`, with any lower helper lemmas in
+   `AdjacencyDistributional.lean`),
+7. `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`,
+8. `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`,
+9. `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`,
+10. `bvt_F_swapCanonical_pairing_of_adjacent_chain`,
+11. `bvt_F_swapCanonical_pairing`.
 
 ### 5.1. Concrete proof strategy for the boundary-continuity slot
 
@@ -826,13 +1010,20 @@ theorem bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support
       (d := d) (n := n) (V := V) i hi hV_ET
   have hflat := bvt_F_hasFlatRegularRepr (d := d) OS lgc n
   have hcont := bvt_F_boundary_continuous_at_real_support (d := d) OS lgc n
+  -- Important checked-surface warning:
+  -- `W_analytic_swap_boundary_pairing_eq` also asks for
+  -- `hLC : IsLocallyCommutativeWeak d W`. For `W := bvt_W OS lgc`, that would
+  -- be circular here. So the raw-boundary closure must descend to
+  -- `extendF_adjSwap_pairing_eq_of_distributional_local_commutativity` or use
+  -- another explicitly documented non-circular substitute for that `hLC`
+  -- input before the public wrapper is reused.
   exact
-    W_analytic_swap_boundary_pairing_eq
-      (d := d) (n := n) (W_analytic_BHW := ?_)
-      hf_compact hg_compact
+    adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility
+      (d := d) (OS := OS) (lgc := lgc) (n := n) (i := i) (hi := hi)
+      f g hf_compact hg_compact hsep hswap
       (by intro x hx; exact hV_ET x (hf_support hx))
       (by intro x hx; exact hg_ET x (hg_support hx))
-      hcont hswap
+      hflat hcont
 ```
 
 Only after this raw-boundary theorem is in place should the later file prove
@@ -842,10 +1033,14 @@ separate wrapper theorem because it changes the evaluation surface from
 locality theorem itself.
 
 Documentation correction: the raw-boundary theorem slot is not a request to
-reprove the BHW/distributional locality package under a new theorem name. The
-live implementation target is to instantiate the already-proved theorem
-`W_analytic_swap_boundary_pairing_eq` after supplying its ET-support and
-continuity inputs; the lower pointwise theorem
+reprove the BHW/distributional locality package under a new theorem name, but
+it is also not yet a one-line instantiation of
+`W_analytic_swap_boundary_pairing_eq`. The checked public wrapper has an extra
+`hLC` hypothesis that becomes circular on `bvt_W`. So the live implementation
+standard is: close the raw-boundary equality by an explicitly non-circular
+consumer of the checked distributional theorem surface, and only then compare
+that theorem to `W_analytic_swap_boundary_pairing_eq` as the downstream/public
+shape. The lower pointwise theorem
 `analytic_boundary_local_commutativity_of_boundary_continuous` stays only as a
 supplier-level fallback inside `BHWExtension.lean`, not as the theorem-2 proof
 surface.
@@ -856,6 +1051,23 @@ The ET-support lemmas should also not remain black boxes. The current repo
 already contains the geometric package that should drive them, but the primary
 documentation contract remains the explicit open-edge Route B rather than an
 undocumented jump straight to global forward-Jost membership.
+
+Checked-source clarification for the Route-B geometry package:
+
+1. `Adjacency.lean :: exists_real_open_nhds_adjSwap` already proves the local
+   open-neighborhood theorem with three output layers at once: local adjacent
+   spacelike persistence, ET membership of the edge itself, and ET membership
+   of the swapped edge.
+2. Therefore the theorem-2 wrappers should not try to manufacture a fresh
+   swapped-ET argument from bare openness again. The only missing work above
+   that theorem is:
+   - compact-support packaging of those local neighborhoods into one open edge
+     covering `tsupport f`,
+   - pure support transport from `f` to `g`,
+   - and then pure ET transport from `V` to the swapped preimage edge.
+3. In particular, `swapped_open_edge_embeds_in_extendedTube` should be read as
+   consuming the swapped-ET clause already produced at the `Adjacency.lean`
+   layer, not as a request to rediscover a new BHW geometry theorem.
 
 1. `JostSet`, `ForwardJostSet`, and `realEmbed` in
    `ComplexLieGroups/JostPoints.lean`;
@@ -1079,6 +1291,80 @@ gluing theorem `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`.
 The docs should therefore keep all three layers visible rather than hiding the
 adjacent-only/raw-boundary mismatch inside the closing frontier `sorry`.
 
+### 6.1. Exact `OSToWightmanBoundaryValueLimits.lean` sibling-subsection contract
+
+The checked file
+`OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean`
+already has a very specific internal role in the live tree: it imports
+`OSToWightmanBoundaryValuesComparison.lean` and packages theorem-3-side
+`singleSplit_xiShift` / `t → 0+` boundary-limit statements for the positivity
+route. That checked file reality creates a concrete documentation obligation for
+later theorem-2 Lean work:
+
+1. theorem-2 support added to this file must be a **new sibling subsection**,
+   not a silent extension of the existing theorem-3 positive-time shell;
+2. the theorem-2 subsection must start from checked forward-tube recovery
+   surfaces and end at checked theorem-2 canonical pairing equalities, with the
+   positivity-only `singleSplit_xiShift` material treated as a neighboring lane
+   rather than as a reusable theorem-2 wrapper;
+3. the file-local order of the new theorem-2 subsection is part of the route
+   contract, because later Lean work should be able to open this file and prove
+   the theorem-2 closure package top-to-bottom without deciding again what the
+   subsection is trying to own.
+
+The required theorem-2 subsection order in
+`OSToWightmanBoundaryValueLimits.lean` is therefore:
+
+1. `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`
+2. `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`
+3. `bvt_F_swapCanonical_pairing_of_adjacent_chain`
+
+The exact internal proof transcript of the first theorem is now also part of the
+doc contract.
+
+`bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` must proceed in this
+order:
+
+1. consume the checked flat-regular package `bvt_F_hasFlatRegularRepr`;
+2. instantiate the checked recovery theorem
+   `boundary_value_recovery_forwardTube_of_flatRegular_from_bv` with:
+   - holomorphic function `bvt_F OS lgc n`,
+   - boundary functional `bvt_W OS lgc n`,
+   - continuity witness `bvt_W_continuous OS lgc n`,
+   - boundary-value witness `bvt_boundary_values OS lgc n`,
+   - direction `canonicalForwardConeDirection (d := d) n`;
+3. rewrite the resulting recovery statement into the exact pairing equality
+   consumed later by theorem 2.
+
+`bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` must then
+proceed in this order:
+
+1. call the adjacent raw-boundary theorem
+   `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`;
+2. apply `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` on the `g`
+   side;
+3. apply `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` on the `f`
+   side;
+4. close by transitivity/symmetry of the resulting equalities.
+
+Finally, `bvt_F_swapCanonical_pairing_of_adjacent_chain` must remain a separate
+finite-composition theorem in the same subsection:
+
+1. input: explicit adjacent-step data realizing general `swap i j` as an
+   adjacent chain;
+2. per-step consumer: the adjacent canonical theorem
+   `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`;
+3. output: the general `swap i j` canonical pairing equality consumed by the
+   frontier theorem.
+
+This sharper sibling-subsection contract eliminates a real implementation
+ambiguity that remained after the earlier file-locus fix: later Lean work is no
+longer left to guess whether `OSToWightmanBoundaryValueLimits.lean` should own a
+recovery specialization, a canonical gluing theorem, or only theorem-3
+positivity limits. It must own all three theorem-2 canonical-direction layers,
+in that order, as a sibling package below the theorem-2 frontier and beside the
+existing theorem-3 lane.
+
 The pseudocode names `adjacentSwapFactorization` and
 `AdjacentCanonicalSwapPairingStepHolds` in the displayed scripts should be read
 in that same light: they are explanatory placeholders for the internal data
@@ -1096,9 +1382,11 @@ The later Lean proof should run in this order.
 3. Build the flattened regular Fourier-Laplace package
    `bvt_F_hasFlatRegularRepr` and then derive
    `bvt_F_boundary_continuous_at_real_support` from it.
-4. Instantiate the checked public raw-boundary theorem
-   `W_analytic_swap_boundary_pairing_eq` on the identified analytic
-   representative of `bvt_F`.
+4. Prove the new theorem-2-specific adjacent-only substitute consumer theorem
+   on the chosen adjacent ET-support package, and use it to obtain
+   `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` without first
+   expanding theorem 2 into the stronger global theorem
+   `IsLocallyCommutativeWeak d (bvt_W OS lgc)`.
 5. Prove the theorem-2-specific canonical pairing recovery theorem
    `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` that specializes
    `boundary_value_recovery_forwardTube_of_flatRegular_from_bv` to
@@ -1125,8 +1413,11 @@ File-locus enforcement for that proof transcript:
    `OSToWightmanBoundaryValues.lean`;
 2. the flattened-regular constructor / continuity package should stay under
    `ForwardTubeDistributions.lean`;
-3. the raw-boundary instantiation layer should sit with
-   `W_analytic_swap_boundary_pairing_eq` in the BHW-extension layer;
+3. the theorem-2-specific non-circular local-commutativity supplier and the
+   raw-boundary instantiation layer should sit with the BHW-extension /
+   adjacent-distributional consumer boundary, so later Lean work can see
+   explicitly where the `IsLocallyCommutativeWeak` input is supplied before the
+   checked pairing theorem is called;
 4. the canonical-shift recovery/rewriting layer should sit in
    `OSToWightmanBoundaryValueLimits.lean`;
 5. the general-swap adjacent-chain reducer
@@ -1558,41 +1849,100 @@ pairing theorem surface in `AdjacencyDistributional.lean` directly:
 The later Lean file should implement Route B in the following explicit order.
 
 1. Start from the support hypothesis on the adjacent pair.
-2. For each support point `x`, choose a small real neighborhood `V_x` on which
-   the same adjacent spacelike inequality remains true by openness of the
-   spacelike region.
-3. Use compactness of `tsupport f` to extract finitely many such neighborhoods.
-4. Define `V := ⋃_{r=1}^N V_{x_r}`.
-5. Prove `V` is open and contains `tsupport f`.
-6. Prove every point of `V` still lies in the BHW extended tube after real
-   embedding.
-7. Use the swap hypothesis to prove `tsupport g ⊆ swap(i,j) ⁻¹' V`.
-8. Prove that swapped open edge also embeds into the extended tube.
-9. Feed those two ET-support statements to the already-proved distributional
-   locality theorem.
+2. Use the already-checked `Adjacency.lean :: exists_real_open_nhds_adjSwap`
+   as the local compactness/open-neighborhood engine. That theorem already
+   packages the local proof transcript:
+   - openness of the adjacent spacelike region,
+   - openness of ET membership under real embedding,
+   - openness of swapped-ET membership,
+   - and intersection of those three open conditions around a real witness.
+3. Build the theorem-2-facing wrapper
+   `choose_real_open_edge_for_adjacent_swap` by adding the missing theorem-2
+   support-inclusion layer: cover `tsupport f` by such local neighborhoods and
+   package the resulting open set `V` together with `tsupport f ⊆ V`.
+4. Prove `swapped_support_lies_in_swapped_open_edge` as the pure support-transport
+   step from the checked swap identity `g x = f (x ∘ swap)`.
+5. Prove `swapped_open_edge_embeds_in_extendedTube` as the explicit transport of
+   the ET witness on `V` to the swapped preimage edge.
+6. Only then feed those ET-support statements to the checked distributional
+   theorem `AdjacencyDistributional.lean ::
+   extendF_adjSwap_pairing_eq_of_distributional_local_commutativity`.
+
+The internal transcript of those three theorem-2-facing wrappers is now fixed
+more sharply.
+
+`choose_real_open_edge_for_adjacent_swap` should prove its conclusion in this
+order:
+
+1. take `x ∈ tsupport f`;
+2. use `hsep x` together with `f.toFun x ≠ 0` to obtain the adjacent spacelike
+   inequality at that support point;
+3. apply the checked supplier `exists_real_open_nhds_adjSwap` to that specific
+   support point, obtaining a local neighborhood `V_x` with all three local
+   outputs already packaged:
+   - `IsOpen V_x`,
+   - adjacent spacelike persistence on `V_x`,
+   - `realEmbed '' V_x ⊆ ExtendedTube`,
+   - swapped `realEmbed '' (swap⁻¹(V_x)) ⊆ ExtendedTube`;
+4. convert that pointwise family into a theorem-2 support neighborhood by the
+   compactness of `tsupport f`: choose finitely many support points, take the
+   union of the resulting `V_x`, and record that finite union as the theorem-2
+   open edge `V`;
+5. discharge the theorem conclusion fields in the order
+   `IsOpen V` -> `tsupport f ⊆ V` -> `∀ x ∈ V, realEmbed x ∈ ExtendedTube`.
+
+`swapped_support_lies_in_swapped_open_edge` is **only** a support theorem; it
+must not re-prove ET geometry. Its proof transcript should be:
+
+1. fix `x ∈ tsupport g`;
+2. show `(x ∘ swap) ∈ tsupport f` by contradiction, using the checked pointwise
+   swap identity `hswap` to transfer vanishing of `f` near `(x ∘ swap)` back to
+   vanishing of `g` near `x`;
+3. apply the already-proved support inclusion `hsupp` to conclude
+   `(x ∘ swap) ∈ V`;
+4. rewrite that as membership of `x` in the swapped preimage edge
+   `{x | (x ∘ swap) ∈ V}`.
+
+`swapped_open_edge_embeds_in_extendedTube` is then **only** the ET-transport
+wrapper above `hV`; its transcript should be:
+
+1. fix `x` in the swapped preimage edge;
+2. unpack the preimage-edge hypothesis as `(x ∘ swap) ∈ V`;
+3. apply the already-available ET witness `hV` at the point `(x ∘ swap)`;
+4. rewrite the resulting statement back to the displayed target
+   `realEmbed x ∈ ExtendedTube` using the checked swapped-ET clause already
+   built into `exists_real_open_nhds_adjSwap` / the chosen theorem-2 edge.
+
+This extra split matters because only the first wrapper uses compactness of the
+support; the second is support transport only; the third is ET transport only.
+Later Lean work should not blur those three tasks back into one opaque
+`choose/open/swap` helper.
 
 So the Route-B implementation skeleton should be read operationally as:
 
 ```lean
-lemma local_spacelike_open_edge_around_support_point
-lemma compact_support_finite_open_edge_cover
-lemma finite_open_edge_union_embeds_in_extendedTube
-```
+-- checked-present lower geometry helper already in Adjacency.lean
+exists_real_open_nhds_adjSwap
 
-Those are acceptable subordinate helper lemmas for proving the canonical
-contract-level Route-B package
-
-```lean
+-- still-missing theorem-2-facing wrappers to be built on top of it
 choose_real_open_edge_for_adjacent_swap
 swapped_support_lies_in_swapped_open_edge
 swapped_open_edge_embeds_in_extendedTube
 ```
 
-and then the canonical raw-boundary theorem slot
+The older pseudocode helper names
 
 ```lean
-bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support
+local_spacelike_open_edge_around_support_point
+compact_support_finite_open_edge_cover
+finite_open_edge_union_embeds_in_extendedTube
 ```
+
+should now be read only as possible *internal* proof fragments inside
+`choose_real_open_edge_for_adjacent_swap`, not as a second competing theorem-slot
+family. The checked tree already exposes `exists_real_open_nhds_adjSwap` as the
+actual lower file-local supplier on `Adjacency.lean`, and the theorem-2 docs
+should freeze that fact.
 
 This is the actual proof mechanism that makes Route B preferable: it is local,
 compact-support-based, and uses openness of the spacelike relation, rather

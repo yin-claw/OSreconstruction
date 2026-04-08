@@ -116,7 +116,7 @@ Immediate sharpened subgaps:
 - For `schwinger_continuation_base_step`: the next active target is the original 2-point Schwinger case, i.e. one difference variable after translation reduction. This must be stated on the honest Schwinger-side domain (`ZeroDiagonalSchwartz d 2` or an explicitly admissible Euclidean subspace promoted into it), not on ambient full Schwartz space.
 - For `schwinger_continuation_base_step`: no more active effort on the original 1-point case; it is mathematically trivial from translation invariance and not a blocker.
 - For `schwinger_continuation_base_step`: the honest remaining choice is between a concrete Schwinger-side two-point/difference-variable reduction and, only if forced later, a deeper Schwartz kernel-extension theorem. The tensor insertion maps do not close the blocker by themselves.
-- For theorem 2 / `bvt_F_swapCanonical_pairing`: the current implementation target is not another continuation theorem. The hard gap is the explicit Route-B real-open-edge support package feeding the checked raw-boundary theorem surface `WickRotation/BHWExtension.lean :: W_analytic_swap_boundary_pairing_eq`, together with the flattened regular constructor package needed to obtain `bvt_F` boundary continuity on the raw real trace.
+- For theorem 2 / `bvt_F_swapCanonical_pairing`: the current implementation target is not another continuation theorem. The hard gap is the explicit Route-B real-open-edge support package feeding the checked raw-boundary adjacent-swap lane, together with the flattened regular constructor package needed to obtain `bvt_F` boundary continuity on the raw real trace. The docs now record one extra theorem-surface caution: the public BHW wrapper `WickRotation/BHWExtension.lean :: W_analytic_swap_boundary_pairing_eq` itself asks for `hLC : IsLocallyCommutativeWeak d W`, so taking `W := bvt_W OS lgc` would be circular on theorem 2. A direct source check shows the lower theorem `AdjacencyDistributional.lean :: extendF_adjSwap_pairing_eq_of_distributional_local_commutativity` still asks for the same `IsLocallyCommutativeWeak` input. So the raw-boundary closure shape is now fixed more sharply: theorem 2 should introduce the explicitly named adjacent-only substitute consumer theorem `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` on the `AdjacencyDistributional.lean` / `BHWExtension.lean` seam. Its statement home is `BHWExtension.lean`, any lower helper lemmas belong in `AdjacencyDistributional.lean`, and its proof transcript is now fixed as: pointwise `analytic_boundary_local_commutativity_of_boundary_continuous` on the chosen Route-B edge -> compact-support integrand equality -> pairing equality. The docs no longer leave open a second endorsed route that first proves the stronger full-global theorem `IsLocallyCommutativeWeak d (bvt_W OS lgc)`.
 - Theorem-2 checked production-locus split: the frontier theorem itself lives in
   `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean`,
   the downstream consumer already lives in
@@ -134,12 +134,15 @@ Immediate sharpened subgaps:
   `OSReconstruction/ComplexLieGroups/JostPoints.lean`.
 - Theorem-2 doc-level package order is now explicit: Route-B real-open-edge
   choice -> swapped-edge ET support -> `bvt_F_hasFlatRegularRepr` ->
-  `bvt_F_boundary_continuous_at_real_support` -> instantiate the checked
-  public raw-boundary theorem `W_analytic_swap_boundary_pairing_eq` on the
-  identified analytic representative to obtain an **adjacent-only** raw-
-  boundary package -> separate adjacent canonical-shift adapter theorem ->
-  separate reduction from a general `swap i j` frontier statement to an
-  adjacent-transposition chain. The lower pointwise theorem
+  `bvt_F_boundary_continuous_at_real_support` -> close the adjacent-only raw-
+  boundary theorem through the substitute consumer
+  `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` -> package
+  that closure as `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` ->
+  separate adjacent canonical-shift adapter theorem -> separate reduction from
+  a general `swap i j` frontier statement to an adjacent-transposition chain.
+  The checked public wrapper `W_analytic_swap_boundary_pairing_eq` remains the
+  downstream/public comparison shape, not the theorem-2 raw-boundary closure
+  theorem itself. The lower pointwise theorem
   `analytic_boundary_local_commutativity_of_boundary_continuous` remains
   supplier-only and is not a co-primary theorem-2 closing surface. Also keep
   the adjacent-chain reducer contract separate from any pseudocode-internal
@@ -158,7 +161,15 @@ Immediate sharpened subgaps:
   `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`,
   `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`,
   `bvt_F_swapCanonical_pairing_of_adjacent_chain`, etc.). Those latter names
-  are implementation targets, not hidden helpers to rediscover.
+  are implementation targets, not hidden helpers to rediscover. More sharply,
+  the public wrapper `W_analytic_swap_boundary_pairing_eq` and the lower
+  distributional theorem below it are no longer interchangeable in the docs:
+  both still carry the global `IsLocallyCommutativeWeak` input, so the
+  endorsed theorem-2 raw-boundary slot is now the adjacent-only substitute
+  consumer theorem on the `AdjacencyDistributional.lean` / `BHWExtension.lean`
+  seam. The docs no longer allow an "adjacent" theorem-slot name that silently
+  asks for the stronger full-global theorem surface, and they no longer leave
+  the full-global route as a co-endorsed theorem-2 closure shape.
 - The theorem-2 continuity subpackage is now sharper as well. The checked
   public holomorphic and unflattened boundary-distribution suppliers already
   exist in `OSToWightmanBoundaryValuesBase.lean` (`bvt_F_holomorphic`,
@@ -210,6 +221,25 @@ Immediate sharpened subgaps:
   `nhdsWithin 0 (Set.Ioi 0)` boundary-value theorem. Do not leave the theorem-2
   adapter docs talking as if a new boundary functional `T` still needs to be
   invented.
+- Theorem-2 file-locus ownership inside
+  `OSToWightmanBoundaryValueLimits.lean` is now sharper too: the checked file
+  currently packages theorem-3 `singleSplit_xiShift` / `t → 0+` limit results,
+  so theorem-2 support there must be added as a sibling subsection in the exact
+  local order
+  `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`
+  -> `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`
+  -> `bvt_F_swapCanonical_pairing_of_adjacent_chain`.
+  That subsection begins only after the raw-boundary theorem
+  `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` has already been
+  proved on the `BHWExtension.lean` side via
+  `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`; it does not
+  own the raw-boundary closure theorem itself. The first theorem should be
+  treated as the direct specialization of
+  `boundary_value_recovery_forwardTube_of_flatRegular_from_bv` at `bvt_W`,
+  `bvt_W_continuous`, `bvt_boundary_values`, and
+  `canonicalForwardConeDirection`; the second theorem should then glue that
+  already-closed adjacent raw-boundary equality to the specialization on both
+  sides before the separate general-swap reducer is proved.
 - More explicitly, theorem 2 is now bound to the unique package chain
   `choose_real_open_edge_for_adjacent_swap`
   -> `swapped_support_lies_in_swapped_open_edge`
@@ -229,7 +259,18 @@ Immediate sharpened subgaps:
   `.../BHWPermutation.lean` by default; `.../Adjacency.lean` is the default
   home for lower pointwise/open-edge suppliers, while
   `.../AdjacencyDistributional.lean` is the checked distributional pairing
-  surface they must feed; the raw-boundary wrapper theorem
+  surface they must feed. More sharply, the checked tree already exposes
+  `Adjacency.lean :: exists_real_open_nhds_adjSwap` as the lower local
+  compactness/open-neighborhood supplier, so the theorem-2-facing wrapper
+  `choose_real_open_edge_for_adjacent_swap` should be implemented as a support-
+  inclusion package on top of that theorem rather than as a fresh rediscovery
+  of the Route-B open-edge proof. The wrapper split is now fixed too:
+  `choose_real_open_edge_for_adjacent_swap` = compact-support finite-cover
+  packaging above `exists_real_open_nhds_adjSwap`;
+  `swapped_support_lies_in_swapped_open_edge` = support transport only via the
+  swap identity `g x = f (x ∘ swap)`;
+  `swapped_open_edge_embeds_in_extendedTube` = ET transport only from the
+  chosen edge to the swapped preimage edge. The raw-boundary wrapper theorem
   belongs with the BHW-extension boundary-pairing layer, the canonical-shift
   adapter and the general-swap adjacent-chain reducer
   `bvt_F_swapCanonical_pairing_of_adjacent_chain` belong in
@@ -262,17 +303,29 @@ Immediate sharpened subgaps:
   is the explicit public adapter package
   `canonical_cluster_integrand_eq_singleSplit_integrand -> canonical_translate_factor_eq_singleSplit_translate_factor -> singleSplit_core_rewrites_to_canonical_shell -> canonical_shell_limit_of_rewrite -> bvt_cluster_canonical_from_positiveTime_core`.
   Current cross-check against the checked repo-relative loci:
+  - `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean`
+    is the theorem-3 transport supplier theorem 4 must consume, and under the
+    current doc contract it also owns the one-factor transport extraction
+    theorems `cluster_left_factor_transport` /
+    `cluster_right_factor_transport` plus the degree-zero normalization
+    bookkeeping they need;
   - `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValuesBase.lean`
     already has the base reductions
     `...singleSplitLargeSpatial`, `...singleSplitSchwingerLargeSpatial`, and
-    legacy `...singleSplitFactorComparison`;
-  - `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean`
-    is still the theorem-3 transport supplier theorem 4 must consume;
+    legacy `...singleSplitFactorComparison`, and it is the designated home for
+    the repaired positive-time bridge
+    `...of_singleSplitTransportComparison` together with the thin wrapper
+    `bvt_cluster_positiveTime_singleSplit_core`;
   - `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean`
     has the final private wrapper
     `bvt_F_clusterCanonicalEventually_translate`, its translated wrapper,
     the public transfer theorem `bv_cluster_transfer_of_canonical_eventually`,
-    and the exported consumer `bvt_W_cluster`;
+    and the exported consumer `bvt_W_cluster`; it is also the designated home
+    for the still-missing public canonical-shell adapter package rather than a
+    place to hide the repaired positive-time bridge itself;
+  - `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean`
+    is *not* the theorem-4 home under the current checked-tree contract; it
+    remains theorem-2/theorem-3 support infrastructure;
   - the intermediate adapter package is still missing under separate theorem
     names and should be introduced explicitly rather than hidden inside the
     final `sorry`.
@@ -393,7 +446,17 @@ Not on the shortest OS reconstruction lane:
 - `Wightman/Reconstruction/Main.lean`: `wightman_uniqueness`
 - `Wightman/Reconstruction/GNSHilbertSpace.lean`: one remaining spectral-theory blocker
 - `Wightman/WightmanAxioms.lean`: 4 infrastructural sorrys
-- `Wightman/NuclearSpaces/*`: side development, not first execution lane
+- Nuclear-space / Bochner-Minlos support: this clone does contain a live checked
+  `Wightman/NuclearSpaces/*` subtree (`NuclearSpace.lean`,
+  `SchwartzNuclear.lean`, `GaussianFieldBridge.lean`,
+  `BochnerMinlos.lean`, `EuclideanMeasure.lean`, `ComplexSchwartz.lean`, plus
+  helpers), but the downstream reconstruction consumers still see only the two
+  exported axiom surfaces `schwartz_nuclear_extension` and
+  `exists_continuousMultilinear_ofSeparatelyContinuous` in
+  `Wightman/WightmanAxioms.lean`. Treat the honest open problem here as an
+  ownership/integration split: later work must distinguish checked local
+  NuclearSpaces support files, downstream reconstruction-facing axiom/theorem
+  surfaces, and any remaining bridge/import wrappers needed to connect them.
 - `ComplexLieGroups` residual blockers: see the CLG status files
 
 ## Execution Order

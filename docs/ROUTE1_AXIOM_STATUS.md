@@ -17,11 +17,23 @@ On the merged path, this means `isPreconnected_baseFiber` is no longer needed
 to prove `bhw_translation_invariant`. The remaining trust surface is the single
 reduced-BHW axiom recorded below.
 
-Global repository note: the tracked production tree now contains **3** axioms total.
-Only **1** of them belongs to Route 1. The other two live in
-`Wightman/WightmanAxioms.lean` and are pure functional-analysis axioms:
-`schwartz_nuclear_extension` and
-`exists_continuousMultilinear_ofSeparatelyContinuous`.
+Global repository note: this file is Route-1-local, but the live tracked
+production tree is no longer the older 3-axiom snapshot. The checked repo-wide
+census used by `README.md` and the active proof-doc stack is now **6 explicit
+axioms** on the tracked production tree, of which only **1** belongs to Route 1:
+`BHWReducedExtension.lean :: reduced_bargmann_hall_wightman_of_input`.
+
+The other tracked axioms are outside the Route-1 lane and should not be folded
+back into its status accounting:
+- the two functional-analysis axioms in `Wightman/WightmanAxioms.lean`
+  (`schwartz_nuclear_extension`,
+  `exists_continuousMultilinear_ofSeparatelyContinuous`),
+- the remaining tracked axioms recorded in the live repo-wide census in
+  `README.md` / `docs/openclaw_comprehensive_reading_note.md`.
+
+So the operational meaning of this note is narrower: it certifies that the
+Route-1 translation-invariance route still has exactly one Route-1 axiom, not
+that the whole repository has only one or three axioms left.
 
 ### Current inventory
 

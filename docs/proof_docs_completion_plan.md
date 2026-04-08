@@ -120,11 +120,36 @@ These docs control the mathematical suppliers for theorem 2/3 and general `k`.
 4. `docs/os1_detailed_proof_audit.md`
 5. `docs/os2_detailed_proof_audit.md`
 
+Checked-tree clarification for this phase:
+- in the current clone, `docs/nuclear_spaces_blueprint.md` is a contract for a
+  lane that already has checked support files under
+  `OSReconstruction/Wightman/NuclearSpaces/`;
+- a direct checked-tree scan currently shows **7** local `sorry`s there
+  (`NuclearSpace.lean`: 2, `BochnerMinlos.lean`: 5), but the repo-wide
+  headline `63`-sorry census intentionally excludes that secondary lane so the
+  active theorem-2/3/4 ledger stays stable;
+- Phase-B hardening must therefore keep three layers separate:
+  1. checked downstream axiom surfaces in `Wightman/WightmanAxioms.lean`
+     (`schwartz_nuclear_extension`,
+     `exists_continuousMultilinear_ofSeparatelyContinuous`),
+  2. checked local support files under `Wightman/NuclearSpaces/*`, and
+  3. any still-planned import/integration wrappers needed to connect the local
+     support lane to the downstream reconstruction consumers;
+- any pass that reassigns theorem-package ownership between those layers or
+  changes whether the NuclearSpaces lane remains outside the headline census
+  must update the phase description and downstream file-ownership notes in the
+  same pass.
+
 Completion criterion for Phase B:
 
 1. every SCV supplier is broken into theorem packages rather than invoked as
    "SCV machinery";
-2. the nuclear-space doc has one endorsed route and a blocked-only fallback;
+2. the nuclear-space doc has one endorsed route and a blocked-only fallback,
+   while also marking which theorem surfaces are already checked in
+   `Wightman/NuclearSpaces/*`, which are only exported downstream through
+   `Wightman/WightmanAxioms.lean`, which remain genuinely planned/open, and
+   whether the live local-NuclearSpaces sorrys are being counted inside or
+   outside the repo-wide headline census policy;
 3. the general-`k` doc fixes file boundaries, theorem slots, indexing, and SCV
    imports before implementation;
 4. OS I / OS II audit docs point to exact local theorem-package suppliers and
@@ -241,6 +266,23 @@ This doc is complete only when:
    `extendF_adjSwap_pairing_eq_of_distributional_local_commutativity` and
    `analytic_boundary_local_commutativity_of_boundary_continuous` recorded only
    as lower supplier theorems rather than competing theorem-2 endgames;
+8b. the blueprint must also record the checked theorem-surface mismatch there:
+   `W_analytic_swap_boundary_pairing_eq` itself asks for
+   `hLC : IsLocallyCommutativeWeak d W`, so the theorem-2 raw-boundary package
+   on `W := bvt_W OS lgc` is not implementation-ready unless the docs say
+   explicitly how that circularity is avoided. After checking the surrounding
+   live theorem surfaces, the endorsed theorem-2 route is now the adjacent-only
+   one: `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` must be
+   documented as a consumer of the explicitly named adjacent-only substitute
+   theorem `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`.
+   That theorem must be owned by `BHWExtension.lean` (with any lower helper
+   lemmas in `AdjacencyDistributional.lean`), and its transcript must freeze the
+   non-circular closure order:
+   pointwise `analytic_boundary_local_commutativity_of_boundary_continuous`
+   on the chosen Route-B edge -> integrand equality on compact support ->
+   pairing equality by integral congruence. The docs may no longer leave open a
+   second endorsed route that first proves the stronger full-global theorem
+   `IsLocallyCommutativeWeak d (bvt_W OS lgc)`;
 8a. the blueprint explicitly separates checked-present theorem surfaces from
    checked-missing planned theorem-package names, so later Lean work cannot
    mistake doc-introduced names like
@@ -269,6 +311,21 @@ This doc is complete only when:
    machinery only, so the theorem-2 canonical-direction package there is new
    missing support work in a sibling subsection, not a reinterpretation of the
    existing positivity shell;
+10a. that sibling-subsection contract must itself be explicit at proof-
+   transcript level: the theorem-2 package in
+   `OSToWightmanBoundaryValueLimits.lean` must run in the local order
+   `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`
+   -> `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`
+   -> `bvt_F_swapCanonical_pairing_of_adjacent_chain`, with the first theorem
+   documented as a direct specialization of
+   `boundary_value_recovery_forwardTube_of_flatRegular_from_bv` at
+   `bvt_W`, `bvt_W_continuous`, `bvt_boundary_values`, and
+   `canonicalForwardConeDirection`, and the second theorem documented as the
+   named adjacent raw-boundary equality
+   `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` plus that
+   specialization on the `g` side and the `f` side. If that file-local
+   transcript is not fixed, theorem 2 is still not
+   implementation-ready;
 11. the theorem-2 blueprint fixes one unique proof transcript order:
    `choose_real_open_edge_for_adjacent_swap`
    -> `swapped_support_lies_in_swapped_open_edge`
@@ -292,7 +349,18 @@ This doc is complete only when:
 12. later sections of the theorem-2 blueprint may introduce subordinate local
    cover / compactness helper lemmas, but they must not silently rename the
    contract-level Route-B theorem slots or introduce a second competing
-   top-level geometry vocabulary;
+   top-level geometry vocabulary. More sharply, the checked tree already has
+   `ComplexLieGroups/Connectedness/BHWPermutation/Adjacency.lean ::
+   exists_real_open_nhds_adjSwap` as the lower compactness/open-neighborhood
+   supplier, so theorem-2 docs should treat any `local_spacelike_open_edge_*`
+   pseudocode only as internal proof fragments under
+   `choose_real_open_edge_for_adjacent_swap`, not as a rival contract-level
+   theorem family. The wrapper-level proof transcript must also stay split
+   explicitly: `choose_real_open_edge_for_adjacent_swap` owns the compact-
+   support finite-cover packaging, `swapped_support_lies_in_swapped_open_edge`
+   owns only support transport along `hswap`, and
+   `swapped_open_edge_embeds_in_extendedTube` owns only ET transport from the
+   chosen edge to the swapped preimage edge;
 13. the theorem-2 continuity package explicitly distinguishes checked-present
    `bvt_F` suppliers from the remaining missing constructor work: the blueprint
    must name `OSToWightmanBoundaryValuesBase.lean :: bvt_F_holomorphic` and
@@ -389,7 +457,14 @@ This doc is complete only when:
    legacy `...singleSplitFactorComparison`, and the final private wrapper
    `OSToWightmanBoundaryValues.lean :: bvt_F_clusterCanonicalEventually_translate`)
    from still-missing named adapter theorems;
-6. theorem 4 is visibly pure consumer work after theorem 3.
+6. theorem 4 is visibly pure consumer work after theorem 3;
+7. theorem-4 file ownership is fixed sharply enough for direct Lean execution:
+   one-factor transport extraction in `.../OSToWightmanPositivity.lean`, the
+   repaired positive-time bridge in `.../OSToWightmanBoundaryValuesBase.lean`,
+   and the public canonical-shell adapter plus final wrapper in
+   `.../OSToWightmanBoundaryValues.lean`, with
+   `.../OSToWightmanBoundaryValueLimits.lean` explicitly *not* treated as a
+   theorem-4 home under the current checked-tree contract.
 
 ## 4.4. `general_k_continuation_blueprint.md`
 

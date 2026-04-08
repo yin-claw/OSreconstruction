@@ -7,6 +7,46 @@ It should be read together with:
 - `docs/theorem2_locality_blueprint.md`,
 - `docs/scv_infrastructure_blueprint.md`.
 
+## 0. Scope / handoff boundary to theorem 2
+
+This file is **not** the canonical theorem-2 locality ledger.
+
+Its scope is narrower:
+
+1. the remaining nontrivial-permutation / connectedness blockers in
+   `ComplexLieGroups/Connectedness/BHWPermutation/PermutationFlowBlocker.lean`,
+2. the exact proof transcript for finishing the full permutation-flow endgame in
+   `PermutationFlow.lean`.
+
+Theorem 2 sits strictly lower than that endgame and consumes only the
+already-checked adjacent-swap lane. The exact theorem-2 handoff boundary is:
+
+1. `ComplexLieGroups/Connectedness/BHWPermutation/Adjacency.lean`
+   supplies the checked Route-B real-open-edge geometry, with lower supplier
+   `exists_real_open_nhds_adjSwap`;
+2. `ComplexLieGroups/Connectedness/BHWPermutation/AdjacencyDistributional.lean`
+   supplies the checked adjacent-swap distributional comparison lane;
+3. `Wightman/Reconstruction/WickRotation/BHWExtension.lean` is the statement
+   home of the planned adjacent-only substitute consumer
+   `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`;
+4. only after that raw-boundary closure does theorem 2 move into
+   `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean`
+   for the canonical-shift package
+   `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`
+   -> `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`
+   -> `bvt_F_swapCanonical_pairing_of_adjacent_chain`.
+
+So later Lean work should read this file with the following discipline:
+
+1. the two blockers below are for the **general nontrivial permutation-flow**
+   route, not for theorem 2's adjacent-only raw-boundary closure;
+2. theorem 2 must not be described here as if it waited on the blockers
+   `blocker_isConnected_permSeedSet_nontrivial` or
+   `blocker_iterated_eow_hExtPerm_d1_nontrivial`;
+3. conversely, the full permutation-flow endgame should not reopen theorem-2
+   raw-boundary packaging once the adjacent-swap lane has already handed off the
+   checked overlap-equality theorem surfaces it needs.
+
 ## 1. Live blocker surfaces
 
 The still-open explicit blockers are:
@@ -33,8 +73,22 @@ The BHW permutation lane already has substantial proved infrastructure:
 6. `PermutationFlow.lean` contains the full iteration skeleton and final BHW
    theorem wiring.
 
+For implementation purposes, these six files should be split into two distinct
+consumer lanes rather than one blob:
+
+1. theorem-2 adjacent-swap consumers stop at the checked/proof-planned handoff
+   `Adjacency.lean`
+   -> `AdjacencyDistributional.lean`
+   -> `BHWExtension.lean`
+   -> `OSToWightmanBoundaryValueLimits.lean`;
+2. nontrivial-permutation-flow consumers continue past that adjacent-swap lane
+   and are exactly the two blockers isolated in
+   `PermutationFlowBlocker.lean`.
+
 So the remaining work is not “build the permutation theory from scratch.”
-It is the two exact blockers above.
+It is the two exact blockers above, with the adjacent-swap theorem-2 lane
+already treated as fixed lower infrastructure rather than as part of the open
+blocker inventory.
 
 ## 3. Blocker A: connectedness of the nontrivial seed set
 
@@ -216,8 +270,13 @@ private theorem iterated_eow_permutation_extension [NeZero d] (n : ℕ) := by
 
 1. Do not reopen the proved adjacent-swap machinery when the blocker is about
    nontrivial permutation flow.
-2. Do not hide the `d ≥ 2` and `d = 1` branches inside one opaque theorem.
-3. Do not mix numerical evidence with proof obligations in the later Lean code;
+2. Do not mislabel theorem 2 as blocked on
+   `blocker_isConnected_permSeedSet_nontrivial` or
+   `blocker_iterated_eow_hExtPerm_d1_nontrivial`; theorem 2 closes on the
+   adjacent-only raw-boundary/canonical-shift route documented in
+   `docs/theorem2_locality_blueprint.md`.
+3. Do not hide the `d ≥ 2` and `d = 1` branches inside one opaque theorem.
+4. Do not mix numerical evidence with proof obligations in the later Lean code;
    numerical notes are sanity checks only.
 
 ## 8. What counts as implementation-ready

@@ -11,16 +11,30 @@ It should be read together with:
 
 ## 1. Live frontier surfaces
 
-The relevant current open theorem surfaces are:
+Checked-tree clarification (2026-04-08): the current repo clone **does**
+contain a checked `OSReconstruction/Wightman/NuclearSpaces/` subtree, including
+at least
+`NuclearSpace.lean`, `SchwartzNuclear.lean`, `GaussianFieldBridge.lean`,
+`BochnerMinlos.lean`, `EuclideanMeasure.lean`, and `ComplexSchwartz.lean`.
+So the older path references `Wightman/NuclearSpaces/NuclearSpace.lean` and
+`Wightman/NuclearSpaces/BochnerMinlos.lean` are not merely historical labels in
+this clone: they are checked file loci, though several theorem packages there
+remain incomplete.
 
-1. `subspace_seminorm_dominated` and `product_seminorm_dominated` in
-   `Wightman/NuclearSpaces/NuclearSpace.lean`,
-2. the Bochner-Minlos sorries in
-   `Wightman/NuclearSpaces/BochnerMinlos.lean`,
-3. the axioms
+The live production surface on this lane is therefore split into two checked
+layers:
+
+1. the local support files under `Wightman/NuclearSpaces/*`, where the current
+   dominance / kernel / Bochner-Minlos implementation work actually lives;
+2. the exported reconstruction-facing axioms
    `schwartz_nuclear_extension` and
    `exists_continuousMultilinear_ofSeparatelyContinuous`
-   in `Wightman/WightmanAxioms.lean`.
+   in `Wightman/WightmanAxioms.lean`, which still package the not-yet-integrated
+   support for downstream consumers.
+
+This blueprint must keep both layers explicit: later Lean work should neither
+hunt for a non-existent subtree nor pretend the downstream axiom surface has
+already been replaced by proved imported theorems.
 
 These are not independent. They form one package:
 
@@ -32,21 +46,35 @@ These are not independent. They form one package:
 
 ## 2. What is already available
 
-The docs should treat the following as clean inputs:
+Checked-tree clarification for this clone:
 
-1. `GaussianFieldBridge.lean` provides sorry-free Hermite and Gaussian
-   infrastructure,
-2. `ComplexSchwartz.lean` already transports nuclearity across complexification,
-3. the basic `NuclearSpace` API exists and only two dominance theorems remain
-   sorry-backed.
+1. the repo tree here **does** expose checked local files such as
+   `GaussianFieldBridge.lean`, `ComplexSchwartz.lean`,
+   `NuclearSpace.lean`, `SchwartzNuclear.lean`, and `BochnerMinlos.lean`;
+2. those files are real checked support loci, not merely historical names;
+3. the downstream production consumers nevertheless still see this lane mainly
+   through the two axioms in `Wightman/WightmanAxioms.lean`, together with the
+   companion reconstruction files.
 
-So the later implementation should not start from “what is a nuclear space?”
-It should start from the two remaining dominance lemmas and the kernel-theorem
-consumer interfaces.
+So later implementation work on this lane should start from the checked
+`NuclearSpaces/` subtree that is actually present, while keeping explicit for
+any given theorem package whether it is:
+
+1. already proved / re-exported via the checked `gaussian-field` bridge,
+2. still open in the checked local support files, or
+3. still packaged only by the downstream axiom surfaces.
 
 ## 3. Package A: Nuclearity infrastructure
 
-The current explicit blockers in `NuclearSpace.lean` are:
+Historical/planned file-locus note:
+these Package-A theorem slots live on the checked local support lane centered
+on `Wightman/NuclearSpaces/NuclearSpace.lean`. The file is present in this
+clone, but the theorem package is still incomplete there, so the package below
+should be read as an implementation contract for the checked file rather than as
+purely hypothetical support work.
+
+The current explicit blockers in the historical/planned `NuclearSpace.lean`
+lane are:
 
 1. `gauge_dominates_on_subspace_of_convex_nhd`,
 2. `product_seminorm_dominated`.
@@ -285,6 +313,12 @@ that layer implicit.
 
 ## 6. Package D: Bochner finite-dimensional existence
 
+Checked file-locus note:
+this Bochner-Minlos lane already has a checked support locus in the present
+clone at `Wightman/NuclearSpaces/BochnerMinlos.lean`. The theorem slots below
+therefore describe the missing package to be implemented in that checked file,
+not a hypothetical future file that still needs to be restored.
+
 The first open finite-dimensional theorem is:
 
 ```lean
@@ -421,7 +455,11 @@ The later implementation should proceed in this order:
 
 The docs should not present Bochner-Minlos as if it were required before the
 GNS/kernel theorem. They are parallel consumers of overlapping nuclear-space
-infrastructure.
+infrastructure. In this clone the Bochner-Minlos lane is already attached to
+the checked file `Wightman/NuclearSpaces/BochnerMinlos.lean`, so future
+implementation passes should work against that real file locus and state
+explicitly whether each theorem package is local-open, imported, or still only
+available through downstream axiomatization.
 
 ## 9. Lean-style pseudocode for the kernel-theorem consumer side
 

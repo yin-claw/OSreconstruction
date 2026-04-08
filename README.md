@@ -5,16 +5,27 @@ A Lean 4 formalization of the **Osterwalder-Schrader reconstruction theorem** an
 ## Current Axiom Inventory
 
 The tracked production tree currently contains **6 explicit axioms**:
-- `schwartz_nuclear_extension` in `Wightman/WightmanAxioms.lean` — **partially proved**: nuclearity of Schwartz space is now proved in the [`gaussian-field`](https://github.com/or-n/gaussian-field) library; the remaining gap is importing the instance and deriving the kernel theorem
-- `exists_continuousMultilinear_ofSeparatelyContinuous` in `Wightman/WightmanAxioms.lean` — **proved** in [`gaussian-field`](https://github.com/mrdouglasny/gaussian-field) (`GeneralResults/SeparatelyContMultilinear.lean`, extension branch); remaining gap is importing the theorem
+- `schwartz_nuclear_extension` in `Wightman/WightmanAxioms.lean`
+- `exists_continuousMultilinear_ofSeparatelyContinuous` in `Wightman/WightmanAxioms.lean`
 - `vladimirov_tillmann` in `SCV/VladimirovTillmann.lean`
 - `distributional_cluster_lifts_to_tube` in `SCV/VladimirovTillmann.lean` — distributional cluster on tube boundary lifts to pointwise cluster on tube interior (Poisson integral + Riemann-Lebesgue)
 - `tube_boundaryValueData_of_polyGrowth` in `SCV/TubeBoundaryValues.lean` — Vladimirov-style boundary-value existence on tube domains from global polynomial growth
 - `reduced_bargmann_hall_wightman_of_input` in `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean`
 
-The first two are pure functional-analysis axioms on the Wightman/Schwartz side.
-The next three are pure SCV / complex-analytic axioms on the tube-domain
-side: Vladimirov-Tillmann growth, cluster lifting, and boundary-value existence from
+The first two are downstream reconstruction-facing functional-analysis surfaces
+on the Wightman/Schwartz side. The docs now treat them with an explicit
+three-layer ownership split:
+1. checked local support work in `Wightman/NuclearSpaces/*`,
+2. any optional bridge/import packaging (for example from `gaussian-field`),
+3. the downstream exported consumer surfaces in `Wightman/WightmanAxioms.lean`.
+
+So README should no longer be read as claiming that the upstream source has
+already been fixed to one exact implementation route; the open problem is still
+which bridge packages those local/imported ingredients into the downstream
+reconstruction-facing theorem surfaces.
+
+The next three are pure SCV / complex-analytic axioms on the tube-domain side:
+Vladimirov-Tillmann growth, cluster lifting, and boundary-value existence from
 global polynomial growth. The sixth is the reduced-coordinate Bargmann-Hall-Wightman
 bridge on the Route 1 translation-invariance lane.
 
@@ -149,18 +160,22 @@ overview.
 The tracked production tree currently includes **6 explicit `axiom`
 declarations**:
 - `schwartz_nuclear_extension` in `Wightman/WightmanAxioms.lean`
-- `exists_continuousMultilinear_ofSeparatelyContinuous` in `Wightman/WightmanAxioms.lean` — **proved** in [`gaussian-field`](https://github.com/mrdouglasny/gaussian-field) (`GeneralResults/SeparatelyContMultilinear.lean`, extension branch); remaining gap is importing the theorem
+- `exists_continuousMultilinear_ofSeparatelyContinuous` in `Wightman/WightmanAxioms.lean`
 - `vladimirov_tillmann` in `SCV/VladimirovTillmann.lean`
 - `distributional_cluster_lifts_to_tube` in `SCV/VladimirovTillmann.lean`
 - `tube_boundaryValueData_of_polyGrowth` in `SCV/TubeBoundaryValues.lean`
 - `reduced_bargmann_hall_wightman_of_input` in `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean`
 
-The first two are pure functional-analysis axioms on the Wightman/Schwartz side
-(Schwartz kernel theorem and Banach-Steinhaus for finite multilinear maps). The
-next three are pure SCV tube-domain axioms: growth,
-cluster lifting, and boundary-value existence. The sixth is the deferred reduced-BHW
-bridge on the Route 1 translation-invariance lane. Remaining work outside these
-deferred surfaces is represented by explicit theorem-level `sorry` placeholders.
+The first two are downstream functional-analysis consumer surfaces on the
+Wightman/Schwartz side (Schwartz kernel theorem and Banach-Steinhaus for finite
+multilinear maps), but later Lean work must keep their ownership split explicit:
+checked local support in `Wightman/NuclearSpaces/*`, optional bridge/import
+packaging, and only then the exported `Wightman/WightmanAxioms.lean` surfaces
+consumed by reconstruction files. The next three are pure SCV tube-domain
+axioms: growth, cluster lifting, and boundary-value existence. The sixth is the
+deferred reduced-BHW bridge on the Route 1 translation-invariance lane.
+Remaining work outside these deferred surfaces is represented by explicit
+theorem-level `sorry` placeholders.
 The snapshot below counts only tracked production files; local scratch under
 `Proofideas/` and other untracked experiments are intentionally excluded.
 
@@ -204,9 +219,19 @@ Current blocker map:
   pointwise/open-edge adjacent-swap support file and
   `.../AdjacencyDistributional.lean` is the checked distributional pairing
   surface consumed by theorem 2; `ComplexLieGroups/Connectedness/BHWPermutation.lean`
-  remains only the lane entry point unless the docs are rewritten. The
-  raw-boundary wrapper belongs
-  beside `WickRotation/BHWExtension.lean :: W_analytic_swap_boundary_pairing_eq`,
+  remains only the lane entry point unless the docs are rewritten. The checked
+  tree now fixes the lower geometry supplier more sharply too:
+  `Adjacency.lean :: exists_real_open_nhds_adjSwap` already owns the local
+  compactness/open-neighborhood package for a real adjacent-swap edge, so the
+  theorem-2-facing wrapper `choose_real_open_edge_for_adjacent_swap` should be
+  read as a still-missing support-inclusion wrapper on top of that checked
+  helper rather than as a request to rediscover the local open-edge proof from
+  scratch. Even more sharply, the wrapper split is now explicit at proof-
+  transcript level: `choose_real_open_edge_for_adjacent_swap` owns the compact-
+  support finite-cover packaging, `swapped_support_lies_in_swapped_open_edge`
+  is support transport only, and `swapped_open_edge_embeds_in_extendedTube` is
+  ET transport only. The raw-boundary wrapper belongs beside
+  `WickRotation/BHWExtension.lean :: W_analytic_swap_boundary_pairing_eq`,
   the canonical-shift adapter and the general-swap adjacent-chain reducer
   `bvt_F_swapCanonical_pairing_of_adjacent_chain` belong in
   `WickRotation/OSToWightmanBoundaryValueLimits.lean`, and
@@ -247,6 +272,43 @@ Current blocker map:
   `canonicalForwardConeDirection`, and the separate gluing theorem
   `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`. It is not
   a search for some separate hidden raw/canonical rewrite layer.
+- Another theorem-2 doc correction is now explicit too: the checked public BHW
+  wrapper `W_analytic_swap_boundary_pairing_eq` is not directly the raw-
+  boundary theorem-2 closure theorem, because its theorem surface asks for
+  `hLC : IsLocallyCommutativeWeak d W`. On the theorem-2 lane, taking
+  `W := bvt_W OS lgc` would make that input circular. A direct source check now
+  records one sharper fact: the lower theorem
+  `AdjacencyDistributional.lean ::
+  extendF_adjSwap_pairing_eq_of_distributional_local_commutativity` still asks
+  for the same `IsLocallyCommutativeWeak` input. So the actual missing theorem-
+  2 raw-boundary package is not merely "drop to the lower theorem". After
+  checking the surrounding theorem-2 surfaces, the docs now freeze one unique
+  closure shape: introduce the explicitly named adjacent-only substitute
+  consumer theorem
+  `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`, exported
+  from `AdjacencyDistributional.lean` / `BHWExtension.lean` with statement home
+  in `BHWExtension.lean`. Its proof transcript is also fixed: pointwise
+  `analytic_boundary_local_commutativity_of_boundary_continuous` on the chosen
+  Route-B edge -> compact-support integrand equality -> pairing equality. The
+  theorem-2 lane no longer leaves open a second endorsed route that first
+  proves the stronger full-global theorem
+  `IsLocallyCommutativeWeak d (bvt_W OS lgc)`.
+- The checked file `OSToWightmanBoundaryValueLimits.lean` now has a sharper
+  doc-level ownership contract too. In the live tree it is still a theorem-3
+  `singleSplit_xiShift` / `t → 0+` limit file, so theorem-2 support there must
+  be added as a new sibling subsection in the exact local order
+  `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`
+  -> `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`
+  -> `bvt_F_swapCanonical_pairing_of_adjacent_chain`. Later Lean work should
+  not guess where that package begins or ends, and should not treat the
+  existing positivity shell as if it already closed theorem 2. More sharply,
+  this sibling subsection starts only after the adjacent-only raw-boundary
+  theorem has already been closed on the `BHWExtension.lean` side via
+  `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` and then
+  packaged in `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`; the
+  `OSToWightmanBoundaryValueLimits.lean` lane is canonical-shift recovery,
+  gluing, and adjacent-chain reduction only, not a second home for the raw-
+  boundary closure theorem.
 - That specialization contract is now also fixed at the boundary-functional
   level: it must instantiate
   `boundary_value_recovery_forwardTube_of_flatRegular_from_bv` with
@@ -264,6 +326,7 @@ Current blocker map:
   `bvt_F_holomorphic`, `bvt_boundary_values`, and
   `bv_local_commutativity_transfer_of_swap_pairing`, while names such as
   `choose_real_open_edge_for_adjacent_swap`,
+  `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`,
   `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`,
   `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`, and
   `bvt_F_swapCanonical_pairing_of_adjacent_chain` are still
@@ -444,8 +507,7 @@ flowchart TD
 | `Wightman/Reconstruction/Main.lean` | 1 | `wightman_uniqueness` |
 | `Wightman/WightmanAxioms.lean` | 0 + 2 axioms | Schwartz kernel theorem + Banach-Steinhaus bridge are now explicit axioms |
 | `SCV/VladimirovTillmann.lean` | 0 + 2 axioms | Vladimirov-Tillmann tube-growth theorem + distributional cluster lifts to tube |
-| `Wightman/NuclearSpaces/BochnerMinlos.lean` | 5 | Bochner-Minlos measure construction |
-| `Wightman/NuclearSpaces/NuclearSpace.lean` | 2 | nuclear space infrastructure |
+| `Wightman/NuclearSpaces/*` | checked local support lane, but not yet fully integrated into downstream reconstruction consumers | the checked tree here contains a live `Wightman/NuclearSpaces/` subtree (`NuclearSpace.lean`, `SchwartzNuclear.lean`, `GaussianFieldBridge.lean`, `BochnerMinlos.lean`, `EuclideanMeasure.lean`, `ComplexSchwartz.lean`); docs must distinguish those checked support files from the still-exported downstream axioms in `Wightman/WightmanAxioms.lean` and from any remaining import/integration gaps |
 | `Wightman/Reconstruction/ForwardTubeDistributions.lean` | 0 | distributional uniqueness / boundary-value lane complete |
 | `Wightman/Reconstruction/WickRotation/ForwardTubeLorentz.lean` | 2 | polynomial growth slice + PET measure-zero step |
 | `Wightman/Reconstruction/WickRotation/BHWExtension.lean` | 0 | honest distributional adjacent-swap lane complete |
@@ -510,9 +572,6 @@ the tracked production tree, not as a complete file listing.
 │   │   ├── SchwartzTensorProduct.lean    # Schwartz tensor products and insertion CLMs
 │   │   ├── Reconstruction.lean           # stable reconstruction barrel
 │   │   ├── ReconstructionBridge.lean     # wires WickRotation to theorem surface
-│   │   ├── Groups/                       # Lorentz and Poincare groups
-│   │   ├── Spacetime/                    # Minkowski geometry and metric
-│   │   ├── NuclearSpaces/                # nuclear-space, Minlos, and gaussian-field bridge
 │   │   └── Reconstruction/
 │   │       ├── Core.lean                 # shared core OS/Wightman reconstruction objects
 │   │       ├── SchwingerOS.lean          # Schwinger-side / zero-diagonal OS layer
@@ -620,6 +679,12 @@ Two navigation notes:
   `CenterSpatialTranslationInvariant.lean`, and `TwoPointDescent.lean` so the
   Wick-rotation files do not keep absorbing low-level coordinate bookkeeping.
 - `Wightman/Reconstruction/Main.lean` only wires the top-level theorems.
+- Checked-tree caution: older planning docs still mention historical
+  `Wightman/Groups/` and `Wightman/Spacetime/` subtrees, but those directories
+  are not present in the current checked tree of this clone. By contrast,
+  `Wightman/NuclearSpaces/` **is** present and should be treated as a real local
+  support lane. For implementation work, prefer the concrete file inventory in
+  the tree above over any older path vocabulary.
 - The live `E -> R` lane is intentionally split across
   `OSToWightmanSemigroup.lean`, `OSToWightman.lean`, and
   `OSToWightmanBoundaryValues.lean`. Older kernel / specialized-two-point
