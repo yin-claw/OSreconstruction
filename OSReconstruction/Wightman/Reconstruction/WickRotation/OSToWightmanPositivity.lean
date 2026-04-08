@@ -1536,123 +1536,14 @@ noncomputable def euclideanPositiveTimeSingleVector
         (EuclideanPositiveTimeComponent.toPositiveTimeSingle (d := d) f)).re := by
   simp [euclideanPositiveTimeSingleVector, positiveTimeBorchersVector_norm_sq_eq]
 
-/-- The current-code realization of the degree-`n` Section 4.3 Fourier-Laplace
-transport map.
+/-
+Package I transport note:
 
-Current route note:
-
-* the theorem-surface codomain is under migration to the corrected half-space
-  Section-4.3 object from the blueprint;
-* the current type signature remains a temporary placeholder while branch `3b`
-  builds the concrete partial-spatial-Fourier infrastructure;
-* do **not** read this placeholder signature as endorsing the withdrawn
-  full-Schwartz / Seeley-extension route from Iteration B.
+The placeholder `def := by sorry` route for `os1TransportComponent` and its
+downstream consumers has been quarantined from production. The next honest
+production step is to replace that entire block with a real Section 4.3
+transport package on the corrected half-space codomain, after the codomain
+surface is settled in scratch and `agents_chat.md`.
 -/
-noncomputable def os1TransportComponent
-    (d n : ℕ) [NeZero d] :
-    euclideanPositiveTimeSubmodule (d := d) n →L[ℂ] SchwartzNPoint d n := by
-  sorry
-
-/-- The Section 4.3 transport applied componentwise to a positive-time
-Borchers sequence. This is the Minkowski-side test sequence whose
-Wightman quadratic form is compared against the OS Hilbert-space inner
-product. -/
-noncomputable def positiveTimeBorchersTransport
-    (d : ℕ) [NeZero d] :
-    PositiveTimeBorchersSequence d → BorchersSequence d
-  | F =>
-      { funcs := fun n =>
-          os1TransportComponent (d := d) n
-            ⟨((F : BorchersSequence d).funcs n), F.ordered_tsupport n⟩
-        bound := (F : BorchersSequence d).bound
-        bound_spec := by
-          intro n hn
-          have hzero : ((F : BorchersSequence d).funcs n) = 0 :=
-            (F : BorchersSequence d).bound_spec n hn
-          have hsub :
-              (⟨((F : BorchersSequence d).funcs n), F.ordered_tsupport n⟩ :
-                euclideanPositiveTimeSubmodule (d := d) n) = 0 := by
-            apply Subtype.ext
-            exact hzero
-          simpa [hsub] using
-            (os1TransportComponent (d := d) n).map_zero }
-
-/-- The core Section 4.3 sesquilinear bridge: on transported positive-time
-inputs, the reconstructed Wightman pairing agrees with the honest OS Hilbert
-space inner product. This is the theorem surface needed to expose the
-cross-degree terms in `WightmanInnerProduct` and feed the final positivity
-closure.
-
-Because `os1TransportComponent` lands in full `SchwartzNPoint d n` via a
-non-canonical Seeley extension, the proof of this bridge must be phrased so it
-does not depend on the chosen extension. Concretely, only the half-space trace
-of the Section 4.3 transform is mathematically meaningful, and any two Schwartz
-extensions of that same half-space data differ by a function whose half-space
-trace vanishes. The bridge proof must use only Wightman smearings that are
-insensitive to that difference. -/
-theorem bvt_W_eq_inner_on_positiveTimeTransport
-    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
-    (F G : PositiveTimeBorchersSequence d) :
-    WightmanInnerProduct d (bvt_W OS lgc)
-      (positiveTimeBorchersTransport (d := d) F)
-      (positiveTimeBorchersTransport (d := d) G) =
-      @inner ℂ (OSHilbertSpace OS) _
-        (positiveTimeBorchersVector (d := d) OS F)
-        (positiveTimeBorchersVector (d := d) OS G) := by
-  sorry
-
-/-- Positivity already holds on the image of the positive-time Section 4.3
-transport, once the sesquilinear bridge is available. This is the first honest
-consumer of `bvt_W_eq_inner_on_positiveTimeTransport`. -/
-theorem bvt_W_positive_on_positiveTimeTransport_image
-    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
-    (F : PositiveTimeBorchersSequence d) :
-    0 ≤ (WightmanInnerProduct d (bvt_W OS lgc)
-            (positiveTimeBorchersTransport (d := d) F)
-            (positiveTimeBorchersTransport (d := d) F)).re := by
-  rw [bvt_W_eq_inner_on_positiveTimeTransport (OS := OS) (lgc := lgc) F F]
-  have hnorm :
-      RCLike.re
-        (@inner ℂ (OSHilbertSpace OS) _ (positiveTimeBorchersVector (d := d) OS F)
-          (positiveTimeBorchersVector (d := d) OS F)) =
-        ‖positiveTimeBorchersVector (d := d) OS F‖ ^ 2 := by
-    simpa using
-      (inner_self_eq_norm_sq (𝕜 := ℂ) (positiveTimeBorchersVector (d := d) OS F))
-  change 0 ≤ RCLike.re
-    (@inner ℂ (OSHilbertSpace OS) _ (positiveTimeBorchersVector (d := d) OS F)
-      (positiveTimeBorchersVector (d := d) OS F))
-  rw [hnorm]
-  exact sq_nonneg ‖positiveTimeBorchersVector (d := d) OS F‖
-
-/-- Final theorem-3 blocker after the transport/bridge package is in place:
-reduce positivity for arbitrary Borchers data to positivity on the
-positive-time transport image by the remaining density and continuity
-arguments. -/
-theorem bvt_W_positive_density_reduction
-    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
-    (F : BorchersSequence d) :
-    (WightmanInnerProduct d (bvt_W OS lgc) F F).re ≥ 0 := by
-  sorry
-
-/-- Sorry 3: Wightman positive-definiteness for all BorchersSequence.
-
-The correct proof route (OS I Section 4.3, equations 4.22-4.28):
-1. define the Section 4.3 transport map on positive-time Euclidean inputs,
-2. show `bvt_W` agrees with the corresponding VEV / Hilbert-space pairing on
-   that positive-time transport core,
-3. use density of positive-time vectors in `OSHilbertSpace OS` from the
-   completion/GNS construction,
-4. extend by continuity to arbitrary `BorchersSequence d`.
-
-This requires Fourier-Laplace infrastructure connecting `bvt_F` to the
-semigroup spectral measure and the corrected Section 4.3 transport / VEV
-identification. The old Schwartz-density theorem surface was withdrawn after
-review; see `agents_chat.md` Entries #329-#331. -/
-theorem bvt_W_positive_direct
-    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS) :
-    ∀ F : BorchersSequence d,
-      (WightmanInnerProduct d (bvt_W OS lgc) F F).re ≥ 0 := by
-  intro F
-  simpa using bvt_W_positive_density_reduction (OS := OS) (lgc := lgc) F
 
 end
