@@ -5,6 +5,7 @@ Authors: Michael Douglas, ModularPhysics Contributors
 -/
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBoundaryValues
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanSemigroup
+import OSReconstruction.Wightman.Reconstruction.WickRotation.Section43Codomain
 import OSReconstruction.SCV.PaleyWiener
 import OSReconstruction.SCV.PartialFourierSpatial
 import OSReconstruction.Mathlib429Compat
@@ -1454,6 +1455,47 @@ private theorem partialFourierSpatial_timeSliceCanonicalExtension_eq_complexLapl
   simpa [harg] using
     (fourierLaplaceExt_partialFourierSpatial_timeSlice_eq_complexLaplaceTransform
       (d := d) (n := n) f r t ξ hη)
+
+/-- The actual branch-`3b` time slice, packaged as the one-variable Section 4.3
+positive-time test input. -/
+private noncomputable def partialFourierSpatial_timeSliceTest
+    {n : ℕ} (f : EuclideanPositiveTimeComponent d n)
+    (r : Fin n) (t : Fin n → ℝ)
+    (ξ : EuclideanSpace ℝ (Fin n × Fin d)) :
+    ↥(OSReconstruction.euclideanPositiveTimeTest1D) :=
+  ⟨partialFourierSpatial_timeSliceSchwartz (d := d) (n := n) f.1 r t ξ,
+    tsupport_partialFourierSpatial_timeSlice_subset_Ici_of_orderedPositiveTime
+      (d := d) (n := n) f r t ξ⟩
+
+/-- The quotient-side descended pairing for the actual branch-`3b` time slice.
+This is the first direct bridge from the existing slice-level analytic package
+to the new Section 4.3 transport codomain. -/
+private theorem fourierPairingDescendsToSection43PositiveEnergy1D_partialFourierSpatial_timeSlice
+    {n : ℕ} (f : EuclideanPositiveTimeComponent d n)
+    (r : Fin n) (t : Fin n → ℝ)
+    (ξ : EuclideanSpace ℝ (Fin n × Fin d)) :
+    OSReconstruction.fourierPairingDescendsToSection43PositiveEnergy1D
+        (fourierInvPairingCLM
+          (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n) f.1 r t ξ))
+        (fourierInvPairing_hasOneSidedFourierSupport
+          (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n) f.1 r t ξ)
+          (tsupport_partialFourierSpatial_timeSlice_subset_Ici_of_orderedPositiveTime
+            (d := d) (n := n) f r t ξ))
+        (OSReconstruction.os1TransportOneVar
+          (partialFourierSpatial_timeSliceTest (d := d) (n := n) f r t ξ)) =
+      fourierInvPairingCLM
+        (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n) f.1 r t ξ)
+        ((SchwartzMap.fourierTransformCLM ℂ)
+          (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n) f.1 r t ξ)) := by
+  simpa [partialFourierSpatial_timeSliceTest] using
+    (OSReconstruction.fourierPairingDescendsToSection43PositiveEnergy1D_os1TransportOneVar
+      (T := fourierInvPairingCLM
+        (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n) f.1 r t ξ))
+      (hT_supp := fourierInvPairing_hasOneSidedFourierSupport
+        (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n) f.1 r t ξ)
+        (tsupport_partialFourierSpatial_timeSlice_subset_Ici_of_orderedPositiveTime
+          (d := d) (n := n) f r t ξ))
+      (f := partialFourierSpatial_timeSliceTest (d := d) (n := n) f r t ξ))
 
 /-- The honest OS Hilbert-space vector determined by a positive-time Euclidean
 Borchers sequence. Package I will later define the Minkowski-side transport map

@@ -120,6 +120,22 @@ noncomputable def section43PositiveEnergyQuotientMap1D :
     (Submodule.mkQ section43PositiveEnergyVanishingSubmodule1D)
     (section43PositiveEnergyVanishingSubmodule1D.isOpenQuotientMap_mkQ.continuous)
 
+/-- The one-variable Section 4.3 transport map.
+
+On the quotient codomain model, the honest production surface is: take the
+positive-time Euclidean Schwartz test itself and pass to its class modulo
+functions vanishing on `[0, ∞)`. The Fourier transform is then supplied by the
+descended pairing `fourierPairingDescendsToSection43PositiveEnergy1D`, so the
+transport does not introduce a second Fourier transform by hand. -/
+noncomputable def os1TransportOneVar :
+    euclideanPositiveTimeTest1D →L[ℂ] Section43PositiveEnergy1D :=
+  section43PositiveEnergyQuotientMap1D.comp euclideanPositiveTimeTest1D.subtypeL
+
+@[simp] theorem os1TransportOneVar_apply
+    (f : euclideanPositiveTimeTest1D) :
+    os1TransportOneVar f =
+      section43PositiveEnergyQuotientMap1D f.1 := rfl
+
 /-- Equality on `[0,∞)` is exactly equality in the one-variable quotient
 codomain. -/
 theorem section43PositiveEnergyQuotientMap1D_eq_of_eqOn_nonneg
@@ -184,5 +200,46 @@ noncomputable def fourierPairingDescendsToSection43PositiveEnergy1D
       (Submodule.Quotient.mk f)) =
       T ((SchwartzMap.fourierTransformCLM ℂ) f)
   simp
+
+@[simp] theorem fourierPairingDescendsToSection43PositiveEnergy1D_os1TransportOneVar
+    (T : SchwartzMap ℝ ℂ →L[ℂ] ℂ)
+    (hT_supp : SCV.HasOneSidedFourierSupport T)
+    (f : euclideanPositiveTimeTest1D) :
+    fourierPairingDescendsToSection43PositiveEnergy1D T hT_supp
+        (os1TransportOneVar f) =
+      T ((SchwartzMap.fourierTransformCLM ℂ) f.1) := by
+  simp [os1TransportOneVar]
+
+/-- The one-variable transport map is injective: two positive-time Euclidean
+tests with the same quotient class agree on `[0,∞)`, and outside that half-line
+they both vanish by support. -/
+theorem os1TransportOneVar_injective :
+    Function.Injective os1TransportOneVar := by
+  intro f g hfg
+  apply Subtype.ext
+  change (f : SchwartzMap ℝ ℂ) = g
+  have hEqOn :
+      Set.EqOn (f : ℝ → ℂ) (g : ℝ → ℂ) (Set.Ici (0 : ℝ)) := by
+    have hq :
+        section43PositiveEnergyQuotientMap1D (f : SchwartzMap ℝ ℂ) =
+          section43PositiveEnergyQuotientMap1D (g : SchwartzMap ℝ ℂ) := hfg
+    change (Submodule.Quotient.mk (f : SchwartzMap ℝ ℂ) : Section43PositiveEnergy1D) =
+      Submodule.Quotient.mk (g : SchwartzMap ℝ ℂ) at hq
+    rw [Submodule.Quotient.eq] at hq
+    intro x hx
+    have hx0 : ((f - g : SchwartzMap ℝ ℂ) : ℝ → ℂ) x = 0 := hq hx
+    exact sub_eq_zero.mp hx0
+  ext x
+  by_cases hx : 0 ≤ x
+  · exact hEqOn hx
+  · have hf_zero : (f : ℝ → ℂ) x = 0 := by
+      apply image_eq_zero_of_notMem_tsupport
+      intro hxt
+      exact hx (f.2 hxt)
+    have hg_zero : (g : ℝ → ℂ) x = 0 := by
+      apply image_eq_zero_of_notMem_tsupport
+      intro hxt
+      exact hx (g.2 hxt)
+    simp [hf_zero, hg_zero]
 
 end OSReconstruction
