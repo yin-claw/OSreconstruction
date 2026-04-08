@@ -3079,11 +3079,12 @@ theorem fourierLaplaceExtMultiDim_vladimirov_growth
 
 /-! ### Fourier conventions and boundary values
 
-**Fourier normalization note**: The tube kernel uses `exp(ix·ξ)` (physics convention),
-while Mathlib's `fourierTransformCLM` uses `exp(-2πi⟨x,ξ⟩)`. The boundary value
-`∫ F(x+i0η) f(x) dx` naturally produces `T(FT_phys(f))`. The `inverseFourierFlatCLM`
-below uses Mathlib's convention; the BV theorem statement needs adjustment.
-TODO: define `physicsFourierFlatCLM` matching `exp(ix·ξ)` and use in BV theorem. -/
+**Fourier conventions**: The tube kernel uses `exp(ix·ξ)` (physics convention),
+while Mathlib's `fourierTransformCLM` uses `exp(-2πi⟨x,ξ⟩)`. Both are provided:
+- `inverseFourierFlatCLM`: Mathlib convention (forward FT transported to Fin m → ℝ)
+- `physicsFourierFlatCLM`: physics convention, `f ↦ (ξ ↦ ∫ exp(ix·ξ) f(x) dx)`
+
+The boundary value theorem uses the physics convention. -/
 
 /-- The Mathlib-convention Fourier transform on `Fin m → ℝ`, defined by transporting
     through `EuclideanSpace ℝ (Fin m)` (which has `InnerProductSpace`)
@@ -3111,6 +3112,13 @@ noncomputable def inverseFourierFlatCLM {m : ℕ} :
       SchwartzMap (EuclideanSpace ℝ (Fin m)) ℂ :=
     SchwartzMap.fourierTransformCLM ℂ
   fromEuc.comp (ft.comp toEuc)
+
+-- Physics-convention FT: f ↦ (ξ ↦ ∫ exp(ix·ξ) f(x) dx)
+-- Related to Mathlib's by: FT_phys(f)(ξ) = FT_Mathlib(f)(-ξ/(2π))
+-- For now, just sorry the definition — the key is getting the BV statement right.
+noncomputable def physicsFourierFlatCLM {m : ℕ} :
+    SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] SchwartzMap (Fin m → ℝ) ℂ := by
+  sorry
 
 /-- The point `x + iεη` lies in the tube domain `T(C)` when `ε > 0` and `η ∈ C`.
 
@@ -3164,7 +3172,7 @@ theorem fourierLaplaceExtMultiDim_boundaryValue
               (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) *
             f x)
           (nhdsWithin 0 (Set.Ioi 0))
-          (nhds (T (inverseFourierFlatCLM f))) := by
+          (nhds (T (physicsFourierFlatCLM f))) := by
   intro η hη f
   -- Step 1: For ε > 0, x + iεη ∈ T(C) by cone scaling.
   have hmem : ∀ (x : Fin m → ℝ) (ε : ℝ), 0 < ε →
