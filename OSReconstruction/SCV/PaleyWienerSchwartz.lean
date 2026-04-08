@@ -3208,6 +3208,7 @@ private lemma realPlusIEpsEta_mem_tubeDomain
 theorem scalar_dct_schwartz_pairing {m : ℕ}
     (g : ℝ → (Fin m → ℝ) → ℂ)
     (L : (Fin m → ℝ) → ℂ)
+    (hg_meas : ∀ ε, AEStronglyMeasurable (g ε) MeasureTheory.volume)
     (hconv : ∀ (x : Fin m → ℝ),
       Filter.Tendsto (fun ε => g ε x) (nhdsWithin 0 (Set.Ioi 0)) (nhds (L x)))
     (hdom : ∃ (C : ℝ) (N : ℕ), C > 0 ∧
@@ -3223,7 +3224,8 @@ theorem scalar_dct_schwartz_pairing {m : ℕ}
   apply MeasureTheory.tendsto_integral_filter_of_dominated_convergence
     (bound := fun x => C_bd * (1 + ‖x‖) ^ N * ‖f x‖)
   · -- AEStronglyMeasurable for the family
-    sorry -- measurability of g ε · f
+    filter_upwards with ε
+    exact (hg_meas ε).mul f.continuous.aestronglyMeasurable
   · -- Domination: ‖g ε x * f x‖ ≤ bound x for ε near 0
     filter_upwards [nhdsWithin_le_nhds (Iio_mem_nhds one_pos),
       self_mem_nhdsWithin] with ε hε1 hε_pos
@@ -3233,7 +3235,12 @@ theorem scalar_dct_schwartz_pairing {m : ℕ}
       (hbound ε (Set.mem_Ioi.mp hε_pos) (le_of_lt (Set.mem_Iio.mp hε1)) x)
       (norm_nonneg _)
   · -- Integrability of bound
-    sorry -- C * (1+‖x‖)^N * ‖f x‖ is integrable (poly × Schwartz)
+    -- C * (1+‖x‖)^N * ‖f x‖ is integrable: poly × Schwartz
+    have hf_int := f.integrable_pow_mul MeasureTheory.volume N
+    -- hf_int : Integrable (fun x => ‖x‖^N * ‖f x‖)
+    -- Need: Integrable (fun x => C_bd * (1+‖x‖)^N * ‖f x‖)
+    -- (1+‖x‖)^N ≤ 2^N * (1 + ‖x‖^N) by binomial bound
+    sorry -- integrability plumbing: (1+‖x‖)^N * ‖f x‖ from ‖x‖^N * ‖f x‖
   · -- Pointwise convergence
     filter_upwards with x
     exact (hconv x).mul_const (f x)
