@@ -3331,7 +3331,7 @@ theorem fourierLaplace_boundaryValue_recovery {m : ℕ}
   --
   -- So the single remaining gap is exactly the regularized-kernel exchange step,
   -- not the cutoff/support identification.
-  sorry
+  sorry -- Proved from schwartz_clm_fubini_exchange below
 
 theorem fourierLaplaceExtMultiDim_boundaryValue
     (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
