@@ -5,8 +5,8 @@ Purpose: this note is the repo-wide triage sheet for every direct production
 
 Count convention:
 - direct tactic holes only: `^[[:space:]]*sorry([[:space:]]|$)`
-- checked on `2026-04-05`
-- current live count: `60`
+- checked on `2026-04-08`
+- current live count: `63`
 
 This note should be read together with:
 - `docs/theorem2_locality_blueprint.md`
@@ -22,11 +22,11 @@ This note should be read together with:
 
 | Subsystem | Direct `sorry`s |
 |---|---:|
-| `OSReconstruction/Wightman` | 20 |
+| `OSReconstruction/Wightman` | 23 |
 | `OSReconstruction/SCV` | 2 |
 | `OSReconstruction/ComplexLieGroups` | 2 |
 | `OSReconstruction/vNA` | 36 |
-| **Total** | **60** |
+| **Total** | **63** |
 
 ## 2. Highest-priority OS-route frontiers
 
@@ -184,11 +184,11 @@ direct `sorry` census.
 If the user wants the shortest mathematically faithful route on current `main`,
 the next documentation-guided Lean execution order should be:
 
-1. theorem 3 public reduction in `docs/theorem3_os_route_blueprint.md`,
-2. theorem 4 one-factor extraction / cluster closure in
-   `docs/theorem4_cluster_blueprint.md`,
-3. theorem 2 locality continuity / adapter package in
+1. theorem 2 locality continuity / adapter package in
    `docs/theorem2_locality_blueprint.md`,
+2. theorem 3 public reduction in `docs/theorem3_os_route_blueprint.md`,
+3. theorem 4 one-factor extraction / cluster closure in
+   `docs/theorem4_cluster_blueprint.md`,
 4. only then the broader general-`k`, reverse-direction, GNS, nuclear, and
    vNA backlogs.
 
@@ -362,53 +362,53 @@ graph should be stated explicitly in one place.
 ### 12.1. Public `E -> R` frontiers
 
 1. `W1 = theorem 2 locality`
-   in [OSToWightmanBoundaryValues.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean)
+   in `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean`
    depends on:
-   - [theorem2_locality_blueprint.md](/Users/xiyin/OSReconstruction/docs/theorem2_locality_blueprint.md)
-   - [scv_infrastructure_blueprint.md](/Users/xiyin/OSReconstruction/docs/scv_infrastructure_blueprint.md)
+   - `docs/theorem2_locality_blueprint.md`
+   - `docs/scv_infrastructure_blueprint.md`
    - current BHW / ET geometry files
 2. `W2 = theorem 3 positivity`
    depends on:
-   - [theorem3_os_route_blueprint.md](/Users/xiyin/OSReconstruction/docs/theorem3_os_route_blueprint.md)
-   - [os1_detailed_proof_audit.md](/Users/xiyin/OSReconstruction/docs/os1_detailed_proof_audit.md)
+   - `docs/theorem3_os_route_blueprint.md`
+   - `docs/os1_detailed_proof_audit.md`
    - current K2 / compact-approximation production chain
 3. `W3 = theorem 4 cluster`
    depends on:
    - theorem 3 one-factor package first,
-   - [theorem4_cluster_blueprint.md](/Users/xiyin/OSReconstruction/docs/theorem4_cluster_blueprint.md),
+   - `docs/theorem4_cluster_blueprint.md`,
    - OS I Section 4.4 transport ideas from
-     [os1_detailed_proof_audit.md](/Users/xiyin/OSReconstruction/docs/os1_detailed_proof_audit.md)
+     `docs/os1_detailed_proof_audit.md`
 
-So the public execution order remains:
+So the public execution order now matches the canonical development plan:
 
-1. theorem 3,
-2. theorem 4,
-3. theorem 2 separately,
+1. theorem 2,
+2. theorem 3,
+3. theorem 4,
 
-with theorem 4 downstream of theorem 3 and theorem 2 largely independent of
-that positivity/cluster lane.
+with theorem 4 downstream of theorem 3, while theorem 2 is the separate
+locality frontier on the active `E -> R` boundary-value lane.
 
 ### 12.2. Generalization and side lanes
 
 1. `general k > 2`
    depends on:
-   - [general_k_continuation_blueprint.md](/Users/xiyin/OSReconstruction/docs/general_k_continuation_blueprint.md)
-   - [os2_detailed_proof_audit.md](/Users/xiyin/OSReconstruction/docs/os2_detailed_proof_audit.md)
-   - [scv_infrastructure_blueprint.md](/Users/xiyin/OSReconstruction/docs/scv_infrastructure_blueprint.md)
+   - `docs/general_k_continuation_blueprint.md`
+   - `docs/os2_detailed_proof_audit.md`
+   - `docs/scv_infrastructure_blueprint.md`
 2. `R -> E`
    depends on:
-   - [r_to_e_blueprint.md](/Users/xiyin/OSReconstruction/docs/r_to_e_blueprint.md)
-   - [os1_detailed_proof_audit.md](/Users/xiyin/OSReconstruction/docs/os1_detailed_proof_audit.md)
+   - `docs/r_to_e_blueprint.md`
+   - `docs/os1_detailed_proof_audit.md`
    - reverse-direction Schwinger/BHW production files
 3. `GNS spectrum/cyclicity`
    depends on:
-   - [gns_pipeline_blueprint.md](/Users/xiyin/OSReconstruction/docs/gns_pipeline_blueprint.md)
-   - [nuclear_spaces_blueprint.md](/Users/xiyin/OSReconstruction/docs/nuclear_spaces_blueprint.md)
-   - [scv_infrastructure_blueprint.md](/Users/xiyin/OSReconstruction/docs/scv_infrastructure_blueprint.md)
+   - `docs/gns_pipeline_blueprint.md`
+   - `docs/nuclear_spaces_blueprint.md`
+   - `docs/scv_infrastructure_blueprint.md`
 4. `vNA / unbounded spectral`
    depends on:
-   - [vna_infrastructure_blueprint.md](/Users/xiyin/OSReconstruction/docs/vna_infrastructure_blueprint.md)
-   - [vna_triage.md](/Users/xiyin/OSReconstruction/docs/vna_triage.md)
+   - `docs/vna_infrastructure_blueprint.md`
+   - `docs/vna_triage.md`
 
 ### 12.3. Route rule implied by the graph
 
@@ -427,9 +427,9 @@ the public OS-route frontier, the docs should enforce the following phases.
 
 #### Phase 1. Public `E -> R` completion
 
-1. `W2` theorem 3 positivity,
-2. `W3` theorem 4 cluster,
-3. `W1` theorem 2 locality.
+1. `W1` theorem 2 locality,
+2. `W2` theorem 3 positivity,
+3. `W3` theorem 4 cluster.
 
 #### Phase 2. Immediate `E -> R` support cleanup
 
@@ -440,12 +440,12 @@ the public OS-route frontier, the docs should enforce the following phases.
 
 1. `S1-S2` Bochner tube extension,
 2. general `k > 2` OS II package from
-   [general_k_continuation_blueprint.md](/Users/xiyin/OSReconstruction/docs/general_k_continuation_blueprint.md).
+   `docs/general_k_continuation_blueprint.md`.
 
 #### Phase 4. Reverse-direction strengthening
 
 1. honest `R -> E` transport packages from
-   [r_to_e_blueprint.md](/Users/xiyin/OSReconstruction/docs/r_to_e_blueprint.md),
+   `docs/r_to_e_blueprint.md`,
 2. quarantine/remove the false reverse-direction positivity chain.
 
 #### Phase 5. GNS / kernel / uniqueness side lane

@@ -1,13 +1,81 @@
 # Theorem 3 OS-Route Blueprint
 
 Purpose: this note is the implementation blueprint for the live `E -> R`
-frontier theorem
+frontier theorem.
 
-- `OSToWightmanBoundaryValues.lean`, private theorem `bvt_W_positive`.
+Production locus split for theorem 3:
 
-This document is not a historical summary. It is the route specification to be
-followed during Lean work. If the code seems to suggest a different route, the
-docs must be repaired first and Lean work must pause.
+- **Exported wrapper theorem:**
+  `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean`,
+  private theorem `bvt_W_positive`.
+- **Actual implementation/theorem-package locus:**
+  `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean`,
+  in particular the Package-A/B support theorems together with the still-open
+  Section-4.3 transport/positivity theorems culminating in
+  `bvt_W_positive_direct`.
+
+This distinction is part of the implementation contract: theorem-3 work should
+land in `OSToWightmanPositivity.lean`, and `bvt_W_positive` in
+`OSToWightmanBoundaryValues.lean` should be treated as the exported consumer
+wrapper unless the docs are explicitly rewritten first.
+
+This document is the theorem-3 route specification to be followed during Lean
+work. If the code seems to suggest a different route, the docs must be repaired
+first and Lean work must pause.
+
+This file now has a strict split between:
+
+1. **Active implementation contract**: Sections `1`-`4`, `5.1`, `5.2`, and
+   `5.9`.
+2. **Historical / quarantined route record**: Sections `5.3`-`5.8`.
+
+For active implementation, the later Lean worker should start from the active
+contract only. The historical sections remain in this file only to fence off
+false or withdrawn routes under exact names, so they are not accidentally
+revived.
+
+Quick-start checklist for implementers:
+
+1. read Sections `1.1`-`1.2` for the exact live theorem surface and local
+   production status;
+2. consume only the already-proved hooks listed in Section `2`;
+3. treat Packages `A`, `B`, and `I` as the only live package chain;
+4. treat Packages `C`-`H` as negative guidance / theorem-name archaeology only;
+5. note that references to `OSReconstruction/SCV/PartialFourierSpatial.lean`
+   describe a **planned companion support file** for the branch-`3b` route. It
+   is not present in the current repo tree yet, so any theorem-package using
+   it must either create that file first or explicitly redirect to the file
+   that actually houses the support work.
+
+### 0.1. Checked production file inventory for theorem 3
+
+This blueprint now records the exact repo-relative production paths that were
+checked against the current tree, because several surrounding docs and older
+notes use shortened filenames that are too ambiguous for implementation work.
+
+Checked-present theorem-3 production files:
+
+- `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean`
+- `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean`
+- `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValuesBase.lean`
+- `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean`
+- `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValuesCompactApprox.lean`
+- `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanSemigroup.lean`
+- `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanSpatialMomentum.lean`
+- `OSReconstruction/Wightman/Reconstruction/SchwingerOS.lean`
+
+Checked-missing planned support file:
+
+- `OSReconstruction/SCV/PartialFourierSpatial.lean`
+
+Implementation rule for this blueprint:
+
+1. short names like `OSToWightmanPositivity.lean` or `SchwingerOS.lean` are
+   allowed below only as shorthand for the exact checked paths above;
+2. if a future refactor moves any of those files, this blueprint must be
+   updated in the same pass;
+3. no theorem-3 work should be landed in a nearby WickRotation helper file just
+   because a shortened filename in the docs made the locus look ambiguous.
 
 This note should be read together with:
 
@@ -79,8 +147,21 @@ As of the current local branch state:
    `OSToWightmanBoundaryValuesCompactApprox.lean`, and
    `OSToWightmanBoundaryValues.lean`, but they are legacy consumers rather than
    endorsed theorem-3 route definitions;
-5. the live theorem-3 frontier is now the corrected Package-I theorem surface;
-6. the older raw theorem slogan
+5. the actual open theorem-3 implementation seam is in
+   `OSToWightmanPositivity.lean`, where the honest remaining transport package
+   is represented by theorems such as
+   `bvt_W_eq_inner_on_positiveTimeTransport`,
+   `bvt_W_positive_on_positiveTimeTransport_image`,
+   `bvt_W_positive_density_reduction`, and the exported theorem
+   `bvt_W_positive_direct`;
+6. `OSToWightmanBoundaryValues.lean` still contains the private theorem
+   `bvt_W_positive`, but at the current repo state that theorem is the exported
+   wrapper/frontier consumer, not the file where the Section-4.3 transport
+   package itself should be developed;
+7. the live theorem-3 frontier is therefore the corrected Package-I theorem
+   surface as implemented through `OSToWightmanPositivity.lean` and only then
+   exported through `OSToWightmanBoundaryValues.lean`;
+8. the older raw theorem slogan
    `WightmanInnerProduct(bvt_W)(F,F).re = ‖u(F)‖^2` for the same raw
    `BorchersSequence d` on both sides is not endorsed and is under
    correction.
@@ -341,7 +422,7 @@ Exact current implementation note:
 2. later work should build on that theorem, not reprove Package B under a
    slightly different wrapper unless there is a compelling API reason.
 
-### 5.3. Package C: false legacy theorem surface
+### 5.3. Package C: false legacy theorem surface [historical quarantine]
 
 Package C is **not** a live frontier any more. It is the old positive-real
 same-shell theorem surface externalized as `hschw`, and it is mathematically
@@ -486,7 +567,7 @@ Exact current handoff theorems after the correction:
    `bvt_wightmanInner_eq_osInner_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero`
    remain legacy consumers only and should not drive new theorem-3 production.
 
-### 5.4. Package D: withdrawn raw positive-time sesquilinear route
+### 5.4. Package D: withdrawn raw positive-time sesquilinear route [historical quarantine]
 
 The theorem surface
 
@@ -521,7 +602,7 @@ Consequences:
 3. the corrected route moves directly from the single/split bridge to the
    Section 4.3 transformed-image / transport package.
 
-### 5.5. Package E: withdrawn raw positive-time positivity route
+### 5.5. Package E: withdrawn raw positive-time positivity route [historical quarantine]
 
 The theorem surface
 
@@ -542,7 +623,7 @@ What remains true is only:
 
 The analytic core now passes straight from the single/split bridge to Package I.
 
-### 5.6. Package F: ordered-positive-time density in each degree
+### 5.6. Package F: ordered-positive-time density in each degree [historical quarantine]
 
 Important route correction:
 
@@ -595,7 +676,7 @@ Exact current implementation status:
 3. this section is retained only as a warning / historical quarantine, not as
    endorsed implementation guidance.
 
-### 5.7. Package G: componentwise positive-time approximation of Borchers sequences
+### 5.7. Package G: componentwise positive-time approximation of Borchers sequences [historical quarantine]
 
 The original Package-G statement depended on the quarantined raw Package-F
 statement above. So this section is also historical only, not a currently
@@ -626,7 +707,7 @@ Exact current implementation status:
 3. it is not the final arbitrary-`BorchersSequence` approximation theorem and
    should not be documented or used as if it were.
 
-### 5.8. Package H: withdrawn continuity-after-density route
+### 5.8. Package H: withdrawn continuity-after-density route [historical quarantine]
 
 This section records the old continuity-after-density plan only so it is not
 accidentally revived as current blueprint guidance.
@@ -760,10 +841,19 @@ theorem bvtTransportImage_smul
     f ∈ bvtTransportImage (d := d) n →
     c • f ∈ bvtTransportImage (d := d) n
 
-/-- OS I Lemma 4.1: dense range of the degree-`n` transport component. -/
+/-- OS I Lemma 4.1: dense range of the degree-`n` transport component in the
+corrected half-space codomain. This is a paper-faithfulness theorem slot, not
+part of the minimal blocker chain for `bvt_W_positive_direct`. -/
 theorem os1TransportComponent_denseRange
     (n : ℕ) :
     DenseRange (os1TransportComponent d n)
+
+/-- Kernel-zero / injectivity theorem for the Section-4.3 transport component.
+This is the theorem actually consumed by the well-definedness proof for the
+transport map on the transformed image. -/
+theorem os1TransportComponent_eq_zero_iff
+    {n : ℕ} {f : EuclideanPositiveTimeComponent d n} :
+    os1TransportComponent d n f = 0 ↔ f = 0
 
 /-- Finite Borchers data whose every component lies in the Section 4.3 image. -/
 structure BvtTransportImageSequence (d : ℕ) [NeZero d] where
@@ -936,7 +1026,8 @@ The proof must be decomposed into the following local steps.
 5. The concrete current-code branch `3b` should be built through a companion
    support file, not monolithically inside the frontier theorem file.
    The intended support chain is:
-   - `OSReconstruction/SCV/PartialFourierSpatial.lean`,
+   - `OSReconstruction/SCV/PartialFourierSpatial.lean` (**planned support file;
+     not yet present in the repo at the time of this doc pass**),
    - `nPointTimeSpatialCLE`,
    - `partialFourierSpatial_fun`,
    - differentiation-under-the-integral and seminorm bounds there,
@@ -1101,12 +1192,20 @@ on raw `BorchersSequence d` remains off-route.
 
 Exact current implementation status:
 
-1. there is no current production theorem implementing Package I yet;
+1. there is no current production theorem implementing the full corrected
+   Package-I closure yet;
 2. the current production file `OSToWightmanPositivity.lean` now honestly
-   isolates Package I as one of the two remaining `sorry`s;
-3. the old raw same-input theorem slogan is withdrawn and must not be
+   isolates the live theorem-3 transport/positivity seam through
+   `bvt_W_eq_inner_on_positiveTimeTransport` and
+   `bvt_W_positive_density_reduction`, with the exported theorem surface named
+   `bvt_W_positive_direct`;
+3. `OSToWightmanBoundaryValues.lean` still carries the private theorem
+   `bvt_W_positive`, but that theorem should be read as the downstream wrapper
+   exporting theorem 3 to the full boundary-value package, not as the place to
+   design new Section-4.3 transport infrastructure;
+4. the old raw same-input theorem slogan is withdrawn and must not be
    implemented literally;
-4. the theorem-3 blueprint now endorses only the transformed-image /
+5. the theorem-3 blueprint now endorses only the transformed-image /
    density-closure reading of Section 4.3.
 
 ## 6. Exact relation to the current production consumers
@@ -1180,7 +1279,7 @@ theorem re_WightmanInnerProduct_tendsto_of_componentwise_tendsto ... := by
 def bvtTransportImage ... := by
   ...
 
-theorem bvtTransportImage_dense ... := by
+theorem os1TransportComponent_eq_zero_iff ... := by
   ...
 
 def BvtTransportImageSequence ... := by
@@ -1196,14 +1295,22 @@ theorem bvt_W_positive_of_transportImage_density ... := by
   ...
 ```
 
+Note the deliberate omission: the active production route does **not** insert a
+separate theorem `bvtTransportImage_dense`. The paper-faithfulness density slot
+is `os1TransportComponent_denseRange` on the corrected half-space codomain,
+while the production closure for theorem 3 runs through the Hilbert-space
+closure theorem `bvt_W_positive_of_transportImage_density`.
+
 The current production file
 `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean`
 already uses the exact names
 `identity_theorem_right_halfplane`,
 `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single`.
 The transformed-image theorem names above should therefore be treated as the
-fixed guidance for the corrected Section 4.3 closure package. The older raw
-same-input names
+fixed guidance for the corrected Section 4.3 closure package in
+`OSToWightmanPositivity.lean`; the downstream private theorem
+`bvt_W_positive` in `OSToWightmanBoundaryValues.lean` should only consume that
+package. The older raw same-input names
 `schwinger_timeShift_eq_bvt_W_conjTensorProduct_timeShift`,
 `bvt_wightmanInner_eq_osInner_of_positiveTime`,
 and `bvt_positiveTime_self_nonneg_from_packageC`
