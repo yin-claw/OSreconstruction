@@ -9,6 +9,7 @@ import OSReconstruction.SCV.Osgood
 import OSReconstruction.GeneralResults.ScalarFTC
 import OSReconstruction.GeneralResults.SchwartzCutoffExp
 import OSReconstruction.GeneralResults.SchwartzDamping
+import OSReconstruction.GeneralResults.PhysicsFourierEval
 import OSReconstruction.GeneralResults.SchwartzFubini
 import Mathlib.Algebra.Order.Chebyshev
 
@@ -3220,6 +3221,48 @@ private lemma realPlusIEpsEta_mem_tubeDomain
 /-- Pointwise identification of the Fubini-exchanged Schwartz kernel with the
 regularized physics Fourier transform. This is the remaining kernel-computation
 step in the boundary-value theorem. -/
+private lemma physicsFourierFlatCLM_integral
+    {m : ℕ} (f : SchwartzMap (Fin m → ℝ) ℂ) (ξ : Fin m → ℝ) :
+    (∫ x : Fin m → ℝ, Complex.exp (I * ∑ i, (x i : ℂ) * (ξ i : ℂ)) * f x) =
+      physicsFourierFlatCLM f ξ := by
+  rw [physicsFourierFlatCLM_apply]
+  have harg :
+      (∫ x : Fin m → ℝ,
+        (Complex.exp
+            (I * ((Real.pi : ℂ) * (2 * ∑ i,
+              (ξ i : ℂ) * ((x i : ℂ) * (((Real.pi : ℂ)⁻¹ * (2 : ℂ)⁻¹)))))))
+            * f x) =
+      ∫ x : Fin m → ℝ, Complex.exp (I * ∑ i, (x i : ℂ) * (ξ i : ℂ)) * f x := by
+    apply integral_congr_ae
+    filter_upwards with x
+    congr 2
+    have hs :
+        (Real.pi : ℂ) * (2 * ∑ i,
+            (ξ i : ℂ) * ((x i : ℂ) * (((Real.pi : ℂ)⁻¹ * (2 : ℂ)⁻¹))) ) =
+          ∑ i, (x i : ℂ) * (ξ i : ℂ) := by
+      simp_rw [Finset.mul_sum]
+      refine Finset.sum_congr rfl ?_
+      intro i hi
+      field_simp [Real.pi_ne_zero]
+    rw [hs]
+  calc
+    ∫ x : Fin m → ℝ, Complex.exp (I * ∑ i, (x i : ℂ) * (ξ i : ℂ)) * f x
+        = ∫ x : Fin m → ℝ,
+            Complex.exp
+              (I * ((Real.pi : ℂ) * (2 * ∑ i,
+                (ξ i : ℂ) * ((x i : ℂ) * (((Real.pi : ℂ)⁻¹ * (2 : ℂ)⁻¹))))))
+              * f x := by
+              symm
+              exact harg
+    _ = inverseFourierFlatCLM f ((-(1 / (2 * Real.pi) : ℝ)) • ξ) := by
+          symm
+          simpa [inverseFourierFlatCLM, smul_eq_mul, Pi.smul_apply,
+            mul_assoc, mul_left_comm, mul_comm] using
+            (fourierTransformFlat_eval f ((-(1 / (2 * Real.pi) : ℝ)) • ξ))
+
+/-- Pointwise identification of the Fubini-exchanged Schwartz kernel with the
+regularized physics Fourier transform. This is the remaining kernel-computation
+step in the boundary-value theorem. -/
 private theorem regularizedKernel_pointwise
     {m : ℕ}
     (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
@@ -3233,10 +3276,107 @@ private theorem regularizedKernel_pointwise
         Complex.exp (-(ε : ℂ) * (etaPairingCLM η ξ : ℂ)) *
           (((dualConeCutoff C).val ξ : ℂ) * physicsFourierFlatCLM f ξ) := by
   intro ε hε ξ
-  -- Proof: unfold ψ_{x+iεη}(ξ) = χ(ξ) exp(-εη·ξ) exp(ix·ξ),
-  -- pull x-independent factors out of integral, identify ∫exp(ix·ξ)f(x)dx
-  -- with physicsFourierFlatCLM f ξ via fourierTransformFlat_eval.
-  sorry -- provable from fourierTransformFlat_eval + integral_mul_left + psiZRaw unfolding
+  have hz : ∀ x : Fin m → ℝ,
+      (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) ∈ SCV.TubeDomain C := by
+    intro x
+    exact realPlusIEpsEta_mem_tubeDomain C hC_cone x η hη ε hε
+  let χ : FixedConeCutoff (DualConeFlat C) := dualConeCutoff C
+  have hexp_split : ∀ x : Fin m → ℝ,
+      Complex.exp
+          (I * ∑ i, ((x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) * (ξ i : ℂ)) =
+        Complex.exp (-(ε : ℂ) * (etaPairingCLM η ξ : ℂ)) *
+          Complex.exp (I * ∑ i, (x i : ℂ) * (ξ i : ℂ)) := by
+    intro x
+    have hsum :
+        I * ∑ i, ((x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) * (ξ i : ℂ) =
+          (-(ε : ℂ) * (etaPairingCLM η ξ : ℂ)) +
+            I * ∑ i, (x i : ℂ) * (ξ i : ℂ) := by
+      rw [etaPairingCLM_apply]
+      simp_rw [add_mul, mul_assoc]
+      rw [Finset.sum_add_distrib, mul_add]
+      have hcross :
+          I * ∑ x_1, I * (ε : ℂ) * (η x_1 : ℂ) * (ξ x_1 : ℂ) =
+            -(ε : ℂ) * ↑(∑ x, η x * ξ x) := by
+        calc
+          I * ∑ x_1, I * (ε : ℂ) * (η x_1 : ℂ) * (ξ x_1 : ℂ) =
+              ∑ x_1, I * (I * (ε : ℂ) * (η x_1 : ℂ) * (ξ x_1 : ℂ)) := by
+                rw [Finset.mul_sum]
+          _ = ∑ x_1, -((ε : ℂ) * ((η x_1 : ℂ) * (ξ x_1 : ℂ))) := by
+                refine Finset.sum_congr rfl ?_
+                intro i hi
+                have hterm :
+                    I * (I * ((ε : ℂ) * (η i : ℂ) * (ξ i : ℂ))) =
+                      -((ε : ℂ) * ((η i : ℂ) * (ξ i : ℂ))) := by
+                  rw [show I * (I * ((ε : ℂ) * (η i : ℂ) * (ξ i : ℂ))) =
+                      (I * I) * ((ε : ℂ) * (η i : ℂ) * (ξ i : ℂ)) by ring]
+                  simp [Complex.I_sq]
+                  ring
+                have hterm' :
+                    I * (I * (ε : ℂ) * (η i : ℂ) * (ξ i : ℂ)) =
+                      -((ε : ℂ) * ((η i : ℂ) * (ξ i : ℂ))) := by
+                  calc
+                  I * (I * (ε : ℂ) * (η i : ℂ) * (ξ i : ℂ))
+                      = I * (I * ((ε : ℂ) * (η i : ℂ) * (ξ i : ℂ))) := by ring
+                  _ = -((ε : ℂ) * ((η i : ℂ) * (ξ i : ℂ))) := hterm
+                simpa [mul_assoc] using hterm'
+          _ = -(∑ x_1, (ε : ℂ) * ((η x_1 : ℂ) * (ξ x_1 : ℂ))) := by
+                rw [Finset.sum_neg_distrib]
+          _ = -((ε : ℂ) * ∑ x_1, (η x_1 : ℂ) * (ξ x_1 : ℂ)) := by
+                rw [← Finset.mul_sum]
+          _ = -(ε : ℂ) * ↑(∑ x, η x * ξ x) := by
+                have hsumCast :
+                    (∑ x_1, (η x_1 : ℂ) * (ξ x_1 : ℂ)) = ↑(∑ x, η x * ξ x) := by
+                  exact_mod_cast rfl
+                rw [hsumCast]
+                ring
+      have hcross' :
+          I * ∑ x, (ε : ℂ) * ((η x : ℂ) * (I * (ξ x : ℂ))) =
+            -(ε : ℂ) * ↑(∑ x, η x * ξ x) := by
+        simpa [mul_assoc, mul_left_comm, mul_comm] using hcross
+      rw [add_comm, hcross']
+    rw [hsum, Complex.exp_add]
+  calc
+    (∫ x : Fin m → ℝ,
+      multiDimPsiZExt C hC_open hC_conv hC_cone hC_salient
+        (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) ξ * f x)
+        =
+      ∫ x : Fin m → ℝ,
+        multiDimPsiZ C hC_open hC_conv hC_cone hC_salient
+          (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) (hz x) ξ * f x := by
+          apply integral_congr_ae
+          filter_upwards with x
+          rw [multiDimPsiZExt_eq C hC_open hC_conv hC_cone hC_salient
+            (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) (hz x)]
+    _ =
+      ∫ x : Fin m → ℝ,
+        (((χ.val ξ : ℂ) *
+          Complex.exp (-(ε : ℂ) * (etaPairingCLM η ξ : ℂ))) *
+            (Complex.exp (I * ∑ i, (x i : ℂ) * (ξ i : ℂ)) * f x)) := by
+          apply integral_congr_ae
+          filter_upwards with x
+          change (multiDimPsiZ C hC_open hC_conv hC_cone hC_salient
+              (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) (hz x) ξ) * f x = _
+          rw [show multiDimPsiZ C hC_open hC_conv hC_cone hC_salient
+              (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) (hz x) ξ =
+                psiZRaw χ 1 (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) ξ by
+                rfl]
+          rw [show psiZRaw χ 1 (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) ξ =
+              (χ.val ξ : ℂ) *
+                Complex.exp (I * ∑ i, ((x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) * (ξ i : ℂ)) by
+                simp [psiZRaw]]
+          rw [hexp_split x]
+          ring
+    _ = (((χ.val ξ : ℂ) * Complex.exp (-(ε : ℂ) * (etaPairingCLM η ξ : ℂ))) *
+          ∫ x : Fin m → ℝ, Complex.exp (I * ∑ i, (x i : ℂ) * (ξ i : ℂ)) * f x) := by
+          simpa [mul_assoc] using
+            (MeasureTheory.integral_const_mul
+              (((χ.val ξ : ℂ) * Complex.exp (-(ε : ℂ) * (etaPairingCLM η ξ : ℂ)))
+              ) (fun x : Fin m → ℝ =>
+                Complex.exp (I * ∑ i, (x i : ℂ) * (ξ i : ℂ)) * f x))
+    _ = Complex.exp (-(ε : ℂ) * (etaPairingCLM η ξ : ℂ)) *
+          (((dualConeCutoff C).val ξ : ℂ) * physicsFourierFlatCLM f ξ) := by
+          rw [physicsFourierFlatCLM_integral]
+          ring
 
 /-- **Boundary value convergence for the Fourier-Laplace extension.**
 
