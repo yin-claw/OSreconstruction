@@ -3234,47 +3234,30 @@ theorem fourierLaplaceExtMultiDim_boundaryValue
           (nhdsWithin 0 (Set.Ioi 0))
           (nhds (T (physicsFourierFlatCLM f))) := by
   intro η hη f
-  -- Step 1: For ε > 0, x + iεη ∈ T(C) by cone scaling.
-  have hmem : ∀ (x : Fin m → ℝ) (ε : ℝ), 0 < ε →
-      (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) ∈ SCV.TubeDomain C :=
-    fun x ε hε => realPlusIEpsEta_mem_tubeDomain C hC_cone x η hη ε hε
-  -- Step 2: Rewrite using fourierLaplaceExtMultiDim_eq_ext (no membership proofs).
-  -- F(z) = T(ψ^ext_z) for ALL z, where ψ^ext = 0 outside the tube.
-  have hF_rewrite : ∀ ε : ℝ,
-      (fun x : Fin m → ℝ =>
-        fourierLaplaceExtMultiDim C hC_open hC_conv hC_cone hC_salient T
-          (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) * f x) =
-      (fun x : Fin m → ℝ =>
-        T (multiDimPsiZExt C hC_open hC_conv hC_cone hC_salient
-          (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I)) * f x) := by
-    intro ε
-    ext x
-    rw [fourierLaplaceExtMultiDim_eq_ext]
-  -- Rewrite the integral to use multiDimPsiZExt.
-  simp_rw [fun ε => hF_rewrite ε]
-  -- Step 3: T is bounded by a finite sup of Schwartz seminorms (PROVED).
-  obtain ⟨s, C_T, _hC_T_ne, hT_bound⟩ := schwartz_clm_bound_by_finset_sup T
-  -- Steps 4-7 (sorry'd): CLM-integral exchange + Schwartz convergence.
-  --
-  -- After rewriting, we need:
-  --   ∫ T(ψ^ext_{x+iεη}) · f(x) dx → T(inverseFourierFlatCLM f) as ε→0⁺
-  --
-  -- The mathematical argument (Route A):
-  --   (a) ∫ T(ψ^ext_{x+iεη}) f(x) dx = T(∫ ψ^ext_{x+iεη} f(x) dx)  [Bochner exchange]
-  --   (b) = T(ξ ↦ χ(ξ) exp(-εη·ξ) FT(f)(ξ))                          [Fubini on ψ]
-  --   (c) → T(ξ ↦ χ(ξ) FT(f)(ξ)) as ε→0⁺                            [Schwartz convergence]
-  --   (d) = T(FT(f)) = T(inverseFourierFlatCLM f)                      [Fourier support]
-  --
-  -- Step (a) requires Schwartz-valued Bochner integration (not in Mathlib).
-  -- Step (b) uses ψ_{x+iεη}(ξ) = χ(ξ)exp(ix·ξ)exp(-εη·ξ) and x-integration.
-  -- Step (c) uses `multiDimPsiZ_seminorm_difference_bound` (PROVED) for seminorm control.
-  -- Step (d) uses `HasFourierSupportInDualCone` + `FixedConeCutoff.one_on_neighborhood`.
-  --
-  -- The proved infrastructure reduces the problem to the Bochner exchange (a),
-  -- specifically: Schwartz-valued Bochner integration theory, which is not in Mathlib.
-  -- Available alternatives:
-  --   - Direct seminorm argument bypassing Bochner (use hT_bound pointwise + DCT)
-  --   - Factor through `distributional_limit_of_equicontinuous` (PROVED)
-  sorry
+  let g : ℝ → (Fin m → ℝ) → ℂ := fun ε x =>
+    fourierLaplaceExtMultiDim C hC_open hC_conv hC_cone hC_salient T
+      (fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I)
+  have hboundary_pkg :
+      ∃ (L : (Fin m → ℝ) → ℂ),
+        (∀ (x : Fin m → ℝ),
+          Filter.Tendsto (fun ε => g ε x) (nhdsWithin 0 (Set.Ioi 0)) (nhds (L x))) ∧
+        (∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+          ∀ (ε : ℝ), 0 < ε → ε ≤ 1 → ∀ (x : Fin m → ℝ),
+            ‖g ε x‖ ≤ C_bd * (1 + ‖x‖) ^ N) ∧
+        (∫ x : Fin m → ℝ, L x * f x = T (physicsFourierFlatCLM f)) := by
+    -- This is the remaining boundary package:
+    -- 1. pointwise convergence of `F(x + i ε η)` to a scalar boundary trace `L x`,
+    -- 2. a polynomial dominator on the fixed ray `0 < ε ≤ 1`,
+    -- 3. identification of the boundary pairing with `T (physicsFourierFlatCLM f)`.
+    --
+    -- The new scalar DCT axiom below then finishes the theorem.
+    --
+    -- The last clause is the Fourier-support identification step:
+    -- `T` only sees the dual-cone-supported part of the cutoff kernel, where `χ = 1`,
+    -- so the real-edge kernel integrates to the physics-convention Fourier transform.
+    sorry
+  rcases hboundary_pkg with ⟨L, hconv, hdom, hId⟩
+  rw [← hId]
+  exact scalar_dct_schwartz_pairing g L hconv hdom f
 
 end
