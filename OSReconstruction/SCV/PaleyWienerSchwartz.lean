@@ -3158,6 +3158,15 @@ noncomputable def physicsFourierFlatCLM {m : ℕ} :
       inverseFourierFlatCLM f ((-(1 / (2 * Real.pi) : ℝ)) • ξ) := by
   simp [physicsFourierFlatCLM]
 
+/-- A fixed cone cutoff is identically `1` on the dual cone itself. -/
+private lemma fixedConeCutoff_eq_one_on_dualCone
+    {m : ℕ} {C : Set (Fin m → ℝ)}
+    (χ : FixedConeCutoff (DualConeFlat C)) {ξ : Fin m → ℝ}
+    (hξ : ξ ∈ DualConeFlat C) :
+    χ.val ξ = 1 := by
+  obtain ⟨ε, hε, hone⟩ := χ.one_on_neighborhood
+  exact hone ξ (by simpa [Metric.infDist_zero_of_mem hξ] using hε)
+
 /-- The point `x + iεη` lies in the tube domain `T(C)` when `ε > 0` and `η ∈ C`.
 
     Proof: `Im(x + iεη)_j = ε * η_j`, so `Im(z) = ε • η ∈ C` by the cone property. -/
@@ -3308,19 +3317,20 @@ theorem fourierLaplace_boundaryValue_recovery {m : ℕ}
         f x)
       (nhdsWithin 0 (Set.Ioi 0))
       (nhds (T (physicsFourierFlatCLM f))) := by
-  -- Proof outline (Vladimirov Thm 25.5):
-  -- Step 1: F(x+iεη) = T(ψ_{x+iεη}) where ψ_z(ξ) = χ(ξ)exp(iz·ξ)
-  -- Step 2: Define Φ_ε(ξ) = χ(ξ)exp(-εη·ξ) · FT_phys(f)(ξ) ∈ S
-  -- Step 3: ∫ T(ψ_{x+iεη}) f(x) dx = T(Φ_ε) (scalar-level exchange)
-  -- Step 4: Φ_ε → χ · FT_phys(f) in S-topology as ε→0+
-  -- Step 5: T(Φ_ε) → T(χ · FT_phys(f)) by T.continuous
-  -- Step 6: T(χ · FT_phys(f)) = T(FT_phys(f)) by Fourier support (χ=1 on C*)
+  -- Vladimirov Thm 25.5 should proceed through the regularized frequency kernel
+  --   Φ_ε(ξ) = χ(ξ) * exp(-ε η·ξ) * FT_phys(f)(ξ),
+  -- where χ is a fixed cutoff for `DualConeFlat C`.
   --
-  -- Steps 3 and 6 are the mathematical core.
-  -- Step 3 reduces to: the x-integral of T(ψ_{x+iεη})f(x) equals T applied to
-  --   the ξ-function ∫ ψ_{x+iεη}(ξ)f(x)dx = χ(ξ)exp(-εη·ξ)∫exp(ix·ξ)f(x)dx.
-  -- Step 6 uses HasFourierSupportInDualCone: T vanishes on functions
-  --   supported outside C*, and χ-1 is supported outside a neighborhood of C*.
+  -- The remaining formal gap is the scalar/Fubini exchange theorem showing
+  --   ∫ T(ψ_{x+iεη}) f(x) dx = T(Φ_ε)
+  -- with `Φ_ε` viewed as a Schwartz function in ξ. Once that is available:
+  --   1. `Φ_ε → χ * FT_phys(f)` in Schwartz topology,
+  --   2. `T(Φ_ε) → T(χ * FT_phys(f))` by continuity of `T`,
+  --   3. `T(χ * FT_phys(f)) = T(FT_phys(f))` by `HasFourierSupportInDualCone`,
+  --      using `fixedConeCutoff_eq_one_on_dualCone`.
+  --
+  -- So the single remaining gap is exactly the regularized-kernel exchange step,
+  -- not the cutoff/support identification.
   sorry
 
 theorem fourierLaplaceExtMultiDim_boundaryValue
