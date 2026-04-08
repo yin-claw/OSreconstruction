@@ -695,6 +695,10 @@ private theorem multiDimPsiZDynamic_pointwise_vladimirov
     -- But the value depends on z (through hz), so we need B uniform in z.
     -- On Subsingleton, z is unique too, so there's only one value.
     -- Just sorry this edge case — it never arises in practice (salient cones have m ≥ 1).
+    -- All elements of Fin m → ℝ are equal (subsingleton), so ‖ξ‖ = 0
+    -- Degenerate: Cᶜ = ∅ implies m = 0 (subsingleton). All z, ξ are equal.
+    -- For k ≥ 1: ‖ξ‖^k = 0, bound trivial. For k = 0: need B ≥ ‖D^n f(0)‖.
+    -- Mathematically trivial but Lean-fiddly (SchwartzMap extensionality through hz).
     sorry
   · -- ── Main case: Cᶜ ≠ ∅ ──
     let χ := (fixedConeCutoff_exists (DualConeFlat C) (dualConeFlat_closed C)).some
