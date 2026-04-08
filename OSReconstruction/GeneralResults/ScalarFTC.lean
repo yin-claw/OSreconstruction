@@ -105,12 +105,21 @@ theorem cexp_sub_one_sub_id_eq_integral (w : ℂ) :
     Proof: |∫₀¹ exp(tw)| ≤ ∫₀¹ |exp(tw)| ≤ ∫₀¹ exp(‖w‖) = exp(‖w‖). -/
 theorem norm_cexp_sub_one_le (w : ℂ) :
     ‖cexp w - 1‖ ≤ ‖w‖ * Real.exp ‖w‖ := by
-  sorry -- interval coercion plumbing; mathematically trivial
+  have h := Complex.norm_exp_sub_sum_le_norm_mul_exp w 1
+  have heq : ∑ m ∈ Finset.range 1, w ^ m / (m.factorial : ℂ) = 1 := by
+    simp
+  rw [heq, pow_one] at h
+  exact h
 
 /-- `‖exp(w) - 1 - w‖ ≤ ‖w‖² * exp(‖w‖)` from the integral representation.
     Proof: |∫₀¹ (1-t)exp(tw)| ≤ ∫₀¹ exp(‖w‖) = exp(‖w‖). -/
 theorem norm_cexp_sub_one_sub_id_le (w : ℂ) :
     ‖cexp w - 1 - w‖ ≤ ‖w‖ ^ 2 * Real.exp ‖w‖ := by
-  sorry -- interval coercion plumbing; mathematically trivial
+  have h := Complex.norm_exp_sub_sum_le_norm_mul_exp w 2
+  have heq : ∑ m ∈ Finset.range 2, w ^ m / (m.factorial : ℂ) = 1 + w := by
+    simp [Finset.sum_range_succ]
+  rw [heq] at h
+  calc ‖cexp w - 1 - w‖ = ‖cexp w - (1 + w)‖ := by congr 1; ring
+    _ ≤ ‖w‖ ^ 2 * Real.exp ‖w‖ := h
 
 end

@@ -3935,7 +3935,41 @@ theorem fourierLaplace_boundaryValue_recovery {m : ℕ}
     -- The cutoff χ vanishes outside the 1-neighborhood of DualConeFlat C.
     -- On that set, η ∈ C gives ⟨η, ξ⟩ ≥ -‖η‖ (since dist(ξ, C*) ≤ 1 and
     -- ⟨η, ξ'⟩ ≥ 0 for ξ' ∈ C*).
-    sorry
+    refine ⟨2 * ‖Lη‖, fun ξ hξ_supp => ?_⟩
+    -- Step 1: hχf ξ ≠ 0, so χ.val ξ ≠ 0
+    have hχξ_ne : (χ.val ξ : ℂ) ≠ 0 := by
+      intro hχξ_zero
+      apply Function.mem_support.mp hξ_supp
+      show hχf ξ = 0
+      dsimp [hχf]
+      rw [SchwartzMap.smulLeftCLM_apply_apply hχ_temp, hχξ_zero, zero_smul]
+    -- Step 2: χ.val ξ ≠ 0 implies infDist ξ (DualConeFlat C) ≤ 1
+    have hdist : Metric.infDist ξ (DualConeFlat C) ≤ 1 := by
+      by_contra h
+      push_neg at h
+      have := χ.support_bound ξ (by linarith)
+      exact hχξ_ne (by simp [this])
+    -- Step 3: Find ξ' ∈ DualConeFlat C with dist ξ ξ' < 2
+    have hne : (DualConeFlat C).Nonempty := ⟨0, zero_mem_dualConeFlat C⟩
+    have hlt : Metric.infDist ξ (DualConeFlat C) < 2 := by linarith
+    obtain ⟨ξ', hξ'_mem, hξ'_dist⟩ := (Metric.infDist_lt_iff hne).mp hlt
+    -- Step 4: Lη ξ = Lη ξ' + Lη (ξ - ξ') ≥ 0 - 2‖Lη‖
+    have hLη_ξ' : 0 ≤ Lη ξ' := by
+      simp only [Lη, etaPairingCLM_apply]
+      exact (mem_dualConeFlat.mp hξ'_mem) η hη
+    have hLη_diff : -Lη (ξ - ξ') ≤ ‖Lη‖ * ‖ξ - ξ'‖ := by
+      have := Lη.le_opNorm (ξ - ξ')
+      rw [Real.norm_eq_abs] at this
+      linarith [le_abs_self (Lη (ξ - ξ')), neg_abs_le (Lη (ξ - ξ'))]
+    have hLη_linear : Lη ξ = Lη ξ' + Lη (ξ - ξ') := by
+      rw [map_sub]; ring
+    have hdist_norm : ‖ξ - ξ'‖ < 2 := by
+      rwa [dist_eq_norm] at hξ'_dist
+    have hLη_bound : ‖Lη‖ * ‖ξ - ξ'‖ ≤ 2 * ‖Lη‖ := by
+      have : ‖ξ - ξ'‖ ≤ 2 := le_of_lt hdist_norm
+      calc ‖Lη‖ * ‖ξ - ξ'‖ ≤ ‖Lη‖ * 2 := by gcongr
+        _ = 2 * ‖Lη‖ := by ring
+    linarith
   obtain ⟨hε, hhε_apply, hhε_tendsto⟩ := schwartz_exp_damping_tendsto hχf Lη hsupp_Lη
   have hΦ_eq_hε : ∀ (ε : ℝ) (hε_pos : 0 < ε), Φ ε = hε ε := by
     intro ε hε_pos

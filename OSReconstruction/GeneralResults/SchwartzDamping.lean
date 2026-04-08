@@ -111,19 +111,96 @@ private lemma decay_exp_mul_schwartz
       ∀ ξ, ‖ξ‖ ^ k * ‖iteratedFDeriv ℝ n
         (fun ξ => exp (-(ε : ℂ) * (L ξ : ℂ)) * h ξ) ξ‖ ≤ C := by
   intro k n
-  -- Proof structure:
-  -- 1. Outside closure(supp h): product vanishes nearby → all derivatives are 0
-  -- 2. Inside closure(supp h): Leibniz + Faa di Bruno + exp bound + Schwartz seminorms
-  --
-  -- The function equals cexp(L' ξ) * h(ξ) where L' = -ε • (ofRealCLM ∘ L) : E →L[ℝ] ℂ.
-  -- By norm_iteratedFDeriv_mul_le (Leibniz):
-  --   ‖D^n[cexp∘L' · h](ξ)‖ ≤ Σ C(n,i) ‖D^i[cexp∘L'](ξ)‖ · ‖D^{n-i}h(ξ)‖
-  -- By norm_iteratedFDeriv_cexp_comp_clm_le (Faa di Bruno):
-  --   ‖D^i[cexp∘L'](ξ)‖ ≤ i! · ‖cexp(L' ξ)‖ · ‖L'‖^i
-  -- On closure(supp h), L ≥ -M ⟹ ‖cexp(L' ξ)‖ = exp(-ε·L(ξ)) ≤ exp(εM).
-  -- By Schwartz decay: ‖ξ‖^k · ‖D^{n-i}h(ξ)‖ ≤ seminorm(k,n-i)(h).
-  -- Total bound: Σ C(n,i) · i! · exp(εM) · ‖L'‖^i · seminorm(k,n-i)(h).
-  sorry
+  -- Define the CLM L' = -ε • (ofRealCLM ∘ L) so that exp(-εL(ξ)) = cexp(L' ξ).
+  let L' : (Fin m → ℝ) →L[ℝ] ℂ := -(ε : ℂ) • (Complex.ofRealCLM.comp L)
+  -- The exponential factor is cexp ∘ L'
+  have hfun_eq : (fun ξ => exp (-(ε : ℂ) * (L ξ : ℂ)) * h ξ) =
+      (fun ξ => cexp (L' ξ) * h ξ) := by
+    ext ξ; simp [L', ContinuousLinearMap.smul_apply, ContinuousLinearMap.comp_apply, smul_eq_mul]
+  rw [hfun_eq]
+  -- Exp is smooth, h is smooth
+  have hexp_smooth : ContDiff ℝ ∞ (fun ξ => cexp (L' ξ)) :=
+    Complex.contDiff_exp.comp L'.contDiff
+  have hh_smooth : ContDiff ℝ ∞ (⇑h) := h.smooth'
+  -- On closure(supp h), ‖cexp(L' ξ)‖ ≤ exp(εM)
+  have hclosure := L_bounded_below_on_closure_support h L M hsupp
+  have hexp_bound : ∀ ξ, ξ ∈ closure (Function.support (⇑h)) →
+      ‖cexp (L' ξ)‖ ≤ Real.exp (ε * M) := by
+    intro ξ hξ
+    rw [Complex.norm_exp]
+    have hLξ := hclosure ξ hξ
+    have : (L' ξ).re = -ε * L ξ := by
+      simp [L', ContinuousLinearMap.smul_apply, ContinuousLinearMap.comp_apply,
+        Complex.ofReal_re, Complex.neg_re, Complex.mul_re, Complex.ofReal_im, mul_zero, sub_zero]
+    rw [this]
+    exact Real.exp_le_exp.mpr (by nlinarith)
+  -- Define the bound as a sum involving Schwartz seminorms
+  let B := ∑ j ∈ Finset.range (n + 1),
+    (n.choose j : ℝ) * (j.factorial : ℝ) * Real.exp (ε * M) *
+      ‖L'‖ ^ j * (SchwartzMap.seminorm ℝ k (n - j) h)
+  refine ⟨max B 0, ?_⟩
+  intro ξ
+  by_cases hξ : ξ ∈ closure (Function.support (⇑h))
+  · -- Case: ξ ∈ closure(supp h)
+    apply (le_max_left B 0).trans'
+    -- Use Leibniz on the two-factor product
+    let e : (Fin m → ℝ) → ℂ := fun ξ => cexp (L' ξ)
+    have hLeib := norm_iteratedFDeriv_mul_le hexp_smooth hh_smooth ξ
+      (show (n : WithTop ℕ∞) ≤ ∞ from WithTop.coe_le_coe.mpr le_top)
+    -- Distribute ‖ξ‖^k into the sum
+    have hstep1 : ‖ξ‖ ^ k * ‖iteratedFDeriv ℝ n (fun x => cexp (L' x) * h x) ξ‖ ≤
+        ‖ξ‖ ^ k * ∑ j ∈ Finset.range (n + 1),
+          (n.choose j : ℝ) * ‖iteratedFDeriv ℝ j e ξ‖ *
+            ‖iteratedFDeriv ℝ (n - j) (⇑h) ξ‖ := by
+      gcongr
+      convert hLeib using 2 <;> rfl
+    have hstep2 : ‖ξ‖ ^ k * ∑ j ∈ Finset.range (n + 1),
+          (n.choose j : ℝ) * ‖iteratedFDeriv ℝ j e ξ‖ *
+            ‖iteratedFDeriv ℝ (n - j) (⇑h) ξ‖ =
+        ∑ j ∈ Finset.range (n + 1),
+          (n.choose j : ℝ) * ‖iteratedFDeriv ℝ j e ξ‖ *
+            (‖ξ‖ ^ k * ‖iteratedFDeriv ℝ (n - j) (⇑h) ξ‖) := by
+      rw [Finset.mul_sum]; congr 1; ext j; ring
+    have hstep3 : ∀ j ∈ Finset.range (n + 1),
+        (n.choose j : ℝ) * ‖iteratedFDeriv ℝ j e ξ‖ *
+          (‖ξ‖ ^ k * ‖iteratedFDeriv ℝ (n - j) (⇑h) ξ‖) ≤
+        (n.choose j : ℝ) * (j.factorial * ‖cexp (L' ξ)‖ * ‖L'‖ ^ j) *
+          (SchwartzMap.seminorm ℝ k (n - j) h) := by
+      intro j _
+      gcongr
+      · exact norm_iteratedFDeriv_cexp_comp_clm_le L' ξ j
+      · exact SchwartzMap.le_seminorm ℝ k (n - j) h ξ
+    have hstep4 : ∀ j ∈ Finset.range (n + 1),
+        (n.choose j : ℝ) * (j.factorial * ‖cexp (L' ξ)‖ * ‖L'‖ ^ j) *
+          (SchwartzMap.seminorm ℝ k (n - j) h) ≤
+        (n.choose j : ℝ) * (j.factorial * Real.exp (ε * M) * ‖L'‖ ^ j) *
+          (SchwartzMap.seminorm ℝ k (n - j) h) := by
+      intro j _
+      gcongr
+      exact hexp_bound ξ hξ
+    calc ‖ξ‖ ^ k * ‖iteratedFDeriv ℝ n (fun ξ => cexp (L' ξ) * h ξ) ξ‖
+        ≤ ‖ξ‖ ^ k * ∑ j ∈ Finset.range (n + 1),
+          (n.choose j : ℝ) * ‖iteratedFDeriv ℝ j e ξ‖ *
+            ‖iteratedFDeriv ℝ (n - j) (⇑h) ξ‖ := hstep1
+      _ = ∑ j ∈ Finset.range (n + 1),
+            (n.choose j : ℝ) * ‖iteratedFDeriv ℝ j e ξ‖ *
+              (‖ξ‖ ^ k * ‖iteratedFDeriv ℝ (n - j) (⇑h) ξ‖) := hstep2
+      _ ≤ ∑ j ∈ Finset.range (n + 1),
+            (n.choose j : ℝ) * (j.factorial * ‖cexp (L' ξ)‖ * ‖L'‖ ^ j) *
+              (SchwartzMap.seminorm ℝ k (n - j) h) := Finset.sum_le_sum hstep3
+      _ ≤ ∑ j ∈ Finset.range (n + 1),
+            (n.choose j : ℝ) * (j.factorial * Real.exp (ε * M) * ‖L'‖ ^ j) *
+              (SchwartzMap.seminorm ℝ k (n - j) h) := Finset.sum_le_sum hstep4
+      _ = B := by dsimp only [B]; congr 1; ext j; ring
+  · -- Case: ξ ∉ closure(supp h)
+    apply (le_max_right B 0).trans'
+    have hzero := expL_mul_h_eventuallyEq_zero h L ε ξ hξ
+    have hfun_eq' : (fun x => cexp (L' x) * h x) =ᶠ[nhds ξ] 0 := by
+      apply hzero.congr
+      filter_upwards with x
+      simp [L', ContinuousLinearMap.smul_apply, ContinuousLinearMap.comp_apply, smul_eq_mul]
+    rw [iteratedFDeriv_eq_zero_of_eventuallyEq_zero hfun_eq' n]
+    simp
 
 /-! ### Construction of the Schwartz family h_ε -/
 
