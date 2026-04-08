@@ -3251,7 +3251,7 @@ theorem fourierLaplaceExtMultiDim_boundaryValue
     -- L(x) := lim_{ε→0+} F(x+iεη) exists for each x.
     have hpart1 : ∀ x, ∃ Lx, Filter.Tendsto (fun ε => g ε x)
         (nhdsWithin 0 (Set.Ioi 0)) (nhds Lx) := by
-      sorry -- provable: equicontinuity + completeness of ℂ
+      sorry -- provable: Cauchy from seminorm_difference_bound + T.continuous
     choose L hL using hpart1
     -- Part 2: Polynomial dominator on 0 < ε ≤ 1
     -- From fourierLaplaceExtMultiDim_vladimirov_growth: |F(x+iεη)| ≤ C(1+‖x‖)^N
