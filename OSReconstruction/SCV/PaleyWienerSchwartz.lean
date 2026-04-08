@@ -3236,11 +3236,47 @@ theorem scalar_dct_schwartz_pairing {m : ℕ}
       (norm_nonneg _)
   · -- Integrability of bound
     -- C * (1+‖x‖)^N * ‖f x‖ is integrable: poly × Schwartz
-    have hf_int := f.integrable_pow_mul MeasureTheory.volume N
-    -- hf_int : Integrable (fun x => ‖x‖^N * ‖f x‖)
-    -- Need: Integrable (fun x => C_bd * (1+‖x‖)^N * ‖f x‖)
-    -- (1+‖x‖)^N ≤ 2^N * (1 + ‖x‖^N) by binomial bound
-    sorry -- integrability plumbing: (1+‖x‖)^N * ‖f x‖ from ‖x‖^N * ‖f x‖
+    have h_norm_int : MeasureTheory.Integrable (fun x : Fin m → ℝ => ‖f x‖) := by
+      simpa only [pow_zero, one_mul] using
+        (f.integrable_pow_mul MeasureTheory.MeasureSpace.volume 0)
+    have h_pow_int : MeasureTheory.Integrable
+        (fun x : Fin m → ℝ => ‖x‖ ^ N * ‖f x‖) :=
+      f.integrable_pow_mul MeasureTheory.MeasureSpace.volume N
+    have h_sum : MeasureTheory.Integrable
+        (fun x : Fin m → ℝ => (2 : ℝ) ^ N * (‖f x‖ + ‖x‖ ^ N * ‖f x‖)) :=
+      (h_norm_int.add h_pow_int).const_mul _
+    have h_bound :
+        ∀ x : Fin m → ℝ,
+          ‖(1 + ‖x‖) ^ N * ‖f x‖‖ ≤
+            (2 : ℝ) ^ N * (‖f x‖ + ‖x‖ ^ N * ‖f x‖) := by
+      intro x
+      rw [Real.norm_of_nonneg (mul_nonneg (pow_nonneg (by positivity) N) (norm_nonneg _))]
+      have h1 : (1 + ‖x‖) ^ N ≤ (2 : ℝ) ^ N * (1 + ‖x‖ ^ N) := by
+        calc
+          (1 + ‖x‖) ^ N ≤ (2 * max 1 ‖x‖) ^ N := by
+            apply pow_le_pow_left₀ (by positivity)
+            calc
+              1 + ‖x‖ ≤ max 1 ‖x‖ + max 1 ‖x‖ :=
+                add_le_add (le_max_left 1 ‖x‖) (le_max_right 1 ‖x‖)
+              _ = 2 * max 1 ‖x‖ := by ring
+          _ = 2 ^ N * (max 1 ‖x‖) ^ N := by rw [mul_pow]
+          _ ≤ 2 ^ N * (1 + ‖x‖ ^ N) := by
+              apply mul_le_mul_of_nonneg_left _ (by positivity)
+              by_cases h : (1 : ℝ) ≤ ‖x‖
+              · simp [max_eq_right h]
+              · push_neg at h
+                simp [max_eq_left h.le]
+      calc
+        (1 + ‖x‖) ^ N * ‖f x‖ ≤ (2 : ℝ) ^ N * (1 + ‖x‖ ^ N) * ‖f x‖ := by
+          exact mul_le_mul_of_nonneg_right h1 (norm_nonneg _)
+        _ = (2 : ℝ) ^ N * (‖f x‖ + ‖x‖ ^ N * ‖f x‖) := by ring
+    have h_poly_int : MeasureTheory.Integrable
+        (fun x : Fin m → ℝ => (1 + ‖x‖) ^ N * ‖f x‖) := by
+      exact h_sum.mono'
+        ((((continuous_const.add continuous_norm).pow N).mul f.continuous.norm).aestronglyMeasurable)
+        (Filter.Eventually.of_forall h_bound)
+    exact (h_poly_int.const_mul C_bd).congr <| ae_of_all _ fun x => by
+      ring
   · -- Pointwise convergence
     filter_upwards with x
     exact (hconv x).mul_const (f x)
