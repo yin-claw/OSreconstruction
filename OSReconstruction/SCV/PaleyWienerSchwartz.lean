@@ -3245,17 +3245,31 @@ theorem fourierLaplaceExtMultiDim_boundaryValue
           ∀ (ε : ℝ), 0 < ε → ε ≤ 1 → ∀ (x : Fin m → ℝ),
             ‖g ε x‖ ≤ C_bd * (1 + ‖x‖) ^ N) ∧
         (∫ x : Fin m → ℝ, L x * f x = T (physicsFourierFlatCLM f)) := by
-    -- This is the remaining boundary package:
-    -- 1. pointwise convergence of `F(x + i ε η)` to a scalar boundary trace `L x`,
-    -- 2. a polynomial dominator on the fixed ray `0 < ε ≤ 1`,
-    -- 3. identification of the boundary pairing with `T (physicsFourierFlatCLM f)`.
-    --
-    -- The new scalar DCT axiom below then finishes the theorem.
-    --
-    -- The last clause is the Fourier-support identification step:
-    -- `T` only sees the dual-cone-supported part of the cutoff kernel, where `χ = 1`,
-    -- so the real-edge kernel integrates to the physics-convention Fourier transform.
-    sorry
+    -- Part 1: Pointwise convergence F(x+iεη) → L(x) as ε→0+
+    -- F(z) = T(ψ_z), and ψ_{x+iεη} → ψ_{x+i0η} in Schwartz seminorms
+    -- (from multiDimPsiZ_seminorm_difference_bound). T.continuous gives convergence.
+    -- L(x) := lim_{ε→0+} F(x+iεη) exists for each x.
+    have hpart1 : ∀ x, ∃ Lx, Filter.Tendsto (fun ε => g ε x)
+        (nhdsWithin 0 (Set.Ioi 0)) (nhds Lx) := by
+      sorry -- provable: equicontinuity + completeness of ℂ
+    choose L hL using hpart1
+    -- Part 2: Polynomial dominator on 0 < ε ≤ 1
+    -- From fourierLaplaceExtMultiDim_vladimirov_growth: |F(x+iεη)| ≤ C(1+‖x‖)^N
+    -- with C depending on η but not on x or ε (for ε in [δ, 1]).
+    -- The cone-scaling dist(εη, ∂C) ≥ ε·dist(η, ∂C) keeps the bound uniform.
+    have hpart2 : ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+        ∀ (ε : ℝ), 0 < ε → ε ≤ 1 → ∀ (x : Fin m → ℝ),
+          ‖g ε x‖ ≤ C_bd * (1 + ‖x‖) ^ N := by
+      sorry -- provable: Vladimirov growth + cone scaling of infDist
+    -- Part 3: Identification ∫ L(x) f(x) dx = T(physicsFourierFlatCLM f)
+    -- This is the Fourier-Laplace representation identity:
+    -- ∫ (lim T(ψ_{x+iεη})) f(x) dx = T(FT_phys(f))
+    -- Uses: T has Fourier support in C*, χ=1 on C*, so
+    -- T(ψ_x) = T(exp(ix·ξ)) and x-integration gives the physics FT.
+    -- Ref: Vladimirov, Thm 25.5.
+    have hpart3 : ∫ x, L x * f x = T (physicsFourierFlatCLM f) := by
+      sorry -- Fourier-Laplace representation identity (Vladimirov Thm 25.5)
+    exact ⟨L, hL, hpart2, hpart3⟩
   rcases hboundary_pkg with ⟨L, hconv, hdom, hId⟩
   rw [← hId]
   exact scalar_dct_schwartz_pairing g L hconv hdom f
