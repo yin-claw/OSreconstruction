@@ -20,15 +20,15 @@ subcones of C, with an explicit inverse-power singularity at the cone boundary.
 
 ## Status
 
-This is stated as an axiom. The proof requires:
-1. The structure theorem for tempered distributions
-2. Fourier support in the dual cone from the boundary value convergence
-3. The Fourier-Laplace representation F(z) = ∫_{C*} Ŵ(p) e^{iz·p} dp
-4. Growth estimates from the Laplace integral over the dual cone
+`vladimirov_tillmann` is a **theorem** (0 sorrys), proved from:
+1. `bv_implies_fourier_support` (axiom): BV → Fourier support in dual cone
+2. `fl_representation_from_bv` (axiom): F = FL extension on the tube
+3. `fourierLaplaceExtMultiDim_vladimirov_growth` (proved in PaleyWienerSchwartz.lean):
+   growth bound on the FL extension
 
-These are standard results (Vladimirov, "Methods of the Theory of Generalized
-Functions", Theorem 14.1 and §25) but require substantial Lean infrastructure
-in the SCV library (~800 lines).
+The 4 bridge axioms (`bv_implies_fourier_support`, `tube_holomorphic_unique_from_bv`,
+`fl_representation_from_bv`, `schwartz_clm_fubini_exchange`) are textbook SCV/FA
+results requiring Poisson integral infrastructure not yet in Mathlib.
 
 ## References
 
