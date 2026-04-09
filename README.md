@@ -60,11 +60,23 @@ Use the repo docs in the following order.
      `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean`.
      The checked ownership split is now explicit:
      `OSToWightmanPositivity.lean` owns the theorem-3 implementation seam and
-     currently exports the checked-present support surfaces
-     `identity_theorem_right_halfplane`,
-     `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single`,
-     `positiveTimeBorchersVector_dense`, and
-     `euclideanPositiveTimeSingleVector`;
+     currently exports checked-present support families that must be read in
+     first-consumer order, not source-line order: the scalar Stage-A entry pair
+     `identity_theorem_right_halfplane` (`:48`) and
+     `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` (`:110`), used
+     only on the entry seam `os1TransportOneVar ->
+     os1TransportOneVar_eq_zero_iff`; then the checked general Hilbert
+     target/equality package `positiveTimeBorchersVector` (`:1461`),
+     `positiveTimeBorchersVector_inner_eq` (`:1467`), and
+     `positiveTimeBorchersVector_norm_sq_eq` (`:1480`), first entering only at
+     `bvt_transport_to_osHilbert_onImage`; then the checked density theorem
+     `positiveTimeBorchersVector_dense` (`:1506`), first entering only at
+     `bvt_W_positive_of_transportImage_density`; and only downstream of that
+     primitive closure lane the later single-component specialization
+     `euclideanPositiveTimeSingleVector` (`:1523`) together with
+     `euclideanPositiveTimeSingleVector_norm_sq_eq` (`:1530`). So these are
+     not a flat reusable support bag, and the single-component wrapper must not
+     be read as the primitive Stage-C target.
      `OSToWightmanBoundaryValueLimits.lean` owns only the checked
      `singleSplit_xiShift` holomorphic / `t -> 0+` limit-support layer;
      `OSToWightmanBoundaryValues.lean` owns only the exported frontier shell
@@ -435,34 +447,51 @@ Current blocker map:
   the private theorem
   `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean :: bvt_W_positive`
   is the exported wrapper, not the implementation locus. The checked theorem-3
-  file split should now be read literally and in execution order:
+  file split should now be read literally and with first-consumer restrictions,
+  not as one flat list of support names:
   - `.../OSToWightmanPositivity.lean` = Packages A-B plus the live Section-4.3
-    implementation locus, currently with checked support surfaces
-    `identity_theorem_right_halfplane`
-    -> `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single`
-    -> `positiveTimeBorchersVector_dense`
-    -> `euclideanPositiveTimeSingleVector`, followed by the still-planned
-    Section-4.3 slot chain
+    implementation locus. The currently checked support anchors are
+    `identity_theorem_right_halfplane` (`:48`) and
+    `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` (`:110`), and they
+    are first consumed only on the Stage-A lane
+    `os1TransportOneVar -> os1TransportOneVar_eq_zero_iff`. The checked
+    general Hilbert-target anchors are `positiveTimeBorchersVector` (`:1461`),
+    `positiveTimeBorchersVector_inner_eq` (`:1467`), and
+    `positiveTimeBorchersVector_norm_sq_eq` (`:1480`), first consumed only by
+    `bvt_transport_to_osHilbert_onImage`; the later single-component
+    specialization `euclideanPositiveTimeSingleVector` (`:1523`) with norm
+    supplier `euclideanPositiveTimeSingleVector_norm_sq_eq` (`:1530`) is
+    downstream of that Stage-C transport map rather than its primitive target;
+    `positiveTimeBorchersVector_dense` (`:1506`) is first consumed only by
+    `bvt_W_positive_of_transportImage_density`. Above those frozen supplier
+    entry points, the still-planned Section-4.3 slot chain is
     `os1TransportOneVar`
     -> `os1TransportOneVar_eq_zero_iff`
     -> `os1TransportComponent`
     -> `os1TransportComponent_eq_zero_iff`
     -> `BvtTransportImageSequence`
+    -> `bvt_transport_to_osHilbert_onImage_wellDefined`
     -> `bvt_transport_to_osHilbert_onImage`
     -> `lemma42_matrix_element_time_interchange`
     -> `bvt_wightmanInner_eq_transport_norm_sq_onImage`
     -> `bvt_W_positive_of_transportImage_density`;
   - `.../OSToWightmanBoundaryValueLimits.lean` = checked theorem-3 supplier
     layer only, namely the `singleSplit_xiShift` scalar holomorphic object and
-    its `t -> 0+` limit transfer theorems consumed by the Section-4.3 package;
+    its `t -> 0+` limit transfer theorems consumed first by
+    `os1TransportOneVar` / `os1TransportOneVar_eq_zero_iff`; no later theorem-3
+    slot may bypass that supplier layer with an unnamed uniqueness argument;
   - `.../OSToWightmanBoundaryValues.lean` = exported frontier shell
     `bvt_W_positive` plus downstream wrappers/consumers only.
   The contract is now sharper than a generic “transport-image positivity”
-  slogan: on-image well-definedness must close through the explicit degreewise
-  kernel-zero theorem `os1TransportComponent_eq_zero_iff`, and the quadratic
-  identity may only be proved after the concrete Lemma-4.2 adapter
-  `lemma42_matrix_element_time_interchange`; dense-range statements remain
-  quotient-side paper-faithfulness results, not active positivity-closing slots.
+  slogan: on-image well-definedness is its own theorem slot
+  `bvt_transport_to_osHilbert_onImage_wellDefined`, and that slot must close
+  through the explicit degreewise kernel-zero theorems
+  `os1TransportOneVar_eq_zero_iff` and `os1TransportComponent_eq_zero_iff`
+  before the transport map `bvt_transport_to_osHilbert_onImage` is even formed;
+  the quadratic identity may only be proved after the concrete Lemma-4.2
+  adapter `lemma42_matrix_element_time_interchange`; dense-range statements
+  remain quotient-side paper-faithfulness results, not active
+  positivity-closing slots.
   Source-check caution against the current tree: the exact theorem-3 package
   still needs to be read from the theorem-3 blueprint rather than inferred from
   README theorem names, because the fully split Section-4.3 transport-image
@@ -474,9 +503,9 @@ Current blocker map:
   corrected bridge / public canonical-shell adapter package sits between those
   reductions and the final private wrapper
   `OSToWightmanBoundaryValues.lean :: bvt_F_clusterCanonicalEventually_translate`.
-  The theorem-4 implementation contract is now fixed slot-by-slot:
-  - `OSToWightmanPositivity.lean` is the designated owner of the theorem-3-
-    consumer bookkeeping and one-factor transport extraction package
+  The theorem-4 implementation contract is now fixed as an execution ledger:
+  - `OSToWightmanPositivity.lean` owns the theorem-3-consumer bookkeeping and
+    one-factor transport extraction package
     `normalizedZeroDegreeRightVector`
     -> `normalizedZeroDegreeRightVector_bound` / `..._funcs_zero` /
        `..._funcs_pos`
@@ -484,18 +513,42 @@ Current blocker map:
     -> `zeroDegree_right_single_os_extracts_factor`
     -> `zero_degree_component_comparison_for_normalized_right_vector`
     -> `cluster_left_factor_transport`
-    -> `cluster_right_factor_transport`,
-    but a direct source check shows those names are still planned theorem slots
-    rather than checked-present helpers in the current file;
+    -> `cluster_right_factor_transport`.
+    The right-factor lane is now fixed more sharply too: it must **reuse** the
+    same normalized degree-`0` witness package via the definitional alias
+    `normalizedZeroDegreeLeftVector d := normalizedZeroDegreeRightVector d`,
+    and the Lean execution transcript is now frozen explicitly:
+    (1) instantiate the same degree-`0` witness on the left by definitional
+    equality only,
+    (2) import no new normalization lemmas beyond the already-landed
+    `normalizedZeroDegreeRightVector_bound` / `..._funcs_zero` /
+    `..._funcs_pos`,
+    (3) switch only the checked right-single supplier surfaces
+    `WightmanInnerProduct_right_single` and `OSInnerProduct_right_single` into
+    the theorem-4 packaging slots
+    `zeroDegree_right_single_wightman_extracts_factor` and
+    `zeroDegree_right_single_os_extracts_factor`,
+    (4) consume the same theorem-4-specific comparison slot
+    `zero_degree_component_comparison_for_normalized_right_vector`, and only
+    then
+    (5) close `cluster_right_factor_transport`.
+    Later Lean work is not allowed to invent a second "left normalization"
+    package, hide extra normalization constants inside
+    `cluster_right_factor_transport`, or reprove a fresh opposite-side
+    right-single identity there.
+    Source-check note: these are still planned theorem slots rather than
+    checked-present helpers in the current file.
   - `OSToWightmanBoundaryValuesBase.lean` owns the repaired positive-time
-    bridge and only that bridge layer:
+    bridge only:
     `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison`
-    -> `bvt_cluster_positiveTime_singleSplit_core`;
-    source-check note: the checked file currently contains the legacy base
-    reductions `...singleSplitLargeSpatial`,
-    `...singleSplitSchwingerLargeSpatial`, and legacy
-    `...singleSplitFactorComparison`, but not yet the corrected transport-input
-    replacement theorem under that new name;
+    -> `bvt_cluster_positiveTime_singleSplit_core`.
+    Source-check note: the checked file currently contains the legacy base
+    reductions at exact anchors
+    `:2214 :: bvt_F_clusterCanonicalEventually_translate_of_singleSplitLargeSpatial`,
+    `:2352 :: bvt_F_clusterCanonicalEventually_translate_of_singleSplitSchwingerLargeSpatial`,
+    and `:2514 :: bvt_F_clusterCanonicalEventually_translate_of_singleSplitFactorComparison`,
+    but not yet the corrected transport-input replacement theorem under that
+    new name.
   - `OSToWightmanBoundaryValues.lean` owns the public canonical-shell adapter
     and final frontier wrapper in the strict forward order
     `canonical_cluster_integrand_eq_singleSplit_integrand`
@@ -504,12 +557,62 @@ Current blocker map:
     -> `canonical_shell_limit_of_rewrite`
     -> `bvt_cluster_canonical_from_positiveTime_core`
     -> `bvt_F_clusterCanonicalEventually_translate`.
+    The limit-transport slot is no longer allowed to hide its internal order:
+    `canonical_shell_limit_of_rewrite` must run as
+    positive-real identification by
+    `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq`
+    -> optional right-half-plane uniqueness via
+    `differentiableOn_bvt_singleSplit_xiShiftHolomorphicValue` and
+    `bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq`
+    -> final Wightman-target limit transport by
+    `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`.
+    The Schwinger-target theorems
+    `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq_schwinger_timeShift`
+    and
+    `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger`
+    are lower supplier legs only, and the deprecated bridge
+    `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`
+    is forbidden in theorem 4.
     Source-check note: the checked file currently exposes only the final
-    theorem-4 consumer shell (`bv_cluster_transfer_of_canonical_eventually`,
-    private `bvt_F_clusterCanonicalEventually_translate`, private
-    `bvt_F_clusterCanonicalEventually`, private `bvt_W_cluster`), so the
-    named adapter package above the final wrapper is still planned support work,
-    not already-landed code.
+    theorem-4 consumer shell at exact anchors
+    `:27 :: bv_cluster_transfer_of_canonical_eventually`,
+    `:398 :: private bvt_F_clusterCanonicalEventually_translate`,
+    `:414 :: private bvt_F_clusterCanonicalEventually`, and
+    `:473 :: private bvt_W_cluster`, so the named adapter package above the
+    final wrapper is still planned support work, not already-landed code.
+  The intended owner / consumes / exports / next-consumer order is now:
+  `normalizedZeroDegreeRightVector`
+  -> structural degree-`0` lemmas
+  -> right-single Wightman/OS extraction lemmas
+  -> zero-degree component comparison
+  -> `cluster_left_factor_transport` / `cluster_right_factor_transport`
+  -> `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison`
+  -> `bvt_cluster_positiveTime_singleSplit_core`
+  -> `canonical_cluster_integrand_eq_singleSplit_integrand`
+  -> `canonical_translate_factor_eq_singleSplit_translate_factor`
+  -> `singleSplit_core_rewrites_to_canonical_shell`
+  -> `canonical_shell_limit_of_rewrite`
+  -> `bvt_cluster_canonical_from_positiveTime_core`
+  -> final private `bvt_F_clusterCanonicalEventually_translate`.
+  Source-check refinement on the first extraction pair: theorem 4 owns the
+  planned slots `zeroDegree_right_single_wightman_extracts_factor` and
+  `zeroDegree_right_single_os_extracts_factor` inside
+  `OSToWightmanPositivity.lean`, but the checked supplier theorems they must
+  consume already live in
+  `OSReconstruction/Wightman/Reconstruction/Core.lean ::
+  WightmanInnerProduct_right_single` and
+  `OSReconstruction/Wightman/Reconstruction/SchwingerOS.lean ::
+  OSInnerProduct_right_single`. So the first theorem-4 implementation step is
+  packaging those checked right-single surfaces against the new degree-`0`
+  witness package, not proving fresh right-single identities inside the
+  positivity file. Dually, the right-factor step is not permission to derive a
+  second normalization witness for the opposite side: the exact contract is
+  "reuse the same degree-`0` package by definitional alias, import no new
+  structural lemmas, package only the checked suppliers
+  `WightmanInnerProduct_right_single` / `OSInnerProduct_right_single` into the
+  right-side extraction slots, then consume
+  `zero_degree_component_comparison_for_normalized_right_vector` on the
+  right-input lane before `cluster_right_factor_transport` is even stated."
   Two anti-drift rules are now part of the README contract too:
   1. the legacy theorem
      `bvt_F_clusterCanonicalEventually_translate_of_singleSplitFactorComparison`
@@ -738,7 +841,7 @@ flowchart TD
 | `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` | 2 actual holes + quarantined reverse-positivity wrapper | the two live `sorry`s are `schwingerExtension_os_term_eq_wightman_term` and `W_analytic_cluster_integral`; the file also contains the routed-but-not-yet-trusted reverse positivity wrapper `wickRotatedBoundaryPairing_reflection_positive`, which is source-checked as quarantined because it still depends on the false OS=`Wightman` chain, while `W_analytic_cluster_integral` is source-checked as a live common-BHW / full-`SchwartzNPoint` cluster supplier rather than the final `ZeroDiagonalSchwartz` `E4_cluster` witness; the same file also contains the non-`sorry` analytic reality input `bhw_euclidean_reality_ae` that later packaging still depends on |
 | `Wightman/Reconstruction/WickRotation/OSToWightmanSemigroup.lean` | 0 | OS semigroup, spectral/Laplace bridge, one-variable holomorphic infrastructure |
 | `Wightman/Reconstruction/WickRotation/OSToWightman.lean` | 2 | upstream root continuation blocker: `schwinger_continuation_base_step` |
-| `Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean` | 4 | theorem-3 support file: checked-present A/B + Hilbert-density support (`identity_theorem_right_halfplane`, `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single`, `positiveTimeBorchersVector_dense`, `euclideanPositiveTimeSingleVector`) plus the still-missing Section-4.3 transport/closure block documented in the theorem-3 blueprint, with frozen execution order `os1TransportOneVar -> os1TransportOneVar_eq_zero_iff -> os1TransportComponent -> os1TransportComponent_eq_zero_iff -> BvtTransportImageSequence -> bvt_transport_to_osHilbert_onImage -> lemma42_matrix_element_time_interchange -> bvt_wightmanInner_eq_transport_norm_sq_onImage -> bvt_W_positive_of_transportImage_density` |
+| `Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean` | 4 | theorem-3 support file: checked-present support is now frozen by first-consumer family rather than by a flat repo-state slogan. The scalar Stage-A entry pair is `identity_theorem_right_halfplane` (`:48`) and `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` (`:110`), first consumed only by `os1TransportOneVar` then `os1TransportOneVar_eq_zero_iff`; the checked general Hilbert target/equality package is `positiveTimeBorchersVector` (`:1461`) with `positiveTimeBorchersVector_inner_eq` (`:1467`) and `positiveTimeBorchersVector_norm_sq_eq` (`:1480`), first consumed only by `bvt_transport_to_osHilbert_onImage`; the later wrapper `euclideanPositiveTimeSingleVector` (`:1523`) with `euclideanPositiveTimeSingleVector_norm_sq_eq` (`:1530`) is downstream specialization only; and the density theorem is `positiveTimeBorchersVector_dense` (`:1506`), first consumed only by `bvt_W_positive_of_transportImage_density`. Above those checked entry points the still-missing Section-4.3 transport/closure block remains the frozen execution order `os1TransportOneVar -> os1TransportOneVar_eq_zero_iff -> os1TransportComponent -> os1TransportComponent_eq_zero_iff -> BvtTransportImageSequence -> bvt_transport_to_osHilbert_onImage_wellDefined -> bvt_transport_to_osHilbert_onImage -> lemma42_matrix_element_time_interchange -> bvt_wightmanInner_eq_transport_norm_sq_onImage -> bvt_W_positive_of_transportImage_density` |
 | `Wightman/Reconstruction/WickRotation/K2VI1/Frontier.lean` | 3 | residual/support frontier from the earlier split `k = 2` route; not the canonical theorem-2/3/4 blocker ledger |
 | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | 7 | exported wrappers, tempered boundary values, transfer chain, cluster |
 | `SCV/LaplaceSchwartz.lean` | 0 | generic tempered boundary-value lemmas extracted |

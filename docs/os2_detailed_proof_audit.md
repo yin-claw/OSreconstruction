@@ -1770,41 +1770,29 @@ Hilbert transport stage.
 
 The missing theorem package should be read as follows.
 
-Stage A: one-variable supplier/transport lane
-- input: the one-variable common kernel supplied by the strengthened `K2VI1` /
-  `InputA*` package, together with the checked theorem-3 `singleSplit_xiShift`
-  positive-real / `t -> 0+` support package;
-- consume, in order, the checked SCV supplier chain
-  `partialFourierSpatial_fun`
-  -> `partialFourierSpatial_timeSliceSchwartz`
-  -> `partialFourierSpatial_timeSlice_hasPaleyWienerExtension`
-  -> `partialFourierSpatial_timeSliceCanonicalExtension`;
-- export the theorem slots `os1TransportOneVar` and
-  `os1TransportOneVar_eq_zero_iff`.
+| Stage / slot | Ownership | Consumes | Exports | Next allowed consumer |
+|---|---|---|---|---|
+| `identity_theorem_right_halfplane` | `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean:48` | checked scalar-holomorphic setup already present in the file | right-half-plane identity theorem for the theorem-3 one-variable scalar holomorphic object | `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` only |
+| `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` | `.../OSToWightmanPositivity.lean:110` | checked scalar holomorphic traces plus `identity_theorem_right_halfplane` | equality of the theorem-3 scalar holomorphic objects on `{Re z > 0}` for compact positive-time single/single data | theorem-3 `singleSplit_xiShift` support layer only |
+| theorem-3 `singleSplit_xiShift` support layer | `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | the checked scalar holomorphic trace, positive-real identification theorems, and `t -> 0+` limit-transfer theorems | the only one-variable boundary/limit facts the Section-4.3 package may consume | `os1TransportOneVar` first, then `os1TransportOneVar_eq_zero_iff`; no later slot may bypass this Stage-A export route |
+| Stage A — `os1TransportOneVar` | `.../OSToWightmanPositivity.lean` | the one-variable common kernel supplied by the strengthened `K2VI1` / `InputA*` package; the checked `singleSplit_xiShift` support layer; and the checked SCV supplier chain `partialFourierSpatial_fun -> partialFourierSpatial_timeSliceSchwartz -> partialFourierSpatial_timeSlice_hasPaleyWienerExtension -> partialFourierSpatial_timeSliceCanonicalExtension` | one-variable Section-4.3 transport map on the corrected half-space codomain | `os1TransportOneVar_eq_zero_iff`, `os1TransportComponent` |
+| Stage A — `os1TransportOneVar_eq_zero_iff` | same file | `os1TransportOneVar` together with the positive-half-line boundary-value uniqueness input; the checked scalar suppliers `:48` / `:110` may be reused here and nowhere earlier/later outside the exported Stage-A package | one-variable kernel-zero theorem | `os1TransportComponent`, `bvt_transport_to_osHilbert_onImage_wellDefined` |
+| Stage B — `os1TransportComponent` | same file | Stage-A transport package plus the explicit Section-4.3 Fourier-Laplace formula `(4.19)`-`(4.20)` | degreewise transformed-image transport map | `os1TransportComponent_eq_zero_iff`, `BvtTransportImageSequence` |
+| Stage B — `os1TransportComponent_eq_zero_iff` | same file | `os1TransportComponent` | degreewise kernel-zero theorem | `BvtTransportImageSequence`, `bvt_transport_to_osHilbert_onImage_wellDefined` |
+| Stage B — `BvtTransportImageSequence` | same file | `os1TransportComponent` | bundled transformed-image core on which the quadratic identity is proved | `bvt_transport_to_osHilbert_onImage_wellDefined` only; the quadratic-identity lane may reuse this object again only downstream of the transport-map theorem |
+| `positiveTimeBorchersVector` + `positiveTimeBorchersVector_inner_eq` + `positiveTimeBorchersVector_norm_sq_eq` | `.../OSToWightmanPositivity.lean:1461` / `:1467` / `:1480` | checked positive-time Hilbert-space support infrastructure already present in the file | the general OS Hilbert target for arbitrary positive-time Borchers data, together with its first checked inner/norm equalities | `bvt_transport_to_osHilbert_onImage` first; no Stage-A/B slot may consume this package |
+| `euclideanPositiveTimeSingleVector` + `euclideanPositiveTimeSingleVector_norm_sq_eq` | `.../OSToWightmanPositivity.lean:1523` / `:1530` | the same checked positive-time Hilbert-space support layer, but now explicitly downstream of the general target/equality package | single-component specialization of `positiveTimeBorchersVector` and its norm identity | later Stage-C single-component specializations only; this package must not be documented as the primitive transport target |
+| Stage C — `bvt_transport_to_osHilbert_onImage_wellDefined` | `.../OSToWightmanPositivity.lean` | `BvtTransportImageSequence`, degreewise representative choice, difference of two chosen preimage families, then kernel-zero consumption in the strict order `os1TransportOneVar_eq_zero_iff -> os1TransportComponent_eq_zero_iff` | proof that the OS-Hilbert transport value is independent of the chosen transformed-image preimage | `bvt_transport_to_osHilbert_onImage` |
+| Stage C — `bvt_transport_to_osHilbert_onImage` | same file | `BvtTransportImageSequence`, `bvt_transport_to_osHilbert_onImage_wellDefined`, and the checked general Hilbert target/equality package `positiveTimeBorchersVector` / `positiveTimeBorchersVector_inner_eq` / `positiveTimeBorchersVector_norm_sq_eq` first entering exactly here | on-image OS-Hilbert transport map landing first in the general positive-time Borchers Hilbert target for theorem 3 | `lemma42_matrix_element_time_interchange` first, then `bvt_wightmanInner_eq_transport_norm_sq_onImage`; later rows may not bypass this map and consume representative data directly, and single-component wrappers may enter only downstream as specializations |
+| Stage C — `lemma42_matrix_element_time_interchange` | same file | `bvt_transport_to_osHilbert_onImage`, transformed-image data, and the OS-II-repaired continuation kernel inputs | Lemma-4.2 matrix-element interchange seam | `bvt_wightmanInner_eq_transport_norm_sq_onImage` |
+| Stage C — `bvt_wightmanInner_eq_transport_norm_sq_onImage` | same file | `bvt_transport_to_osHilbert_onImage_wellDefined` to freeze one representative family first, then `bvt_transport_to_osHilbert_onImage`, then `lemma42_matrix_element_time_interchange`, and only then the repaired OS-II-backed `bvt_F` / `bvt_W` norm-square recognition route via the checked general equality `positiveTimeBorchersVector_norm_sq_eq` on the actual transport target | on-image quadratic identity | `bvt_W_positive_of_transportImage_density` |
+| `positiveTimeBorchersVector_dense` | `.../OSToWightmanPositivity.lean:1506` | checked positive-time Hilbert-space completion infrastructure already present in the file | density of positive-time vectors in `OSHilbertSpace OS` | `bvt_W_positive_of_transportImage_density` only |
+| Stage C — `bvt_W_positive_of_transportImage_density` | same file | `bvt_wightmanInner_eq_transport_norm_sq_onImage`, `positiveTimeBorchersVector_dense`, and the Hilbert-side bounded finite-support continuity closure step | implementation-side arbitrary-sequence positivity theorem | exported wrapper `OSToWightmanBoundaryValues.lean :: bvt_W_positive` only |
 
-Stage B: degreewise transformed-image lane
-- input: the Stage-A one-variable transport package plus the explicit Section
-  4.3 Fourier-Laplace formula `(4.19)`-`(4.20)`;
-- export the degreewise transformed-image slots `os1TransportComponent` and
-  `os1TransportComponent_eq_zero_iff`, then the bundled image object
-  `BvtTransportImageSequence`.
-
-Stage C: on-image Hilbert transport / quadratic identity lane
-- input: `BvtTransportImageSequence`, the existing OS-Hilbert construction,
-  and the repaired OS-II-backed `bvt_F` / `bvt_W` continuation kernel route;
-- define `bvt_transport_to_osHilbert_onImage` on image data only, with the
-  well-definedness proof required to consume the explicit kernel-zero theorem
-  `os1TransportComponent_eq_zero_iff` rather than an unnamed injectivity
-  slogan;
-- insert the separate Lemma-4.2 adapter slot
-  `lemma42_matrix_element_time_interchange` between the on-image transport map
-  and the quadratic-identity theorem, so the docs no longer leave later Lean
-  work to guess where the matrix-element interchange is proved;
-- then prove `bvt_wightmanInner_eq_transport_norm_sq_onImage` on the image core
-  and close arbitrary-sequence positivity only afterward via the separate
-  density theorem `bvt_W_positive_of_transportImage_density`, with
-  `OSToWightmanBoundaryValues.lean :: bvt_W_positive` treated only as the
-  exported frontier wrapper above that implementation-side closure theorem.
+In words:
+- Stage A is the one-variable supplier/transport lane. Its scalar entry seam is frozen as `identity_theorem_right_halfplane -> bvt_xiShift_eq_osInnerProduct_holomorphicValue_single -> singleSplit_xiShift` support layer -> `os1TransportOneVar -> os1TransportOneVar_eq_zero_iff`.
+- Stage B is the degreewise transformed-image lane. It may consume only the exported Stage-A package plus the explicit Fourier-Laplace formula `(4.19)`-`(4.20)`.
+- Stage C is the on-image Hilbert transport / quadratic identity lane. It must first prove `bvt_transport_to_osHilbert_onImage_wellDefined`, then define `bvt_transport_to_osHilbert_onImage` landing in the checked general Hilbert target `positiveTimeBorchersVector` rather than the later single-component wrapper, then insert the separate Lemma-4.2 slot `lemma42_matrix_element_time_interchange`, and only after that recognize the norm square through the checked general theorem `positiveTimeBorchersVector_norm_sq_eq` and prove the quadratic identity before the final density closure theorem.
 
 So the exact theorem-3 ambiguity to avoid is now sharper:
 - do **not** treat the missing work as merely "show two kernels agree locally";
@@ -1833,8 +1821,9 @@ Unacceptable proof shapes:
 - generic contour-shift slogans with unchanged test function,
 - direct operator equalities `e^{-tH} = e^{itH}` or similar circular rewrites,
 - further reduction lemmas that merely rename the same missing bridge,
-- any proof sketch that leaves unclear where the one-variable stage ends, where
-  kernel-zero is proved, or what theorem justifies the on-image transport map.
+- any proof sketch that leaves unclear where the one-variable stage ends,
+  where `bvt_transport_to_osHilbert_onImage_wellDefined` is proved, where
+  kernel-zero is consumed, or what theorem justifies the on-image transport map.
 
 ## 14. Recommended Operational Use
 

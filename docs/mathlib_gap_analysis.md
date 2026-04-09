@@ -273,12 +273,15 @@ Important current-status clarification:
 
 1. the old Package-C / `hschw` route is quarantined rather than active;
 2. the active theorem-3 blocker is now the corrected Package-I Section 4.3
-   transport package, but the docs should name its real missing seams more
-   sharply than just “codomain + dense range”: the contract-level blockers are
-   the branch-`3b` one-variable / degreewise transport surfaces
+   transport package, and its real missing seams are more specific than the
+   old slogan “codomain + dense range”: the contract-level blockers are the
+   branch-`3b` one-variable / degreewise transport surfaces
    `os1TransportOneVar`, `os1TransportOneVar_eq_zero_iff`,
-   `os1TransportComponent`, `os1TransportComponent_eq_zero_iff`, and the
-   on-image transport package `bvt_transport_to_osHilbert_onImage` /
+   `os1TransportComponent`, `os1TransportComponent_eq_zero_iff`,
+   `BvtTransportImageSequence`,
+   `bvt_transport_to_osHilbert_onImage_wellDefined`,
+   `bvt_transport_to_osHilbert_onImage`,
+   `lemma42_matrix_element_time_interchange`, and
    `bvt_wightmanInner_eq_transport_norm_sq_onImage`;
 3. the main missing content there is the OS I Section 4.3 one-variable
    Fourier-Laplace / Paley-Wiener / extension proof above the already checked
@@ -294,6 +297,8 @@ Important current-status clarification:
    form, in exact implementation order:
    transformed positive-time Euclidean data
    -> transformed-image core in the Section-4.3 half-space Schwartz codomain
+   -> preimage-independence theorem
+      `bvt_transport_to_osHilbert_onImage_wellDefined`
    -> on-image transport `bvt_transport_to_osHilbert_onImage`
    -> Lemma-4.2 adapter `lemma42_matrix_element_time_interchange`
    -> quadratic identity
@@ -306,6 +311,21 @@ Important current-status clarification:
    vague “prove dense range first” slogan, or “add a `Submodule`/topology layer
    first” as if any of those were the main obstruction.
 
+Implementation-facing theorem-3 slot ledger for this gap note:
+
+| Slot | Owned by | Consumes | Exports | Next consumer |
+| --- | --- | --- | --- | --- |
+| `os1TransportOneVar` | `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean` | checked branch-`3b` suppliers in `OSReconstruction/SCV/PartialFourierSpatial.lean` (`partialFourierSpatial_fun`, `partialFourierSpatial_timeSliceSchwartz`, `partialFourierSpatial_timeSlice_hasPaleyWienerExtension`, `partialFourierSpatial_timeSliceCanonicalExtension`) plus the theorem-3 `singleSplit_xiShift` support route; source-checked scalar entry seam `identity_theorem_right_halfplane` (`OSToWightmanPositivity.lean:48`) -> `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` (`:110`) | the one-variable Section-4.3 transport map on the corrected half-space codomain | `os1TransportOneVar_eq_zero_iff`, `os1TransportComponent` |
+| `os1TransportOneVar_eq_zero_iff` | same file | `os1TransportOneVar` together with the positive-half-line boundary-value uniqueness input; first-consumer restriction: the checked `:48` / `:110` scalar suppliers are consumed here and in `os1TransportOneVar` before any later transport-image closure slot | the one-variable kernel-zero theorem | `os1TransportComponent`, `bvt_transport_to_osHilbert_onImage_wellDefined` |
+| `os1TransportComponent` | same file | `os1TransportOneVar`, `os1TransportOneVar_eq_zero_iff`, and the degreewise assembly above the checked branch-`3b` supplier chain | the degreewise transformed-image transport map | `os1TransportComponent_eq_zero_iff`, `BvtTransportImageSequence` |
+| `os1TransportComponent_eq_zero_iff` | same file | `os1TransportComponent` | the degreewise kernel-zero theorem | `BvtTransportImageSequence`, `bvt_transport_to_osHilbert_onImage_wellDefined` |
+| `BvtTransportImageSequence` | same file | `os1TransportComponent` | the transformed-image core object on which the quadratic identity is proved | `bvt_transport_to_osHilbert_onImage_wellDefined` only; the transformed-image core may re-enter only downstream of the transport map and the separate Lemma-4.2 seam |
+| `bvt_transport_to_osHilbert_onImage_wellDefined` | same file | `BvtTransportImageSequence`, degreewise representative choice, difference of two preimage families, then kernel-zero consumption in the strict order `os1TransportOneVar_eq_zero_iff` -> `os1TransportComponent_eq_zero_iff` | proof that the OS-Hilbert transport value is independent of the chosen transformed-image preimage | `bvt_transport_to_osHilbert_onImage` |
+| `bvt_transport_to_osHilbert_onImage` | same file | `BvtTransportImageSequence`, `bvt_transport_to_osHilbert_onImage_wellDefined`, and the checked general Hilbert embedding surface `positiveTimeBorchersVector`; the first checked equalities available on this lane are `positiveTimeBorchersVector_inner_eq` / `positiveTimeBorchersVector_norm_sq_eq`, while the single-component wrapper `euclideanPositiveTimeSingleVector` (`OSToWightmanPositivity.lean:1523`) together with norm supplier `euclideanPositiveTimeSingleVector_norm_sq_eq` (`:1530`) is only a later specialization of that more primitive embedding package; first-consumer restriction: the general Hilbert embeddings first enter here, not earlier in Stage A/B | the OS Hilbert vector attached to transformed-image data | `lemma42_matrix_element_time_interchange` first, then `bvt_wightmanInner_eq_transport_norm_sq_onImage`; later rows may not bypass this map and consume representative data directly |
+| `lemma42_matrix_element_time_interchange` | same file | `bvt_transport_to_osHilbert_onImage`, transformed-image data, and the repaired OS-II-backed `bvt_F` / `bvt_W` continuation kernel | the explicit Lemma-4.2 matrix-element interchange seam between the transport map and the quadratic identity | `bvt_wightmanInner_eq_transport_norm_sq_onImage` |
+| `bvt_wightmanInner_eq_transport_norm_sq_onImage` | same file | `bvt_transport_to_osHilbert_onImage_wellDefined` to freeze one representative family first, then `bvt_transport_to_osHilbert_onImage`, then `lemma42_matrix_element_time_interchange`, and only then norm-square recognition against the repaired OS-II-backed `bvt_F` / `bvt_W` continuation kernel, using the checked general norm identity `positiveTimeBorchersVector_norm_sq_eq` on the actual transport target rather than skipping straight to the single-component specialization | the on-image quadratic identity `(W(F,F)).re = ‖u(F)‖^2` | `bvt_W_positive_of_transportImage_density` |
+| `bvt_W_positive_of_transportImage_density` | same file | `bvt_wightmanInner_eq_transport_norm_sq_onImage`, Hilbert-space density, and bounded finite-support continuity, with checked density supplier `positiveTimeBorchersVector_dense` (`OSToWightmanPositivity.lean:1506`) reserved as the first input consumed here | the implementation-side theorem-3 positivity closure | `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean :: bvt_W_positive` |
+
 Additional theorem-3 clarification:
 
 1. the Section-4.3 test-function transport `(4.19)`-`(4.20)` is explicit and
@@ -317,9 +337,20 @@ Additional theorem-3 clarification:
    theorem, but it is not the current minimal blocker for theorem 3; the live
    closure seam is the explicit on-image route through
    `os1TransportComponent_eq_zero_iff`,
+   `bvt_transport_to_osHilbert_onImage_wellDefined`,
+   `bvt_transport_to_osHilbert_onImage`,
    `lemma42_matrix_element_time_interchange`, and
    `bvt_W_positive_of_transportImage_density`, with `bvt_W_positive` only the
-   exported downstream wrapper.
+   exported downstream wrapper; and
+4. the Stage-C proof transcript is now fixed tightly enough that later Lean
+   work should not have to rediscover its internal order: representative choice
+   must be discharged first by `bvt_transport_to_osHilbert_onImage_wellDefined`,
+   then the transport map is formed into the checked general target
+   `positiveTimeBorchersVector`, then Lemma 4.2 rewrites matrix elements, and
+   only after that may the norm-square identity be recognized via
+   `positiveTimeBorchersVector_norm_sq_eq`; the single-component wrapper
+   `euclideanPositiveTimeSingleVector` is downstream specialization only, not
+   the primitive Stage-C target.
 
 ## 6. Operator-theory gaps
 

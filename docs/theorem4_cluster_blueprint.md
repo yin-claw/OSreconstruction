@@ -130,6 +130,51 @@ Checked-missing theorem-package ownership:
    -> `bvt_cluster_canonical_from_positiveTime_core`,
    and then consume that package in the final private theorem
    `bvt_F_clusterCanonicalEventually_translate`.
+   But those adapter theorems are allowed to consume only the already-checked
+   generic boundary-value supplier surfaces imported into
+   `OSToWightmanBoundaryValues.lean`, namely:
+   - from `OSToWightmanBoundaryValuesComparison.lean`:
+     `canonicalForwardConeDirection`,
+     `canonicalForwardConeDirection_mem`, and the already-landed public
+     transfer theorem `bv_cluster_transfer_of_canonical_eventually`;
+   - from `OSToWightmanBoundaryValueLimits.lean`:
+     the theorem-3 scalar-holomorphic package
+     `bvt_singleSplit_xiShiftHolomorphicValue`,
+     `differentiableOn_bvt_singleSplit_xiShiftHolomorphicValue`,
+     `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq`,
+     `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq_schwinger_timeShift`,
+     `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger`,
+     `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`, and
+     `bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq`.
+   But the theorem-4 adapter may consume that list only in the now-frozen split:
+   `canonical_shell_limit_of_rewrite` alone may import the
+   `BoundaryValueLimits.lean` package, and the direct consumer surfaces are now
+   source-checked against exact anchors in
+   `OSToWightmanBoundaryValueLimits.lean`:
+   `differentiableOn_bvt_singleSplit_xiShiftHolomorphicValue` (line 273),
+   `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq` (line 290),
+   `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`
+   (line 446), and `bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq`
+   (line 536). Inside that theorem the internal proof order is fixed as
+   `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq`
+   -> optional right-half-plane uniqueness only via
+   `differentiableOn_bvt_singleSplit_xiShiftHolomorphicValue` +
+   `bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq`
+   -> final Wightman-target `t -> 0+` transport only via
+   `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`.
+   The object `bvt_singleSplit_xiShiftHolomorphicValue` itself (line 260) is
+   only the underlying scalar holomorphic function these direct consumers talk
+   about; it is not a separate theorem-4 adapter step. The Schwinger-target
+   theorems `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq_schwinger_timeShift`
+   (line 314) and
+   `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger`
+   (line 350) stay supplier-only lower legs on this lane, and the lower helper
+   `eqOn_rightHalfPlane_of_ofReal_eq` (line 494) remains quarantined beneath
+   `bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq` rather than a direct
+   theorem-4 input. The theorem-4 adapter must not pretend that
+   `BoundaryValueLimits.lean` already contains any theorem-4-specific cluster
+   wrapper under separate names, and it must not use the deprecated
+   bridge `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`.
 4. `SchwingerOS.lean` remains only the source of the already-checked OS-side
    positive-time/Hilbert-space algebra. It is not the place to hide theorem-4
    wrapper glue.
@@ -597,11 +642,11 @@ Cross-check against the current repo tree:
    `...of_singleSplitSchwingerLargeSpatial`, and
    `...of_singleSplitFactorComparison`;
 2. `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean`
-   already contains only the final private wrapper
-   `bvt_F_clusterCanonicalEventually_translate`, the translated wrapper
-   `bvt_F_clusterCanonicalEventually`, the public transfer theorem
-   `bv_cluster_transfer_of_canonical_eventually`, and the exported consumer
-   `bvt_W_cluster`;
+   already contains only the final checked wrapper layer, at exact source
+   anchors `:27 :: bv_cluster_transfer_of_canonical_eventually`,
+   `:398 :: private bvt_F_clusterCanonicalEventually_translate`,
+   `:414 :: private bvt_F_clusterCanonicalEventually`, and
+   `:473 :: private bvt_W_cluster`;
 3. there is **not yet** any separately named production theorem for the public
    canonical-shell adapter package
    (`canonical_cluster_integrand_eq_singleSplit_integrand`,
@@ -641,6 +686,85 @@ separate theorem names. The docs should therefore not pretend the adapter is
 already mechanical or already factored in code. But they should also not treat
 it as a new Euclidean cluster theorem. It is a wrapper/adaptation problem
 sitting strictly above the already-proved single-split core.
+
+### 7.1. Exact imported supplier surfaces for the missing canonical-shell adapter
+
+To keep the later Lean pass from rediscovering the import graph by grep, the
+missing canonical-shell adapter package is now constrained to the following
+supplier map.
+
+1. `canonical_cluster_integrand_eq_singleSplit_integrand`
+   should consume only checked generic shell data already imported through
+   `OSToWightmanBoundaryValuesComparison.lean`:
+   - `canonicalForwardConeDirection`
+   - `canonicalForwardConeDirection_mem`
+   together with the public theorem-4 target shell appearing in the statement
+   of private `bvt_F_clusterCanonicalEventually_translate` and the base-core
+   shell appearing in
+   `OSToWightmanBoundaryValuesBase.lean ::
+   bvt_cluster_positiveTime_singleSplit_core`.
+   Its job is purely to rewrite the canonical-direction integrand into the
+   positive-time `xiShift`/single-split integrand shape. It does **not**
+   consume any cluster-specific theorem already living in
+   `BoundaryValueLimits.lean`, because none exist there today.
+2. `canonical_translate_factor_eq_singleSplit_translate_factor`
+   should consume only the checked generic translation shell objects already in
+   scope in `OSToWightmanBoundaryValues.lean`:
+   - `translateSchwartzNPoint`
+   - the same checked `canonicalForwardConeDirection` surface
+   - the explicit positive-time translated factor appearing in the base-core
+     theorem statement.
+   This theorem is a parameter/argument rewrite only; it should not invoke any
+   OS cluster theorem.
+3. `singleSplit_core_rewrites_to_canonical_shell`
+   should be the first theorem that actually consumes the repaired base-core
+   theorem `bvt_cluster_positiveTime_singleSplit_core`. Its allowed imported
+   suppliers are exactly:
+   - `bvt_cluster_positiveTime_singleSplit_core`
+   - `canonical_cluster_integrand_eq_singleSplit_integrand`
+   - `canonical_translate_factor_eq_singleSplit_translate_factor`.
+   So the proof transcript order is fixed: first the two explicit rewrites,
+   then apply the positive-time core.
+4. `canonical_shell_limit_of_rewrite`
+   should consume only the checked generic limit-transport surfaces already in
+   `OSToWightmanBoundaryValueLimits.lean`, but its internal proof transcript is
+   now fixed more sharply than a bare list of allowed imports. The endorsed
+   order is:
+   - first, use
+     `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq` to identify the
+     positive-real trace of the chosen scalar holomorphic object with the raw
+     `singleSplit_xiShift` boundary-value integral;
+   - second, if the canonical-shell statement is presented via a separately
+     defined holomorphic scalar trace, use
+     `differentiableOn_bvt_singleSplit_xiShiftHolomorphicValue` together with
+     `bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq` to show that this
+     canonical-shell trace agrees with the chosen checked scalar holomorphic
+     object on the full right half-plane; no other uniqueness theorem slot is
+     allowed here;
+   - third, discharge the actual `t → 0+` transport to the Wightman target with
+     `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`.
+   The auxiliary checked surfaces
+   `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq_schwinger_timeShift` and
+   `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger`
+   remain available only as lower supplier legs when the rewritten
+   positive-time core is first routed through the Schwinger time-shift shell;
+   they are not permission to replace the final Wightman-target limit step with
+   a Schwinger-only endpoint. The deprecated theorem
+   `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`
+   is explicitly out of contract for theorem 4.
+   The implementation rule here is strict: `canonical_shell_limit_of_rewrite`
+   may use theorem-3 scalar-holomorphic / limit transport as generic imported
+   machinery, but it may not claim that `BoundaryValueLimits.lean` already owns
+   a theorem-4 canonical cluster adapter theorem, and it may not leave the
+   positive-real identification / right-half-plane uniqueness / final Wightman
+   limit order implicit.
+5. `bvt_cluster_canonical_from_positiveTime_core`
+   should consume only:
+   - `singleSplit_core_rewrites_to_canonical_shell`
+   - `canonical_shell_limit_of_rewrite`.
+   It is therefore a thin assembly theorem immediately below private
+   `bvt_F_clusterCanonicalEventually_translate`, not a place for hidden new
+   analytic content.
 
 ## 8. Exact proof decomposition for theorem 4
 
@@ -836,9 +960,15 @@ The theorem-4 closure is now explicit enough to estimate file size honestly.
    lemmas:
    roughly `20-45` lines.
 2. `zeroDegree_right_single_wightman_extracts_factor`:
-   roughly `20-40` lines.
+   roughly `20-40` lines. It should be a packaging lemma above the checked
+   supplier `OSReconstruction/Wightman/Reconstruction/Core.lean ::
+   WightmanInnerProduct_right_single`, not a new right-single theorem from
+   scratch.
 3. `zeroDegree_right_single_os_extracts_factor`:
-   roughly `20-45` lines.
+   roughly `20-45` lines. It should package the checked supplier
+   `OSReconstruction/Wightman/Reconstruction/SchwingerOS.lean ::
+   OSInnerProduct_right_single` against the normalized degree-`0` witness,
+   again not rediscover the base right-single identity.
 4. `zero_degree_component_comparison_for_normalized_right_vector`:
    roughly `25-55` lines.
 5. `cluster_left_factor_transport`:
@@ -867,8 +997,8 @@ Repository-status note:
 1. none of the adapter theorems listed in this subsection currently exist under
    these names in the checked repo tree;
 2. the only current production object above the base-layer reductions is the
-   final private wrapper
-   `OSToWightmanBoundaryValues.lean :: bvt_F_clusterCanonicalEventually_translate`;
+   final checked private wrapper
+   `OSToWightmanBoundaryValues.lean :398 :: bvt_F_clusterCanonicalEventually_translate`;
 3. the next Lean/doc pass should therefore introduce or explicitly rename this
    missing adapter package before touching the final wrapper proof.
 
@@ -901,16 +1031,45 @@ positive-time core **forward**, not backwards through a misoriented rewrite:
 1. first prove the positive-time single-split core theorem,
 2. rewrite that core statement into the public canonical shell,
 3. then pass from the rewritten shell statement to the public eventual/limit
-   statement.
+   statement,
+4. then expose that result through the thin public adapter theorem consumed by
+   the final private frontier wrapper.
 
-Its inputs should therefore be only:
+The exact slot-by-slot consumer contract is therefore:
 
-1. the positive-time single-split core theorem,
-2. the theorem-3 one-factor comparison package already extracted earlier in
-   this blueprint,
-3. the degree-zero normalization lemmas recorded below.
+1. `singleSplit_core_rewrites_to_canonical_shell` consumes only
+   `bvt_cluster_positiveTime_singleSplit_core`,
+   `canonical_cluster_integrand_eq_singleSplit_integrand`, and
+   `canonical_translate_factor_eq_singleSplit_translate_factor`;
+2. `canonical_shell_limit_of_rewrite` consumes only
+   `singleSplit_core_rewrites_to_canonical_shell` plus the checked generic
+   scalar-holomorphic / `t → 0+` transport package imported from
+   `OSToWightmanBoundaryValueLimits.lean`, and the inner order is fixed:
+   `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq`
+   -> optional right-half-plane uniqueness via
+   `differentiableOn_bvt_singleSplit_xiShiftHolomorphicValue` and
+   `bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq`
+   -> final limit transport by
+   `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`.
+   The Schwinger-target theorems
+   `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq_schwinger_timeShift` and
+   `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger`
+   are lower supplier legs only, and the deprecated bridge
+   `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`
+   is forbidden here;
+3. `bvt_cluster_canonical_from_positiveTime_core` consumes only
+   `canonical_shell_limit_of_rewrite`;
+4. private `bvt_F_clusterCanonicalEventually_translate` consumes only
+   `bvt_cluster_canonical_from_positiveTime_core`.
 
-It should not contain any new analytic-continuation content.
+The degree-zero normalization lemmas and theorem-3 one-factor transport package
+belong strictly below this public adapter ladder: they are consumed while
+proving the repaired bridge
+`bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison`
+and must not be re-imported or silently reconstructed inside the later
+canonical-shell adapter. Likewise this adapter package should not contain any
+new analytic-continuation content beyond the already checked generic
+limit-transport surfaces just listed.
 
 ### 12.4.2. Exact proof transcript for the public canonical-shell adapter
 
@@ -939,12 +1098,19 @@ theorem bvt_cluster_canonical_from_positiveTime_core
 The proof order should be:
 
 1. integrand-level rewrite,
-2. pairing/integral-level rewrite,
-3. package those rewrites as
+2. translated-factor / parameter rewrite,
+3. apply the repaired base theorem `bvt_cluster_positiveTime_singleSplit_core`,
+4. package those rewrites plus that application as
    `singleSplit_core_rewrites_to_canonical_shell`,
-4. use `canonical_shell_limit_of_rewrite` to transport the shell statement to
-   the public eventual/limit statement,
-5. finish by applying the already-proved positive-time core theorem.
+5. use `canonical_shell_limit_of_rewrite` to transport the shell statement to
+   the public eventual/limit statement in the explicit suborder
+   positive-real identification
+   -> right-half-plane uniqueness when needed
+   -> final Wightman-target `t → 0+` transport, using only the checked generic
+   scalar holomorphic / `t → 0+` transport surfaces imported from
+   `OSToWightmanBoundaryValueLimits.lean`,
+6. finish by packaging the result as
+   `bvt_cluster_canonical_from_positiveTime_core`.
 
 That is why this adapter is a wrapper package and not a new analytic theorem.
 If the later Lean proof starts introducing contour or boundary-value arguments

@@ -1129,8 +1129,13 @@ The honest current-code package is:
 1. represent the transformed-image core by a finite-support sequence whose
    degree-`n` component lies in `bvtTransportImage (d := d) n`;
 2. choose, for each degree, a Euclidean positive-time preimage;
-3. map that preimage to the existing OS vector
-   `euclideanPositiveTimeSingleVector`;
+3. map that preimage first to the checked general OS vector target
+   `positiveTimeBorchersVector`, with
+   `positiveTimeBorchersVector_inner_eq` /
+   `positiveTimeBorchersVector_norm_sq_eq` as the first Hilbert-side equality
+   surfaces on this lane; the wrapper
+   `euclideanPositiveTimeSingleVector` is only a later single-component
+   specialization of that package;
 4. sum over the finite degree support in `OSHilbertSpace OS`.
 
 That is why the correct current-code structure is:
@@ -1143,13 +1148,26 @@ structure BvtTransportImageSequence (d : ℕ) [NeZero d] where
 ```
 
 The well-definedness proof must use `os1TransportComponent_eq_zero_iff`, not
-density. The exact proof is:
+density. The exact Lean-facing proof transcript is:
 
-1. suppose two Euclidean preimages give the same transformed-image element;
-2. subtract them;
-3. the difference maps to zero under `os1TransportComponent`;
-4. injectivity / kernel-zero gives equality of the preimages;
-5. therefore the OS Hilbert vector does not depend on the choice.
+1. fix `F : BvtTransportImageSequence d` and choose two degreewise positive-time
+   preimage families `f`, `g` for the same transformed-image representatives;
+2. for each degree in the finite support of `F.toBorchers`, form the
+   difference `f_n - g_n` in the positive-time domain;
+3. use equality of the transformed-image representatives to show that every
+   such difference maps to `0` under `os1TransportComponent`;
+4. apply the explicit kernel-zero theorem
+   `os1TransportComponent_eq_zero_iff` degreewise, reducing the claim to the
+   Stage-A kernel-zero package already exported above;
+5. conclude `f_n = g_n` for every degree, hence the resulting finite-support
+   OS vectors assembled from the checked general target
+   `positiveTimeBorchersVector` are equal; the single-component wrapper
+   `euclideanPositiveTimeSingleVector` may be recovered only later as a
+   specialization, not used as the primitive well-definedness target;
+6. package that degreewise equality into the theorem slot
+   `bvt_transport_to_osHilbert_onImage_wellDefined`;
+7. only after that theorem is closed may the definition
+   `bvt_transport_to_osHilbert_onImage` be introduced.
 
 ### 5.9.4. Detailed proof of Eq. `(4.28)` on the image
 
@@ -1163,21 +1181,38 @@ product identity, if ever wanted later, is downstream and optional.
 The proof transcript is:
 
 1. start from a transformed-image sequence `F`;
-2. choose degreewise Euclidean preimages `f_n` in the positive-time domain;
-3. expand the Wightman quadratic form degreewise using the current public
-   `WightmanInnerProduct`;
-4. for each component pair, rewrite the Wightman pairing by the
-   Section-4.3 / Lemma-4.2 Fourier-Laplace computation:
-   - spatial Fourier transform is handled by the ordinary tempered
-     distribution Fourier calculus already used elsewhere in the repo;
-   - time-variable interchange is exactly the hidden Section-8 one-variable
-     theorem recorded in `docs/os1_detailed_proof_audit.md` as
+2. invoke `bvt_transport_to_osHilbert_onImage_wellDefined` to pick one
+   degreewise positive-time preimage family `f_n` without leaving any hidden
+   representative-choice obligation for later lines of the proof;
+3. define the transported Hilbert vector by
+   `bvt_transport_to_osHilbert_onImage (d := d) OS lgc F` using exactly those
+   degreewise representatives and the checked general target
+   `positiveTimeBorchersVector`; the single-component wrapper
+   `euclideanPositiveTimeSingleVector` is a later specialization of this
+   transport package rather than the primitive Stage-C target;
+4. expand the Wightman quadratic form degreewise using the current public
+   `WightmanInnerProduct` on `F.toBorchers`;
+5. for each component pair, insert the separate Lemma-4.2 adapter
+   `lemma42_matrix_element_time_interchange` to rewrite the matrix element in
+   terms of the same preimage family `f_n`; this is the first theorem slot at
+   which the transport map is allowed to interact with the repaired OS-II
+   `bvt_F` / `bvt_W` continuation kernel;
+6. inside that adapter, use the fixed Fourier-Laplace ingredients only in the
+   order already frozen above:
+   - spatial Fourier transform via the existing tempered-distribution Fourier
+     calculus already used elsewhere in the repo;
+   - time-variable interchange via the hidden Section-8 one-variable theorem
+     recorded in `docs/os1_detailed_proof_audit.md` as
      `lemma42_matrix_element_time_interchange`;
    - the common kernel is the corrected OS-II-backed analytic-continuation
      object underlying `bvt_F` / `bvt_W`, not a fresh spectral-measure
-     construction in Section 4.3 itself.
-5. recognize the resulting degreewise finite sum as the Hilbert norm square of
-   `bvt_transport_to_osHilbert_onImage`.
+     construction in Section 4.3 itself;
+7. after the Lemma-4.2 rewrite, recognize the resulting degreewise finite sum
+   as the Hilbert norm square of
+   `bvt_transport_to_osHilbert_onImage (d := d) OS lgc F`;
+8. close exactly the diagonal theorem slot
+   `bvt_wightmanInner_eq_transport_norm_sq_onImage`; any polarized version is
+   downstream and optional.
 
 No theorem in this package should claim that the raw Wightman quadratic form on
 the same literal test function equals the raw OS pairing. The comparison is
@@ -1217,17 +1252,38 @@ Package-I route is frozen here as a slot ledger:
 
 | Slot | File ownership | Must consume exactly | Must prove / export exactly | Next allowed consumer |
 | --- | --- | --- | --- | --- |
-| `identity_theorem_right_halfplane` | `Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean` | none | scalar identity theorem on `{z : ℂ | 0 < z.re}` | `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` |
-| `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` | same file | checked theorem-3 scalar holomorphic traces plus `identity_theorem_right_halfplane` | equality of the scalar theorem-3 holomorphic objects on the right half-plane for compact positive-time single/single data | theorem-3 `singleSplit_xiShift` support package in `OSToWightmanBoundaryValueLimits.lean` |
-| theorem-3 `singleSplit_xiShift` support layer | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | the chosen scalar holomorphic trace, its positive-real identification theorems, and its `t -> 0+` limit-transfer theorems | the only one-variable boundary/limit facts the Section-4.3 package may consume | `os1TransportComponent`, `bvt_wightmanInner_eq_transport_norm_sq_onImage` |
-| `positiveTimeBorchersVector_dense` | `Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean` | checked positive-time Hilbert-space completion infrastructure | density of positive-time vectors in `OSHilbertSpace OS` | `bvt_W_positive_of_transportImage_density` |
-| `euclideanPositiveTimeSingleVector` | same file | checked positive-time Hilbert-space support infrastructure | canonical OS Hilbert-space vector attached to one positive-time Euclidean component, with its norm identity | `bvt_transport_to_osHilbert_onImage`, `bvt_wightmanInner_eq_transport_norm_sq_onImage` |
-| `os1TransportComponent` | same file | theorem-3 `singleSplit_xiShift` support layer, the explicit Section-4.3 Fourier-Laplace formula `(4.19)`-`(4.20)` on the corrected half-space codomain, and the checked branch-`3b` partial-spatial-Fourier supplier chain (`PartialFourierSpatial.lean` + `partialFourierSpatial_timeSliceCanonicalExtension`) | degreewise Section-4.3 transport map together with its kernel-zero theorem `os1TransportComponent_eq_zero_iff` | `BvtTransportImageSequence`, `bvt_transport_to_osHilbert_onImage_wellDefined` |
-| `BvtTransportImageSequence` | same file | `os1TransportComponent` | transformed-image core object on which the quadratic identity is proved | `bvt_transport_to_osHilbert_onImage`, `bvt_wightmanInner_eq_transport_norm_sq_onImage` |
-| `bvt_transport_to_osHilbert_onImage` | same file | `BvtTransportImageSequence`, preimage choice, `os1TransportComponent_eq_zero_iff`, and the existing OS Hilbert-space construction | the OS Hilbert vector attached to transformed-image data | `bvt_wightmanInner_eq_transport_norm_sq_onImage` |
-| `bvt_wightmanInner_eq_transport_norm_sq_onImage` | same file | `BvtTransportImageSequence`, `bvt_transport_to_osHilbert_onImage`, and the repaired OS-II-backed `bvt_F` / `bvt_W` continuation kernel | the transformed-image quadratic identity on the image core only | `bvt_W_positive_of_transportImage_density` |
+| `identity_theorem_right_halfplane` | `Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean:48` | none | scalar identity theorem on `{z : ℂ | 0 < z.re}` | `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` |
+| `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` | `.../OSToWightmanPositivity.lean:110` | checked theorem-3 scalar holomorphic traces plus `identity_theorem_right_halfplane` | equality of the scalar theorem-3 holomorphic objects on the right half-plane for compact positive-time single/single data | theorem-3 `singleSplit_xiShift` support package in `OSToWightmanBoundaryValueLimits.lean`, and from there only the Stage-A slots `os1TransportOneVar` then `os1TransportOneVar_eq_zero_iff` may consume the resulting scalar package |
+| theorem-3 `singleSplit_xiShift` support layer | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | the chosen scalar holomorphic trace, its positive-real identification theorems, and its `t -> 0+` limit-transfer theorems | the only one-variable boundary/limit facts the Section-4.3 package may consume | `os1TransportOneVar` first, then `os1TransportOneVar_eq_zero_iff`; later transport-image / Hilbert-density slots may use this scalar package only through those Stage-A exports |
+| checked branch-`3b` SCV foothold | `OSReconstruction/SCV/PartialFourierSpatial.lean` | existing SCV/Schwartz infrastructure already landed in that file | the exact checked supplier chain `partialFourierSpatial_fun -> partialFourierSpatial_timeSliceSchwartz -> partialFourierSpatial_timeSlice_hasPaleyWienerExtension -> partialFourierSpatial_timeSliceCanonicalExtension` on the half-space test-function side | `os1TransportOneVar` only |
+| `os1TransportOneVar` | `.../OSToWightmanPositivity.lean` | theorem-3 `singleSplit_xiShift` support layer plus the checked branch-`3b` SCV foothold, with the scalar entry seam consumed in the fixed order `identity_theorem_right_halfplane` -> `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` -> `singleSplit_xiShift` support layer | one-variable Section-4.3 transport map on the corrected half-space codomain | `os1TransportOneVar_eq_zero_iff`, `os1TransportComponent` |
+| `os1TransportOneVar_eq_zero_iff` | same file | `os1TransportOneVar` together with the positive-half-line boundary-value uniqueness input, and no fresh scalar supplier beyond the Stage-A exports above | one-variable kernel-zero theorem for the branch-`3b` transport stage | `os1TransportComponent`, `bvt_transport_to_osHilbert_onImage_wellDefined` |
+| `positiveTimeBorchersVector` | `.../OSToWightmanPositivity.lean:1461` together with checked equalities `positiveTimeBorchersVector_inner_eq` at `:1467` and `positiveTimeBorchersVector_norm_sq_eq` at `:1480` | checked positive-time Hilbert-space support infrastructure at the general transport target | the canonical OS Hilbert-space vector attached to positive-time Euclidean data before any single-component specialization, together with the first Hilbert-side inner/norm equalities allowed on the theorem-3 lane | `bvt_transport_to_osHilbert_onImage` first; only after that theorem is formed may downstream slots such as `lemma42_matrix_element_time_interchange` and `bvt_wightmanInner_eq_transport_norm_sq_onImage` reuse this general target/equality package |
+| `euclideanPositiveTimeSingleVector` | `.../OSToWightmanPositivity.lean:1523` together with norm identity `euclideanPositiveTimeSingleVector_norm_sq_eq` at `:1530` | checked later single-component specialization of `positiveTimeBorchersVector` | canonical OS Hilbert-space vector attached to one positive-time Euclidean component, but only as a downstream specialization of the general target package rather than the primitive transport target | only downstream of `bvt_transport_to_osHilbert_onImage`; no Stage-C theorem may treat this wrapper as earlier than the checked general target/equality surfaces |
+| `positiveTimeBorchersVector_dense` | `.../OSToWightmanPositivity.lean:1506` | checked positive-time Hilbert-space completion infrastructure | density of positive-time vectors in `OSHilbertSpace OS` | `bvt_W_positive_of_transportImage_density` only |
+| `os1TransportComponent` | same file | `os1TransportOneVar`, `os1TransportOneVar_eq_zero_iff`, and the explicit Section-4.3 Fourier-Laplace formula `(4.19)`-`(4.20)` on the corrected half-space codomain above the checked branch-`3b` supplier chain | degreewise Section-4.3 transport map together with its kernel-zero theorem `os1TransportComponent_eq_zero_iff` | `BvtTransportImageSequence`, `bvt_transport_to_osHilbert_onImage_wellDefined` |
+| `BvtTransportImageSequence` | same file | `os1TransportComponent` | transformed-image core object that is carried forward into the on-image Hilbert transport stage and only later reappears inside the quadratic identity | `bvt_transport_to_osHilbert_onImage_wellDefined` only; later slots may reuse this transformed-image object only downstream of the transport-map theorem rather than consuming it directly from this row |
+| `bvt_transport_to_osHilbert_onImage_wellDefined` | same file | `BvtTransportImageSequence`, degreewise preimage choice, and the kernel-zero theorems `os1TransportOneVar_eq_zero_iff` / `os1TransportComponent_eq_zero_iff` | proof that the OS-Hilbert transport value does not depend on the chosen preimage representative | `bvt_transport_to_osHilbert_onImage` |
+| `bvt_transport_to_osHilbert_onImage` | same file | `BvtTransportImageSequence`, `bvt_transport_to_osHilbert_onImage_wellDefined`, and the checked general Hilbert-target package `positiveTimeBorchersVector` with first equality surfaces `positiveTimeBorchersVector_inner_eq` / `positiveTimeBorchersVector_norm_sq_eq`; the later wrapper `euclideanPositiveTimeSingleVector` is downstream specialization only | the OS Hilbert vector attached to transformed-image data | `lemma42_matrix_element_time_interchange` first, then `bvt_wightmanInner_eq_transport_norm_sq_onImage`; the quadratic-identity theorem may only consume the transformed-image core again through this transport-map stage |
+| `bvt_wightmanInner_eq_transport_norm_sq_onImage` | same file | `bvt_transport_to_osHilbert_onImage_wellDefined` to freeze one representative family first, then `bvt_transport_to_osHilbert_onImage`, then `lemma42_matrix_element_time_interchange`, and only then norm-square recognition against the repaired OS-II-backed `bvt_F` / `bvt_W` kernel route via the checked general equality `positiveTimeBorchersVector_norm_sq_eq` on the actual transport target | the transformed-image quadratic identity on the image core only | `bvt_W_positive_of_transportImage_density` |
 | `bvt_W_positive_of_transportImage_density` | same file | `bvt_wightmanInner_eq_transport_norm_sq_onImage`, `positiveTimeBorchersVector_dense`, bounded finite-support continuity of `bvt_W`, and Hilbert-space closure | implementation-side theorem-3 positivity for arbitrary `BorchersSequence d` | `OSToWightmanBoundaryValues.lean :: bvt_W_positive` |
 | `bvt_W_positive` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | the implementation-side positivity theorem from `OSToWightmanPositivity.lean` | exported frontier theorem only | downstream wrappers / reconstruction consumers |
+
+The checked-present theorem-3 supplier anchors are therefore frozen in
+first-consumer order, not file-order shorthand:
+`identity_theorem_right_halfplane` at line 48,
+`bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` at line 110,
+`positiveTimeBorchersVector` at line 1461 together with
+`positiveTimeBorchersVector_inner_eq` at line 1467 and
+`positiveTimeBorchersVector_norm_sq_eq` at line 1480 as the first Hilbert-side
+package consumed by `bvt_transport_to_osHilbert_onImage`,
+then the density supplier `positiveTimeBorchersVector_dense` at line 1506 as a
+final-closure-only input to `bvt_W_positive_of_transportImage_density`, while
+`euclideanPositiveTimeSingleVector` at line 1523 with norm identity
+`euclideanPositiveTimeSingleVector_norm_sq_eq` at line 1530 of
+`OSToWightmanPositivity.lean` is explicitly outside that primitive closure
+ledger and may re-enter only later as a downstream single-component
+specialization.
 
 Two anti-drift rules are part of that ledger now too:
 1. the transformed-image package belongs entirely in
@@ -1242,12 +1298,24 @@ Exact current implementation status:
 1. there is no current production theorem implementing Package I yet;
 2. a direct source check of
    `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean`
-   shows the checked-present theorem-3 support there is currently:
-   - `identity_theorem_right_halfplane`,
-   - `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single`,
-   - `positiveTimeBorchersVector_dense`,
-   - `euclideanPositiveTimeSingleVector`, and related positive-time Hilbert
-     norm identities;
+   shows the checked-present theorem-3 support there is currently split into
+   three non-coequal supplier families with frozen first consumers:
+   - scalar Stage-A entry support:
+     `identity_theorem_right_halfplane` and
+     `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single`, consumed first
+     only by the `singleSplit_xiShift` support layer and then the Stage-A slots
+     `os1TransportOneVar -> os1TransportOneVar_eq_zero_iff`;
+   - Hilbert-vector support:
+     the checked general target `positiveTimeBorchersVector` together with the
+     first Hilbert-side equalities `positiveTimeBorchersVector_inner_eq` and
+     `positiveTimeBorchersVector_norm_sq_eq`, first consumed only by
+     `bvt_transport_to_osHilbert_onImage`; the later single-component wrapper
+     `euclideanPositiveTimeSingleVector` together with
+     `euclideanPositiveTimeSingleVector_norm_sq_eq` is downstream
+     specialization only;
+   - Hilbert-density support:
+     `positiveTimeBorchersVector_dense`, first consumed only by
+     `bvt_W_positive_of_transportImage_density`;
 3. a direct source check of
    `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean`
    shows that file is still a theorem-3-side support layer only: it packages
@@ -1275,8 +1343,12 @@ endorsed closure route.
 
 Safe usage:
 
-1. mine the current codebase only for reusable continuity / completion /
-   positive-time Hilbert-space facts;
+1. mine the current codebase only for reusable facts whose first-consumer
+   boundary is already frozen in this blueprint: scalar Stage-A entry facts may
+   feed only `os1TransportOneVar` / `os1TransportOneVar_eq_zero_iff`, the
+   Hilbert vector/norm package may first feed only
+   `bvt_transport_to_osHilbert_onImage`, and the density theorem may first
+   feed only `bvt_W_positive_of_transportImage_density`;
 2. keep the deprecated `hschw` consumer chain compiled but untouched;
 3. if a legacy theorem becomes useful later, re-justify it from the corrected
    transformed-image Package-I route rather than treating it as an input.
