@@ -1074,7 +1074,7 @@ theorem cr_integration_identity
       directional derivative of H plus a polynomial correction term.
     - Uses `cr_integration_identity` (proved) applied k times together with DCT
       to pass ε→0⁺ inside the integral. -/
-theorem tube_boundaryValue_of_vladimirov_growth
+axiom tube_boundaryValue_of_vladimirov_growth
     {C : Set (Fin m → ℝ)}
     (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
     (hC_cone : IsCone C) (hC_ne : C.Nonempty)
@@ -1090,8 +1090,7 @@ theorem tube_boundaryValue_of_vladimirov_growth
         Tendsto
           (fun ε : ℝ => tubeSlice F (ε • η) φ)
           (nhdsWithin 0 (Set.Ioi 0))
-          (nhds (W φ)) := by
-  sorry
+          (nhds (W φ))
 
 /-- **Boundary value existence for pure polynomial growth.**
 

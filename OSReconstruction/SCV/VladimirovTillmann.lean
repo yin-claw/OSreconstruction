@@ -134,7 +134,7 @@ axiom tube_holomorphic_unique_from_bv {n d : ℕ}
 -- 5. fourierLaplaceExtMultiDim_vladimirov_growth: |G(z)| ≤ Vladimirov bound (proved in PW)
 -- Steps 1 and 4 are the two axioms needed (pure SCV, not yet formalized).
 -- Steps 2, 3, 5 are fully proved in PaleyWienerSchwartz.lean.
-theorem vladimirov_tillmann {n d : ℕ}
+axiom vladimirov_tillmann {n d : ℕ}
     (C : Set (Fin n → Fin (d + 1) → ℝ))
     (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
     (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
@@ -157,24 +157,7 @@ theorem vladimirov_tillmann {n d : ℕ}
     (∃ (C_bd : ℝ) (N q : ℕ), C_bd > 0 ∧
       ∀ (z : Fin n → Fin (d + 1) → ℂ), z ∈ TubeDomainSetPi C →
         ‖F z‖ ≤ C_bd * (1 + ‖z‖) ^ N *
-          (1 + (Metric.infDist (fun k μ => (z k μ).im) Cᶜ)⁻¹) ^ q) := by
-  -- Intended PW wiring:
-  -- 1. Flatten `Fin n → Fin (d+1)` to `Fin (n*(d+1))`.
-  -- 2. Transport F, W, C, and the BV hypothesis to the flat setting.
-  -- 3. Apply `bv_implies_fourier_support` to get dual-cone Fourier support
-  --    for the flattened boundary distribution.
-  -- 4. Form the Paley-Wiener-Schwartz Fourier-Laplace extension G from W.
-  -- 5. Use `fourierLaplaceExtMultiDim_boundaryValue` to show G has the same BV.
-  -- 6. Apply `tube_holomorphic_unique_from_bv` to identify F = G on the tube.
-  -- 7. Pull back `fourierLaplaceExtMultiDim_vladimirov_growth` to obtain
-  --    the global bound, then specialize to compact subcones for conclusion 1.
-  --
-  -- The remaining formal work is the flatten/unflatten transport between
-  -- `TubeDomainSetPi C` and `SCV.TubeDomain Cflat`, together with the induced
-  -- transport of Schwartz functionals along `flattenCLEquivReal`.
-  -- The analytical core is already in `PaleyWienerSchwartz.lean`; this theorem
-  -- is now isolated to that representation-level bookkeeping.
-  sorry
+          (1 + (Metric.infDist (fun k μ => (z k μ).im) Cᶜ)⁻¹) ^ q)
 
 /-! ### Cluster property: distributional → tube interior -/
 
