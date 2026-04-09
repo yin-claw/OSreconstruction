@@ -975,7 +975,12 @@ def constructWightmanFunctions (OS : OsterwalderSchraderAxioms d)
   lorentz_covariant := bvt_lorentz_covariant OS lgc
   spectrum_condition := by
     intro n
-    exact ⟨bvt_F OS lgc n, bvt_F_holomorphic OS lgc n, bvt_boundary_values OS lgc n⟩
+    refine ⟨bvt_F OS lgc n, bvt_F_holomorphic OS lgc n, ?_, bvt_boundary_values OS lgc n⟩
+    -- Moderate growth of the OS analytic continuation on compact subsets.
+    -- Follows from the OS contraction semigroup (Hille-Yosida): ‖T(t)‖ ≤ 1 for t > 0
+    -- implies boundedness of the n-point function on the forward tube.
+    intro K _hK_compact _hK_sub
+    sorry
   locally_commutative := bvt_locally_commutative OS lgc
   positive_definite := bvt_positive_definite OS lgc
   hermitian := bvt_hermitian OS lgc

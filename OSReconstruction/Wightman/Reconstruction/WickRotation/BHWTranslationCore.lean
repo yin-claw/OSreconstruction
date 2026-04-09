@@ -62,7 +62,7 @@ theorem W_analytic_translation_on_forwardTube {d n : ℕ} [NeZero d]
   let W_analytic := (Wfn.spectrum_condition n).choose
   have hW_holo : DifferentiableOn ℂ W_analytic (ForwardTube d n) :=
     (Wfn.spectrum_condition n).choose_spec.1
-  have hW_bv := (Wfn.spectrum_condition n).choose_spec.2
+  have hW_bv := (Wfn.spectrum_condition n).choose_spec.2.2
 
   have forwardTube_add_real_shift :
       ∀ (w : Fin n → Fin (d + 1) → ℂ) (a : Fin (d + 1) → ℝ),

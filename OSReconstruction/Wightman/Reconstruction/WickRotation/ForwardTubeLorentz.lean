@@ -657,49 +657,11 @@ theorem polynomial_growth_on_slice {d n : ℕ} [NeZero d]
       ∀ (x : NPointDomain d n),
         ‖F (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I)‖ ≤
           C_bd * (1 + ‖x‖) ^ N := by
-  rcases h_bv with ⟨W, hW_bv⟩
-  have hC_open : IsOpen (ForwardConeAbs d n) := forwardConeAbs_isOpen d n
-  have hC_conv : Convex ℝ (ForwardConeAbs d n) := forwardConeAbs_convex d n
-  have hC_cone : IsCone (ForwardConeAbs d n) := by
-    intro y hy t ht
-    exact forwardConeAbs_smul d n t ht y hy
-  have hC_salient : IsSalientCone (ForwardConeAbs d n) := forwardConeAbs_salient d n
-  have hF_vt : DifferentiableOn ℂ F (TubeDomainSetPi (ForwardConeAbs d n)) := by
-    simpa [TubeDomainSetPi, forwardTube_eq_imPreimage] using hF
-  have hW_bv :
-      ∀ (η' : Fin n → Fin (d + 1) → ℝ), η' ∈ ForwardConeAbs d n →
-        ∀ (φ : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ),
-          Filter.Tendsto
-            (fun ε' : ℝ => ∫ x : Fin n → Fin (d + 1) → ℝ,
-              F (fun k μ => ↑(x k μ) + ε' * ↑(η' k μ) * Complex.I) * φ x)
-            (nhdsWithin 0 (Set.Ioi 0)) (nhds (W φ)) := by
-    intro η' hη' φ
-    exact hW_bv φ η' ((inForwardCone_iff_mem_forwardConeAbs (d := d) (n := n) η').2 hη')
-  -- Growth hypothesis required by VT representation theorem.
-  -- In the OS reconstruction, this follows from the semigroup contraction property.
-  have hF_growth : ∃ (C_bd : ℝ) (N q : ℕ), C_bd > 0 ∧
-      ∀ (z : Fin n → Fin (d + 1) → ℂ),
-        z ∈ TubeDomainSetPi (ForwardConeAbs d n) →
-          ‖F z‖ ≤ C_bd * (1 + ‖z‖) ^ N *
-            (1 + (Metric.infDist (fun k μ => (z k μ).im)
-              (ForwardConeAbs d n)ᶜ)⁻¹) ^ q := by
-    sorry
-  obtain ⟨hpoly, -⟩ :=
-    vladimirov_tillmann (ForwardConeAbs d n) hC_open hC_conv hC_cone hC_salient F hF_vt
-      hF_growth W hW_bv
-  have hη_abs : η ∈ ForwardConeAbs d n :=
-    (inForwardCone_iff_mem_forwardConeAbs (d := d) (n := n) η).1 hη
-  let y0 : Fin n → Fin (d + 1) → ℝ := ε • η
-  have hy0_mem : y0 ∈ ForwardConeAbs d n := forwardConeAbs_smul d n ε hε η hη_abs
-  have hK_sub : ({y0} : Set (Fin n → Fin (d + 1) → ℝ)) ⊆ ForwardConeAbs d n := by
-    intro y hy
-    rcases Set.mem_singleton_iff.mp hy with rfl
-    exact hy0_mem
-  obtain ⟨C_bd, N, hC_pos, hbound⟩ := hpoly {y0} isCompact_singleton hK_sub
-  refine ⟨C_bd, N, hC_pos, ?_⟩
-  intro x
-  simpa [y0, smul_eq_mul, mul_assoc, mul_left_comm, mul_comm]
-    using hbound x y0 (by simp)
+  -- Polynomial growth on a single slice {x + iεη : x ∈ ℝⁿ} follows from
+  -- tempered BV via Banach-Steinhaus: the family {∫ F(·+iεη) φ dx}_{ε>0}
+  -- is equicontinuous on S(ℝⁿ), giving polynomial bounds on each slice.
+  -- This does NOT require the global VT growth hypothesis.
+  sorry
 
 /-- Proved slice-growth theorem under regular flattened-tube Fourier-Laplace input. -/
 theorem polynomial_growth_on_slice_of_flatRegular {d n : ℕ} [NeZero d]
@@ -1282,7 +1244,7 @@ theorem W_analytic_lorentz_bv_agree
     (fun Λ f g hfg => Wfn.lorentz_covariant n Λ f g hfg)
     (Wfn.spectrum_condition n).choose
     (Wfn.spectrum_condition n).choose_spec.1
-    (Wfn.spectrum_condition n).choose_spec.2
+    (Wfn.spectrum_condition n).choose_spec.2.2
     Λ
 
 

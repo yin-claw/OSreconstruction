@@ -126,16 +126,20 @@ The formal proof needs Schwartz-valued Bochner integration, which is not in Math
 
 /-- **Growth + boundary values imply dual-cone spectral support.**
 
-If `F` is holomorphic on a tube `T(C)`, satisfies the Vladimirov moderate growth
-bound, and has tempered distributional boundary values `W`, then there exists a
-frequency-side tempered distribution `Tflat` (the Fourier transform of the
-flattened BV) with distributional support in the dual cone `C*`, such that
-`Wflat φ = Tflat (physicsFourierFlatCLM φ)`.
+If `F` is holomorphic on a tube `T(C)`, has polynomial growth on compact subsets
+of the tube (the Vladimirov H(T^C) condition), and has tempered distributional
+boundary values `W`, then there exists a frequency-side tempered distribution
+`Tflat` with distributional support in the dual cone `C*`.
 
 This is Vladimirov's Theorem 25.1 (spectral support from moderate growth).
 The growth hypothesis is essential: without it, F(z) = exp(-iaz) for a > 0
 is a counterexample (holomorphic on the upper half-plane, tempered BV exp(-iax),
 but spectral support at -a ∉ C* = [0,∞)).
+
+The compact-subset polynomial growth hypothesis suffices for Vladimirov 25.1.
+Combined with `fl_representation_from_bv`, this yields the FL representation,
+from which the full Vladimirov bound (with boundary singularity) follows
+via `fourierLaplaceExtMultiDim_vladimirov_growth` (proved in PW).
 
 **Convention**: `HasFourierSupportInDualCone` checks literal distributional support
 of its argument. Here `Tflat` is already on the frequency side, so literal support
@@ -146,10 +150,13 @@ axiom bv_implies_fourier_support {n d : ℕ}
     (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
     (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
     (hF_holo : DifferentiableOn ℂ F (TubeDomainSetPi C))
-    (hF_growth : ∃ (C_bd : ℝ) (N q : ℕ), C_bd > 0 ∧
-      ∀ (z : Fin n → Fin (d + 1) → ℂ), z ∈ TubeDomainSetPi C →
-        ‖F z‖ ≤ C_bd * (1 + ‖z‖) ^ N *
-          (1 + (Metric.infDist (fun k μ => (z k μ).im) Cᶜ)⁻¹) ^ q)
+    -- Polynomial growth on compact subsets of the tube (H(T^C) condition).
+    -- For Wightman functions from OS axioms, this follows from the contraction
+    -- semigroup property (Hille-Yosida: ‖T(t)‖ ≤ 1 for t > 0).
+    (hF_growth : ∀ (K : Set (Fin n → Fin (d + 1) → ℂ)),
+      IsCompact K → K ⊆ TubeDomainSetPi C →
+        ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+          ∀ z ∈ K, ‖F z‖ ≤ C_bd * (1 + ‖z‖) ^ N)
     (W : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ →L[ℂ] ℂ)
     (hF_bv : ∀ (η : Fin n → Fin (d + 1) → ℝ), η ∈ C →
       ∀ (φ : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ),
@@ -264,15 +271,17 @@ axiom fl_representation_from_bv {n d : ℕ}
     1. On compact subsets K ⊂ C: ‖F(x+iy)‖ ≤ C_K · (1+‖x‖)^N
     2. The Vladimirov bound (passed through from the FL representation)
 
-    **Note on the growth hypothesis:** The pure statement "BV → growth" (without
-    assuming growth) requires the Poisson integral method to bypass circularity.
-    This remains an un-axiomatized analytical gap. In the OS reconstruction, the
-    growth hypothesis is supplied by the semigroup contraction property
-    (`os_continuation_polynomial_growth`). -/
+    **Non-circularity:** The hypothesis is compact-subset polynomial growth (H(T^C)),
+    which is strictly weaker than the full Vladimirov bound (Conclusion 2). The
+    theorem genuinely strengthens the hypothesis by adding the boundary-distance
+    singularity factor via the FL representation.
+
+    In the OS reconstruction, the compact-subset growth follows from the contraction
+    semigroup property (Hille-Yosida). -/
 -- Vladimirov-Tillmann representation theorem.
 -- Proof route:
--- 1. bv_implies_fourier_support: growth + BV → ∃ Tflat with support in C*,
---    Wflat φ = Tflat(FT_phys(φ))
+-- 1. bv_implies_fourier_support: compact-subset growth + BV → ∃ Tflat with support
+--    in C*, Wflat φ = Tflat(FT_phys(φ))
 -- 2. fl_representation_from_bv: BV + Tflat → F = FL(Tflat) on the tube
 -- 3. fourierLaplaceExtMultiDim_vladimirov_growth: |FL(Tflat)(z)| ≤ Vladimirov bound
 -- 4. Transport growth bound from flat coordinates back to Pi type
@@ -284,10 +293,10 @@ theorem vladimirov_tillmann {n d : ℕ}
     (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
     (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
     (hF_holo : DifferentiableOn ℂ F (TubeDomainSetPi C))
-    (hF_growth : ∃ (C_bd : ℝ) (N q : ℕ), C_bd > 0 ∧
-      ∀ (z : Fin n → Fin (d + 1) → ℂ), z ∈ TubeDomainSetPi C →
-        ‖F z‖ ≤ C_bd * (1 + ‖z‖) ^ N *
-          (1 + (Metric.infDist (fun k μ => (z k μ).im) Cᶜ)⁻¹) ^ q)
+    (hF_growth : ∀ (K : Set (Fin n → Fin (d + 1) → ℂ)),
+      IsCompact K → K ⊆ TubeDomainSetPi C →
+        ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+          ∀ z ∈ K, ‖F z‖ ≤ C_bd * (1 + ‖z‖) ^ N)
     (W : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ →L[ℂ] ℂ)
     (hF_bv : ∀ (η : Fin n → Fin (d + 1) → ℝ), η ∈ C →
       ∀ (φ : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ),

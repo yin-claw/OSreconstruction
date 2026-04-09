@@ -132,7 +132,7 @@ theorem W_analytic_lorentz_on_tube (Wfn : WightmanFunctions d) (n : ℕ) :
     (fun Λ f g hfg => Wfn.lorentz_covariant n Λ f g hfg)
     (Wfn.spectrum_condition n).choose
     (Wfn.spectrum_condition n).choose_spec.1
-    (Wfn.spectrum_condition n).choose_spec.2
+    (Wfn.spectrum_condition n).choose_spec.2.2
 
 /-- Connected Lorentz covariance of the boundary distribution already pays the
 compact-support Wick-section pairing identity for the transformed forward-tube
@@ -404,7 +404,7 @@ noncomputable def W_analytic_BHW (Wfn : WightmanFunctions d) (n : ℕ) :
       (Wfn.spectrum_condition n).choose_spec.1
       (W_analytic_lorentz_on_tube Wfn n)
       Wfn.W
-      (Wfn.spectrum_condition n).choose_spec.2
+      (Wfn.spectrum_condition n).choose_spec.2.2
       Wfn.locally_commutative
   exact ⟨h.choose, h.choose_spec.1, h.choose_spec.2.1, h.choose_spec.2.2.1,
     h.choose_spec.2.2.2.1⟩
@@ -426,7 +426,7 @@ theorem W_analytic_BHW_unique (Wfn : WightmanFunctions d) (n : ℕ)
       (Wfn.spectrum_condition n).choose_spec.1
       (W_analytic_lorentz_on_tube Wfn n)
       Wfn.W
-      (Wfn.spectrum_condition n).choose_spec.2
+      (Wfn.spectrum_condition n).choose_spec.2.2
       Wfn.locally_commutative
   have hchosen : (W_analytic_BHW Wfn n).val = h.choose := by
     rfl
