@@ -675,8 +675,18 @@ theorem polynomial_growth_on_slice {d n : ℕ} [NeZero d]
             (nhdsWithin 0 (Set.Ioi 0)) (nhds (W φ)) := by
     intro η' hη' φ
     exact hW_bv φ η' ((inForwardCone_iff_mem_forwardConeAbs (d := d) (n := n) η').2 hη')
+  -- Growth hypothesis required by VT representation theorem.
+  -- In the OS reconstruction, this follows from the semigroup contraction property.
+  have hF_growth : ∃ (C_bd : ℝ) (N q : ℕ), C_bd > 0 ∧
+      ∀ (z : Fin n → Fin (d + 1) → ℂ),
+        z ∈ TubeDomainSetPi (ForwardConeAbs d n) →
+          ‖F z‖ ≤ C_bd * (1 + ‖z‖) ^ N *
+            (1 + (Metric.infDist (fun k μ => (z k μ).im)
+              (ForwardConeAbs d n)ᶜ)⁻¹) ^ q := by
+    sorry
   obtain ⟨hpoly, -⟩ :=
-    vladimirov_tillmann (ForwardConeAbs d n) hC_open hC_conv hC_cone hC_salient F hF_vt W hW_bv
+    vladimirov_tillmann (ForwardConeAbs d n) hC_open hC_conv hC_cone hC_salient F hF_vt
+      hF_growth W hW_bv
   have hη_abs : η ∈ ForwardConeAbs d n :=
     (inForwardCone_iff_mem_forwardConeAbs (d := d) (n := n) η).1 hη
   let y0 : Fin n → Fin (d + 1) → ℝ := ε • η

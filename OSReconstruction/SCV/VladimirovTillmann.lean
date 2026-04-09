@@ -50,21 +50,25 @@ the axiom statements for correctness.
 
 #### Axiom 1: `bv_implies_fourier_support` (spectral support)
 
-**Plain English**: If F is holomorphic on a tube T(C) and has tempered distributional
-boundary values W, then the Fourier transform of W is supported in the dual cone C*.
+**Plain English**: If F is holomorphic on a tube T(C), satisfies the Vladimirov
+moderate growth bound, and has tempered distributional boundary values W, then the
+Fourier transform of W is supported in the dual cone C*.
 
-**Mathematics**: Given F holomorphic on T(C) = {z : Im(z) ∈ C} with boundary value
-W ∈ S'(ℝᵐ) defined by ∫ F(x+iεη) φ(x) dx → W(φ), there exists a tempered
-distribution T̂ (called `Tflat` in the code) such that:
+**Mathematics**: Given F holomorphic on T(C) = {z : Im(z) ∈ C} with the growth bound
+‖F(z)‖ ≤ C(1+‖z‖)^N · (1 + dist(Im z, ∂C)⁻¹)^q, and boundary value W ∈ S'(ℝᵐ)
+defined by ∫ F(x+iεη) φ(x) dx → W(φ), there exists a tempered distribution T̂
+(called `Tflat` in the code) such that:
   (a) supp(T̂) ⊆ C* = {ξ : ξ·y ≥ 0 for all y ∈ C}
   (b) W(φ) = T̂(FT_phys(φ)) for all φ ∈ S(ℝᵐ)
 where FT_phys(φ)(ξ) = ∫ exp(ix·ξ) φ(x) dx is the physics Fourier transform.
 The distribution T̂ is on the frequency side (momentum space); `HasFourierSupportInDualCone`
 checks its literal distributional support, which IS the Fourier support of W.
 
-**Reference**: Vladimirov, "Methods of Generalized Functions", Theorems 25.1–25.2.
-The proof uses the Poisson integral of the tube to extract spectral support from the
-holomorphic extension, without assuming polynomial growth a priori.
+**Why the growth hypothesis is essential**: Without it, F(z) = exp(-iaz) for a > 0
+on the upper half-plane is a counterexample: holomorphic, tempered BV = exp(-iax),
+but spectral support at -a ∉ C* = [0,∞).
+
+**Reference**: Vladimirov, "Methods of Generalized Functions", Theorem 25.1.
 
 #### Axiom 2: `tube_holomorphic_unique_from_bv` (uniqueness)
 
@@ -120,18 +124,18 @@ The formal proof needs Schwartz-valued Bochner integration, which is not in Math
 
 -/
 
-/-- **Boundary values imply dual-cone spectral support.**
+/-- **Growth + boundary values imply dual-cone spectral support.**
 
-If `F` is holomorphic on a tube `T(C)` and has tempered distributional boundary
-values `W`, then there exists a frequency-side tempered distribution `Tflat`
-(the Fourier transform of the flattened BV) with distributional support in the
-dual cone `C*`, such that `Wflat φ = Tflat (physicsFourierFlatCLM φ)`.
+If `F` is holomorphic on a tube `T(C)`, satisfies the Vladimirov moderate growth
+bound, and has tempered distributional boundary values `W`, then there exists a
+frequency-side tempered distribution `Tflat` (the Fourier transform of the
+flattened BV) with distributional support in the dual cone `C*`, such that
+`Wflat φ = Tflat (physicsFourierFlatCLM φ)`.
 
-This is the SCV spectral support theorem (Vladimirov Thm 25.1–25.2,
-Hörmander Thm 8.4.15). The frequency-side distribution `Tflat` is the spectral
-measure of the boundary value: the BV distribution `W` acts on test functions `φ`
-by first applying the physics Fourier transform, then pairing with `Tflat`.
-The support of `Tflat` in `C*` is the spectral condition.
+This is Vladimirov's Theorem 25.1 (spectral support from moderate growth).
+The growth hypothesis is essential: without it, F(z) = exp(-iaz) for a > 0
+is a counterexample (holomorphic on the upper half-plane, tempered BV exp(-iax),
+but spectral support at -a ∉ C* = [0,∞)).
 
 **Convention**: `HasFourierSupportInDualCone` checks literal distributional support
 of its argument. Here `Tflat` is already on the frequency side, so literal support
@@ -142,6 +146,10 @@ axiom bv_implies_fourier_support {n d : ℕ}
     (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
     (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
     (hF_holo : DifferentiableOn ℂ F (TubeDomainSetPi C))
+    (hF_growth : ∃ (C_bd : ℝ) (N q : ℕ), C_bd > 0 ∧
+      ∀ (z : Fin n → Fin (d + 1) → ℂ), z ∈ TubeDomainSetPi C →
+        ‖F z‖ ≤ C_bd * (1 + ‖z‖) ^ N *
+          (1 + (Metric.infDist (fun k μ => (z k μ).im) Cᶜ)⁻¹) ^ q)
     (W : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ →L[ℂ] ℂ)
     (hF_bv : ∀ (η : Fin n → Fin (d + 1) → ℝ), η ∈ C →
       ∀ (φ : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ),
@@ -239,30 +247,33 @@ axiom fl_representation_from_bv {n d : ℕ}
 
 /-! ### The Vladimirov-Tillmann theorem -/
 
-/-- The Vladimirov-Tillmann theorem for tube domains.
+/-- The Vladimirov-Tillmann representation theorem for tube domains.
 
     If F is holomorphic on T(C) = { z | Im(z) ∈ C } where C is a proper open
-    convex cone, and has tempered distributional boundary values W, then F has
-    polynomial growth on compact subcones and an explicit singularity bound at ∂C.
+    convex cone, has the Vladimirov moderate growth bound, and has tempered
+    distributional boundary values W, then F has the Fourier-Laplace
+    representation F = FL(T̂) for a spectral distribution T̂ supported in the
+    dual cone, giving polynomial growth on compact subsets of C.
 
     **Hypotheses:**
-    - C is an open convex cone (closed under positive scaling)
-    - C is salient (its closure contains no complete line)
-    - F is holomorphic on T(C)
+    - C is an open convex cone, salient
+    - F is holomorphic on T(C) with Vladimirov moderate growth
     - The smeared boundary values converge to a tempered distribution W
 
     **Conclusions:**
-    1. On compact subcones K ⊂ C: ‖F(x+iy)‖ ≤ C_K · (1+‖x‖)^N
-    2. Globally: ‖F(z)‖ ≤ C · (1+‖z‖)^N · (1 + dist(Im z, ∂C)⁻¹)^q
+    1. On compact subsets K ⊂ C: ‖F(x+iy)‖ ≤ C_K · (1+‖x‖)^N
+    2. The Vladimirov bound (passed through from the FL representation)
 
-    The `(1 + dist⁻¹)` form prevents the bound from collapsing to zero
-    deep inside the cone (where dist → ∞) and captures the inverse-power
-    singularity near ∂C (where dist → 0). -/
--- Vladimirov-Tillmann: BV → growth.
+    **Note on the growth hypothesis:** The pure statement "BV → growth" (without
+    assuming growth) requires the Poisson integral method to bypass circularity.
+    This remains an un-axiomatized analytical gap. In the OS reconstruction, the
+    growth hypothesis is supplied by the semigroup contraction property
+    (`os_continuation_polynomial_growth`). -/
+-- Vladimirov-Tillmann representation theorem.
 -- Proof route:
--- 1. bv_implies_fourier_support: F holo + BV W → ∃ Tflat with support in C*,
+-- 1. bv_implies_fourier_support: growth + BV → ∃ Tflat with support in C*,
 --    Wflat φ = Tflat(FT_phys(φ))
--- 2. fl_representation_from_bv: F = FL(Tflat) on the tube (Vladimirov Thm 25.5)
+-- 2. fl_representation_from_bv: BV + Tflat → F = FL(Tflat) on the tube
 -- 3. fourierLaplaceExtMultiDim_vladimirov_growth: |FL(Tflat)(z)| ≤ Vladimirov bound
 -- 4. Transport growth bound from flat coordinates back to Pi type
 -- Steps 1 and 2 are axioms (pure SCV, not yet formalized).
@@ -273,6 +284,10 @@ theorem vladimirov_tillmann {n d : ℕ}
     (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
     (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
     (hF_holo : DifferentiableOn ℂ F (TubeDomainSetPi C))
+    (hF_growth : ∃ (C_bd : ℝ) (N q : ℕ), C_bd > 0 ∧
+      ∀ (z : Fin n → Fin (d + 1) → ℂ), z ∈ TubeDomainSetPi C →
+        ‖F z‖ ≤ C_bd * (1 + ‖z‖) ^ N *
+          (1 + (Metric.infDist (fun k μ => (z k μ).im) Cᶜ)⁻¹) ^ q)
     (W : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ →L[ℂ] ℂ)
     (hF_bv : ∀ (η : Fin n → Fin (d + 1) → ℝ), η ∈ C →
       ∀ (φ : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ),
@@ -318,7 +333,7 @@ theorem vladimirov_tillmann {n d : ℕ}
     exact show eR y' = 0 from by rw [hC_salient y' hy' hy'', map_zero]
   -- Step 2: Apply bv_implies_fourier_support to get frequency-side Tflat
   obtain ⟨Tflat, hTflat_support, hTflat_eq⟩ :=
-    bv_implies_fourier_support C hC_open hC_conv hC_cone hC_salient F hF_holo W hF_bv
+    bv_implies_fourier_support C hC_open hC_conv hC_cone hC_salient F hF_holo hF_growth W hF_bv
   -- Step 3: Apply fl_representation_from_bv to get F = FL(Tflat) on the tube
   have hFL_repr : ∀ z ∈ TubeDomainSetPi C,
       F z = fourierLaplaceExtMultiDim Cflat hCflat_open hCflat_conv hCflat_cone

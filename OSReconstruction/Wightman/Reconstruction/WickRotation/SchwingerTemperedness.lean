@@ -788,9 +788,18 @@ theorem hasForwardTubeGrowth_of_wightman {d : ℕ} [NeZero d]
           (nhdsWithin 0 (Set.Ioi 0)) (nhds (Wcl φ)) := by
     intro η hη φ; rw [hWcl]
     exact hW_bv φ η ((inForwardCone_iff_mem_forwardConeAbs η).mpr hη)
+  -- Growth hypothesis required by VT representation theorem.
+  -- In the OS reconstruction, this follows from the semigroup contraction property.
+  have hW_growth : ∃ (C_bd : ℝ) (N q : ℕ), C_bd > 0 ∧
+      ∀ (z : Fin n → Fin (d + 1) → ℂ),
+        z ∈ TubeDomainSetPi (ForwardConeAbs d n) →
+          ‖W_analytic z‖ ≤ C_bd * (1 + ‖z‖) ^ N *
+            (1 + (Metric.infDist (fun k μ => (z k μ).im)
+              (ForwardConeAbs d n)ᶜ)⁻¹) ^ q := by
+    sorry
   obtain ⟨_, ⟨C_vt, N_vt, q_vt, hC_vt_pos, hVT_bound⟩⟩ :=
     vladimirov_tillmann (ForwardConeAbs d n) hC_open hC_conv hC_cone hC_salient
-      W_analytic hW_holo' Wcl hW_bv'
+      W_analytic hW_holo' hW_growth Wcl hW_bv'
   -- Step 2: Get the universal projection constant
   obtain ⟨c_proj, hc_pos, hproj⟩ := exists_universal_time_projection d n
   let c_geom : ℝ := c_proj / (2 * d + 4 : ℝ)
