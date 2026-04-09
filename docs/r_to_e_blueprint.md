@@ -131,13 +131,15 @@ If the repo later wants a stronger theorem such as
 ```lean
 theorem wightman_to_os_axioms_full :
     ∃ OS : OsterwalderSchraderAxioms d,
-      OS.schwinger = constructSchwingerFunctions Wfn := by
+      OS.S = constructSchwingerFunctions Wfn := by
 ```
 
-then the documentation-standard theorem slots should be:
+then the documentation-standard theorem slots should be frozen at the **actual
+field level** rather than a bundled "Euclidean invariance / symmetry /
+positivity / cluster" slogan:
 
 ```lean
-lemma constructSchwinger_e0_tempered
+lemma constructSchwinger_tempered
     (Wfn : WightmanFunctions d) :
     ∀ n, Continuous (constructSchwingerFunctions Wfn n) := by
   -- Proposition 5.1 / `constructedSchwinger_tempered_zeroDiagonal`
@@ -147,27 +149,69 @@ lemma constructSchwinger_linear
     ∀ n, IsLinearMap ℂ (constructSchwingerFunctions Wfn n) := by
   -- already current production theorem
 
-lemma constructSchwinger_euclidean_invariant
+lemma constructSchwinger_reality
     (Wfn : WightmanFunctions d) :
-    EuclideanInvariance (constructSchwingerFunctions Wfn) := by
-  -- transport covariance through the BHW extension and Wick restriction
+    ∀ (n : ℕ) (f g : ZeroDiagonalSchwartz d n),
+      (∀ x, g.1 x = starRingEnd ℂ (f.1 (timeReflectionN d x))) →
+      starRingEnd ℂ ((constructSchwingerFunctions Wfn) n f) =
+        (constructSchwingerFunctions Wfn) n g := by
+  -- package `wickRotatedBoundaryPairing_reality`
 
 lemma constructSchwinger_symmetric
     (Wfn : WightmanFunctions d) :
-    EuclideanSymmetry (constructSchwingerFunctions Wfn) := by
-  -- transport permutation symmetry through the same common holomorphic object
+    ∀ (n : ℕ) (σ : Equiv.Perm (Fin n)) (f g : ZeroDiagonalSchwartz d n),
+      (∀ x, g.1 x = f.1 (fun i => x (σ i))) →
+      (constructSchwingerFunctions Wfn) n f =
+        (constructSchwingerFunctions Wfn) n g := by
+  -- package `wickRotatedBoundaryPairing_symmetric`
+
+lemma constructSchwinger_translation_invariant
+    (Wfn : WightmanFunctions d) :
+    ∀ (n : ℕ) (a : SpacetimeDim d) (f g : ZeroDiagonalSchwartz d n),
+      (∀ x, g.1 x = f.1 (fun i => x i + a)) →
+      (constructSchwingerFunctions Wfn) n f =
+        (constructSchwingerFunctions Wfn) n g := by
+  -- transport BHW translation covariance, then descend to Wick restriction
+
+lemma constructSchwinger_rotation_invariant
+    (Wfn : WightmanFunctions d) :
+    ∀ (n : ℕ) (R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ),
+      R.transpose * R = 1 → R.det = 1 →
+      ∀ (f g : ZeroDiagonalSchwartz d n),
+      (∀ x, g.1 x = f.1 (fun i => R.mulVec (x i))) →
+      (constructSchwingerFunctions Wfn) n f =
+        (constructSchwingerFunctions Wfn) n g := by
+  -- transport Lorentz/Poincare covariance through the common BHW object
 
 lemma constructSchwinger_positive
     (Wfn : WightmanFunctions d) :
-    ReflectionPositive (constructSchwingerFunctions Wfn) := by
+    ∀ (F : BorchersSequence d),
+      (∀ n, tsupport ((F.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+        OrderedPositiveTimeRegion d n) →
+      (OSInnerProduct d (constructSchwingerFunctions Wfn) F F).re ≥ 0 := by
   -- reuse the Section 4.3 transport package, not the false OS=W chain
 
 lemma constructSchwinger_cluster
     (Wfn : WightmanFunctions d) :
-    EuclideanCluster (constructSchwingerFunctions Wfn) := by
-  -- reuse the Section 4.4 transport package
+    ∀ (n m : ℕ) (f : ZeroDiagonalSchwartz d n) (g : ZeroDiagonalSchwartz d m),
+      ∀ ε : ℝ, ε > 0 → ∃ R : ℝ, R > 0 ∧
+        ∀ a : SpacetimeDim d, a 0 = 0 → (∑ i : Fin d, (a (Fin.succ i))^2) > R^2 →
+          ∀ (g_a : ZeroDiagonalSchwartz d m),
+            (∀ x : NPointDomain d m, g_a.1 x = g.1 (fun i => x i - a)) →
+            ∀ (fg_a : ZeroDiagonalSchwartz d (n + m)),
+              (∀ x : NPointDomain d (n + m),
+                fg_a.1 x = f.1 (splitFirst n m x) * g_a.1 (splitLast n m x)) →
+              ‖(constructSchwingerFunctions Wfn) (n + m) fg_a -
+                (constructSchwingerFunctions Wfn) n f *
+                (constructSchwingerFunctions Wfn) m g‖ < ε := by
+  -- reuse the Section 4.4 transport package in the literal field order
+  -- `constructSchwinger_cluster_translate_adapter ->
+  --  constructSchwinger_cluster_tensor_adapter -> constructSchwinger_cluster`
 ```
 
+The key contract change is that later Lean work is no longer allowed to hide
+split `E1` packaging inside a bundled `EuclideanInvariance` theorem or to defer
+the exact zero-diagonal theorem surface until implementation time.
 ## 7. Exact proof decomposition for the current theorem
 
 The later maintainer reading `wightman_to_os_full` should understand its proof
@@ -253,11 +297,21 @@ Future stronger theorem surface:
 ```lean
 theorem wightman_to_os_axioms_full (Wfn : WightmanFunctions d) :
     ∃ OS : OsterwalderSchraderAxioms d,
-      OS.schwinger = constructSchwingerFunctions Wfn := by
+      OS.S = constructSchwingerFunctions Wfn := by
   -- Step A: build the Schwinger family by Wick restriction
-  -- Step B: prove E0 via Proposition 5.1
-  -- Step C: prove E1/E2 by transporting covariance and permutation symmetry
-  -- Step D: prove E3/E4 by reusing the Section 4 positivity/cluster transport
+  -- Step B: prove E0 via Proposition 5.1, including the explicit
+  --         `E0_reality` packaging from
+  --         `wickRotatedBoundaryPairing_reality`
+  -- Step C: package `E3_symmetric` from
+  --         `wickRotatedBoundaryPairing_symmetric`, then package the split
+  --         `E1_translation_invariant` / `E1_rotation_invariant` fields from
+  --         the checked BHW covariance seam
+  --         `F_ext_translation_invariant ->
+  --          wickRotatedBoundaryPairing_translation_invariant` and
+  --         `F_ext_rotation_invariant ->
+  --          wickRotatedBoundaryPairing_rotation_invariant`
+  -- Step D: prove `E2_reflection_positive` / `E4_cluster` by reusing the
+  --         reverse Section-4 transport/density packages
 ```
 
 ## 12. Exact status of the currently existing stronger reverse theorems
@@ -307,63 +361,188 @@ axioms elsewhere in the repo.
 So the `R -> E` blueprint should document cluster as a future Section 4.4
 transport package, not as "already done modulo plumbing."
 
-## 13. Exact OS-I-style theorem-slot inventory for E0-E4
+## 13. Exact source-checked OS-axiom slot inventory for a future stronger `R -> E` theorem
 
 If the repo later strengthens `wightman_to_os_full` to a full
-`OsterwalderSchraderAxioms` theorem, the documentation should keep the axiom
-fields separated exactly as follows.
+`OsterwalderSchraderAxioms` theorem, the documentation must follow the **actual
+field surface in** `OSReconstruction/Wightman/Reconstruction/SchwingerOS.lean`,
+not a loose E0/E1/E2/E3/E4 slogan. The live source-checked field order is:
 
-### 13.1. E0 temperedness / continuity / linearity
+1. `E0_tempered`
+2. `E0_linear`
+3. `E0_reality`
+4. `E1_translation_invariant`
+5. `E1_rotation_invariant`
+6. `E2_reflection_positive`
+7. `E3_symmetric`
+8. `E4_cluster`
 
-Current production already covers the continuity/linearity surface:
+So later reverse-direction docs and pseudocode must not swap `E2`/`E3`, and
+must not omit the `E0_reality` slot.
+
+### 13.1. E0 temperedness / continuity / linearity / reality
+
+Current production already covers two of the three `E0` components directly:
 
 1. `constructedSchwinger_tempered_zeroDiagonal`
 2. `constructedZeroDiagonalSchwinger_linear`
 
-The later stronger theorem should simply repackage those under the axiom-field
-names, not re-prove them from scratch.
+A third source-checked Euclidean-side theorem already exists too:
+
+3. `wickRotatedBoundaryPairing_reality`
+
+So the future stronger theorem should document the `E0` package as a three-slot
+repackaging layer rather than pretending that `E0` is only continuity plus
+linearity.
+
+The implementation-facing theorem slots should therefore be frozen as:
+
+```lean
+lemma constructSchwinger_tempered
+    (Wfn : WightmanFunctions d) :
+    ∀ n, Continuous (constructSchwingerFunctions Wfn n) := by
+  simpa [constructSchwingerFunctions] using
+    constructedSchwinger_tempered_zeroDiagonal Wfn
+
+lemma constructSchwinger_linear
+    (Wfn : WightmanFunctions d) :
+    ∀ n, IsLinearMap ℂ (constructSchwingerFunctions Wfn n) := by
+  simpa [constructSchwingerFunctions] using
+    constructedZeroDiagonalSchwinger_linear Wfn
+
+lemma constructSchwinger_reality
+    (Wfn : WightmanFunctions d) :
+    ∀ (n : ℕ) (f g : ZeroDiagonalSchwartz d n),
+      (∀ x, g.1 x = starRingEnd ℂ (f.1 (timeReflectionN d x))) →
+      starRingEnd ℂ ((constructSchwingerFunctions Wfn) n f) =
+        (constructSchwingerFunctions Wfn) n g := by
+  -- package `wickRotatedBoundaryPairing_reality`
+```
+
+The important ambiguity removed here is: the future reverse theorem is **not**
+allowed to leave the `E0_reality` field implicit or to bury it under the later
+positivity package.
 
 ### 13.2. E1 Euclidean invariance
 
-This is not yet isolated in production under a final theorem name. The proof
-package should be documented as:
+In the live axiom surface, `E1` is split into two separate fields in
+`SchwingerOS.lean`, not one bundled field:
+
+1. `E1_translation_invariant`
+2. `E1_rotation_invariant`
+
+This is not yet isolated in production under final theorem names. The proof
+package should therefore be documented in the same split form:
 
 ```lean
-lemma constructSchwinger_translation_covariant
+lemma constructSchwinger_translation_invariant
     (Wfn : WightmanFunctions d) :
-    EuclideanTranslationInvariant (constructSchwingerFunctions Wfn) := by
+    ∀ (n : ℕ) (a : SpacetimeDim d) (f g : ZeroDiagonalSchwartz d n),
+      (∀ x, g.1 x = f.1 (fun i => x i + a)) →
+      (constructSchwingerFunctions Wfn) n f =
+        (constructSchwingerFunctions Wfn) n g := by
   -- transport real translation covariance of `W_analytic_BHW` through Wick
 
-lemma constructSchwinger_rotation_covariant
+lemma constructSchwinger_rotation_invariant
     (Wfn : WightmanFunctions d) :
-    EuclideanRotationInvariant (constructSchwingerFunctions Wfn) := by
+    ∀ (n : ℕ) (R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ),
+      R.transpose * R = 1 → R.det = 1 →
+      ∀ (f g : ZeroDiagonalSchwartz d n),
+      (∀ x, g.1 x = f.1 (fun i => R.mulVec (x i))) →
+      (constructSchwingerFunctions Wfn) n f =
+        (constructSchwingerFunctions Wfn) n g := by
   -- transport the Lorentz/Poincare covariance package to Euclidean rotations
-
-lemma constructSchwinger_euclidean_invariant
-    (Wfn : WightmanFunctions d) :
-    EuclideanInvariance (constructSchwingerFunctions Wfn) := by
-  exact combine_translation_and_rotation_covariance
-    (constructSchwinger_translation_covariant Wfn)
-    (constructSchwinger_rotation_covariant Wfn)
 ```
 
-The important documentation point is that E1 should be proved by *transport of
-covariance through the common holomorphic object*, not by a direct calculation
-on the Wick-restricted integral.
+The important documentation point is that `E1` should be proved by *transport
+of covariance through the common holomorphic object*, not by a fresh direct
+calculation on the Wick-restricted integral.
 
-### 13.3. E3 symmetry
+### 13.2.1. File ownership and proof-transcript order for the future stronger theorem
 
-This one is already largely present on the correct theorem shape:
+To make the later Lean pass mechanical rather than rediscovered, the reverse
+route should freeze the ownership and consumption order of the future theorem
+slots as follows.
 
-```lean
-theorem wickRotatedBoundaryPairing_symmetric
-```
+1. `E0_tempered`
+   - file owner: `Wightman/Reconstruction/WickRotation/SchwingerTemperedness.lean`
+   - exported surface already present:
+     `constructedSchwinger_tempered_zeroDiagonal`
+   - packaging task: re-express that theorem on
+     `constructSchwingerFunctions Wfn`
+2. `E0_linear`
+   - file owner: `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean`
+   - exported surface already present:
+     `constructedZeroDiagonalSchwinger_linear`
+   - packaging task: re-express that theorem on
+     `constructSchwingerFunctions Wfn`
+3. `E0_reality`
+   - file owner: `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean`
+   - exported surface already present:
+     `wickRotatedBoundaryPairing_reality`
+   - packaging task: convert its current theorem surface into the exact
+     `SchwingerOS.lean :: OsterwalderSchraderAxioms.E0_reality` witness format
+4. `E3_symmetric`
+   - file owner: `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean`
+   - exported surface already present:
+     `wickRotatedBoundaryPairing_symmetric`
+   - packaging task: convert the existing permutation statement into the exact
+     `E3_symmetric` field shape on `ZeroDiagonalSchwartz`
+5. `E1_translation_invariant` / `E1_rotation_invariant`
+   - expected owner: `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean`
+   - supporting analytic input files:
+     `BHWExtension.lean` and `BHWTranslation.lean`
+   - packaging task: transport covariance of the common BHW analytic object,
+     then descend to the exact `ZeroDiagonalSchwartz` field witnesses
+6. `E2_reflection_positive`
+   - expected owner: a future reverse-direction theorem package in
+     `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean`
+   - current source status in the live file:
+     `wickRotatedBoundaryPairing_reflection_positive` is already present, but
+     only as a **quarantined wrapper** because it still sits downstream of the
+     false OS=`Wightman` pairing route through
+     `schwingerExtension_os_inner_product_eq_wightman`
+   - hard consumers it must target exactly:
+     `SchwingerOS.lean :: OSInnerProduct` and
+     `SchwingerOS.lean :: OsterwalderSchraderAxioms.E2_reflection_positive`
+   - prohibited route: any reuse of
+     `schwingerExtension_os_inner_product_eq_wightman`,
+     `schwingerExtension_os_inner_product_eq_wightman_positivity`, or the
+     current quarantined wrapper as if it were already honest infrastructure
+7. `E4_cluster`
+   - expected owner: a future reverse-direction packaging theorem layer
+     targeting `Wightman/Reconstruction/SchwingerOS.lean`
+   - source-checked checked-present suppliers / wrappers:
+     `W_analytic_cluster_integral` then `wickRotatedBoundaryPairing_cluster`
+   - still-missing zero-diagonal packaging theorem family:
+     `constructSchwinger_cluster_translate_adapter ->
+     constructSchwinger_cluster_tensor_adapter ->
+     constructSchwinger_cluster`
+   - hard consumer it must target exactly:
+     `SchwingerOS.lean :: OsterwalderSchraderAxioms.E4_cluster`
+   - required consumer ladder:
+     `W_analytic_cluster_integral -> wickRotatedBoundaryPairing_cluster ->
+     constructSchwinger_cluster_translate_adapter ->
+     constructSchwinger_cluster_tensor_adapter -> constructSchwinger_cluster ->
+     OsterwalderSchraderAxioms.E4_cluster`
+   - exact field-shaped obligations that the adapter family must manufacture:
+     `g_a : ZeroDiagonalSchwartz d m` with the translated pointwise formula,
+     then `fg_a : ZeroDiagonalSchwartz d (n + m)` with the literal
+     tensor-product pointwise formula from
+     `SchwingerOS.lean:792-804`
+   - prohibited route: vague citation of `W_analytic_cluster_integral`, direct
+     reuse of `wickRotatedBoundaryPairing_cluster`, or a black-box invocation of
+     `constructSchwinger_cluster` that leaves the witness-building order
+     implicit
 
-So the future implementation step for E3 should mostly be a packaging theorem
-that re-expresses the existing permutation-invariance result in the exact axiom
-field format.
+So the later strong theorem should be implemented in the literal order
 
-### 13.4. E2 reflection positivity
+`E0_tempered -> E0_linear -> E0_reality -> E3_symmetric -> E1 translation/rotation -> E2 -> E4`,
+
+with each later slot consuming the earlier packaged Euclidean surfaces rather
+than rediscovering them from the raw BHW integral.
+
+### 13.3. E2 reflection positivity
 
 This is the main reverse-direction trap. The future theorem slot should be
 documented as:
@@ -371,7 +550,10 @@ documented as:
 ```lean
 lemma constructSchwinger_positive
     (Wfn : WightmanFunctions d) :
-    ReflectionPositive (constructSchwingerFunctions Wfn) := by
+    ∀ (F : BorchersSequence d),
+      (∀ n, tsupport ((F.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+        OrderedPositiveTimeRegion d n) →
+      (OSInnerProduct d (constructSchwingerFunctions Wfn) F F).re ≥ 0 := by
   -- do *not* use `schwingerExtension_os_inner_product_eq_wightman`
   -- reuse the OS I Section 4.3 transport package on the Wick-restricted family
 ```
@@ -384,13 +566,27 @@ This should also be documented explicitly as a reverse-direction transport:
 
 1. start from Wightman data,
 2. build the Wick-restricted Schwinger family,
-3. apply the OS I Section 4.3 positivity architecture to that constructed
-   Euclidean family.
+3. identify the positive-time Wick-restricted core relevant to OS I Section 4.3,
+4. reuse the Section-4.3 transport package on that constructed Euclidean
+   family,
+5. close by the Euclidean-side density / continuity argument.
 
 So the later Lean proof should not cite the forward `E -> R` positivity theorem
 as if it automatically runs backward. It should construct the reverse theorem
-with the same Section 4.3 proof shape, now applied on the Euclidean family
+with the same Section-4.3 proof shape, now applied on the Euclidean family
 produced from the Wightman input.
+
+### 13.4. E3 symmetry
+
+This one is already largely present on the correct theorem shape:
+
+```lean
+theorem wickRotatedBoundaryPairing_symmetric
+```
+
+So the future implementation step for `E3_symmetric` should mostly be a
+packaging theorem that re-expresses the existing permutation-invariance result
+in the exact axiom-field format.
 
 ### 13.5. E4 cluster
 
@@ -399,8 +595,19 @@ The future theorem slot should be documented as:
 ```lean
 lemma constructSchwinger_cluster
     (Wfn : WightmanFunctions d) :
-    EuclideanCluster (constructSchwingerFunctions Wfn) := by
-  -- reuse the OS I Section 4.4 transport package
+    ∀ (n m : ℕ) (f : ZeroDiagonalSchwartz d n) (g : ZeroDiagonalSchwartz d m),
+      ∀ ε : ℝ, ε > 0 → ∃ R : ℝ, R > 0 ∧
+        ∀ a : SpacetimeDim d, a 0 = 0 → (∑ i : Fin d, (a (Fin.succ i))^2) > R^2 →
+          ∀ (g_a : ZeroDiagonalSchwartz d m),
+            (∀ x : NPointDomain d m, g_a.1 x = g.1 (fun i => x i - a)) →
+            ∀ (fg_a : ZeroDiagonalSchwartz d (n + m)),
+              (∀ x : NPointDomain d (n + m),
+                fg_a.1 x = f.1 (splitFirst n m x) * g_a.1 (splitLast n m x)) →
+              ‖(constructSchwingerFunctions Wfn) (n + m) fg_a -
+                (constructSchwingerFunctions Wfn) n f *
+                (constructSchwingerFunctions Wfn) m g‖ < ε := by
+  -- reuse the OS I Section 4.4 transport package in the exact
+  -- `SchwingerOS.lean :: E4_cluster` witness order
 ```
 
 Again, the documentation should prefer the clean Section 4 transport route over
@@ -410,50 +617,117 @@ the currently half-open `W_analytic_cluster_integral` lane.
 
 The later Lean implementation should proceed in this order.
 
-1. Keep `wightman_to_os_full` as the minimal bridge theorem.
-2. Repackage the already-proved continuity and linearity theorems as E0.
-3. Package E2 from `wickRotatedBoundaryPairing_symmetric`.
-4. Package the honest Euclidean-reality lemmas as support input for E3.
-5. Prove E3 by transporting the Section 4.3 positivity package.
-6. Prove E4 by transporting the Section 4.4 cluster package.
-7. Only after E0/E2/E3/E4 are honest should the repo decide whether a full E1
-   Euclidean invariance structure is needed at the same theorem surface.
+1. Keep `wightman_to_os_full` as the minimal bridge theorem in
+   `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean`.
+2. Repackage the already-proved continuity and linearity theorems as
+   `E0_tempered` and `E0_linear`.
+3. Repackage `wickRotatedBoundaryPairing_reality` as the missing `E0_reality`
+   field.
+4. Package `E3_symmetric` from `wickRotatedBoundaryPairing_symmetric`.
+5. Package the split `E1` fields in the exact order
+   `E1_translation_invariant -> E1_rotation_invariant`, using the common BHW
+   analytic object as the only endorsed transport surface.
+6. Prove `E2_reflection_positive` by transporting the OS I Section-4.3
+   positivity package.
+7. Prove `E4_cluster` by transporting the OS I Section-4.4 cluster package.
 
 This order matters because it keeps the route faithful to the currently proved
-bridge and avoids rebuilding the reverse direction around the false positivity
-chain.
+bridge, forces the reverse theorem to respect the actual `SchwingerOS.lean`
+field inventory, and avoids rebuilding the reverse direction around the false
+positivity chain or around an underspecified bundled `E1` theorem shape.
 
+### 14.1. Explicit slot ledger for the split `E1` package
+
+To make the later Lean pass mechanical, the reverse docs should now freeze the
+split `E1` package at the same slot-ledger standard used elsewhere in the repo.
+
+1. `constructSchwinger_translation_covariant_BHW`
+   - file owner:
+     `OSReconstruction/Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean`
+   - consumes checked-present `W_analytic_BHW` plus the existing Wightman-side
+     translation-covariance package that theorem already depends on
+   - exports the BHW-side translation covariance statement on the common
+     holomorphic object
+   - next allowed consumer:
+     `constructSchwinger_translation_invariant`
+2. `constructSchwinger_translation_invariant`
+   - file owner:
+     `.../SchwingerAxioms.lean`
+   - consumes only the previous BHW-side translation-covariance theorem plus
+     the definition of `constructSchwingerFunctions`
+   - exports the exact field-shaped witness for
+     `SchwingerOS.lean :: OsterwalderSchraderAxioms.E1_translation_invariant`
+   - next allowed consumers:
+     the final stronger wrapper and the later `E4` package only through the
+     packaged Euclidean family, not by reopening raw BHW covariance
+3. `constructSchwinger_rotation_covariant_BHW`
+   - file owner:
+     `.../SchwingerAxioms.lean`
+   - consumes checked-present `W_analytic_BHW` plus the existing Lorentz /
+     Poincare covariance package behind the BHW extension
+   - exports the BHW-side covariance statement specialized to the Euclidean
+     rotation subgroup on the Wick slice
+   - next allowed consumer:
+     `constructSchwinger_rotation_invariant`
+4. `constructSchwinger_rotation_invariant`
+   - file owner:
+     `.../SchwingerAxioms.lean`
+   - consumes only the previous BHW-side rotation-covariance theorem plus the
+     definition of `constructSchwingerFunctions`
+   - exports the exact field-shaped witness for
+     `SchwingerOS.lean :: OsterwalderSchraderAxioms.E1_rotation_invariant`
+   - next allowed consumers:
+     the final stronger wrapper and downstream Euclidean-axiom consumers only
+
+The implementation consequence is strict: later Lean work may introduce small
+rewrite helpers under those four slots, but it may not collapse them back into
+one vague theorem called `constructSchwinger_euclidean_invariant`.
 ## 15. Implementation-ready pseudocode for the stronger theorem surface
 
 ```lean
 theorem wightman_to_os_axioms_full (Wfn : WightmanFunctions d) :
     ∃ OS : OsterwalderSchraderAxioms d,
-      OS.schwinger = constructSchwingerFunctions Wfn := by
+      OS.S = constructSchwingerFunctions Wfn := by
   let S := constructSchwingerFunctions Wfn
-  have hE0_cont : ∀ n, Continuous (S n) := by
+  have hE0_tempered : ∀ n, Continuous (S n) := by
     intro n
     simpa [S, constructSchwingerFunctions] using
       constructedSchwinger_tempered_zeroDiagonal Wfn n
-  have hE0_lin : ∀ n, IsLinearMap ℂ (S n) := by
+  have hE0_linear : ∀ n, IsLinearMap ℂ (S n) := by
     intro n
     simpa [S, constructSchwingerFunctions] using
       constructedZeroDiagonalSchwinger_linear Wfn n
-  have hE2 : EuclideanSymmetry S := by
+  have hE0_reality :
+      ∀ (n : ℕ) (f g : ZeroDiagonalSchwartz d n),
+        (∀ x, g.1 x = starRingEnd ℂ (f.1 (timeReflectionN d x))) →
+        starRingEnd ℂ (S n f) = S n g := by
+    intro n f g hfg
+    -- package `wickRotatedBoundaryPairing_reality` plus the given witness `hfg`
+    exact constructSchwinger_reality (d := d) Wfn n f g hfg
+  have hE3 :
+      ∀ (n : ℕ) (σ : Equiv.Perm (Fin n)) (f g : ZeroDiagonalSchwartz d n),
+        (∀ x, g.1 x = f.1 (fun i => x (σ i))) →
+        S n f = S n g := by
     intro n σ f g hfg
     simpa [S, constructSchwingerFunctions] using
-      wickRotatedBoundaryPairing_symmetric Wfn n σ f g hfg
-  have hE3 : ReflectionPositive S := by
+      wickRotatedBoundaryPairing_symmetric Wfn n σ f.1 g.1 hfg
+  have hE2 :
+      ∀ (F : BorchersSequence d),
+        (∀ n, tsupport ((F.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+          OrderedPositiveTimeRegion d n) →
+        (OSInnerProduct d S F F).re ≥ 0 := by
     exact constructSchwinger_positive (d := d) Wfn
-  have hE4 : EuclideanCluster S := by
-    exact constructSchwinger_cluster (d := d) Wfn
-  have hE1 : EuclideanInvariance S := by
-    exact constructSchwinger_euclidean_invariant (d := d) Wfn
+  have hE4 := constructSchwinger_cluster (d := d) Wfn
+  -- `E1_translation_invariant` / `E1_rotation_invariant` are separate later slots.
   exact ⟨{
-    E0_continuous := hE0_cont
-    E0_linear := hE0_lin
-    E1_invariant := hE1
-    E2_symmetric := hE2
-    E3_positive := hE3
+    S := S
+    E0_tempered := hE0_tempered
+    E0_linear := hE0_linear
+    E0_reality := hE0_reality
+    E1_translation_invariant := constructSchwinger_translation_invariant (d := d) Wfn
+    E1_rotation_invariant := constructSchwinger_rotation_invariant (d := d) Wfn
+    E2_reflection_positive := hE2
+    E3_symmetric := hE3
     E4_cluster := hE4
   }, rfl⟩
 ```
@@ -461,11 +735,19 @@ theorem wightman_to_os_axioms_full (Wfn : WightmanFunctions d) :
 This pseudocode is intentionally explicit about the trusted and untrusted
 pieces:
 
-1. the E0/E2 slots already point to honest current theorem surfaces;
-2. the E3/E4 slots are future targets that must reuse the Section 4 transport
-   packages;
+1. the `E0_tempered`, `E0_linear`, `E0_reality`, and `E3_symmetric` slots now
+   point to honest current theorem surfaces or immediate repackaging targets;
+2. the `E2_reflection_positive` and `E4_cluster` slots remain future targets
+   that must reuse the Section 4 transport packages;
 3. the old false OS=`Wightman` positivity chain does not appear anywhere in
-   the target proof script.
+   the target proof script;
+4. the stronger theorem surface must target the actual structure fields
+   `OS.S`, `OS.E0_tempered`, `OS.E0_linear`, `OS.E0_reality`,
+   `OS.E1_translation_invariant`, `OS.E1_rotation_invariant`,
+   `OS.E2_reflection_positive`, `OS.E3_symmetric`, and `OS.E4_cluster`.
+   The derived projection `OS.schwinger` does exist in `SchwingerOS.lean`, but
+   it is a wrapper definition rather than a structure field, so later docs
+   should not blur "field inventory" with "derived accessor".
 
 ## 16. Concrete proof sketches and route classification for E0-E4
 
@@ -502,18 +784,8 @@ action bookkeeping.
 
 ### 16.3. E2 proof sketch
 
-E2 is now an honest packaging theorem around the already-correct symmetry
-surface.
-
-1. use `wickRotatedBoundaryPairing_symmetric`,
-2. rewrite it into the exact axiom-field format used by the OS structure,
-3. discharge any zero-diagonal adapters explicitly.
-
-Estimated size: `20-50` Lean lines.
-
-### 16.4. E3 proof sketch
-
-E3 must *not* go through the false OS=`Wightman` positivity chain.
+`E2_reflection_positive` must *not* go through the false OS=`Wightman`
+positivity chain.
 
 The honest route is:
 
@@ -521,12 +793,23 @@ The honest route is:
    Section 4.3 transport object,
 2. prove the diagonal OS form equals the Hilbert norm square on the initial
    positive-time core,
-3. extend by polarization/density if the axiom field needs the full
-   sesquilinear form,
+3. extend by density / continuity to the full ordered positive-time Euclidean
+   Borchers-sequence domain required by `E2_reflection_positive`,
 4. conclude reflection positivity.
 
 Estimated size: `120-220` Lean lines after the OS I Section 4.3 transport
 package is implemented under exact theorem names.
+
+### 16.4. E3 proof sketch
+
+`E3_symmetric` is now an honest packaging theorem around the already-correct
+symmetry surface.
+
+1. use `wickRotatedBoundaryPairing_symmetric`,
+2. rewrite it into the exact axiom-field format used by the OS structure,
+3. discharge any zero-diagonal adapters explicitly.
+
+Estimated size: `20-50` Lean lines.
 
 ### 16.5. E4 proof sketch
 
@@ -582,55 +865,80 @@ targets.
 1. `constructSchwingerFunctions`
 2. `constructedSchwinger_tempered_zeroDiagonal`
 3. `constructedZeroDiagonalSchwinger_linear`
-4. `wickRotatedBoundaryPairing_symmetric`
-5. `bhw_euclidean_reality_ae`
-6. `wightman_to_os_full`
+4. `wickRotatedBoundaryPairing_reality`
+5. `wickRotatedBoundaryPairing_symmetric`
+6. `bhw_euclidean_reality_ae`
+7. `bhw_pointwise_cluster_forwardTube`
+8. `wightman_to_os_full`
+
+The live `SchwingerAxioms.lean` front should therefore be described with more
+precision than a generic “positivity / reality / cluster” slogan:
+- actual remaining `sorry` slots there are only
+  `schwingerExtension_os_term_eq_wightman_term` and
+  `W_analytic_cluster_integral`;
+- `bhw_euclidean_reality_ae` is an already-checked analytic supplier, not a
+  remaining hole;
+- `wickRotatedBoundaryPairing_reflection_positive` exists but stays in the
+  `QUARANTINE` bucket until rerouted through the honest Section-4.3 transport
+  package.
 
 ## 18. Estimated Lean line counts for a future full reverse theorem
 
 The reverse blueprint is now detailed enough for rough sizing.
 
-1. E0 packaging:
-   `20-40` lines.
+1. E0 packaging (including the now-explicit `E0_reality` slot):
+   `40-80` lines.
 2. E1 transport package:
    `80-160` lines.
-3. E2 packaging:
-   `20-50` lines.
-4. E3 honest positivity transport:
+3. E2 honest positivity transport:
    `120-220` lines.
+4. E3 symmetry packaging:
+   `20-50` lines.
 5. E4 honest cluster transport:
    `120-220` lines.
 6. final `wightman_to_os_axioms_full` wrapper:
    `20-40` lines.
 
 So the honest route to a full reverse-direction axiom theorem should be thought
-of as an approximately `380-730` line package, with almost all of the real
-work in the E3/E4 transport theorems rather than in the final wrapper.
+of as an approximately `400-770` line package, with almost all of the real
+work in the `E2`/`E4` transport theorems rather than in the final wrapper.
 
-## 19. Exact dependency chain for E1/E3/E4
+## 19. Exact dependency chain for E0/E1/E2/E3/E4
 
 The reverse-direction doc should now write the theorem dependencies in a way
-that prevents accidental reuse of the false positivity route.
+that prevents accidental reuse of the false positivity route and keeps the
+source-checked `SchwingerOS.lean` field order visible.
 
 ### 19.1. E1 dependency chain
 
 The later implementation should proceed through these theorem slots:
 
 ```lean
-lemma W_analytic_BHW_translation_covariant
-lemma W_analytic_BHW_rotation_covariant
-lemma wickRotate_intertwines_translation_action
-lemma wickRotate_intertwines_rotation_action
-lemma constructSchwinger_translation_covariant
-lemma constructSchwinger_rotation_covariant
-theorem constructSchwinger_euclidean_invariant
+lemma constructSchwinger_translation_covariant_BHW
+lemma constructSchwinger_translation_invariant
+lemma constructSchwinger_rotation_covariant_BHW
+lemma constructSchwinger_rotation_invariant
 ```
+
+with the proof transcript frozen as:
+
+1. transport Wightman translation covariance through the checked common BHW
+   object,
+2. descend that covariance to the exact
+   `SchwingerOS.lean :: OsterwalderSchraderAxioms.E1_translation_invariant`
+   field witness on `constructSchwingerFunctions Wfn`,
+3. transport Lorentz/Poincaré covariance through the same BHW object but now
+   specialized to the Euclidean rotation subgroup on the Wick slice,
+4. descend that to the exact
+   `SchwingerOS.lean :: OsterwalderSchraderAxioms.E1_rotation_invariant`
+   field witness.
 
 The key documentation constraint is that the action should always be pushed
 through the common holomorphic object first, and only then restricted to the
-Wick-rotated Euclidean slice.
+Wick-rotated Euclidean slice. Later docs are **not** allowed to collapse this
+back into a bundled theorem such as `constructSchwinger_euclidean_invariant`.
 
-### 19.2. E3 dependency chain
+### 19.2. E2 dependency chain
 
 The later positivity proof should be forced through the following package:
 
@@ -642,10 +950,10 @@ lemma wickRotatedBoundaryPairing_nonneg_by_density
 theorem constructSchwinger_positive
 ```
 
-The docs should continue to ban any route that tries to prove E3 by asserting a
-direct equality of the OS form with the Wightman form.
+The docs should continue to ban any route that tries to prove `E2` by asserting
+a direct equality of the OS form with the Wightman form.
 
-### 19.2.1. Exact proof transcript for the E3 transport package
+### 19.2.1. Exact proof transcript for the E2 transport package
 
 The later Lean proof should make the transport mechanism literal:
 
@@ -675,55 +983,140 @@ This is the point where the docs must remain strict: the proof is a transport
 and density theorem, not a direct comparison of Euclidean and Minkowski
 pairings.
 
-### 19.3. E4 dependency chain
+### 19.3. E3 dependency chain
 
-The later cluster proof should be split as:
+The later symmetry proof should be split as:
 
 ```lean
-lemma wickRotatedBoundaryPairing_cluster_on_core
-lemma wickRotatedBoundaryPairing_cluster_transport
-lemma wickRotatedBoundaryPairing_cluster_by_density
+lemma constructSchwinger_symmetry_on_Schwartz
+lemma constructSchwinger_symmetry_on_zeroDiagonal
+theorem constructSchwinger_symmetric
+```
+
+In practice this is expected to collapse almost immediately to
+`wickRotatedBoundaryPairing_symmetric`, but the docs should still keep the
+packaging seam explicit: the production theorem is on `SchwartzNPoint`, while
+`OsterwalderSchraderAxioms.E3_symmetric` is stated on `ZeroDiagonalSchwartz`.
+
+### 19.4. E4 dependency chain
+
+The later cluster proof is no longer allowed to hide behind a generic
+"transport on a core, then density" slogan. The checked-present reverse file
+already exposes one literal wrapper surface,
+`SchwingerAxioms.lean :: wickRotatedBoundaryPairing_cluster`, and the docs now
+freeze the implementation-facing consumer ladder around that fact:
+
+```lean
+lemma W_analytic_cluster_integral
+lemma wickRotatedBoundaryPairing_cluster
 theorem constructSchwinger_cluster
 ```
 
-Again, the point is to document cluster as a Section 4.4 transport theorem,
-not as a fresh direct integral estimate in `SchwingerAxioms.lean`.
+with the final consumer target fixed as
+`SchwingerOS.lean :: OsterwalderSchraderAxioms.E4_cluster`.
 
-### 19.3.1. Exact proof transcript for the E4 transport package
+More explicitly, the reverse cluster lane must now be read in the same
+checked/planned split used elsewhere in the repo:
+
+1. `W_analytic_cluster_integral`
+   - file owner:
+     `OSReconstruction/Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean`
+   - status: checked-present live supplier theorem on the common-BHW /
+     full-`SchwartzNPoint` side
+   - exports: the common-BHW/full-Schwartz cluster estimate
+   - next allowed consumer: `wickRotatedBoundaryPairing_cluster` only
+2. `wickRotatedBoundaryPairing_cluster`
+   - file owner:
+     `.../SchwingerAxioms.lean`
+   - status: checked-present wrapper theorem
+   - consumes: `W_analytic_cluster_integral`
+   - exports: the Wick-restricted full-`SchwartzNPoint` cluster wrapper
+   - next allowed consumer: `constructSchwinger_cluster` only
+3. `constructSchwinger_cluster`
+   - file owner: future packaging theorem on the reverse `R -> E` lane,
+     documented against
+     `OSReconstruction/Wightman/Reconstruction/SchwingerOS.lean`
+   - status: still-missing planned zero-diagonal packaging theorem
+   - consumes: `wickRotatedBoundaryPairing_cluster` plus an explicit
+     zero-diagonal adapter package matching the *actual* field surface of
+     `SchwingerOS.lean :: OsterwalderSchraderAxioms.E4_cluster`
+   - required local theorem slots before the final packaging step:
+     1. `constructSchwinger_cluster_translate_adapter`
+        - theorem surface: for `g : ZeroDiagonalSchwartz d m` and spatial `a`,
+          build / identify the translated witness `g_a : ZeroDiagonalSchwartz d m`
+          with pointwise equation `g_a.1 x = g.1 (fun i => x i - a)`
+        - role: converts the checked full-`SchwartzNPoint` translation input of
+          `wickRotatedBoundaryPairing_cluster` into the exact zero-diagonal
+          quantifier expected by `E4_cluster`
+     2. `constructSchwinger_cluster_tensor_adapter`
+        - theorem surface: for `f : ZeroDiagonalSchwartz d n` and translated
+          `g_a`, build / identify `fg_a : ZeroDiagonalSchwartz d (n + m)` with
+          pointwise equation
+          `fg_a.1 x = f.1 (splitFirst n m x) * g_a.1 (splitLast n m x)`
+        - role: supplies the exact `(n+m)`-point test object quantified by the
+          field `E4_cluster`; later Lean work is no longer allowed to hide this
+          under a vague "tensor product restriction" slogan
+     3. `constructSchwinger_cluster`
+        - theorem surface: consume `wickRotatedBoundaryPairing_cluster` together
+          with the two adapter witnesses above and discharge the exact norm
+          inequality appearing in `SchwingerOS.lean : E4_cluster`
+   - exports: the exact field witness consumed by
+     `OsterwalderSchraderAxioms.E4_cluster`
+
+So the implementation-facing theorem order is frozen as
+
+```lean
+W_analytic_cluster_integral
+  -> wickRotatedBoundaryPairing_cluster
+  -> constructSchwinger_cluster_translate_adapter
+  -> constructSchwinger_cluster_tensor_adapter
+  -> constructSchwinger_cluster
+  -> OsterwalderSchraderAxioms.E4_cluster
+```
+
+The adapter pair is not optional bookkeeping: it is the exact local proof
+transcript forced by `SchwingerOS.lean:792-804`, where the final field first
+quantifies the translated witness `g_a` and then the tensor witness `fg_a`
+before the norm inequality is even stated. Later Lean work must therefore not
+replace this lane with a generic pseudo-family such as
+`wickRotatedBoundaryPairing_cluster_transport_on_core` /
+`..._by_density` unless those names are first introduced and justified as real
+intermediate theorem surfaces.
+
+### 19.4.1. Exact proof transcript for the E4 packaging route
 
 The later Lean proof should proceed as:
 
-1. define the same Wick-rotated positive-time core used in E3,
-2. prove the Euclidean cluster functional on that core agrees with the
-   transported Minkowski cluster functional,
-3. invoke the OS-I Section 4.4 cluster theorem on the transported Minkowski
-   side,
-4. deduce the cluster statement on the core,
-5. extend from the core to the full Euclidean test space by density and
-   continuity of the cluster pairings,
-6. package the result as the `E4` axiom field.
+1. prove or repair `W_analytic_cluster_integral` on the honest common-BHW /
+   full-`SchwartzNPoint` side,
+2. package that supplier as the checked Wick-restricted wrapper
+   `wickRotatedBoundaryPairing_cluster` in `SchwingerAxioms.lean`,
+3. add the still-missing zero-diagonal adapter package above that checked
+   wrapper, in the literal order
+   `constructSchwinger_cluster_translate_adapter -> constructSchwinger_cluster_tensor_adapter -> constructSchwinger_cluster`,
+   so the proof explicitly manufactures the quantified witnesses `g_a` and
+   `fg_a` required by `SchwingerOS.lean :: OsterwalderSchraderAxioms.E4_cluster`
+   rather than silently coercing a full-`SchwartzNPoint` tensor product,
+4. assign that packaged witness to the exact structure field
+   `SchwingerOS.lean :: OsterwalderSchraderAxioms.E4_cluster`.
 
-So the theorem slots should be:
-
-```lean
-lemma wickRotatedBoundaryPairing_cluster_transport_on_core
-lemma wickRotatedBoundaryPairing_cluster_on_core
-lemma wickRotatedBoundaryPairing_cluster_core_dense
-lemma wickRotatedBoundaryPairing_cluster_by_density
-theorem constructSchwinger_cluster
-```
-
-That keeps the reverse cluster route parallel to the reverse positivity route:
-transport on a core first, then density closure.
+The critical ambiguity removed here is ownership: the reverse docs are no
+longer allowed to suggest that the implementation target is an unspecified
+core/density package living somewhere between `SchwingerAxioms.lean` and
+`SchwingerOS.lean`. The checked wrapper already lives in
+`SchwingerAxioms.lean`; the missing work above it is the explicit
+zero-diagonal packaging theorem `constructSchwinger_cluster`.
 
 ### 19.4. Implementation consequence
 
 If a later reverse-direction Lean proof tries to jump directly from:
 
 1. `constructSchwingerFunctions`,
-2. `wickRotatedBoundaryPairing_symmetric`,
-3. `bhw_euclidean_reality_ae`,
+2. `wickRotatedBoundaryPairing_reality`,
+3. `wickRotatedBoundaryPairing_symmetric`,
+4. `bhw_euclidean_reality_ae`,
 
-to the full E3 or E4 axiom fields without the intermediate transport theorems
-above, the docs should be updated first. The current note should no longer
-permit hidden large steps in the reverse direction.
+to the full `E2_reflection_positive` or `E4_cluster` axiom fields without the
+intermediate transport theorems above, the docs should be updated first. The
+current note should no longer permit hidden large steps in the reverse
+direction.

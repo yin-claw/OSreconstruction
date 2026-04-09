@@ -20,10 +20,41 @@ Here "peripheral" does **not** mean mathematically unimportant. It means:
 
 ## 1. Reverse-direction / historical route residuals
 
+Source-checked split (2026-04-08): the late reverse-direction fields are not
+peripheral for the same reason.
+
+- `E2_reflection_positive` currently has a checked theorem surface
+  (`wickRotatedBoundaryPairing_reflection_positive`), but that surface is
+  **quarantined** because it still depends on the false OS=`Wightman` chain.
+  The honest implementation route is the stricter six-slot transport/density
+  package
+  `wickRotated_positiveTimeCore -> wickRotatedBoundaryPairing_eq_transport_inner_on_core -> wickRotatedBoundaryPairing_nonneg_on_core -> wickRotated_positiveTimeCore_dense -> wickRotatedBoundaryPairing_nonneg_by_density -> constructSchwinger_positive -> OsterwalderSchraderAxioms.E2_reflection_positive`.
+  File ownership on that lane is now fixed: the first five slots belong in
+  `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean`, while
+  `constructSchwinger_positive` is the final packaging theorem that exports the
+  actual field witness in `Wightman/Reconstruction/SchwingerOS.lean`.
+- `E4_cluster` instead has a live theorem-shaped full-Schwartz/common-BHW
+  supplier (`W_analytic_cluster_integral`), but that theorem is still only an
+  upstream Section-4.4 input to the final `ZeroDiagonalSchwartz` packaging.
+  Its open proof route is no longer allowed to be described vaguely: the
+  supplier theorem itself must run in the literal order
+  `sector partition -> identity-sector ForwardTube application of bhw_pointwise_cluster_forwardTube -> permutation rewrite on bad sectors -> uniform HasForwardTubeGrowth majorant -> sectorwise dominated convergence -> finite sector sum`,
+  and only after that may the checked wrapper / final packager ladder
+  `W_analytic_cluster_integral -> wickRotatedBoundaryPairing_cluster -> constructSchwinger_cluster_translate_adapter -> constructSchwinger_cluster_tensor_adapter -> constructSchwinger_cluster -> OsterwalderSchraderAxioms.E4_cluster`
+  start.
+
+So this section must not be read as if all reverse residuals are simply “old
+false-route leftovers.” It contains both quarantined positivity debt and live
+cluster-supplier debt.
+
 | File:line | Theorem | Why peripheral right now | Primary doc |
 |---|---|---|---|
-| `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean:2366` | `schwingerExtension_os_term_eq_wightman_term` | false route, should be quarantined not advanced | `docs/r_to_e_blueprint.md` |
-| `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean:3581` | `W_analytic_cluster_integral` | reverse-direction cluster, not current `E -> R` target | `docs/r_to_e_blueprint.md` |
+| `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean:2358` | `schwingerExtension_os_term_eq_wightman_term` | false route; active docs classify it as DELETE from the honest reverse route | `docs/r_to_e_blueprint.md` |
+| `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean:2412` | `wickRotatedBoundaryPairing_reflection_positive` | checked-present but quarantined wrapper on the reverse E2 lane; still not an honest supplier for `E2_reflection_positive`, which must instead come from the planned transport/density package `wickRotated_positiveTimeCore -> wickRotatedBoundaryPairing_eq_transport_inner_on_core -> wickRotatedBoundaryPairing_nonneg_on_core -> wickRotated_positiveTimeCore_dense -> wickRotatedBoundaryPairing_nonneg_by_density -> constructSchwinger_positive -> OsterwalderSchraderAxioms.E2_reflection_positive` | `docs/r_to_e_blueprint.md` |
+| `Wightman/Reconstruction/SchwingerOS.lean:774` | `OsterwalderSchraderAxioms.E2_reflection_positive` | final reverse E2 field target; the still-missing packaging theorem `constructSchwinger_positive` must land exactly here rather than into a generic reverse positivity wrapper | `docs/r_to_e_blueprint.md` |
+| `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean:3545` | `W_analytic_cluster_integral` | reverse Section-4.4 cluster supplier on the honest common-BHW/full-Schwartz lane; peripheral only because `R -> E` is not the active implementation target, not because it is a false-route theorem; its proof transcript is frozen as sector partition -> identity-sector ForwardTube step -> bad-sector permutation rewrites -> uniform majorant -> sectorwise DCT -> finite sector sum | `docs/r_to_e_blueprint.md`, `docs/cluster_property_analysis.md` |
+| `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean:3589` | `wickRotatedBoundaryPairing_cluster` | checked full-`SchwartzNPoint` wrapper above `W_analytic_cluster_integral`; still not the final zero-diagonal Euclidean axiom witness | `docs/r_to_e_blueprint.md`, `docs/cluster_property_analysis.md` |
+| `Wightman/Reconstruction/SchwingerOS.lean:792` | `OsterwalderSchraderAxioms.E4_cluster` | final reverse E4 field target; the still-missing packaging theorem `constructSchwinger_cluster` must land exactly here after the checked wrapper step, and that packaging is now frozen more sharply as `constructSchwinger_cluster_translate_adapter` (build `g_a : ZeroDiagonalSchwartz d m`) -> `constructSchwinger_cluster_tensor_adapter` (build `fg_a : ZeroDiagonalSchwartz d (n + m)`) -> `constructSchwinger_cluster` | `docs/r_to_e_blueprint.md`, `docs/cluster_property_analysis.md` |
 | `Wightman/Reconstruction/WickRotation/BHWTranslation.lean:1115` | `isPreconnected_baseFiber` | old-route residual, no longer needed on merged Route 1 path | `docs/r_to_e_blueprint.md` |
 | `Wightman/Reconstruction/WickRotation/ForwardTubeLorentz.lean:1129` | `wickRotation_not_in_PET_null` | reverse-direction measure-zero geometry | `docs/r_to_e_blueprint.md` |
 
@@ -180,6 +211,15 @@ The later backlog should be budgeted approximately as:
 4. Do not resume the quarantined false reverse-direction positivity chain as if
    it were a valid proof route. If any part of it is reused, it must first be
    rewritten under the theorem packages documented in `docs/r_to_e_blueprint.md`.
+5. Do not collapse reverse `E2_reflection_positive` and reverse `E4_cluster`
+   into one generic “late reverse package.” `wickRotatedBoundaryPairing_
+   reflection_positive` is quarantined-wrapper debt on the Section-4.3 lane,
+   while `W_analytic_cluster_integral` is live-supplier debt on the
+   Section-4.4 lane.
+6. Do not describe `W_analytic_cluster_integral` as itself the final Euclidean
+   axiom theorem; the final consumer is still
+   `SchwingerOS.lean :: OsterwalderSchraderAxioms.E4_cluster` after the
+   reverse transport/density packaging.
 
 ## 8. Why this file exists
 

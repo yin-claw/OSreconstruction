@@ -53,7 +53,38 @@
 
 ---
 
-## R→E Direction (Wightman → Schwinger): 9 sorrys
+## R→E Direction (Wightman → Schwinger): historical monolith view only
+
+This section is retained only as a historical decomposition of the old
+`WickRotation.lean` monolith. It is **not** the live implementation ledger.
+In the current split tree, later Lean work must read reverse ownership from
+`Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` together with
+`docs/r_to_e_blueprint.md`, `README.md`, and
+`OSReconstruction/Wightman/TODO.md`.
+
+For the late reverse fields, the implementation contract is now explicitly
+split:
+- `E2_reflection_positive` does **not** currently have an honest supplier
+  theorem. The checked wrapper
+  `SchwingerAxioms.lean :: wickRotatedBoundaryPairing_reflection_positive`
+  stays quarantined because it still depends on the false OS=`Wightman` chain.
+- `E4_cluster` already has a live supplier theorem
+  `SchwingerAxioms.lean :: W_analytic_cluster_integral`, but that theorem is
+  only the first supplier in the frozen consumer ladder
+  `W_analytic_cluster_integral -> wickRotatedBoundaryPairing_cluster -> constructSchwinger_cluster_translate_adapter -> constructSchwinger_cluster_tensor_adapter -> constructSchwinger_cluster -> OsterwalderSchraderAxioms.E4_cluster`.
+  The final packaging step is now frozen at the exact field shape from
+  `SchwingerOS.lean:792`: later Lean work must not stop at a vague
+  `constructSchwinger_cluster` slogan, but must pass through the literal
+  zero-diagonal adapter order
+  `constructSchwinger_cluster_translate_adapter ->`
+  `constructSchwinger_cluster_tensor_adapter ->`
+  `constructSchwinger_cluster`, where the first adapter manufactures the
+  quantified witness `g_a : ZeroDiagonalSchwartz d m` and the second
+  manufactures `fg_a : ZeroDiagonalSchwartz d (n + m)` before the final norm
+  inequality theorem is even well-typed.
+
+So later docs and later Lean work must not collapse the late reverse backlog
+into a generic `constructedSchwinger_*` bucket.
 
 ### Group A: BHW Hypotheses (2 sorrys remaining, 1 closed)
 
@@ -92,11 +123,50 @@ All three follow the same pattern: use proved results from AnalyticContinuation.
 #### C1. `constructedSchwinger_tempered` — E0 (line ~253)
 Needs polynomial growth bounds. Enabler: `polynomial_growth_tube` / `polynomial_growth_forwardTube`.
 
-#### C2. `constructedSchwinger_reflection_positive` — E2 (line ~409)
-Deep calculation connecting OS inner product to Wightman positivity (R2).
+#### C2. reverse `E2_reflection_positive` transport package (historical monolith label)
+Current sharpened status: the checked theorem surface
+`wickRotatedBoundaryPairing_reflection_positive` exists, but it is only a
+**quarantined wrapper** because it still closes through the false
+OS=`Wightman` chain. So the real missing work is not to finish a theorem named
+`constructedSchwinger_reflection_positive`; it is to build an honest reverse
+Section-4.3 transport/density package that lands directly in
+`SchwingerOS.lean :: OsterwalderSchraderAxioms.E2_reflection_positive`.
 
-#### C3. `W_analytic_cluster_integral` — E4 support (line ~491)
-Cluster decomposition + dominated convergence.
+The file-ownership split is now explicit even in this historical note:
+- `OSReconstruction/Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean`
+  owns the honest transport/density core slots
+  `wickRotated_positiveTimeCore -> wickRotatedBoundaryPairing_eq_transport_inner_on_core -> wickRotatedBoundaryPairing_nonneg_on_core -> wickRotated_positiveTimeCore_dense -> wickRotatedBoundaryPairing_nonneg_by_density`.
+- `OSReconstruction/Wightman/Reconstruction/SchwingerOS.lean` owns only the
+  final packaging theorem `constructSchwinger_positive` exporting the field
+  witness `OsterwalderSchraderAxioms.E2_reflection_positive`.
+
+#### C3. `W_analytic_cluster_integral` — reverse `E4_cluster` supplier, not final field witness
+Current sharpened status: `W_analytic_cluster_integral` is a real live theorem
+on the common-BHW / full-`SchwartzNPoint` side, but it is **not** itself the
+final reverse cluster theorem. The frozen implementation order is
+`W_analytic_cluster_integral -> wickRotatedBoundaryPairing_cluster -> constructSchwinger_cluster_translate_adapter -> constructSchwinger_cluster_tensor_adapter -> constructSchwinger_cluster -> OsterwalderSchraderAxioms.E4_cluster`,
+so the still-missing theorem slots above the checked wrapper are the two
+explicit witness-building adapters plus the final norm-inequality packager,
+not a vague monolithic `constructedSchwinger_*` closure.
+
+The ownership split is likewise literal:
+- `OSReconstruction/Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean`
+  owns the checked supplier `W_analytic_cluster_integral` and the checked
+  wrapper `wickRotatedBoundaryPairing_cluster`.
+- `OSReconstruction/Wightman/Reconstruction/SchwingerOS.lean` owns only the
+  final field consumer `OsterwalderSchraderAxioms.E4_cluster`.
+- The still-missing theorem `constructSchwinger_cluster` is the explicit
+  zero-diagonal packaging seam between those two checked file owners.
+
+The packaging seam is now frozen more tightly against the actual field
+statement in `SchwingerOS.lean:792-804`. The route above the checked wrapper
+must run in the local order
+`constructSchwinger_cluster_translate_adapter ->`
+`constructSchwinger_cluster_tensor_adapter -> constructSchwinger_cluster`,
+with the first adapter producing the quantified translated witness
+`g_a : ZeroDiagonalSchwartz d m` and the second producing the quantified
+`(n+m)`-point witness `fg_a : ZeroDiagonalSchwartz d (n + m)` that the field
+statement requires before the final cluster norm inequality can be packaged.
 
 #### C4. Boundary values in `wightman_to_os_full` (line ~755)
 Sign convention issue. See `docs/sign_convention_analysis.md`.
@@ -146,8 +216,8 @@ Sign fix (x - iεη → x + iεη)
 
 Still blocked (deeper arguments needed):
     B1-B3 (F_ext invariance) ← density/full-measure lemma
-    C2 (E2 reflection positivity) ← Wightman positivity calculation
-    C3 (E4 cluster) ← cluster decomposition + dominated convergence
+    C2 (E2 reflection positivity) ← reverse Section-4.3 transport/density package on the Wick-rotated positive-time core; do not use the false OS=`Wightman` pairing chain
+    C3 (E4 cluster) ← reverse Section-4.4 transport/density package in the frozen order `W_analytic_cluster_integral -> wickRotatedBoundaryPairing_cluster -> constructSchwinger_cluster_translate_adapter -> constructSchwinger_cluster_tensor_adapter -> constructSchwinger_cluster -> OsterwalderSchraderAxioms.E4_cluster`
     D1-D3 (E→R inductive continuation) ← OS II Laplace transform theory
     E1-E6 (Wightman axiom verification) ← depends on D1-D3
 ```
@@ -170,4 +240,12 @@ With the 5 new axioms (3 general tube domain + 2 forward tube) and continuous bo
 - B1-B3: need density/full-measure lemma (~50 lines)
 - C1: need polynomial growth bounds wired through (~30 lines)
 - C4: sign convention fix (~5 line change, but affects all downstream)
-- C2, C3, D1-D3, E1-E6: deeper mathematical arguments needed
+- late reverse fields: keep the split explicit — `E2_reflection_positive`
+  still needs the honest reverse Section-4.3 transcript
+  `wickRotated_positiveTimeCore -> wickRotatedBoundaryPairing_eq_transport_inner_on_core -> wickRotatedBoundaryPairing_nonneg_on_core -> wickRotated_positiveTimeCore_dense -> wickRotatedBoundaryPairing_nonneg_by_density -> constructSchwinger_positive -> OsterwalderSchraderAxioms.E2_reflection_positive`,
+  while `E4_cluster` already has the live supplier
+  `W_analytic_cluster_integral` but still needs the full wrapper/package ladder
+  `W_analytic_cluster_integral -> wickRotatedBoundaryPairing_cluster -> constructSchwinger_cluster_translate_adapter -> constructSchwinger_cluster_tensor_adapter -> constructSchwinger_cluster -> OsterwalderSchraderAxioms.E4_cluster`,
+  with the exact `g_a` / `fg_a` witness obligations coming from the field
+  statement in `SchwingerOS.lean`
+- D1-D3, E1-E6: deeper mathematical arguments needed

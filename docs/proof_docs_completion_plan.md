@@ -199,11 +199,15 @@ This doc is complete only when:
    a support restriction `tsupport ⊆ PositiveEnergyRegion` or a false
    `DenseRange` claim in full `SchwartzNPoint d n`;
 4. Package I has concrete theorem slots for the explicit `(4.19)`-`(4.20)`
-   test-function transform, the transformed image, the half-space dense-range
-   paper theorem `os1TransportComponent_denseRange`, the kernel-zero theorems
-   `os1TransportOneVar_eq_zero_iff` and `os1TransportComponent_eq_zero_iff`
-   consumed by the on-image well-definedness proof, the transport map on that
-   image, the quadratic identity there, and the final public closure theorem;
+   test-function transform, the transformed image, the quotient-side
+   paper-faithfulness dense-range theorem
+   `denseRange_section43PositiveEnergyQuotientMap` (and its 1D precursor)
+   kept separate from the live positivity closure route, the kernel-zero
+   theorems `os1TransportOneVar_eq_zero_iff` and
+   `os1TransportComponent_eq_zero_iff` consumed by the on-image
+   well-definedness proof, the transport map on that image, the concrete
+   Lemma-4.2 adapter `lemma42_matrix_element_time_interchange`, the quadratic
+   identity there, and the final public closure theorem;
    the slot ledger must also say explicitly which checked-present
    `SCV/PartialFourierSpatial.lean` suppliers each transport step may consume,
    and in what order:
@@ -214,13 +218,16 @@ This doc is complete only when:
    -> `os1TransportOneVar`
    -> `os1TransportOneVar_eq_zero_iff`
    -> `os1TransportComponent`
+   -> `os1TransportComponent_eq_zero_iff`
    -> `BvtTransportImageSequence`
    -> `bvt_transport_to_osHilbert_onImage`
+   -> `lemma42_matrix_element_time_interchange`
    -> `bvt_wightmanInner_eq_transport_norm_sq_onImage`;
    the completion standard here is not merely "name the support file" but
    "freeze the Lean execution order above that file so later implementation
-   does not have to guess where the one-variable stage ends and the on-image
-   stage begins";
+   does not have to guess where the one-variable stage ends, where the
+   on-image well-definedness proof consumes kernel-zero, or where the
+   Lemma-4.2 interchange adapter first enters the quadratic-identity stage";
 5. the doc explicitly distinguishes the exported wrapper theorem
    `OSToWightmanBoundaryValues.lean :: bvt_W_positive` from the actual
    checked implementation/support locus in `OSToWightmanPositivity.lean`.
@@ -258,8 +265,11 @@ This doc is complete only when:
 10. the support-work checklist is satisfied literally;
 11. the blueprint does not reintroduce a separate active theorem slot
     `bvtTransportImage_dense`: Hilbert-space closure is the live production
-    route, while `os1TransportComponent_denseRange` remains only the
-    paper-faithfulness theorem on the corrected half-space codomain.
+    route, while the quotient-side dense-range theorems
+    `denseRange_section43PositiveEnergyQuotientMap` and
+    `denseRange_section43PositiveEnergyQuotientMap1D` remain only
+    paper-faithfulness results on the corrected half-space codomain and are
+    not allowed to masquerade as the live positivity-closing step.
 
 ## 4.2. `theorem2_locality_blueprint.md`
 
@@ -543,6 +553,91 @@ This doc is complete only when:
 3. Vladimirov-Tillmann and Bochner packages are split into real theorem
    packages;
 4. no consumer doc needs to invent its own boundary-value constructor.
+
+## 4.6. `r_to_e_blueprint.md`
+
+This doc is complete only when:
+
+1. the current minimal bridge theorem `wightman_to_os_full` is source-checked
+   against the live production theorem in
+   `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean`,
+   with its exact existing inputs fixed as
+   `constructZeroDiagonalSchwingerFunctions`,
+   `constructedSchwinger_tempered_zeroDiagonal`,
+   `constructedZeroDiagonalSchwinger_linear`,
+   `W_analytic_BHW`, and `bhw_distributional_boundary_values`;
+2. any future stronger reverse theorem is documented against the actual field
+   inventory of `SchwingerOS.lean :: OsterwalderSchraderAxioms`, namely
+   `E0_tempered`, `E0_linear`, `E0_reality`,
+   `E1_translation_invariant`, `E1_rotation_invariant`,
+   `E2_reflection_positive`, `E3_symmetric`, `E4_cluster`, so the docs do not
+   swap `E2`/`E3`, omit `E0_reality`, or confuse the real structure fields
+   with the derived accessor `OS.schwinger`;
+3. the reverse blueprint distinguishes checked-present honest Euclidean-side
+   theorem surfaces from quarantined false/off-paper ones, including the fact
+   that `wickRotatedBoundaryPairing_reality` and
+   `wickRotatedBoundaryPairing_symmetric` are honest current packaging inputs,
+   while `schwingerExtension_os_term_eq_wightman_term`,
+   `schwingerExtension_os_inner_product_eq_wightman`, and
+   `schwingerExtension_os_inner_product_eq_wightman_positivity` are deleted
+   from the active route;
+4. the future `E2_reflection_positive` route is written explicitly as a reverse
+   Section-4.3 transport/density package on the Wick-restricted family rather
+   than as any reuse of the false OS=`Wightman` pairing chain or of the forward
+   `E -> R` positivity theorem; the docs must freeze the exact theorem-slot
+   ladder
+   `wickRotated_positiveTimeCore -> wickRotatedBoundaryPairing_eq_transport_inner_on_core -> wickRotatedBoundaryPairing_nonneg_on_core -> wickRotated_positiveTimeCore_dense -> wickRotatedBoundaryPairing_nonneg_by_density -> constructSchwinger_positive -> OsterwalderSchraderAxioms.E2_reflection_positive`,
+   with `constructSchwinger_positive` recorded explicitly as the still-missing
+   honest reverse Section-4.3 packaging theorem in
+   `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` rather than as
+   a reuse of the quarantined wrapper
+   `wickRotatedBoundaryPairing_reflection_positive`;
+5. the future `E4_cluster` route is written explicitly as the parallel reverse
+   Section-4.4 transport/density package rather than as a vague promise to
+   reuse `W_analytic_cluster_integral` later; the docs must freeze the exact
+   consumer ladder
+   `W_analytic_cluster_integral -> wickRotatedBoundaryPairing_cluster -> constructSchwinger_cluster_translate_adapter -> constructSchwinger_cluster_tensor_adapter -> constructSchwinger_cluster -> OsterwalderSchraderAxioms.E4_cluster`,
+   with the first two surfaces source-checked as already present in
+   `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` and the latter
+   three surfaces recorded explicitly as the still-missing zero-diagonal
+   packaging theorem family targeting `Wightman/Reconstruction/SchwingerOS.lean`.
+   More sharply, the proof-doc contract must no longer stop at the slogan
+   “restrict the tensor product”: it must freeze the exact local adapter order
+   and the exact quantified field obligations from `SchwingerOS.lean:792-804`.
+   The first adapter builds the translated witness
+   `g_a : ZeroDiagonalSchwartz d m`, the second builds the quantified
+   `(n + m)`-point witness `fg_a : ZeroDiagonalSchwartz d (n + m)` with the
+   literal tensor-product pointwise formula required by
+   `SchwingerOS.lean :: OsterwalderSchraderAxioms.E4_cluster`, and only the
+   final theorem consumes `wickRotatedBoundaryPairing_cluster` plus those
+   witnesses to discharge the field inequality; later summary docs are not
+   allowed to abbreviate this family back down to a black-box
+   `constructSchwinger_cluster` step.
+6. the packaging seam from current `SchwartzNPoint` theorems to future
+   `ZeroDiagonalSchwartz` axiom fields is explicit wherever the theorem surface
+   changes, especially for `E0_reality` and `E3_symmetric`;
+7. the docs explicitly record the sharper late-field status split inside the
+   live `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` file:
+   `wickRotatedBoundaryPairing_reflection_positive` is only a checked-present
+   **quarantined** wrapper because it still depends on the false
+   `schwingerExtension_os_inner_product_eq_wightman` chain, whereas
+   `W_analytic_cluster_integral` is a live theorem-shaped **supplier** on the
+   common-BHW / full-`SchwartzNPoint` level and therefore sits strictly
+   upstream of the future `ZeroDiagonalSchwartz` field witness for
+   `E4_cluster`; later docs must not compress both into one generic “late
+   reverse positivity/cluster” bucket. More sharply, they must preserve the
+   exact cluster packaging order
+   `W_analytic_cluster_integral -> wickRotatedBoundaryPairing_cluster -> constructSchwinger_cluster_translate_adapter -> constructSchwinger_cluster_tensor_adapter -> constructSchwinger_cluster -> OsterwalderSchraderAxioms.E4_cluster`
+   instead of jumping directly from the supplier theorem to the final axiom
+   field or hiding the quantified `g_a` / `fg_a` witnesses inside an unnamed
+   packaging blob;
+8. the future split `E1` package is no longer allowed to hide behind a bundled
+   `EuclideanInvariance` slogan: the docs must fix separate translation and
+   rotation theorem slots, their file ownership in
+   `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean`, the common-BHW
+   transport route they consume, and the exact order
+   `E1_translation_invariant -> E1_rotation_invariant` before the final
+   stronger wrapper theorem is written.
 
 ## 5. Audit queries that must return clean
 

@@ -1796,9 +1796,15 @@ Stage C: on-image Hilbert transport / quadratic identity lane
   well-definedness proof required to consume the explicit kernel-zero theorem
   `os1TransportComponent_eq_zero_iff` rather than an unnamed injectivity
   slogan;
+- insert the separate Lemma-4.2 adapter slot
+  `lemma42_matrix_element_time_interchange` between the on-image transport map
+  and the quadratic-identity theorem, so the docs no longer leave later Lean
+  work to guess where the matrix-element interchange is proved;
 - then prove `bvt_wightmanInner_eq_transport_norm_sq_onImage` on the image core
   and close arbitrary-sequence positivity only afterward via the separate
-  density theorem `bvt_W_positive_of_transportImage_density`.
+  density theorem `bvt_W_positive_of_transportImage_density`, with
+  `OSToWightmanBoundaryValues.lean :: bvt_W_positive` treated only as the
+  exported frontier wrapper above that implementation-side closure theorem.
 
 So the exact theorem-3 ambiguity to avoid is now sharper:
 - do **not** treat the missing work as merely "show two kernels agree locally";
@@ -1807,7 +1813,11 @@ So the exact theorem-3 ambiguity to avoid is now sharper:
 - do **not** hide the well-definedness step behind a derived
   `Function.Injective ...` slogan when the blueprint now fixes the consumable
   theorem surfaces as `os1TransportOneVar_eq_zero_iff` and
-  `os1TransportComponent_eq_zero_iff`.
+  `os1TransportComponent_eq_zero_iff`;
+- do **not** stop the documentation ledger at the on-image quadratic identity
+  or collapse the implementation-side closure theorem
+  `bvt_W_positive_of_transportImage_density` into the downstream frontier
+  wrapper `bvt_W_positive`.
 
 Acceptable proof shapes:
 1. a fixed-time / partial-boundary-value extension theorem on the common kernel,

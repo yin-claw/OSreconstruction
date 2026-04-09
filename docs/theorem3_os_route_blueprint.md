@@ -744,7 +744,11 @@ It is also **not** the full ambient `SchwartzNPoint d n` equipped with a
 false `DenseRange` claim.
 
 The correct theorem surface is the paper's half-space Schwartz target
-`L(R_+^{4n})`, implemented as a dedicated half-space Schwartz sub-object. The
+`L(R_+^{4n})`, implemented in production by a quotient model of the half-space
+target rather than by the current support-restricted source itself. Concretely,
+the intended theorem surface is the quotient-side object
+`SchwartzNPoint d n ⧸ {f | f = 0 on section43PositiveEnergyRegion}` (or a
+definitionally equivalent realization), not a naive support subtype. The
 current blueprint no longer endorses either:
 - the false support-restricted subtype
   `{f : SchwartzNPoint d n // tsupport f ⊆ PositiveEnergyRegion}`, or
@@ -777,15 +781,26 @@ theorem bvtTransportImage_smul
     f ∈ bvtTransportImage (d := d) n →
     c • f ∈ bvtTransportImage (d := d) n
 
-/-- OS I Lemma 4.1: dense range of the degree-`n` transport component. -/
-theorem os1TransportComponent_denseRange
+/-- For positive degree, the current support-restricted Section-4.3 source is
+not dense in the half-space quotient codomain. Degree `0` is exceptional
+because the source already equals the ambient Schwartz space there. -/
+theorem not_denseRange_os1TransportComponent_succ
     (n : ℕ) :
-    DenseRange (os1TransportComponent d n)
+    ¬ DenseRange (os1TransportComponent d (n + 1))
+
+/-- The honest dense map on the codomain side is the ambient-Schwartz quotient
+map onto the positive-energy quotient carrier, not `os1TransportComponent`
+itself. -/
+theorem denseRange_section43PositiveEnergyQuotientMap
+    (n : ℕ) :
+    DenseRange (section43PositiveEnergyQuotientMap (d := d) n)
 
 /-- Finite Borchers data whose every component lies in the Section 4.3 image. -/
 structure BvtTransportImageSequence (d : ℕ) [NeZero d] where
   toBorchers : BorchersSequence d
-  image_mem : ∀ n, toBorchers.funcs n ∈ bvtTransportImage (d := d) n
+  image_mem : ∀ n,
+    section43PositiveEnergyQuotientMap (d := d) n (toBorchers.funcs n) ∈
+      bvtTransportImage (d := d) n
 
 /-- The OS I Section 4.3 transport map on the transformed-image core. -/
 noncomputable def bvt_transport_to_osHilbert_onImage
@@ -836,7 +851,8 @@ For theorem 3, the codomain choice is now fixed:
 1. the paper's Lemma 4.1 codomain is `L(R_+^{4n})`, the half-space Schwartz
    space;
 2. the blueprint therefore fixes **Option beta**:
-   `Section43PositiveEnergyComponent d n` is a half-space Schwartz sub-object;
+   `Section43PositiveEnergyComponent d n` is a quotient-model realization of
+   the half-space Schwartz target;
 3. the full-Schwartz / internal-Seeley-extension route from Iteration B is
    retracted and should not be implemented;
 4. any later equivalent coding of this codomain must remain definitionally
@@ -864,12 +880,19 @@ Proof transcript:
    followed by the existing OS Hilbert-space construction;
 7. prove preimage-independence / well-definedness using the zero-kernel part of
    OS I Lemma 4.1;
-8. prove `bvt_wightmanInner_eq_transport_norm_sq_onImage` by the Section 4.3
-   Fourier-Laplace / Lemma-4.2 computation on the transformed-image core;
-9. use the already-built density of positive-time vectors in `OSHilbertSpace OS`
+8. prove the multivariate iterated-slice descended-pairing theorem that
+   identifies the abstract quotient-valued transform with the concrete
+   iterated `partialFourierSpatial_fun` / Fourier-Laplace computation;
+9. prove the matching transformed-image kernel bridge
+   `bvt_W_matrixElement_onImage`, consuming the concrete Section-4.3 /
+   Lemma-4.2 adapter `lemma42_matrix_element_time_interchange`;
+10. prove `bvt_wightmanInner_eq_transport_norm_sq_onImage` by matching the
+   Wightman and transport double sums termwise through those Stage-5
+   prerequisites;
+11. use the already-built density of positive-time vectors in `OSHilbertSpace OS`
    coming from the completion/GNS construction, not a separate density theorem
    in Schwartz space;
-10. extend positivity from the transported image to arbitrary public
+12. extend positivity from the transported image to arbitrary public
    `BorchersSequence d` by the resulting Hilbert-space closure plus continuity
    of `bvt_W`.
 
@@ -939,10 +962,15 @@ The proof must be decomposed into the following local steps.
        (f : EuclideanPositiveTimeTest1D) :
        ...
 
-   /-- paper Lemma 4.1 dense-image statement, but on the corrected one-variable
-   half-space codomain only -/
-   theorem os1TransportOneVar_denseRange :
-       DenseRange os1TransportOneVar
+   /-- on the current support-restricted one-variable source, dense range is
+   false once one passes to the honest quotient-side codomain. -/
+   theorem not_denseRange_os1TransportOneVar :
+       ¬ DenseRange os1TransportOneVar
+
+   /-- the honest one-variable dense map is the quotient projection from the
+   ambient Schwartz space onto the positive-energy half-line carrier. -/
+   theorem denseRange_section43PositiveEnergyQuotientMap1D :
+       DenseRange section43PositiveEnergyQuotientMap1D
 
    /-- kernel-zero/injectivity statement consumed later by the on-image
    well-definedness proof -/
@@ -960,6 +988,7 @@ The proof must be decomposed into the following local steps.
 3. The exact analytic suppliers for that one-variable package are:
    - `SCV.fourierLaplaceExt`,
    - `SCV.paley_wiener_half_line`,
+   - the checked one-step supplier `SCV.paley_wiener_one_step`,
    - `SchwartzMap.fourierTransformCLM`,
    - the fact that Fourier transform is an automorphism of Schwartz space.
 
@@ -1049,7 +1078,7 @@ theorem os1TransportComponent_continuous :
     Continuous (os1TransportComponent d n)
 ```
 
-### 5.9.2. Lemma 4.1 density: paper theorem, not the live positivity blocker
+### 5.9.2. Lemma 4.1 density: quotient-side theorem, not the live positivity blocker
 
 The dense-image half of OS I Lemma 4.1 is still a real paper theorem, but it is
 not currently the live blocker for the still-missing Section-4.3 public
@@ -1057,28 +1086,35 @@ positivity closure theorem.
 
 What is settled:
 
-1. `DenseRange (os1TransportComponent d n)` in full `SchwartzNPoint d n` is
-   false and is withdrawn.
-2. A fixed Seeley extension has closed range, so no proof should aim at dense
+1. `DenseRange (os1TransportComponent d (n + 1))` on the current
+   support-restricted source should not be used as a production theorem slot.
+   Degree `0` is exceptional because the source already equals the ambient
+   Schwartz space there.
+2. `DenseRange (os1TransportComponent d (n + 1))` in full ambient
+   `SchwartzNPoint d (n + 1)` is false and is withdrawn.
+3. A fixed Seeley extension has closed range, so no proof should aim at dense
    range in the full ambient Schwartz space.
-3. If Lemma 4.1 is later formalized faithfully, it must be stated on the
+4. The honest dense map is the ambient-Schwartz quotient map onto the
+   positive-energy codomain, not `os1TransportComponent` itself.
+5. If Lemma 4.1 is later formalized faithfully, it must be stated on the
    actual half-space codomain `L(R_+^{4n})` from Section 4.3.
-4. The positivity proof for theorem 3 does not need that Schwartz-density
+6. The positivity proof for theorem 3 does not need that Schwartz-density
    theorem as a live prerequisite. What it needs is:
    - the transport-map comparison on positive-time inputs,
    - density of the resulting vectors in the Hilbert space `H`,
    - continuity/closure on the `bvt_W` side.
 
-So `os1TransportComponent_denseRange` is now a paper-faithfulness side theorem,
+So the quotient-side density statement is a paper-faithfulness side theorem,
 not part of the current minimal production route for the still-missing
 Section-4.3 positivity closure theorem.
 
 Implementation rule:
 - do **not** introduce a separate active theorem slot
   `bvtTransportImage_dense`;
-- if a later proof wants the paper Lemma-4.1 statement, it must use
-  `os1TransportComponent_denseRange` on the corrected half-space codomain and
-  then explain exactly how that paper-faithfulness result is being consumed;
+- if a later proof wants the paper Lemma-4.1 statement, it must use the
+  quotient-side density package (`denseRange_section43PositiveEnergyQuotientMap`
+  and its degree-1 precursor) on the corrected half-space codomain and then
+  explain exactly how that paper-faithfulness result is being consumed;
 - the current theorem-3 production route closes positivity through the
   transformed-image quadratic identity plus Hilbert-space density/continuity,
   not through a second topological density theorem on the transformed image.

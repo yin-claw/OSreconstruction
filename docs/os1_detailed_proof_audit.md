@@ -396,42 +396,43 @@ The documentation should name a different hidden dependency instead:
 So the later Lean port should break the Section-4.3 dependency chain as:
 
 1. define the explicit test-function transform `(4.19)`-`(4.20)`;
-2. prove continuity, injectivity, and dense range of that transform;
-3. import the Wightman-side kernel from the OS II repaired continuation route;
-4. combine the two through Lemma 4.2 and Eq. `(4.28)`.
+2. prove continuity and injectivity of that transform on the current
+   support-restricted positive-time source;
+3. record the honest quotient-side dense map separately, rather than asserting
+   dense range for the support-restricted source itself;
+4. import the Wightman-side kernel from the OS II repaired continuation route;
+5. combine the two through Lemma 4.2 and Eq. `(4.28)`.
 
 Implementation-level theorem-slot inventory for that corrected chain:
 
-```lean
-lemma section43_testFunctionTransform
-    :
-    EuclideanPositiveTimeTestSequence d → Section43PositiveEnergyTestSequence d := by
-  -- formulas `(4.19)`-`(4.20)` as an explicit Fourier-Laplace transform
-
-lemma section43_testFunctionTransform_continuous :
-    Continuous (section43_testFunctionTransform (d := d)) := by
-  -- continuity of the explicit transform on the chosen half-space codomain
-
-lemma section43_testFunctionTransform_injective
-    :
-    Function.Injective (section43_testFunctionTransform (d := d)) := by
-  -- one-variable positive-support uniqueness in each time variable
-
-lemma section43_testFunctionTransform_denseRange
-    :
-    DenseRange (section43_testFunctionTransform (d := d)) := by
-  -- density of the image in the Euclidean positive-time test space
-
-lemma section43_wightmanKernel_from_os2_repair
-    (lgc : OSLinearGrowthCondition d OS) :
-    ∃ K, CorrectedSection43Kernel d OS lgc K := by
-  -- this is where production replaces the broken OS I Lemma 8.8 route
-```
+| Slot | Ownership | Consumes | Exports | Next allowed consumer |
+|------|-----------|----------|---------|------------------------|
+| `os1TransportOneVar` | `Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean` | the checked one-variable/SCV supplier chain `partialFourierSpatial_fun -> partialFourierSpatial_timeSliceSchwartz -> partialFourierSpatial_timeSlice_hasPaleyWienerExtension -> partialFourierSpatial_timeSliceCanonicalExtension` plus the explicit Section-4.3 Fourier-Laplace formula `(4.19)`-`(4.20)` | the branch-`3b` one-variable transport on the corrected half-space codomain | `os1TransportOneVar_eq_zero_iff`, `os1TransportComponent` |
+| `os1TransportOneVar_eq_zero_iff` | same file | `os1TransportOneVar` together with boundary-value uniqueness on the positive half-line | the contract-level one-variable kernel-zero theorem | `os1TransportComponent`, `bvt_transport_to_osHilbert_onImage_wellDefined` |
+| `not_denseRange_os1TransportOneVar` | same file | `os1TransportOneVar` | the warning theorem that the support-restricted one-variable transport is not the honest dense-range map on the quotient-side codomain | `denseRange_section43PositiveEnergyQuotientMap1D`, theorem-slot acceptance criteria |
+| `denseRange_section43PositiveEnergyQuotientMap1D` | same file | the ambient-Schwartz quotient projection to the one-variable positive-energy carrier | the honest paper-faithful one-variable dense-range statement | no live theorem-3 consumer is allowed to depend on this unless it explicitly explains why the paper-faithfulness statement is being used |
+| `os1TransportComponent` | same file | `os1TransportOneVar`, `os1TransportOneVar_eq_zero_iff`, and the degreewise iterated-variable assembly above the checked branch-`3b` supplier chain | the degreewise Section-4.3 transport map on the corrected half-space codomain | `os1TransportComponent_eq_zero_iff`, `BvtTransportImageSequence` |
+| `os1TransportComponent_eq_zero_iff` | same file | `os1TransportComponent` | the contract-level degreewise kernel-zero theorem | `bvt_transport_to_osHilbert_onImage_wellDefined`, `BvtTransportImageSequence` |
+| `not_denseRange_os1TransportComponent_succ` | same file | `os1TransportComponent` | the warning theorem that positive-degree support-restricted transport is not dense on the quotient-side codomain | `denseRange_section43PositiveEnergyQuotientMap`, theorem-slot acceptance criteria |
+| `denseRange_section43PositiveEnergyQuotientMap` | same file | the ambient-Schwartz quotient projection to the positive-energy codomain | the honest degreewise paper-faithful dense-range statement | no live theorem-3 closure slot; keep separate from the positivity route |
+| `BvtTransportImageSequence` | same file | `os1TransportComponent` | the transformed-image core on which the quadratic identity is actually proved | `bvt_transport_to_osHilbert_onImage`, `bvt_wightmanInner_eq_transport_norm_sq_onImage` |
+| `bvt_transport_to_osHilbert_onImage` | same file | `BvtTransportImageSequence`, degreewise preimage choice, `os1TransportComponent_eq_zero_iff`, and the checked Hilbert-side support surfaces `positiveTimeBorchersVector_dense` / `euclideanPositiveTimeSingleVector` | the OS Hilbert vector attached to transformed-image data | `bvt_wightmanInner_eq_transport_norm_sq_onImage` |
+| `bvt_wightmanInner_eq_transport_norm_sq_onImage` | same file | `BvtTransportImageSequence`, `bvt_transport_to_osHilbert_onImage`, `lemma42_matrix_element_time_interchange`, and the OS-II-repaired `bvt_F` / `bvt_W` continuation kernel | the diagonal transformed-image quadratic identity `(W(F,F)).re = ‖u(F)‖^2` on the image core only | `bvt_W_positive_of_transportImage_density` |
+| `bvt_W_positive_of_transportImage_density` | same file | the transformed-image quadratic identity together with Hilbert-density / bounded finite-support continuity | the public theorem-3 positivity closure theorem | `OSToWightmanBoundaryValues.lean :: bvt_W_positive` |
 
 This is intentionally more detailed than the paper, because otherwise the later
 Lean implementation would still have to choose where the explicit
-Fourier-Laplace test-function package stops and the OS-II-repaired Wightman
-kernel package begins.
+Fourier-Laplace test-function package stops, where the on-image Hilbert
+transport begins, and where the OS-II-repaired Wightman kernel first enters.
+It also aligns this audit with the live theorem-3 blueprint and the checked
+production support file: the present repo already contains
+`partialFourierSpatial_timeSliceSchwartz`,
+`partialFourierSpatial_timeSlice_hasPaleyWienerExtension`, and
+`partialFourierSpatial_timeSliceCanonicalExtension` in
+`OSToWightmanPositivity.lean`, so later Lean work should attach the branch-`3b`
+transport package directly to those checked supplier surfaces rather than
+reintroducing a second generic `section43_*` naming layer or a separate raw
+OS-I-only kernel constructor.
 
 ### 7.2.1. What part of Section 4.3 is one-variable, and what part is not
 
@@ -486,12 +487,18 @@ Layer A. One-variable transform.
      `(4.19)`-`(4.20)`;
    - it lands in the positive-energy half-line codomain `q⁰ ≥ 0`.
 
-2. Prove its two key properties:
-   - injective / kernel-zero;
-   - dense range in the positive-energy one-variable Schwartz codomain.
+2. Prove its key honest property:
+   - injective / kernel-zero on the current support-restricted Euclidean
+     source.
 
-3. The exact analytic suppliers for this one-variable package are:
+3. Record the honest quotient-side density statement separately:
+   - the ambient-Schwartz quotient map onto the half-line codomain has dense
+     range;
+   - the support-restricted transport itself does not.
+
+4. The exact analytic suppliers for this one-variable package are:
    - `SCV.fourierLaplaceExt`,
+   - `SCV.paley_wiener_one_step`,
    - `SCV.paley_wiener_half_line`,
    - the automorphism property of the Fourier transform on Schwartz space.
 
@@ -514,42 +521,54 @@ Layer C. Topological consequences.
    one-variable transform and the spatial Fourier automorphism;
 2. injectivity follows from the one-variable kernel-zero theorem, applied one
    time variable at a time;
-3. dense range follows by iterating the one-variable dense-range theorem.
+3. no separate dense-range theorem is needed on the support-restricted source;
+   the honest dense map is the ambient-Schwartz quotient map onto the
+   half-space codomain. For positive degree, the literal support-restricted
+   transport is not dense; degree `0` is exceptional because the source already
+   equals the ambient Schwartz space there.
 
 So the honest implementation theorem package is:
 
 ```lean
-lemma section43_oneVar_transform
-    : EuclideanPositiveTimeTest1D →L[ℂ] SchwartzMap ℝ ℂ := by
+noncomputable def os1TransportOneVar
+    : EuclideanPositiveTimeTest1D →L[ℂ] Section43PositiveEnergy1D := by
   ...
 
-lemma section43_oneVar_transform_injective :
-    Function.Injective section43_oneVar_transform := by
+theorem os1TransportOneVar_eq_zero_iff
+    (f : EuclideanPositiveTimeTest1D) :
+    os1TransportOneVar f = 0 ↔ f = 0 := by
   ...
 
-lemma section43_oneVar_transform_denseRange :
-    DenseRange section43_oneVar_transform := by
+theorem not_denseRange_os1TransportOneVar :
+    ¬ DenseRange os1TransportOneVar := by
   ...
 
-lemma section43_component_transform
+theorem denseRange_section43PositiveEnergyQuotientMap1D :
+    DenseRange section43PositiveEnergyQuotientMap1D := by
+  ...
+
+noncomputable def os1TransportComponent
     (n : ℕ) :
-    EuclideanPositiveTimeComponent d n →L[ℂ] SchwartzNPoint d n := by
+    EuclideanPositiveTimeComponent d n →L[ℂ] Section43PositiveEnergyComponent d n := by
   ...
 
-lemma section43_component_transform_injective
-    (n : ℕ) :
-    Function.Injective (section43_component_transform (d := d) n) := by
+theorem os1TransportComponent_eq_zero_iff
+    (n : ℕ) (f : EuclideanPositiveTimeComponent d n) :
+    os1TransportComponent (d := d) n f = 0 ↔ f = 0 := by
   ...
 
-lemma section43_component_transform_denseRange
+theorem denseRange_section43PositiveEnergyQuotientMap
     (n : ℕ) :
-    DenseRange (section43_component_transform (d := d) n) := by
+    DenseRange (section43PositiveEnergyQuotientMap (d := d) n) := by
   ...
 ```
 
 This transcript matters because it tells the later implementation exactly where
 the real analytic work belongs: in the one-variable transform, not in a fake
-many-variable theorem.
+many-variable theorem. More sharply, it also freezes the exact theorem surfaces
+that later on-image well-definedness may consume: `os1TransportOneVar_eq_zero_iff`
+and `os1TransportComponent_eq_zero_iff`, not a looser generic theorem named only
+`Function.Injective ...`.
 
 ### 7.3. Lemma 4.2 unpacked
 
@@ -674,26 +693,33 @@ substeps:
 The corresponding implementation theorem slots should therefore be:
 
 ```lean
-lemma section43_transport_on_image
-    (F : TransportImageSequence d) :
-    OSHilbertSpace OS := by
+noncomputable def bvt_transport_to_osHilbert_onImage
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS) :
+    BvtTransportImageSequence d → OSHilbertSpace OS := by
   ...
 
-lemma section43_transport_wellDefined
-    (F : TransportImageSequence d) :
+theorem bvt_transport_to_osHilbert_onImage_wellDefined
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F : BvtTransportImageSequence d) :
     ... := by
   ...
 
-lemma section43_quadratic_identity_on_image
-    (F : TransportImageSequence d) :
-    WightmanInnerProduct reconstructedWightman F.1 F.1 =
-      inner (section43_transport_on_image F)
-        (section43_transport_on_image F) := by
+theorem bvt_wightmanInner_eq_transport_norm_sq_onImage
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F : BvtTransportImageSequence d) :
+    (WightmanInnerProduct d (bvt_W OS lgc) F.1 F.1).re =
+      ‖bvt_transport_to_osHilbert_onImage (d := d) OS lgc F‖ ^ 2 := by
   ...
 ```
 
 Only after this diagonal identity is proved should the full public positivity
-statement be recovered by density and continuity.
+statement be recovered by density and continuity. This naming discipline now
+matters operationally: `OSToWightmanPositivity.lean` already contains the
+checked Hilbert-side supplier surfaces `positiveTimeBorchersVector_dense` and
+`euclideanPositiveTimeSingleVector`, so the still-missing Section-4.3 closure
+package should grow directly above those checked theorems under the
+`bvt_transport_*` / `bvt_wightmanInner_*` names, not under a second generic
+`section43_transport_*` pseudocode family.
 
 ## 8. Section 4.4: Cluster
 
@@ -1544,12 +1570,33 @@ lemma wick_restriction_defines_euclidean_family
       ∀ x, S x = Fext (wickRotate x) := by
   -- define Euclidean functions by Wick restriction of the common object
 
-lemma euclidean_invariance_from_minkowski_covariance
-    (Fext : HolomorphicOnPermutedTubeData d)
-    (S : EuclideanData d)
-    (hwick : ∀ x, S x = Fext (wickRotate x)) :
-    EuclideanInvariance S := by
-  -- transport covariance through the common holomorphic object
+lemma constructSchwinger_translation_covariant_BHW
+    (Wfn : WightmanFunctions d) (n : ℕ) :
+    -- BHW-side translation covariance on the common holomorphic object
+    True := by
+  -- source-check against `SchwingerAxioms.lean :: F_ext_translation_invariant`
+
+lemma constructSchwinger_translation_invariant
+    (Wfn : WightmanFunctions d) :
+    -- exact witness for `SchwingerOS.lean :: OsterwalderSchraderAxioms.E1_translation_invariant`
+    True := by
+  -- descend the previous BHW-side covariance theorem through
+  -- `constructSchwingerFunctions`; source-check against
+  -- `SchwingerAxioms.lean :: wickRotatedBoundaryPairing_translation_invariant`
+
+lemma constructSchwinger_rotation_covariant_BHW
+    (Wfn : WightmanFunctions d) (n : ℕ) :
+    -- BHW-side rotation covariance on the common holomorphic object
+    True := by
+  -- source-check against `SchwingerAxioms.lean :: F_ext_rotation_invariant`
+
+lemma constructSchwinger_rotation_invariant
+    (Wfn : WightmanFunctions d) :
+    -- exact witness for `SchwingerOS.lean :: OsterwalderSchraderAxioms.E1_rotation_invariant`
+    True := by
+  -- descend the previous BHW-side covariance theorem through
+  -- `constructSchwingerFunctions`; source-check against
+  -- `SchwingerAxioms.lean :: wickRotatedBoundaryPairing_rotation_invariant`
 
 lemma euclidean_symmetry_from_permuted_tube_extension
     (Fext : HolomorphicOnPermutedTubeData d)
@@ -1576,10 +1623,21 @@ lemma euclidean_cluster_from_section4_transport
 So the reverse `R -> E` direction should later decompose into:
 1. BHW extension,
 2. Wick restriction,
-3. Euclidean invariance,
-4. Euclidean symmetry,
-5. positivity reuse,
-6. cluster reuse.
+3. split `E1` translation package (`F_ext_translation_invariant` ->
+   `wickRotatedBoundaryPairing_translation_invariant`),
+4. split `E1` rotation package (`F_ext_rotation_invariant` ->
+   `wickRotatedBoundaryPairing_rotation_invariant`),
+5. Euclidean symmetry,
+6. positivity reuse,
+7. cluster reuse.
+
+The implementation warning is now explicit here too: later Lean work must not
+collapse steps 3-4 back into a bundled `EuclideanInvariance` theorem. The
+actual reverse field inventory in
+`OSReconstruction/Wightman/Reconstruction/SchwingerOS.lean` is split as
+`E1_translation_invariant` and `E1_rotation_invariant`, and the checked
+supplier/consumer seams in
+`.../WickRotation/SchwingerAxioms.lean` are likewise already split.
 
 ### A.5. Technical one-variable Fourier-Laplace bridge
 
@@ -1628,12 +1686,14 @@ be recorded as:
 ```lean
 /-- Concrete Section 4.3 version of the Lemma 4.2 interchange step. -/
 theorem lemma42_matrix_element_time_interchange
-    (W : WightmanDifferenceData d)
-    (f_left : PositiveEnergyWightmanTest n)
-    (f_right : PositiveEnergyWightmanTest m) :
-    section43_pairing_before_time_interchange W f_left f_right
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BvtTransportImageSequence d) :
+    wightman_pairing_written_as_spatial_then_time_integral
+        (bvt_F OS lgc) F.1 F.1
       =
-    section43_pairing_after_time_interchange W f_left f_right := by
+    wightman_pairing_written_as_time_then_spatial_integral
+        (bvt_F OS lgc) F.1 F.1 := by
   -- reduce both sides to the one-variable positive-support theorem,
   -- then discharge the spatial Fourier bookkeeping separately
 ```

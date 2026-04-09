@@ -369,7 +369,7 @@ unless they are restated in the canonical live docs.
 
 The heart of the reconstruction: translating between Wightman and OS axioms.
 
-#### R → E Direction: `constructedSchwinger_*` (sorrys #3–7)
+#### R → E Direction: reverse field-packaging lane (historical sorrys #3–7)
 
 Given Wightman functions {W_n}, define Schwinger functions S_n by Wick rotation
 and verify the OS axioms.
@@ -377,16 +377,53 @@ and verify the OS axioms.
 | Sorry | Theorem | OS Axiom | Proof idea |
 |-------|---------|----------|------------|
 | #3 | `constructedSchwinger_tempered` | E0 | Polynomial growth of W_analytic × Schwartz decay |
-| #4 | `constructedSchwinger_euclidean_covariant` | E1 | Change of variables + complex Lorentz invariance |
-| #5 | `constructedSchwinger_reflection_positive` | E2 | Borchers involution + Wightman positivity |
-| #6 | `constructedSchwinger_symmetric` | E3 | BHW permutation symmetry (needs #2) |
-| #7 | `constructedSchwinger_cluster` | E4 | Propagate Wightman cluster through Wick rotation |
+| #4 | split `E1_translation_invariant` / `E1_rotation_invariant` package | E1 | Change of variables + the checked BHW covariance seam `F_ext_translation_invariant -> wickRotatedBoundaryPairing_translation_invariant` and `F_ext_rotation_invariant -> wickRotatedBoundaryPairing_rotation_invariant` |
+| #5 | `constructSchwinger_positive` | E2 | Reverse Section-4.3 transport/density package with frozen execution order `wickRotated_positiveTimeCore -> wickRotatedBoundaryPairing_eq_transport_inner_on_core -> wickRotatedBoundaryPairing_nonneg_on_core -> wickRotated_positiveTimeCore_dense -> wickRotatedBoundaryPairing_nonneg_by_density -> constructSchwinger_positive -> OsterwalderSchraderAxioms.E2_reflection_positive`; not a direct OS=`Wightman` shortcut |
+| #6 | `E0_reality` + `E3_symmetric` packaging | E0 / E3 | Repackage checked `wickRotatedBoundaryPairing_reality` and `wickRotatedBoundaryPairing_symmetric` into the exact `OsterwalderSchraderAxioms` field shapes on `OS.S` |
+| #7 | `constructSchwinger_cluster` | E4 | Reverse Section-4.4 packaging above the checked full-`SchwartzNPoint` wrapper, with frozen consumer order `W_analytic_cluster_integral -> wickRotatedBoundaryPairing_cluster -> constructSchwinger_cluster_translate_adapter -> constructSchwinger_cluster_tensor_adapter -> constructSchwinger_cluster -> OsterwalderSchraderAxioms.E4_cluster` |
 
-**Already proven:** `wightman_to_os_full` (line 385) — Top-level wiring assuming the above.
+**Already proven:** `wightman_to_os_full` (line 385) — the weaker top-level bridge to `IsWickRotationPair`, not a full packaged `OsterwalderSchraderAxioms` witness.
+
+Source-checked reverse-lane status split (2026-04-08): the late reverse fields are no longer allowed to blur together in this outline. In the live `SchwingerAxioms.lean` file, `wickRotatedBoundaryPairing_reflection_positive` already exists but is only a **quarantined wrapper** because it still closes through the false OS=`Wightman` chain `schwingerExtension_os_inner_product_eq_wightman -> schwingerExtension_os_inner_product_eq_wightman_positivity`; it therefore does **not** count as an honest checked supplier for `constructSchwinger_positive` / `E2_reflection_positive`. The honest E2 route is now frozen slot-by-slot: `wickRotated_positiveTimeCore` defines the Wick-restricted positive-time dense core, `wickRotatedBoundaryPairing_eq_transport_inner_on_core` identifies the reverse Euclidean pairing with the forward Section-4.3 transport inner product on that core, `wickRotatedBoundaryPairing_nonneg_on_core` imports positivity there, `wickRotated_positiveTimeCore_dense` supplies the density step, `wickRotatedBoundaryPairing_nonneg_by_density` extends nonnegativity to the ambient positive-time Euclidean space, and only then may `constructSchwinger_positive` package the result as `OsterwalderSchraderAxioms.E2_reflection_positive`. By contrast, `W_analytic_cluster_integral` is a live theorem-shaped reverse cluster supplier on the common-BHW/full-Schwartz level, but it is still only the upstream input to the future `constructSchwinger_cluster` / `E4_cluster` packaging on `ZeroDiagonalSchwartz`, not that final axiom-field witness itself. The implementation-facing consumer ladder is therefore frozen as `W_analytic_cluster_integral -> wickRotatedBoundaryPairing_cluster -> constructSchwinger_cluster_translate_adapter -> constructSchwinger_cluster_tensor_adapter -> constructSchwinger_cluster -> OsterwalderSchraderAxioms.E4_cluster`, with `wickRotatedBoundaryPairing_cluster` owned by `SchwingerAxioms.lean` as the checked full-`SchwartzNPoint` wrapper and the three later slots reserved for the explicit zero-diagonal witness manufacture plus final packaging theorem on `constructSchwingerFunctions Wfn`.
+
+The supplier theorem `W_analytic_cluster_integral` is no longer allowed to remain a vague “transport/density” box in this outline. Its proof transcript is now fixed in the same implementation order used by the detailed reverse-cluster note:
+
+1. partition the `(n+m)`-point integration domain into finitely many time-ordering sectors;
+2. prove the identity-sector ForwardTube membership needed to apply
+   `bhw_pointwise_cluster_forwardTube` directly;
+3. on every bad sector, rewrite the common-BHW integrand into an order-compatible chart by BHW permutation invariance, using within-block permutation symmetry of the factorized limit explicitly rather than a generic “by symmetry” phrase;
+4. dominate every sector uniformly in the spatial translation parameter by the existing `HasForwardTubeGrowth` majorant together with Schwartz decay of `f.tensorProduct g_a`;
+5. run dominated convergence sectorwise and then sum the finitely many sector contributions;
+6. only after that supplier theorem is closed, pass to the checked wrapper `wickRotatedBoundaryPairing_cluster`, and only later to the still-missing zero-diagonal packager `constructSchwinger_cluster`.
+
+So the reverse E4 lane in this outline is not just “Section 4.4 later”; it is the explicit three-level contract:
+- first close `W_analytic_cluster_integral` by sector decomposition on the common-BHW/full-`SchwartzNPoint` side,
+- then pass through the checked full-`SchwartzNPoint` wrapper `wickRotatedBoundaryPairing_cluster`, still owned by `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean`,
+- then add the still-missing zero-diagonal packaging theorem `constructSchwinger_cluster`, whose only acceptable owner is the reverse theorem-packaging layer targeting `Wightman/Reconstruction/SchwingerOS.lean :: OsterwalderSchraderAxioms.E4_cluster`.
+
+That final packaging step is no longer allowed to be described as a vague “restrict tensor product / descend to zero diagonal” move. The implementation-facing transcript above `SchwingerOS.lean:792` is now frozen as:
+1. `constructSchwinger_cluster_translate_adapter`: given `g : ZeroDiagonalSchwartz d m` and a spatial translation vector `a`, build the exact quantified witness `g_a : ZeroDiagonalSchwartz d m` with pointwise equation `g_a.1 x = g.1 (fun i => x i - a)`;
+2. `constructSchwinger_cluster_tensor_adapter`: given `f : ZeroDiagonalSchwartz d n` and that translated witness `g_a`, build the exact `(n+m)`-point witness `fg_a : ZeroDiagonalSchwartz d (n + m)` with pointwise equation `fg_a.1 x = f.1 (splitFirst n m x) * g_a.1 (splitLast n m x)`;
+3. `constructSchwinger_cluster`: consume `wickRotatedBoundaryPairing_cluster` together with those two adapters and discharge the literal norm inequality required by `OsterwalderSchraderAxioms.E4_cluster`.
+
+To make that handoff executable rather than descriptive, the reverse `E4` lane is
+now frozen here as a compact slot ledger too:
+
+| Slot | Ownership | Must consume exactly | Must export exactly | Next allowed consumer |
+|------|-----------|----------------------|---------------------|-----------------------|
+| `W_analytic_cluster_integral` | `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` | the common-BHW/full-`SchwartzNPoint` cluster setup, with the proof transcript fixed as sector partition -> identity-sector ForwardTube step -> bad-sector permutation rewrites -> uniform majorant -> sectorwise dominated convergence -> finite sector sum | the reverse Section-4.4 supplier estimate on the common-BHW/full-`SchwartzNPoint` side | `wickRotatedBoundaryPairing_cluster` only |
+| `wickRotatedBoundaryPairing_cluster` | `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` | `W_analytic_cluster_integral` only | the checked Wick-rotated full-`SchwartzNPoint` wrapper, still below any zero-diagonal packaging | `constructSchwinger_cluster_translate_adapter`, `constructSchwinger_cluster_tensor_adapter`, `constructSchwinger_cluster` |
+| `constructSchwinger_cluster_translate_adapter` | reverse packaging layer targeting `Wightman/Reconstruction/SchwingerOS.lean` | `g : ZeroDiagonalSchwartz d m` plus a spatial translation vector `a` | the exact witness `g_a : ZeroDiagonalSchwartz d m` with pointwise translate equation | `constructSchwinger_cluster_tensor_adapter`, `constructSchwinger_cluster` |
+| `constructSchwinger_cluster_tensor_adapter` | same reverse packaging layer | `f : ZeroDiagonalSchwartz d n` plus the translated witness `g_a` | the exact witness `fg_a : ZeroDiagonalSchwartz d (n + m)` with pointwise tensor equation | `constructSchwinger_cluster` |
+| `constructSchwinger_cluster` | same reverse packaging layer, final target `SchwingerOS.lean :: OsterwalderSchraderAxioms.E4_cluster` | `wickRotatedBoundaryPairing_cluster` plus the manufactured witnesses `g_a` and `fg_a`; no vague tensor-restriction shortcut | the literal norm inequality demanded by the final `E4_cluster` field | final reverse field packaging only |
+
+So later Lean work is not allowed to stop at the supplier/wrapper prose level or to leave the zero-diagonal witnesses implicit: `SchwingerAxioms.lean` owns the supplier theorem plus the full-`SchwartzNPoint` wrapper, while the final `g_a` / `fg_a` witness manufacture belongs to the reverse packaging layer above it.
 
 #### E → R Direction: Analytic Continuation Chain (sorrys #8–10)
 
 The reverse direction, following Osterwalder-Schrader II (1975).
+
+Source-checked reverse-direction caution (2026-04-08): if this lane is later upgraded from `IsWickRotationPair` to a full `OsterwalderSchraderAxioms` witness, the structure target is `OS.S = constructSchwingerFunctions Wfn`, not the derived accessor `OS.schwinger = ...`. The already-landed packaging inputs for the early reverse fields are `constructedSchwinger_tempered_zeroDiagonal`, `constructedZeroDiagonalSchwinger_linear`, `wickRotatedBoundaryPairing_reality`, and `wickRotatedBoundaryPairing_symmetric`; later docs must not blur those into a vague bundled “reality / Euclidean symmetry” slogan. More sharply, the remaining late reverse fields have distinct source-checked statuses that should stay explicit: `E2_reflection_positive` still lacks an honest checked supplier theorem because the currently available wrapper is quarantined behind the false OS=`Wightman` chain, while `E4_cluster` already has the live supplier theorem `W_analytic_cluster_integral`, but only at the full-Schwartz/common-BHW-integral level rather than the final `ZeroDiagonalSchwartz` axiom-field level.
 
 | Sorry | Theorem | Reference | Description |
 |-------|---------|-----------|-------------|
@@ -459,7 +496,7 @@ is well-defined (by equality of inner products), isometric, and intertwines fiel
 > Wightman QFT → Schwinger functions satisfying OS axioms.
 
 **Proof:** Wire to `wightman_to_os_full` (already proven in WickRotation.lean),
-pending completion of `constructedSchwinger_*` theorems (#3–7).
+pending completion of the remaining reverse field-packaging theorems (#3–7).
 
 #### Sorry #22: `os_to_wightman` (line 1251)
 
@@ -504,7 +541,7 @@ Layer 4: Analytic Continuation
 Layer 5: Wick Rotation Bridge
   WickRotation.lean
        │
-       ├── R→E: constructedSchwinger_* (#3-7) ← BHW axiom for E3
+       ├── R→E: reverse field-packaging lane (#3-7) ← BHW axiom for split E1 / E3 packaging
        ├── E→R: inductive/full analytic continuation (#8-10)
        ├── constructWightmanFunctions (#11-17) ← BHW axiom, #10
        └── os_to_wightman_full (#18) ← #11-17
@@ -564,7 +601,7 @@ read from the split contracts:
   | one-variable identity support | `Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean` | `identity_theorem_right_halfplane`, `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` | theorem-3 `singleSplit_xiShift` support layer in `OSToWightmanBoundaryValueLimits.lean` |
   | positive-time / Hilbert-density support | `Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean` | `positiveTimeBorchersVector_dense`, `euclideanPositiveTimeSingleVector`, and related norm identities | the transformed-image transport / quadratic-identity package |
   | one-variable holomorphic/limit support | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | the checked `singleSplit_xiShift` holomorphic trace, its positive-real identification theorems, and its `t -> 0+` limit-transfer theorems used by theorem 3 | the one-variable Section-4.3 slots `os1TransportOneVar` then `os1TransportOneVar_eq_zero_iff` in `OSToWightmanPositivity.lean` |
-  | Section-4.3 transformed-image package | `Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean` | no landed theorem-slot names yet under the blueprint names `os1TransportOneVar`, `os1TransportOneVar_eq_zero_iff`, `os1TransportComponent`, `os1TransportComponent_eq_zero_iff`, `BvtTransportImageSequence`, `bvt_transport_to_osHilbert_onImage`, `bvt_wightmanInner_eq_transport_norm_sq_onImage`, `bvt_W_positive_of_transportImage_density`; the Lean execution order is frozen as `partialFourierSpatial_fun -> partialFourierSpatial_timeSliceSchwartz -> partialFourierSpatial_timeSlice_hasPaleyWienerExtension -> partialFourierSpatial_timeSliceCanonicalExtension -> os1TransportOneVar -> os1TransportOneVar_eq_zero_iff -> os1TransportComponent -> os1TransportComponent_eq_zero_iff -> BvtTransportImageSequence -> bvt_transport_to_osHilbert_onImage -> bvt_wightmanInner_eq_transport_norm_sq_onImage`, and the on-image transport stage must consume the explicit kernel-zero theorems rather than an unnamed injectivity slogan | `OSToWightmanBoundaryValues.lean :: bvt_W_positive` |
+  | Section-4.3 transformed-image package | `Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean` | no landed theorem-slot names yet under the blueprint names `os1TransportOneVar`, `os1TransportOneVar_eq_zero_iff`, `os1TransportComponent`, `os1TransportComponent_eq_zero_iff`, `BvtTransportImageSequence`, `bvt_transport_to_osHilbert_onImage`, `lemma42_matrix_element_time_interchange`, `bvt_wightmanInner_eq_transport_norm_sq_onImage`, `bvt_W_positive_of_transportImage_density`; the Lean execution order is frozen as `partialFourierSpatial_fun -> partialFourierSpatial_timeSliceSchwartz -> partialFourierSpatial_timeSlice_hasPaleyWienerExtension -> partialFourierSpatial_timeSliceCanonicalExtension -> os1TransportOneVar -> os1TransportOneVar_eq_zero_iff -> os1TransportComponent -> os1TransportComponent_eq_zero_iff -> BvtTransportImageSequence -> bvt_transport_to_osHilbert_onImage -> lemma42_matrix_element_time_interchange -> bvt_wightmanInner_eq_transport_norm_sq_onImage -> bvt_W_positive_of_transportImage_density`, and the on-image transport stage must consume the explicit kernel-zero theorems rather than an unnamed injectivity slogan | `OSToWightmanBoundaryValues.lean :: bvt_W_positive` |
   | exported frontier consumer | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | the private frontier theorem `bvt_W_positive` and downstream wrappers/transfer consumers | public reconstruction consumers only |
 
   Two theorem-3 anti-drift rules are now part of that contract too:

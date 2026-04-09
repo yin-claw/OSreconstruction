@@ -117,11 +117,14 @@ Exact implementation consequence:
 
 Current repo surface:
 
-1. older versions of this repo tracked a `Wightman/NuclearSpaces/BochnerMinlos.lean`
-   file with five direct sorries, but that file is not present in the current
-   checked tree of this clone; treat it as a historical/planned support locus
-   rather than a live file reference unless the file is restored or the docs
-   are rebound to a new checked location.
+1. the current checked tree **does** contain
+   `OSReconstruction/Wightman/NuclearSpaces/BochnerMinlos.lean`; it belongs to
+   the checked local NuclearSpaces support lane rather than to the theorem-2/3/4
+   critical-path ledger.
+2. doc readers should therefore distinguish three separate things explicitly:
+   the checked local support file itself, any remaining bridge/import work above
+   that support lane, and the downstream exported consumer surfaces in
+   `Wightman/WightmanAxioms.lean`.
 
 Mathlib status:
 
@@ -270,21 +273,38 @@ Important current-status clarification:
 
 1. the old Package-C / `hschw` route is quarantined rather than active;
 2. the active theorem-3 blocker is now the corrected Package-I Section 4.3
-   transport package, especially the exact codomain and dense-range theorem
-   surface for `os1TransportComponent`;
+   transport package, but the docs should name its real missing seams more
+   sharply than just “codomain + dense range”: the contract-level blockers are
+   the branch-`3b` one-variable / degreewise transport surfaces
+   `os1TransportOneVar`, `os1TransportOneVar_eq_zero_iff`,
+   `os1TransportComponent`, `os1TransportComponent_eq_zero_iff`, and the
+   on-image transport package `bvt_transport_to_osHilbert_onImage` /
+   `bvt_wightmanInner_eq_transport_norm_sq_onImage`;
 3. the main missing content there is the OS I Section 4.3 one-variable
-   Fourier-Laplace / Paley-Wiener / extension proof, not a new topology on raw
-   `BorchersSequence d`;
+   Fourier-Laplace / Paley-Wiener / extension proof above the already checked
+   local suppliers `partialFourierSpatial_fun`,
+   `partialFourierSpatial_timeSliceSchwartz`,
+   `partialFourierSpatial_timeSlice_hasPaleyWienerExtension`, and
+   `partialFourierSpatial_timeSliceCanonicalExtension`, not a new topology on
+   raw `BorchersSequence d`;
 4. the old public density layer F/G/H is now withdrawn rather than repaired,
    because ordered-positive-time support is not dense in the full Schwartz
    space;
 5. the final public closure route is Package I in its corrected Section 4.3
-   form: transformed positive-time Euclidean data -> transformed-image core in
-   the Section-4.3 half-space Schwartz codomain -> quadratic identity there -> public
-   density/continuity closure;
-6. so theorem-3 work should not drift back to either
-   a raw density theorem or “add a `Submodule`/topology layer first” as if
-   either were the main obstruction.
+   form, in exact implementation order:
+   transformed positive-time Euclidean data
+   -> transformed-image core in the Section-4.3 half-space Schwartz codomain
+   -> on-image transport `bvt_transport_to_osHilbert_onImage`
+   -> Lemma-4.2 adapter `lemma42_matrix_element_time_interchange`
+   -> quadratic identity
+      `bvt_wightmanInner_eq_transport_norm_sq_onImage`
+   -> Hilbert-space density / bounded finite-support continuity closure
+      `bvt_W_positive_of_transportImage_density`
+   -> only then the exported frontier wrapper
+      `OSToWightmanBoundaryValues.lean :: bvt_W_positive`;
+6. so theorem-3 work should not drift back to either a raw density theorem, a
+   vague “prove dense range first” slogan, or “add a `Submodule`/topology layer
+   first” as if any of those were the main obstruction.
 
 Additional theorem-3 clarification:
 
@@ -294,7 +314,12 @@ Additional theorem-3 clarification:
    `bvt_F` / `bvt_W` object, so the production route is safe even though the
    original OS I paper used Lemma 8.8;
 3. the half-space dense-range theorem from Lemma 4.1 is a paper-faithfulness
-   theorem, but it is not the current minimal blocker for `bvt_W_positive`.
+   theorem, but it is not the current minimal blocker for theorem 3; the live
+   closure seam is the explicit on-image route through
+   `os1TransportComponent_eq_zero_iff`,
+   `lemma42_matrix_element_time_interchange`, and
+   `bvt_W_positive_of_transportImage_density`, with `bvt_W_positive` only the
+   exported downstream wrapper.
 
 ## 6. Operator-theory gaps
 

@@ -117,10 +117,54 @@ Two negative route rules are now fixed here too:
 
 | ID | File:line | Theorem | Lane | Status |
 |---|---|---|---|---|
-| W8 | `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean:2366` | `schwingerExtension_os_term_eq_wightman_term` | false positivity route | quarantine/delete |
-| W9 | `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean:3581` | `W_analytic_cluster_integral` | reverse-direction cluster | live but not on shortest path |
-| W10 | `Wightman/Reconstruction/WickRotation/BHWTranslation.lean:1115` | `isPreconnected_baseFiber` | old-route PET connectivity | peripheral |
-| W11 | `Wightman/Reconstruction/WickRotation/ForwardTubeLorentz.lean:1129` | `wickRotation_not_in_PET_null` | reverse-direction measure-zero geometry | peripheral |
+| W8 | `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean:2358` | `schwingerExtension_os_term_eq_wightman_term` | false positivity route | quarantine/delete |
+| W9 | `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean:2412` | `wickRotatedBoundaryPairing_reflection_positive` | quarantined reverse-direction positivity wrapper | checked-present but untrusted |
+| W10 | `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean:3545` | `W_analytic_cluster_integral` | reverse-direction cluster supplier | live but not on shortest path |
+| W11 | `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean:3589` | `wickRotatedBoundaryPairing_cluster` | reverse-direction cluster wrapper above the live supplier | checked-present but not final field witness |
+| W12 | `Wightman/Reconstruction/WickRotation/BHWTranslation.lean:1115` | `isPreconnected_baseFiber` | old-route PET connectivity | peripheral |
+| W13 | `Wightman/Reconstruction/WickRotation/ForwardTubeLorentz.lean:1129` | `wickRotation_not_in_PET_null` | reverse-direction measure-zero geometry | peripheral |
+
+Source-checked reverse-lane contract (2026-04-08): keep three statuses distinct.
+1. `schwingerExtension_os_term_eq_wightman_term` is the false OS=`Wightman`
+   identification lane and should not be revived as a stepping stone.
+2. `SchwingerAxioms.lean:2412 :: wickRotatedBoundaryPairing_reflection_positive`
+   is **checked-present but quarantined**, because it still closes only through
+   `schwingerExtension_os_inner_product_eq_wightman_positivity`; therefore the
+   future field `SchwingerOS.lean:774 :: OsterwalderSchraderAxioms.E2_reflection_positive`
+   still has no honest checked supplier theorem.
+3. `SchwingerAxioms.lean:3545 :: W_analytic_cluster_integral` is a real live theorem-shaped supplier, but it
+   is only the full-Schwartz/common-BHW integral stage, and
+   `SchwingerAxioms.lean:3589 :: wickRotatedBoundaryPairing_cluster` is only
+   the checked wrapper above it. The future field
+   `SchwingerOS.lean:792 :: OsterwalderSchraderAxioms.E4_cluster` still needs the
+   fully frozen consumer ladder
+   `W_analytic_cluster_integral -> wickRotatedBoundaryPairing_cluster -> constructSchwinger_cluster_translate_adapter -> constructSchwinger_cluster_tensor_adapter -> constructSchwinger_cluster -> OsterwalderSchraderAxioms.E4_cluster`,
+   where the first adapter must manufacture the translated witness
+   `g_a : ZeroDiagonalSchwartz d m`, the second must manufacture the tensor
+   witness `fg_a : ZeroDiagonalSchwartz d (n + m)`, and only then may
+   `constructSchwinger_cluster` discharge the final norm inequality on
+   `constructSchwingerFunctions Wfn`.
+   The supplier theorem itself is now frozen to the sector-decomposition proof
+   transcript: finite time-ordering sector partition of the `(n+m)`-point
+   Wick-rotated integral -> identity-sector application of
+   `bhw_pointwise_cluster_forwardTube` -> BHW permutation rewrites on bad
+   sectors -> uniform `HasForwardTubeGrowth` majorant with Schwartz decay ->
+   sectorwise dominated convergence -> finite sector sum. Later Lean work
+   should not treat the current theorem as if that packaging were already done,
+   and should not reopen PET-strengthening or direct-distributional routes as
+   coequal implementation plans.
+
+   The reverse `E4` lane is now frozen here as a slot ledger too, so later Lean
+   implementation does not have to reconstruct the adapter handoff from the
+   blueprint stack:
+
+   | Slot | File ownership | Must consume exactly | Must prove / export exactly | Next allowed consumer |
+   | --- | --- | --- | --- | --- |
+   | `W_analytic_cluster_integral` | `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` | the checked common-BHW / full-`SchwartzNPoint` cluster setup, with the proof transcript fixed as sector partition -> identity-sector ForwardTube step -> bad-sector permutation rewrites -> uniform majorant -> sectorwise DCT -> finite sector sum | the reverse Section-4.4 supplier estimate on the common-BHW/full-`SchwartzNPoint` side | `wickRotatedBoundaryPairing_cluster` only |
+   | `wickRotatedBoundaryPairing_cluster` | `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` | `W_analytic_cluster_integral` only | the checked Wick-rotated full-`SchwartzNPoint` cluster wrapper, still not a zero-diagonal axiom-field witness | `constructSchwinger_cluster_translate_adapter`, `constructSchwinger_cluster_tensor_adapter`, `constructSchwinger_cluster` |
+   | `constructSchwinger_cluster_translate_adapter` | reverse packaging layer targeting `Wightman/Reconstruction/SchwingerOS.lean` | `g : ZeroDiagonalSchwartz d m` plus a spatial translation vector `a` | the exact quantified witness `g_a : ZeroDiagonalSchwartz d m` with pointwise equation `g_a.1 x = g.1 (fun i => x i - a)` required by `E4_cluster` | `constructSchwinger_cluster_tensor_adapter`, `constructSchwinger_cluster` |
+   | `constructSchwinger_cluster_tensor_adapter` | same reverse packaging layer above `SchwingerAxioms.lean` | `f : ZeroDiagonalSchwartz d n` plus the translated witness `g_a` | the exact `(n+m)`-point witness `fg_a : ZeroDiagonalSchwartz d (n + m)` with pointwise equation `fg_a.1 x = f.1 (splitFirst n m x) * g_a.1 (splitLast n m x)` | `constructSchwinger_cluster` |
+   | `constructSchwinger_cluster` | same reverse packaging layer, with final consumer target `SchwingerOS.lean:792` | `wickRotatedBoundaryPairing_cluster` plus the manufactured witnesses `g_a` and `fg_a`; no vague tensor-restriction shortcut is allowed here | the literal norm inequality demanded by `OsterwalderSchraderAxioms.E4_cluster` | final reverse field packaging only |
 
 ### 3.3. GNS / uniqueness / functional-analysis side lane
 
@@ -531,10 +575,13 @@ Estimated remaining Lean size:
 The following direct `sorry`s should remain documented but not distract the
 current theorem-2/3/4 execution order:
 
-1. `schwingerExtension_os_term_eq_wightman_term`
-2. `W_analytic_cluster_integral`
+1. `schwingerExtension_os_term_eq_wightman_term` (false OS=`Wightman` lane;
+   keep quarantined)
+2. `W_analytic_cluster_integral` (live reverse cluster supplier, but still not
+   the final `E4_cluster` field packaging)
 3. `isPreconnected_baseFiber`
-4. `wickRotation_not_in_PET_null`
+4. `wickRotation_not_in_PET_null` (currently consumed by the reverse cluster
+   supplier, not by an honest reverse positivity theorem)
 5. the checked nuclear / Bochner-Minlos secondary lane recorded in
    `docs/nuclear_spaces_blueprint.md`, `docs/gns-pipeline-sorries.md`, and
    `docs/peripheral_sorry_triage.md`, owned by the local
@@ -602,7 +649,12 @@ that positivity/cluster lane.
    depends on:
    - `docs/r_to_e_blueprint.md`
    - `docs/os1_detailed_proof_audit.md`
-   - reverse-direction Schwinger/BHW production files
+   - reverse-direction Schwinger/BHW production files, with the split `E1`
+     seam frozen explicitly as
+     `SchwingerAxioms.lean :: F_ext_translation_invariant -> wickRotatedBoundaryPairing_translation_invariant`
+     and
+     `SchwingerAxioms.lean :: F_ext_rotation_invariant -> wickRotatedBoundaryPairing_rotation_invariant`,
+     before any later full `OsterwalderSchraderAxioms` wrapper
 3. `GNS spectrum/cyclicity`
    depends on:
    - `docs/gns_pipeline_blueprint.md`
@@ -648,7 +700,11 @@ the public OS-route frontier, the docs should enforce the following phases.
 #### Phase 4. Reverse-direction strengthening
 
 1. honest `R -> E` transport packages from
-   `docs/r_to_e_blueprint.md`,
+   `docs/r_to_e_blueprint.md`, including the checked split-`E1` seam
+   `F_ext_translation_invariant -> wickRotatedBoundaryPairing_translation_invariant`
+   and `F_ext_rotation_invariant -> wickRotatedBoundaryPairing_rotation_invariant`
+   in `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` before any
+   later full `OsterwalderSchraderAxioms` wrapper,
 2. quarantine/remove the false reverse-direction positivity chain.
 
 #### Phase 5. GNS / kernel / uniqueness side lane
