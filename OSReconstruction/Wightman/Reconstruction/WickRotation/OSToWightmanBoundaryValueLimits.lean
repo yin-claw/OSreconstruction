@@ -453,6 +453,126 @@ private theorem hasPolynomialGrowthOnLine_bvt_W_conjTensorProduct_timeShift
           nlinarith
         simpa [Cbound, mul_assoc, mul_left_comm, mul_comm] using haux
 
+/-- Exact flattened-surface continuity for the live Stage-5 blocker:
+after fixing the left factor, the scalar functional of the translated
+flattened right factor is continuous in the translation parameter. -/
+private theorem continuous_bvt_W_flattened_translate
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ}
+    (f : SchwartzNPoint d n)
+    (g : SchwartzNPoint d m)
+    (hg_compact : HasCompactSupport (g : NPointDomain d m → ℂ)) :
+    Continuous (fun t : ℝ =>
+      ((bvt_W_conjTensorProduct_rightCLM (d := d) OS lgc f).comp
+        (unflattenSchwartzNPoint (d := d)))
+        (SCV.translateSchwartz (t • flatTimeShiftDirection d m)
+          (flattenSchwartzNPoint (d := d) g))) := by
+  rw [show
+      (fun t : ℝ =>
+        ((bvt_W_conjTensorProduct_rightCLM (d := d) OS lgc f).comp
+          (unflattenSchwartzNPoint (d := d)))
+          (SCV.translateSchwartz (t • flatTimeShiftDirection d m)
+            (flattenSchwartzNPoint (d := d) g))) =
+      (fun t : ℝ =>
+        bvt_W OS lgc (n + m)
+          (f.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t g))) by
+      funext t
+      symm
+      exact bvt_W_conjTensorProduct_timeShift_eq_flattened_translate
+        (d := d) (OS := OS) (lgc := lgc) f g t]
+  exact continuous_bvt_W_conjTensorProduct_timeShift
+    (d := d) OS lgc f g hg_compact
+
+/-- Exact flattened-surface polynomial growth for the live Stage-5 blocker:
+the translated flattened right-factor pairing grows at most polynomially in the
+real translation parameter. -/
+private theorem hasPolynomialGrowthOnLine_bvt_W_flattened_translate
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ}
+    (f : SchwartzNPoint d n)
+    (g : SchwartzNPoint d m) :
+    SCV.HasPolynomialGrowthOnLine (fun t : ℝ =>
+      ((bvt_W_conjTensorProduct_rightCLM (d := d) OS lgc f).comp
+        (unflattenSchwartzNPoint (d := d)))
+        (SCV.translateSchwartz (t • flatTimeShiftDirection d m)
+          (flattenSchwartzNPoint (d := d) g))) := by
+  rw [show
+      (fun t : ℝ =>
+        ((bvt_W_conjTensorProduct_rightCLM (d := d) OS lgc f).comp
+          (unflattenSchwartzNPoint (d := d)))
+          (SCV.translateSchwartz (t • flatTimeShiftDirection d m)
+            (flattenSchwartzNPoint (d := d) g))) =
+      (fun t : ℝ =>
+        bvt_W OS lgc (n + m)
+          (f.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t g))) by
+      funext t
+      symm
+      exact bvt_W_conjTensorProduct_timeShift_eq_flattened_translate
+        (d := d) (OS := OS) (lgc := lgc) f g t]
+  exact hasPolynomialGrowthOnLine_bvt_W_conjTensorProduct_timeShift
+    (d := d) OS lgc f g
+
+/-- Exact flattened-surface integrability for the Stage-5 spectral pairing:
+the translated flattened right-factor functional pairs integrably against the
+Fourier transform of any one-variable Schwartz test. -/
+private theorem integrable_bvt_W_flattened_translate_mul_fourierTransform
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ}
+    (f : SchwartzNPoint d n)
+    (g : SchwartzNPoint d m)
+    (hg_compact : HasCompactSupport (g : NPointDomain d m → ℂ))
+    (χ : SchwartzMap ℝ ℂ) :
+    MeasureTheory.Integrable (fun t : ℝ =>
+      ((bvt_W_conjTensorProduct_rightCLM (d := d) OS lgc f).comp
+        (unflattenSchwartzNPoint (d := d)))
+        (SCV.translateSchwartz (t • flatTimeShiftDirection d m)
+          (flattenSchwartzNPoint (d := d) g)) *
+        (SchwartzMap.fourierTransformCLM ℂ χ) t) := by
+  exact SCV.integrable_mul_fourierTransform_of_continuous_polynomialGrowthOnLine
+    (f := fun t : ℝ =>
+      ((bvt_W_conjTensorProduct_rightCLM (d := d) OS lgc f).comp
+        (unflattenSchwartzNPoint (d := d)))
+        (SCV.translateSchwartz (t • flatTimeShiftDirection d m)
+          (flattenSchwartzNPoint (d := d) g)))
+    (continuous_bvt_W_flattened_translate
+      (d := d) OS lgc f g hg_compact)
+    (hasPolynomialGrowthOnLine_bvt_W_flattened_translate
+      (d := d) OS lgc f g)
+    χ
+
+/-- Exact hypothesis transfer for the live Stage-5 blocker: if the flattened
+translation functional has one-sided Fourier support, then so does the original
+time-shift pairing functional. This means the remaining spectral theorem can be
+proved directly on the flattened surface and then fed into the existing ambient
+Paley-Wiener witness route without further bookkeeping. -/
+private theorem hasOneSidedFourierSupport_bvt_W_conjTensorProduct_timeShift_of_flattened
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ}
+    (f : SchwartzNPoint d n)
+    (g : SchwartzNPoint d m)
+    (h_spectral_flat :
+      SCV.HasOneSidedFourierSupport
+        (fun χ : SchwartzMap ℝ ℂ =>
+          ∫ t : ℝ,
+            ((bvt_W_conjTensorProduct_rightCLM (d := d) OS lgc f).comp
+              (unflattenSchwartzNPoint (d := d)))
+              (SCV.translateSchwartz (t • flatTimeShiftDirection d m)
+                (flattenSchwartzNPoint (d := d) g)) * χ t)) :
+    SCV.HasOneSidedFourierSupport
+      (fun χ : SchwartzMap ℝ ℂ =>
+        ∫ t : ℝ,
+          bvt_W OS lgc (n + m)
+            (f.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) * χ t) := by
+  intro χ hχ_supp
+  change
+    ∫ t : ℝ,
+      bvt_W OS lgc (n + m)
+        (f.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) *
+          (SchwartzMap.fourierTransformCLM ℂ χ) t = 0
+  rw [integral_bvt_W_conjTensorProduct_timeShift_mul_fourierTransform_eq_flattened_translate
+    (d := d) (OS := OS) (lgc := lgc) f g χ]
+  exact h_spectral_flat χ hχ_supp
+
 /-- Ambient-witness existence on the current Stage-5 route: once the real-time
 Wightman pairing against a fixed ambient tensor has one-sided Fourier support,
 the existing Paley-Wiener infrastructure produces the required upper-half-plane
