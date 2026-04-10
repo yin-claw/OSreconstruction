@@ -187,6 +187,20 @@ theorem tube_holomorphic_unique_from_bv {n d : ℕ}
     (F G : (Fin n → Fin (d + 1) → ℂ) → ℂ)
     (hF_holo : DifferentiableOn ℂ F (TubeDomainSetPi C))
     (hG_holo : DifferentiableOn ℂ G (TubeDomainSetPi C))
+    -- Integrability hypotheses (needed for BV transport)
+    (hFG_int : ∀ (y : Fin n → Fin (d + 1) → ℝ), y ∈ C →
+      ∀ (ψ : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ),
+        MeasureTheory.Integrable (fun x : Fin n → Fin (d + 1) → ℝ =>
+          (F (fun k μ => (x k μ : ℂ) + (y k μ : ℂ) * Complex.I) -
+           G (fun k μ => (x k μ : ℂ) + (y k μ : ℂ) * Complex.I)) * ψ x))
+    (hF_int : ∀ (y : Fin n → Fin (d + 1) → ℝ), y ∈ C →
+      ∀ (ψ : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ),
+        MeasureTheory.Integrable (fun x : Fin n → Fin (d + 1) → ℝ =>
+          F (fun k μ => (x k μ : ℂ) + (y k μ : ℂ) * Complex.I) * ψ x))
+    (hG_int : ∀ (y : Fin n → Fin (d + 1) → ℝ), y ∈ C →
+      ∀ (ψ : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ),
+        MeasureTheory.Integrable (fun x : Fin n → Fin (d + 1) → ℝ =>
+          G (fun k μ => (x k μ : ℂ) + (y k μ : ℂ) * Complex.I) * ψ x))
     (W : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ →L[ℂ] ℂ)
     (hF_bv : ∀ (η : Fin n → Fin (d + 1) → ℝ), η ∈ C →
       ∀ (φ : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ),
@@ -234,17 +248,50 @@ theorem tube_holomorphic_unique_from_bv {n d : ℕ}
   -- Hflat is holomorphic
   have hHflat_holo : DifferentiableOn ℂ Hflat (SCV.TubeDomain Cflat) :=
     (hF_holo.sub hG_holo).comp e.symm.differentiableOn (fun w hw => hmem_tube w hw)
-  -- Integrability: holomorphic → continuous on slice, times Schwartz → integrable
+  -- Key helper: e.symm (eR y_pi + ...) = y_pi + ... component-wise
+  have he_symm_eR : ∀ (a b : Fin n → Fin (d + 1) → ℝ) (c : ℂ),
+      e.symm (fun i => (eR a i : ℂ) + c * (eR b i : ℂ) * Complex.I) =
+        fun k μ => (a k μ : ℂ) + c * (b k μ : ℂ) * Complex.I := by
+    intro a b c; ext k μ
+    simp only [e, eR, flattenCLEquiv_symm_apply, flattenCLEquivReal_apply]
+    simp [Equiv.symm_apply_apply]
+  -- Variant without the c multiplier (for the 1* case)
+  have he_symm_eR₁ : ∀ (a b : Fin n → Fin (d + 1) → ℝ),
+      e.symm (fun i => (eR a i : ℂ) + (eR b i : ℂ) * Complex.I) =
+        fun k μ => (a k μ : ℂ) + (b k μ : ℂ) * Complex.I := by
+    intro a b; ext k μ
+    simp only [e, eR, flattenCLEquiv_symm_apply, flattenCLEquivReal_apply]
+    simp [Equiv.symm_apply_apply]
+  -- Integrability: transport via measure-preserving flattening
   have hHflat_int : ∀ y ∈ Cflat, ∀ ψ : SchwartzMap (Fin m → ℝ) ℂ,
       MeasureTheory.Integrable (fun x : Fin m → ℝ =>
         Hflat (fun i => (x i : ℂ) + (y i : ℂ) * Complex.I) * ψ x) := by
-    intro y hy ψ
-    -- Hflat is holomorphic → continuous on each slice x ↦ Hflat(x+iy).
-    -- Continuous function on ℝᵐ times Schwartz ψ is integrable because
-    -- ψ decays faster than any polynomial while Hflat(·+iy) is continuous
-    -- (hence locally bounded, and bounded on compact sets).
-    -- This is the same integrability argument used in forward_tube_bv_integrable.
-    sorry
+    intro y ⟨y_pi, hy_pi, hy_eq⟩ ψ; subst hy_eq
+    -- Define the Pi-coordinate test function
+    let φ : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ :=
+      (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ eR) ψ
+    -- The Pi-coordinate integrand is integrable by hypothesis
+    have hpi_int := hFG_int y_pi hy_pi φ
+    -- The flat integrand, composed with flattenMeasurableEquiv, equals the Pi integrand
+    have hfun_eq : (fun x : Fin n → Fin (d + 1) → ℝ =>
+        (F (fun k μ => (x k μ : ℂ) + (y_pi k μ : ℂ) * Complex.I) -
+         G (fun k μ => (x k μ : ℂ) + (y_pi k μ : ℂ) * Complex.I)) * φ x) =
+      (fun x : Fin m → ℝ =>
+        Hflat (fun i => (x i : ℂ) + (eR y_pi i : ℂ) * Complex.I) * ψ x) ∘
+          flattenMeasurableEquiv n (d + 1) := by
+      ext x; dsimp [Function.comp]
+      have hflat_eq : flattenMeasurableEquiv n (d + 1) x = eR x := by
+        ext i; simp [flattenMeasurableEquiv_apply, eR, flattenCLEquivReal_apply]
+      rw [hflat_eq]
+      have hH_eq : Hflat (fun i => (eR x i : ℂ) + (eR y_pi i : ℂ) * Complex.I) =
+          F (fun k μ => (x k μ : ℂ) + (y_pi k μ : ℂ) * Complex.I) -
+          G (fun k μ => (x k μ : ℂ) + (y_pi k μ : ℂ) * Complex.I) := by
+        dsimp [Hflat, Function.comp]; rw [he_symm_eR₁]
+      have hφ_eq : ψ (eR x) = φ x := by simp [φ]
+      rw [hH_eq, hφ_eq]
+    rw [hfun_eq] at hpi_int
+    exact ((flattenMeasurableEquiv_measurePreserving n (d + 1)).integrable_comp_emb
+      (flattenMeasurableEquiv n (d + 1)).measurableEmbedding).1 hpi_int
   -- Zero BV: both F and G have BV W, so H = F - G has BV 0
   have hHflat_bv_zero : ∀ (f : SchwartzMap (Fin m → ℝ) ℂ)
       (η : Fin m → ℝ), η ∈ Cflat →
@@ -252,12 +299,63 @@ theorem tube_holomorphic_unique_from_bv {n d : ℕ}
         (fun ε : ℝ => ∫ x : Fin m → ℝ,
           Hflat (fun i => (x i : ℂ) + ε * (η i : ℂ) * Complex.I) * f x)
         (nhdsWithin 0 (Set.Ioi 0)) (nhds 0) := by
-    intro f η ⟨η_pi, hη_pi, hη_eq⟩
-    -- The flat integral ∫ Hflat(x+iεη) f(x) dx equals
-    -- ∫ (F-G)(eR⁻¹x + iε·η_pi·I) f(x) dx in Pi coords.
-    -- By change of variables x = eR(x'), this is
-    -- ∫ (F-G)(x'+iεη') (f∘eR)(x') dx' = ∫ F·φ - ∫ G·φ → W(φ) - W(φ) = 0
-    sorry
+    intro f η ⟨η_pi, hη_pi, hη_eq⟩; subst hη_eq
+    -- Define the Pi-coordinate test function
+    let φ : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ :=
+      (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ eR) f
+    -- Both F and G converge to W(φ), so their difference → 0
+    have hF_lim := hF_bv η_pi hη_pi φ
+    have hG_lim := hG_bv η_pi hη_pi φ
+    have hsub_lim : Filter.Tendsto
+        (fun ε : ℝ =>
+          (∫ x : Fin n → Fin (d + 1) → ℝ,
+            F (fun k μ => (x k μ : ℂ) + (ε : ℂ) * (η_pi k μ : ℂ) * Complex.I) * φ x) -
+          (∫ x : Fin n → Fin (d + 1) → ℝ,
+            G (fun k μ => (x k μ : ℂ) + (ε : ℂ) * (η_pi k μ : ℂ) * Complex.I) * φ x))
+        (nhdsWithin 0 (Set.Ioi 0)) (nhds 0) := by
+      simpa using hF_lim.sub hG_lim
+    -- Show the flat integral equals the Pi integral difference
+    refine hsub_lim.congr' ?_
+    filter_upwards [self_mem_nhdsWithin] with ε hε
+    -- The flat integral via change of variables
+    have hcov :
+        ∫ x : Fin m → ℝ,
+          Hflat (fun i => (x i : ℂ) + ε * (eR η_pi i : ℂ) * Complex.I) * f x =
+        ∫ x : Fin n → Fin (d + 1) → ℝ,
+          Hflat (fun i => (eR x i : ℂ) + ε * (eR η_pi i : ℂ) * Complex.I) * f (eR x) :=
+      integral_flatten_change_of_variables n (d + 1) _
+    rw [hcov]
+    -- Simplify the integrand using he_symm_eR
+    have hintegrand_eq : ∀ (x : Fin n → Fin (d + 1) → ℝ),
+        Hflat (fun i => (eR x i : ℂ) + (ε : ℂ) * (eR η_pi i : ℂ) * Complex.I) * f (eR x) =
+        (F (fun k μ => (x k μ : ℂ) + (ε : ℂ) * (η_pi k μ : ℂ) * Complex.I) * φ x) -
+        (G (fun k μ => (x k μ : ℂ) + (ε : ℂ) * (η_pi k μ : ℂ) * Complex.I) * φ x) := by
+      intro x
+      have harg := he_symm_eR x η_pi ((ε : ℂ))
+      have hφ : f (eR x) = φ x := by simp [φ]
+      dsimp [Hflat, Function.comp]
+      rw [show e.symm (fun i => ↑(eR x i) + ↑ε * ↑(eR η_pi i) * Complex.I) =
+        fun k μ => ↑(x k μ) + ↑ε * ↑(η_pi k μ) * Complex.I from harg, hφ]
+      ring
+    simp_rw [hintegrand_eq]
+    -- Now separate the integral of (F*φ - G*φ) into ∫ F*φ - ∫ G*φ
+    have hεη : ε • η_pi ∈ C := hC_cone η_pi hη_pi ε (Set.mem_Ioi.mp hε)
+    have hIntF := hF_int (ε • η_pi) hεη φ
+    have hIntG := hG_int (ε • η_pi) hεη φ
+    -- Rewrite the scalar ε • η_pi in the integrability hypotheses
+    have hF_int' : MeasureTheory.Integrable
+        (fun x : Fin n → Fin (d + 1) → ℝ =>
+          F (fun k μ => (x k μ : ℂ) + (ε : ℂ) * (η_pi k μ : ℂ) * Complex.I) * φ x) := by
+      convert hIntF using 1
+      ext x; congr 2; funext k; funext μ; congr 1
+      simp [Pi.smul_apply, smul_eq_mul, Complex.ofReal_mul]
+    have hG_int' : MeasureTheory.Integrable
+        (fun x : Fin n → Fin (d + 1) → ℝ =>
+          G (fun k μ => (x k μ : ℂ) + (ε : ℂ) * (η_pi k μ : ℂ) * Complex.I) * φ x) := by
+      convert hIntG using 1
+      ext x; congr 2; funext k; funext μ; congr 1
+      simp [Pi.smul_apply, smul_eq_mul, Complex.ofReal_mul]
+    exact (MeasureTheory.integral_sub hF_int' hG_int').symm
   -- Apply distributional uniqueness (proved in DistributionalUniqueness.lean)
   have hHflat_zero := SCV.distributional_uniqueness_tube_of_zero_bv
     hCflat_open hCflat_conv hCflat_ne hCflat_cone hHflat_holo hHflat_int hHflat_bv_zero
@@ -266,7 +364,6 @@ theorem tube_holomorphic_unique_from_bv {n d : ℕ}
   have h0 := hHflat_zero (e z) (hmem_flat z hz)
   change F (e.symm (e z)) - G (e.symm (e z)) = 0 at h0
   rwa [e.symm_apply_apply, sub_eq_zero] at h0
-
 /-! ### Fourier-Laplace representation axiom -/
 
 /-- **Fourier-Laplace representation theorem.**
