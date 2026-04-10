@@ -578,18 +578,41 @@ Exact current-code milestone:
   `section43_iteratedSlice_descendedPairing`;
 - the older theorem `section43_iteratedSlice_descendedPairing_imagAxis`
   remains as the first explicit one-variable fragment inside that proof;
-- the next exact analytic blocker is the concrete Section-4.3 adapter
-  `lemma42_matrix_element_time_interchange`;
-- the kernel-level theorem `bvt_W_matrixElement_onImage` is the immediate
-  consumer of that adapter, not the direct successor of slice descent.
+- the reusable one-variable interchange step is now formalized privately as
+  `one_variable_time_interchange_for_wightman_pairing`, together with the
+  kernel-reduction chain down to an ambient upper-half-plane witness, in
+  [OSToWightmanPositivity.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean);
+- `OSToWightmanPositivity.lean` is now `sorry`-free; the active public
+  theorem-3 `sorry` remains `bvt_W_positive` in
+  [OSToWightmanBoundaryValues.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean);
+- the slice-side vanishing package is now available on both pairing
+  orientations, including
+  `fourierInvPairingCLM_partialFourierSpatial_timeSlice_sub_eq_zero_of_repr_eq_transport`
+  and
+  `fourierInvPairingCLM_opposite_partialFourierSpatial_timeSlice_sub_eq_zero_of_repr_eq_transport`;
+- the next exact analytic blocker is therefore the concrete spatial-Fourier
+  factorization theorem that rewrites the shell-specific paired-vanishing
+  hypothesis `hzero` in
+  `bvt_W_conjTensorProduct_timeShift_hasPaleyWienerExtension_of_boundaryValue_of_paired_zero`
+  into those already-proved slice pairings, followed by the
+  positive-imaginary-axis witness identification;
+- the Section-4.3 adapter `lemma42_matrix_element_time_interchange` and the
+  kernel-level theorem `bvt_W_matrixElement_onImage` remain the immediate
+  public consumers of that witness, not the direct successor of slice descent;
+- `lemma42_matrix_element_time_interchange` is now present in production on
+  the honest witness-consuming surface, so the remaining blocker is not a
+  missing reduction theorem but the actual proof of the witness-identification
+  and canonical-shell limit hypotheses it assumes.
 
 /-- Concrete Section-4.3 version of the Lemma-4.2 interchange step. This is
-the first theorem after slice descent that still contains new analytic
-content. -/
+now implemented on the honest current surface: it consumes an upper-half-plane
+witness together with the positive-imaginary-axis OS identification and the
+canonical-shell limit theorem. The remaining analytic content is to prove those
+hypotheses, not to add another theorem layer. -/
 lemma lemma42_matrix_element_time_interchange
     (n : ℕ) :
     ... := by
-  ...
+  -- implemented in `OSToWightmanPositivity.lean`
 
 /-- Stage-5 prerequisite: the OS-II `bvt_W` kernel on transformed-image inputs,
 written in the same iterated coordinates as the previous lemma. -/
@@ -1629,9 +1652,11 @@ theorem one_variable_time_interchange_for_wightman_pairing
   -- then rewrite both sides as the same boundary-value distribution pairing
 ```
 
-This theorem is not optional documentation frosting. Without naming it
-explicitly, the later Lean port of OS I positivity would still hide the only
-genuinely analytic step in Lemma 4.2.
+This theorem was not optional documentation frosting. It has now been
+formalized privately in
+[OSToWightmanPositivity.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean),
+which is why the live analytic blocker has moved one step further down to the
+ambient Paley-Wiener witness construction.
 
 Implementation note:
 
@@ -1651,6 +1676,12 @@ Implementation note:
   4. only if a whole-domain comparison of witnesses is needed, use
      `identity_theorem_upperHalfPlane` or an explicit rotation bridge to
      compare with any right-half-plane scalar trace;
+- in the current repo, step 1 has already been reduced to
+  `bvt_W_conjTensorProduct_timeShift_hasPaleyWienerExtension_of_boundaryValue_of_paired_zero`
+  in
+  [OSToWightmanBoundaryValueLimits.lean](/Users/xiyin/OSReconstruction/OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean),
+  so the remaining live content is the shell-specific paired-vanishing
+  hypothesis `hzero` for the actual time-shift pairing functional;
 - a tempting simplification must be rejected here: on the corrected ambient
   theorem surface, the canonical shell
   `xiShift(... wickRotate(y) ..., t * I)` is not pointwise a `ForwardTube`

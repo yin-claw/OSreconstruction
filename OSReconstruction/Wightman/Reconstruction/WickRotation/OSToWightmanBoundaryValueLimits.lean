@@ -470,6 +470,38 @@ theorem bvt_W_conjTensorProduct_timeShift_hasPaleyWienerExtension_of_boundaryVal
     hH_bv
     hzero
 
+/-- Any upper-half-plane witness with the linewise polynomial-growth package
+used in the ambient Paley-Wiener route pairs integrably with Fourier transforms
+of Schwartz tests. This is the exact real-line integrability input needed by
+the current Stage-5 `hzero` contour-shift argument. -/
+private theorem integrable_mul_fourierTransform_of_upperHalfPlaneWitness
+    (H : ℂ → ℂ)
+    (hH_holo : DifferentiableOn ℂ H SCV.upperHalfPlane)
+    (hH_growth :
+      ∀ η : ℝ, 0 < η →
+        SCV.HasPolynomialGrowthOnLine (fun x => H (↑x + ↑η * Complex.I)))
+    (χ : SchwartzMap ℝ ℂ)
+    {η : ℝ} (hη : 0 < η) :
+    MeasureTheory.Integrable
+      (fun x : ℝ =>
+        H (↑x + ↑η * Complex.I) * (SchwartzMap.fourierTransformCLM ℂ χ) x) := by
+  have hline_maps :
+      Set.MapsTo (fun x : ℝ => (↑x : ℂ) + ↑η * Complex.I) Set.univ SCV.upperHalfPlane := by
+    intro x hx
+    simpa [SCV.upperHalfPlane, hη]
+  have hline_cont :
+      Continuous (fun x : ℝ => H (↑x + ↑η * Complex.I)) := by
+    have hmap_cont : Continuous (fun x : ℝ => (↑x : ℂ) + ↑η * Complex.I) := by
+      fun_prop
+    exact hH_holo.continuousOn.comp_continuous hmap_cont (by
+      intro x
+      simpa [SCV.upperHalfPlane, hη])
+  exact SCV.integrable_mul_fourierTransform_of_continuous_polynomialGrowthOnLine
+    (f := fun x : ℝ => H (↑x + ↑η * Complex.I))
+    hline_cont
+    (hH_growth η hη)
+    χ
+
 /-- Zero-translation specialization of the proved Schwinger-side `t → 0+` limit
 for the compact ordered positive-time `singleSplit_xiShift` shell.
 

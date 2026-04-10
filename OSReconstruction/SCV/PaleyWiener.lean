@@ -1082,6 +1082,43 @@ private theorem integrable_one_add_abs_rpow_mul_norm
       φ.continuous.norm).aestronglyMeasurable)
     (Filter.Eventually.of_forall h_bound)
 
+/-- A continuous line function with polynomial growth pairs integrably against a
+Schwartz test. This is the basic analytic bound later used for the Stage-5
+contour pairings: once the line factor is only polynomially large, Schwartz
+decay makes the real-line pairing honest. -/
+theorem integrable_mul_of_continuous_polynomialGrowthOnLine
+    (f : ℝ → ℂ)
+    (hf_cont : Continuous f)
+    (hf_growth : HasPolynomialGrowthOnLine f)
+    (φ : SchwartzMap ℝ ℂ) :
+    Integrable (fun x : ℝ => f x * φ x) := by
+  rcases hf_growth with ⟨C, N, hC_pos, hbound⟩
+  refine Integrable.mono'
+    ((integrable_one_add_abs_rpow_mul_norm φ N).const_mul C)
+    (hf_cont.mul φ.continuous).aestronglyMeasurable
+    ?_
+  filter_upwards with x
+  calc
+    ‖f x * φ x‖ = ‖f x‖ * ‖φ x‖ := norm_mul _ _
+    _ ≤ (C * (1 + |x|) ^ N) * ‖φ x‖ := by
+          gcongr
+          exact hbound x
+    _ = C * ((1 + |x|) ^ N * ‖φ x‖) := by ring
+
+/-- Fourier-transform specialization of
+`integrable_mul_of_continuous_polynomialGrowthOnLine`: a polynomial-growth line
+function pairs integrably with the Fourier transform of any Schwartz test. This
+is the exact real-line integrability form used by the current Stage-5
+`hzero`/boundary-value contour route. -/
+theorem integrable_mul_fourierTransform_of_continuous_polynomialGrowthOnLine
+    (f : ℝ → ℂ)
+    (hf_cont : Continuous f)
+    (hf_growth : HasPolynomialGrowthOnLine f)
+    (φ : SchwartzMap ℝ ℂ) :
+    Integrable (fun x : ℝ => f x * (SchwartzMap.fourierTransformCLM ℂ φ) x) := by
+  exact integrable_mul_of_continuous_polynomialGrowthOnLine
+    f hf_cont hf_growth ((SchwartzMap.fourierTransformCLM ℂ) φ)
+
 private def stepAProbeFamily
     (s : Finset (ℕ × ℕ)) (η : ℝ) (hη : 0 < η) (φ : SchwartzMap ℝ ℂ) :
     ℝ → ((p : ↑s.attach) → (ℝ →ᵇ ℂ)) :=

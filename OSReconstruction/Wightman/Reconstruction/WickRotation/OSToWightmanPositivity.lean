@@ -679,7 +679,7 @@ private theorem contDiff_partialFourierSpatial_timeSlice
 
 /-- The branch-`3b` time slice, packaged honestly as a Schwartz function in the
 chosen time variable. -/
-private noncomputable def partialFourierSpatial_timeSliceSchwartz
+noncomputable def partialFourierSpatial_timeSliceSchwartz
     {n : ℕ}
     (f : SchwartzNPoint d n)
     (r : Fin n) (t : Fin n → ℝ)
@@ -1273,7 +1273,7 @@ private noncomputable def fourierInvPairingCLM
 /-- Positive-support Schwartz input gives one-sided Fourier support for the
 inverse-Fourier pairing functional. This is the exact half-line spectral input
 for the one-variable Section 4.3 Paley-Wiener step. -/
-private theorem fourierInvPairing_hasOneSidedFourierSupport
+theorem fourierInvPairing_hasOneSidedFourierSupport
     (f : SchwartzMap ℝ ℂ)
     (hf_supp : tsupport (f : ℝ → ℂ) ⊆ Set.Ici 0) :
     SCV.HasOneSidedFourierSupport (fourierInvPairingCLM f) := by
@@ -1296,7 +1296,7 @@ private theorem fourierInvPairing_hasOneSidedFourierSupport
 /-- Honest one-variable Section 4.3 supplier: from positive-support Schwartz
 input, obtain the Paley-Wiener upper-half-plane extension with the correct
 distributional boundary value. -/
-private theorem complexLaplaceTransform_hasPaleyWienerExtension
+theorem complexLaplaceTransform_hasPaleyWienerExtension
     (f : SchwartzMap ℝ ℂ)
     (hf_supp : tsupport (f : ℝ → ℂ) ⊆ Set.Ici 0) :
     ∃ F_ext : ℂ → ℂ,
@@ -1355,7 +1355,7 @@ private theorem fourierLaplaceExt_fourierInvPairing_eq_complexLaplaceTransform
 positive-time time slice: on the positive imaginary axis, the canonical
 Fourier-Laplace extension of the induced inverse-Fourier pairing reproduces the
 raw one-sided Laplace transform of the slice itself. -/
-private theorem fourierLaplaceExt_partialFourierSpatial_timeSlice_eq_complexLaplaceTransform
+theorem fourierLaplaceExt_partialFourierSpatial_timeSlice_eq_complexLaplaceTransform
     {n : ℕ} (f : EuclideanPositiveTimeComponent d n)
     (r : Fin n) (t : Fin n → ℝ)
     (ξ : EuclideanSpace ℝ (Fin n × Fin d))
@@ -1378,7 +1378,7 @@ private theorem fourierLaplaceExt_partialFourierSpatial_timeSlice_eq_complexLapl
 /-- The one-variable Paley-Wiener theorem, specialized to the actual branch-`3b`
 positive-time time slice. This is the exact existential supplier that still
 needs to be assembled into the global Section 4.3 transport map. -/
-private theorem partialFourierSpatial_timeSlice_hasPaleyWienerExtension
+theorem partialFourierSpatial_timeSlice_hasPaleyWienerExtension
     {n : ℕ} (f : EuclideanPositiveTimeComponent d n)
     (r : Fin n) (t : Fin n → ℝ)
     (ξ : EuclideanSpace ℝ (Fin n × Fin d)) :
@@ -1403,7 +1403,7 @@ private theorem partialFourierSpatial_timeSlice_hasPaleyWienerExtension
 to the actual branch-`3b` positive-time slice. This avoids arbitrary
 `Classical.choose` packaging: it is exactly the scaled `SCV.fourierLaplaceExt`
 that `paley_wiener_half_line` builds under the hood. -/
-private noncomputable def partialFourierSpatial_timeSliceCanonicalExtension
+noncomputable def partialFourierSpatial_timeSliceCanonicalExtension
     {n : ℕ} (f : EuclideanPositiveTimeComponent d n)
     (r : Fin n) (t : Fin n → ℝ)
     (ξ : EuclideanSpace ℝ (Fin n × Fin d))
@@ -1421,7 +1421,7 @@ private noncomputable def partialFourierSpatial_timeSliceCanonicalExtension
 
 /-- On the positive imaginary axis, the canonical slice extension reproduces
 the raw one-sided Laplace transform of the branch-`3b` time slice. -/
-private theorem partialFourierSpatial_timeSliceCanonicalExtension_eq_complexLaplaceTransform
+theorem partialFourierSpatial_timeSliceCanonicalExtension_eq_complexLaplaceTransform
     {n : ℕ} (f : EuclideanPositiveTimeComponent d n)
     (r : Fin n) (t : Fin n → ℝ)
     (ξ : EuclideanSpace ℝ (Fin n × Fin d))
@@ -1726,7 +1726,7 @@ against the ambient slice of `φ` already equals the same pairing against the
 actual positive-time slice. This is the scalar theorem-surface that the later
 Lemma-4.2 adapter should consume directly, without reintroducing quotient
 wrappers in its statement. -/
-private theorem fourierInvPairingCLM_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport
+theorem fourierInvPairingCLM_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport
     {n : ℕ}
     {φ : SchwartzNPoint d n}
     {f : euclideanPositiveTimeSubmodule (d := d) n}
@@ -1809,7 +1809,7 @@ quotient-class hypothesis, the ambient-minus-preimage one-variable slice lies
 in the kernel of every one-sided Fourier-support pairing. This is the exact
 zero statement later needed in the Lemma-4.2 route, without reintroducing
 quotient wrappers. -/
-private theorem oneSidedFourierSupport_partialFourierSpatial_timeSlice_sub_eq_zero_of_repr_eq_transport
+theorem oneSidedFourierSupport_partialFourierSpatial_timeSlice_sub_eq_zero_of_repr_eq_transport
     {n : ℕ}
     {φ : SchwartzNPoint d n}
     {f : euclideanPositiveTimeSubmodule (d := d) n}
@@ -1835,6 +1835,46 @@ private theorem oneSidedFourierSupport_partialFourierSpatial_timeSlice_sub_eq_ze
     partialFourierSpatial_timeSlice_eqOn_nonneg_of_repr_eq_transport
       (d := d) (n := n) hφf r t ht ξ hs
   simp [hslice]
+
+/-- Concrete scalar specialization of
+`oneSidedFourierSupport_partialFourierSpatial_timeSlice_sub_eq_zero_of_repr_eq_transport`:
+the one-variable pairing induced by any positive-time slice on the opposite
+factor already kills the ambient-minus-preimage slice difference. This is the
+exact "each slice pairing vanishes" statement later consumed by the
+matrix-element factorization step. -/
+theorem fourierInvPairingCLM_partialFourierSpatial_timeSlice_sub_eq_zero_of_repr_eq_transport
+    {n m : ℕ}
+    {φ : SchwartzNPoint d n}
+    {f : euclideanPositiveTimeSubmodule (d := d) n}
+    {g : euclideanPositiveTimeSubmodule (d := d) m}
+    (hφf :
+      section43PositiveEnergyQuotientMap (d := d) n φ =
+        os1TransportComponent d n f)
+    (rφ : Fin n) (tφ : Fin n → ℝ)
+    (htφ : ∀ i : Fin n, i ≠ rφ → 0 ≤ tφ i)
+    (ξφ : EuclideanSpace ℝ (Fin n × Fin d))
+    (rψ : Fin m) (tψ : Fin m → ℝ)
+    (htψ : ∀ i : Fin m, i ≠ rψ → 0 ≤ tψ i)
+    (ξψ : EuclideanSpace ℝ (Fin m × Fin d)) :
+    fourierInvPairingCLM
+        (partialFourierSpatial_timeSliceSchwartz (d := d) (n := m)
+          (EuclideanPositiveTimeComponent.ofSubmodule g).1 rψ tψ ξψ)
+        ((SchwartzMap.fourierTransformCLM ℂ)
+          ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n) φ rφ tφ ξφ) -
+            (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n)
+              (EuclideanPositiveTimeComponent.ofSubmodule f).1 rφ tφ ξφ))) = 0 := by
+  exact
+    oneSidedFourierSupport_partialFourierSpatial_timeSlice_sub_eq_zero_of_repr_eq_transport
+      (d := d)
+      (T := fourierInvPairingCLM
+        (partialFourierSpatial_timeSliceSchwartz (d := d) (n := m)
+          (EuclideanPositiveTimeComponent.ofSubmodule g).1 rψ tψ ξψ))
+      (hT_supp := fourierInvPairing_hasOneSidedFourierSupport
+        (partialFourierSpatial_timeSliceSchwartz (d := d) (n := m)
+          (EuclideanPositiveTimeComponent.ofSubmodule g).1 rψ tψ ξψ)
+        (tsupport_partialFourierSpatial_timeSlice_subset_Ici_of_orderedPositiveTime
+          (d := d) (n := m) (EuclideanPositiveTimeComponent.ofSubmodule g) rψ tψ ξψ))
+      hφf rφ tφ htφ ξφ
 
 /-- Fourier-pairing symmetry on Fourier-transformed inputs: the slice pairing
 induced by `f` and evaluated on `𝓕 g` is the same scalar as the opposite
@@ -1862,7 +1902,7 @@ This is a genuine current-code ingredient for the later Lemma-4.2 adapter:
 both pairing functionals come from positive-time slices, so the descended
 pairing theorems apply on each side, and the middle equality is just the
 Fourier-pairing symmetry above. -/
-private theorem fourierInvPairingCLM_opposite_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport
+theorem fourierInvPairingCLM_opposite_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport
     {n m : ℕ}
     {φ : SchwartzNPoint d n}
     {ψ : SchwartzNPoint d m}
@@ -1934,6 +1974,85 @@ private theorem fourierInvPairingCLM_opposite_partialFourierSpatial_timeSlice_eq
       fourierInvPairingCLM fSlice ((SchwartzMap.fourierTransformCLM ℂ) ψSlice) := by
         symm
         exact hright
+
+/-- Opposite-factor kernel form of the same bridge: once ambient
+representatives `φ, ψ` come from positive-time preimages `f, g`, the
+one-variable pairing induced by the positive-time slice of `f` already kills
+the ambient-minus-preimage slice difference on the opposite factor.
+
+This is the scalar zero theorem that the later Stage-5 spatial-Fourier
+factorization can consume directly when the surviving slice pairing happens to
+land on the opposite side. -/
+theorem fourierInvPairingCLM_opposite_partialFourierSpatial_timeSlice_sub_eq_zero_of_repr_eq_transport
+    {n m : ℕ}
+    {φ : SchwartzNPoint d n}
+    {ψ : SchwartzNPoint d m}
+    {f : euclideanPositiveTimeSubmodule (d := d) n}
+    {g : euclideanPositiveTimeSubmodule (d := d) m}
+    (hφf :
+      section43PositiveEnergyQuotientMap (d := d) n φ =
+        os1TransportComponent d n f)
+    (hψg :
+      section43PositiveEnergyQuotientMap (d := d) m ψ =
+        os1TransportComponent d m g)
+    (rφ : Fin n) (tφ : Fin n → ℝ)
+    (htφ : ∀ i : Fin n, i ≠ rφ → 0 ≤ tφ i)
+    (ξφ : EuclideanSpace ℝ (Fin n × Fin d))
+    (rψ : Fin m) (tψ : Fin m → ℝ)
+    (htψ : ∀ i : Fin m, i ≠ rψ → 0 ≤ tψ i)
+    (ξψ : EuclideanSpace ℝ (Fin m × Fin d)) :
+    fourierInvPairingCLM
+        (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n)
+          (EuclideanPositiveTimeComponent.ofSubmodule f).1 rφ tφ ξφ)
+        ((SchwartzMap.fourierTransformCLM ℂ)
+          ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := m) ψ rψ tψ ξψ) -
+            (partialFourierSpatial_timeSliceSchwartz (d := d) (n := m)
+              (EuclideanPositiveTimeComponent.ofSubmodule g).1 rψ tψ ξψ))) = 0 := by
+  let φSlice :=
+    partialFourierSpatial_timeSliceSchwartz (d := d) (n := n) φ rφ tφ ξφ
+  let ψSlice :=
+    partialFourierSpatial_timeSliceSchwartz (d := d) (n := m) ψ rψ tψ ξψ
+  let fSlice :=
+    partialFourierSpatial_timeSliceSchwartz (d := d) (n := n)
+      (EuclideanPositiveTimeComponent.ofSubmodule f).1 rφ tφ ξφ
+  let gSlice :=
+    partialFourierSpatial_timeSliceSchwartz (d := d) (n := m)
+      (EuclideanPositiveTimeComponent.ofSubmodule g).1 rψ tψ ξψ
+  have hleft_zero :
+      fourierInvPairingCLM gSlice
+          ((SchwartzMap.fourierTransformCLM ℂ) (φSlice - fSlice)) = 0 := by
+    simpa [φSlice, fSlice, gSlice] using
+      (fourierInvPairingCLM_partialFourierSpatial_timeSlice_sub_eq_zero_of_repr_eq_transport
+        (d := d) (n := n) (m := m) (φ := φ) (f := f) (g := g)
+        hφf rφ tφ htφ ξφ rψ tψ htψ ξψ)
+  have hleft :
+      fourierInvPairingCLM gSlice ((SchwartzMap.fourierTransformCLM ℂ) φSlice) =
+        fourierInvPairingCLM gSlice ((SchwartzMap.fourierTransformCLM ℂ) fSlice) := by
+    exact sub_eq_zero.mp (by simpa [map_sub] using hleft_zero)
+  have hopposite :
+      fourierInvPairingCLM gSlice ((SchwartzMap.fourierTransformCLM ℂ) φSlice) =
+        fourierInvPairingCLM fSlice ((SchwartzMap.fourierTransformCLM ℂ) ψSlice) := by
+    simpa [φSlice, ψSlice, fSlice, gSlice] using
+      (fourierInvPairingCLM_opposite_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport
+        (d := d) (n := n) (m := m) (φ := φ) (ψ := ψ) (f := f) (g := g)
+        hφf hψg rφ tφ htφ ξφ rψ tψ htψ ξψ)
+  have hsymm :
+      fourierInvPairingCLM gSlice ((SchwartzMap.fourierTransformCLM ℂ) fSlice) =
+        fourierInvPairingCLM fSlice ((SchwartzMap.fourierTransformCLM ℂ) gSlice) := by
+    exact fourierInvPairingCLM_fourierTransform_symm gSlice fSlice
+  have hmain :
+      fourierInvPairingCLM fSlice ((SchwartzMap.fourierTransformCLM ℂ) ψSlice) =
+        fourierInvPairingCLM fSlice ((SchwartzMap.fourierTransformCLM ℂ) gSlice) := by
+    calc
+      fourierInvPairingCLM fSlice ((SchwartzMap.fourierTransformCLM ℂ) ψSlice) =
+        fourierInvPairingCLM gSlice ((SchwartzMap.fourierTransformCLM ℂ) φSlice) := by
+          symm
+          exact hopposite
+      _ =
+        fourierInvPairingCLM gSlice ((SchwartzMap.fourierTransformCLM ℂ) fSlice) := hleft
+      _ =
+        fourierInvPairingCLM fSlice ((SchwartzMap.fourierTransformCLM ℂ) gSlice) := hsymm
+  exact sub_eq_zero.mp (by simpa [map_sub] using sub_eq_zero.mpr hmain)
 
 /-- Concrete positive-time `ξ`-shift shell on the actual reconstructed
 continuation kernel `bvt_F`: on positive real times, the Euclidean/OS matrix
@@ -2111,6 +2230,25 @@ private theorem bvt_F_canonical_conjTensorProduct_timeShift_eq_xiShift
               · simp [wickRotatePoint, xiShift, hμ, hk]
               · simp [wickRotatePoint, xiShift, hμ, hk]
           rw [hshell]
+
+/-- The chosen boundary-value continuation `bvt_F` inherits the global forward-
+tube polynomial-growth package from
+`full_analytic_continuation_with_symmetry_growth`. This keeps the current
+Stage-5 shell work on the theorem-based OS continuation rather than routing
+through any extra placeholder witness. -/
+private theorem bvt_F_hasGlobalForwardTubeGrowth
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (k : ℕ) :
+    ∃ (C_bd : ℝ) (N : ℕ),
+      0 < C_bd ∧
+      ∀ z ∈ ForwardTube d k,
+        ‖bvt_F OS lgc k z‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
+  rcases (full_analytic_continuation_with_symmetry_growth OS lgc k).choose_spec with
+    ⟨_hhol, hrest⟩
+  rcases hrest with ⟨_hEuclid, hrest⟩
+  rcases hrest with ⟨_hPerm, hrest⟩
+  rcases hrest with ⟨_hTrans, hrest⟩
+  exact hrest.2
 
 /-- Exact Step-1 Wightman-side boundary-value shell for the current
 Lemma-4.2 route: the reconstructed pairing against the right-time-shifted
@@ -2774,6 +2912,61 @@ private theorem kernel_eq_of_tendsto_bvt_F_canonical_xiShift_to_upperHalfPlaneWi
   intro t ht
   simpa [hH_imag_os t ht] using hlimit t ht
 
+/-- Concrete Section-4.3 / Lemma-4.2 adapter on the current honest theorem
+surface: if an upper-half-plane witness already matches the semigroup-side
+holomorphic matrix element on the positive imaginary axis, and the canonical
+forward-cone `ξ`-shift shell converges to those same witness values for every
+positive real time, then the reconstructed Wightman matrix element equals the
+OS/Schwinger matrix element.
+
+This theorem does not hide the remaining analytic work. Its hypotheses are
+exactly the current Stage-5 blocker: the positive-imaginary-axis witness
+identification and the shell-specific limit theorem. Once those are proved,
+this theorem is the public consumer that delivers the per-pair kernel equality
+needed later for Eq. `(4.28)` and positivity. -/
+theorem lemma42_matrix_element_time_interchange
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (hf_compact : HasCompactSupport (f : NPointDomain d n → ℂ))
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hg_compact : HasCompactSupport (g : NPointDomain d m → ℂ))
+    (hψ_compact : HasCompactSupport (ψ : NPointDomain d m → ℂ))
+    (H : ℂ → ℂ)
+    (hH_imag_os :
+      ∀ t : ℝ, 0 < t →
+        H ((t : ℂ) * Complex.I) =
+          OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+            (PositiveTimeBorchersSequence.single n f hf_ord)
+            (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ))
+    (hlimit :
+      ∀ t : ℝ, 0 < t →
+        Filter.Tendsto
+          (fun ε : ℝ =>
+            ∫ y : NPointDomain d (n + m),
+              bvt_F OS lgc (n + m)
+                (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                  (fun k μ =>
+                    ↑(y k μ) +
+                      ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                        Complex.I)
+                  (t : ℂ)) *
+                (φ.conjTensorProduct ψ) y)
+          (nhdsWithin 0 (Set.Ioi 0))
+          (nhds (H ((t : ℂ) * Complex.I)))) :
+    bvt_W OS lgc (n + m) (φ.conjTensorProduct ψ) =
+      OS.S (n + m) (ZeroDiagonalSchwartz.ofClassical (f.osConjTensorProduct g)) := by
+  exact
+    kernel_eq_of_tendsto_bvt_F_canonical_xiShift_to_upperHalfPlaneWitness_on_imagAxis
+      (d := d) (OS := OS) (lgc := lgc) (hm := hm)
+      (φ := φ) (ψ := ψ) (f := f)
+      (hf_ord := hf_ord) (hf_compact := hf_compact)
+      (g := g) (hg_ord := hg_ord) (hg_compact := hg_compact)
+      (hψ_compact := hψ_compact) (H := H) hH_imag_os hlimit
+
 /-- Same Stage-5 reduction, but with the target scalar written as the chosen
 one-variable `singleSplit_xiShift` holomorphic trace built from the positive-time
 preimages.
@@ -2930,7 +3123,7 @@ private theorem partialFourierSpatial_timeSliceSchwartz_eq_of_transport_eq
 axis, the canonical Section-4.3 slice extension depends only on the multivariate
 quotient class. This is the honest current-code fragment of the blueprint's
 `section43_iteratedSlice_descendedPairing`. -/
-private theorem section43_iteratedSlice_descendedPairing_imagAxis
+theorem section43_iteratedSlice_descendedPairing_imagAxis
     {n : ℕ}
     {f g : euclideanPositiveTimeSubmodule (d := d) n}
     (hfg : os1TransportComponent d n f = os1TransportComponent d n g)
@@ -2956,7 +3149,7 @@ the same Section-4.3 quotient class, the canonical one-variable branch-`3b`
 slice extensions agree on the entire upper half-plane. This upgrades the
 previous imag-axis fragment by a one-variable identity theorem and does not use
 any forbidden many-variable separate-analyticity shortcut. -/
-private theorem section43_iteratedSlice_descendedPairing
+theorem section43_iteratedSlice_descendedPairing
     {n : ℕ}
     {f g : euclideanPositiveTimeSubmodule (d := d) n}
     (hfg : os1TransportComponent d n f = os1TransportComponent d n g)
