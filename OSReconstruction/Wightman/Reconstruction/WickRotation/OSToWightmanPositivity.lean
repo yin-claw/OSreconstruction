@@ -3863,6 +3863,30 @@ private theorem bvt_wightmanInner_eq_transport_norm_sq_onImage_of_kernel_eq
       (g := bvtTransportImagePreimage (d := d) F k)).2
       (hkernel n k hn hk)
 
+/-- Once the Stage-5 matrix-element kernel equality is available on the
+transformed-image carrier, positivity on that carrier is immediate: the
+reconstructed Wightman quadratic form is already identified with the square
+norm of the transported OS Hilbert-space vector. -/
+private theorem bvt_wightmanInner_self_nonneg_onImage_of_kernel_eq
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F : BvtTransportImageSequence d) {m : ℕ}
+    (hFm : F.toBorchers.bound ≤ m)
+    (hkernel : ∀ n k,
+      n ≤ F.toBorchers.bound →
+      k ≤ F.toBorchers.bound →
+      bvt_W OS lgc (n + k)
+        ((F.toBorchers.funcs n).conjTensorProduct (F.toBorchers.funcs k)) =
+      OS.S (n + k)
+        (ZeroDiagonalSchwartz.ofClassical
+          (((bvtTransportImagePreimage (d := d) F n : euclideanPositiveTimeSubmodule (d := d) n) :
+              SchwartzNPoint d n).osConjTensorProduct
+            ((bvtTransportImagePreimage (d := d) F k : euclideanPositiveTimeSubmodule (d := d) k) :
+              SchwartzNPoint d k)))) :
+    0 ≤ (WightmanInnerProduct d (bvt_W OS lgc) F.toBorchers F.toBorchers).re := by
+  rw [bvt_wightmanInner_eq_transport_norm_sq_onImage_of_kernel_eq
+    (d := d) (OS := OS) (lgc := lgc) (F := F) (m := m) hFm hkernel]
+  exact sq_nonneg ‖bvt_transport_to_osHilbert_onImage OS F‖
+
 /-
 Package I transport note:
 

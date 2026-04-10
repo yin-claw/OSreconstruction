@@ -153,6 +153,204 @@ theorem fourier_pairing_vanishes_of_eqOn_nonneg
   simpa using
     (fourier_pairing_eq_of_eqOn_nonneg (T := T) hT_supp (φ := φ) (ψ := 0) h_zero)
 
+/-- Cauchy-rectangle core for the upper-half-plane contour-shift argument:
+the bottom horizontal integral on `[-R, R]` can be rewritten as the top edge
+plus the two vertical sides. This isolates the complex-analytic content; later
+vanishing theorems only need to send those three boundary terms to `0` as
+`R → ∞`. -/
+theorem intervalIntegral_eq_top_sub_right_add_left_of_holomorphic_UHP
+    (g : ℂ → ℂ)
+    (hg_holo : DifferentiableOn ℂ g {z : ℂ | 0 ≤ z.im})
+    {R : ℝ} (hR : 0 ≤ R) :
+    ∫ x : ℝ in -R..R, g x =
+      -(Complex.I * ∫ y : ℝ in 0..R, g (↑R + ↑y * I)) +
+        ((∫ x : ℝ in -R..R, g (↑x + ↑R * I)) +
+          Complex.I * ∫ y : ℝ in 0..R, g (↑y * I + -↑R)) := by
+  have hrect_holo :
+      DifferentiableOn ℂ g ((Set.uIcc (-R) R) ×ℂ (Set.uIcc 0 R)) := by
+    refine hg_holo.mono ?_
+    intro z hz
+    show 0 ≤ z.im
+    simpa [hR] using (Complex.mem_reProdIm.mp hz).2.1
+  let A : ℂ := ∫ x : ℝ in -R..R, g x
+  let B : ℂ := ∫ x : ℝ in -R..R, g (↑x + ↑R * I)
+  let C : ℂ := Complex.I • ∫ y : ℝ in 0..R, g (↑R + ↑y * I)
+  let D : ℂ := Complex.I • ∫ y : ℝ in 0..R, g (-↑R + ↑y * I)
+  have hrect :=
+    Complex.integral_boundary_rect_eq_zero_of_differentiableOn
+      g (-R) (R + R * Complex.I) (by
+        simpa [Complex.add_re, Complex.add_im] using hrect_holo)
+  have hzero : A - (B - C + D) = 0 := by
+    simpa [A, B, C, D, sub_eq_add_neg, add_assoc, add_left_comm, add_comm,
+      smul_eq_mul, mul_assoc, mul_left_comm, mul_comm] using hrect
+  have hswap :
+      (∫ x : ℝ in -R..R, g (↑R * I + ↑x)) =
+        ∫ x : ℝ in -R..R, g (↑x + ↑R * I) := by
+    refine intervalIntegral.integral_congr_ae ?_
+    filter_upwards with x
+    intro _
+    rw [add_comm]
+  have hmain := (sub_eq_zero.mp hzero)
+  abel_nf at hmain
+  simpa [A, B, C, D, hswap, sub_eq_add_neg, add_assoc, add_left_comm, add_comm,
+    smul_eq_mul, mul_assoc, mul_left_comm, mul_comm] using hmain
+
+/-- If `g` is holomorphic on the closed upper half-plane and its top horizontal
+and vertical-edge integrals vanish as the Cauchy rectangle grows, then the real
+line integral of `g` is `0`. This is the contour-shift supplier used by the
+current Stage-5 reverse-Paley-Wiener route. -/
+theorem integral_zero_of_holomorphic_UHP_exponentialDecay
+    (g : ℂ → ℂ)
+    (hg_holo : DifferentiableOn ℂ g {z : ℂ | 0 ≤ z.im})
+    (hg_integrable : MeasureTheory.Integrable (fun x : ℝ => g x))
+    (hg_top_integrable : ∀ R : ℝ, 0 ≤ R →
+      MeasureTheory.Integrable (fun x : ℝ => g (↑x + ↑R * I)))
+    (hg_decay_top : ∀ ε : ℝ, 0 < ε → ∃ R₀ : ℝ, 0 < R₀ ∧ ∀ R : ℝ, R₀ ≤ R →
+      ∫ x : ℝ, ‖g (↑x + ↑R * I)‖ ≤ ε)
+    (hg_decay_sides : ∀ ε : ℝ, 0 < ε → ∃ R₀ : ℝ, 0 < R₀ ∧ ∀ R : ℝ, R₀ ≤ R →
+      (∫ y in Set.Icc (0 : ℝ) R, ‖g (↑R + ↑y * I)‖) +
+        (∫ y in Set.Icc (0 : ℝ) R, ‖g (-↑R + ↑y * I)‖) ≤ ε) :
+    ∫ x : ℝ, g x = 0 := by
+  have hleft :
+      Filter.Tendsto (fun R : ℝ => ∫ x : ℝ in -R..0, g x)
+        Filter.atTop (nhds (∫ x : ℝ in Set.Iic 0, g x)) := by
+    have hneg_atBot : Filter.Tendsto (fun R : ℝ => -R) Filter.atTop Filter.atBot := by
+      simpa using
+        (Filter.Tendsto.neg_mul_atTop
+          (f := fun _ : ℝ => (-1 : ℝ))
+          (g := fun R : ℝ => R)
+          (C := (-1 : ℝ))
+          (by norm_num)
+          tendsto_const_nhds
+          Filter.tendsto_id)
+    simpa using
+      (MeasureTheory.intervalIntegral_tendsto_integral_Iic
+        (f := fun x : ℝ => g x) 0 hg_integrable.integrableOn hneg_atBot)
+  have hright :
+      Filter.Tendsto (fun R : ℝ => ∫ x : ℝ in (0 : ℝ)..R, g x)
+        Filter.atTop (nhds (∫ x : ℝ in Set.Ioi 0, g x)) := by
+    simpa using
+      (MeasureTheory.intervalIntegral_tendsto_integral_Ioi
+        (f := fun x : ℝ => g x) 0 hg_integrable.integrableOn Filter.tendsto_id)
+  have htrunc :
+      Filter.Tendsto (fun R : ℝ => ∫ x : ℝ in -R..R, g x)
+        Filter.atTop
+        (nhds ((∫ x : ℝ in Set.Iic 0, g x) + ∫ x : ℝ in Set.Ioi 0, g x)) := by
+    refine Filter.Tendsto.congr' ?_ (hleft.add hright)
+    filter_upwards [Filter.eventually_ge_atTop (0 : ℝ)] with R hR
+    have hneg : IntervalIntegrable (fun x : ℝ => g x) MeasureTheory.volume (-R) 0 :=
+      hg_integrable.intervalIntegrable
+    have hpos : IntervalIntegrable (fun x : ℝ => g x) MeasureTheory.volume 0 R :=
+      hg_integrable.intervalIntegrable
+    exact intervalIntegral.integral_add_adjacent_intervals hneg hpos
+  have htrunc_full :
+      Filter.Tendsto (fun R : ℝ => ∫ x : ℝ in -R..R, g x)
+        Filter.atTop (nhds (∫ x : ℝ, g x)) := by
+    have hsplit :
+        (∫ x : ℝ in Set.Iic 0, g x) + (∫ x : ℝ in Set.Ioi 0, g x) =
+          ∫ x : ℝ, g x := by
+      convert
+        (MeasureTheory.setIntegral_union (Set.Iic_disjoint_Ioi <| Eq.le rfl)
+          measurableSet_Ioi hg_integrable.integrableOn hg_integrable.integrableOn).symm
+      rw [Set.Iic_union_Ioi, MeasureTheory.Measure.restrict_univ]
+    simpa [hsplit] using htrunc
+  have hzero :
+      Filter.Tendsto (fun R : ℝ => ∫ x : ℝ in -R..R, g x)
+        Filter.atTop (nhds (0 : ℂ)) := by
+    rw [tendsto_zero_iff_norm_tendsto_zero]
+    refine Metric.tendsto_nhds.mpr ?_
+    intro ε hε
+    obtain ⟨R₁, hR₁_pos, hR₁⟩ := hg_decay_top (ε / 3) (by positivity)
+    obtain ⟨R₂, hR₂_pos, hR₂⟩ := hg_decay_sides (ε / 3) (by positivity)
+    refine Filter.mem_atTop_sets.2 ?_
+    refine ⟨max R₁ R₂, ?_⟩
+    intro R hR
+    have hR₁_le : R₁ ≤ R := le_trans (le_max_left _ _) hR
+    have hR₂_le : R₂ ≤ R := le_trans (le_max_right _ _) hR
+    have hR_nonneg : 0 ≤ R := le_trans (le_of_lt hR₁_pos) hR₁_le
+    have hrect :=
+      intervalIntegral_eq_top_sub_right_add_left_of_holomorphic_UHP g hg_holo hR_nonneg
+    have htop :
+        ‖∫ x : ℝ in -R..R, g (↑x + ↑R * I)‖ ≤ ε / 3 := by
+      calc
+        ‖∫ x : ℝ in -R..R, g (↑x + ↑R * I)‖
+            ≤ ∫ x : ℝ in -R..R, ‖g (↑x + ↑R * I)‖ := by
+              exact intervalIntegral.norm_integral_le_integral_norm (by linarith)
+        _ = ∫ x : ℝ in Set.Ioc (-R) R, ‖g (↑x + ↑R * I)‖ := by
+              rw [intervalIntegral.integral_of_le (by linarith)]
+        _ ≤ ∫ x : ℝ, ‖g (↑x + ↑R * I)‖ := by
+              exact MeasureTheory.setIntegral_le_integral
+                ((hg_top_integrable R hR_nonneg).norm)
+                (Filter.Eventually.of_forall fun _ => by positivity)
+        _ ≤ ε / 3 := hR₁ R hR₁_le
+    have hright_bound :
+        ‖Complex.I * ∫ y : ℝ in (0 : ℝ)..R, g (↑R + ↑y * I)‖
+          ≤ ∫ y in Set.Icc (0 : ℝ) R, ‖g (↑R + ↑y * I)‖ := by
+      rw [norm_mul, Complex.norm_I, one_mul]
+      calc
+        ‖∫ y : ℝ in (0 : ℝ)..R, g (↑R + ↑y * I)‖
+            ≤ ∫ y : ℝ in (0 : ℝ)..R, ‖g (↑R + ↑y * I)‖ := by
+              exact intervalIntegral.norm_integral_le_integral_norm hR_nonneg
+        _ = ∫ y in Set.Icc (0 : ℝ) R, ‖g (↑R + ↑y * I)‖ := by
+              rw [intervalIntegral.integral_of_le hR_nonneg, MeasureTheory.integral_Icc_eq_integral_Ioc]
+    have hleft_bound :
+        ‖Complex.I * ∫ y : ℝ in (0 : ℝ)..R, g (↑y * I + -↑R)‖
+          ≤ ∫ y in Set.Icc (0 : ℝ) R, ‖g (-↑R + ↑y * I)‖ := by
+      rw [norm_mul, Complex.norm_I, one_mul]
+      calc
+        ‖∫ y : ℝ in (0 : ℝ)..R, g (↑y * I + -↑R)‖
+            ≤ ∫ y : ℝ in (0 : ℝ)..R, ‖g (↑y * I + -↑R)‖ := by
+              exact intervalIntegral.norm_integral_le_integral_norm hR_nonneg
+        _ = ∫ y in Set.Icc (0 : ℝ) R, ‖g (↑y * I + -↑R)‖ := by
+              rw [intervalIntegral.integral_of_le hR_nonneg, MeasureTheory.integral_Icc_eq_integral_Ioc]
+        _ = ∫ y in Set.Icc (0 : ℝ) R, ‖g (-↑R + ↑y * I)‖ := by
+              refine MeasureTheory.integral_congr_ae ?_
+              filter_upwards with y
+              simp [add_comm]
+    let A : ℝ := ∫ y in Set.Icc (0 : ℝ) R, ‖g (↑R + ↑y * I)‖
+    let B : ℝ := ∫ y in Set.Icc (0 : ℝ) R, ‖g (-↑R + ↑y * I)‖
+    have hAB : A + B ≤ ε / 3 := by
+      dsimp [A, B]
+      exact hR₂ R hR₂_le
+    have hsides :
+        ‖Complex.I * ∫ y : ℝ in (0 : ℝ)..R, g (↑R + ↑y * I)‖ +
+            ‖Complex.I * ∫ y : ℝ in (0 : ℝ)..R, g (↑y * I + -↑R)‖
+          ≤ ε / 3 := by
+      calc
+        ‖Complex.I * ∫ y : ℝ in (0 : ℝ)..R, g (↑R + ↑y * I)‖ +
+            ‖Complex.I * ∫ y : ℝ in (0 : ℝ)..R, g (↑y * I + -↑R)‖
+          ≤ A + B := by
+                exact add_le_add hright_bound hleft_bound
+        _ ≤ ε / 3 := hAB
+    have hnorm :
+        ‖∫ x : ℝ in -R..R, g x‖ < ε := by
+      rw [hrect]
+      calc
+        ‖-(Complex.I * ∫ y : ℝ in (0 : ℝ)..R, g (↑R + ↑y * I)) +
+            ((∫ x : ℝ in -R..R, g (↑x + ↑R * I)) +
+              Complex.I * ∫ y : ℝ in (0 : ℝ)..R, g (↑y * I + -↑R))‖
+          ≤ ‖Complex.I * ∫ y : ℝ in (0 : ℝ)..R, g (↑R + ↑y * I)‖ +
+              (‖∫ x : ℝ in -R..R, g (↑x + ↑R * I)‖ +
+                ‖Complex.I * ∫ y : ℝ in (0 : ℝ)..R, g (↑y * I + -↑R)‖) := by
+                  calc
+                    ‖-(Complex.I * ∫ y : ℝ in (0 : ℝ)..R, g (↑R + ↑y * I)) +
+                        ((∫ x : ℝ in -R..R, g (↑x + ↑R * I)) +
+                          Complex.I * ∫ y : ℝ in (0 : ℝ)..R, g (↑y * I + -↑R))‖
+                      ≤ ‖-(Complex.I * ∫ y : ℝ in (0 : ℝ)..R, g (↑R + ↑y * I))‖ +
+                          ‖(∫ x : ℝ in -R..R, g (↑x + ↑R * I)) +
+                            Complex.I * ∫ y : ℝ in (0 : ℝ)..R, g (↑y * I + -↑R)‖ := by
+                              exact norm_add_le _ _
+                    _ ≤ ‖Complex.I * ∫ y : ℝ in (0 : ℝ)..R, g (↑R + ↑y * I)‖ +
+                          (‖∫ x : ℝ in -R..R, g (↑x + ↑R * I)‖ +
+                            ‖Complex.I * ∫ y : ℝ in (0 : ℝ)..R, g (↑y * I + -↑R)‖) := by
+                              gcongr
+                              · simp
+                              · exact norm_add_le _ _
+        _ ≤ ε / 3 + ε / 3 := by nlinarith [htop, hsides]
+        _ < ε := by linarith
+    simpa [Real.dist_eq, abs_of_nonneg (norm_nonneg _)] using hnorm
+  exact tendsto_nhds_unique htrunc_full hzero
+
 /-- Honest reverse-Paley-Wiener reduction theorem: if a scalar functional `T`
 is the boundary value of an upper-half-plane trace `F`, and if that trace
 already annihilates Fourier transforms of negative-support Schwartz tests on
@@ -346,6 +544,73 @@ theorem fourierTransform_negSupport_holomorphic_UHP
         hbound_int
         hderiv_ev).2
   exact h.differentiableAt.differentiableWithinAt
+
+/-- If a Schwartz test is supported in `(-∞, -δ]`, then its Fourier-transform
+kernel on the upper half-plane decays at least like `e^{-2πδ Im z}`.
+
+This is the gap-away-from-zero ingredient used in the current Stage-5 contour
+argument: once the test support stays strictly left of the origin, the
+upper-half-plane Fourier transform gains genuine exponential decay in the
+vertical direction. -/
+theorem norm_fourierTransform_gapNegSupport_UHP_le
+    (φ : SchwartzMap ℝ ℂ)
+    {δ : ℝ} (hδ : 0 ≤ δ)
+    (hφ : ∀ x ∈ Function.support (φ : ℝ → ℂ), x ≤ -δ)
+    (z : ℂ) (hz : z ∈ upperHalfPlane) :
+    ‖∫ ξ : ℝ, Complex.exp (-2 * Real.pi * I * z * ξ) * φ ξ‖ ≤
+      Real.exp (-2 * Real.pi * z.im * δ) * ∫ ξ : ℝ, ‖φ ξ‖ := by
+  let F : ℝ → ℂ :=
+    fun ξ => Complex.exp (-2 * Real.pi * I * z * ξ) * φ ξ
+  have hF_int : MeasureTheory.Integrable F := by
+    refine MeasureTheory.Integrable.mono'
+      ((SchwartzMap.integrable (μ := MeasureTheory.volume) φ).norm)
+      (((Complex.continuous_exp.comp
+        ((Complex.continuous_ofReal.const_mul ((-2 * Real.pi * Complex.I * z) : ℂ)))).mul
+          φ.continuous).aestronglyMeasurable)
+      ?_
+    filter_upwards with ξ
+    rcases eq_or_ne ((φ : ℝ → ℂ) ξ) 0 with hξ | hξ
+    · simp [F, hξ]
+    · have hξ_left : ξ ≤ -δ := hφ ξ hξ
+      have hξ_nonpos : ξ ≤ 0 := by linarith
+      calc
+        ‖F ξ‖
+            = Real.exp (2 * Real.pi * z.im * ξ) * ‖φ ξ‖ := by
+                simp [F, Complex.norm_exp, mul_comm, mul_left_comm]
+        _ ≤ 1 * ‖φ ξ‖ := by
+              have hz_im : 0 < z.im := hz
+              have hle : 2 * Real.pi * z.im * ξ ≤ 0 := by
+                have hfac_nonneg : 0 ≤ 2 * Real.pi * z.im := by positivity
+                exact mul_nonpos_of_nonneg_of_nonpos hfac_nonneg hξ_nonpos
+              exact mul_le_mul_of_nonneg_right
+                (by exact Real.exp_le_one_iff.mpr hle) (norm_nonneg _)
+        _ = ‖φ ξ‖ := by ring
+  calc
+    ‖∫ ξ : ℝ, F ξ‖ ≤ ∫ ξ : ℝ, ‖F ξ‖ := by
+          exact MeasureTheory.norm_integral_le_integral_norm _
+    _ ≤ ∫ ξ : ℝ, Real.exp (-2 * Real.pi * z.im * δ) * ‖φ ξ‖ := by
+          refine MeasureTheory.integral_mono_ae ?_ ?_ ?_
+          · exact hF_int.norm
+          · exact ((SchwartzMap.integrable (μ := MeasureTheory.volume) φ).norm).const_mul _
+          · filter_upwards with ξ
+            rcases eq_or_ne ((φ : ℝ → ℂ) ξ) 0 with hξ | hξ
+            · simp [F, hξ]
+            · have hξ_left : ξ ≤ -δ := hφ ξ hξ
+              calc
+                ‖Complex.exp (-2 * Real.pi * I * z * ξ) * φ ξ‖
+                    = Real.exp (2 * Real.pi * z.im * ξ) * ‖φ ξ‖ := by
+                        simp [Complex.norm_exp, mul_comm, mul_left_comm]
+                _ ≤ Real.exp (-2 * Real.pi * z.im * δ) * ‖φ ξ‖ := by
+                      have hfac_nonneg : 0 ≤ 2 * Real.pi * z.im := by
+                        have hz_im : 0 < z.im := hz
+                        positivity
+                      have hmul := mul_le_mul_of_nonneg_left hξ_left hfac_nonneg
+                      have hle : 2 * Real.pi * z.im * ξ ≤ -2 * Real.pi * z.im * δ := by
+                        simpa [mul_assoc, mul_left_comm, mul_comm, left_distrib, right_distrib] using hmul
+                      exact mul_le_mul_of_nonneg_right
+                        (Real.exp_le_exp.mpr hle) (norm_nonneg _)
+    _ = Real.exp (-2 * Real.pi * z.im * δ) * ∫ ξ : ℝ, ‖φ ξ‖ := by
+          rw [MeasureTheory.integral_const_mul]
 
 
 /-! ### Finite Schwartz-seminorm control of tempered functionals -/
