@@ -3155,7 +3155,7 @@ noncomputable def physicsFourierFlatCLM {m : ℕ} :
     ContinuousLinearEquiv.smulLeft a
   (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ scaleNeg).comp inverseFourierFlatCLM
 
-@[simp] private lemma physicsFourierFlatCLM_apply {m : ℕ}
+@[simp] theorem physicsFourierFlatCLM_apply {m : ℕ}
     (f : SchwartzMap (Fin m → ℝ) ℂ) (ξ : Fin m → ℝ) :
     physicsFourierFlatCLM f ξ =
       inverseFourierFlatCLM f ((-(1 / (2 * Real.pi) : ℝ)) • ξ) := by
@@ -3266,7 +3266,7 @@ private lemma realPlusIEpsEta_mem_tubeDomain
 /-- Pointwise identification of the Fubini-exchanged Schwartz kernel with the
 regularized physics Fourier transform. This is the remaining kernel-computation
 step in the boundary-value theorem. -/
-private lemma physicsFourierFlatCLM_integral
+theorem physicsFourierFlatCLM_integral
     {m : ℕ} (f : SchwartzMap (Fin m → ℝ) ℂ) (ξ : Fin m → ℝ) :
     (∫ x : Fin m → ℝ, Complex.exp (I * ∑ i, (x i : ℂ) * (ξ i : ℂ)) * f x) =
       physicsFourierFlatCLM f ξ := by

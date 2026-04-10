@@ -650,13 +650,13 @@ private theorem zeroHeadBlockShift_flatTimeShiftDirection_pairing_nonpos_of_mem_
                   (1 + (k : ℝ) * ε) -
                     (((((k : ℕ) - 1 : ℕ) : ℝ) + 1) * ε) = 1 := by
                 nlinarith [hkcast, hprev_cast]
-              simp [yε, e0, hk_lt, hk_eq, hk0, hn0_ne,
-                hkprev_lt, Pi.smul_apply, smul_eq_mul, hmain]
+              simpa [yε, e0, hk_lt, hk_eq, hk0, hn0_ne,
+                hkprev_lt, hn_pos, Pi.smul_apply, smul_eq_mul] using hmain
             · have hn_pos : 0 < n := by omega
               have hn0_ne : n ≠ 0 := Nat.ne_of_gt hn_pos
               have hkprev_lt : ((k : ℕ) - 1) < n := by omega
               simp [yε, e0, hk_lt, hk_eq, hk0, hn0_ne, hkprev_lt,
-                hμ, Pi.smul_apply, smul_eq_mul]
+                hn_pos, hμ, Pi.smul_apply, smul_eq_mul]
           · have hk_gt : n < (k : ℕ) := by omega
             have hkprev_ge : n ≤ (k : ℕ) - 1 := by omega
             have hkprev_not_lt : ¬ ((k : ℕ) - 1 < n) := by omega
@@ -677,7 +677,7 @@ private theorem zeroHeadBlockShift_flatTimeShiftDirection_pairing_nonpos_of_mem_
                 nlinarith [hkcast]
               simp [yε, e0, hk_lt, hk_eq, hk_gt, hkprev_ge, hkprev_not_lt, hk0,
                 Pi.smul_apply, smul_eq_mul, hmain]
-            · simp [yε, e0, hk_lt, hk_eq, hk_gt, hkprev_not_lt, hμ,
+            · simpa [yε, e0, hk_lt, hk_eq, hk_gt, hkprev_ge, hkprev_not_lt, hk0, hμ,
                 Pi.smul_apply, smul_eq_mul]
     have hpair_nonneg :
         0 ≤ ∑ i, (flattenCLEquivReal (n + m) (d + 1) yε) i * ξ i := by
@@ -689,120 +689,36 @@ private theorem zeroHeadBlockShift_flatTimeShiftDirection_pairing_nonpos_of_mem_
         fun k =>
           if (k : ℕ) < n then (((k : ℝ) + 1) * ε : ℝ)
           else (1 + (k : ℝ) * ε : ℝ)
+      let b : Fin (n + m) → ℝ := fun k => if (k : ℕ) < n then 0 else 1
+      let c : Fin (n + m) → ℝ :=
+        fun k => if (k : ℕ) < n then ((k : ℝ) + 1) else (k : ℝ)
       calc
         (∑ i, (flattenCLEquivReal (n + m) (d + 1) yε) i * ξ i)
             = ∑ k : Fin (n + m), a k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1)))) := by
                 simpa [yε, a, flattenCLEquivReal_apply] using
                   (sum_over_flat_timeSlots (d := d) (a := a) ξ)
-        _ = S + ε * W := by
-          have hsum_range :
-              (∑ k : Fin (n + m), a k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1))))) =
-                Finset.sum (Finset.range (n + m)) (fun k =>
-                  a ⟨k, by omega⟩ *
-                    ξ (finProdFinEquiv (⟨k, by omega⟩, (0 : Fin (d + 1))))) := by
-            simpa using
-              (Fin.sum_univ_eq_sum_range
-                (f := fun k : Fin (n + m) =>
-                  a k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1))))))
-          rw [hsum_range]
-          rw [Finset.sum_range_add]
-          have hhead :
-              (∑ k in Finset.range n,
-                a ⟨k, by omega⟩ * ξ (finProdFinEquiv (⟨k, by omega⟩, (0 : Fin (d + 1))))) =
-              ε *
-                (∑ k in Finset.range n,
-                  (((k : ℝ) + 1) *
-                    ξ (finProdFinEquiv (⟨k, by omega⟩, (0 : Fin (d + 1)))))) := by
-            refine Finset.sum_congr rfl ?_
-            intro k hk
-            have hk_lt' : (k : ℕ) < n := by simpa using hk
-            simp [a, hk_lt', mul_assoc, mul_left_comm, mul_comm]
-          have htail :
-              (∑ k in Finset.range m,
-                a ⟨n + k, by omega⟩ *
-                  ξ (finProdFinEquiv (⟨n + k, by omega⟩, (0 : Fin (d + 1))))) =
-              S + ε *
-                (∑ k in Finset.range m,
-                  ((n + k : ℝ) *
-                    ξ (finProdFinEquiv (⟨n + k, by omega⟩, (0 : Fin (d + 1)))))) := by
-            have hS_range :
-                S =
-                  ∑ k in Finset.range m,
-                    ξ (finProdFinEquiv (Fin.natAdd n ⟨k, by omega⟩, (0 : Fin (d + 1)))) := by
-              rw [S, Fin.sum_univ_eq_sum_range]
+        _ = ∑ k : Fin (n + m),
+              (b k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1)))) +
+                ε * (c k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1)))))) := by
               refine Finset.sum_congr rfl ?_
               intro k hk
-              congr 1
-              apply congrArg (fun i : Fin (n + m) => finProdFinEquiv (i, (0 : Fin (d + 1))))
-              apply Fin.ext
-              simp [Fin.natAdd]
-            rw [hS_range]
-            calc
-              ∑ k in Finset.range m,
-                  a ⟨n + k, by omega⟩ *
-                    ξ (finProdFinEquiv (⟨n + k, by omega⟩, (0 : Fin (d + 1))))
-                = ∑ k in Finset.range m,
-                    (1 + (n + k : ℝ) * ε) *
-                      ξ (finProdFinEquiv (⟨n + k, by omega⟩, (0 : Fin (d + 1)))) := by
-                    refine Finset.sum_congr rfl ?_
-                    intro k hk
-                    simp [a]
-              _ = ∑ k in Finset.range m,
-                    (ξ (finProdFinEquiv (⟨n + k, by omega⟩, (0 : Fin (d + 1)))) +
-                      ε * ((n + k : ℝ) *
-                        ξ (finProdFinEquiv (⟨n + k, by omega⟩, (0 : Fin (d + 1)))))) := by
-                    refine Finset.sum_congr rfl ?_
-                    intro k hk
-                    ring
-              _ =
-                  (∑ k in Finset.range m,
-                    ξ (finProdFinEquiv (⟨n + k, by omega⟩, (0 : Fin (d + 1))))) +
-                  ε *
-                    (∑ k in Finset.range m,
-                      ((n + k : ℝ) *
-                        ξ (finProdFinEquiv (⟨n + k, by omega⟩, (0 : Fin (d + 1)))))) := by
-                    rw [Finset.sum_add_distrib]
-                    rw [← Finset.mul_sum]
-                    refine congrArg (fun z => _ + z) ?_
-                    refine Finset.sum_congr rfl ?_
-                    intro k hk
-                    ring
-              _ = S + ε *
-                    ∑ k in Finset.range m,
-                      ((n + k : ℝ) *
-                        ξ (finProdFinEquiv (⟨n + k, by omega⟩, (0 : Fin (d + 1)))))) := by
-                    rw [hS_range]
-          rw [hhead, htail]
-          dsimp [W]
-          rw [Fin.sum_univ_eq_sum_range, Finset.sum_range_add]
-          have hW_head :
-              ∑ k in Finset.range n,
-                (if ((⟨k, by omega⟩ : Fin (n + m)) : ℕ) < n then
-                    ((↑⟨k, by omega⟩ : ℝ) + 1)
-                  else ↑⟨k, by omega⟩) *
-                  ξ (finProdFinEquiv (⟨k, by omega⟩, (0 : Fin (d + 1)))) =
-                ∑ k in Finset.range n,
-                  (((k : ℝ) + 1) *
-                    ξ (finProdFinEquiv (⟨k, by omega⟩, (0 : Fin (d + 1))))) := by
-            refine Finset.sum_congr rfl ?_
-            intro k hk
-            have hk_lt' : ((⟨k, by omega⟩ : Fin (n + m)) : ℕ) < n := by simpa
-            simp [hk_lt']
-          have hW_tail :
-              ∑ k in Finset.range m,
-                (if ((⟨n + k, by omega⟩ : Fin (n + m)) : ℕ) < n then
-                    ((↑⟨n + k, by omega⟩ : ℝ) + 1)
-                  else ↑⟨n + k, by omega⟩) *
-                  ξ (finProdFinEquiv (⟨n + k, by omega⟩, (0 : Fin (d + 1)))) =
-                ∑ k in Finset.range m,
-                  ((n + k : ℝ) *
-                    ξ (finProdFinEquiv (⟨n + k, by omega⟩, (0 : Fin (d + 1))))) := by
-            refine Finset.sum_congr rfl ?_
-            intro k hk
-            have hk_not_lt : ¬ ((⟨n + k, by omega⟩ : Fin (n + m)) : ℕ) < n := by omega
-            simp [hk_not_lt]
-          rw [hW_head, hW_tail]
-          ring
+              by_cases hk_lt : (k : ℕ) < n
+              · simp [a, b, c, hk_lt]
+                ring
+              · simp [a, b, c, hk_lt]
+                ring
+        _ = (∑ k : Fin (n + m), b k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1))))) +
+              ε * (∑ k : Fin (n + m), c k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1))))) := by
+              rw [Finset.sum_add_distrib, Finset.mul_sum]
+        _ = S + ε * W := by
+              have hb :
+                  ∑ k : Fin (n + m), b k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1)))) = S := by
+                rw [Fin.sum_univ_add]
+                simp [b, S]
+              have hc :
+                  ∑ k : Fin (n + m), c k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1)))) = W := by
+                simp [c, W]
+              rw [hb, hc]
     have hW_bound : ε * W ≤ (-S) / 2 := by
       have hε_nonneg : 0 ≤ ε := le_of_lt hε_pos
       have hstep1 : ε * W ≤ ε * |W| := by
@@ -1303,6 +1219,203 @@ private theorem zeroHeadBlockShift_flatTimeShiftDirection_pairing_eq_neg_tailTim
           simp [S]
         rw [hhead_zero, zero_add, htail_eq]
   simpa [S, xSplit, hvEff_targetVec] using hsum_eq
+
+/-- Tail-block version of `flatTimeShiftDirection_pairing_nonpos_of_mem_dualCone`:
+after inserting the right-block time-shift vector into the full flattened
+`(n+m)`-point space, every dual-cone frequency still pairs nonpositively with
+that inserted translation direction. This is the exact geometry needed by the
+final full-flat spectral assembly. -/
+private theorem zeroHeadBlockShift_flatTimeShiftDirection_pairing_nonpos_of_mem_dualCone
+    {n m : ℕ}
+    {ξ : Fin ((n + m) * (d + 1)) → ℝ}
+    (hξ :
+      ξ ∈ DualConeFlat
+        ((flattenCLEquivReal (n + m) (d + 1)) '' ForwardConeAbs d (n + m))) :
+    ∑ i,
+      (((OSReconstruction.castFinCLE
+          (by ring : n * (d + 1) + m * (d + 1) = (n + m) * (d + 1)))
+        (OSReconstruction.zeroHeadBlockShift
+          (m := n * (d + 1)) (n := m * (d + 1))
+          (flatTimeShiftDirection d m))) i) * ξ i ≤ 0 := by
+  classical
+  let S : ℝ :=
+    ∑ j : Fin m, ξ (finProdFinEquiv (Fin.natAdd n j, (0 : Fin (d + 1))))
+  have hS_nonneg : 0 ≤ S := by
+    by_contra hS
+    have hSneg : S < 0 := lt_of_not_ge hS
+    let W : ℝ :=
+      ∑ k : Fin (n + m),
+        (if (k : ℕ) < n then ((k : ℝ) + 1) else (k : ℝ)) *
+          ξ (finProdFinEquiv (k, (0 : Fin (d + 1))))
+    let ε : ℝ := (-S) / (2 * (|W| + 1))
+    have hε_pos : 0 < ε := by
+      dsimp [ε]
+      apply div_pos
+      · linarith
+      · positivity
+    let yε : Fin (n + m) → Fin (d + 1) → ℝ :=
+      fun k μ =>
+        if μ = 0 then
+          if (k : ℕ) < n then (((k : ℝ) + 1) * ε : ℝ)
+          else (1 + (k : ℝ) * ε : ℝ)
+        else 0
+    let e0 : Fin (d + 1) → ℝ := fun μ => if μ = 0 then 1 else 0
+    have he0 : InOpenForwardCone d e0 := by
+      constructor
+      · simp [e0]
+      · simp [e0, MinkowskiSpace.minkowskiNormSq, MinkowskiSpace.minkowskiInner]
+    have hεe0 : InOpenForwardCone d (ε • e0) :=
+      inOpenForwardCone_smul d ε hε_pos e0 he0
+    have hyε_mem : yε ∈ ForwardConeAbs d (n + m) := by
+      intro k
+      by_cases hk0 : (k : ℕ) = 0
+      · have hk_nat : (k : ℕ) = 0 := hk0
+        have hk_zero : (k : ℝ) = 0 := by exact_mod_cast hk_nat
+        convert inOpenForwardCone_smul d
+          (if (0 : ℕ) < n then (1 : ℝ) * ε else (1 : ℝ))
+          (by
+            by_cases hn : 0 < n
+            · simp [hn, hε_pos]
+            · have hn0 : n = 0 := Nat.eq_zero_of_not_pos hn
+              simp [hn0])
+          e0 he0 using 1
+        ext μ
+        by_cases hμ : μ = 0
+        · subst hμ
+          by_cases hn : 0 < n
+          · have hk_lt : (k : ℕ) < n := by simpa [hk0] using hn
+            simp [yε, e0, hk0, hk_zero, hk_lt, hn, Pi.smul_apply, smul_eq_mul]
+          · have hn0 : n = 0 := Nat.eq_zero_of_not_pos hn
+            simp [yε, e0, hk0, hk_zero, hn0, Pi.smul_apply, smul_eq_mul]
+        · simp [yε, e0, hk0, hμ, Pi.smul_apply, smul_eq_mul]
+      · have hkpos : 0 < (k : ℕ) := Nat.pos_of_ne_zero hk0
+        by_cases hk_lt : (k : ℕ) < n
+        · have hkcast :
+            ((((k : ℕ) - 1 : ℕ) : ℝ) + 1) = (k : ℝ) := by
+            have hnat : (k : ℕ) - 1 + 1 = (k : ℕ) :=
+              Nat.sub_add_cancel (show 1 ≤ (k : ℕ) from hkpos)
+            exact_mod_cast hnat
+          convert hεe0 using 1
+          ext μ
+          by_cases hμ : μ = 0
+          · subst hμ
+            have hkprev_lt : ((k : ℕ) - 1) < n := by omega
+            have hmain :
+                (((k : ℝ) + 1) * ε) -
+                    (((((k : ℕ) - 1 : ℕ) : ℝ) + 1) * ε) = ε := by
+              nlinarith [hkcast]
+            simp [yε, e0, hk_lt, hk0, Pi.smul_apply, smul_eq_mul, hmain, hkprev_lt]
+          · simp [yε, e0, hk_lt, hk0, hμ, Pi.smul_apply, smul_eq_mul]
+        · by_cases hk_eq : (k : ℕ) = n
+          · convert he0 using 1
+            ext μ
+            by_cases hμ : μ = 0
+            · subst hμ
+              have hn_pos : 0 < n := by omega
+              have hn0_ne : n ≠ 0 := Nat.ne_of_gt hn_pos
+              have hkprev_lt : ((k : ℕ) - 1) < n := by omega
+              have hkcast : (k : ℝ) = (n : ℝ) := by exact_mod_cast hk_eq
+              have hprev_cast :
+                  ((((k : ℕ) - 1 : ℕ) : ℝ) + 1) = (n : ℝ) := by
+                have hnat : (k : ℕ) - 1 + 1 = n := by
+                  rw [hk_eq]
+                  exact Nat.sub_add_cancel (show 1 ≤ n from hn_pos)
+                exact_mod_cast hnat
+              have hmain :
+                  (1 + (k : ℝ) * ε) -
+                    (((((k : ℕ) - 1 : ℕ) : ℝ) + 1) * ε) = 1 := by
+                nlinarith [hkcast, hprev_cast]
+              simpa [yε, e0, hk_lt, hk_eq, hk0, hn0_ne,
+                hkprev_lt, hn_pos, Pi.smul_apply, smul_eq_mul] using hmain
+            · have hn_pos : 0 < n := by omega
+              have hn0_ne : n ≠ 0 := Nat.ne_of_gt hn_pos
+              have hkprev_lt : ((k : ℕ) - 1) < n := by omega
+              simp [yε, e0, hk_lt, hk_eq, hk0, hn0_ne, hkprev_lt,
+                hn_pos, hμ, Pi.smul_apply, smul_eq_mul]
+          · have hk_gt : n < (k : ℕ) := by omega
+            have hkprev_ge : n ≤ (k : ℕ) - 1 := by omega
+            have hkprev_not_lt : ¬ ((k : ℕ) - 1 < n) := by omega
+            have hkcast :
+                (((k : ℕ) - 1 : ℕ) : ℝ) = (k : ℝ) - 1 := by
+              have hnat : (k : ℕ) - 1 + 1 = (k : ℕ) :=
+                Nat.sub_add_cancel (show 1 ≤ (k : ℕ) from hkpos)
+              have hreal : ((((k : ℕ) - 1 : ℕ) : ℝ) + 1) = (k : ℝ) := by
+                exact_mod_cast hnat
+              linarith
+            convert hεe0 using 1
+            ext μ
+            by_cases hμ : μ = 0
+            · subst hμ
+              have hmain :
+                  (1 + (k : ℝ) * ε) -
+                    (1 + ((((k : ℕ) - 1 : ℕ) : ℝ)) * ε) = ε := by
+                nlinarith [hkcast]
+              simp [yε, e0, hk_lt, hk_eq, hk_gt, hkprev_ge, hkprev_not_lt, hk0,
+                Pi.smul_apply, smul_eq_mul, hmain]
+            · simpa [yε, e0, hk_lt, hk_eq, hk_gt, hkprev_ge, hkprev_not_lt, hk0, hμ,
+                Pi.smul_apply, smul_eq_mul]
+    have hpair_nonneg :
+        0 ≤ ∑ i, (flattenCLEquivReal (n + m) (d + 1) yε) i * ξ i := by
+      exact (mem_dualConeFlat.mp hξ)
+        ((flattenCLEquivReal (n + m) (d + 1)) yε) ⟨yε, hyε_mem, rfl⟩
+    have hsum_rewrite :
+        (∑ i, (flattenCLEquivReal (n + m) (d + 1) yε) i * ξ i) = S + ε * W := by
+      let a : Fin (n + m) → ℝ :=
+        fun k =>
+          if (k : ℕ) < n then (((k : ℝ) + 1) * ε : ℝ)
+          else (1 + (k : ℝ) * ε : ℝ)
+      let b : Fin (n + m) → ℝ := fun k => if (k : ℕ) < n then 0 else 1
+      let c : Fin (n + m) → ℝ :=
+        fun k => if (k : ℕ) < n then ((k : ℝ) + 1) else (k : ℝ)
+      calc
+        (∑ i, (flattenCLEquivReal (n + m) (d + 1) yε) i * ξ i)
+            = ∑ k : Fin (n + m), a k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1)))) := by
+                simpa [yε, a, flattenCLEquivReal_apply] using
+                  (sum_over_flat_timeSlots (d := d) (a := a) ξ)
+        _ = ∑ k : Fin (n + m),
+              (b k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1)))) +
+                ε * (c k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1)))))) := by
+              refine Finset.sum_congr rfl ?_
+              intro k hk
+              by_cases hk_lt : (k : ℕ) < n
+              · simp [a, b, c, hk_lt]
+                ring
+              · simp [a, b, c, hk_lt]
+                ring
+        _ = (∑ k : Fin (n + m), b k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1))))) +
+              ε * (∑ k : Fin (n + m), c k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1))))) := by
+              rw [Finset.sum_add_distrib, Finset.mul_sum]
+        _ = S + ε * W := by
+              have hb :
+                  ∑ k : Fin (n + m), b k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1)))) = S := by
+                rw [Fin.sum_univ_add]
+                simp [b, S]
+              have hc :
+                  ∑ k : Fin (n + m), c k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1)))) = W := by
+                simp [c, W]
+              rw [hb, hc]
+    have hW_bound : ε * W ≤ (-S) / 2 := by
+      have hε_nonneg : 0 ≤ ε := le_of_lt hε_pos
+      have hstep1 : ε * W ≤ ε * |W| := by
+        exact mul_le_mul_of_nonneg_left (le_abs_self W) hε_nonneg
+      have hstep2 : ε * |W| ≤ (-S) / 2 := by
+        have hratio : |W| / (|W| + 1) ≤ (1 : ℝ) := by
+          have hne : (|W| + 1 : ℝ) ≠ 0 := by positivity
+          field_simp [hne]
+          nlinarith [abs_nonneg W]
+        have hrepr : ε * |W| = ((-S) / 2) * (|W| / (|W| + 1)) := by
+          have hne : 2 * (|W| + 1) ≠ 0 := by positivity
+          dsimp [ε]
+          field_simp [hne]
+        rw [hrepr]
+        have hcoeff_nonneg : 0 ≤ (-S) / 2 := by linarith
+        simpa using mul_le_mul_of_nonneg_left hratio hcoeff_nonneg
+      exact le_trans hstep1 hstep2
+    rw [hsum_rewrite] at hpair_nonneg
+    linarith [hpair_nonneg, hW_bound, hSneg]
+  rw [zeroHeadBlockShift_flatTimeShiftDirection_pairing_eq_neg_tailTimeSum
+    (d := d) (n := n) (m := m) ξ]
+  linarith
 
 /-- After flattening and reindexing the real block into head/tail form, the
 ambient conjugated tensor product is exactly the ordinary flat tensor product of
