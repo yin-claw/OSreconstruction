@@ -130,13 +130,19 @@ Checked-missing theorem-package ownership:
    -> `bvt_cluster_canonical_from_positiveTime_core`,
    and then consume that package in the final private theorem
    `bvt_F_clusterCanonicalEventually_translate`.
-   But those adapter theorems are allowed to consume only the already-checked
-   generic boundary-value supplier surfaces imported into
-   `OSToWightmanBoundaryValues.lean`, namely:
+   The file-local seam is now frozen more sharply than “wrapper-file support”:
+   `canonical_cluster_integrand_eq_singleSplit_integrand` is the **first**
+   theorem-4 slot allowed to live in `OSToWightmanBoundaryValues.lean`, while
+   the already-checked public transfer theorem
+   `bv_cluster_transfer_of_canonical_eventually` is a **downstream consumer** of
+   the final private wrapper chain, not an admissible input to the 5-slot
+   adapter queue.
+
+   So those adapter theorems are allowed to consume only the checked generic
+   supplier surfaces that genuinely sit upstream of that queue, namely:
    - from `OSToWightmanBoundaryValuesComparison.lean`:
-     `canonicalForwardConeDirection`,
-     `canonicalForwardConeDirection_mem`, and the already-landed public
-     transfer theorem `bv_cluster_transfer_of_canonical_eventually`;
+     `canonicalForwardConeDirection` and
+     `canonicalForwardConeDirection_mem` only;
    - from `OSToWightmanBoundaryValueLimits.lean`:
      the theorem-3 scalar-holomorphic package
      `bvt_singleSplit_xiShiftHolomorphicValue`,
@@ -491,10 +497,20 @@ lemma normalizedZeroDegreeRightVector_funcs_pos
     ∀ m > 0,
       ((normalizedZeroDegreeRightVector d : BorchersSequence d).funcs m) = 0
 
-lemma normalizedZeroDegreeRightVector_is_unit_normalized
-    (d : ℕ) :
-    degreeZeroEvaluation
-      (((normalizedZeroDegreeRightVector d : BorchersSequence d).funcs 0)) = 1
+lemma conjTensorProduct_degreeZeroUnit_eq
+    (n : ℕ) (f : SchwartzNPoint d n) :
+    f.conjTensorProduct degreeZeroUnit = f
+
+lemma osConjTensorProduct_degreeZeroUnit_eq
+    (n : ℕ) (f : SchwartzNPoint d n) :
+    f.osConjTensorProduct degreeZeroUnit = ZeroDiagonalSchwartz.ofClassical (f.osConj)
+
+lemma ZeroDiagonalSchwartz_ofClassical_degreeZeroUnit_eq
+    (n : ℕ) (f : SchwartzNPoint d n) :
+    ZeroDiagonalSchwartz.ofClassical
+      (f.osConjTensorProduct degreeZeroUnit)
+      =
+    ZeroDiagonalSchwartz.ofClassical (f.osConj)
 
 lemma zeroDegree_right_single_wightman_extracts_factor
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
@@ -504,7 +520,11 @@ lemma zeroDegree_right_single_wightman_extracts_factor
       (normalizedZeroDegreeRightVector d : BorchersSequence d)
       =
       bvt_W OS lgc n f := by
-  -- unfold `WightmanInnerProduct_right_single` and the chosen normalization
+  -- proof transcript is frozen:
+  --   `WightmanInnerProduct_right_single`
+  --   -> `normalizedZeroDegreeRightVector_funcs_zero`
+  --   -> `normalizedZeroDegreeRightVector_funcs_pos`
+  --   -> `conjTensorProduct_degreeZeroUnit_eq`
 
 lemma zeroDegree_right_single_os_extracts_factor
     (OS : OsterwalderSchraderAxioms d)
@@ -514,7 +534,12 @@ lemma zeroDegree_right_single_os_extracts_factor
       (normalizedZeroDegreeRightVector d : BorchersSequence d)
       =
       OS.S n (ZeroDiagonalSchwartz.ofClassical (f.osConj)) := by
-  -- unfold `OSInnerProduct_right_single` and the same normalization
+  -- proof transcript is frozen:
+  --   `OSInnerProduct_right_single`
+  --   -> `normalizedZeroDegreeRightVector_funcs_zero`
+  --   -> `normalizedZeroDegreeRightVector_funcs_pos`
+  --   -> `osConjTensorProduct_degreeZeroUnit_eq`
+  --   -> `ZeroDiagonalSchwartz_ofClassical_degreeZeroUnit_eq`
 
 lemma zero_degree_component_comparison_for_normalized_right_vector
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
@@ -526,14 +551,35 @@ lemma zero_degree_component_comparison_for_normalized_right_vector
     OSInnerProduct d OS.S
       (F : BorchersSequence d)
       (normalizedZeroDegreeRightVector d : BorchersSequence d) := by
-  -- theorem-3 Package-I transport specialized to the degree-zero right vector
+  -- proof transcript is frozen:
+  --   specialize the repaired theorem-3 Section-4.3 comparison to the literal
+  --   right witness `normalizedZeroDegreeRightVector d`
+  --   -> discharge every `m > 0` component using
+  --      `normalizedZeroDegreeRightVector_funcs_pos`
+  --   -> leave exactly the `m = 0` component as the only surviving slot
 ```
 
 The crucial documentation point is that
 `normalizedZeroDegreeRightVector` should be the literal degree-zero unit
-generator, not an abstract existential placeholder. The four structural lemmas
-above should be proved immediately after the definition so the later theorem-4
-file can avoid repeated unfolding.
+generator, not an abstract existential placeholder. The frozen theorem-creation
+queue on this lane is the 12-slot package
+`normalizedZeroDegreeRightVector`
+-> `normalizedZeroDegreeRightVector_bound`
+-> `normalizedZeroDegreeRightVector_funcs_zero`
+-> `normalizedZeroDegreeRightVector_funcs_pos`
+-> `conjTensorProduct_degreeZeroUnit_eq`
+-> `osConjTensorProduct_degreeZeroUnit_eq`
+-> `ZeroDiagonalSchwartz_ofClassical_degreeZeroUnit_eq`
+-> `zeroDegree_right_single_wightman_extracts_factor`
+-> `zeroDegree_right_single_os_extracts_factor`
+-> `zero_degree_component_comparison_for_normalized_right_vector`
+-> `cluster_left_factor_transport`
+-> `cluster_right_factor_transport`.
+There is intentionally **no** extra contract-level theorem slot such as
+`normalizedZeroDegreeRightVector_is_unit_normalized`: if a later proof wants a
+scalar evaluation fact, it should derive it locally from
+`normalizedZeroDegreeRightVector_funcs_zero` and the literal definition of
+`degreeZeroUnit` rather than expanding the frozen public queue.
 
 Once those structural lemmas are in place, the remaining theorem-4 input is no
 longer a same-shell factor identity. It is the exact transport comparison
@@ -760,30 +806,157 @@ supplier map.
    limit order implicit.
 5. `bvt_cluster_canonical_from_positiveTime_core`
    should consume only:
-   - `singleSplit_core_rewrites_to_canonical_shell`
    - `canonical_shell_limit_of_rewrite`.
-   It is therefore a thin assembly theorem immediately below private
+   It is therefore a thin public wrapper theorem immediately below private
    `bvt_F_clusterCanonicalEventually_translate`, not a place for hidden new
-   analytic content.
+   analytic content. In particular, once
+   `canonical_shell_limit_of_rewrite` has produced the exact eventual
+   canonical-shell statement, `bvt_cluster_canonical_from_positiveTime_core`
+   should do no further shell rewriting and should not reopen
+   `singleSplit_core_rewrites_to_canonical_shell` by hand.
 
 ## 8. Exact proof decomposition for theorem 4
 
-The later Lean proof should be carried out in this order.
+The later Lean proof should be carried out in the following exact order.
+This is intentionally finer than a slogan like “bridge, then adapter, then
+wrapper”: each row below is a distinct implementation obligation with a fixed
+next consumer.
 
-1. Supply the two one-factor comparison theorems from the theorem-3 package.
-2. Prove the corrected bridge
+### 8.0. Owner / consumes / exports / next-consumer ledger
+
+The theorem-4 route should now be read as the following literal execution
+ledger. This table is the contract-level version of the prose decomposition
+below: later Lean work should be able to implement the rows in order without
+having to guess where the positivity-side extraction ends, where the repaired
+base bridge begins, or where the public canonical-shell adapter first imports
+any theorem-3 limit transport.
+
+| Slot | Owner | Consumes | Exports | Next consumer |
+| --- | --- | --- | --- | --- |
+| `normalizedZeroDegreeRightVector` | `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean` | degree-`0` unit shell only | literal positive-time Borchers vector concentrated in degree `0` with value `1` | its structural lemmas, then the normalization rewrites, then the right-single extraction lemmas |
+| `normalizedZeroDegreeRightVector_bound` / `..._funcs_zero` / `..._funcs_pos` | same file | `normalizedZeroDegreeRightVector` | exact bound / degree-`0` / positive-degree-vanishing facts for the normalized witness | `conjTensorProduct_degreeZeroUnit_eq`, `osConjTensorProduct_degreeZeroUnit_eq`, `ZeroDiagonalSchwartz_ofClassical_degreeZeroUnit_eq`, the right-single extraction pair, and the degree-`0` comparison theorem |
+| `conjTensorProduct_degreeZeroUnit_eq` | same file | `normalizedZeroDegreeRightVector_funcs_zero` | exact Wightman-side degree-`0` normalization rewrite | `zeroDegree_right_single_wightman_extracts_factor` |
+| `osConjTensorProduct_degreeZeroUnit_eq` | same file | `normalizedZeroDegreeRightVector_funcs_zero` | exact OS-side degree-`0` normalization rewrite | `zeroDegree_right_single_os_extracts_factor` |
+| `ZeroDiagonalSchwartz_ofClassical_degreeZeroUnit_eq` | same file | `normalizedZeroDegreeRightVector_funcs_zero` | exact zero-diagonal wrapper / cast cleanup for the degree-`0` unit shell | both right-single extraction lemmas and the degree-`0` comparison theorem |
+| `zeroDegree_right_single_wightman_extracts_factor` | same file | checked `WightmanInnerProduct_right_single` plus the three normalization lemmas above | extraction of the left Wightman factor against the normalized degree-`0` right vector | `cluster_left_factor_transport` |
+| `zeroDegree_right_single_os_extracts_factor` | same file | checked `OSInnerProduct_right_single` plus the same normalization lemmas | extraction of the left OS factor against the normalized degree-`0` right vector | `cluster_left_factor_transport` |
+| `zero_degree_component_comparison_for_normalized_right_vector` | same file | repaired theorem-3 Section-4.3 transport package plus the normalized degree-`0` structural lemmas | the unique surviving `m = 0` transport comparison | `cluster_left_factor_transport`, `cluster_right_factor_transport` |
+| `cluster_left_factor_transport` | same file | `zeroDegree_right_single_wightman_extracts_factor`, `zeroDegree_right_single_os_extracts_factor`, `zero_degree_component_comparison_for_normalized_right_vector` | corrected theorem-3-to-theorem-4 left one-factor transport identity | `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison` |
+| `cluster_right_factor_transport` | same file | the same normalized witness package reused via `normalizedZeroDegreeLeftVector d := normalizedZeroDegreeRightVector d`, together with the corresponding right-single extraction rewrites and `zero_degree_component_comparison_for_normalized_right_vector`; no second normalization package is allowed here | corrected theorem-3-to-theorem-4 right one-factor transport identity | `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison` |
+| `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison` | `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValuesBase.lean` | checked base anchors `:2214 :: ...singleSplitLargeSpatial`, `:2352 :: ...singleSplitSchwingerLargeSpatial`, `:2514 :: ...singleSplitFactorComparison`, plus `cluster_left_factor_transport` and `cluster_right_factor_transport` | repaired positive-time single-split bridge with corrected transport inputs | `bvt_cluster_positiveTime_singleSplit_core` |
+| `bvt_cluster_positiveTime_singleSplit_core` | same file | `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison` only | the sole theorem-4 cluster statement allowed to leave the base file | `singleSplit_core_rewrites_to_canonical_shell` only |
+| `canonical_cluster_integrand_eq_singleSplit_integrand` | `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | only `canonicalForwardConeDirection`, `canonicalForwardConeDirection_mem`, the public canonical-shell statement shape, and the repaired base-core shell statement; it may **not** import `OSToWightmanBoundaryValueLimits.lean` | integrand-level rewrite from the public canonical shell to the repaired positive-time single-split shell | `singleSplit_core_rewrites_to_canonical_shell` |
+| `canonical_translate_factor_eq_singleSplit_translate_factor` | same file | only `translateSchwartzNPoint`, the same canonical-direction surfaces, and the translated factor appearing in the repaired base-core theorem; it may **not** hide any limit transport | translated-right-factor rewrite needed before the base-core theorem can be applied | `singleSplit_core_rewrites_to_canonical_shell` |
+| `singleSplit_core_rewrites_to_canonical_shell` | same file | `bvt_cluster_positiveTime_singleSplit_core`, `canonical_cluster_integrand_eq_singleSplit_integrand`, `canonical_translate_factor_eq_singleSplit_translate_factor` | the repaired positive-time core restated in the exact public canonical-shell form | `canonical_shell_limit_of_rewrite` |
+| `canonical_shell_limit_of_rewrite` | same file | `singleSplit_core_rewrites_to_canonical_shell` plus only the checked scalar-holomorphic / right-half-plane uniqueness / `t -> 0+` transport package from `OSToWightmanBoundaryValueLimits.lean`, in the strict internal order fixed below | transport from the rewritten shell statement to the eventual canonical-shell limit statement | `bvt_cluster_canonical_from_positiveTime_core` |
+| `bvt_cluster_canonical_from_positiveTime_core` | same file | `canonical_shell_limit_of_rewrite` only | the full public theorem-4 canonical-shell adapter theorem | `OSToWightmanBoundaryValues.lean:398 :: private bvt_F_clusterCanonicalEventually_translate` only |
+| `OSToWightmanBoundaryValues.lean:398 :: private bvt_F_clusterCanonicalEventually_translate` | same file | `bvt_cluster_canonical_from_positiveTime_core` only | checked private frontier theorem | downstream `:414 :: private bvt_F_clusterCanonicalEventually` -> `:27 :: bv_cluster_transfer_of_canonical_eventually` -> `:473 :: private bvt_W_cluster` |
+
+1. Prove the normalized degree-`0` witness package in
+   `OSToWightmanPositivity.lean`:
+   `normalizedZeroDegreeRightVector`
+   -> `normalizedZeroDegreeRightVector_bound`
+   -> `normalizedZeroDegreeRightVector_funcs_zero`
+   -> `normalizedZeroDegreeRightVector_funcs_pos`.
+2. Close the hidden scalar/cast cleanup lemmas in the same file:
+   `conjTensorProduct_degreeZeroUnit_eq`
+   -> `osConjTensorProduct_degreeZeroUnit_eq`
+   -> `ZeroDiagonalSchwartz_ofClassical_degreeZeroUnit_eq`.
+3. Package the checked right-single extraction theorems into theorem-4-facing
+   slots:
+   `zeroDegree_right_single_wightman_extracts_factor`
+   -> `zeroDegree_right_single_os_extracts_factor`.
+4. Compare the resulting degree-`0` components via
+   `zero_degree_component_comparison_for_normalized_right_vector`.
+5. Only then close the one-factor transport pair
+   `cluster_left_factor_transport`
+   -> `cluster_right_factor_transport`.
+   The right lane must reuse the same normalized witness via the definitional
+   alias `normalizedZeroDegreeLeftVector d := normalizedZeroDegreeRightVector d`;
+   it may not introduce a second normalization package.
+6. Build the repaired base-file bridge
    `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison`
-   by reusing the existing large-spatial / Schwinger-side support package and
-   replacing only the false same-shell input hypotheses.
-3. Apply that corrected bridge to close the positive-time single-split cluster
-   core.
-4. Write the explicit adapter from the public canonical BV shell to that
-   positive-time core.
-5. Reuse the already-proved wrapper
-   `bvt_F_clusterCanonicalEventually`.
-6. Apply `bv_cluster_transfer_of_canonical_eventually` to get `bvt_W_cluster`.
+   in `OSToWightmanBoundaryValuesBase.lean`, consuming only the checked base
+   anchors `:2214`, `:2352`, `:2514` together with
+   `cluster_left_factor_transport` and `cluster_right_factor_transport`.
+7. Export the thin base wrapper
+   `bvt_cluster_positiveTime_singleSplit_core`.
+   This is the sole theorem allowed to leave
+   `OSToWightmanBoundaryValuesBase.lean` and enter the public adapter ladder.
+8. Build the public canonical-shell rewrite pair in
+   `OSToWightmanBoundaryValues.lean`:
+   `canonical_cluster_integrand_eq_singleSplit_integrand`
+   -> `canonical_translate_factor_eq_singleSplit_translate_factor`.
+9. Package those two rewrites together with the base export as
+   `singleSplit_core_rewrites_to_canonical_shell`.
+   The proof order here is literal and should be written that way in Lean:
+   - first introduce the public canonical-shell goal in the exact statement
+     shape consumed later by `canonical_shell_limit_of_rewrite`;
+   - second prove a local integrand-rewrite sublemma/have using
+     `canonical_cluster_integrand_eq_singleSplit_integrand`;
+   - third prove a separate translated-factor sublemma/have using
+     `canonical_translate_factor_eq_singleSplit_translate_factor`;
+   - fourth rewrite the canonical-shell goal by those two sublemmas so the goal
+     now matches the positive-time single-split shell verbatim;
+   - fifth apply `bvt_cluster_positiveTime_singleSplit_core` with no theorem-3
+     limit machinery in scope.
+10. Transport that rewritten shell statement through the checked generic
+    theorem-3 scalar-holomorphic machinery by proving
+    `canonical_shell_limit_of_rewrite`.
+    Its internal proof transcript is fixed more sharply than a theorem list:
+    - first bind the output of
+      `singleSplit_core_rewrites_to_canonical_shell` as the only shell-level
+      input to this theorem;
+    - second instantiate the checked scalar holomorphic object and identify its
+      positive-real trace with the rewritten shell statement using
+      `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq`;
+    - third, only if the chosen canonical-shell scalar was introduced under a
+      separately named trace, use
+      `differentiableOn_bvt_singleSplit_xiShiftHolomorphicValue` together with
+      `bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq` to upgrade the
+      positive-real identity to right-half-plane equality;
+    - fourth discharge the actual `t -> 0+` passage to the Wightman target only
+      with
+      `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`;
+    - fifth export the exact eventual canonical-shell statement consumed by
+      `bvt_cluster_canonical_from_positiveTime_core`, with no residual mention
+      of `bvt_cluster_positiveTime_singleSplit_core` or of the two rewrite
+      lemmas.
+11. Package the resulting public adapter as
+    `bvt_cluster_canonical_from_positiveTime_core`, then feed only that theorem
+    into the checked frontier shell
+    `OSToWightmanBoundaryValues.lean:398 :: private bvt_F_clusterCanonicalEventually_translate`.
+    The implementation order here is also fixed:
+    - first state `bvt_cluster_canonical_from_positiveTime_core` with exactly
+      the same eventual canonical-shell surface produced by
+      `canonical_shell_limit_of_rewrite`;
+    - second prove it by a single direct application of
+      `canonical_shell_limit_of_rewrite`;
+    - third let private
+      `bvt_F_clusterCanonicalEventually_translate` consume only this wrapper,
+      after which the already-landed downstream consumers remain
+      `:414 :: private bvt_F_clusterCanonicalEventually`
+      -> `:27 :: bv_cluster_transfer_of_canonical_eventually`
+      -> `:473 :: private bvt_W_cluster`.
 
-The later implementation should not invert that order.
+The later implementation should not invert that order, collapse multiple rows
+back into a black-box “canonical adapter”, or import theorem-3 limit transport
+before `singleSplit_core_rewrites_to_canonical_shell` has already fixed the
+exact shell statement being transported.
+
+Two negative routing rules are part of this ledger:
+
+1. the normalization / one-factor package in `OSToWightmanPositivity.lean`
+   must be completely finished before the repaired bridge in
+   `OSToWightmanBoundaryValuesBase.lean` is stated, rather than letting the
+   base file hide degree-`0` bookkeeping or right-single extraction work;
+2. the public adapter in `OSToWightmanBoundaryValues.lean` must remain a pure
+   rewrite/limit-transport layer above `bvt_cluster_positiveTime_singleSplit_core`.
+   In particular, `canonical_cluster_integrand_eq_singleSplit_integrand` and
+   `canonical_translate_factor_eq_singleSplit_translate_factor` are not allowed
+   to import theorem-3 limit transport early, and
+   `private bvt_F_clusterCanonicalEventually_translate` is not allowed to hide
+   any leftover rewrite or bridge work behind the final wrapper.
 
 ## 9. Exact theorem-name dictionary for theorem 4
 
@@ -859,11 +1032,37 @@ private theorem bvt_F_clusterCanonicalEventually_translate
                       Complex.I) *
                   ((f.tensorProduct (translateSchwartzNPoint (d := d) a g)) x)) -
               bvt_W OS lgc n f * bvt_W OS lgc m g‖ < ε := by
-  -- Step A: close the ordered positive-time single-split core
-  have hcore := bvt_cluster_positiveTime_singleSplit_core (d := d) (OS := OS) (lgc := lgc)
-  -- Step B: write the exact public canonical-shell adapter
-  exact bvt_cluster_canonical_from_positiveTime_core (d := d) (OS := OS) (lgc := lgc)
+  -- Below this wrapper, the repaired base bridge has already been closed in
+  -- OStoWightmanBoundaryValuesBase.lean and exported only through the thin row
+  -- `bvt_cluster_positiveTime_singleSplit_core`.
+  have hcore : _ :=
+    bvt_cluster_positiveTime_singleSplit_core (d := d) (OS := OS) (lgc := lgc)
+  -- First canonical-shell rewrite row: integrand only.
+  have hintegrand : _ :=
+    canonical_cluster_integrand_eq_singleSplit_integrand
+      (d := d) (OS := OS) (lgc := lgc)
+  -- Second canonical-shell rewrite row: translated factor only.
+  have htranslate : _ :=
+    canonical_translate_factor_eq_singleSplit_translate_factor
+      (d := d) (OS := OS) (lgc := lgc)
+  -- Package those three inputs into the exact positive-time core shell shape.
+  have hshell : _ :=
+    singleSplit_core_rewrites_to_canonical_shell
+      (d := d) (OS := OS) (lgc := lgc)
+      hcore hintegrand htranslate
+  -- Only now import the theorem-3 scalar-holomorphic / limit machinery.
+  have hlimit : _ :=
+    canonical_shell_limit_of_rewrite (d := d) (OS := OS) (lgc := lgc) hshell
+  -- Thin public adapter immediately above the checked private frontier.
+  exact bvt_cluster_canonical_from_positiveTime_core
+    (d := d) (OS := OS) (lgc := lgc) hlimit
 ```
+
+This pseudocode is intentionally more verbose than the previous two-line sketch:
+it makes explicit that the checked private frontier theorem is *not* allowed to
+hide the integrand rewrite, translated-factor rewrite, shell-level reduction,
+or limit transport. Those rows must already exist as separate named lemmas or
+theorems before the final wrapper closes.
 
 The point of this pseudocode is not that the final theorem is one line. The
 point is that every real mathematical ingredient has already been named above.
@@ -1037,6 +1236,17 @@ positive-time core **forward**, not backwards through a misoriented rewrite:
 
 The exact slot-by-slot consumer contract is therefore:
 
+0. below the public adapter, the repaired base bridge is itself exclusive:
+   `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison`
+   may consume only the checked base anchors
+   `OSToWightmanBoundaryValuesBase.lean:2214 :: bvt_F_clusterCanonicalEventually_translate_of_singleSplitLargeSpatial`,
+   `:2352 :: bvt_F_clusterCanonicalEventually_translate_of_singleSplitSchwingerLargeSpatial`,
+   and `:2514 :: bvt_F_clusterCanonicalEventually_translate_of_singleSplitFactorComparison`,
+   together with `cluster_left_factor_transport` and
+   `cluster_right_factor_transport`; then
+   `bvt_cluster_positiveTime_singleSplit_core` is the sole theorem allowed to
+   leave `OSToWightmanBoundaryValuesBase.lean` and enter the public adapter
+   ladder;
 1. `singleSplit_core_rewrites_to_canonical_shell` consumes only
    `bvt_cluster_positiveTime_singleSplit_core`,
    `canonical_cluster_integrand_eq_singleSplit_integrand`, and
@@ -1058,9 +1268,15 @@ The exact slot-by-slot consumer contract is therefore:
    `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`
    is forbidden here;
 3. `bvt_cluster_canonical_from_positiveTime_core` consumes only
-   `canonical_shell_limit_of_rewrite`;
+   `canonical_shell_limit_of_rewrite` and is the only public theorem allowed to
+   feed the checked frontier `OSToWightmanBoundaryValues.lean:398 :: private
+   bvt_F_clusterCanonicalEventually_translate`;
 4. private `bvt_F_clusterCanonicalEventually_translate` consumes only
-   `bvt_cluster_canonical_from_positiveTime_core`.
+   `bvt_cluster_canonical_from_positiveTime_core`, so the literal frontier
+   boundary is frozen as
+   `canonical_shell_limit_of_rewrite`
+   -> `bvt_cluster_canonical_from_positiveTime_core`
+   -> `:398 :: private bvt_F_clusterCanonicalEventually_translate`.
 
 The degree-zero normalization lemmas and theorem-3 one-factor transport package
 belong strictly below this public adapter ladder: they are consumed while
@@ -1099,7 +1315,8 @@ The proof order should be:
 
 1. integrand-level rewrite,
 2. translated-factor / parameter rewrite,
-3. apply the repaired base theorem `bvt_cluster_positiveTime_singleSplit_core`,
+3. apply the repaired base theorem `bvt_cluster_positiveTime_singleSplit_core`
+   — and only that base-file export, not the legacy `:2514` theorem directly,
 4. package those rewrites plus that application as
    `singleSplit_core_rewrites_to_canonical_shell`,
 5. use `canonical_shell_limit_of_rewrite` to transport the shell statement to
@@ -1110,7 +1327,12 @@ The proof order should be:
    scalar holomorphic / `t → 0+` transport surfaces imported from
    `OSToWightmanBoundaryValueLimits.lean`,
 6. finish by packaging the result as
-   `bvt_cluster_canonical_from_positiveTime_core`.
+   `bvt_cluster_canonical_from_positiveTime_core`,
+7. feed the final checked private wrapper only through that thin public adapter,
+   so the frontier remains visibly
+   `canonical_shell_limit_of_rewrite`
+   -> `bvt_cluster_canonical_from_positiveTime_core`
+   -> `:398 :: private bvt_F_clusterCanonicalEventually_translate`.
 
 That is why this adapter is a wrapper package and not a new analytic theorem.
 If the later Lean proof starts introducing contour or boundary-value arguments

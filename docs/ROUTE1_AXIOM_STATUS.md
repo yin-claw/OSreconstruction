@@ -121,7 +121,15 @@ that axiom is frozen much more sharply in `docs/theorem2_locality_blueprint.md`:
    `OSToWightmanBoundaryValueLimits.lean`, in the explicit order
    `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`
    -> `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`
-   -> `bvt_F_swapCanonical_pairing_of_adjacent_chain`;
+   -> `bvt_F_swapCanonical_pairing_of_adjacent_chain`; and the middle theorem's
+   local proof transcript is frozen more sharply than this older note used to
+   say: raw-boundary wrapper
+   `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` first, recovery on the
+   swapped (`g`) side second, recovery on the unswapped (`f`) side third,
+   transitivity/symmetry closure fourth. The final adjacent-chain reducer may
+   then consume only that adjacent canonical theorem plus explicit adjacent
+   factorization data for `swap i j`; it may not reopen raw-boundary or
+   recovery theorems.
 4. only after that the thin frontier consumer
    `OSToWightmanBoundaryValues.lean :: bvt_F_swapCanonical_pairing`.
 
@@ -183,9 +191,13 @@ than the absolute version:
    `Adjacency.lean` Route-B geometry
    -> `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`
    -> canonical-shift package in `OSToWightmanBoundaryValueLimits.lean`
-   -> `bvt_F_swapCanonical_pairing`; eliminating the Route-1 axiom does not
-   license collapsing those later theorem-2 layers into one opaque “BHW done”
-   step.
+   -> `bvt_F_swapCanonical_pairing`; and that middle package must keep its
+   internal ownership/transcript boundary explicit: `BHWExtension.lean` owns the
+   adjacent raw-boundary wrapper, `OSToWightmanBoundaryValueLimits.lean` owns
+   the canonical-direction recovery wrapper plus the adjacent-canonical and
+   adjacent-chain theorems, and `OSToWightmanBoundaryValues.lean` owns only the
+   final thin frontier consumer. Eliminating the Route-1 axiom does not license
+   collapsing those later theorem-2 layers into one opaque “BHW done” step.
 
 **Estimated difficulty**: Substantial but bounded. The abstract EotW and
 Lorentz-sweeping machinery already exists; the new work is defining the reduced

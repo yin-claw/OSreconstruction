@@ -854,15 +854,30 @@ implementation contract than older theorem-2 notes used.
 4. Only after that raw-boundary adjacent equality is in hand should later Lean
    work pass to the canonical positive-imaginary shift using the checked
    boundary-recovery theorem
-   `boundary_value_recovery_forwardTube_of_flatRegular_from_bv`, packaged on the
-   theorem-2 lane as:
-   - `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`, then
-   - `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`.
+   `boundary_value_recovery_forwardTube_of_flatRegular_from_bv`. In the live
+   implementation contract, that canonical-shift endgame is not just a pair of
+   names; it is a file-owned local transcript inside
+   `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean`:
+   - first prove the wrapper
+     `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`, whose only job is
+     to specialize the checked recovery theorem to the theorem-2 canonical
+     direction (`canonicalForwardConeDirection`) for the actual `bvt_F` /
+     `bvt_W` boundary-value package;
+   - then prove
+     `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`, and its
+     internal proof order is frozen as: raw-boundary wrapper
+     `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` first, canonical
+     recovery on the swapped (`g`) side second, canonical recovery on the
+     unswapped (`f`) side third, transitivity/symmetry closure fourth.
 5. The frontier theorem is still stated for a general transposition `swap i j`,
    while the raw-boundary and canonical-shift theorem-2 core is adjacent-only.
    So the final closure must visibly include the separate reducer
-   `bvt_F_swapCanonical_pairing_of_adjacent_chain`; the general-swap step must
-   not be hidden inside the last `sorry`.
+   `bvt_F_swapCanonical_pairing_of_adjacent_chain`, also owned by
+   `OSToWightmanBoundaryValueLimits.lean`; that reducer may consume only the
+   adjacent canonical theorem together with explicit adjacent-factorization data
+   for `swap i j`, and it must not reopen raw-boundary or boundary-recovery
+   theorems directly. The general-swap step must therefore remain visible as a
+   separate theorem slot rather than being hidden inside the last `sorry`.
 
 So the paper-level slogan
 

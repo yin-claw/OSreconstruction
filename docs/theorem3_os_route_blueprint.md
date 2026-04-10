@@ -864,23 +864,27 @@ Proof transcript:
 1. define the degreewise transformed image `bvtTransportImage` exactly as in OS
    I Lemma 4.1, i.e. literally as the range of
    `os1TransportComponent d n`;
-2. define the transformed image `bvtTransportImage` as the range of
-   `os1TransportComponent d n`;
-3. do **not** implement `os1TransportComponent` as the naive unrestricted
+2. do **not** implement `os1TransportComponent` as the naive unrestricted
    real-axis Laplace integral by itself; the paper route factors through the
    intermediate `(4.19)` space and Lemma 8.2, and that is exactly what keeps
    the codomain on the genuine half-space Schwartz theorem surface rather than
    drifting either to a tempered-only theorem surface or to the false
    support-restricted codomain `tsupport ⊆ PositiveEnergyRegion`;
-4. derive additive/scalar closure of the image from linearity of
+3. derive additive/scalar closure of the image from linearity of
    `os1TransportComponent`;
-5. package finite-support sequences in that image as
+4. package finite-support sequences in that image as
    `BvtTransportImageSequence d`;
-6. define `bvt_transport_to_osHilbert_onImage` by the Section 4.3 preimage map
-   followed by the existing OS Hilbert-space construction;
-7. prove preimage-independence / well-definedness using the zero-kernel part of
-   OS I Lemma 4.1;
-8. prove the multivariate iterated-slice descended-pairing theorem that
+5. prove preimage-independence / well-definedness first, via the explicit
+   theorem slot `bvt_transport_to_osHilbert_onImage_wellDefined`, by choosing
+   degreewise positive-time preimages, subtracting two chosen preimage
+   families, and consuming kernel-zero in the strict order
+   `os1TransportOneVar_eq_zero_iff -> os1TransportComponent_eq_zero_iff`;
+6. only after that theorem is closed, define
+   `bvt_transport_to_osHilbert_onImage` by the Section 4.3 preimage map
+   followed by the existing OS Hilbert-space construction, landing first in
+   the checked general target `positiveTimeBorchersVector` rather than the
+   downstream single-component wrapper `euclideanPositiveTimeSingleVector`;
+7. prove the multivariate iterated-slice descended-pairing theorem that
    identifies the abstract quotient-valued transform with the concrete
    iterated `partialFourierSpatial_fun` / Fourier-Laplace computation;
 9. prove the matching transformed-image kernel bridge

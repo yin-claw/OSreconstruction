@@ -1719,12 +1719,23 @@ The locality lane is not allowed to stop at a high-level sentence like
    by circularly instantiating a theorem surface that already asks for global
    local commutativity of `bvt_W`;
 4. only after that pass to the canonical positive-imaginary shift via
-   `boundary_value_recovery_forwardTube_of_flatRegular_from_bv`, packaged as
-   `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` and
-   `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`;
+   `boundary_value_recovery_forwardTube_of_flatRegular_from_bv`, but again with
+   the local theorem surfaces and proof order frozen explicitly inside
+   `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean`:
+   first the wrapper
+   `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`, then the adjacent
+   canonical theorem
+   `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` whose
+   internal proof transcript is fixed as raw-boundary wrapper first, recovery on
+   the swapped (`g`) side second, recovery on the unswapped (`f`) side third,
+   transitivity/symmetry closure fourth;
 5. and only then reduce the general `swap i j` frontier to an adjacent chain by
    the separate theorem package
-   `bvt_F_swapCanonical_pairing_of_adjacent_chain`.
+   `bvt_F_swapCanonical_pairing_of_adjacent_chain`, also in
+   `OSToWightmanBoundaryValueLimits.lean`, with a consumes-only contract: it may
+   use explicit adjacent-transposition factorization data plus repeated
+   `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`, but it may
+   not reopen the raw-boundary theorem or either recovery specialization.
 
 So OS II's prohibition on fake continuation shortcuts should be read locally as
 forbidding theorem-2 endgames of the form:
@@ -2354,3 +2365,8 @@ This separation matters because OS II's one-variable philosophy is compatible
 with theorem-2 only at the adjacent-step level first. Jumping directly from a
 local `k = 2` comparison theorem to the final general `swap i j` locality
 wrapper would again suppress a real proof package rather than documenting it.
+The file boundary is part of the contract: `BHWExtension.lean` owns the
+adjacent raw-boundary wrapper surface, `OSToWightmanBoundaryValueLimits.lean`
+owns the canonical-shift adapter and adjacent-chain reducer, and only
+`OSToWightmanBoundaryValues.lean` may expose the thin frontier consumer
+`bvt_F_swapCanonical_pairing`.

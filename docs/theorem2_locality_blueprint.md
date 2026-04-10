@@ -228,8 +228,8 @@ lane.
 | `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` | statement home `Wightman/Reconstruction/WickRotation/BHWExtension.lean`; lower helper lemmas in `ComplexLieGroups/Connectedness/BHWPermutation/AdjacencyDistributional.lean` | Route-B open-edge package (`choose_real_open_edge_for_adjacent_swap`, `swapped_support_lies_in_swapped_open_edge`, `swapped_open_edge_embeds_in_extendedTube`) plus `bvt_F_boundary_continuous_at_real_support` and checked `analytic_boundary_local_commutativity_of_boundary_continuous` | the actual adjacent-only non-circular raw-boundary pairing equality for theorem 2 | `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` |
 | `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` | `Wightman/Reconstruction/WickRotation/BHWExtension.lean` / theorem-2 boundary-pairing layer | `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` plus the checked ET-support wrapper format expected by the Wick-rotation boundary side | theorem-2-facing adjacent raw-boundary equality in the exported boundary-pairing format | `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` |
 | `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | `bvt_F_hasFlatRegularRepr` plus checked `boundary_value_recovery_forwardTube_of_flatRegular_from_bv`, instantiated with checked `bvt_W`, `bvt_W_continuous`, `bvt_boundary_values`, and `canonicalForwardConeDirection` | the theorem-2-specific canonical-direction pairing recovery equality | `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` |
-| `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` plus two uses of `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` | adjacent canonical pairing equality for one adjacent transposition | `bvt_F_swapCanonical_pairing_of_adjacent_chain` |
-| `bvt_F_swapCanonical_pairing_of_adjacent_chain` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | explicit adjacent-transposition factorization data for `swap i j` plus repeated `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` | general `swap i j` canonical pairing equality, still below the frontier file | `bvt_F_swapCanonical_pairing` |
+| `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | exact local transcript only: first `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`, then `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` on the swapped (`g`) side, then the same recovery theorem on the unswapped (`f`) side, then transitivity/symmetry closure | adjacent canonical pairing equality for one adjacent transposition | `bvt_F_swapCanonical_pairing_of_adjacent_chain` |
+| `bvt_F_swapCanonical_pairing_of_adjacent_chain` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | explicit adjacent-transposition factorization data for `swap i j` plus repeated `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`; it may not reopen `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`, `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`, or `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` directly | general `swap i j` canonical pairing equality, still below the frontier file | `bvt_F_swapCanonical_pairing` |
 | `bvt_F_swapCanonical_pairing` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | checked `bv_local_commutativity_transfer_of_swap_pairing` plus `bvt_F_swapCanonical_pairing_of_adjacent_chain` | the final theorem-2 frontier statement consumed by the transfer layer | downstream transfer / public locality consumers only |
 
 Two negative ownership rules are now explicit in the ledger too:
@@ -530,10 +530,18 @@ Route contract clarification:
    from the final general-swap frontier theorem. Later Lean work must not hide
    the reduction from arbitrary `swap i j` to an adjacent-transposition chain
    inside the closing frontier `sorry`.
-6. in particular, `bvt_F_swapCanonical_pairing_of_adjacent_chain` is part of
+6. more sharply, `bvt_F_swapCanonical_pairing_of_adjacent_chain` has its own
+   negative ownership contract: it may consume only explicit adjacent-step
+   factorization data together with repeated
+   `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`. It is not
+   allowed to reopen `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`,
+   `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`, or
+   `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` inside the chain
+   proof.
+7. in particular, `bvt_F_swapCanonical_pairing_of_adjacent_chain` is part of
    the checked-missing theorem-package inventory above, not an optional helper
    to be rediscovered ad hoc inside the frontier theorem.
-7. the auxiliary names `adjacentSwapFactorization` and
+8. the auxiliary names `adjacentSwapFactorization` and
    `AdjacentCanonicalSwapPairingStepHolds` that appear later in pseudocode are
    intentionally schematic only: they indicate that the general-swap proof must
    pass through explicit adjacent-step data, but they are not fixed theorem or
@@ -1388,6 +1396,39 @@ finite-composition theorem in the same subsection:
 3. output: the general `swap i j` canonical pairing equality consumed by the
    frontier theorem.
 
+The internal execution contract of that adjacent-chain reducer is now frozen
+more sharply too, because “factorization data + repeated adjacent theorem” was
+still too coarse for direct Lean execution. The reducer should be implemented as
+one short local package in this exact order:
+
+1. **factorization slot**: package the finite list / tuple / inductive chain of
+   adjacent transpositions realizing `swap i j`; this slot owns only the
+   combinatorial permutation data and the endpoint identity saying the composed
+   chain equals `Equiv.swap i j` on indices;
+2. **test-function transport slot**: prove once that the theorem-2 swap witness
+   for `g x = f (x ∘ swap i j)` induces the corresponding witness for each
+   adjacent step in that chain; this slot may consume the endpoint swap witness
+   and the factorization data, but it may not reopen any raw-boundary or
+   recovery theorem;
+3. **step application slot**: apply
+   `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` step-by-step
+   along the chain, producing one canonical pairing equality per adjacent move;
+4. **composition slot**: concatenate those step equalities in chain order and
+   then rewrite the final composed permutation back to the target
+   `swap i j` statement;
+5. **export slot**: emit only the finished general `swap i j` canonical pairing
+   equality for consumption by `bvt_F_swapCanonical_pairing`.
+
+Two negative rules are part of this contract:
+
+- the factorization/transport subproofs are not allowed to call
+  `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`,
+  `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`, or
+  `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` directly;
+- the step-application slot must consume the already-packaged adjacent canonical
+  theorem exactly as exported, rather than re-deriving a custom adjacent case
+  inside the general-swap proof.
+
 This sharper sibling-subsection contract eliminates a real implementation
 ambiguity that remained after the earlier file-locus fix: later Lean work is no
 longer left to guess whether `OSToWightmanBoundaryValueLimits.lean` should own a
@@ -1428,8 +1469,13 @@ The later Lean proof should run in this order.
    combines that canonical pairing formula with the adjacent raw-boundary
    equality from `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`.
 7. Prove the general-swap reduction theorem
-   `bvt_F_swapCanonical_pairing_of_adjacent_chain` that composes those adjacent
-   canonical equalities into the frontier theorem surface for `swap i j`.
+   `bvt_F_swapCanonical_pairing_of_adjacent_chain` in the exact local order:
+   (a) package adjacent-transposition factorization data for `swap i j`,
+   (b) derive the per-step test-function transport witness for that chain from
+   the endpoint swap witness, (c) apply
+   `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` step-by-step,
+   and only then (d) compose the resulting equalities and rewrite the composed
+   permutation back to `swap i j`.
 8. Feed that theorem into
    `bv_local_commutativity_transfer_of_swap_pairing`.
 
