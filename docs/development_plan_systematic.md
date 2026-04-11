@@ -267,9 +267,9 @@ Live status:
   | `cluster_right_factor_transport` | same file | the right-side analogue of `cluster_left_factor_transport`: reuse the same normalized degree-`0` witness package via the definitional alias `normalizedZeroDegreeLeftVector d := normalizedZeroDegreeRightVector d`, then consume the corresponding right-single Wightman/OS extraction rewrites together with `zero_degree_component_comparison_for_normalized_right_vector` to move the nontrivial shell to the second input without inventing a second normalization package | corrected theorem-3-to-theorem-4 right one-factor transport equality | `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison` |
   | `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison` | `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValuesBase.lean` | literal base-file replacement transcript only: start from the checked anchors `:2214 :: ...singleSplitLargeSpatial`, `:2352 :: ...singleSplitSchwingerLargeSpatial`, and `:2514 :: ...singleSplitFactorComparison`; replace only the false same-shell factor-comparison input by `cluster_left_factor_transport` and `cluster_right_factor_transport`; keep the quantified eventual / ordered-positive-time shell otherwise unchanged; export exactly that repaired bridge under the new theorem name, with no canonical-direction rewrite or `BoundaryValueLimits.lean` transport allowed in this file | repaired positive-time single-split bridge with the same conclusion shape as the legacy `...singleSplitFactorComparison` theorem but without false same-shell hypotheses | `bvt_cluster_positiveTime_singleSplit_core` only |
   | `bvt_cluster_positiveTime_singleSplit_core` | same file | a one-step packaging wrapper consuming only `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison`; it may restate the same ordered-positive-time / compact-support shell in the public form needed by the wrapper file, but it may not add canonical-direction rewrites, scalar-holomorphic transport, or any new cluster-factor algebra | the theorem-4 cluster statement on the ordered-positive-time / compact-support single-split shell, exported from the base file as the sole theorem allowed to enter the public adapter ladder | `canonical_cluster_integrand_eq_singleSplit_integrand` first; the later wrapper-file queue is then `canonical_translate_factor_eq_singleSplit_translate_factor -> singleSplit_core_rewrites_to_canonical_shell -> canonical_shell_limit_of_rewrite -> bvt_cluster_canonical_from_positiveTime_core` |
-  | `canonical_cluster_integrand_eq_singleSplit_integrand` | `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | only the checked canonical-direction surfaces imported through `OSToWightmanBoundaryValuesComparison.lean` (`canonicalForwardConeDirection`, `canonicalForwardConeDirection_mem`) plus the repaired base-core shell statement exported by `bvt_cluster_positiveTime_singleSplit_core` | the theorem-4-specific integrand rewrite from the public canonical shell to the repaired positive-time single-split shell | `singleSplit_core_rewrites_to_canonical_shell` |
-  | `canonical_translate_factor_eq_singleSplit_translate_factor` | same file | only the checked translated-shell data already in scope (`translateSchwartzNPoint` together with the same canonical-direction surface) plus the translated-shell statement shape appearing in private `bvt_F_clusterCanonicalEventually_translate` | the translated-right-factor rewrite needed to match the positive-time core surface exactly, before any limit transport is invoked | `singleSplit_core_rewrites_to_canonical_shell` |
-  | `singleSplit_core_rewrites_to_canonical_shell` | same file | `bvt_cluster_positiveTime_singleSplit_core`, `canonical_cluster_integrand_eq_singleSplit_integrand`, `canonical_translate_factor_eq_singleSplit_translate_factor` | rewrite/transport of the positive-time core theorem into the exact canonical-shell statement shape expected by private `bvt_F_clusterCanonicalEventually_translate`; this row must finish all shell-shape work before any limit theorem is touched | `canonical_shell_limit_of_rewrite` |
+  | `canonical_cluster_integrand_eq_singleSplit_integrand` | `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | only the checked canonical-direction surfaces imported through `OSToWightmanBoundaryValuesComparison.lean` (`canonicalForwardConeDirection`, `canonicalForwardConeDirection_mem`) plus the repaired base-core shell statement exported by `bvt_cluster_positiveTime_singleSplit_core`; anti-drift owner rule: even though the checked sibling files `OSToWightmanBoundaryValuesEuclidean.lean` and `OSToWightmanBoundaryValuesCompactApprox.lean` exist in the live tree, they are not alternate homes for this slot under the current theorem-4 contract | the theorem-4-specific integrand rewrite from the public canonical shell to the repaired positive-time single-split shell; this row is kernel-only and may not hide any `a : SpacetimeDim d` to `a_sp : Fin d → ℝ` conversion | `singleSplit_core_rewrites_to_canonical_shell` |
+  | `canonical_translate_factor_eq_singleSplit_translate_factor` | same file | only the checked translated-shell data already in scope (`translateSchwartzNPoint` together with the same canonical-direction surface) plus the translated-shell statement shape appearing in private `bvt_F_clusterCanonicalEventually_translate`; anti-drift owner rule: this slot, too, stays pinned to `OSToWightmanBoundaryValues.lean` rather than diffusing into the checked sibling files `OSToWightmanBoundaryValuesEuclidean.lean` / `OSToWightmanBoundaryValuesCompactApprox.lean` | the translated-right-factor rewrite needed to match the positive-time core surface exactly, before any limit transport is invoked; this is the unique row allowed to convert the frontier parameter `a : SpacetimeDim d` with side condition `a 0 = 0` into the base-shell spatial tail `a_sp := fun i => a (Fin.succ i)` used through `Fin.cons 0 a_sp` | `singleSplit_core_rewrites_to_canonical_shell` |
+  | `singleSplit_core_rewrites_to_canonical_shell` | same file | `bvt_cluster_positiveTime_singleSplit_core`, `canonical_cluster_integrand_eq_singleSplit_integrand`, `canonical_translate_factor_eq_singleSplit_translate_factor` | rewrite/transport of the positive-time core theorem into the exact canonical-shell statement shape expected by private `bvt_F_clusterCanonicalEventually_translate`; this row must finish all shell-shape work before any limit theorem is touched, but it is binder/shell-neutral bookkeeping only and may not perform any residual `SpacetimeDim`/spatial-tail conversion, `Fin.cons` cleanup, or migrate part of the queue into the Euclidean/CompactApprox sibling files | `canonical_shell_limit_of_rewrite` |
   | `canonical_shell_limit_of_rewrite` | same file | `singleSplit_core_rewrites_to_canonical_shell` plus only the checked scalar-holomorphic / limit-transport package imported from `OSToWightmanBoundaryValueLimits.lean`, source-checked at `:260 :: bvt_singleSplit_xiShiftHolomorphicValue`, `:273 :: differentiableOn_bvt_singleSplit_xiShiftHolomorphicValue`, `:290 :: bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq`, `:314 :: bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq_schwinger_timeShift`, `:350 :: tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger`, `:446 :: tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`, `:494 :: eqOn_rightHalfPlane_of_ofReal_eq`, and `:536 :: bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq`; its internal proof transcript is fixed as `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq` -> optional right-half-plane uniqueness only via `differentiableOn_bvt_singleSplit_xiShiftHolomorphicValue` + `bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq` -> final Wightman-target `t → 0+` transport only via `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`. The Schwinger-target theorems `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq_schwinger_timeShift` and `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger` are lower supplier legs only, `eqOn_rightHalfPlane_of_ofReal_eq` is uniqueness infrastructure only, and the deprecated bridge `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift` is forbidden on this lane. In particular this slot is a pure limit-transport theorem: it may not reopen the canonical integrand rewrite, the translated-factor rewrite, or the repaired base-bridge seam | transport from the rewritten shell statement to the eventual/limit form consumed immediately by `bvt_cluster_canonical_from_positiveTime_core` and then private `bvt_F_clusterCanonicalEventually_translate` | `bvt_cluster_canonical_from_positiveTime_core` |
   | `bvt_cluster_canonical_from_positiveTime_core` | same file | `canonical_shell_limit_of_rewrite` only | the full public theorem-4 canonical-shell adapter result, stated as the immediate input to the only checked downstream frontier shell in `OSToWightmanBoundaryValues.lean` (`:398 :: private bvt_F_clusterCanonicalEventually_translate`; downstream `:414 :: private bvt_F_clusterCanonicalEventually`, `:27 :: bv_cluster_transfer_of_canonical_eventually`, `:473 :: private bvt_W_cluster`) | `:398 :: private bvt_F_clusterCanonicalEventually_translate` only |
 
@@ -353,6 +353,31 @@ Live status:
     private frontier theorem. The adapter lane must begin from
     `bvt_cluster_positiveTime_singleSplit_core` and rebuild the canonical shell
     statement in the exact order recorded above.
+  - The shell conversion itself is now fixed against the checked theorem
+    statements, not just against theorem names. The base-file export still ends
+    on the positive-time single-split shell with analytic kernel
+    `bvt_F OS lgc (n + m) (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+    (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I))`
+    and test-function factor
+    `f.osConjTensorProduct (translateSchwartzNPoint (d := d) (Fin.cons 0 a) g)`.
+    The checked frontier theorem at
+    `OSToWightmanBoundaryValues.lean:398 :: private
+    bvt_F_clusterCanonicalEventually_translate` instead asks for the canonical
+    shell with analytic kernel
+    `bvt_F OS lgc (n + m) (fun k μ => ↑(x k μ) + t *
+    ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) * Complex.I)`
+    and test-function factor
+    `f.tensorProduct (translateSchwartzNPoint (d := d) a g)`.
+    So the wrapper-file contract is literal: only
+    `canonical_cluster_integrand_eq_singleSplit_integrand` may rewrite the
+    analytic kernel; only
+    `canonical_translate_factor_eq_singleSplit_translate_factor` may rewrite the
+    translated factor; `singleSplit_core_rewrites_to_canonical_shell` must then
+    keep the entire quantifier / eventual / norm shell fixed while composing
+    exactly those two rewrites and applying
+    `bvt_cluster_positiveTime_singleSplit_core`; and no residual shell
+    conversion may remain for `canonical_shell_limit_of_rewrite` or the private
+    frontier theorem.
 
   Implementation-size sanity check, so the task is not mentally compressed back
   into “one final cluster theorem”:
@@ -413,15 +438,34 @@ Live status:
   `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`, and then a
   separate adjacent-chain reduction theorem
   `bvt_F_swapCanonical_pairing_of_adjacent_chain` before the first downstream
-  consumer `OSToWightmanBoundaryValuesComparison.lean ::
+  consumer `OSToWightmanBoundaryValuesComparison.lean:1465 ::
   bv_local_commutativity_transfer_of_swap_pairing` and only then the final
-  frontier theorem. Inside that canonical-shift sibling subsection the local execution
-  order is now fixed too: the gluing theorem must call the adjacent
-  raw-boundary theorem first, then apply canonical recovery on the swapped
-  (`g`) side, then on the unswapped (`f`) side, and only then close by
-  transitivity/symmetry; the adjacent-chain reducer may consume only that
-  adjacent canonical theorem plus explicit factorization data for `swap i j`,
-  not the raw-boundary or boundary-recovery theorems directly.
+  frontier theorem `OSToWightmanBoundaryValues.lean:351 ::
+  bvt_F_swapCanonical_pairing`. The checked frontier file now fixes the final
+  theorem-2 handoff transcript even more sharply: line `:725` closes the public
+  locality theorem by exact application of
+  `bv_local_commutativity_transfer_of_swap_pairing (d := d) n`, and line `:729`
+  only packages that result through the private wrapper
+  `bvt_F_swapCanonical_pairing (d := d) OS lgc n`. So the comparison theorem is
+  the literal last substantive consumer after the canonical-swap package leaves
+  `BoundaryValueLimits.lean`, not merely a planning-level bridge. Inside that
+  canonical-shift sibling subsection the local execution order is now fixed
+  too: the gluing theorem must call the adjacent raw-boundary theorem first,
+  then apply canonical recovery on the swapped (`g`) side, then on the
+  unswapped (`f`) side, and only then close by transitivity/symmetry; the
+  adjacent-chain reducer may consume only that adjacent canonical theorem plus
+  explicit factorization data for `swap i j`, not the raw-boundary or
+  boundary-recovery theorems directly. More sharply, the reducer itself must be
+  documented and later implemented in one fixed local order:
+  factorization slot for the adjacent-transposition chain realizing `swap i j`
+  -> test-function transport slot carrying the endpoint swap witness along that
+  chain -> step-application slot using only
+  `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`
+  step-by-step -> composition slot concatenating those equalities in chain
+  order and rewriting the composed permutation back to `swap i j` -> export of
+  the finished general-swap canonical pairing theorem. This removes the last
+  implementation ambiguity about where the combinatorial permutation work ends
+  and where theorem-2 locality theorems are allowed to re-enter.
   `OSToWightmanBoundaryValueLimits.lean` is the checked file locus for
   the canonical-shift / adjacent-chain part of that planned theorem-2 closure
   package, but the current tree still uses that file only for theorem-3 /
@@ -430,7 +474,11 @@ Live status:
   More sharply, that sibling subsection starts only after
   `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` is already available;
   it does not own the raw-boundary closure theorem itself. Those layers must
-  not be hidden in one closing `sorry`. Conversely, schematic pseudocode names
+  not be hidden in one closing `sorry`, and the adjacent-chain reducer is not
+  allowed to reopen `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`,
+  `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`, or
+  `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` inside its
+  factorization or transport subproofs. Conversely, schematic pseudocode names
   for the internal
   adjacent-step data of that reducer (for example
   `adjacentSwapFactorization` / `AdjacentCanonicalSwapPairingStepHolds`) are

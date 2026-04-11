@@ -351,9 +351,19 @@ Immediate sharpened subgaps:
   -> `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`
   -> `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`
   -> `bvt_F_swapCanonical_pairing_of_adjacent_chain`
-  -> `bvt_F_swapCanonical_pairing`.
-  Any forward-Jost upgrade route is blocked-only fallback unless an exact
-  production theorem first closes it.
+  -> `OSToWightmanBoundaryValuesComparison.lean:1465 ::
+     bv_local_commutativity_transfer_of_swap_pairing`
+  -> `OSToWightmanBoundaryValues.lean:351 :: bvt_F_swapCanonical_pairing`.
+  This is not just a file-order summary: a source check of the live frontier
+  file shows the actual final handoff transcript goes through
+  `OSToWightmanBoundaryValues.lean:725` (`exact
+  bv_local_commutativity_transfer_of_swap_pairing (d := d) n`) before the
+  public wrapper line `:729` packages the result via
+  `bvt_F_swapCanonical_pairing (d := d) OS lgc n`. So the comparison theorem is
+  not merely conceptually first-consumer; it is the literal last substantive
+  theorem application before the frontier wrapper closes. Any forward-Jost
+  upgrade route is blocked-only fallback unless an exact production theorem
+  first closes it.
 - The theorem-2 route contract is also fixed slot-by-slot now:
   - `choose_real_open_edge_for_adjacent_swap` must consume checked
     `exists_real_open_nhds_adjSwap` plus theorem-2 support inclusion and export
@@ -383,7 +393,15 @@ Immediate sharpened subgaps:
     composition reducer above that theorem and may consume only the adjacent
     canonical theorem plus explicit adjacent-step factorization data, not the
     raw-boundary theorem or boundary-recovery specialization directly, before
-    the frontier theorem closes.
+    the frontier theorem closes. Its own Lean-order transcript is now fixed as
+    `factorization package -> per-step test-function/support transport witness
+    -> adjacent-canonical theorem application at each adjacent transposition ->
+    final composition/rewrite back to swap i j`; if a later proof needs more
+    local helper lemmas, those helpers must live as a contiguous file-local
+    package under this reducer inside the theorem-2 subsection of
+    `OSToWightmanBoundaryValueLimits.lean`, rather than reopening the lower
+    raw-boundary or recovery slots or leaking outward as new comparison/frontier
+    theorem surfaces.
 - Theorem-2 file-locus contract is now explicit at the package level too:
   Route-B ET-support geometry theorems belong under the checked
   BHW-permutation adjacent-swap support subfile layer, not in the umbrella
@@ -445,7 +463,14 @@ Immediate sharpened subgaps:
   `OSToWightmanBoundaryValueLimits.lean` scalar-holomorphic package, after the
   earlier two adapter rewrites have already rebuilt the exact canonical-shell
   statement shape. So `canonical_shell_limit_of_rewrite` is a pure
-  limit-transport slot, not a mixed rewrite/transport theorem. The
+  limit-transport slot, not a mixed rewrite/transport theorem. Live-tree
+  ownership caution: the sibling files
+  `OSToWightmanBoundaryValuesEuclidean.lean` and
+  `OSToWightmanBoundaryValuesCompactApprox.lean` are present in the checked
+  Wick-rotation directory, but under the current theorem-4 contract they are
+  not alternate homes for any of the five adapter slots. The adapter queue
+  stays pinned to `OSToWightmanBoundaryValues.lean` unless the theorem-4 docs
+  are rewritten in the same pass. The
   direct theorem-4 inputs are now source-checked at exact anchors:
   `differentiableOn_bvt_singleSplit_xiShiftHolomorphicValue` (line 273),
   `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq` (line 290),
@@ -458,7 +483,13 @@ Immediate sharpened subgaps:
   is not allowed to say only “rewrite the integrand and translated factor”. It
   must run as a literal five-step shell-local transcript on the exact frontier
   shell at `OSToWightmanBoundaryValues.lean:398`: first freeze the full
-  quantifier block `(n, m, f, g, ε, a, t)`; second rewrite only the analytic
+  quantifier block `(n, m, f, g, ε, a, t)`; binder ownership is fixed already
+  at that point, with `canonical_cluster_integrand_eq_singleSplit_integrand`
+  staying kernel-only while
+  `canonical_translate_factor_eq_singleSplit_translate_factor` alone must own
+  the conversion from `a : SpacetimeDim d` with `a 0 = 0` to the base-shell
+  spatial tail `a_sp : Fin d → ℝ` via `a_sp := fun i => a (Fin.succ i)` inside
+  `translateSchwartzNPoint`; second rewrite only the analytic
   kernel
   `bvt_F OS lgc (n + m) (fun k μ => ↑(x k μ) + t * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) * Complex.I)`
   via `canonical_cluster_integrand_eq_singleSplit_integrand`; third rewrite
@@ -643,10 +674,28 @@ Immediate sharpened subgaps:
     -> `singleSplit_core_rewrites_to_canonical_shell`
     -> `canonical_shell_limit_of_rewrite`
     -> `bvt_cluster_canonical_from_positiveTime_core`.
+    Physical insertion in `OSToWightmanBoundaryValues.lean` is frozen too:
+    source-check the live wrapper chain as
+    `:398 :: private bvt_F_clusterCanonicalEventually_translate`
+    -> `:414 :: private bvt_F_clusterCanonicalEventually`
+    -> `:27 :: bv_cluster_transfer_of_canonical_eventually`
+    -> `:473 :: private bvt_W_cluster`, then insert the five missing public
+    adapter theorems as one contiguous block immediately above `:398`. Do not
+    scatter them across the `:398`/`:414` seam, bury them as local helper lets
+    inside `:398`, or reopen the downstream wrappers as theorem-4 work sites.
     These three exact anchors are now the only admissible checked base inputs
     on the theorem-4 bridge lane, and
     `bvt_cluster_positiveTime_singleSplit_core` is the sole theorem allowed to
-    leave the base file and enter the public adapter ladder;
+    leave the base file and enter the public adapter ladder. The handoff is now
+    frozen at binder level too: the base theorem keeps only the spatial tail
+    parameter `a_sp : Fin d → ℝ` through `Fin.cons 0 a_sp`, whereas the public
+    frontier shell keeps `a : SpacetimeDim d` together with `a 0 = 0`. The
+    only row allowed to bridge those parameterizations is
+    `canonical_translate_factor_eq_singleSplit_translate_factor`, via the
+    explicit identification `a_sp := fun i => a (Fin.succ i)` inside
+    `translateSchwartzNPoint`; `canonical_cluster_integrand_eq_singleSplit_integrand`
+    is restricted to the analytic-kernel rewrite only and may not silently own
+    the translation-parameter conversion;
   - `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean`
     has the final private wrapper
     `bvt_F_clusterCanonicalEventually_translate`, its translated wrapper,
@@ -713,6 +762,21 @@ Immediate sharpened subgaps:
   - the intermediate adapter package is still missing under separate theorem
     names and should be introduced explicitly rather than hidden inside the
     final `sorry`.
+  - the shell-rewrite seam inside that missing public adapter is now frozen as
+    a strict consumer contract rather than a loose queue summary:
+    `canonical_cluster_integrand_eq_singleSplit_integrand` is kernel-only and
+    may consume only canonical-direction data plus the frontier shell;
+    `canonical_translate_factor_eq_singleSplit_translate_factor` is
+    translated-factor / binder-conversion only and may consume only
+    `translateSchwartzNPoint`, the same canonical-direction data, and the
+    explicit `a : SpacetimeDim d` -> `a_sp := fun i => a (Fin.succ i)`
+    conversion; neither rewrite row may import the base-core theorem or any
+    `BoundaryValueLimits.lean` theorem directly; `singleSplit_core_rewrites_to_canonical_shell`
+    is the first row allowed to see both rewrites and the only row allowed to
+    apply `bvt_cluster_positiveTime_singleSplit_core`; `canonical_shell_limit_of_rewrite`
+    is then the first row allowed to import the checked scalar/uniqueness/
+    `t -> 0+` package from `OSToWightmanBoundaryValueLimits.lean`; and
+    `bvt_cluster_canonical_from_positiveTime_core` is wrapper-only above that.
   - implementation order rule for this lane: do not start theorem 4 by trying
     to prove `cluster_left_factor_transport` or `cluster_right_factor_transport`
     directly. First land the degree-0 normalization witness and its structural

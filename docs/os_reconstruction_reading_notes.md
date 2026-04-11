@@ -156,14 +156,27 @@ First-step execution rule for theorem 4 in this note:
 
 The theorem-4 adapter proof-transcript order is also fixed here, not left to
 later rediscovery:
-1. `canonical_cluster_integrand_eq_singleSplit_integrand` discharges the
-   canonical-direction integrand rewrite;
-2. `canonical_translate_factor_eq_singleSplit_translate_factor` discharges the
-   translated-right-factor rewrite;
+1. `canonical_cluster_integrand_eq_singleSplit_integrand` discharges only the
+   canonical-direction analytic-kernel rewrite in the literal frontier shell at
+   `OSToWightmanBoundaryValues.lean:398`; it is kernel-only and may not own any
+   binder or translated-factor conversion.
+2. `canonical_translate_factor_eq_singleSplit_translate_factor` discharges only
+   the translated-right-factor rewrite in that same shell, and it is also the
+   unique theorem-4 slot allowed to convert the frontier binder
+   `a : SpacetimeDim d` with side condition `a 0 = 0` into the base-shell
+   spatial tail `a_sp : Fin d → ℝ` via `a_sp := fun i => a (Fin.succ i)`
+   inside `translateSchwartzNPoint`.
 3. only then may `singleSplit_core_rewrites_to_canonical_shell` apply
    `bvt_cluster_positiveTime_singleSplit_core`, so this slot remains a pure
-   shell-reduction theorem rather than a mixed rewrite/limit theorem;
-4. only after that shell-level reduction may
+   shell-reduction theorem rather than a mixed rewrite/limit theorem; it may
+   not perform any extra binder conversion, side-condition cleanup, or hidden
+   shell reshaping of its own.
+4. the five-slot public adapter ladder remains pinned to
+   `OSToWightmanBoundaryValues.lean`: although the checked tree also contains
+   `OSToWightmanBoundaryValuesEuclidean.lean` and
+   `OSToWightmanBoundaryValuesCompactApprox.lean`, under the current contract
+   those sibling files are not alternate homes for any theorem-4 adapter slot.
+5. only after that shell-level reduction may
    `canonical_shell_limit_of_rewrite` import the checked
    `OSToWightmanBoundaryValueLimits.lean` scalar package, and its local Lean
    transcript is frozen more sharply than “use the six checked theorems”:

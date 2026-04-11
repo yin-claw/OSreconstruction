@@ -323,6 +323,16 @@ should be read as:
      | `wickRotated_positiveTimeCore_dense` | `WickRotation/SchwingerAxioms.lean` | the chosen reverse positive-time core | density of that core in the ambient positive-time Euclidean test-function space | `wickRotatedBoundaryPairing_nonneg_by_density` |
      | `wickRotatedBoundaryPairing_nonneg_by_density` | `WickRotation/SchwingerAxioms.lean` | core nonnegativity + density | ambient positive-time reverse nonnegativity | `constructSchwinger_positive` only |
      | `constructSchwinger_positive` | reverse packaging layer targeting `Reconstruction/SchwingerOS.lean` | the ambient positive-time reverse nonnegativity theorem; no false OS=`Wightman` shortcut | the exact field witness `OsterwalderSchraderAxioms.E2_reflection_positive` | final field packaging only |
+
+     The final E2 packaging slot is not allowed to stay schematic here. Its
+     local proof transcript is:
+     1. instantiate the literal `SchwingerOS.lean:774` field goal on the given
+        `F : BorchersSequence d` with ordered positive-time support;
+     2. rewrite that field-side `OSInnerProduct d S F F` surface to the ambient
+        reverse positivity theorem delivered by
+        `wickRotatedBoundaryPairing_nonneg_by_density`;
+     3. discharge the nonnegativity inequality there;
+     4. close the field witness by definitional rewriting only.
 2. `E4_cluster`
    - checked supplier/wrapper owner:
      `OSReconstruction/Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean`
@@ -345,6 +355,18 @@ should be read as:
      | `constructSchwinger_cluster_translate_adapter` | reverse packaging layer targeting `Reconstruction/SchwingerOS.lean` | `g : ZeroDiagonalSchwartz d m` plus a spatial translation vector `a` | the exact quantified witness `g_a : ZeroDiagonalSchwartz d m` required by `SchwingerOS.lean :: OsterwalderSchraderAxioms.E4_cluster` | `constructSchwinger_cluster_tensor_adapter`, `constructSchwinger_cluster` |
      | `constructSchwinger_cluster_tensor_adapter` | same reverse packaging layer | `f : ZeroDiagonalSchwartz d n` plus the translated witness `g_a` | the exact witness `fg_a : ZeroDiagonalSchwartz d (n + m)` required by `SchwingerOS.lean :: OsterwalderSchraderAxioms.E4_cluster` | `constructSchwinger_cluster` |
      | `constructSchwinger_cluster` | same reverse packaging layer, final target `Reconstruction/SchwingerOS.lean` | `wickRotatedBoundaryPairing_cluster` plus the manufactured witnesses `g_a` and `fg_a`; no black-box tensor-restriction shortcut | the literal norm inequality demanded by `OsterwalderSchraderAxioms.E4_cluster` | final field packaging only |
+
+     The final E4 packaging seam is likewise frozen against the literal
+     `SchwingerOS.lean:792-807` quantifier order:
+     1. `constructSchwinger_cluster_translate_adapter` first builds `g_a` and
+        proves `g_a.1 x = g.1 (fun i => x i - a)`;
+     2. `constructSchwinger_cluster_tensor_adapter` next builds `fg_a` and
+        proves `fg_a.1 x = f.1 (splitFirst n m x) * g_a.1 (splitLast n m x)`;
+     3. only then may `constructSchwinger_cluster` rewrite the field goal to
+        the checked full-`SchwartzNPoint` estimate from
+        `wickRotatedBoundaryPairing_cluster`;
+     4. substitute the two witness equations;
+     5. discharge the final norm inequality.
 
 This note therefore owns only item (2), but it now records item (1) at enough
 resolution that later Lean work cannot misread this file as assigning the same

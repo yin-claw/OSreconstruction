@@ -75,13 +75,24 @@ As of the current local branch state:
 3. Package C / `hschw` has now been settled as false at the exact theorem
    surface; see `agents_chat.md` Entries `#283`, `#285`, `#286`;
 4. the checked theorem-3 limit support in
-   `OSToWightmanBoundaryValueLimits.lean` is now explicit and finite:
-   `bvt_singleSplit_xiShiftHolomorphicValue`,
-   `differentiableOn_bvt_singleSplit_xiShiftHolomorphicValue`,
-   `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq_schwinger_timeShift`,
-   `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger`,
-   and
-   `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`;
+   `OSToWightmanBoundaryValueLimits.lean` is now explicit, source-checked, and
+   stratified by role rather than treated as one flat bag of helpers:
+   - underlying scalar object only:
+     `:260 :: bvt_singleSplit_xiShiftHolomorphicValue`;
+   - holomorphic / positive-real support:
+     `:273 :: differentiableOn_bvt_singleSplit_xiShiftHolomorphicValue`,
+     `:290 :: bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq`,
+     `:314 :: bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq_schwinger_timeShift`,
+     `:350 :: tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger`;
+   - live uniqueness-only infrastructure:
+     `:494 :: eqOn_rightHalfPlane_of_ofReal_eq`,
+     `:536 :: bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq`;
+   - sole live theorem-3 / theorem-4 terminal Wightman-target limit theorem:
+     `:446 :: tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`.
+   By contrast, the older bridge
+   `:388 :: tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`
+   remains historical/quarantined only and has no direct consumer on the live
+   theorem-3 or theorem-4 route;
 5. the checked theorem-3 consumer shell in
    `OSToWightmanBoundaryValues.lean` is also explicit: the private frontier
    theorem is still `bvt_W_positive`, while the checked downstream wrappers
@@ -141,17 +152,38 @@ inventing new theorem shapes.
 
 In `OSToWightmanBoundaryValueLimits.lean`:
 
-- `bvt_singleSplit_xiShiftHolomorphicValue`
-- `differentiableOn_bvt_singleSplit_xiShiftHolomorphicValue`
-- `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq`
-- `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq_schwinger_timeShift`
-- `bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq`
-- `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger`
-- `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`
-- `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`
+- `:260 :: bvt_singleSplit_xiShiftHolomorphicValue`
+- `:273 :: differentiableOn_bvt_singleSplit_xiShiftHolomorphicValue`
+- `:290 :: bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq`
+- `:314 :: bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq_schwinger_timeShift`
+- `:350 :: tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger`
+- `:446 :: tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`
+- `:494 :: eqOn_rightHalfPlane_of_ofReal_eq`
+- `:536 :: bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq`
 
-These theorems already package the one-variable holomorphic object attached to a
-single/split pair and the relevant `z -> 0+` limit statements.
+These are not interchangeable. The contract-level order is now:
+
+1. instantiate the scalar object `bvt_singleSplit_xiShiftHolomorphicValue`;
+2. use `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq` for the positive-real
+   identification step;
+3. if uniqueness on `{re z > 0}` is needed, route only through
+   `differentiableOn_bvt_singleSplit_xiShiftHolomorphicValue`
+   together with
+   `bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq`, with
+   `eqOn_rightHalfPlane_of_ofReal_eq` quarantined one level lower as helper
+   infrastructure only;
+4. use only
+   `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`
+   as the terminal Wightman-target `t -> 0+` transport theorem.
+
+The Schwinger-target lemmas
+`bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq_schwinger_timeShift` and
+`tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger`
+remain lower supplier legs only. The deprecated bridge
+`:388 :: tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`
+is intentionally excluded from the active supplier inventory: it remains a
+logically valid implication from a false premise in the checked file, but it is
+not part of the endorsed theorem-3/theorem-4 execution route.
 
 In `OSToWightmanPositivity.lean`:
 
@@ -422,10 +454,16 @@ Existing production infrastructure already supporting this route:
    `OSToWightmanBoundaryValueLimits.lean`;
 4. `OSInnerProductTimeShiftHolomorphicValue_eq_selfAdjointSpectralLaplaceOffdiag`
    in `OSToWightmanSemigroup.lean`;
-5. `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger`
-   and
-   `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`
+5. `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger`,
+   `eqOn_rightHalfPlane_of_ofReal_eq`,
+   `bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq`, and
+   `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`
    in `OSToWightmanBoundaryValueLimits.lean`.
+
+The deprecated bridge
+`..._nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`
+should be read only as quarantined/dead-end infrastructure and not as part of
+this theorem inventory.
 
 Core Wightman-side boundary-value infrastructure already present:
 

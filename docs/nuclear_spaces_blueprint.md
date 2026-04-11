@@ -32,9 +32,28 @@ layers:
    in `Wightman/WightmanAxioms.lean`, which still package the not-yet-integrated
    support for downstream consumers.
 
+A direct checked-tree scan for this clone currently exposes the concrete file
+inventory
+`NuclearSpace.lean`, `SchwartzNuclear.lean`, `GaussianFieldBridge.lean`,
+`BochnerMinlos.lean`, `EuclideanMeasure.lean`, `ComplexSchwartz.lean`,
+`Helpers/PositiveDefiniteKernels.lean`, and `NuclearOperator.lean`, with the
+open local `sorry` count on this lane still equal to 7 (`NuclearSpace.lean`: 2,
+`BochnerMinlos.lean`: 5). Those 7 holes are already included in the live
+repo-wide headline `60`-sorry whole-project census; this blueprint tracks them
+separately only as an ownership/execution ledger.
+
 This blueprint must keep both layers explicit: later Lean work should neither
 hunt for a non-existent subtree nor pretend the downstream axiom surface has
 already been replaced by proved imported theorems.
+
+The execution contract for later Lean work is therefore:
+
+1. prove or import the missing local support theorems in the checked
+   `Wightman/NuclearSpaces/*` files;
+2. route those results through an explicit bridge/re-export layer into the
+   downstream `Wightman/WightmanAxioms.lean` theorem surfaces;
+3. only then let GNS or reconstruction consumer files use the repaired exported
+   surfaces.
 
 These are not independent. They form one package:
 

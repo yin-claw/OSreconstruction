@@ -1051,11 +1051,13 @@ reference interfaces for later package design.
 51. `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq`
 52. `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq_schwinger_timeShift`
 53. `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger`
-54. `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`
+54. `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift` **deprecated / quarantined** — keep listed only as a historical checked theorem surface, not as live route inventory for theorem 3 or theorem 4
 55. `schwinger_eq_bvt_W_conjTensorProduct_timeShift_of_boundary_ray_eq_xiShift`
 56. `eqOn_rightHalfPlane_of_ofReal_eq`
 57. `bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq`
 58. `bvt_wightmanInner_eq_osInner_of_componentwise_tendsto_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero`
+
+Active route note: the live theorem-3 / theorem-4 limit package is `51 -> 56 -> 57 -> 47/58` at the boundary-value transport level, with `52` and `53` retained only as lower Schwinger-side supplier legs. Item 54 is explicitly not an allowed consumer on the active reconstruction lanes.
 
 ### 13.5. K2VI1 concrete one-variable kernel route
 

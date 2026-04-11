@@ -129,9 +129,47 @@ that axiom is frozen much more sharply in `docs/theorem2_locality_blueprint.md`:
    transitivity/symmetry closure fourth. The final adjacent-chain reducer may
    then consume only that adjacent canonical theorem plus explicit adjacent
    factorization data for `swap i j`; it may not reopen raw-boundary or
-   recovery theorems.
-4. only after that the thin frontier consumer
-   `OSToWightmanBoundaryValues.lean :: bvt_F_swapCanonical_pairing`.
+   recovery theorems. More sharply, the reducer itself is no longer just a
+   slogan-level “iterate adjacent swaps” step: later Lean work should split it
+   locally into (a) adjacent-transposition factorization data for `swap i j`,
+   (b) transport of the swapped test-function witness along that chain,
+   (c) repeated application of
+   `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` one chain
+   step at a time, and (d) final composition/rewrite back to the endpoint
+   permutation `swap i j`.
+4. only after that the first downstream comparison consumer
+   `OSToWightmanBoundaryValuesComparison.lean:1465 ::
+   bv_local_commutativity_transfer_of_swap_pairing`;
+5. only then the thin frontier consumer
+   `OSToWightmanBoundaryValues.lean:351 :: bvt_F_swapCanonical_pairing`, whose
+   checked file-local endgame is now frozen too: `:725` applies the comparison
+   theorem and `:729` only packages through the private wrapper theorem.
+
+That downstream theorem-2 insertion/handoff seam is now fixed even more
+literally too, so Route-1 status does not lag the canonical locality docs.
+The new theorem-2 canonical-direction subsection in
+`OSToWightmanBoundaryValueLimits.lean` must be inserted as one contiguous block
+**after** the current theorem-3 closure block ending at
+`:763 :: bvt_wightmanInner_self_nonneg_of_componentwise_tendsto_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_hermitian`.
+Inside that new subsection, the general-swap reducer
+`bvt_F_swapCanonical_pairing_of_adjacent_chain` owns four file-local helper
+slots before export:
+
+| Local slot inside `bvt_F_swapCanonical_pairing_of_adjacent_chain` | Must export | May consume | Must not consume directly |
+| --- | --- | --- | --- |
+| factorization slot | a finite adjacent-transposition chain together with the endpoint rewrite back to `Equiv.swap i j` | only permutation/combinatorial data for `swap i j` | any theorem-2 locality theorem |
+| per-step transport slot | for each adjacent step, the transported test-function identity and support/separation witness needed to instantiate the adjacent canonical theorem | the endpoint witness `g x = f (x ∘ Equiv.swap i j)` plus the factorization slot | raw-boundary theorems, recovery theorems, comparison/frontier theorems |
+| step-application slot | adjacent-step canonical equalities only | the per-step transport slot plus `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` | `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`, `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`, `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`, comparison/frontier theorems |
+| composition / endpoint-rewrite slot | the final equality already rewritten back to the target `swap i j` statement | only the list of adjacent-step equalities plus the endpoint rewrite from the factorization slot | any reopening of the adjacent canonical theorem |
+| export slot | the theorem surface `bvt_F_swapCanonical_pairing_of_adjacent_chain` consumed first by `OSToWightmanBoundaryValuesComparison.lean:1465` | only the finished composition result | any additional permutation or boundary-value work |
+
+So the comparison/frontier exit seam is now explicit here too: once the route
+leaves `OSToWightmanBoundaryValueLimits.lean`, the next substantive theorem
+application is exactly
+`OSToWightmanBoundaryValuesComparison.lean:1465 ::
+ bv_local_commutativity_transfer_of_swap_pairing`, and after that the frontier
+file is allowed to do only the checked two-line endgame
+`OSToWightmanBoundaryValues.lean:725` then `:729`.
 
 Two non-circularity cautions belong here too, because this older status note is
 otherwise easy to misread as an instruction to jump straight to a checked public
@@ -148,7 +186,10 @@ BHW wrapper:
 So the operational role of the Route-1 reduced BHW axiom is narrower than a
 historical Jost/BHW slogan: it supplies the reduced continuation side, but it
 does not erase the later theorem-2 open-edge / raw-boundary / canonical-shift
-split that Lean still has to implement explicitly.
+split that Lean still has to implement explicitly, and it certainly does not
+license skipping the checked comparison-file handoff at
+`OSToWightmanBoundaryValuesComparison.lean:1465` or relocating the final
+wrapper-only endgame away from `OSToWightmanBoundaryValues.lean:725/:729`.
 
 Porting the permutation flow to reduced coordinates is geometrically cleaner
 than the absolute version:
@@ -191,12 +232,23 @@ than the absolute version:
    `Adjacency.lean` Route-B geometry
    -> `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility`
    -> canonical-shift package in `OSToWightmanBoundaryValueLimits.lean`
+   -> `OSToWightmanBoundaryValuesComparison.lean ::
+      bv_local_commutativity_transfer_of_swap_pairing`
    -> `bvt_F_swapCanonical_pairing`; and that middle package must keep its
    internal ownership/transcript boundary explicit: `BHWExtension.lean` owns the
    adjacent raw-boundary wrapper, `OSToWightmanBoundaryValueLimits.lean` owns
    the canonical-direction recovery wrapper plus the adjacent-canonical and
    adjacent-chain theorems, and `OSToWightmanBoundaryValues.lean` owns only the
-   final thin frontier consumer. Eliminating the Route-1 axiom does not license
+   final thin frontier consumer. More sharply, the theorem-2
+   `BoundaryValueLimits.lean` subsection must begin only after the current
+   theorem-3 block ends at `:763`, and the general-swap reducer there is not
+   just a slogan-level “iterate adjacent swaps” step: its local ownership is
+   split into factorization -> per-step transport -> adjacent-step application
+   -> composition/endpoint rewrite -> export, with the export theorem consumed
+   first by `OSToWightmanBoundaryValuesComparison.lean:1465` and only then by
+   the frontier endgame at `OSToWightmanBoundaryValues.lean:725/:729`. It is
+   not permitted to reopen the raw-boundary theorem or the canonical-recovery
+   specialization there. Eliminating the Route-1 axiom does not license
    collapsing those later theorem-2 layers into one opaque “BHW done” step.
 
 **Estimated difficulty**: Substantial but bounded. The abstract EotW and

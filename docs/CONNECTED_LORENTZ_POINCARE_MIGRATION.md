@@ -5,6 +5,13 @@
 This note explains the April 2026 cleanup that changed the default meaning of
 `LorentzGroup` and `PoincareGroup` in the Wightman/reconstruction layer.
 
+This is now a **checked-tree navigation note**, not just a naming memo. Its job
+is to pin which files own the connected/default covariance surfaces, which files
+still expose the explicit full-group variants, and which surviving
+`RestrictedLorentzGroup` names are merely local compatibility aliases inside the
+independent `ComplexLieGroups` subsystem rather than contradictory public API
+surfaces.
+
 The short version is:
 
 - `LorentzGroup d` now means the connected proper-orthochronous Lorentz group
@@ -86,6 +93,34 @@ as the default meaning of “Lorentz group” or “Poincare group.”
 
 ## Main code changes
 
+### Checked-tree scope of the migration
+
+The migration affects the **Wightman/reconstruction-facing API** first:
+
+- `OSReconstruction/Wightman/Groups/Lorentz.lean`
+- `OSReconstruction/Wightman/Groups/Poincare.lean`
+- `OSReconstruction/Bridge/AxiomBridge.lean`
+- the public Wightman / analytic-continuation / Wick-rotation consumer files
+  that now speak directly in terms of `LorentzGroup d` and `PoincareGroup d`
+  rather than old restricted-wrapper surfaces.
+
+It does **not** mean that every internal theorem in the repo was globally
+rewritten to avoid the word `Restricted`. In the current checked tree the
+independent `ComplexLieGroups` development still uses
+`RestrictedLorentzGroup` pervasively, but source-checking shows that this is a
+local compatibility alias in `OSReconstruction/ComplexLieGroups/LorentzLieGroup.lean`
+for the same connected proper-orthochronous object. So when later docs or Lean
+work encounter:
+
+- `ComplexLieGroups/LorentzLieGroup.lean :: RestrictedLorentzGroup`
+- `ComplexLieGroups/Connectedness/*`
+- `ComplexLieGroups/Connectedness/BHWPermutation/*`
+- `Wightman/Reconstruction/WickRotation/OSToWightmanEuclideanLorentz.lean`
+
+that should be read as **internal connected-group infrastructure**, not as a
+signal that the public Wightman-side migration was incomplete or that full
+`O(1,d)` covariance has silently re-entered the default route.
+
 ### Foundational group definitions
 
 The key files are:
@@ -123,10 +158,72 @@ The following public theorem surfaces were normalized from old
 - [BHWExtension.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/BHWExtension.lean)
 - [BHWReducedExtension.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean)
 - [ForwardTubeLorentz.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/ForwardTubeLorentz.lean)
+- [OSToWightmanEuclideanLorentz.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanEuclideanLorentz.lean)
 - [OSToWightmanTubeIdentity.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanTubeIdentity.lean)
 - [OSToWightmanBoundaryValuesBase.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValuesBase.lean)
 - [OSToWightmanBoundaryValues.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean)
 - [SchwingerAxioms.lean](../OSReconstruction/Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean)
+
+For later implementation work, the checked-tree ownership split is now:
+
+1. **group-definition owners**
+   - `Wightman/Groups/Lorentz.lean`
+   - `Wightman/Groups/Poincare.lean`
+2. **bridge owner**
+   - `Bridge/AxiomBridge.lean`
+3. **public consumers**
+   - `WightmanAxioms.lean`
+   - `Reconstruction/AnalyticContinuation.lean`
+   - `WickRotation/BHWExtension.lean`
+   - `WickRotation/BHWReducedExtension.lean`
+   - `WickRotation/ForwardTubeLorentz.lean`
+   - `WickRotation/OSToWightmanEuclideanLorentz.lean`
+   - `WickRotation/OSToWightmanTubeIdentity.lean`
+   - `WickRotation/OSToWightmanBoundaryValuesBase.lean`
+   - `WickRotation/OSToWightmanBoundaryValues.lean`
+   - `WickRotation/SchwingerAxioms.lean`
+
+To make this executable rather than just navigational, later Lean work should
+follow the theorem-surface queue below instead of jumping between files by
+guesswork.
+
+### Public covariance execution queue
+
+1. **Public group surface first**
+   - if the missing object is the connected default Lorentz/Poincaré group
+     itself, start in `Wightman/Groups/Lorentz.lean` or
+     `Wightman/Groups/Poincare.lean`;
+   - do **not** start from `ComplexLieGroups/*` unless the task is genuinely an
+     internal connectedness/path-component proof.
+2. **Only then cross the public bridge**
+   - if the consumer theorem needs the internal/external conversion, use the
+     checked bridge surfaces in `Bridge/AxiomBridge.lean`:
+     `lorentzGroupToWightman` and `wightmanToLorentzGroup`;
+   - the bridge is the only endorsed place where later Lean work should change
+     representation of the public connected covariance group.
+3. **Then enter the specific public consumer lane**
+   - `ForwardTubeLorentz.lean`: forward-tube Lorentz covariance / boundary-value
+     transport, e.g. `lorentz_covariant_distributional_bv`;
+   - `BHWExtension.lean`: raw BHW-extension covariance consumers below the OS→W
+     boundary-value wrappers;
+   - `OSToWightmanBoundaryValues.lean`: final public OS→W covariance wrappers,
+     with the checked local queue
+     `bvt_lorentz_covariant_restricted -> bvt_lorentz_covariant ->
+     constructWightmanFunctions`;
+   - `SchwingerAxioms.lean`: reverse E1 packaging, with the checked split queue
+     `F_ext_translation_invariant ->
+      wickRotatedBoundaryPairing_translation_invariant`
+     and
+     `F_ext_rotation_invariant ->
+      wickRotatedBoundaryPairing_rotation_invariant`,
+     after which any full `OsterwalderSchraderAxioms` wrapper may only package
+     those separate fields rather than reopening the Wightman-side covariance
+     migration.
+
+So later Lean work should not reopen the migration at random consumer sites.
+If a covariance-type mismatch appears, first decide whether it belongs in the
+public Wightman group-definition layer, in `AxiomBridge.lean`, or only inside a
+local `ComplexLieGroups` compatibility proof.
 
 This is the main user-facing effect of the migration.
 
@@ -163,6 +260,18 @@ So this remaining name is not a mathematical mismatch in the production
 Wightman/reconstruction API. It is just older local terminology inside that
 independent copy of the connected-complex-Lorentz infrastructure.
 
+The practical documentation rule is therefore stricter than before:
+
+- if a doc is describing the **public Wightman/reconstruction API**, it should
+  speak in terms of `LorentzGroup d` / `PoincareGroup d` and explicit
+  `FullLorentzGroup d` / `FullPoincareGroup d` when needed;
+- if a doc is describing the **internal ComplexLieGroups/BHW connectedness
+  machinery**, it may still mention `RestrictedLorentzGroup`, but it must say
+  clearly that this is the checked local alias for the connected component, not
+  a different covariance convention;
+- docs must not present those internal alias uses as evidence that the repo
+  still has two competing default Lorentz-group meanings.
+
 ## Collaborator guidance
 
 If you are touching Wightman/reconstruction code, use this rule:
@@ -175,6 +284,23 @@ If you are touching Wightman/reconstruction code, use this rule:
 If you see old local notes or comments talking about “restricted Lorentz” on the
 Wightman side, interpret them as historical language for what is now just the
 default `LorentzGroup`.
+
+For file navigation, use the following decision tree before editing theorem
+surfaces:
+
+1. **Need the actual group definition or the full-group variant?**
+   Start in `Wightman/Groups/Lorentz.lean` or `Wightman/Groups/Poincare.lean`.
+2. **Need the API bridge between Wightman-side and internal group packaging?**
+   Start in `Bridge/AxiomBridge.lean`.
+3. **Need a public covariance consumer on the OS/BHW/Wick-rotation route?**
+   Start in the consuming theorem file (`AnalyticContinuation.lean`,
+   `BHWExtension.lean`, `BHWReducedExtension.lean`,
+   `ForwardTubeLorentz.lean`, `OSToWightmanEuclideanLorentz.lean`,
+   `OSToWightmanTubeIdentity.lean`, `OSToWightmanBoundaryValuesBase.lean`,
+   `OSToWightmanBoundaryValues.lean`, or `SchwingerAxioms.lean`).
+4. **Need a connectedness/path-component proof inside ComplexLieGroups?**
+   It is normal to land in local `RestrictedLorentzGroup` code there; do not
+   "fix" those names unless the task is explicitly to clean that subsystem.
 
 ## Verification
 
