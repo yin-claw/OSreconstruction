@@ -42,14 +42,27 @@ clone and are the exact files later Lean work should open:
 - `OSReconstruction/Wightman/Reconstruction/WickRotation/BHWExtension.lean`
 - `OSReconstruction/Wightman/Reconstruction/ForwardTubeDistributions.lean`
 - `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean`
-- `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean`
 - `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValuesComparison.lean`
+- `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean`
+- `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValuesBase.lean`
+- `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValuesCompactApprox.lean`
 
 Path-discipline correction:
 shortened descriptions like “the BHW file”, “PermutationFlow”, or
 “BoundaryValueLimits” are acceptable only as shorthand for the exact paths
 above. They should not be treated as permission to relocate theorem-2 work into
 nearby umbrella files.
+
+Repo-tree correction for theorem-2 ownership:
+`OSToWightmanBoundaryValuesBase.lean` and
+`OSToWightmanBoundaryValuesCompactApprox.lean` are real checked support files in
+this tree, but on the live theorem-2 route they are legacy/support consumers,
+not the first public locality consumers. The active theorem-2 consumer frontier
+is now frozen as
+`OSToWightmanBoundaryValueLimits.lean -> OStoWightmanBoundaryValuesComparison.lean -> OStoWightmanBoundaryValues.lean`,
+with `OSToWightmanBoundaryValuesComparison.lean` explicitly the first
+downstream comparison/transfer consumer after the canonical-swap package is
+closed.
 
 ## 2. Checked-present theorem surfaces vs planned theorem slots
 
@@ -116,9 +129,16 @@ execution order.
      `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`
      -> `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`
      -> `bvt_F_swapCanonical_pairing_of_adjacent_chain`.
-6. `OSToWightmanBoundaryValues.lean`
-   - owns only the final frontier consumer
-     `bvt_F_swapCanonical_pairing`.
+6. `OSToWightmanBoundaryValuesComparison.lean`
+   - is the first downstream comparison/transfer consumer after the
+     canonical-swap package exists,
+   - with the checked consumer surface
+     `bv_local_commutativity_transfer_of_swap_pairing`.
+7. `OSToWightmanBoundaryValues.lean`
+   - owns only the thin frontier theorem-2 consumer
+     `bvt_F_swapCanonical_pairing`,
+   - and must not be misread as the first public consumer boundary once the
+     canonical-swap package leaves `OSToWightmanBoundaryValueLimits.lean`.
 
 ### 3.2 Proof-transcript order that later Lean work should follow
 
@@ -143,12 +163,14 @@ The theorem-2/BHW transcript is now explicitly:
    `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`
    -> `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`
    -> `bvt_F_swapCanonical_pairing_of_adjacent_chain`;
-7. only after those support theorems exist should
-   `OSToWightmanBoundaryValues.lean :: bvt_F_swapCanonical_pairing` become a
-   thin final consumer;
-8. then `OSToWightmanBoundaryValuesComparison.lean ::
-   bv_local_commutativity_transfer_of_swap_pairing` transfers that result to
-   the public locality axiom.
+7. the first downstream consumer boundary after that package is
+   `OSToWightmanBoundaryValuesComparison.lean ::
+   bv_local_commutativity_transfer_of_swap_pairing`; this file must remain the
+   comparison/transfer bridge rather than being skipped in summaries that jump
+   straight from `BoundaryValueLimits.lean` to `BoundaryValues.lean`;
+8. only after that comparison/transfer seam is fixed should
+   `OSToWightmanBoundaryValues.lean :: bvt_F_swapCanonical_pairing` be treated
+   as the thin frontier consumer shell.
 
 Implementation warning:
 later Lean work should **not** collapse steps 3-7 into one closing theorem, and
@@ -176,8 +198,9 @@ doc too, so this file no longer lags the core blueprint.
 | `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` | `Wightman/Reconstruction/WickRotation/BHWExtension.lean` / theorem-2 boundary-pairing layer | `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` plus the checked ET-support wrapper format expected by the Wick-rotation boundary side | theorem-2-facing adjacent raw-boundary equality in the exported boundary-pairing format | `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` |
 | `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | `bvt_F_hasFlatRegularRepr` plus checked `boundary_value_recovery_forwardTube_of_flatRegular_from_bv`, instantiated with checked `bvt_W`, `bvt_W_continuous`, `bvt_boundary_values`, and `canonicalForwardConeDirection` | the theorem-2-specific canonical-direction pairing recovery equality | `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` |
 | `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | exact local proof transcript only: first `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`, then `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery` on the swapped (`g`) side, then the same recovery theorem on the unswapped (`f`) side, then transitivity/symmetry closure | adjacent canonical pairing equality for one adjacent transposition | `bvt_F_swapCanonical_pairing_of_adjacent_chain` |
-| `bvt_F_swapCanonical_pairing_of_adjacent_chain` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | explicit adjacent-transposition factorization data for `swap i j` plus repeated `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`; it may not reopen raw-boundary or recovery theorems directly | general `swap i j` canonical pairing equality, still below the frontier file | `bvt_F_swapCanonical_pairing` |
-| `bvt_F_swapCanonical_pairing` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | checked `bv_local_commutativity_transfer_of_swap_pairing` plus `bvt_F_swapCanonical_pairing_of_adjacent_chain` | the final theorem-2 frontier statement consumed by the transfer layer | downstream transfer / public locality consumers only |
+| `bvt_F_swapCanonical_pairing_of_adjacent_chain` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean` | explicit adjacent-transposition factorization data for `swap i j` plus repeated `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`; it may not reopen raw-boundary or recovery theorems directly | general `swap i j` canonical pairing equality, still below the downstream comparison and frontier files | `bv_local_commutativity_transfer_of_swap_pairing`, `bvt_F_swapCanonical_pairing` |
+| `bv_local_commutativity_transfer_of_swap_pairing` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValuesComparison.lean` | checked comparison/transfer shell plus `bvt_F_swapCanonical_pairing_of_adjacent_chain`; it is the first downstream theorem-2 consumer after the canonical-swap package leaves `BoundaryValueLimits.lean` | theorem-2 locality transfer result in the comparison layer | downstream locality assembly, `bvt_F_swapCanonical_pairing` |
+| `bvt_F_swapCanonical_pairing` | `Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | the already-closed canonical swap package together with the finished comparison/transfer seam; it is not allowed to replace or absorb `OSToWightmanBoundaryValuesComparison.lean` | the thin theorem-2 frontier statement visible to later public locality consumers | downstream transfer / public locality consumers only |
 
 Two negative handoff rules are part of this ledger too:
 
@@ -234,9 +257,11 @@ No longer allowed to drift across docs:
 2. theorem 2 does **not** close by directly instantiating
    `W_analytic_swap_boundary_pairing_eq`;
 3. the BHW lane stops at the adjacent-only raw-boundary handoff and does not
-   own the later canonical-shift or frontier-consumer layers;
+   own the later canonical-shift, comparison-transfer, or frontier-consumer
+   layers;
 4. the final theorem-2 proof order is raw-boundary handoff first, canonical
-   recovery second, adjacent-chain reduction third, frontier consumer fourth;
+   recovery second, adjacent-chain reduction third, comparison-transfer fourth,
+   frontier consumer fifth;
 5. the local canonical-shift gluing transcript is frozen as
    `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support`
    -> swapped-side `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`

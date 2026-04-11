@@ -177,10 +177,16 @@ Checked-missing theorem-package ownership:
    (line 350) stay supplier-only lower legs on this lane, and the lower helper
    `eqOn_rightHalfPlane_of_ofReal_eq` (line 494) remains quarantined beneath
    `bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq` rather than a direct
-   theorem-4 input. The theorem-4 adapter must not pretend that
-   `BoundaryValueLimits.lean` already contains any theorem-4-specific cluster
-   wrapper under separate names, and it must not use the deprecated
-   bridge `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`.
+   theorem-4 input. Source-check the live boundary here as
+   `OSToWightmanBoundaryValueLimits.lean:388/:446/:494/:536`: the theorem-4
+   adapter must not pretend that `BoundaryValueLimits.lean` already contains
+   any theorem-4-specific cluster wrapper under separate names, it must treat
+   the deprecated bridge
+   `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`
+   at `:388` as historical checked surface only with no direct theorem-4
+   consumer, and it may terminate the lane only with
+   `:446 :: tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`
+   after any optional uniqueness detour through `:494 -> :536`.
 4. `SchwingerOS.lean` remains only the source of the already-checked OS-side
    positive-time/Hilbert-space algebra. It is not the place to hide theorem-4
    wrapper glue.
@@ -476,6 +482,23 @@ The intended paper-faithful route is:
 
 The exact additional theorem-slot inventory is therefore:
 
+Source-check refinement against the current repo tree:
+- the Wightman-side checked supplier is
+  `OSReconstruction/Wightman/Reconstruction/Core.lean:393 ::
+  WightmanInnerProduct_right_single`;
+- the OS-side checked supplier is
+  `OSReconstruction/Wightman/Reconstruction/SchwingerOS.lean:466 ::
+  OSInnerProduct_right_single`.
+
+So the first theorem-4 execution move is not "prove a right-single identity".
+It is package those two already-landed right-single theorems against the new
+literal degree-`0` witness package. In particular, later Lean work should open
+those exact files first when proving
+`zeroDegree_right_single_wightman_extracts_factor` and
+`zeroDegree_right_single_os_extracts_factor`, and should treat any attempt to
+rederive fresh right-single formulas inside `OSToWightmanPositivity.lean` as
+route drift.
+
 ```lean
 def normalizedZeroDegreeRightVector (d : ℕ) : PositiveTimeBorchersSequence d := by
   exact
@@ -520,11 +543,19 @@ lemma zeroDegree_right_single_wightman_extracts_factor
       (normalizedZeroDegreeRightVector d : BorchersSequence d)
       =
       bvt_W OS lgc n f := by
-  -- proof transcript is frozen:
-  --   `WightmanInnerProduct_right_single`
-  --   -> `normalizedZeroDegreeRightVector_funcs_zero`
-  --   -> `normalizedZeroDegreeRightVector_funcs_pos`
-  --   -> `conjTensorProduct_degreeZeroUnit_eq`
+  -- proof transcript is frozen and source-anchored:
+  --   instantiate checked
+  --   `OSReconstruction/Wightman/Reconstruction/Core.lean:393
+  --    :: WightmanInnerProduct_right_single`
+  --   -> rewrite the right witness by
+  --      `normalizedZeroDegreeRightVector_funcs_zero`
+  --   -> discharge every positive-degree shell by
+  --      `normalizedZeroDegreeRightVector_funcs_pos`
+  --   -> rewrite the surviving degree-`0` classical tensor by
+  --      `conjTensorProduct_degreeZeroUnit_eq`
+  --   -> remove the remaining cast / zero-diagonal wrapper by
+  --      `ZeroDiagonalSchwartz_ofClassical_degreeZeroUnit_eq`
+  --   -> definitional close to literal target `bvt_W OS lgc n f`
 
 lemma zeroDegree_right_single_os_extracts_factor
     (OS : OsterwalderSchraderAxioms d)
@@ -534,12 +565,20 @@ lemma zeroDegree_right_single_os_extracts_factor
       (normalizedZeroDegreeRightVector d : BorchersSequence d)
       =
       OS.S n (ZeroDiagonalSchwartz.ofClassical (f.osConj)) := by
-  -- proof transcript is frozen:
-  --   `OSInnerProduct_right_single`
-  --   -> `normalizedZeroDegreeRightVector_funcs_zero`
-  --   -> `normalizedZeroDegreeRightVector_funcs_pos`
-  --   -> `osConjTensorProduct_degreeZeroUnit_eq`
-  --   -> `ZeroDiagonalSchwartz_ofClassical_degreeZeroUnit_eq`
+  -- proof transcript is frozen and source-anchored:
+  --   instantiate checked
+  --   `OSReconstruction/Wightman/Reconstruction/SchwingerOS.lean:466
+  --    :: OSInnerProduct_right_single`
+  --   -> rewrite the right witness by
+  --      `normalizedZeroDegreeRightVector_funcs_zero`
+  --   -> discharge every positive-degree shell by
+  --      `normalizedZeroDegreeRightVector_funcs_pos`
+  --   -> rewrite the surviving degree-`0` OS tensor by
+  --      `osConjTensorProduct_degreeZeroUnit_eq`
+  --   -> remove the remaining cast / zero-diagonal wrapper by
+  --      `ZeroDiagonalSchwartz_ofClassical_degreeZeroUnit_eq`
+  --   -> definitional close to the literal target
+  --      `OS.S n (ZeroDiagonalSchwartz.ofClassical (f.osConj))`
 
 lemma zero_degree_component_comparison_for_normalized_right_vector
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
@@ -795,9 +834,13 @@ supplier map.
    remain available only as lower supplier legs when the rewritten
    positive-time core is first routed through the Schwinger time-shift shell;
    they are not permission to replace the final Wightman-target limit step with
-   a Schwinger-only endpoint. The deprecated theorem
+   a Schwinger-only endpoint. Source-check the checked alternatives in
+   `OSToWightmanBoundaryValueLimits.lean`: the deprecated theorem
    `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`
-   is explicitly out of contract for theorem 4.
+   at `:388` is explicitly out of contract for theorem 4 and has no direct
+   consumer on this lane, while the only admissible terminal limit theorem is
+   `:446 :: tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`,
+   optionally preceded by the uniqueness package `:494 -> :536`.
    The implementation rule here is strict: `canonical_shell_limit_of_rewrite`
    may use theorem-3 scalar-holomorphic / limit transport as generic imported
    machinery, but it may not claim that `BoundaryValueLimits.lean` already owns
@@ -838,13 +881,13 @@ any theorem-3 limit transport.
 | `conjTensorProduct_degreeZeroUnit_eq` | same file | `normalizedZeroDegreeRightVector_funcs_zero` | exact Wightman-side degree-`0` normalization rewrite | `zeroDegree_right_single_wightman_extracts_factor` |
 | `osConjTensorProduct_degreeZeroUnit_eq` | same file | `normalizedZeroDegreeRightVector_funcs_zero` | exact OS-side degree-`0` normalization rewrite | `zeroDegree_right_single_os_extracts_factor` |
 | `ZeroDiagonalSchwartz_ofClassical_degreeZeroUnit_eq` | same file | `normalizedZeroDegreeRightVector_funcs_zero` | exact zero-diagonal wrapper / cast cleanup for the degree-`0` unit shell | both right-single extraction lemmas and the degree-`0` comparison theorem |
-| `zeroDegree_right_single_wightman_extracts_factor` | same file | checked `WightmanInnerProduct_right_single` plus the three normalization lemmas above | extraction of the left Wightman factor against the normalized degree-`0` right vector | `cluster_left_factor_transport` |
-| `zeroDegree_right_single_os_extracts_factor` | same file | checked `OSInnerProduct_right_single` plus the same normalization lemmas | extraction of the left OS factor against the normalized degree-`0` right vector | `cluster_left_factor_transport` |
+| `zeroDegree_right_single_wightman_extracts_factor` | same file | checked `OSReconstruction/Wightman/Reconstruction/Core.lean:393 :: WightmanInnerProduct_right_single`, then in literal Lean order `normalizedZeroDegreeRightVector_funcs_zero` -> `normalizedZeroDegreeRightVector_funcs_pos` -> `conjTensorProduct_degreeZeroUnit_eq` -> `ZeroDiagonalSchwartz_ofClassical_degreeZeroUnit_eq`; there is no separate scalar-normalization theorem slot between these rewrites | extraction of the left Wightman factor against the normalized degree-`0` right vector, closed definitionally after the cast-removal step | `cluster_left_factor_transport` |
+| `zeroDegree_right_single_os_extracts_factor` | same file | checked `OSReconstruction/Wightman/Reconstruction/SchwingerOS.lean:466 :: OSInnerProduct_right_single`, then in literal Lean order `normalizedZeroDegreeRightVector_funcs_zero` -> `normalizedZeroDegreeRightVector_funcs_pos` -> `osConjTensorProduct_degreeZeroUnit_eq` -> `ZeroDiagonalSchwartz_ofClassical_degreeZeroUnit_eq`; again no extra scalar-normalization slot is allowed | extraction of the left OS factor against the normalized degree-`0` right vector, closed definitionally after the cast-removal step | `cluster_left_factor_transport` |
 | `zero_degree_component_comparison_for_normalized_right_vector` | same file | repaired theorem-3 Section-4.3 transport package plus the normalized degree-`0` structural lemmas | the unique surviving `m = 0` transport comparison | `cluster_left_factor_transport`, `cluster_right_factor_transport` |
 | `cluster_left_factor_transport` | same file | `zeroDegree_right_single_wightman_extracts_factor`, `zeroDegree_right_single_os_extracts_factor`, `zero_degree_component_comparison_for_normalized_right_vector` | corrected theorem-3-to-theorem-4 left one-factor transport identity | `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison` |
 | `cluster_right_factor_transport` | same file | the same normalized witness package reused via `normalizedZeroDegreeLeftVector d := normalizedZeroDegreeRightVector d`, together with the corresponding right-single extraction rewrites and `zero_degree_component_comparison_for_normalized_right_vector`; no second normalization package is allowed here | corrected theorem-3-to-theorem-4 right one-factor transport identity | `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison` |
 | `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison` | `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValuesBase.lean` | checked base anchors `:2214 :: ...singleSplitLargeSpatial`, `:2352 :: ...singleSplitSchwingerLargeSpatial`, `:2514 :: ...singleSplitFactorComparison`, plus `cluster_left_factor_transport` and `cluster_right_factor_transport` | repaired positive-time single-split bridge with corrected transport inputs | `bvt_cluster_positiveTime_singleSplit_core` |
-| `bvt_cluster_positiveTime_singleSplit_core` | same file | `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison` only | the sole theorem-4 cluster statement allowed to leave the base file | `singleSplit_core_rewrites_to_canonical_shell` only |
+| `bvt_cluster_positiveTime_singleSplit_core` | same file | `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison` only | the sole theorem-4 cluster statement allowed to leave the base file | `canonical_cluster_integrand_eq_singleSplit_integrand` first; then `canonical_translate_factor_eq_singleSplit_translate_factor -> singleSplit_core_rewrites_to_canonical_shell -> canonical_shell_limit_of_rewrite -> bvt_cluster_canonical_from_positiveTime_core` |
 | `canonical_cluster_integrand_eq_singleSplit_integrand` | `OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValues.lean` | only `canonicalForwardConeDirection`, `canonicalForwardConeDirection_mem`, the public canonical-shell statement shape, and the repaired base-core shell statement; it may **not** import `OSToWightmanBoundaryValueLimits.lean` | integrand-level rewrite from the public canonical shell to the repaired positive-time single-split shell | `singleSplit_core_rewrites_to_canonical_shell` |
 | `canonical_translate_factor_eq_singleSplit_translate_factor` | same file | only `translateSchwartzNPoint`, the same canonical-direction surfaces, and the translated factor appearing in the repaired base-core theorem; it may **not** hide any limit transport | translated-right-factor rewrite needed before the base-core theorem can be applied | `singleSplit_core_rewrites_to_canonical_shell` |
 | `singleSplit_core_rewrites_to_canonical_shell` | same file | `bvt_cluster_positiveTime_singleSplit_core`, `canonical_cluster_integrand_eq_singleSplit_integrand`, `canonical_translate_factor_eq_singleSplit_translate_factor` | the repaired positive-time core restated in the exact public canonical-shell form | `canonical_shell_limit_of_rewrite` |
@@ -1264,9 +1307,12 @@ The exact slot-by-slot consumer contract is therefore:
    The Schwinger-target theorems
    `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq_schwinger_timeShift` and
    `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger`
-   are lower supplier legs only, and the deprecated bridge
-   `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`
-   is forbidden here;
+   are lower supplier legs only. Source-check the consumer boundary in
+   `OSToWightmanBoundaryValueLimits.lean`: `:388`
+   (`tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`)
+   is historical/quarantined only with no direct theorem-4 consumer, whereas
+   `:446` is the sole final limit theorem this row may consume after any
+   optional uniqueness step through `:494 -> :536`;
 3. `bvt_cluster_canonical_from_positiveTime_core` consumes only
    `canonical_shell_limit_of_rewrite` and is the only public theorem allowed to
    feed the checked frontier `OSToWightmanBoundaryValues.lean:398 :: private
@@ -1342,6 +1388,12 @@ here, it has drifted below the current documentation standard.
 
 The theorem-4 doc should also make explicit the small identities that are easy
 to suppress in prose but will matter in the later Lean file.
+
+These identities are not optional cleanup after the extraction lemmas. They are
+part of the pre-extraction package, because the checked suppliers at
+`Core.lean:393` and `SchwingerOS.lean:466` only become literal one-factor
+statements after the degree-`0` tensor-product and zero-diagonal wrappers are
+normalized away in the exact order already fixed above.
 
 File-ownership note: these normalization lemmas should live beside the
 one-factor transport package in `OSToWightmanPositivity.lean` unless that file

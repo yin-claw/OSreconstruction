@@ -1679,21 +1679,62 @@ lemma euclidean_cluster_from_section4_transport
 So the reverse `R -> E` direction should later decompose into:
 1. BHW extension,
 2. Wick restriction,
-3. split `E1` translation package (`F_ext_translation_invariant` ->
-   `wickRotatedBoundaryPairing_translation_invariant`),
-4. split `E1` rotation package (`F_ext_rotation_invariant` ->
-   `wickRotatedBoundaryPairing_rotation_invariant`),
-5. Euclidean symmetry,
-6. positivity reuse,
-7. cluster reuse.
+3. the reverse `E1` four-slot queue
+   `constructSchwinger_translation_covariant_BHW ->`
+   `constructSchwinger_translation_invariant ->`
+   `constructSchwinger_rotation_covariant_BHW ->`
+   `constructSchwinger_rotation_invariant`,
+4. Euclidean symmetry,
+5. positivity reuse,
+6. cluster reuse.
 
 The implementation warning is now explicit here too: later Lean work must not
-collapse steps 3-4 back into a bundled `EuclideanInvariance` theorem. The
-actual reverse field inventory in
+collapse the reverse `E1` lane back into a bundled `EuclideanInvariance`
+theorem. The actual reverse field inventory in
 `OSReconstruction/Wightman/Reconstruction/SchwingerOS.lean` is split as
 `E1_translation_invariant` and `E1_rotation_invariant`, and the checked
 supplier/consumer seams in
 `.../WickRotation/SchwingerAxioms.lean` are likewise already split.
+
+More sharply, the reverse `E1` queue must now stay implementation-facing rather
+than slogan-level:
+
+| slot | owner | consumes | exports | next consumer |
+| --- | --- | --- | --- | --- |
+| `constructSchwinger_translation_covariant_BHW` | `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean` | checked `W_analytic_BHW`, checked `F_ext_translation_invariant`, and only public group/representation rewrites routed through `Wightman/Groups/{Lorentz,Poincare}.lean -> Bridge/AxiomBridge.lean` when needed | BHW-side translation covariance on the common holomorphic object | `constructSchwinger_translation_invariant` only |
+| `constructSchwinger_translation_invariant` | same file | only `constructSchwinger_translation_covariant_BHW`, checked `wickRotatedBoundaryPairing_translation_invariant`, and the definition of `constructSchwingerFunctions` | exact field witness `SchwingerOS.lean :: OsterwalderSchraderAxioms.E1_translation_invariant` | `constructSchwinger_rotation_covariant_BHW` only |
+| `constructSchwinger_rotation_covariant_BHW` | same file | checked `W_analytic_BHW`, checked `F_ext_rotation_invariant`, and the public covariance lane `Wightman/Groups/{Lorentz,Poincare}.lean -> Bridge/AxiomBridge.lean -> ForwardTubeLorentz.lean :: lorentz_covariant_distributional_bv -> OSToWightmanBoundaryValues.lean :: bvt_lorentz_covariant_restricted -> bvt_lorentz_covariant -> constructWightmanFunctions`; no internal `ComplexLieGroups/LorentzLieGroup.lean :: RestrictedLorentzGroup` route is allowed | BHW-side covariance statement already specialized to the Euclidean rotation subgroup on the Wick slice | `constructSchwinger_rotation_invariant` only |
+| `constructSchwinger_rotation_invariant` | same file | only `constructSchwinger_rotation_covariant_BHW`, checked `wickRotatedBoundaryPairing_rotation_invariant`, and the definition of `constructSchwingerFunctions` | exact field witness `SchwingerOS.lean :: OsterwalderSchraderAxioms.E1_rotation_invariant` | final stronger reverse wrapper only |
+
+The internal proof transcript is frozen too:
+1. `constructSchwinger_translation_covariant_BHW`: normalize the acting public
+   translation representation first, route any needed representation change only
+   through `Bridge/AxiomBridge.lean` second, apply `F_ext_translation_invariant`
+   third, and restate the result on the exact `W_analytic_BHW` surface consumed
+   by Wick restriction fourth.
+2. `constructSchwinger_translation_invariant`: unfold
+   `constructSchwingerFunctions` first, rewrite the target into the
+   Wick-rotated boundary-pairing form second, feed the previous BHW theorem into
+   `wickRotatedBoundaryPairing_translation_invariant` third, and close by
+   definitional rewriting fourth.
+3. `constructSchwinger_rotation_covariant_BHW`: choose the Euclidean rotation
+   input first, rewrite it into the public connected Lorentz/Poincaré language
+   second, transport that action through the checked public queue ending at
+   `constructWightmanFunctions` third, and only then apply
+   `F_ext_rotation_invariant` / repackage the result as a pure Wick-slice
+   rotation statement fourth.
+4. `constructSchwinger_rotation_invariant`: unfold
+   `constructSchwingerFunctions` first, rewrite to the Wick-rotated
+   boundary-pairing target second, feed the row-3 BHW rotation theorem into
+   `wickRotatedBoundaryPairing_rotation_invariant` third, and finish by
+   definitional closure fourth.
+
+Anti-shortcut rule for this audit note: only the two `*_covariant_BHW` slots may
+mention `Wightman/Groups/{Lorentz,Poincare}.lean`, `Bridge/AxiomBridge.lean`,
+or the checked `ForwardTubeLorentz.lean -> OSToWightmanBoundaryValues.lean`
+public covariance queue. The two `*_invariant` slots are pure Wick-restriction /
+field-packaging theorems and may not reopen bridge transport, public covariance
+lemmas, or internal `ComplexLieGroups/*` aliases.
 
 ### A.5. Technical one-variable Fourier-Laplace bridge
 

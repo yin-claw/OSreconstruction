@@ -46,6 +46,13 @@ Frozen implementation order:
 | `wickRotatedBoundaryPairing_nonneg_by_density` | same file | `wickRotatedBoundaryPairing_nonneg_on_core` plus `wickRotated_positiveTimeCore_dense` | the full reverse positivity inequality on the Wick-rotated pairing | `constructSchwinger_positive` |
 | `constructSchwinger_positive` | `Wightman/Reconstruction/SchwingerOS.lean` packaging layer | `wickRotatedBoundaryPairing_nonneg_by_density`; no false OS=`Wightman` shortcut | the exact field witness `OsterwalderSchraderAxioms.E2_reflection_positive` | final field packaging only |
 
+Local packaging transcript for `constructSchwinger_positive` is now frozen as:
+1. start with the literal field goal in `SchwingerOS.lean:774`, i.e. `∀ (F : BorchersSequence d), (∀ n, tsupport ... ⊆ OrderedPositiveTimeRegion d n) → (OSInnerProduct d S F F).re ≥ 0`;
+2. instantiate the ambient reverse positivity theorem on that same positive-time test family rather than inventing any new wrapper family;
+3. rewrite the field-side pairing surface from `OSInnerProduct d S F F` to the ambient Wick-rotated boundary-pairing inequality provided by `wickRotatedBoundaryPairing_nonneg_by_density`;
+4. discharge nonnegativity there;
+5. close `OsterwalderSchraderAxioms.E2_reflection_positive` by definitional rewriting only. Later Lean work may not reopen the false OS=`Wightman` comparison chain inside this slot.
+
 ### 1.2. Reverse late lane B — `E4_cluster`
 
 Checked status: `W_analytic_cluster_integral` is a live theorem-shaped
@@ -68,6 +75,13 @@ Frozen wrapper / packaging order:
 | `constructSchwinger_cluster_tensor_adapter` | same reverse packaging layer | `f : ZeroDiagonalSchwartz d n` plus the translated witness `g_a` | the exact witness `fg_a : ZeroDiagonalSchwartz d (n + m)` required by `SchwingerOS.lean :: OsterwalderSchraderAxioms.E4_cluster` | `constructSchwinger_cluster` |
 | `constructSchwinger_cluster` | same reverse packaging layer, final target `Wightman/Reconstruction/SchwingerOS.lean` | `wickRotatedBoundaryPairing_cluster` plus the manufactured witnesses `g_a` and `fg_a`; no black-box tensor-restriction shortcut | the literal norm inequality demanded by `OsterwalderSchraderAxioms.E4_cluster` | final field packaging only |
 
+Local packaging transcript for the E4 adapter/package seam is now frozen as:
+1. `constructSchwinger_cluster_translate_adapter`: define the translated witness `g_a : ZeroDiagonalSchwartz d m` and prove the exact pointwise shell `g_a.1 x = g.1 (fun i => x i - a)`;
+2. `constructSchwinger_cluster_tensor_adapter`: define the tensor witness `fg_a : ZeroDiagonalSchwartz d (n + m)` and prove the exact shell `fg_a.1 x = f.1 (splitFirst n m x) * g_a.1 (splitLast n m x)`;
+3. only after those two witness slots exist, rewrite the literal `SchwingerOS.lean:792-807` field goal into the checked full-`SchwartzNPoint` estimate supplied by `wickRotatedBoundaryPairing_cluster`;
+4. substitute the explicit witness equations for `g_a` and `fg_a`;
+5. discharge the final norm inequality. Later Lean work may not hide steps (1)-(4) inside a black-box “tensor restriction” theorem.
+
 So this section must not be read as if all reverse residuals are simply “old
 false-route leftovers.” It contains both quarantined positivity debt and live
 cluster-supplier debt, and the two late reverse lanes now have explicit
@@ -88,8 +102,8 @@ owner/consumes/exports/next-consumer contracts here as well.
 
 | File:line | Theorem | Why peripheral right now | Primary doc |
 |---|---|---|---|
-| `Wightman/Reconstruction/GNSHilbertSpace.lean:1258` | `gns_matrix_coefficient_holomorphic_axiom` | important, but not on theorem-2/3/4 route | `docs/gns_pipeline_blueprint.md` |
-| `Wightman/Reconstruction/Main.lean:82` | `wightman_uniqueness` | standalone theorem depending on cyclicity | `docs/wightman_uniqueness_blueprint.md` |
+| `Wightman/Reconstruction/GNSHilbertSpace.lean:1249` | `gns_matrix_coefficient_holomorphic_axiom` | important, but not on theorem-2/3/4 route; this is now the first still-open spectrum-condition owner slot because the `:1005 -> :1062` translation/strong-continuity lane is already checked closed | `docs/gns_pipeline_blueprint.md` |
+| `Wightman/Reconstruction/Main.lean:74` | `wightman_uniqueness` | pure downstream uniqueness consumer only: after `GNSHilbertSpace.lean :2114 :: gnsQFT` and cyclicity are honest, this lane must run the explicit helper queue `cyclicWordVector/cyclicWordSpan -> cyclicWordVector_inner_cyclicWordVector -> uniquenessPreMap -> uniquenessPreMap_inner_formula -> uniquenessPreMap_null_of_null -> uniquenessDenseMap -> uniquenessDenseMap_inner_preserving -> uniquenessDenseMap_norm_preserving -> uniquenessDenseMap_isometry -> cyclicWord_in_range_of_uniquenessDenseMap -> cyclicWordSpan_le_range_uniquenessDenseMap -> uniquenessDenseMap_denseRange -> uniquenessDenseMap_extends_to_unitary -> uniquenessUnitary_maps_vacuum -> uniquenessUnitary_intertwines_field_on_cyclic_core -> cyclicWordSpan_is_field_core -> uniquenessUnitary_intertwines_field -> wightman_uniqueness`, with no reopening of the spectrum bridge, nuclear bridge, or cyclicity packaging. Source-check the owner boundary literally: the current `Wightman/Reconstruction/` tree has `Main.lean` but no separate checked Main-side uniqueness helper module, and `Main.lean` itself contains only the final theorem surface `wightman_uniqueness`; every earlier name in that queue is therefore still a documentation-owned theorem slot rather than an existing Lean declaration. First-consumer rule now frozen here too: cyclic-word matrix-element transfer first enters at `uniquenessPreMap_inner_formula`, quotient descent ends at `uniquenessPreMap_null_of_null`, descended inner/norm preservation starts only after `uniquenessDenseMap`, dense-range work starts only at `cyclicWord_in_range_of_uniquenessDenseMap`, `uniquenessDenseMap_extends_to_unitary` is the only completion/surjectivity row and must export the actual unitary together with its extension identity on the dense cyclic subspace, `uniquenessUnitary_intertwines_field_on_cyclic_core` is core-only, field-core closure starts only at `cyclicWordSpan_is_field_core` with local order `cyclicWordVector_mem_domain -> span-level domain inclusion -> checked WightmanQFT field-core/graph-closure facts`, and `Main.lean:74` is assembly-only. | `docs/wightman_uniqueness_blueprint.md` |
 
 ## 3. Nuclear-space / Bochner-Minlos side lane
 
@@ -98,6 +112,14 @@ checked `OSReconstruction/Wightman/NuclearSpaces/` subtree. The peripheral lane
 is therefore not just blueprint-only planning; it has real checked file
 ownership, but it remains peripheral relative to the current theorem-2/3/4 OS
 frontier.
+
+Count-policy clarification (2026-04-10): the 7 checked local `sorry`s listed in
+this NuclearSpaces lane are already part of the live repo-wide headline `60`
+count. This section is a peripheral ownership/readout ledger, not an exception
+to the global census. If a later note wants a narrower NuclearSpaces-only or
+support-lane-only count, it must label that number explicitly as an auxiliary
+census rather than reviving the old misleading “outside the headline count”
+wording.
 
 ### 3.1. Checked local NuclearSpaces sorrys
 
@@ -119,6 +141,16 @@ Later Lean work must keep three layers separate:
 2. downstream reconstruction-facing surfaces currently exported as axioms in
    `Wightman/WightmanAxioms.lean`;
 3. the still-open integration/import wrapper route connecting (1) to (2).
+
+The implementation contract is therefore:
+
+1. local theorem proving for this lane happens first in the checked
+   `NuclearSpaces/*` files listed above;
+2. any replacement of the downstream `WightmanAxioms.lean` axiom surfaces must
+   occur through an explicit bridge/re-export layer rather than by letting GNS
+   or reconstruction files reach directly into the local support subtree;
+3. no doc may blur “local theorem owner”, “downstream exported consumer
+   surface”, and “bridge/import work” into one generic NuclearSpaces task.
 
 This lane is therefore peripheral by **execution order**, not by lack of live
 checked files.
@@ -163,7 +195,7 @@ the recommended order is:
 
 1. GNS holomorphic bridge,
 2. nuclear/kernal theorem package,
-3. standalone uniqueness,
+3. Main-side uniqueness helper package,
 4. SCV Bochner tube theorem,
 5. BHW permutation blockers,
 6. reverse-direction historical residuals.
@@ -177,13 +209,27 @@ The later implementation should not attack the peripheral backlog as isolated
 single sorries. The correct grouping is:
 
 1. **GNS holomorphic / cyclicity lane**
-   - `gns_matrix_coefficient_holomorphic_axiom`
+   - `GNSHilbertSpace.lean:1249 :: gns_matrix_coefficient_holomorphic_axiom`
    - the imported/consumer nuclear theorems from
      `docs/nuclear_spaces_blueprint.md`
-   - `gns_cyclicity`
-2. **Standalone GNS uniqueness lane**
-   - `wightman_uniqueness`
+   - `GNSHilbertSpace.lean:1643 :: gns_cyclicity`
+   - then assembly at `GNSHilbertSpace.lean:2114 :: gnsQFT`
+2. **Main-side uniqueness helper package**
+   - `Main.lean:74 :: wightman_uniqueness`
    - only after the GNS cyclic span package is honest
+   - execute it in the fixed dense-core helper order
+     `cyclicWordVector/cyclicWordSpan -> cyclicWordVector_inner_cyclicWordVector -> uniquenessPreMap -> uniquenessPreMap_inner_formula -> uniquenessPreMap_null_of_null -> uniquenessDenseMap -> uniquenessDenseMap_inner_preserving -> uniquenessDenseMap_norm_preserving -> uniquenessDenseMap_isometry -> cyclicWord_in_range_of_uniquenessDenseMap -> cyclicWordSpan_le_range_uniquenessDenseMap -> uniquenessDenseMap_denseRange -> uniquenessDenseMap_extends_to_unitary -> uniquenessUnitary_maps_vacuum -> uniquenessUnitary_intertwines_field_on_cyclic_core -> cyclicWordSpan_is_field_core -> uniquenessUnitary_intertwines_field -> wightman_uniqueness`
+   - source-check the owner split literally before implementing: in the current
+     tree the only checked Main-side uniqueness declaration is
+     `Main.lean:74 :: wightman_uniqueness`; the earlier queue items are still
+     documentation-owned theorem slots
+   - file-layout contract is now explicit too: either create that queue
+     directly in `Main.lean` above `wightman_uniqueness`, or first add one
+     explicitly named helper file under `Wightman/Reconstruction/` and move a
+     contiguous prefix of the queue there with docs updated to match; do **not**
+     act as if an unnamed helper module already exists
+   - and use it only as a consumer of `gnsQFT` / cyclicity facts, not as a
+     place to repackage the upstream GNS bridge theorems
 3. **Measure/nuclear lane**
    - `gauge_dominates_on_subspace_of_convex_nhd`
    - `product_seminorm_dominated`
@@ -217,8 +263,10 @@ The later backlog should be budgeted approximately as:
 
 1. GNS holomorphic bridge plus cyclicity consumers:
    `220-360` lines beyond imported nuclear/SCV support,
-2. standalone uniqueness:
-   `80-180` lines once cyclicity is honest,
+2. Main-side uniqueness helper package:
+   `80-180` lines for the final `Main.lean` consumer theorem only, plus a
+   helper package in `docs/wightman_uniqueness_blueprint.md` for the dense-core
+   map / quotient descent / dense-range / cyclic-core field-extension queue once cyclicity is honest,
 3. nuclear / Bochner-Minlos lane:
    `600-1000` lines across several files,
 4. SCV Bochner tube lane:

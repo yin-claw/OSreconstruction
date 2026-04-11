@@ -93,6 +93,18 @@ Use the repo docs in the following order.
      after those 19 upstream slots the final checked private wrapper
      `OSToWightmanBoundaryValues.lean ::
      bvt_F_clusterCanonicalEventually_translate`.
+     Read the base/public handoff literally against the checked tree:
+     `OSToWightmanBoundaryValuesBase.lean:2214`, `:2352`, and `:2514` are the
+     legacy checked base anchors; the still-missing repaired theorem
+     `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison`
+     is the last slot allowed to mention the one-factor transport equalities;
+     `bvt_cluster_positiveTime_singleSplit_core` is only the one-line base-file
+     wrapper above it; and the public wrapper file is not allowed to start
+     earlier than
+     `canonical_cluster_integrand_eq_singleSplit_integrand`. So the legacy
+     checked theorem
+     `bvt_F_clusterCanonicalEventually_translate_of_singleSplitFactorComparison`
+     is support infrastructure only, not an admissible theorem-4 endpoint.
 
 `README.md` is intentionally only a high-level overview. The detailed live
 frontier / blocker ledger should be read from the docs above, not reconstructed
@@ -281,12 +293,16 @@ Current blocker map:
   -> `bvt_F_canonical_boundary_pairing_eq_from_bv_recovery`
   -> `bvt_F_adjacentSwapCanonical_pairing_from_raw_boundary_locality`
   -> `bvt_F_swapCanonical_pairing_of_adjacent_chain`
+  -> `OSToWightmanBoundaryValuesComparison.lean ::
+     bv_local_commutativity_transfer_of_swap_pairing`
   -> `bvt_F_swapCanonical_pairing`.
   This adjacent-only/core versus general-swap/frontier split is now part of the
   doc contract because the checked raw-boundary theorem surface is adjacent
-  only, while the frontier theorem still uses general `swap i j`. A forward-
-  Jost upgrade remains blocked-only fallback unless a checked production theorem
-  first makes it available.
+  only, while the frontier theorem still uses general `swap i j`, and the
+  comparison file is now frozen as the first downstream consumer of the
+  finished canonical-swap package before the frontier wrapper closes. A
+  forward-Jost upgrade remains blocked-only fallback unless a checked
+  production theorem first makes it available.
 - A sharper route-contract ledger is now also fixed for those slots, so later
   Lean work does not have to reconstruct the dependency graph from scattered
   prose:
@@ -319,8 +335,11 @@ Current blocker map:
     `bvt_F_swapCanonical_pairing_of_adjacent_chain` is a separate finite-
     composition reducer: it may consume only that adjacent canonical theorem
     plus explicit adjacent-swap factorization data for `swap i j`, not the
-    raw-boundary or boundary-recovery theorems directly, before the frontier
-    theorem `bvt_F_swapCanonical_pairing` closes in
+    raw-boundary or boundary-recovery theorems directly. After that reducer
+    closes, the first downstream consumer is
+    `OSToWightmanBoundaryValuesComparison.lean ::
+    bv_local_commutativity_transfer_of_swap_pairing`; only then may the thin
+    frontier wrapper `bvt_F_swapCanonical_pairing` close in
     `OSToWightmanBoundaryValues.lean`.
 - More sharply, the raw-boundary -> canonical-shift bridge is no longer to be
   read as an unspecified rewrite miracle. The checked tree already contains the
@@ -548,6 +567,26 @@ Current blocker map:
     -> `zero_degree_component_comparison_for_normalized_right_vector`
     -> `cluster_left_factor_transport`
     -> `cluster_right_factor_transport`.
+    The left-factor lane is now fixed as literally as the right-factor lane:
+    (1) start only from the already-packaged extraction theorems
+    `zeroDegree_right_single_wightman_extracts_factor` and
+    `zeroDegree_right_single_os_extracts_factor`—which means the checked
+    suppliers `Core.lean:393 :: WightmanInnerProduct_right_single` and
+    `SchwingerOS.lean:466 :: OSInnerProduct_right_single`, together with the
+    normalization/cast-cleanup queue, have already been consumed upstream;
+    (2) rewrite the theorem-3 Section-4.3 transport identity only through the
+    unique surviving `m = 0` comparison slot
+    `zero_degree_component_comparison_for_normalized_right_vector`; (3)
+    substitute the two extracted left-factor formulas into that `m = 0` shell;
+    (4) close `cluster_left_factor_transport` without reopening any witness
+    construction, scalar-normalization, or right-single algebra. So
+    `cluster_left_factor_transport` is not allowed to import
+    `WightmanInnerProduct_right_single`, `OSInnerProduct_right_single`,
+    `conjTensorProduct_degreeZeroUnit_eq`,
+    `osConjTensorProduct_degreeZeroUnit_eq`, or
+    `ZeroDiagonalSchwartz_ofClassical_degreeZeroUnit_eq` directly; all of that
+    must already be packaged inside the two extraction slots before the left
+    transport theorem starts.
     The right-factor lane is now fixed more sharply too: it must **reuse** the
     same normalized degree-`0` witness package via the definitional alias
     `normalizedZeroDegreeLeftVector d := normalizedZeroDegreeRightVector d`,
@@ -581,8 +620,24 @@ Current blocker map:
     Their semantic job is fixed: tensoring on the right by the normalized
     degree-`0` unit must leave the left factor unchanged on the Wightman side,
     leave it unchanged on the OS-conjugated side, and introduce no stray
-    scalar/cast when wrapped by `ZeroDiagonalSchwartz.ofClassical`. So the
-    first extraction lane is now frozen even more finely:
+    scalar/cast when wrapped by `ZeroDiagonalSchwartz.ofClassical`. The two
+    extraction slots are therefore no longer just dependency buckets but
+    literal Lean-order scripts:
+    `zeroDegree_right_single_wightman_extracts_factor`
+    = instantiate checked `Core.lean:393 :: WightmanInnerProduct_right_single`
+    -> rewrite by `normalizedZeroDegreeRightVector_funcs_zero`
+    -> rewrite by `normalizedZeroDegreeRightVector_funcs_pos`
+    -> rewrite by `conjTensorProduct_degreeZeroUnit_eq`
+    -> rewrite by `ZeroDiagonalSchwartz_ofClassical_degreeZeroUnit_eq`
+    -> definitional close;
+    `zeroDegree_right_single_os_extracts_factor`
+    = instantiate checked `SchwingerOS.lean:466 :: OSInnerProduct_right_single`
+    -> rewrite by `normalizedZeroDegreeRightVector_funcs_zero`
+    -> rewrite by `normalizedZeroDegreeRightVector_funcs_pos`
+    -> rewrite by `osConjTensorProduct_degreeZeroUnit_eq`
+    -> rewrite by `ZeroDiagonalSchwartz_ofClassical_degreeZeroUnit_eq`
+    -> definitional close.
+    So the first extraction lane is now frozen even more finely:
     `normalizedZeroDegreeRightVector`
     -> structural degree-`0` lemmas
     -> hidden normalization identities above
@@ -616,20 +671,25 @@ Current blocker map:
     -> `bvt_F_clusterCanonicalEventually_translate`.
     The limit-transport slot is no longer allowed to hide its internal order:
     `canonical_shell_limit_of_rewrite` must run as
-    positive-real identification by
-    `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq`
-    -> optional right-half-plane uniqueness via
-    `differentiableOn_bvt_singleSplit_xiShiftHolomorphicValue` and
-    `bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq`
+    instantiate `:260 :: bvt_singleSplit_xiShiftHolomorphicValue`
+    -> positive-real identification by
+    `:290 :: bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq`
+    -> optional right-half-plane uniqueness only via
+    `:273 :: differentiableOn_bvt_singleSplit_xiShiftHolomorphicValue`
+    and `:536 :: bvt_singleSplit_xiShiftHolomorphicValue_eqOn_ofReal_eq`
+    (with `:494 :: eqOn_rightHalfPlane_of_ofReal_eq` helper-only beneath it)
     -> final Wightman-target limit transport by
-    `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`.
+    `:446 :: tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`.
     The Schwinger-target theorems
-    `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq_schwinger_timeShift`
+    `:314 :: bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq_schwinger_timeShift`
     and
-    `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger`
-    are lower supplier legs only, and the deprecated bridge
-    `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`
-    is forbidden in theorem 4.
+    `:350 :: tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_schwinger`
+    are lower supplier legs only. Source-check the live boundary in
+    `OSToWightmanBoundaryValueLimits.lean`: `:388`
+    (`tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_schwinger_eq_bvt_W_conjTensorProduct_timeShift`)
+    is historical/quarantined only with no direct theorem-3/theorem-4 consumer,
+    whereas `:446` is the sole allowed terminal limit theorem and `:494 -> :536`
+    are uniqueness-only infrastructure.
     Source-check note: the checked file currently exposes only the final
     theorem-4 consumer shell at exact anchors
     `:27 :: bv_cluster_transfer_of_canonical_eventually`,
@@ -637,7 +697,14 @@ Current blocker map:
     `:414 :: private bvt_F_clusterCanonicalEventually`, and
     `:473 :: private bvt_W_cluster`, so the named adapter package above the
     final wrapper is still planned support work, not already-landed code. The
-    public adapter queue is now frozen at transcript level too:
+    wrapper rows closest to that frontier are now frozen as one-line theorems
+    too: `bvt_cluster_positiveTime_singleSplit_core` must be "state the public
+    ordered-positive-time shell -> apply
+    bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison
+    -> close", and `bvt_cluster_canonical_from_positiveTime_core` must be
+    "state the exact eventual canonical-shell theorem consumed by `:398` ->
+    apply `canonical_shell_limit_of_rewrite` -> close". The public adapter
+    queue is now frozen at transcript level too:
     (1) `canonical_cluster_integrand_eq_singleSplit_integrand` rewrites only
     the analytic kernel in the exact shell already visible at
     `OSToWightmanBoundaryValues.lean:398`, i.e. the factor
@@ -676,6 +743,20 @@ Current blocker map:
   -> `cluster_left_factor_transport` / `cluster_right_factor_transport`
   -> `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison`
   -> `bvt_cluster_positiveTime_singleSplit_core`
+  where the repaired base-bridge theorem also has a frozen local transcript:
+  (1) begin from exactly the checked base anchors
+  `:2214 :: ...singleSplitLargeSpatial`,
+  `:2352 :: ...singleSplitSchwingerLargeSpatial`, and
+  `:2514 :: ...singleSplitFactorComparison`; (2) replace only the false
+  same-shell factor-comparison input by the new pair
+  `cluster_left_factor_transport` and `cluster_right_factor_transport`; (3)
+  keep the quantified eventual/positive-time shell statement otherwise
+  unchanged; (4) export the repaired bridge under the new name
+  `bvt_F_clusterCanonicalEventually_translate_of_singleSplitTransportComparison`;
+  (5) then package that theorem once, and only once, into the thin base-file
+  wrapper `bvt_cluster_positiveTime_singleSplit_core`. The base file is not
+  allowed to smuggle in any canonical-direction rewrites or
+  `BoundaryValueLimits.lean` transport above that wrapper.
   -> `canonical_cluster_integrand_eq_singleSplit_integrand`
   -> `canonical_translate_factor_eq_singleSplit_translate_factor`
   -> `singleSplit_core_rewrites_to_canonical_shell`
@@ -762,6 +843,34 @@ Current blocker map:
 
   Reverse late-field slot ledger:
 
+  - `E1` lane
+    - `constructSchwinger_translation_covariant_BHW`
+      - owner: `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean`
+      - consumes: checked `W_analytic_BHW`, checked `F_ext_translation_invariant`, and only public group/representation rewrites routed through `Wightman/Groups/{Lorentz,Poincare}.lean -> Bridge/AxiomBridge.lean`
+      - exports: the BHW-side translation-covariance statement on the common holomorphic object
+      - next consumer: `constructSchwinger_translation_invariant`
+      - proof order: normalize the public group action first, bridge-convert second, apply `F_ext_translation_invariant` third, then restate in the exact `W_analytic_BHW` argument order fourth
+    - `constructSchwinger_translation_invariant`
+      - owner: `.../SchwingerAxioms.lean`
+      - consumes: only `constructSchwinger_translation_covariant_BHW`, checked `wickRotatedBoundaryPairing_translation_invariant`, and the definition of `constructSchwingerFunctions`
+      - exports: the exact field witness for `SchwingerOS.lean :: OsterwalderSchraderAxioms.E1_translation_invariant`
+      - next consumer: final `OsterwalderSchraderAxioms` packaging only
+      - proof order: unfold `constructSchwingerFunctions` first, rewrite to the Wick-rotated boundary-pairing target second, feed the previous BHW-side theorem into `wickRotatedBoundaryPairing_translation_invariant` third, then close by definitional rewriting fourth
+    - `constructSchwinger_rotation_covariant_BHW`
+      - owner: `.../SchwingerAxioms.lean`
+      - consumes: checked `W_analytic_BHW`, checked `F_ext_rotation_invariant`, and the checked public covariance queue `Wightman/Groups/{Lorentz,Poincare}.lean -> Bridge/AxiomBridge.lean -> ForwardTubeLorentz.lean :: lorentz_covariant_distributional_bv -> OSToWightmanBoundaryValues.lean :: bvt_lorentz_covariant_restricted -> bvt_lorentz_covariant -> constructWightmanFunctions`
+      - exports: the BHW-side covariance statement specialized to the Euclidean rotation subgroup on the Wick slice
+      - next consumer: `constructSchwinger_rotation_invariant`
+      - proof order: rewrite the Euclidean rotation input into the public connected Lorentz/Poincaré language first, transport it through the checked public queue second, apply `F_ext_rotation_invariant` third, then package only the Wick-slice rotation statement fourth
+    - `constructSchwinger_rotation_invariant`
+      - owner: `.../SchwingerAxioms.lean`
+      - consumes: only `constructSchwinger_rotation_covariant_BHW`, checked `wickRotatedBoundaryPairing_rotation_invariant`, and the definition of `constructSchwingerFunctions`
+      - exports: the exact field witness for `SchwingerOS.lean :: OsterwalderSchraderAxioms.E1_rotation_invariant`
+      - next consumer: final `OsterwalderSchraderAxioms` packaging only
+      - proof order: unfold `constructSchwingerFunctions` first, rewrite to the Wick-rotated boundary-pairing target second, feed the previous BHW-side theorem into `wickRotatedBoundaryPairing_rotation_invariant` third, then close by definitional rewriting fourth
+    - anti-drift rule:
+      only the two `*_covariant_BHW` rows may mention public group owners or `Bridge/AxiomBridge.lean`; the two `*_invariant` rows are pure Wick-restriction/field-packaging steps and may not reopen covariance transport or use internal `ComplexLieGroups/*` aliases.
+
   - `E2_reflection_positive` lane
     - `wickRotated_positiveTimeCore`
       - owner: `Wightman/Reconstruction/WickRotation/SchwingerAxioms.lean`
@@ -797,12 +906,22 @@ Current blocker map:
         boundary pairing
       - next consumer: `constructSchwinger_positive`
     - `constructSchwinger_positive`
-      - owner: `Wightman/Reconstruction/SchwingerOS.lean`
-      - consumes: `wickRotatedBoundaryPairing_nonneg_by_density`
+      - owner: reverse packaging layer targeting
+        `Wightman/Reconstruction/SchwingerOS.lean:774`
+      - consumes: `wickRotatedBoundaryPairing_nonneg_by_density`; overview docs
+        must not pin a narrower file home unless that ownership split is fixed
+        consistently everywhere
       - exports: the actual field witness for
         `OsterwalderSchraderAxioms.E2_reflection_positive`
       - next consumer:
         `OsterwalderSchraderAxioms.E2_reflection_positive`
+      - local packaging transcript: instantiate the exact positive-time test
+        family required by `SchwingerOS.lean ::
+        OsterwalderSchraderAxioms.E2_reflection_positive`, rewrite its pairing
+        surface to the ambient reverse nonnegativity theorem
+        `wickRotatedBoundaryPairing_nonneg_by_density`, discharge the
+        positivity inequality there, and only then close the field witness by
+        definitional rewriting
     - quarantine note:
       `wickRotatedBoundaryPairing_reflection_positive` remains checked-present
       but quarantined because it still closes only through the false
@@ -826,38 +945,61 @@ Current blocker map:
       - next consumer:
         `constructSchwinger_cluster_translate_adapter`
     - `constructSchwinger_cluster_translate_adapter`
-      - owner: `Wightman/Reconstruction/SchwingerOS.lean`
-      - consumes: `wickRotatedBoundaryPairing_cluster`
+      - owner: reverse packaging layer targeting
+        `Wightman/Reconstruction/SchwingerOS.lean:802-804`
+      - consumes: only `g : ZeroDiagonalSchwartz d m` plus the spatial
+        translation vector `a`; it does **not** consume
+        `wickRotatedBoundaryPairing_cluster`
       - exports: the translated witness
         `g_a : ZeroDiagonalSchwartz d m`
       - next consumer:
-        `constructSchwinger_cluster_tensor_adapter`
+        `constructSchwinger_cluster_tensor_adapter`, `constructSchwinger_cluster`
+      - local adapter transcript: define the translated zero-diagonal witness,
+        prove the literal pointwise translate formula required by the field
+        quantifier, and package the same zero-diagonal side conditions without
+        touching the common-BHW cluster theorem yet
     - `constructSchwinger_cluster_tensor_adapter`
-      - owner: `.../SchwingerOS.lean`
-      - consumes:
-        `wickRotatedBoundaryPairing_cluster` and the translated witness `g_a`
+      - owner: same reverse packaging layer above
+        `Wightman/Reconstruction/SchwingerOS.lean:804-807`
+      - consumes: only `f : ZeroDiagonalSchwartz d n` and the translated
+        witness `g_a`; it still does **not** consume
+        `wickRotatedBoundaryPairing_cluster`
       - exports: the tensor witness
         `fg_a : ZeroDiagonalSchwartz d (n + m)` with the literal product formula
         required by the field surface
       - next consumer: `constructSchwinger_cluster`
+      - local adapter transcript: define the `(n+m)`-point tensor witness,
+        prove the exact pointwise shell
+        `fg_a.1 x = f.1 (splitFirst n m x) * g_a.1 (splitLast n m x)`, and
+        package its zero-diagonal hypotheses before the final norm inequality is
+        even stated
     - `constructSchwinger_cluster`
-      - owner: `.../SchwingerOS.lean`
+      - owner: reverse packaging layer targeting
+        `Wightman/Reconstruction/SchwingerOS.lean:792`
       - consumes:
         `wickRotatedBoundaryPairing_cluster`, `g_a`, and `fg_a`
       - exports: the final norm inequality witness for
         `OsterwalderSchraderAxioms.E4_cluster`
       - next consumer: `OsterwalderSchraderAxioms.E4_cluster`
+      - local packaging transcript: first rewrite the quantified field goal into
+        the exact Wick-rotated boundary-pairing estimate supplied by
+        `wickRotatedBoundaryPairing_cluster`, then substitute the explicit
+        translated witness `g_a`, then substitute the explicit tensor witness
+        `fg_a`, and only then discharge the final norm inequality
 
   The reverse proof docs now pin the stronger future-theorem packaging contract
   there too: any later full `OsterwalderSchraderAxioms` theorem must package
   the actual field inventory in the explicit order
-  `E0_tempered -> E0_linear -> E0_reality -> E3_symmetric -> E1_translation_invariant -> E1_rotation_invariant -> E2_reflection_positive -> E4_cluster`,
+  `E0_tempered -> E0_linear -> E0_reality -> E3_symmetric -> constructSchwinger_translation_covariant_BHW -> constructSchwinger_translation_invariant -> constructSchwinger_rotation_covariant_BHW -> constructSchwinger_rotation_invariant -> E2_reflection_positive -> E4_cluster`,
   with the already-checked packaging inputs named explicitly:
   `wickRotatedBoundaryPairing_reality` for `E0_reality`,
-  `wickRotatedBoundaryPairing_symmetric` for `E3_symmetric`, and structure
-  equality written against `OS.S`, not the derived accessor `OS.schwinger`.
-  The split `E1` work is likewise no longer allowed to hide behind a bundled
-  `EuclideanInvariance` slogan.
+  `wickRotatedBoundaryPairing_symmetric` for `E3_symmetric`, the split checked
+  E1 consumers `F_ext_translation_invariant -> wickRotatedBoundaryPairing_translation_invariant`
+  and `F_ext_rotation_invariant -> wickRotatedBoundaryPairing_rotation_invariant`,
+  and structure equality written against `OS.S`, not the derived accessor
+  `OS.schwinger`. The split `E1` work is likewise no longer allowed to hide
+  behind a bundled `EuclideanInvariance` slogan, and only the two
+  `*_covariant_BHW` rows above may touch the public covariance bridge.
 - `isPreconnected_baseFiber` remains in `WickRotation/BHWTranslation.lean` as
   an old-route residual theorem, but it is no longer the blocker used to obtain
   `bhw_translation_invariant` on the merged path.
@@ -892,24 +1034,24 @@ Current blocker map:
   `SchwingerAxioms.lean` still contains the remaining analytic Wick-rotation
   obligations after temperedness is in place.
 
-Snapshot (2026-04-07, tracked production tree):
+Snapshot (2026-04-10, whole checked project tree):
 
 | Module | Direct `sorry` lines |
 |--------|-----------------------|
-| `Wightman/` | 23 |
+| `Wightman/` | 20 |
 | `SCV/` | 2 |
 | `ComplexLieGroups/` | 2 |
 | `vNA/` | 36 |
-| **Total** | **63** |
+| **Total** | **60** |
 
 Count-policy clarification:
-- this `63` is the whole tracked production-tree direct-hole count used in the
-  higher-level repo snapshot;
-- the proof-doc headline frontier in `docs/sorry_triage.md` is intentionally the
-  narrower `60`-sorry theorem-2/3/4 ledger, because it excludes the checked
-  secondary `Wightman/NuclearSpaces/*` lane (7 local `sorry`s);
-- docs should say which policy they are using rather than silently switching
-  between `63` and `60`.
+- this `60` is now the live whole-project direct-hole count cross-checked by
+  the current `OSReconstruction/Wightman/TODO.md` census command;
+- older overview notes that spoke of a `63`-sorry tracked tree excluding the
+  checked `Wightman/NuclearSpaces/*` lane are stale and should not be treated
+  as current blocker authority;
+- if a doc wants to use a narrower auxiliary ledger than the whole-project `60`,
+  it must say so explicitly instead of silently switching counting policies.
 
 Tracked production tree also contains `6` explicit axioms:
 - `schwartz_nuclear_extension`
@@ -955,7 +1097,7 @@ flowchart TD
 
 | File | Direct `sorry`s | Notes |
 |------|------------------|-------|
-| `Wightman/Reconstruction/Main.lean` | 1 | `wightman_uniqueness` |
+| `Wightman/Reconstruction/Main.lean` | 1 | `wightman_uniqueness`; pure downstream consumer only, with the live owner boundary frozen as `GNSHilbertSpace.lean :1005 -> :1062 -> :1249 -> :1643 -> :2114`, then `Main.lean :63 -> :74`. Source-check against the repo tree: there is currently **no separate `Main/Uniqueness` support file**; `Main.lean` contains only the final theorem surface, while the implementation-facing helper decomposition is documented in `docs/wightman_uniqueness_blueprint.md`. The ownership contract is now explicit: among the names in that blueprint, the only checked surface that already exists in the repo is `Main.lean:74 :: wightman_uniqueness`; every earlier slot in the queue (`cyclicWordVector`, `cyclicWordSpan`, `cyclicWordVector_inner_cyclicWordVector`, `uniquenessPreMap`, `uniquenessPreMap_inner_formula`, `uniquenessPreMap_null_of_null`, `uniquenessDenseMap`, `uniquenessDenseMap_inner_preserving`, `uniquenessDenseMap_norm_preserving`, `uniquenessDenseMap_isometry`, `cyclicWord_in_range_of_uniquenessDenseMap`, `cyclicWordSpan_le_range_uniquenessDenseMap`, `uniquenessDenseMap_denseRange`, `uniquenessDenseMap_extends_to_unitary`, `uniquenessUnitary_maps_vacuum`, `uniquenessUnitary_intertwines_field_on_cyclic_core`, `cyclicWordSpan_is_field_core`, `uniquenessUnitary_intertwines_field`) is currently a documentation-owned theorem slot rather than an existing Lean declaration. The middle-lane contracts are now explicit enough for direct Lean execution rather than just queue navigation: `cyclicWordVector_inner_cyclicWordVector` is the only slot allowed to settle the vacuum matrix-element formula; `uniquenessPreMap_inner_formula` may consume only that cyclic-word formula plus the equality hypothesis `h`; `uniquenessPreMap_null_of_null` is the sole quotient/null descent seam; `uniquenessDenseMap_inner_preserving` and `uniquenessDenseMap_norm_preserving` may consume only the already-descended `uniquenessDenseMap`; `uniquenessDenseMap_isometry` packages metric data only and may not begin dense-range work; dense-range work may start only at `cyclicWord_in_range_of_uniquenessDenseMap -> cyclicWordSpan_le_range_uniquenessDenseMap`; `uniquenessDenseMap_extends_to_unitary` is the only row allowed to finish completion/surjectivity packaging and must export both the actual unitary and its extension identity on the dense cyclic subspace; `uniquenessUnitary_intertwines_field_on_cyclic_core` is core-only; `cyclicWordSpan_is_field_core` is the first field-domain closure row and must itself run in the fixed local order `cyclicWordVector_mem_domain -> span-level domain inclusion -> checked WightmanQFT field-core/graph-closure facts`; and `Main.lean:74` is assembly-only, consuming only `uniquenessUnitary_maps_vacuum` plus `uniquenessUnitary_intertwines_field`. The physical insertion contract is now frozen here too: there are only two admissible layouts against the checked tree — either create the helper queue explicitly inside `Main.lean` above line 74 in the documented order, or first create one explicitly named helper file under `Wightman/Reconstruction/` (for example `MainUniqueness.lean` / `Uniqueness.lean`), move a contiguous theorem block there, and update all ownership docs/imports before using it. What is forbidden is acting as if an unnamed helper module already exists, or hiding descent/dense-range/core-closure inside local lets under `wightman_uniqueness`. No uniqueness work may reopen the spectrum bridge, nuclear bridge, cyclicity packaging, quotient descent, dense-range construction, unitary-extension packaging, or field-core closure once those seams are passed. |
 | `Wightman/WightmanAxioms.lean` | 0 + 2 axioms | Schwartz kernel theorem + Banach-Steinhaus bridge are now explicit axioms |
 | `SCV/VladimirovTillmann.lean` | 0 + 2 axioms | Vladimirov-Tillmann tube-growth theorem + distributional cluster lifts to tube |
 | `Wightman/NuclearSpaces/*` | checked local support lane, but not yet fully integrated into downstream reconstruction consumers | the checked tree here contains a live `Wightman/NuclearSpaces/` subtree (`NuclearSpace.lean`, `SchwartzNuclear.lean`, `GaussianFieldBridge.lean`, `BochnerMinlos.lean`, `EuclideanMeasure.lean`, `ComplexSchwartz.lean`); docs must distinguish those checked support files from the still-exported downstream axioms in `Wightman/WightmanAxioms.lean` and from any remaining import/integration gaps |
@@ -1130,13 +1272,36 @@ Two navigation notes:
   helpers are split out into `BlockIntegral.lean`, `HeadBlockTranslationInvariant.lean`,
   `CenterSpatialTranslationInvariant.lean`, and `TwoPointDescent.lean` so the
   Wick-rotation files do not keep absorbing low-level coordinate bookkeeping.
-- `Wightman/Reconstruction/Main.lean` only wires the top-level theorems.
-- Checked-tree caution: older planning docs still mention historical
-  `Wightman/Groups/` and `Wightman/Spacetime/` subtrees, but those directories
-  are not present in the current checked tree of this clone. By contrast,
-  `Wightman/NuclearSpaces/` **is** present and should be treated as a real local
-  support lane. For implementation work, prefer the concrete file inventory in
-  the tree above over any older path vocabulary.
+- `Wightman/Reconstruction/Main.lean` only wires the top-level theorems. In particular, the current checked tree has `wightman_reconstruction` and `wightman_uniqueness` there, but no separate checked Main-side uniqueness helper file yet: until one is actually created, the full helper queue remains documentation-owned in `docs/wightman_uniqueness_blueprint.md`, and later Lean work must either insert that queue contiguously above `Main.lean:74` or move one contiguous block into one explicitly named new helper file under `Wightman/Reconstruction/`.
+- Checked-tree caution: older planning docs sometimes talk about
+  `Wightman/Groups/` and `Wightman/Spacetime/` as if they were obsolete path
+  vocabulary. In the current checked tree of this clone, those subtrees are
+  real and present (`Groups/Lorentz.lean`, `Groups/Poincare.lean`,
+  `Spacetime/Metric.lean`, `Spacetime/MinkowskiGeometry.lean`). What *is*
+  obsolete is using older prose about nonexistent monolithic owners instead of
+  the live split file inventory above. The covariance-facing ownership split
+  should now be read literally:
+  1. public group-definition owners:
+     `Wightman/Groups/Lorentz.lean` and `Wightman/Groups/Poincare.lean`;
+  2. public bridge owner:
+     `Bridge/AxiomBridge.lean`;
+  3. public reconstruction/Wick-rotation consumers:
+     `Wightman/WightmanAxioms.lean`,
+     `Wightman/Reconstruction/AnalyticContinuation.lean`,
+     `Wightman/Reconstruction/WickRotation/BHWExtension.lean`,
+     `.../BHWReducedExtension.lean`, `.../ForwardTubeLorentz.lean`,
+     `.../OSToWightmanEuclideanLorentz.lean`,
+     `.../OSToWightmanTubeIdentity.lean`,
+     `.../OSToWightmanBoundaryValuesBase.lean`,
+     `.../OSToWightmanBoundaryValues.lean`, and
+     `.../SchwingerAxioms.lean`.
+  By contrast, `ComplexLieGroups/LorentzLieGroup.lean :: RestrictedLorentzGroup`
+  remains an internal compatibility alias inside the independent
+  `ComplexLieGroups/*` subsystem; later Lean work should not treat that local
+  alias as an alternative public default or reopen the Wightman-side migration
+  from those internal files. Likewise, `Wightman/NuclearSpaces/` is a real
+  local support lane. For implementation work, prefer the concrete file
+  inventory in the tree above over any older route shorthand.
 - The live `E -> R` lane is intentionally split across
   `OSToWightmanSemigroup.lean`, `OSToWightman.lean`, and
   `OSToWightmanBoundaryValues.lean`. Older kernel / specialized-two-point

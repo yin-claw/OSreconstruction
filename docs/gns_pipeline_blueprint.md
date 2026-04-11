@@ -31,9 +31,11 @@ Checked-tree clarification for this clone:
 4. the current policy-level sorry census also keeps that distinction explicit:
    a direct checked-tree scan shows **7** local `sorry`s in the checked
    `Wightman/NuclearSpaces/*` lane (`NuclearSpace.lean`: 2,
-   `BochnerMinlos.lean`: 5), but the headline repo-wide `63`-sorry ledger is
-   intentionally reserved for the theorem-2/3/4 critical-path tree and does
-   **not** absorb those secondary-lane support holes.
+   `BochnerMinlos.lean`: 5), and those 7 are already included in the live
+   **60**-sorry whole-project census used by the proof-doc stack. The live
+   overview docs still track the NuclearSpaces lane separately, but that is an
+   ownership/readout split rather than an outside-the-headline-count exception.
+   Any narrower auxiliary census must be labeled explicitly.
 
 So the GNS documentation contract in this clone is three-layered:
 
@@ -41,10 +43,11 @@ So the GNS documentation contract in this clone is three-layered:
    `SchwartzNuclear.lean`, `GaussianFieldBridge.lean`,
    `BochnerMinlos.lean`, `EuclideanMeasure.lean`, `ComplexSchwartz.lean`;
 2. downstream consumer ownership: `Wightman/WightmanAxioms.lean` exports
-   `exists_continuousMultilinear_ofSeparatelyContinuous` and
-   `schwartz_nuclear_extension`, then `Wightman/Reconstruction/GNSHilbertSpace.lean`
-   consumes the resulting `WightmanQFT` surface through `gns_cyclicity` and
-   `gnsQFT`;
+   `exists_continuousMultilinear_ofSeparatelyContinuous` (`:504`) and
+   `schwartz_nuclear_extension` (`:342`), then
+   `Wightman/Reconstruction/GNSHilbertSpace.lean` consumes the resulting
+   `WightmanQFT` surface through `gns_cyclicity` (`:1643`) and `gnsQFT`
+   (`:2114`);
 3. integration ownership: any future import/re-export/wrapper work that wires
    the checked local NuclearSpaces lane into those downstream axiom surfaces
    must be documented as bridge work rather than silently treated as if the
@@ -52,12 +55,33 @@ So the GNS documentation contract in this clone is three-layered:
 
 The GNS pipeline currently feeds:
 
-1. `wightman_reconstruction` in
-   `Wightman/Reconstruction/Main.lean`,
-2. `gnsQFT` in
-   `Wightman/Reconstruction/GNSHilbertSpace.lean`,
-3. the standalone theorem `wightman_uniqueness` in
-   `Wightman/Reconstruction/Main.lean`.
+1. `Wightman/Reconstruction/GNSHilbertSpace.lean :2114 :: gnsQFT`,
+2. `Wightman/Reconstruction/Main.lean :63 :: wightman_reconstruction`,
+3. `Wightman/Reconstruction/Main.lean :74 :: wightman_uniqueness`.
+
+Source-checked owner/consumer split for the live GNS lane:
+
+1. `GNSHilbertSpace.lean :1005 :: continuous_translate_npoint_schwartz` is the
+   first still-open translation-continuity slot;
+2. `:1062 :: gns_stronglyContinuous_preHilbert` is the second slot and may
+   consume Package A, but nothing later;
+3. `:1249 :: gns_matrix_coefficient_holomorphic_axiom` is the only spectrum
+   bridge theorem allowed to touch the one-point forward-tube package;
+4. `:1643 :: gns_cyclicity` is the first direct GNS consumer of the downstream
+   nuclear theorem surfaces exported by `WightmanAxioms.lean`;
+5. `:2114 :: gnsQFT` is assembly only, and `Main.lean :74 :: wightman_uniqueness`
+   is downstream of that assembly rather than a co-owner of any GNS package.
+
+The implementation contract is therefore not just “finish the GNS file”. The
+literal owner queue is:
+
+`continuous_translate_npoint_schwartz`
+-> `gns_stronglyContinuous_preHilbert`
+-> `gns_matrix_coefficient_holomorphic_axiom`
+-> nuclear bridge through exported `WightmanAxioms.lean` surfaces
+-> `gns_cyclicity`
+-> `gnsQFT`
+-> `wightman_uniqueness`.
 
 The remaining GNS-side blockers are:
 
@@ -423,15 +447,90 @@ should be the actual proofs of the named theorem slots above.
 
 The later Lean implementation should proceed in this order:
 
-1. `continuous_translate_npoint_schwartz`,
-2. `gns_stronglyContinuous_preHilbert`,
-3. the forward-tube / matrix-coefficient holomorphic bridge,
+1. `GNSHilbertSpace.lean :1005 :: continuous_translate_npoint_schwartz`,
+2. `GNSHilbertSpace.lean :1062 :: gns_stronglyContinuous_preHilbert`,
+3. `GNSHilbertSpace.lean :1249 :: gns_matrix_coefficient_holomorphic_axiom`,
 4. the nuclear-space bridge in the exact ownership order
    `Wightman/NuclearSpaces/*` support -> optional import/re-export bridge ->
-   downstream `Wightman/WightmanAxioms.lean` theorem surface,
-5. `gns_cyclicity`,
-6. final `gnsQFT` assembly,
-7. only then the standalone `wightman_uniqueness`.
+   downstream `Wightman/WightmanAxioms.lean :504/:342` theorem surfaces,
+5. `GNSHilbertSpace.lean :1643 :: gns_cyclicity`,
+6. `GNSHilbertSpace.lean :2114 :: gnsQFT`,
+7. `Main.lean :63 :: wightman_reconstruction`,
+8. only then `Main.lean :74 :: wightman_uniqueness`.
+
+The last step is not a one-line epilogue. Source-checked file ownership for
+that final lane is now part of the contract: the live tree contains no
+separate `Wightman/Reconstruction/Main/*` helper module and no checked
+uniqueness support `.lean` file sitting beside `Main.lean`; a direct source
+check of `Wightman/Reconstruction/Main.lean` also shows that, besides the
+already checked `wightman_reconstruction`, the only checked uniqueness-side
+declaration presently there is `:74 :: wightman_uniqueness`. By contrast the
+nuclear-side support lane really does have checked files under
+`Wightman/NuclearSpaces/*`, including `Helpers/PositiveDefiniteKernels.lean`
+and `NuclearOperator.lean`. So once the queue reaches `Main.lean :74`, the
+later Lean transcript must be read as a documentation-owned helper package
+ending at the checked theorem surface in `Main.lean`, rather than as a hidden
+support-file import or a promise that names like `uniquenessPreMap` already
+exist somewhere in the checked tree. Concretely, the downstream uniqueness
+lane itself must run in the fixed helper order
+
+`cyclicWordVector/cyclicWordSpan`
+-> `cyclicWordVector_inner_cyclicWordVector`
+-> `uniquenessPreMap`
+-> `uniquenessPreMap_inner_formula`
+-> `uniquenessPreMap_null_of_null`
+-> `uniquenessDenseMap`
+-> `uniquenessDenseMap_inner_preserving`
+-> `uniquenessDenseMap_norm_preserving`
+-> `uniquenessDenseMap_isometry`
+-> `cyclicWord_in_range_of_uniquenessDenseMap`
+-> `cyclicWordSpan_le_range_uniquenessDenseMap`
+-> `uniquenessDenseMap_denseRange`
+-> `uniquenessDenseMap_extends_to_unitary`
+-> `uniquenessUnitary_maps_vacuum`
+-> `uniquenessUnitary_intertwines_field_on_cyclic_core`
+-> `cyclicWordSpan_is_field_core`
+-> `uniquenessUnitary_intertwines_field`
+-> `wightman_uniqueness`.
+
+The queue is not just an ordering slogan; it freezes where each mathematical
+responsibility begins and ends. `cyclicWordVector_inner_cyclicWordVector` is
+the only slot allowed to settle the cyclic-word vacuum matrix-element formula.
+`uniquenessPreMap_inner_formula` is the only transfer-across-`h` row before
+quotient descent. `uniquenessPreMap_null_of_null` is the sole quotient/null
+seam. `uniquenessDenseMap_inner_preserving` and
+`uniquenessDenseMap_norm_preserving` begin only after the descended map exists,
+and `uniquenessDenseMap_isometry` packages metric data only rather than starting
+dense-range work. Dense range begins only at
+`cyclicWord_in_range_of_uniquenessDenseMap -> cyclicWordSpan_le_range_uniquenessDenseMap`,
+and field-domain closure begins only at `cyclicWordSpan_is_field_core`, so the
+cyclic-core intertwining theorem may not hide a graph-closure argument.
+Finally, `Main.lean :74 :: wightman_uniqueness` is assembly-only.
+
+This fixes the implementation seams that were still easy to blur in overview
+form: the transfer-across-`h` step is no longer collapsed into the quotient row;
+descended inner/norm preservation is no longer hidden inside a generic
+isometry package; dense range is the direct cyclic-word-in-range argument, not
+a second inverse-map construction; the field intertwining proof reaches
+arbitrary domain vectors only after the cyclic-core theorem plus the explicit
+core/closure step; and file ownership is explicit — until a real support
+`.lean` file is created, these helper slots belong to the
+documentation/blueprint layer and culminate in the sole checked Main-side
+ theorem surface `Wightman/Reconstruction/Main.lean :74`, rather than being
+split across an undocumented helper module. In particular, later Lean work has
+exactly two in-contract choices: either insert those helper declarations into
+`Main.lean` in the order listed above and then finish `wightman_uniqueness`, or
+first create a real helper module and update the ownership docs before using
+it. Anything in between would reintroduce the old ambiguity about whether the
+uniqueness queue is a theorem-creation contract or just a descriptive slogan.
+
+Two anti-drift rules are part of that queue:
+
+1. `wightman_reconstruction` is downstream packaging from `gnsQFT`, not a place
+   to reopen Packages A-D;
+2. `wightman_uniqueness` may consume the finished `WightmanQFT` surface only.
+   It may not silently import the nuclear bridge, spectrum bridge, or cyclicity
+   subproofs directly from unfinished GNS internals.
 
 ## 9. Do not do this
 
