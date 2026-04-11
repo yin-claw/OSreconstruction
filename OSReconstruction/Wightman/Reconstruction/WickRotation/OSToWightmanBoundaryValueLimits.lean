@@ -3119,7 +3119,7 @@ private theorem exists_bvt_W_conjTensorProduct_timeShift_temperedFunctional
 pairing functional. Unlike the existing `Classical.choose` witness, this is an
 explicit scaled `SCV.fourierLaplaceExt`, so its interior values can be
 computed directly on the positive imaginary axis. -/
-private noncomputable def bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+noncomputable def bvt_W_conjTensorProduct_timeShiftCanonicalExtension
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     {n m : ℕ}
     (f : SchwartzNPoint d n)
@@ -3138,7 +3138,7 @@ private noncomputable def bvt_W_conjTensorProduct_timeShiftCanonicalExtension
   else
     0
 
-private theorem bvt_W_conjTensorProduct_timeShiftCanonicalExtension_differentiableOn
+theorem bvt_W_conjTensorProduct_timeShiftCanonicalExtension_differentiableOn
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     {n m : ℕ}
     (f : SchwartzNPoint d n)
@@ -3206,7 +3206,7 @@ private theorem bvt_W_conjTensorProduct_timeShiftCanonicalExtension_differentiab
 positive horizontal line. This is the exact growth package needed to keep the
 later theorem-3 arguments on the canonical witness surface instead of falling
 back to the older existential one. -/
-private theorem hasPolynomialGrowthOnLine_bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+theorem hasPolynomialGrowthOnLine_bvt_W_conjTensorProduct_timeShiftCanonicalExtension
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     {n m : ℕ}
     (f : SchwartzNPoint d n)
@@ -3258,7 +3258,7 @@ private theorem hasPolynomialGrowthOnLine_bvt_W_conjTensorProduct_timeShiftCanon
 /-- Integrability of the canonical Stage-5 witness against Fourier transforms
 of Schwartz tests along positive horizontal lines. This is the canonical-
 witness analogue of the older existential-witness integrability package. -/
-private theorem integrable_mul_fourierTransform_of_bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+theorem integrable_mul_fourierTransform_of_bvt_W_conjTensorProduct_timeShiftCanonicalExtension
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     {n m : ℕ}
     (f : SchwartzNPoint d n)
@@ -3284,7 +3284,7 @@ private theorem integrable_mul_fourierTransform_of_bvt_W_conjTensorProduct_timeS
 time-shift pairing as its distributional boundary value. This closes the
 boundary-value half of the canonical-witness route and avoids falling back to
 the older existential witness surface. -/
-private theorem tendsto_bvt_W_conjTensorProduct_timeShiftCanonicalExtension_boundaryValue
+theorem tendsto_bvt_W_conjTensorProduct_timeShiftCanonicalExtension_boundaryValue
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     {n m : ℕ} (hm : 0 < m)
     (f : SchwartzNPoint d n)
@@ -3316,11 +3316,113 @@ private theorem tendsto_bvt_W_conjTensorProduct_timeShiftCanonicalExtension_boun
   simpa [bvt_W_conjTensorProduct_timeShiftCanonicalExtension, T, hT_apply χ] using
     (SCV.paley_wiener_half_line_explicit T hT_supp).2.2 χ
 
+/-- The old chosen upper-half-plane witness and the explicit canonical witness
+have the same distributional boundary value when paired against Fourier
+transforms of Schwartz tests.
+
+This is an honest preparatory step toward collapsing the two parallel UHP
+witness surfaces by uniqueness: it records that, on the exact one-variable
+test class already used throughout Stage 5, both witnesses converge to the same
+real-time Wightman pairing functional. -/
+theorem tendsto_sub_bvt_W_timeShiftUpperHalfPlaneWitness_canonicalExtension_boundaryValue_fourierTransform_zero
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (f : SchwartzNPoint d n)
+    (g : SchwartzNPoint d m)
+    (hg_compact : HasCompactSupport (g : NPointDomain d m → ℂ))
+    (χ : SchwartzMap ℝ ℂ) :
+    Filter.Tendsto
+      (fun η : ℝ =>
+        ∫ x : ℝ,
+          (bvt_W_conjTensorProduct_timeShiftUpperHalfPlaneWitness
+              (d := d) OS lgc hm f g hg_compact (↑x + ↑η * Complex.I) -
+            bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+              (d := d) OS lgc f g hg_compact (↑x + ↑η * Complex.I)) *
+            (SchwartzMap.fourierTransformCLM ℂ χ) x)
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds 0) := by
+  have hUpper :
+      Filter.Tendsto
+        (fun η : ℝ =>
+          ∫ x : ℝ,
+            bvt_W_conjTensorProduct_timeShiftUpperHalfPlaneWitness
+              (d := d) OS lgc hm f g hg_compact (↑x + ↑η * Complex.I) *
+              (SchwartzMap.fourierTransformCLM ℂ χ) x)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (∫ t : ℝ,
+            bvt_W OS lgc (n + m)
+              (f.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) *
+              (SchwartzMap.fourierTransformCLM ℂ χ) t)) :=
+    tendsto_bvt_W_conjTensorProduct_timeShiftUpperHalfPlaneWitness_boundaryValue_fourierTransform
+      (d := d) (OS := OS) (lgc := lgc) (hm := hm) f g hg_compact χ
+  have hCanonical :
+      Filter.Tendsto
+        (fun η : ℝ =>
+          ∫ x : ℝ,
+            bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+              (d := d) OS lgc f g hg_compact (↑x + ↑η * Complex.I) *
+              (SchwartzMap.fourierTransformCLM ℂ χ) x)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (∫ t : ℝ,
+            bvt_W OS lgc (n + m)
+              (f.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) *
+              (SchwartzMap.fourierTransformCLM ℂ χ) t)) := by
+    simpa using
+      tendsto_bvt_W_conjTensorProduct_timeShiftCanonicalExtension_boundaryValue
+        (d := d) (OS := OS) (lgc := lgc) (hm := hm) f g hg_compact
+        ((SchwartzMap.fourierTransformCLM ℂ) χ)
+  have hEq :
+      (fun η : ℝ =>
+        ∫ x : ℝ,
+          (bvt_W_conjTensorProduct_timeShiftUpperHalfPlaneWitness
+              (d := d) OS lgc hm f g hg_compact (↑x + ↑η * Complex.I) -
+            bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+              (d := d) OS lgc f g hg_compact (↑x + ↑η * Complex.I)) *
+            (SchwartzMap.fourierTransformCLM ℂ χ) x)
+      =ᶠ[nhdsWithin 0 (Set.Ioi 0)]
+      (fun η : ℝ =>
+        (∫ x : ℝ,
+          bvt_W_conjTensorProduct_timeShiftUpperHalfPlaneWitness
+            (d := d) OS lgc hm f g hg_compact (↑x + ↑η * Complex.I) *
+            (SchwartzMap.fourierTransformCLM ℂ χ) x) -
+        (∫ x : ℝ,
+          bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+            (d := d) OS lgc f g hg_compact (↑x + ↑η * Complex.I) *
+            (SchwartzMap.fourierTransformCLM ℂ χ) x)) := by
+    filter_upwards [self_mem_nhdsWithin] with η hη
+    have hIntUpper :=
+      integrable_mul_fourierTransform_of_bvt_W_conjTensorProduct_timeShiftUpperHalfPlaneWitness
+        (d := d) (OS := OS) (lgc := lgc) (hm := hm) f g hg_compact χ hη
+    have hIntCanonical :=
+      integrable_mul_fourierTransform_of_bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+        (d := d) (OS := OS) (lgc := lgc) (f := f) (g := g)
+        (hg_compact := hg_compact) χ hη
+    show ∫ x : ℝ,
+        (bvt_W_conjTensorProduct_timeShiftUpperHalfPlaneWitness
+            (d := d) OS lgc hm f g hg_compact (↑x + ↑η * Complex.I) -
+          bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+            (d := d) OS lgc f g hg_compact (↑x + ↑η * Complex.I)) *
+          (SchwartzMap.fourierTransformCLM ℂ χ) x =
+      (∫ x : ℝ,
+        bvt_W_conjTensorProduct_timeShiftUpperHalfPlaneWitness
+          (d := d) OS lgc hm f g hg_compact (↑x + ↑η * Complex.I) *
+          (SchwartzMap.fourierTransformCLM ℂ χ) x) -
+      (∫ x : ℝ,
+        bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+          (d := d) OS lgc f g hg_compact (↑x + ↑η * Complex.I) *
+          (SchwartzMap.fourierTransformCLM ℂ χ) x)
+    simp only [sub_mul]
+    exact MeasureTheory.integral_sub hIntUpper hIntCanonical
+  refine Filter.Tendsto.congr' hEq.symm ?_
+  simpa using hUpper.sub hCanonical
+
 /-- On the positive imaginary axis, the canonical ambient witness is given by
 the Fourier-Laplace integral of the real-time Wightman pairing functional
 against the standard `ψ_z` kernel. This is the first concrete interior-value
 formula for the Stage-5 ambient witness. -/
-private theorem bvt_W_conjTensorProduct_timeShiftCanonicalExtension_eq_fourierLaplaceIntegral
+theorem bvt_W_conjTensorProduct_timeShiftCanonicalExtension_eq_fourierLaplaceIntegral
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     {n m : ℕ}
     (f : SchwartzNPoint d n)
@@ -3362,7 +3464,7 @@ private theorem bvt_W_conjTensorProduct_timeShiftCanonicalExtension_eq_fourierLa
 standard `ψ_z` kernel on the positive imaginary axis. This is the exact
 one-variable convergence statement needed before comparing the canonical witness
 to the semigroup-side spectral/Laplace object. -/
-private theorem tendsto_bvt_W_conjTensorProduct_timeShiftCanonicalExtension_to_imagAxis
+theorem tendsto_bvt_W_conjTensorProduct_timeShiftCanonicalExtension_to_imagAxis
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     {n m : ℕ} (hm : 0 < m)
     (f : SchwartzNPoint d n)

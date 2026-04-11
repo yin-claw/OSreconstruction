@@ -2444,6 +2444,55 @@ private theorem bvt_W_eq_of_tendsto_bvt_F_canonical_xiShift_conjTensorProduct_ti
       (d := d) (OS := OS) (lgc := lgc) (hm := hm) (φ := φ) (ψ := ψ) (t := t)
   exact tendsto_nhds_unique hL hW
 
+/-- Conditional bookkeeping for the current Lemma-4.2 `hlimit` surface.
+
+If some future theorem supplies the displayed pointwise real-time identity,
+then the already-proved canonical `ξ`-shift shell boundary theorem immediately
+yields the required limit to the OS holomorphic target.
+
+Important: this does **not** identify the live production target. The
+hypothesis shape here is the old pointwise `hschw`-style surface, which is not
+the honest Wick-rotation theorem to prove. The real remaining seam is a
+distribution-level Fourier/Laplace identification, and this helper should only
+be read as a consequence theorem for any later theorem that happens to fit the
+same output shape. -/
+private theorem tendsto_bvt_F_canonical_xiShift_to_osHolomorphicValue_of_bvt_W_timeShift_eq
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hreal :
+      ∀ t : ℝ, 0 < t →
+        bvt_W OS lgc (n + m)
+          (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t ψ)) =
+            OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+              (PositiveTimeBorchersSequence.single n f hf_ord)
+              (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ)) :
+    ∀ t : ℝ, 0 < t →
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          ∫ y : NPointDomain d (n + m),
+            bvt_F OS lgc (n + m)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                (fun k μ =>
+                  ↑(y k μ) +
+                    ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                      Complex.I)
+                (t : ℂ)) *
+              (φ.conjTensorProduct ψ) y)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+            (PositiveTimeBorchersSequence.single n f hf_ord)
+            (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ))) := by
+  intro t ht
+  simpa [hreal t ht] using
+    (tendsto_bvt_F_canonical_xiShift_conjTensorProduct_timeShift_boundaryValue
+      (d := d) (OS := OS) (lgc := lgc) (hm := hm) (φ := φ) (ψ := ψ) (t := t))
+
 /-- On the exact `bvt_F` shell used by the current Lemma-4.2 lane, the
 positive-real OS matrix element converges back to the unshifted Euclidean term
 as `t → 0+`. This is the current-code specialization of the already-proved

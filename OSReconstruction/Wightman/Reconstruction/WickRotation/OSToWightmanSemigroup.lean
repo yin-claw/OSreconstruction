@@ -3386,6 +3386,96 @@ theorem OSInnerProductTimeShiftHolomorphicValue_differentiableOn
   differentiableOn_OSInnerProductTimeShiftHolomorphicValue
     (d := d) OS lgc F G
 
+/-- The rotation `w ↦ -I w` sends the upper half-plane to the right half-plane. -/
+theorem mul_negI_mapsTo_upperHalfPlane_rightHalfPlane :
+    Set.MapsTo (fun w : ℂ => -Complex.I * w)
+      SCV.upperHalfPlane {z : ℂ | 0 < z.re} := by
+  intro w hw
+  simp only [SCV.upperHalfPlane, Set.mem_setOf_eq] at hw ⊢
+  simp only [Complex.mul_re, Complex.neg_re, Complex.I_re, Complex.neg_im, Complex.I_im]
+  linarith
+
+/-- The rotated OS holomorphic matrix element `w ↦ OS(-I w)` is holomorphic on
+the upper half-plane. This is the semigroup-side holomorphic input for the
+later UHP uniqueness comparison with the canonical Wightman witness. -/
+theorem differentiableOn_rotated_OSInnerProductTimeShiftHolomorphicValue
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d) :
+    DifferentiableOn ℂ
+      (fun w : ℂ =>
+        OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F G (-Complex.I * w))
+      SCV.upperHalfPlane := by
+  have hrot :
+      DifferentiableOn ℂ (fun w : ℂ => -Complex.I * w) SCV.upperHalfPlane := by
+    intro w _
+    exact ((differentiable_id.const_mul (-Complex.I)).differentiableAt).differentiableWithinAt
+  exact
+    (OSInnerProductTimeShiftHolomorphicValue_differentiableOn
+      (d := d) OS lgc F G).comp hrot mul_negI_mapsTo_upperHalfPlane_rightHalfPlane
+
+/-- On the upper half-plane, the rotated OS holomorphic matrix element is the
+off-diagonal spectral Laplace transform evaluated at the rotated argument. -/
+theorem rotated_OSInnerProductTimeShiftHolomorphicValue_eq_selfAdjointSpectralLaplaceOffdiag
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d)
+    {w : ℂ} (hw : w ∈ SCV.upperHalfPlane) :
+    OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F G (-Complex.I * w) =
+      ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag
+        (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+        (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+        (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))
+        (((show OSPreHilbertSpace OS from (⟦G⟧)) : OSHilbertSpace OS))
+        (-Complex.I * w) := by
+  exact OSInnerProductTimeShiftHolomorphicValue_eq_selfAdjointSpectralLaplaceOffdiag
+    (d := d) OS lgc F G (-Complex.I * w)
+    (mul_negI_mapsTo_upperHalfPlane_rightHalfPlane hw)
+
+/-- Along each positive horizontal line in the upper half-plane, the rotated
+OS holomorphic matrix element is uniformly bounded, hence has polynomial
+growth. This is the semigroup-side growth input needed for the later UHP
+uniqueness comparison with the canonical Wightman witness. -/
+theorem hasPolynomialGrowthOnLine_rotated_OSInnerProductTimeShiftHolomorphicValue
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : PositiveTimeBorchersSequence d)
+    (η : ℝ) (hη : 0 < η) :
+    SCV.HasPolynomialGrowthOnLine
+      (fun x : ℝ =>
+        OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F G
+          (-Complex.I * ((x : ℂ) + η * Complex.I))) := by
+  let xF : OSHilbertSpace OS :=
+    (((show OSPreHilbertSpace OS from (⟦F⟧)) : OSHilbertSpace OS))
+  let xG : OSHilbertSpace OS :=
+    (((show OSPreHilbertSpace OS from (⟦G⟧)) : OSHilbertSpace OS))
+  refine ⟨2 * ‖xF‖ * ‖xG‖ + 1, 0, by positivity, ?_⟩
+  intro x
+  have hre :
+      0 < (-Complex.I * ((x : ℂ) + η * Complex.I)).re := by
+    simp [Complex.mul_re, hη]
+  calc
+    ‖OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc F G
+        (-Complex.I * ((x : ℂ) + η * Complex.I))‖
+      = ‖@inner ℂ (OSHilbertSpace OS) _ xF
+          ((osTimeShiftHilbertComplex (d := d) OS lgc
+            (-Complex.I * ((x : ℂ) + η * Complex.I))) xG)‖ := by
+            rw [OSInnerProductTimeShiftHolomorphicValue_eq_inner_osTimeShiftHilbertComplex
+              (d := d) OS lgc F G
+              (-Complex.I * ((x : ℂ) + η * Complex.I)) hre]
+    _ ≤ ‖xF‖ *
+        ‖(osTimeShiftHilbertComplex (d := d) OS lgc
+          (-Complex.I * ((x : ℂ) + η * Complex.I))) xG‖ := norm_inner_le_norm _ _
+    _ ≤ ‖xF‖ *
+        (‖osTimeShiftHilbertComplex (d := d) OS lgc
+          (-Complex.I * ((x : ℂ) + η * Complex.I))‖ * ‖xG‖) := by
+            gcongr
+            exact ContinuousLinearMap.le_opNorm _ _
+    _ ≤ ‖xF‖ * (2 * ‖xG‖) := by
+          gcongr
+          exact osTimeShiftHilbertComplex_norm_le
+            (d := d) OS lgc (-Complex.I * ((x : ℂ) + η * Complex.I)) hre
+    _ ≤ 2 * ‖xF‖ * ‖xG‖ + 1 := by
+          nlinarith [norm_nonneg xF, norm_nonneg xG]
+    _ = (2 * ‖xF‖ * ‖xG‖ + 1) * (1 + |x|) ^ 0 := by simp
+
 private theorem continuousOn_OSInnerProductTimeShiftHolomorphicValue
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     (F G : PositiveTimeBorchersSequence d) :
