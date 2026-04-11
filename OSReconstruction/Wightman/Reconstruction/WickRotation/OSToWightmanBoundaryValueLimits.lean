@@ -3358,6 +3358,43 @@ private theorem bvt_W_conjTensorProduct_timeShiftCanonicalExtension_eq_fourierLa
             simpa [Complex.mul_im, hη.ne']
               using mul_pos Real.two_pi_pos hη)))
 
+/-- Specialization of the canonical-witness boundary-value theorem to the
+standard `ψ_z` kernel on the positive imaginary axis. This is the exact
+one-variable convergence statement needed before comparing the canonical witness
+to the semigroup-side spectral/Laplace object. -/
+private theorem tendsto_bvt_W_conjTensorProduct_timeShiftCanonicalExtension_to_imagAxis
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (f : SchwartzNPoint d n)
+    (g : SchwartzNPoint d m)
+    (hg_compact : HasCompactSupport (g : NPointDomain d m → ℂ))
+    {t : ℝ} (ht : 0 < t) :
+    Filter.Tendsto
+      (fun ε : ℝ =>
+        ∫ x : ℝ,
+          bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+            (d := d) OS lgc f g hg_compact (↑x + ↑ε * Complex.I) *
+          (SchwartzMap.fourierTransformCLM ℂ
+            (SCV.schwartzPsiZ
+              (((2 * Real.pi : ℂ) * (t * Complex.I)))
+              (by
+                simpa [Complex.mul_im, ht.ne']
+                  using mul_pos Real.two_pi_pos ht))) x)
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds
+        (bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+          (d := d) OS lgc f g hg_compact (t * Complex.I))) := by
+  simpa [bvt_W_conjTensorProduct_timeShiftCanonicalExtension_eq_fourierLaplaceIntegral
+    (d := d) (OS := OS) (lgc := lgc) (f := f) (g := g) (hg_compact := hg_compact) ht] using
+    (tendsto_bvt_W_conjTensorProduct_timeShiftCanonicalExtension_boundaryValue
+      (d := d) (OS := OS) (lgc := lgc) (hm := hm) f g hg_compact
+      ((SchwartzMap.fourierTransformCLM ℂ)
+        (SCV.schwartzPsiZ
+          (((2 * Real.pi : ℂ) * (t * Complex.I)))
+          (by
+            simpa [Complex.mul_im, ht.ne']
+              using mul_pos Real.two_pi_pos ht))))
+
 /-- Zero-translation specialization of the proved Schwinger-side `t → 0+` limit
 for the compact ordered positive-time `singleSplit_xiShift` shell.
 
