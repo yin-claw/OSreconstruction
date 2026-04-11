@@ -2733,6 +2733,221 @@ theorem paley_wiener_half_line
       (tendsto_congr' hEventually_eq).2 hlimit_C0
     simpa [hC0_eq] using hlimit
 
+theorem paley_wiener_half_line_explicit
+    (T : SchwartzMap ℝ ℂ →L[ℂ] ℂ)
+    (hT_supp : HasOneSidedFourierSupport T) :
+    let F : ℂ → ℂ := fun w =>
+      if hw : 0 < w.im then
+        fourierLaplaceExt T ((((2 * Real.pi : ℝ) : ℂ) * w))
+          (by
+            have hscaled : 0 < (2 * Real.pi) * w.im := mul_pos Real.two_pi_pos hw
+            simpa [Complex.mul_im] using hscaled)
+      else 0
+    DifferentiableOn ℂ F upperHalfPlane ∧
+      (∀ η : ℝ, 0 < η →
+        HasPolynomialGrowthOnLine (fun x => F (↑x + ↑η * I))) ∧
+      (∀ φ : SchwartzMap ℝ ℂ,
+        Tendsto (fun η : ℝ => ∫ x : ℝ, F (↑x + ↑η * I) * φ x)
+          (nhdsWithin 0 (Ioi 0))
+          (nhds (T φ))) := by
+  let a : ℝ := 2 * Real.pi
+  have ha_pos : 0 < a := by
+    dsimp [a]
+    positivity
+  let Fcore : ℂ → ℂ := fun w => if hw : 0 < w.im then fourierLaplaceExt T w hw else 0
+  let F : ℂ → ℂ := fun w => Fcore ((a : ℂ) * w)
+  have hEq :
+      F =
+        (fun w : ℂ =>
+          if hw : 0 < w.im then
+            fourierLaplaceExt T ((((2 * Real.pi : ℝ) : ℂ) * w))
+              (by
+                have hscaled : 0 < (2 * Real.pi) * w.im := mul_pos Real.two_pi_pos hw
+                simpa [Complex.mul_im] using hscaled)
+          else 0) := by
+    funext w
+    by_cases hw : 0 < w.im
+    · have hscaled : 0 < (((a : ℂ) * w).im) := by
+        simpa [Complex.mul_im, a, mul_assoc] using mul_pos ha_pos hw
+      unfold F Fcore
+      rw [dif_pos hscaled, dif_pos hw]
+    · have hnotscaled : ¬ 0 < (((a : ℂ) * w).im) := by
+        intro hscaled
+        have hscaled' : 0 < a * w.im := by
+          simpa [Complex.mul_im, a, mul_assoc] using hscaled
+        exact hw <| by nlinarith [ha_pos, hscaled']
+      unfold F Fcore
+      rw [dif_neg hnotscaled, dif_neg hw]
+  have hmain :
+      DifferentiableOn ℂ F upperHalfPlane ∧
+      (∀ η : ℝ, 0 < η →
+        HasPolynomialGrowthOnLine (fun x => F (↑x + ↑η * I))) ∧
+      (∀ φ : SchwartzMap ℝ ℂ,
+        Tendsto (fun η : ℝ => ∫ x : ℝ, F (↑x + ↑η * I) * φ x)
+          (nhdsWithin 0 (Ioi 0))
+          (nhds (T φ))) := by
+    constructor
+    · have hmap : MapsTo (fun w : ℂ => (a : ℂ) * w) upperHalfPlane upperHalfPlane := by
+        intro z hz
+        dsimp [upperHalfPlane] at hz ⊢
+        simpa [Complex.mul_im, a, mul_assoc] using mul_pos ha_pos hz
+      have hmul :
+          DifferentiableOn ℂ (fun w : ℂ => (a : ℂ) * w) upperHalfPlane := by
+        intro z hz
+        simpa using
+          (((differentiableAt_id : DifferentiableAt ℂ (fun y : ℂ => y) z).const_mul
+            (a : ℂ)).differentiableWithinAt)
+      simpa [F] using
+        (fourierLaplaceExt_differentiableOn T).comp
+          hmul
+          hmap
+    · constructor
+      · intro η hη
+        obtain ⟨C, N, hC, hbound⟩ :=
+          fourierLaplaceExt_horizontal_growth T (a * η) (mul_pos ha_pos hη)
+        refine ⟨C * a ^ N, N, by positivity, fun x => ?_⟩
+        have him : 0 < (((a : ℂ) * ((x : ℂ) + η * I)).im) := by
+          simpa [Complex.mul_im, a, mul_assoc] using mul_pos ha_pos hη
+        calc
+          ‖F ((x : ℂ) + η * I)‖
+              = ‖fourierLaplaceExt T ((a : ℂ) * ((x : ℂ) + η * I)) him‖ := by
+                  change ‖(if h : 0 < (((a : ℂ) * ((x : ℂ) + η * I)).im) then
+                    fourierLaplaceExt T ((a : ℂ) * ((x : ℂ) + η * I)) h else 0)‖ = _
+                  rw [dif_pos him]
+          _ ≤ C * (1 + |a * x|) ^ N := by
+                simpa [a, mul_add, mul_assoc, add_comm, add_left_comm, add_assoc] using
+                  hbound (a * x)
+          _ ≤ C * (a ^ N * (1 + |x|) ^ N) := by
+                gcongr
+                simpa [a] using one_add_abs_two_pi_mul_rpow_le N x
+          _ = (C * a ^ N) * (1 + |x|) ^ N := by ring
+      · intro φ
+        let ψ : SchwartzMap ℝ ℂ := FourierTransform.fourierInv φ
+        let S : SchwartzMap ℝ ℂ →L[ℂ] ℂ := T.comp (SchwartzMap.fourierTransformCLM ℂ)
+        obtain ⟨s, G, hS_factor⟩ := exists_probe_factorization S
+        have hS_apply (f : SchwartzMap ℝ ℂ) : S f = G (probeCLM s f) := by
+          exact congrArg (fun H => H f) hS_factor
+        have hStepB :
+            Tendsto
+              (fun η : ℝ =>
+                if hη_pos : 0 < η then
+                  if hη_le : η ≤ 1 then
+                    T (SchwartzMap.fourierTransformCLM ℂ
+                      (expDampingMulLeftTailCutoffSchwartz η hη_pos hη_le
+                        (cutoffSchwartz ψ) (cutoffSchwartz_left ψ)))
+                  else 0
+                else 0)
+              (nhdsWithin 0 (Ioi 0))
+              (nhds 0) :=
+          tendsto_fourier_expDampingCutoff_zero (T := T) ψ
+        have hStepC :
+            T (SchwartzMap.fourierTransformCLM ℂ (cutoffSchwartz ψ)) =
+              T (SchwartzMap.fourierTransformCLM ℂ ψ) :=
+          fourier_pairing_cutoffSchwartz_eq (T := T) hT_supp ψ
+        have hStepD : T (SchwartzMap.fourierTransformCLM ℂ ψ) = T φ := by
+          dsimp [ψ]
+          exact congrArg T (FourierTransform.fourier_fourierInv_eq φ)
+        let C0 : ℂ := S (cutoffSchwartz ψ)
+        let R : ℝ → ℂ := fun η =>
+          if hη_pos : 0 < a * η then
+            if hη_le : a * η ≤ 1 then
+              S (expDampingMulLeftTailCutoffSchwartz (a * η) hη_pos hη_le
+                (cutoffSchwartz ψ) (cutoffSchwartz_left ψ))
+            else
+              0
+          else
+            0
+        have hscale_tendsto :
+            Tendsto (fun η : ℝ => a * η) (nhdsWithin 0 (Ioi 0)) (nhdsWithin 0 (Ioi 0)) := by
+          refine tendsto_nhdsWithin_iff.mpr ?_
+          constructor
+          · have hcontWithin : ContinuousWithinAt (fun η : ℝ => a * η) (Ioi 0) 0 := by
+              exact (continuous_const.mul continuous_id).continuousAt.continuousWithinAt
+            simpa using hcontWithin.tendsto
+          · filter_upwards [self_mem_nhdsWithin] with η hη
+            simpa [a] using mul_pos ha_pos hη
+        have hR : Tendsto R (nhdsWithin 0 (Ioi 0)) (nhds 0) := by
+          simpa [R, S, a] using hStepB.comp hscale_tendsto
+        have hsmall_ev : ∀ᶠ η in nhdsWithin 0 (Ioi 0), a * η ≤ 1 := by
+          refine mem_nhdsWithin_of_mem_nhds ?_
+          refine Filter.mem_of_superset (Iio_mem_nhds (show (0 : ℝ) < 1 / a by positivity)) ?_
+          intro η hη
+          have hlt_mul : a * η < a * (1 / a) := mul_lt_mul_of_pos_left hη ha_pos
+          have ha_ne : a ≠ 0 := ne_of_gt ha_pos
+          have hlt : a * η < 1 := by
+            calc
+              a * η < a * (1 / a) := hlt_mul
+              _ = 1 := by field_simp [ha_ne]
+          exact le_of_lt hlt
+        have hIntegral_eq :
+            ∀ (η : ℝ) (hη : 0 < η) (hη_le : a * η ≤ 1),
+              ∫ x : ℝ, F (↑x + ↑η * I) * φ x =
+                S (stepAKernel (a * η) (mul_pos ha_pos hη) hη_le ψ) := by
+          intro η hη hη_le
+          have hpoint :
+              ∀ x : ℝ,
+                F (↑x + ↑η * I) * φ x = G (stepAProbeFamily s η hη φ x) := by
+            intro x
+            have him : 0 < (((a : ℂ) * ((x : ℂ) + η * I)).im) := by
+              simpa [Complex.mul_im, a, mul_assoc] using mul_pos ha_pos hη
+            have hSval :
+                S (scaledHorizontalSchwartzPsi η hη x) =
+                  fourierLaplaceExt T ((a : ℂ) * ((x : ℂ) + η * I)) him := by
+              dsimp [S]
+              rw [fourierLaplaceExt_eq]
+              congr 1
+              ext t
+              simp [scaledHorizontalSchwartzPsi, horizontalSchwartzPsi, a, mul_add, mul_assoc]
+            calc
+              F (↑x + ↑η * I) * φ x
+                  = fourierLaplaceExt T ((a : ℂ) * ((x : ℂ) + η * I)) him * φ x := by
+                      change
+                        ((if h : 0 < (((a : ℂ) * ((x : ℂ) + η * I)).im) then
+                          fourierLaplaceExt T ((a : ℂ) * ((x : ℂ) + η * I)) h else 0) * φ x) = _
+                      rw [dif_pos him]
+              _ = S (scaledHorizontalSchwartzPsi η hη x) * φ x := by rw [← hSval]
+              _ = φ x * S (scaledHorizontalSchwartzPsi η hη x) := by ring
+              _ = φ x * G (probeCLM s (scaledHorizontalSchwartzPsi η hη x)) := by
+                    rw [← hS_apply (scaledHorizontalSchwartzPsi η hη x)]
+              _ = G (stepAProbeFamily s η hη φ x) := by
+                    simp [stepAProbeFamily, map_smul, smul_eq_mul]
+          calc
+            ∫ x : ℝ, F (↑x + ↑η * I) * φ x
+                = ∫ x : ℝ, G (stepAProbeFamily s η hη φ x) := by
+                    refine integral_congr_ae ?_
+                    filter_upwards with x
+                    exact hpoint x
+            _ = G (∫ x : ℝ, stepAProbeFamily s η hη φ x) := by
+                  simpa using G.integral_comp_comm (integrable_stepAProbeFamily s η hη φ)
+            _ = G (probeCLM s (stepAKernel (a * η) (mul_pos ha_pos hη) hη_le ψ)) := by
+                  rw [integral_stepAProbeFamily_eq_probe_stepAKernel s η hη hη_le φ]
+            _ = S (stepAKernel (a * η) (mul_pos ha_pos hη) hη_le ψ) := by
+                  rw [hS_apply]
+        have hEventually_eq :
+            (fun η : ℝ => ∫ x : ℝ, F (↑x + ↑η * I) * φ x) =ᶠ[nhdsWithin 0 (Ioi 0)]
+              fun η => C0 + R η := by
+          filter_upwards [self_mem_nhdsWithin, hsmall_ev] with η hη hη_le
+          have hηpos : 0 < η := by
+            simpa using hη
+          have hmain := hIntegral_eq η hηpos hη_le
+          calc
+            ∫ x : ℝ, F (↑x + ↑η * I) * φ x
+                = S (stepAKernel (a * η) (mul_pos ha_pos hηpos) hη_le ψ) := hmain
+            _ = C0 + R η := by
+                  simp [C0, R, S, stepAKernel, hη_le, mul_pos ha_pos hηpos]
+        have hlimit_C0 : Tendsto (fun η : ℝ => C0 + R η) (nhdsWithin 0 (Ioi 0)) (nhds C0) := by
+          simpa [add_comm, add_left_comm, add_assoc] using (tendsto_const_nhds.add hR)
+        have hC0_eq : C0 = T φ := by
+          dsimp [C0, S]
+          simpa using hStepC.trans hStepD
+        have hlimit :
+            Tendsto (fun η : ℝ => ∫ x : ℝ, F (↑x + ↑η * I) * φ x)
+              (nhdsWithin 0 (Ioi 0)) (nhds C0) :=
+          (tendsto_congr' hEventually_eq).2 hlimit_C0
+        simpa [hC0_eq] using hlimit
+  dsimp
+  simpa [hEq] using hmain
+
 /-! ### Multidimensional status -/
 
 /-

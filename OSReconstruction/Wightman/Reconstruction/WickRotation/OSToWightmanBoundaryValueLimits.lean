@@ -3202,6 +3202,120 @@ private theorem bvt_W_conjTensorProduct_timeShiftCanonicalExtension_differentiab
   rw [hEq]
   exact hF_diff
 
+/-- The concrete canonical Stage-5 witness has polynomial growth on every
+positive horizontal line. This is the exact growth package needed to keep the
+later theorem-3 arguments on the canonical witness surface instead of falling
+back to the older existential one. -/
+private theorem hasPolynomialGrowthOnLine_bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ}
+    (f : SchwartzNPoint d n)
+    (g : SchwartzNPoint d m)
+    (hg_compact : HasCompactSupport (g : NPointDomain d m → ℂ))
+    (η : ℝ) (hη : 0 < η) :
+    SCV.HasPolynomialGrowthOnLine
+      (fun x =>
+        bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+          (d := d) OS lgc f g hg_compact (↑x + ↑η * Complex.I)) := by
+  let T :=
+    Classical.choose <|
+      exists_bvt_W_conjTensorProduct_timeShift_temperedFunctional
+        (d := d) OS lgc f g hg_compact
+  obtain ⟨C, N, hC_nonneg, hbound⟩ :=
+    SCV.fourierLaplaceExt_horizontal_growth T
+      ((2 * Real.pi) * η) (mul_pos Real.two_pi_pos hη)
+  refine ⟨C * (2 * Real.pi) ^ N, N, by positivity, fun x => ?_⟩
+  have hw : 0 < (↑x + ↑η * Complex.I).im := by simpa using hη
+  have hscaled :
+      0 < ((((2 * Real.pi : ℝ) : ℂ) * (↑x + ↑η * Complex.I)).im) := by
+    simpa [Complex.mul_im, mul_assoc] using mul_pos Real.two_pi_pos hη
+  have hline :
+      ‖SCV.fourierLaplaceExt T ((((2 * Real.pi : ℝ) : ℂ) * (↑x + ↑η * Complex.I))) hscaled‖
+        ≤ C * (1 + |(2 * Real.pi) * x|) ^ N := by
+    simpa [mul_add, mul_assoc, add_comm, add_left_comm, add_assoc] using
+      hbound ((2 * Real.pi) * x)
+  have hscale_le : 1 + |(2 * Real.pi) * x| ≤ (2 * Real.pi) * (1 + |x|) := by
+    have hpi_ge_one : (1 : ℝ) ≤ 2 * Real.pi := by
+      nlinarith [Real.pi_gt_three]
+    have hpi_nonneg : 0 ≤ 2 * Real.pi := by positivity
+    rw [abs_mul, abs_of_nonneg hpi_nonneg]
+    nlinarith [abs_nonneg x]
+  have hpow_le :
+      (1 + |(2 * Real.pi) * x|) ^ N ≤ ((2 * Real.pi) * (1 + |x|)) ^ N := by
+    exact pow_le_pow_left₀ (by positivity) hscale_le N
+  calc
+    ‖bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+        (d := d) OS lgc f g hg_compact (↑x + ↑η * Complex.I)‖
+        =
+      ‖SCV.fourierLaplaceExt T ((((2 * Real.pi : ℝ) : ℂ) * (↑x + ↑η * Complex.I))) hscaled‖ := by
+          simp [bvt_W_conjTensorProduct_timeShiftCanonicalExtension, hη, T]
+    _ ≤ C * (1 + |(2 * Real.pi) * x|) ^ N := hline
+    _ ≤ C * (((2 * Real.pi) * (1 + |x|)) ^ N) := by
+          exact mul_le_mul_of_nonneg_left hpow_le (le_of_lt hC_nonneg)
+    _ = C * ((2 * Real.pi) ^ N * (1 + |x|) ^ N) := by rw [mul_pow]
+    _ = (C * (2 * Real.pi) ^ N) * (1 + |x|) ^ N := by ring
+
+/-- Integrability of the canonical Stage-5 witness against Fourier transforms
+of Schwartz tests along positive horizontal lines. This is the canonical-
+witness analogue of the older existential-witness integrability package. -/
+private theorem integrable_mul_fourierTransform_of_bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ}
+    (f : SchwartzNPoint d n)
+    (g : SchwartzNPoint d m)
+    (hg_compact : HasCompactSupport (g : NPointDomain d m → ℂ))
+    (χ : SchwartzMap ℝ ℂ)
+    {η : ℝ} (hη : 0 < η) :
+    MeasureTheory.Integrable
+      (fun x : ℝ =>
+        bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+          (d := d) OS lgc f g hg_compact (↑x + ↑η * Complex.I) *
+          (SchwartzMap.fourierTransformCLM ℂ χ) x) := by
+  exact integrable_mul_fourierTransform_of_upperHalfPlaneWitness
+    (H := bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+      (d := d) OS lgc f g hg_compact)
+    (bvt_W_conjTensorProduct_timeShiftCanonicalExtension_differentiableOn
+      (d := d) (OS := OS) (lgc := lgc) f g hg_compact)
+    (hasPolynomialGrowthOnLine_bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+      (d := d) (OS := OS) (lgc := lgc) f g hg_compact)
+    χ hη
+
+/-- The explicit canonical Stage-5 witness has the reconstructed Wightman
+time-shift pairing as its distributional boundary value. This closes the
+boundary-value half of the canonical-witness route and avoids falling back to
+the older existential witness surface. -/
+private theorem tendsto_bvt_W_conjTensorProduct_timeShiftCanonicalExtension_boundaryValue
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (f : SchwartzNPoint d n)
+    (g : SchwartzNPoint d m)
+    (hg_compact : HasCompactSupport (g : NPointDomain d m → ℂ))
+    (χ : SchwartzMap ℝ ℂ) :
+    Filter.Tendsto
+      (fun η : ℝ =>
+        ∫ x : ℝ,
+          bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+            (d := d) OS lgc f g hg_compact (↑x + ↑η * Complex.I) * χ x)
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds
+        (∫ t : ℝ,
+          bvt_W OS lgc (n + m)
+            (f.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t g)) * χ t)) := by
+  let T :=
+    Classical.choose <|
+      exists_bvt_W_conjTensorProduct_timeShift_temperedFunctional
+        (d := d) OS lgc f g hg_compact
+  have hT_apply := Classical.choose_spec <|
+    exists_bvt_W_conjTensorProduct_timeShift_temperedFunctional
+      (d := d) OS lgc f g hg_compact
+  have hT_supp : SCV.HasOneSidedFourierSupport T := by
+    intro φ hφ_neg
+    rw [hT_apply]
+    exact hasOneSidedFourierSupport_bvt_W_conjTensorProduct_timeShift
+      (d := d) (OS := OS) (lgc := lgc) (hm := hm) f g φ hφ_neg
+  simpa [bvt_W_conjTensorProduct_timeShiftCanonicalExtension, T, hT_apply χ] using
+    (SCV.paley_wiener_half_line_explicit T hT_supp).2.2 χ
+
 /-- On the positive imaginary axis, the canonical ambient witness is given by
 the Fourier-Laplace integral of the real-time Wightman pairing functional
 against the standard `ψ_z` kernel. This is the first concrete interior-value
