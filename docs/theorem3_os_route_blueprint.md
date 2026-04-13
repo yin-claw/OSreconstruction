@@ -501,8 +501,9 @@ Exact current handoff theorems after the correction:
 
 1. the `hschw`-consuming compact-approximation theorems remain compiled legacy
    infrastructure but are no longer part of the endorsed route;
-2. the live theorem-3 implementation target is now the Section 4.3 transport
-   image / quadratic-identity / closure package from Package I;
+2. the live theorem-3 implementation target remains Package I, with the
+   current sub-blocker being the canonical shell-to-Laplace identification in
+   §5.9.4a.1.ε before the separate Section-4.3 `hH_imag_os` identification;
 3. the older theorems
    `bvt_wightmanInner_single_single_eq_osInner_of_tendsto_singleSplit_xiShift_nhdsWithin_zero`
    and
@@ -1425,19 +1426,23 @@ proof `by simpa [Complex.mul_im, ht.ne'] using mul_pos Real.two_pi_pos ht`, and
 
 #### 5.9.4a.1. Implementation packet for the transported-image bridge
 
-The immediate Lean target is **not** a new public Paley-Wiener Step-A export.
-The canonical witness package already exposes the `ψ_z` descended-pairing
-formula needed at the positive imaginary axis. The next missing theorem is the
-Section-4.3 transported-image cancellation that identifies the explicit
-canonical shell with that canonical witness on the transported surface.
+Correction status, 2026-04-13: this subsection records the older
+transported-image draft. It is retained for the later `hH_imag_os` /
+Section-4.3 identification, but it is not the current shell-to-Laplace
+implementation route. The immediate Lean target is now the canonical
+positive-height shell packet in §5.9.4a.1.ε, beginning with
+`canonicalXiShift_mem_forwardTube`. The public Paley-Wiener export and the
+strengthened BV/FL `Tflat` package have already been implemented and checked.
 
 The downstream shell-minus-horizontal cancellation theorem remains part of the
-consumer chain, but it is **not** the first implementation target. It should be
-proved only after
-`bvt_F_canonical_xiShift_shell_eq_integrated_descendedPsiZ_of_section43Transport`,
-`bvt_F_canonical_xiShift_shell_sub_iterated_fourierLaplaceIntegral_eq_zero_of_section43Transport`,
-and
-`tendsto_bvt_F_canonical_xiShift_section43Transport_iterated_residual_zero`:
+consumer chain, but its proof must come from the corrected finite-height
+canonical residual
+`bvt_F_canonical_xiShift_shell_eq_iterated_fourierLaplaceIntegral` and the
+existing reducer
+`tendsto_bvt_F_canonical_xiShift_to_ambientCanonicalExtension_imagAxis_of_shell_sub_horizontal_tendsto_zero`.
+The older Section-4.3 residual names displayed below are historical
+transported-image drafts and must not be used to bypass the canonical-shell
+packet.
 
 ```lean
 private theorem
@@ -1482,16 +1487,17 @@ private theorem
       (nhds 0)
 ```
 
-This theorem is allowed because the hypotheses `hφf` and `hψg` are part of the
-statement. The corresponding theorem without those hypotheses is false and must
-not be introduced.
+This historical theorem shape is allowed only as a transported-image
+specialization because the hypotheses `hφf` and `hψg` are part of the
+statement. It is not the current shell-to-Laplace theorem, and it must not be
+used as a substitute for the canonical-shell residual packet.
 
 For Lean execution, do **not** prove the residual theorem by an unnamed
 analytic lemma. The non-subtracted `singleSplit` shell theorem displayed next
 is downstream diagnostic/assembly work retained for older reducers; it is not
-the first irreducible theorem for the live `lemma42` consumer. The first
-irreducible theorem is the finite-height shell-to-descended-`ψ_Z` normal-form
-helper stated below.
+an implementation target for the live `lemma42` consumer. The first irreducible
+theorem for the live shell-to-Laplace seam is the finite-height canonical
+shell-to-iterated-Fourier-Laplace equality in §5.9.4a.1.ε.
 
 ```lean
 private theorem
@@ -1625,15 +1631,16 @@ the first hard Lean target. It has a bare value
 Schwartz approximate-identity or point-evaluation normal form. That is the
 wrong first implementation surface for the code we already have.
 
-The first hard theorem is instead the **positive-height shell/interchange
-normal form**, followed formally by the limit-level shell-minus-horizontal zero
-residual. This keeps both sides as honest pairings against Schwartz tests and
-uses the existing production theorem
+The later 2026-04-13 correction sharpens this decision: the first hard theorem
+for the live shell-to-Laplace seam is the **canonical positive-height
+shell/interchange normal form** in §5.9.4a.1.ε, not the transported
+single-split normal form below. This keeps both sides as honest pairings
+against Schwartz tests and uses the existing production theorem
 `tendsto_bvt_F_canonical_xiShift_shell_sub_iterated_to_timeShift_sub_canonicalExtension`
 to recover the pointwise scalar equality only after the zero residual has been
-proved. This route is not a wrapper: the finite-height theorem below is exactly
-the OS I Lemma 4.2 `(4.23) -> (4.24)` integration interchange on the corrected
-OS-II boundary-value surface.
+proved. The older Section-4.3 finite-height theorem below is retained as a
+historical transported-image draft, not as an implementation target for the
+current blocker.
 
 The selected right-block time coordinate is still
 
@@ -2079,8 +2086,12 @@ private theorem
         (SchwartzMap.fourierTransformCLM ℂ ψZt) x
 ```
 
-This theorem is the exact Lean-ready name for the shell-side content. The
-larger displayed helper is then obtained formally:
+Historical note: this was the earlier proposed shell-side theorem name. For the
+current route it is superseded by
+`bvt_F_canonical_xiShift_shell_eq_iterated_fourierLaplaceIntegral` in
+§5.9.4a.1.ε, where the shell and horizontal sides are compared through the
+common `Tflat`. In the older draft, the larger displayed helper was then
+obtained formally:
 
 1. rewrite its left side by
    `(bvt_F_canonical_conjTensorProduct_timeShift_eq_xiShift ... t ε).symm`;
@@ -2470,6 +2481,10 @@ private theorem flatTailTimeShiftDirection_zero
   simp [flatTailTimeShiftDirection, flatTimeShiftDirection]
 ```
 
+Lean status, 2026-04-13: `flatTailTimeShiftDirection` and
+`flatTailTimeShiftDirection_zero` are implemented in
+`OSToWightmanBoundaryValueLimits.lean` and exact-checked.
+
    The sign lemma generalizes the existing
    `flatTimeShiftDirection_pairing_nonpos_of_mem_dualCone`. For each tail
    index `j`, dual-cone membership implies
@@ -2484,6 +2499,19 @@ private theorem flatTailTimeShiftDirection_pairing_nonpos_of_mem_dualCone
       ξ ∈ DualConeFlat ((flattenCLEquivReal q (d + 1)) '' ForwardConeAbs d q)) :
     ∑ a, flatTailTimeShiftDirection d q j a * ξ a ≤ 0
 ```
+
+Lean status, 2026-04-13: this theorem is implemented in
+`OSToWightmanBoundaryValueLimits.lean` and exact-checked by
+
+```bash
+lake env lean OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean
+```
+
+The implementation uses the Lean order `k < j` on `Fin q` for the before-jump
+branch. This is definitionally friendlier than repeatedly normalizing
+`k.val < j.val`; the final `flatTailTimeShiftDirection` sum is still rewritten
+from the theorem's `j.val ≤ k.val` condition to the complementary `¬ k < j`
+branch.
 
    Proof transcript for `flatTailTimeShiftDirection_pairing_nonpos_of_mem_dualCone`:
 
@@ -2532,7 +2560,59 @@ private theorem flatTailTimeShiftDirection_pairing_nonpos_of_mem_dualCone
       hence nonpositive by `hS_nonneg`.
 
    The right-block version used by the actual `φ ⊗ ψ` flattened surface should
-   be derived by vector equality, not reproved from scratch:
+   be derived by vector equality, not reproved from scratch.
+
+   Implementation note, 2026-04-13: a naive
+   `ext a; simp [flatTailTimeShiftDirection, zeroHeadBlockShift]` attempt is
+   **not** implementation-ready. Lean exposes the cast/reindex coordinates as
+   `a / (d+1)` and `a.modNat`, so the equality must follow the compiled
+   split-block pattern already used by
+   `zeroHeadBlockShift_flatTimeShiftDirection_pairing_eq_neg_tailTimeSum`:
+
+   1. Define
+      `xSplit := zeroHeadBlockShift (m := n*(d+1)) (n := m*(d+1))
+        (flatTailTimeShiftDirection d m j)`.
+   2. Define
+      `vEff := (castFinCLE (by ring : (n+m)*(d+1)=n*(d+1)+m*(d+1))).symm xSplit`
+      and `y := (flattenCLEquivReal (n+m) (d+1)).symm vEff`.
+   3. Reuse `splitFirst_reindex_flatten_symm_eq` to prove
+      `splitFirst n m y = 0`.
+   4. Reuse `splitLast_reindex_flatten_symm_eq` to prove
+      `splitLast n m y =
+        (flattenCLEquivReal m (d+1)).symm (flatTailTimeShiftDirection d m j)`.
+   5. Prove the full coordinate formula
+
+```lean
+have hy_formula :
+  ∀ k : Fin (n + m), ∀ μ : Fin (d + 1),
+    y k μ =
+      if μ = 0 then
+        if (k : ℕ) < n + j.val then 0 else (-1 : ℝ)
+      else 0 := by
+  intro k μ
+  by_cases hk_head : (k : ℕ) < n
+  · -- use `hsplitFirst`; RHS is `0` since `k < n ≤ n+j.val`
+  · -- set `r : Fin m := ⟨(k : ℕ) - n, by omega⟩`
+    -- use `hsplitLast`
+    -- prove `j ≤ r ↔ n + j.val ≤ k.val` by `Fin.ext`/`omega`
+```
+
+   6. Convert `hy_formula` back through
+      `flattenCLEquivReal.apply_symm_apply`, exactly as in the existing
+      zero-head full-tail proof, obtaining
+
+```lean
+have hvEff_formula :
+  ∀ a,
+    vEff a =
+      if (finProdFinEquiv.symm a).2 = 0 then
+        if ((finProdFinEquiv.symm a).1 : Fin (n + m)).val < n + j.val
+        then 0 else (-1 : ℝ)
+      else 0
+```
+
+   7. Use `hvEff_formula` to prove the vector equality below. Only then should
+      the sign corollary rewrite to the already checked base lemma.
 
 ```lean
 private theorem zeroHeadBlockShift_flatTailTimeShiftDirection_eq
@@ -2543,8 +2623,7 @@ private theorem zeroHeadBlockShift_flatTailTimeShiftDirection_eq
         (m := n * (d + 1)) (n := m * (d + 1))
         (flatTailTimeShiftDirection d m j)) =
       flatTailTimeShiftDirection d (n + m) (Fin.natAdd n j) := by
-  ext a
-  simp [flatTailTimeShiftDirection, OSReconstruction.zeroHeadBlockShift]
+  -- Do not use bare `simp`; use the split-block coordinate proof above.
 
 private theorem zeroHeadBlockShift_flatTailTimeShiftDirection_pairing_nonpos_of_mem_dualCone
     {n m : ℕ} (j : Fin m)
@@ -3073,11 +3152,9 @@ obtain ⟨Φ1, hΦ1_point, hΦ1_apply⟩ :=
    original real-line functional `TW`. If Lean exposes a side goal not literally
    discharged by the two displayed side helpers, record the exact side goal
    here before adding another helper.
-9. The scalar kernel identity inside the Fubini proof uses the Paley-Wiener
-   `ψ_Z` pairing formula. The currently private theorem
-   `psiZ_pairing_formula` in
-   [SCV/PaleyWiener.lean](/Users/xiyin/OSReconstruction/OSReconstruction/SCV/PaleyWiener.lean)
-   must be exposed as a public, non-OS helper before this proof is attempted:
+9. The scalar kernel identity inside the Fubini proof uses the public
+   Paley-Wiener `ψ_Z` pairing formula already available in
+   [SCV/PaleyWiener.lean](/Users/xiyin/OSReconstruction/OSReconstruction/SCV/PaleyWiener.lean):
 
 ```lean
 theorem psiZ_twoPi_pairing_formula
@@ -3097,22 +3174,67 @@ theorem psiZ_twoPi_pairing_formula
    class of `ψZxε x`; use `section43_iteratedSlice_descendedPairing` only at
    this final one-variable stage, with `hw` proved by `by simpa using hε`.
 
-This gate changes the readiness status: the two `Fin 1` side helpers are now
-Lean-ready, the coordinate policy for the frozen slices is fixed, and the
-zero-left branch is documented. The finite-height OS theorem should now be
-implemented only through the ordered support packets written below:
+This gate changes the readiness status for the older Section-4.3 finite-height
+draft: the two `Fin 1` side helpers are now Lean-ready, the coordinate policy
+for the frozen slices is fixed, and the zero-left branch is documented.
 
-1. the full-kernel dual-cone support theorem
-   `tflat_pairing_eq_of_eqOn_dualCone`;
-2. the public non-OS Paley-Wiener formula `psiZ_twoPi_pairing_formula`;
-3. the strengthened BVLimits package
-   `exists_flattened_bvt_F_dualCone_distribution_with_fourierLaplace_repr`;
-4. the ambient Fubini package
-   `exists_ambientKernel_pairing_psiZTimeShift`;
-5. the transported tube-support/cutoff/Fubini package culminating in
-   `exists_transportKernel_pairing_singleSplitXiShiftScalar`;
-6. the full-kernel normal-form packet
-   `hardSingleSplit_psiZ_timeShift_expands_to_dualCone_eq_kernel_pairing`.
+2026-04-13 correction after the horizontal scalar computation:
+the raw canonical-shell/horizontal dual-cone EqOn target is **withdrawn as an
+active implementation target**. The checked horizontal scalar has the damping
+factor
+
+```lean
+base ξ *
+  Complex.exp ((ε : ℂ) * (lam ξ : ℂ)) *
+  Complex.exp ((t : ℂ) * (lam ξ : ℂ))
+```
+
+where `lam ξ` is the zero-head right-time-shift pairing. The positive-height
+canonical shell, however, uses `xiShift ... (t : ℂ)` as a real tube shift and
+the canonical imaginary direction `ε • canonicalForwardConeDirection`. On the
+dual cone its pointwise exponential has the schematic scalar
+
+```lean
+base ξ *
+  Complex.exp (-(ε : ℂ) * ηCanonicalPair ξ) *
+  Complex.exp (-(Complex.I * (t : ℂ) * (lam ξ : ℂ)))
+```
+
+up to the already-fixed sign convention
+`lam ξ = - tailTimePair ξ`. These two scalars are not equal on the full dual
+cone: the shell has an oscillatory real-time factor, while the horizontal
+imaginary-axis witness has Laplace damping. Therefore an arbitrary-`φ,ψ`
+theorem named
+
+```lean
+canonicalShell_horizontal_kernel_eqOn_dualCone
+```
+
+would prove the false generic identity between real-time Wightman values and
+positive-imaginary-axis Laplace values. Do not implement it, and do not use the
+horizontal `KHorizontal` packet to prove a zero residual for arbitrary
+ambient representatives.
+
+The sound live implementation order is instead:
+
+1. keep the already-checked canonical shell tube/Fubini package as a diagnostic
+   and as support for the actual shell limit;
+2. keep the already-checked horizontal Paley/Fubini package as the canonical
+   Wightman witness normal form;
+3. prove the Section-4.3 transported scalar bridge with hypotheses `hφf` and
+   `hψg`;
+4. use that transported bridge to supply the `hlimit` hypothesis of
+   `kernel_eq_of_tendsto_bvt_F_canonical_xiShift_to_osHolomorphicValue_on_positiveReals`
+   or the upper-half-plane witness variant;
+5. use the existing `lemma42_matrix_element_time_interchange` consumer.
+
+The raw transport/cutoff packet
+`zSplit_mem_forwardTube_of_osConjTensorProduct_support`,
+`exists_transportTubeCutoff`,
+`exists_transportKernel_pairing_singleSplitXiShiftScalar`, and
+`hardSingleSplit_psiZ_timeShift_expands_to_dualCone_eq_kernel_pairing` is
+retired for the current route. Do not implement or consume it unless a separate
+future correction supplies a valid tube representative.
 
 These theorem transcripts replace the earlier unspecified "same-`Ψ`" and
 "put into `χAmbient`/`χTransport`" gates. Production Lean should follow this
@@ -3270,17 +3392,13 @@ Concrete source anchors for the preferred limit-level route:
    interchange before applying unshifted Section-4.3 slice descent. It must not
    infer any equality of shifted representatives from `hψg`.
 
-The route choice is now fixed, but production implementation of the big
-finite-height helper is still gated. The next Lean-safe production targets are
-only the two displayed `Fin 1` Fubini side helpers and the public non-OS
-`ψ_Z` kernel formula. The local shell-side normal form
-`bvt_F_canonical_conjTensorProduct_timeShift_shell_eq_integrated_TW_psiZ` may
-be attempted only after the exact frozen-slice integral, the unshifted
-full-orthant slice adapter, the global tail-gap quotient/descent theorem,
-and the positive-support time-shift distribution transcript are written here. The
-limit-level theorem is formal after those finite positive-height statements.
-Do not reopen the pointwise/evaluation-normal-form route unless this subsection
-is rewritten with an explicit approximate-identity theorem.
+The route choice in this older subsection is retained only for the separate
+Section-4.3 OS-identification work. It is no longer the live shell-to-Laplace
+blocker. For the shell-to-Laplace seam, production implementation must follow
+the corrected canonical positive-height shell packet in §5.9.4a.1.ε. In
+particular, do not attempt the raw `singleSplit` transport/cutoff packet, and
+do not reopen the pointwise/evaluation-normal-form route unless this
+subsection is rewritten with an explicit approximate-identity theorem.
 
 The equality form consumed by the shell-limit theorem is formal:
 
@@ -3591,8 +3709,11 @@ Hidden obligations for
    time-shift distribution has been paired with the Paley-Wiener kernel and
    reduced to unshifted positive-support slice data.
 
-Once the direct shell-limit theorem and the canonical-to-OS theorem below are
-available, the semigroup-target version is purely formal:
+Once a transported shell-limit theorem and the OS holomorphic identification are
+available, the semigroup-target version is purely formal. The transported
+shell-limit theorem must not be proved by the withdrawn arbitrary
+shell-minus-horizontal EqOn; it must use the Section-4.3 hypotheses `hφf` and
+`hψg` inside the scalar comparison.
 
 ```lean
 private theorem
@@ -3632,22 +3753,25 @@ private theorem
 
 Proof transcript:
 
-1. Let `hCanonLimit` be
+1. Prove the transported scalar bridge
+   `tendsto_bvt_F_canonical_xiShift_to_osHolomorphicValue_of_section43Transport`
+   directly from Section-4.3 slice descent, or prove the canonical-extension
+   variant under the same `hφf`/`hψg` hypotheses and then rewrite by the
+   OS-holomorphic identification.
+2. If using the canonical-extension variant, let `hCanonLimit` be
    `tendsto_bvt_F_canonical_xiShift_to_canonicalExtension_imagAxis_of_section43Transport`
-   specialized to the fixed `t ht`.
-2. Let `hCanonOS` be
+   specialized to the fixed `t ht`, and let `hCanonOS` be
    `bvt_W_conjTensorProduct_timeShiftCanonicalExtension_imag_eq_osHolomorphicValue_of_section43Transport`
    specialized to the same `t ht`.
 3. Rewrite the target of `hCanonLimit` by `hCanonOS` and close with `simpa`.
-   No `singleSplit` theorem and no same-shell Euclidean/Wightman equality is
-   used in this direct route.
+   No same-shell Euclidean/Wightman equality is used in this direct route.
 
 Do not prove the normalized iterated-residual theorem from the semigroup shell
 limit or from the canonical witness's OS identification. That would be circular
-on the current route. Its proof is the positive-height shell/interchange
-normal form recorded above, followed by the formal eventually-zero Tendsto
-argument. The shell-minus-horizontal theorem is live route work, not a
-downstream diagnostic.
+on the current route. Also do not attempt to prove the arbitrary
+shell-minus-horizontal zero theorem: after the horizontal scalar computation it
+is diagnostic only, not live route work. The remaining live route work is the
+transported Section-4.3 scalar comparison.
 
 The OS-side comparison needed by the same consumer is the following exact
 hypothesis supplier for the already-proved ambient/preimage reducer:
@@ -3788,11 +3912,19 @@ therefore stay genuinely off-diagonal on the Wightman side.
 The positive-support time-shift distribution theorem is the expanded integral
 form of the off-diagonal core. It is the place where the shifted right factor
 is handled, and it is the exact Lean surface that must be proved before the
-descended `ψ_Z` theorem can be a one-line quotient expansion:
+descended `ψ_Z` theorem can be a one-line quotient expansion.
+
+Important correction: the active theorem must land directly on the
+off-diagonal spectral Laplace scalar. It must **not** land first on
+`bvtSingleSplitXiShiftScalar`. The raw single-split tube route has been
+retired, and using the single-split scalar as the hard target would smuggle the
+invalid `zSplit` surface back into the proof. The semigroup scalar is already
+available on the correct OS Hilbert vectors, so the non-circular transported
+comparison is:
 
 ```lean
 private theorem
-    integral_bvt_W_conjTensorProduct_timeShift_mul_fourierTransform_psiZ_eq_singleSplitXiShiftScalar_of_section43Transport
+    integral_bvt_W_conjTensorProduct_timeShift_mul_fourierTransform_psiZ_eq_selfAdjointSpectralLaplaceOffdiag_of_section43Transport
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     {n m : ℕ} (hm : 0 < m)
     (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
@@ -3807,6 +3939,14 @@ private theorem
     (hψg :
       section43PositiveEnergyQuotientMap (d := d) m ψ =
         os1TransportComponent d m g) :
+    let A : OSHilbertSpace OS →L[ℂ] OSHilbertSpace OS :=
+      osTimeShiftHilbert (d := d) OS lgc 1 one_pos
+    let hA : IsSelfAdjoint A :=
+      osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos
+    let xF : OSHilbertSpace OS := (((show OSPreHilbertSpace OS from
+      (⟦PositiveTimeBorchersSequence.single n f.1 f.2⟧)) : OSHilbertSpace OS))
+    let xG : OSHilbertSpace OS := (((show OSPreHilbertSpace OS from
+      (⟦PositiveTimeBorchersSequence.single m g.1 g.2⟧)) : OSHilbertSpace OS))
     ∀ t : ℝ, ∀ ht : 0 < t,
       let ψZ : SchwartzMap ℝ ℂ :=
         SCV.schwartzPsiZ
@@ -3818,58 +3958,48 @@ private theorem
         bvt_W OS lgc (n + m)
           (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) τ ψ)) *
           (SchwartzMap.fourierTransformCLM ℂ ψZ) τ) =
-        bvtSingleSplitXiShiftScalar (d := d) OS lgc hm f.1 g.1 t
+        ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag A hA xF xG (t : ℂ)
 ```
 
-This is the hard theorem. Its right side is deliberately the existing
-single-split scalar, not the spectral Laplace scalar. The semigroup/spectral
-conversion after this theorem is formal and already has production lemmas.
+This is the hard theorem. It is off-diagonal on both sides, uses the ambient
+Wightman representatives only through the time-shift functional paired against
+`𝓕ψ_Z`, and uses the Section-4.3 transport hypotheses only through quotient /
+slice descent. It does not require compactness of `φ`.
 
-Scalar-normalization packet for the right side. The local abbreviation
+Lean-ready proof transcript for this active theorem:
+
+1. Fix `t ht` and introduce `ψZ`, `A`, `hA`, `xF`, and `xG`.
+2. Rewrite the left side as
+   `OSReconstruction.fourierPairingDescendsToSection43PositiveEnergy1D TW hTW
+      (section43PositiveEnergyQuotientMap1D ψZ)`
+   using the already-proved production theorem
+   `integral_bvt_W_conjTensorProduct_timeShift_mul_fourierTransform_psiZ_eq_fourierPairingDescendsToSection43PositiveEnergy1D`.
+3. Apply the Section-4.3 transported slice comparison on the quotient class of
+   `ψZ`. This is the remaining mathematical core: after expanding the
+   one-variable quotient by `fourierPairingDescendsToSection43PositiveEnergy1D_apply`,
+   the proof must use the full positive-energy slice bridge, not a pointwise
+   rewrite of `timeShiftSchwartzNPoint t ψ`.
+4. Convert the resulting OS-side slice scalar to
+   `ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag A hA xF xG (t : ℂ)`
+   by
+   `OSInnerProductTimeShiftHolomorphicValue_eq_selfAdjointSpectralLaplaceOffdiag`
+   only after the Section-4.3 quotient comparison has supplied the OS Hilbert
+   vectors `xF` and `xG`.
+5. Close by `simpa [ψZ, A, hA, xF, xG]`. If Lean exposes an additional side
+   goal, record that exact goal in this subsection before adding support
+   lemmas.
+
+Optional downstream scalar-normalization packet. The local abbreviation
 `bvtSingleSplitXiShiftScalar` is the explicit real-axis integral from
-`bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq`; it is not a new analytic
-object. Before any spectral rewrite, normalize it through the following two
-formal lemmas:
+`bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq`; it may still be useful as
+a diagnostic after the main route is closed, but it is not an active
+implementation target for hPsi or shell-to-Laplace.
 
-```lean
-private theorem bvtSingleSplitXiShiftScalar_eq_holomorphicValue
-    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
-    {n m : ℕ} (hm : 0 < m)
-    (f : euclideanPositiveTimeSubmodule (d := d) n)
-    (g : euclideanPositiveTimeSubmodule (d := d) m)
-    (hf_compact : HasCompactSupport (f.1 : NPointDomain d n → ℂ))
-    (hg_compact : HasCompactSupport (g.1 : NPointDomain d m → ℂ))
-    {t : ℝ} (ht : 0 < t) :
-    bvtSingleSplitXiShiftScalar (d := d) OS lgc hm f.1 g.1 t =
-      bvt_singleSplit_xiShiftHolomorphicValue
-        (d := d) OS lgc hm f.1 f.2 hf_compact g.1 g.2 hg_compact (t : ℂ) := by
-  symm
-  exact
-    bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq
-      (d := d) (OS := OS) (lgc := lgc) hm
-      f.1 f.2 hf_compact g.1 g.2 hg_compact t ht
+Retired proof transcript for the old single-split integral theorem:
 
-private theorem bvtSingleSplitXiShiftScalar_eq_osInnerProductHolomorphicValue
-    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
-    {n m : ℕ} (hm : 0 < m)
-    (f : euclideanPositiveTimeSubmodule (d := d) n)
-    (g : euclideanPositiveTimeSubmodule (d := d) m)
-    (hf_compact : HasCompactSupport (f.1 : NPointDomain d n → ℂ))
-    (hg_compact : HasCompactSupport (g.1 : NPointDomain d m → ℂ))
-    {t : ℝ} (ht : 0 < t) :
-    bvtSingleSplitXiShiftScalar (d := d) OS lgc hm f.1 g.1 t =
-      OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
-        (PositiveTimeBorchersSequence.single n f.1 f.2)
-        (PositiveTimeBorchersSequence.single m g.1 g.2) (t : ℂ) := by
-  rw [bvtSingleSplitXiShiftScalar_eq_holomorphicValue
-    (d := d) (OS := OS) (lgc := lgc) hm f g hf_compact hg_compact ht]
-  exact
-    bvt_xiShift_eq_osInnerProduct_holomorphicValue_single
-      (d := d) (OS := OS) (lgc := lgc) hm
-      f.1 f.2 hf_compact g.1 g.2 hg_compact (t : ℂ) (by simpa using ht)
-```
-
-Proof transcript for the hard single-split integral theorem:
+The following transcript is superseded by the canonical-shell correction in
+§5.9.4a.1.ε. It is retained only to explain why the frequency-side `Tflat`
+idea was introduced; it is not an implementation target on the current route.
 
 1. Fix `t ht` and abbreviate `ψZ`.
 2. Expand the left side only far enough to expose the Wightman time-shift
@@ -4092,7 +4222,1486 @@ body by this stronger package and recover the old theorem as a short
 projection. The theorem is not a wrapper because it exposes the interior
 Fourier-Laplace identity that `KTransport` must consume.
 
-The transported Fubini side also needs a support-safe tube packet. Let
+#### 5.9.4a.1.ε Correction: the raw single-split tube-support packet is retired
+
+The transported Fubini side must **not** be implemented from the raw
+`singleSplit` surface displayed in the previous draft. The tempting theorem
+
+```lean
+zSplit_mem_forwardTube_of_osConjTensorProduct_support
+```
+
+is false as stated. In the simplest `n = 1`, `m = 1` case, a point in the
+support of `f.osConjTensorProduct g` has its left block in the OS-reflected
+support of `f`, hence its first Euclidean time is negative. The raw expression
+
+```lean
+xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+  (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)
+```
+
+does not change the first left point when `n > 0`, so the imaginary part of the
+first absolute coordinate has negative time component. But
+`ForwardConeAbs d (n + m)` requires the first absolute imaginary increment to
+lie in `InOpenForwardCone d`, in particular to have positive time component.
+Thus the raw point is not in the forward tube in general.
+
+Operational consequence:
+
+1. Do not invoke the strengthened multivariable Fourier-Laplace representation
+   on the raw `singleSplit` integrand at `ε = 0`.
+2. Do not implement `exists_transportTubeCutoff`,
+   `continuous_transportPsiZFamily_with_cutoff`,
+   `seminorm_transportPsiZFamily_with_cutoff_bound`, or
+   `exists_transportKernel_pairing_singleSplitXiShiftScalar` from the raw
+   `zSplit` surface below. Those names are retained only as historical markers
+   for the rejected route.
+3. The corrected shell-to-Laplace proof must stay on the canonical
+   positive-height shell
+   `x + ε * canonicalForwardConeDirection * I`, with `ε > 0`, until after the
+   Fourier-Laplace/Fubini comparison has been performed. Only then may the
+   already-proved boundary-value limit send `ε → 0+`.
+
+This correction aligns the blueprint with the production theorem surface already
+present in `OSToWightmanPositivity.lean`:
+
+```lean
+bvt_F_canonical_xiShift_shell_sub_horizontal_eq_shell_sub_iterated_fourierLaplaceIntegral
+tendsto_bvt_F_canonical_xiShift_shell_sub_iterated_to_timeShift_sub_canonicalExtension
+tendsto_bvt_F_canonical_xiShift_to_ambientCanonicalExtension_imagAxis_of_shell_sub_horizontal_tendsto_zero
+```
+
+The next hard theorem is therefore not a raw equality with
+`bvtSingleSplitXiShiftScalar`. It is the finite-height canonical residual
+identity:
+
+```lean
+private theorem
+    bvt_F_canonical_xiShift_shell_eq_iterated_fourierLaplaceIntegral
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (hψ_compact : HasCompactSupport (ψ : NPointDomain d m → ℂ))
+    {t ε : ℝ} (ht : 0 < t) (hε : 0 < ε) :
+    (∫ y : NPointDomain d (n + m),
+      bvt_F OS lgc (n + m)
+        (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+          (fun k μ =>
+            ↑(y k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                Complex.I)
+          (t : ℂ)) *
+        (φ.conjTensorProduct ψ) y) =
+    (∫ x : ℝ,
+      (∫ τ : ℝ,
+        bvt_W OS lgc (n + m)
+          (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) τ ψ)) *
+        (SchwartzMap.fourierTransformCLM ℂ
+          (SCV.schwartzPsiZ
+            ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+            (by
+              have hscaled : 0 < (2 * Real.pi) *
+                  (((x : ℂ) + ε * Complex.I).im) :=
+                mul_pos Real.two_pi_pos (by simpa using hε)
+              simpa [Complex.mul_im] using hscaled))) τ) *
+      (SchwartzMap.fourierTransformCLM ℂ
+        (SCV.schwartzPsiZ
+          (((2 * Real.pi : ℂ) * (t * Complex.I)))
+          (by
+            simpa [Complex.mul_im, ht.ne']
+              using mul_pos Real.two_pi_pos ht))) x)
+```
+
+This theorem is purely the shell-to-Laplace/Fubini comparison for the ambient
+representatives `φ, ψ`. It does not mention the positive-time preimages `f, g`
+and it does not use Section-4.3 transport. Section-4.3 transport is needed in
+the separate `hH_imag_os` theorem identifying the canonical witness on the
+positive imaginary axis with the OS holomorphic matrix element.
+
+The finite-height proof is Lean-ready in the following smaller packets.
+
+First, the canonical shell is genuinely in the forward tube for every real
+configuration, precisely because the imaginary part is the fixed positive
+canonical direction and the `ξ`-shift parameter `t : ℂ` is real:
+
+```lean
+private theorem canonicalXiShift_mem_forwardTube
+    {n m : ℕ} (hm : 0 < m)
+    {t ε : ℝ} (hε : 0 < ε)
+    (y : NPointDomain d (n + m)) :
+    xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+      (fun k μ =>
+        ↑(y k μ) +
+          ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+            Complex.I)
+      (t : ℂ) ∈ TubeDomainSetPi (ForwardConeAbs d (n + m))
+```
+
+Proof transcript:
+
+1. Unfold `TubeDomainSetPi`.
+2. Prove the imaginary part is exactly
+   `ε • canonicalForwardConeDirection (d := d) (n + m)`.
+   The `xiShift` adds the real scalar `(t : ℂ)`, so it contributes no imaginary
+   part.
+3. Convert `canonicalForwardConeDirection_mem (d := d) (n + m)` to membership
+   in `ForwardConeAbs d (n + m)` using
+   `inForwardCone_iff_mem_forwardConeAbs`.
+4. Apply `forwardConeAbs_smul d (n + m) ε hε`.
+
+The shell-side Fubini package also needs the flattened tube bridge already used
+locally in `VladimirovTillmann.lean`. Promote it as reusable support before the
+Fubini theorem:
+
+```lean
+theorem flattenCLEquiv_mem_tubeDomain_image
+    {n r : ℕ} {C : Set (Fin n → Fin (r + 1) → ℝ)}
+    {z : Fin n → Fin (r + 1) → ℂ}
+    (hz : z ∈ TubeDomainSetPi C) :
+    flattenCLEquiv n (r + 1) z ∈
+      SCV.TubeDomain ((flattenCLEquivReal n (r + 1)) '' C)
+
+theorem flattenCLEquiv_symm_mem_tubeDomainSetPi_of_mem_tubeDomain_image
+    {n r : ℕ} {C : Set (Fin n → Fin (r + 1) → ℝ)}
+    {w : Fin (n * (r + 1)) → ℂ}
+    (hw : w ∈ SCV.TubeDomain ((flattenCLEquivReal n (r + 1)) '' C)) :
+    (flattenCLEquiv n (r + 1)).symm w ∈ TubeDomainSetPi C
+```
+
+Both proofs are one-line imaginary-part transport after
+`flattenCLEquiv_im`, `flattenCLEquiv_apply`, and
+`flattenCLEquivReal_apply`. They are not route wrappers: they expose the exact
+SCV/Pi-domain bridge needed to use the flattened Fourier-Laplace theorem on the
+canonical shell.
+
+Second, package the shell side as a `Tflat` pairing at fixed `ε > 0`:
+
+```lean
+private theorem
+    exists_shellKernel_pairing_canonicalXiShift
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    {t ε : ℝ} (hε : 0 < ε)
+    (hCflat_open :
+      IsOpen
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+    (hCflat_conv :
+      Convex ℝ
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+    (hCflat_cone :
+      IsCone
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+    (hCflat_salient :
+      IsSalientCone
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+    (Tflat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ →L[ℂ] ℂ)
+    (hFL :
+      ∀ z : Fin (n + m) → Fin (d + 1) → ℂ,
+        z ∈ TubeDomainSetPi (ForwardConeAbs d (n + m)) →
+          bvt_F OS lgc (n + m) z =
+            fourierLaplaceExtMultiDim
+              ((flattenCLEquivReal (n + m) (d + 1)) ''
+                ForwardConeAbs d (n + m))
+              hCflat_open hCflat_conv hCflat_cone hCflat_salient
+              Tflat (flattenCLEquiv (n + m) (d + 1) z)) :
+    ∃ KShell : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ,
+      (∫ y : NPointDomain d (n + m),
+        bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun k μ =>
+              ↑(y k μ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                  Complex.I)
+            (t : ℂ)) *
+          (φ.conjTensorProduct ψ) y) =
+        Tflat KShell
+```
+
+Proof transcript:
+
+1. First apply `canonicalShellPsiZExtFamily_pairing` with
+   `fFlat := flattenSchwartzNPoint (d := d) (φ.conjTensorProduct ψ)`.
+   This gives `KShell` and the flat identity
+
+```lean
+∫ yflat, Tflat (multiDimPsiZExt Cflat ... (zShellFlat yflat)) *
+  flattenSchwartzNPoint (d := d) (φ.conjTensorProduct ψ) yflat
+= Tflat KShell
+```
+
+2. Use `integral_flatten_change_of_variables (n + m) (d + 1)` for the flat
+   integrand
+
+```lean
+fun yflat =>
+  Tflat (multiDimPsiZExt Cflat ... (zShellFlat yflat)) *
+    flattenSchwartzNPoint (d := d) (φ.conjTensorProduct ψ) yflat
+```
+
+   so the flat integral is the same as the integral over
+   `NPointDomain d (n+m)` after substituting
+   `yflat = flattenCLEquivReal (n + m) (d + 1) y`.
+
+3. In that substituted integrand, simplify
+   `(flattenCLEquivReal ...).symm (flattenCLEquivReal ... y)` to `y` and use
+   `flattenSchwartzNPoint_apply` to turn the flat test factor into
+   `(φ.conjTensorProduct ψ) y`.
+
+4. Use `canonicalXiShift_mem_forwardTube` to rewrite each shell value by `hFL`.
+5. Rewrite `fourierLaplaceExtMultiDim` to
+   `Tflat (multiDimPsiZExt ...)` using
+   `fourierLaplaceExtMultiDim_eq_ext`. Do **not** use
+   `fourierLaplaceExtMultiDim_eq_dynamic` here: the existing public continuity
+   API is for the fixed-radius `multiDimPsiZ` / `multiDimPsiZExt` family, and
+   the boundary-value proof already contains the exact fixed-radius Fubini
+   pattern needed here.
+6. Apply `schwartz_clm_fubini_exchange` only through the already-checked
+   `canonicalShellPsiZExtFamily_pairing` to the family
+   `yflat ↦ multiDimPsiZExt Cflat ... (zShellFlat yflat)`, where
+
+```lean
+let zShell (yflat : Fin ((n + m) * (d + 1)) → ℝ) :
+    Fin (n + m) → Fin (d + 1) → ℂ :=
+  xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+    (fun k μ =>
+      (((flattenCLEquivReal (n + m) (d + 1)).symm yflat k μ : ℝ) : ℂ) +
+        ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+          Complex.I)
+    (t : ℂ)
+
+let zShellFlat (yflat : Fin ((n + m) * (d + 1)) → ℝ) :
+    Fin ((n + m) * (d + 1)) → ℂ :=
+  flattenCLEquiv (n + m) (d + 1) (zShell yflat)
+```
+
+   The continuity proof copies the `hFubini` continuity block in
+   `fourierLaplaceExtMultiDim_boundaryValue`: define
+   `ι yflat : SCV.TubeDomain Cflat` by pairing `zShellFlat yflat` with tube
+   membership from `canonicalXiShift_mem_forwardTube` and
+   `flattenCLEquiv_mem_tubeDomain_image`; then write the family as
+   a direct application of the public helper
+   `continuous_multiDimPsiZExt_comp_of_mem_tube`.
+4. The seminorm-growth proof also copies the fixed-radius growth block in
+   `fourierLaplaceExtMultiDim_boundaryValue`, not the dynamic-radius theorem.
+   This should not be copied directly into Positivity, because the existing
+   proof uses private Paley-Wiener internals such as `multiDimPsiExpCLM`.
+   Instead, first promote the reusable analytic estimate inside
+   `PaleyWienerSchwartz.lean`:
+
+```lean
+theorem multiDimPsiZExt_fixedImaginary_seminorm_bound
+    {m : ℕ}
+    (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
+    {η : Fin m → ℝ} (hη : η ∈ C)
+    (k n : ℕ) :
+    ∃ (B : ℝ) (N : ℕ), 0 < B ∧
+      ∀ x : Fin m → ℝ,
+        SchwartzMap.seminorm ℝ k n
+          (multiDimPsiZExt C hC_open hC_conv hC_cone hC_salient
+            (fun i => (x i : ℂ) + (η i : ℂ) * Complex.I)) ≤
+          B * (1 + ‖x‖) ^ N
+```
+
+   Proof transcript for this public helper:
+
+   1. Set `χ := fixedConeCutoff_exists ...`, `y₀ := η`, and obtain
+      `c₀ > 0` from `dualConeFlat_coercivity hC_open hC_cone hη`.
+   2. For `z x i := (x i : ℂ) + (η i : ℂ) * Complex.I`, show
+      `z x ∈ SCV.TubeDomain C` and
+      `(fun i => (z x i).im) = η`.
+   3. Use `cexp_bound_on_support` with the fixed coercivity `c₀`, support
+      radius `1`, and
+      `A₀ := c₀ + ((Fintype.card (Fin m) : ℝ)^2) * ‖η‖`.
+   4. Apply `schwartz_seminorm_cutoff_exp_bound_affine_uniform` to obtain the
+      pointwise derivative bound for the fixed-radius raw kernel.
+   5. Convert the pointwise bound to a Schwartz seminorm by
+      `SchwartzMap.seminorm_le_bound` and `multiDimPsiZExt_eq`.
+   6. Bound
+      `‖multiDimPsiExpCLM (z x)‖ ≤ mR * (‖x‖ + ‖η‖)` by
+      `multiDimPsiExpCLM_norm_le` plus the componentwise estimate
+      `‖z x‖ ≤ ‖x‖ + ‖η‖`.
+   7. Absorb the affine term into a polynomial:
+      with `Cpoly := 1 + mR * ‖η‖ + mR`,
+      `(1 + ‖multiDimPsiExpCLM (z x)‖)^n
+        ≤ Cpoly^n * (1 + ‖x‖)^n`.
+
+   Then specialize this helper in Positivity. The shell imaginary part is the
+   fixed vector
+
+```lean
+ηShell :=
+  flattenCLEquivReal (n + m) (d + 1)
+    (ε • canonicalForwardConeDirection (d := d) (n + m))
+```
+
+   and `ηShell ∈ Cflat` follows from
+   `forwardConeAbs_smul` plus the flattening image. The shell real part is
+
+```lean
+xShell yflat i := (zShellFlat yflat i).re
+```
+
+   and `zShellFlat yflat` is definitionally equal, coordinatewise by real and
+   imaginary parts, to
+   `fun i => (xShell yflat i : ℂ) + (ηShell i : ℂ) * Complex.I`.
+   The only Positivity-specific estimate needed for the Fubini side condition
+   is the affine norm bound
+
+```lean
+∃ A > 0, ∀ yflat,
+  ‖xShell yflat‖ ≤ A * (1 + ‖yflat‖)
+```
+
+   A concrete choice is
+   `A := 1 + |t|`: each coordinate of the real part is either the corresponding
+   flattened real coordinate or that coordinate plus `t` in the shifted
+   time-component region, so
+   `|xShell yflat i| ≤ ‖yflat‖ + |t| ≤ (1 + |t|) * (1 + ‖yflat‖)`.
+   After applying the public helper to `xShell yflat`, absorb
+   `(1 + ‖xShell yflat‖)^N` into a constant multiple of
+   `(1 + ‖yflat‖)^N`.
+7. Conclude by transitivity with the flat identity from Step 1.
+
+Implementation helpers to write before the shell package, all copied from the
+existing `fourierLaplaceExtMultiDim_boundaryValue` proof skeleton:
+
+```lean
+theorem continuous_multiDimPsiZExt_comp_of_mem_tube ...        -- implemented
+private theorem continuous_canonicalShellPsiZExtFamily ...     -- implemented
+private theorem seminorm_canonicalShellPsiZExtFamily_bound ...
+private theorem canonicalShellPsiZExtFamily_pairing ...
+```
+
+The public continuity helper is already the reusable form of the
+`multiDimPsiZExt` continuity block. The two shell-specific helpers discharge
+the `schwartz_clm_fubini_exchange` side conditions.
+
+The next implementation should first prove the flat Fubini packet, because it
+is the direct consumer of those two side conditions and does not yet need the
+boundary-value representation hypothesis:
+
+```lean
+private theorem canonicalShellPsiZExtFamily_pairing
+    {n m : ℕ} (hm : 0 < m)
+    {t ε : ℝ} (hε : 0 < ε)
+    (hCflat_open : IsOpen Cflat)
+    (hCflat_conv : Convex ℝ Cflat)
+    (hCflat_cone : IsCone Cflat)
+    (hCflat_salient : IsSalientCone Cflat)
+    (Tflat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ →L[ℂ] ℂ)
+    (fFlat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ) :
+    ∃ KShell : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ,
+      (∫ yflat : Fin ((n + m) * (d + 1)) → ℝ,
+        Tflat (multiDimPsiZExt Cflat ... (zShellFlat yflat)) *
+          fFlat yflat) =
+        Tflat KShell
+```
+
+Proof transcript:
+
+1. Define
+   `gFamily yflat := multiDimPsiZExt Cflat ... (zShellFlat yflat)`.
+2. Use `continuous_canonicalShellPsiZExtFamily` for the `hg_cont` hypothesis.
+3. Use `seminorm_canonicalShellPsiZExtFamily_bound` for the `hg_bound`
+   hypothesis.
+4. Apply
+   `schwartz_clm_fubini_exchange Tflat gFamily fFlat hg_cont hg_bound`.
+5. Return the produced `KShell`; the axiom gives
+   `Tflat KShell = ∫ yflat, Tflat (gFamily yflat) * fFlat yflat`, so the
+   desired displayed equality is its symmetric form.
+
+Only after this flat packet is checked should the route prove
+`exists_shellKernel_pairing_canonicalXiShift`, which adds:
+
+1. `hFL` to rewrite
+   `bvt_F OS lgc ... shellZ = Tflat (multiDimPsiZExt Cflat ... zShellFlat)`;
+2. `integral_flatten_change_of_variables` plus the
+   `flattenSchwartzNPoint_apply` normal form for the change from
+   `NPointDomain d (n+m)` to flat coordinates;
+3. `fFlat := flattenSchwartzNPoint (d := d) (φ.conjTensorProduct ψ)`.
+
+These helpers are genuine analytic/Fubini content and are permitted; a
+one-line wrapper around `hFL` alone is not.
+
+Third, package the horizontal/iterated Fourier-Laplace side as a `Tflat`
+pairing using the same `Tflat`:
+
+```lean
+private theorem
+    exists_horizontalKernel_pairing_iteratedFourierLaplace
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    {t ε : ℝ} (ht : 0 < t) (hε : 0 < ε)
+    (Tflat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ →L[ℂ] ℂ)
+    (hTflat_bv :
+      ∀ φflat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ,
+        bvt_W OS lgc (n + m) (unflattenSchwartzNPoint (d := d) φflat) =
+          Tflat (physicsFourierFlatCLM φflat)) :
+    ∃ KHorizontal : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ,
+      (∫ x : ℝ,
+        (∫ τ : ℝ,
+          bvt_W OS lgc (n + m)
+            (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) τ ψ)) *
+          (SchwartzMap.fourierTransformCLM ℂ
+            (SCV.schwartzPsiZ
+              ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+              (by
+                have hscaled : 0 < (2 * Real.pi) *
+                    (((x : ℂ) + ε * Complex.I).im) :=
+                  mul_pos Real.two_pi_pos (by simpa using hε)
+                simpa [Complex.mul_im] using hscaled))) τ) *
+        (SchwartzMap.fourierTransformCLM ℂ
+          (SCV.schwartzPsiZ
+            (((2 * Real.pi : ℂ) * (t * Complex.I)))
+            (by
+              simpa [Complex.mul_im, ht.ne']
+                using mul_pos Real.two_pi_pos ht))) x) =
+        Tflat KHorizontal
+```
+
+Implementation-readiness refinement.
+
+Do not attempt the displayed double integral as the first Lean theorem. The
+safe implementation route factors it through an arbitrary one-variable
+time-shift test. This is the missing reusable rung between the shell-side
+`KShell` theorem and the full horizontal kernel:
+
+```lean
+theorem exists_timeShiftKernel_pairing_fourierTest
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (χ : SchwartzMap ℝ ℂ)
+    (Tflat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ →L[ℂ] ℂ)
+    (hTflat_bv :
+      ∀ φflat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ,
+        bvt_W OS lgc (n + m) (unflattenSchwartzNPoint (d := d) φflat) =
+          Tflat (physicsFourierFlatCLM φflat)) :
+    ∃ Kχ : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ,
+      (∀ ξ : (Fin ((n + m) * (d + 1)) → ℝ),
+        Kχ ξ =
+          (∫ τ : ℝ,
+            timeShiftFlatOrbit (d := d) φ ψ τ ξ * χ τ)) ∧
+      ((∫ τ : ℝ,
+        bvt_W OS lgc (n + m)
+          (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) τ ψ)) *
+          χ τ) =
+        Tflat Kχ)
+```
+
+This theorem is implemented in `OSToWightmanBoundaryValueLimits.lean`, not in the
+positivity frontier, because its proof is exactly the existing flat
+translation/Fubini proof pattern with the negative-support vanishing step
+removed. Its statement mentions no private BVLimits constants; the proof may
+reuse the private local flattening algebra already in that file.
+
+Proof transcript for `exists_timeShiftKernel_pairing_fourierTest`:
+
+1. Set `M := (n + m) * (d + 1)`. Since `0 < d` is in scope, `0 < M` follows
+   from `hm : 0 < m`. Define
+   `k := M - 1`, `hk : k + 1 = M`, `β := normedUnitBumpSchwartzPi k`,
+   `fpad0 := χ.prependField β`, and
+   `fpad := OSReconstruction.reindexSchwartzFin hk fpad0`.
+2. Define the public orbit abbreviation
+
+```lean
+timeShiftFlatOrbit (d := d) φ ψ τ
+```
+
+   for the full expression
+   `physicsFourierFlatCLM (reindexSchwartzFin ...
+     (SCV.translateSchwartz (zeroHeadBlockShift (τ • flatTimeShiftDirection d m))
+       Ψ))`. This keeps the theorem statement parse-stable and gives the
+   downstream EqOn proof a canonical name for the horizontal orbit. Here
+   `Ψ := (flattenSchwartzNPoint (d := d) φ.borchersConj).tensorProduct
+     (flattenSchwartzNPoint (d := d) ψ)`,
+   `orbit τ := timeShiftFlatOrbit (d := d) φ ψ τ`,
+   `headCoord x := ((OSReconstruction.castFinCLE hk).symm x) 0`, and
+   `gFamily x := orbit (headCoord x)`.
+3. Prove `Continuous gFamily` using
+   `continuous_physicsFourierFlatCLM_reindex_translate_zeroHeadBlockShift`
+   composed with `headCoord`.
+4. Prove the polynomial seminorm bound for `gFamily` from
+   `exists_bound_seminorm_physicsFourierFlatCLM_reindex_translate_zeroHeadBlockShift`
+   and `|headCoord x| ≤ ‖x‖`, exactly as in
+   `integral_bvt_W_flattened_translate_mul_fourierTransform_eq_zero_of_negSupport`.
+5. Apply `schwartz_clm_fubini_exchange Tflat gFamily fpad` and call the
+   produced kernel `Kχ`.
+6. Rewrite its pointwise formula from the full flat integral to the displayed
+   one-variable integral using `integral_comp_castFinCLE_eq`,
+   `integral_finSucc_cons_eq`, `MeasureTheory.integral_prod_mul`, and
+   `integral_normedUnitBumpSchwartzPi`.
+7. Rewrite the scalar pairing field by `hTflat_bv`, the local
+   `timeShiftSchwartzNPoint`/flattening translation identity, and the same
+   padded-integral calculation. The final result is the displayed equality
+   `(∫ τ, bvt_W ... * χ τ) = Tflat Kχ`.
+
+After this theorem is available, the horizontal packet is no longer a raw
+double-Fubini problem. It should be assembled in two explicit steps:
+
+1. Build a one-dimensional horizontal Paley kernel `χHorizontal ε t` by applying
+   `schwartz_clm_fubini_exchange` on `Fin 1` to the family
+   `x ↦ (SchwartzMap.fourierTransformCLM ℂ) (ψZ_{2π(x+εi)})`, using the already
+   documented side conditions
+   `continuous_fin1_reindexed_fourierTransform_schwartzPsiZ_horizontal` and
+   `seminorm_fin1_reindexed_fourierTransform_schwartzPsiZ_horizontal_growth`.
+   Its pointwise formula is
+   `χHorizontal τ = ∫ x, (𝓕 ψZ_{2π(x+εi)}) τ * (𝓕 ψZ_{2πit}) x`.
+2. Apply `exists_timeShiftKernel_pairing_fourierTest` with
+   `χ := χHorizontal`. The resulting `Kχ` is the desired
+   `KHorizontal`, and its pointwise formula is suitable for the later
+   dual-cone EqOn calculation against `KShell`.
+
+The older direct double-Fubini proof transcript is superseded by the
+two-stage transcript above. In particular, do not build `KHorizontal` by first
+choosing a family of existential inner kernels depending on `x`; that loses the
+continuity/growth data needed for the outer Fubini step. The safe Lean order is:
+first prove the arbitrary-test flat time-shift theorem, then build the
+one-dimensional `χHorizontal`, then apply the arbitrary-test theorem with
+`χ := χHorizontal`.
+
+Implementation-ready statement for the one-dimensional horizontal Paley kernel:
+
+```lean
+private theorem exists_horizontalPaleyKernel_pairing_fourierTransform
+    {ε t : ℝ} (hε : 0 < ε) (ht : 0 < t)
+    (TW : SchwartzMap ℝ ℂ →L[ℂ] ℂ) :
+    ∃ χHorizontal : SchwartzMap ℝ ℂ,
+      (∀ τ : ℝ,
+        χHorizontal τ =
+          ∫ x : ℝ,
+            (SchwartzMap.fourierTransformCLM ℂ
+              (SCV.schwartzPsiZ
+                ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+                ...)) τ *
+            (SchwartzMap.fourierTransformCLM ℂ
+              (SCV.schwartzPsiZ
+                (((2 * Real.pi : ℂ) * (t * Complex.I)))
+                ...)) x) ∧
+      TW χHorizontal =
+        ∫ x : ℝ,
+          TW
+            ((SchwartzMap.fourierTransformCLM ℂ)
+              (SCV.schwartzPsiZ
+                ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+                ...)) *
+          (SchwartzMap.fourierTransformCLM ℂ
+            (SCV.schwartzPsiZ
+              (((2 * Real.pi : ℂ) * (t * Complex.I)))
+              ...)) x
+```
+
+Lean proof transcript:
+
+1. Set
+
+```lean
+let e1 : (Fin 1 → ℝ) ≃L[ℝ] ℝ :=
+  ContinuousLinearEquiv.funUnique (Fin 1) ℝ ℝ
+let toFin1 : SchwartzMap ℝ ℂ →L[ℂ] SchwartzMap (Fin 1 → ℝ) ℂ :=
+  SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e1
+let fromFin1 : SchwartzMap (Fin 1 → ℝ) ℂ →L[ℂ] SchwartzMap ℝ ℂ :=
+  SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e1.symm
+let T1 : SchwartzMap (Fin 1 → ℝ) ℂ →L[ℂ] ℂ := TW.comp fromFin1
+let ψZt : SchwartzMap ℝ ℂ :=
+  SCV.schwartzPsiZ (((2 * Real.pi : ℂ) * (t * Complex.I))) ...
+let f1 : SchwartzMap (Fin 1 → ℝ) ℂ :=
+  toFin1 ((SchwartzMap.fourierTransformCLM ℂ) ψZt)
+let g1 : (Fin 1 → ℝ) → SchwartzMap (Fin 1 → ℝ) ℂ := fun x1 =>
+  toFin1
+    ((SchwartzMap.fourierTransformCLM ℂ)
+      (SCV.schwartzPsiZ
+        ((((2 * Real.pi : ℝ) : ℂ) * ((e1 x1 : ℂ) + ε * Complex.I)))
+        ...))
+```
+
+2. Apply `schwartz_clm_fubini_exchange T1 g1 f1` with
+   `SCV.continuous_fin1_reindexed_fourierTransform_schwartzPsiZ_horizontal hε`
+   and
+   `SCV.seminorm_fin1_reindexed_fourierTransform_schwartzPsiZ_horizontal_growth hε`.
+   Let the produced `Fin 1` kernel be `χ1`.
+3. Define `χHorizontal := fromFin1 χ1`.
+4. Pointwise formula:
+   `χHorizontal τ = χ1 (e1.symm τ)`, then use the Fubini pointwise formula.
+   Rewrite
+   `toFin1 φ x1 = φ (e1 x1)` and `e1 (e1.symm τ) = τ`.
+   Convert the remaining `Fin 1` integral to the real-line integral using
+   the measure-preserving equivalence
+   `MeasureTheory.volume_preserving_funUnique (Fin 1) ℝ`.
+5. Pairing formula:
+   `TW χHorizontal = T1 χ1`, use the Fubini pairing equality, rewrite
+   `fromFin1 (toFin1 φ) = φ`, and again convert the `Fin 1` integral to the
+   real-line integral.
+6. Immediately derive the universal form:
+
+```lean
+private theorem exists_horizontalPaleyKernel_universal_pairing
+    {ε t : ℝ} (hε : 0 < ε) (ht : 0 < t) :
+    let ψZxε : ℝ → SchwartzMap ℝ ℂ := ...
+    let ψZt : SchwartzMap ℝ ℂ := ...
+    ∃ χHorizontal : SchwartzMap ℝ ℂ,
+      (∀ τ : ℝ,
+        χHorizontal τ =
+          ∫ x : ℝ,
+            (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) τ *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x) ∧
+      ∀ TW : SchwartzMap ℝ ℂ →L[ℂ] ℂ,
+        TW χHorizontal =
+          ∫ x : ℝ,
+            TW (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x
+```
+
+   Proof: choose `χHorizontal` from
+   `exists_horizontalPaleyKernel_pairing_fourierTransform hε ht 0`. For an
+   arbitrary `TW`, apply
+   `exists_horizontalPaleyKernel_pairing_fourierTransform hε ht TW`, obtaining
+   `χTW`. Prove `χTW = χHorizontal` by `ext τ` from the identical pointwise
+   formula. Transport the `TW` pairing identity across this equality.
+
+   This universal theorem is essential for the dual-cone EqOn proof: at fixed
+   flattened frequency `ξ`, instantiate `TW` as the one-variable continuous
+   functional
+
+```lean
+χ ↦ ∫ τ, timeShiftFlatOrbit (d := d) φ ψ τ ξ * χ τ
+```
+
+   after rewriting `timeShiftFlatOrbit` to its oscillatory phase form. This
+   avoids a raw ad hoc scalar Fubini step in the EqOn proof.
+
+7. Keep these theorems in `OSToWightmanPositivity.lean` near the existing
+   horizontal canonical-witness normal forms. It is generic in `TW`, so it is
+   not a wrapper over the Wightman theorem; the immediate next consumer
+   instantiates
+   `TW := bvt_W_conjTensorProduct_timeShiftTemperedFunctional ...`.
+
+Implementation-ready statement for the immediate Wightman/full-flat consumer:
+
+```lean
+private theorem exists_horizontalKernel_pairing_iteratedFourierLaplace
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (hψ_compact : HasCompactSupport (ψ : NPointDomain d m → ℂ))
+    {ε t : ℝ} (hε : 0 < ε) (ht : 0 < t)
+    (Tflat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ →L[ℂ] ℂ)
+    (hTflat_bv :
+      ∀ φflat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ,
+        bvt_W OS lgc (n + m) (unflattenSchwartzNPoint (d := d) φflat) =
+          Tflat (physicsFourierFlatCLM φflat)) :
+    let ψZxε : ℝ → SchwartzMap ℝ ℂ := ...
+    let ψZt : SchwartzMap ℝ ℂ := ...
+    ∃ χHorizontal : SchwartzMap ℝ ℂ,
+      (∀ τ : ℝ,
+        χHorizontal τ =
+          ∫ x : ℝ,
+            (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) τ *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x) ∧
+      ∃ KHorizontal : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ,
+        (∀ ξ : Fin ((n + m) * (d + 1)) → ℝ,
+          KHorizontal ξ =
+            ∫ τ : ℝ,
+              timeShiftFlatOrbit (d := d) φ ψ τ ξ * χHorizontal τ) ∧
+        (∫ x : ℝ,
+          bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+              (d := d) OS lgc φ ψ hψ_compact ((x : ℂ) + ε * Complex.I) *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x) =
+          Tflat KHorizontal
+```
+
+Proof transcript:
+
+1. Let
+   `TW := bvt_W_conjTensorProduct_timeShiftTemperedFunctional
+     (d := d) OS lgc φ ψ hψ_compact`.
+2. Apply
+   `exists_horizontalPaleyKernel_pairing_fourierTransform hε ht TW`,
+   obtaining `χHorizontal`, its pointwise formula, and
+   `TW χHorizontal = ∫ x, TW (𝓕 ψZxε x) * (𝓕 ψZt) x`.
+3. Apply `exists_timeShiftKernel_pairing_fourierTest` to this
+   `χHorizontal`, `Tflat`, and `hTflat_bv`, obtaining `KHorizontal`,
+   its pointwise formula, and
+   `∫ τ, bvt_W(φ ⊗ timeShift τ ψ) * χHorizontal τ = Tflat KHorizontal`.
+4. Prove the horizontal scalar equality by the chain
+
+```lean
+∫ x, H(x + ε i) * (𝓕 ψZt) x
+  = ∫ x, TW (𝓕 ψZxε x) * (𝓕 ψZt) x
+  = TW χHorizontal
+  = ∫ τ, bvt_W(φ ⊗ timeShift τ ψ) * χHorizontal τ
+  = Tflat KHorizontal
+```
+
+The first equality is pointwise integral congruence using
+`bvt_W_conjTensorProduct_timeShiftCanonicalExtension_horizontal_eq_fourierLaplaceIntegral`
+together with
+`bvt_W_conjTensorProduct_timeShiftTemperedFunctional_apply`.
+The third equality is exactly
+`bvt_W_conjTensorProduct_timeShiftTemperedFunctional_apply` applied to
+`χHorizontal`.
+
+Withdrawn fourth step: the finite-height full-kernel equality below is not a
+valid arbitrary-`φ,ψ` target. It is retained only to document the exact theorem
+shape that must **not** be implemented without additional transported
+Section-4.3 hypotheses:
+
+```lean
+private theorem
+    canonicalShell_horizontal_kernel_eqOn_dualCone
+    ...
+    Set.EqOn
+      (KShell : (Fin ((n + m) * (d + 1)) → ℝ) → ℂ)
+      KHorizontal
+      (DualConeFlat
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+```
+
+The reason is explicit after the horizontal scalar calculation. On the dual
+cone the horizontal packet gives Laplace damping in `t`, while the canonical
+shell has a real `xiShift ... (t : ℂ)` and therefore an oscillatory phase.
+This mismatch is not a Lean inconvenience; it is the mathematical obstruction
+that prevents an unconditional shell-to-canonical-imaginary-axis theorem.
+
+The following support lemma remains sound and useful for shell normal-form
+diagnostics, and it is already implemented in `SCV/PaleyWienerSchwartz.lean`.
+It should not be followed by the withdrawn raw EqOn theorem.
+
+Implementation-ready support lemma:
+
+```lean
+theorem multiDimPsiZExt_apply_of_mem_dualCone {m : ℕ}
+    (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
+    (z : Fin m → ℂ) (hz : z ∈ SCV.TubeDomain C)
+    {ξ : Fin m → ℝ} (hξ : ξ ∈ DualConeFlat C) :
+    multiDimPsiZExt C hC_open hC_conv hC_cone hC_salient z ξ =
+      Complex.exp (Complex.I * ∑ i, z i * (ξ i : ℂ))
+```
+
+Lean proof transcript:
+
+```lean
+  rw [multiDimPsiZExt_eq C hC_open hC_conv hC_cone hC_salient z hz]
+  let χ : FixedConeCutoff (DualConeFlat C) :=
+    (fixedConeCutoff_exists (DualConeFlat C) (dualConeFlat_closed C)).some
+  change psiZRaw χ 1 z ξ =
+    Complex.exp (Complex.I * ∑ i, z i * (ξ i : ℂ))
+  have hχ : χ.val ξ = 1 := fixedConeCutoff_eq_one_on_dualCone χ hξ
+  simp [psiZRaw, hχ]
+```
+
+Expected local adjustment: if `simp [psiZRaw, hχ]` does not rewrite the cutoff
+argument because it appears as `fun i => 1⁻¹ * ξ i`, add
+
+```lean
+  have hscale : (fun i => (1 : ℝ)⁻¹ * ξ i) = ξ := by
+    ext i
+    simp
+  simp [psiZRaw, hscale, hχ]
+```
+
+This theorem is mathematically sound because `multiDimPsiZExt` first reduces to
+the fixed-radius `multiDimPsiZ` on the tube; `multiDimPsiZ` is
+`psiZRaw χ 1 z`; and `χ = 1` on `DualConeFlat C` by
+`FixedConeCutoff.one_on_neighborhood` plus `Metric.infDist_zero_of_mem`.
+
+After this support lemma, the EqOn theorem should be implemented with the
+following local notation:
+
+```lean
+let q : ℕ := n + m
+let M : ℕ := q * (d + 1)
+let Cflat : Set (Fin M → ℝ) :=
+  (flattenCLEquivReal q (d + 1)) '' ForwardConeAbs d q
+let Ψ : SchwartzMap (Fin (n * (d + 1) + m * (d + 1)) → ℝ) ℂ :=
+  (flattenSchwartzNPoint (d := d) φ.borchersConj).tensorProduct
+    (flattenSchwartzNPoint (d := d) ψ)
+let Ψfull : SchwartzMap (Fin M → ℝ) ℂ :=
+  OSReconstruction.reindexSchwartzFin
+    (by ring : n * (d + 1) + m * (d + 1) = M) Ψ
+let vTail : Fin M → ℝ :=
+  (OSReconstruction.castFinCLE
+    (by ring : n * (d + 1) + m * (d + 1) = M))
+    (OSReconstruction.zeroHeadBlockShift
+      (m := n * (d + 1)) (n := m * (d + 1))
+      (flatTimeShiftDirection d m))
+let lam ξ : ℝ := ∑ i, vTail i * ξ i
+let r ξ : ℝ := - lam ξ / (2 * Real.pi)
+let base ξ : ℂ := physicsFourierFlatCLM Ψfull ξ
+```
+
+For `ξ ∈ DualConeFlat Cflat`, the public BVLimits sign lemma gives
+`lam ξ ≤ 0`, hence `0 ≤ r ξ`. The exact one-variable Fourier normalization is:
+
+```lean
+∫ τ : ℝ,
+  Complex.exp (-(Complex.I * (lam ξ : ℂ) * τ)) *
+    (SchwartzMap.fourierTransformCLM ℂ χ) τ
+= χ (r ξ)
+```
+
+This is exactly `integral_phase_mul_fourierTransform_eq_eval χ (lam ξ)`.
+
+The fixed-frequency phase functional used with
+`exists_horizontalPaleyKernel_universal_pairing` is:
+
+```lean
+TWξ χ :=
+  base ξ *
+    ∫ τ : ℝ,
+      Complex.exp (-(Complex.I * (lam ξ : ℂ) * τ)) * χ τ
+```
+
+or equivalently the integral of
+`Complex.exp (-(I * lam ξ * τ)) * base ξ * χ τ`; choose the former in Lean
+because it is the scalar multiple of the existing one-variable
+`SchwartzMap.integralCLM` applied after `SchwartzMap.smulLeftCLM` by the
+temperate-growth phase. Its evaluation on Fourier transforms is:
+
+```lean
+TWξ (SchwartzMap.fourierTransformCLM ℂ χ)
+  = base ξ * χ (r ξ)
+```
+
+by pulling out `base ξ` and applying
+`integral_phase_mul_fourierTransform_eq_eval`.
+
+Implementation-ready support lemma for the full-flat time-shift orbit, to be
+placed in `OSToWightmanBoundaryValueLimits.lean` immediately after
+`timeShiftFlatOrbit`:
+
+```lean
+theorem timeShiftFlatOrbit_apply_phase
+    {n m : ℕ}
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (τ : ℝ) (ξ : Fin ((n + m) * (d + 1)) → ℝ) :
+    timeShiftFlatOrbit (d := d) φ ψ τ ξ =
+      Complex.exp
+        (-(Complex.I *
+          (((∑ i,
+            (((OSReconstruction.castFinCLE
+              (Nat.add_mul n m (d + 1)).symm)
+              (OSReconstruction.zeroHeadBlockShift
+                (m := n * (d + 1)) (n := m * (d + 1))
+                (flatTimeShiftDirection d m))) i) * ξ i : ℝ) : ℂ) *
+            (τ : ℂ)))) *
+        physicsFourierFlatCLM
+          (OSReconstruction.reindexSchwartzFin
+            (Nat.add_mul n m (d + 1)).symm
+            ((flattenSchwartzNPoint (d := d) φ.borchersConj).tensorProduct
+              (flattenSchwartzNPoint (d := d) ψ))) ξ
+```
+
+Lean proof transcript:
+
+```lean
+  classical
+  let Ψ : SchwartzMap (Fin (n * (d + 1) + m * (d + 1)) → ℝ) ℂ :=
+    (flattenSchwartzNPoint (d := d) φ.borchersConj).tensorProduct
+      (flattenSchwartzNPoint (d := d) ψ)
+  dsimp [timeShiftFlatOrbit]
+  rw [physicsFourierFlatCLM_reindex_translate_zeroHeadBlockShift_apply
+    (d := d) (n := n) (m := m)
+    (a := τ • flatTimeShiftDirection d m) (Ψ := Ψ) (ξ := ξ)]
+  congr 1
+  have hsum_real :
+      (∑ i,
+          ((OSReconstruction.castFinCLE
+            (Nat.add_mul n m (d + 1)).symm)
+            (OSReconstruction.zeroHeadBlockShift
+              (m := n * (d + 1)) (n := m * (d + 1))
+              (τ • flatTimeShiftDirection d m))) i * ξ i) =
+        (∑ i,
+          ((OSReconstruction.castFinCLE
+            (Nat.add_mul n m (d + 1)).symm)
+            (OSReconstruction.zeroHeadBlockShift
+              (m := n * (d + 1)) (n := m * (d + 1))
+              (flatTimeShiftDirection d m))) i * ξ i) * τ := by
+    simp [zeroHeadBlockShift_smul, Finset.mul_sum, Pi.smul_apply,
+      mul_assoc, mul_left_comm, mul_comm]
+  have hsum :
+      (∑ i,
+          ((((OSReconstruction.castFinCLE
+            (Nat.add_mul n m (d + 1)).symm)
+            (OSReconstruction.zeroHeadBlockShift
+              (m := n * (d + 1)) (n := m * (d + 1))
+              (τ • flatTimeShiftDirection d m))) i : ℝ) : ℂ) *
+            (ξ i : ℂ)) =
+        ((∑ i,
+            (((OSReconstruction.castFinCLE
+              (Nat.add_mul n m (d + 1)).symm)
+              (OSReconstruction.zeroHeadBlockShift
+                (m := n * (d + 1)) (n := m * (d + 1))
+                (flatTimeShiftDirection d m))) i) * ξ i : ℝ) : ℂ) * τ := by
+    exact_mod_cast hsum_real
+  congr 1
+  rw [hsum]
+```
+
+This theorem is a genuine exposure of existing Fourier algebra, not a wrapper:
+it removes the repeated unfold/rewrite burden from the future EqOn proof and
+fixes the sign of the phase once, using the already verified translation lemma.
+
+Implementation-ready one-variable phase functional packet, to be placed in
+`OSToWightmanPositivity.lean` near the horizontal Paley kernel theorem:
+
+```lean
+private theorem horizontalPhase_temperate (lam : ℝ) :
+    (fun τ : ℝ =>
+      Complex.exp (-(Complex.I * (lam : ℂ) * (τ : ℂ)))).HasTemperateGrowth := by
+  let c : ℂ := -(Complex.I * (lam : ℂ))
+  suffices htemp : (fun τ : ℝ => Complex.exp (c * (τ : ℂ))).HasTemperateGrowth by
+    convert htemp using 1
+    ext τ
+    simp [c, mul_assoc]
+  refine ⟨?_, ?_⟩
+  · have hlin : ContDiff ℝ (↑(⊤ : ℕ∞)) (fun τ : ℝ => c * (τ : ℂ)) := by
+      simpa using (contDiff_const.mul Complex.ofRealCLM.contDiff)
+    exact Complex.contDiff_exp.comp hlin
+  · intro n
+    refine ⟨0, ‖c ^ n‖, fun τ => ?_⟩
+    rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv]
+    have hiter := congr_fun (SCV.iteratedDeriv_cexp_const_mul_real n c) τ
+    rw [hiter]
+    have hre : (c * (τ : ℂ)).re = 0 := by
+      simp [c, Complex.mul_re]
+    calc
+      ‖c ^ n * Complex.exp (c * (τ : ℂ))‖ = ‖c ^ n‖ := by
+        rw [norm_mul, Complex.norm_exp, hre, Real.exp_zero, mul_one]
+      _ ≤ ‖c ^ n‖ * (1 + ‖τ‖) ^ 0 := by simp
+
+private noncomputable def horizontalPhasePairingCLM
+    (base : ℂ) (lam : ℝ) :
+    SchwartzMap ℝ ℂ →L[ℂ] ℂ :=
+  base •
+    ((SchwartzMap.integralCLM ℂ
+      (MeasureTheory.volume : MeasureTheory.Measure ℝ)).comp
+      (SchwartzMap.smulLeftCLM ℂ
+        (fun τ : ℝ =>
+          Complex.exp (-(Complex.I * (lam : ℂ) * (τ : ℂ))))))
+
+private theorem horizontalPhasePairingCLM_apply
+    (base : ℂ) (lam : ℝ) (χ : SchwartzMap ℝ ℂ) :
+    horizontalPhasePairingCLM base lam χ =
+      base *
+        ∫ τ : ℝ,
+          Complex.exp (-(Complex.I * (lam : ℂ) * (τ : ℂ))) * χ τ := by
+  simp [horizontalPhasePairingCLM, SchwartzMap.integralCLM_apply,
+    SchwartzMap.smulLeftCLM_apply_apply (horizontalPhase_temperate lam), smul_eq_mul]
+
+private theorem horizontalPhasePairingCLM_fourierTransform
+    (base : ℂ) (lam : ℝ) (χ : SchwartzMap ℝ ℂ) :
+    horizontalPhasePairingCLM base lam
+        ((SchwartzMap.fourierTransformCLM ℂ) χ) =
+      base * χ (-lam / (2 * Real.pi)) := by
+  rw [horizontalPhasePairingCLM_apply]
+  rw [integral_phase_mul_fourierTransform_eq_eval]
+```
+
+This packet is the precise way to instantiate
+`exists_horizontalPaleyKernel_universal_pairing` at a fixed frequency `ξ`.
+The next implementation-ready theorem is the direct instantiation:
+
+```lean
+private theorem exists_horizontalPaleyKernel_phasePairing
+    {ε t : ℝ} (hε : 0 < ε) (ht : 0 < t)
+    (base : ℂ) (lam : ℝ) :
+    let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+      SCV.schwartzPsiZ
+        ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+        (by
+          have hscaled : 0 < (2 * Real.pi) *
+              (((x : ℂ) + ε * Complex.I).im) :=
+            mul_pos Real.two_pi_pos (by simpa using hε)
+          simpa [Complex.mul_im] using hscaled)
+    let ψZt : SchwartzMap ℝ ℂ :=
+      SCV.schwartzPsiZ
+        (((2 * Real.pi : ℂ) * (t * Complex.I)))
+        (by
+          simpa [Complex.mul_im, ht.ne']
+            using mul_pos Real.two_pi_pos ht)
+    ∃ χHorizontal : SchwartzMap ℝ ℂ,
+      (∀ τ : ℝ,
+        χHorizontal τ =
+          ∫ x : ℝ,
+            (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) τ *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x) ∧
+      horizontalPhasePairingCLM base lam χHorizontal =
+        ∫ x : ℝ,
+          (base * (ψZxε x) (-lam / (2 * Real.pi))) *
+          (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+  classical
+  let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+    SCV.schwartzPsiZ
+      ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+      (by
+        have hscaled : 0 < (2 * Real.pi) *
+            (((x : ℂ) + ε * Complex.I).im) :=
+          mul_pos Real.two_pi_pos (by simpa using hε)
+        simpa [Complex.mul_im] using hscaled)
+  let ψZt : SchwartzMap ℝ ℂ :=
+    SCV.schwartzPsiZ
+      (((2 * Real.pi : ℂ) * (t * Complex.I)))
+      (by
+        simpa [Complex.mul_im, ht.ne']
+          using mul_pos Real.two_pi_pos ht)
+  obtain ⟨χHorizontal, hχ_eval, hχ_pair⟩ :=
+    exists_horizontalPaleyKernel_universal_pairing (hε := hε) (ht := ht)
+  refine ⟨χHorizontal, ?_, ?_⟩
+  · simpa [ψZxε, ψZt] using hχ_eval
+  · calc
+      horizontalPhasePairingCLM base lam χHorizontal
+          = ∫ x : ℝ,
+              horizontalPhasePairingCLM base lam
+                ((SchwartzMap.fourierTransformCLM ℂ) (ψZxε x)) *
+              (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+              simpa [ψZxε, ψZt] using
+                hχ_pair (horizontalPhasePairingCLM base lam)
+      _ = ∫ x : ℝ,
+            (base * (ψZxε x) (-lam / (2 * Real.pi))) *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+            apply MeasureTheory.integral_congr_ae
+            filter_upwards with x
+            rw [horizontalPhasePairingCLM_fourierTransform]
+```
+
+This theorem is not the final shell comparison. Its role is to turn the
+horizontal `τ`-kernel into the one remaining `x`-integral at a frozen
+frequency. The subsequent theorem uses it with
+
+```lean
+base := physicsFourierFlatCLM Ψfull ξ
+lam := ∑ i, vTail i * ξ i
+```
+
+and use `timeShiftFlatOrbit_apply_phase` to rewrite
+`timeShiftFlatOrbit τ ξ` as the integrand represented by
+`horizontalPhasePairingCLM base lam`.
+
+The next horizontal-only collapse is implementation-ready:
+
+```lean
+private theorem horizontalPaley_phase_xIntegral_eq
+    {ε t : ℝ} (hε : 0 < ε) (ht : 0 < t)
+    (base : ℂ) (lam : ℝ) :
+    let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+      SCV.schwartzPsiZ
+        ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+        (by
+          have hscaled : 0 < (2 * Real.pi) *
+              (((x : ℂ) + ε * Complex.I).im) :=
+            mul_pos Real.two_pi_pos (by simpa using hε)
+          simpa [Complex.mul_im] using hscaled)
+    let ψZt : SchwartzMap ℝ ℂ :=
+      SCV.schwartzPsiZ
+        (((2 * Real.pi : ℂ) * (t * Complex.I)))
+        (by
+          simpa [Complex.mul_im, ht.ne']
+            using mul_pos Real.two_pi_pos ht)
+    ∫ x : ℝ,
+      (base * (ψZxε x) (-lam / (2 * Real.pi))) *
+      (SchwartzMap.fourierTransformCLM ℂ ψZt) x =
+    base *
+      ((SCV.smoothCutoff (-lam / (2 * Real.pi)) : ℂ) *
+        Complex.exp (-(2 * Real.pi * ε : ℂ) * (-lam / (2 * Real.pi))) *
+        ψZt (-lam / (2 * Real.pi))) := by
+  classical
+  let r : ℝ := -lam / (2 * Real.pi)
+  let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+    SCV.schwartzPsiZ
+      ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+      (by
+        have hscaled : 0 < (2 * Real.pi) *
+            (((x : ℂ) + ε * Complex.I).im) :=
+          mul_pos Real.two_pi_pos (by simpa using hε)
+        simpa [Complex.mul_im] using hscaled)
+  let ψZt : SchwartzMap ℝ ℂ :=
+    SCV.schwartzPsiZ
+      (((2 * Real.pi : ℂ) * (t * Complex.I)))
+      (by
+        simpa [Complex.mul_im, ht.ne']
+          using mul_pos Real.two_pi_pos ht)
+  have hψ_inv :
+      FourierTransform.fourierInv
+          ((SchwartzMap.fourierTransformCLM ℂ) ψZt) = ψZt := by
+    simpa [ψZt] using (FourierTransform.fourierInv_fourier_eq ψZt)
+  have hpair :
+      (∫ x : ℝ,
+          (ψZxε x) r *
+          (SchwartzMap.fourierTransformCLM ℂ ψZt) x) =
+        (SCV.smoothCutoff r : ℂ) *
+          Complex.exp (-(2 * Real.pi * ε : ℂ) * r) *
+          ψZt r := by
+    calc
+      (∫ x : ℝ,
+          (ψZxε x) r *
+          (SchwartzMap.fourierTransformCLM ℂ ψZt) x)
+          = ∫ x : ℝ,
+              SCV.psiZ ((2 * Real.pi : ℂ) * (x + ε * Complex.I)) r *
+              (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+              apply MeasureTheory.integral_congr_ae
+              filter_upwards with x
+              simp [ψZxε]
+      _ = (SCV.smoothCutoff r : ℂ) *
+            Complex.exp (-(2 * Real.pi * ε : ℂ) * r) *
+            FourierTransform.fourierInv
+              ((SchwartzMap.fourierTransformCLM ℂ) ψZt) r :=
+            SCV.psiZ_twoPi_pairing_formula
+              (φ := (SchwartzMap.fourierTransformCLM ℂ ψZt))
+              (η := ε) (ξ := r)
+      _ = (SCV.smoothCutoff r : ℂ) *
+            Complex.exp (-(2 * Real.pi * ε : ℂ) * r) *
+            ψZt r := by rw [hψ_inv]
+  have hmain :
+      (∫ x : ℝ,
+        (base * (ψZxε x) r) *
+        (SchwartzMap.fourierTransformCLM ℂ ψZt) x) =
+      base *
+        ((SCV.smoothCutoff r : ℂ) *
+          Complex.exp (-(2 * Real.pi * ε : ℂ) * r) *
+          ψZt r) := by
+    calc
+      (∫ x : ℝ,
+        (base * (ψZxε x) r) *
+        (SchwartzMap.fourierTransformCLM ℂ ψZt) x)
+          = ∫ x : ℝ,
+              base * ((ψZxε x) r *
+                (SchwartzMap.fourierTransformCLM ℂ ψZt) x) := by
+              apply MeasureTheory.integral_congr_ae
+              filter_upwards with x
+              ring
+      _ = base *
+            ∫ x : ℝ,
+              (ψZxε x) r *
+              (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+            simpa using
+              (MeasureTheory.integral_const_mul
+                (μ := MeasureTheory.volume) base
+                (fun x : ℝ =>
+                  (ψZxε x) r *
+                  (SchwartzMap.fourierTransformCLM ℂ ψZt) x))
+      _ = base *
+            ((SCV.smoothCutoff r : ℂ) *
+              Complex.exp (-(2 * Real.pi * ε : ℂ) * r) *
+              ψZt r) := by rw [hpair]
+  simpa [r, ψZxε, ψZt] using hmain
+```
+
+The remaining horizontal simplification, after this theorem, is purely
+pointwise:
+
+1. For `ξ ∈ DualConeFlat Cflat`, the promoted theorem
+   `zeroHeadBlockShift_flatTimeShiftDirection_pairing_nonpos_of_mem_dualCone`
+   gives `lam ξ ≤ 0`, hence `r ξ = -lam ξ / (2π) ≥ 0`.
+2. `SCV.smoothCutoff_one_of_nonneg` removes the outer cutoff at `r ξ`.
+3. `SCV.psiZ_eq_exp_of_nonneg` removes the cutoff inside `ψZt (r ξ)`.
+4. The exponent algebra is
+
+```lean
+Complex.I * ((2 * Real.pi : ℂ) * (t * Complex.I)) * (r : ℂ)
+  = -(2 * Real.pi * t : ℂ) * (r : ℂ)
+```
+
+so the horizontal scalar becomes
+
+```lean
+base *
+  Complex.exp (-(2 * Real.pi * ε : ℂ) * r) *
+  Complex.exp (-(2 * Real.pi * t : ℂ) * r)
+```
+
+with `r = -lam / (2 * Real.pi)`.
+
+Implementation-ready cutoff-removal theorem:
+
+```lean
+private theorem horizontalPaley_phase_xIntegral_eq_of_nonneg
+    {ε t : ℝ} (hε : 0 < ε) (ht : 0 < t)
+    (base : ℂ) (lam : ℝ)
+    (hr : 0 ≤ -lam / (2 * Real.pi)) :
+    let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+      SCV.schwartzPsiZ
+        ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+        (by
+          have hscaled : 0 < (2 * Real.pi) *
+              (((x : ℂ) + ε * Complex.I).im) :=
+            mul_pos Real.two_pi_pos (by simpa using hε)
+          simpa [Complex.mul_im] using hscaled)
+    let ψZt : SchwartzMap ℝ ℂ :=
+      SCV.schwartzPsiZ
+        (((2 * Real.pi : ℂ) * (t * Complex.I)))
+        (by
+          simpa [Complex.mul_im, ht.ne']
+            using mul_pos Real.two_pi_pos ht)
+    ∫ x : ℝ,
+      (base * (ψZxε x) (-lam / (2 * Real.pi))) *
+      (SchwartzMap.fourierTransformCLM ℂ ψZt) x =
+    base *
+      (Complex.exp (-(2 * Real.pi * ε : ℂ) * (-lam / (2 * Real.pi))) *
+       Complex.exp (-(2 * Real.pi * t : ℂ) * (-lam / (2 * Real.pi)))) := by
+  classical
+  let r : ℝ := -lam / (2 * Real.pi)
+  let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+    SCV.schwartzPsiZ
+      ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+      (by
+        have hscaled : 0 < (2 * Real.pi) *
+            (((x : ℂ) + ε * Complex.I).im) :=
+          mul_pos Real.two_pi_pos (by simpa using hε)
+        simpa [Complex.mul_im] using hscaled)
+  let ψZt : SchwartzMap ℝ ℂ :=
+    SCV.schwartzPsiZ
+      (((2 * Real.pi : ℂ) * (t * Complex.I)))
+      (by
+        simpa [Complex.mul_im, ht.ne']
+          using mul_pos Real.two_pi_pos ht)
+  have hr' : 0 ≤ r := by simpa [r] using hr
+  have hcut : (SCV.smoothCutoff r : ℂ) = 1 := by
+    exact_mod_cast SCV.smoothCutoff_one_of_nonneg hr'
+  have hψt :
+      ψZt r = Complex.exp (-(2 * Real.pi * t : ℂ) * (r : ℂ)) := by
+    calc
+      ψZt r
+          = SCV.psiZ ((2 * Real.pi : ℂ) * (t * Complex.I)) r := by
+              simp [ψZt]
+      _ = Complex.exp
+            (Complex.I * ((2 * Real.pi : ℂ) * (t * Complex.I)) * (r : ℂ)) := by
+            rw [SCV.psiZ_eq_exp_of_nonneg hr']
+      _ = Complex.exp (-(2 * Real.pi * t : ℂ) * (r : ℂ)) := by
+            congr 1
+            calc
+              Complex.I * ((2 * Real.pi : ℂ) * (t * Complex.I)) * (r : ℂ)
+                  = (Complex.I * Complex.I) *
+                      ((2 * Real.pi * t : ℂ) * (r : ℂ)) := by ring
+              _ = -(2 * Real.pi * t : ℂ) * (r : ℂ) := by
+                    simp [Complex.I_mul_I]
+  have hcollapse :=
+    horizontalPaley_phase_xIntegral_eq (hε := hε) (ht := ht)
+      (base := base) (lam := lam)
+  have hmain :
+      (∫ x : ℝ,
+        (base * (ψZxε x) r) *
+        (SchwartzMap.fourierTransformCLM ℂ ψZt) x) =
+      base *
+        (Complex.exp (-(2 * Real.pi * ε : ℂ) * (r : ℂ)) *
+         Complex.exp (-(2 * Real.pi * t : ℂ) * (r : ℂ))) := by
+    calc
+      (∫ x : ℝ,
+        (base * (ψZxε x) r) *
+        (SchwartzMap.fourierTransformCLM ℂ ψZt) x)
+          = base *
+              ((SCV.smoothCutoff r : ℂ) *
+                Complex.exp (-(2 * Real.pi * ε : ℂ) * (r : ℂ)) *
+                ψZt r) := by
+              simpa [r, ψZxε, ψZt] using hcollapse
+      _ = base *
+            (Complex.exp (-(2 * Real.pi * ε : ℂ) * (r : ℂ)) *
+             Complex.exp (-(2 * Real.pi * t : ℂ) * (r : ℂ))) := by
+            rw [hcut, hψt]
+            ring
+  simpa [r, ψZxε, ψZt] using hmain
+```
+
+Implementation-ready dual-cone sign bridge:
+
+```lean
+private theorem horizontalPaley_frequency_nonneg_of_mem_dualCone
+    {n m : ℕ}
+    {ξ : Fin ((n + m) * (d + 1)) → ℝ}
+    (hξ : ξ ∈ DualConeFlat
+      ((flattenCLEquivReal (n + m) (d + 1)) '' ForwardConeAbs d (n + m))) :
+    0 ≤ -(∑ i,
+      (((OSReconstruction.castFinCLE
+          (Nat.add_mul n m (d + 1)).symm)
+        (OSReconstruction.zeroHeadBlockShift
+          (m := n * (d + 1)) (n := m * (d + 1))
+          (flatTimeShiftDirection d m))) i) * ξ i) / (2 * Real.pi) := by
+  have hlam :=
+    zeroHeadBlockShift_flatTimeShiftDirection_pairing_nonpos_of_mem_dualCone
+      (d := d) (n := n) (m := m) (ξ := ξ) hξ
+  have hden_nonneg : 0 ≤ 2 * Real.pi := Real.two_pi_pos.le
+  refine div_nonneg ?_ hden_nonneg
+  exact neg_nonneg.mpr (by simpa using hlam)
+```
+
+Proof transcript:
+
+1. Introduce `ξ hξ` and rewrite both kernels by their Fubini pointwise
+   formulas.
+2. On the `KHorizontal` side, rewrite `timeShiftFlatOrbit` by
+   `physicsFourierFlatCLM_reindex_translate_zeroHeadBlockShift_apply` with
+   `a := τ • flatTimeShiftDirection d m` and `Ψ := Ψ`. The scalar phase
+   simplifies to
+
+```lean
+Complex.exp (-(Complex.I * (lam ξ : ℂ) * τ)) * base ξ
+```
+
+   using `map_smul`, `Finset.mul_sum`, and commutative-ring normalization.
+3. Replace the `τ`-integral against `χHorizontal` by the universal horizontal
+   Fubini identity instantiated at `TWξ`. The result is
+
+```lean
+∫ x : ℝ,
+  base ξ *
+    (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) (r ξ) *
+    (SchwartzMap.fourierTransformCLM ℂ ψZt) x
+```
+
+   after `integral_phase_mul_fourierTransform_eq_eval`.
+4. Use Fourier inversion to convert the preceding `x`-integral. The planned
+   Lean route is to rewrite with
+   `psiZ_twoPi_pairing_formula` in the contrapositive orientation already used
+   in `PaleyWiener.lean`: the `x`-integral of the horizontal
+   `ψ_{2π(x+εi)}` pairing against `𝓕ψ_{2πit}` evaluates to
+
+```lean
+smoothCutoff (r ξ) *
+  Complex.exp (-(2 * Real.pi * ε : ℂ) * (r ξ)) *
+  ψZt (r ξ)
+```
+
+   and `0 ≤ r ξ` makes both one-variable smooth cutoffs equal to `1`.
+5. Therefore the horizontal kernel becomes
+
+```lean
+base ξ *
+  Complex.exp (-(2 * Real.pi * ε : ℂ) * (r ξ)) *
+  Complex.exp (-(2 * Real.pi * t : ℂ) * (r ξ))
+```
+
+   with the `t` factor coming from `ψZt (r ξ)` after cutoff removal. Since
+   `r ξ = -lam ξ/(2π)`, the product is
+
+```lean
+base ξ * Complex.exp ((ε + t : ℂ) * (lam ξ : ℂ))
+```
+
+   up to the precise sign conventions already fixed by
+   `integral_phase_mul_fourierTransform_eq_eval` and
+   `physicsFourierFlatCLM_reindex_translate_zeroHeadBlockShift_apply`.
+   This algebra must be confirmed in Lean before the theorem is considered
+   closed; the signs are not to be adjusted by wrappers.
+6. On the `KShell` side, use
+   `multiDimPsiZExt_apply_of_mem_dualCone` with `C := Cflat` and `hξ`. This
+   rewrites the shell kernel integrand to the pure exponential
+
+```lean
+Complex.exp
+  (Complex.I *
+    ∑ i,
+      (flattenCLEquiv q (d + 1) (zShell yflat) i) *
+        (ξ i : ℂ)) *
+  flattenSchwartzNPoint (d := d) (φ.conjTensorProduct ψ) yflat
+```
+
+   Expanding `zShell` gives
+
+```lean
+Complex.exp
+  (Complex.I * ∑ i, (yflat i : ℂ) * (ξ i : ℂ)) *
+Complex.exp
+  (Complex.I * (t : ℂ) * tailTimePair ξ) *
+Complex.exp
+  (-(ε : ℂ) * ηCanonicalPair ξ)
+```
+
+   where
+
+```lean
+tailTimePair ξ =
+  ∑ k : Fin m, ξ (finProdFinEquiv (Fin.natAdd n k, (0 : Fin (d + 1))))
+
+ηCanonicalPair ξ =
+  ∑ k : Fin (n + m), ((k : ℕ) + 1 : ℝ) *
+    ξ (finProdFinEquiv (k, (0 : Fin (d + 1))))
+```
+
+   and the promoted BVLimits sign convention gives
+   `lam ξ = -tailTimePair ξ`. Thus the shell scalar is oscillatory in `t`:
+
+```lean
+base ξ *
+  Complex.exp (-(Complex.I * (t : ℂ) * (lam ξ : ℂ))) *
+  Complex.exp (-(ε : ℂ) * ηCanonicalPair ξ)
+```
+
+   This is not the horizontal damping scalar from step 5. Consequently the
+   raw `KShell = KHorizontal` EqOn must not be implemented.
+7. The remaining live bridge must reintroduce the Section-4.3 transport
+   hypotheses and prove equality at the scalar level required by the consumer,
+   not by asserting an arbitrary ambient shell/horizontal EqOn.
+
+The zero-residual theorem below is therefore retained only as a conditional
+diagnostic reducer. Its hypothesis must be supplied by a transported theorem,
+not by the withdrawn raw EqOn:
+
+```lean
+private theorem
+    bvt_F_canonical_xiShift_shell_sub_horizontal_tendsto_zero
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (hψ_compact : HasCompactSupport (ψ : NPointDomain d m → ℂ))
+    {t : ℝ} (ht : 0 < t) :
+    let ψZ : SchwartzMap ℝ ℂ :=
+      SCV.schwartzPsiZ
+        (((2 * Real.pi : ℂ) * (t * Complex.I)))
+        (by
+          simpa [Complex.mul_im, ht.ne']
+            using mul_pos Real.two_pi_pos ht)
+    Filter.Tendsto
+      (fun ε : ℝ =>
+        (∫ y : NPointDomain d (n + m),
+          bvt_F OS lgc (n + m)
+            (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+              (fun k μ =>
+                ↑(y k μ) +
+                  ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                    Complex.I)
+              (t : ℂ)) *
+            (φ.conjTensorProduct ψ) y) -
+        (∫ x : ℝ,
+          bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+            (d := d) OS lgc φ ψ hψ_compact (↑x + ↑ε * Complex.I) *
+          (SchwartzMap.fourierTransformCLM ℂ ψZ) x))
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds 0)
+```
+
+Proof transcript:
+
+1. On `nhdsWithin 0 (Set.Ioi 0)`, introduce `hε : 0 < ε`.
+2. Rewrite the horizontal term by
+   `bvt_F_canonical_xiShift_shell_sub_horizontal_eventually_eq_shell_sub_iterated_fourierLaplaceIntegral`.
+3. Apply the finite-height equality
+   `bvt_F_canonical_xiShift_shell_eq_iterated_fourierLaplaceIntegral`.
+4. The residual is eventually the constant zero function, hence tends to `0`.
+
+After this theorem, the already-existing reducer
+`tendsto_bvt_F_canonical_xiShift_to_ambientCanonicalExtension_imagAxis_of_shell_sub_horizontal_tendsto_zero`
+supplies the `hlimit` hypothesis of
+`lemma42_matrix_element_time_interchange` with
+`H := bvt_W_conjTensorProduct_timeShiftCanonicalExtension ...`.
+
+The following raw packet is retained only as the superseded draft that motivated
+the correction above. It must not be used as an implementation target unless a
+new proof first replaces the false raw tube-support theorem with a valid
+permuted/translated tube representative and tracks the resulting Fourier
+factors.
+
+Retired raw packet draft:
+
+Let
 
 ```lean
 let q : ℕ := n + m
@@ -4239,7 +5848,9 @@ Proof transcript for these two side conditions:
    outside `tsupport ρ`, the family is zero. Conclude with `N := 0`, or absorb
    the compact-region constant into `Cg * (1 + ‖yflat‖)^0`.
 
-Then the transported kernel package is Lean-ready as:
+The retired draft claimed the transported kernel package would be Lean-ready
+as follows. This is now false for the live route because the raw support packet
+above does not put `zSplitFlat yflat` in the forward tube:
 
 ```lean
 private theorem
@@ -4620,41 +6231,32 @@ Analytic obligations for the full-kernel packet:
    that exact family; do not silently reuse the right-block
    `zeroHeadBlockShift` estimates.
 5. The public `psiZ_twoPi_pairing_formula` is the only Paley-Wiener identity
-   needed in the packet. The currently private source theorem is
-   `psiZ_pairing_formula` in `SCV/PaleyWiener.lean`; exposing it requires the
-   exact check `lake env lean OSReconstruction/SCV/PaleyWiener.lean`.
+   needed in the packet. It is already available in `SCV/PaleyWiener.lean`;
+   no additional export step is part of the current route.
 6. The packet's final EqOn proof is pointwise in all remaining spatial/Fubini
    parameters. Those parameters must be introduced before the EqOn proof, not
    hidden behind extensional equality of two large integrals.
 
-Readiness guard for this packet:
+Retired readiness guard for this packet:
 
-1. The old same-`Ψ`, different-`χ` packet is not a required production gate for
-   this theorem. It may remain useful as a special-case support theorem, but it
-   must not block the live route and must not be forced if the actual expansion
-   produces two different full kernels.
-2. The decisive certificate is now:
-   `Set.EqOn KAmbient KTransport dualCone`.
-   This is exactly the statement that the Wightman dual-cone distribution cannot
-   distinguish the two expanded kernels.
-3. The scalar-normalization lemmas above are Lean-ready. The production path is
-   now specified in implementable order:
-   `tflat_pairing_eq_of_eqOn_dualCone`,
-   `psiZ_twoPi_pairing_formula`,
-   `exists_flattened_bvt_F_dualCone_distribution_with_fourierLaplace_repr`,
-   `exists_ambientKernel_pairing_psiZTimeShift`,
+1. This raw packet is no longer Lean-ready because its tube-support premise is
+   false. The apparent cutoff/Fubini completion would invoke the
+   Fourier-Laplace representation outside its domain.
+2. The `Set.EqOn KAmbient KTransport dualCone` idea remains mathematically
+   useful, but the transport side must be rebuilt on a valid finite-height
+   canonical shell, not on the raw `singleSplit` surface.
+3. The active implementation order is the transported scalar-bridge order in
+   §5.9.4a.1.ε after the 2026-04-13 scalar mismatch correction. In particular,
+   the names
    `zSplit_mem_forwardTube_of_osConjTensorProduct_support`,
    `exists_transportTubeCutoff`,
-   the two transport-family side-condition lemmas,
-   `exists_transportKernel_pairing_singleSplitXiShiftScalar`, and then
-   `hardSingleSplit_psiZ_timeShift_expands_to_dualCone_eq_kernel_pairing`.
-   The earlier missing mathematical seam is closed in the proof docs: the
-   transported kernel is now sourced from the Fourier-Laplace representation of
-   the same `Tflat`, with support-safe tube membership and Fubini side
-   conditions explicitly exposed.
+   `exists_transportKernel_pairing_singleSplitXiShiftScalar`, and
+   `hardSingleSplit_psiZ_timeShift_expands_to_dualCone_eq_kernel_pairing`
+   must not be added to production for the current route.
 
-After the hard single-split integral theorem is proved, the displayed spectral
-version is a formal corollary:
+The active positive-support theorem for hPsi is the direct spectral version
+below. It is not a corollary of a hard single-split theorem; the single-split
+surface is retired for the current route.
 
 ```lean
 private theorem
@@ -4699,20 +6301,20 @@ Proof transcript for the expanded positive-support theorem:
 
 1. Fix `t ht` and introduce `ψZ`, `A`, `hA`, `xF`, and `xG`.
 2. Rewrite the left side by
-   `integral_bvt_W_conjTensorProduct_timeShift_mul_fourierTransform_psiZ_eq_singleSplitXiShiftScalar_of_section43Transport`.
-3. Rewrite the single-split scalar to
-   `bvt_singleSplit_xiShiftHolomorphicValue ... (t : ℂ)` by the existing
-   real-axis evaluation theorem
-   `bvt_singleSplit_xiShiftHolomorphicValue_ofReal_eq`.
-4. Rewrite that holomorphic value to
-   `OSInnerProductTimeShiftHolomorphicValue` by
-   `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` at the positive
-   real parameter `t`.
-5. Rewrite that scalar to
-   `ContinuousLinearMap.selfAdjointSpectralLaplaceOffdiag A hA xF xG (t : ℂ)`
-   by `OSInnerProductTimeShiftHolomorphicValue_eq_selfAdjointSpectralLaplaceOffdiag`.
-6. Close by `simpa [A, hA, xF, xG]`. If Lean exposes a mismatch here, it is a
-   naming/abbreviation mismatch, not a new analytic theorem.
+   `integral_bvt_W_conjTensorProduct_timeShift_mul_fourierTransform_psiZ_eq_fourierPairingDescendsToSection43PositiveEnergy1D`.
+3. Expand the descended pairing only by
+   `fourierPairingDescendsToSection43PositiveEnergy1D_apply` and
+   `bvt_W_conjTensorProduct_timeShiftTemperedFunctional_apply`.
+4. Apply the Section-4.3 transported slice comparison for the quotient class
+   of `ψZ`. This is the hard step: it converts the Wightman time-shift
+   distribution paired against `𝓕ψZ` to the OS off-diagonal time-shift
+   distribution on the Hilbert vectors `xF`, `xG`. It must use `hφf` and
+   `hψg` through quotient/slice lemmas only.
+5. Rewrite the OS off-diagonal time-shift scalar by
+   `OSInnerProductTimeShiftHolomorphicValue_eq_selfAdjointSpectralLaplaceOffdiag`.
+6. Close by `simpa [ψZ, A, hA, xF, xG]`. If Lean exposes a mismatch here, it is
+   either a local abbreviation mismatch or an explicit missing slice bridge;
+   record the exact goal before adding support lemmas.
 
 Circularity guard for this theorem:
 
@@ -4730,6 +6332,11 @@ Circularity guard for this theorem:
 3. Do not use `lemma42_matrix_element_time_interchange` or
    `lemma42_matrix_element_time_interchange_of_section43Transport`. These are
    consumers after the shell limit and hPsi are available.
+4. Do not use
+   `integral_bvt_W_conjTensorProduct_timeShift_mul_fourierTransform_psiZ_eq_singleSplitXiShiftScalar_of_section43Transport`
+   or any theorem with `bvtSingleSplitXiShiftScalar` in its statement. That
+   route is optional downstream diagnostics only; it is no longer a live proof
+   dependency.
 
 The descended off-diagonal theorem consumed by `hPsi` is then:
 
@@ -5006,42 +6613,28 @@ Readiness rule for this subsection:
    real-time-to-Laplace, or Wightman-to-OS scalar identity.
 2. Arbitrary-`φ, ψ` residual theorems may only compute obstruction limits; they
    must not be used as zero-limit targets.
-3. As of the 2026-04-13 readiness audit, the proof docs are ready for
-   production implementation of the ordered support packets listed above. The
-   safe first Lean edits are the small support lemmas
+3. As of the corrected 2026-04-13 readiness audit, the raw
+   single-split/cutoff packet is retired. The support lemmas
    `tflat_pairing_eq_of_eqOn_dualCone`, `psiZ_twoPi_pairing_formula`, and
-   `exists_flattened_bvt_F_dualCone_distribution_with_fourierLaplace_repr`,
-   followed by the ambient Fubini package, the tube-support/cutoff transport
-   package, and then the hard full-kernel normal-form theorem. Do not attempt a direct pointwise theorem
-   `bvt_W_timeShift_sub_descendedPsiZ_zero_of_section43Transport`; the route is
-   through the full-kernel `Tflat` EqOn packet.
-4. The first production Lean theorem on this subsection must be either one of
-   the displayed `Fin 1` Fubini obligations
-   `continuous_fin1_reindexed_fourierTransform_schwartzPsiZ_horizontal` and
-   `seminorm_fin1_reindexed_fourierTransform_schwartzPsiZ_horizontal_growth`,
-   the public non-OS kernel formula `psiZ_twoPi_pairing_formula`, or the
-   Fourier-side support theorem `tflat_pairing_eq_of_eqOn_dualCone`, or the
-   strengthened BV/FL package
-   `exists_flattened_bvt_F_dualCone_distribution_with_fourierLaplace_repr`.
-   After the support packets and hard single-split theorem are implemented,
-   production
-   Lean attempt
-   `bvt_F_canonical_xiShift_shell_eq_integrated_descendedPsiZ_of_section43Transport`
-   and then
-   `bvt_F_canonical_xiShift_shell_sub_iterated_fourierLaplaceIntegral_eq_zero_of_section43Transport`.
-   The limit-level
-   `tendsto_bvt_F_canonical_xiShift_section43Transport_iterated_residual_zero`
-   is formal after those. The old non-Lean residual placeholder is retired and
-   must not be reintroduced.
-5. Auxiliary Lean lemmas before the finite-height theorem are allowed only for
-   one of the explicitly displayed obligations in its transcript: expansion of
-   the Wightman time-shift functional, the shell-side
-   `partialFourierSpatial_fun_eq_integral` normal form, the
-   `schwartz_clm_fubini_exchange` side conditions, quotient rewrite of a named
-   frozen slice, nonnegative frozen-time support for that slice, the `ψ_Z`
-   positivity/evaluation proof on a proven nonnegative support, or the final
-   integral linearity algebra. No unnamed analytic theorem or administrative
-   decomposition may be introduced.
+   `exists_flattened_bvt_F_dualCone_distribution_with_fourierLaplace_repr`
+   have already been implemented and checked. The canonical positive-height
+   shell packet and the horizontal Paley packet may be used only as diagnostic
+   normal forms unless Section-4.3 transport hypotheses `hφf` and `hψg` are
+   present in the theorem statement.
+4. The direct pointwise theorem
+   `bvt_W_timeShift_sub_descendedPsiZ_zero_of_section43Transport` remains
+   forbidden. The current shell-to-OS route must go through a transported
+   scalar bridge; the raw finite-height canonical-shell/horizontal dual-cone
+   EqOn is withdrawn because it would identify a real-time oscillatory shell
+   with an imaginary-axis Laplace damping factor for arbitrary `φ, ψ`.
+5. Auxiliary Lean lemmas before the finite-height canonical-shell theorem are
+   allowed only for one of the explicitly displayed obligations in
+   §5.9.4a.1.ε: canonical tube membership, shell-side `Tflat` Fubini,
+   horizontal/iterated `Tflat` Fubini, the `ψ_Z` kernel calculation inside
+   that Fubini exchange, or Section-4.3 transported scalar bridge work. No raw
+   `singleSplit` tube-support lemma, cutoff package, arbitrary-`φ,ψ`
+   shell-minus-horizontal zero theorem, or administrative decomposition may be
+   introduced.
 6. The hPsi compactness correction remains sound: use the direct off-diagonal
    helper
    `descendedPsiZ_boundaryValue_eq_selfAdjointSpectralLaplaceOffdiag_of_section43Transport`
@@ -5051,36 +6644,27 @@ Readiness rule for this subsection:
    covered by the displayed theorem slots, stop production edits and return to
    this proof-doc section first. Do not patch around the gap with wrappers or a
    weaker theorem shape.
-8. After the limit-level iterated-residual theorem is proved, implement the live
-   consumer route in this order:
-   `tendsto_bvt_F_canonical_xiShift_shell_sub_horizontal_to_zero_of_section43Transport`,
-   `bvt_W_timeShift_eq_descendedPsiZ_of_section43Transport`,
-   `tendsto_bvt_F_canonical_xiShift_to_canonicalExtension_imagAxis_of_section43Transport`,
-   `descendedPsiZ_boundaryValue_eq_osSpectral_of_section43Transport`,
-   `bvt_W_conjTensorProduct_timeShiftCanonicalExtension_imag_eq_osHolomorphicValue_of_section43Transport`,
-   and
-   `lemma42_matrix_element_time_interchange_of_section43Transport`.
-9. Optional downstream diagnostics, in this order after the live consumer route
-   is closed, are:
-   `bvt_W_timeShift_eq_singleSplitXiShiftScalar_of_section43Transport`,
-   `tendsto_bvtCanonicalXiShiftShell_sub_singleSplitXiShiftScalar_zero_of_section43Transport`,
-   `tendsto_bvt_F_canonical_xiShift_to_singleSplitXiShift_of_section43Transport`,
-   and
-   `tendsto_bvt_F_canonical_xiShift_to_osHolomorphicValue_of_section43Transport`.
-10. Exact verification commands for the permitted next Lean edits are:
-    `lake env lean OSReconstruction/SCV/PaleyWiener.lean` after exposing
-    `psiZ_twoPi_pairing_formula`;
-    `lake env lean OSReconstruction/SCV/FourierSupportCone.lean`
-    after implementing `tflat_pairing_eq_of_eqOn_dualCone` there, or
-    `lake env lean OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean`
-    if the support theorem is kept local in BVLimits;
-    and
+8. After the limit-level canonical residual theorem is proved, feed it into the
+   existing reducer
+   `tendsto_bvt_F_canonical_xiShift_to_ambientCanonicalExtension_imagAxis_of_shell_sub_horizontal_tendsto_zero`
+   to supply the `hlimit` hypothesis of
+   `lemma42_matrix_element_time_interchange`. The remaining live consumer
+   work is then the separate `hH_imag_os` identification of
+   `bvt_W_conjTensorProduct_timeShiftCanonicalExtension` on the positive
+   imaginary axis with the OS holomorphic matrix element.
+9. Optional downstream diagnostics involving raw `singleSplit` or
+   `bvtSingleSplitXiShiftScalar` are not part of the live route. They may be
+   revisited only after the main positivity path is closed or after a new
+   valid tube representative is documented and checked.
+10. Exact verification commands for the next Lean edits are:
     `lake env lean OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanPositivity.lean`
-    after implementing any Positivity-side scalar-normalization, tail-shift,
-    full-kernel normal-form packet, or transported-image theorem.
+    after implementing `canonicalXiShift_mem_forwardTube` or any
+    Positivity-side canonical residual theorem; and
+    `lake env lean OSReconstruction/Wightman/Reconstruction/WickRotation/OSToWightmanBoundaryValueLimits.lean`
+    if the shell/horizontal `Tflat` Fubini packages are placed in BVLimits.
     If a support theorem is promoted from private to public in an imported
     file, run that exact support-file check first, then the downstream
-    Positivity check; do not replace these with a broad build.
+    Positivity check. Do not replace these with a broad build.
 
 ### 5.9.5. Detailed proof of the final public closure
 

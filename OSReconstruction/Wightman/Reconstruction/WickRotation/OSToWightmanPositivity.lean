@@ -2501,6 +2501,536 @@ private theorem bvt_F_canonical_conjTensorProduct_timeShift_eq_xiShift
               · simp [wickRotatePoint, xiShift, hμ, hk]
           rw [hshell]
 
+/-- The corrected finite-height canonical shell is genuinely in the forward
+tube. The real `ξ`-shift contributes no imaginary part, while the fixed
+canonical direction contributes the positive forward-cone height. -/
+private theorem canonicalXiShift_mem_forwardTube
+    {n m : ℕ} (hm : 0 < m)
+    {t ε : ℝ} (hε : 0 < ε)
+    (y : NPointDomain d (n + m)) :
+    xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+      (fun k μ =>
+        ↑(y k μ) +
+          ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+            Complex.I)
+      (t : ℂ) ∈ TubeDomainSetPi (ForwardConeAbs d (n + m)) := by
+  change
+    (fun k μ =>
+      (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+        (fun k μ =>
+          ↑(y k μ) +
+            ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+              Complex.I)
+        (t : ℂ) k μ).im) ∈ ForwardConeAbs d (n + m)
+  have hη_abs :
+      canonicalForwardConeDirection (d := d) (n + m) ∈ ForwardConeAbs d (n + m) :=
+    (inForwardCone_iff_mem_forwardConeAbs (d := d) (n := n + m)
+      (canonicalForwardConeDirection (d := d) (n + m))).mp
+      (canonicalForwardConeDirection_mem (d := d) (n + m))
+  have hscaled :
+      ε • canonicalForwardConeDirection (d := d) (n + m) ∈ ForwardConeAbs d (n + m) :=
+    forwardConeAbs_smul d (n + m) ε hε
+      (canonicalForwardConeDirection (d := d) (n + m)) hη_abs
+  convert hscaled using 1
+  ext k μ
+  by_cases hshift : (⟨n, Nat.lt_add_of_pos_right hm⟩ : Fin (n + m)).val ≤ k.val ∧
+      μ = (0 : Fin (d + 1))
+  · simp [xiShift, hshift]
+  · simp [xiShift, hshift]
+
+/-- Continuity of the fixed-radius Paley-Wiener Schwartz family along the
+flattened finite-height canonical shell. This is the continuity side condition
+for the shell-side `schwartz_clm_fubini_exchange` packet. -/
+private theorem continuous_canonicalShellPsiZExtFamily
+    {n m : ℕ} (hm : 0 < m)
+    {t ε : ℝ} (hε : 0 < ε)
+    (hCflat_open :
+      IsOpen
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+    (hCflat_conv :
+      Convex ℝ
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+    (hCflat_cone :
+      IsCone
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+    (hCflat_salient :
+      IsSalientCone
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m))) :
+    Continuous (fun yflat : Fin ((n + m) * (d + 1)) → ℝ =>
+      multiDimPsiZExt
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m))
+        hCflat_open hCflat_conv hCflat_cone hCflat_salient
+        (flattenCLEquiv (n + m) (d + 1)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun k μ =>
+              (((flattenCLEquivReal (n + m) (d + 1)).symm yflat k μ : ℝ) : ℂ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                  Complex.I)
+            (t : ℂ)))) := by
+  let Cflat : Set (Fin ((n + m) * (d + 1)) → ℝ) :=
+    (flattenCLEquivReal (n + m) (d + 1)) '' ForwardConeAbs d (n + m)
+  let zMap : (Fin ((n + m) * (d + 1)) → ℝ) → Fin ((n + m) * (d + 1)) → ℂ :=
+    fun yflat =>
+      flattenCLEquiv (n + m) (d + 1)
+        (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+          (fun k μ =>
+            (((flattenCLEquivReal (n + m) (d + 1)).symm yflat k μ : ℝ) : ℂ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                Complex.I)
+          (t : ℂ))
+  have hz_cont : Continuous zMap := by
+    dsimp [zMap]
+    apply continuous_pi
+    intro a
+    by_cases hshift : (⟨n, Nat.lt_add_of_pos_right hm⟩ : Fin (n + m)).val ≤
+        (finProdFinEquiv.symm a).1.val ∧ (finProdFinEquiv.symm a).2 = (0 : Fin (d + 1))
+    · simp [flattenCLEquiv_apply, xiShift]
+      continuity
+    · simp [flattenCLEquiv_apply, xiShift]
+      continuity
+  have hz_mem : ∀ yflat, zMap yflat ∈ SCV.TubeDomain Cflat := by
+    intro yflat
+    dsimp [zMap, Cflat]
+    apply flattenCLEquiv_mem_tubeDomain_image
+    exact canonicalXiShift_mem_forwardTube (d := d) hm hε
+      ((flattenCLEquivReal (n + m) (d + 1)).symm yflat)
+  simpa [Cflat, zMap] using
+    continuous_multiDimPsiZExt_comp_of_mem_tube
+      Cflat hCflat_open hCflat_conv hCflat_cone hCflat_salient zMap hz_cont hz_mem
+
+/-- Polynomial seminorm growth of the fixed-radius Paley-Wiener Schwartz family
+along the flattened finite-height canonical shell. This is the growth side
+condition for the shell-side `schwartz_clm_fubini_exchange` packet. -/
+private theorem seminorm_canonicalShellPsiZExtFamily_bound
+    {n m : ℕ} (hm : 0 < m)
+    {t ε : ℝ} (hε : 0 < ε)
+    (hCflat_open :
+      IsOpen
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+    (hCflat_conv :
+      Convex ℝ
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+    (hCflat_cone :
+      IsCone
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+    (hCflat_salient :
+      IsSalientCone
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m))) :
+    ∀ (k l : ℕ), ∃ (C : ℝ) (N : ℕ), 0 < C ∧
+      ∀ yflat : Fin ((n + m) * (d + 1)) → ℝ,
+        SchwartzMap.seminorm ℝ k l
+          (multiDimPsiZExt
+            ((flattenCLEquivReal (n + m) (d + 1)) ''
+              ForwardConeAbs d (n + m))
+            hCflat_open hCflat_conv hCflat_cone hCflat_salient
+            (flattenCLEquiv (n + m) (d + 1)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                (fun k μ =>
+                  (((flattenCLEquivReal (n + m) (d + 1)).symm yflat k μ : ℝ) : ℂ) +
+                    ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                      Complex.I)
+                (t : ℂ)))) ≤
+          C * (1 + ‖yflat‖) ^ N := by
+  intro k l
+  let Cflat : Set (Fin ((n + m) * (d + 1)) → ℝ) :=
+    (flattenCLEquivReal (n + m) (d + 1)) '' ForwardConeAbs d (n + m)
+  let ηShell : Fin ((n + m) * (d + 1)) → ℝ :=
+    flattenCLEquivReal (n + m) (d + 1)
+      (ε • canonicalForwardConeDirection (d := d) (n + m))
+  let zMap : (Fin ((n + m) * (d + 1)) → ℝ) → Fin ((n + m) * (d + 1)) → ℂ :=
+    fun yflat =>
+      flattenCLEquiv (n + m) (d + 1)
+        (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+          (fun k μ =>
+            (((flattenCLEquivReal (n + m) (d + 1)).symm yflat k μ : ℝ) : ℂ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                Complex.I)
+          (t : ℂ))
+  let xShell : (Fin ((n + m) * (d + 1)) → ℝ) → Fin ((n + m) * (d + 1)) → ℝ :=
+    fun yflat a => (zMap yflat a).re
+  have hη_abs :
+      canonicalForwardConeDirection (d := d) (n + m) ∈ ForwardConeAbs d (n + m) :=
+    (inForwardCone_iff_mem_forwardConeAbs (d := d) (n := n + m)
+      (canonicalForwardConeDirection (d := d) (n + m))).mp
+      (canonicalForwardConeDirection_mem (d := d) (n + m))
+  have hη_scaled :
+      ε • canonicalForwardConeDirection (d := d) (n + m) ∈ ForwardConeAbs d (n + m) :=
+    forwardConeAbs_smul d (n + m) ε hε
+      (canonicalForwardConeDirection (d := d) (n + m)) hη_abs
+  have hηShell_mem : ηShell ∈ Cflat := by
+    exact ⟨ε • canonicalForwardConeDirection (d := d) (n + m), hη_scaled, rfl⟩
+  obtain ⟨B, N, hB, hBbound⟩ :=
+    multiDimPsiZExt_fixedImaginary_seminorm_bound
+      Cflat hCflat_open hCflat_conv hCflat_cone hCflat_salient hηShell_mem k l
+  let A : ℝ := 1 + |t|
+  have hA_pos : 0 < A := by
+    dsimp [A]
+    positivity
+  have hxShell_norm :
+      ∀ yflat : Fin ((n + m) * (d + 1)) → ℝ,
+        ‖xShell yflat‖ ≤ A * (1 + ‖yflat‖) := by
+    intro yflat
+    have hsymm_norm :
+        ‖(flattenCLEquivReal (n + m) (d + 1)).symm yflat‖ = ‖yflat‖ := by
+      simpa using
+        (flattenCLEquivReal_norm_eq (n + m) (d + 1)
+          ((flattenCLEquivReal (n + m) (d + 1)).symm yflat)).symm
+    have hcoord :
+        ∀ a : Fin ((n + m) * (d + 1)),
+          |((flattenCLEquivReal (n + m) (d + 1)).symm yflat
+              (finProdFinEquiv.symm a).1 (finProdFinEquiv.symm a).2)| ≤ ‖yflat‖ := by
+      intro a
+      calc
+        |((flattenCLEquivReal (n + m) (d + 1)).symm yflat
+            (finProdFinEquiv.symm a).1 (finProdFinEquiv.symm a).2)|
+            = ‖((flattenCLEquivReal (n + m) (d + 1)).symm yflat
+                (finProdFinEquiv.symm a).1 (finProdFinEquiv.symm a).2)‖ := by
+                rw [Real.norm_eq_abs]
+        _ ≤ ‖(flattenCLEquivReal (n + m) (d + 1)).symm yflat
+              (finProdFinEquiv.symm a).1‖ :=
+            norm_le_pi_norm _ (finProdFinEquiv.symm a).2
+        _ ≤ ‖(flattenCLEquivReal (n + m) (d + 1)).symm yflat‖ :=
+            norm_le_pi_norm _ (finProdFinEquiv.symm a).1
+        _ = ‖yflat‖ := hsymm_norm
+    have hnonneg : 0 ≤ A * (1 + ‖yflat‖) := by positivity
+    apply (pi_norm_le_iff_of_nonneg hnonneg).2
+    intro a
+    by_cases hshift : (⟨n, Nat.lt_add_of_pos_right hm⟩ : Fin (n + m)).val ≤
+        (finProdFinEquiv.symm a).1.val ∧ (finProdFinEquiv.symm a).2 = (0 : Fin (d + 1))
+    · have hre :
+          xShell yflat a =
+            (flattenCLEquivReal (n + m) (d + 1)).symm yflat
+              (finProdFinEquiv.symm a).1 (finProdFinEquiv.symm a).2 + t := by
+        have hshift' : n ≤ a.val / (d + 1) ∧ a.modNat = (0 : Fin (d + 1)) := by
+          simpa using hshift
+        simp [xShell, zMap, flattenCLEquiv_apply, xiShift, hshift']
+      calc
+        ‖xShell yflat a‖ = |xShell yflat a| := Real.norm_eq_abs _
+        _ = |(flattenCLEquivReal (n + m) (d + 1)).symm yflat
+              (finProdFinEquiv.symm a).1 (finProdFinEquiv.symm a).2 + t| := by rw [hre]
+        _ ≤ |(flattenCLEquivReal (n + m) (d + 1)).symm yflat
+              (finProdFinEquiv.symm a).1 (finProdFinEquiv.symm a).2| + |t| :=
+            abs_add_le _ _
+        _ ≤ ‖yflat‖ + |t| := by
+            gcongr
+            exact hcoord a
+        _ ≤ A * (1 + ‖yflat‖) := by
+            dsimp [A]
+            nlinarith [norm_nonneg yflat, abs_nonneg t]
+    · have hre :
+          xShell yflat a =
+            (flattenCLEquivReal (n + m) (d + 1)).symm yflat
+              (finProdFinEquiv.symm a).1 (finProdFinEquiv.symm a).2 := by
+        have hshift' : ¬ (n ≤ a.val / (d + 1) ∧ a.modNat = (0 : Fin (d + 1))) := by
+          simpa using hshift
+        simp [xShell, zMap, flattenCLEquiv_apply, xiShift, hshift']
+      calc
+        ‖xShell yflat a‖ = |xShell yflat a| := Real.norm_eq_abs _
+        _ = |(flattenCLEquivReal (n + m) (d + 1)).symm yflat
+              (finProdFinEquiv.symm a).1 (finProdFinEquiv.symm a).2| := by rw [hre]
+        _ ≤ ‖yflat‖ := hcoord a
+        _ ≤ A * (1 + ‖yflat‖) := by
+            dsimp [A]
+            nlinarith [norm_nonneg yflat, abs_nonneg t]
+  let C : ℝ := B * (1 + A) ^ N
+  have hC_pos : 0 < C := by
+    dsimp [C]
+    positivity
+  refine ⟨C, N, hC_pos, ?_⟩
+  intro yflat
+  have hz_decomp :
+      zMap yflat =
+        fun a => ((xShell yflat a : ℝ) : ℂ) + (ηShell a : ℂ) * Complex.I := by
+    ext a
+    apply Complex.ext
+    · simp [xShell]
+    · have him : (zMap yflat a).im = ηShell a := by
+        by_cases hshift : (⟨n, Nat.lt_add_of_pos_right hm⟩ : Fin (n + m)).val ≤
+            (finProdFinEquiv.symm a).1.val ∧
+              (finProdFinEquiv.symm a).2 = (0 : Fin (d + 1))
+        · have hshift' : n ≤ a.val / (d + 1) ∧ a.modNat = (0 : Fin (d + 1)) := by
+            simpa using hshift
+          simp [zMap, ηShell, flattenCLEquiv_apply, flattenCLEquivReal_apply, xiShift, hshift']
+        · have hshift' : ¬ (n ≤ a.val / (d + 1) ∧ a.modNat = (0 : Fin (d + 1))) := by
+            simpa using hshift
+          simp [zMap, ηShell, flattenCLEquiv_apply, flattenCLEquivReal_apply, xiShift, hshift']
+      simp [him]
+  have hbase :
+      SchwartzMap.seminorm ℝ k l
+        (multiDimPsiZExt Cflat hCflat_open hCflat_conv hCflat_cone hCflat_salient
+          (zMap yflat)) ≤
+        B * (1 + ‖xShell yflat‖) ^ N := by
+    rw [hz_decomp]
+    exact hBbound (xShell yflat)
+  have hpoly :
+      (1 + ‖xShell yflat‖) ^ N ≤ (1 + A) ^ N * (1 + ‖yflat‖) ^ N := by
+    rw [← mul_pow]
+    apply pow_le_pow_left₀ (by linarith [norm_nonneg (xShell yflat)])
+    calc
+      1 + ‖xShell yflat‖ ≤ 1 + A * (1 + ‖yflat‖) := by
+        linarith [hxShell_norm yflat]
+      _ ≤ (1 + A) * (1 + ‖yflat‖) := by
+        have hy_nonneg : 0 ≤ ‖yflat‖ := norm_nonneg yflat
+        nlinarith [hA_pos.le, hy_nonneg]
+  have hfinal :
+      SchwartzMap.seminorm ℝ k l
+        (multiDimPsiZExt Cflat hCflat_open hCflat_conv hCflat_cone hCflat_salient
+          (zMap yflat)) ≤
+        C * (1 + ‖yflat‖) ^ N := by
+    calc
+      SchwartzMap.seminorm ℝ k l
+          (multiDimPsiZExt Cflat hCflat_open hCflat_conv hCflat_cone hCflat_salient
+            (zMap yflat))
+          ≤ B * (1 + ‖xShell yflat‖) ^ N := hbase
+      _ ≤ B * ((1 + A) ^ N * (1 + ‖yflat‖) ^ N) := by
+          gcongr
+      _ = C * (1 + ‖yflat‖) ^ N := by
+          dsimp [C]
+          ring
+  simpa [Cflat, zMap] using hfinal
+
+/-- Flat Fubini packet for the fixed-radius Paley-Wiener Schwartz family along
+the finite-height canonical shell. This packages the `KShell` produced by
+`schwartz_clm_fubini_exchange`; boundary-value rewriting is kept for the next
+lemma. -/
+private theorem canonicalShellPsiZExtFamily_pairing
+    {n m : ℕ} (hm : 0 < m)
+    {t ε : ℝ} (hε : 0 < ε)
+    (hCflat_open :
+      IsOpen
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+    (hCflat_conv :
+      Convex ℝ
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+    (hCflat_cone :
+      IsCone
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+    (hCflat_salient :
+      IsSalientCone
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+    (Tflat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ →L[ℂ] ℂ)
+    (fFlat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ) :
+    ∃ KShell : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ,
+      (∀ ξ : Fin ((n + m) * (d + 1)) → ℝ,
+        KShell ξ =
+          ∫ yflat : Fin ((n + m) * (d + 1)) → ℝ,
+            (multiDimPsiZExt
+              ((flattenCLEquivReal (n + m) (d + 1)) ''
+                ForwardConeAbs d (n + m))
+              hCflat_open hCflat_conv hCflat_cone hCflat_salient
+              (flattenCLEquiv (n + m) (d + 1)
+                (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                  (fun k μ =>
+                    (((flattenCLEquivReal (n + m) (d + 1)).symm yflat k μ : ℝ) : ℂ) +
+                      ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                        Complex.I)
+                  (t : ℂ)))) ξ *
+              fFlat yflat) ∧
+      (∫ yflat : Fin ((n + m) * (d + 1)) → ℝ,
+        Tflat
+          (multiDimPsiZExt
+            ((flattenCLEquivReal (n + m) (d + 1)) ''
+              ForwardConeAbs d (n + m))
+            hCflat_open hCflat_conv hCflat_cone hCflat_salient
+            (flattenCLEquiv (n + m) (d + 1)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                (fun k μ =>
+                  (((flattenCLEquivReal (n + m) (d + 1)).symm yflat k μ : ℝ) : ℂ) +
+                    ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                      Complex.I)
+                (t : ℂ)))) *
+          fFlat yflat) =
+        Tflat KShell := by
+  let Cflat : Set (Fin ((n + m) * (d + 1)) → ℝ) :=
+    (flattenCLEquivReal (n + m) (d + 1)) '' ForwardConeAbs d (n + m)
+  let gFamily : (Fin ((n + m) * (d + 1)) → ℝ) →
+      SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ :=
+    fun yflat =>
+      multiDimPsiZExt Cflat hCflat_open hCflat_conv hCflat_cone hCflat_salient
+        (flattenCLEquiv (n + m) (d + 1)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun k μ =>
+              (((flattenCLEquivReal (n + m) (d + 1)).symm yflat k μ : ℝ) : ℂ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                  Complex.I)
+            (t : ℂ)))
+  have hg_cont : Continuous gFamily := by
+    simpa [Cflat, gFamily] using
+      continuous_canonicalShellPsiZExtFamily (d := d) hm hε
+        hCflat_open hCflat_conv hCflat_cone hCflat_salient
+  have hg_bound :
+      ∀ (k l : ℕ), ∃ (C : ℝ) (N : ℕ), C > 0 ∧
+        ∀ yflat : Fin ((n + m) * (d + 1)) → ℝ,
+          SchwartzMap.seminorm ℝ k l (gFamily yflat) ≤ C * (1 + ‖yflat‖) ^ N := by
+    simpa [Cflat, gFamily] using
+      seminorm_canonicalShellPsiZExtFamily_bound (d := d) hm hε
+        hCflat_open hCflat_conv hCflat_cone hCflat_salient
+  obtain ⟨KShell, _hKShell_eval, hKShell_pair⟩ :=
+    schwartz_clm_fubini_exchange Tflat gFamily fFlat hg_cont hg_bound
+  refine ⟨KShell, ?_, ?_⟩
+  · intro ξ
+    simpa [Cflat, gFamily] using _hKShell_eval ξ
+  · simpa [Cflat, gFamily] using hKShell_pair.symm
+
+/-- Shell-side boundary-value integral as a flattened Paley-Wiener/Fubini
+kernel pairing. This combines the `bvt_F` Fourier-Laplace representation with
+the flat shell Fubini packet. -/
+private theorem exists_shellKernel_pairing_canonicalXiShift
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    {t ε : ℝ} (hε : 0 < ε)
+    (hCflat_open :
+      IsOpen
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+    (hCflat_conv :
+      Convex ℝ
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+    (hCflat_cone :
+      IsCone
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+    (hCflat_salient :
+      IsSalientCone
+        ((flattenCLEquivReal (n + m) (d + 1)) ''
+          ForwardConeAbs d (n + m)))
+    (Tflat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ →L[ℂ] ℂ)
+    (hFL :
+      ∀ z : Fin (n + m) → Fin (d + 1) → ℂ,
+        z ∈ TubeDomainSetPi (ForwardConeAbs d (n + m)) →
+          bvt_F OS lgc (n + m) z =
+            fourierLaplaceExtMultiDim
+              ((flattenCLEquivReal (n + m) (d + 1)) ''
+                ForwardConeAbs d (n + m))
+              hCflat_open hCflat_conv hCflat_cone hCflat_salient
+              Tflat (flattenCLEquiv (n + m) (d + 1) z)) :
+    ∃ KShell : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ,
+      (∀ ξ : Fin ((n + m) * (d + 1)) → ℝ,
+        KShell ξ =
+          ∫ yflat : Fin ((n + m) * (d + 1)) → ℝ,
+            (multiDimPsiZExt
+              ((flattenCLEquivReal (n + m) (d + 1)) ''
+                ForwardConeAbs d (n + m))
+              hCflat_open hCflat_conv hCflat_cone hCflat_salient
+              (flattenCLEquiv (n + m) (d + 1)
+                (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                  (fun k μ =>
+                    (((flattenCLEquivReal (n + m) (d + 1)).symm yflat k μ : ℝ) : ℂ) +
+                      ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                        Complex.I)
+                  (t : ℂ)))) ξ *
+              _root_.flattenSchwartzNPoint (d := d) (φ.conjTensorProduct ψ) yflat) ∧
+      (∫ y : NPointDomain d (n + m),
+        bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun k μ =>
+              ↑(y k μ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                  Complex.I)
+            (t : ℂ)) *
+          (φ.conjTensorProduct ψ) y) =
+        Tflat KShell := by
+  let Cflat : Set (Fin ((n + m) * (d + 1)) → ℝ) :=
+    (flattenCLEquivReal (n + m) (d + 1)) '' ForwardConeAbs d (n + m)
+  let zShell :
+      (Fin ((n + m) * (d + 1)) → ℝ) → Fin (n + m) → Fin (d + 1) → ℂ :=
+    fun yflat =>
+      xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+        (fun k μ =>
+          (((flattenCLEquivReal (n + m) (d + 1)).symm yflat k μ : ℝ) : ℂ) +
+            ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+              Complex.I)
+        (t : ℂ)
+  let gFlat : (Fin ((n + m) * (d + 1)) → ℝ) → ℂ :=
+    fun yflat =>
+      Tflat
+        (multiDimPsiZExt Cflat hCflat_open hCflat_conv hCflat_cone hCflat_salient
+          (flattenCLEquiv (n + m) (d + 1) (zShell yflat))) *
+        _root_.flattenSchwartzNPoint (d := d) (φ.conjTensorProduct ψ) yflat
+  obtain ⟨KShell, hKShell_eval, hKShell⟩ :=
+    canonicalShellPsiZExtFamily_pairing (d := d) hm hε
+      hCflat_open hCflat_conv hCflat_cone hCflat_salient Tflat
+      (_root_.flattenSchwartzNPoint (d := d) (φ.conjTensorProduct ψ))
+  refine ⟨KShell, ?_, ?_⟩
+  · simpa [Cflat, zShell] using hKShell_eval
+  have hflat_cv :
+      ∫ yflat : Fin ((n + m) * (d + 1)) → ℝ, gFlat yflat =
+        ∫ y : NPointDomain d (n + m),
+          gFlat (flattenCLEquivReal (n + m) (d + 1) y) :=
+    integral_flatten_change_of_variables (n + m) (d + 1) gFlat
+  have htarget_to_flat :
+      (∫ y : NPointDomain d (n + m),
+        bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun k μ =>
+              ↑(y k μ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                  Complex.I)
+            (t : ℂ)) *
+          (φ.conjTensorProduct ψ) y) =
+        ∫ y : NPointDomain d (n + m),
+          gFlat (flattenCLEquivReal (n + m) (d + 1) y) := by
+    apply MeasureTheory.integral_congr_ae
+    filter_upwards with y
+    let shellY : Fin (n + m) → Fin (d + 1) → ℂ :=
+      xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+        (fun k μ =>
+          ↑(y k μ) +
+            ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+              Complex.I)
+        (t : ℂ)
+    have hzShell_flat :
+        zShell (flattenCLEquivReal (n + m) (d + 1) y) = shellY := by
+      ext k μ
+      simp [zShell, shellY]
+    have hshell_mem : shellY ∈ TubeDomainSetPi (ForwardConeAbs d (n + m)) := by
+      simpa [shellY] using canonicalXiShift_mem_forwardTube (d := d) hm hε y
+    have hbvt :
+        bvt_F OS lgc (n + m) shellY =
+          Tflat
+            (multiDimPsiZExt Cflat hCflat_open hCflat_conv hCflat_cone hCflat_salient
+              (flattenCLEquiv (n + m) (d + 1) shellY)) := by
+      calc
+        bvt_F OS lgc (n + m) shellY
+            = fourierLaplaceExtMultiDim Cflat hCflat_open hCflat_conv hCflat_cone
+                hCflat_salient Tflat (flattenCLEquiv (n + m) (d + 1) shellY) :=
+              hFL shellY hshell_mem
+        _ = Tflat
+              (multiDimPsiZExt Cflat hCflat_open hCflat_conv hCflat_cone hCflat_salient
+                (flattenCLEquiv (n + m) (d + 1) shellY)) := by
+              rw [fourierLaplaceExtMultiDim_eq_ext]
+    simp [gFlat, Cflat, hzShell_flat, hbvt, shellY, _root_.flattenSchwartzNPoint_apply]
+  calc
+    (∫ y : NPointDomain d (n + m),
+        bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun k μ =>
+              ↑(y k μ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                  Complex.I)
+            (t : ℂ)) *
+          (φ.conjTensorProduct ψ) y)
+        = ∫ y : NPointDomain d (n + m),
+            gFlat (flattenCLEquivReal (n + m) (d + 1) y) := htarget_to_flat
+    _ = ∫ yflat : Fin ((n + m) * (d + 1)) → ℝ, gFlat yflat := hflat_cv.symm
+    _ = Tflat KShell := by
+      simpa [gFlat, Cflat, zShell] using hKShell
+
 /-- The chosen boundary-value continuation `bvt_F` inherits the global forward-
 tube polynomial-growth package from
 `full_analytic_continuation_with_symmetry_growth`. This keeps the current
@@ -4370,6 +4900,694 @@ private theorem
     exact Filter.Tendsto.congr' (hEq χ).symm hOS
   exact tendsto_nhds_unique hCanonical hCanonical'
 
+/-- One-dimensional horizontal Paley-Wiener kernel for the OS-route
+shell-to-Laplace comparison. For any one-variable tempered functional `TW`,
+the horizontal `x`-integral of `TW` applied to the Fourier-transformed
+`ψ_{2π(x+εi)}` family is represented by pairing `TW` against a single
+Schwartz test `χHorizontal`.
+
+This is the genuine Fin1 Fubini packet used before applying the full flattened
+time-shift theorem `exists_timeShiftKernel_pairing_fourierTest`. -/
+private theorem exists_horizontalPaleyKernel_pairing_fourierTransform
+    {ε t : ℝ} (hε : 0 < ε) (ht : 0 < t)
+    (TW : SchwartzMap ℝ ℂ →L[ℂ] ℂ) :
+    let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+      SCV.schwartzPsiZ
+        ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+        (by
+          have hscaled : 0 < (2 * Real.pi) *
+              (((x : ℂ) + ε * Complex.I).im) :=
+            mul_pos Real.two_pi_pos (by simpa using hε)
+          simpa [Complex.mul_im] using hscaled)
+    let ψZt : SchwartzMap ℝ ℂ :=
+      SCV.schwartzPsiZ
+        (((2 * Real.pi : ℂ) * (t * Complex.I)))
+        (by
+          simpa [Complex.mul_im, ht.ne']
+            using mul_pos Real.two_pi_pos ht)
+    ∃ χHorizontal : SchwartzMap ℝ ℂ,
+      (∀ τ : ℝ,
+        χHorizontal τ =
+          ∫ x : ℝ,
+            (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) τ *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x) ∧
+      TW χHorizontal =
+        ∫ x : ℝ,
+          TW (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) *
+          (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+  classical
+  let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+    SCV.schwartzPsiZ
+      ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+      (by
+        have hscaled : 0 < (2 * Real.pi) *
+            (((x : ℂ) + ε * Complex.I).im) :=
+          mul_pos Real.two_pi_pos (by simpa using hε)
+        simpa [Complex.mul_im] using hscaled)
+  let ψZt : SchwartzMap ℝ ℂ :=
+    SCV.schwartzPsiZ
+      (((2 * Real.pi : ℂ) * (t * Complex.I)))
+      (by
+        simpa [Complex.mul_im, ht.ne']
+          using mul_pos Real.two_pi_pos ht)
+  let e1 : (Fin 1 → ℝ) ≃L[ℝ] ℝ :=
+    ContinuousLinearEquiv.funUnique (Fin 1) ℝ ℝ
+  let toFin1 : SchwartzMap ℝ ℂ →L[ℂ] SchwartzMap (Fin 1 → ℝ) ℂ :=
+    SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e1
+  let fromFin1 : SchwartzMap (Fin 1 → ℝ) ℂ →L[ℂ] SchwartzMap ℝ ℂ :=
+    SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e1.symm
+  let T1 : SchwartzMap (Fin 1 → ℝ) ℂ →L[ℂ] ℂ := TW.comp fromFin1
+  let f1 : SchwartzMap (Fin 1 → ℝ) ℂ :=
+    toFin1 ((SchwartzMap.fourierTransformCLM ℂ) ψZt)
+  let g1 : (Fin 1 → ℝ) → SchwartzMap (Fin 1 → ℝ) ℂ := fun x1 =>
+    toFin1 ((SchwartzMap.fourierTransformCLM ℂ) (ψZxε (e1 x1)))
+  have hg1_cont : Continuous g1 := by
+    simpa [g1, ψZxε, toFin1, e1] using
+      (SCV.continuous_fin1_reindexed_fourierTransform_schwartzPsiZ_horizontal hε)
+  have hg1_bound :
+      ∀ (k n : ℕ), ∃ (C : ℝ) (N : ℕ), C > 0 ∧
+        ∀ (x1 : Fin 1 → ℝ),
+          SchwartzMap.seminorm ℝ k n (g1 x1) ≤ C * (1 + ‖x1‖) ^ N := by
+    simpa [g1, ψZxε, toFin1, e1] using
+      (SCV.seminorm_fin1_reindexed_fourierTransform_schwartzPsiZ_horizontal_growth hε)
+  obtain ⟨χ1, hχ1_eval, hχ1_pair⟩ :=
+    schwartz_clm_fubini_exchange T1 g1 f1 hg1_cont hg1_bound
+  let χHorizontal : SchwartzMap ℝ ℂ := fromFin1 χ1
+  let eM : ℝ ≃ᵐ (Fin 1 → ℝ) := e1.symm.toHomeomorph.toMeasurableEquiv
+  have hmp_eM : MeasureTheory.MeasurePreserving eM MeasureTheory.volume MeasureTheory.volume := by
+    simpa [eM, e1] using (MeasureTheory.volume_preserving_funUnique (Fin 1) ℝ).symm
+  have hfrom_to :
+      ∀ φ : SchwartzMap ℝ ℂ, fromFin1 (toFin1 φ) = φ := by
+    intro φ
+    ext x
+    simp [fromFin1, toFin1, e1, SchwartzMap.compCLMOfContinuousLinearEquiv_apply]
+  refine ⟨χHorizontal, ?_, ?_⟩
+  · intro τ
+    let G : (Fin 1 → ℝ) → ℂ := fun x1 => g1 x1 (e1.symm τ) * f1 x1
+    have hcov :
+        ∫ x : ℝ, G (eM x) = ∫ x1 : Fin 1 → ℝ, G x1 := by
+      simpa [eM] using (hmp_eM.integral_comp' (g := G))
+    calc
+      χHorizontal τ
+          = χ1 (e1.symm τ) := by
+              simp [χHorizontal, fromFin1, SchwartzMap.compCLMOfContinuousLinearEquiv_apply]
+      _ = ∫ x1 : Fin 1 → ℝ, g1 x1 (e1.symm τ) * f1 x1 :=
+            hχ1_eval (e1.symm τ)
+      _ = ∫ x : ℝ,
+            (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) τ *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+              rw [← hcov]
+              apply MeasureTheory.integral_congr_ae
+              filter_upwards with x
+              simp [G, g1, f1, ψZxε, ψZt, toFin1, eM, e1,
+                SchwartzMap.compCLMOfContinuousLinearEquiv_apply]
+  · let G : (Fin 1 → ℝ) → ℂ := fun x1 => T1 (g1 x1) * f1 x1
+    have hcov :
+        ∫ x : ℝ, G (eM x) = ∫ x1 : Fin 1 → ℝ, G x1 := by
+      simpa [eM] using (hmp_eM.integral_comp' (g := G))
+    calc
+      TW χHorizontal
+          = T1 χ1 := by
+              rfl
+      _ = ∫ x1 : Fin 1 → ℝ, T1 (g1 x1) * f1 x1 :=
+            hχ1_pair
+      _ = ∫ x : ℝ,
+            TW (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+              rw [← hcov]
+              apply MeasureTheory.integral_congr_ae
+              filter_upwards with x
+              simp [G, T1, g1, f1, ψZxε, ψZt, hfrom_to, toFin1, fromFin1, eM, e1,
+                SchwartzMap.compCLMOfContinuousLinearEquiv_apply]
+
+/-- Universal form of the one-dimensional horizontal Paley-Wiener kernel.
+The kernel `χHorizontal` is characterized by its pointwise formula, so the
+Fubini pairing identity holds for every one-variable continuous linear
+functional, not only for the functional used to construct it. -/
+private theorem exists_horizontalPaleyKernel_universal_pairing
+    {ε t : ℝ} (hε : 0 < ε) (ht : 0 < t) :
+    let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+      SCV.schwartzPsiZ
+        ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+        (by
+          have hscaled : 0 < (2 * Real.pi) *
+              (((x : ℂ) + ε * Complex.I).im) :=
+            mul_pos Real.two_pi_pos (by simpa using hε)
+          simpa [Complex.mul_im] using hscaled)
+    let ψZt : SchwartzMap ℝ ℂ :=
+      SCV.schwartzPsiZ
+        (((2 * Real.pi : ℂ) * (t * Complex.I)))
+        (by
+          simpa [Complex.mul_im, ht.ne']
+            using mul_pos Real.two_pi_pos ht)
+    ∃ χHorizontal : SchwartzMap ℝ ℂ,
+      (∀ τ : ℝ,
+        χHorizontal τ =
+          ∫ x : ℝ,
+            (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) τ *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x) ∧
+      ∀ TW : SchwartzMap ℝ ℂ →L[ℂ] ℂ,
+        TW χHorizontal =
+          ∫ x : ℝ,
+            TW (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+  classical
+  let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+    SCV.schwartzPsiZ
+      ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+      (by
+        have hscaled : 0 < (2 * Real.pi) *
+            (((x : ℂ) + ε * Complex.I).im) :=
+          mul_pos Real.two_pi_pos (by simpa using hε)
+        simpa [Complex.mul_im] using hscaled)
+  let ψZt : SchwartzMap ℝ ℂ :=
+    SCV.schwartzPsiZ
+      (((2 * Real.pi : ℂ) * (t * Complex.I)))
+      (by
+        simpa [Complex.mul_im, ht.ne']
+          using mul_pos Real.two_pi_pos ht)
+  obtain ⟨χHorizontal, hχ_eval, _hχ_pair_zero⟩ :=
+    exists_horizontalPaleyKernel_pairing_fourierTransform
+      (hε := hε) (ht := ht)
+      (0 : SchwartzMap ℝ ℂ →L[ℂ] ℂ)
+  refine ⟨χHorizontal, ?_, ?_⟩
+  · simpa [ψZxε, ψZt] using hχ_eval
+  · intro TW
+    obtain ⟨χTW, hχTW_eval, hχTW_pair⟩ :=
+      exists_horizontalPaleyKernel_pairing_fourierTransform
+        (hε := hε) (ht := ht) TW
+    have hχTW_eq : χTW = χHorizontal := by
+      ext τ
+      calc
+        χTW τ
+            = ∫ x : ℝ,
+                (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) τ *
+                (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+                simpa [ψZxε, ψZt] using hχTW_eval τ
+        _ = χHorizontal τ := by
+                simpa [ψZxε, ψZt] using (hχ_eval τ).symm
+    calc
+      TW χHorizontal
+          = TW χTW := by rw [hχTW_eq]
+      _ = ∫ x : ℝ,
+            TW (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+            simpa [ψZxε, ψZt] using hχTW_pair
+
+/-- The one-variable oscillatory phase used to probe the horizontal Paley
+kernel at a fixed flattened frequency has temperate growth. -/
+private theorem horizontalPhase_temperate (lam : ℝ) :
+    (fun τ : ℝ =>
+      Complex.exp (-(Complex.I * (lam : ℂ) * (τ : ℂ)))).HasTemperateGrowth := by
+  let c : ℂ := -(Complex.I * (lam : ℂ))
+  suffices htemp : (fun τ : ℝ => Complex.exp (c * (τ : ℂ))).HasTemperateGrowth by
+    convert htemp using 1
+    ext τ
+    simp [c, mul_assoc]
+  refine ⟨?_, ?_⟩
+  · have hlin : ContDiff ℝ (↑(⊤ : ℕ∞)) (fun τ : ℝ => c * (τ : ℂ)) := by
+      simpa using (contDiff_const.mul Complex.ofRealCLM.contDiff)
+    exact Complex.contDiff_exp.comp hlin
+  · intro n
+    refine ⟨0, ‖c ^ n‖, fun τ => ?_⟩
+    rw [norm_iteratedFDeriv_eq_norm_iteratedDeriv]
+    have hiter := congr_fun (SCV.iteratedDeriv_cexp_const_mul_real n c) τ
+    rw [hiter]
+    have hre : (c * (τ : ℂ)).re = 0 := by
+      simp [c, Complex.mul_re]
+    calc
+      ‖c ^ n * Complex.exp (c * (τ : ℂ))‖ = ‖c ^ n‖ := by
+        rw [norm_mul, Complex.norm_exp, hre, Real.exp_zero, mul_one]
+      _ ≤ ‖c ^ n‖ * (1 + ‖τ‖) ^ 0 := by simp
+
+/-- Fixed-frequency one-variable functional for the horizontal Paley kernel.
+It pairs a Schwartz test with the oscillatory phase carrying frequency `lam`,
+then multiplies by the frozen full-flat base Fourier factor. -/
+private noncomputable def horizontalPhasePairingCLM
+    (base : ℂ) (lam : ℝ) :
+    SchwartzMap ℝ ℂ →L[ℂ] ℂ :=
+  base •
+    ((SchwartzMap.integralCLM ℂ
+      (MeasureTheory.volume : MeasureTheory.Measure ℝ)).comp
+      (SchwartzMap.smulLeftCLM ℂ
+        (fun τ : ℝ =>
+          Complex.exp (-(Complex.I * (lam : ℂ) * (τ : ℂ))))))
+
+private theorem horizontalPhasePairingCLM_apply
+    (base : ℂ) (lam : ℝ) (χ : SchwartzMap ℝ ℂ) :
+    horizontalPhasePairingCLM base lam χ =
+      base *
+        ∫ τ : ℝ,
+          Complex.exp (-(Complex.I * (lam : ℂ) * (τ : ℂ))) * χ τ := by
+  simp [horizontalPhasePairingCLM, SchwartzMap.integralCLM_apply,
+    SchwartzMap.smulLeftCLM_apply_apply (horizontalPhase_temperate lam), smul_eq_mul]
+
+private theorem horizontalPhasePairingCLM_fourierTransform
+    (base : ℂ) (lam : ℝ) (χ : SchwartzMap ℝ ℂ) :
+    horizontalPhasePairingCLM base lam
+        ((SchwartzMap.fourierTransformCLM ℂ) χ) =
+      base * χ (-lam / (2 * Real.pi)) := by
+  rw [horizontalPhasePairingCLM_apply]
+  rw [integral_phase_mul_fourierTransform_eq_eval]
+
+/-- Fixed-frequency evaluation of the horizontal Paley kernel against the
+oscillatory phase functional. This is the horizontal half of the finite-height
+kernel comparison at a frozen flattened frequency. -/
+private theorem exists_horizontalPaleyKernel_phasePairing
+    {ε t : ℝ} (hε : 0 < ε) (ht : 0 < t)
+    (base : ℂ) (lam : ℝ) :
+    let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+      SCV.schwartzPsiZ
+        ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+        (by
+          have hscaled : 0 < (2 * Real.pi) *
+              (((x : ℂ) + ε * Complex.I).im) :=
+            mul_pos Real.two_pi_pos (by simpa using hε)
+          simpa [Complex.mul_im] using hscaled)
+    let ψZt : SchwartzMap ℝ ℂ :=
+      SCV.schwartzPsiZ
+        (((2 * Real.pi : ℂ) * (t * Complex.I)))
+        (by
+          simpa [Complex.mul_im, ht.ne']
+            using mul_pos Real.two_pi_pos ht)
+    ∃ χHorizontal : SchwartzMap ℝ ℂ,
+      (∀ τ : ℝ,
+        χHorizontal τ =
+          ∫ x : ℝ,
+            (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) τ *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x) ∧
+      horizontalPhasePairingCLM base lam χHorizontal =
+        ∫ x : ℝ,
+          (base * (ψZxε x) (-lam / (2 * Real.pi))) *
+          (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+  classical
+  let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+    SCV.schwartzPsiZ
+      ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+      (by
+        have hscaled : 0 < (2 * Real.pi) *
+            (((x : ℂ) + ε * Complex.I).im) :=
+          mul_pos Real.two_pi_pos (by simpa using hε)
+        simpa [Complex.mul_im] using hscaled)
+  let ψZt : SchwartzMap ℝ ℂ :=
+    SCV.schwartzPsiZ
+      (((2 * Real.pi : ℂ) * (t * Complex.I)))
+      (by
+        simpa [Complex.mul_im, ht.ne']
+          using mul_pos Real.two_pi_pos ht)
+  obtain ⟨χHorizontal, hχ_eval, hχ_pair⟩ :=
+    exists_horizontalPaleyKernel_universal_pairing (hε := hε) (ht := ht)
+  refine ⟨χHorizontal, ?_, ?_⟩
+  · simpa [ψZxε, ψZt] using hχ_eval
+  · calc
+      horizontalPhasePairingCLM base lam χHorizontal
+          = ∫ x : ℝ,
+              horizontalPhasePairingCLM base lam
+                ((SchwartzMap.fourierTransformCLM ℂ) (ψZxε x)) *
+              (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+              simpa [ψZxε, ψZt] using
+                hχ_pair (horizontalPhasePairingCLM base lam)
+      _ = ∫ x : ℝ,
+            (base * (ψZxε x) (-lam / (2 * Real.pi))) *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+            apply MeasureTheory.integral_congr_ae
+            filter_upwards with x
+            rw [horizontalPhasePairingCLM_fourierTransform]
+
+/-- Collapse the remaining one-variable horizontal Paley integral after
+freezing the oscillatory frequency. The result keeps the one-sided cutoffs
+explicit; they are removed later from the dual-cone inequality `lam ≤ 0`. -/
+private theorem horizontalPaley_phase_xIntegral_eq
+    {ε t : ℝ} (hε : 0 < ε) (ht : 0 < t)
+    (base : ℂ) (lam : ℝ) :
+    let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+      SCV.schwartzPsiZ
+        ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+        (by
+          have hscaled : 0 < (2 * Real.pi) *
+              (((x : ℂ) + ε * Complex.I).im) :=
+            mul_pos Real.two_pi_pos (by simpa using hε)
+          simpa [Complex.mul_im] using hscaled)
+    let ψZt : SchwartzMap ℝ ℂ :=
+      SCV.schwartzPsiZ
+        (((2 * Real.pi : ℂ) * (t * Complex.I)))
+        (by
+          simpa [Complex.mul_im, ht.ne']
+            using mul_pos Real.two_pi_pos ht)
+    ∫ x : ℝ,
+      (base * (ψZxε x) (-lam / (2 * Real.pi))) *
+      (SchwartzMap.fourierTransformCLM ℂ ψZt) x =
+    base *
+      ((SCV.smoothCutoff (-lam / (2 * Real.pi)) : ℂ) *
+        Complex.exp (-(2 * Real.pi * ε : ℂ) * (-lam / (2 * Real.pi))) *
+        ψZt (-lam / (2 * Real.pi))) := by
+  classical
+  let r : ℝ := -lam / (2 * Real.pi)
+  let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+    SCV.schwartzPsiZ
+      ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+      (by
+        have hscaled : 0 < (2 * Real.pi) *
+            (((x : ℂ) + ε * Complex.I).im) :=
+          mul_pos Real.two_pi_pos (by simpa using hε)
+        simpa [Complex.mul_im] using hscaled)
+  let ψZt : SchwartzMap ℝ ℂ :=
+    SCV.schwartzPsiZ
+      (((2 * Real.pi : ℂ) * (t * Complex.I)))
+      (by
+        simpa [Complex.mul_im, ht.ne']
+          using mul_pos Real.two_pi_pos ht)
+  have hψ_inv :
+      FourierTransform.fourierInv
+          ((SchwartzMap.fourierTransformCLM ℂ) ψZt) = ψZt := by
+    simpa [ψZt] using (FourierTransform.fourierInv_fourier_eq ψZt)
+  have hpair :
+      (∫ x : ℝ,
+          (ψZxε x) r *
+          (SchwartzMap.fourierTransformCLM ℂ ψZt) x) =
+        (SCV.smoothCutoff r : ℂ) *
+          Complex.exp (-(2 * Real.pi * ε : ℂ) * r) *
+          ψZt r := by
+    calc
+      (∫ x : ℝ,
+          (ψZxε x) r *
+          (SchwartzMap.fourierTransformCLM ℂ ψZt) x)
+          = ∫ x : ℝ,
+              SCV.psiZ ((2 * Real.pi : ℂ) * (x + ε * Complex.I)) r *
+              (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+              apply MeasureTheory.integral_congr_ae
+              filter_upwards with x
+              simp [ψZxε]
+      _ = (SCV.smoothCutoff r : ℂ) *
+            Complex.exp (-(2 * Real.pi * ε : ℂ) * r) *
+            FourierTransform.fourierInv
+              ((SchwartzMap.fourierTransformCLM ℂ) ψZt) r :=
+            SCV.psiZ_twoPi_pairing_formula
+              (φ := (SchwartzMap.fourierTransformCLM ℂ ψZt))
+              (η := ε) (ξ := r)
+      _ = (SCV.smoothCutoff r : ℂ) *
+            Complex.exp (-(2 * Real.pi * ε : ℂ) * r) *
+            ψZt r := by rw [hψ_inv]
+  have hmain :
+      (∫ x : ℝ,
+        (base * (ψZxε x) r) *
+        (SchwartzMap.fourierTransformCLM ℂ ψZt) x) =
+      base *
+        ((SCV.smoothCutoff r : ℂ) *
+          Complex.exp (-(2 * Real.pi * ε : ℂ) * r) *
+          ψZt r) := by
+    calc
+      (∫ x : ℝ,
+        (base * (ψZxε x) r) *
+        (SchwartzMap.fourierTransformCLM ℂ ψZt) x)
+          = ∫ x : ℝ,
+              base * ((ψZxε x) r *
+                (SchwartzMap.fourierTransformCLM ℂ ψZt) x) := by
+              apply MeasureTheory.integral_congr_ae
+              filter_upwards with x
+              ring
+      _ = base *
+            ∫ x : ℝ,
+              (ψZxε x) r *
+              (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+            simpa using
+              (MeasureTheory.integral_const_mul
+                (μ := MeasureTheory.volume) base
+                (fun x : ℝ =>
+                  (ψZxε x) r *
+                  (SchwartzMap.fourierTransformCLM ℂ ψZt) x))
+      _ = base *
+            ((SCV.smoothCutoff r : ℂ) *
+              Complex.exp (-(2 * Real.pi * ε : ℂ) * r) *
+              ψZt r) := by rw [hpair]
+  simpa [r, ψZxε, ψZt] using hmain
+
+/-- Nonnegative-frequency form of `horizontalPaley_phase_xIntegral_eq`.
+On the dual cone this applies because the tail time-shift direction pairs
+nonpositively with every allowed frequency. -/
+private theorem horizontalPaley_phase_xIntegral_eq_of_nonneg
+    {ε t : ℝ} (hε : 0 < ε) (ht : 0 < t)
+    (base : ℂ) (lam : ℝ)
+    (hr : 0 ≤ -lam / (2 * Real.pi)) :
+    let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+      SCV.schwartzPsiZ
+        ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+        (by
+          have hscaled : 0 < (2 * Real.pi) *
+              (((x : ℂ) + ε * Complex.I).im) :=
+            mul_pos Real.two_pi_pos (by simpa using hε)
+          simpa [Complex.mul_im] using hscaled)
+    let ψZt : SchwartzMap ℝ ℂ :=
+      SCV.schwartzPsiZ
+        (((2 * Real.pi : ℂ) * (t * Complex.I)))
+        (by
+          simpa [Complex.mul_im, ht.ne']
+            using mul_pos Real.two_pi_pos ht)
+    ∫ x : ℝ,
+      (base * (ψZxε x) (-lam / (2 * Real.pi))) *
+      (SchwartzMap.fourierTransformCLM ℂ ψZt) x =
+    base *
+      (Complex.exp (-(2 * Real.pi * ε : ℂ) * (-lam / (2 * Real.pi))) *
+       Complex.exp (-(2 * Real.pi * t : ℂ) * (-lam / (2 * Real.pi)))) := by
+  classical
+  let r : ℝ := -lam / (2 * Real.pi)
+  let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+    SCV.schwartzPsiZ
+      ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+      (by
+        have hscaled : 0 < (2 * Real.pi) *
+            (((x : ℂ) + ε * Complex.I).im) :=
+          mul_pos Real.two_pi_pos (by simpa using hε)
+        simpa [Complex.mul_im] using hscaled)
+  let ψZt : SchwartzMap ℝ ℂ :=
+    SCV.schwartzPsiZ
+      (((2 * Real.pi : ℂ) * (t * Complex.I)))
+      (by
+        simpa [Complex.mul_im, ht.ne']
+          using mul_pos Real.two_pi_pos ht)
+  have hr' : 0 ≤ r := by simpa [r] using hr
+  have hcut : (SCV.smoothCutoff r : ℂ) = 1 := by
+    exact_mod_cast SCV.smoothCutoff_one_of_nonneg hr'
+  have hψt :
+      ψZt r = Complex.exp (-(2 * Real.pi * t : ℂ) * (r : ℂ)) := by
+    calc
+      ψZt r
+          = SCV.psiZ ((2 * Real.pi : ℂ) * (t * Complex.I)) r := by
+              simp [ψZt]
+      _ = Complex.exp
+            (Complex.I * ((2 * Real.pi : ℂ) * (t * Complex.I)) * (r : ℂ)) := by
+            rw [SCV.psiZ_eq_exp_of_nonneg hr']
+      _ = Complex.exp (-(2 * Real.pi * t : ℂ) * (r : ℂ)) := by
+            congr 1
+            calc
+              Complex.I * ((2 * Real.pi : ℂ) * (t * Complex.I)) * (r : ℂ)
+                  = (Complex.I * Complex.I) *
+                      ((2 * Real.pi * t : ℂ) * (r : ℂ)) := by ring
+              _ = -(2 * Real.pi * t : ℂ) * (r : ℂ) := by
+                    simp [Complex.I_mul_I]
+  have hcollapse :=
+    horizontalPaley_phase_xIntegral_eq (hε := hε) (ht := ht)
+      (base := base) (lam := lam)
+  have hmain :
+      (∫ x : ℝ,
+        (base * (ψZxε x) r) *
+        (SchwartzMap.fourierTransformCLM ℂ ψZt) x) =
+      base *
+        (Complex.exp (-(2 * Real.pi * ε : ℂ) * (r : ℂ)) *
+         Complex.exp (-(2 * Real.pi * t : ℂ) * (r : ℂ))) := by
+    calc
+      (∫ x : ℝ,
+        (base * (ψZxε x) r) *
+        (SchwartzMap.fourierTransformCLM ℂ ψZt) x)
+          = base *
+              ((SCV.smoothCutoff r : ℂ) *
+                Complex.exp (-(2 * Real.pi * ε : ℂ) * (r : ℂ)) *
+                ψZt r) := by
+              simpa [r, ψZxε, ψZt] using hcollapse
+      _ = base *
+            (Complex.exp (-(2 * Real.pi * ε : ℂ) * (r : ℂ)) *
+             Complex.exp (-(2 * Real.pi * t : ℂ) * (r : ℂ))) := by
+            rw [hcut, hψt]
+            ring
+  simpa [r, ψZxε, ψZt] using hmain
+
+/-- The frozen horizontal frequency `r = -lam/(2π)` is nonnegative on the
+dual cone. This is exactly the sign input needed to remove the one-sided
+Paley-Wiener cutoffs from the horizontal scalar. -/
+private theorem horizontalPaley_frequency_nonneg_of_mem_dualCone
+    {n m : ℕ}
+    {ξ : Fin ((n + m) * (d + 1)) → ℝ}
+    (hξ : ξ ∈ DualConeFlat
+      ((flattenCLEquivReal (n + m) (d + 1)) '' ForwardConeAbs d (n + m))) :
+    0 ≤ -(∑ i,
+      (((OSReconstruction.castFinCLE
+          (Nat.add_mul n m (d + 1)).symm)
+        (OSReconstruction.zeroHeadBlockShift
+          (m := n * (d + 1)) (n := m * (d + 1))
+          (flatTimeShiftDirection d m))) i) * ξ i) / (2 * Real.pi) := by
+  have hlam :=
+    zeroHeadBlockShift_flatTimeShiftDirection_pairing_nonpos_of_mem_dualCone
+      (d := d) (n := n) (m := m) (ξ := ξ) hξ
+  have hden_nonneg : 0 ≤ 2 * Real.pi := Real.two_pi_pos.le
+  refine div_nonneg ?_ hden_nonneg
+  exact neg_nonneg.mpr (by simpa using hlam)
+
+/-- Pointwise horizontal kernel scalar on the dual cone. This is the full
+horizontal-side finite-height computation: the `τ`-kernel formula collapses to
+the explicit Paley-Wiener damping scalar at each dual-cone frequency. -/
+private theorem horizontalKernel_pointwise_eq_exp_of_mem_dualCone
+    {n m : ℕ}
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    {ε t : ℝ} (hε : 0 < ε) (ht : 0 < t)
+    (χHorizontal : SchwartzMap ℝ ℂ)
+    (KHorizontal : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ)
+    (hχ_eval :
+      ∀ τ : ℝ,
+        χHorizontal τ =
+          ∫ x : ℝ,
+            (SchwartzMap.fourierTransformCLM ℂ
+              (SCV.schwartzPsiZ
+                ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+                (by
+                  have hscaled : 0 < (2 * Real.pi) *
+                      (((x : ℂ) + ε * Complex.I).im) :=
+                    mul_pos Real.two_pi_pos (by simpa using hε)
+                  simpa [Complex.mul_im] using hscaled))) τ *
+            (SchwartzMap.fourierTransformCLM ℂ
+              (SCV.schwartzPsiZ
+                (((2 * Real.pi : ℂ) * (t * Complex.I)))
+                (by
+                  simpa [Complex.mul_im, ht.ne']
+                    using mul_pos Real.two_pi_pos ht))) x)
+    (hK_eval :
+      ∀ ξ : Fin ((n + m) * (d + 1)) → ℝ,
+        KHorizontal ξ =
+          ∫ τ : ℝ,
+            timeShiftFlatOrbit (d := d) φ ψ τ ξ * χHorizontal τ)
+    {ξ : Fin ((n + m) * (d + 1)) → ℝ}
+    (hξ : ξ ∈ DualConeFlat
+      ((flattenCLEquivReal (n + m) (d + 1)) '' ForwardConeAbs d (n + m))) :
+    let base : ℂ :=
+      physicsFourierFlatCLM
+        (OSReconstruction.reindexSchwartzFin
+          (Nat.add_mul n m (d + 1)).symm
+          (((_root_.flattenSchwartzNPoint (d := d) φ.borchersConj).tensorProduct
+            (_root_.flattenSchwartzNPoint (d := d) ψ)))) ξ
+    let lam : ℝ :=
+      ∑ i,
+        (((OSReconstruction.castFinCLE
+            (Nat.add_mul n m (d + 1)).symm)
+          (OSReconstruction.zeroHeadBlockShift
+            (m := n * (d + 1)) (n := m * (d + 1))
+            (flatTimeShiftDirection d m))) i) * ξ i
+    KHorizontal ξ =
+      base *
+        (Complex.exp (-(2 * Real.pi * ε : ℂ) * (-lam / (2 * Real.pi))) *
+         Complex.exp (-(2 * Real.pi * t : ℂ) * (-lam / (2 * Real.pi)))) := by
+  classical
+  let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+    SCV.schwartzPsiZ
+      ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+      (by
+        have hscaled : 0 < (2 * Real.pi) *
+            (((x : ℂ) + ε * Complex.I).im) :=
+          mul_pos Real.two_pi_pos (by simpa using hε)
+        simpa [Complex.mul_im] using hscaled)
+  let ψZt : SchwartzMap ℝ ℂ :=
+    SCV.schwartzPsiZ
+      (((2 * Real.pi : ℂ) * (t * Complex.I)))
+      (by
+        simpa [Complex.mul_im, ht.ne']
+          using mul_pos Real.two_pi_pos ht)
+  let base : ℂ :=
+    physicsFourierFlatCLM
+      (OSReconstruction.reindexSchwartzFin
+        (Nat.add_mul n m (d + 1)).symm
+        (((_root_.flattenSchwartzNPoint (d := d) φ.borchersConj).tensorProduct
+          (_root_.flattenSchwartzNPoint (d := d) ψ)))) ξ
+  let lam : ℝ :=
+    ∑ i,
+      (((OSReconstruction.castFinCLE
+          (Nat.add_mul n m (d + 1)).symm)
+        (OSReconstruction.zeroHeadBlockShift
+          (m := n * (d + 1)) (n := m * (d + 1))
+          (flatTimeShiftDirection d m))) i) * ξ i
+  have hχ_eval_local :
+      ∀ τ : ℝ,
+        χHorizontal τ =
+          ∫ x : ℝ,
+            (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) τ *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+    intro τ
+    simpa [ψZxε, ψZt] using hχ_eval τ
+  have hK_phase :
+      KHorizontal ξ = horizontalPhasePairingCLM base lam χHorizontal := by
+    calc
+      KHorizontal ξ
+          = ∫ τ : ℝ,
+              timeShiftFlatOrbit (d := d) φ ψ τ ξ * χHorizontal τ :=
+            hK_eval ξ
+      _ = ∫ τ : ℝ,
+            base *
+              (Complex.exp (-(Complex.I * (lam : ℂ) * (τ : ℂ))) *
+                χHorizontal τ) := by
+            apply MeasureTheory.integral_congr_ae
+            filter_upwards with τ
+            rw [timeShiftFlatOrbit_apply_phase]
+            dsimp only [base, lam]
+            ring
+      _ = base *
+            ∫ τ : ℝ,
+              Complex.exp (-(Complex.I * (lam : ℂ) * (τ : ℂ))) *
+                χHorizontal τ := by
+            simpa using
+              (MeasureTheory.integral_const_mul
+                (μ := MeasureTheory.volume) base
+                (fun τ : ℝ =>
+                  Complex.exp (-(Complex.I * (lam : ℂ) * (τ : ℂ))) *
+                    χHorizontal τ))
+      _ = horizontalPhasePairingCLM base lam χHorizontal :=
+            (horizontalPhasePairingCLM_apply base lam χHorizontal).symm
+  obtain ⟨χPhase, hχPhase_eval, hχPhase_pair⟩ :=
+    exists_horizontalPaleyKernel_phasePairing
+      (hε := hε) (ht := ht) (base := base) (lam := lam)
+  have hχPhase_eval_local :
+      ∀ τ : ℝ,
+        χPhase τ =
+          ∫ x : ℝ,
+            (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) τ *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+    intro τ
+    simpa [ψZxε, ψZt] using hχPhase_eval τ
+  have hχ_eq : χHorizontal = χPhase := by
+    ext τ
+    rw [hχ_eval_local τ, hχPhase_eval_local τ]
+  have hr :
+      0 ≤ -lam / (2 * Real.pi) := by
+    simpa [lam] using
+      (horizontalPaley_frequency_nonneg_of_mem_dualCone
+        (d := d) (n := n) (m := m) (ξ := ξ) hξ)
+  have hfinal :
+      KHorizontal ξ =
+        base *
+          (Complex.exp (-(2 * Real.pi * ε : ℂ) * (-lam / (2 * Real.pi))) *
+           Complex.exp (-(2 * Real.pi * t : ℂ) * (-lam / (2 * Real.pi)))) := by
+    calc
+      KHorizontal ξ
+          = horizontalPhasePairingCLM base lam χHorizontal := hK_phase
+      _ = horizontalPhasePairingCLM base lam χPhase := by rw [hχ_eq]
+      _ = ∫ x : ℝ,
+            (base * (ψZxε x) (-lam / (2 * Real.pi))) *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+            simpa [ψZxε, ψZt] using hχPhase_pair
+      _ = base *
+            (Complex.exp (-(2 * Real.pi * ε : ℂ) * (-lam / (2 * Real.pi))) *
+             Complex.exp (-(2 * Real.pi * t : ℂ) * (-lam / (2 * Real.pi)))) := by
+            simpa [ψZxε, ψZt] using
+              (horizontalPaley_phase_xIntegral_eq_of_nonneg
+                (hε := hε) (ht := ht) (base := base) (lam := lam) hr)
+  simpa [base, lam] using hfinal
+
 /-- Pointwise normal form for the explicit canonical Wightman witness on a
 positive horizontal line: after unfolding `fourierLaplaceExt`, its value at
 `x + η i` is the real-time Wightman time-shift tempered functional applied to
@@ -4437,6 +5655,139 @@ private theorem
                 (((x : ℂ) + η * Complex.I).im) :=
               mul_pos Real.two_pi_pos (by simpa using hη)
             simpa [Complex.mul_im] using hscaled)))
+
+/-- Horizontal full-flat `Tflat` kernel packet. For finite positive height
+`ε` and positive imaginary-axis target `t`, the canonical horizontal
+Fourier-Laplace scalar is represented by the same full flattened distribution
+`Tflat` as a single kernel `KHorizontal`.
+
+The proof first constructs the one-dimensional Paley-Wiener test
+`χHorizontal`, then feeds it into
+`exists_timeShiftKernel_pairing_fourierTest`. -/
+private theorem exists_horizontalKernel_pairing_iteratedFourierLaplace
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (hψ_compact : HasCompactSupport (ψ : NPointDomain d m → ℂ))
+    {ε t : ℝ} (hε : 0 < ε) (ht : 0 < t)
+    (Tflat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ →L[ℂ] ℂ)
+    (hTflat_bv :
+      ∀ φflat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ,
+        bvt_W OS lgc (n + m) (_root_.unflattenSchwartzNPoint (d := d) φflat) =
+          Tflat (physicsFourierFlatCLM φflat)) :
+    let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+      SCV.schwartzPsiZ
+        ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+        (by
+          have hscaled : 0 < (2 * Real.pi) *
+              (((x : ℂ) + ε * Complex.I).im) :=
+            mul_pos Real.two_pi_pos (by simpa using hε)
+          simpa [Complex.mul_im] using hscaled)
+    let ψZt : SchwartzMap ℝ ℂ :=
+      SCV.schwartzPsiZ
+        (((2 * Real.pi : ℂ) * (t * Complex.I)))
+        (by
+          simpa [Complex.mul_im, ht.ne']
+            using mul_pos Real.two_pi_pos ht)
+    ∃ χHorizontal : SchwartzMap ℝ ℂ,
+      (∀ τ : ℝ,
+        χHorizontal τ =
+          ∫ x : ℝ,
+            (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) τ *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x) ∧
+      ∃ KHorizontal : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ,
+        (∀ ξ : Fin ((n + m) * (d + 1)) → ℝ,
+          KHorizontal ξ =
+            ∫ τ : ℝ,
+              timeShiftFlatOrbit (d := d) φ ψ τ ξ * χHorizontal τ) ∧
+        (∫ x : ℝ,
+          bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+              (d := d) OS lgc φ ψ hψ_compact ((x : ℂ) + ε * Complex.I) *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x) =
+          Tflat KHorizontal := by
+  classical
+  let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
+    SCV.schwartzPsiZ
+      ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+      (by
+        have hscaled : 0 < (2 * Real.pi) *
+            (((x : ℂ) + ε * Complex.I).im) :=
+          mul_pos Real.two_pi_pos (by simpa using hε)
+        simpa [Complex.mul_im] using hscaled)
+  let ψZt : SchwartzMap ℝ ℂ :=
+    SCV.schwartzPsiZ
+      (((2 * Real.pi : ℂ) * (t * Complex.I)))
+      (by
+        simpa [Complex.mul_im, ht.ne']
+          using mul_pos Real.two_pi_pos ht)
+  let TW : SchwartzMap ℝ ℂ →L[ℂ] ℂ :=
+    bvt_W_conjTensorProduct_timeShiftTemperedFunctional
+      (d := d) OS lgc φ ψ hψ_compact
+  obtain ⟨χHorizontal, hχ_eval, hχ_pairTW⟩ :=
+    exists_horizontalPaleyKernel_pairing_fourierTransform
+      (hε := hε) (ht := ht) TW
+  obtain ⟨KHorizontal, hK_eval, hK_pair⟩ :=
+    exists_timeShiftKernel_pairing_fourierTest
+      (d := d) (OS := OS) (lgc := lgc) (hm := hm)
+      (φ := φ) (ψ := ψ) (χ := χHorizontal)
+      (Tflat := Tflat) hTflat_bv
+  have hTW_point :
+      ∀ x : ℝ,
+        TW (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) =
+          bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+            (d := d) OS lgc φ ψ hψ_compact ((x : ℂ) + ε * Complex.I) := by
+    intro x
+    calc
+      TW (SchwartzMap.fourierTransformCLM ℂ (ψZxε x))
+          =
+        ∫ τ : ℝ,
+          bvt_W OS lgc (n + m)
+            (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) τ ψ)) *
+          (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) τ := by
+            simpa [TW] using
+              (bvt_W_conjTensorProduct_timeShiftTemperedFunctional_apply
+                (d := d) (OS := OS) (lgc := lgc)
+                (f := φ) (g := ψ) (hg_compact := hψ_compact)
+                ((SchwartzMap.fourierTransformCLM ℂ) (ψZxε x)))
+      _ =
+          bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+            (d := d) OS lgc φ ψ hψ_compact ((x : ℂ) + ε * Complex.I) := by
+            simpa [ψZxε] using
+              (bvt_W_conjTensorProduct_timeShiftCanonicalExtension_horizontal_eq_fourierLaplaceIntegral
+                (d := d) (OS := OS) (lgc := lgc)
+                (φ := φ) (ψ := ψ) (hψ_compact := hψ_compact) hε x).symm
+  have hTWχ_apply :
+      TW χHorizontal =
+        ∫ τ : ℝ,
+          bvt_W OS lgc (n + m)
+            (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) τ ψ)) *
+          χHorizontal τ := by
+    simpa [TW] using
+      (bvt_W_conjTensorProduct_timeShiftTemperedFunctional_apply
+        (d := d) (OS := OS) (lgc := lgc)
+        (f := φ) (g := ψ) (hg_compact := hψ_compact) χHorizontal)
+  refine ⟨χHorizontal, ?_, KHorizontal, hK_eval, ?_⟩
+  · simpa [ψZxε, ψZt] using hχ_eval
+  · calc
+      (∫ x : ℝ,
+          bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+              (d := d) OS lgc φ ψ hψ_compact ((x : ℂ) + ε * Complex.I) *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x)
+          =
+        ∫ x : ℝ,
+          TW (SchwartzMap.fourierTransformCLM ℂ (ψZxε x)) *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x := by
+            apply MeasureTheory.integral_congr_ae
+            filter_upwards with x
+            rw [hTW_point x]
+      _ = TW χHorizontal := by
+            simpa [ψZxε, ψZt] using hχ_pairTW.symm
+      _ =
+        ∫ τ : ℝ,
+          bvt_W OS lgc (n + m)
+            (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) τ ψ)) *
+          χHorizontal τ := hTWχ_apply
+      _ = Tflat KHorizontal := hK_pair
 
 /-- Outer-integral normal form for the canonical horizontal Fourier-Laplace
 pairing. For fixed `t > 0`, the horizontal integral of the canonical witness

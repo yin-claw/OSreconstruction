@@ -363,6 +363,271 @@ private theorem sum_over_flat_timeSlots
         intro p
         simp))
 
+/-- Tail-cumulative time-shift direction in flattened coordinates.
+
+For a chosen tail index `j`, this has coefficient `-1` in the time coordinate
+of every point `k ≥ j` and coefficient `0` elsewhere. The existing
+`flatTimeShiftDirection` is the `j = 0` special case. -/
+def flatTailTimeShiftDirection (d q : ℕ) (j : Fin q) :
+    Fin (q * (d + 1)) → ℝ :=
+  fun a =>
+    if j.val ≤ (finProdFinEquiv.symm a).1.val ∧
+        (finProdFinEquiv.symm a).2 = (0 : Fin (d + 1)) then
+      (-1 : ℝ)
+    else
+      0
+
+omit [NeZero d] in
+@[simp] theorem flatTailTimeShiftDirection_zero
+    {q : ℕ} (hq : 0 < q) :
+    flatTailTimeShiftDirection d q ⟨0, hq⟩ =
+      flatTimeShiftDirection d q := by
+  ext a
+  simp [flatTailTimeShiftDirection, flatTimeShiftDirection]
+
+/-- Dual-cone sign geometry for every cumulative tail time-shift direction. -/
+private theorem flatTailTimeShiftDirection_pairing_nonpos_of_mem_dualCone
+    {q : ℕ} (j : Fin q)
+    {ξ : Fin (q * (d + 1)) → ℝ}
+    (hξ :
+      ξ ∈ DualConeFlat ((flattenCLEquivReal q (d + 1)) '' ForwardConeAbs d q)) :
+    ∑ a, flatTailTimeShiftDirection d q j a * ξ a ≤ 0 := by
+  classical
+  let S : ℝ :=
+    ∑ k : Fin q,
+      (if k < j then (0 : ℝ) else 1) *
+        ξ (finProdFinEquiv (k, (0 : Fin (d + 1))))
+  have hS_nonneg : 0 ≤ S := by
+    by_contra hS
+    have hSneg : S < 0 := lt_of_not_ge hS
+    let W : ℝ :=
+      ∑ k : Fin q,
+        (if k < j then (k : ℝ) + 1 else (k : ℝ)) *
+          ξ (finProdFinEquiv (k, (0 : Fin (d + 1))))
+    let ε : ℝ := (-S) / (2 * (|W| + 1))
+    have hε_pos : 0 < ε := by
+      dsimp [ε]
+      apply div_pos
+      · linarith
+      · positivity
+    let yε : Fin q → Fin (d + 1) → ℝ :=
+      fun k μ =>
+        if μ = 0 then
+          if k < j then (((k : ℝ) + 1) * ε : ℝ)
+          else (1 + (k : ℝ) * ε : ℝ)
+        else 0
+    let e0 : Fin (d + 1) → ℝ := fun μ => if μ = 0 then 1 else 0
+    have he0 : InOpenForwardCone d e0 := by
+      constructor
+      · simp [e0]
+      · simp [e0, MinkowskiSpace.minkowskiNormSq, MinkowskiSpace.minkowskiInner]
+    have hεe0 : InOpenForwardCone d (ε • e0) :=
+      inOpenForwardCone_smul d ε hε_pos e0 he0
+    have hyε_mem : yε ∈ ForwardConeAbs d q := by
+      intro k
+      by_cases hk0 : (k : ℕ) = 0
+      · convert inOpenForwardCone_smul d
+          (if (0 : ℕ) < j.val then (1 : ℝ) * ε else (1 : ℝ))
+          (by
+            by_cases hj : 0 < j.val
+            · simp [hj, hε_pos]
+            · have hj0 : j.val = 0 := Nat.eq_zero_of_not_pos hj
+              simp [hj0])
+          e0 he0 using 1
+        ext μ
+        by_cases hμ : μ = 0
+        · subst hμ
+          by_cases hj : 0 < j.val
+          · have hk_lt : k < j := by omega
+            simp [yε, e0, hk0, hk_lt, hj, Pi.smul_apply, smul_eq_mul]
+          · have hj0 : j.val = 0 := Nat.eq_zero_of_not_pos hj
+            have hk_not_lt : ¬ k < j := by omega
+            simp [yε, e0, hk0, hj0, hk_not_lt,
+              Pi.smul_apply, smul_eq_mul]
+        · simp [yε, e0, hk0, hμ, Pi.smul_apply, smul_eq_mul]
+      · have hkpos : 0 < (k : ℕ) := Nat.pos_of_ne_zero hk0
+        by_cases hk_lt : k < j
+        · have hkcast :
+            ((((k : ℕ) - 1 : ℕ) : ℝ) + 1) = (k : ℝ) := by
+            have hnat : (k : ℕ) - 1 + 1 = (k : ℕ) :=
+              Nat.sub_add_cancel (show 1 ≤ (k : ℕ) from hkpos)
+            exact_mod_cast hnat
+          convert hεe0 using 1
+          ext μ
+          by_cases hμ : μ = 0
+          · subst hμ
+            have hkprev_lt : (⟨(k : ℕ) - 1, by omega⟩ : Fin q) < j := by
+              change (k : ℕ) - 1 < j.val
+              exact lt_of_le_of_lt (Nat.sub_le (k : ℕ) 1)
+                (show (k : ℕ) < j.val from hk_lt)
+            have hmain :
+                (((k : ℝ) + 1) * ε) -
+                    (((((k : ℕ) - 1 : ℕ) : ℝ) + 1) * ε) = ε := by
+              nlinarith [hkcast]
+            simpa [yε, e0, hk0, hk_lt, hkprev_lt, Pi.smul_apply, smul_eq_mul] using hmain
+          · simp [yε, e0, hk0, hμ, Pi.smul_apply, smul_eq_mul]
+        · by_cases hk_eq : (k : ℕ) = j.val
+          · convert he0 using 1
+            ext μ
+            by_cases hμ : μ = 0
+            · subst hμ
+              have hj_pos : 0 < j.val := by omega
+              have hj0_ne : j.val ≠ 0 := Nat.ne_of_gt hj_pos
+              have hkprev_lt : (⟨(k : ℕ) - 1, by omega⟩ : Fin q) < j := by
+                change (k : ℕ) - 1 < j.val
+                omega
+              have hkcast : (k : ℝ) = (j.val : ℝ) := by exact_mod_cast hk_eq
+              have hprev_cast :
+                  ((((k : ℕ) - 1 : ℕ) : ℝ) + 1) = (j.val : ℝ) := by
+                have hnat : (k : ℕ) - 1 + 1 = j.val := by
+                  rw [hk_eq]
+                  exact Nat.sub_add_cancel (show 1 ≤ j.val from hj_pos)
+                exact_mod_cast hnat
+              have hmain :
+                  (1 + (k : ℝ) * ε) -
+                    (((((k : ℕ) - 1 : ℕ) : ℝ) + 1) * ε) = 1 := by
+                nlinarith [hkcast, hprev_cast]
+              simpa [yε, e0, hk0, hk_lt, hkprev_lt, Pi.smul_apply, smul_eq_mul] using hmain
+            · have hj_pos : 0 < j.val := by omega
+              have hj0_ne : j.val ≠ 0 := Nat.ne_of_gt hj_pos
+              have hkprev_lt : (⟨(k : ℕ) - 1, by omega⟩ : Fin q) < j := by
+                change (k : ℕ) - 1 < j.val
+                omega
+              simp [yε, e0, hk0, hμ]
+          · have hk_gt : j.val < (k : ℕ) := by omega
+            have hkprev_ge : j.val ≤ (k : ℕ) - 1 := by omega
+            have hkprev_not_lt : ¬ (⟨(k : ℕ) - 1, by omega⟩ : Fin q) < j := by
+              change ¬ (k : ℕ) - 1 < j.val
+              omega
+            have hkcast :
+                (((k : ℕ) - 1 : ℕ) : ℝ) = (k : ℝ) - 1 := by
+              have hnat : (k : ℕ) - 1 + 1 = (k : ℕ) :=
+                Nat.sub_add_cancel (show 1 ≤ (k : ℕ) from hkpos)
+              have hreal : ((((k : ℕ) - 1 : ℕ) : ℝ) + 1) = (k : ℝ) := by
+                exact_mod_cast hnat
+              linarith
+            convert hεe0 using 1
+            ext μ
+            by_cases hμ : μ = 0
+            · subst hμ
+              have hmain :
+                  (1 + (k : ℝ) * ε) -
+                    (1 + ((((k : ℕ) - 1 : ℕ) : ℝ)) * ε) = ε := by
+                nlinarith [hkcast]
+              simpa [yε, e0, hk0, hk_lt, hkprev_not_lt, Pi.smul_apply, smul_eq_mul] using hmain
+            · simp [yε, e0, hk0, hμ]
+    have hpair_nonneg :
+        0 ≤ ∑ a, (flattenCLEquivReal q (d + 1) yε) a * ξ a := by
+      exact (mem_dualConeFlat.mp hξ)
+        ((flattenCLEquivReal q (d + 1)) yε) ⟨yε, hyε_mem, rfl⟩
+    have hsum_rewrite :
+        (∑ a, (flattenCLEquivReal q (d + 1) yε) a * ξ a) = S + ε * W := by
+      let a : Fin q → ℝ :=
+        fun k =>
+          if k < j then (((k : ℝ) + 1) * ε : ℝ)
+          else (1 + (k : ℝ) * ε : ℝ)
+      let b : Fin q → ℝ := fun k => if k < j then 0 else 1
+      let c : Fin q → ℝ :=
+        fun k => if k < j then ((k : ℝ) + 1) else (k : ℝ)
+      calc
+        (∑ a, (flattenCLEquivReal q (d + 1) yε) a * ξ a)
+            = ∑ k : Fin q, a k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1)))) := by
+                simpa [yε, a, flattenCLEquivReal_apply] using
+                  (sum_over_flat_timeSlots (d := d) (a := a) ξ)
+        _ = ∑ k : Fin q,
+              (b k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1)))) +
+                ε * (c k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1)))))) := by
+              refine Finset.sum_congr rfl ?_
+              intro k hk
+              by_cases hk_lt : k < j
+              · dsimp [a, b, c]
+                rw [if_pos hk_lt, if_pos hk_lt, if_pos hk_lt]
+                ring
+              · dsimp [a, b, c]
+                rw [if_neg hk_lt, if_neg hk_lt, if_neg hk_lt]
+                ring
+        _ = (∑ k : Fin q, b k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1))))) +
+              ε * (∑ k : Fin q, c k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1))))) := by
+              rw [Finset.sum_add_distrib, Finset.mul_sum]
+        _ = S + ε * W := by
+              have hb :
+                  ∑ k : Fin q, b k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1)))) = S := by
+                simp [b, S]
+              have hc :
+                  ∑ k : Fin q, c k * ξ (finProdFinEquiv (k, (0 : Fin (d + 1)))) = W := by
+                simp [c, W]
+              rw [hb, hc]
+    have hW_bound : ε * W ≤ (-S) / 2 := by
+      have hε_nonneg : 0 ≤ ε := le_of_lt hε_pos
+      have hstep1 : ε * W ≤ ε * |W| := by
+        exact mul_le_mul_of_nonneg_left (le_abs_self W) hε_nonneg
+      have hstep2 : ε * |W| ≤ (-S) / 2 := by
+        have hratio : |W| / (|W| + 1) ≤ (1 : ℝ) := by
+          have hne : (|W| + 1 : ℝ) ≠ 0 := by positivity
+          field_simp [hne]
+          nlinarith [abs_nonneg W]
+        have hrepr : ε * |W| = ((-S) / 2) * (|W| / (|W| + 1)) := by
+          have hne : 2 * (|W| + 1) ≠ 0 := by positivity
+          dsimp [ε]
+          field_simp [hne]
+        rw [hrepr]
+        have hcoeff_nonneg : 0 ≤ (-S) / 2 := by linarith
+        simpa using mul_le_mul_of_nonneg_left hratio hcoeff_nonneg
+      exact le_trans hstep1 hstep2
+    rw [hsum_rewrite] at hpair_nonneg
+    linarith [hpair_nonneg, hW_bound, hSneg]
+  have hsum_eq :
+      ∑ a, flatTailTimeShiftDirection d q j a * ξ a = -S := by
+    calc
+      ∑ a, flatTailTimeShiftDirection d q j a * ξ a
+          = ∑ a,
+              (if (finProdFinEquiv.symm a).2 = (0 : Fin (d + 1)) then
+                if ((finProdFinEquiv.symm a).1 : Fin q) < j then 0 else (-1 : ℝ)
+               else 0) * ξ a := by
+                refine Finset.sum_congr rfl ?_
+                intro a ha
+                let p : Fin q × Fin (d + 1) := finProdFinEquiv.symm a
+                change
+                  (if j.val ≤ p.1.val ∧ p.2 = (0 : Fin (d + 1)) then (-1 : ℝ) else 0) *
+                      ξ a =
+                    (if p.2 = (0 : Fin (d + 1)) then
+                      if p.1 < j then 0 else (-1 : ℝ)
+                     else 0) * ξ a
+                by_cases htime : p.2 = (0 : Fin (d + 1))
+                · by_cases hlt : p.1 < j
+                  · have hnot : ¬ j ≤ p.1 := not_le_of_gt hlt
+                    simp [htime, hlt, hnot]
+                  · have hle : j ≤ p.1 := le_of_not_gt hlt
+                    simp [htime, hlt, hle]
+                · simp [htime]
+      _ = ∑ k : Fin q,
+            (if k < j then 0 else (-1 : ℝ)) *
+              ξ (finProdFinEquiv (k, (0 : Fin (d + 1)))) := by
+            rw [sum_over_flat_timeSlots
+              (d := d)
+              (a := fun k : Fin q => if k < j then 0 else (-1 : ℝ)) ξ]
+      _ = -S := by
+            calc
+              ∑ k : Fin q,
+                  (if k < j then 0 else (-1 : ℝ)) *
+                    ξ (finProdFinEquiv (k, (0 : Fin (d + 1))))
+                  = ∑ k : Fin q,
+                      -((if k < j then (0 : ℝ) else 1) *
+                        ξ (finProdFinEquiv (k, (0 : Fin (d + 1))))) := by
+                        refine Finset.sum_congr rfl ?_
+                        intro k hk
+                        by_cases hlt : k < j
+                        · simp [hlt]
+                        · simp [hlt]
+              _ = -∑ k : Fin q,
+                    (if k < j then (0 : ℝ) else 1) *
+                      ξ (finProdFinEquiv (k, (0 : Fin (d + 1)))) := by
+                      rw [Finset.sum_neg_distrib]
+              _ = -S := by
+                    rfl
+  rw [hsum_eq]
+  linarith
+
 /-- Correct sign geometry for the flattened Stage-5 blocker: any frequency
 vector in the dual cone of the flattened absolute forward cone pairs
 nonpositively with `flatTimeShiftDirection`.
@@ -570,7 +835,7 @@ private theorem fourierInv_eq_cexp_integral_local
 /-- One-variable phase evaluation for the current flattened Stage-5 route:
 pairing a pure oscillatory phase against the Fourier transform of a Schwartz
 test recovers the test at the matching nonnegative frequency. -/
-private theorem integral_phase_mul_fourierTransform_eq_eval
+theorem integral_phase_mul_fourierTransform_eq_eval
     (χ : SchwartzMap ℝ ℂ)
     (lam : ℝ) :
     ∫ t : ℝ,
@@ -1112,7 +1377,7 @@ surface produced by `exists_flattened_bvt_W_conjTensorProduct_right_dualCone_dis
 After reindexing the split head/tail block back to the literal `(n+m)`-point
 flattening, the real-time tail translation still appears as the expected
 oscillatory phase. -/
-private theorem physicsFourierFlatCLM_reindex_translate_zeroHeadBlockShift_apply
+theorem physicsFourierFlatCLM_reindex_translate_zeroHeadBlockShift_apply
     {n m : ℕ}
     (a : Fin (m * (d + 1)) → ℝ)
     (Ψ : SchwartzMap (Fin (n * (d + 1) + m * (d + 1)) → ℝ) ℂ)
@@ -1346,7 +1611,7 @@ after inserting the right-block time-shift vector into the full flattened
 `(n+m)`-point space, every dual-cone frequency still pairs nonpositively with
 that inserted translation direction. This is the exact geometry needed by the
 final full-flat spectral assembly. -/
-private theorem zeroHeadBlockShift_flatTimeShiftDirection_pairing_nonpos_of_mem_dualCone
+theorem zeroHeadBlockShift_flatTimeShiftDirection_pairing_nonpos_of_mem_dualCone
     {n m : ℕ}
     {ξ : Fin ((n + m) * (d + 1)) → ℝ}
     (hξ :
@@ -2106,7 +2371,7 @@ one-parameter orbit `t • η`. -/
         simp [ih, Pi.smul_apply]
 
 /-- Scalar real-translation orbits are continuous in the Schwartz topology. -/
-private theorem continuous_translateSchwartz_smul_local {m : ℕ}
+theorem continuous_translateSchwartz_smul_local {m : ℕ}
     (η : Fin m → ℝ) (ψ : SchwartzMap (Fin m → ℝ) ℂ) :
     Continuous (fun t : ℝ => SCV.translateSchwartz (t • η) ψ) := by
   rw [continuous_iff_continuousAt]
@@ -2200,9 +2465,10 @@ private theorem continuous_translateSchwartz_smul_local {m : ℕ}
   rw [hEqfun]
   exact hcomp
 
-/-- Exact continuity of the full flattened Fourier-shift orbit used in the
+/- Exact continuity of the full flattened Fourier-shift orbit used in the
 final Stage-5 support theorem. -/
-private theorem continuous_physicsFourierFlatCLM_reindex_translate_zeroHeadBlockShift
+omit [NeZero d] in
+theorem continuous_physicsFourierFlatCLM_reindex_translate_zeroHeadBlockShift
     {n m : ℕ}
     (Ψ : SchwartzMap (Fin (n * (d + 1) + m * (d + 1)) → ℝ) ℂ) :
     Continuous (fun t : ℝ =>
@@ -2249,10 +2515,11 @@ private theorem continuous_physicsFourierFlatCLM_reindex_translate_zeroHeadBlock
   rw [hEq]
   exact physicsFourierFlatCLM.continuous.comp hcont_reindex
 
-/-- Polynomial seminorm growth of the full flattened Fourier-shift orbit. This
+/- Polynomial seminorm growth of the full flattened Fourier-shift orbit. This
 is the exact Schwartz-family bound needed by `schwartz_clm_fubini_exchange` in
 the final flattened spectral step. -/
-private theorem exists_bound_seminorm_physicsFourierFlatCLM_reindex_translate_zeroHeadBlockShift
+omit [NeZero d] in
+theorem exists_bound_seminorm_physicsFourierFlatCLM_reindex_translate_zeroHeadBlockShift
     {n m : ℕ}
     (Ψ : SchwartzMap (Fin (n * (d + 1) + m * (d + 1)) → ℝ) ℂ)
     (k l : ℕ) :
@@ -2519,6 +2786,339 @@ private theorem integral_comp_castFinCLE_eq {a b : ℕ}
   simpa [e, OSReconstruction.castFinCLE, MeasurableEquiv.piCongrLeft,
     ContinuousLinearEquiv.piCongrLeft] using
     (he.integral_comp' (f := e) (g := f))
+
+/-- Full-flat normal form for a right time shift inside the ambient conjugated
+tensor product. This is the algebraic bridge used by the horizontal `Tflat`
+Fubini packet. -/
+private theorem conjTensorProduct_timeShift_eq_unflatten_reindex_translate_zeroHeadBlock
+    {n m : ℕ}
+    (f : SchwartzNPoint d n)
+    (g : SchwartzNPoint d m)
+    (t : ℝ) :
+    f.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t g) =
+      unflattenSchwartzNPoint (d := d)
+        (OSReconstruction.reindexSchwartzFin
+          (by ring : n * (d + 1) + m * (d + 1) = (n + m) * (d + 1))
+          (SCV.translateSchwartz
+            (OSReconstruction.zeroHeadBlockShift
+              (m := n * (d + 1)) (n := m * (d + 1))
+              (t • flatTimeShiftDirection d m))
+            ((flattenSchwartzNPoint (d := d) f.borchersConj).tensorProduct
+              (flattenSchwartzNPoint (d := d) g)))) := by
+  let ψt : SchwartzMap (Fin (m * (d + 1)) → ℝ) ℂ :=
+    SCV.translateSchwartz (t • flatTimeShiftDirection d m)
+      (flattenSchwartzNPoint (d := d) g)
+  let Ψ : SchwartzMap (Fin (n * (d + 1) + m * (d + 1)) → ℝ) ℂ :=
+    (flattenSchwartzNPoint (d := d) f.borchersConj).tensorProduct
+      (flattenSchwartzNPoint (d := d) g)
+  have hψ_shift :
+      timeShiftSchwartzNPoint (d := d) t g =
+        unflattenSchwartzNPoint (d := d) ψt := by
+    simpa [ψt] using timeShiftSchwartzNPoint_eq_unflatten_translate_local
+      (d := d) (t := t) (f := g)
+  have hψ_flat :
+      flattenSchwartzNPoint (d := d) (unflattenSchwartzNPoint (d := d) ψt) = ψt := by
+    ext u
+    simp [flattenSchwartzNPoint_apply, unflattenSchwartzNPoint_apply]
+  have htail :
+      (flattenSchwartzNPoint (d := d) f.borchersConj).tensorProduct ψt =
+        SCV.translateSchwartz
+          (OSReconstruction.zeroHeadBlockShift
+            (m := n * (d + 1)) (n := m * (d + 1))
+            (t • flatTimeShiftDirection d m))
+          Ψ := by
+    simpa [ψt, Ψ] using
+      tensorProduct_translateSchwartz_tail_eq_translate_zeroHeadBlock
+        (d := d) (n := n) (m := m)
+        (flattenSchwartzNPoint (d := d) f.borchersConj)
+        (flattenSchwartzNPoint (d := d) g)
+        (t • flatTimeShiftDirection d m)
+  have hflat :
+      OSReconstruction.reindexSchwartzFin
+          (by ring : (n + m) * (d + 1) = n * (d + 1) + m * (d + 1))
+          (flattenSchwartzNPoint (d := d)
+            (f.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t g))) =
+        SCV.translateSchwartz
+          (OSReconstruction.zeroHeadBlockShift
+            (m := n * (d + 1)) (n := m * (d + 1))
+            (t • flatTimeShiftDirection d m))
+          Ψ := by
+    rw [hψ_shift]
+    simpa [hψ_flat, htail] using
+      reindex_flattenSchwartzNPoint_conjTensorProduct_eq_tensorProduct
+        (d := d) f (unflattenSchwartzNPoint (d := d) ψt)
+  have hflat' := congrArg
+    (OSReconstruction.reindexSchwartzFin
+      (by ring : n * (d + 1) + m * (d + 1) = (n + m) * (d + 1))) hflat
+  have hfull_left :
+      unflattenSchwartzNPoint (d := d)
+          (flattenSchwartzNPoint (d := d)
+            (f.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t g))) =
+        f.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t g) := by
+    ext x
+    simp [unflattenSchwartzNPoint_apply, flattenSchwartzNPoint_apply]
+  exact hfull_left.symm.trans (by
+    simpa [ψt, Ψ] using
+      congrArg (unflattenSchwartzNPoint (d := d)) hflat')
+
+/-- The full flattened Fourier-side orbit for translating the right tensor
+factor in real time. This is the common kernel family used by the horizontal
+`Tflat` Fubini packet. -/
+noncomputable def timeShiftFlatOrbit
+    {n m : ℕ}
+    (φ : SchwartzNPoint d n)
+    (ψ : SchwartzNPoint d m)
+    (τ : ℝ) :
+    SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ :=
+  physicsFourierFlatCLM
+    (OSReconstruction.reindexSchwartzFin
+      (by ring : n * (d + 1) + m * (d + 1) = (n + m) * (d + 1))
+      (SCV.translateSchwartz
+        (OSReconstruction.zeroHeadBlockShift
+          (m := n * (d + 1)) (n := m * (d + 1))
+          (τ • flatTimeShiftDirection d m))
+        ((flattenSchwartzNPoint (d := d) φ.borchersConj).tensorProduct
+          (flattenSchwartzNPoint (d := d) ψ))))
+
+/-- Pointwise phase normal form for the full flattened Fourier-side orbit
+associated to translating the right tensor factor in real time. -/
+theorem timeShiftFlatOrbit_apply_phase
+    {n m : ℕ}
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (τ : ℝ) (ξ : Fin ((n + m) * (d + 1)) → ℝ) :
+    timeShiftFlatOrbit (d := d) φ ψ τ ξ =
+      Complex.exp
+        (-(Complex.I *
+          (((∑ i,
+            (((OSReconstruction.castFinCLE
+              (Nat.add_mul n m (d + 1)).symm)
+              (OSReconstruction.zeroHeadBlockShift
+                (m := n * (d + 1)) (n := m * (d + 1))
+                (flatTimeShiftDirection d m))) i) * ξ i : ℝ) : ℂ) *
+            (τ : ℂ)))) *
+        physicsFourierFlatCLM
+          (OSReconstruction.reindexSchwartzFin
+            (Nat.add_mul n m (d + 1)).symm
+            ((flattenSchwartzNPoint (d := d) φ.borchersConj).tensorProduct
+              (flattenSchwartzNPoint (d := d) ψ))) ξ := by
+  classical
+  let Ψ : SchwartzMap (Fin (n * (d + 1) + m * (d + 1)) → ℝ) ℂ :=
+    (flattenSchwartzNPoint (d := d) φ.borchersConj).tensorProduct
+      (flattenSchwartzNPoint (d := d) ψ)
+  dsimp [timeShiftFlatOrbit]
+  rw [physicsFourierFlatCLM_reindex_translate_zeroHeadBlockShift_apply
+    (d := d) (n := n) (m := m)
+    (a := τ • flatTimeShiftDirection d m) (Ψ := Ψ) (ξ := ξ)]
+  congr 1
+  have hsum_real :
+      (∑ i,
+          ((OSReconstruction.castFinCLE
+            (Nat.add_mul n m (d + 1)).symm)
+            (OSReconstruction.zeroHeadBlockShift
+              (m := n * (d + 1)) (n := m * (d + 1))
+              (τ • flatTimeShiftDirection d m))) i * ξ i) =
+        (∑ i,
+          ((OSReconstruction.castFinCLE
+            (Nat.add_mul n m (d + 1)).symm)
+            (OSReconstruction.zeroHeadBlockShift
+              (m := n * (d + 1)) (n := m * (d + 1))
+              (flatTimeShiftDirection d m))) i * ξ i) * τ := by
+    simp [zeroHeadBlockShift_smul, Finset.mul_sum, Pi.smul_apply,
+      mul_assoc, mul_left_comm, mul_comm]
+  have hsum :
+      (∑ i,
+          ((((OSReconstruction.castFinCLE
+            (Nat.add_mul n m (d + 1)).symm)
+            (OSReconstruction.zeroHeadBlockShift
+              (m := n * (d + 1)) (n := m * (d + 1))
+              (τ • flatTimeShiftDirection d m))) i : ℝ) : ℂ) *
+            (ξ i : ℂ)) =
+        ((∑ i,
+            (((OSReconstruction.castFinCLE
+              (Nat.add_mul n m (d + 1)).symm)
+              (OSReconstruction.zeroHeadBlockShift
+                (m := n * (d + 1)) (n := m * (d + 1))
+                (flatTimeShiftDirection d m))) i) * ξ i : ℝ) : ℂ) * τ := by
+    exact_mod_cast hsum_real
+  congr 1
+  rw [hsum]
+
+/-- Arbitrary one-variable test version of the horizontal flat Fubini packet.
+It represents the real time-shift Wightman pairing against `χ` by the same
+full flattened `Tflat` distribution used by the multivariate
+Vladimirov-Tillmann package. -/
+theorem exists_timeShiftKernel_pairing_fourierTest
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (χ : SchwartzMap ℝ ℂ)
+    (Tflat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ →L[ℂ] ℂ)
+    (hTflat_bv :
+      ∀ φflat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ,
+        bvt_W OS lgc (n + m) (unflattenSchwartzNPoint (d := d) φflat) =
+          Tflat (physicsFourierFlatCLM φflat)) :
+    ∃ Kχ : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ,
+      (∀ ξ : (Fin ((n + m) * (d + 1)) → ℝ),
+        (Kχ ξ =
+          (∫ τ : ℝ,
+            timeShiftFlatOrbit (d := d) φ ψ τ ξ * χ τ))) ∧
+      ((∫ τ : ℝ,
+        bvt_W OS lgc (n + m)
+          (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) τ ψ)) *
+          χ τ) =
+        Tflat Kχ) := by
+  classical
+  let M : ℕ := (n + m) * (d + 1)
+  have hM_pos : 0 < M := by
+    dsimp [M]
+    have hnm_pos : 0 < n + m := by omega
+    exact Nat.mul_pos hnm_pos (Nat.succ_pos _)
+  let k : ℕ := M - 1
+  have hk : k + 1 = M := by
+    dsimp [k]
+    exact Nat.succ_pred_eq_of_pos hM_pos
+  let β : SchwartzMap (Fin k → ℝ) ℂ := normedUnitBumpSchwartzPi k
+  let fpad0 : SchwartzMap (Fin (k + 1) → ℝ) ℂ := χ.prependField β
+  let fpad : SchwartzMap (Fin M → ℝ) ℂ := OSReconstruction.reindexSchwartzFin hk fpad0
+  let Ψ : SchwartzMap (Fin (n * (d + 1) + m * (d + 1)) → ℝ) ℂ :=
+    (flattenSchwartzNPoint (d := d) φ.borchersConj).tensorProduct
+      (flattenSchwartzNPoint (d := d) ψ)
+  let orbit : ℝ → SchwartzMap (Fin M → ℝ) ℂ :=
+    fun τ => timeShiftFlatOrbit (d := d) φ ψ τ
+  let headCoord : (Fin M → ℝ) → ℝ :=
+    fun x => ((OSReconstruction.castFinCLE hk).symm x) 0
+  let gFamily : (Fin M → ℝ) → SchwartzMap (Fin M → ℝ) ℂ := fun x => orbit (headCoord x)
+  have hg_cont : Continuous gFamily := by
+    dsimp [gFamily, orbit, headCoord]
+    exact
+      (continuous_physicsFourierFlatCLM_reindex_translate_zeroHeadBlockShift
+        (d := d) (n := n) (m := m) Ψ).comp
+        ((continuous_apply (0 : Fin (k + 1))).comp
+          ((OSReconstruction.castFinCLE hk).symm.continuous))
+  have hg_bound :
+      ∀ (k0 l0 : ℕ), ∃ (C : ℝ) (N : ℕ), C > 0 ∧
+        ∀ x : Fin M → ℝ,
+          SchwartzMap.seminorm ℝ k0 l0 (gFamily x) ≤ C * (1 + ‖x‖) ^ N := by
+    intro k0 l0
+    obtain ⟨C, N, hC_pos, hC_bound⟩ :=
+      exists_bound_seminorm_physicsFourierFlatCLM_reindex_translate_zeroHeadBlockShift
+        (d := d) (n := n) (m := m) Ψ k0 l0
+    refine ⟨C, N, hC_pos, ?_⟩
+    intro x
+    have hcoord :
+        |headCoord x| ≤ ‖x‖ := by
+      have hhead :
+          headCoord x = x ((finCongr hk) 0) := by
+        simp [headCoord, OSReconstruction.castFinCLE_symm_apply]
+      rw [hhead]
+      simpa using (norm_le_pi_norm (f := x) (i := (finCongr hk) 0))
+    calc
+      SchwartzMap.seminorm ℝ k0 l0 (gFamily x)
+          ≤ C * (1 + |headCoord x|) ^ N := hC_bound (headCoord x)
+      _ ≤ C * (1 + ‖x‖) ^ N := by
+          refine mul_le_mul_of_nonneg_left ?_ (le_of_lt hC_pos)
+          exact pow_le_pow_left₀ (by positivity) (by linarith) N
+  obtain ⟨Kχ, hKχ_eval, hKχ_pair⟩ :=
+    schwartz_clm_fubini_exchange Tflat gFamily fpad hg_cont hg_bound
+  have hKχ_point :
+      ∀ ξ : (Fin ((n + m) * (d + 1)) → ℝ),
+        Kχ ξ =
+          (∫ τ : ℝ,
+            timeShiftFlatOrbit (d := d) φ ψ τ ξ * χ τ) := by
+    intro ξ
+    rw [hKχ_eval ξ]
+    let G : (Fin (k + 1) → ℝ) → ℂ := fun z => orbit (z 0) ξ * fpad0 z
+    calc
+      ∫ x : Fin M → ℝ, gFamily x ξ * fpad x
+          = ∫ x : Fin M → ℝ, G ((OSReconstruction.castFinCLE hk).symm x) := by
+              apply MeasureTheory.integral_congr_ae
+              filter_upwards with x
+              simp [G, gFamily, headCoord, fpad, fpad0, OSReconstruction.reindexSchwartzFin_apply]
+      _ = ∫ z : Fin (k + 1) → ℝ, G z := by
+            simpa using integral_comp_castFinCLE_eq (h := hk.symm) (f := G)
+      _ = ∫ p : ℝ × (Fin k → ℝ), orbit p.1 ξ * (χ p.1 * β p.2) := by
+            simpa [G, fpad0, SchwartzMap.prependField_apply, mul_assoc] using
+              (OSReconstruction.integral_finSucc_cons_eq (f := G)).symm
+      _ = (∫ τ : ℝ, orbit τ ξ * χ τ) * (∫ y : Fin k → ℝ, β y) := by
+            simpa [mul_assoc] using
+              (MeasureTheory.integral_prod_mul
+                (f := fun τ : ℝ => orbit τ ξ * χ τ)
+                (g := fun y : Fin k → ℝ => β y))
+      _ = ∫ τ : ℝ, orbit τ ξ * χ τ := by
+            rw [integral_normedUnitBumpSchwartzPi]
+            ring
+      _ = ∫ τ : ℝ,
+            timeShiftFlatOrbit (d := d) φ ψ τ ξ * χ τ := by
+            rfl
+  have hPair_repr :
+      ∫ x : Fin M → ℝ, Tflat (gFamily x) * fpad x =
+        ∫ τ : ℝ,
+          bvt_W OS lgc (n + m)
+            (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) τ ψ)) *
+          χ τ := by
+    let pairing : ℝ → ℂ := fun τ =>
+      bvt_W OS lgc (n + m)
+        (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) τ ψ))
+    have hrepr_x : ∀ x : Fin M → ℝ, Tflat (gFamily x) = pairing (headCoord x) := by
+      intro x
+      let φflat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ :=
+        OSReconstruction.reindexSchwartzFin
+          (by ring : n * (d + 1) + m * (d + 1) = (n + m) * (d + 1))
+          (SCV.translateSchwartz
+            (OSReconstruction.zeroHeadBlockShift
+              (m := n * (d + 1)) (n := m * (d + 1))
+              (headCoord x • flatTimeShiftDirection d m))
+            Ψ)
+      have hgf : gFamily x = physicsFourierFlatCLM φflat := by
+        simp [gFamily, orbit, φflat, timeShiftFlatOrbit, Ψ]
+      have hshift :
+          φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) (headCoord x) ψ) =
+            unflattenSchwartzNPoint (d := d) φflat := by
+        simpa [φflat, Ψ] using
+          conjTensorProduct_timeShift_eq_unflatten_reindex_translate_zeroHeadBlock
+            (d := d) (f := φ) (g := ψ) (t := headCoord x)
+      calc
+        Tflat (gFamily x)
+            = Tflat (physicsFourierFlatCLM φflat) := by rw [hgf]
+        _ = bvt_W OS lgc (n + m) (unflattenSchwartzNPoint (d := d) φflat) :=
+            (hTflat_bv φflat).symm
+        _ = pairing (headCoord x) := by
+            simp [pairing, hshift]
+    let F : (Fin (k + 1) → ℝ) → ℂ := fun z => pairing (z 0) * fpad0 z
+    calc
+      ∫ x : Fin M → ℝ, Tflat (gFamily x) * fpad x
+          = ∫ x : Fin M → ℝ, F ((OSReconstruction.castFinCLE hk).symm x) := by
+              apply MeasureTheory.integral_congr_ae
+              filter_upwards with x
+              rw [hrepr_x x]
+              simp [F, headCoord, fpad, fpad0, OSReconstruction.reindexSchwartzFin_apply]
+      _ = ∫ z : Fin (k + 1) → ℝ, F z := by
+            simpa using integral_comp_castFinCLE_eq (h := hk.symm) (f := F)
+      _ = ∫ p : ℝ × (Fin k → ℝ), pairing p.1 * (χ p.1 * β p.2) := by
+            simpa [F, fpad0, SchwartzMap.prependField_apply, mul_assoc] using
+              (OSReconstruction.integral_finSucc_cons_eq (f := F)).symm
+      _ = (∫ τ : ℝ, pairing τ * χ τ) * (∫ y : Fin k → ℝ, β y) := by
+            simpa [mul_assoc] using
+              (MeasureTheory.integral_prod_mul
+                (f := fun τ : ℝ => pairing τ * χ τ)
+                (g := fun y : Fin k → ℝ => β y))
+      _ = ∫ τ : ℝ, pairing τ * χ τ := by
+            rw [integral_normedUnitBumpSchwartzPi]
+            ring
+      _ = ∫ τ : ℝ,
+          bvt_W OS lgc (n + m)
+            (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) τ ψ)) *
+          χ τ := rfl
+  refine ⟨Kχ, hKχ_point, ?_⟩
+  calc
+    (∫ τ : ℝ,
+        bvt_W OS lgc (n + m)
+          (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) τ ψ)) *
+        χ τ)
+        = ∫ x : Fin M → ℝ, Tflat (gFamily x) * fpad x := hPair_repr.symm
+    _ = Tflat Kχ := by
+          symm
+          exact hKχ_pair
 
 /-- Tail-block phase vanishing on the full flattened dual-cone surface. -/
 private theorem integral_zeroHeadBlockShift_flatTimeShiftDirection_phase_mul_fourierTransform_eq_zero_of_negSupport
