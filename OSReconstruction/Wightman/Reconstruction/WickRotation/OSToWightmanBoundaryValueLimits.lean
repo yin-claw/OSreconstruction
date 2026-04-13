@@ -222,6 +222,127 @@ private theorem exists_flattened_bvt_W_dualCone_distribution
   intro φ
   simpa [Wcl, unflattenSchwartzNPoint] using hTflat_repr φ
 
+/-- Flattened dual-cone support package together with the Fourier-Laplace
+representation of the interior Wightman holomorphic function.
+
+This strengthens `exists_flattened_bvt_W_dualCone_distribution` by retaining the
+same `Tflat` witness long enough to apply `fl_representation_from_bv`. The
+boundary representation is used for ambient Wightman pairings; the
+Fourier-Laplace representation is used for the transported `bvt_F` shell. -/
+private theorem exists_flattened_bvt_F_dualCone_distribution_with_fourierLaplace_repr
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) :
+    let C : Set (Fin n → Fin (d + 1) → ℝ) := ForwardConeAbs d n
+    let Cflat : Set (Fin (n * (d + 1)) → ℝ) :=
+      (flattenCLEquivReal n (d + 1)) '' C
+    ∃ (Tflat : SchwartzMap (Fin (n * (d + 1)) → ℝ) ℂ →L[ℂ] ℂ),
+    ∃ (hCflat_open : IsOpen Cflat),
+    ∃ (hCflat_conv : Convex ℝ Cflat),
+    ∃ (hCflat_cone : IsCone Cflat),
+    ∃ (hCflat_salient : IsSalientCone Cflat),
+      HasFourierSupportInDualCone Cflat Tflat ∧
+        (∀ (φ : SchwartzMap (Fin (n * (d + 1)) → ℝ) ℂ),
+          bvt_W OS lgc n (unflattenSchwartzNPoint (d := d) φ) =
+            Tflat (physicsFourierFlatCLM φ)) ∧
+        (∀ z : Fin n → Fin (d + 1) → ℂ, z ∈ TubeDomainSetPi C →
+          bvt_F OS lgc n z =
+            fourierLaplaceExtMultiDim Cflat
+              hCflat_open hCflat_conv hCflat_cone hCflat_salient
+              Tflat (flattenCLEquiv n (d + 1) z)) := by
+  let C : Set (Fin n → Fin (d + 1) → ℝ) := ForwardConeAbs d n
+  let eR := flattenCLEquivReal n (d + 1)
+  let Cflat : Set (Fin (n * (d + 1)) → ℝ) := eR '' C
+  let Wcl : SchwartzNPoint d n →L[ℂ] ℂ :=
+    { toLinearMap :=
+        { toFun := bvt_W OS lgc n
+          map_add' := (bvt_W_linear (d := d) OS lgc n).map_add
+          map_smul' := (bvt_W_linear (d := d) OS lgc n).map_smul }
+      cont := bvt_W_continuous (d := d) OS lgc n }
+  have hWcl : ∀ f : SchwartzNPoint d n, Wcl f = bvt_W OS lgc n f := by
+    intro f
+    rfl
+  have hC_open : IsOpen C := by
+    simpa [C] using forwardConeAbs_isOpen d n
+  have hC_conv : Convex ℝ C := by
+    simpa [C] using forwardConeAbs_convex d n
+  have hC_cone : IsCone C := by
+    intro y hy t ht
+    exact forwardConeAbs_smul d n t ht y hy
+  have hC_salient : IsSalientCone C := by
+    simpa [C] using forwardConeAbs_salient d n
+  have hF_holo :
+      DifferentiableOn ℂ (bvt_F OS lgc n) (TubeDomainSetPi C) := by
+    simpa [C, forwardTube_eq_imPreimage] using bvt_F_holomorphic (d := d) OS lgc n
+  have hF_growth :
+      ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+        ∀ z, z ∈ TubeDomainSetPi C →
+          ‖bvt_F OS lgc n z‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
+    have hGrowthPkg :
+        ∃ (C_bd : ℝ) (N : ℕ),
+          0 < C_bd ∧
+          ∀ z ∈ ForwardTube d n,
+            ‖bvt_F OS lgc n z‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
+      rcases (full_analytic_continuation_with_symmetry_growth OS lgc n).choose_spec with
+        ⟨_hhol, hrest⟩
+      rcases hrest with ⟨_hF_euclid, hrest⟩
+      rcases hrest with ⟨_hF_perm, hrest⟩
+      rcases hrest with ⟨_hF_trans, hrest⟩
+      exact hrest.2
+    obtain ⟨C_bd, N, hC_pos, hbound⟩ := hGrowthPkg
+    refine ⟨C_bd, N, hC_pos, ?_⟩
+    intro z hz
+    simpa [C, forwardTube_eq_imPreimage] using
+      hbound z (by simpa [C, forwardTube_eq_imPreimage] using hz)
+  have hF_bv :
+      ∀ (η : Fin n → Fin (d + 1) → ℝ), η ∈ C →
+        ∀ (φ : SchwartzNPoint d n),
+          Filter.Tendsto
+            (fun ε : ℝ => ∫ x : NPointDomain d n,
+              bvt_F OS lgc n
+                (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * φ x)
+            (nhdsWithin 0 (Set.Ioi 0))
+            (nhds (Wcl φ)) := by
+    intro η hη φ
+    rw [hWcl]
+    exact bvt_boundary_values (d := d) OS lgc n φ η
+      ((inForwardCone_iff_mem_forwardConeAbs (d := d) (n := n) η).2 (by
+        simpa [C] using hη))
+  have hCflat_open : IsOpen Cflat := eR.toHomeomorph.isOpenMap _ hC_open
+  have hCflat_conv : Convex ℝ Cflat :=
+    hC_conv.linear_image eR.toLinearEquiv.toLinearMap
+  have hCflat_cone : IsCone Cflat := by
+    intro y hy t ht
+    rcases hy with ⟨y', hy', rfl⟩
+    exact ⟨t • y', hC_cone y' hy' t ht, by simpa using eR.map_smul t y'⟩
+  have hCflat_salient : IsSalientCone Cflat := by
+    intro y hy hy_neg
+    rw [show closure Cflat = eR '' closure C from
+      (eR.toHomeomorph.image_closure C).symm] at hy hy_neg
+    obtain ⟨y', hy', rfl⟩ := hy
+    obtain ⟨y'', hy'', hyw⟩ := hy_neg
+    have h_neg : y'' = -y' := eR.injective (by rw [hyw, map_neg])
+    subst h_neg
+    exact show eR y' = 0 from by rw [hC_salient y' hy' hy'', map_zero]
+  obtain ⟨Tflat, hTflat_supp, hTflat_repr⟩ :=
+    bv_implies_fourier_support C hC_open hC_conv hC_cone hC_salient
+      (bvt_F OS lgc n) hF_holo hF_growth Wcl hF_bv
+  have hFL_repr :
+      ∀ z ∈ TubeDomainSetPi C,
+        bvt_F OS lgc n z =
+          fourierLaplaceExtMultiDim Cflat
+            hCflat_open hCflat_conv hCflat_cone hCflat_salient
+            Tflat (flattenCLEquiv n (d + 1) z) :=
+    fl_representation_from_bv C hC_open hC_conv hC_cone hC_salient
+      (bvt_F OS lgc n) hF_holo Wcl hF_bv
+      Cflat rfl hCflat_open hCflat_conv hCflat_cone hCflat_salient
+      Tflat hTflat_supp hTflat_repr
+  refine ⟨Tflat, hCflat_open, hCflat_conv, hCflat_cone, hCflat_salient,
+    hTflat_supp, ?_, ?_⟩
+  · intro φ
+    simpa [Wcl, unflattenSchwartzNPoint] using hTflat_repr φ
+  · intro z hz
+    exact hFL_repr z hz
+
 /-- Reindex a flattened sum that only samples the time-coordinate slots. -/
 private theorem sum_over_flat_timeSlots
     {n : ℕ}

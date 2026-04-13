@@ -2278,6 +2278,16 @@ private theorem psiZ_pairing_formula
       (fun (x : ℝ) => Complex.exp (2 * Real.pi * Complex.I * ξ * x) * φ x)]
   ring
 
+/-- Public `2π`-normalized `ψ_z` pairing formula used by the OS-route
+time-shift expansion. -/
+theorem psiZ_twoPi_pairing_formula
+    (φ : SchwartzMap ℝ ℂ) (η ξ : ℝ) :
+    ∫ x : ℝ,
+      psiZ ((2 * Real.pi : ℂ) * (x + η * Complex.I)) ξ * φ x =
+        smoothCutoff ξ * Complex.exp (-(2 * Real.pi * η : ℂ) * ξ) *
+          FourierTransform.fourierInv φ ξ :=
+  psiZ_pairing_formula φ η ξ
+
 private def stepAScalarDerivIntegrand
     (η : ℝ) (hη : 0 < η) (φ : SchwartzMap ℝ ℂ) (n : ℕ) (ξ x : ℝ) : ℂ :=
   iteratedDeriv n (scaledHorizontalSchwartzPsi η hη x) ξ * φ x

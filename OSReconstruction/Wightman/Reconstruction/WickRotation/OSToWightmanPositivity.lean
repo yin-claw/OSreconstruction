@@ -199,6 +199,117 @@ theorem bvt_xiShift_eq_osInnerProduct_holomorphicValue_single
     rw [hvanish, zero_add]
   · exact hz
 
+/-- Rotated-horizontal-line form of the single-component semigroup bridge:
+inside the Route `3b-II` boundary-value pairing, the rotated OS holomorphic
+matrix element can be rewritten pointwise as the already-built
+`singleSplit_xiShift` holomorphic trace.
+
+This is not the missing Phase C' identity. It only transfers the **OS side** of
+the horizontal-line boundary-value integral to the single-split holomorphic
+supplier on the same right-half-plane point `-I * (x + η I)`. The remaining
+frontier is the boundary-value identification of that trace with the Wightman
+time-shift functional. -/
+private theorem
+    integral_rotated_OSInnerProductTimeShiftHolomorphicValue_eq_singleSplit_xiShiftHolomorphicValue_fourierTransform
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (hf_compact : HasCompactSupport (f : NPointDomain d n → ℂ))
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hg_compact : HasCompactSupport (g : NPointDomain d m → ℂ))
+    (χ : SchwartzMap ℝ ℂ) {η : ℝ} (hη : 0 < η) :
+    (∫ x : ℝ,
+      OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+          (PositiveTimeBorchersSequence.single n f hf_ord)
+          (PositiveTimeBorchersSequence.single m g hg_ord)
+          (-Complex.I * ((x : ℂ) + η * Complex.I)) *
+        (SchwartzMap.fourierTransformCLM ℂ χ) x)
+      =
+    ∫ x : ℝ,
+      bvt_singleSplit_xiShiftHolomorphicValue
+          (d := d) OS lgc hm f hf_ord hf_compact g hg_ord hg_compact
+          (-Complex.I * ((x : ℂ) + η * Complex.I)) *
+        (SchwartzMap.fourierTransformCLM ℂ χ) x := by
+  refine MeasureTheory.integral_congr_ae ?_
+  filter_upwards with x
+  have hz : 0 < (-Complex.I * ((x : ℂ) + η * Complex.I)).re := by
+    ring_nf
+    simpa using hη
+  have hpt :=
+    bvt_xiShift_eq_osInnerProduct_holomorphicValue_single
+      (d := d) (OS := OS) (lgc := lgc) (hm := hm)
+      (f := f) (hf_ord := hf_ord) (hf_compact := hf_compact)
+      (g := g) (hg_ord := hg_ord) (hg_compact := hg_compact)
+      (z := -Complex.I * ((x : ℂ) + η * Complex.I)) hz
+  exact congrArg (fun z => z * (SchwartzMap.fourierTransformCLM ℂ χ) x) hpt.symm
+
+/-- Distributional boundary value of the rotated `singleSplit_xiShift`
+holomorphic trace on the real axis of the upper half-plane.
+
+This is the semigroup-side boundary-value theorem transferred through Package
+B. It gives the `singleSplit` trace the same spectral boundary functional as
+the rotated OS holomorphic matrix element. The remaining Phase C' work is to
+identify this boundary functional with the canonical Wightman time-shift
+boundary functional. -/
+private theorem
+    tendsto_bvt_singleSplit_xiShiftHolomorphicValue_rotated_boundaryValue_fourierTransform
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (hf_compact : HasCompactSupport (f : NPointDomain d n → ℂ))
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hg_compact : HasCompactSupport (g : NPointDomain d m → ℂ))
+    (χ : SchwartzMap ℝ ℂ) :
+    Filter.Tendsto
+      (fun η : ℝ =>
+        ∫ x : ℝ,
+          bvt_singleSplit_xiShiftHolomorphicValue
+              (d := d) OS lgc hm f hf_ord hf_compact g hg_ord hg_compact
+              (-Complex.I * ((x : ℂ) + η * Complex.I)) *
+            (SchwartzMap.fourierTransformCLM ℂ χ) x)
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds
+        (selfAdjointSpectralBoundaryValueOffdiag
+          (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+          (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+          (((show OSPreHilbertSpace OS from
+            (⟦PositiveTimeBorchersSequence.single n f hf_ord⟧)) : OSHilbertSpace OS))
+          (((show OSPreHilbertSpace OS from
+            (⟦PositiveTimeBorchersSequence.single m g hg_ord⟧)) : OSHilbertSpace OS))
+          χ)) := by
+  have hOS :=
+    tendsto_rotated_OSInnerProductTimeShiftHolomorphicValue_boundaryValue_fourierTransform
+      (d := d) OS lgc
+      (PositiveTimeBorchersSequence.single n f hf_ord)
+      (PositiveTimeBorchersSequence.single m g hg_ord) χ
+  have hEq :
+      (fun η : ℝ =>
+        ∫ x : ℝ,
+          OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+              (PositiveTimeBorchersSequence.single n f hf_ord)
+              (PositiveTimeBorchersSequence.single m g hg_ord)
+              (-Complex.I * ((x : ℂ) + η * Complex.I)) *
+            (SchwartzMap.fourierTransformCLM ℂ χ) x)
+      =ᶠ[nhdsWithin 0 (Set.Ioi 0)]
+      (fun η : ℝ =>
+        ∫ x : ℝ,
+          bvt_singleSplit_xiShiftHolomorphicValue
+              (d := d) OS lgc hm f hf_ord hf_compact g hg_ord hg_compact
+              (-Complex.I * ((x : ℂ) + η * Complex.I)) *
+            (SchwartzMap.fourierTransformCLM ℂ χ) x) := by
+    filter_upwards [self_mem_nhdsWithin] with η hη
+    exact
+      integral_rotated_OSInnerProductTimeShiftHolomorphicValue_eq_singleSplit_xiShiftHolomorphicValue_fourierTransform
+        (d := d) (OS := OS) (lgc := lgc) (hm := hm)
+        (f := f) (hf_ord := hf_ord) (hf_compact := hf_compact)
+        (g := g) (hg_ord := hg_ord) (hg_compact := hg_compact)
+        (χ := χ) hη
+  exact Filter.Tendsto.congr' hEq hOS
+
 /-! ## Part 3: Sorry 3 — Wightman positive-definiteness
 
 CRITICAL ROUTE CORRECTION (Entry #277):
@@ -3784,6 +3895,134 @@ private theorem
           (PositiveTimeBorchersSequence.single n f hf_ord)
           (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ) := hOS
 
+/-- Ambient/preimage version of the descended `ψ_{2πit}` Phase C' bridge:
+the canonical upper-half-plane Wightman witness is built from the ambient
+transformed representatives `φ, ψ`, while the OS Hilbert vectors and the
+semigroup holomorphic matrix element are built from their positive-time
+Euclidean preimages `f, g`.
+
+This is the theorem surface needed by the transformed-image route. The
+remaining hypothesis is the genuine quotient/slice-descent comparison of the
+descended Wightman Section-4.3 functional with the OS spectral boundary
+functional on the single Paley-Wiener kernel family `ψ_{2πit}`. -/
+private theorem
+    bvt_W_conjTensorProduct_timeShiftCanonicalExtension_imag_eq_osHolomorphicValue_of_ambient_descended_psiZ_boundaryValue_eq
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (hψ_compact : HasCompactSupport (ψ : NPointDomain d m → ℂ))
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hPsi :
+      let xF : OSHilbertSpace OS := (((show OSPreHilbertSpace OS from
+        (⟦PositiveTimeBorchersSequence.single n f hf_ord⟧)) : OSHilbertSpace OS))
+      let xG : OSHilbertSpace OS := (((show OSPreHilbertSpace OS from
+        (⟦PositiveTimeBorchersSequence.single m g hg_ord⟧)) : OSHilbertSpace OS))
+      ∀ t : ℝ, ∀ ht : 0 < t,
+        OSReconstruction.fourierPairingDescendsToSection43PositiveEnergy1D
+          (bvt_W_conjTensorProduct_timeShiftTemperedFunctional
+            (d := d) OS lgc φ ψ hψ_compact)
+          (bvt_W_conjTensorProduct_timeShiftTemperedFunctional_hasOneSidedFourierSupport
+            (d := d) OS lgc hm φ ψ hψ_compact)
+          (section43PositiveEnergyQuotientMap1D
+            (SCV.schwartzPsiZ
+              (((2 * Real.pi : ℂ) * (t * Complex.I)))
+              (by
+                simpa [Complex.mul_im, ht.ne']
+                  using mul_pos Real.two_pi_pos ht))) =
+          selfAdjointSpectralBoundaryValueOffdiagCLM
+            (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+            (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+            xF xG
+            (SCV.schwartzPsiZ
+              (((2 * Real.pi : ℂ) * (t * Complex.I)))
+              (by
+                simpa [Complex.mul_im, ht.ne']
+                  using mul_pos Real.two_pi_pos ht))) :
+    ∀ t : ℝ, 0 < t →
+      bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+        (d := d) OS lgc φ ψ hψ_compact ((t : ℂ) * Complex.I) =
+      OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+        (PositiveTimeBorchersSequence.single n f hf_ord)
+        (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ) := by
+  intro t ht
+  let ψZ : SchwartzMap ℝ ℂ :=
+    SCV.schwartzPsiZ
+      (((2 * Real.pi : ℂ) * (t * Complex.I)))
+      (by
+        simpa [Complex.mul_im, ht.ne']
+          using mul_pos Real.two_pi_pos ht)
+  let xF : OSHilbertSpace OS := (((show OSPreHilbertSpace OS from
+    (⟦PositiveTimeBorchersSequence.single n f hf_ord⟧)) : OSHilbertSpace OS))
+  let xG : OSHilbertSpace OS := (((show OSPreHilbertSpace OS from
+    (⟦PositiveTimeBorchersSequence.single m g hg_ord⟧)) : OSHilbertSpace OS))
+  have hCanonical :
+      bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+          (d := d) OS lgc φ ψ hψ_compact ((t : ℂ) * Complex.I) =
+        OSReconstruction.fourierPairingDescendsToSection43PositiveEnergy1D
+          (bvt_W_conjTensorProduct_timeShiftTemperedFunctional
+            (d := d) OS lgc φ ψ hψ_compact)
+          (bvt_W_conjTensorProduct_timeShiftTemperedFunctional_hasOneSidedFourierSupport
+            (d := d) OS lgc hm φ ψ hψ_compact)
+          (section43PositiveEnergyQuotientMap1D ψZ) := by
+    simpa [ψZ] using
+      (bvt_W_conjTensorProduct_timeShiftCanonicalExtension_imagAxis_eq_fourierPairingDescendsToSection43PositiveEnergy1D_psiZ
+        (d := d) (OS := OS) (lgc := lgc) (hm := hm) (f := φ) (g := ψ)
+        (hg_compact := hψ_compact) ht)
+  have hPsi_t :
+      OSReconstruction.fourierPairingDescendsToSection43PositiveEnergy1D
+        (bvt_W_conjTensorProduct_timeShiftTemperedFunctional
+          (d := d) OS lgc φ ψ hψ_compact)
+        (bvt_W_conjTensorProduct_timeShiftTemperedFunctional_hasOneSidedFourierSupport
+          (d := d) OS lgc hm φ ψ hψ_compact)
+        (section43PositiveEnergyQuotientMap1D ψZ) =
+      selfAdjointSpectralBoundaryValueOffdiag
+        (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+        (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+        xF xG ψZ := by
+    simpa [ψZ, xF, xG] using hPsi t ht
+  have hOS :
+      selfAdjointSpectralBoundaryValueOffdiag
+          (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+          (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+          xF xG ψZ =
+        OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+          (PositiveTimeBorchersSequence.single n f hf_ord)
+          (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ) := by
+    rw [selfAdjointSpectralBoundaryValueOffdiag_eq_selfAdjointSpectralLaplaceOffdiag_psiZ
+      (A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+      (hA := osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+      (hspec := spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos)
+      (x := xF) (y := xG) (ht := ht)]
+    symm
+    simpa [xF, xG] using
+      (OSInnerProductTimeShiftHolomorphicValue_eq_selfAdjointSpectralLaplaceOffdiag
+        (d := d) OS lgc
+        (PositiveTimeBorchersSequence.single n f hf_ord)
+        (PositiveTimeBorchersSequence.single m g hg_ord)
+        (t : ℂ) (by simpa using ht))
+  calc
+    bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+        (d := d) OS lgc φ ψ hψ_compact ((t : ℂ) * Complex.I)
+      =
+        OSReconstruction.fourierPairingDescendsToSection43PositiveEnergy1D
+          (bvt_W_conjTensorProduct_timeShiftTemperedFunctional
+            (d := d) OS lgc φ ψ hψ_compact)
+          (bvt_W_conjTensorProduct_timeShiftTemperedFunctional_hasOneSidedFourierSupport
+            (d := d) OS lgc hm φ ψ hψ_compact)
+          (section43PositiveEnergyQuotientMap1D ψZ) := hCanonical
+    _ =
+        selfAdjointSpectralBoundaryValueOffdiag
+          (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+          (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+          xF xG ψZ := hPsi_t
+    _ =
+        OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+          (PositiveTimeBorchersSequence.single n f hf_ord)
+          (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ) := hOS
+
 /-- Imaginary-axis corollary of the previous uniqueness assembly: once the
 canonical Wightman boundary functional and the rotated OS spectral boundary
 functional agree on Fourier transforms of Schwartz tests, the desired scalar
@@ -3979,6 +4218,685 @@ private theorem
             xF xG ψχ)) := by
     exact Filter.Tendsto.congr' (hEq ψχ).symm hOS
   exact tendsto_nhds_unique hCanonical hCanonical'
+
+/-- Ambient/preimage boundary-value bridge for Phase C': if the canonical
+upper-half-plane Wightman witness for ambient representatives `φ, ψ` agrees on
+the positive imaginary axis with the semigroup-side OS matrix element built
+from Euclidean preimages `f, g`, then the real-time Wightman boundary
+functional of `φ, ψ` agrees with the OS spectral boundary functional of
+`f, g` on Fourier transforms of Schwartz tests.
+
+The proof is the same one-variable upper-half-plane identity plus uniqueness
+of distributional boundary values used in the same-input bridge, but now on
+the theorem surface required by the transformed-image positivity route. -/
+private theorem
+    bvt_W_conjTensorProduct_timeShift_boundaryValue_fourierTransform_eq_of_ambient_canonicalExtension_imag_eq_osHolomorphicValue
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (hψ_compact : HasCompactSupport (ψ : NPointDomain d m → ℂ))
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hImag :
+      ∀ t : ℝ, 0 < t →
+        bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+          (d := d) OS lgc φ ψ hψ_compact ((t : ℂ) * Complex.I) =
+        OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+          (PositiveTimeBorchersSequence.single n f hf_ord)
+          (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ)) :
+    ∀ χ : SchwartzMap ℝ ℂ,
+      ∫ t : ℝ,
+        bvt_W OS lgc (n + m)
+          (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t ψ)) *
+          (SchwartzMap.fourierTransformCLM ℂ χ) t =
+      selfAdjointSpectralBoundaryValueOffdiag
+        (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+        (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+        (((show OSPreHilbertSpace OS from
+          (⟦PositiveTimeBorchersSequence.single n f hf_ord⟧)) : OSHilbertSpace OS))
+        (((show OSPreHilbertSpace OS from
+          (⟦PositiveTimeBorchersSequence.single m g hg_ord⟧)) : OSHilbertSpace OS))
+        χ := by
+  let xF : OSHilbertSpace OS := (((show OSPreHilbertSpace OS from
+    (⟦PositiveTimeBorchersSequence.single n f hf_ord⟧)) : OSHilbertSpace OS))
+  let xG : OSHilbertSpace OS := (((show OSPreHilbertSpace OS from
+    (⟦PositiveTimeBorchersSequence.single m g hg_ord⟧)) : OSHilbertSpace OS))
+  have hEqUHP :
+      ∀ z : ℂ, 0 < z.im →
+        bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+          (d := d) OS lgc φ ψ hψ_compact z =
+        OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+          (PositiveTimeBorchersSequence.single n f hf_ord)
+          (PositiveTimeBorchersSequence.single m g hg_ord) (-Complex.I * z) := by
+    exact
+      identity_theorem_upperHalfPlane
+        (f := bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+          (d := d) OS lgc φ ψ hψ_compact)
+        (g := fun w =>
+          OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+            (PositiveTimeBorchersSequence.single n f hf_ord)
+            (PositiveTimeBorchersSequence.single m g hg_ord)
+            (-Complex.I * w))
+        (hf := bvt_W_conjTensorProduct_timeShiftCanonicalExtension_differentiableOn
+          (d := d) (OS := OS) (lgc := lgc) φ ψ hψ_compact)
+        (hg := differentiableOn_rotated_OSInnerProductTimeShiftHolomorphicValue
+          (d := d) OS lgc
+          (PositiveTimeBorchersSequence.single n f hf_ord)
+          (PositiveTimeBorchersSequence.single m g hg_ord))
+        (hagree := fun η hη => by
+          have hrot : -Complex.I * ((η : ℂ) * Complex.I) = (η : ℂ) := by
+            ring_nf
+            simp
+          simpa [hrot] using hImag η hη)
+  have hEq :
+      ∀ χ : SchwartzMap ℝ ℂ,
+        (fun η : ℝ =>
+          ∫ x : ℝ,
+            bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+              (d := d) OS lgc φ ψ hψ_compact (↑x + ↑η * Complex.I) *
+              (SchwartzMap.fourierTransformCLM ℂ χ) x)
+        =ᶠ[nhdsWithin 0 (Set.Ioi 0)]
+        (fun η : ℝ =>
+          ∫ x : ℝ,
+            OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+                (PositiveTimeBorchersSequence.single n f hf_ord)
+                (PositiveTimeBorchersSequence.single m g hg_ord)
+                (-Complex.I * ((x : ℂ) + η * Complex.I)) *
+              (SchwartzMap.fourierTransformCLM ℂ χ) x) := by
+    intro χ
+    filter_upwards [self_mem_nhdsWithin] with η hη
+    refine MeasureTheory.integral_congr_ae ?_
+    filter_upwards with x
+    have hw : 0 < ((x : ℂ) + η * Complex.I).im := by
+      simpa using hη
+    simpa [mul_assoc] using
+      congrArg
+        (fun z =>
+          z * (SchwartzMap.fourierTransformCLM ℂ χ) x)
+        (hEqUHP _ hw)
+  intro χ
+  have hCanonical :
+      Filter.Tendsto
+        (fun η : ℝ =>
+          ∫ x : ℝ,
+            bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+              (d := d) OS lgc φ ψ hψ_compact (↑x + ↑η * Complex.I) *
+              (SchwartzMap.fourierTransformCLM ℂ χ) x)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (∫ t : ℝ,
+            bvt_W OS lgc (n + m)
+              (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t ψ)) *
+              (SchwartzMap.fourierTransformCLM ℂ χ) t)) := by
+    simpa using
+      tendsto_bvt_W_conjTensorProduct_timeShiftCanonicalExtension_boundaryValue
+        (d := d) (OS := OS) (lgc := lgc) (hm := hm) φ ψ hψ_compact
+        ((SchwartzMap.fourierTransformCLM ℂ) χ)
+  have hOS :
+      Filter.Tendsto
+        (fun η : ℝ =>
+          ∫ x : ℝ,
+            OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+                (PositiveTimeBorchersSequence.single n f hf_ord)
+                (PositiveTimeBorchersSequence.single m g hg_ord)
+                (-Complex.I * ((x : ℂ) + η * Complex.I)) *
+              (SchwartzMap.fourierTransformCLM ℂ χ) x)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (selfAdjointSpectralBoundaryValueOffdiag
+            (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+            (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+            xF xG χ)) := by
+    simpa [xF, xG] using
+      tendsto_rotated_OSInnerProductTimeShiftHolomorphicValue_boundaryValue_fourierTransform
+        (d := d) OS lgc
+        (PositiveTimeBorchersSequence.single n f hf_ord)
+        (PositiveTimeBorchersSequence.single m g hg_ord) χ
+  have hCanonical' :
+      Filter.Tendsto
+        (fun η : ℝ =>
+          ∫ x : ℝ,
+            bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+              (d := d) OS lgc φ ψ hψ_compact (↑x + ↑η * Complex.I) *
+              (SchwartzMap.fourierTransformCLM ℂ χ) x)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (selfAdjointSpectralBoundaryValueOffdiag
+            (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+            (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+            xF xG χ)) := by
+    exact Filter.Tendsto.congr' (hEq χ).symm hOS
+  exact tendsto_nhds_unique hCanonical hCanonical'
+
+/-- Pointwise normal form for the explicit canonical Wightman witness on a
+positive horizontal line: after unfolding `fourierLaplaceExt`, its value at
+`x + η i` is the real-time Wightman time-shift tempered functional applied to
+the Fourier transform of the Paley-Wiener kernel
+`ψ_{2π(x+η i)}`.
+
+This is a proof-local algebraic step toward the shell-to-Laplace comparison:
+it exposes the inner Wightman time-shift integral that will later be related
+to the explicit canonical `ξ`-shift shell. -/
+private theorem
+    bvt_W_conjTensorProduct_timeShiftCanonicalExtension_horizontal_eq_fourierLaplaceIntegral
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ}
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (hψ_compact : HasCompactSupport (ψ : NPointDomain d m → ℂ))
+    {η : ℝ} (hη : 0 < η) (x : ℝ) :
+    bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+        (d := d) OS lgc φ ψ hψ_compact ((x : ℂ) + η * Complex.I) =
+      ∫ τ : ℝ,
+        bvt_W OS lgc (n + m)
+          (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) τ ψ)) *
+        (SchwartzMap.fourierTransformCLM ℂ
+          (SCV.schwartzPsiZ
+            ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + η * Complex.I)))
+            (by
+              have hscaled : 0 < (2 * Real.pi) *
+                  (((x : ℂ) + η * Complex.I).im) :=
+                mul_pos Real.two_pi_pos (by simpa using hη)
+              simpa [Complex.mul_im] using hscaled))) τ := by
+  have hw : 0 < (((x : ℂ) + η * Complex.I).im) := by
+    simpa using hη
+  rw [bvt_W_conjTensorProduct_timeShiftCanonicalExtension, dif_pos hw]
+  rw [SCV.fourierLaplaceExt_eq]
+  change
+    bvt_W_conjTensorProduct_timeShiftTemperedFunctional
+        (d := d) OS lgc φ ψ hψ_compact
+      ((SchwartzMap.fourierTransformCLM ℂ)
+        (SCV.schwartzPsiZ
+          ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + η * Complex.I)))
+          (by
+            have hscaled : 0 < (2 * Real.pi) *
+                (((x : ℂ) + η * Complex.I).im) :=
+              mul_pos Real.two_pi_pos (by simpa using hη)
+            simpa [Complex.mul_im] using hscaled))) =
+      ∫ τ : ℝ,
+        bvt_W OS lgc (n + m)
+          (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) τ ψ)) *
+        (SchwartzMap.fourierTransformCLM ℂ
+          (SCV.schwartzPsiZ
+            ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + η * Complex.I)))
+            (by
+              have hscaled : 0 < (2 * Real.pi) *
+                  (((x : ℂ) + η * Complex.I).im) :=
+                mul_pos Real.two_pi_pos (by simpa using hη)
+              simpa [Complex.mul_im] using hscaled))) τ
+  exact
+    bvt_W_conjTensorProduct_timeShiftTemperedFunctional_apply
+      (d := d) (OS := OS) (lgc := lgc) (f := φ) (g := ψ)
+      (hg_compact := hψ_compact)
+      ((SchwartzMap.fourierTransformCLM ℂ)
+        (SCV.schwartzPsiZ
+          ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + η * Complex.I)))
+          (by
+            have hscaled : 0 < (2 * Real.pi) *
+                (((x : ℂ) + η * Complex.I).im) :=
+              mul_pos Real.two_pi_pos (by simpa using hη)
+            simpa [Complex.mul_im] using hscaled)))
+
+/-- Outer-integral normal form for the canonical horizontal Fourier-Laplace
+pairing. For fixed `t > 0`, the horizontal integral of the canonical witness
+against `𝓕ψ_{2πit}` can be rewritten as an iterated real-time Wightman
+time-shift integral whose inner Paley-Wiener kernel is `ψ_{2π(x+ηi)}`.
+
+This does not perform the Fubini/Fourier-inversion step. It is the exact
+normal form that the next shell-to-Laplace proof has to analyze. -/
+private theorem
+    integral_bvt_W_conjTensorProduct_timeShiftCanonicalExtension_horizontal_eq_iterated_fourierLaplaceIntegral
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ}
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (hψ_compact : HasCompactSupport (ψ : NPointDomain d m → ℂ))
+    {t η : ℝ} (ht : 0 < t) (hη : 0 < η) :
+    (∫ x : ℝ,
+      bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+          (d := d) OS lgc φ ψ hψ_compact ((x : ℂ) + η * Complex.I) *
+        (SchwartzMap.fourierTransformCLM ℂ
+          (SCV.schwartzPsiZ
+            (((2 * Real.pi : ℂ) * (t * Complex.I)))
+            (by
+              simpa [Complex.mul_im, ht.ne']
+                using mul_pos Real.two_pi_pos ht))) x)
+      =
+    ∫ x : ℝ,
+      (∫ τ : ℝ,
+        bvt_W OS lgc (n + m)
+          (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) τ ψ)) *
+        (SchwartzMap.fourierTransformCLM ℂ
+          (SCV.schwartzPsiZ
+            ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + η * Complex.I)))
+            (by
+              have hscaled : 0 < (2 * Real.pi) *
+                  (((x : ℂ) + η * Complex.I).im) :=
+                mul_pos Real.two_pi_pos (by simpa using hη)
+              simpa [Complex.mul_im] using hscaled))) τ) *
+        (SchwartzMap.fourierTransformCLM ℂ
+          (SCV.schwartzPsiZ
+            (((2 * Real.pi : ℂ) * (t * Complex.I)))
+            (by
+              simpa [Complex.mul_im, ht.ne']
+                using mul_pos Real.two_pi_pos ht))) x := by
+  refine MeasureTheory.integral_congr_ae ?_
+  filter_upwards with x
+  have hpt :=
+    bvt_W_conjTensorProduct_timeShiftCanonicalExtension_horizontal_eq_fourierLaplaceIntegral
+      (d := d) (OS := OS) (lgc := lgc)
+      (φ := φ) (ψ := ψ) (hψ_compact := hψ_compact) hη x
+  exact
+    congrArg
+      (fun z =>
+        z *
+          (SchwartzMap.fourierTransformCLM ℂ
+            (SCV.schwartzPsiZ
+              (((2 * Real.pi : ℂ) * (t * Complex.I)))
+              (by
+                simpa [Complex.mul_im, ht.ne']
+                  using mul_pos Real.two_pi_pos ht))) x)
+      hpt
+
+/-- Pointwise shell-minus-horizontal normal form for the shell-to-Laplace seam.
+After the previous lemma rewrites the canonical horizontal witness as an
+iterated real-time Wightman integral, the remaining comparison is exactly the
+difference between the explicit canonical `bvt_F` `ξ`-shell and that iterated
+integral.
+
+This is deliberately not a new end-stage conditional wrapper: it is the local
+algebraic rewrite that exposes the next Fubini/Fourier-inversion target. -/
+private theorem
+    bvt_F_canonical_xiShift_shell_sub_horizontal_eq_shell_sub_iterated_fourierLaplaceIntegral
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (hψ_compact : HasCompactSupport (ψ : NPointDomain d m → ℂ))
+    {t ε : ℝ} (ht : 0 < t) (hε : 0 < ε) :
+    (∫ y : NPointDomain d (n + m),
+        bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun k μ =>
+              ↑(y k μ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                  Complex.I)
+            (t : ℂ)) *
+          (φ.conjTensorProduct ψ) y) -
+      (∫ x : ℝ,
+        bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+            (d := d) OS lgc φ ψ hψ_compact ((x : ℂ) + ε * Complex.I) *
+          (SchwartzMap.fourierTransformCLM ℂ
+            (SCV.schwartzPsiZ
+              (((2 * Real.pi : ℂ) * (t * Complex.I)))
+              (by
+                simpa [Complex.mul_im, ht.ne']
+                  using mul_pos Real.two_pi_pos ht))) x) =
+    (∫ y : NPointDomain d (n + m),
+        bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun k μ =>
+              ↑(y k μ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                  Complex.I)
+            (t : ℂ)) *
+          (φ.conjTensorProduct ψ) y) -
+      (∫ x : ℝ,
+        (∫ τ : ℝ,
+          bvt_W OS lgc (n + m)
+            (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) τ ψ)) *
+          (SchwartzMap.fourierTransformCLM ℂ
+            (SCV.schwartzPsiZ
+              ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+              (by
+                have hscaled : 0 < (2 * Real.pi) *
+                    (((x : ℂ) + ε * Complex.I).im) :=
+                  mul_pos Real.two_pi_pos (by simpa using hε)
+                simpa [Complex.mul_im] using hscaled))) τ) *
+          (SchwartzMap.fourierTransformCLM ℂ
+            (SCV.schwartzPsiZ
+              (((2 * Real.pi : ℂ) * (t * Complex.I)))
+              (by
+                simpa [Complex.mul_im, ht.ne']
+                  using mul_pos Real.two_pi_pos ht))) x) := by
+  rw [integral_bvt_W_conjTensorProduct_timeShiftCanonicalExtension_horizontal_eq_iterated_fourierLaplaceIntegral
+    (d := d) (OS := OS) (lgc := lgc)
+    (φ := φ) (ψ := ψ) (hψ_compact := hψ_compact) ht hε]
+
+/-- The shell-minus-horizontal comparison has an unconditional residual limit:
+the explicit `bvt_F` `ξ`-shell tends to the real-time shifted Wightman pairing,
+while the canonical horizontal Fourier-Laplace integral tends to the canonical
+witness value at `t i`. Thus their difference tends to the difference of those
+two scalar targets.
+
+This computes the exact scalar obstruction behind the shell-to-Laplace seam. -/
+private theorem
+    tendsto_bvt_F_canonical_xiShift_shell_sub_horizontal_to_timeShift_sub_canonicalExtension
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (hψ_compact : HasCompactSupport (ψ : NPointDomain d m → ℂ))
+    {t : ℝ} (ht : 0 < t) :
+    let ψZ : SchwartzMap ℝ ℂ :=
+      SCV.schwartzPsiZ
+        (((2 * Real.pi : ℂ) * (t * Complex.I)))
+        (by
+          simpa [Complex.mul_im, ht.ne']
+            using mul_pos Real.two_pi_pos ht)
+    Filter.Tendsto
+      (fun ε : ℝ =>
+        (∫ y : NPointDomain d (n + m),
+          bvt_F OS lgc (n + m)
+            (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+              (fun k μ =>
+                ↑(y k μ) +
+                  ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                    Complex.I)
+              (t : ℂ)) *
+            (φ.conjTensorProduct ψ) y) -
+        (∫ x : ℝ,
+          bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+            (d := d) OS lgc φ ψ hψ_compact (↑x + ↑ε * Complex.I) *
+          (SchwartzMap.fourierTransformCLM ℂ ψZ) x))
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds
+        (bvt_W OS lgc (n + m)
+          (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t ψ)) -
+        bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+          (d := d) OS lgc φ ψ hψ_compact ((t : ℂ) * Complex.I))) := by
+  let ψZ : SchwartzMap ℝ ℂ :=
+    SCV.schwartzPsiZ
+      (((2 * Real.pi : ℂ) * (t * Complex.I)))
+      (by
+        simpa [Complex.mul_im, ht.ne']
+          using mul_pos Real.two_pi_pos ht)
+  let shell : ℝ → ℂ := fun ε =>
+    ∫ y : NPointDomain d (n + m),
+      bvt_F OS lgc (n + m)
+        (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+          (fun k μ =>
+            ↑(y k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                Complex.I)
+          (t : ℂ)) *
+        (φ.conjTensorProduct ψ) y
+  let horizontal : ℝ → ℂ := fun ε =>
+    ∫ x : ℝ,
+      bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+        (d := d) OS lgc φ ψ hψ_compact (↑x + ↑ε * Complex.I) *
+      (SchwartzMap.fourierTransformCLM ℂ ψZ) x
+  have hShell :
+      Filter.Tendsto shell
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (bvt_W OS lgc (n + m)
+            (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t ψ)))) := by
+    simpa [shell] using
+      (tendsto_bvt_F_canonical_xiShift_conjTensorProduct_timeShift_boundaryValue
+        (d := d) (OS := OS) (lgc := lgc) (hm := hm)
+        (φ := φ) (ψ := ψ) (t := t))
+  have hHorizontal :
+      Filter.Tendsto horizontal
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+            (d := d) OS lgc φ ψ hψ_compact ((t : ℂ) * Complex.I))) := by
+    simpa [horizontal, ψZ] using
+      (tendsto_bvt_W_conjTensorProduct_timeShiftCanonicalExtension_to_imagAxis
+        (d := d) (OS := OS) (lgc := lgc) (hm := hm)
+        (f := φ) (g := ψ) (hg_compact := hψ_compact) ht)
+  simpa [shell, horizontal, ψZ] using hShell.sub hHorizontal
+
+/-- Eventual guarded normal form for the actual shell-minus-horizontal limit
+function. On the punctured positive neighbourhood used by the boundary-value
+filter, the horizontal canonical witness can be replaced by the explicit
+iterated real-time Fourier-Laplace integral.
+
+The `if hε : 0 < ε` guard only makes the right-hand side a total function of
+`ε`; it disappears under `nhdsWithin 0 (Set.Ioi 0)`. -/
+private theorem
+    bvt_F_canonical_xiShift_shell_sub_horizontal_eventually_eq_shell_sub_iterated_fourierLaplaceIntegral
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (hψ_compact : HasCompactSupport (ψ : NPointDomain d m → ℂ))
+    {t : ℝ} (ht : 0 < t) :
+    let ψZt : SchwartzMap ℝ ℂ :=
+      SCV.schwartzPsiZ
+        (((2 * Real.pi : ℂ) * (t * Complex.I)))
+        (by
+          simpa [Complex.mul_im, ht.ne']
+            using mul_pos Real.two_pi_pos ht)
+    (fun ε : ℝ =>
+      (∫ y : NPointDomain d (n + m),
+        bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun k μ =>
+              ↑(y k μ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                  Complex.I)
+            (t : ℂ)) *
+          (φ.conjTensorProduct ψ) y) -
+      (∫ x : ℝ,
+        bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+          (d := d) OS lgc φ ψ hψ_compact (↑x + ↑ε * Complex.I) *
+        (SchwartzMap.fourierTransformCLM ℂ ψZt) x))
+    =ᶠ[nhdsWithin 0 (Set.Ioi 0)]
+    (fun ε : ℝ =>
+      (∫ y : NPointDomain d (n + m),
+        bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun k μ =>
+              ↑(y k μ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                  Complex.I)
+            (t : ℂ)) *
+          (φ.conjTensorProduct ψ) y) -
+      if hε : 0 < ε then
+        ∫ x : ℝ,
+          (∫ τ : ℝ,
+            bvt_W OS lgc (n + m)
+              (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) τ ψ)) *
+            (SchwartzMap.fourierTransformCLM ℂ
+              (SCV.schwartzPsiZ
+                ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+                (by
+                  have hscaled : 0 < (2 * Real.pi) *
+                      (((x : ℂ) + ε * Complex.I).im) :=
+                    mul_pos Real.two_pi_pos (by simpa using hε)
+                  simpa [Complex.mul_im] using hscaled))) τ) *
+          (SchwartzMap.fourierTransformCLM ℂ ψZt) x
+      else
+        0) := by
+  let ψZt : SchwartzMap ℝ ℂ :=
+    SCV.schwartzPsiZ
+      (((2 * Real.pi : ℂ) * (t * Complex.I)))
+      (by
+        simpa [Complex.mul_im, ht.ne']
+          using mul_pos Real.two_pi_pos ht)
+  filter_upwards [self_mem_nhdsWithin] with ε hε
+  have hεpos : 0 < ε := hε
+  rw [dif_pos hεpos]
+  simpa [ψZt] using
+    bvt_F_canonical_xiShift_shell_sub_horizontal_eq_shell_sub_iterated_fourierLaplaceIntegral
+      (d := d) (OS := OS) (lgc := lgc) (hm := hm)
+      (φ := φ) (ψ := ψ) (hψ_compact := hψ_compact) ht hεpos
+
+/-- The fully explicit shell-minus-iterated Fourier-Laplace expression has the
+same residual limit as shell-minus-horizontal. Thus the concrete Fubini /
+Fourier-inversion target is precisely to show this explicit residual tends to
+zero, which is equivalent at the limit-target level to the missing scalar
+time-interchange identity. -/
+private theorem
+    tendsto_bvt_F_canonical_xiShift_shell_sub_iterated_to_timeShift_sub_canonicalExtension
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (hψ_compact : HasCompactSupport (ψ : NPointDomain d m → ℂ))
+    {t : ℝ} (ht : 0 < t) :
+    let ψZt : SchwartzMap ℝ ℂ :=
+      SCV.schwartzPsiZ
+        (((2 * Real.pi : ℂ) * (t * Complex.I)))
+        (by
+          simpa [Complex.mul_im, ht.ne']
+            using mul_pos Real.two_pi_pos ht)
+    Filter.Tendsto
+      (fun ε : ℝ =>
+        (∫ y : NPointDomain d (n + m),
+          bvt_F OS lgc (n + m)
+            (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+              (fun k μ =>
+                ↑(y k μ) +
+                  ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                    Complex.I)
+              (t : ℂ)) *
+            (φ.conjTensorProduct ψ) y) -
+        if hε : 0 < ε then
+          ∫ x : ℝ,
+            (∫ τ : ℝ,
+              bvt_W OS lgc (n + m)
+                (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) τ ψ)) *
+              (SchwartzMap.fourierTransformCLM ℂ
+                (SCV.schwartzPsiZ
+                  ((((2 * Real.pi : ℝ) : ℂ) * ((x : ℂ) + ε * Complex.I)))
+                  (by
+                    have hscaled : 0 < (2 * Real.pi) *
+                        (((x : ℂ) + ε * Complex.I).im) :=
+                      mul_pos Real.two_pi_pos (by simpa using hε)
+                    simpa [Complex.mul_im] using hscaled))) τ) *
+            (SchwartzMap.fourierTransformCLM ℂ ψZt) x
+        else
+          0)
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds
+        (bvt_W OS lgc (n + m)
+          (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t ψ)) -
+        bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+          (d := d) OS lgc φ ψ hψ_compact ((t : ℂ) * Complex.I))) := by
+  let ψZt : SchwartzMap ℝ ℂ :=
+    SCV.schwartzPsiZ
+      (((2 * Real.pi : ℂ) * (t * Complex.I)))
+      (by
+        simpa [Complex.mul_im, ht.ne']
+          using mul_pos Real.two_pi_pos ht)
+  have hEq :=
+    bvt_F_canonical_xiShift_shell_sub_horizontal_eventually_eq_shell_sub_iterated_fourierLaplaceIntegral
+      (d := d) (OS := OS) (lgc := lgc) (hm := hm)
+      (φ := φ) (ψ := ψ) (hψ_compact := hψ_compact) ht
+  have hResidual :=
+    tendsto_bvt_F_canonical_xiShift_shell_sub_horizontal_to_timeShift_sub_canonicalExtension
+      (d := d) (OS := OS) (lgc := lgc) (hm := hm)
+      (φ := φ) (ψ := ψ) (hψ_compact := hψ_compact) ht
+  exact Filter.Tendsto.congr' hEq hResidual
+
+/-- Exact shell-to-Laplace reduction for the ambient Phase C' witness.
+
+For a fixed positive time `t`, the explicit canonical Wightman witness already
+has a horizontal boundary-value limit against the Paley-Wiener kernel
+`ψ_{2πit}`. Therefore, to prove that the concrete `bvt_F` canonical
+`ξ`-shift shell converges to the same witness value, it is enough to prove that
+the difference between that shell and the corresponding horizontal
+Fourier-Laplace integral tends to zero.
+
+This isolates the real remaining analytic comparison without changing the
+theorem category: both terms are on the Wightman/ambient representative side
+`φ, ψ`; no Schwinger/Wightman same-shell equality is asserted. -/
+private theorem
+    tendsto_bvt_F_canonical_xiShift_to_ambientCanonicalExtension_imagAxis_of_shell_sub_horizontal_tendsto_zero
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (hψ_compact : HasCompactSupport (ψ : NPointDomain d m → ℂ))
+    {t : ℝ} (ht : 0 < t)
+    (hShellLaplace :
+      let ψZ : SchwartzMap ℝ ℂ :=
+        SCV.schwartzPsiZ
+          (((2 * Real.pi : ℂ) * (t * Complex.I)))
+          (by
+            simpa [Complex.mul_im, ht.ne']
+              using mul_pos Real.two_pi_pos ht)
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          (∫ y : NPointDomain d (n + m),
+            bvt_F OS lgc (n + m)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                (fun k μ =>
+                  ↑(y k μ) +
+                    ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                      Complex.I)
+                (t : ℂ)) *
+              (φ.conjTensorProduct ψ) y) -
+          (∫ x : ℝ,
+            bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+              (d := d) OS lgc φ ψ hψ_compact (↑x + ↑ε * Complex.I) *
+            (SchwartzMap.fourierTransformCLM ℂ ψZ) x))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds 0)) :
+    Filter.Tendsto
+      (fun ε : ℝ =>
+        ∫ y : NPointDomain d (n + m),
+          bvt_F OS lgc (n + m)
+            (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+              (fun k μ =>
+                ↑(y k μ) +
+                  ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                    Complex.I)
+              (t : ℂ)) *
+            (φ.conjTensorProduct ψ) y)
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds
+        (bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+          (d := d) OS lgc φ ψ hψ_compact ((t : ℂ) * Complex.I))) := by
+  let ψZ : SchwartzMap ℝ ℂ :=
+    SCV.schwartzPsiZ
+      (((2 * Real.pi : ℂ) * (t * Complex.I)))
+      (by
+        simpa [Complex.mul_im, ht.ne']
+          using mul_pos Real.two_pi_pos ht)
+  let shell : ℝ → ℂ := fun ε =>
+    ∫ y : NPointDomain d (n + m),
+      bvt_F OS lgc (n + m)
+        (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+          (fun k μ =>
+            ↑(y k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                Complex.I)
+          (t : ℂ)) *
+        (φ.conjTensorProduct ψ) y
+  let horizontal : ℝ → ℂ := fun ε =>
+    ∫ x : ℝ,
+      bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+        (d := d) OS lgc φ ψ hψ_compact (↑x + ↑ε * Complex.I) *
+      (SchwartzMap.fourierTransformCLM ℂ ψZ) x
+  have hShellLaplace' :
+      Filter.Tendsto
+        (fun ε : ℝ => shell ε - horizontal ε)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds 0) := by
+    simpa [shell, horizontal, ψZ] using hShellLaplace
+  have hHorizontal :
+      Filter.Tendsto horizontal
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+            (d := d) OS lgc φ ψ hψ_compact ((t : ℂ) * Complex.I))) := by
+    simpa [horizontal, ψZ] using
+      (tendsto_bvt_W_conjTensorProduct_timeShiftCanonicalExtension_to_imagAxis
+        (d := d) (OS := OS) (lgc := lgc) (hm := hm)
+        (f := φ) (g := ψ) (hg_compact := hψ_compact) ht)
+  have hsum :
+      Filter.Tendsto
+        (fun ε : ℝ => (shell ε - horizontal ε) + horizontal ε)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (0 +
+            bvt_W_conjTensorProduct_timeShiftCanonicalExtension
+              (d := d) OS lgc φ ψ hψ_compact ((t : ℂ) * Complex.I))) :=
+    hShellLaplace'.add hHorizontal
+  have hEq :
+      (fun ε : ℝ => (shell ε - horizontal ε) + horizontal ε) = shell := by
+    funext ε
+    simp [shell, horizontal]
+  simpa [hEq, shell] using hsum
 
 /-- Equality of multivariate Section 4.3 quotient classes forces equality of
 the associated one-variable slice tests on `[0,\infty)`, provided the frozen
@@ -4193,6 +5111,127 @@ theorem positiveTimeBorchersVector_dense
   rw [hrange]
   exact UniformSpace.Completion.denseRange_coe
 
+private theorem positiveTimeBorchersVector_eq_sum_single_vectors
+    (OS : OsterwalderSchraderAxioms d)
+    (F : PositiveTimeBorchersSequence d) :
+    positiveTimeBorchersVector (d := d) OS F =
+      ∑ k ∈ Finset.range (((F : BorchersSequence d).bound) + 1),
+        positiveTimeBorchersVector (d := d) OS
+          (PositiveTimeBorchersSequence.single k
+            (((F : BorchersSequence d).funcs k)) (F.ordered_tsupport k)) := by
+  unfold positiveTimeBorchersVector
+  suffices h : ∀ (s : Finset ℕ) (G : PositiveTimeBorchersSequence d),
+      (∀ k, k ∉ s → ((G : BorchersSequence d).funcs k) = 0) →
+      (((show OSPreHilbertSpace OS from (⟦G⟧)) : OSHilbertSpace OS)) =
+        ∑ k ∈ s,
+          (((show OSPreHilbertSpace OS from
+            (⟦PositiveTimeBorchersSequence.single k
+              (((G : BorchersSequence d).funcs k)) (G.ordered_tsupport k)⟧)) :
+            OSHilbertSpace OS)) from
+    h (Finset.range (((F : BorchersSequence d).bound) + 1)) F (fun k hk =>
+      (F : BorchersSequence d).bound_spec k (by
+        simp only [Finset.mem_range, not_lt] at hk
+        omega))
+  intro s
+  induction s using Finset.cons_induction with
+  | empty =>
+      intro G hG
+      rw [Finset.sum_empty]
+      have hpre :
+          (⟦G⟧ : OSPreHilbertSpace OS) =
+            (⟦(0 : PositiveTimeBorchersSequence d)⟧ : OSPreHilbertSpace OS) := by
+        exact OSPreHilbertSpace.mk_eq_of_funcs_eq OS G 0
+          (fun k => by simp [hG k (by simp)])
+      simpa [UniformSpace.Completion.coe_zero] using
+        congrArg (fun x : OSPreHilbertSpace OS => ((x : OSHilbertSpace OS))) hpre
+  | cons a s ha ih =>
+      intro G hG
+      rw [Finset.sum_cons]
+      let G' : PositiveTimeBorchersSequence d := {
+        toBorchersSequence := {
+          funcs := fun k => if k = a then 0 else ((G : BorchersSequence d).funcs k)
+          bound := max ((G : BorchersSequence d).bound) a
+          bound_spec := fun k hk => by
+            show (if k = a then (0 : SchwartzNPoint d k)
+              else (G : BorchersSequence d).funcs k) = 0
+            split
+            · rfl
+            · next _hka => exact (G : BorchersSequence d).bound_spec k (by omega)
+        }
+        ordered_tsupport := fun k => by
+          by_cases hka : k = a
+          · intro x hx
+            simp [hka] at hx
+          · simpa [hka] using G.ordered_tsupport k
+      }
+      have hG'supp : ∀ k, k ∉ s → ((G' : BorchersSequence d).funcs k) = 0 := by
+        intro k hk
+        by_cases hka : k = a
+        · subst hka
+          simp [G']
+        · simp [G', hka]
+          exact hG k (fun hmem => (Finset.mem_cons.mp hmem).elim hka hk)
+      have h_split :
+          (⟦G⟧ : OSPreHilbertSpace OS) =
+            (⟦(G' + PositiveTimeBorchersSequence.single a
+              (((G : BorchersSequence d).funcs a)) (G.ordered_tsupport a))⟧ :
+              OSPreHilbertSpace OS) := by
+        apply OSPreHilbertSpace.mk_eq_of_funcs_eq OS
+        intro k
+        simp only [PositiveTimeBorchersSequence.add_toBorchersSequence,
+          BorchersSequence.add_funcs, G']
+        by_cases hka : k = a
+        · subst hka
+          simp [BorchersSequence.single_funcs_eq]
+        · simp [hka, PositiveTimeBorchersSequence.single_toBorchersSequence]
+      have hG'eq :
+          (((show OSPreHilbertSpace OS from (⟦G'⟧)) : OSHilbertSpace OS)) =
+            ∑ k ∈ s,
+              (((show OSPreHilbertSpace OS from
+                (⟦PositiveTimeBorchersSequence.single k
+                  (((G : BorchersSequence d).funcs k)) (G.ordered_tsupport k)⟧)) :
+                OSHilbertSpace OS)) := by
+        rw [show ∑ k ∈ s,
+              (((show OSPreHilbertSpace OS from
+                (⟦PositiveTimeBorchersSequence.single k
+                  (((G : BorchersSequence d).funcs k)) (G.ordered_tsupport k)⟧)) :
+                OSHilbertSpace OS)) =
+            ∑ k ∈ s,
+              (((show OSPreHilbertSpace OS from
+                (⟦PositiveTimeBorchersSequence.single k
+                  (((G' : BorchersSequence d).funcs k)) (G'.ordered_tsupport k)⟧)) :
+                OSHilbertSpace OS)) from by
+          refine Finset.sum_congr rfl ?_
+          intro k hk
+          have hka : k ≠ a := by
+            intro h
+            exact ha (by simpa [h] using hk)
+          simp [G', hka]]
+        exact ih G' hG'supp
+      have hcomm :
+          (⟦(G' + PositiveTimeBorchersSequence.single a
+            (((G : BorchersSequence d).funcs a)) (G.ordered_tsupport a))⟧ :
+            OSPreHilbertSpace OS) =
+          (⟦(PositiveTimeBorchersSequence.single a
+            (((G : BorchersSequence d).funcs a)) (G.ordered_tsupport a) + G')⟧ :
+            OSPreHilbertSpace OS) := by
+        apply OSPreHilbertSpace.mk_eq_of_funcs_eq OS
+        intro k
+        simp [BorchersSequence.add_funcs, add_comm]
+      rw [h_split, hcomm]
+      let xpre : OSPreHilbertSpace OS :=
+        ⟦PositiveTimeBorchersSequence.single a
+          (((G : BorchersSequence d).funcs a)) (G.ordered_tsupport a)⟧
+      let ypre : OSPreHilbertSpace OS := ⟦G'⟧
+      change ((xpre + ypre : OSPreHilbertSpace OS) : OSHilbertSpace OS) =
+        (xpre : OSHilbertSpace OS) +
+          ∑ k ∈ s,
+            (((show OSPreHilbertSpace OS from
+              (⟦PositiveTimeBorchersSequence.single k
+                (((G : BorchersSequence d).funcs k)) (G.ordered_tsupport k)⟧)) :
+              OSHilbertSpace OS))
+      rw [UniformSpace.Completion.coe_add, hG'eq]
+
 /-- The degree-`n` Section 4.3 transformed image. -/
 def bvtTransportImage (d n : ℕ) [NeZero d] :
     Set (Section43PositiveEnergyComponent (d := d) n) :=
@@ -4224,6 +5263,14 @@ structure BvtTransportImageSequence (d : ℕ) [NeZero d] where
   image_mem : ∀ n,
     section43PositiveEnergyQuotientMap (d := d) n (toBorchers.funcs n) ∈
       bvtTransportImage (d := d) n
+
+def positiveTimeBorchersSequence_toBvtTransportImageSequence
+    (F : PositiveTimeBorchersSequence d) :
+    BvtTransportImageSequence d where
+  toBorchers := (F : BorchersSequence d)
+  image_mem := fun n => by
+    refine ⟨⟨((F : BorchersSequence d).funcs n), F.ordered_tsupport n⟩, ?_⟩
+    simp [os1TransportComponent_apply]
 
 instance : Add (BvtTransportImageSequence d) where
   add F G :=
@@ -4426,6 +5473,38 @@ theorem bvt_transport_to_osHilbert_onImage_wellDefined
     apply os1TransportComponent_injective (d := d) (n := n)
     rw [bvtTransportImagePreimage_spec, hg]
   simp [hpre]
+
+theorem bvt_transport_to_osHilbert_onImage_positiveTime
+    (OS : OsterwalderSchraderAxioms d)
+    (F : PositiveTimeBorchersSequence d) :
+    bvt_transport_to_osHilbert_onImage OS
+      (positiveTimeBorchersSequence_toBvtTransportImageSequence (d := d) F) =
+    positiveTimeBorchersVector (d := d) OS F := by
+  let G : BvtTransportImageSequence d :=
+    positiveTimeBorchersSequence_toBvtTransportImageSequence (d := d) F
+  let g : ∀ n, euclideanPositiveTimeSubmodule (d := d) n :=
+    fun n => ⟨((F : BorchersSequence d).funcs n), F.ordered_tsupport n⟩
+  have hg : ∀ n,
+      os1TransportComponent d n (g n) =
+        section43PositiveEnergyQuotientMap (d := d) n (G.toBorchers.funcs n) := by
+    intro n
+    simp [G, g, positiveTimeBorchersSequence_toBvtTransportImageSequence,
+      os1TransportComponent_apply]
+  rw [bvt_transport_to_osHilbert_onImage_wellDefined (d := d) (OS := OS)
+    (F := G) (g := g) hg]
+  simpa [G, g, euclideanPositiveTimeSingleVector, positiveTimeBorchersVector]
+    using (positiveTimeBorchersVector_eq_sum_single_vectors (d := d) OS F).symm
+
+/-- The Section 4.3 on-image transport has dense range in the OS Hilbert space:
+the positive-time Borchers vectors are dense, and every such vector is the
+transport of its componentwise Section 4.3 image. -/
+theorem bvt_transport_to_osHilbert_onImage_dense
+    (OS : OsterwalderSchraderAxioms d) :
+    Dense (Set.range (bvt_transport_to_osHilbert_onImage (d := d) OS)) := by
+  refine Dense.mono ?_ (positiveTimeBorchersVector_dense (d := d) OS)
+  rintro _ ⟨F, rfl⟩
+  exact ⟨positiveTimeBorchersSequence_toBvtTransportImageSequence (d := d) F,
+    bvt_transport_to_osHilbert_onImage_positiveTime (d := d) OS F⟩
 
 private theorem bvt_transport_to_osHilbert_onImage_eq_padded_sum
     (OS : OsterwalderSchraderAxioms d)
@@ -4786,6 +5865,39 @@ private theorem inner_euclideanPositiveTimeSingleVector_ofSubmodule_eq_osInner
           (EuclideanPositiveTimeComponent.ofSubmodule g)) := by
   simp [euclideanPositiveTimeSingleVector, positiveTimeBorchersVector_inner_eq]
 
+private theorem inner_bvt_transport_to_osHilbert_onImage_eq_osInner_padded_double_sum
+    (OS : OsterwalderSchraderAxioms d)
+    (F G : BvtTransportImageSequence d) {m : ℕ}
+    (hFm : F.toBorchers.bound ≤ m) (hGm : G.toBorchers.bound ≤ m) :
+    @inner ℂ (OSHilbertSpace OS) _
+        (bvt_transport_to_osHilbert_onImage OS F)
+        (bvt_transport_to_osHilbert_onImage OS G) =
+      (Finset.range (m + 1)).sum fun n =>
+        (Finset.range (m + 1)).sum fun k =>
+          if h₁ : n ≤ F.toBorchers.bound then
+            if h₂ : k ≤ G.toBorchers.bound then
+              PositiveTimeBorchersSequence.osInner OS
+                (EuclideanPositiveTimeComponent.toPositiveTimeSingle (d := d)
+                  (EuclideanPositiveTimeComponent.ofSubmodule
+                    (bvtTransportImagePreimage (d := d) F n)))
+                (EuclideanPositiveTimeComponent.toPositiveTimeSingle (d := d)
+                  (EuclideanPositiveTimeComponent.ofSubmodule
+                    (bvtTransportImagePreimage (d := d) G k)))
+            else 0
+          else 0 := by
+  rw [inner_bvt_transport_to_osHilbert_onImage_eq_double_sum
+    (d := d) (OS := OS) (F := F) (G := G) (m := m) hFm hGm]
+  refine Finset.sum_congr rfl ?_
+  intro n hn
+  refine Finset.sum_congr rfl ?_
+  intro k hk
+  by_cases h₁ : n ≤ F.toBorchers.bound
+  · by_cases h₂ : k ≤ G.toBorchers.bound
+    · simp [h₁, h₂,
+        inner_euclideanPositiveTimeSingleVector_ofSubmodule_eq_osInner]
+    · simp [h₁, h₂]
+  · simp [h₁]
+
 private theorem norm_sq_bvt_transport_to_osHilbert_onImage_eq_osInner_padded_double_sum
     (OS : OsterwalderSchraderAxioms d)
     (F : BvtTransportImageSequence d) {m : ℕ}
@@ -4880,7 +5992,81 @@ private theorem bvt_wightmanInner_self_eq_single_single_padded_double_sum
   intro k hk
   by_cases h₁ : n ≤ F.toBorchers.bound
   · by_cases h₂ : k ≤ F.toBorchers.bound
-    · simp [h₁, h₂, WightmanInnerProduct_single_single, bvt_W_linear]
+    · have hsingle :=
+        WightmanInnerProduct_single_single (d := d) (W := bvt_W OS lgc)
+          (hlin := bvt_W_linear (d := d) OS lgc) (n := n) (m := k)
+          (f := F.toBorchers.funcs n) (g := F.toBorchers.funcs k)
+      simpa [h₁, h₂] using hsingle.symm
+    · simp [h₁, h₂]
+  · simp [h₁]
+
+private theorem bvt_wightmanInner_eq_padded_double_sum
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : BvtTransportImageSequence d) {m : ℕ}
+    (hFm : F.toBorchers.bound ≤ m) (hGm : G.toBorchers.bound ≤ m) :
+    WightmanInnerProduct d (bvt_W OS lgc) F.toBorchers G.toBorchers =
+      (Finset.range (m + 1)).sum fun n =>
+        (Finset.range (m + 1)).sum fun k =>
+          if h₁ : n ≤ F.toBorchers.bound then
+            if h₂ : k ≤ G.toBorchers.bound then
+              bvt_W OS lgc (n + k)
+                ((F.toBorchers.funcs n).conjTensorProduct (G.toBorchers.funcs k))
+            else 0
+          else 0 := by
+  have hw :
+      WightmanInnerProduct d (bvt_W OS lgc) F.toBorchers G.toBorchers =
+        WightmanInnerProductN d (bvt_W OS lgc) F.toBorchers G.toBorchers
+          (m + 1) (m + 1) := by
+    apply WightmanInnerProduct_eq_extended (d := d) (W := bvt_W OS lgc)
+      (hlin := bvt_W_linear (d := d) OS lgc)
+    · exact Nat.succ_le_succ hFm
+    · exact Nat.succ_le_succ hGm
+  rw [hw]
+  unfold WightmanInnerProductN
+  refine Finset.sum_congr rfl ?_
+  intro n hn
+  by_cases hN : n ≤ F.toBorchers.bound
+  · refine Finset.sum_congr rfl ?_
+    intro k hk
+    by_cases hK : k ≤ G.toBorchers.bound
+    · simp [hN, hK]
+    · have hkgt : G.toBorchers.bound < k := by omega
+      simp [hN, hK, G.toBorchers.bound_spec k hkgt,
+        (bvt_W_linear (d := d) OS lgc (n + k)).map_zero]
+  · have hngt : F.toBorchers.bound < n := by omega
+    simp [hN]
+    apply Finset.sum_eq_zero
+    intro k hk
+    rw [F.toBorchers.bound_spec n hngt, SchwartzMap.conjTensorProduct_zero_left,
+      (bvt_W_linear (d := d) OS lgc (n + k)).map_zero]
+
+private theorem bvt_wightmanInner_eq_single_single_padded_double_sum
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : BvtTransportImageSequence d) {m : ℕ}
+    (hFm : F.toBorchers.bound ≤ m) (hGm : G.toBorchers.bound ≤ m) :
+    WightmanInnerProduct d (bvt_W OS lgc) F.toBorchers G.toBorchers =
+      (Finset.range (m + 1)).sum fun n =>
+        (Finset.range (m + 1)).sum fun k =>
+          if h₁ : n ≤ F.toBorchers.bound then
+            if h₂ : k ≤ G.toBorchers.bound then
+              WightmanInnerProduct d (bvt_W OS lgc)
+                (BorchersSequence.single n (F.toBorchers.funcs n))
+                (BorchersSequence.single k (G.toBorchers.funcs k))
+            else 0
+          else 0 := by
+  rw [bvt_wightmanInner_eq_padded_double_sum
+    (d := d) (OS := OS) (lgc := lgc) (F := F) (G := G) (m := m) hFm hGm]
+  refine Finset.sum_congr rfl ?_
+  intro n hn
+  refine Finset.sum_congr rfl ?_
+  intro k hk
+  by_cases h₁ : n ≤ F.toBorchers.bound
+  · by_cases h₂ : k ≤ G.toBorchers.bound
+    · have hsingle :=
+        WightmanInnerProduct_single_single (d := d) (W := bvt_W OS lgc)
+          (hlin := bvt_W_linear (d := d) OS lgc) (n := n) (m := k)
+          (f := F.toBorchers.funcs n) (g := G.toBorchers.funcs k)
+      simpa [h₁, h₂] using hsingle.symm
     · simp [h₁, h₂]
   · simp [h₁]
 
@@ -4979,6 +6165,75 @@ private theorem bvt_wightmanInner_eq_transport_norm_sq_onImage_of_single_single
       · simp [h₁, h₂]
     · simp [h₁]
   exact congrArg Complex.re hsum
+
+private theorem bvt_wightmanInner_eq_transport_inner_onImage_of_single_single
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : BvtTransportImageSequence d) {m : ℕ}
+    (hFm : F.toBorchers.bound ≤ m) (hGm : G.toBorchers.bound ≤ m)
+    (hss : ∀ n k,
+      n ≤ F.toBorchers.bound →
+      k ≤ G.toBorchers.bound →
+      WightmanInnerProduct d (bvt_W OS lgc)
+          (BorchersSequence.single n (F.toBorchers.funcs n))
+          (BorchersSequence.single k (G.toBorchers.funcs k)) =
+        PositiveTimeBorchersSequence.osInner OS
+          (EuclideanPositiveTimeComponent.toPositiveTimeSingle (d := d)
+            (EuclideanPositiveTimeComponent.ofSubmodule
+              (bvtTransportImagePreimage (d := d) F n)))
+          (EuclideanPositiveTimeComponent.toPositiveTimeSingle (d := d)
+            (EuclideanPositiveTimeComponent.ofSubmodule
+              (bvtTransportImagePreimage (d := d) G k)))) :
+    WightmanInnerProduct d (bvt_W OS lgc) F.toBorchers G.toBorchers =
+      @inner ℂ (OSHilbertSpace OS) _
+        (bvt_transport_to_osHilbert_onImage OS F)
+        (bvt_transport_to_osHilbert_onImage OS G) := by
+  rw [bvt_wightmanInner_eq_single_single_padded_double_sum
+    (d := d) (OS := OS) (lgc := lgc) (F := F) (G := G) (m := m) hFm hGm]
+  rw [inner_bvt_transport_to_osHilbert_onImage_eq_osInner_padded_double_sum
+    (d := d) (OS := OS) (F := F) (G := G) (m := m) hFm hGm]
+  refine Finset.sum_congr rfl ?_
+  intro n hn
+  refine Finset.sum_congr rfl ?_
+  intro k hk
+  by_cases h₁ : n ≤ F.toBorchers.bound
+  · by_cases h₂ : k ≤ G.toBorchers.bound
+    · simp [h₁, h₂, hss n k h₁ h₂]
+    · simp [h₁, h₂]
+  · simp [h₁]
+
+theorem bvt_wightmanInner_eq_transport_inner_onImage_of_kernel_eq
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (F G : BvtTransportImageSequence d)
+    (hkernel : ∀ n k,
+      n ≤ F.toBorchers.bound →
+      k ≤ G.toBorchers.bound →
+      bvt_W OS lgc (n + k)
+        ((F.toBorchers.funcs n).conjTensorProduct (G.toBorchers.funcs k)) =
+      OS.S (n + k)
+        (ZeroDiagonalSchwartz.ofClassical
+          (((bvtTransportImagePreimage (d := d) F n : euclideanPositiveTimeSubmodule (d := d) n) :
+              SchwartzNPoint d n).osConjTensorProduct
+            ((bvtTransportImagePreimage (d := d) G k : euclideanPositiveTimeSubmodule (d := d) k) :
+              SchwartzNPoint d k)))) :
+    WightmanInnerProduct d (bvt_W OS lgc) F.toBorchers G.toBorchers =
+      @inner ℂ (OSHilbertSpace OS) _
+        (bvt_transport_to_osHilbert_onImage OS F)
+        (bvt_transport_to_osHilbert_onImage OS G) := by
+  let M := max F.toBorchers.bound G.toBorchers.bound
+  apply bvt_wightmanInner_eq_transport_inner_onImage_of_single_single
+    (d := d) (OS := OS) (lgc := lgc) (F := F) (G := G) (m := M)
+  · dsimp [M]
+    exact le_max_left _ _
+  · dsimp [M]
+    exact le_max_right _ _
+  intro n k hn hk
+  exact
+    (single_single_wightman_eq_osInner_iff_kernel_eq
+      (d := d) (OS := OS) (lgc := lgc)
+      (φ := F.toBorchers.funcs n) (ψ := G.toBorchers.funcs k)
+      (f := bvtTransportImagePreimage (d := d) F n)
+      (g := bvtTransportImagePreimage (d := d) G k)).2
+      (hkernel n k hn hk)
 
 theorem bvt_wightmanInner_eq_transport_norm_sq_onImage_of_kernel_eq
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
