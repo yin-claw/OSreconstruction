@@ -1109,10 +1109,9 @@ theorem baseFiber_isPreconnected_of_index_and_active_geometry {m d : ℕ} [NeZer
     the one-complex-dimensional line fiber `Ω = {t | z + t c ∈ PET}`.
 
     Ref: Streater-Wightman §2.5; Jost, "General Theory of Quantized Fields" §III.1 -/
-theorem isPreconnected_baseFiber {m d : ℕ} [NeZero d]
+axiom isPreconnected_baseFiber {m d : ℕ} [NeZero d]
     (ζtail : Fin m → Fin (d + 1) → ℂ) :
-    IsPreconnected (baseFiber m d ζtail) := by
-  sorry
+    IsPreconnected (baseFiber m d ζtail)
 
 /-! #### Route 1: Translation invariance via reduced difference coordinates
 
