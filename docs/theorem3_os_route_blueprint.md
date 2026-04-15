@@ -12881,7 +12881,7 @@ theorem exists_eq_sum_headBlock_coord_smul_of_zeroHeadSection_of_hasCompactSuppo
       F =
         ∑ μ : Fin p,
           SchwartzMap.smulLeftCLM ℂ
-            (fun x : Fin (p + q) → ℝ => (x (Fin.castAdd q μ) : ℂ))
+            (fun x : Fin (p + q) → ℝ => x (Fin.castAdd q μ))
             (G μ)
 ```
 
@@ -12908,9 +12908,19 @@ R := F - unitBumpSchwartz.prependField h
       with `unitBumpSchwartz.prependField`.  Compact support is preserved by
       `headSectionCLM`, `prependField`, and subtraction, exactly as in
       `exists_eq_sum_coord_smul_of_zero_of_hasCompactSupport`.
+
+      Production status, 2026-04-15: this theorem is implemented in the small
+      companion file `HeadBlockDecomposition.lean` and exact-checks without
+      warnings.  The theorem intentionally uses real coordinate multipliers,
+      matching `exists_eq_coord_smul_of_headSection_zero_of_hasCompactSupport`;
+      the later total-momentum pushforward is responsible for rewriting real
+      scalar multiplication as complex multiplication where it meets
+      `section43TotalMomentumCoordMultiplierCLM`.
    5. Push the resulting `G μ` forward through
       `section43TotalMomentumHeadTailCLE` to obtain the desired `H μ`.  The
-      coordinate identity above rewrites the head-coordinate multipliers as
+      coordinate identity above rewrites the head-coordinate multipliers to
+      real scalar multiplication by the total-momentum coordinate, and then
+      `Complex.real_smul`/`smul_eq_mul` identifies this with
       `section43TotalMomentumCoordMultiplierCLM d (N' + 1) μ`.
 
 4. Apply the derivative equations from step 1 to every summand in the compact
@@ -12947,7 +12957,7 @@ theorem exists_eq_sum_headBlock_coord_smul_of_zeroHeadSection_of_hasCompactSuppo
       F =
         ∑ μ : Fin p,
           SchwartzMap.smulLeftCLM ℂ
-            (fun x : Fin (p + q) → ℝ => (x (Fin.castAdd q μ) : ℂ))
+            (fun x : Fin (p + q) → ℝ => x (Fin.castAdd q μ))
             (G μ)
 
 noncomputable def section43TotalMomentumHeadTailCLE
@@ -12979,12 +12989,13 @@ theorem hasFourierSupportIn_totalMomentumZero_of_phase_invariant
 
 Lean implementation notes for this split:
 
-1. The generic head-block theorem should live outside the Section 4.3
-   OS-specific file, preferably in a small companion support file importing
-   `TranslationInvariantSchwartz.lean`, because it only depends on the
-   existing `headSectionCLM`, `unitBumpSchwartz.prependField`,
-   `hasCompactSupport_prependField`, and
-   `exists_eq_coord_smul_of_headSection_zero_of_hasCompactSupport`.
+1. The generic head-block theorem lives outside the Section 4.3 OS-specific
+   file, in `HeadBlockDecomposition.lean`, importing `BlockIntegral.lean` and
+   `TranslationInvariantSchwartz.lean`.  It depends on the existing
+   `headSectionCLM`, `unitBumpSchwartz.prependField`,
+   `hasCompactSupport_prependField`,
+   `exists_eq_coord_smul_of_headSection_zero_of_hasCompactSupport`, and the
+   `zeroHeadBlockShift`/`castFinCLE` reindexing API.
 2. The successor case for the generic theorem should first reindex
    `Fin ((p + 1) + q)` to `Fin ((p + q) + 1)` using
    `castFinCLE (Nat.succ_add p q)` so that `headSectionCLM (p + q)` applies
@@ -13010,8 +13021,9 @@ Lean implementation notes for this split:
 6. After pulling `K` back through the CLE, the zero-head-section hypothesis is
    exactly `hK_zero`, because the head block is
    `section43TotalMomentumFlat`.  Pushing the generic head-block decomposition
-   forward rewrites each head-coordinate multiplier to
-   `section43TotalMomentumCoordMultiplierCLM`.
+   forward rewrites each real head-coordinate multiplier to the corresponding
+   total-momentum coordinate multiplier; finish the type-level scalar
+   conversion pointwise with `Complex.real_smul` and `smul_eq_mul`.
 
 Then the combined support theorem is an intersection step for closed support
 sets:
