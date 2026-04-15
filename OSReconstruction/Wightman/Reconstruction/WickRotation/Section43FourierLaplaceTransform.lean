@@ -10,7 +10,7 @@ import Mathlib.Data.Fin.Rev
 
 noncomputable section
 
-open scoped Topology FourierTransform
+open scoped Topology FourierTransform LineDeriv
 open Set MeasureTheory
 
 namespace OSReconstruction
@@ -779,6 +779,36 @@ def section43DiagonalTranslationFlat
     let p := finProdFinEquiv.symm i
     a p.2
 
+def section43TotalMomentumBasis
+    (d : ℕ) [NeZero d]
+    (μ : Fin (d + 1)) : Fin (d + 1) → ℝ :=
+  fun ν => if ν = μ then 1 else 0
+
+@[simp] theorem section43TotalMomentumBasis_apply_self
+    (d : ℕ) [NeZero d]
+    (μ : Fin (d + 1)) :
+    section43TotalMomentumBasis d μ μ = 1 := by
+  simp [section43TotalMomentumBasis]
+
+@[simp] theorem section43TotalMomentumBasis_apply_ne
+    (d : ℕ) [NeZero d]
+    {μ ν : Fin (d + 1)} (hν : ν ≠ μ) :
+    section43TotalMomentumBasis d μ ν = 0 := by
+  simp [section43TotalMomentumBasis, hν]
+
+theorem section43TotalMomentumBasis_sum_complex
+    (d : ℕ) [NeZero d]
+    (μ : Fin (d + 1)) (f : Fin (d + 1) → ℂ) :
+    (∑ ν : Fin (d + 1), (section43TotalMomentumBasis d μ ν : ℂ) * f ν) =
+      f μ := by
+  classical
+  rw [Finset.sum_eq_single μ]
+  · simp
+  · intro ν _ hν
+    simp [section43TotalMomentumBasis, hν]
+  · intro hμ
+    exact False.elim (hμ (Finset.mem_univ μ))
+
 theorem section43DiagonalTranslationFlat_pair_eq_totalMomentum
     (d N : ℕ) [NeZero d]
     (a : Fin (d + 1) → ℝ)
@@ -824,6 +854,14 @@ theorem section43DiagonalTranslationFlat_complex_pair_eq_totalMomentum
   have h := congrArg (fun r : ℝ => (r : ℂ))
     (section43DiagonalTranslationFlat_pair_eq_totalMomentum d N a ξ)
   simpa using h
+
+@[simp] theorem section43DiagonalTranslationFlat_smul
+    (d N : ℕ) [NeZero d]
+    (t : ℝ) (a : Fin (d + 1) → ℝ) :
+    section43DiagonalTranslationFlat d N (t • a) =
+      t • section43DiagonalTranslationFlat d N a := by
+  ext i
+  simp [section43DiagonalTranslationFlat, Pi.smul_apply]
 
 theorem physicsFourierFlatCLM_diagonalTranslate_apply
     (d N : ℕ) [NeZero d]
@@ -882,6 +920,36 @@ theorem section43TotalMomentumPhase_hasTemperateGrowth
   ext ξ
   simp [L]
 
+theorem section43TotalMomentumCoord_hasTemperateGrowth
+    (d N : ℕ) [NeZero d]
+    (μ : Fin (d + 1)) :
+    (fun ξ : Fin (N * (d + 1)) → ℝ =>
+      (section43TotalMomentumFlat d N ξ μ : ℂ)).HasTemperateGrowth := by
+  have hreal : Function.HasTemperateGrowth (section43TotalMomentumComponentCLM d N μ) := by
+    exact (section43TotalMomentumComponentCLM d N μ).hasTemperateGrowth
+  simpa [Function.comp_def, section43TotalMomentumComponentCLM_apply] using
+    Complex.ofRealCLM.toContinuousLinearMap.hasTemperateGrowth.comp hreal
+
+noncomputable def section43TotalMomentumCoordMultiplierCLM
+    (d N : ℕ) [NeZero d]
+    (μ : Fin (d + 1)) :
+    SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ →L[ℂ]
+      SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ :=
+  SchwartzMap.smulLeftCLM ℂ
+    (fun ξ : Fin (N * (d + 1)) → ℝ =>
+      (section43TotalMomentumFlat d N ξ μ : ℂ))
+
+@[simp] theorem section43TotalMomentumCoordMultiplierCLM_apply
+    (d N : ℕ) [NeZero d]
+    (μ : Fin (d + 1))
+    (K : SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ)
+    (ξ : Fin (N * (d + 1)) → ℝ) :
+    section43TotalMomentumCoordMultiplierCLM d N μ K ξ =
+      (section43TotalMomentumFlat d N ξ μ : ℂ) * K ξ := by
+  rw [section43TotalMomentumCoordMultiplierCLM]
+  exact SchwartzMap.smulLeftCLM_apply_apply
+    (section43TotalMomentumCoord_hasTemperateGrowth d N μ) K ξ
+
 noncomputable def section43TotalMomentumPhaseCLM
     (d N : ℕ) [NeZero d]
     (a : Fin (d + 1) → ℝ) :
@@ -908,6 +976,40 @@ noncomputable def section43TotalMomentumPhaseCLM
   exact SchwartzMap.smulLeftCLM_apply_apply
     (section43TotalMomentumPhase_hasTemperateGrowth d N a) K ξ
 
+noncomputable def section43TotalMomentumBasisPhaseCLM
+    (d N : ℕ) [NeZero d]
+    (μ : Fin (d + 1)) (t : ℝ) :
+    SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ →L[ℂ]
+      SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ :=
+  section43TotalMomentumPhaseCLM d N (t • section43TotalMomentumBasis d μ)
+
+@[simp] theorem section43TotalMomentumBasisPhaseCLM_apply
+    (d N : ℕ) [NeZero d]
+    (μ : Fin (d + 1)) (t : ℝ)
+    (K : SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ)
+    (ξ : Fin (N * (d + 1)) → ℝ) :
+    section43TotalMomentumBasisPhaseCLM d N μ t K ξ =
+      Complex.exp
+        (-(Complex.I * (t : ℂ) *
+          (section43TotalMomentumFlat d N ξ μ : ℂ))) * K ξ := by
+  classical
+  rw [section43TotalMomentumBasisPhaseCLM, section43TotalMomentumPhaseCLM_apply]
+  congr 2
+  have hsum :
+      (∑ ν : Fin (d + 1),
+        (((t • section43TotalMomentumBasis d μ) ν : ℂ) *
+          (section43TotalMomentumFlat d N ξ ν : ℂ)))
+      =
+      (t : ℂ) * (section43TotalMomentumFlat d N ξ μ : ℂ) := by
+    rw [Finset.sum_eq_single μ]
+    · simp [Pi.smul_apply]
+    · intro ν _ hν
+      simp [Pi.smul_apply, section43TotalMomentumBasis, hν]
+    · intro hμ
+      exact False.elim (hμ (Finset.mem_univ μ))
+  rw [hsum]
+  ring
+
 theorem physicsFourierFlatCLM_diagonalTranslate_eq_phaseCLM
     (d N : ℕ) [NeZero d]
     (a : Fin (d + 1) → ℝ)
@@ -919,6 +1021,72 @@ theorem physicsFourierFlatCLM_diagonalTranslate_eq_phaseCLM
   ext ξ
   rw [physicsFourierFlatCLM_diagonalTranslate_apply]
   rw [section43TotalMomentumPhaseCLM_apply]
+
+theorem physicsFourierFlatCLM_diagonalBasisTranslate_eq_basisPhaseCLM
+    (d N : ℕ) [NeZero d]
+    (μ : Fin (d + 1)) (t : ℝ)
+    (φflat : SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ) :
+    physicsFourierFlatCLM
+        (SCV.translateSchwartz
+          (t • section43DiagonalTranslationFlat d N
+            (section43TotalMomentumBasis d μ)) φflat)
+      =
+    section43TotalMomentumBasisPhaseCLM d N μ t
+      (physicsFourierFlatCLM φflat) := by
+  rw [← section43DiagonalTranslationFlat_smul]
+  rw [physicsFourierFlatCLM_diagonalTranslate_eq_phaseCLM]
+  rfl
+
+theorem flatComplexPairing_hasTemperateGrowth {m : ℕ}
+    (v : Fin m → ℝ) :
+    (fun ξ : Fin m → ℝ =>
+      ∑ i : Fin m, (v i : ℂ) * (ξ i : ℂ)).HasTemperateGrowth := by
+  let L : (Fin m → ℝ) →L[ℝ] ℝ :=
+    ∑ i : Fin m,
+      v i • ContinuousLinearMap.proj (R := ℝ) (ι := Fin m)
+        (φ := fun _ => ℝ) i
+  have hL : Function.HasTemperateGrowth L := L.hasTemperateGrowth
+  have hC := Complex.ofRealCLM.toContinuousLinearMap.hasTemperateGrowth.comp hL
+  convert hC using 1
+  ext ξ
+  simp [L]
+
+theorem physicsFourierFlatCLM_lineDeriv_eq_pairingMultiplier {m : ℕ}
+    (v : Fin m → ℝ)
+    (φ : SchwartzMap (Fin m → ℝ) ℂ) :
+    physicsFourierFlatCLM (∂_{v} φ)
+      =
+    (-Complex.I) •
+      SchwartzMap.smulLeftCLM ℂ
+        (fun ξ : Fin m → ℝ =>
+          ∑ i : Fin m, (v i : ℂ) * (ξ i : ℂ))
+        (physicsFourierFlatCLM φ) := by
+  /-
+  Proof frontier: unfold `physicsFourierFlatCLM` into Mathlib Fourier plus the
+  `-(1 / (2π))` scaling, move `∂_v` through the Euclidean transport using
+  `SchwartzMap.lineDerivOp_compCLMOfContinuousLinearEquiv`, apply
+  `SchwartzMap.fourier_lineDerivOp_eq`, then simplify the transported
+  multiplier to the flat pairing on the right.
+  -/
+  sorry
+
+theorem physicsFourierFlatCLM_lineDeriv_diagonalTranslation_eq_coordMultiplier
+    (d N : ℕ) [NeZero d]
+    (μ : Fin (d + 1))
+    (φflat : SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ) :
+    physicsFourierFlatCLM
+        (∂_{section43DiagonalTranslationFlat d N
+            (section43TotalMomentumBasis d μ)} φflat)
+      =
+    (-Complex.I) •
+      section43TotalMomentumCoordMultiplierCLM d N μ
+        (physicsFourierFlatCLM φflat) := by
+  /-
+  Follows from `physicsFourierFlatCLM_lineDeriv_eq_pairingMultiplier` and
+  `section43DiagonalTranslationFlat_complex_pair_eq_totalMomentum`, plus
+  `section43TotalMomentumBasis_sum_complex`.
+  -/
+  sorry
 
 /-- Translate the right `m`-point tail by `-t` in the time coordinate only.
 

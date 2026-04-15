@@ -12580,6 +12580,213 @@ fun t : ℝ =>
 4. Differentiate both sides at `0`.  Continuity/linearity of `Tflat` moves
    the derivative through `Tflat`; divide by `-Complex.I`.
 
+Implementation refinement, 2026-04-15: do not try to prove this by an
+unstructured Frechet derivative of the CLM-valued map
+`a ↦ section43TotalMomentumPhaseCLM d N a`.  The implementable theorem should
+be the one-parameter difference-quotient statement, modeled exactly on
+`tendsto_diffQuotient_translateSchwartz_zero` in
+`TranslationInvariantSchwartz.lean`.
+
+For fixed `μ`, define the one-parameter phase multiplier
+
+```lean
+noncomputable def section43TotalMomentumBasisPhaseCLM
+    (d N : ℕ) [NeZero d] (μ : Fin (d + 1)) (t : ℝ) :
+    SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ →L[ℂ]
+      SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ :=
+  section43TotalMomentumPhaseCLM d N (fun ν => if ν = μ then t else 0)
+
+noncomputable def section43TotalMomentumCoordMultiplierCLM
+    (d N : ℕ) [NeZero d] (μ : Fin (d + 1)) :
+    SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ →L[ℂ]
+      SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ :=
+  SchwartzMap.smulLeftCLM ℂ
+    (fun ξ => (section43TotalMomentumFlat d N ξ μ : ℂ))
+```
+
+Production status, 2026-04-15: the small API
+
+```lean
+section43TotalMomentumCoord_hasTemperateGrowth
+section43TotalMomentumCoordMultiplierCLM
+section43TotalMomentumCoordMultiplierCLM_apply
+section43TotalMomentumBasis
+section43TotalMomentumBasis_apply_self
+section43TotalMomentumBasis_apply_ne
+section43TotalMomentumBasisPhaseCLM
+section43TotalMomentumBasisPhaseCLM_apply
+section43DiagonalTranslationFlat_smul
+physicsFourierFlatCLM_diagonalBasisTranslate_eq_basisPhaseCLM
+```
+
+is implemented in `Section43FourierLaplaceTransform.lean` and exact-checks.
+
+Sharper implementation refinement, 2026-04-15: the coordinate-annihilation
+step does **not** need a new direct seminorm estimate for phase multipliers.
+Use the already-proved real-translation difference quotient instead.
+
+For the basis vector
+
+```lean
+def section43TotalMomentumBasis
+    (d : ℕ) [NeZero d] (μ : Fin (d + 1)) : Fin (d + 1) → ℝ :=
+  fun ν => if ν = μ then 1 else 0
+```
+
+the diagonal real-space translation direction is
+
+```lean
+vμ := section43DiagonalTranslationFlat d N (section43TotalMomentumBasis d μ)
+```
+
+The key Fourier derivative identity should be implemented as
+
+```lean
+theorem physicsFourierFlatCLM_lineDeriv_eq_pairingMultiplier
+    {m : ℕ}
+    (v : Fin m → ℝ)
+    (φ : SchwartzMap (Fin m → ℝ) ℂ) :
+    physicsFourierFlatCLM (∂_{v} φ)
+      =
+    (-Complex.I) •
+      SchwartzMap.smulLeftCLM ℂ
+        (fun ξ : Fin m → ℝ =>
+          ∑ i : Fin m, (v i : ℂ) * (ξ i : ℂ))
+        (physicsFourierFlatCLM φ)
+```
+
+Proof transcript for the general theorem:
+
+1. Unfold `physicsFourierFlatCLM` as
+   `compCLMOfContinuousLinearEquiv scaleNeg ∘ inverseFourierFlatCLM`, where
+   `scaleNeg ξ = -(1 / (2 * Real.pi)) • ξ`.
+2. Unfold `inverseFourierFlatCLM` as Euclidean transport, Mathlib Fourier
+   transform, and transport back.
+3. Use `SchwartzMap.lineDerivOp_compCLMOfContinuousLinearEquiv` to move
+   `∂_v` through the Euclidean transport.  The transported direction is
+   `(EuclideanSpace.equiv (Fin m) ℝ).symm v`.
+4. Apply Mathlib's `SchwartzMap.fourier_lineDerivOp_eq`, which gives the
+   multiplier `2 * Real.pi * Complex.I * inner η vE`.
+5. Apply the final scaling `η = -(1 / (2 * Real.pi)) • ξ`; the scalar factor
+   simplifies to `-Complex.I * ∑ i, (v i : ℂ) * (ξ i : ℂ)`.
+6. Finish by extensionality and the `SchwartzMap.smulLeftCLM_apply_apply`
+   theorem.  The multiplier has temperate growth because it is a finite sum
+   of products of constants and coordinate projections.
+
+The diagonal total-momentum specialization is then
+
+```lean
+theorem physicsFourierFlatCLM_lineDeriv_diagonalTranslation_eq_coordMultiplier
+    (d N : ℕ) [NeZero d]
+    (μ : Fin (d + 1))
+    (φflat : SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ) :
+    physicsFourierFlatCLM
+        (∂_{section43DiagonalTranslationFlat d N
+            (section43TotalMomentumBasis d μ)} φflat)
+      =
+    (-Complex.I) •
+      section43TotalMomentumCoordMultiplierCLM d N μ
+        (physicsFourierFlatCLM φflat)
+```
+
+Proof transcript for the specialization:
+
+1. Apply `physicsFourierFlatCLM_lineDeriv_eq_pairingMultiplier` with
+
+```lean
+v := section43DiagonalTranslationFlat d N
+       (section43TotalMomentumBasis d μ)
+```
+
+2. Rewrite the pairing multiplier with
+   `section43DiagonalTranslationFlat_complex_pair_eq_totalMomentum` and the
+   basis-vector finite-sum identity, giving exactly
+   `section43TotalMomentumFlat d N ξ μ`.
+3. Finish with
+   `section43TotalMomentumCoordMultiplierCLM_apply`.
+
+Production status, 2026-04-15: the helper
+
+```lean
+flatComplexPairing_hasTemperateGrowth
+```
+
+is implemented and exact-checks.  The theorem surfaces
+
+```lean
+physicsFourierFlatCLM_lineDeriv_eq_pairingMultiplier
+physicsFourierFlatCLM_lineDeriv_diagonalTranslation_eq_coordMultiplier
+```
+
+have been added in `Section43FourierLaplaceTransform.lean` as the active WIP
+frontier and currently close by `sorry`.  The remaining Lean work is not a
+mathematical gap in the route: it is the explicit transported-scaling
+simplification after applying `SchwartzMap.fourier_lineDerivOp_eq`.
+
+Only after this identity is available, use the existing translation
+difference quotient to prove coordinate annihilation.  For each `ξ`, the
+same identity can also be justified by scalar limit uniqueness:
+
+```lean
+physicsFourierFlatCLM
+  (t⁻¹ • (SCV.translateSchwartz (t • vμ) φflat - φflat)) ξ
+```
+
+has limit both `physicsFourierFlatCLM (∂_{vμ} φflat) ξ` and
+`((-Complex.I) • section43TotalMomentumCoordMultiplierCLM d N μ
+  (physicsFourierFlatCLM φflat)) ξ`, but the direct Fourier-derivative theorem
+above is the preferred production proof.
+
+In the annihilation proof, rewrite the translated quotient using linearity of
+`physicsFourierFlatCLM` and
+`physicsFourierFlatCLM_diagonalBasisTranslate_eq_basisPhaseCLM`:
+
+```lean
+t⁻¹ •
+  (section43TotalMomentumBasisPhaseCLM d N μ t
+      (physicsFourierFlatCLM φflat)
+    - physicsFourierFlatCLM φflat)
+```
+
+Then prove coordinate annihilation without a direct phase-difference theorem:
+
+```lean
+theorem tflat_annihilates_totalMomentumCoord_of_phase_invariant
+    (d N : ℕ) [NeZero d]
+    (Tflat : SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ →L[ℂ] ℂ)
+    (hphase :
+      ∀ (a : Fin (d + 1) → ℝ)
+        (K : SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ),
+        Tflat (section43TotalMomentumPhaseCLM d N a K) = Tflat K) :
+    ∀ (μ : Fin (d + 1))
+      (K : SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ),
+      Tflat (section43TotalMomentumCoordMultiplierCLM d N μ K) = 0
+```
+
+Proof transcript:
+
+1. Use `physicsFourierFlatCLM_surjective` to write
+   `K = physicsFourierFlatCLM φflat`.
+2. Apply `Tflat.continuous` to the translated difference quotient theorem:
+
+```lean
+Filter.Tendsto
+  (fun t : ℝ =>
+    Tflat (physicsFourierFlatCLM
+      (t⁻¹ • (SCV.translateSchwartz (t • vμ) φflat - φflat))))
+  (nhdsWithin 0 ({0}ᶜ))
+  (𝓝 (Tflat (physicsFourierFlatCLM (∂_{vμ} φflat))))
+```
+
+3. For every `t ≠ 0`, rewrite the source term by linearity and
+   `physicsFourierFlatCLM_diagonalTranslate_eq_phaseCLM`; `hphase` makes it
+   equal to `0`.
+4. Limit uniqueness gives
+   `Tflat (physicsFourierFlatCLM (∂_{vμ} φflat)) = 0`.
+5. Rewrite this with
+   `physicsFourierFlatCLM_lineDeriv_diagonalTranslation_eq_coordMultiplier`
+   and divide by `-Complex.I`.
+
 Lean proof transcript for
 `hasFourierSupportIn_totalMomentumZero_of_phase_invariant`:
 
@@ -12605,7 +12812,11 @@ have hK_zero :
 ```
 
 3. Prove the compact-support decomposition for functions that vanish on the
-   total-momentum hyperplane:
+   total-momentum hyperplane.  This cannot be replaced by a neighborhood
+   reciprocal-cutoff argument: `HasFourierSupportIn` uses
+   `Function.support`, not closed support, so a Schwartz test may vanish on
+   the hyperplane while being nonzero arbitrarily close to it.  The exact
+   hyperplane-division theorem is therefore necessary.
 
 ```lean
 theorem exists_eq_sum_totalMomentum_smul_of_vanishes_totalMomentumZero_of_hasCompactSupport
@@ -12626,10 +12837,11 @@ theorem exists_eq_sum_totalMomentum_smul_of_vanishes_totalMomentumZero_of_hasCom
 
    1. For `N = 0`, `section43TotalMomentumZeroFlat d 0 = Set.univ`, so
       `hK_zero` gives `K = 0`; choose all `H μ = 0`.
-   2. For `N = N' + 1`, build a continuous linear equivalence
+   2. For `N = N' + 1`, build the direct total-momentum/head-tail continuous
+      linear equivalence
 
 ```lean
-noncomputable def section43TotalMomentumHeadCLE
+noncomputable def section43TotalMomentumHeadTailCLE
     (d N' : ℕ) [NeZero d] :
     (Fin ((N' + 1) * (d + 1)) → ℝ) ≃L[ℝ]
       (Fin ((d + 1) + (N' * (d + 1))) → ℝ)
@@ -12637,10 +12849,39 @@ noncomputable def section43TotalMomentumHeadCLE
 
       whose first `d + 1` coordinates are
       `section43TotalMomentumFlat d (N' + 1) ξ`, and whose tail coordinates
-      are the remaining cumulative-tail variables.  Construct it by composing
-      `section43CumulativeTailMomentumCLE d (N' + 1)` with the existing
-      block flatten/split equivalences.
-   3. Pull `K` back along `section43TotalMomentumHeadCLE.symm`.  The pulled
+      are the original particle coordinates with particle `0` removed:
+
+```lean
+splitFirst (d + 1) (N' * (d + 1))
+  (section43TotalMomentumHeadTailCLE d N' ξ)
+    = section43TotalMomentumFlat d (N' + 1) ξ
+
+splitLast (d + 1) (N' * (d + 1))
+  (section43TotalMomentumHeadTailCLE d N' ξ)
+    = fun j => ξ (finProdFinEquiv (j.1.succ, j.2))
+```
+
+      Its inverse sends `(p, ηtail)` to the flat vector whose nonzero-tail
+      particles are `ηtail`, and whose particle `0` coordinate is
+
+```lean
+p μ - ∑ j : Fin N', ηtail (finProdFinEquiv (j, μ)).
+```
+
+      The left/right inverse proofs are coordinate extensionality plus the
+      finite-sum identity
+
+```lean
+∑ k : Fin (N' + 1), ξ (finProdFinEquiv (k, μ))
+  =
+ξ (finProdFinEquiv (0, μ)) +
+  ∑ j : Fin N', ξ (finProdFinEquiv (j.succ, μ)).
+```
+
+      This direct equivalence is preferable to a cumulative-tail equivalence:
+      it exposes the total-momentum hyperplane as the literal zero-head
+      section needed by the compact head-block division theorem.
+   3. Pull `K` back along `section43TotalMomentumHeadTailCLE.symm`.  The pulled
       function has zero head-section for every tail value.
    4. Prove the compact head-block decomposition theorem, using the existing
       `headCoordCoeff` and cutoff machinery from
@@ -12662,17 +12903,33 @@ theorem exists_eq_sum_headBlock_coord_smul_of_zeroHeadSection_of_hasCompactSuppo
             (G μ)
 ```
 
-      Implement it by induction on `p`.  The successor step writes
-      `F = R + unitBumpSchwartz.prependField (headSectionCLM _ F)`, where
-      `R` has zero first head-section.  Factor `R` by the first coordinate
-      using the existing
-      `exists_eq_coord_smul_of_headSection_zero_of_hasCompactSupport`; apply
-      the induction hypothesis to `headSectionCLM _ F` for the remaining
-      `p` head coordinates.  Compact support is preserved by
+      Implement it by induction on `p`.
+
+      Base `p = 0`: `zeroHeadBlockShift` is the identity on
+      `Fin (0 + q) → ℝ`, so the zero-head-section hypothesis gives `F = 0`;
+      choose the empty family.
+
+      Successor step `p = p' + 1`: after the usual `Nat.succ_add` reindexing,
+      set
+
+```lean
+h := headSectionCLM (p' + q) F
+R := F - unitBumpSchwartz.prependField h
+```
+
+      Then `h` has compact support and satisfies the zero-head-section
+      hypothesis for the remaining `p'` head coordinates; `R` has compact
+      support and zero first head-section.  Factor `R` by the first coordinate
+      using
+      `exists_eq_coord_smul_of_headSection_zero_of_hasCompactSupport`; factor
+      `h` by the induction hypothesis; prepend those tail coefficients back
+      with `unitBumpSchwartz.prependField`.  Compact support is preserved by
       `headSectionCLM`, `prependField`, and subtraction, exactly as in
       `exists_eq_sum_coord_smul_of_zero_of_hasCompactSupport`.
    5. Push the resulting `G μ` forward through
-      `section43TotalMomentumHeadCLE` to obtain the desired `H μ`.
+      `section43TotalMomentumHeadTailCLE` to obtain the desired `H μ`.  The
+      coordinate identity above rewrites the head-coordinate multipliers as
+      `section43TotalMomentumCoordMultiplierCLM d (N' + 1) μ`.
 
 4. Apply the derivative equations from step 1 to every summand in the compact
    decomposition and sum the results.  This gives `Tflat Kc = 0` for every
