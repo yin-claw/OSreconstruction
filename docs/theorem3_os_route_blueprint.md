@@ -13049,8 +13049,14 @@ Lean implementation notes for this split:
    total-momentum coordinate multiplier; finish the type-level scalar
    conversion pointwise with `Complex.real_smul` and `smul_eq_mul`.
 
-The next honest frontier is now the combined support theorem: an intersection
-step for closed support sets.
+The next honest frontier is now the combined support theorem.  Important
+correction, 2026-04-15: this cannot be a generic closed-set intersection lemma
+for the current `HasFourierSupportIn` predicate.
+
+Reason: `HasFourierSupportIn` is intentionally a pointwise
+`Function.support` predicate, so it proves an `EqOn` principle, not merely
+ordinary distributional closed-support containment.  For this strong predicate
+the naive theorem
 
 ```lean
 theorem hasFourierSupportIn_inter_of_closed
@@ -13064,73 +13070,121 @@ theorem hasFourierSupportIn_inter_of_closed
     HasFourierSupportIn (S ∩ H) Tflat
 ```
 
-Proof transcript:
+is false for arbitrary closed `S` and `H`.  A model obstruction is in `ℝ²`:
+let `S` be the `x`-axis, let `H` be the parabola `y = x^2`, and let
+`T φ = ∂ₓ φ (0,0)`.  If a smooth test vanishes pointwise on `S`, then its
+restriction to the `x`-axis is identically zero, so `T φ = 0`; the same holds
+for tests vanishing pointwise on `H`, because the tangent of `H` at the origin
+is also the `x`-axis.  But `S ∩ H = {(0,0)}`, and `φ(x,y)=x` vanishes
+pointwise on the intersection while `T φ = 1`.  Thus the old generic
+intersection statement would be unsound for the exact support interface used
+by production.
 
-1. It is enough to prove the result for compactly supported Schwartz tests and
-   then pass to arbitrary Schwartz tests by `bumpTruncationRadius` and
-   `SchwartzMap.tendsto_bump_truncation_nhds`, exactly as in the
-   total-momentum support theorem.
-2. For compactly supported `K` with
-   `Function.support K ∩ (S ∩ H) = ∅`, let
-   `Ksupp := tsupport (K : _ → ℂ)`.  This is compact.
-3. Use the compact two-closed-set partition lemma:
-
-```lean
-theorem exists_smooth_partition_of_compact_subset_union_open
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
-    (Kc : Set E) (hKc_compact : IsCompact Kc)
-    (U V : Set E) (hU_open : IsOpen U) (hV_open : IsOpen V)
-    (hcover : Kc ⊆ U ∪ V) :
-    ∃ χU χV : E → ℂ,
-      ContDiff ℝ ⊤ χU ∧ ContDiff ℝ ⊤ χV ∧
-      Function.HasTemperateGrowth χU ∧ Function.HasTemperateGrowth χV ∧
-      (∀ x ∈ Kc, χU x + χV x = 1) ∧
-      tsupport χU ⊆ U ∧
-      tsupport χV ⊆ V
-```
-
-   Proof transcript: cover the compact set by finitely many balls whose
-   closures lie in either `U` or `V`; choose smooth bumps by
-   `exists_contDiff_tsupport_subset`; sum the `U` bumps and `V` bumps; divide
-   by their total, which is strictly positive on `Kc`; extend the reciprocal
-   by a smooth cutoff on a neighborhood of `Kc`.  This is standard
-   finite-dimensional smooth partition-of-unity infrastructure and belongs
-   near `DistributionalUniqueness.lean`.
-
-   Instantiate it with `U := Hᶜ`, `V := Sᶜ`, and `Kc := tsupport K`.  The
-   cover follows from the support-disjoint hypothesis.  It gives smooth
-   cutoffs `χS χH` with
+The corrected proof obligation is an OS-specific smooth ideal decomposition
+for the actual Section 4.3 pair:
 
 ```lean
-χS + χH = 1 on Ksupp
-tsupport χS ⊆ Hᶜ
-tsupport χH ⊆ Sᶜ
+theorem section43SpectralIdealDecomposition
+    (d N : ℕ) [NeZero d]
+    (K : SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ)
+    (hK :
+      ∀ ξ, ξ ∈ section43WightmanSpectralRegion d N → K ξ = 0) :
+    ∃ KS KH : SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ,
+      K = KS + KH ∧
+      (∀ ξ, ξ ∈
+        DualConeFlat ((flattenCLEquivReal N (d + 1)) '' ForwardConeAbs d N) →
+        KS ξ = 0) ∧
+      (∀ ξ, ξ ∈ section43TotalMomentumZeroFlat d N → KH ξ = 0)
 ```
 
-   Use the existing smooth bump/Urysohn infrastructure from
-   `DistributionalUniqueness.lean`
-   (`exists_contDiff_tsupport_subset`) and compactness of `Ksupp`.
-4. Set
+This theorem is the exact algebraic/sheaf content needed by the strong
+support interface.  It says that the Schwartz ideal of tests vanishing on the
+spectral region is the sum of the ideal of tests vanishing on the dual cone and
+the ideal of tests vanishing on the total-momentum-zero hyperplane, for this
+particular OS geometry.  It is not a wrapper: without this decomposition, the
+available hypotheses `hdual` and `htotal` do not imply the desired pointwise
+`EqOn` support theorem.
+
+Once `section43SpectralIdealDecomposition` is proved, the combined support
+theorem is short and implementation-ready:
 
 ```lean
-KS := SchwartzMap.smulLeftCLM ℂ χS K
-KH := SchwartzMap.smulLeftCLM ℂ χH K
+theorem hasFourierSupportIn_wightmanSpectralRegion_of_dualCone_and_totalMomentumZero
+    (d N : ℕ) [NeZero d]
+    {Tflat : SchwartzMap (Fin (N * (d + 1)) → ℝ) ℂ →L[ℂ] ℂ}
+    (hdual :
+      HasFourierSupportIn
+        (DualConeFlat ((flattenCLEquivReal N (d + 1)) '' ForwardConeAbs d N))
+        Tflat)
+    (htotal :
+      HasFourierSupportIn (section43TotalMomentumZeroFlat d N) Tflat) :
+    HasFourierSupportIn (section43WightmanSpectralRegion d N) Tflat
 ```
 
-   Then `K = KS + KH`; `KS` is supported outside `H`, and `KH` is supported
-   outside `S`.
-5. Apply `htotal KS`, `hdual KH`, and linearity to get `Tflat K = 0`.
-6. For the OS route instantiate
+Proof transcript for the combined theorem:
+
+1. Introduce `K` and `hKsupp`, where
+   `hKsupp : ∀ ξ ∈ Function.support K, ξ ∉ section43WightmanSpectralRegion d N`.
+2. Convert `hKsupp` into pointwise vanishing on the spectral region:
 
 ```lean
-S := DualConeFlat ((flattenCLEquivReal N (d + 1)) '' ForwardConeAbs d N)
-H := section43TotalMomentumZeroFlat d N
+have hKzero :
+    ∀ ξ, ξ ∈ section43WightmanSpectralRegion d N → K ξ = 0 := by
+  intro ξ hξ
+  by_contra hne
+  exact hKsupp ξ (Function.mem_support.mpr hne) hξ
 ```
 
-   using closedness of `DualConeFlat` and of the kernel of
-   `section43TotalMomentumFlat`.
+3. Apply `section43SpectralIdealDecomposition d N K hKzero` and obtain
+   `K = KS + KH`, with `KS` vanishing on the dual cone and `KH` vanishing on
+   the total-momentum-zero hyperplane.
+4. Apply `hdual KS` and `htotal KH`.  Their support-disjointness obligations
+   are discharged exactly as in step 2, using the pointwise vanishing
+   conclusions from the decomposition.
+5. Rewrite `Tflat K` by `K = KS + KH`, use `map_add`, and close with the two
+   zero results.
 
-This generic support lemma belongs in `SCV/FourierSupportCone.lean`.
+The remaining proof-doc work is therefore not `hasFourierSupportIn_inter`; it
+is the decomposition theorem `section43SpectralIdealDecomposition`.
+
+Implementation blueprint for `section43SpectralIdealDecomposition`:
+
+1. First move to the cumulative-tail coordinates already used by
+   `section43FrequencyProjection`.  The required geometry is not an arbitrary
+   pair of closed sets; it is the pair consisting of the OS I positive-energy
+   cone and the total-momentum linear constraint.
+2. In those coordinates, prove the exact set-theoretic description of
+   `section43WightmanSpectralRegion`.  This must include the total-momentum
+   equation, not just the dual-cone implication
+   `section43CumulativeTailMomentumCLE_mem_positiveEnergy_of_mem_dualCone`.
+3. Prove the finite-dimensional smooth ideal decomposition for the resulting
+   normal-crossing model:
+
+```lean
+theorem smoothIdealDecomposition_positiveOrthant_totalMomentum
+    {a b : ℕ}
+    (F : SchwartzMap ((Fin a → ℝ) × (Fin b → ℝ)) ℂ)
+    (hF :
+      ∀ x, x ∈ positiveOrthantModel a b ∩ totalMomentumModel a b →
+        F x = 0) :
+    ∃ FS FH : SchwartzMap ((Fin a → ℝ) × (Fin b → ℝ)) ℂ,
+      F = FS + FH ∧
+      (∀ x, x ∈ positiveOrthantModel a b → FS x = 0) ∧
+      (∀ x, x ∈ totalMomentumModel a b → FH x = 0)
+```
+
+   This is the hard new mathematical item.  It is an ideal-sum theorem, not a
+   partition-of-compact-support theorem.  The proof must use the exact
+   normal-crossing geometry of the OS positive-energy inequalities and the
+   total-momentum linear equations.  A generic compact `tsupport` partition is
+   not sufficient, because `Function.support K` may be disjoint from
+   `S ∩ H` while `tsupport K` accumulates on `S ∩ H`.
+4. Transport this model decomposition back through the Section 4.3 coordinate
+   equivalences.  Compact support is not needed in the final statement; the
+   output pieces are Schwartz because the model theorem is stated directly on
+   Schwartz maps.
+5. Only after this theorem is implemented should production expose
+   `hasFourierSupportIn_wightmanSpectralRegion_of_dualCone_and_totalMomentumZero`.
 
 The OS-route helper is then:
 
@@ -13146,7 +13200,11 @@ theorem hasFourierSupportIn_inter_of_dualCone_and_totalMomentumZero
     HasFourierSupportIn (section43WightmanSpectralRegion d N) Tflat
 ```
 
-Only after these generic support lemmas exist does
+This name may be kept for downstream compatibility, but its proof must go
+through `section43SpectralIdealDecomposition`, not through the false generic
+closed-set intersection lemma.
+
+Only after this OS-specific decomposition/support helper exists does
 `bvt_W_flattened_distribution_hasFourierSupportIn_wightmanSpectralRegion`
 become a direct implementation:
 
