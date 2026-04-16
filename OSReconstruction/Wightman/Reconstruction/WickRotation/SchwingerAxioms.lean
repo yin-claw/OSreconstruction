@@ -126,21 +126,22 @@ theorem F_ext_on_translatedPET_translation_invariant (Wfn : WightmanFunctions d)
   convert this using 2
   ext k μ; ring
 
-/-- For a.e. x, F_ext(wick(x)) = F_ext_on_translatedPET(wick(x)).
+/-! **Note on the kernel extension gap.**
 
-    This is the kernel identity that bridges the raw F_ext evaluation
-    (well-defined on PET) with the TranslatedPET evaluation (well-defined a.e.).
-    It holds for all x where wick(x) ∈ PET. -/
-theorem F_ext_eq_translated_ae (Wfn : WightmanFunctions d) (n : ℕ) :
-    ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume,
-      ∀ (h : (fun k => wickRotatePoint (x k)) ∈ TranslatedPET d n),
-        (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k)) =
-        F_ext_on_translatedPET Wfn n (fun k => wickRotatePoint (x k)) h := by
-  -- This holds on PET (by F_ext_on_translatedPET_eq_on_PET).
-  -- PET complement ∩ TranslatedPET has measure zero for n ≤ d+1.
-  -- For n ≥ d+2, the identity may fail on a positive-measure set,
-  -- but the integral is unchanged (F_ext garbage outside PET doesn't contribute).
-  sorry
+`F_ext_on_translatedPET` is well-defined and translation-invariant on TranslatedPET
+(proved above, 0 sorrys). But the raw kernel `F_ext(wick(x))` used in
+`wickRotatedBoundaryPairing` (BHWTranslation.lean) evaluates F_ext at `wick(x)`,
+which may not be in PET for n ≥ d+2. The pointwise identity
+`F_ext(wick(x)) = F_ext_on_translatedPET(wick(x))` does NOT hold a.e. in general.
+
+The correct fix is to change `wickRotatedBoundaryPairing` to use
+`F_ext_on_translatedPET` as its kernel. This is an upstream change in
+BHWTranslation.lean that should be coordinated with xiyin.
+
+Until then, the `F_ext_*_invariant_translated` theorems below carry a sorry
+for the kernel bridge step. These sorrys are mathematically valid (the boundary
+pairing integral is insensitive to the kernel's values outside PET) but cannot
+be formalized without the upstream kernel change. -/
 
 /-- F_ext is translation-invariant on TranslatedPET.
 
@@ -423,30 +424,6 @@ private theorem measurePreserving_revPerm :
     (MeasureTheory.volume_measurePreserving_piCongrLeft
       (fun _ : Fin n => Fin (d + 1) → ℝ) Fin.revPerm).symm
 
-/-- Reflected-reversed Euclidean configurations also lie in PET a.e.
-
-    This closes the geometric side of Euclidean BHW reality: the target point
-    `wick(timeReflection(x ∘ rev))` is defined on the same full-measure PET set
-    as `wick(x)`. The remaining gap in `bhw_euclidean_reality_ae` is therefore
-    purely the analytic Schwarz-reflection argument. -/
-theorem ae_reflected_reversed_euclidean_points_in_permutedTube {d n : ℕ} [NeZero d] :
-    ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume,
-      (fun k => wickRotatePoint (timeReflection d (x (Fin.rev k)))) ∈
-        PermutedExtendedTube d n := by
-  let T : NPointDomain d n → NPointDomain d n :=
-    fun x => timeReflectionN d (fun i => x (Fin.rev i))
-  have hT :
-      MeasureTheory.MeasurePreserving T MeasureTheory.volume MeasureTheory.volume :=
-    (measurePreserving_timeReflectionN (d := d) (n := n)).comp
-      (measurePreserving_revPerm (d := d) (n := n))
-  rw [Filter.Eventually, MeasureTheory.mem_ae_iff]
-  let s : Set (NPointDomain d n) :=
-    {x | (fun k => wickRotatePoint (x k)) ∉ PermutedExtendedTube d n}
-  have hs_null : MeasureTheory.volume s = 0 := by
-    simpa [s] using
-      (MeasureTheory.mem_ae_iff.mp (ae_euclidean_points_in_permutedTube (d := d) (n := n)))
-  simpa [T, s, timeReflectionN] using hT.preimage_null hs_null
-
 /-- Reflected-reversed Euclidean configurations also lie in `TranslatedPET`
     a.e. This is the corrected W11 surface compatible with the basepoint issue. -/
 theorem ae_reflected_reversed_euclidean_points_in_translatedPET {d n : ℕ} [NeZero d] :
@@ -477,16 +454,6 @@ theorem ae_euclidean_points_in_translatedPET_overlap {d n : ℕ} [NeZero d] :
         TranslatedPET d n := by
   filter_upwards [ae_euclidean_points_in_translatedPET (d := d) (n := n),
     ae_reflected_reversed_euclidean_points_in_translatedPET (d := d) (n := n)] with x hx hx'
-  exact ⟨hx, hx'⟩
-
-/-- Original and reflected-reversed Euclidean configurations lie in PET simultaneously a.e. -/
-theorem ae_euclidean_points_in_permutedTube_overlap {d n : ℕ} [NeZero d] :
-    ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume,
-      (fun k => wickRotatePoint (x k)) ∈ PermutedExtendedTube d n ∧
-      (fun k => wickRotatePoint (timeReflection d (x (Fin.rev k)))) ∈
-        PermutedExtendedTube d n := by
-  filter_upwards [ae_euclidean_points_in_permutedTube (d := d) (n := n),
-    ae_reflected_reversed_euclidean_points_in_permutedTube (d := d) (n := n)] with x hx hx'
   exact ⟨hx, hx'⟩
 
 /-- The Schwinger functions satisfy rotation invariance (E1b).

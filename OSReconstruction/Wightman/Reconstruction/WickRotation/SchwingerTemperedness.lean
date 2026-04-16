@@ -589,9 +589,11 @@ theorem bhw_euclidean_kernel_measurable {d n : ℕ} [NeZero d]
   have hcomp_cont : ContinuousOn (fun x => F_ext (wick x)) S :=
     hF_cont.comp hwick_cont.continuousOn (Set.mapsTo_preimage wick _)
   -- Sᶜ has measure zero — uses deprecated ae_euclidean_points_in_permutedTube.
-  -- TODO: migrate to TranslatedPET once kernel is extended to TranslatedPET.
-  have hSc_null : MeasureTheory.volume Sᶜ = 0 :=
-    MeasureTheory.mem_ae_iff.mp ae_euclidean_points_in_permutedTube
+  -- Needs: Sᶜ has measure zero, where S = {x : wick(x) ∈ PET}.
+  -- The correct proof uses TranslatedPET (a.e. wick(x) ∈ TranslatedPET) plus
+  -- F_ext continuous on TranslatedPET (not just PET). This requires the upstream
+  -- kernel change to wickRotatedBoundaryPairing.
+  have hSc_null : MeasureTheory.volume Sᶜ = 0 := by sorry
   -- AEStronglyMeasurable on μ.restrict S
   have h_on_S : MeasureTheory.AEStronglyMeasurable
       (fun x => F_ext (wick x)) (MeasureTheory.volume.restrict S) :=
