@@ -104,6 +104,116 @@ noncomputable def section43FourierLaplace_timeIntegrandFDerivCLM
           (section43QSpatial (d := d) (n := n) m) := by
   simp [section43FourierLaplace_timeIntegrandFDerivCLM]
 
+/-- The explicit pointwise first-derivative CLM depends continuously on the
+real time variable `τ`. -/
+theorem continuous_section43FourierLaplace_timeIntegrandFDerivCLM
+    (d n : ℕ) [NeZero d]
+    (F : SchwartzNPoint d n)
+    (q : NPointDomain d n) :
+    Continuous fun τ : Fin n → ℝ =>
+      section43FourierLaplace_timeIntegrandFDerivCLM d n F q τ := by
+  refine (continuous_clm_apply (𝕜 := ℝ) (E := NPointDomain d n) (F := ℂ)).2 ?_
+  intro m
+  let Efun : (Fin n → ℝ) → ℂ := fun τ =>
+    Complex.exp
+      (-(∑ k : Fin n,
+        (τ k : ℂ) * (section43QTime (d := d) (n := n) q k : ℂ)))
+  let Pfun : (Fin n → ℝ) → ℂ := fun τ =>
+    partialFourierSpatial_fun (d := d) (n := n) F
+      (τ, section43QSpatial (d := d) (n := n) q)
+  let Dfun : (Fin n → ℝ) → ℂ := fun τ =>
+    (fderiv ℝ
+      (fun ξ : EuclideanSpace ℝ (Fin n × Fin d) =>
+        partialFourierSpatial_fun (d := d) (n := n) F (τ, ξ))
+      (section43QSpatial (d := d) (n := n) q))
+      (section43QSpatial (d := d) (n := n) m)
+  have hE : Continuous Efun := by
+    dsimp [Efun]
+    fun_prop
+  have hP : Continuous Pfun := by
+    let hbase : Continuous
+        (partialFourierSpatial_fun (d := d) (n := n) F) :=
+      continuous_partialFourierSpatial_fun (d := d) (n := n) F
+    let hpath : Continuous fun τ : Fin n → ℝ =>
+        (τ, section43QSpatial (d := d) (n := n) q) :=
+      continuous_id.prodMk continuous_const
+    simpa [Pfun] using hbase.comp hpath
+  have hD : Continuous Dfun := by
+    let hbase : Continuous
+        (fun p : (Fin n → ℝ) × EuclideanSpace ℝ (Fin n × Fin d) =>
+          fderiv ℝ
+            (fun ξ : EuclideanSpace ℝ (Fin n × Fin d) =>
+              partialFourierSpatial_fun (d := d) (n := n) F (p.1, ξ))
+            p.2 (section43QSpatial (d := d) (n := n) m)) :=
+      continuous_partialFourierSpatial_fun_spatialDerivative_apply
+        (d := d) (n := n) F (section43QSpatial (d := d) (n := n) m)
+    let hpath : Continuous fun τ : Fin n → ℝ =>
+        (τ, section43QSpatial (d := d) (n := n) q) :=
+      continuous_id.prodMk continuous_const
+    simpa [Dfun, Function.comp_apply] using hbase.comp hpath
+  have htime : Continuous fun τ : Fin n → ℝ =>
+      ∑ k : Fin n,
+        (section43QTime (d := d) (n := n) m k : ℝ) •
+          (-(τ k : ℂ) * Efun τ * Pfun τ) := by
+    refine continuous_finset_sum Finset.univ fun k _ => ?_
+    have hτk : Continuous fun τ : Fin n → ℝ => (τ k : ℂ) :=
+      Complex.continuous_ofReal.comp (continuous_apply k)
+    have hscalar : Continuous fun τ : Fin n → ℝ =>
+        -(τ k : ℂ) * Efun τ * Pfun τ :=
+      ((hτk.neg).mul hE).mul hP
+    exact continuous_const.smul hscalar
+  have hspace : Continuous fun τ : Fin n → ℝ => Efun τ • Dfun τ :=
+    hE.smul hD
+  have htarget : Continuous fun τ : Fin n → ℝ =>
+      let E : ℂ :=
+        Complex.exp
+          (-(∑ k : Fin n,
+            (τ k : ℂ) * (section43QTime (d := d) (n := n) q k : ℂ)))
+      let P : ℂ :=
+        partialFourierSpatial_fun (d := d) (n := n) F
+          (τ, section43QSpatial (d := d) (n := n) q)
+      (∑ k : Fin n,
+        (section43QTime (d := d) (n := n) m k : ℝ) •
+          (-(τ k : ℂ) * E * P)) +
+      E •
+        (fderiv ℝ
+          (fun ξ : EuclideanSpace ℝ (Fin n × Fin d) =>
+            partialFourierSpatial_fun (d := d) (n := n) F (τ, ξ))
+          (section43QSpatial (d := d) (n := n) q))
+          (section43QSpatial (d := d) (n := n) m) := by
+    simpa [Efun, Pfun, Dfun] using htime.add hspace
+  convert htarget using 1
+  ext τ
+  exact section43FourierLaplace_timeIntegrandFDerivCLM_apply d n F q m τ
+
+/-- The undifferentiated Section 4.3 Fourier-Laplace time integrand is
+continuous as a function of the real time variable `τ`. -/
+theorem continuous_section43FourierLaplace_timeIntegrand
+    (d n : ℕ) [NeZero d]
+    (F : SchwartzNPoint d n)
+    (q : NPointDomain d n) :
+    Continuous fun τ : Fin n → ℝ =>
+      Complex.exp
+        (-(∑ k : Fin n,
+          (τ k : ℂ) * (section43QTime (d := d) (n := n) q k : ℂ))) *
+      partialFourierSpatial_fun (d := d) (n := n) F
+        (τ, section43QSpatial (d := d) (n := n) q) := by
+  have hE : Continuous fun τ : Fin n → ℝ =>
+      Complex.exp
+        (-(∑ k : Fin n,
+          (τ k : ℂ) * (section43QTime (d := d) (n := n) q k : ℂ))) := by
+    fun_prop
+  have hP : Continuous fun τ : Fin n → ℝ =>
+      partialFourierSpatial_fun (d := d) (n := n) F
+        (τ, section43QSpatial (d := d) (n := n) q) := by
+    let hbase : Continuous (partialFourierSpatial_fun (d := d) (n := n) F) :=
+      continuous_partialFourierSpatial_fun (d := d) (n := n) F
+    let hpath : Continuous fun τ : Fin n → ℝ =>
+        (τ, section43QSpatial (d := d) (n := n) q) :=
+      continuous_id.prodMk continuous_const
+    simpa using hbase.comp hpath
+  exact hE.mul hP
+
 set_option backward.isDefEq.respectTransparency false in
 /-- First derivative candidate for the Section 4.3 Fourier-Laplace integral,
 as the Bochner integral of the CLM-valued pointwise derivative. -/
@@ -499,6 +609,75 @@ theorem hasCompactSupport_section43FourierLaplace_timeIntegrandFDerivCLM_of_comp
     section43FourierLaplace_timeIntegrandFDerivCLM_eq_zero_of_timeNorm_gt_bound
       d n f hf_ord hR_supp q τ hlt
   exact hτ_support hzero
+
+set_option backward.isDefEq.respectTransparency false in
+/-- For compact ordered support, the pointwise first-derivative CLM is
+integrable as a function of the time variable `τ`. -/
+theorem integrable_section43FourierLaplace_timeIntegrandFDerivCLM_of_compact
+    (d n : ℕ) [NeZero d]
+    (f : SchwartzNPoint d n)
+    (hf_ord :
+      tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (hf_compact : HasCompactSupport (f : NPointDomain d n → ℂ))
+    (q : NPointDomain d n) :
+    Integrable
+      (fun τ : Fin n → ℝ =>
+        section43FourierLaplace_timeIntegrandFDerivCLM d n
+          (section43DiffPullbackCLM d n ⟨f, hf_ord⟩) q τ) := by
+  exact (continuous_section43FourierLaplace_timeIntegrandFDerivCLM
+    (d := d) (n := n) (section43DiffPullbackCLM d n ⟨f, hf_ord⟩) q).integrable_of_hasCompactSupport
+      (hasCompactSupport_section43FourierLaplace_timeIntegrandFDerivCLM_of_compact
+        d n f hf_ord hf_compact q)
+
+/-- For compact ordered support, the undifferentiated Section 4.3
+Fourier-Laplace time integrand is compactly supported in `τ`. -/
+theorem hasCompactSupport_section43FourierLaplace_timeIntegrand_of_compact
+    (d n : ℕ) [NeZero d]
+    (f : SchwartzNPoint d n)
+    (hf_ord :
+      tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (hf_compact : HasCompactSupport (f : NPointDomain d n → ℂ))
+    (q : NPointDomain d n) :
+    HasCompactSupport fun τ : Fin n → ℝ =>
+      Complex.exp
+        (-(∑ k : Fin n,
+          (τ k : ℂ) * (section43QTime (d := d) (n := n) q k : ℂ))) *
+      partialFourierSpatial_fun (d := d) (n := n)
+        (section43DiffPullbackCLM d n ⟨f, hf_ord⟩)
+        (τ, section43QSpatial (d := d) (n := n) q) := by
+  rcases exists_section43DiffPullback_timeNorm_bound_of_compact_tsupport
+    d n f hf_ord hf_compact with ⟨R, _hR_nonneg, hR_supp⟩
+  refine HasCompactSupport.of_support_subset_isCompact
+    (isCompact_closedBall (0 : Fin n → ℝ) R) ?_
+  intro τ hτ_support
+  rw [Metric.mem_closedBall, dist_eq_norm, sub_zero]
+  by_contra hnot
+  have hlt : R < ‖τ‖ := lt_of_not_ge hnot
+  have hzero :=
+    partialFourierSpatial_section43DiffPullback_eq_zero_of_timeNorm_gt_bound
+      d n f hf_ord hR_supp τ (section43QSpatial (d := d) (n := n) q) hlt
+  exact hτ_support (by simp [hzero])
+
+/-- For compact ordered support, the undifferentiated Section 4.3
+Fourier-Laplace time integrand is integrable for every ambient `q`. -/
+theorem integrable_section43FourierLaplace_timeIntegrand_of_compact
+    (d n : ℕ) [NeZero d]
+    (f : SchwartzNPoint d n)
+    (hf_ord :
+      tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (hf_compact : HasCompactSupport (f : NPointDomain d n → ℂ))
+    (q : NPointDomain d n) :
+    Integrable fun τ : Fin n → ℝ =>
+      Complex.exp
+        (-(∑ k : Fin n,
+          (τ k : ℂ) * (section43QTime (d := d) (n := n) q k : ℂ))) *
+      partialFourierSpatial_fun (d := d) (n := n)
+        (section43DiffPullbackCLM d n ⟨f, hf_ord⟩)
+        (τ, section43QSpatial (d := d) (n := n) q) := by
+  exact (continuous_section43FourierLaplace_timeIntegrand
+    d n (section43DiffPullbackCLM d n ⟨f, hf_ord⟩) q).integrable_of_hasCompactSupport
+      (hasCompactSupport_section43FourierLaplace_timeIntegrand_of_compact
+        d n f hf_ord hf_compact q)
 
 /-- On time slices above a strict support margin, the Laplace exponential gains
 uniform damping by the total positive-energy time. -/

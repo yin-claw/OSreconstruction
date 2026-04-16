@@ -19637,6 +19637,23 @@ longer the product-rule calculation or the support cutoff; it is the boundedness
 / integrability / local-domination packet needed to pass the pointwise
 derivative under the Bochner integral.
 
+Update, 2026-04-16, continued: the fixed-`q` continuity and compact-support
+integrability packet below is now also implemented and exact-file checked in
+`Section43FourierLaplaceWitness.lean`.
+
+```lean
+continuous_section43FourierLaplace_timeIntegrandFDerivCLM
+continuous_section43FourierLaplace_timeIntegrand
+integrable_section43FourierLaplace_timeIntegrandFDerivCLM_of_compact
+hasCompactSupport_section43FourierLaplace_timeIntegrand_of_compact
+integrable_section43FourierLaplace_timeIntegrand_of_compact
+```
+
+The remaining first-derivative seam is now sharper: prove local domination of
+the derivative CLM uniformly for `q'` in a small ambient ball around `q`, and
+then invoke Mathlib's
+`hasFDerivAt_integral_of_dominated_of_fderiv_le`.
+
 The remaining first derivative proof should be implemented in the following
 order.
 
@@ -19676,8 +19693,8 @@ Compiled transcript:
    identify the product-rule derivative with
    `section43FourierLaplace_timeIntegrandFDerivCLM_apply`.
 
-Second prove the CLM-valued derivative is integrable at fixed `q` under compact
-ordered support:
+The following fixed-`q` CLM-valued derivative integrability theorem is already
+compiled under compact ordered support:
 
 ```lean
 theorem integrable_section43FourierLaplace_timeIntegrandFDerivCLM_of_compact
@@ -19693,30 +19710,16 @@ theorem integrable_section43FourierLaplace_timeIntegrandFDerivCLM_of_compact
           (section43DiffPullbackCLM d n ⟨f, hf_ord⟩) q τ)
 ```
 
-Transcript: obtain `R` from
-`exists_section43DiffPullback_timeNorm_bound_of_compact_tsupport`; split the
-time integral into the compact ball `‖τ‖ ≤ R` and its complement.  On the
-complement the CLM is now zero by the compiled theorem
-`section43FourierLaplace_timeIntegrandFDerivCLM_eq_zero_of_timeNorm_gt_bound`.
-On the compact ball, the remaining implementation choice is how to package
-boundedness:
+Compiled transcript: obtain `R` from
+`exists_section43DiffPullback_timeNorm_bound_of_compact_tsupport`, use the
+compiled theorem
+`section43FourierLaplace_timeIntegrandFDerivCLM_eq_zero_of_timeNorm_gt_bound`
+to package compact support in `τ`, prove CLM-valued continuity using
+`continuous_clm_apply`, `continuous_partialFourierSpatial_fun`, and
+`continuous_partialFourierSpatial_fun_spatialDerivative_apply`, then close with
+`Continuous.integrable_of_hasCompactSupport`.
 
-1. Preferred route: prove `τ ↦ section43FourierLaplace_timeIntegrandFDerivCLM
-   d n F q τ` is continuous as a CLM-valued map, using
-   `continuous_clm_apply`, `continuous_partialFourierSpatial_fun`, and
-   `continuous_partialFourierSpatial_fun_spatialDerivative_apply`; then apply
-   `Continuous.integrable_of_hasCompactSupport` with the compiled
-   `hasCompactSupport_section43FourierLaplace_timeIntegrandFDerivCLM_of_compact`.
-2. Fallback route if CLM-valued continuity creates definitional-equality
-   friction: prove the norm bound directly on the compact ball.  Apply the
-   derivative CLM to a unit vector `m`, use the explicit apply theorem to bound
-   the finite time sum and the spatial derivative term, take the supremum on
-   the compact τ-ball via the scalar continuity hooks, and close with the
-   finite-dimensional operator-norm comparison.  This is not a wrapper route:
-   the bound is exactly the compact-slab domination needed by the parametric
-   integral theorem.
-
-Third prove the local dominated derivative bound needed by Mathlib:
+Next prove the local dominated derivative bound needed by Mathlib:
 
 ```lean
 theorem section43FourierLaplace_timeIntegrandFDerivCLM_local_bound
@@ -19733,6 +19736,39 @@ exponential factor is bounded by
 `exp(R * (1 + ‖section43QTime q‖))`; the partial-Fourier terms are bounded by
 the already compiled uniform Schwartz estimates and their finite coordinate
 transport analogues.
+
+Implementation-ready local-domination plan:
+
+1. First prove joint continuity of the derivative CLM:
+
+```lean
+theorem continuous_section43FourierLaplace_timeIntegrandFDerivCLM_joint
+    (d n : ℕ) [NeZero d]
+    (F : SchwartzNPoint d n) :
+    Continuous fun p : NPointDomain d n × (Fin n → ℝ) =>
+      section43FourierLaplace_timeIntegrandFDerivCLM d n F p.1 p.2
+```
+
+Use the same proof as the fixed-`q` continuity theorem, replacing the path
+`τ ↦ (τ, section43QSpatial q)` by
+`p ↦ (p.2, section43QSpatial p.1)`.  The final extensionality step is again
+`section43FourierLaplace_timeIntegrandFDerivCLM_apply`.
+
+2. For fixed `q`, choose the local set
+   `s = Metric.closedBall q 1`.  From compact ordered support choose the
+   upper time-slab radius `R`.
+3. On the compact product
+   `Metric.closedBall q 1 ×ˢ Metric.closedBall (0 : Fin n → ℝ) R`, joint
+   continuity gives boundedness of
+   `(q', τ) ↦ ‖section43FourierLaplace_timeIntegrandFDerivCLM ... q' τ‖`.
+   Let the bound constant be `C`.
+4. Define the dominating scalar as
+   `fun τ => Set.indicator (Metric.closedBall (0 : Fin n → ℝ) R)
+      (fun _ => C) τ`.
+5. Integrability follows from compact support of the indicator on the finite
+   dimensional time space.  The pointwise domination is `0` off the slab by
+   `section43FourierLaplace_timeIntegrandFDerivCLM_eq_zero_of_timeNorm_gt_bound`
+   and bounded by `C` on the compact product.
 
 Recommended first derivative theorem shape:
 
