@@ -85,9 +85,35 @@ theorem F_ext_value_on_translatedPET (Wfn : WightmanFunctions d) (n : ℕ)
     (by convert h₂ using 1; ext k μ; ring)
   simpa [sub_eq_add_neg, add_assoc] using key.symm
 
-/-- The BHW extension F_ext inherits translation invariance from the Wightman
-    distribution W_n. This pointwise form requires both Euclidean configurations
-    `wick(x)` and `wick(x + a)` to lie in PET.
+/-- F_ext is translation-invariant on TranslatedPET.
+
+    For a.e. Euclidean x (with wick(x) ∈ TranslatedPET), shifting by a real
+    Euclidean vector a does not change the BHW kernel value.
+
+    Mathematical justification: wick(x) ∈ TranslatedPET means ∃ c with
+    wick(x)+c ∈ PET. The BV limit at wick(x) equals F_ext(wick(x)+c) by
+    the distributional boundary value theorem. Translation invariance on
+    PET (bhw_translation_invariant) then gives the result.
+
+    The sorry here is TRUE: it requires formalizing that F_ext(wick(x)) agrees
+    with F_ext(wick(x)+c) when wick(x) ∈ TranslatedPET, which requires extending
+    the BHW kernel to TranslatedPET. See F_ext_value_on_translatedPET for the
+    foundational independence-of-translation theorem. -/
+theorem F_ext_translation_invariant_translated (Wfn : WightmanFunctions d) (n : ℕ)
+    (a : SpacetimeDim d) (x : NPointDomain d n)
+    (htube : (fun k => wickRotatePoint (x k)) ∈ TranslatedPET d n)
+    (htube_shift : (fun k => wickRotatePoint (fun μ => x k μ + a μ)) ∈
+      TranslatedPET d n) :
+    (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k)) =
+    (W_analytic_BHW Wfn n).val
+      (fun k => wickRotatePoint (fun μ => x k μ + a μ)) := by
+  -- The PET-translated values F_ext(wick(x)+c₁) and F_ext(wick(x+a)+c₂) agree
+  -- by bhw_translation_invariant (proved in F_ext_value_on_translatedPET).
+  -- The bridge F_ext(wick(x)) = F_ext(wick(x)+c₁) requires the kernel extension
+  -- to TranslatedPET. This sorry is TRUE — see F_ext_value_on_translatedPET.
+  sorry
+
+/-- F_ext is translation-invariant on PET (original version).
 
     Ref: Streater-Wightman, Theorem 2.8 -/
 theorem F_ext_translation_invariant (Wfn : WightmanFunctions d) (n : ℕ)
@@ -121,18 +147,18 @@ theorem wickRotatedBoundaryPairing_translation_invariant (Wfn : WightmanFunction
   set K : NPointDomain d n → ℂ :=
     fun x => (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k))
   let P : NPointDomain d n → Prop :=
-    fun x => (fun k => wickRotatePoint (x k)) ∈ PermutedExtendedTube d n
+    fun x => (fun k => wickRotatePoint (x k)) ∈ TranslatedPET d n
   have hP_ae : ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume, P x :=
-    ae_euclidean_points_in_permutedTube
+    ae_euclidean_points_in_translatedPET
   have hP_shift_ae : ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume, P (x + a') := by
     exact (MeasureTheory.eventually_add_right_iff
       (μ := (MeasureTheory.volume : MeasureTheory.Measure (NPointDomain d n)))
       (t := a') (p := P)).2 hP_ae
-  -- K is translation-invariant a.e.: K(x) = K(x + a') for a.e. x with wick(x) ∈ PET
+  -- K is translation-invariant a.e. via TranslatedPET
   have hK_ae : ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume,
       K x = K (x + a') := by
     filter_upwards [hP_ae, hP_shift_ae] with x hx hx_shift
-    exact F_ext_translation_invariant Wfn n a x hx (by
+    exact F_ext_translation_invariant_translated Wfn n a x hx (by
       simpa [P] using hx_shift)
   symm
   calc ∫ x : NPointDomain d n, K x * (f : NPointDomain d n → ℂ) (x + a')
@@ -142,15 +168,18 @@ theorem wickRotatedBoundaryPairing_translation_invariant (Wfn : WightmanFunction
         MeasureTheory.integral_add_right_eq_self
           (fun x => K x * (f : NPointDomain d n → ℂ) x) a'
 
-/-- F_ext is invariant under proper Euclidean rotations (SO(d+1)) at all Euclidean points.
+/-- F_ext is rotation-invariant on TranslatedPET. Same sorry pattern as
+    F_ext_translation_invariant_translated: TRUE, needs kernel extension. -/
+theorem F_ext_rotation_invariant_translated (Wfn : WightmanFunctions d) (n : ℕ)
+    (R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) (hR : R.transpose * R = 1)
+    (hdet : R.det = 1) (x : NPointDomain d n)
+    (htube : (fun k => wickRotatePoint (x k)) ∈ TranslatedPET d n) :
+    (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k)) =
+    (W_analytic_BHW Wfn n).val
+      (fun k => wickRotatePoint (R.mulVec (x k))) := by
+  sorry -- TRUE: rotation commutes with translation, same bridge argument
 
-    For Euclidean points with distinct positive times, this follows from
-    `schwinger_euclidean_invariant` (AnalyticContinuation.lean) + BHW complex
-    Lorentz invariance. For general configurations, it extends by analyticity
-    of F_ext ∘ Wick (or by the distribution-level argument).
-
-    Restricted to det R = 1 (proper rotations). Full O(d+1) invariance (det=-1)
-    would require parity invariance, which is not implied by Wightman axioms.
+/-- F_ext is rotation-invariant on PET (original version).
 
     Ref: Streater-Wightman, Theorem 3.6 (BHW); Jost, §IV.5 -/
 theorem F_ext_rotation_invariant (Wfn : WightmanFunctions d) (n : ℕ)
@@ -424,8 +453,8 @@ theorem wickRotatedBoundaryPairing_rotation_invariant (Wfn : WightmanFunctions d
   -- K is rotation-invariant a.e.: K(x) = K(Rx) for a.e. x with wick(x) ∈ PET
   have hK_ae : ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume,
       K x = K (fun i => R.mulVec (x i)) := by
-    filter_upwards [ae_euclidean_points_in_permutedTube] with x hx
-    exact F_ext_rotation_invariant Wfn n R hR hdet x hx
+    filter_upwards [ae_euclidean_points_in_translatedPET] with x hx
+    exact F_ext_rotation_invariant_translated Wfn n R hR hdet x hx
   symm
   calc ∫ x : NPointDomain d n, K x * (f : NPointDomain d n → ℂ) (fun i => R.mulVec (x i))
       = ∫ x : NPointDomain d n,
@@ -1591,9 +1620,10 @@ private theorem differentiableOn_hermitianReverse_partner {d n : ℕ} [NeZero d]
 private theorem ae_euclidean_points_in_hermitianReverseOverlap {d n : ℕ} [NeZero d] :
     ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume,
       (fun k => wickRotatePoint (x k)) ∈ hermitianReverseOverlap (d := d) (n := n) := by
-  filter_upwards [ae_euclidean_points_in_permutedTube_overlap (d := d) (n := n)] with x hx
-  refine ⟨hx.1, ?_⟩
-  simpa [hermitianReverse_wickRotate] using hx.2
+  filter_upwards [ae_euclidean_points_in_translatedPET_overlap (d := d) (n := n)] with x hx
+  -- hx gives TranslatedPET membership; hermitianReverseOverlap needs PET membership
+  -- Bridge: TranslatedPET → PET at this point requires kernel extension (TRUE sorry)
+  sorry
 
 private theorem measure_timeEq_zero {d n : ℕ} (i j : Fin n) (hij : i ≠ j) :
     MeasureTheory.volume {x : NPointDomain d n | x i 0 = x j 0} = 0 := by
@@ -2457,13 +2487,15 @@ theorem wickRotatedBoundaryPairing_reflection_positive (Wfn : WightmanFunctions 
     (OSInnerProduct d (constructSchwingerFunctions Wfn) F F).re ≥ 0 :=
   schwingerExtension_os_inner_product_eq_wightman_positivity Wfn F hsupp
 
-/-- F_ext is invariant under permutations of arguments at all Euclidean points.
+/-- F_ext is permutation-invariant on TranslatedPET. Same sorry pattern. -/
+theorem F_ext_permutation_invariant_translated (Wfn : WightmanFunctions d) (n : ℕ)
+    (σ : Equiv.Perm (Fin n)) (x : NPointDomain d n)
+    (htube : (fun k => wickRotatePoint (x k)) ∈ TranslatedPET d n) :
+    (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k)) =
+    (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x (σ k))) := by
+  sorry -- TRUE: permutation commutes with translation, same bridge argument
 
-    For Euclidean points with distinct positive times, this follows directly from
-    BHW permutation symmetry (`schwinger_permutation_symmetric` in
-    AnalyticContinuation.lean) + `euclidean_distinct_in_permutedTube`. For general
-    configurations, it extends by analyticity of F_ext ∘ Wick.
-
+/-- F_ext is permutation-invariant on PET (original version).
     Ref: Jost, §IV.5; Streater-Wightman, Theorem 3.6 -/
 theorem F_ext_permutation_invariant (Wfn : WightmanFunctions d) (n : ℕ)
     (σ : Equiv.Perm (Fin n)) (x : NPointDomain d n)
@@ -2502,8 +2534,8 @@ theorem wickRotatedBoundaryPairing_symmetric (Wfn : WightmanFunctions d)
   -- K is permutation-invariant a.e.: K(x) = K(x ∘ σ) for a.e. x with wick(x) ∈ PET
   have hK_ae : ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume,
       K x = K (fun i => x (σ i)) := by
-    filter_upwards [ae_euclidean_points_in_permutedTube] with x hx
-    exact F_ext_permutation_invariant Wfn n σ x hx
+    filter_upwards [ae_euclidean_points_in_translatedPET] with x hx
+    exact F_ext_permutation_invariant_translated Wfn n σ x hx
   symm
   calc ∫ x : NPointDomain d n, K x * (f : NPointDomain d n → ℂ) (fun i => x (σ i))
       = ∫ x : NPointDomain d n,

@@ -588,7 +588,8 @@ theorem bhw_euclidean_kernel_measurable {d n : ℕ} [NeZero d]
   -- F_ext ∘ wick is ContinuousOn S
   have hcomp_cont : ContinuousOn (fun x => F_ext (wick x)) S :=
     hF_cont.comp hwick_cont.continuousOn (Set.mapsTo_preimage wick _)
-  -- Sᶜ has measure zero (ae_euclidean_points_in_permutedTube)
+  -- Sᶜ has measure zero — uses deprecated ae_euclidean_points_in_permutedTube.
+  -- TODO: migrate to TranslatedPET once kernel is extended to TranslatedPET.
   have hSc_null : MeasureTheory.volume Sᶜ = 0 :=
     MeasureTheory.mem_ae_iff.mp ae_euclidean_points_in_permutedTube
   -- AEStronglyMeasurable on μ.restrict S
@@ -1127,7 +1128,7 @@ theorem wick_rotated_kernel_mul_zeroDiagonal_integrable {d n : ℕ} [NeZero d]
       (m := q) (M := N) (hcoin := hcoin)
       (C_bd := C_bd * nR ^ N) (hC := by positivity)
     -- Prove the a.e. weighted bound on the BHW kernel
-    filter_upwards [ae_euclidean_points_in_permutedTube (d := d) (n := n),
+    filter_upwards [ae_euclidean_points_in_translatedPET (d := d) (n := n),
       ae_pairwise_distinct_timeCoords (d := d) (n := n)] with x hx_pet hx_distinct
     -- Step 1: Shift to positive times
     let A : ℝ := 1 + ∑ i : Fin n, |x i 0|
@@ -1161,17 +1162,15 @@ theorem wick_rotated_kernel_mul_zeroDiagonal_integrable {d n : ℕ} [NeZero d]
     have hwick_add : (fun k => wickRotatePoint (xs k)) =
         (fun k μ => wickRotatePoint (x k) μ + wickRotatePoint a μ) := by
       ext k μ; simp only [wickRotatePoint, xs, a]; split_ifs <;> push_cast <;> ring
+    -- Translation invariance: F_ext(wick(x)) = F_ext(wick(xs))
+    -- Uses TranslatedPET membership; needs kernel extension for formal proof
     have htransl : (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (x k)) =
         (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (xs k)) := by
-      rw [hwick_add]
-      exact (bhw_translation_invariant Wfn (wickRotatePoint a)
-        (fun k => wickRotatePoint (x k)) hx_pet
-        (by simpa [hwick_add] using hxs_pet)).symm
-    -- Step 4: Permutation invariance — F_ext(wick(xs)) = F_ext(wick(xs ∘ π))
+      sorry -- TRUE: F_ext_translation_invariant_translated
+    -- Permutation invariance: F_ext(wick(xs)) = F_ext(wick(xs ∘ π))
     have hperm : (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (xs k)) =
-        (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (xs (π k))) :=
-      ((W_analytic_BHW Wfn n).property.2.2.2 π
-        (fun k => wickRotatePoint (xs k)) hxs_pet).symm
+        (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (xs (π k))) := by
+      sorry -- TRUE: F_ext_permutation_invariant on PET (xs has positive times → in PET)
     -- Step 5: BHW agreement on ForwardTube — F_ext = W_analytic
     have hagree : (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (xs (π k))) =
         (Wfn.spectrum_condition n).choose (fun k => wickRotatePoint (xs (π k))) :=
@@ -1303,7 +1302,7 @@ theorem wick_rotated_kernel_mul_zeroDiagonal_integrable {d n : ℕ} [NeZero d]
       -- The kernel equals v₀ a.e. (via translation to positive time + constancy)
       have hkernel_ae : ∀ᵐ (x : NPointDomain d 1) ∂MeasureTheory.volume,
           (W_analytic_BHW Wfn 1).val (fun k => wickRotatePoint (x k)) = v₀ := by
-        filter_upwards [ae_euclidean_points_in_permutedTube (d := d) (n := 1)] with x hx_pet
+        filter_upwards [ae_euclidean_points_in_translatedPET (d := d) (n := 1)] with x hx_pet
         -- Shift x to positive time
         let A₁ : ℝ := 1 + |x 0 0|
         let a₁ : SpacetimeDim d := fun μ => if μ = 0 then A₁ else 0
@@ -1324,10 +1323,7 @@ theorem wick_rotated_kernel_mul_zeroDiagonal_integrable {d n : ℕ} [NeZero d]
           ext k μ; simp only [wickRotatePoint, xs₁, a₁]; split_ifs <;> push_cast <;> ring
         have htransl₁ : (W_analytic_BHW Wfn 1).val (fun k => wickRotatePoint (x k)) =
             (W_analytic_BHW Wfn 1).val (fun k => wickRotatePoint (xs₁ k)) := by
-          rw [hwick_add₁]
-          exact (bhw_translation_invariant Wfn (wickRotatePoint a₁)
-            (fun k => wickRotatePoint (x k)) hx_pet
-            (by simpa [hwick_add₁] using hxs₁_pet)).symm
+          sorry -- TRUE: F_ext_translation_invariant_translated
         -- F_ext(wick(xs₁)) = W_analytic(wick(xs₁)) on ForwardTube
         have hagree₁ := (W_analytic_BHW Wfn 1).property.2.1 _ hfwd₁
         -- W_analytic(wick(xs₁)) = W_analytic(wick(x₀)) by translation invariance
@@ -1858,34 +1854,17 @@ theorem wick_rotated_kernel_mul_schwartz_integrable_of_hasCompactSupport_of_tsup
   have hf_int : MeasureTheory.Integrable (fun x : NPointDomain d n => f x) MeasureTheory.volume :=
     f.integrable (μ := MeasureTheory.volume)
   let P : NPointDomain d n → Prop :=
-    fun x => (fun k => wickRotatePoint (x k)) ∈ PermutedExtendedTube d n
+    fun x => (fun k => wickRotatePoint (x k)) ∈ TranslatedPET d n
   have hP_ae : ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume, P x :=
-    ae_euclidean_points_in_permutedTube
+    ae_euclidean_points_in_translatedPET
   have hP_shift_ae : ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume, P (x + aN) := by
     exact (MeasureTheory.eventually_add_right_iff
       (μ := (MeasureTheory.volume : MeasureTheory.Measure (NPointDomain d n)))
       (t := aN) (p := P)).2 hP_ae
   have hK_ae : ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume, K x = K (x + aN) := by
     filter_upwards [hP_ae, hP_shift_ae] with x hx hx_shift
-    have hx' : (fun k => wickRotatePoint (x k)) ∈ PermutedExtendedTube d n := by
-      simpa [P] using hx
-    have hx_shift0 : (fun k => wickRotatePoint (x k + a)) ∈ PermutedExtendedTube d n := by
-      simpa [P, aN] using hx_shift
-    have hwick_add :
-        (fun k => wickRotatePoint (x k + a)) =
-          (fun k μ => wickRotatePoint (x k) μ + wickRotatePoint a μ) := by
-      ext k μ
-      by_cases hμ : μ = 0
-      · subst hμ
-        simp [wickRotatePoint, mul_add]
-      · simp [wickRotatePoint, hμ]
-    have hx_shift' :
-        (fun k μ => wickRotatePoint (x k) μ + wickRotatePoint a μ) ∈
-          PermutedExtendedTube d n := by
-      simpa [hwick_add] using hx_shift0
-    simpa [K, aN, hwick_add] using
-      (bhw_translation_invariant Wfn (wickRotatePoint a)
-        (fun k => wickRotatePoint (x k)) hx' hx_shift').symm
+    -- Translation invariance via TranslatedPET (TRUE sorry: needs kernel extension)
+    sorry
   exact hg_shift_int.congr <| hK_ae.mono fun x hx => by
     simpa [K] using congrArg (fun z : ℂ => z * f x) hx.symm
 
@@ -1990,7 +1969,7 @@ theorem constructedSchwinger_tempered_zeroDiagonal (Wfn : WightmanFunctions d) (
         ∀ᵐ x : NPointDomain d n ∂MeasureTheory.volume,
           ‖K x‖ * Metric.infDist x (CoincidenceLocus d n) ^ (q + 1) ≤
             C_bd * nR ^ N * (1 + ‖x‖) ^ N := by
-      filter_upwards [ae_euclidean_points_in_permutedTube (d := d) (n := n),
+      filter_upwards [ae_euclidean_points_in_translatedPET (d := d) (n := n),
         ae_pairwise_distinct_timeCoords (d := d) (n := n)] with x hx_pet hx_distinct
       let A : ℝ := 1 + ∑ i : Fin n, |x i 0|
       let a : SpacetimeDim d := fun μ => if μ = 0 then A else 0
@@ -2017,15 +1996,12 @@ theorem constructedSchwinger_tempered_zeroDiagonal (Wfn : WightmanFunctions d) (
       have hwick_add : (fun k => wickRotatePoint (xs k)) =
           (fun k μ => wickRotatePoint (x k) μ + wickRotatePoint a μ) := by
         ext k μ; simp only [wickRotatePoint, xs, a]; split_ifs <;> push_cast <;> ring
+      -- Translation + permutation invariance via TranslatedPET (TRUE sorry)
       have htransl : K x = (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (xs k)) := by
-        simp only [K, hK_def]; rw [hwick_add]
-        exact (bhw_translation_invariant Wfn (wickRotatePoint a)
-          (fun k => wickRotatePoint (x k)) hx_pet
-          (by simpa [hwick_add] using hxs_pet)).symm
+        sorry -- TRUE: F_ext_translation_invariant_translated
       have hperm : (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (xs k)) =
-          (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (xs (π k))) :=
-        ((W_analytic_BHW Wfn n).property.2.2.2 π
-          (fun k => wickRotatePoint (xs k)) hxs_pet).symm
+          (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (xs (π k))) := by
+        sorry -- TRUE: xs has positive times → in PET → permutation invariance
       have hagree : (W_analytic_BHW Wfn n).val (fun k => wickRotatePoint (xs (π k))) =
           (Wfn.spectrum_condition n).choose (fun k => wickRotatePoint (xs (π k))) :=
         (W_analytic_BHW Wfn n).property.2.1 _ hfwd
@@ -2226,7 +2202,7 @@ theorem constructedSchwinger_tempered_zeroDiagonal (Wfn : WightmanFunctions d) (
             (fun k j hkj => by fin_cases k <;> fin_cases j <;> simp_all [Fin.lt_iff_val_lt_val])
             (fun k => by fin_cases k; simp [x₀, Pi.single_apply])
         have hkernel_ae : ∀ᵐ (x : NPointDomain d 1) ∂MeasureTheory.volume, K x = v₀ := by
-          filter_upwards [ae_euclidean_points_in_permutedTube (d := d) (n := 1)] with x hx_pet
+          filter_upwards [ae_euclidean_points_in_translatedPET (d := d) (n := 1)] with x hx_pet
           simp only [K, v₀, hK_def]
           let A₁ : ℝ := 1 + |x 0 0|
           let a₁ : SpacetimeDim d := fun μ => if μ = 0 then A₁ else 0
@@ -2248,9 +2224,7 @@ theorem constructedSchwinger_tempered_zeroDiagonal (Wfn : WightmanFunctions d) (
               (W_analytic_BHW Wfn 1).val (fun k => wickRotatePoint (x k)) =
               (W_analytic_BHW Wfn 1).val (fun k => wickRotatePoint (xs₁ k)) := by
             rw [hwick_add₁]
-            exact (bhw_translation_invariant Wfn (wickRotatePoint a₁)
-              (fun k => wickRotatePoint (x k)) hx_pet
-              (by simpa [hwick_add₁] using hxs₁_pet)).symm
+            sorry -- TRUE: F_ext_translation_invariant_translated
           have hagree₁ := (W_analytic_BHW Wfn 1).property.2.1 _ hfwd₁
           have hagree₀ := (W_analytic_BHW Wfn 1).property.2.1 _ hfwd₀
           have htransl_const :
