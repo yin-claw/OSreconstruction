@@ -1221,40 +1221,91 @@ theorem translatedPET_translate_iff {d n : ℕ} [NeZero d]
   · intro hz
     exact translatedPET_translate (d := d) (n := n) hz c
 
+/-- The coincident-time hyperplane `{x : x i 0 = x j 0}` is Haar-null for
+    `i ≠ j`. -/
+private theorem measure_timeEq_zero_local {d n : ℕ} (i j : Fin n) (hij : i ≠ j) :
+    MeasureTheory.volume
+      {x : NPointDomain d n | x i 0 = x j 0} = 0 := by
+  let L : NPointDomain d n →ₗ[ℝ] ℝ :=
+    { toFun := fun x => x i 0 - x j 0
+      map_add' := by intro x y; simp; ring
+      map_smul' := by intro a x; simp; ring }
+  have hset :
+      {x : NPointDomain d n | x i 0 = x j 0} = (LinearMap.ker L : Set _) := by
+    ext x; simp [L, LinearMap.mem_ker, sub_eq_zero]
+  have hker_ne_top : LinearMap.ker L ≠ ⊤ := by
+    intro htop
+    have hzero : L = 0 := LinearMap.ker_eq_top.mp htop
+    have hval : L (fun k μ => if k = i ∧ μ = 0 then (1 : ℝ) else 0) = 0 := by
+      simpa using congrArg
+        (fun f => f (fun k μ => if k = i ∧ μ = 0 then (1 : ℝ) else 0)) hzero
+    have hji : j ≠ i := fun h => hij h.symm
+    have : (1 : ℝ) = 0 := by simp [L, hji] at hval
+    norm_num at this
+  rw [hset]
+  exact MeasureTheory.Measure.addHaar_submodule MeasureTheory.volume
+    (LinearMap.ker L) hker_ne_top
+
+/-- The set of configurations with at least one pair of coincident times is a
+    finite union of hyperplanes, hence Haar-null. -/
+private theorem measure_timeCoinc_zero {d n : ℕ} [NeZero d] :
+    MeasureTheory.volume
+      {x : NPointDomain d n | ∃ i j : Fin n, i ≠ j ∧ x i 0 = x j 0} = 0 := by
+  classical
+  set S : Set (NPointDomain d n) :=
+    {x | ∃ i j : Fin n, i ≠ j ∧ x i 0 = x j 0}
+  have hS_cover :
+      S ⊆ ⋃ p : {p : Fin n × Fin n // p.1 ≠ p.2}, {x | x p.1.1 0 = x p.1.2 0} := by
+    intro x hx
+    obtain ⟨i, j, hij, heq⟩ := hx
+    exact Set.mem_iUnion.mpr ⟨⟨(i, j), hij⟩, heq⟩
+  refine MeasureTheory.measure_mono_null hS_cover ?_
+  apply MeasureTheory.measure_iUnion_null
+  rintro ⟨⟨i, j⟩, hij⟩
+  exact measure_timeEq_zero_local (d := d) (n := n) i j hij
+
 /-- **A.e. Wick-rotated Euclidean configuration lies in the translated PET.**
 
-    **STATUS: this declaration is currently an `axiom`, not a `theorem`.** The
-    statement replaces the earlier (FALSE for `n ≥ d+2`) claim that
-    `wick⁻¹(PermutedExtendedTube)` has full measure (see `W11Counterexample.lean`
-    and `docs/w11_basepoint_counterexample.md`). The `TranslatedPET` surface is
-    strictly weaker (it relaxes the k=0 basepoint condition), so a measure-zero
-    complement is consistent with the known physics. A full Lean proof is
-    **not yet supplied in this file** and is tracked as future work.
-
-    Proof sketch (to be formalized):
-    (1) Non-coincident: the set of `x` with two coincident times has measure 0
-        (covered by `measure_timeEq_zero` in `SchwingerTemperedness.lean`).
-    (2) Generic spatial projection: for a.e. `x`, there is a spatial direction
-        `v` along which the 2D projections `(τ_k, x_k · v)` are pairwise
-        distinct and nonzero (codimension ≥ 1).
-    (3) The `sinusoid_separation` lemma (`GeneralResults/SinusoidSeparation.lean`,
-        already sorry-free) then provides a boost angle making all consecutive
-        imaginary differences positive and in V⁺.
-    (4) A uniform imaginary-time translation fixes the k=0 basepoint condition,
-        yielding membership in `TranslatedPET`.
-
-    **Mathematical justification:** the standard (difference-only) PET contains
-    all non-coincident Wick-rotated Euclidean configurations (Jost §IV.4). Our
-    `TranslatedPET` is equivalent to the standard PET since translation preserves
-    the Wightman function value by translation invariance (R3).
-
-    Downstream consumers (`ae_euclidean_points_in_translatedPET`, and through it
-    the new `F_ext_on_translatedPET_total` kernel) currently inherit this
-    axiom. -/
-axiom wickRotation_in_translatedPET_null {d n : ℕ} [NeZero d] :
+    Proof strategy: if `x` has pairwise distinct times (a full-measure condition),
+    shift by `a = (A, 0, …, 0)` where `A = 1 + Σ|x_i 0|`. Then `x + a` has
+    strictly positive pairwise-distinct times, so `wick(x + a) ∈ PET` by
+    `euclidean_distinct_in_permutedTube`. Since `wick(x + a) = wick(x) + wick(a)`
+    (with `wick(a) = (iA, 0, …, 0)`), the vector `c := wick(a)` witnesses
+    `wick(x) ∈ TranslatedPET`. -/
+theorem wickRotation_in_translatedPET_null {d n : ℕ} [NeZero d] :
     MeasureTheory.volume
       {x : NPointDomain d n |
-        (fun k => wickRotatePoint (x k)) ∉ TranslatedPET d n} = 0
+        (fun k => wickRotatePoint (x k)) ∉ TranslatedPET d n} = 0 := by
+  refine MeasureTheory.measure_mono_null ?_ (measure_timeCoinc_zero (d := d) (n := n))
+  intro x hx
+  simp only [Set.mem_setOf_eq] at hx ⊢
+  by_contra hdist_all
+  push_neg at hdist_all
+  -- hdist_all : ∀ i j, i ≠ j → x i 0 ≠ x j 0
+  apply hx
+  -- Goal: (fun k => wickRotatePoint (x k)) ∈ TranslatedPET d n
+  -- Construct the shift a = (A, 0, ..., 0)
+  let A : ℝ := 1 + ∑ i : Fin n, |x i 0|
+  let a : SpacetimeDim d := fun μ => if μ = 0 then A else 0
+  let xs : NPointDomain d n := fun k μ => x k μ + a μ
+  have hpos : ∀ i : Fin n, xs i 0 > 0 := by
+    intro i
+    have hi_le : |x i 0| ≤ ∑ j : Fin n, |x j 0| :=
+      Finset.single_le_sum (fun j _ => abs_nonneg (x j 0)) (Finset.mem_univ i)
+    have : 0 < x i 0 + A := by dsimp [A]; linarith [neg_abs_le (x i 0)]
+    simpa [xs, a] using this
+  have hdistinct_xs : ∀ i j : Fin n, i ≠ j → xs i 0 ≠ xs j 0 := by
+    intro i j hij
+    simpa [xs, a] using hdist_all i j hij
+  have hxs_pet : (fun k => wickRotatePoint (xs k)) ∈ PermutedExtendedTube d n :=
+    euclidean_distinct_in_permutedTube xs hdistinct_xs hpos
+  have hwick_add :
+      (fun k => wickRotatePoint (xs k)) =
+        (fun k μ => wickRotatePoint (x k) μ + wickRotatePoint a μ) := by
+    ext k μ
+    simp only [xs, a, wickRotatePoint]
+    split_ifs <;> push_cast <;> ring
+  exact ⟨wickRotatePoint a, hwick_add ▸ hxs_pet⟩
 
 /-- **Almost every Euclidean Wick-rotated configuration lies in the translated PET.**
 
