@@ -71,23 +71,22 @@ This requires a < 0 AND a > 0. Contradiction.
 Since Fin 2 has exactly 2 permutations (id and swap), and both are impossible
 for ANY Λ, the configuration is not in PET. QED.
 
-**Status in Lean (`W11Counterexample.lean`, 0 sorrys):** The file formalizes the
-*algebraic core* of the obstruction:
+**Status in Lean (`W11Counterexample.lean`, 0 sorrys, standard axioms only):**
+The file formalizes both the algebraic core AND the full non-membership theorem:
 
 - `w11_counterexample_distinct`: x₁ ≠ x₂.
 - `w11_counterexample_wick_time`, `_wick_spatial`: z₂ = −z₁ componentwise.
-- `w11_no_valid_ordering`: for any a ∈ ℝ, we cannot have (a > 0 ∧ −2a > 0) and
-  we cannot have (−a > 0 ∧ 2a > 0) — the two permutation-specific contradictions.
+- `w11_no_valid_ordering`: the permutation-specific algebraic contradictions.
 - `w11_origin_in_convex_hull`, `w11_origin_in_triangle`, `w11_barycentric_valid`:
   (½)x₁ + (½)x₂ = 0 for n=2, and (¼)x₁ + (⅓)x₂ + (5⁄12)x₃ = 0 for n=3.
-
-The full non-membership theorem
-`(fun k => wickRotatePoint (w11_counterexample_config k)) ∉ PermutedExtendedTube 1 2`
-is argued informally in this document but is **not yet itself a Lean theorem in
-the file** — closing the loop requires unfolding the `PermutedExtendedTube`
-`iUnion` over (π, Λ) and combining the algebraic facts above with the
-`InOpenForwardCone` definitional conditions. The algebraic obstruction is
-fully Lean-formalized; the final unfolding step is currently expressed in prose.
+- **`w11_counterexample_not_in_PET`: the explicit theorem
+  `(fun k => wickRotatePoint (w11_counterexample_config k)) ∉ PermutedExtendedTube 1 2`**,
+  proved by unfolding the PET `iUnion`, applying
+  `BHWCore.complexLorentzAction_inv` to deduce `w₁ = −w₀`, case-splitting on
+  `Perm (Fin 2)` (`= {1, Equiv.swap 0 1}`), and ruling out both permutations via
+  opposite-sign `InOpenForwardCone` conditions on `(w₀ 0).im`.
+  `#print axioms w11_counterexample_not_in_PET` depends on only
+  `[propext, Classical.choice, Quot.sound]` (no `sorryAx`).
 
 ## Why this is positive measure for n ≥ d+2
 

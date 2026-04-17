@@ -11,18 +11,15 @@ import OSReconstruction.ComplexLieGroups.BHWCore
 
 ## What this file formalizes
 
-This file contains the **algebraic core** of the obstruction: the specific
-points `x₁=(1,0)`, `x₂=(-1,0)` in `d=1` (and analogous n=3 triangle), the key
-identities `z₂ = -z₁` and `(½)x₁ + (½)x₂ = 0`, and the no-valid-ordering
-contradiction `¬(a > 0 ∧ -2a > 0)` for any real `a`.
-
-The full non-membership theorem
-`(fun k => wickRotatePoint (w11_counterexample_config k)) ∉ PermutedExtendedTube 1 2`
-is argued informally in the module docstring below but is **not yet itself a
-Lean theorem in this file** — closing the loop requires unfolding the
-`PermutedExtendedTube` `iUnion` over (π, Λ) and combining the algebraic facts
-below with the `InOpenForwardCone` definitional conditions. The algebraic
-obstruction is fully Lean-formalized; the final unfolding is currently prose.
+This file contains both the algebraic core of the obstruction AND the full
+non-membership theorem `w11_counterexample_not_in_PET`, stating that the
+Wick-rotated configuration `(z₀, z₁) = ((i, 0), (−i, 0))` does not lie in
+`PermutedExtendedTube 1 2`. The proof unfolds the PET `iUnion` over
+`(π, Λ, w)`, uses `BHWCore.complexLorentzAction_inv` to deduce `w₁ = −w₀`
+from `z₁ = −z₀`, case-splits on `Perm (Fin 2) = {1, Equiv.swap 0 1}`, and
+rules out both permutations via opposite-sign `InOpenForwardCone` conditions
+on `(w₀ 0).im`. `#print axioms w11_counterexample_not_in_PET` depends only on
+`[propext, Classical.choice, Quot.sound]`.
 
 ## The issue
 
@@ -175,5 +172,108 @@ theorem w11_barycentric_valid :
     (1/4 : ℝ) > 0 ∧ (1/3 : ℝ) > 0 ∧ (5/12 : ℝ) > 0 ∧
     (1/4 : ℝ) + 1/3 + 5/12 = 1 := by
   norm_num
+
+/-! ## Full non-membership theorem
+
+Closes the `PermutedExtendedTube`-`iUnion` unfolding: the Wick-rotated
+configuration `(z₀, z₁) = ((i, 0), (−i, 0))` really does not live in
+`PermutedExtendedTube 1 2`. -/
+
+/-- Any permutation on `Fin 2` is either the identity or the swap (0 1). -/
+private theorem perm_fin2_cases (π : Equiv.Perm (Fin 2)) :
+    π = 1 ∨ π = Equiv.swap 0 1 := by
+  revert π
+  decide
+
+/-- **The counterexample configuration is not in `PermutedExtendedTube 1 2`.**
+
+For d=1, n=2 and the Wick-rotated configuration
+`z := (wick(1,0), wick(−1,0)) = ((i,0), (−i,0))`, any `π, Λ, w` realizing
+PET-membership would force `w 1 = −w 0` by linearity of the complex Lorentz
+action. Either permutation then gives opposite-sign obstructions on
+`(w 0 0).im`, a contradiction. -/
+theorem w11_counterexample_not_in_PET :
+    (fun k => wickRotatePoint (w11_counterexample_config k)) ∉
+      _root_.PermutedExtendedTube 1 2 := by
+  intro hmem
+  set z : Fin 2 → Fin 2 → ℂ :=
+    fun k => wickRotatePoint (w11_counterexample_config k) with hz_def
+  -- z 1 = -z 0 componentwise
+  have hz_opp : ∀ μ, z 1 μ = -z 0 μ := by
+    intro μ
+    fin_cases μ
+    · show z 1 0 = -z 0 0
+      simp [z, wickRotatePoint, w11_counterexample_config]
+    · show z 1 1 = -z 0 1
+      have h10 : (1 : Fin 2) ≠ 0 := by decide
+      simp [z, wickRotatePoint, w11_counterexample_config, h10,
+        Matrix.cons_val_one]
+  -- Unfold PET
+  simp only [_root_.PermutedExtendedTube, Set.mem_iUnion, Set.mem_setOf_eq] at hmem
+  obtain ⟨π, Λ, w, hw_ft, hz_eq⟩ := hmem
+  -- Deduce w 1 = -w 0 by inverting the complex Lorentz action.
+  have hw_opp : ∀ μ, w 1 μ = -w 0 μ := by
+    -- hz_eq unfolds to z = BHWCore.complexLorentzAction Λ w (definitionally).
+    have hzLw : z = BHWCore.complexLorentzAction Λ w := hz_eq
+    have hwLz : w = BHWCore.complexLorentzAction Λ⁻¹ z := by
+      have := BHWCore.complexLorentzAction_inv Λ w
+      rw [hzLw]; exact this.symm
+    intro μ
+    have h1 : w 1 μ = ∑ ν, Λ⁻¹.val μ ν * z 1 ν := by rw [hwLz]; rfl
+    have h0 : w 0 μ = ∑ ν, Λ⁻¹.val μ ν * z 0 ν := by rw [hwLz]; rfl
+    rw [h1]
+    calc ∑ ν, Λ⁻¹.val μ ν * z 1 ν
+        = ∑ ν, Λ⁻¹.val μ ν * (-z 0 ν) :=
+            Finset.sum_congr rfl fun ν _ => by rw [hz_opp]
+      _ = -∑ ν, Λ⁻¹.val μ ν * z 0 ν := by
+            rw [← Finset.sum_neg_distrib]
+            exact Finset.sum_congr rfl fun ν _ => by ring
+      _ = -w 0 μ := by rw [h0]
+  -- Let a := (w 0 0).im
+  set a : ℝ := (w 0 0).im with ha_def
+  have hw1_0_im : (w 1 0).im = -a := by
+    rw [hw_opp 0]; simp [ha_def]
+  -- Case analysis on π
+  rcases perm_fin2_cases π with hπ_id | hπ_swap
+  · -- π = 1: conditions force a > 0 and -2a > 0.
+    have hπ0 : π 0 = 0 := by rw [hπ_id]; rfl
+    have hπ1 : π 1 = 1 := by rw [hπ_id]; rfl
+    have hFT0 := hw_ft 0
+    have hFT1 := hw_ft 1
+    -- k=0: (w (π 0) 0).im > 0
+    have ha_pos : a > 0 := by
+      have h := hFT0.1
+      simp [hπ0] at h
+      exact h
+    -- k=1: (w (π 1) 0 - w (π 0) 0).im > 0
+    have ha_neg : a < 0 := by
+      have h := hFT1.1
+      -- The prev in ForwardTube at k=1 unfolds to w (π 0)
+      have : (1 : Fin 2).val = 1 := rfl
+      simp only [this, Nat.succ_ne_zero, ↓reduceDIte, show (⟨1 - 1, by omega⟩ : Fin 2) = 0 from rfl,
+        hπ0, hπ1, Complex.sub_im] at h
+      -- h : (w 1 0).im - (w 0 0).im > 0
+      rw [hw1_0_im, ← ha_def] at h
+      linarith
+    linarith
+  · -- π = swap 0 1: conditions force -a > 0 and 2a > 0.
+    have hπ0 : π 0 = 1 := by rw [hπ_swap]; rfl
+    have hπ1 : π 1 = 0 := by rw [hπ_swap]; decide
+    have hFT0 := hw_ft 0
+    have hFT1 := hw_ft 1
+    have ha_neg : a < 0 := by
+      have h := hFT0.1
+      simp [hπ0] at h
+      rw [hw1_0_im] at h
+      linarith
+    have ha_pos : a > 0 := by
+      have h := hFT1.1
+      have : (1 : Fin 2).val = 1 := rfl
+      simp only [this, Nat.succ_ne_zero, ↓reduceDIte, show (⟨1 - 1, by omega⟩ : Fin 2) = 0 from rfl,
+        hπ0, hπ1, Complex.sub_im] at h
+      -- h : (w 0 0).im - (w 1 0).im > 0
+      rw [hw1_0_im, ← ha_def] at h
+      linarith
+    linarith
 
 end
