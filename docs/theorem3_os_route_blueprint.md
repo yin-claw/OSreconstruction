@@ -20438,11 +20438,33 @@ Implementation readiness checkpoint:
   `section43FourierLaplace_timeIntegrand_iteratedFDeriv_eq_zero_of_timeNorm_gt_bound`,
   and
   `hasFDerivAt_section43FourierLaplace_timeIntegrand_iteratedFDeriv_curryLeft`.
-- Ready next: prove
-  `section43FourierLaplace_timeIntegrand_iteratedFDeriv_curryLeft_local_bound_of_compact`,
-  the compact upper-slab local domination theorem.
-- Then ready: apply `hasFDerivAt_integral_of_dominated_of_fderiv_le` to
-  identify the derivative of the integrated candidate with the next candidate.
+- Compiled now in
+  `Section43FourierLaplaceCompactDifferentiation.lean` and exact-file checked
+  on 2026-04-17:
+  `norm_le_of_mem_time_closedBall_zero`,
+  `norm_nPoint_le_norm_add_one_of_mem_closedBall`,
+  `norm_exp_neg_section43_timePair_le_local_closedBall`, and
+  `section43FourierLaplace_timeIntegrand_iteratedFDeriv_curryLeft_local_bound_of_compact`.
+- Compiled now in
+  `Section43FourierLaplaceCompactDifferentiation.lean` and exact-file checked
+  on 2026-04-17:
+  `continuous_cmlm_apply_nPoint`,
+  `continuous_section43DerivativeWordScalar`,
+  `continuous_section43FourierLaplace_timeIntegrand_iteratedFDeriv_apply`,
+  `continuous_section43FourierLaplace_timeIntegrand_iteratedFDeriv`,
+  `integrable_section43FourierLaplace_timeIntegrand_iteratedFDeriv_of_compact`,
+  and
+  `aestronglyMeasurable_section43FourierLaplace_timeIntegrand_iteratedFDeriv_curryLeft`.
+- Ready next: align the CMLM codomain topology/normed-space instance surface
+  for `hasFDerivAt_integral_of_dominated_of_fderiv_le`.  The first attempt
+  showed the honest remaining Lean seam: the theorem expects the normed /
+  pseudometric topology on
+  `ContinuousMultilinearMap ℝ (fun _ : Fin r => NPointDomain d n) ℂ`, while
+  direct continuity lemmas naturally produce `AEStronglyMeasurable` under the
+  bundled CMLM topology.  Close this with a small topology-transport lemma, not
+  with heartbeat increases or wrapper reductions.
+- Then apply `hasFDerivAt_integral_of_dominated_of_fderiv_le` to identify the
+  derivative of the integrated candidate with the next candidate.
 - Then ready: identify the candidate with actual `iteratedFDeriv` by
   induction.
 - Then ready: derive the actual derivative rapid theorem from that
@@ -20635,6 +20657,21 @@ Proof transcript:
 Fourth prove compact local domination for the candidate derivative:
 
 ```lean
+theorem norm_exp_neg_section43_timePair_le_local_closedBall
+    (d n : ℕ) [NeZero d]
+    (q q' : NPointDomain d n)
+    (τ : Fin n → ℝ)
+    {R : ℝ} (hR_nonneg : 0 ≤ R)
+    (hτ : τ ∈ Metric.closedBall (0 : Fin n → ℝ) R)
+    (hq' : q' ∈ Metric.closedBall q (1 : ℝ)) :
+    ‖Complex.exp
+      (-(∑ k : Fin n,
+        (τ k : ℂ) *
+          (section43QTime (d := d) (n := n) q' k : ℂ)))‖ ≤
+      Real.exp
+        (R * ((∑ k : Fin n, section43QTimeCoordOpNorm d n k) *
+          (‖q‖ + 1)))
+
 theorem section43FourierLaplace_timeIntegrand_iteratedFDeriv_curryLeft_local_bound_of_compact
     (d n r : ℕ) [NeZero d]
     (f : SchwartzNPoint d n)
@@ -20662,21 +20699,38 @@ Proof transcript:
 1. Choose `R ≥ 0` from
    `exists_section43DiffPullback_timeNorm_bound_of_compact_tsupport`.
 2. Let `Kτ = Metric.closedBall (0 : Fin n → ℝ) R`.
-3. Off `Kτ`, the derivative is zero by the upper-slab all-order zero theorem,
+3. Prove the local exponential bound:
+   - From `hτ : τ ∈ Kτ`, obtain `‖τ‖ ≤ R` by rewriting
+     `Metric.mem_closedBall`, `dist_eq_norm`, and `sub_zero`.
+   - From `hq' : q' ∈ Metric.closedBall q 1`, obtain
+     `‖q'‖ ≤ ‖q‖ + 1` by combining
+     `‖q'‖ = ‖(q' - q) + q‖`, `norm_add_le`, and
+     `dist q' q ≤ 1`.
+   - For each `k`, combine `norm_le_pi_norm τ k` and
+     `abs_section43QTime_coord_le_opNorm d n q' k` to prove
+     `|τ k * section43QTime q' k| ≤
+      R * (section43QTimeCoordOpNorm d n k * (‖q‖ + 1))`.
+   - Use `Complex.norm_exp`, compute the real part of the exponent by `simp`,
+     bound `-(∑ k, τ k * section43QTime q' k)` by
+     `∑ k, |τ k * section43QTime q' k|` via
+     `neg_le_abs` and `Finset.abs_sum_le_sum_abs`, and finish with
+     `Real.exp_le_exp`.
+   - Rewrite the final finite sum as
+     `R * ((∑ k, section43QTimeCoordOpNorm d n k) * (‖q‖ + 1))`
+     using distributivity and commutativity.
+4. Off `Kτ`, the derivative is zero by the upper-slab all-order zero theorem,
    so the bound can be zero there.
-4. On `Kτ` and `Metric.closedBall q 1`, use the no-margin operator norm
+5. On `Kτ` and `Metric.closedBall q 1`, use the no-margin operator norm
    estimate for order `r + 1` plus `ContinuousMultilinearMap.curryLeft_norm`.
-5. Bound the exponential uniformly on the product by
-   `Complex.norm_exp`, `Finset.abs_sum_le_sum_abs`,
-   `abs_section43QTime_coord_le_opNorm`, `‖q'‖ ≤ ‖q‖ + 1`, `‖τ‖ ≤ R`, and
-   monotonicity of `Real.exp`.
 6. For each word `a`, choose a global constant from
    `exists_norm_bound_partialFourierSpatial_fun` for
    `section43DerivativeWordInput d n (r + 1)
       (section43DiffPullbackCLM d n ⟨f, hf_ord⟩) a`.
 7. Use `‖τ‖ ^ K ≤ R ^ K` on `Kτ` and the nonnegativity of word
    coefficients to build a single constant
-   `C = Cexp * ∑ a, coeff(a) * R ^ timeCount(a) * Cword(a)`.
+   `C = Cexp * ∑ a, coeff(a) * R ^ timeCount(a) * Cword(a)`, where
+   `Cexp =
+    Real.exp (R * ((∑ k, section43QTimeCoordOpNorm d n k) * (‖q‖ + 1)))`.
 8. Take `bound = Set.indicator Kτ (fun _ => C)`.  Integrability is exactly
    `integrable_indicator_time_closedBall_const`.
 
@@ -20705,11 +20759,107 @@ Proof transcript:
 1. Use
    `hasFDerivAt_integral_of_dominated_of_fderiv_le` with codomain
    `ContinuousMultilinearMap ℝ (fun _ : Fin r => NPointDomain d n) ℂ`.
-2. The parameter set is `Metric.closedBall q 1`, which is in `𝓝 q`.
-3. Fixed-`q'` measurability/integrability follows from the compact local
-   bound and fixed-`τ` continuity of the pointwise `iteratedFDeriv`; if Lean
-   requests an explicit fixed-`q'` integrability theorem, prove it from the
-   same upper-slab indicator bound with `q = q'`.
+2. Before this theorem, compile the fixed-`q` hypothesis packet:
+
+```lean
+theorem continuous_section43FourierLaplace_timeIntegrand_iteratedFDeriv
+    (d n r : ℕ) [NeZero d]
+    (F : SchwartzNPoint d n)
+    (q : NPointDomain d n) :
+    Continuous fun τ : Fin n → ℝ =>
+      iteratedFDeriv ℝ r
+        (fun q' : NPointDomain d n =>
+          Complex.exp
+            (-(∑ k : Fin n,
+              (τ k : ℂ) *
+                (section43QTime (d := d) (n := n) q' k : ℂ))) *
+          partialFourierSpatial_fun (d := d) (n := n) F
+            (τ, section43QSpatial (d := d) (n := n) q'))
+        q
+
+theorem integrable_section43FourierLaplace_timeIntegrand_iteratedFDeriv_of_compact
+    (d n r : ℕ) [NeZero d]
+    (f : SchwartzNPoint d n)
+    (hf_ord :
+      tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (hf_compact : HasCompactSupport (f : NPointDomain d n → ℂ))
+    (q : NPointDomain d n) :
+    Integrable fun τ : Fin n → ℝ =>
+      iteratedFDeriv ℝ r
+        (fun q' : NPointDomain d n =>
+          Complex.exp
+            (-(∑ k : Fin n,
+              (τ k : ℂ) *
+                (section43QTime (d := d) (n := n) q' k : ℂ))) *
+          partialFourierSpatial_fun (d := d) (n := n)
+            (section43DiffPullbackCLM d n ⟨f, hf_ord⟩)
+            (τ, section43QSpatial (d := d) (n := n) q'))
+        q
+
+theorem aestronglyMeasurable_section43FourierLaplace_timeIntegrand_iteratedFDeriv_curryLeft
+    (d n r : ℕ) [NeZero d]
+    (f : SchwartzNPoint d n)
+    (hf_ord :
+      tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (hf_compact : HasCompactSupport (f : NPointDomain d n → ℂ))
+    (q : NPointDomain d n) :
+    AEStronglyMeasurable
+      (fun τ : Fin n → ℝ =>
+        (iteratedFDeriv ℝ (r + 1)
+          (fun q' : NPointDomain d n =>
+            Complex.exp
+              (-(∑ k : Fin n,
+                (τ k : ℂ) *
+                  (section43QTime (d := d) (n := n) q' k : ℂ))) *
+            partialFourierSpatial_fun (d := d) (n := n)
+              (section43DiffPullbackCLM d n ⟨f, hf_ord⟩)
+              (τ, section43QSpatial (d := d) (n := n) q'))
+          q).curryLeft)
+```
+
+Proof transcript for the continuity packet:
+
+1. Prove a finite-dimensional application criterion for CMLM-valued maps,
+   by induction on `r`, using `continuous_clm_apply` for the curry-left
+   representation and `continuousMultilinearCurryFin0` for the zero-arity
+   endpoint:
+   `Continuous (fun x => L x) ↔ ∀ m, Continuous (fun x => L x m)`.
+2. For each direction tuple `m`, rewrite the applied function by
+   `section43FourierLaplace_timeIntegrand_iteratedFDeriv_apply_eq_sum_words`.
+3. Each finite-word scalar is continuous in `τ` by induction on the word
+   length; time atoms contribute the coordinate `τ k`, while spatial atoms
+   are independent of `τ`.
+4. Each partial-Fourier word term is continuous in `τ` by
+   `continuous_partialFourierSpatial_fun` composed with
+   `τ ↦ (τ, section43QSpatial q)`.
+5. Finite sums and products give applied continuity, hence CMLM-valued
+   continuity.
+6. Integrability follows from the compiled local domination theorem with
+   center `q`, together with the continuity/aestrong-measurability theorem
+   and `Integrable.mono'`/the dominated-bound integrability.
+7. The curry-left derivative measurability theorem uses the order `r + 1`
+   integrability theorem and then composes its `AEStronglyMeasurable` field
+   with the continuous curry-left linear isometry.  This is why the compiled
+   theorem includes the compact-support hypothesis.
+
+Remaining topology-transport seam before the dominated-integral theorem:
+
+1. Add a small lemma that restates the compiled `AEStronglyMeasurable` facts
+   for CMLM-valued maps using the exact codomain topology inferred by
+   `hasFDerivAt_integral_of_dominated_of_fderiv_le`.
+2. The point is not new mathematics: it is an instance/topology alignment
+   between `ContinuousMultilinearMap.instTopologicalSpace` and the
+   pseudometric topology coming from the operator norm.
+3. Do not use `set_option maxHeartbeats 0`; if a finite local synth-heartbeat
+   option appears necessary, first try explicit local instances or an
+   equality/identity transport lemma and document the exact statement.
+4. Once this transport compiles, the previously attempted `HasFDerivAt` proof
+   should be reintroduced with the same ingredients already compiled:
+   local bound, `hF_meas`, `hF_int`, `hF'_meas`, pointwise curry-left
+   derivative, and the integral-application extensionality proof for the
+   derivative integral.
+
+3. The parameter set is `Metric.closedBall q 1`, which is in `𝓝 q`.
 4. The pointwise `HasFDerivAt` hypothesis is
    `hasFDerivAt_section43FourierLaplace_timeIntegrand_iteratedFDeriv_curryLeft`.
 5. The dominated bound is
