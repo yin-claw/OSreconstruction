@@ -3,11 +3,13 @@ Copyright (c) 2025 ModularPhysics Contributors. All rights reserved.
 Released under Apache 2.0 license.
 Authors: Michael Douglas, ModularPhysics Contributors
 -/
-import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBoundaryValues
+import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBoundaryValuesBase
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBoundaryValueLimits
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanSemigroup
 import OSReconstruction.Wightman.Reconstruction.WickRotation.EuclideanPositiveTime
 import OSReconstruction.Wightman.Reconstruction.WickRotation.Section43Codomain
+import OSReconstruction.Wightman.Reconstruction.WickRotation.SchwingerTemperedness
+import OSReconstruction.Wightman.Reconstruction.ForwardTubeDistributions
 import OSReconstruction.SCV.PaleyWiener
 import OSReconstruction.SCV.PartialFourierSpatial
 import OSReconstruction.Mathlib429Compat
@@ -1619,7 +1621,30 @@ theorem fourierLaplaceExt_partialFourierSpatial_timeSlice_eq_complexLaplaceTrans
 
 /-- The one-variable Paley-Wiener theorem, specialized to the actual branch-`3b`
 positive-time time slice. This is the exact existential supplier that still
-needs to be assembled into the global Section 4.3 transport map. -/
+needs to be assembled into the global Section 4.3 transport map.
+
+Source-first obstruction note for the live theorem-3 seam:
+- this theorem only produces an upper-half-plane extension for one descended
+  slice
+  `partialFourierSpatial_timeSliceSchwartz ...`;
+- together with
+  `section43_iteratedSlice_descendedPairing` later in this file, the current
+  graph can therefore descend those slice extensions along
+  `os1TransportComponent` equalities;
+- however, no theorem in this file or in
+  `OSToWightmanBoundaryValueLimits.lean` / `...Comparison.lean` currently
+  assembles those descended one-variable slices into the per-pair right-half-
+  plane witness needed by
+  `one_variable_time_interchange_for_wightman_pairing`;
+- equivalently, no existing theorem on the explicit family inputs
+  `F, hF, hcomp, f, hf, hprecompact, hambientCompact, hF0`
+  lands either
+  `∃ H : ℂ → ℂ, DifferentiableOn ℂ H {z : ℂ | 0 < z.re} ∧ ...`
+  with the required positive-real shell and Wightman values, or the immediate
+  antecedent
+  `bvt_singleSplit_xiShiftHolomorphicValue ... (t : ℂ) = bvt_W ...`;
+- that witness-construction theorem remains the earliest honest missing
+  upstream surface strictly before the public `hreal` payload. -/
 theorem partialFourierSpatial_timeSlice_hasPaleyWienerExtension
     {n : ℕ} (f : EuclideanPositiveTimeComponent d n)
     (r : Fin n) (t : Fin n → ℝ)
@@ -1911,11 +1936,63 @@ private theorem partialFourierSpatial_fun_eq_of_eqOn_section43PositiveEnergyRegi
       SchwartzMap.compCLMOfContinuousLinearEquiv_apply] using hfg hregion
   simp [hval]
 
+/-- Equality of multivariate Section 4.3 quotient classes forces equality of
+the associated one-variable slice tests on `[0,\infty)`, provided the frozen
+background times are nonnegative. This is the quotient-level frozen-slice
+bridge needed to consume total-arity quotient equalities directly, without
+repackaging them through the ordered-support transport subtype. -/
+private theorem partialFourierSpatial_timeSlice_eqOn_nonneg_of_section43PositiveEnergyQuotientMap_eq
+    {n : ℕ}
+    {φ ψ : SchwartzNPoint d n}
+    (hφψ :
+      section43PositiveEnergyQuotientMap (d := d) n φ =
+        section43PositiveEnergyQuotientMap (d := d) n ψ)
+    (r : Fin n) (t : Fin n → ℝ)
+    (ht : ∀ i : Fin n, i ≠ r → 0 ≤ t i)
+    (ξ : EuclideanSpace ℝ (Fin n × Fin d)) :
+    Set.EqOn
+      ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n) φ r t ξ :
+          SchwartzMap ℝ ℂ) : ℝ → ℂ)
+      ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n) ψ r t ξ :
+          SchwartzMap ℝ ℂ) : ℝ → ℂ)
+      (Set.Ici (0 : ℝ)) := by
+  have hregion :
+      Set.EqOn (φ : NPointDomain d n → ℂ) (ψ : NPointDomain d n → ℂ)
+        (section43PositiveEnergyRegion d n) :=
+    eqOn_region_of_section43PositiveEnergyQuotientMap_eq
+      (d := d) (n := n) (f := φ) (g := ψ) hφψ
+  intro s hs
+  have hnonneg : ∀ i : Fin n, 0 ≤ Function.update t r s i := by
+    intro i
+    by_cases hi : i = r
+    · subst hi
+      simpa using hs
+    · rw [Function.update_of_ne hi]
+      exact ht i hi
+  simpa [partialFourierSpatial_timeSliceSchwartz] using
+    partialFourierSpatial_fun_eq_of_eqOn_section43PositiveEnergyRegion
+      (d := d) (n := n) hregion (Function.update t r s) hnonneg ξ
+
 /-- If an ambient transformed-image representative `φ` and a positive-time
 preimage `f` define the same Section 4.3 quotient class, then freezing all but
 one time variable with nonnegative background times gives the same one-variable
 slice on `[0,∞)`. This is the first honest ambient-representative bridge
-needed by the corrected Stage-5 theorem surface. -/
+needed by the corrected Stage-5 theorem surface.
+
+Bounded-pass status note (2026-04-13): source-first inspection now matters one
+notch more sharply here. The public frozen-slice chain used later near
+`hlimit_os`
+
+`section43PositiveEnergyQuotientMap1D_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+-> `fourierInvPairingCLM_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+-> `fourierInvPairingCLM_opposite_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+-> `section43_iteratedSlice_descendedPairing`
+
+starts by applying `section43PositiveEnergyQuotientMap1D_eq_of_eqOn_nonneg` to
+this exact `Set.EqOn` theorem. So if the fixed-time canonical-shell
+specialization of that public chain is still too high, the exact first lower
+source-backed ingredient is this theorem together with the still-missing choice
+of canonical slice parameters `(r, t, ht, ξ)` matching the ambient shell. -/
 private theorem partialFourierSpatial_timeSlice_eqOn_nonneg_of_repr_eq_transport
     {n : ℕ}
     {φ : SchwartzNPoint d n}
@@ -1978,6 +2055,279 @@ private theorem section43_zero_left_repr_eq_transport_pointwise
     eqOn_region_of_section43PositiveEnergyQuotientMap_eq
       (d := d) (n := 0) hq
   exact hEqOn (by intro i; exact Fin.elim0 i)
+/-- Negative time in the distinguished variable forces any frozen slice of a
+mixed-order fixed-pair source test to vanish. Only the nonnegative-time part of
+`FixedPairMixedOrderTimeRegion` is used here; the reversed/forward order split
+is irrelevant at this one-variable entry point. -/
+private theorem nPointTimeSpatialSchwartzCLE_eq_zero_of_neg_time_of_fixedPairMixedOrder
+    {n m : ℕ}
+    (F : OSReconstruction.FixedPairMixedOrderComponent d n m)
+    (r : Fin (n + m)) (t : Fin (n + m) → ℝ)
+    (η : EuclideanSpace ℝ (Fin (n + m) × Fin d))
+    {s : ℝ} (hs : s < 0) :
+    OSReconstruction.nPointTimeSpatialSchwartzCLE (d := d) (n := n + m) F.1
+      (Function.update t r s, η) = 0 := by
+  have hnot_region :
+        (OSReconstruction.nPointTimeSpatialCLE (d := d) (n + m)).symm
+        (Function.update t r s, η) ∉
+        OSReconstruction.FixedPairMixedOrderTimeRegion d n m := by
+    intro hmem
+    have htime :
+        0 ≤
+          (((OSReconstruction.nPointTimeSpatialCLE (d := d) (n + m)).symm
+            (Function.update t r s, η)) r 0) := hmem.1 r
+    have hEq :
+        (((OSReconstruction.nPointTimeSpatialCLE (d := d) (n + m)).symm
+          (Function.update t r s, η)) r 0) = s := by
+      simp [OSReconstruction.nPointTimeSpatialCLE]
+    linarith
+  have hnot_supp :
+      (OSReconstruction.nPointTimeSpatialCLE (d := d) (n + m)).symm
+        (Function.update t r s, η) ∉
+        tsupport (F.1 : NPointDomain d (n + m) → ℂ) := by
+    intro hx
+    exact hnot_region (F.2 hx)
+  change F.1 ((OSReconstruction.nPointTimeSpatialCLE (d := d) (n + m)).symm
+    (Function.update t r s, η)) = 0
+  simpa using image_eq_zero_of_notMem_tsupport hnot_supp
+
+/-- Equality of total-arity Section 4.3 quotient classes already forces
+equality of the associated frozen mixed-order slices on `[0,\infty)`, provided
+the frozen background times are nonnegative away from the distinguished
+variable. This is the first exact mixed-order `EqOn` bridge beneath the later
+1D quotient and pairing consumers. -/
+private theorem partialFourierSpatial_timeSlice_eqOn_nonneg_of_repr_eq_fixedPairMixedOrder
+    {n m : ℕ}
+    {Φ : SchwartzNPoint d (n + m)}
+    {F : OSReconstruction.FixedPairMixedOrderComponent d n m}
+    (hΦF :
+      section43PositiveEnergyQuotientMap (d := d) (n + m) Φ =
+        section43PositiveEnergyQuotientMap (d := d) (n + m) F.1)
+    (r : Fin (n + m)) (t : Fin (n + m) → ℝ)
+    (ht : ∀ i : Fin (n + m), i ≠ r → 0 ≤ t i)
+    (ξ : EuclideanSpace ℝ (Fin (n + m) × Fin d)) :
+    Set.EqOn
+      ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) Φ r t ξ :
+          SchwartzMap ℝ ℂ) : ℝ → ℂ)
+      ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) F.1 r t ξ :
+          SchwartzMap ℝ ℂ) : ℝ → ℂ)
+      (Set.Ici (0 : ℝ)) := by
+  have hregion :
+      Set.EqOn (Φ : NPointDomain d (n + m) → ℂ) (F.1 : NPointDomain d (n + m) → ℂ)
+        (section43PositiveEnergyRegion d (n + m)) :=
+    eqOn_region_of_section43PositiveEnergyQuotientMap_eq
+      (d := d) (n := n + m) (f := Φ) (g := F.1) hΦF
+  intro s hs
+  have hnonneg : ∀ i : Fin (n + m), 0 ≤ Function.update t r s i := by
+    intro i
+    by_cases hi : i = r
+    · subst hi
+      simpa using hs
+    · rw [Function.update_of_ne hi]
+      exact ht i hi
+  simpa [partialFourierSpatial_timeSliceSchwartz] using
+    partialFourierSpatial_fun_eq_of_eqOn_section43PositiveEnergyRegion
+      (d := d) (n := n + m) hregion (Function.update t r s) hnonneg ξ
+
+/-- Therefore every frozen branch-`3b` slice of a mixed-order fixed-pair source
+test is supported in `t ≥ 0` in the distinguished variable, as long as the
+other frozen times are nonnegative. This is the exact one-variable source fact
+needed to feed the existing Section 4.3 1D quotient codomain. -/
+private theorem tsupport_partialFourierSpatial_timeSlice_subset_Ici_of_fixedPairMixedOrder
+    {n m : ℕ}
+    (F : OSReconstruction.FixedPairMixedOrderComponent d n m)
+    (r : Fin (n + m)) (t : Fin (n + m) → ℝ)
+    (ht : ∀ i : Fin (n + m), i ≠ r → 0 ≤ t i)
+    (ξ : EuclideanSpace ℝ (Fin (n + m) × Fin d)) :
+    tsupport (fun s : ℝ =>
+      OSReconstruction.partialFourierSpatial_fun (d := d) (n := n + m) F.1
+        (Function.update t r s, ξ)) ⊆ Set.Ici 0 := by
+  intro s hs
+  by_contra hs_neg
+  have hs_lt : s < 0 := by
+    simpa [Set.mem_Ici, not_le] using hs_neg
+  have hs_not :
+      s ∉ tsupport (fun s' : ℝ =>
+        OSReconstruction.partialFourierSpatial_fun (d := d) (n := n + m) F.1
+          (Function.update t r s', ξ)) := by
+    rw [notMem_tsupport_iff_eventuallyEq]
+    have hball : Metric.ball s (-s / 2) ∈ 𝓝 s := by
+      apply Metric.ball_mem_nhds
+      linarith
+    filter_upwards [hball] with s' hs'
+    have hsabs : |s' - s| < -s / 2 := by
+      simpa [Metric.mem_ball, Real.dist_eq] using hs'
+    have hs'_lt : s' < 0 := by
+      linarith [(abs_lt.mp hsabs).2, hs_lt]
+    rw [OSReconstruction.partialFourierSpatial_fun_eq_integral]
+    refine MeasureTheory.integral_eq_zero_of_ae ?_
+    filter_upwards with η
+    simp [nPointTimeSpatialSchwartzCLE_eq_zero_of_neg_time_of_fixedPairMixedOrder
+      (d := d) (F := F) (r := r) (t := t) (η := η) hs'_lt]
+  exact hs_not hs
+
+/-- The actual branch-`3b` time slice of a mixed-order fixed-pair source,
+packaged as a one-variable Section 4.3 positive-time test. This is the first
+honest replacement for the old total-arity `EuclideanPositiveTimeComponent`
+entry point on the fixed-pair mixed-order geometry. -/
+private noncomputable def partialFourierSpatial_timeSliceTest_fixedPairMixedOrder
+    {n m : ℕ} (F : OSReconstruction.FixedPairMixedOrderComponent d n m)
+    (r : Fin (n + m)) (t : Fin (n + m) → ℝ)
+    (ht : ∀ i : Fin (n + m), i ≠ r → 0 ≤ t i)
+    (ξ : EuclideanSpace ℝ (Fin (n + m) × Fin d)) :
+    ↥(OSReconstruction.euclideanPositiveTimeTest1D) :=
+  ⟨partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) F.1 r t ξ,
+    tsupport_partialFourierSpatial_timeSlice_subset_Ici_of_fixedPairMixedOrder
+      (d := d) F r t ht ξ⟩
+
+/-- First mixed-order transport consumer strictly below the live fixed-pair
+frontier: if an ambient total-arity representative and a mixed-order fixed-pair
+source test define the same Section 4.3 quotient class, then the corresponding
+frozen one-variable slice already descends to the existing 1D transport codomain.
+
+This replaces the old total-arity `EuclideanPositiveTimeComponent` entry point
+for the fixed-pair geometry without reviving the false whole-shell
+`OrderedPositiveTimeRegion` claim. -/
+private theorem
+    section43PositiveEnergyQuotientMap1D_partialFourierSpatial_timeSlice_eq_of_repr_eq_fixedPairMixedOrder
+    {n m : ℕ}
+    {Φ : SchwartzNPoint d (n + m)}
+    {F : OSReconstruction.FixedPairMixedOrderComponent d n m}
+    (hΦF :
+      section43PositiveEnergyQuotientMap (d := d) (n + m) Φ =
+        section43PositiveEnergyQuotientMap (d := d) (n + m) F.1)
+    (r : Fin (n + m)) (t : Fin (n + m) → ℝ)
+    (ht : ∀ i : Fin (n + m), i ≠ r → 0 ≤ t i)
+    (ξ : EuclideanSpace ℝ (Fin (n + m) × Fin d)) :
+    section43PositiveEnergyQuotientMap1D
+        (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) Φ r t ξ) =
+      os1TransportOneVar
+        (partialFourierSpatial_timeSliceTest_fixedPairMixedOrder
+          (d := d) F r t ht ξ) := by
+  apply section43PositiveEnergyQuotientMap1D_eq_of_eqOn_nonneg
+  have hregion :
+      Set.EqOn (Φ : NPointDomain d (n + m) → ℂ) (F.1 : NPointDomain d (n + m) → ℂ)
+        (section43PositiveEnergyRegion d (n + m)) :=
+    eqOn_region_of_section43PositiveEnergyQuotientMap_eq
+      (d := d) (n := n + m) (f := Φ) (g := F.1) hΦF
+  intro s hs
+  have hnonneg : ∀ i : Fin (n + m), 0 ≤ Function.update t r s i := by
+    intro i
+    by_cases hi : i = r
+    · subst hi
+      simpa using hs
+    · rw [Function.update_of_ne hi]
+      exact ht i hi
+  simpa [partialFourierSpatial_timeSliceTest_fixedPairMixedOrder,
+    partialFourierSpatial_timeSliceSchwartz] using
+    partialFourierSpatial_fun_eq_of_eqOn_section43PositiveEnergyRegion
+      (d := d) (n := n + m) hregion (Function.update t r s) hnonneg ξ
+
+/-- First actual frozen-slice consumer of the mixed-order fixed-pair source
+entry point: any one-sided Fourier-support functional already sees the same
+one-variable Section 4.3 class on the corresponding time slice. This is the
+mixed-order replacement for the old total-arity
+`EuclideanPositiveTimeComponent` consumer used later in the slice-descended
+pairing chain. -/
+private theorem
+    fourierPairingDescendsToSection43PositiveEnergy1D_eq_of_repr_eq_fixedPairMixedOrder
+    {n m : ℕ}
+    {Φ : SchwartzNPoint d (n + m)}
+    {F : OSReconstruction.FixedPairMixedOrderComponent d n m}
+    (hΦF :
+      section43PositiveEnergyQuotientMap (d := d) (n + m) Φ =
+        section43PositiveEnergyQuotientMap (d := d) (n + m) F.1)
+    (T : SchwartzMap ℝ ℂ →L[ℂ] ℂ)
+    (hT_supp : SCV.HasOneSidedFourierSupport T)
+    (r : Fin (n + m)) (t : Fin (n + m) → ℝ)
+    (ht : ∀ i : Fin (n + m), i ≠ r → 0 ≤ t i)
+    (ξ : EuclideanSpace ℝ (Fin (n + m) × Fin d)) :
+    fourierPairingDescendsToSection43PositiveEnergy1D T hT_supp
+        (section43PositiveEnergyQuotientMap1D
+          (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) Φ r t ξ)) =
+      fourierPairingDescendsToSection43PositiveEnergy1D T hT_supp
+        (os1TransportOneVar
+          (partialFourierSpatial_timeSliceTest_fixedPairMixedOrder
+            (d := d) F r t ht ξ)) := by
+  rw [section43PositiveEnergyQuotientMap1D_partialFourierSpatial_timeSlice_eq_of_repr_eq_fixedPairMixedOrder
+    (d := d) (n := n) (m := m) hΦF r t ht ξ]
+
+/-- Therefore the one-variable Section 4.3 quotient class of the ambient slice
+is the same as the transport slice class of its positive-time preimage. This is
+the direct current-code bridge from an ambient transformed-image representative
+to the one-variable quotient theorem used later in the Stage-5 adapter. -/
+private theorem fourierInvPairingCLM_partialFourierSpatial_timeSlice_eq_of_repr_eq_fixedPairMixedOrder
+    {n m : ℕ}
+    {Φ : SchwartzNPoint d (n + m)}
+    {F : OSReconstruction.FixedPairMixedOrderComponent d n m}
+    (hΦF :
+      section43PositiveEnergyQuotientMap (d := d) (n + m) Φ =
+        section43PositiveEnergyQuotientMap (d := d) (n + m) F.1)
+    (r : Fin (n + m)) (t : Fin (n + m) → ℝ)
+    (ht : ∀ i : Fin (n + m), i ≠ r → 0 ≤ t i)
+    (ξ : EuclideanSpace ℝ (Fin (n + m) × Fin d)) :
+    fourierInvPairingCLM
+        (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) F.1 r t ξ)
+        ((SchwartzMap.fourierTransformCLM ℂ)
+          (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) Φ r t ξ)) =
+      fourierInvPairingCLM
+        (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) F.1 r t ξ)
+        ((SchwartzMap.fourierTransformCLM ℂ)
+          (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) F.1 r t ξ)) := by
+  let FSlice :=
+    partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) F.1 r t ξ
+  have hleft :
+      fourierPairingDescendsToSection43PositiveEnergy1D
+          (fourierInvPairingCLM FSlice)
+          (fourierInvPairing_hasOneSidedFourierSupport FSlice
+            (tsupport_partialFourierSpatial_timeSlice_subset_Ici_of_fixedPairMixedOrder
+              (d := d) F r t ht ξ))
+          (section43PositiveEnergyQuotientMap1D
+            (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) Φ r t ξ)) =
+        fourierInvPairingCLM FSlice
+          ((SchwartzMap.fourierTransformCLM ℂ)
+            (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) Φ r t ξ)) := by
+    simpa [FSlice] using
+      (fourierPairingDescendsToSection43PositiveEnergy1D_apply
+        (T := fourierInvPairingCLM FSlice)
+        (hT_supp := fourierInvPairing_hasOneSidedFourierSupport FSlice
+          (tsupport_partialFourierSpatial_timeSlice_subset_Ici_of_fixedPairMixedOrder
+            (d := d) F r t ht ξ))
+        (f := partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) Φ r t ξ))
+  calc
+    fourierInvPairingCLM FSlice
+        ((SchwartzMap.fourierTransformCLM ℂ)
+          (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) Φ r t ξ)) =
+      fourierPairingDescendsToSection43PositiveEnergy1D
+          (fourierInvPairingCLM FSlice)
+          (fourierInvPairing_hasOneSidedFourierSupport FSlice
+            (tsupport_partialFourierSpatial_timeSlice_subset_Ici_of_fixedPairMixedOrder
+              (d := d) F r t ht ξ))
+          (section43PositiveEnergyQuotientMap1D
+            (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) Φ r t ξ)) := by
+        symm
+        exact hleft
+    _ =
+      fourierPairingDescendsToSection43PositiveEnergy1D
+          (fourierInvPairingCLM FSlice)
+          (fourierInvPairing_hasOneSidedFourierSupport FSlice
+            (tsupport_partialFourierSpatial_timeSlice_subset_Ici_of_fixedPairMixedOrder
+              (d := d) F r t ht ξ))
+          (os1TransportOneVar
+            (partialFourierSpatial_timeSliceTest_fixedPairMixedOrder
+              (d := d) F r t ht ξ)) := by
+        exact fourierPairingDescendsToSection43PositiveEnergy1D_eq_of_repr_eq_fixedPairMixedOrder
+          (d := d) (n := n) (m := m) hΦF
+          (T := fourierInvPairingCLM FSlice)
+          (hT_supp := fourierInvPairing_hasOneSidedFourierSupport FSlice
+            (tsupport_partialFourierSpatial_timeSlice_subset_Ici_of_fixedPairMixedOrder
+              (d := d) F r t ht ξ))
+          r t ht ξ
+    _ =
+      fourierInvPairingCLM FSlice
+        ((SchwartzMap.fourierTransformCLM ℂ)
+          (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) F.1 r t ξ)) := by
+        simp [FSlice, partialFourierSpatial_timeSliceTest_fixedPairMixedOrder]
 
 /-- Therefore the one-variable Section 4.3 quotient class of the ambient slice
 is the same as the transport slice class of its positive-time preimage. This is
@@ -2626,6 +2976,91 @@ private theorem canonicalXiShift_mem_forwardTube
   · simp [xiShift, hshift]
   · simp [xiShift, hshift]
 
+/-- The fixed-time canonical shell map is an affine smooth map on the real
+configuration space. This is the domain-side smoothness input for any later
+attempt to package the restricted shell coefficient as a temperate-growth
+function. -/
+private theorem contDiff_canonicalXiShift
+    {n m : ℕ} (hm : 0 < m)
+    (t ε : ℝ) :
+    ContDiff ℝ (⊤ : ℕ∞)
+      (fun y : NPointDomain d (n + m) =>
+        xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+          (fun k μ =>
+            ↑(y k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                Complex.I)
+          (t : ℂ)) := by
+  rw [contDiff_pi]
+  intro k
+  rw [contDiff_pi]
+  intro μ
+  have hcoord :
+      ContDiff ℝ (⊤ : ℕ∞) (fun y : NPointDomain d (n + m) => ((y k μ : ℝ) : ℂ)) := by
+    simpa using (Complex.ofRealCLM.contDiff.comp
+      (contDiff_apply_apply (𝕜 := ℝ) (ι := Fin (n + m)) (ι' := Fin (d + 1)) (E := ℝ)
+        (n := (⊤ : ℕ∞)) (i := k) (j := μ) :
+        ContDiff ℝ (⊤ : ℕ∞) (fun y : NPointDomain d (n + m) => y k μ)))
+  by_cases hshift : (⟨n, Nat.lt_add_of_pos_right hm⟩ : Fin (n + m)).val ≤ k.val ∧
+      μ = (0 : Fin (d + 1))
+  · simp [xiShift, hshift]
+    have hcoord0 :
+        ContDiff ℝ (⊤ : ℕ∞) (fun y : NPointDomain d (n + m) => ((y k 0 : ℝ) : ℂ)) := by
+      simpa [hshift.2] using hcoord
+    simpa [add_assoc] using hcoord0.add (contDiff_const.add contDiff_const)
+  · simp [xiShift, hshift]
+    exact hcoord.add contDiff_const
+
+/-- Pointwise real differentiability of the affine fixed-time canonical shell
+map. This is the exact local bridge from `contDiff_canonicalXiShift` needed at
+the shell-derivative insertion point. -/
+private theorem differentiableAt_canonicalXiShift
+    {n m : ℕ} (hm : 0 < m)
+    (t ε : ℝ) (y : NPointDomain d (n + m)) :
+    DifferentiableAt ℝ
+      (fun y : NPointDomain d (n + m) =>
+        xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+          (fun k μ =>
+            ↑(y k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                Complex.I)
+          (t : ℂ)) y := by
+  let hdiff : Differentiable ℝ
+      (fun y : NPointDomain d (n + m) =>
+        xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+          (fun k μ =>
+            ↑(y k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                Complex.I)
+          (t : ℂ)) :=
+    (contDiff_canonicalXiShift (d := d) hm t ε).differentiable (by simp)
+  exact hdiff y
+
+/-- Pointwise real Fréchet derivative bridge for the affine fixed-time
+canonical shell map. This packages the already-landed differentiability result
+at the exact domain-side shell surface needed by the next chain-rule step. -/
+private theorem hasFDerivAt_canonicalXiShift
+    {n m : ℕ} (hm : 0 < m)
+    (t ε : ℝ) (y : NPointDomain d (n + m)) :
+    HasFDerivAt
+      (fun y : NPointDomain d (n + m) =>
+        xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+          (fun k μ =>
+            ↑(y k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                Complex.I)
+          (t : ℂ))
+      (fderiv ℝ
+        (fun y : NPointDomain d (n + m) =>
+          xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun k μ =>
+              ↑(y k μ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                  Complex.I)
+            (t : ℂ)) y)
+      y := by
+  exact (differentiableAt_canonicalXiShift (d := d) hm t ε y).hasFDerivAt
+
 /-- Continuity of the fixed-radius Paley-Wiener Schwartz family along the
 flattened finite-height canonical shell. This is the continuity side condition
 for the shell-side `schwartz_clm_fubini_exchange` packet. -/
@@ -3138,6 +3573,2169 @@ private theorem bvt_F_hasGlobalForwardTubeGrowth
   rcases hrest with ⟨_hTrans, hrest⟩
   exact hrest.2
 
+/-- Shell-specialized zeroth-order polynomial growth for the fixed-time
+canonical `ξ`-shift coefficient. This is the precise shell-level consequence
+already available from the current forward-tube growth package; higher
+iterated real derivative bounds remain the first missing step toward
+`Function.HasTemperateGrowth`. -/
+private theorem bvt_F_canonicalXiShift_hasPolynomialGrowth
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    {t ε : ℝ} (hε : 0 < ε) :
+    ∃ (C_bd : ℝ) (N : ℕ),
+      0 < C_bd ∧
+      ∀ y : NPointDomain d (n + m),
+        ‖bvt_F OS lgc (n + m)
+            (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+              (fun k μ =>
+                ↑(y k μ) +
+                  ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                    Complex.I)
+              (t : ℂ))‖ ≤
+          C_bd * (1 + ‖y‖) ^ N := by
+  obtain ⟨C0, N, hC0_pos, hgrowth⟩ :=
+    bvt_F_hasGlobalForwardTubeGrowth (d := d) OS lgc (n + m)
+  let shift :
+      Fin (n + m) → Fin (d + 1) → ℂ :=
+    fun k μ =>
+      (if (⟨n, Nat.lt_add_of_pos_right hm⟩ : Fin (n + m)).val ≤ k.val ∧
+            μ = (0 : Fin (d + 1)) then
+          (t : ℂ)
+        else
+          0) +
+        ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) * Complex.I
+  have hreal_norm :
+      ∀ y : NPointDomain d (n + m),
+        ‖(fun k μ => ((y k μ : ℝ) : ℂ))‖ ≤ ‖y‖ := by
+    intro y
+    refine (pi_norm_le_iff_of_nonneg (norm_nonneg y)).2 ?_
+    intro k
+    refine (pi_norm_le_iff_of_nonneg (norm_nonneg y)).2 ?_
+    intro μ
+    calc
+      ‖(((y k μ : ℝ) : ℂ))‖ = |y k μ| := by simp
+      _ = ‖y k μ‖ := by rw [Real.norm_eq_abs]
+      _ ≤ ‖y k‖ := norm_le_pi_norm _ μ
+      _ ≤ ‖y‖ := norm_le_pi_norm _ k
+  let C_bd : ℝ := C0 * (1 + ‖shift‖) ^ N
+  have hC_bd_pos : 0 < C_bd := by
+    dsimp [C_bd]
+    positivity
+  refine ⟨C_bd, N, hC_bd_pos, ?_⟩
+  intro y
+  let shellY : Fin (n + m) → Fin (d + 1) → ℂ :=
+    xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+      (fun k μ =>
+        ↑(y k μ) +
+          ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+            Complex.I)
+      (t : ℂ)
+  have hshell_mem : shellY ∈ ForwardTube d (n + m) := by
+    simpa [forwardTube_eq_imPreimage] using
+      canonicalXiShift_mem_forwardTube (d := d) hm hε y
+  have hshell_decomp :
+      shellY = fun k μ => (((y k μ : ℝ) : ℂ)) + shift k μ := by
+    ext k μ
+    by_cases hshift : (⟨n, Nat.lt_add_of_pos_right hm⟩ : Fin (n + m)).val ≤ k.val ∧
+        μ = (0 : Fin (d + 1))
+    · simp [shellY, shift, xiShift, hshift]
+      ring_nf
+    · simp [shellY, shift, xiShift, hshift]
+  have hshell_norm :
+      ‖shellY‖ ≤ ‖y‖ + ‖shift‖ := by
+    rw [hshell_decomp]
+    calc
+      ‖fun k μ => (((y k μ : ℝ) : ℂ)) + shift k μ‖
+          ≤ ‖fun k μ => (((y k μ : ℝ) : ℂ))‖ + ‖shift‖ := norm_add_le _ _
+      _ ≤ ‖y‖ + ‖shift‖ := by
+          gcongr
+          exact hreal_norm y
+  have hshell_growth :
+      1 + ‖shellY‖ ≤ (1 + ‖shift‖) * (1 + ‖y‖) := by
+    have hstep : 1 + ‖shellY‖ ≤ 1 + (‖y‖ + ‖shift‖) := by
+      linarith
+    have hprod : 1 + (‖y‖ + ‖shift‖) ≤ (1 + ‖shift‖) * (1 + ‖y‖) := by
+      nlinarith [norm_nonneg y, norm_nonneg shift]
+    exact hstep.trans hprod
+  calc
+    ‖bvt_F OS lgc (n + m) shellY‖ ≤ C0 * (1 + ‖shellY‖) ^ N := hgrowth shellY hshell_mem
+    _ ≤ C0 * ((1 + ‖shift‖) * (1 + ‖y‖)) ^ N := by
+        gcongr
+    _ = C_bd * (1 + ‖y‖) ^ N := by
+        dsimp [C_bd]
+        rw [mul_pow]
+        ring
+
+/-- The raw ambient fixed-time shell functional at positive imaginary height,
+packaged as a continuous linear functional on the full ambient Schwartz space
+before any Section 4.3 kernel or quotient descent. -/
+private noncomputable def section43_fixedTimeShellRawCLM
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (t ε : ℝ) (hε : 0 < ε) :
+    SchwartzNPoint d (n + m) →L[ℂ] ℂ := by
+  set coeff : NPointDomain d (n + m) → ℂ := fun y =>
+    bvt_F OS lgc (n + m)
+      (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+        (fun k μ =>
+          ↑(y k μ) +
+            ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+              Complex.I)
+        (t : ℂ))
+  have hcoeff_cont : Continuous coeff := by
+    rw [continuous_iff_continuousAt]
+    intro y
+    let shellMap : NPointDomain d (n + m) → Fin (n + m) → Fin (d + 1) → ℂ :=
+      fun y =>
+        xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+          (fun k μ =>
+            ↑(y k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                Complex.I)
+          (t : ℂ)
+    have hshell_mem : shellMap y ∈ ForwardTube d (n + m) := by
+      simpa [shellMap, forwardTube_eq_imPreimage] using
+        canonicalXiShift_mem_forwardTube (d := d) hm hε y
+    have houter_cont : ContinuousAt (bvt_F OS lgc (n + m)) (shellMap y) := by
+      let hft_open :
+          IsOpen (ForwardTube d (n + m)) := by
+        simpa [BHW_forwardTube_eq (d := d) (n := n + m)] using
+          (BHW.isOpen_forwardTube (d := d) (n := n + m))
+      have houter_diff :
+          DifferentiableAt ℂ (bvt_F OS lgc (n + m)) (shellMap y) :=
+        (bvt_F_holomorphic (d := d) OS lgc (n + m)).differentiableAt
+          (hft_open.mem_nhds hshell_mem)
+      exact houter_diff.continuousAt
+    have hinner_cont : ContinuousAt shellMap y :=
+      (contDiff_canonicalXiShift (d := d) hm t ε).continuous.continuousAt
+    simpa [coeff, shellMap] using houter_cont.comp hinner_cont
+  have hcoeff_meas :
+      MeasureTheory.AEStronglyMeasurable coeff MeasureTheory.volume :=
+    hcoeff_cont.aestronglyMeasurable
+  let growth :=
+    bvt_F_canonicalXiShift_hasPolynomialGrowth
+      (d := d) (n := n) (m := m) OS lgc hm (t := t) (ε := ε) hε
+  let C_bd : ℝ := Classical.choose growth
+  let N : ℕ := Classical.choose (Classical.choose_spec growth)
+  have hC_bd : 0 < C_bd := by
+    exact (Classical.choose_spec (Classical.choose_spec growth)).1
+  have hcoeff_bound :
+      ∀ y : NPointDomain d (n + m), ‖coeff y‖ ≤ C_bd * (1 + ‖y‖) ^ N := by
+    exact (Classical.choose_spec (Classical.choose_spec growth)).2
+  letI : MeasureTheory.Measure.IsAddHaarMeasure
+      (MeasureTheory.volume : MeasureTheory.Measure (NPointDomain d (n + m))) :=
+    MeasureTheory.Measure.instIsAddHaarMeasureForallVolumeOfMeasurableAddOfSigmaFinite
+  letI : (MeasureTheory.volume : MeasureTheory.Measure (NPointDomain d (n + m))).HasTemperateGrowth :=
+    MeasureTheory.Measure.IsAddHaarMeasure.instHasTemperateGrowth
+  have h_binom_ineq : ∀ s : ℝ, 0 ≤ s → (1 + s) ^ N ≤ 2 ^ N * (1 + s ^ N) := by
+    intro s hs
+    have h2s : 1 + s ≤ 2 * max 1 s := by
+      calc
+        1 + s ≤ max 1 s + max 1 s := add_le_add (le_max_left _ _) (le_max_right _ _)
+        _ = 2 * max 1 s := by ring
+    calc
+      (1 + s) ^ N ≤ (2 * max 1 s) ^ N := pow_le_pow_left₀ (by positivity) h2s N
+      _ = 2 ^ N * (max 1 s) ^ N := by rw [mul_pow]
+      _ ≤ 2 ^ N * (1 + s ^ N) := by
+          apply mul_le_mul_of_nonneg_left _ (by positivity)
+          rcases le_total s 1 with h | h
+          · rw [max_eq_left h]
+            simp [one_pow]
+            linarith [pow_nonneg hs N]
+          · rw [max_eq_right h]
+            linarith [show (1 : ℝ) ^ N = 1 from one_pow N]
+  have hcoeff_mul_integrable :
+      ∀ h : SchwartzNPoint d (n + m),
+        MeasureTheory.Integrable
+          (fun y : NPointDomain d (n + m) => coeff y * h y) MeasureTheory.volume := by
+    intro h
+    have hh_int : MeasureTheory.Integrable (fun y : NPointDomain d (n + m) => ‖h y‖)
+        MeasureTheory.volume := by
+      simpa using h.integrable.norm
+    have hh_pow_int :
+        MeasureTheory.Integrable
+          (fun y : NPointDomain d (n + m) => ‖y‖ ^ N * ‖h y‖) MeasureTheory.volume := by
+      simpa using h.integrable_pow_mul (μ := MeasureTheory.volume) N
+    have hmajorant_int :
+        MeasureTheory.Integrable
+          (fun y : NPointDomain d (n + m) =>
+            C_bd * 2 ^ N * (‖h y‖ + ‖y‖ ^ N * ‖h y‖))
+          MeasureTheory.volume :=
+      (hh_int.add hh_pow_int).const_mul (C_bd * 2 ^ N)
+    apply hmajorant_int.mono' (hcoeff_meas.mul h.integrable.aestronglyMeasurable)
+    filter_upwards [Filter.Eventually.of_forall hcoeff_bound] with y hy
+    change ‖coeff y * h y‖ ≤ C_bd * 2 ^ N * (‖h y‖ + ‖y‖ ^ N * ‖h y‖)
+    rw [norm_mul]
+    calc
+      ‖coeff y‖ * ‖h y‖ ≤ C_bd * (1 + ‖y‖) ^ N * ‖h y‖ :=
+        mul_le_mul_of_nonneg_right hy (norm_nonneg _)
+      _ ≤ C_bd * (2 ^ N * (1 + ‖y‖ ^ N)) * ‖h y‖ := by
+          apply mul_le_mul_of_nonneg_right _ (norm_nonneg _)
+          exact mul_le_mul_of_nonneg_left
+            (h_binom_ineq ‖y‖ (norm_nonneg _)) (le_of_lt hC_bd)
+      _ = C_bd * 2 ^ N * (‖h y‖ + ‖y‖ ^ N * ‖h y‖) := by ring
+  refine ContinuousLinearMap.mk
+    { toFun := fun h => ∫ y : NPointDomain d (n + m), coeff y * h y
+      map_add' := by
+        intro h1 h2
+        simpa [Pi.add_apply, mul_add] using
+          (MeasureTheory.integral_add
+            (hcoeff_mul_integrable h1) (hcoeff_mul_integrable h2))
+      map_smul' := by
+        intro a h
+        calc
+          ∫ y : NPointDomain d (n + m), coeff y * (a • h) y
+              = ∫ y : NPointDomain d (n + m), a * (coeff y * h y) := by
+                  apply MeasureTheory.integral_congr_ae
+                  filter_upwards with y
+                  simp [Pi.smul_apply, smul_eq_mul]
+                  ring
+          _ = a * ∫ y : NPointDomain d (n + m), coeff y * h y := by
+                  exact MeasureTheory.integral_const_mul a _ } ?_
+  exact schwartz_continuous_of_polynomial_bound (d := d) coeff hcoeff_meas
+    C_bd N hC_bd (Filter.Eventually.of_forall hcoeff_bound)
+
+/-- Fixed-time branch normalization for the translated shell:
+`xiShift` at the theorem-3 shell index is the ambient configuration plus the
+single real-time indicator shift on the zero-th coordinate. This is the exact
+local affine form needed for the next translated-shell growth comparison. -/
+private theorem section43_fixedTime_xiShift_zero_eq_add_indicator
+    {n m : ℕ} (hm : 0 < m) (t : ℝ)
+    (z : Fin (n + m) → Fin (d + 1) → ℂ) :
+    xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0 z (t : ℂ) =
+      fun k μ =>
+        z k μ +
+          if (⟨n, Nat.lt_add_of_pos_right hm⟩ : Fin (n + m)).val ≤ k.val ∧
+              μ = (0 : Fin (d + 1)) then
+            (t : ℂ)
+          else
+            0 := by
+  ext k μ
+  by_cases hshift : (⟨n, Nat.lt_add_of_pos_right hm⟩ : Fin (n + m)).val ≤ k.val ∧
+      μ = (0 : Fin (d + 1))
+  · simp [xiShift, hshift]
+  · simp [xiShift, hshift]
+
+/-- Global forward-tube polynomial growth for the fixed-time translated shell
+continuation obtained by shifting the theorem-3 shell index in the real time
+direction. This is the exact growth transfer needed before applying the generic
+boundary-value constructor at the first fixed-time shell insertion surface. -/
+private theorem section43_fixedTime_xiShift_hasGlobalForwardTubeGrowth
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m) (t : ℝ) :
+    ∃ (C_bd : ℝ) (N : ℕ),
+      0 < C_bd ∧
+      ∀ z ∈ ForwardTube d (n + m),
+        ‖bvt_F OS lgc (n + m)
+            (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0 z (t : ℂ))‖ ≤
+          C_bd * (1 + ‖z‖) ^ N := by
+  obtain ⟨C0, N, hC0_pos, hgrowth⟩ :=
+    bvt_F_hasGlobalForwardTubeGrowth (d := d) OS lgc (n + m)
+  let shift :
+      Fin (n + m) → Fin (d + 1) → ℂ :=
+    fun k μ =>
+      if (⟨n, Nat.lt_add_of_pos_right hm⟩ : Fin (n + m)).val ≤ k.val ∧
+          μ = (0 : Fin (d + 1)) then
+        (t : ℂ)
+      else
+        0
+  let C_bd : ℝ := C0 * (1 + ‖shift‖) ^ N
+  have hC_bd_pos : 0 < C_bd := by
+    dsimp [C_bd]
+    positivity
+  refine ⟨C_bd, N, hC_bd_pos, ?_⟩
+  intro z hz
+  have hz_shift_mem :
+      xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0 z (t : ℂ) ∈ ForwardTube d (n + m) := by
+    rw [forwardTube_eq_imPreimage] at hz ⊢
+    have him :
+        (fun k μ =>
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0 z (t : ℂ) k μ).im) =
+          fun k μ => (z k μ).im := by
+      ext k μ
+      by_cases hshift : (⟨n, Nat.lt_add_of_pos_right hm⟩ : Fin (n + m)).val ≤ k.val ∧
+          μ = (0 : Fin (d + 1))
+      · simp [xiShift, hshift]
+      · simp [xiShift, hshift]
+    simpa [Set.mem_setOf_eq, him] using hz
+  have hshift_decomp :
+      xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0 z (t : ℂ) =
+        fun k μ => z k μ + shift k μ := by
+    simpa [shift] using
+      section43_fixedTime_xiShift_zero_eq_add_indicator (d := d) hm t z
+  have hshift_norm :
+      ‖xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0 z (t : ℂ)‖ ≤ ‖z‖ + ‖shift‖ := by
+    rw [hshift_decomp]
+    exact norm_add_le _ _
+  have hshift_growth :
+      1 + ‖xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0 z (t : ℂ)‖ ≤
+        (1 + ‖shift‖) * (1 + ‖z‖) := by
+    have hstep : 1 + ‖xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0 z (t : ℂ)‖ ≤
+        1 + (‖z‖ + ‖shift‖) := by
+      linarith
+    have hprod : 1 + (‖z‖ + ‖shift‖) ≤ (1 + ‖shift‖) * (1 + ‖z‖) := by
+      nlinarith [norm_nonneg z, norm_nonneg shift]
+    exact hstep.trans hprod
+  calc
+    ‖bvt_F OS lgc (n + m)
+        (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0 z (t : ℂ))‖
+        ≤ C0 * (1 + ‖xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0 z (t : ℂ)‖) ^ N := by
+            exact hgrowth _ hz_shift_mem
+    _ ≤ C0 * ((1 + ‖shift‖) * (1 + ‖z‖)) ^ N := by
+          gcongr
+    _ = C_bd * (1 + ‖z‖) ^ N := by
+          dsimp [C_bd]
+          rw [mul_pow]
+          ring
+
+/-- Fixed-time shell-local uniform polynomial growth for the raw theorem-3
+kernel on heights `0 < ε < 1`.
+
+This is the smaller shell-side bridge directly beneath the eventual
+finite-seminorm bound on `section43_fixedTimeShellRawCLM`: before integrating
+against Schwartz tests, the translated shell coefficient already admits one
+common polynomial-growth bound independent of the shell height. -/
+private theorem section43_fixedTimeShellRaw_uniformPolyGrowth_fixedTime
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m) (t : ℝ) :
+    ∃ (C_shell : ℝ) (N : ℕ), 0 < C_shell ∧
+      ∀ ε : ℝ, ∀ hε : 0 < ε, ∀ hε_lt : ε < 1,
+      ∀ y : NPointDomain d (n + m),
+        ‖bvt_F OS lgc (n + m)
+            (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+              (fun k μ =>
+                ↑(y k μ) +
+                  ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                    Complex.I)
+              (t : ℂ))‖ ≤
+          C_shell * (1 + ‖y‖) ^ N := by
+  obtain ⟨C_bd, N, hC_bd_pos, hgrowth⟩ :=
+    section43_fixedTime_xiShift_hasGlobalForwardTubeGrowth
+      (d := d) OS lgc hm t
+  let η : Fin (n + m) → Fin (d + 1) → ℝ :=
+    canonicalForwardConeDirection (d := d) (n + m)
+  refine ⟨C_bd * (1 + ‖η‖) ^ N, N, mul_pos hC_bd_pos (pow_pos (by positivity) _), ?_⟩
+  intro ε hε hε_lt y
+  let z : Fin (n + m) → Fin (d + 1) → ℂ :=
+    fun k μ => ↑(y k μ) + ε * ↑(η k μ) * Complex.I
+  have hz : z ∈ ForwardTube d (n + m) := by
+    have hη_abs : η ∈ ForwardConeAbs d (n + m) :=
+      (inForwardCone_iff_mem_forwardConeAbs (d := d) (n := n + m) η).mp
+        (canonicalForwardConeDirection_mem (d := d) (n + m))
+    have hscaled : ε • η ∈ ForwardConeAbs d (n + m) :=
+      forwardConeAbs_smul d (n + m) ε hε η hη_abs
+    simpa [forwardTube_eq_imPreimage, z, η] using hscaled
+  have hgrow := hgrowth z hz
+  have hnorm :
+      ‖z‖ ≤ ‖y‖ + ‖ε • η‖ := by
+    have hz_eq :
+        z = (fun k μ => (y k μ : ℂ)) + (fun k μ => ((ε * η k μ : ℝ) : ℂ) * Complex.I) := by
+      ext k μ
+      simp [z]
+    rw [hz_eq]
+    have hyC :
+        ‖(fun k μ => (y k μ : ℂ))‖ ≤ ‖y‖ := by
+      change ‖(fun k : Fin (n + m) => fun μ : Fin (d + 1) => ((y k μ : ℝ) : ℂ))‖ ≤ ‖y‖
+      refine (pi_norm_le_iff_of_nonneg
+        (x := (fun k : Fin (n + m) => fun μ : Fin (d + 1) => ((y k μ : ℝ) : ℂ)))
+        (r := ‖y‖)
+        (show 0 ≤ ‖y‖ by exact norm_nonneg _)).2 ?_
+      intro k
+      have hyCk : ‖fun μ => ((y k μ : ℝ) : ℂ)‖ ≤ ‖y k‖ := by
+        change ‖(fun μ : Fin (d + 1) => ((y k μ : ℝ) : ℂ))‖ ≤ ‖y k‖
+        refine (pi_norm_le_iff_of_nonneg
+          (x := (fun μ : Fin (d + 1) => ((y k μ : ℝ) : ℂ)))
+          (r := ‖y k‖)
+          (show 0 ≤ ‖y k‖ by exact norm_nonneg _)).2 ?_
+        intro μ
+        calc
+          ‖((y k μ : ℝ) : ℂ)‖ = ‖y k μ‖ := by simp
+          _ ≤ ‖y k‖ := norm_le_pi_norm (f := y k) μ
+      exact le_trans hyCk (norm_le_pi_norm (f := y) k)
+    have hηI :
+        ‖fun k μ => ((ε * η k μ : ℝ) : ℂ) * Complex.I‖ ≤ ‖ε • η‖ := by
+      change
+        ‖(fun k : Fin (n + m) => fun μ : Fin (d + 1) =>
+          (((ε * η k μ : ℝ) : ℂ) * Complex.I))‖ ≤ ‖ε • η‖
+      refine (pi_norm_le_iff_of_nonneg
+        (x := (fun k : Fin (n + m) => fun μ : Fin (d + 1) =>
+          (((ε * η k μ : ℝ) : ℂ) * Complex.I)))
+        (r := ‖ε • η‖)
+        (show 0 ≤ ‖ε • η‖ by exact norm_nonneg _)).2 ?_
+      intro k
+      have hηIk : ‖fun μ => (((ε * η k μ : ℝ) : ℂ) * Complex.I)‖ ≤ ‖(ε • η) k‖ := by
+        change
+          ‖(fun μ : Fin (d + 1) =>
+            (((ε * η k μ : ℝ) : ℂ) * Complex.I))‖ ≤ ‖(ε • η) k‖
+        refine (pi_norm_le_iff_of_nonneg
+          (x := (fun μ : Fin (d + 1) =>
+            (((ε * η k μ : ℝ) : ℂ) * Complex.I)))
+          (r := ‖(ε • η) k‖)
+          (show 0 ≤ ‖(ε • η) k‖ by exact norm_nonneg _)).2 ?_
+        intro μ
+        calc
+          ‖(((ε * η k μ : ℝ) : ℂ) * Complex.I)‖ = ‖ε * η k μ‖ := by simp
+          _ = ‖(ε • η) k μ‖ := by simp [Pi.smul_apply]
+          _ ≤ ‖(ε • η) k‖ := norm_le_pi_norm (f := (ε • η) k) μ
+      exact le_trans hηIk (norm_le_pi_norm (f := ε • η) k)
+    calc
+      ‖(fun k μ => (y k μ : ℂ)) + (fun k μ => ((ε * η k μ : ℝ) : ℂ) * Complex.I)‖
+          ≤ ‖fun k μ => (y k μ : ℂ)‖ + ‖fun k μ => ((ε * η k μ : ℝ) : ℂ) * Complex.I‖ :=
+        norm_add_le _ _
+      _ ≤ ‖y‖ + ‖ε • η‖ := add_le_add hyC hηI
+  have hone :
+      1 + ‖z‖ ≤ (1 + ‖ε • η‖) * (1 + ‖y‖) := by
+    have htmp : 1 + ‖z‖ ≤ 1 + (‖y‖ + ‖ε • η‖) := by
+      linarith [hnorm]
+    have hprod : 1 + (‖y‖ + ‖ε • η‖) ≤ (1 + ‖ε • η‖) * (1 + ‖y‖) := by
+      nlinarith [norm_nonneg y, norm_nonneg (ε • η)]
+    exact le_trans htmp hprod
+  have hε_norm_le_one : ‖ε‖ ≤ (1 : ℝ) := by
+    rw [Real.norm_of_nonneg (le_of_lt hε)]
+    linarith
+  have hεη_norm_le : ‖ε • η‖ ≤ ‖η‖ := by
+    calc
+      ‖ε • η‖ = ‖ε‖ * ‖η‖ := norm_smul ε η
+      _ ≤ 1 * ‖η‖ := by
+        gcongr
+      _ = ‖η‖ := by ring
+  have hscale_le :
+      (1 + ‖ε • η‖) * (1 + ‖y‖) ≤ (1 + ‖η‖) * (1 + ‖y‖) := by
+    apply mul_le_mul_of_nonneg_right ?_ (by positivity)
+    linarith
+  calc
+    ‖bvt_F OS lgc (n + m)
+        (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+          (fun k μ =>
+            ↑(y k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                Complex.I)
+          (t : ℂ))‖
+        = ‖bvt_F OS lgc (n + m) (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0 z (t : ℂ))‖ := by
+            simp [z, η]
+    _ ≤ C_bd * (1 + ‖z‖) ^ N := hgrow
+    _ ≤ C_bd * ((1 + ‖ε • η‖) * (1 + ‖y‖)) ^ N := by
+          gcongr
+    _ ≤ C_bd * ((1 + ‖η‖) * (1 + ‖y‖)) ^ N := by
+          apply mul_le_mul_of_nonneg_left ?_ (le_of_lt hC_bd_pos)
+          exact pow_le_pow_left₀ (by positivity) hscale_le N
+    _ = (C_bd * (1 + ‖η‖) ^ N) * (1 + ‖y‖) ^ N := by
+          rw [mul_pow]
+          ring
+
+/-- Fixed-test-function shell-local boundedness on `0 < ε < 1`.
+
+This is the first honest shell-side step strictly above
+`section43_fixedTimeShellRaw_uniformPolyGrowth_fixedTime`: for each ambient
+Schwartz test, the fixed-time raw shell CLMs stay pointwise bounded as the
+imaginary shell height runs through `(0,1)`. The remaining upgrade to one
+common finite Schwartz seminorm is then a Banach-Steinhaus step, not another
+shell-integral estimate. -/
+private theorem section43_fixedTimeShellRawCLM_pointwiseBounded_fixedTime
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m) (t : ℝ) :
+    ∀ φ : SchwartzNPoint d (n + m),
+      ∃ Cφ : ℝ, 0 ≤ Cφ ∧
+        ∀ ε : ℝ, ∀ hε : 0 < ε, ∀ hε_lt : ε < 1,
+          ‖section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε hε φ‖ ≤ Cφ := by
+  obtain ⟨C_shell, N, hC_shell_pos, hcoeff_bound⟩ :=
+    section43_fixedTimeShellRaw_uniformPolyGrowth_fixedTime
+      (d := d) OS lgc hm t
+  intro φ
+  set D_fin : ℕ := Module.finrank ℝ (NPointDomain d (n + m))
+  set M : ℕ := N + D_fin + 1
+  set I_D : ℝ :=
+    ∫ y : NPointDomain d (n + m), (1 + ‖y‖) ^ (-(↑(D_fin + 1) : ℝ))
+  set sem : ℝ :=
+    (Finset.Iic (M, 0)).sup
+      (schwartzSeminormFamily ℂ (NPointDomain d (n + m)) ℂ) φ
+  let Cφ : ℝ := C_shell * 2 ^ M * sem * I_D
+  refine ⟨Cφ, ?_, ?_⟩
+  · dsimp [Cφ, sem, I_D]
+    apply mul_nonneg (mul_nonneg (mul_nonneg (le_of_lt hC_shell_pos) (by positivity))
+      (apply_nonneg _ _))
+    apply MeasureTheory.integral_nonneg
+    intro y
+    apply Real.rpow_nonneg
+    linarith [norm_nonneg y]
+  · intro ε hε hε_lt
+    have hsem_bound :
+        ∀ y : NPointDomain d (n + m),
+          (1 + ‖y‖) ^ M * ‖φ y‖ ≤ 2 ^ M * sem := by
+      intro y
+      have h := SchwartzMap.one_add_le_sup_seminorm_apply (𝕜 := ℂ) (m := (M, 0))
+        (le_refl M) (le_refl 0) φ y
+      rwa [norm_iteratedFDeriv_zero] at h
+    have hcoeff_cont :
+        Continuous
+          (fun y : NPointDomain d (n + m) =>
+            bvt_F OS lgc (n + m)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                (fun k μ =>
+                  ↑(y k μ) +
+                    ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                      Complex.I)
+                (t : ℂ))) := by
+      rw [continuous_iff_continuousAt]
+      intro y
+      let shellMap : NPointDomain d (n + m) → Fin (n + m) → Fin (d + 1) → ℂ :=
+        fun y =>
+          xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun k μ =>
+              ↑(y k μ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                  Complex.I)
+            (t : ℂ)
+      have hshell_mem : shellMap y ∈ ForwardTube d (n + m) := by
+        simpa [shellMap, forwardTube_eq_imPreimage] using
+          canonicalXiShift_mem_forwardTube (d := d) hm hε y
+      have houter_cont : ContinuousAt (bvt_F OS lgc (n + m)) (shellMap y) := by
+        let hft_open :
+            IsOpen (ForwardTube d (n + m)) := by
+          simpa [BHW_forwardTube_eq (d := d) (n := n + m)] using
+            (BHW.isOpen_forwardTube (d := d) (n := n + m))
+        have houter_diff :
+            DifferentiableAt ℂ (bvt_F OS lgc (n + m)) (shellMap y) :=
+          (bvt_F_holomorphic (d := d) OS lgc (n + m)).differentiableAt
+            (hft_open.mem_nhds hshell_mem)
+        exact houter_diff.continuousAt
+      have hinner_cont : ContinuousAt shellMap y :=
+        (contDiff_canonicalXiShift (d := d) hm t ε).continuous.continuousAt
+      simpa [shellMap] using houter_cont.comp hinner_cont
+    have hpointwise :
+        ∀ᵐ y : NPointDomain d (n + m) ∂MeasureTheory.volume,
+          ‖bvt_F OS lgc (n + m)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                (fun k μ =>
+                  ↑(y k μ) +
+                    ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                      Complex.I)
+                (t : ℂ)) *
+            φ y‖ ≤
+              C_shell * 2 ^ M * sem *
+                (1 + ‖y‖) ^ (-(↑(D_fin + 1) : ℝ)) := by
+      filter_upwards with y
+      have h1y_pos : (0 : ℝ) < 1 + ‖y‖ := by
+        linarith [norm_nonneg y]
+      have h1yD1_pos : (0 : ℝ) < (1 + ‖y‖) ^ (D_fin + 1) := pow_pos h1y_pos _
+      rw [Real.rpow_neg (le_of_lt h1y_pos), Real.rpow_natCast, norm_mul]
+      have step1 :
+          ‖bvt_F OS lgc (n + m)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                (fun k μ =>
+                  ↑(y k μ) +
+                    ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                      Complex.I)
+                (t : ℂ))‖ * ‖φ y‖ ≤
+            C_shell * (1 + ‖y‖) ^ N * ‖φ y‖ :=
+        mul_le_mul_of_nonneg_right (hcoeff_bound ε hε hε_lt y) (norm_nonneg _)
+      have step2 :
+          (1 + ‖y‖) ^ N * ‖φ y‖ ≤
+            2 ^ M * sem * ((1 + ‖y‖) ^ (D_fin + 1))⁻¹ := by
+        rw [le_mul_inv_iff₀ h1yD1_pos]
+        have hM : N + (D_fin + 1) = M := by
+          omega
+        calc
+          (1 + ‖y‖) ^ N * ‖φ y‖ * (1 + ‖y‖) ^ (D_fin + 1)
+              = (1 + ‖y‖) ^ (N + (D_fin + 1)) * ‖φ y‖ := by
+                  rw [pow_add]
+                  ring
+          _ = (1 + ‖y‖) ^ M * ‖φ y‖ := by rw [hM]
+          _ ≤ 2 ^ M * sem := hsem_bound y
+      calc
+        ‖bvt_F OS lgc (n + m)
+            (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+              (fun k μ =>
+                ↑(y k μ) +
+                  ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                    Complex.I)
+              (t : ℂ))‖ * ‖φ y‖
+            ≤ C_shell * (1 + ‖y‖) ^ N * ‖φ y‖ := step1
+        _ = C_shell * ((1 + ‖y‖) ^ N * ‖φ y‖) := by ring
+        _ ≤ C_shell * (2 ^ M * sem * ((1 + ‖y‖) ^ (D_fin + 1))⁻¹) :=
+          mul_le_mul_of_nonneg_left step2 (le_of_lt hC_shell_pos)
+        _ = C_shell * 2 ^ M * sem * ((1 + ‖y‖) ^ (D_fin + 1))⁻¹ := by ring
+    have hInt_kernel :
+        MeasureTheory.Integrable
+          (fun y : NPointDomain d (n + m) =>
+            bvt_F OS lgc (n + m)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                (fun k μ =>
+                  ↑(y k μ) +
+                    ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                      Complex.I)
+                (t : ℂ)) *
+            φ y)
+          MeasureTheory.volume := by
+      refine ((integrable_one_add_norm (show (D_fin : ℝ) < ↑(D_fin + 1) by
+          push_cast
+          linarith)).const_mul (C_shell * 2 ^ M * sem)).mono' ?_ ?_
+      · exact hcoeff_cont.aestronglyMeasurable.mul φ.continuous.aestronglyMeasurable
+      · exact hpointwise
+    calc
+      ‖section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε hε φ‖
+          = ‖∫ y : NPointDomain d (n + m),
+              bvt_F OS lgc (n + m)
+                (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                  (fun k μ =>
+                    ↑(y k μ) +
+                      ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                        Complex.I)
+                  (t : ℂ)) *
+                φ y‖ := by
+              simp [section43_fixedTimeShellRawCLM]
+      _ ≤ ∫ y : NPointDomain d (n + m),
+            ‖bvt_F OS lgc (n + m)
+                (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                  (fun k μ =>
+                    ↑(y k μ) +
+                      ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                        Complex.I)
+                  (t : ℂ)) *
+              φ y‖ :=
+        MeasureTheory.norm_integral_le_integral_norm _
+      _ ≤ ∫ y : NPointDomain d (n + m),
+            C_shell * 2 ^ M * sem *
+              (1 + ‖y‖) ^ (-(↑(D_fin + 1) : ℝ)) :=
+        MeasureTheory.integral_mono_ae
+          hInt_kernel.norm
+          ((integrable_one_add_norm (show (D_fin : ℝ) < ↑(D_fin + 1) by
+              push_cast
+              linarith)).const_mul (C_shell * 2 ^ M * sem))
+          hpointwise
+      _ = C_shell * 2 ^ M * sem * I_D := by
+            rw [MeasureTheory.integral_const_mul]
+      _ = Cφ := by
+            simp [Cφ, I_D]
+
+/-- First honest fixed-time shell boundary-distribution step beneath
+`hlimit_os`: for each fixed `t > 0`, the positive-height raw shell family
+admits some limit in the ambient Schwartz dual.
+
+This all-directions version matches the hypothesis surface expected later by
+the SCV Fourier-support and Fourier-Laplace representation seams.
+
+It still only lands the existence half of the shell boundary-distribution
+package. It is not yet enough for the outside-region branch in `hlimit_os`,
+because the later quotient-kernel theorem for the resulting limit functional is
+still missing. -/
+private theorem section43_fixedTimeShellRawCLM_boundaryValueData_allDirections_fixedTime
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (t : ℝ) :
+    ∃ T_t : SchwartzNPoint d (n + m) →L[ℂ] ℂ,
+      (∀ h : SchwartzNPoint d (n + m),
+        Filter.Tendsto
+          (fun ε : ℝ =>
+            if hε : 0 < ε then
+              section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε hε h
+            else
+              0)
+      (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+      (nhds (T_t h))) ∧
+      (let F_analytic :
+          (Fin (n + m) → Fin (d + 1) → ℂ) → ℂ :=
+          fun z =>
+            bvt_F OS lgc (n + m)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0 z (t : ℂ))
+       ∀ (η : Fin (n + m) → Fin (d + 1) → ℝ), η ∈ ForwardConeAbs d (n + m) →
+         ∀ h : SchwartzNPoint d (n + m),
+          Filter.Tendsto
+            (fun ε : ℝ =>
+              ∫ x : Fin (n + m) → Fin (d + 1) → ℝ,
+                F_analytic (fun k μ =>
+                  ↑(x k μ) + (ε : ℂ) * ↑(η k μ) * Complex.I) * h x)
+            (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+            (nhds (T_t h))) := by
+  let j : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+  let F_analytic :
+      (Fin (n + m) → Fin (d + 1) → ℂ) → ℂ :=
+    fun z => bvt_F OS lgc (n + m) (xiShift j 0 z (t : ℂ))
+  have hF_hol :
+      DifferentiableOn ℂ F_analytic (TubeDomainSetPi (ForwardConeAbs d (n + m))) := by
+    intro z hz
+    have hz_shift_mem :
+        xiShift j 0 z (t : ℂ) ∈ ForwardTube d (n + m) := by
+      rw [forwardTube_eq_imPreimage]
+      change (fun k μ => (z k μ).im) ∈ ForwardConeAbs d (n + m) at hz
+      have him :
+          (fun k μ => (xiShift j 0 z (t : ℂ) k μ).im) =
+            fun k μ => (z k μ).im := by
+        ext k μ
+        by_cases hshift : j.val ≤ k.val ∧ μ = (0 : Fin (d + 1))
+        · have hshift' : j ≤ k ∧ μ = (0 : Fin (d + 1)) := by simpa using hshift
+          simp [xiShift, hshift']
+        · have hshift' : ¬ (j ≤ k ∧ μ = (0 : Fin (d + 1))) := by simpa using hshift
+          simp [xiShift, hshift']
+      simpa [him] using hz
+    have hft_open : IsOpen (ForwardTube d (n + m)) := by
+      simpa [BHW_forwardTube_eq (d := d) (n := n + m)] using
+        (BHW.isOpen_forwardTube (d := d) (n := n + m))
+    have houter :
+        DifferentiableAt ℂ (bvt_F OS lgc (n + m)) (xiShift j 0 z (t : ℂ)) :=
+      (bvt_F_holomorphic (d := d) OS lgc (n + m)).differentiableAt
+        (hft_open.mem_nhds hz_shift_mem)
+    let shift : Fin (n + m) → Fin (d + 1) → ℂ :=
+      fun k μ =>
+        if j.val ≤ k.val ∧ μ = (0 : Fin (d + 1)) then
+          (t : ℂ)
+        else
+          0
+    have hinner :
+        DifferentiableAt ℂ
+          (fun z : Fin (n + m) → Fin (d + 1) → ℂ => xiShift j 0 z (t : ℂ)) z := by
+      convert (differentiableAt_id.add_const shift : DifferentiableAt ℂ
+        (fun z : Fin (n + m) → Fin (d + 1) → ℂ => z + shift) z) using 1
+      ext w k μ
+      by_cases hshift : j.val ≤ k.val ∧ μ = (0 : Fin (d + 1))
+      · have hshift' : j ≤ k ∧ μ = (0 : Fin (d + 1)) := by simpa using hshift
+        simp [shift, xiShift, hshift']
+      · have hshift' : ¬ (j ≤ k ∧ μ = (0 : Fin (d + 1))) := by simpa using hshift
+        simp [shift, xiShift, hshift']
+    exact (houter.comp z hinner).differentiableWithinAt
+  let growth :=
+    section43_fixedTime_xiShift_hasGlobalForwardTubeGrowth
+      (d := d) (n := n) OS lgc hm t
+  let C_bd : ℝ := Classical.choose growth
+  let N : ℕ := Classical.choose (Classical.choose_spec growth)
+  have hC_bd_pos : 0 < C_bd := by
+    exact (Classical.choose_spec (Classical.choose_spec growth)).1
+  have hF_growth :
+      ∀ (z : Fin (n + m) → Fin (d + 1) → ℂ), z ∈ ForwardTube d (n + m) →
+        ‖bvt_F OS lgc (n + m) (xiShift j 0 z (t : ℂ))‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
+    exact (Classical.choose_spec (Classical.choose_spec growth)).2
+  obtain ⟨T_t, hT_t⟩ :=
+    SCV.tube_boundaryValueData_of_polyGrowth
+      (C := ForwardConeAbs d (n + m))
+      (hC_open := forwardConeAbs_isOpen d (n + m))
+      (hC_conv := forwardConeAbs_convex d (n + m))
+      (hC_cone := by
+        intro y hy s hs
+        exact forwardConeAbs_smul d (n + m) s hs y hy)
+      (hC_salient := forwardConeAbs_salient d (n + m))
+      (F := F_analytic)
+      (hF_hol := by
+        simpa [TubeDomainSetPi, forwardTube_eq_imPreimage] using hF_hol)
+      C_bd N hC_bd_pos
+      (hF_growth := by
+        intro z hz
+        exact hF_growth z (by simpa [TubeDomainSetPi, forwardTube_eq_imPreimage] using hz))
+  refine ⟨T_t, ?_, ?_⟩
+  · intro h
+    have hη :
+        canonicalForwardConeDirection (d := d) (n + m) ∈ ForwardConeAbs d (n + m) :=
+      (inForwardCone_iff_mem_forwardConeAbs
+        (d := d) (n := n + m)
+        (canonicalForwardConeDirection (d := d) (n + m))).mp
+        (canonicalForwardConeDirection_mem (d := d) (n + m))
+    have hmain :=
+      hT_t h (canonicalForwardConeDirection (d := d) (n + m)) hη
+    have hEq :
+        (fun ε : ℝ =>
+          if hε : 0 < ε then
+            section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε hε h
+          else
+            0) =ᶠ[nhdsWithin (0 : ℝ) (Set.Ioi 0)]
+        (fun ε : ℝ =>
+          ∫ x : Fin (n + m) → Fin (d + 1) → ℝ,
+            F_analytic (fun k μ =>
+              ↑(x k μ) +
+                (ε : ℂ) * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                  Complex.I) *
+              h x) := by
+      filter_upwards [self_mem_nhdsWithin] with ε hε
+      have hpos : 0 < ε := hε
+      simp [F_analytic, section43_fixedTimeShellRawCLM, j, hpos]
+    exact Filter.Tendsto.congr' hEq.symm hmain
+  · dsimp
+    intro η hη h
+    simpa [F_analytic] using (hT_t h η hη)
+
+/-- Canonical-ray corollary of the fixed-time all-directions shell
+boundary-distribution package. -/
+private theorem section43_fixedTimeShellRawCLM_boundaryValueData_fixedTime
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (t : ℝ) :
+    ∃ T_t : SchwartzNPoint d (n + m) →L[ℂ] ℂ,
+      ∀ h : SchwartzNPoint d (n + m),
+        Filter.Tendsto
+          (fun ε : ℝ =>
+            if hε : 0 < ε then
+              section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε hε h
+            else
+              0)
+          (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+          (nhds (T_t h)) := by
+  obtain ⟨T_t, hcanon, _hall⟩ :=
+    section43_fixedTimeShellRawCLM_boundaryValueData_allDirections_fixedTime
+      (d := d) OS lgc hm t
+  exact ⟨T_t, hcanon⟩
+
+/-- Fixed-time spectral-support supplier obtained by specializing
+`SCV.bv_implies_fourier_support` to the shifted continuation
+`F_analytic z = bvt_F OS lgc (n + m) (xiShift ... z (t : ℂ))` and the
+boundary functional `T_t` produced on the shell seam. -/
+private theorem section43_fixedTimeShellRawCLM_bv_implies_fourier_support_fixedTime
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (t : ℝ) :
+    ∃ T_t : SchwartzNPoint d (n + m) →L[ℂ] ℂ,
+      (∀ h : SchwartzNPoint d (n + m),
+        Filter.Tendsto
+          (fun ε : ℝ =>
+            if hε : 0 < ε then
+              section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε hε h
+            else
+              0)
+          (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+          (nhds (T_t h))) ∧
+      ∃ Tflat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ →L[ℂ] ℂ,
+        HasFourierSupportInDualCone
+          ((flattenCLEquivReal (n + m) (d + 1)) '' ForwardConeAbs d (n + m))
+          Tflat ∧
+        ∀ φ : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ,
+          T_t.comp (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
+              (flattenCLEquivReal (n + m) (d + 1))) φ =
+            Tflat (physicsFourierFlatCLM φ) := by
+  let j : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+  let F_analytic :
+      (Fin (n + m) → Fin (d + 1) → ℂ) → ℂ :=
+    fun z => bvt_F OS lgc (n + m) (xiShift j 0 z (t : ℂ))
+  have hF_holo :
+      DifferentiableOn ℂ F_analytic (TubeDomainSetPi (ForwardConeAbs d (n + m))) := by
+    intro z hz
+    have hz_shift_mem :
+        xiShift j 0 z (t : ℂ) ∈ ForwardTube d (n + m) := by
+      rw [forwardTube_eq_imPreimage]
+      change (fun k μ => (z k μ).im) ∈ ForwardConeAbs d (n + m) at hz
+      have him :
+          (fun k μ => (xiShift j 0 z (t : ℂ) k μ).im) =
+            fun k μ => (z k μ).im := by
+        ext k μ
+        by_cases hshift : j.val ≤ k.val ∧ μ = (0 : Fin (d + 1))
+        · have hshift' : j ≤ k ∧ μ = (0 : Fin (d + 1)) := by simpa using hshift
+          simp [xiShift, hshift']
+        · have hshift' : ¬ (j ≤ k ∧ μ = (0 : Fin (d + 1))) := by simpa using hshift
+          simp [xiShift, hshift']
+      simpa [him] using hz
+    have hft_open : IsOpen (ForwardTube d (n + m)) := by
+      simpa [BHW_forwardTube_eq (d := d) (n := n + m)] using
+        (BHW.isOpen_forwardTube (d := d) (n := n + m))
+    have houter :
+        DifferentiableAt ℂ (bvt_F OS lgc (n + m)) (xiShift j 0 z (t : ℂ)) :=
+      (bvt_F_holomorphic (d := d) OS lgc (n + m)).differentiableAt
+        (hft_open.mem_nhds hz_shift_mem)
+    let shift : Fin (n + m) → Fin (d + 1) → ℂ :=
+      fun k μ =>
+        if j.val ≤ k.val ∧ μ = (0 : Fin (d + 1)) then
+          (t : ℂ)
+        else
+          0
+    have hinner :
+        DifferentiableAt ℂ
+          (fun z : Fin (n + m) → Fin (d + 1) → ℂ => xiShift j 0 z (t : ℂ)) z := by
+      convert (differentiableAt_id.add_const shift : DifferentiableAt ℂ
+        (fun z : Fin (n + m) → Fin (d + 1) → ℂ => z + shift) z) using 1
+      ext w k μ
+      by_cases hshift : j.val ≤ k.val ∧ μ = (0 : Fin (d + 1))
+      · have hshift' : j ≤ k ∧ μ = (0 : Fin (d + 1)) := by simpa using hshift
+        simp [shift, xiShift, hshift']
+      · have hshift' : ¬ (j ≤ k ∧ μ = (0 : Fin (d + 1))) := by simpa using hshift
+        simp [shift, xiShift, hshift']
+    exact (houter.comp z hinner).differentiableWithinAt
+  let growth :=
+    section43_fixedTime_xiShift_hasGlobalForwardTubeGrowth
+      (d := d) (n := n) OS lgc hm t
+  let C_bd : ℝ := Classical.choose growth
+  let N : ℕ := Classical.choose (Classical.choose_spec growth)
+  have hC_bd_pos : 0 < C_bd := by
+    exact (Classical.choose_spec (Classical.choose_spec growth)).1
+  have hF_growth :
+      ∀ (z : Fin (n + m) → Fin (d + 1) → ℂ), z ∈ ForwardTube d (n + m) →
+        ‖bvt_F OS lgc (n + m) (xiShift j 0 z (t : ℂ))‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
+    exact (Classical.choose_spec (Classical.choose_spec growth)).2
+  have hF_growth_tube :
+      ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+        ∀ (z : Fin (n + m) → Fin (d + 1) → ℂ), z ∈ TubeDomainSetPi (ForwardConeAbs d (n + m)) →
+          ‖F_analytic z‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
+    refine ⟨C_bd, N, hC_bd_pos, ?_⟩
+    intro z hz
+    exact hF_growth z (by simpa [TubeDomainSetPi, forwardTube_eq_imPreimage] using hz)
+  obtain ⟨T_t, hcanon, hall⟩ :=
+    section43_fixedTimeShellRawCLM_boundaryValueData_allDirections_fixedTime
+      (d := d) OS lgc hm t
+  have hTflat_data :=
+    bv_implies_fourier_support
+      (C := ForwardConeAbs d (n + m))
+      (hC_open := forwardConeAbs_isOpen d (n + m))
+      (hC_conv := forwardConeAbs_convex d (n + m))
+      (hC_cone := by
+        intro y hy s hs
+        exact forwardConeAbs_smul d (n + m) s hs y hy)
+      (hC_salient := forwardConeAbs_salient d (n + m))
+      (F := F_analytic)
+      (hF_holo := by
+        simpa [TubeDomainSetPi, forwardTube_eq_imPreimage] using hF_holo)
+      (hF_growth := hF_growth_tube)
+      (W := T_t)
+      (hF_bv := hall)
+  dsimp only at hTflat_data
+  obtain ⟨Tflat, hTflat_support, hTflat_eq⟩ := hTflat_data
+  exact ⟨T_t, hcanon, Tflat, hTflat_support, hTflat_eq⟩
+
+/-- Fixed-time Fourier-Laplace representation on the shifted tube, obtained by
+combining the fixed-time all-directions boundary-value package with the SCV
+supplier/comparison axioms. This is the first consumer seam above
+`section43_fixedTimeShellRawCLM_boundaryValueData_allDirections_fixedTime`. -/
+private theorem section43_fixedTimeShellRawCLM_fl_representation_fixedTime
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (t : ℝ) :
+    ∃ T_t : SchwartzNPoint d (n + m) →L[ℂ] ℂ,
+      (∀ h : SchwartzNPoint d (n + m),
+        Filter.Tendsto
+          (fun ε : ℝ =>
+            if hε : 0 < ε then
+              section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε hε h
+            else
+              0)
+          (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+          (nhds (T_t h))) ∧
+      ∃ Tflat : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ →L[ℂ] ℂ,
+        HasFourierSupportInDualCone (ForwardConeFlat d (n + m)) Tflat ∧
+        (∀ φ : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ,
+          T_t.comp (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
+              (flattenCLEquivReal (n + m) (d + 1))) φ =
+            Tflat (physicsFourierFlatCLM φ)) ∧
+        ∃ hCflat_cone : IsCone (ForwardConeFlat d (n + m)),
+          ∃ hCflat_salient : IsSalientCone (ForwardConeFlat d (n + m)),
+            let F_analytic :
+                (Fin (n + m) → Fin (d + 1) → ℂ) → ℂ :=
+                fun z =>
+                  bvt_F OS lgc (n + m)
+                    (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0 z (t : ℂ))
+            ∀ z, z ∈ TubeDomainSetPi (ForwardConeAbs d (n + m)) →
+              F_analytic z =
+                fourierLaplaceExtMultiDim
+                  (ForwardConeFlat d (n + m))
+                  (forwardConeFlat_isOpen d (n + m))
+                  (forwardConeFlat_convex d (n + m))
+                  hCflat_cone hCflat_salient Tflat
+                  ((flattenCLEquiv (n + m) (d + 1)) z) := by
+  let j : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+  let F_analytic :
+      (Fin (n + m) → Fin (d + 1) → ℂ) → ℂ :=
+    fun z => bvt_F OS lgc (n + m) (xiShift j 0 z (t : ℂ))
+  have hF_holo :
+      DifferentiableOn ℂ F_analytic (TubeDomainSetPi (ForwardConeAbs d (n + m))) := by
+    intro z hz
+    have hz_shift_mem :
+        xiShift j 0 z (t : ℂ) ∈ ForwardTube d (n + m) := by
+      rw [forwardTube_eq_imPreimage]
+      change (fun k μ => (z k μ).im) ∈ ForwardConeAbs d (n + m) at hz
+      have him :
+          (fun k μ => (xiShift j 0 z (t : ℂ) k μ).im) =
+            fun k μ => (z k μ).im := by
+        ext k μ
+        by_cases hshift : j.val ≤ k.val ∧ μ = (0 : Fin (d + 1))
+        · have hshift' : j ≤ k ∧ μ = (0 : Fin (d + 1)) := by simpa using hshift
+          simp [xiShift, hshift']
+        · have hshift' : ¬ (j ≤ k ∧ μ = (0 : Fin (d + 1))) := by simpa using hshift
+          simp [xiShift, hshift']
+      simpa [him] using hz
+    have hft_open : IsOpen (ForwardTube d (n + m)) := by
+      simpa [BHW_forwardTube_eq (d := d) (n := n + m)] using
+        (BHW.isOpen_forwardTube (d := d) (n := n + m))
+    have houter :
+        DifferentiableAt ℂ (bvt_F OS lgc (n + m)) (xiShift j 0 z (t : ℂ)) :=
+      (bvt_F_holomorphic (d := d) OS lgc (n + m)).differentiableAt
+        (hft_open.mem_nhds hz_shift_mem)
+    let shift : Fin (n + m) → Fin (d + 1) → ℂ :=
+      fun k μ =>
+        if j.val ≤ k.val ∧ μ = (0 : Fin (d + 1)) then
+          (t : ℂ)
+        else
+          0
+    have hinner :
+        DifferentiableAt ℂ
+          (fun z : Fin (n + m) → Fin (d + 1) → ℂ => xiShift j 0 z (t : ℂ)) z := by
+      convert (differentiableAt_id.add_const shift : DifferentiableAt ℂ
+        (fun z : Fin (n + m) → Fin (d + 1) → ℂ => z + shift) z) using 1
+      ext w k μ
+      by_cases hshift : j.val ≤ k.val ∧ μ = (0 : Fin (d + 1))
+      · have hshift' : j ≤ k ∧ μ = (0 : Fin (d + 1)) := by simpa using hshift
+        simp [shift, xiShift, hshift']
+      · have hshift' : ¬ (j ≤ k ∧ μ = (0 : Fin (d + 1))) := by simpa using hshift
+        simp [shift, xiShift, hshift']
+    exact (houter.comp z hinner).differentiableWithinAt
+  let growth :=
+    section43_fixedTime_xiShift_hasGlobalForwardTubeGrowth
+      (d := d) (n := n) OS lgc hm t
+  let C_bd : ℝ := Classical.choose growth
+  let N : ℕ := Classical.choose (Classical.choose_spec growth)
+  have hC_bd_pos : 0 < C_bd := by
+    exact (Classical.choose_spec (Classical.choose_spec growth)).1
+  have hF_growth :
+      ∀ (z : Fin (n + m) → Fin (d + 1) → ℂ), z ∈ ForwardTube d (n + m) →
+        ‖bvt_F OS lgc (n + m) (xiShift j 0 z (t : ℂ))‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
+    exact (Classical.choose_spec (Classical.choose_spec growth)).2
+  have hF_growth_tube :
+      ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+        ∀ (z : Fin (n + m) → Fin (d + 1) → ℂ), z ∈ TubeDomainSetPi (ForwardConeAbs d (n + m)) →
+          ‖F_analytic z‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
+    refine ⟨C_bd, N, hC_bd_pos, ?_⟩
+    intro z hz
+    exact hF_growth z (by simpa [TubeDomainSetPi, forwardTube_eq_imPreimage] using hz)
+  obtain ⟨T_t, hcanon, hall⟩ :=
+    section43_fixedTimeShellRawCLM_boundaryValueData_allDirections_fixedTime
+      (d := d) OS lgc hm t
+  have hTflat_data :=
+    bv_implies_fourier_support
+      (C := ForwardConeAbs d (n + m))
+      (hC_open := forwardConeAbs_isOpen d (n + m))
+      (hC_conv := forwardConeAbs_convex d (n + m))
+      (hC_cone := by
+        intro y hy s hs
+        exact forwardConeAbs_smul d (n + m) s hs y hy)
+      (hC_salient := forwardConeAbs_salient d (n + m))
+      (F := F_analytic)
+      (hF_holo := by
+        simpa [TubeDomainSetPi, forwardTube_eq_imPreimage] using hF_holo)
+      (hF_growth := hF_growth_tube)
+      (W := T_t)
+      (hF_bv := hall)
+  dsimp only at hTflat_data
+  obtain ⟨Tflat, hTflat_support_raw, hTflat_eq⟩ := hTflat_data
+  have hTflat_support :
+      HasFourierSupportInDualCone (ForwardConeFlat d (n + m)) Tflat := by
+    simpa [ForwardConeFlat] using hTflat_support_raw
+  have hCflat_cone : IsCone (ForwardConeFlat d (n + m)) := by
+    intro y hy s hs
+    exact forwardConeFlat_isCone d (n + m) s hs y hy
+  have hCflat_salient : IsSalientCone (ForwardConeFlat d (n + m)) := by
+    let eR := flattenCLEquivReal (n + m) (d + 1)
+    change IsSalientCone (eR '' ForwardConeAbs d (n + m))
+    intro y hy hy_neg
+    rw [show closure (eR '' ForwardConeAbs d (n + m)) = eR '' closure (ForwardConeAbs d (n + m)) from
+      (eR.toHomeomorph.image_closure (ForwardConeAbs d (n + m))).symm] at hy hy_neg
+    obtain ⟨y', hy', rfl⟩ := hy
+    obtain ⟨y'', hy'', hyw⟩ := hy_neg
+    have h_neg : y'' = -y' := eR.injective (by rw [hyw, map_neg])
+    subst h_neg
+    exact show eR y' = 0 from by
+      rw [forwardConeAbs_salient d (n + m) y' hy' hy'', map_zero]
+  have hFL_repr :
+      ∀ z, z ∈ TubeDomainSetPi (ForwardConeAbs d (n + m)) →
+        F_analytic z =
+          fourierLaplaceExtMultiDim
+            (ForwardConeFlat d (n + m))
+            (forwardConeFlat_isOpen d (n + m))
+            (forwardConeFlat_convex d (n + m))
+            hCflat_cone hCflat_salient Tflat
+            ((flattenCLEquiv (n + m) (d + 1)) z) := by
+    simpa [F_analytic, ForwardConeFlat] using
+      (fl_representation_from_bv
+        (C := ForwardConeAbs d (n + m))
+        (hC_open := forwardConeAbs_isOpen d (n + m))
+        (hC_conv := forwardConeAbs_convex d (n + m))
+        (hC_cone := by
+          intro y hy s hs
+          exact forwardConeAbs_smul d (n + m) s hs y hy)
+        (hC_salient := forwardConeAbs_salient d (n + m))
+        (F := F_analytic)
+        (hF_holo := by
+          simpa [TubeDomainSetPi, forwardTube_eq_imPreimage] using hF_holo)
+        (W := T_t)
+        (hF_bv := hall)
+        (Cflat := ForwardConeFlat d (n + m))
+        (hCflat_eq := rfl)
+        (hCflat_open := forwardConeFlat_isOpen d (n + m))
+        (hCflat_conv := forwardConeFlat_convex d (n + m))
+        (hCflat_cone := hCflat_cone)
+        (hCflat_salient := hCflat_salient)
+        (Tflat := Tflat)
+        (hTflat_support := by simpa [ForwardConeFlat] using hTflat_support_raw)
+        (hTflat_eq := hTflat_eq))
+  exact
+    ⟨T_t, hcanon, Tflat, hTflat_support, hTflat_eq, hCflat_cone, hCflat_salient, hFL_repr⟩
+
+/-- Fixed-time tempered Fourier-Laplace package for the flattened shifted
+continuation. This is the exact lower supplier already source-ready beneath the
+missing local-trace continuity bridge: it packages the landed all-directions
+distributional boundary-value data and global tube growth for `G_t`, but makes
+no pointwise boundary-continuity claim. -/
+private def section43_fixedTimeShellRaw_temperedRepr_fixedTime
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (t : ℝ) :
+    SCV.HasFourierLaplaceReprTempered
+      (ForwardConeFlat d (n + m))
+      (fun zflat =>
+        bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            ((flattenCLEquiv (n + m) (d + 1)).symm zflat) (t : ℂ))) := by
+  let j : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+  let F_analytic :
+      (Fin (n + m) → Fin (d + 1) → ℂ) → ℂ :=
+    fun z => bvt_F OS lgc (n + m) (xiShift j 0 z (t : ℂ))
+  have hF_holo :
+      DifferentiableOn ℂ F_analytic (TubeDomainSetPi (ForwardConeAbs d (n + m))) := by
+    intro z hz
+    have hz_shift_mem :
+        xiShift j 0 z (t : ℂ) ∈ ForwardTube d (n + m) := by
+      rw [forwardTube_eq_imPreimage]
+      change (fun k μ => (z k μ).im) ∈ ForwardConeAbs d (n + m) at hz
+      have him :
+          (fun k μ => (xiShift j 0 z (t : ℂ) k μ).im) =
+            fun k μ => (z k μ).im := by
+        ext k μ
+        by_cases hshift : j.val ≤ k.val ∧ μ = (0 : Fin (d + 1))
+        · have hshift' : j ≤ k ∧ μ = (0 : Fin (d + 1)) := by simpa using hshift
+          simp [xiShift, hshift']
+        · have hshift' : ¬ (j ≤ k ∧ μ = (0 : Fin (d + 1))) := by simpa using hshift
+          simp [xiShift, hshift']
+      simpa [him] using hz
+    have hft_open : IsOpen (ForwardTube d (n + m)) := by
+      simpa [BHW_forwardTube_eq (d := d) (n := n + m)] using
+        (BHW.isOpen_forwardTube (d := d) (n := n + m))
+    have houter :
+        DifferentiableAt ℂ (bvt_F OS lgc (n + m)) (xiShift j 0 z (t : ℂ)) :=
+      (bvt_F_holomorphic (d := d) OS lgc (n + m)).differentiableAt
+        (hft_open.mem_nhds hz_shift_mem)
+    let shift : Fin (n + m) → Fin (d + 1) → ℂ :=
+      fun k μ =>
+        if j.val ≤ k.val ∧ μ = (0 : Fin (d + 1)) then
+          (t : ℂ)
+        else
+          0
+    have hinner :
+        DifferentiableAt ℂ
+          (fun z : Fin (n + m) → Fin (d + 1) → ℂ => xiShift j 0 z (t : ℂ)) z := by
+      convert (differentiableAt_id.add_const shift : DifferentiableAt ℂ
+        (fun z : Fin (n + m) → Fin (d + 1) → ℂ => z + shift) z) using 1
+      ext w k μ
+      by_cases hshift : j.val ≤ k.val ∧ μ = (0 : Fin (d + 1))
+      · have hshift' : j ≤ k ∧ μ = (0 : Fin (d + 1)) := by simpa using hshift
+        simp [shift, xiShift, hshift']
+      · have hshift' : ¬ (j ≤ k ∧ μ = (0 : Fin (d + 1))) := by simpa using hshift
+        simp [shift, xiShift, hshift']
+    exact (houter.comp z hinner).differentiableWithinAt
+  let growth :=
+    section43_fixedTime_xiShift_hasGlobalForwardTubeGrowth
+      (d := d) (n := n) OS lgc hm t
+  let C_bd : ℝ := Classical.choose growth
+  let N : ℕ := Classical.choose (Classical.choose_spec growth)
+  have hC_bd_pos : 0 < C_bd := by
+    exact (Classical.choose_spec (Classical.choose_spec growth)).1
+  have hF_growth :
+      ∀ (z : Fin (n + m) → Fin (d + 1) → ℂ), z ∈ ForwardTube d (n + m) →
+        ‖bvt_F OS lgc (n + m) (xiShift j 0 z (t : ℂ))‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
+    exact (Classical.choose_spec (Classical.choose_spec growth)).2
+  have hF_growth_tube :
+      ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+        ∀ (z : Fin (n + m) → Fin (d + 1) → ℂ), z ∈ TubeDomainSetPi (ForwardConeAbs d (n + m)) →
+          ‖F_analytic z‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
+    refine ⟨C_bd, N, hC_bd_pos, ?_⟩
+    intro z hz
+    exact hF_growth z (by simpa [TubeDomainSetPi, forwardTube_eq_imPreimage] using hz)
+  let boundaryData :=
+    section43_fixedTimeShellRawCLM_boundaryValueData_allDirections_fixedTime
+      (d := d) (n := n) OS lgc hm t
+  let T_t : SchwartzNPoint d (n + m) →L[ℂ] ℂ := Classical.choose boundaryData
+  have hall :
+      ∀ (η : Fin (n + m) → Fin (d + 1) → ℝ), η ∈ ForwardConeAbs d (n + m) →
+        ∀ (h : SchwartzNPoint d (n + m)),
+          Filter.Tendsto
+            (fun ε : ℝ =>
+              ∫ x : Fin (n + m) → Fin (d + 1) → ℝ,
+                F_analytic (fun k μ => ↑(x k μ) + (ε : ℂ) * ↑(η k μ) * Complex.I) * h x)
+            (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+            (nhds (T_t h)) := by
+    exact (Classical.choose_spec boundaryData).2
+  let hTempered :
+      SCV.HasFourierLaplaceReprTempered (ForwardConeFlat d (n + m))
+        (F_analytic ∘ (flattenCLEquiv (n + m) (d + 1)).symm) :=
+    vladimirov_tillmann_hasFourierLaplaceReprTempered
+      (ForwardConeAbs d (n + m))
+      (forwardConeAbs_isOpen d (n + m))
+      (forwardConeAbs_convex d (n + m))
+      (fun y hy s hs => forwardConeAbs_smul d (n + m) s hs y hy)
+      (forwardConeAbs_salient d (n + m))
+      F_analytic hF_holo hF_growth_tube T_t hall
+  simpa [F_analytic] using hTempered
+
+private theorem section43_fixedTimeShellRawCLM_uniformSeminormBound_fixedTime
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m) (t : ℝ) :
+    ∃ s : Finset (ℕ × ℕ), ∃ C_sem : ℝ, 0 ≤ C_sem ∧
+      ∀ ε : ℝ, ∀ hε : 0 < ε, ∀ hε_lt : ε < 1,
+      ∀ φ : SchwartzNPoint d (n + m),
+        ‖section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε hε φ‖ ≤
+          C_sem *
+            (s.sup (schwartzSeminormFamily ℂ (NPointDomain d (n + m)) ℂ)) φ := by
+  let T : {ε : ℝ // 0 < ε ∧ ε < 1} → SchwartzNPoint d (n + m) →L[ℝ] ℂ :=
+    fun ε =>
+      { toLinearMap :=
+          { toFun := fun φ =>
+              section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε.1 ε.2.1 φ
+            map_add' := by
+              intro φ ψ
+              simp
+            map_smul' := by
+              intro c φ
+              simpa [smul_eq_mul] using
+                (section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε.1 ε.2.1).map_smul
+                  (c : ℂ) φ }
+        cont := (section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε.1 ε.2.1).continuous }
+  have hT :
+      ∀ φ : SchwartzNPoint d (n + m),
+        ∃ Cφ : ℝ, ∀ ε : {ε : ℝ // 0 < ε ∧ ε < 1}, ‖T ε φ‖ ≤ Cφ := by
+    intro φ
+    obtain ⟨Cφ, _hCφ_nonneg, hCφ⟩ :=
+      section43_fixedTimeShellRawCLM_pointwiseBounded_fixedTime
+        (d := d) OS lgc hm t φ
+    refine ⟨Cφ, ?_⟩
+    intro ε
+    simpa [T] using hCφ ε.1 ε.2.1 ε.2.2
+  obtain ⟨s, C, hCne, hbound⟩ := SchwartzMap.tempered_uniform_schwartz_bound hT
+  have hsup_eq :
+      ∀ I : Finset (ℕ × ℕ), ∀ f : SchwartzMap (NPointDomain d (n + m)) ℂ,
+        (I.sup (schwartzSeminormFamily ℂ (NPointDomain d (n + m)) ℂ)) f =
+          (I.sup (schwartzSeminormFamily ℝ (NPointDomain d (n + m)) ℂ)) f := by
+    intro I f
+    induction I using Finset.cons_induction with
+    | empty =>
+        simp [Finset.sup_empty]
+    | @cons a I ha hI =>
+        simp [hI, schwartzSeminormFamily, SchwartzMap.seminorm_apply]
+  refine ⟨s, C, NNReal.coe_nonneg C, ?_⟩
+  intro ε hε hε_lt φ
+  have hmain := hbound ⟨ε, hε, hε_lt⟩ φ
+  simpa [T, hsup_eq s, smul_eq_mul] using hmain
+
+private theorem section43_fixedTimeShellRawCLM_tendsto_exists_fixedTime
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (t : ℝ) (ht : 0 < t) :
+    ∃ T_t : SchwartzNPoint d (n + m) →L[ℂ] ℂ,
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          if hε : 0 < ε then
+            section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε hε
+          else
+            0)
+        (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+        (nhds T_t) := by
+  obtain ⟨T_t, hT_t⟩ :=
+    section43_fixedTimeShellRawCLM_boundaryValueData_fixedTime
+      (d := d) OS lgc hm t
+  obtain ⟨s, C_sem, hC_sem, hbound⟩ :=
+    section43_fixedTimeShellRawCLM_uniformSeminormBound_fixedTime
+      (d := d) OS lgc hm t
+  have hsup_eq :
+      ∀ I : Finset (ℕ × ℕ), ∀ f : SchwartzNPoint d (n + m),
+        (I.sup (schwartzSeminormFamily ℂ (NPointDomain d (n + m)) ℂ)) f =
+          (I.sup (schwartzSeminormFamily ℝ (NPointDomain d (n + m)) ℂ)) f := by
+    intro I f
+    induction I using Finset.cons_induction with
+    | empty =>
+        simp [Finset.sup_empty]
+    | @cons a I ha hI =>
+        simp [hI, schwartzSeminormFamily, SchwartzMap.seminorm_apply]
+  haveI := IsScalarTower.restrictScalars ℝ ℂ (SchwartzNPoint d (n + m))
+  let pR : Seminorm ℝ (SchwartzNPoint d (n + m)) :=
+    s.sup (schwartzSeminormFamily ℝ (NPointDomain d (n + m)) ℂ)
+  let T0R : SchwartzNPoint d (n + m) →L[ℝ] ℂ :=
+    { toLinearMap :=
+        { toFun := fun φ => T_t φ
+          map_add' := by
+            intro φ ψ
+            simp
+          map_smul' := by
+            intro c φ
+            simpa [smul_eq_mul] using T_t.map_smul (c : ℂ) φ }
+      cont := T_t.continuous }
+  let familyR : ℝ → SchwartzNPoint d (n + m) →L[ℝ] ℂ := fun ε =>
+    if hε : 0 < ε then
+      { toLinearMap :=
+          { toFun := fun φ =>
+              section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε hε φ
+            map_add' := by
+              intro φ ψ
+              simp
+            map_smul' := by
+              intro c φ
+              simpa [smul_eq_mul] using
+                (section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε hε).map_smul
+                  (c : ℂ) φ }
+        cont := (section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε hε).continuous }
+    else
+      0
+  have hpointwiseR :
+      ∀ φ : SchwartzNPoint d (n + m),
+        Filter.Tendsto (fun ε : ℝ => familyR ε φ)
+          (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+          (nhds (T0R φ)) := by
+    intro φ
+    have hEq :
+        (fun ε : ℝ => familyR ε φ) =ᶠ[nhdsWithin (0 : ℝ) (Set.Ioi 0)]
+          (fun ε : ℝ =>
+            if hε : 0 < ε then
+              section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε hε φ
+            else
+              0) := by
+      filter_upwards [self_mem_nhdsWithin] with ε hε
+      have hval :
+          familyR ε φ =
+            section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε hε φ := by
+        simp [familyR, show 0 < ε from hε]
+      simpa [show 0 < ε from hε] using hval
+    exact Filter.Tendsto.congr' hEq.symm (by simpa [T0R] using hT_t φ)
+  have hlt1 :
+      ∀ᶠ ε : ℝ in nhdsWithin (0 : ℝ) (Set.Ioi 0), ε < 1 := by
+    filter_upwards [self_mem_nhdsWithin, mem_nhdsWithin_of_mem_nhds (Iio_mem_nhds zero_lt_one)] with
+      ε hε hlt
+    exact hlt
+  have hfamily_bound :
+      ∀ᶠ ε : ℝ in nhdsWithin (0 : ℝ) (Set.Ioi 0),
+        ∀ φ : SchwartzNPoint d (n + m), ‖familyR ε φ‖ ≤ C_sem * pR φ := by
+    filter_upwards [self_mem_nhdsWithin, hlt1] with ε hε hε_lt φ
+    have hmain := hbound ε hε hε_lt φ
+    simpa [familyR, show 0 < ε from hε, pR, hsup_eq s φ] using hmain
+  have hT0_bound :
+      ∀ φ : SchwartzNPoint d (n + m), ‖T0R φ‖ ≤ C_sem * pR φ := by
+    intro φ
+    exact le_of_tendsto (hpointwiseR φ).norm <| (hfamily_bound.mono fun ε hε => hε φ)
+  have hsub_bound :
+      ∀ᶠ ε : ℝ in nhdsWithin (0 : ℝ) (Set.Ioi 0),
+        ∀ φ : SchwartzNPoint d (n + m), ‖(familyR ε - T0R) φ‖ ≤ (2 * C_sem) * pR φ := by
+    filter_upwards [hfamily_bound] with ε hε φ
+    calc
+      ‖(familyR ε - T0R) φ‖ = ‖familyR ε φ - T0R φ‖ := by
+        simp [ContinuousLinearMap.sub_apply]
+      _ ≤ ‖familyR ε φ‖ + ‖T0R φ‖ := norm_sub_le _ _
+      _ ≤ C_sem * pR φ + C_sem * pR φ := add_le_add (hε φ) (hT0_bound φ)
+      _ = (2 * C_sem) * pR φ := by ring
+  have hMapsTo :
+      ∀ {B : Set (SchwartzNPoint d (n + m))} {U : Set ℂ},
+        Bornology.IsVonNBounded ℝ B →
+        U ∈ nhds (0 : ℂ) →
+        ∀ᶠ ε : ℝ in nhdsWithin (0 : ℝ) (Set.Ioi 0),
+          Set.MapsTo (fun φ => (familyR ε - T0R) φ) B U := by
+    intro B U hB hU
+    apply SchwartzMap.tempered_eventually_mapsTo_sub_of_finite_seminorm_net
+      (E := NPointDomain d (n + m)) (F := ℂ) (G := ℂ) (l := nhdsWithin (0 : ℝ) (Set.Ioi 0))
+      (T := familyR) (L := T0R) pR (C := 2 * C_sem)
+    · positivity
+    · exact hU
+    · exact hsub_bound
+    · exact hpointwiseR
+    · intro ε hε
+      obtain ⟨t, htB, hcover⟩ :=
+        NuclearSpace.finite_net_of_schwartz_seminorm_of_isVonNBounded
+          (E := NPointDomain d (n + m)) s hB ε hε
+      refine ⟨t, ?_⟩
+      intro φ hφ
+      rcases hcover φ hφ with ⟨ψ, hψt, hψB, hφψ⟩
+      refine ⟨ψ, hψt, ?_⟩
+      simpa [pR] using hφψ
+  refine ⟨T_t, ?_⟩
+  have hzero :
+      Filter.Tendsto (fun ε : ℝ => familyR ε - T0R)
+        (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+        (nhds (0 : SchwartzNPoint d (n + m) →L[ℝ] ℂ)) := by
+    rw [ContinuousLinearMap.hasBasis_nhds_zero.tendsto_right_iff]
+    intro SV hSV
+    rcases hSV with ⟨hB, hU⟩
+    simpa [Set.MapsTo] using (hMapsTo hB hU)
+  have hT0R_eq : T0R = T_t.restrictScalars ℝ := by
+    ext φ
+    rfl
+  have hfamilyR_eq :
+      familyR = fun ε : ℝ =>
+        (((if hε : 0 < ε then
+          section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε hε
+        else
+          0) : SchwartzNPoint d (n + m) →L[ℂ] ℂ).restrictScalars ℝ) := by
+    funext ε
+    by_cases hε : 0 < ε
+    · ext φ
+      simp [familyR, hε]
+    · ext φ
+      simp [familyR, hε]
+  have hrestrict :
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          (((if hε : 0 < ε then
+            section43_fixedTimeShellRawCLM (d := d) OS lgc hm t ε hε
+          else
+            0) : SchwartzNPoint d (n + m) →L[ℂ] ℂ).restrictScalars ℝ))
+        (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+        (nhds (T_t.restrictScalars ℝ)) := by
+    have hadd := hzero.const_add T0R
+    simpa [hfamilyR_eq, hT0R_eq, familyR, T0R, sub_eq_add_neg, Pi.add_apply,
+      add_comm, add_left_comm, add_assoc] using hadd
+  have hEmb :=
+      ContinuousLinearMap.isEmbedding_restrictScalars
+        (𝕜 := ℂ) (E := SchwartzNPoint d (n + m)) (F := ℂ) ℝ
+  rw [show nhds T_t =
+      Filter.comap (ContinuousLinearMap.restrictScalars ℝ)
+        (nhds (T_t.restrictScalars ℝ)) by
+      simpa using hEmb.nhds_eq_comap T_t]
+  rw [Filter.tendsto_iff_comap] at hrestrict ⊢
+  simpa [Filter.comap_comap, Function.comp] using hrestrict
+
+/-- Dominated-convergence supplier for the actual ambient fixed-time shell.
+This is the exact theorem-sized contract exposed beneath `hlimit_os`: if the
+live shell integrand against a fixed ambient test `h` is pointwise driven to
+zero and uniformly dominated by an integrable ambient bound near `ε = 0+`, then
+the corresponding raw shell integral tends to `0`. -/
+private theorem
+    section43_fixedTimeShellRaw_on_section43PositiveEnergyRegion_compl_eventually_bounded
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (t : ℝ)
+    (h : SchwartzNPoint d (n + m)) :
+    ∃ bound : NPointDomain d (n + m) → ℝ,
+      MeasureTheory.Integrable bound MeasureTheory.volume ∧
+      ∀ᶠ ε : ℝ in nhdsWithin (0 : ℝ) (Set.Ioi 0),
+        ∀ y : NPointDomain d (n + m),
+          ‖Set.indicator ((section43PositiveEnergyRegion d (n + m))ᶜ)
+              (fun y =>
+                bvt_F OS lgc (n + m)
+                  (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                    (fun k μ =>
+                      ↑(y k μ) +
+                        ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                          Complex.I)
+                    (t : ℂ)) *
+                  h y) y‖ ≤ bound y := by
+  obtain ⟨C_shell, N, hC_shell_pos, hcoeff_bound⟩ :=
+    section43_fixedTimeShellRaw_uniformPolyGrowth_fixedTime
+      (d := d) OS lgc hm t
+  let K : NPointDomain d (n + m) → ℂ := fun y =>
+    ↑(C_shell * (1 + ‖y‖) ^ N)
+  have hK_meas : MeasureTheory.AEStronglyMeasurable K MeasureTheory.volume := by
+    have hK_cont : Continuous K := by
+      exact Complex.continuous_ofReal.comp
+        (continuous_const.mul ((continuous_const.add continuous_norm).pow N))
+    exact hK_cont.aestronglyMeasurable
+  have hK_norm (y : NPointDomain d (n + m)) :
+      ‖K y‖ = C_shell * (1 + ‖y‖) ^ N := by
+    have hnonneg : 0 ≤ C_shell * (1 + ‖y‖) ^ N := by
+      positivity
+    change ‖((C_shell * (1 + ‖y‖) ^ N : ℝ) : ℂ)‖ = C_shell * (1 + ‖y‖) ^ N
+    rw [Complex.norm_real, Real.norm_of_nonneg hnonneg]
+  have hK_bound :
+      ∀ᵐ y : NPointDomain d (n + m) ∂MeasureTheory.volume,
+        ‖K y‖ ≤ C_shell * (1 + ‖y‖) ^ N := by
+    filter_upwards with y
+    rw [hK_norm y]
+  have hbound_int_complex :
+      MeasureTheory.Integrable (fun y : NPointDomain d (n + m) => K y * h y)
+        MeasureTheory.volume :=
+    schwartz_polynomial_kernel_integrable
+      (d := d) (n := n + m) K hK_meas C_shell N hC_shell_pos hK_bound h
+  have hbound_int :
+      MeasureTheory.Integrable
+        (fun y : NPointDomain d (n + m) =>
+          C_shell * (1 + ‖y‖) ^ N * ‖h y‖)
+        MeasureTheory.volume := by
+    convert hbound_int_complex.norm using 1
+    ext y
+    rw [norm_mul]
+    rw [hK_norm y, mul_assoc]
+  refine ⟨fun y => C_shell * (1 + ‖y‖) ^ N * ‖h y‖, hbound_int, ?_⟩
+  have h_mem : Set.Ioo (0 : ℝ) 1 ∈ nhdsWithin (0 : ℝ) (Set.Ioi 0) :=
+    mem_nhdsWithin.mpr ⟨Set.Iio 1, isOpen_Iio, by simp,
+      fun ε hε => Set.mem_Ioo.mpr ⟨Set.mem_Ioi.mp hε.2, Set.mem_Iio.mp hε.1⟩⟩
+  apply Filter.eventually_of_mem h_mem
+  intro ε hε y
+  obtain ⟨hε_pos, hε_lt⟩ := Set.mem_Ioo.mp hε
+  by_cases hy : y ∈ (section43PositiveEnergyRegion d (n + m))ᶜ
+  · simp only [Set.indicator_of_mem hy]
+    calc
+      ‖bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun k μ =>
+              ↑(y k μ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                  Complex.I)
+            (t : ℂ)) *
+          h y‖
+          = ‖bvt_F OS lgc (n + m)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                (fun k μ =>
+                  ↑(y k μ) +
+                    ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                      Complex.I)
+                (t : ℂ))‖ * ‖h y‖ := by
+              rw [norm_mul]
+      _ ≤ (C_shell * (1 + ‖y‖) ^ N) * ‖h y‖ := by
+        gcongr
+        exact hcoeff_bound ε hε_pos hε_lt y
+      _ = C_shell * (1 + ‖y‖) ^ N * ‖h y‖ := by ring
+  · rw [Set.indicator_of_notMem hy, norm_zero]
+    positivity
+
+/-- Local flat boundary-regularity package on the complement side for the
+fixed-time shell continuation. This is the exact theorem-(1) seam beneath the
+coefficient limit: an open flat neighborhood inside the flattened complement
+image together with `ContinuousWithinAt` of the flattened continuation at every
+real boundary point of that neighborhood. -/
+private theorem
+    section43_fixedTimeShellRaw_pointwiseContinuity_of_bvt_F_at_shifted_point
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (t : ℝ)
+    (y : NPointDomain d (n + m))
+    (hcont_shifted :
+      ContinuousWithinAt
+        (bvt_F OS lgc (n + m))
+        (ForwardTube d (n + m))
+        (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+          (fun k μ => (y k μ : ℂ)) (t : ℂ))) :
+    let H_t : (Fin (n + m) → Fin (d + 1) → ℂ) → ℂ :=
+      fun z =>
+        bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0 z (t : ℂ))
+    ContinuousWithinAt H_t
+      (ForwardTube d (n + m))
+      (fun k μ => (y k μ : ℂ)) := by
+  let j : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+  let shift : Fin (n + m) → Fin (d + 1) → ℂ :=
+    fun k μ =>
+      if j.val ≤ k.val ∧ μ = (0 : Fin (d + 1)) then
+        (t : ℂ)
+      else
+        0
+  have hxi_eq :
+      (fun z : Fin (n + m) → Fin (d + 1) → ℂ => xiShift j 0 z (t : ℂ)) =
+        fun z => z + shift := by
+    funext z
+    simpa [shift] using
+      section43_fixedTime_xiShift_zero_eq_add_indicator (d := d) hm t z
+  have hinner :
+      ContinuousWithinAt
+        (fun z : Fin (n + m) → Fin (d + 1) → ℂ => xiShift j 0 z (t : ℂ))
+        (ForwardTube d (n + m))
+        (fun k μ => (y k μ : ℂ)) := by
+    rw [hxi_eq]
+    exact (continuous_id.add continuous_const).continuousAt.continuousWithinAt
+  have hmap :
+      Set.MapsTo
+        (fun z : Fin (n + m) → Fin (d + 1) → ℂ => xiShift j 0 z (t : ℂ))
+        (ForwardTube d (n + m))
+        (ForwardTube d (n + m)) := by
+    intro z hz
+    rw [forwardTube_eq_imPreimage] at hz ⊢
+    have him :
+        (fun k μ => (xiShift j 0 z (t : ℂ) k μ).im) =
+          fun k μ => (z k μ).im := by
+      ext k μ
+      by_cases hshift : j.val ≤ k.val ∧ μ = (0 : Fin (d + 1))
+      · have hshift' : j ≤ k ∧ μ = (0 : Fin (d + 1)) := by simpa using hshift
+        simp [xiShift, hshift']
+      · have hshift' : ¬ (j ≤ k ∧ μ = (0 : Fin (d + 1))) := by simpa using hshift
+        simp [xiShift, hshift']
+    simpa [Set.mem_setOf_eq, him] using hz
+  change
+    (ContinuousWithinAt
+      ((bvt_F OS lgc (n + m)) ∘
+        (fun z : Fin (n + m) → Fin (d + 1) → ℂ => xiShift j 0 z (t : ℂ)))
+      (ForwardTube d (n + m))
+      (fun k μ => (y k μ : ℂ)))
+  exact
+    ContinuousWithinAt.comp
+      (f := fun z : Fin (n + m) → Fin (d + 1) → ℂ => xiShift j 0 z (t : ℂ))
+      (g := bvt_F OS lgc (n + m))
+      (s := ForwardTube d (n + m))
+      (t := ForwardTube d (n + m))
+      (x := fun k μ => (y k μ : ℂ))
+      hcont_shifted hinner hmap
+
+/-- Local flat boundary-regularity package on the complement side for the
+fixed-time shell continuation. After the proved `xiShift` transport lemma just
+above, the only remaining content is continuity of raw `bvt_F` at the shifted
+real boundary point. -/
+private theorem
+    section43_bvt_F_continuousWithinAt_shifted_section43PositiveEnergyRegion_compl
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (t : ℝ)
+    (y : NPointDomain d (n + m))
+    (hy : y ∈ (section43PositiveEnergyRegion d (n + m))ᶜ) :
+    ContinuousWithinAt
+      (bvt_F OS lgc (n + m))
+      (ForwardTube d (n + m))
+      (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+        (fun k μ => (y k μ : ℂ)) (t : ℂ)) := by
+  sorry
+
+/-- Local flat boundary-regularity package on the complement side for the
+fixed-time shell continuation. After the proved `xiShift` transport lemma just
+above, the only remaining content is continuity of raw `bvt_F` at the shifted
+real boundary point. -/
+private theorem
+    section43_fixedTimeShellRaw_pointwiseContinuity_on_section43PositiveEnergyRegion_compl
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (t : ℝ)
+    (y : NPointDomain d (n + m))
+    (hy : y ∈ (section43PositiveEnergyRegion d (n + m))ᶜ) :
+    let H_t : (Fin (n + m) → Fin (d + 1) → ℂ) → ℂ :=
+      fun z =>
+        bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0 z (t : ℂ))
+    ContinuousWithinAt H_t
+      (ForwardTube d (n + m))
+      (fun k μ => (y k μ : ℂ)) := by
+  have hcont_shifted :
+      ContinuousWithinAt
+        (bvt_F OS lgc (n + m))
+        (ForwardTube d (n + m))
+        (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+          (fun k μ => (y k μ : ℂ)) (t : ℂ)) :=
+    section43_bvt_F_continuousWithinAt_shifted_section43PositiveEnergyRegion_compl
+      (d := d) OS lgc hm t y hy
+  simpa using
+    section43_fixedTimeShellRaw_pointwiseContinuity_of_bvt_F_at_shifted_point
+      (d := d) OS lgc hm t y hcont_shifted
+
+/-- Local flat boundary-regularity package on the complement side for the
+fixed-time shell continuation. This is just the flattening transport of the
+unflattened pointwise shell continuity theorem immediately above. -/
+private theorem
+    section43_fixedTimeShellRaw_pointwiseFlatContinuity_on_section43PositiveEnergyRegion_compl
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (t : ℝ)
+    (xflat : Fin ((n + m) * (d + 1)) → ℝ)
+    (hxflat : xflat ∈ (flattenCLEquivReal (n + m) (d + 1)) ''
+      ((section43PositiveEnergyRegion d (n + m))ᶜ)) :
+    let G_t : (Fin ((n + m) * (d + 1)) → ℂ) → ℂ :=
+      fun zflat =>
+        bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            ((flattenCLEquiv (n + m) (d + 1)).symm zflat) (t : ℂ))
+    ContinuousWithinAt G_t
+      (SCV.TubeDomain (ForwardConeFlat d (n + m)))
+      (SCV.realEmbed xflat) := by
+  rcases hxflat with ⟨y, hy, rfl⟩
+  let e := flattenCLEquiv (n + m) (d + 1)
+  let H_t : (Fin (n + m) → Fin (d + 1) → ℂ) → ℂ :=
+    fun z =>
+      bvt_F OS lgc (n + m)
+        (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0 z (t : ℂ))
+  set G_t : (Fin ((n + m) * (d + 1)) → ℂ) → ℂ :=
+    fun zflat =>
+      bvt_F OS lgc (n + m)
+        (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0 (e.symm zflat) (t : ℂ)) with hG_t
+  have hH :
+      ContinuousWithinAt H_t
+        (ForwardTube d (n + m))
+        (fun k μ => (y k μ : ℂ)) := by
+    simpa [H_t] using
+      section43_fixedTimeShellRaw_pointwiseContinuity_on_section43PositiveEnergyRegion_compl
+        (d := d) OS lgc hm t y hy
+  have he :
+      ContinuousWithinAt e.symm
+        (SCV.TubeDomain (ForwardConeFlat d (n + m)))
+        (SCV.realEmbed (flattenCLEquivReal (n + m) (d + 1) y)) :=
+    e.symm.continuous.continuousAt.continuousWithinAt
+  have hx :
+      e.symm (SCV.realEmbed (flattenCLEquivReal (n + m) (d + 1) y)) =
+        (fun k μ => (y k μ : ℂ)) := by
+    ext k μ
+    simp [e, SCV.realEmbed, flattenCLEquiv_symm_apply, flattenCLEquivReal_apply]
+  have hH' :
+      ContinuousWithinAt H_t
+        (ForwardTube d (n + m))
+        (e.symm (SCV.realEmbed (flattenCLEquivReal (n + m) (d + 1) y))) := by
+    simpa [hx] using hH
+  have hmap : Set.MapsTo e.symm
+      (SCV.TubeDomain (ForwardConeFlat d (n + m)))
+      (ForwardTube d (n + m)) := by
+    intro zflat hzflat
+    rw [forwardTube_eq_imPreimage]
+    simpa [ForwardConeFlat] using
+      flattenCLEquiv_symm_mem_tubeDomainSetPi_of_mem_tubeDomain_image
+        (C := ForwardConeAbs d (n + m)) hzflat
+  change
+    ContinuousWithinAt G_t
+      (SCV.TubeDomain (ForwardConeFlat d (n + m)))
+      (SCV.realEmbed (flattenCLEquivReal (n + m) (d + 1) y))
+  simpa [hG_t, H_t, e, Function.comp] using
+    (ContinuousWithinAt.comp
+      (f := e.symm)
+      (g := H_t)
+      (s := SCV.TubeDomain (ForwardConeFlat d (n + m)))
+      (t := ForwardTube d (n + m))
+      (x := SCV.realEmbed (flattenCLEquivReal (n + m) (d + 1) y))
+      hH' he hmap)
+
+/-- Local flat boundary-regularity package on the complement side for the
+fixed-time shell continuation. This is the exact theorem-(1) seam beneath the
+coefficient limit: an open flat neighborhood inside the flattened complement
+image together with `ContinuousWithinAt` of the flattened continuation at every
+real boundary point of that neighborhood. -/
+private theorem
+    section43_fixedTimeShellRaw_localFlatContinuity_on_section43PositiveEnergyRegion_compl
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (t : ℝ)
+    (y : NPointDomain d (n + m))
+    (hy : y ∈ (section43PositiveEnergyRegion d (n + m))ᶜ) :
+    let G_t : (Fin ((n + m) * (d + 1)) → ℂ) → ℂ :=
+      fun zflat =>
+        bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            ((flattenCLEquiv (n + m) (d + 1)).symm zflat) (t : ℂ))
+    ∃ Uflat : Set (Fin ((n + m) * (d + 1)) → ℝ),
+      IsOpen Uflat ∧
+      flattenCLEquivReal (n + m) (d + 1) y ∈ Uflat ∧
+      Uflat ⊆ (flattenCLEquivReal (n + m) (d + 1)) ''
+        ((section43PositiveEnergyRegion d (n + m))ᶜ) ∧
+      ∀ xflat ∈ Uflat, ContinuousWithinAt G_t
+        (SCV.TubeDomain (ForwardConeFlat d (n + m)))
+        (SCV.realEmbed xflat) := by
+  let eR := flattenCLEquivReal (n + m) (d + 1)
+  let Uflat : Set (Fin ((n + m) * (d + 1)) → ℝ) :=
+    eR '' ((section43PositiveEnergyRegion d (n + m))ᶜ)
+  refine ⟨Uflat, ?_, ?_, ?_, ?_⟩
+  · have hComplOpen :
+        IsOpen ((section43PositiveEnergyRegion d (n + m))ᶜ) := by
+      have hClosed :
+          IsClosed (section43PositiveEnergyRegion d (n + m)) := by
+        simp only [section43PositiveEnergyRegion, Set.setOf_forall]
+        exact isClosed_iInter (fun i : Fin (n + m) =>
+          isClosed_le continuous_const
+            (((continuous_apply (0 : Fin (d + 1))).comp (continuous_apply i)) :
+              Continuous (fun q : NPointDomain d (n + m) => q i 0)))
+      simpa using hClosed.isOpen_compl
+    exact eR.toHomeomorph.isOpenMap _ hComplOpen
+  · exact Set.mem_image_of_mem eR hy
+  · intro x hx
+    exact hx
+  · intro xflat hxflat
+    simpa [Uflat, eR] using
+      section43_fixedTimeShellRaw_pointwiseFlatContinuity_on_section43PositiveEnergyRegion_compl
+        (d := d) OS lgc hm t xflat hxflat
+
+/-- Holomorphy supplier for the flattened fixed-time shell continuation. This
+is the exact extra SCV input needed by the explicit local trace-object route
+beneath the coefficient limit. -/
+private theorem section43_fixedTimeShellRaw_differentiableOn_fixedTime
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (t : ℝ) :
+    let G_t : (Fin ((n + m) * (d + 1)) → ℂ) → ℂ :=
+      fun zflat =>
+        bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            ((flattenCLEquiv (n + m) (d + 1)).symm zflat) (t : ℂ))
+    DifferentiableOn ℂ G_t (SCV.TubeDomain (ForwardConeFlat d (n + m))) := by
+  let j : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+  let F_analytic :
+      (Fin (n + m) → Fin (d + 1) → ℂ) → ℂ :=
+    fun z => bvt_F OS lgc (n + m) (xiShift j 0 z (t : ℂ))
+  have hF_holo :
+      DifferentiableOn ℂ F_analytic (TubeDomainSetPi (ForwardConeAbs d (n + m))) := by
+    intro z hz
+    have hz_shift_mem :
+        xiShift j 0 z (t : ℂ) ∈ ForwardTube d (n + m) := by
+      rw [forwardTube_eq_imPreimage]
+      change (fun k μ => (z k μ).im) ∈ ForwardConeAbs d (n + m) at hz
+      have him :
+          (fun k μ => (xiShift j 0 z (t : ℂ) k μ).im) =
+            fun k μ => (z k μ).im := by
+        ext k μ
+        by_cases hshift : j.val ≤ k.val ∧ μ = (0 : Fin (d + 1))
+        · have hshift' : j ≤ k ∧ μ = (0 : Fin (d + 1)) := by simpa using hshift
+          simp [xiShift, hshift']
+        · have hshift' : ¬ (j ≤ k ∧ μ = (0 : Fin (d + 1))) := by simpa using hshift
+          simp [xiShift, hshift']
+      simpa [him] using hz
+    have hft_open : IsOpen (ForwardTube d (n + m)) := by
+      simpa [BHW_forwardTube_eq (d := d) (n := n + m)] using
+        (BHW.isOpen_forwardTube (d := d) (n := n + m))
+    have houter :
+        DifferentiableAt ℂ (bvt_F OS lgc (n + m)) (xiShift j 0 z (t : ℂ)) :=
+      (bvt_F_holomorphic (d := d) OS lgc (n + m)).differentiableAt
+        (hft_open.mem_nhds hz_shift_mem)
+    let shift : Fin (n + m) → Fin (d + 1) → ℂ :=
+      fun k μ =>
+        if j.val ≤ k.val ∧ μ = (0 : Fin (d + 1)) then
+          (t : ℂ)
+        else
+          0
+    have hinner :
+        DifferentiableAt ℂ
+          (fun z : Fin (n + m) → Fin (d + 1) → ℂ => xiShift j 0 z (t : ℂ)) z := by
+      convert (differentiableAt_id.add_const shift : DifferentiableAt ℂ
+        (fun z : Fin (n + m) → Fin (d + 1) → ℂ => z + shift) z) using 1
+      ext w k μ
+      by_cases hshift : j.val ≤ k.val ∧ μ = (0 : Fin (d + 1))
+      · have hshift' : j ≤ k ∧ μ = (0 : Fin (d + 1)) := by simpa using hshift
+        simp [shift, xiShift, hshift']
+      · have hshift' : ¬ (j ≤ k ∧ μ = (0 : Fin (d + 1))) := by simpa using hshift
+        simp [shift, xiShift, hshift']
+    exact (houter.comp z hinner).differentiableWithinAt
+  have hF_holo_forward :
+      DifferentiableOn ℂ F_analytic (ForwardTube d (n + m)) := by
+    simpa [forwardTube_eq_imPreimage] using hF_holo
+  have hG_diff :
+      DifferentiableOn ℂ
+        (F_analytic ∘ (flattenCLEquiv (n + m) (d + 1)).symm)
+        (SCV.TubeDomain (ForwardConeFlat d (n + m))) :=
+    differentiableOn_flatten hF_holo_forward
+  simpa [F_analytic] using hG_diff
+
+/-- Honest coefficient-consumer split for the explicit local trace-object
+route. On an open flat neighborhood `Uflat`, explicit holomorphy + tempered FL
+data + a continuous trace object `B` + local annihilation of the boundary
+distribution force the corresponding fixed-time shell coefficient to tend to
+zero along the chosen cone ray. -/
+private theorem
+    section43_fixedTimeShellRaw_flat_coefficient_tendsto_zero_of_localTraceData
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (t : ℝ) :
+    let G_t : (Fin ((n + m) * (d + 1)) → ℂ) → ℂ :=
+      fun zflat =>
+        bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            ((flattenCLEquiv (n + m) (d + 1)).symm zflat) (t : ℂ))
+    let hG_diff : DifferentiableOn ℂ G_t (SCV.TubeDomain (ForwardConeFlat d (n + m))) :=
+      section43_fixedTimeShellRaw_differentiableOn_fixedTime
+        (d := d) OS lgc hm t
+    let hTempered : SCV.HasFourierLaplaceReprTempered (ForwardConeFlat d (n + m)) G_t :=
+      section43_fixedTimeShellRaw_temperedRepr_fixedTime
+        (d := d) OS lgc hm t
+    ∀ (Uflat : Set (Fin ((n + m) * (d + 1)) → ℝ))
+      (hUflat : IsOpen Uflat)
+      (xflat : Fin ((n + m) * (d + 1)) → ℝ)
+      (hxflat : xflat ∈ Uflat)
+      {B : (Fin ((n + m) * (d + 1)) → ℝ) → ℂ}
+      (hB_contOn : ContinuousOn B Uflat)
+      (ηflat : Fin ((n + m) * (d + 1)) → ℝ)
+      (hηflat : ηflat ∈ ForwardConeFlat d (n + m))
+      (htraceUflat : ∀ uflat ∈ Uflat,
+        Filter.Tendsto
+          (fun ε : ℝ => G_t (fun i => ↑(uflat i) + ↑ε * ↑(ηflat i) * Complex.I))
+          (nhdsWithin 0 (Set.Ioi 0))
+          (nhds (B uflat)))
+      (h_dist_zero_local :
+        ∀ f : SchwartzMap (Fin ((n + m) * (d + 1)) → ℝ) ℂ,
+          tsupport (f : (Fin ((n + m) * (d + 1)) → ℝ) → ℂ) ⊆ Uflat →
+            hTempered.dist f = 0),
+      Filter.Tendsto
+        (fun ε : ℝ => G_t (fun i => ↑(xflat i) + ↑ε * ↑(ηflat i) * Complex.I))
+        (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+        (nhds 0) := by
+  intro G_t hG_diff hTempered Uflat hUflat xflat hxflat B hB_contOn ηflat hηflat htraceUflat
+    h_dist_zero_local
+  have hB_zero_on : Set.EqOn B 0 Uflat := by
+    refine SCV.eqOn_open_of_compactSupport_schwartz_integral_eq_of_continuousOn
+      hUflat hB_contOn continuousOn_const ?_
+    intro f hf_compact hf_supp
+    have hrecov :=
+      SCV.fourierLaplace_schwartz_integral_convergence_local_of_trace
+        (C := ForwardConeFlat d (n + m))
+        (forwardConeFlat_isOpen d (n + m))
+        (forwardConeFlat_convex d (n + m))
+        (forwardConeFlat_nonempty d (n + m))
+        (forwardConeFlat_isCone d (n + m))
+        hG_diff hTempered Uflat hUflat hB_contOn ηflat hηflat htraceUflat f hf_supp
+        hf_compact
+    have hdist := hTempered.boundary_value f ηflat hηflat
+    have hEq : hTempered.dist f = ∫ y, B y * f y :=
+      tendsto_nhds_unique hdist hrecov
+    calc
+      ∫ y, B y * f y = hTempered.dist f := hEq.symm
+      _ = 0 := h_dist_zero_local f hf_supp
+      _ = ∫ y, (0 : ℂ) * f y := by simp
+  have hBxflat : B xflat = 0 := by
+    simpa using hB_zero_on hxflat
+  simpa [hBxflat] using htraceUflat xflat hxflat
+
+/-- Dominated-convergence supplier for the actual ambient fixed-time shell.
+This is the exact theorem-sized contract exposed beneath `hlimit_os`: if the
+live shell integrand against a fixed ambient test `h` is pointwise driven to
+zero and uniformly dominated by an integrable ambient bound near `ε = 0+`, then
+the corresponding raw shell integral tends to `0`. -/
+private theorem
+    section43_fixedTimeShellRaw_coefficient_tendsto_zero_on_section43PositiveEnergyRegion_compl
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (t : ℝ)
+    (y : NPointDomain d (n + m))
+    (hy : y ∈ (section43PositiveEnergyRegion d (n + m))ᶜ) :
+    Filter.Tendsto
+      (fun ε : ℝ =>
+        bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun k μ =>
+              ↑(y k μ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                  Complex.I)
+            (t : ℂ)))
+      (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+      (nhds 0) := by
+  sorry
+
+/-- Dominated-convergence supplier for the actual ambient fixed-time shell.
+This is the exact theorem-sized contract exposed beneath `hlimit_os`: if the
+live shell integrand against a fixed ambient test `h` is pointwise driven to
+zero and uniformly dominated by an integrable ambient bound near `ε = 0+`, then
+the corresponding raw shell integral tends to `0`. -/
+private theorem
+    section43_fixedTimeShellRaw_tendsto_zero_on_section43PositiveEnergyRegion_compl
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (t : ℝ)
+    (h : SchwartzNPoint d (n + m))
+    (hq :
+      section43PositiveEnergyQuotientMap (d := d) (n + m) h = 0) :
+    Filter.Tendsto
+      (fun ε : ℝ =>
+        ∫ y : NPointDomain d (n + m),
+          Set.indicator ((section43PositiveEnergyRegion d (n + m))ᶜ)
+            (fun y =>
+              bvt_F OS lgc (n + m)
+                (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                  (fun k μ =>
+                    ↑(y k μ) +
+                      ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                        Complex.I)
+                  (t : ℂ)) *
+                h y) y)
+      (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+      (nhds 0) := by
+  let F : ℝ → NPointDomain d (n + m) → ℂ := fun ε y =>
+    Set.indicator ((section43PositiveEnergyRegion d (n + m))ᶜ)
+      (fun y =>
+        bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun k μ =>
+              ↑(y k μ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                  Complex.I)
+            (t : ℂ)) *
+          h y) y
+  obtain ⟨bound, hbound_int, hbound⟩ :=
+    section43_fixedTimeShellRaw_on_section43PositiveEnergyRegion_compl_eventually_bounded
+      (d := d) OS lgc hm t h
+  have hpointwise :
+      ∀ y : NPointDomain d (n + m),
+        Filter.Tendsto (fun ε : ℝ => F ε y)
+          (nhdsWithin (0 : ℝ) (Set.Ioi 0)) (nhds 0) := by
+    intro y
+    by_cases hy : y ∈ (section43PositiveEnergyRegion d (n + m))ᶜ
+    · simp only [F, Set.indicator_of_mem hy]
+      have hcoeff :
+          Filter.Tendsto
+            (fun ε : ℝ =>
+              bvt_F OS lgc (n + m)
+                (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                  (fun k μ =>
+                    ↑(y k μ) +
+                      ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                        Complex.I)
+                  (t : ℂ)))
+            (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+            (nhds 0) :=
+        section43_fixedTimeShellRaw_coefficient_tendsto_zero_on_section43PositiveEnergyRegion_compl
+          (d := d) OS lgc hm t y hy
+      simpa using hcoeff.mul tendsto_const_nhds
+    · simp [F, Set.indicator_of_notMem hy]
+  sorry
+
+/-- Dominated-convergence supplier for the actual ambient fixed-time shell.
+This is the exact theorem-sized contract exposed beneath `hlimit_os`: if the
+live shell integrand against a fixed ambient test `h` is pointwise driven to
+zero and uniformly dominated by an integrable ambient bound near `ε = 0+`, then
+the corresponding raw shell integral tends to `0`. -/
+private theorem section43_fixedTimeShellRaw_tendsto_zero_of_dominated_convergence
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (t : ℝ)
+    (h : SchwartzNPoint d (n + m))
+    (bound : NPointDomain d (n + m) → ℝ)
+    (hbound :
+      ∀ᶠ ε : ℝ in nhdsWithin (0 : ℝ) (Set.Ioi 0),
+        ∀ y : NPointDomain d (n + m),
+          ‖bvt_F OS lgc (n + m)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                (fun k μ =>
+                  ↑(y k μ) +
+                    ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                      Complex.I)
+                (t : ℂ)) *
+              h y‖ ≤ bound y)
+    (hbound_int : MeasureTheory.Integrable bound MeasureTheory.volume)
+    (hlim :
+      ∀ y : NPointDomain d (n + m),
+        Filter.Tendsto
+          (fun ε : ℝ =>
+            bvt_F OS lgc (n + m)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                (fun k μ =>
+                  ↑(y k μ) +
+                    ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                      Complex.I)
+                (t : ℂ)) *
+              h y)
+          (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+          (nhds 0)) :
+    Filter.Tendsto
+      (fun ε : ℝ =>
+        ∫ y : NPointDomain d (n + m),
+          bvt_F OS lgc (n + m)
+            (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+              (fun k μ =>
+                ↑(y k μ) +
+                  ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                    Complex.I)
+              (t : ℂ)) *
+            h y)
+      (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+      (nhds 0) := by
+  let F : ℝ → NPointDomain d (n + m) → ℂ := fun ε y =>
+    bvt_F OS lgc (n + m)
+      (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+        (fun k μ =>
+          ↑(y k μ) +
+            ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+              Complex.I)
+        (t : ℂ)) *
+      h y
+  have hF_meas :
+      ∀ᶠ ε : ℝ in nhdsWithin (0 : ℝ) (Set.Ioi 0),
+        MeasureTheory.AEStronglyMeasurable (F ε) MeasureTheory.volume := by
+    filter_upwards [self_mem_nhdsWithin] with ε hε
+    let coeff : NPointDomain d (n + m) → ℂ := fun y =>
+      bvt_F OS lgc (n + m)
+        (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+          (fun k μ =>
+            ↑(y k μ) +
+              ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                Complex.I)
+          (t : ℂ))
+    have hcoeff_cont : Continuous coeff := by
+      rw [continuous_iff_continuousAt]
+      intro y
+      let shellMap : NPointDomain d (n + m) → Fin (n + m) → Fin (d + 1) → ℂ :=
+        fun y =>
+          xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun k μ =>
+              ↑(y k μ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                  Complex.I)
+            (t : ℂ)
+      have hshell_mem : shellMap y ∈ ForwardTube d (n + m) := by
+        simpa [shellMap, forwardTube_eq_imPreimage] using
+          canonicalXiShift_mem_forwardTube (d := d) hm hε y
+      have houter_cont : ContinuousAt (bvt_F OS lgc (n + m)) (shellMap y) := by
+        let hft_open :
+            IsOpen (ForwardTube d (n + m)) := by
+          simpa [BHW_forwardTube_eq (d := d) (n := n + m)] using
+            (BHW.isOpen_forwardTube (d := d) (n := n + m))
+        have houter_diff :
+            DifferentiableAt ℂ (bvt_F OS lgc (n + m)) (shellMap y) :=
+          (bvt_F_holomorphic (d := d) OS lgc (n + m)).differentiableAt
+            (hft_open.mem_nhds hshell_mem)
+        exact houter_diff.continuousAt
+      have hinner_cont : ContinuousAt shellMap y :=
+        (contDiff_canonicalXiShift (d := d) hm t ε).continuous.continuousAt
+      simpa [coeff, shellMap] using houter_cont.comp hinner_cont
+    simpa [F, coeff] using (hcoeff_cont.mul h.continuous).aestronglyMeasurable
+  have h_bound :
+      ∀ᶠ ε : ℝ in nhdsWithin (0 : ℝ) (Set.Ioi 0),
+        ∀ᵐ y ∂MeasureTheory.volume, ‖F ε y‖ ≤ bound y := by
+    refine hbound.mono ?_
+    intro ε hε
+    exact Filter.Eventually.of_forall hε
+  have h_lim :
+      ∀ᵐ y ∂MeasureTheory.volume,
+        Filter.Tendsto (fun ε : ℝ => F ε y) (nhdsWithin (0 : ℝ) (Set.Ioi 0)) (nhds 0) :=
+    Filter.Eventually.of_forall hlim
+  simpa [F] using
+    (MeasureTheory.tendsto_integral_filter_of_dominated_convergence
+      (μ := MeasureTheory.volume) (bound := bound) hF_meas h_bound hbound_int h_lim)
+
+/-- Local real-scalar differentiability bridge for the boundary-value
+coefficient on the shell codomain. This isolates the exact codomain-side
+`restrictScalars` seam needed by the shell-coefficient differentiability
+surface. -/
+private theorem differentiableAt_bvt_F_restrictScalars
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ}
+    {z : Fin (n + m) → Fin (d + 1) → ℂ}
+    (hz : DifferentiableAt ℂ (bvt_F OS lgc (n + m)) z) :
+    DifferentiableAt ℝ (bvt_F OS lgc (n + m)) z := by
+  letI : NormedSpace ℝ (Fin (n + m) → Fin (d + 1) → ℂ) :=
+    NormedSpace.restrictScalars ℝ ℂ (Fin (n + m) → Fin (d + 1) → ℂ)
+  haveI := IsScalarTower.restrictScalars ℝ ℂ (Fin (n + m) → Fin (d + 1) → ℂ)
+  letI : NormedSpace ℝ ℂ := NormedSpace.restrictScalars ℝ ℂ ℂ
+  haveI := IsScalarTower.restrictScalars ℝ ℂ ℂ
+  exact hz.restrictScalars ℝ
+
+/-- Real Fréchet differentiability package for the shell coefficient obtained by
+composing the holomorphic `bvt_F` witness with the affine fixed-time canonical
+shell map. This is the exact shell-local chain-rule bridge below the current
+codomain-side `restrictScalars` seam. -/
+private theorem hasFDerivAt_bvt_F_canonicalXiShift
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    {t ε : ℝ} (hε : 0 < ε)
+    (y : NPointDomain d (n + m)) :
+    HasFDerivAt
+      (fun y : NPointDomain d (n + m) =>
+        bvt_F OS lgc (n + m)
+          (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+            (fun k μ =>
+              ↑(y k μ) +
+                ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                  Complex.I)
+            (t : ℂ)))
+      (fderiv ℝ
+        (fun y : NPointDomain d (n + m) =>
+          bvt_F OS lgc (n + m)
+            (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+              (fun k μ =>
+                ↑(y k μ) +
+                  ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                    Complex.I)
+              (t : ℂ))) y)
+      y := by
+  let shellMap : NPointDomain d (n + m) → (Fin (n + m) → Fin (d + 1) → ℂ) :=
+    fun y =>
+      xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+        (fun k μ =>
+          ↑(y k μ) +
+            ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+              Complex.I)
+        (t : ℂ)
+  have hshell_mem : shellMap y ∈ ForwardTube d (n + m) := by
+    simpa [shellMap, forwardTube_eq_imPreimage] using
+      canonicalXiShift_mem_forwardTube (d := d) hm hε y
+  have houter_diffC :
+      DifferentiableAt ℂ (bvt_F OS lgc (n + m)) (shellMap y) := by
+    have hft_open : IsOpen (ForwardTube d (n + m)) := by
+      simpa [BHW_forwardTube_eq (d := d) (n := n + m)] using
+        (BHW.isOpen_forwardTube (d := d) (n := n + m))
+    exact
+      (bvt_F_holomorphic (d := d) OS lgc (n + m)).differentiableAt
+        (hft_open.mem_nhds hshell_mem)
+  have houter_diffR :
+      DifferentiableAt ℝ (bvt_F OS lgc (n + m)) (shellMap y) :=
+    differentiableAt_bvt_F_restrictScalars (d := d) OS lgc houter_diffC
+  exact
+    (houter_diffR.comp y
+      (differentiableAt_canonicalXiShift (d := d) hm t ε y)).hasFDerivAt
+
 /-- Exact Step-1 Wightman-side boundary-value shell for the current
 Lemma-4.2 route: the reconstructed pairing against the right-time-shifted
 ambient tensor is the canonical forward-cone boundary value of the matching
@@ -3490,7 +6088,104 @@ positive real times.
 This is the exact reusable analytic theorem slot described in the proof docs
 as `one_variable_time_interchange_for_wightman_pairing`. The later concrete
 Section-4.3 adapter still has to construct such an `H` from the ambient
-representative / positive-time preimage hypotheses. -/
+representative / positive-time preimage hypotheses.
+
+Exact current pre-witness seam after the source audit:
+- there is no smaller honest theorem on the same explicit ambient / preimage
+  inputs that lands strictly between the current slice package and the witness
+  consumed here;
+- the first exact assembly ingredient is already visible one level below this
+  theorem: for fixed
+  `hφf :
+      section43PositiveEnergyQuotientMap (d := d) n φ =
+        os1TransportComponent d n ⟨f, hf_ord⟩`
+  and
+  `hψg :
+      section43PositiveEnergyQuotientMap (d := d) m ψ =
+        os1TransportComponent d m ⟨g, hg_ord⟩`,
+  one needs a single upper-half-plane scalar assembled from the slice package,
+  with theorem surface
+  `∃ Hs : ℂ → ℂ,
+      DifferentiableOn ℂ Hs SCV.upperHalfPlane ∧
+      (∀ t : ℝ, 0 < t →
+        Hs ((t : ℂ) * Complex.I) =
+          OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+            (PositiveTimeBorchersSequence.single n f hf_ord)
+            (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ))`;
+  this is the exact `hH_imag_os` input consumed later by
+  `lemma42_matrix_element_time_interchange`, and rotating such an `Hs` is the
+  first honest ingredient of the right-half-plane witness constructor used
+  here;
+- the exact first obstruction inside that constructor is not another generic
+  holomorphic-existence step but a fixed-pair packaging/equality step:
+  starting from the slice-indexed data delivered by
+  `partialFourierSpatial_timeSlice_hasPaleyWienerExtension`,
+  `partialFourierSpatial_timeSliceCanonicalExtension`,
+  `section43_iteratedSlice_descendedPairing`,
+  `fourierInvPairingCLM_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`,
+  and
+  `fourierInvPairingCLM_opposite_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`,
+  one still needs a theorem that assembles those equalities over the Section-4.3
+  slice variables into one scalar `Hs` attached to the fixed pair
+  `(φ, ψ)` / `(f, g)`, and proves that this assembled scalar is exactly
+  `OSInnerProductTimeShiftHolomorphicValue ...` on the positive imaginary axis;
+- the source already reaches the slice-level endpoint
+  `section43_iteratedSlice_descendedPairing`, together with the scalar slice
+  bridge theorems
+  `fourierInvPairingCLM_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+  and
+  `fourierInvPairingCLM_opposite_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`;
+- those theorems are still indexed by slice data `(r, t, ht, ξ, w)` and only
+  compare one-variable slice pairings or their canonical upper-half-plane
+  extensions along `os1TransportComponent` equalities;
+- in particular, none of them performs the missing aggregation over the frozen
+  slice parameters or identifies the resulting scalar with the semigroup-side
+  quantity `OSInnerProductTimeShiftHolomorphicValue`; they only move ambient
+  representatives to their positive-time preimages inside already chosen slice
+  pairings;
+- the already-landed theorem
+  `section43_fixedPair_upperHalfPlaneScalarization` is not that missing
+  assembly step: its proof packages only the semigroup-side scalar
+  `w ↦ OSInnerProductTimeShiftHolomorphicValue ... (-I * w)` and does not use
+  `φ`, `ψ`, `hφf`, or `hψg` in any mathematically active way;
+- none of the current source theorems states, or can by itself recover, the
+  first honest ambient fixed-pair output: a right-half-plane witness
+  `H : ℂ → ℂ` whose positive-real values are simultaneously the full
+  `(n + m)`-point `xiShift` shell against `f.osConjTensorProduct g` and the
+  ambient Wightman pairing
+  `bvt_W ... (φ.conjTensorProduct (timeShiftSchwartzNPoint ... ψ))`;
+- so, after the semigroup-only scalarization has been factored out, the
+  earliest honest next theorem on these inputs is the ambient witness
+  constructor itself:
+  from
+  `hφf :
+      section43PositiveEnergyQuotientMap (d := d) n φ =
+        os1TransportComponent d n ⟨f, hf_ord⟩`
+  and
+  `hψg :
+      section43PositiveEnergyQuotientMap (d := d) m ψ =
+        os1TransportComponent d m ⟨g, hg_ord⟩`,
+  together with the existing compact-support hypotheses, produce
+  `∃ H : ℂ → ℂ,
+      DifferentiableOn ℂ H {z : ℂ | 0 < z.re} ∧
+      (∀ t : ℝ, 0 < t →
+        H (t : ℂ) =
+          ∫ y : NPointDomain d (n + m),
+            bvt_F OS lgc (n + m)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                (fun i => wickRotatePoint (y i)) ((t : ℂ) * Complex.I)) *
+              (f.osConjTensorProduct g) y) ∧
+      (∀ t : ℝ, 0 < t →
+        H (t : ℂ) =
+          bvt_W OS lgc (n + m)
+            (φ.conjTensorProduct
+              (timeShiftSchwartzNPoint (d := d) t ψ)))`;
+- on the explicit family inputs used later in
+  `exists_bounded_componentwise_onImage_supplier_data_of_preimageFamilies`,
+  instantiating this theorem for each `(N, n, k)` remains exactly the missing
+  supplier step before the public `hreal` payload;
+- therefore no honest wrapper theorem should be inserted between the explicit
+  family inputs and this witness constructor. -/
 private theorem one_variable_time_interchange_for_wightman_pairing
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     {n m : ℕ} (hm : 0 < m)
@@ -3812,6 +6507,72 @@ exactly the current Stage-5 blocker: the positive-imaginary-axis witness
 identification and the shell-specific limit theorem. Once those are proved,
 this theorem is the public consumer that delivers the per-pair kernel equality
 needed later for Eq. `(4.28)` and positivity. -/
+/-
+Exact witness-constructor assembly note after the latest source audit:
+
+- the first honest missing theorem strictly below the eventual right-half-plane
+  witness `H` is the per-pair upper-half-plane scalar assembled from the
+  Section-4.3 slice package;
+- inspecting the proof body shows that `lemma42_matrix_element_time_interchange`
+  itself is only a direct call to
+  `kernel_eq_of_tendsto_bvt_F_canonical_xiShift_to_upperHalfPlaneWitness_on_imagAxis`,
+  so its local use of the witness is exactly:
+  1. the positive-imaginary-axis identification `hH_imag_os`, and
+  2. the matching canonical-shell limit `hlimit`;
+- in particular, no local holomorphy or identity-theorem argument remains
+  below `lemma42`; those belong strictly upstream in the construction of the
+  fixed-pair witness, not in `lemma42` itself;
+- for fixed ambient/preimage data
+  `hφf :
+      section43PositiveEnergyQuotientMap (d := d) n φ =
+        os1TransportComponent d n ⟨f, hf_ord⟩`
+  and
+  `hψg :
+      section43PositiveEnergyQuotientMap (d := d) m ψ =
+        os1TransportComponent d m ⟨g, hg_ord⟩`,
+  the exact first assembly statement is
+  `∃ Hs : ℂ → ℂ,
+      DifferentiableOn ℂ Hs SCV.upperHalfPlane ∧
+      (∀ t : ℝ, 0 < t →
+        Hs ((t : ℂ) * Complex.I) =
+          OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+            (PositiveTimeBorchersSequence.single n f hf_ord)
+            (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ))`;
+- this is exactly the `hH_imag_os` datum consumed by
+  `lemma42_matrix_element_time_interchange`;
+- the source bodies above show that this fixed-pair scalarization theorem
+  should quantify only
+  `OS`, `lgc`, `{n m}`, `φ`, `ψ`, `f`, `g`, `hf_ord`, `hg_ord`, `hφf`, and
+  `hψg`: neither compact-support hypotheses nor the later shift index
+  hypothesis `hm : 0 < m` appear in the actual slice-descending theorems or in
+  the target `OSInnerProductTimeShiftHolomorphicValue`, so adding them here
+  would be theorem-shape drift;
+- the current theorems
+  `partialFourierSpatial_timeSlice_hasPaleyWienerExtension`,
+  `partialFourierSpatial_timeSliceCanonicalExtension`,
+  `section43_iteratedSlice_descendedPairing`,
+  `fourierInvPairingCLM_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`,
+  and
+  `fourierInvPairingCLM_opposite_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+  stop one level earlier: they descend individual slice pairings indexed by
+  `(r, t, ht, ξ, w)` but do not package those slice identities into a single
+  holomorphic scalar `Hs` for the fixed pair `(φ, ψ)` / `(f, g)`;
+- more sharply, no current theorem states the missing scalarization step that
+  would freeze the slice parameters, combine the descended slice pairings into
+  one complex-valued function of the single continuation variable, and identify
+  that function on `((t : ℂ) * Complex.I)` with
+  `OSInnerProductTimeShiftHolomorphicValue ...`;
+- this also explains why the theorem should not be stated first on a smaller
+  codomain-level Section-4.3 object: the actual downstream consumer still
+  needs the ambient representatives `φ, ψ` for the canonical-shell limit and
+  the positive-time preimages `f, g` for the semigroup-side target, so a
+  codomain-only statement here would only hide essential data behind a wrapper;
+- only after such an `Hs` is assembled can one rotate it to the right-half-
+  plane witness used by
+  `one_variable_time_interchange_for_wightman_pairing`,
+  for example by setting `H z := Hs (z * Complex.I)` and then proving the
+  positive-real shell and Wightman-value formulas consumed there.
+-/
 theorem lemma42_matrix_element_time_interchange
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     {n m : ℕ} (hm : 0 < m)
@@ -4386,6 +7147,115 @@ private theorem
         (section43PositiveEnergyQuotientMap1D ψ) := hIntegral
 
 
+/-- Compact-support-free fixed-kernel consumer for the descended `ψ_{2πit}`
+boundary-value comparison: once a one-variable witness `Tφψ` with one-sided
+Fourier support is given, the only remaining input needed at this stage is the
+transport-backed comparison on the single `ψ_{2πit}` family. -/
+private theorem
+    bvt_W_conjTensorProduct_timeShift_noCompact_psiZ_eq_osHolomorphicValue_of_ambient_descended_boundaryValue_eq
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ}
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (Tφψ : SchwartzMap ℝ ℂ →L[ℂ] ℂ)
+    (hTφψ_supp : SCV.HasOneSidedFourierSupport Tφψ)
+    (hPsi :
+      let xF : OSHilbertSpace OS := (((show OSPreHilbertSpace OS from
+        (⟦PositiveTimeBorchersSequence.single n f hf_ord⟧)) : OSHilbertSpace OS))
+      let xG : OSHilbertSpace OS := (((show OSPreHilbertSpace OS from
+        (⟦PositiveTimeBorchersSequence.single m g hg_ord⟧)) : OSHilbertSpace OS))
+      ∀ t : ℝ, ∀ ht : 0 < t,
+        OSReconstruction.fourierPairingDescendsToSection43PositiveEnergy1D
+          Tφψ hTφψ_supp
+          (section43PositiveEnergyQuotientMap1D
+            (SCV.schwartzPsiZ
+              (((2 * Real.pi : ℂ) * (t * Complex.I)))
+              (by
+                simpa [Complex.mul_im, ht.ne']
+                  using mul_pos Real.two_pi_pos ht))) =
+        selfAdjointSpectralBoundaryValueOffdiagCLM
+          (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+          (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+          xF xG
+          (SCV.schwartzPsiZ
+            (((2 * Real.pi : ℂ) * (t * Complex.I)))
+            (by
+              simpa [Complex.mul_im, ht.ne']
+                using mul_pos Real.two_pi_pos ht))) :
+    ∀ t : ℝ, ∀ ht : 0 < t,
+      Tφψ
+        ((SchwartzMap.fourierTransformCLM ℂ)
+          (SCV.schwartzPsiZ
+            (((2 * Real.pi : ℂ) * (t * Complex.I)))
+            (by
+              simpa [Complex.mul_im, ht.ne']
+                using mul_pos Real.two_pi_pos ht))) =
+      OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+        (PositiveTimeBorchersSequence.single n f hf_ord)
+        (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ) := by
+  intro t ht
+  let ψZ : SchwartzMap ℝ ℂ :=
+    SCV.schwartzPsiZ
+      (((2 * Real.pi : ℂ) * (t * Complex.I)))
+      (by
+        simpa [Complex.mul_im, ht.ne']
+          using mul_pos Real.two_pi_pos ht)
+  let xF : OSHilbertSpace OS := (((show OSPreHilbertSpace OS from
+    (⟦PositiveTimeBorchersSequence.single n f hf_ord⟧)) : OSHilbertSpace OS))
+  let xG : OSHilbertSpace OS := (((show OSPreHilbertSpace OS from
+    (⟦PositiveTimeBorchersSequence.single m g hg_ord⟧)) : OSHilbertSpace OS))
+  have hDesc :
+      Tφψ ((SchwartzMap.fourierTransformCLM ℂ) ψZ) =
+        OSReconstruction.fourierPairingDescendsToSection43PositiveEnergy1D
+          Tφψ hTφψ_supp (section43PositiveEnergyQuotientMap1D ψZ) := by
+    simpa [ψZ] using
+      (OSReconstruction.fourierPairingDescendsToSection43PositiveEnergy1D_apply
+        (T := Tφψ) (hT_supp := hTφψ_supp) (f := ψZ)).symm
+  have hPsi_t :
+      OSReconstruction.fourierPairingDescendsToSection43PositiveEnergy1D
+        Tφψ hTφψ_supp (section43PositiveEnergyQuotientMap1D ψZ) =
+      selfAdjointSpectralBoundaryValueOffdiag
+        (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+        (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+        xF xG ψZ := by
+    simpa [ψZ, xF, xG] using hPsi t ht
+  have hOS :
+      selfAdjointSpectralBoundaryValueOffdiag
+          (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+          (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+          xF xG ψZ =
+        OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+          (PositiveTimeBorchersSequence.single n f hf_ord)
+          (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ) := by
+    rw [selfAdjointSpectralBoundaryValueOffdiag_eq_selfAdjointSpectralLaplaceOffdiag_psiZ
+      (A := osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+      (hA := osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+      (hspec := spectrum_osTimeShiftHilbert_subset_Icc (d := d) OS lgc 1 one_pos)
+      (x := xF) (y := xG) (ht := ht)]
+    symm
+    simpa [xF, xG] using
+      (OSInnerProductTimeShiftHolomorphicValue_eq_selfAdjointSpectralLaplaceOffdiag
+        (d := d) OS lgc
+        (PositiveTimeBorchersSequence.single n f hf_ord)
+        (PositiveTimeBorchersSequence.single m g hg_ord)
+        (t : ℂ) (by simpa using ht))
+  calc
+    Tφψ ((SchwartzMap.fourierTransformCLM ℂ) ψZ)
+      =
+        OSReconstruction.fourierPairingDescendsToSection43PositiveEnergy1D
+          Tφψ hTφψ_supp (section43PositiveEnergyQuotientMap1D ψZ) := hDesc
+    _ =
+        selfAdjointSpectralBoundaryValueOffdiag
+          (osTimeShiftHilbert (d := d) OS lgc 1 one_pos)
+          (osTimeShiftHilbert_isSelfAdjoint (d := d) OS lgc 1 one_pos)
+          xF xG ψZ := hPsi_t
+    _ =
+        OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+          (PositiveTimeBorchersSequence.single n f hf_ord)
+          (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ) := hOS
+
 /-- Imaginary-axis corollary of the previous uniqueness assembly: once the
 canonical Wightman boundary functional and the rotated OS spectral boundary
 functional agree on Fourier transforms of Schwartz tests, the desired scalar
@@ -4853,10 +7723,6 @@ private theorem exists_horizontalPaleyKernel_pairing_fourierTransform
               simp [G, T1, g1, f1, ψZxε, ψZt, hfrom_to, toFin1, fromFin1, eM, e1,
                 SchwartzMap.compCLMOfContinuousLinearEquiv_apply]
 
-/-- Universal form of the one-dimensional horizontal Paley-Wiener kernel.
-The kernel `χHorizontal` is characterized by its pointwise formula, so the
-Fubini pairing identity holds for every one-variable continuous linear
-functional, not only for the functional used to construct it. -/
 private theorem exists_horizontalPaleyKernel_universal_pairing
     {ε t : ℝ} (hε : 0 < ε) (ht : 0 < t) :
     let ψZxε : ℝ → SchwartzMap ℝ ℂ := fun x =>
@@ -6229,6 +9095,1780 @@ theorem section43_iteratedSlice_descendedPairing
         section43_iteratedSlice_descendedPairing_imagAxis
           (d := d) (n := n) hfg r t ht ξ hη)
       w hw
+
+/- Exact fixed-pair Section-4.3 scalarization seam.
+
+As currently stated, this theorem only packages the semigroup-side upper-half-
+plane witness with the required positive-imaginary-axis OS identification. The
+ambient representatives `φ, ψ` and the transport hypotheses `hφf`, `hψg` do
+not yet appear in the conclusion, so the proof below is correspondingly
+semigroup-side only.
+
+This means the live Section-4.3 assembly obstruction remains strictly
+downstream: one still needs an honest theorem that uses the frozen slice
+package to connect the ambient transport data to the canonical-shell limit /
+Wightman-side identification consumed later by
+`lemma42_matrix_element_time_interchange`.
+
+More sharply, the present source now fixes the first payload ordering inside
+that ambient witness package:
+
+- `hH_imag_os` is not the first remaining transport-dependent payload, because
+  it is already available semigroup-side from the chosen positive-time
+  preimages through
+  `section43_fixedPair_upperHalfPlaneScalarization`;
+- after that, `rightHalfPlaneWitness_of_upperHalfPlaneScalarization` supplies
+  the later witness-shape rotation without any active use of
+  `(φ, ψ, hφf, hψg)`;
+- so the first theorem-sized payload that still genuinely has to consume the
+  ambient transport data is `hlimit`, i.e. the canonical-shell convergence to
+  the witness value on the positive imaginary axis.
+
+More sharply, source-first inspection localizes the first exact obstruction
+*inside* that `hlimit` constructor:
+
+- the shell whose limit must be proved is the ambient canonical forward-cone
+  perturbation
+  `ε ↦ ∫ y, bvt_F ... (xiShift ... (fun k μ => ↑(y k μ) + ε * canonical... * I)
+    (t : ℂ)) * (φ.conjTensorProduct ψ) y`;
+- the currently landed slice package only controls frozen one-variable objects
+  indexed by `(r, t, ht, ξ, w)`, namely the canonical slice extensions and the
+  descended scalar Fourier pairings attached to those slices;
+- the imported canonical-witness suppliers from
+  `OSToWightmanBoundaryValueLimits.lean`, including
+  `bvt_W_conjTensorProduct_timeShiftCanonicalExtension_eq_fourierLaplaceIntegral`,
+  `tendsto_bvt_W_conjTensorProduct_timeShiftCanonicalExtension_to_imagAxis`,
+  and
+  `bvt_exists_singleSplit_xiShift_holomorphicValue_with_limit`,
+  still do not close this seam:
+  they operate only on the preimage-side data `(f, g, hg_compact)` and give
+  either a canonical witness value or a preimage-side shell witness, but no
+  theorem among them consumes the ambient representatives `φ, ψ` together with
+  the transport equalities `hφf, hψg` to identify the ambient canonical shell
+  above with that witness value;
+- there is still no theorem in the present source that rewrites the above
+  ambient canonical-shell integrand, for fixed positive real `t`, as an
+  assembled scalar built from those frozen slice pairings, nor any theorem that
+  identifies the resulting assembled scalar with the semigroup-side witness
+  value on `((t : ℂ) * Complex.I)`.
+- equivalently, the exact missing theorem-sized payload is still the first
+  transport-backed assembly step that would take the frozen slice chain
+  `section43PositiveEnergyQuotientMap1D_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+  -> `fourierInvPairingCLM_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+  -> `fourierInvPairingCLM_opposite_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+  -> `section43_iteratedSlice_descendedPairing`
+  and package those slicewise equalities, for the fixed pair
+  `(φ, ψ, hφf, hψg)`, into a single scalar value that is simultaneously:
+  1. the `ε -> 0+` target of the ambient canonical `xiShift` shell, and
+  2. the value of an ambient upper-half-plane witness on `((t : ℂ) * I)`;
+- stated one notch earlier at fixed positive real `t`, there is still no
+  current theorem whose conclusion even rewrites the ambient canonical shell
+  integrand
+  `ε ↦ ∫ y, bvt_F ... (xiShift ... (fun k μ =>
+      ↑(y k μ) + ε * canonicalForwardConeDirection ... * I) (t : ℂ)) *
+      (φ.conjTensorProduct ψ) y`
+  as a single scalar assembled from that frozen slice chain before taking the
+  `ε -> 0+` limit;
+- equivalently, after freezing one positive real time `t`, the first missing
+  source-backed theorem would have to start from the exact ambient shell
+  function
+  `shell_t(ε) :=
+    ∫ y, bvt_F ... (xiShift ... (fun k μ =>
+        ↑(y k μ) + ε * canonicalForwardConeDirection ... * I) (t : ℂ)) *
+      (φ.conjTensorProduct ψ) y`
+  and produce one scalar `A_t` assembled from the frozen slice package
+  `section43PositiveEnergyQuotientMap1D_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+  ->
+  `fourierInvPairingCLM_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+  ->
+  `fourierInvPairingCLM_opposite_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+  ->
+  `section43_iteratedSlice_descendedPairing`,
+  and prove only
+  `Filter.Tendsto shell_t (nhdsWithin 0 (Set.Ioi 0)) (nhds A_t)`;
+- stated in exactly the currently missing fixed-`t` shell-to-slice form, there
+  is still no theorem in the present source of shape
+  `∀ t : ℝ, 0 < t → ∃ A_t : ℂ, ...` that rewrites the ambient canonical
+  `xiShift` shell for `(φ, ψ)` into one scalar assembled from that frozen
+  slice chain before any later witness-value identification;
+- stated even more tightly at fixed positive real `t`, the missing source-backed
+  theorem would have to start from the actual ambient shell function
+  `ε ↦ ∫ y, bvt_F ... (xiShift ... (fun k μ =>
+      ↑(y k μ) + ε * canonicalForwardConeDirection ... * I) (t : ℂ)) *
+      (φ.conjTensorProduct ψ) y`
+  and prove that its limit as `ε -> 0+` is computed by one scalar assembled
+  from the frozen slice data already controlled by the four theorems above;
+- the bounded fixed-`t` pass reconfirms that there is still no honest smaller
+  theorem below this shell surface: once the exact ambient shell is frozen,
+  any weaker statement would still leave the transport-backed shell-to-slice
+  aggregation itself undone and so would only rename one frozen slice equality
+  rather than perform new mathematics;
+- there is still no honest smaller theorem below that fixed-`t` shell surface:
+  any candidate statement that keeps the same ambient shell on the left but
+  produces anything weaker than such an assembled scalar `A_t` on the right
+  would merely repackage one frozen slice equality without performing the
+  missing shell-to-slice aggregation, so it would be wrapper drift rather than
+  a mathematically smaller source-backed prerequisite;
+- no current theorem rewrites that exact ambient shell into such an assembled
+  frozen-slice scalar, even after fixing `t > 0`, so the obstruction is not a
+  further uniqueness theorem, not witness-shape rotation, and not any later
+  closure argument: it is precisely the first transport-backed shell-to-slice
+  assembly for the fixed pair `(φ, ψ)` / `(f, g)`;
+- until that exact assembly exists, the current file has no source-backed way
+  to build the fixed-pair witness package consumed later by
+  `kernel_eq_of_tendsto_bvt_F_canonical_xiShift_to_upperHalfPlaneWitness_on_imagAxis`,
+  because the landed semigroup-side scalarization and rotation theorems never
+  convert the ambient transport equalities into a scalar shell-limit statement.
+
+Readiness verdict after this bounded source-first pass:
+
+- the already-landed theorem below,
+  `section43_fixedPair_shellToSlice_limit_fixedTime`,
+  remains only a boundary-value existence corollary; its chosen witness
+  `A_t := bvt_W ... (φ.conjTensorProduct (timeShiftSchwartzNPoint ... t ψ))`
+  is not the missing Section-4.3 shell-to-slice scalar assembled from the
+  transport data `(φ, ψ, f, g, hφf, hψg)`;
+- the exact first lower source-backed ingredient beneath that intended shell-
+  to-slice assembly is still the frozen-slice consumer cluster already present
+  in this file:
+  `section43PositiveEnergyQuotientMap1D_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+  ->
+  `fourierInvPairingCLM_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+  ->
+  `fourierInvPairingCLM_opposite_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+  ->
+  `section43_iteratedSlice_descendedPairing`;
+- source-first inspection of the theorem bodies sharpens that one notch
+  further: the first theorem strictly below that public cluster is the private
+  `Set.EqOn` bridge
+  `partialFourierSpatial_timeSlice_eqOn_nonneg_of_repr_eq_transport`, because
+  the first public edge
+  `section43PositiveEnergyQuotientMap1D_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+  is only `section43PositiveEnergyQuotientMap1D_eq_of_eqOn_nonneg` applied to
+  that slice equality on `[0,∞)`;
+- therefore, if the fixed-time canonical-shell specialization of the public
+  frozen-slice chain is still too high, the exact first lower ingredient now
+  exposed by the current source is:
+  1. choose the canonical frozen slice parameters `(r, tSlice, ht, ξ)` that
+     realize the ambient shell as a one-variable `partialFourierSpatial` slice,
+  2. then apply
+     `partialFourierSpatial_timeSlice_eqOn_nonneg_of_repr_eq_transport`
+     at those parameters before re-descending to the quotient/pairing levels;
+- no current theorem packages that fixed-`t` frozen-slice cluster into one
+  scalar target for the ambient canonical shell, so there is still no honest
+  smaller theorem between the live local seam `hlimit_os` and that frozen-slice
+  cluster;
+- if work resumes below this seam, the next honest theorem must expose the
+  exact inline frozen-slice scalar assembled from that cluster, not introduce a
+  fresh wrapper witness name or another existence theorem. -/
+
+omit [NeZero d] in
+private theorem tsupport_precomp_subset_local {X Y α : Type*}
+    [TopologicalSpace X] [TopologicalSpace Y] [Zero α]
+    {f : Y → α} {h : X → Y} (hh : Continuous h) :
+    tsupport (fun x => f (h x)) ⊆ h ⁻¹' tsupport f := by
+  refine closure_minimal ?_ ((isClosed_tsupport _).preimage hh)
+  intro x hx
+  exact subset_closure (by simpa [Function.mem_support] using hx)
+
+private theorem section43_fixedPair_nonnegTimeCoords_of_mem_tsupport_conjTensorProduct
+    {n m : ℕ}
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    {y : NPointDomain d (n + m)}
+    (hy : y ∈ tsupport (((f.conjTensorProduct g : SchwartzNPoint d (n + m)) :
+      NPointDomain d (n + m) → ℂ))) :
+    ∀ i : Fin (n + m), 0 ≤ y i 0 := by
+  have hsplitFirstRev_cont :
+      Continuous (fun z : NPointDomain d (n + m) =>
+        fun i : Fin n => splitFirst n m z (Fin.rev i)) := by
+    refine continuous_pi ?_
+    intro i
+    simpa [splitFirst] using
+      (continuous_apply (Fin.castAdd m (Fin.rev i)) :
+        Continuous fun z : NPointDomain d (n + m) => z (Fin.castAdd m (Fin.rev i)))
+  have hyprod :
+      y ∈ tsupport (fun z : NPointDomain d (n + m) =>
+        starRingEnd ℂ (f (fun i : Fin n => splitFirst n m z (Fin.rev i))) *
+          g (splitLast n m z)) := by
+    simpa [SchwartzMap.conjTensorProduct_apply] using hy
+  have hleft :
+      (fun i : Fin n => splitFirst n m y (Fin.rev i)) ∈
+        tsupport (f : NPointDomain d n → ℂ) := by
+    have hy_left :
+        y ∈ tsupport (fun z : NPointDomain d (n + m) =>
+          starRingEnd ℂ (f (fun i : Fin n => splitFirst n m z (Fin.rev i)))) :=
+      (tsupport_mul_subset_left
+        (f := fun z : NPointDomain d (n + m) =>
+          starRingEnd ℂ (f (fun i : Fin n => splitFirst n m z (Fin.rev i))))
+        (g := fun z : NPointDomain d (n + m) => g (splitLast n m z))) hyprod
+    exact tsupport_precomp_subset_local
+      (f := (f : NPointDomain d n → ℂ))
+      (h := fun z : NPointDomain d (n + m) => fun i : Fin n =>
+        splitFirst n m z (Fin.rev i))
+      hsplitFirstRev_cont
+      ((tsupport_comp_subset
+        (g := starRingEnd ℂ)
+        (map_zero _)
+        (fun z : NPointDomain d (n + m) =>
+          f (fun i : Fin n => splitFirst n m z (Fin.rev i)))) hy_left)
+  have hright :
+      splitLast n m y ∈ tsupport (g : NPointDomain d m → ℂ) := by
+    exact tsupport_precomp_subset_local
+      (f := (g : NPointDomain d m → ℂ))
+      (h := splitLast n m)
+      (splitLast_continuousLinear n m)
+      ((tsupport_mul_subset_right
+        (f := fun z : NPointDomain d (n + m) =>
+          starRingEnd ℂ (f (fun i : Fin n => splitFirst n m z (Fin.rev i))))
+        (g := fun z : NPointDomain d (n + m) => g (splitLast n m z))) hyprod)
+  intro i
+  by_cases hi : i.1 < n
+  · have hpos :
+        0 < ((fun j : Fin n => splitFirst n m y (Fin.rev j)) (Fin.rev ⟨i.1, hi⟩)) 0 :=
+      (hf_ord hleft (Fin.rev ⟨i.1, hi⟩)).1
+    simpa [splitFirst, hi] using le_of_lt hpos
+  · have hi_ge : n ≤ i.1 := Nat.not_lt.mp hi
+    let j : Fin m := ⟨i.1 - n, by omega⟩
+    have hij : Fin.natAdd n j = i := by
+      apply Fin.ext
+      simp [j, hi_ge]
+    have hpos : 0 < (splitLast n m y j) 0 := (hg_ord hright j).1
+    simpa [splitLast, hij] using le_of_lt hpos
+
+private theorem section43_fixedPair_leftBlock_reverseTimeOrder_of_mem_tsupport_conjTensorProduct
+    {n m : ℕ}
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    {y : NPointDomain d (n + m)}
+    (hy : y ∈ tsupport (((f.conjTensorProduct g : SchwartzNPoint d (n + m)) :
+      NPointDomain d (n + m) → ℂ))) :
+    ∀ {i j : Fin (n + m)}, i.1 < n → j.1 < n → i < j → y j 0 < y i 0 := by
+  have hsplitFirstRev_cont :
+      Continuous (fun z : NPointDomain d (n + m) =>
+        fun i : Fin n => splitFirst n m z (Fin.rev i)) := by
+    refine continuous_pi ?_
+    intro i
+    simpa [splitFirst] using
+      (continuous_apply (Fin.castAdd m (Fin.rev i)) :
+        Continuous fun z : NPointDomain d (n + m) => z (Fin.castAdd m (Fin.rev i)))
+  have hyprod :
+      y ∈ tsupport (fun z : NPointDomain d (n + m) =>
+        starRingEnd ℂ (f (fun i : Fin n => splitFirst n m z (Fin.rev i))) *
+          g (splitLast n m z)) := by
+    simpa [SchwartzMap.conjTensorProduct_apply] using hy
+  have hleft :
+      (fun i : Fin n => splitFirst n m y (Fin.rev i)) ∈
+        tsupport (f : NPointDomain d n → ℂ) := by
+    have hy_left :
+        y ∈ tsupport (fun z : NPointDomain d (n + m) =>
+          starRingEnd ℂ (f (fun i : Fin n => splitFirst n m z (Fin.rev i)))) :=
+      (tsupport_mul_subset_left
+        (f := fun z : NPointDomain d (n + m) =>
+          starRingEnd ℂ (f (fun i : Fin n => splitFirst n m z (Fin.rev i))))
+        (g := fun z : NPointDomain d (n + m) => g (splitLast n m z))) hyprod
+    exact tsupport_precomp_subset_local
+      (f := (f : NPointDomain d n → ℂ))
+      (h := fun z : NPointDomain d (n + m) => fun i : Fin n =>
+        splitFirst n m z (Fin.rev i))
+      hsplitFirstRev_cont
+      ((tsupport_comp_subset
+        (g := starRingEnd ℂ)
+        (map_zero _)
+        (fun z : NPointDomain d (n + m) =>
+          f (fun i : Fin n => splitFirst n m z (Fin.rev i)))) hy_left)
+  intro i j hi hj hij
+  have hrev : Fin.rev ⟨j.1, hj⟩ < Fin.rev ⟨i.1, hi⟩ := by
+    simpa using (Fin.rev_lt_rev.mpr hij)
+  have htime :
+      ((fun k : Fin n => splitFirst n m y (Fin.rev k)) (Fin.rev ⟨j.1, hj⟩)) 0 <
+        ((fun k : Fin n => splitFirst n m y (Fin.rev k)) (Fin.rev ⟨i.1, hi⟩)) 0 :=
+    (hf_ord hleft (Fin.rev ⟨j.1, hj⟩)).2 (Fin.rev ⟨i.1, hi⟩) hrev
+  simpa [splitFirst] using htime
+
+/-- Exact lower obstruction beneath the fixed-time shell-to-slice seam: a
+support point of `f.conjTensorProduct g` with two left-block indices can never
+lie in `OrderedPositiveTimeRegion d (n + m)`, because the left block is
+reversed by `conjTensorProduct`. So the attempted whole-shell ordered-support
+goal is false before any cross-block barrier is considered. -/
+private theorem section43_fixedPair_conjTensorProduct_not_mem_orderedPositiveTimeRegion_of_leftBlockPair
+    {n m : ℕ}
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    {y : NPointDomain d (n + m)}
+    (hy : y ∈ tsupport (((f.conjTensorProduct g : SchwartzNPoint d (n + m)) :
+      NPointDomain d (n + m) → ℂ)))
+    {i j : Fin (n + m)}
+    (hi : i.1 < n) (hj : j.1 < n) (hij : i < j) :
+    y ∉ OrderedPositiveTimeRegion d (n + m) := by
+  intro hy_ord
+  have hrev :
+      y j 0 < y i 0 :=
+    section43_fixedPair_leftBlock_reverseTimeOrder_of_mem_tsupport_conjTensorProduct
+      (d := d) (f := f) (hf_ord := hf_ord) (g := g) (hg_ord := hg_ord)
+      (y := y) hy hi hj hij
+  have hord : y i 0 < y j 0 := (hy_ord i).2 j hij
+  exact (not_lt_of_gt hrev) hord
+
+private theorem section43_fixedPair_rightBlock_forwardTimeOrder_of_mem_tsupport_conjTensorProduct
+    {n m : ℕ}
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    {y : NPointDomain d (n + m)}
+    (hy : y ∈ tsupport (((f.conjTensorProduct g : SchwartzNPoint d (n + m)) :
+      NPointDomain d (n + m) → ℂ))) :
+    ∀ {i j : Fin (n + m)}, n ≤ i.1 → n ≤ j.1 → i < j → y i 0 < y j 0 := by
+  have hsplitFirstRev_cont :
+      Continuous (fun z : NPointDomain d (n + m) =>
+        fun i : Fin n => splitFirst n m z (Fin.rev i)) := by
+    refine continuous_pi ?_
+    intro i
+    simpa [splitFirst] using
+      (continuous_apply (Fin.castAdd m (Fin.rev i)) :
+        Continuous fun z : NPointDomain d (n + m) => z (Fin.castAdd m (Fin.rev i)))
+  have hyprod :
+      y ∈ tsupport (fun z : NPointDomain d (n + m) =>
+        starRingEnd ℂ (f (fun i : Fin n => splitFirst n m z (Fin.rev i))) *
+          g (splitLast n m z)) := by
+    simpa [SchwartzMap.conjTensorProduct_apply] using hy
+  have hright :
+      splitLast n m y ∈ tsupport (g : NPointDomain d m → ℂ) := by
+    exact tsupport_precomp_subset_local
+      (f := (g : NPointDomain d m → ℂ))
+      (h := splitLast n m)
+      (splitLast_continuousLinear n m)
+      ((tsupport_mul_subset_right
+        (f := fun z : NPointDomain d (n + m) =>
+          starRingEnd ℂ (f (fun i : Fin n => splitFirst n m z (Fin.rev i))))
+        (g := fun z : NPointDomain d (n + m) => g (splitLast n m z))) hyprod)
+  intro i j hi hj hij
+  let ii : Fin m := ⟨i.1 - n, by omega⟩
+  let jj : Fin m := ⟨j.1 - n, by omega⟩
+  have hii : Fin.natAdd n ii = i := by
+    apply Fin.ext
+    simp [ii, hi]
+  have hjj : Fin.natAdd n jj = j := by
+    apply Fin.ext
+    simp [jj, hj]
+  have hij' : ii < jj := by
+    apply Fin.lt_iff_val_lt_val.mpr
+    dsimp [ii, jj]
+    omega
+  have htime : (splitLast n m y ii) 0 < (splitLast n m y jj) 0 :=
+    (hg_ord hright ii).2 jj hij'
+  simpa [splitLast, hii, hjj] using htime
+
+private theorem section43_fixedPair_nonnegAwayFrom_r_of_mem_tsupport_conjTensorProduct
+    {n m : ℕ} (hm : 0 < m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (y : NPointDomain d (n + m)) (t : ℝ)
+    (ht : 0 ≤ t) :
+    let r : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+    let tSlice : Fin (n + m) → ℝ :=
+      fun i =>
+        if hi : i.1 < n then
+          y i 0
+        else if hir : i = r then
+          0
+        else
+          y i 0 + t
+    y ∈ tsupport (((f.conjTensorProduct g : SchwartzNPoint d (n + m)) :
+      NPointDomain d (n + m) → ℂ)) →
+      ∀ i : Fin (n + m), i ≠ r → 0 ≤ tSlice i := by
+  dsimp
+  intro hy
+  have hy_nonneg :
+      ∀ i : Fin (n + m), 0 ≤ y i 0 :=
+    section43_fixedPair_nonnegTimeCoords_of_mem_tsupport_conjTensorProduct
+      (d := d) f hf_ord g hg_ord hy
+  let r : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+  let tSlice : Fin (n + m) → ℝ :=
+    fun i =>
+      if hi : i.1 < n then
+        y i 0
+      else if hir : i = r then
+        0
+      else
+        y i 0 + t
+  intro i hi
+  by_cases hin : i.1 < n
+  · simp [tSlice, hin, hy_nonneg i]
+  · by_cases hir : i = r
+    · exact (hi hir).elim
+    · have htime : 0 ≤ y i 0 + t := add_nonneg (hy_nonneg i) ht
+      have hir_lit : i ≠ ⟨n, Nat.lt_add_of_pos_right hm⟩ := by
+        simpa [r] using hir
+      simpa [hin, hir_lit] using htime
+
+private theorem section43_fixedPair_canonicalShell_realPart_sliceRealization
+    {n m : ℕ} (hm : 0 < m)
+    (y : NPointDomain d (n + m)) (t ε : ℝ) :
+    let r : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+    let tSlice : Fin (n + m) → ℝ :=
+      fun i =>
+        if hi : i.1 < n then
+          y i 0
+        else if hir : i = r then
+          0
+        else
+          y i 0 + t
+    let ξ : EuclideanSpace ℝ (Fin (n + m) × Fin d) :=
+      (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+        (fun p => y p.1 (Fin.succ p.2))
+    let z : Fin (n + m) → Fin (d + 1) → ℂ :=
+      xiShift r 0
+        (fun k μ =>
+          ↑(y k μ) +
+            ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) * Complex.I)
+        (t : ℂ)
+    Function.update tSlice r (y r 0 + t) = (fun i => (z i 0).re) ∧
+      ξ =
+        (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+          (fun p => (z p.1 (Fin.succ p.2)).re) := by
+  dsimp
+  let r : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+  let tSlice : Fin (n + m) → ℝ :=
+    fun i =>
+      if hi : i.1 < n then
+        y i 0
+      else if hir : i = r then
+        0
+      else
+        y i 0 + t
+  let ξ : EuclideanSpace ℝ (Fin (n + m) × Fin d) :=
+    (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+      (fun p => y p.1 (Fin.succ p.2))
+  let z : Fin (n + m) → Fin (d + 1) → ℂ :=
+    xiShift r 0
+      (fun k μ =>
+        ↑(y k μ) +
+          ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) * Complex.I)
+      (t : ℂ)
+  refine ⟨?_, ?_⟩
+  · ext i
+    by_cases hir : i = r
+    · subst hir
+      simp [z, xiShift, r]
+    · by_cases hin : i.1 < n
+      · have hnot : ¬ r.val ≤ i.val := by
+          simpa [r] using Nat.not_le_of_gt hin
+        simp [Function.update, tSlice, z, xiShift, r, hir, hin, hnot]
+      · have hr_le : r.val ≤ i.val := by
+          simpa [r] using Nat.le_of_not_lt hin
+        simp [Function.update, tSlice, z, xiShift, r, hir, hin, hr_le]
+  · ext p
+    simp [ξ, z, xiShift, canonicalForwardConeDirection]
+
+private theorem section43_fixedPair_canonicalShell_sliceRealization
+    {n m : ℕ} (hm : 0 < m)
+    (Φ : SchwartzNPoint d (n + m))
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (y : NPointDomain d (n + m)) (t ε : ℝ)
+    (ht : 0 ≤ t)
+    (hy : y ∈ tsupport (((f.conjTensorProduct g : SchwartzNPoint d (n + m)) :
+      NPointDomain d (n + m) → ℂ))) :
+    let r : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+    let tSlice : Fin (n + m) → ℝ :=
+      fun i =>
+        if hi : i.1 < n then
+          y i 0
+        else if hir : i = r then
+          0
+        else
+          y i 0 + t
+    let ξ : EuclideanSpace ℝ (Fin (n + m) × Fin d) :=
+      (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+        (fun p => y p.1 (Fin.succ p.2))
+    let z : Fin (n + m) → Fin (d + 1) → ℂ :=
+      xiShift r 0
+        (fun k μ =>
+          ↑(y k μ) +
+            ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) * Complex.I)
+        (t : ℂ)
+    (∀ i : Fin (n + m), i ≠ r → 0 ≤ tSlice i) ∧
+      ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) Φ r tSlice ξ :
+          SchwartzMap ℝ ℂ) (y r 0 + t) =
+        OSReconstruction.partialFourierSpatial_fun (d := d) (n := n + m) Φ
+          ((fun i => (z i 0).re),
+            (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+              (fun p => (z p.1 (Fin.succ p.2)).re))) := by
+  dsimp
+  let r : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+  let tSlice : Fin (n + m) → ℝ :=
+    fun i =>
+      if hi : i.1 < n then
+        y i 0
+      else if hir : i = r then
+        0
+      else
+        y i 0 + t
+  let ξ : EuclideanSpace ℝ (Fin (n + m) × Fin d) :=
+    (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+      (fun p => y p.1 (Fin.succ p.2))
+  let z : Fin (n + m) → Fin (d + 1) → ℂ :=
+    xiShift r 0
+      (fun k μ =>
+        ↑(y k μ) +
+          ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) * Complex.I)
+      (t : ℂ)
+  have hnonneg :
+      ∀ i : Fin (n + m), i ≠ r → 0 ≤ tSlice i :=
+    section43_fixedPair_nonnegAwayFrom_r_of_mem_tsupport_conjTensorProduct
+      (d := d) (hm := hm) f hf_ord g hg_ord y t ht hy
+  have hreal :
+      Function.update tSlice r (y r 0 + t) = (fun i => (z i 0).re) ∧
+        ξ =
+          (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+            (fun p => (z p.1 (Fin.succ p.2)).re) :=
+    section43_fixedPair_canonicalShell_realPart_sliceRealization
+      (d := d) (hm := hm) y t ε
+  refine ⟨hnonneg, ?_⟩
+  change
+    OSReconstruction.partialFourierSpatial_fun (d := d) (n := n + m) Φ
+      (Function.update tSlice r (y r 0 + t), ξ) =
+    OSReconstruction.partialFourierSpatial_fun (d := d) (n := n + m) Φ
+      ((fun i => (z i 0).re),
+        (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+          (fun p => (z p.1 (Fin.succ p.2)).re))
+  rw [hreal.1, hreal.2]
+
+/-- Region-level fixed-time canonical shell realization on the actual shell used
+in `hlimit_os`: once the background point lies in the Section-4.3 positive-
+energy region, the canonical `xiShift` shell is already the corresponding
+frozen slice, with the required nonnegativity away from the distinguished index
+`r`. This is the first honest shell-domain promotion strictly below the failed
+ambient shell-vanishing attempt. -/
+private theorem section43_fixedPair_canonicalShell_sliceRealization_on_section43PositiveEnergyRegion
+    {n m : ℕ} (hm : 0 < m)
+    (Φ : SchwartzNPoint d (n + m))
+    (y : NPointDomain d (n + m)) (t ε : ℝ)
+    (ht : 0 ≤ t)
+    (hy_region : y ∈ section43PositiveEnergyRegion d (n + m)) :
+    let r : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+    let tSlice : Fin (n + m) → ℝ :=
+      fun i =>
+        if hi : i.1 < n then
+          y i 0
+        else if hir : i = r then
+          0
+        else
+          y i 0 + t
+    let ξ : EuclideanSpace ℝ (Fin (n + m) × Fin d) :=
+      (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+        (fun p => y p.1 (Fin.succ p.2))
+    let z : Fin (n + m) → Fin (d + 1) → ℂ :=
+      xiShift r 0
+        (fun k μ =>
+          ↑(y k μ) +
+            ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) * Complex.I)
+        (t : ℂ)
+    (∀ i : Fin (n + m), i ≠ r → 0 ≤ tSlice i) ∧
+      ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) Φ r tSlice ξ :
+          SchwartzMap ℝ ℂ) (y r 0 + t) =
+        OSReconstruction.partialFourierSpatial_fun (d := d) (n := n + m) Φ
+          ((fun i => (z i 0).re),
+            (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+              (fun p => (z p.1 (Fin.succ p.2)).re))) := by
+  dsimp
+  let r : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+  let tSlice : Fin (n + m) → ℝ :=
+    fun i =>
+      if hi : i.1 < n then
+        y i 0
+      else if hir : i = r then
+        0
+      else
+        y i 0 + t
+  let ξ : EuclideanSpace ℝ (Fin (n + m) × Fin d) :=
+    (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+      (fun p => y p.1 (Fin.succ p.2))
+  let z : Fin (n + m) → Fin (d + 1) → ℂ :=
+    xiShift r 0
+      (fun k μ =>
+        ↑(y k μ) +
+          ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) * Complex.I)
+      (t : ℂ)
+  have hnonneg :
+      ∀ i : Fin (n + m), i ≠ r → 0 ≤ tSlice i := by
+    intro i hi
+    by_cases hin : i.1 < n
+    · simp [tSlice, hin, hy_region i]
+    · by_cases hir : i = r
+      · exact (hi hir).elim
+      · have htime : 0 ≤ y i 0 + t := add_nonneg (hy_region i) ht
+        simp [tSlice, hin, hir, htime]
+  have hreal :
+      Function.update tSlice r (y r 0 + t) = (fun i => (z i 0).re) ∧
+        ξ =
+          (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+            (fun p => (z p.1 (Fin.succ p.2)).re) :=
+    section43_fixedPair_canonicalShell_realPart_sliceRealization
+      (d := d) (hm := hm) y t ε
+  refine ⟨hnonneg, ?_⟩
+  change
+    OSReconstruction.partialFourierSpatial_fun (d := d) (n := n + m) Φ
+      (Function.update tSlice r (y r 0 + t), ξ) =
+    OSReconstruction.partialFourierSpatial_fun (d := d) (n := n + m) Φ
+      ((fun i => (z i 0).re),
+        (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+          (fun p => (z p.1 (Fin.succ p.2)).re))
+  rw [hreal.1, hreal.2]
+
+/- Already-landed shell-limit existence corollary.
+
+This theorem only records that the fixed-time canonical ambient shell has some
+limit; on the current branch that witness is supplied by the boundary-value
+target `bvt_W ... (φ.conjTensorProduct (timeShiftSchwartzNPoint ... t ψ))`.
+It is therefore not the missing transport-backed Section-4.3 shell-to-slice
+assembly, which would have to expose the inline frozen-slice scalar built from
+the slice transport cluster listed immediately above. -/
+theorem section43_fixedPair_shellToSlice_limit_fixedTime
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hφf :
+      section43PositiveEnergyQuotientMap (d := d) n φ =
+        os1TransportComponent d n ⟨f, hf_ord⟩)
+    (hψg :
+      section43PositiveEnergyQuotientMap (d := d) m ψ =
+        os1TransportComponent d m ⟨g, hg_ord⟩) :
+    ∀ t : ℝ, 0 < t → ∃ A_t : ℂ,
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          ∫ y : NPointDomain d (n + m),
+            bvt_F OS lgc (n + m)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                (fun k μ =>
+                  ↑(y k μ) +
+                    ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                      Complex.I)
+                (t : ℂ)) *
+              (φ.conjTensorProduct ψ) y)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds A_t) := by
+  intro t ht
+  refine ⟨
+    bvt_W OS lgc (n + m)
+      (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t ψ)),
+    ?_⟩
+  exact
+    tendsto_bvt_F_canonical_xiShift_conjTensorProduct_timeShift_boundaryValue
+      (d := d) (OS := OS) (lgc := lgc) (hm := hm) (φ := φ) (ψ := ψ) (t := t)
+
+/-- Total-arity ambient tensor classes agree with the explicit tensor built from
+the chosen Section-4.3 preimages, at the quotient level. This is the exact
+source-backed predecessor of the still-missing attempt to repackage that class
+as an `os1TransportComponent` at arity `n + m`. -/
+private theorem section43PositiveEnergyQuotientMap_conjTensorProduct_eq_of_repr_eq_transport
+    {n m : ℕ}
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hφf :
+      section43PositiveEnergyQuotientMap (d := d) n φ =
+        os1TransportComponent d n ⟨f, hf_ord⟩)
+    (hψg :
+      section43PositiveEnergyQuotientMap (d := d) m ψ =
+        os1TransportComponent d m ⟨g, hg_ord⟩) :
+    section43PositiveEnergyQuotientMap (d := d) (n + m) (φ.conjTensorProduct ψ) =
+      section43PositiveEnergyQuotientMap (d := d) (n + m) (f.conjTensorProduct g) := by
+  have hφ_region :
+      Set.EqOn (φ : NPointDomain d n → ℂ) (f : NPointDomain d n → ℂ)
+        (section43PositiveEnergyRegion d n) := by
+    have hq :
+        section43PositiveEnergyQuotientMap (d := d) n φ =
+          section43PositiveEnergyQuotientMap (d := d) n f := by
+      simpa [os1TransportComponent_apply] using hφf
+    exact eqOn_region_of_section43PositiveEnergyQuotientMap_eq
+      (d := d) (n := n) (f := φ) (g := f) hq
+  have hψ_region :
+      Set.EqOn (ψ : NPointDomain d m → ℂ) (g : NPointDomain d m → ℂ)
+        (section43PositiveEnergyRegion d m) := by
+    have hq :
+        section43PositiveEnergyQuotientMap (d := d) m ψ =
+          section43PositiveEnergyQuotientMap (d := d) m g := by
+      simpa [os1TransportComponent_apply] using hψg
+    exact eqOn_region_of_section43PositiveEnergyQuotientMap_eq
+      (d := d) (n := m) (f := ψ) (g := g) hq
+  apply section43PositiveEnergyQuotientMap_eq_of_eqOn_region
+  intro x hx
+  have hφ_eq :
+      φ (fun i : Fin n => splitFirst n m x (Fin.rev i)) =
+        f (fun i : Fin n => splitFirst n m x (Fin.rev i)) := by
+    apply hφ_region
+    intro i
+    simpa [section43PositiveEnergyRegion, splitFirst] using
+      hx (Fin.castAdd m (Fin.rev i))
+  have hψ_eq :
+      ψ (splitLast n m x) = g (splitLast n m x) := by
+    apply hψ_region
+    intro i
+    simpa [section43PositiveEnergyRegion, splitLast] using
+      hx (Fin.natAdd n i)
+  simp [SchwartzMap.conjTensorProduct_apply, hφ_eq, hψ_eq]
+
+/-- On the actual source shell domain where the fixed-time slice theorems are
+available, the ambient tensor weight already agrees pointwise with the explicit
+preimage tensor weight. This is the exact lower weight-comparison fact currently
+available beneath `hlimit_os`. -/
+private theorem section43_fixedPair_conjTensorProduct_eq_of_repr_eq_on_section43Region
+    {n m : ℕ}
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hφf :
+      section43PositiveEnergyQuotientMap (d := d) n φ =
+        os1TransportComponent d n ⟨f, hf_ord⟩)
+    (hψg :
+      section43PositiveEnergyQuotientMap (d := d) m ψ =
+        os1TransportComponent d m ⟨g, hg_ord⟩)
+    {y : NPointDomain d (n + m)}
+    (hy : y ∈ section43PositiveEnergyRegion d (n + m)) :
+    (φ.conjTensorProduct ψ) y = (f.conjTensorProduct g) y := by
+  have hrepr :
+      section43PositiveEnergyQuotientMap (d := d) (n + m) (φ.conjTensorProduct ψ) =
+        section43PositiveEnergyQuotientMap (d := d) (n + m) (f.conjTensorProduct g) := by
+    exact
+      section43PositiveEnergyQuotientMap_conjTensorProduct_eq_of_repr_eq_transport
+        (d := d) (φ := φ) (ψ := ψ) (f := f) (hf_ord := hf_ord)
+        (g := g) (hg_ord := hg_ord) (hφf := hφf) (hψg := hψg)
+  exact
+    eqOn_region_of_section43PositiveEnergyQuotientMap_eq
+      (d := d) (n := n + m) (f := φ.conjTensorProduct ψ) (g := f.conjTensorProduct g) hrepr
+      hy
+
+/-- On the Section-4.3 positive-energy region, the ambient tensor weight already
+vanishes off the exact source-shell support. This is the sharpest pointwise
+vanishing consequence currently available beneath `hlimit_os`. -/
+private theorem section43_fixedPair_conjTensorProduct_eq_zero_of_repr_eq_on_section43Region_outside_source_tsupport
+    {n m : ℕ}
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hφf :
+      section43PositiveEnergyQuotientMap (d := d) n φ =
+        os1TransportComponent d n ⟨f, hf_ord⟩)
+    (hψg :
+      section43PositiveEnergyQuotientMap (d := d) m ψ =
+        os1TransportComponent d m ⟨g, hg_ord⟩)
+    {y : NPointDomain d (n + m)}
+    (hy_region : y ∈ section43PositiveEnergyRegion d (n + m))
+    (hy_not_source :
+      y ∉ tsupport (((f.conjTensorProduct g : SchwartzNPoint d (n + m)) :
+        NPointDomain d (n + m) → ℂ))) :
+    (φ.conjTensorProduct ψ) y = 0 := by
+  rw [section43_fixedPair_conjTensorProduct_eq_of_repr_eq_on_section43Region
+    (d := d) (φ := φ) (ψ := ψ) (f := f) (hf_ord := hf_ord)
+    (g := g) (hg_ord := hg_ord) (hφf := hφf) (hψg := hψg) hy_region]
+  exact image_eq_zero_of_notMem_tsupport hy_not_source
+
+/-- On the actual source shell domain where the fixed-time slice theorems are
+available, the ambient tensor weight already agrees pointwise with the explicit
+preimage tensor weight. This is the exact lower weight-comparison fact currently
+available beneath `hlimit_os`. -/
+private theorem section43_fixedPair_conjTensorProduct_eq_of_repr_eq_on_source_tsupport
+    {n m : ℕ}
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hφf :
+      section43PositiveEnergyQuotientMap (d := d) n φ =
+        os1TransportComponent d n ⟨f, hf_ord⟩)
+    (hψg :
+      section43PositiveEnergyQuotientMap (d := d) m ψ =
+        os1TransportComponent d m ⟨g, hg_ord⟩)
+    {y : NPointDomain d (n + m)}
+    (hy : y ∈ tsupport (((f.conjTensorProduct g : SchwartzNPoint d (n + m)) :
+      NPointDomain d (n + m) → ℂ))) :
+    (φ.conjTensorProduct ψ) y = (f.conjTensorProduct g) y := by
+  have hrepr :
+      section43PositiveEnergyQuotientMap (d := d) (n + m) (φ.conjTensorProduct ψ) =
+        section43PositiveEnergyQuotientMap (d := d) (n + m) (f.conjTensorProduct g) := by
+    exact
+      section43PositiveEnergyQuotientMap_conjTensorProduct_eq_of_repr_eq_transport
+        (d := d) (φ := φ) (ψ := ψ) (f := f) (hf_ord := hf_ord)
+        (g := g) (hg_ord := hg_ord) (hφf := hφf) (hψg := hψg)
+  have hy_region : y ∈ section43PositiveEnergyRegion d (n + m) := by
+    intro i
+    exact
+      section43_fixedPair_nonnegTimeCoords_of_mem_tsupport_conjTensorProduct
+        (d := d) (f := f) (hf_ord := hf_ord) (g := g) (hg_ord := hg_ord) hy i
+  exact
+    section43_fixedPair_conjTensorProduct_eq_of_repr_eq_on_section43Region
+      (d := d) (φ := φ) (ψ := ψ) (f := f) (hf_ord := hf_ord)
+      (g := g) (hg_ord := hg_ord) (hφf := hφf) (hψg := hψg) hy_region
+
+/-- Fixed-time canonical specialization of the mixed-order frozen-slice
+transport bridge: once the ambient pair `φ, ψ` and the positive-time preimages
+`f, g` are fixed, every canonical shell slice value on the ambient tensor at
+the evaluation point `y r 0 + t` already agrees with the corresponding
+mixed-order source slice value. This is the first exact transport rewrite
+needed immediately below `hshellToSlice` in the live fixed-time seam. -/
+private theorem section43_fixedPair_canonicalSlice_eq_of_repr_eq_fixedTime
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hφf :
+      section43PositiveEnergyQuotientMap (d := d) n φ =
+        os1TransportComponent d n ⟨f, hf_ord⟩)
+    (hψg :
+      section43PositiveEnergyQuotientMap (d := d) m ψ =
+        os1TransportComponent d m ⟨g, hg_ord⟩)
+    (y : NPointDomain d (n + m)) (t : ℝ) (ht : 0 < t)
+    (hy : y ∈ tsupport (((f.conjTensorProduct g : SchwartzNPoint d (n + m)) :
+      NPointDomain d (n + m) → ℂ))) :
+    let r : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+    let tSlice : Fin (n + m) → ℝ :=
+      fun i =>
+        if hi : i.1 < n then
+          y i 0
+        else if hir : i = r then
+          0
+        else
+          y i 0 + t
+    let ξ : EuclideanSpace ℝ (Fin (n + m) × Fin d) :=
+      (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+        (fun p => y p.1 (Fin.succ p.2))
+    ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+        (φ.conjTensorProduct ψ) r tSlice ξ : SchwartzMap ℝ ℂ) (y r 0 + t)) =
+      ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+        (OSReconstruction.FixedPairMixedOrderComponent.ofConjTensorProduct
+          (d := d) (n := n) (m := m) f hf_ord g hg_ord).1
+          r tSlice ξ : SchwartzMap ℝ ℂ) (y r 0 + t)) := by
+  dsimp
+  let r : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+  let tSlice : Fin (n + m) → ℝ :=
+    fun i =>
+      if hi : i.1 < n then
+        y i 0
+      else if hir : i = r then
+        0
+      else
+        y i 0 + t
+  let ξ : EuclideanSpace ℝ (Fin (n + m) × Fin d) :=
+    (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+      (fun p => y p.1 (Fin.succ p.2))
+  let F :=
+    OSReconstruction.FixedPairMixedOrderComponent.ofConjTensorProduct
+      (d := d) (n := n) (m := m) f hf_ord g hg_ord
+  have hrepr :
+      section43PositiveEnergyQuotientMap (d := d) (n + m) (φ.conjTensorProduct ψ) =
+        section43PositiveEnergyQuotientMap (d := d) (n + m) F.1 := by
+    simpa [F] using
+      section43PositiveEnergyQuotientMap_conjTensorProduct_eq_of_repr_eq_transport
+        (d := d) (φ := φ) (ψ := ψ) (f := f) (hf_ord := hf_ord)
+        (g := g) (hg_ord := hg_ord) (hφf := hφf) (hψg := hψg)
+  have hnonnegAway :
+      ∀ i : Fin (n + m), i ≠ r → 0 ≤ tSlice i := by
+    simpa [r, tSlice] using
+      section43_fixedPair_nonnegAwayFrom_r_of_mem_tsupport_conjTensorProduct
+        (d := d) (hm := hm) (f := f) (hf_ord := hf_ord)
+        (g := g) (hg_ord := hg_ord) (y := y) (t := t) (ht := le_of_lt ht) hy
+  have hsliceEq :
+      Set.EqOn
+        ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+          (φ.conjTensorProduct ψ) r tSlice ξ : SchwartzMap ℝ ℂ) : ℝ → ℂ)
+        ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+          F.1 r tSlice ξ : SchwartzMap ℝ ℂ) : ℝ → ℂ)
+        (Set.Ici (0 : ℝ)) := by
+    exact
+      partialFourierSpatial_timeSlice_eqOn_nonneg_of_repr_eq_fixedPairMixedOrder
+        (d := d) (n := n) (m := m) (Φ := φ.conjTensorProduct ψ) (F := F)
+        hrepr r tSlice hnonnegAway ξ
+  have hy_nonneg :
+      0 ≤ y r 0 := by
+    exact
+      section43_fixedPair_nonnegTimeCoords_of_mem_tsupport_conjTensorProduct
+        (d := d) (f := f) (hf_ord := hf_ord) (g := g) (hg_ord := hg_ord) hy r
+  have hEval_nonneg : y r 0 + t ∈ Set.Ici (0 : ℝ) := by
+    exact add_nonneg hy_nonneg (le_of_lt ht)
+  exact hsliceEq hEval_nonneg
+
+/-- Region-level fixed-time canonical transport beneath the ambient shell
+comparison seam: the same fixed-time slice transport identity already holds on
+the entire Section-4.3 positive-energy region, not just on the explicit source
+support. This is the first honest weakening strictly below the failed ambient
+shell-vanishing theorem. -/
+private theorem section43_fixedPair_canonicalSlice_eq_of_repr_eq_fixedTime_on_section43PositiveEnergyRegion
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hφf :
+      section43PositiveEnergyQuotientMap (d := d) n φ =
+        os1TransportComponent d n ⟨f, hf_ord⟩)
+    (hψg :
+      section43PositiveEnergyQuotientMap (d := d) m ψ =
+        os1TransportComponent d m ⟨g, hg_ord⟩)
+    (y : NPointDomain d (n + m)) (t : ℝ) (ht : 0 < t)
+    (hy_region : y ∈ section43PositiveEnergyRegion d (n + m)) :
+    let r : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+    let tSlice : Fin (n + m) → ℝ :=
+      fun i =>
+        if hi : i.1 < n then
+          y i 0
+        else if hir : i = r then
+          0
+        else
+          y i 0 + t
+    let ξ : EuclideanSpace ℝ (Fin (n + m) × Fin d) :=
+      (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+        (fun p => y p.1 (Fin.succ p.2))
+    ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+        (φ.conjTensorProduct ψ) r tSlice ξ : SchwartzMap ℝ ℂ) (y r 0 + t)) =
+      ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+        (OSReconstruction.FixedPairMixedOrderComponent.ofConjTensorProduct
+          (d := d) (n := n) (m := m) f hf_ord g hg_ord).1
+          r tSlice ξ : SchwartzMap ℝ ℂ) (y r 0 + t)) := by
+  dsimp
+  let r : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+  let tSlice : Fin (n + m) → ℝ :=
+    fun i =>
+      if hi : i.1 < n then
+        y i 0
+      else if hir : i = r then
+        0
+      else
+        y i 0 + t
+  let ξ : EuclideanSpace ℝ (Fin (n + m) × Fin d) :=
+    (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+      (fun p => y p.1 (Fin.succ p.2))
+  let F :=
+    OSReconstruction.FixedPairMixedOrderComponent.ofConjTensorProduct
+      (d := d) (n := n) (m := m) f hf_ord g hg_ord
+  have hrepr :
+      section43PositiveEnergyQuotientMap (d := d) (n + m) (φ.conjTensorProduct ψ) =
+        section43PositiveEnergyQuotientMap (d := d) (n + m) F.1 := by
+    simpa [F] using
+      section43PositiveEnergyQuotientMap_conjTensorProduct_eq_of_repr_eq_transport
+        (d := d) (φ := φ) (ψ := ψ) (f := f) (hf_ord := hf_ord)
+        (g := g) (hg_ord := hg_ord) (hφf := hφf) (hψg := hψg)
+  have hnonnegAway :
+      ∀ i : Fin (n + m), i ≠ r → 0 ≤ tSlice i := by
+    intro i hi
+    by_cases hin : i.1 < n
+    · simp [tSlice, hin, hy_region i]
+    · by_cases hir : i = r
+      · exact (hi hir).elim
+      · have htime : 0 ≤ y i 0 + t := add_nonneg (hy_region i) (le_of_lt ht)
+        simp [tSlice, hin, hir, htime]
+  have hsliceEq :
+      Set.EqOn
+        ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+          (φ.conjTensorProduct ψ) r tSlice ξ : SchwartzMap ℝ ℂ) : ℝ → ℂ)
+        ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+          F.1 r tSlice ξ : SchwartzMap ℝ ℂ) : ℝ → ℂ)
+        (Set.Ici (0 : ℝ)) := by
+    exact
+      partialFourierSpatial_timeSlice_eqOn_nonneg_of_repr_eq_fixedPairMixedOrder
+        (d := d) (n := n) (m := m) (Φ := φ.conjTensorProduct ψ) (F := F)
+        hrepr r tSlice hnonnegAway ξ
+  have hy_nonneg : 0 ≤ y r 0 := hy_region r
+  have hEval_nonneg : y r 0 + t ∈ Set.Ici (0 : ℝ) := by
+    exact add_nonneg hy_nonneg (le_of_lt ht)
+  exact hsliceEq hEval_nonneg
+
+/-- Exact lower weighted raw scalarization contract beneath the fixed-time
+shell-to-slice seam: for the actual one-variable mixed-order slice Schwartz
+function, the horizontal `ψ_Z` kernel pairing at
+`w = (y r 0 + t) + ε i` collapses to the raw slice value at `y r 0 + t`
+multiplied by the built-in damping factor
+`exp(-(2π ε)(y r 0 + t))`.
+
+This is the first honest scalar theorem under the current seam. It does not yet
+identify that kernel scalar with the descended Section-4.3 pairing; it only
+lands the weighted raw slice-value contract that remains after the already-
+landed opposite-pairing normalization and Fourier inversion steps. -/
+private theorem section43_fixedPair_mixedOrderSlice_weightedRawScalarKernel_fixedTime
+    {n m : ℕ} (hm : 0 < m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (t ε : ℝ) (hε : 0 < ε) :
+    let F :=
+      OSReconstruction.FixedPairMixedOrderComponent.ofConjTensorProduct
+        (d := d) (n := n) (m := m) f hf_ord g hg_ord
+    let r : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+    let tSlice : NPointDomain d (n + m) → Fin (n + m) → ℝ := fun y i =>
+      if hi : i.1 < n then
+        y i 0
+      else if hir : i = r then
+        0
+      else
+        y i 0 + t
+    let ξ : NPointDomain d (n + m) → EuclideanSpace ℝ (Fin (n + m) × Fin d) := fun y =>
+      (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+        (fun p => y p.1 (Fin.succ p.2))
+    ∀ y : NPointDomain d (n + m),
+      (hs : 0 ≤ y r 0 + t) →
+      (∫ x : ℝ,
+        SCV.psiZ
+            (((2 * Real.pi : ℂ) * ((x : ℂ) + ε * Complex.I)))
+            (y r 0 + t) *
+          (SchwartzMap.fourierTransformCLM ℂ
+            (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+              F.1 r (tSlice y) (ξ y))) x) =
+        Complex.exp (-(2 * Real.pi * ε : ℂ) * (y r 0 + t)) *
+          ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+            F.1 r (tSlice y) (ξ y) : SchwartzMap ℝ ℂ) (y r 0 + t)) := by
+  intro F r tSlice ξ y hs
+  let fSlice : SchwartzMap ℝ ℂ :=
+    partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m) F.1 r (tSlice y) (ξ y)
+  let φ : SchwartzMap ℝ ℂ := (SchwartzMap.fourierTransformCLM ℂ) fSlice
+  have hpair :
+      (∫ x : ℝ,
+        SCV.psiZ (((2 * Real.pi : ℂ) * ((x : ℂ) + ε * Complex.I))) (y r 0 + t) * φ x) =
+        SCV.smoothCutoff (y r 0 + t) *
+          Complex.exp (-(2 * Real.pi * ε : ℂ) * (y r 0 + t)) *
+          FourierTransform.fourierInv φ (y r 0 + t) := by
+    simpa [φ] using
+      (SCV.psiZ_twoPi_pairing_formula
+        (φ := (SchwartzMap.fourierTransformCLM ℂ fSlice))
+        (η := ε) (ξ := y r 0 + t))
+  have hcut : (SCV.smoothCutoff (y r 0 + t) : ℂ) = 1 := by
+    exact_mod_cast SCV.smoothCutoff_one_of_nonneg hs
+  have hInv :
+      FourierTransform.fourierInv φ (y r 0 + t) = fSlice (y r 0 + t) := by
+    simpa [φ, fSlice] using
+      congrArg (fun ψ : SchwartzMap ℝ ℂ => ψ (y r 0 + t))
+        (FourierTransform.fourierInv_fourier_eq fSlice)
+  calc
+    (∫ x : ℝ,
+      SCV.psiZ (((2 * Real.pi : ℂ) * ((x : ℂ) + ε * Complex.I))) (y r 0 + t) * φ x)
+        =
+      SCV.smoothCutoff (y r 0 + t) *
+        Complex.exp (-(2 * Real.pi * ε : ℂ) * (y r 0 + t)) *
+        FourierTransform.fourierInv φ (y r 0 + t) := hpair
+    _ =
+      Complex.exp (-(2 * Real.pi * ε : ℂ) * (y r 0 + t)) * fSlice (y r 0 + t) := by
+      rw [hcut, hInv]
+      simp
+    _ =
+      Complex.exp (-(2 * Real.pi * ε : ℂ) * (y r 0 + t)) *
+        ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+          F.1 r (tSlice y) (ξ y) : SchwartzMap ℝ ℂ) (y r 0 + t)) := by
+      simp [fSlice]
+
+/-- Honest lower theorem beneath the fixed-time mixed-order scalarization seam:
+the mixed-order frozen slice already has the expected one-variable Section-4.3
+descended `ψ_Z` scalar at the upper-half-plane point
+`w = (y r 0 + t) + ε i`.
+
+This theorem does not yet identify that descended scalar with the raw slice
+evaluation at `y r 0 + t`; it only packages the part of the contract that is
+actually supplied by the existing one-sided-support and quotient-descended
+pairing infrastructure. -/
+private theorem section43_fixedPair_mixedOrderSliceCanonicalExtension_descendedScalar_fixedTime
+    {n m : ℕ} (hm : 0 < m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (t ε : ℝ) (ht : 0 < t) (hε : 0 < ε) :
+    let F :=
+      OSReconstruction.FixedPairMixedOrderComponent.ofConjTensorProduct
+        (d := d) (n := n) (m := m) f hf_ord g hg_ord
+    let r : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+    let tSlice : NPointDomain d (n + m) → Fin (n + m) → ℝ := fun y i =>
+      if hi : i.1 < n then
+        y i 0
+      else if hir : i = r then
+        0
+      else
+        y i 0 + t
+    let ξ : NPointDomain d (n + m) → EuclideanSpace ℝ (Fin (n + m) × Fin d) := fun y =>
+      (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+        (fun p => y p.1 (Fin.succ p.2))
+    ∀ y : NPointDomain d (n + m),
+      (hnonnegAway : ∀ i : Fin (n + m), i ≠ r → 0 ≤ tSlice y i) →
+      SCV.fourierLaplaceExt
+          (fourierInvPairingCLM
+            (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+              F.1 r (tSlice y) (ξ y)))
+          (((2 * Real.pi : ℂ) * (((y r 0 + t : ℂ) + ε * Complex.I))))
+          (by
+            simpa [Complex.mul_im, add_comm, add_left_comm, add_assoc]
+              using mul_pos Real.two_pi_pos hε) =
+        OSReconstruction.fourierPairingDescendsToSection43PositiveEnergy1D
+          (fourierInvPairingCLM
+            (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+              F.1 r (tSlice y) (ξ y)))
+          (fourierInvPairing_hasOneSidedFourierSupport
+            (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+              F.1 r (tSlice y) (ξ y))
+            (tsupport_partialFourierSpatial_timeSlice_subset_Ici_of_fixedPairMixedOrder
+              (d := d) F r (tSlice y) hnonnegAway
+              (ξ y)))
+          (section43PositiveEnergyQuotientMap1D
+            (SCV.schwartzPsiZ
+              (((2 * Real.pi : ℂ) * (((y r 0 + t : ℂ) + ε * Complex.I))))
+              (by
+                simpa [Complex.mul_im, add_comm, add_left_comm, add_assoc]
+                  using mul_pos Real.two_pi_pos hε))) := by
+  intro F r tSlice ξ y hnonnegAway
+  rw [SCV.fourierLaplaceExt_eq]
+  symm
+  exact
+    OSReconstruction.fourierPairingDescendsToSection43PositiveEnergy1D_apply
+      (T := fourierInvPairingCLM
+        (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+          F.1 r (tSlice y) (ξ y)))
+      (hT_supp := fourierInvPairing_hasOneSidedFourierSupport
+        (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+          F.1 r (tSlice y) (ξ y))
+        (tsupport_partialFourierSpatial_timeSlice_subset_Ici_of_fixedPairMixedOrder
+          (d := d) F r (tSlice y) hnonnegAway (ξ y)))
+      (f := SCV.schwartzPsiZ
+        (((2 * Real.pi : ℂ) * (((y r 0 + t : ℂ) + ε * Complex.I))))
+        (by
+          simpa [Complex.mul_im, add_comm, add_left_comm, add_assoc]
+            using mul_pos Real.two_pi_pos hε))
+
+/-- Exact lower normal form immediately beneath the fixed-time descended-scalar
+slice theorem: the Section-4.3 descended pairing on the actual mixed-order
+slice at `w = (y r 0 + t) + ε i` is already the direct one-variable `ψ_w`
+pairing against that slice itself.
+
+This is strictly lower than the still-missing bridge to the weighted-raw
+evaluation scalar. It only removes the quotient/`fourierLaplaceExt` packaging
+from the descended side. -/
+private theorem section43_fixedPair_mixedOrderSlice_descendedScalar_eq_directPsiIntegral_fixedTime
+    {n m : ℕ} (hm : 0 < m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (t ε : ℝ) (ht : 0 < t) (hε : 0 < ε) :
+    let F :=
+      OSReconstruction.FixedPairMixedOrderComponent.ofConjTensorProduct
+        (d := d) (n := n) (m := m) f hf_ord g hg_ord
+    let r : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+    let tSlice : NPointDomain d (n + m) → Fin (n + m) → ℝ := fun y i =>
+      if hi : i.1 < n then
+        y i 0
+      else if hir : i = r then
+        0
+      else
+        y i 0 + t
+    let ξ : NPointDomain d (n + m) → EuclideanSpace ℝ (Fin (n + m) × Fin d) := fun y =>
+      (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+        (fun p => y p.1 (Fin.succ p.2))
+    ∀ y : NPointDomain d (n + m),
+      (hnonnegAway : ∀ i : Fin (n + m), i ≠ r → 0 ≤ tSlice y i) →
+      OSReconstruction.fourierPairingDescendsToSection43PositiveEnergy1D
+          (fourierInvPairingCLM
+            (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+              F.1 r (tSlice y) (ξ y)))
+          (fourierInvPairing_hasOneSidedFourierSupport
+            (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+              F.1 r (tSlice y) (ξ y))
+            (tsupport_partialFourierSpatial_timeSlice_subset_Ici_of_fixedPairMixedOrder
+              (d := d) F r (tSlice y) hnonnegAway
+              (ξ y)))
+          (section43PositiveEnergyQuotientMap1D
+            (SCV.schwartzPsiZ
+              (((2 * Real.pi : ℂ) * (((y r 0 + t : ℂ) + ε * Complex.I))))
+              (by
+                simpa [Complex.mul_im, add_comm, add_left_comm, add_assoc]
+                  using mul_pos Real.two_pi_pos hε))) =
+        ∫ s : ℝ,
+          (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+            F.1 r (tSlice y) (ξ y)) s *
+            SCV.psiZ
+              (((2 * Real.pi : ℂ) * (((y r 0 + t : ℂ) + ε * Complex.I))))
+              s := by
+  intro F r tSlice ξ y hnonnegAway
+  let fSlice : SchwartzMap ℝ ℂ :=
+    partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+      F.1 r (tSlice y) (ξ y)
+  let ψw : SchwartzMap ℝ ℂ :=
+    SCV.schwartzPsiZ
+      (((2 * Real.pi : ℂ) * (((y r 0 + t : ℂ) + ε * Complex.I))))
+      (by
+        simpa [Complex.mul_im, add_comm, add_left_comm, add_assoc]
+          using mul_pos Real.two_pi_pos hε)
+  have hApply :
+      OSReconstruction.fourierPairingDescendsToSection43PositiveEnergy1D
+          (fourierInvPairingCLM fSlice)
+          (fourierInvPairing_hasOneSidedFourierSupport
+            fSlice
+            (tsupport_partialFourierSpatial_timeSlice_subset_Ici_of_fixedPairMixedOrder
+              (d := d) F r (tSlice y) hnonnegAway (ξ y)))
+          (section43PositiveEnergyQuotientMap1D ψw) =
+        fourierInvPairingCLM fSlice ((SchwartzMap.fourierTransformCLM ℂ) ψw) := by
+    simpa [fSlice, ψw] using
+      (OSReconstruction.fourierPairingDescendsToSection43PositiveEnergy1D_apply
+        (T := fourierInvPairingCLM fSlice)
+        (hT_supp := fourierInvPairing_hasOneSidedFourierSupport
+          fSlice
+          (tsupport_partialFourierSpatial_timeSlice_subset_Ici_of_fixedPairMixedOrder
+            (d := d) F r (tSlice y) hnonnegAway (ξ y)))
+        (f := ψw))
+  have hInv :
+      FourierTransform.fourierInv ((SchwartzMap.fourierTransformCLM ℂ) ψw) = ψw := by
+    simpa [ψw] using (FourierTransform.fourierInv_fourier_eq ψw)
+  calc
+    OSReconstruction.fourierPairingDescendsToSection43PositiveEnergy1D
+        (fourierInvPairingCLM fSlice)
+        (fourierInvPairing_hasOneSidedFourierSupport
+          fSlice
+          (tsupport_partialFourierSpatial_timeSlice_subset_Ici_of_fixedPairMixedOrder
+            (d := d) F r (tSlice y) hnonnegAway (ξ y)))
+        (section43PositiveEnergyQuotientMap1D ψw)
+      = fourierInvPairingCLM fSlice ((SchwartzMap.fourierTransformCLM ℂ) ψw) := hApply
+    _ = ∫ s : ℝ, fSlice s * ψw s := by
+      rw [fourierInvPairingCLM_apply, SchwartzMap.integral_fourierInv_mul_eq]
+      rw [hInv]
+    _ = ∫ s : ℝ,
+          (partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+            F.1 r (tSlice y) (ξ y)) s *
+            SCV.psiZ
+              (((2 * Real.pi : ℂ) * (((y r 0 + t : ℂ) + ε * Complex.I))))
+              s := by
+      simp [fSlice, ψw]
+
+
+/-- Exact earlier blocker beneath the fixed-time shell-limit theorem:
+for fixed positive real `t`, identify the boundary-value target already
+produced by the canonical ambient shell with the semigroup-side holomorphic
+matrix element on the same ambient/preimage inputs.
+
+Once this fixed-time value identification is available, the shell-limit theorem
+below is immediate by rewriting the target of
+`tendsto_bvt_F_canonical_xiShift_conjTensorProduct_timeShift_boundaryValue`. -/
+/-
+Bounded-pass seam note (2026-04-13).
+
+The exact intended theorem immediately below this value equality is no longer
+the whole fixed-`ε` shell assembly theorem
+
+`section43_fixedPair_shellToSlice_assembledScalar_fixedTime`
+
+itself. Source-first, the branch has now been sharpened one notch lower: the
+first missing theorem strictly beneath this value equality is the pointwise-in-
+`y` fixed-time scalarization theorem tentatively of shape
+
+`section43_fixedPair_shellToSlice_integrand_descendedScalar_fixedTime`.
+
+That theorem has not yet landed honestly on the current branch. Its exact
+already-supported feeder chain is still the frozen-slice transport cluster:
+
+`section43PositiveEnergyQuotientMap1D_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+-> `fourierInvPairingCLM_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+-> `fourierInvPairingCLM_opposite_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+-> `section43_iteratedSlice_descendedPairing`.
+
+Those theorems are the last source-backed transport statements beneath the local
+seam `hlimit_os`; none of them yet rewrites the canonical ambient shell
+integrand at fixed `t > 0`, `ε > 0`, and support point `y` into the explicit
+descended slice scalar evaluated at
+`w = ((y r 0 + t : ℂ) + ε * Complex.I)`. Any smaller theorem inserted here
+must therefore perform that genuine pointwise shell-to-slice scalarization, not
+just wrap one frozen-slice equality.
+-/
+private theorem section43_fixedPair_bvtW_timeShift_eq_osHolomorphicValue_fixedTime
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hφf :
+      section43PositiveEnergyQuotientMap (d := d) n φ =
+        os1TransportComponent d n ⟨f, hf_ord⟩)
+    (hψg :
+      section43PositiveEnergyQuotientMap (d := d) m ψ =
+        os1TransportComponent d m ⟨g, hg_ord⟩)
+    (t : ℝ) (ht : 0 < t) :
+    bvt_W OS lgc (n + m)
+      (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t ψ)) =
+      OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+        (PositiveTimeBorchersSequence.single n f hf_ord)
+        (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ) := by
+  have hlimit_w :
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          ∫ y : NPointDomain d (n + m),
+            bvt_F OS lgc (n + m)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                (fun k μ =>
+                  ↑(y k μ) +
+                    ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                      Complex.I)
+                (t : ℂ)) *
+              (φ.conjTensorProduct ψ) y)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (bvt_W OS lgc (n + m)
+            (φ.conjTensorProduct (timeShiftSchwartzNPoint (d := d) t ψ)))) := by
+    exact
+      tendsto_bvt_F_canonical_xiShift_conjTensorProduct_timeShift_boundaryValue
+        (d := d) (OS := OS) (lgc := lgc) (hm := hm) (φ := φ) (ψ := ψ) (t := t)
+  have hlimit_os :
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          ∫ y : NPointDomain d (n + m),
+            bvt_F OS lgc (n + m)
+              (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+                (fun k μ =>
+                  ↑(y k μ) +
+                    ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                      Complex.I)
+                (t : ℂ)) *
+              (φ.conjTensorProduct ψ) y)
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds
+          (OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+            (PositiveTimeBorchersSequence.single n f hf_ord)
+            (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ))) := by
+    let r : Fin (n + m) := ⟨n, Nat.lt_add_of_pos_right hm⟩
+    let tSlice : NPointDomain d (n + m) → Fin (n + m) → ℝ := fun y i =>
+      if hi : i.1 < n then
+        y i 0
+      else if hir : i = r then
+        0
+      else
+        y i 0 + t
+    let ξ : NPointDomain d (n + m) → EuclideanSpace ℝ (Fin (n + m) × Fin d) := fun y =>
+      (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+        (fun p => y p.1 (Fin.succ p.2))
+    have hshellToSlice :
+        ∀ ε : ℝ, ∀ y : NPointDomain d (n + m),
+          y ∈ tsupport
+            (((f.conjTensorProduct g : SchwartzNPoint d (n + m)) :
+              NPointDomain d (n + m) → ℂ)) →
+          (∀ i : Fin (n + m), i ≠ r → 0 ≤ tSlice y i) ∧
+            ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+                (φ.conjTensorProduct ψ) r (tSlice y) (ξ y) : SchwartzMap ℝ ℂ)
+                (y r 0 + t) =
+              OSReconstruction.partialFourierSpatial_fun (d := d) (n := n + m)
+                (φ.conjTensorProduct ψ)
+                ((fun i =>
+                    ((xiShift r 0
+                        (fun k μ =>
+                          ↑(y k μ) +
+                            ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                              Complex.I)
+                        (t : ℂ)) i 0).re),
+                  (EuclideanSpace.equiv (ι := Fin (n + m) × Fin d) (𝕜 := ℝ)).symm
+                    (fun p =>
+                ((xiShift r 0
+                    (fun k μ =>
+                      ↑(y k μ) +
+                        ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                          Complex.I)
+                    (t : ℂ)) p.1 (Fin.succ p.2)).re))) := by
+      intro ε y hy
+      have hy_region : y ∈ section43PositiveEnergyRegion d (n + m) := by
+        intro i
+        exact
+          section43_fixedPair_nonnegTimeCoords_of_mem_tsupport_conjTensorProduct
+            (d := d) (f := f) (hf_ord := hf_ord) (g := g) (hg_ord := hg_ord) hy i
+      simpa [r, tSlice, ξ] using
+        section43_fixedPair_canonicalShell_sliceRealization_on_section43PositiveEnergyRegion
+          (d := d) (hm := hm) (Φ := φ.conjTensorProduct ψ)
+          (y := y) (t := t) (ε := ε) (ht := le_of_lt ht) hy_region
+    have hsliceTransport :
+        ∀ y : NPointDomain d (n + m),
+          y ∈ tsupport
+            (((f.conjTensorProduct g : SchwartzNPoint d (n + m)) :
+              NPointDomain d (n + m) → ℂ)) →
+          ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+              (φ.conjTensorProduct ψ) r (tSlice y) (ξ y) : SchwartzMap ℝ ℂ)
+              (y r 0 + t)) =
+            ((partialFourierSpatial_timeSliceSchwartz (d := d) (n := n + m)
+              (OSReconstruction.FixedPairMixedOrderComponent.ofConjTensorProduct
+                (d := d) (n := n) (m := m) f hf_ord g hg_ord).1
+                r (tSlice y) (ξ y) : SchwartzMap ℝ ℂ) (y r 0 + t)) := by
+      intro y hy
+      have hy_region : y ∈ section43PositiveEnergyRegion d (n + m) := by
+        intro i
+        exact
+          section43_fixedPair_nonnegTimeCoords_of_mem_tsupport_conjTensorProduct
+            (d := d) (f := f) (hf_ord := hf_ord) (g := g) (hg_ord := hg_ord) hy i
+      simpa [r, tSlice, ξ] using
+        section43_fixedPair_canonicalSlice_eq_of_repr_eq_fixedTime_on_section43PositiveEnergyRegion
+          (d := d) (hm := hm) (φ := φ) (ψ := ψ) (f := f) (hf_ord := hf_ord)
+          (g := g) (hg_ord := hg_ord) (hφf := hφf) (hψg := hψg)
+          (y := y) (t := t) (ht := ht) hy_region
+    have hweightEqOnSource :
+        ∀ y : NPointDomain d (n + m),
+          y ∈ tsupport
+            (((f.conjTensorProduct g : SchwartzNPoint d (n + m)) :
+              NPointDomain d (n + m) → ℂ)) →
+          (φ.conjTensorProduct ψ) y = (f.conjTensorProduct g) y := by
+      intro y hy
+      exact
+        section43_fixedPair_conjTensorProduct_eq_of_repr_eq_on_source_tsupport
+          (d := d) (φ := φ) (ψ := ψ) (f := f) (hf_ord := hf_ord)
+          (g := g) (hg_ord := hg_ord) (hφf := hφf) (hψg := hψg) hy
+    /-
+    Exact bounded-pass verdict.
+
+    The older transport-level blocker note here is now stale on the branch.
+    The mixed-order total-arity source and its first fixed-time transport
+    consumers are already landed:
+
+    `FixedPairMixedOrderTimeRegion`,
+    `FixedPairMixedOrderComponent.ofConjTensorProduct`,
+    `partialFourierSpatial_timeSlice_eqOn_nonneg_of_repr_eq_fixedPairMixedOrder`,
+    `section43PositiveEnergyQuotientMap1D_partialFourierSpatial_timeSlice_eq_of_repr_eq_fixedPairMixedOrder`,
+    and
+    `fourierInvPairingCLM_partialFourierSpatial_timeSlice_eq_of_repr_eq_fixedPairMixedOrder`.
+
+    So the first exact lower blocker beneath `hlimit_os` is no longer the false
+    whole-shell ordered-support target for `f.conjTensorProduct g`.
+
+    The new fixed-time transport step is now consumed directly in this proof:
+    after the canonical realization `hshellToSlice`, `hsliceTransport` rewrites
+    the ambient frozen slice value to the mixed-order source slice value using
+    `section43_fixedPair_canonicalSlice_eq_of_repr_eq_fixedTime`.
+
+    The older pointwise scalar-bridge note here is now too optimistic.
+    After `hshellToSlice` and `hsliceTransport`, the branch still only knows a
+    raw mixed-order frozen-slice value
+
+    `(partialFourierSpatial_timeSliceSchwartz ... F.1 ...
+      : SchwartzMap ℝ ℂ) (y r 0 + t)`,
+
+    while the already-landed descended theorem
+
+    `section43_fixedPair_mixedOrderSlice_descendedScalar_eq_directPsiIntegral_fixedTime`
+
+    reaches the different scalar
+
+    `∫ s : ℝ,
+      (partialFourierSpatial_timeSliceSchwartz ... F.1 r (tSlice y) (ξ y)) s *
+        SCV.psiZ (((2 * Real.pi : ℂ) * (((y r 0 + t : ℂ) + ε * Complex.I)))) s`.
+
+    For generic positive-time slices these are not equal pointwise in `ε`: the
+    direct `psiZ` scalar is the one-variable Fourier-Laplace value of the
+    slice, while the raw value above is a weighted point evaluation. So the
+    formerly advertised pointwise bridge
+
+    `section43_fixedPair_shellToSlice_integrand_descendedScalar_fixedTime`
+
+    is not an honest next theorem surface in this form.
+
+    Exact current source-backed feeder chain:
+
+    `section43_fixedPair_canonicalShell_sliceRealization`
+    ->
+    `section43_fixedPair_canonicalSlice_eq_of_repr_eq_fixedTime`
+    ->
+    `section43PositiveEnergyQuotientMap_conjTensorProduct_eq_of_repr_eq_transport`
+    ->
+    `section43PositiveEnergyQuotientMap1D_partialFourierSpatial_timeSlice_eq_of_repr_eq_fixedPairMixedOrder`
+    ->
+    `fourierInvPairingCLM_partialFourierSpatial_timeSlice_eq_of_repr_eq_fixedPairMixedOrder`
+    ->
+    `fourierInvPairingCLM_opposite_partialFourierSpatial_timeSlice_eq_of_repr_eq_transport`
+    ->
+    `section43_iteratedSlice_descendedPairing`.
+
+    The remaining mismatch is sharper than the old scalar-only note.
+    On the current branch one can now test the actual ambient-vs-source shell
+    difference
+
+    `bvt_F ... (xiShift ...) * (((φ.conjTensorProduct ψ) - (f.conjTensorProduct g)) y)`
+
+    by the honest three-way decomposition on the live shell domain:
+
+    1. if
+       `hy : y ∈ tsupport (((f.conjTensorProduct g : SchwartzNPoint d (n + m)) :
+         NPointDomain d (n + m) → ℂ))`,
+       then
+       `section43_fixedPair_conjTensorProduct_eq_of_repr_eq_on_source_tsupport`
+       kills the weight difference;
+    2. if
+       `hy_region : y ∈ section43PositiveEnergyRegion d (n + m)` and
+       `hy_not_source : y ∉ tsupport (((f.conjTensorProduct g :
+         SchwartzNPoint d (n + m)) : NPointDomain d (n + m) → ℂ))`,
+       then
+       `section43_fixedPair_conjTensorProduct_eq_zero_of_repr_eq_on_section43Region_outside_source_tsupport`
+       kills the ambient weight, hence the difference;
+    3. but for
+       `y ∉ section43PositiveEnergyRegion d (n + m)`,
+       source-first inspection finds no existing theorem whose conclusion
+       annihilates the live canonical-shell integrand or even rewrites that
+       outside-region contribution into a controlled slice scalar.
+
+    So the decomposition fails first in case (3), before any later direct-
+    `psiZ` scalar comparison. Equivalently, the first exact remaining lower
+    obligation is an honest ambient-domain fixed-time shell comparison input
+    for `hlimit_os` that removes the outside-region contribution on the actual
+    shell without reviving the false whole-shell ordered-support claim.
+
+    Source-first, the next honest theorem-sized target is a limit-level
+    ambient-vs-source shell comparison on the actual current shell, for
+    example a theorem of the form
+
+    `Filter.Tendsto
+      (fun ε : ℝ =>
+        ∫ y : NPointDomain d (n + m),
+          bvt_F OS lgc (n + m)
+            (xiShift r 0
+              (fun k μ =>
+                ↑(y k μ) +
+                  ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                    Complex.I)
+              (t : ℂ)) *
+            (((φ.conjTensorProduct ψ) - (f.conjTensorProduct g)) y))
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds 0)`.
+
+    Equivalently, one could prove the same shell has the same limit against
+    `(φ.conjTensorProduct ψ)` and against `(f.conjTensorProduct g)`. Either
+    way, that is the exact first lower theorem beneath `hlimit_os`; only after
+    it lands can the genuine source-shell minus direct-`psiZ` limit be stated
+    and proved on the fixed-time source inputs.
+    -/
+    sorry
+  exact tendsto_nhds_unique hlimit_w hlimit_os
+
+/-- Current shell-limit target after moving the blocker one theorem earlier:
+for fixed positive real `t`, rewrite the already-landed canonical ambient
+boundary-value limit to the semigroup-side holomorphic matrix element. -/
+private theorem section43_fixedPair_shellToSlice_limit_osHolomorphicValue_fixedTime
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hφf :
+      section43PositiveEnergyQuotientMap (d := d) n φ =
+        os1TransportComponent d n ⟨f, hf_ord⟩)
+    (hψg :
+      section43PositiveEnergyQuotientMap (d := d) m ψ =
+        os1TransportComponent d m ⟨g, hg_ord⟩)
+    (t : ℝ) (ht : 0 < t) :
+    Filter.Tendsto
+      (fun ε : ℝ =>
+        ∫ y : NPointDomain d (n + m),
+          bvt_F OS lgc (n + m)
+            (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+              (fun k μ =>
+                ↑(y k μ) +
+                  ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                    Complex.I)
+              (t : ℂ)) *
+            (φ.conjTensorProduct ψ) y)
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds
+        (OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+          (PositiveTimeBorchersSequence.single n f hf_ord)
+          (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ))) := by
+  simpa [section43_fixedPair_bvtW_timeShift_eq_osHolomorphicValue_fixedTime
+    (d := d) (OS := OS) (lgc := lgc) (hm := hm)
+    (φ := φ) (ψ := ψ) (f := f) (hf_ord := hf_ord)
+    (g := g) (hg_ord := hg_ord) (hφf := hφf) (hψg := hψg)
+    (t := t) ht] using
+    (tendsto_bvt_F_canonical_xiShift_conjTensorProduct_timeShift_boundaryValue
+      (d := d) (OS := OS) (lgc := lgc) (hm := hm) (φ := φ) (ψ := ψ) (t := t))
+
+private theorem section43_fixedPair_shellToSlice_limit_fixedTime_value_eq_osHolomorphicValue
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hφf :
+      section43PositiveEnergyQuotientMap (d := d) n φ =
+        os1TransportComponent d n ⟨f, hf_ord⟩)
+    (hψg :
+      section43PositiveEnergyQuotientMap (d := d) m ψ =
+        os1TransportComponent d m ⟨g, hg_ord⟩)
+    (t : ℝ) (ht : 0 < t) :
+    Classical.choose
+        (section43_fixedPair_shellToSlice_limit_fixedTime
+          (d := d) (OS := OS) (lgc := lgc) (hm := hm)
+          (φ := φ) (ψ := ψ) (f := f) (hf_ord := hf_ord)
+          (g := g) (hg_ord := hg_ord) (hφf := hφf) (hψg := hψg) t ht)
+      =
+      OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+        (PositiveTimeBorchersSequence.single n f hf_ord)
+        (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ) := by
+  exact tendsto_nhds_unique
+    (Classical.choose_spec
+      (section43_fixedPair_shellToSlice_limit_fixedTime
+        (d := d) (OS := OS) (lgc := lgc) (hm := hm)
+        (φ := φ) (ψ := ψ) (f := f) (hf_ord := hf_ord)
+        (g := g) (hg_ord := hg_ord) (hφf := hφf) (hψg := hψg) t ht))
+    (section43_fixedPair_shellToSlice_limit_osHolomorphicValue_fixedTime
+      (d := d) (OS := OS) (lgc := lgc) (hm := hm)
+      (φ := φ) (ψ := ψ) (f := f) (hf_ord := hf_ord)
+      (g := g) (hg_ord := hg_ord) (hφf := hφf) (hψg := hψg)
+      (t := t) ht)
+
+theorem section43_fixedPair_shellToSlice_limit_upperHalfPlaneWitness_fixedTime
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ} (hm : 0 < m)
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hφf :
+      section43PositiveEnergyQuotientMap (d := d) n φ =
+        os1TransportComponent d n ⟨f, hf_ord⟩)
+    (hψg :
+      section43PositiveEnergyQuotientMap (d := d) m ψ =
+        os1TransportComponent d m ⟨g, hg_ord⟩)
+    (Hs : ℂ → ℂ)
+    (hHs_imag_os :
+      ∀ τ : ℝ, 0 < τ →
+        Hs ((τ : ℂ) * Complex.I) =
+          OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+            (PositiveTimeBorchersSequence.single n f hf_ord)
+            (PositiveTimeBorchersSequence.single m g hg_ord) (τ : ℂ))
+    (t : ℝ) (ht : 0 < t) :
+    Filter.Tendsto
+      (fun ε : ℝ =>
+        ∫ y : NPointDomain d (n + m),
+          bvt_F OS lgc (n + m)
+            (xiShift ⟨n, Nat.lt_add_of_pos_right hm⟩ 0
+              (fun k μ =>
+                ↑(y k μ) +
+                  ε * ↑(canonicalForwardConeDirection (d := d) (n + m) k μ) *
+                    Complex.I)
+              (t : ℂ)) *
+            (φ.conjTensorProduct ψ) y)
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds (Hs ((t : ℂ) * Complex.I))) := by
+  rw [hHs_imag_os t ht]
+  exact
+    section43_fixedPair_shellToSlice_limit_osHolomorphicValue_fixedTime
+      (d := d) (OS := OS) (lgc := lgc) (hm := hm)
+      (φ := φ) (ψ := ψ) (f := f) (hf_ord := hf_ord)
+      (g := g) (hg_ord := hg_ord) (hφf := hφf) (hψg := hψg) (t := t) ht
+
+/-- Semigroup-side fixed-pair scalarization already available above the live
+fixed-time shell seam. It packages only the upper-half-plane OS matrix element;
+it does not discharge the ambient transport-backed shell limit. -/
+theorem section43_fixedPair_upperHalfPlaneScalarization
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ}
+    (φ : SchwartzNPoint d n) (ψ : SchwartzNPoint d m)
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (hφf :
+      section43PositiveEnergyQuotientMap (d := d) n φ =
+        os1TransportComponent d n ⟨f, hf_ord⟩)
+    (hψg :
+      section43PositiveEnergyQuotientMap (d := d) m ψ =
+        os1TransportComponent d m ⟨g, hg_ord⟩) :
+    ∃ Hs : ℂ → ℂ,
+      DifferentiableOn ℂ Hs SCV.upperHalfPlane ∧
+      (∀ τ : ℝ, 0 < τ →
+        Hs ((τ : ℂ) * Complex.I) =
+          OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+            (PositiveTimeBorchersSequence.single n f hf_ord)
+            (PositiveTimeBorchersSequence.single m g hg_ord) (τ : ℂ)) := by
+  refine ⟨fun w =>
+      OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+        (PositiveTimeBorchersSequence.single n f hf_ord)
+        (PositiveTimeBorchersSequence.single m g hg_ord) (-Complex.I * w),
+    ?_, ?_⟩
+  · exact differentiableOn_rotated_OSInnerProductTimeShiftHolomorphicValue
+      (d := d) OS lgc
+      (PositiveTimeBorchersSequence.single n f hf_ord)
+      (PositiveTimeBorchersSequence.single m g hg_ord)
+  · intro τ hτ
+    change
+      OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+        (PositiveTimeBorchersSequence.single n f hf_ord)
+        (PositiveTimeBorchersSequence.single m g hg_ord)
+        (-Complex.I * ((τ : ℂ) * Complex.I)) =
+      OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+        (PositiveTimeBorchersSequence.single n f hf_ord)
+        (PositiveTimeBorchersSequence.single m g hg_ord) (τ : ℂ)
+    congr 1
+    calc
+      -Complex.I * ((τ : ℂ) * Complex.I)
+          = ((-Complex.I) * Complex.I) * (τ : ℂ) := by ring
+      _ = (1 : ℂ) * (τ : ℂ) := by simp [Complex.I_mul_I]
+      _ = (τ : ℂ) := by ring
+
+/-- Exact downstream bridge out of the fixed-pair scalarization seam: once the
+Section-4.3 assembly provides an upper-half-plane scalar `Hs` with the required
+positive-imaginary-axis OS identification, rotating by `z ↦ z * I` produces the
+right-half-plane witness shape consumed later by
+`one_variable_time_interchange_for_wightman_pairing`. -/
+private theorem rightHalfPlaneWitness_of_upperHalfPlaneScalarization
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    {n m : ℕ}
+    (f : SchwartzNPoint d n)
+    (hf_ord : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (g : SchwartzNPoint d m)
+    (hg_ord : tsupport (g : NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (Hs : ℂ → ℂ)
+    (hHs_holo : DifferentiableOn ℂ Hs SCV.upperHalfPlane)
+    (hHs_imag_os :
+      ∀ τ : ℝ, 0 < τ →
+        Hs ((τ : ℂ) * Complex.I) =
+          OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+            (PositiveTimeBorchersSequence.single n f hf_ord)
+            (PositiveTimeBorchersSequence.single m g hg_ord) (τ : ℂ)) :
+    ∃ H : ℂ → ℂ,
+      DifferentiableOn ℂ H {z : ℂ | 0 < z.re} ∧
+      (∀ t : ℝ, 0 < t →
+        H (t : ℂ) =
+          OSInnerProductTimeShiftHolomorphicValue (d := d) OS lgc
+            (PositiveTimeBorchersSequence.single n f hf_ord)
+            (PositiveTimeBorchersSequence.single m g hg_ord) (t : ℂ)) := by
+  refine ⟨fun z => Hs (z * Complex.I), ?_, ?_⟩
+  · have hmap : Set.MapsTo (fun z : ℂ => z * Complex.I)
+        {z : ℂ | 0 < z.re} SCV.upperHalfPlane := by
+      intro z hz
+      simpa [SCV.upperHalfPlane, Complex.mul_im] using hz
+    have hmul :
+        DifferentiableOn ℂ (fun z : ℂ => z * Complex.I) {z : ℂ | 0 < z.re} := by
+      intro z hz
+      simpa using
+        (((differentiableAt_id : DifferentiableAt ℂ (fun y : ℂ => y) z).mul_const
+          Complex.I).differentiableWithinAt)
+    exact hHs_holo.comp hmul hmap
+  · intro t ht
+    simpa [mul_comm] using hHs_imag_os t ht
 
 /-- The honest OS Hilbert-space vector determined by a positive-time Euclidean
 Borchers sequence. Package I will later define the Minkowski-side transport map

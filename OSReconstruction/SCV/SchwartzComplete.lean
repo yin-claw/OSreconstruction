@@ -455,6 +455,117 @@ theorem tempered_uniform_schwartz_bound
     _ ≤ p f := hp_bound i f
     _ ≤ (C • s.sup (schwartzSeminormFamily ℝ E F)) f := hp_dominate f
 
+/-- Finite-seminorm nets upgrade pointwise convergence of tempered functionals
+to uniform convergence on the netted set, provided the whole family is
+eventually controlled by one seminorm.
+
+This is the exact downstream finite-net consumer used beneath theorem 3:
+once bounded `B` is known to admit finite `p`-nets, pointwise convergence and a
+common `p`-bound imply `TendstoUniformlyOn` on `B`. -/
+theorem tempered_tendstoUniformlyOn_of_finite_seminorm_net
+    {α G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {l : Filter α}
+    {T : α → SchwartzMap E F →L[ℝ] G}
+    {L : SchwartzMap E F →L[ℝ] G}
+    (p : Seminorm ℝ (SchwartzMap E F)) {C : ℝ} (hC : 0 ≤ C)
+    {B : Set (SchwartzMap E F)}
+    (hbound : ∀ᶠ a in l, ∀ φ : SchwartzMap E F, ‖(T a - L) φ‖ ≤ C * p φ)
+    (hpointwise : ∀ φ : SchwartzMap E F, Filter.Tendsto (fun a => T a φ) l (nhds (L φ)))
+    (hnet : ∀ ε > 0, ∃ t : Finset (SchwartzMap E F),
+      ∀ φ ∈ B, ∃ ψ ∈ t, p (φ - ψ) < ε) :
+    TendstoUniformlyOn (fun a φ => T a φ) L l B := by
+  rw [Metric.tendstoUniformlyOn_iff]
+  intro ε hε
+  by_cases hCzero : C = 0
+  · filter_upwards [hbound] with a ha φ hφ
+    have hzero : ‖(T a - L) φ‖ = 0 := by
+      have hle : ‖(T a - L) φ‖ ≤ 0 := by
+        simpa [hCzero] using ha φ
+      exact le_antisymm hle (norm_nonneg _)
+    have hdist : dist (L φ) (T a φ) = 0 := by
+      simpa [ContinuousLinearMap.sub_apply, dist_eq_norm, norm_sub_rev] using hzero
+    exact hdist ▸ hε
+  · have hCpos : 0 < C := lt_of_le_of_ne hC (by simpa [eq_comm] using hCzero)
+    obtain ⟨t, ht⟩ := hnet (ε / (2 * C)) (by positivity)
+    have hsmall_on_t : ∀ ψ ∈ t, ∀ᶠ a in l, ‖(T a - L) ψ‖ < ε / 2 := by
+      intro ψ hψ
+      have hψ :
+          Filter.Tendsto (fun a => (T a - L) ψ) l (nhds 0) := by
+        have hsub : Filter.Tendsto (fun a => T a ψ - L ψ) l (nhds (L ψ - L ψ)) :=
+          (hpointwise ψ).sub (tendsto_const_nhds : Filter.Tendsto (fun _ : α => L ψ) l (nhds (L ψ)))
+        simpa [ContinuousLinearMap.sub_apply] using hsub
+      have hmetric := Metric.tendsto_nhds.mp hψ (ε / 2) (by positivity)
+      simpa [dist_eq_norm] using hmetric
+    have hsmall :
+        ∀ᶠ a in l, ∀ ψ ∈ t, ‖(T a - L) ψ‖ < ε / 2 := by
+      rw [Finset.eventually_all]
+      intro ψ hψ
+      exact hsmall_on_t ψ hψ
+    filter_upwards [hbound, hsmall] with a ha hsmalla φ hφ
+    obtain ⟨ψ, hψt, hψclose⟩ := ht φ hφ
+    have hsplit : (T a - L) φ = (T a - L) (φ - ψ) + (T a - L) ψ := by
+      calc
+        (T a - L) φ = (T a - L) ((φ - ψ) + ψ) := by
+          congr 1
+          abel
+        _ = (T a - L) (φ - ψ) + (T a - L) ψ := map_add _ _ _
+    have hpterm : C * p (φ - ψ) < ε / 2 := by
+      have hmul : C * p (φ - ψ) < C * (ε / (2 * C)) :=
+        mul_lt_mul_of_pos_left hψclose hCpos
+      have hcalc : C * (ε / (2 * C)) = ε / 2 := by
+        field_simp [hCpos.ne']
+      simpa [hcalc] using hmul
+    have hψsmall : ‖(T a - L) ψ‖ < ε / 2 := hsmalla ψ hψt
+    calc
+      dist (L φ) (T a φ) = ‖(T a - L) φ‖ := by
+        simp [ContinuousLinearMap.sub_apply, dist_eq_norm, norm_sub_rev]
+      _ = ‖(T a - L) (φ - ψ) + (T a - L) ψ‖ := by rw [hsplit]
+      _ ≤ ‖(T a - L) (φ - ψ)‖ + ‖(T a - L) ψ‖ := norm_add_le _ _
+      _ < C * p (φ - ψ) + ε / 2 := by
+        exact add_lt_add_of_le_of_lt (ha (φ - ψ)) hψsmall
+      _ < ε / 2 + ε / 2 := by
+        linarith
+      _ = ε := by ring
+
+/-- Finite-seminorm nets also give the exact bounded-set `MapsTo` conclusion
+needed by the strong topology on tempered distributions.
+
+This is the shell-local consumer immediately above theorem 3's producer seam:
+once a bounded set `B` is already known to admit finite `p`-nets, the common
+`p`-bound and pointwise convergence imply that the difference family
+eventually maps `B` into any prescribed neighbourhood of `0`. -/
+theorem tempered_eventually_mapsTo_sub_of_finite_seminorm_net
+    {α G : Type*} [NormedAddCommGroup G] [NormedSpace ℝ G]
+    {l : Filter α}
+    {T : α → SchwartzMap E F →L[ℝ] G}
+    {L : SchwartzMap E F →L[ℝ] G}
+    (p : Seminorm ℝ (SchwartzMap E F)) {C : ℝ} (hC : 0 ≤ C)
+    {B : Set (SchwartzMap E F)} {U : Set G}
+    (hU : U ∈ nhds (0 : G))
+    (hbound : ∀ᶠ a in l, ∀ φ : SchwartzMap E F, ‖(T a - L) φ‖ ≤ C * p φ)
+    (hpointwise : ∀ φ : SchwartzMap E F, Filter.Tendsto (fun a => T a φ) l (nhds (L φ)))
+    (hnet : ∀ ε > 0, ∃ t : Finset (SchwartzMap E F),
+      ∀ φ ∈ B, ∃ ψ ∈ t, p (φ - ψ) < ε) :
+    ∀ᶠ a in l, Set.MapsTo (fun φ => (T a - L) φ) B U := by
+  have hzero : TendstoUniformlyOn (fun a φ => (T a - L) φ) 0 l B := by
+    simpa [ContinuousLinearMap.sub_apply] using
+      (tempered_tendstoUniformlyOn_of_finite_seminorm_net
+        (E := E) (F := F) (G := G)
+        (l := l) (T := fun a => T a - L) (L := 0) p hC
+        (by simpa using hbound)
+        (by
+          intro φ
+          have hsub : Filter.Tendsto (fun a => T a φ - L φ) l (nhds (L φ - L φ)) :=
+            (hpointwise φ).sub tendsto_const_nhds
+          simpa [ContinuousLinearMap.sub_apply] using hsub)
+        hnet)
+  rw [Metric.tendstoUniformlyOn_iff] at hzero
+  rcases Metric.mem_nhds_iff.mp hU with ⟨ε, hεpos, hεU⟩
+  filter_upwards [hzero ε hεpos] with a ha
+  intro φ hφ
+  apply hεU
+  simpa [Metric.mem_ball, dist_eq_norm, norm_sub_rev, ContinuousLinearMap.sub_apply] using ha φ hφ
+
 /-- A convergent sequence of tempered distributions is uniformly bounded
     in some Schwartz seminorm. More precisely, if `T_n(f) → L(f)` for each
     Schwartz `f`, then `{T_n}` is equicontinuous. -/

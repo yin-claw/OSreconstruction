@@ -121,6 +121,11 @@ reduction from arbitrary Borchers data to the positive-time sector. -/
 /-- If a candidate Wightman family agrees termwise with the Euclidean OS tensor
 terms on ordered positive-time test pairs, then its Borchers inner product
 agrees with the honest OS inner product on the positive-time Borchers algebra. -/
+/- Exact support-side seam:
+this is the first nearby reusable theorem cluster, but it is only a consumer of
+already-packaged ordered support (`hterm` and `F/G : PositiveTimeBorchersSequence d`).
+It does not upgrade ambient/fixed-surrogate data plus boundary-vanishing or
+time-shift comparison hypotheses to `ordered_tsupport`. -/
 theorem wightmanInner_eq_osInner_of_orderedPositive_termwise
     (OS : OsterwalderSchraderAxioms d)
     (W : (n : ℕ) → SchwartzNPoint d n → ℂ)

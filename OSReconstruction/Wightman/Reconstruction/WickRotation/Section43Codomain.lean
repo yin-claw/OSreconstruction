@@ -19,6 +19,18 @@ def section43PositiveEnergyRegion (d n : ℕ) : Set (NPointDomain d n) :=
 /-- Ordered positive-time support is stronger than the Section 4.3 positive-energy
 condition: strict time ordering in particular forces every time coordinate to be
 nonnegative. -/
+/-
+Exact bare-positivity consumer boundary on the current OS route:
+this theorem is the first and only nearby forgetful consequence below ordered
+support that is actually reused downstream, namely on the Section-4.3 codomain
+side (`os1TransportComponent_injective`, boundary evaluation at `0`, and the
+resulting transformed-image obstruction package). Current source still has no
+theorem that runs the other way, or that upgrades ambient/fixed-surrogate /
+comparison / boundary-vanishing data to `OrderedPositiveTimeRegion`. So this
+codomain consequence does not start the live positivity-consumer chain for
+theorem 3; every later reuse of bare positivity stays quotient-side, and the
+live OS-inner-product / positivity theorems still begin only once strict
+ordered support is already assumed. -/
 theorem orderedPositiveTimeRegion_subset_section43PositiveEnergyRegion
     (d n : ℕ) :
     OrderedPositiveTimeRegion d n ⊆ section43PositiveEnergyRegion d n := by

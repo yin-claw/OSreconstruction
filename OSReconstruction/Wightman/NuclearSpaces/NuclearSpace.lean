@@ -4,6 +4,7 @@ Released under Apache 2.0 license.
 Authors: ModularPhysics Contributors
 -/
 import Mathlib.Analysis.LocallyConvex.WithSeminorms
+import Mathlib.Analysis.Distribution.SchwartzSpace.Basic
 import Mathlib.Analysis.Seminorm
 import Mathlib.Analysis.Convex.Gauge
 import Mathlib.Topology.Algebra.Module.LocallyConvex
@@ -94,6 +95,440 @@ private theorem finset_sum_seminorm_apply {V : Type*} [AddCommGroup V] [Module �
   | empty => simp [Seminorm.zero_apply]
   | cons a s has ih =>
     rw [Finset.sum_cons, Finset.sum_cons, Seminorm.add_apply, ih]
+
+/-- On a `q`-bounded set, every shifted nuclear tail is pointwise dominated by the
+corresponding scalar coefficient tail times the uniform `q`-bound. This isolates
+the summable-tail estimate strictly below the full uniform truncation theorem. -/
+private theorem nuclear_tail_le_of_q_bounded {V : Type*} [AddCommGroup V] [Module ℝ V]
+    [TopologicalSpace V] (q : Seminorm ℝ V) (f : ℕ → (V →L[ℝ] ℝ)) (c : ℕ → ℝ)
+    (hc_nonneg : ∀ n, 0 ≤ c n) (hc_sum : Summable c) (hf_bound : ∀ n x, ‖f n x‖ ≤ q x)
+    {B : Set V} {M : ℝ} (hM : ∀ x ∈ B, q x ≤ M) (N : ℕ) :
+    ∀ x ∈ B, ∑' n, ‖f (n + N) x‖ * c (n + N) ≤ M * ∑' n, c (n + N) := by
+  intro x hx
+  have hM_nonneg : 0 ≤ M := le_trans (apply_nonneg q x) (hM x hx)
+  have hc_tail : Summable (fun n => c (n + N)) := (summable_nat_add_iff N).2 hc_sum
+  have h_rhs_sum : Summable (fun n => M * c (n + N)) := hc_tail.mul_left M
+  have h_term_nonneg : ∀ n, 0 ≤ ‖f (n + N) x‖ * c (n + N) := by
+    intro n
+    exact mul_nonneg (norm_nonneg _) (hc_nonneg _)
+  have h_term_le : ∀ n, ‖f (n + N) x‖ * c (n + N) ≤ M * c (n + N) := by
+    intro n
+    exact mul_le_mul_of_nonneg_right ((hf_bound (n + N) x).trans (hM x hx)) (hc_nonneg _)
+  have h_lhs_sum : Summable (fun n => ‖f (n + N) x‖ * c (n + N)) :=
+    Summable.of_nonneg_of_le h_term_nonneg h_term_le h_rhs_sum
+  calc
+    ∑' n, ‖f (n + N) x‖ * c (n + N) ≤ ∑' n, M * c (n + N) :=
+      h_lhs_sum.tsum_le_tsum h_term_le h_rhs_sum
+    _ = M * ∑' n, c (n + N) := by rw [tsum_mul_left]
+
+/-- Scalar tails of a nonnegative summable coefficient series become arbitrarily
+small after multiplication by a fixed nonnegative bound. Combined with
+`nuclear_tail_le_of_q_bounded`, this is the only scalar tail-of-`tsum` input
+still needed for the full uniform nuclear-tail truncation lemma. -/
+private theorem mul_tsum_nat_add_lt_of_summable_nonneg
+    (c : ℕ → ℝ) (hc_nonneg : ∀ n, 0 ≤ c n) (_hc_sum : Summable c)
+    {M ε : ℝ} (hM : 0 ≤ M) (hε : 0 < ε) :
+    ∃ N : ℕ, M * ∑' n, c (n + N) < ε := by
+  by_cases hMzero : M = 0
+  · refine ⟨0, ?_⟩
+    simpa [hMzero] using hε
+  have hMpos : 0 < M := lt_of_le_of_ne hM (Ne.symm hMzero)
+  have htail :
+      Tendsto (fun N : ℕ => ∑' n, c (n + N)) atTop (nhds 0) := by
+    simpa using (_root_.tendsto_sum_nat_add (f := c))
+  have hsmall :
+      ∀ᶠ N : ℕ in atTop, ∑' n, c (n + N) < ε / M := by
+    have hball : Metric.ball (0 : ℝ) (ε / M) ∈ nhds (0 : ℝ) :=
+      Metric.ball_mem_nhds _ (by positivity)
+    filter_upwards [htail hball] with N hN
+    have htail_nonneg : 0 ≤ ∑' n, c (n + N) := by
+      exact tsum_nonneg (fun n => hc_nonneg (n + N))
+    simpa [Metric.mem_ball, dist_eq_norm, Real.norm_eq_abs, abs_of_nonneg htail_nonneg] using hN
+  rcases Filter.eventually_atTop.1 hsmall with ⟨N, hN⟩
+  refine ⟨N, ?_⟩
+  have hmul : M * ∑' n, c (n + N) < M * (ε / M) :=
+    mul_lt_mul_of_pos_left (hN N le_rfl) hMpos
+  have hcalc : M * (ε / M) = ε := by
+    field_simp [hMpos.ne']
+  simpa [hcalc] using hmul
+
+/-- Uniform nuclear-tail truncation on a `q`-bounded set. This is the first
+genuinely new theorem surface below the generic nuclear-seminorm precompactness
+step: once the scalar tail becomes uniformly small, the remaining blocker is
+only the finite-family coordinate net theorem. -/
+private theorem uniform_nuclear_tail_lt_of_q_bounded
+    {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+    (q : Seminorm ℝ V) (f : ℕ → (V →L[ℝ] ℝ)) (c : ℕ → ℝ)
+    (hc_nonneg : ∀ n, 0 ≤ c n) (hc_sum : Summable c) (hf_bound : ∀ n x, ‖f n x‖ ≤ q x)
+    {B : Set V} (hB : ∃ M > 0, ∀ x ∈ B, q x < M) :
+    ∀ ε > 0, ∃ N : ℕ, ∀ x ∈ B, ∑' n, ‖f (n + N) x‖ * c (n + N) < ε := by
+  intro ε hε
+  rcases hB with ⟨M, hM_pos, hM_bound⟩
+  have hM_nonneg : 0 ≤ M := le_of_lt hM_pos
+  obtain ⟨N, hN⟩ :=
+    mul_tsum_nat_add_lt_of_summable_nonneg c hc_nonneg hc_sum hM_nonneg hε
+  refine ⟨N, ?_⟩
+  intro x hx
+  have hM_le : ∀ y ∈ B, q y ≤ M := by
+    intro y hy
+    exact le_of_lt (hM_bound y hy)
+  have htail_le :
+      ∑' n, ‖f (n + N) x‖ * c (n + N) ≤ M * ∑' n, c (n + N) :=
+    nuclear_tail_le_of_q_bounded q f c hc_nonneg hc_sum hf_bound hM_le N x hx
+  exact lt_of_le_of_lt htail_le hN
+
+/-- Uniform nuclear-tail truncation on pairwise differences from a `q`-bounded set.
+This is the first new producer-side input enabled by retaining net centres in `B`:
+it upgrades the pointwise tail bound to the `x - y` surface needed for the later
+head-plus-tail assembly. -/
+private theorem uniform_nuclear_tail_lt_of_q_bounded_sub
+    {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+    (q : Seminorm ℝ V) (f : ℕ → (V →L[ℝ] ℝ)) (c : ℕ → ℝ)
+    (hc_nonneg : ∀ n, 0 ≤ c n) (hc_sum : Summable c) (hf_bound : ∀ n x, ‖f n x‖ ≤ q x)
+    {B : Set V} (hB : ∃ M > 0, ∀ x ∈ B, q x < M) :
+    ∀ ε > 0, ∃ N : ℕ, ∀ x ∈ B, ∀ y ∈ B,
+      ∑' n, ‖f (n + N) (x - y)‖ * c (n + N) < ε := by
+  intro ε hε
+  let Bdiff : Set V := { z | ∃ x ∈ B, ∃ y ∈ B, z = x - y }
+  have hBdiff : ∃ M' > 0, ∀ z ∈ Bdiff, q z < M' := by
+    rcases hB with ⟨M, hM_pos, hM_bound⟩
+    refine ⟨2 * M, by positivity, ?_⟩
+    intro z hz
+    rcases hz with ⟨x, hx, y, hy, rfl⟩
+    have hsub : q (x - y) ≤ q x + q y := map_sub_le_add q x y
+    linarith [hM_bound x hx, hM_bound y hy]
+  obtain ⟨N, hN⟩ :=
+    uniform_nuclear_tail_lt_of_q_bounded q f c hc_nonneg hc_sum hf_bound hBdiff ε hε
+  refine ⟨N, ?_⟩
+  intro x hx y hy
+  exact hN (x - y) ⟨x, hx, y, hy, rfl⟩
+
+/-- On a `q`-bounded set, the image under finitely many scalar coordinates is totally bounded
+in the finite product space. This is a genuine substep below the full finite-family weighted-sum
+net theorem: it only packages the finite-dimensional box-precompactness input and does not yet
+transfer that cover back to the weighted seminorm on the original space. -/
+private theorem finite_coordinate_image_totallyBounded_of_q_bounded
+    {V ι : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V] [Fintype ι]
+    (q : Seminorm ℝ V) (g : ι → (V →L[ℝ] ℝ)) (hg_bound : ∀ i x, ‖g i x‖ ≤ q x)
+    {B : Set V} (hB : ∃ M > 0, ∀ x ∈ B, q x < M) :
+    TotallyBounded ((fun x : V => fun i => g i x) '' B : Set (ι → ℝ)) := by
+  rcases hB with ⟨M, hM_pos, hM_bound⟩
+  let K : Set (ι → ℝ) := Set.pi Set.univ (fun _ => Set.Icc (-M) M)
+  have hK_compact : IsCompact K := by
+    exact isCompact_univ_pi (fun _ => isCompact_Icc)
+  have himage : ((fun x : V => fun i => g i x) '' B : Set (ι → ℝ)) ⊆ K := by
+    rintro y ⟨x, hx, rfl⟩
+    intro i hi
+    have hcoord_lt : ‖g i x‖ < M := lt_of_le_of_lt (hg_bound i x) (hM_bound x hx)
+    have habs_lt : |g i x| < M := by
+      simpa [Real.norm_eq_abs] using hcoord_lt
+    rcases abs_lt.mp habs_lt with ⟨hleft, hright⟩
+    exact Set.mem_Icc.mpr ⟨le_of_lt hleft, le_of_lt hright⟩
+  exact (hK_compact.totallyBounded).subset himage
+
+/-- Finite families of scalar coordinates admit finite weighted `ℓ¹`-nets on `q`-bounded sets.
+
+This is the active finite-family theorem surface immediately above
+`finite_coordinate_image_totallyBounded_of_q_bounded`: the remaining work is to extract a finite
+metric net in the coordinate product and pull it back along the coordinate map, then convert
+coordinatewise closeness into smallness of the weighted sum. -/
+private theorem finite_weighted_coordinate_net_of_q_bounded
+    {V ι : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V] [Fintype ι]
+    (q : Seminorm ℝ V) (g : ι → (V →L[ℝ] ℝ)) (a : ι → ℝ)
+    (ha_nonneg : ∀ i, 0 ≤ a i) (hg_bound : ∀ i x, ‖g i x‖ ≤ q x)
+    {B : Set V} (hB : ∃ M > 0, ∀ x ∈ B, q x < M) :
+    ∀ ε > 0, ∃ t : Finset V, ∀ x ∈ B, ∃ y ∈ t, ∑ i, ‖g i (x - y)‖ * a i < ε := by
+  classical
+  intro ε hε
+  let coord : V → (ι → ℝ) := fun x i => g i x
+  let A : ℝ := ∑ i, a i
+  let δ : ℝ := ε / (A + 1)
+  have hA_nonneg : 0 ≤ A := by
+    exact Finset.sum_nonneg fun i _ => ha_nonneg i
+  have hδ_pos : 0 < δ := by
+    have hA1_pos : 0 < A + 1 := by linarith
+    exact div_pos hε hA1_pos
+  have hδ_sum_lt : δ * A < ε := by
+    have hA_lt : A < A + 1 := by linarith
+    have hmul : δ * A < δ * (A + 1) := mul_lt_mul_of_pos_left hA_lt hδ_pos
+    have hcalc : δ * (A + 1) = ε := by
+      dsimp [δ]
+      field_simp [show A + 1 ≠ 0 by linarith]
+    simpa [hcalc] using hmul
+  have htb :
+      TotallyBounded (coord '' B : Set (ι → ℝ)) :=
+    finite_coordinate_image_totallyBounded_of_q_bounded q g hg_bound hB
+  obtain ⟨u, hu_subset, hu_fin, hu_cover⟩ :=
+    Metric.finite_approx_of_totallyBounded htb δ hδ_pos
+  have hpreimage : ∀ z : u, ∃ x ∈ B, coord x = z := by
+    intro z
+    exact hu_subset z.prop
+  choose rep hrep_mem hrep_eq using hpreimage
+  haveI : Fintype u := hu_fin.fintype
+  let t : Finset V := Finset.univ.image rep
+  refine ⟨t, ?_⟩
+  intro x hx
+  have hx_image : coord x ∈ coord '' B := ⟨x, hx, rfl⟩
+  have hx_cover : coord x ∈ ⋃ y ∈ u, Metric.ball y δ := hu_cover hx_image
+  rcases Set.mem_iUnion.1 hx_cover with ⟨z, hz_cover⟩
+  rcases Set.mem_iUnion.1 hz_cover with ⟨hz, hdist⟩
+  let z' : u := ⟨z, hz⟩
+  refine ⟨rep z', ?_, ?_⟩
+  · exact Finset.mem_image.mpr ⟨z', Finset.mem_univ _, rfl⟩
+  · have hcoord_dist : ∀ i, dist (g i x) (g i (rep z')) < δ := by
+      intro i
+      have hi : dist (coord x i) (z i) < δ := ((dist_pi_lt_iff hδ_pos).1 hdist) i
+      have hz_eq : z i = g i (rep z') := by
+        exact congrFun (hrep_eq z') i |>.symm
+      simpa [coord, hz_eq] using hi
+    have hsum_le :
+        ∑ i, ‖g i (x - rep z')‖ * a i ≤ ∑ i, δ * a i := by
+      refine Finset.sum_le_sum fun i _ => ?_
+      have hi_le : ‖g i (x - rep z')‖ ≤ δ := le_of_lt <| by
+        simpa [ContinuousLinearMap.map_sub, dist_eq_norm] using hcoord_dist i
+      exact mul_le_mul_of_nonneg_right hi_le (ha_nonneg i)
+    calc
+      ∑ i, ‖g i (x - rep z')‖ * a i ≤ ∑ i, δ * a i := hsum_le
+      _ = δ * A := by
+        simp [A, Finset.mul_sum]
+      _ < ε := hδ_sum_lt
+
+/-- Strengthened finite-family weighted net theorem that keeps the chosen net
+centres explicitly inside `B`. This is the exact finite-head interface needed
+for the later head-plus-tail assembly on differences `x - y` with `x, y ∈ B`. -/
+private theorem finite_weighted_coordinate_net_mem_of_q_bounded
+    {V ι : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V] [Fintype ι]
+    (q : Seminorm ℝ V) (g : ι → (V →L[ℝ] ℝ)) (a : ι → ℝ)
+    (ha_nonneg : ∀ i, 0 ≤ a i) (hg_bound : ∀ i x, ‖g i x‖ ≤ q x)
+    {B : Set V} (hB : ∃ M > 0, ∀ x ∈ B, q x < M) :
+    ∀ ε > 0, ∃ t : Finset V, (∀ y ∈ t, y ∈ B) ∧
+      ∀ x ∈ B, ∃ y ∈ t, y ∈ B ∧ ∑ i, ‖g i (x - y)‖ * a i < ε := by
+  classical
+  intro ε hε
+  let coord : V → (ι → ℝ) := fun x i => g i x
+  let A : ℝ := ∑ i, a i
+  let δ : ℝ := ε / (A + 1)
+  have hA_nonneg : 0 ≤ A := by
+    exact Finset.sum_nonneg fun i _ => ha_nonneg i
+  have hδ_pos : 0 < δ := by
+    have hA1_pos : 0 < A + 1 := by linarith
+    exact div_pos hε hA1_pos
+  have hδ_sum_lt : δ * A < ε := by
+    have hA_lt : A < A + 1 := by linarith
+    have hmul : δ * A < δ * (A + 1) := mul_lt_mul_of_pos_left hA_lt hδ_pos
+    have hcalc : δ * (A + 1) = ε := by
+      dsimp [δ]
+      field_simp [show A + 1 ≠ 0 by linarith]
+    simpa [hcalc] using hmul
+  have htb :
+      TotallyBounded (coord '' B : Set (ι → ℝ)) :=
+    finite_coordinate_image_totallyBounded_of_q_bounded q g hg_bound hB
+  obtain ⟨u, hu_subset, hu_fin, hu_cover⟩ :=
+    Metric.finite_approx_of_totallyBounded htb δ hδ_pos
+  have hpreimage : ∀ z : u, ∃ x ∈ B, coord x = z := by
+    intro z
+    exact hu_subset z.prop
+  choose rep hrep_mem hrep_eq using hpreimage
+  haveI : Fintype u := hu_fin.fintype
+  let t : Finset V := Finset.univ.image rep
+  refine ⟨t, ?_, ?_⟩
+  · intro y hy
+    rcases Finset.mem_image.mp hy with ⟨z, -, rfl⟩
+    exact hrep_mem z
+  · intro x hx
+    have hx_image : coord x ∈ coord '' B := ⟨x, hx, rfl⟩
+    have hx_cover : coord x ∈ ⋃ y ∈ u, Metric.ball y δ := hu_cover hx_image
+    rcases Set.mem_iUnion.1 hx_cover with ⟨z, hz_cover⟩
+    rcases Set.mem_iUnion.1 hz_cover with ⟨hz, hdist⟩
+    let z' : u := ⟨z, hz⟩
+    refine ⟨rep z', ?_, hrep_mem z', ?_⟩
+    · exact Finset.mem_image.mpr ⟨z', Finset.mem_univ _, rfl⟩
+    · have hcoord_dist : ∀ i, dist (g i x) (g i (rep z')) < δ := by
+        intro i
+        have hi : dist (coord x i) (z i) < δ := ((dist_pi_lt_iff hδ_pos).1 hdist) i
+        have hz_eq : z i = g i (rep z') := by
+          exact congrFun (hrep_eq z') i |>.symm
+        simpa [coord, hz_eq] using hi
+      have hsum_le :
+          ∑ i, ‖g i (x - rep z')‖ * a i ≤ ∑ i, δ * a i := by
+        refine Finset.sum_le_sum fun i _ => ?_
+        have hi_le : ‖g i (x - rep z')‖ ≤ δ := le_of_lt <| by
+          simpa [ContinuousLinearMap.map_sub, dist_eq_norm] using hcoord_dist i
+        exact mul_le_mul_of_nonneg_right hi_le (ha_nonneg i)
+      calc
+        ∑ i, ‖g i (x - rep z')‖ * a i ≤ ∑ i, δ * a i := hsum_le
+        _ = δ * A := by
+          simp [A, Finset.mul_sum]
+        _ < ε := hδ_sum_lt
+
+/-- Direct head-plus-tail assembly for the generic nuclear-seminorm finite-net step.
+
+This is a genuinely smaller theorem surface below the full generic precompactness theorem:
+it assumes the finite head net and the uniform tail estimate are already available, and
+only performs the `tsum` splitting and final `p`-estimate. -/
+private theorem finite_net_of_nuclear_head_tail
+    {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+    (p : Seminorm ℝ V) (f : ℕ → (V →L[ℝ] ℝ)) (c : ℕ → ℝ)
+    {B : Set V} (hp_bound : ∀ z, p z ≤ ∑' n, ‖f n z‖ * c n) :
+    ∀ (N : ℕ) {ε_head ε_tail : ℝ},
+      (∃ t : Finset V, (∀ y ∈ t, y ∈ B) ∧
+        ∀ x ∈ B, ∃ y ∈ t, y ∈ B ∧
+          ∑ i : Fin N, ‖f i (x - y)‖ * c i < ε_head) ->
+      (∀ x ∈ B, ∀ y ∈ B, Summable (fun n => ‖f n (x - y)‖ * c n)) ->
+      (∀ x ∈ B, ∀ y ∈ B, ∑' n, ‖f (n + N) (x - y)‖ * c (n + N) < ε_tail) ->
+      ∃ t : Finset V, ∀ x ∈ B, ∃ y ∈ t, p (x - y) < ε_head + ε_tail := by
+  intro N ε_head ε_tail hhead hsummable htail
+  rcases hhead with ⟨t, htB, hcover⟩
+  refine ⟨t, ?_⟩
+  intro x hx
+  rcases hcover x hx with ⟨y, hyt, hyB, hhead_xy⟩
+  refine ⟨y, hyt, ?_⟩
+  let term : ℕ → ℝ := fun n => ‖f n (x - y)‖ * c n
+  have hsplit :
+      ∑' n, term n = ∑ i : Fin N, term i + ∑' n, term (n + N) := by
+    rw [← Summable.sum_add_tsum_nat_add N (hsummable x hx y hyB)]
+    rw [← Fin.sum_univ_eq_sum_range]
+  calc
+    p (x - y) ≤ ∑' n, term n := hp_bound (x - y)
+    _ = ∑ i : Fin N, term i + ∑' n, term (n + N) := hsplit
+    _ < ε_head + ε_tail := by
+      exact add_lt_add hhead_xy (htail x hx y hyB)
+
+/-- Generic nuclear-seminorm finite-net theorem on a `q`-bounded set.
+
+This is the full producer-side precompactness step above
+`finite_net_of_nuclear_head_tail`: it combines the uniform tail estimate on
+differences with the finite weighted head net and the nuclear-dominance
+inequality to produce finite `p`-nets whose centres stay in `B`. -/
+private theorem finite_net_of_nuclear_seminorm_of_q_bounded
+    {V : Type*} [AddCommGroup V] [Module ℝ V] [TopologicalSpace V]
+    (p q : Seminorm ℝ V) (f : ℕ → (V →L[ℝ] ℝ)) (c : ℕ → ℝ)
+    (hc_nonneg : ∀ n, 0 ≤ c n) (hc_sum : Summable c) (hf_bound : ∀ n x, ‖f n x‖ ≤ q x)
+    {B : Set V} (hB : ∃ M > 0, ∀ x ∈ B, q x < M)
+    (hp_bound : ∀ x, p x ≤ ∑' n, ‖f n x‖ * c n) :
+    ∀ ε > 0, ∃ t : Finset V, (∀ y ∈ t, y ∈ B) ∧
+      ∀ x ∈ B, ∃ y ∈ t, y ∈ B ∧ p (x - y) < ε := by
+  intro ε hε
+  have hhalf_pos : 0 < ε / 2 := by positivity
+  obtain ⟨N, htail⟩ :=
+    uniform_nuclear_tail_lt_of_q_bounded_sub q f c hc_nonneg hc_sum hf_bound hB (ε / 2) hhalf_pos
+  obtain ⟨t, htB, hhead⟩ :=
+    finite_weighted_coordinate_net_mem_of_q_bounded
+      q (fun i : Fin N => f i) (fun i : Fin N => c i)
+      (fun i => hc_nonneg i) (fun i x => hf_bound i x) hB (ε / 2) hhalf_pos
+  have hsummable : ∀ x ∈ B, ∀ y ∈ B, Summable (fun n => ‖f n (x - y)‖ * c n) := by
+    intro x hx y hy
+    refine Summable.of_nonneg_of_le
+      (fun n => mul_nonneg (norm_nonneg _) (hc_nonneg n))
+      (fun n => mul_le_mul_of_nonneg_right (hf_bound n (x - y)) (hc_nonneg n))
+      ((hc_sum.hasSum.mul_left (q (x - y))).summable)
+  refine ⟨t, htB, ?_⟩
+  intro x hx
+  rcases hhead x hx with ⟨y, hyt, hyB, hhead_xy⟩
+  let term : ℕ → ℝ := fun n => ‖f n (x - y)‖ * c n
+  have hsplit :
+      ∑' n, term n = ∑ i : Fin N, term i + ∑' n, term (n + N) := by
+    rw [← Summable.sum_add_tsum_nat_add N (hsummable x hx y hyB)]
+    rw [← Fin.sum_univ_eq_sum_range]
+  refine ⟨y, hyt, hyB, ?_⟩
+  calc
+    p (x - y) ≤ ∑' n, term n := hp_bound (x - y)
+    _ = ∑ i : Fin N, term i + ∑' n, term (n + N) := hsplit
+    _ < ε / 2 + ε / 2 := add_lt_add hhead_xy (htail x hx y hyB)
+    _ = ε := by ring
+
+/-- Bounded sets in a nuclear Schwartz space admit finite nets for every finite
+supremum of Schwartz seminorms.
+
+This is the Schwartz-specialization seam immediately above the generic nuclear
+finite-net theorem: boundedness in the Schwartz topology is first converted to a
+bound for the nuclear dominating seminorm `q`, then the generic theorem supplies
+finite `p`-nets with centres retained in `B`. -/
+theorem finite_net_of_schwartz_seminorm_of_isVonNBounded
+    {E F : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NormedAddCommGroup F] [NormedSpace ℝ F]
+    [NuclearSpace (SchwartzMap E F)]
+    (s : Finset (ℕ × ℕ)) {B : Set (SchwartzMap E F)}
+    (hB : Bornology.IsVonNBounded ℝ B) :
+    ∀ ε > 0, ∃ t : Finset (SchwartzMap E F), (∀ y ∈ t, y ∈ B) ∧
+      ∀ x ∈ B, ∃ y ∈ t, y ∈ B ∧
+        (s.sup (schwartzSeminormFamily ℝ E F)) (x - y) < ε := by
+  let p : Seminorm ℝ (SchwartzMap E F) := s.sup (schwartzSeminormFamily ℝ E F)
+  have hp_cont : Continuous p := by
+    refine Seminorm.continuous_of_le ?_
+      (show p ≤ ∑ i ∈ s, schwartzSeminormFamily ℝ E F i by
+        simpa [p] using
+          (Seminorm.finset_sup_le_sum (schwartzSeminormFamily ℝ E F) s))
+    change Continuous
+        (fun x => Seminorm.coeFnAddMonoidHom ℝ (SchwartzMap E F)
+          (∑ i ∈ s, schwartzSeminormFamily ℝ E F i) x)
+    simp_rw [map_sum, Finset.sum_apply]
+    exact continuous_finset_sum _ fun i _ =>
+      (schwartz_withSeminorms ℝ E F).continuous_seminorm i
+  obtain ⟨q, hq_cont, hpq, f, c, hc_nonneg, hc_sum, hf_bound, hp_bound⟩ :=
+    NuclearSpace.nuclear_dominance p hp_cont
+  obtain ⟨sq, C, _hCne, hq_le⟩ :=
+    Seminorm.bound_of_continuous (schwartz_withSeminorms ℝ E F) q hq_cont
+  obtain ⟨r, hr_pos, hr_bound⟩ :=
+    ((schwartz_withSeminorms ℝ E F).isVonNBounded_iff_finset_seminorm_bounded).1 hB sq
+  have hC_nonneg : 0 ≤ (C : ℝ) := NNReal.coe_nonneg C
+  have hBq : ∃ M > 0, ∀ x ∈ B, q x < M := by
+    refine ⟨(C : ℝ) * r + 1, by positivity, ?_⟩
+    intro x hx
+    have hsq_lt : (sq.sup (schwartzSeminormFamily ℝ E F)) x < r := hr_bound x hx
+    have hqx_le : q x ≤ (C : ℝ) * (sq.sup (schwartzSeminormFamily ℝ E F)) x := by
+      simpa using hq_le x
+    have hCr_lt : (C : ℝ) * (sq.sup (schwartzSeminormFamily ℝ E F)) x < (C : ℝ) * r := by
+      gcongr
+    exact lt_of_le_of_lt hqx_le (by linarith)
+  simpa [p] using
+    finite_net_of_nuclear_seminorm_of_q_bounded
+      p q f c hc_nonneg hc_sum hf_bound hBq hp_bound
+
+/-- Complex-valued bounded Schwartz sets admit finite nets for every finite
+supremum of complex Schwartz seminorms.
+
+This is the first shell-facing complex bridge above the real Schwartz
+specialization: restrict boundedness from `ℂ` to `ℝ`, invoke the already-landed
+real finite-net theorem, then identify the resulting seminorm bounds using the
+scalar-independent formula for `SchwartzMap.seminorm`. -/
+theorem finite_net_of_complex_schwartz_seminorm_of_isVonNBounded
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [NuclearSpace (SchwartzMap E ℂ)]
+    (s : Finset (ℕ × ℕ)) {B : Set (SchwartzMap E ℂ)}
+    (hB : Bornology.IsVonNBounded ℂ B) :
+    ∀ ε > 0, ∃ t : Finset (SchwartzMap E ℂ), (∀ y ∈ t, y ∈ B) ∧
+      ∀ x ∈ B, ∃ y ∈ t, y ∈ B ∧
+        (s.sup (schwartzSeminormFamily ℂ E ℂ)) (x - y) < ε := by
+  intro ε hε
+  have hsup_eq :
+      ∀ I : Finset (ℕ × ℕ), ∀ f : SchwartzMap E ℂ,
+        (I.sup (schwartzSeminormFamily ℂ E ℂ)) f =
+          (I.sup (schwartzSeminormFamily ℝ E ℂ)) f := by
+    intro I f
+    induction I using Finset.cons_induction with
+    | empty =>
+        simp [Finset.sup_empty]
+    | @cons a I ha hI =>
+        simp [hI, schwartzSeminormFamily, SchwartzMap.seminorm_apply]
+  have hB_real : Bornology.IsVonNBounded ℝ B := by
+    rw [(schwartz_withSeminorms ℝ E ℂ).isVonNBounded_iff_finset_seminorm_bounded]
+    rw [(schwartz_withSeminorms ℂ E ℂ).isVonNBounded_iff_finset_seminorm_bounded] at hB
+    intro I
+    rcases hB I with ⟨r, hr, hI⟩
+    refine ⟨r, hr, ?_⟩
+    intro x hx
+    rw [← hsup_eq I x]
+    exact hI x hx
+  obtain ⟨t, htB, hcover⟩ :=
+    finite_net_of_schwartz_seminorm_of_isVonNBounded
+      (E := E) (F := ℂ) s hB_real ε hε
+  refine ⟨t, htB, ?_⟩
+  intro x hx
+  rcases hcover x hx with ⟨y, hyt, hyB, hxy⟩
+  refine ⟨y, hyt, hyB, ?_⟩
+  rw [hsup_eq s]
+  exact hxy
 
 /-- Finite-dimensional spaces are nuclear.
 

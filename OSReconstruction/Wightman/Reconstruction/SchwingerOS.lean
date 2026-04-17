@@ -208,6 +208,12 @@ theorem OSTensorAdmissible.smul_left {F G : BorchersSequence d}
 
 /-- Ordered positive-time topological support is enough to guarantee that every
     OS tensor term of two Borchers sequences already lies in `°S`. -/
+/- Exact category boundary:
+this theorem is still strictly downstream of the missing theorem-3 ingress.
+It consumes the raw ordered-support family on ambient Schwartz components and
+only produces zero-diagonal tensor admissibility for later OS inner-product
+packaging; it does not recover any support fact from boundary-value, quotient,
+or transformed-image hypotheses. -/
 theorem OSTensorAdmissible_of_tsupport_subset_orderedPositiveTimeRegion
     (F G : BorchersSequence d)
     (hF : ∀ n, tsupport ((F.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆

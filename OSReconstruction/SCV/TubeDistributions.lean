@@ -6,6 +6,7 @@ Authors: ModularPhysics Contributors
 import OSReconstruction.SCV.TubeDomainExtension
 import OSReconstruction.SCV.IdentityTheorem
 import OSReconstruction.SCV.LaplaceSchwartz
+import OSReconstruction.SCV.LocalBoundaryRecovery
 import OSReconstruction.SCV.BochnerTubeTheorem
 import Mathlib.Analysis.Distribution.SchwartzSpace.Deriv
 
@@ -73,6 +74,68 @@ The weak bare-BV theorem fronts have been removed. The declarations below are
 the rigorous transport results currently justified by explicit regular
 Fourier-Laplace input data, packaged as `HasFourierLaplaceReprRegular`.
 -/
+
+/-- Zero boundary trace on tube domains from tempered FL data and an explicit
+continuous real trace along one interior approach direction. This is the first
+honest consumer bridge above the local trace seam after the zero-extension
+audit: the real-edge object is a separate trace `G`, not definitionally
+`F ∘ realEmbed`. -/
+theorem boundary_trace_zero_of_tempered_of_trace {m : ℕ}
+    {C : Set (Fin m → ℝ)} (hC : IsOpen C) (hconv : Convex ℝ C) (hne : C.Nonempty)
+    (hcone : ∀ (t : ℝ), 0 < t → ∀ y ∈ C, t • y ∈ C)
+    {F : (Fin m → ℂ) → ℂ} (hF : DifferentiableOn ℂ F (TubeDomain C))
+    (hTempered : HasFourierLaplaceReprTempered C F)
+    {G : (Fin m → ℝ) → ℂ} (hG_cont : Continuous G)
+    (η : Fin m → ℝ) (hη : η ∈ C)
+    (htrace : ∀ x : Fin m → ℝ,
+      Filter.Tendsto
+        (fun ε : ℝ => F (fun i => ↑(x i) + ↑ε * ↑(η i) * I))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (G x)))
+    (h_dist_zero : ∀ (f : SchwartzMap (Fin m → ℝ) ℂ), hTempered.dist f = 0)
+    (x : Fin m → ℝ) : G x = 0 := by
+  have hint :
+      ∀ f : SchwartzMap (Fin m → ℝ) ℂ,
+        HasCompactSupport (f : (Fin m → ℝ) → ℂ) →
+        tsupport (f : (Fin m → ℝ) → ℂ) ⊆ (Set.univ : Set (Fin m → ℝ)) →
+        ∫ y : Fin m → ℝ, G y * f y = 0 := by
+    intro f hf_compact _
+    have hrecov :=
+      fourierLaplace_schwartz_integral_convergence_local_of_trace
+        hC hconv hne hcone hF hTempered Set.univ isOpen_univ hG_cont.continuousOn
+        η hη (fun y _ => htrace y) f (by simp) hf_compact
+    have hdist := hTempered.boundary_value f η hη
+    have hEq : hTempered.dist f = ∫ y : Fin m → ℝ, G y * f y :=
+      tendsto_nhds_unique hdist hrecov
+    calc
+      ∫ y : Fin m → ℝ, G y * f y = hTempered.dist f := hEq.symm
+      _ = 0 := h_dist_zero f
+  have hli : MeasureTheory.LocallyIntegrable G := hG_cont.locallyIntegrable
+  have hae : ∀ᵐ y ∂MeasureTheory.MeasureSpace.volume, G y = 0 := by
+    have := ae_eq_zero_of_integral_contDiff_smul_eq_zero hli ?_
+    · exact this
+    · intro φ hφ_smooth hφ_compact
+      have hφC_smooth : ContDiff ℝ ((⊤ : ENat) : WithTop ENat) (fun y => (φ y : ℂ)) := by
+        rw [contDiff_infty] at hφ_smooth
+        rw [contDiff_infty]
+        intro n
+        exact (Complex.ofRealCLM.contDiff.of_le le_top).comp (hφ_smooth n)
+      have hφC_compact : HasCompactSupport (fun y => (φ y : ℂ)) :=
+        hφ_compact.comp_left Complex.ofReal_zero
+      let φ_schwartz : SchwartzMap (Fin m → ℝ) ℂ :=
+        hφC_compact.toSchwartzMap hφC_smooth
+      have hφ_eval : ∀ y, φ_schwartz y = (φ y : ℂ) :=
+        HasCompactSupport.toSchwartzMap_toFun hφC_compact hφC_smooth
+      have hzero := hint φ_schwartz (by simpa [φ_schwartz] using hφC_compact) (by simp)
+      convert hzero using 1
+      congr 1 with y
+      rw [hφ_eval y]
+      show φ y • G y = G y * ↑(φ y)
+      rw [show (φ y : ℝ) • (G y : ℂ) = (↑(φ y) : ℂ) * G y from Complex.real_smul]
+      exact mul_comm _ _
+  have hEq : G = fun _ => 0 :=
+    MeasureTheory.Measure.eq_of_ae_eq hae hG_cont continuous_const
+  exact congr_fun hEq x
 
 /-- Zero boundary value on tube domains from regular FL input data. -/
 theorem boundary_value_zero_of_regular {m : ℕ}

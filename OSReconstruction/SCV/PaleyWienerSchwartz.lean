@@ -3232,6 +3232,20 @@ theorem fourierLaplaceExtMultiDim_continuousOn
   ext z
   simpa [ψ] using fourierLaplaceExtMultiDim_eq C hC_open hC_conv hC_cone hC_salient T z.1 z.2
 
+/- The stale theorem surface
+`fourierLaplaceExtMultiDim_continuousWithinAt_realEmbed` was removed on
+`2026-04-16`.
+
+Reason: `fourierLaplaceExtMultiDim` is definitionally `0` off the tube, so a
+pointwise `ContinuousWithinAt` theorem at `realEmbed x` targets the off-tube
+zero extension rather than the actual tempered/distributional boundary value.
+The honest primitive outputs at this seam remain:
+
+* `fourierLaplaceExtMultiDim_boundaryValue` for the tempered boundary
+  functional, and
+* explicit downstream trace-limit hypotheses when a separate boundary trace
+  object is available. -/
+
 /-- **Main holomorphicity theorem**: F(z) = T(ψ_z) is holomorphic on the tube T(C).
 
     Proof: Combine separate holomorphicity + continuity via `osgood_lemma`. -/
@@ -3314,6 +3328,127 @@ theorem fourierLaplaceExtMultiDim_vladimirov_growth
     _ = C_T * B * (1 + ‖z‖) ^ N *
           (1 + (Metric.infDist (fun i => (z i).im) Cᶜ)⁻¹) ^ M := by
         ring
+
+/-- Polynomial growth on compact imaginary slices for the primitive
+Fourier-Laplace extension.
+
+Fixing a compact `K ⊆ C` bounds the Vladimirov boundary-distance factor away
+from zero uniformly on `K`, so the global growth estimate collapses to the
+`hpoly` shape used by `HasFourierLaplaceReprTempered`. -/
+theorem fourierLaplaceExtMultiDim_poly_growth_on_compact
+    (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
+    (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ)
+    (hT_support : HasFourierSupportInDualCone C T)
+    (K : Set (Fin m → ℝ)) (hK : IsCompact K) (hK_sub : K ⊆ C) :
+    ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+      ∀ (x y : Fin m → ℝ), y ∈ K →
+        ‖fourierLaplaceExtMultiDim C hC_open hC_conv hC_cone hC_salient T
+            (fun i => ↑(x i) + ↑(y i) * Complex.I)‖ ≤
+          C_bd * (1 + ‖x‖) ^ N := by
+  by_cases hK_ne : K.Nonempty
+  · obtain ⟨C_vlad, N_vlad, M_vlad, hC_vlad_pos, hgrowth⟩ :=
+      fourierLaplaceExtMultiDim_vladimirov_growth C hC_open hC_conv
+        hC_cone hC_salient T hT_support
+    obtain ⟨B_K, hB_K_pos, hB_K⟩ : ∃ B : ℝ, 0 < B ∧ ∀ y ∈ K, ‖y‖ ≤ B := by
+      obtain ⟨B, hB⟩ := hK.isBounded.subset_closedBall 0
+      refine ⟨max B 1, lt_max_of_lt_right one_pos, fun y hy => ?_⟩
+      have := hB hy
+      rw [Metric.mem_closedBall, dist_zero_right] at this
+      exact this.trans (le_max_left _ _)
+    obtain ⟨y₀, hy₀_mem, hy₀_min⟩ :=
+      hK.exists_isMinOn hK_ne (Metric.continuous_infDist_pt Cᶜ).continuousOn
+    have hB_pos : (0 : ℝ) < (1 + B_K) ^ N_vlad := pow_pos (by linarith) _
+    have hD_pos : (0 : ℝ) < (1 + (Metric.infDist y₀ Cᶜ)⁻¹) ^ M_vlad :=
+      pow_pos (by linarith [inv_nonneg.mpr (Metric.infDist_nonneg (x := y₀) (s := Cᶜ))]) _
+    refine ⟨C_vlad * (1 + B_K) ^ N_vlad * (1 + (Metric.infDist y₀ Cᶜ)⁻¹) ^ M_vlad,
+      N_vlad, mul_pos (mul_pos hC_vlad_pos hB_pos) hD_pos, ?_⟩
+    intro x y hy
+    have hz_mem :
+        (fun i => (x i : ℂ) + (y i : ℂ) * Complex.I) ∈ SCV.TubeDomain C := by
+      show (fun i => ((x i : ℂ) + (y i : ℂ) * Complex.I).im) ∈ C
+      simp only [Complex.add_im, Complex.ofReal_im, Complex.mul_im,
+        Complex.ofReal_re, Complex.I_re, mul_zero, Complex.I_im, mul_one, add_zero]
+      simpa using hK_sub hy
+    have hgrowth' := hgrowth _ hz_mem
+    have h_im_eq :
+        (fun i => ((x i : ℂ) + (y i : ℂ) * Complex.I).im) = y := by
+      ext i
+      simp
+    have h_infDist_le : Metric.infDist y₀ Cᶜ ≤ Metric.infDist y Cᶜ := hy₀_min hy
+    have h_dist :
+        (1 + (Metric.infDist (fun i => ((x i : ℂ) + ↑(y i) * Complex.I).im) Cᶜ)⁻¹) ^ M_vlad ≤
+          (1 + (Metric.infDist y₀ Cᶜ)⁻¹) ^ M_vlad := by
+      rw [h_im_eq]
+      have : (0 : ℝ) ≤ (Metric.infDist y Cᶜ)⁻¹ := inv_nonneg.mpr Metric.infDist_nonneg
+      apply pow_le_pow_left₀ (by linarith)
+      rcases (Cᶜ : Set (Fin m → ℝ)).eq_empty_or_nonempty with h_empty | h_ne
+      · simp [h_empty, Metric.infDist_empty]
+      · have hδ : 0 < Metric.infDist y₀ Cᶜ :=
+          ((isClosed_compl_iff.mpr hC_open).notMem_iff_infDist_pos h_ne).mp
+            (fun h => h (hK_sub hy₀_mem))
+        linarith [inv_anti₀ hδ h_infDist_le]
+    have hz_norm :
+        ‖(fun i => (x i : ℂ) + (y i : ℂ) * Complex.I)‖ ≤ ‖x‖ + ‖y‖ := by
+      refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+      · show ‖(fun i => (x i : ℂ))‖ ≤ ‖x‖
+        simp only [Pi.norm_def, Pi.nnnorm_def]
+        gcongr with i _
+        simp [Complex.nnnorm_real]
+      · show ‖(fun i => (y i : ℂ) * Complex.I)‖ ≤ ‖y‖
+        simp only [Pi.norm_def, Pi.nnnorm_def]
+        gcongr with i _
+        simp [map_mul, Complex.nnnorm_I, mul_one, Complex.nnnorm_real]
+    have h_norm :
+        (1 + ‖(fun i => (x i : ℂ) + (y i : ℂ) * Complex.I)‖) ^ N_vlad ≤
+          (1 + B_K) ^ N_vlad * (1 + ‖x‖) ^ N_vlad := by
+      rw [← mul_pow]
+      apply pow_le_pow_left₀ (by positivity)
+      have hy_bound : ‖y‖ ≤ B_K := hB_K y hy
+      nlinarith [hz_norm, norm_nonneg x]
+    have step1 :
+        C_vlad * (1 + ‖(fun i => (x i : ℂ) + (y i : ℂ) * Complex.I)‖) ^ N_vlad ≤
+          C_vlad * ((1 + B_K) ^ N_vlad * (1 + ‖x‖) ^ N_vlad) :=
+      mul_le_mul_of_nonneg_left h_norm hC_vlad_pos.le
+    calc
+      ‖fourierLaplaceExtMultiDim C hC_open hC_conv hC_cone hC_salient T
+          (fun i => ↑(x i) + ↑(y i) * Complex.I)‖
+          ≤ C_vlad * (1 + ‖(fun i => (x i : ℂ) + (y i : ℂ) * Complex.I)‖) ^ N_vlad *
+              (1 + (Metric.infDist (fun i => ((x i : ℂ) + ↑(y i) * Complex.I).im) Cᶜ)⁻¹) ^ M_vlad :=
+        hgrowth'
+      _ ≤ C_vlad * ((1 + B_K) ^ N_vlad * (1 + ‖x‖) ^ N_vlad) *
+            ((1 + (Metric.infDist y₀ Cᶜ)⁻¹) ^ M_vlad) := by
+          have h1 :
+              (0 : ℝ) ≤
+                (Metric.infDist (fun i => ((x i : ℂ) + ↑(y i) * Complex.I).im) Cᶜ)⁻¹ :=
+            inv_nonneg.mpr Metric.infDist_nonneg
+          exact mul_le_mul step1 h_dist (pow_nonneg (by linarith) _)
+            (mul_nonneg hC_vlad_pos.le
+              (mul_nonneg hB_pos.le (pow_nonneg (by linarith [norm_nonneg x]) _)))
+      _ = C_vlad * (1 + B_K) ^ N_vlad * (1 + (Metric.infDist y₀ Cᶜ)⁻¹) ^ M_vlad *
+            (1 + ‖x‖) ^ N_vlad := by ring
+  · rw [Set.not_nonempty_iff_eq_empty] at hK_ne
+    subst hK_ne
+    exact ⟨1, 0, one_pos, fun _ y hy => (Set.mem_empty_iff_false y |>.mp hy).elim⟩
+
+/-- Uniform polynomial bound along fixed boundary rays for the primitive
+Fourier-Laplace extension.
+
+This is theorem 1 on the live OS II route: for each interior direction `η ∈ C`,
+the primitive witness `fourierLaplaceExtMultiDim ... T` admits an `ε`-uniform
+polynomial bound on the ray `x + i ε η` for all sufficiently small `ε > 0`. -/
+theorem fourierLaplaceExtMultiDim_uniform_bound_near_boundary
+    (C : Set (Fin m → ℝ)) (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
+    (T : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ)
+    (hT_support : HasFourierSupportInDualCone C T) :
+    ∀ (η : Fin m → ℝ), η ∈ C →
+      ∃ (C_bd : ℝ) (N : ℕ) (δ : ℝ), C_bd > 0 ∧ δ > 0 ∧
+        ∀ (x : Fin m → ℝ) (ε : ℝ), 0 < ε → ε < δ →
+          ‖fourierLaplaceExtMultiDim C hC_open hC_conv hC_cone hC_salient T
+              (fun i => ↑(x i) + ↑ε * ↑(η i) * I)‖ ≤
+            C_bd * (1 + ‖x‖) ^ N := by
+  sorry
 
 /-! ### Fourier conventions and boundary values
 
@@ -3486,6 +3621,44 @@ private lemma realPlusIEpsEta_mem_tubeDomain
       Complex.I_im, Complex.I_re, Pi.smul_apply, smul_eq_mul]
   rw [hIm]
   exact hC_cone η hη ε hε
+
+/-- The canonical interior ray `x + i ε η` approaches the real boundary point
+`realEmbed x` from within the tube as `ε → 0+`. -/
+theorem realPlusIEpsEta_tendsto_nhdsWithin_realEmbed
+    (C : Set (Fin m → ℝ)) (hC_cone : IsCone C)
+    (x : Fin m → ℝ) (η : Fin m → ℝ) (hη : η ∈ C) :
+    Filter.Tendsto
+      (fun ε : ℝ => fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I)
+      (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+      (nhdsWithin (SCV.realEmbed x) (SCV.TubeDomain C)) := by
+  have h_path_cont : Continuous
+      (fun ε : ℝ => fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I) := by
+    exact continuous_pi fun i =>
+      continuous_const.add
+        ((Complex.continuous_ofReal.comp continuous_id).mul continuous_const |>.mul
+          continuous_const)
+  have h_path_zero :
+      (fun i : Fin m => (x i : ℂ) + ((0 : ℝ) : ℂ) * (η i : ℂ) * I) =
+        SCV.realEmbed x := by
+    ext i
+    simp [SCV.realEmbed]
+  have h_path_maps :
+      Set.MapsTo
+        (fun ε : ℝ => fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I)
+        (Set.Ioi (0 : ℝ))
+        (SCV.TubeDomain C) := by
+    intro ε hε
+    exact realPlusIEpsEta_mem_tubeDomain C hC_cone x η hη ε hε
+  rw [tendsto_nhdsWithin_iff]
+  refine ⟨?_, Filter.eventually_of_mem self_mem_nhdsWithin h_path_maps⟩
+  have h :
+      Filter.Tendsto
+        (fun ε : ℝ => fun i => (x i : ℂ) + (ε : ℂ) * (η i : ℂ) * I)
+        (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+        (nhds
+          (fun i : Fin m => (x i : ℂ) + ((0 : ℝ) : ℂ) * (η i : ℂ) * I)) :=
+    h_path_cont.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
+  rwa [h_path_zero] at h
 
 /-- Pointwise identification of the Fubini-exchanged Schwartz kernel with the
 regularized physics Fourier transform. This is the remaining kernel-computation

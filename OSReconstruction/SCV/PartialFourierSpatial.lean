@@ -1,6 +1,9 @@
 import OSReconstruction.SCV.HasFDerivAtProd
 import OSReconstruction.Wightman.Reconstruction.SchwartzPartialEval
+import OSReconstruction.Wightman.NuclearSpaces.ComplexSchwartz
+import OSReconstruction.Wightman.NuclearSpaces.NuclearSpace
 import Mathlib.Analysis.Distribution.SchwartzSpace.Fourier
+import Mathlib.Topology.Algebra.Module.FiniteDimension
 
 noncomputable section
 
@@ -70,6 +73,50 @@ noncomputable def nPointTimeSpatialSchwartzCLE :
             simp [toFwd, toInv, SchwartzMap.compCLMOfContinuousLinearEquiv_apply, e] }
       continuous_toFun := toFwd.continuous
       continuous_invFun := toInv.continuous }
+
+/-- The complex-valued Schwartz space on the actual `NPointDomain` shell domain
+is nuclear as a real locally convex space, by transport to a finite-dimensional
+Euclidean Schwartz space through the existing time/spatial splitting. -/
+noncomputable instance instNuclearSpaceComplexNPointDomain :
+    NuclearSpace (SchwartzNPoint d n) := by
+  let eProd : ((Fin n → ℝ) × EuclideanSpace ℝ (Fin n × Fin d)) ≃L[ℝ]
+      EuclideanSpace ℝ (Fin (n + n * d)) :=
+    ContinuousLinearEquiv.ofFinrankEq (by
+      simp [Fintype.card_prod, Nat.mul_comm])
+  let eProdS :
+      SchwartzMap ((Fin n → ℝ) × EuclideanSpace ℝ (Fin n × Fin d)) ℂ ≃L[ℝ]
+        SchwartzMap (EuclideanSpace ℝ (Fin (n + n * d))) ℂ :=
+    ContinuousLinearEquiv.equivOfInverse
+      (SchwartzMap.compCLMOfContinuousLinearEquiv (𝕜 := ℝ) (F := ℂ) eProd.symm)
+      (SchwartzMap.compCLMOfContinuousLinearEquiv (𝕜 := ℝ) (F := ℂ) eProd)
+      (by
+        intro f
+        ext x
+        simp [SchwartzMap.compCLMOfContinuousLinearEquiv_apply, eProd])
+      (by
+        intro f
+        ext x
+        simp [SchwartzMap.compCLMOfContinuousLinearEquiv_apply, eProd])
+  let eNPoint :
+      SchwartzMap (NPointDomain d n) ℂ ≃L[ℝ]
+        SchwartzMap ((Fin n → ℝ) × EuclideanSpace ℝ (Fin n × Fin d)) ℂ :=
+    ContinuousLinearEquiv.equivOfInverse
+      (SchwartzMap.compCLMOfContinuousLinearEquiv (𝕜 := ℝ) (F := ℂ)
+        (nPointTimeSpatialCLE (d := d) n).symm)
+      (SchwartzMap.compCLMOfContinuousLinearEquiv (𝕜 := ℝ) (F := ℂ)
+        (nPointTimeSpatialCLE (d := d) n))
+      (by
+        intro f
+        ext x
+        exact congrArg f ((nPointTimeSpatialCLE (d := d) n).left_inv x))
+      (by
+        intro f
+        ext x
+        exact congrArg f ((nPointTimeSpatialCLE (d := d) n).right_inv x))
+  let e := eNPoint.trans eProdS
+  letI : NuclearSpace (SchwartzMap (EuclideanSpace ℝ (Fin (n + n * d))) ℂ) :=
+    SchwartzMap.instNuclearSpaceComplex (n + n * d)
+  exact NuclearSpace.of_continuousLinearEquiv e
 
 /-- The swapped version of `nPointTimeSpatialCLE`, so the spatial block appears
 first and the time block second. This is the correct product order for

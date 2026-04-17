@@ -1942,6 +1942,42 @@ theorem uniqueness_of_boundary_zero_on_interval (a b : ℝ) (hab : a < b)
     g z = F z := (hF_plus z ⟨hzU, hzUHP⟩).symm
     _ = 0 := hF_zero_on_U z hzU
 
+/-- Trace-based tube uniqueness from a tempered FL package plus an explicit
+boundary trace object.
+
+This is the first honest consumer of
+`boundary_trace_zero_of_tempered_of_trace` downstream of the local trace seam:
+the tempered boundary functional annihilates the explicit trace `B` along a
+chosen interior ray, and a separate full `nhdsWithin` boundary limit to that
+same `B` upgrades pointwise boundary vanishing to vanishing on the whole
+tube. -/
+theorem distributional_uniqueness_tube_of_tempered_of_trace {m : ℕ}
+    {C : Set (Fin m → ℝ)} (hC : IsOpen C) (hconv : Convex ℝ C) (hne : C.Nonempty)
+    (hcone : ∀ (t : ℝ), 0 < t → ∀ y ∈ C, t • y ∈ C)
+    {F : (Fin m → ℂ) → ℂ}
+    (hF_diff : DifferentiableOn ℂ F (TubeDomain C))
+    (hTempered : HasFourierLaplaceReprTempered C F)
+    {B : (Fin m → ℝ) → ℂ} (hB_cont : Continuous B)
+    (η : Fin m → ℝ) (hη : η ∈ C)
+    (htrace_ray : ∀ x : Fin m → ℝ,
+      Tendsto
+        (fun ε : ℝ => F (fun i => ↑(x i) + ↑ε * ↑(η i) * I))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (B x)))
+    (htrace_boundary : ∀ x : Fin m → ℝ,
+      Tendsto F (nhdsWithin (realEmbed x) (TubeDomain C)) (nhds (B x)))
+    (h_dist_zero : ∀ (f : SchwartzMap (Fin m → ℝ) ℂ), hTempered.dist f = 0) :
+    ∀ z ∈ TubeDomain C, F z = 0 := by
+  have hB_zero : ∀ x : Fin m → ℝ, B x = 0 := by
+    intro x
+    exact boundary_trace_zero_of_tempered_of_trace
+      hC hconv hne hcone hF_diff hTempered hB_cont η hη htrace_ray h_dist_zero x
+  have htrace_zero : ∀ x : Fin m → ℝ,
+      Tendsto F (nhdsWithin (realEmbed x) (TubeDomain C)) (nhds 0) := by
+    intro x
+    simpa [hB_zero x] using htrace_boundary x
+  exact uniqueness_of_boundary_trace_zero hC hconv hne hcone hF_diff htrace_zero
+
 /-- Tube-domain uniqueness from weak boundary-value zero along every cone ray.
 
 For each compactly supported real mollifier `ψ`, the real-direction convolution

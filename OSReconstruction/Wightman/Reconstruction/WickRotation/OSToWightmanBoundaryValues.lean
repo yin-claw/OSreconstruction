@@ -7,6 +7,7 @@ import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBoundar
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBoundaryValueLimits
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBoundaryValuesCompactApprox
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBoundaryValuesEuclidean
+import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanPositivityOnImage
 import OSReconstruction.Wightman.Reconstruction.WightmanTwoPoint
 
 /-!
@@ -19,6 +20,7 @@ slimmed `OSToWightmanBoundaryValuesComparison.lean`.
 
 open scoped Classical NNReal
 open BigOperators Finset
+open OSReconstruction
 
 noncomputable section
 
@@ -366,7 +368,7 @@ private theorem bvt_F_swapCanonical_pairing
             ε * ↑(canonicalForwardConeDirection (d := d) n k μ) * Complex.I) * (f x) := by
   sorry
 
-/-- Theorem 3 frontier: positivity of the reconstructed Wightman inner product.
+/- Theorem 3 frontier: positivity of the reconstructed Wightman inner product.
 
 OS paper target:
 - OS I Section 4.3 "Positivity", pp. 102-103
@@ -376,13 +378,1262 @@ OS paper target:
 Current active substep on the repo's OS route:
 - OS II Theorem 4.3, p. 289, together with Chapter VI.1, pp. 297-298
 
-This sorry is the OS-isometry / boundary-value identification step, not any
-same-test-function equality `W_n(f) = S_n(f)`. -/
+The transformed-image / on-image positivity package now lives upstream, and the
+blueprint fixes the remaining theorem-3 seam as the prior VEV /
+boundary-value identification into the fixed-surrogate theorem
+`bvt_wightmanInner_self_nonneg_of_eq_boundaryVanishingTarget` in
+`OSToWightmanPositivityOnImage.lean`.
+
+That consuming theorem already fixes the narrow honest supplier surface:
+- ambient supplier data: `F₀`, `m`, `hF₀`, `hEq`,
+- outer on-image closure consumer data there: `G`, `hG`, `hcomp`, `hcore`,
+- but the first genuinely missing upstream fixed-surrogate seam is the
+  stricter producer payload localized in
+  `OSToWightmanPositivityOnImage.lean` and
+  `OSToWightmanBoundaryValuesComparison.lean`:
+  `∃ G, hG, hcomp, hprecompact, hambientCompact, hG0, hreal`.
+So the missing theorem-3 work before `bvt_W_positive` is specifically the
+upstream ambient fixed-surrogate identification feeding that existing on-image
+consumer theorem, not any new local retuning theorem here.
+
+So this file no longer contains an endorsed theorem-3 supplier surface. The
+local retuning/surrogate chain below is retained only as private legacy graph
+structure until that upstream identification package lands.
+
+Route discipline here:
+- no same-input `W = S` shortcut,
+- no transformed-image-family supplier theorem in this file,
+- no wrapper reduction theorem around the later on-image package. -/
+/-- Algebraic vacuum-retuning expansion used only by the legacy local chain.
+
+This is not itself a live theorem-3 seam. It is just the quadratic expansion
+for adding a vacuum-sequence multiple, reused by the retained private retuning
+block below. -/
+private theorem bvt_W_selfPairing_re_add_vacuumSequence
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BorchersSequence d) (c : ℂ) :
+    let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+    (WightmanInnerProduct d (bvt_W OS lgc) (F + c • V) (F + c • V)).re =
+      (WightmanInnerProduct d (bvt_W OS lgc) F F
+        + c * WightmanInnerProduct d (bvt_W OS lgc) F V
+        + starRingEnd ℂ c * WightmanInnerProduct d (bvt_W OS lgc) V F
+        + starRingEnd ℂ c * c *
+            WightmanInnerProduct d (bvt_W OS lgc) V V).re := by
+  let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+  change (WightmanInnerProduct d (bvt_W OS lgc) (F + c • V) (F + c • V)).re =
+    (WightmanInnerProduct d (bvt_W OS lgc) F F
+      + c * WightmanInnerProduct d (bvt_W OS lgc) F V
+      + starRingEnd ℂ c * WightmanInnerProduct d (bvt_W OS lgc) V F
+      + starRingEnd ℂ c * c *
+          WightmanInnerProduct d (bvt_W OS lgc) V V).re
+  rw [WightmanInnerProduct_add_left (d := d) (W := bvt_W OS lgc) (bvt_W_linear (d := d) OS lgc),
+    WightmanInnerProduct_add_right (d := d) (W := bvt_W OS lgc) (bvt_W_linear (d := d) OS lgc),
+    WightmanInnerProduct_add_right (d := d) (W := bvt_W OS lgc) (bvt_W_linear (d := d) OS lgc),
+    WightmanInnerProduct_smul_right (d := d) (W := bvt_W OS lgc) (bvt_W_linear (d := d) OS lgc),
+    WightmanInnerProduct_smul_left (d := d) (W := bvt_W OS lgc) (bvt_W_linear (d := d) OS lgc),
+    WightmanInnerProduct_smul_left (d := d) (W := bvt_W OS lgc) (bvt_W_linear (d := d) OS lgc),
+    WightmanInnerProduct_smul_right (d := d) (W := bvt_W OS lgc) (bvt_W_linear (d := d) OS lgc)]
+  simp only [V]
+  ring_nf
+
+private theorem bvt_W_vacuumSequence_self
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+    WightmanInnerProduct d (bvt_W OS lgc) V V = 1 := by
+  let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+  simp only [V, WightmanInnerProduct]
+  rw [show (Reconstruction.vacuumSequence (d := d)).bound + 1 = 2 from rfl]
+  simp only [Finset.sum_range_succ, Finset.sum_range_zero, zero_add]
+  have hv1 : (Reconstruction.vacuumSequence (d := d)).funcs 1 = 0 := rfl
+  simp only [hv1, SchwartzMap.conjTensorProduct_zero_left,
+    SchwartzMap.conjTensorProduct_zero_right, (bvt_W_linear (d := d) OS lgc _).map_zero, add_zero]
+  show bvt_W OS lgc 0
+      (((Reconstruction.vacuumSequence (d := d)).funcs 0).conjTensorProduct
+        ((Reconstruction.vacuumSequence (d := d)).funcs 0)) = 1
+  rw [bvt_normalized (d := d) OS lgc]
+  rw [SchwartzMap.conjTensorProduct_apply]
+  change (starRingEnd ℂ (1 : ℂ)) * 1 = (1 : ℂ)
+  simp
+
+private theorem bvt_W_real_vacuumSequence_retuning_range
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BorchersSequence d) (r : ℝ)
+    (hr :
+      (WightmanInnerProduct d (bvt_W OS lgc) F F).re -
+          ((WightmanInnerProduct d (bvt_W OS lgc) F (Reconstruction.vacuumSequence (d := d)) +
+              WightmanInnerProduct d (bvt_W OS lgc) (Reconstruction.vacuumSequence (d := d)) F).re) ^ 2 / 4
+        ≤ r) :
+    ∃ t : ℝ,
+      (WightmanInnerProduct d (bvt_W OS lgc)
+          (F + ((t : ℂ) • Reconstruction.vacuumSequence (d := d)))
+          (F + ((t : ℂ) • Reconstruction.vacuumSequence (d := d)))).re = r := by
+  let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+  let a : ℝ := (WightmanInnerProduct d (bvt_W OS lgc) F F).re
+  let b : ℝ :=
+    (WightmanInnerProduct d (bvt_W OS lgc) F V +
+      WightmanInnerProduct d (bvt_W OS lgc) V F).re
+  let lower : ℝ := a - b ^ 2 / 4
+  have hlower : lower ≤ r := by
+    simpa [V, a, b, lower] using hr
+  have hgap : 0 ≤ r - lower := sub_nonneg.mpr hlower
+  have hquad :
+      ∀ t : ℝ,
+        (WightmanInnerProduct d (bvt_W OS lgc)
+            (F + ((t : ℂ) • V))
+            (F + ((t : ℂ) • V))).re =
+          a + b * t + t ^ 2 := by
+    intro t
+    have h :=
+      bvt_W_selfPairing_re_add_vacuumSequence
+        (d := d) OS lgc F (t : ℂ)
+    have hVV : WightmanInnerProduct d (bvt_W OS lgc) V V = 1 := by
+      simpa [V] using bvt_W_vacuumSequence_self (d := d) OS lgc
+    calc
+      (WightmanInnerProduct d (bvt_W OS lgc)
+          (F + ((t : ℂ) • V))
+          (F + ((t : ℂ) • V))).re
+          =
+        a +
+          (WightmanInnerProduct d (bvt_W OS lgc) F V).re * t +
+          (WightmanInnerProduct d (bvt_W OS lgc) V F).re * t +
+          t * t := by
+            simpa [V, a, hVV, Complex.add_re, Complex.mul_re, Complex.ofReal_re,
+              Complex.ofReal_im, Complex.conj_ofReal, mul_comm, mul_left_comm, mul_assoc]
+              using h
+      _ = a + b * t + t ^ 2 := by
+            simp [b]
+            ring
+  refine ⟨Real.sqrt (r - lower) - b / 2, ?_⟩
+  rw [hquad]
+  have hsqrt : (Real.sqrt (r - lower)) ^ 2 = r - lower := by
+    rw [Real.sq_sqrt hgap]
+  calc
+    a + b * (Real.sqrt (r - lower) - b / 2) +
+        (Real.sqrt (r - lower) - b / 2) ^ 2
+        = lower + (Real.sqrt (r - lower)) ^ 2 := by
+            simp [lower]
+            ring
+    _ = lower + (r - lower) := by rw [hsqrt]
+    _ = r := by ring
+
+private theorem bvt_W_real_vacuumSequence_retuning_lowerBound_of_exists
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BorchersSequence d) (r : ℝ)
+    (hretune :
+      ∃ t : ℝ,
+        (WightmanInnerProduct d (bvt_W OS lgc)
+            (F + ((t : ℂ) • Reconstruction.vacuumSequence (d := d)))
+            (F + ((t : ℂ) • Reconstruction.vacuumSequence (d := d)))).re = r) :
+    (WightmanInnerProduct d (bvt_W OS lgc) F F).re -
+        ((WightmanInnerProduct d (bvt_W OS lgc) F
+              (Reconstruction.vacuumSequence (d := d)) +
+            WightmanInnerProduct d (bvt_W OS lgc)
+              (Reconstruction.vacuumSequence (d := d)) F).re) ^ 2 / 4 ≤
+      r := by
+  let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+  let a : ℝ := (WightmanInnerProduct d (bvt_W OS lgc) F F).re
+  let b : ℝ :=
+    (WightmanInnerProduct d (bvt_W OS lgc) F V +
+      WightmanInnerProduct d (bvt_W OS lgc) V F).re
+  let lower : ℝ := a - b ^ 2 / 4
+  have hquad :
+      ∀ t : ℝ,
+        (WightmanInnerProduct d (bvt_W OS lgc)
+            (F + ((t : ℂ) • V))
+            (F + ((t : ℂ) • V))).re =
+          a + b * t + t ^ 2 := by
+    intro t
+    have h :=
+      bvt_W_selfPairing_re_add_vacuumSequence
+        (d := d) OS lgc F (t : ℂ)
+    have hVV : WightmanInnerProduct d (bvt_W OS lgc) V V = 1 := by
+      simpa [V] using bvt_W_vacuumSequence_self (d := d) OS lgc
+    calc
+      (WightmanInnerProduct d (bvt_W OS lgc)
+          (F + ((t : ℂ) • V))
+          (F + ((t : ℂ) • V))).re
+          =
+        a +
+          (WightmanInnerProduct d (bvt_W OS lgc) F V).re * t +
+          (WightmanInnerProduct d (bvt_W OS lgc) V F).re * t +
+          t * t := by
+            simpa [V, a, hVV, Complex.add_re, Complex.mul_re, Complex.ofReal_re,
+              Complex.ofReal_im, Complex.conj_ofReal, mul_comm, mul_left_comm, mul_assoc]
+              using h
+      _ = a + b * t + t ^ 2 := by
+            simp [b]
+            ring
+  rcases hretune with ⟨t, ht⟩
+  have hsq : 0 ≤ (t + b / 2) ^ 2 := sq_nonneg (t + b / 2)
+  have hlower :
+      lower ≤ a + b * t + t ^ 2 := by
+    calc
+      lower ≤ lower + (t + b / 2) ^ 2 := by nlinarith
+      _ = a + b * t + t ^ 2 := by
+            simp [lower]
+            ring
+  calc
+    (WightmanInnerProduct d (bvt_W OS lgc) F F).re -
+        ((WightmanInnerProduct d (bvt_W OS lgc) F
+              (Reconstruction.vacuumSequence (d := d)) +
+            WightmanInnerProduct d (bvt_W OS lgc)
+              (Reconstruction.vacuumSequence (d := d)) F).re) ^ 2 / 4
+        = lower := by simp [V, a, b, lower]
+    _ ≤ a + b * t + t ^ 2 := hlower
+    _ = r := by simpa [V] using (hquad t).symm.trans ht
+
+/-- Exact real-vacuum retuning attainment criterion on the ambient side.
+
+This is honest reusable replacement-seam content: it characterizes precisely
+which real values can be attained by retuning `F` with a real multiple of the
+vacuum sequence, without claiming any boundary-vanishing surrogate theorem. -/
+private theorem bvt_W_real_vacuumSequence_retuning_exists_iff
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BorchersSequence d) (r : ℝ) :
+    (∃ t : ℝ,
+      (WightmanInnerProduct d (bvt_W OS lgc)
+          (F + ((t : ℂ) • Reconstruction.vacuumSequence (d := d)))
+          (F + ((t : ℂ) • Reconstruction.vacuumSequence (d := d)))).re = r) ↔
+      (WightmanInnerProduct d (bvt_W OS lgc) F F).re -
+          ((WightmanInnerProduct d (bvt_W OS lgc) F
+                (Reconstruction.vacuumSequence (d := d)) +
+              WightmanInnerProduct d (bvt_W OS lgc)
+                (Reconstruction.vacuumSequence (d := d)) F).re) ^ 2 / 4 ≤
+        r := by
+  constructor
+  · intro hretune
+    exact bvt_W_real_vacuumSequence_retuning_lowerBound_of_exists
+      (d := d) OS lgc F r hretune
+  · intro hr
+    exact bvt_W_real_vacuumSequence_retuning_range
+      (d := d) OS lgc F r hr
+
+private theorem bvt_W_killedTarget_removedComponent_retuningOptimalGap_eq_selfPairingGap_of_le_bound
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BorchersSequence d) {n : ℕ} (hn_pos : 0 < n)
+    (hprev : ∀ k, 0 < k → k < n →
+      ((F.funcs k : SchwartzNPoint d k) : NPointDomain d k → ℂ) 0 = 0)
+    (hn_bound : n ≤ F.bound) :
+    let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+    let S : BorchersSequence d := BorchersSequence.single n (F.funcs n)
+    let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+    let q : ℝ :=
+      (WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+        WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re
+    (WightmanInnerProduct d (bvt_W OS lgc) F F).re -
+        (WightmanInnerProduct d (bvt_W OS lgc)
+          (Fkill - (((q / 2 : ℝ) : ℂ) • V))
+          (Fkill - (((q / 2 : ℝ) : ℂ) • V))).re
+      =
+      (WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+          WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+          WightmanInnerProduct d (bvt_W OS lgc) S S).re +
+        q ^ 2 / 4 := by
+  let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+  let S : BorchersSequence d := BorchersSequence.single n (F.funcs n)
+  let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+  let q : ℝ :=
+    (WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+      WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re
+  have h_expand :
+      (WightmanInnerProduct d (bvt_W OS lgc) F F).re =
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+            WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) S S).re := by
+    have hF_funcs : ∀ k, F.funcs k = (Fkill + S).funcs k := by
+      intro k
+      simp [Fkill, S, sub_eq_add_neg, add_assoc]
+    have hW :
+        WightmanInnerProduct d (bvt_W OS lgc) F F =
+          WightmanInnerProduct d (bvt_W OS lgc) (Fkill + S) (Fkill + S) := by
+      exact
+        (WightmanInnerProduct_congr_left (d := d) (W := bvt_W OS lgc)
+          (hlin := bvt_W_linear (d := d) OS lgc) F (Fkill + S) F hF_funcs).trans
+        (WightmanInnerProduct_congr_right (d := d) (W := bvt_W OS lgc)
+          (hlin := bvt_W_linear (d := d) OS lgc) (Fkill + S) F (Fkill + S) hF_funcs)
+    rw [congrArg Complex.re hW]
+    rw [WightmanInnerProduct_add_left (d := d) (W := bvt_W OS lgc)
+        (bvt_W_linear (d := d) OS lgc),
+      WightmanInnerProduct_add_right (d := d) (W := bvt_W OS lgc)
+        (bvt_W_linear (d := d) OS lgc),
+      WightmanInnerProduct_add_right (d := d) (W := bvt_W OS lgc)
+        (bvt_W_linear (d := d) OS lgc)]
+    ring_nf
+  have hretuned :
+      (WightmanInnerProduct d (bvt_W OS lgc)
+          (Fkill - (((q / 2 : ℝ) : ℂ) • V))
+          (Fkill - (((q / 2 : ℝ) : ℂ) • V))).re =
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re - q ^ 2 / 4 := by
+    let r : ℝ := q * 2⁻¹
+    have hpair :=
+      bvt_W_selfPairing_re_add_vacuumSequence
+        (d := d) OS lgc Fkill (-((r : ℝ) : ℂ))
+    have hVV : WightmanInnerProduct d (bvt_W OS lgc) V V = 1 := by
+      simpa [V] using bvt_W_vacuumSequence_self (d := d) OS lgc
+    calc
+      (WightmanInnerProduct d (bvt_W OS lgc)
+          (Fkill - (((q / 2 : ℝ) : ℂ) • V))
+          (Fkill - (((q / 2 : ℝ) : ℂ) • V))).re
+          =
+        (WightmanInnerProduct d (bvt_W OS lgc)
+          (Fkill + (-((r : ℝ) : ℂ)) • V)
+          (Fkill + (-((r : ℝ) : ℂ)) • V)).re := by
+            have hcoef : (((q / 2 : ℝ) : ℂ) • V) = (((r : ℝ) : ℂ) • V) := by
+              simp [r]
+              ring
+            let A : BorchersSequence d := Fkill - (((q / 2 : ℝ) : ℂ) • V)
+            let B : BorchersSequence d := Fkill + (-((r : ℝ) : ℂ)) • V
+            have hAB_funcs : ∀ k, A.funcs k = B.funcs k := by
+              intro k
+              dsimp [A, B]
+              change Fkill.funcs k + -((((q / 2 : ℝ) : ℂ) • V.funcs k)) =
+                Fkill.funcs k + (-((r : ℝ) : ℂ)) • V.funcs k
+              have hcoef_funcs :
+                  (((q / 2 : ℝ) : ℂ) • V.funcs k) = (((r : ℝ) : ℂ) • V.funcs k) := by
+                simpa using congrArg (fun X : BorchersSequence d => X.funcs k) hcoef
+              have hneg_funcs :
+                  -((((q / 2 : ℝ) : ℂ) • V.funcs k)) = (-((r : ℝ) : ℂ)) • V.funcs k := by
+                simpa [neg_smul] using congrArg Neg.neg hcoef_funcs
+              exact congrArg (fun z => Fkill.funcs k + z) hneg_funcs
+            have hAB :
+                WightmanInnerProduct d (bvt_W OS lgc) A A =
+                  WightmanInnerProduct d (bvt_W OS lgc) B B := by
+              exact
+                (WightmanInnerProduct_congr_left (d := d) (W := bvt_W OS lgc)
+                  (hlin := bvt_W_linear (d := d) OS lgc) A B A hAB_funcs).trans
+                (WightmanInnerProduct_congr_right (d := d) (W := bvt_W OS lgc)
+                  (hlin := bvt_W_linear (d := d) OS lgc) B A B hAB_funcs)
+            exact congrArg Complex.re hAB
+      _ =
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill
+          + (-((r : ℝ) : ℂ)) *
+              WightmanInnerProduct d (bvt_W OS lgc) Fkill V
+          + starRingEnd ℂ (-((r : ℝ) : ℂ)) *
+              WightmanInnerProduct d (bvt_W OS lgc) V Fkill
+          + starRingEnd ℂ (-((r : ℝ) : ℂ)) * (-((r : ℝ) : ℂ)) *
+              WightmanInnerProduct d (bvt_W OS lgc) V V).re := by
+            simpa [V] using hpair
+      _ =
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re -
+          ((WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+              WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re) * r +
+          r ^ 2 := by
+            simp [r, hVV, Complex.add_re, Complex.mul_re,
+              Complex.ofReal_re, Complex.ofReal_im, Complex.conj_ofReal]
+            ring
+      _ = (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re - q ^ 2 / 4 := by
+            simp [r, q]
+            ring
+  have hsplit :
+      (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill +
+          WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+          WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+          WightmanInnerProduct d (bvt_W OS lgc) S S).re =
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re +
+          (WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+              WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+              WightmanInnerProduct d (bvt_W OS lgc) S S).re := by
+    simp [Complex.add_re, add_assoc]
+  calc
+    (WightmanInnerProduct d (bvt_W OS lgc) F F).re -
+        (WightmanInnerProduct d (bvt_W OS lgc)
+          (Fkill - (((q / 2 : ℝ) : ℂ) • V))
+          (Fkill - (((q / 2 : ℝ) : ℂ) • V))).re
+        =
+      ((WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+            WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) S S).re) -
+          ((WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re - q ^ 2 / 4) := by
+            rw [h_expand, hretuned]
+    _ =
+      ((WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re +
+          (WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+              WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+              WightmanInnerProduct d (bvt_W OS lgc) S S).re) -
+        ((WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re - q ^ 2 / 4) := by
+          rw [hsplit]
+    _ =
+      (WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+          WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+          WightmanInnerProduct d (bvt_W OS lgc) S S).re +
+        q ^ 2 / 4 := by
+          ring
+
+private theorem bvt_W_killedTarget_removedComponent_retuningOptimalGap_nonneg_of_le_bound
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BorchersSequence d) {n : ℕ} (hn_pos : 0 < n)
+    (hprev : ∀ k, 0 < k → k < n →
+      ((F.funcs k : SchwartzNPoint d k) : NPointDomain d k → ℂ) 0 = 0)
+    (hn_bound : n ≤ F.bound) :
+    let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+    let S : BorchersSequence d := BorchersSequence.single n (F.funcs n)
+    let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+    let q : ℝ :=
+      (WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+        WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re
+    0 ≤
+      (WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+          WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+          WightmanInnerProduct d (bvt_W OS lgc) S S).re +
+        q ^ 2 / 4 := by
+  /- Route-fidelity note:
+  this theorem is part of the older intrinsic boundary-vanishing correction
+  chain inside `OSToWightmanBoundaryValues.lean`. The theorem-3 blueprint no
+  longer treats this as the live Package-I seam. The endorsed frontier is the
+  prior ambient supplier that must first produce:
+  1. a boundary-vanishing surrogate `F₀`,
+  2. quadratic-form equality `Re ⟪F, F⟫ = Re ⟪F₀, F₀⟫`,
+  3. the exact zero-right / positive-degree transformed-image kernel inputs
+     consumed upstream in `OSToWightmanPositivityOnImage.lean`.
+
+  So this local nonnegativity statement is retained only as legacy internal
+  graph structure; it should not be mistaken for the endorsed missing theorem-3
+  supplier surface. No honest local proof is currently available from the
+  already-imported retuning algebra alone. -/
+  let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+  let S : BorchersSequence d := BorchersSequence.single n (F.funcs n)
+  let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+  let q : ℝ :=
+    (WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+      WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re
+  have hgap :
+      (WightmanInnerProduct d (bvt_W OS lgc) F F).re -
+          (WightmanInnerProduct d (bvt_W OS lgc)
+            (Fkill - (((q / 2 : ℝ) : ℂ) • V))
+            (Fkill - (((q / 2 : ℝ) : ℂ) • V))).re
+        =
+      (WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+          WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+          WightmanInnerProduct d (bvt_W OS lgc) S S).re +
+        q ^ 2 / 4 := by
+    simpa [Fkill, S, V, q] using
+      bvt_W_killedTarget_removedComponent_retuningOptimalGap_eq_selfPairingGap_of_le_bound
+        (d := d) OS lgc F (n := n) hn_pos hprev hn_bound
+  -- Exact next blocker: prove the self-pairing comparison
+  -- `Re ⟪Fkill - (q/2)V, Fkill - (q/2)V⟫ ≤ Re ⟪F, F⟫`,
+  -- then transport it across `hgap`.
+  sorry
+
+/-!
+Legacy intrinsic surrogate chain.
+
+The theorem-3 blueprint and the on-image Stage-5 file now agree that the live
+missing supplier is upstream of this block: one must first identify the target
+quadratic form with a bounded boundary-vanishing surrogate and then feed that
+surrogate into the transformed-image closure package. The theorems below are
+therefore retained only as private legacy local graph structure; they are not
+the endorsed theorem-3 supplier interface.
+
+Exact source-backed status of this local block:
+- genuinely reusable proved ambient-side content survives only up to the
+  vacuum-retuning algebra and pairing-preservation identities above, namely
+  `bvt_W_real_vacuumSequence_retuning_range`,
+  `bvt_W_real_vacuumSequence_retuning_lowerBound_of_exists`, and
+  `bvt_W_real_vacuumSequence_retuning_exists_iff`, together with
+  `bvt_W_killedTarget_removedComponent_retuningOptimalGap_eq_selfPairingGap_of_le_bound`;
+- the first theorem that tries to turn that algebra into the intrinsic
+  boundary-vanishing correction route is still
+  `bvt_W_killedTarget_removedComponent_retuningOptimalGap_nonneg_of_le_bound`,
+  which remains a live `sorry`;
+- every later intrinsic surrogate constructor in this file depends downstream
+  on that unresolved nonnegativity step, so none of them can be treated as a
+  currently available ambient supplier for
+  `bvt_wightmanInner_self_nonneg_of_eq_boundaryVanishingTarget`.
+
+Relevant endorsed seam:
+- `OSToWightmanPositivityOnImage.lean`
+- `bvt_wightmanInner_self_nonneg_of_eq_boundaryVanishingTarget`
+-/
+
+private theorem bvt_W_killedTarget_optimalRetuning_selfPairing_le_of_le_bound
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BorchersSequence d) {n : ℕ} (hn_pos : 0 < n)
+    (hprev : ∀ k, 0 < k → k < n →
+      ((F.funcs k : SchwartzNPoint d k) : NPointDomain d k → ℂ) 0 = 0)
+    (hn_bound : n ≤ F.bound) :
+    let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+    let S : BorchersSequence d := BorchersSequence.single n (F.funcs n)
+    let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+    let q : ℝ :=
+      (WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+        WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re
+    (WightmanInnerProduct d (bvt_W OS lgc)
+        (Fkill - (((q / 2 : ℝ) : ℂ) • V))
+        (Fkill - (((q / 2 : ℝ) : ℂ) • V))).re ≤
+      (WightmanInnerProduct d (bvt_W OS lgc) F F).re := by
+  let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+  let S : BorchersSequence d := BorchersSequence.single n (F.funcs n)
+  let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+  let q : ℝ :=
+    (WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+      WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re
+  have hquad :
+      0 ≤
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+            WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) S S).re +
+          q ^ 2 / 4 := by
+    simpa [Fkill, S, V, q] using
+      bvt_W_killedTarget_removedComponent_retuningOptimalGap_nonneg_of_le_bound
+        (d := d) OS lgc F (n := n) hn_pos hprev hn_bound
+  have h_expand :
+      (WightmanInnerProduct d (bvt_W OS lgc) F F).re =
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+            WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) S S).re := by
+    have hF_funcs : ∀ k, F.funcs k = (Fkill + S).funcs k := by
+      intro k
+      simp [Fkill, S, sub_eq_add_neg, add_assoc]
+    have hW :
+        WightmanInnerProduct d (bvt_W OS lgc) F F =
+          WightmanInnerProduct d (bvt_W OS lgc) (Fkill + S) (Fkill + S) := by
+      exact
+        (WightmanInnerProduct_congr_left (d := d) (W := bvt_W OS lgc)
+          (hlin := bvt_W_linear (d := d) OS lgc) F (Fkill + S) F hF_funcs).trans
+        (WightmanInnerProduct_congr_right (d := d) (W := bvt_W OS lgc)
+          (hlin := bvt_W_linear (d := d) OS lgc) (Fkill + S) F (Fkill + S) hF_funcs)
+    rw [congrArg Complex.re hW]
+    rw [WightmanInnerProduct_add_left (d := d) (W := bvt_W OS lgc)
+        (bvt_W_linear (d := d) OS lgc),
+      WightmanInnerProduct_add_right (d := d) (W := bvt_W OS lgc)
+        (bvt_W_linear (d := d) OS lgc),
+      WightmanInnerProduct_add_right (d := d) (W := bvt_W OS lgc)
+        (bvt_W_linear (d := d) OS lgc)]
+    ring_nf
+  have hretuned :
+      (WightmanInnerProduct d (bvt_W OS lgc)
+          (Fkill - (((q / 2 : ℝ) : ℂ) • V))
+          (Fkill - (((q / 2 : ℝ) : ℂ) • V))).re =
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re - q ^ 2 / 4 := by
+    let r : ℝ := q * 2⁻¹
+    have hpair :=
+      bvt_W_selfPairing_re_add_vacuumSequence
+        (d := d) OS lgc Fkill (-((r : ℝ) : ℂ))
+    have hVV : WightmanInnerProduct d (bvt_W OS lgc) V V = 1 := by
+      simpa [V] using bvt_W_vacuumSequence_self (d := d) OS lgc
+    calc
+      (WightmanInnerProduct d (bvt_W OS lgc)
+          (Fkill - (((q / 2 : ℝ) : ℂ) • V))
+          (Fkill - (((q / 2 : ℝ) : ℂ) • V))).re
+          =
+        (WightmanInnerProduct d (bvt_W OS lgc)
+          (Fkill + (-((r : ℝ) : ℂ)) • V)
+          (Fkill + (-((r : ℝ) : ℂ)) • V)).re := by
+            have hcoef : (((q / 2 : ℝ) : ℂ) • V) = (((r : ℝ) : ℂ) • V) := by
+              simp [r]
+              ring
+            have hcoef' : (((q / 2 : ℝ) : ℂ)) = (((r : ℝ) : ℂ)) := by
+              simp [r]
+              ring
+            let A : BorchersSequence d := Fkill - (((q / 2 : ℝ) : ℂ) • V)
+            let B : BorchersSequence d := Fkill + (-((r : ℝ) : ℂ)) • V
+            have hAB_funcs : ∀ k, A.funcs k = B.funcs k := by
+              intro k
+              dsimp [A, B]
+              change Fkill.funcs k + -((((q / 2 : ℝ) : ℂ) • V.funcs k)) =
+                Fkill.funcs k + (-((r : ℝ) : ℂ)) • V.funcs k
+              have hcoef_funcs :
+                  (((q / 2 : ℝ) : ℂ) • V.funcs k) = (((r : ℝ) : ℂ) • V.funcs k) := by
+                simpa using congrArg (fun X : BorchersSequence d => X.funcs k) hcoef
+              have hneg_funcs :
+                  -((((q / 2 : ℝ) : ℂ) • V.funcs k)) = (-((r : ℝ) : ℂ)) • V.funcs k := by
+                simpa [neg_smul] using congrArg Neg.neg hcoef_funcs
+              exact congrArg (fun z => Fkill.funcs k + z) hneg_funcs
+            have hAB :
+                WightmanInnerProduct d (bvt_W OS lgc) A A =
+                  WightmanInnerProduct d (bvt_W OS lgc) B B := by
+              exact
+                (WightmanInnerProduct_congr_left (d := d) (W := bvt_W OS lgc)
+                  (hlin := bvt_W_linear (d := d) OS lgc) A B A hAB_funcs).trans
+                (WightmanInnerProduct_congr_right (d := d) (W := bvt_W OS lgc)
+                  (hlin := bvt_W_linear (d := d) OS lgc) B A B hAB_funcs)
+            exact congrArg Complex.re hAB
+      _ =
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill
+          + (-((r : ℝ) : ℂ)) *
+              WightmanInnerProduct d (bvt_W OS lgc) Fkill V
+          + starRingEnd ℂ (-((r : ℝ) : ℂ)) *
+              WightmanInnerProduct d (bvt_W OS lgc) V Fkill
+          + starRingEnd ℂ (-((r : ℝ) : ℂ)) * (-((r : ℝ) : ℂ)) *
+              WightmanInnerProduct d (bvt_W OS lgc) V V).re := by
+            simpa [V] using hpair
+      _ =
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re -
+          ((WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+              WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re) * r +
+          r ^ 2 := by
+            simp [r, hVV, Complex.add_re, Complex.mul_re,
+              Complex.ofReal_re, Complex.ofReal_im, Complex.conj_ofReal]
+            ring
+      _ = (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re - q ^ 2 / 4 := by
+            simp [r, q]
+            ring
+  have hsplit :
+      (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill +
+          WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+          WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+          WightmanInnerProduct d (bvt_W OS lgc) S S).re =
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re +
+          (WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+              WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+              WightmanInnerProduct d (bvt_W OS lgc) S S).re := by
+    simp [Complex.add_re, add_assoc]
+  have hgoal :
+      (WightmanInnerProduct d (bvt_W OS lgc)
+          (Fkill - (((q / 2 : ℝ) : ℂ) • V))
+          (Fkill - (((q / 2 : ℝ) : ℂ) • V))).re ≤
+        (WightmanInnerProduct d (bvt_W OS lgc) F F).re := by
+    rw [h_expand, hsplit, hretuned]
+    linarith
+  simpa [Fkill, S, V, q] using hgoal
+
+private theorem bvt_W_killedTarget_removedComponent_retuningQuadratic_nonneg_of_le_bound
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BorchersSequence d) {n : ℕ} (hn_pos : 0 < n)
+    (hprev : ∀ k, 0 < k → k < n →
+      ((F.funcs k : SchwartzNPoint d k) : NPointDomain d k → ℂ) 0 = 0)
+    (hn_bound : n ≤ F.bound) :
+    let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+    let S : BorchersSequence d := BorchersSequence.single n (F.funcs n)
+    let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+    0 ≤
+      (WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+          WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+          WightmanInnerProduct d (bvt_W OS lgc) S S).re +
+        ((WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+              WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re) ^ 2 / 4 := by
+  simpa using
+    bvt_W_killedTarget_removedComponent_retuningOptimalGap_nonneg_of_le_bound
+      (d := d) OS lgc F (n := n) hn_pos hprev hn_bound
+
+private theorem bvt_W_killedTarget_selfPairing_real_vacuumRetuning_lowerBound_of_le_bound
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BorchersSequence d) {n : ℕ} (hn_pos : 0 < n)
+    (hprev : ∀ k, 0 < k → k < n →
+      ((F.funcs k : SchwartzNPoint d k) : NPointDomain d k → ℂ) 0 = 0)
+    (hn_bound : n ≤ F.bound) :
+    let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+    (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re -
+        ((WightmanInnerProduct d (bvt_W OS lgc) Fkill
+              (Reconstruction.vacuumSequence (d := d)) +
+            WightmanInnerProduct d (bvt_W OS lgc)
+              (Reconstruction.vacuumSequence (d := d)) Fkill).re) ^ 2 / 4 ≤
+      (WightmanInnerProduct d (bvt_W OS lgc) F F).re := by
+  let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+  let S : BorchersSequence d := BorchersSequence.single n (F.funcs n)
+  let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+  have hquad :
+      0 ≤
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+            WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) S S).re +
+          ((WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+                WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re) ^ 2 / 4 := by
+    simpa [Fkill, S, V] using
+      bvt_W_killedTarget_removedComponent_retuningQuadratic_nonneg_of_le_bound
+        (d := d) OS lgc F (n := n) hn_pos hprev hn_bound
+  have h_expand :
+      (WightmanInnerProduct d (bvt_W OS lgc) F F).re =
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+            WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) S S).re := by
+    have hF_funcs : ∀ k, F.funcs k = (Fkill + S).funcs k := by
+      intro k
+      simp [Fkill, S, sub_eq_add_neg, add_assoc]
+    have hW :
+        WightmanInnerProduct d (bvt_W OS lgc) F F =
+          WightmanInnerProduct d (bvt_W OS lgc) (Fkill + S) (Fkill + S) := by
+      exact
+        (WightmanInnerProduct_congr_left (d := d) (W := bvt_W OS lgc)
+          (hlin := bvt_W_linear (d := d) OS lgc) F (Fkill + S) F hF_funcs).trans
+        (WightmanInnerProduct_congr_right (d := d) (W := bvt_W OS lgc)
+          (hlin := bvt_W_linear (d := d) OS lgc) (Fkill + S) F (Fkill + S) hF_funcs)
+    rw [congrArg Complex.re hW]
+    rw [WightmanInnerProduct_add_left (d := d) (W := bvt_W OS lgc)
+        (bvt_W_linear (d := d) OS lgc),
+      WightmanInnerProduct_add_right (d := d) (W := bvt_W OS lgc)
+        (bvt_W_linear (d := d) OS lgc),
+      WightmanInnerProduct_add_right (d := d) (W := bvt_W OS lgc)
+        (bvt_W_linear (d := d) OS lgc)]
+    ring_nf
+  have hgoal :
+      (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re -
+          ((WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+                WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re) ^ 2 / 4 ≤
+        (WightmanInnerProduct d (bvt_W OS lgc) F F).re := by
+    have hsplit :
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+            WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) S S).re =
+          (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re +
+            (WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+                WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+                WightmanInnerProduct d (bvt_W OS lgc) S S).re := by
+      simp [Complex.add_re, add_assoc]
+    rw [h_expand]
+    rw [hsplit]
+    linarith [hquad]
+  simpa [Fkill, V] using hgoal
+
+private theorem bvt_W_killedTarget_selfPairing_real_vacuumRetuning_exists_of_le_bound
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BorchersSequence d) {n : ℕ} (hn_pos : 0 < n)
+    (hprev : ∀ k, 0 < k → k < n →
+      ((F.funcs k : SchwartzNPoint d k) : NPointDomain d k → ℂ) 0 = 0)
+    (hn_bound : n ≤ F.bound) :
+    let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+    let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+    ∃ t : ℝ,
+      (WightmanInnerProduct d (bvt_W OS lgc)
+          (Fkill + ((t : ℂ) • V))
+          (Fkill + ((t : ℂ) • V))).re =
+        (WightmanInnerProduct d (bvt_W OS lgc) F F).re := by
+  /- Exact live theorem-3 retuning attainment seam on the bounded ambient side.
+
+  This is the narrow mathematical content still needed to discharge
+  `h_intrinsicRetuning`: after removing the live degree-`n` component, a real
+  vacuum retuning of `Fkill` should recover the original reconstructed
+  self-pairing real part. The surrounding decomposition and lower-bound bridge
+  are already in place and should stay downstream of this statement. -/
+  let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+  have hinf :
+      (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re -
+          ((WightmanInnerProduct d (bvt_W OS lgc) Fkill
+                (Reconstruction.vacuumSequence (d := d)) +
+              WightmanInnerProduct d (bvt_W OS lgc)
+                (Reconstruction.vacuumSequence (d := d)) Fkill).re) ^ 2 / 4 ≤
+        (WightmanInnerProduct d (bvt_W OS lgc) F F).re := by
+    simpa [Fkill] using
+      bvt_W_killedTarget_selfPairing_real_vacuumRetuning_lowerBound_of_le_bound
+        (d := d) OS lgc F (n := n) hn_pos hprev hn_bound
+  simpa [Fkill] using
+    bvt_W_real_vacuumSequence_retuning_range
+      (d := d) OS lgc Fkill
+      ((WightmanInnerProduct d (bvt_W OS lgc) F F).re) hinf
+
+private theorem bvt_W_killedTarget_removedComponent_retuningLowerBound_of_le_bound
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BorchersSequence d) {n : ℕ} (hn_pos : 0 < n)
+    (hprev : ∀ k, 0 < k → k < n →
+      ((F.funcs k : SchwartzNPoint d k) : NPointDomain d k → ℂ) 0 = 0)
+    (hn_bound : n ≤ F.bound) :
+    let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+    let S : BorchersSequence d := BorchersSequence.single n (F.funcs n)
+    let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+    0 ≤
+      (WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+          WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+          WightmanInnerProduct d (bvt_W OS lgc) S S).re +
+        ((WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+              WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re) ^ 2 / 4 := by
+  simpa using
+    bvt_W_killedTarget_removedComponent_retuningQuadratic_nonneg_of_le_bound
+      (d := d) OS lgc F (n := n) hn_pos hprev hn_bound
+
+private theorem bvt_W_killedTarget_selfPairing_ge_vacuumRetuningInfimum_of_le_bound
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BorchersSequence d) {n : ℕ} (hn_pos : 0 < n)
+    (hprev : ∀ k, 0 < k → k < n →
+      ((F.funcs k : SchwartzNPoint d k) : NPointDomain d k → ℂ) 0 = 0)
+    (hn_bound : n ≤ F.bound) :
+    let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+    let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+    (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re -
+        ((WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+              WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re) ^ 2 / 4 ≤
+      (WightmanInnerProduct d (bvt_W OS lgc) F F).re := by
+  let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+  let S : BorchersSequence d := BorchersSequence.single n (F.funcs n)
+  let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+  have hquad :
+      0 ≤
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+            WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) S S).re +
+          ((WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+                WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re) ^ 2 / 4 := by
+    simpa [Fkill, S, V] using
+      bvt_W_killedTarget_removedComponent_retuningLowerBound_of_le_bound
+        (d := d) OS lgc F (n := n) hn_pos hprev hn_bound
+  have h_expand :
+      (WightmanInnerProduct d (bvt_W OS lgc) F F).re =
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+            WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) S S).re := by
+    have hF_funcs : ∀ k, F.funcs k = (Fkill + S).funcs k := by
+      intro k
+      simp [Fkill, S, sub_eq_add_neg, add_assoc]
+    have hW :
+        WightmanInnerProduct d (bvt_W OS lgc) F F =
+          WightmanInnerProduct d (bvt_W OS lgc) (Fkill + S) (Fkill + S) := by
+      exact
+        (WightmanInnerProduct_congr_left (d := d) (W := bvt_W OS lgc)
+          (hlin := bvt_W_linear (d := d) OS lgc) F (Fkill + S) F hF_funcs).trans
+        (WightmanInnerProduct_congr_right (d := d) (W := bvt_W OS lgc)
+          (hlin := bvt_W_linear (d := d) OS lgc) (Fkill + S) F (Fkill + S) hF_funcs)
+    rw [congrArg Complex.re hW]
+    rw [WightmanInnerProduct_add_left (d := d) (W := bvt_W OS lgc)
+        (bvt_W_linear (d := d) OS lgc),
+      WightmanInnerProduct_add_right (d := d) (W := bvt_W OS lgc)
+        (bvt_W_linear (d := d) OS lgc),
+      WightmanInnerProduct_add_right (d := d) (W := bvt_W OS lgc)
+        (bvt_W_linear (d := d) OS lgc)]
+    ring_nf
+  have hgoal :
+      (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re -
+          ((WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+                WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re) ^ 2 / 4 ≤
+        (WightmanInnerProduct d (bvt_W OS lgc) F F).re := by
+    have hsplit :
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+            WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) S S).re =
+          (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re +
+            (WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+                WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+                WightmanInnerProduct d (bvt_W OS lgc) S S).re := by
+      simp [Complex.add_re, add_assoc]
+    rw [h_expand]
+    rw [hsplit]
+    linarith [hquad]
+  simpa [Fkill, V] using hgoal
+
+private theorem bvt_W_killedTarget_removedComponent_retuningLowerBound
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BorchersSequence d) {n : ℕ} (hn_pos : 0 < n)
+    (hprev : ∀ k, 0 < k → k < n →
+      ((F.funcs k : SchwartzNPoint d k) : NPointDomain d k → ℂ) 0 = 0) :
+    let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+    let S : BorchersSequence d := BorchersSequence.single n (F.funcs n)
+    let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+    0 ≤
+      (WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+          WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+          WightmanInnerProduct d (bvt_W OS lgc) S S).re +
+        ((WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+              WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re) ^ 2 / 4 := by
+  by_cases hn_bound : n ≤ F.bound
+  · simpa using
+      bvt_W_killedTarget_removedComponent_retuningLowerBound_of_le_bound
+        (d := d) OS lgc F (n := n) hn_pos hprev hn_bound
+  · let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+    let S : BorchersSequence d := BorchersSequence.single n (F.funcs n)
+    let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+    have hgt : F.bound < n := Nat.lt_of_not_ge hn_bound
+    have hFn_zero : (F.funcs n : SchwartzNPoint d n) = 0 := F.bound_spec n hgt
+    have hS_funcs : ∀ k, S.funcs k = 0 := by
+      intro k
+      by_cases hkn : k = n
+      · subst hkn
+        simp [S, hFn_zero]
+      · simp [S, BorchersSequence.single_funcs_ne hkn (F.funcs n)]
+    have hW_Fkill_S :
+        WightmanInnerProduct d (bvt_W OS lgc) Fkill S = 0 := by
+      rw [WightmanInnerProduct_congr_right (d := d) (W := bvt_W OS lgc)
+          (hlin := bvt_W_linear (d := d) OS lgc) Fkill S 0 hS_funcs]
+      exact WightmanInnerProduct_zero_right (d := d) (W := bvt_W OS lgc)
+        (bvt_W_linear (d := d) OS lgc) Fkill
+    have hW_S_Fkill :
+        WightmanInnerProduct d (bvt_W OS lgc) S Fkill = 0 := by
+      rw [WightmanInnerProduct_congr_left (d := d) (W := bvt_W OS lgc)
+          (hlin := bvt_W_linear (d := d) OS lgc) S 0 Fkill hS_funcs]
+      exact WightmanInnerProduct_zero_left (d := d) (W := bvt_W OS lgc)
+        (bvt_W_linear (d := d) OS lgc) Fkill
+    have hW_S_S :
+        WightmanInnerProduct d (bvt_W OS lgc) S S = 0 := by
+      rw [WightmanInnerProduct_congr_right (d := d) (W := bvt_W OS lgc)
+          (hlin := bvt_W_linear (d := d) OS lgc) S S 0 hS_funcs]
+      exact WightmanInnerProduct_zero_right (d := d) (W := bvt_W OS lgc)
+        (bvt_W_linear (d := d) OS lgc) S
+    have hsq :
+        0 ≤
+          ((WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+                WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re) ^ 2 / 4 := by
+      nlinarith [sq_nonneg
+        ((WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+            WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re)]
+    have htarget :
+        0 ≤
+          (WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+              WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+              WightmanInnerProduct d (bvt_W OS lgc) S S).re +
+            ((WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+                  WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re) ^ 2 / 4 := by
+      rw [hW_Fkill_S, hW_S_Fkill, hW_S_S]
+      simp
+      exact hsq
+    simpa [Fkill, S, V] using htarget
+
+private theorem bvt_W_killedTarget_selfPairing_ge_vacuumRetuningInfimum
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BorchersSequence d) {n : ℕ} (hn_pos : 0 < n)
+    (hprev : ∀ k, 0 < k → k < n →
+      ((F.funcs k : SchwartzNPoint d k) : NPointDomain d k → ℂ) 0 = 0) :
+    let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+    (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re -
+        ((WightmanInnerProduct d (bvt_W OS lgc) Fkill
+              (Reconstruction.vacuumSequence (d := d)) +
+            WightmanInnerProduct d (bvt_W OS lgc)
+              (Reconstruction.vacuumSequence (d := d)) Fkill).re) ^ 2 / 4 ≤
+      (WightmanInnerProduct d (bvt_W OS lgc) F F).re := by
+  let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+  let S : BorchersSequence d := BorchersSequence.single n (F.funcs n)
+  let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+  have hquad :
+      0 ≤
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+            WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) S S).re +
+          ((WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+                WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re) ^ 2 / 4 := by
+    simpa [Fkill, S, V] using
+      bvt_W_killedTarget_removedComponent_retuningLowerBound
+        (d := d) OS lgc F (n := n) hn_pos hprev
+  have h_expand :
+      (WightmanInnerProduct d (bvt_W OS lgc) F F).re =
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+            WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) S S).re := by
+    have hF_funcs : ∀ k, F.funcs k = (Fkill + S).funcs k := by
+      intro k
+      simp [Fkill, S, sub_eq_add_neg, add_assoc]
+    have hW :
+        WightmanInnerProduct d (bvt_W OS lgc) F F =
+          WightmanInnerProduct d (bvt_W OS lgc) (Fkill + S) (Fkill + S) := by
+      exact
+        (WightmanInnerProduct_congr_left (d := d) (W := bvt_W OS lgc)
+          (hlin := bvt_W_linear (d := d) OS lgc) F (Fkill + S) F hF_funcs).trans
+        (WightmanInnerProduct_congr_right (d := d) (W := bvt_W OS lgc)
+          (hlin := bvt_W_linear (d := d) OS lgc) (Fkill + S) F (Fkill + S) hF_funcs)
+    rw [congrArg Complex.re hW]
+    rw [WightmanInnerProduct_add_left (d := d) (W := bvt_W OS lgc)
+        (bvt_W_linear (d := d) OS lgc),
+      WightmanInnerProduct_add_right (d := d) (W := bvt_W OS lgc)
+        (bvt_W_linear (d := d) OS lgc),
+      WightmanInnerProduct_add_right (d := d) (W := bvt_W OS lgc)
+        (bvt_W_linear (d := d) OS lgc)]
+    ring_nf
+  have hgoal :
+      (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re -
+          ((WightmanInnerProduct d (bvt_W OS lgc) Fkill V +
+                WightmanInnerProduct d (bvt_W OS lgc) V Fkill).re) ^ 2 / 4 ≤
+        (WightmanInnerProduct d (bvt_W OS lgc) F F).re := by
+    have hsplit :
+        (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+            WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+            WightmanInnerProduct d (bvt_W OS lgc) S S).re =
+          (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re +
+            (WightmanInnerProduct d (bvt_W OS lgc) Fkill S +
+                WightmanInnerProduct d (bvt_W OS lgc) S Fkill +
+                WightmanInnerProduct d (bvt_W OS lgc) S S).re := by
+      simp [Complex.add_re, add_assoc]
+    rw [h_expand]
+    rw [hsplit]
+    linarith [hquad]
+  simpa [Fkill, V]
+    using hgoal
+
+private theorem bvt_W_killedTarget_selfPairing_vacuumRetuning_exists
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (F : BorchersSequence d) {n : ℕ} (hn_pos : 0 < n)
+    (hprev : ∀ k, 0 < k → k < n →
+      ((F.funcs k : SchwartzNPoint d k) : NPointDomain d k → ℂ) 0 = 0) :
+    ∃ c : ℂ,
+      (WightmanInnerProduct d (bvt_W OS lgc)
+          ((F - BorchersSequence.single n (F.funcs n)) + c •
+            Reconstruction.vacuumSequence (d := d))
+          ((F - BorchersSequence.single n (F.funcs n)) + c •
+            Reconstruction.vacuumSequence (d := d))).re =
+        (WightmanInnerProduct d (bvt_W OS lgc) F F).re := by
+  let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+  have hinf :
+      (WightmanInnerProduct d (bvt_W OS lgc) Fkill Fkill).re -
+          ((WightmanInnerProduct d (bvt_W OS lgc) Fkill
+                (Reconstruction.vacuumSequence (d := d)) +
+              WightmanInnerProduct d (bvt_W OS lgc)
+                (Reconstruction.vacuumSequence (d := d)) Fkill).re) ^ 2 / 4 ≤
+        (WightmanInnerProduct d (bvt_W OS lgc) F F).re := by
+    simpa [Fkill] using
+      bvt_W_killedTarget_selfPairing_ge_vacuumRetuningInfimum
+        (d := d) OS lgc F (n := n) hn_pos hprev
+  rcases bvt_W_real_vacuumSequence_retuning_range
+      (d := d) OS lgc Fkill
+      ((WightmanInnerProduct d (bvt_W OS lgc) F F).re) hinf with ⟨t, ht⟩
+  refine ⟨(t : ℂ), ?_⟩
+  simpa [Fkill] using ht
+
+/-- Legacy private one-step correction inside the superseded intrinsic
+boundary-vanishing route.
+
+The theorem-3 blueprint no longer treats this theorem surface as the endorsed
+supplier. The real missing input is an upstream VEV / boundary-value theorem
+that directly supplies a fixed boundary-vanishing surrogate together with the
+exact on-image closure data consumed in
+`OSToWightmanPositivityOnImage.lean`. -/
+private theorem bvt_W_component_boundaryVanishingCorrection
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    ∀ (F : BorchersSequence d) {n : ℕ}, 0 < n → n ≤ F.bound →
+      (∀ k, 0 < k → k < n →
+        ((F.funcs k : SchwartzNPoint d k) : NPointDomain d k → ℂ) 0 = 0) →
+      ∃ F₁ : BorchersSequence d,
+        F₁.bound ≤ F.bound ∧
+        (∀ k, 0 < k → k ≤ n →
+          ((F₁.funcs k : SchwartzNPoint d k) : NPointDomain d k → ℂ) 0 = 0) ∧
+        (WightmanInnerProduct d (bvt_W OS lgc) F₁ F₁).re =
+          (WightmanInnerProduct d (bvt_W OS lgc) F F).re := by
+  /- Legacy route note:
+  this intrinsic correction theorem belongs to the pre-blueprint local attempt
+  to manufacture the boundary-vanishing surrogate directly inside the boundary-
+  values file. The current theorem-3 blueprint instead requires that surrogate,
+  the quadratic-form equality, and the zero-right / transformed-image supplier
+  data to come from an upstream VEV / boundary-value identification step. -/
+  have hkill :
+      ∀ (F : BorchersSequence d) {n : ℕ}, 0 < n → n ≤ F.bound →
+        (∀ k, 0 < k → k < n →
+          ((F.funcs k : SchwartzNPoint d k) : NPointDomain d k → ℂ) 0 = 0) →
+        ∃ Fkill : BorchersSequence d,
+          Fkill.bound ≤ F.bound ∧
+          (∀ k, 0 < k → k ≤ n →
+            ((Fkill.funcs k : SchwartzNPoint d k) : NPointDomain d k → ℂ) 0 = 0) := by
+    intro F n hn_pos hn_bound hprev
+    let Fkill : BorchersSequence d :=
+      F - BorchersSequence.single n (F.funcs n)
+    refine ⟨Fkill, ?_, ?_⟩
+    · change max F.bound n ≤ F.bound
+      simpa [max_eq_left hn_bound]
+    · intro k hk_pos hk_le
+      by_cases hkn : k = n
+      · subst hkn
+        simp [Fkill]
+      · have hk_lt : k < n := by omega
+        simp [Fkill, BorchersSequence.single_funcs_ne hkn (F.funcs n), hprev k hk_pos hk_lt]
+  intro F n hn_pos hn_bound hprev
+  let Fkill : BorchersSequence d := F - BorchersSequence.single n (F.funcs n)
+  have hFkill_bound : Fkill.bound ≤ F.bound := by
+    change max F.bound n ≤ F.bound
+    simpa [max_eq_left hn_bound]
+  have hFkill_vanish :
+      ∀ k, 0 < k → k ≤ n →
+        ((Fkill.funcs k : SchwartzNPoint d k) : NPointDomain d k → ℂ) 0 = 0 := by
+    intro k hk_pos hk_le
+    by_cases hkn : k = n
+    · subst hkn
+      simp [Fkill]
+    · have hk_lt : k < n := by omega
+      simp [Fkill, BorchersSequence.single_funcs_ne hkn (F.funcs n), hprev k hk_pos hk_lt]
+  let V : BorchersSequence d := Reconstruction.vacuumSequence (d := d)
+  have hscalar :
+      ∃ c : ℂ,
+        (WightmanInnerProduct d (bvt_W OS lgc) (Fkill + c • V) (Fkill + c • V)).re =
+          (WightmanInnerProduct d (bvt_W OS lgc) F F).re := by
+    simpa [Fkill, V] using
+      bvt_W_killedTarget_selfPairing_vacuumRetuning_exists
+        (d := d) OS lgc F (n := n) hn_pos hprev
+  rcases hscalar with ⟨c, hc⟩
+  refine ⟨Fkill + c • V, ?_, ?_, hc⟩
+  · change max Fkill.bound V.bound ≤ F.bound
+    refine max_le ?_ ?_
+    · exact hFkill_bound
+    · have h1 : 1 ≤ F.bound := le_trans (Nat.succ_le_of_lt hn_pos) hn_bound
+      simpa [V, Reconstruction.vacuumSequence] using h1
+  · intro k hk_pos hk_le
+    have hkill_zero := hFkill_vanish k hk_pos hk_le
+    have hV_zero :
+        ((V.funcs k : SchwartzNPoint d k) : NPointDomain d k → ℂ) 0 = 0 := by
+      obtain ⟨m, rfl⟩ := Nat.exists_eq_succ_of_ne_zero (Nat.ne_of_gt hk_pos)
+      simp [V, Reconstruction.vacuumSequence]
+    simp [hkill_zero, hV_zero, V]
+
+/-- Legacy finite-stage surrogate constructor for the old intrinsic route.
+
+This remains private compiled scaffolding only. It should not be read as the
+endorsed theorem-3 supplier interface, which now lives upstream as the missing
+fixed-surrogate identification feeding
+`bvt_wightmanInner_self_nonneg_of_eq_boundaryVanishingTarget`. -/
+private theorem bvt_W_positive_boundaryVanishingSurrogateUpTo
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    ∀ (F : BorchersSequence d) (m : ℕ), m ≤ F.bound →
+      ∃ F₀ : BorchersSequence d,
+        F₀.bound ≤ F.bound ∧
+        (∀ n, 0 < n → n ≤ m →
+          ((F₀.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) 0 = 0) ∧
+        (WightmanInnerProduct d (bvt_W OS lgc) F F).re =
+          (WightmanInnerProduct d (bvt_W OS lgc) F₀ F₀).re := by
+  /- Legacy supplier note:
+  this internal surrogate-construction chain is not the endorsed theorem-3
+  route any more. The live route is the upstream supplier interface already
+  isolated in `OSToWightmanPositivityOnImage.lean`, not an intrinsic retuning
+  argument here. This theorem remains only as legacy compiled structure until
+  that upstream identification package is landed. -/
+  intro F m
+  induction m generalizing F with
+  | zero =>
+      intro hm
+      refine ⟨F, le_rfl, ?_, rfl⟩
+      intro n hn hnm
+      omega
+  | succ m ihm =>
+      intro hmF
+      rcases ihm F (Nat.le_of_succ_le hmF) with ⟨F₀, hF₀_bound, hvanish, hEq⟩
+      by_cases hstep : m + 1 ≤ F₀.bound
+      · obtain ⟨F₁, hF₁_bound, hF₁_vanish, hEq_step⟩ :=
+          bvt_W_component_boundaryVanishingCorrection
+            (d := d) OS lgc F₀ (n := m + 1) (Nat.succ_pos m) hstep
+            (by
+              intro k hk_pos hk_lt
+              exact hvanish k hk_pos (Nat.le_of_lt_succ hk_lt))
+        refine ⟨F₁, le_trans hF₁_bound hF₀_bound, ?_, ?_⟩
+        · intro n hn hnm
+          exact hF₁_vanish n hn hnm
+        · calc
+            (WightmanInnerProduct d (bvt_W OS lgc) F F).re
+                = (WightmanInnerProduct d (bvt_W OS lgc) F₀ F₀).re := hEq
+            _ = (WightmanInnerProduct d (bvt_W OS lgc) F₁ F₁).re := hEq_step.symm
+      · refine ⟨F₀, hF₀_bound, ?_, hEq⟩
+        intro n hn hnm
+        by_cases hnm1 : n = m + 1
+        · subst hnm1
+          have hgt : F₀.bound < m + 1 := Nat.lt_of_not_ge hstep
+          have hzero : (F₀.funcs (m + 1) : SchwartzNPoint d (m + 1)) = 0 :=
+            F₀.bound_spec (m + 1) hgt
+          simpa [hzero]
+        · have hnm' : n ≤ m := by omega
+          exact hvanish n hn hnm'
+
+/-- Legacy full-surrogate packaging for the superseded intrinsic route.
+
+This theorem shape is stronger than the currently endorsed theorem-3 seam and
+is kept only as private compiled scaffolding while the upstream fixed-surrogate
+identification package feeding the existing on-image consumer theorem is not
+yet implemented. -/
+private theorem bvt_W_positive_boundaryVanishingSurrogate
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS) :
+    ∀ F : BorchersSequence d,
+      ∃ F₀ : BorchersSequence d,
+        (∀ n, 0 < n →
+          ((F₀.funcs n : SchwartzNPoint d n) : NPointDomain d n → ℂ) 0 = 0) ∧
+        (WightmanInnerProduct d (bvt_W OS lgc) F F).re =
+          (WightmanInnerProduct d (bvt_W OS lgc) F₀ F₀).re := by
+  intro F
+  rcases bvt_W_positive_boundaryVanishingSurrogateUpTo
+      (d := d) OS lgc F F.bound le_rfl with
+    ⟨F₀, hF₀_bound, hvanish, hEq⟩
+  refine ⟨F₀, ?_, hEq⟩
+  intro n hn
+  by_cases hn_bound : n ≤ F.bound
+  · exact hvanish n hn hn_bound
+  · have hgt : F.bound < n := Nat.lt_of_not_ge hn_bound
+    have hgt₀ : F₀.bound < n := lt_of_le_of_lt hF₀_bound hgt
+    have hzero : (F₀.funcs n : SchwartzNPoint d n) = 0 := F₀.bound_spec n hgt₀
+    simpa [hzero]
+
 private theorem bvt_W_positive
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) :
     ∀ F : BorchersSequence d,
       (WightmanInnerProduct d (bvt_W OS lgc) F F).re ≥ 0 := by
+  /- Live-route note:
+  the actual remaining theorem-3 supplier seam is no longer the intrinsic
+  surrogate chain above. By the current blueprint and
+  `OSToWightmanPositivityOnImage.lean`, the honest missing input is an upstream
+  VEV / boundary-value identification feeding the existing fixed-surrogate
+  consumer theorem
+  `bvt_wightmanInner_self_nonneg_of_eq_boundaryVanishingTarget`:
+  `F₀`, `m`, `hF₀`, `hEq`, `G`, `hG`, `hcomp`, and `hcore`.
+  Exact currently sourced refinement of that statement:
+  in the present branch, the only file-local/on-image route that actually
+  recovers this `hcore` payload is the fixed-surrogate supplier block in
+  `OSToWightmanPositivityOnImage.lean`, and there the minimal extra ambient
+  datum first required is
+  `hF0 : ((F₀.funcs 0 : SchwartzNPoint d 0) = 0)`,
+  together with the explicit family-side payload
+  `hprecompact`, `hambientCompact`, `hG0`, and `hreal`.
+  Source-backed obstruction at this exact caller surface:
+  the retained local surrogate chain
+  `bvt_W_positive_boundaryVanishingSurrogateUpTo` /
+  `bvt_W_positive_boundaryVanishingSurrogate`
+  only proves boundary-point vanishing for degrees `n > 0`; it does not
+  construct or imply the additional degree-`0` datum
+  `((F₀.funcs 0 : SchwartzNPoint d 0) = 0)` now required downstream by the
+  corrected compact-family/on-image consumer package. So the present ambient
+  theorem-3 caller in this file cannot honestly supply `hF0` from existing
+  local source alone. More precisely, the only retained file-local correction
+  algebra is the `0 < n` component-killing / vacuum-retuning chain
+  `bvt_W_component_boundaryVanishingCorrection`, and its retuning direction is
+  `Reconstruction.vacuumSequence`, whose degree-`0` component is nonzero.
+  Concretely, the locally produced surrogate has the shape
+  `F₀ = (F - BorchersSequence.single n (F.funcs n)) + c • vacuumSequence`,
+  so its degree-`0` term is changed only by the vacuum direction, while the
+  available retuning theorem
+  `bvt_W_real_vacuumSequence_retuning_exists_iff`
+  characterizes attainable **real quadratic values** under that one-parameter
+  vacuum perturbation and does not solve the separate component equation
+  `((F₀.funcs 0 : SchwartzNPoint d 0) = 0)`.
+  Current source therefore contains no theorem here that simultaneously
+  preserves the quadratic value and forces the ambient degree-`0` component to
+  vanish. More sharply, after re-reading the current upstream files
+  `OSToWightmanPositivityOnImage.lean`,
+  `OSToWightmanBoundaryValuesCompactApprox.lean`, and
+  `OSToWightmanBoundaryValuesBase.lean`, there is also no existing theorem that
+  takes this fixed ambient surrogate `F₀` and honestly supplies the explicit
+  family payload
+  `G, hG, hcomp, hprecompact, hambientCompact, hG0`
+  consumed by
+  `bvt_wightmanInner_self_nonneg_of_fixed_boundaryVanishingSurrogate_onImage_supplier_of_timeShift_eq_on_positiveReals`.
+  The only current explicit family constructor is the legacy compact positive-
+  time package in `OSToWightmanPositivityOnImage.lean`, and every theorem on
+  that surface starts from an honest `PositiveTimeBorchersSequence d` together
+  with its own ambient degree-`0` zero datum. No theorem in the present
+  boundary-value layer upgrades an arbitrary theorem-3 surrogate `F₀` to that
+  positive-time surface or otherwise constructs the required on-image family.
+  Source-first decomposition of the missing payload therefore stops even
+  earlier than `hcomp`: once an honest positive-time/on-image family is in
+  hand, the current compact-family cluster in
+  `OSToWightmanPositivityOnImage.lean` already supplies the boundedness and
+  convergence fields (`hG`, `hcomp`) via the explicit family
+  `compactApproxPositiveTimeBorchers` together with
+  `tendsto_compactApproxPositiveTimeBorchers_component`, and the same cluster
+  also supplies `hprecompact`, `hambientCompact`, and `hG0`. The first
+  genuinely missing producer piece is thus the upstream fixed-surrogate family
+  constructor itself: a theorem that, for the specific bounded surrogate `F₀`,
+  produces an honest `G : ℕ → BvtTransportImageSequence d` on the positive-time
+  / transformed-image side. So the first missing upstream theorem surface is
+  not yet another local
+  `hF0`-recovery lemma here; it is an upstream fixed-surrogate supplier theorem
+  producing exactly that family payload for the specific `F₀`, after which
+  `component_zero_of_fixed_boundaryVanishingSurrogate_onImage_supplier` can
+  recover `hF0` internally and the existing `hreal` consumer can run.
+  This local theorem remains blocked only because that upstream supplier is not
+  yet available; the retained private retuning chain is not the endorsed route
+  to manufacture those inputs. -/
   sorry
 
 /-- Theorem 4 frontier: cluster transfer for the canonical BV pairing.
@@ -899,6 +2150,7 @@ theorem bvt_positiveTime_self_nonneg_of_compactApprox_componentwise_ofReal_eq_bv
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
     (F : PositiveTimeBorchersSequence d)
+    (_hF0 : (((F : BorchersSequence d).funcs 0 : SchwartzNPoint d 0)) = 0)
     (hreal :
       ∀ N n m (hm : 0 < m) (t : ℝ), 0 < t →
         let F_N : PositiveTimeBorchersSequence d := compactApproxPositiveTimeBorchers F N;
@@ -917,9 +2169,21 @@ theorem bvt_positiveTime_self_nonneg_of_compactApprox_componentwise_ofReal_eq_bv
                   ((F_N : BorchersSequence d).funcs m))))) :
     0 ≤ (WightmanInnerProduct d (bvt_W OS lgc)
       (F : BorchersSequence d) (F : BorchersSequence d)).re := by
+  /-
+  Source-backed surface repair (2026-04-12):
+  the corrected compact-family on-image consumer exposed upstream in
+  `OSToWightmanPositivityOnImage.lean`
+  needs the ambient degree-`0` vanishing datum
+  `(((F : BorchersSequence d).funcs 0 : SchwartzNPoint d 0)) = 0`.
+  Current source does not honestly derive that datum from the legacy
+  compact-shell positive-real family hypothesis `hreal` alone, so this theorem
+  now exposes `hF0` explicitly at the public consumer surface rather than
+  continuing to hide the exact extra input still required by the corrected OS
+  route.
+  -/
   exact
-    bvt_wightmanInner_self_nonneg_of_compactApprox_componentwise_ofReal_eq_bvt_W_conjTensorProduct_timeShift_of_hermitian
-      (d := d) OS lgc (bvt_hermitian (d := d) OS lgc) F hreal
+    bvt_wightmanInner_self_nonneg_of_compactApproxPositiveTime_onImage_of_component_zero_and_singleSplit_eq_bvt_W_on_positiveReals
+      (d := d) OS lgc F _hF0 hreal
 
 /-
 Deprecated route note:

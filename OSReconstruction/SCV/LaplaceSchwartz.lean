@@ -270,6 +270,77 @@ theorem fourierLaplace_uniform_bound_near_boundary {m : ℕ}
         ‖F (fun i => ↑(x i) + ↑ε * ↑(η i) * I)‖ ≤ C_bd * (1 + ‖x‖) ^ N :=
   hRegular.uniform_bound η hη
 
+/-- Global polynomial growth on the whole tube already implies the boundary-ray
+`uniform_bound` field used by the tempered/regular Fourier-Laplace packages.
+
+This is the honest OS/Vladimirov-strength input for the raywise estimate: it is
+strictly stronger than bare dual-cone support of a primitive FL extension, and
+it is exactly the hypothesis shape already used upstream in the VT bridge. -/
+theorem uniform_bound_near_boundary_of_global_poly_growth {m : ℕ}
+    {C : Set (Fin m → ℝ)}
+    (hC_cone : ∀ (t : ℝ), 0 < t → ∀ y ∈ C, t • y ∈ C)
+    {F : (Fin m → ℂ) → ℂ}
+    (hgrowth : ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+      ∀ (z : Fin m → ℂ), z ∈ TubeDomain C →
+        ‖F z‖ ≤ C_bd * (1 + ‖z‖) ^ N) :
+    ∀ (η : Fin m → ℝ), η ∈ C →
+      ∃ (C_ray : ℝ) (N : ℕ) (δ : ℝ), C_ray > 0 ∧ δ > 0 ∧
+        ∀ (x : Fin m → ℝ) (ε : ℝ), 0 < ε → ε < δ →
+          ‖F (fun i => ↑(x i) + ↑ε * ↑(η i) * I)‖ ≤
+            C_ray * (1 + ‖x‖) ^ N := by
+  intro η hη
+  obtain ⟨C_bd, N, hC_bd_pos, hgrowth⟩ := hgrowth
+  refine ⟨C_bd * (1 + ‖η‖) ^ N, N, 1,
+    mul_pos hC_bd_pos (pow_pos (by positivity) _), zero_lt_one, ?_⟩
+  intro x ε hε_pos hε_lt
+  let z : Fin m → ℂ := fun i => ↑(x i) + ↑ε * ↑(η i) * I
+  have hz_mem : z ∈ TubeDomain C := by
+    show (fun i => (z i).im) ∈ C
+    have him : (fun i => (z i).im) = ε • η := by
+      ext i
+      simp [z, Complex.add_im, Complex.ofReal_im, Complex.mul_im,
+        Complex.ofReal_re, Complex.I_re, Complex.I_im]
+    rw [him]
+    exact hC_cone ε hε_pos η hη
+  have hFz := hgrowth z hz_mem
+  have hz_norm : ‖z‖ ≤ ‖x‖ + ‖η‖ := by
+    refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+    · show ‖(fun i => (x i : ℂ))‖ ≤ ‖x‖
+      simp only [Pi.norm_def]
+      gcongr with i
+      simp [Complex.nnnorm_real]
+    · have hsmul :
+          (fun i => ↑ε * ↑(η i) * I) = (ε : ℂ) • (fun i => (η i : ℂ) * I) := by
+          ext i
+          simp [smul_eq_mul, mul_left_comm, mul_comm]
+      rw [hsmul, norm_smul]
+      have hvec : ‖(fun i => (η i : ℂ) * I)‖ ≤ ‖η‖ := by
+        simp only [Pi.norm_def]
+        gcongr with i
+        simp [Complex.nnnorm_I, mul_one, Complex.nnnorm_real]
+      have hεnorm_le : ‖(ε : ℂ)‖ ≤ 1 := by
+        have hε_le : ε ≤ 1 := by linarith
+        simpa [Complex.norm_real, abs_of_nonneg hε_pos.le] using hε_le
+      calc
+        ‖(ε : ℂ)‖ * ‖fun i => (η i : ℂ) * I‖ ≤ ‖(ε : ℂ)‖ * ‖η‖ :=
+          mul_le_mul_of_nonneg_left hvec (norm_nonneg _)
+        _ ≤ 1 * ‖η‖ := by gcongr
+        _ = ‖η‖ := by ring
+  have hbase : 1 + ‖z‖ ≤ (1 + ‖η‖) * (1 + ‖x‖) := by
+    nlinarith [hz_norm, norm_nonneg x, norm_nonneg η]
+  have hpow :
+      (1 + ‖z‖) ^ N ≤ (1 + ‖η‖) ^ N * (1 + ‖x‖) ^ N := by
+    calc
+      (1 + ‖z‖) ^ N ≤ ((1 + ‖η‖) * (1 + ‖x‖)) ^ N := by
+        exact pow_le_pow_left₀ (by positivity) hbase _
+      _ = (1 + ‖η‖) ^ N * (1 + ‖x‖) ^ N := by rw [mul_pow]
+  calc
+    ‖F (fun i => ↑(x i) + ↑ε * ↑(η i) * I)‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
+      simpa [z] using hFz
+    _ ≤ C_bd * ((1 + ‖η‖) ^ N * (1 + ‖x‖) ^ N) := by
+      exact mul_le_mul_of_nonneg_left hpow hC_bd_pos.le
+    _ = (C_bd * (1 + ‖η‖) ^ N) * (1 + ‖x‖) ^ N := by ring
+
 /-- **AE strong measurability of FL integrand.**
     The function x ↦ F(x + iεη) * f(x) is AE strongly measurable for each ε. -/
 theorem fourierLaplace_integrand_aestronglyMeasurable {m : ℕ}

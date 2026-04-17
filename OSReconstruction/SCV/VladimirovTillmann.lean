@@ -661,6 +661,305 @@ theorem vladimirov_tillmann {n d : ℕ}
     _ = C_bd_flat * (1 + B_K) ^ N_flat * (1 + (Metric.infDist y₀ Cᶜ)⁻¹) ^ M_flat *
         (1 + ‖x‖) ^ N_flat := by ring
 
+/-- Package the actual VT/OS input surface into a genuine tempered
+Fourier-Laplace boundary-value representation on the flattened tube.
+
+This is the honest supplier theorem for the OS route: the `uniform_bound`
+field comes from the live global tube-growth hypothesis via
+`uniform_bound_near_boundary_of_global_poly_growth`, while the compact-slice
+`poly_growth` field comes from `vladimirov_tillmann`. No false support-only
+theorem-1 surface is used. -/
+def vladimirov_tillmann_hasFourierLaplaceReprTempered {n d : ℕ}
+    (C : Set (Fin n → Fin (d + 1) → ℝ))
+    (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF_holo : DifferentiableOn ℂ F (TubeDomainSetPi C))
+    (hF_growth : ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+      ∀ (z : Fin n → Fin (d + 1) → ℂ), z ∈ TubeDomainSetPi C →
+        ‖F z‖ ≤ C_bd * (1 + ‖z‖) ^ N)
+    (W : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ →L[ℂ] ℂ)
+    (hF_bv : ∀ (η : Fin n → Fin (d + 1) → ℝ), η ∈ C →
+      ∀ (φ : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ),
+        Filter.Tendsto
+          (fun ε : ℝ => ∫ x : Fin n → Fin (d + 1) → ℝ,
+            F (fun k μ => (x k μ : ℂ) + (ε : ℂ) * (η k μ : ℂ) * Complex.I) * φ x)
+          (nhdsWithin 0 (Set.Ioi 0)) (nhds (W φ))) :
+    SCV.HasFourierLaplaceReprTempered
+      ((flattenCLEquivReal n (d + 1)) '' C)
+      (F ∘ (flattenCLEquiv n (d + 1)).symm) := by
+  let e := flattenCLEquiv n (d + 1)
+  let eR := flattenCLEquivReal n (d + 1)
+  let Cflat : Set (Fin (n * (d + 1)) → ℝ) := eR '' C
+  let G : (Fin (n * (d + 1)) → ℂ) → ℂ := F ∘ e.symm
+  let pullback : SchwartzMap (Fin (n * (d + 1)) → ℝ) ℂ →L[ℂ]
+      SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ :=
+    SchwartzMap.compCLMOfContinuousLinearEquiv ℂ eR
+  let Wflat : SchwartzMap (Fin (n * (d + 1)) → ℝ) ℂ →L[ℂ] ℂ := W.comp pullback
+  have hmem_tube : ∀ w : Fin (n * (d + 1)) → ℂ,
+      w ∈ SCV.TubeDomain Cflat → e.symm w ∈ TubeDomainSetPi C := by
+    intro w hw
+    show (fun k μ => ((e.symm w) k μ).im) ∈ C
+    obtain ⟨y, hy, hyw⟩ := (hw : (fun i => (w i).im) ∈ Cflat)
+    convert hy using 1
+    ext k μ
+    have := congr_fun hyw (finProdFinEquiv (k, μ))
+    simpa [e, eR, flattenCLEquiv_symm_apply, flattenCLEquivReal_apply] using this.symm
+  have hflatten_norm : ∀ (z : Fin n → Fin (d + 1) → ℂ), ‖e z‖ = ‖z‖ := by
+    intro z
+    simp only [Pi.norm_def, e]
+    congr 1
+    simp only [Pi.nnnorm_def, flattenCLEquiv_apply]
+    apply le_antisymm
+    · apply Finset.sup_le
+      intro b _
+      exact Finset.le_sup_of_le (Finset.mem_univ (finProdFinEquiv.symm b).1)
+        (Finset.le_sup_of_le (Finset.mem_univ (finProdFinEquiv.symm b).2) (by simp))
+    · apply Finset.sup_le
+      intro i _
+      apply Finset.sup_le
+      intro j _
+      exact Finset.le_sup_of_le (Finset.mem_univ (finProdFinEquiv (i, j))) (by simp)
+  have hflatten_norm_symm : ∀ (z : Fin (n * (d + 1)) → ℂ), ‖e.symm z‖ = ‖z‖ := by
+    intro z
+    simpa using (hflatten_norm (e.symm z)).symm
+  have hCflat_cone : ∀ (t : ℝ), 0 < t → ∀ y ∈ Cflat, t • y ∈ Cflat := by
+    intro t ht y hy
+    rcases hy with ⟨y', hy', rfl⟩
+    exact ⟨t • y', hC_cone y' hy' t ht, by simpa using eR.map_smul t y'⟩
+  have hBVflat :
+      ∀ (f : SchwartzMap (Fin (n * (d + 1)) → ℝ) ℂ) (η : Fin (n * (d + 1)) → ℝ),
+        η ∈ Cflat →
+        Filter.Tendsto
+          (fun ε : ℝ =>
+            ∫ x : Fin (n * (d + 1)) → ℝ,
+              G (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I) * f x)
+          (nhdsWithin 0 (Set.Ioi 0))
+          (nhds (Wflat f)) := by
+    intro f η hη
+    rcases hη with ⟨η', hη', rfl⟩
+    let fPi : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ := pullback f
+    have hEq :
+        (fun ε : ℝ =>
+          ∫ x : Fin (n * (d + 1)) → ℝ,
+            G (fun i => ↑(x i) + ↑ε * ↑((eR η') i) * Complex.I) * f x)
+        =
+        (fun ε : ℝ =>
+          ∫ y : Fin n → Fin (d + 1) → ℝ,
+            F (fun k μ => ↑(y k μ) + ↑ε * ↑(η' k μ) * Complex.I) * fPi y) := by
+      funext ε
+      rw [integral_flatten_change_of_variables n (d + 1)
+        (fun x : Fin (n * (d + 1)) → ℝ =>
+          G (fun i => ↑(x i) + ↑ε * ↑((eR η') i) * Complex.I) * f x)]
+      congr 1
+      ext y
+      have hFarg :
+          G (fun i => ↑(eR y i) + ↑ε * ↑(eR η' i) * Complex.I) =
+            F (fun k μ => ↑(y k μ) + ↑ε * ↑(η' k μ) * Complex.I) := by
+        change
+          F (e.symm (fun i => ↑(eR y i) + ↑ε * ↑(eR η' i) * Complex.I)) =
+            F (fun k μ => ↑(y k μ) + ↑ε * ↑(η' k μ) * Complex.I)
+        congr 1
+        ext k μ
+        have hyk : eR y (finProdFinEquiv (k, μ)) = y k μ := by
+          simp [eR, flattenCLEquivReal_apply]
+        have hηk : eR η' (finProdFinEquiv (k, μ)) = η' k μ := by
+          simp [eR, flattenCLEquivReal_apply]
+        rw [show (e.symm (fun i => ↑(eR y i) + ↑ε * ↑(eR η' i) * Complex.I)) k μ =
+            (fun i => ↑(eR y i) + ↑ε * ↑(eR η' i) * Complex.I) (finProdFinEquiv (k, μ)) by
+              simp [e, flattenCLEquiv_symm_apply]]
+        simp [hyk, hηk]
+      have hfarg : f (eR y) = fPi y := by
+        simp [fPi, pullback, eR]
+      rw [hFarg, hfarg]
+    rw [hEq]
+    simpa [Wflat, fPi, pullback] using hF_bv η' hη' fPi
+  have hpoly_pi :
+      ∀ (K : Set (Fin n → Fin (d + 1) → ℝ)), IsCompact K → K ⊆ C →
+        ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+          ∀ (x y : Fin n → Fin (d + 1) → ℝ), y ∈ K →
+            ‖F (fun k μ => ↑(x k μ) + ↑(y k μ) * Complex.I)‖ ≤
+              C_bd * (1 + ‖x‖) ^ N := by
+    exact (vladimirov_tillmann C hC_open hC_conv hC_cone hC_salient
+      F hF_holo hF_growth W hF_bv).1
+  have hpoly_flat :
+      ∀ (K : Set (Fin (n * (d + 1)) → ℝ)), IsCompact K → K ⊆ Cflat →
+        ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+          ∀ (x y : Fin (n * (d + 1)) → ℝ), y ∈ K →
+            ‖G (fun i => ↑(x i) + ↑(y i) * Complex.I)‖ ≤
+              C_bd * (1 + ‖x‖) ^ N := by
+    intro K hK hK_sub
+    let KPi : Set (Fin n → Fin (d + 1) → ℝ) := eR.symm '' K
+    have hKPi_compact : IsCompact KPi := hK.image eR.symm.continuous
+    have hKPi_sub : KPi ⊆ C := by
+      intro y hy
+      rcases hy with ⟨w, hw, rfl⟩
+      rcases hK_sub hw with ⟨y', hy', hyw⟩
+      have hw_eq : eR.symm (eR y') = y' := by simp
+      have : eR.symm w = y' := by simpa [hyw] using hw_eq
+      simpa [this] using hy'
+    obtain ⟨C_bd, N, hC_bd_pos, hKPi_bound⟩ := hpoly_pi KPi hKPi_compact hKPi_sub
+    refine ⟨C_bd, N, hC_bd_pos, ?_⟩
+    intro x y hy
+    have hyPi : eR.symm y ∈ KPi := ⟨y, hy, rfl⟩
+    have hbound := hKPi_bound (eR.symm x) (eR.symm y) hyPi
+    have harg :
+        G (fun i => ↑(x i) + ↑(y i) * Complex.I) =
+          F (fun k μ => ↑((eR.symm x) k μ) + ↑((eR.symm y) k μ) * Complex.I) := by
+      have hargVec :
+          e.symm (fun i => ↑(x i) + ↑(y i) * Complex.I) =
+            (fun k μ => ↑((eR.symm x) k μ) + ↑((eR.symm y) k μ) * Complex.I) := by
+        ext k μ
+        simp [e, eR, flattenCLEquiv_symm_apply, flattenCLEquivReal_symm_apply]
+      simpa [G] using congrArg F hargVec
+    have hnorm : ‖eR.symm x‖ = ‖x‖ := by
+      have hnorm' : ‖eR (eR.symm x)‖ = ‖eR.symm x‖ :=
+        flattenCLEquivReal_norm_eq n (d + 1) (eR.symm x)
+      simpa using hnorm'.symm
+    simpa [harg, hnorm] using hbound
+  have hglobal_flat :
+      ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+        ∀ (z : Fin (n * (d + 1)) → ℂ), z ∈ SCV.TubeDomain Cflat →
+          ‖G z‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
+    obtain ⟨C_bd, N, hC_bd_pos, hgrowth⟩ := hF_growth
+    refine ⟨C_bd, N, hC_bd_pos, ?_⟩
+    intro z hz
+    simpa [G, hflatten_norm_symm z] using hgrowth (e.symm z) (hmem_tube z hz)
+  have hunif_flat :
+      ∀ (η : Fin (n * (d + 1)) → ℝ), η ∈ Cflat →
+        ∃ (C_bd : ℝ) (N : ℕ) (δ : ℝ), C_bd > 0 ∧ δ > 0 ∧
+          ∀ (x : Fin (n * (d + 1)) → ℝ) (ε : ℝ), 0 < ε → ε < δ →
+            ‖G (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I)‖ ≤
+              C_bd * (1 + ‖x‖) ^ N := by
+    intro η hη
+    obtain ⟨C_bd, N, hC_bd_pos, hgrowth⟩ := hglobal_flat
+    refine ⟨C_bd * (1 + ‖η‖) ^ N, N, 1,
+      mul_pos hC_bd_pos (pow_pos (by positivity) _), zero_lt_one, ?_⟩
+    intro x ε hε_pos hε_lt
+    let z : Fin (n * (d + 1)) → ℂ := fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I
+    have hz_mem : z ∈ SCV.TubeDomain Cflat := by
+      show (fun i => (z i).im) ∈ Cflat
+      have him : (fun i => (z i).im) = ε • η := by
+        ext i
+        simp [z, Complex.add_im, Complex.ofReal_im, Complex.mul_im,
+          Complex.ofReal_re, Complex.I_re, Complex.I_im]
+      rw [him]
+      exact hCflat_cone ε hε_pos η hη
+    have hGz := hgrowth z hz_mem
+    have hz_norm : ‖z‖ ≤ ‖x‖ + ‖η‖ := by
+      refine (norm_add_le _ _).trans (add_le_add ?_ ?_)
+      · show ‖(fun i => (x i : ℂ))‖ ≤ ‖x‖
+        simp only [Pi.norm_def]
+        gcongr with i
+        simp [Complex.nnnorm_real]
+      · have hsmul :
+            (fun i => ↑ε * ↑(η i) * Complex.I) =
+              (ε : ℂ) • (fun i => (η i : ℂ) * Complex.I) := by
+            ext i
+            simp [smul_eq_mul, mul_left_comm, mul_comm]
+        rw [hsmul, norm_smul]
+        have hvec : ‖(fun i => (η i : ℂ) * Complex.I)‖ ≤ ‖η‖ := by
+          simp only [Pi.norm_def]
+          gcongr with i
+          simp [Complex.nnnorm_I, mul_one, Complex.nnnorm_real]
+        have hεnorm_le : ‖(ε : ℂ)‖ ≤ 1 := by
+          have hε_le : ε ≤ 1 := by linarith
+          simpa [Complex.norm_real, abs_of_nonneg hε_pos.le] using hε_le
+        calc
+          ‖(ε : ℂ)‖ * ‖fun i => (η i : ℂ) * Complex.I‖ ≤ ‖(ε : ℂ)‖ * ‖η‖ :=
+            mul_le_mul_of_nonneg_left hvec (norm_nonneg _)
+          _ ≤ 1 * ‖η‖ := by gcongr
+          _ = ‖η‖ := by ring
+    have hbase : 1 + ‖z‖ ≤ (1 + ‖η‖) * (1 + ‖x‖) := by
+      nlinarith [hz_norm, norm_nonneg x, norm_nonneg η]
+    have hpow :
+        (1 + ‖z‖) ^ N ≤ (1 + ‖η‖) ^ N * (1 + ‖x‖) ^ N := by
+      calc
+        (1 + ‖z‖) ^ N ≤ ((1 + ‖η‖) * (1 + ‖x‖)) ^ N := by
+          exact pow_le_pow_left₀ (by positivity) hbase _
+        _ = (1 + ‖η‖) ^ N * (1 + ‖x‖) ^ N := by rw [mul_pow]
+    calc
+      ‖G (fun i => ↑(x i) + ↑ε * ↑(η i) * Complex.I)‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
+        simpa [z] using hGz
+      _ ≤ C_bd * ((1 + ‖η‖) ^ N * (1 + ‖x‖) ^ N) := by
+        exact mul_le_mul_of_nonneg_left hpow hC_bd_pos.le
+      _ = (C_bd * (1 + ‖η‖) ^ N) * (1 + ‖x‖) ^ N := by ring
+  exact
+    { toHasFourierLaplaceRepr :=
+        { dist := Wflat
+          dist_continuous := Wflat.continuous
+          boundary_value := hBVflat }
+      poly_growth := hpoly_flat
+      uniform_bound := hunif_flat }
+
+/-- Distributional uniqueness on the forward tube from the genuine VT supplier
+plus zero distributional boundary values for the difference. -/
+theorem distributional_uniqueness_forwardTube_of_trace_from_vt_bvZero
+    {d n : ℕ} [NeZero d]
+    {F₁ F₂ : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+    (hF₁ : DifferentiableOn ℂ F₁ (ForwardTube d n))
+    (hF₂ : DifferentiableOn ℂ F₂ (ForwardTube d n))
+    (hG_growth : ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+      ∀ z : Fin n → Fin (d + 1) → ℂ, z ∈ ForwardTube d n →
+        ‖F₁ z - F₂ z‖ ≤ C_bd * (1 + ‖z‖) ^ N)
+    {B : NPointDomain d n → ℂ} (hB_cont : Continuous B)
+    (η : Fin n → Fin (d + 1) → ℝ) (hη : InForwardCone d n η)
+    (htrace_ray : ∀ x : NPointDomain d n,
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          F₁ (fun k μ => ↑(x k μ) + ↑ε * ↑(η k μ) * Complex.I) -
+          F₂ (fun k μ => ↑(x k μ) + ↑ε * ↑(η k μ) * Complex.I))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (B x)))
+    (htrace_boundary : ∀ x : NPointDomain d n,
+      Filter.Tendsto
+        (fun z => F₁ z - F₂ z)
+        (nhdsWithin (fun k μ => (x k μ : ℂ)) (ForwardTube d n))
+        (nhds (B x)))
+    (h_agree : ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
+      InForwardCone d n η →
+      Filter.Tendsto
+        (fun ε : ℝ => ∫ x : NPointDomain d n,
+          ((F₁ (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I)) -
+           (F₂ (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I))) * (f x))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds 0)) :
+    ∀ z ∈ ForwardTube d n, F₁ z = F₂ z := by
+  let G : (Fin n → Fin (d + 1) → ℂ) → ℂ := fun z => F₁ z - F₂ z
+  have hG_holo : DifferentiableOn ℂ G (TubeDomainSetPi (ForwardConeAbs d n)) := by
+    simpa [G, TubeDomainSetPi, forwardTube_eq_imPreimage] using (hF₁.sub hF₂)
+  have hG_growth_pi : ∃ (C_bd : ℝ) (N : ℕ), C_bd > 0 ∧
+      ∀ z : Fin n → Fin (d + 1) → ℂ, z ∈ TubeDomainSetPi (ForwardConeAbs d n) →
+        ‖G z‖ ≤ C_bd * (1 + ‖z‖) ^ N := by
+    rcases hG_growth with ⟨C_bd, N, hC_bd_pos, hbound⟩
+    refine ⟨C_bd, N, hC_bd_pos, ?_⟩
+    intro z hz
+    exact hbound z (by simpa [TubeDomainSetPi, forwardTube_eq_imPreimage] using hz)
+  have hG_zero_bv :
+      ∀ (η' : Fin n → Fin (d + 1) → ℝ), η' ∈ ForwardConeAbs d n →
+        ∀ (φ : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ),
+          Filter.Tendsto
+            (fun ε : ℝ => ∫ x : Fin n → Fin (d + 1) → ℝ,
+              G (fun k μ => (x k μ : ℂ) + (ε : ℂ) * (η' k μ : ℂ) * Complex.I) * φ x)
+            (nhdsWithin 0 (Set.Ioi 0))
+            (nhds ((0 : SchwartzMap (Fin n → Fin (d + 1) → ℝ) ℂ →L[ℂ] ℂ) φ)) := by
+    intro η' hη' φ
+    simpa [G] using h_agree φ η'
+      ((inForwardCone_iff_mem_forwardConeAbs η').2 hη')
+  let hTempered_G : SCV.HasFourierLaplaceReprTempered (ForwardConeFlat d n)
+      (fun z =>
+        (F₁ ∘ (flattenCLEquiv n (d + 1)).symm) z -
+        (F₂ ∘ (flattenCLEquiv n (d + 1)).symm) z) :=
+    vladimirov_tillmann_hasFourierLaplaceReprTempered
+      (ForwardConeAbs d n)
+      (forwardConeAbs_isOpen d n)
+      (forwardConeAbs_convex d n)
+      (fun y hy t ht => forwardConeAbs_smul d n t ht y hy)
+      (forwardConeAbs_salient d n)
+      G hG_holo hG_growth_pi 0 hG_zero_bv
+  exact
+    distributional_uniqueness_forwardTube_of_flatTempered_of_trace_from_bvZero
+      hF₁ hF₂ hTempered_G hB_cont η hη htrace_ray htrace_boundary h_agree
 /-! ### Cluster property: distributional → tube interior -/
 
 /-- **Distributional cluster property lifts to tube interior.**

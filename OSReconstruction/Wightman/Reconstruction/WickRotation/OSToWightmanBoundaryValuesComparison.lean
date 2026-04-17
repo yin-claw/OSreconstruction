@@ -26,6 +26,59 @@ So the live comparison surface in this file is an ordered-positive-time
 isometry statement, not a same-shell identity. The remaining unresolved content
 is the `xiShift` boundary-value convergence hypothesis, not the theorem shape
 itself.
+
+Exact theorem-3 upstream localization note:
+- `OSToWightmanBoundaryValuesEuclidean.lean` only supplies the Euclidean
+  rotation pairing for `bvt_F`, so it is not the place where the remaining
+  positive-real-time supplier theorem can land;
+- the future fixed-surrogate supplier theorem must instead live in this
+  comparison layer, because the on-image Stage-5 reducer downstream consumes
+  exactly a positive-real-time comparison datum `hreal` between
+  `bvt_W(..., f.conjTensorProduct (timeShift g))` and the OS semigroup matrix
+  element for the chosen transformed-image preimages;
+- more precisely, the earliest honest missing theorem surface is the producer
+  on the explicit preimage-family inputs already accepted upstream by
+  `exists_bounded_componentwise_onImage_supplier_data_of_preimageFamilies`:
+  ambient family `F`, boundedness/convergence data, degreewise preimages `f`,
+  transport equalities, compact-support control, and degree-`0` vanishing;
+- no current source theorem actually lands either that exact `hreal` family or
+  the direct antecedent
+  `bvt_singleSplit_xiShiftHolomorphicValue ... (t : ℂ) = bvt_W ...`
+  on those explicit inputs;
+- source-first, the first still-missing theorem lies one step earlier in
+  `OSToWightmanPositivity.lean`, at the reusable consumer
+  `one_variable_time_interchange_for_wightman_pairing`: for each
+  `N n k` with `n ≤ (F N).bound`, `k ≤ (F N).bound`, `hk_pos : 0 < k`, one
+  needs a holomorphic witness
+  `H : ℂ → ℂ` on `{z : ℂ | 0 < z.re}` with
+  positive-real shell values
+  `H (t : ℂ) =
+      ∫ y, bvt_F ... (xiShift ... ((t : ℂ) * Complex.I)) *
+        (((f N n : _) : SchwartzNPoint d n).osConjTensorProduct
+          (((f N k : _) : SchwartzNPoint d k))) y`
+  and positive-real Wightman values
+  `H (t : ℂ) =
+      bvt_W OS lgc (n + k)
+        (((F N).funcs n).conjTensorProduct
+          (timeShiftSchwartzNPoint (d := d) t ((F N).funcs k)))`;
+- from that witness, the existing theorem
+  `one_variable_time_interchange_for_wightman_pairing` yields the direct
+  `singleSplit = bvt_W` antecedent on the same inputs, and then
+  `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` converts it to the
+  exact `hreal` family consumed downstream here and in
+  `OSToWightmanPositivityOnImage.lean`;
+- the current source graph already exposes the positive-degree upgrade
+  `hreal -> hWlimit` without any new wrapper: combine
+  `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` from
+  `OSToWightmanPositivity.lean` with
+  `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`
+  from `OSToWightmanBoundaryValueLimits.lean`, then feed the resulting
+  `hWlimit` family to the comparison theorems below;
+- so the remaining missing source theorem is upstream of this file and upstream
+  even of the public `hreal` seam itself: no current theorem here constructs
+  the required holomorphic witness, the direct `singleSplit = bvt_W`
+  antecedent, or the resulting `hreal` family for the fixed-surrogate/on-image
+  supplier block from honest ambient inputs.
 -/
 
 open scoped Classical NNReal
@@ -433,7 +486,15 @@ theorem bvt_eq_schwinger_of_tendsto_singleSplit_xiShift_nhdsWithin_zero_zeroRigh
 /-- For compact ordered positive-time Borchers vectors, the componentwise
 single-split `xiShift` shell comparisons imply the full self-pair comparison
 once the remaining degree-`0` right component is discharged using Hermiticity.
-This packages the exact repair used by the active positivity lane. -/
+
+The exact positive-degree supplier-facing payload consumed here is the family
+
+`∀ n m (hm : 0 < m), Tendsto (fun t => ∫ y, bvt_F ... (xiShift ⟨n, _⟩ 0
+  (fun i => wickRotatePoint (y i)) ((t : ℂ) * I)) *
+  (((F.funcs n).osConjTensorProduct (F.funcs m)) y))
+  (nhdsWithin 0 (Ioi 0))
+  (nhds (bvt_W ... ((F.funcs n).conjTensorProduct (F.funcs m))))`.
+-/
 theorem bvt_wightmanInner_self_eq_osInner_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero_of_hermitian
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     (hherm :
@@ -557,6 +618,25 @@ theorem bvt_wightmanInner_self_eq_osInner_of_componentwise_tendsto_singleSplit_x
 self-pair on the compact positive-time shell controlled by the componentwise
 single-split `xiShift` limits. This is the exact positivity payoff of the
 comparison lane before any approximation from general Borchers vectors. -/
+/-
+Exact theorem-3 supplier target note:
+- this `hWlimit`-consumer cluster is the nearest upstream comparison surface
+  that the still-missing fixed-surrogate supplier
+  `∃ G, hG, hcomp, hprecompact, hambientCompact, hG0, hreal`
+  should feed;
+- concretely, the cluster is exactly
+  `bvt_wightmanInner_self_eq_osInner_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero_of_hermitian`
+  together with the nonnegativity payoff theorem immediately below;
+- the current source already exposes the theorem-sized downstream handoff for
+  that exact payload as
+  `bvt_wightmanInner_self_nonneg_of_fixed_boundaryVanishingSurrogate_onImage_supplier_of_timeShift_eq_on_positiveReals`
+  in `OSToWightmanPositivityOnImage.lean`, so no extra comparison-layer
+  wrapper theorem is missing here;
+- the existing
+  `bvt_xiShift_eq_osInnerProduct_holomorphicValue_single` plus
+  `tendsto_bvt_singleSplit_xiShiftHolomorphicValue_nhdsWithin_zero_of_ofReal_eq_bvt_W_conjTensorProduct_timeShift`
+  already upgrade the supplier's positive-real-time family `hreal` to the
+  `hWlimit` hypotheses consumed below. -/
 theorem bvt_wightmanInner_self_nonneg_of_componentwise_tendsto_singleSplit_xiShift_nhdsWithin_zero_of_hermitian
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     (hherm :

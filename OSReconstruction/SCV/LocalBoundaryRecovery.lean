@@ -99,11 +99,40 @@ private theorem pointwise_convergence_local {m : ℕ}
       schwartz_eq_zero_of_not_mem_tsupport f U hf_supp y hy
     simp [hfy]
 
+/-- Pointwise convergence of the integrand `F(x+iεη)*f(x) → G(x)*f(x)` ae,
+using a separate boundary trace on `U` and the fact that `f` vanishes outside
+`U`. -/
+private theorem pointwise_convergence_local_of_trace {m : ℕ}
+    {C : Set (Fin m → ℝ)} (_hne : C.Nonempty)
+    {F : (Fin m → ℂ) → ℂ}
+    (U : Set (Fin m → ℝ))
+    {G : (Fin m → ℝ) → ℂ}
+    (η : Fin m → ℝ)
+    (htraceU : ∀ x ∈ U,
+      Filter.Tendsto
+        (fun ε : ℝ => F (fun i => ↑(x i) + ↑ε * ↑(η i) * I))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (G x)))
+    (f : SchwartzMap (Fin m → ℝ) ℂ)
+    (hf_supp : tsupport (f : (Fin m → ℝ) → ℂ) ⊆ U) :
+    ∀ᵐ y : Fin m → ℝ ∂volume,
+      Filter.Tendsto (fun ε : ℝ =>
+        F (fun i => ↑(y i) + ↑ε * ↑(η i) * I) * (f : (Fin m → ℝ) → ℂ) y)
+      (nhdsWithin 0 (Set.Ioi 0))
+      (nhds (G y * (f : (Fin m → ℝ) → ℂ) y)) := by
+  apply Filter.Eventually.of_forall
+  intro y
+  by_cases hy : y ∈ U
+  · exact (htraceU y hy).mul tendsto_const_nhds
+  · have hfy : (f : (Fin m → ℝ) → ℂ) y = 0 :=
+      schwartz_eq_zero_of_not_mem_tsupport f U hf_supp y hy
+    simp [hfy]
+
 /-- Local version of `fourierLaplace_schwartz_integral_convergence`: the
 integrals `∫ F(x+iεη) f(x) dx` converge to `∫ F(x) f(x) dx` as `ε → 0+`,
 using boundary continuity only on U. -/
 private theorem fourierLaplace_schwartz_integral_convergence_local {m : ℕ}
-    {C : Set (Fin m → ℝ)} (hC : IsOpen C) (_hconv : Convex ℝ C) (hne : C.Nonempty)
+    {C : Set (Fin m → ℝ)} (_hC : IsOpen C) (_hconv : Convex ℝ C) (hne : C.Nonempty)
     (hcone : ∀ (t : ℝ), 0 < t → ∀ y ∈ C, t • y ∈ C)
     {F : (Fin m → ℂ) → ℂ} (hF : DifferentiableOn ℂ F (TubeDomain C))
     (hTempered : HasFourierLaplaceReprTempered C F)
@@ -141,6 +170,53 @@ private theorem fourierLaplace_schwartz_integral_convergence_local {m : ℕ}
       (ae_of_all _ fun y => by ring)
   · -- Pointwise convergence (LOCAL — the key difference from the global proof)
     exact pointwise_convergence_local hne hcone hF U hcontU f hf_supp η hη
+
+/-- Local dominated-convergence seam with an explicit boundary trace object.
+
+This is the honest replacement contract at the first local boundary-recovery
+consumer after the zero-extension discovery: the boundary object integrated on
+the real edge is a separate trace `G`, not definitionally `F ∘ realEmbed`. -/
+theorem fourierLaplace_schwartz_integral_convergence_local_of_trace {m : ℕ}
+    {C : Set (Fin m → ℝ)} (_hC : IsOpen C) (_hconv : Convex ℝ C) (_hne : C.Nonempty)
+    (hcone : ∀ (t : ℝ), 0 < t → ∀ y ∈ C, t • y ∈ C)
+    {F : (Fin m → ℂ) → ℂ} (hF : DifferentiableOn ℂ F (TubeDomain C))
+    (hTempered : HasFourierLaplaceReprTempered C F)
+    (U : Set (Fin m → ℝ)) (_hU : IsOpen U)
+    {G : (Fin m → ℝ) → ℂ}
+    (_hG_contOn : ContinuousOn G U)
+    (η : Fin m → ℝ) (hη : η ∈ C)
+    (htraceU : ∀ x ∈ U,
+      Filter.Tendsto
+        (fun ε : ℝ => F (fun i => ↑(x i) + ↑ε * ↑(η i) * I))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (G x)))
+    (f : SchwartzMap (Fin m → ℝ) ℂ)
+    (hf_supp : tsupport (f : (Fin m → ℝ) → ℂ) ⊆ U)
+    (_hf_compact : HasCompactSupport (f : (Fin m → ℝ) → ℂ)) :
+    Filter.Tendsto (fun ε : ℝ =>
+      ∫ x : Fin m → ℝ, F (fun i => ↑(x i) + ↑ε * ↑(η i) * I) * f x)
+    (nhdsWithin 0 (Set.Ioi 0))
+    (nhds (∫ x, G x * f x)) := by
+  obtain ⟨C_bd, N, δ, _hC_bd_pos, hδ_pos, h_bd⟩ := hTempered.uniform_bound η hη
+  apply MeasureTheory.tendsto_integral_filter_of_dominated_convergence
+    (bound := fun y : Fin m → ℝ => C_bd * (1 + ‖y‖) ^ N * ‖(f : (Fin m → ℝ) → ℂ) y‖)
+  · apply Filter.eventually_of_mem self_mem_nhdsWithin
+    intro ε hε
+    exact fourierLaplace_integrand_aestronglyMeasurable hF η hη hcone (↑f)
+      (schwartzMap_integrable f) ε (Set.mem_Ioi.mp hε)
+  · have h_mem : Set.Ioo 0 δ ∈ nhdsWithin (0 : ℝ) (Set.Ioi 0) :=
+      mem_nhdsWithin.mpr ⟨Set.Iio δ, isOpen_Iio, Set.mem_Iio.mpr hδ_pos,
+        fun ε hε => Set.mem_Ioo.mpr ⟨Set.mem_Ioi.mp hε.2, Set.mem_Iio.mp hε.1⟩⟩
+    apply Filter.eventually_of_mem h_mem
+    intro ε hε
+    obtain ⟨hε_pos, hε_lt⟩ := Set.mem_Ioo.mp hε
+    apply Filter.Eventually.of_forall
+    intro y
+    rw [norm_mul]
+    exact mul_le_mul_of_nonneg_right (h_bd y ε hε_pos hε_lt) (norm_nonneg _)
+  · exact (schwartzMap_polynomial_norm_integrable f N).const_mul C_bd |>.congr
+      (ae_of_all _ fun y => by ring)
+  · exact pointwise_convergence_local_of_trace (C := C) _hne U η htraceU f hf_supp
 
 /-- **Local-open boundary recovery from a tempered Fourier-Laplace package.**
 

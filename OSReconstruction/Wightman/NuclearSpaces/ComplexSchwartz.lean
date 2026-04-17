@@ -29,6 +29,15 @@ open SchwartzMap
 
 variable {D : Type*} [NormedAddCommGroup D] [NormedSpace ℝ D]
 
+/-- Real scalars act compatibly through complex-linear maps on complex-valued
+Schwartz spaces, so complex-linear functionals can be restricted to `ℝ`. -/
+instance instCompatibleSMulRealComplex :
+    LinearMap.CompatibleSMul (𝓢(D, ℂ)) ℂ ℝ ℂ where
+  map_smul := by
+    intro f c x
+    change f ((c : ℂ) • x) = (c : ℂ) • f x
+    exact map_smulₛₗ f (c : ℂ) x
+
 /-- Real part as a continuous linear map on Schwartz spaces. -/
 def realPartCLM : 𝓢(D, ℂ) →L[ℝ] 𝓢(D, ℝ) :=
   SchwartzMap.mkCLM (𝕜 := ℝ) (𝕜' := ℝ)

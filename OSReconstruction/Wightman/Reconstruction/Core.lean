@@ -1336,6 +1336,17 @@ theorem OrderedPositiveTimeRegion_subset_positiveTimeRegion (d n : ℕ) :
   intro x hx i
   exact (hx i).1
 
+/- Exact earliest raw-support ingress seam:
+below pointwise ordered-time membership itself, current source only exposes this
+forgetful inclusion to bare positivity of each time coordinate. It does not
+recover any strict ordering or noncoincidence consequence from ambient
+fixed-surrogate, comparison, boundary-vanishing, or transformed-image data.
+There is also no standalone source theorem below the next lemma that packages
+the pairwise strict time inequalities `x i 0 < x j 0` for `i < j`; those are
+still used directly from the membership hypothesis itself. In particular,
+current source has no theorem upgrading `x ∈ PositiveTimeRegion d n` to any
+pairwise strict time-ordering conclusion. -/
+
 /-- The coincidence locus where at least two Euclidean arguments coincide. -/
 def CoincidenceLocus (d n : ℕ) : Set (NPointDomain d n) :=
   { x | ∃ i j : Fin n, i ≠ j ∧ x i = x j }
@@ -1346,6 +1357,13 @@ theorem coincidenceLocus_one_eq_empty {d : ℕ} :
   ext x
   simp [CoincidenceLocus]
 
+/-- Exact earliest raw-support geometry seam, and the lowest currently reusable
+strict sub-conclusion below support disjointness: ordered positive-time
+membership already rules out coincidence pointwise, but current source still
+has no lemma below this line upgrading ambient fixed-surrogate / comparison /
+boundary-vanishing inputs to such ordered membership. Any future ambient
+ingress must still supply pointwise ordered-time membership on raw support
+before this lemma can fire. -/
 theorem not_mem_CoincidenceLocus_of_mem_OrderedPositiveTimeRegion
     {d n : ℕ} {x : NPointDomain d n}
     (hx : x ∈ OrderedPositiveTimeRegion d n) :
@@ -1396,6 +1414,14 @@ theorem VanishesToInfiniteOrderOnCoincidence.one {d : ℕ}
   intro k x hx
   simp [coincidenceLocus_one_eq_empty (d := d)] at hx
 
+/-- Exact support-to-flatness seam: once one has proved that the topological
+support is disjoint from `CoincidenceLocus`, the remaining upgrade to
+zero-diagonal regularity is purely local derivative support control via
+`support_iteratedFDeriv_subset`.
+
+This theorem is still downstream of any future ambient-ingress result: current
+source has no theorem here deriving the disjointness hypothesis from
+boundary-vanishing, comparison, or transformed-image data. -/
 theorem VanishesToInfiniteOrderOnCoincidence_of_tsupport_disjoint
     {d n : ℕ} (f : SchwartzNPoint d n)
     (hdisj : Disjoint (tsupport (f : NPointDomain d n → ℂ)) (CoincidenceLocus d n)) :
@@ -1411,6 +1437,16 @@ theorem VanishesToInfiniteOrderOnCoincidence_of_tsupport_disjoint
       ((support_iteratedFDeriv_subset (𝕜 := ℝ) (n := k) (f := ⇑f)) hx)
   by_contra hx_nonzero
   exact hx_not_support (by simpa [Function.mem_support, hx_nonzero])
+
+/-- Exact raw-support-to-disjointness seam: ordered positive-time support already
+excludes coincidence points before any derivative argument is used. -/
+theorem tsupport_disjoint_CoincidenceLocus_of_subset_orderedPositiveTimeRegion
+    {d n : ℕ} (f : SchwartzNPoint d n)
+    (hsupp : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n) :
+    Disjoint (tsupport (f : NPointDomain d n → ℂ)) (CoincidenceLocus d n) := by
+  rw [Set.disjoint_left]
+  intro x hxsupport hxcoin
+  exact (not_mem_CoincidenceLocus_of_mem_OrderedPositiveTimeRegion (hsupp hxsupport)) hxcoin
 
 omit [NeZero d] in
 private def coincidenceCollapse {n : ℕ} (i j : Fin n) (x : NPointDomain d n) :
@@ -2606,21 +2642,18 @@ abbrev SchwingerFunctions (d : ℕ) := ZeroDiagonalSchwingerFunctions d
     zero-diagonal space `°S`: coincidence points lie outside the ordered-time
     region, and every iterated derivative is supported inside the support of the
     original Schwartz function. -/
+/- Exact raw-support seam:
+this is the earliest current bridge from ordered positive-time support to any
+downstream zero-diagonal consequence. It is still purely support-side and does
+not extract `tsupport ⊆ OrderedPositiveTimeRegion` from ambient comparison,
+boundary-vanishing, or transformed-image hypotheses. -/
 theorem VanishesToInfiniteOrderOnCoincidence_of_support_subset_orderedPositiveTimeRegion
     {d n : ℕ} (f : SchwartzNPoint d n)
     (hsupp : tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n) :
     VanishesToInfiniteOrderOnCoincidence f := by
-  intro k x hxcoin
-  have hx_not_ord : x ∉ OrderedPositiveTimeRegion d n := by
-    intro hxord
-    exact (not_mem_CoincidenceLocus_of_mem_OrderedPositiveTimeRegion hxord) hxcoin
-  have hx_not_support :
-      x ∉ Function.support (iteratedFDeriv ℝ k (f : NPointDomain d n → ℂ)) := by
-    intro hx
-    have hx' := support_iteratedFDeriv_subset (𝕜 := ℝ) (n := k) (f := ⇑f) hx
-    exact hx_not_ord (hsupp hx')
-  by_contra hx_nonzero
-  exact hx_not_support (by simpa [Function.mem_support, hx_nonzero])
+  exact VanishesToInfiniteOrderOnCoincidence_of_tsupport_disjoint f
+    (tsupport_disjoint_CoincidenceLocus_of_subset_orderedPositiveTimeRegion
+      (f := f) hsupp)
 
 /-- Time reflection operator on Euclidean points: θ(τ, x⃗) = (-τ, x⃗) -/
 def timeReflection (x : SpacetimeDim d) : SpacetimeDim d :=

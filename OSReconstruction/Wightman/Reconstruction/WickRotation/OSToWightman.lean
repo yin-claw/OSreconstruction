@@ -5,6 +5,7 @@ Authors: Michael Douglas, ModularPhysics Contributors
 -/
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBase
 import OSReconstruction.Wightman.Reconstruction.DenseCLM
+import OSReconstruction.ComplexLieGroups.JostPoints
 
 /-!
 # OS to Wightman Analytic Continuation Core
@@ -674,6 +675,43 @@ private theorem xiShift_add_same {k d : ℕ}
   · simp [xiShift, h, add_assoc]
   · simp [xiShift, h]
 
+/-- `xiShift` is an affine translate of the input configuration by a fixed
+`(j,r,t)`-dependent shift vector, so its norm is controlled by the input norm
+plus the norm of that fixed translate. This is the exact norm-control interface
+needed to transfer global polynomial-growth bounds along fixed real-time shell
+translations. -/
+private theorem norm_xiShift_le {k d : ℕ}
+    (j : Fin k) (r : Fin (d + 1))
+    (z : Fin k → Fin (d + 1) → ℂ) (t : ℂ) :
+    ‖xiShift j r z t‖ ≤
+      ‖z‖ + ‖fun i μ => if j ≤ i ∧ μ = r then t else 0‖ := by
+  let shift : Fin k → Fin (d + 1) → ℂ :=
+    fun i μ => if j ≤ i ∧ μ = r then t else 0
+  have hdecomp : xiShift j r z t = fun i μ => z i μ + shift i μ := by
+    ext i μ
+    by_cases h : j ≤ i ∧ μ = r
+    · simp [xiShift, shift, h]
+    · simp [xiShift, shift, h]
+  rw [hdecomp]
+  exact norm_add_le _ _
+
+/-- A real `ξ`-shift preserves forward-tube membership because it leaves every
+imaginary coordinate unchanged. This is the exact geometry-side input needed to
+transfer global forward-tube growth along fixed real-time shell translations. -/
+private theorem xiShift_mem_forwardTube_of_real {k d : ℕ} [NeZero d]
+    (j : Fin k) (r : Fin (d + 1))
+    (z : Fin k → Fin (d + 1) → ℂ) (t : ℝ)
+    (hz : z ∈ ForwardTube d k) :
+    xiShift j r z (t : ℂ) ∈ ForwardTube d k := by
+  rw [forwardTube_eq_imPreimage] at hz ⊢
+  have him :
+      (fun i μ => (xiShift j r z (t : ℂ) i μ).im) = fun i μ => (z i μ).im := by
+    ext i μ
+    by_cases h : j ≤ i ∧ μ = r
+    · simp [xiShift, h]
+    · simp [xiShift, h]
+  simpa [Set.mem_setOf_eq, him] using hz
+
 /-- In flattened difference coordinates, `xiShift` changes exactly one coordinate:
 the `(j,r)` difference variable is translated by `t`, and all other difference
 coordinates stay fixed. This is the concrete bookkeeping fact behind the
@@ -794,6 +832,86 @@ theorem fromDiffFlat_update_eq_xiShift_sub {k d : ℕ}
   · subst hq
     simp [Function.update]
   · simp [Function.update, hq]
+
+/-- Evaluating flattened difference coordinates on a real configuration recovers
+the corresponding real consecutive difference. This is the exact bridge from the
+`xiShift` flat-coordinate update theorem to the Jost-side consecutive-difference
+language. -/
+theorem toDiffFlat_ofReal_apply_eq_consecutiveDiff {k d : ℕ}
+    (y : Fin k → Fin (d + 1) → ℝ) (i : Fin k) (μ : Fin (d + 1)) :
+    BHW.toDiffFlat k d (fun a b => (y a b : ℂ)) (finProdFinEquiv (i, μ)) =
+      (BHW.consecutiveDiff y i μ : ℂ) := by
+  by_cases hi0 : i.val = 0
+  · simp [BHW.toDiffFlat, BHW.flattenCfg, BHW.diffCoordEquiv_apply,
+      BHW.consecutiveDiff, hi0]
+  · simp [BHW.toDiffFlat, BHW.flattenCfg, BHW.diffCoordEquiv_apply,
+      BHW.consecutiveDiff, hi0]
+
+/-- On a real configuration, `xiShift j 0` changes exactly one consecutive
+difference slot: `(j,0)` increases by `t`, and every other slot is unchanged. -/
+theorem consecutiveDiff_xiShift_zero_ofReal_eq_update {k d : ℕ}
+    (j : Fin k) (y : Fin k → Fin (d + 1) → ℝ) (t : ℝ) :
+    (fun p : Fin k × Fin (d + 1) =>
+      BHW.consecutiveDiff
+        (fun a b => (xiShift j 0 (fun a b => (y a b : ℂ)) (t : ℂ) a b).re)
+        p.1 p.2) =
+      Function.update
+        (fun p : Fin k × Fin (d + 1) => BHW.consecutiveDiff y p.1 p.2)
+        (j, (0 : Fin (d + 1)))
+        (BHW.consecutiveDiff y j 0 + t) := by
+  let yShift : Fin k → Fin (d + 1) → ℝ :=
+    fun a b => (xiShift j 0 (fun a b => (y a b : ℂ)) (t : ℂ) a b).re
+  ext p
+  rcases p with ⟨i, μ⟩
+  have hyShift_ofReal :
+      (fun a b => ((yShift a b : ℝ) : ℂ)) =
+        xiShift j 0 (fun a b => (y a b : ℂ)) (t : ℂ) := by
+    funext a b
+    by_cases h : j ≤ a ∧ b = (0 : Fin (d + 1))
+    · simp [yShift, xiShift, h]
+    · simp [yShift, xiShift, h]
+  have hflat :=
+    congrArg (fun u => u (finProdFinEquiv (i, μ)))
+      (toDiffFlat_xiShift_eq_update (j := j) (r := (0 : Fin (d + 1)))
+        (z := fun a b => (y a b : ℂ)) (t := (t : ℂ)))
+  rw [← hyShift_ofReal] at hflat
+  have hre := congrArg Complex.re hflat
+  by_cases hp : (i, μ) = (j, (0 : Fin (d + 1)))
+  · cases hp
+    simpa [toDiffFlat_ofReal_apply_eq_consecutiveDiff, yShift, Function.update] using hre
+  · have hfin :
+        finProdFinEquiv (i, μ) ≠ finProdFinEquiv (j, (0 : Fin (d + 1))) := by
+      intro h
+      apply hp
+      exact finProdFinEquiv.injective h
+    simpa [toDiffFlat_ofReal_apply_eq_consecutiveDiff, yShift, Function.update, hfin, hp] using hre
+
+/-- The updated slot in `consecutiveDiff_xiShift_zero_ofReal_eq_update`. -/
+theorem consecutiveDiff_xiShift_zero_ofReal_eq_add {k d : ℕ}
+    (j : Fin k) (y : Fin k → Fin (d + 1) → ℝ) (t : ℝ) :
+    BHW.consecutiveDiff
+        (fun a b => (xiShift j 0 (fun a b => (y a b : ℂ)) (t : ℂ) a b).re)
+        j 0 =
+      BHW.consecutiveDiff y j 0 + t := by
+  have h :=
+    congrArg (fun f => f (j, (0 : Fin (d + 1))))
+      (consecutiveDiff_xiShift_zero_ofReal_eq_update (j := j) (y := y) (t := t))
+  simpa using h
+
+/-- Every off-slot consecutive difference is unchanged by the real `xiShift`
+at time component `0`. -/
+theorem consecutiveDiff_xiShift_zero_ofReal_eq_of_ne {k d : ℕ}
+    (j : Fin k) (y : Fin k → Fin (d + 1) → ℝ) (t : ℝ)
+    {i : Fin k} {μ : Fin (d + 1)}
+    (hneq : (i, μ) ≠ (j, (0 : Fin (d + 1)))) :
+    BHW.consecutiveDiff
+        (fun a b => (xiShift j 0 (fun a b => (y a b : ℂ)) (t : ℂ) a b).re)
+        i μ =
+      BHW.consecutiveDiff y i μ := by
+  have h :=
+    congrArg (fun f => f (i, μ))
+      (consecutiveDiff_xiShift_zero_ofReal_eq_update (j := j) (y := y) (t := t))
+  simpa [Function.update, hneq] using h
 
 /-- Tail Euclidean time shift starting at index `j`: points with index `i ≥ j`
 are shifted by the real time vector `timeShiftVec d t`, earlier points are fixed. -/

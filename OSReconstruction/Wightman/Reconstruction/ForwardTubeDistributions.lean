@@ -6,6 +6,7 @@ Authors: ModularPhysics Contributors
 import OSReconstruction.SCV.TubeDistributions
 import OSReconstruction.SCV.ConeDefs
 import OSReconstruction.SCV.LaplaceSchwartz
+import OSReconstruction.SCV.PaleyWienerSchwartz
 import OSReconstruction.SCV.DistributionalUniqueness
 import OSReconstruction.Wightman.Reconstruction
 
@@ -483,6 +484,146 @@ theorem forwardConeAbs_smul (d n : ℕ) [NeZero d]
     convert this using 1; ext μ; split <;> simp [Pi.smul_apply, smul_eq_mul, mul_sub]
   exact inOpenForwardCone_smul d t ht _ hk
 
+/-- The forward cone is salient: its closure contains no complete line. -/
+theorem forwardConeAbs_salient (d n : ℕ) [NeZero d] :
+    IsSalientCone (ForwardConeAbs d n) := by
+  intro y hy hny
+  have h_time_diff_zero : ∀ j : Fin n,
+      y j 0 - (if h : j.val = 0 then 0 else y ⟨j.val - 1, by omega⟩ 0) = 0 := by
+    intro j
+    have hδ_cont : Continuous (fun w : Fin n → Fin (d + 1) → ℝ =>
+        w j 0 - if h : j.val = 0 then 0 else w (⟨j.val - 1, by omega⟩ : Fin n) 0) := by
+      apply Continuous.sub ((continuous_apply (0 : Fin (d + 1))).comp (continuous_apply j))
+      split_ifs with h
+      · exact continuous_const
+      · exact (continuous_apply (0 : Fin (d + 1))).comp
+          (continuous_apply (⟨j.val - 1, by omega⟩ : Fin n))
+    have hprev_eq : ∀ (w : Fin n → Fin (d + 1) → ℝ) (ν : Fin (d + 1)),
+        (if h : j.val = 0 then (0 : Fin (d + 1) → ℝ) else w (⟨j.val - 1, by omega⟩ : Fin n)) ν =
+        (if h : j.val = 0 then 0 else w (⟨j.val - 1, by omega⟩ : Fin n) ν) := by
+      intro w ν
+      split_ifs <;> simp
+    have h_nonneg : 0 ≤ y j 0 - (if h : j.val = 0 then 0 else y ⟨j.val - 1, by omega⟩ 0) := by
+      have hForward_sub : ForwardConeAbs d n ⊆
+          {w : Fin n → Fin (d + 1) → ℝ | (0 : ℝ) <
+            w j 0 - if h : j.val = 0 then 0 else w (⟨j.val - 1, by omega⟩ : Fin n) 0} := by
+        intro w hw
+        have h1 := (hw j).1
+        simp only [hprev_eq] at h1
+        exact h1
+      exact (closure_lt_subset_le continuous_const hδ_cont) (closure_mono hForward_sub hy)
+    have h_nonpos : y j 0 - (if h : j.val = 0 then 0 else y ⟨j.val - 1, by omega⟩ 0) ≤ 0 := by
+      have hForward_sub : ForwardConeAbs d n ⊆
+          {w : Fin n → Fin (d + 1) → ℝ | (0 : ℝ) <
+            w j 0 - if h : j.val = 0 then 0 else w (⟨j.val - 1, by omega⟩ : Fin n) 0} := by
+        intro w hw
+        have h1 := (hw j).1
+        simp only [hprev_eq] at h1
+        exact h1
+      have h1 : 0 ≤ (-y) j 0 - (if h : j.val = 0 then 0 else (-y) (⟨j.val - 1, by omega⟩ : Fin n) 0) :=
+        (closure_lt_subset_le continuous_const hδ_cont) (closure_mono hForward_sub hny)
+      have heq :
+          (-y) j 0 - (if h : j.val = 0 then 0 else (-y) (⟨j.val - 1, by omega⟩ : Fin n) 0) =
+            -(y j 0 - (if h : j.val = 0 then 0 else y ⟨j.val - 1, by omega⟩ 0)) := by
+        simp only [Pi.neg_apply]
+        split_ifs <;> ring
+      linarith [heq ▸ h1]
+    linarith
+  have h_all_diff_zero : ∀ j : Fin n, ∀ μ : Fin (d + 1),
+      y j μ - (if h : j.val = 0 then 0 else y ⟨j.val - 1, by omega⟩ μ) = 0 := by
+    intro j μ
+    by_cases hμ : μ = 0
+    · subst hμ
+      exact h_time_diff_zero j
+    · let spatial_sq_sum : (Fin n → Fin (d + 1) → ℝ) → ℝ := fun w =>
+        ∑ i : Fin d, (w j (Fin.succ i) -
+          (if h : j.val = 0 then 0 else w (⟨j.val - 1, by omega⟩ : Fin n) (Fin.succ i))) ^ 2
+      have hS_cont : Continuous spatial_sq_sum := by
+        apply continuous_finset_sum
+        intro i _
+        apply Continuous.pow
+        apply Continuous.sub
+        · exact (continuous_apply (Fin.succ i)).comp (continuous_apply j)
+        · split_ifs with h
+          · exact continuous_const
+          · exact (continuous_apply (Fin.succ i)).comp
+              (continuous_apply (⟨j.val - 1, by omega⟩ : Fin n))
+      have h_spatial_nonpos : spatial_sq_sum y ≤ 0 := by
+        let time_sq : (Fin n → Fin (d + 1) → ℝ) → ℝ := fun w =>
+          (w j 0 - (if h : j.val = 0 then 0 else w (⟨j.val - 1, by omega⟩ : Fin n) 0)) ^ 2
+        have hT_cont : Continuous time_sq := by
+          apply Continuous.pow
+          apply Continuous.sub
+          · exact (continuous_apply (0 : Fin (d + 1))).comp (continuous_apply j)
+          · split_ifs with h
+            · exact continuous_const
+            · exact (continuous_apply (0 : Fin (d + 1))).comp
+                (continuous_apply (⟨j.val - 1, by omega⟩ : Fin n))
+        have h_on_cone : ∀ w ∈ ForwardConeAbs d n, spatial_sq_sum w ≤ time_sq w := by
+          intro w hw
+          have hj := hw j
+          have hQ := MinkowskiSpace.minkowskiNormSq_eq d
+            (fun ν => w j ν - (if h : j.val = 0 then 0 else w (⟨j.val - 1, by omega⟩ : Fin n) ν))
+          simp only [MinkowskiSpace.timeComponent, MinkowskiSpace.spatialComponents] at hQ
+          have hfun_eq :
+              (fun μ => w j μ -
+                (if h : j.val = 0 then (0 : Fin (d + 1) → ℝ) else
+                  w (⟨j.val - 1, by omega⟩ : Fin n)) μ) =
+              (fun ν => w j ν - if h : j.val = 0 then 0 else
+                w (⟨j.val - 1, by omega⟩ : Fin n) ν) := by
+            ext ν
+            split_ifs <;> simp [Pi.zero_apply]
+          have hj2 : MinkowskiSpace.minkowskiNormSq d
+              (fun ν => w j ν - (if h : j.val = 0 then 0 else
+                w (⟨j.val - 1, by omega⟩ : Fin n) ν)) < 0 := by
+            rw [← hfun_eq]
+            exact hj.2
+          linarith [hj2, hQ]
+        have h_le : spatial_sq_sum y ≤ time_sq y :=
+          closure_minimal h_on_cone (isClosed_le hS_cont hT_cont) hy
+        have h_time_sq_zero : time_sq y = 0 := by
+          show (y j 0 - (if h : j.val = 0 then 0 else y ⟨j.val - 1, by omega⟩ 0)) ^ 2 = 0
+          rw [h_time_diff_zero j]
+          ring
+        linarith
+      have h_each_zero : ∀ i : Fin d,
+          (y j (Fin.succ i) -
+            (if h : j.val = 0 then 0 else y ⟨j.val - 1, by omega⟩ (Fin.succ i))) ^ 2 = 0 :=
+        fun i => le_antisymm
+          (le_trans
+            (Finset.single_le_sum
+              (fun k _ => sq_nonneg (y j (Fin.succ k) -
+                (if h : j.val = 0 then 0 else y ⟨j.val - 1, by omega⟩ (Fin.succ k))))
+              (Finset.mem_univ i))
+            h_spatial_nonpos)
+          (sq_nonneg _)
+      have hμ_pred : μ = Fin.succ (μ.pred hμ) := by
+        exact (Fin.succ_pred μ hμ).symm
+      rw [hμ_pred]
+      have := h_each_zero (μ.pred hμ)
+      rwa [sq_eq_zero_iff] at this
+  ext k μ
+  suffices ∀ m : ℕ, ∀ k : Fin n, k.val = m → y k μ = 0 by
+    exact this k.val k rfl
+  intro m
+  induction m with
+  | zero =>
+      intro k hk
+      have := h_all_diff_zero k μ
+      have hk0 : k.val = 0 := hk
+      simp only [hk0, ↓reduceDIte] at this
+      linarith
+  | succ m ih =>
+      intro k hk
+      have hkv : ¬k.val = 0 := by omega
+      have hd := h_all_diff_zero k μ
+      simp only [hkv, ↓reduceDIte] at hd
+      have hpred_lt : k.val - 1 < n := by omega
+      have hprev : y ⟨k.val - 1, hpred_lt⟩ μ = 0 :=
+        ih ⟨k.val - 1, hpred_lt⟩
+          (show (⟨k.val - 1, hpred_lt⟩ : Fin n).val = m by simp; omega)
+      linarith
+
 /-- ForwardConeFlat is a cone: closed under positive scalar multiplication. -/
 theorem forwardConeFlat_isCone (d n : ℕ) [NeZero d]
     (t : ℝ) (ht : 0 < t) (y : Fin (n * (d + 1)) → ℝ) (hy : y ∈ ForwardConeFlat d n) :
@@ -529,8 +670,8 @@ theorem forwardTube_flatten_eq_tubeDomain (d n : ℕ) [NeZero d] :
     · convert hyk.2 using 2
       ext μ; split_ifs with h <;> simp [him]
 
-/-- Helper: transport DifferentiableOn through the flattening. -/
-private theorem differentiableOn_flatten {n : ℕ} {d : ℕ} [NeZero d]
+/-- Helper: transport `DifferentiableOn` through the flattening. -/
+theorem differentiableOn_flatten {n : ℕ} {d : ℕ} [NeZero d]
     {F : (Fin n → Fin (d + 1) → ℂ) → ℂ}
     (hF : DifferentiableOn ℂ F (ForwardTube d n)) :
     DifferentiableOn ℂ (F ∘ (flattenCLEquiv n (d + 1)).symm)
@@ -675,6 +816,64 @@ theorem distributional_uniqueness_forwardTube {d n : ℕ} [NeZero d]
   have hzero := huniq (e z) hmem
   simpa [G, e] using sub_eq_zero.mp hzero
 
+/-! ### Pointwise continuity from exact flattened FL representation -/
+
+/-- Pointwise forward-tube boundary continuity from an exact flattened
+Fourier-Laplace representation, provided the flattened Fourier-Laplace trace
+already converges to the chosen boundary value at the corresponding real point.
+
+This isolates the exact source gap on the theorem-3 complement seam: the
+flattened dual-cone witness and interior FL representation already exist, and
+the exact remaining missing input is the flattened-side boundary trace
+convergence at the real point. -/
+theorem boundary_function_continuousWithinAt_forwardTube_of_flatFLRepr_at_point
+    {d n : ℕ} [NeZero d]
+    {F : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+    (Tflat : SchwartzMap (Fin (n * (d + 1)) → ℝ) ℂ →L[ℂ] ℂ)
+    (hCflat_open : IsOpen (ForwardConeFlat d n))
+    (hCflat_conv : Convex ℝ (ForwardConeFlat d n))
+    (hCflat_cone : IsCone (ForwardConeFlat d n))
+    (hCflat_salient : IsSalientCone (ForwardConeFlat d n))
+    (_hTflat_support : HasFourierSupportInDualCone (ForwardConeFlat d n) Tflat)
+    (x : NPointDomain d n)
+    (hrepr_tube :
+      ∀ z ∈ ForwardTube d n,
+        F z =
+          fourierLaplaceExtMultiDim
+            (ForwardConeFlat d n) hCflat_open hCflat_conv hCflat_cone hCflat_salient
+            Tflat ((flattenCLEquiv n (d + 1)) z))
+    (htrace_boundary :
+      Filter.Tendsto
+        (fourierLaplaceExtMultiDim
+          (ForwardConeFlat d n) hCflat_open hCflat_conv hCflat_cone hCflat_salient
+          Tflat)
+        (nhdsWithin
+          (SCV.realEmbed (flattenCLEquivReal n (d + 1) x))
+          (SCV.TubeDomain (ForwardConeFlat d n)))
+        (nhds (F (fun k μ => (x k μ : ℂ))))) :
+    ContinuousWithinAt
+      F
+      (ForwardTube d n)
+      (fun k μ => (x k μ : ℂ)) := by
+  let e := flattenCLEquiv n (d + 1)
+  let eR := flattenCLEquivReal n (d + 1)
+  have hmap :
+      Filter.Tendsto e
+        (nhdsWithin (fun k μ => (x k μ : ℂ)) (ForwardTube d n))
+        (nhdsWithin (SCV.realEmbed (eR x)) (SCV.TubeDomain (ForwardConeFlat d n))) :=
+    (e.continuousAt.continuousWithinAt.tendsto_nhdsWithin fun z hz => by
+      rw [← forwardTube_flatten_eq_tubeDomain]
+      exact Set.mem_image_of_mem e hz)
+  have hcomp := Filter.Tendsto.comp htrace_boundary hmap
+  have hcomp_fun :
+      Filter.Tendsto F
+        (nhdsWithin (fun k μ => (x k μ : ℂ)) (ForwardTube d n))
+        (nhds (F (fun k μ => (x k μ : ℂ)))) := by
+    refine Filter.Tendsto.congr' ?_ hcomp
+    filter_upwards [self_mem_nhdsWithin] with z hz
+    simp [Function.comp, e, hrepr_tube z hz]
+  simpa [ContinuousWithinAt] using hcomp_fun
+
 /-! ### Proved versions under regular flattened FL input -/
 
 /-- Proved boundary continuity of the real trace under regular flattened-tube
@@ -759,6 +958,111 @@ theorem boundary_value_recovery_forwardTube_of_flatRegular {d n : ℕ} [NeZero d
 
 /-- Proved forward-tube distributional uniqueness under regular flattened-tube
     input for the difference `F₁ - F₂`. -/
+theorem distributional_uniqueness_forwardTube_of_flatTempered_of_trace
+    {d n : ℕ} [NeZero d]
+    {F₁ F₂ : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+    (hF₁ : DifferentiableOn ℂ F₁ (ForwardTube d n))
+    (hF₂ : DifferentiableOn ℂ F₂ (ForwardTube d n))
+    (hTempered_G : SCV.HasFourierLaplaceReprTempered (ForwardConeFlat d n)
+      (fun z =>
+        (F₁ ∘ (flattenCLEquiv n (d + 1)).symm) z -
+        (F₂ ∘ (flattenCLEquiv n (d + 1)).symm) z))
+    {B : NPointDomain d n → ℂ} (hB_cont : Continuous B)
+    (η : Fin n → Fin (d + 1) → ℝ) (hη : InForwardCone d n η)
+    (htrace_ray : ∀ x : NPointDomain d n,
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          F₁ (fun k μ => ↑(x k μ) + ↑ε * ↑(η k μ) * I) -
+          F₂ (fun k μ => ↑(x k μ) + ↑ε * ↑(η k μ) * I))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (B x)))
+    (htrace_boundary : ∀ x : NPointDomain d n,
+      Filter.Tendsto
+        (fun z => F₁ z - F₂ z)
+        (nhdsWithin (fun k μ => (x k μ : ℂ)) (ForwardTube d n))
+        (nhds (B x)))
+    (h_dist_zero : ∀ (f : SchwartzMap (Fin (n * (d + 1)) → ℝ) ℂ), hTempered_G.dist f = 0) :
+    ∀ z ∈ ForwardTube d n, F₁ z = F₂ z := by
+  let e := flattenCLEquiv n (d + 1)
+  let eR := flattenCLEquivReal n (d + 1)
+  let G : (Fin (n * (d + 1)) → ℂ) → ℂ := fun z =>
+    F₁ (e.symm z) - F₂ (e.symm z)
+  have hG₁_diff : DifferentiableOn ℂ (F₁ ∘ e.symm) (SCV.TubeDomain (ForwardConeFlat d n)) :=
+    differentiableOn_flatten hF₁
+  have hG₂_diff : DifferentiableOn ℂ (F₂ ∘ e.symm) (SCV.TubeDomain (ForwardConeFlat d n)) :=
+    differentiableOn_flatten hF₂
+  have hG_diff : DifferentiableOn ℂ G (SCV.TubeDomain (ForwardConeFlat d n)) := by
+    simpa [G, Function.comp] using hG₁_diff.sub hG₂_diff
+  let Bflat : (Fin (n * (d + 1)) → ℝ) → ℂ := fun x => B (eR.symm x)
+  have hBflat_cont : Continuous Bflat := hB_cont.comp eR.symm.continuous
+  have hηflat : eR η ∈ ForwardConeFlat d n := ⟨η, hη, rfl⟩
+  have htrace_ray_flat :
+      ∀ x : Fin (n * (d + 1)) → ℝ,
+        Filter.Tendsto
+          (fun ε : ℝ => G (fun i => ↑(x i) + ↑ε * ↑((eR η) i) * I))
+          (nhdsWithin 0 (Set.Ioi 0))
+          (nhds (Bflat x)) := by
+    intro x
+    have hEq :
+        (fun ε : ℝ => G (fun i => ↑(x i) + ↑ε * ↑((eR η) i) * I)) =
+        (fun ε : ℝ =>
+          F₁ (fun k μ => ↑((eR.symm x) k μ) + ↑ε * ↑(η k μ) * I) -
+          F₂ (fun k μ => ↑((eR.symm x) k μ) + ↑ε * ↑(η k μ) * I)) := by
+      funext ε
+      have hArg :
+          e.symm (fun i => ↑(x i) + ↑ε * ↑((eR η) i) * I) =
+            (fun k μ => ↑((eR.symm x) k μ) + ↑ε * ↑(η k μ) * I) := by
+        ext k μ
+        have hxk : (eR.symm x) k μ = x (finProdFinEquiv (k, μ)) := by
+          simp [eR, flattenCLEquivReal_symm_apply]
+        have hηk : eR η (finProdFinEquiv (k, μ)) = η k μ := by
+          simp [eR, flattenCLEquivReal_apply]
+        rw [flattenCLEquiv_symm_apply]
+        simp [hxk, hηk]
+      simp [G, hArg]
+    rw [hEq]
+    simpa [Bflat] using htrace_ray (eR.symm x)
+  have htrace_boundary_flat :
+      ∀ x : Fin (n * (d + 1)) → ℝ,
+        Filter.Tendsto G
+          (nhdsWithin (SCV.realEmbed x) (SCV.TubeDomain (ForwardConeFlat d n)))
+          (nhds (Bflat x)) := by
+    intro x
+    have hmap :
+        Filter.Tendsto e.symm
+          (nhdsWithin (SCV.realEmbed x) (SCV.TubeDomain (ForwardConeFlat d n)))
+          (nhdsWithin (fun k μ => ↑((eR.symm x) k μ)) (ForwardTube d n)) :=
+      (e.symm.continuousAt.continuousWithinAt.tendsto_nhdsWithin fun w hw => by
+        rw [← forwardTube_flatten_eq_tubeDomain] at hw
+        obtain ⟨z, hz, hzw⟩ := hw
+        have hwz : e.symm w = z := by
+          rw [← hzw]
+          simp [e]
+        simpa [hwz] using hz)
+    have htrace := htrace_boundary (eR.symm x)
+    change Filter.Tendsto (fun w => F₁ (e.symm w) - F₂ (e.symm w))
+      (nhdsWithin (SCV.realEmbed x) (SCV.TubeDomain (ForwardConeFlat d n)))
+      (nhds (B (eR.symm x)))
+    rw [show (fun k μ => ↑((eR.symm x) k μ)) = e.symm (SCV.realEmbed x) by
+      ext k μ
+      simp [e, eR, SCV.realEmbed, flattenCLEquiv_symm_apply, flattenCLEquivReal_symm_apply]]
+      at htrace
+    exact htrace.comp hmap
+  have huniq := SCV.distributional_uniqueness_tube_of_tempered_of_trace
+    (forwardConeFlat_isOpen d n)
+    (forwardConeFlat_convex d n)
+    (forwardConeFlat_nonempty d n)
+    (forwardConeFlat_isCone d n)
+    hG_diff hTempered_G hBflat_cont (eR η) hηflat htrace_ray_flat htrace_boundary_flat h_dist_zero
+  intro z hz
+  have hmem : e z ∈ SCV.TubeDomain (ForwardConeFlat d n) := by
+    rw [← forwardTube_flatten_eq_tubeDomain]
+    exact Set.mem_image_of_mem e hz
+  have hzero := huniq (e z) hmem
+  simpa [G, e, Function.comp] using sub_eq_zero.mp hzero
+
+/-- Proved forward-tube distributional uniqueness under regular flattened-tube
+    input for the difference `F₁ - F₂`. -/
 theorem distributional_uniqueness_forwardTube_of_flatRegular {d n : ℕ} [NeZero d]
     {F₁ F₂ : (Fin n → Fin (d + 1) → ℂ) → ℂ}
     (hF₁ : DifferentiableOn ℂ F₁ (ForwardTube d n))
@@ -770,24 +1074,112 @@ theorem distributional_uniqueness_forwardTube_of_flatRegular {d n : ℕ} [NeZero
     (h_dist_zero : ∀ (f : SchwartzMap (Fin (n * (d + 1)) → ℝ) ℂ), hRegular_G.dist f = 0) :
     ∀ z ∈ ForwardTube d n, F₁ z = F₂ z := by
   let e := flattenCLEquiv n (d + 1)
-  let G₁ : (Fin (n * (d + 1)) → ℂ) → ℂ := F₁ ∘ e.symm
-  let G₂ : (Fin (n * (d + 1)) → ℂ) → ℂ := F₂ ∘ e.symm
-  have hG₁_diff : DifferentiableOn ℂ G₁ (SCV.TubeDomain (ForwardConeFlat d n)) :=
-    differentiableOn_flatten hF₁
-  have hG₂_diff : DifferentiableOn ℂ G₂ (SCV.TubeDomain (ForwardConeFlat d n)) :=
-    differentiableOn_flatten hF₂
-  have huniq := SCV.distributional_uniqueness_tube_of_regular
-    (forwardConeFlat_isOpen d n)
-    (forwardConeFlat_convex d n)
-    (forwardConeFlat_nonempty d n)
-    (forwardConeFlat_isCone d n)
-    hG₁_diff hG₂_diff hRegular_G h_dist_zero
-  intro z hz
-  have hmem : e z ∈ SCV.TubeDomain (ForwardConeFlat d n) := by
-    rw [← forwardTube_flatten_eq_tubeDomain]
-    exact Set.mem_image_of_mem e hz
-  have := huniq (e z) hmem
-  simpa [G₁, G₂, e, Function.comp] using this
+  let eR := flattenCLEquivReal n (d + 1)
+  let G : (Fin n → Fin (d + 1) → ℂ) → ℂ := fun z => F₁ z - F₂ z
+  let Gflat : (Fin (n * (d + 1)) → ℂ) → ℂ := G ∘ e.symm
+  have hG_diff : DifferentiableOn ℂ G (ForwardTube d n) := hF₁.sub hF₂
+  let hTempered_G : SCV.HasFourierLaplaceReprTempered (ForwardConeFlat d n) Gflat :=
+    { toHasFourierLaplaceRepr := hRegular_G.toHasFourierLaplaceRepr
+      poly_growth := hRegular_G.poly_growth
+      uniform_bound := hRegular_G.uniform_bound }
+  let B : NPointDomain d n → ℂ := fun x => G (fun k μ => (x k μ : ℂ))
+  have hB_cont : Continuous B :=
+    boundary_function_continuous_forwardTube_of_flatRegular hG_diff hRegular_G
+  obtain ⟨η, hη_mem⟩ := forwardConeAbs_nonempty d n
+  have hη : InForwardCone d n η := (inForwardCone_iff_mem_forwardConeAbs η).2 hη_mem
+  have hηflat : eR η ∈ ForwardConeFlat d n := ⟨η, hη_mem, rfl⟩
+  have htrace_boundary : ∀ x : NPointDomain d n,
+      Filter.Tendsto
+        (fun z => F₁ z - F₂ z)
+        (nhdsWithin (fun k μ => (x k μ : ℂ)) (ForwardTube d n))
+        (nhds (B x)) := by
+    intro x
+    have hmap :
+        Filter.Tendsto e
+          (nhdsWithin (fun k μ => (x k μ : ℂ)) (ForwardTube d n))
+          (nhdsWithin (SCV.realEmbed (eR x)) (SCV.TubeDomain (ForwardConeFlat d n))) :=
+      (e.continuousAt.continuousWithinAt.tendsto_nhdsWithin fun z hz => by
+        rw [← forwardTube_flatten_eq_tubeDomain]
+        exact Set.mem_image_of_mem e hz)
+    have htrace_flat := hRegular_G.tube_continuousWithinAt (eR x)
+    have hreal :
+        e (fun k μ => (x k μ : ℂ)) = SCV.realEmbed (eR x) := by
+      ext i
+      simp [e, eR, SCV.realEmbed, flattenCLEquiv_apply, flattenCLEquivReal_apply]
+    rw [← hreal] at htrace_flat
+    have hcomp := Filter.Tendsto.comp htrace_flat hmap
+    have hcomp_fun :
+        Filter.Tendsto (fun z => F₁ z - F₂ z)
+          (nhdsWithin (fun k μ => (x k μ : ℂ)) (ForwardTube d n))
+          (nhds
+            ((fun z => (F₁ ∘ e.symm) z - (F₂ ∘ e.symm) z)
+              (e (fun k μ => (x k μ : ℂ))))) := by
+      refine Filter.Tendsto.congr' ?_ hcomp
+      filter_upwards [self_mem_nhdsWithin] with z hz
+      simp [e]
+    have hcomp' :
+        Filter.Tendsto G
+          (nhdsWithin (fun k μ => (x k μ : ℂ)) (ForwardTube d n))
+          (nhds (G (fun k μ => (x k μ : ℂ)))) := by
+      change Filter.Tendsto (fun z => F₁ z - F₂ z)
+        (nhdsWithin (fun k μ => (x k μ : ℂ)) (ForwardTube d n))
+        (nhds (F₁ (fun k μ => (x k μ : ℂ)) - F₂ (fun k μ => (x k μ : ℂ))))
+      simpa [e] using hcomp_fun
+    simpa [B] using hcomp'
+  have htrace_ray : ∀ x : NPointDomain d n,
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          F₁ (fun k μ => ↑(x k μ) + ↑ε * ↑(η k μ) * I) -
+          F₂ (fun k μ => ↑(x k μ) + ↑ε * ↑(η k μ) * I))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (B x)) := by
+    intro x
+    have hpath_forward :
+        Filter.Tendsto
+          (fun ε : ℝ => fun k μ => ↑(x k μ) + ↑ε * ↑(η k μ) * I)
+          (nhdsWithin 0 (Set.Ioi 0))
+          (nhdsWithin (fun k μ => (x k μ : ℂ)) (ForwardTube d n)) := by
+      have h_path_cont : Continuous (fun ε : ℝ =>
+          (fun k μ => ↑(x k μ) + ↑ε * ↑(η k μ) * I)) :=
+        continuous_pi fun k =>
+          continuous_pi fun μ =>
+            continuous_const.add
+              ((Complex.continuous_ofReal.comp continuous_id).mul continuous_const |>.mul
+                continuous_const)
+      have h_path_zero :
+          (fun k μ => ↑(x k μ) + ↑((0 : ℝ)) * ↑(η k μ) * I) =
+            (fun k μ => (x k μ : ℂ)) := by
+        ext k μ
+        simp
+      have h_path_maps :
+          Set.MapsTo (fun ε : ℝ => fun k μ => ↑(x k μ) + ↑ε * ↑(η k μ) * I)
+            (Set.Ioi (0 : ℝ)) (ForwardTube d n) := by
+        intro ε hε
+        have him :
+            (fun k μ => ((↑(x k μ) + ↑ε * ↑(η k μ) * I : ℂ)).im) = ε • η := by
+          ext k μ
+          simp [Complex.add_im, Complex.mul_im, Complex.I_im, Complex.I_re,
+            Complex.ofReal_im, Complex.ofReal_re, Pi.smul_apply, smul_eq_mul]
+        rw [forwardTube_eq_imPreimage]
+        change (fun k μ => ((↑(x k μ) + ↑ε * ↑(η k μ) * I : ℂ)).im) ∈ ForwardConeAbs d n
+        rw [him]
+        exact forwardConeAbs_smul d n ε hε η hη_mem
+      rw [tendsto_nhdsWithin_iff]
+      refine ⟨?_, Filter.eventually_of_mem self_mem_nhdsWithin h_path_maps⟩
+      have h :
+          Filter.Tendsto
+            (fun ε : ℝ => fun k μ => ↑(x k μ) + ↑ε * ↑(η k μ) * I)
+            (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+            (nhds (fun k μ => ↑(x k μ) + ↑((0 : ℝ)) * ↑(η k μ) * I)) :=
+        h_path_cont.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
+      rwa [h_path_zero] at h
+    exact (htrace_boundary x).comp hpath_forward
+  have hdist_zero_tempered :
+      ∀ (f : SchwartzMap (Fin (n * (d + 1)) → ℝ) ℂ), hTempered_G.dist f = 0 := by
+    intro f
+    simpa [hTempered_G] using h_dist_zero f
+  exact distributional_uniqueness_forwardTube_of_flatTempered_of_trace
+    hF₁ hF₂ hTempered_G hB_cont η hη htrace_ray htrace_boundary hdist_zero_tempered
 
 /-! ### Norm Preservation under Flattening -/
 
@@ -1118,14 +1510,29 @@ theorem boundary_value_recovery_forwardTube_of_flatRegular_from_bv {d n : ℕ} [
 
 /-- Distributional uniqueness on the forward tube from explicit regular flattened input plus
     zero product-coordinate boundary data for the difference. -/
-theorem distributional_uniqueness_forwardTube_of_flatRegular_from_bvZero {d n : ℕ} [NeZero d]
+theorem distributional_uniqueness_forwardTube_of_flatTempered_of_trace_from_bvZero
+    {d n : ℕ} [NeZero d]
     {F₁ F₂ : (Fin n → Fin (d + 1) → ℂ) → ℂ}
     (hF₁ : DifferentiableOn ℂ F₁ (ForwardTube d n))
     (hF₂ : DifferentiableOn ℂ F₂ (ForwardTube d n))
-    (hRegular_G : SCV.HasFourierLaplaceReprRegular (ForwardConeFlat d n)
+    (hTempered_G : SCV.HasFourierLaplaceReprTempered (ForwardConeFlat d n)
       (fun z =>
         (F₁ ∘ (flattenCLEquiv n (d + 1)).symm) z -
         (F₂ ∘ (flattenCLEquiv n (d + 1)).symm) z))
+    {B : NPointDomain d n → ℂ} (hB_cont : Continuous B)
+    (η : Fin n → Fin (d + 1) → ℝ) (hη : InForwardCone d n η)
+    (htrace_ray : ∀ x : NPointDomain d n,
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          F₁ (fun k μ => ↑(x k μ) + ↑ε * ↑(η k μ) * I) -
+          F₂ (fun k μ => ↑(x k μ) + ↑ε * ↑(η k μ) * I))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (B x)))
+    (htrace_boundary : ∀ x : NPointDomain d n,
+      Filter.Tendsto
+        (fun z => F₁ z - F₂ z)
+        (nhdsWithin (fun k μ => (x k μ : ℂ)) (ForwardTube d n))
+        (nhds (B x)))
     (h_agree : ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
       InForwardCone d n η →
       Filter.Tendsto
@@ -1152,17 +1559,174 @@ theorem distributional_uniqueness_forwardTube_of_flatRegular_from_bvZero {d n : 
         (F₂ ∘ (flattenCLEquiv n (d + 1)).symm) z) :=
     schwartz_bv_to_flat_repr hG h_zero_bv
   have hdist :
-      hRegular_G.dist = hRepr.dist :=
+      hTempered_G.dist = hRepr.dist :=
     SCV.fourierLaplace_repr_dist_unique
-      (forwardConeFlat_nonempty d n) hRegular_G.toHasFourierLaplaceRepr hRepr
-  have hdist_zero : ∀ (f : SchwartzMap (Fin (n * (d + 1)) → ℝ) ℂ), hRegular_G.dist f = 0 := by
+      (forwardConeFlat_nonempty d n) hTempered_G.toHasFourierLaplaceRepr hRepr
+  have hdist_zero :
+      ∀ (f : SchwartzMap (Fin (n * (d + 1)) → ℝ) ℂ), hTempered_G.dist f = 0 := by
     intro f
     calc
-      hRegular_G.dist f = hRepr.dist f := by
+      hTempered_G.dist f = hRepr.dist f := by
         simpa using congrArg (fun W => W f) hdist
       _ = 0 := by
         simpa [hRepr, h_zero_bv]
           using schwartz_bv_to_flat_repr_dist_apply hG continuous_const h_agree f
-  exact distributional_uniqueness_forwardTube_of_flatRegular hF₁ hF₂ hRegular_G hdist_zero
+  exact distributional_uniqueness_forwardTube_of_flatTempered_of_trace
+    hF₁ hF₂ hTempered_G hB_cont η hη htrace_ray htrace_boundary hdist_zero
+
+/-- Distributional uniqueness on the forward tube from explicit regular flattened input plus
+    zero product-coordinate boundary data for the difference. This remains the regular-package
+    route; the trace-based caller-side replacement additionally needs a separate full boundary
+    `nhdsWithin` trace hypothesis and is recorded in
+    `distributional_uniqueness_forwardTube_of_flatTempered_of_trace_from_bvZero`. -/
+theorem distributional_uniqueness_forwardTube_of_flatRegular_from_bvZero {d n : ℕ} [NeZero d]
+    {F₁ F₂ : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+    (hF₁ : DifferentiableOn ℂ F₁ (ForwardTube d n))
+    (hF₂ : DifferentiableOn ℂ F₂ (ForwardTube d n))
+    (hRegular_G : SCV.HasFourierLaplaceReprRegular (ForwardConeFlat d n)
+      (fun z =>
+        (F₁ ∘ (flattenCLEquiv n (d + 1)).symm) z -
+        (F₂ ∘ (flattenCLEquiv n (d + 1)).symm) z))
+    (h_agree : ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
+      InForwardCone d n η →
+      Filter.Tendsto
+        (fun ε : ℝ => ∫ x : NPointDomain d n,
+          ((F₁ (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I)) -
+           (F₂ (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I))) * (f x))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds 0)) :
+    ∀ z ∈ ForwardTube d n, F₁ z = F₂ z := by
+  let G : (Fin n → Fin (d + 1) → ℂ) → ℂ := fun z => F₁ z - F₂ z
+  have hG : DifferentiableOn ℂ G (ForwardTube d n) := hF₁.sub hF₂
+  let e := flattenCLEquiv n (d + 1)
+  let eR := flattenCLEquivReal n (d + 1)
+  let hTempered_G : SCV.HasFourierLaplaceReprTempered (ForwardConeFlat d n)
+      (fun z =>
+        (F₁ ∘ e.symm) z -
+        (F₂ ∘ e.symm) z) :=
+    { toHasFourierLaplaceRepr := hRegular_G.toHasFourierLaplaceRepr
+      poly_growth := hRegular_G.poly_growth
+      uniform_bound := hRegular_G.uniform_bound }
+  let B : NPointDomain d n → ℂ := fun x => G (fun k μ => (x k μ : ℂ))
+  have hB_cont : Continuous B :=
+    boundary_function_continuous_forwardTube_of_flatRegular hG hRegular_G
+  obtain ⟨η, hη_mem⟩ := forwardConeAbs_nonempty d n
+  have hη : InForwardCone d n η := (inForwardCone_iff_mem_forwardConeAbs η).2 hη_mem
+  let h_zero_bv :
+      ∃ (T' : SchwartzNPoint d n → ℂ), Continuous T' ∧
+        ∀ (f : SchwartzNPoint d n) (η : Fin n → Fin (d + 1) → ℝ),
+          InForwardCone d n η →
+          Filter.Tendsto
+            (fun ε : ℝ => ∫ x : NPointDomain d n,
+              G (fun k μ => ↑(x k μ) + ε * ↑(η k μ) * Complex.I) * (f x))
+            (nhdsWithin 0 (Set.Ioi 0))
+            (nhds (T' f)) := ⟨0, continuous_const, h_agree⟩
+  let hRepr : SCV.HasFourierLaplaceRepr (ForwardConeFlat d n)
+      (fun z =>
+        (F₁ ∘ (flattenCLEquiv n (d + 1)).symm) z -
+        (F₂ ∘ (flattenCLEquiv n (d + 1)).symm) z) :=
+    schwartz_bv_to_flat_repr hG h_zero_bv
+  have hdist :
+      hRegular_G.dist = hRepr.dist :=
+    SCV.fourierLaplace_repr_dist_unique
+      (forwardConeFlat_nonempty d n) hRegular_G.toHasFourierLaplaceRepr hRepr
+  have htrace_boundary : ∀ x : NPointDomain d n,
+      Filter.Tendsto
+        (fun z => F₁ z - F₂ z)
+        (nhdsWithin (fun k μ => (x k μ : ℂ)) (ForwardTube d n))
+        (nhds (B x)) := by
+    intro x
+    have hmap :
+        Filter.Tendsto e
+          (nhdsWithin (fun k μ => (x k μ : ℂ)) (ForwardTube d n))
+          (nhdsWithin (SCV.realEmbed (eR x)) (SCV.TubeDomain (ForwardConeFlat d n))) :=
+      (e.continuousAt.continuousWithinAt.tendsto_nhdsWithin fun z hz => by
+        rw [← forwardTube_flatten_eq_tubeDomain]
+        exact Set.mem_image_of_mem e hz)
+    have htrace_flat := hRegular_G.tube_continuousWithinAt (eR x)
+    have hreal :
+        e (fun k μ => (x k μ : ℂ)) = SCV.realEmbed (eR x) := by
+      ext i
+      simp [e, eR, SCV.realEmbed, flattenCLEquiv_apply, flattenCLEquivReal_apply]
+    rw [← hreal] at htrace_flat
+    have hcomp := Filter.Tendsto.comp htrace_flat hmap
+    have hcomp_fun :
+        Filter.Tendsto (fun z => F₁ z - F₂ z)
+          (nhdsWithin (fun k μ => (x k μ : ℂ)) (ForwardTube d n))
+          (nhds
+            ((fun z => (F₁ ∘ e.symm) z - (F₂ ∘ e.symm) z)
+              (e (fun k μ => (x k μ : ℂ))))) := by
+      refine Filter.Tendsto.congr' ?_ hcomp
+      filter_upwards [self_mem_nhdsWithin] with z hz
+      simp [e]
+    have hcomp' :
+        Filter.Tendsto G
+          (nhdsWithin (fun k μ => (x k μ : ℂ)) (ForwardTube d n))
+          (nhds (G (fun k μ => (x k μ : ℂ)))) := by
+      change Filter.Tendsto (fun z => F₁ z - F₂ z)
+        (nhdsWithin (fun k μ => (x k μ : ℂ)) (ForwardTube d n))
+        (nhds (F₁ (fun k μ => (x k μ : ℂ)) - F₂ (fun k μ => (x k μ : ℂ))))
+      simpa [e] using hcomp_fun
+    simpa [B, G] using hcomp'
+  have htrace_ray : ∀ x : NPointDomain d n,
+      Filter.Tendsto
+        (fun ε : ℝ =>
+          F₁ (fun k μ => ↑(x k μ) + ↑ε * ↑(η k μ) * I) -
+          F₂ (fun k μ => ↑(x k μ) + ↑ε * ↑(η k μ) * I))
+        (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (B x)) := by
+    intro x
+    have hpath_forward :
+        Filter.Tendsto
+          (fun ε : ℝ => fun k μ => ↑(x k μ) + ↑ε * ↑(η k μ) * I)
+          (nhdsWithin 0 (Set.Ioi 0))
+          (nhdsWithin (fun k μ => (x k μ : ℂ)) (ForwardTube d n)) := by
+      have h_path_cont : Continuous (fun ε : ℝ =>
+          (fun k μ => ↑(x k μ) + ↑ε * ↑(η k μ) * I)) :=
+        continuous_pi fun k =>
+          continuous_pi fun μ =>
+            continuous_const.add
+              ((Complex.continuous_ofReal.comp continuous_id).mul continuous_const |>.mul
+                continuous_const)
+      have h_path_zero :
+          (fun k μ => ↑(x k μ) + ↑((0 : ℝ)) * ↑(η k μ) * I) =
+            (fun k μ => (x k μ : ℂ)) := by
+        ext k μ
+        simp
+      have h_path_maps :
+          Set.MapsTo (fun ε : ℝ => fun k μ => ↑(x k μ) + ↑ε * ↑(η k μ) * I)
+            (Set.Ioi (0 : ℝ)) (ForwardTube d n) := by
+        intro ε hε
+        have him :
+            (fun k μ => ((↑(x k μ) + ↑ε * ↑(η k μ) * I : ℂ)).im) = ε • η := by
+          ext k μ
+          simp [Complex.add_im, Complex.mul_im, Complex.I_im, Complex.I_re,
+            Complex.ofReal_im, Complex.ofReal_re, Pi.smul_apply, smul_eq_mul]
+        rw [forwardTube_eq_imPreimage]
+        change (fun k μ => ((↑(x k μ) + ↑ε * ↑(η k μ) * I : ℂ)).im) ∈ ForwardConeAbs d n
+        rw [him]
+        exact forwardConeAbs_smul d n ε hε η hη_mem
+      rw [tendsto_nhdsWithin_iff]
+      refine ⟨?_, Filter.eventually_of_mem self_mem_nhdsWithin h_path_maps⟩
+      have h :
+          Filter.Tendsto
+            (fun ε : ℝ => fun k μ => ↑(x k μ) + ↑ε * ↑(η k μ) * I)
+            (nhdsWithin (0 : ℝ) (Set.Ioi 0))
+            (nhds (fun k μ => ↑(x k μ) + ↑((0 : ℝ)) * ↑(η k μ) * I)) :=
+        h_path_cont.continuousAt.tendsto.mono_left nhdsWithin_le_nhds
+      rwa [h_path_zero] at h
+    exact (htrace_boundary x).comp hpath_forward
+  have hdist_zero : ∀ (f : SchwartzMap (Fin (n * (d + 1)) → ℝ) ℂ), hTempered_G.dist f = 0 := by
+    intro f
+    calc
+      hTempered_G.dist f = hRegular_G.dist f := by
+        rfl
+      _ = hRepr.dist f := by
+        simpa using congrArg (fun W => W f) hdist
+      _ = 0 := by
+        simpa [hRepr, h_zero_bv]
+          using schwartz_bv_to_flat_repr_dist_apply hG continuous_const h_agree f
+  exact distributional_uniqueness_forwardTube_of_flatTempered_of_trace
+    hF₁ hF₂ hTempered_G hB_cont η hη htrace_ray htrace_boundary hdist_zero
 
 end
