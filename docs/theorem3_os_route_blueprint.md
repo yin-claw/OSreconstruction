@@ -20016,6 +20016,15 @@ Proof transcript:
 4. Pull the common factors
    `Real.exp (...)` and `∏ j, ‖m j‖` outside the finite sum.
 
+Compiled status, 2026-04-17: the pointwise finite-word expansion and applied
+positive-energy norm bound are implemented and exact-file checked in
+`Section43FourierLaplaceHigherDerivatives.lean`:
+
+```lean
+theorem section43FourierLaplace_timeIntegrand_iteratedFDeriv_apply_eq_sum_words
+theorem norm_section43FourierLaplace_timeIntegrand_iteratedFDeriv_apply_le_sum_words
+```
+
 For the lower-margin branch, do not prove that every transported word
 vanishes.  Prove instead that the original integrand is identically zero as a
 function of `q`, and therefore all of its iterated derivatives are zero:
@@ -20095,6 +20104,15 @@ theorem norm_section43FourierLaplace_timeIntegrand_iteratedFDeriv_le_sum_words
               (section43DerivativeWordInput d n r
                 (section43DiffPullbackCLM d n ⟨f, hf_ord⟩) a)
               (τ, section43QSpatial (d := d) (n := n) q)‖
+```
+
+Compiled status, 2026-04-17: the lower-margin all-order zero theorem and the
+operator-norm word bound are implemented and exact-file checked in
+`Section43FourierLaplaceHigherDerivatives.lean`:
+
+```lean
+theorem section43FourierLaplace_timeIntegrand_iteratedFDeriv_eq_zero_of_exists_time_lt_margin
+theorem norm_section43FourierLaplace_timeIntegrand_iteratedFDeriv_le_sum_words
 ```
 
 The integrated rapid estimate should be implemented first for the finite-word
@@ -20263,18 +20281,24 @@ Implementation readiness checkpoint:
   the cons/tail simp lemmas for word scalar/input/count/coeff, and the
   one-letter expansion theorem
   `section43FourierLaplace_timeIntegrandFDerivCLM_apply_eq_sum_atoms`.
-- Ready next: prove the pointwise finite-word expansion and its applied norm
-  corollary.
+- Compiled now in `Section43FourierLaplaceHigherDerivatives.lean`:
+  `contDiff_section43FourierLaplace_timeIntegrand_q`,
+  `section43FourierLaplace_sum_words_fderivCLM_apply_eq_sum_cons`,
+  `section43FourierLaplace_timeIntegrand_iteratedFDeriv_apply_eq_sum_words`,
+  `norm_section43FourierLaplace_timeIntegrand_iteratedFDeriv_apply_le_sum_words`,
+  `section43FourierLaplace_timeIntegrand_iteratedFDeriv_eq_zero_of_exists_time_lt_margin`,
+  and
+  `norm_section43FourierLaplace_timeIntegrand_iteratedFDeriv_le_sum_words`.
+- Ready next: prove the integrated finite-word candidate rapid estimate.
 - Implementation caution for the next theorem: the induction step naturally
   differentiates the CLM-valued map
   `q ↦ iteratedFDeriv ℝ r G q`, while the desired statement is applied to
   directions.  The clean Lean route is either to formulate an intermediate
   CLM-valued finite-word candidate, or to use the constant-application
   derivative theorem to pass from the CLM-valued derivative to the applied
-  scalar function.  Do not fake this with an applied-only rewrite that loses
-  the derivative-of-application obligation.
-- Then ready: prove the lower-margin all-order zero theorem and the
-  operator-norm word bound.
+  scalar function.  This is now handled in the compiled proof by
+  `fderiv_continuousMultilinear_apply_const_apply`, after proving smoothness
+  of the pointwise integrand.
 - Then ready: prove the integrated candidate rapid theorem by finite
   summation of `section43PartialFourier_timeMomentIntegral_spatialRapid`.
 - Then ready: under `hf_compact`, identify the candidate with actual
