@@ -1182,7 +1182,7 @@ theorem norm_section43FourierLaplace_timeIntegrand_iteratedFDeriv_le_sum_words
                   (section43QTime (d := d) (n := n) q' k : ℂ))) *
               partialFourierSpatial_fun (d := d) (n := n) F
                 (τ, section43QSpatial (d := d) (n := n) q'))
-          q‖ ≤ A * S := by
+      q‖ ≤ A * S := by
       refine ContinuousMultilinearMap.opNorm_le_bound hM_nonneg ?_
       intro m
       have happly :=
@@ -1190,6 +1190,301 @@ theorem norm_section43FourierLaplace_timeIntegrand_iteratedFDeriv_le_sum_words
           d n r F q hq τ hτ_margin m
       simpa [A, S, F] using happly
     simpa [A, S, F] using hop
+
+/-- Pointwise norm bound for the all-order finite-word expansion without any
+positive-energy or time-margin assumptions.  The exponential is left as its
+actual norm; this is the compact-slab variant needed for dominated
+differentiation. -/
+theorem norm_section43FourierLaplace_timeIntegrand_iteratedFDeriv_apply_le_sum_words_absExp
+    (d n r : ℕ) [NeZero d]
+    (F : SchwartzNPoint d n)
+    (q : NPointDomain d n)
+    (τ : Fin n → ℝ)
+    (m : Fin r → NPointDomain d n) :
+    ‖iteratedFDeriv ℝ r
+      (fun q' : NPointDomain d n =>
+        Complex.exp
+          (-(∑ k : Fin n,
+            (τ k : ℂ) *
+              (section43QTime (d := d) (n := n) q' k : ℂ))) *
+          partialFourierSpatial_fun (d := d) (n := n) F
+            (τ, section43QSpatial (d := d) (n := n) q'))
+      q m‖ ≤
+      ‖Complex.exp
+          (-(∑ k : Fin n,
+            (τ k : ℂ) *
+              (section43QTime (d := d) (n := n) q k : ℂ)))‖ *
+        (∑ a : Section43DerivativeWord d n r,
+          section43DerivativeWordCoeff d n r a *
+            ‖τ‖ ^ section43DerivativeWordTimeCount d n r a *
+            ‖partialFourierSpatial_fun (d := d) (n := n)
+              (section43DerivativeWordInput d n r F a)
+              (τ, section43QSpatial (d := d) (n := n) q)‖) *
+        ∏ j : Fin r, ‖m j‖ := by
+  classical
+  let E : ℂ :=
+    Complex.exp
+      (-(∑ k : Fin n,
+        (τ k : ℂ) * (section43QTime (d := d) (n := n) q k : ℂ)))
+  let dirProd : ℝ := ∏ j : Fin r, ‖m j‖
+  let P : Section43DerivativeWord d n r → ℂ := fun a =>
+    partialFourierSpatial_fun (d := d) (n := n)
+      (section43DerivativeWordInput d n r F a)
+      (τ, section43QSpatial (d := d) (n := n) q)
+  have hmain :
+      ‖∑ a : Section43DerivativeWord d n r,
+        section43DerivativeWordScalar d n r a τ m * E * P a‖ ≤
+        ∑ a : Section43DerivativeWord d n r,
+          ‖E‖ *
+            (section43DerivativeWordCoeff d n r a *
+              ‖τ‖ ^ section43DerivativeWordTimeCount d n r a * ‖P a‖) *
+            dirProd := by
+    calc
+      ‖∑ a : Section43DerivativeWord d n r,
+        section43DerivativeWordScalar d n r a τ m * E * P a‖ ≤
+          ∑ a : Section43DerivativeWord d n r,
+            ‖section43DerivativeWordScalar d n r a τ m * E * P a‖ := by
+            exact norm_sum_le _ _
+      _ ≤ ∑ a : Section43DerivativeWord d n r,
+          ‖E‖ *
+            (section43DerivativeWordCoeff d n r a *
+              ‖τ‖ ^ section43DerivativeWordTimeCount d n r a * ‖P a‖) *
+            dirProd := by
+          refine Finset.sum_le_sum ?_
+          intro a _ha
+          have hscalar := section43DerivativeWordScalar_norm_le d n r a τ m
+          have hSE :
+              ‖section43DerivativeWordScalar d n r a τ m‖ * ‖E‖ ≤
+                (section43DerivativeWordCoeff d n r a *
+                  ‖τ‖ ^ section43DerivativeWordTimeCount d n r a * dirProd) * ‖E‖ := by
+            exact mul_le_mul_of_nonneg_right hscalar (norm_nonneg E)
+          have hP_nonneg : 0 ≤ ‖P a‖ := norm_nonneg _
+          calc
+            ‖section43DerivativeWordScalar d n r a τ m * E * P a‖ =
+                ‖section43DerivativeWordScalar d n r a τ m‖ * ‖E‖ * ‖P a‖ := by
+                  simp [mul_assoc]
+            _ ≤ ((section43DerivativeWordCoeff d n r a *
+                  ‖τ‖ ^ section43DerivativeWordTimeCount d n r a * dirProd) * ‖E‖) *
+                  ‖P a‖ := by
+                  exact mul_le_mul_of_nonneg_right hSE hP_nonneg
+            _ = ‖E‖ *
+                (section43DerivativeWordCoeff d n r a *
+                  ‖τ‖ ^ section43DerivativeWordTimeCount d n r a * ‖P a‖) *
+                dirProd := by
+                  ring
+  calc
+    ‖iteratedFDeriv ℝ r
+      (fun q' : NPointDomain d n =>
+        Complex.exp
+          (-(∑ k : Fin n,
+            (τ k : ℂ) *
+              (section43QTime (d := d) (n := n) q' k : ℂ))) *
+          partialFourierSpatial_fun (d := d) (n := n) F
+            (τ, section43QSpatial (d := d) (n := n) q'))
+      q m‖ =
+        ‖∑ a : Section43DerivativeWord d n r,
+          section43DerivativeWordScalar d n r a τ m * E * P a‖ := by
+          rw [section43FourierLaplace_timeIntegrand_iteratedFDeriv_apply_eq_sum_words]
+    _ ≤ ∑ a : Section43DerivativeWord d n r,
+          ‖E‖ *
+            (section43DerivativeWordCoeff d n r a *
+              ‖τ‖ ^ section43DerivativeWordTimeCount d n r a * ‖P a‖) *
+            dirProd := hmain
+    _ = ‖E‖ *
+        (∑ a : Section43DerivativeWord d n r,
+          section43DerivativeWordCoeff d n r a *
+            ‖τ‖ ^ section43DerivativeWordTimeCount d n r a * ‖P a‖) *
+        dirProd := by
+          rw [← Finset.sum_mul]
+          congr 1
+          rw [Finset.mul_sum]
+    _ =
+      ‖Complex.exp
+          (-(∑ k : Fin n,
+            (τ k : ℂ) *
+              (section43QTime (d := d) (n := n) q k : ℂ)))‖ *
+        (∑ a : Section43DerivativeWord d n r,
+          section43DerivativeWordCoeff d n r a *
+            ‖τ‖ ^ section43DerivativeWordTimeCount d n r a *
+            ‖partialFourierSpatial_fun (d := d) (n := n)
+              (section43DerivativeWordInput d n r F a)
+              (τ, section43QSpatial (d := d) (n := n) q)‖) *
+        ∏ j : Fin r, ‖m j‖ := by
+          simp [E, P, dirProd]
+
+/-- Operator-norm form of the no-margin finite-word bound. -/
+theorem norm_section43FourierLaplace_timeIntegrand_iteratedFDeriv_le_sum_words_absExp
+    (d n r : ℕ) [NeZero d]
+    (F : SchwartzNPoint d n)
+    (q : NPointDomain d n)
+    (τ : Fin n → ℝ) :
+    ‖iteratedFDeriv ℝ r
+      (fun q' : NPointDomain d n =>
+        Complex.exp
+          (-(∑ k : Fin n,
+            (τ k : ℂ) *
+              (section43QTime (d := d) (n := n) q' k : ℂ))) *
+          partialFourierSpatial_fun (d := d) (n := n) F
+            (τ, section43QSpatial (d := d) (n := n) q'))
+      q‖ ≤
+      ‖Complex.exp
+          (-(∑ k : Fin n,
+            (τ k : ℂ) *
+              (section43QTime (d := d) (n := n) q k : ℂ)))‖ *
+        ∑ a : Section43DerivativeWord d n r,
+          section43DerivativeWordCoeff d n r a *
+            ‖τ‖ ^ section43DerivativeWordTimeCount d n r a *
+            ‖partialFourierSpatial_fun (d := d) (n := n)
+              (section43DerivativeWordInput d n r F a)
+              (τ, section43QSpatial (d := d) (n := n) q)‖ := by
+  classical
+  let E : ℂ :=
+    Complex.exp
+      (-(∑ k : Fin n,
+        (τ k : ℂ) * (section43QTime (d := d) (n := n) q k : ℂ)))
+  let S : ℝ :=
+    ∑ a : Section43DerivativeWord d n r,
+      section43DerivativeWordCoeff d n r a *
+        ‖τ‖ ^ section43DerivativeWordTimeCount d n r a *
+        ‖partialFourierSpatial_fun (d := d) (n := n)
+          (section43DerivativeWordInput d n r F a)
+          (τ, section43QSpatial (d := d) (n := n) q)‖
+  have hS_nonneg : 0 ≤ S := by
+    dsimp [S]
+    refine Finset.sum_nonneg ?_
+    intro a _ha
+    exact mul_nonneg
+      (mul_nonneg (section43DerivativeWordCoeff_nonneg d n r a)
+        (pow_nonneg (norm_nonneg τ) _))
+      (norm_nonneg _)
+  have hM_nonneg : 0 ≤ ‖E‖ * S := mul_nonneg (norm_nonneg E) hS_nonneg
+  have hop :
+      ‖iteratedFDeriv ℝ r
+        (fun q' : NPointDomain d n =>
+          Complex.exp
+            (-(∑ k : Fin n,
+              (τ k : ℂ) *
+                (section43QTime (d := d) (n := n) q' k : ℂ))) *
+          partialFourierSpatial_fun (d := d) (n := n) F
+            (τ, section43QSpatial (d := d) (n := n) q'))
+        q‖ ≤ ‖E‖ * S := by
+    refine ContinuousMultilinearMap.opNorm_le_bound hM_nonneg ?_
+    intro m
+    have happly :=
+      norm_section43FourierLaplace_timeIntegrand_iteratedFDeriv_apply_le_sum_words_absExp
+        d n r F q τ m
+    simpa [E, S] using happly
+  simpa [E, S] using hop
+
+/-- Above the compact-support time slab, the pointwise Fourier-Laplace time
+integrand is identically zero as a function of `q`. -/
+theorem section43FourierLaplace_timeIntegrand_eq_zero_of_timeNorm_gt_bound
+    (d n : ℕ) [NeZero d]
+    (f : SchwartzNPoint d n)
+    (hf_ord :
+      tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    {R : ℝ}
+    (hR_supp :
+      ∀ ξ ∈ tsupport
+        (((section43DiffPullbackCLM d n ⟨f, hf_ord⟩ : SchwartzNPoint d n) :
+          NPointDomain d n → ℂ)),
+        ‖section43QTime (d := d) (n := n) ξ‖ ≤ R)
+    (τ : Fin n → ℝ)
+    (hτ : R < ‖τ‖) :
+    (fun q' : NPointDomain d n =>
+      Complex.exp
+        (-(∑ k : Fin n,
+          (τ k : ℂ) *
+            (section43QTime (d := d) (n := n) q' k : ℂ))) *
+      partialFourierSpatial_fun (d := d) (n := n)
+        (section43DiffPullbackCLM d n ⟨f, hf_ord⟩)
+        (τ, section43QSpatial (d := d) (n := n) q')) =
+      fun _ => 0 := by
+  funext q'
+  have hP_zero :
+      partialFourierSpatial_fun (d := d) (n := n)
+        (section43DiffPullbackCLM d n ⟨f, hf_ord⟩)
+        (τ, section43QSpatial (d := d) (n := n) q') = 0 := by
+    exact partialFourierSpatial_section43DiffPullback_eq_zero_of_timeNorm_gt_bound
+      d n f hf_ord hR_supp τ (section43QSpatial (d := d) (n := n) q') hτ
+  simp [hP_zero]
+
+/-- Above the compact-support time slab, all pointwise iterated derivatives of
+the Fourier-Laplace time integrand vanish. -/
+theorem section43FourierLaplace_timeIntegrand_iteratedFDeriv_eq_zero_of_timeNorm_gt_bound
+    (d n r : ℕ) [NeZero d]
+    (f : SchwartzNPoint d n)
+    (hf_ord :
+      tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    {R : ℝ}
+    (hR_supp :
+      ∀ ξ ∈ tsupport
+        (((section43DiffPullbackCLM d n ⟨f, hf_ord⟩ : SchwartzNPoint d n) :
+          NPointDomain d n → ℂ)),
+        ‖section43QTime (d := d) (n := n) ξ‖ ≤ R)
+    (τ : Fin n → ℝ)
+    (hτ : R < ‖τ‖) :
+    iteratedFDeriv ℝ r
+      (fun q' : NPointDomain d n =>
+        Complex.exp
+          (-(∑ k : Fin n,
+            (τ k : ℂ) *
+              (section43QTime (d := d) (n := n) q' k : ℂ))) *
+        partialFourierSpatial_fun (d := d) (n := n)
+          (section43DiffPullbackCLM d n ⟨f, hf_ord⟩)
+          (τ, section43QSpatial (d := d) (n := n) q')) =
+      0 := by
+  rw [section43FourierLaplace_timeIntegrand_eq_zero_of_timeNorm_gt_bound
+    d n f hf_ord hR_supp τ hτ]
+  simp
+
+/-- Pointwise derivative of the pointwise `r`-th derivative.  The derivative is
+the left-curry of the `(r+1)`-linear map, matching the
+`iteratedFDeriv_succ_apply_left` convention. -/
+theorem hasFDerivAt_section43FourierLaplace_timeIntegrand_iteratedFDeriv_curryLeft
+    (d n r : ℕ) [NeZero d]
+    (F : SchwartzNPoint d n)
+    (q : NPointDomain d n)
+    (τ : Fin n → ℝ) :
+    HasFDerivAt
+      (fun q' : NPointDomain d n =>
+        iteratedFDeriv ℝ r
+          (fun q'' : NPointDomain d n =>
+            Complex.exp
+              (-(∑ k : Fin n,
+                (τ k : ℂ) *
+                  (section43QTime (d := d) (n := n) q'' k : ℂ))) *
+            partialFourierSpatial_fun (d := d) (n := n) F
+              (τ, section43QSpatial (d := d) (n := n) q''))
+          q')
+      ((iteratedFDeriv ℝ (r + 1)
+        (fun q'' : NPointDomain d n =>
+          Complex.exp
+            (-(∑ k : Fin n,
+              (τ k : ℂ) *
+                (section43QTime (d := d) (n := n) q'' k : ℂ))) *
+          partialFourierSpatial_fun (d := d) (n := n) F
+            (τ, section43QSpatial (d := d) (n := n) q''))
+        q).curryLeft)
+      q := by
+  let G : NPointDomain d n → ℂ := fun q' =>
+    Complex.exp
+      (-(∑ k : Fin n,
+        (τ k : ℂ) *
+          (section43QTime (d := d) (n := n) q' k : ℂ))) *
+    partialFourierSpatial_fun (d := d) (n := n) F
+      (τ, section43QSpatial (d := d) (n := n) q')
+  have hGsmooth : ContDiff ℝ (⊤ : ℕ∞) G := by
+    simpa [G] using contDiff_section43FourierLaplace_timeIntegrand_q d n F τ
+  have hdiff : DifferentiableAt ℝ (iteratedFDeriv ℝ r G) q := by
+    exact hGsmooth.contDiffAt.differentiableAt_iteratedFDeriv
+      (WithTop.coe_lt_coe.2 (ENat.coe_lt_top r))
+  have hderiv_eq :
+      fderiv ℝ (iteratedFDeriv ℝ r G) q =
+        (iteratedFDeriv ℝ (r + 1) G q).curryLeft := by
+    ext v mtail
+    rfl
+  simpa [G, hderiv_eq] using hdiff.hasFDerivAt
 
 set_option backward.isDefEq.respectTransparency false in
 /-- All-order derivative candidate for the Section 4.3 Fourier-Laplace
