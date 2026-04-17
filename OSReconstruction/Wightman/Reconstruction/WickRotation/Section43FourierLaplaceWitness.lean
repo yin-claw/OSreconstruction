@@ -33,6 +33,279 @@ noncomputable def section43QSpatialCLM (d n : ℕ) [NeZero d] :
     section43QSpatialCLM d n q = section43QSpatial (d := d) (n := n) q := by
   rfl
 
+/-- Coordinate bound for the time selector, stated using the coordinate
+projection CLM that appears in the derivative formula. -/
+theorem abs_section43QTime_coord_le_opNorm
+    (d n : ℕ) [NeZero d]
+    (m : NPointDomain d n) (k : Fin n) :
+    |section43QTime (d := d) (n := n) m k| ≤
+      ‖((ContinuousLinearMap.proj
+          (R := ℝ) (ι := Fin n) (φ := fun _ => ℝ) k).comp
+          (section43QTimeCLM d n))‖ * ‖m‖ := by
+  let L : NPointDomain d n →L[ℝ] ℝ :=
+    ((ContinuousLinearMap.proj
+      (R := ℝ) (ι := Fin n) (φ := fun _ => ℝ) k).comp
+      (section43QTimeCLM d n))
+  simpa [L, Real.norm_eq_abs] using ContinuousLinearMap.le_opNorm L m
+
+/-- Coordinate bound for the spatial selector, stated using the Euclidean
+coordinate projection CLM. -/
+theorem abs_section43QSpatial_coord_le_opNorm
+    (d n : ℕ) [NeZero d]
+    (m : NPointDomain d n) (i : Fin n × Fin d) :
+    |section43QSpatial (d := d) (n := n) m i| ≤
+      ‖((EuclideanSpace.proj (𝕜 := ℝ) i).comp
+          (section43QSpatialCLM d n))‖ * ‖m‖ := by
+  let L : NPointDomain d n →L[ℝ] ℝ :=
+    ((EuclideanSpace.proj (𝕜 := ℝ) i).comp
+      (section43QSpatialCLM d n))
+  simpa [L, Real.norm_eq_abs] using ContinuousLinearMap.le_opNorm L m
+
+/-- Coordinate multiplier Schwartz input produced by differentiating the
+spatial Fourier variable in the Section 4.3 Fourier-Laplace integrand. -/
+noncomputable def section43SpatialMultiplierTransport
+    (d n : ℕ) [NeZero d]
+    (F : SchwartzNPoint d n)
+    (i : Fin n × Fin d) : SchwartzNPoint d n :=
+  (nPointSpatialTimeSchwartzCLE (d := d) (n := n)).symm
+    (-(2 * Real.pi * Complex.I) •
+      SchwartzMap.smulLeftCLM ℂ
+        (fun p : EuclideanSpace ℝ (Fin n × Fin d) × (Fin n → ℝ) =>
+          ((p.1 i : ℝ) : ℂ))
+        (nPointSpatialTimeSchwartzCLE (d := d) (n := n) F))
+
+theorem partialFourierSpatial_fun_finset_sum
+    (d n : ℕ)
+    {ι : Type*} [DecidableEq ι]
+    (s : Finset ι) (F : ι → SchwartzNPoint d n)
+    (p : (Fin n → ℝ) × EuclideanSpace ℝ (Fin n × Fin d)) :
+    partialFourierSpatial_fun (d := d) (n := n) (∑ i ∈ s, F i) p =
+      ∑ i ∈ s, partialFourierSpatial_fun (d := d) (n := n) (F i) p := by
+  classical
+  refine Finset.induction_on s ?empty ?insert
+  · have hzero :
+        partialFourierSpatial_fun (d := d) (n := n) (0 : SchwartzNPoint d n) p = 0 := by
+      simpa using
+        (partialFourierSpatial_fun_smul (d := d) (n := n) (a := 0)
+          (f := (0 : SchwartzNPoint d n)) p)
+    simpa using hzero
+  · intro a s ha ih
+    simp [Finset.sum_insert, ha, ih, partialFourierSpatial_fun_add]
+
+theorem partialFourierSpatial_fun_fintype_sum
+    (d n : ℕ)
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (F : ι → SchwartzNPoint d n)
+    (p : (Fin n → ℝ) × EuclideanSpace ℝ (Fin n × Fin d)) :
+    partialFourierSpatial_fun (d := d) (n := n) (∑ i, F i) p =
+      ∑ i, partialFourierSpatial_fun (d := d) (n := n) (F i) p := by
+  classical
+  simpa using
+    (partialFourierSpatial_fun_finset_sum (d := d) (n := n)
+      (s := Finset.univ) F p)
+
+/-- Coordinate expansion of the spatial derivative of the partial spatial
+Fourier transform.  This removes the direction-dependent multiplier
+`inner η v` and replaces it with a finite sum of fixed coordinate multiplier
+Schwartz inputs. -/
+theorem fderiv_partialFourierSpatial_fun_spatial_apply_eq_sum_multiplierTransport
+    (d n : ℕ) [NeZero d]
+    (F : SchwartzNPoint d n)
+    (τ : Fin n → ℝ)
+    (ξ v : EuclideanSpace ℝ (Fin n × Fin d)) :
+    fderiv ℝ
+      (fun ξ' : EuclideanSpace ℝ (Fin n × Fin d) =>
+        partialFourierSpatial_fun (d := d) (n := n) F (τ, ξ'))
+      ξ v =
+      ∑ i : Fin n × Fin d,
+        ((v i : ℝ) : ℂ) *
+          partialFourierSpatial_fun (d := d) (n := n)
+            (section43SpatialMultiplierTransport d n F i) (τ, ξ) := by
+  calc
+    fderiv ℝ
+        (fun ξ' : EuclideanSpace ℝ (Fin n × Fin d) =>
+          partialFourierSpatial_fun (d := d) (n := n) F (τ, ξ'))
+        ξ v =
+        partialFourierSpatial_fun (d := d) (n := n)
+          ((nPointSpatialTimeSchwartzCLE (d := d) (n := n)).symm
+            (-(2 * Real.pi * Complex.I) •
+              SchwartzMap.smulLeftCLM ℂ
+                (fun p : EuclideanSpace ℝ (Fin n × Fin d) × (Fin n → ℝ) =>
+                  ((inner ℝ p.1 v : ℝ) : ℂ))
+                (nPointSpatialTimeSchwartzCLE (d := d) (n := n) F)))
+          (τ, ξ) := by
+            exact fderiv_partialFourierSpatial_fun_spatial_apply_eq_transportSchwartz
+              (d := d) (n := n) (f := F) (t := τ) (ξ := ξ) (m := v)
+    _ = ∑ i : Fin n × Fin d,
+        ((v i : ℝ) : ℂ) *
+          partialFourierSpatial_fun (d := d) (n := n)
+            (section43SpatialMultiplierTransport d n F i) (τ, ξ) := by
+            let E := nPointSpatialTimeSchwartzCLE (d := d) (n := n)
+            have hinput :
+                (E.symm
+                  (-(2 * Real.pi * Complex.I) •
+                    SchwartzMap.smulLeftCLM ℂ
+                      (fun p : EuclideanSpace ℝ (Fin n × Fin d) × (Fin n → ℝ) =>
+                        ((inner ℝ p.1 v : ℝ) : ℂ))
+                      (E F))) =
+                ∑ i : Fin n × Fin d,
+                  ((v i : ℝ) : ℂ) • section43SpatialMultiplierTransport d n F i := by
+              have hinput_fwd :
+                  E
+                    (E.symm
+                      (-(2 * Real.pi * Complex.I) •
+                        SchwartzMap.smulLeftCLM ℂ
+                          (fun p : EuclideanSpace ℝ (Fin n × Fin d) × (Fin n → ℝ) =>
+                            ((inner ℝ p.1 v : ℝ) : ℂ))
+                          (E F))) =
+                  E
+                    (∑ i : Fin n × Fin d,
+                      ((v i : ℝ) : ℂ) • section43SpatialMultiplierTransport d n F i) := by
+                ext p
+                have hinner :
+                    (fun p : EuclideanSpace ℝ (Fin n × Fin d) × (Fin n → ℝ) =>
+                      ((inner ℝ p.1 v : ℝ) : ℂ)).HasTemperateGrowth := by
+                  let Lfst :
+                      (EuclideanSpace ℝ (Fin n × Fin d) × (Fin n → ℝ)) →L[ℝ]
+                        EuclideanSpace ℝ (Fin n × Fin d) :=
+                    ContinuousLinearMap.fst ℝ
+                      (EuclideanSpace ℝ (Fin n × Fin d)) (Fin n → ℝ)
+                  let Linner : EuclideanSpace ℝ (Fin n × Fin d) →L[ℝ] ℝ :=
+                    (innerSL ℝ) v
+                  have hreal : Function.HasTemperateGrowth (Linner.comp Lfst) :=
+                    (Linner.comp Lfst).hasTemperateGrowth
+                  simpa [Lfst, Linner, real_inner_comm] using
+                    Complex.ofRealCLM.toContinuousLinearMap.hasTemperateGrowth.comp hreal
+                have hcoord :
+                    ∀ i : Fin n × Fin d,
+                      (fun p : EuclideanSpace ℝ (Fin n × Fin d) × (Fin n → ℝ) =>
+                        ((p.1 i : ℝ) : ℂ)).HasTemperateGrowth := by
+                  intro i
+                  let Lfst :
+                      (EuclideanSpace ℝ (Fin n × Fin d) × (Fin n → ℝ)) →L[ℝ]
+                        EuclideanSpace ℝ (Fin n × Fin d) :=
+                    ContinuousLinearMap.fst ℝ
+                      (EuclideanSpace ℝ (Fin n × Fin d)) (Fin n → ℝ)
+                  let Lcoord :
+                      (EuclideanSpace ℝ (Fin n × Fin d) × (Fin n → ℝ)) →L[ℝ] ℝ :=
+                    (EuclideanSpace.proj (𝕜 := ℝ) i).comp Lfst
+                  have hreal : Function.HasTemperateGrowth Lcoord :=
+                    Lcoord.hasTemperateGrowth
+                  simpa [Lfst, Lcoord] using
+                    Complex.ofRealCLM.toContinuousLinearMap.hasTemperateGrowth.comp hreal
+                simp only [E, section43SpatialMultiplierTransport, map_sum, map_smul,
+                  ContinuousLinearEquiv.apply_symm_apply, SchwartzMap.smul_apply]
+                simp_rw [SchwartzMap.smulLeftCLM_apply_apply hinner]
+                let G : (Fin n × Fin d) →
+                    SchwartzMap
+                      (EuclideanSpace ℝ (Fin n × Fin d) × (Fin n → ℝ)) ℂ :=
+                  fun x =>
+                    ((v x : ℝ) : ℂ) •
+                      -(2 * (Real.pi : ℂ) * Complex.I) •
+                        SchwartzMap.smulLeftCLM ℂ
+                          (fun p : EuclideanSpace ℝ (Fin n × Fin d) × (Fin n → ℝ) =>
+                            ((p.1 x : ℝ) : ℂ))
+                          (nPointSpatialTimeSchwartzCLE (d := d) (n := n) F)
+                have hsum_apply : (∑ x : Fin n × Fin d, G x) p = ∑ x, G x p := by
+                  classical
+                  let P : Finset (Fin n × Fin d) → Prop := fun s =>
+                    (∑ x ∈ s, G x) p = ∑ x ∈ s, G x p
+                  change P Finset.univ
+                  refine Finset.induction_on (Finset.univ : Finset (Fin n × Fin d)) ?empty ?insert
+                  · simp [P]
+                  · intro a s ha ih
+                    simp [P]
+                rw [show
+                    (∑ x : Fin n × Fin d,
+                      ((v x : ℝ) : ℂ) •
+                        -(2 * (Real.pi : ℂ) * Complex.I) •
+                          SchwartzMap.smulLeftCLM ℂ
+                            (fun p : EuclideanSpace ℝ (Fin n × Fin d) × (Fin n → ℝ) =>
+                              ((p.1 x : ℝ) : ℂ))
+                            (nPointSpatialTimeSchwartzCLE (d := d) (n := n) F)) p =
+                      (∑ x : Fin n × Fin d, G x) p by
+                    rfl]
+                rw [hsum_apply]
+                have hG_eval :
+                    ∀ x : Fin n × Fin d,
+                      G x p =
+                        ((v x : ℝ) : ℂ) *
+                          (-(2 * (Real.pi : ℂ) * Complex.I)) *
+                            (((p.1 x : ℝ) : ℂ) *
+                              ((nPointSpatialTimeSchwartzCLE (d := d) (n := n) F) p)) := by
+                  intro x
+                  dsimp [G]
+                  change
+                    ((v x : ℝ) : ℂ) *
+                        ((-(2 * (Real.pi : ℂ) * Complex.I)) *
+                          ((SchwartzMap.smulLeftCLM ℂ
+                            (fun p : EuclideanSpace ℝ (Fin n × Fin d) × (Fin n → ℝ) =>
+                              ((p.1 x : ℝ) : ℂ))
+                            (nPointSpatialTimeSchwartzCLE (d := d) (n := n) F)) p)) =
+                      ((v x : ℝ) : ℂ) *
+                        (-(2 * (Real.pi : ℂ) * Complex.I)) *
+                          (((p.1 x : ℝ) : ℂ) *
+                            ((nPointSpatialTimeSchwartzCLE (d := d) (n := n) F) p))
+                  rw [SchwartzMap.smulLeftCLM_apply_apply (hcoord x)]
+                  simp [smul_eq_mul, mul_assoc, mul_left_comm, mul_comm]
+                rw [show
+                    (∑ x : Fin n × Fin d, G x p) =
+                      ∑ x : Fin n × Fin d,
+                        ((v x : ℝ) : ℂ) *
+                          (-(2 * (Real.pi : ℂ) * Complex.I)) *
+                            (((p.1 x : ℝ) : ℂ) *
+                              ((nPointSpatialTimeSchwartzCLE (d := d) (n := n) F) p)) by
+                    refine Finset.sum_congr rfl ?_
+                    intro x _hx
+                    exact hG_eval x]
+                simp [PiLp.inner_apply, real_inner_eq_re_inner ℝ, RCLike.inner_apply,
+                  Complex.ofReal_sum, Finset.mul_sum, Finset.sum_mul, smul_eq_mul,
+                  mul_assoc, mul_comm]
+              exact E.injective hinput_fwd
+            rw [hinput]
+            rw [partialFourierSpatial_fun_fintype_sum]
+            refine Finset.sum_congr rfl ?_
+            intro i _hi
+            simpa using
+              (partialFourierSpatial_fun_smul (d := d) (n := n)
+                (a := ((v i : ℝ) : ℂ))
+                (f := section43SpatialMultiplierTransport d n F i)
+                (p := (τ, ξ)))
+
+/-- Norm bound following from the coordinate expansion of the spatial
+derivative of the partial spatial Fourier transform. -/
+theorem norm_fderiv_partialFourierSpatial_fun_spatial_apply_le_sum_multiplierTransport
+    (d n : ℕ) [NeZero d]
+    (F : SchwartzNPoint d n)
+    (τ : Fin n → ℝ)
+    (ξ v : EuclideanSpace ℝ (Fin n × Fin d)) :
+    ‖fderiv ℝ
+      (fun ξ' : EuclideanSpace ℝ (Fin n × Fin d) =>
+        partialFourierSpatial_fun (d := d) (n := n) F (τ, ξ'))
+      ξ v‖ ≤
+      ∑ i : Fin n × Fin d,
+        |v i| *
+          ‖partialFourierSpatial_fun (d := d) (n := n)
+            (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖ := by
+  rw [fderiv_partialFourierSpatial_fun_spatial_apply_eq_sum_multiplierTransport]
+  calc
+    ‖∑ i : Fin n × Fin d,
+        ((v i : ℝ) : ℂ) *
+          partialFourierSpatial_fun (d := d) (n := n)
+            (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖
+        ≤ ∑ i : Fin n × Fin d,
+            ‖((v i : ℝ) : ℂ) *
+              partialFourierSpatial_fun (d := d) (n := n)
+                (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖ := by
+          exact norm_sum_le _ _
+    _ = ∑ i : Fin n × Fin d,
+        |v i| *
+          ‖partialFourierSpatial_fun (d := d) (n := n)
+            (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖ := by
+          refine Finset.sum_congr rfl ?_
+          intro i _hi
+          simp [Complex.norm_real, Real.norm_eq_abs]
+
 /-- Continuous-linear argument of the Laplace exponential in the Section 4.3
 Fourier-Laplace integrand, with the time variable `τ` fixed. -/
 noncomputable def section43FourierLaplace_expArgCLM
@@ -185,6 +458,105 @@ theorem continuous_section43FourierLaplace_timeIntegrandFDerivCLM
   convert htarget using 1
   ext τ
   exact section43FourierLaplace_timeIntegrandFDerivCLM_apply d n F q m τ
+
+/-- The explicit pointwise first-derivative CLM depends continuously on both
+the ambient variable `q` and the real time variable `τ`. -/
+theorem continuous_section43FourierLaplace_timeIntegrandFDerivCLM_joint
+    (d n : ℕ) [NeZero d]
+    (F : SchwartzNPoint d n) :
+    Continuous fun p : NPointDomain d n × (Fin n → ℝ) =>
+      section43FourierLaplace_timeIntegrandFDerivCLM d n F p.1 p.2 := by
+  refine (continuous_clm_apply (𝕜 := ℝ) (E := NPointDomain d n) (F := ℂ)).2 ?_
+  intro m
+  let Efun : NPointDomain d n × (Fin n → ℝ) → ℂ := fun p =>
+    Complex.exp
+      (-(∑ k : Fin n,
+        (p.2 k : ℂ) *
+          (section43QTime (d := d) (n := n) p.1 k : ℂ)))
+  let Pfun : NPointDomain d n × (Fin n → ℝ) → ℂ := fun p =>
+    partialFourierSpatial_fun (d := d) (n := n) F
+      (p.2, section43QSpatial (d := d) (n := n) p.1)
+  let Dfun : NPointDomain d n × (Fin n → ℝ) → ℂ := fun p =>
+    (fderiv ℝ
+      (fun ξ : EuclideanSpace ℝ (Fin n × Fin d) =>
+        partialFourierSpatial_fun (d := d) (n := n) F (p.2, ξ))
+      (section43QSpatial (d := d) (n := n) p.1))
+      (section43QSpatial (d := d) (n := n) m)
+  have hE : Continuous Efun := by
+    have hsum : Continuous fun p : NPointDomain d n × (Fin n → ℝ) =>
+        ∑ k : Fin n,
+          (p.2 k : ℂ) *
+            (section43QTime (d := d) (n := n) p.1 k : ℂ) := by
+      refine continuous_finset_sum Finset.univ fun k _ => ?_
+      have hτk : Continuous fun p : NPointDomain d n × (Fin n → ℝ) =>
+          (p.2 k : ℂ) :=
+        Complex.continuous_ofReal.comp ((continuous_apply k).comp continuous_snd)
+      have hqtime : Continuous fun p : NPointDomain d n × (Fin n → ℝ) =>
+          section43QTime (d := d) (n := n) p.1 := by
+        simpa using ((section43QTimeCLM d n).continuous.comp continuous_fst)
+      have hqk : Continuous fun p : NPointDomain d n × (Fin n → ℝ) =>
+          (section43QTime (d := d) (n := n) p.1 k : ℂ) :=
+        Complex.continuous_ofReal.comp ((continuous_apply k).comp hqtime)
+      exact hτk.mul hqk
+    simpa [Efun] using Complex.continuous_exp.comp hsum.neg
+  have hP : Continuous Pfun := by
+    let hbase : Continuous
+        (partialFourierSpatial_fun (d := d) (n := n) F) :=
+      continuous_partialFourierSpatial_fun (d := d) (n := n) F
+    let hpath : Continuous fun p : NPointDomain d n × (Fin n → ℝ) =>
+        (p.2, section43QSpatial (d := d) (n := n) p.1) :=
+      continuous_snd.prodMk ((section43QSpatialCLM d n).continuous.comp continuous_fst)
+    simpa [Pfun] using hbase.comp hpath
+  have hD : Continuous Dfun := by
+    let hbase : Continuous
+        (fun p : (Fin n → ℝ) × EuclideanSpace ℝ (Fin n × Fin d) =>
+          fderiv ℝ
+            (fun ξ : EuclideanSpace ℝ (Fin n × Fin d) =>
+              partialFourierSpatial_fun (d := d) (n := n) F (p.1, ξ))
+            p.2 (section43QSpatial (d := d) (n := n) m)) :=
+      continuous_partialFourierSpatial_fun_spatialDerivative_apply
+        (d := d) (n := n) F (section43QSpatial (d := d) (n := n) m)
+    let hpath : Continuous fun p : NPointDomain d n × (Fin n → ℝ) =>
+        (p.2, section43QSpatial (d := d) (n := n) p.1) :=
+      continuous_snd.prodMk ((section43QSpatialCLM d n).continuous.comp continuous_fst)
+    simpa [Dfun, Function.comp_apply] using hbase.comp hpath
+  have htime : Continuous fun p : NPointDomain d n × (Fin n → ℝ) =>
+      ∑ k : Fin n,
+        (section43QTime (d := d) (n := n) m k : ℝ) •
+          (-(p.2 k : ℂ) * Efun p * Pfun p) := by
+    refine continuous_finset_sum Finset.univ fun k _ => ?_
+    have hτk : Continuous fun p : NPointDomain d n × (Fin n → ℝ) =>
+        (p.2 k : ℂ) :=
+      Complex.continuous_ofReal.comp ((continuous_apply k).comp continuous_snd)
+    have hscalar : Continuous fun p : NPointDomain d n × (Fin n → ℝ) =>
+        -(p.2 k : ℂ) * Efun p * Pfun p :=
+      ((hτk.neg).mul hE).mul hP
+    exact continuous_const.smul hscalar
+  have hspace : Continuous fun p : NPointDomain d n × (Fin n → ℝ) =>
+      Efun p • Dfun p :=
+    hE.smul hD
+  have htarget : Continuous fun p : NPointDomain d n × (Fin n → ℝ) =>
+      let E : ℂ :=
+        Complex.exp
+          (-(∑ k : Fin n,
+            (p.2 k : ℂ) *
+              (section43QTime (d := d) (n := n) p.1 k : ℂ)))
+      let P : ℂ :=
+        partialFourierSpatial_fun (d := d) (n := n) F
+          (p.2, section43QSpatial (d := d) (n := n) p.1)
+      (∑ k : Fin n,
+        (section43QTime (d := d) (n := n) m k : ℝ) •
+          (-(p.2 k : ℂ) * E * P)) +
+      E •
+        (fderiv ℝ
+          (fun ξ : EuclideanSpace ℝ (Fin n × Fin d) =>
+            partialFourierSpatial_fun (d := d) (n := n) F (p.2, ξ))
+          (section43QSpatial (d := d) (n := n) p.1))
+          (section43QSpatial (d := d) (n := n) m) := by
+    simpa [Efun, Pfun, Dfun] using htime.add hspace
+  convert htarget using 1
+  ext p
+  exact section43FourierLaplace_timeIntegrandFDerivCLM_apply d n F p.1 m p.2
 
 /-- The undifferentiated Section 4.3 Fourier-Laplace time integrand is
 continuous as a function of the real time variable `τ`. -/
@@ -585,6 +957,48 @@ theorem section43FourierLaplace_timeIntegrandFDerivCLM_eq_zero_of_timeNorm_gt_bo
   ext m
   simp [section43FourierLaplace_timeIntegrandFDerivCLM, F, hP_zero, hfderiv_zero]
 
+/-- The pointwise first-derivative CLM of the Section 4.3 Fourier-Laplace
+integrand vanishes on time slices below a strict ordered-support margin. -/
+theorem section43FourierLaplace_timeIntegrandFDerivCLM_eq_zero_of_exists_time_lt_margin
+    (d n : ℕ) [NeZero d]
+    (f : SchwartzNPoint d n)
+    (hf_ord :
+      tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    {δ : ℝ}
+    (hδ_supp :
+      tsupport (f : NPointDomain d n → ℂ) ⊆
+        {x |
+          (∀ i : Fin n, δ ≤ x i 0) ∧
+          (∀ i j : Fin n, i < j → δ ≤ x j 0 - x i 0)})
+    (q : NPointDomain d n) (τ : Fin n → ℝ)
+    (hτ : ∃ i : Fin n, τ i < δ) :
+    section43FourierLaplace_timeIntegrandFDerivCLM d n
+      (section43DiffPullbackCLM d n ⟨f, hf_ord⟩) q τ = 0 := by
+  let F : SchwartzNPoint d n := section43DiffPullbackCLM d n ⟨f, hf_ord⟩
+  have hP_zero :
+      partialFourierSpatial_fun (d := d) (n := n) F
+        (τ, section43QSpatial (d := d) (n := n) q) = 0 := by
+    simpa [F] using
+      partialFourierSpatial_section43DiffPullback_eq_zero_of_exists_time_lt_margin
+        d n f hf_ord hδ_supp τ
+        (section43QSpatial (d := d) (n := n) q) hτ
+  have hfun_zero :
+      (fun ξ : EuclideanSpace ℝ (Fin n × Fin d) =>
+        partialFourierSpatial_fun (d := d) (n := n) F (τ, ξ)) = fun _ => 0 := by
+    funext ξ
+    simpa [F] using
+      partialFourierSpatial_section43DiffPullback_eq_zero_of_exists_time_lt_margin
+        d n f hf_ord hδ_supp τ ξ hτ
+  have hfderiv_zero :
+      fderiv ℝ
+        (fun ξ : EuclideanSpace ℝ (Fin n × Fin d) =>
+          partialFourierSpatial_fun (d := d) (n := n) F (τ, ξ))
+        (section43QSpatial (d := d) (n := n) q) = 0 := by
+    rw [hfun_zero]
+    simp
+  ext m
+  simp [section43FourierLaplace_timeIntegrandFDerivCLM, F, hP_zero, hfderiv_zero]
+
 /-- For compact ordered support, the pointwise first-derivative CLM is compactly
 supported as a function of the time variable `τ`. -/
 theorem hasCompactSupport_section43FourierLaplace_timeIntegrandFDerivCLM_of_compact
@@ -628,6 +1042,89 @@ theorem integrable_section43FourierLaplace_timeIntegrandFDerivCLM_of_compact
     (d := d) (n := n) (section43DiffPullbackCLM d n ⟨f, hf_ord⟩) q).integrable_of_hasCompactSupport
       (hasCompactSupport_section43FourierLaplace_timeIntegrandFDerivCLM_of_compact
         d n f hf_ord hf_compact q)
+
+/-- A constant restricted to a compact time ball is integrable.  This is the
+scalar bound used by the local dominated-derivative theorem. -/
+theorem integrable_indicator_time_closedBall_const
+    (n : ℕ) (R C : ℝ) :
+    Integrable
+      (Set.indicator (Metric.closedBall (0 : Fin n → ℝ) R)
+        (fun _ : Fin n → ℝ => C)) := by
+  have hK : IsCompact (Metric.closedBall (0 : Fin n → ℝ) R) :=
+    isCompact_closedBall (0 : Fin n → ℝ) R
+  have hIntOn :
+      IntegrableOn (fun _ : Fin n → ℝ => C)
+        (Metric.closedBall (0 : Fin n → ℝ) R) := by
+    exact continuousOn_const.integrableOn_compact hK
+  exact hIntOn.integrable_indicator hK.measurableSet
+
+set_option backward.isDefEq.respectTransparency false in
+/-- Joint continuity gives a scalar norm bound for the pointwise derivative
+CLM on any compact product of an ambient `q`-ball and a time ball. -/
+theorem exists_section43FourierLaplace_timeIntegrandFDerivCLM_norm_bound_on_compact
+    (d n : ℕ) [NeZero d]
+    (F : SchwartzNPoint d n)
+    (q : NPointDomain d n) (R : ℝ) :
+    ∃ C : ℝ,
+      ∀ q' ∈ Metric.closedBall q (1 : ℝ),
+      ∀ τ ∈ Metric.closedBall (0 : Fin n → ℝ) R,
+        ‖section43FourierLaplace_timeIntegrandFDerivCLM d n F q' τ‖ ≤ C := by
+  classical
+  let Kq : Set (NPointDomain d n) := Metric.closedBall q (1 : ℝ)
+  let Kτ : Set (Fin n → ℝ) := Metric.closedBall (0 : Fin n → ℝ) R
+  let K : Set (NPointDomain d n × (Fin n → ℝ)) := Kq ×ˢ Kτ
+  have hKq : IsCompact Kq := isCompact_closedBall q (1 : ℝ)
+  have hKτ : IsCompact Kτ := isCompact_closedBall (0 : Fin n → ℝ) R
+  have hK : IsCompact K := hKq.prod hKτ
+  let g : NPointDomain d n × (Fin n → ℝ) → ℝ := fun p =>
+    ‖section43FourierLaplace_timeIntegrandFDerivCLM d n F p.1 p.2‖
+  have hg_cont : Continuous g := by
+    exact continuous_norm.comp
+      (continuous_section43FourierLaplace_timeIntegrandFDerivCLM_joint
+        (d := d) (n := n) F)
+  rcases hK.bddAbove_image hg_cont.continuousOn with ⟨C, hC⟩
+  refine ⟨C, ?_⟩
+  intro q' hq' τ hτ
+  exact hC ⟨(q', τ), ⟨hq', hτ⟩, rfl⟩
+
+set_option backward.isDefEq.respectTransparency false in
+/-- Local domination for the pointwise derivative CLM: under compact ordered
+support, one integrable scalar function dominates the derivative CLM uniformly
+for `q'` in a fixed compact neighborhood of `q`. -/
+theorem section43FourierLaplace_timeIntegrandFDerivCLM_local_bound_of_compact
+    (d n : ℕ) [NeZero d]
+    (f : SchwartzNPoint d n)
+    (hf_ord :
+      tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (hf_compact : HasCompactSupport (f : NPointDomain d n → ℂ))
+    (q : NPointDomain d n) :
+    ∃ bound : (Fin n → ℝ) → ℝ,
+      Integrable bound ∧
+      ∀ᵐ τ, ∀ q' ∈ Metric.closedBall q (1 : ℝ),
+        ‖section43FourierLaplace_timeIntegrandFDerivCLM d n
+          (section43DiffPullbackCLM d n ⟨f, hf_ord⟩) q' τ‖ ≤ bound τ := by
+  classical
+  rcases exists_section43DiffPullback_timeNorm_bound_of_compact_tsupport
+    d n f hf_ord hf_compact with ⟨R, _hR_nonneg, hR_supp⟩
+  let Kτ : Set (Fin n → ℝ) := Metric.closedBall (0 : Fin n → ℝ) R
+  let F : SchwartzNPoint d n := section43DiffPullbackCLM d n ⟨f, hf_ord⟩
+  rcases exists_section43FourierLaplace_timeIntegrandFDerivCLM_norm_bound_on_compact
+    (d := d) (n := n) F q R with ⟨C, hC⟩
+  refine ⟨Set.indicator Kτ (fun _ => C), ?_, ?_⟩
+  · simpa [Kτ] using integrable_indicator_time_closedBall_const n R C
+  · filter_upwards with τ q' hq'
+    by_cases hτ : τ ∈ Kτ
+    · rw [Set.indicator_of_mem hτ]
+      simpa [F, Kτ] using hC q' hq' τ hτ
+    · have hdist_not : ¬ dist τ (0 : Fin n → ℝ) ≤ R := by
+        simpa [Kτ, Metric.mem_closedBall] using hτ
+      have hlt_dist : R < dist τ (0 : Fin n → ℝ) := lt_of_not_ge hdist_not
+      have hlt : R < ‖τ‖ := by
+        simpa [dist_eq_norm, sub_zero] using hlt_dist
+      have hzero :=
+        section43FourierLaplace_timeIntegrandFDerivCLM_eq_zero_of_timeNorm_gt_bound
+          d n f hf_ord hR_supp q' τ hlt
+      rw [Set.indicator_of_notMem hτ, hzero, norm_zero]
 
 /-- For compact ordered support, the undifferentiated Section 4.3
 Fourier-Laplace time integrand is compactly supported in `τ`. -/
@@ -678,6 +1175,61 @@ theorem integrable_section43FourierLaplace_timeIntegrand_of_compact
     d n (section43DiffPullbackCLM d n ⟨f, hf_ord⟩) q).integrable_of_hasCompactSupport
       (hasCompactSupport_section43FourierLaplace_timeIntegrand_of_compact
         d n f hf_ord hf_compact q)
+
+set_option backward.isDefEq.respectTransparency false in
+/-- Ambient first derivative of the Section 4.3 Fourier-Laplace integral under
+compact ordered support.  This is the differentiated-under-the-integral
+formula supplied by the compact-slab domination packet above. -/
+theorem section43FourierLaplaceIntegral_hasFDerivAt_of_compact_orderedSupport
+    (d n : ℕ) [NeZero d]
+    (f : SchwartzNPoint d n)
+    (hf_ord :
+      tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (hf_compact : HasCompactSupport (f : NPointDomain d n → ℂ))
+    (q : NPointDomain d n) :
+    HasFDerivAt
+      (fun q' : NPointDomain d n =>
+        section43FourierLaplaceIntegral d n ⟨f, hf_ord⟩ q')
+      (section43FourierLaplaceIntegral_fderivCandidate d n f hf_ord q)
+      q := by
+  let Fpull : SchwartzNPoint d n := section43DiffPullbackCLM d n ⟨f, hf_ord⟩
+  let Fint : NPointDomain d n → (Fin n → ℝ) → ℂ := fun q' τ =>
+    Complex.exp
+      (-(∑ k : Fin n,
+        (τ k : ℂ) * (section43QTime (d := d) (n := n) q' k : ℂ))) *
+    partialFourierSpatial_fun (d := d) (n := n) Fpull
+      (τ, section43QSpatial (d := d) (n := n) q')
+  let Fderiv : NPointDomain d n → (Fin n → ℝ) → NPointDomain d n →L[ℝ] ℂ :=
+    fun q' τ => section43FourierLaplace_timeIntegrandFDerivCLM d n Fpull q' τ
+  rcases section43FourierLaplace_timeIntegrandFDerivCLM_local_bound_of_compact
+    d n f hf_ord hf_compact q with ⟨bound, hbound_int, hbound⟩
+  have hs : Metric.closedBall q (1 : ℝ) ∈ 𝓝 q :=
+    Metric.closedBall_mem_nhds q zero_lt_one
+  have hF_meas : ∀ᶠ q' in 𝓝 q, AEStronglyMeasurable (Fint q') := by
+    exact Filter.Eventually.of_forall fun q' =>
+      (continuous_section43FourierLaplace_timeIntegrand
+        d n Fpull q').aestronglyMeasurable
+  have hF_int : Integrable (Fint q) := by
+    simpa [Fint, Fpull] using
+      integrable_section43FourierLaplace_timeIntegrand_of_compact
+        d n f hf_ord hf_compact q
+  have hFderiv_meas : AEStronglyMeasurable (Fderiv q) := by
+    exact (continuous_section43FourierLaplace_timeIntegrandFDerivCLM
+      (d := d) (n := n) Fpull q).aestronglyMeasurable
+  have hdiff : ∀ᵐ τ : Fin n → ℝ, ∀ q' ∈ Metric.closedBall q (1 : ℝ),
+      HasFDerivAt (Fint · τ) (Fderiv q' τ) q' := by
+    filter_upwards with τ q' _hq'
+    simpa [Fint, Fderiv, Fpull] using
+      hasFDerivAt_section43FourierLaplace_timeIntegrand
+        d n Fpull q' τ
+  have hmain :=
+    hasFDerivAt_integral_of_dominated_of_fderiv_le
+      (𝕜 := ℝ) (μ := volume)
+      (F := Fint) (F' := Fderiv) (x₀ := q)
+      (s := Metric.closedBall q (1 : ℝ)) (bound := bound)
+      hs hF_meas hF_int hFderiv_meas hbound hbound_int hdiff
+  simpa [section43FourierLaplaceIntegral,
+    section43FourierLaplaceIntegral_fderivCandidate, Fint, Fderiv, Fpull] using hmain
 
 /-- On time slices above a strict support margin, the Laplace exponential gains
 uniform damping by the total positive-energy time. -/
@@ -748,6 +1300,429 @@ theorem norm_section43FourierLaplace_timeIntegrand_le_exp_neg_margin_sum
         d n q τ hq hτ
     rw [norm_mul]
     exact mul_le_mul_of_nonneg_right hE_le (norm_nonneg _)
+
+/-- Positive-energy bound for the time-derivative part of the pointwise
+first-derivative CLM. -/
+theorem norm_section43FourierLaplace_timeDerivativeSum_le_exp_margin_sum
+    (d n : ℕ) [NeZero d]
+    (F : SchwartzNPoint d n)
+    {δ : ℝ}
+    (q m : NPointDomain d n) (hq : q ∈ section43PositiveEnergyRegion d n)
+    (τ : Fin n → ℝ) (hτ : ∀ i : Fin n, δ ≤ τ i) :
+    let A : ℝ :=
+      Real.exp (-(δ * ∑ k : Fin n,
+        section43QTime (d := d) (n := n) q k))
+    let E : ℂ :=
+      Complex.exp
+        (-(∑ k : Fin n,
+          (τ k : ℂ) * (section43QTime (d := d) (n := n) q k : ℂ)))
+    let P : ℂ :=
+      partialFourierSpatial_fun (d := d) (n := n) F
+        (τ, section43QSpatial (d := d) (n := n) q)
+    ‖∑ k : Fin n,
+        (section43QTime (d := d) (n := n) m k : ℝ) •
+          (-(τ k : ℂ) * E * P)‖ ≤
+      ∑ k : Fin n,
+        (‖((ContinuousLinearMap.proj
+          (R := ℝ) (ι := Fin n) (φ := fun _ => ℝ) k).comp
+          (section43QTimeCLM d n))‖ * ‖m‖) *
+          (‖τ‖ * A * ‖P‖) := by
+  intro A E P
+  have hE :
+      ‖E‖ ≤ A := by
+    simpa [A, E] using
+      norm_exp_neg_section43_timePair_le_exp_neg_margin_sum
+        d n q τ hq hτ
+  calc
+    ‖∑ k : Fin n,
+        (section43QTime (d := d) (n := n) m k : ℝ) •
+          (-(τ k : ℂ) * E * P)‖
+        ≤ ∑ k : Fin n,
+            ‖(section43QTime (d := d) (n := n) m k : ℝ) •
+              (-(τ k : ℂ) * E * P)‖ := by
+          exact norm_sum_le _ _
+    _ ≤ ∑ k : Fin n,
+        (‖((ContinuousLinearMap.proj
+          (R := ℝ) (ι := Fin n) (φ := fun _ => ℝ) k).comp
+          (section43QTimeCLM d n))‖ * ‖m‖) *
+          (‖τ‖ * A * ‖P‖) := by
+          refine Finset.sum_le_sum fun k _hk => ?_
+          have hm := abs_section43QTime_coord_le_opNorm d n m k
+          have hτk : |τ k| ≤ ‖τ‖ := by
+            simpa [Real.norm_eq_abs] using norm_le_pi_norm τ k
+          calc
+            ‖(section43QTime (d := d) (n := n) m k : ℝ) •
+                (-(τ k : ℂ) * E * P)‖ =
+                |section43QTime (d := d) (n := n) m k| *
+                  (|τ k| * ‖E‖ * ‖P‖) := by
+                  simp [Complex.norm_real, Real.norm_eq_abs,
+                    mul_assoc, mul_left_comm]
+            _ ≤ (‖((ContinuousLinearMap.proj
+                  (R := ℝ) (ι := Fin n) (φ := fun _ => ℝ) k).comp
+                  (section43QTimeCLM d n))‖ * ‖m‖) *
+                (‖τ‖ * A * ‖P‖) := by
+                  gcongr
+
+/-- Positive-energy bound for the spatial-derivative part of the pointwise
+first-derivative CLM. -/
+theorem norm_section43FourierLaplace_spatialDerivativeTerm_le_exp_margin_sum
+    (d n : ℕ) [NeZero d]
+    (F : SchwartzNPoint d n)
+    {δ : ℝ}
+    (q m : NPointDomain d n) (hq : q ∈ section43PositiveEnergyRegion d n)
+    (τ : Fin n → ℝ) (hτ : ∀ i : Fin n, δ ≤ τ i) :
+    let A : ℝ :=
+      Real.exp (-(δ * ∑ k : Fin n,
+        section43QTime (d := d) (n := n) q k))
+    let E : ℂ :=
+      Complex.exp
+        (-(∑ k : Fin n,
+          (τ k : ℂ) * (section43QTime (d := d) (n := n) q k : ℂ)))
+    let ξ : EuclideanSpace ℝ (Fin n × Fin d) :=
+      section43QSpatial (d := d) (n := n) q
+    ‖E •
+      (fderiv ℝ
+        (fun ξ' : EuclideanSpace ℝ (Fin n × Fin d) =>
+          partialFourierSpatial_fun (d := d) (n := n) F (τ, ξ'))
+        ξ)
+        (section43QSpatial (d := d) (n := n) m)‖ ≤
+      A *
+        ∑ i : Fin n × Fin d,
+          (‖((EuclideanSpace.proj (𝕜 := ℝ) i).comp
+            (section43QSpatialCLM d n))‖ * ‖m‖) *
+            ‖partialFourierSpatial_fun (d := d) (n := n)
+              (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖ := by
+  intro A E ξ
+  have hE :
+      ‖E‖ ≤ A := by
+    simpa [A, E] using
+      norm_exp_neg_section43_timePair_le_exp_neg_margin_sum
+        d n q τ hq hτ
+  let D : ℂ :=
+    (fderiv ℝ
+      (fun ξ' : EuclideanSpace ℝ (Fin n × Fin d) =>
+        partialFourierSpatial_fun (d := d) (n := n) F (τ, ξ'))
+      ξ)
+      (section43QSpatial (d := d) (n := n) m)
+  have hD :
+      ‖D‖ ≤
+        ∑ i : Fin n × Fin d,
+          |section43QSpatial (d := d) (n := n) m i| *
+            ‖partialFourierSpatial_fun (d := d) (n := n)
+              (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖ := by
+    simpa [D] using
+      norm_fderiv_partialFourierSpatial_fun_spatial_apply_le_sum_multiplierTransport
+        d n F τ ξ (section43QSpatial (d := d) (n := n) m)
+  have hD_coord :
+      ∑ i : Fin n × Fin d,
+          |section43QSpatial (d := d) (n := n) m i| *
+            ‖partialFourierSpatial_fun (d := d) (n := n)
+              (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖ ≤
+        ∑ i : Fin n × Fin d,
+          (‖((EuclideanSpace.proj (𝕜 := ℝ) i).comp
+            (section43QSpatialCLM d n))‖ * ‖m‖) *
+            ‖partialFourierSpatial_fun (d := d) (n := n)
+              (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖ := by
+    refine Finset.sum_le_sum fun i _hi => ?_
+    have hi := abs_section43QSpatial_coord_le_opNorm d n m i
+    exact mul_le_mul_of_nonneg_right hi (norm_nonneg _)
+  calc
+    ‖E •
+      (fderiv ℝ
+        (fun ξ' : EuclideanSpace ℝ (Fin n × Fin d) =>
+          partialFourierSpatial_fun (d := d) (n := n) F (τ, ξ'))
+        ξ)
+        (section43QSpatial (d := d) (n := n) m)‖ =
+        ‖E‖ * ‖D‖ := by
+          simp [D]
+    _ ≤ A * ‖D‖ := by
+          exact mul_le_mul_of_nonneg_right hE (norm_nonneg D)
+    _ ≤ A *
+        ∑ i : Fin n × Fin d,
+          |section43QSpatial (d := d) (n := n) m i| *
+            ‖partialFourierSpatial_fun (d := d) (n := n)
+              (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖ := by
+          exact mul_le_mul_of_nonneg_left hD (Real.exp_pos _).le
+    _ ≤ A *
+        ∑ i : Fin n × Fin d,
+          (‖((EuclideanSpace.proj (𝕜 := ℝ) i).comp
+            (section43QSpatialCLM d n))‖ * ‖m‖) *
+            ‖partialFourierSpatial_fun (d := d) (n := n)
+              (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖ := by
+          exact mul_le_mul_of_nonneg_left hD_coord (Real.exp_pos _).le
+
+/-- Pointwise positive-energy bound for the explicit first-derivative CLM
+applied to one ambient direction. -/
+theorem norm_section43FourierLaplace_timeIntegrandFDerivCLM_apply_le_exp_margin_sum
+    (d n : ℕ) [NeZero d]
+    (F : SchwartzNPoint d n)
+    {δ : ℝ}
+    (q m : NPointDomain d n) (hq : q ∈ section43PositiveEnergyRegion d n)
+    (τ : Fin n → ℝ) (hτ : ∀ i : Fin n, δ ≤ τ i) :
+    let A : ℝ :=
+      Real.exp (-(δ * ∑ k : Fin n,
+        section43QTime (d := d) (n := n) q k))
+    let ξ : EuclideanSpace ℝ (Fin n × Fin d) :=
+      section43QSpatial (d := d) (n := n) q
+    let P : ℂ :=
+      partialFourierSpatial_fun (d := d) (n := n) F (τ, ξ)
+    ‖section43FourierLaplace_timeIntegrandFDerivCLM d n F q τ m‖ ≤
+      (∑ k : Fin n,
+        (‖((ContinuousLinearMap.proj
+          (R := ℝ) (ι := Fin n) (φ := fun _ => ℝ) k).comp
+          (section43QTimeCLM d n))‖ * ‖m‖) *
+          (‖τ‖ * A * ‖P‖)) +
+      A *
+        ∑ i : Fin n × Fin d,
+          (‖((EuclideanSpace.proj (𝕜 := ℝ) i).comp
+            (section43QSpatialCLM d n))‖ * ‖m‖) *
+            ‖partialFourierSpatial_fun (d := d) (n := n)
+              (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖ := by
+  intro A ξ P
+  let E : ℂ :=
+    Complex.exp
+      (-(∑ k : Fin n,
+        (τ k : ℂ) * (section43QTime (d := d) (n := n) q k : ℂ)))
+  let T : ℂ :=
+    ∑ k : Fin n,
+      (section43QTime (d := d) (n := n) m k : ℝ) •
+        (-(τ k : ℂ) * E * P)
+  let S : ℂ :=
+    E •
+      (fderiv ℝ
+        (fun ξ' : EuclideanSpace ℝ (Fin n × Fin d) =>
+          partialFourierSpatial_fun (d := d) (n := n) F (τ, ξ'))
+        ξ)
+        (section43QSpatial (d := d) (n := n) m)
+  have happly :
+      section43FourierLaplace_timeIntegrandFDerivCLM d n F q τ m = T + S := by
+    simp [T, S, E, P, ξ, section43FourierLaplace_timeIntegrandFDerivCLM_apply]
+  have hT :
+      ‖T‖ ≤
+      ∑ k : Fin n,
+        (‖((ContinuousLinearMap.proj
+          (R := ℝ) (ι := Fin n) (φ := fun _ => ℝ) k).comp
+          (section43QTimeCLM d n))‖ * ‖m‖) *
+          (‖τ‖ * A * ‖P‖) := by
+    simpa [T, E, P, A] using
+      norm_section43FourierLaplace_timeDerivativeSum_le_exp_margin_sum
+        d n F q m hq τ hτ
+  have hS :
+      ‖S‖ ≤
+      A *
+        ∑ i : Fin n × Fin d,
+          (‖((EuclideanSpace.proj (𝕜 := ℝ) i).comp
+            (section43QSpatialCLM d n))‖ * ‖m‖) *
+            ‖partialFourierSpatial_fun (d := d) (n := n)
+              (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖ := by
+    simpa [S, E, A, ξ] using
+      norm_section43FourierLaplace_spatialDerivativeTerm_le_exp_margin_sum
+        d n F q m hq τ hτ
+  calc
+    ‖section43FourierLaplace_timeIntegrandFDerivCLM d n F q τ m‖ =
+        ‖T + S‖ := by rw [happly]
+    _ ≤ ‖T‖ + ‖S‖ := norm_add_le T S
+    _ ≤
+      (∑ k : Fin n,
+        (‖((ContinuousLinearMap.proj
+          (R := ℝ) (ι := Fin n) (φ := fun _ => ℝ) k).comp
+          (section43QTimeCLM d n))‖ * ‖m‖) *
+          (‖τ‖ * A * ‖P‖)) +
+      A *
+        ∑ i : Fin n × Fin d,
+          (‖((EuclideanSpace.proj (𝕜 := ℝ) i).comp
+            (section43QSpatialCLM d n))‖ * ‖m‖) *
+            ‖partialFourierSpatial_fun (d := d) (n := n)
+              (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖ := by
+          exact add_le_add hT hS
+
+set_option backward.isDefEq.respectTransparency false in
+/-- Operator-norm version of the pointwise positive-energy bound for the
+explicit first-derivative CLM. -/
+theorem norm_section43FourierLaplace_timeIntegrandFDerivCLM_le_exp_margin_sum
+    (d n : ℕ) [NeZero d]
+    (F : SchwartzNPoint d n)
+    {δ : ℝ}
+    (q : NPointDomain d n) (hq : q ∈ section43PositiveEnergyRegion d n)
+    (τ : Fin n → ℝ) (hτ : ∀ i : Fin n, δ ≤ τ i) :
+    let A : ℝ :=
+      Real.exp (-(δ * ∑ k : Fin n,
+        section43QTime (d := d) (n := n) q k))
+    let ξ : EuclideanSpace ℝ (Fin n × Fin d) :=
+      section43QSpatial (d := d) (n := n) q
+    let P : ℂ :=
+      partialFourierSpatial_fun (d := d) (n := n) F (τ, ξ)
+    ‖section43FourierLaplace_timeIntegrandFDerivCLM d n F q τ‖ ≤
+      (∑ k : Fin n,
+        ‖((ContinuousLinearMap.proj
+          (R := ℝ) (ι := Fin n) (φ := fun _ => ℝ) k).comp
+          (section43QTimeCLM d n))‖ *
+          (‖τ‖ * A * ‖P‖)) +
+      A *
+        ∑ i : Fin n × Fin d,
+          ‖((EuclideanSpace.proj (𝕜 := ℝ) i).comp
+            (section43QSpatialCLM d n))‖ *
+            ‖partialFourierSpatial_fun (d := d) (n := n)
+              (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖ := by
+  intro A ξ P
+  let Tcoef : Fin n → ℝ := fun k =>
+    ‖((ContinuousLinearMap.proj
+      (R := ℝ) (ι := Fin n) (φ := fun _ => ℝ) k).comp
+      (section43QTimeCLM d n))‖
+  let Scoef : Fin n × Fin d → ℝ := fun i =>
+    ‖((EuclideanSpace.proj (𝕜 := ℝ) i).comp
+      (section43QSpatialCLM d n))‖
+  let M : ℝ :=
+    (∑ k : Fin n, Tcoef k * (‖τ‖ * A * ‖P‖)) +
+    A *
+      ∑ i : Fin n × Fin d, Scoef i *
+          ‖partialFourierSpatial_fun (d := d) (n := n)
+            (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖
+  have hM_nonneg : 0 ≤ M := by
+    dsimp [M]
+    positivity
+  refine ContinuousLinearMap.opNorm_le_bound
+    (section43FourierLaplace_timeIntegrandFDerivCLM d n F q τ) hM_nonneg ?_
+  intro m
+  have happly :=
+    norm_section43FourierLaplace_timeIntegrandFDerivCLM_apply_le_exp_margin_sum
+      d n F q m hq τ hτ
+  calc
+    ‖section43FourierLaplace_timeIntegrandFDerivCLM d n F q τ m‖
+        ≤ (∑ k : Fin n,
+            (‖((ContinuousLinearMap.proj
+              (R := ℝ) (ι := Fin n) (φ := fun _ => ℝ) k).comp
+              (section43QTimeCLM d n))‖ * ‖m‖) *
+              (‖τ‖ * A * ‖P‖)) +
+          A *
+            ∑ i : Fin n × Fin d,
+              (‖((EuclideanSpace.proj (𝕜 := ℝ) i).comp
+                (section43QSpatialCLM d n))‖ * ‖m‖) *
+                ‖partialFourierSpatial_fun (d := d) (n := n)
+                  (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖ := by
+          simpa [A, ξ, P] using happly
+    _ = M * ‖m‖ := by
+          have htime :
+              (∑ k : Fin n, (Tcoef k * ‖m‖) * (‖τ‖ * A * ‖P‖)) =
+                (∑ k : Fin n, Tcoef k * (‖τ‖ * A * ‖P‖)) * ‖m‖ := by
+            calc
+              (∑ k : Fin n, (Tcoef k * ‖m‖) * (‖τ‖ * A * ‖P‖)) =
+                  ∑ k : Fin n, (Tcoef k * (‖τ‖ * A * ‖P‖)) * ‖m‖ := by
+                    refine Finset.sum_congr rfl ?_
+                    intro k _hk
+                    ring
+              _ = (∑ k : Fin n, Tcoef k * (‖τ‖ * A * ‖P‖)) * ‖m‖ := by
+                    rw [Finset.sum_mul]
+          have hspace :
+              A *
+                (∑ i : Fin n × Fin d,
+                  (Scoef i * ‖m‖) *
+                    ‖partialFourierSpatial_fun (d := d) (n := n)
+                      (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖) =
+                (A *
+                  ∑ i : Fin n × Fin d,
+                    Scoef i *
+                      ‖partialFourierSpatial_fun (d := d) (n := n)
+                        (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖) * ‖m‖ := by
+            have hsum :
+                (∑ i : Fin n × Fin d,
+                  (Scoef i * ‖m‖) *
+                    ‖partialFourierSpatial_fun (d := d) (n := n)
+                      (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖) =
+                    (∑ i : Fin n × Fin d,
+                      Scoef i *
+                        ‖partialFourierSpatial_fun (d := d) (n := n)
+                          (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖) * ‖m‖ := by
+              calc
+                (∑ i : Fin n × Fin d,
+                  (Scoef i * ‖m‖) *
+                    ‖partialFourierSpatial_fun (d := d) (n := n)
+                      (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖) =
+                    ∑ i : Fin n × Fin d,
+                      (Scoef i *
+                        ‖partialFourierSpatial_fun (d := d) (n := n)
+                          (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖) * ‖m‖ := by
+                      refine Finset.sum_congr rfl ?_
+                      intro i _hi
+                      ring
+                _ = (∑ i : Fin n × Fin d,
+                      Scoef i *
+                        ‖partialFourierSpatial_fun (d := d) (n := n)
+                          (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖) * ‖m‖ := by
+                      rw [Finset.sum_mul]
+            rw [hsum]
+            ring
+          rw [show
+              (∑ k : Fin n,
+                (‖((ContinuousLinearMap.proj
+                  (R := ℝ) (ι := Fin n) (φ := fun _ => ℝ) k).comp
+                  (section43QTimeCLM d n))‖ * ‖m‖) *
+                  (‖τ‖ * A * ‖P‖)) =
+                (∑ k : Fin n, (Tcoef k * ‖m‖) * (‖τ‖ * A * ‖P‖)) by
+                simp [Tcoef]]
+          rw [show
+              (∑ i : Fin n × Fin d,
+                (‖((EuclideanSpace.proj (𝕜 := ℝ) i).comp
+                  (section43QSpatialCLM d n))‖ * ‖m‖) *
+                  ‖partialFourierSpatial_fun (d := d) (n := n)
+                    (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖) =
+                (∑ i : Fin n × Fin d,
+                  (Scoef i * ‖m‖) *
+                    ‖partialFourierSpatial_fun (d := d) (n := n)
+                      (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖) by
+                simp [Scoef]]
+          rw [htime, hspace]
+          ring
+
+set_option backward.isDefEq.respectTransparency false in
+/-- Pointwise operator-norm derivative bound for the OS-I pullback input, with
+the lower-margin branch closed by support vanishing. -/
+theorem norm_section43FourierLaplace_timeIntegrandFDerivCLM_le_exp_margin_sum_of_orderedSupport
+    (d n : ℕ) [NeZero d]
+    (f : SchwartzNPoint d n)
+    (hf_ord :
+      tsupport (f : NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    {δ : ℝ}
+    (hδ_supp :
+      tsupport (f : NPointDomain d n → ℂ) ⊆
+        {x |
+          (∀ i : Fin n, δ ≤ x i 0) ∧
+          (∀ i j : Fin n, i < j → δ ≤ x j 0 - x i 0)})
+    (q : NPointDomain d n) (hq : q ∈ section43PositiveEnergyRegion d n)
+    (τ : Fin n → ℝ) :
+    let F : SchwartzNPoint d n := section43DiffPullbackCLM d n ⟨f, hf_ord⟩
+    let A : ℝ :=
+      Real.exp (-(δ * ∑ k : Fin n,
+        section43QTime (d := d) (n := n) q k))
+    let ξ : EuclideanSpace ℝ (Fin n × Fin d) :=
+      section43QSpatial (d := d) (n := n) q
+    let P : ℂ :=
+      partialFourierSpatial_fun (d := d) (n := n) F (τ, ξ)
+    ‖section43FourierLaplace_timeIntegrandFDerivCLM d n F q τ‖ ≤
+      (∑ k : Fin n,
+        ‖((ContinuousLinearMap.proj
+          (R := ℝ) (ι := Fin n) (φ := fun _ => ℝ) k).comp
+          (section43QTimeCLM d n))‖ *
+          (‖τ‖ * A * ‖P‖)) +
+      A *
+        ∑ i : Fin n × Fin d,
+          ‖((EuclideanSpace.proj (𝕜 := ℝ) i).comp
+            (section43QSpatialCLM d n))‖ *
+            ‖partialFourierSpatial_fun (d := d) (n := n)
+              (section43SpatialMultiplierTransport d n F i) (τ, ξ)‖ := by
+  intro F A ξ P
+  by_cases hlow : ∃ i : Fin n, τ i < δ
+  · have hzero :=
+      section43FourierLaplace_timeIntegrandFDerivCLM_eq_zero_of_exists_time_lt_margin
+        d n f hf_ord hδ_supp q τ hlow
+    rw [hzero, norm_zero]
+    positivity
+  · have hτ : ∀ i : Fin n, δ ≤ τ i := by
+      intro i
+      exact le_of_not_gt fun hi => hlow ⟨i, hi⟩
+    simpa [F, A, ξ, P] using
+      norm_section43FourierLaplace_timeIntegrandFDerivCLM_le_exp_margin_sum
+        d n F q hq τ hτ
 
 /-- Base norm estimate for the Section 4.3 Fourier-Laplace integral: the strict
 ordered-support margin factors out as exponential positive-energy damping. -/
