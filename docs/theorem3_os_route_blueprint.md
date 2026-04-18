@@ -24756,21 +24756,426 @@ theorem dense_section43IteratedLaplaceCompactTransform_preimage
 with continuity from `isOpenQuotientMap_mkQ`, exactly as in
 `section43PositiveEnergyQuotientMap`.
 
-Proof transcript:
+Updated proof transcript, 2026-04-18:
 
-1. For `n = 0`, the positive orthant is a singleton quotient; choose the
-   degree-zero compact source with the required scalar value.
-2. For `n + 1`, use the already documented iterated one-coordinate formula.
-   Apply the one-variable dense-preimage theorem in the distinguished
-   coordinate and use finite-product / currying continuity to lift the
-   approximation to `Fin (n + 1) → ℝ`.
-3. Iterate over all time coordinates.  This is OS I's Lemma-8.2 induction
-   inside Lemma 4.1; no Wightman support theorem enters.
-4. Keep the target as a quotient by vanishing on `∀ i, 0 ≤ τ i`; this avoids a
+The old coordinate-induction sketch is not implementation-ready and should not
+be used as the Lean route.  The current route is the tensor-density route
+documented in `docs/section43_fourier_laplace_density.md`.
+
+1. Use the compiled one-variable compact-Laplace dense preimage theorem in each
+   factor.
+2. Use the compiled transported product-tensor density theorem
+   `section43_timeProductTensor_span_dense_of_factor_dense`.
+3. Use the compiled product-source support and finite-product Fubini packet:
+   `section43TimeProductSource`,
+   `section43TimeProductSource_integral_eq_product_raw`, and
+   `section43TimeProductTensor_oneSidedLaplaceRepresentative`.
+4. Before defining the full arbitrary-source map
+   `section43IteratedLaplaceCompactTransform`, prove the time-only analogue of
+   `exists_section43FourierLaplaceRepresentative_eq_integral_of_compact_orderedSupport_of_margin`.
+   Its required sublemmas are:
+
+```lean
+section43TimePositiveThickening
+section43TimePositiveCutoff
+section43TimePositiveCutoff_eq_one_of_mem
+section43TimePositiveCutoff_hasTemperateGrowth
+section43TimePositiveCutoff_iteratedFDeriv_support_subset_thickening_one
+section43IteratedLaplaceRaw
+exists_positive_margin_of_compact_time_tsupport_subset_strictPositive
+exists_time_closedBall_of_compact_tsupport
+section43IteratedLaplaceRaw_iteratedFDerivCandidate
+section43IteratedLaplaceRaw_iteratedFDerivCandidate_hasFDerivAt
+section43IteratedLaplaceRaw_iteratedFDeriv_eq_candidate
+section43IteratedLaplaceRaw_contDiff
+section43IteratedLaplaceRaw_iteratedFDeriv_rapid_on_timeThickening
+section43IteratedLaplaceSchwartzRepresentative
+exists_section43IteratedLaplaceRepresentative
+```
+
+Implementation correction for the local dominated-differentiation seam:
+
+The local-bound theorem for
+`section43IteratedLaplaceRaw_iteratedFDerivCandidate_hasFDerivAt` should be
+proved from the explicit finite-time Laplace linear functional, not by copying
+the spatial derivative-word expansion from the ordered-support
+Fourier-Laplace proof.  The σ-dependence is
+
+```lean
+fun σ => Complex.exp (section43TimeLaplaceLinearCLM n τ σ)
+```
+
+where
+
+```lean
+section43TimeLaplaceLinearCLM n τ σ =
+  -(∑ i : Fin n, (τ i : ℂ) * (σ i : ℂ)).
+```
+
+The exact helper packet to compile before the local-bound theorem is:
+
+```lean
+section43TimeLaplaceLinearCLM
+section43TimeLaplaceLinearCLM_apply
+norm_time_le_norm_add_one_of_mem_closedBall
+norm_section43TimeLaplaceLinearCLM_le
+norm_exp_neg_timePair_le_local_time_closedBall
+exists_norm_bound_section43CompactStrictPositiveTimeSource_on_time_closedBall
+section43IteratedLaplaceRaw_integrand_iteratedFDeriv_eq_zero_of_not_mem_tsupport
+section43IteratedLaplaceRaw_integrand_iteratedFDeriv_curryLeft_local_bound_of_compact
+```
+
+The bound is
+
+```lean
+Set.indicator (Metric.closedBall (0 : Fin n → ℝ) R)
+  (fun _ =>
+    (r + 1).factorial *
+      Real.exp (∑ _ : Fin n, R * (‖σ‖ + 1)) *
+      (∑ _ : Fin n, R) ^ (r + 1) *
+      Cg)
+```
+
+where `R` bounds `tsupport g.f` and `Cg` bounds `‖g.f τ‖` on that closed
+ball.  On the closed ball, use
+`norm_iteratedFDeriv_cexp_comp_clm_le` plus
+`iteratedFDeriv_smul_const_apply`; off the closed ball, use
+`tsupport g.f ⊆ Metric.closedBall 0 R` to show `g.f τ = 0`, hence every
+pointwise σ-derivative is zero.  This is the implementation-ready replacement
+for any older sketch involving finite-height shells, spatial derivative words,
+or wrapper reductions.
+
+Production status, 2026-04-18: the local-bound packet above is compiled in
+`Section43FourierLaplaceTimeProduct.lean`, including
+
+```lean
+section43IteratedLaplaceRaw_integrand_iteratedFDeriv_curryLeft_local_bound_of_compact
+integrable_section43IteratedLaplaceRaw_integrand_of_compact
+```
+
+The next theorem is
+
+```lean
+integrable_section43IteratedLaplaceRaw_integrand_iteratedFDeriv_of_compact
+```
+
+and the remaining proof-doc gap is the all-order measurability side.  The
+successor integrability proof should reuse the compiled local bound exactly as
+the ordered-support theorem does, but it must first prove that
+
+```lean
+fun τ =>
+  iteratedFDeriv ℝ r
+    (fun σ' =>
+      Complex.exp (-(∑ i, (τ i : ℂ) * (σ' i : ℂ))) * g.f τ)
+    σ
+```
+
+is AEStronglyMeasurable.  The preferred route is an explicit continuity lemma
+in `τ`, proved from the finite-dimensional formula for the σ-derivatives of
+the exponential linear functional and continuity of `g.f`.  Do not add a
+measurability hypothesis to the theorem statement.
+
+Updated production status, 2026-04-18: the full arbitrary compact
+strict-positive finite-time representative packet is now compiled in
+`Section43FourierLaplaceTimeProduct.lean`.  In particular, the following
+previously planned theorems are no longer blockers:
+
+```lean
+integrable_section43IteratedLaplaceRaw_integrand_iteratedFDeriv_of_compact
+section43IteratedLaplaceRaw_iteratedFDerivCandidate_hasFDerivAt
+section43IteratedLaplaceRaw_iteratedFDeriv_eq_candidate
+section43IteratedLaplaceRaw_contDiff
+section43IteratedLaplaceRaw_iteratedFDeriv_rapid_on_timeThickening
+section43IteratedLaplaceSchwartzRepresentative
+exists_section43IteratedLaplaceRepresentative
+section43IteratedLaplaceCompactTransform
+section43IteratedLaplaceCompactTransform_productSource
+```
+
+Next stage: prove the finite-product dense-preimage theorem for
+`section43IteratedLaplaceCompactTransform` in a new small companion file rather
+than extending `Section43FourierLaplaceTimeProduct.lean` further.
+
+Updated production status, 2026-04-18: the finite-product dense-preimage stage
+is now compiled in
+`Section43FourierLaplaceTimeProductDensity.lean`.  The new file proves:
+
+```lean
+section43IteratedLaplaceCompactTransform_map_add
+section43IteratedLaplaceCompactTransform_map_smul
+section43IteratedLaplaceCompactTransformLinearMap
+section43TimeProductTensor_mem_iteratedLaplaceCompactTransform_preimage
+dense_section43IteratedLaplaceCompactTransform_preimage
+denseRange_section43IteratedLaplaceCompactTransformLinearMap
+```
+
+The key correction is that the finite-time transform range is used through the
+compiled linear map, so the span-density argument is mathematically sound:
+product tensors with one-variable compact-Laplace preimage factors lie in the
+finite-time preimage, and the finite-time preimage is the comap of the linear
+range submodule under `section43TimePositiveQuotientMap`.
+
+The next stage is not to attack `bvt_W_positive` directly.  First make Layer 3
+implementation-ready: transport the finite-time dense range through the spatial
+Fourier variables and identify the resulting representative with
+`partialFourierSpatial_fun`.
+
+5. The rapid-decay proof must reuse the compiled time-only estimates
+   `norm_exp_neg_timePair_le_exp_thickened_margin_sum` and
+   `exp_margin_sum_controls_thickened_time_polynomial`; do not introduce a new
+   analytic route.
+6. After `exists_section43IteratedLaplaceRepresentative` is compiled, define
+   `section43IteratedLaplaceCompactTransform` by choosing this representative,
+   prove `section43IteratedLaplaceCompactTransform_eq_quotient`, and discharge
+   `section43IteratedLaplaceCompactTransform_productSource` by applying the
+   already compiled product-source representative theorem.
+7. Keep the target as a quotient by vanishing on `∀ i, 0 ≤ τ i`; this avoids a
    false support-restricted dense-range theorem.
 
-Third, insert the spatial Fourier transform.  This is a homeomorphism on the
-spatial Schwartz variables, so density is preserved:
+Third, insert the spatial Fourier transform.  This step has a critical compact
+support correction: the dense spatial-frequency factors must be Fourier
+transforms of compactly supported spatial Schwartz sources.  It is not enough
+to take `FourierTransform.fourierInv χ` for an arbitrary spatial-frequency
+factor `χ`, because that inverse Fourier transform is generally not compactly
+supported and would not produce a valid compact spacetime source.
+
+The detailed implementation transcript is maintained in
+`docs/section43_fourier_laplace_density.md`, Layer 3.  The exact subpacket is:
+
+```lean
+abbrev Section43SpatialSpace (d n : ℕ) [NeZero d] :=
+  EuclideanSpace ℝ (Fin n × Fin d)
+
+def Section43SpatialCompactSource (d n : ℕ) [NeZero d] :=
+  {κ : SchwartzMap (Section43SpatialSpace d n) ℂ //
+    HasCompactSupport (κ : Section43SpatialSpace d n → ℂ)}
+
+def section43SpatialFourierCompactRange
+    (d n : ℕ) [NeZero d] :
+    Set (SchwartzMap (Section43SpatialSpace d n) ℂ) :=
+  Set.range fun κ : Section43SpatialCompactSource d n =>
+    SchwartzMap.fourierTransformCLM ℂ κ.1
+
+theorem dense_section43SpatialFourierCompactRange
+    (d n : ℕ) [NeZero d] :
+    Dense (section43SpatialFourierCompactRange d n)
+
+noncomputable def section43TimeSpatialTensor
+    (d n : ℕ) [NeZero d]
+    (Φ : SchwartzMap (Fin n → ℝ) ℂ)
+    (χ : SchwartzMap (Section43SpatialSpace d n) ℂ) :
+    SchwartzNPoint d n
+
+theorem section43TimeSpatialTensor_apply
+    (d n : ℕ) [NeZero d]
+    (Φ : SchwartzMap (Fin n → ℝ) ℂ)
+    (χ : SchwartzMap (Section43SpatialSpace d n) ℂ)
+    (q : NPointDomain d n) :
+    section43TimeSpatialTensor d n Φ χ q =
+      Φ (section43QTime (d := d) (n := n) q) *
+      χ (section43QSpatial (d := d) (n := n) q)
+
+theorem dense_section43TimeSpatialTensor_span_of_factor_dense
+    (d n : ℕ) [NeZero d]
+    {St : Set (SchwartzMap (Fin n → ℝ) ℂ)}
+    {Sx : Set (SchwartzMap (Section43SpatialSpace d n) ℂ)}
+    (hSt : Dense St) (hSx : Dense Sx) :
+    Dense
+      (((Submodule.span ℂ
+        {F : SchwartzNPoint d n |
+          ∃ Φ ∈ St, ∃ χ ∈ Sx,
+            F = section43TimeSpatialTensor d n Φ χ}) :
+        Submodule ℂ (SchwartzNPoint d n)) :
+        Set (SchwartzNPoint d n))
+
+noncomputable def section43TimeSpatialProductSource
+    (d n : ℕ) [NeZero d]
+    (g : Section43CompactStrictPositiveTimeSource n)
+    (κ : Section43SpatialCompactSource d n) :
+    Section43CompactStrictPositiveTimeSpatialSource d n
+
+theorem partialFourierSpatial_fun_section43TimeSpatialProductSource
+    (d n : ℕ) [NeZero d]
+    (g : Section43CompactStrictPositiveTimeSource n)
+    (κ : Section43SpatialCompactSource d n)
+    (τ : Fin n → ℝ) (ξ : Section43SpatialSpace d n) :
+    partialFourierSpatial_fun
+      (d := d) (n := n)
+      (section43TimeSpatialProductSource d n g κ).f
+      (τ, ξ) =
+    g.f τ * (SchwartzMap.fourierTransformCLM ℂ κ.1) ξ
+```
+
+The spatial density proof uses the compiled compact-support density theorem
+`SchwartzMap.dense_hasCompactSupport`, transported from
+`SchwartzMap (Fin (n*d) → ℝ) ℂ` to
+`SchwartzMap (Section43SpatialSpace d n) ℂ` through
+`EuclideanSpace.equiv` and `finProdFinEquiv`.  Then for any spatial target
+`χ`, approximate `FourierTransform.fourierInv χ` by compactly supported
+spatial Schwartz functions and use continuity of
+`SchwartzMap.fourierTransformCLM ℂ` plus
+`FourierTransform.fourier_fourierInv_eq`.
+
+The time-spatial density proof uses
+`dense_section43IteratedLaplaceCompactTransform_preimage n` for the time
+factor and `dense_section43SpatialFourierCompactRange d n` for the spatial
+factor, then transports the restricted simple-tensor span through
+`nPointTimeSpatialSchwartzCLE`.  The representative identification is by
+unfolding `partialFourierSpatial_fun`: the fixed-time slice of
+`section43TimeSpatialProductSource d n g κ` is `g.f τ • κ.1`, so the spatial
+Fourier transform is obtained from `(SchwartzMap.fourierTransformCLM ℂ).map_smul`
+with no manual Fourier-normalization rewrite.
+
+The source-side product construction must use the following Lean-ready support
+packet; this is the next production target after the compiled
+`SchwartzNPoint` tensor-density transport.
+
+First, introduce the time-support control lemma:
+
+```lean
+theorem tsupport_section43NPointTimeSpatialTensor_subset_time_preimage
+    (d n : ℕ) [NeZero d]
+    (φ : SchwartzMap (Fin n → ℝ) ℂ)
+    (χ : SchwartzMap (Section43SpatialSpace d n) ℂ) :
+    tsupport
+      ((section43NPointTimeSpatialTensor d n φ χ :
+          SchwartzNPoint d n) : NPointDomain d n → ℂ)
+      ⊆
+    (section43QTime (d := d) (n := n)) ⁻¹'
+      tsupport (φ : (Fin n → ℝ) → ℂ)
+```
+
+Proof route: rewrite by `section43NPointTimeSpatialTensor_apply`, apply
+`tsupport_mul_subset_left` to the product
+`φ (section43QTime q) * χ (section43QSpatial q)`, and then use
+`tsupport_comp_subset_preimage` with the continuity supplied by
+`section43QTimeCLM d n`.  In Lean, first insert the explicit function
+equality
+`((section43NPointTimeSpatialTensor d n φ χ : SchwartzNPoint d n) :
+NPointDomain d n → ℂ) = fun q => φ (section43QTime q) *
+χ (section43QSpatial q)` by `funext; simp`, then call
+`tsupport_comp_subset_preimage (φ : (Fin n → ℝ) → ℂ)
+(f := section43QTime (d := d) (n := n)) ...`.
+
+Second, prove compact support without relying on a false generic compact
+preimage statement:
+
+```lean
+theorem hasCompactSupport_section43NPointTimeSpatialTensor
+    (d n : ℕ) [NeZero d]
+    (φ : SchwartzMap (Fin n → ℝ) ℂ)
+    (χ : SchwartzMap (Section43SpatialSpace d n) ℂ)
+    (hφ : HasCompactSupport (φ : (Fin n → ℝ) → ℂ))
+    (hχ : HasCompactSupport (χ : Section43SpatialSpace d n → ℂ)) :
+    HasCompactSupport
+      ((section43NPointTimeSpatialTensor d n φ χ :
+          SchwartzNPoint d n) : NPointDomain d n → ℂ)
+```
+
+Proof route: set `e := nPointTimeSpatialCLE (d := d) n` and
+`K := e.symm '' (tsupport φ ×ˢ tsupport χ)`.  Compactness is
+`(hφ.isCompact.prod hχ.isCompact).image e.symm.continuous`.  For the support
+subset, if the product value at `q` is nonzero, then both factors are nonzero;
+convert them to topological-support membership with `subset_tsupport _` and
+`Function.mem_support.mpr`, then witness `q ∈ K` by
+`(section43QTime q, section43QSpatial q)`.
+
+Third, define:
+
+```lean
+noncomputable def section43TimeSpatialProductSource
+    (d n : ℕ) [NeZero d]
+    (g : Section43CompactStrictPositiveTimeSource n)
+    (κ : Section43SpatialCompactSource d n) :
+    Section43CompactStrictPositiveTimeSpatialSource d n
+```
+
+with underlying function `section43NPointTimeSpatialTensor d n g.f κ.1`.
+The `positive` field is the time-support lemma followed by `g.positive`; the
+`compact` field is the compact-support lemma applied to `g.compact` and
+`κ.2`.
+
+Fourth, prove the fixed-time slice identity before the Fourier identity:
+
+```lean
+theorem partialEval₂_section43TimeSpatialProductSource
+    (d n : ℕ) [NeZero d]
+    (g : Section43CompactStrictPositiveTimeSource n)
+    (κ : Section43SpatialCompactSource d n)
+    (τ : Fin n → ℝ) :
+    SchwartzMap.partialEval₂
+      (nPointSpatialTimeSchwartzCLE (d := d) (n := n)
+        (section43TimeSpatialProductSource d n g κ).f) τ =
+    g.f τ • κ.1
+```
+
+Proof route: extensionality in the spatial variable, then simp using
+`nPointSpatialTimeSchwartzCLE_apply` and `smul_eq_mul`.  In compiled Lean this
+is clearest with explicit `change` steps:
+`partialEval₂` becomes evaluation of the spatial-time Schwartz map at
+`(η, τ)`, `nPointSpatialTimeSchwartzCLE_apply` rewrites it to the time-spatial
+value `(τ, η)`, and the transported tensor reduces to
+`section43TimeSpatialTensor d n g.f κ.1 (τ, η)`.  This confirms the
+orientation: `partialEval₂` fixes the time coordinate of the spatial-time
+Schwartz map.
+
+Finally:
+
+```lean
+theorem partialFourierSpatial_fun_section43TimeSpatialProductSource
+    (d n : ℕ) [NeZero d]
+    (g : Section43CompactStrictPositiveTimeSource n)
+    (κ : Section43SpatialCompactSource d n)
+    (τ : Fin n → ℝ) (ξ : Section43SpatialSpace d n) :
+    partialFourierSpatial_fun
+      (d := d) (n := n)
+      (section43TimeSpatialProductSource d n g κ).f
+      (τ, ξ) =
+    g.f τ * (SchwartzMap.fourierTransformCLM ℂ κ.1) ξ
+```
+
+Proof route: unfold `partialFourierSpatial_fun`, rewrite the slice by
+`partialEval₂_section43TimeSpatialProductSource`, apply
+`(SchwartzMap.fourierTransformCLM ℂ).map_smul`, and normalize scalar
+multiplication with `simp [smul_eq_mul]`.
+
+Production status, 2026-04-18: the product-space density half of this Layer-3
+packet is compiled in
+`OSReconstruction/Wightman/Reconstruction/WickRotation/Section43FourierLaplaceSpatialDensity.lean`.
+It proves the compact spatial Fourier range density, the time/spatial product
+flattening, the pointwise product tensor formula, unrestricted block-tensor
+density, restricted dense-factor tensor density, and the route-relevant
+specialization:
+
+```lean
+dense_section43TimeSpatialTensor_span_compactLaplace_spatialFourier
+```
+
+This compiled theorem still lives on
+`SchwartzMap ((Fin n → ℝ) × Section43SpatialSpace d n) ℂ`.  The next
+implementation step is the honest transport through
+`nPointTimeSpatialSchwartzCLE` to `SchwartzNPoint d n`, with a pointwise formula
+using `section43QTime` and `section43QSpatial`.  The product-source definition
+and `partialFourierSpatial_fun_section43TimeSpatialProductSource` should follow
+that transport; they are not yet compiled.
+
+Production update, 2026-04-18: the `SchwartzNPoint d n` transport has now also
+compiled in
+`OSReconstruction/Wightman/Reconstruction/WickRotation/Section43FourierLaplaceSpatialDensity.lean`:
+
+```lean
+section43NPointTimeSpatialTensor
+section43NPointTimeSpatialTensor_apply
+dense_section43NPointTimeSpatialTensor_span_of_factor_dense
+dense_section43NPointTimeSpatialTensor_span_compactLaplace_spatialFourier
+```
+
+The next implementation target is now the source-side half:
+`section43TimeSpatialProductSource` and
+`partialFourierSpatial_fun_section43TimeSpatialProductSource`.
+
+The public Layer-3 target remains:
 
 Use this representative predicate rather than introducing an opaque
 placeholder map:
@@ -24817,63 +25222,362 @@ theorem dense_section43TimeLaplaceSpatialFourier_compact_preimage
 
 Proof transcript:
 
-1. Identify `NPointDomain d n` with
-   `(Fin n → ℝ) × EuclideanSpace ℝ (Fin n × Fin d)` using
-   `nPointTimeSpatialCLE`.
-2. Apply the iterated time-Laplace theorem in the first factor.
-3. Compose with the spatial Fourier CLM/equivalence in the second factor.
-4. Use continuity and open-quotient transport to move density through these
-   continuous linear equivalences.
+1. Let
+   `St := (section43TimePositiveQuotientMap n) ⁻¹'
+     Set.range (section43IteratedLaplaceCompactTransform n)` and
+   `Sx := section43SpatialFourierCompactRange d n`.
+2. Use
+   `dense_section43IteratedLaplaceCompactTransform_preimage n` and
+   `dense_section43SpatialFourierCompactRange d n`, then apply
+   `dense_section43TimeSpatialTensor_span_of_factor_dense`.
+3. For a generator `section43TimeSpatialTensor d n Φ χ` with
+   `Φ ∈ St` and `χ ∈ Sx`, choose
+   `g : Section43CompactStrictPositiveTimeSource n` and
+   `κ : Section43SpatialCompactSource d n` witnessing those memberships.
+4. Define `Ψt := section43IteratedLaplaceSchwartzRepresentative n g` and
+   `Ψ := section43TimeSpatialTensor d n Ψt χ`.  Quotient equality for the time
+   factor gives `Φ = Ψt` on `section43TimePositiveRegion n`, hence the full
+   tensors agree on `section43PositiveEnergyRegion d n`.
+5. Define `G := section43TimeSpatialProductSource d n g κ`.  Use
+   `partialFourierSpatial_fun_section43TimeSpatialProductSource` and
+   `section43IteratedLaplaceSchwartzRepresentative_apply_of_mem` to prove
+   `section43TimeLaplaceSpatialFourierRepresentative d n G Ψ`.
+   The first compiled theorem should be the product-generator case:
+   ```lean
+   theorem section43TimeLaplaceSpatialFourierRepresentative_productSource
+       (d n : ℕ) [NeZero d]
+       (g : Section43CompactStrictPositiveTimeSource n)
+       (κ : Section43SpatialCompactSource d n) :
+       section43TimeLaplaceSpatialFourierRepresentative d n
+         (section43TimeSpatialProductSource d n g κ)
+         (section43NPointTimeSpatialTensor d n
+           (section43IteratedLaplaceSchwartzRepresentative n g)
+           (SchwartzMap.fourierTransformCLM ℂ κ.1))
+   ```
+   Proof route: for `q ∈ section43PositiveEnergyRegion d n`, obtain
+   `section43QTime q ∈ section43TimePositiveRegion n` by unfolding
+   `section43PositiveEnergyRegion`, `section43QTime`, and
+   `nPointTimeSpatialCLE`.  Rewrite the target tensor by
+   `section43NPointTimeSpatialTensor_apply`, rewrite the time representative by
+   `section43IteratedLaplaceSchwartzRepresentative_apply_of_mem`, unfold
+   `section43IteratedLaplaceRaw`, rewrite the integrand by
+   `partialFourierSpatial_fun_section43TimeSpatialProductSource`, and pull the
+   constant spatial Fourier factor outside the time integral by applying
+   `MeasureTheory.integral_mul_const` explicitly to the spatial Fourier scalar
+   and the base finite-time Laplace integrand.
+   Production update, 2026-04-18: both
+   `section43TimeLaplaceSpatialFourierRepresentative` and
+   `section43TimeLaplaceSpatialFourierRepresentative_productSource` are
+   compiled in `Section43FourierLaplaceSpatialDensity.lean`.
+6. Package the time-spatial compact transform as a linear map, or prove the
+   representative target is closed under finite linear combinations directly.
+   The next compiled subpacket should first avoid any span closure issue and
+   prove generator containment.  The key quotient lemma is:
+   ```lean
+   theorem section43NPointTimeSpatialTensor_positiveEnergyQuotient_eq_of_timeQuotient_eq
+       (d n : ℕ) [NeZero d]
+       {φ ψ : SchwartzMap (Fin n → ℝ) ℂ}
+       (χ : SchwartzMap (Section43SpatialSpace d n) ℂ)
+       (hφψ :
+         section43TimePositiveQuotientMap n φ =
+           section43TimePositiveQuotientMap n ψ) :
+       section43PositiveEnergyQuotientMap (d := d) n
+         (section43NPointTimeSpatialTensor d n φ χ) =
+       section43PositiveEnergyQuotientMap (d := d) n
+         (section43NPointTimeSpatialTensor d n ψ χ)
+   ```
+   It is just `section43PositiveEnergyQuotientMap_eq_of_eqOn_region` plus
+   `eqOn_region_of_section43TimePositiveQuotientMap_eq` evaluated at
+   `section43QTime q`.
+
+   Then prove:
+   ```lean
+   theorem section43NPointTimeSpatialTensor_mem_timeLaplaceSpatialFourierTarget
+       (d n : ℕ) [NeZero d]
+       (φ : SchwartzMap (Fin n → ℝ) ℂ)
+       (χ : SchwartzMap (Section43SpatialSpace d n) ℂ)
+       (hφ :
+         φ ∈ ((section43TimePositiveQuotientMap n) ⁻¹'
+           Set.range (section43IteratedLaplaceCompactTransform n)))
+       (hχ : χ ∈ section43SpatialFourierCompactRange d n) :
+       ∃ (G : Section43CompactStrictPositiveTimeSpatialSource d n)
+         (Ψ : SchwartzNPoint d n),
+         section43TimeLaplaceSpatialFourierRepresentative d n G Ψ ∧
+         section43PositiveEnergyQuotientMap (d := d) n
+           (section43NPointTimeSpatialTensor d n φ χ) =
+         section43PositiveEnergyQuotientMap (d := d) n Ψ
+   ```
+   Here `hφ` chooses `g` with
+   `section43IteratedLaplaceCompactTransform n g =
+   section43TimePositiveQuotientMap n φ`, `hχ` chooses `κ`, the representative
+   is the product-source theorem above, and quotient equality follows from
+   `section43IteratedLaplaceCompactTransform_eq_quotient` for
+   `section43IteratedLaplaceSchwartzRepresentative n g`.
+   Production update, 2026-04-18: this generator-containment subpacket is
+   compiled in `Section43FourierLaplaceSpatialDensity.lean`:
+   `section43NPointTimeSpatialTensor_positiveEnergyQuotient_eq_of_timeQuotient_eq`
+   and
+   `section43NPointTimeSpatialTensor_mem_timeLaplaceSpatialFourierTarget`.
+   Production update, 2026-04-18: the finite-span bridge is now compiled as a
+   linear-closure packet, not as a new analytic identification.  The production
+   declarations are:
+   ```lean
+   namespace Section43CompactStrictPositiveTimeSpatialSource
+
+   instance (d n : ℕ) [NeZero d] :
+       Zero (Section43CompactStrictPositiveTimeSpatialSource d n)
+   instance (d n : ℕ) [NeZero d] :
+       Add (Section43CompactStrictPositiveTimeSpatialSource d n)
+   instance (d n : ℕ) [NeZero d] :
+       AddCommMonoid (Section43CompactStrictPositiveTimeSpatialSource d n)
+   instance (d n : ℕ) [NeZero d] :
+       SMul ℂ (Section43CompactStrictPositiveTimeSpatialSource d n)
+   instance (d n : ℕ) [NeZero d] :
+       Module ℂ (Section43CompactStrictPositiveTimeSpatialSource d n)
+
+   end Section43CompactStrictPositiveTimeSpatialSource
+
+   theorem section43TimeSpatialSource_tsupport_subset_positiveEnergy
+       (G : Section43CompactStrictPositiveTimeSpatialSource d n) :
+       tsupport (G.f : NPointDomain d n → ℂ) ⊆
+         section43PositiveEnergyRegion d n
+
+   theorem integrable_section43TimeLaplaceSpatialFourier_timeIntegrand
+       (G : Section43CompactStrictPositiveTimeSpatialSource d n)
+       (q : NPointDomain d n)
+       (hq : q ∈ section43PositiveEnergyRegion d n) :
+       Integrable
+         (fun τ : Fin n → ℝ =>
+           Complex.exp
+             (-(∑ i : Fin n,
+               (τ i : ℂ) *
+                 (section43QTime (d := d) (n := n) q i : ℂ))) *
+           partialFourierSpatial_fun
+             (d := d) (n := n) G.f
+             (τ, section43QSpatial (d := d) (n := n) q))
+
+   theorem section43TimeLaplaceSpatialFourierRepresentative_add
+       {G H : Section43CompactStrictPositiveTimeSpatialSource d n}
+       {Φ Ψ : SchwartzNPoint d n}
+       (hΦ : section43TimeLaplaceSpatialFourierRepresentative d n G Φ)
+       (hΨ : section43TimeLaplaceSpatialFourierRepresentative d n H Ψ) :
+       section43TimeLaplaceSpatialFourierRepresentative d n (G + H) (Φ + Ψ)
+
+   theorem section43TimeLaplaceSpatialFourierRepresentative_smul
+       (c : ℂ)
+       {G : Section43CompactStrictPositiveTimeSpatialSource d n}
+       {Φ : SchwartzNPoint d n}
+       (hΦ : section43TimeLaplaceSpatialFourierRepresentative d n G Φ) :
+       section43TimeLaplaceSpatialFourierRepresentative d n (c • G) (c • Φ)
+
+   def section43TimeLaplaceSpatialFourierTarget
+       (d n : ℕ) [NeZero d] : Set (SchwartzNPoint d n)
+
+   theorem section43TimeLaplaceSpatialFourierTarget_zero
+       (d n : ℕ) [NeZero d] :
+       (0 : SchwartzNPoint d n) ∈
+         section43TimeLaplaceSpatialFourierTarget d n
+
+   theorem section43TimeLaplaceSpatialFourierTarget_add
+       (d n : ℕ) [NeZero d]
+       {Φ Ψ : SchwartzNPoint d n}
+       (hΦ : Φ ∈ section43TimeLaplaceSpatialFourierTarget d n)
+       (hΨ : Ψ ∈ section43TimeLaplaceSpatialFourierTarget d n) :
+       Φ + Ψ ∈ section43TimeLaplaceSpatialFourierTarget d n
+
+   theorem section43TimeLaplaceSpatialFourierTarget_smul
+       (d n : ℕ) [NeZero d]
+       (c : ℂ)
+       {Φ : SchwartzNPoint d n}
+       (hΦ : Φ ∈ section43TimeLaplaceSpatialFourierTarget d n) :
+       c • Φ ∈ section43TimeLaplaceSpatialFourierTarget d n
+
+   theorem section43NPointTimeSpatialTensor_span_le_timeLaplaceSpatialFourierTarget
+       (d n : ℕ) [NeZero d] :
+       ((Submodule.span ℂ
+         {F : SchwartzNPoint d n |
+           ∃ φ : SchwartzMap (Fin n → ℝ) ℂ,
+           φ ∈
+             ((section43TimePositiveQuotientMap n) ⁻¹'
+               Set.range (section43IteratedLaplaceCompactTransform n)) ∧
+           ∃ χ : SchwartzMap (Section43SpatialSpace d n) ℂ,
+           χ ∈ section43SpatialFourierCompactRange d n ∧
+             F = section43NPointTimeSpatialTensor d n φ χ}) :
+         Set (SchwartzNPoint d n)) ⊆
+           section43TimeLaplaceSpatialFourierTarget d n
+
+   theorem dense_section43TimeLaplaceSpatialFourier_compact_preimage
+       (d n : ℕ) [NeZero d] :
+       Dense
+         {Φ : SchwartzNPoint d n |
+           ∃ (G : Section43CompactStrictPositiveTimeSpatialSource d n)
+             (Ψ : SchwartzNPoint d n),
+             section43TimeLaplaceSpatialFourierRepresentative d n G Ψ ∧
+             section43PositiveEnergyQuotientMap (d := d) n Φ =
+               section43PositiveEnergyQuotientMap (d := d) n Ψ}
+   ```
+   The source algebra is copied from
+   `Section43CompactStrictPositiveTimeSource`; support closure uses
+   `tsupport_add`, `tsupport_smul_subset_right`, `HasCompactSupport.add`, and
+   `HasCompactSupport.smul_left`.  The integrability proof is the existing
+   `integrable_section43FourierLaplace_timeIntegrand` argument with
+   `section43DiffPullbackCLM d n f` replaced by `G.f` and negative-time
+   vanishing supplied by
+   `section43PartialFourierSpatial_fun_eq_zero_of_neg_time_of_support_positiveEnergy`
+   plus `section43TimeSpatialSource_tsupport_subset_positiveEnergy`.
+   Representative add/smul are pointwise `calc` proofs using
+   `MeasureTheory.integral_add`, `MeasureTheory.integral_const_mul`,
+   `partialFourierSpatial_fun_add`, and `partialFourierSpatial_fun_smul`.
+
+   The target set is:
+   ```lean
+   def section43TimeLaplaceSpatialFourierTarget
+       (d n : ℕ) [NeZero d] : Set (SchwartzNPoint d n) :=
+     {Φ |
+       ∃ (G : Section43CompactStrictPositiveTimeSpatialSource d n)
+         (Ψ : SchwartzNPoint d n),
+         section43TimeLaplaceSpatialFourierRepresentative d n G Ψ ∧
+         section43PositiveEnergyQuotientMap (d := d) n Φ =
+           section43PositiveEnergyQuotientMap (d := d) n Ψ}
+   ```
+   Add/smul closure of this target uses `map_add` and `map_smul` for
+   `section43PositiveEnergyQuotientMap`.  The span containment uses
+   `Submodule.span_induction` with the compiled generator-containment theorem
+   as the base case.  Density follows by `Dense.mono` from
+   `dense_section43NPointTimeSpatialTensor_span_compactLaplace_spatialFourier`.
+7. Treat `n = 0` explicitly if the finite-dimensional tensor construction does
+   not simplify by `simp`: the time integral is over the unique point and the
+   density is purely the spatial Fourier compact-range density.
 
 Fourth, transport from difference coordinates back to ordered Euclidean
 coordinates.  This is the already compiled map
 `section43DiffCoordRealCLE d n`.
 
+Implementation file: add a new downstream companion
+`Section43FourierLaplaceOrderedDensity.lean` importing
+`Section43FourierLaplaceSpatialDensity` and `Section43FourierLaplaceClosure`.
+Do not reopen the large transform or closure files for this packet.
+
 ```lean
 theorem dense_section43FourierLaplace_compact_ordered_preimage_raw
     (d n : ℕ) [NeZero d] :
     Dense
-      {Φ : SchwartzNPoint d n |
-        ∃ (f : SchwartzNPoint d n)
-          (hf_ord :
-            tsupport (f : NPointDomain d n → ℂ) ⊆
-              OrderedPositiveTimeRegion d n)
-          (hf_compact : HasCompactSupport (f : NPointDomain d n → ℂ)),
-          section43PositiveEnergyQuotientMap (d := d) n Φ =
-            section43FourierLaplaceTransformComponent d n
-              f hf_ord hf_compact}
+      ((section43PositiveEnergyQuotientMap (d := d) n) ⁻¹'
+        Set.range (section43FourierLaplaceTransformComponentMap d n))
 ```
 
 Proof transcript:
 
-1. Use `section43DiffCoordRealCLE d n` to rewrite ordered positive-time support
-   of `f` as positive-orthant support of
-   `section43DiffPullbackCLM d n ⟨f, hf_ord⟩`.
-2. Use
-   `section43FourierLaplaceIntegral_eq_time_spatial_integral` to identify the
-   transformed representative with the time-Laplace / spatial-Fourier
-   transform from the previous lemma.
-3. For compact sources, use
-   `section43FourierLaplaceTransformComponent_has_representative` to replace
-   the abstract representative by the production quotient class.  If two
-   representatives satisfy `section43FourierLaplaceRepresentative` for the
-   same source, their quotient classes are equal by
-   `section43PositiveEnergyQuotientMap_eq_of_eqOn_region`.
+1. Prove the order lemma:
+   ```lean
+   theorem section43DiffCoordRealCLE_symm_mem_orderedPositiveTimeRegion_of_pos_time
+       (d n : ℕ) [NeZero d]
+       {δ : NPointDomain d n}
+       (hδ : ∀ i : Fin n, 0 < δ i 0) :
+       (section43DiffCoordRealCLE d n).symm δ ∈
+         OrderedPositiveTimeRegion d n
+   ```
+   Use `section43DiffCoordRealCLE_symm_apply`: ordered coordinates are partial
+   sums of positive difference times.  First-coordinate positivity is
+   `Finset.sum_pos`; strict ordering follows because the later partial sum is
+   the earlier one plus a nonempty positive block.  If Lean needs it, isolate:
+   ```lean
+   lemma partialSum_strictMono_of_pos
+       {n : ℕ} {a : Fin n → ℝ}
+       (ha : ∀ i, 0 < a i) :
+       StrictMono fun k : Fin n =>
+         ∑ r : Fin (k.val + 1), a ⟨r.val, by omega⟩
+   ```
+	   The concrete strict-order proof should rewrite both finite sums by
+	   `Finset.sum_fin_eq_sum_range`, decompose the larger range with
+	   `Finset.sum_range_add_sum_Ico`, prove the interval
+	   `Finset.Ico (i.val + 1) (j.val + 1)` is nonempty using `i < j`, and close
+	   with `lt_add_of_pos_right` plus `Finset.sum_pos`.  The compiled proof uses
+	   a local Nat-indexed function `fj` for the larger partial sum and rewrites
+	   the smaller partial sum into `fj` before applying
+	   `← Finset.sum_range_add_sum_Ico fj hle`; this is the robust Lean shape
+	   because the dependent coordinate `δ ⟨r, _⟩` needs the `r ≤ j.val` bound
+	   extracted from `r < j.val + 1`.
+2. Define the ordered pushforward source:
+   ```lean
+   noncomputable def section43OrderedSourceOfTimeSpatialSource
+       (d n : ℕ) [NeZero d]
+       (G : Section43CompactStrictPositiveTimeSpatialSource d n) :
+       Section43CompactOrderedSource d n
+   ```
+   Carrier:
+   ```lean
+   SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
+     (section43DiffCoordRealCLE d n) G.f
+   ```
+   Ordered support: map support through
+   `tsupport_comp_subset_preimage`, apply `G.positive`, then step 1.
+   Compactness: use `tsupport_comp_eq_preimage`, rewrite the preimage as the
+   image of `tsupport G.f` under `(section43DiffCoordRealCLE d n).symm`, and
+   apply compact image.
+3. Prove the pullback identity:
+   ```lean
+   theorem section43DiffPullbackCLM_orderedSourceOfTimeSpatialSource
+       (d n : ℕ) [NeZero d]
+       (G : Section43CompactStrictPositiveTimeSpatialSource d n) :
+       section43DiffPullbackCLM d n
+         ⟨(section43OrderedSourceOfTimeSpatialSource d n G).f,
+          (section43OrderedSourceOfTimeSpatialSource d n G).ordered⟩ =
+       G.f
+   ```
+   This is an `ext δ` proof using `section43DiffPullbackCLM_apply` and
+   `ContinuousLinearEquiv.apply_symm_apply`.
+4. Convert Layer-3 representatives to OS-I representatives:
+   ```lean
+   theorem section43FourierLaplaceRepresentative_of_timeSpatialRepresentative
+       (d n : ℕ) [NeZero d]
+       {G : Section43CompactStrictPositiveTimeSpatialSource d n}
+       {Ψ : SchwartzNPoint d n}
+       (hΨ :
+         section43TimeLaplaceSpatialFourierRepresentative d n G Ψ) :
+       section43FourierLaplaceRepresentative d n
+         ⟨(section43OrderedSourceOfTimeSpatialSource d n G).f,
+          (section43OrderedSourceOfTimeSpatialSource d n G).ordered⟩ Ψ
+   ```
+   For `q ∈ section43PositiveEnergyRegion`, unfold
+   `section43FourierLaplaceIntegral` and rewrite the pullback by step 3; the
+   resulting integral is exactly `hΨ q hq`.
+5. Prove target containment:
+   ```lean
+   theorem section43TimeLaplaceSpatialFourierTarget_subset_component_preimage
+       (d n : ℕ) [NeZero d] :
+       section43TimeLaplaceSpatialFourierTarget d n ⊆
+         (section43PositiveEnergyQuotientMap (d := d) n) ⁻¹'
+           Set.range (section43FourierLaplaceTransformComponentMap d n)
+   ```
+   Given `Φ` with witness `G, Ψ, hΨ, hΦq`, set
+   `src := section43OrderedSourceOfTimeSpatialSource d n G`.  Step 4 makes
+   `Ψ` a `section43FourierLaplaceRepresentative` for `src`.  Use
+   `section43FourierLaplaceTransformComponent_has_representative` to obtain the
+   chosen component representative `Φc`; quotient equality between `Ψ` and
+   `Φc` follows by `section43PositiveEnergyQuotientMap_eq_of_eqOn_region`.
+   Combine that equality with `hΦq` and provide the range witness `src`.
+6. Conclude by `Dense.mono` from
+   `dense_section43TimeLaplaceSpatialFourier_compact_preimage`.
 
-Finally, prove the production theorem by unfolding the `Section43CompactOrderedSource`
-wrapper:
-
+Production update, 2026-04-18: this ordered-density bridge is compiled in
+`Section43FourierLaplaceOrderedDensity.lean`:
 ```lean
-theorem dense_section43FourierLaplaceTransformComponentMap_preimage
-    (d n : ℕ) [NeZero d] :
-    Dense
-      ((section43PositiveEnergyQuotientMap (d := d) n) ⁻¹'
-        Set.range (section43FourierLaplaceTransformComponentMap d n)) := by
-  -- use `dense_section43FourierLaplace_compact_ordered_preimage_raw`;
-  -- convert the raw existential `(f, hf_ord, hf_compact)` into
-  -- `Section43CompactOrderedSource`;
-  -- unfold `section43FourierLaplaceTransformComponentMap`.
+section43DiffCoordRealCLE_symm_mem_orderedPositiveTimeRegion_of_pos_time
+section43OrderedSourceOfTimeSpatialSource
+section43DiffPullbackCLM_orderedSourceOfTimeSpatialSource
+section43FourierLaplaceRepresentative_of_timeSpatialRepresentative
+section43TimeLaplaceSpatialFourierTarget_subset_component_preimage
+dense_section43FourierLaplace_compact_ordered_preimage_raw
 ```
+
+Production update, 2026-04-18: the public theorem-3 positivity frontier
+`bvt_W_positive` in `OSToWightmanBoundaryValues.lean` is now closed by applying
+`OSReconstruction.bvt_W_positive_of_component_dense_preimage` to
+`OSReconstruction.dense_section43FourierLaplace_compact_ordered_preimage_raw`.
+This is the planned OS-route endpoint for Section 4.3 positivity: all analysis
+is in the Section 4.3 density/closure files, and the public frontier only
+connects the compiled density theorem to the closed-set positivity bridge.
 
 Implementation guardrails:
 
