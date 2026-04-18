@@ -2938,6 +2938,98 @@ Proof:
    `partialFourierSpatial_fun_section43TimeSpatialProductSource` and the
    defining theorem
    `section43IteratedLaplaceSchwartzRepresentative_apply_of_mem`.
+   The first production theorem should be the single-generator statement:
+   ```lean
+   theorem section43TimeLaplaceSpatialFourierRepresentative_productSource
+       (d n : ℕ) [NeZero d]
+       (g : Section43CompactStrictPositiveTimeSource n)
+       (κ : Section43SpatialCompactSource d n) :
+       section43TimeLaplaceSpatialFourierRepresentative d n
+         (section43TimeSpatialProductSource d n g κ)
+         (section43NPointTimeSpatialTensor d n
+           (section43IteratedLaplaceSchwartzRepresentative n g)
+           (SchwartzMap.fourierTransformCLM ℂ κ.1))
+   ```
+   Proof skeleton:
+   ```lean
+   intro q hq
+   have hσ :
+       section43QTime (d := d) (n := n) q ∈
+         section43TimePositiveRegion n := by
+     intro i
+     simpa [section43PositiveEnergyRegion, section43QTime,
+       nPointTimeSpatialCLE] using hq i
+   rw [section43NPointTimeSpatialTensor_apply]
+   rw [section43IteratedLaplaceSchwartzRepresentative_apply_of_mem g hσ]
+   unfold section43IteratedLaplaceRaw
+   rw [show
+       (∫ τ : Fin n → ℝ,
+          Complex.exp
+            (-(∑ i : Fin n,
+              (τ i : ℂ) *
+                (section43QTime (d := d) (n := n) q i : ℂ))) *
+            partialFourierSpatial_fun
+              (d := d) (n := n)
+              (section43TimeSpatialProductSource d n g κ).f
+              (τ, section43QSpatial (d := d) (n := n) q)) =
+       (∫ τ : Fin n → ℝ,
+          Complex.exp
+            (-(∑ i : Fin n,
+              (τ i : ℂ) *
+                (section43QTime (d := d) (n := n) q i : ℂ))) *
+            g.f τ) *
+         (SchwartzMap.fourierTransformCLM ℂ κ.1)
+           (section43QSpatial (d := d) (n := n) q) by
+     calc
+       (∫ τ : Fin n → ℝ,
+          Complex.exp
+            (-(∑ i : Fin n,
+              (τ i : ℂ) *
+                (section43QTime (d := d) (n := n) q i : ℂ))) *
+            partialFourierSpatial_fun
+              (d := d) (n := n)
+              (section43TimeSpatialProductSource d n g κ).f
+              (τ, section43QSpatial (d := d) (n := n) q))
+           =
+         ∫ τ : Fin n → ℝ,
+           (Complex.exp
+             (-(∑ i : Fin n,
+               (τ i : ℂ) *
+                 (section43QTime (d := d) (n := n) q i : ℂ))) *
+             g.f τ) *
+           (SchwartzMap.fourierTransformCLM ℂ κ.1)
+             (section43QSpatial (d := d) (n := n) q) := by
+             congr with τ
+             rw [partialFourierSpatial_fun_section43TimeSpatialProductSource]
+             ring
+       _ =
+         (∫ τ : Fin n → ℝ,
+           Complex.exp
+             (-(∑ i : Fin n,
+               (τ i : ℂ) *
+                 (section43QTime (d := d) (n := n) q i : ℂ))) *
+             g.f τ) *
+           (SchwartzMap.fourierTransformCLM ℂ κ.1)
+             (section43QSpatial (d := d) (n := n) q) :=
+             MeasureTheory.integral_mul_const
+               ((SchwartzMap.fourierTransformCLM ℂ κ.1)
+                 (section43QSpatial (d := d) (n := n) q))
+               (fun τ : Fin n → ℝ =>
+                 Complex.exp
+                   (-(∑ i : Fin n,
+                     (τ i : ℂ) *
+                       (section43QTime (d := d) (n := n) q i : ℂ))) *
+                   g.f τ)]
+   ```
+   The theorem deliberately proves only the product-source representative
+   identity; it does not yet claim density or linear closure.
+   Production update, 2026-04-18: this theorem and the representative predicate
+   are now compiled in
+   `Section43FourierLaplaceSpatialDensity.lean`:
+   ```lean
+   section43TimeLaplaceSpatialFourierRepresentative
+   section43TimeLaplaceSpatialFourierRepresentative_productSource
+   ```
 6. Therefore every restricted tensor is in the target.  Since the target is the
    preimage of a linear range under the quotient map once the time-spatial
    transform is packaged linearly, it is a submodule; otherwise prove directly

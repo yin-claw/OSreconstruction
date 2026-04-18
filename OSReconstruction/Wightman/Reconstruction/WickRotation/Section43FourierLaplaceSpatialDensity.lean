@@ -695,4 +695,95 @@ theorem partialFourierSpatial_fun_section43TimeSpatialProductSource
   rw [(SchwartzMap.fourierTransformCLM ℂ).map_smul]
   simp [smul_eq_mul]
 
+/-- A difference-coordinate source `g` represents a time-Laplace /
+spatial-Fourier transform `Φ` on the Section 4.3 positive-energy surface. -/
+def section43TimeLaplaceSpatialFourierRepresentative
+    (d n : ℕ) [NeZero d]
+    (g : Section43CompactStrictPositiveTimeSpatialSource d n)
+    (Φ : SchwartzNPoint d n) : Prop :=
+  ∀ q : NPointDomain d n, q ∈ section43PositiveEnergyRegion d n →
+    Φ q =
+      ∫ τ : Fin n → ℝ,
+        Complex.exp
+          (-(∑ i : Fin n,
+            (τ i : ℂ) * (section43QTime (d := d) (n := n) q i : ℂ))) *
+          partialFourierSpatial_fun
+            (d := d) (n := n) g.f
+            (τ, section43QSpatial (d := d) (n := n) q)
+
+/-- Product sources represent the tensor product of the finite-time Laplace
+representative and the spatial Fourier transform of the compact spatial
+source. -/
+theorem section43TimeLaplaceSpatialFourierRepresentative_productSource
+    (d n : ℕ) [NeZero d]
+    (g : Section43CompactStrictPositiveTimeSource n)
+    (κ : Section43SpatialCompactSource d n) :
+    section43TimeLaplaceSpatialFourierRepresentative d n
+      (section43TimeSpatialProductSource d n g κ)
+      (section43NPointTimeSpatialTensor d n
+        (section43IteratedLaplaceSchwartzRepresentative n g)
+        (SchwartzMap.fourierTransformCLM ℂ κ.1)) := by
+  intro q hq
+  have hσ :
+      section43QTime (d := d) (n := n) q ∈
+        section43TimePositiveRegion n := by
+    intro i
+    simpa [section43PositiveEnergyRegion, section43QTime, nPointTimeSpatialCLE] using hq i
+  rw [section43NPointTimeSpatialTensor_apply]
+  rw [section43IteratedLaplaceSchwartzRepresentative_apply_of_mem g hσ]
+  unfold section43IteratedLaplaceRaw
+  rw [show
+      (∫ τ : Fin n → ℝ,
+        Complex.exp
+          (-(∑ i : Fin n,
+            (τ i : ℂ) * (section43QTime (d := d) (n := n) q i : ℂ))) *
+          partialFourierSpatial_fun
+            (d := d) (n := n)
+            (section43TimeSpatialProductSource d n g κ).f
+            (τ, section43QSpatial (d := d) (n := n) q)) =
+      (∫ τ : Fin n → ℝ,
+        Complex.exp
+          (-(∑ i : Fin n,
+            (τ i : ℂ) * (section43QTime (d := d) (n := n) q i : ℂ))) *
+          g.f τ) *
+        (SchwartzMap.fourierTransformCLM ℂ κ.1)
+          (section43QSpatial (d := d) (n := n) q) by
+    calc
+      (∫ τ : Fin n → ℝ,
+        Complex.exp
+          (-(∑ i : Fin n,
+            (τ i : ℂ) * (section43QTime (d := d) (n := n) q i : ℂ))) *
+          partialFourierSpatial_fun
+            (d := d) (n := n)
+            (section43TimeSpatialProductSource d n g κ).f
+            (τ, section43QSpatial (d := d) (n := n) q))
+          =
+        ∫ τ : Fin n → ℝ,
+          (Complex.exp
+            (-(∑ i : Fin n,
+              (τ i : ℂ) * (section43QTime (d := d) (n := n) q i : ℂ))) *
+            g.f τ) *
+          (SchwartzMap.fourierTransformCLM ℂ κ.1)
+            (section43QSpatial (d := d) (n := n) q) := by
+            congr with τ
+            rw [partialFourierSpatial_fun_section43TimeSpatialProductSource]
+            ring
+      _ =
+        (∫ τ : Fin n → ℝ,
+          Complex.exp
+            (-(∑ i : Fin n,
+              (τ i : ℂ) * (section43QTime (d := d) (n := n) q i : ℂ))) *
+            g.f τ) *
+          (SchwartzMap.fourierTransformCLM ℂ κ.1)
+            (section43QSpatial (d := d) (n := n) q) :=
+            MeasureTheory.integral_mul_const
+              ((SchwartzMap.fourierTransformCLM ℂ κ.1)
+                (section43QSpatial (d := d) (n := n) q))
+              (fun τ : Fin n → ℝ =>
+                Complex.exp
+                  (-(∑ i : Fin n,
+                    (τ i : ℂ) *
+                      (section43QTime (d := d) (n := n) q i : ℂ))) *
+                  g.f τ)]
+
 end OSReconstruction

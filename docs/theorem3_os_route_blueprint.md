@@ -25242,6 +25242,33 @@ Proof transcript:
    `partialFourierSpatial_fun_section43TimeSpatialProductSource` and
    `section43IteratedLaplaceSchwartzRepresentative_apply_of_mem` to prove
    `section43TimeLaplaceSpatialFourierRepresentative d n G Ψ`.
+   The first compiled theorem should be the product-generator case:
+   ```lean
+   theorem section43TimeLaplaceSpatialFourierRepresentative_productSource
+       (d n : ℕ) [NeZero d]
+       (g : Section43CompactStrictPositiveTimeSource n)
+       (κ : Section43SpatialCompactSource d n) :
+       section43TimeLaplaceSpatialFourierRepresentative d n
+         (section43TimeSpatialProductSource d n g κ)
+         (section43NPointTimeSpatialTensor d n
+           (section43IteratedLaplaceSchwartzRepresentative n g)
+           (SchwartzMap.fourierTransformCLM ℂ κ.1))
+   ```
+   Proof route: for `q ∈ section43PositiveEnergyRegion d n`, obtain
+   `section43QTime q ∈ section43TimePositiveRegion n` by unfolding
+   `section43PositiveEnergyRegion`, `section43QTime`, and
+   `nPointTimeSpatialCLE`.  Rewrite the target tensor by
+   `section43NPointTimeSpatialTensor_apply`, rewrite the time representative by
+   `section43IteratedLaplaceSchwartzRepresentative_apply_of_mem`, unfold
+   `section43IteratedLaplaceRaw`, rewrite the integrand by
+   `partialFourierSpatial_fun_section43TimeSpatialProductSource`, and pull the
+   constant spatial Fourier factor outside the time integral by applying
+   `MeasureTheory.integral_mul_const` explicitly to the spatial Fourier scalar
+   and the base finite-time Laplace integrand.
+   Production update, 2026-04-18: both
+   `section43TimeLaplaceSpatialFourierRepresentative` and
+   `section43TimeLaplaceSpatialFourierRepresentative_productSource` are
+   compiled in `Section43FourierLaplaceSpatialDensity.lean`.
 6. Package the time-spatial compact transform as a linear map, or prove the
    representative target is closed under finite linear combinations directly.
    Then the restricted dense span is contained in the target preimage, so
