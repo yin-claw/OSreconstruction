@@ -1,13 +1,22 @@
 # Theorem 2 Locality Blueprint
 
 Purpose: this note is the theorem-specific implementation blueprint for the
-live `E -> R` locality frontier
+theorem-2 `E -> R` locality frontier.  The current production code still has
+the private sufficient-condition frontier
 
 - `OSToWightmanBoundaryValues.lean`, private theorem
   `bvt_F_swapCanonical_pairing`.
 
-This is the current theorem-2 `main` route. It supersedes older gap notes that
-were written before `edge_of_the_wedge` was proved as a theorem.
+The recommended proof route is no longer to force that overstrong finite-height
+canonical-shell theorem first.  The primary OS route is now the BHW/PET
+boundary route: prove a non-circular permutation-edge theorem for
+`extendF (bvt_F OS lgc n)`, add the corresponding boundary-transfer theorem,
+and then retire or bypass the private finite-shell sufficient condition.  The
+finite-shell packet remains a fallback only if we deliberately keep the current
+private consumer unchanged.
+
+This note supersedes older gap notes that were written before
+`edge_of_the_wedge` was proved as a theorem.
 
 This note should be read together with:
 - `docs/os1_detailed_proof_audit.md`, Section 9,
@@ -40,6 +49,19 @@ actual hypotheses:
 - `Adjacency.lean :: exists_real_open_nhds_adjSwap`
 - `ForwardTubeDistributions.lean :: boundary_function_continuous_forwardTube_of_flatRegular`
 - `OSToWightmanBoundaryValuesComparison.lean :: bv_local_commutativity_transfer_of_swap_pairing`
+- `OSToWightmanTubeIdentity.lean :: eqOn_openConnected_of_distributional_wickSection_eq_on_realOpen`
+- `OSToWightmanTubeIdentity.lean :: EuclideanOrderedPositiveTimeSector`
+- `OSToWightmanTubeIdentity.lean :: positiveTimeTranslate`
+- `OSToWightmanTubeIdentity.lean :: exists_uniform_positiveTimeShift_of_compact_tsupport`
+- `OSToWightmanTubeIdentity.lean :: isOpen_positiveTimeTranslate_image`
+- `OSToWightmanTubeIdentity.lean :: wickRotate_mem_forwardTube_of_mem_orderedPositiveTimeSector`
+- `OSToWightmanTubeIdentity.lean :: positiveTimeTranslate_mem_orderedPositiveTimeSector_of_pairwise_distinct`
+- `OSToWightmanTubeIdentity.lean :: timeShiftSchwartzNPoint_apply_positiveTimeTranslate`
+- `OSToWightmanTubeIdentity.lean :: hasCompactSupport_timeShiftSchwartzNPoint`
+- `OSToWightmanTubeIdentity.lean :: tsupport_timeShiftSchwartzNPoint_subset_positiveTimeTranslate_image`
+- `OSToWightmanTubeIdentity.lean :: measure_timeCoord_eq_zero`
+- `OSToWightmanTubeIdentity.lean :: ae_pairwise_distinct_timeCoords`
+- `OSToWightmanBoundaryValuesBase.lean :: bvt_F_acrOne_package`
 
 Important correction: the first four BHW/adjacency locality surfaces above
 currently take an input of the form
@@ -75,10 +97,13 @@ theorem-2 bridge.
 | `bvt_F_acrOne_package` | `OSToWightmanBoundaryValuesBase.lean` or a small selected-witness support file | a strengthened/refactored `full_analytic_continuation_with_symmetry_growth` theorem that retains the ACR(1) conjunct from the chosen witness | ACR(1) holomorphy, Euclidean reproduction, permutation symmetry, and translation symmetry for the selected `bvt_F OS lgc n` |
 | `bvt_F_extendF_perm_eq_on_realJost_of_OS_symmetry` | `BHWExtension.lean` theorem-2 boundary layer, with OS adapters near WickRotation if cleaner | `OS.E3_symmetric`, `bvt_euclidean_restriction`, Lorentz invariance of `bvt_F`, Jost/BHW geometry, and identity/EOW propagation on the connected real Jost edge | pointwise equality of the BHW analytic continuation `extendF (bvt_F OS lgc n)` on permuted real Jost edge points |
 | `BHW.HasPermutationEdgeDistributionEquality` | `BHWExtension.lean` / `BHWPermutation` support layer | a real-open Jost edge `V`, ET and permuted-ET control, and compact support of the test function | a predicate packaging permutation equality of `extendF F` as a compactly supported edge-distribution equality |
-| `bvt_F_extendF_perm_edgeDistribution_eq_from_OS` | WickRotation theorem-2 support layer | selected `bvt_F` ACR(1) package, `OS.E3_symmetric`, `bvt_euclidean_restriction`, and many-variable EOW/totally-real propagation | equality of the two `extendF (bvt_F OS lgc n)` real-overlap branch pairings against compact tests |
+| `bvt_F_distributionalEOW_permBranch_from_euclideanEdge` | SCV/BHW theorem-2 support layer | selected `bvt_F` ACR(1) package, compact-test Euclidean edge equality, and a distributional EOW theorem | transports compact-test Euclidean branch equality to compact-test real-Jost branch equality without raw real-trace continuity |
+| `bvt_F_extendF_adjacentEdgeDistribution_eq_from_OS` | WickRotation theorem-2 support layer | adjacent Euclidean order change plus `bvt_F_distributionalEOW_permBranch_from_euclideanEdge` | adjacent/order-change version of the branch distribution equality; the true local EOW seed |
+| `bvt_F_extendF_perm_edgeDistribution_eq_from_OS` | WickRotation theorem-2 support layer | adjacent branch-distribution seed plus BHW/PET permutation-flow propagation, or explicit transported-overlap induction | equality of the two `extendF (bvt_F OS lgc n)` real-overlap branch pairings against compact tests for a finite permutation |
 | `BHW.permuteSchwartz` and support/measure lemmas | `BHWPermutation/PermutationFlow.lean` support layer, publicized from existing private code | coordinate permutation as a continuous linear equivalence | reusable permuted Schwartz test functions, Jost-support transport, compact-support transport, and permutation-invariant integral change of variables |
-| `bvt_W_perm_invariant_on_compactJostOverlap_from_OS` | WickRotation theorem-2 support layer | `bvt_F_extendF_perm_edgeDistribution_eq_from_OS`, change of variables, ET/permuted-ET support transport, and `bvt_boundary_values` | distributional permutation equality for `bvt_W OS lgc n` on compactly supported tests with `tsupport ⊆ V` |
-| `BHW.extendF_perm_eq_on_realOpen_of_jost_distribution_symmetry` | `BHWPermutation/PermutationFlow.lean` or new companion file | the existing private hLC proof spine, with `hW_overlap_perm` replacing `hF_local_dist` | pointwise equality of `extendF F` on any real-open Jost/permutation-overlap edge |
+| `bvt_W_perm_invariant_on_compactJostOverlap_from_OS` | WickRotation theorem-2 support layer | `bvt_F_extendF_perm_edgeDistribution_eq_from_OS`, change of variables, ET/permuted-ET support transport, and `bvt_boundary_values` | optional compatibility adapter: distributional permutation equality for `bvt_W OS lgc n` on compactly supported tests with `tsupport ⊆ V` |
+| `BHW.extendF_perm_eq_on_realOpen_of_edgeDistributionEquality` | `BHWPermutation/PermutationFlow.lean` or new companion file | `BHW.HasPermutationEdgeDistributionEquality`, continuity of the two `extendF` real-edge traces, and `SCV.eqOn_open_of_compactSupport_schwartz_integral_eq_of_continuousOn` | pointwise equality of `extendF F` on any real-open Jost/permutation-overlap edge |
+| `BHW.extendF_perm_eq_on_realOpen_of_jost_distribution_symmetry` | `BHWPermutation/PermutationFlow.lean` or new companion file | secondary compatibility route copying the private hLC proof spine, with `hW_overlap_perm` replacing `hF_local_dist` | same pointwise equality as the direct edge-distribution theorem; not the preferred primary route once `bvt_F_hasPermutationEdgeDistributionEquality` is available |
 | `bvt_F_hasPermutationEdgeDistributionEquality` | WickRotation theorem-2 support layer | `bvt_F_extendF_perm_edgeDistribution_eq_from_OS` and the support-zero lemma outside `tsupport` | OS-side edge-distribution equality for every finite permutation, without any global `IsLocallyCommutativeWeak d (bvt_W OS lgc)` input |
 | `adjacent_boundary_pairing_eq_of_openEdgeBoundaryCompatibility` | `BHWExtension.lean`, with lower helpers in `AdjacencyDistributional.lean` if needed | Route-B ET support, Euclidean/permutation symmetry, and EOW/uniqueness inputs | adjacent-only raw-boundary pairing equality without any global `IsLocallyCommutativeWeak d (bvt_W OS lgc)` input |
 | `bvt_F_adjacentSwap_boundary_pairing_eq_of_ET_support` | `BHWExtension.lean` theorem-2 boundary-pairing layer | the adjacent-only raw-boundary supplier above | theorem-2-facing adjacent raw-boundary equality for `bvt_F`; useful edge data, not the finite-shell frontier |
@@ -548,7 +573,8 @@ boundary continuity argument.  It is not the current primary theorem-2 route.
 If `bvt_F_hasFlatRegularRepr` turns out not to be obtainable from the current
 production growth package, then that regular package is only the honest blocker
 for the fallback raw-boundary route.  The primary route should instead continue
-through `bvt_W_perm_invariant_on_compactJostOverlap_from_OS`.
+through `bvt_F_distributionalEOW_permBranch_from_euclideanEdge` and
+`bvt_F_hasPermutationEdgeDistributionEquality`.
 
 The key documentation correction is:
 
@@ -2072,8 +2098,8 @@ theorem bvt_W_perm_invariant_on_compactJostOverlap_from_OS
       bvt_W OS lgc n
         (BHW.permuteSchwartz (d := d) σ⁻¹ φ) =
       bvt_W OS lgc n φ := by
-  -- This is the theorem-2 OS core:
-  -- OS.E3_symmetric + bvt_euclidean_restriction + BHW/Jost EOW imply that
+  -- Compatibility adapter, not the theorem-2 OS core:
+  -- the direct branch-distribution theorem plus boundary recovery implies that
   -- the reconstructed Wightman boundary distribution has permutation-equal
   -- values on compact tests supported in the chosen Jost overlap `V`.
 ```
@@ -2108,8 +2134,51 @@ theorem BHW.permuteSchwartz_hasCompactSupport ...
 theorem BHW.integral_perm_eq_self ...
 ```
 
-With that theorem available, the Lean-facing edge theorem becomes a direct
-non-circular sibling of the private hLC theorem:
+With the direct edge-distribution package available, the preferred
+Lean-facing pointwise theorem should not pass through `W` at all.  It is just
+the compact-support uniqueness theorem applied to the two continuous
+`extendF` traces:
+
+```lean
+theorem BHW.extendF_perm_eq_on_realOpen_of_edgeDistributionEquality
+    (n : ℕ)
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF_holo : DifferentiableOn ℂ F (ForwardTube d n))
+    (hF_lorentz :
+      ∀ (Λ : RestrictedLorentzGroup d)
+        (z : Fin n → Fin (d + 1) → ℂ), z ∈ ForwardTube d n →
+        F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
+    (σ : Equiv.Perm (Fin n))
+    (V : Set (NPointDomain d n))
+    (hV_open : IsOpen V)
+    (hV_jost : ∀ x ∈ V, x ∈ BHW.JostSet d n)
+    (hV_ET : ∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+    (hV_permET :
+      ∀ x ∈ V,
+        BHW.realEmbed (fun k => x (σ k)) ∈ BHW.ExtendedTube d n)
+    (hEdge :
+      ∀ (φ : SchwartzNPoint d n),
+        HasCompactSupport (φ : NPointDomain d n → ℂ) →
+        tsupport (φ : NPointDomain d n → ℂ) ⊆ V →
+        ∫ x : NPointDomain d n,
+            (BHW.extendF F (BHW.realEmbed (fun k => x (σ k))) -
+              BHW.extendF F (BHW.realEmbed x)) * φ x
+          = 0) :
+    ∀ x ∈ V,
+      BHW.extendF F (BHW.realEmbed (fun k => x (σ k))) =
+        BHW.extendF F (BHW.realEmbed x) := by
+  -- Define `gV x := extendF F (realEmbed (x ∘ σ))` and
+  -- `hVf x := extendF F (realEmbed x)`.
+  -- Use `extendF_holomorphicOn` to get continuity of both traces on `V`.
+  -- Apply
+  -- `SCV.eqOn_open_of_compactSupport_schwartz_integral_eq_of_continuousOn`.
+  -- In the test-function callback, rewrite the equality of pairings from
+  -- `hEdge φ hφ_compact hφ_tsupport` by `integral_sub` and `sub_mul`.
+```
+
+The theorem below is a secondary compatibility route, useful only if we decide
+to mine the private hLC proof literally.  It should not be the primary route
+once `bvt_F_hasPermutationEdgeDistributionEquality` has been proved.
 
 ```lean
 theorem BHW.extendF_perm_eq_on_realOpen_of_jost_distribution_symmetry
@@ -2176,90 +2245,42 @@ theorem bvt_F_extendF_perm_eq_on_realJost_of_OS_symmetry
   -- Inputs:
   --   hF_holo      := bvt_F_holomorphic OS lgc n
   --   hF_lorentz   := bvt_F_restrictedLorentzInvariant_forwardTube OS lgc n
-  --   hF_bv_dist   := bvt_boundary_values OS lgc n
-  --   hW_overlap_perm := bvt_W_perm_invariant_on_compactJostOverlap_from_OS OS lgc n
+  --   hEdge        := bvt_F_hasPermutationEdgeDistributionEquality OS lgc n σ V ...
 ```
 
 This decomposition is the current proof-doc frontier.  The generic
 `extendF`/Schwartz/support code is close to implementation because it is already
 present privately.  The genuinely mathematical theorem still requiring proof
-documentation is `bvt_W_perm_invariant_on_compactJostOverlap_from_OS`.
+documentation is `bvt_F_extendF_perm_edgeDistribution_eq_from_OS`.
 
-That theorem must be proved by an OS/BHW edge argument, not by raw continuity:
+That theorem must be proved by an OS/BHW edge argument, not by raw continuity
+and not by first proving global Wightman locality:
 
 1. construct the OS-side analytic branches for the two permutation orderings
    from the ACR(1) witness behind `bvt_F`;
 2. prove their Euclidean restrictions agree by `OS.E3_symmetric` and
    `bvt_euclidean_restriction`;
 3. use the repaired many-variable identity/EOW theorem on the Jost real edge;
-4. identify the resulting boundary distributions with `bvt_W OS lgc n` via
-   `bvt_boundary_values` and the `extendF` compact-support recovery theorem.
+4. identify the resulting real-edge distribution with the two
+   `extendF (bvt_F OS lgc n)` boundary traces on the chosen overlap `V`.
 
 Until this four-step OS edge theorem is written at this level of precision, the
 production Lean proof should stop before `bvt_F_extendF_perm_eq_on_realJost...`.
 
 #### Selected-witness issue for the OS edge theorem
 
-There is a second implementation trap inside
-`bvt_W_perm_invariant_on_compactJostOverlap_from_OS`.  The current definition
+The selected-witness ACR package is now implemented.  The current definition
 
 ```lean
 def bvt_F (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS) (n : ℕ) :
     (Fin n → Fin (d + 1) → ℂ) → ℂ :=
-  (full_analytic_continuation_with_symmetry_growth OS lgc n).choose
+  (full_analytic_continuation_with_acr_symmetry_growth OS lgc n).choose
 ```
 
-selects from a theorem whose public statement exposes holomorphy on
-`ForwardTube d n`, Euclidean reproduction, permutation symmetry, translation
-invariance, canonical reflection, and growth.  It does **not** expose
-`DifferentiableOn ℂ (bvt_F OS lgc n) (AnalyticContinuationRegion d n 1)`.
-
-By contrast, the existing theorem
-
-```lean
-schwinger_continuation_base_step_acrOne_assembly_with_translationInvariant
-```
-
-does expose an ACR(1)-holomorphic Euclidean witness with permutation and
-translation symmetry.  The proof of the OS Jost-edge theorem may need this
-ACR(1) holomorphy to run the Euclidean branch/edge-of-the-wedge step.  Therefore
-the Lean implementation must choose one of the following explicit routes:
-
-1. **Strengthen the selected witness package.**  Add a theorem surface, and
-   possibly refactor the `bvt_F`/`bvt_W` selector, so the selected `bvt_F` itself
-   carries the ACR(1) package:
-
-   ```lean
-   theorem bvt_F_acrOne_package
-       (OS : OsterwalderSchraderAxioms d)
-       (lgc : OSLinearGrowthCondition d OS) (n : ℕ) :
-       DifferentiableOn ℂ (bvt_F OS lgc n)
-         (AnalyticContinuationRegion d n 1) ∧
-       (∀ f : ZeroDiagonalSchwartz d n,
-         OS.S n f =
-           ∫ x : NPointDomain d n,
-             bvt_F OS lgc n (fun j => wickRotatePoint (x j)) * f.1 x) ∧
-       (∀ σ z, bvt_F OS lgc n (fun j => z (σ j)) =
-         bvt_F OS lgc n z) ∧
-       (∀ z a, bvt_F OS lgc n (fun j => z j + a) =
-         bvt_F OS lgc n z)
-   ```
-
-2. **Use an auxiliary ACR(1) witness and prove a transfer theorem.**  This route
-   is allowed only if the transfer theorem explicitly identifies the auxiliary
-   witness with the selected `bvt_F` boundary distribution `bvt_W OS lgc n`.
-   Do not rely on definitional equality of two independent `Classical.choose`
-   witnesses.
-
-This blueprint now chooses the first route as the production target.  It keeps
-the theorem-2 proof about the same selected analytic object used by all
-downstream boundary-value theorems and avoids a second transfer theorem between
-independent `Classical.choose` witnesses.  The refactor should be done as a
-small exact-file-checked support pass before attempting
-`bvt_W_perm_invariant_on_compactJostOverlap_from_OS`.
-
-The implementation recipe is:
+keeps the theorem-2 proof about the same selected analytic object used by all
+downstream boundary-value theorems and avoids any transfer theorem between
+independent `Classical.choose` witnesses.  The implemented theorem surface is:
 
 ```lean
 theorem full_analytic_continuation_with_acr_symmetry_growth
@@ -2290,17 +2311,13 @@ theorem full_analytic_continuation_with_acr_symmetry_growth
           ‖W_analytic z‖ ≤ C_bd * (1 + ‖z‖) ^ N
 ```
 
-Prove it by reusing the already-checked
+It is proved by reusing the already-checked
 `schwinger_continuation_base_step_acrOne_assembly_with_translationInvariant`;
 the `ForwardTube` holomorphy conjunct is just `hACR.mono
 (forwardTube_subset_acr_one ...)`, and the growth conjunct is the existing
 ACR(1) growth restricted to `ForwardTube`.
 
-Then either change `bvt_F` to choose from this stronger theorem, or introduce a
-new selected witness `bvt_F_acr` and prove all existing `bvt_F` API lemmas from
-that selector.  The first option is preferred if it only touches
-`OSToWightmanBoundaryValuesBase.lean`: it preserves the existing public name
-`bvt_F` and exposes
+The selected `bvt_F` API now exposes:
 
 ```lean
 theorem bvt_F_acrOne_package ...
@@ -2308,12 +2325,780 @@ theorem bvt_F_acrOne_package ...
 
 by projection from the stronger `choose_spec`.
 
-#### Local-overlap decomposition of `bvt_W_perm...`
+#### Local-overlap decomposition of the OS branch equality
 
 The OS distribution theorem needed by the public real-open `extendF` theorem is
-not a global all-Jost statement.  It is a compact-support theorem localized to
-the same real-open overlap `V` used by the private BHW proof.  This is the
-minimal Lean-facing shape:
+not a global all-Jost statement and does not need to be routed through `bvt_W`
+first.  The preferred object is the compact edge-distribution equality for the
+two `extendF` real-edge traces on the same real-open overlap `V`.
+
+Important implementation guardrail: the theorem below is an exported package
+for an arbitrary permutation `σ`; it is not meant to be proved by a single
+ACR(1) edge-of-the-wedge application for arbitrary `σ`.  The local EOW seed is
+the adjacent/order-change statement.  The arbitrary-permutation export must be
+obtained either by the BHW/PET permutation-flow machinery or by an explicit
+transported-overlap induction that supplies every intermediate ET/permuted-ET
+overlap.  Do not hide that propagation inside the name below.
+
+```lean
+theorem bvt_F_extendF_perm_edgeDistribution_eq_from_OS
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (σ : Equiv.Perm (Fin n))
+    (V : Set (NPointDomain d n))
+    (hV_open : IsOpen V)
+    (hV_jost : ∀ x ∈ V, x ∈ BHW.JostSet d n)
+    (hV_ET : ∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+    (hV_permET :
+      ∀ x ∈ V,
+        BHW.realEmbed (fun k => x (σ k)) ∈ BHW.ExtendedTube d n)
+    (φ : SchwartzNPoint d n)
+    (hφ_compact : HasCompactSupport (φ : NPointDomain d n → ℂ))
+    (hφ_tsupport : tsupport (φ : NPointDomain d n → ℂ) ⊆ V) :
+    ∫ x : NPointDomain d n,
+        BHW.extendF (bvt_F OS lgc n)
+          (BHW.realEmbed (fun k => x (σ k))) * φ x
+      =
+    ∫ x : NPointDomain d n,
+        BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x) * φ x := by
+  -- Export theorem.  The proof must factor through the adjacent/order-change
+  -- OS EOW seed plus BHW/PET propagation, or through an explicit transported
+  -- overlap induction.  It is not a one-shot ACR(1) theorem for arbitrary σ.
+```
+
+The adjacent seed is the actual local EOW theorem:
+
+```lean
+theorem bvt_F_extendF_adjacentEdgeDistribution_eq_from_OS
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) (i : Fin n) (hi : i.val + 1 < n)
+    (V : Set (NPointDomain d n))
+    (hV_open : IsOpen V)
+    (hV_jost : ∀ x ∈ V, x ∈ BHW.JostSet d n)
+    (hV_ET : ∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+    (hV_swapET :
+      ∀ x ∈ V,
+        BHW.realEmbed
+          (fun k => x ((Equiv.swap i ⟨i.val + 1, hi⟩) k)) ∈
+            BHW.ExtendedTube d n)
+    (φ : SchwartzNPoint d n)
+    (hφ_compact : HasCompactSupport (φ : NPointDomain d n → ℂ))
+    (hφ_tsupport : tsupport (φ : NPointDomain d n → ℂ) ⊆ V) :
+    ∫ x : NPointDomain d n,
+        BHW.extendF (bvt_F OS lgc n)
+          (BHW.realEmbed
+            (fun k => x ((Equiv.swap i ⟨i.val + 1, hi⟩) k))) * φ x
+      =
+    ∫ x : NPointDomain d n,
+        BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x) * φ x := by
+  -- OS.E3_symmetric gives equality on the Euclidean edge.
+  -- The selected ACR(1) branch package and many-variable EOW propagate that
+  -- equality to the adjacent real-open Jost overlap `V`.
+```
+
+The analytic theorem hidden in the last comment must be stated separately.  The
+checked theorem
+
+```lean
+SCV.edge_of_the_wedge_theorem
+```
+
+has pointwise continuous boundary hypotheses.  The OS input supplied by
+`OS.E3_symmetric` and `bvt_euclidean_restriction` is instead a compact-test
+distributional equality on the Euclidean edge.  Therefore the production proof
+needs a distributional EOW bridge, not a call to the pointwise theorem with an
+unstated raw boundary-continuity assumption:
+
+```lean
+theorem bvt_F_distributionalEOW_permBranch_from_euclideanEdge
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) (σ : Equiv.Perm (Fin n))
+    (V : Set (NPointDomain d n))
+    (hV_open : IsOpen V)
+    (hV_jost : ∀ x ∈ V, x ∈ BHW.JostSet d n)
+    (hV_ET : ∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+    (hV_permET :
+      ∀ x ∈ V,
+        BHW.realEmbed (fun k => x (σ k)) ∈ BHW.ExtendedTube d n)
+    (hEuclid :
+      ∀ (φ : SchwartzNPoint d n),
+        HasCompactSupport (φ : NPointDomain d n → ℂ) →
+        tsupport (φ : NPointDomain d n → ℂ) ⊆ V →
+        ∫ x : NPointDomain d n,
+            bvt_F OS lgc n (fun k => wickRotatePoint (x (σ k))) * φ x
+          =
+        ∫ x : NPointDomain d n,
+            bvt_F OS lgc n (fun k => wickRotatePoint (x k)) * φ x) :
+    ∀ (φ : SchwartzNPoint d n),
+      HasCompactSupport (φ : NPointDomain d n → ℂ) →
+      tsupport (φ : NPointDomain d n → ℂ) ⊆ V →
+      ∫ x : NPointDomain d n,
+          BHW.extendF (bvt_F OS lgc n)
+            (BHW.realEmbed (fun k => x (σ k))) * φ x
+        =
+      ∫ x : NPointDomain d n,
+          BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x) * φ x := by
+  -- This is the honest analytic seam.  It should be proved as a compact-test
+  -- distributional EOW statement for the selected `bvt_F_acrOne_package`.
+  -- It must not assert pointwise continuity of
+  -- `x ↦ bvt_F OS lgc n (BHW.realEmbed x)`.
+```
+
+This theorem is allowed to be an SCV/BHW support theorem if stated without QFT
+objects, but if it mentions `OS`, `bvt_F`, or `bvt_W`, it belongs in the
+Wick-rotation theorem-2 support layer.  In either placement, it is the remaining
+mathematical proof-doc gap for the branch-distribution route.
+
+The implementation-ready decomposition is the following.  The local version of
+the already-checked Wick-section identity theorem has now been added in
+`OSToWightmanTubeIdentity.lean`.  The older theorem
+`eqOn_openConnected_of_distributional_wickSection_eq` asks for compact-test
+equality on the full Wick section of `U`; the theorem-2 route only has equality
+on a chosen real-open overlap `V`.  The needed general SCV lemma is:
+
+```lean
+theorem eqOn_openConnected_of_distributional_wickSection_eq_on_realOpen
+    (U : Set (Fin n → Fin (d + 1) → ℂ))
+    (V : Set (NPointDomain d n))
+    (hU_open : IsOpen U)
+    (hU_conn : IsConnected U)
+    (hV_open : IsOpen V)
+    (hV_nonempty : V.Nonempty)
+    (hV_wick :
+      ∀ x ∈ V, (fun k => wickRotatePoint (x k)) ∈ U)
+    (F G : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF : DifferentiableOn ℂ F U)
+    (hG : DifferentiableOn ℂ G U)
+    (hint :
+      ∀ φ : SchwartzNPoint d n,
+        HasCompactSupport (φ : NPointDomain d n → ℂ) →
+        tsupport (φ : NPointDomain d n → ℂ) ⊆ V →
+        ∫ x : NPointDomain d n,
+            F (fun k => wickRotatePoint (x k)) * φ x =
+        ∫ x : NPointDomain d n,
+            G (fun k => wickRotatePoint (x k)) * φ x) :
+    Set.EqOn F G U := by
+  -- Copy the proof of
+  -- `eqOn_openConnected_of_distributional_wickSection_eq`.
+  -- The only change is that the preliminary real equality is obtained on
+  -- `V`, not on the whole Wick section of `U`:
+  --
+  --   1. use continuity of the Wick traces on `V`;
+  --   2. apply
+  --      `SCV.eqOn_open_of_compactSupport_schwartz_integral_eq_of_continuousOn`
+  --      with `hV_open` and `hint`;
+  --   3. apply `SCV.identity_theorem_totally_real_product` to the holomorphic
+  --      difference on the connected domain `U`, with the nonempty open real
+  --      edge `V`.
+```
+
+If `V = ∅`, the branch-distribution theorem should bypass this identity theorem:
+`tsupport φ ⊆ ∅` implies the test is zero, so both integrals vanish.  All
+nontrivial applications to pointwise real-open equality use neighborhoods of a
+chosen point and therefore have `V.Nonempty`.
+
+Second, isolate the genuine BHW/PET analytic continuation data as an envelope
+theorem.  This theorem is not a wrapper: it is exactly the missing statement
+that the two branches have a common connected holomorphic domain joining the
+Euclidean Wick edge to the real Jost overlap.
+
+Important correction: this envelope is sector-local on the Euclidean side.
+For a general real-open Jost overlap `V`, the Wick-rotated points
+`fun k => wickRotatePoint (x k)` need not lie in `ACR(1)` or in the forward
+tube.  The ACR(1) witness is holomorphic on the ordered Euclidean time sector;
+outside that sector its values are still defined as a total function, but they
+cannot be used as boundary values of a holomorphic branch without first
+permuting to an ordered sector.  Therefore the implementation must prove the
+branch envelope in the following order:
+
+1. Sector-local envelope for a fixed strict Euclidean time ordering `τ`.
+2. Distributional EOW on that sector.
+3. Finite sector decomposition / partition of the compact test pairing,
+   using permutation symmetry to rewrite each sector back to the original
+   branch.
+4. A separate null-wall lemma for the time-tie hyperplanes, or a smooth
+   partition-of-unity construction that avoids non-Schwartz indicator
+   functions.
+
+The theorem name below is the exported all-`V` package.  Its proof must not
+pretend that the all-`V` Euclidean edge is a single ACR(1) edge.
+
+```lean
+theorem bvt_F_permBranchEnvelope_on_jostOverlap_from_ACR_and_BHW
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) (σ : Equiv.Perm (Fin n))
+    (V : Set (NPointDomain d n))
+    (hV_open : IsOpen V)
+    (hV_jost : ∀ x ∈ V, x ∈ BHW.JostSet d n)
+    (hV_ET : ∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+    (hV_permET :
+      ∀ x ∈ V,
+        BHW.realEmbed (fun k => x (σ k)) ∈ BHW.ExtendedTube d n) :
+    ∃ (U : Set (Fin n → Fin (d + 1) → ℂ))
+      (F_id F_perm : (Fin n → Fin (d + 1) → ℂ) → ℂ),
+      IsOpen U ∧
+      IsConnected U ∧
+      (∀ x ∈ V, (fun k => wickRotatePoint (x k)) ∈ U) ∧
+      (∀ x ∈ V, BHW.realEmbed x ∈ U) ∧
+      DifferentiableOn ℂ F_id U ∧
+      DifferentiableOn ℂ F_perm U ∧
+      (∀ x ∈ V,
+        F_id (fun k => wickRotatePoint (x k)) =
+          bvt_F OS lgc n (fun k => wickRotatePoint (x k))) ∧
+      (∀ x ∈ V,
+        F_perm (fun k => wickRotatePoint (x k)) =
+          bvt_F OS lgc n (fun k => wickRotatePoint (x (σ k)))) ∧
+      (∀ x ∈ V,
+        F_id (BHW.realEmbed x) =
+          BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x)) ∧
+      (∀ x ∈ V,
+        F_perm (BHW.realEmbed x) =
+          BHW.extendF (bvt_F OS lgc n)
+            (BHW.realEmbed (fun k => x (σ k)))) := by
+  -- This is the analytic/PET seam.  The proof should use:
+  --   * `bvt_F_acrOne_package` for the selected witness on the Euclidean side;
+  --   * the checked BHW `extendF` holomorphy on the extended tube;
+  --   * Jost/ET geometry for `V`;
+  --   * adjacent/order-change EOW plus permutation-flow propagation for
+  --     arbitrary `σ`.
+  --
+  -- Do not prove the arbitrary-`σ` envelope by a one-shot ACR(1) argument.
+  -- The adjacent envelope is the local seed; the arbitrary envelope is an
+  -- export of the BHW/PET permutation-flow spine.
+```
+
+The sector-local statement should be explicit:
+
+```lean
+def EuclideanOrderedPositiveTimeSector
+    (τ : Equiv.Perm (Fin n)) : Set (NPointDomain d n) :=
+  {x | (fun k => x (τ k)) ∈ OrderedPositiveTimeRegion d n}
+
+theorem wickRotate_mem_forwardTube_of_mem_orderedPositiveTimeSector
+    (τ : Equiv.Perm (Fin n))
+    {x : NPointDomain d n}
+    (hx : x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) τ) :
+    (fun k => wickRotatePoint (x (τ k))) ∈ ForwardTube d n := by
+  -- Apply `euclidean_ordered_in_forwardTube` to the permuted Euclidean
+  -- configuration.  The positivity condition is essential because the
+  -- absolute-coordinate forward tube compares the first point with the origin.
+
+theorem bvt_F_permBranchEnvelope_on_timeSector_from_ACR_and_BHW
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) (σ τ : Equiv.Perm (Fin n))
+    (V : Set (NPointDomain d n))
+    (hV_open : IsOpen V)
+    (hV_sector : V ⊆ EuclideanOrderedPositiveTimeSector (d := d) (n := n) τ)
+    (hV_jost : ∀ x ∈ V, x ∈ BHW.JostSet d n)
+    (hV_ET : ∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+    (hV_permET :
+      ∀ x ∈ V,
+        BHW.realEmbed (fun k => x (σ k)) ∈ BHW.ExtendedTube d n) :
+    ∃ (U : Set (Fin n → Fin (d + 1) → ℂ))
+      (F_id F_perm : (Fin n → Fin (d + 1) → ℂ) → ℂ),
+      IsOpen U ∧
+      IsConnected U ∧
+      (∀ x ∈ V, (fun k => wickRotatePoint (x (τ k))) ∈ U) ∧
+      (∀ x ∈ V, BHW.realEmbed x ∈ U) ∧
+      DifferentiableOn ℂ F_id U ∧
+      DifferentiableOn ℂ F_perm U ∧
+      (∀ x ∈ V,
+        F_id (fun k => wickRotatePoint (x (τ k))) =
+          bvt_F OS lgc n (fun k => wickRotatePoint (x k))) ∧
+      (∀ x ∈ V,
+        F_perm (fun k => wickRotatePoint (x (τ k))) =
+          bvt_F OS lgc n (fun k => wickRotatePoint (x (σ k)))) ∧
+      (∀ x ∈ V,
+        F_id (BHW.realEmbed x) =
+          BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x)) ∧
+      (∀ x ∈ V,
+        F_perm (BHW.realEmbed x) =
+          BHW.extendF (bvt_F OS lgc n)
+            (BHW.realEmbed (fun k => x (σ k)))) := by
+  -- Use `bvt_F_acrOne_package` and
+  -- `wickRotate_mem_forwardTube_of_mem_orderedPositiveTimeSector` to place the Wick edge
+  -- on an honest holomorphic branch.  The equations on the Wick edge use
+  -- `bvt_F_perm` to remove the sector-ordering permutation `τ`.  For the
+  -- permuted branch, the relevant forward-tube permutation is
+  -- `ρ := τ⁻¹ * σ`, since
+  -- `(fun k => wickRotatePoint (x (τ k))) ∘ ρ =
+  --   fun k => wickRotatePoint (x (σ k))`.
+  -- The real-edge equations use BHW `extendF`.
+```
+
+This correction also changes the all-sector export.  The old phrase "strict
+time sector decomposition" is not implementation-ready by itself for two
+separate reasons:
+
+1. ordering alone does not put the Wick point in the absolute-coordinate
+   forward tube; positive time is needed for the first point relative to the
+   origin;
+2. an arbitrary compactly supported Euclidean test is not supported in the
+   positive-time cone.
+
+The production-ready export should use a **uniform translation of the compact
+support**, not a pointwise translation depending on `x`.  This keeps the
+Schwartz-test surface honest.  Given a compactly supported test `φ`, choose one
+real Euclidean time shift `A` so that every point in `tsupport φ` has positive
+time after adding `A` to the time coordinate.  Then work with the translated
+test and translate the resulting real-edge equality back by real translation
+invariance.
+
+The support and null-wall lemmas needed for this are:
+
+```lean
+theorem ae_pairwise_distinct_timeCoords :
+    ∀ᵐ (x : NPointDomain d n) ∂MeasureTheory.volume,
+      ∀ i j : Fin n, i ≠ j → x i 0 ≠ x j 0
+
+def positiveTimeTranslate (A : ℝ) (x : NPointDomain d n) :
+    NPointDomain d n :=
+  fun k μ => x k μ + if μ = 0 then A else 0
+
+theorem exists_uniform_positiveTimeShift_of_compact_tsupport
+    (φ : SchwartzNPoint d n)
+    (hφ_compact : HasCompactSupport (φ : NPointDomain d n → ℂ)) :
+    ∃ A : ℝ,
+      0 < A ∧
+      ∀ x ∈ tsupport (φ : NPointDomain d n → ℂ),
+        ∀ k : Fin n, 0 < positiveTimeTranslate (d := d) (n := n) A x k 0
+
+theorem positiveTimeTranslate_mem_orderedSector_of_pairwise_distinct
+    (A : ℝ) (hApos :
+      ∀ k : Fin n, 0 < positiveTimeTranslate (d := d) (n := n) A x k 0)
+    (hdistinct : ∀ i j : Fin n, i ≠ j → x i 0 ≠ x j 0) :
+    ∃ τ : Equiv.Perm (Fin n),
+      positiveTimeTranslate (d := d) (n := n) A x ∈
+        EuclideanOrderedPositiveTimeSector (d := d) (n := n) τ
+```
+
+For the compact-support shift, use compactness of `tsupport φ` and continuity
+of the finitely many coordinate functions `x ↦ x k 0` to get a lower bound.
+For the sector theorem, use `τ := Tuple.sort (fun k => x k 0)`; pairwise
+distinctness upgrades monotone sorting to strict monotonicity, and the uniform
+positivity hypothesis gives the positive-time part.
+
+The theorem-2 use of this shift is only branch placement.  It must not replace
+the OS-side Euclidean equality with a Wightman-side permutation theorem.  The
+actual equality still comes from
+
+```lean
+OS.E3_symmetric
+bvt_euclidean_restriction
+bvt_F_translationInvariant
+bvt_F_perm
+```
+
+The translated-test surface should be explicit.  If `a_A` is the real
+spacetime vector with time component `A` and spatial components `0`, then
+`positiveTimeTranslate A x = fun k => x k + a_A`.  The existing semigroup
+test map is exactly the required translated test:
+
+```lean
+timeShiftSchwartzNPoint (d := d) A φ
+```
+
+and prove:
+
+```lean
+@[simp] theorem timeShiftSchwartzNPoint_apply_positiveTimeTranslate
+    (A : ℝ) (φ : SchwartzNPoint d n) (y : NPointDomain d n) :
+    timeShiftSchwartzNPoint (d := d) A φ y =
+      φ (positiveTimeTranslate (d := d) (n := n) (-A) y)
+
+theorem hasCompactSupport_timeShiftSchwartzNPoint
+    (A : ℝ) (φ : SchwartzNPoint d n)
+    (hφ_compact : HasCompactSupport (φ : NPointDomain d n → ℂ)) :
+    HasCompactSupport
+      (timeShiftSchwartzNPoint (d := d) A φ :
+        NPointDomain d n → ℂ)
+
+theorem tsupport_timeShiftSchwartzNPoint_subset_positiveTimeTranslate_image
+    (A : ℝ) (φ : SchwartzNPoint d n)
+    (V : Set (NPointDomain d n))
+    (hφ_tsupport : tsupport (φ : NPointDomain d n → ℂ) ⊆ V) :
+    tsupport
+        (timeShiftSchwartzNPoint (d := d) A φ :
+          NPointDomain d n → ℂ)
+      ⊆ positiveTimeTranslate (d := d) (n := n) A '' V
+```
+
+The real-open image data can be transported by the same real translation:
+
+```lean
+theorem isOpen_positiveTimeTranslate_image
+    (A : ℝ) (V : Set (NPointDomain d n)) (hV_open : IsOpen V) :
+    IsOpen (positiveTimeTranslate (d := d) (n := n) A '' V)
+```
+
+However, the following tempting theorem shapes are **false** for the current
+absolute-coordinate BHW definitions and must not be implemented:
+
+```lean
+-- false
+positiveTimeTranslate A x ∈ BHW.JostSet d n ↔ x ∈ BHW.JostSet d n
+
+-- false
+BHW.realEmbed (positiveTimeTranslate A x) ∈ BHW.ExtendedTube d n ↔
+  BHW.realEmbed x ∈ BHW.ExtendedTube d n
+```
+
+Reason: `BHW.JostSet d n` is not only a pairwise-difference condition; by
+definition it also requires every absolute point `x i` to be spacelike relative
+to the origin.  Uniform time translation preserves pairwise differences but can
+turn an individual spacelike vector into a timelike vector.  The
+absolute-coordinate `ExtendedTube` has the same issue: translation invariance of
+the **value** of the BHW extension is available only under explicit hypotheses
+that both configurations already lie in `PermutedExtendedTube`, not as
+membership invariance of the tube itself.
+
+Therefore the translated compact-support route cannot transport the Jost/ET
+real-edge hypotheses by asserting membership invariance.  It must use one of
+the following honest repairs:
+
+1. a translated-PET extension for the selected OS witness, analogous to the
+   `BHWTranslation.lean` `F_ext_on_translatedPET` package, so the translated
+   positive-time branch is evaluated through a PET witness rather than through
+   raw `BHW.extendF` membership; or
+2. a reduced-difference-coordinate formulation in which uniform translations
+   are quotient-killed before the Jost/ET hypotheses are applied.
+
+The value theorem below is still valid as a conditional PET value-invariance
+statement, but it is not a membership-transport theorem and does not by itself
+justify applying a sector-local BHW branch theorem at a translated real point:
+
+```lean
+theorem bvt_extendF_realTimeTranslate
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) (A : ℝ)
+    (x : NPointDomain d n)
+    (hxET : BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+    (hxAET :
+      BHW.realEmbed (positiveTimeTranslate (d := d) (n := n) A x) ∈
+        BHW.ExtendedTube d n) :
+    BHW.extendF (bvt_F OS lgc n)
+        (BHW.realEmbed (positiveTimeTranslate (d := d) (n := n) A x)) =
+      BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x)
+```
+
+These are real-translation invariance facts, not complex-time translation
+facts.  They should be proved from existing BHW translation-invariance
+geometry and always retain the two PET-membership hypotheses.  They do not
+assume local commutativity of `bvt_W OS lgc`.  The value theorem
+`bvt_extendF_realTimeTranslate` should use the absolute forward-tube input
+already exposed as
+`bvt_absoluteForwardTubeInput`: descend to the reduced/Route-1 BHW extension,
+use the algebraic translation-invariance of the reduced pullback, and identify
+it back with `BHW.extendF (bvt_F OS lgc n)` on `ExtendedTube`.  This is the same
+translation-invariance mechanism as `BHWTranslation.lean`, but with the
+selected OS witness instead of an already-packaged `WightmanFunctions` object.
+
+#### 6.7.1. Selected-OS translated-PET repair package
+
+The repair above should be implemented as a selected-OS analogue of the already
+proved `BHWTranslation.lean` translated-PET package.  This is the next proof-doc
+unit that must be made Lean-ready before any branch-envelope theorem consumes
+translated positive-time support.
+
+First isolate the true PET value-invariance theorem:
+
+```lean
+theorem bvt_extendF_translation_invariant_on_PET
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (c : Fin (d + 1) → ℂ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz : z ∈ PermutedExtendedTube d n)
+    (hzc : (fun k μ => z k μ + c μ) ∈ PermutedExtendedTube d n) :
+    BHW.extendF (bvt_F OS lgc n) (fun k μ => z k μ + c μ) =
+      BHW.extendF (bvt_F OS lgc n) z
+```
+
+This theorem is **not** a corollary of set membership invariance.  Its proof
+must follow the Route-1 reduced-difference pattern:
+
+1. split the `n = 0` and `n = m + 1` cases;
+2. instantiate the absolute forward-tube input
+   `bvt_absoluteForwardTubeInput OS lgc m`;
+3. descend it with `BHW.descendAbsoluteForwardTubeInput`;
+4. build or reuse the reduced BHW extension for that descended input;
+5. pull it back along `reducedDiffMap`;
+6. prove the pulled-back extension is algebraically translation-invariant by
+   `BHW.reduced_pullback_translation_invariant`;
+7. identify the pulled-back extension with `BHW.extendF (bvt_F OS lgc (m+1))`
+   on PET by BHW uniqueness.
+
+The missing substep is item 4/7 for a generic `AbsoluteForwardTubeInput`.  The
+current `BHWTranslation.lean` implementation proves the same pattern for an
+already packaged `WightmanFunctions` object using
+`route1AbsoluteBHWExtensionCanonical`; theorem 2 cannot instantiate that with
+`os_to_wightman_full OS lgc`, because that structure already contains locality.
+So the theorem-2 repair must either generalize the Route-1 reduced extension
+from `WightmanFunctions` to `AbsoluteForwardTubeInput`, or prove the same
+uniqueness comparison directly for the selected `bvt_absoluteForwardTubeInput`.
+
+Once PET value-invariance exists, define the selected translated-PET value
+without any arbitrary branch choice:
+
+```lean
+theorem bvt_extendF_value_on_translatedPET
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (c₁ c₂ : Fin (d + 1) → ℂ)
+    (h₁ : (fun k μ => z k μ + c₁ μ) ∈ PermutedExtendedTube d n)
+    (h₂ : (fun k μ => z k μ + c₂ μ) ∈ PermutedExtendedTube d n) :
+    BHW.extendF (bvt_F OS lgc n) (fun k μ => z k μ + c₁ μ) =
+      BHW.extendF (bvt_F OS lgc n) (fun k μ => z k μ + c₂ μ) := by
+  have key :=
+    bvt_extendF_translation_invariant_on_PET
+      (d := d) OS lgc n (fun μ => c₂ μ - c₁ μ)
+      (fun k μ => z k μ + c₁ μ) h₁
+      (by
+        convert h₂ using 1
+        ext k μ
+        ring)
+  simpa [sub_eq_add_neg, add_assoc] using key.symm
+
+noncomputable def bvt_F_on_translatedPET
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz : z ∈ TranslatedPET d n) : ℂ :=
+  BHW.extendF (bvt_F OS lgc n) (fun k μ => z k μ + hz.choose μ)
+```
+
+Then mirror the existing translated-PET API:
+
+```lean
+theorem bvt_F_on_translatedPET_eq_on_PET
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz_pet : z ∈ PermutedExtendedTube d n)
+    (hz_tpet : z ∈ TranslatedPET d n) :
+    bvt_F_on_translatedPET OS lgc n z hz_tpet =
+      BHW.extendF (bvt_F OS lgc n) z
+
+theorem bvt_F_on_translatedPET_translation_invariant
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (c : Fin (d + 1) → ℂ)
+    (hz : z ∈ TranslatedPET d n)
+    (hzc : (fun k μ => z k μ + c μ) ∈ TranslatedPET d n) :
+    bvt_F_on_translatedPET OS lgc n z hz =
+      bvt_F_on_translatedPET OS lgc n (fun k μ => z k μ + c μ) hzc
+```
+
+If an everywhere-defined integrand is later needed, it may follow the existing
+`F_ext_on_translatedPET_total` pattern:
+
+```lean
+noncomputable def bvt_F_on_translatedPET_total ... z :=
+  if hz : z ∈ TranslatedPET d n then
+    bvt_F_on_translatedPET OS lgc n z hz
+  else 0
+```
+
+but this total version is only honest when paired with the null-set theorem
+`ae_euclidean_points_in_translatedPET` or a support hypothesis proving the
+integrand is used only on `TranslatedPET`.  It must not be used as a pointwise
+extension off `TranslatedPET`.
+
+Only after this selected translated-PET package is available should the
+translated positive-time compact-support argument continue.  In that version,
+positive-time translation is used to place Wick-rotated Euclidean points in a
+forward/PET witness, while the final comparison back to the original support is
+performed by `bvt_F_on_translatedPET_translation_invariant`, not by a false
+Jost/ET membership-transport theorem.
+
+The following raw `extendF` theorem remains a PET-local pointwise sublemma.  It
+is useful on real-open neighborhoods where both the original and permuted real
+configurations are already in PET/ET.  It is **not** by itself the translated
+compact-support theorem, because positive-time translation does not transport
+Jost/ET membership:
+
+```lean
+theorem bvt_F_extendF_perm_pointwise_of_positive_distinct
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) (σ : Equiv.Perm (Fin n))
+    (V : Set (NPointDomain d n))
+    (hV_open : IsOpen V)
+    (hV_jost : ∀ x ∈ V, x ∈ BHW.JostSet d n)
+    (hV_ET : ∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+    (hV_permET :
+      ∀ x ∈ V,
+        BHW.realEmbed (fun k => x (σ k)) ∈ BHW.ExtendedTube d n)
+    (x : NPointDomain d n)
+    (hxV : x ∈ V)
+    (hpos : ∀ k : Fin n, 0 < x k 0)
+    (hdistinct : ∀ i j : Fin n, i ≠ j → x i 0 ≠ x j 0) :
+    BHW.extendF (bvt_F OS lgc n)
+        (BHW.realEmbed (fun k => x (σ k))) =
+      BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x)
+```
+
+Proof sketch for the pointwise theorem:
+
+1. Choose the sorted order `τ` of the positive, pairwise-distinct time
+   coordinates of `x`.
+3. Because the strict inequalities and positivity are open, choose a real-open
+   neighborhood `Vx ⊆ V` on which the same `τ` keeps every point in
+   `EuclideanOrderedPositiveTimeSector τ`.
+4. Apply the sector-local branch-envelope theorem on `Vx`.
+5. Apply `eqOn_openConnected_of_distributional_wickSection_eq_on_realOpen` on
+   `Vx`, using the OS Euclidean compact-test equality transported by
+   `bvt_F_perm`.
+6. Specialize the resulting real-edge equality at `x`.
+
+After the selected translated-PET repair and the corresponding TPET pointwise
+positive-sector theorem are available, package the compact pairing theorem.
+The theorem statement below is still the desired raw `extendF` compact pairing
+on the original PET-controlled support, but its proof must pass through
+translated-PET values during the positive-time translation step:
+
+```lean
+theorem bvt_F_distributionalEOW_permBranch_from_euclideanEdge_translatedSupport
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) (σ : Equiv.Perm (Fin n))
+    (V : Set (NPointDomain d n))
+    (hV_open : IsOpen V)
+    (hV_jost : ∀ x ∈ V, x ∈ BHW.JostSet d n)
+    (hV_ET : ∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+    (hV_permET :
+      ∀ x ∈ V,
+        BHW.realEmbed (fun k => x (σ k)) ∈ BHW.ExtendedTube d n)
+    (φ : SchwartzNPoint d n)
+    (hφ_compact : HasCompactSupport (φ : NPointDomain d n → ℂ))
+    (hφ_tsupport : tsupport (φ : NPointDomain d n → ℂ) ⊆ V) :
+    ∫ x : NPointDomain d n,
+        BHW.extendF (bvt_F OS lgc n)
+          (BHW.realEmbed (fun k => x (σ k))) * φ x
+      =
+    ∫ x : NPointDomain d n,
+        BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x) * φ x := by
+  -- 1. Rewrite the raw `extendF` values on the original support as
+  --    `bvt_F_on_translatedPET`, using `bvt_F_on_translatedPET_eq_on_PET`
+  --    and the hypotheses `hV_ET`, `hV_permET`.
+  -- 2. Choose a uniform `A` from compactness of `tsupport φ`.
+  -- 3. Change variables by `positiveTimeTranslate A`, using the checked
+  --    `timeShiftSchwartzNPoint` support lemmas.
+  -- 4. Use `bvt_F_on_translatedPET_translation_invariant` to move the TPET
+  --    values between the original and translated real configurations.
+  -- 5. Apply the positive-time, pairwise-distinct TPET pointwise theorem a.e.
+  --    on the translated support.
+  -- 6. Remove time-tie walls with `ae_pairwise_distinct_timeCoords` and finish
+  --    by `integral_congr_ae`.
+```
+
+This route avoids non-Schwartz indicators entirely.  Time-tie walls are removed
+only by `integral_congr_ae` using the finite-union null theorem.  Sector choices
+are made locally around each a.e. point, not by multiplying the test by sector
+indicator functions.
+
+The currently missing theorem before this compact package is implementation-ready
+is the TPET pointwise positive-sector version:
+
+```lean
+theorem bvt_F_on_translatedPET_perm_pointwise_of_positive_distinct
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) (σ : Equiv.Perm (Fin n))
+    (x : NPointDomain d n)
+    (hpairwiseJost :
+      ∀ i j : Fin n, i ≠ j →
+        MinkowskiSpace.IsSpacelike d (fun μ => x i μ - x j μ))
+    (hpos : ∀ k : Fin n, 0 < x k 0)
+    (hdistinct : ∀ i j : Fin n, i ≠ j → x i 0 ≠ x j 0)
+    (hx_tpet : BHW.realEmbed x ∈ TranslatedPET d n)
+    (hxσ_tpet : BHW.realEmbed (fun k => x (σ k)) ∈ TranslatedPET d n) :
+    bvt_F_on_translatedPET OS lgc n
+        (BHW.realEmbed (fun k => x (σ k))) hxσ_tpet =
+      bvt_F_on_translatedPET OS lgc n (BHW.realEmbed x) hx_tpet
+```
+
+This statement uses the translation-invariant, pairwise-difference Jost
+condition, not the absolute `BHW.JostSet`, because the latter is not preserved
+by uniform time translation.  Its proof is the sector-local branch-envelope
+argument: choose the sorted positive sector, use the Wick-section identity on a
+small real-open neighborhood, and identify the resulting branch values with the
+selected translated-PET values via the witness supplied by
+`bvt_F_on_translatedPET`.
+
+The older finite-sector export can remain as a fallback theorem slot, but it
+should be secondary to the translated-compact-support theorem above:
+
+```lean
+theorem bvt_F_distributionalEOW_permBranch_from_euclideanEdge_sectorDecomp
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) (σ : Equiv.Perm (Fin n))
+    (V : Set (NPointDomain d n))
+    (hV_open : IsOpen V)
+    (hV_jost : ∀ x ∈ V, x ∈ BHW.JostSet d n)
+    (hV_ET : ∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+    (hV_permET :
+      ∀ x ∈ V,
+        BHW.realEmbed (fun k => x (σ k)) ∈ BHW.ExtendedTube d n) :
+    ∀ (φ : SchwartzNPoint d n),
+      HasCompactSupport (φ : NPointDomain d n → ℂ) →
+      tsupport (φ : NPointDomain d n → ℂ) ⊆ V →
+      ∫ x : NPointDomain d n,
+          BHW.extendF (bvt_F OS lgc n)
+            (BHW.realEmbed (fun k => x (σ k))) * φ x
+        =
+      ∫ x : NPointDomain d n,
+          BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x) * φ x := by
+  -- Fallback route only: split the translated compact pairing into finitely
+  -- many ordered positive-time sectors plus the time-tie/null-boundary pieces.
+  -- On each sector, apply the sector-local branch envelope and the local
+  -- Wick-section identity theorem.  The tie walls require a null-set /
+  -- integrable-zero lemma or a smooth sector partition; do not use raw
+  -- indicator functions as Schwartz tests.
+```
+
+With the sector-local envelope theorem, the sector-decomposition export, and
+the local Wick-section identity theorem, the proof of
+`bvt_F_distributionalEOW_permBranch_from_euclideanEdge` becomes mechanical:
+
+1. If `V = ∅`, prove both sides are zero from
+   `tsupport φ ⊆ ∅`.
+2. Otherwise obtain `⟨U, F_id, F_perm, ...⟩` from the branch-envelope theorem.
+3. Apply
+   `eqOn_openConnected_of_distributional_wickSection_eq_on_realOpen` to
+   `F_id` and `F_perm`, using `hEuclid` rewritten by the two Wick-edge
+   equations from the envelope.
+4. Specialize the resulting `Set.EqOn F_id F_perm U` at
+   `BHW.realEmbed x` for each `x ∈ V`, and rewrite by the two real-edge
+   equations from the envelope.
+5. Convert that pointwise equality on `V` to the compact-test integral equality:
+   outside `tsupport φ`, the factor `φ x` is zero; inside `tsupport φ`, use
+   `hφ_tsupport : tsupport φ ⊆ V`.
+
+This leaves no hidden raw-boundary continuity assumption.  The only continuity
+used in the conversion from distributional equality to pointwise equality is
+continuity of holomorphic functions on the interior domain `U`, exactly as in
+the checked `OSToWightmanTubeIdentity` proof.
+
+Equivalently, package this as `bvt_F_hasPermutationEdgeDistributionEquality`
+by moving the difference to one side.  Then
+`BHW.extendF_perm_eq_on_realOpen_of_edgeDistributionEquality` converts this
+compact distribution equality to pointwise equality on `V`.
+
+The `bvt_W` theorem below is only a compatibility adapter after the direct
+branch equality has been proved.  It is useful for comparing with the private
+hLC proof, but it should not be treated as the hard theorem-2 core:
 
 ```lean
 theorem bvt_W_perm_invariant_on_compactJostOverlap_from_OS
@@ -2331,18 +3116,17 @@ theorem bvt_W_perm_invariant_on_compactJostOverlap_from_OS
       tsupport (φ : NPointDomain d n → ℂ) ⊆ V →
       bvt_W OS lgc n (BHW.permuteSchwartz (d := d) σ⁻¹ φ) =
       bvt_W OS lgc n φ := by
-  -- OS.E3_symmetric gives equality on the Euclidean side.
-  -- The ACR(1) branch package and EOW propagate that equality to the chosen
-  -- real-open Jost overlap `V`.
-  -- Boundary recovery identifies the two branch distributions with
+  -- Apply `bvt_F_extendF_perm_edgeDistribution_eq_from_OS`, change variables,
+  -- and use boundary recovery to identify the two branch distributions with
   -- `bvt_W OS lgc n φ` and
   -- `bvt_W OS lgc n (BHW.permuteSchwartz σ⁻¹ φ)`.
 ```
 
 Do not replace this by a simple adjacent-swap induction over a global
 `tsupport ⊆ JostSet` theorem unless every intermediate permutation is supplied
-with its transported real-open ET/permuted-ET overlap.  The local theorem above
-is the exact hypothesis the private `SCV.eqOn_open...` spine needs.
+with its transported real-open ET/permuted-ET overlap.  The local branch theorem
+above is the exact compact-support hypothesis the public `SCV.eqOn_open...`
+spine needs.
 
 Its proof must be documented as the following concrete sublemmas:
 
@@ -2397,9 +3181,9 @@ theorem bvt_W_perm_eq_of_branch_distribution_eq_on_jostOverlap
     -- `bvt_boundary_values` for `φ` and `BHW.permuteSchwartz σ⁻¹ φ`.
 ```
 
-The proof transcript for the local-overlap theorem should then be:
+The proof transcript for the branch theorem should then be:
 
-1. Set `F := bvt_F OS lgc n` and `φσ := BHW.permuteSchwartz σ⁻¹ φ`.
+1. Set `F := bvt_F OS lgc n`.
 2. From `hφ_tsupport : tsupport φ ⊆ V`, obtain
    `hφ_zero : VanishesToInfiniteOrderOnCoincidence φ` using
    `BHW.jostSet_disjoint_coincidenceLocus`.
@@ -2415,6 +3199,11 @@ The proof transcript for the local-overlap theorem should then be:
    ∫ x, F (fun k => wickRotatePoint (x k)) * φ x
    ```
 
+   The inverse permutation in `permuteZeroDiagonalSchwartz σ⁻¹` is deliberate:
+   after the change of variables, it produces the branch
+   `x ↦ F (wickRotatePoint (x ∘ σ))`, matching the left trace
+   `extendF F (realEmbed (x ∘ σ))`.
+
 5. Feed that equality, the selected `bvt_F_acrOne_package`, and the
    many-variable EOW/totally-real identity theorem into the branch theorem
 
@@ -2428,7 +3217,15 @@ The proof transcript for the local-overlap theorem should then be:
            BHW.extendF F (BHW.realEmbed x) * φ x
    ```
 
-6. Use the change-of-variables identity already present in the private proof:
+This directly supplies the `hEdge` input for
+`BHW.extendF_perm_eq_on_realOpen_of_edgeDistributionEquality`, after rewriting
+the equality above as an integral of
+`(extendF F (realEmbed (x ∘ σ)) - extendF F (realEmbed x)) * φ x`.
+
+The optional `bvt_W` compatibility adapter then continues:
+
+6. Set `φσ := BHW.permuteSchwartz σ⁻¹ φ` and use the change-of-variables
+   identity already present in the private proof:
 
    ```lean
    ∫ x, BHW.extendF F (BHW.realEmbed x) * φσ x =
@@ -2445,8 +3242,8 @@ The proof transcript for the local-overlap theorem should then be:
    bvt_W OS lgc n φσ = bvt_W OS lgc n φ
    ```
 
-   and feed this equality to
-   `BHW.extendF_perm_eq_on_realOpen_of_jost_distribution_symmetry`.
+   This is a useful consistency theorem, but it is no longer the preferred
+   input for the pointwise real-open proof.
 
 This is the precise place where the OS-II correction matters: the proof must use
 the repaired many-variable `bvt_F` / ACR(1) branch package.  It must not invoke a
@@ -2729,6 +3526,8 @@ Checked-present surfaces to use only where their hypotheses are non-circular:
 4. `boundary_function_continuous_forwardTube_of_flatRegular`
 5. `edge_of_the_wedge`
 6. `SCV.edge_of_the_wedge_theorem`
+7. `eqOn_openConnected_of_distributional_wickSection_eq_on_realOpen`
+8. `bvt_F_acrOne_package`
 
 Checked-present surfaces that are comparison/supplier context but are not
 direct final theorem-2 calls on `W := bvt_W OS lgc`:
@@ -2741,28 +3540,31 @@ direct final theorem-2 calls on `W := bvt_W OS lgc`:
 Primary planned theorem-2 closure slots:
 
 1. `BHW.HasPermutationEdgeDistributionEquality`
-2. `bvt_F_acrOne_package`
-3. `bvt_F_extendF_perm_edgeDistribution_eq_from_OS`
-4. `bvt_F_hasPermutationEdgeDistributionEquality`
-5. `bvt_F_restrictedLorentzInvariant_forwardTube`
-6. `bvt_F_complexLorentzInvariant_forwardTube`
-7. `BHW.permuteSchwartz`
-8. `BHW.permute_support_jost`
-9. `BHW.permute_tsupport_jost`
-10. `BHW.permuteSchwartz_hasCompactSupport`
-11. `BHW.integral_perm_eq_self`
-12. `bvt_W_perm_invariant_on_compactJostOverlap_from_OS`
-13. `BHW.extendF_perm_eq_on_realOpen_of_jost_distribution_symmetry`
-14. `bvt_F_extendF_perm_eq_on_realJost_of_OS_symmetry`
-15. `BHW.jostWitness_exists_for_perm_overlap`
-16. `BHW.isConnected_permForwardOverlapSet_for_perm`
-17. `BHW.extendF_perm_eq_on_realOpen_of_symmetric_boundary`
-18. `BHW.extendF_perm_overlap_of_symmetric_boundary`
-19. `BHW.bargmann_hall_wightman_theorem_of_extendF_perm`
-20. `bvt_F_extendF_perm_overlap`
-21. `bvt_F_symmetric_PET_extension`
-22. `bv_local_commutativity_transfer_of_symmetric_PET_boundary`
-23. `bvt_locally_commutative_from_symmetric_PET_boundary`
+2. `bvt_F_distributionalEOW_permBranch_from_euclideanEdge`
+3. `bvt_F_permBranchEnvelope_on_jostOverlap_from_ACR_and_BHW`
+4. `bvt_F_extendF_adjacentEdgeDistribution_eq_from_OS`
+5. `bvt_F_extendF_perm_edgeDistribution_eq_from_OS`
+6. `bvt_F_hasPermutationEdgeDistributionEquality`
+7. `BHW.extendF_perm_eq_on_realOpen_of_edgeDistributionEquality`
+8. `bvt_F_restrictedLorentzInvariant_forwardTube`
+9. `bvt_F_complexLorentzInvariant_forwardTube`
+10. `BHW.permuteSchwartz`
+11. `BHW.permute_support_jost`
+12. `BHW.permute_tsupport_jost`
+13. `BHW.permuteSchwartz_hasCompactSupport`
+14. `BHW.integral_perm_eq_self`
+15. `bvt_W_perm_invariant_on_compactJostOverlap_from_OS`
+16. `BHW.extendF_perm_eq_on_realOpen_of_jost_distribution_symmetry`
+17. `bvt_F_extendF_perm_eq_on_realJost_of_OS_symmetry`
+18. `BHW.jostWitness_exists_for_perm_overlap`
+19. `BHW.isConnected_permForwardOverlapSet_for_perm`
+20. `BHW.extendF_perm_eq_on_realOpen_of_symmetric_boundary`
+21. `BHW.extendF_perm_overlap_of_symmetric_boundary`
+22. `BHW.bargmann_hall_wightman_theorem_of_extendF_perm`
+23. `bvt_F_extendF_perm_overlap`
+24. `bvt_F_symmetric_PET_extension`
+25. `bv_local_commutativity_transfer_of_symmetric_PET_boundary`
+26. `bvt_locally_commutative_from_symmetric_PET_boundary`
 
 Do not insert `bvt_F_hasFlatRegularRepr` or
 `bvt_F_boundary_continuous_at_real_support` into the primary list.  Those names
@@ -2942,8 +3744,10 @@ private theorem bvt_F_swapCanonical_pairing
 This section is retained as a fallback-route audit.  It is useful if we later
 decide to prove raw boundary continuity, but it is not part of the primary
 OS-I-faithful theorem-2 path.  The primary path runs through
-`bvt_W_perm_invariant_on_compactJostOverlap_from_OS` and the BHW `extendF`
-real-Jost edge theorem.
+`bvt_F_distributionalEOW_permBranch_from_euclideanEdge`,
+`bvt_F_hasPermutationEdgeDistributionEquality`, and the BHW `extendF`
+real-Jost edge theorem.  The `bvt_W_perm...` theorem is a compatibility
+adapter, not the main bridge.
 
 For the fallback continuity route, the blueprint should still be explicit about
 one important fact:
@@ -3193,9 +3997,9 @@ The docs may safely claim:
 2. if a stronger support theorem is separately proved that upgrades the
    locality support hypothesis to `ForwardJostSet` membership, then
    `forwardJostSet_subset_extendedTube` can close that stronger route;
-3. the current public finite-shell route does not need either global
-   forward-Jost membership or absolute ET-overlap from one pair, because it
-   uses reduced difference coordinates and a reduced local-edge theorem;
+3. the fallback finite-shell route does not need either global forward-Jost
+   membership or absolute ET-overlap from one pair, because it uses reduced
+   difference coordinates and a reduced local-edge theorem;
 4. boundary-value recovery identifies the limiting raw boundary distribution;
    it does not replace the finite-shell pointwise interchange proof needed at
    fixed `ε > 0`.
@@ -3253,7 +4057,7 @@ This route may remain useful for adjacent raw-boundary statements and for
 testing the BHW edge machinery.  It is not the public selected-transposition
 finite-shell route.
 
-#### Route C: primary reduced finite-shell route
+#### Route C: fallback reduced finite-shell route
 
 ```lean
 theorem bvt_F_reduced_canonicalRealSwap_eq_of_pairSpacelike
@@ -3274,14 +4078,28 @@ theorem bvt_F_reduced_canonicalRealSwap_eq_of_pairSpacelike
           (ξ k μ : ℂ) + ε * canonicalReducedDirectionC (d := d) m k μ * Complex.I)
 ```
 
-This is the primary hard route after the algebraic reduced-permutation split.
-It expresses the selected-pair seam in the coordinates that theorem 2 actually
-controls, with the imaginary direction normalized back to the canonical one.
+This is the honest fallback route if we deliberately keep the current private
+finite-height consumer `bvt_F_swapCanonical_pairing`.  It expresses the
+selected-pair seam in reduced coordinates, with the imaginary direction
+normalized back to the canonical one.  It is no longer the recommended first
+route to theorem 2, because the BHW/PET boundary route can prove locality by a
+more direct permutation-edge theorem for `extendF`.
 
 ### 15.4. Recommended implementation order
 
-The next Lean implementation should follow Route C unless a new, explicitly
-proved stronger geometry theorem appears.
+The next Lean implementation should follow the primary BHW/PET boundary route:
+
+1. prove the adjacent branch-envelope theorem for the selected `bvt_F`;
+2. export the arbitrary-permutation branch envelope through the BHW/PET
+   permutation-flow spine;
+3. prove `bvt_F_distributionalEOW_permBranch_from_euclideanEdge`;
+4. package the result as `bvt_F_hasPermutationEdgeDistributionEquality`;
+5. apply `BHW.extendF_perm_eq_on_realOpen_of_edgeDistributionEquality`;
+6. add the boundary-transfer theorem that proves
+   `IsLocallyCommutativeWeak d (bvt_W OS lgc)` from this PET boundary package.
+
+Route C should be implemented only if that primary route is blocked or if we
+choose to retain the current overstrong finite-shell consumer.
 
 1. Implement the reduced algebraic packet:
    `bvt_F_reduced`, reduced factorization through `reducedDiffMap`, direction
@@ -3304,9 +4122,9 @@ proved stronger geometry theorem appears.
 7. Prove the pairing theorem by swap change-of-variables and support-zero
    bookkeeping.
 
-Route B can be kept as an adjacent pilot, but should not block Route C.  Route
-A should only be revived if the stronger forward-Jost theorem is genuinely
-proved under the current theorem surface.
+Route B can be kept as an adjacent pilot, but should not block the primary
+BHW/PET boundary route.  Route A should only be revived if the stronger
+forward-Jost theorem is genuinely proved under the current theorem surface.
 
 ### 15.5. Estimated Lean size after the correction
 
@@ -3323,6 +4141,7 @@ proved under the current theorem surface.
 5. Pairing adapter:
    `30-70` lines after the pointwise shell theorem exists.
 
-The docs should therefore treat the reduced canonical-real-swap local-edge
-theorem, not absolute ET-overlap, as the next proof-doc gap to close before
-production Lean work continues.
+The docs should therefore treat the branch-envelope theorem and the local
+distributional Wick-section identity as the next proof-doc gaps for the primary
+route.  The reduced canonical-real-swap local-edge theorem is the next gap only
+on the fallback finite-shell route.
