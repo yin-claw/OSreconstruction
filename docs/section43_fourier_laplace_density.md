@@ -3111,6 +3111,64 @@ Proof:
    section43NPointTimeSpatialTensor_positiveEnergyQuotient_eq_of_timeQuotient_eq
    section43NPointTimeSpatialTensor_mem_timeLaplaceSpatialFourierTarget
    ```
+   Linear-closure packet needed next:
+   1. Give `Section43CompactStrictPositiveTimeSpatialSource d n` the same
+      `Zero`, `Add`, `SMul ℂ`, `AddCommMonoid`, and `Module ℂ` structure as
+      `Section43CompactStrictPositiveTimeSource n`, using `f` as the injective
+      carrier map.  The support proofs are exactly:
+      `tsupport_add`, `tsupport_smul_subset_right`, `HasCompactSupport.add`,
+      and `HasCompactSupport.smul_left`.
+   2. Prove strict support implies closed positive-energy support:
+      ```lean
+      theorem section43TimeSpatialSource_tsupport_subset_positiveEnergy
+          (G : Section43CompactStrictPositiveTimeSpatialSource d n) :
+          tsupport (G.f : NPointDomain d n → ℂ) ⊆
+            section43PositiveEnergyRegion d n
+      ```
+      by `exact le_of_lt (G.positive hq i)`.
+   3. Prove integrability of the representative time integrand:
+      ```lean
+      theorem integrable_section43TimeLaplaceSpatialFourier_timeIntegrand
+          (G : Section43CompactStrictPositiveTimeSpatialSource d n)
+          (q : NPointDomain d n)
+          (hq : q ∈ section43PositiveEnergyRegion d n) :
+          Integrable
+            (fun τ : Fin n → ℝ =>
+              Complex.exp
+                (-(∑ i : Fin n,
+                  (τ i : ℂ) *
+                    (section43QTime (d := d) (n := n) q i : ℂ))) *
+              partialFourierSpatial_fun
+                (d := d) (n := n) G.f
+                (τ, section43QSpatial (d := d) (n := n) q))
+      ```
+      Proof route: copy the proof of
+      `integrable_section43FourierLaplace_timeIntegrand`, replacing
+      `section43DiffPullbackCLM` by `G.f` and using
+      `section43PartialFourierSpatial_fun_eq_zero_of_neg_time_of_support_positiveEnergy`
+      with `section43TimeSpatialSource_tsupport_subset_positiveEnergy G`.
+      The base integrability is `integrable_partialFourierSpatial_timeSlice`;
+      on nonnegative `τ`, use `norm_exp_neg_section43_timePair_le_one`.
+   4. Prove representative linearity:
+      ```lean
+      theorem section43TimeLaplaceSpatialFourierRepresentative_add
+          {G H : Section43CompactStrictPositiveTimeSpatialSource d n}
+          {Φ Ψ : SchwartzNPoint d n}
+          (hΦ : section43TimeLaplaceSpatialFourierRepresentative d n G Φ)
+          (hΨ : section43TimeLaplaceSpatialFourierRepresentative d n H Ψ) :
+          section43TimeLaplaceSpatialFourierRepresentative d n (G + H) (Φ + Ψ)
+
+      theorem section43TimeLaplaceSpatialFourierRepresentative_smul
+          (c : ℂ)
+          {G : Section43CompactStrictPositiveTimeSpatialSource d n}
+          {Φ : SchwartzNPoint d n}
+          (hΦ : section43TimeLaplaceSpatialFourierRepresentative d n G Φ) :
+          section43TimeLaplaceSpatialFourierRepresentative d n (c • G) (c • Φ)
+      ```
+      For add, use the integrability theorem for `G` and `H`,
+      `MeasureTheory.integral_add`, and `partialFourierSpatial_fun_add`.
+      For scalar multiplication, use `MeasureTheory.integral_const_mul` and
+      `partialFourierSpatial_fun_smul`.
 7. Conclude density by `Dense.mono` from the dense restricted span.
 
 The `n = 0` case must be kept explicit in implementation.  Then
