@@ -25047,6 +25047,21 @@ using `section43QTime` and `section43QSpatial`.  The product-source definition
 and `partialFourierSpatial_fun_section43TimeSpatialProductSource` should follow
 that transport; they are not yet compiled.
 
+Production update, 2026-04-18: the `SchwartzNPoint d n` transport has now also
+compiled in
+`OSReconstruction/Wightman/Reconstruction/WickRotation/Section43FourierLaplaceSpatialDensity.lean`:
+
+```lean
+section43NPointTimeSpatialTensor
+section43NPointTimeSpatialTensor_apply
+dense_section43NPointTimeSpatialTensor_span_of_factor_dense
+dense_section43NPointTimeSpatialTensor_span_compactLaplace_spatialFourier
+```
+
+The next implementation target is now the source-side half:
+`section43TimeSpatialProductSource` and
+`partialFourierSpatial_fun_section43TimeSpatialProductSource`.
+
 The public Layer-3 target remains:
 
 Use this representative predicate rather than introducing an opaque

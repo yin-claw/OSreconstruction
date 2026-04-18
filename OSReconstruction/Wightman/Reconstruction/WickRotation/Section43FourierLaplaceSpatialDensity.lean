@@ -441,4 +441,105 @@ theorem dense_section43TimeSpatialTensor_span_compactLaplace_spatialFourier
     (hSt := dense_section43IteratedLaplaceCompactTransform_preimage n)
     (hSx := dense_section43SpatialFourierCompactRange d n)
 
+/-- The time/spatial tensor transported back to the `n`-point Schwartz space. -/
+noncomputable def section43NPointTimeSpatialTensor (d n : ℕ) [NeZero d]
+    (φ : SchwartzMap (Fin n → ℝ) ℂ)
+    (χ : SchwartzMap (Section43SpatialSpace d n) ℂ) :
+    SchwartzNPoint d n :=
+  (nPointTimeSpatialSchwartzCLE (d := d) (n := n)).symm
+    (section43TimeSpatialTensor d n φ χ)
+
+@[simp] theorem section43NPointTimeSpatialTensor_apply
+    (d n : ℕ) [NeZero d]
+    (φ : SchwartzMap (Fin n → ℝ) ℂ)
+    (χ : SchwartzMap (Section43SpatialSpace d n) ℂ)
+    (q : NPointDomain d n) :
+    section43NPointTimeSpatialTensor d n φ χ q =
+      φ (section43QTime (d := d) (n := n) q) *
+        χ (section43QSpatial (d := d) (n := n) q) := by
+  change section43TimeSpatialTensor d n φ χ ((nPointTimeSpatialCLE (d := d) n) q) = _
+  rw [show ((nPointTimeSpatialCLE (d := d) n) q) =
+      (section43QTime (d := d) (n := n) q,
+        section43QSpatial (d := d) (n := n) q) by
+    simp [section43QTime, section43QSpatial]]
+  simp
+
+/-- The restricted time/spatial tensor-density theorem transported to
+`SchwartzNPoint d n`. -/
+theorem dense_section43NPointTimeSpatialTensor_span_of_factor_dense
+    {d n : ℕ} [NeZero d]
+    {St : Set (SchwartzMap (Fin n → ℝ) ℂ)}
+    {Sx : Set (SchwartzMap (Section43SpatialSpace d n) ℂ)}
+    (hSt : Dense St) (hSx : Dense Sx) :
+    Dense
+      (((Submodule.span ℂ
+        {F : SchwartzNPoint d n |
+          ∃ φ : SchwartzMap (Fin n → ℝ) ℂ,
+          φ ∈ St ∧
+          ∃ χ : SchwartzMap (Section43SpatialSpace d n) ℂ,
+          χ ∈ Sx ∧
+            F = section43NPointTimeSpatialTensor d n φ χ}) :
+        Submodule ℂ (SchwartzNPoint d n)) :
+        Set (SchwartzNPoint d n)) := by
+  let E := SchwartzNPoint d n
+  let A := SchwartzMap (Section43TimeSpatialSpace d n) ℂ
+  let e := nPointTimeSpatialSchwartzCLE (d := d) (n := n)
+  let PN : Set E :=
+    {F : E | ∃ φ : SchwartzMap (Fin n → ℝ) ℂ, φ ∈ St ∧
+      ∃ χ : SchwartzMap (Section43SpatialSpace d n) ℂ, χ ∈ Sx ∧
+        F = section43NPointTimeSpatialTensor d n φ χ}
+  let MN : Submodule ℂ E := Submodule.span ℂ PN
+  let PP : Set A :=
+    {F : A | ∃ φ : SchwartzMap (Fin n → ℝ) ℂ, φ ∈ St ∧
+      ∃ χ : SchwartzMap (Section43SpatialSpace d n) ℂ, χ ∈ Sx ∧
+        F = section43TimeSpatialTensor d n φ χ}
+  let MP : Submodule ℂ A := Submodule.span ℂ PP
+  change Dense (MN : Set E)
+  rw [Submodule.dense_iff_topologicalClosure_eq_top]
+  apply Submodule.eq_top_iff'.mpr
+  intro x
+  let preM : Submodule ℂ A := MN.topologicalClosure.comap e.symm.toLinearMap
+  have hMP_dense : Dense (MP : Set A) := by
+    simpa [MP, PP, A] using
+      dense_section43TimeSpatialTensor_span_of_factor_dense
+        (d := d) (n := n) (St := St) (Sx := Sx) hSt hSx
+  have hMP_le_preM : MP ≤ preM := by
+    refine Submodule.span_le.mpr ?_
+    intro F hF
+    rcases hF with ⟨φ, hφ, χ, hχ, rfl⟩
+    change e.symm (section43TimeSpatialTensor d n φ χ) ∈ MN.topologicalClosure
+    refine MN.le_topologicalClosure (Submodule.subset_span ?_)
+    exact ⟨φ, hφ, χ, hχ, rfl⟩
+  have hpre_closed : IsClosed (preM : Set A) := by
+    change IsClosed {y : A | e.symm y ∈ (MN.topologicalClosure : Set E)}
+    exact MN.isClosed_topologicalClosure.preimage e.symm.continuous
+  have htop_le_pre : (⊤ : Submodule ℂ A) ≤ preM := by
+    have hclosure : MP.topologicalClosure ≤ preM :=
+      MP.topologicalClosure_minimal hMP_le_preM hpre_closed
+    rwa [(Submodule.dense_iff_topologicalClosure_eq_top).mp hMP_dense] at hclosure
+  have hxpre : e x ∈ preM := htop_le_pre trivial
+  change e.symm (e x) ∈ MN.topologicalClosure at hxpre
+  simpa using hxpre
+
+/-- Route-relevant `SchwartzNPoint` density after transporting the product-space
+Layer-3 packet through the time/spatial split. -/
+theorem dense_section43NPointTimeSpatialTensor_span_compactLaplace_spatialFourier
+    (d n : ℕ) [NeZero d] :
+    Dense
+      (((Submodule.span ℂ
+        {F : SchwartzNPoint d n |
+          ∃ φ : SchwartzMap (Fin n → ℝ) ℂ,
+          φ ∈
+            ((section43TimePositiveQuotientMap n) ⁻¹'
+              Set.range (section43IteratedLaplaceCompactTransform n)) ∧
+          ∃ χ : SchwartzMap (Section43SpatialSpace d n) ℂ,
+          χ ∈ section43SpatialFourierCompactRange d n ∧
+            F = section43NPointTimeSpatialTensor d n φ χ}) :
+        Submodule ℂ (SchwartzNPoint d n)) :
+        Set (SchwartzNPoint d n)) :=
+  dense_section43NPointTimeSpatialTensor_span_of_factor_dense
+    (d := d) (n := n)
+    (hSt := dense_section43IteratedLaplaceCompactTransform_preimage n)
+    (hSx := dense_section43SpatialFourierCompactRange d n)
+
 end OSReconstruction

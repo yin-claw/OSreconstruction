@@ -2704,6 +2704,25 @@ terms of `section43QTime` and `section43QSpatial`.  Only after that transport
 should the compact spacetime product source and the
 `partialFourierSpatial_fun` factorization be implemented.
 
+Production update, 2026-04-18: the `SchwartzNPoint d n` transport is now also
+compiled in the same companion file:
+
+```lean
+section43NPointTimeSpatialTensor
+section43NPointTimeSpatialTensor_apply
+dense_section43NPointTimeSpatialTensor_span_of_factor_dense
+dense_section43NPointTimeSpatialTensor_span_compactLaplace_spatialFourier
+```
+
+The remaining Layer-3 implementation seam is therefore no longer density
+transport.  It is the source-side construction and Fourier-slice
+identification:
+
+```lean
+section43TimeSpatialProductSource
+partialFourierSpatial_fun_section43TimeSpatialProductSource
+```
+
 The source attached to a restricted tensor is:
 
 ```lean
