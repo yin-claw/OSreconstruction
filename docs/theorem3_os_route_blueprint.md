@@ -25318,8 +25318,133 @@ Proof transcript:
    `section43NPointTimeSpatialTensor_positiveEnergyQuotient_eq_of_timeQuotient_eq`
    and
    `section43NPointTimeSpatialTensor_mem_timeLaplaceSpatialFourierTarget`.
-   Then the restricted dense span is contained in the target preimage, so
-   density follows by `Dense.mono`.
+   Production update, 2026-04-18: the finite-span bridge is now compiled as a
+   linear-closure packet, not as a new analytic identification.  The production
+   declarations are:
+   ```lean
+   namespace Section43CompactStrictPositiveTimeSpatialSource
+
+   instance (d n : ℕ) [NeZero d] :
+       Zero (Section43CompactStrictPositiveTimeSpatialSource d n)
+   instance (d n : ℕ) [NeZero d] :
+       Add (Section43CompactStrictPositiveTimeSpatialSource d n)
+   instance (d n : ℕ) [NeZero d] :
+       AddCommMonoid (Section43CompactStrictPositiveTimeSpatialSource d n)
+   instance (d n : ℕ) [NeZero d] :
+       SMul ℂ (Section43CompactStrictPositiveTimeSpatialSource d n)
+   instance (d n : ℕ) [NeZero d] :
+       Module ℂ (Section43CompactStrictPositiveTimeSpatialSource d n)
+
+   end Section43CompactStrictPositiveTimeSpatialSource
+
+   theorem section43TimeSpatialSource_tsupport_subset_positiveEnergy
+       (G : Section43CompactStrictPositiveTimeSpatialSource d n) :
+       tsupport (G.f : NPointDomain d n → ℂ) ⊆
+         section43PositiveEnergyRegion d n
+
+   theorem integrable_section43TimeLaplaceSpatialFourier_timeIntegrand
+       (G : Section43CompactStrictPositiveTimeSpatialSource d n)
+       (q : NPointDomain d n)
+       (hq : q ∈ section43PositiveEnergyRegion d n) :
+       Integrable
+         (fun τ : Fin n → ℝ =>
+           Complex.exp
+             (-(∑ i : Fin n,
+               (τ i : ℂ) *
+                 (section43QTime (d := d) (n := n) q i : ℂ))) *
+           partialFourierSpatial_fun
+             (d := d) (n := n) G.f
+             (τ, section43QSpatial (d := d) (n := n) q))
+
+   theorem section43TimeLaplaceSpatialFourierRepresentative_add
+       {G H : Section43CompactStrictPositiveTimeSpatialSource d n}
+       {Φ Ψ : SchwartzNPoint d n}
+       (hΦ : section43TimeLaplaceSpatialFourierRepresentative d n G Φ)
+       (hΨ : section43TimeLaplaceSpatialFourierRepresentative d n H Ψ) :
+       section43TimeLaplaceSpatialFourierRepresentative d n (G + H) (Φ + Ψ)
+
+   theorem section43TimeLaplaceSpatialFourierRepresentative_smul
+       (c : ℂ)
+       {G : Section43CompactStrictPositiveTimeSpatialSource d n}
+       {Φ : SchwartzNPoint d n}
+       (hΦ : section43TimeLaplaceSpatialFourierRepresentative d n G Φ) :
+       section43TimeLaplaceSpatialFourierRepresentative d n (c • G) (c • Φ)
+
+   def section43TimeLaplaceSpatialFourierTarget
+       (d n : ℕ) [NeZero d] : Set (SchwartzNPoint d n)
+
+   theorem section43TimeLaplaceSpatialFourierTarget_zero
+       (d n : ℕ) [NeZero d] :
+       (0 : SchwartzNPoint d n) ∈
+         section43TimeLaplaceSpatialFourierTarget d n
+
+   theorem section43TimeLaplaceSpatialFourierTarget_add
+       (d n : ℕ) [NeZero d]
+       {Φ Ψ : SchwartzNPoint d n}
+       (hΦ : Φ ∈ section43TimeLaplaceSpatialFourierTarget d n)
+       (hΨ : Ψ ∈ section43TimeLaplaceSpatialFourierTarget d n) :
+       Φ + Ψ ∈ section43TimeLaplaceSpatialFourierTarget d n
+
+   theorem section43TimeLaplaceSpatialFourierTarget_smul
+       (d n : ℕ) [NeZero d]
+       (c : ℂ)
+       {Φ : SchwartzNPoint d n}
+       (hΦ : Φ ∈ section43TimeLaplaceSpatialFourierTarget d n) :
+       c • Φ ∈ section43TimeLaplaceSpatialFourierTarget d n
+
+   theorem section43NPointTimeSpatialTensor_span_le_timeLaplaceSpatialFourierTarget
+       (d n : ℕ) [NeZero d] :
+       ((Submodule.span ℂ
+         {F : SchwartzNPoint d n |
+           ∃ φ : SchwartzMap (Fin n → ℝ) ℂ,
+           φ ∈
+             ((section43TimePositiveQuotientMap n) ⁻¹'
+               Set.range (section43IteratedLaplaceCompactTransform n)) ∧
+           ∃ χ : SchwartzMap (Section43SpatialSpace d n) ℂ,
+           χ ∈ section43SpatialFourierCompactRange d n ∧
+             F = section43NPointTimeSpatialTensor d n φ χ}) :
+         Set (SchwartzNPoint d n)) ⊆
+           section43TimeLaplaceSpatialFourierTarget d n
+
+   theorem dense_section43TimeLaplaceSpatialFourier_compact_preimage
+       (d n : ℕ) [NeZero d] :
+       Dense
+         {Φ : SchwartzNPoint d n |
+           ∃ (G : Section43CompactStrictPositiveTimeSpatialSource d n)
+             (Ψ : SchwartzNPoint d n),
+             section43TimeLaplaceSpatialFourierRepresentative d n G Ψ ∧
+             section43PositiveEnergyQuotientMap (d := d) n Φ =
+               section43PositiveEnergyQuotientMap (d := d) n Ψ}
+   ```
+   The source algebra is copied from
+   `Section43CompactStrictPositiveTimeSource`; support closure uses
+   `tsupport_add`, `tsupport_smul_subset_right`, `HasCompactSupport.add`, and
+   `HasCompactSupport.smul_left`.  The integrability proof is the existing
+   `integrable_section43FourierLaplace_timeIntegrand` argument with
+   `section43DiffPullbackCLM d n f` replaced by `G.f` and negative-time
+   vanishing supplied by
+   `section43PartialFourierSpatial_fun_eq_zero_of_neg_time_of_support_positiveEnergy`
+   plus `section43TimeSpatialSource_tsupport_subset_positiveEnergy`.
+   Representative add/smul are pointwise `calc` proofs using
+   `MeasureTheory.integral_add`, `MeasureTheory.integral_const_mul`,
+   `partialFourierSpatial_fun_add`, and `partialFourierSpatial_fun_smul`.
+
+   The target set is:
+   ```lean
+   def section43TimeLaplaceSpatialFourierTarget
+       (d n : ℕ) [NeZero d] : Set (SchwartzNPoint d n) :=
+     {Φ |
+       ∃ (G : Section43CompactStrictPositiveTimeSpatialSource d n)
+         (Ψ : SchwartzNPoint d n),
+         section43TimeLaplaceSpatialFourierRepresentative d n G Ψ ∧
+         section43PositiveEnergyQuotientMap (d := d) n Φ =
+           section43PositiveEnergyQuotientMap (d := d) n Ψ}
+   ```
+   Add/smul closure of this target uses `map_add` and `map_smul` for
+   `section43PositiveEnergyQuotientMap`.  The span containment uses
+   `Submodule.span_induction` with the compiled generator-containment theorem
+   as the base case.  Density follows by `Dense.mono` from
+   `dense_section43NPointTimeSpatialTensor_span_compactLaplace_spatialFourier`.
 7. Treat `n = 0` explicitly if the finite-dimensional tensor construction does
    not simplify by `simp`: the time integral is over the unique point and the
    density is purely the spatial Fourier compact-range density.

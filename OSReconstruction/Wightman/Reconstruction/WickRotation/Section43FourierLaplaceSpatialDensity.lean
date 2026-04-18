@@ -630,6 +630,116 @@ structure Section43CompactStrictPositiveTimeSpatialSource
       {q | ∀ i : Fin n, 0 < section43QTime (d := d) (n := n) q i}
   compact : HasCompactSupport (f : NPointDomain d n → ℂ)
 
+namespace Section43CompactStrictPositiveTimeSpatialSource
+
+private theorem ext_f {d n : ℕ} [NeZero d]
+    {G H : Section43CompactStrictPositiveTimeSpatialSource d n}
+    (hf : G.f = H.f) : G = H := by
+  cases G
+  cases H
+  simp at hf
+  subst hf
+  rfl
+
+private theorem f_injective (d n : ℕ) [NeZero d] :
+    Function.Injective
+      (fun G : Section43CompactStrictPositiveTimeSpatialSource d n => G.f) := by
+  intro G H hf
+  exact ext_f hf
+
+instance (d n : ℕ) [NeZero d] :
+    Zero (Section43CompactStrictPositiveTimeSpatialSource d n) where
+  zero :=
+    { f := 0
+      positive := by
+        intro q hq
+        simp at hq
+      compact := by
+        simpa using
+          (HasCompactSupport.zero :
+            HasCompactSupport (0 : NPointDomain d n → ℂ)) }
+
+instance (d n : ℕ) [NeZero d] :
+    Add (Section43CompactStrictPositiveTimeSpatialSource d n) where
+  add G H :=
+    { f := G.f + H.f
+      positive := by
+        intro q hq
+        have hq' :=
+          tsupport_add (G.f : NPointDomain d n → ℂ)
+            (H.f : NPointDomain d n → ℂ) hq
+        exact hq'.elim (fun hG => G.positive hG) (fun hH => H.positive hH)
+      compact := by
+        simpa using HasCompactSupport.add G.compact H.compact }
+
+instance (d n : ℕ) [NeZero d] :
+    SMul ℕ (Section43CompactStrictPositiveTimeSpatialSource d n) where
+  smul m G :=
+    { f := (m : ℂ) • G.f
+      positive := by
+        exact
+          (tsupport_smul_subset_right
+            (fun _ : NPointDomain d n => (m : ℂ))
+            (G.f : NPointDomain d n → ℂ)).trans G.positive
+      compact := by
+        simpa using
+          (HasCompactSupport.smul_left
+            (f := fun _ : NPointDomain d n => (m : ℂ))
+            (f' := (G.f : NPointDomain d n → ℂ)) G.compact) }
+
+instance (d n : ℕ) [NeZero d] :
+    AddCommMonoid (Section43CompactStrictPositiveTimeSpatialSource d n) :=
+  Function.Injective.addCommMonoid
+    (fun G : Section43CompactStrictPositiveTimeSpatialSource d n => G.f)
+    (f_injective d n) rfl
+    (by intro G H; rfl)
+    (by
+      intro G m
+      change (m : ℂ) • G.f = m • G.f
+      rw [Nat.cast_smul_eq_nsmul ℂ])
+
+instance (d n : ℕ) [NeZero d] :
+    SMul ℂ (Section43CompactStrictPositiveTimeSpatialSource d n) where
+  smul c G :=
+    { f := c • G.f
+      positive := by
+        exact
+          (tsupport_smul_subset_right
+            (fun _ : NPointDomain d n => c)
+            (G.f : NPointDomain d n → ℂ)).trans G.positive
+      compact := by
+        simpa using
+          (HasCompactSupport.smul_left
+            (f := fun _ : NPointDomain d n => c)
+            (f' := (G.f : NPointDomain d n → ℂ)) G.compact) }
+
+private def fAddMonoidHom (d n : ℕ) [NeZero d] :
+    Section43CompactStrictPositiveTimeSpatialSource d n →+
+      SchwartzNPoint d n where
+  toFun := fun G => G.f
+  map_zero' := rfl
+  map_add' := by intro G H; rfl
+
+instance (d n : ℕ) [NeZero d] :
+    Module ℂ (Section43CompactStrictPositiveTimeSpatialSource d n) :=
+  Function.Injective.module ℂ (fAddMonoidHom d n)
+    (by
+      intro G H hf
+      exact (f_injective d n) hf)
+    (by intro c G; rfl)
+
+end Section43CompactStrictPositiveTimeSpatialSource
+
+/-- Strict support in the positive time orthant implies support in the closed
+Section 4.3 positive-energy region. -/
+theorem section43TimeSpatialSource_tsupport_subset_positiveEnergy
+    {d n : ℕ} [NeZero d]
+    (G : Section43CompactStrictPositiveTimeSpatialSource d n) :
+    tsupport (G.f : NPointDomain d n → ℂ) ⊆
+      section43PositiveEnergyRegion d n := by
+  intro q hq i
+  exact le_of_lt (G.positive hq i)
+
 /-- Product a compact strict-positive time source with a compact spatial source,
 then transport it to the `n`-point difference-coordinate Schwartz space. -/
 noncomputable def section43TimeSpatialProductSource
@@ -711,6 +821,68 @@ def section43TimeLaplaceSpatialFourierRepresentative
             (d := d) (n := n) g.f
             (τ, section43QSpatial (d := d) (n := n) q)
 
+/-- The time integrand in a time-Laplace / spatial-Fourier representative is
+integrable on the positive-energy surface. -/
+theorem integrable_section43TimeLaplaceSpatialFourier_timeIntegrand
+    (d n : ℕ) [NeZero d]
+    (G : Section43CompactStrictPositiveTimeSpatialSource d n)
+    (q : NPointDomain d n)
+    (hq : q ∈ section43PositiveEnergyRegion d n) :
+    Integrable
+      (fun τ : Fin n → ℝ =>
+        Complex.exp
+          (-(∑ k : Fin n,
+            (τ k : ℂ) * (section43QTime (d := d) (n := n) q k : ℂ))) *
+        partialFourierSpatial_fun
+          (d := d) (n := n) G.f
+          (τ, section43QSpatial (d := d) (n := n) q)) := by
+  let F : (Fin n → ℝ) → ℂ := fun τ =>
+    partialFourierSpatial_fun
+      (d := d) (n := n) G.f
+      (τ, section43QSpatial (d := d) (n := n) q)
+  let E : (Fin n → ℝ) → ℂ := fun τ =>
+    Complex.exp
+      (-(∑ k : Fin n,
+        (τ k : ℂ) * (section43QTime (d := d) (n := n) q k : ℂ)))
+  have hF_int : Integrable F (volume : Measure (Fin n → ℝ)) := by
+    simpa [F] using
+      integrable_partialFourierSpatial_timeSlice
+        (d := d) (n := n) G.f
+        (section43QSpatial (d := d) (n := n) q)
+  have hEF_meas : AEStronglyMeasurable
+      (fun τ : Fin n → ℝ => E τ * F τ)
+      (volume : Measure (Fin n → ℝ)) := by
+    have hE_cont : Continuous E := by
+      fun_prop
+    exact hE_cont.aestronglyMeasurable.mul hF_int.aestronglyMeasurable
+  have hbound : ∀ᵐ τ : Fin n → ℝ ∂(volume : Measure (Fin n → ℝ)),
+      ‖E τ * F τ‖ ≤ ‖F τ‖ := by
+    refine Filter.Eventually.of_forall ?_
+    intro τ
+    by_cases hneg : ∃ i : Fin n, τ i < 0
+    · rcases hneg with ⟨i, hi⟩
+      have hF_zero : F τ = 0 := by
+        simpa [F, Function.update_eq_self] using
+          section43PartialFourierSpatial_fun_eq_zero_of_neg_time_of_support_positiveEnergy
+            (d := d) (n := n) G.f
+            (section43TimeSpatialSource_tsupport_subset_positiveEnergy
+              (d := d) (n := n) G)
+            i τ (section43QSpatial (d := d) (n := n) q)
+            (s := τ i) hi
+      simp [hF_zero]
+    · have hτ_nonneg : ∀ i : Fin n, 0 ≤ τ i := by
+        intro i
+        exact le_of_not_gt fun hi => hneg ⟨i, hi⟩
+      have hE_le : ‖E τ‖ ≤ 1 := by
+        simpa [E] using
+          norm_exp_neg_section43_timePair_le_one
+            (d := d) (n := n) q τ hq hτ_nonneg
+      calc
+        ‖E τ * F τ‖ = ‖E τ‖ * ‖F τ‖ := norm_mul _ _
+        _ ≤ 1 * ‖F τ‖ := mul_le_mul_of_nonneg_right hE_le (norm_nonneg _)
+        _ = ‖F τ‖ := one_mul _
+  simpa [F, E] using hF_int.mono hEF_meas hbound
+
 /-- Product sources represent the tensor product of the finite-time Laplace
 representative and the spatial Fourier transform of the compact spatial
 source. -/
@@ -782,9 +954,203 @@ theorem section43TimeLaplaceSpatialFourierRepresentative_productSource
               (fun τ : Fin n → ℝ =>
                 Complex.exp
                   (-(∑ i : Fin n,
-                    (τ i : ℂ) *
+            (τ i : ℂ) *
                       (section43QTime (d := d) (n := n) q i : ℂ))) *
                   g.f τ)]
+
+/-- Time-Laplace / spatial-Fourier representatives are closed under addition. -/
+theorem section43TimeLaplaceSpatialFourierRepresentative_add
+    (d n : ℕ) [NeZero d]
+    {G H : Section43CompactStrictPositiveTimeSpatialSource d n}
+    {Φ Ψ : SchwartzNPoint d n}
+    (hΦ : section43TimeLaplaceSpatialFourierRepresentative d n G Φ)
+    (hΨ : section43TimeLaplaceSpatialFourierRepresentative d n H Ψ) :
+    section43TimeLaplaceSpatialFourierRepresentative d n (G + H) (Φ + Ψ) := by
+  intro q hq
+  let E : (Fin n → ℝ) → ℂ := fun τ =>
+    Complex.exp
+      (-(∑ i : Fin n,
+        (τ i : ℂ) * (section43QTime (d := d) (n := n) q i : ℂ)))
+  let FG : (Fin n → ℝ) → ℂ := fun τ =>
+    partialFourierSpatial_fun
+      (d := d) (n := n) G.f
+      (τ, section43QSpatial (d := d) (n := n) q)
+  let FH : (Fin n → ℝ) → ℂ := fun τ =>
+    partialFourierSpatial_fun
+      (d := d) (n := n) H.f
+      (τ, section43QSpatial (d := d) (n := n) q)
+  have hGint :
+      Integrable (fun τ : Fin n → ℝ => E τ * FG τ)
+        (volume : Measure (Fin n → ℝ)) := by
+    simpa [E, FG] using
+      integrable_section43TimeLaplaceSpatialFourier_timeIntegrand
+        d n G q hq
+  have hHint :
+      Integrable (fun τ : Fin n → ℝ => E τ * FH τ)
+        (volume : Measure (Fin n → ℝ)) := by
+    simpa [E, FH] using
+      integrable_section43TimeLaplaceSpatialFourier_timeIntegrand
+        d n H q hq
+  calc
+    (Φ + Ψ) q = Φ q + Ψ q := rfl
+    _ =
+        (∫ τ : Fin n → ℝ, E τ * FG τ) +
+        (∫ τ : Fin n → ℝ, E τ * FH τ) := by
+          rw [hΦ q hq, hΨ q hq]
+    _ = ∫ τ : Fin n → ℝ, E τ * FG τ + E τ * FH τ := by
+          exact (MeasureTheory.integral_add hGint hHint).symm
+    _ = ∫ τ : Fin n → ℝ,
+        E τ *
+          partialFourierSpatial_fun
+            (d := d) (n := n) (G + H).f
+            (τ, section43QSpatial (d := d) (n := n) q) := by
+          congr with τ
+          change E τ * FG τ + E τ * FH τ =
+            E τ *
+              partialFourierSpatial_fun
+                (d := d) (n := n) (G.f + H.f)
+                (τ, section43QSpatial (d := d) (n := n) q)
+          rw [partialFourierSpatial_fun_add]
+          change E τ * FG τ + E τ * FH τ = E τ * (FG τ + FH τ)
+          ring
+
+/-- Time-Laplace / spatial-Fourier representatives are closed under scalar
+multiplication. -/
+theorem section43TimeLaplaceSpatialFourierRepresentative_smul
+    (d n : ℕ) [NeZero d]
+    (c : ℂ)
+    {G : Section43CompactStrictPositiveTimeSpatialSource d n}
+    {Φ : SchwartzNPoint d n}
+    (hΦ : section43TimeLaplaceSpatialFourierRepresentative d n G Φ) :
+    section43TimeLaplaceSpatialFourierRepresentative d n (c • G) (c • Φ) := by
+  intro q hq
+  let E : (Fin n → ℝ) → ℂ := fun τ =>
+    Complex.exp
+      (-(∑ i : Fin n,
+        (τ i : ℂ) * (section43QTime (d := d) (n := n) q i : ℂ)))
+  let FG : (Fin n → ℝ) → ℂ := fun τ =>
+    partialFourierSpatial_fun
+      (d := d) (n := n) G.f
+      (τ, section43QSpatial (d := d) (n := n) q)
+  calc
+    (c • Φ) q = c * Φ q := by simp [smul_eq_mul]
+    _ = c * ∫ τ : Fin n → ℝ, E τ * FG τ := by
+          rw [hΦ q hq]
+    _ = ∫ τ : Fin n → ℝ, c * (E τ * FG τ) := by
+          exact
+            (MeasureTheory.integral_const_mul c
+              (fun τ : Fin n → ℝ => E τ * FG τ)).symm
+    _ = ∫ τ : Fin n → ℝ,
+        E τ *
+          partialFourierSpatial_fun
+            (d := d) (n := n) (c • G).f
+            (τ, section43QSpatial (d := d) (n := n) q) := by
+          congr with τ
+          change c * (E τ * FG τ) =
+            E τ *
+              partialFourierSpatial_fun
+                (d := d) (n := n) (c • G.f)
+                (τ, section43QSpatial (d := d) (n := n) q)
+          rw [partialFourierSpatial_fun_smul]
+          change c * (E τ * FG τ) = E τ * (c * FG τ)
+          ring
+
+/-- The quotient-side target represented by compact strict-positive
+time/spatial sources. -/
+def section43TimeLaplaceSpatialFourierTarget
+    (d n : ℕ) [NeZero d] : Set (SchwartzNPoint d n) :=
+  {Φ |
+    ∃ (G : Section43CompactStrictPositiveTimeSpatialSource d n)
+      (Ψ : SchwartzNPoint d n),
+      section43TimeLaplaceSpatialFourierRepresentative d n G Ψ ∧
+      section43PositiveEnergyQuotientMap (d := d) n Φ =
+        section43PositiveEnergyQuotientMap (d := d) n Ψ}
+
+/-- The zero source represents the zero transform. -/
+theorem section43TimeLaplaceSpatialFourierRepresentative_zero
+    (d n : ℕ) [NeZero d] :
+    section43TimeLaplaceSpatialFourierRepresentative d n
+      (0 : Section43CompactStrictPositiveTimeSpatialSource d n)
+      (0 : SchwartzNPoint d n) := by
+  intro q hq
+  change (0 : ℂ) =
+    ∫ τ : Fin n → ℝ,
+      Complex.exp
+        (-(∑ i : Fin n,
+          (τ i : ℂ) * (section43QTime (d := d) (n := n) q i : ℂ))) *
+      partialFourierSpatial_fun
+        (d := d) (n := n) (0 : SchwartzNPoint d n)
+        (τ, section43QSpatial (d := d) (n := n) q)
+  have hzero : ∀ τ : Fin n → ℝ,
+      partialFourierSpatial_fun
+        (d := d) (n := n) (0 : SchwartzNPoint d n)
+        (τ, section43QSpatial (d := d) (n := n) q) = 0 := by
+    intro τ
+    rw [partialFourierSpatial_fun]
+    have hslice :
+        SchwartzMap.partialEval₂
+            (nPointSpatialTimeSchwartzCLE (d := d) (n := n)
+              (0 : SchwartzNPoint d n)) τ = 0 := by
+      ext η
+      rfl
+    rw [hslice]
+    simp
+  have hfun :
+      (fun τ : Fin n → ℝ =>
+        Complex.exp
+          (-(∑ i : Fin n,
+            (τ i : ℂ) * (section43QTime (d := d) (n := n) q i : ℂ))) *
+        partialFourierSpatial_fun
+          (d := d) (n := n) (0 : SchwartzNPoint d n)
+          (τ, section43QSpatial (d := d) (n := n) q)) =
+        fun _ : Fin n → ℝ => 0 := by
+    funext τ
+    simp [hzero τ]
+  rw [hfun]
+  simp
+
+/-- The representative target contains zero. -/
+theorem section43TimeLaplaceSpatialFourierTarget_zero
+    (d n : ℕ) [NeZero d] :
+    (0 : SchwartzNPoint d n) ∈
+      section43TimeLaplaceSpatialFourierTarget d n := by
+  refine ⟨0, 0, section43TimeLaplaceSpatialFourierRepresentative_zero d n, ?_⟩
+  simp
+
+/-- The representative target is closed under addition. -/
+theorem section43TimeLaplaceSpatialFourierTarget_add
+    (d n : ℕ) [NeZero d]
+    {Φ Ψ : SchwartzNPoint d n}
+    (hΦ : Φ ∈ section43TimeLaplaceSpatialFourierTarget d n)
+    (hΨ : Ψ ∈ section43TimeLaplaceSpatialFourierTarget d n) :
+    Φ + Ψ ∈ section43TimeLaplaceSpatialFourierTarget d n := by
+  rcases hΦ with ⟨G, Φrep, hGrep, hΦq⟩
+  rcases hΨ with ⟨H, Ψrep, hHrep, hΨq⟩
+  refine ⟨G + H, Φrep + Ψrep,
+    section43TimeLaplaceSpatialFourierRepresentative_add d n hGrep hHrep, ?_⟩
+  let Q := section43PositiveEnergyQuotientMap (d := d) n
+  change Q (Φ + Ψ) = Q (Φrep + Ψrep)
+  calc
+    Q (Φ + Ψ) = Q Φ + Q Ψ := Q.map_add Φ Ψ
+    _ = Q Φrep + Q Ψrep := by rw [hΦq, hΨq]
+    _ = Q (Φrep + Ψrep) := (Q.map_add Φrep Ψrep).symm
+
+/-- The representative target is closed under scalar multiplication. -/
+theorem section43TimeLaplaceSpatialFourierTarget_smul
+    (d n : ℕ) [NeZero d]
+    (c : ℂ)
+    {Φ : SchwartzNPoint d n}
+    (hΦ : Φ ∈ section43TimeLaplaceSpatialFourierTarget d n) :
+    c • Φ ∈ section43TimeLaplaceSpatialFourierTarget d n := by
+  rcases hΦ with ⟨G, Φrep, hGrep, hΦq⟩
+  refine ⟨c • G, c • Φrep,
+    section43TimeLaplaceSpatialFourierRepresentative_smul d n c hGrep, ?_⟩
+  let Q := section43PositiveEnergyQuotientMap (d := d) n
+  change Q (c • Φ) = Q (c • Φrep)
+  calc
+    Q (c • Φ) = c • Q Φ := Q.map_smul c Φ
+    _ = c • Q Φrep := by rw [hΦq]
+    _ = Q (c • Φrep) := (Q.map_smul c Φrep).symm
 
 /-- If two time factors agree in the finite-time positive quotient, then their
 transported time/spatial tensors agree in the Section 4.3 positive-energy
@@ -855,5 +1221,79 @@ theorem section43NPointTimeSpatialTensor_mem_timeLaplaceSpatialFourierTarget
       section43NPointTimeSpatialTensor_positiveEnergyQuotient_eq_of_timeQuotient_eq
         d n (SchwartzMap.fourierTransformCLM ℂ κ.1)
         (hg.symm.trans hcompact)
+
+/-- The dense restricted generator span is contained in the compact
+time-Laplace / spatial-Fourier representative target. -/
+theorem section43NPointTimeSpatialTensor_span_le_timeLaplaceSpatialFourierTarget
+    (d n : ℕ) [NeZero d] :
+    ((Submodule.span ℂ
+      {F : SchwartzNPoint d n |
+        ∃ φ : SchwartzMap (Fin n → ℝ) ℂ,
+        φ ∈
+          ((section43TimePositiveQuotientMap n) ⁻¹'
+            Set.range (section43IteratedLaplaceCompactTransform n)) ∧
+        ∃ χ : SchwartzMap (Section43SpatialSpace d n) ℂ,
+        χ ∈ section43SpatialFourierCompactRange d n ∧
+          F = section43NPointTimeSpatialTensor d n φ χ}) :
+      Set (SchwartzNPoint d n)) ⊆
+      section43TimeLaplaceSpatialFourierTarget d n := by
+  let S : Set (SchwartzNPoint d n) :=
+    {F : SchwartzNPoint d n |
+      ∃ φ : SchwartzMap (Fin n → ℝ) ℂ,
+      φ ∈
+        ((section43TimePositiveQuotientMap n) ⁻¹'
+          Set.range (section43IteratedLaplaceCompactTransform n)) ∧
+      ∃ χ : SchwartzMap (Section43SpatialSpace d n) ℂ,
+      χ ∈ section43SpatialFourierCompactRange d n ∧
+        F = section43NPointTimeSpatialTensor d n φ χ}
+  intro F hF
+  change F ∈ Submodule.span ℂ S at hF
+  refine Submodule.span_induction ?_ ?_ ?_ ?_ hF
+  · intro G hG
+    rcases hG with ⟨φ, hφ, χ, hχ, rfl⟩
+    simpa [section43TimeLaplaceSpatialFourierTarget] using
+      section43NPointTimeSpatialTensor_mem_timeLaplaceSpatialFourierTarget
+        d n φ χ hφ hχ
+  · exact section43TimeLaplaceSpatialFourierTarget_zero d n
+  · intro G H _ _ hG hH
+    exact section43TimeLaplaceSpatialFourierTarget_add d n hG hH
+  · intro c G _ hG
+    exact section43TimeLaplaceSpatialFourierTarget_smul d n c hG
+
+/-- Compact strict-positive time/spatial sources give a dense set of
+positive-energy quotient representatives. -/
+theorem dense_section43TimeLaplaceSpatialFourier_compact_preimage
+    (d n : ℕ) [NeZero d] :
+    Dense
+      {Φ : SchwartzNPoint d n |
+        ∃ (G : Section43CompactStrictPositiveTimeSpatialSource d n)
+          (Ψ : SchwartzNPoint d n),
+          section43TimeLaplaceSpatialFourierRepresentative d n G Ψ ∧
+          section43PositiveEnergyQuotientMap (d := d) n Φ =
+            section43PositiveEnergyQuotientMap (d := d) n Ψ} := by
+  let S : Set (SchwartzNPoint d n) :=
+    {F : SchwartzNPoint d n |
+      ∃ φ : SchwartzMap (Fin n → ℝ) ℂ,
+      φ ∈
+        ((section43TimePositiveQuotientMap n) ⁻¹'
+          Set.range (section43IteratedLaplaceCompactTransform n)) ∧
+      ∃ χ : SchwartzMap (Section43SpatialSpace d n) ℂ,
+      χ ∈ section43SpatialFourierCompactRange d n ∧
+        F = section43NPointTimeSpatialTensor d n φ χ}
+  let M : Submodule ℂ (SchwartzNPoint d n) := Submodule.span ℂ S
+  have hM_dense : Dense (M : Set (SchwartzNPoint d n)) := by
+    simpa [M, S] using
+      dense_section43NPointTimeSpatialTensor_span_compactLaplace_spatialFourier
+        d n
+  have hM_le :
+      (M : Set (SchwartzNPoint d n)) ⊆
+        section43TimeLaplaceSpatialFourierTarget d n := by
+    simpa [M, S] using
+      section43NPointTimeSpatialTensor_span_le_timeLaplaceSpatialFourierTarget
+        d n
+  have htarget_dense :
+      Dense (section43TimeLaplaceSpatialFourierTarget d n) :=
+    Dense.mono hM_le hM_dense
+  simpa [section43TimeLaplaceSpatialFourierTarget] using htarget_dense
 
 end OSReconstruction

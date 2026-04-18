@@ -3111,13 +3111,93 @@ Proof:
    section43NPointTimeSpatialTensor_positiveEnergyQuotient_eq_of_timeQuotient_eq
    section43NPointTimeSpatialTensor_mem_timeLaplaceSpatialFourierTarget
    ```
-   Linear-closure packet needed next:
+   Linear-closure packet needed next.  This is the finite-span bridge from the
+   compiled generator containment theorem to the dense restricted span theorem.
    1. Give `Section43CompactStrictPositiveTimeSpatialSource d n` the same
       `Zero`, `Add`, `SMul ℂ`, `AddCommMonoid`, and `Module ℂ` structure as
       `Section43CompactStrictPositiveTimeSource n`, using `f` as the injective
       carrier map.  The support proofs are exactly:
       `tsupport_add`, `tsupport_smul_subset_right`, `HasCompactSupport.add`,
       and `HasCompactSupport.smul_left`.
+      The implementation should be a direct copy of the existing namespace:
+      ```lean
+      namespace Section43CompactStrictPositiveTimeSpatialSource
+
+      private theorem ext_f
+          {G H : Section43CompactStrictPositiveTimeSpatialSource d n}
+          (hf : G.f = H.f) : G = H := by
+        cases G
+        cases H
+        simp at hf
+        subst hf
+        rfl
+
+      private theorem f_injective (d n : ℕ) [NeZero d] :
+          Function.Injective
+            (fun G : Section43CompactStrictPositiveTimeSpatialSource d n => G.f) := by
+        intro G H hf
+        exact ext_f hf
+
+      instance (d n : ℕ) [NeZero d] :
+          Zero (Section43CompactStrictPositiveTimeSpatialSource d n) := ...
+      instance (d n : ℕ) [NeZero d] :
+          Add (Section43CompactStrictPositiveTimeSpatialSource d n) := ...
+      instance (d n : ℕ) [NeZero d] :
+          SMul ℕ (Section43CompactStrictPositiveTimeSpatialSource d n) := ...
+      instance (d n : ℕ) [NeZero d] :
+          AddCommMonoid (Section43CompactStrictPositiveTimeSpatialSource d n) :=
+        Function.Injective.addCommMonoid
+          (fun G : Section43CompactStrictPositiveTimeSpatialSource d n => G.f)
+          (f_injective d n) rfl
+          (by intro G H; rfl)
+          (by
+            intro G m
+            change (m : ℂ) • G.f = m • G.f
+            rw [Nat.cast_smul_eq_nsmul ℂ])
+      instance (d n : ℕ) [NeZero d] :
+          SMul ℂ (Section43CompactStrictPositiveTimeSpatialSource d n) := ...
+
+      private def fAddMonoidHom (d n : ℕ) [NeZero d] :
+          Section43CompactStrictPositiveTimeSpatialSource d n →+
+            SchwartzNPoint d n where
+        toFun := fun G => G.f
+        map_zero' := rfl
+        map_add' := by intro G H; rfl
+
+      instance (d n : ℕ) [NeZero d] :
+          Module ℂ (Section43CompactStrictPositiveTimeSpatialSource d n) :=
+        Function.Injective.module ℂ (fAddMonoidHom d n)
+          (by
+            intro G H hf
+            exact (f_injective d n) hf)
+          (by intro c G; rfl)
+
+      end Section43CompactStrictPositiveTimeSpatialSource
+      ```
+      The `Zero`, `Add`, and scalar cases are literally:
+      ```lean
+      positive := by
+        intro q hq
+        simp at hq
+
+      positive := by
+        intro q hq
+        have hq' :=
+          tsupport_add (G.f : NPointDomain d n → ℂ)
+            (H.f : NPointDomain d n → ℂ) hq
+        exact hq'.elim (fun hG => G.positive hG) (fun hH => H.positive hH)
+
+      positive := by
+        exact
+          (tsupport_smul_subset_right
+            (fun _ : NPointDomain d n => c)
+            (G.f : NPointDomain d n → ℂ)).trans G.positive
+      compact := by
+        simpa using
+          (HasCompactSupport.smul_left
+            (f := fun _ : NPointDomain d n => c)
+            (f' := (G.f : NPointDomain d n → ℂ)) G.compact)
+      ```
    2. Prove strict support implies closed positive-energy support:
       ```lean
       theorem section43TimeSpatialSource_tsupport_subset_positiveEnergy
@@ -3149,6 +3229,56 @@ Proof:
       with `section43TimeSpatialSource_tsupport_subset_positiveEnergy G`.
       The base integrability is `integrable_partialFourierSpatial_timeSlice`;
       on nonnegative `τ`, use `norm_exp_neg_section43_timePair_le_one`.
+      The Lean skeleton is:
+      ```lean
+      let F : (Fin n → ℝ) → ℂ := fun τ =>
+        partialFourierSpatial_fun
+          (d := d) (n := n) G.f
+          (τ, section43QSpatial (d := d) (n := n) q)
+      let E : (Fin n → ℝ) → ℂ := fun τ =>
+        Complex.exp
+          (-(∑ k : Fin n,
+            (τ k : ℂ) * (section43QTime (d := d) (n := n) q k : ℂ)))
+      have hF_int : Integrable F (volume : Measure (Fin n → ℝ)) := by
+        simpa [F] using
+          integrable_partialFourierSpatial_timeSlice
+            (d := d) (n := n) G.f
+            (section43QSpatial (d := d) (n := n) q)
+      have hEF_meas : AEStronglyMeasurable
+          (fun τ : Fin n → ℝ => E τ * F τ)
+          (volume : Measure (Fin n → ℝ)) := by
+        have hE_cont : Continuous E := by
+          fun_prop
+        exact hE_cont.aestronglyMeasurable.mul hF_int.aestronglyMeasurable
+      have hbound : ∀ᵐ τ : Fin n → ℝ ∂(volume : Measure (Fin n → ℝ)),
+          ‖E τ * F τ‖ ≤ ‖F τ‖ := by
+        refine Filter.Eventually.of_forall ?_
+        intro τ
+        by_cases hneg : ∃ i : Fin n, τ i < 0
+        · rcases hneg with ⟨i, hi⟩
+          have hF_zero : F τ = 0 := by
+            simpa [F, Function.update_eq_self] using
+              section43PartialFourierSpatial_fun_eq_zero_of_neg_time_of_support_positiveEnergy
+                (d := d) (n := n) G.f
+                (section43TimeSpatialSource_tsupport_subset_positiveEnergy
+                  (d := d) (n := n) G)
+                i τ (section43QSpatial (d := d) (n := n) q)
+                (s := τ i) hi
+          simp [hF_zero]
+        · have hτ_nonneg : ∀ i : Fin n, 0 ≤ τ i := by
+            intro i
+            exact le_of_not_gt fun hi => hneg ⟨i, hi⟩
+          have hE_le : ‖E τ‖ ≤ 1 := by
+            simpa [E] using
+              norm_exp_neg_section43_timePair_le_one
+                (d := d) (n := n) q τ hq hτ_nonneg
+          calc
+            ‖E τ * F τ‖ = ‖E τ‖ * ‖F τ‖ := norm_mul _ _
+            _ ≤ 1 * ‖F τ‖ :=
+              mul_le_mul_of_nonneg_right hE_le (norm_nonneg _)
+            _ = ‖F τ‖ := one_mul _
+      simpa [F, E] using hF_int.mono hEF_meas hbound
+      ```
    4. Prove representative linearity:
       ```lean
       theorem section43TimeLaplaceSpatialFourierRepresentative_add
@@ -3169,7 +3299,118 @@ Proof:
       `MeasureTheory.integral_add`, and `partialFourierSpatial_fun_add`.
       For scalar multiplication, use `MeasureTheory.integral_const_mul` and
       `partialFourierSpatial_fun_smul`.
-7. Conclude density by `Dense.mono` from the dense restricted span.
+      Avoid brittle rewriting by naming the exponential and Fourier factors:
+      ```lean
+      intro q hq
+      let E : (Fin n → ℝ) → ℂ := fun τ => ...
+      let FG : (Fin n → ℝ) → ℂ := fun τ =>
+        partialFourierSpatial_fun (d := d) (n := n) G.f
+          (τ, section43QSpatial (d := d) (n := n) q)
+      let FH : (Fin n → ℝ) → ℂ := fun τ =>
+        partialFourierSpatial_fun (d := d) (n := n) H.f
+          (τ, section43QSpatial (d := d) (n := n) q)
+      have hGint := integrable_section43TimeLaplaceSpatialFourier_timeIntegrand
+        (d := d) (n := n) G q hq
+      have hHint := integrable_section43TimeLaplaceSpatialFourier_timeIntegrand
+        (d := d) (n := n) H q hq
+      calc
+        (Φ + Ψ) q = Φ q + Ψ q := rfl
+        _ =
+            (∫ τ : Fin n → ℝ, E τ * FG τ) +
+            (∫ τ : Fin n → ℝ, E τ * FH τ) := by
+              rw [hΦ q hq, hΨ q hq]
+        _ = ∫ τ : Fin n → ℝ, E τ * FG τ + E τ * FH τ := by
+              exact (MeasureTheory.integral_add
+                (by simpa [E, FG] using hGint)
+                (by simpa [E, FH] using hHint)).symm
+        _ = ∫ τ : Fin n → ℝ, E τ *
+              partialFourierSpatial_fun (d := d) (n := n) (G + H).f
+                (τ, section43QSpatial (d := d) (n := n) q) := by
+              congr with τ
+              change E τ * FG τ + E τ * FH τ =
+                E τ * partialFourierSpatial_fun
+                  (d := d) (n := n) (G.f + H.f)
+                  (τ, section43QSpatial (d := d) (n := n) q)
+              rw [partialFourierSpatial_fun_add]
+              change E τ * FG τ + E τ * FH τ = E τ * (FG τ + FH τ)
+              ring
+      ```
+      Scalar multiplication is the same pattern:
+      ```lean
+      intro q hq
+      let E : (Fin n → ℝ) → ℂ := fun τ => ...
+      let FG : (Fin n → ℝ) → ℂ := fun τ =>
+        partialFourierSpatial_fun (d := d) (n := n) G.f
+          (τ, section43QSpatial (d := d) (n := n) q)
+      have hGint := integrable_section43TimeLaplaceSpatialFourier_timeIntegrand
+        (d := d) (n := n) G q hq
+      calc
+        (c • Φ) q = c * Φ q := by simp [smul_eq_mul]
+        _ = c * ∫ τ : Fin n → ℝ, E τ * FG τ := by
+              rw [hΦ q hq]
+        _ = ∫ τ : Fin n → ℝ, c * (E τ * FG τ) := by
+              exact (MeasureTheory.integral_const_mul c
+                (fun τ : Fin n → ℝ => E τ * FG τ)).symm
+        _ = ∫ τ : Fin n → ℝ, E τ *
+              partialFourierSpatial_fun (d := d) (n := n) (c • G).f
+                (τ, section43QSpatial (d := d) (n := n) q) := by
+              congr with τ
+              change c * (E τ * FG τ) =
+                E τ * partialFourierSpatial_fun
+                  (d := d) (n := n) (c • G.f)
+                  (τ, section43QSpatial (d := d) (n := n) q)
+              rw [partialFourierSpatial_fun_smul]
+              change c * (E τ * FG τ) = E τ * (c * FG τ)
+              ring
+      ```
+      The explicit `change` lines are important: they expose `(G + H).f` and
+      `(c • G).f` as `G.f + H.f` and `c • G.f` before applying the
+      partial-Fourier linearity lemmas.
+   5. Define the representative target set and prove finite-span containment:
+      ```lean
+      def section43TimeLaplaceSpatialFourierTarget
+          (d n : ℕ) [NeZero d] : Set (SchwartzNPoint d n) :=
+        {Φ |
+          ∃ (G : Section43CompactStrictPositiveTimeSpatialSource d n)
+            (Ψ : SchwartzNPoint d n),
+            section43TimeLaplaceSpatialFourierRepresentative d n G Ψ ∧
+            section43PositiveEnergyQuotientMap (d := d) n Φ =
+              section43PositiveEnergyQuotientMap (d := d) n Ψ}
+
+      theorem section43TimeLaplaceSpatialFourierTarget_add
+          {Φ Ψ : SchwartzNPoint d n}
+          (hΦ : Φ ∈ section43TimeLaplaceSpatialFourierTarget d n)
+          (hΨ : Ψ ∈ section43TimeLaplaceSpatialFourierTarget d n) :
+          Φ + Ψ ∈ section43TimeLaplaceSpatialFourierTarget d n
+
+      theorem section43TimeLaplaceSpatialFourierTarget_smul
+          (c : ℂ) {Φ : SchwartzNPoint d n}
+          (hΦ : Φ ∈ section43TimeLaplaceSpatialFourierTarget d n) :
+          c • Φ ∈ section43TimeLaplaceSpatialFourierTarget d n
+      ```
+      In the quotient equalities, use `map_add` and `map_smul` for
+      `section43PositiveEnergyQuotientMap`, then the representative add/smul
+      theorem for the witnesses.  With these two closure lemmas, prove
+      `Submodule.span ℂ restrictedGenerators ⊆ section43TimeLaplaceSpatialFourierTarget d n`
+      by `Submodule.span_induction`, using the compiled generator containment
+      theorem as the base case.
+   Production update, 2026-04-18: the full linear-closure and dense-target
+   packet is compiled in `Section43FourierLaplaceSpatialDensity.lean`:
+   ```lean
+   section43TimeSpatialSource_tsupport_subset_positiveEnergy
+   integrable_section43TimeLaplaceSpatialFourier_timeIntegrand
+   section43TimeLaplaceSpatialFourierRepresentative_add
+   section43TimeLaplaceSpatialFourierRepresentative_smul
+   section43TimeLaplaceSpatialFourierTarget
+   section43TimeLaplaceSpatialFourierTarget_zero
+   section43TimeLaplaceSpatialFourierTarget_add
+   section43TimeLaplaceSpatialFourierTarget_smul
+   section43NPointTimeSpatialTensor_span_le_timeLaplaceSpatialFourierTarget
+   dense_section43TimeLaplaceSpatialFourier_compact_preimage
+   ```
+6. Conclude density by `Dense.mono` from the dense restricted span.  This is
+   now the compiled theorem
+   `dense_section43TimeLaplaceSpatialFourier_compact_preimage`.
 
 The `n = 0` case must be kept explicit in implementation.  Then
 `Fin n → ℝ` and `Section43SpatialSpace d n` are singleton/zero-dimensional
