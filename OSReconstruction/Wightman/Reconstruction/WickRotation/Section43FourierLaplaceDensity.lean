@@ -41,6 +41,83 @@ noncomputable def section43OneSidedLaplaceRaw
     (g : Section43CompactPositiveTimeSource1D) (σ : ℝ) : ℂ :=
   ∫ t : ℝ, Complex.exp (-(t : ℂ) * (σ : ℂ)) * g.f t
 
+/-- The candidate for the `r`-th real derivative of the compact one-sided
+Laplace transform.  Compact source support makes this integral meaningful for
+every real `σ`, including the cutoff transition strip. -/
+noncomputable def section43OneSidedLaplaceRawDerivCandidate
+    (g : Section43CompactPositiveTimeSource1D) (r : ℕ) (σ : ℝ) : ℂ :=
+  ∫ t : ℝ,
+    ((-t : ℂ) ^ r *
+      Complex.exp (-(t : ℂ) * (σ : ℂ))) * g.f t
+
+@[simp] theorem section43OneSidedLaplaceRawDerivCandidate_zero
+    (g : Section43CompactPositiveTimeSource1D) (σ : ℝ) :
+    section43OneSidedLaplaceRawDerivCandidate g 0 σ =
+      section43OneSidedLaplaceRaw g σ := by
+  unfold section43OneSidedLaplaceRawDerivCandidate section43OneSidedLaplaceRaw
+  simp
+
+theorem section43OneSidedLaplaceRawDerivCandidate_integrable
+    (g : Section43CompactPositiveTimeSource1D) (r : ℕ) (σ : ℝ) :
+    Integrable
+      (fun t : ℝ =>
+        ((-t : ℂ) ^ r *
+          Complex.exp (-(t : ℂ) * (σ : ℂ))) * g.f t) := by
+  have hcont :
+      Continuous
+        (fun t : ℝ =>
+          ((-t : ℂ) ^ r *
+            Complex.exp (-(t : ℂ) * (σ : ℂ))) * g.f t) := by
+    have h :
+        Continuous
+          (((fun t : ℝ => (-t : ℂ) ^ r) *
+              (fun t : ℝ =>
+                Complex.exp (-(t : ℂ) * (σ : ℂ)))) *
+            (g.f : ℝ → ℂ)) := by
+      exact (((Complex.continuous_ofReal.comp continuous_id).neg.pow r).mul
+        (Complex.continuous_exp.comp
+          ((Complex.continuous_ofReal.comp continuous_id).neg.mul
+            (continuous_const : Continuous (fun _ : ℝ => (σ : ℂ)))))).mul
+        g.f.continuous
+    simpa [Pi.mul_apply] using h
+  have hcomp :
+      HasCompactSupport
+        (fun t : ℝ =>
+          ((-t : ℂ) ^ r *
+            Complex.exp (-(t : ℂ) * (σ : ℂ))) * g.f t) := by
+    simpa [Pi.mul_apply] using
+      (HasCompactSupport.mul_left
+        (f := fun t : ℝ =>
+          (-t : ℂ) ^ r * Complex.exp (-(t : ℂ) * (σ : ℂ)))
+        (f' := (g.f : ℝ → ℂ)) g.compact)
+  exact hcont.integrable_of_hasCompactSupport hcomp
+
+theorem section43OneSidedLaplaceRawDerivKernel_hasDerivAt
+    (g : Section43CompactPositiveTimeSource1D) (r : ℕ) (t σ : ℝ) :
+    HasDerivAt
+      (fun σ : ℝ =>
+        ((-t : ℂ) ^ r *
+          Complex.exp (-(t : ℂ) * (σ : ℂ))) * g.f t)
+      (((-t : ℂ) ^ (r + 1) *
+        Complex.exp (-(t : ℂ) * (σ : ℂ))) * g.f t)
+      σ := by
+  have hexp :
+      HasDerivAt
+        (fun σ : ℝ => Complex.exp (-(t : ℂ) * (σ : ℂ)))
+        (-(t : ℂ) * Complex.exp (-(t : ℂ) * (σ : ℂ))) σ := by
+    have hlin :
+        HasDerivAt (fun σ : ℝ => -(t : ℂ) * (σ : ℂ)) (-(t : ℂ)) σ := by
+      have hmul :
+          HasDerivAt (fun σ : ℝ => (t : ℂ) * (σ : ℂ)) (t : ℂ) σ := by
+        simpa using
+          ((hasDerivAt_const (x := σ) (c := (t : ℂ))).mul
+            (Complex.ofRealCLM.hasDerivAt (x := σ)))
+      simpa [neg_mul] using hmul.neg
+    simpa [mul_comm, mul_left_comm, mul_assoc] using hlin.cexp
+  have h := (hexp.const_mul ((-t : ℂ) ^ r)).mul_const (g.f t)
+  convert h using 1
+  ring
+
 theorem Section43CompactPositiveTimeSource1D.tsupport_subset_Ici
     (g : Section43CompactPositiveTimeSource1D) :
     tsupport (g.f : ℝ → ℂ) ⊆ Set.Ici (0 : ℝ) := by
@@ -179,6 +256,181 @@ theorem exists_positive_Icc_bounds_of_compactPositiveTimeSource
       (g := g.f) hδ_supp g.compact with
     ⟨R, hδR, hR⟩
   exact ⟨δ, R, hδ_pos, hδR, hR⟩
+
+theorem section43OneSidedLaplaceRawDerivCandidate_hasDerivAt
+    (g : Section43CompactPositiveTimeSource1D) (r : ℕ) (σ₀ : ℝ) :
+    HasDerivAt
+      (section43OneSidedLaplaceRawDerivCandidate g r)
+      (section43OneSidedLaplaceRawDerivCandidate g (r + 1) σ₀)
+      σ₀ := by
+  classical
+  rcases exists_positive_Icc_bounds_of_compactPositiveTimeSource g with
+    ⟨δ, R, hδ_pos, hδR, hsupp⟩
+  let B : ℝ :=
+    (max |δ| |R|) ^ (r + 1) * Real.exp (R * (|σ₀| + 1))
+  let bound : ℝ → ℝ := fun t => B * ‖g.f t‖
+  have hR_pos : 0 < R := lt_of_lt_of_le hδ_pos hδR
+  have hs : Metric.closedBall σ₀ (1 : ℝ) ∈ 𝓝 σ₀ :=
+    Metric.closedBall_mem_nhds σ₀ zero_lt_one
+  have hF_meas :
+      ∀ᶠ σ : ℝ in 𝓝 σ₀,
+        AEStronglyMeasurable
+          (fun t : ℝ =>
+            ((-t : ℂ) ^ r *
+              Complex.exp (-(t : ℂ) * (σ : ℂ))) * g.f t)
+          (volume : Measure ℝ) := by
+    filter_upwards with σ
+    exact (section43OneSidedLaplaceRawDerivCandidate_integrable g r σ).aestronglyMeasurable
+  have hF_int :
+      Integrable
+        (fun t : ℝ =>
+          ((-t : ℂ) ^ r *
+            Complex.exp (-(t : ℂ) * (σ₀ : ℂ))) * g.f t) :=
+    section43OneSidedLaplaceRawDerivCandidate_integrable g r σ₀
+  have hF'_meas :
+      AEStronglyMeasurable
+        (fun t : ℝ =>
+          ((-t : ℂ) ^ (r + 1) *
+            Complex.exp (-(t : ℂ) * (σ₀ : ℂ))) * g.f t)
+        (volume : Measure ℝ) :=
+    (section43OneSidedLaplaceRawDerivCandidate_integrable g (r + 1) σ₀).aestronglyMeasurable
+  have hbound_int : Integrable bound volume := by
+    dsimp [bound]
+    exact g.f.integrable.norm.const_mul B
+  have h_bound :
+      ∀ᵐ (t : ℝ) ∂(volume : Measure ℝ), ∀ σ ∈ Metric.closedBall σ₀ (1 : ℝ),
+        ‖((-t : ℂ) ^ (r + 1) *
+            Complex.exp (-(t : ℂ) * (σ : ℂ))) * g.f t‖ ≤ bound t := by
+    filter_upwards with t σ hσ
+    by_cases htzero : g.f t = 0
+    · simp [bound, htzero]
+    · have ht_supp : t ∈ tsupport (g.f : ℝ → ℂ) :=
+        subset_tsupport _ htzero
+      have htIcc : t ∈ Set.Icc δ R := hsupp ht_supp
+      have htδ : δ ≤ t := htIcc.1
+      have htR : t ≤ R := htIcc.2
+      have ht_nonneg : 0 ≤ t := le_trans (le_of_lt hδ_pos) htδ
+      have hσ_dist : dist σ σ₀ ≤ (1 : ℝ) := by
+        simpa [Metric.mem_closedBall] using hσ
+      have hσ_abs : |σ| ≤ |σ₀| + 1 := by
+        have hsub : |σ - σ₀| ≤ (1 : ℝ) := by
+          simpa [Real.dist_eq] using hσ_dist
+        calc
+          |σ| = |(σ - σ₀) + σ₀| := by ring_nf
+          _ ≤ |σ - σ₀| + |σ₀| := abs_add_le _ _
+          _ ≤ |σ₀| + 1 := by linarith
+      have ht_abs_le : |t| ≤ max |δ| |R| := by
+        rw [abs_of_nonneg ht_nonneg]
+        exact htR.trans ((le_abs_self R).trans (le_max_right |δ| |R|))
+      have hexp_re :
+          (-(t : ℂ) * (σ : ℂ)).re ≤ R * (|σ₀| + 1) := by
+        have hre : (-(t : ℂ) * (σ : ℂ)).re = -(t * σ) := by
+          simp [Complex.mul_re]
+        rw [hre]
+        have h_abs_mul : |t * σ| ≤ R * (|σ₀| + 1) := by
+          calc
+            |t * σ| = |t| * |σ| := abs_mul t σ
+            _ ≤ R * (|σ₀| + 1) := by
+              rw [abs_of_nonneg ht_nonneg]
+              exact mul_le_mul htR hσ_abs (abs_nonneg σ) (le_of_lt hR_pos)
+        exact (neg_le_abs (t * σ)).trans h_abs_mul
+      calc
+        ‖((-t : ℂ) ^ (r + 1) *
+            Complex.exp (-(t : ℂ) * (σ : ℂ))) * g.f t‖
+            = ‖(-t : ℂ) ^ (r + 1)‖ *
+                ‖Complex.exp (-(t : ℂ) * (σ : ℂ))‖ * ‖g.f t‖ := by
+              rw [norm_mul, norm_mul]
+        _ = |t| ^ (r + 1) *
+                Real.exp ((-(t : ℂ) * (σ : ℂ)).re) * ‖g.f t‖ := by
+              rw [norm_pow, norm_neg, Complex.norm_real, Real.norm_eq_abs,
+                Complex.norm_exp]
+        _ ≤ (max |δ| |R|) ^ (r + 1) *
+                Real.exp (R * (|σ₀| + 1)) * ‖g.f t‖ := by
+              gcongr
+        _ = bound t := by
+              rfl
+  have h_diff :
+      ∀ᵐ (t : ℝ) ∂(volume : Measure ℝ), ∀ σ ∈ Metric.closedBall σ₀ (1 : ℝ),
+        HasDerivAt
+          (fun σ : ℝ =>
+            ((-t : ℂ) ^ r *
+              Complex.exp (-(t : ℂ) * (σ : ℂ))) * g.f t)
+          (((-t : ℂ) ^ (r + 1) *
+            Complex.exp (-(t : ℂ) * (σ : ℂ))) * g.f t)
+          σ := by
+    filter_upwards with t σ _hσ
+    exact section43OneSidedLaplaceRawDerivKernel_hasDerivAt g r t σ
+  have hmain :=
+    (hasDerivAt_integral_of_dominated_loc_of_deriv_le
+      (𝕜 := ℝ) (μ := volume)
+      (F := fun (σ : ℝ) (t : ℝ) =>
+        ((-t : ℂ) ^ r *
+          Complex.exp (-(t : ℂ) * (σ : ℂ))) * g.f t)
+      (F' := fun (σ : ℝ) (t : ℝ) =>
+        ((-t : ℂ) ^ (r + 1) *
+          Complex.exp (-(t : ℂ) * (σ : ℂ))) * g.f t)
+      (x₀ := σ₀) (s := Metric.closedBall σ₀ (1 : ℝ))
+      (bound := bound)
+      hs hF_meas hF_int hF'_meas h_bound hbound_int h_diff).2
+  change HasDerivAt
+    (fun σ : ℝ =>
+      ∫ t : ℝ,
+        ((-t : ℂ) ^ r *
+          Complex.exp (-(t : ℂ) * (σ : ℂ))) * g.f t)
+    (∫ t : ℝ,
+      ((-t : ℂ) ^ (r + 1) *
+        Complex.exp (-(t : ℂ) * (σ₀ : ℂ))) * g.f t)
+    σ₀
+  simpa [neg_mul, mul_assoc] using hmain
+
+theorem section43OneSidedLaplaceRaw_iteratedDeriv_formula
+    (g : Section43CompactPositiveTimeSource1D) (r : ℕ) (σ : ℝ) :
+    iteratedDeriv r (section43OneSidedLaplaceRaw g) σ =
+      section43OneSidedLaplaceRawDerivCandidate g r σ := by
+  revert σ
+  induction r with
+  | zero =>
+      intro σ
+      simp
+  | succ r ih =>
+      intro σ
+      rw [iteratedDeriv_succ]
+      have hfun :
+          iteratedDeriv r (section43OneSidedLaplaceRaw g) =
+            section43OneSidedLaplaceRawDerivCandidate g r := by
+        ext u
+        exact ih u
+      rw [hfun]
+      exact (section43OneSidedLaplaceRawDerivCandidate_hasDerivAt g r σ).deriv
+
+theorem section43OneSidedLaplaceRaw_contDiff
+    (g : Section43CompactPositiveTimeSource1D) :
+    ContDiff ℝ (↑(⊤ : ℕ∞)) (section43OneSidedLaplaceRaw g) := by
+  apply contDiff_of_differentiable_iteratedDeriv
+  intro r _hr
+  have hfun :
+      iteratedDeriv r (section43OneSidedLaplaceRaw g) =
+        section43OneSidedLaplaceRawDerivCandidate g r := by
+    ext σ
+    exact section43OneSidedLaplaceRaw_iteratedDeriv_formula g r σ
+  rw [hfun]
+  exact fun σ =>
+    (section43OneSidedLaplaceRawDerivCandidate_hasDerivAt g r σ).differentiableAt
+
+theorem section43OneSidedLaplaceRaw_iteratedFDeriv_formula
+    (g : Section43CompactPositiveTimeSource1D) (r : ℕ) (σ : ℝ) :
+    iteratedFDeriv ℝ r (section43OneSidedLaplaceRaw g) σ =
+      (ContinuousMultilinearMap.mkPiAlgebraFin ℝ r ℝ).smulRight
+        (section43OneSidedLaplaceRawDerivCandidate g r σ) := by
+  apply ContinuousMultilinearMap.ext
+  intro m
+  rw [iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod,
+    section43OneSidedLaplaceRaw_iteratedDeriv_formula]
+  change (∏ i, m i) • section43OneSidedLaplaceRawDerivCandidate g r σ =
+    ((ContinuousMultilinearMap.mkPiAlgebraFin ℝ r ℝ) m) •
+      section43OneSidedLaplaceRawDerivCandidate g r σ
+  rw [ContinuousMultilinearMap.mkPiAlgebraFin_apply]
+  rw [List.prod_ofFn]
 
 /-- Local name for Mathlib's inverse Fourier continuous linear map on
 one-dimensional Schwartz space. -/

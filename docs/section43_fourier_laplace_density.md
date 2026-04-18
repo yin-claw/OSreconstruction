@@ -261,7 +261,7 @@ theorem section43OneSidedLaplaceRaw_contDiff
 theorem section43OneSidedLaplaceRaw_iteratedFDeriv_formula
     (g : Section43CompactPositiveTimeSource1D) (r : ℕ) (σ : ℝ) :
     iteratedFDeriv ℝ r (section43OneSidedLaplaceRaw g) σ =
-      ContinuousMultilinearMap.mkPiAlgebraFin ℝ r ℂ
+      (ContinuousMultilinearMap.mkPiAlgebraFin ℝ r ℝ).smulRight
         (∫ t : ℝ,
           (-t : ℂ) ^ r *
             Complex.exp (-(t : ℂ) * (σ : ℂ)) * g.f t)
@@ -274,6 +274,187 @@ theorem section43OneSidedLaplaceRaw_rapid_on_Ici_neg_one
           ‖iteratedFDeriv ℝ r (section43OneSidedLaplaceRaw g) σ‖ ≤ C
 ```
 
+Lean-ready raw-Laplace calculus packet:
+
+Production status, 2026-04-17: this packet is compiled through Step 8 in
+`Section43FourierLaplaceDensity.lean`.  The remaining theorem from this group
+is the rapid estimate on `Set.Ici (-1)`.
+
+1. Add the genuine derivative-candidate integral, not as a wrapper but as the
+   object that appears after differentiating under the integral:
+
+```lean
+noncomputable def section43OneSidedLaplaceRawDerivCandidate
+    (g : Section43CompactPositiveTimeSource1D) (r : ℕ) (σ : ℝ) : ℂ :=
+  ∫ t : ℝ,
+    (-t : ℂ) ^ r *
+      Complex.exp (-(t : ℂ) * (σ : ℂ)) * g.f t
+```
+
+Then `section43OneSidedLaplaceRawDerivCandidate g 0 = section43OneSidedLaplaceRaw g`.
+
+2. Prove integrability of every derivative kernel for every real `σ`:
+
+```lean
+theorem section43OneSidedLaplaceRawDerivCandidate_integrable
+    (g : Section43CompactPositiveTimeSource1D) (r : ℕ) (σ : ℝ) :
+    Integrable
+      (fun t : ℝ =>
+        (-t : ℂ) ^ r *
+          Complex.exp (-(t : ℂ) * (σ : ℂ)) * g.f t)
+```
+
+Proof transcript:
+
+- The integrand is continuous as a product of the polynomial factor, the
+  complex exponential factor, and `g.f.continuous`.
+- Its compact support follows from `g.compact.mul_left`, because the first two
+  factors multiply `g.f` on the left.
+- Apply `Continuous.integrable_of_hasCompactSupport`.
+
+This lemma is intentionally stronger than the existing nonnegative-real-part
+integrability theorem: compact source support makes the kernel integrable for
+all real `σ`, including the transition strip `-1 ≤ σ ≤ 0` where the cutoff has
+nonzero derivatives.
+
+3. Prove the pointwise kernel derivative:
+
+```lean
+theorem section43OneSidedLaplaceRawDerivKernel_hasDerivAt
+    (g : Section43CompactPositiveTimeSource1D) (r : ℕ) (t σ : ℝ) :
+    HasDerivAt
+      (fun σ : ℝ =>
+        (-t : ℂ) ^ r *
+          Complex.exp (-(t : ℂ) * (σ : ℂ)) * g.f t)
+      ((-t : ℂ) ^ (r + 1) *
+        Complex.exp (-(t : ℂ) * (σ : ℂ)) * g.f t)
+      σ
+```
+
+Proof transcript:
+
+- First prove
+
+```lean
+HasDerivAt
+  (fun σ : ℝ => Complex.exp (-(t : ℂ) * (σ : ℂ)))
+  (-(t : ℂ) * Complex.exp (-(t : ℂ) * (σ : ℂ))) σ
+```
+
+  by differentiating `fun σ : ℝ => -((t : ℂ) * (σ : ℂ))`: prove the linear
+  derivative for `fun σ => (t : ℂ) * (σ : ℂ)` using
+  `(Complex.ofRealCLM.hasDerivAt (x := σ))`, negate it, then apply `.cexp`.
+- Multiply by the constants `(-t : ℂ)^r` and `g.f t`.
+- Finish by `ring` to identify
+  `(-t)^r * (-(t))` with `(-t)^(r+1)`.
+
+4. Prove the local domination needed by
+   `hasDerivAt_integral_of_dominated_loc_of_deriv_le`.
+
+For fixed `σ₀`, choose support bounds
+`0 < δ`, `δ ≤ R`, and `tsupport g.f ⊆ Set.Icc δ R`.  Let
+
+```lean
+Mσ := |σ₀| + 1
+B r σ₀ :=
+  (max |δ| |R|) ^ r * Real.exp (R * Mσ)
+```
+
+and use the real bound
+
+```lean
+bound t := B (r + 1) σ₀ * ‖g.f t‖
+```
+
+Then for all `σ ∈ Metric.closedBall σ₀ 1`,
+
+```lean
+‖(-t : ℂ) ^ (r + 1) *
+    Complex.exp (-(t : ℂ) * (σ : ℂ)) * g.f t‖ ≤ bound t.
+```
+
+Proof transcript:
+
+- If `g.f t = 0`, both sides reduce to `0 ≤ 0`.
+- If `g.f t ≠ 0`, then `t ∈ tsupport g.f`, hence `δ ≤ t ≤ R`.
+- Thus `0 ≤ t`, `|t| ≤ max |δ| |R|`, and
+  `‖(-t : ℂ)^(r+1)‖ ≤ (max |δ| |R|)^(r+1)`.
+- From `σ ∈ closedBall σ₀ 1`, get `|σ| ≤ |σ₀| + 1`.
+- Since `0 ≤ t ≤ R`,
+  `(-(t : ℂ) * (σ : ℂ)).re = -(t * σ) ≤ R * (|σ₀| + 1)`.
+- Therefore
+  `‖Complex.exp (-(t : ℂ) * (σ : ℂ))‖ ≤ Real.exp (R * (|σ₀| + 1))`
+  by `Complex.norm_exp` and `Real.exp_le_exp`.
+- `bound` is integrable because it is a constant multiple of
+  `g.f.integrable.norm`.
+
+5. Apply
+
+```lean
+hasDerivAt_integral_of_dominated_loc_of_deriv_le
+```
+
+with
+
+```lean
+F σ t :=
+  (-t : ℂ)^r * Complex.exp (-(t : ℂ) * (σ : ℂ)) * g.f t
+F' σ t :=
+  (-t : ℂ)^(r+1) * Complex.exp (-(t : ℂ) * (σ : ℂ)) * g.f t
+s := Metric.closedBall σ₀ 1
+bound := fun t => B (r + 1) σ₀ * ‖g.f t‖
+```
+
+This gives:
+
+```lean
+theorem section43OneSidedLaplaceRawDerivCandidate_hasDerivAt
+    (g : Section43CompactPositiveTimeSource1D) (r : ℕ) (σ : ℝ) :
+    HasDerivAt
+      (section43OneSidedLaplaceRawDerivCandidate g r)
+      (section43OneSidedLaplaceRawDerivCandidate g (r + 1) σ)
+      σ
+```
+
+6. Induct on `r` to identify ordinary iterated derivatives:
+
+```lean
+theorem section43OneSidedLaplaceRaw_iteratedDeriv_formula
+    (g : Section43CompactPositiveTimeSource1D) (r : ℕ) (σ : ℝ) :
+    iteratedDeriv r (section43OneSidedLaplaceRaw g) σ =
+      section43OneSidedLaplaceRawDerivCandidate g r σ
+```
+
+Use `iteratedDeriv_succ` and
+`section43OneSidedLaplaceRawDerivCandidate_hasDerivAt.deriv`.
+
+7. Smoothness follows by the same local pattern already used in
+   `section43ContDiff_partialFourierSpatial_timeSlice`:
+
+```lean
+apply contDiff_of_differentiable_iteratedDeriv
+intro r hr
+rw [section43OneSidedLaplaceRaw_iteratedDeriv_formula]
+exact fun σ =>
+  (section43OneSidedLaplaceRawDerivCandidate_hasDerivAt g r σ).differentiableAt
+```
+
+8. Convert to the Fréchet formula only after the ordinary derivative formula is
+   proved.  Use
+   `iteratedFDeriv_apply_eq_iteratedDeriv_mul_prod` to prove equality by
+   extensionality against `m : Fin r → ℝ`:
+
+```lean
+theorem section43OneSidedLaplaceRaw_iteratedFDeriv_formula
+    (g : Section43CompactPositiveTimeSource1D) (r : ℕ) (σ : ℝ) :
+    iteratedFDeriv ℝ r (section43OneSidedLaplaceRaw g) σ =
+      (ContinuousMultilinearMap.mkPiAlgebraFin ℝ r ℝ).smulRight
+        (section43OneSidedLaplaceRawDerivCandidate g r σ)
+```
+
+Both sides evaluate to `(∏ i, m i) •
+section43OneSidedLaplaceRawDerivCandidate g r σ`.
+
 For the rapid theorem, use
 `exists_positive_Icc_bounds_of_compactPositiveTimeSource` to choose
 `0 < δ ≤ R` and `tsupport g.f ⊆ Set.Icc δ R`.  Split `σ ∈ Set.Ici (-1)` into
@@ -281,6 +462,90 @@ For the rapid theorem, use
 use compact support.  On `[0,∞)`, use
 `Real.exp (-(δ * σ))` and the standard fact that exponential decay dominates
 all polynomial powers.
+
+Lean-ready rapid-bound transcript:
+
+1. Normalize the Fréchet derivative norm via the compiled formula:
+
+```lean
+rw [section43OneSidedLaplaceRaw_iteratedFDeriv_formula]
+rw [ContinuousMultilinearMap.norm_smulRight,
+  ContinuousMultilinearMap.norm_mkPiAlgebraFin]
+```
+
+This reduces the target to bounding
+`‖section43OneSidedLaplaceRawDerivCandidate g r σ‖`.
+
+2. Let
+
+```lean
+A r := (R ^ r) * ∫ t : ℝ, ‖g.f t‖
+```
+
+or, if Lean prefers avoiding positivity of the integral inline, use
+
+```lean
+A r := (max |δ| |R|) ^ r * ∫ t : ℝ, ‖g.f t‖
+```
+
+The integral is finite because `g.f.integrable.norm`.
+
+3. Prove the candidate integral bound by
+`norm_integral_le_integral_norm` and support splitting:
+
+```lean
+‖section43OneSidedLaplaceRawDerivCandidate g r σ‖
+  ≤ A r * Real.exp (R)
+```
+
+for `-1 ≤ σ ≤ 0`, and
+
+```lean
+‖section43OneSidedLaplaceRawDerivCandidate g r σ‖
+  ≤ A r * Real.exp (-(δ * σ))
+```
+
+for `0 ≤ σ`.
+
+Proof details:
+
+- If `g.f t = 0`, the integrand norm is zero.
+- If `g.f t ≠ 0`, then `δ ≤ t ≤ R`.
+- For `-1 ≤ σ ≤ 0`, use
+  `(-(t : ℂ) * (σ : ℂ)).re = -(t * σ) ≤ R` because
+  `t ≤ R` and `-σ ≤ 1`.
+- For `0 ≤ σ`, use
+  `-(t * σ) ≤ -(δ * σ)` because `δ ≤ t` and `0 ≤ σ`.
+
+4. The compact strip contribution is bounded by
+
+```lean
+Cstrip r s := 2 ^ s * A r * Real.exp R
+```
+
+because `σ ∈ [-1,0]` implies `‖σ‖ ≤ 1`, hence
+`(1 + ‖σ‖)^s ≤ 2^s`.
+
+5. The positive half-line contribution is bounded by applying
+`SCV.pow_mul_exp_neg_le_const hδ_pos s` to `ξ := 1 + σ`:
+
+```lean
+(1 + ‖σ‖)^s * Real.exp (-(δ * σ))
+  = Real.exp δ * ((1 + σ)^s * Real.exp (-(δ * (1 + σ))))
+  ≤ Real.exp δ * Cexp
+```
+
+for `0 ≤ σ`.  This avoids a separate binomial estimate for `(1 + σ)^s`.
+
+6. Take
+
+```lean
+C := max 0 (Cstrip r s + A r * Real.exp δ * Cexp)
+```
+
+or the sum of nonnegative factors if Lean already has the individual
+nonnegativity facts available.  Then dispatch the two cases `σ ≤ 0` and
+`0 ≤ σ`.
 
 Dense range theorem:
 
