@@ -64,7 +64,26 @@ actual hypotheses:
 - `ForwardTubeLorentz.lean :: isOpen_translatedPET`
 - `ForwardTubeLorentz.lean :: translatedPET_perm`
 - `ForwardTubeLorentz.lean :: translatedPET_perm_iff`
+- `ForwardTubeLorentz.lean :: translatedPET_value_eq_of_translation_invariant`
+- `ForwardTubeLorentz.lean :: translatedPETValue`
+- `ForwardTubeLorentz.lean :: translatedPETValue_eq_on_PET`
+- `ForwardTubeLorentz.lean :: translatedPETValue_translation_invariant`
+- `ForwardTubeLorentz.lean :: translatedPETValueTotal`
+- `ForwardTubeLorentz.lean :: translatedPETValueTotal_eq_on_PET`
+- `ForwardTubeLorentz.lean :: translatedPETValueTotal_translation_invariant`
 - `OSToWightmanBoundaryValuesBase.lean :: bvt_F_acrOne_package`
+- `OSToWightmanSelectedWitness.lean :: bvt_route1AbsolutePrePullback`
+- `OSToWightmanSelectedWitness.lean :: bvt_route1AbsolutePrePullback_translate`
+- `OSToWightmanSelectedWitness.lean :: bvt_route1AbsolutePrePullback_eq_bvt_F_on_forwardTube`
+- `OSToWightmanSelectedWitness.lean :: bvt_reducedWightmanFamily`
+- `OSToWightmanSelectedWitness.lean :: bvt_selectedReducedPreInput_factorization_absoluteApproach`
+- `OSToWightmanSelectedWitness.lean :: bvt_selectedReducedBoundaryIntegral_eq_absoluteBoundaryIntegral`
+- `OSToWightmanSelectedWitness.lean :: bvt_selectedReducedBoundaryValues`
+- `OSToWightmanSelectedWitness.lean :: bvt_selectedReducedForwardTubeInput`
+- `OSToWightmanSelectedWitness.lean :: bvt_selectedPETExtensionOfReducedData`
+- `OSToWightmanSelectedWitness.lean :: bvt_selectedPETExtensionOfReducedData_translate`
+- `OSToWightmanSelectedWitness.lean :: bvt_selectedPETExtensionOfReducedData_translate_on_PET`
+- `OSToWightmanSelectedWitness.lean :: bvt_selectedPETExtensionOfReducedData_eq_bvt_F_on_forwardTube`
 
 Important correction: the first four BHW/adjacency locality surfaces above
 currently take an input of the form
@@ -2953,8 +2972,336 @@ from `WightmanFunctions` to a non-circular selected OS input carrying
 `bvt_F_acrOne_package`, or prove the same comparison directly for
 `bvt_absoluteForwardTubeInput`.
 
+Implementation status after the generic `TranslatedPET` value API: the TPET
+witness-independence algebra is no longer a blocker.  The remaining
+implementation blocker is specifically the PET scalar `bvt_F_PETExtension`
+and its PET translation invariance:
+
+```lean
+-- the exact hard input now needed by `translatedPETValue`
+theorem bvt_F_PETExtension_translation_invariant_on_PET
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (c : Fin (d + 1) → ℂ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz : z ∈ PermutedExtendedTube d n)
+    (hzc : (fun k μ => z k μ + c μ) ∈ PermutedExtendedTube d n) :
+    bvt_F_PETExtension OS lgc n (fun k μ => z k μ + c μ) =
+      bvt_F_PETExtension OS lgc n z
+```
+
+The tempting shortcut is invalid:
+
+```lean
+-- forbidden/circular: constructs a full WightmanFunctions record in order to
+-- call `W_analytic_BHW` or `W_analytic_BHW_unique`
+let Wfn := os_to_wightman_full OS lgc
+```
+
+Reason: `os_to_wightman_full` contains the theorem-2 locality field being
+proved.  Likewise, the existing `BHWTranslation.lean::bhw_translation_invariant`
+is not a selected-OS theorem; its proof uses `W_analytic_BHW_unique`, whose BHW
+theorem input includes `Wfn.locally_commutative`.
+
+Therefore the next production theorem must have one of the following non-
+circular shapes.
+
+First possible route: generalize Route 1 away from `WightmanFunctions`.
+
+```lean
+-- Generic selected reduced/PET route.  The statement should not mention
+-- `WightmanFunctions`, and should consume an `AbsoluteForwardTubeInput` plus
+-- the reduced boundary/permutation edge data that replaces global locality.
+theorem selectedPETExtension_exists_of_absoluteInput
+    {Wabs : SchwartzNPoint d (m + 1) → ℂ}
+    (hAbs : BHW.AbsoluteForwardTubeInput (d := d) m Wabs)
+    (hEdge :
+      -- compact-test permutation/edge equality for the selected input,
+      -- strong enough to replace `IsLocallyCommutativeWeak`
+      BHW.SelectedPermutationEdgeData d m hAbs.toFun Wabs) :
+    ∃ Fpet : (Fin (m + 1) → Fin (d + 1) → ℂ) → ℂ,
+      DifferentiableOn ℂ Fpet (PermutedExtendedTube d (m + 1)) ∧
+      (∀ z ∈ ForwardTube d (m + 1), Fpet z = hAbs.toFun z) ∧
+      (∀ (z : Fin (m + 1) → Fin (d + 1) → ℂ)
+          (c : Fin (d + 1) → ℂ),
+        z ∈ PermutedExtendedTube d (m + 1) →
+        (fun k μ => z k μ + c μ) ∈ PermutedExtendedTube d (m + 1) →
+        Fpet (fun k μ => z k μ + c μ) = Fpet z)
+```
+
+This route should reuse the already checked algebra
+`BHW.reduced_pullback_translation_invariant`; its hard analytic input is the
+selected reduced BHW/PET existence and gluing theorem, not the TPET translation
+choice argument.
+
+Second possible route: prove only the selected translation-invariant PET scalar
+needed by theorem 2, postponing full PET permutation invariance.
+
+```lean
+theorem bvt_selectedPETTranslationScalar_exists
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (m : ℕ) :
+    ∃ Fpet : (Fin (m + 1) → Fin (d + 1) → ℂ) → ℂ,
+      DifferentiableOn ℂ Fpet (PermutedExtendedTube d (m + 1)) ∧
+      (∀ z ∈ ForwardTube d (m + 1), Fpet z = bvt_F OS lgc (m + 1) z) ∧
+      (∀ z ∈ BHW.ExtendedTube d (m + 1),
+        Fpet z = BHW.extendF (bvt_F OS lgc (m + 1)) z) ∧
+      (∀ (z : Fin (m + 1) → Fin (d + 1) → ℂ)
+          (c : Fin (d + 1) → ℂ),
+        z ∈ PermutedExtendedTube d (m + 1) →
+        (fun k μ => z k μ + c μ) ∈ PermutedExtendedTube d (m + 1) →
+        Fpet (fun k μ => z k μ + c μ) = Fpet z)
+```
+
+This narrower route is enough for `translatedPETValue` and the compact
+positive-time support argument.  It still must not be proved from global
+`IsLocallyCommutativeWeak d (bvt_W OS lgc)`.  Its proof should identify `Fpet`
+with the reduced pullback on PET and with raw `BHW.extendF` only on the ordinary
+ET branch, where raw `extendF` is meaningful.
+
+For both routes, the first Lean-ready preinput sublemmas are now implemented:
+
+```lean
+theorem bvt_route1AbsolutePrePullback_translate
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (m : ℕ)
+    (z : Fin (m + 1) → Fin (d + 1) → ℂ)
+    (c : Fin (d + 1) → ℂ) :
+    bvt_route1AbsolutePrePullback OS lgc m (fun k μ => z k μ + c μ) =
+      bvt_route1AbsolutePrePullback OS lgc m z
+
+theorem bvt_route1AbsolutePrePullback_eq_bvt_F_on_forwardTube
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (m : ℕ)
+    (z : Fin (m + 1) → Fin (d + 1) → ℂ)
+    (hz : z ∈ ForwardTube d (m + 1)) :
+    bvt_route1AbsolutePrePullback OS lgc m z =
+      bvt_F OS lgc (m + 1) z
+```
+
+These sublemmas are algebraic/reduced-coordinate and forward-tube comparison
+statements.  They isolate the selected translation-invariant preinput without
+mentioning PET gluing or locality.  They must not be mistaken for the selected
+PET extension: outside the forward tube, `bvt_route1AbsolutePrePullback`
+evaluates the original total forward-tube witness on a safe representative, and
+is not known to be holomorphic on ET/PET or to agree with raw `BHW.extendF`.
+
+The next hard theorem surface is therefore **not** the following overstrong
+statement about the pre-pullback:
+
+```lean
+-- do not try to prove this for the pre-pullback alone
+theorem bvt_route1AbsolutePrePullback_eq_extendF_on_ET
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (m : ℕ)
+    (z : Fin (m + 1) → Fin (d + 1) → ℂ)
+    (hz : z ∈ BHW.ExtendedTube d (m + 1)) :
+    bvt_route1AbsolutePrePullback OS lgc m z =
+      BHW.extendF (bvt_F OS lgc (m + 1)) z
+```
+
+That statement would require precisely the missing selected reduced BHW/PET
+extension.  The correct next production theorem should first construct a
+selected reduced BHW extension `Fred` from the selected OS input and selected
+edge/permutation data, then define the PET scalar as its absolute pullback:
+
+```lean
+noncomputable def bvt_selectedPETExtension
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (m : ℕ) :
+    (Fin (m + 1) → Fin (d + 1) → ℂ) → ℂ :=
+  BHW.pullbackReducedExtension
+    (bvt_selectedReducedBHWExtension OS lgc m)
+
+theorem bvt_selectedPETExtension_translate
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (m : ℕ)
+    (z : Fin (m + 1) → Fin (d + 1) → ℂ)
+    (c : Fin (d + 1) → ℂ) :
+    bvt_selectedPETExtension OS lgc m (fun k μ => z k μ + c μ) =
+      bvt_selectedPETExtension OS lgc m z
+```
+
+The translation theorem is then immediate from
+`BHW.reduced_pullback_translation_invariant`.  The hard part is the existence
+and uniqueness/gluing theorem for `bvt_selectedReducedBHWExtension`, including
+agreement with the pre-pullback on `ReducedForwardTubeN` and agreement with raw
+`BHW.extendF (bvt_F OS lgc (m+1))` on the ordinary ET branch.  This is exactly
+where selected OS edge-distribution data replaces the forbidden global
+`Wfn.locally_commutative`.
+
+The implementation-ready part of this paragraph is now in production in its
+honest "given reduced data" form:
+
+```lean
+noncomputable def bvt_selectedPETExtensionOfReducedData
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (m : ℕ)
+    (Fred : BHW.ReducedBHWExtensionData (d := d) (n := m + 1)
+      (BHW.descendAbsoluteForwardTubeInput (d := d) (m := m)
+        (bvt_absoluteForwardTubeInput (d := d) OS lgc m)).toFun) :
+    (Fin (m + 1) → Fin (d + 1) → ℂ) → ℂ
+
+theorem bvt_selectedPETExtensionOfReducedData_translate_on_PET
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (m : ℕ)
+    (Fred : BHW.ReducedBHWExtensionData (d := d) (n := m + 1)
+      (BHW.descendAbsoluteForwardTubeInput (d := d) (m := m)
+        (bvt_absoluteForwardTubeInput (d := d) OS lgc m)).toFun)
+    (z : Fin (m + 1) → Fin (d + 1) → ℂ)
+    (c : Fin (d + 1) → ℂ)
+    (hz : z ∈ PermutedExtendedTube d (m + 1))
+    (hzc : (fun k μ => z k μ + c μ) ∈ PermutedExtendedTube d (m + 1)) :
+    bvt_selectedPETExtensionOfReducedData OS lgc m Fred
+        (fun k μ => z k μ + c μ) =
+      bvt_selectedPETExtensionOfReducedData OS lgc m Fred z
+
+theorem bvt_selectedPETExtensionOfReducedData_eq_bvt_F_on_forwardTube
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (m : ℕ)
+    (Fred : BHW.ReducedBHWExtensionData (d := d) (n := m + 1)
+      (BHW.descendAbsoluteForwardTubeInput (d := d) (m := m)
+        (bvt_absoluteForwardTubeInput (d := d) OS lgc m)).toFun)
+    (z : Fin (m + 1) → Fin (d + 1) → ℂ)
+    (hz : z ∈ ForwardTube d (m + 1)) :
+    bvt_selectedPETExtensionOfReducedData OS lgc m Fred z =
+      bvt_F OS lgc (m + 1) z
+```
+
+This closes the reduced-pullback algebra seam.  It deliberately does not
+construct `Fred`.  The next proof-doc item must therefore specify the exact
+non-circular construction of
+
+```lean
+Fred : BHW.ReducedBHWExtensionData (d := d) (n := m + 1)
+  (BHW.descendAbsoluteForwardTubeInput (d := d) (m := m)
+    (bvt_absoluteForwardTubeInput (d := d) OS lgc m)).toFun
+```
+
+from selected OS edge-distribution/permutation data.
+
+The reduced forward-tube input required by that theorem is no longer a gap.
+Production now constructs it directly from the selected OS witness:
+
+```lean
+noncomputable def bvt_reducedWightmanFamily
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (χ : BHW.NormalizedBasepointCutoff d) :
+    (m : ℕ) → SchwartzNPoint d m → ℂ
+
+theorem bvt_selectedReducedBoundaryValues
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (χ : BHW.NormalizedBasepointCutoff d)
+    (m : ℕ) :
+    BHW.HasReducedBoundaryValues (d := d)
+      (bvt_reducedWightmanFamily OS lgc χ) m
+      (BHW.descendAbsoluteForwardTubeInput (d := d) (m := m)
+        (bvt_absoluteForwardTubeInput (d := d) OS lgc m)).toFun
+
+noncomputable def bvt_selectedReducedForwardTubeInput
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (χ : BHW.NormalizedBasepointCutoff d)
+    (m : ℕ) :
+    BHW.ReducedForwardTubeInput (d := d)
+      (bvt_reducedWightmanFamily OS lgc χ) m
+```
+
+The proof is the exact reduced/absolute change-of-variables argument already
+used for the Route-1 spectrum-condition input, but specialized non-circularly
+to `bvt_F`/`bvt_W`: `bvt_selectedReducedPreInput_factorization_absoluteApproach`
+identifies the descended preinput with the absolute `bvt_F` approach point,
+`bvt_selectedReducedBoundaryIntegral_eq_absoluteBoundaryIntegral` integrates
+out the normalized basepoint cutoff, and `bvt_boundary_values` supplies the
+limit.  No PET gluing, `W_analytic_BHW_unique`, `os_to_wightman_full`, or
+locality input is used.
+
+Consequently the next hard theorem surface is now narrower:
+
+```lean
+structure SelectedAbsolutePermutationEdgeData
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) : Prop where
+  overlap_connected :
+    ∀ σ : Equiv.Perm (Fin n),
+      IsConnected
+        {z : Fin n → Fin (d + 1) → ℂ |
+          z ∈ BHW.ExtendedTube d n ∧
+            BHW.permAct (d := d) σ z ∈ BHW.ExtendedTube d n}
+  edge_witness :
+    ∀ σ : Equiv.Perm (Fin n),
+      ∃ V : Set (NPointDomain d n),
+        IsOpen V ∧ V.Nonempty ∧
+        (∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n) ∧
+        (∀ x ∈ V,
+          BHW.realEmbed (fun k => x (σ k)) ∈ BHW.ExtendedTube d n) ∧
+        (∀ φ : SchwartzNPoint d n,
+          HasCompactSupport (φ : NPointDomain d n → ℂ) →
+          tsupport (φ : NPointDomain d n → ℂ) ⊆ V →
+          ∫ x : NPointDomain d n,
+              BHW.extendF (bvt_F OS lgc n)
+                (BHW.realEmbed (fun k => x (σ k))) * φ x
+            =
+          ∫ x : NPointDomain d n,
+              BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x) * φ x)
+
+theorem bvt_selectedReducedBHWExtensionData_exists
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (χ : BHW.NormalizedBasepointCutoff d)
+    (m : ℕ)
+    (hEdge : SelectedAbsolutePermutationEdgeData OS lgc (m + 1)) :
+    ∃ Fred : BHW.ReducedBHWExtensionData (d := d) (n := m + 1)
+      (bvt_selectedReducedForwardTubeInput OS lgc χ m).toFun,
+      True
+```
+
+`SelectedAbsolutePermutationEdgeData` is not a global locality hypothesis.  Its
+`edge_witness` field is exactly the compact-test equality consumed by the
+checked theorem `BHW.extendF_perm_overlap_of_edgePairingEquality`; its
+`overlap_connected` field supplies that theorem's connected-domain
+propagation.  The remaining implementation work inside
+`bvt_selectedReducedBHWExtensionData_exists` is then:
+
+1. apply `BHW.extendF_perm_overlap_of_edgePairingEquality` for every `σ` to
+   obtain absolute branch equality on ET/permuted-ET overlaps;
+2. glue the ordinary `BHW.extendF (bvt_F OS lgc (m+1))` branches across the
+   finite permutation cover of `PermutedExtendedTube`;
+3. descend the glued absolute PET function through `BHW.reducedDiffMap` to the
+   image domain `BHW.ReducedPermutedExtendedTubeN d m`;
+4. prove the descended function is holomorphic, agrees with
+   `(bvt_selectedReducedForwardTubeInput OS lgc χ m).toFun` on
+   `BHW.ReducedForwardTubeN d m`, and has the reduced Lorentz/permutation
+   invariance fields required by `BHW.ReducedBHWExtensionData`;
+5. feed the resulting `Fred` to
+   `bvt_selectedPETExtensionOfReducedData`.
+
 Once PET value-invariance exists, define the selected translated-PET value
-without any arbitrary branch choice:
+without any arbitrary branch choice.  The purely geometric part of this step is
+now implemented in `ForwardTubeLorentz.lean`: for any scalar `F` on PET that is
+invariant under uniform complex translations between PET points,
+`translatedPETValue F z hz` evaluates `F` at a chosen PET witness for
+`z ∈ TranslatedPET`, and theorems
+`translatedPET_value_eq_of_translation_invariant`,
+`translatedPETValue_eq_on_PET`, and
+`translatedPETValue_translation_invariant` prove witness independence,
+agreement on PET, and TPET translation invariance.  The remaining theorem-2
+task is therefore not the TPET choice algebra; it is to construct the selected
+OS PET scalar `bvt_F_PETExtension` with the required PET translation
+invariance, non-circularly.
 
 ```lean
 theorem isOpen_translatedPET {d n : ℕ} [NeZero d] :
@@ -3003,7 +3350,7 @@ noncomputable def bvt_F_on_translatedPET
     (n : ℕ)
     (z : Fin n → Fin (d + 1) → ℂ)
     (hz : z ∈ TranslatedPET d n) : ℂ :=
-  bvt_F_PETExtension OS lgc n (fun k μ => z k μ + hz.choose μ)
+  translatedPETValue (bvt_F_PETExtension OS lgc n) z hz
 ```
 
 Then mirror the existing translated-PET API:
