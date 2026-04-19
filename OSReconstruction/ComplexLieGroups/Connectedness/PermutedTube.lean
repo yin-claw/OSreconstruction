@@ -227,4 +227,43 @@ theorem complexLorentzAction_mem_permutedExtendedTube
   refine Set.mem_iUnion.mpr ⟨π, Λ * Λ', w, hw, ?_⟩
   rw [hzw, complexLorentzAction_mul]
 
+/-- Membership in the permuted extended tube is equivalently membership in one
+permutation pullback of the ordinary extended tube.  This is the explicit
+branch-cover form used by later gluing arguments. -/
+theorem mem_permutedExtendedTube_iff_exists_perm_mem_extendedTube :
+    z ∈ PermutedExtendedTube d n ↔
+      ∃ π : Equiv.Perm (Fin n), (fun k => z (π k)) ∈ ExtendedTube d n := by
+  constructor
+  · intro hz
+    rcases Set.mem_iUnion.mp hz with ⟨π, Λ, w, hwπ, rfl⟩
+    refine ⟨π, ?_⟩
+    refine Set.mem_iUnion.mpr ⟨Λ, ?_⟩
+    refine ⟨fun k => w (π k), ?_, ?_⟩
+    · simpa [PermutedForwardTube] using hwπ
+    · ext k μ
+      simp [complexLorentzAction]
+  · rintro ⟨π, hπz⟩
+    rcases Set.mem_iUnion.mp hπz with ⟨Λ, w, hw, hπz_eq⟩
+    refine Set.mem_iUnion.mpr ⟨π, Λ, fun k => w (π.symm k), ?_, ?_⟩
+    · simpa [PermutedForwardTube] using hw
+    · ext k μ
+      have hcoord := congrFun (congrFun hπz_eq (π.symm k)) μ
+      simpa [complexLorentzAction] using hcoord
+
+/-- A chosen permutation branch witnessing membership in the permuted extended
+tube.  The accompanying theorem below is the preferred way to use this choice. -/
+noncomputable def permutedExtendedTubeBranch
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz : z ∈ PermutedExtendedTube d n) :
+    Equiv.Perm (Fin n) :=
+  (mem_permutedExtendedTube_iff_exists_perm_mem_extendedTube (d := d) (n := n)).1 hz |>.choose
+
+/-- The chosen branch of a PET point lands in the ordinary extended tube. -/
+theorem permutedExtendedTubeBranch_mem_extendedTube
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz : z ∈ PermutedExtendedTube d n) :
+    (fun k => z (permutedExtendedTubeBranch (d := d) (n := n) z hz k)) ∈
+      ExtendedTube d n :=
+  (mem_permutedExtendedTube_iff_exists_perm_mem_extendedTube (d := d) (n := n)).1 hz |>.choose_spec
+
 end BHW

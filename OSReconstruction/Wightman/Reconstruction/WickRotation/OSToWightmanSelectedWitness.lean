@@ -1,3 +1,4 @@
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.EdgeDistribution
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanBoundaryValues
 
 /-!
@@ -15,6 +16,84 @@ open Complex Topology Matrix LorentzLieGroup Classical Filter NormedSpace
 open scoped Matrix.Norms.Operator
 
 variable {d : ℕ} [NeZero d]
+
+/-! ### Selected edge data
+
+The next Route-1 seam is the OS-side compact edge pairing input for finite
+permutations.  The OS/BHW route constructs this data for adjacent
+transpositions first; full permutation statements must then be obtained by an
+adjacent-swap chain through PET, not by requiring real edge witnesses for every
+permutation at once.
+-/
+
+/-- Selected OS edge data for adjacent transpositions at fixed public arity.
+
+This is the construction target for the OS route.  It deliberately stores only
+the exact adjacent data consumed by the non-circular
+`BHW.extendF_perm_overlap_of_edgePairingEquality` theorem: connectedness of the
+explicit adjacent ET/swap-ET overlap and compact-test equality on one nonempty
+real-open edge slice. -/
+structure SelectedAdjacentPermutationEdgeData
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) : Prop where
+  overlap_connected :
+    ∀ (i : Fin n) (hi : i.val + 1 < n),
+      IsConnected
+        {z : Fin n → Fin (d + 1) → ℂ |
+          z ∈ BHW.ExtendedTube d n ∧
+            BHW.permAct (d := d) (Equiv.swap i ⟨i.val + 1, hi⟩) z ∈
+              BHW.ExtendedTube d n}
+  edge_witness :
+    ∀ (i : Fin n) (hi : i.val + 1 < n),
+      ∃ V : Set (NPointDomain d n),
+        IsOpen V ∧ V.Nonempty ∧
+        (∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n) ∧
+        (∀ x ∈ V,
+          BHW.realEmbed (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
+            BHW.ExtendedTube d n) ∧
+        (∀ φ : SchwartzNPoint d n,
+          HasCompactSupport (φ : NPointDomain d n → ℂ) →
+          tsupport (φ : NPointDomain d n → ℂ) ⊆ V →
+          ∫ x : NPointDomain d n,
+              BHW.extendF (bvt_F OS lgc n)
+                (BHW.realEmbed (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k))) * φ x
+            =
+          ∫ x : NPointDomain d n,
+              BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x) * φ x)
+
+/-- Overstrong all-permutation edge data at fixed public arity.
+
+This is a conditional helper only, not the OS-route construction target:
+arbitrary permutations can have no nonempty real edge overlap in high arity.
+The active route should construct `SelectedAdjacentPermutationEdgeData` and then
+derive general branch independence by an adjacent-swap chain. -/
+structure SelectedAllPermutationEdgeData
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) : Prop where
+  overlap_connected :
+    ∀ σ : Equiv.Perm (Fin n),
+      IsConnected
+        {z : Fin n → Fin (d + 1) → ℂ |
+          z ∈ BHW.ExtendedTube d n ∧
+            BHW.permAct (d := d) σ z ∈ BHW.ExtendedTube d n}
+  edge_witness :
+    ∀ σ : Equiv.Perm (Fin n),
+      ∃ V : Set (NPointDomain d n),
+        IsOpen V ∧ V.Nonempty ∧
+        (∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n) ∧
+        (∀ x ∈ V,
+          BHW.realEmbed (fun k => x (σ k)) ∈ BHW.ExtendedTube d n) ∧
+        (∀ φ : SchwartzNPoint d n,
+          HasCompactSupport (φ : NPointDomain d n → ℂ) →
+          tsupport (φ : NPointDomain d n → ℂ) ⊆ V →
+          ∫ x : NPointDomain d n,
+              BHW.extendF (bvt_F OS lgc n)
+                (BHW.realEmbed (fun k => x (σ k))) * φ x
+            =
+          ∫ x : NPointDomain d n,
+              BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x) * φ x)
 
 /-- The selected OS analytic witness is invariant under restricted real Lorentz
 transformations on the forward tube. -/
@@ -100,6 +179,364 @@ theorem bvt_F_complexLorentzInvariant_forwardTube
       Λ z
       ((BHW_forwardTube_eq (d := d) (n := n)) ▸ hz)
       ((BHW_forwardTube_eq (d := d) (n := n)) ▸ hΛz)
+
+/-- Selected compact edge data propagates to pointwise equality of the selected
+`extendF` branches on the whole adjacent ET/swap-ET overlap. -/
+theorem bvt_F_extendF_adjacent_overlap_of_selectedEdgeData
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (hEdge : SelectedAdjacentPermutationEdgeData OS lgc n)
+    (i : Fin n) (hi : i.val + 1 < n)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz : z ∈ BHW.ExtendedTube d n)
+    (hswapz :
+      BHW.permAct (d := d) (Equiv.swap i ⟨i.val + 1, hi⟩) z ∈
+        BHW.ExtendedTube d n) :
+    BHW.extendF (bvt_F OS lgc n)
+        (BHW.permAct (d := d) (Equiv.swap i ⟨i.val + 1, hi⟩) z) =
+      BHW.extendF (bvt_F OS lgc n) z := by
+  let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+  rcases hEdge.edge_witness i hi with
+    ⟨V, hV_open, hV_ne, hV_ET, hV_permET, hPairing⟩
+  have hF_holo :
+      DifferentiableOn ℂ (bvt_F OS lgc n) (BHW.ForwardTube d n) := by
+    simpa [BHW_forwardTube_eq (d := d) (n := n)] using
+      bvt_F_holomorphic (d := d) OS lgc n
+  have hF_lorentz :
+      ∀ (Λ : RestrictedLorentzGroup d)
+        (z : Fin n → Fin (d + 1) → ℂ), z ∈ BHW.ForwardTube d n →
+        bvt_F OS lgc n
+          (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) =
+        bvt_F OS lgc n z := by
+    intro Λ z hz
+    exact bvt_F_restrictedLorentzInvariant_forwardTube
+      (d := d) OS lgc n Λ z
+      ((BHW_forwardTube_eq (d := d) (n := n)) ▸ hz)
+  have hOverlap := hEdge.overlap_connected i hi
+  exact
+    BHW.extendF_perm_overlap_of_edgePairingEquality
+      (d := d) n (bvt_F OS lgc n) hF_holo hF_lorentz τ
+      (by simpa [τ] using hOverlap)
+      V hV_open hV_ne hV_ET
+      (by intro x hx; simpa [τ] using hV_permET x hx)
+      (by
+        intro φ hφ_compact hφ_tsupport
+        simpa [τ] using hPairing φ hφ_compact hφ_tsupport)
+      z hz
+      (by simpa [τ] using hswapz)
+
+/-- Overstrong all-permutation compact edge data propagates to pointwise equality
+of the selected `extendF` branches on the whole ET/permuted-ET overlap.
+
+This lemma is useful only under the explicit all-permutation hypothesis; the
+OS route should not try to construct that hypothesis directly. -/
+theorem bvt_F_extendF_perm_overlap_of_selectedEdgeData
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (hEdge : SelectedAllPermutationEdgeData OS lgc n)
+    (σ : Equiv.Perm (Fin n))
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz : z ∈ BHW.ExtendedTube d n)
+    (hσz : BHW.permAct (d := d) σ z ∈ BHW.ExtendedTube d n) :
+    BHW.extendF (bvt_F OS lgc n) (BHW.permAct (d := d) σ z) =
+      BHW.extendF (bvt_F OS lgc n) z := by
+  rcases hEdge.edge_witness σ with
+    ⟨V, hV_open, hV_ne, hV_ET, hV_permET, hPairing⟩
+  have hF_holo :
+      DifferentiableOn ℂ (bvt_F OS lgc n) (BHW.ForwardTube d n) := by
+    simpa [BHW_forwardTube_eq (d := d) (n := n)] using
+      bvt_F_holomorphic (d := d) OS lgc n
+  have hF_lorentz :
+      ∀ (Λ : RestrictedLorentzGroup d)
+        (z : Fin n → Fin (d + 1) → ℂ), z ∈ BHW.ForwardTube d n →
+        bvt_F OS lgc n
+          (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) =
+        bvt_F OS lgc n z := by
+    intro Λ z hz
+    exact bvt_F_restrictedLorentzInvariant_forwardTube
+      (d := d) OS lgc n Λ z
+      ((BHW_forwardTube_eq (d := d) (n := n)) ▸ hz)
+  exact
+    BHW.extendF_perm_overlap_of_edgePairingEquality
+      (d := d) n (bvt_F OS lgc n) hF_holo hF_lorentz σ
+      (hEdge.overlap_connected σ) V hV_open hV_ne hV_ET hV_permET
+      hPairing z hz hσz
+
+/-! ### Selected glued absolute PET scalar
+
+Using the overlap equality above, the selected `extendF` branches have a
+well-defined value on the whole permuted extended tube.  This is still an
+absolute-coordinate PET scalar; the later reduced theorem must prove/descent
+the corresponding quotient package.
+-/
+
+/-- Selected absolute PET scalar obtained by choosing a permutation branch and
+evaluating the ordinary selected `extendF` there.  It is zero off PET only so it
+can be used as a total ambient function; the meaningful theorems below are
+PET-local. -/
+noncomputable def bvt_selectedAbsolutePETGluedValue
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) :
+    (Fin n → Fin (d + 1) → ℂ) → ℂ :=
+  fun z =>
+    if hz : z ∈ BHW.PermutedExtendedTube d n then
+      BHW.extendF (bvt_F OS lgc n)
+        (fun k => z (BHW.permutedExtendedTubeBranch (d := d) (n := n) z hz k))
+    else
+      0
+
+/-- The selected glued PET scalar is independent of the chosen branch: on any
+permutation branch landing in ET, it equals that branch's `extendF` value. -/
+theorem bvt_selectedAbsolutePETGluedValue_eq_extendF_perm
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (hEdge : SelectedAllPermutationEdgeData OS lgc n)
+    (π : Equiv.Perm (Fin n))
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hπz : (fun k => z (π k)) ∈ BHW.ExtendedTube d n) :
+    bvt_selectedAbsolutePETGluedValue (d := d) OS lgc n z =
+      BHW.extendF (bvt_F OS lgc n) (fun k => z (π k)) := by
+  have hzPET : z ∈ BHW.PermutedExtendedTube d n := by
+    rw [BHW.mem_permutedExtendedTube_iff_exists_perm_mem_extendedTube]
+    exact ⟨π, hπz⟩
+  let π₀ : Equiv.Perm (Fin n) :=
+    BHW.permutedExtendedTubeBranch (d := d) (n := n) z hzPET
+  have hπ₀z : (fun k => z (π₀ k)) ∈ BHW.ExtendedTube d n := by
+    simpa [π₀] using
+      BHW.permutedExtendedTubeBranch_mem_extendedTube
+        (d := d) (n := n) z hzPET
+  have hperm_apply :
+      BHW.permAct (d := d) (π₀⁻¹ * π) (fun k => z (π₀ k)) =
+        fun k => z (π k) := by
+    ext k μ
+    simp [BHW.permAct, Equiv.Perm.mul_apply]
+  have hcompat :=
+    bvt_F_extendF_perm_overlap_of_selectedEdgeData
+      (d := d) OS lgc n hEdge (π₀⁻¹ * π) (fun k => z (π₀ k))
+      hπ₀z
+      (by
+        rw [hperm_apply]
+        exact hπz)
+  have hbranch :
+      BHW.extendF (bvt_F OS lgc n) (fun k => z (π k)) =
+        BHW.extendF (bvt_F OS lgc n) (fun k => z (π₀ k)) := by
+    simpa [hperm_apply] using hcompat
+  unfold bvt_selectedAbsolutePETGluedValue
+  simp only [dif_pos hzPET]
+  change BHW.extendF (bvt_F OS lgc n) (fun k => z (π₀ k)) =
+    BHW.extendF (bvt_F OS lgc n) (fun k => z (π k))
+  exact hbranch.symm
+
+/-- On the original forward tube, the selected glued PET scalar agrees with the
+selected OS witness. -/
+theorem bvt_selectedAbsolutePETGluedValue_eq_bvt_F_on_forwardTube
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (hEdge : SelectedAllPermutationEdgeData OS lgc n)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz : z ∈ BHW.ForwardTube d n) :
+    bvt_selectedAbsolutePETGluedValue (d := d) OS lgc n z =
+      bvt_F OS lgc n z := by
+  have hbranch :=
+    bvt_selectedAbsolutePETGluedValue_eq_extendF_perm
+      (d := d) OS lgc n hEdge (1 : Equiv.Perm (Fin n)) z
+      (BHW.forwardTube_subset_extendedTube hz)
+  have hF_holo :
+      DifferentiableOn ℂ (bvt_F OS lgc n) (BHW.ForwardTube d n) := by
+    simpa [BHW_forwardTube_eq (d := d) (n := n)] using
+      bvt_F_holomorphic (d := d) OS lgc n
+  have hF_lorentz :
+      ∀ (Λ : RestrictedLorentzGroup d)
+        (z : Fin n → Fin (d + 1) → ℂ), z ∈ BHW.ForwardTube d n →
+        bvt_F OS lgc n
+          (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) =
+        bvt_F OS lgc n z := by
+    intro Λ z hz
+    exact bvt_F_restrictedLorentzInvariant_forwardTube
+      (d := d) OS lgc n Λ z
+      ((BHW_forwardTube_eq (d := d) (n := n)) ▸ hz)
+  have hext :
+      BHW.extendF (bvt_F OS lgc n) z = bvt_F OS lgc n z :=
+    BHW.extendF_eq_on_forwardTube n (bvt_F OS lgc n)
+      hF_holo hF_lorentz z hz
+  simpa using hbranch.trans hext
+
+/-- The selected glued absolute PET scalar is holomorphic on the permuted
+extended tube. -/
+theorem bvt_selectedAbsolutePETGluedValue_holomorphicOn_PET
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (hEdge : SelectedAllPermutationEdgeData OS lgc n) :
+    DifferentiableOn ℂ
+      (bvt_selectedAbsolutePETGluedValue (d := d) OS lgc n)
+      (BHW.PermutedExtendedTube d n) := by
+  intro z hzPET
+  let π₀ : Equiv.Perm (Fin n) :=
+    BHW.permutedExtendedTubeBranch (d := d) (n := n) z hzPET
+  have hπ₀z : (fun k => z (π₀ k)) ∈ BHW.ExtendedTube d n := by
+    simpa [π₀] using
+      BHW.permutedExtendedTubeBranch_mem_extendedTube
+        (d := d) (n := n) z hzPET
+  have hperm_cont :
+      Continuous
+        (fun w : Fin n → Fin (d + 1) → ℂ => fun k => w (π₀ k)) := by
+    refine continuous_pi ?_
+    intro k
+    exact continuous_apply (π₀ k)
+  have hEq :
+      bvt_selectedAbsolutePETGluedValue (d := d) OS lgc n =ᶠ[𝓝 z]
+        fun w => BHW.extendF (bvt_F OS lgc n) (fun k => w (π₀ k)) := by
+    filter_upwards
+      [(BHW.isOpen_extendedTube.preimage hperm_cont).mem_nhds hπ₀z] with w hw
+    exact
+      bvt_selectedAbsolutePETGluedValue_eq_extendF_perm
+        (d := d) OS lgc n hEdge π₀ w hw
+  have hF_holo :
+      DifferentiableOn ℂ (bvt_F OS lgc n) (BHW.ForwardTube d n) := by
+    simpa [BHW_forwardTube_eq (d := d) (n := n)] using
+      bvt_F_holomorphic (d := d) OS lgc n
+  have hF_cinv :
+      ∀ (Λ : ComplexLorentzGroup d)
+        (z : Fin n → Fin (d + 1) → ℂ),
+        z ∈ BHW.ForwardTube d n →
+        BHW.complexLorentzAction Λ z ∈ BHW.ForwardTube d n →
+        bvt_F OS lgc n (BHW.complexLorentzAction Λ z) =
+          bvt_F OS lgc n z := by
+    intro Λ z hz hΛz
+    exact bvt_F_complexLorentzInvariant_forwardTube
+      (d := d) OS lgc n Λ z
+      ((BHW_forwardTube_eq (d := d) (n := n)) ▸ hz)
+      ((BHW_forwardTube_eq (d := d) (n := n)) ▸ hΛz)
+  have hExt_at :
+      DifferentiableAt ℂ (BHW.extendF (bvt_F OS lgc n)) (fun k => z (π₀ k)) := by
+    exact
+      ((BHW.extendF_holomorphicOn n (bvt_F OS lgc n) hF_holo hF_cinv)
+        (fun k => z (π₀ k)) hπ₀z).differentiableAt
+        (BHW.isOpen_extendedTube.mem_nhds hπ₀z)
+  have hperm_diff :
+      Differentiable ℂ
+        (fun w : Fin n → Fin (d + 1) → ℂ => fun k => w (π₀ k)) :=
+    differentiable_pi.mpr fun k => differentiable_apply (π₀ k)
+  have hperm_at :
+      DifferentiableAt ℂ
+        (fun w : Fin n → Fin (d + 1) → ℂ => fun k => w (π₀ k)) z :=
+    hperm_diff.differentiableAt
+  have hbranch_at :
+      DifferentiableAt ℂ
+        (fun w => BHW.extendF (bvt_F OS lgc n) (fun k => w (π₀ k))) z :=
+    by
+      simpa [Function.comp_def] using hExt_at.comp z hperm_at
+  exact (hEq.differentiableAt_iff.mpr hbranch_at).differentiableWithinAt
+
+/-- The selected glued absolute PET scalar is invariant under complex Lorentz
+transformations on PET. -/
+theorem bvt_selectedAbsolutePETGluedValue_lorentzInvariant
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (hEdge : SelectedAllPermutationEdgeData OS lgc n)
+    (Λ : ComplexLorentzGroup d)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz : z ∈ BHW.PermutedExtendedTube d n) :
+    bvt_selectedAbsolutePETGluedValue (d := d) OS lgc n
+        (BHW.complexLorentzAction Λ z) =
+      bvt_selectedAbsolutePETGluedValue (d := d) OS lgc n z := by
+  let π₀ : Equiv.Perm (Fin n) :=
+    BHW.permutedExtendedTubeBranch (d := d) (n := n) z hz
+  have hπ₀z : (fun k => z (π₀ k)) ∈ BHW.ExtendedTube d n := by
+    simpa [π₀] using
+      BHW.permutedExtendedTubeBranch_mem_extendedTube
+        (d := d) (n := n) z hz
+  have hπ₀Λz :
+      (fun k => BHW.complexLorentzAction Λ z (π₀ k)) ∈
+        BHW.ExtendedTube d n := by
+    have hΛπ₀z :=
+      BHW.complexLorentzAction_mem_extendedTube
+        (d := d) n Λ hπ₀z
+    simpa [BHW.lorentz_perm_commute] using hΛπ₀z
+  have hleft :=
+    bvt_selectedAbsolutePETGluedValue_eq_extendF_perm
+      (d := d) OS lgc n hEdge π₀
+      (BHW.complexLorentzAction Λ z) hπ₀Λz
+  have hright :=
+    bvt_selectedAbsolutePETGluedValue_eq_extendF_perm
+      (d := d) OS lgc n hEdge π₀ z hπ₀z
+  have hF_holo :
+      DifferentiableOn ℂ (bvt_F OS lgc n) (BHW.ForwardTube d n) := by
+    simpa [BHW_forwardTube_eq (d := d) (n := n)] using
+      bvt_F_holomorphic (d := d) OS lgc n
+  have hF_lorentz :
+      ∀ (Λ : RestrictedLorentzGroup d)
+        (z : Fin n → Fin (d + 1) → ℂ), z ∈ BHW.ForwardTube d n →
+        bvt_F OS lgc n
+          (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) =
+        bvt_F OS lgc n z := by
+    intro Λ z hz
+    exact bvt_F_restrictedLorentzInvariant_forwardTube
+      (d := d) OS lgc n Λ z
+      ((BHW_forwardTube_eq (d := d) (n := n)) ▸ hz)
+  have hExt :
+      BHW.extendF (bvt_F OS lgc n)
+          (BHW.complexLorentzAction Λ (fun k => z (π₀ k))) =
+        BHW.extendF (bvt_F OS lgc n) (fun k => z (π₀ k)) :=
+    BHW.extendF_complex_lorentz_invariant n (bvt_F OS lgc n)
+      hF_holo hF_lorentz Λ (fun k => z (π₀ k)) hπ₀z
+  calc
+    bvt_selectedAbsolutePETGluedValue (d := d) OS lgc n
+        (BHW.complexLorentzAction Λ z)
+        = BHW.extendF (bvt_F OS lgc n)
+            (fun k => BHW.complexLorentzAction Λ z (π₀ k)) := hleft
+    _ = BHW.extendF (bvt_F OS lgc n)
+          (BHW.complexLorentzAction Λ (fun k => z (π₀ k))) := by
+            congr 1
+    _ = BHW.extendF (bvt_F OS lgc n) (fun k => z (π₀ k)) := hExt
+    _ = bvt_selectedAbsolutePETGluedValue (d := d) OS lgc n z := hright.symm
+
+/-- The selected glued absolute PET scalar is invariant under finite coordinate
+permutations on PET. -/
+theorem bvt_selectedAbsolutePETGluedValue_permInvariant
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (hEdge : SelectedAllPermutationEdgeData OS lgc n)
+    (σ : Equiv.Perm (Fin n))
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz : z ∈ BHW.PermutedExtendedTube d n) :
+    bvt_selectedAbsolutePETGluedValue (d := d) OS lgc n
+        (fun k => z (σ k)) =
+      bvt_selectedAbsolutePETGluedValue (d := d) OS lgc n z := by
+  let π₀ : Equiv.Perm (Fin n) :=
+    BHW.permutedExtendedTubeBranch (d := d) (n := n) z hz
+  have hπ₀z : (fun k => z (π₀ k)) ∈ BHW.ExtendedTube d n := by
+    simpa [π₀] using
+      BHW.permutedExtendedTubeBranch_mem_extendedTube
+        (d := d) (n := n) z hz
+  have hperm_apply :
+      (fun k => (fun j => z (σ j)) ((σ⁻¹ * π₀) k)) =
+        fun k => z (π₀ k) := by
+    ext k μ
+    simp [Equiv.Perm.mul_apply]
+  have hleft :=
+    bvt_selectedAbsolutePETGluedValue_eq_extendF_perm
+      (d := d) OS lgc n hEdge (σ⁻¹ * π₀) (fun k => z (σ k))
+      (by
+        rw [hperm_apply]
+        exact hπ₀z)
+  have hright :=
+    bvt_selectedAbsolutePETGluedValue_eq_extendF_perm
+      (d := d) OS lgc n hEdge π₀ z hπ₀z
+  have hleft' :
+      bvt_selectedAbsolutePETGluedValue (d := d) OS lgc n
+          (fun k => z (σ k)) =
+        BHW.extendF (bvt_F OS lgc n) (fun k => z (π₀ k)) := by
+    simpa [hperm_apply] using hleft
+  exact hleft'.trans hright.symm
 
 /-! ### Selected Route-1 pre-pullback
 

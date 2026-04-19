@@ -61,6 +61,9 @@ actual hypotheses:
 - `OSToWightmanTubeIdentity.lean :: tsupport_timeShiftSchwartzNPoint_subset_positiveTimeTranslate_image`
 - `OSToWightmanTubeIdentity.lean :: measure_timeCoord_eq_zero`
 - `OSToWightmanTubeIdentity.lean :: ae_pairwise_distinct_timeCoords`
+- `Connectedness/PermutedTube.lean :: mem_permutedExtendedTube_iff_exists_perm_mem_extendedTube`
+- `Connectedness/PermutedTube.lean :: permutedExtendedTubeBranch`
+- `Connectedness/PermutedTube.lean :: permutedExtendedTubeBranch_mem_extendedTube`
 - `ForwardTubeLorentz.lean :: isOpen_translatedPET`
 - `ForwardTubeLorentz.lean :: translatedPET_perm`
 - `ForwardTubeLorentz.lean :: translatedPET_perm_iff`
@@ -72,6 +75,16 @@ actual hypotheses:
 - `ForwardTubeLorentz.lean :: translatedPETValueTotal_eq_on_PET`
 - `ForwardTubeLorentz.lean :: translatedPETValueTotal_translation_invariant`
 - `OSToWightmanBoundaryValuesBase.lean :: bvt_F_acrOne_package`
+- `OSToWightmanSelectedWitness.lean :: SelectedAdjacentPermutationEdgeData`
+- `OSToWightmanSelectedWitness.lean :: SelectedAllPermutationEdgeData` (overstrong conditional helper only)
+- `OSToWightmanSelectedWitness.lean :: bvt_F_extendF_adjacent_overlap_of_selectedEdgeData`
+- `OSToWightmanSelectedWitness.lean :: bvt_F_extendF_perm_overlap_of_selectedEdgeData`
+- `OSToWightmanSelectedWitness.lean :: bvt_selectedAbsolutePETGluedValue`
+- `OSToWightmanSelectedWitness.lean :: bvt_selectedAbsolutePETGluedValue_eq_extendF_perm`
+- `OSToWightmanSelectedWitness.lean :: bvt_selectedAbsolutePETGluedValue_eq_bvt_F_on_forwardTube`
+- `OSToWightmanSelectedWitness.lean :: bvt_selectedAbsolutePETGluedValue_holomorphicOn_PET`
+- `OSToWightmanSelectedWitness.lean :: bvt_selectedAbsolutePETGluedValue_lorentzInvariant`
+- `OSToWightmanSelectedWitness.lean :: bvt_selectedAbsolutePETGluedValue_permInvariant`
 - `OSToWightmanSelectedWitness.lean :: bvt_route1AbsolutePrePullback`
 - `OSToWightmanSelectedWitness.lean :: bvt_route1AbsolutePrePullback_translate`
 - `OSToWightmanSelectedWitness.lean :: bvt_route1AbsolutePrePullback_eq_bvt_F_on_forwardTube`
@@ -3228,66 +3241,238 @@ out the normalized basepoint cutoff, and `bvt_boundary_values` supplies the
 limit.  No PET gluing, `W_analytic_BHW_unique`, `os_to_wightman_full`, or
 locality input is used.
 
-Consequently the next hard theorem surface is now narrower:
+Consequently the next hard theorem surface is now narrower, but one correction
+is essential.  The OS/BHW route must construct edge data only for adjacent
+transpositions, not for arbitrary finite permutations.  Arbitrary permutations
+can have empty real edge overlap in high arity, so an all-permutation
+`V.Nonempty` witness is too strong to be the construction target.
+
+The active selected edge-data structure and adjacent overlap adapter are now
+implemented in `OSToWightmanSelectedWitness.lean`:
 
 ```lean
-structure SelectedAbsolutePermutationEdgeData
+structure SelectedAdjacentPermutationEdgeData
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
     (n : ℕ) : Prop where
   overlap_connected :
-    ∀ σ : Equiv.Perm (Fin n),
+    ∀ (i : Fin n) (hi : i.val + 1 < n),
       IsConnected
         {z : Fin n → Fin (d + 1) → ℂ |
           z ∈ BHW.ExtendedTube d n ∧
-            BHW.permAct (d := d) σ z ∈ BHW.ExtendedTube d n}
+            BHW.permAct (d := d) (Equiv.swap i ⟨i.val + 1, hi⟩) z ∈
+              BHW.ExtendedTube d n}
   edge_witness :
-    ∀ σ : Equiv.Perm (Fin n),
+    ∀ (i : Fin n) (hi : i.val + 1 < n),
       ∃ V : Set (NPointDomain d n),
         IsOpen V ∧ V.Nonempty ∧
         (∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n) ∧
         (∀ x ∈ V,
-          BHW.realEmbed (fun k => x (σ k)) ∈ BHW.ExtendedTube d n) ∧
+          BHW.realEmbed (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
+            BHW.ExtendedTube d n) ∧
         (∀ φ : SchwartzNPoint d n,
           HasCompactSupport (φ : NPointDomain d n → ℂ) →
           tsupport (φ : NPointDomain d n → ℂ) ⊆ V →
           ∫ x : NPointDomain d n,
               BHW.extendF (bvt_F OS lgc n)
-                (BHW.realEmbed (fun k => x (σ k))) * φ x
+                (BHW.realEmbed (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k))) * φ x
             =
           ∫ x : NPointDomain d n,
               BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x) * φ x)
+
+theorem bvt_F_extendF_adjacent_overlap_of_selectedEdgeData
+    (hEdge : SelectedAdjacentPermutationEdgeData OS lgc n)
+    (i : Fin n) (hi : i.val + 1 < n) :
+    ∀ z, z ∈ BHW.ExtendedTube d n →
+      BHW.permAct (d := d) (Equiv.swap i ⟨i.val + 1, hi⟩) z ∈
+        BHW.ExtendedTube d n →
+      BHW.extendF (bvt_F OS lgc n)
+          (BHW.permAct (d := d) (Equiv.swap i ⟨i.val + 1, hi⟩) z) =
+        BHW.extendF (bvt_F OS lgc n) z
 
 theorem bvt_selectedReducedBHWExtensionData_exists
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
     (χ : BHW.NormalizedBasepointCutoff d)
     (m : ℕ)
-    (hEdge : SelectedAbsolutePermutationEdgeData OS lgc (m + 1)) :
+    (hEdge : SelectedAdjacentPermutationEdgeData OS lgc (m + 1)) :
     ∃ Fred : BHW.ReducedBHWExtensionData (d := d) (n := m + 1)
       (bvt_selectedReducedForwardTubeInput OS lgc χ m).toFun,
       True
 ```
 
-`SelectedAbsolutePermutationEdgeData` is not a global locality hypothesis.  Its
-`edge_witness` field is exactly the compact-test equality consumed by the
-checked theorem `BHW.extendF_perm_overlap_of_edgePairingEquality`; its
-`overlap_connected` field supplies that theorem's connected-domain
-propagation.  The remaining implementation work inside
-`bvt_selectedReducedBHWExtensionData_exists` is then:
+`SelectedAdjacentPermutationEdgeData` is not a global locality hypothesis.  Its
+`edge_witness` field is exactly the compact-test equality consumed by
+`BHW.extendF_perm_overlap_of_edgePairingEquality`, but only on adjacent
+spacelike edges where the OS/Jost input is expected to exist.  Its
+`overlap_connected` field supplies the adjacent connected-domain propagation.
 
-1. apply `BHW.extendF_perm_overlap_of_edgePairingEquality` for every `σ` to
-   obtain absolute branch equality on ET/permuted-ET overlaps;
-2. glue the ordinary `BHW.extendF (bvt_F OS lgc (m+1))` branches across the
-   finite permutation cover of `PermutedExtendedTube`;
-3. descend the glued absolute PET function through `BHW.reducedDiffMap` to the
+There is also an explicitly overstrong conditional helper:
+
+```lean
+structure SelectedAllPermutationEdgeData
+theorem bvt_F_extendF_perm_overlap_of_selectedEdgeData
+```
+
+This all-permutation helper should not be treated as the OS-route construction
+target.  It is retained only to keep the checked conditional branch-gluing
+lemmas available while the real adjacent-to-general chain theorem is developed.
+Under that overstrong hypothesis, value-level branch gluing has been checked:
+
+```lean
+noncomputable def bvt_selectedAbsolutePETGluedValue
+theorem bvt_selectedAbsolutePETGluedValue_eq_extendF_perm
+theorem bvt_selectedAbsolutePETGluedValue_eq_bvt_F_on_forwardTube
+theorem bvt_selectedAbsolutePETGluedValue_holomorphicOn_PET
+theorem bvt_selectedAbsolutePETGluedValue_lorentzInvariant
+theorem bvt_selectedAbsolutePETGluedValue_permInvariant
+```
+
+This conditional package proves what the final adjacent-chain package must
+recover: the selected branch value is independent of the chosen permutation
+branch, agrees with `bvt_F OS lgc n` on the original forward tube, is
+holomorphic on PET, and has the expected absolute Lorentz and finite-permutation
+invariance on PET.  The missing theorem is now the honest one:
+
+```lean
+theorem bvt_selectedAbsolutePETGluedValue_eq_extendF_perm_of_adjacentEdgeData
+    (hEdge : SelectedAdjacentPermutationEdgeData OS lgc n)
+    (π : Equiv.Perm (Fin n))
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hπz : (fun k => z (π k)) ∈ BHW.ExtendedTube d n) :
+    bvt_selectedAbsolutePETGluedValue OS lgc n z =
+      BHW.extendF (bvt_F OS lgc n) (fun k => z (π k))
+```
+
+It must be proved by chaining adjacent-swap branch equalities through the PET
+sector graph, not by requiring real edge data for `π₀⁻¹ * π` directly.
+
+The remaining implementation work inside
+`bvt_selectedReducedBHWExtensionData_exists` is therefore:
+
+1. prove adjacent-to-general PET branch gluing from
+   `SelectedAdjacentPermutationEdgeData`;
+2. prove the glued absolute PET scalar is constant on uniform-translation
+   fibers wherever the two representatives lie in PET;
+3. descend the glued absolute PET scalar through `BHW.reducedDiffMap` to the
    image domain `BHW.ReducedPermutedExtendedTubeN d m`;
-4. prove the descended function is holomorphic, agrees with
+4. prove the descended function agrees with
    `(bvt_selectedReducedForwardTubeInput OS lgc χ m).toFun` on
-   `BHW.ReducedForwardTubeN d m`, and has the reduced Lorentz/permutation
-   invariance fields required by `BHW.ReducedBHWExtensionData`;
+   `BHW.ReducedForwardTubeN d m`, and transport the already-proved absolute
+   Lorentz/permutation invariance to the reduced invariance fields required by
+   `BHW.ReducedBHWExtensionData`;
 5. feed the resulting `Fred` to
    `bvt_selectedPETExtensionOfReducedData`.
+
+#### Next quotient-descent seam: selected translation-fiber constancy
+
+The next theorem is not yet a Lean-ready one-liner.  The exact mathematical
+surface needed before reduced descent is:
+
+```lean
+theorem bvt_selectedAbsolutePETGluedValue_translationInvariant_on_PET
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (hEdge : SelectedAdjacentPermutationEdgeData OS lgc n)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (c : Fin (d + 1) → ℂ)
+    (hz : z ∈ BHW.PermutedExtendedTube d n)
+    (hzc : (fun k μ => z k μ + c μ) ∈ BHW.PermutedExtendedTube d n) :
+    bvt_selectedAbsolutePETGluedValue OS lgc n
+        (fun k μ => z k μ + c μ) =
+      bvt_selectedAbsolutePETGluedValue OS lgc n z
+```
+
+This is the real quotient-descent gate.  Once it is proved, the reduced function
+can be defined on `BHW.ReducedPermutedExtendedTubeN d m` by choosing any absolute
+PET representative `z` of the reduced point and evaluating
+`bvt_selectedAbsolutePETGluedValue OS lgc (m + 1) z`; the theorem above gives
+representative independence because equal reduced differences differ by a
+uniform complex translation.
+
+The proof should follow the already-existing base-fiber architecture, but with
+the selected glued scalar in place of the old global `W_analytic_BHW` scalar:
+
+```lean
+theorem bvt_selectedAbsolutePETGluedValue_translationLocal
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (hEdge : SelectedAdjacentPermutationEdgeData OS lgc n)
+    (c : Fin (d + 1) → ℂ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz : z ∈ BHW.PermutedExtendedTube d n) :
+    ∃ ε > 0, ∀ t : ℂ, ‖t‖ < ε →
+      (fun k μ => z k μ + t * c μ) ∈ BHW.PermutedExtendedTube d n ∧
+      bvt_selectedAbsolutePETGluedValue OS lgc n
+          (fun k μ => z k μ + t * c μ) =
+        bvt_selectedAbsolutePETGluedValue OS lgc n z
+```
+
+Local translation should be proved by unpacking a PET witness
+`z = Λ • w` with `w ∈ PermutedForwardTube π`, shrinking `t` so the same
+permuted forward-tube branch remains valid, and chaining:
+
+```text
+G(z + t c)
+= G(Λ • (w + t Λ⁻¹c))       by selected Lorentz invariance
+= G(w + t Λ⁻¹c)             by selected Lorentz invariance
+= bvt_F((w + t Λ⁻¹c)∘π)     by selected PET branch equality + FT agreement
+= bvt_F(w∘π)                by selected forward-tube translation invariance
+= G(w)
+= G(z)
+```
+
+The local proof requires one additional named selected forward-tube theorem:
+
+```lean
+theorem bvt_F_translation_invariant_forwardTube
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (c : Fin (d + 1) → ℂ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz : z ∈ BHW.ForwardTube d n)
+    (hzc : (fun k μ => z k μ + c μ) ∈ BHW.ForwardTube d n) :
+    bvt_F OS lgc n (fun k μ => z k μ + c μ) =
+      bvt_F OS lgc n z
+```
+
+This should be a direct extraction from
+`bvt_absoluteForwardTubeInput (d := d) OS lgc (n - 1)` when `n = m + 1`, plus
+the existing `AbsoluteForwardTubeInput.translation_invariant` field.  The
+`n = 0` case should be treated separately or avoided by stating the selected
+quotient-descent theorem at public arity `m + 1`.
+
+To globalize local translation to arbitrary `c`, define the selected base-fiber
+value for fixed reduced tail:
+
+```lean
+def bvt_selectedBaseFiberValue
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (hEdge : SelectedAdjacentPermutationEdgeData OS lgc (m + 1))
+    (ζtail : Fin m → Fin (d + 1) → ℂ) :
+    (Fin (d + 1) → ℂ) → ℂ :=
+  fun ζ₀ =>
+    bvt_selectedAbsolutePETGluedValue OS lgc (m + 1)
+      (baseFiberConfig m d ζtail ζ₀)
+```
+
+Then prove:
+
+```lean
+theorem fderiv_bvt_selectedBaseFiberValue_eq_zero
+theorem exists_isConst_bvt_selectedBaseFiberValue_of_isPreconnected
+theorem bvt_selectedAbsolutePETGluedValue_translationInvariant_of_baseFiber_isPreconnected
+```
+
+The remaining mathematical gap is therefore sharply isolated: either prove the
+needed `IsPreconnected (baseFiber m d ζtail)` geometry without relying on the
+old WIP `sorry`, or give a different direct proof of selected
+translation-fiber constancy.  Until that geometry is closed, the reduced
+quotient descent is **not** 100% implementation-ready.
 
 Once PET value-invariance exists, define the selected translated-PET value
 without any arbitrary branch choice.  The purely geometric part of this step is
