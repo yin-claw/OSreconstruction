@@ -75,9 +75,21 @@ actual hypotheses:
 - `ForwardTubeLorentz.lean :: translatedPETValueTotal_eq_on_PET`
 - `ForwardTubeLorentz.lean :: translatedPETValueTotal_translation_invariant`
 - `OSToWightmanBoundaryValuesBase.lean :: bvt_F_acrOne_package`
+- `Connectedness/PermutedTube.lean :: permutedExtendedTubeSector`
+- `Connectedness/PermutedTube.lean :: isOpen_permutedExtendedTubeSector`
+- `Connectedness/PermutedTube.lean :: permutedExtendedTube_eq_iUnion_sectors`
+- `Connectedness/PermutedTube.lean :: permutedExtendedTubeSector_subset_permutedExtendedTube`
+- `Connectedness/PermutedTubeConnected.lean :: permutedExtendedTubeSector_isPreconnected`
+- `Connectedness/PermutedTubeConnected.lean :: permutedExtendedTubeSector_adjacent_overlap_nonempty`
+- `Connectedness/PermutedTubeGluing.lean :: gluedPETValue`
+- `Connectedness/PermutedTubeGluing.lean :: gluedPETValue_eq_of_mem_sector`
+- `Connectedness/PermutedTubeGluing.lean :: gluedPETValue_holomorphicOn`
 - `OSToWightmanSelectedWitness.lean :: SelectedAdjacentPermutationEdgeData`
 - `OSToWightmanSelectedWitness.lean :: SelectedAllPermutationEdgeData` (overstrong conditional helper only)
 - `OSToWightmanSelectedWitness.lean :: bvt_F_extendF_adjacent_overlap_of_selectedEdgeData`
+- `OSToWightmanSelectedWitness.lean :: bvt_selectedPETBranch`
+- `OSToWightmanSelectedWitness.lean :: bvt_selectedPETBranch_holomorphicOn_sector`
+- `OSToWightmanSelectedWitness.lean :: bvt_selectedPETBranch_adjacent_eq_on_sector_overlap`
 - `OSToWightmanSelectedWitness.lean :: bvt_F_extendF_perm_overlap_of_selectedEdgeData`
 - `OSToWightmanSelectedWitness.lean :: bvt_selectedAbsolutePETGluedValue`
 - `OSToWightmanSelectedWitness.lean :: bvt_selectedAbsolutePETGluedValue_eq_extendF_perm`
@@ -3290,6 +3302,40 @@ theorem bvt_F_extendF_adjacent_overlap_of_selectedEdgeData
           (BHW.permAct (d := d) (Equiv.swap i ⟨i.val + 1, hi⟩) z) =
         BHW.extendF (bvt_F OS lgc n) z
 
+def BHW.permutedExtendedTubeSector (d n : ℕ) (π : Equiv.Perm (Fin n))
+theorem BHW.isOpen_permutedExtendedTubeSector
+theorem BHW.permutedExtendedTube_eq_iUnion_sectors
+theorem BHW.permutedExtendedTubeSector_subset_permutedExtendedTube
+theorem BHW.permutedExtendedTubeSector_isPreconnected
+theorem BHW.permutedExtendedTubeSector_adjacent_overlap_nonempty
+
+def bvt_selectedPETBranch
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (π : Equiv.Perm (Fin n)) :
+    (Fin n → Fin (d + 1) → ℂ) → ℂ :=
+  fun z => BHW.extendF (bvt_F OS lgc n) (fun k => z (π k))
+
+theorem bvt_selectedPETBranch_holomorphicOn_sector
+    (π : Equiv.Perm (Fin n)) :
+    DifferentiableOn ℂ
+      (bvt_selectedPETBranch OS lgc n π)
+      (BHW.permutedExtendedTubeSector d n π)
+
+theorem bvt_selectedPETBranch_adjacent_eq_on_sector_overlap
+    (hEdge : SelectedAdjacentPermutationEdgeData OS lgc n)
+    (π : Equiv.Perm (Fin n))
+    (i : Fin n) (hi : i.val + 1 < n)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hzπ : z ∈ BHW.permutedExtendedTubeSector d n π)
+    (hzπswap :
+      z ∈ BHW.permutedExtendedTubeSector d n
+        (π * Equiv.swap i ⟨i.val + 1, hi⟩)) :
+    bvt_selectedPETBranch OS lgc n
+        (π * Equiv.swap i ⟨i.val + 1, hi⟩) z =
+      bvt_selectedPETBranch OS lgc n π z
+
 theorem bvt_selectedReducedBHWExtensionData_exists
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
@@ -3306,6 +3352,68 @@ theorem bvt_selectedReducedBHWExtensionData_exists
 `BHW.extendF_perm_overlap_of_edgePairingEquality`, but only on adjacent
 spacelike edges where the OS/Jost input is expected to exist.  Its
 `overlap_connected` field supplies the adjacent connected-domain propagation.
+The branch-cover package above is the Lean-ready local compatibility layer:
+each branch is holomorphic on its own explicit sector, and adjacent branches
+agree on adjacent sector overlaps.
+
+The purely formal finite-cover gluing step has now been split off and
+implemented in `PermutedTubeGluing.lean`.  It deliberately assumes compatibility
+on all sector overlaps:
+
+```lean
+def BHW.gluedPETValue
+    (G : (π : Equiv.Perm (Fin n)) →
+      (Fin n → Fin (d + 1) → ℂ) → ℂ)
+
+theorem BHW.gluedPETValue_eq_of_mem_sector
+    (G : (π : Equiv.Perm (Fin n)) →
+      (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hcompat :
+      ∀ (π ρ : Equiv.Perm (Fin n))
+        (z : Fin n → Fin (d + 1) → ℂ),
+        z ∈ BHW.permutedExtendedTubeSector d n π →
+        z ∈ BHW.permutedExtendedTubeSector d n ρ →
+        G π z = G ρ z)
+    (π : Equiv.Perm (Fin n))
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hzπ : z ∈ BHW.permutedExtendedTubeSector d n π) :
+    BHW.gluedPETValue G z = G π z
+
+theorem BHW.gluedPETValue_holomorphicOn
+    (G : (π : Equiv.Perm (Fin n)) →
+      (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hG_holo :
+      ∀ π, DifferentiableOn ℂ (G π) (BHW.permutedExtendedTubeSector d n π))
+    (hcompat :
+      ∀ (π ρ : Equiv.Perm (Fin n))
+        (z : Fin n → Fin (d + 1) → ℂ),
+        z ∈ BHW.permutedExtendedTubeSector d n π →
+        z ∈ BHW.permutedExtendedTubeSector d n ρ →
+        G π z = G ρ z) :
+    DifferentiableOn ℂ (BHW.gluedPETValue G) (BHW.PermutedExtendedTube d n)
+```
+
+The remaining hard gap is therefore even sharper: prove all-overlap branch
+compatibility from adjacent overlap compatibility.
+
+```lean
+theorem bvt_selectedPETBranch_allOverlap_eq_of_adjacentEdgeData
+    (hEdge : SelectedAdjacentPermutationEdgeData OS lgc n)
+    (π ρ : Equiv.Perm (Fin n))
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hzπ : z ∈ BHW.permutedExtendedTubeSector d n π)
+    (hzρ : z ∈ BHW.permutedExtendedTubeSector d n ρ) :
+    bvt_selectedPETBranch OS lgc n π z =
+      bvt_selectedPETBranch OS lgc n ρ z
+```
+
+This is the exact point where the proof must use the BHW sector-graph/monodromy
+argument: adjacent swaps generate the permutation graph and PET is the connected
+analytic continuation domain for the adjacent-glued sectors.  It is not enough
+to chain adjacent equalities at a fixed point, because a fixed `z` in two
+non-adjacent sectors need not lie in every intermediate sector.  The proof must
+obtain independence of analytic continuation over the finite open cover,
+rather than asking for a nonexistent all-permutation real edge.
 
 There is also an explicitly overstrong conditional helper:
 

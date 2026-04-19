@@ -226,6 +226,97 @@ theorem bvt_F_extendF_adjacent_overlap_of_selectedEdgeData
       z hz
       (by simpa [τ] using hswapz)
 
+/-! ### Selected PET branch cover
+
+The adjacent route works first branch-by-branch on the explicit PET cover
+`BHW.permutedExtendedTubeSector d n π`.  The theorem
+`bvt_selectedPETBranch_adjacent_eq_on_sector_overlap` is the checked local
+compatibility datum that the later global PET gluing/monodromy step must
+propagate through the finite adjacent-swap sector graph.
+-/
+
+/-- The selected `π`-branch on the explicit PET sector
+`{z | z ∘ π ∈ ExtendedTube}`. -/
+noncomputable def bvt_selectedPETBranch
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (π : Equiv.Perm (Fin n)) :
+    (Fin n → Fin (d + 1) → ℂ) → ℂ :=
+  fun z => BHW.extendF (bvt_F OS lgc n) (fun k => z (π k))
+
+/-- Each selected PET branch is holomorphic on its explicit sector. -/
+theorem bvt_selectedPETBranch_holomorphicOn_sector
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (π : Equiv.Perm (Fin n)) :
+    DifferentiableOn ℂ
+      (bvt_selectedPETBranch (d := d) OS lgc n π)
+      (BHW.permutedExtendedTubeSector d n π) := by
+  intro z hz
+  have hF_holo :
+      DifferentiableOn ℂ (bvt_F OS lgc n) (BHW.ForwardTube d n) := by
+    simpa [BHW_forwardTube_eq (d := d) (n := n)] using
+      bvt_F_holomorphic (d := d) OS lgc n
+  have hF_cinv :
+      ∀ (Λ : ComplexLorentzGroup d)
+        (z : Fin n → Fin (d + 1) → ℂ),
+        z ∈ BHW.ForwardTube d n →
+        BHW.complexLorentzAction Λ z ∈ BHW.ForwardTube d n →
+        bvt_F OS lgc n (BHW.complexLorentzAction Λ z) =
+          bvt_F OS lgc n z := by
+    intro Λ z hz hΛz
+    exact bvt_F_complexLorentzInvariant_forwardTube
+      (d := d) OS lgc n Λ z
+      ((BHW_forwardTube_eq (d := d) (n := n)) ▸ hz)
+      ((BHW_forwardTube_eq (d := d) (n := n)) ▸ hΛz)
+  have hExt_at :
+      DifferentiableAt ℂ (BHW.extendF (bvt_F OS lgc n)) (fun k => z (π k)) := by
+    exact
+      ((BHW.extendF_holomorphicOn n (bvt_F OS lgc n) hF_holo hF_cinv)
+        (fun k => z (π k)) hz).differentiableAt
+        (BHW.isOpen_extendedTube.mem_nhds hz)
+  have hperm_diff :
+      Differentiable ℂ
+        (fun w : Fin n → Fin (d + 1) → ℂ => fun k => w (π k)) :=
+    differentiable_pi.mpr fun k => differentiable_apply (π k)
+  have hbranch_at :
+      DifferentiableAt ℂ
+        (fun w => BHW.extendF (bvt_F OS lgc n) (fun k => w (π k))) z := by
+    simpa [Function.comp_def] using hExt_at.comp z hperm_diff.differentiableAt
+  simpa [bvt_selectedPETBranch] using hbranch_at.differentiableWithinAt
+
+/-- Adjacent selected branches agree on the overlap of the corresponding PET
+sectors.  This is the branch-cover compatibility datum supplied by adjacent
+edge data. -/
+theorem bvt_selectedPETBranch_adjacent_eq_on_sector_overlap
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (hEdge : SelectedAdjacentPermutationEdgeData OS lgc n)
+    (π : Equiv.Perm (Fin n))
+    (i : Fin n) (hi : i.val + 1 < n)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hzπ : z ∈ BHW.permutedExtendedTubeSector d n π)
+    (hzπswap :
+      z ∈ BHW.permutedExtendedTubeSector d n
+        (π * Equiv.swap i ⟨i.val + 1, hi⟩)) :
+    bvt_selectedPETBranch (d := d) OS lgc n
+        (π * Equiv.swap i ⟨i.val + 1, hi⟩) z =
+      bvt_selectedPETBranch (d := d) OS lgc n π z := by
+  let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+  let y : Fin n → Fin (d + 1) → ℂ := fun k => z (π k)
+  have hy : y ∈ BHW.ExtendedTube d n := by
+    simpa [BHW.permutedExtendedTubeSector, y] using hzπ
+  have hτy : BHW.permAct (d := d) τ y ∈ BHW.ExtendedTube d n := by
+    simpa [BHW.permutedExtendedTubeSector, BHW.permAct, y, τ, Equiv.Perm.mul_apply]
+      using hzπswap
+  have hmain :=
+    bvt_F_extendF_adjacent_overlap_of_selectedEdgeData
+      (d := d) OS lgc n hEdge i hi y hy hτy
+  simpa [bvt_selectedPETBranch, BHW.permAct, y, τ, Equiv.Perm.mul_apply] using hmain
+
 /-- Overstrong all-permutation compact edge data propagates to pointwise equality
 of the selected `extendF` branches on the whole ET/permuted-ET overlap.
 
