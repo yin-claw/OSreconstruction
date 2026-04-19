@@ -111,14 +111,14 @@ theorem-2 bridge.
 | `bvt_F_permutedEtaCanonicalShell_eq_canonicalShell_of_spacelike` | `BHWExtension.lean` theorem-2 finite-shell layer | `bvt_F_holomorphic`, Lorentz invariance, boundary continuity, and `canonical_adjacentSwap_shell_mem_EOW_domain` | pointwise equality between the permuted-imaginary-direction shell and the canonical shell over the same real edge |
 | `bvt_F_adjacentSwapCanonical_pointwise_of_spacelike` | `BHWExtension.lean` theorem-2 finite-shell layer | `swappedCanonicalShell_eq_perm_permutedEtaCanonicalShell`, `bvt_F_perm`, and the permuted-eta finite-shell theorem | pointwise equality of the swapped-real-coordinate finite shell with the canonical shell for one adjacent spacelike pair |
 | `bvt_F_adjacentSwapCanonical_pairing_from_pointwise` | `OSToWightmanBoundaryValueLimits.lean` or `OSToWightmanBoundaryValuesComparison.lean` support layer | measure-preserving coordinate reindexing, support-zero outside `tsupport f`, `hswap`, and the pointwise finite-shell theorem | adjacent canonical-shift pairing equality |
-| `bvt_F_reduced` | `OSToWightmanBoundaryValuesComparison.lean` or small theorem-2 support file | `safeSection`, `reducedDiffMap`, and `bvt_F_translationInvariant` | reduced-coordinate representative of `bvt_F` |
-| `bvt_F_eq_bvt_F_reduced_reducedDiffMap` | same reduced shell support layer | translation invariance and `safeSection` right-inverse bookkeeping | pointwise factorization of `bvt_F OS lgc n z` through `reducedDiffMap n d z` |
+| `bvt_F_reduced` | `OSToWightmanReduced.lean` | implemented from `safeSection` and the selected OS witness | reduced-coordinate representative of `bvt_F` |
+| `bvt_F_eq_bvt_F_reduced_reducedDiffMap` | `OSToWightmanReduced.lean` | implemented from `bvt_F_translationInvariant`, `reducedDiffMap_safeSection`, and `exists_uniformShift_eq_of_reducedDiffMap_eq` | pointwise factorization of `bvt_F OS lgc n z` through `reducedDiffMap n d z` |
 | `canonicalForwardConeDirection_reducedDiff_eq_canonicalReducedDirection` | same reduced shell support layer | definitions of `canonicalForwardConeDirection`, `reducedDiffMapReal`, and `safeBasepointVec` | reduced direction of the public canonical shell is the product-cone direction `safeBasepointVec` in every reduced slot |
 | `permutedCanonicalForwardDirection_reducedDiff_eq_permOnReducedDiff` | same reduced shell support layer | `permOnReducedDiff_reducedDiffMap` and the previous direction lemma | reduced direction of `canonicalForwardConeDirection ∘ Equiv.swap i j` |
 | `reducedPairDiff_reducedDiffMapReal` | same reduced shell support layer | `realDiffCoordCLE`, `prependBasepointReal`, and translation-cancellation algebra | support hypothesis `AreSpacelikeSeparated d (x i) (x j)` rewritten in reduced coordinates |
-| `bvt_F_reduced_permOnReducedDiff` | same reduced shell support layer | `permOnReducedDiff_reducedDiffMap`, `safeSection`, `exists_uniformShift_eq_of_reducedDiffMap_eq`, `bvt_F_perm`, and `bvt_F_translationInvariant` | reduced-coordinate permutation invariance of the descended OS-side witness |
-| `permOnReducedDiff_swap_permutedCanonicalDirection` | same reduced shell support layer | `permOnReducedDiff_mul` and involutivity of `Equiv.swap` | selected swap sends the permuted canonical reduced direction back to the canonical reduced direction |
-| `bvt_F_reduced_permutedDirection_to_realPermutedCanonical` | same reduced shell support layer | `bvt_F_reduced_permOnReducedDiff` and linearity of `permOnReducedDiff` | converts the permuted-imaginary-direction comparison into a canonical-direction comparison at the permuted real reduced basepoint |
+| `bvt_F_reduced_permOnReducedDiff` | `OSToWightmanReduced.lean` | implemented from reduced factorization, `permOnReducedDiff_reducedDiffMap`, and `bvt_F_perm` | reduced-coordinate permutation invariance of the descended OS-side witness |
+| `permOnReducedDiff_swap_permutedCanonicalDirection` | `OSToWightmanReduced.lean` | implemented from `permOnReducedDiff_mul` and involutivity of `Equiv.swap` | selected swap sends the permuted canonical reduced direction back to the canonical reduced direction |
+| `bvt_F_reduced_permutedDirection_to_realPermutedCanonical` | `OSToWightmanReduced.lean` | implemented from `bvt_F_reduced_permOnReducedDiff` | converts the permuted-imaginary-direction comparison into a canonical-direction comparison at the permuted real reduced basepoint |
 | `reducedSpacelikeSwapEdge` / `isOpen_reducedSpacelikeSwapEdge` | reduced local EOW support layer | `reducedPairDiff` and openness of the spacelike cone | the real reduced edge on which the selected pair is spacelike |
 | `bvt_F_reduced_boundary_perm_eq_on_reducedSpacelikeSwapEdge` | reduced local EOW support layer | `bvt_F_reduced_permOnReducedDiff` | boundary equality of the two reduced branches on the spacelike real edge |
 | `bvt_F_reduced_holomorphicOn_reducedForwardTube` / `bvt_F_reduced_holomorphicOn_swapPulledForwardTube` | reduced local EOW support layer | `bvt_F_holomorphic`, `safeSection_mem_forwardTube`, and continuity of `permOnReducedDiff` | holomorphicity of the two reduced branches on their tube domains |
@@ -2765,9 +2765,11 @@ the following honest repairs:
 2. a reduced-difference-coordinate formulation in which uniform translations
    are quotient-killed before the Jost/ET hypotheses are applied.
 
-The value theorem below is still valid as a conditional PET value-invariance
-statement, but it is not a membership-transport theorem and does not by itself
-justify applying a sector-local BHW branch theorem at a translated real point:
+The only honest raw-`extendF` translation theorem has **ET hypotheses**, not PET
+hypotheses.  It is useful as an adapter on points that already lie in the
+ordinary extended tube, but it is not a membership-transport theorem and does
+not by itself justify applying a sector-local BHW branch theorem at a translated
+real point:
 
 ```lean
 theorem bvt_extendF_realTimeTranslate
@@ -2786,7 +2788,7 @@ theorem bvt_extendF_realTimeTranslate
 
 These are real-translation invariance facts, not complex-time translation
 facts.  They should be proved from existing BHW translation-invariance
-geometry and always retain the two PET-membership hypotheses.  They do not
+geometry and always retain the two ET-membership hypotheses.  They do not
 assume local commutativity of `bvt_W OS lgc`.  The value theorem
 `bvt_extendF_realTimeTranslate` should use the absolute forward-tube input
 already exposed as
@@ -2803,9 +2805,11 @@ proved `BHWTranslation.lean` translated-PET package.  This is the next proof-doc
 unit that must be made Lean-ready before any branch-envelope theorem consumes
 translated positive-time support.
 
-First isolate the true PET value-invariance theorem:
+The following theorem shape is now explicitly rejected:
 
 ```lean
+-- wrong surface: raw `BHW.extendF` is only the ordinary ET branch,
+-- not the full PET extension.
 theorem bvt_extendF_translation_invariant_on_PET
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
@@ -2818,8 +2822,85 @@ theorem bvt_extendF_translation_invariant_on_PET
       BHW.extendF (bvt_F OS lgc n) z
 ```
 
-This theorem is **not** a corollary of set membership invariance.  Its proof
-must follow the Route-1 reduced-difference pattern:
+Reason: `BHW.extendF F` is the choice-based complex-Lorentz extension from the
+forward tube to the ordinary `BHW.ExtendedTube`.  The full PET value in
+`BHWTranslation.lean` is `(W_analytic_BHW Wfn n).val`, not raw
+`BHW.extendF`.  For theorem 2 we cannot use
+`W_analytic_BHW (os_to_wightman_full OS lgc) n`, because its uniqueness proof
+uses `Wfn.locally_commutative`, which is exactly the target theorem.
+
+The first corrected theorem slot is the ET-local adapter:
+
+```lean
+theorem bvt_extendF_translation_invariant_on_ET
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (c : Fin (d + 1) → ℂ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz : z ∈ BHW.ExtendedTube d n)
+    (hzc : (fun k μ => z k μ + c μ) ∈ BHW.ExtendedTube d n) :
+    BHW.extendF (bvt_F OS lgc n) (fun k μ => z k μ + c μ) =
+      BHW.extendF (bvt_F OS lgc n) z
+```
+
+This adapter is still nontrivial, but its domain matches raw `extendF`.  It
+should be proved by identifying raw `extendF (bvt_F OS lgc n)` on ET with the
+Route-1 reduced pullback associated to `bvt_absoluteForwardTubeInput`, then
+using algebraic translation-invariance of the reduced pullback.
+
+The PET-level object must be a selected OS extension value, not raw
+`BHW.extendF`.  The theorem-2 route needs the following existence package:
+
+```lean
+theorem bvt_selectedPETExtension_exists
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) :
+    ∃ Fpet : (Fin n → Fin (d + 1) → ℂ) → ℂ,
+      DifferentiableOn ℂ Fpet (PermutedExtendedTube d n) ∧
+      (∀ z ∈ ForwardTube d n, Fpet z = bvt_F OS lgc n z) ∧
+      (∀ z ∈ BHW.ExtendedTube d n,
+        Fpet z = BHW.extendF (bvt_F OS lgc n) z) ∧
+      (∀ (z : Fin n → Fin (d + 1) → ℂ) (c : Fin (d + 1) → ℂ),
+        z ∈ PermutedExtendedTube d n →
+        (fun k μ => z k μ + c μ) ∈ PermutedExtendedTube d n →
+        Fpet (fun k μ => z k μ + c μ) = Fpet z)
+```
+
+Once this theorem exists, the selected extension is chosen in the usual way:
+
+```lean
+noncomputable def bvt_F_PETExtension
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) :
+    (Fin n → Fin (d + 1) → ℂ) → ℂ :=
+  (bvt_selectedPETExtension_exists OS lgc n).choose
+
+theorem bvt_F_PETExtension_eq_extendF_on_ET
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz : z ∈ BHW.ExtendedTube d n) :
+    bvt_F_PETExtension OS lgc n z =
+      BHW.extendF (bvt_F OS lgc n) z
+
+theorem bvt_F_PETExtension_translation_invariant_on_PET
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (c : Fin (d + 1) → ℂ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz : z ∈ PermutedExtendedTube d n)
+    (hzc : (fun k μ => z k μ + c μ) ∈ PermutedExtendedTube d n) :
+    bvt_F_PETExtension OS lgc n (fun k μ => z k μ + c μ) =
+      bvt_F_PETExtension OS lgc n z
+```
+
+The proof of `bvt_selectedPETExtension_exists` must follow the non-circular
+Route-1/reduced-difference pattern:
 
 1. split the `n = 0` and `n = m + 1` cases;
 2. instantiate the absolute forward-tube input
@@ -2829,23 +2910,27 @@ must follow the Route-1 reduced-difference pattern:
 5. pull it back along `reducedDiffMap`;
 6. prove the pulled-back extension is algebraically translation-invariant by
    `BHW.reduced_pullback_translation_invariant`;
-7. identify the pulled-back extension with `BHW.extendF (bvt_F OS lgc (m+1))`
-   on PET by BHW uniqueness.
+7. identify the pulled-back extension with raw
+   `BHW.extendF (bvt_F OS lgc (m+1))` on the non-permuted ET branch;
+8. use the selected OS permutation/edge-distribution package, not
+   `Wfn.locally_commutative`, to glue the PET branches needed by theorem 2.
 
-The missing substep is item 4/7 for a generic `AbsoluteForwardTubeInput`.  The
-current `BHWTranslation.lean` implementation proves the same pattern for an
-already packaged `WightmanFunctions` object using
-`route1AbsoluteBHWExtensionCanonical`; theorem 2 cannot instantiate that with
+The missing substep is item 4 plus the PET gluing part of item 8 for a selected
+OS input.  The current `BHWTranslation.lean` implementation proves the same
+translation-invariance pattern for an already packaged `WightmanFunctions`
+object using `route1AbsoluteBHWExtensionCanonical` and
+`W_analytic_BHW_unique`; theorem 2 cannot instantiate that route with
 `os_to_wightman_full OS lgc`, because that structure already contains locality.
 So the theorem-2 repair must either generalize the Route-1 reduced extension
-from `WightmanFunctions` to `AbsoluteForwardTubeInput`, or prove the same
-uniqueness comparison directly for the selected `bvt_absoluteForwardTubeInput`.
+from `WightmanFunctions` to a non-circular selected OS input carrying
+`bvt_F_acrOne_package`, or prove the same comparison directly for
+`bvt_absoluteForwardTubeInput`.
 
 Once PET value-invariance exists, define the selected translated-PET value
 without any arbitrary branch choice:
 
 ```lean
-theorem bvt_extendF_value_on_translatedPET
+theorem bvt_F_PETExtension_value_on_translatedPET
     (OS : OsterwalderSchraderAxioms d)
     (lgc : OSLinearGrowthCondition d OS)
     (n : ℕ)
@@ -2853,10 +2938,10 @@ theorem bvt_extendF_value_on_translatedPET
     (c₁ c₂ : Fin (d + 1) → ℂ)
     (h₁ : (fun k μ => z k μ + c₁ μ) ∈ PermutedExtendedTube d n)
     (h₂ : (fun k μ => z k μ + c₂ μ) ∈ PermutedExtendedTube d n) :
-    BHW.extendF (bvt_F OS lgc n) (fun k μ => z k μ + c₁ μ) =
-      BHW.extendF (bvt_F OS lgc n) (fun k μ => z k μ + c₂ μ) := by
+    bvt_F_PETExtension OS lgc n (fun k μ => z k μ + c₁ μ) =
+      bvt_F_PETExtension OS lgc n (fun k μ => z k μ + c₂ μ) := by
   have key :=
-    bvt_extendF_translation_invariant_on_PET
+    bvt_F_PETExtension_translation_invariant_on_PET
       (d := d) OS lgc n (fun μ => c₂ μ - c₁ μ)
       (fun k μ => z k μ + c₁ μ) h₁
       (by
@@ -2871,7 +2956,7 @@ noncomputable def bvt_F_on_translatedPET
     (n : ℕ)
     (z : Fin n → Fin (d + 1) → ℂ)
     (hz : z ∈ TranslatedPET d n) : ℂ :=
-  BHW.extendF (bvt_F OS lgc n) (fun k μ => z k μ + hz.choose μ)
+  bvt_F_PETExtension OS lgc n (fun k μ => z k μ + hz.choose μ)
 ```
 
 Then mirror the existing translated-PET API:
@@ -2885,7 +2970,7 @@ theorem bvt_F_on_translatedPET_eq_on_PET
     (hz_pet : z ∈ PermutedExtendedTube d n)
     (hz_tpet : z ∈ TranslatedPET d n) :
     bvt_F_on_translatedPET OS lgc n z hz_tpet =
-      BHW.extendF (bvt_F OS lgc n) z
+      bvt_F_PETExtension OS lgc n z
 
 theorem bvt_F_on_translatedPET_translation_invariant
     (OS : OsterwalderSchraderAxioms d)
@@ -2921,7 +3006,7 @@ forward/PET witness, while the final comparison back to the original support is
 performed by `bvt_F_on_translatedPET_translation_invariant`, not by a false
 Jost/ET membership-transport theorem.
 
-The following raw `extendF` theorem remains a PET-local pointwise sublemma.  It
+The following raw `extendF` theorem remains an ET-local pointwise sublemma.  It
 is useful on real-open neighborhoods where both the original and permuted real
 configurations are already in PET/ET.  It is **not** by itself the translated
 compact-support theorem, because positive-time translation does not transport
