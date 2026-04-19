@@ -3415,6 +3415,216 @@ non-adjacent sectors need not lie in every intermediate sector.  The proof must
 obtain independence of analytic continuation over the finite open cover,
 rather than asking for a nonexistent all-permutation real edge.
 
+The Lean implementation is therefore not ready to close this theorem from the
+current local data alone.  The missing item is a BHW cover-gluing/monodromy
+theorem, not another wrapper around `SelectedAdjacentPermutationEdgeData`.
+
+The incorrect pointwise route is already visible in the older
+`BHWPermutation/PermutationFlow.lean` scaffolding:
+
+```lean
+Relation.ReflTransGen (etAdjStep (d := d) (n := n) y) 1 τ
+```
+
+or its midpoint form
+
+```lean
+permAct (d := d) (σ * Equiv.swap i ⟨i.val + 1, hi⟩) y ∈
+    BHW.ExtendedTube d n →
+  permAct (d := d) σ y ∈ BHW.ExtendedTube d n
+```
+
+This is too strong for the PET all-overlap theorem.  It asks for a single
+configuration `y` to remain inside ET along a chosen adjacent-swap word.  The
+whole reason to use PET is that analytic continuation can move through the
+sector cover even when that fixed configuration is not in the intermediate
+absolute ET sectors.
+
+The correct theorem should be formulated at the level of analytic branches on
+open sectors.  Write
+
+```lean
+S π := BHW.permutedExtendedTubeSector d n π
+G π := bvt_selectedPETBranch OS lgc n π
+```
+
+The current production facts give:
+
+1. `IsOpen (S π)`;
+2. `IsPreconnected (S π)`;
+3. `BHW.PermutedExtendedTube d n = ⋃ π, S π`;
+4. `DifferentiableOn ℂ (G π) (S π)`;
+5. `G (π * τ) = G π` on `S π ∩ S (π * τ)` for every adjacent swap `τ`;
+6. `S π ∩ S (π * τ)` is nonempty for every adjacent swap `τ`.
+
+These six facts still do not imply all-overlap compatibility for an arbitrary
+finite open cover.  A tempting additional statement would be:
+
+```lean
+-- Do not adopt this as a target without a separate proof.
+theorem BHW.petSector_pathSaturation_inter_next_preconnected ...
+```
+
+meaning that, for an adjacent path list `L` ending at `α` and a neighboring
+sector `β`, every connected component of
+`(⋃ π ∈ L, S π) ∩ S β` meets `S α ∩ S β`.  This would make an inductive
+path-gluing proof straightforward, because equality on the last adjacent
+overlap could be propagated to all of the new intersection by the identity
+theorem.
+
+But this path-saturation statement is itself a strong global geometry claim and
+should be treated as unproved and possibly false until established from BHW
+geometry.  It is not a safe next Lean target.  The production route should
+instead expose the actual BHW monodromy / well-definedness theorem:
+
+```lean
+theorem BHW.extendF_pet_branch_independence_of_adjacent
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF_holo : DifferentiableOn ℂ F (BHW.ForwardTube d n))
+    (hF_lorentz :
+      ∀ (Λ : RestrictedLorentzGroup d)
+        (z : Fin n → Fin (d + 1) → ℂ), z ∈ BHW.ForwardTube d n →
+        F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
+    (hAdj :
+      ∀ (π : Equiv.Perm (Fin n)) (i : Fin n) (hi : i.val + 1 < n)
+        (z : Fin n → Fin (d + 1) → ℂ),
+        z ∈ BHW.permutedExtendedTubeSector d n π →
+        z ∈ BHW.permutedExtendedTubeSector d n
+          (π * Equiv.swap i ⟨i.val + 1, hi⟩) →
+        BHW.extendF F (fun k => z ((π * Equiv.swap i ⟨i.val + 1, hi⟩) k)) =
+          BHW.extendF F (fun k => z (π k))) :
+    ∀ (π ρ : Equiv.Perm (Fin n))
+      (z : Fin n → Fin (d + 1) → ℂ),
+      z ∈ BHW.permutedExtendedTubeSector d n π →
+      z ∈ BHW.permutedExtendedTubeSector d n ρ →
+      BHW.extendF F (fun k => z (π k)) =
+        BHW.extendF F (fun k => z (ρ k))
+```
+
+This theorem is not a wrapper: it is the hard single-valued analytic
+continuation statement for the PET sector cover.  It is the selected-data
+analogue of the older private `fullExtendF_well_defined` spine in
+`BHWPermutation/PermutationFlow.lean`, but it must not consume
+`IsLocallyCommutativeWeak d (bvt_W OS lgc)` or any theorem equivalent to the
+public locality conclusion.
+
+The proof obligations for this theorem are:
+
+1. construct the analytic continuation space from the disjoint union of sector
+   charts `Σ π, S π`, identifying adjacent charts on the full adjacent overlaps
+   where `hAdj` gives equality;
+2. prove the projection of this continuation space to
+   `BHW.PermutedExtendedTube d n` is single-valued, or equivalently that the
+   value of `BHW.extendF F` is constant on every fiber over a PET point;
+3. prove this single-valuedness by the standard BHW monodromy argument, using
+   adjacent swaps as the local edge-of-the-wedge seeds and the connected PET
+   continuation domain, not by requiring a fixed point to remain in all
+   intermediate absolute ET overlaps;
+4. explicitly handle the low-dimensional branch (`d = 1`) if the available BHW
+   geometry splits by dimension, as the existing `PermutationFlow` scaffolding
+   does;
+5. after single-valuedness is proved, define the PET scalar and use the already
+   checked formal gluing adapter only as the final value-selection mechanism.
+
+Once `BHW.extendF_pet_branch_independence_of_adjacent` exists, the algebraic
+tail can follow the existing private `fullExtendF_well_defined` proof almost
+verbatim, but with no `W` and no `hF_local_dist`.  The intermediate theorem
+should be:
+
+```lean
+theorem BHW.F_permutation_invariance_of_petBranchIndependence
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF_holo : DifferentiableOn ℂ F (BHW.ForwardTube d n))
+    (hF_lorentz :
+      ∀ (Λ : RestrictedLorentzGroup d)
+        (z : Fin n → Fin (d + 1) → ℂ), z ∈ BHW.ForwardTube d n →
+        F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
+    (hPET :
+      ∀ (π ρ : Equiv.Perm (Fin n))
+        (z : Fin n → Fin (d + 1) → ℂ),
+        z ∈ BHW.permutedExtendedTubeSector d n π →
+        z ∈ BHW.permutedExtendedTubeSector d n ρ →
+        BHW.extendF F (fun k => z (π k)) =
+          BHW.extendF F (fun k => z (ρ k))) :
+    ∀ {w : Fin n → Fin (d + 1) → ℂ}, w ∈ BHW.ForwardTube d n →
+      ∀ {τ : Equiv.Perm (Fin n)} {Γ : ComplexLorentzGroup d},
+        BHW.complexLorentzAction Γ (fun k => w (τ k)) ∈
+          BHW.ForwardTube d n →
+        F (BHW.complexLorentzAction Γ (fun k => w (τ k))) = F w
+```
+
+Proof sketch for the Lean term:
+
+1. set `z := BHW.complexLorentzAction Γ (fun k => w (τ k))`;
+2. `z ∈ S 1` because the hypothesis says `z ∈ ForwardTube`, hence `z ∈ ET`;
+3. `z ∈ S τ⁻¹` because `fun k => z (τ⁻¹ k) = BHW.complexLorentzAction Γ w`,
+   and `BHW.complexLorentzAction Γ w ∈ ET` since `w ∈ ForwardTube ⊆ ET`;
+4. apply `hPET 1 τ⁻¹ z` to get
+   `BHW.extendF F z = BHW.extendF F (BHW.complexLorentzAction Γ w)`;
+5. rewrite the left side by `BHW.extendF_eq_on_forwardTube`;
+6. rewrite the right side by `BHW.extendF_complex_lorentz_invariant` and
+   `BHW.extendF_eq_on_forwardTube`.
+
+Then the existing `fullExtendF_well_defined` algebra becomes:
+
+```lean
+theorem BHW.fullExtendF_well_defined_of_petBranchIndependence
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF_holo : DifferentiableOn ℂ F (BHW.ForwardTube d n))
+    (hF_lorentz :
+      ∀ (Λ : RestrictedLorentzGroup d)
+        (z : Fin n → Fin (d + 1) → ℂ), z ∈ BHW.ForwardTube d n →
+        F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
+    (hPET : -- branch independence as above)
+    {w₁ w₂ : Fin n → Fin (d + 1) → ℂ}
+    (hw₁ : w₁ ∈ BHW.ForwardTube d n)
+    (hw₂ : w₂ ∈ BHW.ForwardTube d n)
+    {π₁ π₂ : Equiv.Perm (Fin n)} {Λ₁ Λ₂ : ComplexLorentzGroup d}
+    (h : BHW.complexLorentzAction Λ₁ (fun k => w₁ (π₁ k)) =
+         BHW.complexLorentzAction Λ₂ (fun k => w₂ (π₂ k))) :
+    F w₁ = F w₂
+```
+
+The proof is the existing private proof with the call to
+`F_permutation_invariance` replaced by
+`F_permutation_invariance_of_petBranchIndependence`.
+
+An equivalent theorem shape is also acceptable if it is closer to the existing
+private code:
+
+```lean
+theorem BHW.fullExtendF_well_defined_of_adjacentBranchEquality
+    -- same analytic inputs and adjacent branch equality as above
+    -- any two PET representations of the same point give the same `F` value
+```
+
+This version would let the existing `fullExtendF` construction be reused
+non-circularly.  The key requirement is the same: the theorem must prove
+single-valued PET analytic continuation from adjacent branch equality, not
+assume all-permutation real edge data and not assume global Wightman locality.
+
+Only after one of these BHW monodromy / well-definedness statements is proved
+should the selected theorem be implemented:
+
+```lean
+theorem bvt_selectedPETBranch_allOverlap_eq_of_adjacentEdgeData
+    (hEdge : SelectedAdjacentPermutationEdgeData OS lgc n)
+    (π ρ : Equiv.Perm (Fin n))
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hzπ : z ∈ BHW.permutedExtendedTubeSector d n π)
+    (hzρ : z ∈ BHW.permutedExtendedTubeSector d n ρ) :
+    bvt_selectedPETBranch OS lgc n π z =
+      bvt_selectedPETBranch OS lgc n ρ z
+```
+
+by instantiating `G` with `bvt_selectedPETBranch OS lgc n`, `hG_holo` with
+`bvt_selectedPETBranch_holomorphicOn_sector`, and `hAdj` with
+`bvt_selectedPETBranch_adjacent_eq_on_sector_overlap`.
+
+This is the next proof-doc completion target.  Production Lean should not add a
+theorem named `bvt_selectedPETBranch_allOverlap_eq_of_adjacentEdgeData` until
+the single-valued PET monodromy / well-definedness theorem above is proved.
+
 There is also an explicitly overstrong conditional helper:
 
 ```lean
@@ -4310,32 +4520,46 @@ direct final theorem-2 calls on `W := bvt_W OS lgc`:
 
 Primary planned theorem-2 closure slots:
 
-1. `BHW.HasPermutationEdgeDistributionEquality`
-2. `bvt_F_distributionalEOW_permBranch_from_euclideanEdge`
-3. `bvt_F_permBranchEnvelope_on_jostOverlap_from_ACR_and_BHW`
-4. `bvt_F_extendF_adjacentEdgeDistribution_eq_from_OS`
-5. `bvt_F_extendF_perm_edgeDistribution_eq_from_OS`
-6. `bvt_F_hasPermutationEdgeDistributionEquality`
-7. `BHW.extendF_perm_eq_on_realOpen_of_edgePairingEquality`
-8. `bvt_F_restrictedLorentzInvariant_forwardTube`
-9. `bvt_F_complexLorentzInvariant_forwardTube`
-10. `BHW.permuteSchwartz`
-11. `BHW.permute_support_jost`
-12. `BHW.permute_tsupport_jost`
-13. `BHW.permuteSchwartz_hasCompactSupport`
-14. `BHW.integral_perm_eq_self`
-15. `bvt_W_perm_invariant_on_compactJostOverlap_from_OS`
-16. `BHW.extendF_perm_eq_on_realOpen_of_jost_distribution_symmetry`
-17. `bvt_F_extendF_perm_eq_on_realJost_of_OS_symmetry`
-18. `BHW.jostWitness_exists_for_perm_overlap`
-19. `BHW.isConnected_permForwardOverlapSet_for_perm`
-20. `BHW.extendF_perm_eq_on_realOpen_of_edgePairingEquality`
-21. `BHW.extendF_perm_overlap_of_edgePairingEquality`
-22. `BHW.bargmann_hall_wightman_theorem_of_extendF_perm`
-23. `bvt_F_extendF_perm_overlap`
-24. `bvt_F_symmetric_PET_extension`
+1. `bvt_F_restrictedLorentzInvariant_forwardTube`
+2. `bvt_F_complexLorentzInvariant_forwardTube`
+3. `BHW.HasPermutationEdgeDistributionEquality`
+4. `bvt_F_distributionalEOW_permBranch_from_euclideanEdge`
+5. `bvt_F_permBranchEnvelope_on_jostOverlap_from_ACR_and_BHW`
+6. `bvt_F_extendF_adjacentEdgeDistribution_eq_from_OS`
+7. `bvt_F_selectedAdjacentPermutationEdgeData_from_OS`
+8. `SelectedAdjacentPermutationEdgeData`
+9. `bvt_F_extendF_adjacent_overlap_of_selectedEdgeData`
+10. `bvt_selectedPETBranch`
+11. `bvt_selectedPETBranch_holomorphicOn_sector`
+12. `bvt_selectedPETBranch_adjacent_eq_on_sector_overlap`
+13. `BHW.extendF_pet_branch_independence_of_adjacent`
+14. `bvt_selectedPETBranch_allOverlap_eq_of_adjacentEdgeData`
+15. `BHW.F_permutation_invariance_of_petBranchIndependence`
+16. `BHW.fullExtendF_well_defined_of_petBranchIndependence`
+17. `BHW.bargmann_hall_wightman_theorem_of_adjacentBranchEquality`
+18. `bvt_F_symmetric_PET_extension_of_adjacentEdgeData`
+19. `BHW.permuteSchwartz`
+20. `BHW.permute_support_jost`
+21. `BHW.permute_tsupport_jost`
+22. `BHW.permuteSchwartz_hasCompactSupport`
+23. `BHW.integral_perm_eq_self`
+24. `bvt_W_perm_invariant_on_compactJostOverlap_from_OS`
 25. `bv_local_commutativity_transfer_of_symmetric_PET_boundary`
 26. `bvt_locally_commutative_from_symmetric_PET_boundary`
+
+The following older slot names are no longer primary construction targets:
+
+1. `BHW.jostWitness_exists_for_perm_overlap`;
+2. `BHW.isConnected_permForwardOverlapSet_for_perm`;
+3. `bvt_F_extendF_perm_edgeDistribution_eq_from_OS`;
+4. `bvt_F_hasPermutationEdgeDistributionEquality`;
+5. `bvt_F_extendF_perm_overlap`.
+
+They may remain as conditional compatibility lemmas if their hypotheses are
+explicitly supplied, but theorem 2 must not try to construct arbitrary
+all-permutation real edge witnesses.  General permutation behavior must be
+exported through adjacent edge data plus the PET monodromy / single-valuedness
+theorem.
 
 Do not insert `bvt_F_hasFlatRegularRepr` or
 `bvt_F_boundary_continuous_at_real_support` into the primary list.  Those names
@@ -4406,30 +4630,42 @@ implementation is drifting back toward a stale or circular locality plan.
 Primary PET-extension construction:
 
 ```lean
-theorem bvt_F_extendF_perm_overlap
+theorem bvt_F_selectedAdjacentPermutationEdgeData_from_OS
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
     (n : ℕ) :
-    ∀ (σ : Equiv.Perm (Fin n))
-      (z : Fin n → Fin (d + 1) → ℂ),
-      z ∈ BHW.ExtendedTube d n →
-      BHW.permAct (d := d) σ z ∈ BHW.ExtendedTube d n →
-      BHW.extendF (bvt_F OS lgc n) (BHW.permAct (d := d) σ z) =
-        BHW.extendF (bvt_F OS lgc n) z := by
-  intro σ z hz hzσ
-  have hOverlapConn :=
-    BHW.isConnected_permExtendedOverlap_for_perm (d := d) (n := n) σ
-  obtain ⟨V, hV_open, hV_ne, hV_ET, hV_permET, hEdgePair⟩ :=
-    bvt_F_extendF_perm_edgePairing_eq_from_OS (d := d) OS lgc n σ
+    SelectedAdjacentPermutationEdgeData OS lgc n := by
+  -- Construct only adjacent-swap edge data:
+  --   * adjacent overlap connectedness;
+  --   * adjacent real-open edge witness;
+  --   * compact-test edge equality from OS Euclidean symmetry and
+  --     distributional EOW.
+  -- Do not construct arbitrary all-permutation real edge witnesses.
+
+theorem bvt_selectedPETBranch_allOverlap_eq_of_adjacentEdgeData
+    (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (hEdge : SelectedAdjacentPermutationEdgeData OS lgc n)
+    (π ρ : Equiv.Perm (Fin n))
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hzπ : z ∈ BHW.permutedExtendedTubeSector d n π)
+    (hzρ : z ∈ BHW.permutedExtendedTubeSector d n ρ) :
+    bvt_selectedPETBranch OS lgc n π z =
+      bvt_selectedPETBranch OS lgc n ρ z := by
   exact
-    BHW.extendF_perm_overlap_of_edgePairingEquality
+    BHW.extendF_pet_branch_independence_of_adjacent
       (d := d) n (bvt_F OS lgc n)
       (bvt_F_holomorphic (d := d) OS lgc n)
       (bvt_F_restrictedLorentzInvariant_forwardTube (d := d) OS lgc n)
-      σ hOverlapConn V hV_open hV_ne hV_ET hV_permET hEdgePair z hz hzσ
+      (by
+        intro π i hi z hzπ hzπswap
+        exact bvt_selectedPETBranch_adjacent_eq_on_sector_overlap
+          (d := d) OS lgc n hEdge π i hi z hzπ hzπswap)
+      π ρ z hzπ hzρ
 
-theorem bvt_F_symmetric_PET_extension
+theorem bvt_F_symmetric_PET_extension_of_adjacentEdgeData
     (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
-    (n : ℕ) :
+    (n : ℕ)
+    (hEdge : SelectedAdjacentPermutationEdgeData OS lgc n) :
     ∃ Fext : (Fin n → Fin (d + 1) → ℂ) → ℂ,
       DifferentiableOn ℂ Fext (BHW.PermutedExtendedTube d n) ∧
       (∀ z ∈ ForwardTube d n, Fext z = bvt_F OS lgc n z) ∧
@@ -4440,21 +4676,23 @@ theorem bvt_F_symmetric_PET_extension
         z ∈ BHW.PermutedExtendedTube d n →
         Fext (fun k => z (σ k)) = Fext z) := by
   obtain ⟨Fext, hFext_holo, hFext_agree, hFext_lorentz, hFext_perm, _huniq⟩ :=
-    BHW.bargmann_hall_wightman_theorem_of_extendF_perm
+    BHW.bargmann_hall_wightman_theorem_of_adjacentBranchEquality
       (d := d) n (bvt_F OS lgc n)
       (bvt_F_holomorphic (d := d) OS lgc n)
       (bvt_F_restrictedLorentzInvariant_forwardTube (d := d) OS lgc n)
-      (bvt_F_extendF_perm_overlap (d := d) OS lgc n)
+      (bvt_selectedPETBranch_allOverlap_eq_of_adjacentEdgeData
+        (d := d) OS lgc n hEdge)
   exact ⟨Fext, hFext_holo, hFext_agree, hFext_lorentz, hFext_perm⟩
 ```
 
-The geometry slots `BHW.jostWitness_exists_for_perm_overlap` and
-`BHW.isConnected_permForwardOverlapSet_for_perm` are the public forms of the
-geometry currently represented in the private BHW permutation-flow proof by
-`JostWitnessGeneralSigma.jostWitness_exists` and the perm-seed connectedness
-blocker.  The Lorentz slot
-`bvt_F_restrictedLorentzInvariant_forwardTube` is the public form of the
-currently-private `bvt_F` restricted-Lorentz invariance package.
+The old arbitrary-permutation pseudocode using
+`bvt_F_extendF_perm_edgePairing_eq_from_OS`,
+`BHW.jostWitness_exists_for_perm_overlap`, and
+`BHW.isConnected_permForwardOverlapSet_for_perm` is no longer the primary
+route.  Those names ask for all-permutation real overlap data and are too
+strong as construction targets.  The primary construction is adjacent edge data
+plus the PET monodromy theorem
+`BHW.extendF_pet_branch_independence_of_adjacent`.
 
 Primary boundary-level closure:
 
@@ -4464,8 +4702,10 @@ private theorem bvt_locally_commutative_boundary_route
     (lgc : OSLinearGrowthCondition d OS) :
     IsLocallyCommutativeWeak d (bvt_W OS lgc) := by
   intro n i j f g hsep hswap
+  have hEdge : SelectedAdjacentPermutationEdgeData OS lgc n :=
+    bvt_F_selectedAdjacentPermutationEdgeData_from_OS (d := d) OS lgc n
   obtain ⟨Fext, hFext_holo, hFext_agree, hFext_lorentz, hFext_perm⟩ :=
-    bvt_F_symmetric_PET_extension (d := d) OS lgc n
+    bvt_F_symmetric_PET_extension_of_adjacentEdgeData (d := d) OS lgc n hEdge
   exact
     bv_local_commutativity_transfer_of_symmetric_PET_boundary
       (d := d) n
