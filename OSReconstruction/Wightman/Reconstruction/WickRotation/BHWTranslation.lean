@@ -1365,19 +1365,6 @@ theorem F_ext_on_translatedPET_total_translation_invariant {d n : ℕ} [NeZero d
   simp only [F_ext_on_translatedPET_total, dif_pos hz, dif_pos hzc]
   exact F_ext_on_translatedPET_translation_invariant Wfn z c hz hzc
 
-private theorem permutedExtendedTube_perm {d n : ℕ} [NeZero d]
-    (σ : Equiv.Perm (Fin n))
-    {z : Fin n → Fin (d + 1) → ℂ}
-    (hz : z ∈ PermutedExtendedTube d n) :
-    (fun k => z (σ k)) ∈ PermutedExtendedTube d n := by
-  rw [← BHW_permutedExtendedTube_eq (d := d) (n := n)] at hz ⊢
-  obtain ⟨π, hπ⟩ := Set.mem_iUnion.mp hz
-  rcases hπ with ⟨Λ, w, hw, hzw⟩
-  refine Set.mem_iUnion.mpr ⟨σ.symm * π, ⟨Λ, fun k => w (σ k), ?_, ?_⟩⟩
-  · simpa [BHW.PermutedForwardTube] using hw
-  · ext k μ
-    simp [hzw, BHW.complexLorentzAction]
-
 /-- `F_ext_on_translatedPET_total` is permutation-invariant on `TranslatedPET`. -/
 theorem F_ext_on_translatedPET_total_perm_invariant {d n : ℕ} [NeZero d]
     (Wfn : WightmanFunctions d)

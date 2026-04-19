@@ -1221,6 +1221,219 @@ theorem translatedPET_translate_iff {d n : ℕ} [NeZero d]
   · intro hz
     exact translatedPET_translate (d := d) (n := n) hz c
 
+/-- `TranslatedPET` is open: it is the union of translated preimages of the
+open permuted extended tube. -/
+theorem isOpen_translatedPET {d n : ℕ} [NeZero d] :
+    IsOpen (TranslatedPET d n) := by
+  rw [TranslatedPET]
+  have hset :
+      {z : Fin n → Fin (d + 1) → ℂ |
+        ∃ c : Fin (d + 1) → ℂ,
+          (fun k μ => z k μ + c μ) ∈ PermutedExtendedTube d n} =
+        ⋃ c : Fin (d + 1) → ℂ,
+          {z : Fin n → Fin (d + 1) → ℂ |
+            (fun k μ => z k μ + c μ) ∈ PermutedExtendedTube d n} := by
+    ext z
+    simp
+  rw [hset]
+  refine isOpen_iUnion fun c => ?_
+  have hcont :
+      Continuous
+        (fun z : Fin n → Fin (d + 1) → ℂ =>
+          fun k μ => z k μ + c μ) := by
+    apply continuous_pi
+    intro k
+    apply continuous_pi
+    intro μ
+    have hk :
+        Continuous
+          (fun z : Fin n → Fin (d + 1) → ℂ => z k) :=
+      continuous_apply k
+    have hcoord :
+        Continuous
+          (fun z : Fin n → Fin (d + 1) → ℂ => z k μ) :=
+      (continuous_apply μ).comp hk
+    exact hcoord.add continuous_const
+  exact
+    (BHW_permutedExtendedTube_eq (d := d) (n := n) ▸ BHW.isOpen_permutedExtendedTube).preimage
+      hcont
+
+/-- The permuted extended tube is stable under coordinate permutations. -/
+theorem permutedExtendedTube_perm {d n : ℕ} [NeZero d]
+    (σ : Equiv.Perm (Fin n))
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hz : z ∈ PermutedExtendedTube d n) :
+    (fun k => z (σ k)) ∈ PermutedExtendedTube d n := by
+  rw [← BHW_permutedExtendedTube_eq (d := d) (n := n)] at hz ⊢
+  obtain ⟨π, hπ⟩ := Set.mem_iUnion.mp hz
+  rcases hπ with ⟨Λ, w, hw, hzw⟩
+  refine Set.mem_iUnion.mpr ⟨σ.symm * π, ⟨Λ, fun k => w (σ k), ?_, ?_⟩⟩
+  · simpa [BHW.PermutedForwardTube] using hw
+  · ext k μ
+    simp [hzw, BHW.complexLorentzAction]
+
+/-- `TranslatedPET` is stable under coordinate permutations. -/
+theorem translatedPET_perm {d n : ℕ} [NeZero d]
+    (σ : Equiv.Perm (Fin n))
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hz : z ∈ TranslatedPET d n) :
+    (fun k => z (σ k)) ∈ TranslatedPET d n := by
+  rcases hz with ⟨c, hc⟩
+  refine ⟨c, ?_⟩
+  simpa using permutedExtendedTube_perm (d := d) (n := n) σ hc
+
+/-- Coordinate permutation is an equivalence on `TranslatedPET`. -/
+theorem translatedPET_perm_iff {d n : ℕ} [NeZero d]
+    (σ : Equiv.Perm (Fin n))
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    (fun k => z (σ k)) ∈ TranslatedPET d n ↔ z ∈ TranslatedPET d n := by
+  constructor
+  · intro hz
+    have hback :=
+      translatedPET_perm (d := d) (n := n) σ.symm
+        (z := fun k => z (σ k)) hz
+    simpa using hback
+  · intro hz
+    exact translatedPET_perm (d := d) (n := n) σ hz
+
+/-! #### Generic values on `TranslatedPET`
+
+The following small API separates the purely geometric witness-independence
+argument from the specific BHW or selected-OS analytic extension that supplies
+the PET value.  If a scalar `F` is invariant under uniform complex translations
+where both endpoints lie in `PermutedExtendedTube`, then evaluating `F` at any
+PET translate of a `TranslatedPET` point is independent of the chosen translate.
+-/
+
+/-- A PET scalar with uniform-translation invariance has a well-defined value
+at a translated-PET point: any two PET witnesses give the same scalar. -/
+theorem translatedPET_value_eq_of_translation_invariant {d n : ℕ} [NeZero d]
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF_translate :
+      ∀ (z : Fin n → Fin (d + 1) → ℂ) (c : Fin (d + 1) → ℂ),
+        z ∈ PermutedExtendedTube d n →
+        (fun k μ => z k μ + c μ) ∈ PermutedExtendedTube d n →
+        F (fun k μ => z k μ + c μ) = F z)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (c₁ c₂ : Fin (d + 1) → ℂ)
+    (h₁ : (fun k μ => z k μ + c₁ μ) ∈ PermutedExtendedTube d n)
+    (h₂ : (fun k μ => z k μ + c₂ μ) ∈ PermutedExtendedTube d n) :
+    F (fun k μ => z k μ + c₁ μ) =
+      F (fun k μ => z k μ + c₂ μ) := by
+  have key := hF_translate (fun k μ => z k μ + c₁ μ)
+    (fun μ => c₂ μ - c₁ μ) h₁
+    (by
+      convert h₂ using 1
+      ext k μ
+      ring)
+  simpa [sub_eq_add_neg, add_assoc] using key.symm
+
+/-- Evaluate a PET scalar at a translated-PET point using the chosen PET
+witness.  `translatedPET_value_eq_of_translation_invariant` proves that this
+choice is independent once the PET scalar has uniform-translation invariance. -/
+noncomputable def translatedPETValue {d n : ℕ} [NeZero d]
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz : z ∈ TranslatedPET d n) : ℂ :=
+  F (fun k μ => z k μ + hz.choose μ)
+
+/-- On the original PET, the translated-PET value agrees with the PET scalar. -/
+theorem translatedPETValue_eq_on_PET {d n : ℕ} [NeZero d]
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF_translate :
+      ∀ (z : Fin n → Fin (d + 1) → ℂ) (c : Fin (d + 1) → ℂ),
+        z ∈ PermutedExtendedTube d n →
+        (fun k μ => z k μ + c μ) ∈ PermutedExtendedTube d n →
+        F (fun k μ => z k μ + c μ) = F z)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz_pet : z ∈ PermutedExtendedTube d n)
+    (hz_tpet : z ∈ TranslatedPET d n) :
+    translatedPETValue F z hz_tpet = F z := by
+  unfold translatedPETValue
+  have hzero :
+      (fun k μ => z k μ + (0 : Fin (d + 1) → ℂ) μ) ∈
+        PermutedExtendedTube d n := by
+    simpa using hz_pet
+  have h :=
+    translatedPET_value_eq_of_translation_invariant
+      (d := d) (n := n) F hF_translate z hz_tpet.choose 0
+      hz_tpet.choose_spec hzero
+  simpa using h
+
+/-- The translated-PET value is invariant under uniform complex translations,
+provided both translated-PET memberships are supplied. -/
+theorem translatedPETValue_translation_invariant {d n : ℕ} [NeZero d]
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF_translate :
+      ∀ (z : Fin n → Fin (d + 1) → ℂ) (c : Fin (d + 1) → ℂ),
+        z ∈ PermutedExtendedTube d n →
+        (fun k μ => z k μ + c μ) ∈ PermutedExtendedTube d n →
+        F (fun k μ => z k μ + c μ) = F z)
+    (z : Fin n → Fin (d + 1) → ℂ) (c : Fin (d + 1) → ℂ)
+    (hz : z ∈ TranslatedPET d n)
+    (hzc : (fun k μ => z k μ + c μ) ∈ TranslatedPET d n) :
+    translatedPETValue F z hz =
+      translatedPETValue F (fun k μ => z k μ + c μ) hzc := by
+  unfold translatedPETValue
+  have h₂ :
+      (fun k μ => z k μ + (fun μ => c μ + hzc.choose μ) μ) ∈
+        PermutedExtendedTube d n := by
+    convert hzc.choose_spec using 1
+    ext k μ
+    ring
+  have h :=
+    translatedPET_value_eq_of_translation_invariant
+      (d := d) (n := n) F hF_translate z hz.choose
+      (fun μ => c μ + hzc.choose μ) hz.choose_spec h₂
+  convert h using 2
+  ext k μ
+  ring
+
+/-- Total version of `translatedPETValue`: outside `TranslatedPET` it is zero.
+This is only an honest integrand when paired with a support or a.e. theorem
+showing the non-`TranslatedPET` locus is irrelevant. -/
+noncomputable def translatedPETValueTotal {d n : ℕ} [NeZero d]
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (z : Fin n → Fin (d + 1) → ℂ) : ℂ :=
+  if hz : z ∈ TranslatedPET d n then
+    translatedPETValue F z hz
+  else 0
+
+/-- On the original PET, the total translated-PET value agrees with the PET
+scalar. -/
+theorem translatedPETValueTotal_eq_on_PET {d n : ℕ} [NeZero d]
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF_translate :
+      ∀ (z : Fin n → Fin (d + 1) → ℂ) (c : Fin (d + 1) → ℂ),
+        z ∈ PermutedExtendedTube d n →
+        (fun k μ => z k μ + c μ) ∈ PermutedExtendedTube d n →
+        F (fun k μ => z k μ + c μ) = F z)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hz_pet : z ∈ PermutedExtendedTube d n) :
+    translatedPETValueTotal F z = F z := by
+  have hz_tpet : z ∈ TranslatedPET d n :=
+    PermutedExtendedTube_subset_TranslatedPET hz_pet
+  simp only [translatedPETValueTotal, dif_pos hz_tpet]
+  exact translatedPETValue_eq_on_PET F hF_translate z hz_pet hz_tpet
+
+/-- The total translated-PET value is translation-invariant on
+`TranslatedPET`. -/
+theorem translatedPETValueTotal_translation_invariant {d n : ℕ} [NeZero d]
+    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (hF_translate :
+      ∀ (z : Fin n → Fin (d + 1) → ℂ) (c : Fin (d + 1) → ℂ),
+        z ∈ PermutedExtendedTube d n →
+        (fun k μ => z k μ + c μ) ∈ PermutedExtendedTube d n →
+        F (fun k μ => z k μ + c μ) = F z)
+    (z : Fin n → Fin (d + 1) → ℂ) (c : Fin (d + 1) → ℂ)
+    (hz : z ∈ TranslatedPET d n) :
+    translatedPETValueTotal F z =
+      translatedPETValueTotal F (fun k μ => z k μ + c μ) := by
+  have hzc : (fun k μ => z k μ + c μ) ∈ TranslatedPET d n :=
+    translatedPET_translate hz c
+  simp only [translatedPETValueTotal, dif_pos hz, dif_pos hzc]
+  exact translatedPETValue_translation_invariant F hF_translate z c hz hzc
+
 /-- The coincident-time hyperplane `{x : x i 0 = x j 0}` is Haar-null for
     `i ≠ j`. -/
 private theorem measure_timeEq_zero_local {d n : ℕ} (i j : Fin n) (hij : i ≠ j) :
