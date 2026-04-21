@@ -16,15 +16,20 @@ This file contains:
 1. **Momentum-space spectral condition definitions**: Fourier transform on n-point
    Schwartz space, difference-variable reduction, `SpectralConditionDistribution`,
    `ForwardTubeAnalyticity`.
-2. **Equivalence proof**: `SpectralConditionDistribution d W ↔ ForwardTubeAnalyticity d W`,
-   using two axioms from hard analysis:
-   - `cone_fourierLaplace_extension` (Vladimirov §25 Thm 25.1 / SW Thm 2-6)
-   - `converse_paleyWiener_tube` (Vladimirov §26 Thm 26.1 / RS II §IX.3)
+2. **One-way implication**:
+   `ForwardTubeAnalyticity d W → SpectralConditionDistribution d W`,
+   using the converse Paley-Wiener-Schwartz tube theorem
+   (Vladimirov §26 Thm 26.1 / RS II §IX.3).
 
 ## Main Results
 
-- `spectralConditionDistribution_iff_forwardTubeAnalyticity`:
-  `SpectralConditionDistribution d W ↔ ForwardTubeAnalyticity d W`
+- `spectralConditionDistribution_of_forwardTubeAnalyticity`:
+  `ForwardTubeAnalyticity d W → SpectralConditionDistribution d W`
+
+The reverse direction under the global polynomial-growth hypothesis is
+deferred: the standard Fourier-Laplace transform of a cone-supported tempered
+distribution satisfies only Vladimirov slow growth, which is weaker than a
+uniform `(1 + ‖z‖)^N` bound on the whole tube.
 -/
 
 noncomputable section
@@ -1295,26 +1300,35 @@ lemma euclideanDot_nonneg_closedCone
 /-! ### Main Theorem -/
 
 variable (d) in
-/-- **Equivalence of the two spectral condition formulations.**
+/-- **Spectral condition from forward tube analyticity** (one-way direction).
 
-    `SpectralConditionDistribution d W ↔ ForwardTubeAnalyticity d W`.
+    `ForwardTubeAnalyticity d W → SpectralConditionDistribution d W`.
 
-    The forward direction uses the Fourier-Laplace representation theorem
-    (Vladimirov §25), and the backward direction uses the converse
-    Paley-Wiener-Schwartz tube theorem (Vladimirov §26), so the tube side must
-    include the standard global polynomial-growth hypothesis in addition to
-    holomorphicity and boundary-value recovery.
+    Uses the converse Paley-Wiener-Schwartz tube theorem (Vladimirov §26): a
+    holomorphic function on the forward tube with global polynomial-growth
+    bound and tempered boundary values comes from a tempered distribution whose
+    Fourier transform has support in the product forward momentum cone.
+
+    Only this direction is needed for the GNS spectral-condition bridge
+    (`wfn_spectralConditionDistribution` in `GNSHilbertSpace.lean`).
+
+    The converse direction `SpectralConditionDistribution → ForwardTubeAnalyticity`
+    under the global polynomial-growth hypothesis is deferred: Fourier-Laplace
+    transforms of cone-supported tempered distributions generically have
+    Vladimirov slow growth (boundary blow-up indexed by distance to `∂V₊`), not a
+    uniform `(1 + ‖z‖)^N` bound on the whole tube.
 
     Ref: Streater-Wightman, Theorem 3-5; Reed-Simon Vol. II, §IX.3. -/
-theorem spectralConditionDistribution_iff_forwardTubeAnalyticity
+theorem spectralConditionDistribution_of_forwardTubeAnalyticity
     {W : (n : ℕ) → SchwartzNPointSpace d n → ℂ}
     (hW_tempered : ∀ n, Continuous (W n))
     (hW_linear : ∀ n, IsLinearMap ℂ (W n))
     (hW_transl : ∀ (n : ℕ) (a : Fin (d + 1) → ℝ)
       (f g : SchwartzNPointSpace d n),
       (∀ x : NPointSpacetime d n, g.toFun x = f.toFun (fun i => x i + a)) →
-      W n f = W n g) :
-    SpectralConditionDistribution d W ↔ ForwardTubeAnalyticity d W := by
+      W n f = W n g)
+    (hFTA : ForwardTubeAnalyticity d W) :
+    SpectralConditionDistribution d W := by
   sorry
 
 end
