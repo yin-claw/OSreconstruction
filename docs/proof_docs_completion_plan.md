@@ -181,6 +181,378 @@ Current examples:
    real-environment via the constant-rank theorem, and Hall-Wightman
    real-environment uniqueness via local maximal-totally-real charts plus
    analytic continuation on the connected scalar-product variety.
+   The OS-side constructor is now pinned to a field-by-field Lean transcript:
+   the strengthened `BHW.os45_adjacent_singleChart_commonBoundaryValue` must
+   export one and the same OS45 patch `V` with Jost membership, both adjacent
+   extended-tube memberships, and an
+   `BHW.AdjacentOSEOWDifferenceEnvelope`.  The theorem-2 blueprint now separates
+   the OS45 instantiation theorem
+   `BHW.os45_adjacent_commonBoundaryEnvelope` from the direct-coordinate
+   packaging: it constructs the common chart, applies the pure-SCV local
+   distributional envelope theorem
+   `SCV.local_distributional_edge_of_the_wedge_envelope`, and exports a
+   holomorphic branch-difference function with the Wick/real trace identities.
+   The SCV theorem surface is now pinned to truncated local wedges, a local
+   continuous EOW lemma extracted from the Cauchy-polydisc proof,
+   Streater-Wightman real-direction regularization, compact-subcone-uniform
+   distributional boundary limits, kernel/nuclear-theorem recovery,
+   translation covariance, compactly supported approximate identities, and
+   explicit slow-growth bounds; this keeps the theorem in the OS-II
+   distributional category instead of silently upgrading to pointwise boundary
+   values.  The finite-order primitive shortcut is rejected because the
+   multi-variable integration constants are infinite-dimensional, and the false
+   polynomial-correction shortcut is not used.  The checked
+   real-mollification infrastructure in `SCV/DistributionalUniqueness.lean`
+   supplies part of the route, but the nonzero-envelope kernel recovery still
+   has to be formalized through the exact QFT-free substrate
+   `SCV.complexTranslateSchwartz`, `SCV.schwartzTensorProduct₂`,
+   `SCV.schwartzKernel₂_extension`, `SCV.realConvolutionTest`,
+   `SCV.translationCovariantProductKernel_descends`,
+   `SCV.distributionalHolomorphic_regular`, and the envelope-family lemmas
+   `SCV.regularizedEnvelope_linearContinuousInKernel`,
+   `SCV.regularizedEnvelope_translationCovariant`,
+   `SCV.regularizedEnvelope_productKernel`,
+   `SCV.regularizedEnvelope_kernelRepresentation`, and
+   `SCV.regularizedEnvelope_deltaLimit_agreesOnWedges`.  The checked consumer uses
+   `bvt_F_acrOne_package` to prove vanishing.
+   The first SCV substrate slice is now checked in
+   `SCV/DistributionalEOWKernel.lean`: `complexTranslateSchwartz`,
+   `schwartzTensorProduct₂`, `realConvolutionShearCLE`,
+   `complexRealFiberIntegralRaw`, `integrable_complexRealFiber`,
+   `baseFDerivSchwartz`,
+   `exists_norm_pow_mul_complexRealFiberIntegralRaw_le`,
+   `exists_integrable_bound_baseFDerivSchwartz`,
+   `hasFDerivAt_complexRealFiberIntegralRaw`, the raw integral smoothness and
+   decay theorems, `complexRealFiberIntegral`, and
+   `realConvolutionTest` with the exact OS-II sign and its translation identity
+   `realConvolutionTest φ ψ z = ∫ t, φ (z - realEmbed t) * ψ t`.
+   The identity
+   `realConvolutionTest (complexTranslateSchwartz a φ) ψ =
+    realConvolutionTest φ (translateSchwartz a ψ)`
+   is the checked sign bridge into product-kernel descent.
+   The same SCV file now checks the first fiber-descent primitives
+   `complexRealFiberTranslateSchwartzCLM`,
+   `complexRealFiberIntegral_fiberTranslate`,
+   `complexRealFiberIntegral_schwartzTensorProduct₂`,
+   `translateSchwartz_translateSchwartz`,
+   `complexTranslateSchwartz_complexTranslateSchwartz`,
+   `shearedProductKernelFunctional`, and
+   `IsComplexRealFiberTranslationInvariant`, plus
+   `complexRealFiberTranslate_shearedTensor_eq`.  The same SCV substrate now
+   checks the pure coordinate transport needed for the mixed fiber
+   factorization: `headBlockShift`, `realBlockFlattenCLE`,
+   `complexToFinTwoCLE`, `complexChartRealFlattenCLE`, `finAppendCLE`,
+   `mixedChartFiberFirstCLE`, its head/tail real-imaginary apply lemmas,
+   `mixedChartFiberFirstCLE_symm_headBlockShift`, and the sign-sensitive
+   transport identity `mixedChartFiberFirstCLE_translate`.  The transported
+   fiber-integral identity
+   `complexRealFiberIntegral_eq_transport_integrateHeadBlock`, the pure-SCV
+   head-block factorization theorem, and the mixed
+   `map_eq_of_complexRealFiberIntegral_eq_of_fiberTranslationInvariant`
+   theorem are now checked.  The normalized-cutoff consumer is also checked in
+   `SCV/DistributionalEOWKernelFactorization.lean`:
+   `SCV.schwartzTensorProduct₂CLMRight`,
+   `SCV.complexRealFiberTranslationDescentCLM`, and
+   `SCV.map_eq_complexRealFiberTranslationDescentCLM_of_fiberTranslationInvariant`.
+   The next proof-doc/Lean target is therefore the product-kernel extension and
+   translation-covariant descent layer:
+   `SCV.schwartzKernel₂_extension`,
+   `SCV.translationCovariantProductKernel_descends`, and
+   `SCV.distributionalHolomorphic_regular`.  The descent theorem is now
+   documented with the correct global/local split:
+   first prove the global pure-SCV theorem from
+   `SCV.ProductKernelRealTranslationCovariantGlobal`, then derive the
+   support-restricted envelope corollary from
+   `SCV.ProductKernelRealTranslationCovariantLocal` after applying the fixed
+   cutoff.  The remaining gap before the sheared product-kernel descent is the
+   mixed product-tensor density/kernel-extension theorem: product covariance is
+   currently an equality on `schwartzTensorProduct₂` tests, and promotion to all
+   mixed Schwartz tests must go through `schwartzKernel₂_extension` or an
+   equivalent uniqueness principle.  Before that density promotion, the next
+   100%-ready Lean slice is the tensor-level sign theorem
+   `SCV.shearedProductKernel_fiberTranslate_shearedTensor_eq_self_of_productCovariant`:
+   combine `SCV.complexRealFiberTranslate_shearedTensor_eq` with global product
+   covariance at `-a` and
+   `SCV.translateSchwartz_translateSchwartz` to prove that the sheared
+   functional is invariant on every sheared product tensor.  This closes the
+   exact OS-II sign/covariance calculation on the generator family without
+   pretending that product-tensor density has already been proved.  The next
+   100%-ready promotion theorem is conditional on the precise dense-span
+   blocker `SCV.ShearedProductTensorDense m`: define
+   `SCV.shearedProductTensorSet` as the sheared `schwartzTensorProduct₂`
+   generator family, take its complex linear span, prove equality of the two
+   continuous functionals on that span by `Submodule.span_induction`, and use
+   the closed-equalizer dense-set argument to obtain
+   `SCV.shearedProductKernel_fiberInvariant_of_productCovariant_of_shearedProductTensorDense`.
+   Combining that with the checked normalized fiber factorization gives
+   `SCV.translationCovariantProductKernel_descends_of_shearedProductTensorDense`.
+   This is a genuine reduction: all remaining unproved mathematical content is
+   isolated in `SCV.ShearedProductTensorDense m`, equivalent to the mixed
+   two-space product-density/kernel-extension theorem.  The conditional
+   promotion/descent package is now checked in
+   `SCV/DistributionalEOWProductKernel.lean`; the next proof-doc task is to
+   make `SCV.ShearedProductTensorDense m`/`SCV.schwartzKernel₂_extension`
+   itself Lean-ready without importing the Wightman `schwartz_nuclear_extension`
+   axiom.
+   The first Lean-ready part of that density task is now checked: define the
+   unsheared simple-product generator family
+   `SCV.productTensorSet m`, its span `SCV.productTensorSpan m`, and the
+   standard blocker `SCV.ProductTensorDense m`.  Then prove
+   `SCV.shearedProductTensorDense_of_productTensorDense` by transporting
+   density through
+   `SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
+     (SCV.realConvolutionShearCLE m)`.  The checked proof should use
+   `SCV.shearedProductTensorSet_eq_image_productTensorSet`,
+   `Submodule.map_span`,
+   `Submodule.dense_iff_topologicalClosure_eq_top`, surjectivity from
+   `SCV.compCLMOfContinuousLinearEquiv_symm_left_inv`, and
+   `DenseRange.topologicalClosure_map_submodule`.  The consumer corollary
+   `SCV.translationCovariantProductKernel_descends_of_productTensorDense`
+   simply feeds this transported density into the already checked
+   sheared-density descent theorem.  This is not a wrapper inflation: it
+   replaces the shear-specific blocker by the standard unsheared product
+   Schwartz density theorem, which is exactly the remaining functional-analytic
+   content of `SCV.schwartzKernel₂_extension`.
+   The next density proof is now pinned to a pure-SCV/GaussianField route, not
+   to Wightman `schwartz_nuclear_extension`.  Add
+   `SCV/ComplexSchwartz.lean` with `SCV.schwartzRealPartCLM`,
+   `SCV.schwartzImagPartCLM`, `SCV.schwartzOfRealCLM`, and
+   `SCV.complexSchwartzDecomposeCLE`, importing no Wightman files.  These
+   SCV-owned names deliberately avoid colliding with the already existing
+   Wightman `SchwartzMap.*` decomposition declarations.  Add
+   `SCV/SchwartzExternalProduct.lean` for the checked external product
+   `(x,y) ↦ φ x * ψ y`, and `SCV/ProductDensity.lean` for
+   `SCV.twoBlockProductSchwartz`, `SCV.flatMixedCLM`,
+   `SCV.flattenMixedFunctional`, and the bridge
+   `SCV.flatTwoBlockProduct_eq_mixedProduct`.  The next theorem in that
+   product-density companion proves, for `0 < m`, that any mixed-chart
+   complex continuous linear functional vanishing on all
+   `SCV.schwartzTensorProduct₂ φ ψ` is zero.  The proof transports the
+   functional through `SCV.mixedChartFiberFirstCLE m`, uses
+   `GaussianField.productHermite_schwartz_dense (D := ℝ) (m + m*2)` on the
+   flat domain `Fin (m + m*2) -> ℝ`, splits each one-dimensional Hermite
+   product into the first `m` real-fiber coordinates and the last `m*2`
+   flattened complex-chart coordinates, and then reconstructs complex-valued
+   tests from real/imaginary parts with `SCV.complexSchwartzDecomposeCLE`.
+   This product-density companion is now checked through the final density
+   theorem: `SCV.flatComplexCLM_zero_of_zero_on_twoBlockProducts`,
+   `SCV.mixedProductCLM_zero_of_zero_on_productTensor`,
+   `SCV.ProductTensorDense_of_pos`, `SCV.ProductTensorDense_zero`, and
+   `SCV.ProductTensorDense_all`.  The final `SCV.ProductTensorDense_of_pos`
+   is the same Hahn-Banach
+   separation argument as `Wightman/Reconstruction/DenseCLM.lean`, with the
+   new pure-SCV CLM-uniqueness theorem replacing Wightman nuclear uniqueness.
+   The `m = 0` case must be a direct singleton-domain proof using the constant
+   product tensor; it is not covered by GaussianField's positive-dimensional
+   product-Hermite theorem.  The resulting implementation targets are:
+
+   ```lean
+   theorem SCV.flatTwoBlockProduct_eq_mixedProduct
+   theorem SCV.flatComplexCLM_zero_of_zero_on_twoBlockProducts
+   theorem SCV.mixedProductCLM_zero_of_zero_on_productTensor
+   theorem SCV.ProductTensorDense_of_pos
+   theorem SCV.ProductTensorDense_zero
+   theorem SCV.ProductTensorDense_all
+   ```
+
+   `SCV.ProductTensorDense_all` now feeds directly into the already checked
+   `SCV.translationCovariantProductKernel_descends_of_productTensorDense` via
+   the new `SCV.translationCovariantProductKernel_descends`, removing the
+   product-kernel density blocker from theorem 2.
+   The local distributional-EOW support-preservation layer is now checked in
+   `SCV/DistributionalEOWSupport.lean`, not introduced as a new theorem
+   wrapper.  It proves `SCV.KernelSupportWithin_hasCompactSupport`, because
+   the production predicate is only closed-ball topological-support containment
+   and compact support follows from finite-dimensional compactness of closed
+   balls.  It also proves
+   `SCV.directionalDerivSchwartzCLM_tsupport_subset`,
+   `SCV.directionalDerivSchwartzCLM_supportsInOpen`,
+   `SCV.dbarSchwartzCLM_tsupport_subset`, and `SCV.SupportsInOpen.dbar`.
+   These are the exact lemmas consumed by the upcoming
+   `regularizedEnvelope_productKernel_dbar_eq_zero` integration-by-parts
+   package: they ensure every `dbarSchwartzCLM` test remains compactly
+   supported inside the same open set `U0`.
+   The next `∂bar` algebra slice is also fixed at theorem level:
+   `SCV/DistributionalEOWDbar.lean` proves
+   `SCV.integral_mul_directionalDerivSchwartzCLM_right_eq_neg_left`,
+   `SCV.integral_mul_dbarSchwartzCLM_right_eq_neg_left`, and
+   `SCV.integral_mul_dbarSchwartzCLM_right_eq_zero_of_dbar_eq_zero`.  The file
+   now also proves
+   `SCV.integral_mul_dbarSchwartzCLM_right_eq_zero_of_left_local_schwartz`,
+   the algebraic endpoint of the local cutoff argument.  Its hypotheses are
+   exactly the data the cutoff must produce: a Schwartz representative `G`
+   agreeing with the holomorphic factor on
+   `tsupport (dbarSchwartzCLM j φ)` and satisfying
+   `dbarSchwartzCLM j G = 0` on `tsupport φ`.
+   The first cutoff subtheorem is now checked in
+   `SCV/DistributionalEOWCutoff.lean`:
+   `SCV.exists_smooth_cutoff_eq_one_near_tsupport_of_supportsInOpen`.  It uses
+   nested thickenings of the compact set `K = tsupport φ ⊆ U`, applies
+   `exists_contMDiff_support_eq_eq_one_iff` to
+   `thickening r₂ K` and `closure (thickening r₁ K)`, and returns a smooth
+   real cutoff equal to one on an open neighborhood of `K` with compact
+   topological support inside `U`.
+   The representative theorem is now checked in
+   `SCV/DistributionalEOWRepresentative.lean`:
+   `SCV.exists_local_schwartz_representative_eq_on_open` forms the
+   zero-extended compactly supported smooth function `χ * F`, converts it into
+   a Schwartz map, and proves agreement with `F` on the cutoff neighborhood.
+   The pointwise Cauchy-Riemann theorem
+   `SCV.dbarSchwartzCLM_eq_zero_on_of_eqOn_holomorphic` derives local
+   coordinate `∂bar` vanishing from
+   `hF_holo.analyticOnNhd_of_finiteDimensional hU_open`.  These feed
+   `SCV.exists_local_dbarClosed_schwartz_representative`, and
+   `SCV.integral_holomorphic_mul_dbarSchwartz_eq_zero` follows immediately by
+   the checked localization lemma.  The product-kernel consumer
+   `SCV.regularizedEnvelope_productKernel_dbar_eq_zero` is now checked too:
+   it applies the product-kernel representation to
+   `dbarSchwartzCLM j φ`, using `SupportsInOpen.dbar`, and then invokes
+   `SCV.integral_holomorphic_mul_dbarSchwartz_eq_zero` for the scalar
+   holomorphic kernel `G ψ`.  The continuity-passage theorem
+   `SCV.translationCovariantKernel_distributionalHolomorphic` is now checked
+   under the concrete approximate-identity hypotheses
+   `∀ᶠ i, KernelSupportWithin (ψι i) r` and
+   convergence of `realConvolutionTest θ (ψι i)` to `θ` in the Schwartz
+   topology for every `θ`.  The next genuine theorem-2 SCV target is therefore
+   the approximate-identity construction that supplies those two hypotheses:
+   `SCV.exists_normalized_schwartz_bump_kernelSupportWithin` and
+   `SCV.exists_shrinking_normalized_schwartz_bump_sequence` are now checked,
+   so the remaining target is
+   `SCV.tendsto_realConvolutionTest_of_shrinking_normalized_support`, followed
+   by `SCV.exists_realConvolutionTest_approxIdentity`.  The proof doc now
+   decomposes this target into exact Lean theorem slots: kernel `L¹` mass from
+   real nonnegative normalization, `norm_realEmbed_le`, `continuous_realEmbed`,
+   support-to-zero from `KernelSupportWithin`, the translated-derivative
+   identity, integrability of the translated derivative kernel, the checked
+   zeroth-order derivative-through-convolution identity, full derivative
+   commutation through `realConvolutionTest`, the global compact/tail
+   small-translation estimate in Schwartz seminorms, and the final
+   `WithSeminorms` convergence argument.
+   Because `SCV/DistributionalEOWKernel.lean` is now a checked, sorry-free
+   1000-line support file, the next implementation stage uses new pure-SCV
+   companions rather than growing it.  `SCV.HeadBlockIntegral` is now
+   implemented directly as a finite-dimensional real fiber integral, adapting
+   the checked `complexRealFiberIntegral` estimates to the base/fiber product
+   `((Fin n -> ℝ) × (Fin m -> ℝ))`; the public theorem
+   `SCV.integrateHeadBlock_apply_finAppend` is checked and reduces by the
+   continuous-linear equivalence `headTailAppendCLE`.  The corresponding mixed
+   chart transport theorem
+   `SCV.complexRealFiberIntegral_eq_transport_integrateHeadBlock` is checked in
+   `SCV/DistributionalEOWKernelTransport.lean`.  The existing Wightman
+   `SliceIntegral.lean`, `BlockIntegral.lean`, and
+   `HeadBlockTranslationInvariant.lean` files remain source patterns only and
+   are not imported into SCV.  The next descent-side checked lemma is now also
+   in `SCV.HeadBlockIntegral`: `integrateHeadBlock_translate_head`, proving
+   that the quotient map is invariant under translating the integrated head
+   coordinates.  The remaining head-block factorization proof is pinned to the
+   recursive quotient descent in the checked Wightman source pattern: prove
+   the one-coordinate quotient through `sliceIntegral` using the
+   finite-dimensional `headFiberAntideriv`, then induct over the head block.
+   The direct quotient algebra needed by that
+   induction is now also checked in `SCV.HeadBlockIntegral`:
+   `integrateHeadBlock_zero`, `integrateHeadBlock_add`, and
+   `integrateHeadBlock_sub`.  `SCV/TranslationDifferentiation.lean` now checks
+   the QFT-free translate difference-quotient theorem, and
+   `SCV.HeadBlockIntegral` now checks
+   `IsHeadBlockTranslationInvariantSchwartzCLM` and
+   `map_lineDeriv_headBlockShift_eq_zero`, so invariant functionals are known
+   to annihilate head-coordinate derivatives.  `SCV/SchwartzPrependField.lean`
+   now checks the collision-free pure-SCV fixed-head product package
+   `SCV.tailCLM`, `SCV.prependField`, and `SCV.prependFieldCLMRight`.
+   `SCV/HeadFiberAntideriv.lean` now checks the first slice-integral batch:
+   `tailInsertCLM`, `sliceIntegralRaw`, the Fubini theorem
+   `integral_sliceIntegralRaw`, the slice decay majorants, differentiated
+   slice formulas through `contDiff_sliceIntegralRaw`,
+   `decay_sliceIntegralRaw`, `sliceIntegral`, `integrable_sliceSection`, the
+   complex algebra/prepend identities including `sliceIntegral_prependField`,
+   and the `iicZeroSlice` derivative/`ContDiff` package.
+   `SCV/HeadFiberAntiderivInterval.lean` now checks `hasDerivAt_integral_Iic`,
+   `intervalPiece`, the product differentiability split,
+   `contDiff_intervalPiece`, `headFiberAntiderivRaw`,
+   `headFiberAntiderivRaw_eq_interval_add_iic`, and
+	   `lineDeriv_headFiberAntiderivRaw`.  `SCV/HeadFiberAntiderivDecay.lean`
+	   now checks the remaining head-fiber work: zero-slice preservation under
+	   pure-tail derivatives, the raw primitive derivative identities, the
+	   `Set.Ioi` complementary-tail representation, zeroth-order and full
+	   iterated-derivative decay, and final `headFiberAntideriv` Schwartz
+	   packaging with pointwise and operator-form head-direction FTC.  No
+	   Wightman import is used for these extractions.  The
+	   one-coordinate descent layer in `SCV/HeadBlockDescent.lean` now checks:
+	   head-translation invariant functionals kill head derivatives, vanish on
+	   zero `sliceIntegral`, factor through `sliceIntegral` using a concrete
+	   normalized bump, and compare any two tests with equal `sliceIntegral`.
+	   The general head-block descent layer in `SCV/HeadBlockDescent.lean` also
+	   now checks: the pure finite-dimensional reindexing API, the fixed-tail
+	   head section, `integrateHeadBlock_sliceIntegral_reindex`, the reindexed
+	   head-block translation identities, preservation of remaining-head
+	   invariance under one-coordinate descent, and
+	   `map_eq_of_integrateHeadBlock_eq_of_headBlockTranslationInvariant_SCV`.
+	   The mixed-chart consumer in
+	   `SCV/DistributionalEOWKernelTransport.lean` now also checks
+	   `map_eq_of_complexRealFiberIntegral_eq_of_fiberTranslationInvariant`,
+	   transporting fiber-translation invariance through
+	   `mixedChartFiberFirstCLE` and using
+	   `complexRealFiberIntegral_eq_transport_integrateHeadBlock` plus the
+	   checked head-block descent theorem.
+	   The general proof uses a documented
+	   SCV-specific bridge: because `SCV.integrateHeadBlock` is the direct
+	   finite-dimensional integral rather than the old recursive definition,
+	   it first proves `integrateHeadBlock_sliceIntegral_reindex` by the fixed-tail
+	   `integral_sliceIntegralRaw`/Fubini argument recorded in
+	   `docs/scv_infrastructure_blueprint.md`.  The blueprint now fixes the
+	   exact Lean route for that bridge: extract a pure SCV
+	   `schwartzPartialEval₂` package, define `fixedTailHeadSection` by
+	   partial evaluation after `finAppendCLE`, prove the cast identity by the
+	   three finite-index cases, and apply the already checked
+	   `integral_sliceIntegralRaw`.  The recursive theorem transcript is also
+	   pinned to the checked Lean route: the `m = 0` base case uses the
+	   zero-dimensional volume/Dirac identity and
+	   `Fin.append default (castFinCLE (Nat.zero_add n) x) = x`, and the
+	   successor step uses the new direct/recursive bridge to convert equality
+	   of full head-block integrals into equality of the sliced remaining
+	   integrals before applying the induction hypothesis.
+	   The
+	   scratch algebra in
+   `test/proofideas_head_block_helpers.lean` has been independently checked:
+   it contains 19 proved helper theorems, not the 15 recorded in
+   `agents_chat.md` #1313.  Port only the helpers consumed by the immediate
+   proof transcript; do not turn the scratch inventory into a wrapper layer.
+	   The proof-doc gap exposed by the source audit is now closed in
+	   `docs/scv_infrastructure_blueprint.md`: the precursor extraction, the
+	   first `HeadFiberAntideriv.lean` slice, and
+	   `HeadFiberAntiderivInterval.lean` and `HeadFiberAntiderivDecay.lean` are
+	   now checked.  The blueprint records the exact declaration order for the
+	   decay file and the proof transcript that was implemented.  The next local
+	   file should be `SCV/HeadBlockDescent.lean`, the recursive quotient-descent
+	   port of the checked Wightman source pattern rather than a free-floating
+	   wrapper layer.
+   The #1307 audit has been folded into the route: `LocalTranslateMargin` is
+   only the explicit closed-ball real-translation support condition, the final
+   `SCV.local_distributional_edge_of_the_wedge_envelope` theorem must include
+   uniqueness on the constructed open set, the
+   `distributionalHolomorphic_regular` input is preceded by a concrete
+   three-lemma `∂̄` integration-by-parts package, and the OS45 boundary-value
+   step requires a compact-subcone-uniform strengthening of
+   `bvt_boundary_values` derived from the OS-II polynomial-growth boundary
+   value theorem.  In particular, `bvt_boundary_values` as currently checked is
+   raywise in `η`; the theorem-2 consumer needs the documented
+   `TendstoUniformlyOn` theorem over every compact direction set before the
+   SCV envelope can be applied.
+   The initial coordinate and trace-membership support
+   `BHW.configPermCLE`, `BHW.os45CommonChartCLE`,
+   `BHW.wickRotate_ordered_mem_acrOne`,
+   `BHW.adjacent_wick_traces_mem_acrOne`, and
+   `BHW.os45CommonChart_real_mem_pulledRealBranchDomain_pair` is checked in
+   `OSToWightmanLocalityOS45CommonChart.lean` and
+   `OSToWightmanLocalityOS45TraceMembership.lean`, so the next unresolved proof
+   document/Lean targets are the pure-SCV local distributional envelope theorem
+   and its OS45 instantiation.
+   `BHW.sourceRealEnvironment_of_os45JostPatch` supplies the Gram environment
+   for that same `V`; and
+   `bvt_F_selectedAdjacentDistributionalJostAnchorData_of_OSII` fills the
+   eleven fields of `SelectedAdjacentDistributionalJostAnchorData` before the
+   already checked bridge constructs
+   `BHW.SourceDistributionalAdjacentTubeAnchor`.
    The theorem-2 blueprint now also gives the full scalar-coordinate
    Hall-Wightman source packet needed after those suppliers are available:
    checked Gram-permutation/domain definitions, the

@@ -477,8 +477,82 @@ Implementation locus:
    `SelectedAdjacentDistributionalJostAnchorData` and the checked reindexing
    definition `bvt_F_distributionalJostAnchor_of_selectedJostData`; the next
    OS-side construction target is the genuine OS-II supplier
-   `bvt_F_distributionalJostAnchor_of_OSII`;
-   the checked SCV lemmas
+   `bvt_F_distributionalJostAnchor_of_OSII`.  The theorem-2 blueprint now fixes
+   its exact Lean transcript:
+   first prove the strengthened
+   `BHW.os45_adjacent_singleChart_commonBoundaryValue`, returning one patch
+   `V` that simultaneously carries Jost membership, both adjacent
+   extended-tube memberships, and an
+   `BHW.AdjacentOSEOWDifferenceEnvelope`.  The hard local theorem inside that
+   Slot 1 proof is `BHW.os45_adjacent_commonBoundaryEnvelope`: it constructs the
+   common OS45 chart, applies the pure-SCV local distributional EOW envelope
+   theorem `SCV.local_distributional_edge_of_the_wedge_envelope`, and exports
+   the holomorphic branch-difference function with the two trace identities.
+   That SCV theorem must use truncated local wedges, a local continuous EOW
+   lemma extracted from the Cauchy-polydisc proof, Streater-Wightman
+   real-direction regularization, compact-subcone-uniform distributional
+   boundary limits, kernel/nuclear-theorem recovery, translation covariance,
+   compactly supported approximate identities, and explicit slow-growth bounds.
+   The kernel-recovery layer is the exact pure-SCV package
+   `SCV.complexTranslateSchwartz`, `SCV.schwartzTensorProduct₂`,
+   `SCV.schwartzKernel₂_extension`, `SCV.realConvolutionTest`,
+   `SCV.translationCovariantProductKernel_descends`,
+   `SCV.distributionalHolomorphic_regular`, and the regularized-envelope
+   lemmas `SCV.regularizedEnvelope_linearContinuousInKernel`,
+   `SCV.regularizedEnvelope_translationCovariant`,
+   `SCV.regularizedEnvelope_productKernel`,
+   `SCV.regularizedEnvelope_kernelRepresentation`, and
+   `SCV.regularizedEnvelope_deltaLimit_agreesOnWedges`; do not replace it with
+   the homogeneous `SchwartzMap.productTensor ![φ, ψ]` API, the Wightman-side
+   tensor/slice-integral files, or the QFT-facing
+   `schwartz_nuclear_extension` axiom.  The currently checked SCV substrate in
+   `SCV/DistributionalEOWKernel.lean` covers `SCV.complexTranslateSchwartz`,
+   `SCV.schwartzTensorProduct₂`, `SCV.realConvolutionShearCLE`, and
+   `SCV.complexRealFiberIntegralRaw`, plus `SCV.integrable_complexRealFiber`,
+   `SCV.baseFDerivSchwartz`, and
+   `SCV.exists_norm_pow_mul_complexRealFiberIntegralRaw_le` and
+   `SCV.exists_integrable_bound_baseFDerivSchwartz`, plus
+   `SCV.hasFDerivAt_complexRealFiberIntegralRaw`, the raw integral smoothness
+   and decay theorems, `SCV.complexRealFiberIntegral`, and
+   `SCV.realConvolutionTest` with its apply theorem and translation identity.
+   The same file now also checks `SCV.complexRealFiberTranslateSchwartzCLM`,
+   `SCV.complexRealFiberIntegral_fiberTranslate`,
+   `SCV.complexRealFiberIntegral_schwartzTensorProduct₂`,
+   `SCV.translateSchwartz_translateSchwartz`,
+   `SCV.complexTranslateSchwartz_complexTranslateSchwartz`,
+   `SCV.shearedProductKernelFunctional`, and
+   `SCV.IsComplexRealFiberTranslationInvariant`, plus
+   `SCV.complexRealFiberTranslate_shearedTensor_eq`.  The next target is the
+   sheared product-kernel invariance theorem after the required density theorem
+   is available, the mixed fiber-factorization theorem, and then the
+   product-kernel extension and translation-covariant descent layer:
+   `SCV.schwartzKernel₂_extension`,
+   `SCV.translationCovariantProductKernel_descends`, and
+   `SCV.distributionalHolomorphic_regular`.  The descent layer is pinned to
+   the global covariance predicate
+   `SCV.ProductKernelRealTranslationCovariantGlobal`; the local
+   support-restricted covariance needed by the envelope is a later cutoff
+   corollary, not the direct input to the global `Hdist`.
+   A radial limit, a global-tube shortcut, a naive mollifier limit without the
+   kernel step, a finite-order primitive shortcut, a polynomial-correction
+   shortcut, or a pointwise-boundary shortcut is not sufficient.
+   The coordinate and trace-membership prerequisites
+   `BHW.configPermCLE`, `BHW.os45CommonChartCLE`,
+   `BHW.wickRotate_ordered_mem_acrOne`,
+   `BHW.adjacent_wick_traces_mem_acrOne`, and
+   `BHW.os45CommonChart_real_mem_pulledRealBranchDomain_pair` are checked in
+   `OSToWightmanLocalityOS45CommonChart.lean` and
+   `OSToWightmanLocalityOS45TraceMembership.lean`; the remaining hard work is
+   the pure-SCV local distributional envelope theorem and its OS45
+   instantiation.  Slot 1 does not prove vanishing;
+   the checked consumer kills the
+   Wick trace using `bvt_F_acrOne_package` and transports zero to the real edge.
+   After Slot 1, prove
+   `BHW.sourceRealEnvironment_of_os45JostPatch` for the Gram image of that
+   same patch; then build
+   `bvt_F_selectedAdjacentDistributionalJostAnchorData_of_OSII` and pass it
+   through the checked reindexing bridge.
+   The checked SCV lemmas
    `BHW.sourceDistributionalUniquenessSet_of_isOpen_nonempty` and
    `BHW.sourceDistributionalUniquenessSet_of_contains_open` are only
    full-matrix sufficient criteria.  They do not supply the general OS

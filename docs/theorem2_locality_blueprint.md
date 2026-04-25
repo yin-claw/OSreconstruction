@@ -117,6 +117,14 @@ surfaces:
   half, printed page `83`, contains the second theorem cited by OS I. It says
   that a Wightman function with all Wightman properties except those derived
   from locality, and with the required symmetry, satisfies locality.
+- The local Streater-Wightman source has been checked for the distributional
+  EOW ingredient: `references/pct-spin-and-statistics-and-all-that-9781400884230_compress.pdf`,
+  Theorem 2-16 (printed pp. `81-83`) proves the distributional EOW theorem by
+  real-variable test-function regularization, continuous EOW, a
+  Schwartz-nuclear-kernel argument, translation covariance, and a delta
+  sequence.  This is the theorem shape used by the SCV blueprint.  Theorem
+  2-17 is only the zero-boundary uniqueness corollary and does not replace the
+  local envelope needed for `AdjacentOSEOWDifferenceEnvelope`.
 
 ## 1. Final theorem surface
 
@@ -134,7 +142,7 @@ private theorem bvt_W_swap_pairing_of_spacelike
       bvt_W OS lgc n f = bvt_W OS lgc n g
 ```
 
-This matches the corrected primitive locality surface
+This matches the corrected core locality surface
 `IsLocallyCommutativeWeak` in
 `Wightman/Reconstruction/Core.lean`.
 
@@ -157,22 +165,28 @@ The local proof-audit in
 Section `9` / `9.1` fixes the safe Lean-facing interpretation: theorem 2 is a
 branch-difference argument, not a same-shell Wick-to-real equality.
 
-1. **OS-internal Euclidean symmetry layer.**
-   Use `E3_symmetric` on ordered positive-time zero-diagonal tests and the
-   already-checked Euclidean/Wick identification to prove that the adjacent
-   Wick branch difference has zero Euclidean edge distribution on the chosen
-   ordered real patch.
+1. **OS-II repaired symmetry layer.**
+   Use the reconstructed OS-II analytic continuation package
+   `bvt_F_acrOne_package` as the Lean-facing form of the OS §4.5 symmetry input.
+   The older checked theorem
+   `os45_adjacent_euclideanEdge_pairing_eq_on_timeSector` remains the compact
+   E3/Wick sanity check on ordered real patches, but the active adjacent-edge
+   consumer proves Wick-trace zero directly from the permutation symmetry field
+   of `bvt_F_acrOne_package`.
 
 2. **Local common-boundary / EOW layer.**
    Near a real adjacent Jost edge point, realize the same adjacent
-   branch-difference object on a common local chart and use the already-proved
-   common-boundary / edge-of-the-wedge theorem to continue it from the
-   Euclidean edge to the real Jost edge.
+   branch-difference object on a common local chart.  Slot 1 supplies the
+   common-chart envelope; the already checked
+   `eqOn_openConnected_of_distributional_wickSection_eq_on_realOpen` consumer
+   then continues Wick-trace zero to the real Jost edge.
 
-3. **Selected adjacent edge-data packaging.**
-   Package the resulting compact-test equality on one real-open edge slice
-   together with overlap connectedness as
-   `SelectedAdjacentPermutationEdgeData`.
+3. **Distributional Jost-anchor packaging.**
+   Package the resulting compact-test equality on one real-open Jost slice
+   together with the Hall-Wightman scalar-product real environment as
+   `SelectedAdjacentDistributionalJostAnchorData`, then pass it through the
+   already checked bridge
+   `bvt_F_distributionalJostAnchor_of_selectedJostData`.
 
 4. **Checked PET/BHW branch-gluing layer.**
    Feed the adjacent selected data into the already-checked selected-branch and
@@ -229,12 +243,18 @@ In `Wightman/Reconstruction/WickRotation/OSToWightmanLocalityOS45CommonEdge.lean
 
 In `Wightman/Reconstruction/WickRotation/OSToWightmanSelectedWitness.lean`:
 
+- `SelectedAdjacentDistributionalJostAnchorData`
+- `bvt_F_distributionalJostAnchor_of_selectedJostData`
 - `SelectedAdjacentPermutationEdgeData`
 - `bvt_F_extendF_adjacent_overlap_of_selectedEdgeData`
 - `bvt_selectedPETBranch_adjacent_eq_on_sector_overlap`
 
-These are downstream consumers. The OS45 supplier must target their exact input
-shape rather than inventing a parallel interface.
+The active theorem-2 supplier targets
+`SelectedAdjacentDistributionalJostAnchorData`, because the BHW source theorem
+needs the Jost patch, the compact-test boundary equality, and the
+scalar-product real environment.  `SelectedAdjacentPermutationEdgeData` and its
+PET-side consumers are retained as checked historical/background consumers; they
+are not enough to supply the source distributional anchor by themselves.
 
 ### 3.3. Checked PET gluing / monodromy / boundary-transfer algebra
 
@@ -287,6 +307,12 @@ theorem os45_adjacent_singleChart_commonBoundaryValue
     (n : ℕ) (i : Fin n) (hi : i.val + 1 < n) :
     ∃ (V : Set (NPointDomain d n)) (rho : Equiv.Perm (Fin n)),
       IsOpen V ∧ IsConnected V ∧ V.Nonempty ∧
+      (∀ x ∈ V, x ∈ BHW.JostSet d n) ∧
+      (∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n) ∧
+      (∀ x ∈ V,
+        BHW.realEmbed
+          (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
+            BHW.ExtendedTube d n) ∧
       AdjacentOSEOWDifferenceEnvelope (d := d) OS lgc n
         (Equiv.swap i ⟨i.val + 1, hi⟩) V
 ```
@@ -294,6 +320,9 @@ theorem os45_adjacent_singleChart_commonBoundaryValue
 Mathematical content:
 
 - choose `V` and `rho` from `os45_adjacent_localEOWGeometry`;
+- export the Jost and both adjacent extended-tube membership facts for this
+  **same** `V`; these side conditions must not be reselected later from a
+  separate call to the geometry theorem;
 - use the OS45 quarter-turn / common-edge geometry only to choose a connected
   local complex domain `U` around the selected edge where both the Wick trace
   and the real-edge trace live;
@@ -308,16 +337,26 @@ Mathematical content:
   ```
 
   i.e. `adjacentOS45RealEdgeDifference`;
-- define the corresponding adjacent branch-difference object on the Wick /
-  Euclidean side and prove, via
-  `os45_adjacent_euclideanEdge_pairing_eq_on_timeSector`, that its Euclidean
-  edge distribution is zero on the ordered real patch;
-- use local common-boundary / EOW to show that the Wick-side and real-side
-  branch differences are traces of one common holomorphic object on `U`;
-- conclude from the zero Euclidean edge distribution that this common
-  branch-difference object vanishes, hence the real-edge adjacent difference
-  vanishes on the selected edge slice;
-- package that vanishing result as an `AdjacentOSEOWDifferenceEnvelope`.
+- use local common-boundary / EOW to construct one common holomorphic
+  branch-difference object on `U`;
+- prove that its Wick trace is the direct adjacent `bvt_F` difference
+
+  ```lean
+  bvt_F OS lgc n (fun k => wickRotatePoint (x (τ k))) -
+    bvt_F OS lgc n (fun k => wickRotatePoint (x k))
+  ```
+
+  and that its real trace is the direct adjacent `extendF` difference above;
+- package those trace identities as an `AdjacentOSEOWDifferenceEnvelope`.
+
+Slot 1 deliberately does **not** prove the branch difference is zero.  The
+checked consumer
+`BHW.bvt_F_adjacent_extendF_edgeDistribution_eq_of_osEOWDifferenceEnvelope`
+uses the Wick trace field together with the permutation-symmetry field of
+`bvt_F_acrOne_package` to prove Wick-side zero, then applies the already checked
+distributional Wick-section identity theorem
+`eqOn_openConnected_of_distributional_wickSection_eq_on_realOpen` to transport
+that zero to the real edge.
 
 This theorem is where the actual OS I §4.5 local common-boundary argument lives.
 It is not a replacement for the paper route; it is the local chart-level
@@ -366,6 +405,830 @@ have hrealDiff :
       (d := d) (n := n) OS lgc τ ρ x
 ```
 
+Lean-ready common-chart to direct-envelope transcript:
+
+```lean
+let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+rcases BHW.os45_adjacent_localEOWGeometry
+    (d := d) (n := n) hd i hi with
+  ⟨V, ρ, hV_open, hV_conn, hV_ne, hV_jost, hV_ET, hV_swapET,
+    hV_ordered, hV_swap_ordered, hV_wick, hV_real,
+    hV_geom, hV_swap_geom⟩
+
+-- Common-chart coordinate: first relabel by `ρ`, then apply the fixed OS45
+-- quarter turn.
+let Qρ : (Fin n -> Fin (d + 1) -> ℂ) -> (Fin n -> Fin (d + 1) -> ℂ) :=
+  fun z => BHW.os45QuarterTurnConfig (d := d) (n := n) (fun k => z (ρ k))
+
+-- The genuine OS45 common-boundary theorem, proved from the two
+-- `OS45OppositeTubeBranchGeometry` packets and the OS-II/ACR-one Wick branch
+-- data, must return a common chart and not merely a domain.
+have hCommon :
+    ∃ (Uc : Set (Fin n -> Fin (d + 1) -> ℂ))
+      (Hc : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ),
+      IsOpen Uc ∧ IsConnected Uc ∧
+      DifferentiableOn ℂ Hc Uc ∧
+      (∀ x ∈ V, Qρ (fun k => wickRotatePoint (x k)) ∈ Uc) ∧
+      (∀ x ∈ V, Qρ (BHW.realEmbed (d := d) x) ∈ Uc) ∧
+      (∀ x ∈ V,
+        Hc (Qρ (fun k => wickRotatePoint (x k))) =
+          bvt_F OS lgc n (fun k => wickRotatePoint (x (τ k))) -
+          bvt_F OS lgc n (fun k => wickRotatePoint (x k))) ∧
+      (∀ x ∈ V,
+        Hc (Qρ (BHW.realEmbed (d := d) x)) =
+          BHW.extendF (bvt_F OS lgc n)
+            (BHW.realEmbed (d := d) (fun k => x (τ k))) -
+          BHW.extendF (bvt_F OS lgc n)
+            (BHW.realEmbed (d := d) x)) := by
+  exact
+    BHW.os45_adjacent_commonBoundaryEnvelope
+      (d := d) hd OS lgc n i hi V ρ
+      hV_open hV_conn hV_ne hV_jost hV_ET hV_swapET
+      hV_ordered hV_swap_ordered hV_wick hV_real
+      hV_geom hV_swap_geom
+
+rcases hCommon with
+  ⟨Uc, Hc, hUc_open, hUc_conn, hHc_holo,
+    hwick_mem_c, hreal_mem_c, hwick_trace_c, hreal_trace_c⟩
+
+-- In implementation, package `Qρ` as a complex-linear homeomorphism:
+-- permutation of labels followed by `os45QuarterTurnCLE`.
+let Qρe : (Fin n -> Fin (d + 1) -> ℂ) ≃L[ℂ]
+    (Fin n -> Fin (d + 1) -> ℂ) :=
+  BHW.os45CommonChartCLE (d := d) (n := n) ρ
+
+let U : Set (Fin n -> Fin (d + 1) -> ℂ) := Qρe.symm '' Uc
+let H : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ := fun z => Hc (Qρe z)
+
+have hU_open : IsOpen U := by
+  simpa [U] using Qρe.symm.toHomeomorph.isOpenMap Uc hUc_open
+
+have hU_conn : IsConnected U := by
+  simpa [U] using
+    hUc_conn.image Qρe.symm Qρe.symm.continuous.continuousOn
+
+have hH_holo : DifferentiableOn ℂ H U := by
+  -- compose `hHc_holo` with the complex-linear chart map `Qρe`; for
+  -- `z ∈ Qρe.symm '' Uc`, `Qρe z ∈ Uc`.
+  intro z hz
+  rcases hz with ⟨w, hwUc, rfl⟩
+  have hmap : Qρe (Qρe.symm w) ∈ Uc := by
+    simpa using hwUc
+  exact
+    (hHc_holo (Qρe (Qρe.symm w)) hmap).comp
+      (Qρe.symm w)
+      (Qρe.differentiableAt.differentiableWithinAt)
+      (by
+        intro y hy
+        rcases hy with ⟨u, huUc, rfl⟩
+        simpa using huUc)
+
+refine
+  { U := U
+    U_open := hU_open
+    U_connected := hU_conn
+    H := H
+    H_holo := hH_holo
+    wick_mem := ?wick_mem
+    real_mem := ?real_mem
+    wick_diff := ?wick_diff
+    real_diff := ?real_diff }
+· intro x hx
+  refine ⟨Qρe (fun k => wickRotatePoint (x k)), ?_, ?_⟩
+  · simpa [Qρe, Qρ] using hwick_mem_c x hx
+  · simp
+· intro x hx
+  refine ⟨Qρe (BHW.realEmbed (d := d) x), ?_, ?_⟩
+  · simpa [Qρe, Qρ] using hreal_mem_c x hx
+  · simp
+· intro x hx
+  simpa [H, Qρe, Qρ, τ] using hwick_trace_c x hx
+· intro x hx
+  simpa [H, Qρe, Qρ, τ] using hreal_trace_c x hx
+```
+
+The new theorem named in this transcript,
+`BHW.os45_adjacent_commonBoundaryEnvelope`, is not a wrapper: it is the exact
+OS45 common-boundary / EOW step.  Its proof obligations are the real
+mathematical content:
+
+1. construct the common OS45 chart domain from the two
+   `OS45OppositeTubeBranchGeometry` packets over the same `V`;
+2. identify the positive-side trace with the adjacent `bvt_F` Wick difference;
+3. identify the negative-side trace with the adjacent `extendF` real-edge
+   difference using
+   `BHW.os45PulledRealBranch_sub_eq_adjacentOS45RealEdgeDifference`;
+4. export connectedness of the one common chart domain used by both traces.
+
+The coordinate infrastructure needed by this transcript is now implemented in
+`Wightman/Reconstruction/WickRotation/OSToWightmanLocalityOS45CommonChart.lean`.
+It supplies the complex-linear chart equivalence
+
+```lean
+#check BHW.configPermCLE
+#check BHW.configPermCLE_apply
+#check BHW.configPermCLE_symm_apply
+
+#check BHW.os45CommonChartCLE
+#check BHW.os45CommonChartCLE_apply
+#check BHW.os45CommonChartCLE_symm_apply
+```
+
+Their defining equations are:
+
+```lean
+BHW.configPermCLE (d := d) (n := n) ρ z =
+  fun k μ => z (ρ k) μ
+
+(BHW.configPermCLE (d := d) (n := n) ρ).symm z =
+  fun k μ => z (ρ.symm k) μ
+
+BHW.os45CommonChartCLE (d := d) (n := n) ρ z =
+  BHW.os45QuarterTurnConfig (d := d) (n := n) (fun k μ => z (ρ k) μ)
+```
+
+The implemented definitions have the surfaces:
+
+```lean
+noncomputable def configPermCLE
+    (ρ : Equiv.Perm (Fin n)) :
+    (Fin n -> Fin (d + 1) -> ℂ) ≃L[ℂ]
+      (Fin n -> Fin (d + 1) -> ℂ)
+
+noncomputable def os45CommonChartCLE
+    (ρ : Equiv.Perm (Fin n)) :
+    (Fin n -> Fin (d + 1) -> ℂ) ≃L[ℂ]
+      (Fin n -> Fin (d + 1) -> ℂ)
+```
+
+This is coordinate bookkeeping, but it is not a theorem-2 replacement theorem:
+it exists only so the common-chart EOW output can be pulled back to the direct
+coordinates required by `AdjacentOSEOWDifferenceEnvelope`.
+
+Internal transcript for `BHW.os45_adjacent_commonBoundaryEnvelope`:
+
+```lean
+theorem BHW.os45_adjacent_commonBoundaryEnvelope
+    [NeZero d]
+    (hd : 2 <= d)
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) (i : Fin n) (hi : i.val + 1 < n)
+    (V : Set (NPointDomain d n)) (ρ : Equiv.Perm (Fin n))
+    (hV_open : IsOpen V) (hV_conn : IsConnected V) (hV_ne : V.Nonempty)
+    (hV_jost : ∀ x ∈ V, x ∈ BHW.JostSet d n)
+    (hV_ET : ∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+    (hV_swapET :
+      ∀ x ∈ V,
+        BHW.realEmbed (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
+          BHW.ExtendedTube d n)
+    (hV_ordered :
+      ∀ x ∈ V,
+        x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) ρ)
+    (hV_swap_ordered :
+      ∀ x ∈ V,
+        (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
+          EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+            ((Equiv.swap i ⟨i.val + 1, hi⟩).symm * ρ))
+    (hV_wick :
+      ∀ x ∈ V,
+        (fun k => wickRotatePoint (x k)) ∈
+          adjacentOS45WickSeedDomain (d := d) (n := n) i hi ρ)
+    (hV_real :
+      ∀ x ∈ V,
+        BHW.realEmbed x ∈
+          adjacentOS45RealEdgeDomain (d := d) (n := n) i hi)
+    (hV_geom :
+      ∀ x ∈ V, BHW.OS45OppositeTubeBranchGeometry (d := d) (n := n) ρ x)
+    (hV_swap_geom :
+      ∀ x ∈ V,
+        BHW.OS45OppositeTubeBranchGeometry (d := d) (n := n)
+          ((Equiv.swap i ⟨i.val + 1, hi⟩).symm * ρ)
+          (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k))) :
+    ∃ (Uc : Set (Fin n -> Fin (d + 1) -> ℂ))
+      (Hc : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ),
+      IsOpen Uc ∧ IsConnected Uc ∧
+      DifferentiableOn ℂ Hc Uc ∧
+      (∀ x ∈ V,
+        BHW.os45CommonChartCLE (d := d) (n := n) ρ
+          (fun k => wickRotatePoint (x k)) ∈ Uc) ∧
+      (∀ x ∈ V,
+        BHW.os45CommonChartCLE (d := d) (n := n) ρ
+          (BHW.realEmbed (d := d) x) ∈ Uc) ∧
+      (∀ x ∈ V,
+        Hc (BHW.os45CommonChartCLE (d := d) (n := n) ρ
+            (fun k => wickRotatePoint (x k))) =
+          bvt_F OS lgc n
+            (fun k => wickRotatePoint (x (Equiv.swap i ⟨i.val + 1, hi⟩ k))) -
+          bvt_F OS lgc n (fun k => wickRotatePoint (x k))) ∧
+      (∀ x ∈ V,
+        Hc (BHW.os45CommonChartCLE (d := d) (n := n) ρ
+            (BHW.realEmbed (d := d) x)) =
+          BHW.extendF (bvt_F OS lgc n)
+            (BHW.realEmbed (d := d)
+              (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k))) -
+          BHW.extendF (bvt_F OS lgc n)
+            (BHW.realEmbed (d := d) x))
+```
+
+Proof decomposition of this theorem, without hiding the analytic work:
+
+1. Set `τ := Equiv.swap i ⟨i.val + 1, hi⟩` and
+   `Qρe := BHW.os45CommonChartCLE (d := d) (n := n) ρ`.
+2. Define the positive-side branch difference on the pulled OS-II ACR-one
+   wedge.  The domain must be written in ordered coordinates; otherwise the
+   theorem would silently assume that the selected patch is identity-ordered.
+   The trace value is still the direct adjacent difference, because
+   `bvt_F_acrOne_package` supplies total permutation symmetry.
+
+   ```lean
+   let Dplus : Set (Fin n -> Fin (d + 1) -> ℂ) :=
+     {z |
+       BHW.permAct (d := d) ρ (Qρe.symm z) ∈
+         AnalyticContinuationRegion d n 1 ∧
+       BHW.permAct (d := d) (τ.symm * ρ)
+         (BHW.permAct (d := d) τ (Qρe.symm z)) ∈
+         AnalyticContinuationRegion d n 1}
+
+   let Hplus : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ := fun z =>
+     bvt_F OS lgc n (BHW.permAct (d := d) τ (Qρe.symm z)) -
+       bvt_F OS lgc n (Qρe.symm z)
+   ```
+
+   The proof of `DifferentiableOn ℂ Hplus Dplus` uses
+   `(bvt_F_acrOne_package (d := d) OS lgc n).1` after rewriting each direct
+   `bvt_F` term by the permutation-symmetry field
+   `(bvt_F_acrOne_package (d := d) OS lgc n).2.2.1`; the two ACR-one
+   memberships are exactly the two ordered-sector hypotheses.  The required
+   coordinate maps are differentiable because they are finite coordinate
+   permutations composed with `Qρe.symm`.
+
+   The ordered-sector to ACR-one bridge is also implemented in
+   `OSToWightmanLocalityOS45CommonChart.lean`:
+
+   ```lean
+   theorem BHW.wickRotate_ordered_mem_acrOne
+       [NeZero d]
+       (σ : Equiv.Perm (Fin n))
+       {x : NPointDomain d n}
+       (hx : x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) σ) :
+       BHW.permAct (d := d) σ (fun k => wickRotatePoint (x k)) ∈
+         AnalyticContinuationRegion d n 1
+   ```
+
+   This is a direct calculation from the definition of
+   `AnalyticContinuationRegion d n 1` and the strict positive ordered-time
+   inequalities; it is coordinate mathematics, not a theorem-2 wrapper.
+3. Define the negative-side branch difference using the checked real pullbacks:
+
+   ```lean
+   let Dminus : Set (Fin n -> Fin (d + 1) -> ℂ) :=
+     BHW.os45PulledRealBranchDomain (d := d) (n := n) ρ ∩
+       BHW.os45PulledRealBranchDomain (d := d) (n := n) (τ.symm * ρ)
+
+   let Hminus : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ := fun z =>
+     BHW.os45PulledRealBranch (d := d) (n := n) OS lgc (τ.symm * ρ) z -
+       BHW.os45PulledRealBranch (d := d) (n := n) OS lgc ρ z
+   ```
+
+   `DifferentiableOn ℂ Hminus Dminus` is exactly
+   `os45PulledRealBranch_holomorphicOn` on each factor, restricted to the
+   intersection.
+4. The two trace memberships are not optional side facts.  They are proved from
+   the two ordered-sector hypotheses and the two
+   `OS45OppositeTubeBranchGeometry` packets:
+
+   ```lean
+   have hplus_trace_mem :
+       ∀ x ∈ V, Qρe (fun k => wickRotatePoint (x k)) ∈ Dplus := by
+     intro x hx
+     simpa [Dplus, Qρe, τ] using
+       BHW.adjacent_wick_traces_mem_acrOne
+         (d := d) (n := n) i hi ρ
+         (hV_ordered x hx) (hV_swap_ordered x hx)
+
+   have hminus_trace_mem :
+       ∀ x ∈ V, Qρe (BHW.realEmbed (d := d) x) ∈ Dminus := by
+     intro x hx
+     simpa [Dminus, Qρe, τ] using
+       BHW.os45CommonChart_real_mem_pulledRealBranchDomain_pair
+         (d := d) (n := n) τ ρ (hV_ET x hx) (hV_swapET x hx)
+   ```
+
+5. Do **not** introduce placeholder boundary predicates.  The current repo
+   APIs are exact and must be used by name:
+
+   - `SCV.edge_of_the_wedge_theorem` in
+     `SCV/TubeDomainExtension.lean` constructs an envelope from **continuous
+     pointwise** boundary values on an open real edge.
+   - `SCV.distributional_uniqueness_tube_of_zero_bv` and
+     `SCV.distributional_uniqueness_tube_of_zero_bv_of_clm` in
+     `SCV/DistributionalUniqueness.lean` prove zero/uniqueness from
+     **distributional** boundary values.
+   - `eqOn_openConnected_of_distributional_wickSection_eq_on_realOpen` in
+     `OSToWightmanTubeIdentity.lean` is already the checked local consumer that
+     turns compact-test Wick-section equality on a real-open patch into
+     pointwise equality on a connected holomorphic chart.
+
+   Hence Slot 1 must not add a structure named
+   `HasCommonDistributionalBoundaryValueOn`, a symbolic
+   `BoundaryPairingLimit`, or any similar field package.  If the implementation
+   uses continuous EOW, it must first prove the actual continuous `bv`,
+   `ContinuousOn bv E`, and the two pointwise `Tendsto` hypotheses required by
+   `SCV.edge_of_the_wedge_theorem`.  If the implementation stays in the OS-II
+   distributional category, it must state and prove a genuine local
+   distributional EOW envelope theorem, not assume one through a record field.
+
+6. The theorem surface needed by Slot 1 is therefore the following pure-SCV
+   local envelope theorem, followed by its OS45 instantiation.  This theorem is
+   the Lean-facing form of the standard distributional edge-of-the-wedge
+   analytic input used by OS §4.5.  It is not a new axiom, and it must not
+   mention OS, Wightman functions, `bvt_F`, `extendF`, or locality.
+
+   ```lean
+   theorem SCV.local_distributional_edge_of_the_wedge_envelope
+       {m : ℕ}
+       (Ωplus Ωminus : Set (Fin m -> ℂ))
+       (E : Set (Fin m -> ℝ))
+       (hΩplus_open : IsOpen Ωplus)
+       (hΩminus_open : IsOpen Ωminus)
+       (hE_open : IsOpen E)
+       (hE_ne : E.Nonempty)
+       (C : Set (Fin m -> ℝ))
+       (hC_open : IsOpen C)
+       (hC_conv : Convex ℝ C)
+       (hC_ne : C.Nonempty)
+       (hC_not_zero : (0 : Fin m -> ℝ) ∉ C)
+       (hC_cone : ∀ (t : ℝ), 0 < t -> ∀ y ∈ C, t • y ∈ C)
+       -- `Kη` represents a compact set of directions in a closed subcone
+       -- compactly contained in `C`.  This is the Lean-facing substitute for
+       -- the usual `C₀ ⋐ C` notation.
+       (hlocal_wedge :
+         ∀ K : Set (Fin m -> ℝ), IsCompact K -> K ⊆ E ->
+           ∀ Kη : Set (Fin m -> ℝ), IsCompact Kη -> Kη ⊆ C ->
+             ∃ r : ℝ, 0 < r ∧
+               ∀ x ∈ K, ∀ η ∈ Kη, ∀ ε : ℝ, 0 < ε -> ε < r ->
+                 (fun a => (x a : ℂ) +
+                   (ε : ℂ) * (η a : ℂ) * Complex.I) ∈ Ωplus ∧
+                 (fun a => (x a : ℂ) -
+                   (ε : ℂ) * (η a : ℂ) * Complex.I) ∈ Ωminus)
+       (Fplus Fminus : (Fin m -> ℂ) -> ℂ)
+       (hFplus : DifferentiableOn ℂ Fplus Ωplus)
+       (hFminus : DifferentiableOn ℂ Fminus Ωminus)
+       (hslow_plus :
+         ∀ K : Set (Fin m -> ℝ), IsCompact K -> K ⊆ E ->
+           ∀ Kη : Set (Fin m -> ℝ), IsCompact Kη -> Kη ⊆ C ->
+             ∃ (A : ℝ) (N : ℕ) (r : ℝ), 0 < A ∧ 0 < r ∧
+               ∀ x ∈ K,
+                 ∀ η ∈ Kη, ∀ ε : ℝ, 0 < ε -> ε < r ->
+                   ‖Fplus (fun a => (x a : ℂ) +
+                     (ε : ℂ) * (η a : ℂ) * Complex.I)‖ ≤
+                     A * (ε⁻¹) ^ N)
+       (hslow_minus :
+         ∀ K : Set (Fin m -> ℝ), IsCompact K -> K ⊆ E ->
+           ∀ Kη : Set (Fin m -> ℝ), IsCompact Kη -> Kη ⊆ C ->
+             ∃ (A : ℝ) (N : ℕ) (r : ℝ), 0 < A ∧ 0 < r ∧
+               ∀ x ∈ K,
+                 ∀ η ∈ Kη, ∀ ε : ℝ, 0 < ε -> ε < r ->
+                   ‖Fminus (fun a => (x a : ℂ) -
+                     (ε : ℂ) * (η a : ℂ) * Complex.I)‖ ≤
+                     A * (ε⁻¹) ^ N)
+       (T : SchwartzMap (Fin m -> ℝ) ℂ ->L[ℂ] ℂ)
+       -- In this repo, `SchwartzMap` plus compact support and support inside
+       -- `E` is the current Lean representation of `C_c^∞(E)`.
+       (hplus_bv :
+         ∀ Kη : Set (Fin m -> ℝ), IsCompact Kη -> Kη ⊆ C ->
+           ∀ φ : SchwartzMap (Fin m -> ℝ) ℂ,
+             HasCompactSupport (φ : (Fin m -> ℝ) -> ℂ) ->
+             tsupport (φ : (Fin m -> ℝ) -> ℂ) ⊆ E ->
+             TendstoUniformlyOn
+               (fun ε η =>
+                 ∫ x : Fin m -> ℝ,
+                   Fplus (fun a => (x a : ℂ) +
+                     (ε : ℂ) * (η a : ℂ) * Complex.I) * φ x)
+               (fun _ : Fin m -> ℝ => T φ)
+               (nhdsWithin 0 (Set.Ioi 0))
+               Kη)
+       (hminus_bv :
+         ∀ Kη : Set (Fin m -> ℝ), IsCompact Kη -> Kη ⊆ C ->
+           ∀ φ : SchwartzMap (Fin m -> ℝ) ℂ,
+             HasCompactSupport (φ : (Fin m -> ℝ) -> ℂ) ->
+             tsupport (φ : (Fin m -> ℝ) -> ℂ) ⊆ E ->
+             TendstoUniformlyOn
+               (fun ε η =>
+                 ∫ x : Fin m -> ℝ,
+                   Fminus (fun a => (x a : ℂ) -
+                     (ε : ℂ) * (η a : ℂ) * Complex.I) * φ x)
+               (fun _ : Fin m -> ℝ => T φ)
+               (nhdsWithin 0 (Set.Ioi 0))
+               Kη) :
+       ∃ (U : Set (Fin m -> ℂ)) (F : (Fin m -> ℂ) -> ℂ),
+         IsOpen U ∧
+         (∀ x ∈ E, realEmbed x ∈ U) ∧
+         DifferentiableOn ℂ F U ∧
+         (∀ z ∈ U ∩ Ωplus, F z = Fplus z) ∧
+         (∀ z ∈ U ∩ Ωminus, F z = Fminus z) ∧
+         (∀ G : (Fin m -> ℂ) -> ℂ,
+           DifferentiableOn ℂ G U ->
+           (∀ z ∈ U ∩ Ωplus, G z = Fplus z) ->
+           (∀ z ∈ U ∩ Ωminus, G z = Fminus z) ->
+             ∀ z ∈ U, G z = F z)
+   ```
+
+   The final uniqueness clause is intentional.  It is not needed by the first
+   Slot-1 consumer, but it prevents the regularized-envelope construction from
+   depending on arbitrary choices of local branches.  In implementation this
+   uniqueness is proved chartwise by the continuous local EOW identity theorem
+   and then patched across overlaps; every connected component of the
+   constructed `U` contains one of the local wedge pieces used to define the
+   envelope.
+
+   Proof transcript for the SCV theorem:
+
+   1. For each compact real set `K ⊆ E` and compact direction set `Kη ⊆ C`,
+      use `hlocal_wedge` to get a radius `r > 0` so the truncated wedges
+      `x ± i εη`, `x ∈ K`, `η ∈ Kη`, `0 < ε < r`, lie in `Ωplus/Ωminus`.
+      This is the local replacement for a global tube hypothesis.
+   2. Use `hslow_plus` and `hslow_minus` on the same `K,Kη` to obtain explicit
+      polynomial slow-growth orders.  These bounds supply the integrability and
+      equicontinuity estimates needed for distributional boundary values.
+   3. Use `hplus_bv` and `hminus_bv` as uniform compact-subcone boundary
+      convergence statements.  In the current Lean surface, compactly supported
+      `SchwartzMap`s with `tsupport ⊆ E` represent the local test space
+      `C_c^\infty(E)`.
+   4. First prove the pure-SCV local **continuous** EOW theorem
+      `SCV.local_continuous_edge_of_the_wedge_envelope`.  This is not a
+      wrapper around the checked global `SCV.edge_of_the_wedge_theorem`, because
+      that theorem is stated for global tubes.  The proof must extract the
+      Cauchy-polydisc construction from `SCV/TubeDomainExtension.lean` and
+      replace `Phi_pos_in_tube` / `Phi_neg_in_tube` by local compact-subcone
+      membership lemmas using `hlocal_wedge`.
+   5. Use the **Streater-Wightman distributional EOW route** from Theorem
+      2-16 of the Wightman book: real-direction convolution regularization,
+      continuous EOW for each compactly supported smoothing kernel, kernel
+      extraction by the Schwartz nuclear theorem, translation covariance, and
+      compactly supported approximate-identity recovery.  The rejected
+      finite-order primitive route is not active: in several variables
+      separately normalized holomorphic primitives can differ by arbitrary
+      transverse holomorphic functions, and the naive polynomial-correction
+      shortcut is false.
+   6. At a real edge point `x0 ∈ E`, choose cone-basis vectors
+      `ys : Fin m -> Fin m -> ℝ` with `ys j ∈ C` and linearly independent.
+      Pull the edge to an axis box `B` by
+      `u ↦ x0 + Σ j, u j • ys j`; shrink `B` so its closed box maps into `E`.
+      The positive and negative chart polywedges are
+      `B + i(0,δ)^m` and `B - i(0,δ)^m`.
+   7. Pull `Fplus`, `Fminus`, and the common distribution `T` back to this
+      chart.  The distribution pullback must include the determinant/Jacobian
+      factor of the real linear chart.  Apply the local wedge hypothesis and
+      the slow-growth hypotheses on the compact closed box and the compact
+      simplex of positive chart directions to get one radius and one order
+      `N0` valid for both signs.
+   8. Choose nested chart boxes `B0 ⋐ B1 ⋐ Echart` and a support radius
+      `rψ > 0` so `u ∈ B0` and `t ∈ closedBall 0 rψ` imply `u + t ∈ B1`.
+      Shrink the positive and negative polywedges over `B0` so every real
+      translate by such `t` remains inside the corresponding large local wedge
+      over `B1`.
+   9. For each compactly supported Schwartz kernel `ψ` with
+      `tsupport ψ ⊆ closedBall 0 rψ`, form the real-direction regularizations
+      `Fplusψ z = ∫ t, FplusChart (z + realEmbed t) * ψ t` and
+      `Fminusψ z = ∫ t, FminusChart (z + realEmbed t) * ψ t`.  Prove these are
+      holomorphic on the shrunken chart polywedges by the local version of
+      `SCV.differentiableOn_realMollify_tubeDomain`.
+   10. Define the common continuous boundary value
+       `bvψ u = Tchart (translateSchwartz (-u) ψ)`.
+       Prove `ContinuousOn bvψ B0` using the existing translation-continuity
+       theorem in `SCV/DistributionalUniqueness.lean`, and prove
+       `Fplusψ` and `Fminusψ` tend to `bvψ` at the real edge by Fubini,
+       support stability, the compact-subcone boundary-value hypotheses, and
+       the slow-growth bounds.
+   11. Apply `SCV.local_continuous_edge_of_the_wedge_envelope` to the
+       regularized pair for each `ψ`, producing `Gψ` on one fixed neighborhood
+       `U0` determined only by `B0`, `B1`, `C`, and `rψ`.  The extracted local
+       continuous EOW theorem must include uniqueness on `U0`; this is what
+       makes linearity in `ψ` and real-translation covariance provable without
+       arbitrary-choice artifacts.
+   12. Prove the Streater-Wightman recovery package:
+       for each `z ∈ U0`, `ψ ↦ Gψ z` is continuous linear on the fixed
+       compact-support kernel space.  In Lean this is implemented with a fixed
+       cutoff `χr = 1` on the allowed kernel-support ball, giving a genuine
+       `SchwartzMap ->L[ℂ] ℂ` functional on all Schwartz kernels while agreeing
+       with `Gψ z` on the kernels used in the proof.  The family is
+       real-translation covariant; the Schwartz kernel/nuclear theorem
+       therefore gives one distributional kernel depending only on the
+       translated complex point; and the distributional Cauchy-Riemann
+       equations plus Weyl/Montel regularity produce a holomorphic function
+       `H` on `U0`.  The distributional Cauchy-Riemann step is not a
+       black-box phrase: the SCV infrastructure blueprint now splits it into
+       `regularizedEnvelope_productKernel_dbar_eq_zero`,
+       `exists_realConvolutionTest_approxIdentity`, and
+       `translationCovariantKernel_distributionalHolomorphic`.  The first and
+       third are now checked: the product-kernel theorem is the compact-support
+       integration-by-parts step moving `∂̄` from the test function to the
+       holomorphic regularized envelope, and the distributional-holomorphicity
+       theorem passes the zero identity through the descended distribution by
+       continuity.  The live blocker is the middle theorem, which supplies
+       Schwartz-topology density of real convolution tests.
+   13. Let `ψρ` be a compactly supported approximate identity with supports
+       inside `closedBall 0 rψ`.  On the positive and negative wedge pieces,
+       `Gψρ` converges to `FplusChart` and `FminusChart` by the already checked
+       real-mollification approximate-identity theorem.  Since the same
+       sequence converges locally uniformly to `H`, `H` is the desired local
+       distributional EOW envelope.
+   14. Patch these chart envelopes over a basis of real edge boxes.  Overlap
+       compatibility is by the ordinary identity theorem on positive or
+       negative wedge pieces, reusing the same style as
+       `local_extensions_consistent` in `SCV/TubeDomainExtension.lean`.
+   15. Extract the connected component needed by the OS45 consumer only after
+       the local extension `U,F` exists; connectedness is not an input to the
+       SCV theorem.
+
+   This proof is pure complex analysis/distribution theory.  It is the place
+   where the standard Streater-Wightman/Jost distributional EOW theorem is
+   proved in the repo's SCV layer; it is not another locality theorem.
+
+7. The OS45 instantiation of this SCV theorem must use a local wedge, not an
+   arbitrary placeholder domain.  The Lean-facing theorem remains
+   `BHW.os45_adjacent_commonBoundaryEnvelope`, but its internal data are fixed
+   as follows:
+
+   ```lean
+   let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+   let Qρe := BHW.os45CommonChartCLE (d := d) (n := n) ρ
+   let Ecommon : Set (NPointDomain d n) :=
+     BHW.os45CommonEdgeRealPoint (d := d) (n := n) ρ '' V
+
+   let Ωplus : Set (Fin n -> Fin (d + 1) -> ℂ) :=
+     {z |
+       BHW.permAct (d := d) ρ (Qρe.symm z) ∈
+         AnalyticContinuationRegion d n 1 ∧
+       BHW.permAct (d := d) (τ.symm * ρ)
+         (BHW.permAct (d := d) τ (Qρe.symm z)) ∈
+         AnalyticContinuationRegion d n 1}
+
+   let Ωminus : Set (Fin n -> Fin (d + 1) -> ℂ) :=
+     BHW.os45PulledRealBranchDomain (d := d) (n := n) ρ ∩
+       BHW.os45PulledRealBranchDomain (d := d) (n := n) (τ.symm * ρ)
+
+   let Hplus : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ := fun z =>
+     bvt_F OS lgc n (BHW.permAct (d := d) τ (Qρe.symm z)) -
+       bvt_F OS lgc n (Qρe.symm z)
+
+   let Hminus : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ := fun z =>
+     BHW.os45PulledRealBranch (d := d) (n := n) OS lgc (τ.symm * ρ) z -
+       BHW.os45PulledRealBranch (d := d) (n := n) OS lgc ρ z
+   ```
+
+   Required OS45 proof slots, in order:
+
+   1. `Ωplus` and `Ωminus` are open.  The negative side uses
+      `isOpen_os45PulledRealBranchDomain`; the positive side uses openness of
+      `AnalyticContinuationRegion d n 1`, supplied by
+      `isOpen_analyticContinuationRegion_succ`, under the explicit
+      continuous-linear maps.
+   2. `Hplus` is holomorphic on `Ωplus`; use
+      `(bvt_F_acrOne_package (d := d) OS lgc n).1`, the total permutation
+      symmetry field `(bvt_F_acrOne_package (d := d) OS lgc n).2.2.1`, and
+      differentiability of `Qρe.symm` and finite coordinate permutations.
+   3. `Hminus` is holomorphic on `Ωminus`; use
+      `BHW.os45PulledRealBranch_holomorphicOn` on each factor and restrict to
+      the intersection.
+   4. The trace membership facts are already checked in
+      `OSToWightmanLocalityOS45TraceMembership.lean`:
+
+      ```lean
+      theorem BHW.adjacent_wick_traces_mem_acrOne
+          (i : Fin n) (hi : i.val + 1 < n)
+          (ρ : Equiv.Perm (Fin n))
+          {x : NPointDomain d n}
+          (hx_ordered :
+            x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) ρ)
+          (hx_swap_ordered :
+            (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
+              EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+                ((Equiv.swap i ⟨i.val + 1, hi⟩).symm * ρ)) :
+          BHW.permAct (d := d) ρ (fun k => wickRotatePoint (x k)) ∈
+              AnalyticContinuationRegion d n 1 ∧
+          BHW.permAct (d := d) ((Equiv.swap i ⟨i.val + 1, hi⟩).symm * ρ)
+              (BHW.permAct (d := d) (Equiv.swap i ⟨i.val + 1, hi⟩)
+                (fun k => wickRotatePoint (x k))) ∈
+              AnalyticContinuationRegion d n 1
+
+      theorem BHW.os45CommonChart_real_mem_pulledRealBranchDomain_pair
+          (τ ρ : Equiv.Perm (Fin n))
+          {x : NPointDomain d n}
+          (hx_ET : BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+          (hxτ_ET : BHW.realEmbed (fun k => x (τ k)) ∈
+            BHW.ExtendedTube d n) :
+          BHW.os45CommonChartCLE (d := d) (n := n) ρ (BHW.realEmbed x) ∈
+            BHW.os45PulledRealBranchDomain (d := d) (n := n) ρ ∩
+              BHW.os45PulledRealBranchDomain (d := d) (n := n)
+                (τ.symm * ρ)
+      ```
+
+      They provide the two ACR-one memberships for the Wick trace and both
+      pulled real-branch-domain memberships for the real trace.
+   5. Build the local wedge hypothesis for
+      `SCV.local_distributional_edge_of_the_wedge_envelope` from
+      `OS45OppositeTubeBranchGeometry`.  The theorem to prove in Lean is:
+
+      ```lean
+      theorem BHW.os45_commonChart_localWedge
+          [NeZero d]
+          (i : Fin n) (hi : i.val + 1 < n)
+          (V : Set (NPointDomain d n))
+          (ρ : Equiv.Perm (Fin n))
+          (hV_open : IsOpen V)
+          (hV_geom :
+            ∀ x ∈ V, OS45OppositeTubeBranchGeometry (d := d) (n := n) ρ x)
+          (hV_swap_geom :
+            ∀ x ∈ V,
+              OS45OppositeTubeBranchGeometry (d := d) (n := n)
+                ((Equiv.swap i ⟨i.val + 1, hi⟩).symm * ρ)
+                (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)))
+          (Ωplus Ωminus : Set (Fin n -> Fin (d + 1) -> ℂ))
+          (Ecommon Ccommon : Set (NPointDomain d n))
+          (hΩplus_open : IsOpen Ωplus)
+          (hΩminus_open : IsOpen Ωminus)
+          (hEcommon :
+            Ecommon = os45CommonEdgeRealPoint (d := d) (n := n) ρ '' V)
+          (hCcommon : Ccommon = {η | InForwardCone d n η}) :
+          ∀ K : Set (NPointDomain d n), IsCompact K -> K ⊆ Ecommon ->
+            ∀ Kη : Set (NPointDomain d n), IsCompact Kη -> Kη ⊆ Ccommon ->
+              ∃ r : ℝ, 0 < r ∧
+                ∀ x ∈ K, ∀ η ∈ Kη, ∀ ε : ℝ, 0 < ε -> ε < r ->
+                  (fun a μ => (x a μ : ℂ) +
+                    (ε : ℂ) * (η a μ : ℂ) * Complex.I) ∈ Ωplus ∧
+                  (fun a μ => (x a μ : ℂ) -
+                    (ε : ℂ) * (η a μ : ℂ) * Complex.I) ∈ Ωminus
+      ```
+
+      Proof: pull `K` back through `os45CommonEdgeRealCLE ρ`; for each source
+      point use the two geometry packets to get the exact plus/minus trace
+      directions; use openness of `Ωplus/Ωminus` and compactness of `K × Kη`
+      to choose one radius.  The compact direction set must be a compact
+      subcone of `InForwardCone d n`, not a single radial direction.
+   6. Prove local slow growth for both sides.  These are genuine estimates, not
+      optional assumptions:
+
+      ```lean
+      theorem BHW.os45_Hplus_slowGrowth_compactSubcone
+          [NeZero d]
+          (OS : OsterwalderSchraderAxioms d)
+          (lgc : OSLinearGrowthCondition d OS)
+          (n : ℕ) (i : Fin n) (hi : i.val + 1 < n)
+          (ρ : Equiv.Perm (Fin n))
+          (Ecommon Ccommon : Set (NPointDomain d n))
+          (Hplus : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ) :
+          ∀ K : Set (NPointDomain d n), IsCompact K -> K ⊆ Ecommon ->
+            ∀ Kη : Set (NPointDomain d n), IsCompact Kη -> Kη ⊆ Ccommon ->
+              ∃ (A : ℝ) (N : ℕ) (r : ℝ), 0 < A ∧ 0 < r ∧
+                ∀ x ∈ K, ∀ η ∈ Kη, ∀ ε : ℝ, 0 < ε -> ε < r ->
+                  ‖Hplus (fun a μ => (x a μ : ℂ) +
+                    (ε : ℂ) * (η a μ : ℂ) * Complex.I)‖ ≤ A * (ε⁻¹) ^ N
+
+      theorem BHW.os45_Hminus_slowGrowth_compactSubcone
+          [NeZero d]
+          (OS : OsterwalderSchraderAxioms d)
+          (lgc : OSLinearGrowthCondition d OS)
+          (n : ℕ) (i : Fin n) (hi : i.val + 1 < n)
+          (ρ : Equiv.Perm (Fin n))
+          (Ecommon Ccommon : Set (NPointDomain d n))
+          (Hminus : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ) :
+          ∀ K : Set (NPointDomain d n), IsCompact K -> K ⊆ Ecommon ->
+            ∀ Kη : Set (NPointDomain d n), IsCompact Kη -> Kη ⊆ Ccommon ->
+              ∃ (A : ℝ) (N : ℕ) (r : ℝ), 0 < A ∧ 0 < r ∧
+                ∀ x ∈ K, ∀ η ∈ Kη, ∀ ε : ℝ, 0 < ε -> ε < r ->
+                  ‖Hminus (fun a μ => (x a μ : ℂ) -
+                    (ε : ℂ) * (η a μ : ℂ) * Complex.I)‖ ≤ A * (ε⁻¹) ^ N
+      ```
+
+      The plus estimate comes from the growth field of
+      `full_analytic_continuation_with_acr_symmetry_growth OS lgc n`, transported
+      through the two finite permutation/OS45 common-chart linear maps and
+      combined by `norm_sub_le`.  The minus estimate comes from the same
+      forward-tube growth after the BHW `extendF` branch representation:
+      cover the compact OS45 real-branch patch by finitely many Lorentz charts
+      in `ExtendedTube`; on each chart use `forward_tube_lorentz_growth`, then
+      take the maximum of the finitely many constants.
+   7. Prove the two compact-subcone-uniform distributional boundary-value
+      hypotheses by transporting OS-II ACR-one boundary values to the common
+      chart.  The Lean surfaces are:
+
+      ```lean
+      theorem BHW.os45_Hplus_commonBoundary_uniform
+          [NeZero d]
+          (OS : OsterwalderSchraderAxioms d)
+          (lgc : OSLinearGrowthCondition d OS)
+          (n : ℕ) (i : Fin n) (hi : i.val + 1 < n)
+          (V Ecommon Ccommon : Set (NPointDomain d n))
+          (ρ : Equiv.Perm (Fin n))
+          (Tcommon : SchwartzMap (NPointDomain d n) ℂ ->L[ℂ] ℂ)
+          (Hplus : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ) :
+          ∀ Kη : Set (NPointDomain d n), IsCompact Kη -> Kη ⊆ Ccommon ->
+            ∀ φ : SchwartzMap (NPointDomain d n) ℂ,
+              HasCompactSupport (φ : NPointDomain d n -> ℂ) ->
+              tsupport (φ : NPointDomain d n -> ℂ) ⊆ Ecommon ->
+              TendstoUniformlyOn
+                (fun ε η =>
+                  ∫ x : NPointDomain d n,
+                    Hplus (fun a μ => (x a μ : ℂ) +
+                      (ε : ℂ) * (η a μ : ℂ) * Complex.I) * φ x)
+                (fun _ : NPointDomain d n => Tcommon φ)
+                (nhdsWithin 0 (Set.Ioi 0))
+                Kη
+
+      theorem BHW.os45_Hminus_commonBoundary_uniform
+          [NeZero d]
+          (OS : OsterwalderSchraderAxioms d)
+          (lgc : OSLinearGrowthCondition d OS)
+          (n : ℕ) (i : Fin n) (hi : i.val + 1 < n)
+          (V Ecommon Ccommon : Set (NPointDomain d n))
+          (ρ : Equiv.Perm (Fin n))
+          (Tcommon : SchwartzMap (NPointDomain d n) ℂ ->L[ℂ] ℂ)
+          (Hminus : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ) :
+          ∀ Kη : Set (NPointDomain d n), IsCompact Kη -> Kη ⊆ Ccommon ->
+            ∀ φ : SchwartzMap (NPointDomain d n) ℂ,
+              HasCompactSupport (φ : NPointDomain d n -> ℂ) ->
+              tsupport (φ : NPointDomain d n -> ℂ) ⊆ Ecommon ->
+              TendstoUniformlyOn
+                (fun ε η =>
+                  ∫ x : NPointDomain d n,
+                    Hminus (fun a μ => (x a μ : ℂ) -
+                      (ε : ℂ) * (η a μ : ℂ) * Complex.I) * φ x)
+                (fun _ : NPointDomain d n => Tcommon φ)
+                (nhdsWithin 0 (Set.Ioi 0))
+                Kη
+      ```
+
+      The common boundary functional `Tcommon` is the compact-test distribution
+      on the common edge obtained from
+      `os45_adjacent_euclideanEdge_pairing_eq_on_timeSector` after the
+      `os45CommonEdgeRealCLE ρ` change of variables.  The plus side uses
+      `bvt_boundary_values` / `bvt_F_acrOne_package`; the minus side uses the
+      BHW branch pullback theorem defining `os45PulledRealBranch` and the same
+      common-edge test after the OS45 chart.  No locality theorem, PET
+      branch-independence theorem, or boundary-locality transfer theorem may
+      appear in this proof.
+
+      The phrase "uses `bvt_boundary_values`" hides one genuine OS-II
+      strengthening that must be implemented before the SCV theorem can be
+      consumed.  The checked theorem `bvt_boundary_values` is raywise in the
+      forward-cone direction `η`; the SCV envelope theorem needs
+      `TendstoUniformlyOn` over every compact direction set `Kη`.  The required
+      Lean-facing strengthening is:
+
+      ```lean
+      theorem BHW.bvt_boundary_values_uniformOnCompactDirections
+          [NeZero d]
+          (OS : OsterwalderSchraderAxioms d)
+          (lgc : OSLinearGrowthCondition d OS)
+          (n : ℕ)
+          (Kη : Set (NPointDomain d n))
+          (hKη_compact : IsCompact Kη)
+          (hKη_sub : Kη ⊆ ForwardConeAbs d n)
+          (φ : SchwartzMap (NPointDomain d n) ℂ)
+          (hφ_compact : HasCompactSupport (φ : NPointDomain d n -> ℂ)) :
+          TendstoUniformlyOn
+            (fun ε η =>
+              ∫ x : NPointDomain d n,
+                bvt_F OS lgc n
+                  (fun k μ => (x k μ : ℂ) +
+                    (ε : ℂ) * (η k μ : ℂ) * Complex.I) * φ x)
+            (fun _ : NPointDomain d n => bvt_W OS lgc n φ)
+            (nhdsWithin 0 (Set.Ioi 0))
+            Kη
+      ```
+
+      Proof transcript: strengthen
+      `SCV.tube_boundaryValueData_of_polyGrowth` to its compact-subcone
+      uniform form, not merely its raywise form.  For fixed compact
+      `tsupport φ` and compact `Kη`, the tube membership radius is uniform by
+      compactness and `hKη_sub`; the OS-II polynomial growth bound from
+      `full_analytic_continuation_with_acr_symmetry_growth` gives one
+      integrable Schwartz seminorm bound independent of `η ∈ Kη` and small
+      `ε`; continuity of the holomorphic integrand in `(ε,η,x)` gives local
+      uniform convergence in `η`; a finite subcover of `Kη` upgrades raywise
+      convergence to `TendstoUniformlyOn`.  After that, the OS45 common-chart
+      theorems `os45_Hplus_commonBoundary_uniform` and
+      `os45_Hminus_commonBoundary_uniform` are obtained by composing this
+      compact-subcone theorem with the finite linear maps
+      `os45CommonEdgeRealCLE`, `configPermCLE`, `os45CommonChartCLE`, and the
+      branch-pullback identities.  This is an OS-II boundary-value transport
+      step, not a locality or PET monodromy input.
+   8. Apply `SCV.local_distributional_edge_of_the_wedge_envelope` after
+      flattening the nested product by `flattenCLEquiv n (d + 1)` and
+      `flattenCLEquivReal n (d + 1)`, then unflatten the output to get
+      `Uc,Hc` in OS45 chart coordinates.
+   9. Replace `Uc` by the connected component containing the nonempty common
+      edge image.  Prove both selected trace families lie in this component
+      through the plus/minus wedge paths supplied by the OS45 geometry.
+   10. Finish the trace equations by rewriting:
+      - the positive trace by the definition of `Hplus`,
+        `Qρe.symm_apply_apply`, `BHW.permAct_wickRotatePoint`, and `τ`;
+      - the negative trace by
+        `BHW.os45PulledRealBranch_sub_eq_adjacentOS45RealEdgeDifference`.
+
 Why this still does **not** finish Slot 1:
 
 - at a Wick point one has
@@ -376,34 +1239,32 @@ Why this still does **not** finish Slot 1:
 - the simultaneous forward-tube condition is a thin equal-time constraint, not
   the open agreement set required by a naive identity-theorem argument.
 
-Therefore Slot 1 must still consume the full OS-paper downstream packet:
-
-1. adjacent PET-sector compatibility (Slot 5),
-2. BHW orbit/chamber connectivity (Slot 6),
-3. PET branch independence / symmetric continuation (Slot 7),
-4. only then the Jost boundary step and the real-edge packaging.
+Therefore Slot 1 is not a naive forward-tube identity-theorem argument.  Its
+proof must build the common OS45 EOW envelope directly from the local
+common-boundary geometry, the Wick-side distributional equality supplied by
+the OS-II/ACR-one witness, and the real-side branch-pullback support above.
+It must not consume the downstream PET branch-independence theorem, because
+that theorem itself now consumes the distributional Jost anchor produced from
+this local data.
 
 The branch-pullback support is genuine progress, but only as negative-side
 chart infrastructure for that later common-boundary packaging.
 
 Active decomposition of Slot 1:
 
-1. build the local connected domain `U` on which the adjacent Wick-side and
-   real-side branch differences are both represented after the common-chart
-   placement;
-2. prove zero Euclidean edge distribution for the Wick-side adjacent branch
-   difference using `os45_adjacent_euclideanEdge_pairing_eq_on_timeSector`;
-3. run the local common-boundary / EOW step to identify the Wick-side and
-   real-side branch differences as traces of one holomorphic object on `U`;
-4. use the zero Euclidean edge distribution to conclude the common object
-   vanishes and hence the real-edge adjacent difference vanishes;
-5. package the resulting real-edge vanishing as
+1. build the local connected common-chart domain on which the adjacent Wick-side
+   and real-side branch differences are both represented;
+2. run the local distributional common-boundary / EOW step to produce the
+   holomorphic common-chart branch-difference function `Hc`;
+3. pull `Hc` back through the OS45 common-chart equivalence `Qρe`;
+4. package the resulting direct-coordinate trace identities as
    `AdjacentOSEOWDifferenceEnvelope`.
 
 With that choice:
 
-- the positive-side envelope trace is the honest Wick-side adjacent branch
-  difference, whose Euclidean edge distribution vanishes by E3;
+- the positive-side envelope trace is the honest direct Wick-side adjacent
+  difference, whose vanishing is supplied downstream by
+  `bvt_F_acrOne_package`;
 - the negative-side envelope trace is the honest adjacent real-edge
   `extendF` difference;
 - no tautological selected-branch cancellation appears anywhere in the active
@@ -414,36 +1275,273 @@ With that choice:
 The old "common-chart Wick difference" route is dead and should not be revived
 in production code except as a cautionary note.
 
-Implementation-order note:
+Current implementation order:
 
-- the theorem surface remains Slot 1;
-- the next production theorem to implement is nevertheless Slot 5, because the
-  checked branch-pullback support above does not close Slot 1 on its own, while
-  Slot 5 is an already-determined theorem-2-facing wrapper on the strict OS
-  route.
+1. finish the pure-SCV theorem package needed by Slot 1:
+   `SCV.complexTranslateSchwartz`,
+   `SCV.schwartzTensorProduct₂`,
+   `SCV.schwartzKernel₂_extension`,
+   `SCV.realConvolutionTest`,
+   `SCV.translationCovariantProductKernel_descends`,
+   `SCV.distributionalHolomorphic_regular`,
+   `SCV.local_continuous_edge_of_the_wedge_envelope`,
+   `SCV.localRealMollifySide_holomorphicOn`,
+   `SCV.localRealMollify_commonContinuousBoundary`,
+   `SCV.regularizedLocalEOW_family`,
+   `SCV.regularizedEnvelope_linearContinuousInKernel`,
+   `SCV.regularizedEnvelope_translationCovariant`,
+   `SCV.regularizedEnvelope_productKernel`,
+   `SCV.regularizedEnvelope_kernelRepresentation`,
+   `SCV.regularizedEnvelope_deltaLimit_agreesOnWedges`, and finally
+   `SCV.local_distributional_edge_of_the_wedge_envelope`.  These are pure SCV
+   / topological-vector-space theorem surfaces and must not import Wightman or
+   OS files.
+   `SCV.complexTranslateSchwartz`, `SCV.schwartzTensorProduct₂`,
+   `SCV.realConvolutionShearCLE`, `SCV.complexRealFiberIntegralRaw`, and
+   `SCV.integrable_complexRealFiber`, plus `SCV.baseFDerivSchwartz` and
+   `SCV.exists_norm_pow_mul_complexRealFiberIntegralRaw_le` and
+   `SCV.exists_integrable_bound_baseFDerivSchwartz` and
+   `SCV.hasFDerivAt_complexRealFiberIntegralRaw`, plus the raw integral
+   smoothness and decay theorems, `SCV.complexRealFiberIntegral`, and
+   `SCV.realConvolutionTest` with the exact convolution test formula
+   `realConvolutionTest φ ψ z = ∫ t, φ (z - realEmbed t) * ψ t`,
+   and the translation identity
+   `realConvolutionTest (complexTranslateSchwartz a φ) ψ =
+    realConvolutionTest φ (translateSchwartz a ψ)`, are now checked in
+   `SCV/DistributionalEOWKernel.lean`.  The same file now also checks the
+   first fiber-descent primitives:
+   `SCV.complexRealFiberTranslateSchwartzCLM`,
+   `SCV.complexRealFiberIntegral_fiberTranslate`,
+   `SCV.complexRealFiberIntegral_schwartzTensorProduct₂`,
+   `SCV.translateSchwartz_translateSchwartz`,
+   `SCV.complexTranslateSchwartz_complexTranslateSchwartz`,
+   `SCV.shearedProductKernelFunctional`, and
+   `SCV.IsComplexRealFiberTranslationInvariant`, plus the sheared tensor
+   identity `SCV.complexRealFiberTranslate_shearedTensor_eq`.  The mixed
+   fiber quotient and its normalized-cutoff consumer are now checked:
+   `SCV.map_eq_of_complexRealFiberIntegral_eq_of_fiberTranslationInvariant`,
+   `SCV.schwartzTensorProduct₂CLMRight`,
+   `SCV.complexRealFiberTranslationDescentCLM`, and
+   `SCV.map_eq_complexRealFiberTranslationDescentCLM_of_fiberTranslationInvariant`.
+   The next substrate target is therefore the product-kernel extension and
+   translation-covariant descent layer:
+   `SCV.schwartzKernel₂_extension`,
+   `SCV.translationCovariantProductKernel_descends`, and
+   `SCV.distributionalHolomorphic_regular`.  The descent theorem now has the
+   Lean-facing global/local split required by the Streater-Wightman kernel
+   step: global covariance
+   `SCV.ProductKernelRealTranslationCovariantGlobal` proves the pure descent,
+   and local support covariance is used only after the fixed-cutoff extension.
+   The remaining mathematical blocker is the mixed product-tensor
+   density/kernel-extension theorem; without it, product-test covariance cannot
+   honestly be promoted to fiber-translation invariance of
+   `SCV.shearedProductKernelFunctional K` on all mixed Schwartz tests.  The
+   tensor-level sign bridge before that density step is now explicit:
+   `SCV.shearedProductKernel_fiberTranslate_shearedTensor_eq_self_of_productCovariant`
+   proves invariance on each sheared product tensor by applying
+   `SCV.ProductKernelRealTranslationCovariantGlobal` at `-a` and simplifying
+   `translateSchwartz (-a) (translateSchwartz a ψ)` to `ψ`.  This is the
+   correct intermediate theorem: it proves the OS-II covariance calculation on
+   generators, while leaving the dense-span promotion as the next genuine
+   functional-analytic blocker.  The promotion theorem itself should retain the
+   explicit hypothesis `SCV.ShearedProductTensorDense m`: from that dense-span
+   hypothesis, `Submodule.span_induction` plus closedness of the equalizer of
+   two continuous linear maps gives
+   `SCV.shearedProductKernel_fiberInvariant_of_productCovariant_of_shearedProductTensorDense`.
+   The checked normalized fiber quotient then yields
+   `SCV.translationCovariantProductKernel_descends_of_shearedProductTensorDense`,
+   with the descended distribution
+   `SCV.complexRealFiberTranslationDescentCLM
+     (SCV.shearedProductKernelFunctional K) η`.
+   The unqualified descent theorem remains blocked exactly by proving
+   `SCV.ShearedProductTensorDense m`/`SCV.schwartzKernel₂_extension`, not by any
+   further sign or quotient algebra.  The conditional dense-span promotion and
+   descent are now checked in `SCV/DistributionalEOWProductKernel.lean`.
+   The next product-kernel reduction is now checked: introduce the
+   unsheared generator family
+   `SCV.productTensorSet m = {schwartzTensorProduct₂ φ ψ}`, its span
+   `SCV.productTensorSpan m`, and the standard density hypothesis
+   `SCV.ProductTensorDense m`.  Prove
+   `SCV.shearedProductTensorSet_eq_image_productTensorSet` and
+   `SCV.shearedProductTensorSpan_eq_productTensorSpan_map` using the checked
+   shear map
+   `SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
+     (SCV.realConvolutionShearCLE m)` and `Submodule.map_span`.  Then prove
+   `SCV.shearedProductTensorDense_of_productTensorDense` by transporting
+   topological closure along the surjective shear CLM:
+   convert both density statements with
+   `Submodule.dense_iff_topologicalClosure_eq_top`, obtain surjectivity from
+   `SCV.compCLMOfContinuousLinearEquiv_symm_left_inv`, and apply
+   `DenseRange.topologicalClosure_map_submodule`.  The corollary
+   `SCV.translationCovariantProductKernel_descends_of_productTensorDense`
+   is the theorem-2 consumer surface for this stage; the only remaining
+   unproved content after it is the standard QFT-free product-Schwartz density
+   theorem `SCV.ProductTensorDense m`, equivalently the mixed two-space kernel
+   theorem `SCV.schwartzKernel₂_extension`.
+   The proof of `SCV.ProductTensorDense m` is now routed through pure
+   SCV/GaussianField infrastructure:
+   flatten the mixed chart by `SCV.mixedChartFiberFirstCLE m`, use the checked
+   `SCV.schwartzExternalProduct` to define `SCV.twoBlockProductSchwartz`, prove
+   that flat two-block products pull back to `SCV.schwartzTensorProduct₂`, use
+   `GaussianField.productHermite_schwartz_dense (D := ℝ) (m + m*2)` for
+   `0 < m`, and split one-dimensional Hermite products into the first `m`
+   fiber coordinates and the last `m*2` flattened complex-chart coordinates.
+   Complex-valued tests are recovered from real-valued density by the local
+   pure-SCV decomposition
+   `SCV.complexSchwartzDecomposeCLE :
+     SchwartzMap D ℂ ≃L[ℝ] (SchwartzMap D ℝ × SchwartzMap D ℝ)`.
+   The final density theorem uses the same Hahn-Banach separation transcript as
+   `Wightman/Reconstruction/DenseCLM.lean`, replacing Wightman nuclear
+   uniqueness by the new mixed-product CLM uniqueness theorem.  The `m = 0`
+   base case is a direct singleton-domain span calculation.  This route is now
+   checked in `OSReconstruction/SCV/ProductDensity.lean`; the Lean targets
+   discharged there are `SCV.flatTwoBlockProduct_eq_mixedProduct`,
+   `SCV.flatComplexCLM_zero_of_zero_on_twoBlockProducts`,
+   `SCV.mixedProductCLM_zero_of_zero_on_productTensor`,
+   `SCV.ProductTensorDense_of_pos`, `SCV.ProductTensorDense_zero`, and
+   `SCV.ProductTensorDense_all`, culminating in
+   `SCV.translationCovariantProductKernel_descends`.
+   The pure-SCV local-EOW support-preservation bridge needed before the
+   distributional holomorphy integration-by-parts theorem is now checked in
+   `SCV/DistributionalEOWSupport.lean`:
 
-Immediate branch-stage clarification:
+   ```lean
+   theorem SCV.KernelSupportWithin_hasCompactSupport
+   theorem SCV.directionalDerivSchwartzCLM_tsupport_subset
+   theorem SCV.directionalDerivSchwartzCLM_supportsInOpen
+   theorem SCV.dbarSchwartzCLM_tsupport_subset
+   theorem SCV.SupportsInOpen.dbar
+   ```
 
-- the current branch-stage implementation target is the `2 <= d` direct BHW
-  single-valuedness packet;
-- that packet consists of:
-  1. Slot 5 in
-     `Wightman/Reconstruction/WickRotation/OSToWightmanLocalityPETCompat.lean`,
-  2. the selected branch facts in
-     `Wightman/Reconstruction/WickRotation/OSToWightmanSelectedWitness.lean`,
-  3. the direct BHW theorem
-     `bvt_F_bhwSingleValuedOn_permutedExtendedTube_of_two_le`;
-- within that stage, the only allowed new theorem-level frontier is the
-  imported/source-backed direct BHW theorem above;
-- no `d = 1` implementation, Slot-10 imported boundary theorem, theorem-4 work,
-  or generic permutation-flow endgame belongs to this stage.
+   This is not a wrapper layer.  It supplies the exact support hygiene required
+   by the Streater-Wightman Theorem 2-16 regularization proof: radius-bounded
+   kernels are compactly supported, and `dbarSchwartzCLM` preserves compact
+   support inside the local open chart `U0`.
+   The following `∂bar` integration-by-parts core is now checked and remains
+   pure SCV:
+
+   ```lean
+   theorem SCV.integral_mul_directionalDerivSchwartzCLM_right_eq_neg_left
+   theorem SCV.integral_mul_dbarSchwartzCLM_right_eq_neg_left
+   theorem SCV.integral_mul_dbarSchwartzCLM_right_eq_zero_of_dbar_eq_zero
+   theorem SCV.integral_mul_dbarSchwartzCLM_right_eq_zero_of_left_local_schwartz
+   theorem SCV.exists_smooth_cutoff_eq_one_near_tsupport_of_supportsInOpen
+   theorem SCV.exists_local_schwartz_representative_eq_on_open
+   theorem SCV.dbarSchwartzCLM_eq_zero_on_of_eqOn_holomorphic
+   theorem SCV.exists_local_dbarClosed_schwartz_representative
+   theorem SCV.integral_holomorphic_mul_dbarSchwartz_eq_zero
+   theorem SCV.regularizedEnvelope_productKernel_dbar_eq_zero
+   theorem SCV.translationCovariantKernel_distributionalHolomorphic
+   theorem SCV.exists_normalized_schwartz_bump_kernelSupportWithin
+   theorem SCV.exists_shrinking_normalized_schwartz_bump_sequence
+   ```
+
+   The first three are the global Schwartz-Schwartz identities.  The local
+   Schwartz-representative algebra theorem is the endpoint: if a genuine
+   Schwartz representative
+   `G` agrees with the holomorphic-looking factor `F` on
+   `tsupport (dbarSchwartzCLM j φ)` and `dbarSchwartzCLM j G = 0` on
+   `tsupport φ`, then
+   `∫ z, F z * (dbarSchwartzCLM j φ) z = 0`.  The cutoff theorem is also now
+   checked: it constructs a smooth real compact cutoff equal to one on an open
+   neighborhood of `tsupport φ` and topologically supported inside `U`.
+   The zero-extension, smooth-to-Schwartz conversion, local Cauchy-Riemann
+   pointwise theorem, representative theorem, and local holomorphic integral
+   theorem are now checked as well:
+
+   ```lean
+   theorem SCV.exists_local_dbarClosed_schwartz_representative
+       (U : Set (ComplexChartSpace m))
+       (hU_open : IsOpen U)
+       (F : ComplexChartSpace m -> ℂ)
+       (hF_holo : DifferentiableOn ℂ F U)
+       (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+       (hφ : SupportsInOpen (φ : ComplexChartSpace m -> ℂ) U)
+       (j : Fin m) :
+       ∃ G : SchwartzMap (ComplexChartSpace m) ℂ,
+         (∀ z ∈ tsupport
+             ((dbarSchwartzCLM j φ :
+               SchwartzMap (ComplexChartSpace m) ℂ) :
+               ComplexChartSpace m -> ℂ),
+             F z = G z) ∧
+         (∀ z ∈ tsupport (φ : ComplexChartSpace m -> ℂ),
+             (dbarSchwartzCLM j G) z = 0)
+   ```
+
+   Its proof consumes the checked nested-thickening cutoff theorem, builds the
+   zero-extended compactly supported smooth representative `χ * F`, converts it
+   to a Schwartz function with `HasCompactSupport.toSchwartzMap`, and proves
+   the coordinate Cauchy-Riemann identity on `tsupport φ` from
+   `hF_holo.analyticOnNhd_of_finiteDimensional hU_open`.
+   `SCV.integral_holomorphic_mul_dbarSchwartz_eq_zero` follows by one
+   application of
+   `SCV.integral_mul_dbarSchwartzCLM_right_eq_zero_of_left_local_schwartz`.
+   The product-kernel consumer
+   `SCV.regularizedEnvelope_productKernel_dbar_eq_zero` is now checked as
+   well.  It uses `SupportsInOpen.dbar` to rewrite the product kernel on
+   `schwartzTensorProduct₂ (dbarSchwartzCLM j φ) ψ` by the representing
+   integral, then applies
+   `SCV.integral_holomorphic_mul_dbarSchwartz_eq_zero` to `G ψ`.  The next
+   continuity-passage theorem
+   `SCV.translationCovariantKernel_distributionalHolomorphic` is also checked
+   under the concrete approximate-identity hypotheses
+   `∀ᶠ i, KernelSupportWithin (ψι i) r` and
+   convergence of `realConvolutionTest θ (ψι i)` to `θ` in the Schwartz
+   topology for every `θ`.  The next theorem-2 blocker in this SCV lane is
+   therefore the genuine construction of that compact-supported approximate
+   identity, not the local holomorphic cutoff bridge.  The exact next
+   theorem surface
+   `SCV.exists_normalized_schwartz_bump_kernelSupportWithin` is also now
+   checked in pure SCV, as is
+   `SCV.exists_shrinking_normalized_schwartz_bump_sequence`.  The remaining
+   approximate-identity theorem surfaces are
+   `SCV.tendsto_realConvolutionTest_of_shrinking_normalized_support` and
+   `SCV.exists_realConvolutionTest_approxIdentity`.  The Lean-ready proof
+   route is now pinned in `docs/scv_infrastructure_blueprint.md`: first check
+   the elementary kernel-mass/support/real-embedding lemmas plus the translated
+   derivative integrability and zeroth-order convolution identity, then prove
+   `iteratedFDeriv_realConvolutionTest_eq_integral`, the global weighted
+   small-real-translation estimate for Schwartz derivatives, and finally the
+   seminorm-topology convergence theorem.  This remains pure SCV and does not
+   introduce a bundled EOW wrapper or a Wightman-source import.
+2. prove the strengthened Slot 1 surface above.  The coordinate prerequisites
+   `BHW.configPermCLE`, `BHW.os45CommonChartCLE`,
+   `BHW.wickRotate_ordered_mem_acrOne`,
+   `BHW.adjacent_wick_traces_mem_acrOne`, and
+   `BHW.os45CommonChart_real_mem_pulledRealBranchDomain_pair` are now checked.
+   The next theorem surface to formalize is the pure-SCV local distributional
+   EOW envelope theorem
+   `SCV.local_distributional_edge_of_the_wedge_envelope`; after that, prove
+   the OS45 instantiation
+   `BHW.os45_adjacent_commonBoundaryEnvelope` and package its output as
+   `AdjacentOSEOWDifferenceEnvelope` while exporting the same patch `V` for
+   Jost membership and both real extended-tube memberships;
+3. prove `BHW.sourceRealEnvironment_of_os45JostPatch`, the genuine
+   Hall-Wightman scalar-product-variety real-environment theorem;
+4. implement
+   `bvt_F_selectedAdjacentDistributionalJostAnchorData_of_OSII` from exactly
+   those two inputs and the checked compact-test theorem
+   `BHW.bvt_F_adjacent_extendF_edgeDistribution_eq_of_osEOWDifferenceEnvelope`;
+5. pass that data through the already checked
+   `bvt_F_distributionalJostAnchor_of_selectedJostData` bridge;
+6. only then continue to the direct BHW/PET single-valuedness theorem
+   `bvt_F_bhwSingleValuedOn_permutedExtendedTube_of_two_le`.
+
+No `d = 1` implementation, imported boundary-locality theorem, theorem-4 work,
+or generic permutation-flow endgame belongs to this stage.  The older
+`SelectedAdjacentPermutationEdgeData` packet below is retained as audited
+background, but it is not allowed to supply the distributional Jost anchor
+because it forgets the scalar-product real environment and the compact
+boundary-distribution data.
 
 ### Slot 2. `bvt_F_adjacent_edgeWitness_from_OS_ACR_of_two_le`
 
 Once Slot 1 exists, the compact-test edge theorem is already checked:
 `bvt_F_adjacent_extendF_edgeDistribution_eq_of_osEOWDifferenceEnvelope`.
 
-So the next theorem is a packaging theorem:
+The following selected-edge theorem is therefore only a historical/background
+packaging theorem for the older selected-permutation edge packet, not the
+active implementation gate for theorem 2:
 
 ```lean
 theorem bvt_F_adjacent_edgeWitness_from_OS_ACR_of_two_le
@@ -1568,8 +2666,15 @@ datum that Hall-Wightman consumes.
        (n : ℕ)
        (F : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
        (hF_holo : DifferentiableOn ℂ F (BHW.ForwardTube d n))
-       (hF_lorentz : ...)
-       (hF_perm : ...)
+       (hF_lorentz :
+         ∀ (Λ : RestrictedLorentzGroup d)
+           (z : Fin n -> Fin (d + 1) -> ℂ),
+           z ∈ BHW.ForwardTube d n ->
+           F (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) = F z)
+       (hF_perm :
+         ∀ (σ : Equiv.Perm (Fin n))
+           (z : Fin n -> Fin (d + 1) -> ℂ),
+           F (fun k => z (σ k)) = F z)
        (hAnchor :
          SourceDistributionalAdjacentTubeAnchor (d := d) n F) :
        ∀ (π ρ : Equiv.Perm (Fin n))
@@ -1818,18 +2923,141 @@ structure SelectedAdjacentDistributionalJostAnchorData
 
 Construction of this package is genuine theorem-2 mathematics:
 
-1. obtain `V`, `rho`, and all real-edge side conditions from
-   `BHW.os45_adjacent_localEOWGeometry (d := d) hd i hi`;
-2. obtain the single-chart branch-difference envelope from
-   `os45_adjacent_singleChart_commonBoundaryValue`;
-3. apply
+1. obtain `V`, `rho`, all real-edge side conditions, and the single-chart
+   branch-difference envelope from the strengthened
+   `BHW.os45_adjacent_singleChart_commonBoundaryValue`; its proof in turn
+   starts from `BHW.os45_adjacent_localEOWGeometry (d := d) hd i hi`;
+2. apply
    `BHW.bvt_F_adjacent_extendF_edgeDistribution_eq_of_osEOWDifferenceEnvelope`
    to get the compact-test equality on `V`, using `.symm` if the checked
    theorem is stated in the swap-first orientation;
-4. use the corrected Hall-Wightman scalar-product geometry lemma
+3. use the corrected Hall-Wightman scalar-product geometry lemma
    `BHW.sourceRealEnvironment_of_os45JostPatch` to construct
    `baseGramEnvironment`, its variety-level uniqueness proof, and the
    realization/lift facts.
+
+The Lean implementation target is the following constructor, followed by the
+already checked reindexing bridge.  The constructor is the next genuine
+mathematical step: it chooses one OS45 patch per adjacent transposition,
+proves the Hall-Wightman real-environment property for the Gram image of that
+same patch, and obtains compact-test equality from the OS45 EOW envelope.
+
+```lean
+noncomputable def bvt_F_selectedAdjacentDistributionalJostAnchorData_of_OSII
+    [NeZero d]
+    (hd : 2 <= d)
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) :
+    SelectedAdjacentDistributionalJostAnchorData OS lgc n := by
+  classical
+  let τ := fun (i : Fin n) (hi : i.val + 1 < n) =>
+    Equiv.swap i ⟨i.val + 1, hi⟩
+
+  have hOS45 :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        ∃ (V : Set (NPointDomain d n)) (rho : Equiv.Perm (Fin n)),
+          IsOpen V ∧ IsConnected V ∧ V.Nonempty ∧
+          (∀ x ∈ V, x ∈ BHW.JostSet d n) ∧
+          (∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n) ∧
+          (∀ x ∈ V,
+            BHW.realEmbed (fun k => x (τ i hi k)) ∈
+              BHW.ExtendedTube d n) ∧
+          BHW.AdjacentOSEOWDifferenceEnvelope (d := d) OS lgc n
+            (τ i hi) V := by
+    intro i hi
+    simpa [τ] using
+      BHW.os45_adjacent_singleChart_commonBoundaryValue
+        (d := d) hd OS lgc n i hi
+
+  choose V rho hV using hOS45
+
+  have hGram :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        ∃ E : Set (Fin n -> Fin n -> ℝ),
+          BHW.sourceDistributionalUniquenessSetOnVariety d n E ∧
+          (∀ x ∈ V i hi,
+            BHW.sourceRealMinkowskiGram d n x ∈ E) ∧
+          (∀ G ∈ E, ∃ x ∈ V i hi,
+            BHW.sourceRealMinkowskiGram d n x = G) := by
+    intro i hi
+    exact
+      BHW.sourceRealEnvironment_of_os45JostPatch
+        (d := d) hd n (V i hi)
+        (hV i hi).1
+        (hV i hi).2.2.1
+        (hV i hi).2.2.2.1
+
+  choose E hE using hGram
+
+  refine
+    { basePatch := V
+      basePatch_open := ?basePatch_open
+      basePatch_nonempty := ?basePatch_nonempty
+      basePatch_jost := ?basePatch_jost
+      basePatch_left_ET := ?basePatch_left_ET
+      basePatch_right_ET := ?basePatch_right_ET
+      baseGramEnvironment := E
+      baseGramEnvironment_unique := ?baseGramEnvironment_unique
+      baseGram_left_mem := ?baseGram_left_mem
+      baseGram_realized := ?baseGram_realized
+      baseCompactEq := ?baseCompactEq }
+  · intro i hi
+    exact (hV i hi).1
+  · intro i hi
+    exact (hV i hi).2.2.1
+  · intro i hi x hx
+    exact (hV i hi).2.2.2.1 x hx
+  · intro i hi x hx
+    exact (hV i hi).2.2.2.2.1 x hx
+  · intro i hi x hx
+    exact (hV i hi).2.2.2.2.2.1 x hx
+  · intro i hi
+    exact (hE i hi).1
+  · intro i hi x hx
+    exact (hE i hi).2.1 x hx
+  · intro i hi G hG
+    exact (hE i hi).2.2 G hG
+  · intro i hi φ hφ_compact hφ_tsupport
+    have hswap_first :=
+      BHW.bvt_F_adjacent_extendF_edgeDistribution_eq_of_osEOWDifferenceEnvelope
+        (d := d) OS lgc n i hi (V i hi)
+        (hV i hi).1
+        (hV i hi).2.2.1
+        (hV i hi).2.2.2.2.2.2
+        φ hφ_compact hφ_tsupport
+    simpa [τ] using hswap_first.symm
+
+noncomputable def bvt_F_distributionalJostAnchor_of_OSII
+    [NeZero d]
+    (hd : 2 <= d)
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) :
+    BHW.SourceDistributionalAdjacentTubeAnchor
+      (d := d) n (bvt_F OS lgc n) :=
+  bvt_F_distributionalJostAnchor_of_selectedJostData
+    (d := d) OS lgc n
+    (bvt_F_selectedAdjacentDistributionalJostAnchorData_of_OSII
+      (d := d) hd OS lgc n)
+```
+
+Projection audit for the packed `hV i hi` proof:
+
+1. `.1` is `IsOpen (V i hi)`.
+2. `.2.1` is `IsConnected (V i hi)`; it is exported for the OS45 EOW proof
+   but is not a field of `SelectedAdjacentDistributionalJostAnchorData`.
+3. `.2.2.1` is `(V i hi).Nonempty`.
+4. `.2.2.2.1` is the Jost-set proof.
+5. `.2.2.2.2.1` and `.2.2.2.2.2.1` are the left and adjacent-right
+   extended-tube membership proofs.
+6. `.2.2.2.2.2.2` is the `AdjacentOSEOWDifferenceEnvelope`.
+
+The constructor deliberately does not invoke
+`SelectedAdjacentPermutationEdgeData`: that packet forgets the scalar-product
+real environment and the Jost/equal-boundary information.  The only
+administrative step after this constructor is the already checked
+`bvt_F_distributionalJostAnchor_of_selectedJostData` reindexing bridge.
 
 The last lemma is a genuine SCV/Hall-Wightman geometry theorem, not a wrapper:
 it says that the Minkowski-Gram image of the chosen open Jost patch supplies a
