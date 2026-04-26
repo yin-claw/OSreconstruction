@@ -92,7 +92,7 @@ final envelope theorem:
 
 ```lean
 lemma localContinuousEOW_envelope
-lemma localRealMollifySide_holomorphicOn
+lemma localRealMollifySide_holomorphicOn_of_translate_margin
 lemma localRealMollify_commonContinuousBoundary
 lemma regularizedLocalEOW_family
 lemma regularizedEnvelope_linearContinuousInKernel
@@ -163,11 +163,16 @@ Infrastructure audit after `agents_chat.md` #1291:
 2. `SCV/DistributionalUniqueness.lean` already supplies translation,
    compact-support stability, real-mollification holomorphy, approximate
    identity convergence, and zero-boundary uniqueness tools.  The local
-   distributional EOW envelope should reuse these lemmas.  What remains to add
-   is the nonzero-envelope half of the Streater-Wightman argument: continuous
-   boundary values for each regularization, uniform local continuous-EOW
-   domains, linearity/continuity in the smoothing kernel, translation
-   covariance, kernel representation, and delta-limit recovery.
+   distributional EOW envelope should reuse these lemmas.  The downstream
+   kernel-recovery and delta-limit half of the nonzero-envelope argument is
+   now checked in `SCV/DistributionalEOWKernelRecovery.lean`, ending at
+   `SCV.regularizedEnvelope_chartEnvelope_from_productKernel`.  What remains
+   to add is the upstream regularized-family half of Streater-Wightman
+   Theorem 2-16: continuous boundary values for each regularization, uniform
+   local continuous-EOW domains, linearity/continuity in the smoothing kernel,
+   real-translation covariance from uniqueness, and the exact
+   product-kernel representation interface that supplies
+   `K,G,hcov,hG_holo,hK_rep` to the checked chart assembly theorem.
 3. Every new helper below is either an extraction of existing repo SCV code
    (`local_eow_extension`, `local_extensions_consistent`), a standard
    finite-dimensional chart/compactness lemma, an existing real-mollification
@@ -186,7 +191,7 @@ Source ledger for the internal helper list:
 | `localEOW_pullback_boundary_value` | Standard distribution pullback under an affine real-linear equivalence with Jacobian. |
 | `localEOW_uniform_slowGrowth_order` | Compactness plus maxima of the two local slow-growth orders. |
 | `localEOW_nested_axis_boxes`, `localEOW_support_margin` | Finite-dimensional topology: choose `B0 ⋐ B1 ⋐ E` and kernel-support radius `r` so `B0 + supp ψ ⊆ B1`. |
-| `localRealMollifySide_holomorphicOn` | Local version of `differentiableOn_realMollify_tubeDomain`: real-direction convolution of a holomorphic wedge function is holomorphic on the shrunken wedge whenever the support margin keeps all translates inside the original local wedge. |
+| `localRealMollifySide_holomorphicOn_of_translate_margin` | Checked in `SCV/LocalDistributionalEOW.lean`: local version of `differentiableOn_realMollify_tubeDomain`; real-direction convolution of a holomorphic wedge function is holomorphic on the shrunken wedge whenever the support margin keeps all translates of the real-kernel support inside the original local wedge. |
 | `localRealMollify_commonContinuousBoundary` | Streater-Wightman regularization step: the regularized plus/minus sides have the same continuous boundary value `x ↦ T (translateSchwartz (-x) ψ)`.  This reuses `continuous_apply_translateSchwartz_of_isCompactSupport` and compact-support stability. |
 | `regularizedLocalEOW_family` | Apply local continuous EOW to every fixed smoothing kernel, using one neighborhood determined by the nested boxes and support radius. |
 | `regularizedEnvelope_linearContinuousInKernel` | For each point in the common neighborhood, the value of the regularized envelope is a continuous linear functional of the smoothing kernel.  Use a fixed compactly supported cutoff `χr = 1` on the allowed kernel-support ball so the functional is a genuine `SchwartzMap ->L[ℂ] ℂ`, not an LF-space wrapper. |
@@ -307,8 +312,10 @@ Implementation notes:
 8. For every compactly supported Schwartz kernel `ψ` with
    `tsupport ψ ⊆ closedBall 0 rψ`, define
    `Fplusψ z = ∫ t, FplusChart (z + realEmbed t) * ψ t` and similarly for the
-   minus side.  `localRealMollifySide_holomorphicOn` proves these are
-   holomorphic on the shrunken polywedges.
+   minus side.  The checked theorem
+   `localRealMollifySide_holomorphicOn_of_translate_margin` proves these are
+   holomorphic on the shrunken polywedges from the explicit support-margin
+   hypothesis.
 9. Define the continuous boundary function
    `bvψ u = Tchart (translateSchwartz (-u) ψ)` on `B0`.
    `localRealMollify_commonContinuousBoundary` proves continuity of `bvψ` and
@@ -546,16 +553,19 @@ noncomputable def mollifiedBoundary
     (Fin m -> ℝ) -> ℂ :=
   fun u => T (translateSchwartz (-u) ψ)
 
-lemma localRealMollifySide_holomorphicOn
+theorem localRealMollifySide_holomorphicOn_of_translate_margin
     {m : ℕ}
-    (Dsmall Dlarge : Set (Fin m -> ℂ))
-    (F : (Fin m -> ℂ) -> ℂ)
+    (F : ComplexChartSpace m -> ℂ)
     (ψ : SchwartzMap (Fin m -> ℝ) ℂ)
-    (r : ℝ)
-    (hψ : KernelSupportWithin ψ r)
-    (hmargin : LocalTranslateMargin Dsmall Dlarge r)
-    (hF_holo : DifferentiableOn ℂ F Dlarge) :
-    DifferentiableOn ℂ (realMollifyLocal F ψ) Dsmall
+    (Ω D : Set (ComplexChartSpace m))
+    (hΩ_open : IsOpen Ω)
+    (hD_open : IsOpen D)
+    (hF_holo : DifferentiableOn ℂ F Ω)
+    (hψ_compact : HasCompactSupport (ψ : (Fin m -> ℝ) -> ℂ))
+    (hmargin :
+      ∀ z ∈ D, ∀ t ∈ tsupport (ψ : (Fin m -> ℝ) -> ℂ),
+        z + realEmbed t ∈ Ω) :
+    DifferentiableOn ℂ (realMollifyLocal F ψ) D
 
 lemma mollifiedBoundary_continuousOn
     {m : ℕ}
@@ -961,6 +971,530 @@ noncomputable def realMollifyLocal
     ComplexChartSpace m -> ℂ :=
   fun z => ∫ t : Fin m -> ℝ, F (z + realEmbed t) * ψ t
 ```
+
+Checked final chart-envelope assembly:
+
+```lean
+theorem regularizedEnvelope_chartEnvelope_from_productKernel
+    {m : ℕ} {r : ℝ}
+    (hm : 0 < m) (hr : 0 < r)
+    (K : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ)
+    (G : SchwartzMap (Fin m -> ℝ) ℂ -> ComplexChartSpace m -> ℂ)
+    (Ucore U0 DplusSmall DminusSmall : Set (ComplexChartSpace m))
+    (Fplus Fminus : ComplexChartSpace m -> ℂ)
+    (ψn : ℕ -> SchwartzMap (Fin m -> ℝ) ℂ)
+    (hUcore_open : IsOpen Ucore)
+    (hU0_open : IsOpen U0)
+    (hcore_U0 : Ucore ⊆ U0)
+    (hmargin_r :
+      ∀ z ∈ Ucore, ∀ t : Fin m -> ℝ, ‖t‖ ≤ r ->
+        z + realEmbed t ∈ U0)
+    (hcov : ProductKernelRealTranslationCovariantGlobal K)
+    (hG_holo :
+      ∀ ψ, KernelSupportWithin ψ r -> DifferentiableOn ℂ (G ψ) U0)
+    (hK_rep :
+      ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+        (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+        SupportsInOpen (φ : ComplexChartSpace m -> ℂ) U0 ->
+        KernelSupportWithin ψ r ->
+          K (schwartzTensorProduct₂ φ ψ) =
+            ∫ z : ComplexChartSpace m, G ψ z * φ z)
+    (hψ_nonneg : ∀ n t, 0 ≤ (ψn n t).re)
+    (hψ_real : ∀ n t, (ψn n t).im = 0)
+    (hψ_norm : ∀ n, ∫ t : Fin m -> ℝ, ψn n t = 1)
+    (hψ_support_shrink :
+      ∀ n, KernelSupportWithin (ψn n) (1 / (n + 1 : ℝ)))
+    (hψ_support_r : ∀ n, KernelSupportWithin (ψn n) r)
+    (hG_plus :
+      ∀ᶠ n in atTop, ∀ z ∈ Ucore ∩ DplusSmall,
+        G (ψn n) z = realMollifyLocal Fplus (ψn n) z)
+    (hG_minus :
+      ∀ᶠ n in atTop, ∀ z ∈ Ucore ∩ DminusSmall,
+        G (ψn n) z = realMollifyLocal Fminus (ψn n) z)
+    (happrox_plus :
+      ∀ z ∈ Ucore ∩ DplusSmall,
+        Tendsto (fun n => realMollifyLocal Fplus (ψn n) z)
+          atTop (nhds (Fplus z)))
+    (happrox_minus :
+      ∀ z ∈ Ucore ∩ DminusSmall,
+        Tendsto (fun n => realMollifyLocal Fminus (ψn n) z)
+          atTop (nhds (Fminus z))) :
+    ∃ H : ComplexChartSpace m -> ℂ,
+      DifferentiableOn ℂ H U0 ∧
+      ∃ Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ,
+        RepresentsDistributionOnComplexDomain Hdist H U0 ∧
+        (∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+          K (schwartzTensorProduct₂ φ ψ) =
+            Hdist (realConvolutionTest φ ψ)) ∧
+        (∀ z ∈ Ucore ∩ DplusSmall, H z = Fplus z) ∧
+        (∀ z ∈ Ucore ∩ DminusSmall, H z = Fminus z)
+```
+
+Proof transcript: first apply
+`regularizedEnvelope_holomorphicDistribution_from_productKernel` to obtain
+`H`, holomorphy of `H`, a representative distribution `Hdist`, and the descent
+identity.  For each `n`, apply the checked
+`regularizedEnvelope_pointwiseRepresentation_of_productKernel` with
+`hψ_support_r n`, `hG_holo (ψn n) (hψ_support_r n)`, `hH_holo`, `hRep`,
+`hdesc`, and the real-translation core margin `hmargin_r`.  This gives
+
+```lean
+G (ψn n) z = ∫ t, H (z + realEmbed t) * ψn n t
+```
+
+on `Ucore`.  Apply
+`regularizedEnvelope_kernelLimit_from_representation`, using
+`hH_holo.continuousOn`, to get `G (ψn n) z -> H z` on `Ucore`.  Apply
+`regularizedEnvelope_deltaLimit_agreesOnWedges` to identify the same `H` with
+`Fplus` and `Fminus` on the shrunken wedge pieces.  There is no longer a free
+`hkernel_limit` or pointwise-representation supplier in the final chart
+assembly.
+
+Next implementation target: build the exact regularized-family package that
+feeds this checked chart assembly.  This is the remaining Streater-Wightman
+Theorem 2-16 content before `SCV.local_distributional_edge_of_the_wedge_envelope`
+can be stated in production Lean.  It must produce the actual `K` and `G`
+objects consumed by `regularizedEnvelope_chartEnvelope_from_productKernel`;
+it must not add a record that merely assumes boundary pairings or assumes the
+product-kernel representation.
+
+Lean-facing subtheorems for the next file
+`SCV/LocalDistributionalEOW.lean`:
+
+```lean
+theorem localRealMollifySide_holomorphicOn_of_translate_margin
+    {m : ℕ}
+    (F : ComplexChartSpace m -> ℂ)
+    (ψ : SchwartzMap (Fin m -> ℝ) ℂ)
+    (Ω D : Set (ComplexChartSpace m))
+    (hΩ_open : IsOpen Ω)
+    (hD_open : IsOpen D)
+    (hF_holo : DifferentiableOn ℂ F Ω)
+    (hψ_compact : HasCompactSupport (ψ : (Fin m -> ℝ) -> ℂ))
+    (hmargin :
+      ∀ z ∈ D, ∀ t ∈ tsupport (ψ : (Fin m -> ℝ) -> ℂ),
+        z + realEmbed t ∈ Ω) :
+    DifferentiableOn ℂ (realMollifyLocal F ψ) D
+
+theorem regularizedBoundaryValue_continuousOn
+    {m : ℕ}
+    (T : SchwartzMap (Fin m -> ℝ) ℂ ->L[ℂ] ℂ)
+    (ψ : SchwartzMap (Fin m -> ℝ) ℂ)
+    (E : Set (Fin m -> ℝ))
+    (hψ_compact : HasCompactSupport (ψ : (Fin m -> ℝ) -> ℂ)) :
+    ContinuousOn (fun x : Fin m -> ℝ => T (translateSchwartz (-x) ψ)) E
+
+theorem localRealMollify_commonContinuousBoundary
+    {m : ℕ}
+    (Ωplus Ωminus : Set (ComplexChartSpace m))
+    (B0 : Set (Fin m -> ℝ))
+    (C0 : Set (Fin m -> ℝ))
+    (Fplus Fminus : ComplexChartSpace m -> ℂ)
+    (Tchart : SchwartzMap (Fin m -> ℝ) ℂ ->L[ℂ] ℂ)
+    (ψ : SchwartzMap (Fin m -> ℝ) ℂ)
+    -- open/nested-box/support-margin hypotheses
+    -- slow-growth bounds for the two signs
+    -- compact-subcone distributional boundary hypotheses for Fplus/Fminus
+    :
+    ContinuousOn (fun x : Fin m -> ℝ =>
+      Tchart (translateSchwartz (-x) ψ)) B0 ∧
+    (∀ x ∈ B0,
+      Tendsto (realMollifyLocal Fplus ψ)
+        (nhdsWithin (realEmbed x) Ωplus)
+        (nhds (Tchart (translateSchwartz (-x) ψ)))) ∧
+    (∀ x ∈ B0,
+      Tendsto (realMollifyLocal Fminus ψ)
+        (nhdsWithin (realEmbed x) Ωminus)
+        (nhds (Tchart (translateSchwartz (-x) ψ))))
+
+theorem regularizedLocalEOW_family
+    {m : ℕ} {r : ℝ}
+    (hm : 0 < m) (hr : 0 < r)
+    (Ωplus Ωminus U0 DplusSmall DminusSmall : Set (ComplexChartSpace m))
+    (B0 : Set (Fin m -> ℝ))
+    (Fplus Fminus : ComplexChartSpace m -> ℂ)
+    (Tchart : SchwartzMap (Fin m -> ℝ) ℂ ->L[ℂ] ℂ)
+    -- local continuous EOW hypotheses and the previous regularization theorem
+    :
+    ∃ G : SchwartzMap (Fin m -> ℝ) ℂ -> ComplexChartSpace m -> ℂ,
+      (∀ ψ, KernelSupportWithin ψ r ->
+        DifferentiableOn ℂ (G ψ) U0) ∧
+      (∀ ψ, KernelSupportWithin ψ r ->
+        ∀ z ∈ U0 ∩ DplusSmall,
+          G ψ z = realMollifyLocal Fplus ψ z) ∧
+      (∀ ψ, KernelSupportWithin ψ r ->
+        ∀ z ∈ U0 ∩ DminusSmall,
+          G ψ z = realMollifyLocal Fminus ψ z) ∧
+      (∀ ψ a,
+        KernelSupportWithin ψ r ->
+        KernelSupportWithin (translateSchwartz a ψ) r ->
+        -- whenever both real-translated points remain in U0
+        ∀ z ∈ U0, z - realEmbed a ∈ U0 ->
+          G (translateSchwartz a ψ) z = G ψ (z - realEmbed a))
+
+theorem regularizedEnvelope_linearContinuousInKernel_from_localEOW_family
+    {m : ℕ} {r : ℝ}
+    (U0 : Set (ComplexChartSpace m))
+    (G : SchwartzMap (Fin m -> ℝ) ℂ -> ComplexChartSpace m -> ℂ)
+    -- explicit Cauchy-polydisc formula for G, slow-growth bounds,
+    -- fixed support cutoff χr = 1 on closedBall 0 r
+    :
+    ∃ B : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ]
+        (SchwartzMap (Fin m -> ℝ) ℂ ->L[ℂ] ℂ),
+      ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+        (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+        SupportsInOpen (φ : ComplexChartSpace m -> ℂ) U0 ->
+        KernelSupportWithin ψ r ->
+          B φ ψ = ∫ z : ComplexChartSpace m, G ψ z * φ z
+
+theorem regularizedEnvelope_translationCovariant_from_localEOW_family
+    {m : ℕ} {r : ℝ}
+    (U0 : Set (ComplexChartSpace m))
+    (G : SchwartzMap (Fin m -> ℝ) ℂ -> ComplexChartSpace m -> ℂ)
+    -- uniqueness output of local continuous EOW and real-translation
+    -- support-margin hypotheses
+    :
+    ∀ (a : Fin m -> ℝ)
+      (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+      (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+      SupportsInOpen (φ : ComplexChartSpace m -> ℂ) U0 ->
+      SupportsInOpen
+        (complexTranslateSchwartz a φ : ComplexChartSpace m -> ℂ) U0 ->
+      KernelSupportWithin ψ r ->
+      KernelSupportWithin (translateSchwartz a ψ) r ->
+        (∫ z : ComplexChartSpace m,
+            G ψ z * complexTranslateSchwartz a φ z) =
+          ∫ z : ComplexChartSpace m,
+            G (translateSchwartz a ψ) z * φ z
+
+theorem regularizedLocalEOW_productKernel_package
+    {m : ℕ} {r : ℝ}
+    (hm : 0 < m) (hr : 0 < r)
+    (Ucore U0 DplusSmall DminusSmall : Set (ComplexChartSpace m))
+    (Fplus Fminus : ComplexChartSpace m -> ℂ)
+    (G : SchwartzMap (Fin m -> ℝ) ℂ -> ComplexChartSpace m -> ℂ)
+    (ψn : ℕ -> SchwartzMap (Fin m -> ℝ) ℂ)
+    (hψ_support_r : ∀ n, KernelSupportWithin (ψn n) r)
+    -- output of regularizedLocalEOW_family:
+    (hG_holo_window :
+      ∀ ψ, KernelSupportWithin ψ r -> DifferentiableOn ℂ (G ψ) U0)
+    (hG_plus_window :
+      ∀ ψ, KernelSupportWithin ψ r ->
+        ∀ z ∈ Ucore ∩ DplusSmall,
+          G ψ z = realMollifyLocal Fplus ψ z)
+    (hG_minus_window :
+      ∀ ψ, KernelSupportWithin ψ r ->
+        ∀ z ∈ Ucore ∩ DminusSmall,
+          G ψ z = realMollifyLocal Fminus ψ z)
+    (hB :
+      ∃ B : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ]
+          (SchwartzMap (Fin m -> ℝ) ℂ ->L[ℂ] ℂ),
+        ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+          SupportsInOpen (φ : ComplexChartSpace m -> ℂ) U0 ->
+          KernelSupportWithin ψ r ->
+            B φ ψ = ∫ z : ComplexChartSpace m, G ψ z * φ z)
+    (hcov_window :
+      ∀ (a : Fin m -> ℝ)
+        (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+        (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+        SupportsInOpen (φ : ComplexChartSpace m -> ℂ) U0 ->
+        SupportsInOpen
+          (complexTranslateSchwartz a φ : ComplexChartSpace m -> ℂ) U0 ->
+        KernelSupportWithin ψ r ->
+        KernelSupportWithin (translateSchwartz a ψ) r ->
+          (∫ z : ComplexChartSpace m,
+              G ψ z * complexTranslateSchwartz a φ z) =
+            ∫ z : ComplexChartSpace m,
+              G (translateSchwartz a ψ) z * φ z)
+    :
+    ∃ K : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ,
+      ProductKernelRealTranslationCovariantGlobal K ∧
+      (∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+        (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+        SupportsInOpen (φ : ComplexChartSpace m -> ℂ) U0 ->
+        KernelSupportWithin ψ r ->
+          K (schwartzTensorProduct₂ φ ψ) =
+            ∫ z : ComplexChartSpace m, G ψ z * φ z) ∧
+      (∀ n, ∀ z ∈ Ucore ∩ DplusSmall,
+        G (ψn n) z = realMollifyLocal Fplus (ψn n) z) ∧
+      (∀ n, ∀ z ∈ Ucore ∩ DminusSmall,
+        G (ψn n) z = realMollifyLocal Fminus (ψn n) z)
+```
+
+In production this theorem should either take a fixed approximate-identity
+sequence satisfying the four checked support/normalization hypotheses, as
+displayed above, or obtain one from
+`exists_realConvolutionTest_approxIdentity (m := m) hr` and return it together
+with `K` and `G`.  The important interface is exact: after this theorem, the
+call to `regularizedEnvelope_chartEnvelope_from_productKernel` is mechanical;
+the two `∀ n` wedge identities feed its eventual hypotheses by
+`Filter.Eventually.of_forall`.
+
+Proof transcript for the next target:
+
+1. Prove `localRealMollifySide_holomorphicOn_of_translate_margin` by adapting
+   the checked differentiation-under-the-integral proof of
+   `differentiableOn_realMollify_tubeDomain`; replace the tube-domain
+   imaginary-part invariance with the explicit support-margin hypothesis
+   `z + realEmbed t ∈ Ω` on `tsupport ψ`.
+2. Prove `regularizedBoundaryValue_continuousOn` directly from
+   `continuous_apply_translateSchwartz_of_isCompactSupport` and continuity of
+   `x ↦ -x`.
+3. Prove `localRealMollify_commonContinuousBoundary` by Fubini on the compact
+   real support of `ψ`: rewrite the regularized boundary pairing as
+   `Tchart (translateSchwartz (-x) ψ)`, use the compact-subcone uniform
+   distributional boundary hypotheses for the two signs, and use the
+   slow-growth bounds only for the domination needed to interchange the
+   real-kernel integral with the boundary limit.
+4. Apply `SCV.local_continuous_edge_of_the_wedge_envelope` to the two
+   regularized sides.  The nested boxes and support radius must be chosen
+   before `ψ`; this is why the output domain `U0` is independent of the
+   smoothing kernel inside the fixed support window.
+5. Prove linearity in `ψ` by applying uniqueness in the local continuous EOW
+   theorem to `G (a • ψ1 + b • ψ2)` and
+   `a • G ψ1 + b • G ψ2`; the two sides agree on both regularized wedge
+   pieces by linearity of the real convolution integral and the common
+   boundary value.
+6. Prove real-translation covariance by applying the same uniqueness theorem
+   to `G (translateSchwartz a ψ) z` and `G ψ (z - realEmbed a)` on the
+   overlap where both points lie in `U0`; the plus/minus wedge identities
+   reduce the claim to the checked translation formula for
+   `realMollifyLocal`.
+7. Use the fixed cutoff `χr = 1` on `closedBall 0 r` to extend the windowed
+   continuous linear functional
+   `ψ ↦ ∫ z, G ψ z * φ z` to all Schwartz kernels.  This constructs an
+   honest global product kernel `K`; it is not an LF-space wrapper and not an
+   arbitrary extension, because all later uses are on kernels whose support is
+   inside the fixed ball where `χr = 1`.
+8. Prove `ProductKernelRealTranslationCovariantGlobal K` from the covariance
+   of `G` and the support/cutoff identities.  Then the checked theorem
+   `regularizedEnvelope_chartEnvelope_from_productKernel` supplies the
+   holomorphic chart envelope and wedge agreement.
+
+Checked endpoint for the pointwise-representation bridge:
+
+```lean
+theorem regularizedEnvelope_pointwise_eq_of_test_integral_zero
+    {m : ℕ}
+    (Ucore : Set (ComplexChartSpace m))
+    (Gψ Hψ : ComplexChartSpace m -> ℂ)
+    (hUcore_open : IsOpen Ucore)
+    (hG_cont : ContinuousOn Gψ Ucore)
+    (hH_cont : ContinuousOn Hψ Ucore)
+    (htest_zero :
+      ∀ φ : SchwartzMap (ComplexChartSpace m) ℂ,
+        SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Ucore ->
+          (∫ z : ComplexChartSpace m, (Gψ z - Hψ z) * φ z) = 0) :
+    ∀ z ∈ Ucore, Gψ z = Hψ z
+```
+
+This is the final fundamental-lemma step of pointwise representation.  For a
+fixed smoothing kernel `ψ`, take
+
+```lean
+Hψ z = ∫ t : Fin m -> ℝ, H (z + realEmbed t) * ψ t.
+```
+
+The bridge theorem package is now checked.  The extra hypothesis is not
+cosmetic: the pointwise representation requires a real-translation margin
+
+```lean
+∀ z ∈ Ucore, ∀ t ∈ tsupport (ψ : (Fin m -> ℝ) -> ℂ),
+  z + realEmbed t ∈ U0
+```
+
+or, for the final approximate-identity sequence, the uniform closed-ball
+version
+
+```lean
+∀ z ∈ Ucore, ∀ t : Fin m -> ℝ, ‖t‖ ≤ r ->
+  z + realEmbed t ∈ U0.
+```
+
+The weaker inclusion `Ucore ⊆ U0` is enough for the delta-limit estimate after
+the pointwise representation is known, but it is not enough to justify
+representing `Hdist (realConvolutionTest φ ψ)` by integration over `H` on
+`U0`.
+
+First, convert equality of all test pairings into pointwise equality.  This is
+now checked in `SCV/DistributionalEOWKernelRecovery.lean`:
+
+```lean
+theorem regularizedEnvelope_pointwise_eq_of_test_integral_eq
+    {m : ℕ}
+    (Ucore : Set (ComplexChartSpace m))
+    (Gψ Hψ : ComplexChartSpace m -> ℂ)
+    (hUcore_open : IsOpen Ucore)
+    (hG_cont : ContinuousOn Gψ Ucore)
+    (hH_cont : ContinuousOn Hψ Ucore)
+    (hG_int :
+      ∀ φ : SchwartzMap (ComplexChartSpace m) ℂ,
+        SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Ucore ->
+          Integrable fun z : ComplexChartSpace m => Gψ z * φ z)
+    (hH_int :
+      ∀ φ : SchwartzMap (ComplexChartSpace m) ℂ,
+        SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Ucore ->
+          Integrable fun z : ComplexChartSpace m => Hψ z * φ z)
+    (htest_eq :
+      ∀ φ : SchwartzMap (ComplexChartSpace m) ℂ,
+        SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Ucore ->
+          (∫ z : ComplexChartSpace m, Gψ z * φ z) =
+            ∫ z : ComplexChartSpace m, Hψ z * φ z) :
+    ∀ z ∈ Ucore, Gψ z = Hψ z
+```
+
+Proof transcript: fix `φ` supported in `Ucore`.  Rewrite
+`(Gψ z - Hψ z) * φ z` pointwise as
+`Gψ z * φ z - Hψ z * φ z`; use `MeasureTheory.integral_sub` with `hG_int`
+and `hH_int`; the hypothesis `htest_eq φ hφ` makes the result zero.  Then
+apply `regularizedEnvelope_pointwise_eq_of_test_integral_zero`.
+
+Second, prove the support theorem needed to apply
+`RepresentsDistributionOnComplexDomain` to the convolution test.  This theorem
+is now checked in `SCV/DistributionalEOWKernelRecovery.lean`:
+
+```lean
+theorem realConvolutionTest_supportsInOpen_of_translate_margin
+    {m : ℕ}
+    (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+    (ψ : SchwartzMap (Fin m -> ℝ) ℂ)
+    (Ucore U0 : Set (ComplexChartSpace m))
+    (hφ : SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Ucore)
+    (hψ_compact : HasCompactSupport (ψ : (Fin m -> ℝ) -> ℂ))
+    (hmargin :
+      ∀ z ∈ Ucore, ∀ t ∈ tsupport (ψ : (Fin m -> ℝ) -> ℂ),
+        z + realEmbed t ∈ U0) :
+    SupportsInOpen
+      (realConvolutionTest φ ψ : ComplexChartSpace m -> ℂ) U0
+```
+
+Proof transcript: let
+`K = (fun p : ComplexChartSpace m × (Fin m -> ℝ) =>
+  p.1 + realEmbed p.2) '' (tsupport φ ×ˢ tsupport ψ)`.
+The product of the two topological supports is compact, hence `K` is compact
+and closed.  If `y ∉ K`, then for every `t`, either
+`t ∉ tsupport ψ` or `y - realEmbed t ∉ tsupport φ`; otherwise
+`y = (y - realEmbed t) + realEmbed t` would lie in `K`.  Therefore the
+integrand in `realConvolutionTest_apply` is identically zero at `y`, so the
+ordinary support of `realConvolutionTest φ ψ` is contained in the closed
+compact set `K`; `closure_minimal` then gives topological support contained in
+`K`.  Finally, `hφ.2` and `hmargin` give `K ⊆ U0`.
+
+Third, prove continuity of the recovered mollifier.  This theorem is now
+checked in `SCV/DistributionalEOWKernelRecovery.lean`:
+
+```lean
+theorem continuousOn_realMollifyLocal_of_translate_margin
+    {m : ℕ}
+    (H : ComplexChartSpace m -> ℂ)
+    (ψ : SchwartzMap (Fin m -> ℝ) ℂ)
+    (Ucore U0 : Set (ComplexChartSpace m))
+    (hU0_open : IsOpen U0)
+    (hH_cont : ContinuousOn H U0)
+    (hψ_compact : HasCompactSupport (ψ : (Fin m -> ℝ) -> ℂ))
+    (hmargin :
+      ∀ z ∈ Ucore, ∀ t ∈ tsupport (ψ : (Fin m -> ℝ) -> ℂ),
+        z + realEmbed t ∈ U0) :
+    ContinuousOn (fun z : ComplexChartSpace m =>
+      ∫ t : Fin m -> ℝ, H (z + realEmbed t) * ψ t) Ucore
+```
+
+Proof transcript: use Mathlib's
+`MeasureTheory.continuousOn_integral_of_compact_support` with compact set
+`tsupport ψ`.  The compact-support vanishing condition is
+`image_eq_zero_of_notMem_tsupport`.  For continuity of the integrand on
+`Ucore × univ`, split on `t ∈ tsupport ψ`: on support, compose `hH_cont` with
+the continuous map `(z,t) ↦ z + realEmbed t` and use `hmargin`; off support,
+`ψ` is eventually zero by `notMem_tsupport_iff_eventuallyEq`.
+
+Fourth, prove the actual Fubini/change-of-variables identity.  This theorem is
+now checked in `SCV/DistributionalEOWKernelRecovery.lean`:
+
+```lean
+theorem realConvolutionTest_pairing_eq_mollifier_pairing
+    {m : ℕ}
+    (H : ComplexChartSpace m -> ℂ)
+    (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+    (ψ : SchwartzMap (Fin m -> ℝ) ℂ)
+    (Ucore U0 : Set (ComplexChartSpace m))
+    (hU0_open : IsOpen U0)
+    (hH_cont : ContinuousOn H U0)
+    (hφ : SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Ucore)
+    (hψ_compact : HasCompactSupport (ψ : (Fin m -> ℝ) -> ℂ))
+    (hmargin :
+      ∀ z ∈ Ucore, ∀ t ∈ tsupport (ψ : (Fin m -> ℝ) -> ℂ),
+        z + realEmbed t ∈ U0) :
+    (∫ y : ComplexChartSpace m,
+      H y * realConvolutionTest φ ψ y) =
+      ∫ z : ComplexChartSpace m,
+        (∫ t : Fin m -> ℝ, H (z + realEmbed t) * ψ t) * φ z
+```
+
+Proof transcript: unfold `realConvolutionTest_apply`, expand the left side as
+`∫ y, H y * ∫ t, φ (y - realEmbed t) * ψ t`.  Use compact support of
+`φ` and `ψ` plus `hmargin` to prove the joint integrand has compact support
+inside the compact image above, and is continuous by the same on/off-support
+argument as the continuity theorem.  Apply
+`MeasureTheory.integral_integral_swap_of_hasCompactSupport`.  For each fixed
+`t`, use `integral_add_right_eq_self (realEmbed t)` on the complex chart to
+rewrite the inner integral from `y` to `z + realEmbed t`.  Swap integrals
+back, then pull the factor `φ z` outside the inner `t`-integral with
+`MeasureTheory.integral_mul_left`/`integral_const_mul` and finish by pointwise
+ring normalization.
+
+Finally, the supplier consumed by the checked assembly theorem is itself
+checked:
+
+```lean
+theorem regularizedEnvelope_pointwiseRepresentation_of_productKernel
+    {m : ℕ} {r : ℝ}
+    (K : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ)
+    (G : SchwartzMap (Fin m -> ℝ) ℂ -> ComplexChartSpace m -> ℂ)
+    (H : ComplexChartSpace m -> ℂ)
+    (Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ)
+    (Ucore U0 : Set (ComplexChartSpace m))
+    (ψ : SchwartzMap (Fin m -> ℝ) ℂ)
+    (hUcore_open : IsOpen Ucore)
+    (hU0_open : IsOpen U0)
+    (hcore_U0 : Ucore ⊆ U0)
+    (hmargin_r :
+      ∀ z ∈ Ucore, ∀ t : Fin m -> ℝ, ‖t‖ ≤ r ->
+        z + realEmbed t ∈ U0)
+    (hψ_support : KernelSupportWithin ψ r)
+    (hG_holo : DifferentiableOn ℂ (G ψ) U0)
+    (hH_holo : DifferentiableOn ℂ H U0)
+    (hRep : RepresentsDistributionOnComplexDomain Hdist H U0)
+    (hdesc :
+      ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+        (η : SchwartzMap (Fin m -> ℝ) ℂ),
+        K (schwartzTensorProduct₂ φ η) =
+          Hdist (realConvolutionTest φ η))
+    (hK_rep :
+      ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+        (η : SchwartzMap (Fin m -> ℝ) ℂ),
+        SupportsInOpen (φ : ComplexChartSpace m -> ℂ) U0 ->
+        KernelSupportWithin η r ->
+          K (schwartzTensorProduct₂ φ η) =
+            ∫ z : ComplexChartSpace m, G η z * φ z) :
+    ∀ z ∈ Ucore,
+      G ψ z = ∫ t : Fin m -> ℝ, H (z + realEmbed t) * ψ t
+```
+
+Proof transcript: define
+`Hψ z = ∫ t, H (z + realEmbed t) * ψ t`.  Get
+`hψ_compact` from `KernelSupportWithin_hasCompactSupport hψ_support` and the
+pointwise margin from `hmargin_r` and `hψ_support`.  `G ψ` is continuous on
+`Ucore` by `hG_holo.continuousOn.mono hcore_U0`; `Hψ` is continuous by
+`continuousOn_realMollifyLocal_of_translate_margin`.  For any `φ` supported
+in `Ucore`, use the support theorem to apply `hRep` to
+`realConvolutionTest φ ψ`, compare `hK_rep φ ψ` with `hdesc φ ψ`, and then
+rewrite the `H` side using
+`realConvolutionTest_pairing_eq_mollifier_pairing`.  This gives the
+`htest_eq` hypothesis for
+`regularizedEnvelope_pointwise_eq_of_test_integral_eq`, which then gives the
+desired pointwise representation.
 
 Kernel-recovery implementation substrate:
 
@@ -8909,11 +9443,14 @@ Exact product-kernel/descent subpackage:
 
    This closes the distributional-holomorphic regularity input needed by the
    regularized-envelope route.  The next proof-doc/Lean frontier is no longer
-   CR extraction or the delta-limit estimate; the checked recovery lemmas now
-   cover `regularizedEnvelope_kernelLimit_from_representation` and
-   `regularizedEnvelope_deltaLimit_agreesOnWedges`.  The remaining
+   CR extraction, the delta-limit estimate, or the pointwise representation
+   bridge; the checked recovery lemmas now cover
+   `regularizedEnvelope_kernelLimit_from_representation`,
+   `regularizedEnvelope_deltaLimit_agreesOnWedges`,
+   `regularizedEnvelope_pointwiseRepresentation_of_productKernel`, and
+   `regularizedEnvelope_chartEnvelope_from_productKernel`.  The remaining
    Streater-Wightman nonzero-envelope work is the upstream regularized-family
-   construction/kernel-representation interface and the local continuous EOW
+   construction/product-kernel interface and the local continuous EOW
    extraction/patching package below.
 8. Use the representation identity with an approximate identity `ψι -> δ0`.
    The tests `realConvolutionTest φ ψι` converge to `φ`, while on wedge pieces
@@ -9040,10 +9577,12 @@ For theorem 2, the immediate SCV implementation order is:
    sheared-functional / fiber-invariance predicates, the sheared tensor
    fiber-translation identity, the mixed fiber quotient, product density,
    translation-covariant descent, the product-kernel `∂bar` consumer, the
-   distributional-holomorphicity continuity passage, and compact
-   approximate-identity convergence, and
-   `distributionalHolomorphic_regular`.  The remaining portion is the
-   regularized-envelope recovery and local continuous EOW extraction;
+   distributional-holomorphicity continuity passage, compact
+   approximate-identity convergence, `distributionalHolomorphic_regular`,
+   the pointwise representation bridge, and the checked chart assembly theorem
+   `regularizedEnvelope_chartEnvelope_from_productKernel`.  The remaining
+   portion is the upstream local continuous EOW extraction and regularized
+   local EOW family/product-kernel package;
 2. `SCV/LocalContinuousEOW.lean`: expose the local continuous EOW theorem by
    refactoring `local_eow_extension` and `local_extensions_consistent` from
    `TubeDomainExtension.lean`;
@@ -9146,10 +9685,14 @@ descent are now checked.  The support-preservation companion
 `dbarSchwartzCLM_tsupport_subset`, and `SupportsInOpen.dbar`.  The checked
 approximate-identity companion now also supplies
 `tendsto_realConvolutionTest_of_shrinking_normalized_support` and
-`exists_realConvolutionTest_approxIdentity`.  The next declarations should
-therefore address the distributional-regularity layer
-`distributionalHolomorphic_regular` and the regularized-envelope kernel
-recovery surfaces listed in Section 2.4.
+`exists_realConvolutionTest_approxIdentity`.  The distributional-regularity and
+kernel-recovery layers now continue through
+`distributionalHolomorphic_regular`,
+`regularizedEnvelope_holomorphicDistribution_from_productKernel`,
+`regularizedEnvelope_pointwiseRepresentation_of_productKernel`, and
+`regularizedEnvelope_chartEnvelope_from_productKernel`.  The next declarations
+should therefore address the local continuous EOW extraction and the
+regularized local EOW family/product-kernel package specified in Section 2.4.
 
 ## 11. Exact proof transcript for tube boundary values from polynomial growth
 

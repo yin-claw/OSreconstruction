@@ -918,17 +918,18 @@ Proof decomposition of this theorem, without hiding the analytic work:
        therefore gives one distributional kernel depending only on the
        translated complex point; and the distributional Cauchy-Riemann
        equations plus Weyl/Montel regularity produce a holomorphic function
-       `H` on `U0`.  The distributional Cauchy-Riemann step is not a
-       black-box phrase: the SCV infrastructure blueprint now splits it into
-       `regularizedEnvelope_productKernel_dbar_eq_zero`,
-       `exists_realConvolutionTest_approxIdentity`, and
-       `translationCovariantKernel_distributionalHolomorphic`.  The first and
-       third are now checked: the product-kernel theorem is the compact-support
-       integration-by-parts step moving `∂̄` from the test function to the
-       holomorphic regularized envelope, and the distributional-holomorphicity
-       theorem passes the zero identity through the descended distribution by
-       continuity.  The live blocker is the middle theorem, which supplies
-       Schwartz-topology density of real convolution tests.
+       `H` on `U0`.  This recovery layer is now checked through
+       `SCV.regularizedEnvelope_chartEnvelope_from_productKernel`: the compact
+       approximate identity `exists_realConvolutionTest_approxIdentity`, the
+       product-kernel `∂bar` consumer, the distributional-holomorphicity
+       passage, the pointwise representation bridge, and the delta-limit wedge
+       agreement are all production Lean theorems.  Therefore the live blocker
+       is upstream of the checked recovery theorem: construct the regularized
+       local EOW family from the local continuous EOW theorem, prove its
+       linearity/continuity in the smoothing kernel, prove real-translation
+       covariance by uniqueness, and package those facts as the exact
+       `K,G,hcov,hG_holo,hK_rep` hypotheses consumed by
+       `regularizedEnvelope_chartEnvelope_from_productKernel`.
    13. Let `ψρ` be a compactly supported approximate identity with supports
        inside `closedBall 0 rψ`.  On the positive and negative wedge pieces,
        `Gψρ` converges to `FplusChart` and `FminusChart` by the already checked
@@ -1285,7 +1286,7 @@ Current implementation order:
    `SCV.translationCovariantProductKernel_descends`,
    `SCV.distributionalHolomorphic_regular`,
    `SCV.local_continuous_edge_of_the_wedge_envelope`,
-   `SCV.localRealMollifySide_holomorphicOn`,
+   `SCV.localRealMollifySide_holomorphicOn_of_translate_margin`,
    `SCV.localRealMollify_commonContinuousBoundary`,
    `SCV.regularizedLocalEOW_family`,
    `SCV.regularizedEnvelope_linearContinuousInKernel`,
@@ -1464,9 +1465,24 @@ Current implementation order:
 	   compact-support integrability, the representation-to-difference identity,
 	   `SCV.regularizedEnvelope_kernelLimit_from_representation`, and
 	   `SCV.regularizedEnvelope_deltaLimit_agreesOnWedges` are all in
-	   `SCV/DistributionalEOWKernelRecovery.lean`.  The remaining theorem-2
-	   SCV frontier is the upstream regularized-family construction plus the
-	   local envelope assembly/patching, not an assumed `hkernel_limit`.
+	   `SCV/DistributionalEOWKernelRecovery.lean`.  The pointwise
+	   representation bridge is also checked there:
+	   `SCV.realConvolutionTest_supportsInOpen_of_translate_margin` supplies
+	   the support obligation, `SCV.continuousOn_realMollifyLocal_of_translate_margin`
+	   supplies mollifier continuity,
+	   `SCV.realConvolutionTest_pairing_eq_mollifier_pairing` supplies the
+	   compact-support Fubini/change-of-variables identity, and
+	   `SCV.regularizedEnvelope_pointwise_eq_of_test_integral_eq` supplies the
+	   final test-pairing-to-pointwise step.  The checked
+	   `SCV.regularizedEnvelope_pointwiseRepresentation_of_productKernel`
+	   combines those ingredients, and the checked final assembly theorem
+	   `SCV.regularizedEnvelope_chartEnvelope_from_productKernel` combines it
+	   with kernel recovery and delta-limit wedge agreement.  The remaining
+	   theorem-2 SCV frontier is therefore upstream: extract the local
+	   continuous EOW construction, prove the regularized local EOW family,
+	   prove its linearity/continuity and real-translation covariance, and
+	   package the actual product kernel `K` plus `G,hcov,hG_holo,hK_rep` for
+	   the checked chart-assembly theorem.
 	   The tensor-level sign bridge before
    the density step remains explicit:
    `SCV.shearedProductKernel_fiberTranslate_shearedTensor_eq_self_of_productCovariant`

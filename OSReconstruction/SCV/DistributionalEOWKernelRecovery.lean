@@ -12,8 +12,9 @@ import OSReconstruction.SCV.ProductDensity
 
 This downstream file assembles the checked product-kernel descent,
 approximate-identity, product-kernel `∂bar`, and distributional-holomorphic
-regularity layers.  It does not yet prove agreement with the plus/minus wedge
-functions; that is the subsequent delta-limit step.
+regularity layers.  It also contains the checked delta-limit agreement step
+and the final assembly consumer that keeps the remaining pointwise kernel
+representation bridge explicit.
 -/
 
 noncomputable section
@@ -314,6 +315,581 @@ noncomputable def realMollifyLocal
     ComplexChartSpace m → ℂ :=
   fun z => ∫ t : Fin m → ℝ, F (z + realEmbed t) * ψ t
 
+/-- The recovered real-direction mollifier is continuous on a core chart domain
+whenever all real translates used by the compact kernel support stay inside the
+domain where the recovered representative is continuous. -/
+theorem continuousOn_realMollifyLocal_of_translate_margin
+    (H : ComplexChartSpace m → ℂ)
+    (ψ : SchwartzMap (Fin m → ℝ) ℂ)
+    (Ucore U0 : Set (ComplexChartSpace m))
+    (hU0_open : IsOpen U0)
+    (hH_cont : ContinuousOn H U0)
+    (hψ_compact : HasCompactSupport (ψ : (Fin m → ℝ) → ℂ))
+    (hmargin :
+      ∀ z ∈ Ucore, ∀ t ∈ tsupport (ψ : (Fin m → ℝ) → ℂ),
+        z + realEmbed t ∈ U0) :
+    ContinuousOn (fun z : ComplexChartSpace m =>
+      ∫ t : Fin m → ℝ, H (z + realEmbed t) * ψ t) Ucore := by
+  let k : Set (Fin m → ℝ) := tsupport (ψ : (Fin m → ℝ) → ℂ)
+  let f : ComplexChartSpace m → (Fin m → ℝ) → ℂ :=
+    fun z t => H (z + realEmbed t) * ψ t
+  have hk : IsCompact k := by
+    simpa [k] using hψ_compact
+  have hf : ContinuousOn f.uncurry (Ucore ×ˢ univ) := by
+    intro p hp
+    rcases hp with ⟨hpU, -⟩
+    by_cases ht : p.2 ∈ k
+    · have hp_shift : p.1 + realEmbed p.2 ∈ U0 :=
+        hmargin p.1 hpU p.2 ht
+      have hH_at : ContinuousAt H (p.1 + realEmbed p.2) :=
+        (hH_cont (p.1 + realEmbed p.2) hp_shift).continuousAt
+          (hU0_open.mem_nhds hp_shift)
+      have hshift_at :
+          ContinuousAt
+            (fun q : ComplexChartSpace m × (Fin m → ℝ) =>
+              q.1 + realEmbed q.2) p :=
+        (continuous_fst.add
+          ((continuous_realEmbed (m := m)).comp continuous_snd)).continuousAt
+      have hleft :
+          ContinuousAt
+            (fun q : ComplexChartSpace m × (Fin m → ℝ) =>
+              H (q.1 + realEmbed q.2)) p :=
+        ContinuousAt.comp_of_eq hH_at hshift_at rfl
+      have hright :
+          ContinuousAt
+            (fun q : ComplexChartSpace m × (Fin m → ℝ) => ψ q.2) p :=
+        ContinuousAt.comp ψ.continuous.continuousAt continuous_snd.continuousAt
+      simpa [f] using (hleft.mul hright).continuousWithinAt
+    · have hψ_zero :
+          (ψ : (Fin m → ℝ) → ℂ) =ᶠ[nhds p.2] fun _ => 0 := by
+        have ht' : p.2 ∉ tsupport (ψ : (Fin m → ℝ) → ℂ) := by
+          simpa [k] using ht
+        rwa [notMem_tsupport_iff_eventuallyEq] at ht'
+      have hψ_zero_pair :
+          (fun q : ComplexChartSpace m × (Fin m → ℝ) => ψ q.2)
+            =ᶠ[nhds p] fun _ => 0 :=
+        hψ_zero.comp_tendsto continuous_snd.continuousAt
+      have hprod_zero : f.uncurry =ᶠ[nhds p] fun _ => 0 := by
+        filter_upwards [hψ_zero_pair] with q hq
+        change H (q.1 + realEmbed q.2) * ψ q.2 = 0
+        simp [hq]
+      exact hprod_zero.continuousAt.continuousWithinAt
+  have hfs : ∀ p, ∀ x, p ∈ Ucore → x ∉ k → f p x = 0 := by
+    intro p x _ hx
+    have hψ_zero : ψ x = 0 :=
+      image_eq_zero_of_notMem_tsupport (by simpa [k] using hx)
+    simp [f, hψ_zero]
+  simpa [f] using
+    continuousOn_integral_of_compact_support
+      (μ := volume) hk hf hfs
+
+/-- The real-convolution test is supported in the larger chart domain whenever
+the real translates of the support of the complex test by the support of the
+real kernel stay in that domain. -/
+theorem realConvolutionTest_supportsInOpen_of_translate_margin
+    (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+    (ψ : SchwartzMap (Fin m → ℝ) ℂ)
+    (Ucore U0 : Set (ComplexChartSpace m))
+    (hφ : SupportsInOpen (φ : ComplexChartSpace m → ℂ) Ucore)
+    (hψ_compact : HasCompactSupport (ψ : (Fin m → ℝ) → ℂ))
+    (hmargin :
+      ∀ z ∈ Ucore, ∀ t ∈ tsupport (ψ : (Fin m → ℝ) → ℂ),
+        z + realEmbed t ∈ U0) :
+    SupportsInOpen
+      (realConvolutionTest φ ψ : ComplexChartSpace m → ℂ) U0 := by
+  let K : Set (ComplexChartSpace m) :=
+    (fun p : ComplexChartSpace m × (Fin m → ℝ) => p.1 + realEmbed p.2) ''
+      (tsupport (φ : ComplexChartSpace m → ℂ) ×ˢ
+        tsupport (ψ : (Fin m → ℝ) → ℂ))
+  have hshift_cont :
+      Continuous
+        (fun p : ComplexChartSpace m × (Fin m → ℝ) =>
+          p.1 + realEmbed p.2) :=
+    continuous_fst.add ((continuous_realEmbed (m := m)).comp continuous_snd)
+  have hK_compact : IsCompact K :=
+    (hφ.1.prod hψ_compact).image hshift_cont
+  have hK_closed : IsClosed K := hK_compact.isClosed
+  have hsupport_subset :
+      Function.support (realConvolutionTest φ ψ : ComplexChartSpace m → ℂ)
+        ⊆ K := by
+    intro y hy
+    by_contra hyK
+    have hpoint_zero :
+        ∀ t : Fin m → ℝ, φ (y - realEmbed t) * ψ t = 0 := by
+      intro t
+      by_cases ht : t ∈ tsupport (ψ : (Fin m → ℝ) → ℂ)
+      · have hz_not :
+            y - realEmbed t ∉ tsupport (φ : ComplexChartSpace m → ℂ) := by
+          intro hz
+          have hy_mem : y ∈ K := by
+            refine ⟨(y - realEmbed t, t), ⟨hz, ht⟩, ?_⟩
+            ext i
+            simp
+          exact hyK hy_mem
+        have hφ_zero : φ (y - realEmbed t) = 0 :=
+          image_eq_zero_of_notMem_tsupport hz_not
+        simp [hφ_zero]
+      · have hψ_zero : ψ t = 0 := image_eq_zero_of_notMem_tsupport ht
+        simp [hψ_zero]
+    have hconv_zero : realConvolutionTest φ ψ y = 0 := by
+      rw [realConvolutionTest_apply]
+      calc
+        (∫ t : Fin m → ℝ, φ (y - realEmbed t) * ψ t) =
+            ∫ _t : Fin m → ℝ, 0 := by
+              apply integral_congr_ae
+              filter_upwards with t
+              exact hpoint_zero t
+        _ = 0 := by simp
+    exact hy hconv_zero
+  have htsubK :
+      tsupport (realConvolutionTest φ ψ : ComplexChartSpace m → ℂ) ⊆ K :=
+    closure_minimal hsupport_subset hK_closed
+  refine ⟨?_, htsubK.trans ?_⟩
+  · exact hK_compact.of_isClosed_subset (isClosed_tsupport _) htsubK
+  · intro y hy
+    rcases hy with ⟨p, hp, rfl⟩
+    exact hmargin p.1 (hφ.2 hp.1) p.2 hp.2
+
+/-- Pairing the recovered representative with the real-convolution test is the
+same as pairing the real-direction mollification of the representative with
+the original complex-chart test.  This is the compact-support Fubini and
+translation-invariance step in the pointwise kernel-representation bridge. -/
+theorem realConvolutionTest_pairing_eq_mollifier_pairing
+    (H : ComplexChartSpace m → ℂ)
+    (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+    (ψ : SchwartzMap (Fin m → ℝ) ℂ)
+    (Ucore U0 : Set (ComplexChartSpace m))
+    (hU0_open : IsOpen U0)
+    (hH_cont : ContinuousOn H U0)
+    (hφ : SupportsInOpen (φ : ComplexChartSpace m → ℂ) Ucore)
+    (hψ_compact : HasCompactSupport (ψ : (Fin m → ℝ) → ℂ))
+    (hmargin :
+      ∀ z ∈ Ucore, ∀ t ∈ tsupport (ψ : (Fin m → ℝ) → ℂ),
+        z + realEmbed t ∈ U0) :
+    (∫ y : ComplexChartSpace m,
+      H y * realConvolutionTest φ ψ y) =
+      ∫ z : ComplexChartSpace m,
+        (∫ t : Fin m → ℝ, H (z + realEmbed t) * ψ t) * φ z := by
+  let J : ComplexChartSpace m → (Fin m → ℝ) → ℂ :=
+    fun y t => H y * (φ (y - realEmbed t) * ψ t)
+  have hJ_cont : Continuous J.uncurry := by
+    rw [continuous_iff_continuousAt]
+    intro p
+    by_cases ht : p.2 ∈ tsupport (ψ : (Fin m → ℝ) → ℂ)
+    · by_cases hz :
+        p.1 - realEmbed p.2 ∈ tsupport (φ : ComplexChartSpace m → ℂ)
+      · have hpU : p.1 ∈ U0 := by
+          have htmp := hmargin (p.1 - realEmbed p.2) (hφ.2 hz) p.2 ht
+          simpa using htmp
+        have hH_at : ContinuousAt H p.1 :=
+          (hH_cont p.1 hpU).continuousAt (hU0_open.mem_nhds hpU)
+        have hH_comp :
+            ContinuousAt
+              (fun q : ComplexChartSpace m × (Fin m → ℝ) => H q.1) p :=
+          ContinuousAt.comp hH_at continuous_fst.continuousAt
+        have hshift_minus :
+            ContinuousAt
+              (fun q : ComplexChartSpace m × (Fin m → ℝ) =>
+                q.1 - realEmbed q.2) p :=
+          (continuous_fst.sub
+            ((continuous_realEmbed (m := m)).comp continuous_snd)).continuousAt
+        have hφ_comp :
+            ContinuousAt
+              (fun q : ComplexChartSpace m × (Fin m → ℝ) =>
+                φ (q.1 - realEmbed q.2)) p :=
+          ContinuousAt.comp φ.continuous.continuousAt hshift_minus
+        have hψ_comp :
+            ContinuousAt
+              (fun q : ComplexChartSpace m × (Fin m → ℝ) => ψ q.2) p :=
+          ContinuousAt.comp ψ.continuous.continuousAt
+            continuous_snd.continuousAt
+        simpa [J] using hH_comp.mul (hφ_comp.mul hψ_comp)
+      · have hφ_zero :
+            (φ : ComplexChartSpace m → ℂ)
+              =ᶠ[nhds (p.1 - realEmbed p.2)] fun _ => 0 := by
+          rwa [notMem_tsupport_iff_eventuallyEq] at hz
+        have hshift_minus :
+            ContinuousAt
+              (fun q : ComplexChartSpace m × (Fin m → ℝ) =>
+                q.1 - realEmbed q.2) p :=
+          (continuous_fst.sub
+            ((continuous_realEmbed (m := m)).comp continuous_snd)).continuousAt
+        have hφ_zero_pair :
+            (fun q : ComplexChartSpace m × (Fin m → ℝ) =>
+              φ (q.1 - realEmbed q.2))
+              =ᶠ[nhds p] fun _ => 0 :=
+          hφ_zero.comp_tendsto hshift_minus
+        have hJ_zero : J.uncurry =ᶠ[nhds p] fun _ => 0 := by
+          filter_upwards [hφ_zero_pair] with q hq
+          change H q.1 * (φ (q.1 - realEmbed q.2) * ψ q.2) = 0
+          simp [hq]
+        exact hJ_zero.continuousAt
+    · have hψ_zero :
+          (ψ : (Fin m → ℝ) → ℂ) =ᶠ[nhds p.2] fun _ => 0 := by
+        rwa [notMem_tsupport_iff_eventuallyEq] at ht
+      have hψ_zero_pair :
+          (fun q : ComplexChartSpace m × (Fin m → ℝ) => ψ q.2)
+            =ᶠ[nhds p] fun _ => 0 :=
+        hψ_zero.comp_tendsto continuous_snd.continuousAt
+      have hJ_zero : J.uncurry =ᶠ[nhds p] fun _ => 0 := by
+        filter_upwards [hψ_zero_pair] with q hq
+        change H q.1 * (φ (q.1 - realEmbed q.2) * ψ q.2) = 0
+        simp [hq]
+      exact hJ_zero.continuousAt
+  have hJ_compact : HasCompactSupport J.uncurry := by
+    let L : Set (ComplexChartSpace m × (Fin m → ℝ)) :=
+      (fun p : ComplexChartSpace m × (Fin m → ℝ) =>
+        (p.1 + realEmbed p.2, p.2)) ''
+        (tsupport (φ : ComplexChartSpace m → ℂ) ×ˢ
+          tsupport (ψ : (Fin m → ℝ) → ℂ))
+    have hmap_cont :
+        Continuous
+          (fun p : ComplexChartSpace m × (Fin m → ℝ) =>
+            (p.1 + realEmbed p.2, p.2)) := by
+      exact
+        (continuous_fst.add
+          ((continuous_realEmbed (m := m)).comp continuous_snd)).prodMk
+            continuous_snd
+    have hL_compact : IsCompact L :=
+      (hφ.1.prod hψ_compact).image hmap_cont
+    have hL_closed : IsClosed L := hL_compact.isClosed
+    have hsupport_subset : Function.support J.uncurry ⊆ L := by
+      intro p hp
+      by_contra hpL
+      have hpoint_zero : J.uncurry p = 0 := by
+        by_cases ht : p.2 ∈ tsupport (ψ : (Fin m → ℝ) → ℂ)
+        · have hz_not :
+              p.1 - realEmbed p.2 ∉
+                tsupport (φ : ComplexChartSpace m → ℂ) := by
+            intro hz
+            have hp_mem : p ∈ L := by
+              refine ⟨(p.1 - realEmbed p.2, p.2), ⟨hz, ht⟩, ?_⟩
+              ext i <;> simp
+            exact hpL hp_mem
+          have hφ_zero : φ (p.1 - realEmbed p.2) = 0 :=
+            image_eq_zero_of_notMem_tsupport hz_not
+          change H p.1 * (φ (p.1 - realEmbed p.2) * ψ p.2) = 0
+          simp [hφ_zero]
+        · have hψ_zero : ψ p.2 = 0 :=
+            image_eq_zero_of_notMem_tsupport ht
+          change H p.1 * (φ (p.1 - realEmbed p.2) * ψ p.2) = 0
+          simp [hψ_zero]
+      exact hp hpoint_zero
+    have htsubL : tsupport J.uncurry ⊆ L :=
+      closure_minimal hsupport_subset hL_closed
+    exact hL_compact.of_isClosed_subset (isClosed_tsupport _) htsubL
+  let M : ComplexChartSpace m → (Fin m → ℝ) → ℂ :=
+    fun z t => H (z + realEmbed t) * (φ z * ψ t)
+  have hM_cont : Continuous M.uncurry := by
+    rw [continuous_iff_continuousAt]
+    intro p
+    by_cases hz : p.1 ∈ tsupport (φ : ComplexChartSpace m → ℂ)
+    · by_cases ht : p.2 ∈ tsupport (ψ : (Fin m → ℝ) → ℂ)
+      · have hpU : p.1 + realEmbed p.2 ∈ U0 :=
+          hmargin p.1 (hφ.2 hz) p.2 ht
+        have hH_at : ContinuousAt H (p.1 + realEmbed p.2) :=
+          (hH_cont (p.1 + realEmbed p.2) hpU).continuousAt
+            (hU0_open.mem_nhds hpU)
+        have hshift_at :
+            ContinuousAt
+              (fun q : ComplexChartSpace m × (Fin m → ℝ) =>
+                q.1 + realEmbed q.2) p :=
+          (continuous_fst.add
+            ((continuous_realEmbed (m := m)).comp continuous_snd)).continuousAt
+        have hH_comp :
+            ContinuousAt
+              (fun q : ComplexChartSpace m × (Fin m → ℝ) =>
+                H (q.1 + realEmbed q.2)) p :=
+          ContinuousAt.comp_of_eq hH_at hshift_at rfl
+        have hφ_comp :
+            ContinuousAt
+              (fun q : ComplexChartSpace m × (Fin m → ℝ) => φ q.1) p :=
+          ContinuousAt.comp φ.continuous.continuousAt
+            continuous_fst.continuousAt
+        have hψ_comp :
+            ContinuousAt
+              (fun q : ComplexChartSpace m × (Fin m → ℝ) => ψ q.2) p :=
+          ContinuousAt.comp ψ.continuous.continuousAt
+            continuous_snd.continuousAt
+        simpa [M] using hH_comp.mul (hφ_comp.mul hψ_comp)
+      · have hψ_zero :
+            (ψ : (Fin m → ℝ) → ℂ) =ᶠ[nhds p.2] fun _ => 0 := by
+          rwa [notMem_tsupport_iff_eventuallyEq] at ht
+        have hψ_zero_pair :
+            (fun q : ComplexChartSpace m × (Fin m → ℝ) => ψ q.2)
+              =ᶠ[nhds p] fun _ => 0 :=
+          hψ_zero.comp_tendsto continuous_snd.continuousAt
+        have hM_zero : M.uncurry =ᶠ[nhds p] fun _ => 0 := by
+          filter_upwards [hψ_zero_pair] with q hq
+          change H (q.1 + realEmbed q.2) * (φ q.1 * ψ q.2) = 0
+          simp [hq]
+        exact hM_zero.continuousAt
+    · have hφ_zero :
+          (φ : ComplexChartSpace m → ℂ) =ᶠ[nhds p.1] fun _ => 0 := by
+        rwa [notMem_tsupport_iff_eventuallyEq] at hz
+      have hφ_zero_pair :
+          (fun q : ComplexChartSpace m × (Fin m → ℝ) => φ q.1)
+            =ᶠ[nhds p] fun _ => 0 :=
+        hφ_zero.comp_tendsto continuous_fst.continuousAt
+      have hM_zero : M.uncurry =ᶠ[nhds p] fun _ => 0 := by
+        filter_upwards [hφ_zero_pair] with q hq
+        change H (q.1 + realEmbed q.2) * (φ q.1 * ψ q.2) = 0
+        simp [hq]
+      exact hM_zero.continuousAt
+  have hM_compact : HasCompactSupport M.uncurry := by
+    have hsupport_subset :
+        Function.support M.uncurry ⊆
+          tsupport (φ : ComplexChartSpace m → ℂ) ×ˢ
+            tsupport (ψ : (Fin m → ℝ) → ℂ) := by
+      intro p hp
+      by_contra hp_prod
+      have hzero : M.uncurry p = 0 := by
+        by_cases hz : p.1 ∈ tsupport (φ : ComplexChartSpace m → ℂ)
+        · have ht : p.2 ∉ tsupport (ψ : (Fin m → ℝ) → ℂ) := by
+            intro ht
+            exact hp_prod ⟨hz, ht⟩
+          have hψ_zero : ψ p.2 = 0 :=
+            image_eq_zero_of_notMem_tsupport ht
+          change H (p.1 + realEmbed p.2) * (φ p.1 * ψ p.2) = 0
+          simp [hψ_zero]
+        · have hφ_zero : φ p.1 = 0 :=
+            image_eq_zero_of_notMem_tsupport hz
+          change H (p.1 + realEmbed p.2) * (φ p.1 * ψ p.2) = 0
+          simp [hφ_zero]
+      exact hp hzero
+    have hprod_compact :
+        IsCompact
+          (tsupport (φ : ComplexChartSpace m → ℂ) ×ˢ
+            tsupport (ψ : (Fin m → ℝ) → ℂ)) :=
+      hφ.1.prod hψ_compact
+    have htsub :
+        tsupport M.uncurry ⊆
+          tsupport (φ : ComplexChartSpace m → ℂ) ×ˢ
+            tsupport (ψ : (Fin m → ℝ) → ℂ) :=
+      closure_minimal hsupport_subset hprod_compact.isClosed
+    exact hprod_compact.of_isClosed_subset (isClosed_tsupport _) htsub
+  have hleft_expand :
+      (∫ y : ComplexChartSpace m, H y * realConvolutionTest φ ψ y) =
+        ∫ y : ComplexChartSpace m, ∫ t : Fin m → ℝ, J y t := by
+    apply integral_congr_ae
+    filter_upwards with y
+    rw [realConvolutionTest_apply]
+    exact
+      (MeasureTheory.integral_const_mul (H y)
+        (fun t : Fin m → ℝ => φ (y - realEmbed t) * ψ t)).symm
+  have hswap_J :
+      (∫ y : ComplexChartSpace m, ∫ t : Fin m → ℝ, J y t) =
+        ∫ t : Fin m → ℝ, ∫ y : ComplexChartSpace m, J y t :=
+    MeasureTheory.integral_integral_swap_of_hasCompactSupport hJ_cont hJ_compact
+  have hchange :
+      (∫ t : Fin m → ℝ, ∫ y : ComplexChartSpace m, J y t) =
+        ∫ t : Fin m → ℝ, ∫ z : ComplexChartSpace m, M z t := by
+    apply integral_congr_ae
+    filter_upwards with t
+    simpa [J, M] using
+      (MeasureTheory.integral_add_right_eq_self
+        (μ := (volume : Measure (ComplexChartSpace m)))
+        (fun y : ComplexChartSpace m => J y t) (realEmbed t)).symm
+  have hswap_M :
+      (∫ t : Fin m → ℝ, ∫ z : ComplexChartSpace m, M z t) =
+        ∫ z : ComplexChartSpace m, ∫ t : Fin m → ℝ, M z t :=
+    (MeasureTheory.integral_integral_swap_of_hasCompactSupport hM_cont hM_compact).symm
+  have hright_contract :
+      (∫ z : ComplexChartSpace m, ∫ t : Fin m → ℝ, M z t) =
+        ∫ z : ComplexChartSpace m,
+          (∫ t : Fin m → ℝ, H (z + realEmbed t) * ψ t) * φ z := by
+    apply integral_congr_ae
+    filter_upwards with z
+    calc
+      (∫ t : Fin m → ℝ, M z t) =
+          ∫ t : Fin m → ℝ, (H (z + realEmbed t) * ψ t) * φ z := by
+            apply integral_congr_ae
+            filter_upwards with t
+            simp [M]
+            ring
+      _ =
+          (∫ t : Fin m → ℝ, H (z + realEmbed t) * ψ t) * φ z := by
+            exact
+              MeasureTheory.integral_mul_const (φ z)
+                (fun t : Fin m → ℝ => H (z + realEmbed t) * ψ t)
+  calc
+    (∫ y : ComplexChartSpace m, H y * realConvolutionTest φ ψ y)
+        = ∫ y : ComplexChartSpace m, ∫ t : Fin m → ℝ, J y t :=
+          hleft_expand
+    _ = ∫ t : Fin m → ℝ, ∫ y : ComplexChartSpace m, J y t := hswap_J
+    _ = ∫ t : Fin m → ℝ, ∫ z : ComplexChartSpace m, M z t := hchange
+    _ = ∫ z : ComplexChartSpace m, ∫ t : Fin m → ℝ, M z t := hswap_M
+    _ =
+        ∫ z : ComplexChartSpace m,
+          (∫ t : Fin m → ℝ, H (z + realEmbed t) * ψ t) * φ z :=
+          hright_contract
+
+/-- Fundamental-lemma endpoint for the pointwise kernel-representation bridge:
+if two continuous local kernels have zero difference against every Schwartz
+test supported in an open chart subdomain, then they agree pointwise there. -/
+theorem regularizedEnvelope_pointwise_eq_of_test_integral_zero
+    (Ucore : Set (ComplexChartSpace m))
+    (Gψ Hψ : ComplexChartSpace m → ℂ)
+    (hUcore_open : IsOpen Ucore)
+    (hG_cont : ContinuousOn Gψ Ucore)
+    (hH_cont : ContinuousOn Hψ Ucore)
+    (htest_zero :
+      ∀ φ : SchwartzMap (ComplexChartSpace m) ℂ,
+        SupportsInOpen (φ : ComplexChartSpace m → ℂ) Ucore →
+          (∫ z : ComplexChartSpace m, (Gψ z - Hψ z) * φ z) = 0) :
+    ∀ z ∈ Ucore, Gψ z = Hψ z := by
+  have hdiff_zero :
+      ∀ z ∈ Ucore, (Gψ z - Hψ z) = 0 :=
+    eq_zero_on_open_of_supportsInOpen_schwartz_integral_zero
+      hUcore_open (hG_cont.sub hH_cont) htest_zero
+  intro z hz
+  exact sub_eq_zero.mp (hdiff_zero z hz)
+
+/-- Fundamental-lemma endpoint in equality-of-pairings form: if two continuous
+local kernels have the same integral against every Schwartz test supported in
+an open chart subdomain, then they agree pointwise there.  The explicit
+integrability hypotheses keep the integral algebra honest. -/
+theorem regularizedEnvelope_pointwise_eq_of_test_integral_eq
+    (Ucore : Set (ComplexChartSpace m))
+    (Gψ Hψ : ComplexChartSpace m → ℂ)
+    (hUcore_open : IsOpen Ucore)
+    (hG_cont : ContinuousOn Gψ Ucore)
+    (hH_cont : ContinuousOn Hψ Ucore)
+    (hG_int :
+      ∀ φ : SchwartzMap (ComplexChartSpace m) ℂ,
+        SupportsInOpen (φ : ComplexChartSpace m → ℂ) Ucore →
+          Integrable fun z : ComplexChartSpace m => Gψ z * φ z)
+    (hH_int :
+      ∀ φ : SchwartzMap (ComplexChartSpace m) ℂ,
+        SupportsInOpen (φ : ComplexChartSpace m → ℂ) Ucore →
+          Integrable fun z : ComplexChartSpace m => Hψ z * φ z)
+    (htest_eq :
+      ∀ φ : SchwartzMap (ComplexChartSpace m) ℂ,
+        SupportsInOpen (φ : ComplexChartSpace m → ℂ) Ucore →
+          (∫ z : ComplexChartSpace m, Gψ z * φ z) =
+            ∫ z : ComplexChartSpace m, Hψ z * φ z) :
+    ∀ z ∈ Ucore, Gψ z = Hψ z := by
+  refine regularizedEnvelope_pointwise_eq_of_test_integral_zero
+    Ucore Gψ Hψ hUcore_open hG_cont hH_cont ?_
+  intro φ hφ
+  calc
+    (∫ z : ComplexChartSpace m, (Gψ z - Hψ z) * φ z) =
+        ∫ z : ComplexChartSpace m, Gψ z * φ z - Hψ z * φ z := by
+          apply integral_congr_ae
+          filter_upwards with z
+          ring
+    _ =
+        (∫ z : ComplexChartSpace m, Gψ z * φ z) -
+          ∫ z : ComplexChartSpace m, Hψ z * φ z := by
+          exact MeasureTheory.integral_sub (hG_int φ hφ) (hH_int φ hφ)
+    _ = 0 := sub_eq_zero.mpr (htest_eq φ hφ)
+
+/-- Pointwise representation of the regularized scalar kernel for the recovered
+holomorphic representative.  This is the supplier needed by the final chart
+assembly theorem, proved from product-kernel representation, descent to the
+recovered distribution, support of the real-convolution test, Fubini, and the
+local fundamental lemma. -/
+theorem regularizedEnvelope_pointwiseRepresentation_of_productKernel
+    {r : ℝ}
+    (K : SchwartzMap (ComplexChartSpace m × (Fin m → ℝ)) ℂ →L[ℂ] ℂ)
+    (G : SchwartzMap (Fin m → ℝ) ℂ → ComplexChartSpace m → ℂ)
+    (H : ComplexChartSpace m → ℂ)
+    (Hdist : SchwartzMap (ComplexChartSpace m) ℂ →L[ℂ] ℂ)
+    (Ucore U0 : Set (ComplexChartSpace m))
+    (ψ : SchwartzMap (Fin m → ℝ) ℂ)
+    (hUcore_open : IsOpen Ucore)
+    (hU0_open : IsOpen U0)
+    (hcore_U0 : Ucore ⊆ U0)
+    (hmargin_r :
+      ∀ z ∈ Ucore, ∀ t : Fin m → ℝ, ‖t‖ ≤ r →
+        z + realEmbed t ∈ U0)
+    (hψ_support : KernelSupportWithin ψ r)
+    (hG_holo : DifferentiableOn ℂ (G ψ) U0)
+    (hH_holo : DifferentiableOn ℂ H U0)
+    (hRep : RepresentsDistributionOnComplexDomain Hdist H U0)
+    (hdesc :
+      ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+        (η : SchwartzMap (Fin m → ℝ) ℂ),
+        K (schwartzTensorProduct₂ φ η) =
+          Hdist (realConvolutionTest φ η))
+    (hK_rep :
+      ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+        (η : SchwartzMap (Fin m → ℝ) ℂ),
+        SupportsInOpen (φ : ComplexChartSpace m → ℂ) U0 →
+        KernelSupportWithin η r →
+          K (schwartzTensorProduct₂ φ η) =
+            ∫ z : ComplexChartSpace m, G η z * φ z) :
+    ∀ z ∈ Ucore,
+      G ψ z = ∫ t : Fin m → ℝ, H (z + realEmbed t) * ψ t := by
+  let Hψ : ComplexChartSpace m → ℂ :=
+    fun z => ∫ t : Fin m → ℝ, H (z + realEmbed t) * ψ t
+  have hψ_compact : HasCompactSupport (ψ : (Fin m → ℝ) → ℂ) :=
+    KernelSupportWithin_hasCompactSupport hψ_support
+  have hmargin :
+      ∀ z ∈ Ucore, ∀ t ∈ tsupport (ψ : (Fin m → ℝ) → ℂ),
+        z + realEmbed t ∈ U0 := by
+    intro z hz t ht
+    have ht_norm : ‖t‖ ≤ r := by
+      simpa [KernelSupportWithin, Metric.mem_closedBall, dist_eq_norm]
+        using hψ_support ht
+    exact hmargin_r z hz t ht_norm
+  have hG_cont_core : ContinuousOn (G ψ) Ucore :=
+    hG_holo.continuousOn.mono hcore_U0
+  have hHψ_cont : ContinuousOn Hψ Ucore := by
+    simpa [Hψ] using
+      continuousOn_realMollifyLocal_of_translate_margin
+        H ψ Ucore U0 hU0_open hH_holo.continuousOn hψ_compact hmargin
+  have hG_int :
+      ∀ φ : SchwartzMap (ComplexChartSpace m) ℂ,
+        SupportsInOpen (φ : ComplexChartSpace m → ℂ) Ucore →
+          Integrable fun z : ComplexChartSpace m => G ψ z * φ z := by
+    intro φ hφ
+    exact
+      integrable_continuousOn_mul_schwartz_of_supportsInOpen
+        hUcore_open hG_cont_core hφ
+  have hH_int :
+      ∀ φ : SchwartzMap (ComplexChartSpace m) ℂ,
+        SupportsInOpen (φ : ComplexChartSpace m → ℂ) Ucore →
+          Integrable fun z : ComplexChartSpace m => Hψ z * φ z := by
+    intro φ hφ
+    exact
+      integrable_continuousOn_mul_schwartz_of_supportsInOpen
+        hUcore_open hHψ_cont hφ
+  have htest_eq :
+      ∀ φ : SchwartzMap (ComplexChartSpace m) ℂ,
+        SupportsInOpen (φ : ComplexChartSpace m → ℂ) Ucore →
+          (∫ z : ComplexChartSpace m, G ψ z * φ z) =
+            ∫ z : ComplexChartSpace m, Hψ z * φ z := by
+    intro φ hφ
+    have hφ_U0 : SupportsInOpen (φ : ComplexChartSpace m → ℂ) U0 :=
+      ⟨hφ.1, hφ.2.trans hcore_U0⟩
+    have hconv_support :
+        SupportsInOpen
+          (realConvolutionTest φ ψ : ComplexChartSpace m → ℂ) U0 :=
+      realConvolutionTest_supportsInOpen_of_translate_margin
+        φ ψ Ucore U0 hφ hψ_compact hmargin
+    calc
+      (∫ z : ComplexChartSpace m, G ψ z * φ z) =
+          K (schwartzTensorProduct₂ φ ψ) := by
+            exact (hK_rep φ ψ hφ_U0 hψ_support).symm
+      _ = Hdist (realConvolutionTest φ ψ) := hdesc φ ψ
+      _ =
+          ∫ y : ComplexChartSpace m,
+            H y * realConvolutionTest φ ψ y :=
+            hRep (realConvolutionTest φ ψ) hconv_support
+      _ =
+          ∫ z : ComplexChartSpace m,
+            (∫ t : Fin m → ℝ, H (z + realEmbed t) * ψ t) * φ z :=
+          realConvolutionTest_pairing_eq_mollifier_pairing
+            H φ ψ Ucore U0 hU0_open hH_holo.continuousOn
+            hφ hψ_compact hmargin
+      _ = ∫ z : ComplexChartSpace m, Hψ z * φ z := by
+          rfl
+  exact
+    regularizedEnvelope_pointwise_eq_of_test_integral_eq
+      Ucore (G ψ) Hψ hUcore_open hG_cont_core hHψ_cont
+      hG_int hH_int htest_eq
+
 /-- Once the recovered holomorphic representative has the same kernel limit as
 the regularized plus/minus side mollifications, uniqueness of limits identifies
 it with the original side functions on the shrunken wedge pieces. -/
@@ -363,10 +939,7 @@ theorem regularizedEnvelope_deltaLimit_agreesOnWedges
 holomorphic on a chart domain descends to a distributional-holomorphic chart
 distribution, hence to a holomorphic representative on that chart.
 
-This is the Streater-Wightman kernel-recovery midpoint.  The remaining
-envelope step is to show, by compactly supported approximate identities, that
-the produced holomorphic function agrees with the original plus/minus wedge
-functions on the shrunken wedge pieces. -/
+This is the Streater-Wightman kernel-recovery midpoint. -/
 theorem regularizedEnvelope_holomorphicDistribution_from_productKernel
     {r : ℝ}
     (hm : 0 < m)
@@ -416,5 +989,86 @@ theorem regularizedEnvelope_holomorphicDistribution_from_productKernel
   obtain ⟨H, hH_holo, hRep⟩ :=
     distributionalHolomorphic_regular Hdist hm hU0_open hCR
   exact ⟨H, hH_holo, Hdist, hRep, hdesc⟩
+
+/-- Final chart-envelope assembly from the checked product-kernel midpoint, the
+proved pointwise-representation bridge for the recovered holomorphic function,
+and the checked delta-limit wedge-agreement theorem. -/
+theorem regularizedEnvelope_chartEnvelope_from_productKernel
+    {r : ℝ}
+    (hm : 0 < m)
+    (hr : 0 < r)
+    (K : SchwartzMap (ComplexChartSpace m × (Fin m → ℝ)) ℂ →L[ℂ] ℂ)
+    (G : SchwartzMap (Fin m → ℝ) ℂ → ComplexChartSpace m → ℂ)
+    (Ucore U0 DplusSmall DminusSmall : Set (ComplexChartSpace m))
+    (Fplus Fminus : ComplexChartSpace m → ℂ)
+    (ψn : ℕ → SchwartzMap (Fin m → ℝ) ℂ)
+    (hUcore_open : IsOpen Ucore)
+    (hU0_open : IsOpen U0)
+    (hcore_U0 : Ucore ⊆ U0)
+    (hmargin_r :
+      ∀ z ∈ Ucore, ∀ t : Fin m → ℝ, ‖t‖ ≤ r →
+        z + realEmbed t ∈ U0)
+    (hcov : ProductKernelRealTranslationCovariantGlobal K)
+    (hG_holo : ∀ ψ, KernelSupportWithin ψ r → DifferentiableOn ℂ (G ψ) U0)
+    (hK_rep :
+      ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+        (ψ : SchwartzMap (Fin m → ℝ) ℂ),
+        SupportsInOpen (φ : ComplexChartSpace m → ℂ) U0 →
+        KernelSupportWithin ψ r →
+          K (schwartzTensorProduct₂ φ ψ) =
+            ∫ z : ComplexChartSpace m, G ψ z * φ z)
+    (hψ_nonneg : ∀ n t, 0 ≤ (ψn n t).re)
+    (hψ_real : ∀ n t, (ψn n t).im = 0)
+    (hψ_norm : ∀ n, ∫ t : Fin m → ℝ, ψn n t = 1)
+    (hψ_support_shrink :
+      ∀ n, KernelSupportWithin (ψn n) (1 / (n + 1 : ℝ)))
+    (hψ_support_r : ∀ n, KernelSupportWithin (ψn n) r)
+    (hG_plus :
+      ∀ᶠ n in atTop, ∀ z ∈ Ucore ∩ DplusSmall,
+        G (ψn n) z = realMollifyLocal Fplus (ψn n) z)
+    (hG_minus :
+      ∀ᶠ n in atTop, ∀ z ∈ Ucore ∩ DminusSmall,
+        G (ψn n) z = realMollifyLocal Fminus (ψn n) z)
+    (happrox_plus :
+      ∀ z ∈ Ucore ∩ DplusSmall,
+        Tendsto (fun n => realMollifyLocal Fplus (ψn n) z)
+          atTop (nhds (Fplus z)))
+    (happrox_minus :
+      ∀ z ∈ Ucore ∩ DminusSmall,
+        Tendsto (fun n => realMollifyLocal Fminus (ψn n) z)
+          atTop (nhds (Fminus z))) :
+    ∃ H : ComplexChartSpace m → ℂ,
+      DifferentiableOn ℂ H U0 ∧
+      ∃ Hdist : SchwartzMap (ComplexChartSpace m) ℂ →L[ℂ] ℂ,
+        RepresentsDistributionOnComplexDomain Hdist H U0 ∧
+        (∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (ψ : SchwartzMap (Fin m → ℝ) ℂ),
+          K (schwartzTensorProduct₂ φ ψ) =
+            Hdist (realConvolutionTest φ ψ)) ∧
+        (∀ z ∈ Ucore ∩ DplusSmall, H z = Fplus z) ∧
+        (∀ z ∈ Ucore ∩ DminusSmall, H z = Fminus z) := by
+  obtain ⟨H, hH_holo, Hdist, hRep, hdesc⟩ :=
+    regularizedEnvelope_holomorphicDistribution_from_productKernel
+      hm hr K G U0 hU0_open hcov hG_holo hK_rep
+  have hH_rep :
+      ∀ n, ∀ z ∈ Ucore,
+        G (ψn n) z =
+          ∫ t : Fin m → ℝ, H (z + realEmbed t) * ψn n t := by
+    intro n
+    exact
+      regularizedEnvelope_pointwiseRepresentation_of_productKernel
+        K G H Hdist Ucore U0 (ψn n) hUcore_open hU0_open hcore_U0
+        hmargin_r (hψ_support_r n) (hG_holo (ψn n) (hψ_support_r n))
+        hH_holo hRep hdesc hK_rep
+  have hkernel_limit :
+      ∀ z ∈ Ucore, Tendsto (fun n => G (ψn n) z) atTop (nhds (H z)) :=
+    regularizedEnvelope_kernelLimit_from_representation
+      Ucore U0 H G ψn hU0_open hcore_U0 hH_holo.continuousOn
+      hH_rep hψ_nonneg hψ_real hψ_norm hψ_support_shrink
+  obtain ⟨hplus, hminus⟩ :=
+    regularizedEnvelope_deltaLimit_agreesOnWedges
+      Ucore G Fplus Fminus H DplusSmall DminusSmall ψn
+      hG_plus hG_minus happrox_plus happrox_minus hkernel_limit
+  exact ⟨H, hH_holo, Hdist, hRep, hdesc, hplus, hminus⟩
 
 end SCV

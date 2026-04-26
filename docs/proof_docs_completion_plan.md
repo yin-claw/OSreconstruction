@@ -673,9 +673,11 @@ Current examples:
 	   `differentiableOn_complex_of_contDiffOn_real_and_pointwiseDbar_zero`.
 	   The final assembled theorem
 	   `SCV.distributionalHolomorphic_regular` is checked with no new axioms or
-	   sorrys.  The next theorem-2 SCV frontier is therefore the
-	   regularized-envelope recovery and local continuous EOW extraction, not
-	   additional Weyl/CR regularity.  The next small Lean bridge is now checked
+	   sorrys.  The theorem-2 SCV frontier after Weyl/CR regularity moved to
+	   regularized-envelope recovery, and that recovery layer is now checked
+	   through the chart-assembly theorem below; the current frontier is local
+	   continuous EOW extraction plus the upstream regularized-family/product-
+	   kernel package.  The next small Lean bridge is now checked
 	   as
 	   `SCV.regularizedEnvelope_holomorphicDistribution_from_productKernel`:
 	   combine product-kernel descent, the checked compact approximate identity,
@@ -692,9 +694,28 @@ Current examples:
 	   `regularizedEnvelope_deltaLimit_agreesOnWedges` together derive
 	   `G (ψn n) z -> H z` from the actual representation integral and then
 	   identify `H` with the plus/minus side functions by limit uniqueness.
-	   The remaining theorem-2 SCV frontier is therefore no longer
-	   Weyl/regularity or the delta-limit estimate; it is the upstream
-	   regularized-family construction and the local envelope assembly/patching.
+	   The final checked SCV assembly theorem is now
+	   `SCV.regularizedEnvelope_chartEnvelope_from_productKernel`: it applies
+	   the checked product-kernel midpoint, derives the pointwise representation
+	   of the recovered `H`, and then invokes the checked delta-limit wedge
+	   agreement.  The remaining theorem-2 SCV frontier is therefore no longer
+	   Weyl/regularity, the delta-limit estimate, or a free
+	   pointwise-representation bridge; it is the local continuous EOW
+	   extraction/patching and OS45 instantiation.  The bridge has been
+	   decomposed and checked in `docs/scv_infrastructure_blueprint.md` through:
+	   the now checked support theorem
+	   `SCV.realConvolutionTest_supportsInOpen_of_translate_margin`, the now
+	   checked continuity theorem
+	   `SCV.continuousOn_realMollifyLocal_of_translate_margin`, the
+	   checked compact-support Fubini/change-of-variables pairing theorem
+	   `SCV.realConvolutionTest_pairing_eq_mollifier_pairing`, the checked
+	   `SCV.regularizedEnvelope_pointwise_eq_of_test_integral_eq` endpoint, and
+	   the checked supplier
+	   `SCV.regularizedEnvelope_pointwiseRepresentation_of_productKernel`.
+	   The first upstream regularized-family slice is now checked as well:
+	   `SCV.localRealMollifySide_holomorphicOn_of_translate_margin` in
+	   `SCV/LocalDistributionalEOW.lean`, proving local holomorphy of the
+	   real-direction mollifier from the explicit support-translate margin.
    The initial coordinate and trace-membership support
    `BHW.configPermCLE`, `BHW.os45CommonChartCLE`,
    `BHW.wickRotate_ordered_mem_acrOne`,
