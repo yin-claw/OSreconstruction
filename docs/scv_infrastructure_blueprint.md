@@ -8144,7 +8144,10 @@ Exact product-kernel/descent subpackage:
 	     patching the ball representatives into one smooth representative on
 	     `V`.
 
-   The open-set theorem is a local assembly over balls:
+   The open-set theorem is a local assembly over balls.  The implementation
+   should not introduce another Weyl lemma or a theorem-2 wrapper.  It should
+   only assemble the checked ball theorem by canonical local patching and
+   ordinary finite smooth partitions on compact test supports.
 
    ```lean
    theorem exists_finite_schwartz_partitionOfUnity_on_compact
@@ -8154,6 +8157,7 @@ Exact product-kernel/descent subpackage:
        {K : Set E} (hK : IsCompact K)
        {U : ι -> Set E}
        (hU_open : ∀ i, IsOpen (U i))
+       (hU_relcompact : ∀ i, ∃ c R, U i ⊆ Metric.closedBall c R)
        (hcover : K ⊆ ⋃ i, U i) :
        ∃ χ : ι -> SchwartzMap E ℂ,
          (∀ i, HasCompactSupport (χ i : E -> ℂ)) ∧
@@ -8184,24 +8188,145 @@ Exact product-kernel/descent subpackage:
          RepresentsEuclideanDistributionOn T H V
    ```
 
-   For each `x ∈ V`, choose `R_x > 0` with `closedBall x R_x ⊆ V` and apply
-   the ball theorem with `r = R_x / 2`.  Define `H x` by the corresponding
-   local representative if `x ∈ V`, and `0` outside.  On overlaps, the two
-   representatives have identical pairings against all compactly supported
-   Schwartz tests in the overlap because both represent `T`; use
-   `eqOn_open_of_compactSupport_schwartz_integral_eq_of_continuousOn` to prove
-   pointwise equality.  Smoothness is local from the ball representatives.
-   The global representation for a test supported in `V` follows by covering
-   `tsupport φ` with finitely many such balls and applying
-   `exists_finite_schwartz_partitionOfUnity_on_compact`.  Each product
-   `χ i * φ` is a Schwartz test supported in the corresponding ball by
-   `supportsInOpen_partition_mul`; apply the local representation to each
-   product and sum.  The partition theorem is pure finite-dimensional
-   topology/calculus: choose smaller closed neighborhoods inside the open
-   cover using normality/compactness, obtain bump functions by
-   `exists_contDiff_tsupport_subset`, divide by the finite positive sum on
-   `K`, and convert the compactly supported smooth functions to
-   `SchwartzMap`s with `HasCompactSupport.toSchwartzMap`.
+   The Lean route should be the following, in this order.
+
+   **Canonical local representative.**
+
+   For `x ∈ V`, choose a positive radius `R x` with
+
+   ```lean
+   Metric.closedBall x (R x) ⊆ V
+   ```
+
+   using `exists_pos_closedBall_subset_of_isOpen`, and define the global
+   candidate by the canonical ball representative centered at the point:
+
+   ```lean
+   H x :=
+     if hx : x ∈ V then euclideanWeylBallRepresentative T x (R ⟨x, hx⟩) x
+       else 0
+   ```
+
+   The only choice here is the radius guaranteed by openness; the
+   representative itself is the already checked canonical
+   `euclideanWeylBallRepresentative`, not an arbitrary local witness.
+
+   For any fixed `c ∈ V`, put `R0 := R c`.  On the smaller ball
+   `Metric.ball c (R0 / 4)`, prove
+
+   ```lean
+   H y = euclideanWeylBallRepresentative T c R0 y
+   ```
+
+   by choosing a Weyl bump radius `ε` small enough that both
+   `Metric.closedBall y ε ⊆ Metric.ball c R0` and
+   `Metric.closedBall y ε ⊆ Metric.ball y (R y)` hold, then applying
+   `euclideanWeylBallRepresentative_eq_regularized` to both centers.  This is
+   the concrete overlap-patching lemma and avoids invoking distributional
+   uniqueness for the smoothness proof.  Smoothness of `H` on `V` then follows
+   locally from `contDiffOn_euclideanWeylBallRepresentative`.
+
+   **Finite partitions only on test supports.**
+
+   The partition of unity is needed only after a test `φ` is fixed.  Let
+   `K := tsupport φ`; `hφ.1` gives `IsCompact K`, and `hφ.2` gives
+   `K ⊆ V`.  Cover `K` by finitely many smaller balls
+
+   ```lean
+   U i := Metric.ball (c i) (r i)
+   ```
+
+   such that each `Metric.closedBall (c i) (2 * r i) ⊆ V` and the local
+   equality
+
+   ```lean
+   ∀ y ∈ U i, H y = euclideanWeylBallRepresentative T (c i) (2 * r i) y
+   ```
+
+   is available.  Use Mathlib's
+   `SmoothPartitionOfUnity.exists_isSubordinate` with `s = K` and this finite
+   ball cover.  Because each `U i` is bounded, `tsupport (ρ i) ⊆ U i` implies
+   compact support by containment in `Metric.closedBall (c i) (r i)`.
+   Convert the real smooth partition functions to complex-valued Schwartz
+   maps:
+
+   ```lean
+   ρχ i : SchwartzMap E ℂ
+   hρχ_apply i x : ρχ i x = (ρ i x : ℂ)
+   hρχ_support i : tsupport (ρχ i : E -> ℂ) ⊆ U i
+   hpartition_on_K : ∀ x ∈ K, ∑ i, ρχ i x = 1
+   ```
+
+   Then the checked lemma
+   `schwartzMap_eq_finset_sum_smulLeftCLM_of_sum_eq_one_on_tsupport` gives
+
+   ```lean
+   φ = ∑ i, SchwartzMap.smulLeftCLM ℂ (ρχ i : E -> ℂ) φ
+   ```
+
+   and `supportsInOpen_partition_mul_left` gives support of each localized
+   test inside the corresponding ball `U i`.
+
+   **Representation identity for a fixed test.**
+
+   Apply the checked ball representation theorem to each `U i`, replace the
+   local ball representative by `H` on the support of the localized test using
+   the local equality above, sum the finitely many identities, and use
+   linearity of `T` plus the finite partition decomposition of `φ`.
+
+   The only analytic bookkeeping needed in the summation is the finite-integral
+   passage; the local integrability part is now checked as
+
+   ```lean
+   theorem integrable_continuousOn_mul_schwartz_of_supportsInOpen
+       {H : E -> ℂ} {ψ : SchwartzMap E ℂ} {U : Set E}
+       (hU : IsOpen U)
+       (hH : ContinuousOn H U)
+       (hψ : SupportsInOpen (ψ : E -> ℂ) U) :
+       Integrable fun x => H x * ψ x
+   ```
+
+   proved by extending `H * ψ` by zero outside `U`.  Since
+   `tsupport ψ ⊆ U`, every point outside `U` has a neighborhood on which
+   `ψ = 0`, while points in `U` use `hH`.  Compact support comes from
+   `hψ.1`.
+
+   With this finite-integral lemma in place, the open-set theorem is a direct
+   proof with no new axiom and no theorem-level `sorry`.
+
+   Production status in `SCV/EuclideanWeylOpen.lean`: the first open-assembly
+   prerequisites are now checked.
+
+   ```lean
+   exists_pos_closedBall_subset_of_isOpen
+   euclideanWeylOpenRadius
+   euclideanWeylOpenRepresentative
+   euclideanWeylOpenRepresentative_eq_ballRepresentative_on_small_ball
+   contDiffOn_euclideanWeylOpenRepresentative
+   supportsInOpen_partition_mul
+   supportsInOpen_partition_mul_left
+   exists_finite_schwartz_partitionOfUnity_on_compact
+   schwartzMap_eq_finset_sum_smulLeftCLM_of_sum_eq_one_on_tsupport
+   integrable_continuousOn_mul_schwartz_of_supportsInOpen
+   euclideanDistribution_representation_of_finite_partition_for_test
+   euclidean_weyl_laplacian_distribution_regular_on_open
+   ```
+
+   `SCV/EuclideanWeylRepresentation.lean` also now exposes the
+   non-existential canonical ball representation theorem:
+
+   ```lean
+   euclideanWeylBallRepresentative_represents_on_ball
+   ```
+
+   This closes the radius-selection, canonical-overlap/smoothness,
+   support-preservation, finite compact partition, finite
+   partition-decomposition, local compact-support integrability, finite
+   summation, and the full open-set Euclidean Weyl representation theorem.
+   The remaining SCV route after Weyl regularity is the already documented
+   extraction of pointwise Cauchy-Riemann equations from distributional
+   `∂bar` equations, followed by real-smooth-plus-CR-to-complex
+   differentiability.
 
    After Weyl regularity gives a smooth representative, recover the pointwise
    Cauchy-Riemann equations from the distributional equations.  The pointwise

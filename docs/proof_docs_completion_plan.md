@@ -643,7 +643,22 @@ Current examples:
 	   `euclidean_laplacian_distribution_regular_on_ball`, using the explicit
 	   Weyl-bump sequence, scalar pairing, and constant-sequence limit
 	   argument.  The next SCV subproblem is now the open-set representation
-	   assembly by finite partition of unity and overlap patching.
+	   assembly.  The detailed route in
+	   `docs/scv_infrastructure_blueprint.md` now uses the canonical Weyl ball
+	   representative at each point and finite smooth partitions only on compact
+	   test supports.  The remaining Lean work before the open theorem is:
+	   support preservation for `χ * φ`, finite decomposition of a compactly
+	   supported Schwartz test by partition functions, and the compact-support
+	   integrability/finite-integral lemma for local continuous representatives.
+	   These first prerequisites are now checked in
+	   `SCV/EuclideanWeylOpen.lean`; the canonical-overlap lemma, smoothness of
+	   the open representative, and finite compact `SmoothPartitionOfUnity`
+	   bridge for `tsupport φ` are checked as well.  The ball-representation
+	   theorem is now available in non-existential form as
+	   `euclideanWeylBallRepresentative_represents_on_ball`.  The finite
+	   summation identity and the full open-set theorem
+	   `euclidean_weyl_laplacian_distribution_regular_on_open` are now checked
+	   in `SCV/EuclideanWeylOpen.lean`.
 	   Zero-dimensional bump-difference bookkeeping is only needed if a
 	   dimension-free caller requires it.  Extraction of pointwise Cauchy-Riemann equations from the smooth
 	   representative then uses the checked `∂bar` integration-by-parts theorem,

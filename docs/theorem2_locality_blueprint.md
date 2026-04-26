@@ -1429,8 +1429,24 @@ Current implementation order:
 	   `euclidean_laplacian_distribution_regular_on_ball`; it combines
 	   scale-invariance, scalar pairing, and approximate identity to represent
 	   the harmonic distribution on `Metric.ball c r`.  The next implementation
-	   stage is the open-set representation assembly.  After that lands,
-	   the route continues with pointwise CR extraction and
+	   stage is the open-set representation assembly, now pinned in
+	   `docs/scv_infrastructure_blueprint.md` as a canonical ball-representative
+	   patching argument plus finite smooth partitions only on compact test
+	   supports.  The representative is the pointwise canonical Weyl ball
+	   representative with a radius chosen from openness; local equality to a
+	   fixed ball representative supplies smoothness.  The first prerequisites are now checked in
+	   `SCV/EuclideanWeylOpen.lean`: radius selection inside an open set,
+	   the canonical open representative, local equality to fixed ball
+	   representatives, smoothness on the open set, support preservation for
+	   `χ * φ`, finite compact smooth partitions converted to Schwartz maps,
+	   finite partition decomposition of a compactly supported Schwartz test,
+	   and local compact-support integrability for `Hloc * (χ * φ)`.
+	   `SCV/EuclideanWeylRepresentation.lean` also now exposes the
+	   non-existential theorem
+	   `euclideanWeylBallRepresentative_represents_on_ball`.  The finite
+	   summation identity and the full open-set theorem
+	   `euclidean_weyl_laplacian_distribution_regular_on_open` are now checked
+	   in `SCV/EuclideanWeylOpen.lean`.  The route now continues with pointwise CR extraction and
 	   real-smooth-plus-CR-to-complex-differentiability, as recorded in
 	   `docs/scv_infrastructure_blueprint.md`.  The tensor-level sign bridge before
    the density step remains explicit:
