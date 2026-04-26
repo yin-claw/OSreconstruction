@@ -1342,10 +1342,14 @@ Current implementation order:
    `SCV.complexChartLaplacianSchwartzCLM_eq_four_sum_dbar_dz`, and
    `SCV.local_laplacian_zero_of_distributionalHolomorphic`, plus the
    `SCV.pointwiseDbar` definition and
-   `SCV.dbarSchwartzCLM_apply_eq_pointwiseDbar` bridge.  The next genuine
-   SCV substrate target is therefore the localized Weyl/parametrix theorem for
-   `SCV.complexChartLaplacianSchwartzCLM`, followed by pointwise CR extraction
-   and real-smooth-plus-CR-to-complex-differentiability, as recorded in
+   `SCV.dbarSchwartzCLM_apply_eq_pointwiseDbar` bridge.  The first Euclidean
+   transport objects, coordinate-direction transport lemmas, Euclidean
+   coordinate Laplacian comparison, chart-Laplacian transport theorem,
+   transported distribution, and support transport theorem are checked as
+   well.  The next genuine SCV substrate target is therefore the localized
+   Euclidean Weyl/parametrix theorem plus the volume-preserving
+   chart-change lemma, followed by pointwise CR extraction and
+   real-smooth-plus-CR-to-complex-differentiability, as recorded in
    `docs/scv_infrastructure_blueprint.md`.  The tensor-level sign bridge before
    the density step remains explicit:
    `SCV.shearedProductKernel_fiberTranslate_shearedTensor_eq_self_of_productCovariant`

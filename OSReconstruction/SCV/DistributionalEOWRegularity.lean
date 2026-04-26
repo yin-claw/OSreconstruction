@@ -291,4 +291,255 @@ theorem dbarSchwartzCLM_apply_eq_pointwiseDbar
     SchwartzMap.lineDerivOp_apply_eq_fderiv, smul_eq_mul]
   ring
 
+/-- Real-linear Euclidean coordinates for the complex chart, using the checked
+real/imaginary flattening in `DistributionalEOWKernel`. -/
+noncomputable def complexChartEuclideanCLE (m : ℕ) :
+    ComplexChartSpace m ≃L[ℝ] EuclideanSpace ℝ (Fin (m * 2)) :=
+  (complexChartRealFlattenCLE m).trans
+    (EuclideanSpace.equiv (Fin (m * 2)) ℝ).symm
+
+/-- Schwartz-space transport along `complexChartEuclideanCLE`. -/
+noncomputable def complexChartEuclideanSchwartzCLE (m : ℕ) :
+    SchwartzMap (ComplexChartSpace m) ℂ ≃L[ℂ]
+      SchwartzMap (EuclideanSpace ℝ (Fin (m * 2))) ℂ := by
+  let e := complexChartEuclideanCLE m
+  let toFwd :
+      SchwartzMap (ComplexChartSpace m) ℂ →L[ℂ]
+        SchwartzMap (EuclideanSpace ℝ (Fin (m * 2))) ℂ :=
+    SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e.symm
+  let toInv :
+      SchwartzMap (EuclideanSpace ℝ (Fin (m * 2))) ℂ →L[ℂ]
+        SchwartzMap (ComplexChartSpace m) ℂ :=
+    SchwartzMap.compCLMOfContinuousLinearEquiv ℂ e
+  exact
+    { toLinearEquiv :=
+        { toFun := toFwd
+          map_add' := toFwd.map_add
+          map_smul' := toFwd.map_smul
+          invFun := toInv
+          left_inv := by
+            intro f
+            ext x
+            simp [toFwd, toInv, SchwartzMap.compCLMOfContinuousLinearEquiv_apply, e]
+          right_inv := by
+            intro f
+            ext x
+            simp [toFwd, toInv, SchwartzMap.compCLMOfContinuousLinearEquiv_apply, e] }
+      continuous_toFun := toFwd.continuous
+      continuous_invFun := toInv.continuous }
+
+@[simp]
+theorem complexChartEuclideanSchwartzCLE_apply
+    (m : ℕ) (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+    (x : EuclideanSpace ℝ (Fin (m * 2))) :
+    complexChartEuclideanSchwartzCLE m φ x =
+      φ ((complexChartEuclideanCLE m).symm x) := by
+  simp [complexChartEuclideanSchwartzCLE,
+    SchwartzMap.compCLMOfContinuousLinearEquiv_apply]
+
+@[simp]
+theorem complexChartEuclideanSchwartzCLE_symm_apply
+    (m : ℕ) (φ : SchwartzMap (EuclideanSpace ℝ (Fin (m * 2))) ℂ)
+    (z : ComplexChartSpace m) :
+    (complexChartEuclideanSchwartzCLE m).symm φ z =
+      φ (complexChartEuclideanCLE m z) := by
+  change
+    (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
+      (complexChartEuclideanCLE m) φ) z =
+    φ (complexChartEuclideanCLE m z)
+  rfl
+
+/-- The real coordinate direction maps to the corresponding Euclidean basis
+vector under the checked real/imaginary flattening. -/
+theorem complexChartEuclideanCLE_realDir {m : ℕ} (j : Fin m) :
+    complexChartEuclideanCLE m (complexRealDir j) =
+      EuclideanSpace.single (finProdFinEquiv (j, (0 : Fin 2))) (1 : ℝ) := by
+  ext k
+  obtain ⟨p, rfl⟩ := finProdFinEquiv.surjective k
+  rcases p with ⟨i, b⟩
+  fin_cases b
+  · by_cases hij : i = j
+    · subst hij
+      simp [complexChartEuclideanCLE, complexRealDir]
+    · simp [complexChartEuclideanCLE, complexRealDir, hij]
+  · by_cases hij : i = j
+    · subst hij
+      simp [complexChartEuclideanCLE, complexRealDir]
+    · simp [complexChartEuclideanCLE, complexRealDir, hij]
+
+/-- The imaginary coordinate direction maps to the corresponding Euclidean
+basis vector under the checked real/imaginary flattening. -/
+theorem complexChartEuclideanCLE_imagDir {m : ℕ} (j : Fin m) :
+    complexChartEuclideanCLE m (complexImagDir j) =
+      EuclideanSpace.single (finProdFinEquiv (j, (1 : Fin 2))) (1 : ℝ) := by
+  ext k
+  obtain ⟨p, rfl⟩ := finProdFinEquiv.surjective k
+  rcases p with ⟨i, b⟩
+  fin_cases b
+  · by_cases hij : i = j
+    · subst hij
+      simp [complexChartEuclideanCLE, complexImagDir]
+    · simp [complexChartEuclideanCLE, complexImagDir, hij]
+  · by_cases hij : i = j
+    · subst hij
+      simp [complexChartEuclideanCLE, complexImagDir]
+    · simp [complexChartEuclideanCLE, complexImagDir, hij]
+
+/-- First real-coordinate derivatives commute with Euclidean chart transport. -/
+theorem complexChartEuclidean_lineDeriv_realDir {m : ℕ}
+    (φ : SchwartzMap (ComplexChartSpace m) ℂ) (j : Fin m) :
+    ∂_{EuclideanSpace.single (finProdFinEquiv (j, (0 : Fin 2))) (1 : ℝ)}
+        (complexChartEuclideanSchwartzCLE m φ) =
+      complexChartEuclideanSchwartzCLE m
+        (directionalDerivSchwartzCLM (complexRealDir j) φ) := by
+  simpa [complexChartEuclideanSchwartzCLE, directionalDerivSchwartzCLM,
+    ← complexChartEuclideanCLE_realDir (m := m) j] using
+    (SchwartzMap.lineDerivOp_compCLMOfContinuousLinearEquiv (𝕜 := ℂ)
+      (m := EuclideanSpace.single (finProdFinEquiv (j, (0 : Fin 2))) (1 : ℝ))
+      (g := (complexChartEuclideanCLE m).symm)
+      (f := φ))
+
+/-- First imaginary-coordinate derivatives commute with Euclidean chart
+transport. -/
+theorem complexChartEuclidean_lineDeriv_imagDir {m : ℕ}
+    (φ : SchwartzMap (ComplexChartSpace m) ℂ) (j : Fin m) :
+    ∂_{EuclideanSpace.single (finProdFinEquiv (j, (1 : Fin 2))) (1 : ℝ)}
+        (complexChartEuclideanSchwartzCLE m φ) =
+      complexChartEuclideanSchwartzCLE m
+        (directionalDerivSchwartzCLM (complexImagDir j) φ) := by
+  simpa [complexChartEuclideanSchwartzCLE, directionalDerivSchwartzCLM,
+    ← complexChartEuclideanCLE_imagDir (m := m) j] using
+    (SchwartzMap.lineDerivOp_compCLMOfContinuousLinearEquiv (𝕜 := ℂ)
+      (m := EuclideanSpace.single (finProdFinEquiv (j, (1 : Fin 2))) (1 : ℝ))
+      (g := (complexChartEuclideanCLE m).symm)
+      (f := φ))
+
+/-- Second real-coordinate derivatives commute with Euclidean chart transport. -/
+theorem complexChartEuclidean_secondLineDeriv_realDir {m : ℕ}
+    (φ : SchwartzMap (ComplexChartSpace m) ℂ) (j : Fin m) :
+    ∂_{EuclideanSpace.single (finProdFinEquiv (j, (0 : Fin 2))) (1 : ℝ)}
+        (∂_{EuclideanSpace.single (finProdFinEquiv (j, (0 : Fin 2))) (1 : ℝ)}
+          (complexChartEuclideanSchwartzCLE m φ)) =
+      complexChartEuclideanSchwartzCLE m
+        (directionalDerivSchwartzCLM (complexRealDir j)
+          (directionalDerivSchwartzCLM (complexRealDir j) φ)) := by
+  rw [complexChartEuclidean_lineDeriv_realDir φ j]
+  rw [complexChartEuclidean_lineDeriv_realDir
+    (directionalDerivSchwartzCLM (complexRealDir j) φ) j]
+
+/-- Second imaginary-coordinate derivatives commute with Euclidean chart
+transport. -/
+theorem complexChartEuclidean_secondLineDeriv_imagDir {m : ℕ}
+    (φ : SchwartzMap (ComplexChartSpace m) ℂ) (j : Fin m) :
+    ∂_{EuclideanSpace.single (finProdFinEquiv (j, (1 : Fin 2))) (1 : ℝ)}
+        (∂_{EuclideanSpace.single (finProdFinEquiv (j, (1 : Fin 2))) (1 : ℝ)}
+          (complexChartEuclideanSchwartzCLE m φ)) =
+      complexChartEuclideanSchwartzCLE m
+        (directionalDerivSchwartzCLM (complexImagDir j)
+          (directionalDerivSchwartzCLM (complexImagDir j) φ)) := by
+  rw [complexChartEuclidean_lineDeriv_imagDir φ j]
+  rw [complexChartEuclidean_lineDeriv_imagDir
+    (directionalDerivSchwartzCLM (complexImagDir j) φ) j]
+
+/-- The coordinate real Laplacian on a Euclidean chart, written with the
+canonical coordinate basis. -/
+noncomputable def euclideanCoordinateLaplacianSchwartzCLM
+    {ι : Type*} [Fintype ι] [DecidableEq ι] :
+    SchwartzMap (EuclideanSpace ℝ ι) ℂ →L[ℂ]
+      SchwartzMap (EuclideanSpace ℝ ι) ℂ :=
+  ∑ k : ι,
+    (LineDeriv.lineDerivOpCLM ℂ
+        (SchwartzMap (EuclideanSpace ℝ ι) ℂ)
+        (EuclideanSpace.single k (1 : ℝ))).comp
+      (LineDeriv.lineDerivOpCLM ℂ
+        (SchwartzMap (EuclideanSpace ℝ ι) ℂ)
+        (EuclideanSpace.single k (1 : ℝ)))
+
+/-- The explicit coordinate Laplacian is Mathlib's Euclidean Schwartz
+Laplacian. -/
+theorem euclideanCoordinateLaplacianSchwartzCLM_eq_laplacianCLM
+    {ι : Type*} [Fintype ι] [DecidableEq ι]
+    (φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ) :
+    euclideanCoordinateLaplacianSchwartzCLM φ =
+      LineDeriv.laplacianCLM ℝ (EuclideanSpace ℝ ι)
+        (SchwartzMap (EuclideanSpace ℝ ι) ℂ) φ := by
+  rw [SchwartzMap.laplacianCLM_eq (𝕜 := ℝ)]
+  calc
+    euclideanCoordinateLaplacianSchwartzCLM φ =
+        ∑ k : ι,
+          ∂_{EuclideanSpace.single k (1 : ℝ)}
+            (∂_{EuclideanSpace.single k (1 : ℝ)} φ) := by
+      simp [euclideanCoordinateLaplacianSchwartzCLM]
+    _ = Laplacian.laplacian φ := by
+      simpa using
+        (SchwartzMap.laplacian_eq_sum (EuclideanSpace.basisFun ι ℝ) φ).symm
+
+/-- Transporting the checked complex-chart coordinate Laplacian gives the
+standard Euclidean Laplacian on the flattened chart. -/
+theorem complexChartLaplacianSchwartzCLM_transport {m : ℕ}
+    (φ : SchwartzMap (ComplexChartSpace m) ℂ) :
+    complexChartEuclideanSchwartzCLE m
+        (complexChartLaplacianSchwartzCLM φ) =
+      LineDeriv.laplacianCLM ℝ (EuclideanSpace ℝ (Fin (m * 2)))
+        (SchwartzMap (EuclideanSpace ℝ (Fin (m * 2))) ℂ)
+        (complexChartEuclideanSchwartzCLE m φ) := by
+  rw [← euclideanCoordinateLaplacianSchwartzCLM_eq_laplacianCLM]
+  simp [euclideanCoordinateLaplacianSchwartzCLM,
+    complexChartLaplacianSchwartzCLM_apply, map_sum, map_add,
+    ← complexChartEuclidean_secondLineDeriv_realDir,
+    ← complexChartEuclidean_secondLineDeriv_imagDir]
+  rw [← finProdFinEquiv.sum_comp]
+  rw [Fintype.sum_prod_type]
+  simp [Fin.sum_univ_two]
+
+/-- Transport a complex-chart distribution to the Euclidean flattened chart. -/
+noncomputable def transportedDistributionToEuclidean {m : ℕ}
+    (T : SchwartzMap (ComplexChartSpace m) ℂ →L[ℂ] ℂ) :
+    SchwartzMap (EuclideanSpace ℝ (Fin (m * 2))) ℂ →L[ℂ] ℂ :=
+  T.comp
+    ((complexChartEuclideanSchwartzCLE m).symm :
+      SchwartzMap (EuclideanSpace ℝ (Fin (m * 2))) ℂ →L[ℂ]
+        SchwartzMap (ComplexChartSpace m) ℂ)
+
+@[simp]
+theorem transportedDistributionToEuclidean_apply {m : ℕ}
+    (T : SchwartzMap (ComplexChartSpace m) ℂ →L[ℂ] ℂ)
+    (φ : SchwartzMap (EuclideanSpace ℝ (Fin (m * 2))) ℂ) :
+    transportedDistributionToEuclidean T φ =
+      T ((complexChartEuclideanSchwartzCLE m).symm φ) := rfl
+
+/-- Compact support inside a transported Euclidean open set pulls back to
+compact support inside the original complex chart open set. -/
+theorem supportsInOpen_transport_to_euclidean {m : ℕ}
+    {φ : SchwartzMap (EuclideanSpace ℝ (Fin (m * 2))) ℂ}
+    {U0 : Set (ComplexChartSpace m)}
+    (hφ : SupportsInOpen
+      (φ : EuclideanSpace ℝ (Fin (m * 2)) → ℂ)
+      ((complexChartEuclideanCLE m) '' U0)) :
+    SupportsInOpen
+      (((complexChartEuclideanSchwartzCLE m).symm φ :
+          SchwartzMap (ComplexChartSpace m) ℂ) :
+        ComplexChartSpace m → ℂ) U0 := by
+  let e := complexChartEuclideanCLE m
+  constructor
+  · change HasCompactSupport fun z : ComplexChartSpace m => φ (e z)
+    exact hφ.1.comp_homeomorph e.toHomeomorph
+  · have htsupport :
+        tsupport
+          (((complexChartEuclideanSchwartzCLE m).symm φ :
+              SchwartzMap (ComplexChartSpace m) ℂ) :
+            ComplexChartSpace m → ℂ) =
+          e.toHomeomorph ⁻¹'
+            tsupport (φ : EuclideanSpace ℝ (Fin (m * 2)) → ℂ) := by
+      simpa [e, complexChartEuclideanSchwartzCLE_symm_apply] using
+        (tsupport_comp_eq_preimage
+          (g := (φ : EuclideanSpace ℝ (Fin (m * 2)) → ℂ)) e.toHomeomorph)
+    intro z hz
+    have hez :
+        e z ∈ tsupport
+          (φ : EuclideanSpace ℝ (Fin (m * 2)) → ℂ) := by
+      simpa [htsupport] using hz
+    rcases hφ.2 hez with ⟨z', hz'U, hz'eq⟩
+    exact (e.injective hz'eq).symm ▸ hz'U
+
 end SCV

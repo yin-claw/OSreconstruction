@@ -544,7 +544,10 @@ Current examples:
    `complexChartLaplacianSchwartzCLM_eq_four_sum_dbar_dz`, the reduction from
    distributional `∂bar`-holomorphy to local harmonicity, the localized Weyl
    lemma/parametrix for the real Laplacian after transport from the plain
-   chart to a Euclidean model, the checked `pointwiseDbar` bridge, extraction
+   chart to a Euclidean model, the checked `pointwiseDbar`, Euclidean
+   chart/Schwartz transport bridges, coordinate-direction transport,
+   Laplacian transport, transported distribution, and support transport,
+   extraction
    of pointwise Cauchy-Riemann equations from the smooth representative using the checked
    `∂bar` integration-by-parts theorem, and conversion from real smoothness
    plus CR equations to `DifferentiableOn ℂ`.
