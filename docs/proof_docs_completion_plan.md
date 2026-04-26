@@ -550,9 +550,12 @@ Current examples:
    plus support transport in both directions, the volume-preserving
    chart-change theorem, and the Euclidean-representative pullback theorem.
    The first Euclidean moving-kernel layer for that Weyl route, including
-   reflected support control and compact-kernel continuity, is now checked in
-   `SCV/EuclideanWeyl.lean`.  The remaining Euclidean Weyl proof route is
-   pinned to the pure mollifier scale-invariance proof in
+   reflected support control, derivative commutation, first-order translation
+   seminorm estimates, and compact-kernel continuity, is now checked in
+   `SCV/EuclideanWeyl.lean`.  The next proof-doc/implementation frontier is
+   the split Euclidean difference-quotient theorem for
+   `euclideanTranslateSchwartzCLM`; after that, the remaining Euclidean Weyl
+   proof route is pinned to the pure mollifier scale-invariance proof in
    `docs/scv_infrastructure_blueprint.md`; after it lands, extraction
    of pointwise Cauchy-Riemann equations from the smooth representative using the checked
    `∂bar` integration-by-parts theorem, and conversion from real smoothness

@@ -5328,9 +5328,14 @@ Exact product-kernel/descent subpackage:
    theorem representsDistributionOnComplexDomain_of_euclidean
    def euclideanTranslateSchwartzCLM
    theorem euclideanTranslateSchwartz_apply
+   theorem seminorm_euclideanTranslateSchwartz_le
    def euclideanReflectedTranslate
    theorem euclideanReflectedTranslate_apply
    theorem supportsInOpen_euclideanReflectedTranslate_of_kernelSupport
+   theorem euclideanLineDerivOp_comm
+   theorem euclideanLineDerivOp_iterated_comm
+   theorem fderiv_iteratedFDeriv_eq_iteratedFDeriv_euclideanLineDeriv
+   theorem exists_seminorm_euclideanTranslateSchwartz_sub_le_linear
    theorem tendsto_euclideanTranslateSchwartz_nhds_of_isCompactSupport
    theorem continuous_apply_euclideanTranslateSchwartz_of_isCompactSupport
    theorem continuous_apply_euclideanReflectedTranslate_of_isCompactSupport
@@ -5339,8 +5344,9 @@ Exact product-kernel/descent subpackage:
    The chart/representative declarations are checked in
    `SCV/DistributionalEOWRegularity.lean`; the Euclidean moving-kernel
    declarations are checked in `SCV/EuclideanWeyl.lean`.  The remaining Lean
-   work for this substage is no longer coordinate, support, Jacobian, or
-   reflected-kernel bookkeeping; it is the genuine local Euclidean Weyl theorem.
+   work for this substage is no longer coordinate, support, Jacobian,
+   reflected-kernel bookkeeping, or first-order translation seminorm growth; it
+   is the genuine local Euclidean Weyl theorem.
 
    Exact remaining theorem surfaces for the Weyl package:
 
@@ -5387,8 +5393,9 @@ Exact product-kernel/descent subpackage:
    wrapper and do not add an axiom.  Prove the pure Euclidean theorem by the
    standard mollifier-scale-invariance proof of Weyl's lemma.
 
-   The first Euclidean translation, reflected-kernel support, and compact-kernel
-   continuity layer is now checked in `SCV/EuclideanWeyl.lean`:
+   The first Euclidean translation, reflected-kernel support, derivative
+   commutation, first-order seminorm estimate, and compact-kernel continuity
+   layer is now checked in `SCV/EuclideanWeyl.lean`:
 
    ```lean
    noncomputable def euclideanTranslateSchwartzCLM
@@ -5402,6 +5409,13 @@ Exact product-kernel/descent subpackage:
        (φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ)
        (x : EuclideanSpace ℝ ι) :
        euclideanTranslateSchwartzCLM a φ x = φ (x + a)
+
+   theorem seminorm_euclideanTranslateSchwartz_le
+       (k l : ℕ) (φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ) :
+       ∃ D : ℝ, 0 ≤ D ∧ ∀ a : EuclideanSpace ℝ ι,
+         (SchwartzMap.seminorm ℂ k l)
+           (euclideanTranslateSchwartzCLM a φ) ≤
+           D * (1 + ‖a‖) ^ k
 
    noncomputable def euclideanReflectedTranslate
        (x : EuclideanSpace ℝ ι)
@@ -5424,6 +5438,30 @@ Exact product-kernel/descent subpackage:
          (euclideanReflectedTranslate x ρ :
            EuclideanSpace ℝ ι -> ℂ) V
 
+   theorem euclideanLineDerivOp_comm
+       (φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ)
+       (v w : EuclideanSpace ℝ ι) :
+       ∂_{v} ((∂_{w} φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ)) =
+         ∂_{w} ((∂_{v} φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ))
+
+   theorem fderiv_iteratedFDeriv_eq_iteratedFDeriv_euclideanLineDeriv
+       {n : ℕ}
+       (φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ)
+       (v x : EuclideanSpace ℝ ι) :
+       fderiv ℝ (iteratedFDeriv ℝ n
+           (φ : EuclideanSpace ℝ ι -> ℂ)) x v =
+         iteratedFDeriv ℝ n
+           (((∂_{v} φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ) :
+             EuclideanSpace ℝ ι -> ℂ)) x
+
+   theorem exists_seminorm_euclideanTranslateSchwartz_sub_le_linear
+       (g : SchwartzMap (EuclideanSpace ℝ ι) ℂ)
+       (v : EuclideanSpace ℝ ι) (k n : ℕ) :
+       ∃ C : ℝ, 0 ≤ C ∧
+         ∀ t : ℝ, |t| ≤ 1 ->
+           SchwartzMap.seminorm ℝ k n
+             (euclideanTranslateSchwartzCLM (t • v) g - g) ≤ C * |t|
+
    theorem tendsto_euclideanTranslateSchwartz_nhds_of_isCompactSupport
        (ρ : SchwartzMap (EuclideanSpace ℝ ι) ℂ)
        (hρ_compact : HasCompactSupport
@@ -5444,19 +5482,56 @@ Exact product-kernel/descent subpackage:
            T (euclideanReflectedTranslate x ρ))
    ```
 
-   The proofs are the existing `translateSchwartz` proofs transported from
-   `Fin m -> ℝ` to `EuclideanSpace ℝ ι`: `SchwartzMap.compCLM` for
-   translation, `tsupport_comp_eq_preimage` for support, and
-   `isCompact_closedBall` for compactness.  This layer is already compiled and
-   exported by `SCV.lean`.  The reflected convention is chosen so that the
-   eventual regularization is
+   The proofs are the existing `translateSchwartz` and
+   `TranslationDifferentiation` proofs transported from `Fin m -> ℝ` to
+   `EuclideanSpace ℝ ι`: `SchwartzMap.compCLM` for translation,
+   `tsupport_comp_eq_preimage` for support, `isCompact_closedBall` for
+   compactness, and the standard mean-value/seminorm estimate for
+   `τ_{t v}g - g`.  This layer is already compiled and exported by `SCV.lean`.
+   The reflected convention is chosen so that the eventual regularization is
    `Hρ x = T (euclideanReflectedTranslate x ρ)` and
    `∫ Hρ x * φ x dx = T (ρ̌ * φ)` with Mathlib's convolution convention.
 
    Next upgrade the checked continuity of distributional mollifications to
-   smoothness.  This is the Euclidean analogue of the checked
-   translation-differentiation lemmas in `SCV/TranslationDifferentiation.lean`,
-   but all variables are Euclidean and no OS data enter:
+   differentiability and then smoothness.  The remaining difference-quotient
+   layer should be split into the following genuine Euclidean lemmas rather
+   than proved as one heartbeat-heavy monolith:
+
+   ```lean
+   theorem euclideanDiffQuotient_iteratedFDeriv_pointwise
+       (φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ)
+       (v : EuclideanSpace ℝ ι) (k n : ℕ)
+       {t : ℝ} (ht : t ≠ 0)
+       (x : EuclideanSpace ℝ ι) :
+       iteratedFDeriv ℝ n
+         (↑(t⁻¹ • (euclideanTranslateSchwartzCLM (t • v) φ - φ) -
+             ∂_{v} φ) : EuclideanSpace ℝ ι -> ℂ) x =
+         t⁻¹ •
+           (iteratedFDeriv ℝ n (φ : EuclideanSpace ℝ ι -> ℂ) (x + t • v) -
+            iteratedFDeriv ℝ n (φ : EuclideanSpace ℝ ι -> ℂ) x) -
+         iteratedFDeriv ℝ n
+           (((∂_{v} φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ) :
+             EuclideanSpace ℝ ι -> ℂ)) x
+
+   theorem exists_seminorm_diffQuotient_euclideanTranslateSchwartz_sub_lineDeriv_le
+       (φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ)
+       (v : EuclideanSpace ℝ ι) (k n : ℕ) :
+       ∃ C : ℝ, 0 ≤ C ∧
+         ∀ t : ℝ, t ≠ 0 -> |t| ≤ 1 ->
+           SchwartzMap.seminorm ℝ k n
+             (t⁻¹ • (euclideanTranslateSchwartzCLM (t • v) φ - φ) -
+               ∂_{v} φ) ≤ C * |t|
+
+   theorem tendsto_diffQuotient_euclideanTranslateSchwartz_zero
+       (φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ)
+       (v : EuclideanSpace ℝ ι) :
+       Tendsto
+         (fun t : ℝ =>
+           t⁻¹ • (euclideanTranslateSchwartzCLM (t • v) φ - φ))
+         (nhdsWithin (0 : ℝ) ({0}ᶜ)) (𝓝 (∂_{v} φ))
+   ```
+
+   After those are checked, the distributional derivative theorem is:
 
    ```lean
    theorem hasDerivAt_regularizedDistribution_along
@@ -5479,12 +5554,12 @@ Exact product-kernel/descent subpackage:
          (fun x => T (euclideanReflectedTranslate x ρ))
    ```
 
-   The first theorem is copied from
-   `tendsto_translateSchwartz_nhds_of_isCompactSupport`.  For the derivative
-   formula, start with one direction `v` and prove the displayed
-   one-variable difference quotient
-   using `SCV.exists_seminorm_diffQuotient_translateSchwartz_sub_lineDeriv_le`
-   ported to `EuclideanSpace`; compose the limit with `T.continuous`.
+   For the derivative formula, start with one direction `v` and use
+   `tendsto_diffQuotient_euclideanTranslateSchwartz_zero`; compose the limit
+   with `T.continuous`.  For the reflected translate,
+   `euclideanReflectedTranslate (x + t • v) ρ =
+   euclideanTranslateSchwartzCLM (-(x + t • v)) ρ`, so the derivative is the
+   negative of the translate of `∂_v ρ`.
    Iterate this directional statement, or equivalently prove the corresponding
    Fréchet derivative statement, to obtain `contDiff_regularizedDistribution`.
    The exact sign is fixed by

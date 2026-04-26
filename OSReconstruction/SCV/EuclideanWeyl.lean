@@ -4,6 +4,7 @@ Released under Apache 2.0 license.
 Authors: ModularPhysics Contributors
 -/
 import OSReconstruction.SCV.DistributionalEOWKernel
+import Mathlib.Analysis.Calculus.FDeriv.Symmetric
 
 /-!
 # Euclidean Weyl Infrastructure
@@ -18,6 +19,7 @@ on finite-dimensional Euclidean spaces.
 noncomputable section
 
 open Complex MeasureTheory Topology Metric Set Filter
+open scoped LineDeriv
 
 namespace SCV
 
@@ -53,6 +55,71 @@ theorem euclideanTranslateSchwartz_apply
     (φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ)
     (x : EuclideanSpace ℝ ι) :
     euclideanTranslateSchwartzCLM a φ x = φ (x + a) := rfl
+
+/-- Euclidean translations of a Schwartz function have polynomial seminorm
+growth in the translation parameter. -/
+theorem seminorm_euclideanTranslateSchwartz_le
+    {ι : Type*} [Fintype ι]
+    (k l : ℕ) (f : SchwartzMap (EuclideanSpace ℝ ι) ℂ) :
+    ∃ D : ℝ, 0 ≤ D ∧ ∀ a : EuclideanSpace ℝ ι,
+      (SchwartzMap.seminorm ℂ k l) (euclideanTranslateSchwartzCLM a f) ≤
+        D * (1 + ‖a‖) ^ k := by
+  obtain ⟨Ck, hCk⟩ := f.decay' k l
+  obtain ⟨C0, hC0⟩ := f.decay' 0 l
+  have hC0' :
+      ∀ y : EuclideanSpace ℝ ι, ‖iteratedFDeriv ℝ l (⇑f) y‖ ≤ C0 := by
+    intro y
+    have hy := hC0 y
+    simp [pow_zero] at hy
+    simpa using hy
+  have hCk_nn : 0 ≤ Ck :=
+    le_trans (mul_nonneg (pow_nonneg (norm_nonneg _) k) (norm_nonneg _)) (hCk 0)
+  have hC0_nn : 0 ≤ C0 := le_trans (norm_nonneg _) (hC0' 0)
+  set D := 2 ^ (k - 1) * (Ck + C0)
+  have hD_nn : 0 ≤ D := by
+    dsimp [D]
+    exact mul_nonneg (pow_nonneg (by norm_num : (0 : ℝ) ≤ 2) _) (by linarith)
+  refine ⟨D, hD_nn, fun a => ?_⟩
+  apply SchwartzMap.seminorm_le_bound ℂ k l _ <| mul_nonneg hD_nn
+    (pow_nonneg (by linarith [norm_nonneg a]) k)
+  intro x
+  have hcoe :
+      (⇑(euclideanTranslateSchwartzCLM a f) :
+        EuclideanSpace ℝ ι → ℂ) = fun z => f (z + a) :=
+    funext fun _ => rfl
+  rw [hcoe, iteratedFDeriv_comp_add_right]
+  have hnorm_x : ‖x‖ ≤ ‖x + a‖ + ‖a‖ := by
+    calc
+      ‖x‖ = ‖(x + a) - a‖ := by simp
+      _ ≤ ‖x + a‖ + ‖a‖ := norm_sub_le _ _
+  have h1a : 1 ≤ 1 + ‖a‖ := le_add_of_nonneg_right (norm_nonneg a)
+  have hkey : Ck + ‖a‖ ^ k * C0 ≤ (1 + ‖a‖) ^ k * (Ck + C0) := by
+    rw [mul_add]
+    apply add_le_add
+    · exact le_mul_of_one_le_left hCk_nn (one_le_pow₀ h1a)
+    · exact mul_le_mul_of_nonneg_right
+        (pow_le_pow_left₀ (norm_nonneg a) (le_add_of_nonneg_left zero_le_one) k) hC0_nn
+  calc
+    ‖x‖ ^ k * ‖iteratedFDeriv ℝ l (⇑f) (x + a)‖
+        ≤ (‖x + a‖ + ‖a‖) ^ k * ‖iteratedFDeriv ℝ l (⇑f) (x + a)‖ := by
+          gcongr
+    _ ≤ (2 ^ (k - 1) * (‖x + a‖ ^ k + ‖a‖ ^ k)) *
+          ‖iteratedFDeriv ℝ l (⇑f) (x + a)‖ := by
+          gcongr
+          exact add_pow_le (norm_nonneg _) (norm_nonneg _) k
+    _ = 2 ^ (k - 1) *
+          (‖x + a‖ ^ k * ‖iteratedFDeriv ℝ l (⇑f) (x + a)‖ +
+            ‖a‖ ^ k * ‖iteratedFDeriv ℝ l (⇑f) (x + a)‖) := by
+          ring
+    _ ≤ 2 ^ (k - 1) * (Ck + ‖a‖ ^ k * C0) := by
+          gcongr
+          · exact hCk (x + a)
+          · exact hC0' (x + a)
+    _ ≤ 2 ^ (k - 1) * ((1 + ‖a‖) ^ k * (Ck + C0)) := by
+          gcongr
+    _ = D * (1 + ‖a‖) ^ k := by
+          simp only [D]
+          ring
 
 /-- The reflected translate of a Euclidean Schwartz kernel:
 `euclideanReflectedTranslate x ρ y = ρ (y - x)`. -/
@@ -126,6 +193,237 @@ private theorem iteratedFDeriv_sub_euclidean_schwartz
   rw [hfg, iteratedFDeriv_add_apply hf.contDiffAt hg.neg.contDiffAt,
     hneg, iteratedFDeriv_neg_apply]
   simp [sub_eq_add_neg]
+
+/-- Euclidean directional derivatives of Schwartz functions commute. -/
+theorem euclideanLineDerivOp_comm
+    {ι : Type*} [Fintype ι]
+    (f : SchwartzMap (EuclideanSpace ℝ ι) ℂ)
+    (v w : EuclideanSpace ℝ ι) :
+    ∂_{v} ((∂_{w} f : SchwartzMap (EuclideanSpace ℝ ι) ℂ)) =
+      ∂_{w} ((∂_{v} f : SchwartzMap (EuclideanSpace ℝ ι) ℂ)) := by
+  ext x
+  have hsym :=
+    (f.contDiffAt (2 : ℕ∞) (x := x)).isSymmSndFDerivAt
+      (n := (2 : WithTop ℕ∞)) (by simp)
+  calc
+    (∂_{v} ((∂_{w} f : SchwartzMap (EuclideanSpace ℝ ι) ℂ))) x =
+        (∂^{![v, w]} f) x := by
+      simp [LineDeriv.iteratedLineDerivOp_succ_left]
+    _ = iteratedFDeriv ℝ 2
+          (f : EuclideanSpace ℝ ι → ℂ) x ![v, w] := by
+      simpa using
+        (SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv
+          (f := f) (m := ![v, w]) (x := x))
+    _ = iteratedFDeriv ℝ 2
+          (f : EuclideanSpace ℝ ι → ℂ) x ![w, v] := by
+      exact hsym.iteratedFDeriv_cons
+    _ = (∂^{![w, v]} f) x := by
+      simpa using
+        (SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv
+          (f := f) (m := ![w, v]) (x := x)).symm
+    _ = (∂_{w} ((∂_{v} f : SchwartzMap (EuclideanSpace ℝ ι) ℂ))) x := by
+      simp [LineDeriv.iteratedLineDerivOp_succ_left]
+
+/-- A single Euclidean directional derivative commutes past an iterated
+directional derivative. -/
+theorem euclideanLineDerivOp_iterated_comm
+    {ι : Type*} [Fintype ι] {n : ℕ}
+    (f : SchwartzMap (EuclideanSpace ℝ ι) ℂ)
+    (v : EuclideanSpace ℝ ι)
+    (u : Fin n → EuclideanSpace ℝ ι) :
+    ∂_{v} (∂^{u} f) = ∂^{u} (∂_{v} f) := by
+  induction n generalizing f with
+  | zero =>
+      ext x
+      simp [LineDeriv.iteratedLineDerivOp_fin_zero]
+  | succ n ih =>
+      rw [LineDeriv.iteratedLineDerivOp_succ_right,
+        LineDeriv.iteratedLineDerivOp_succ_right]
+      rw [ih (f := ∂_{u (Fin.last n)} f)]
+      congr 1
+      exact euclideanLineDerivOp_comm f v (u (Fin.last n))
+
+/-- Differentiating an iterated Euclidean derivative in direction `v` is the
+same as iterating after the line derivative `∂_v`. -/
+theorem fderiv_iteratedFDeriv_eq_iteratedFDeriv_euclideanLineDeriv
+    {ι : Type*} [Fintype ι] {n : ℕ}
+    (f : SchwartzMap (EuclideanSpace ℝ ι) ℂ)
+    (v x : EuclideanSpace ℝ ι) :
+    fderiv ℝ (iteratedFDeriv ℝ n
+        (f : EuclideanSpace ℝ ι → ℂ)) x v =
+      iteratedFDeriv ℝ n
+        (((∂_{v} f : SchwartzMap (EuclideanSpace ℝ ι) ℂ) :
+          EuclideanSpace ℝ ι → ℂ)) x := by
+  ext u
+  calc
+    (fderiv ℝ (iteratedFDeriv ℝ n
+        (f : EuclideanSpace ℝ ι → ℂ)) x v) u =
+        iteratedFDeriv ℝ (n + 1)
+          (f : EuclideanSpace ℝ ι → ℂ) x (Fin.cons v u) := by
+      simp [iteratedFDeriv_succ_apply_left]
+    _ = (∂^{Fin.cons v u} f) x := by
+      symm
+      simpa using
+        (SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv
+          (f := f) (m := Fin.cons v u) (x := x))
+    _ = (∂_{v} (∂^{u} f)) x := by
+      simpa using
+        (congrArg (fun g : SchwartzMap (EuclideanSpace ℝ ι) ℂ => g x)
+          (LineDeriv.iteratedLineDerivOp_succ_left
+            (m := Fin.cons v u) (f := f)))
+    _ = (∂^{u} (∂_{v} f)) x := by
+      rw [euclideanLineDerivOp_iterated_comm (f := f) (v := v) (u := u)]
+    _ = iteratedFDeriv ℝ n
+          (((∂_{v} f : SchwartzMap (EuclideanSpace ℝ ι) ℂ) :
+            EuclideanSpace ℝ ι → ℂ)) x u := by
+      simpa using
+        (SchwartzMap.iteratedLineDerivOp_eq_iteratedFDeriv
+          (f := (∂_{v} f : SchwartzMap (EuclideanSpace ℝ ι) ℂ))
+          (m := u) (x := x))
+
+/-- A first-order Euclidean translation estimate in Schwartz seminorms. -/
+theorem exists_seminorm_euclideanTranslateSchwartz_sub_le_linear
+    {ι : Type*} [Fintype ι]
+    (g : SchwartzMap (EuclideanSpace ℝ ι) ℂ)
+    (v : EuclideanSpace ℝ ι) (k n : ℕ) :
+    ∃ C : ℝ, 0 ≤ C ∧
+      ∀ t : ℝ, |t| ≤ 1 →
+        SchwartzMap.seminorm ℝ k n
+          (euclideanTranslateSchwartzCLM (t • v) g - g) ≤ C * |t| := by
+  obtain ⟨D, hD_nonneg, hD⟩ :=
+    seminorm_euclideanTranslateSchwartz_le k (n + 1) g
+  let C : ℝ := ‖v‖ * D * (1 + ‖v‖) ^ k
+  refine ⟨C, by positivity, ?_⟩
+  intro t ht
+  refine SchwartzMap.seminorm_le_bound ℝ k n
+      (euclideanTranslateSchwartzCLM (t • v) g - g)
+      (by positivity) ?_
+  intro x
+  let H :
+      EuclideanSpace ℝ ι →
+        ContinuousMultilinearMap ℝ
+          (fun _ : Fin n => EuclideanSpace ℝ ι) ℂ :=
+    iteratedFDeriv ℝ n (g : EuclideanSpace ℝ ι → ℂ)
+  let hxFun : ℝ →
+      ContinuousMultilinearMap ℝ
+        (fun _ : Fin n => EuclideanSpace ℝ ι) ℂ :=
+    fun s => ‖x‖ ^ k • H (x + s • (t • v))
+  have hH_diff : Differentiable ℝ H := by
+    simpa [H] using
+      (g.smooth (n + 1)).differentiable_iteratedFDeriv (by
+        exact_mod_cast Nat.lt_succ_self n)
+  have hxFun_hasDeriv :
+      ∀ s : ℝ,
+        HasDerivAt hxFun
+          (‖x‖ ^ k • (fderiv ℝ H (x + s • (t • v)) (t • v))) s := by
+    intro s
+    have hgamma :
+        HasDerivAt
+          (fun r : ℝ => x + r • (t • v)) (t • v) s := by
+      let L : ℝ →L[ℝ] ℝ := 1
+      let Lsmul : ℝ →L[ℝ] EuclideanSpace ℝ ι :=
+        ContinuousLinearMap.smulRight L (t • v)
+      simpa [L, Lsmul, ContinuousLinearMap.smulRight_apply, one_smul,
+        add_comm, add_left_comm, add_assoc] using (Lsmul.hasDerivAt).const_add x
+    have hcomp :
+        HasDerivAt (fun r : ℝ => H (x + r • (t • v)))
+          ((fderiv ℝ H (x + s • (t • v))) (t • v)) s := by
+      exact (hH_diff (x + s • (t • v))).hasFDerivAt.comp_hasDerivAt s hgamma
+    simpa [hxFun] using hcomp.const_smul (‖x‖ ^ k)
+  have hxFun_bound :
+      ∀ s ∈ Set.Ico (0 : ℝ) 1,
+        ‖‖x‖ ^ k • (fderiv ℝ H (x + s • (t • v)) (t • v))‖ ≤ C * |t| := by
+    intro s hs
+    have hs_abs : |s| ≤ 1 := by
+      have hs0 : 0 ≤ s := hs.1
+      have hs1 : s ≤ 1 := le_of_lt hs.2
+      rw [abs_of_nonneg hs0]
+      exact hs1
+    have hstv_norm : ‖s • (t • v)‖ ≤ ‖v‖ := by
+      calc
+        ‖s • (t • v)‖ = |s| * (|t| * ‖v‖) := by
+          rw [norm_smul, norm_smul, Real.norm_eq_abs, Real.norm_eq_abs]
+        _ ≤ 1 * (1 * ‖v‖) := by
+          gcongr
+        _ = ‖v‖ := by ring
+    have hone_pow :
+        (1 + ‖s • (t • v)‖) ^ k ≤ (1 + ‖v‖) ^ k := by
+      gcongr
+    have hseminorm0 :
+        ‖x‖ ^ k *
+            ‖iteratedFDeriv ℝ (n + 1)
+              (⇑(euclideanTranslateSchwartzCLM (s • (t • v)) g)) x‖ ≤
+          D * (1 + ‖s • (t • v)‖) ^ k := by
+      exact le_trans (SchwartzMap.le_seminorm ℂ k (n + 1) _ x) (hD (s • (t • v)))
+    have hseminorm :
+        ‖x‖ ^ k *
+            ‖iteratedFDeriv ℝ (n + 1)
+              (g : EuclideanSpace ℝ ι → ℂ) (x + s • (t • v))‖ ≤
+          D * (1 + ‖s • (t • v)‖) ^ k := by
+      have htrans :
+          iteratedFDeriv ℝ (n + 1)
+            (⇑(euclideanTranslateSchwartzCLM (s • (t • v)) g)) x =
+          iteratedFDeriv ℝ (n + 1)
+            (g : EuclideanSpace ℝ ι → ℂ) (x + s • (t • v)) := by
+        simpa using
+          (iteratedFDeriv_comp_add_right
+            (f := (g : EuclideanSpace ℝ ι → ℂ)) (n + 1) (s • (t • v)) x)
+      simpa [htrans] using hseminorm0
+    have hxpow_nonneg : 0 ≤ ‖x‖ ^ k := by positivity
+    calc
+      ‖‖x‖ ^ k • (fderiv ℝ H (x + s • (t • v)) (t • v))‖
+          = ‖x‖ ^ k * ‖(fderiv ℝ H (x + s • (t • v))) (t • v)‖ := by
+            rw [norm_smul, Real.norm_eq_abs, abs_of_nonneg hxpow_nonneg]
+      _ ≤ ‖x‖ ^ k * (‖fderiv ℝ H (x + s • (t • v))‖ * ‖t • v‖) := by
+            gcongr
+            exact ContinuousLinearMap.le_opNorm _ _
+      _ = (‖x‖ ^ k * ‖fderiv ℝ H (x + s • (t • v))‖) * ‖t • v‖ := by
+            ring
+      _ = (‖x‖ ^ k *
+            ‖iteratedFDeriv ℝ (n + 1)
+              (g : EuclideanSpace ℝ ι → ℂ) (x + s • (t • v))‖) *
+            ‖t • v‖ := by
+            rw [norm_fderiv_iteratedFDeriv]
+      _ ≤ (D * (1 + ‖s • (t • v)‖) ^ k) * ‖t • v‖ := by
+            gcongr
+      _ ≤ (D * (1 + ‖v‖) ^ k) * ‖t • v‖ := by
+            gcongr
+      _ = (D * (1 + ‖v‖) ^ k) * (|t| * ‖v‖) := by
+            rw [norm_smul, Real.norm_eq_abs]
+      _ = C * |t| := by
+            dsimp [C]
+            ring
+  have hmv :=
+    norm_image_sub_le_of_norm_deriv_le_segment_01'
+      (f := hxFun)
+      (f' := fun s => ‖x‖ ^ k • (fderiv ℝ H (x + s • (t • v)) (t • v)))
+      (fun s hs => (hxFun_hasDeriv s).hasDerivWithinAt)
+      hxFun_bound
+  have hiter_eq :
+      iteratedFDeriv ℝ n
+        (⇑(euclideanTranslateSchwartzCLM (t • v) g - g)) x =
+        H (x + t • v) - H x := by
+    have htrans :
+        iteratedFDeriv ℝ n
+          (⇑(euclideanTranslateSchwartzCLM (t • v) g)) x =
+          H (x + t • v) := by
+      simpa [H] using
+        (iteratedFDeriv_comp_add_right
+          (f := (g : EuclideanSpace ℝ ι → ℂ)) n (t • v) x)
+    rw [iteratedFDeriv_sub_euclidean_schwartz]
+    rw [htrans]
+  have hxFun_diff :
+      hxFun 1 - hxFun 0 = ‖x‖ ^ k • (H (x + t • v) - H x) := by
+    simp [hxFun, smul_sub]
+  calc
+    ‖x‖ ^ k *
+        ‖iteratedFDeriv ℝ n
+          (⇑(euclideanTranslateSchwartzCLM (t • v) g - g)) x‖
+        = ‖hxFun 1 - hxFun 0‖ := by
+            rw [hxFun_diff, hiter_eq, norm_smul, Real.norm_eq_abs]
+            have hxpow_nonneg : 0 ≤ ‖x‖ ^ k := by positivity
+            simp [abs_of_nonneg hxpow_nonneg]
+    _ ≤ C * |t| := by simpa [sub_eq_add_neg] using hmv
 
 /-- Compactly supported Euclidean translations are continuous in the Schwartz
 topology. -/
