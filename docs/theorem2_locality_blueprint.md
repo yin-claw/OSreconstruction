@@ -1350,9 +1350,10 @@ Current implementation order:
    pullback theorem are checked as well.  The first pure Euclidean
    moving-kernel layer for the Weyl route, including reflected translate support
    control, derivative commutation, first-order translation seminorm estimates,
-   and compact-kernel continuity in Schwartz topology, is checked in
-   `SCV/EuclideanWeyl.lean`.  The next genuine SCV substrate target is to split
-   and close the Euclidean difference-quotient theorem for
+   the pointwise quotient-derivative identity, and compact-kernel continuity in
+   Schwartz topology, is checked in `SCV/EuclideanWeyl.lean`.  The next genuine
+   SCV substrate target is to close the remaining seminorm and topology pieces
+   of the Euclidean difference-quotient theorem for
    `euclideanTranslateSchwartzCLM`, then the localized Euclidean Weyl theorem
    itself, now routed through the mollifier-scale-invariance proof recorded in
    `docs/scv_infrastructure_blueprint.md`, followed by pointwise CR extraction and

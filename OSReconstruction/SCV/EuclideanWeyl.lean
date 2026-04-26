@@ -425,6 +425,73 @@ theorem exists_seminorm_euclideanTranslateSchwartz_sub_le_linear
             simp [abs_of_nonneg hxpow_nonneg]
     _ ≤ C * |t| := by simpa [sub_eq_add_neg] using hmv
 
+/-- Pointwise iterated-derivative formula for the Euclidean translation
+difference-quotient error. -/
+theorem euclideanDiffQuotient_iteratedFDeriv_pointwise
+    {ι : Type*} [Fintype ι] {n : ℕ}
+    (φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ)
+    (v : EuclideanSpace ℝ ι) {t : ℝ} (_ht : t ≠ 0)
+    (x : EuclideanSpace ℝ ι) :
+    iteratedFDeriv ℝ n
+      (↑(t⁻¹ • (euclideanTranslateSchwartzCLM (t • v) φ - φ) - ∂_{v} φ) :
+        EuclideanSpace ℝ ι → ℂ) x =
+      t⁻¹ •
+        (iteratedFDeriv ℝ n (φ : EuclideanSpace ℝ ι → ℂ) (x + t • v) -
+          iteratedFDeriv ℝ n (φ : EuclideanSpace ℝ ι → ℂ) x) -
+      iteratedFDeriv ℝ n
+        (((∂_{v} φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ) :
+          EuclideanSpace ℝ ι → ℂ)) x := by
+  let g : SchwartzMap (EuclideanSpace ℝ ι) ℂ := ∂_{v} φ
+  have hshift_sub :
+      iteratedFDeriv ℝ n
+        (⇑(euclideanTranslateSchwartzCLM (t • v) φ - φ)) x =
+        iteratedFDeriv ℝ n (φ : EuclideanSpace ℝ ι → ℂ) (x + t • v) -
+          iteratedFDeriv ℝ n (φ : EuclideanSpace ℝ ι → ℂ) x := by
+    have hshift :
+        iteratedFDeriv ℝ n
+          (⇑(euclideanTranslateSchwartzCLM (t • v) φ)) x =
+          iteratedFDeriv ℝ n (φ : EuclideanSpace ℝ ι → ℂ) (x + t • v) := by
+      simpa using
+        (iteratedFDeriv_comp_add_right
+          (f := (φ : EuclideanSpace ℝ ι → ℂ)) n (t • v) x)
+    rw [iteratedFDeriv_sub_euclidean_schwartz, hshift]
+  change
+    iteratedFDeriv ℝ n
+      (⇑(t⁻¹ • (euclideanTranslateSchwartzCLM (t • v) φ - φ)) +
+        fun z => -((g : EuclideanSpace ℝ ι → ℂ) z)) x =
+      t⁻¹ •
+        (iteratedFDeriv ℝ n (φ : EuclideanSpace ℝ ι → ℂ) (x + t • v) -
+          iteratedFDeriv ℝ n (φ : EuclideanSpace ℝ ι → ℂ) x) -
+      iteratedFDeriv ℝ n
+        (((∂_{v} φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ) :
+          EuclideanSpace ℝ ι → ℂ)) x
+  rw [iteratedFDeriv_add_apply
+    ((t⁻¹ • (euclideanTranslateSchwartzCLM (t • v) φ - φ)).smooth n).contDiffAt
+    (g.smooth n).neg.contDiffAt]
+  have hsc :
+      iteratedFDeriv ℝ n
+        (⇑(t⁻¹ • (euclideanTranslateSchwartzCLM (t • v) φ - φ))) x =
+        t⁻¹ • iteratedFDeriv ℝ n
+          (⇑(euclideanTranslateSchwartzCLM (t • v) φ - φ)) x := by
+    simpa [Pi.smul_apply] using
+      (iteratedFDeriv_const_smul_apply'
+        (𝕜 := ℝ) (a := t⁻¹)
+        (f := (⇑(euclideanTranslateSchwartzCLM (t • v) φ - φ) :
+          EuclideanSpace ℝ ι → ℂ))
+        (x := x)
+        ((euclideanTranslateSchwartzCLM (t • v) φ - φ).smooth n).contDiffAt)
+  have hneg :
+      iteratedFDeriv ℝ n
+        (fun z => -((g : EuclideanSpace ℝ ι → ℂ) z)) x =
+        -iteratedFDeriv ℝ n
+          (((∂_{v} φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ) :
+            EuclideanSpace ℝ ι → ℂ)) x := by
+    simpa [g] using
+      (iteratedFDeriv_neg_apply (𝕜 := ℝ) (i := n)
+        (f := (g : EuclideanSpace ℝ ι → ℂ)) (x := x))
+  rw [hsc, hneg, hshift_sub]
+  simp [sub_eq_add_neg, add_left_comm, add_comm]
+
 /-- Compactly supported Euclidean translations are continuous in the Schwartz
 topology. -/
 theorem tendsto_euclideanTranslateSchwartz_nhds_of_isCompactSupport

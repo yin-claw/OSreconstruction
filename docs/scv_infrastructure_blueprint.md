@@ -5336,6 +5336,7 @@ Exact product-kernel/descent subpackage:
    theorem euclideanLineDerivOp_iterated_comm
    theorem fderiv_iteratedFDeriv_eq_iteratedFDeriv_euclideanLineDeriv
    theorem exists_seminorm_euclideanTranslateSchwartz_sub_le_linear
+   theorem euclideanDiffQuotient_iteratedFDeriv_pointwise
    theorem tendsto_euclideanTranslateSchwartz_nhds_of_isCompactSupport
    theorem continuous_apply_euclideanTranslateSchwartz_of_isCompactSupport
    theorem continuous_apply_euclideanReflectedTranslate_of_isCompactSupport
@@ -5462,6 +5463,21 @@ Exact product-kernel/descent subpackage:
            SchwartzMap.seminorm ℝ k n
              (euclideanTranslateSchwartzCLM (t • v) g - g) ≤ C * |t|
 
+   theorem euclideanDiffQuotient_iteratedFDeriv_pointwise
+       {n : ℕ}
+       (φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ)
+       (v : EuclideanSpace ℝ ι) {t : ℝ} (ht : t ≠ 0)
+       (x : EuclideanSpace ℝ ι) :
+       iteratedFDeriv ℝ n
+         (↑(t⁻¹ • (euclideanTranslateSchwartzCLM (t • v) φ - φ) -
+             ∂_{v} φ) : EuclideanSpace ℝ ι -> ℂ) x =
+         t⁻¹ •
+           (iteratedFDeriv ℝ n (φ : EuclideanSpace ℝ ι -> ℂ) (x + t • v) -
+            iteratedFDeriv ℝ n (φ : EuclideanSpace ℝ ι -> ℂ) x) -
+         iteratedFDeriv ℝ n
+           (((∂_{v} φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ) :
+             EuclideanSpace ℝ ι -> ℂ)) x
+
    theorem tendsto_euclideanTranslateSchwartz_nhds_of_isCompactSupport
        (ρ : SchwartzMap (EuclideanSpace ℝ ι) ℂ)
        (hρ_compact : HasCompactSupport
@@ -5493,26 +5509,12 @@ Exact product-kernel/descent subpackage:
    `∫ Hρ x * φ x dx = T (ρ̌ * φ)` with Mathlib's convolution convention.
 
    Next upgrade the checked continuity of distributional mollifications to
-   differentiability and then smoothness.  The remaining difference-quotient
-   layer should be split into the following genuine Euclidean lemmas rather
-   than proved as one heartbeat-heavy monolith:
+   differentiability and then smoothness.  The first lemma in the split
+   difference-quotient layer,
+   `euclideanDiffQuotient_iteratedFDeriv_pointwise`, is checked.  The remaining
+   difference-quotient layer is:
 
    ```lean
-   theorem euclideanDiffQuotient_iteratedFDeriv_pointwise
-       (φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ)
-       (v : EuclideanSpace ℝ ι) (k n : ℕ)
-       {t : ℝ} (ht : t ≠ 0)
-       (x : EuclideanSpace ℝ ι) :
-       iteratedFDeriv ℝ n
-         (↑(t⁻¹ • (euclideanTranslateSchwartzCLM (t • v) φ - φ) -
-             ∂_{v} φ) : EuclideanSpace ℝ ι -> ℂ) x =
-         t⁻¹ •
-           (iteratedFDeriv ℝ n (φ : EuclideanSpace ℝ ι -> ℂ) (x + t • v) -
-            iteratedFDeriv ℝ n (φ : EuclideanSpace ℝ ι -> ℂ) x) -
-         iteratedFDeriv ℝ n
-           (((∂_{v} φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ) :
-             EuclideanSpace ℝ ι -> ℂ)) x
-
    theorem exists_seminorm_diffQuotient_euclideanTranslateSchwartz_sub_lineDeriv_le
        (φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ)
        (v : EuclideanSpace ℝ ι) (k n : ℕ) :

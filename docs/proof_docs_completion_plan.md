@@ -551,9 +551,10 @@ Current examples:
    chart-change theorem, and the Euclidean-representative pullback theorem.
    The first Euclidean moving-kernel layer for that Weyl route, including
    reflected support control, derivative commutation, first-order translation
-   seminorm estimates, and compact-kernel continuity, is now checked in
-   `SCV/EuclideanWeyl.lean`.  The next proof-doc/implementation frontier is
-   the split Euclidean difference-quotient theorem for
+   seminorm estimates, the pointwise quotient-derivative identity, and
+   compact-kernel continuity, is now checked in `SCV/EuclideanWeyl.lean`.  The
+   next proof-doc/implementation frontier is the remaining seminorm and
+   topology pieces of the split Euclidean difference-quotient theorem for
    `euclideanTranslateSchwartzCLM`; after that, the remaining Euclidean Weyl
    proof route is pinned to the pure mollifier scale-invariance proof in
    `docs/scv_infrastructure_blueprint.md`; after it lands, extraction
