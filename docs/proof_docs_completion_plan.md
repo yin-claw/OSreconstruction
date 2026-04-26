@@ -660,10 +660,41 @@ Current examples:
 	   `euclidean_weyl_laplacian_distribution_regular_on_open` are now checked
 	   in `SCV/EuclideanWeylOpen.lean`.
 	   Zero-dimensional bump-difference bookkeeping is only needed if a
-	   dimension-free caller requires it.  Extraction of pointwise Cauchy-Riemann equations from the smooth
-	   representative then uses the checked `∂bar` integration-by-parts theorem,
-	   followed by conversion from real smoothness plus CR equations to
-	   `DifferentiableOn ℂ`.
+	   dimension-free caller requires it.  The downstream complex-chart
+	   holomorphic regularity layer is now checked in
+	   `SCV/DistributionalEOWHolomorphic.lean`: the open-set Euclidean Weyl
+	   theorem has been transported through `complexChartEuclideanCLE` as
+	   `weyl_laplacian_distribution_regular_on_open`; the local fundamental
+	   lemma for continuous-on-open functions tested against `SupportsInOpen`
+	   Schwartz functions is checked; the real-smooth cutoff representative
+	   with `dbar G = pointwiseDbar H` on `tsupport φ` is checked; distributional
+	   `∂bar` holomorphy is converted to pointwise `pointwiseDbar = 0`; and the
+	   finite-dimensional CR linear algebra now supplies
+	   `differentiableOn_complex_of_contDiffOn_real_and_pointwiseDbar_zero`.
+	   The final assembled theorem
+	   `SCV.distributionalHolomorphic_regular` is checked with no new axioms or
+	   sorrys.  The next theorem-2 SCV frontier is therefore the
+	   regularized-envelope recovery and local continuous EOW extraction, not
+	   additional Weyl/CR regularity.  The next small Lean bridge is now checked
+	   as
+	   `SCV.regularizedEnvelope_holomorphicDistribution_from_productKernel`:
+	   combine product-kernel descent, the checked compact approximate identity,
+	   the checked product-kernel `∂bar` consumer, and
+	   `SCV.distributionalHolomorphic_regular` to obtain a holomorphic chart
+	   representative for the descended distribution.  The delta-limit recovery
+	   layer is now also checked in `SCV/DistributionalEOWKernelRecovery.lean`:
+	   `eventually_translate_mem_open_of_shrinking_support`,
+	   `integrable_continuousOn_realTranslate_mul_kernel`,
+	   `regularizedEnvelope_difference_integral_identity_eventually`,
+	   `regularizedEnvelope_kernelLimit_from_difference_integral`,
+	   `regularizedEnvelope_kernelLimit_from_representation`,
+	   `realMollifyLocal`, and
+	   `regularizedEnvelope_deltaLimit_agreesOnWedges` together derive
+	   `G (ψn n) z -> H z` from the actual representation integral and then
+	   identify `H` with the plus/minus side functions by limit uniqueness.
+	   The remaining theorem-2 SCV frontier is therefore no longer
+	   Weyl/regularity or the delta-limit estimate; it is the upstream
+	   regularized-family construction and the local envelope assembly/patching.
    The initial coordinate and trace-membership support
    `BHW.configPermCLE`, `BHW.os45CommonChartCLE`,
    `BHW.wickRotate_ordered_mem_acrOne`,

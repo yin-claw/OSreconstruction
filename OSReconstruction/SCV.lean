@@ -31,6 +31,7 @@ import OSReconstruction.SCV.EuclideanWeylPairing
 import OSReconstruction.SCV.EuclideanWeylApproxIdentity
 import OSReconstruction.SCV.EuclideanWeylRepresentation
 import OSReconstruction.SCV.EuclideanWeylOpen
+import OSReconstruction.SCV.DistributionalEOWHolomorphic
 import OSReconstruction.SCV.SchwartzPrependField
 import OSReconstruction.SCV.SchwartzPartialEval
 import OSReconstruction.SCV.TranslationDifferentiation
@@ -43,6 +44,7 @@ import OSReconstruction.SCV.DistributionalEOWKernelTransport
 import OSReconstruction.SCV.DistributionalEOWKernelFactorization
 import OSReconstruction.SCV.DistributionalEOWProductKernel
 import OSReconstruction.SCV.ProductDensity
+import OSReconstruction.SCV.DistributionalEOWKernelRecovery
 import OSReconstruction.SCV.HasFDerivAtProd
 import OSReconstruction.SCV.PartialFourierSpatial
 

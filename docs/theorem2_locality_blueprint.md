@@ -1446,9 +1446,28 @@ Current implementation order:
 	   `euclideanWeylBallRepresentative_represents_on_ball`.  The finite
 	   summation identity and the full open-set theorem
 	   `euclidean_weyl_laplacian_distribution_regular_on_open` are now checked
-	   in `SCV/EuclideanWeylOpen.lean`.  The route now continues with pointwise CR extraction and
-	   real-smooth-plus-CR-to-complex-differentiability, as recorded in
-	   `docs/scv_infrastructure_blueprint.md`.  The tensor-level sign bridge before
+	   in `SCV/EuclideanWeylOpen.lean`.  The downstream complex-chart theorem
+	   `SCV.distributionalHolomorphic_regular` is now checked in
+	   `SCV/DistributionalEOWHolomorphic.lean`: Euclidean Weyl is transported
+	   through `complexChartEuclideanCLE`, distributional `∂bar = 0` is
+	   extracted to pointwise `pointwiseDbar = 0` by the local fundamental lemma
+	   and cutoff representative, and finite-dimensional CR linear algebra gives
+	   the complex derivative witness.  The next local SCV targets are therefore
+	   regularized-envelope recovery, local continuous EOW extraction, and
+	   patching, all as recorded in `docs/scv_infrastructure_blueprint.md`.
+	   The immediate checked bridge is now
+	   `SCV.regularizedEnvelope_holomorphicDistribution_from_productKernel`,
+	   which assembles product-kernel descent, compact approximate identities,
+	   the product-kernel `∂bar` consumer, and
+	   `SCV.distributionalHolomorphic_regular`.  The downstream delta-limit
+	   agreement is now checked as well: shrinking-support geometry,
+	   compact-support integrability, the representation-to-difference identity,
+	   `SCV.regularizedEnvelope_kernelLimit_from_representation`, and
+	   `SCV.regularizedEnvelope_deltaLimit_agreesOnWedges` are all in
+	   `SCV/DistributionalEOWKernelRecovery.lean`.  The remaining theorem-2
+	   SCV frontier is the upstream regularized-family construction plus the
+	   local envelope assembly/patching, not an assumed `hkernel_limit`.
+	   The tensor-level sign bridge before
    the density step remains explicit:
    `SCV.shearedProductKernel_fiberTranslate_shearedTensor_eq_self_of_productCovariant`
    proves invariance on each sheared product tensor by applying
