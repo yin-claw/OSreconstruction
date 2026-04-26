@@ -539,11 +539,13 @@ Current examples:
    SCV envelope can be applied.
    The next proof-doc frontier is now exactly
    `SCV.distributionalHolomorphic_regular`.  The blueprint records the Lean
-   helper sequence: `dzSchwartzCLM` and its support lemmas, the
-   `laplacianSchwartzCLM_eq_four_sum_dbar_dz` identity, the reduction from
+   helper sequence: `dzSchwartzCLM` and its support lemmas, the checked
+   coordinate-Laplacian identity
+   `complexChartLaplacianSchwartzCLM_eq_four_sum_dbar_dz`, the reduction from
    distributional `∂bar`-holomorphy to local harmonicity, the localized Weyl
-   lemma/parametrix for the real Laplacian, extraction of pointwise
-   Cauchy-Riemann equations from the smooth representative using the checked
+   lemma/parametrix for the real Laplacian after transport from the plain
+   chart to a Euclidean model, the checked `pointwiseDbar` bridge, extraction
+   of pointwise Cauchy-Riemann equations from the smooth representative using the checked
    `∂bar` integration-by-parts theorem, and conversion from real smoothness
    plus CR equations to `DifferentiableOn ℂ`.
    The initial coordinate and trace-membership support

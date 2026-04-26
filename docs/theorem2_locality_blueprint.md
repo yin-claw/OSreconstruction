@@ -1335,9 +1335,17 @@ Current implementation order:
    `SCV.regularizedEnvelope_productKernel_dbar_eq_zero`,
    `SCV.translationCovariantKernel_distributionalHolomorphic`,
    `SCV.tendsto_realConvolutionTest_of_shrinking_normalized_support`, and
-   `SCV.exists_realConvolutionTest_approxIdentity`.  The next genuine SCV
-   substrate target is therefore `SCV.distributionalHolomorphic_regular`, whose
-   proof-doc route is the localized Weyl/`∂bar` regularity package recorded in
+   `SCV.exists_realConvolutionTest_approxIdentity`.  The first
+   `SCV.distributionalHolomorphic_regular` calculus layer is also checked in
+   `SCV/DistributionalEOWRegularity.lean`: `dzSchwartzCLM`, support
+   preservation, real-direction commutation, the coordinate-Laplacian identity
+   `SCV.complexChartLaplacianSchwartzCLM_eq_four_sum_dbar_dz`, and
+   `SCV.local_laplacian_zero_of_distributionalHolomorphic`, plus the
+   `SCV.pointwiseDbar` definition and
+   `SCV.dbarSchwartzCLM_apply_eq_pointwiseDbar` bridge.  The next genuine
+   SCV substrate target is therefore the localized Weyl/parametrix theorem for
+   `SCV.complexChartLaplacianSchwartzCLM`, followed by pointwise CR extraction
+   and real-smooth-plus-CR-to-complex-differentiability, as recorded in
    `docs/scv_infrastructure_blueprint.md`.  The tensor-level sign bridge before
    the density step remains explicit:
    `SCV.shearedProductKernel_fiberTranslate_shearedTensor_eq_self_of_productCovariant`

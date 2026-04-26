@@ -4858,8 +4858,12 @@ Exact product-kernel/descent subpackage:
    `DistributionalEOWApproxIdentity` and mathlib's distribution derivative
    files.  Do not put it back into the large kernel file.
 
-   The first internal layer is the test-function `∂/∂z_j` operator and the
-   real Laplacian identity.  These are genuine calculus facts, not wrappers:
+   The first internal layer is the test-function `∂/∂z_j` operator, support
+   preservation, commutation of the real coordinate derivatives, and the real
+   Laplacian identity.  These are genuine finite-dimensional calculus facts,
+   not wrappers.  The Lean implementation should be staged so that the
+   support/commutation package is checked before the Laplacian and Weyl
+   layers are attempted.
 
    ```lean
    def dzSchwartzCLM {m : ℕ} (j : Fin m) :
@@ -4885,12 +4889,134 @@ Exact product-kernel/descent subpackage:
        (j : Fin m) (φ : SchwartzMap (ComplexChartSpace m) ℂ) :
        dbarSchwartzCLM j (dzSchwartzCLM j φ) =
          dzSchwartzCLM j (dbarSchwartzCLM j φ)
+   ```
 
+   The first checked slice of `SCV/DistributionalEOWRegularity.lean` now
+   contains the following local calculus package:
+
+   ```lean
+   def dzSchwartzCLM {m : ℕ} (j : Fin m) :
+       SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ]
+         SchwartzMap (ComplexChartSpace m) ℂ
+
+   theorem dzSchwartzCLM_tsupport_subset
+       (j : Fin m) (φ : SchwartzMap (ComplexChartSpace m) ℂ) :
+       tsupport ((dzSchwartzCLM j φ : SchwartzMap (ComplexChartSpace m) ℂ) :
+         ComplexChartSpace m -> ℂ) ⊆
+       tsupport (φ : ComplexChartSpace m -> ℂ)
+
+   theorem SupportsInOpen.dz
+       (hφ : SupportsInOpen (φ : ComplexChartSpace m -> ℂ) U0)
+       (j : Fin m) :
+       SupportsInOpen ((dzSchwartzCLM j φ : SchwartzMap (ComplexChartSpace m) ℂ) :
+         ComplexChartSpace m -> ℂ) U0
+
+   theorem lineDerivOp_comm_complex
+       (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+       (v w : ComplexChartSpace m) :
+       ∂_{v} ((∂_{w} φ : SchwartzMap (ComplexChartSpace m) ℂ)) =
+         ∂_{w} ((∂_{v} φ : SchwartzMap (ComplexChartSpace m) ℂ))
+
+   theorem directionalDerivSchwartzCLM_comm
+       (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+       (v w : ComplexChartSpace m) :
+       directionalDerivSchwartzCLM v (directionalDerivSchwartzCLM w φ) =
+         directionalDerivSchwartzCLM w (directionalDerivSchwartzCLM v φ)
+
+   theorem dbar_dzSchwartzCLM_comm
+       (j : Fin m) (φ : SchwartzMap (ComplexChartSpace m) ℂ) :
+       dbarSchwartzCLM j (dzSchwartzCLM j φ) =
+         dzSchwartzCLM j (dbarSchwartzCLM j φ)
+   ```
+
+   Proof transcript for this first slice.  The definition of `dzSchwartzCLM`
+   is the standard Wirtinger operator
+   `1/2 (D_{x_j} - i D_{y_j})` on tests.  Its support lemma is literally the
+   checked `dbarSchwartzCLM_tsupport_subset` proof with `Complex.I` replaced
+   by `-Complex.I`: use `directionalDerivSchwartzCLM_tsupport_subset` for
+   both real coordinate derivatives, then use `tsupport_smul_subset_right` and
+   `tsupport_add` for the finite linear combination.  `SupportsInOpen.dz`
+   follows by the same `subset_tsupport` argument as `SupportsInOpen.dbar`.
+   The commutation lemma is copied from the checked
+   `SCV.TranslationDifferentiation.lineDerivOp_comm` proof, with domain
+   `ComplexChartSpace m`: at each point, `φ.contDiffAt 2` gives
+   `isSymmSndFDerivAt`; converting both iterated line derivatives to
+   `iteratedFDeriv ℝ 2` and swapping the two inputs proves equality.  Finally
+   `dbar_dzSchwartzCLM_comm` expands the two continuous linear maps and uses
+   the real-direction commutation for `complexRealDir j` and
+   `complexImagDir j`.  The scalar algebra is the identity
+   `(D_x + i D_y)(D_x - i D_y) = (D_x - i D_y)(D_x + i D_y)` after the two
+   mixed derivatives have been identified.
+
+   The second internal layer is now also checked, with one important Lean-side
+   correction.  The repo's `ComplexChartSpace m` is the plain finite Pi chart
+   carrying the existing Schwartz-space norm, not Mathlib's `PiLp 2`
+   Euclidean type.  Therefore the production theorem must not impose a fake
+   `InnerProductSpace ℝ (ComplexChartSpace m)` instance just to call
+   `LineDeriv.laplacianCLM`.  Instead, define the honest coordinate Laplacian
+   used by the SCV proof:
+
+   ```lean
+   def complexChartLaplacianSchwartzCLM {m : ℕ} :
+       SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ]
+         SchwartzMap (ComplexChartSpace m) ℂ :=
+     ∑ j : Fin m,
+       ((directionalDerivSchwartzCLM (complexRealDir j)).comp
+           (directionalDerivSchwartzCLM (complexRealDir j)) +
+         (directionalDerivSchwartzCLM (complexImagDir j)).comp
+           (directionalDerivSchwartzCLM (complexImagDir j)))
+
+   theorem complexChartLaplacianSchwartzCLM_apply
+       (φ : SchwartzMap (ComplexChartSpace m) ℂ) :
+       complexChartLaplacianSchwartzCLM φ =
+         ∑ j : Fin m,
+           (directionalDerivSchwartzCLM (complexRealDir j)
+               (directionalDerivSchwartzCLM (complexRealDir j) φ) +
+             directionalDerivSchwartzCLM (complexImagDir j)
+               (directionalDerivSchwartzCLM (complexImagDir j) φ))
+
+   theorem four_dbar_dzSchwartzCLM_eq_real_imag_second
+       (j : Fin m) (φ : SchwartzMap (ComplexChartSpace m) ℂ) :
+       (4 : ℂ) • dbarSchwartzCLM j (dzSchwartzCLM j φ) =
+         directionalDerivSchwartzCLM (complexRealDir j)
+             (directionalDerivSchwartzCLM (complexRealDir j) φ) +
+           directionalDerivSchwartzCLM (complexImagDir j)
+             (directionalDerivSchwartzCLM (complexImagDir j) φ)
+
+   theorem complexChartLaplacianSchwartzCLM_eq_four_sum_dbar_dz
+       (φ : SchwartzMap (ComplexChartSpace m) ℂ) :
+       complexChartLaplacianSchwartzCLM φ =
+         (4 : ℂ) •
+           ∑ j : Fin m, dbarSchwartzCLM j (dzSchwartzCLM j φ)
+
+   theorem local_laplacian_zero_of_distributionalHolomorphic
+       (Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ)
+       {U0 : Set (ComplexChartSpace m)}
+       (hCR : IsDistributionalHolomorphicOn Hdist U0)
+       (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+       (hφ : SupportsInOpen (φ : ComplexChartSpace m -> ℂ) U0) :
+       Hdist (complexChartLaplacianSchwartzCLM φ) = 0
+   ```
+
+   Proof transcript for the checked coordinate Laplacian layer.  The apply
+   theorem is just evaluation of a finite sum of continuous linear maps.
+   For each coordinate, expand `dbarSchwartzCLM` and `dzSchwartzCLM`, use
+   `directionalDerivSchwartzCLM_comm` to identify the mixed derivatives, and
+   simplify the scalar identity `I^2 = -1`; this proves
+   `four_dbar_dzSchwartzCLM_eq_real_imag_second`.  Summing over `Fin m` gives
+   `complexChartLaplacianSchwartzCLM_eq_four_sum_dbar_dz`.  The distributional
+   harmonicity theorem then pushes `Hdist` through the scalar and finite sum
+   and applies `hCR j (dzSchwartzCLM j φ) (hφ.dz j)`.
+
+   The older candidate theorem below was intentionally rejected during
+   implementation:
+
+   ```lean
    theorem laplacianSchwartzCLM_eq_four_sum_dbar_dz
        (φ : SchwartzMap (ComplexChartSpace m) ℂ) :
        LineDeriv.laplacianCLM ℝ (ComplexChartSpace m)
            (SchwartzMap (ComplexChartSpace m) ℂ) φ =
-         (4 : ℂ) •
+           (4 : ℂ) •
            ∑ j : Fin m, dbarSchwartzCLM j (dzSchwartzCLM j φ)
 
    theorem local_laplacian_zero_of_distributionalHolomorphic
@@ -4901,16 +5027,14 @@ Exact product-kernel/descent subpackage:
        (hφ : SupportsInOpen (φ : ComplexChartSpace m -> ℂ) U0) :
        Hdist
          (LineDeriv.laplacianCLM ℝ (ComplexChartSpace m)
-           (SchwartzMap (ComplexChartSpace m) ℂ) φ) = 0
+               (SchwartzMap (ComplexChartSpace m) ℂ) φ) = 0
    ```
 
-   The proof of the last theorem rewrites the Laplacian by
-   `laplacianSchwartzCLM_eq_four_sum_dbar_dz`, pushes `Hdist` through the finite
-   sum and scalar, and applies `hCR j (dzSchwartzCLM j φ) (hφ.dz j)`.
-   The support lemmas follow exactly the pattern already checked for
-   `dbarSchwartzCLM_tsupport_subset`: each directional derivative has support
-   contained in the original topological support, and finite linear
-   combinations preserve the subset.
+   It is mathematically equivalent only after transporting the plain chart to
+   a Euclidean `PiLp 2` model, but it is not a Lean-ready statement on
+   `ComplexChartSpace m` itself.  The Euclidean transport belongs in the Weyl
+   theorem proof, where norm-equivalence and chart linear-equivalence
+   bookkeeping are unavoidable and mathematically meaningful.
 
    The hard analytic input is Weyl's lemma for the real Laplacian, localized to
    Schwartz tests.  This is the remaining genuine mathematical theorem for this
@@ -4925,20 +5049,106 @@ Exact product-kernel/descent subpackage:
        (hΔ :
          ∀ φ : SchwartzMap (ComplexChartSpace m) ℂ,
            SupportsInOpen (φ : ComplexChartSpace m -> ℂ) U0 ->
-             T
-               (LineDeriv.laplacianCLM ℝ (ComplexChartSpace m)
-                 (SchwartzMap (ComplexChartSpace m) ℂ) φ) = 0) :
+             T (complexChartLaplacianSchwartzCLM φ) = 0) :
        ∃ H : ComplexChartSpace m -> ℂ,
          ContDiffOn ℝ (⊤ : ℕ∞) H U0 ∧
          RepresentsDistributionOnComplexDomain T H U0
    ```
 
+   Lean helper sequence for the Weyl transport layer.  These are the next
+   proof-doc targets before implementing the parametrix itself:
+
+   ```lean
+   noncomputable def complexChartEuclideanCLE (m : ℕ) :
+       ComplexChartSpace m ≃L[ℝ] EuclideanSpace ℝ (Fin (m * 2)) :=
+     (complexChartRealFlattenCLE m).trans
+       (EuclideanSpace.equiv (Fin (m * 2)) ℝ).symm
+
+   noncomputable def complexChartEuclideanSchwartzCLE (m : ℕ) :
+       SchwartzMap (ComplexChartSpace m) ℂ ≃L[ℂ]
+         SchwartzMap (EuclideanSpace ℝ (Fin (m * 2))) ℂ
+
+   theorem complexChartEuclideanCLE_realDir
+       (j : Fin m) :
+       complexChartEuclideanCLE m (complexRealDir j) =
+         (EuclideanSpace.equiv (Fin (m * 2)) ℝ).symm
+           (fun k => if k = finProdFinEquiv (j, (0 : Fin 2)) then 1 else 0)
+
+   theorem complexChartEuclideanCLE_imagDir
+       (j : Fin m) :
+       complexChartEuclideanCLE m (complexImagDir j) =
+         (EuclideanSpace.equiv (Fin (m * 2)) ℝ).symm
+           (fun k => if k = finProdFinEquiv (j, (1 : Fin 2)) then 1 else 0)
+
+   theorem complexChartLaplacianSchwartzCLM_transport
+       (φ : SchwartzMap (ComplexChartSpace m) ℂ) :
+       complexChartEuclideanSchwartzCLE m
+           (complexChartLaplacianSchwartzCLM φ) =
+         LineDeriv.laplacianCLM ℝ (EuclideanSpace ℝ (Fin (m * 2)))
+           (SchwartzMap (EuclideanSpace ℝ (Fin (m * 2))) ℂ)
+           (complexChartEuclideanSchwartzCLE m φ)
+
+   def transportedDistributionToEuclidean
+       (T : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ) :
+       SchwartzMap (EuclideanSpace ℝ (Fin (m * 2))) ℂ ->L[ℂ] ℂ :=
+     T.comp
+       ((complexChartEuclideanSchwartzCLE m).symm :
+         SchwartzMap (EuclideanSpace ℝ (Fin (m * 2))) ℂ ->L[ℂ]
+           SchwartzMap (ComplexChartSpace m) ℂ)
+
+   theorem supportsInOpen_transport_to_euclidean
+       {φ : SchwartzMap (EuclideanSpace ℝ (Fin (m * 2))) ℂ}
+       {U0 : Set (ComplexChartSpace m)}
+       (hφ : SupportsInOpen (φ : EuclideanSpace ℝ (Fin (m * 2)) -> ℂ)
+         ((complexChartEuclideanCLE m) '' U0)) :
+       SupportsInOpen
+         (((complexChartEuclideanSchwartzCLE m).symm φ :
+             SchwartzMap (ComplexChartSpace m) ℂ) :
+           ComplexChartSpace m -> ℂ) U0
+
+   theorem euclidean_weyl_laplacian_distribution_regular_on_open
+       {ι : Type*} [Fintype ι]
+       (T : SchwartzMap (EuclideanSpace ℝ ι) ℂ ->L[ℂ] ℂ)
+       {V : Set (EuclideanSpace ℝ ι)}
+       (hV_open : IsOpen V)
+       (hΔ :
+         ∀ φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ,
+           SupportsInOpen (φ : EuclideanSpace ℝ ι -> ℂ) V ->
+             T
+               (LineDeriv.laplacianCLM ℝ (EuclideanSpace ℝ ι)
+                 (SchwartzMap (EuclideanSpace ℝ ι) ℂ) φ) = 0) :
+       ∃ H : EuclideanSpace ℝ ι -> ℂ,
+         ContDiffOn ℝ (⊤ : ℕ∞) H V ∧
+         ∀ φ : SchwartzMap (EuclideanSpace ℝ ι) ℂ,
+           SupportsInOpen (φ : EuclideanSpace ℝ ι -> ℂ) V ->
+             T φ = ∫ x, H x * φ x
+   ```
+
+   The transport proof of `weyl_laplacian_distribution_regular_on_open` then
+   applies the Euclidean theorem to
+   `transportedDistributionToEuclidean T` on
+   `(complexChartEuclideanCLE m) '' U0`.  The support transport lemma moves
+   compact support back to `U0`, and
+   `complexChartLaplacianSchwartzCLM_transport` converts the checked
+   coordinate-Laplacian hypothesis into the Euclidean Laplacian hypothesis.
+   The representative on `U0` is
+   `fun z => HE (complexChartEuclideanCLE m z)`.  Its real smoothness follows
+   by composing `hHE : ContDiffOn ℝ ⊤ HE _` with the continuous linear map
+   `complexChartEuclideanCLE m`; the representation identity is transported
+   by `SchwartzMap.compCLMOfContinuousLinearEquiv_apply` and the linear
+   change-of-variables formula for the finite-dimensional equivalence.
+
    Proof transcript for the Weyl lemma.  Work locally on a closed ball
-   `closedBall c (2 * r) ⊆ U0`.  Convolve `T` with the standard
-   finite-dimensional Newton kernel cut off outside `closedBall 0 r`; the
-   checked mathlib distribution derivative API already supplies the sign
-   convention for the test Laplacian:
-   `TemperedDistribution.laplacian_apply_apply`.  The cutoff Newton kernel
+   `closedBall c (2 * r) ⊆ U0`.  Transport the local chart by
+   `complexChartEuclideanCLE m`, which is built from the existing
+   `complexChartRealFlattenCLE m` and `EuclideanSpace.equiv`, so that the
+   checked coordinate Laplacian becomes the standard Euclidean Laplacian.
+   Convolve the transported
+   distribution with the standard finite-dimensional Newton kernel cut off
+   outside `closedBall 0 r`; the checked mathlib distribution derivative API
+   supplies the sign convention for the test Laplacian, while the transport
+   lemmas identify it with `complexChartLaplacianSchwartzCLM`.  The cutoff
+   Newton kernel
    gives a local parametrix
    ```
    Δ (N_r * φ) = φ + R_r φ
@@ -4953,7 +5163,9 @@ Exact product-kernel/descent subpackage:
    them.  This gives the displayed global `H`.
 
    After Weyl regularity gives a smooth representative, recover the pointwise
-   Cauchy-Riemann equations from the distributional equations:
+   Cauchy-Riemann equations from the distributional equations.  The pointwise
+   operator definition and its global-Schwartz compatibility lemma are now
+   checked in `SCV/DistributionalEOWRegularity.lean`:
 
    ```lean
    def pointwiseDbar (j : Fin m) (H : ComplexChartSpace m -> ℂ)
@@ -4961,6 +5173,12 @@ Exact product-kernel/descent subpackage:
      (1 / 2 : ℂ) *
        (fderiv ℝ H z (complexRealDir j) +
         Complex.I * fderiv ℝ H z (complexImagDir j))
+
+   theorem dbarSchwartzCLM_apply_eq_pointwiseDbar
+       (j : Fin m) (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+       (z : ComplexChartSpace m) :
+       (dbarSchwartzCLM j φ) z =
+         pointwiseDbar j (φ : ComplexChartSpace m -> ℂ) z
 
    theorem pointwiseDbar_eq_zero_of_distributionalHolomorphic
        (Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ)
