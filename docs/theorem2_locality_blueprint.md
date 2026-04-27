@@ -4932,6 +4932,39 @@ Current next-stage gate after the `SourceExtension.lean` cleanup:
    The new module should contain only the finite-dimensional Gram-map and
    Hall-Wightman real-environment facts below; it must not mention OS,
    Schwinger functions, locality, or `bvt_F`.
+5. Checked algebraic support now in
+   `BHWPermutation/SourceExtension.lean`:
+   `sourceRealGramDifferential`, `sourceComplexGramDifferential`,
+   `sourceComplexGramDifferential_realEmbed`,
+   `sourceRealGramTangentSpaceAt`, `sourceComplexGramTangentSpaceAt`,
+   `SourceComplexifiedRealTangentEqualsComplexTangent`, and
+   `IsHWRealEnvironment`.  The regular-locus template support is also checked:
+   `sourceTemplateDomainIndex`, `sourceTemplateCoordIndex`,
+   `sourceTemplateDomainIndex_injective`,
+   `sourceTemplateCoordIndex_injective`,
+   `sourceFullSpanTemplate_basisVector`,
+   `linearIndependent_sourceFullSpanTemplate_basisBlock`,
+   `sourceFullSpanTemplate_regular`, `sourceRegularMinor`,
+   `continuous_sourceRegularMinor`,
+   `exists_nonzero_coordinate_minor_of_linearIndependent`,
+   `sourceGramRegularAt_of_exists_nonzero_minor`,
+   `exists_nonzero_minor_of_sourceGramRegularAt`, and
+   `sourceGramRegularAt_iff_exists_nonzero_minor`,
+   `isOpen_sourceGramRegularAt`,
+   `sourceFullSpanTemplate_regularMinor_eq_one`, and
+   `sourceFullSpanTemplate_regularMinor_ne_zero`, together with the
+   determinant-line polynomial facts
+   `sourceCanonicalRegularMinorLinePolynomial`,
+   `sourceCanonicalRegularMinorLinePolynomial_leadingCoeff`,
+   `sourceCanonicalRegularMinorLinePolynomial_ne_zero`,
+   `sourceCanonicalRegularMinorLinePolynomial_eval`,
+   `sourceCanonicalRegularMinor_nonzero_dense`, and
+   `dense_sourceGramRegularAt`.  These are definitions, finite-dimensional
+   linear algebra, determinant-polynomial root avoidance, and finite-union
+   topological arguments only; they do not assert the Gram-map
+   differential-rank theorem,
+   constant-rank local charts, Hall-Wightman uniqueness, or the global
+   `S''_n` source branch theorem.
 
 **A. Dense/open regular configurations.**
 
@@ -4939,20 +4972,108 @@ The Lean proof of `dense_sourceGramRegularAt` and
 `isOpen_sourceGramRegularAt` should use ordinary finite-dimensional linear
 algebra, not Hall-Wightman.
 
+Implementation order for the regular-locus package:
+
+1. introduce the two inclusion maps for the template basis block; checked in
+   `SourceExtension.lean`;
+2. prove the corresponding template vectors are ordinary coordinate basis
+   vectors; checked in `SourceExtension.lean`;
+3. prove the maximal-span template is regular; checked in
+   `SourceExtension.lean`;
+4. define maximal coordinate minors and prove their continuity; checked in
+   `SourceExtension.lean`;
+5. characterize regularity by one nonzero maximal minor; checked in
+   `SourceExtension.lean`;
+6. prove openness from the nonzero-minor characterization; checked in
+   `SourceExtension.lean`;
+7. prove the canonical template minor is `1` and hence nonzero; checked in
+   `SourceExtension.lean`;
+8. prove density by perturbing along the regular template and avoiding the
+   finite zero set of the nonzero determinant polynomial
+   `det(t I + B)`; checked in `SourceExtension.lean`.
+
+Checked Lean surfaces for steps 1-8:
+
 ```lean
-/-- A concrete full-span template: the first `m = min n (d + 1)` source
-vectors are coordinate basis vectors and the remaining vectors are zero or
-repetitions. -/
-noncomputable def BHW.sourceFullSpanTemplate
-    (d n : ℕ) : NPointDomain d n :=
-  fun k μ => if μ.val = k.val then 1 else 0
+def BHW.sourceTemplateDomainIndex
+    (d n : ℕ) :
+    Fin (min n (d + 1)) -> Fin n :=
+  fun a => ⟨a.val, lt_of_lt_of_le a.isLt (Nat.min_le_left n (d + 1))⟩
+
+def BHW.sourceTemplateCoordIndex
+    (d n : ℕ) :
+    Fin (min n (d + 1)) -> Fin (d + 1) :=
+  fun a => ⟨a.val, lt_of_lt_of_le a.isLt (Nat.min_le_right n (d + 1))⟩
+
+theorem BHW.sourceTemplateCoordIndex_injective
+    (d n : ℕ) :
+    Function.Injective (BHW.sourceTemplateCoordIndex d n)
+
+theorem BHW.sourceTemplateDomainIndex_injective
+    (d n : ℕ) :
+    Function.Injective (BHW.sourceTemplateDomainIndex d n)
+
+theorem BHW.sourceFullSpanTemplate_basisVector
+    (d n : ℕ)
+    (a : Fin (min n (d + 1))) :
+    BHW.sourceFullSpanTemplate d n
+        (BHW.sourceTemplateDomainIndex d n a) =
+      Pi.single (M := fun _ : Fin (d + 1) => ℝ)
+        (BHW.sourceTemplateCoordIndex d n a) (1 : ℝ)
+
+theorem BHW.linearIndependent_sourceFullSpanTemplate_basisBlock
+    (d n : ℕ) :
+    LinearIndependent ℝ
+      (fun a : Fin (min n (d + 1)) =>
+        BHW.sourceFullSpanTemplate d n
+          (BHW.sourceTemplateDomainIndex d n a))
 
 theorem BHW.sourceFullSpanTemplate_regular
     (d n : ℕ) :
-    BHW.SourceGramRegularAt d n
-      (BHW.sourceFullSpanTemplate d n)
+    BHW.SourceGramRegularAt d n (BHW.sourceFullSpanTemplate d n)
 
-/-- Maximal span is witnessed by a nonzero coordinate minor. -/
+def BHW.sourceRegularMinor
+    (d n : ℕ)
+    (I : Fin (min n (d + 1)) -> Fin n)
+    (J : Fin (min n (d + 1)) -> Fin (d + 1))
+    (x : NPointDomain d n) : ℝ :=
+  Matrix.det (fun a b => x (I a) (J b))
+
+theorem BHW.continuous_sourceRegularMinor
+    (d n : ℕ)
+    (I : Fin (min n (d + 1)) -> Fin n)
+    (J : Fin (min n (d + 1)) -> Fin (d + 1)) :
+    Continuous (BHW.sourceRegularMinor d n I J)
+
+theorem BHW.exists_nonzero_coordinate_minor_of_linearIndependent
+    {m D : ℕ}
+    {v : Fin m -> Fin D -> ℝ}
+    (hli : LinearIndependent ℝ v) :
+    ∃ J : Fin m -> Fin D,
+      Function.Injective J ∧
+      Matrix.det (fun a b => v a (J b)) ≠ 0
+
+theorem BHW.sourceGramRegularAt_of_exists_nonzero_minor
+    (d n : ℕ)
+    {x : NPointDomain d n}
+    (hminor :
+      ∃ I : Fin (min n (d + 1)) -> Fin n,
+        Function.Injective I ∧
+        ∃ J : Fin (min n (d + 1)) -> Fin (d + 1),
+          Function.Injective J ∧
+          BHW.sourceRegularMinor d n I J x ≠ 0) :
+    BHW.SourceGramRegularAt d n x
+
+theorem BHW.exists_nonzero_minor_of_sourceGramRegularAt
+    (d n : ℕ)
+    {x : NPointDomain d n}
+    (hreg : BHW.SourceGramRegularAt d n x) :
+    ∃ I : Fin (min n (d + 1)) -> Fin n,
+      Function.Injective I ∧
+      ∃ J : Fin (min n (d + 1)) -> Fin (d + 1),
+        Function.Injective J ∧
+        BHW.sourceRegularMinor d n I J x ≠ 0
+
 theorem BHW.sourceGramRegularAt_iff_exists_nonzero_minor
     (d n : ℕ)
     (x : NPointDomain d n) :
@@ -4961,31 +5082,197 @@ theorem BHW.sourceGramRegularAt_iff_exists_nonzero_minor
         Function.Injective I ∧
         ∃ J : Fin (min n (d + 1)) -> Fin (d + 1),
           Function.Injective J ∧
-          Matrix.det (fun a b => x (I a) (J b)) ≠ 0
+          BHW.sourceRegularMinor d n I J x ≠ 0
 
 theorem BHW.isOpen_sourceGramRegularAt
     (d n : ℕ) :
-    IsOpen {x : NPointDomain d n | BHW.SourceGramRegularAt d n x} := by
-  rw [Set.ext_iff] -- use the nonzero-minor characterization
-  -- finite union over `(I,J)` of preimages of `{r | r ≠ 0}` under continuous
-  -- determinant polynomials.
+    IsOpen {x : NPointDomain d n | BHW.SourceGramRegularAt d n x}
+
+theorem BHW.sourceFullSpanTemplate_regularMinor_eq_one
+    (d n : ℕ) :
+    BHW.sourceRegularMinor d n
+        (BHW.sourceTemplateDomainIndex d n)
+        (BHW.sourceTemplateCoordIndex d n)
+        (BHW.sourceFullSpanTemplate d n) = 1
+
+theorem BHW.sourceFullSpanTemplate_regularMinor_ne_zero
+    (d n : ℕ) :
+    BHW.sourceRegularMinor d n
+        (BHW.sourceTemplateDomainIndex d n)
+        (BHW.sourceTemplateCoordIndex d n)
+        (BHW.sourceFullSpanTemplate d n) ≠ 0
+
+def BHW.sourceCanonicalRegularMinorLinePolynomial
+    (d n : ℕ)
+    (x : NPointDomain d n) : Polynomial ℝ :=
+  Matrix.det ((Polynomial.X : Polynomial ℝ) •
+      (1 : Matrix (Fin (min n (d + 1)))
+        (Fin (min n (d + 1))) (Polynomial ℝ)) +
+    (fun a b : Fin (min n (d + 1)) =>
+      Polynomial.C
+        (x (BHW.sourceTemplateDomainIndex d n a)
+          (BHW.sourceTemplateCoordIndex d n b))))
+
+theorem BHW.sourceCanonicalRegularMinorLinePolynomial_leadingCoeff
+    (d n : ℕ)
+    (x : NPointDomain d n) :
+    Polynomial.leadingCoeff
+      (BHW.sourceCanonicalRegularMinorLinePolynomial d n x) = 1
+
+theorem BHW.sourceCanonicalRegularMinorLinePolynomial_ne_zero
+    (d n : ℕ)
+    (x : NPointDomain d n) :
+    BHW.sourceCanonicalRegularMinorLinePolynomial d n x ≠ 0
+
+theorem BHW.sourceCanonicalRegularMinorLinePolynomial_eval
+    (d n : ℕ)
+    (x : NPointDomain d n)
+    (t : ℝ) :
+    (BHW.sourceCanonicalRegularMinorLinePolynomial d n x).eval t =
+      BHW.sourceRegularMinor d n
+        (BHW.sourceTemplateDomainIndex d n)
+        (BHW.sourceTemplateCoordIndex d n)
+        (x + t • BHW.sourceFullSpanTemplate d n)
+
+theorem BHW.sourceCanonicalRegularMinor_nonzero_dense
+    (d n : ℕ) :
+    Dense {x : NPointDomain d n |
+      BHW.sourceRegularMinor d n
+        (BHW.sourceTemplateDomainIndex d n)
+        (BHW.sourceTemplateCoordIndex d n) x ≠ 0}
 
 theorem BHW.dense_sourceGramRegularAt
     (d n : ℕ) :
-    Dense {x : NPointDomain d n | BHW.SourceGramRegularAt d n x} := by
-  -- For any `x` and any neighbourhood, perturb along a full-span template:
-  -- `x_t = x + t • sourceFullSpanTemplate d n`.
-  -- Choose a fixed minor nonzero on the template.  The same minor of `x_t`
-  -- is a univariate polynomial whose leading coefficient is that nonzero
-  -- template determinant, hence the polynomial is not identically zero.
-  -- A nonzero univariate polynomial has finitely many zeros, so choose
-  -- arbitrarily small nonzero `t` avoiding them.
+    Dense {x : NPointDomain d n | BHW.SourceGramRegularAt d n x}
 ```
 
-If the univariate perturbation proof becomes awkward, use the existing
-polynomial zero-set infrastructure in `GeneralResults/PolynomialMeasureZero`:
-the complement of the finite union of all maximal-minor zero sets has empty
-interior because one minor is nonzero at `sourceFullSpanTemplate`.
+Proof transcript for `sourceFullSpanTemplate_regular`:
+
+1. Let `m := min n (d + 1)`.
+2. Use `sourceFullSpanTemplate_basisVector` to identify the selected template
+   vectors with the first `m` coordinate vectors.
+3. Use `(Pi.basisFun ℝ (Fin (d + 1))).linearIndependent`, composed with
+   `sourceTemplateCoordIndex` and `sourceTemplateCoordIndex_injective`, to get
+   linear independence of the selected coordinate vectors.
+4. Map that linear independence across the equality from step 2 to prove
+   `linearIndependent_sourceFullSpanTemplate_basisBlock`.
+5. Each selected template vector lies in
+   `sourceConfigurationSpan d n (sourceFullSpanTemplate d n)` by
+   `Submodule.subset_span` applied to the corresponding element of
+   `Set.range`.
+6. Therefore the span has finrank at least `m`.
+7. It has finrank at most `m` by combining
+   `finrank_range_le_card (b := sourceFullSpanTemplate d n)` with
+   `Submodule.finrank_le` and `Module.finrank_fin_fun`, giving upper bounds
+   `n` and `d + 1`, hence the `min`.
+8. Combine the two inequalities with antisymmetry and unfold
+   `SourceGramRegularAt`.
+
+Proof transcript for `sourceGramRegularAt_of_exists_nonzero_minor`:
+
+1. unpack `I`, `J`, and the nonzero determinant of the selected square minor;
+2. define the coordinate-restriction linear map
+   `restrictJ : (Fin (d + 1) -> ℝ) ->ₗ[ℝ]
+     (Fin (min n (d + 1)) -> ℝ)` by `(restrictJ v) b = v (J b)`;
+3. use `Matrix.linearIndependent_rows_of_det_ne_zero` on the minor matrix to
+   obtain linear independence of
+   `fun a b => x (I a) (J b)`;
+4. apply `LinearIndependent.of_comp restrictJ` to lift this to linear
+   independence of `fun a => x (I a)` in the full coordinate space;
+5. coerce these selected rows into
+   `sourceConfigurationSpan d n x` using `Submodule.subset_span ⟨I a, rfl⟩`;
+6. `fintype_card_le_finrank` gives the lower bound
+   `min n (d + 1) <= Module.finrank ℝ (sourceConfigurationSpan d n x)`;
+7. `finrank_range_le_card (b := x)`, `Submodule.finrank_le`, and
+   `Module.finrank_fin_fun` give the upper bound by the same `min`;
+8. use `le_antisymm` and unfold `SourceGramRegularAt`.
+
+Proof transcript for `exists_nonzero_coordinate_minor_of_linearIndependent`:
+
+1. set `A : Matrix (Fin m) (Fin D) ℝ := fun a j => v a j`;
+2. from `hli`, get
+   `Module.finrank ℝ (Submodule.span ℝ (Set.range A.row)) = m` using
+   `finrank_span_eq_card`;
+3. use `Matrix.rank_eq_finrank_span_row` and
+   `Matrix.rank_eq_finrank_span_cols` to conclude the column span of `A` also
+   has finrank `m`;
+4. apply `Submodule.exists_fun_fin_finrank_span_eq` to `Set.range A.col` and
+   reindex by `finCongr hcolrank.symm` to choose `m` independent columns from
+   actual columns of `A`;
+5. define `J` by choosing each column preimage and prove `J` injective from
+   `LinearIndependent.injective`;
+6. the selected square matrix has linearly independent columns, so
+   `Matrix.linearIndependent_cols_iff_isUnit` and
+   `B.isUnit_iff_isUnit_det` give nonzero determinant.
+
+Proof transcript for `exists_nonzero_minor_of_sourceGramRegularAt`:
+
+1. rewrite `hreg` as
+   `Module.finrank ℝ (Submodule.span ℝ (Set.range x)) = min n (d + 1)`;
+2. use `Submodule.exists_fun_fin_finrank_span_eq` on `Set.range x` and
+   reindex by that equality to obtain a linearly independent selected row
+   family of size `min n (d + 1)`;
+3. choose row preimages `I a : Fin n`, prove the selected rows are still
+   linearly independent, and prove `I` injective from
+   `LinearIndependent.injective`;
+4. apply `exists_nonzero_coordinate_minor_of_linearIndependent` to the
+   selected rows and package the resulting `J` and nonzero determinant.
+
+Proof transcript for `isOpen_sourceGramRegularAt`:
+
+1. rewrite the regular locus by
+   `sourceGramRegularAt_iff_exists_nonzero_minor`;
+2. identify it with the finite union over row maps `I`, proofs of
+   `Function.Injective I`, column maps `J`, and proofs of
+   `Function.Injective J` of the sets
+   `{x | sourceRegularMinor d n I J x ≠ 0}`;
+3. each such set is open by `isOpen_ne_fun
+   (continuous_sourceRegularMinor d n I J) continuous_const`;
+4. close with repeated `isOpen_iUnion`.
+
+Proof transcript for `sourceFullSpanTemplate_regularMinor_eq_one`:
+
+1. unfold `sourceRegularMinor`;
+2. use `sourceFullSpanTemplate_basisVector` to rewrite the canonical minor
+   matrix as the identity matrix on `Fin (min n (d + 1))`;
+3. use `sourceTemplateCoordIndex_injective` to identify equality of selected
+   coordinate indices with equality of row/column indices;
+4. conclude the determinant is `1`; the nonzero theorem is `rw` plus
+   `norm_num`.
+
+Proof transcript for `sourceCanonicalRegularMinorLinePolynomial_eval` and
+`sourceCanonicalRegularMinor_nonzero_dense`:
+
+1. For fixed `x`, set `I0 := sourceTemplateDomainIndex d n`,
+   `J0 := sourceTemplateCoordIndex d n`, and
+   `B a b := x (I0 a) (J0 b)`.
+2. Define the line-minor polynomial
+   `p_x(t) := det(t I + B)` as
+   `sourceCanonicalRegularMinorLinePolynomial d n x`.
+3. Mathlib's
+   `Polynomial.leadingCoeff_det_X_one_add_C` gives
+   `leadingCoeff p_x = 1`, hence `p_x ≠ 0`.
+4. The evaluation identity is checked by expanding both determinants with
+   `Matrix.det_apply'` and `Polynomial.eval_finset_sum`: for every `t`,
+   `p_x.eval t` is the canonical minor of
+   `x + t • sourceFullSpanTemplate d n`.  The entrywise step uses
+   `sourceFullSpanTemplate_basisVector` and
+   `sourceTemplateCoordIndex_injective` to identify the selected template
+   block with the identity matrix.
+5. For an arbitrary nonempty open set `U`, choose `x ∈ U` and consider
+   `line t := x + t • sourceFullSpanTemplate d n`.
+6. The root set `{t | p_x.eval t = 0}` is finite because it is contained in
+   `p_x.roots.toFinset`.
+7. `Dense.diff_finite dense_univ` gives density of the complement of that
+   finite root set in `ℝ`.
+8. The preimage `line ⁻¹' U` is open and contains `0`, so the dense complement
+   supplies `t` with `line t ∈ U` and `p_x.eval t ≠ 0`.
+9. By the evaluation identity, `line t` lies in the canonical nonzero-minor
+   locus; hence that locus is dense.
+10. Since the canonical row and column selections are injective, the checked
+    theorem `sourceGramRegularAt_of_exists_nonzero_minor` maps the dense
+    canonical nonzero-minor locus into the full regular locus, proving
+    `dense_sourceGramRegularAt`.
 
 **B. Differential rank and local real environments.**
 
@@ -5045,6 +5332,71 @@ theorem BHW.sourceRealGramDifferential_rank_of_regular
       (LinearMap.range (BHW.sourceRealGramDifferential d n x)) =
       BHW.sourceGramExpectedDim d n
 ```
+
+The immediate algebraic implementation subpacket is now checked in
+`SourceExtension.lean`:
+
+```lean
+def BHW.sourceRealGramDifferential
+    (d n : ℕ)
+    (x : Fin n -> Fin (d + 1) -> ℝ) :
+    (Fin n -> Fin (d + 1) -> ℝ) →ₗ[ℝ]
+      (Fin n -> Fin n -> ℝ) :=
+{ toFun := fun h i j =>
+    ∑ μ : Fin (d + 1),
+      MinkowskiSpace.metricSignature d μ *
+        (h i μ * x j μ + x i μ * h j μ)
+  map_add' := by
+    intro h₁ h₂
+    ext i j
+    simp [Pi.add_apply, add_mul, mul_add, Finset.sum_add_distrib]
+    ring
+  map_smul' := by
+    intro c h
+    ext i j
+    simp [Pi.smul_apply, smul_eq_mul, Finset.mul_sum, mul_add]
+    apply Finset.sum_congr rfl
+    intro μ _
+    ring }
+
+def BHW.sourceComplexGramDifferential
+    (d n : ℕ)
+    (z : Fin n -> Fin (d + 1) -> ℂ) :
+    (Fin n -> Fin (d + 1) -> ℂ) →ₗ[ℂ]
+      (Fin n -> Fin n -> ℂ) :=
+{ toFun := fun h i j =>
+    ∑ μ : Fin (d + 1),
+      (MinkowskiSpace.metricSignature d μ : ℂ) *
+        (h i μ * z j μ + z i μ * h j μ)
+  map_add' := by
+    intro h₁ h₂
+    ext i j
+    simp [Pi.add_apply, add_mul, mul_add, Finset.sum_add_distrib]
+    ring
+  map_smul' := by
+    intro c h
+    ext i j
+    simp [Pi.smul_apply, smul_eq_mul, Finset.mul_sum, mul_add]
+    apply Finset.sum_congr rfl
+    intro μ _
+    ring }
+
+theorem BHW.sourceComplexGramDifferential_realEmbed
+    (d n : ℕ)
+    (x h : Fin n -> Fin (d + 1) -> ℝ) :
+    BHW.sourceComplexGramDifferential d n (BHW.realEmbed x)
+        (BHW.realEmbed h) =
+      BHW.sourceRealGramComplexify n
+        ((BHW.sourceRealGramDifferential d n x) h) := by
+  ext i j
+  simp [BHW.sourceComplexGramDifferential,
+    BHW.sourceRealGramDifferential, BHW.sourceRealGramComplexify,
+    BHW.realEmbed]
+```
+
+This subpacket contributes the honest tangent map needed for the later
+constant-rank theorem.  It does not assert the rank, local submersion,
+real-environment uniqueness, or any OS-side conclusion.
 
 Then apply the finite-dimensional constant-rank theorem to the smooth
 polynomial map `sourceRealMinkowskiGram d n`.  The chart produced by constant

@@ -555,7 +555,28 @@ Implementation locus:
    regular-stratum definitions are `sourceGramExpectedDim`,
    `sourceConfigurationSpan`, `sourceComplexConfigurationSpan`,
    `SourceGramRegularAt`, `SourceComplexGramRegularAt`, and the concrete
-   full-span template `sourceFullSpanTemplate`;
+   full-span template `sourceFullSpanTemplate`.  The template/minor support
+   for the regular locus is also checked:
+   `sourceTemplateDomainIndex`, `sourceTemplateCoordIndex`,
+   `sourceTemplateDomainIndex_injective`,
+   `sourceTemplateCoordIndex_injective`,
+   `sourceFullSpanTemplate_basisVector`,
+   `linearIndependent_sourceFullSpanTemplate_basisBlock`,
+   `sourceFullSpanTemplate_regular`, `sourceRegularMinor`,
+   `continuous_sourceRegularMinor`,
+   `exists_nonzero_coordinate_minor_of_linearIndependent`,
+   `sourceGramRegularAt_of_exists_nonzero_minor`,
+   `exists_nonzero_minor_of_sourceGramRegularAt`, and
+   `sourceGramRegularAt_iff_exists_nonzero_minor`, plus
+   `isOpen_sourceGramRegularAt`,
+   `sourceFullSpanTemplate_regularMinor_eq_one`, and
+   `sourceFullSpanTemplate_regularMinor_ne_zero`, plus the determinant-line
+   density package `sourceCanonicalRegularMinorLinePolynomial`,
+   `sourceCanonicalRegularMinorLinePolynomial_leadingCoeff`,
+   `sourceCanonicalRegularMinorLinePolynomial_ne_zero`,
+   `sourceCanonicalRegularMinorLinePolynomial_eval`,
+   `sourceCanonicalRegularMinor_nonzero_dense`, and
+   `dense_sourceGramRegularAt`;
 6. do not consume the top-level
    `BHWPermutation.PermutationFlow.bargmann_hall_wightman_theorem` for theorem
    2, because its current public statement carries

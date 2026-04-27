@@ -1,3 +1,8 @@
+import Mathlib.Algebra.Polynomial.Roots
+import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
+import Mathlib.LinearAlgebra.Matrix.Polynomial
+import Mathlib.LinearAlgebra.Matrix.Rank
+import Mathlib.RingTheory.MatrixPolynomialAlgebra
 import OSReconstruction.ComplexLieGroups.Connectedness.ComplexInvarianceCore
 import OSReconstruction.ComplexLieGroups.Connectedness.PermutedTubeConnected
 import OSReconstruction.ComplexLieGroups.Connectedness.PermutedTubeGluing
@@ -20,7 +25,7 @@ scalar Gram seed equality.
 
 noncomputable section
 
-open Complex Topology Matrix LorentzLieGroup Classical Filter NormedSpace
+open Complex Topology Matrix LorentzLieGroup Classical Filter NormedSpace Polynomial
 open scoped Matrix.Norms.Operator
 
 namespace BHW
@@ -247,12 +252,547 @@ def SourceComplexGramRegularAt (d n : ℕ)
     (z : Fin n → Fin (d + 1) → ℂ) : Prop :=
   Module.finrank ℂ (sourceComplexConfigurationSpan d n z) = min n (d + 1)
 
+/-- Differential of the real source Gram map at `x`. -/
+def sourceRealGramDifferential
+    (d n : ℕ)
+    (x : Fin n → Fin (d + 1) → ℝ) :
+    (Fin n → Fin (d + 1) → ℝ) →ₗ[ℝ] (Fin n → Fin n → ℝ) where
+  toFun := fun h i j =>
+    ∑ μ : Fin (d + 1),
+      MinkowskiSpace.metricSignature d μ *
+        (h i μ * x j μ + x i μ * h j μ)
+  map_add' := by
+    intro h₁ h₂
+    ext i j
+    simp [Pi.add_apply, add_mul, mul_add, Finset.sum_add_distrib]
+    ring
+  map_smul' := by
+    intro c h
+    ext i j
+    simp [Pi.smul_apply, smul_eq_mul, Finset.mul_sum, mul_add]
+    apply Finset.sum_congr rfl
+    intro μ _
+    ring
+
+/-- Differential of the complex source Gram map at `z`. -/
+def sourceComplexGramDifferential
+    (d n : ℕ)
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    (Fin n → Fin (d + 1) → ℂ) →ₗ[ℂ] (Fin n → Fin n → ℂ) where
+  toFun := fun h i j =>
+    ∑ μ : Fin (d + 1),
+      (MinkowskiSpace.metricSignature d μ : ℂ) *
+        (h i μ * z j μ + z i μ * h j μ)
+  map_add' := by
+    intro h₁ h₂
+    ext i j
+    simp [Pi.add_apply, add_mul, mul_add, Finset.sum_add_distrib]
+    ring
+  map_smul' := by
+    intro c h
+    ext i j
+    simp [Pi.smul_apply, smul_eq_mul, Finset.mul_sum, mul_add]
+    apply Finset.sum_congr rfl
+    intro μ _
+    ring
+
 /-- A concrete maximal-span template used in the source Gram regular-locus
 geometry: the available coordinate basis vectors appear among the first
 `min n (d + 1)` source vectors, and later source vectors are zero. -/
 def sourceFullSpanTemplate (d n : ℕ) :
     Fin n → Fin (d + 1) → ℝ :=
   fun k μ => if μ.val = k.val then 1 else 0
+
+/-- The selected source-vector indices in the concrete full-span template. -/
+def sourceTemplateDomainIndex
+    (d n : ℕ) :
+    Fin (min n (d + 1)) → Fin n :=
+  fun a => ⟨a.val, lt_of_lt_of_le a.isLt (Nat.min_le_left n (d + 1))⟩
+
+/-- The selected spacetime-coordinate indices in the concrete full-span
+template. -/
+def sourceTemplateCoordIndex
+    (d n : ℕ) :
+    Fin (min n (d + 1)) → Fin (d + 1) :=
+  fun a => ⟨a.val, lt_of_lt_of_le a.isLt (Nat.min_le_right n (d + 1))⟩
+
+/-- The coordinate-index inclusion for the full-span template is injective. -/
+theorem sourceTemplateDomainIndex_injective
+    (d n : ℕ) :
+    Function.Injective (sourceTemplateDomainIndex d n) := by
+  intro a b h
+  apply Fin.ext
+  exact congrArg (fun c : Fin n => c.val) h
+
+/-- The coordinate-index inclusion for the full-span template is injective. -/
+theorem sourceTemplateCoordIndex_injective
+    (d n : ℕ) :
+    Function.Injective (sourceTemplateCoordIndex d n) := by
+  intro a b h
+  apply Fin.ext
+  exact congrArg (fun c : Fin (d + 1) => c.val) h
+
+/-- The selected rows of the full-span template are the corresponding standard
+coordinate vectors. -/
+theorem sourceFullSpanTemplate_basisVector
+    (d n : ℕ)
+    (a : Fin (min n (d + 1))) :
+    sourceFullSpanTemplate d n
+        (sourceTemplateDomainIndex d n a) =
+      Pi.single (M := fun _ : Fin (d + 1) => ℝ)
+        (sourceTemplateCoordIndex d n a) (1 : ℝ) := by
+  ext μ
+  by_cases hEq : μ = sourceTemplateCoordIndex d n a
+  · subst μ
+    simp [sourceFullSpanTemplate, sourceTemplateDomainIndex,
+      sourceTemplateCoordIndex]
+  · have hμ : μ.val ≠ a.val := by
+      intro hval
+      exact hEq (Fin.ext hval)
+    have hNe :
+        μ ≠ (⟨a.val,
+          lt_of_lt_of_le a.isLt
+            (Nat.min_le_right n (d + 1))⟩ : Fin (d + 1)) := by
+      simpa [sourceTemplateCoordIndex] using hEq
+    simp [sourceFullSpanTemplate, sourceTemplateDomainIndex,
+      sourceTemplateCoordIndex, hμ, hNe]
+
+/-- The selected rows of the full-span template are linearly independent. -/
+theorem linearIndependent_sourceFullSpanTemplate_basisBlock
+    (d n : ℕ) :
+    LinearIndependent ℝ
+      (fun a : Fin (min n (d + 1)) =>
+        sourceFullSpanTemplate d n (sourceTemplateDomainIndex d n a)) := by
+  have hcoord : LinearIndependent ℝ
+      (fun a : Fin (min n (d + 1)) =>
+        Pi.single (M := fun _ : Fin (d + 1) => ℝ)
+          (sourceTemplateCoordIndex d n a) (1 : ℝ)) :=
+    by
+      have hbasis :
+          LinearIndependent ℝ (Pi.basisFun ℝ (Fin (d + 1))) :=
+        (Pi.basisFun ℝ (Fin (d + 1))).linearIndependent
+      have hcoord :=
+        hbasis.comp (sourceTemplateCoordIndex d n)
+          (sourceTemplateCoordIndex_injective d n)
+      simpa [Function.comp_def, Pi.basisFun_apply] using hcoord
+  have hfun :
+      (fun a : Fin (min n (d + 1)) =>
+        sourceFullSpanTemplate d n (sourceTemplateDomainIndex d n a)) =
+      (fun a : Fin (min n (d + 1)) =>
+        Pi.single (M := fun _ : Fin (d + 1) => ℝ)
+          (sourceTemplateCoordIndex d n a) (1 : ℝ)) := by
+    funext a
+    exact sourceFullSpanTemplate_basisVector d n a
+  rw [hfun]
+  exact hcoord
+
+/-- The full-span template is a regular source configuration. -/
+theorem sourceFullSpanTemplate_regular
+    (d n : ℕ) :
+    SourceGramRegularAt d n (sourceFullSpanTemplate d n) := by
+  unfold SourceGramRegularAt
+  let S : Submodule ℝ (Fin (d + 1) → ℝ) :=
+    sourceConfigurationSpan d n (sourceFullSpanTemplate d n)
+  have hli : LinearIndependent ℝ
+      (fun a : Fin (min n (d + 1)) =>
+        sourceFullSpanTemplate d n (sourceTemplateDomainIndex d n a)) :=
+    linearIndependent_sourceFullSpanTemplate_basisBlock d n
+  have hliS : LinearIndependent ℝ
+      (fun a : Fin (min n (d + 1)) =>
+        (⟨sourceFullSpanTemplate d n (sourceTemplateDomainIndex d n a),
+          by
+            change sourceFullSpanTemplate d n
+                (sourceTemplateDomainIndex d n a) ∈
+              Submodule.span ℝ (Set.range (sourceFullSpanTemplate d n))
+            exact Submodule.subset_span
+              ⟨sourceTemplateDomainIndex d n a, rfl⟩⟩ : S)) := by
+    apply LinearIndependent.of_comp S.subtype
+    simpa [Function.comp_def, S] using hli
+  have hlower : min n (d + 1) ≤ Module.finrank ℝ S := by
+    simpa using hliS.fintype_card_le_finrank
+  have hupper_n : Module.finrank ℝ S ≤ n := by
+    simpa [S, sourceConfigurationSpan] using
+      (finrank_range_le_card (R := ℝ) (b := sourceFullSpanTemplate d n))
+  have hupper_d : Module.finrank ℝ S ≤ d + 1 := by
+    have h := Submodule.finrank_le S
+    simpa [Module.finrank_fin_fun] using h
+  have hupper : Module.finrank ℝ S ≤ min n (d + 1) :=
+    le_min hupper_n hupper_d
+  exact le_antisymm hupper hlower
+
+/-- A maximal coordinate minor of a source configuration. -/
+def sourceRegularMinor
+    (d n : ℕ)
+    (I : Fin (min n (d + 1)) → Fin n)
+    (J : Fin (min n (d + 1)) → Fin (d + 1))
+    (x : Fin n → Fin (d + 1) → ℝ) : ℝ :=
+  Matrix.det (fun a b => x (I a) (J b))
+
+/-- Coordinate minors vary continuously with the source configuration. -/
+theorem continuous_sourceRegularMinor
+    (d n : ℕ)
+    (I : Fin (min n (d + 1)) → Fin n)
+    (J : Fin (min n (d + 1)) → Fin (d + 1)) :
+    Continuous (sourceRegularMinor d n I J) := by
+  unfold sourceRegularMinor
+  exact (continuous_matrix fun a b =>
+    (continuous_apply (J b)).comp (continuous_apply (I a))).matrix_det
+
+/-- A linearly independent family of vectors in a coordinate space has a
+nonzero square coordinate minor. -/
+theorem exists_nonzero_coordinate_minor_of_linearIndependent
+    {m D : ℕ}
+    {v : Fin m → Fin D → ℝ}
+    (hli : LinearIndependent ℝ v) :
+    ∃ J : Fin m → Fin D,
+      Function.Injective J ∧
+      Matrix.det (fun a b => v a (J b)) ≠ 0 := by
+  let A : Matrix (Fin m) (Fin D) ℝ := fun a j => v a j
+  have hrowspan :
+      Module.finrank ℝ (Submodule.span ℝ (Set.range A.row)) = m := by
+    have hspan := finrank_span_eq_card (R := ℝ) (b := v) hli
+    simpa [A, Matrix.row, Fintype.card_fin] using hspan
+  have hcolrank :
+      Module.finrank ℝ (Submodule.span ℝ (Set.range A.col)) = m := by
+    have hrank_rows := Matrix.rank_eq_finrank_span_row (R := ℝ) A
+    have hrank_cols := Matrix.rank_eq_finrank_span_cols (R := ℝ) A
+    calc
+      Module.finrank ℝ (Submodule.span ℝ (Set.range A.col)) = A.rank := by
+        exact hrank_cols.symm
+      _ = Module.finrank ℝ (Submodule.span ℝ (Set.range A.row)) := by
+        exact hrank_rows
+      _ = m := hrowspan
+  obtain ⟨c, hc_mem, _hc_span, hc_li⟩ :=
+    Submodule.exists_fun_fin_finrank_span_eq (K := ℝ) (s := Set.range A.col)
+  let e : Fin m ≃
+      Fin (Module.finrank ℝ (Submodule.span ℝ (Set.range A.col))) :=
+    finCongr hcolrank.symm
+  let J : Fin m → Fin D := fun b => Classical.choose (hc_mem (e b))
+  have hJcol : ∀ b : Fin m, A.col (J b) = c (e b) := by
+    intro b
+    exact Classical.choose_spec (hc_mem (e b))
+  have hcols : LinearIndependent ℝ (fun b : Fin m => A.col (J b)) := by
+    have hc' : LinearIndependent ℝ (fun b : Fin m => c (e b)) :=
+      hc_li.comp e e.injective
+    convert hc' using 1
+    ext b a
+    exact congr_fun (hJcol b) a
+  have hJinj : Function.Injective J := by
+    intro b₁ b₂ h
+    apply hcols.injective
+    ext a
+    simp [A, Matrix.col, h]
+  let B : Matrix (Fin m) (Fin m) ℝ := fun a b => v a (J b)
+  have hcolsB : LinearIndependent ℝ B.col := by
+    simpa [A, Matrix.col] using hcols
+  have hunit : IsUnit B :=
+    (Matrix.linearIndependent_cols_iff_isUnit).1 hcolsB
+  have hunitdet : IsUnit B.det := B.isUnit_iff_isUnit_det.mp hunit
+  exact ⟨J, hJinj, by simpa [B] using hunitdet.ne_zero⟩
+
+/-- A nonzero maximal coordinate minor witnesses regularity of the source
+configuration. -/
+theorem sourceGramRegularAt_of_exists_nonzero_minor
+    (d n : ℕ)
+    {x : Fin n → Fin (d + 1) → ℝ}
+    (hminor :
+      ∃ I : Fin (min n (d + 1)) → Fin n,
+        Function.Injective I ∧
+        ∃ J : Fin (min n (d + 1)) → Fin (d + 1),
+          Function.Injective J ∧
+          sourceRegularMinor d n I J x ≠ 0) :
+    SourceGramRegularAt d n x := by
+  rcases hminor with ⟨I, _hI, J, _hJ, hdet⟩
+  let restrictJ : (Fin (d + 1) → ℝ) →ₗ[ℝ]
+      (Fin (min n (d + 1)) → ℝ) := {
+    toFun := fun v b => v (J b)
+    map_add' := by
+      intro v w
+      ext b
+      simp
+    map_smul' := by
+      intro c v
+      ext b
+      simp }
+  have hrows : LinearIndependent ℝ
+      (fun a : Fin (min n (d + 1)) =>
+        fun b : Fin (min n (d + 1)) => x (I a) (J b)) := by
+    exact Matrix.linearIndependent_rows_of_det_ne_zero hdet
+  have hxI : LinearIndependent ℝ
+      (fun a : Fin (min n (d + 1)) => x (I a)) := by
+    apply LinearIndependent.of_comp restrictJ
+    simpa [Function.comp_def, restrictJ] using hrows
+  unfold SourceGramRegularAt
+  let S : Submodule ℝ (Fin (d + 1) → ℝ) :=
+    sourceConfigurationSpan d n x
+  have hxIS : LinearIndependent ℝ
+      (fun a : Fin (min n (d + 1)) =>
+        (⟨x (I a), by
+          change x (I a) ∈ Submodule.span ℝ (Set.range x)
+          exact Submodule.subset_span ⟨I a, rfl⟩⟩ : S)) := by
+    apply LinearIndependent.of_comp S.subtype
+    simpa [Function.comp_def, S] using hxI
+  have hlower : min n (d + 1) ≤ Module.finrank ℝ S := by
+    simpa using hxIS.fintype_card_le_finrank
+  have hupper_n : Module.finrank ℝ S ≤ n := by
+    simpa [S, sourceConfigurationSpan] using
+      (finrank_range_le_card (R := ℝ) (b := x))
+  have hupper_d : Module.finrank ℝ S ≤ d + 1 := by
+    have h := Submodule.finrank_le S
+    simpa [Module.finrank_fin_fun] using h
+  have hupper : Module.finrank ℝ S ≤ min n (d + 1) :=
+    le_min hupper_n hupper_d
+  exact le_antisymm hupper hlower
+
+/-- Regularity of a source configuration supplies a nonzero maximal coordinate
+minor. -/
+theorem exists_nonzero_minor_of_sourceGramRegularAt
+    (d n : ℕ)
+    {x : Fin n → Fin (d + 1) → ℝ}
+    (hreg : SourceGramRegularAt d n x) :
+    ∃ I : Fin (min n (d + 1)) → Fin n,
+      Function.Injective I ∧
+      ∃ J : Fin (min n (d + 1)) → Fin (d + 1),
+        Function.Injective J ∧
+        sourceRegularMinor d n I J x ≠ 0 := by
+  have hfin : Module.finrank ℝ (Submodule.span ℝ (Set.range x)) =
+      min n (d + 1) := by
+    simpa [SourceGramRegularAt, sourceConfigurationSpan] using hreg
+  obtain ⟨v, hv_mem, _hv_span, hv_li⟩ :=
+    Submodule.exists_fun_fin_finrank_span_eq (K := ℝ) (s := Set.range x)
+  let e : Fin (min n (d + 1)) ≃
+      Fin (Module.finrank ℝ (Submodule.span ℝ (Set.range x))) :=
+    finCongr hfin.symm
+  let w : Fin (min n (d + 1)) → Fin (d + 1) → ℝ :=
+    fun a => v (e a)
+  have hw_li : LinearIndependent ℝ w := hv_li.comp e e.injective
+  let I : Fin (min n (d + 1)) → Fin n :=
+    fun a => Classical.choose (hv_mem (e a))
+  have hIrow : ∀ a : Fin (min n (d + 1)), x (I a) = w a := by
+    intro a
+    exact Classical.choose_spec (hv_mem (e a))
+  have hxI_li :
+      LinearIndependent ℝ
+        (fun a : Fin (min n (d + 1)) => x (I a)) := by
+    convert hw_li using 1
+    ext a μ
+    exact congr_fun (hIrow a) μ
+  have hIinj : Function.Injective I := by
+    intro a b h
+    apply hxI_li.injective
+    ext μ
+    simp [h]
+  obtain ⟨J, hJinj, hdet⟩ :=
+    exists_nonzero_coordinate_minor_of_linearIndependent
+      (v := fun a => x (I a)) hxI_li
+  exact ⟨I, hIinj, J, hJinj, by simpa [sourceRegularMinor] using hdet⟩
+
+/-- Maximal source span is equivalent to the existence of a nonzero maximal
+coordinate minor. -/
+theorem sourceGramRegularAt_iff_exists_nonzero_minor
+    (d n : ℕ)
+    (x : Fin n → Fin (d + 1) → ℝ) :
+    SourceGramRegularAt d n x ↔
+      ∃ I : Fin (min n (d + 1)) → Fin n,
+        Function.Injective I ∧
+        ∃ J : Fin (min n (d + 1)) → Fin (d + 1),
+          Function.Injective J ∧
+          sourceRegularMinor d n I J x ≠ 0 :=
+  ⟨exists_nonzero_minor_of_sourceGramRegularAt d n,
+    sourceGramRegularAt_of_exists_nonzero_minor d n⟩
+
+/-- The regular source configurations form an open subset of source
+configuration space. -/
+theorem isOpen_sourceGramRegularAt
+    (d n : ℕ) :
+    IsOpen {x : Fin n → Fin (d + 1) → ℝ | SourceGramRegularAt d n x} := by
+  classical
+  rw [show {x : Fin n → Fin (d + 1) → ℝ | SourceGramRegularAt d n x} =
+      ⋃ I : Fin (min n (d + 1)) → Fin n,
+        ⋃ _hI : Function.Injective I,
+          ⋃ J : Fin (min n (d + 1)) → Fin (d + 1),
+            ⋃ _hJ : Function.Injective J,
+              {x : Fin n → Fin (d + 1) → ℝ |
+                sourceRegularMinor d n I J x ≠ 0} by
+    ext x
+    simp [sourceGramRegularAt_iff_exists_nonzero_minor]]
+  apply isOpen_iUnion
+  intro I
+  apply isOpen_iUnion
+  intro _hI
+  apply isOpen_iUnion
+  intro J
+  apply isOpen_iUnion
+  intro _hJ
+  exact isOpen_ne_fun (continuous_sourceRegularMinor d n I J) continuous_const
+
+/-- The canonical full-span template has unit determinant on its canonical
+maximal minor. -/
+theorem sourceFullSpanTemplate_regularMinor_eq_one
+    (d n : ℕ) :
+    sourceRegularMinor d n (sourceTemplateDomainIndex d n)
+        (sourceTemplateCoordIndex d n) (sourceFullSpanTemplate d n) = 1 := by
+  unfold sourceRegularMinor
+  rw [show (fun a b : Fin (min n (d + 1)) =>
+      sourceFullSpanTemplate d n (sourceTemplateDomainIndex d n a)
+        (sourceTemplateCoordIndex d n b)) =
+        (1 : Matrix (Fin (min n (d + 1)))
+          (Fin (min n (d + 1))) ℝ) by
+    ext a b
+    have hidx :
+        sourceTemplateCoordIndex d n a = sourceTemplateCoordIndex d n b ↔
+          a = b :=
+      (sourceTemplateCoordIndex_injective d n).eq_iff
+    have hidx' :
+        sourceTemplateCoordIndex d n b = sourceTemplateCoordIndex d n a ↔
+          a = b := by
+      rw [eq_comm, hidx]
+    simp [sourceFullSpanTemplate_basisVector, Matrix.one_apply,
+      Pi.single_apply, hidx']]
+  simp
+
+/-- The canonical full-span template minor is nonzero. -/
+theorem sourceFullSpanTemplate_regularMinor_ne_zero
+    (d n : ℕ) :
+    sourceRegularMinor d n (sourceTemplateDomainIndex d n)
+        (sourceTemplateCoordIndex d n) (sourceFullSpanTemplate d n) ≠ 0 := by
+  rw [sourceFullSpanTemplate_regularMinor_eq_one]
+  norm_num
+
+/-- The determinant polynomial of the canonical regular minor along the line
+`x + t • sourceFullSpanTemplate`. -/
+def sourceCanonicalRegularMinorLinePolynomial
+    (d n : ℕ)
+    (x : Fin n → Fin (d + 1) → ℝ) : Polynomial ℝ :=
+  let B : Matrix (Fin (min n (d + 1))) (Fin (min n (d + 1))) ℝ :=
+    fun a b =>
+      x (sourceTemplateDomainIndex d n a) (sourceTemplateCoordIndex d n b)
+  Matrix.det ((Polynomial.X : Polynomial ℝ) •
+      (1 : Matrix (Fin (min n (d + 1))) (Fin (min n (d + 1))) (Polynomial ℝ)) +
+    B.map Polynomial.C)
+
+/-- The canonical line-minor determinant polynomial has leading coefficient
+one. -/
+theorem sourceCanonicalRegularMinorLinePolynomial_leadingCoeff
+    (d n : ℕ)
+    (x : Fin n → Fin (d + 1) → ℝ) :
+    Polynomial.leadingCoeff
+      (sourceCanonicalRegularMinorLinePolynomial d n x) = 1 := by
+  simpa [sourceCanonicalRegularMinorLinePolynomial] using
+    Polynomial.leadingCoeff_det_X_one_add_C
+      (A := (fun a b : Fin (min n (d + 1)) =>
+        x (sourceTemplateDomainIndex d n a) (sourceTemplateCoordIndex d n b) :
+        Matrix (Fin (min n (d + 1))) (Fin (min n (d + 1))) ℝ))
+
+/-- The canonical line-minor determinant polynomial is not the zero
+polynomial. -/
+theorem sourceCanonicalRegularMinorLinePolynomial_ne_zero
+    (d n : ℕ)
+    (x : Fin n → Fin (d + 1) → ℝ) :
+    sourceCanonicalRegularMinorLinePolynomial d n x ≠ 0 := by
+  intro hp
+  have hlead :=
+    sourceCanonicalRegularMinorLinePolynomial_leadingCoeff d n x
+  have hlead0 := congrArg Polynomial.leadingCoeff hp
+  rw [hlead] at hlead0
+  norm_num at hlead0
+
+/-- Evaluating the canonical line-minor polynomial gives the canonical
+coordinate minor of `x + t • sourceFullSpanTemplate`. -/
+theorem sourceCanonicalRegularMinorLinePolynomial_eval
+    (d n : ℕ)
+    (x : Fin n → Fin (d + 1) → ℝ)
+    (t : ℝ) :
+    (sourceCanonicalRegularMinorLinePolynomial d n x).eval t =
+      sourceRegularMinor d n (sourceTemplateDomainIndex d n)
+        (sourceTemplateCoordIndex d n)
+        (x + t • sourceFullSpanTemplate d n) := by
+  unfold sourceCanonicalRegularMinorLinePolynomial sourceRegularMinor
+  rw [Matrix.det_apply', Polynomial.eval_finset_sum, Matrix.det_apply']
+  apply Finset.sum_congr rfl
+  intro σ _
+  rw [Polynomial.eval_mul, Polynomial.eval_intCast]
+  congr 1
+  rw [Polynomial.eval_prod]
+  apply Finset.prod_congr rfl
+  intro i _
+  by_cases h : σ i = i
+  · have hcoord :
+        sourceTemplateCoordIndex d n i =
+          sourceTemplateCoordIndex d n (σ i) := by rw [h]
+    simp [Matrix.add_apply, Matrix.smul_apply, Matrix.map_apply,
+      sourceFullSpanTemplate_basisVector, Pi.add_apply, Pi.smul_apply,
+      smul_eq_mul, h, hcoord, add_comm]
+  · have hcoord :
+        sourceTemplateCoordIndex d n i ≠
+          sourceTemplateCoordIndex d n (σ i) := by
+      intro hcoord
+      exact h ((sourceTemplateCoordIndex_injective d n) hcoord).symm
+    simp [Matrix.add_apply, Matrix.smul_apply, Matrix.map_apply,
+      sourceFullSpanTemplate_basisVector, Pi.add_apply, Pi.smul_apply,
+      smul_eq_mul, h, hcoord, add_comm]
+
+/-- The nonvanishing locus of the canonical regular minor is dense. -/
+theorem sourceCanonicalRegularMinor_nonzero_dense
+    (d n : ℕ) :
+    Dense {x : Fin n → Fin (d + 1) → ℝ |
+      sourceRegularMinor d n (sourceTemplateDomainIndex d n)
+        (sourceTemplateCoordIndex d n) x ≠ 0} := by
+  rw [dense_iff_inter_open]
+  intro U hU hU_nonempty
+  rcases hU_nonempty with ⟨x, hxU⟩
+  let line : ℝ → Fin n → Fin (d + 1) → ℝ :=
+    fun t => x + t • sourceFullSpanTemplate d n
+  let p := sourceCanonicalRegularMinorLinePolynomial d n x
+  have hp_ne : p ≠ 0 := by
+    simpa [p] using
+      sourceCanonicalRegularMinorLinePolynomial_ne_zero d n x
+  have hroots_finite : ({t : ℝ | p.eval t = 0}).Finite := by
+    apply Set.Finite.subset (p.roots.toFinset.finite_toSet)
+    intro t ht
+    simp only [Set.mem_setOf_eq, Finset.mem_coe, Multiset.mem_toFinset] at ht ⊢
+    exact (Polynomial.mem_roots hp_ne).mpr ht
+  have hdense : Dense (Set.univ \ {t : ℝ | p.eval t = 0}) := by
+    simpa using
+      (Dense.diff_finite (s := (Set.univ : Set ℝ)) dense_univ hroots_finite)
+  have hline_cont : Continuous line := by
+    exact continuous_const.add (continuous_id.smul continuous_const)
+  have hpre_open : IsOpen (line ⁻¹' U) := hU.preimage hline_cont
+  have hpre_nonempty : (line ⁻¹' U).Nonempty := by
+    refine ⟨0, ?_⟩
+    simpa [line] using hxU
+  obtain ⟨t, htgood, htU⟩ :=
+    hdense.exists_mem_open hpre_open hpre_nonempty
+  have hp_eval_ne : p.eval t ≠ 0 := by
+    have ht_not : t ∉ {t : ℝ | p.eval t = 0} := by
+      simpa [Set.mem_diff, p] using htgood
+    simpa using ht_not
+  refine ⟨line t, ?_, ?_⟩
+  · exact htU
+  · have hminor :
+        sourceRegularMinor d n (sourceTemplateDomainIndex d n)
+          (sourceTemplateCoordIndex d n) (line t) ≠ 0 := by
+      have heval : p.eval t =
+          sourceRegularMinor d n (sourceTemplateDomainIndex d n)
+            (sourceTemplateCoordIndex d n) (line t) := by
+        simpa [p, line] using
+          sourceCanonicalRegularMinorLinePolynomial_eval d n x t
+      exact fun h => hp_eval_ne (by rwa [heval])
+    exact hminor
+
+/-- Regular source configurations form a dense subset of source configuration
+space. -/
+theorem dense_sourceGramRegularAt
+    (d n : ℕ) :
+    Dense {x : Fin n → Fin (d + 1) → ℝ | SourceGramRegularAt d n x} := by
+  apply (sourceCanonicalRegularMinor_nonzero_dense d n).mono
+  intro x hx
+  exact sourceGramRegularAt_of_exists_nonzero_minor d n
+    ⟨sourceTemplateDomainIndex d n,
+      sourceTemplateDomainIndex_injective d n,
+      sourceTemplateCoordIndex d n,
+      sourceTemplateCoordIndex_injective d n,
+      hx⟩
 
 /-- Coordinate permutation on real Gram matrices. -/
 def sourcePermuteGram (n : ℕ)
@@ -276,6 +816,50 @@ def sourceRealGramComplexify (n : ℕ)
     (G : Fin n → Fin n → ℝ) :
     Fin n → Fin n → ℂ :=
   fun i j => (G i j : ℂ)
+
+/-- The complex Gram differential at a real point extends the real Gram
+differential by complexification on real tangent vectors. -/
+theorem sourceComplexGramDifferential_realEmbed
+    (d n : ℕ)
+    (x h : Fin n → Fin (d + 1) → ℝ) :
+    sourceComplexGramDifferential d n (realEmbed x) (realEmbed h) =
+      sourceRealGramComplexify n ((sourceRealGramDifferential d n x) h) := by
+  ext i j
+  simp [sourceComplexGramDifferential, sourceRealGramDifferential,
+    sourceRealGramComplexify, realEmbed]
+
+/-- Real tangent space to the source Gram image at a real Gram matrix,
+represented by regular real configurations mapping to that matrix. -/
+def sourceRealGramTangentSpaceAt
+    (d n : ℕ)
+    (G : Fin n → Fin n → ℝ) :
+    Set (Fin n → Fin n → ℝ) :=
+  {δG | ∃ x : Fin n → Fin (d + 1) → ℝ,
+    SourceGramRegularAt d n x ∧
+    sourceRealMinkowskiGram d n x = G ∧
+    δG ∈ LinearMap.range (sourceRealGramDifferential d n x)}
+
+/-- Complex tangent space to the source Gram image at a complex Gram matrix,
+represented by regular complex configurations mapping to that matrix. -/
+def sourceComplexGramTangentSpaceAt
+    (d n : ℕ)
+    (Z : Fin n → Fin n → ℂ) :
+    Set (Fin n → Fin n → ℂ) :=
+  {δZ | ∃ z : Fin n → Fin (d + 1) → ℂ,
+    SourceComplexGramRegularAt d n z ∧
+    sourceMinkowskiGram d n z = Z ∧
+    δZ ∈ LinearMap.range (sourceComplexGramDifferential d n z)}
+
+/-- Hall-Wightman's maximal-totally-real tangent condition at a real Gram
+matrix: the complex span of real Gram tangent vectors equals the complex
+tangent space of the scalar-product variety. -/
+def SourceComplexifiedRealTangentEqualsComplexTangent
+    (d n : ℕ)
+    (G : Fin n → Fin n → ℝ) : Prop :=
+  Submodule.span ℂ
+      (sourceRealGramComplexify n '' sourceRealGramTangentSpaceAt d n G) =
+    Submodule.span ℂ
+      (sourceComplexGramTangentSpaceAt d n (sourceRealGramComplexify n G))
 
 /-- Complexifying a permuted real Gram matrix agrees with permuting the
 complexified Gram matrix. -/
@@ -421,6 +1005,24 @@ def IsRelOpenInSourceRealGramVariety
     (E : Set (Fin n → Fin n → ℝ)) : Prop :=
   ∃ E0 : Set (Fin n → Fin n → ℝ),
     IsOpen E0 ∧ E = E0 ∩ sourceRealGramVariety d n
+
+/-- Hall-Wightman's real-environment condition on the scalar-product variety.
+
+The environment is relatively open in the real scalar-product variety, is
+realized by regular real Jost configurations, and is maximal totally real in
+the complex scalar-product variety. -/
+structure IsHWRealEnvironment
+    (d n : ℕ)
+    (O : Set (Fin n → Fin n → ℝ)) : Prop where
+  nonempty : O.Nonempty
+  relOpen : IsRelOpenInSourceRealGramVariety d n O
+  realized_by_jost :
+    ∀ G ∈ O, ∃ x : Fin n → Fin (d + 1) → ℝ,
+      x ∈ JostSet d n ∧
+      SourceGramRegularAt d n x ∧
+      sourceRealMinkowskiGram d n x = G
+  maximal_totally_real :
+    ∀ G ∈ O, SourceComplexifiedRealTangentEqualsComplexTangent d n G
 
 /-- Local ambient holomorphicity for scalar-product representatives on the
 Hall-Wightman scalar-product variety.  This is the analytic-set style surface

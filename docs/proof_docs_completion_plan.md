@@ -196,12 +196,39 @@ Current examples:
    `sourceGramExpectedDim`, `sourceConfigurationSpan`,
    `sourceComplexConfigurationSpan`, `SourceGramRegularAt`, and
    `SourceComplexGramRegularAt`, together with the concrete template
-   `sourceFullSpanTemplate`.  The theorem-2 blueprint now also gives
-   proof skeletons for the three supplier facts: maximal-span density/open
-   regular locus via determinant minors, regular Gram-map rank/local
-   real-environment via the constant-rank theorem, and Hall-Wightman
-   real-environment uniqueness via local maximal-totally-real charts plus
-   analytic continuation on the connected scalar-product variety.
+   `sourceFullSpanTemplate`.  The algebraic tangent support is also now
+   checked in Lean: `sourceRealGramDifferential`,
+   `sourceComplexGramDifferential`,
+   `sourceComplexGramDifferential_realEmbed`,
+   `sourceRealGramTangentSpaceAt`, `sourceComplexGramTangentSpaceAt`,
+   `SourceComplexifiedRealTangentEqualsComplexTangent`, and
+   `IsHWRealEnvironment`.  The regular-locus template/minor support is now
+   checked too: `sourceTemplateDomainIndex`, `sourceTemplateCoordIndex`,
+   `sourceTemplateDomainIndex_injective`,
+   `sourceTemplateCoordIndex_injective`,
+   `sourceFullSpanTemplate_basisVector`,
+   `linearIndependent_sourceFullSpanTemplate_basisBlock`,
+   `sourceFullSpanTemplate_regular`, `sourceRegularMinor`,
+   `continuous_sourceRegularMinor`,
+   `exists_nonzero_coordinate_minor_of_linearIndependent`,
+   `sourceGramRegularAt_of_exists_nonzero_minor`,
+   `exists_nonzero_minor_of_sourceGramRegularAt`, and
+   `sourceGramRegularAt_iff_exists_nonzero_minor`, plus openness of the
+   regular locus as `isOpen_sourceGramRegularAt` and the canonical template
+   minor facts `sourceFullSpanTemplate_regularMinor_eq_one` and
+   `sourceFullSpanTemplate_regularMinor_ne_zero`, plus the determinant-line
+   density package `sourceCanonicalRegularMinorLinePolynomial`,
+   `sourceCanonicalRegularMinorLinePolynomial_leadingCoeff`,
+   `sourceCanonicalRegularMinorLinePolynomial_ne_zero`,
+   `sourceCanonicalRegularMinorLinePolynomial_eval`,
+   `sourceCanonicalRegularMinor_nonzero_dense`, and
+   `dense_sourceGramRegularAt`.  The theorem-2 blueprint now
+   also gives proof
+   skeletons for the three supplier facts: maximal-span density/open regular
+   locus via determinant minors, regular Gram-map rank/local real-environment
+   via the constant-rank theorem, and Hall-Wightman real-environment uniqueness
+   via local maximal-totally-real charts plus analytic continuation on the
+   connected scalar-product variety.
    The OS-side constructor is now pinned to a field-by-field Lean transcript:
    the strengthened `BHW.os45_adjacent_singleChart_commonBoundaryValue` must
    export one and the same OS45 patch `V` with Jost membership, both adjacent
