@@ -2,11 +2,15 @@
 
 Purpose: this note records the BHW permutation / overlap-connectedness
 infrastructure, with a narrow theorem-2 consumer contract.  The theorem-2
-implementation entry point is now the direct BHW single-valuedness packet in
-`docs/theorem2_locality_blueprint.md`.  The former fixed-`w`
-forward-tube chamber packet in Sections 8-10 is archived as a rejected route.
-The older generic permutation-flow blockers in Sections 1-7 are background
-infrastructure only, not a substitute for the OS-paper locality route.
+implementation entry point is the source-backed Hall-Wightman/BHW
+single-valuedness packet in `docs/theorem2_locality_blueprint.md`, supplied by
+the OS-II selected distributional Jost anchor.  The checked BHW/PET monodromy
+interface and its reachable-label `hOrbit` hypothesis remain conditional
+infrastructure, but `hOrbit` is not the strict OS-paper theorem-2 gate.  The
+former common fixed-`w` forward-tube chamber packet in Sections 8-10 is
+archived as a rejected route.  The older generic permutation-flow blockers in
+Sections 1-7 are background infrastructure only, not a substitute for the
+OS-paper locality route.
 
 It should be read together with:
 - `docs/theorem2_locality_blueprint.md`,
@@ -22,11 +26,13 @@ not become an alternate reconstruction proof.  For theorem 2, this means:
    8.8 step;
 2. OS I Section 4.5 is used only for the locality order
    `symmetry -> S'_n -> BHW -> S''_n -> Jost boundary locality`;
-3. theorem 2 must consume Hall-Wightman/BHW as a single-valued continuation
-   theorem on the permuted extended tube `S''_n`.  The former fixed-`w`
-   adjacent chamber chain is not active: its documented edges require common
-   permuted-forward-tube witnesses, and distinct permuted forward-tube sectors
-   are disjoint;
+3. theorem 2 must consume Hall-Wightman/BHW through the source-backed
+   single-valuedness theorem on `S''_n`.  The checked PET monodromy interface
+   is a conditional consumer if a separate `hOrbit` theorem is later proved,
+   but OS I §4.5 does not supply `hOrbit` as its locality step.  The former
+   common fixed-`w` adjacent chamber chain is not active: its documented edges
+   require common permuted-forward-tube witnesses, and distinct permuted
+   forward-tube sectors are disjoint;
 4. the `d = 1` theorem-2 lane must remain the OS one-gap complex-edge route
    documented in `theorem2_locality_blueprint.md`, because the generic
    `blocker_iterated_eow_hExtPerm_d1_nontrivial` assumes locality and is
@@ -275,21 +281,17 @@ itself. For theorem 2, the readiness gate is now:
 
 1. do not implement
    `hallWightman_fixedPoint_endpointActiveGallery_of_two_le`,
-   `petOrbitChamberChain_of_two_le`, or
+   `petOrbitChamberChain_of_two_le`, or any common-slice version of
    `petOrbitChamberConnected_of_two_le` as theorem-2 frontiers;
 2. the documented common fixed-`w` forward-tube edge is impossible for distinct
    permutation labels, by the repo's permuted-forward-tube disjointness facts;
-3. the active theorem-2 surface is the distributional Euclidean/Jost-anchored BHW
-   single-valuedness theorem packet in
-   `docs/theorem2_locality_blueprint.md`: first the corrected source
-   branch-law theorem replacing the hF_perm-only
-   `BHW.hallWightman_permutedExtendedTube_branchLaw_of_forwardTube_symmetry`,
-   then the proved assembly theorem
-   `BHW.permutedExtendedTube_extension_of_forwardTube_symmetry`, then the
-   sector equality theorem
-   `BHW.permutedExtendedTube_singleValued_of_forwardTube_symmetry`, then the
-   OS-specific
-   `bvt_F_bhwSingleValuedOn_permutedExtendedTube_of_two_le`;
+3. the active theorem-2 surface is the source-backed BHW single-valuedness
+   packet in `docs/theorem2_locality_blueprint.md`: supply the OS-II
+   distributional Jost anchor, prove the source scalar overlap/cover facts,
+   and close
+   `hallWightman_source_permutedBranch_compatibility_of_distributionalAnchor`;
+   the selected-adjacent monodromy packet is conditional infrastructure, not
+   the OS-paper gate;
 4. the generic permutation-flow files remain useful background infrastructure,
    but theorem 2 must not depend on a theorem whose proof assumes locality.
 
@@ -303,45 +305,29 @@ Rough expected size:
 
 For theorem 2, these sizes are historical guidance for the generic
 permutation-flow lane.  The current docs-first blocker is more specific:
-finish the distributional Euclidean/Jost-anchored BHW single-valuedness theorem transcript
-before attempting the planned Slot-6/Slot-7 theorem surfaces.
+finish the source-backed Hall-Wightman scalar overlap and cover-reaching
+transcript before attempting the Slot-6 source theorem surface.
 
 ## 10. Theorem-2 consumer contract
 
 Theorem 2 does **not** consume the whole generic permutation-flow package.
-The strict OS-route consumer packet is now narrower than the older monodromy
-plan:
+The strict OS-route consumer packet is now narrower than the older generic
+permutation-flow plan:
 
 1. theorem 2 builds the OS-II-corrected analytic witness `bvt_F OS lgc n`;
-2. OS-II Euclidean symmetry and branch/Schwinger matching supply the symmetric
-   analytic datum on the permuted forward-tube family `S'_n`;
-3. the source-backed BHW theorem extends that datum single-valuedly to the
-   permuted extended tube `S''_n`;
+2. the OS-II selected adjacent Euclidean/Jost anchor supplies
+   `BHW.SourceDistributionalAdjacentTubeAnchor` for that witness;
+3. the source-backed Hall-Wightman theorem extends the symmetric `S'_n` datum
+   single-valuedly to the permuted extended tube `S''_n`;
 4. Jost p. 83, second theorem, converts the symmetric boundary values into
    locality.
 
-So for theorem 2 the exact source-facing BHW frontier is the
-distributional Euclidean/Jost-anchored replacement for
+So for theorem 2 the exact source-facing BHW frontier is
 
 ```lean
-BHW.hallWightman_permutedExtendedTube_branchLaw_of_forwardTube_symmetry
-```
-
-Its proved PET-algebra assembly theorem is
-
-```lean
+BHW.hallWightman_source_permutedBranch_compatibility_of_distributionalAnchor
 BHW.permutedExtendedTube_extension_of_forwardTube_symmetry
-```
-
-Its derived sector equality theorem is
-
-```lean
 BHW.permutedExtendedTube_singleValued_of_forwardTube_symmetry
-```
-
-Its OS-specific consumer is
-
-```lean
 bvt_F_bhwSingleValuedOn_permutedExtendedTube_of_two_le
 ```
 
@@ -356,9 +342,11 @@ with target shape
     bvt_selectedPETBranch (d := d) OS lgc n ρ z
 ```
 
-The older target `petOrbitChamberConnected_of_two_le` is archived for theorem
-2.  Its common-forward-tube finite-chain strengthening cannot be correct for
-distinct adjacent labels.
+The reachable-label target `petOrbitChamberConnected_of_two_le` is conditional
+monodromy infrastructure.  It is not the theorem-2 gate unless separately
+proved and accepted as a faithful decomposition of the source-backed
+Hall-Wightman theorem.  The older common-forward-tube finite-chain
+strengthening remains rejected outright.
 
 Source ledger for this theorem packet:
 
@@ -383,14 +371,9 @@ Source ledger for this theorem packet:
    Euclidean/Jost-anchored source compatibility theorem
    `BHW.hallWightman_source_permutedBranch_compatibility_of_distributionalAnchor`.
    The hF_perm-only branch-law surface is archived historical context, not a
-   source theorem to close as stated.  The corrected compatibility theorem feeds the
-   proved source-extension assembly theorem
-   `BHW.permutedExtendedTube_extension_of_forwardTube_symmetry`, with the
-   derived sector equality
-   `BHW.permutedExtendedTube_singleValued_of_forwardTube_symmetry` specialized
-   to `bvt_F OS lgc n` by
-   `bvt_F_bhwSingleValuedOn_permutedExtendedTube_of_two_le`.  The public
-   consumer is `bvt_F_petBranchIndependence_of_two_le`.
+   source theorem to close as stated.  The public consumer is the OS
+   specialization
+   `bvt_F_bhwSingleValuedOn_permutedExtendedTube_of_two_le`.
 5. The exported chain theorem `petOrbitChamberChain_of_two_le` is archived for
    theorem 2.  It is not a verbatim numbered theorem in OS I or Hall-Wightman,
    and its documented common forward-tube-slice edge contradicts the repo's
@@ -421,35 +404,37 @@ What is locally verified versus external:
    search supports extended-tube analytic continuation and single-valuedness.
    It does not provide, and the repo definitions do not permit, common
    fixed-`w` permuted-forward-tube overlaps for distinct labels.
-3. The theorem-2 packet therefore uses the distributional Euclidean/Jost-anchored BHW source
-   branch-law theorem that constructs one single-valued PET extension on
-   `S''_n`, proves the extension theorem's PET algebra from it, and then takes
-   sector branch equality as a corollary.  The approved Deep Research audit
-   rejected the hF_perm-only generic source boundary: total values of `F` away
-   from the ordered forward tube can satisfy the formal permutation hypothesis
-   without constraining the analytic germ whose extended-tube branches must be
-   compared.
+3. The theorem-2 packet therefore uses the source-backed BHW single-valuedness
+   theorem in scalar-product/extended-tube language.  The checked lower-layer
+   BHW/PET monodromy consumer remains available only as conditional
+   infrastructure with an extra `hOrbit` input.  The approved Deep Research
+   audits remain relevant as warnings against both the hF_perm-only generic
+   source boundary and the unproved pointwise-orbit stratification: total
+   values of `F` away from the ordered forward tube can satisfy formal
+   permutation hypotheses without constraining the analytic germ whose
+   extended-tube branches must be compared.
 4. Figure 2-4 may justify local common real environments for adjacent
    **extended** tubes.  It does not manufacture forward-tube overlaps.
 
 The Slot-6 proof-doc contract is therefore the following mathematical
 derivation:
 
-1. state the distributional Euclidean/Jost-anchored BHW branch-law theorem replacing
-   `BHW.hallWightman_permutedExtendedTube_branchLaw_of_forwardTube_symmetry`
-   in the local `BHW.PermutedExtendedTube` /
-   `BHW.permutedExtendedTubeSector` language;
-2. identify the OS-II-corrected selected branch family
-   `bvt_selectedPETBranch (d := d) OS lgc n π` as the symmetric analytic datum
-   on `S'_n`;
-3. ensure the imported/source theorem has no `IsLocallyCommutativeWeak`
+1. build the source scalar representatives and adjacent Hall-Wightman
+   real-environment overlaps from the OS-II selected distributional Jost
+   anchor;
+2. use the checked source overlap equality in
+   `BHWPermutation/SourceExtension.lean`; keep the cover-reaching package only
+   as an archived decomposition unless its global source input is supplied;
+3. prove the source-backed
+   `BHW.hallWightman_source_permutedBranch_compatibility_of_distributionalAnchor`
+   on `S''_n`;
+4. ensure no theorem in the proof has an `IsLocallyCommutativeWeak`
    hypothesis; the current repo surfaces named `bargmann_hall_wightman` and
    `BHW.bargmann_hall_wightman_theorem` take such a hypothesis and are
    circular for theorem 2;
-4. specialize it using `bvt_F_holomorphic`,
-   `bvt_F_restrictedLorentzInvariant_forwardTube`, `bvt_F_perm` as auxiliary
-   formal symmetry data, and the OS-II Euclidean/Jost anchor package, then
-   package the result as `bvt_F_petBranchIndependence_of_two_le`.
+5. specialize the sector-equality corollary using the OS-II selected adjacent
+   Euclidean/Jost anchor package, then package the result as
+   `bvt_F_bhwSingleValuedOn_permutedExtendedTube_of_two_le`.
 
 The equality theorem
 `BHW.permutedExtendedTube_singleValued_of_forwardTube_symmetry` is only the
@@ -467,9 +452,10 @@ Implementation locus:
    discharges branch holomorphicity from `BHW.extendF_holomorphicOn` after
    deriving complex-Lorentz overlap invariance from restricted real Lorentz
    invariance, is checked;
-3. the generic branch-law, extension, and single-valuedness theorems now carry
-   `BHW.SourceDistributionalAdjacentTubeAnchor` explicitly and are checked
-   consumers of the one remaining source theorem;
+3. the proof-doc branch-law, extension, and single-valuedness theorem surfaces
+   now carry `BHW.SourceDistributionalAdjacentTubeAnchor` explicitly; the
+   currently checked Lean support stops before the hard source compatibility
+   theorem;
 4. prove or source-import only
    `BHW.hallWightman_source_permutedBranch_compatibility_of_distributionalAnchor`
    as the hard theorem-level frontier;
@@ -575,8 +561,8 @@ Implementation locus:
    2, because its current public statement carries
    `IsLocallyCommutativeWeak` / boundary-distribution inputs and is circular for
    theorem 2.  The lower-layer, non-circular BHW/PET support in
-   `PermutedTubeMonodromy.lean` is permitted and is now the checked active entry
-   point:
+   `PermutedTubeMonodromy.lean` is permitted as conditional infrastructure but
+   is not the checked active entry point:
    `BHW.extendF_pet_branch_independence_of_adjacent_of_orbitChamberConnected`
    and `BHW.F_permutation_invariance_of_petBranchIndependence`.
 
@@ -598,7 +584,7 @@ permutation symmetry.  A later internal proof may introduce a family-indexed
 Hall-Wightman helper, but the theorem-2-facing source input should remain the
 corrected branch-law theorem, not a raw hF_perm-only theorem.
 The larger theorem
-`BHW.permutedExtendedTube_extension_of_forwardTube_symmetry` is now the proved
+`BHW.permutedExtendedTube_extension_of_forwardTube_symmetry` is the planned
 PET-algebra assembly from that branch law.
 
 The theorem-2 blueprint now fixes the only allowed private branch-law lemma
@@ -700,8 +686,17 @@ order:
 6. close
    `hallWightman_source_permutedBranch_compatibility_of_distributionalAnchor`
    by the documented scalar-domain proof transcript.  The production
-   `SourceExtension.lean` module currently stops before this unresolved source
-   gate and contains only sorry-free data/support lemmas.
+   `SourceExtension.lean` module has now checked
+   `sourceScalarRepresentative_adjacent_eq_on_overlap_of_realEnvironment`.
+   It should now be treated as checked local source support only.  The former
+   generic witness/cover theorem
+   `exists_sourceAdjacentOverlapWitness_of_mem_doubleDomain` has been retired
+   from production because the API-backed Deep Research theorem-shape check
+   `v1_ChdYZXp1YWRLRUJZMjlzT0lQa1BtbXlRNBIXWGV6dWFkS0VCWTI5c09JUGtQbW15UTQ`
+   agrees with the local audit that this obligation is too strong from an
+   arbitrary local anchor alone.  The active source frontier is therefore the
+   direct Hall-Wightman/BHW theorem above, with any witness/cover package kept
+   only as an archived decomposition of that source input.
 
 The packaging is intentionally two-stage.  `SourceScalarRepresentativeData`
 is local data for the ordinary extended-tube scalar image
@@ -709,57 +704,37 @@ is local data for the ordinary extended-tube scalar image
 `M_n` / `S''_n` is a continuation theorem for that branch data, not a reason to
 repackage the representative itself as globally defined source data.
 
-For the proof doc to count as implementation-ready, step 5 must no longer be
-treated as one opaque source theorem.  The theorem
+For the proof doc to count as implementation-ready, step 5 must identify its
+source input explicitly.  The theorem
 `hallWightman_scalarOverlapContinuation_from_adjacentSeeds` is now understood
-as a compressed package of three Hall-Wightman sub-obligations:
+as a compressed package of Hall-Wightman sub-obligations:
 
-1. real-environment uniqueness for one adjacent scalar overlap component;
+1. real-environment uniqueness for one adjacent scalar overlap component
+   (checked in `SourceExtension.lean`);
 2. scalar-variety adjacent continuation from that local overlap to the full
    adjacent double-domain;
 3. adjacent-transposition word propagation from one adjacent swap to a general
    permutation.
 
-The theorem-2 blueprint now gives Lean-shaped statements and proof transcripts
-for those three pieces.  Until the proof docs expose the exact overlap domains,
-chain geometry, and permutation-word domain-membership lemmas needed by that
-split, the source gate is not 100% ready for implementation.
-It now also fixes the proof strategy for those suppliers: define the adjacent
-overlap as a connected component of a Hall-Wightman real-environment
-neighbourhood intersected with the adjacent double scalar domain; define the
-seed cover as the union of such overlaps; obtain the adjacent-chain theorem
-from connectedness plus finite-chain extraction on that open cover; treat
-`sourcePermuteComplexGram_mul` and
-`perm_word_of_adjacent_transpositions` as separate permutation algebra; and
-replace the false naive `mul_mem_left/right` step with a stronger
-word-chain supplier that records admissible intermediate scalar points for the
-chosen adjacent word.  So the final passage from adjacent swaps to a general
-permutation is no longer advertised as “pure algebra”; it is algebra plus
-scalar-domain continuation geometry.  It also now fixes the normalization step from an
-abstract adjacent transposition `τ` to a concrete consecutive swap
-`Equiv.swap i ⟨i.val + 1, hi⟩`, and uses that normalization to define the seed
-cover for `τ` as the union over permutation labels `π` of the corresponding
-overlap components.
-The route decision is now explicit: this adjacent-word package is retained
-only as a possible internal decomposition.  The active theorem-2 contract is
-the stronger global Hall-Wightman single-valued continuation theorem on the
-connected scalar-product double domain, supplied by the local real-environment
-overlap theorem and the adjacent scalar-domain continuation geometry.  The
-route is now unique and the supplier theorem surfaces are fixed, but the proof
-docs are not yet fully discharged until the remaining enlargement /
-cover-reaching supplier `sourceDoublePermutationGramDomain_adjacent_chain` is
-justified from the approved Hall-Wightman geometry.
-The detailed theorem-2 blueprint now splits that further into the scalar-domain
-reachability theorem `sourceAdjacentSeedCover_cover_doubleDomain` and reuse of
-mathlib's `IsConnected.biUnion_of_reflTransGen` for the connected-union step.
-It now also pins down the exact supporting theorem surfaces needed to make that
-usable in Lean: `sourceAdjacentSeedCover_eq_union`,
-`sourceAdjacentOverlapLabelSet`,
+The theorem-2 blueprint keeps Lean-shaped statements and proof transcripts for
+those pieces as an archived decomposition only.  The source gate is not reopened
+by adding those names as production `sorry`s: the witness/cover layer is
+source-equivalent unless a genuine global Hall-Wightman/Araki reachability
+theorem is supplied first.  The active theorem-2 contract is the direct global
+Hall-Wightman single-valued continuation theorem on the scalar-product domain,
+with the checked local real-environment overlap theorem as supporting local
+geometry.
+
+If the archived decomposition is later revived after that source input is
+available, its supporting theorem surfaces are:
+`sourceAdjacentSeedCover_eq_union`, `sourceAdjacentOverlapLabelSet`,
 `exists_sourceAdjacentOverlapWitness_of_mem_doubleDomain`,
-`mem_sourceAdjacentSeedCover_of_mem_doubleDomain`, and
-`sourceAdjacentOverlapIndex_reflTransGen` on that active label set.  The
-step-1 realization input to this witness theorem is now fixed at the checked
-Lean surface `exists_sourceExtendedTube_realizations_of_mem_doubleDomain`.
+`mem_sourceAdjacentSeedCover_of_mem_doubleDomain`,
+`sourceAdjacentSeedCover_cover_doubleDomain`,
+`sourceDoublePermutationGramDomain_adjacent_chain`, and
+`sourceAdjacentOverlapIndex_reflTransGen` on the active label set.  The step-1
+realization input to this witness theorem is already fixed at the checked Lean
+surface `exists_sourceExtendedTube_realizations_of_mem_doubleDomain`.
 Permutation-side theorem surfaces should now be stated against the existing
 repo API of concrete swaps plus `BHW.Fin.Perm.adjSwap_induction`, not against
 an abstract adjacent-transposition predicate except at the normalization step.
@@ -767,18 +742,13 @@ One more code-shape correction is now explicit: the final overlap object on
 this route cannot honestly remain parameter-free in `(d,n,π,i,hi)` alone,
 because it is built from a chosen Hall-Wightman local neighbourhood around the
 anchor Gram environment.  So the current production parameter-free overlap
-constant should be treated only as a placeholder surface.
-Active implementation detail: keep
-`sourceAdjacentPermutationGramOverlap` as the connected component around the
-real Gram environment inside the adjacent double scalar-product domain.  The
-seed-cover / chain layer is therefore not dead fallback bookkeeping; it is the
-honest internal route for reaching arbitrary points of the adjacent double
-domain unless a separate direct connectedness theorem is later proved.
-The final active overlap object is therefore the `overlap` field inside
-`SourceAdjacentOverlapWitness`; the old parameter-free
-`sourceAdjacentPermutationGramOverlap d n π i hi` remains only a placeholder
-surface in production Lean and should not be treated as the final theorem-2
-API.
+constant should be treated only as a legacy/full-double-domain convenience
+surface.  If the archived witness decomposition is revived, the theorem-2-facing
+overlap will be the `overlap` field of `SourceAdjacentOverlapWitness`; the
+seed-cover / chain layer is therefore an archived source-theorem decomposition,
+not a current production route.  The old parameter-free
+`sourceAdjacentPermutationGramOverlap d n π i hi` remains only a legacy helper
+surface in production Lean and should not be treated as the final theorem-2 API.
 Also ruled out explicitly: do not identify that scalar double-domain with the
 Gram-map image of the vector-valued adjacent overlap domain unless a separate
 theorem proves common-configuration realizability.  The current scalar-domain
@@ -787,14 +757,18 @@ definition is weaker than that.
 Current checked/unchecked boundary:
 
 1. checked in production Lean:
+   `differentiable_sourcePermuteComplexGram`,
+   `SourceVarietyHolomorphicOn.precomp_sourcePermuteComplexGram`,
    `sourceAnchor_compactBranchEq_pointwise_on_realPatch`,
    `sourceScalarRepresentative_adjacent_seed_eq_on_environment`,
+   `sourceScalarRepresentative_adjacent_eq_on_overlap_of_realEnvironment`,
    `sourceAdjacentPermutationGramOverlap_relOpen`,
    `gramEnvironment_complexify_mem_adjacentOverlap`,
    `permutedExtendF_holomorphicOn_sector_of_forwardTube_lorentz`;
 2. quarantined to proof docs:
    `hallWightman_exists_sourceScalarRepresentative_of_forwardTube_lorentz`,
-   the three split scalar-overlap continuation obligations,
+   the archived scalar-overlap witness/cover-reaching decomposition around
+   `exists_sourceAdjacentOverlapWitness_of_mem_doubleDomain`,
    `hallWightman_source_permutedBranch_compatibility_of_distributionalAnchor`,
    and the downstream PET branch-law / PET extension / sector single-valuedness
    consumers.
@@ -1205,9 +1179,9 @@ theorem petOrbitChamberAdjStep_iff_exists_slice_overlap
 This is the general-`d` analogue of the `d = 1` object `permLambdaSliceD1`.
 
 So the theorem-2 route does **not** currently consume this fixed-`w` slice
-geometry.  It consumes the distributional Euclidean/Jost-anchored BHW source branch-law
-theorem, the proved source-extension assembly theorem, and the single-valued
-sector-equality corollary on permuted extended-tube sectors documented in
+geometry.  It consumes the distributional Euclidean/Jost-anchored BHW source
+branch-law theorem, the planned source-extension assembly theorem, and the
+single-valued sector-equality corollary on permuted extended-tube sectors documented in
 `docs/theorem2_locality_blueprint.md`.
 
 The checked monodromy reduction chain is:
@@ -1219,16 +1193,14 @@ theorem extendF_pet_branch_independence_of_adjacent_of_orbitChamberConnected
 ```
 
 So theorem 2 should no longer treat any provisional theorem
-`..._of_connectedForwardOverlap`, `petOrbitChamberChain_of_two_le`, or
-`petOrbitChamberConnected_of_two_le` as the next implementation target.  The
-next missing theorem is the distributional Euclidean/Jost-anchored source branch-law theorem
-replacing
-`BHW.hallWightman_permutedExtendedTube_branchLaw_of_forwardTube_symmetry`,
-followed by the proved assembly theorem
-`BHW.permutedExtendedTube_extension_of_forwardTube_symmetry`, the mechanical
-sector equality theorem
-`BHW.permutedExtendedTube_singleValued_of_forwardTube_symmetry` and the
-OS-specific specialization `bvt_F_bhwSingleValuedOn_permutedExtendedTube_of_two_le`.
+`..._of_connectedForwardOverlap`, `petOrbitChamberChain_of_two_le`, or a
+common-slice version of `petOrbitChamberConnected_of_two_le` as the next
+implementation target.  The next missing BHW theorem is instead the
+source-backed compatibility theorem in
+`BHWPermutation/SourceExtension.lean`.  The checked monodromy consumer
+`BHW.extendF_pet_branch_independence_of_adjacent_of_orbitChamberConnected`
+remains conditional infrastructure with an explicit `hOrbit` argument; it is
+not the OS-paper theorem-2 gate.
 
 Archived implementation packet for the old blocker:
 
@@ -1299,13 +1271,23 @@ Checked local support already available:
    then gives preconnectedness of that orbit set once the usual stabilizer /
    orbit-image hypotheses are supplied.
 4. This support may still be useful for a separate geometry investigation, but
-   it is not the theorem-2 route unless the statements are redesigned around
-   extended-tube sector membership.
+   it is not the strict theorem-2 route.  If the conditional monodromy route is
+   pursued later, it must use only the weaker reachable-label adjacency
+   relation: two adjacent labels both reachable from the same fixed point.  It
+   must not require one Lorentz witness in two ordinary permuted forward-tube
+   chambers.
 
 The theorem-2 corollary of this section is therefore:
 
-1. `blocker_isConnected_permSeedSet_nontrivial` is generic BHW permutation-flow
-   infrastructure, not an active theorem-2 input;
+1. the full nontrivial-permutation theorem
+   `blocker_isConnected_permSeedSet_nontrivial` is generic BHW
+   permutation-flow infrastructure and should not be the preferred theorem-2
+   statement.  However, the current checked selected-adjacent bridge does
+   depend on its adjacent specialization through
+   `bvt_selectedAdjacentOverlap_connected_of_permSeedGeometry`.  The clean
+   theorem-2 replacement is the narrower adjacent-swap connectedness theorem
+   documented in `theorem2_locality_blueprint.md`, proved via
+   `adjSwapForwardOverlapIndexSet` and real double-coset generation;
 2. `blocker_iterated_eow_hExtPerm_d1_nontrivial` is **not** a theorem-2 input,
    because it assumes the target locality statement in dimension one;
 3. any theorem-2 proof doc or Lean file that uses monodromy must first supply a

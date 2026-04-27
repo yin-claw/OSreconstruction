@@ -202,12 +202,12 @@ theorem mem_sourceDoublePermutationGramDomain_iff_exists_realizations
     · exact ⟨z, hz, hzGram⟩
     · exact ⟨w, hw, hwGram⟩
 
-/-- Preferred local Hall-Wightman overlap domain for one adjacent swap.
+/-- Legacy full-domain Hall-Wightman overlap helper for one adjacent swap.
 
-At the current theorem-2 frontier this is definitionally the whole adjacent
-double scalar-product domain.  The proof docs allow a later refinement to a
-smaller connected overlap component only if the direct global-domain route
-fails during formalization. -/
+This is definitionally the whole adjacent double scalar-product domain.  The
+theorem-2-facing local overlap is the `overlap` field of
+`SourceAdjacentOverlapWitness`, which also carries connectedness and
+real-environment membership data. -/
 def sourceAdjacentPermutationGramOverlap (d n : ℕ)
     (_π : Equiv.Perm (Fin n))
     (i : Fin n)
@@ -327,6 +327,22 @@ theorem continuous_sourcePermuteComplexGram
   intro j
   exact (continuous_apply (σ j)).comp (continuous_apply (σ i))
 
+/-- Coordinate permutation on complex Gram matrices is complex differentiable. -/
+theorem differentiable_sourcePermuteComplexGram
+    (n : ℕ)
+    (σ : Equiv.Perm (Fin n)) :
+    Differentiable ℂ (sourcePermuteComplexGram n σ) := by
+  rw [differentiable_pi]
+  intro i
+  rw [differentiable_pi]
+  intro j
+  have hi : Differentiable ℂ
+      (fun Z : Fin n → Fin n → ℂ => Z (σ i)) :=
+    differentiable_apply (σ i)
+  have hj : Differentiable ℂ (fun r : Fin n → ℂ => r (σ j)) :=
+    differentiable_apply (σ j)
+  exact hj.comp hi
+
 /-- Relative openness in the Hall-Wightman scalar-product variety is preserved
 under precomposition by a coordinate permutation. -/
 theorem IsRelOpenInSourceComplexGramVariety.preimage_sourcePermuteComplexGram
@@ -384,7 +400,7 @@ theorem sourceDoublePermutationGramDomain_relOpen_of_sourceExtendedTubeGramDomai
   simpa [sourceDoublePermutationGramDomain] using
     IsRelOpenInSourceComplexGramVariety.inter d n hU hpre
 
-/-- The preferred adjacent scalar overlap domain is relatively open provided
+/-- The legacy full adjacent scalar overlap domain is relatively open provided
 the ordinary extended-tube scalar Gram domain is. -/
 theorem sourceAdjacentPermutationGramOverlap_relOpen_of_sourceExtendedTubeGramDomain
     (d n : ℕ)
@@ -436,6 +452,29 @@ theorem SourceVarietyHolomorphicOn.of_subset_relOpen
   · intro W hW
     rw [hV0_eq]
     exact ⟨hW.1.2, hW.2⟩
+
+/-- Source-variety holomorphicity is stable under a source Gram coordinate
+permutation. -/
+theorem SourceVarietyHolomorphicOn.precomp_sourcePermuteComplexGram
+    (d n : ℕ)
+    {Φ : (Fin n → Fin n → ℂ) → ℂ}
+    {U : Set (Fin n → Fin n → ℂ)}
+    (hΦ : SourceVarietyHolomorphicOn d n Φ U)
+    (σ : Equiv.Perm (Fin n)) :
+    SourceVarietyHolomorphicOn d n
+      (fun Z => Φ (sourcePermuteComplexGram n σ Z))
+      {Z | sourcePermuteComplexGram n σ Z ∈ U} := by
+  intro Z hZ
+  rcases hΦ (sourcePermuteComplexGram n σ Z) hZ with
+    ⟨U0, hU0_open, hZU0, hDiffU0, hU0_sub⟩
+  refine ⟨{W | sourcePermuteComplexGram n σ W ∈ U0},
+    hU0_open.preimage (continuous_sourcePermuteComplexGram n σ), hZU0, ?_, ?_⟩
+  · exact hDiffU0.fun_comp
+      (differentiable_sourcePermuteComplexGram n σ).differentiableOn
+      (by intro W hW; exact hW)
+  · intro W hW
+    exact hU0_sub ⟨hW.1,
+      (sourcePermuteComplexGram_mem_sourceComplexGramVariety_iff d n σ W).2 hW.2⟩
 
 /-- A Hall-Wightman real Gram environment which is a uniqueness set for
 variety-holomorphic scalar-product representatives.
@@ -829,7 +868,7 @@ theorem sourceAdjacentSeedCover_subset_doubleDomain
     (data.overlap_subset hZoverlap).1
   simpa [hτ] using hmem
 
-/-- The preferred adjacent scalar overlap domain is relatively open once the
+/-- The legacy full adjacent scalar overlap domain is relatively open once the
 Hall-Wightman scalar representative has supplied relative openness of the
 ordinary extended-tube scalar Gram domain. -/
 theorem sourceAdjacentPermutationGramOverlap_relOpen
@@ -878,96 +917,47 @@ theorem sourceScalarRepresentative_adjacent_eq_on_overlap_of_realEnvironment
     let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
     ∀ Z, Z ∈ data.overlap →
       hRep.Phi (sourcePermuteComplexGram n τ Z) = hRep.Phi Z := by
-  sorry
-
-/-- Witness-construction form of the adjacent seed-cover reachability theorem.
-
-This is the honest scalar-domain continuation frontier behind cover-reaching:
-every point of the normalized adjacent double scalar-product domain should lie
-in one chosen Hall-Wightman overlap witness. -/
-theorem exists_sourceAdjacentOverlapWitness_of_mem_doubleDomain
-    [NeZero d]
-    (n : ℕ)
-    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
-    (hRep : SourceScalarRepresentativeData (d := d) n F)
-    (hAnchor : SourceDistributionalAdjacentTubeAnchor (d := d) n F)
-    (i : Fin n)
-    (hi : i.val + 1 < n)
-    {Z : Fin n → Fin n → ℂ}
-    (hZ :
-      Z ∈ sourceDoublePermutationGramDomain d n
-        (Equiv.swap i ⟨i.val + 1, hi⟩)) :
-    ∃ (π : Equiv.Perm (Fin n))
-      (data : SourceAdjacentOverlapWitness
-        (d := d) n F hRep hAnchor π i hi),
-      Z ∈ data.overlap := by
-  sorry
-
-/-- Unfolded cover-reaching theorem at a normalized adjacent swap. -/
-theorem mem_sourceAdjacentSeedCover_of_mem_doubleDomain
-    [NeZero d]
-    (n : ℕ)
-    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
-    (hRep : SourceScalarRepresentativeData (d := d) n F)
-    (hAnchor : SourceDistributionalAdjacentTubeAnchor (d := d) n F)
-    (i : Fin n)
-    (hi : i.val + 1 < n)
-    {Z : Fin n → Fin n → ℂ}
-    (hZ :
-      Z ∈ sourceDoublePermutationGramDomain d n
-        (Equiv.swap i ⟨i.val + 1, hi⟩)) :
-    Z ∈ sourceAdjacentSeedCover n F hRep hAnchor
-      (Equiv.swap i ⟨i.val + 1, hi⟩) := by
-  rcases exists_sourceAdjacentOverlapWitness_of_mem_doubleDomain
-      (d := d) n F hRep hAnchor i hi hZ with ⟨π, data, hOverlap⟩
-  exact mem_sourceAdjacentSeedCover_of_mem_overlap
-    (d := d) n F hRep hAnchor π i hi data hOverlap
-
-/-- Cover-reaching theorem for the witness-based adjacent seed cover. -/
-theorem sourceAdjacentSeedCover_cover_doubleDomain
-    [NeZero d]
-    (n : ℕ)
-    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
-    (hRep : SourceScalarRepresentativeData (d := d) n F)
-    (hAnchor : SourceDistributionalAdjacentTubeAnchor (d := d) n F)
-    (i : Fin n)
-    (hi : i.val + 1 < n) :
-    sourceDoublePermutationGramDomain d n
-        (Equiv.swap i ⟨i.val + 1, hi⟩) ⊆
-      sourceAdjacentSeedCover n F hRep hAnchor
-        (Equiv.swap i ⟨i.val + 1, hi⟩) := by
+  dsimp
+  have _hd : 2 <= d := hd
+  let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+  let Ψ : (Fin n → Fin n → ℂ) → ℂ :=
+    fun W => hRep.Phi (sourcePermuteComplexGram n τ W)
+  have hOverlap_subset_repU : data.overlap ⊆ hRep.U := by
+    intro Z hZ
+    have hdouble : Z ∈ sourceDoublePermutationGramDomain d n τ :=
+      (data.overlap_subset hZ).1
+    simpa [hRep.U_eq, τ] using hdouble.1
+  have hPerm_overlap_subset_repU :
+      data.overlap ⊆ {Z | sourcePermuteComplexGram n τ Z ∈ hRep.U} := by
+    intro Z hZ
+    have hdouble : Z ∈ sourceDoublePermutationGramDomain d n τ :=
+      (data.overlap_subset hZ).1
+    simpa [hRep.U_eq, τ] using hdouble.2
+  have hΦ : SourceVarietyHolomorphicOn d n hRep.Phi data.overlap :=
+    SourceVarietyHolomorphicOn.of_subset_relOpen
+      (d := d) (n := n) hRep.Phi_holomorphic
+      data.overlap_relOpen hOverlap_subset_repU
+  have hΨ : SourceVarietyHolomorphicOn d n Ψ data.overlap := by
+    have hpre : SourceVarietyHolomorphicOn d n Ψ
+        {Z | sourcePermuteComplexGram n τ Z ∈ hRep.U} := by
+      simpa [Ψ] using
+        SourceVarietyHolomorphicOn.precomp_sourcePermuteComplexGram
+          (d := d) (n := n) hRep.Phi_holomorphic τ
+    exact SourceVarietyHolomorphicOn.of_subset_relOpen
+      (d := d) (n := n) hpre data.overlap_relOpen
+      hPerm_overlap_subset_repU
+  have hreal :
+      ∀ G, G ∈ hAnchor.gramEnvironment π i hi →
+        hRep.Phi (sourceRealGramComplexify n G) =
+          Ψ (sourceRealGramComplexify n G) := by
+    intro G hG
+    simpa [Ψ, τ] using hSeed G hG
+  have hEqOn : Set.EqOn hRep.Phi Ψ data.overlap :=
+    (hAnchor.gramEnvironment_unique π i hi).2
+      data.overlap hRep.Phi Ψ data.overlap_relOpen
+      data.overlap_connected data.environment_mem_overlap hΦ hΨ hreal
   intro Z hZ
-  exact mem_sourceAdjacentSeedCover_of_mem_doubleDomain
-    (d := d) n F hRep hAnchor i hi hZ
-
-/-- Adjacent equality on the seed cover enlarges to the full adjacent double
-scalar-product domain once the scalar-domain continuation chain is available. -/
-theorem sourceScalarRepresentative_adjacent_eq_on_doubleDomain_of_chain
-    [NeZero d]
-    (_hd : 2 <= d)
-    (n : ℕ)
-    (F : (Fin n → Fin (d + 1) → ℂ) → ℂ)
-    (hRep : SourceScalarRepresentativeData (d := d) n F)
-    (hAnchor : SourceDistributionalAdjacentTubeAnchor (d := d) n F)
-    (i : Fin n)
-    (hi : i.val + 1 < n)
-    (hLocal :
-      ∀ Z,
-        Z ∈ sourceAdjacentSeedCover n F hRep hAnchor
-          (Equiv.swap i ⟨i.val + 1, hi⟩) →
-        hRep.Phi
-            (sourcePermuteComplexGram n (Equiv.swap i ⟨i.val + 1, hi⟩) Z) =
-          hRep.Phi Z) :
-    ∀ Z,
-      Z ∈ sourceDoublePermutationGramDomain d n
-        (Equiv.swap i ⟨i.val + 1, hi⟩) →
-      hRep.Phi
-          (sourcePermuteComplexGram n (Equiv.swap i ⟨i.val + 1, hi⟩) Z) =
-        hRep.Phi Z := by
-  intro Z hZ
-  exact hLocal Z <|
-    sourceAdjacentSeedCover_cover_doubleDomain
-      (d := d) n F hRep hAnchor i hi hZ
+  exact (hEqOn hZ).symm
 
 /- The unresolved Hall-Wightman source existence theorem for this data is kept
 in the proof docs until it has a checked proof or an explicitly approved source
@@ -1196,7 +1186,7 @@ theorem sourceRealGramComplexify_mem_sourceDoublePermutationGramDomain_of_enviro
     exact ⟨realEmbed (fun k => x ((π * τ) k)), hright_ET, rfl⟩
 
 /-- Real Gram points from an adjacent Hall-Wightman environment lie in the
-preferred adjacent overlap domain. -/
+legacy full adjacent overlap domain. -/
 theorem gramEnvironment_complexify_mem_adjacentOverlap
     [NeZero d]
     (n : ℕ)
