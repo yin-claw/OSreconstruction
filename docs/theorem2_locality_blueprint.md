@@ -4927,14 +4927,16 @@ Current next-stage gate after the `SourceExtension.lean` cleanup:
    with `hallWightman_exists_sourceScalarRepresentative_of_forwardTube_lorentz`
    as the ordinary scalar-representative source input.
 4. If the real-environment geometry is implemented rather than source-imported,
-   put it in a small source-geometry companion module imported by
-   `SourceExtension.lean`, instead of growing the theorem-2 consumer files.
-   The new module should contain only the finite-dimensional Gram-map and
-   Hall-Wightman real-environment facts below; it must not mention OS,
-   Schwinger functions, locality, or `bvt_F`.
+   put it in a small source-geometry companion module that imports
+   `SourceExtension.lean` and is exported by the `BHWPermutation` aggregate,
+   instead of growing the theorem-2 consumer files or reopening the now-large
+   source-extension module.  The companion module should contain only the
+   finite-dimensional Gram-map and Hall-Wightman real-environment facts below;
+   it must not mention OS, Schwinger functions, locality, or `bvt_F`.
 5. Checked algebraic support now in
    `BHWPermutation/SourceExtension.lean`:
    `sourceRealGramDifferential`, `sourceComplexGramDifferential`,
+   `sourceRealMinkowskiGram_hasFDerivAt`,
    `sourceComplexGramDifferential_realEmbed`,
    `sourceRealGramTangentSpaceAt`, `sourceComplexGramTangentSpaceAt`,
    `SourceComplexifiedRealTangentEqualsComplexTangent`, and
@@ -4959,9 +4961,23 @@ Current next-stage gate after the `SourceExtension.lean` cleanup:
    `sourceCanonicalRegularMinorLinePolynomial_ne_zero`,
    `sourceCanonicalRegularMinorLinePolynomial_eval`,
    `sourceCanonicalRegularMinor_nonzero_dense`, and
-   `dense_sourceGramRegularAt`.  These are definitions, finite-dimensional
-   linear algebra, determinant-polynomial root avoidance, and finite-union
-   topological arguments only; they do not assert the Gram-map
+   `dense_sourceGramRegularAt`.  Post-cleanup rank-stage support now starts in
+   `BHWPermutation/SourceRegularRank.lean`; the smoothness theorem
+   `contDiff_sourceRealMinkowskiGram`, the selected-coordinate projection
+   `sourceSelectedGramCoord`, the symmetric selected-coordinate target
+   `sourceSelectedSymCoordSubspace`,
+   `linearIndependent_sourceRows_of_sourceRegularMinor_ne_zero`,
+   `span_sourceRows_eq_sourceConfigurationSpan_of_sourceRegularMinor_ne_zero`,
+   `sourceSelectedGramCoord_differential_mem`,
+   `minkowskiInner_dualVectorOfLinearFunctional`,
+   `exists_minkowski_dual_family_of_linearIndependent`, and
+   `exists_minkowski_dual_sourceRows_of_sourceRegularMinor_ne_zero`,
+   plus the projected-range theorem
+   `sourceSelectedGramCoord_comp_differential_range_eq`, are checked there.
+   These are
+   definitions, finite-dimensional linear algebra, determinant-polynomial root
+   avoidance, and finite-union topological arguments only; they do not assert
+   the Gram-map
    differential-rank theorem,
    constant-rank local charts, Hall-Wightman uniqueness, or the global
    `S''_n` source branch theorem.
@@ -5283,35 +5299,710 @@ dG_x(h) i j =
   ∑ μ, η_μ * (h i μ * x j μ + x i μ * h j μ)
 ```
 
-has rank `sourceGramExpectedDim d n`.  The proof is the standard Gram-map
-rank calculation for a nondegenerate symmetric bilinear form:
+has rank `sourceGramExpectedDim d n`.  This is the next genuine mathematical
+frontier.  The local real-environment theorem must not be written as a
+wrapper around an unavailable generic constant-rank theorem: this mathlib
+checkout has inverse-function-theorem and local-diffeomorphism infrastructure,
+but no ready general constant-rank/submersion API.  The Lean route should
+therefore implement the standard proof of the constant-rank chart for this
+specific finite-dimensional Gram map.
 
-1. let `m = min n (d + 1)`;
-2. choose `m` source vectors forming a basis of the source span and express
-   every remaining source vector in that basis;
-3. split variations into components tangent to the source span and components
-   annihilating all source vectors under the Minkowski pairing;
-4. the normal-annihilator variations contribute
-   `n * ((d + 1) - m)` to the kernel;
-5. the span-tangent kernel is the infinitesimal skew-adjoint part, of dimension
+The rank calculation should be formalized by a selected-coordinate projection,
+not by trying to characterize the whole ambient matrix space at once.  This
+keeps the Lean target finite and exact.
+
+Let `m = min n (d + 1)` and put `D = d + 1`.  From a nonzero regular minor,
+choose
+
+```lean
+I : Fin m -> Fin n
+J : Fin m -> Fin D
+hI : Function.Injective I
+hJ : Function.Injective J
+hdet : sourceRegularMinor d n I J x ≠ 0
+```
+
+Then:
+
+1. `hdet` gives linear independence of the selected source rows
+   `e a := x (I a)`.  This is already the same determinant argument used in
+   `sourceGramRegularAt_of_exists_nonzero_minor`, but the rank proof should
+   expose it as a reusable selected-row lemma.
+2. `sourceGramRegularAt_of_exists_nonzero_minor` gives
+   `SourceGramRegularAt d n x`, hence the full source span has dimension `m`.
+   Since the selected rows are an independent `m`-tuple inside that span, their
+   span equals `sourceConfigurationSpan d n x`.
+3. For every row `r : Fin n`, choose coefficients
+   `c r : Fin m -> ℝ` with
+   `x r = ∑ a, c r a • x (I a)`.  In Lean, obtain these coefficients from the
+   selected basis of the source span, not by a dummy `Classical.choose` over an
+   underspecified equation.
+4. Define the selected-column projection on Gram variations:
+
+```lean
+def sourceSelectedGramCoord
+    (n m : ℕ) (I : Fin m -> Fin n) :
+    (Fin n -> Fin n -> ℝ) →ₗ[ℝ] (Fin n -> Fin m -> ℝ) :=
+{ toFun := fun δ i a => δ i (I a), ... }
+```
+
+5. Define the genuine coordinate target subspace
+
+```lean
+def sourceSelectedSymCoordSubspace
+    (n m : ℕ) (I : Fin m -> Fin n) :
+    Submodule ℝ (Fin n -> Fin m -> ℝ) :=
+{ A | ∀ a b : Fin m, A (I a) b = A (I b) a }
+```
+
+This subspace records all pairings with the selected rows, with exactly the
+symmetry relations on the selected `m × m` block.  Its dimension is
+
+```lean
+n * m - (m * (m - 1)) / 2
+```
+
+The Lean proof should use a codimension calculation, not an ad hoc complement
+construction.  Define the strict-upper selected-pair type and skew-coordinate
+map:
+
+```lean
+def sourceSelectedUpperPair (m : ℕ) :=
+  {p : Fin m × Fin m // p.1 < p.2}
+
+def sourceSelectedSkewCoord
+    (n m : ℕ) (I : Fin m -> Fin n) :
+    (Fin n -> Fin m -> ℝ) →ₗ[ℝ]
+      (sourceSelectedUpperPair m -> ℝ) :=
+{ toFun := fun A p => A (I p.1.1) p.1.2 - A (I p.1.2) p.1.1, ... }
+```
+
+Then:
+
+```lean
+theorem sourceSelectedSkewCoord_ker
+    (n m : ℕ) (I : Fin m -> Fin n) :
+    LinearMap.ker (sourceSelectedSkewCoord n m I) =
+      sourceSelectedSymCoordSubspace n m I
+```
+
+The proof is by `lt_trichotomy a b`: the strict-upper equation gives
+`A(I a)b = A(I b)a` when `a < b`, the reversed strict-upper equation gives it
+when `b < a`, and the diagonal case is reflexive.
+
+For surjectivity, use the injective selected-row index:
+
+```lean
+theorem sourceSelectedSkewCoord_surjective
+    (n m : ℕ) (I : Fin m -> Fin n)
+    (hI : Function.Injective I) :
+    Function.Surjective (sourceSelectedSkewCoord n m I)
+```
+
+Given `B : sourceSelectedUpperPair m -> ℝ`, set
+
+```lean
+A r b :=
+  if hr : r ∈ Set.range I then
+    let a := (Equiv.ofInjective I hI).symm ⟨r, hr⟩
+    if hlt : a < b then B ⟨(a, b), hlt⟩ else 0
+  else 0
+```
+
+Then for `a < b`, `A(I a)b = B(a,b)` and `A(I b)a = 0`, so the skew map
+returns `B`.  This gives range `⊤`.
+
+Count the strict-upper pair type by the equivalence
+
+```lean
+sourceSelectedUpperPair m ≃ Sigma (fun b : Fin m => Fin b.val)
+```
+
+and hence
+
+```lean
+Fintype.card (sourceSelectedUpperPair m)
+  = ∑ b : Fin m, b.val
+  = m * (m - 1) / 2.
+```
+
+Rank-nullity for `sourceSelectedSkewCoord n m I`, together with
+`Module.finrank_fintype_fun_eq_card` and `Module.finrank_pi`, gives
+
+```lean
+Module.finrank ℝ (sourceSelectedSymCoordSubspace n m I) =
+  n * m - m * (m - 1) / 2.
+```
+
+6. The projected differential lands in this subspace:
+
+```lean
+sourceSelectedGramCoord n m I
+  ((sourceRealGramDifferential d n x) h) ∈
+sourceSelectedSymCoordSubspace n m I
+```
+
+The proof is just symmetry of the differential:
+`dG_x(h) (I a) (I b) = dG_x(h) (I b) (I a)`.
+
+7. The projected differential is surjective onto this subspace.  Let
+`A : Fin n -> Fin m -> ℝ` satisfy the selected-block symmetry.  Since the
+Minkowski form is nondegenerate and the selected rows are independent, choose
+dual vectors
+
+```lean
+u : Fin m -> (Fin (d + 1) -> ℝ)
+hdual : ∀ a b, MinkowskiSpace.minkowskiInner d (u a) (x (I b)) =
+  if a = b then 1 else 0
+```
+
+This dual-vector step is not an assumption and must be proved before the
+surjectivity theorem.  The Lean proof is finite-dimensional and explicit:
+
+```lean
+def sourceStdBasisVector
+    (d : ℕ) (μ : Fin (d + 1)) : Fin (d + 1) -> ℝ :=
+  Pi.single (M := fun _ : Fin (d + 1) => ℝ) μ (1 : ℝ)
+
+theorem sourceStdBasis_sum
+    (d : ℕ) (v : Fin (d + 1) -> ℝ) :
+    (∑ μ : Fin (d + 1), v μ • sourceStdBasisVector d μ) = v
+
+def minkowskiDualVectorOfLinearFunctional
+    (d : ℕ)
+    (ell : (Fin (d + 1) -> ℝ) ->ₗ[ℝ] ℝ) :
+    Fin (d + 1) -> ℝ :=
+  fun μ => MinkowskiSpace.metricSignature d μ *
+    ell (sourceStdBasisVector d μ)
+
+theorem minkowskiInner_dualVectorOfLinearFunctional
+    (d : ℕ)
+    (ell : (Fin (d + 1) -> ℝ) ->ₗ[ℝ] ℝ)
+    (v : Fin (d + 1) -> ℝ) :
+    MinkowskiSpace.minkowskiInner d
+      (minkowskiDualVectorOfLinearFunctional d ell) v = ell v
+```
+
+The proof of the last theorem expands `v` in the standard coordinate basis.
+Coordinatewise, avoid the local `NeZero d` side condition on
+`MinkowskiSpace.metricSignature_mul_self` by splitting on `μ = 0` and
+simplifying `MinkowskiSpace.metricSignature`; this proves
+`η_μ * η_μ = 1` directly in all source dimensions.  Then rewrite
+`ell (∑ μ, v μ • e_μ)` by `map_sum` and `map_smul`, and finish with
+`sourceStdBasis_sum`.
+
+For an independent selected family `e : Fin m -> Fin (d + 1) -> ℝ`, construct
+the Kronecker duals by extending coordinate functionals from the span:
+
+```lean
+theorem exists_minkowski_dual_family_of_linearIndependent
+    (d m : ℕ)
+    {e : Fin m -> Fin (d + 1) -> ℝ}
+    (hli : LinearIndependent ℝ e) :
+    ∃ u : Fin m -> Fin (d + 1) -> ℝ,
+      ∀ a b : Fin m,
+        MinkowskiSpace.minkowskiInner d (u a) (e b) =
+          if a = b then 1 else 0 := by
+  let W : Submodule ℝ (Fin (d + 1) -> ℝ) :=
+    Submodule.span ℝ (Set.range e)
+  classical
+  choose ell hell using
+    fun a : Fin m =>
+      LinearMap.exists_extend
+        ((Finsupp.lapply a).comp hli.repr :
+          W ->ₗ[ℝ] ℝ)
+  refine ⟨fun a => minkowskiDualVectorOfLinearFunctional d (ell a), ?_⟩
+  intro a b
+  rw [minkowskiInner_dualVectorOfLinearFunctional]
+  have hbW : (⟨e b, Submodule.subset_span ⟨b, rfl⟩⟩ : W) = _ := rfl
+  have hell_apply :
+      ell a (e b) =
+        ((Finsupp.lapply a).comp hli.repr)
+          (⟨e b, Submodule.subset_span ⟨b, rfl⟩⟩ : W) := by
+    simpa using congrArg (fun L => L
+      (⟨e b, Submodule.subset_span ⟨b, rfl⟩⟩ : W)) (hell a)
+  rw [hell_apply, LinearMap.comp_apply, Finsupp.lapply_apply]
+  rw [hli.repr_eq_single b
+    (⟨e b, Submodule.subset_span ⟨b, rfl⟩⟩ : W) rfl]
+  by_cases h : a = b
+  · subst h
+    simp
+  · simp [h]
+```
+
+The final selected-row supplier is then immediate from the checked front-door
+lemma:
+
+```lean
+theorem exists_minkowski_dual_sourceRows_of_sourceRegularMinor_ne_zero
+    (d n : ℕ)
+    {x : Fin n -> Fin (d + 1) -> ℝ}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hminor : sourceRegularMinor d n I J x ≠ 0) :
+    ∃ u : Fin (min n (d + 1)) -> Fin (d + 1) -> ℝ,
+      ∀ a b : Fin (min n (d + 1)),
+        MinkowskiSpace.minkowskiInner d (u a) (x (I b)) =
+          if a = b then 1 else 0
+```
+
+Then define the source variation by
+
+```lean
+selectedVar a := (1 / 2) •
+  ∑ b : Fin m, A (I a) b • u b
+
+residualVar r := ∑ a : Fin m,
+  (A r a - MinkowskiSpace.minkowskiInner d (x r) (selectedVar a)) • u a
+
+h r := if hr : r ∈ Set.range I
+  then selectedVar ((Equiv.ofInjective I hI).symm ⟨r, hr⟩)
+  else residualVar r
+```
+
+The proof should expose the two elementary calculation lemmas used here, not
+bury them inside a tactic block:
+
+```lean
+theorem sourceRealGramDifferential_apply_eq_minkowskiInner
+    (d n : ℕ)
+    (x h : Fin n -> Fin (d + 1) -> ℝ)
+    (i j : Fin n) :
+    sourceRealGramDifferential d n x h i j =
+      MinkowskiSpace.minkowskiInner d (h i) (x j) +
+        MinkowskiSpace.minkowskiInner d (x i) (h j)
+
+theorem minkowskiInner_sum_smul_dual_left
+    (d m : ℕ)
+    {u e : Fin m -> Fin (d + 1) -> ℝ}
+    (hdual :
+      ∀ a b : Fin m,
+        MinkowskiSpace.minkowskiInner d (u a) (e b) =
+          if a = b then 1 else 0)
+    (coeff : Fin m -> ℝ) (a : Fin m) :
+    MinkowskiSpace.minkowskiInner d
+      (∑ b : Fin m, coeff b • u b) (e a) = coeff a
+```
+
+The first is just `Finset.sum_add_distrib` after unfolding the differential
+and `minkowskiInner`; the second uses the linearity of
+`v ↦ MinkowskiSpace.minkowskiInner d v (e a)`, `map_sum`, `map_smul`, the
+dual identity, and the finite sum of Kronecker deltas.
+
+The selected row calculation is:
+
+```lean
+have hselected_pair :
+    ∀ a b : Fin m,
+      MinkowskiSpace.minkowskiInner d (selectedVar a) (x (I b)) =
+        (1 / 2) * A (I a) b := by
+  intro a b
+  unfold selectedVar
+  rw [sourceMinkowskiInner_smul_left]
+  rw [minkowskiInner_sum_smul_dual_left d m hdual]
+
+have h_selected :
+    ∀ a b : Fin m,
+      sourceRealGramDifferential d n x h (I a) (I b) =
+        A (I a) b := by
+  intro a b
+  rw [sourceRealGramDifferential_apply_eq_minkowskiInner]
+  rw [h_at_selected a, h_at_selected b]
+  rw [hselected_pair a b]
+  rw [sourceMinkowskiInner_comm d (x (I a)) (selectedVar b),
+    hselected_pair b a]
+  have hsymAB :
+      A (I b) a = A (I a) b :=
+    (mem_sourceSelectedSymCoordSubspace.mp hA b a)
+  nlinarith
+```
+
+The unselected row calculation is:
+
+```lean
+have hresidual_pair :
+    ∀ r : Fin n, ∀ a : Fin m,
+      MinkowskiSpace.minkowskiInner d (residualVar r) (x (I a)) =
+        A r a - MinkowskiSpace.minkowskiInner d (x r) (selectedVar a) := by
+  intro r a
+  unfold residualVar
+  rw [minkowskiInner_sum_smul_dual_left d m hdual]
+
+have h_unselected :
+    ∀ r : Fin n, r ∉ Set.range I ->
+      ∀ a : Fin m,
+        sourceRealGramDifferential d n x h r (I a) = A r a := by
+  intro r hr a
+  rw [sourceRealGramDifferential_apply_eq_minkowskiInner]
+  rw [h_at_unselected r hr, h_at_selected a]
+  rw [hresidual_pair r a]
+  ring
+```
+
+In the range proof, split each row `r` by `by_cases hr : r ∈ Set.range I`.
+In the selected case set
+`c := (Equiv.ofInjective I hI).symm ⟨r, hr⟩`; use
+`Equiv.apply_ofInjective_symm hI ⟨r, hr⟩` to rewrite `I c = r`, then apply
+`h_selected c a`.  In the unselected case apply `h_unselected r hr a`.
+
+For selected rows the block symmetry gives
+
+```lean
+dG_x(h) (I a) (I b) = A (I a) b.
+```
+
+For unselected rows the residual definition gives
+
+```lean
+dG_x(h) r (I a) = A r a.
+```
+
+Together these prove
+
+```lean
+LinearMap.range
+  ((sourceSelectedGramCoord n m I).comp
+    (sourceRealGramDifferential d n x))
+= sourceSelectedSymCoordSubspace n m I
+```
+
+8. The selected-coordinate projection is injective on the range of the full
+differential.  If two image variations have equal selected coordinates, then
+for each `j : Fin n` use the coefficients from step 3:
+
+```lean
+x j = ∑ a, c j a • x (I a)
+```
+
+First reduce to the kernel statement.  It is enough to prove that, for a
+variation `h`, if
+
+```lean
+hsel : sourceSelectedGramCoord n m I
+  ((sourceRealGramDifferential d n x) h) = 0
+```
+
+then `sourceRealGramDifferential d n x h = 0`.  The coefficient supplier is a
+separate checked finite-dimensional lemma:
+
+```lean
+theorem sourceRows_coefficients_of_sourceRegularMinor_ne_zero
+    (d n : ℕ)
+    {x : Fin n -> Fin (d + 1) -> ℝ}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hminor : sourceRegularMinor d n I J x ≠ 0) :
+    ∃ c : Fin n -> Fin (min n (d + 1)) -> ℝ,
+      ∀ r : Fin n,
+        x r = ∑ a : Fin (min n (d + 1)), c r a • x (I a)
+```
+
+It follows from
+`span_sourceRows_eq_sourceConfigurationSpan_of_sourceRegularMinor_ne_zero` and
+`Submodule.mem_span_range_iff_exists_fun`.
+
+The kernel calculation uses the following linearity helpers:
+
+```lean
+theorem sourceMinkowskiInner_sum_smul_left
+    (d m : ℕ)
+    (coeff : Fin m -> ℝ)
+    (u : Fin m -> Fin (d + 1) -> ℝ)
+    (v : Fin (d + 1) -> ℝ) :
+    MinkowskiSpace.minkowskiInner d
+      (∑ a : Fin m, coeff a • u a) v =
+      ∑ a : Fin m, coeff a *
+        MinkowskiSpace.minkowskiInner d (u a) v
+
+theorem sourceMinkowskiInner_sum_smul_right
+    (d m : ℕ)
+    (u : Fin (d + 1) -> ℝ)
+    (coeff : Fin m -> ℝ)
+    (v : Fin m -> Fin (d + 1) -> ℝ) :
+    MinkowskiSpace.minkowskiInner d u
+      (∑ a : Fin m, coeff a • v a) =
+      ∑ a : Fin m, coeff a *
+        MinkowskiSpace.minkowskiInner d u (v a)
+```
+
+For the kernel proof, write `e a := x (I a)` and
+
+```lean
+hApprox r := ∑ a, c r a • h (I a)
+```
+
+The selected-coordinate zero hypothesis gives
+
+```lean
+hzero_col : ∀ i a,
+  sourceRealGramDifferential d n x h i (I a) = 0
+```
+
+and the selected block equations give, for every `j b`,
+
+```lean
+MinkowskiSpace.minkowskiInner d (h j - hApprox j) (x (I b)) = 0
+```
+
+because `hzero_col j b` says
+`B(h j, e_b) + B(x j, h(I b)) = 0`, while the expansion of `x j`
+and the equations `hzero_col (I a) b` give
+`B(hApprox j, e_b) + B(x j, h(I b)) = 0`.
+
+Then for arbitrary `i j`,
+
+```lean
+dG_x(h) i j
+  = B(h i, x j) + B(x i, h j)
+  = B(h i, x j) + B(x i, hApprox j)
+  = ∑ a, c j a * dG_x(h) i (I a)
+  = 0.
+```
+
+Here `B(x i, h j - hApprox j) = 0` follows by expanding `x i` in the selected
+rows and using the just-proved orthogonality of `h j - hApprox j` to every
+selected row.  This proves the kernel statement, and the injectivity theorem
+follows by applying it to the difference of two representatives in
+`LinearMap.range (sourceRealGramDifferential d n x)`.
+
+Bilinearity then gives the useful displayed identity
+
+```lean
+dG_x(h) i j = ∑ a, c j a * dG_x(h) i (I a)
+```
+
+so all target coordinates agree.  Therefore the projection restricts to a
+linear equivalence between
+
+```lean
+LinearMap.range (sourceRealGramDifferential d n x)
+```
+
+and `sourceSelectedSymCoordSubspace n m I`.
+
+9. The rank theorem follows by finrank through that linear equivalence and the
+checked arithmetic identity
+
+```lean
+n * m - (m * (m - 1)) / 2 = sourceGramExpectedDim d n
+```
+
+after unfolding `sourceGramExpectedDim`.
+
+The Lean assembly should be explicit:
+
+```lean
+let L := sourceRealGramDifferential d n x
+let P := sourceSelectedGramCoord n (min n (d + 1)) I
+let S := sourceSelectedSymCoordSubspace n (min n (d + 1)) I
+
+def rangeToSelectedSym :
+    LinearMap.range L ->ₗ[ℝ] S :=
+{ toFun := fun y =>
+    ⟨P y, by
+      rcases y.property with ⟨h, rfl⟩
+      rw [← sourceSelectedGramCoord_comp_differential_range_eq
+        d n hI hJ hminor]
+      exact ⟨h, rfl⟩⟩,
+  ... }
+
+have hinj : Function.Injective rangeToSelectedSym := by
+  intro y z hyz
+  apply sourceSelectedGramCoord_injective_on_differential_range d n hI hJ hminor
+  exact congrArg Subtype.val hyz
+
+have hsurj : Function.Surjective rangeToSelectedSym := by
+  intro A
+  have hA :
+      (A : Fin n -> Fin (min n (d + 1)) -> ℝ) ∈
+        LinearMap.range (P.comp L) := by
+    rw [sourceSelectedGramCoord_comp_differential_range_eq d n hI hJ hminor]
+    exact A.property
+  rcases hA with ⟨h, hh⟩
+  refine ⟨⟨L h, ⟨h, rfl⟩⟩, ?_⟩
+  ext i a
+  exact congrFun (congrFun hh i) a
+
+let e : LinearMap.range L ≃ₗ[ℝ] S :=
+  LinearEquiv.ofBijective rangeToSelectedSym ⟨hinj, hsurj⟩
+
+calc
+  Module.finrank ℝ (LinearMap.range L)
+      = Module.finrank ℝ S := e.finrank_eq
+  _ = n * m - (m * (m - 1)) / 2 :=
+      finrank_sourceSelectedSymCoordSubspace n m I hI
+  _ = sourceGramExpectedDim d n := by
+      simp [sourceGramExpectedDim, m]
+```
+
+The kernel calculation is equivalent and useful for rank-nullity:
+
+1. variations in the annihilator of the selected span contribute
+   `n * ((d + 1) - m)` kernel dimensions;
+2. span-tangent variations `A` satisfying
+   `B (A e_a) e_b + B e_a (A e_b) = 0` are the infinitesimal
+   skew-adjoint endomorphisms of the selected span, of dimension
    `m * (m - 1) / 2`;
-6. the total kernel has dimension
+3. the total kernel dimension is
    `n * ((d + 1) - m) + m * (m - 1) / 2`;
-7. rank-nullity gives image dimension
-   `n * (d + 1) - (n * ((d + 1) - m) + m * (m - 1) / 2) =
-    n * m - m * (m - 1) / 2`;
-8. equivalently, the image consists of:
-   - arbitrary symmetric variations of the `m × m` basis Gram block, and
-   - arbitrary variations of the coefficients of the remaining `n - m`
-     vectors in the chosen span;
-9. conclude image dimension `n * m - m * (m - 1) / 2`;
-10. for `n <= d + 1`, this says the map is a submersion onto all symmetric
-   matrices; for `d + 1 <= n`, it is a submersion onto the regular
-   rank-`d + 1` scalar-product variety.
+4. rank-nullity gives the same rank formula.
 
 Lean-facing theorem packet:
 
 ```lean
+/-- The real source Gram map has the declared Frechet derivative. -/
+theorem BHW.sourceRealMinkowskiGram_hasFDerivAt
+    (d n : ℕ)
+    (x : NPointDomain d n) :
+    HasFDerivAt (BHW.sourceRealMinkowskiGram d n)
+      (LinearMap.toContinuousLinearMap
+        (BHW.sourceRealGramDifferential d n x)) x
+
+/-- The real source Gram map is smooth; it is a polynomial in the source
+coordinates. -/
+theorem BHW.contDiff_sourceRealMinkowskiGram
+    (d n : ℕ) :
+    ContDiff ℝ ⊤ (BHW.sourceRealMinkowskiGram d n)
+
+/-- Selected source rows from a nonzero coordinate minor are linearly
+independent. -/
+theorem BHW.linearIndependent_sourceRows_of_sourceRegularMinor_ne_zero
+    (d n : ℕ)
+    {x : NPointDomain d n}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hminor : BHW.sourceRegularMinor d n I J x ≠ 0) :
+    LinearIndependent ℝ (fun a => x (I a))
+
+/-- Selected source rows from a nonzero maximal minor span the whole source
+configuration span. -/
+theorem BHW.span_sourceRows_eq_sourceConfigurationSpan_of_sourceRegularMinor_ne_zero
+    (d n : ℕ)
+    {x : NPointDomain d n}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hminor : BHW.sourceRegularMinor d n I J x ≠ 0) :
+    Submodule.span ℝ (Set.range (fun a => x (I a))) =
+      BHW.sourceConfigurationSpan d n x
+
+def BHW.sourceSelectedGramCoord
+    (n m : ℕ) (I : Fin m -> Fin n) :
+    (Fin n -> Fin n -> ℝ) →ₗ[ℝ] (Fin n -> Fin m -> ℝ)
+
+def BHW.sourceSelectedSymCoordSubspace
+    (n m : ℕ) (I : Fin m -> Fin n) :
+    Submodule ℝ (Fin n -> Fin m -> ℝ)
+
+def BHW.sourceStdBasisVector
+    (d : ℕ) (μ : Fin (d + 1)) : Fin (d + 1) -> ℝ
+
+theorem BHW.sourceStdBasis_sum
+    (d : ℕ) (v : Fin (d + 1) -> ℝ) :
+    (∑ μ : Fin (d + 1), v μ • BHW.sourceStdBasisVector d μ) = v
+
+def BHW.minkowskiDualVectorOfLinearFunctional
+    (d : ℕ)
+    (ell : (Fin (d + 1) -> ℝ) ->ₗ[ℝ] ℝ) :
+    Fin (d + 1) -> ℝ
+
+theorem BHW.minkowskiInner_dualVectorOfLinearFunctional
+    (d : ℕ)
+    (ell : (Fin (d + 1) -> ℝ) ->ₗ[ℝ] ℝ)
+    (v : Fin (d + 1) -> ℝ) :
+    MinkowskiSpace.minkowskiInner d
+      (BHW.minkowskiDualVectorOfLinearFunctional d ell) v = ell v
+
+theorem BHW.exists_minkowski_dual_family_of_linearIndependent
+    (d m : ℕ)
+    {e : Fin m -> Fin (d + 1) -> ℝ}
+    (hli : LinearIndependent ℝ e) :
+    ∃ u : Fin m -> Fin (d + 1) -> ℝ,
+      ∀ a b : Fin m,
+        MinkowskiSpace.minkowskiInner d (u a) (e b) =
+          if a = b then 1 else 0
+
+theorem BHW.exists_minkowski_dual_sourceRows_of_sourceRegularMinor_ne_zero
+    (d n : ℕ)
+    {x : NPointDomain d n}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hminor : BHW.sourceRegularMinor d n I J x ≠ 0) :
+    ∃ u : Fin (min n (d + 1)) -> Fin (d + 1) -> ℝ,
+      ∀ a b : Fin (min n (d + 1)),
+        MinkowskiSpace.minkowskiInner d (u a) (x (I b)) =
+          if a = b then 1 else 0
+
+abbrev BHW.sourceSelectedUpperPair (m : ℕ) :=
+  {p : Fin m × Fin m // p.1 < p.2}
+
+def BHW.sourceSelectedSkewCoord
+    (n m : ℕ) (I : Fin m -> Fin n) :
+    (Fin n -> Fin m -> ℝ) →ₗ[ℝ]
+      (BHW.sourceSelectedUpperPair m -> ℝ)
+
+theorem BHW.sourceSelectedSkewCoord_ker
+    (n m : ℕ) (I : Fin m -> Fin n) :
+    LinearMap.ker (BHW.sourceSelectedSkewCoord n m I) =
+      BHW.sourceSelectedSymCoordSubspace n m I
+
+theorem BHW.sourceSelectedSkewCoord_surjective
+    (n m : ℕ) (I : Fin m -> Fin n)
+    (hI : Function.Injective I) :
+    Function.Surjective (BHW.sourceSelectedSkewCoord n m I)
+
+theorem BHW.card_sourceSelectedUpperPair
+    (m : ℕ) :
+    Fintype.card (BHW.sourceSelectedUpperPair m) =
+      m * (m - 1) / 2
+
+theorem BHW.finrank_sourceSelectedSymCoordSubspace
+    (n m : ℕ)
+    (I : Fin m -> Fin n)
+    (hI : Function.Injective I) :
+    Module.finrank ℝ
+      (BHW.sourceSelectedSymCoordSubspace n m I) =
+      n * m - (m * (m - 1)) / 2
+
+theorem BHW.sourceSelectedGramCoord_comp_differential_range_eq
+    (d n : ℕ)
+    {x : NPointDomain d n}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hI : Function.Injective I)
+    (hJ : Function.Injective J)
+    (hminor : BHW.sourceRegularMinor d n I J x ≠ 0) :
+    LinearMap.range
+      ((BHW.sourceSelectedGramCoord n (min n (d + 1)) I).comp
+        (BHW.sourceRealGramDifferential d n x)) =
+      BHW.sourceSelectedSymCoordSubspace n (min n (d + 1)) I
+
+theorem BHW.sourceSelectedGramCoord_injective_on_differential_range
+    (d n : ℕ)
+    {x : NPointDomain d n}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hI : Function.Injective I)
+    (hJ : Function.Injective J)
+    (hminor : BHW.sourceRegularMinor d n I J x ≠ 0) :
+    Function.Injective
+      (fun y : LinearMap.range (BHW.sourceRealGramDifferential d n x) =>
+        (BHW.sourceSelectedGramCoord n (min n (d + 1)) I) y)
+
+/-- Rank theorem in the nonzero-minor coordinates.  This is the theorem to
+prove first; the `SourceGramRegularAt` version is its corollary. -/
+theorem BHW.sourceRealGramDifferential_rank_of_exists_nonzero_minor
+    (d n : ℕ)
+    {x : NPointDomain d n}
+    (hminor :
+      ∃ I : Fin (min n (d + 1)) -> Fin n,
+        Function.Injective I ∧
+        ∃ J : Fin (min n (d + 1)) -> Fin (d + 1),
+          Function.Injective J ∧
+          BHW.sourceRegularMinor d n I J x ≠ 0) :
+    Module.finrank ℝ
+      (LinearMap.range (BHW.sourceRealGramDifferential d n x)) =
+      BHW.sourceGramExpectedDim d n
+
 /-- Kernel dimension of the Gram differential at a regular point.  The kernel
 contains both normal-annihilator variations and infinitesimal skew-adjoint
 span rotations. -/
@@ -5331,10 +6022,29 @@ theorem BHW.sourceRealGramDifferential_rank_of_regular
     Module.finrank ℝ
       (LinearMap.range (BHW.sourceRealGramDifferential d n x)) =
       BHW.sourceGramExpectedDim d n
+
+/-- Complexifying a real regular source configuration remains regular.  Prove
+this through the already checked nonzero-minor characterization, after casting
+the nonzero real determinant to a nonzero complex determinant. -/
+theorem BHW.sourceComplex_regular_of_real_regular
+    (d n : ℕ)
+    {x : NPointDomain d n}
+    (hreg : BHW.SourceGramRegularAt d n x) :
+    BHW.SourceComplexGramRegularAt d n (BHW.realEmbed x)
+
+/-- At a real regular point, the complex tangent of the complex scalar-product
+variety is exactly the complex span of the real tangent. -/
+theorem BHW.sourceComplexifiedRealTangentEqualsComplexTangent_of_regular
+    (d n : ℕ)
+    {x : NPointDomain d n}
+    (hreg : BHW.SourceGramRegularAt d n x) :
+    BHW.SourceComplexifiedRealTangentEqualsComplexTangent d n
+      (BHW.sourceRealMinkowskiGram d n x)
 ```
 
-The immediate algebraic implementation subpacket is now checked in
-`SourceExtension.lean`:
+The immediate algebraic implementation subpacket is now split across the
+stable regular-locus file `SourceExtension.lean` and the post-cleanup companion
+`SourceRegularRank.lean`:
 
 ```lean
 def BHW.sourceRealGramDifferential
@@ -5381,6 +6091,13 @@ def BHW.sourceComplexGramDifferential
     intro μ _
     ring }
 
+theorem BHW.sourceRealMinkowskiGram_hasFDerivAt
+    (d n : ℕ)
+    (x : Fin n -> Fin (d + 1) -> ℝ) :
+    HasFDerivAt (BHW.sourceRealMinkowskiGram d n)
+      (LinearMap.toContinuousLinearMap
+        (BHW.sourceRealGramDifferential d n x)) x
+
 theorem BHW.sourceComplexGramDifferential_realEmbed
     (d n : ℕ)
     (x h : Fin n -> Fin (d + 1) -> ℝ) :
@@ -5392,15 +6109,666 @@ theorem BHW.sourceComplexGramDifferential_realEmbed
   simp [BHW.sourceComplexGramDifferential,
     BHW.sourceRealGramDifferential, BHW.sourceRealGramComplexify,
     BHW.realEmbed]
+
+theorem BHW.contDiff_sourceRealMinkowskiGram
+    (d n : ℕ) :
+    ContDiff ℝ ⊤ (BHW.sourceRealMinkowskiGram d n) := by
+  rw [contDiff_pi]
+  intro i
+  rw [contDiff_pi]
+  intro j
+  unfold BHW.sourceRealMinkowskiGram
+  apply ContDiff.sum
+  intro μ _
+  exact ((contDiff_const.mul (contDiff_apply_apply ℝ ℝ i μ)).mul
+    (contDiff_apply_apply ℝ ℝ j μ))
+
+theorem BHW.linearIndependent_sourceRows_of_sourceRegularMinor_ne_zero
+    (d n : ℕ)
+    {x : Fin n -> Fin (d + 1) -> ℝ}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hminor : BHW.sourceRegularMinor d n I J x ≠ 0) :
+    LinearIndependent ℝ (fun a : Fin (min n (d + 1)) => x (I a))
+
+theorem BHW.span_sourceRows_eq_sourceConfigurationSpan_of_sourceRegularMinor_ne_zero
+    (d n : ℕ)
+    {x : Fin n -> Fin (d + 1) -> ℝ}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hminor : BHW.sourceRegularMinor d n I J x ≠ 0) :
+    Submodule.span ℝ
+        (Set.range (fun a : Fin (min n (d + 1)) => x (I a))) =
+      BHW.sourceConfigurationSpan d n x
+
+def BHW.sourceSelectedGramCoord
+    (n m : ℕ) (I : Fin m -> Fin n) :
+    (Fin n -> Fin n -> ℝ) →ₗ[ℝ] (Fin n -> Fin m -> ℝ)
+
+def BHW.sourceSelectedSymCoordSubspace
+    (n m : ℕ) (I : Fin m -> Fin n) :
+    Submodule ℝ (Fin n -> Fin m -> ℝ)
+
+theorem BHW.sourceRealGramDifferential_symm
+    (d n : ℕ)
+    (x h : Fin n -> Fin (d + 1) -> ℝ)
+    (i j : Fin n) :
+    BHW.sourceRealGramDifferential d n x h i j =
+      BHW.sourceRealGramDifferential d n x h j i
+
+theorem BHW.sourceSelectedGramCoord_differential_mem
+    (d n : ℕ)
+    (x h : Fin n -> Fin (d + 1) -> ℝ)
+    {m : ℕ} (I : Fin m -> Fin n) :
+    BHW.sourceSelectedGramCoord n m I
+        ((BHW.sourceRealGramDifferential d n x) h) ∈
+      BHW.sourceSelectedSymCoordSubspace n m I
+
+theorem BHW.minkowskiInner_dualVectorOfLinearFunctional
+    (d : ℕ)
+    (ell : (Fin (d + 1) -> ℝ) ->ₗ[ℝ] ℝ)
+    (v : Fin (d + 1) -> ℝ) :
+    MinkowskiSpace.minkowskiInner d
+      (BHW.minkowskiDualVectorOfLinearFunctional d ell) v = ell v
+
+theorem BHW.exists_minkowski_dual_family_of_linearIndependent
+    (d m : ℕ)
+    {e : Fin m -> Fin (d + 1) -> ℝ}
+    (hli : LinearIndependent ℝ e) :
+    ∃ u : Fin m -> Fin (d + 1) -> ℝ,
+      ∀ a b : Fin m,
+        MinkowskiSpace.minkowskiInner d (u a) (e b) =
+          if a = b then 1 else 0
+
+theorem BHW.exists_minkowski_dual_sourceRows_of_sourceRegularMinor_ne_zero
+    (d n : ℕ)
+    {x : Fin n -> Fin (d + 1) -> ℝ}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hminor : BHW.sourceRegularMinor d n I J x ≠ 0) :
+    ∃ u : Fin (min n (d + 1)) -> Fin (d + 1) -> ℝ,
+      ∀ a b : Fin (min n (d + 1)),
+        MinkowskiSpace.minkowskiInner d (u a) (x (I b)) =
+          if a = b then 1 else 0
+
+theorem BHW.sourceMinkowskiInner_comm
+    (d : ℕ) (x y : Fin (d + 1) -> ℝ) :
+    MinkowskiSpace.minkowskiInner d x y =
+      MinkowskiSpace.minkowskiInner d y x
+
+theorem BHW.sourceMinkowskiInner_smul_left
+    (d : ℕ) (c : ℝ) (x y : Fin (d + 1) -> ℝ) :
+    MinkowskiSpace.minkowskiInner d (c • x) y =
+      c * MinkowskiSpace.minkowskiInner d x y
+
+theorem BHW.sourceRealGramDifferential_apply_eq_minkowskiInner
+    (d n : ℕ)
+    (x h : Fin n -> Fin (d + 1) -> ℝ)
+    (i j : Fin n) :
+    BHW.sourceRealGramDifferential d n x h i j =
+      MinkowskiSpace.minkowskiInner d (h i) (x j) +
+        MinkowskiSpace.minkowskiInner d (x i) (h j)
+
+theorem BHW.minkowskiInner_sum_smul_dual_left
+    (d m : ℕ)
+    {u e : Fin m -> Fin (d + 1) -> ℝ}
+    (hdual :
+      ∀ a b : Fin m,
+        MinkowskiSpace.minkowskiInner d (u a) (e b) =
+          if a = b then 1 else 0)
+    (coeff : Fin m -> ℝ) (a : Fin m) :
+    MinkowskiSpace.minkowskiInner d
+      (∑ b : Fin m, coeff b • u b) (e a) = coeff a
+
+theorem BHW.sourceMinkowskiInner_sum_smul_left
+    (d m : ℕ)
+    (coeff : Fin m -> ℝ)
+    (u : Fin m -> Fin (d + 1) -> ℝ)
+    (v : Fin (d + 1) -> ℝ) :
+    MinkowskiSpace.minkowskiInner d
+      (∑ a : Fin m, coeff a • u a) v =
+      ∑ a : Fin m, coeff a *
+        MinkowskiSpace.minkowskiInner d (u a) v
+
+theorem BHW.sourceMinkowskiInner_sum_smul_right
+    (d m : ℕ)
+    (u : Fin (d + 1) -> ℝ)
+    (coeff : Fin m -> ℝ)
+    (v : Fin m -> Fin (d + 1) -> ℝ) :
+    MinkowskiSpace.minkowskiInner d u
+      (∑ a : Fin m, coeff a • v a) =
+      ∑ a : Fin m, coeff a *
+        MinkowskiSpace.minkowskiInner d u (v a)
+
+theorem BHW.sourceRows_coefficients_of_sourceRegularMinor_ne_zero
+    (d n : ℕ)
+    {x : Fin n -> Fin (d + 1) -> ℝ}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hminor : BHW.sourceRegularMinor d n I J x ≠ 0) :
+    ∃ c : Fin n -> Fin (min n (d + 1)) -> ℝ,
+      ∀ r : Fin n,
+        x r = ∑ a : Fin (min n (d + 1)), c r a • x (I a)
+
+theorem BHW.sourceRealGramDifferential_eq_zero_of_selectedGramCoord_eq_zero
+    (d n : ℕ)
+    {x : Fin n -> Fin (d + 1) -> ℝ}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hminor : BHW.sourceRegularMinor d n I J x ≠ 0)
+    {h : Fin n -> Fin (d + 1) -> ℝ}
+    (hsel :
+      BHW.sourceSelectedGramCoord n (min n (d + 1)) I
+        ((BHW.sourceRealGramDifferential d n x) h) = 0) :
+    (BHW.sourceRealGramDifferential d n x) h = 0
+
+theorem BHW.sourceSelectedGramCoord_comp_differential_range_eq
+    (d n : ℕ)
+    {x : Fin n -> Fin (d + 1) -> ℝ}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hI : Function.Injective I)
+    (hJ : Function.Injective J)
+    (hminor : BHW.sourceRegularMinor d n I J x ≠ 0) :
+    LinearMap.range
+      ((BHW.sourceSelectedGramCoord n (min n (d + 1)) I).comp
+        (BHW.sourceRealGramDifferential d n x)) =
+      BHW.sourceSelectedSymCoordSubspace n (min n (d + 1)) I
+
+theorem BHW.sourceSelectedGramCoord_injective_on_differential_range
+    (d n : ℕ)
+    {x : Fin n -> Fin (d + 1) -> ℝ}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hI : Function.Injective I)
+    (hJ : Function.Injective J)
+    (hminor : BHW.sourceRegularMinor d n I J x ≠ 0) :
+    Function.Injective
+      (fun y : LinearMap.range (BHW.sourceRealGramDifferential d n x) =>
+        (BHW.sourceSelectedGramCoord n (min n (d + 1)) I) y)
 ```
 
-This subpacket contributes the honest tangent map needed for the later
-constant-rank theorem.  It does not assert the rank, local submersion,
-real-environment uniqueness, or any OS-side conclusion.
+This subpacket now closes the selected-coordinate rank calculation itself:
+the differential range is linearly equivalent to the symmetric
+selected-coordinate subspace, the strict-upper skew map gives that subspace's
+codimension, and `sourceRealGramDifferential_rank_of_regular` is checked.  It
+does not yet assert a local submersion chart, real-environment uniqueness, or
+any OS-side conclusion.  The next proof-doc stage is the finite-dimensional
+augmented inverse-function chart and the real-environment supplier built from
+it.
 
-Then apply the finite-dimensional constant-rank theorem to the smooth
-polynomial map `sourceRealMinkowskiGram d n`.  The chart produced by constant
-rank is the local real part of Hall-Wightman's scalar-product variety.
+The next chart stage must be stated as a relative-openness theorem, not as an
+affine tangent-plane theorem.  The tempting statement
+
+```lean
+∀ r near 0 in LinearMap.range (sourceRealGramDifferential d n x0),
+  ∃ y near x0,
+    sourceRealMinkowskiGram d n y =
+      sourceRealMinkowskiGram d n x0 + r
+```
+
+is too strong in general: the Hall-Wightman scalar-product locus is a curved
+rank-bounded variety, so a regular image is locally a graph over its tangent
+coordinates, not literally an open subset of the affine tangent plane.  The
+correct output is that the Gram image of a small regular source patch is
+relatively open in `sourceRealGramVariety d n`.
+
+Use the selected-coordinate map as the submersion coordinate.  For
+`m = min n (d + 1)` and a fixed nonzero minor `I,J` at `x0`, define the
+codomain-restricted differential
+
+```lean
+def BHW.sourceSelectedGramDifferentialToSym
+    (d n m : ℕ)
+    (x : NPointDomain d n)
+    (I : Fin m -> Fin n) :
+    NPointDomain d n →ₗ[ℝ]
+      BHW.sourceSelectedSymCoordSubspace n m I :=
+{ toFun := fun h =>
+    ⟨BHW.sourceSelectedGramCoord n m I
+      ((BHW.sourceRealGramDifferential d n x) h),
+     BHW.sourceSelectedGramCoord_differential_mem d n x h I⟩,
+  ... }
+
+theorem BHW.sourceSelectedGramDifferentialToSym_surjective_of_sourceRegularMinor_ne_zero
+    (d n : ℕ)
+    {x : NPointDomain d n}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hI : Function.Injective I)
+    (hJ : Function.Injective J)
+    (hminor : BHW.sourceRegularMinor d n I J x ≠ 0) :
+    Function.Surjective
+      (BHW.sourceSelectedGramDifferentialToSym d n
+        (min n (d + 1)) x I)
+
+theorem BHW.sourceSelectedGramDifferentialToSym_ker_of_sourceRegularMinor_ne_zero
+    (d n : ℕ)
+    {x : NPointDomain d n}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hminor : BHW.sourceRegularMinor d n I J x ≠ 0) :
+    LinearMap.ker
+      (BHW.sourceSelectedGramDifferentialToSym d n
+        (min n (d + 1)) x I) =
+      LinearMap.ker (BHW.sourceRealGramDifferential d n x)
+```
+
+The first theorem is exactly the checked range equality, but with the
+codomain already restricted to the symmetric selected-coordinate subspace
+needed by mathlib's implicit-function theorem.  The second theorem says this
+selected submersion has the same infinitesimal fibers as the full Gram map.
+
+Then define the selected Gram coordinate map into that subspace:
+
+```lean
+def BHW.sourceSelectedRealGramMap
+    (d n m : ℕ)
+    (I : Fin m -> Fin n) :
+    NPointDomain d n ->
+      BHW.sourceSelectedSymCoordSubspace n m I :=
+  fun x =>
+    ⟨BHW.sourceSelectedGramCoord n m I
+        (BHW.sourceRealMinkowskiGram d n x),
+     by
+       intro a b
+       simp [BHW.sourceSelectedGramCoord,
+         BHW.sourceRealMinkowskiGram_symm]⟩
+
+theorem BHW.sourceSelectedRealGramMap_hasStrictFDerivAt
+    (d n m : ℕ)
+    (I : Fin m -> Fin n)
+    (x : NPointDomain d n) :
+    HasStrictFDerivAt
+      (BHW.sourceSelectedRealGramMap d n m I)
+      (LinearMap.toContinuousLinearMap
+        (BHW.sourceSelectedGramDifferentialToSym d n m x I)) x
+```
+
+This proof uses `contDiff_sourceRealMinkowskiGram` and
+`ContDiff.hasStrictFDerivAt`, then codomain-restricts the derivative to the
+selected symmetric subspace.
+
+For a nonzero minor at `x0`, apply mathlib's finite-dimensional implicit
+function theorem
+
+```lean
+HasStrictFDerivAt.implicitToOpenPartialHomeomorph
+```
+
+to `sourceSelectedRealGramMap d n m I`.  Its target is
+
+```lean
+BHW.sourceSelectedSymCoordSubspace n m I ×
+  LinearMap.ker
+    (BHW.sourceSelectedGramDifferentialToSym d n m x0 I)
+```
+
+and the first component is definitionally the selected Gram coordinate map.
+The minor nonvanishing condition is open, so shrink the source to the same
+minor chart; on that chart all derivatives have the same selected-coordinate
+rank and the same kernel as the full Gram differential.
+
+The constant-rank step is then the finite-dimensional Hall-Wightman argument
+in these selected coordinates.  Do **not** prove vertical constancy by
+differentiating the implicit inverse along a vertical path: mathlib's current
+implicit-function interface exposes the inverse derivative at the base point,
+not on a whole local product neighborhood.  The faithful and Lean-ready route
+is algebraic:
+
+1. let `e` be the open partial homeomorphism from the implicit theorem;
+2. for each selected coordinate `r` near the base value, define the source
+   section `s r := e.symm (r, 0)`;
+3. prove the finite selected-coordinate uniqueness theorem: on a fixed
+   nonzero selected-minor chart, equality of selected Gram coordinates implies
+   equality of the full Gram matrices;
+4. apply that theorem to `y` and `s ((e y).1)`.  The first-coordinate identity
+   for `e` gives equality of selected coordinates, and the source has been
+   shrunk to the same nonzero-minor chart, so the full Gram values agree;
+5. therefore the local Gram image is exactly
+   `{sourceRealMinkowskiGram d n (s r) | r ∈ R}` for an open selected
+   coordinate set `R`;
+6. this set is relatively open in `sourceRealGramVariety d n`, with selected
+   coordinates as its local chart.  No assertion is made that it is affine in
+   the ambient full matrix space.
+
+The selected-coordinate uniqueness theorem is now checked in Lean:
+
+```lean
+theorem BHW.sourceSelectedGramCoord_eq_fullGram_eq_of_sourceRegularMinor_ne_zero
+    (d n : ℕ)
+    {x y : NPointDomain d n}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hminor_x : BHW.sourceRegularMinor d n I J x ≠ 0)
+    (hminor_y : BHW.sourceRegularMinor d n I J y ≠ 0)
+    (hsel :
+      BHW.sourceSelectedGramCoord n (min n (d + 1)) I
+          (BHW.sourceRealMinkowskiGram d n x) =
+        BHW.sourceSelectedGramCoord n (min n (d + 1)) I
+          (BHW.sourceRealMinkowskiGram d n y)) :
+    BHW.sourceRealMinkowskiGram d n x =
+      BHW.sourceRealMinkowskiGram d n y
+```
+
+Proof transcript:
+
+* Set `m = min n (d + 1)`.
+* Case `hn : n ≤ d + 1`.  Then `m = n`, so the injective map
+  `I : Fin m -> Fin n` is surjective after the cardinality rewrite.  For any
+  `i j : Fin n`, choose `a : Fin m` with `I a = j`.  Evaluating `hsel` at
+  `(i,a)` gives
+  `sourceRealMinkowskiGram d n x i j =
+   sourceRealMinkowskiGram d n y i j`.
+  Extensionality closes the matrix equality.  This case uses no
+  nondegeneracy of the restricted Minkowski form.
+* Case `hD : d + 1 ≤ n`.  Then `m = d + 1`.  The nonzero minors make both
+  selected families `x ∘ I` and `y ∘ I` bases of the full source spacetime.
+  Use `span_sourceRows_eq_sourceConfigurationSpan_of_sourceRegularMinor_ne_zero`
+  and the dimension squeeze, or equivalently the already checked
+  `linearIndependent_sourceRows_of_sourceRegularMinor_ne_zero` plus
+  `Module.finrank_fin_fun`, to get
+
+  ```lean
+  Submodule.span ℝ (Set.range (fun a : Fin m => x (I a))) = ⊤
+  Submodule.span ℝ (Set.range (fun a : Fin m => y (I a))) = ⊤
+  ```
+
+* Add the local nondegeneracy support lemma:
+
+  ```lean
+  theorem BHW.sourceMinkowskiInner_left_nonDegenerate
+      (d : ℕ) {w : Fin (d + 1) -> ℝ}
+      (horth :
+        ∀ v : Fin (d + 1) -> ℝ,
+          MinkowskiSpace.minkowskiInner d w v = 0) :
+      w = 0
+  ```
+
+  Proof: test `horth` on `sourceStdBasisVector d μ`; the resulting scalar is
+  `MinkowskiSpace.metricSignature d μ * w μ`, and the signature entry is
+  `1` for `μ = 0` and `-1` otherwise.
+* Add the span version:
+
+  ```lean
+  theorem BHW.sourceMinkowskiInner_eq_zero_of_orthogonal_spanning_family
+      (d m : ℕ)
+      {e : Fin m -> Fin (d + 1) -> ℝ}
+      (hspan :
+        Submodule.span ℝ (Set.range e) = ⊤)
+      {w : Fin (d + 1) -> ℝ}
+      (horth :
+        ∀ a : Fin m,
+          MinkowskiSpace.minkowskiInner d w (e a) = 0) :
+      w = 0
+  ```
+
+  Proof: define the right-linear functional
+  `v ↦ MinkowskiSpace.minkowskiInner d w v`; it vanishes on the generating
+  set, hence on its span, hence on `⊤`; then use
+  `sourceMinkowskiInner_left_nonDegenerate`.
+* In the full-spacetime case, choose coefficients `c_x r a` expressing
+  `x r` in the selected `x`-rows, using
+  `sourceRows_coefficients_of_sourceRegularMinor_ne_zero`.  For each `r`,
+  define
+
+  ```lean
+  yApprox r := ∑ a : Fin m, c_x r a • y (I a)
+  ```
+
+  Evaluating `hsel` on selected block entries proves
+  `MinkowskiSpace.minkowskiInner d (y r - yApprox r) (y (I b)) = 0` for all
+  `b`.  Since the selected `y`-rows span `⊤`, the span nondegeneracy lemma gives
+  `y r = yApprox r`.
+* Now compute, for arbitrary `r s`,
+
+  ```lean
+  sourceRealMinkowskiGram d n x r s
+    = ∑ a, c_x s a *
+        sourceRealMinkowskiGram d n x r (I a)
+    = ∑ a, c_x s a *
+        sourceRealMinkowskiGram d n y r (I a)
+    = sourceRealMinkowskiGram d n y r s
+  ```
+
+  The first and last equalities use the coefficient expansions and
+  `sourceMinkowskiInner_sum_smul_right`; the middle equality is `hsel`.
+  Extensionality closes the theorem.  The production proof also checks the
+  support lemmas `sourceRealMinkowskiGram_apply_eq_minkowskiInner`,
+  `sourceMinkowskiInner_add_right`, `sourceMinkowskiInner_smul_right`,
+  `sourceMinkowskiInner_left_nonDegenerate`,
+  `sourceMinkowskiInner_eq_zero_of_orthogonal_spanning_family`,
+  `sourceSelectedIndex_surjective_of_le`, and
+  `sourceSelectedRows_span_top_of_sourceRegularMinor_ne_zero`.
+
+Lean-facing local-chart packet:
+
+```lean
+theorem BHW.sourceSelectedRealGramMap_implicit_chart_of_nonzero_minor
+    (d n : ℕ)
+    {x0 : NPointDomain d n}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hI : Function.Injective I)
+    (hJ : Function.Injective J)
+    (hminor : BHW.sourceRegularMinor d n I J x0 ≠ 0) :
+    ∃ e : OpenPartialHomeomorph
+        (NPointDomain d n)
+        (BHW.sourceSelectedSymCoordSubspace n (min n (d + 1)) I ×
+          LinearMap.ker
+            (BHW.sourceSelectedGramDifferentialToSym d n
+              (min n (d + 1)) x0 I)),
+      x0 ∈ e.source ∧
+      e x0 =
+        (BHW.sourceSelectedRealGramMap d n (min n (d + 1)) I x0, 0) ∧
+      ∀ x ∈ e.source,
+        (e x).1 =
+          BHW.sourceSelectedRealGramMap d n (min n (d + 1)) I x
+
+theorem BHW.sourceRealGramMap_constant_on_selectedVerticalFibers
+    (d n : ℕ)
+    {x0 : NPointDomain d n}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hI : Function.Injective I)
+    (hJ : Function.Injective J)
+    (hminor : BHW.sourceRegularMinor d n I J x0 ≠ 0) :
+    ∃ e : OpenPartialHomeomorph
+        (NPointDomain d n)
+        (BHW.sourceSelectedSymCoordSubspace n (min n (d + 1)) I ×
+          LinearMap.ker
+            (BHW.sourceSelectedGramDifferentialToSym d n
+              (min n (d + 1)) x0 I)),
+      x0 ∈ e.source ∧
+      ∃ U : Set (NPointDomain d n),
+        IsOpen U ∧ x0 ∈ U ∧ U ⊆ e.source ∧
+        (∀ x ∈ U, BHW.sourceRegularMinor d n I J x ≠ 0) ∧
+        ∀ y ∈ U, ∀ z ∈ U,
+          (e y).1 = (e z).1 ->
+          BHW.sourceRealMinkowskiGram d n y =
+            BHW.sourceRealMinkowskiGram d n z
+
+theorem BHW.sourceRealGramMap_localRelOpenImage_of_regular
+    (d n : ℕ)
+    {x0 : NPointDomain d n}
+    (hreg : BHW.SourceGramRegularAt d n x0) :
+    ∃ U : Set (NPointDomain d n),
+      IsOpen U ∧ x0 ∈ U ∧
+      ∃ O : Set (Fin n -> Fin n -> ℝ),
+        BHW.sourceRealMinkowskiGram d n x0 ∈ O ∧
+        BHW.IsRelOpenInSourceRealGramVariety d n O ∧
+        O ⊆ BHW.sourceRealMinkowskiGram d n '' U ∧
+        ∀ G ∈ O, ∃ x ∈ U,
+          BHW.SourceGramRegularAt d n x ∧
+          BHW.sourceRealMinkowskiGram d n x = G
+```
+
+For the Hall-Wightman real-environment supplier, the usable form is the
+open-neighborhood variant:
+
+```lean
+theorem BHW.sourceRealGramMap_localRelOpenImage_in_open_of_regular
+    (d n : ℕ)
+    {x0 : NPointDomain d n}
+    (hreg : BHW.SourceGramRegularAt d n x0)
+    {V : Set (NPointDomain d n)}
+    (hV_open : IsOpen V)
+    (hx0V : x0 ∈ V) :
+    ∃ U : Set (NPointDomain d n),
+      IsOpen U ∧ x0 ∈ U ∧ U ⊆ V ∧
+      ∃ O : Set (Fin n -> Fin n -> ℝ),
+        BHW.sourceRealMinkowskiGram d n x0 ∈ O ∧
+        BHW.IsRelOpenInSourceRealGramVariety d n O ∧
+        O ⊆ BHW.sourceRealMinkowskiGram d n '' U ∧
+        ∀ G ∈ O, ∃ x ∈ U,
+          BHW.SourceGramRegularAt d n x ∧
+          BHW.sourceRealMinkowskiGram d n x = G
+```
+
+Its proof is the same selected-coordinate chart proof, with the source patch
+shrunk from `e.source ∩ {minor ≠ 0}` to
+`e.source ∩ {minor ≠ 0} ∩ V`.  This is not a wrapper: it is the exact source
+locality needed later to force the real-environment witnesses to stay inside
+the user's chosen Jost/open patch.  The old theorem is recovered by taking
+`V = Set.univ`.
+
+The vertical-constancy theorem immediately above is now checked too.  Its proof
+chooses the implicit chart `e` from
+`sourceSelectedRealGramMap_implicit_chart_of_nonzero_minor`, sets
+`U = e.source ∩ {x | sourceRegularMinor d n I J x ≠ 0}`, uses `e.open_source`
+and `continuous_sourceRegularMinor` for openness, and converts
+`(e y).1 = (e z).1` into equality of selected Gram coordinates via the
+first-coordinate identity of the chart.  The checked algebraic uniqueness
+theorem then gives equality of full Gram matrices.
+
+One hidden point remains before the relative-openness theorem is Lean-ready:
+relative openness is a statement in the **Gram variety**, not merely in the
+source chart.  If a nearby Gram matrix `G` lies in
+`sourceRealGramVariety d n`, Lean only gives an arbitrary realization
+`G = sourceRealMinkowskiGram d n y`; this realization `y` need not already lie
+in the same nonzero-minor source patch `U`.  The source-chart vertical
+constancy theorem therefore is not enough by itself.  The missing algebraic
+bridge is that selected coordinates equal to those of one regular chart point
+determine the full Gram matrix for any realization in the variety.
+
+The required proof packet is:
+
+```lean
+theorem BHW.sourceSelectedGramCoord_eq_fullGram_eq_of_leftMinor_rightSpanTop
+    (d n : ℕ)
+    {x y : NPointDomain d n}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hI : Function.Injective I)
+    (hminor_x : BHW.sourceRegularMinor d n I J x ≠ 0)
+    (hspan_y :
+      Submodule.span ℝ
+        (Set.range (fun a : Fin (min n (d + 1)) => y (I a))) = ⊤)
+    (hsel :
+      BHW.sourceSelectedGramCoord n (min n (d + 1)) I
+          (BHW.sourceRealMinkowskiGram d n x) =
+        BHW.sourceSelectedGramCoord n (min n (d + 1)) I
+          (BHW.sourceRealMinkowskiGram d n y)) :
+    BHW.sourceRealMinkowskiGram d n x =
+      BHW.sourceRealMinkowskiGram d n y
+
+theorem BHW.sourceSelectedRows_span_top_of_selectedGramCoord_eq_regular
+    (d n : ℕ)
+    {x y : NPointDomain d n}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hminor_x : BHW.sourceRegularMinor d n I J x ≠ 0)
+    (hsel :
+      BHW.sourceSelectedGramCoord n (min n (d + 1)) I
+          (BHW.sourceRealMinkowskiGram d n x) =
+        BHW.sourceSelectedGramCoord n (min n (d + 1)) I
+          (BHW.sourceRealMinkowskiGram d n y))
+    (hD : d + 1 ≤ n) :
+    Submodule.span ℝ
+      (Set.range (fun a : Fin (min n (d + 1)) => y (I a))) = ⊤
+
+theorem BHW.sourceSelectedGramCoord_eq_fullGram_eq_of_sourceRegularMinor_ne_zero_of_mem_variety
+    (d n : ℕ)
+    {x : NPointDomain d n}
+    {G : Fin n -> Fin n -> ℝ}
+    {I : Fin (min n (d + 1)) -> Fin n}
+    {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+    (hI : Function.Injective I)
+    (hminor_x : BHW.sourceRegularMinor d n I J x ≠ 0)
+    (hG : G ∈ BHW.sourceRealGramVariety d n)
+    (hsel :
+      BHW.sourceSelectedGramCoord n (min n (d + 1)) I
+          (BHW.sourceRealMinkowskiGram d n x) =
+        BHW.sourceSelectedGramCoord n (min n (d + 1)) I G) :
+    BHW.sourceRealMinkowskiGram d n x = G
+```
+
+Proof transcript:
+
+* The first theorem is the already checked selected-coordinate uniqueness
+  proof with the right-hand nonzero-minor hypothesis replaced by the exact
+  fact it used: the selected `y`-rows span the full source spacetime.  Choose
+  coefficients `c_x r a` expressing each `x r` in the selected `x`-rows,
+  define `yApprox r = ∑ a, c_x r a • y (I a)`, use selected-coordinate
+  equality to show `y r - yApprox r` is orthogonal to every selected `y`-row,
+  and use `hspan_y` plus
+  `sourceMinkowskiInner_eq_zero_of_orthogonal_spanning_family` to get
+  `y r = yApprox r`.  The final full-Gram calculation is the same finite sum
+  expansion as in the checked theorem.
+* For
+  `sourceSelectedRows_span_top_of_selectedGramCoord_eq_regular`, assume
+  `d + 1 ≤ n`, so `m = d + 1`.  The nonzero minor for `x` makes the selected
+  `x`-rows span `⊤` and linearly independent.  To prove the selected `y`-rows
+  linearly independent, take coefficients `c` with
+  `∑ a, c a • y (I a) = 0`.  Pair this sum with each selected `y (I b)`.
+  The selected Gram blocks of `x` and `y` agree by `hsel`, so
+  `∑ a, c a • x (I a)` is orthogonal to every selected `x (I b)`.  Since the
+  selected `x`-rows span `⊤`, nondegeneracy gives
+  `∑ a, c a • x (I a) = 0`; linear independence of the selected `x`-rows gives
+  `c = 0`.  Thus the selected `y`-rows are linearly independent, and their
+  cardinality is `d + 1`, so their span is `⊤`.
+* For the arbitrary-variety theorem, unfold
+  `G ∈ sourceRealGramVariety d n` as `G = sourceRealMinkowskiGram d n y`.
+  If `n ≤ d + 1`, then `I : Fin (min n (d+1)) -> Fin n` is surjective and
+  selected columns are all columns.  If `d + 1 ≤ n`, first apply the previous
+  span-transfer theorem to the arbitrary realization `y`, then apply
+  `sourceSelectedGramCoord_eq_fullGram_eq_of_leftMinor_rightSpanTop`.
+
+This proof packet is now checked in
+`BHWPermutation/SourceRegularRank.lean`: the arbitrary-variety uniqueness
+bridge is no longer a documentation-only assumption.
+
+With this algebraic bridge, the relative-open image proof becomes a direct
+chart argument:
+
+1. choose `I,J` from `exists_nonzero_minor_of_sourceGramRegularAt`;
+2. apply `sourceRealGramMap_constant_on_selectedVerticalFibers` and keep the
+   resulting source patch `U ⊆ e.source`;
+3. define
+   `T = e '' U` in the product chart and
+   `R = Prod.fst '' T` in the selected symmetric-coordinate subspace;
+4. `T` is open because `U` is open in `e.source` and `e` is an open partial
+   homeomorphism; `R` is open because product projection is an open map;
+5. choose an ambient open set `R0` whose preimage under the subtype inclusion
+   is `R`; define
+   `E0 = {G | sourceSelectedGramCoord n m I G ∈ R0}`;
+6. set `O = E0 ∩ sourceRealGramVariety d n`.  This is relatively open by
+   definition;
+7. if `G ∈ O`, turn its selected coordinates into a subtype point of the
+   selected symmetric-coordinate subspace using symmetry of real source Gram
+   matrices.  Since that subtype point lies in `R`, choose `u ∈ U` with
+   `(e u).1` equal to it.  The first-coordinate identity for `e` gives
+   equality of selected coordinates for `u` and `G`, and the arbitrary-variety
+   uniqueness theorem gives `sourceRealMinkowskiGram d n u = G`;
+8. the same nonzero minor on `U` gives `SourceGramRegularAt d n u` by
+   `sourceGramRegularAt_of_exists_nonzero_minor`.
+
+The theorems `BHW.sourceRealGramMap_localRelOpenImage_in_open_of_regular` and
+`BHW.sourceRealGramMap_localRelOpenImage_of_regular` are now checked in
+`BHWPermutation/SourceRegularRank.lean`.  This is the precise local
+constant-rank output needed for Hall-Wightman's real environment: it is a
+relative-openness statement inside `sourceRealGramVariety d n`; it deliberately
+does not claim affine openness in the tangent space.
 
 ```lean
 theorem BHW.sourceRealGramMap_realEnvironmentAt_of_regular
@@ -5415,20 +6783,26 @@ theorem BHW.sourceRealGramMap_realEnvironmentAt_of_regular
     ∃ O : Set (Fin n -> Fin n -> ℝ),
       O ⊆ BHW.sourceRealMinkowskiGram d n '' V ∧
       BHW.IsHWRealEnvironment d n O := by
-  -- shrink `V` to `V0 = V ∩ JostSet d n ∩ regularLocus ∩ metric chart`
-  -- using `hV_open`, `BHW.isOpen_jostSet`, and
-  -- `BHW.isOpen_sourceGramRegularAt`;
-  -- apply constant-rank/local-submersion to `sourceRealMinkowskiGram`;
+  -- shrink `V` to `V0 = V ∩ JostSet d n ∩ regularLocus ∩ U`
+  -- using `hV_open`, `BHW.isOpen_jostSet`,
+  -- `BHW.isOpen_sourceGramRegularAt`, and the local chart domain `U`;
+  -- apply `sourceRealGramMap_localRelOpenImage_of_regular` at `x0`;
   -- set `O = sourceRealMinkowskiGram d n '' V0`;
   -- `O ⊆ sourceRealMinkowskiGram d n '' V` is immediate from `V0 ⊆ V`;
-  -- `relOpen` comes from the local-submersion chart;
+  -- `relOpen` comes from the range-coordinate chart theorem above;
   -- `realized_by_jost` comes from the definition of `O`;
-  -- `maximal_totally_real` is the real/complex tangent comparison below.
+  -- `maximal_totally_real` is
+  -- `sourceComplexifiedRealTangentEqualsComplexTangent_of_regular`
+  -- on the shrunken regular locus.
 ```
 
-The complex tangent comparison is algebraic: complexifying a real regular
-configuration remains regular, and the complex differential is the
-complexification of the real differential.
+The complex tangent comparison is algebraic once the real and complex rank
+theorems are available.  The first bridge lemma is now checked: complexifying
+a real regular configuration remains regular.  The proof uses the nonzero
+minor characterization of real regularity, casts the real determinant through
+`RingHom.map_det Complex.ofRealHom`, obtains complex linear independence of
+the same selected rows, and repeats the dimension squeeze in the complex
+configuration span.  The differential bridge is also checked:
 
 ```lean
 theorem BHW.sourceComplex_regular_of_real_regular
@@ -5445,6 +6819,15 @@ theorem BHW.sourceComplexGramDifferential_realEmbed
       BHW.sourceRealGramComplexify n
         ((BHW.sourceRealGramDifferential d n x) h)
 
+theorem BHW.sourceComplexGramDifferential_realEmbed_range_eq_complex_span
+    (d n : ℕ)
+    (x : NPointDomain d n) :
+    LinearMap.range
+        (BHW.sourceComplexGramDifferential d n (BHW.realEmbed x)) =
+      Submodule.span ℂ
+        (BHW.sourceRealGramComplexify n ''
+          LinearMap.range (BHW.sourceRealGramDifferential d n x))
+
 theorem BHW.sourceComplexifiedRealTangentEqualsComplexTangent_of_regular
     (d n : ℕ)
     {x : NPointDomain d n}
@@ -5452,6 +6835,25 @@ theorem BHW.sourceComplexifiedRealTangentEqualsComplexTangent_of_regular
     BHW.SourceComplexifiedRealTangentEqualsComplexTangent d n
       (BHW.sourceRealMinkowskiGram d n x)
 ```
+
+The range-complexification theorem is now checked in
+`BHWPermutation/SourceRegularRank.lean`.  Proof: for `⊆`, write an arbitrary
+complex variation `h` as
+`realEmbed (fun i μ => (h i μ).re) + Complex.I •
+realEmbed (fun i μ => (h i μ).im)`, use complex-linearity of
+`sourceComplexGramDifferential` and the checked
+`sourceComplexGramDifferential_realEmbed` identity, and conclude membership in
+the complex span.  For `⊇`, every complexified real differential value is the
+complex differential of `realEmbed h`, so the generating set lies in the
+complex range.
+
+This still does **not** by itself prove
+`sourceComplexifiedRealTangentEqualsComplexTangent_of_regular`: the remaining
+obligation is the complex analogue of the selected-coordinate rank/local-chart
+argument, showing that every regular complex realization over the same
+complexified real Gram point has the same complex tangent image as the real
+embedded regular point.  That should be documented and proved as the next
+finite-dimensional Hall-Wightman tangent packet, not assumed.
 
 **C. Hall-Wightman uniqueness from a real environment.**
 

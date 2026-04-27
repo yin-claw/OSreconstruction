@@ -1,4 +1,6 @@
 import Mathlib.Algebra.Polynomial.Roots
+import Mathlib.Analysis.Calculus.FDeriv.Mul
+import Mathlib.Analysis.Normed.Module.FiniteDimension
 import Mathlib.LinearAlgebra.Dimension.StrongRankCondition
 import Mathlib.LinearAlgebra.Matrix.Polynomial
 import Mathlib.LinearAlgebra.Matrix.Rank
@@ -295,6 +297,104 @@ def sourceComplexGramDifferential
     apply Finset.sum_congr rfl
     intro μ _
     ring
+
+/-- The real source Gram map has Frechet derivative
+`sourceRealGramDifferential`. -/
+theorem sourceRealMinkowskiGram_hasFDerivAt
+    (d n : ℕ)
+    (x : Fin n → Fin (d + 1) → ℝ) :
+    HasFDerivAt (sourceRealMinkowskiGram d n)
+      (LinearMap.toContinuousLinearMap (sourceRealGramDifferential d n x)) x := by
+  let rowProj : Fin n →
+      ((Fin n → Fin (d + 1) → ℝ) →L[ℝ] (Fin (d + 1) → ℝ)) :=
+    fun i =>
+      ContinuousLinearMap.proj (R := ℝ)
+        (φ := fun _ : Fin n => Fin (d + 1) → ℝ) i
+  let coordProj : Fin (d + 1) →
+      ((Fin (d + 1) → ℝ) →L[ℝ] ℝ) :=
+    fun μ =>
+      ContinuousLinearMap.proj (R := ℝ)
+        (φ := fun _ : Fin (d + 1) => ℝ) μ
+  let coord : Fin n → Fin (d + 1) →
+      ((Fin n → Fin (d + 1) → ℝ) →L[ℝ] ℝ) :=
+    fun i μ => (coordProj μ).comp (rowProj i)
+  let L : (Fin n → Fin (d + 1) → ℝ) →L[ℝ]
+      (Fin n → Fin n → ℝ) :=
+    LinearMap.toContinuousLinearMap (sourceRealGramDifferential d n x)
+  change HasFDerivAt (sourceRealMinkowskiGram d n) L x
+  have hL : L =
+      ContinuousLinearMap.pi
+        (fun i : Fin n =>
+          (ContinuousLinearMap.proj (R := ℝ)
+            (φ := fun _ : Fin n => Fin n → ℝ) i).comp L) := by
+    ext y i j
+    rfl
+  rw [hL]
+  rw [hasFDerivAt_pi]
+  intro i
+  let Li : (Fin n → Fin (d + 1) → ℝ) →L[ℝ] (Fin n → ℝ) :=
+    (ContinuousLinearMap.proj (R := ℝ)
+      (φ := fun _ : Fin n => Fin n → ℝ) i).comp L
+  change HasFDerivAt
+    (fun y : Fin n → Fin (d + 1) → ℝ =>
+      sourceRealMinkowskiGram d n y i) Li x
+  have hLi : Li =
+      ContinuousLinearMap.pi
+        (fun j : Fin n =>
+          (ContinuousLinearMap.proj (R := ℝ)
+            (φ := fun _ : Fin n => ℝ) j).comp Li) := by
+    ext y j
+    rfl
+  rw [hLi]
+  rw [hasFDerivAt_pi]
+  intro j
+  let component : (Fin n → Fin (d + 1) → ℝ) →L[ℝ] ℝ :=
+    (ContinuousLinearMap.proj (R := ℝ)
+      (φ := fun _ : Fin n => ℝ) j).comp Li
+  change HasFDerivAt
+    (fun y : Fin n → Fin (d + 1) → ℝ =>
+      sourceRealMinkowskiGram d n y i j) component x
+  have hsum : HasFDerivAt
+      (fun y : Fin n → Fin (d + 1) → ℝ =>
+        ∑ μ : Fin (d + 1),
+          MinkowskiSpace.metricSignature d μ * y i μ * y j μ)
+      (∑ μ : Fin (d + 1),
+        (MinkowskiSpace.metricSignature d μ) •
+          (ContinuousLinearMap.smulRight (coord i μ) (x j μ) +
+            ContinuousLinearMap.smulRight (coord j μ) (x i μ))) x := by
+    apply HasFDerivAt.fun_sum
+    intro μ _
+    have hi :
+        HasFDerivAt
+          (fun y : Fin n → Fin (d + 1) → ℝ => y i μ)
+          (coord i μ) x := by
+      simpa [coord, rowProj, coordProj] using
+        (coord i μ).hasFDerivAt (x := x)
+    have hj :
+        HasFDerivAt
+          (fun y : Fin n → Fin (d + 1) → ℝ => y j μ)
+          (coord j μ) x := by
+      simpa [coord, rowProj, coordProj] using
+        (coord j μ).hasFDerivAt (x := x)
+    convert (hi.mul hj).const_mul (MinkowskiSpace.metricSignature d μ) using 1
+    · ext y
+      simp
+      ring
+    · ext h
+      simp [coord, rowProj, coordProj, ContinuousLinearMap.smulRight]
+      ring
+  convert hsum using 1
+  ext h
+  change (sourceRealGramDifferential d n x h) i j =
+    (∑ μ : Fin (d + 1),
+      (MinkowskiSpace.metricSignature d μ) •
+        (ContinuousLinearMap.smulRight (coord i μ) (x j μ) +
+          ContinuousLinearMap.smulRight (coord j μ) (x i μ))) h
+  simp [coord, rowProj, coordProj, sourceRealGramDifferential,
+    Finset.sum_apply, ContinuousLinearMap.smulRight]
+  apply Finset.sum_congr rfl
+  intro μ _
+  ring
 
 /-- A concrete maximal-span template used in the source Gram regular-locus
 geometry: the available coordinate basis vectors appear among the first

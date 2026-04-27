@@ -2,4 +2,5 @@ import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.Adjacency
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.IndexSetD1
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SeedSlices
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceExtension
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceRegularRank
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.PermutationFlow

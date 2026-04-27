@@ -199,10 +199,53 @@ Current examples:
    `sourceFullSpanTemplate`.  The algebraic tangent support is also now
    checked in Lean: `sourceRealGramDifferential`,
    `sourceComplexGramDifferential`,
+   `sourceRealMinkowskiGram_hasFDerivAt`,
+   `contDiff_sourceRealMinkowskiGram`,
+   `sourceSelectedGramCoord`, `sourceSelectedSymCoordSubspace`,
+   `linearIndependent_sourceRows_of_sourceRegularMinor_ne_zero`,
+   `span_sourceRows_eq_sourceConfigurationSpan_of_sourceRegularMinor_ne_zero`,
+   `sourceRealGramDifferential_symm`,
+   `sourceSelectedGramCoord_differential_mem`,
+   `minkowskiInner_dualVectorOfLinearFunctional`,
+   `exists_minkowski_dual_family_of_linearIndependent`,
+   `exists_minkowski_dual_sourceRows_of_sourceRegularMinor_ne_zero`,
+   `sourceRealGramDifferential_apply_eq_minkowskiInner`,
+   `minkowskiInner_sum_smul_dual_left`,
+   `sourceMinkowskiInner_sum_smul_left`,
+   `sourceMinkowskiInner_sum_smul_right`,
+   `sourceMinkowskiInner_add_right`,
+   `sourceMinkowskiInner_smul_right`,
+   `sourceMinkowskiInner_left_nonDegenerate`,
+   `sourceMinkowskiInner_eq_zero_of_orthogonal_spanning_family`,
+   `sourceSelectedGramCoord_comp_differential_range_eq`,
+   `sourceRows_coefficients_of_sourceRegularMinor_ne_zero`,
+   `sourceRealMinkowskiGram_apply_eq_minkowskiInner`,
+   `sourceSelectedIndex_surjective_of_le`,
+   `sourceSelectedRows_span_top_of_sourceRegularMinor_ne_zero`,
+   `sourceSelectedGramCoord_eq_fullGram_eq_of_sourceRegularMinor_ne_zero`,
+   `sourceRealGramMap_constant_on_selectedVerticalFibers`,
+   `sourceRealGramDifferential_eq_zero_of_selectedGramCoord_eq_zero`,
+   `sourceSelectedGramCoord_injective_on_differential_range`,
+   `sourceSelectedGramDifferentialToSym`,
+   `sourceSelectedRealGramMap`,
+   `sourceSelectedRealGramMap_hasStrictFDerivAt`,
+   `sourceSelectedGramDifferentialToSym_surjective_of_sourceRegularMinor_ne_zero`,
+   `sourceSelectedGramDifferentialToSym_ker_of_sourceRegularMinor_ne_zero`,
+   `sourceSelectedRealGramMap_implicit_chart_of_nonzero_minor`,
+   `sourceSelectedUpperPair`, `sourceSelectedSkewCoord`,
+   `sourceSelectedSkewCoord_ker`, `sourceSelectedSkewCoord_surjective`,
+   `card_sourceSelectedUpperPair`, `finrank_sourceSelectedSymCoordSubspace`,
+   `sourceRealGramDifferential_rank_of_exists_nonzero_minor`,
+   `sourceRealGramDifferential_rank_of_regular`,
+   `sourceComplex_regular_of_real_regular`,
    `sourceComplexGramDifferential_realEmbed`,
    `sourceRealGramTangentSpaceAt`, `sourceComplexGramTangentSpaceAt`,
    `SourceComplexifiedRealTangentEqualsComplexTangent`, and
-   `IsHWRealEnvironment`.  The regular-locus template/minor support is now
+   `IsHWRealEnvironment`.  The tangent-complexification support theorem
+   `sourceComplexGramDifferential_realEmbed_range_eq_complex_span` is now
+   checked too: at a real source point, the complex differential range is the
+   complex span of the real differential range.  The regular-locus
+   template/minor support is now
    checked too: `sourceTemplateDomainIndex`, `sourceTemplateCoordIndex`,
    `sourceTemplateDomainIndex_injective`,
    `sourceTemplateCoordIndex_injective`,
@@ -222,13 +265,40 @@ Current examples:
    `sourceCanonicalRegularMinorLinePolynomial_ne_zero`,
    `sourceCanonicalRegularMinorLinePolynomial_eval`,
    `sourceCanonicalRegularMinor_nonzero_dense`, and
-   `dense_sourceGramRegularAt`.  The theorem-2 blueprint now
-   also gives proof
-   skeletons for the three supplier facts: maximal-span density/open regular
-   locus via determinant minors, regular Gram-map rank/local real-environment
-   via the constant-rank theorem, and Hall-Wightman real-environment uniqueness
-   via local maximal-totally-real charts plus analytic continuation on the
-   connected scalar-product variety.
+   `dense_sourceGramRegularAt`.  The post-cleanup rank-stage support now lives
+   in the small companion module `BHWPermutation/SourceRegularRank.lean`,
+   rather than further growing `SourceExtension.lean`.  The theorem-2
+   blueprint now also gives proof skeletons for the three supplier facts:
+   maximal-span density/open regular locus via determinant minors, regular
+   Gram-map rank/local real-environment via the explicit selected-coordinate
+   rank theorem and a selected-coordinate constant-rank chart for the finite
+   source Gram map, and Hall-Wightman real-environment uniqueness via local
+   maximal-totally-real charts plus analytic continuation on the connected
+   scalar-product variety.  The local chart target is relative openness in
+   the scalar-product variety; it is not the false affine claim that the Gram
+   image contains an open subset of `G0 + range dG_x0`.  The algebraic
+   selected-coordinate uniqueness step
+   `sourceSelectedGramCoord_eq_fullGram_eq_of_sourceRegularMinor_ne_zero`
+   and its chart consequence
+   `sourceRealGramMap_constant_on_selectedVerticalFibers` are now checked.
+   This replaces the earlier vertical-path/integration idea: on one fixed
+   nonzero selected-minor chart, selected Gram coordinates determine the full
+   Gram matrix, hence the selected implicit chart has full-Gram-constant
+   vertical fibers after shrinking to the same minor chart.
+   The next relative-open image step is now documented with the extra
+   algebraic bridge that the chart proof genuinely needs:
+   `sourceSelectedGramCoord_eq_fullGram_eq_of_leftMinor_rightSpanTop`,
+   `sourceSelectedRows_span_top_of_selectedGramCoord_eq_regular`, and
+   `sourceSelectedGramCoord_eq_fullGram_eq_of_sourceRegularMinor_ne_zero_of_mem_variety`.
+   These avoid the hidden false assumption that an arbitrary realization of a
+   nearby Gram matrix in `sourceRealGramVariety d n` already lies in the same
+   source minor chart; selected coordinates of one regular chart point must
+   determine the whole Gram matrix for any realization in the variety.  This
+   bridge, the open-neighborhood relative image theorem
+   `sourceRealGramMap_localRelOpenImage_in_open_of_regular`, and its
+   `V = Set.univ` corollary
+   `sourceRealGramMap_localRelOpenImage_of_regular` are now checked in
+   `BHWPermutation/SourceRegularRank.lean`.
    The OS-side constructor is now pinned to a field-by-field Lean transcript:
    the strengthened `BHW.os45_adjacent_singleChart_commonBoundaryValue` must
    export one and the same OS45 patch `V` with Jost membership, both adjacent

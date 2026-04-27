@@ -576,7 +576,67 @@ Implementation locus:
    `sourceCanonicalRegularMinorLinePolynomial_ne_zero`,
    `sourceCanonicalRegularMinorLinePolynomial_eval`,
    `sourceCanonicalRegularMinor_nonzero_dense`, and
-   `dense_sourceGramRegularAt`;
+   `dense_sourceGramRegularAt`.  The follow-on rank-stage companion
+   `BHWPermutation/SourceRegularRank.lean` now checks
+   `contDiff_sourceRealMinkowskiGram`, `sourceSelectedGramCoord`,
+   `sourceSelectedSymCoordSubspace`,
+   `linearIndependent_sourceRows_of_sourceRegularMinor_ne_zero`,
+   `span_sourceRows_eq_sourceConfigurationSpan_of_sourceRegularMinor_ne_zero`,
+   `sourceRealGramDifferential_symm`,
+   `sourceSelectedGramCoord_differential_mem`,
+   `minkowskiInner_dualVectorOfLinearFunctional`,
+   `exists_minkowski_dual_family_of_linearIndependent`,
+   `exists_minkowski_dual_sourceRows_of_sourceRegularMinor_ne_zero`,
+   `sourceRealGramDifferential_apply_eq_minkowskiInner`,
+   `minkowskiInner_sum_smul_dual_left`,
+   `sourceMinkowskiInner_sum_smul_left`,
+   `sourceMinkowskiInner_sum_smul_right`,
+   `sourceMinkowskiInner_add_right`,
+   `sourceMinkowskiInner_smul_right`,
+   `sourceMinkowskiInner_left_nonDegenerate`,
+   `sourceMinkowskiInner_eq_zero_of_orthogonal_spanning_family`, and
+   `sourceSelectedGramCoord_comp_differential_range_eq`,
+   `sourceRows_coefficients_of_sourceRegularMinor_ne_zero`,
+   `sourceRealMinkowskiGram_apply_eq_minkowskiInner`,
+   `sourceSelectedIndex_surjective_of_le`,
+   `sourceSelectedRows_span_top_of_sourceRegularMinor_ne_zero`,
+   `sourceSelectedGramCoord_eq_fullGram_eq_of_sourceRegularMinor_ne_zero`,
+   `sourceRealGramMap_constant_on_selectedVerticalFibers`,
+   `sourceRealGramDifferential_eq_zero_of_selectedGramCoord_eq_zero`,
+   `sourceSelectedGramCoord_injective_on_differential_range`,
+   `sourceSelectedGramDifferentialToSym`,
+   `sourceSelectedRealGramMap`,
+   `sourceSelectedRealGramMap_hasStrictFDerivAt`,
+   `sourceSelectedGramDifferentialToSym_surjective_of_sourceRegularMinor_ne_zero`,
+   `sourceSelectedGramDifferentialToSym_ker_of_sourceRegularMinor_ne_zero`,
+   `sourceSelectedRealGramMap_implicit_chart_of_nonzero_minor`,
+   `sourceSelectedUpperPair`, `sourceSelectedSkewCoord`,
+   `sourceSelectedSkewCoord_ker`, `sourceSelectedSkewCoord_surjective`,
+   `card_sourceSelectedUpperPair`, `finrank_sourceSelectedSymCoordSubspace`,
+   `sourceRealGramDifferential_rank_of_exists_nonzero_minor`,
+   `sourceRealGramDifferential_rank_of_regular`,
+   `sourceComplex_regular_of_real_regular`, and
+   `sourceComplexGramDifferential_realEmbed_range_eq_complex_span`;
+   the algebraic fiber uniqueness step and its chart consequence say that, on
+   a fixed nonzero selected-minor chart, equality of selected Gram coordinates
+   forces equality of the full Gram matrices, so the selected implicit chart
+   has full-Gram-constant vertical fibers after shrinking to that chart.  This
+   avoids introducing a differentiability-of-the-implicit-inverse neighborhood
+   obligation that mathlib's current implicit-function interface does not
+   expose.
+   The relative-open image stage now has the missing variety-realization
+   bridge spelled out in the theorem-2 blueprint: first prove selected-coordinate
+   uniqueness with only a right-hand full-span hypothesis, then prove that
+   equality of selected coordinates with a regular source point transfers
+   full span to an arbitrary realization in `sourceRealGramVariety d n`, and
+   finally conclude full Gram equality for any such realization.  This is the
+   algebraic Hall-Wightman step needed before the selected chart can be used
+   as a genuine relative-open coordinate chart on the scalar-product variety;
+   the bridge, the open-neighborhood version
+   `sourceRealGramMap_localRelOpenImage_in_open_of_regular`, and the
+   `V = Set.univ` corollary
+   `sourceRealGramMap_localRelOpenImage_of_regular` now check in
+   `BHWPermutation/SourceRegularRank.lean`.
 6. do not consume the top-level
    `BHWPermutation.PermutationFlow.bargmann_hall_wightman_theorem` for theorem
    2, because its current public statement carries
