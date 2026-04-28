@@ -286,6 +286,20 @@ theorem KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM
     KernelSupportWithin.smul ((localEOWRealJacobianAbs ys)⁻¹ : ℂ)
       (KernelSupportWithin.localEOWRealLinearPushforwardCLM ys hli hφ)
 
+/-- Support transport for a translated chart-coordinate kernel after
+Jacobian-normalized pushforward.  The translation first enlarges the chart
+support radius by `‖a‖`, then the linear pushforward enlarges by the chart
+operator norm. -/
+theorem KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM_translateSchwartz
+    (ys : Fin m → Fin m → ℝ) (hli : LinearIndependent ℝ ys)
+    (a : Fin m → ℝ) {φ : SchwartzMap (Fin m → ℝ) ℂ} {r : ℝ}
+    (hφ : KernelSupportWithin φ r) :
+    KernelSupportWithin
+      (SCV.localEOWRealLinearKernelPushforwardCLM ys hli (SCV.translateSchwartz a φ))
+      (‖(SCV.localEOWRealLinearCLE ys hli).toContinuousLinearMap‖ * (r + ‖a‖)) := by
+  exact KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM ys hli
+    (KernelSupportWithin.translateSchwartz a hφ)
+
 /-- Pull a distribution on the original real edge back to local chart
 coordinates.  The inverse absolute determinant is the usual Jacobian factor for
 the affine change of variables `y = x0 + A u`. -/

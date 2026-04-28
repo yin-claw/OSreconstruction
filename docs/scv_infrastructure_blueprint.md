@@ -289,6 +289,7 @@ Source ledger for the internal helper list:
 | `localRealMollify_commonContinuousBoundary_of_clm` | Checked extraction step: if the plus/minus slice CLMs converge pointwise to the same chart distribution and correctly evaluate the translated kernels appearing in `realMollifyLocal`, then the regularized plus/minus sides have the same continuous boundary value `x ↦ T (translateSchwartz (-x) ψ)`.  The remaining hard input is constructing these slice CLMs from the OS-II distributional boundary-value hypotheses, not assuming common continuous boundary. |
 | `realMollifyLocal_translateSchwartz` | Checked in `SCV/LocalDistributionalEOW.lean`: translating the real smoothing kernel by `a` is exactly the same as evaluating the original real mollifier at `z - realEmbed a`.  This is the change-of-variables input for the fixed-window family covariance proof. |
 | `realMollifyLocal_localEOWRealLinearKernelPushforwardCLM` | Checked in `SCV/LocalDistributionalEOW.lean`: applying `realMollifyLocal` to the Jacobian-normalized chart-kernel pushforward equals the chart-coordinate integral `∫ u, F (z + realEmbed (localEOWRealLinearPart ys u)) * φ u`.  This is the chart-linear change-of-variables theorem needed before proving covariance for the regularized family. |
+| `localEOWShiftedWindow`, `isOpen_localEOWShiftedWindow`, `convex_localEOWShiftedWindow`, `isPreconnected_localEOWShiftedWindow` | Checked in `SCV/LocalDistributionalEOW.lean`: the honest shifted-overlap domain for local covariance is `Metric.ball 0 (δ / 2) ∩ {w | w - realEmbed a ∈ Metric.ball 0 (δ / 2)}`.  It is open, convex, and preconnected, so the identity theorem can propagate equality from a positive-imaginary seed in the overlap. |
 | `regularizedLocalEOW_fixedKernelEnvelope_from_clm` | Checked in `SCV/LocalDistributionalEOW.lean`: for one compactly supported smoothing kernel, combines the local real-mollifier holomorphy margins, the CLM common-boundary extraction, and the checked coordinate local continuous EOW theorem to produce the local coordinate envelope with strict positive/negative side agreements and uniqueness.  This is the fixed-kernel bridge; it does not yet prove linearity/continuity in the kernel or construct the product kernel `K`. |
 | `regularizedLocalEOW_fixedWindowEnvelope_from_clm` | Checked in `SCV/LocalDistributionalEOW.lean`: the same fixed-kernel bridge, but with the Rudin chart data `ys, ρ, r, δ` supplied once instead of existentially chosen.  Its output is the explicit function `localRudinEnvelope δ x0 ys (realMollifyLocal Fplus ψ) (realMollifyLocal Fminus ψ)` with holomorphy, strict side agreements, real-edge identity, and uniqueness.  This is required before building a coherent family `G ψ`; otherwise Lean could choose different local charts for different kernels. |
 | `regularizedLocalEOW_family_from_fixedWindow` | Checked in `SCV/LocalDistributionalEOW.lean`: packages the explicit fixed-window family `G ψ w = localRudinEnvelope δ x0 ys (realMollifyLocal Fplus ψ) (realMollifyLocal Fminus ψ) w` for every supported smoothing kernel.  It gives the exact family-level holomorphy, strict side-agreement, real-edge identity, and uniqueness facts needed before proving linearity, covariance, and the product-kernel construction. |
@@ -302,7 +303,7 @@ Source ledger for the internal helper list:
 | `complexRealFiberIntegralCLM`, `complexRealFiberIntegralCLM_apply` | Checked in `SCV/DistributionalEOWBoundaryProductKernel.lean`: real-fiber integration is now a continuous complex-linear map `SchwartzMap (ComplexChartSpace m × (Fin m → ℝ)) ℂ →L[ℂ] SchwartzMap (ComplexChartSpace m) ℂ`, with pointwise formula `∫ t, F (z,t)`.  Additivity and scalar compatibility are Bochner-integral linearity; smoothness is `contDiff_complexRealFiberIntegralRaw`; the `SchwartzMap.mkCLM` bound is `exists_seminorm_bound_complexRealFiberIntegralRaw_deriv`. |
 | `boundaryProductKernel_from_fiberIntegralCLM` | Checked in `SCV/DistributionalEOWBoundaryProductKernel.lean`: the algebraic product-kernel construction.  Given a real-fiber integration operator as a genuine continuous linear map with pointwise formula, composing it with the real-convolution shear and `Tchart` gives a product kernel `K` with `ProductKernelRealTranslationCovariantGlobal K` and `K (schwartzTensorProduct₂ φ ψ) = Tchart (realConvolutionTest φ ψ)`. |
 | `boundaryProductKernel_from_complexRealFiberIntegralCLM` | Checked in `SCV/DistributionalEOWBoundaryProductKernel.lean`: the previous conditional product-kernel algebra instantiated with the now-checked `complexRealFiberIntegralCLM`.  Given a complex-chart distribution `Tchart : SchwartzMap (ComplexChartSpace m) ℂ →L[ℂ] ℂ`, it constructs the associated mixed product kernel with product-test representation and real-translation covariance.  It does **not** itself construct `Tchart` from the real-edge distributional boundary data; theorem 2 still needs the regularized-family/product-bilinear step that produces the `K,G,hK_rep` data consumed by `regularizedEnvelope_chartEnvelope_from_productKernel`. |
-| `regularizedLocalEOW_productKernel_from_continuousEOW` | The remaining product-kernel-family theorem.  It must upgrade the fixed-kernel bridge to one coherent family over kernels, prove linearity/continuity in the smoothing kernel using uniqueness and fixed cutoff estimates, first put the real smoothing variable in the same chart coordinates as the Rudin envelope, prove real-translation covariance by the same uniqueness argument, and output the exact `K,G,hcov,hG_holo,hK_rep,ψn` fields consumed by the checked theorem `regularizedEnvelope_chartEnvelope_from_productKernel`. |
+| `regularizedLocalEOW_productKernel_from_continuousEOW` | Remaining product-kernel-family objective, but not yet a Lean-ready single theorem after the chart-covariance audit.  The local fixed-window family can supply linearity, value CLMs, and shifted-overlap covariance, but a local pairing extended by cutoff does not honestly give `ProductKernelRealTranslationCovariantGlobal K`.  The next checked steps are translated support radii and local shifted-overlap covariance; the full supplier must either obtain a genuinely global covariant `K` from global OS/Wightman translation-invariant data or be replaced by a proved local-covariance recovery theorem. |
 | `regularizedEnvelope_deltaLimit_agreesOnWedges` | Approximate-identity recovery: once kernel recovery has produced a holomorphic `H`, compactly supported approximate identities show `H` agrees with the original plus/minus wedge functions on the shrunken wedge pieces. |
 | `local_continuous_edge_of_the_wedge_envelope` | Checked in `SCV/LocalContinuousEOWSideAgreement.lean`: local coordinate-ball continuous EOW extraction.  It packages the chart window, the Rudin envelope, holomorphy on `ball 0 (δ/2)`, agreement on the explicit strict positive/negative side balls, and real-boundary agreement on the coordinate real slice.  It intentionally does not claim agreement on arbitrary extra components of `Ωplus` or `Ωminus`. |
 | `chartDistributionalEOW_local_envelope` | Local distributional EOW envelope on one chart, obtained from the regularized-envelope family and delta-limit recovery. |
@@ -2710,18 +2711,144 @@ continuity in the smoothing kernel, the cutoff identity to remove `χ` on
 supported kernels, and the real-translation identity below to supply
 covariance.  It must not introduce a placeholder product-kernel theorem.
 
-lemma regularizedEnvelope_realTranslation_identity
-    {m : ℕ}
-    (U0 : Set (Fin m -> ℂ))
-    (G : SchwartzMap (Fin m -> ℝ) ℂ ->
-      (Fin m -> ℂ) -> ℂ) :
-    -- If both sides are defined and the translated kernel keeps the same
-    -- support radius, then this equality follows by comparing on a wedge
-    -- piece and applying the identity theorem.
-    ∀ (a : Fin m -> ℝ) (ψ : SchwartzMap (Fin m -> ℝ) ℂ) (z : Fin m -> ℂ),
-      z ∈ U0 ->
-      z - realEmbed a ∈ U0 ->
-      G (translateSchwartz a ψ) z = G ψ (z - realEmbed a)
+Before attacking the full product-kernel supplier, the next Lean-ready
+covariance mini-layer is:
+
+```lean
+theorem realMollifyLocal_localEOWChart_kernelPushforwardCLM
+    (F : ComplexChartSpace m -> ℂ)
+    (x0 : Fin m -> ℝ) (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (φ : SchwartzMap (Fin m -> ℝ) ℂ)
+    (w : ComplexChartSpace m) :
+    realMollifyLocal F (localEOWRealLinearKernelPushforwardCLM ys hli φ)
+        (localEOWChart x0 ys w) =
+      ∫ u : Fin m -> ℝ,
+        F (localEOWChart x0 ys (w + realEmbed u)) * φ u
+
+theorem realMollifyLocal_localEOWChart_translate_kernelPushforwardCLM
+    (F : ComplexChartSpace m -> ℂ)
+    (x0 : Fin m -> ℝ) (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (φ : SchwartzMap (Fin m -> ℝ) ℂ)
+    (a : Fin m -> ℝ)
+    (w : ComplexChartSpace m) :
+    realMollifyLocal F
+        (localEOWRealLinearKernelPushforwardCLM ys hli
+          (translateSchwartz a φ))
+        (localEOWChart x0 ys w) =
+      realMollifyLocal F
+        (localEOWRealLinearKernelPushforwardCLM ys hli φ)
+        (localEOWChart x0 ys (w - realEmbed a))
+```
+
+The first theorem is just the checked Jacobian-normalized
+`realMollifyLocal_localEOWRealLinearKernelPushforwardCLM` plus
+`localEOWChart_add_realEmbed`.  The second theorem changes variables
+`u ↦ u + a` in the chart-coordinate integral.  This is the exact side-branch
+identity needed by fixed-window uniqueness to prove covariance of the
+regularized family.  It avoids the invalid shortcut
+`localEOWChart (w - realEmbed a) = localEOWChart w - realEmbed a`; the actual
+original-edge displacement remains `localEOWRealLinearPart ys a`.
+
+The next support-radius facts are also Lean-ready:
+
+```lean
+theorem KernelSupportWithin.translateSchwartz
+    (a : Fin m -> ℝ) {ψ : SchwartzMap (Fin m -> ℝ) ℂ} {r : ℝ}
+    (hψ : KernelSupportWithin ψ r) :
+    KernelSupportWithin (SCV.translateSchwartz a ψ) (r + ‖a‖)
+
+theorem KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM_translateSchwartz
+    (ys : Fin m -> Fin m -> ℝ) (hli : LinearIndependent ℝ ys)
+    (a : Fin m -> ℝ) {φ : SchwartzMap (Fin m -> ℝ) ℂ} {r : ℝ}
+    (hφ : KernelSupportWithin φ r) :
+    KernelSupportWithin
+      (SCV.localEOWRealLinearKernelPushforwardCLM ys hli
+        (SCV.translateSchwartz a φ))
+      (‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖ * (r + ‖a‖))
+```
+
+The fixed-radius covariance statement may still assume
+`KernelSupportWithin (localEOWRealLinearKernelPushforwardCLM ys hli φ) rψ`
+and
+`KernelSupportWithin
+  (localEOWRealLinearKernelPushforwardCLM ys hli (translateSchwartz a φ)) rψ`
+when it wants to stay inside one fixed window.  The translated-radius theorem
+is for choosing a larger support window honestly; it is not a license to reuse
+the old radius after translation.
+
+Important route correction: the local fixed-window family alone does not
+construct a globally translation-covariant product kernel.  A complex-chart
+cutoff extension of `(φ, ψ) ↦ ∫ z, G ψ z * φ z` would generally destroy
+`ProductKernelRealTranslationCovariantGlobal`.  Thus the checked recovery
+theorem remains a consumer of a genuinely global covariant `K`; it should not
+be fed by an arbitrary extension of the local pairing.  The next local theorem
+is the shifted-overlap covariance lemma below, not the full product-kernel
+supplier.
+
+```lean
+lemma regularizedLocalEOW_family_chartKernel_covariance_on_shiftedOverlap
+    {m : ℕ} {rψ ρ r δ : ℝ}
+    -- fixed-window hypotheses of
+    -- `regularizedLocalEOW_family_from_fixedWindow`
+    (hm : 0 < m)
+    (x0 : Fin m -> ℝ) (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (φ : SchwartzMap (Fin m -> ℝ) ℂ)
+    (a : Fin m -> ℝ)
+    (hφ :
+      KernelSupportWithin
+        (localEOWRealLinearKernelPushforwardCLM ys hli φ) rψ)
+    (hφa :
+      KernelSupportWithin
+        (localEOWRealLinearKernelPushforwardCLM ys hli
+          (SCV.translateSchwartz a φ)) rψ)
+    (hpos_overlap :
+      ∃ z0,
+        z0 ∈ Metric.ball (0 : ComplexChartSpace m) (δ / 2) ∧
+        z0 - realEmbed a ∈
+          Metric.ball (0 : ComplexChartSpace m) (δ / 2) ∧
+        (∀ j, 0 < (z0 j).im)) :
+    let G : SchwartzMap (Fin m -> ℝ) ℂ -> ComplexChartSpace m -> ℂ :=
+      fun ψ =>
+        localRudinEnvelope δ x0 ys
+          (realMollifyLocal Fplus ψ) (realMollifyLocal Fminus ψ)
+    ∀ w,
+      w ∈ Metric.ball (0 : ComplexChartSpace m) (δ / 2) ->
+      w - realEmbed a ∈
+        Metric.ball (0 : ComplexChartSpace m) (δ / 2) ->
+        G (localEOWRealLinearKernelPushforwardCLM ys hli
+            (SCV.translateSchwartz a φ)) w =
+          G (localEOWRealLinearKernelPushforwardCLM ys hli φ)
+            (w - realEmbed a)
+```
+
+Proof plan:
+
+1. Set
+   `V = Metric.ball 0 (δ / 2) ∩ {w | w - realEmbed a ∈ Metric.ball 0 (δ / 2)}`.
+   This is open and convex, hence preconnected.  The `hpos_overlap`
+   hypothesis supplies the identity-theorem seed in the positive orthant.
+2. The left side is holomorphic on `V` by
+   `regularizedLocalEOW_family_from_fixedWindow` applied to the translated
+   pushed kernel and `hφa`.
+3. The right side is holomorphic on `V` by the same family theorem applied to
+   the unshifted pushed kernel and `hφ`, composed with the affine map
+   `w ↦ w - realEmbed a`.
+4. On `V ∩ {w | ∀ j, 0 < (w j).im}`, both sides reduce to the plus side by the
+   family side-agreement clause.  The equality of side mollifiers is exactly
+   `realMollifyLocal_localEOWChart_translate_kernelPushforwardCLM`.
+5. Apply `AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq` on `V`.
+
+This is a local pointwise covariance theorem.  It is useful for chart
+consistency and for auditing the product-kernel route, but it is not by itself
+`ProductKernelRealTranslationCovariantGlobal K`.
+
+The following older schematic remains only a recovery-shape reminder.  Do not
+implement it as the next Lean target unless the missing global/local covariance
+decision above has been settled; in particular, the `hcov` hypothesis below is
+not supplied by a complex-chart cutoff extension of the local family.
 
 lemma regularizedEnvelope_productKernel_representation_from_family
     {m : ℕ}

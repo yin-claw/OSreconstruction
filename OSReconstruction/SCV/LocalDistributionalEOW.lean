@@ -785,6 +785,117 @@ theorem realMollifyLocal_localEOWRealLinearKernelPushforwardCLM
           filter_upwards with u
           exact hrhs u
 
+/-- The overlap of one local Rudin window with its real translate by `a`.
+
+This is the honest domain for local fixed-window covariance: both `w` and
+`w - realEmbed a` must remain in the same chart ball. -/
+def localEOWShiftedWindow (δ : ℝ) (a : Fin m → ℝ) :
+    Set (ComplexChartSpace m) :=
+  Metric.ball (0 : ComplexChartSpace m) (δ / 2) ∩
+    {w | w - realEmbed a ∈ Metric.ball (0 : ComplexChartSpace m) (δ / 2)}
+
+theorem localEOWShiftedWindow_mem_left {δ : ℝ} {a : Fin m → ℝ}
+    {w : ComplexChartSpace m}
+    (hw : w ∈ localEOWShiftedWindow (m := m) δ a) :
+    w ∈ Metric.ball (0 : ComplexChartSpace m) (δ / 2) :=
+  hw.1
+
+theorem localEOWShiftedWindow_mem_shift {δ : ℝ} {a : Fin m → ℝ}
+    {w : ComplexChartSpace m}
+    (hw : w ∈ localEOWShiftedWindow (m := m) δ a) :
+    w - realEmbed a ∈ Metric.ball (0 : ComplexChartSpace m) (δ / 2) :=
+  hw.2
+
+/-- The shifted local EOW window is open. -/
+theorem isOpen_localEOWShiftedWindow (δ : ℝ) (a : Fin m → ℝ) :
+    IsOpen (localEOWShiftedWindow (m := m) δ a) := by
+  exact Metric.isOpen_ball.inter
+    (Metric.isOpen_ball.preimage (continuous_id.sub continuous_const))
+
+/-- The shifted local EOW window is convex as the intersection of two balls:
+the original chart ball and the ball centered at `realEmbed a`. -/
+theorem convex_localEOWShiftedWindow (δ : ℝ) (a : Fin m → ℝ) :
+    Convex ℝ (localEOWShiftedWindow (m := m) δ a) := by
+  rw [localEOWShiftedWindow]
+  refine (convex_ball (0 : ComplexChartSpace m) (δ / 2)).inter ?_
+  have hset : {w : ComplexChartSpace m |
+        w - realEmbed a ∈ Metric.ball (0 : ComplexChartSpace m) (δ / 2)} =
+      Metric.ball (realEmbed a : ComplexChartSpace m) (δ / 2) := by
+    ext w
+    simp [Metric.mem_ball, dist_eq_norm]
+  rw [hset]
+  exact convex_ball (realEmbed a : ComplexChartSpace m) (δ / 2)
+
+/-- The shifted local EOW window is preconnected, so the identity theorem can
+propagate equality from any nonempty open seed inside the overlap. -/
+theorem isPreconnected_localEOWShiftedWindow (δ : ℝ) (a : Fin m → ℝ) :
+    IsPreconnected (localEOWShiftedWindow (m := m) δ a) :=
+  (convex_localEOWShiftedWindow (m := m) δ a).isPreconnected
+
+/-- Chart-coordinate form of the Jacobian-normalized kernel pushforward
+identity.  After transporting the kernel to the original real edge, the
+original mollifier at `localEOWChart x0 ys w` is exactly the chart-coordinate
+mollifier in the Rudin variable. -/
+theorem realMollifyLocal_localEOWChart_kernelPushforwardCLM
+    (F : ComplexChartSpace m → ℂ)
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (φ : SchwartzMap (Fin m → ℝ) ℂ)
+    (w : ComplexChartSpace m) :
+    realMollifyLocal F (localEOWRealLinearKernelPushforwardCLM ys hli φ)
+        (localEOWChart x0 ys w) =
+      ∫ u : Fin m → ℝ,
+        F (localEOWChart x0 ys (w + realEmbed u)) * φ u := by
+  rw [realMollifyLocal_localEOWRealLinearKernelPushforwardCLM]
+  apply integral_congr_ae
+  filter_upwards with u
+  rw [localEOWChart_add_realEmbed]
+
+/-- Translating a chart-coordinate smoothing kernel before
+Jacobian-normalized pushforward is the same as translating the Rudin chart
+point in the opposite direction.  This is the side-branch identity used by
+fixed-window uniqueness to prove regularized-family covariance. -/
+theorem realMollifyLocal_localEOWChart_translate_kernelPushforwardCLM
+    (F : ComplexChartSpace m → ℂ)
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (φ : SchwartzMap (Fin m → ℝ) ℂ)
+    (a : Fin m → ℝ)
+    (w : ComplexChartSpace m) :
+    realMollifyLocal F
+        (localEOWRealLinearKernelPushforwardCLM ys hli (translateSchwartz a φ))
+        (localEOWChart x0 ys w) =
+      realMollifyLocal F (localEOWRealLinearKernelPushforwardCLM ys hli φ)
+        (localEOWChart x0 ys (w - realEmbed a)) := by
+  rw [realMollifyLocal_localEOWChart_kernelPushforwardCLM]
+  rw [realMollifyLocal_localEOWChart_kernelPushforwardCLM]
+  let f : (Fin m → ℝ) → ℂ := fun u =>
+    F (localEOWChart x0 ys (w + realEmbed (u - a))) * φ u
+  calc
+    ∫ u : Fin m → ℝ,
+        F (localEOWChart x0 ys (w + realEmbed u)) * translateSchwartz a φ u =
+        ∫ u : Fin m → ℝ, f (u + a) := by
+          apply integral_congr_ae
+          filter_upwards with u
+          dsimp [f]
+          have hsub : u + a - a = u := by
+            ext i
+            simp
+          rw [hsub]
+    _ = ∫ u : Fin m → ℝ, f u := by
+          exact MeasureTheory.integral_add_right_eq_self (μ := volume) f a
+    _ = ∫ u : Fin m → ℝ,
+        F (localEOWChart x0 ys (w - realEmbed a + realEmbed u)) * φ u := by
+          apply integral_congr_ae
+          filter_upwards with u
+          dsimp [f]
+          have harg : w + realEmbed (u - a) =
+              w - realEmbed a + realEmbed u := by
+            ext i
+            simp [realEmbed]
+            ring
+          rw [harg]
+
 /-- Additivity of real-direction mollification in the smoothing kernel, with
 the required Bochner-integrability hypotheses explicit. -/
 theorem realMollifyLocal_add_of_integrable

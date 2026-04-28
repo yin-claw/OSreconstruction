@@ -56,6 +56,35 @@ theorem KernelSupportWithin.smul
   exact hψ ((tsupport_smul_subset_right (fun _ : Fin m → ℝ => c)
     (ψ : (Fin m → ℝ) → ℂ)) hx)
 
+/-- Translating a fixed-radius kernel enlarges the radius by at most the
+translation length.  This is the support bookkeeping needed when a local EOW
+window uses a larger radius for translated chart kernels. -/
+theorem KernelSupportWithin.translateSchwartz
+    (a : Fin m → ℝ) {ψ : SchwartzMap (Fin m → ℝ) ℂ} {r : ℝ}
+    (hψ : KernelSupportWithin ψ r) :
+    KernelSupportWithin (translateSchwartz a ψ) (r + ‖a‖) := by
+  intro x hx
+  have hsub :
+      tsupport ((ψ : (Fin m → ℝ) → ℂ) ∘ fun x : Fin m → ℝ => x + a) ⊆
+        (fun x : Fin m → ℝ => x + a) ⁻¹'
+          tsupport (ψ : (Fin m → ℝ) → ℂ) := by
+    exact tsupport_comp_subset_preimage (ψ : (Fin m → ℝ) → ℂ)
+      (continuous_id.add continuous_const)
+  have hx' : x ∈
+      tsupport ((ψ : (Fin m → ℝ) → ℂ) ∘ fun x : Fin m → ℝ => x + a) := by
+    simpa [translateSchwartz_apply] using hx
+  have hxa_supp : x + a ∈ tsupport (ψ : (Fin m → ℝ) → ℂ) := hsub hx'
+  have hxa_ball := hψ hxa_supp
+  rw [Metric.mem_closedBall, dist_zero_right] at hxa_ball ⊢
+  have hnorm : ‖x‖ ≤ ‖x + a‖ + ‖a‖ := by
+    calc
+      ‖x‖ = ‖(x + a) - a‖ := by
+        congr 1
+        ext i
+        simp
+      _ ≤ ‖x + a‖ + ‖a‖ := norm_sub_le _ _
+  linarith
+
 /-- Multiplying a supported kernel by a Schwartz-side cutoff cannot enlarge
 the kernel support radius. -/
 theorem KernelSupportWithin.smulLeftCLM

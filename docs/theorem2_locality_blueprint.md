@@ -1422,19 +1422,18 @@ Proof decomposition of this theorem, without hiding the analytic work:
          ```lean
          (φ, ψ) ↦ ∫ z : ComplexChartSpace m, G ψ z * φ z
          ```
-         on compactly supported `φ` inside `U0`.  Existence of this mixed
-         Schwartz functional is not a consequence of product-density alone:
-         density gives uniqueness and later descent.  The actual construction
-         must use the explicit fixed-window formula for `G`, Fubini/Tonelli for
-         the Rudin circle integral and the real mollifier integral, and the
-         uniform compact-window estimates to build a continuous linear
-         functional on
-         `SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ`.  Product-density
-         then proves uniqueness of the extension and supports the covariance
-         descent.  Real-translation covariance is proved by the fixed-window
-         uniqueness clause, not by assuming a new covariance axiom.  This
-         produces the actual `K,hcov,hK_rep` demanded by
-         `SCV.regularizedEnvelope_chartEnvelope_from_productKernel`.
+         on compactly supported `φ` inside `U0`.  This step is **not** yet
+         Lean-ready as a direct local-to-global construction.  Product-density
+         gives uniqueness once a continuous mixed Schwartz functional exists,
+         but it does not construct one, and a complex-chart cutoff extension of
+         the local pairing destroys global real-translation covariance.  Before
+         this step can feed
+         `SCV.regularizedEnvelope_chartEnvelope_from_productKernel`, the proof
+         must either obtain a genuinely global covariant `K` from global
+         OS/Wightman translation-invariant data, or replace the checked
+         recovery consumer by a proved local-covariance/local-descent variant.
+         The immediate local Lean target is the shifted-overlap covariance
+         theorem for `G`, not a placeholder `K`.
       6. use `exists_realConvolutionTest_approxIdentity hr` for `ψn`, then feed
          the side identities from step 3 as
          `Filter.Eventually.of_forall`.  The two approximate-identity limits
@@ -1837,6 +1836,46 @@ Implementation-readiness gate for the next Lean stage:
   `SCV.realMollifyLocal_localEOWRealLinearKernelPushforwardCLM` to rewrite the
   side mollifier as the corresponding chart-coordinate integral before invoking
   fixed-window uniqueness/covariance.
+* The immediate Lean-ready covariance support lemmas are the chart-local
+  versions of that identity:
+  `SCV.realMollifyLocal_localEOWChart_kernelPushforwardCLM` and
+  `SCV.realMollifyLocal_localEOWChart_translate_kernelPushforwardCLM`.  The
+  second theorem is the exact translated-kernel side-branch identity needed for
+  the uniqueness proof of regularized-family covariance:
+  pushing `translateSchwartz a φ` through the chart kernel and evaluating at
+  `localEOWChart x0 ys w` is the same as pushing `φ` and evaluating at
+  `localEOWChart x0 ys (w - realEmbed a)`.
+* Route correction before the full product-kernel supplier: a local
+  fixed-window family on `Metric.ball 0 (δ / 2)` does **not** by itself
+  produce a globally translation-covariant mixed Schwartz functional
+  `K : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ`.
+  Extending the local pairing
+  `(φ, ψ) ↦ ∫ z, G ψ z * φ z` by a complex-chart cutoff would make a global
+  functional, but the cutoff breaks
+  `ProductKernelRealTranslationCovariantGlobal`.  Therefore the full theorem
+  `SCV.regularizedLocalEOW_productKernel_from_continuousEOW` must not be
+  implemented as a wrapper around the current local family plus an arbitrary
+  extension.  The checked recovery theorem
+  `SCV.regularizedEnvelope_chartEnvelope_from_productKernel` remains the right
+  consumer once a genuinely global covariant `K` is available, or once a
+  separately proved local-descent recovery theorem replaces the global
+  covariance hypothesis.
+* The next Lean work should therefore stay local and explicit:
+  1. support-radius bookkeeping for translated chart kernels;
+  2. the pointwise shifted-overlap covariance theorem for the fixed-window
+     family, proved on
+     `Metric.ball 0 (δ / 2) ∩ {w | w - realEmbed a ∈ Metric.ball 0 (δ / 2)}`;
+  3. only after that, decide whether the recovery route supplies a global
+     covariant `K` from global OS/Wightman translation invariance, or whether
+     the checked recovery theorem needs a genuine local-covariance variant.
+  The shifted-overlap theorem needs explicit support hypotheses for both the
+  pushed chart kernel and the translated pushed chart kernel; it cannot hide
+  them behind the old fixed radius.
+  The shifted-overlap domain itself is now checked as
+  `SCV.localEOWShiftedWindow`, with
+  `SCV.isOpen_localEOWShiftedWindow`,
+  `SCV.convex_localEOWShiftedWindow`, and
+  `SCV.isPreconnected_localEOWShiftedWindow`.
 * The next OS-side boundary-value theorem is
   `bvt_boundary_values_uniformOnCompactDirections` in
   `OSToWightmanBoundaryValuesBase.lean`.  It is not in the `BHW` namespace, and
