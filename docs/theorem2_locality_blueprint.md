@@ -952,26 +952,40 @@ Proof decomposition of this theorem, without hiding the analytic work:
                (fun _ : Fin m -> ℝ => T φ)
                (nhdsWithin 0 (Set.Ioi 0))
                Kη) :
-       ∃ (U : Set (Fin m -> ℂ)) (F : (Fin m -> ℂ) -> ℂ),
+       ∃ (U Uplus Uminus : Set (Fin m -> ℂ))
+         (F : (Fin m -> ℂ) -> ℂ),
          IsOpen U ∧
+         IsOpen Uplus ∧
+         IsOpen Uminus ∧
+         Uplus ⊆ U ∩ Ωplus ∧
+         Uminus ⊆ U ∩ Ωminus ∧
          (∀ x ∈ E, realEmbed x ∈ U) ∧
+         -- Every connected component of the constructed envelope domain meets
+         -- one of the explicit side windows.  This is the Lean-facing
+         -- uniqueness seed; the theorem does not claim agreement on arbitrary
+         -- extra components of `U ∩ Ωplus` or `U ∩ Ωminus`.
+         (∀ z ∈ U, ∃ V : Set (Fin m -> ℂ),
+           IsOpen V ∧ IsPreconnected V ∧ z ∈ V ∧ V ⊆ U ∧
+             ((V ∩ Uplus).Nonempty ∨ (V ∩ Uminus).Nonempty)) ∧
          DifferentiableOn ℂ F U ∧
-         (∀ z ∈ U ∩ Ωplus, F z = Fplus z) ∧
-         (∀ z ∈ U ∩ Ωminus, F z = Fminus z) ∧
+         (∀ z ∈ Uplus, F z = Fplus z) ∧
+         (∀ z ∈ Uminus, F z = Fminus z) ∧
          (∀ G : (Fin m -> ℂ) -> ℂ,
            DifferentiableOn ℂ G U ->
-           (∀ z ∈ U ∩ Ωplus, G z = Fplus z) ->
-           (∀ z ∈ U ∩ Ωminus, G z = Fminus z) ->
+           (∀ z ∈ Uplus, G z = Fplus z) ->
+           (∀ z ∈ Uminus, G z = Fminus z) ->
              ∀ z ∈ U, G z = F z)
    ```
 
-   The final uniqueness clause is intentional.  It is not needed by the first
-   Slot-1 consumer, but it prevents the regularized-envelope construction from
-   depending on arbitrary choices of local branches.  In implementation this
-   uniqueness is proved chartwise by the continuous local EOW identity theorem
-   and then patched across overlaps; every connected component of the
-   constructed `U` contains one of the local wedge pieces used to define the
-   envelope.
+   The side-agreement clauses intentionally use explicit side windows
+   `Uplus,Uminus`, not all of `U ∩ Ωplus` and `U ∩ Ωminus`.  The local
+   continuous EOW construction only proves agreement on the constructed
+   positive/negative wedge pieces unless an additional side-connectedness
+   theorem is supplied.  The final uniqueness clause is still strong enough:
+   every connected patch of `U` is seeded by one of those explicit side
+   windows, so the ordinary identity theorem propagates equality across the
+   constructed envelope domain without making a false claim about unrelated
+   components of the ambient wedge sets.
 
    Proof transcript for the SCV theorem:
 
@@ -1034,11 +1048,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `SCV.differentiableOn_realMollify_tubeDomain`.
    10. Define the common continuous boundary value
        `bvψ u = Tchart (translateSchwartz (-u) ψ)`.
-       Prove `ContinuousOn bvψ B0` using the existing translation-continuity
-       theorem in `SCV/DistributionalUniqueness.lean`, and prove
-       `Fplusψ` and `Fminusψ` tend to `bvψ` at the real edge by Fubini,
-       support stability, the compact-subcone boundary-value hypotheses, and
-       the slow-growth bounds.
+       The proof is the checked CLM route, not an informal Fubini step:
+       construct the side slice CLMs with
+       `sliceCLM_family_from_distributionalBoundary`, use
+       `realMollifyLocal_eq_cutoffSliceCLM` for the finite-support integral
+       identity, use `tendsto_cutoffSliceCLM_of_boundaryValue` for the
+       plus/minus limits, and then apply
+       `SCV.localRealMollify_commonContinuousBoundary_of_clm` to obtain
+       continuity of `bvψ` and the two continuous boundary traces.
    11. Apply `SCV.local_continuous_edge_of_the_wedge_envelope` to the
        regularized pair for each `ψ`, producing `Gψ` on one fixed neighborhood
        `U0` determined only by `B0`, `B1`, `C`, and `rψ`.  The extracted local
@@ -1604,7 +1621,8 @@ Implementation-readiness gate for the next Lean stage:
   `SCV.localEOWShiftedWindow`,
   `SCV.isOpen_localEOWShiftedWindow`,
   `SCV.convex_localEOWShiftedWindow`,
-  `SCV.isPreconnected_localEOWShiftedWindow`, and
+  `SCV.isPreconnected_localEOWShiftedWindow`,
+  `SCV.exists_positive_imag_mem_localEOWShiftedWindow_of_norm_lt`, and
   `SCV.regularizedLocalEOW_family_chartKernel_covariance_on_shiftedOverlap`.
 * Implementation theorem surfaces for the local descent package:
   1. a localized mixed pairing CLM
@@ -1625,7 +1643,11 @@ Implementation-readiness gate for the next Lean stage:
   These four surfaces now have their hypotheses, support margins, and proof
   transcripts written out in `docs/scv_infrastructure_blueprint.md`; Lean
   should proceed with the helper extraction order there, beginning with the
-  cutoff and partial-evaluation infrastructure for the pairing CLM.
+  complex-chart cutoff, the SCV-local `schwartzPartialEval₁CLM`, the compact
+  uniform value-CLM bound, and only then the pairing CLM.  The
+  partial-evaluation helper must be proved in the SCV layer from
+  `SchwartzMap.compCLM`; importing the Wightman partial-evaluation file would
+  be route drift for this pure-SCV theorem.
 * The next OS-side boundary-value theorem is
   `bvt_boundary_values_uniformOnCompactDirections` in
   `OSToWightmanBoundaryValuesBase.lean`.  It is not in the `BHW` namespace, and

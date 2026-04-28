@@ -329,7 +329,7 @@ Source ledger for the internal helper list:
 | `localRealMollify_commonContinuousBoundary_of_clm` | Checked extraction step: if the plus/minus slice CLMs converge pointwise to the same chart distribution and correctly evaluate the translated kernels appearing in `realMollifyLocal`, then the regularized plus/minus sides have the same continuous boundary value `x ↦ T (translateSchwartz (-x) ψ)`.  The remaining hard input is constructing these slice CLMs from the OS-II distributional boundary-value hypotheses, not assuming common continuous boundary. |
 | `realMollifyLocal_translateSchwartz` | Checked in `SCV/LocalDistributionalEOW.lean`: translating the real smoothing kernel by `a` is exactly the same as evaluating the original real mollifier at `z - realEmbed a`.  This is the change-of-variables input for the fixed-window family covariance proof. |
 | `realMollifyLocal_localEOWRealLinearKernelPushforwardCLM` | Checked in `SCV/LocalDistributionalEOW.lean`: applying `realMollifyLocal` to the Jacobian-normalized chart-kernel pushforward equals the chart-coordinate integral `∫ u, F (z + realEmbed (localEOWRealLinearPart ys u)) * φ u`.  This is the chart-linear change-of-variables theorem needed before proving covariance for the regularized family. |
-| `localEOWShiftedWindow`, `isOpen_localEOWShiftedWindow`, `convex_localEOWShiftedWindow`, `isPreconnected_localEOWShiftedWindow` | Checked in `SCV/LocalDistributionalEOW.lean`: the honest shifted-overlap domain for local covariance is `Metric.ball 0 (δ / 2) ∩ {w | w - realEmbed a ∈ Metric.ball 0 (δ / 2)}`.  It is open, convex, and preconnected, so the identity theorem can propagate equality from a positive-imaginary seed in the overlap. |
+| `localEOWShiftedWindow`, `isOpen_localEOWShiftedWindow`, `convex_localEOWShiftedWindow`, `isPreconnected_localEOWShiftedWindow`, `exists_positive_imag_mem_localEOWShiftedWindow_of_norm_lt` | Checked in `SCV/LocalDistributionalEOW.lean`: the honest shifted-overlap domain for local covariance is `Metric.ball 0 (δ / 2) ∩ {w | w - realEmbed a ∈ Metric.ball 0 (δ / 2)}`.  It is open, convex, and preconnected, so the identity theorem can propagate equality from a positive-imaginary seed in the overlap.  The seed exists whenever `‖a‖ < δ / 4`, using the constant imaginary point with imaginary part `δ / 8` and `norm_realEmbed_le`. |
 | `regularizedLocalEOW_fixedKernelEnvelope_from_clm` | Checked in `SCV/LocalDistributionalEOW.lean`: for one compactly supported smoothing kernel, combines the local real-mollifier holomorphy margins, the CLM common-boundary extraction, and the checked coordinate local continuous EOW theorem to produce the local coordinate envelope with strict positive/negative side agreements and uniqueness.  This is the fixed-kernel bridge; it does not yet prove linearity/continuity in the kernel or construct the product kernel `K`. |
 | `regularizedLocalEOW_fixedWindowEnvelope_from_clm` | Checked in `SCV/LocalDistributionalEOW.lean`: the same fixed-kernel bridge, but with the Rudin chart data `ys, ρ, r, δ` supplied once instead of existentially chosen.  Its output is the explicit function `localRudinEnvelope δ x0 ys (realMollifyLocal Fplus ψ) (realMollifyLocal Fminus ψ)` with holomorphy, strict side agreements, real-edge identity, and uniqueness.  This is required before building a coherent family `G ψ`; otherwise Lean could choose different local charts for different kernels. |
 | `regularizedLocalEOW_family_from_fixedWindow` | Checked in `SCV/LocalDistributionalEOW.lean`: packages the explicit fixed-window family `G ψ w = localRudinEnvelope δ x0 ys (realMollifyLocal Fplus ψ) (realMollifyLocal Fminus ψ) w` for every supported smoothing kernel.  It gives the exact family-level holomorphy, strict side-agreement, real-edge identity, and uniqueness facts needed before proving linearity, covariance, and the product-kernel construction. |
@@ -2214,36 +2214,42 @@ overlap.  This is the exact replacement for the current global
     producing a regularized envelope `Gψ` on a fixed local complex
     neighborhood `U0` determined by `B0`, `B1`, and `rψ`, not by the individual
     values of `ψ`.
-11. Prove `ψ ↦ Gψ z` is continuous linear for every `z ∈ U0`.  Linearity is
-    inherited from convolution and from the explicit Cauchy-polydisc formula
-    in the continuous EOW construction; continuity uses a fixed smooth cutoff
-    `χr = 1` on the allowed kernel-support ball, the compact support radius,
-    and the slow-growth bounds.  This avoids introducing a new LF-space object
-    while keeping the statement honest on the kernels used by the approximate
-    identity.
-12. Prove real-translation covariance:
-    translating the kernel is the same as translating the regularized envelope
-    in the real directions, on the overlap where both sides are defined.  The
-    proof compares the two regularized envelopes on plus or minus wedge pieces
-    and applies the ordinary identity theorem.
-13. Apply the Schwartz kernel/nuclear theorem to the continuous linear map
-    `ψ ↦ Gψ z`, locally uniformly in `z`.  The translation covariance identifies
-    the two-variable kernel with one distributional object evaluated at
-    translated complex points.
-14. Let `ψρ` be a compactly supported approximate identity with
-    `tsupport ψρ ⊆ closedBall 0 rψ` and `ψρ -> δ0`.  The regularized envelopes
-    `Gψρ` converge distributionally, hence locally uniformly on compact subsets,
-    to a holomorphic function `H`.  On the plus/minus wedge pieces,
-    `Gψρ` converges to `FplusChart`/`FminusChart` by the existing
-    approximate-identity theorem for real mollification.  Therefore `H` is the
-    desired chart envelope.
-15. `distributionalEOW_extensions_compatible` proves agreement of two local
+11. Transport the smoothing kernel through the real linear part of the local
+    EOW chart:
+    `Gchart ψ w = G (localEOWRealLinearKernelPushforwardCLM ys hli ψ) w`.
+    The inverse-determinant factor in this pushforward is mandatory; otherwise
+    the side real-mollifier integral is in the wrong coordinates.
+12. Build the localized mixed CLM `K` by the four helper layers recorded below:
+    complex-chart cutoff, SCV-local partial evaluation, compact uniform
+    value-CLM bound, and the cutoff/slice integral.  On supported product
+    tests this `K` represents `∫ z, Gchart ψ z * φ z`; outside the support
+    windows it is only a localization device.
+13. Prove `ProductKernelRealTranslationCovariantLocal K Ucov r`, not global
+    covariance.  The proof expands the supported product-test representation,
+    changes variables in the complex-chart integral, and applies
+    `regularizedLocalEOW_family_chartKernel_covariance_on_shiftedOverlap` on
+    the support of `φ`.
+14. Descend locally to a chart distribution `Hdist` by the product-test
+    sheared-fiber argument with margin
+    `Udesc + closedBall 0 (r + rη) ⊆ Ucov`; then prove local distributional
+    holomorphy of `Hdist` and recover the holomorphic representative by
+    `distributionalHolomorphic_regular`, the checked pointwise representation
+    bridge, and the checked delta-limit wedge-agreement theorem.  This replaces
+    the obsolete "global kernel by cutoff" shortcut.
+15. Let `ψρ` be a compactly supported approximate identity in chart-kernel
+    coordinates with eventual support in `closedBall 0 r`.  On the plus/minus
+    wedge pieces, the side identities for `Gchart ψρ` reduce through
+    `realMollifyLocal_localEOWRealLinearKernelPushforwardCLM` to the
+    chart-coordinate real mollifiers, and the existing approximate-identity
+    theorem gives convergence to `FplusChart`/`FminusChart`.  Therefore the
+    recovered representative is the desired chart envelope.
+16. `distributionalEOW_extensions_compatible` proves agreement of two local
    chart envelopes on overlaps by the ordinary identity theorem: on every
    nonempty overlap the extensions agree with `Fplus` on a positive wedge
    subset, or with `Fminus` on a negative wedge subset.  The already-proved
    distributional uniqueness theorem can still be used as a fallback on tube
    shaped overlap charts, but it is not the envelope-construction step.
-16. `localDistributionalEOW_patch_extensions` follows the existing patching
+17. `localDistributionalEOW_patch_extensions` follows the existing patching
    pattern in `SCV.edge_of_the_wedge_theorem`: define the extension by local
    representatives and use compatibility to prove well-definedness and
    holomorphy.
@@ -2927,7 +2933,7 @@ consistency and is the analytic input to
 `regularizedLocalEOW_pairingCLM_localCovariant`, but it is not by itself
 `ProductKernelRealTranslationCovariantGlobal K`.
 
-Immediate usability helper for the covariance theorem:
+Checked usability helper for the covariance theorem:
 
 ```lean
 theorem exists_positive_imag_mem_localEOWShiftedWindow_of_norm_lt
@@ -2938,9 +2944,9 @@ theorem exists_positive_imag_mem_localEOWShiftedWindow_of_norm_lt
       (∀ j, 0 < (z0 j).im)
 ```
 
-Proof: take `z0 j = (δ / 4 : ℂ) * Complex.I`.  Then
-`‖z0‖ = δ / 4 < δ / 2`, and
-`‖z0 - realEmbed a‖ ≤ ‖z0‖ + ‖realEmbed a‖ ≤ δ / 4 + ‖a‖ < δ / 2`
+Checked proof: take `z0 j = (δ / 8 : ℂ) * Complex.I`.  Then
+`‖z0‖ = δ / 8 < δ / 2`, and
+`‖z0 - realEmbed a‖ ≤ ‖z0‖ + ‖realEmbed a‖ ≤ δ / 8 + ‖a‖ < δ / 2`
 using `norm_realEmbed_le`.  This removes the ad hoc `hpos_overlap`
 hypothesis whenever the real shift is small relative to the fixed Rudin
 window, which is exactly the regime used by compactly supported local
@@ -2999,12 +3005,17 @@ lemma chartDistributionalEOW_local_envelope
     -- plus the local wedge, slow-growth, and boundary-value hypotheses
     -- restricted to the chosen chart box
     :
-    ∃ (Ux0 : Set (Fin m -> ℂ)) (Hx0 : (Fin m -> ℂ) -> ℂ),
+    ∃ (Ux0 Ux0plus Ux0minus : Set (Fin m -> ℂ))
+      (Hx0 : (Fin m -> ℂ) -> ℂ),
       IsOpen Ux0 ∧
+      IsOpen Ux0plus ∧
+      IsOpen Ux0minus ∧
+      Ux0plus ⊆ Ux0 ∩ Ωplus ∧
+      Ux0minus ⊆ Ux0 ∩ Ωminus ∧
       realEmbed x0 ∈ Ux0 ∧
       DifferentiableOn ℂ Hx0 Ux0 ∧
-      (∀ z ∈ Ux0 ∩ Ωplus, Hx0 z = Fplus z) ∧
-      (∀ z ∈ Ux0 ∩ Ωminus, Hx0 z = Fminus z)
+      (∀ z ∈ Ux0plus, Hx0 z = Fplus z) ∧
+      (∀ z ∈ Ux0minus, Hx0 z = Fminus z)
 ```
 
 The displayed `regularizedEnvelope_deltaLimit_agreesOnWedges` surface must not
@@ -3730,10 +3741,14 @@ Proof transcript for the next target:
    This checked theorem is exactly the per-kernel input for the next family
    stage.  The next theorem may use it, but must not restate its conclusion as
    an assumption.
-7. Remaining proof-doc gap before the next major implementation step:
-   construct the local slice CLMs `Tplus y` and `Tminus y` from the OS-II
-   distributional boundary-value hypotheses.  This is where the Fubini and
-   slow-growth work belongs.  The required production theorem must show:
+7. Pinned slice-CLM production theorem for the final
+   `local_distributional_edge_of_the_wedge_envelope` assembly: construct the
+   local slice CLMs `Tplus y` and `Tminus y` from the distributional
+   boundary-value hypotheses.  The integral-interchange and slow-growth
+   estimates are discharged inside the displayed theorem by the checked
+   cutoff-slice CLM lemmas named in the transcript; downstream proofs must not
+   assume the four conclusions directly.  The required production theorem
+   must show:
 
    ```lean
    theorem sliceCLM_family_from_distributionalBoundary
@@ -3926,6 +3941,120 @@ Proof transcript for the next target:
    the positive-imaginary seed required by
    `regularizedLocalEOW_family_chartKernel_covariance_on_shiftedOverlap`.
 
+   Before the first theorem below is implemented, the following helper
+   surfaces must be proved in this order.  These are not wrappers: together
+   they are exactly the functional-analytic content needed to turn the local
+   family `Gchart` into one mixed Schwartz continuous linear functional.
+
+   ```lean
+   theorem exists_complexChart_schwartz_cutoff_eq_one_on_closedBall
+       {m : ℕ} {R Rlarge : ℝ} (hR : 0 < R) (hRlarge : R < Rlarge) :
+       ∃ χ : SchwartzMap (ComplexChartSpace m) ℂ,
+         (∀ z ∈ Metric.closedBall (0 : ComplexChartSpace m) R, χ z = 1) ∧
+         tsupport (χ : ComplexChartSpace m -> ℂ) ⊆
+           Metric.closedBall 0 Rlarge
+
+   theorem SupportsInOpen.smulLeftCLM_eq_of_eq_one_on
+       {m : ℕ} {U : Set (ComplexChartSpace m)}
+       (χ : SchwartzMap (ComplexChartSpace m) ℂ)
+       {φ : SchwartzMap (ComplexChartSpace m) ℂ}
+       (hχ_one : ∀ z ∈ U, χ z = 1)
+       (hφ : SupportsInOpen (φ : ComplexChartSpace m -> ℂ) U) :
+       SchwartzMap.smulLeftCLM ℂ (χ : ComplexChartSpace m -> ℂ) φ = φ
+
+   def schwartzPartialEval₁CLM
+       {m : ℕ} (z : ComplexChartSpace m) :
+       SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ]
+         SchwartzMap (Fin m -> ℝ) ℂ
+
+   theorem schwartzPartialEval₁CLM_apply
+       {m : ℕ} (z : ComplexChartSpace m)
+       (F : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ)
+       (t : Fin m -> ℝ) :
+       schwartzPartialEval₁CLM z F t = F (z, t)
+
+   theorem schwartzPartialEval₁CLM_tensorProduct₂
+       {m : ℕ} (z : ComplexChartSpace m)
+       (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+       (ψ : SchwartzMap (Fin m -> ℝ) ℂ) :
+       schwartzPartialEval₁CLM z (schwartzTensorProduct₂ φ ψ) =
+         φ z • ψ
+
+   theorem schwartzPartialEval₁CLM_compactSeminormBound
+       {m : ℕ} (R : ℝ) (hR : 0 ≤ R)
+       (s : Finset (ℕ × ℕ)) :
+       ∃ s' : Finset (ℕ × ℕ), ∃ C : ℝ, 0 ≤ C ∧
+         ∀ z ∈ Metric.closedBall (0 : ComplexChartSpace m) R,
+         ∀ F : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ,
+           s.sup (schwartzSeminormFamily ℂ (Fin m -> ℝ) ℂ)
+               (schwartzPartialEval₁CLM z F) ≤
+             C * s'.sup
+               (schwartzSeminormFamily ℂ
+                 (ComplexChartSpace m × (Fin m -> ℝ)) ℂ) F
+
+   theorem regularizedLocalEOW_originalFamily_compactValueCLM
+       -- same fixed-window hypotheses as `regularizedEnvelope_valueCLM_of_cutoff`
+       -- with an original-edge cutoff `χψ`
+       (Rcut : ℝ)
+       (hRcut_window :
+         Metric.closedBall (0 : ComplexChartSpace m) Rcut ⊆
+           Metric.ball (0 : ComplexChartSpace m) (δ / 2)) :
+       ∃ L : ComplexChartSpace m ->
+           SchwartzMap (Fin m -> ℝ) ℂ ->L[ℂ] ℂ,
+         (∀ z ∈ Metric.closedBall (0 : ComplexChartSpace m) Rcut,
+           ∀ η : SchwartzMap (Fin m -> ℝ) ℂ,
+             L z η =
+               localRudinEnvelope δ x0 ys
+                 (fun w => realMollifyLocal Fplus
+                   (SchwartzMap.smulLeftCLM ℂ
+                     (χψ : (Fin m -> ℝ) -> ℂ) η) w)
+                 (fun w => realMollifyLocal Fminus
+                   (SchwartzMap.smulLeftCLM ℂ
+                     (χψ : (Fin m -> ℝ) -> ℂ) η) w)
+                 z) ∧
+         ∃ s : Finset (ℕ × ℕ), ∃ C : ℝ, 0 ≤ C ∧
+           ∀ z ∈ Metric.closedBall (0 : ComplexChartSpace m) Rcut,
+           ∀ η : SchwartzMap (Fin m -> ℝ) ℂ,
+             ‖L z η‖ ≤
+               C * s.sup (schwartzSeminormFamily ℂ (Fin m -> ℝ) ℂ) η
+   ```
+
+   Proof transcripts for these helpers:
+
+   * The complex-chart cutoff is the same `ContDiffBump` argument as
+     `exists_schwartz_cutoff_eq_one_on_closedBall`, but with center
+     `0 : ComplexChartSpace m`.  The proof uses `b.contDiff`,
+     `b.hasCompactSupport`, and `HasCompactSupport.toSchwartzMap`; the
+     support conclusion is the topological support of the bump.
+   * `SupportsInOpen.smulLeftCLM_eq_of_eq_one_on` is the complex-chart analogue
+     of `KernelSupportWithin.smulLeftCLM_eq_of_eq_one_on_closedBall`: ext at
+     `z`; if `z ∈ tsupport φ`, use `hφ.2` and `hχ_one`; otherwise use
+     `image_eq_zero_of_notMem_tsupport`.
+   * `schwartzPartialEval₁CLM z` must be built in the SCV layer, not by
+     importing the Wightman partial-evaluation file.  Use `SchwartzMap.compCLM`
+     for the affine temperate map `t ↦ (z,t)`.  The reverse growth bound is
+     `‖t‖ ≤ ‖(z,t)‖` (or the corresponding product-norm lemma), so no compact
+     `z` hypothesis is needed for the definition.  The tensor-product theorem
+     is by extensionality and `schwartzTensorProduct₂_apply`.
+   * The compact partial-evaluation seminorm bound is proved by expanding
+     `SchwartzMap.seminorm`: derivatives in the fiber variable are mixed
+     derivatives in directions `(0,v)`, and the weight satisfies
+     `(1 + ‖t‖)^k ≤ (1 + ‖(z,t)‖)^k`.  For a finite set of target seminorms,
+     collect the same derivative orders as source seminorms.  Any harmless
+     product-norm constants are absorbed into one `C`; no Banach-Steinhaus
+     input is used here.
+   * `regularizedLocalEOW_originalFamily_compactValueCLM` is the compact
+     version of `regularizedEnvelope_valueCLM_of_cutoff`.  For each `z`, use
+     the existing pointwise CLM.  For the single finite-seminorm bound on
+     `closedBall 0 Rcut`, index the Rudin-circle CLM family by
+     `z ∈ closedBall 0 Rcut` and `θ ∈ Set.uIoc (-Real.pi) Real.pi`; the
+     checked `exists_bound_localRudinIntegrand` already supplies pointwise
+     boundedness uniformly in `z` over the full `δ / 2` ball.  Apply the same
+     Banach-Steinhaus theorem used in
+     `exists_schwartz_bound_normalized_intervalIntegral_clm_family`, then
+     integrate over `θ`.  This is the step that prevents a hidden
+     pointwise-continuity-to-continuity gap in the mixed `K`.
+
    The theorem package is:
 
    ```lean
@@ -3962,43 +4091,60 @@ Proof transcript for the next target:
 
    Proof transcript for the pairing CLM:
 
-   1. Choose a complex-chart Schwartz cutoff `χU` equal to `1` on
-      `closedBall 0 Rcov` and with `tsupport χU ⊆ Metric.closedBall 0 Rcut`.
-      This is the finite-dimensional `ContDiffBump` construction already used
-      for real cutoffs, now over `ComplexChartSpace m`.
-   2. Choose a real Schwartz cutoff `χr` equal to `1` on `closedBall 0 r` and
-      supported in a larger real ball still transported inside the fixed
-      original-edge radius `rψ`.
-   3. Prove the genuine compact-family estimate
-      `regularizedLocalEOW_chartKernelFamily_compactSeminormBound`: for
-      `z ∈ closedBall 0 Rcut`, the map
-      `ψ ↦ Gchart (χr • ψ) z` is bounded by one finite Schwartz-seminorm
-      supremum, with constants uniform in `z`.  This is obtained by reusing
-      the compact Rudin-circle bound from the continuous EOW construction and
-      the checked finite-seminorm bounds behind
-      `regularizedEnvelope_valueCLM_of_cutoff`; it is not inferred from merely
-      pointwise continuity.
+   1. Choose radii for the two cutoff layers:
+      `Rcov < Rcut < δ / 2` in the complex chart, and
+      `r < rcut` in chart-kernel coordinates.  Let
+      `P = localEOWRealLinearKernelPushforwardCLM ys hli`.  Choose the fixed
+      original-edge radius `rψ` so that
+      `KernelSupportWithin (P (χr • ψ)) rψ` for every `ψ`; this is the support
+      theorem
+      `KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM` applied to
+      the chart cutoff support.  Choose the original-edge cutoff `χψ` equal to
+      one on `closedBall 0 rψ` and supported in the larger radius already
+      accepted by the fixed-window theorem.
+   2. Choose `χU` by
+      `exists_complexChart_schwartz_cutoff_eq_one_on_closedBall`; choose `χr`
+      and `χψ` by the checked real cutoff theorem.  The product-kernel
+      construction may use these cutoffs only to make global Schwartz CLMs.
+      The later covariance statement removes them on supported tests.
+   3. Use `regularizedLocalEOW_originalFamily_compactValueCLM` to obtain
+      `Lorig z`, uniformly bounded for `z ∈ closedBall 0 Rcut`, with
+      `Lorig z η = G (χψ • η) z`.  Define the chart-kernel value CLM by
+      ```lean
+      Lchart z :=
+        (Lorig z).comp
+          ((localEOWRealLinearKernelPushforwardCLM ys hli).comp
+            (SchwartzMap.smulLeftCLM ℂ (χr : (Fin m -> ℝ) -> ℂ)))
+      ```
+      Then, if `KernelSupportWithin ψ r`, the chart cutoff is removed by
+      `KernelSupportWithin.smulLeftCLM_eq_of_eq_one_on_closedBall`, the
+      pushforward is supported in `closedBall 0 rψ`, the original-edge cutoff
+      is removed by the same theorem, and
+      `Lchart z ψ = Gchart ψ z`.
    4. Build the mixed CLM by the explicit slice formula
       ```lean
       K F =
         ∫ z : ComplexChartSpace m,
           χU z *
-            L z
-              (SchwartzMap.smulLeftCLM ℂ χr
-                (schwartzPartialEval₁ F z))
+            Lchart z (schwartzPartialEval₁CLM z F)
       ```
-      where `L z` is the value CLM for `Gchart` at `z` and
-      `schwartzPartialEval₁ F z` is the real-variable Schwartz slice
-      `t ↦ F (z,t)`.  The needed infrastructure is a CLM version of
-      `SCV.schwartzPartialEval₂`, obtained by composing with the product-swap
-      linear equivalence.
-   5. The uniform compact-family estimate and the compact support of `χU`
-      give the finite seminorm bound required by `SchwartzMap.mkCLMtoNormedSpace`
-      for the mixed Schwartz input `F`.  Linearity is integral linearity plus
-      linearity of `L z`, slice evaluation, and cutoff multiplication.
-   6. For pure tensors with `SupportsInOpen φ Ucov` and
-      `KernelSupportWithin ψ r`, the two cutoffs are invisible:
-      `χU = 1` on `tsupport φ` and `χr • ψ = ψ`.  The slice formula reduces to
+      The integrand is zero off `tsupport χU`, so the integral is over the
+      compact `closedBall 0 Rcut`.
+   5. The mixed finite-seminorm estimate is now mechanical:
+      the compact bound for `Lorig`, the continuity estimate for
+      `P ∘ (χr • ·)`, and
+      `schwartzPartialEval₁CLM_compactSeminormBound` give one finite mixed
+      Schwartz seminorm bound for
+      `F ↦ χU z * Lchart z (schwartzPartialEval₁CLM z F)`, uniformly on
+      `tsupport χU`.  Integrating this bound over the compact support of `χU`
+      supplies the `SchwartzMap.mkCLMtoNormedSpace` bound for `K`.  Linearity
+      is integral linearity plus linearity of the three CLMs.
+   6. For a pure tensor, use
+      `schwartzPartialEval₁CLM_tensorProduct₂` to rewrite the slice as
+      `φ z • ψ`.  Pull the scalar `φ z` through `Lchart z`, remove the real
+      cutoffs as in step 3, and use `χU = 1` on `tsupport φ`
+      (`SupportsInOpen.smulLeftCLM_eq_of_eq_one_on`) to reduce the slice
+      formula to
       `∫ z, Gchart ψ z * φ z`.
 
    ```lean
@@ -4052,6 +4198,7 @@ Proof transcript for the next target:
    theorem translationCovariantProductKernel_descends_local
        (K : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ)
        (Udesc Ucov : Set (ComplexChartSpace m)) (r rη : ℝ)
+       (hr_nonneg : 0 ≤ r) (hrη_nonneg : 0 ≤ rη)
        (η : SchwartzMap (Fin m -> ℝ) ℂ)
        (hη_norm : ∫ t : Fin m -> ℝ, η t = 1)
        (hη_support : KernelSupportWithin η rη)
@@ -4070,22 +4217,46 @@ Proof transcript for the next target:
    Proof transcript for local descent:
 
    1. Define `T := shearedProductKernelFunctional K` and
-      `Hdist := complexRealFiberTranslationDescentCLM T η`, exactly as in the
-      checked global descent.
-   2. Specialize the fiber-quotient proof to
-      `F = realConvolutionShearCLE ▸ schwartzTensorProduct₂ φ ψ`.  The only
-      factorization needed for theorem 2 is this product-test case.
+      `Hdist := complexRealFiberTranslationDescentCLM T η`, using the same
+      descent functional as the checked global theorem.  Do **not** call
+      `translationCovariantProductKernel_descends`: that theorem requires
+      `ProductKernelRealTranslationCovariantGlobal K`, which the localized
+      cutoff construction does not provide.
+   2. Prove only the product-test factorization needed here:
+      ```lean
+      theorem map_eq_complexRealFiberTranslationDescentCLM_of_localProductSupport
+          (hφ : SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Udesc)
+          (hψ : KernelSupportWithin ψ r) :
+          shearedProductKernelFunctional K
+            ((SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
+              (realConvolutionShearCLE m))
+              (schwartzTensorProduct₂ φ ψ)) =
+          complexRealFiberTranslationDescentCLM
+            (shearedProductKernelFunctional K) η
+            (realConvolutionTest φ ψ)
+      ```
+      This theorem is the local replacement for
+      `map_eq_complexRealFiberTranslationDescentCLM_of_fiberTranslationInvariant`.
+      Its conclusion is deliberately restricted to supported product tests.
    3. The comparison test
       `G = schwartzTensorProduct₂ (realConvolutionTest φ ψ) η` has the same
       fiber integral as `F` by
       `complexRealFiberIntegral_schwartzTensorProduct₂` and `hη_norm`.
    4. In the head-fiber antiderivative/quotient argument for `F - G`, every
-      real-fiber translate has shift norm bounded by `r + rη`, because
-      `ψ` and `η` have supports in `closedBall 0 r` and `closedBall 0 rη`.
-      The margin `hmargin` puts all corresponding complex-chart supports in
-      `Ucov`, so each use of global fiber invariance in the checked descent
-      proof is replaced by `hcov`.
-   5. This proves `T F = T G`, which unfolds to
+      elementary fiber translation is by a vector in
+      `closedBall 0 (r + rη)`: it is a difference of one point in
+      `tsupport ψ ⊆ closedBall 0 r` and one point in
+      `tsupport η ⊆ closedBall 0 rη`.  The hypothesis
+      `hmargin : Udesc + closedBall 0 (r + rη) ⊆ Ucov` implies that both
+      complex-chart tests occurring in each covariance call are supported in
+      `Ucov`.  Therefore each generator-level use of global fiber invariance
+      in the checked proof is replaced by
+      `ProductKernelRealTranslationCovariantLocal K Ucov (r + rη)`.
+   5. The support of the convolved test is supplied by the checked theorem
+      `realConvolutionTest_supportsInOpen_of_translate_margin`, using
+      `KernelSupportWithin_hasCompactSupport hψ` and the smaller margin
+      `Udesc + closedBall 0 r ⊆ Ucov` derived from `hmargin`.
+   6. This proves `T F = T G`, which unfolds to
       `K (schwartzTensorProduct₂ φ ψ) =
        Hdist (realConvolutionTest φ ψ)`.
 
@@ -4202,23 +4373,23 @@ Proof transcript for the next target:
       `ContDiffBump`.  Output: a Schwartz multiplier equal to `1` on
       `closedBall 0 Rcov` and supported in `closedBall 0 Rcut`.
    2. `schwartzPartialEval₁CLM`: the continuous linear map
-      `F ↦ (t ↦ F (z,t))`, obtained from `SCV.schwartzPartialEval₂` by the
-      product-swap continuous linear equivalence, plus its apply theorem and
-      finite-seminorm estimate.
-   3. `regularizedLocalEOW_chartKernelFamily_valueCLM`: compose
-      `regularizedEnvelope_valueCLM_of_cutoff` with
-      `localEOWRealLinearKernelPushforwardCLM` and the real cutoff `χr`.
-      Output: for each `z` in the fixed window, a CLM `L z` agreeing with
-      `ψ ↦ Gchart ψ z` on `KernelSupportWithin ψ r`.
-   4. `regularizedLocalEOW_chartKernelFamily_compactSeminormBound`: redo the
-      Rudin-circle compact bound uniformly for `z ∈ closedBall 0 Rcut`; this
-      is the quantitative theorem that makes the mixed slice integral a
-      continuous linear map on the full mixed Schwartz space.
+      `F ↦ (t ↦ F (z,t))`, built directly in the SCV layer from
+      `SchwartzMap.compCLM` along the affine map `t ↦ (z,t)`.  Include its
+      apply theorem, tensor-product theorem, and compact finite-seminorm
+      estimate.  Do not import the Wightman partial-evaluation file.
+   3. `regularizedLocalEOW_originalFamily_compactValueCLM`: the compact
+      uniform version of `regularizedEnvelope_valueCLM_of_cutoff` on
+      `closedBall 0 Rcut`, with one finite Schwartz seminorm bound for all
+      `z` in the compact chart support.
+   4. `regularizedLocalEOW_chartKernelFamily_valueCLM`: define
+      `Lchart z = Lorig z ∘ localEOWRealLinearKernelPushforwardCLM ys hli ∘
+      (χr • ·)`.  On `KernelSupportWithin ψ r`, remove the chart cutoff, the
+      pushed original-edge cutoff, and obtain `Lchart z ψ = Gchart ψ z`.
    5. `regularizedLocalEOW_pairingCLM_of_fixedWindow`: define `K` by the
       cutoff/slice integral and prove the supported product-test
       representation.
-   6. `exists_positive_imag_mem_localEOWShiftedWindow_of_norm_lt`: prove the
-      small-shift seed lemma for shifted overlaps.
+   6. `exists_positive_imag_mem_localEOWShiftedWindow_of_norm_lt`: checked;
+      supplies the small-shift seed lemma for shifted overlaps.
    7. `regularizedLocalEOW_pairingCLM_localCovariant`: prove
       `ProductKernelRealTranslationCovariantLocal K Ucov r`.
    8. `translationCovariantProductKernel_descends_local`: adapt the checked

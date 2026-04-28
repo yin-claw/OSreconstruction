@@ -832,6 +832,43 @@ theorem isPreconnected_localEOWShiftedWindow (δ : ℝ) (a : Fin m → ℝ) :
     IsPreconnected (localEOWShiftedWindow (m := m) δ a) :=
   (convex_localEOWShiftedWindow (m := m) δ a).isPreconnected
 
+/-- A small real shift has a positive-imaginary seed inside the shifted local
+EOW window.  This discharges the nonempty seed hypothesis in local covariance
+applications where both translated complex test supports stay in a sufficiently
+small chart ball. -/
+theorem exists_positive_imag_mem_localEOWShiftedWindow_of_norm_lt
+    (hm : 0 < m) {δ : ℝ} (hδ : 0 < δ)
+    {a : Fin m → ℝ} (ha : ‖a‖ < δ / 4) :
+    ∃ z0 : ComplexChartSpace m,
+      z0 ∈ localEOWShiftedWindow (m := m) δ a ∧
+      (∀ j, 0 < (z0 j).im) := by
+  let c : ℂ := ((δ / 8 : ℝ) : ℂ) * Complex.I
+  let z0 : ComplexChartSpace m := fun _ => c
+  haveI : Nonempty (Fin m) := Fin.pos_iff_nonempty.mp hm
+  have hδnonneg : 0 ≤ δ := le_of_lt hδ
+  have hc_norm : ‖c‖ = δ / 8 := by
+    simp [c, Real.norm_eq_abs, hδnonneg]
+  have hz0_norm : ‖z0‖ = δ / 8 := by
+    simp [z0, hc_norm]
+  refine ⟨z0, ?_, ?_⟩
+  · rw [localEOWShiftedWindow]
+    constructor
+    · rw [Metric.mem_ball, dist_eq_norm, sub_zero, hz0_norm]
+      linarith
+    · change z0 - realEmbed a ∈
+        Metric.ball (0 : ComplexChartSpace m) (δ / 2)
+      rw [Metric.mem_ball, dist_eq_norm]
+      have hshift_le : ‖z0 - realEmbed a - 0‖ ≤ δ / 8 + ‖a‖ := by
+        calc
+          ‖z0 - realEmbed a - 0‖ = ‖z0 - realEmbed a‖ := by simp
+          _ ≤ ‖z0‖ + ‖realEmbed a‖ := norm_sub_le _ _
+          _ ≤ δ / 8 + ‖a‖ := by
+            exact add_le_add (le_of_eq hz0_norm) (norm_realEmbed_le (m := m) a)
+      linarith
+  · intro j
+    have hδ8pos : 0 < δ / 8 := by linarith
+    simpa [z0, c] using hδ8pos
+
 /-- Chart-coordinate form of the Jacobian-normalized kernel pushforward
 identity.  After transporting the kernel to the original real edge, the
 original mollifier at `localEOWChart x0 ys w` is exactly the chart-coordinate
