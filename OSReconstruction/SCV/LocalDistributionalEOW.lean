@@ -4,6 +4,7 @@ Released under Apache 2.0 license.
 Authors: ModularPhysics Contributors
 -/
 import OSReconstruction.SCV.DistributionalEOWKernelRecovery
+import OSReconstruction.SCV.LocalContinuousEOW
 
 /-!
 # Local Distributional Edge-of-the-Wedge Support Lemmas

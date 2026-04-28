@@ -1,6 +1,7 @@
 import Mathlib.Analysis.Normed.Module.Connected
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceComplexChart
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceComplexGlobalIdentity
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceComplexSchurGraph
 
 /-!
 # Density support for source complex regular configurations
@@ -386,6 +387,7 @@ theorem sourceComplexGramMap_localConnectedRelOpenImage_in_open_of_complexRegula
         IsRelOpenInSourceComplexGramVariety d n O ∧
         O ⊆ sourceMinkowskiGram d n '' U ∧
         O ⊆ sourceSymmetricRankExactStratum n (d + 1) ∧
+        IsConnected O ∧
         ∀ G ∈ O, ∃ z ∈ U,
           sourceMinkowskiGram d n z = G := by
   rcases exists_nonzero_minor_of_sourceComplexGramRegularAt d n hreg with
@@ -493,6 +495,20 @@ theorem sourceComplexGramMap_localConnectedRelOpenImage_in_open_of_complexRegula
     intro G hG
     rcases hOcomplex G hG with ⟨u, huU, _hminoru, hGram⟩
     exact ⟨u, huU, hGram⟩
+  have hImageSubset :
+      sourceMinkowskiGram d n '' U ⊆ O := by
+    rintro G ⟨u, huU, rfl⟩
+    refine ⟨?_, ⟨u, rfl⟩⟩
+    have hAR : sourceSelectedComplexGramMap d n m I u ∈ R := by
+      refine ⟨e u, ?_, ?_⟩
+      · exact ⟨u, huU, rfl⟩
+      · exact hefst u (hUsub huU)
+    have hpre :
+        sourceSelectedComplexGramMap d n m I u ∈
+          Subtype.val ⁻¹' R0 := by
+      rw [hR0pre]
+      exact hAR
+    simpa [sourceSelectedComplexGramMap] using hpre
   have hOreg :
       O ⊆ sourceSymmetricRankExactStratum n (d + 1) := by
     intro G hG
@@ -503,12 +519,105 @@ theorem sourceComplexGramMap_localConnectedRelOpenImage_in_open_of_complexRegula
         d n hD
         (sourceComplexGramRegularAt_of_exists_nonzero_minor d n
           ⟨I, hI, J, hJ, hminoru⟩)
+  have hOconn : IsConnected O := by
+    have hOeq : O = sourceMinkowskiGram d n '' U :=
+      Set.Subset.antisymm hOsubset hImageSubset
+    rw [hOeq]
+    exact hUconn.image (sourceMinkowskiGram d n)
+      (contDiff_sourceMinkowskiGram d n).continuous.continuousOn
   refine ⟨U, hUopen, hUconn, hz0U, hUV, O, hbaseO, ?_,
-    hOsubset, hOreg, ?_⟩
+    hOsubset, hOreg, hOconn, ?_⟩
   · exact ⟨E0, hE0open, rfl⟩
   · intro G hG
     rcases hOcomplex G hG with ⟨u, huU, _hminoru, hGram⟩
     exact ⟨u, huU, hGram⟩
+
+/-- Regular-rank points of the source complex Gram variety have relatively
+open connected rank-exact neighborhoods inside any prescribed ambient
+neighborhood. -/
+theorem sourceComplexGramVariety_local_rankExact_connected_basis_regular
+    (d n : ℕ)
+    (hD : d + 1 < n)
+    {Z0 : Fin n → Fin n → ℂ}
+    (hZ0reg : Z0 ∈ sourceSymmetricRankExactStratum n (d + 1))
+    {N0 : Set (Fin n → Fin n → ℂ)}
+    (hN0_open : IsOpen N0)
+    (hZ0N0 : Z0 ∈ N0) :
+    ∃ V : Set (Fin n → Fin n → ℂ),
+      Z0 ∈ V ∧
+      IsRelOpenInSourceComplexGramVariety d n V ∧
+      V ⊆ N0 ∩ sourceComplexGramVariety d n ∧
+      IsConnected (V ∩ sourceSymmetricRankExactStratum n (d + 1)) := by
+  have hDle : d + 1 ≤ n := Nat.le_of_lt hD
+  rcases sourceSymmetricRankExactStratum_exists_complexRegular_realization
+      d n hDle hZ0reg with
+    ⟨z0, hz0reg, hz0Gram⟩
+  let Vsrc : Set (Fin n → Fin (d + 1) → ℂ) :=
+    {z | sourceMinkowskiGram d n z ∈ N0}
+  have hVsrc_open : IsOpen Vsrc :=
+    hN0_open.preimage (contDiff_sourceMinkowskiGram d n).continuous
+  have hz0Vsrc : z0 ∈ Vsrc := by
+    simpa [Vsrc, hz0Gram] using hZ0N0
+  rcases sourceComplexGramMap_localConnectedRelOpenImage_in_open_of_complexRegular
+      d n hDle hz0reg hVsrc_open hz0Vsrc with
+    ⟨Usrc, _hUsrc_open, _hUsrc_conn, _hz0Usrc, hUsrc_sub,
+      O, hZ0O, hO_rel, _hO_image, hO_rank, hO_conn, hO_surj⟩
+  have hZ0O' : Z0 ∈ O := by
+    simpa [hz0Gram] using hZ0O
+  refine ⟨O, hZ0O', hO_rel, ?_, ?_⟩
+  · intro G hGO
+    rcases hO_surj G hGO with ⟨z, hzU, hzG⟩
+    refine ⟨?_, ?_⟩
+    · rw [← hzG]
+      exact hUsrc_sub hzU
+    · exact sourceSymmetricRankExactStratum_subset_sourceComplexGramVariety
+        d n (d + 1) le_rfl (hO_rank hGO)
+  · have hO_inter :
+        O ∩ sourceSymmetricRankExactStratum n (d + 1) = O := by
+      ext G
+      constructor
+      · intro hG
+        exact hG.1
+      · intro hG
+        exact ⟨hG, hO_rank hG⟩
+    rw [hO_inter]
+    exact hO_conn
+
+/-- Every source complex Gram-variety point has arbitrarily small relatively
+open neighborhoods whose rank-`d+1` part is connected.  This is the local
+Hall-Wightman source-variety connectedness input: regular points use the
+checked source-Gram implicit chart, and singular points use the Schur product
+chart. -/
+theorem sourceComplexGramVariety_local_rankExact_connected_basis
+    (d n : ℕ)
+    (hD : d + 1 < n)
+    {Z0 : Fin n → Fin n → ℂ}
+    (hZ0 : Z0 ∈ sourceComplexGramVariety d n)
+    {N0 : Set (Fin n → Fin n → ℂ)}
+    (hN0_open : IsOpen N0)
+    (hZ0N0 : Z0 ∈ N0) :
+    ∃ V : Set (Fin n → Fin n → ℂ),
+      Z0 ∈ V ∧
+      IsRelOpenInSourceComplexGramVariety d n V ∧
+      V ⊆ N0 ∩ sourceComplexGramVariety d n ∧
+      IsConnected (V ∩ sourceSymmetricRankExactStratum n (d + 1)) := by
+  let M0 : Matrix (Fin n) (Fin n) ℂ := Matrix.of fun i j => Z0 i j
+  have hZ0_rank_le : Z0 ∈ sourceSymmetricMatrixSpace n ∧
+      M0.rank ≤ d + 1 := by
+    have h := hZ0
+    rw [sourceComplexGramVariety_eq_rank_le] at h
+    simpa [M0] using h
+  by_cases hreg : M0.rank = d + 1
+  · have hZ0reg : Z0 ∈ sourceSymmetricRankExactStratum n (d + 1) := by
+      exact ⟨hZ0_rank_le.1, by simpa [M0] using hreg⟩
+    exact
+      sourceComplexGramVariety_local_rankExact_connected_basis_regular
+        d n hD hZ0reg hN0_open hZ0N0
+  · have hsing : M0.rank < d + 1 := by
+      omega
+    exact
+      sourceComplexGramVariety_local_rankExact_connected_basis_singular
+        d n hD hZ0 (by simpa [M0] using hsing) hN0_open hZ0N0
 
 /-- Pull back a variety-holomorphic scalar along the source complex Gram map. -/
 theorem SourceVarietyHolomorphicOn.comp_sourceMinkowskiGram
@@ -572,7 +681,7 @@ theorem sourceComplexGramVariety_rankExact_local_identity_near_point
   rcases sourceComplexGramMap_localConnectedRelOpenImage_in_open_of_complexRegular
       d n hDle hz0reg hVsrc_open hz0Vsrc with
     ⟨Usrc, hUsrc_open, hUsrc_conn, _hz0Usrc, hUsrc_subVsrc,
-      O, hbaseO, hO_rel, hO_image, hO_rank, hO_surj⟩
+      O, hbaseO, hO_rel, hO_image, hO_rank, _hO_conn, hO_surj⟩
   have hZ0O : Z0 ∈ O := by
     simpa [hz0Gram] using hbaseO
   rcases hO_rel with ⟨O0, hO0_open, hO_eq⟩
@@ -1004,6 +1113,61 @@ theorem sourceComplexGramVariety_relOpen_subset_closure_inter_rankExact
       d n (d + 1) le_rfl hG'exact
   exact ⟨G', hG'OU0.1, ⟨⟨hG'OU0.2, hG'var⟩, hG'exact⟩⟩
 
+/-- The regular rank stratum is connected inside every connected relatively
+open source complex Gram-variety domain in the strict range. -/
+theorem sourceComplexGramVariety_rankExact_inter_relOpen_isConnected
+    (d n : ℕ)
+    (hD : d + 1 < n)
+    {U : Set (Fin n → Fin n → ℂ)}
+    (hU_rel : IsRelOpenInSourceComplexGramVariety d n U)
+    (hU_conn : IsConnected U) :
+    IsConnected (U ∩ sourceSymmetricRankExactStratum n (d + 1)) := by
+  exact
+    sourceComplexGramVariety_rankExact_inter_relOpen_isConnected_of_local_basis
+      d n hU_conn
+      (sourceComplexGramVariety_relOpen_subset_closure_inter_rankExact
+        d n (Nat.le_of_lt hD) hU_rel)
+      (by
+        intro Z hZU N0 hN0_open hZN0
+        rcases hU_rel with ⟨U0, hU0_open, hU_eq⟩
+        have hZU0 : Z ∈ U0 := by
+          rw [hU_eq] at hZU
+          exact hZU.1
+        have hZvar : Z ∈ sourceComplexGramVariety d n := by
+          rw [hU_eq] at hZU
+          exact hZU.2
+        rcases sourceComplexGramVariety_local_rankExact_connected_basis
+            d n hD hZvar (hU0_open.inter hN0_open) ⟨hZU0, hZN0⟩ with
+          ⟨V, hZV, hV_rel, hV_sub, hV_conn⟩
+        refine ⟨V, hZV, hV_rel, ?_, hV_conn⟩
+        intro G hGV
+        rcases hV_sub hGV with ⟨hGU0N0, hGvar⟩
+        exact ⟨by
+          rw [hU_eq]
+          exact ⟨hGU0N0.1, hGvar⟩, hGU0N0.2⟩)
+
+/-- Strict-range rank-exact source-variety identity principle, with the
+connectedness of the regular rank stratum supplied by the local-basis theorem. -/
+theorem sourceComplexGramVariety_rankExact_identity_principle
+    (d n : ℕ)
+    (hD : d + 1 < n)
+    {U W : Set (Fin n → Fin n → ℂ)}
+    {H : (Fin n → Fin n → ℂ) → ℂ}
+    (hU_rel : IsRelOpenInSourceComplexGramVariety d n U)
+    (hU_conn : IsConnected U)
+    (hW_rel : IsRelOpenInSourceComplexGramVariety d n W)
+    (hW_ne : W.Nonempty)
+    (hW_sub : W ⊆ U)
+    (hH : SourceVarietyHolomorphicOn d n H U)
+    (hW_zero : Set.EqOn H 0 W) :
+    Set.EqOn H 0
+      (U ∩ sourceSymmetricRankExactStratum n (d + 1)) :=
+  sourceComplexGramVariety_rankExact_identity_principle_of_connected
+    d n hD hU_rel
+    (sourceComplexGramVariety_rankExact_inter_relOpen_isConnected
+      d n hD hU_rel hU_conn)
+    hW_rel hW_ne hW_sub hH hW_zero
+
 /-- A continuous scalar-product representative on a relatively open source
 variety domain that vanishes on the dense regular rank stratum vanishes on the
 whole domain. -/
@@ -1063,5 +1227,32 @@ theorem sourceComplexGramVariety_identity_principle_of_connected_rankExact
     sourceComplexGramVariety_relOpen_eqOn_zero_of_eqOn_rankExact
       d n hDle hU_rel (SourceVarietyHolomorphicOn.continuousOn d n hH)
       hzero_rankExact
+
+/-- Source complex Gram-variety identity principle in all arities.  The easy
+branch uses full symmetric coordinates; the strict branch uses the connected
+regular-rank theorem proved from the local Hall-Wightman Schur chart. -/
+theorem sourceComplexGramVariety_identity_principle
+    (d n : ℕ)
+    {U W : Set (Fin n → Fin n → ℂ)}
+    {H : (Fin n → Fin n → ℂ) → ℂ}
+    (hU_rel : IsRelOpenInSourceComplexGramVariety d n U)
+    (hU_conn : IsConnected U)
+    (hW_rel : IsRelOpenInSourceComplexGramVariety d n W)
+    (hW_ne : W.Nonempty)
+    (hW_sub : W ⊆ U)
+    (hH : SourceVarietyHolomorphicOn d n H U)
+    (hW_zero : Set.EqOn H 0 W) :
+    Set.EqOn H 0 U := by
+  by_cases hn : n ≤ d + 1
+  · exact
+      sourceComplexGramVariety_identity_principle_easy
+        d n hn hU_rel hU_conn hW_rel hW_ne hW_sub hH hW_zero
+  · have hD : d + 1 < n := by omega
+    exact
+      sourceComplexGramVariety_identity_principle_of_connected_rankExact
+        d n hD hU_rel
+        (sourceComplexGramVariety_rankExact_inter_relOpen_isConnected
+          d n hD hU_rel hU_conn)
+        hW_rel hW_ne hW_sub hH hW_zero
 
 end BHW

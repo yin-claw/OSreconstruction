@@ -673,10 +673,10 @@ Implementation-readiness audit for this packet:
   concrete OS45 envelope; it is not a new assumption and not a replacement for
   `SelectedAdjacentDistributionalJostAnchorData`.
 * Once this theorem is checked, `bvt_F_selectedAdjacentDistributionalJostAnchorData_of_OSII`
-  is field-by-field bookkeeping plus the separate Gram-environment supplier
-  `BHW.sourceRealEnvironment_of_os45JostPatch`; the already checked projection
-  `bvt_F_distributionalJostAnchor_of_selectedJostData` then supplies
-  `BHW.SourceDistributionalAdjacentTubeAnchor`.
+  is field-by-field bookkeeping plus the checked Gram-environment supplier
+  `BHW.exists_sourceDistributionalUniquenessEnvironment_of_open_jost_patch`;
+  the already checked projection `bvt_F_distributionalJostAnchor_of_selectedJostData`
+  then supplies `BHW.SourceDistributionalAdjacentTubeAnchor`.
 
 Proof decomposition of this theorem, without hiding the analytic work:
 
@@ -1182,7 +1182,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
    14. Patch these chart envelopes over a basis of real edge boxes.  Overlap
        compatibility is by the ordinary identity theorem on positive or
        negative wedge pieces, reusing the same style as
-       `local_extensions_consistent` in `SCV/TubeDomainExtension.lean`.
+       the now-public `SCV.local_extensions_consistent` identity-theorem
+       pattern in `SCV/TubeDomainExtension.lean`.
    15. Extract the connected component needed by the OS45 consumer only after
        the local extension `U,F` exists; connectedness is not an input to the
        SCV theorem.
@@ -1423,7 +1424,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       Lean-facing strengthening is:
 
       ```lean
-      theorem BHW.bvt_boundary_values_uniformOnCompactDirections
+      theorem bvt_boundary_values_uniformOnCompactDirections
           [NeZero d]
           (OS : OsterwalderSchraderAxioms d)
           (lgc : OSLinearGrowthCondition d OS)
@@ -1525,27 +1526,75 @@ With that choice:
 The old "common-chart Wick difference" route is dead and should not be revived
 in production code except as a cautionary note.
 
+Implementation-readiness gate for the next Lean stage:
+
+* Do **not** add another distributional EOW axiom or wrapper.  The checked SCV
+  recovery endpoint is
+  `SCV.regularizedEnvelope_chartEnvelope_from_productKernel`; the remaining
+  theorem-2 work is the upstream supplier data that feed it.
+* The next QFT-free SCV theorem to prove is
+  `SCV.regularizedLocalEOW_productKernel_from_continuousEOW` in
+  `SCV/LocalDistributionalEOW.lean`.  Its output fields must be exactly the
+  hypotheses of `regularizedEnvelope_chartEnvelope_from_productKernel`:
+  `K`, `G`, `ψn`, `ProductKernelRealTranslationCovariantGlobal K`,
+  `∀ ψ, KernelSupportWithin ψ r -> DifferentiableOn ℂ (G ψ) U0`, and the
+  product-test representation `hK_rep`.
+* The next OS-side boundary-value theorem is
+  `bvt_boundary_values_uniformOnCompactDirections` in
+  `OSToWightmanBoundaryValuesBase.lean`.  It is not in the `BHW` namespace, and
+  it must not be introduced as a new axiom.  It should be proved by upgrading
+  the existing polynomial-growth boundary-value proof to compact direction
+  sets, then specializing it to `bvt_F`.
+* Only after those two inputs exist should the OS45 file introduce
+  `BHW.os45_Hplus_commonBoundary_uniform`,
+  `BHW.os45_Hminus_commonBoundary_uniform`, and finally
+  `BHW.os45_adjacent_commonBoundaryEnvelope`.
+
 Current implementation order:
 
-1. finish the pure-SCV theorem package needed by Slot 1:
-   `SCV.complexTranslateSchwartz`,
-   `SCV.schwartzTensorProduct₂`,
-   `SCV.schwartzKernel₂_extension`,
-   `SCV.realConvolutionTest`,
-   `SCV.translationCovariantProductKernel_descends`,
-   `SCV.distributionalHolomorphic_regular`,
-   `SCV.local_continuous_edge_of_the_wedge_envelope`,
-   `SCV.localRealMollifySide_holomorphicOn_of_translate_margin`,
-   `SCV.localRealMollify_commonContinuousBoundary`,
+1. finish the pure-SCV theorem package needed by Slot 1, reading the checked
+   declaration ledger literally.  The checked substrate is now:
+	   `SCV.complexTranslateSchwartz`, `SCV.schwartzTensorProduct₂`,
+	   `SCV.realConvolutionTest`,
+	   `SCV.translationCovariantProductKernel_descends`,
+	   `SCV.distributionalHolomorphic_regular`,
+	   `SCV.localEOWCoefficientSimplex`,
+	   `SCV.localEOWSimplexDirections`,
+	   `SCV.isCompact_localEOWCoefficientSimplex`,
+	   `SCV.isCompact_localEOWSimplexDirections`,
+	   `SCV.localEOWRealChart`,
+	   `SCV.localEOWChart`,
+	   `SCV.continuous_localEOWRealChart`,
+	   `SCV.isCompact_localEOWRealChart_image`,
+	   `SCV.localEOWChart_real_imag`,
+	   `SCV.localEOWSimplexDirections_subset_cone`,
+	   `SCV.localEOW_positive_imag_normalized_mem_simplex`,
+	   `SCV.localEOW_chart_positive_polywedge_mem`,
+	   `SCV.localEOW_chart_negative_polywedge_mem`,
+	   `SCV.localEOW_chart_twoSided_polywedge_mem`,
+	   `SCV.localEOWChart_twoSided_polywedge_mem`,
+	   `SCV.localRealMollifySide_holomorphicOn_of_translate_margin`,
+	   `SCV.localRealMollify_commonContinuousBoundary_of_clm`,
+   `SCV.regularizedEnvelope_productKernel_dbar_eq_zero`,
+   `SCV.translationCovariantKernel_distributionalHolomorphic`,
+   `SCV.regularizedEnvelope_holomorphicDistribution_from_productKernel`,
+   `SCV.regularizedEnvelope_pointwiseRepresentation_of_productKernel`,
+   `SCV.regularizedEnvelope_deltaLimit_agreesOnWedges`, and
+   `SCV.regularizedEnvelope_chartEnvelope_from_productKernel`.
+   The remaining pure-SCV declarations are the local continuous EOW extraction
+   `SCV.local_continuous_edge_of_the_wedge_envelope`, the product-kernel family
+   constructor
+   `SCV.regularizedLocalEOW_productKernel_from_continuousEOW`, and finally
+   `SCV.local_distributional_edge_of_the_wedge_envelope`.  Older placeholder
+   names such as `SCV.localRealMollify_commonContinuousBoundary`,
    `SCV.regularizedLocalEOW_family`,
    `SCV.regularizedEnvelope_linearContinuousInKernel`,
    `SCV.regularizedEnvelope_translationCovariant`,
-   `SCV.regularizedEnvelope_productKernel`,
-   `SCV.regularizedEnvelope_kernelRepresentation`,
-   `SCV.regularizedEnvelope_deltaLimit_agreesOnWedges`, and finally
-   `SCV.local_distributional_edge_of_the_wedge_envelope`.  These are pure SCV
-   / topological-vector-space theorem surfaces and must not import Wightman or
-   OS files.
+   `SCV.regularizedEnvelope_productKernel`, and
+   `SCV.regularizedEnvelope_kernelRepresentation` must not be cited as current
+   Lean API unless they are introduced as proved theorem names.  These are pure
+   SCV / topological-vector-space theorem surfaces and must not import Wightman
+   or OS files.
    `SCV.complexTranslateSchwartz`, `SCV.schwartzTensorProduct₂`,
    `SCV.realConvolutionShearCLE`, `SCV.complexRealFiberIntegralRaw`, and
    `SCV.integrable_complexRealFiber`, plus `SCV.baseFDerivSchwartz` and
@@ -1908,8 +1957,10 @@ Current implementation order:
    `BHW.os45_adjacent_commonBoundaryEnvelope` and package its output as
    `AdjacentOSEOWDifferenceEnvelope` while exporting the same patch `V` for
    Jost membership and both real extended-tube memberships;
-3. prove `BHW.sourceRealEnvironment_of_os45JostPatch`, the genuine
-   Hall-Wightman scalar-product-variety real-environment theorem;
+3. use the checked
+   `BHW.exists_sourceDistributionalUniquenessEnvironment_of_open_jost_patch`,
+   the genuine Hall-Wightman scalar-product-variety real-environment theorem
+   packaged for the Gram image of the selected Jost patch;
 4. implement
    `bvt_F_selectedAdjacentDistributionalJostAnchorData_of_OSII` from exactly
    those two inputs and the checked compact-test theorem
@@ -4374,8 +4425,8 @@ Construction of this package is genuine theorem-2 mathematics:
    `BHW.bvt_F_adjacent_extendF_edgeDistribution_eq_of_osEOWDifferenceEnvelope`
    to get the compact-test equality on `V`, using `.symm` if the checked
    theorem is stated in the swap-first orientation;
-3. use the corrected Hall-Wightman scalar-product geometry lemma
-   `BHW.sourceRealEnvironment_of_os45JostPatch` to construct
+3. use the checked Hall-Wightman scalar-product geometry lemma
+   `BHW.exists_sourceDistributionalUniquenessEnvironment_of_open_jost_patch` to construct
    `baseGramEnvironment`, its variety-level uniqueness proof, and the
    realization/lift facts.
 
@@ -4425,8 +4476,8 @@ noncomputable def bvt_F_selectedAdjacentDistributionalJostAnchorData_of_OSII
             BHW.sourceRealMinkowskiGram d n x = G) := by
     intro i hi
     exact
-      BHW.sourceRealEnvironment_of_os45JostPatch
-        (d := d) hd n (V i hi)
+      BHW.exists_sourceDistributionalUniquenessEnvironment_of_open_jost_patch
+        (d := d) n (V i hi)
         (hV i hi).1
         (hV i hi).2.2.1
         (hV i hi).2.2.2.1
@@ -4479,11 +4530,25 @@ noncomputable def bvt_F_distributionalJostAnchor_of_OSII
     (n : ℕ) :
     BHW.SourceDistributionalAdjacentTubeAnchor
       (d := d) n (bvt_F OS lgc n) :=
-  bvt_F_distributionalJostAnchor_of_selectedJostData
+bvt_F_distributionalJostAnchor_of_selectedJostData
     (d := d) OS lgc n
     (bvt_F_selectedAdjacentDistributionalJostAnchorData_of_OSII
       (d := d) hd OS lgc n)
 ```
+
+The Gram-environment supplier in the constructor is now checked in
+`BHWPermutation/SourceDistributionalUniqueness.lean` as
+`exists_sourceDistributionalUniquenessEnvironment_of_open_jost_patch`.  It takes
+the Gram image of the same nonempty open Jost patch `V`, finds a smaller
+regular Hall-Wightman real environment inside it using dense regular
+configurations and `sourceRealGramMap_realEnvironmentAt_of_regular`, proves
+uniqueness there by
+`sourceDistributionalUniquenessSetOnVariety_of_realEnvironment`, and enlarges
+to the whole Gram image by `sourceDistributionalUniquenessSetOnVariety_mono`.
+The remaining unimplemented input in the constructor is therefore the OS45
+common-boundary/EOW envelope theorem
+`BHW.os45_adjacent_singleChart_commonBoundaryValue`, not the scalar-product
+real-environment uniqueness layer.
 
 Projection audit for the packed `hV i hi` proof:
 
@@ -4674,12 +4739,11 @@ sufficient predicate.  The checked full-matrix lemmas may remain as
 small-arity/full-dimensional sufficient tools, but they must not be used to
 claim that a general OS45 Jost patch has full matrix interior.
 
-The corrected OS-side supplier theorem is:
+The checked OS-side Gram-environment supplier is:
 
 ```lean
-theorem BHW.sourceRealEnvironment_of_os45JostPatch
+theorem BHW.exists_sourceDistributionalUniquenessEnvironment_of_open_jost_patch
     [NeZero d]
-    (hd : 2 <= d)
     (n : ℕ)
     (V : Set (NPointDomain d n))
     (hV_open : IsOpen V)
@@ -4692,11 +4756,14 @@ theorem BHW.sourceRealEnvironment_of_os45JostPatch
         BHW.sourceRealMinkowskiGram d n x = G)
 ```
 
-This is the genuine Hall-Wightman geometry step.  It says that the selected
-OS45 real-open Jost slice maps to a real environment in the scalar-product
-variety.  It is **not** a claim about full-matrix interior.
+This theorem is now checked in
+`BHWPermutation/SourceDistributionalUniqueness.lean`.  It is the genuine
+Hall-Wightman geometry step packaged for the selected OS45 real-open Jost slice:
+the whole Gram image is a variety-level uniqueness environment because it
+contains a smaller regular Hall-Wightman real environment.  It is **not** a
+claim about full-matrix interior.
 
-Lean-ready decomposition of this geometry step:
+Checked decomposition of this geometry step:
 
 ```lean
 /-- Dimension of the regular Hall-Wightman scalar-product variety.
@@ -4832,14 +4899,8 @@ def BHW.SourceComplexifiedRealTangentEqualsComplexTangent
       (BHW.sourceComplexGramTangentSpaceAt d n
         (BHW.sourceRealGramComplexify n G))
 
-/-- Every nonempty open real patch contains a regular configuration. -/
-theorem BHW.exists_sourceGramRegularAt_in_nonempty_open
-    [NeZero d]
-    (n : ℕ)
-    (V : Set (NPointDomain d n))
-    (hV_open : IsOpen V)
-    (hV_ne : V.Nonempty) :
-    ∃ x ∈ V, BHW.SourceGramRegularAt d n x
+-- The proof chooses a regular point in `V` by
+-- `(BHW.dense_sourceGramRegularAt d n).exists_mem_open hV_open hV_ne`.
 
 /-- Hall-Wightman's real-environment predicate.  `O` contains a relatively open
 regular real Gram patch, realized by Jost configurations, whose complexified
@@ -4896,15 +4957,15 @@ theorem BHW.sourceDistributionalUniquenessSetOnVariety_mono
     BHW.sourceDistributionalUniquenessSetOnVariety d n E
 ```
 
-The proof of `BHW.sourceRealEnvironment_of_os45JostPatch` should now be:
+The checked proof of
+`BHW.exists_sourceDistributionalUniquenessEnvironment_of_open_jost_patch` is:
 
 ```lean
   classical
   let E : Set (Fin n -> Fin n -> ℝ) :=
     BHW.sourceRealMinkowskiGram d n '' V
-  obtain ⟨x0, hx0V, hreg⟩ :=
-    BHW.exists_sourceGramRegularAt_in_nonempty_open
-      (d := d) (n := n) V hV_open hV_ne
+  obtain ⟨x0, hreg, hx0V⟩ :=
+    (BHW.dense_sourceGramRegularAt d n).exists_mem_open hV_open hV_ne
   have hx0_jost : x0 ∈ BHW.JostSet d n := hV_jost x0 hx0V
   obtain ⟨O, hO_sub_E, hO_env⟩ :=
     BHW.sourceRealGramMap_realEnvironmentAt_of_regular
@@ -4925,12 +4986,12 @@ The proof of `BHW.sourceRealEnvironment_of_os45JostPatch` should now be:
     exact ⟨x, hxV, rfl⟩
 ```
 
-The implementation may merge the source-level `IsHWRealEnvironment` and
-uniqueness theorem if the eventual Hall-Wightman formalization exposes a
-single real-environment theorem.  It must not replace them by an assertion of
-openness in `Fin n -> Fin n -> ℝ`.
+The implementation keeps the source-level `IsHWRealEnvironment` theorem and
+the uniqueness theorem separate, then packages their consequence for open Jost
+patches in `SourceDistributionalUniqueness.lean`.  It must not be replaced by
+an assertion of openness in `Fin n -> Fin n -> ℝ`.
 
-Detailed proof obligations for the three remaining supplier facts:
+Detailed proof obligations for the remaining supplier facts:
 
 Current next-stage gate after the `SourceExtension.lean` cleanup:
 
@@ -4939,27 +5000,27 @@ Current next-stage gate after the `SourceExtension.lean` cleanup:
    it.  That theorem is source-equivalent and remains proof-doc-only.
 2. The next production theorem on the OS side is the constructor
    `bvt_F_selectedAdjacentDistributionalJostAnchorData_of_OSII`; it is allowed
-   only after its three mathematical suppliers are either checked or recorded
-   as exact theorem-level source frontiers:
+   only after its remaining mathematical suppliers are either checked or
+   recorded as exact theorem-level source frontiers:
    - `BHW.os45_adjacent_singleChart_commonBoundaryValue`, supplying one OS45
      patch `V` with Jost membership, left/right adjacent ET membership, and an
      `AdjacentOSEOWDifferenceEnvelope`;
-   - `BHW.sourceRealEnvironment_of_os45JostPatch`, supplying the
-     scalar-product real environment for the Gram image of that same `V`;
+   - `BHW.exists_sourceDistributionalUniquenessEnvironment_of_open_jost_patch`,
+     already checked, supplying the scalar-product real environment/uniqueness
+     package for the Gram image of that same `V`;
    - `BHW.bvt_F_adjacent_extendF_edgeDistribution_eq_of_osEOWDifferenceEnvelope`,
-     converting the OS45 envelope into the compact-test equality field.
+     already checked, converting the OS45 envelope into the compact-test
+     equality field.
 3. The next production theorem on the BHW source side is not another local
    overlap lemma.  It is the direct source theorem
    `hallWightman_source_permutedBranch_compatibility_of_distributionalAnchor`,
    with `hallWightman_exists_sourceScalarRepresentative_of_forwardTube_lorentz`
    as the ordinary scalar-representative source input.
-4. If the real-environment geometry is implemented rather than source-imported,
-   put it in a small source-geometry companion module that imports
-   `SourceExtension.lean` and is exported by the `BHWPermutation` aggregate,
-   instead of growing the theorem-2 consumer files or reopening the now-large
-   source-extension module.  The companion module should contain only the
-   finite-dimensional Gram-map and Hall-Wightman real-environment facts below;
-   it must not mention OS, Schwinger functions, locality, or `bvt_F`.
+4. The real-environment geometry has been implemented in the small companion
+   module `BHWPermutation/SourceDistributionalUniqueness.lean`, exported by the
+   `BHWPermutation` aggregate.  It contains only finite-dimensional Gram-map and
+   Hall-Wightman real-environment facts and does not mention OS, Schwinger
+   functions, locality, or `bvt_F`.
 5. Checked algebraic support now in
    `BHWPermutation/SourceExtension.lean`:
    `sourceRealGramDifferential`, `sourceComplexGramDifferential`,
@@ -10060,10 +10121,9 @@ implementation target if the global identity theorem is attacked directly:
 	   A principal-minor Schur cover is mathematically valid over `ℂ`: a complex
 	   symmetric rank-`r` matrix has a nonzero principal `r × r` minor, and the
 	   principal Schur graph `C = Bᵀ A⁻¹ B` is the clean Hall-Wightman chart.
-	   That theorem is not yet checked here.  It can be added later as an
-	   algebraic simplifier, but the immediate theorem-2 route should not wait
-	   for it because the selected BHW source-Gram chart infrastructure already
-	   supplies the needed local propagation surface.
+	   That theorem is now checked and is used in the singular local-basis branch;
+	   the selected BHW source-Gram chart infrastructure remains the checked
+	   regular-rank local propagation surface.
 
 	   **B. Connected regular-locus continuation.**  The theorem
 	   `sourceComplexGramVariety_rankExact_inter_relOpen_isConnected` is not a
@@ -10305,9 +10365,9 @@ implementation target if the global identity theorem is attacked directly:
 	   determinantal geometry.  The strict branch `d + 1 < n` remains the
 	   Hall-Wightman scalar-product-variety continuation theorem from packet 0v.
 	0y. final arity split for `sourceComplexGramVariety_identity_principle`.
-	    Once the strict regular-rank theorem from packet 0v is checked, the
-	    final theorem should be implemented by the following short, non-wrapper
-	    arity split:
+	    The strict regular-rank theorem from packet 0v and the final arity split
+	    are now checked in `BHWPermutation/SourceComplexDensity.lean`.  The
+	    final theorem is the following short, non-wrapper arity split:
 
 	   ```lean
 	   theorem BHW.sourceComplexGramVariety_identity_principle
@@ -10339,14 +10399,13 @@ implementation target if the global identity theorem is attacked directly:
 	           hzero_reg
 	   ```
 
-	   This final theorem should not be added until
-	   `sourceComplexGramVariety_rankExact_identity_principle` exists
-	   sorry-free.  The easy branch is already checked; the strict branch must
-	   still prove the actual Hall-Wightman analytic continuation content on the
-	   regular rank stratum.  The continuity extension in the last line is
-	   already checked and is not the hard mathematical step.
+	   This final theorem is now checked.  The easy branch uses full symmetric
+	   coordinates; the strict branch uses the checked connected regular-locus
+	   theorem and the checked dense rank-exact extension.  The continuity
+	   extension in the last line remains the already checked final step, not an
+	   additional Hall-Wightman source assumption.
 
-Strict-branch continuation obligations:
+Checked strict-branch continuation obligations:
 
 1. on a patch with an invertible selected principal `r × r` block `A`, write a
    symmetric matrix as `[[A, B], [Bᵀ, C]]`;
@@ -10380,11 +10439,11 @@ not license the source-space pullback shortcut: the audit agrees that the
 pullback route needs an equivalent monodromy/quotient theorem before it can be
 used.
 
-Lean-ready strict connectedness packet:
+Checked strict connectedness packet:
 
-The remaining connectedness theorem must not be implemented as a single opaque
-black box.  The proof should be split into the following genuine subclaims.
-These are not wrappers: each one isolates a separate mathematical ingredient in
+The connectedness theorem was not implemented as a single opaque black box.
+The proof is split into the following genuine subclaims.  These are not
+wrappers: each one isolates a separate mathematical ingredient in
 Hall-Wightman's scalar-product variety argument.
 
 **0z-1. Topological assembly from local connected punctured neighborhoods.**
@@ -10443,10 +10502,11 @@ above is explicit enough for the proof.
 
 **0z-2. Source-variety local connected rank-exact basis.**
 
-This is the genuine local Hall-Wightman normality/irreducibility theorem.  It is
-the main missing finite-dimensional analytic-geometry proof, and it is the only
-new theorem surface needed before the global connectedness theorem becomes an
-assembly theorem.
+This is the genuine local Hall-Wightman normality/irreducibility theorem.  It
+was the main finite-dimensional analytic-geometry proof needed before the
+global connectedness theorem became an assembly theorem, and is now checked in
+`BHWPermutation/SourceComplexDensity.lean` with its singular Schur-chart branch
+checked in `BHWPermutation/SourceComplexSchurGraph.lean`.
 
 ```lean
 theorem BHW.sourceComplexGramVariety_local_rankExact_connected_basis
@@ -10479,7 +10539,7 @@ Proof transcript by rank of `Z0`:
    conclusion, not wrapped:
 
    ```lean
-   theorem BHW.sourceComplexGramMap_localConnectedRelOpenImage_connected_in_open_of_complexRegular
+   theorem BHW.sourceComplexGramMap_localConnectedRelOpenImage_in_open_of_complexRegular
        (d n : Nat)
        (hD : d + 1 ≤ n)
        {z0 : Fin n -> Fin (d + 1) -> ℂ}
@@ -10487,21 +10547,52 @@ Proof transcript by rank of `Z0`:
        {Vsrc : Set (Fin n -> Fin (d + 1) -> ℂ)}
        (hVsrc_open : IsOpen Vsrc)
        (hz0Vsrc : z0 ∈ Vsrc) :
-       ∃ O : Set (Fin n -> Fin n -> ℂ),
-         BHW.sourceMinkowskiGram d n z0 ∈ O ∧
-         BHW.IsRelOpenInSourceComplexGramVariety d n O ∧
-         O ⊆ BHW.sourceMinkowskiGram d n '' Vsrc ∧
-         O ⊆ BHW.sourceSymmetricRankExactStratum n (d + 1) ∧
-         IsConnected O
+       ∃ U : Set (Fin n -> Fin (d + 1) -> ℂ),
+         IsOpen U ∧ IsConnected U ∧ z0 ∈ U ∧ U ⊆ Vsrc ∧
+         ∃ O : Set (Fin n -> Fin n -> ℂ),
+           BHW.sourceMinkowskiGram d n z0 ∈ O ∧
+           BHW.IsRelOpenInSourceComplexGramVariety d n O ∧
+           O ⊆ BHW.sourceMinkowskiGram d n '' U ∧
+           O ⊆ BHW.sourceSymmetricRankExactStratum n (d + 1) ∧
+           IsConnected O ∧
+           ∀ G ∈ O, ∃ z ∈ U,
+             BHW.sourceMinkowskiGram d n z = G
    ```
 
-   The proof should reuse the body of the checked theorem, not introduce a
-   parallel chart layer:
+   This strengthening is now checked directly in
+   `BHWPermutation/SourceComplexDensity.lean` by reusing the body of the
+   existing local chart theorem, not by introducing a parallel chart layer:
    - the implicit-chart image `T := e '' ball` is connected,
    - `R := Prod.fst '' T` is connected,
-   - the Schur/selected-coordinate graph over `R` is homeomorphic to the local
-     rank-exact image,
+   - the produced relatively open image `O` is equal to
+     `sourceMinkowskiGram d n '' U`, because the selected-coordinate chart
+     gives both inclusions,
    - hence the produced `V ∩ rankExact` is connected.
+
+   The regular branch of the local-basis theorem is now checked directly as:
+
+   ```lean
+   theorem BHW.sourceComplexGramVariety_local_rankExact_connected_basis_regular
+       (d n : Nat)
+       (hD : d + 1 < n)
+       {Z0 : Fin n -> Fin n -> ℂ}
+       (hZ0reg : Z0 ∈ BHW.sourceSymmetricRankExactStratum n (d + 1))
+       {N0 : Set (Fin n -> Fin n -> ℂ)}
+       (hN0_open : IsOpen N0)
+       (hZ0N0 : Z0 ∈ N0) :
+       ∃ V : Set (Fin n -> Fin n -> ℂ),
+         Z0 ∈ V ∧
+         BHW.IsRelOpenInSourceComplexGramVariety d n V ∧
+         V ⊆ N0 ∩ BHW.sourceComplexGramVariety d n ∧
+         IsConnected
+           (V ∩ BHW.sourceSymmetricRankExactStratum n (d + 1))
+   ```
+
+   Proof: choose the checked complex-regular realization of `Z0`; apply
+   `sourceComplexGramMap_localConnectedRelOpenImage_in_open_of_complexRegular`
+   to the source preimage of `N0`; take the produced `O` as `V`.  The theorem's
+   `O ⊆ rankExact` turns `V ∩ rankExact` into `V`, and the surjectivity field
+   plus `U ⊆ {z | sourceMinkowskiGram d n z ∈ N0}` proves `V ⊆ N0`.
 3. If `k < D`, choose a nonzero principal `k × k` minor.  For `k = 0`, this is
    the zero block case.  After reindexing, write a nearby symmetric matrix as
    `[[A, B], [Bᵀ, C]]` with `A` invertible.  The existing file
@@ -10581,8 +10672,7 @@ Proof transcript by rank of `Z0`:
    ```lean
    theorem BHW.sourceSymmetricRankExactCone_small_connected
        (m r : Nat)
-       (hr_pos : 0 < r)
-       (hr_lt : r < m)
+       (hr : r ≤ m)
        {N : Set (Fin m -> Fin m -> ℂ)}
        (hN_open : IsOpen N)
        (h0N : (0 : Fin m -> Fin m -> ℂ) ∈ N) :
@@ -10687,6 +10777,12 @@ Proof transcript by rank of `Z0`:
        JoinedIn (BHW.sourceFullRankConfigurations m r)
          A (BHW.selectedFullRankFrame I)
 
+   theorem BHW.exists_sourceFullRankConfiguration_selected_minor_ne_zero
+       {m r : Nat} {A : Fin m -> Fin r -> ℂ}
+       (hA : A ∈ BHW.sourceFullRankConfigurations m r) :
+       ∃ I : Fin r -> Fin m, Function.Injective I ∧
+         Matrix.det (fun a b : Fin r => A (I a) b) ≠ 0
+
    theorem BHW.selectedFullRankFrame_joined_standard
        {m r : Nat} (hr : r ≤ m)
        {I : Fin r -> Fin m} (hI : Function.Injective I) :
@@ -10705,19 +10801,28 @@ Proof transcript by rank of `Z0`:
    `sourceFullRankConfigurations_left_mul_isUnit_mem` and
    `sourceFullRankConfigurations_right_mul_isUnit_mem`, which are the algebraic
    facts used when pushing `GL_m(ℂ)` and `GL_r(ℂ)` paths into full-rank
-   configuration paths.
+   configuration paths.  The path-level versions
+   `sourceFullRankConfigurations_joined_left_mul_GL` and
+   `sourceFullRankConfigurations_joined_right_mul_GL` are now checked too.
 
-   For the first theorem, work in the selected-minor chart.  The selected
-   `r × r` block `A_I` is in `GL_r(ℂ)`, and
-   `MatrixLieGroup.GL_isPathConnected r` gives a path from `A_I` to `1`.
-   Move the remaining rows linearly to zero while keeping the selected block
-   invertible.  Every intermediate matrix is full rank because the selected
-   block is invertible.  For the second theorem, extend the injection `I` to a
-   permutation of `Fin m`; the associated permutation matrix is in `GL_m(ℂ)`,
-   and `MatrixLieGroup.GL_isPathConnected m`, pushed forward by
-   `g ↦ g * standardFullRankConfiguration m r`, connects the selected frame
-   to the standard frame.  This is the honest Stiefel-space argument; do not
-   replace it by a Schur-chart wrapper.
+   The first theorem is now checked exactly as planned.  In the selected-minor
+   chart, put `B = (A (I a) b)`.  The path first right-multiplies `A` through
+   `GL_r(ℂ)` from `1` to `B⁻¹`, so the selected block becomes the identity.
+   It then linearly contracts all remaining rows to zero; every intermediate
+   matrix stays full rank because the selected block is still the identity.
+   The existence lemma above extracts a selected nonzero row minor from any
+   full-rank configuration by applying
+   `exists_nondegenerate_square_submatrix_of_rank_ge` and absorbing the column
+   permutation into the determinant.
+
+   The second theorem is also checked.  Mathlib's
+   `Equiv.Perm.isMultiplyPretransitive` extends the injection
+   `I : Fin r -> Fin m` to a permutation carrying the standard rows to the
+   selected rows.  The associated permutation matrix is a point of `GL_m(ℂ)`;
+   applying the checked left-`GL` path to the standard frame gives a path to
+   the selected frame, and reversing it gives the stated orientation.  This is
+   the honest Stiefel-space argument; do not replace it by a Schur-chart
+   wrapper.
 
    Combining the parametrization and continuity of `sourceComplexDotGram`
    gives:
@@ -10741,20 +10846,76 @@ Proof transcript by rank of `Z0`:
          (BHW.sourceSymmetricRankExactStratum m r)
 
    theorem BHW.sourceSymmetricRankExactStratum_isPathConnected
-       (m r : Nat) (hr_pos : 0 < r) (hr : r ≤ m) :
+       (m r : Nat) (hr : r ≤ m) :
        IsPathConnected
          (BHW.sourceSymmetricRankExactStratum m r)
    ```
 
-   The first three theorems in this block are now checked in
-   `BHWPermutation/SourceComplexCone.lean`; the remaining theorem is exactly
-   the Stiefel path-connectedness theorem plus that checked image theorem.
+   All four theorems in this block are now checked in
+   `BHWPermutation/SourceComplexCone.lean`.  The full Stiefel-space
+   path-connectedness theorem is no longer a blocker.
 
-   Finally prove the small-cone statement.  Choose `ε > 0` with
-   `Metric.ball 0 ε ⊆ N` and put `C := Metric.ball 0 ε`.  For two points
-   `X,Y ∈ C ∩ rankExact`, take a path `γ` in the rank-exact stratum from
-   `X` to `Y`.  Compactness of `γ '' Set.univ` gives a finite bound `M`; choose
-   a real `0 < ρ < 1` with `ρ * M < ε`.  The concatenated path
+   The radial endpoints, compact-bound middle segment, and small-cone
+   assembly are now checked as well:
+
+   ```lean
+   theorem BHW.sourceSymmetricRankExactStratum_joined_radial_smul
+       {m r : Nat} {Z : Fin m -> Fin m -> ℂ}
+       (hZ : Z ∈ BHW.sourceSymmetricRankExactStratum m r)
+       {ρ : ℝ} (hρ : 0 < ρ) :
+       JoinedIn (BHW.sourceSymmetricRankExactStratum m r)
+         Z ((ρ : ℂ) • Z)
+
+   theorem BHW.sourceSymmetricRankExactStratum_joined_ball_radial_smul
+       {m r : Nat} {ε ρ : ℝ} (hρ : 0 < ρ) (hρle : ρ ≤ 1)
+       {Z : Fin m -> Fin m -> ℂ}
+       (hZball : Z ∈ Metric.ball (0 : Fin m -> Fin m -> ℂ) ε)
+       (hZ : Z ∈ BHW.sourceSymmetricRankExactStratum m r) :
+       JoinedIn
+         (Metric.ball (0 : Fin m -> Fin m -> ℂ) ε ∩
+           BHW.sourceSymmetricRankExactStratum m r)
+         Z ((ρ : ℂ) • Z)
+
+   theorem BHW.exists_pos_norm_bound_of_path
+       {E : Type*} [NormedAddCommGroup E]
+       {X Y : E} (γ : Path X Y) :
+       ∃ M : ℝ, 0 < M ∧ ∀ t : unitInterval, ‖γ t‖ ≤ M
+
+   theorem BHW.sourceSymmetricRankExactStratum_joined_ball_scaled_path
+       {m r : Nat} {ε ρ M : ℝ} (hρ : 0 < ρ)
+       {X Y : Fin m -> Fin m -> ℂ} (γ : Path X Y)
+       (hγ : ∀ t : unitInterval,
+         γ t ∈ BHW.sourceSymmetricRankExactStratum m r)
+       (hbound : ∀ t : unitInterval, ‖γ t‖ ≤ M)
+       (hρM : ρ * M < ε) :
+       JoinedIn
+         (Metric.ball (0 : Fin m -> Fin m -> ℂ) ε ∩
+           BHW.sourceSymmetricRankExactStratum m r)
+         ((ρ : ℂ) • X) ((ρ : ℂ) • Y)
+
+   theorem BHW.sourceSymmetricRankExactStratum_ball_isPathConnected
+       (m r : Nat) (hr : r ≤ m) {ε : ℝ} (hε : 0 < ε) :
+       IsPathConnected
+         (Metric.ball (0 : Fin m -> Fin m -> ℂ) ε ∩
+           BHW.sourceSymmetricRankExactStratum m r)
+
+   theorem BHW.sourceSymmetricRankExactCone_small_connected
+       (m r : Nat) (hr : r ≤ m)
+       {N : Set (Fin m -> Fin m -> ℂ)}
+       (hN_open : IsOpen N)
+       (h0N : (0 : Fin m -> Fin m -> ℂ) ∈ N) :
+       ∃ C : Set (Fin m -> Fin m -> ℂ),
+         (0 : Fin m -> Fin m -> ℂ) ∈ C ∧
+         IsOpen C ∧ C ⊆ N ∧
+         IsConnected (C ∩ BHW.sourceSymmetricRankExactStratum m r)
+   ```
+
+   The proof chooses `ε > 0` with `Metric.ball 0 ε ⊆ N` and puts
+   `C := Metric.ball 0 ε`.  For two points `X,Y ∈ C ∩ rankExact`, it takes a
+   path `γ` in the rank-exact stratum from `X` to `Y`.  Compactness of
+   `γ '' Set.univ` gives a positive finite bound `M`; `exists_pos_mul_lt`
+   chooses `δ > 0` with `δ * M < ε`, and Lean uses
+   `ρ := min δ 1` so both `0 < ρ ≤ 1` and `ρ * M < ε`.  The concatenated path
 
    1. radial path from `X` to `ρ • X`,
    2. scaled path `t ↦ ρ • γ t`,
@@ -10762,10 +10923,990 @@ Proof transcript by rank of `Z0`:
 
    stays in `C ∩ rankExact` because all radial scalars are nonzero and the
    exact stratum is a cone.  This gives path-connectedness, hence connectedness
-   of `C ∩ rankExact`.
-5. The product of the connected base coordinate ball and the connected
-   rank-exact cone piece is connected.  Mapping it through the Schur graph chart
-   gives the required connected `V ∩ rankExact`.
+   of `C ∩ rankExact`.  This completes the cone lemma; no Schur-chart or
+   rank-exact connectedness black box remains at this layer.
+
+5. Implemented singular Schur product chart, not another zero-Schur wrapper.
+   This was the remaining local-basis proof step.  The chart lives in the small
+   companion layer `SourceComplexSchurGraph.lean` over
+   `SourceComplexSchurPatch.lean` and `SourceComplexCone.lean`, because
+   `SourceComplexSchurPatch.lean` is already a large checked algebra file.  The
+   implementation exposes the actual graph map as a definition, then proves the
+   rank-exact preimage theorem that makes the connected-cone input usable.
+
+   The following definition is now checked in
+   `BHWPermutation/SourceComplexSchurGraph.lean`, with the transpose convention
+   matching the symmetric source scalar-product matrices in the checked
+   principal Schur rank theorem:
+
+   ```lean
+   noncomputable def BHW.sourcePrincipalSchurGraph
+       (n : Nat) {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (e : Fin n ≃ r ⊕ q)
+       (A : Matrix r r ℂ) (B : Matrix r q ℂ) (S : Matrix q q ℂ) :
+       Fin n -> Fin n -> ℂ :=
+     fun i j =>
+       (Matrix.fromBlocks A B Bᵀ (S + Bᵀ * A⁻¹ * B))
+         (e i) (e j)
+   ```
+
+   The block-recovery lemmas are the first Lean target.  They should be proved
+   by extensionality and `simp [sourcePrincipalSchurGraph]`; keep them small so
+   the later rank theorem does not repeatedly unfold the whole graph.
+
+   ```lean
+   theorem BHW.sourcePrincipalSchurGraph_toBlocks₁₁
+       (n : Nat) {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (e : Fin n ≃ r ⊕ q)
+       (A : Matrix r r ℂ) (B : Matrix r q ℂ) (S : Matrix q q ℂ) :
+       ((Matrix.of fun i j : Fin n =>
+           BHW.sourcePrincipalSchurGraph n e A B S i j).reindex e e).toBlocks₁₁ = A
+
+   theorem BHW.sourcePrincipalSchurGraph_toBlocks₁₂
+       ... :
+       ((Matrix.of fun i j : Fin n =>
+           BHW.sourcePrincipalSchurGraph n e A B S i j).reindex e e).toBlocks₁₂ = B
+
+   theorem BHW.sourcePrincipalSchurGraph_toBlocks₂₁
+       ... :
+       ((Matrix.of fun i j : Fin n =>
+           BHW.sourcePrincipalSchurGraph n e A B S i j).reindex e e).toBlocks₂₁ = Bᵀ
+
+   theorem BHW.sourcePrincipalSchurGraph_schurComplement
+       (n : Nat) {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (e : Fin n ≃ r ⊕ q)
+       (A : Matrix r r ℂ) (B : Matrix r q ℂ) (S : Matrix q q ℂ) :
+       ((Matrix.of fun i j : Fin n =>
+           BHW.sourcePrincipalSchurGraph n e A B S i j).reindex e e).toBlocks₂₂ -
+         ((Matrix.of fun i j : Fin n =>
+           BHW.sourcePrincipalSchurGraph n e A B S i j).reindex e e).toBlocks₂₁ *
+           ((Matrix.of fun i j : Fin n =>
+             BHW.sourcePrincipalSchurGraph n e A B S i j).reindex e e).toBlocks₁₁⁻¹ *
+           ((Matrix.of fun i j : Fin n =>
+             BHW.sourcePrincipalSchurGraph n e A B S i j).reindex e e).toBlocks₁₂ = S
+   ```
+
+   All four block-recovery lemmas and this Schur-complement recovery lemma are
+   checked in `SourceComplexSchurGraph.lean`.  In the last proof, after the
+   block-recovery rewrites the target is
+   `(S + Bᵀ * A⁻¹ * B) - Bᵀ * A⁻¹ * B = S`.  Use the field/ring simp after
+   rewriting with the recovered blocks; do not unfold the graph inside the
+   rank theorem.
+
+   The inverse-coordinate direction of the same chart is now checked as well:
+
+   ```lean
+   theorem BHW.matrix_eq_zero_of_rank_eq_zero
+       {m n : Type*} [Fintype m] [Fintype n] [DecidableEq n]
+       (A : Matrix m n ℂ) (hA : A.rank = 0) : A = 0
+
+   theorem BHW.sourcePrincipalSchurGraph_coordinates_eq_of_symmetric
+       (n : Nat) {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (e : Fin n ≃ r ⊕ q)
+       {Z : Matrix (Fin n) (Fin n) ℂ}
+       (hZsym : Zᵀ = Z) :
+       (Matrix.of fun i j : Fin n =>
+         BHW.sourcePrincipalSchurGraph n e
+           ((Z.reindex e e).toBlocks₁₁)
+           ((Z.reindex e e).toBlocks₁₂)
+           (BHW.reindexedRectSchurComplement Z e e) i j) = Z
+   ```
+
+   The rank-zero lemma is the finite-dimensional linear algebra fact used below
+   to convert the singular basepoint Schur complement from rank zero to the
+   zero matrix.  The graph inverse is the algebraic equality needed in the final
+   singular chart: a
+   symmetric matrix on the determinant patch is recovered from its `(A,B,S)`
+   Schur coordinates.  The proof reindexes `Z` to `M`, derives
+   `M.toBlocks₂₁ = M.toBlocks₁₂ᵀ` from symmetry, rewrites
+   `S + BᵀA⁻¹B = C`, and then checks the four block cases.  It is not a wrapper
+   around the local-basis theorem.
+
+   The coordinate symmetry facts needed to land in the product factors are also
+   checked:
+
+   ```lean
+   theorem BHW.principalBlock_transpose_eq_of_symmetric
+       (n : Nat) {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (e : Fin n ≃ r ⊕ q)
+       {Z : Matrix (Fin n) (Fin n) ℂ}
+       (hZsym : Zᵀ = Z) :
+       ((Z.reindex e e).toBlocks₁₁)ᵀ =
+         (Z.reindex e e).toBlocks₁₁
+
+   theorem BHW.reindexedRectSchurComplement_transpose_eq_of_symmetric
+       (n : Nat) {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (e : Fin n ≃ r ⊕ q)
+       {Z : Matrix (Fin n) (Fin n) ℂ}
+       (hZsym : Zᵀ = Z) :
+       (BHW.reindexedRectSchurComplement Z e e)ᵀ =
+         BHW.reindexedRectSchurComplement Z e e
+   ```
+
+   Symmetry and source-rank membership then become direct consumers:
+
+   ```lean
+   theorem BHW.sourcePrincipalSchurGraph_mem_symmetric
+       (n : Nat) {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (e : Fin n ≃ r ⊕ q)
+       {A : Matrix r r ℂ} {S : Matrix q q ℂ} (B : Matrix r q ℂ)
+       (hA_sym : Aᵀ = A) (hS_sym : Sᵀ = S) :
+       BHW.sourcePrincipalSchurGraph n e A B S ∈
+         BHW.sourceSymmetricMatrixSpace n
+
+   theorem BHW.sourcePrincipalSchurGraph_mem_rankLE_iff
+       (n D : Nat) {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (e : Fin n ≃ r ⊕ q)
+       {A : Matrix r r ℂ} (hA_unit : IsUnit A.det)
+       (hA_sym : Aᵀ = A)
+       {B : Matrix r q ℂ} {S : Matrix q q ℂ}
+       (hS_sym : Sᵀ = S) (hrD : Fintype.card r ≤ D) :
+       BHW.sourcePrincipalSchurGraph n e A B S ∈
+           BHW.sourceSymmetricRankLEVariety n D ↔
+         (Matrix.of fun i j : q => S i j).rank ≤ D - Fintype.card r
+
+   theorem BHW.sourcePrincipalSchurGraph_mem_rankExact_iff
+       (n D : Nat) {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (e : Fin n ≃ r ⊕ q)
+       {A : Matrix r r ℂ} (hA_unit : IsUnit A.det)
+       (hA_sym : Aᵀ = A)
+       {B : Matrix r q ℂ} {S : Matrix q q ℂ}
+       (hS_sym : Sᵀ = S) (hrD : Fintype.card r ≤ D) :
+       BHW.sourcePrincipalSchurGraph n e A B S ∈
+           BHW.sourceSymmetricRankExactStratum n D ↔
+         (Matrix.of fun i j : q => S i j).rank = D - Fintype.card r
+   ```
+
+   These symmetry and rank-`≤`/rank-exact graph lemmas are also checked in
+   `SourceComplexSchurGraph.lean`.  The proof of the rank lemmas is:
+
+   - rewrite the graph's principal block to `A`, so the checked hypothesis
+     needed by
+     `sourceSymmetricRankLEVariety_iff_principal_schur_rank_le` /
+     `sourceSymmetricRankExactStratum_iff_principal_schur_rank_eq` is exactly
+     `hA_unit`;
+   - rewrite the Schur complement to `S`;
+   - discharge the symmetric-matrix conjunct using
+     `sourcePrincipalSchurGraph_mem_symmetric`.
+
+   For performance, introduce local abbreviations
+   `G := sourcePrincipalSchurGraph n e A B S` and
+   `M := Matrix.of fun i j : Fin n => G i j`; rewrite `M.reindex e e` only
+   once.  The previous direct prototype timed out because it repeatedly
+   unfolded `Matrix.of` and the graph expression inside block simplification.
+
+6. Build the local product neighborhood at a singular point `Z0`.
+
+   Let `D := d + 1`, `k := (Matrix.of fun i j : Fin n => Z0 i j).rank`, and
+   assume the singular branch `k < D`.  From
+   `sourceComplexGramVariety_eq_rank_le`, `hZ0 : Z0 ∈ sourceComplexGramVariety
+   d n` gives symmetry and `k ≤ D`.  Use
+   `exists_sourcePrincipalMinor_ne_zero_of_sourceSymmetricRank` with `r = k` to
+   choose an injective `I : Fin k -> Fin n` with nonzero principal minor, and
+   set
+
+   ```lean
+   let q := BHW.selectedIndexComplement I
+   let e := BHW.selectedIndexSumEquiv I hI
+   let M0 : Matrix (Fin n) (Fin n) ℂ := Matrix.of fun i j => Z0 i j
+   let A0 : Matrix (Fin k) (Fin k) ℂ := (M0.reindex e e).toBlocks₁₁
+   let B0 : Matrix (Fin k) q ℂ := (M0.reindex e e).toBlocks₁₂
+   let S0 : Matrix q q ℂ :=
+     (M0.reindex e e).toBlocks₂₂ -
+       (M0.reindex e e).toBlocks₂₁ * A0⁻¹ * B0
+   ```
+
+   Because `Z0` has rank exactly `k` and `A0.det` is a unit, the checked
+   `rank_reindexed_principal_eq_card_add_rank_schur` gives
+   `S0.rank = 0`, hence `S0 = 0` by `rank_eq_zero`.  Symmetry of `Z0` gives
+   `(M0.reindex e e).toBlocks₂₁ = B0ᵀ`, so
+   `Z0 = sourcePrincipalSchurGraph n e A0 B0 0`.
+
+   The neighborhood should be chosen in graph coordinates:
+
+   - `Aset`: a small connected open ball around `A0` inside the affine subspace
+     of symmetric `Fin k × Fin k` matrices and inside `{A | IsUnit A.det}`;
+   - `Bset`: a small connected open ball around `B0` in all rectangular
+     `Fin k × q` matrices;
+   - `Scone`: the set `C` returned by
+     `sourceSymmetricRankExactCone_small_connected (Fintype.card q) (D-k)` for
+     a small open neighborhood of `0` in symmetric `q × q` matrices, transported
+     along an equivalence `q ≃ Fin (Fintype.card q)` if the existing cone theorem
+     is kept on `Fin m`.
+
+   The type-transport step is now checked in
+   `BHWPermutation/SourceComplexConeTransport.lean`.  The theorem surface is:
+
+   ```lean
+   theorem BHW.matrixSymmetricRankExactCone_small_connected
+       {q : Type*} [Fintype q] [DecidableEq q]
+       (r : Nat) (hr : r ≤ Fintype.card q)
+       {N : Set (Matrix q q ℂ)}
+       (hN_open : IsOpen N)
+       (h0N : (0 : Matrix q q ℂ) ∈ N) :
+       ∃ C : Set (Matrix q q ℂ),
+         (0 : Matrix q q ℂ) ∈ C ∧
+         IsOpen C ∧ C ⊆ N ∧
+         IsConnected
+           (C ∩ {S : Matrix q q ℂ | Sᵀ = S ∧ S.rank = r})
+   ```
+
+   Proof transcript, now reflected in the checked Lean proof:
+
+   1. Put `m := Fintype.card q` and `e := Fintype.equivFin q`.
+   2. Pull `N` back to Fin-coordinates:
+
+      ```lean
+      let Nfin : Set (Matrix (Fin m) (Fin m) ℂ) :=
+        {T | T.reindex e.symm e.symm ∈ N}
+      ```
+
+      `Nfin` is open by `hN_open.preimage` and `fun_prop`; `0 ∈ Nfin` by
+      simp.
+   3. Apply `sourceSymmetricRankExactCone_small_connected m r hr` to `Nfin`,
+      obtaining `Cfin`.
+   4. Push the connected neighborhood back:
+
+      ```lean
+      let C : Set (Matrix q q ℂ) := {S | S.reindex e e ∈ Cfin}
+      ```
+
+      Openness is again a continuous preimage.  The subset `C ⊆ N` follows
+      from `Cfin ⊆ Nfin` and the identity
+      `(S.reindex e e).reindex e.symm e.symm = S`.
+   5. The rank-exact symmetric stratum is transported by reindexing:
+
+      ```lean
+      Sᵀ = S ∧ S.rank = r
+        ↔ (S.reindex e e)ᵀ = S.reindex e e ∧
+          (S.reindex e e).rank = r
+      ```
+
+      The rank part is `simp` for reindexing by equivalences; the symmetry
+      part is entrywise extensionality.
+   6. Hence
+      `C ∩ {S | Sᵀ = S ∧ S.rank = r}` is the continuous image under
+      `T ↦ T.reindex e.symm e.symm` of
+      `Cfin ∩ sourceSymmetricRankExactStratum m r`, so it is connected.
+
+   The exact Lean split should avoid pretending this is ordinary openness in
+   the full `(A,B,S)` space.  The honest base is the product of:
+
+   ```lean
+   {A | Aᵀ = A} ∩ Metric.ball A0 εA ∩ {A | IsUnit A.det}
+   Metric.ball B0 εB
+   C ∩ BHW.sourceSymmetricRankExactStratum (Fintype.card q) (D-k)
+   ```
+
+   with `S` transported back from `Fin (Fintype.card q)` to `q`.  The
+   `A`-factor can be connected by the same small-ball convexity argument used
+   for finite-dimensional affine subspaces: line segments preserve symmetry,
+   and the ball radius is chosen inside the determinant-unit neighborhood.  The
+   `B`-factor is an ordinary connected ball.  The `S`-factor is connected by
+   the cone lemma.  Mathlib's product connectedness then gives connectedness
+   of the rank-exact parameter set.
+
+   The `A`-factor topology is now checked in `SourceComplexSchurGraph.lean`:
+
+   ```lean
+   theorem BHW.isOpen_matrix_det_isUnit
+       {r : Type*} [Fintype r] [DecidableEq r] :
+       IsOpen ({A : Matrix r r ℂ | IsUnit A.det})
+
+   theorem BHW.exists_pos_ball_subset_isUnit_det
+       {r : Type*} [Fintype r] [DecidableEq r]
+       {A0 : Matrix r r ℂ} (hA0 : IsUnit A0.det) :
+       ∃ ε : ℝ, 0 < ε ∧
+         Metric.ball A0 ε ⊆ {A : Matrix r r ℂ | IsUnit A.det}
+
+   theorem BHW.isConnected_symmetric_matrix_ball
+       {r : Type*} [Fintype r] [DecidableEq r]
+       {A0 : Matrix r r ℂ} (hA0sym : A0ᵀ = A0)
+       {ε : ℝ} (hε : 0 < ε) :
+       IsConnected (Metric.ball A0 ε ∩ {A : Matrix r r ℂ | Aᵀ = A})
+
+   theorem BHW.isConnected_matrix_ball
+       {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (B0 : Matrix r q ℂ) {ε : ℝ} (hε : 0 < ε) :
+       IsConnected (Metric.ball B0 ε)
+   ```
+
+   The implementation uses the Frobenius matrix norm scope for matrix metric
+   balls.  This choice is harmless: all finite-dimensional norms give the same
+   local topology, and this lemma only needs a concrete connected ball.
+
+   The Schur-coordinate continuity needed for relative openness is now checked
+   as well:
+
+   ```lean
+   theorem BHW.continuousOn_principalBlock_invEntry
+       (n : Nat) {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (e : Fin n ≃ r ⊕ q) (i j : r) :
+       ContinuousOn
+         (fun Z : Matrix (Fin n) (Fin n) ℂ =>
+           ((Z.reindex e e).toBlocks₁₁)⁻¹ i j)
+         {Z | IsUnit ((Z.reindex e e).toBlocks₁₁.det)}
+
+   theorem BHW.continuousOn_reindexedPrincipalSchurComplement
+       (n : Nat) {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (e : Fin n ≃ r ⊕ q) :
+       ContinuousOn
+         (fun Z : Matrix (Fin n) (Fin n) ℂ =>
+           BHW.reindexedRectSchurComplement Z e e)
+         {Z | IsUnit ((Z.reindex e e).toBlocks₁₁.det)}
+   ```
+
+   The second proof is again coordinatewise: expand the Schur complement entry
+   as
+
+   ```lean
+   C α β -
+     ∑ x, (∑ y, B₂₁ α y * A⁻¹ y x) * B₁₂ x β
+   ```
+
+   and combine finite sums/products of continuous scalar coordinate functions.
+
+   The ambient openness package for the final `V` is now checked:
+
+   ```lean
+   theorem BHW.isOpen_sourcePrincipalSchurCoordinatePatch
+       (n : Nat) {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (e : Fin n ≃ r ⊕ q)
+       {N0 : Set (Matrix (Fin n) (Fin n) ℂ)}
+       (hN0_open : IsOpen N0)
+       {Aset : Set (Matrix r r ℂ)}
+       (hAset_open : IsOpen Aset)
+       {Bset : Set (Matrix r q ℂ)}
+       (hBset_open : IsOpen Bset)
+       {Sset : Set (Matrix q q ℂ)}
+       (hSset_open : IsOpen Sset) :
+       IsOpen
+         {Z : Matrix (Fin n) (Fin n) ℂ |
+           Z ∈ N0 ∧
+           IsUnit ((Z.reindex e e).toBlocks₁₁.det) ∧
+           (Z.reindex e e).toBlocks₁₁ ∈ Aset ∧
+           (Z.reindex e e).toBlocks₁₂ ∈ Bset ∧
+           BHW.reindexedRectSchurComplement Z e e ∈ Sset}
+   ```
+
+   Thus the final relatively open chart is obtained by taking this open ambient
+   set and intersecting it with `sourceComplexGramVariety d n`, exactly as
+   required by `IsRelOpenInSourceComplexGramVariety`.
+
+   The topology lemmas needed before the final local-basis theorem are now
+   precisely these, in this order:
+
+   ```lean
+   theorem BHW.continuousOn_matrix_inv_of_isUnit_det
+       {q : Type*} [Fintype q] [DecidableEq q] :
+       ContinuousOn (fun A : Matrix q q ℂ => A⁻¹)
+         {A : Matrix q q ℂ | IsUnit A.det}
+
+   theorem BHW.continuousOn_sourcePrincipalSchurGraph
+       (n : Nat) {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (e : Fin n ≃ r ⊕ q) :
+       ContinuousOn
+         (fun p : Matrix r r ℂ × Matrix r q ℂ × Matrix q q ℂ =>
+           BHW.sourcePrincipalSchurGraph n e p.1 p.2.1 p.2.2)
+         {p | IsUnit p.1.det}
+
+   theorem BHW.exists_sourcePrincipalSchurGraph_product_subset_open
+       (n : Nat) {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (e : Fin n ≃ r ⊕ q)
+       {A0 : Matrix r r ℂ} {B0 : Matrix r q ℂ} {S0 : Matrix q q ℂ}
+       (hA0_unit : IsUnit A0.det)
+       {N0 : Set (Fin n -> Fin n -> ℂ)}
+       (hN0_open : IsOpen N0)
+       (hG0N0 : BHW.sourcePrincipalSchurGraph n e A0 B0 S0 ∈ N0) :
+       ∃ Aset : Set (Matrix r r ℂ),
+       ∃ Bset : Set (Matrix r q ℂ),
+       ∃ Sset : Set (Matrix q q ℂ),
+         IsOpen Aset ∧ A0 ∈ Aset ∧
+         IsOpen Bset ∧ B0 ∈ Bset ∧
+         IsOpen Sset ∧ S0 ∈ Sset ∧
+         (∀ A ∈ Aset, IsUnit A.det) ∧
+         ((fun p : Matrix r r ℂ × Matrix r q ℂ × Matrix q q ℂ =>
+             BHW.sourcePrincipalSchurGraph n e p.1 p.2.1 p.2.2) ''
+           {p | p.1 ∈ Aset ∧ p.2.1 ∈ Bset ∧ p.2.2 ∈ Sset}) ⊆ N0
+
+   theorem BHW.isConnected_sourcePrincipalSchurGraph_rankExact_image
+       (n D : Nat) {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (e : Fin n ≃ r ⊕ q)
+       {Aset : Set (Matrix r r ℂ)}
+       {Bset : Set (Matrix r q ℂ)}
+       {Sset : Set (Matrix q q ℂ)}
+       (hA_conn : IsConnected Aset)
+       (hB_conn : IsConnected Bset)
+       (hS_conn :
+         IsConnected
+           (Sset ∩ {S : Matrix q q ℂ |
+             Sᵀ = S ∧ S.rank = D - Fintype.card r}))
+       (hA_unit : ∀ A ∈ Aset, IsUnit A.det) :
+       IsConnected
+         ((fun p : Matrix r r ℂ × Matrix r q ℂ × Matrix q q ℂ =>
+             BHW.sourcePrincipalSchurGraph n e p.1 p.2.1 p.2.2) ''
+           ({p | p.1 ∈ Aset ∧ p.2.1 ∈ Bset ∧
+             p.2.2 ∈ Sset ∩ {S : Matrix q q ℂ |
+               Sᵀ = S ∧ S.rank = D - Fintype.card r}}))
+
+   theorem BHW.sourcePrincipalSchurGraph_rankExact_image_subset
+       (n D : Nat) {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (e : Fin n ≃ r ⊕ q)
+       {Aset : Set (Matrix r r ℂ)}
+       {Bset : Set (Matrix r q ℂ)}
+       {Sset : Set (Matrix q q ℂ)}
+       (hA_unit : ∀ A ∈ Aset, IsUnit A.det)
+       (hA_sym : ∀ A ∈ Aset, Aᵀ = A)
+       (hrD : Fintype.card r ≤ D) :
+       ((fun p : Matrix r r ℂ × Matrix r q ℂ × Matrix q q ℂ =>
+           BHW.sourcePrincipalSchurGraph n e p.1 p.2.1 p.2.2) ''
+         {p | p.1 ∈ Aset ∧ p.2.1 ∈ Bset ∧
+           p.2.2 ∈ Sset ∩ {S : Matrix q q ℂ |
+             Sᵀ = S ∧ S.rank = D - Fintype.card r}}) ⊆
+         BHW.sourceSymmetricRankExactStratum n D
+   ```
+
+   The inverse-continuity theorem is now checked in
+   `SourceComplexSchurGraph.lean`.  Its proof uses Mathlib's
+   `Matrix.inv_def : A⁻¹ = Ring.inverse A.det • A.adjugate`.  On
+   `{A | IsUnit A.det}`, the determinant is nonzero, scalar inverse is
+   continuous, and the adjugate entries are polynomial in the entries of `A`.
+   This is a finite-dimensional algebra lemma, not an OS-specific axiom.
+
+   The product-neighborhood theorem is also checked in
+   `SourceComplexSchurGraph.lean`.  Its proof forms the open set
+   `{p | IsUnit p.1.det} ∩ graph ⁻¹' N0`, applies
+   `continuousOn_sourcePrincipalSchurGraph`, and then uses the product-neighborhood
+   basis twice to split a neighborhood of `(A0,B0,S0)` into open `A`, `B`, and
+   `S` neighborhoods.  The returned `A` neighborhood is already contained in
+   the determinant-unit locus.
+
+   These two graph-image theorems are now checked in
+   `SourceComplexSchurGraph.lean`.  The connected-image theorem is product
+   connectedness followed by `continuousOn_sourcePrincipalSchurGraph`.  The
+   rank-exact image-subset theorem applies the checked
+   `sourcePrincipalSchurGraph_mem_rankExact_iff`.
+
+   The exact patch/image equality needed by the singular local-basis theorem is
+   now checked too:
+
+   ```lean
+   theorem BHW.sourcePrincipalSchurGraph_rankExact_image_eq_coordinatePatch
+       (n D : Nat) {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (e : Fin n ≃ r ⊕ q)
+       {N0 : Set (Fin n -> Fin n -> ℂ)}
+       {Aset : Set (Matrix r r ℂ)}
+       {Bset : Set (Matrix r q ℂ)}
+       {Sset : Set (Matrix q q ℂ)}
+       (hA_unit : ∀ A ∈ Aset, IsUnit A.det)
+       (hA_sym : ∀ A ∈ Aset, Aᵀ = A)
+       (hrD : Fintype.card r ≤ D)
+       (hgraph_N0 :
+         ((fun p : Matrix r r ℂ × Matrix r q ℂ × Matrix q q ℂ =>
+             BHW.sourcePrincipalSchurGraph n e p.1 p.2.1 p.2.2) ''
+           {p | p.1 ∈ Aset ∧ p.2.1 ∈ Bset ∧
+             p.2.2 ∈ Sset ∩ {S : Matrix q q ℂ |
+               Sᵀ = S ∧ S.rank = D - Fintype.card r}}) ⊆ N0) :
+       ({Z : Fin n -> Fin n -> ℂ |
+           Z ∈ N0 ∧
+           IsUnit
+             ((((Matrix.of fun i j : Fin n => Z i j).reindex e e).toBlocks₁₁).det) ∧
+           (((Matrix.of fun i j : Fin n => Z i j).reindex e e).toBlocks₁₁) ∈
+             Aset ∧
+           (((Matrix.of fun i j : Fin n => Z i j).reindex e e).toBlocks₁₂) ∈
+             Bset ∧
+           BHW.reindexedRectSchurComplement
+             (Matrix.of fun i j : Fin n => Z i j) e e ∈ Sset} ∩
+         BHW.sourceSymmetricRankExactStratum n D) =
+         ((fun p : Matrix r r ℂ × Matrix r q ℂ × Matrix q q ℂ =>
+             BHW.sourcePrincipalSchurGraph n e p.1 p.2.1 p.2.2) ''
+           {p | p.1 ∈ Aset ∧ p.2.1 ∈ Bset ∧
+             p.2.2 ∈ Sset ∩ {S : Matrix q q ℂ |
+               Sᵀ = S ∧ S.rank = D - Fintype.card r}})
+
+   theorem BHW.sourcePrincipalSchurGraph_rankExact_image_eq_openCoordinatePatch
+       (n D : Nat) {r q : Type*} [Fintype r] [Fintype q]
+       [DecidableEq r] [DecidableEq q]
+       (e : Fin n ≃ r ⊕ q)
+       {N0 : Set (Fin n -> Fin n -> ℂ)}
+       {Aset : Set (Matrix r r ℂ)}
+       {Bset : Set (Matrix r q ℂ)}
+       {Sset : Set (Matrix q q ℂ)}
+       (hA_unit : ∀ A ∈ Aset, IsUnit A.det)
+       (hrD : Fintype.card r ≤ D)
+       (hgraph_N0 :
+         ((fun p : Matrix r r ℂ × Matrix r q ℂ × Matrix q q ℂ =>
+             BHW.sourcePrincipalSchurGraph n e p.1 p.2.1 p.2.2) ''
+           {p | p.1 ∈ Aset ∩ {A : Matrix r r ℂ | Aᵀ = A} ∧
+             p.2.1 ∈ Bset ∧
+             p.2.2 ∈ Sset ∩ {S : Matrix q q ℂ |
+               Sᵀ = S ∧ S.rank = D - Fintype.card r}}) ⊆ N0) :
+       ({Z : Fin n -> Fin n -> ℂ |
+           Z ∈ N0 ∧
+           IsUnit
+             ((((Matrix.of fun i j : Fin n => Z i j).reindex e e).toBlocks₁₁).det) ∧
+           (((Matrix.of fun i j : Fin n => Z i j).reindex e e).toBlocks₁₁) ∈
+             Aset ∧
+           (((Matrix.of fun i j : Fin n => Z i j).reindex e e).toBlocks₁₂) ∈
+             Bset ∧
+           BHW.reindexedRectSchurComplement
+             (Matrix.of fun i j : Fin n => Z i j) e e ∈ Sset} ∩
+         BHW.sourceSymmetricRankExactStratum n D) =
+         ((fun p : Matrix r r ℂ × Matrix r q ℂ × Matrix q q ℂ =>
+             BHW.sourcePrincipalSchurGraph n e p.1 p.2.1 p.2.2) ''
+           {p | p.1 ∈ Aset ∩ {A : Matrix r r ℂ | Aᵀ = A} ∧
+             p.2.1 ∈ Bset ∧
+             p.2.2 ∈ Sset ∩ {S : Matrix q q ℂ |
+               Sᵀ = S ∧ S.rank = D - Fintype.card r}})
+   ```
+
+   Forward direction: a rank-exact `Z` in the coordinate patch has symmetric
+   `A` and `S` coordinates, Schur rank `D-k` by the principal Schur rank
+   theorem, and equals its graph by
+   `sourcePrincipalSchurGraph_coordinates_eq_of_symmetric`.  Reverse direction:
+   block recovery gives the patch coordinates, `hgraph_N0` gives the ambient
+   neighborhood condition, and
+   `sourcePrincipalSchurGraph_mem_rankExact_iff` gives rank-exact membership.
+   The open-coordinate variant packages the additional fact that on a
+   rank-exact symmetric matrix the open `Aset` condition may be replaced by
+   `Aset ∩ {A | Aᵀ = A}` for the graph parameters; it is the preferred equality
+   for the final local-basis proof.
+
+   This theorem is now checked in `SourceComplexSchurGraph.lean`.  The Lean
+   proof is coordinatewise, because a direct `fun_prop` on the unfolded graph
+   expands too much matrix notation.  After
+
+   ```lean
+   rw [continuousOn_pi]
+   intro i
+   rw [continuousOn_pi]
+   intro j
+   unfold sourcePrincipalSchurGraph
+   cases e i <;> cases e j
+   ```
+
+   the four coordinate cases are:
+
+   - upper-left: `p ↦ p.1 a b`;
+   - upper-right: `p ↦ p.2.1 a β`;
+   - lower-left: `p ↦ p.2.1 b α`;
+   - lower-right:
+
+     ```lean
+     p ↦ p.2.2 α β +
+       ∑ x, ∑ y,
+         p.2.1 y α * p.1⁻¹ y x * p.2.1 x β
+     ```
+
+   The first three are `fun_prop`.  For the lower-right case, first prove
+   `ContinuousOn (fun p => p.1⁻¹ y x) {p | IsUnit p.1.det}` from
+   `continuousOn_matrix_inv_of_isUnit_det` and coordinate evaluation.  Then use
+   finite sums/products of continuous-on scalar coordinate functions.  This
+   avoids asking automation to discover continuity of matrix transpose and
+   multiplication at the whole matrix-valued level.
+
+7. Push the product through the graph map.
+
+   Choose radii so that the continuous graph map sends the parameter product
+   into `N0`.  Define
+
+   ```lean
+   let V : Set (Fin n -> Fin n -> ℂ) :=
+     {Z |
+       Z ∈ N0 ∧
+       Z ∈ BHW.sourceComplexGramVariety d n ∧
+       let M : Matrix (Fin n) (Fin n) ℂ := Matrix.of fun i j => Z i j
+       IsUnit ((M.reindex e e).toBlocks₁₁.det) ∧
+       (M.reindex e e).toBlocks₁₁ ∈ Aball ∧
+       (M.reindex e e).toBlocks₁₂ ∈ Bball ∧
+       BHW.reindexedRectSchurComplement M e e ∈ Sambient}
+   ```
+
+   Here `Aball := Metric.ball A0 εA`, `Bball := Metric.ball B0 εB`,
+   `Sambient := C`, and the rank-exact parameter set used for connectedness is
+
+   ```lean
+   let Aexact : Set (Matrix (Fin k) (Fin k) ℂ) :=
+     Aball ∩ {A | Aᵀ = A}
+   let Sexact : Set (Matrix q q ℂ) :=
+     Sambient ∩ {S | Sᵀ = S ∧ S.rank = D - k}
+   ```
+
+   The determinant-unit condition on `Aexact` is supplied by choosing `εA`
+   with `Metric.ball A0 εA ⊆ {A | IsUnit A.det}`.
+
+   This `V` is relatively open in the source complex Gram variety because:
+
+   - `N0` is ambient open;
+   - the determinant-unit condition is open;
+   - block projection and Schur-complement maps are continuous on the
+     determinant-unit patch;
+   - `Aball`, `Bball`, and `Sambient` are open in their intended ambient spaces.
+
+   On this patch, the inverse coordinate map is explicit:
+
+   ```lean
+   Z ↦
+     ( (M.reindex e e).toBlocks₁₁,
+       (M.reindex e e).toBlocks₁₂,
+       (M.reindex e e).toBlocks₂₂ -
+         (M.reindex e e).toBlocks₂₁ *
+           (M.reindex e e).toBlocks₁₁⁻¹ *
+           (M.reindex e e).toBlocks₁₂ )
+   ```
+
+   and the checked Schur rank theorem proves:
+
+   - if `Z ∈ V ∩ sourceSymmetricRankExactStratum n D`, then the Schur
+     complement coordinate has rank `D-k` by
+     `sourceSymmetricRankExactStratum_iff_principal_schur_rank_eq`; symmetry of
+     `Z` gives symmetry of the `A` and `S` coordinates by
+     `principalBlock_transpose_eq_of_symmetric` and
+     `reindexedRectSchurComplement_transpose_eq_of_symmetric`, so the coordinate
+     triple lies in `Aexact × Bball × Sexact`;
+   - every such `Z` is the graph of its coordinates by the checked theorem
+     `sourcePrincipalSchurGraph_coordinates_eq_of_symmetric`;
+   - conversely, every graph point from `Aexact × Bball × Sexact` lies in
+     `V ∩ sourceSymmetricRankExactStratum n D` by
+     `sourcePrincipalSchurGraph_rankExact_image_subset`.
+
+   Therefore `V ∩ rankExact` is exactly the continuous graph image of the
+   connected product.  This proves the singular branch of
+   `sourceComplexGramVariety_local_rankExact_connected_basis`.
+
+   Lean-ready singular branch assembly:
+
+   ```lean
+   -- inside sourceComplexGramVariety_local_rankExact_connected_basis
+   let D : Nat := d + 1
+   let M0 : Matrix (Fin n) (Fin n) ℂ := Matrix.of fun i j => Z0 i j
+   let k : Nat := M0.rank
+   have hZ0sym : Z0 ∈ BHW.sourceSymmetricMatrixSpace n := by
+     rw [BHW.sourceComplexGramVariety_eq_rank_le] at hZ0
+     exact hZ0.1
+   have hkD : k ≤ D := by
+     rw [BHW.sourceComplexGramVariety_eq_rank_le] at hZ0
+     simpa [D, k, M0] using hZ0.2
+   by_cases hkreg : k = D
+   · have hZ0reg : Z0 ∈ BHW.sourceSymmetricRankExactStratum n D := by
+       exact ⟨hZ0sym, by simpa [D, k, M0] using hkreg⟩
+     obtain ⟨z0, hz0_regular, hz0_gram⟩ :=
+       BHW.sourceSymmetricRankExactStratum_exists_complexRegular_realization
+         d n (Nat.le_of_lt hD) (by simpa [D] using hZ0reg)
+     let Vsrc : Set (Fin n -> Fin (d + 1) -> ℂ) :=
+       {z | BHW.sourceMinkowskiGram d n z ∈ N0}
+     have hVsrc_open : IsOpen Vsrc :=
+       hN0_open.preimage (BHW.contDiff_sourceMinkowskiGram d n).continuous
+     have hz0Vsrc : z0 ∈ Vsrc := by
+       simpa [Vsrc, hz0_gram] using hZ0N0
+     obtain ⟨Usrc, hUsrc_open, hUsrc_conn, hz0_Usrc, hUsrc_sub,
+         O, hZ0O, hO_rel, hO_image, hO_rank, hO_conn, hO_surj⟩ :=
+       BHW.sourceComplexGramMap_localConnectedRelOpenImage_in_open_of_complexRegular
+         d n (Nat.le_of_lt hD) hz0_regular hVsrc_open hz0Vsrc
+     refine ⟨O, hZ0O, hO_rel, ?_, ?_⟩
+     · intro G hGO
+       rcases hO_surj G hGO with ⟨z, hzU, hzG⟩
+       refine ⟨?_, ?_⟩
+       · rw [← hzG]
+         exact hUsrc_sub hzU
+       · exact BHW.sourceSymmetricRankExactStratum_subset_sourceComplexGramVariety
+           d n (d + 1) (Nat.le_refl (d + 1)) (hO_rank hGO)
+     · have hO_inter :
+           O ∩ BHW.sourceSymmetricRankExactStratum n (d + 1) = O := by
+         ext G
+         constructor
+         · intro hG
+           exact hG.1
+         · intro hG
+           exact ⟨hG, hO_rank hG⟩
+       rw [hO_inter]
+       exact hO_conn
+   · have hksing : k < D := lt_of_le_of_ne hkD hkreg
+     obtain ⟨I, hI, hminor⟩ :=
+       BHW.exists_sourcePrincipalMinor_ne_zero_of_sourceSymmetricRank
+         (n := n) (r := k) hZ0sym rfl
+     let q := BHW.selectedIndexComplement I
+     let e : Fin n ≃ Fin k ⊕ q := BHW.selectedIndexSumEquiv I hI
+     let A0 : Matrix (Fin k) (Fin k) ℂ := (M0.reindex e e).toBlocks₁₁
+     let B0 : Matrix (Fin k) q ℂ := (M0.reindex e e).toBlocks₁₂
+     let S0 : Matrix q q ℂ := BHW.reindexedRectSchurComplement M0 e e
+   ```
+
+   The selected minor gives the determinant-unit principal block:
+
+   ```lean
+   have hA0_unit : IsUnit A0.det := by
+     simpa [A0, M0, e] using
+       BHW.isUnit_selectedIndexSumEquiv_toBlocks₁₁_det
+         (I := I) (J := I) hI hI hminor
+   ```
+
+   The Schur complement of the basepoint is zero:
+
+   ```lean
+   have hS0_rank_zero : S0.rank = 0 := by
+     have hsplit :=
+       BHW.rank_reindexed_principal_eq_card_add_rank_schur
+         (Z := M0) (e := e) hA0_unit
+     -- `hsplit : M0.rank = k + S0.rank`.
+     -- Since `k = M0.rank`, `omega` gives `S0.rank = 0`.
+     omega
+
+   have hS0_zero : S0 = 0 :=
+     BHW.matrix_eq_zero_of_rank_eq_zero S0 hS0_rank_zero
+
+   have hZ0_graph :
+       BHW.sourcePrincipalSchurGraph n e A0 B0 0 = Z0 := by
+     have hM0sym : M0ᵀ = M0 := by
+       ext i j
+       simpa [M0, Matrix.transpose] using hZ0sym j i
+     have hcoord :=
+       BHW.sourcePrincipalSchurGraph_coordinates_eq_of_symmetric n e hM0sym
+     -- rewrite `S0` to `0` and read the matrix equality coordinatewise.
+     funext i j
+     have hij := congr_fun (congr_fun hcoord i) j
+     simpa [M0, A0, B0, S0, hS0_zero] using hij
+   ```
+
+   Extract product neighborhoods from graph continuity:
+
+   ```lean
+   obtain ⟨UA, UB, US,
+       hUA_open, hA0_UA, hUB_open, hB0_UB, hUS_open, h0_US,
+       hUA_unit, hgraph_U⟩ :=
+     BHW.exists_sourcePrincipalSchurGraph_product_subset_open
+       (n := n) (e := e) (A0 := A0) (B0 := B0) (S0 := 0)
+       hA0_unit hN0_open
+       (by simpa [hZ0_graph] using hZ0N0)
+   ```
+
+   Shrink these neighborhoods to the connected factors used for the rank-exact
+   product:
+
+   ```lean
+   -- choose εA with `Metric.ball A0 εA ⊆ UA`
+   -- choose εB with `Metric.ball B0 εB ⊆ UB`
+   -- apply the transported cone theorem to `US` at the zero Schur coordinate
+   have hq_card : Fintype.card q = n - k := by
+     -- from `Fintype.card_congr e : n = k + Fintype.card q`
+     omega
+   have hDk_le_q : D - k ≤ Fintype.card q := by omega
+   obtain ⟨C, h0C, hC_open, hC_sub_US, hC_rank_conn⟩ :=
+     BHW.matrixSymmetricRankExactCone_small_connected
+       (q := q) (r := D - k) hDk_le_q hUS_open h0_US
+
+   let Aball : Set (Matrix (Fin k) (Fin k) ℂ) := Metric.ball A0 εA
+   let Bball : Set (Matrix (Fin k) q ℂ) := Metric.ball B0 εB
+   let Aexact : Set (Matrix (Fin k) (Fin k) ℂ) :=
+     Aball ∩ {A | Aᵀ = A}
+   ```
+
+   The connectedness inputs are now all checked consumers:
+
+   ```lean
+   have hAexact_conn : IsConnected Aexact :=
+     BHW.isConnected_symmetric_matrix_ball hA0_sym hεA
+   have hBball_conn : IsConnected Bball :=
+     BHW.isConnected_matrix_ball B0 hεB
+   have hSexact_conn :
+       IsConnected (C ∩ {S : Matrix q q ℂ |
+         Sᵀ = S ∧ S.rank = D - k}) :=
+     hC_rank_conn
+   have hgraph_rank_conn :
+       IsConnected
+         ((fun p => BHW.sourcePrincipalSchurGraph n e p.1 p.2.1 p.2.2) ''
+           {p | p.1 ∈ Aexact ∧ p.2.1 ∈ Bball ∧
+             p.2.2 ∈ C ∩ {S : Matrix q q ℂ |
+               Sᵀ = S ∧ S.rank = D - k}}) :=
+     BHW.isConnected_sourcePrincipalSchurGraph_rankExact_image
+       n D e hAexact_conn hBball_conn hSexact_conn
+       (by
+         intro A hA
+         exact hUA_unit A (hAball_sub_UA hA.1))
+   ```
+
+   Define the actual relatively open source-variety neighborhood using the
+   open factors, not the closed symmetric factors:
+
+   ```lean
+   let V0 : Set (Fin n -> Fin n -> ℂ) :=
+     {Z |
+       Z ∈ N0 ∧
+       IsUnit
+         ((((Matrix.of fun i j : Fin n => Z i j).reindex e e).toBlocks₁₁).det) ∧
+       (((Matrix.of fun i j : Fin n => Z i j).reindex e e).toBlocks₁₁) ∈
+         Aball ∧
+       (((Matrix.of fun i j : Fin n => Z i j).reindex e e).toBlocks₁₂) ∈
+         Bball ∧
+       BHW.reindexedRectSchurComplement
+         (Matrix.of fun i j : Fin n => Z i j) e e ∈ C}
+   let V : Set (Fin n -> Fin n -> ℂ) :=
+     V0 ∩ BHW.sourceComplexGramVariety d n
+   ```
+
+   Relative openness follows directly from
+   `isOpen_sourcePrincipalSchurCoordinatePatch`:
+
+   ```lean
+   have hV_rel : BHW.IsRelOpenInSourceComplexGramVariety d n V := by
+     refine ⟨V0, ?_, rfl⟩
+     exact
+       BHW.isOpen_sourcePrincipalSchurCoordinatePatch
+         (n := n) (e := e)
+         hN0_open isOpen_ball isOpen_ball hC_open
+   ```
+
+   Membership and containment:
+
+   ```lean
+   have hZ0V : Z0 ∈ V := by
+     refine ⟨?_, hZ0⟩
+     have hZ0_matrix_graph :
+         (Matrix.of fun i j : Fin n => Z0 i j) =
+           Matrix.of fun i j : Fin n =>
+             BHW.sourcePrincipalSchurGraph n e A0 B0 0 i j := by
+       ext i j
+       simpa [hZ0_graph]
+     refine ⟨hZ0N0, ?_, ?_, ?_, ?_⟩
+     · rw [hZ0_matrix_graph,
+         BHW.sourcePrincipalSchurGraph_toBlocks₁₁ n e A0 B0 0]
+       exact hA0_unit
+     · rw [hZ0_matrix_graph,
+         BHW.sourcePrincipalSchurGraph_toBlocks₁₁ n e A0 B0 0]
+       exact Metric.mem_ball_self hεA
+     · rw [hZ0_matrix_graph,
+         BHW.sourcePrincipalSchurGraph_toBlocks₁₂ n e A0 B0 0]
+       exact Metric.mem_ball_self hεB
+     · change
+         BHW.reindexedRectSchurComplement
+           (Matrix.of fun i j : Fin n => Z0 i j) e e ∈ C
+       rw [hZ0_matrix_graph]
+       change
+         ((Matrix.of fun i j : Fin n =>
+             BHW.sourcePrincipalSchurGraph n e A0 B0 0 i j).reindex e e).toBlocks₂₂ -
+           ((Matrix.of fun i j : Fin n =>
+             BHW.sourcePrincipalSchurGraph n e A0 B0 0 i j).reindex e e).toBlocks₂₁ *
+             ((Matrix.of fun i j : Fin n =>
+               BHW.sourcePrincipalSchurGraph n e A0 B0 0 i j).reindex e e).toBlocks₁₁⁻¹ *
+             ((Matrix.of fun i j : Fin n =>
+               BHW.sourcePrincipalSchurGraph n e A0 B0 0 i j).reindex e e).toBlocks₁₂ ∈ C
+       rw [BHW.sourcePrincipalSchurGraph_schurComplement n e A0 B0 0]
+       exact h0C
+
+   have hV_sub : V ⊆ N0 ∩ BHW.sourceComplexGramVariety d n := by
+     intro Z hZ
+     exact ⟨hZ.1.1, hZ.2⟩
+   ```
+
+   Finally identify the punctured chart with the connected graph image.  Because
+   `V0` uses `Aball` while the graph theorem uses
+   `Aexact = Aball ∩ {A | Aᵀ = A}`, first rewrite the rank-exact intersection:
+   if `Z ∈ sourceSymmetricRankExactStratum n D`, then
+   `principalBlock_transpose_eq_of_symmetric` puts its `A` coordinate in the
+   symmetric factor, so the `Aball` patch and `Aexact` patch agree after
+   intersecting with the rank-exact stratum.  Then apply the checked equality:
+
+   ```lean
+   have hpatch_eq :
+       V ∩ BHW.sourceSymmetricRankExactStratum n D =
+         ((fun p => BHW.sourcePrincipalSchurGraph n e p.1 p.2.1 p.2.2) ''
+           {p | p.1 ∈ Aexact ∧ p.2.1 ∈ Bball ∧
+             p.2.2 ∈ C ∩ {S : Matrix q q ℂ |
+               Sᵀ = S ∧ S.rank = D - k}}) := by
+     have hrank_sub_var :
+         BHW.sourceSymmetricRankExactStratum n D ⊆
+           BHW.sourceComplexGramVariety d n := by
+       simpa [D] using
+         BHW.sourceSymmetricRankExactStratum_subset_sourceComplexGramVariety
+           d n (d + 1) (Nat.le_refl (d + 1))
+
+     have hV_to_Aexact :
+         V ∩ BHW.sourceSymmetricRankExactStratum n D =
+           ({Z : Fin n -> Fin n -> ℂ |
+             Z ∈ N0 ∧
+             IsUnit
+               ((((Matrix.of fun i j : Fin n => Z i j).reindex e e).toBlocks₁₁).det) ∧
+             (((Matrix.of fun i j : Fin n => Z i j).reindex e e).toBlocks₁₁) ∈
+               Aexact ∧
+             (((Matrix.of fun i j : Fin n => Z i j).reindex e e).toBlocks₁₂) ∈
+               Bball ∧
+             BHW.reindexedRectSchurComplement
+               (Matrix.of fun i j : Fin n => Z i j) e e ∈ C} ∩
+             BHW.sourceSymmetricRankExactStratum n D) := by
+       ext Z
+       constructor
+       · rintro ⟨⟨hV0, _hZvar⟩, hZrank⟩
+         rcases hV0 with ⟨hZN0, hUnit, hA_ball, hB_ball, hS_C⟩
+         let M : Matrix (Fin n) (Fin n) ℂ := Matrix.of fun i j => Z i j
+         have hM_sym : Mᵀ = M := by
+           ext i j
+           simpa [M, Matrix.transpose] using hZrank.1 j i
+         have hA_sym :
+             ((M.reindex e e).toBlocks₁₁)ᵀ =
+               (M.reindex e e).toBlocks₁₁ :=
+           BHW.principalBlock_transpose_eq_of_symmetric n e hM_sym
+         exact
+           ⟨⟨hZN0, hUnit, ⟨by simpa [M] using hA_ball, hA_sym⟩,
+              hB_ball, hS_C⟩, hZrank⟩
+       · rintro ⟨hpatch, hZrank⟩
+         rcases hpatch with ⟨hZN0, hUnit, hA_exact, hB_ball, hS_C⟩
+         exact
+           ⟨⟨⟨hZN0, hUnit, hA_exact.1, hB_ball, hS_C⟩,
+              hrank_sub_var hZrank⟩, hZrank⟩
+
+     have hgraph_N0 :
+         ((fun p => BHW.sourcePrincipalSchurGraph n e p.1 p.2.1 p.2.2) ''
+           {p | p.1 ∈ Aexact ∧ p.2.1 ∈ Bball ∧
+             p.2.2 ∈ C ∩ {S : Matrix q q ℂ |
+               Sᵀ = S ∧ S.rank = D - k}}) ⊆ N0 := by
+       rintro G ⟨p, hp, rfl⟩
+       apply hgraph_U
+       refine ⟨p, ?_, rfl⟩
+       exact
+         ⟨hAball_sub_UA hp.1.1,
+          hBball_sub_UB hp.2.1,
+          hC_sub_US hp.2.2.1⟩
+
+     have hpatch_graph :=
+       BHW.sourcePrincipalSchurGraph_rankExact_image_eq_coordinatePatch
+         (n := n) (D := D) (e := e) (N0 := N0)
+         (Aset := Aexact) (Bset := Bball) (Sset := C)
+         (by
+           intro A hA
+           exact hUA_unit A (hAball_sub_UA hA.1))
+         (by
+           intro A hA
+           exact hA.2)
+         (by simpa [D] using hkD)
+         hgraph_N0
+     rw [hV_to_Aexact, hpatch_graph]
+
+   have hV_rank_conn :
+       IsConnected (V ∩ BHW.sourceSymmetricRankExactStratum n D) := by
+     rw [hpatch_eq]
+     exact hgraph_rank_conn
+   ```
+
+   This completes the singular branch and supplies the required witness
+   `⟨V, hZ0V, hV_rel, hV_sub, hV_rank_conn⟩`.
 
 The principal-minor step in item 3 is now checked in
 `BHWPermutation/SourceComplexSchurPatch.lean`:
@@ -10784,9 +11925,36 @@ factor `Z = A Aᵀ` with `A : Fin n -> Fin r -> ℂ`; exact rank `r` forces
 `A` to have full column rank, so a nonzero row minor of `A` gives a nonzero
 principal minor of `A Aᵀ`.
 
+The singular Schur-chart branch is now checked as:
+
+```lean
+theorem BHW.sourceComplexGramVariety_local_rankExact_connected_basis_singular
+    (d n : Nat)
+    (hD : d + 1 < n)
+    {Z0 : Fin n -> Fin n -> ℂ}
+    (hZ0 : Z0 ∈ BHW.sourceComplexGramVariety d n)
+    (hZ0_sing :
+      (Matrix.of fun i j : Fin n => Z0 i j).rank < d + 1)
+    {N0 : Set (Fin n -> Fin n -> ℂ)}
+    (hN0_open : IsOpen N0)
+    (hZ0N0 : Z0 ∈ N0) :
+    ∃ V : Set (Fin n -> Fin n -> ℂ),
+      Z0 ∈ V ∧
+      BHW.IsRelOpenInSourceComplexGramVariety d n V ∧
+      V ⊆ N0 ∩ BHW.sourceComplexGramVariety d n ∧
+      IsConnected
+        (V ∩ BHW.sourceSymmetricRankExactStratum n (d + 1))
+```
+
+The full local-basis theorem is now checked by splitting on
+`(Matrix.of fun i j : Fin n => Z0 i j).rank = d + 1`: the regular branch calls
+`sourceComplexGramVariety_local_rankExact_connected_basis_regular`, and the
+strictly lower-rank branch calls
+`sourceComplexGramVariety_local_rankExact_connected_basis_singular`.
+
 **0z-3. Global connected regular-locus theorem.**
 
-Once 0z-1 and 0z-2 are checked, the production theorem is a short assembly:
+This production theorem is now checked as a short assembly:
 
 ```lean
 theorem BHW.sourceComplexGramVariety_rankExact_inter_relOpen_isConnected
@@ -10804,27 +11972,36 @@ theorem BHW.sourceComplexGramVariety_rankExact_inter_relOpen_isConnected
         d n (Nat.le_of_lt hD) hU_rel)
       (by
         intro Z hZU N0 hN0_open hZN0
-        exact
-          BHW.sourceComplexGramVariety_local_rankExact_connected_basis
-            d n hD
-            (by
-              rcases hU_rel with ⟨U0, hU0_open, hU_eq⟩
-              rw [hU_eq] at hZU
-              exact hZU.2)
-            hN0_open hZN0)
+        rcases hU_rel with ⟨U0, hU0_open, hU_eq⟩
+        have hZU0 : Z ∈ U0 := by
+          rw [hU_eq] at hZU
+          exact hZU.1
+        have hZvar : Z ∈ BHW.sourceComplexGramVariety d n := by
+          rw [hU_eq] at hZU
+          exact hZU.2
+        rcases BHW.sourceComplexGramVariety_local_rankExact_connected_basis
+            d n hD hZvar (hU0_open.inter hN0_open) ⟨hZU0, hZN0⟩ with
+          ⟨V, hZV, hV_rel, hV_sub, hV_conn⟩
+        refine ⟨V, hZV, hV_rel, ?_, hV_conn⟩
+        intro G hGV
+        rcases hV_sub hGV with ⟨hGU0N0, hGvar⟩
+        exact ⟨by
+          rw [hU_eq]
+          exact ⟨hGU0N0.1, hGvar⟩, hGU0N0.2⟩
 ```
 
-The last `hlocal` term may need `V` intersected with `U`; this is harmless:
-relative openness is stable under finite intersections, and connectedness of
-the punctured local chart is preserved by choosing the original `N0` as the
-ambient-open witness for `U`.
+The key Lean bookkeeping is that the local-basis theorem is applied inside the
+ambient open set `U0 ∩ N0`, where `U = U0 ∩ sourceComplexGramVariety d n` is
+the relative-openness witness for `U`.  Therefore the resulting `V` is already
+contained in both `U` and `N0`; no extra intersection with `U` is needed after
+the local theorem returns.
 
 **0z-4. Rank-exact identity principle assembly.**
 
-This step is now checked in Lean in conditional form.  The theorem
+This step is checked in Lean in conditional form.  The theorem
 `sourceComplexGramVariety_rankExact_identity_principle_of_connected` proves
-the global propagation on the rank-exact locus from the single remaining
-geometric hypothesis that `U ∩ rankExact` is connected.
+the global propagation on the rank-exact locus from the supplied geometric
+hypothesis that `U ∩ rankExact` is connected.
 
 ```lean
 theorem BHW.sourceComplexGramVariety_rankExact_identity_principle_of_connected
@@ -10863,7 +12040,7 @@ Checked proof transcript:
 6. Use `hUreg_conn`: a nonempty clopen subset of the connected subtype `Ureg`
    is all of `Ureg`.
 
-The remaining strict theorem is now a one-line assembly once 0z-3 is checked:
+The strict theorem is now checked as a one-line assembly using 0z-3:
 
 ```lean
 theorem BHW.sourceComplexGramVariety_rankExact_identity_principle
@@ -10912,13 +12089,11 @@ It applies
 `sourceComplexGramVariety_rankExact_identity_principle_of_connected` on
 `U ∩ rankExact`, then
 `sourceComplexGramVariety_relOpen_eqOn_zero_of_eqOn_rankExact` using
-`SourceVarietyHolomorphicOn.continuousOn`.  Thus, once 0z-3 is checked, the
-strict full-domain theorem is just this conditional theorem with
-`sourceComplexGramVariety_rankExact_inter_relOpen_isConnected`.
-
-Only after 0z-1 through 0z-3 are checked should this strict assembly theorem
-and the final arity split `sourceComplexGramVariety_identity_principle` be
-added.
+`SourceVarietyHolomorphicOn.continuousOn`.  Since 0z-3 is now checked, the
+strict full-domain theorem is the conditional theorem with
+`sourceComplexGramVariety_rankExact_inter_relOpen_isConnected`, and the final
+arity split `sourceComplexGramVariety_identity_principle` is checked in
+`SourceComplexDensity.lean`.
 
 Deep Research route-risk audit
 `v1_ChdsVFR2YVpiQUN0U1lfdU1Qa1pidjZBMBIXbFRUdmFaYkFDdFNZX3VNUGtaYnY2QTA`
@@ -10944,14 +12119,17 @@ audit also flags the Lean risks that must stay explicit:
    analytic space, any nonempty relatively open subdomain inherits the relevant
    irreducible identity principle.  Here nonemptiness of `U` follows from
    `hW_ne` and `hW_sub`.
-4. Until these analytic-variety facts are proved in Lean, this theorem remains a
-   proof-doc source obligation.  It must not be introduced as a production axiom
-   or a new `sorry`.
+4. These analytic-variety facts are now proved in Lean through the checked
+   local-basis, connected regular-locus, and dense rank-exact extension
+   theorems in `SourceComplexDensity.lean` and `SourceComplexSchurGraph.lean`.
+   They must remain proved theorems, not be replaced by a production axiom or a
+   new `sorry`.
 
 This is the exact point at which Hall-Wightman's scalar-product variety theorem
-enters.  It is mathematically sound to keep this as a source theorem if and only
-if the statement includes the irreducible scalar-product-variety continuation
-content; it is not sound to prove it from connectedness alone.
+enters the Lean proof.  The checked implementation realizes the required
+scalar-product-variety continuation content by local Schur charts, connected
+rank-exact neighborhoods, rank-exact propagation, and dense extension to the
+singular locus.  It is not sound to replace this chain by connectedness alone.
 
 ```lean
 
@@ -10982,6 +12160,13 @@ theorem BHW.sourceDistributionalUniquenessSetOnVariety_of_realEnvironment
   intro Z hZ
   exact sub_eq_zero.mp (hzeroU hZ)
 ```
+
+This theorem is now checked in
+`BHWPermutation/SourceDistributionalUniqueness.lean`.  The file is deliberately
+downstream of `SourceExtension.lean` to avoid an import cycle: it imports the
+local totally-real zero theorem and the checked source-complex identity
+principle, then proves the uniqueness predicate by the direct
+`H := Φ - Ψ` argument above.
 
 The conversion from this base adjacent package to the permutation-indexed
 `SourceDistributionalAdjacentTubeAnchor` is pure bookkeeping and is now

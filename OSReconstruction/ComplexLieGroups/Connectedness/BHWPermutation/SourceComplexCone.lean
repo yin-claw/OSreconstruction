@@ -1,12 +1,15 @@
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceComplexSchurPatch
+import OSReconstruction.ComplexLieGroups.MatrixLieGroup
+import Mathlib.Analysis.Normed.Group.Bounded
+import Mathlib.GroupTheory.GroupAction.MultipleTransitivity
+import Mathlib.LinearAlgebra.Matrix.Permutation
 
 /-!
 # Cone support for source symmetric rank strata
 
-This file records the elementary cone algebra used by the local
-Hall-Wightman source-variety connectedness proof.  The harder topological
-Stiefel-space connectedness and small-cone contraction lemmas are kept for the
-next layer.
+This file records the cone algebra, Stiefel-space path-connectedness, and
+small-cone contraction used by the local Hall-Wightman source-variety
+connectedness proof.
 -/
 
 noncomputable section
@@ -167,6 +170,312 @@ theorem sourceFullRankConfigurations_right_mul_isUnit_mem
     simpa [sourceFullRankConfigurations, P] using hA
   simpa [sourceFullRankConfigurations, P] using hrank
 
+/-- Left multiplication by a matrix in `GL_m(ℂ)` joins a full-rank source
+configuration to its translate inside the full-rank configuration space. -/
+theorem sourceFullRankConfigurations_joined_left_mul_GL
+    {m r : ℕ} {A : Fin m → Fin r → ℂ}
+    (hA : A ∈ sourceFullRankConfigurations m r)
+    (G : GL (Fin m) ℂ) :
+    JoinedIn (sourceFullRankConfigurations m r) A
+      (fun i a =>
+        ((G : Matrix (Fin m) (Fin m) ℂ) *
+          (Matrix.of fun (j : Fin m) (b : Fin r) => A j b)) i a) := by
+  let P : Matrix (Fin m) (Fin r) ℂ :=
+    Matrix.of fun (j : Fin m) (b : Fin r) => A j b
+  let f : GL (Fin m) ℂ → Fin m → Fin r → ℂ :=
+    fun R i a => ((R : Matrix (Fin m) (Fin m) ℂ) * P) i a
+  have hf : Continuous f := by
+    fun_prop
+  have hjoin :
+      JoinedIn (Set.univ : Set (GL (Fin m) ℂ)) (1 : GL (Fin m) ℂ) G :=
+    (MatrixLieGroup.GL_isPathConnected m).joinedIn
+      _ (Set.mem_univ _) _ (Set.mem_univ _)
+  have himage :
+      JoinedIn (f '' (Set.univ : Set (GL (Fin m) ℂ))) (f 1) (f G) :=
+    hjoin.map hf
+  have hsub :
+      f '' (Set.univ : Set (GL (Fin m) ℂ)) ⊆
+        sourceFullRankConfigurations m r := by
+    rintro B ⟨R, _hR, rfl⟩
+    exact
+      sourceFullRankConfigurations_left_mul_isUnit_mem
+        (Matrix.isUnits_det_units R) hA
+  have hf1 : f 1 = A := by
+    ext i a
+    simp [f, P]
+  have htarget :
+      f G =
+        fun i a =>
+          ((G : Matrix (Fin m) (Fin m) ℂ) *
+            (Matrix.of fun (j : Fin m) (b : Fin r) => A j b)) i a := rfl
+  simpa [hf1, htarget] using himage.mono hsub
+
+/-- Right multiplication by a matrix in `GL_r(ℂ)` joins a full-rank source
+configuration to its translate inside the full-rank configuration space. -/
+theorem sourceFullRankConfigurations_joined_right_mul_GL
+    {m r : ℕ} {A : Fin m → Fin r → ℂ}
+    (hA : A ∈ sourceFullRankConfigurations m r)
+    (G : GL (Fin r) ℂ) :
+    JoinedIn (sourceFullRankConfigurations m r) A
+      (fun i a =>
+        ((Matrix.of fun (j : Fin m) (b : Fin r) => A j b) *
+          (G : Matrix (Fin r) (Fin r) ℂ)) i a) := by
+  let P : Matrix (Fin m) (Fin r) ℂ :=
+    Matrix.of fun (j : Fin m) (b : Fin r) => A j b
+  let f : GL (Fin r) ℂ → Fin m → Fin r → ℂ :=
+    fun R i a => (P * (R : Matrix (Fin r) (Fin r) ℂ)) i a
+  have hf : Continuous f := by
+    fun_prop
+  have hjoin :
+      JoinedIn (Set.univ : Set (GL (Fin r) ℂ)) (1 : GL (Fin r) ℂ) G :=
+    (MatrixLieGroup.GL_isPathConnected r).joinedIn
+      _ (Set.mem_univ _) _ (Set.mem_univ _)
+  have himage :
+      JoinedIn (f '' (Set.univ : Set (GL (Fin r) ℂ))) (f 1) (f G) :=
+    hjoin.map hf
+  have hsub :
+      f '' (Set.univ : Set (GL (Fin r) ℂ)) ⊆
+        sourceFullRankConfigurations m r := by
+    rintro B ⟨R, _hR, rfl⟩
+    exact
+      sourceFullRankConfigurations_right_mul_isUnit_mem
+        (Matrix.isUnits_det_units R) hA
+  have hf1 : f 1 = A := by
+    ext i a
+    simp [f, P]
+  have htarget :
+      f G =
+        fun i a =>
+          ((Matrix.of fun (j : Fin m) (b : Fin r) => A j b) *
+            (G : Matrix (Fin r) (Fin r) ℂ)) i a := rfl
+  simpa [hf1, htarget] using himage.mono hsub
+
+/-- A full-rank source configuration has a nonzero square row minor using all
+`r` source columns. -/
+theorem exists_sourceFullRankConfiguration_selected_minor_ne_zero
+    {m r : ℕ} {A : Fin m → Fin r → ℂ}
+    (hA : A ∈ sourceFullRankConfigurations m r) :
+    ∃ I : Fin r → Fin m, Function.Injective I ∧
+      Matrix.det (fun a b : Fin r => A (I a) b) ≠ 0 := by
+  let P : Matrix (Fin m) (Fin r) ℂ := Matrix.of fun i a => A i a
+  have hP_rank : P.rank = r := by
+    simpa [sourceFullRankConfigurations, P] using hA
+  have hge : r ≤ P.rank := by
+    rw [hP_rank]
+  rcases exists_nondegenerate_square_submatrix_of_rank_ge P hge with
+    ⟨I, J, hdetIJ⟩
+  have hIinj : Function.Injective I := by
+    intro a b hab
+    by_contra hne
+    have hzero :
+        Matrix.det (fun x y : Fin r => P (I x) (J y)) = 0 :=
+      Matrix.det_zero_of_row_eq hne (by
+        ext y
+        simp [hab])
+    exact hdetIJ hzero
+  have hJinj : Function.Injective J := by
+    intro a b hab
+    by_contra hne
+    have hzero :
+        Matrix.det (fun x y : Fin r => P (I x) (J y)) = 0 :=
+      Matrix.det_zero_of_column_eq hne (by
+        intro x
+        simp [hab])
+    exact hdetIJ hzero
+  let σ : Equiv.Perm (Fin r) :=
+    Equiv.ofBijective J
+      ((Fintype.bijective_iff_injective_and_card J).mpr ⟨hJinj, by simp⟩)
+  let PI : Matrix (Fin r) (Fin r) ℂ := fun a b => A (I a) b
+  have hdet_perm_ne : (PI.submatrix id σ).det ≠ 0 := by
+    simpa [PI, P, σ] using hdetIJ
+  have hPI_ne : PI.det ≠ 0 := by
+    have hperm := Matrix.det_permute' σ PI
+    rw [hperm] at hdet_perm_ne
+    intro hzero
+    exact hdet_perm_ne (by simp [hzero])
+  exact ⟨I, hIinj, by simpa [PI] using hPI_ne⟩
+
+/-- In a selected-minor chart, a full-rank source configuration is joined to
+the associated coordinate frame.  The path first normalizes the selected
+`r × r` block through `GL_r(ℂ)`, then linearly kills the remaining rows while
+the selected block stays equal to the identity. -/
+theorem sourceFullRankConfigurations_joined_selectedFrame
+    {m r : ℕ} {A : Fin m → Fin r → ℂ}
+    (hA : A ∈ sourceFullRankConfigurations m r)
+    {I : Fin r → Fin m}
+    (hIminor : Matrix.det (fun a b : Fin r => A (I a) b) ≠ 0) :
+    JoinedIn (sourceFullRankConfigurations m r)
+      A (selectedFullRankFrame I) := by
+  let P : Matrix (Fin m) (Fin r) ℂ :=
+    Matrix.of fun (i : Fin m) (a : Fin r) => A i a
+  let B : Matrix (Fin r) (Fin r) ℂ := fun a b => A (I a) b
+  let G : GL (Fin r) ℂ := Matrix.GeneralLinearGroup.mkOfDetNeZero B hIminor
+  have hIinj : Function.Injective I := by
+    intro a b hEq
+    by_contra hne
+    have hzero : Matrix.det B = 0 :=
+      Matrix.det_zero_of_row_eq hne (by
+        ext x
+        simp [B, hEq])
+    exact hIminor (by simpa [B] using hzero)
+  let A₁ : Fin m → Fin r → ℂ :=
+    fun i a => (P * ((G⁻¹ : GL (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ)) i a
+  have hjoin₁ : JoinedIn (sourceFullRankConfigurations m r) A A₁ := by
+    simpa [A₁, P] using
+      sourceFullRankConfigurations_joined_right_mul_GL
+        (m := m) (r := r) (A := A) hA G⁻¹
+  have hA₁_selected :
+      ∀ a b : Fin r, A₁ (I a) b = selectedFullRankFrame I (I a) b := by
+    intro a b
+    have hmul :
+        B * ((G⁻¹ : GL (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) = 1 := by
+      calc
+        B * ((G⁻¹ : GL (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ)
+            = ((G : GL (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) *
+                ((G⁻¹ : GL (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) := by
+              simp [G]
+        _ = ((G * G⁻¹ : GL (Fin r) ℂ) : Matrix (Fin r) (Fin r) ℂ) := rfl
+        _ = 1 := by simp
+    have hentry := congrFun (congrFun hmul a) b
+    have hAentry :
+        A₁ (I a) b =
+          (B * ((G⁻¹ : GL (Fin r) ℂ) :
+            Matrix (Fin r) (Fin r) ℂ)) a b := by
+      simp [A₁, P, B, Matrix.mul_apply]
+    rw [hAentry, hentry]
+    by_cases hab : a = b
+    · subst hab
+      simp [selectedFullRankFrame]
+    · have hne : I a ≠ I b := by
+        intro hEq
+        exact hab (hIinj hEq)
+      simp [selectedFullRankFrame, hne, hab]
+  have hjoin₂ :
+      JoinedIn (sourceFullRankConfigurations m r) A₁ (selectedFullRankFrame I) := by
+    let f : ℝ → Fin m → Fin r → ℂ :=
+      fun t i a =>
+        (1 - (t : ℂ)) * A₁ i a + (t : ℂ) * selectedFullRankFrame I i a
+    refine JoinedIn.ofLine (f := f) ?_ ?_ ?_ ?_
+    · fun_prop
+    · ext i a
+      simp [f]
+    · ext i a
+      simp [f]
+    · rintro X ⟨t, ht, rfl⟩
+      let Q : Matrix (Fin m) (Fin r) ℂ := Matrix.of fun i a => f t i a
+      have hle : Q.rank ≤ r := by
+        simpa using Matrix.rank_le_width Q
+      have hminor : Matrix.det (fun a b : Fin r => Q (I a) b) ≠ 0 := by
+        have hmat :
+            (fun a b : Fin r => Q (I a) b) =
+              (1 : Matrix (Fin r) (Fin r) ℂ) := by
+          ext a b
+          have hframe :
+              selectedFullRankFrame I (I a) b =
+                (1 : Matrix (Fin r) (Fin r) ℂ) a b := by
+            by_cases hab : a = b
+            · subst hab
+              simp [selectedFullRankFrame]
+            · have hne : I a ≠ I b := fun hEq => hab (hIinj hEq)
+              simp [selectedFullRankFrame, hne, hab]
+          simp [Q, f, hA₁_selected a b, hframe]
+          ring
+        rw [hmat, Matrix.det_one]
+        exact one_ne_zero
+      have hge : r ≤ Q.rank :=
+        matrix_rank_ge_of_nondegenerate_square_submatrix
+          (A := Q) (I := I) (J := id) (by simpa using hminor)
+      simpa [sourceFullRankConfigurations, Q] using le_antisymm hle hge
+  exact hjoin₁.trans hjoin₂
+
+/-- Any selected coordinate frame is joined to the standard coordinate frame.
+The proof extends the selected-row injection to a permutation of `Fin m`; the
+corresponding permutation matrix lies in `GL_m(ℂ)` and carries the standard
+frame to the selected one. -/
+theorem selectedFullRankFrame_joined_standard
+    {m r : ℕ} (hr : r ≤ m)
+    {I : Fin r → Fin m} (hI : Function.Injective I) :
+    JoinedIn (sourceFullRankConfigurations m r)
+      (selectedFullRankFrame I)
+      (standardFullRankConfiguration m r hr) := by
+  let x : Fin r ↪ Fin m := ⟨fun a => Fin.castLE hr a, Fin.castLE_injective hr⟩
+  let y : Fin r ↪ Fin m := ⟨I, hI⟩
+  have htrans := Equiv.Perm.isMultiplyPretransitive (Fin m) r
+  rw [MulAction.isMultiplyPretransitive_iff] at htrans
+  rcases htrans x y with ⟨σ, hσxy⟩
+  have hσ : ∀ a : Fin r, σ (Fin.castLE hr a) = I a := by
+    intro a
+    have happ := congrFun (congrArg Function.Embedding.toFun hσxy) a
+    simpa [x, y] using happ
+  let G : GL (Fin m) ℂ :=
+    Matrix.GeneralLinearGroup.mkOfDetNeZero ((σ⁻¹).permMatrix ℂ) (by
+      rw [Matrix.det_permutation]
+      exact_mod_cast (Equiv.Perm.sign (σ⁻¹)).ne_zero)
+  have hstd :
+      standardFullRankConfiguration m r hr ∈
+        sourceFullRankConfigurations m r :=
+    standardFullRankConfiguration_mem_sourceFullRankConfigurations hr
+  have hjoin :=
+    sourceFullRankConfigurations_joined_left_mul_GL
+      (m := m) (r := r) (A := standardFullRankConfiguration m r hr) hstd G
+  have htarget :
+      (fun i a =>
+        ((G : Matrix (Fin m) (Fin m) ℂ) *
+          (Matrix.of fun (j : Fin m) (b : Fin r) =>
+            standardFullRankConfiguration m r hr j b)) i a) =
+        selectedFullRankFrame I := by
+    ext i a
+    simp [G, Matrix.mul_apply, standardFullRankConfiguration,
+      selectedFullRankFrame]
+    by_cases hleft : (σ⁻¹) i = Fin.castLE hr a
+    · have hright : i = I a := by
+        rw [← hσ a]
+        simpa using congrArg σ hleft
+      have hinvIa : (σ⁻¹) (I a) = Fin.castLE hr a := by
+        rw [← hσ a]
+        simp
+      have hinvIa' : (Equiv.symm σ) (I a) = Fin.castLE hr a := by
+        simpa using hinvIa
+      simp [hright, hinvIa']
+    · have hright : i ≠ I a := by
+        intro hi
+        apply hleft
+        rw [hi, ← hσ a]
+        simp
+      have hnot : ¬(Equiv.symm σ) i = Fin.castLE hr a := hleft
+      simp [hnot, hright]
+  have hjoin' :
+      JoinedIn (sourceFullRankConfigurations m r)
+        (standardFullRankConfiguration m r hr) (selectedFullRankFrame I) := by
+    simpa [htarget] using hjoin
+  exact hjoin'.symm
+
+/-- The Stiefel space of full-rank complex source configurations is
+path-connected. -/
+theorem sourceFullRankConfigurations_isPathConnected
+    (m r : ℕ) (hr : r ≤ m) :
+    IsPathConnected (sourceFullRankConfigurations m r) := by
+  rw [isPathConnected_iff]
+  constructor
+  · exact ⟨standardFullRankConfiguration m r hr,
+      standardFullRankConfiguration_mem_sourceFullRankConfigurations hr⟩
+  · intro A hA B hB
+    rcases exists_sourceFullRankConfiguration_selected_minor_ne_zero hA with
+      ⟨IA, hIA, hAminor⟩
+    rcases exists_sourceFullRankConfiguration_selected_minor_ne_zero hB with
+      ⟨IB, hIB, hBminor⟩
+    have hAstd :
+        JoinedIn (sourceFullRankConfigurations m r) A
+          (standardFullRankConfiguration m r hr) :=
+      (sourceFullRankConfigurations_joined_selectedFrame hA hAminor).trans
+        (selectedFullRankFrame_joined_standard hr hIA)
+    have hBstd :
+        JoinedIn (sourceFullRankConfigurations m r) B
+          (standardFullRankConfiguration m r hr) :=
+      (sourceFullRankConfigurations_joined_selectedFrame hB hBminor).trans
+        (selectedFullRankFrame_joined_standard hr hIB)
+    exact hAstd.trans hBstd.symm
+
 /-- A full-rank source configuration maps to the exact symmetric rank stratum
 under the ordinary complex dot-Gram map. -/
 theorem sourceComplexDotGram_mem_rankExact_of_fullRank
@@ -285,5 +594,198 @@ theorem sourceSymmetricRankExactStratum_isPathConnected_of_fullRank
     IsPathConnected (sourceSymmetricRankExactStratum m r) := by
   rw [sourceSymmetricRankExactStratum_eq_sourceComplexDotGram_image_fullRank]
   exact hfull.image (continuous_sourceComplexDotGram r m)
+
+/-- The exact symmetric rank stratum is path-connected whenever the requested
+rank is at most the ambient size. -/
+theorem sourceSymmetricRankExactStratum_isPathConnected
+    (m r : ℕ) (hr : r ≤ m) :
+    IsPathConnected (sourceSymmetricRankExactStratum m r) :=
+  sourceSymmetricRankExactStratum_isPathConnected_of_fullRank m r
+    (sourceFullRankConfigurations_isPathConnected m r hr)
+
+/-- Positive real radial scaling joins a point of the exact symmetric rank
+stratum to its scaled copy while staying in the same stratum. -/
+theorem sourceSymmetricRankExactStratum_joined_radial_smul
+    {m r : ℕ} {Z : Fin m → Fin m → ℂ}
+    (hZ : Z ∈ sourceSymmetricRankExactStratum m r)
+    {ρ : ℝ} (hρ : 0 < ρ) :
+    JoinedIn (sourceSymmetricRankExactStratum m r)
+      Z ((ρ : ℂ) • Z) := by
+  let f : ℝ → Fin m → Fin m → ℂ :=
+    fun t => (((1 - t) + t * ρ : ℝ) : ℂ) • Z
+  refine JoinedIn.ofLine (f := f) ?_ ?_ ?_ ?_
+  · fun_prop
+  · ext i j
+    simp [f]
+  · ext i j
+    simp [f]
+  · rintro X ⟨t, ht, rfl⟩
+    change t ∈ Set.Icc (0 : ℝ) 1 at ht
+    have hcoeff_pos : 0 < (1 - t) + t * ρ := by
+      rcases eq_or_lt_of_le ht.1 with ht0 | htpos
+      · subst ht0
+        simp
+      · exact add_pos_of_nonneg_of_pos (sub_nonneg.mpr ht.2) (mul_pos htpos hρ)
+    exact
+      sourceSymmetricRankExactStratum_smul_mem hZ
+        (by exact_mod_cast hcoeff_pos.ne')
+
+/-- If `0 < ρ ≤ 1`, the positive radial path from `Z` to `ρ • Z` stays inside
+any centered ball that already contains `Z`, as well as inside the exact rank
+stratum. -/
+theorem sourceSymmetricRankExactStratum_joined_ball_radial_smul
+    {m r : ℕ} {ε ρ : ℝ} (hρ : 0 < ρ) (hρle : ρ ≤ 1)
+    {Z : Fin m → Fin m → ℂ}
+    (hZball : Z ∈ Metric.ball (0 : Fin m → Fin m → ℂ) ε)
+    (hZ : Z ∈ sourceSymmetricRankExactStratum m r) :
+    JoinedIn
+      (Metric.ball (0 : Fin m → Fin m → ℂ) ε ∩
+        sourceSymmetricRankExactStratum m r)
+      Z ((ρ : ℂ) • Z) := by
+  let f : ℝ → Fin m → Fin m → ℂ :=
+    fun t => (((1 - t) + t * ρ : ℝ) : ℂ) • Z
+  have hZnorm : ‖Z‖ < ε := by
+    simpa [Metric.mem_ball, dist_eq_norm] using hZball
+  refine JoinedIn.ofLine (f := f) ?_ ?_ ?_ ?_
+  · fun_prop
+  · ext i j
+    simp [f]
+  · ext i j
+    simp [f]
+  · rintro X ⟨t, ht, rfl⟩
+    change t ∈ Set.Icc (0 : ℝ) 1 at ht
+    have hcoeff_pos : 0 < (1 - t) + t * ρ := by
+      rcases eq_or_lt_of_le ht.1 with ht0 | htpos
+      · subst ht0
+        simp
+      · exact add_pos_of_nonneg_of_pos (sub_nonneg.mpr ht.2) (mul_pos htpos hρ)
+    have hcoeff_nonneg : 0 ≤ (1 - t) + t * ρ := hcoeff_pos.le
+    have hcoeff_le_one : (1 - t) + t * ρ ≤ 1 := by
+      have hmul : t * ρ ≤ t * 1 := mul_le_mul_of_nonneg_left hρle ht.1
+      linarith
+    constructor
+    · have hnorm :
+          ‖(((1 - t) + t * ρ : ℝ) : ℂ) • Z‖ < ε := by
+        rw [norm_smul, Complex.norm_of_nonneg hcoeff_nonneg]
+        exact
+          (mul_le_of_le_one_left (norm_nonneg Z) hcoeff_le_one).trans_lt
+            hZnorm
+      simpa [Metric.mem_ball, dist_eq_norm, f] using hnorm
+    · exact
+        sourceSymmetricRankExactStratum_smul_mem hZ
+          (by exact_mod_cast hcoeff_pos.ne')
+
+/-- A continuous path in a normed group has a positive norm bound. -/
+theorem exists_pos_norm_bound_of_path
+    {E : Type*} [NormedAddCommGroup E]
+    {X Y : E} (γ : Path X Y) :
+    ∃ M : ℝ, 0 < M ∧ ∀ t : unitInterval, ‖γ t‖ ≤ M := by
+  have hcompact : IsCompact (Set.range γ) := isCompact_range γ.continuous
+  rcases hcompact.isBounded.exists_pos_norm_le with ⟨M, hMpos, hM⟩
+  exact ⟨M, hMpos, fun t => hM (γ t) ⟨t, rfl⟩⟩
+
+/-- If a path in the exact symmetric rank stratum is uniformly bounded, a small
+positive radial rescaling of the path lies in a prescribed centered ball. -/
+theorem sourceSymmetricRankExactStratum_joined_ball_scaled_path
+    {m r : ℕ} {ε ρ M : ℝ} (hρ : 0 < ρ)
+    {X Y : Fin m → Fin m → ℂ} (γ : Path X Y)
+    (hγ : ∀ t : unitInterval, γ t ∈ sourceSymmetricRankExactStratum m r)
+    (hbound : ∀ t : unitInterval, ‖γ t‖ ≤ M)
+    (hρM : ρ * M < ε) :
+    JoinedIn
+      (Metric.ball (0 : Fin m → Fin m → ℂ) ε ∩
+        sourceSymmetricRankExactStratum m r)
+      ((ρ : ℂ) • X) ((ρ : ℂ) • Y) := by
+  let f : (Fin m → Fin m → ℂ) → (Fin m → Fin m → ℂ) :=
+    fun Z => ((ρ : ℂ) • Z)
+  have hf : Continuous f := by
+    fun_prop
+  refine ⟨γ.map hf, ?_⟩
+  intro t
+  constructor
+  · have hnorm : ‖((ρ : ℂ) • γ t)‖ < ε := by
+      rw [norm_smul, Complex.norm_of_nonneg hρ.le]
+      exact (mul_le_mul_of_nonneg_left (hbound t) hρ.le).trans_lt hρM
+    simpa [Metric.mem_ball, dist_eq_norm, f] using hnorm
+  · exact
+      sourceSymmetricRankExactStratum_smul_mem (hγ t)
+        (by exact_mod_cast hρ.ne')
+
+/-- Every centered ball meets the exact symmetric rank stratum in a
+path-connected set, provided the requested rank is at most the ambient size. -/
+theorem sourceSymmetricRankExactStratum_ball_isPathConnected
+    (m r : ℕ) (hr : r ≤ m) {ε : ℝ} (hε : 0 < ε) :
+    IsPathConnected
+      (Metric.ball (0 : Fin m → Fin m → ℂ) ε ∩
+        sourceSymmetricRankExactStratum m r) := by
+  rw [isPathConnected_iff]
+  constructor
+  · rcases (sourceSymmetricRankExactStratum_isPathConnected m r hr).nonempty with
+      ⟨Z, hZ⟩
+    rcases exists_pos_mul_lt hε ‖Z‖ with ⟨ρ, hρ, hsmall⟩
+    refine ⟨((ρ : ℂ) • Z), ?_, ?_⟩
+    · have hnorm : ‖((ρ : ℂ) • Z)‖ < ε := by
+        rw [norm_smul, Complex.norm_of_nonneg hρ.le]
+        simpa [mul_comm] using hsmall
+      simpa [Metric.mem_ball, dist_eq_norm] using hnorm
+    · exact sourceSymmetricRankExactStratum_smul_mem hZ (by exact_mod_cast hρ.ne')
+  · intro X hX Y hY
+    have hXY : JoinedIn (sourceSymmetricRankExactStratum m r) X Y :=
+      (sourceSymmetricRankExactStratum_isPathConnected m r hr).joinedIn
+        X hX.2 Y hY.2
+    let γ : Path X Y := hXY.somePath
+    have hγ : ∀ t : unitInterval, γ t ∈ sourceSymmetricRankExactStratum m r :=
+      hXY.somePath_mem
+    rcases exists_pos_norm_bound_of_path γ with ⟨M, hMpos, hbound⟩
+    rcases exists_pos_mul_lt hε M with ⟨δ, hδpos, hδsmall⟩
+    let ρ : ℝ := min δ 1
+    have hρ : 0 < ρ := lt_min hδpos zero_lt_one
+    have hρle : ρ ≤ 1 := min_le_right δ 1
+    have hρδ : ρ ≤ δ := min_le_left δ 1
+    have hρM : ρ * M < ε := by
+      rw [mul_comm ρ M]
+      exact (mul_le_mul_of_nonneg_left hρδ hMpos.le).trans_lt hδsmall
+    have hXrad :
+        JoinedIn
+          (Metric.ball (0 : Fin m → Fin m → ℂ) ε ∩
+            sourceSymmetricRankExactStratum m r)
+          X ((ρ : ℂ) • X) :=
+      sourceSymmetricRankExactStratum_joined_ball_radial_smul
+        hρ hρle hX.1 hX.2
+    have hmid :
+        JoinedIn
+          (Metric.ball (0 : Fin m → Fin m → ℂ) ε ∩
+            sourceSymmetricRankExactStratum m r)
+          ((ρ : ℂ) • X) ((ρ : ℂ) • Y) :=
+      sourceSymmetricRankExactStratum_joined_ball_scaled_path
+        hρ γ hγ hbound hρM
+    have hYrad :
+        JoinedIn
+          (Metric.ball (0 : Fin m → Fin m → ℂ) ε ∩
+            sourceSymmetricRankExactStratum m r)
+          Y ((ρ : ℂ) • Y) :=
+      sourceSymmetricRankExactStratum_joined_ball_radial_smul
+        hρ hρle hY.1 hY.2
+    exact (hXrad.trans hmid).trans hYrad.symm
+
+/-- Every neighborhood of zero contains a centered open cone piece whose
+intersection with the exact symmetric rank stratum is connected.  This is the
+finite-dimensional cone input for the singular Schur chart in the source
+Hall-Wightman connectedness argument. -/
+theorem sourceSymmetricRankExactCone_small_connected
+    (m r : ℕ) (hr : r ≤ m)
+    {N : Set (Fin m → Fin m → ℂ)}
+    (hN_open : IsOpen N)
+    (h0N : (0 : Fin m → Fin m → ℂ) ∈ N) :
+    ∃ C : Set (Fin m → Fin m → ℂ),
+      (0 : Fin m → Fin m → ℂ) ∈ C ∧
+      IsOpen C ∧ C ⊆ N ∧
+      IsConnected (C ∩ sourceSymmetricRankExactStratum m r) := by
+  have hN_nhds : N ∈ 𝓝 (0 : Fin m → Fin m → ℂ) := hN_open.mem_nhds h0N
+  rw [Metric.mem_nhds_iff] at hN_nhds
+  rcases hN_nhds with ⟨ε, hε, hεsub⟩
+  refine ⟨Metric.ball (0 : Fin m → Fin m → ℂ) ε, ?_, Metric.isOpen_ball, hεsub, ?_⟩
+  · simpa [Metric.mem_ball]
+  · exact (sourceSymmetricRankExactStratum_ball_isPathConnected m r hr hε).isConnected
 
 end BHW

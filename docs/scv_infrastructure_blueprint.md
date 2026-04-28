@@ -87,28 +87,30 @@ with the produced envelope.  This uniqueness is proved locally by the
 continuous EOW identity theorem and then patched across the local chart cover;
 it is part of the construction, not an additional downstream assumption.
 
-The public proof package should be split as fourteen theorem surfaces plus the
-final envelope theorem:
+The public proof package must distinguish checked API from remaining theorem
+surfaces.  The following names are already checked and should be used exactly:
+`localRealMollifySide_holomorphicOn_of_translate_margin`,
+`realMollifyLocal_eq_sliceIntegral_translate`,
+`realMollifyLocal_eq_sliceFunctional`,
+`exists_cutoffSliceIntegral_clm_of_continuousOn`,
+`realMollifyLocal_eq_cutoffSliceCLM`,
+`tendsto_cutoffSliceCLM_of_boundaryValue`,
+`tendsto_mollified_boundary_of_clm`,
+`localRealMollify_commonContinuousBoundary_of_clm`,
+`regularizedEnvelope_productKernel_dbar_eq_zero`,
+`translationCovariantKernel_distributionalHolomorphic`,
+`regularizedEnvelope_holomorphicDistribution_from_productKernel`,
+`regularizedEnvelope_pointwiseRepresentation_of_productKernel`,
+`regularizedEnvelope_deltaLimit_agreesOnWedges`, and
+`regularizedEnvelope_chartEnvelope_from_productKernel`.
+
+The remaining public proof package should be split as the following theorem
+surfaces plus the final envelope theorem:
 
 ```lean
-lemma localContinuousEOW_envelope
-lemma localRealMollifySide_holomorphicOn_of_translate_margin
-lemma realMollifyLocal_eq_sliceIntegral_translate
-lemma realMollifyLocal_eq_sliceFunctional
-lemma exists_cutoffSliceIntegral_clm_of_continuousOn
-lemma realMollifyLocal_eq_cutoffSliceCLM
-lemma tendsto_cutoffSliceCLM_of_boundaryValue
-lemma exists_cutoffSliceCLM_family_of_boundaryValue
-lemma localRealMollify_commonContinuousBoundary_of_clm
+theorem local_continuous_edge_of_the_wedge_envelope
 lemma sliceCLM_family_from_distributionalBoundary
-lemma regularizedLocalEOW_family
-lemma regularizedEnvelope_linearContinuousInKernel
-lemma regularizedEnvelope_translationCovariant
-lemma regularizedEnvelope_productKernel
-lemma translationCovariantProductKernel_descends
-theorem distributionalHolomorphic_regular
-lemma regularizedEnvelope_kernelRepresentation
-lemma regularizedEnvelope_deltaLimit_agreesOnWedges
+theorem regularizedLocalEOW_productKernel_from_continuousEOW
 lemma chartDistributionalEOW_local_envelope
 lemma distributionalEOW_extensions_compatible
 lemma localDistributionalEOW_patch_extensions
@@ -162,11 +164,27 @@ useful consumer but is not a substitute for constructing the full envelope.
 
 Infrastructure audit after `agents_chat.md` #1291:
 
-1. The private `local_eow_extension` in `SCV/TubeDomainExtension.lean` should be
-   exposed or refactored for the **continuous** layer.  Its global-tube
-   hypotheses mean it cannot be applied directly to OS45 local open sets
-   `Ωplus/Ωminus`, but its local Cauchy-polydisc construction, patching, and
-   overlap-consistency proof are exactly the code to reuse.
+1. The first continuous-layer extraction slice is now checked:
+   `SCV.local_eow_extension` and `SCV.local_extensions_consistent` are public
+   theorems in `SCV/TubeDomainExtension.lean`.  Their global-tube hypotheses
+   mean they still cannot be applied directly to OS45 local open sets
+   `Ωplus/Ωminus`, but their local Cauchy-polydisc construction, patching, and
+   overlap-consistency proof are now an accessible Lean substrate to reuse.
+   The finite-dimensional local-wedge simplex support is also checked in
+   `SCV/LocalContinuousEOW.lean`: `SCV.localEOWCoefficientSimplex`,
+   `SCV.localEOWSimplexDirections`,
+   `SCV.isCompact_localEOWCoefficientSimplex`,
+   `SCV.isCompact_localEOWSimplexDirections`,
+   `SCV.localEOWSimplexDirections_subset_cone`, and
+   `SCV.localEOW_positive_imag_normalized_mem_simplex`.  The actual local
+   chart-membership replacements for the global tube lemmas are now checked as
+   `SCV.localEOW_chart_positive_polywedge_mem` and
+   `SCV.localEOW_chart_negative_polywedge_mem`; the downstream-ready common
+   radius package is `SCV.localEOW_chart_twoSided_polywedge_mem`.  The public
+   chart layer is also checked as `SCV.localEOWRealChart`,
+   `SCV.localEOWChart`, `SCV.continuous_localEOWRealChart`,
+   `SCV.isCompact_localEOWRealChart_image`, `SCV.localEOWChart_real_imag`, and
+   `SCV.localEOWChart_twoSided_polywedge_mem`.
 2. `SCV/DistributionalUniqueness.lean` already supplies translation,
    compact-support stability, real-mollification holomorphy, approximate
    identity convergence, and zero-boundary uniqueness tools.  The local
@@ -193,21 +211,20 @@ Source ledger for the internal helper list:
 |---|---|
 | `localWedge_truncated_maps_compact_subcone` | Direct compact-set use of the local wedge hypothesis. |
 | `localEOW_choose_cone_basis` | Existing `open_set_contains_basis` in `SCV/TubeDomainExtension.lean`. |
+| `localEOWCoefficientSimplex`, `localEOWSimplexDirections`, `isCompact_localEOWCoefficientSimplex`, `isCompact_localEOWSimplexDirections`, `localEOWSimplexDirections_subset_cone`, `localEOW_positive_imag_normalized_mem_simplex` | Checked in `SCV/LocalContinuousEOW.lean`: compact closed coefficient simplex, compact image under the finite-dimensional chart-direction map, convex-combination inclusion in the cone, and normalization of positive imaginary chart directions. |
+| `localEOWRealChart`, `localEOWChart`, `continuous_localEOWRealChart`, `isCompact_localEOWRealChart_image`, `localEOWChart_real_imag`, `localEOWChart_twoSided_polywedge_mem` | Checked in `SCV/LocalContinuousEOW.lean`: public chart notation matching the private `Phi` shape in `TubeDomainExtension.lean`, compactness of real-chart images, decomposition of `localEOWChart x0 ys (u + i v)`, and the direct two-sided local wedge membership theorem in chart coordinates. |
 | `localEOW_chart_real_box` | Finite-dimensional topology: open preimage under a linear equivalence contains a small axis box. |
-| `localEOW_chart_positive_polywedge_mem` | Local replacement for the existing `Phi_pos_in_tube` / `Phi_neg_in_tube` lemmas in `TubeDomainExtension.lean`. |
+| `localEOW_chart_positive_polywedge_mem`, `localEOW_chart_negative_polywedge_mem`, `localEOW_chart_twoSided_polywedge_mem` | Checked in `SCV/LocalContinuousEOW.lean`: local replacements for the existing `Phi_pos_in_tube` / `Phi_neg_in_tube` lemmas in `TubeDomainExtension.lean`, using `hlocal_wedge` on the compact real box and compact chart-direction simplex.  The two-sided theorem preserves the single radius supplied by `hlocal_wedge`. |
 | `localEOW_pullback_boundary_value` | Standard distribution pullback under an affine real-linear equivalence with Jacobian. |
 | `localEOW_uniform_slowGrowth_order` | Compactness plus maxima of the two local slow-growth orders. |
 | `localEOW_nested_axis_boxes`, `localEOW_support_margin` | Finite-dimensional topology: choose `B0 ⋐ B1 ⋐ E` and kernel-support radius `r` so `B0 + supp ψ ⊆ B1`. |
 | `localRealMollifySide_holomorphicOn_of_translate_margin` | Checked in `SCV/LocalDistributionalEOW.lean`: local version of `differentiableOn_realMollify_tubeDomain`; real-direction convolution of a holomorphic wedge function is holomorphic on the shrunken wedge whenever the support margin keeps all translates of the real-kernel support inside the original local wedge. |
 | `localRealMollify_commonContinuousBoundary_of_clm` | Checked extraction step: if the plus/minus slice CLMs converge pointwise to the same chart distribution and correctly evaluate the translated kernels appearing in `realMollifyLocal`, then the regularized plus/minus sides have the same continuous boundary value `x ↦ T (translateSchwartz (-x) ψ)`.  The remaining hard input is constructing these slice CLMs from the OS-II distributional boundary-value hypotheses, not assuming common continuous boundary. |
-| `regularizedLocalEOW_family` | Apply local continuous EOW to every fixed smoothing kernel, using one neighborhood determined by the nested boxes and support radius. |
-| `regularizedEnvelope_linearContinuousInKernel` | For each point in the common neighborhood, the value of the regularized envelope is a continuous linear functional of the smoothing kernel.  Use a fixed compactly supported cutoff `χr = 1` on the allowed kernel-support ball so the functional is a genuine `SchwartzMap ->L[ℂ] ℂ`, not an LF-space wrapper. |
-| `regularizedEnvelope_translationCovariant` | The regularized envelopes satisfy the translation law forced by real-translation of the kernel and the identity theorem on the regularized wedge pieces. |
-| `regularizedEnvelope_kernelRepresentation` | Schwartz kernel/nuclear theorem plus translation covariance: the regularized-envelope family is represented by one distributional kernel depending only on the translated complex point. |
+| `regularizedLocalEOW_productKernel_from_continuousEOW` | The one remaining product-kernel-family theorem.  It applies local continuous EOW to every fixed smoothing kernel on one neighborhood, proves linearity/continuity in the kernel using uniqueness and a fixed cutoff on the allowed support ball, proves real-translation covariance by the same uniqueness argument, and outputs the exact `K,G,hcov,hG_holo,hK_rep,ψn` fields consumed by the checked theorem `regularizedEnvelope_chartEnvelope_from_productKernel`. |
 | `regularizedEnvelope_deltaLimit_agreesOnWedges` | Approximate-identity recovery: once kernel recovery has produced a holomorphic `H`, compactly supported approximate identities show `H` agrees with the original plus/minus wedge functions on the shrunken wedge pieces. |
-| `localContinuousEOW_envelope` | Refactor/extraction of private `local_eow_extension`, with global tube membership replaced by local wedge membership. |
+| `localContinuousEOW_envelope` | Next theorem: adapt the now-public `SCV.local_eow_extension` proof body by replacing global tube membership with local wedge membership. |
 | `chartDistributionalEOW_local_envelope` | Local distributional EOW envelope on one chart, obtained from the regularized-envelope family and delta-limit recovery. |
-| `distributionalEOW_extensions_compatible`, `localDistributionalEOW_patch_extensions` | Existing `local_extensions_consistent` and global patching pattern in `edge_of_the_wedge_theorem`. |
+| `distributionalEOW_extensions_compatible`, `localDistributionalEOW_patch_extensions` | Reuse the now-public `SCV.local_extensions_consistent` identity-theorem pattern and the global patching pattern in `edge_of_the_wedge_theorem`. |
 
 Do not write this as "apply `SCV.edge_of_the_wedge_theorem`" without further
 work.  The checked theorem `SCV.edge_of_the_wedge_theorem` is stated for global
@@ -281,6 +298,30 @@ Its proof is a localization of the existing `TubeDomainExtension.lean` proof:
 
 Implementation notes:
 
+The extraction should start by copying the *shape* of the two private checked
+lemmas in `SCV/TubeDomainExtension.lean`, not by inventing a new local EOW
+wrapper.  The local analogue of `local_eow_extension` must return exactly the
+same seven geometric/analytic fields:
+
+```lean
+∃ (P : Set (ComplexChartSpace m)) (F_loc : ComplexChartSpace m -> ℂ),
+  IsOpen P ∧ Convex ℝ P ∧
+  (∀ z ∈ P, (fun i => starRingEnd ℂ (z i)) ∈ P) ∧
+  realEmbed x0 ∈ P ∧
+  DifferentiableOn ℂ F_loc P ∧
+  (∀ z ∈ P ∩ Ωplus, F_loc z = Fplus z) ∧
+  (∀ z ∈ P ∩ Ωminus, F_loc z = Fminus z)
+```
+
+The local analogue of `local_extensions_consistent` should keep the same
+identity-theorem proof: if two local patches have a nonempty overlap, convexity
+and conjugation invariance put a real midpoint in the overlap, and
+`hlocal_wedge` supplies nearby plus-wedge points in the overlap.  Therefore the
+two local extensions agree on a nonempty open plus-wedge subset, and analytic
+continuation across the convex overlap gives equality everywhere on the
+overlap.  This is the exact replacement for the current global
+`nonempty_open_real_inter_tubeDomain` call; it is not an additional axiom.
+
 1. `localWedge_truncated_maps_compact_subcone` is the uniform
    compact-real-support / compact-direction-set consequence of the local wedge
    hypothesis.  It supplies a radius `r > 0` for all `x ∈ K`, all directions
@@ -301,6 +342,88 @@ Implementation notes:
    polywedge into `Ωminus`.  The proof normalizes the imaginary direction
    `Σ j, v j • ys j` with `0 < v j`, places it in the compact simplex image
    inside `C`, and applies `hlocal_wedge`.
+
+   The Lean proof must make this normalization explicit.  For a fixed cone
+   basis `ys : Fin m -> Fin m -> ℝ`, the checked chart-direction simplex is:
+
+   ```lean
+   def localEOWCoefficientSimplex (m : ℕ) : Set (Fin m -> ℝ) :=
+     {a | (∀ j, a j ∈ Set.Icc (0 : ℝ) 1) ∧ ∑ j, a j = 1}
+
+   def localEOWSimplexDirections (ys : Fin m -> Fin m -> ℝ) :
+       Set (Fin m -> ℝ) :=
+     (fun a : Fin m -> ℝ => ∑ j, a j • ys j) ''
+       localEOWCoefficientSimplex m
+   ```
+
+   The checked support lemmas are:
+
+   ```lean
+   theorem isCompact_localEOWCoefficientSimplex (m : ℕ) :
+       IsCompact (localEOWCoefficientSimplex m)
+
+   theorem isCompact_localEOWSimplexDirections
+       (ys : Fin m -> Fin m -> ℝ) :
+       IsCompact (localEOWSimplexDirections ys)
+
+   theorem localEOWSimplexDirections_subset_cone
+       (C : Set (Fin m -> ℝ))
+       (hC_conv : Convex ℝ C)
+       (ys : Fin m -> Fin m -> ℝ)
+       (hys : ∀ j, ys j ∈ C) :
+       localEOWSimplexDirections ys ⊆ C
+
+   theorem localEOW_positive_imag_normalized_mem_simplex
+       {ys : Fin m -> Fin m -> ℝ}
+       {v : Fin m -> ℝ}
+       (hv_nonneg : ∀ j, 0 ≤ v j)
+       (hv_sum_pos : 0 < ∑ j, v j) :
+       ((∑ j, v j)⁻¹) • (∑ j, v j • ys j) ∈
+         localEOWSimplexDirections ys
+   ```
+
+   The local replacements for `Phi_pos_in_tube` and `Phi_neg_in_tube` are now
+   checked.  The positive theorem has this exact shape:
+
+   ```lean
+   theorem localEOW_chart_positive_polywedge_mem
+       (Ωplus : Set (ComplexChartSpace m))
+       (E C : Set (Fin m -> ℝ))
+       (hlocal_wedge :
+         ∀ K : Set (Fin m -> ℝ), IsCompact K -> K ⊆ E ->
+           ∀ Kη : Set (Fin m -> ℝ), IsCompact Kη -> Kη ⊆ C ->
+	             ∃ r : ℝ, 0 < r ∧
+	               ∀ x ∈ K, ∀ η ∈ Kη, ∀ ε : ℝ, 0 < ε -> ε < r ->
+	                 (fun a => (x a : ℂ) +
+	                   (ε : ℂ) * (η a : ℂ) * Complex.I) ∈ Ωplus)
+	       (hC_conv : Convex ℝ C)
+	       (ys : Fin m -> Fin m -> ℝ)
+       (hys_C : ∀ j, ys j ∈ C)
+       (B : Set (Fin m -> ℝ))
+       (hB_compact : IsCompact B)
+       (hB_E : B ⊆ E) :
+       ∃ r : ℝ, 0 < r ∧
+         ∀ u ∈ B, ∀ v : Fin m -> ℝ,
+           (∀ j, 0 ≤ v j) -> 0 < ∑ j, v j -> (∑ j, v j) < r ->
+             (fun a =>
+               (u a : ℂ) +
+                 (∑ j, (v j : ℂ) * (ys j a : ℂ)) * Complex.I) ∈ Ωplus
+   ```
+
+   The proof applies `hlocal_wedge` to
+   `K = B` and `Kη = localEOWSimplexDirections ys`.  For `v` with all entries
+   positive, set `ε = ∑ j, v j` and
+   `η = ε⁻¹ • ∑ j, v j • ys j`.  Then `η ∈ Kη`, `0 < ε`, and
+   `ε • η = ∑ j, v j • ys j`, so the chart point is exactly
+   `realEmbed u + I * εη`.  The checked negative theorem uses `v j ≤ 0`,
+   `0 < ∑ j, -v j`, `ε = ∑ j, -v j`, and the `Ωminus` membership supplied by
+   the minus half of `hlocal_wedge`.
+
+   The common-radius two-sided version is also checked as
+   `localEOW_chart_twoSided_polywedge_mem`.  This finite-dimensional geometry is
+   now checked; it is not a wrapper around the global tube theorem.  The next
+   continuous-EOW step can directly use these membership lemmas inside the
+   public `local_eow_extension` proof pattern.
 5. `localEOW_pullback_boundary_value` transports the distributional boundary
    value to the chart.  If `L : (Fin m -> ℝ) ≃L[ℝ] (Fin m -> ℝ)` sends the
    standard basis to `ys`, then
@@ -630,7 +753,7 @@ theorem localRealMollify_commonContinuousBoundary_of_clm
         (nhdsWithin (realEmbed x) Ωminus)
         (nhds (Tchart (translateSchwartz (-x) ψ))))
 
-lemma regularizedLocalEOW_family
+lemma regularizedLocalEOW_window_from_continuousEOW
     {m : ℕ}
     (DplusSmall DminusSmall : Set (Fin m -> ℂ))
     (B C : Set (Fin m -> ℝ))
@@ -654,7 +777,7 @@ lemma regularizedLocalEOW_family
                 Hψ z = realMollifyLocal Fplus ψ z) ->
               ∀ z ∈ U0, Hψ z = Gψ z)
 
-lemma regularizedEnvelope_linearContinuousInKernel
+lemma regularizedEnvelope_valueCLM_of_cutoff
     {m : ℕ}
     (U0 : Set (Fin m -> ℂ))
     (G : SchwartzMap (Fin m -> ℝ) ℂ ->
@@ -669,7 +792,7 @@ lemma regularizedEnvelope_linearContinuousInKernel
           KernelSupportWithin ψ r ->
             Lz ψ = G (cutoffKernelCLM χ hχ_temp ψ) z
 
-lemma regularizedEnvelope_translationCovariant
+lemma regularizedEnvelope_realTranslation_identity
     {m : ℕ}
     (U0 : Set (Fin m -> ℂ))
     (G : SchwartzMap (Fin m -> ℝ) ℂ ->
@@ -682,7 +805,7 @@ lemma regularizedEnvelope_translationCovariant
       z - realEmbed a ∈ U0 ->
       G (translateSchwartz a ψ) z = G ψ (z - realEmbed a)
 
-lemma regularizedEnvelope_kernelRepresentation
+lemma regularizedEnvelope_productKernel_representation_from_family
     {m : ℕ}
     (Ucore : Set (Fin m -> ℂ))
     (U0 : Set (Fin m -> ℂ))
@@ -1255,7 +1378,7 @@ theorem localRealMollify_commonContinuousBoundary_of_clm
         (nhdsWithin (realEmbed x) Ωminus)
         (nhds (Tchart (translateSchwartz (-x) ψ))))
 
-theorem regularizedLocalEOW_family
+theorem regularizedLocalEOW_window_from_continuousEOW
     {m : ℕ} {r : ℝ}
     (hm : 0 < m) (hr : 0 < r)
     (Ωplus Ωminus U0 DplusSmall DminusSmall : Set (ComplexChartSpace m))
@@ -1280,7 +1403,7 @@ theorem regularizedLocalEOW_family
         ∀ z ∈ U0, z - realEmbed a ∈ U0 ->
           G (translateSchwartz a ψ) z = G ψ (z - realEmbed a))
 
-theorem regularizedEnvelope_linearContinuousInKernel_from_localEOW_family
+theorem regularizedEnvelope_productBilinear_from_localEOW_window
     {m : ℕ} {r : ℝ}
     (U0 : Set (ComplexChartSpace m))
     (G : SchwartzMap (Fin m -> ℝ) ℂ -> ComplexChartSpace m -> ℂ)
@@ -1295,7 +1418,7 @@ theorem regularizedEnvelope_linearContinuousInKernel_from_localEOW_family
         KernelSupportWithin ψ r ->
           B φ ψ = ∫ z : ComplexChartSpace m, G ψ z * φ z
 
-theorem regularizedEnvelope_translationCovariant_from_localEOW_family
+theorem regularizedEnvelope_realTranslation_integral_from_uniqueness
     {m : ℕ} {r : ℝ}
     (U0 : Set (ComplexChartSpace m))
     (G : SchwartzMap (Fin m -> ℝ) ℂ -> ComplexChartSpace m -> ℂ)
@@ -1323,7 +1446,7 @@ theorem regularizedLocalEOW_productKernel_package
     (G : SchwartzMap (Fin m -> ℝ) ℂ -> ComplexChartSpace m -> ℂ)
     (ψn : ℕ -> SchwartzMap (Fin m -> ℝ) ℂ)
     (hψ_support_r : ∀ n, KernelSupportWithin (ψn n) r)
-    -- output of regularizedLocalEOW_family:
+    -- output of the local EOW window theorem:
     (hG_holo_window :
       ∀ ψ, KernelSupportWithin ψ r -> DifferentiableOn ℂ (G ψ) U0)
     (hG_plus_window :
@@ -2389,7 +2512,7 @@ Detailed kernel-recovery proof transcript:
 3. Promote the separately continuous bilinear map to the product-kernel
    distribution:
    ```lean
-   lemma regularizedEnvelope_productKernel
+   lemma regularizedEnvelope_productKernel_from_bilinear
        :
        ∃ K :
          SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ,
@@ -9932,9 +10055,9 @@ For theorem 2, the immediate SCV implementation order is:
    `regularizedEnvelope_chartEnvelope_from_productKernel`.  The remaining
    portion is the upstream local continuous EOW extraction and regularized
    local EOW family/product-kernel package;
-2. `SCV/LocalContinuousEOW.lean`: expose the local continuous EOW theorem by
-   refactoring `local_eow_extension` and `local_extensions_consistent` from
-   `TubeDomainExtension.lean`;
+2. `SCV/LocalContinuousEOW.lean`: adapt the now-public
+   `SCV.local_eow_extension` and `SCV.local_extensions_consistent` theorem
+   bodies from global tube domains to local `Ωplus/Ωminus` wedge domains;
 3. `SCV/LocalDistributionalEOW.lean`: prove
    `local_distributional_edge_of_the_wedge_envelope` from the
    Streater-Wightman regularization transcript above;
@@ -10062,16 +10185,62 @@ should proceed in the following order.
 8. Prove the recovered distribution gives back the original tube function by
    the standard Poisson/Fourier-Laplace reconstruction formula.
 
+For theorem 2, the boundary-value package also needs a compact-direction
+strengthening.  The public `tube_boundaryValueData_of_polyGrowth` is currently
+raywise; the OS45 local EOW supplier needs uniform convergence on every compact
+direction set `Kη ⊆ C`.  This must be proved in the same QFT-free SCV package,
+not added as a new axiom and not hidden in a BHW-specific theorem.  The
+uniform theorem should have the following shape before the OS specialization:
+
+```lean
+theorem tube_boundaryValueData_uniformOnCompactDirections_of_polyGrowth
+    {n d : ℕ}
+    (C : Set (Fin n -> Fin (d + 1) -> ℝ))
+    (hC_open : IsOpen C) (hC_conv : Convex ℝ C)
+    (hC_cone : IsCone C) (hC_salient : IsSalientCone C)
+    {F : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ}
+    (hF_hol : DifferentiableOn ℂ F (TubeDomainSetPi C))
+    (C_bd : ℝ) (N : ℕ) (hC_bd : 0 < C_bd)
+    (hF_growth : ∀ z ∈ TubeDomainSetPi C,
+      ‖F z‖ ≤ C_bd * (1 + ‖z‖) ^ N) :
+    ∃ W : SchwartzMap (Fin n -> Fin (d + 1) -> ℝ) ℂ ->L[ℂ] ℂ,
+      ∀ (Kη : Set (Fin n -> Fin (d + 1) -> ℝ)),
+        IsCompact Kη -> Kη ⊆ C ->
+        ∀ φ : SchwartzMap (Fin n -> Fin (d + 1) -> ℝ) ℂ,
+          TendstoUniformlyOn
+            (fun ε η => ∫ x : Fin n -> Fin (d + 1) -> ℝ,
+              F (fun k μ => (x k μ : ℂ) +
+                (ε : ℂ) * (η k μ : ℂ) * Complex.I) * φ x)
+            (fun _ => W φ)
+            (nhdsWithin 0 (Set.Ioi 0))
+            Kη
+```
+
+The proof is the raywise proof with every estimate made uniform on compact
+`Kη`: compactness supplies a bound on `‖η‖` and a single tube-radius margin for
+small `ε`; the polynomial-growth estimate gives one Schwartz seminorm
+dominating all slices; continuity of the integrand in `(ε,η,x)` plus that
+dominating seminorm gives local uniform convergence; a finite subcover of
+`Kη` gives `TendstoUniformlyOn`.  The existing private lemmas
+`tubeSlice_uniformPolyGrowth_of_polyGrowth` and
+`tubeSliceIntegralCLM_uniformSeminormBound_of_polyGrowth` are the correct
+starting points, but their current statements are only fixed-direction
+uniformity and must be compact-direction versions before the theorem above can
+be checked.
+
 The implementation theorem slots should therefore be:
 
 ```lean
 def tubeSliceFunctional (ε : ℝ) (y : ConeDir) : SchwartzMap →L[ℂ] ℂ
 lemma tubeSliceFunctional_seminorm_bound
+lemma tubeSliceFunctional_compactDirection_seminorm_bound
 lemma tubeSliceFunctional_cauchy_as_epsilon_to_zero
+lemma tubeSliceFunctional_compactDirection_cauchy_as_epsilon_to_zero
 lemma tubeSliceFunctional_limit_exists
 lemma tubeSliceFunctional_limit_independent_of_direction
 def tubeBoundaryValueDistribution
 lemma tubeBoundaryValueDistribution_isContinuous
+theorem tube_boundaryValueData_uniformOnCompactDirections_of_polyGrowth
 lemma tubeBoundaryValueDistribution_recovers_tube_function
 theorem tube_boundaryValueData_of_polyGrowth
 ```
