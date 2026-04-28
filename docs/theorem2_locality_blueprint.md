@@ -1107,18 +1107,29 @@ Proof decomposition of this theorem, without hiding the analytic work:
       1. `SCV.regularizedLocalEOW_pairingCLM_of_fixedWindow`.  It constructs a
          genuine mixed Schwartz CLM `K` by fixed cutoffs: a complex-chart
          cutoff `χU`, a chart-kernel cutoff `χr`, and the original-edge cutoff
-         hidden inside the value CLM for the pushed kernel:
+         hidden inside the value CLM for the pushed kernel.  Here
+         `P = localEOWRealLinearKernelPushforwardCLM ys hli`:
          ```lean
          K F =
-           ∫ z, χU z *
-             Lchart z (schwartzPartialEval₁CLM z F)
+           ∫ z in closedBall 0 Rcut, χU z *
+             localRudinEnvelope δ x0 ys
+               (realMollifyLocal Fplus
+                 (χψ • P (χr • schwartzPartialEval₁CLM z F)))
+               (realMollifyLocal Fminus
+                 (χψ • P (χr • schwartzPartialEval₁CLM z F))) z
          ```
          where `Lchart z` is
          `Lorig z ∘ localEOWRealLinearKernelPushforwardCLM ys hli ∘ (χr • ·)`.
+         The integral is defined from the actual cutoff envelope expression,
+         not from the choice-valued map `z ↦ Lchart z`; `Lchart` is used for
+         linearity and bounds after the integrand has been shown continuous.
          The proof must include the complex-chart cutoff theorem, the
          SCV-local `schwartzPartialEval₁CLM` and compact seminorm estimate,
-         the compact-uniform value-CLM bound for `Lorig`, and the
-         cutoff-removal proof on tests supported in `Ucov`.
+         the compact-uniform value-CLM bound for `Lorig`, support-radius
+         monotonicity for pushed kernels, finite-seminorm transport through the
+         composed kernel Schwartz CLM, continuity of the varying-slice cutoff
+         envelope integrand, and the cutoff-removal proof on tests supported
+         in `Ucov`.
       2. `SCV.regularizedLocalEOW_pairingCLM_localCovariant`.  It proves
          `ProductKernelRealTranslationCovariantLocal K Ucov r`, not global
          covariance.  The proof expands both product pairings, changes
@@ -1194,9 +1205,22 @@ Proof decomposition of this theorem, without hiding the analytic work:
       The Lean implementation has checked the first helper layers feeding the
       pairing CLM: complex-chart cutoff, `SupportsInOpen` cutoff removal, and
       the SCV-local `schwartzPartialEval₁CLM` apply/tensor/seminorm package,
-      plus the compact value-CLM bound for `Lorig`.  The next Lean target is
-      `regularizedLocalEOW_chartKernelFamily_valueCLM`.  Only after that is
-      checked should Lean introduce
+      plus the compact value-CLM bound for `Lorig`.  The next Lean targets,
+      once the proof docs for this layer are accepted as complete, are
+      `continuous_schwartzPartialEval₁CLM`,
+      `KernelSupportWithin.mono`,
+      `SchwartzMap.exists_schwartzCLM_finsetSeminormBound`, and then
+      `regularizedLocalEOW_chartKernelFamily_valueCLM`.  The chart-kernel
+      theorem must consume the original-family compact value-CLM package and
+      prove the chart cutoff removal, pushforward support enlargement
+      `‖A‖ * rcut ≤ rψ`, original-edge cutoff removal, and composed
+      finite-seminorm bound explicitly.  Before the mixed pairing CLM itself,
+      Lean must also prove
+      `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`, so the
+      set integral defining `K` is an integral of the actual continuous cutoff
+      envelope and not of an arbitrary choice of `Lchart z`.  Only after that
+      is checked should Lean
+      introduce
       `regularizedLocalEOW_pairingCLM_of_fixedWindow`; it must not revive the
       retired global `regularizedLocalEOW_productKernel_from_continuousEOW`
       surface.  In the final `SCV.local_distributional_edge_of_the_wedge_envelope`

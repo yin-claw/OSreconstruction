@@ -3985,7 +3985,10 @@ Proof transcript for the next target:
    family `Gchart` into one mixed Schwartz continuous linear functional.  The
    cutoff helpers, the full partial-evaluation CLM/apply/tensor/seminorm
    package, and the compact original-family value-CLM bound are already
-   checked; the next unchecked helper is
+   checked.  The remaining helper surfaces before the mixed pairing are:
+   the SCV-local continuity-in-the-chart-variable theorem for partial
+   evaluation, support-radius monotonicity, and finite-seminorm transport for a
+   continuous Schwartz CLM.  The next substantive theorem is
    `regularizedLocalEOW_chartKernelFamily_valueCLM`.
 
    ```lean
@@ -4033,6 +4036,27 @@ Proof transcript for the next target:
              C * s'.sup
                (schwartzSeminormFamily ℂ
                  (ComplexChartSpace m × (Fin m -> ℝ)) ℂ) F
+
+   theorem continuous_schwartzPartialEval₁CLM
+       {m : ℕ}
+       (F : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ) :
+       Continuous (fun z : ComplexChartSpace m =>
+         schwartzPartialEval₁CLM z F)
+
+   theorem KernelSupportWithin.mono
+       {m : ℕ} {ψ : SchwartzMap (Fin m -> ℝ) ℂ} {r R : ℝ}
+       (hψ : KernelSupportWithin ψ r) (hrR : r ≤ R) :
+       KernelSupportWithin ψ R
+
+   theorem SchwartzMap.exists_schwartzCLM_finsetSeminormBound
+       {m : ℕ}
+       (T : SchwartzMap (Fin m -> ℝ) ℂ ->L[ℂ]
+             SchwartzMap (Fin m -> ℝ) ℂ)
+       (s0 : Finset (ℕ × ℕ)) :
+       ∃ s : Finset (ℕ × ℕ), ∃ C : ℝ, 0 ≤ C ∧
+         ∀ ψ : SchwartzMap (Fin m -> ℝ) ℂ,
+           s0.sup (schwartzSeminormFamily ℂ (Fin m -> ℝ) ℂ) (T ψ) ≤
+             C * s.sup (schwartzSeminormFamily ℂ (Fin m -> ℝ) ℂ) ψ
 
    theorem regularizedLocalEOW_originalFamily_compactValueCLM
        -- copy the exact parameter block of the checked theorem
@@ -4112,6 +4136,55 @@ Proof transcript for the next target:
      `s' = s` and `C = 1`; the hypotheses `z ∈ closedBall 0 R` and `0 ≤ R`
      are retained only for the downstream compact-family API.  No
      Banach-Steinhaus input is used here.
+   * `continuous_schwartzPartialEval₁CLM` is the SCV-local analogue of the
+     existing Wightman-side `continuous_partialEval₂`, but it must be proved in
+     `SCV/SchwartzPartialEval.lean` or the SCV kernel layer rather than
+     imported.  The proof is the same Frechet-topology argument with the two
+     factors swapped.  First prove a tail lemma:
+     ```
+     schwartzPartialEval₁_tail_small :
+       ∀ k l ε, 0 < ε ->
+         ∃ R, 0 < R ∧ ∀ z t, R < ‖t‖ ->
+           ‖t‖ ^ k *
+             ‖iteratedFDeriv ℝ l
+               (fun t' => F (z,t')) t‖ < ε.
+     ```
+     It uses `F.decay' (k+2) l`, `‖t‖ ≤ ‖(z,t)‖`, and
+     `norm_iteratedFDeriv_partialEval₁_le`.  Then prove the parameter
+     derivative lemmas, obtained from the already checked derivative formula by
+     replacing `ContinuousLinearMap.inr`/`inl` in the Wightman proof:
+     ```
+     hasFDerivAt_iteratedFDeriv_partialEval₁_param
+     norm_fderiv_iteratedFDeriv_partialEval₁_param_le
+     ```
+     The norm bound is controlled by the `(l+1)`-st full mixed derivative of
+     `F`.  Finally use
+     `(schwartz_withSeminorms ℂ (Fin m -> ℝ) ℂ).tendsto_nhds`: given a
+     seminorm `(k,l)` and `ε`, split the `t`-space into the tail
+     `R < ‖t‖`, controlled by the tail lemma for both `z` and `z0`, and the
+     compact ball `‖t‖ ≤ max R 1`, controlled by the mean-value estimate from
+     `norm_fderiv_iteratedFDeriv_partialEval₁_param_le` as `z -> z0`.
+     This is the exact continuity input used later for
+     `z ↦ η z` in the cutoff-envelope integrand.
+   * `KernelSupportWithin.mono` is the closed-ball inclusion proof:
+     if `hψ : tsupport ψ ⊆ closedBall 0 r` and `r ≤ R`, then every support
+     point lies in `closedBall 0 R` by
+     `Metric.closedBall_subset_closedBall`.  This is used so the original-edge
+     cutoff can be chosen on any convenient positive radius `rψ` satisfying
+     `‖A‖ * rcut ≤ rψ`; no positivity theorem for the operator norm of the
+     local chart equivalence is needed.
+   * `SchwartzMap.exists_schwartzCLM_finsetSeminormBound` is the generic
+     finite-seminorm transport fact for the kernel Schwartz space.  Let
+     `p := schwartzSeminormFamily ℂ (Fin m -> ℝ) ℂ`.  For each output
+     seminorm index `i`, the seminorm `(p i).comp T.toLinearMap` is continuous
+     on the input Schwartz space because `(schwartz_withSeminorms ℂ
+     (Fin m -> ℝ) ℂ).continuous_seminorm i` composes with `T.continuous`.
+     Applying `Seminorm.bound_of_continuous` gives a finite input seminorm
+     controlling that one output seminorm.  Package these pointwise bounds as
+     `Seminorm.IsBounded p p T.toLinearMap`, then apply
+     `Seminorm.isBounded_sup` to the finite set `s0`.  Coerce the returned
+     `NNReal` constant to `ℝ`; its nonnegativity is `Cnn.2`.  The final line is
+     `Seminorm.le_def.mp hsup ψ`.
    * `regularizedLocalEOW_originalFamily_compactValueCLM` is checked as the
      compact version of `regularizedEnvelope_valueCLM_of_cutoff`.  Its proof
      not rebuild the circle-parameter CLM from scratch.  Define the total
@@ -4158,20 +4231,234 @@ Proof transcript for the next target:
      the common finite set and constant.  This is the step that prevents a
      hidden pointwise-continuity-to-continuity gap in the mixed `K`.
 
+   The chart-kernel value theorem is deliberately stated as a transformation of
+   the original-family compact value-CLM package, rather than by repeating the
+   full fixed-window hypothesis block.  This is not a wrapper: it contains the
+   chart-linear change of kernel coordinates, the two cutoff-removal arguments,
+   support-radius transport, and the finite-seminorm transport for the composed
+   Schwartz CLM.
+
+   ```lean
+   theorem regularizedLocalEOW_chartKernelFamily_valueCLM
+       {m : ℕ}
+       (ys : Fin m -> Fin m -> ℝ) (hli : LinearIndependent ℝ ys)
+       {Rcut r rcut rψ : ℝ}
+       (χr χψ : SchwartzMap (Fin m -> ℝ) ℂ)
+       (Gorig : SchwartzMap (Fin m -> ℝ) ℂ ->
+         ComplexChartSpace m -> ℂ)
+       (Lorig : ComplexChartSpace m ->
+         SchwartzMap (Fin m -> ℝ) ℂ ->L[ℂ] ℂ)
+       (hχr_one :
+         ∀ t ∈ Metric.closedBall (0 : Fin m -> ℝ) r, χr t = 1)
+       (hχr_support :
+         tsupport (χr : (Fin m -> ℝ) -> ℂ) ⊆
+           Metric.closedBall 0 rcut)
+       (hAcut_le :
+         ‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖ *
+             rcut ≤ rψ)
+       (hχψ_one :
+         ∀ t ∈ Metric.closedBall (0 : Fin m -> ℝ) rψ, χψ t = 1)
+       (hLorig_value :
+         ∀ z ∈ Metric.closedBall (0 : ComplexChartSpace m) Rcut,
+         ∀ η : SchwartzMap (Fin m -> ℝ) ℂ,
+           Lorig z η =
+             Gorig
+               (SchwartzMap.smulLeftCLM ℂ
+                 (χψ : (Fin m -> ℝ) -> ℂ) η) z)
+       (hLorig_bound :
+         ∃ s0 : Finset (ℕ × ℕ), ∃ C0 : ℝ, 0 ≤ C0 ∧
+           ∀ z ∈ Metric.closedBall (0 : ComplexChartSpace m) Rcut,
+           ∀ η : SchwartzMap (Fin m -> ℝ) ℂ,
+             ‖Lorig z η‖ ≤
+               C0 * s0.sup
+                 (schwartzSeminormFamily ℂ (Fin m -> ℝ) ℂ) η) :
+       let P := localEOWRealLinearKernelPushforwardCLM ys hli
+       let Gchart : SchwartzMap (Fin m -> ℝ) ℂ ->
+           ComplexChartSpace m -> ℂ :=
+         fun ψ z => Gorig (P ψ) z
+       ∃ Lchart : ComplexChartSpace m ->
+           SchwartzMap (Fin m -> ℝ) ℂ ->L[ℂ] ℂ,
+         (∀ z ψ,
+           Lchart z ψ =
+             Lorig z
+               (P (SchwartzMap.smulLeftCLM ℂ
+                 (χr : (Fin m -> ℝ) -> ℂ) ψ))) ∧
+         (∀ z ∈ Metric.closedBall (0 : ComplexChartSpace m) Rcut,
+           ∀ ψ : SchwartzMap (Fin m -> ℝ) ℂ,
+             KernelSupportWithin ψ r ->
+               Lchart z ψ = Gchart ψ z) ∧
+         ∃ s : Finset (ℕ × ℕ), ∃ C : ℝ, 0 ≤ C ∧
+           ∀ z ∈ Metric.closedBall (0 : ComplexChartSpace m) Rcut,
+           ∀ ψ : SchwartzMap (Fin m -> ℝ) ℂ,
+             ‖Lchart z ψ‖ ≤
+               C * s.sup (schwartzSeminormFamily ℂ (Fin m -> ℝ) ℂ) ψ
+   ```
+
+   Proof transcript:
+
+   1. Set `P := localEOWRealLinearKernelPushforwardCLM ys hli` and
+      `B := P.comp (SchwartzMap.smulLeftCLM ℂ
+      (χr : (Fin m -> ℝ) -> ℂ))`.  Define
+      `Lchart z := (Lorig z).comp B`.  The first returned identity is then
+      definitional after unfolding `B`.
+   2. For a supported chart kernel `hψ : KernelSupportWithin ψ r`, remove the
+      chart cutoff:
+      ```
+      hχr_id :
+        SchwartzMap.smulLeftCLM ℂ (χr : (Fin m -> ℝ) -> ℂ) ψ = ψ :=
+          KernelSupportWithin.smulLeftCLM_eq_of_eq_one_on_closedBall
+            χr hχr_one hψ
+      ```
+   3. Independently, use the cutoff support to place the cutoff kernel in the
+      larger chart radius:
+      ```
+      hcut_support :
+        KernelSupportWithin
+          (SchwartzMap.smulLeftCLM ℂ
+            (χr : (Fin m -> ℝ) -> ℂ) ψ) rcut :=
+        KernelSupportWithin.smulLeftCLM_of_leftSupport hχr_support ψ
+      ```
+      Push this through the Jacobian-normalized chart-to-original kernel map:
+      ```
+      hpush0 :
+        KernelSupportWithin
+          (P (SchwartzMap.smulLeftCLM ℂ
+            (χr : (Fin m -> ℝ) -> ℂ) ψ))
+          (‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖ * rcut) :=
+        KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM
+          ys hli hcut_support
+      hpush : KernelSupportWithin (P (χr • ψ)) rψ :=
+        hpush0.mono hAcut_le
+      ```
+   4. Remove the original-edge cutoff by the same cutoff-removal lemma:
+      ```
+      hχψ_id :
+        SchwartzMap.smulLeftCLM ℂ (χψ : (Fin m -> ℝ) -> ℂ)
+            (P (χr • ψ)) =
+          P (χr • ψ) :=
+        KernelSupportWithin.smulLeftCLM_eq_of_eq_one_on_closedBall
+          χψ hχψ_one hpush
+      ```
+      Then the value identity on `z ∈ closedBall 0 Rcut` is the calc chain
+      ```
+      Lchart z ψ
+        = Lorig z (P (χr • ψ))
+        = Gorig (χψ • P (χr • ψ)) z
+        = Gorig (P (χr • ψ)) z
+        = Gorig (P ψ) z
+        = Gchart ψ z.
+      ```
+      The penultimate equality rewrites by `hχr_id` and linearity of `P`
+      (or simply `rw [hχr_id]` under the argument of `P`).
+   5. For the finite-seminorm bound, unpack `hLorig_bound` as `s0, C0`.
+      Apply
+      `SchwartzMap.exists_schwartzCLM_finsetSeminormBound B s0` to obtain
+      `s1, C1`.  For `z ∈ closedBall 0 Rcut`,
+      ```
+      ‖Lchart z ψ‖
+        = ‖Lorig z (B ψ)‖
+        ≤ C0 * s0.sup p (B ψ)
+        ≤ C0 * (C1 * s1.sup p ψ)
+        = (C0 * C1) * s1.sup p ψ,
+      ```
+      where `p = schwartzSeminormFamily ℂ (Fin m -> ℝ) ℂ`.  The middle
+      inequality uses `mul_le_mul_of_nonneg_left` and `0 ≤ C0`; the returned
+      constant is `C0 * C1`, nonnegative by `mul_nonneg hC0 hC1`.
+
+   The mixed pairing cannot be defined by integrating an arbitrary
+   choice-valued map `z ↦ Lchart z`: that would hide a measurability gap.
+   Instead, define the integral from the actual cutoff envelope expression and
+   use the chart-kernel value CLM only to prove linearity and the uniform
+   seminorm bound.  The continuity helper needed for the definition is:
+
+   ```lean
+   theorem continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand
+       -- fixed-window hypotheses with original-edge support radius `rψLarge`,
+       -- chart-linear data `ys, hli`, cutoffs `χU`, `χr`, `χψ`,
+       -- support hypotheses `tsupport χU ⊆ closedBall 0 Rcut`,
+       -- `tsupport χr ⊆ closedBall 0 rcut`,
+       -- `tsupport χψ ⊆ closedBall 0 rψLarge`, and
+       -- `closedBall 0 Rcut ⊆ ball 0 (δ / 2)`.
+       (F : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ) :
+       let P := localEOWRealLinearKernelPushforwardCLM ys hli
+       let η : ComplexChartSpace m ->
+           SchwartzMap (Fin m -> ℝ) ℂ :=
+         fun z =>
+           SchwartzMap.smulLeftCLM ℂ (χψ : (Fin m -> ℝ) -> ℂ)
+             (P (SchwartzMap.smulLeftCLM ℂ
+               (χr : (Fin m -> ℝ) -> ℂ)
+               (schwartzPartialEval₁CLM z F)))
+       ContinuousOn
+         (fun z : ComplexChartSpace m =>
+           χU z *
+             localRudinEnvelope δ x0 ys
+               (fun w => realMollifyLocal Fplus (η z) w)
+               (fun w => realMollifyLocal Fminus (η z) w) z)
+         (Metric.closedBall (0 : ComplexChartSpace m) Rcut)
+   ```
+
+   Proof transcript for this continuity helper:
+
+   1. First record the pointwise formula for the varying cutoff kernel.  For
+      `z : ComplexChartSpace m` and `y : Fin m -> ℝ`,
+      ```
+      η z y =
+        χψ y *
+          ((localEOWRealJacobianAbs ys)⁻¹ : ℂ) *
+          χr ((localEOWRealLinearCLE ys hli).symm y) *
+          F (z, (localEOWRealLinearCLE ys hli).symm y).
+      ```
+      This is obtained by rewriting with
+      `localEOWRealLinearKernelPushforwardCLM_apply`,
+      `SchwartzMap.smulLeftCLM_apply_apply`, and
+      `schwartzPartialEval₁CLM_apply`.  The right-hand side is continuous in
+      `(z,y)`.
+   2. The original-edge cutoff controls support uniformly:
+      `KernelSupportWithin (η z) rψLarge` follows from
+      `KernelSupportWithin.smulLeftCLM_of_leftSupport hχψ_support _`.  Thus
+      every real-mollifier integral may be restricted to the compact
+      `closedBall 0 rψLarge`, and the fixed-window side-margin hypotheses keep
+      all translated points inside `Ωplus` or `Ωminus`.
+   3. For each side and each Rudin circle parameter, unfold
+      `realMollifyLocal` and use
+      `MeasureTheory.continuous_parametric_integral_of_continuous` on the
+      compact real ball.  The parameter is the pair consisting of the outer
+      chart variable and the current Rudin arc point; the integrand is the
+      continuous function
+      `Fside (w + realEmbed y) * η z y` on the compact support ball.
+   4. For the circle integral, use the same endpoint split as
+      `continuousAt_localRudinIntegral_of_bound`: positive angles use the plus
+      side, negative angles use the minus side, and the endpoint values are
+      controlled by the common boundary CLM.  The boundary term is continuous
+      in `z` because `z ↦ η z` is continuous into the Schwartz topology
+      (checked by the partial-evaluation CLM apply formula and finite-seminorm
+      bounds) and `Tchart` is a continuous linear map.  The compact product
+      of `closedBall 0 Rcut`, `closedBall 0 rψLarge`, and `[-π,π]` supplies a
+      single dominating bound; apply
+      `intervalIntegral.continuousAt_of_dominated_interval` exactly as in the
+      checked local Rudin continuity proof.
+   5. Multiplication by the fixed Schwartz cutoff `χU` preserves continuity on
+      the closed ball.  Since `tsupport χU ⊆ closedBall 0 Rcut`, the eventual
+      integral over all chart space is the same as the set integral over this
+      compact ball.
+
    The theorem package is:
 
    ```lean
    theorem regularizedLocalEOW_pairingCLM_of_fixedWindow
        -- fixed-window hypotheses for `regularizedLocalEOW_family_from_fixedWindow`
-       -- and the chart-linear data `ys, hli`
-       (Rcov Rcut r : ℝ)
+       -- and the chart-linear data `ys, hli`, with the original-edge support
+       -- radius in the fixed-window hypotheses equal to `rψLarge`
+       (Rcov Rcut r rcut rψ rψLarge : ℝ)
        (hRcov_pos : 0 < Rcov) (hRcov_cut : Rcov < Rcut)
-       (hRcut_window : Rcut < δ / 2)
-       (hr : 0 < r)
-       (hpush :
-         ∀ ψ, KernelSupportWithin ψ r ->
-           KernelSupportWithin
-             (localEOWRealLinearKernelPushforwardCLM ys hli ψ) rψ) :
+       (hRcut_window :
+         Metric.closedBall (0 : ComplexChartSpace m) Rcut ⊆
+           Metric.ball (0 : ComplexChartSpace m) (δ / 2))
+       (hr : 0 < r) (hrcut : r < rcut)
+       (hAcut_le :
+         ‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖ *
+             rcut ≤ rψ)
+       (hrψ_pos : 0 < rψ) (hrψ_large : rψ < rψLarge) :
        let Ucov := Metric.ball (0 : ComplexChartSpace m) Rcov
        let Gchart : SchwartzMap (Fin m -> ℝ) ℂ ->
            ComplexChartSpace m -> ℂ :=
@@ -4197,19 +4484,24 @@ Proof transcript for the next target:
    1. Choose radii for the two cutoff layers:
       `Rcov < Rcut < δ / 2` in the complex chart, and
       `r < rcut` in chart-kernel coordinates.  Let
-      `P = localEOWRealLinearKernelPushforwardCLM ys hli`.  Choose the fixed
-      original-edge radius `rψ` so that
-      `KernelSupportWithin (P (χr • ψ)) rψ` for every `ψ`; this is the support
-      theorem
-      `KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM` applied to
-      the chart cutoff support.  Choose the original-edge cutoff `χψ` equal to
-      one on `closedBall 0 rψ` and supported in the larger radius already
-      accepted by the fixed-window theorem.
+      `P = localEOWRealLinearKernelPushforwardCLM ys hli` and
+      `A = ‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖`.  Choose
+      an original-edge identity radius `rψ` with `A * rcut ≤ rψ` and
+      `0 < rψ`, for example `rψ = A * rcut + 1`; this uses only
+      `0 ≤ A` and `0 < rcut`.  Choose a larger support radius
+      `rψLarge` with `rψ < rψLarge`, for example `rψ + 1`.  The fixed-window
+      side-margin hypotheses are instantiated with `rLarge = rψLarge`, while
+      the cutoff-removal theorem for the pushed kernels uses the smaller
+      identity radius `rψ`.
    2. Choose `χU` by
       `exists_complexChart_schwartz_cutoff_eq_one_on_closedBall`; choose `χr`
-      and `χψ` by the checked real cutoff theorem.  The product-kernel
-      construction may use these cutoffs only to make global Schwartz CLMs.
-      The later covariance statement removes them on supported tests.
+      from `0 < r < rcut`, and choose `χψ` from
+      `0 < rψ < rψLarge`.  Thus `χr = 1` on `closedBall 0 r` and
+      `tsupport χr ⊆ closedBall 0 rcut`, while `χψ = 1` on
+      `closedBall 0 rψ` and `tsupport χψ ⊆ closedBall 0 rψLarge`.  The
+      product-kernel construction may use these cutoffs only to make global
+      Schwartz CLMs.  The later covariance statement removes them on supported
+      tests.
    3. Use `regularizedLocalEOW_originalFamily_compactValueCLM` to obtain
       `Lorig z`, uniformly bounded for `z ∈ closedBall 0 Rcut`, with
       `Lorig z η = G (χψ • η) z`.  Define the chart-kernel value CLM by
@@ -4227,22 +4519,56 @@ Proof transcript for the next target:
    4. Build the mixed CLM by the explicit slice formula
       ```lean
       K F =
-        ∫ z : ComplexChartSpace m,
+        ∫ z in Metric.closedBall (0 : ComplexChartSpace m) Rcut,
           χU z *
-            Lchart z (schwartzPartialEval₁CLM z F)
+            localRudinEnvelope δ x0 ys
+              (fun w => realMollifyLocal Fplus
+                (χψ • P (χr • schwartzPartialEval₁CLM z F)) w)
+              (fun w => realMollifyLocal Fminus
+                (χψ • P (χr • schwartzPartialEval₁CLM z F)) w)
+              z
       ```
-      The integrand is zero off `tsupport χU`, so the integral is over the
-      compact `closedBall 0 Rcut`.
-   5. The mixed finite-seminorm estimate is now mechanical:
-      the compact bound for `Lorig`, the continuity estimate for
-      `P ∘ (χr • ·)`, and
-      `schwartzPartialEval₁CLM_compactSeminormBound` give one finite mixed
-      Schwartz seminorm bound for
-      `F ↦ χU z * Lchart z (schwartzPartialEval₁CLM z F)`, uniformly on
-      `tsupport χU`.  Integrating this bound over the compact support of `χU`
-      supplies the `SchwartzMap.mkCLMtoNormedSpace` bound for `K`.  Linearity
-      is integral linearity plus linearity of the three CLMs.
-   6. For a pure tensor, use
+      Here `χr • _` and `χψ • _` abbreviate the corresponding
+      `SchwartzMap.smulLeftCLM` applications.  The preceding continuity helper
+      gives integrability on the compact closed ball.  The integrand is zero
+      off `tsupport χU`, so this set integral is the same expression as the
+      all-space integral with the chart cutoff.
+   5. Linearity of `F ↦ K F` is proved pointwise before integrating by
+      rewriting the actual cutoff envelope through the chart value CLM:
+      ```
+      localRudinEnvelope ... (χψ • P (χr • schwartzPartialEval₁CLM z F)) z
+        = Lchart z (schwartzPartialEval₁CLM z F).
+      ```
+      The maps `schwartzPartialEval₁CLM z` and `Lchart z` are complex-linear,
+      so additivity and homogeneity follow for the actual integrand after
+      rewriting both sides back to the envelope expression.  The continuity
+      helper supplies the integrability hypotheses for
+      `MeasureTheory.integral_add` and `MeasureTheory.integral_const_mul`.
+   6. The mixed finite-seminorm estimate is now mechanical but must be written
+      against the value CLM, not against an arbitrary choice-valued integrand.
+      For every `z ∈ closedBall 0 Rcut`,
+      the chart-kernel value theorem gives
+      ```
+      localRudinEnvelope ... (χψ • P (χr • schwartzPartialEval₁CLM z F)) z
+        = Lchart z (schwartzPartialEval₁CLM z F).
+      ```
+      Combine the compact bound for `Lchart` with
+      `schwartzPartialEval₁CLM_compactSeminormBound` to obtain
+      ```
+      ‖Lchart z (schwartzPartialEval₁CLM z F)‖
+        ≤ Cmix * smix.sup p_mixed F
+      ```
+      uniformly for `z ∈ closedBall 0 Rcut`.  Bound the fixed cutoff on the
+      compact ball by
+      `Mχ := max M 0`, where `M` comes from
+      `isCompact_closedBall.exists_bound_of_continuousOn` applied to
+      `fun z => ‖χU z‖`.  Then
+      ```
+      ‖K F‖ ≤ (Mχ * Cmix * (volume (closedBall 0 Rcut)).toReal) *
+        smix.sup p_mixed F.
+      ```
+      This is the `SchwartzMap.mkCLMtoNormedSpace` bound.
+   7. For a pure tensor, use
       `schwartzPartialEval₁CLM_tensorProduct₂` to rewrite the slice as
       `φ z • ψ`.  Pull the scalar `φ z` through `Lchart z`, remove the real
       cutoffs as in step 3, and use `χU = 1` on `tsupport φ`
@@ -4486,17 +4812,39 @@ Proof transcript for the next target:
    2b. `schwartzPartialEval₁CLM_compactSeminormBound`: checked; the compact
        finite-seminorm estimate for `z ∈ closedBall 0 Rcut`, with exact
        witnesses `s' = s` and `C = 1`.
+   2c. `continuous_schwartzPartialEval₁CLM`: unchecked SCV-local port of the
+       Wightman `continuous_partialEval₂` proof.  It is needed for the
+       varying-slice continuity theorem and must be proved without importing
+       the Wightman partial-evaluation file.
    3. `regularizedLocalEOW_originalFamily_compactValueCLM`: checked; the compact
       uniform version of `regularizedEnvelope_valueCLM_of_cutoff` on
       `closedBall 0 Rcut`, with one finite Schwartz seminorm bound for all
       `z` in the compact chart support.
-   4. `regularizedLocalEOW_chartKernelFamily_valueCLM`: next target; define
+   4a. `KernelSupportWithin.mono` and
+       `SchwartzMap.exists_schwartzCLM_finsetSeminormBound`: next helper
+       targets before the chart-kernel value theorem.  The first is closed-ball
+       support monotonicity.  The second packages the
+       `Seminorm.bound_of_continuous`/`Seminorm.isBounded_sup` argument that
+       transports any finite output Schwartz seminorm through a continuous
+       kernel-to-kernel Schwartz CLM.
+   4b. `regularizedLocalEOW_chartKernelFamily_valueCLM`: next substantive
+      target; define
       `Lchart z = Lorig z ∘ localEOWRealLinearKernelPushforwardCLM ys hli ∘
-      (χr • ·)`.  On `KernelSupportWithin ψ r`, remove the chart cutoff, the
-      pushed original-edge cutoff, and obtain `Lchart z ψ = Gchart ψ z`.
-   5. `regularizedLocalEOW_pairingCLM_of_fixedWindow`: define `K` by the
-      cutoff/slice integral and prove the supported product-test
-      representation.
+      (χr • ·)`.  On `KernelSupportWithin ψ r`, remove the chart cutoff,
+      push the cutoff kernel support to radius `A * rcut`, enlarge it to the
+      chosen original identity radius `rψ`, remove the original-edge cutoff,
+      and obtain `Lchart z ψ = Gchart ψ z`.  Its common finite-seminorm bound
+      is the compact `Lorig` bound composed with the helper in 4a.
+   5a. `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`: before
+       defining the mixed integral, prove continuity of the actual cutoff
+       envelope integrand
+       `z ↦ χU z * Gorig (χψ • P (χr • schwartzPartialEval₁CLM z F)) z`
+       on `closedBall 0 Rcut`.  This closes the measurability gap that would
+       arise from integrating a choice-valued `z ↦ Lchart z`.
+   5b. `regularizedLocalEOW_pairingCLM_of_fixedWindow`: define `K` by the
+       actual cutoff envelope set integral, use `Lchart` only for the
+       finite-seminorm bound, and prove the supported product-test
+       representation by removing `χU`, `χr`, and `χψ`.
    6. `exists_positive_imag_mem_localEOWShiftedWindow_of_norm_lt`: checked;
       supplies the small-shift seed lemma for shifted overlaps.
    7. `regularizedLocalEOW_pairingCLM_localCovariant`: prove
