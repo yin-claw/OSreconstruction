@@ -2785,13 +2785,17 @@ cutoff extension of `(φ, ψ) ↦ ∫ z, G ψ z * φ z` would generally destroy
 theorem remains a consumer of a genuinely global covariant `K`; it should not
 be fed by an arbitrary extension of the local pairing.  The next local theorem
 is the shifted-overlap covariance lemma below, not the full product-kernel
-supplier.
+supplier.  It should live immediately after
+`regularizedLocalEOW_family_from_fixedWindow` in
+`SCV/LocalDistributionalEOW.lean` and use the same fixed-window hypothesis
+prefix as `regularizedLocalEOW_family_add` / `regularizedLocalEOW_family_smul`.
+The kernel-specific tail is:
 
 ```lean
 lemma regularizedLocalEOW_family_chartKernel_covariance_on_shiftedOverlap
     {m : ℕ} {rψ ρ r δ : ℝ}
-    -- fixed-window hypotheses of
-    -- `regularizedLocalEOW_family_from_fixedWindow`
+    -- same fixed-window hypotheses as
+    -- `regularizedLocalEOW_family_from_fixedWindow`, ending with `hminus`
     (hm : 0 < m)
     (x0 : Fin m -> ℝ) (ys : Fin m -> Fin m -> ℝ)
     (hli : LinearIndependent ℝ ys)
@@ -2806,40 +2810,54 @@ lemma regularizedLocalEOW_family_chartKernel_covariance_on_shiftedOverlap
           (SCV.translateSchwartz a φ)) rψ)
     (hpos_overlap :
       ∃ z0,
-        z0 ∈ Metric.ball (0 : ComplexChartSpace m) (δ / 2) ∧
-        z0 - realEmbed a ∈
-          Metric.ball (0 : ComplexChartSpace m) (δ / 2) ∧
+        z0 ∈ localEOWShiftedWindow (m := m) δ a ∧
         (∀ j, 0 < (z0 j).im)) :
     let G : SchwartzMap (Fin m -> ℝ) ℂ -> ComplexChartSpace m -> ℂ :=
       fun ψ =>
         localRudinEnvelope δ x0 ys
           (realMollifyLocal Fplus ψ) (realMollifyLocal Fminus ψ)
     ∀ w,
-      w ∈ Metric.ball (0 : ComplexChartSpace m) (δ / 2) ->
-      w - realEmbed a ∈
-        Metric.ball (0 : ComplexChartSpace m) (δ / 2) ->
+      w ∈ localEOWShiftedWindow (m := m) δ a ->
         G (localEOWRealLinearKernelPushforwardCLM ys hli
             (SCV.translateSchwartz a φ)) w =
           G (localEOWRealLinearKernelPushforwardCLM ys hli φ)
             (w - realEmbed a)
 ```
 
-Proof plan:
+The support hypotheses are intentionally duplicated.  If the caller wants to
+derive the translated-kernel hypothesis from a smaller chart-coordinate radius,
+it should use
+`KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM_translateSchwartz`
+before calling this theorem.  The covariance theorem itself should not pretend
+that translating the kernel preserves the old fixed radius.
+
+Proof plan with exact checked API:
 
 1. Set
-   `V = Metric.ball 0 (δ / 2) ∩ {w | w - realEmbed a ∈ Metric.ball 0 (δ / 2)}`.
-   This is open and convex, hence preconnected.  The `hpos_overlap`
-   hypothesis supplies the identity-theorem seed in the positive orthant.
-2. The left side is holomorphic on `V` by
-   `regularizedLocalEOW_family_from_fixedWindow` applied to the translated
-   pushed kernel and `hφa`.
-3. The right side is holomorphic on `V` by the same family theorem applied to
-   the unshifted pushed kernel and `hφ`, composed with the affine map
-   `w ↦ w - realEmbed a`.
-4. On `V ∩ {w | ∀ j, 0 < (w j).im}`, both sides reduce to the plus side by the
-   family side-agreement clause.  The equality of side mollifiers is exactly
-   `realMollifyLocal_localEOWChart_translate_kernelPushforwardCLM`.
-5. Apply `AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq` on `V`.
+   `V = localEOWShiftedWindow (m := m) δ a`,
+   `ψ0 = localEOWRealLinearKernelPushforwardCLM ys hli φ`, and
+   `ψa = localEOWRealLinearKernelPushforwardCLM ys hli
+     (SCV.translateSchwartz a φ)`.
+2. Obtain `hfamily` by calling
+   `regularizedLocalEOW_family_from_fixedWindow` with the fixed-window data.
+3. The left function `fun w => G ψa w` is differentiable on `V` by restricting
+   `hfamily.1 ψa hφa` from the whole ball, using
+   `localEOWShiftedWindow_mem_left`.
+4. The right function `fun w => G ψ0 (w - realEmbed a)` is differentiable on
+   `V` by composing `hfamily.1 ψ0 hφ` with
+   `fun w => w - realEmbed a`, using
+   `localEOWShiftedWindow_mem_shift`.
+5. Convert both differentiability facts to `AnalyticOnNhd` on `V` with
+   `differentiableOn_analyticAt` and `isOpen_localEOWShiftedWindow`; use
+   `isPreconnected_localEOWShiftedWindow` for the identity theorem.
+6. On a positive-imaginary neighborhood of the supplied `z0`, use
+   `hfamily.2.1 ψa hφa` at `w` and
+   `hfamily.2.1 ψ0 hφ` at `w - realEmbed a`.  The imaginary parts are
+   unchanged by subtracting `realEmbed a`.
+7. The middle equality on that seed is exactly
+   `realMollifyLocal_localEOWChart_translate_kernelPushforwardCLM`
+   applied to `Fplus`.
+8. Apply `AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq` on `V`.
 
 This is a local pointwise covariance theorem.  It is useful for chart
 consistency and for auditing the product-kernel route, but it is not by itself

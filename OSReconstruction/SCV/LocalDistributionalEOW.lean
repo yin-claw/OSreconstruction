@@ -2031,6 +2031,185 @@ theorem regularizedLocalEOW_family_from_fixedWindow
         (hminus_eval ψ hψ) hplus_limit hminus_limit x0 ys hδ hδρ
         hδsum hE_mem hplus hminus).2.2.2.2 H hH_diff hH_plus w hw
 
+/-- Local real-translation covariance of the fixed-window regularized EOW
+family on the honest shifted overlap.
+
+The kernels are first pushed through the local real chart linear part.  The two
+support hypotheses are intentionally explicit: translating the chart kernel
+does not preserve a fixed support radius without a separate radius-enlargement
+argument. -/
+theorem regularizedLocalEOW_family_chartKernel_covariance_on_shiftedOverlap
+    {Cplus Cminus : Set (Fin m → ℝ)} {rψ ρ r δ : ℝ}
+    (hm : 0 < m)
+    (Ωplus Ωminus Dplus Dminus : Set (ComplexChartSpace m))
+    (E : Set (Fin m → ℝ))
+    (hΩplus_open : IsOpen Ωplus) (hΩminus_open : IsOpen Ωminus)
+    (hDplus_open : IsOpen Dplus) (hDminus_open : IsOpen Dminus)
+    (hE_open : IsOpen E)
+    (Fplus Fminus : ComplexChartSpace m → ℂ)
+    (hFplus_diff : DifferentiableOn ℂ Fplus Ωplus)
+    (hFminus_diff : DifferentiableOn ℂ Fminus Ωminus)
+    (hplus_margin :
+      ∀ ψ : SchwartzMap (Fin m → ℝ) ℂ, KernelSupportWithin ψ rψ →
+        ∀ z ∈ Dplus, ∀ t ∈ tsupport (ψ : (Fin m → ℝ) → ℂ),
+          z + realEmbed t ∈ Ωplus)
+    (hminus_margin :
+      ∀ ψ : SchwartzMap (Fin m → ℝ) ℂ, KernelSupportWithin ψ rψ →
+        ∀ z ∈ Dminus, ∀ t ∈ tsupport (ψ : (Fin m → ℝ) → ℂ),
+          z + realEmbed t ∈ Ωminus)
+    (hDplus_sub : Dplus ⊆ TubeDomain Cplus)
+    (hDminus_sub : Dminus ⊆ TubeDomain Cminus)
+    (Tplus Tminus :
+      (Fin m → ℝ) → SchwartzMap (Fin m → ℝ) ℂ →L[ℝ] ℂ)
+    (Tchart : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ)
+    (hplus_eval :
+      ∀ ψ : SchwartzMap (Fin m → ℝ) ℂ, KernelSupportWithin ψ rψ →
+        ∀ w ∈ Dplus,
+          realMollifyLocal Fplus ψ w =
+            Tplus (fun i => (w i).im)
+              (translateSchwartz (fun i => - (w i).re) ψ))
+    (hminus_eval :
+      ∀ ψ : SchwartzMap (Fin m → ℝ) ℂ, KernelSupportWithin ψ rψ →
+        ∀ w ∈ Dminus,
+          realMollifyLocal Fminus ψ w =
+            Tminus (fun i => (w i).im)
+              (translateSchwartz (fun i => - (w i).re) ψ))
+    (hplus_limit :
+      ∀ f : SchwartzMap (Fin m → ℝ) ℂ,
+        Tendsto (fun y => Tplus y f) (nhdsWithin 0 Cplus)
+          (nhds ((Tchart.restrictScalars ℝ) f)))
+    (hminus_limit :
+      ∀ f : SchwartzMap (Fin m → ℝ) ℂ,
+        Tendsto (fun y => Tminus y f) (nhdsWithin 0 Cminus)
+          (nhds ((Tchart.restrictScalars ℝ) f)))
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    (hδ : 0 < δ) (hδρ : δ * 10 ≤ ρ)
+    (hδsum : (Fintype.card (Fin m) : ℝ) * (δ * 10) < r)
+    (hE_mem :
+      ∀ u ∈ Metric.closedBall (0 : Fin m → ℝ) ρ,
+        localEOWRealChart x0 ys u ∈ E)
+    (hplus :
+      ∀ u ∈ Metric.closedBall (0 : Fin m → ℝ) ρ, ∀ v : Fin m → ℝ,
+        (∀ j, 0 ≤ v j) →
+        0 < ∑ j, v j →
+        (∑ j, v j) < r →
+          localEOWChart x0 ys (fun j => (u j : ℂ) + (v j : ℂ) * Complex.I) ∈ Dplus)
+    (hminus :
+      ∀ u ∈ Metric.closedBall (0 : Fin m → ℝ) ρ, ∀ v : Fin m → ℝ,
+        (∀ j, v j ≤ 0) →
+        0 < ∑ j, -v j →
+        (∑ j, -v j) < r →
+          localEOWChart x0 ys (fun j => (u j : ℂ) + (v j : ℂ) * Complex.I) ∈ Dminus)
+    (hli : LinearIndependent ℝ ys)
+    (φ : SchwartzMap (Fin m → ℝ) ℂ)
+    (a : Fin m → ℝ)
+    (hφ :
+      KernelSupportWithin (localEOWRealLinearKernelPushforwardCLM ys hli φ) rψ)
+    (hφa :
+      KernelSupportWithin
+        (localEOWRealLinearKernelPushforwardCLM ys hli (translateSchwartz a φ)) rψ)
+    (hpos_overlap :
+      ∃ z0, z0 ∈ localEOWShiftedWindow (m := m) δ a ∧
+        (∀ j, 0 < (z0 j).im)) :
+    let G : SchwartzMap (Fin m → ℝ) ℂ → ComplexChartSpace m → ℂ :=
+      fun ψ =>
+        localRudinEnvelope δ x0 ys
+          (realMollifyLocal Fplus ψ) (realMollifyLocal Fminus ψ)
+    ∀ w ∈ localEOWShiftedWindow (m := m) δ a,
+      G (localEOWRealLinearKernelPushforwardCLM ys hli (translateSchwartz a φ)) w =
+        G (localEOWRealLinearKernelPushforwardCLM ys hli φ) (w - realEmbed a) := by
+  dsimp only
+  have hfamily :=
+    regularizedLocalEOW_family_from_fixedWindow hm
+      Ωplus Ωminus Dplus Dminus E hΩplus_open hΩminus_open hDplus_open
+      hDminus_open hE_open Fplus Fminus hFplus_diff hFminus_diff
+      hplus_margin hminus_margin hDplus_sub hDminus_sub Tplus Tminus
+      Tchart hplus_eval hminus_eval hplus_limit hminus_limit x0 ys hδ
+      hδρ hδsum hE_mem hplus hminus
+  dsimp only at hfamily
+  let ψ0 : SchwartzMap (Fin m → ℝ) ℂ :=
+    localEOWRealLinearKernelPushforwardCLM ys hli φ
+  let ψa : SchwartzMap (Fin m → ℝ) ℂ :=
+    localEOWRealLinearKernelPushforwardCLM ys hli (translateSchwartz a φ)
+  let G : SchwartzMap (Fin m → ℝ) ℂ → ComplexChartSpace m → ℂ :=
+    fun ψ =>
+      localRudinEnvelope δ x0 ys
+        (realMollifyLocal Fplus ψ) (realMollifyLocal Fminus ψ)
+  have hV_open : IsOpen (localEOWShiftedWindow (m := m) δ a) :=
+    isOpen_localEOWShiftedWindow (m := m) δ a
+  have hV_preconn : IsPreconnected (localEOWShiftedWindow (m := m) δ a) :=
+    isPreconnected_localEOWShiftedWindow (m := m) δ a
+  have hleft_diff : DifferentiableOn ℂ (fun w => G ψa w)
+      (localEOWShiftedWindow (m := m) δ a) := by
+    exact (hfamily.1 ψa hφa).mono fun w hw =>
+      localEOWShiftedWindow_mem_left (m := m) hw
+  have hshift_diff : DifferentiableOn ℂ
+      (fun w : ComplexChartSpace m => w - realEmbed a)
+      (localEOWShiftedWindow (m := m) δ a) :=
+    (differentiable_id.sub (differentiable_const _)).differentiableOn
+  have hright_diff : DifferentiableOn ℂ (fun w => G ψ0 (w - realEmbed a))
+      (localEOWShiftedWindow (m := m) δ a) := by
+    have hGψ0_diff :
+        DifferentiableOn ℂ (G ψ0) (Metric.ball (0 : ComplexChartSpace m) (δ / 2)) := by
+      simpa [G] using hfamily.1 ψ0 hφ
+    change DifferentiableOn ℂ
+      ((G ψ0) ∘ (fun w : ComplexChartSpace m => w - realEmbed a))
+      (localEOWShiftedWindow (m := m) δ a)
+    exact hGψ0_diff.comp hshift_diff fun w hw =>
+      localEOWShiftedWindow_mem_shift (m := m) hw
+  have hleft_anal : AnalyticOnNhd ℂ (fun w => G ψa w)
+      (localEOWShiftedWindow (m := m) δ a) := fun z hz =>
+    SCV.differentiableOn_analyticAt hV_open hleft_diff hz
+  have hright_anal : AnalyticOnNhd ℂ (fun w => G ψ0 (w - realEmbed a))
+      (localEOWShiftedWindow (m := m) δ a) := fun z hz =>
+    SCV.differentiableOn_analyticAt hV_open hright_diff hz
+  rcases hpos_overlap with ⟨z0, hz0V, hz0_pos⟩
+  have hPos_open : IsOpen {w : ComplexChartSpace m | ∀ j, 0 < (w j).im} := by
+    simp only [Set.setOf_forall]
+    exact isOpen_iInter_of_finite fun j =>
+      isOpen_lt continuous_const (Complex.continuous_im.comp (continuous_apply j))
+  have h_eq_near :
+      (fun w => G ψa w) =ᶠ[nhds z0] (fun w => G ψ0 (w - realEmbed a)) := by
+    rw [Filter.eventuallyEq_iff_exists_mem]
+    refine ⟨localEOWShiftedWindow (m := m) δ a ∩
+        {w : ComplexChartSpace m | ∀ j, 0 < (w j).im}, ?_, ?_⟩
+    · exact Filter.inter_mem (hV_open.mem_nhds hz0V)
+        (hPos_open.mem_nhds hz0_pos)
+    · intro z hz
+      have hzV : z ∈ localEOWShiftedWindow (m := m) δ a := hz.1
+      have hz_pos : ∀ j, 0 < (z j).im := hz.2
+      have hz_left :
+          z ∈ Metric.ball (0 : ComplexChartSpace m) (δ / 2) :=
+        localEOWShiftedWindow_mem_left (m := m) hzV
+      have hz_shift :
+          z - realEmbed a ∈ Metric.ball (0 : ComplexChartSpace m) (δ / 2) :=
+        localEOWShiftedWindow_mem_shift (m := m) hzV
+      have hz_shift_pos : ∀ j, 0 < ((z - realEmbed a) j).im := by
+        intro j
+        simpa [realEmbed] using hz_pos j
+      have hψa_plus := hfamily.2.1 ψa hφa z hz_left hz_pos
+      have hψ0_plus := hfamily.2.1 ψ0 hφ (z - realEmbed a) hz_shift hz_shift_pos
+      have hψa_eval :
+          G ψa z = realMollifyLocal Fplus ψa (localEOWChart x0 ys z) := by
+        simpa [G] using hψa_plus.2
+      have hψ0_eval :
+          G ψ0 (z - realEmbed a) =
+            realMollifyLocal Fplus ψ0 (localEOWChart x0 ys (z - realEmbed a)) := by
+        simpa [G] using hψ0_plus.2
+      calc
+        G ψa z = realMollifyLocal Fplus ψa (localEOWChart x0 ys z) := hψa_eval
+        _ = realMollifyLocal Fplus ψ0 (localEOWChart x0 ys (z - realEmbed a)) := by
+          simpa [ψ0, ψa] using
+            realMollifyLocal_localEOWChart_translate_kernelPushforwardCLM
+              (m := m) Fplus x0 ys hli φ a z
+        _ = G ψ0 (z - realEmbed a) := hψ0_eval.symm
+  have hEqOn : Set.EqOn (fun w => G ψa w) (fun w => G ψ0 (w - realEmbed a))
+      (localEOWShiftedWindow (m := m) δ a) :=
+    hleft_anal.eqOn_of_preconnected_of_eventuallyEq
+      hright_anal hV_preconn hz0V h_eq_near
+  intro w hw
+  simpa [G, ψ0, ψa] using hEqOn hw
+
 /-- Additivity of the explicit fixed-window regularized EOW family on the
 supported-kernel class. -/
 theorem regularizedLocalEOW_family_add

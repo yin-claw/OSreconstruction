@@ -1864,7 +1864,7 @@ Implementation-readiness gate for the next Lean stage:
   1. support-radius bookkeeping for translated chart kernels;
   2. the pointwise shifted-overlap covariance theorem for the fixed-window
      family, proved on
-     `Metric.ball 0 (δ / 2) ∩ {w | w - realEmbed a ∈ Metric.ball 0 (δ / 2)}`;
+     `SCV.localEOWShiftedWindow δ a`;
   3. only after that, decide whether the recovery route supplies a global
      covariant `K` from global OS/Wightman translation invariance, or whether
      the checked recovery theorem needs a genuine local-covariance variant.
@@ -1876,6 +1876,15 @@ Implementation-readiness gate for the next Lean stage:
   `SCV.isOpen_localEOWShiftedWindow`,
   `SCV.convex_localEOWShiftedWindow`, and
   `SCV.isPreconnected_localEOWShiftedWindow`.
+  The Lean proof should introduce
+  `ψ0 = localEOWRealLinearKernelPushforwardCLM ys hli φ` and
+  `ψa = localEOWRealLinearKernelPushforwardCLM ys hli
+    (SCV.translateSchwartz a φ)`, obtain `hfamily` from
+  `SCV.regularizedLocalEOW_family_from_fixedWindow`, prove analyticity of
+  `G ψa` and `fun w => G ψ0 (w - realEmbed a)` on the shifted window, identify
+  the two functions on a positive-imaginary seed using
+  `SCV.realMollifyLocal_localEOWChart_translate_kernelPushforwardCLM`, and
+  propagate equality by `AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq`.
 * The next OS-side boundary-value theorem is
   `bvt_boundary_values_uniformOnCompactDirections` in
   `OSToWightmanBoundaryValuesBase.lean`.  It is not in the `BHW` namespace, and
