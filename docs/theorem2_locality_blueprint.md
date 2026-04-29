@@ -1219,35 +1219,47 @@ Proof decomposition of this theorem, without hiding the analytic work:
       chart-kernel theorem consumes the original-family compact value-CLM
       package and proves the chart cutoff removal, pushforward support
       enlargement `‖A‖ * rcut ≤ rψ`, original-edge cutoff removal, and
-      composed finite-seminorm bound explicitly.  Before the mixed pairing CLM
-      itself, Lean must next prove
-      `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`, so the
-      set integral defining `K` is an integral of the actual continuous cutoff
-      envelope and not of an arbitrary choice of `Lchart z`.  The proof doc
-      for this continuity step is now split into the required helper stack.
-      The first checked layer lives in `SCV/VaryingKernelContinuity.lean`:
-      continuity of the cutoff slice, varying-kernel real-mollifier
-      continuity with fixed compact support and an open original side domain,
-      the real-seminorm uniform-on-compact translation estimate controlling
-      both `k,l` and `0,l` seminorms, fixed-support joint continuity of
-      `(z,u) ↦ translateSchwartz (-u) (η z)`, and the
-      varying-kernel Rudin-envelope dominated-continuity theorem.  The scalar
-      evaluation/support theorems for the actual chart-kernel slice are now
-      checked in the same file, as is the boundary-CLM continuity component of
-      the CLM boundary-data derivation.  The remaining proof-doc-ready layer is
-      the side-limit half of that boundary-data theorem, now split into
-      separate plus/minus moving-kernel limit surfaces, the
-      parametric Rudin-integrand bound over `closedBall 0 Rcut` with the inner
-      Rudin side domains separated from the original holomorphy domains, and
-      the final cutoff-envelope continuity theorem.  The
-      boundary limits in that stack cannot be merely fixed-`z` limits: the
-      kernel varies along the approaching Rudin arc.  They are supplied by the
-      checked local BHW/EOW side-value identities, the existing CLM boundary
-      limits, and `SchwartzMap.tempered_apply_tendsto_of_tendsto_filter`; the
+      composed finite-seminorm bound explicitly.  The chart-linear API is part
+      of this gate: `localEOWRealLinearPushforwardCLM_apply`,
+      `KernelSupportWithin.localEOWRealLinearPushforwardCLM`,
+      `localEOWRealLinearKernelPushforwardCLM_apply`, and
+      `KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM` are checked,
+      and the kernel pushforward includes the inverse absolute determinant
+      factor.  The mollifier change-of-variables theorem
+      `realMollifyLocal_localEOWRealLinearKernelPushforwardCLM` rewrites the
+      original-edge mollifier into the chart-coordinate integral, while
+      `realMollifyLocal_localEOWChart_translate_kernelPushforwardCLM` is the
+      translated side-branch identity used by fixed-window covariance.
+
+      Before the mixed pairing CLM itself, Lean must next prove
+      `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`, so the set
+      integral defining `K` is an integral of the actual continuous cutoff
+      envelope and not of an arbitrary choice of `Lchart z`.  The proof doc for
+      this continuity step is now split into an implementation-ready helper
+      stack.  The checked layer in `SCV/VaryingKernelContinuity.lean` contains:
+      continuity of the cutoff slice, varying-kernel real-mollifier continuity
+      with fixed compact support and an open original side domain, the
+      real-seminorm uniform-on-compact translation estimate controlling both
+      `k,l` and `0,l` seminorms, fixed-support joint continuity of
+      `(z,u) ↦ translateSchwartz (-u) (η z)`, the varying-kernel
+      Rudin-envelope dominated-continuity theorem, the scalar
+      evaluation/support theorems for the actual chart-kernel slice, and
+      the boundary-CLM continuity component of the CLM boundary-data theorem.
+      The remaining Lean targets have exact proof transcripts in
+      `docs/scv_infrastructure_blueprint.md`: the plus and minus side-limit
+      theorems
+      `tendsto_localRudinPlusBoundary_varyingKernel_of_clm` and
+      `tendsto_localRudinMinusBoundary_varyingKernel_of_clm`, the bundled
+      `localRudin_varyingKernel_boundaryData_of_clm`, the parametric
+      Rudin-integrand bound over `closedBall 0 Rcut` with the inner Rudin side
+      domains kept separate from the original holomorphy domains, and the final
+      cutoff-envelope continuity theorem.  The boundary limits in that stack
+      cannot be fixed-`z` limits: the kernel varies along the approaching
+      Rudin arc.  The proof combines the checked local BHW/EOW side-value
+      identities, the existing CLM boundary limits, and
+      `SchwartzMap.tempered_apply_tendsto_of_tendsto_filter`; the
       moving-kernel convergence is exactly the fixed-support joint translation
-      helper.  Only after
-      those are checked should Lean
-      introduce
+      helper.  Only after those targets are checked should Lean introduce
       `regularizedLocalEOW_pairingCLM_of_fixedWindow`; it must not revive the
       retired global `regularizedLocalEOW_productKernel_from_continuousEOW`
       surface.  In the final `SCV.local_distributional_edge_of_the_wedge_envelope`
@@ -1710,11 +1722,15 @@ Implementation-readiness gate for the next Lean stage:
   transcripts written out in `docs/scv_infrastructure_blueprint.md`; Lean
   should proceed with the helper extraction order there.  The complex-chart
   cutoff, SCV-local `schwartzPartialEval₁CLM` apply/tensor/seminorm package,
-  and compact `Lorig` value-CLM bound are checked; the remaining helper order
-  is the chart-kernel value-CLM transport and only then the pairing CLM.  The
-  partial-evaluation helper is proved in the SCV layer from
-  `SchwartzMap.compCLM`; importing the Wightman partial-evaluation file would
-  be route drift for this pure-SCV theorem.
+  compact `Lorig` value-CLM bound, chart-kernel value-CLM transport,
+  chart-linear kernel pushforward API, and first varying-kernel continuity
+  layer are checked.  The remaining helper order is now: split the
+  moving-kernel side limits, bundle the CLM boundary data, prove the
+  parametric Rudin-integrand bound, prove
+  `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`, and only then
+  construct the pairing CLM.  The partial-evaluation helper is proved in the
+  SCV layer from `SchwartzMap.compCLM`; importing the Wightman
+  partial-evaluation file would be route drift for this pure-SCV theorem.
 * The next OS-side boundary-value theorem is
   `bvt_boundary_values_uniformOnCompactDirections` in
   `OSToWightmanBoundaryValuesBase.lean`.  It is not in the `BHW` namespace, and

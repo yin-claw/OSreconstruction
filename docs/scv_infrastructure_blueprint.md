@@ -318,7 +318,7 @@ Source ledger for the internal helper list:
 | `localEOW_choose_cone_basis` | Existing `open_set_contains_basis` in `SCV/TubeDomainExtension.lean`. |
 | `localEOWCoefficientSimplex`, `localEOWSimplexDirections`, `isCompact_localEOWCoefficientSimplex`, `isCompact_localEOWSimplexDirections`, `localEOWSimplexDirections_subset_cone`, `localEOW_positive_imag_normalized_mem_simplex` | Checked in `SCV/LocalContinuousEOW.lean`: compact closed coefficient simplex, compact image under the finite-dimensional chart-direction map, convex-combination inclusion in the cone, and normalization of positive imaginary chart directions. |
 | `localEOWRealChart`, `localEOWChart`, `continuous_localEOWRealChart`, `isCompact_localEOWRealChart_image`, `localEOWChart_real_imag`, `localEOWChart_twoSided_polywedge_mem` | Checked in `SCV/LocalContinuousEOW.lean`: public chart notation matching the private `Phi` shape in `TubeDomainExtension.lean`, compactness of real-chart images, decomposition of `localEOWChart x0 ys (u + i v)`, and the direct two-sided local wedge membership theorem in chart coordinates. |
-| `localEOWRealLinearPart`, `localEOWRealChart_eq_x0_add_linearPart`, `localEOWRealChart_sub`, `localEOWRealChart_add`, `localEOWChart_sub_realEmbed`, `localEOWChart_add_realEmbed`, `localEOWRealLinearCLE`, `localEOWRealLinearPullbackCLM`, `KernelSupportWithin.localEOWRealLinearPullbackCLM`, `localEOWRealLinearPushforwardCLM`, `KernelSupportWithin.localEOWRealLinearPushforwardCLM`, `localEOWRealLinearKernelPushforwardCLM`, `KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM`, `localEOWAffineTestPushforwardCLM`, `localEOWAffineDistributionPullbackCLM` | Checked in `SCV/LocalEOWChartLinear.lean`: explicit affine/linear bookkeeping for the local EOW chart.  A coordinate displacement `v` in the Rudin chart moves the original real edge by `localEOWRealLinearPart ys v`, not by `v` unless `ys` is the standard basis.  If `ys` is linearly independent, `localEOWRealLinearCLE ys hli` is the corresponding continuous linear equivalence and `localEOWRealLinearPullbackCLM ys hli ψ u = ψ (localEOWRealLinearPart ys u)` is the checked Schwartz test-function pullback.  Pullback of `KernelSupportWithin ψ r` is supported in radius `‖(localEOWRealLinearCLE ys hli).symm.toContinuousLinearMap‖ * r`.  The chart-to-original pushforward has apply theorem `localEOWRealLinearPushforwardCLM ys hli φ y = φ ((localEOWRealLinearCLE ys hli).symm y)` and transports support to radius `‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖ * r`.  The kernel pushforward `localEOWRealLinearKernelPushforwardCLM` adds the inverse absolute determinant factor `((localEOWRealJacobianAbs ys)⁻¹ : ℂ)` without enlarging support. |
+| `localEOWRealLinearPart`, `localEOWRealChart_eq_x0_add_linearPart`, `localEOWRealChart_sub`, `localEOWRealChart_add`, `localEOWChart_sub_realEmbed`, `localEOWChart_add_realEmbed`, `localEOWRealLinearCLE`, `localEOWRealLinearCLE_apply`, `localEOWRealLinearPullbackCLM`, `localEOWRealLinearPullbackCLM_apply`, `KernelSupportWithin.localEOWRealLinearPullbackCLM`, `localEOWRealLinearPushforwardCLM`, `localEOWRealLinearPushforwardCLM_apply`, `KernelSupportWithin.localEOWRealLinearPushforwardCLM`, `localEOWRealLinearKernelPushforwardCLM`, `localEOWRealLinearKernelPushforwardCLM_apply`, `KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM`, `KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM_translateSchwartz`, `localEOWAffineTestPushforwardCLM`, `localEOWAffineDistributionPullbackCLM` | Checked in `SCV/LocalEOWChartLinear.lean`: explicit affine/linear bookkeeping for the local EOW chart.  A coordinate displacement `v` in the Rudin chart moves the original real edge by `localEOWRealLinearPart ys v`, not by `v` unless `ys` is the standard basis.  If `ys` is linearly independent, `localEOWRealLinearCLE ys hli` is the corresponding continuous linear equivalence and `localEOWRealLinearPullbackCLM ys hli ψ u = ψ (localEOWRealLinearPart ys u)` is the checked Schwartz test-function pullback.  Pullback of `KernelSupportWithin ψ r` is supported in radius `‖(localEOWRealLinearCLE ys hli).symm.toContinuousLinearMap‖ * r`.  The chart-to-original pushforward has apply theorem `localEOWRealLinearPushforwardCLM ys hli φ y = φ ((localEOWRealLinearCLE ys hli).symm y)` and transports support to radius `‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖ * r`.  The Jacobian-normalized kernel pushforward has apply theorem `localEOWRealLinearKernelPushforwardCLM ys hli φ y = ((localEOWRealJacobianAbs ys)⁻¹ : ℂ) * φ ((localEOWRealLinearCLE ys hli).symm y)`; the scalar determinant factor does not enlarge support, and a translated chart kernel has support radius `‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖ * (r + ‖a‖)`. |
 | `localEOW_chart_real_box` | Finite-dimensional topology: open preimage under a linear equivalence contains a small axis box. |
 | `localEOW_chart_positive_polywedge_mem`, `localEOW_chart_negative_polywedge_mem`, `localEOW_chart_twoSided_polywedge_mem` | Checked in `SCV/LocalContinuousEOW.lean`: local replacements for the existing `Phi_pos_in_tube` / `Phi_neg_in_tube` lemmas in `TubeDomainExtension.lean`, using `hlocal_wedge` on the compact real box and compact chart-direction simplex.  The two-sided theorem preserves the single radius supplied by `hlocal_wedge`. |
 | `localEOW_pullback_boundary_value` | Standard distribution pullback under an affine real-linear equivalence with Jacobian. |
@@ -2101,11 +2101,6 @@ overlap.  This is the exact replacement for the current global
       `AnalyticOnNhd.eqOn_zero_of_preconnected_of_frequently_eq_zero` gives
       equality throughout `V`, in particular at `I`.
 
-   The negative theorem is the same proof with the roles of the upper/lower
-   branches swapped: for `∀ j, (ζ j).im < 0`, `L` maps the upper half-plane to
-   the negative side and the lower half-plane to the positive side, so
-   `gp` uses `Fminus` and `gm` uses `Fplus`.
-
    Its Lean surface is:
 
    ```lean
@@ -2136,6 +2131,52 @@ overlap.  This is the exact replacement for the current global
        localRudinEnvelope δ x0 ys Fplus Fminus ζ =
          Fminus (localEOWChart x0 ys ζ)
    ```
+
+   Proof transcript for `localRudinEnvelope_eq_minus_on_negative_ball`:
+
+   1. Define the same line `L z = localEOWLine ζ z`; then `L I = ζ`,
+      `L` is differentiable, `L(t)` is real for real `t`, and `L(0)` remains
+      in the small Rudin ball.  The only sign change is geometric: if
+      `∀ j, (ζ j).im < 0`, then increasing the one-variable imaginary
+      parameter moves the local EOW chart into the negative side, while
+      decreasing it moves the chart into the positive side.
+   2. Define
+      `bv_line t = bv (localEOWRealChart x0 ys
+      (fun j => (L (t : ℂ) j).re))`.  Continuity is identical to the positive
+      theorem's continuity proof: restrict `localEOWLine_re_closedBall_of_norm_le_two`
+      through `hE_mem` and compose `hbv_cont` with the real chart line.
+   3. Define the one-variable upper/lower branches with the swapped side
+      functions:
+      `gp z = if z.im > 0 then Fminus (localEOWChart x0 ys (L z))
+              else bv_line z.re`
+      and
+      `gm z = if z.im < 0 then Fplus (localEOWChart x0 ys (L z))
+              else bv_line z.re`.
+      Holomorphy of the upper branch now uses `hFminus_diff` and
+      `localEOWChart_line_upper_mem_of_delta_of_negative`; holomorphy of the
+      lower branch uses `hFplus_diff` and
+      `localEOWChart_line_lower_mem_of_delta_of_negative`.
+   4. The boundary convergence inputs are also side-swapped.  As `z` approaches
+      the real axis from the upper half-plane, use
+      `tendsto_localEOWLine_upper_to_boundaryValue_of_negative` and
+      `hFminus_bv`; from the lower half-plane, use
+      `tendsto_localEOWLine_lower_to_boundaryValue_of_negative` and
+      `hFplus_bv`.  Both limits have the same real-edge value `bv_line t`.
+   5. Apply `local_edge_of_the_wedge_1d (-2) 2` to these `gp` and `gm`.
+      Since `I.im > 0` and `L I = ζ`, the one-variable extension evaluates at
+      `I` as `Fminus (localEOWChart x0 ys ζ)`.
+   6. For real `t` near `0`, the proof that
+      `localRudinEnvelope δ x0 ys Fplus Fminus (L(t)) = bv_line t` is the
+      same real-axis mean-value calculation as in the positive theorem:
+      `L(t)` is real, remains in `ball 0 (δ/2)`, and the required real-edge
+      path condition is supplied by `localEOWSmp_re_mem_closedBall hδ hδρ`
+      and `hE_mem`.
+   7. On the same preconnected neighborhood
+      `V = L ⁻¹' Metric.ball 0 (δ/2) ∩ U_L`, the analytic functions
+      `localRudinEnvelope ∘ L` and the one-variable EOW extension agree on
+      real points accumulating at `0`; the identity theorem gives equality
+      throughout `V`, and in particular at `I`, proving the displayed
+      negative-side equality.
 
    Proof transcript for `exists_bound_localRudinIntegrand`: reproduce the
    checked `G_bound` block in `TubeDomainExtension.lean` with the local chart
@@ -4921,9 +4962,20 @@ Proof transcript for the next target:
       translated kernels tend by the just-proved `hbv_cont`, composed with the
       continuous real-sample map.  Then
       `SchwartzMap.tempered_apply_tendsto_of_tendsto_filter` combines
-      `hplus_limit` with this moving-kernel convergence.  The negative branch
-      is the same argument with `hminus_eval`, `hminus_limit`, and
-      `hDminus_sub`.
+      `hplus_limit` with this moving-kernel convergence.  For the negative
+      side-limit, use the lower filter
+      `(Z ×ˢ sphere 0 1) ∩ {p | p.2.im < 0}`.  The identity
+      `hminus_eval (η z) (hη_support z hz)` rewrites the mollifier to
+      `Tminus (im sample) (translateSchwartz (-realSample) (η z))`; the
+      imaginary part tends to `nhdsWithin 0 Cminus` because
+      `localEOWChart_smp_lower_mem_of_delta_on_sphere` puts `sample` in
+      `Dminus` and `hDminus_sub` maps `Dminus` into `TubeDomain Cminus`;
+      the translated-kernel convergence is the same already checked
+      `hbv_cont` composition with `realSample`; and
+      `SchwartzMap.tempered_apply_tendsto_of_tendsto_filter` combines
+      `hminus_limit` with that kernel convergence.  The two split theorem
+      statements below record these plus and minus proofs without relying on a
+      symmetry shortcut.
 
       For implementation, split the two side-limit components out before
       proving the bundled `localRudin_varyingKernel_boundaryData_of_clm`:
@@ -4990,41 +5042,152 @@ Proof transcript for the next target:
                       (η z0))))
 
       theorem tendsto_localRudinMinusBoundary_varyingKernel_of_clm
-          -- identical statement with `Cminus`, `Dminus`, `Fminus`,
-          -- `Tminus`, `hminus_eval`, `hminus_limit`,
-          -- `{p | p.2.im < 0}`, and the lower side geometry `hminus`.
+          {Cminus : Set (Fin m -> ℝ)} {δ ρ r rψLarge : ℝ}
+          (hm : 0 < m)
+          (Dminus : Set (ComplexChartSpace m))
+          (E : Set (Fin m -> ℝ)) (Z : Set (ComplexChartSpace m))
+          (Fminus : ComplexChartSpace m -> ℂ)
+          (hDminus_sub : Dminus ⊆ TubeDomain Cminus)
+          (Tminus :
+            (Fin m -> ℝ) ->
+              SchwartzMap (Fin m -> ℝ) ℂ ->L[ℝ] ℂ)
+          (Tchart : SchwartzMap (Fin m -> ℝ) ℂ ->L[ℂ] ℂ)
+          (hminus_eval :
+            ∀ ψ : SchwartzMap (Fin m -> ℝ) ℂ,
+              KernelSupportWithin ψ rψLarge ->
+              ∀ w ∈ Dminus,
+                realMollifyLocal Fminus ψ w =
+                  Tminus (fun i => (w i).im)
+                    (translateSchwartz (fun i => - (w i).re) ψ))
+          (hminus_limit :
+            ∀ f : SchwartzMap (Fin m -> ℝ) ℂ,
+              Tendsto (fun y => Tminus y f) (nhdsWithin 0 Cminus)
+                (nhds ((Tchart.restrictScalars ℝ) f)))
+          (x0 : Fin m -> ℝ) (ys : Fin m -> Fin m -> ℝ)
+          (hδ : 0 < δ) (hδρ : δ * 10 ≤ ρ)
+          (hδsum : (Fintype.card (Fin m) : ℝ) * (δ * 10) < r)
+          (η : ComplexChartSpace m -> SchwartzMap (Fin m -> ℝ) ℂ)
+          (hZ_ball :
+            Z ⊆ Metric.ball (0 : ComplexChartSpace m) (δ / 2))
+          (hη_support : ∀ z ∈ Z, KernelSupportWithin (η z) rψLarge)
+          (hbv_cont :
+            ContinuousOn
+              (fun p : ComplexChartSpace m × (Fin m -> ℝ) =>
+                Tchart (translateSchwartz (-p.2) (η p.1)))
+              (Z ×ˢ E))
+          (hE_mem :
+            ∀ u ∈ Metric.closedBall (0 : Fin m -> ℝ) ρ,
+              localEOWRealChart x0 ys u ∈ E)
+          (hminus :
+            ∀ u ∈ Metric.closedBall (0 : Fin m -> ℝ) ρ,
+            ∀ v : Fin m -> ℝ,
+              (∀ j, v j ≤ 0) ->
+              0 < ∑ j, -v j ->
+              (∑ j, -v j) < r ->
+                localEOWChart x0 ys
+                  (fun j => (u j : ℂ) + (v j : ℂ) * Complex.I) ∈ Dminus) :
+          ∀ z0 ∈ Z, ∀ l0 ∈ Metric.sphere (0 : ℂ) 1,
+            l0.im = 0 ->
+              Filter.Tendsto
+                (fun p : ComplexChartSpace m × ℂ =>
+                  realMollifyLocal Fminus (η p.1)
+                    (localEOWChart x0 ys (localEOWSmp δ p.1 p.2)))
+                (nhdsWithin (z0, l0)
+                  ((Z ×ˢ Metric.sphere (0 : ℂ) 1) ∩
+                    {p : ComplexChartSpace m × ℂ | p.2.im < 0}))
+                (nhds
+                  (Tchart
+                    (translateSchwartz
+                      (-(localEOWRealChart x0 ys
+                        (fun j => (localEOWSmp δ z0 l0 j).re)))
+                      (η z0))))
       ```
 
-      Lean proof of the plus theorem.  Let
+      Lean proof of the plus theorem.  Fix `z0 ∈ Z`, `l0 ∈ sphere 0 1`,
+      and `hreal : l0.im = 0`.  Let
       `S = Z ×ˢ Metric.sphere (0 : ℂ) 1`,
       `sample p = localEOWChart x0 ys (localEOWSmp δ p.1 p.2)`, and
       `realSample p = localEOWRealChart x0 ys
-        (fun j => (localEOWSmp δ p.1 p.2 j).re)`.  Copy the checked
-      `smp_cont`, `chart_smp_cont`, and `real_chart_smp_cont` construction
-      from `exists_bound_localRudinIntegrand`, restricted from
-      `closedBall 0 (δ/2) × closedBall 0 1` to `S`; `hZ_ball` supplies the
-      closed-ball membership for the first coordinate.  At the endpoint,
-      `Metric.sphere` gives `‖l0‖ = 1`, hence `Complex.normSq l0 = 1`, and
-      with `l0.im = 0`,
-      `localEOWChart_smp_realEdge_eq_of_unit_real` rewrites
-      `sample (z0,l0) = realEmbed (realSample (z0,l0))`.
+        (fun j => (localEOWSmp δ p.1 p.2 j).re)`.  The needed continuity
+      facts are local `have`s, not new public wrappers:
+      - `hsmp_cont`: continuity of
+        `p ↦ localEOWSmp δ p.1 p.2` on
+        `(Metric.closedBall 0 (δ/2)) ×ˢ Metric.closedBall 0 1`, copied from
+        the checked construction in `exists_bound_localRudinIntegrand`;
+      - `hsample_cont`: continuity of `sample` on `S`, obtained by composing
+        `hsmp_cont` with `continuous_localEOWChart x0 ys` and restricting by
+        `hZ_ball` and `Metric.sphere_subset_closedBall`;
+      - `hrealSample_cont`: continuity of `realSample` on `S`, obtained by
+        composing `hsmp_cont`, coordinatewise `Complex.continuous_re`, and
+        `continuous_localEOWRealChart x0 ys`.
 
-      The imaginary-sample map tends to `nhdsWithin 0 Cplus`: it is continuous,
-      its endpoint value is zero by the real-edge rewrite, and on the positive
-      side `localEOWChart_smp_upper_mem_of_delta_on_sphere` gives
-      `sample p ∈ Dplus`, hence `fun i => (sample p i).im ∈ Cplus` by
-      `hDplus_sub`.  The kernel map tends by composing `hbv_cont` with the
-      continuous map `p ↦ (p.1, realSample p)`; membership in `Z ×ˢ E` follows
-      from the filter domain and from `hE_mem (localEOWSmp_re_mem_closedBall
-      hδ hδρ ...)`.  Now use
-      `SchwartzMap.tempered_apply_tendsto_of_tendsto_filter` with
-      `hplus_limit.comp him_tendsto` and this kernel convergence.  Finally
-      use `Filter.Tendsto.congr'` and `hplus_eval (η p.1)` on the positive
-      side, where `hη_support p.1 hp.1` and
-      `localEOWChart_smp_upper_mem_of_delta_on_sphere` discharge the support
-      and side-domain hypotheses.  The minus theorem is the same proof with
-      the sign of the imaginary part reversed and
-      `localEOWChart_smp_lower_mem_of_delta_on_sphere`.
+      Endpoint algebra is fixed.  From `l0 ∈ sphere 0 1`,
+      get `‖l0‖ = 1` and `Complex.normSq l0 = 1`; with `hreal`,
+      `localEOWChart_smp_realEdge_eq_of_unit_real x0 ys` gives
+      ```
+      sample (z0,l0) = realEmbed (realSample (z0,l0)).
+      ```
+      Therefore `fun i => (sample (z0,l0) i).im = 0`.
+
+      The imaginary-sample map tends to `nhdsWithin 0 Cplus`.  Let
+      `imSample p = fun i => (sample p i).im`.  Its continuity follows from
+      `hsample_cont` and coordinatewise imaginary-part continuity, its endpoint
+      is `0` by the real-edge rewrite, and it maps the positive side
+      `(S ∩ {p | 0 < p.2.im})` into `Cplus`: for
+      `p = (z,l)` in that side, `hZ_ball z hz` gives
+      `z ∈ closedBall 0 (δ/2)`, the sphere hypothesis gives `‖l‖ = 1`, and
+      `localEOWChart_smp_upper_mem_of_delta_on_sphere hm Dplus x0 ys
+      hδ hδρ hδsum hplus` gives `sample p ∈ Dplus`; then
+      `hDplus_sub` unfolds `TubeDomain Cplus` to obtain `imSample p ∈ Cplus`.
+
+      The moving-kernel boundary branch tends to the target by composing
+      `hbv_cont` with
+      ```
+      realParam p = (p.1, realSample p).
+      ```
+      The map `realParam` is continuous within the positive-side filter by
+      `hrealSample_cont`.  It maps the positive-side filter into `Z ×ˢ E`:
+      `p.1 ∈ Z` comes from `S`, and
+      `realSample p ∈ E` follows from
+      `localEOWSmp_re_mem_closedBall hδ hδρ` plus `hE_mem`; the closed-ball
+      input to `localEOWSmp_re_mem_closedBall` is again supplied by
+      `hZ_ball` and `Metric.ball_subset_closedBall`.  Hence
+      `hbv_cont.tendsto_nhdsWithin` yields
+      ```
+      Tendsto
+        (fun p => Tchart (translateSchwartz (-(realSample p)) (η p.1)))
+        (nhdsWithin (z0,l0) (S ∩ {p | 0 < p.2.im}))
+        (nhds (Tchart (translateSchwartz (-(realSample (z0,l0))) (η z0)))).
+      ```
+
+      Pointwise CLM convergence is
+      `hplus_limit.comp himSample_tendsto`.  Apply
+      `SchwartzMap.tempered_apply_tendsto_of_tendsto_filter` with that CLM
+      convergence and the moving-kernel convergence to get convergence of
+      ```
+      Tplus (imSample p)
+        (translateSchwartz (-(realSample p)) (η p.1)).
+      ```
+      Finally use `Filter.Tendsto.congr'` on the positive-side filter.  For
+      every eventually sampled `p = (z,l)`, `hplus_eval (η z)
+      (hη_support z hz)` rewrites
+      `realMollifyLocal Fplus (η z) (sample p)` to the displayed `Tplus`
+      expression because `sample p ∈ Dplus`, proved above by
+      `localEOWChart_smp_upper_mem_of_delta_on_sphere`.
+
+      Lean proof of the minus theorem.  Use the same definitions `S`,
+      `sample`, `realSample`, and `imSample`, the same continuity facts, and
+      the same endpoint rewrite.  The map-to-cone proof uses the negative side
+      `(S ∩ {p | p.2.im < 0})`: for `p = (z,l)` in that side,
+      `localEOWChart_smp_lower_mem_of_delta_on_sphere hm Dminus x0 ys
+      hδ hδρ hδsum hminus` gives `sample p ∈ Dminus`, and `hDminus_sub`
+      gives `imSample p ∈ Cminus`.  Compose `hminus_limit` with this
+      `nhdsWithin 0 Cminus` convergence, reuse the same moving-kernel
+      convergence from `hbv_cont`, apply
+      `SchwartzMap.tempered_apply_tendsto_of_tendsto_filter`, and finish by
+      `Filter.Tendsto.congr'` using
+      `hminus_eval (η z) (hη_support z hz)` and the lower-side domain
+      membership just proved.
 
       The same three-way `ContinuousWithinAt.union` patching argument as in
       the checked bound theorem gives `ContinuousOn H S`.  Since
