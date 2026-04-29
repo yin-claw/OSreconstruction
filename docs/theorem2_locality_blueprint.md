@@ -1024,9 +1024,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
 
    1. Derive `hm : 0 < m` from `hC_ne` and `hC_not_zero`.  Then choose a
       single global basis `ys : Fin m -> Fin m -> ℝ` with
-      `LinearIndependent ℝ ys` and `∀ j, ys j ∈ C` by
-      `SCV.localEOW_choose_cone_basis hm C hC_open hC_ne`.  Keep `ys` fixed
-      for every chart in the rest of the proof.
+      `∀ j, ys j ∈ C` and `LinearIndependent ℝ ys` by the checked
+      `SCV.open_set_contains_basis hm C hC_open hC_ne`.  Keep `ys` fixed for
+      every chart in the rest of the proof; do not introduce a production
+      wrapper just to rename this existing theorem.
    2. For each compact real set `K ⊆ E` and compact direction set `Kη ⊆ C`,
       use `hlocal_wedge` to get a radius `r > 0` so the truncated wedges
       `x ± i εη`, `x ∈ K`, `η ∈ Kη`, `0 < ε < r`, lie in `Ωplus/Ωminus`.
