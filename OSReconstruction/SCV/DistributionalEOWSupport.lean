@@ -205,6 +205,99 @@ theorem SupportsInOpen.smulLeftCLM_eq_of_eq_one_on
       simpa [Function.mem_support] using hz_support
     simp [hφz]
 
+/-- A locally continuous coefficient times a Schwartz test supported in the
+local domain is globally continuous.  Outside the declared domain the test is
+eventually zero, so no regularity of the coefficient is used there. -/
+theorem continuous_mul_of_continuousOn_supportsInOpen
+    {U : Set (ComplexChartSpace m)}
+    (hU_open : IsOpen U)
+    (G : ComplexChartSpace m → ℂ)
+    (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+    (hG : ContinuousOn G U)
+    (hφ : SupportsInOpen (φ : ComplexChartSpace m → ℂ) U) :
+    Continuous (fun z : ComplexChartSpace m => G z * φ z) := by
+  let f : ComplexChartSpace m → ℂ := fun z => G z * φ z
+  rw [continuous_iff_continuousAt]
+  intro z
+  by_cases hzU : z ∈ U
+  · have hGz : ContinuousAt G z :=
+      hG.continuousAt (hU_open.mem_nhds hzU)
+    simpa [f] using hGz.mul φ.continuous.continuousAt
+  · have hz_tsupport : z ∉ tsupport (φ : ComplexChartSpace m → ℂ) := by
+      intro hzφ
+      exact hzU (hφ.2 hzφ)
+    have hφ_zero :
+        (φ : ComplexChartSpace m → ℂ) =ᶠ[nhds z] fun _ => 0 := by
+      rwa [notMem_tsupport_iff_eventuallyEq] at hz_tsupport
+    have hf_zero : f =ᶠ[nhds z] fun _ => 0 := by
+      filter_upwards [hφ_zero] with y hy
+      simp [f, hy]
+    exact hf_zero.continuousAt
+
+/-- A locally continuous coefficient can be paired over all space with a
+Schwartz test whose topological support is compactly contained in the local
+domain. -/
+theorem integrable_mul_of_continuousOn_supportsInOpen
+    {U : Set (ComplexChartSpace m)}
+    (hU_open : IsOpen U)
+    (G : ComplexChartSpace m → ℂ)
+    (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+    (hG : ContinuousOn G U)
+    (hφ : SupportsInOpen (φ : ComplexChartSpace m → ℂ) U) :
+    Integrable (fun z : ComplexChartSpace m => G z * φ z) := by
+  let f : ComplexChartSpace m → ℂ := fun z => G z * φ z
+  have hf_cont : Continuous f := by
+    simpa [f] using
+      continuous_mul_of_continuousOn_supportsInOpen hU_open G φ hG hφ
+  have hf_support_subset :
+      Function.support f ⊆ Function.support (φ : ComplexChartSpace m → ℂ) := by
+    intro z hz
+    by_contra hzφ
+    have hφz : φ z = 0 := by
+      simpa [Function.mem_support] using hzφ
+    have hfz : f z = 0 := by
+      simp [f, hφz]
+    exact hz (by simp [hfz])
+  have hf_compact : HasCompactSupport f := by
+    rw [HasCompactSupport]
+    refine hφ.1.of_isClosed_subset isClosed_closure ?_
+    exact
+      closure_minimal
+        (fun z hz => subset_tsupport _ (hf_support_subset hz))
+        (isClosed_tsupport _)
+  exact hf_cont.integrable_of_hasCompactSupport hf_compact
+
+/-- If the support window for a locally continuous coefficient/test product is
+inside a closed ball, the closed-ball integral is the all-space integral. -/
+theorem closedBall_setIntegral_mul_eq_integral_of_supportsInOpen
+    {U : Set (ComplexChartSpace m)} {Rcut : ℝ}
+    (hU_open : IsOpen U)
+    (hU_closedBall :
+      U ⊆ Metric.closedBall (0 : ComplexChartSpace m) Rcut)
+    (G : ComplexChartSpace m → ℂ)
+    (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+    (hG : ContinuousOn G U)
+    (hφ : SupportsInOpen (φ : ComplexChartSpace m → ℂ) U) :
+    (∫ z in Metric.closedBall (0 : ComplexChartSpace m) Rcut, G z * φ z) =
+      ∫ z : ComplexChartSpace m, G z * φ z := by
+  have _ : Integrable (fun z : ComplexChartSpace m => G z * φ z) :=
+    integrable_mul_of_continuousOn_supportsInOpen hU_open G φ hG hφ
+  let s : Set (ComplexChartSpace m) :=
+    Metric.closedBall (0 : ComplexChartSpace m) Rcut
+  have hzero :
+      ∀ z : ComplexChartSpace m, z ∉ s → G z * φ z = 0 := by
+    intro z hz
+    have hz_tsupport : z ∉ tsupport (φ : ComplexChartSpace m → ℂ) := by
+      intro hzφ
+      exact hz (hU_closedBall (hφ.2 hzφ))
+    have hφz : φ z = 0 := by
+      have hz_support : z ∉ Function.support (φ : ComplexChartSpace m → ℂ) := by
+        intro hsupp
+        exact hz_tsupport (subset_closure hsupp)
+      simpa [Function.mem_support] using hz_support
+    simp [hφz]
+  exact MeasureTheory.setIntegral_eq_integral_of_forall_compl_eq_zero hzero
+
 /-- Integration over a real closed ball against a continuous-on-the-ball
 coefficient is a continuous linear functional on Schwartz kernels. -/
 theorem exists_closedBall_integral_clm_of_continuousOn

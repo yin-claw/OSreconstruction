@@ -1334,15 +1334,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
       derives `hkernel_cont`, returns scalar `hbv_cont`, and packages the two
       side limits.  The final cutoff-envelope continuity theorem
       `SCV.continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand` is now
-      checked too.  The remaining proof-doc gate before Lean implementation is
-      the mixed pairing CLM route itself: first add the local support-integral
-      helper surfaces named above, then construct
-      `regularizedLocalEOW_pairingCLM_of_fixedWindow` by the actual
-      closed-ball cutoff-envelope integral and the explicit
-      `SchwartzMap.mkCLMtoNormedSpace` estimate.  That estimate uses the
-      finite-seminorm data from `hLchart_bound`, composes it with
-      `schwartzPartialEval₁CLM_compactSeminormBound`, bounds `χU` only on
-      `closedBall 0 Rcut`, and multiplies by
+      checked too.  The support-integral helper surfaces named above are now
+      checked in `SCV/DistributionalEOWSupport.lean`, and the mixed pairing
+      CLM is checked in `SCV/LocalEOWPairingCLM.lean` as
+      `SCV.regularizedLocalEOW_pairingCLM_of_fixedWindow`.  It is constructed
+      by the actual closed-ball cutoff-envelope integral and the explicit
+      `SchwartzMap.mkCLMtoNormedSpace` estimate: use the finite-seminorm data
+      from `hLchart_bound`, compose it with
+      `schwartzPartialEval₁CLM_compactSeminormBound`, bound `χU` only on
+      `closedBall 0 Rcut`, and multiply by
       `(volume (Metric.closedBall 0 Rcut)).toReal`; no support hypothesis on
       `χU` is part of this theorem.
       The checked parametric bound theorem only uses continuity of

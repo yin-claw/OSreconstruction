@@ -1,0 +1,487 @@
+/-
+Copyright (c) 2026 ModularPhysics Contributors.
+Released under Apache 2.0 license.
+Authors: ModularPhysics Contributors
+-/
+import OSReconstruction.SCV.DistributionalEOWSupport
+import OSReconstruction.SCV.VaryingKernelContinuity
+
+/-!
+# Mixed Pairing CLM for Local Distributional EOW
+
+This file contains the local product-kernel pairing construction used by the
+Streater-Wightman/Jost regularization route.  The construction integrates the
+actual cutoff envelope on a compact chart ball, using the chart-kernel value
+CLM only for linearity and finite-seminorm bounds.
+-/
+
+noncomputable section
+
+open Complex MeasureTheory Topology Metric Set Filter
+
+namespace SCV
+
+variable {m : ℕ}
+
+/-- Build the mixed Schwartz continuous linear functional for the fixed local
+EOW window once the chart-kernel value CLM and the actual cutoff-envelope
+continuity theorem are available. -/
+theorem regularizedLocalEOW_pairingCLM_of_fixedWindow
+    (ys : Fin m → Fin m → ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (δ Rcov Rcut r : ℝ)
+    (hRcov_pos : 0 < Rcov) (hRcov_cut : Rcov < Rcut)
+    (hRcut_window :
+      Metric.closedBall (0 : ComplexChartSpace m) Rcut ⊆
+        Metric.ball (0 : ComplexChartSpace m) (δ / 2))
+    (χU : SchwartzMap (ComplexChartSpace m) ℂ)
+    (χr χψ : SchwartzMap (Fin m → ℝ) ℂ)
+    (hχU_one :
+      ∀ z ∈ Metric.closedBall (0 : ComplexChartSpace m) Rcov,
+        χU z = 1)
+    (Gorig : SchwartzMap (Fin m → ℝ) ℂ →
+      ComplexChartSpace m → ℂ)
+    (Lchart : ComplexChartSpace m →
+      SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ)
+    (hLchart_cutoff :
+      ∀ z ∈ Metric.closedBall (0 : ComplexChartSpace m) Rcut,
+      ∀ ψ : SchwartzMap (Fin m → ℝ) ℂ,
+        Lchart z ψ =
+          Gorig
+            (SchwartzMap.smulLeftCLM ℂ
+              (χψ : (Fin m → ℝ) → ℂ)
+              (localEOWRealLinearKernelPushforwardCLM ys hli
+                (SchwartzMap.smulLeftCLM ℂ
+                  (χr : (Fin m → ℝ) → ℂ) ψ))) z)
+    (hLchart_value :
+      ∀ z ∈ Metric.closedBall (0 : ComplexChartSpace m) Rcut,
+      ∀ ψ : SchwartzMap (Fin m → ℝ) ℂ,
+        KernelSupportWithin ψ r →
+          Lchart z ψ =
+            Gorig (localEOWRealLinearKernelPushforwardCLM ys hli ψ) z)
+    (hLchart_bound :
+      ∃ s : Finset (ℕ × ℕ), ∃ C : ℝ, 0 ≤ C ∧
+        ∀ z ∈ Metric.closedBall (0 : ComplexChartSpace m) Rcut,
+        ∀ ψ : SchwartzMap (Fin m → ℝ) ℂ,
+          ‖Lchart z ψ‖ ≤
+            C * s.sup
+              (schwartzSeminormFamily ℂ (Fin m → ℝ) ℂ) ψ)
+    (hcont_integrand :
+      ∀ F : SchwartzMap
+          (ComplexChartSpace m × (Fin m → ℝ)) ℂ,
+        ContinuousOn
+          (fun z : ComplexChartSpace m =>
+            χU z *
+              Gorig
+                (SchwartzMap.smulLeftCLM ℂ
+                  (χψ : (Fin m → ℝ) → ℂ)
+                  (localEOWRealLinearKernelPushforwardCLM ys hli
+                    (SchwartzMap.smulLeftCLM ℂ
+                      (χr : (Fin m → ℝ) → ℂ)
+                      (schwartzPartialEval₁CLM z F)))) z)
+          (Metric.closedBall (0 : ComplexChartSpace m) Rcut))
+    (hG_holo :
+      ∀ ψ : SchwartzMap (Fin m → ℝ) ℂ,
+        KernelSupportWithin ψ r →
+          DifferentiableOn ℂ
+            (Gorig (localEOWRealLinearKernelPushforwardCLM ys hli ψ))
+            (Metric.ball (0 : ComplexChartSpace m) (δ / 2))) :
+    let Ucov := Metric.ball (0 : ComplexChartSpace m) Rcov
+    let Gchart : SchwartzMap (Fin m → ℝ) ℂ →
+        ComplexChartSpace m → ℂ :=
+      fun ψ => Gorig (localEOWRealLinearKernelPushforwardCLM ys hli ψ)
+    ∃ K : SchwartzMap (ComplexChartSpace m × (Fin m → ℝ)) ℂ →L[ℂ] ℂ,
+      (∀ ψ, KernelSupportWithin ψ r →
+        DifferentiableOn ℂ (Gchart ψ)
+          (Metric.ball (0 : ComplexChartSpace m) (δ / 2))) ∧
+      (∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (ψ : SchwartzMap (Fin m → ℝ) ℂ),
+        SupportsInOpen (φ : ComplexChartSpace m → ℂ) Ucov →
+        KernelSupportWithin ψ r →
+          K (schwartzTensorProduct₂ φ ψ) =
+            ∫ z : ComplexChartSpace m, Gchart ψ z * φ z) := by
+  classical
+  let D := Fin m → ℝ
+  let X := ComplexChartSpace m
+  let P : SchwartzMap D ℂ →L[ℂ] SchwartzMap D ℂ :=
+    localEOWRealLinearKernelPushforwardCLM ys hli
+  let sball : Set X := Metric.closedBall (0 : X) Rcut
+  let pMixed :=
+    schwartzSeminormFamily ℂ (ComplexChartSpace m × (Fin m → ℝ)) ℂ
+  let A : SchwartzMap (ComplexChartSpace m × (Fin m → ℝ)) ℂ → ℂ := fun F =>
+    ∫ z in sball,
+      χU z *
+        Gorig
+          (SchwartzMap.smulLeftCLM ℂ
+            (χψ : D → ℂ)
+            (P (SchwartzMap.smulLeftCLM ℂ
+              (χr : D → ℂ) (schwartzPartialEval₁CLM z F)))) z
+  have hs_compact : IsCompact sball := by
+    simpa [sball, X] using
+      (isCompact_closedBall (0 : ComplexChartSpace m) Rcut)
+  have hs_meas : MeasurableSet sball := hs_compact.measurableSet
+  have hs_fin : volume sball < ⊤ := by
+    simpa [sball, X] using
+      (measure_closedBall_lt_top
+        (x := (0 : ComplexChartSpace m)) (r := Rcut))
+  have hA_integrable :
+      ∀ F : SchwartzMap (ComplexChartSpace m × (Fin m → ℝ)) ℂ,
+        Integrable
+          (fun z : X =>
+            χU z *
+              Gorig
+                (SchwartzMap.smulLeftCLM ℂ
+                  (χψ : D → ℂ)
+                  (P (SchwartzMap.smulLeftCLM ℂ
+                    (χr : D → ℂ) (schwartzPartialEval₁CLM z F)))) z)
+          (volume.restrict sball) := by
+    intro F
+    exact ContinuousOn.integrableOn_compact hs_compact
+      (by simpa [sball, X, D, P] using hcont_integrand F)
+  have hadd :
+      ∀ F H : SchwartzMap (ComplexChartSpace m × (Fin m → ℝ)) ℂ,
+        A (F + H) = A F + A H := by
+    intro F H
+    have hpoint :
+        EqOn
+          (fun z : X =>
+            χU z *
+              Gorig
+                (SchwartzMap.smulLeftCLM ℂ
+                  (χψ : D → ℂ)
+                  (P (SchwartzMap.smulLeftCLM ℂ
+                    (χr : D → ℂ)
+                    (schwartzPartialEval₁CLM z (F + H))))) z)
+          (fun z : X =>
+            χU z *
+              Gorig
+                (SchwartzMap.smulLeftCLM ℂ
+                  (χψ : D → ℂ)
+                  (P (SchwartzMap.smulLeftCLM ℂ
+                    (χr : D → ℂ) (schwartzPartialEval₁CLM z F)))) z +
+            χU z *
+              Gorig
+                (SchwartzMap.smulLeftCLM ℂ
+                  (χψ : D → ℂ)
+                  (P (SchwartzMap.smulLeftCLM ℂ
+                    (χr : D → ℂ) (schwartzPartialEval₁CLM z H)))) z)
+          sball := by
+      intro z hz
+      calc
+        χU z *
+            Gorig
+              (SchwartzMap.smulLeftCLM ℂ
+                (χψ : D → ℂ)
+                (P (SchwartzMap.smulLeftCLM ℂ
+                  (χr : D → ℂ)
+                  (schwartzPartialEval₁CLM z (F + H))))) z
+            =
+          χU z * Lchart z (schwartzPartialEval₁CLM z (F + H)) := by
+            rw [hLchart_cutoff z (by simpa [sball, X] using hz)]
+        _ =
+          χU z *
+            (Lchart z (schwartzPartialEval₁CLM z F) +
+              Lchart z (schwartzPartialEval₁CLM z H)) := by
+            simp
+        _ =
+          χU z * Lchart z (schwartzPartialEval₁CLM z F) +
+            χU z * Lchart z (schwartzPartialEval₁CLM z H) := by
+            ring
+        _ =
+          χU z *
+              Gorig
+                (SchwartzMap.smulLeftCLM ℂ
+                  (χψ : D → ℂ)
+                  (P (SchwartzMap.smulLeftCLM ℂ
+                    (χr : D → ℂ) (schwartzPartialEval₁CLM z F)))) z +
+            χU z *
+              Gorig
+                (SchwartzMap.smulLeftCLM ℂ
+                  (χψ : D → ℂ)
+                  (P (SchwartzMap.smulLeftCLM ℂ
+                    (χr : D → ℂ) (schwartzPartialEval₁CLM z H)))) z := by
+            rw [hLchart_cutoff z (by simpa [sball, X] using hz)
+                (schwartzPartialEval₁CLM z F)]
+            rw [hLchart_cutoff z (by simpa [sball, X] using hz)
+                (schwartzPartialEval₁CLM z H)]
+    calc
+      A (F + H)
+          =
+        ∫ z in sball,
+          (χU z *
+            Gorig
+              (SchwartzMap.smulLeftCLM ℂ
+                (χψ : D → ℂ)
+                (P (SchwartzMap.smulLeftCLM ℂ
+                  (χr : D → ℂ) (schwartzPartialEval₁CLM z F)))) z +
+          χU z *
+            Gorig
+              (SchwartzMap.smulLeftCLM ℂ
+                (χψ : D → ℂ)
+                (P (SchwartzMap.smulLeftCLM ℂ
+                  (χr : D → ℂ) (schwartzPartialEval₁CLM z H)))) z) := by
+          apply MeasureTheory.setIntegral_congr_fun hs_meas hpoint
+      _ = A F + A H := by
+          simpa [A] using
+            (MeasureTheory.integral_add
+              (μ := volume.restrict sball)
+              (f := fun z : X =>
+                χU z *
+                  Gorig
+                    (SchwartzMap.smulLeftCLM ℂ
+                      (χψ : D → ℂ)
+                      (P (SchwartzMap.smulLeftCLM ℂ
+                        (χr : D → ℂ) (schwartzPartialEval₁CLM z F)))) z)
+              (g := fun z : X =>
+                χU z *
+                  Gorig
+                    (SchwartzMap.smulLeftCLM ℂ
+                      (χψ : D → ℂ)
+                      (P (SchwartzMap.smulLeftCLM ℂ
+                        (χr : D → ℂ) (schwartzPartialEval₁CLM z H)))) z)
+              (hA_integrable F) (hA_integrable H))
+  have hsmul :
+      ∀ (c : ℂ) (F : SchwartzMap (ComplexChartSpace m × (Fin m → ℝ)) ℂ),
+        A (c • F) = c • A F := by
+    intro c F
+    have hpoint :
+        EqOn
+          (fun z : X =>
+            χU z *
+              Gorig
+                (SchwartzMap.smulLeftCLM ℂ
+                  (χψ : D → ℂ)
+                  (P (SchwartzMap.smulLeftCLM ℂ
+                    (χr : D → ℂ)
+                    (schwartzPartialEval₁CLM z (c • F))))) z)
+          (fun z : X =>
+            c *
+              (χU z *
+                Gorig
+                  (SchwartzMap.smulLeftCLM ℂ
+                    (χψ : D → ℂ)
+                    (P (SchwartzMap.smulLeftCLM ℂ
+                      (χr : D → ℂ) (schwartzPartialEval₁CLM z F)))) z))
+          sball := by
+      intro z hz
+      calc
+        χU z *
+            Gorig
+              (SchwartzMap.smulLeftCLM ℂ
+                (χψ : D → ℂ)
+                (P (SchwartzMap.smulLeftCLM ℂ
+                  (χr : D → ℂ)
+                  (schwartzPartialEval₁CLM z (c • F))))) z
+            =
+          χU z * Lchart z (schwartzPartialEval₁CLM z (c • F)) := by
+            rw [hLchart_cutoff z (by simpa [sball, X] using hz)]
+        _ = χU z * (c * Lchart z (schwartzPartialEval₁CLM z F)) := by
+            simp [smul_eq_mul]
+        _ = c *
+            (χU z *
+              Gorig
+                (SchwartzMap.smulLeftCLM ℂ
+                  (χψ : D → ℂ)
+                  (P (SchwartzMap.smulLeftCLM ℂ
+                    (χr : D → ℂ) (schwartzPartialEval₁CLM z F)))) z) := by
+            rw [hLchart_cutoff z (by simpa [sball, X] using hz)
+                (schwartzPartialEval₁CLM z F)]
+            ring
+    calc
+      A (c • F)
+          =
+        ∫ z in sball,
+          c *
+            (χU z *
+              Gorig
+                (SchwartzMap.smulLeftCLM ℂ
+                  (χψ : D → ℂ)
+                  (P (SchwartzMap.smulLeftCLM ℂ
+                    (χr : D → ℂ) (schwartzPartialEval₁CLM z F)))) z) := by
+          apply MeasureTheory.setIntegral_congr_fun hs_meas hpoint
+      _ = c • A F := by
+          simpa [A, smul_eq_mul] using
+            (MeasureTheory.integral_const_mul
+              (μ := volume.restrict sball) c
+              (fun z : X =>
+                χU z *
+                  Gorig
+                    (SchwartzMap.smulLeftCLM ℂ
+                      (χψ : D → ℂ)
+                      (P (SchwartzMap.smulLeftCLM ℂ
+                        (χr : D → ℂ) (schwartzPartialEval₁CLM z F)))) z))
+  have hbound_exists :
+      ∃ s : Finset (ℕ × ℕ), ∃ C : ℝ, 0 ≤ C ∧
+        ∀ F : SchwartzMap (ComplexChartSpace m × (Fin m → ℝ)) ℂ,
+          ‖A F‖ ≤ C * s.sup pMixed F := by
+    rcases hLchart_bound with ⟨sL, CL, hCL, hLbound⟩
+    have hRcut_nonneg : 0 ≤ Rcut := by
+      exact le_of_lt (lt_trans hRcov_pos hRcov_cut)
+    obtain ⟨sPE, CPE, hCPE, hPE⟩ :=
+      schwartzPartialEval₁CLM_compactSeminormBound (m := m)
+        Rcut hRcut_nonneg sL
+    obtain ⟨M, hM⟩ :=
+      hs_compact.exists_bound_of_continuousOn
+        (f := fun z : X => ‖χU z‖)
+        (by simpa [sball, X] using
+          ((continuous_norm.comp χU.continuous).continuousOn))
+    let Mχ : ℝ := max M 0
+    have hMχ_nonneg : 0 ≤ Mχ := by
+      simp [Mχ]
+    let Cpoint : ℝ := Mχ * CL * CPE
+    let Cfinal : ℝ := Cpoint * (volume sball).toReal
+    refine ⟨sPE, Cfinal, ?_, ?_⟩
+    · exact mul_nonneg
+        (mul_nonneg (mul_nonneg hMχ_nonneg hCL) hCPE)
+        ENNReal.toReal_nonneg
+    · intro F
+      have hsup_nonneg : 0 ≤ sPE.sup pMixed F := apply_nonneg _ _
+      have hpoint_bound :
+          ∀ z ∈ sball,
+            ‖χU z *
+              Gorig
+                (SchwartzMap.smulLeftCLM ℂ
+                  (χψ : D → ℂ)
+                  (P (SchwartzMap.smulLeftCLM ℂ
+                    (χr : D → ℂ) (schwartzPartialEval₁CLM z F)))) z‖
+              ≤ Cpoint * sPE.sup pMixed F := by
+        intro z hz
+        have hχ_bound : ‖χU z‖ ≤ Mχ := by
+          have hMz : ‖χU z‖ ≤ M := by
+            simpa [Real.norm_eq_abs, abs_of_nonneg (norm_nonneg (χU z))]
+              using hM z hz
+          exact hMz.trans (le_max_left M 0)
+        have hcut :
+            Gorig
+              (SchwartzMap.smulLeftCLM ℂ
+                (χψ : D → ℂ)
+                (P (SchwartzMap.smulLeftCLM ℂ
+                  (χr : D → ℂ) (schwartzPartialEval₁CLM z F)))) z =
+              Lchart z (schwartzPartialEval₁CLM z F) := by
+          exact (hLchart_cutoff z (by simpa [sball, X] using hz)
+            (schwartzPartialEval₁CLM z F)).symm
+        have hL :
+            ‖Lchart z (schwartzPartialEval₁CLM z F)‖ ≤
+              CL * sL.sup (schwartzSeminormFamily ℂ D ℂ)
+                (schwartzPartialEval₁CLM z F) :=
+          hLbound z (by simpa [sball, X] using hz) (schwartzPartialEval₁CLM z F)
+        have hPE' :
+            sL.sup (schwartzSeminormFamily ℂ D ℂ)
+                (schwartzPartialEval₁CLM z F) ≤
+              CPE * sPE.sup pMixed F := by
+          simpa [D, X, pMixed] using hPE z
+            (by simpa [sball, X] using hz) F
+        have hLmix :
+            ‖Lchart z (schwartzPartialEval₁CLM z F)‖ ≤
+              (CL * CPE) * sPE.sup pMixed F := by
+          calc
+            ‖Lchart z (schwartzPartialEval₁CLM z F)‖
+                ≤ CL *
+                    sL.sup (schwartzSeminormFamily ℂ D ℂ)
+                      (schwartzPartialEval₁CLM z F) := hL
+            _ ≤ CL * (CPE * sPE.sup pMixed F) := by
+                exact mul_le_mul_of_nonneg_left hPE' hCL
+            _ = (CL * CPE) * sPE.sup pMixed F := by ring
+        calc
+          ‖χU z *
+              Gorig
+                (SchwartzMap.smulLeftCLM ℂ
+                  (χψ : D → ℂ)
+                  (P (SchwartzMap.smulLeftCLM ℂ
+                    (χr : D → ℂ) (schwartzPartialEval₁CLM z F)))) z‖
+              = ‖χU z‖ * ‖Lchart z (schwartzPartialEval₁CLM z F)‖ := by
+                rw [hcut, norm_mul]
+          _ ≤ Mχ * ((CL * CPE) * sPE.sup pMixed F) := by
+              exact mul_le_mul hχ_bound hLmix
+                (norm_nonneg _) hMχ_nonneg
+          _ = Cpoint * sPE.sup pMixed F := by
+              ring
+      calc
+        ‖A F‖
+            ≤ (Cpoint * sPE.sup pMixed F) * (volume sball).toReal := by
+              simpa [A, Cpoint] using
+                (MeasureTheory.norm_setIntegral_le_of_norm_le_const
+                  (μ := volume) hs_fin hpoint_bound)
+        _ = Cfinal * sPE.sup pMixed F := by
+            ring
+  let K : SchwartzMap (ComplexChartSpace m × (Fin m → ℝ)) ℂ →L[ℂ] ℂ :=
+    SchwartzMap.mkCLMtoNormedSpace (𝕜 := ℂ) A hadd hsmul hbound_exists
+  let Ucov : Set (ComplexChartSpace m) :=
+    Metric.ball (0 : ComplexChartSpace m) Rcov
+  let Gchart : SchwartzMap (Fin m → ℝ) ℂ → ComplexChartSpace m → ℂ :=
+    fun ψ => Gorig (P ψ)
+  refine ⟨K, ?_, ?_⟩
+  · intro ψ hψ
+    simpa [Gchart, P] using hG_holo ψ hψ
+  · intro φ ψ hφ hψ
+    have hUcov_open : IsOpen Ucov := by
+      change IsOpen (Metric.ball (0 : ComplexChartSpace m) Rcov)
+      exact Metric.isOpen_ball
+    have hUcov_closedBall : Ucov ⊆ sball := by
+      intro z hz
+      have hz_closed :
+          z ∈ Metric.closedBall (0 : ComplexChartSpace m) Rcov :=
+        Metric.ball_subset_closedBall hz
+      exact
+        (Metric.closedBall_subset_closedBall (le_of_lt hRcov_cut) hz_closed)
+    have hUcov_window :
+        Ucov ⊆ Metric.ball (0 : ComplexChartSpace m) (δ / 2) := by
+      intro z hz
+      exact hRcut_window (by simpa [sball, X] using hUcov_closedBall hz)
+    have hG_cont : ContinuousOn (Gchart ψ) Ucov := by
+      have hdiff :
+          DifferentiableOn ℂ (Gchart ψ)
+            (Metric.ball (0 : ComplexChartSpace m) (δ / 2)) := by
+        simpa [Gchart, P] using hG_holo ψ hψ
+      exact hdiff.continuousOn.mono hUcov_window
+    have hpure_set :
+        A (schwartzTensorProduct₂ φ ψ) =
+          ∫ z in sball, Gchart ψ z * φ z := by
+      apply MeasureTheory.setIntegral_congr_fun hs_meas
+      intro z hz
+      calc
+        χU z *
+            Gorig
+              (SchwartzMap.smulLeftCLM ℂ
+                (χψ : D → ℂ)
+                (P (SchwartzMap.smulLeftCLM ℂ
+                  (χr : D → ℂ)
+                  (schwartzPartialEval₁CLM z
+                    (schwartzTensorProduct₂ φ ψ))))) z
+            =
+          χU z * Lchart z
+            (schwartzPartialEval₁CLM z (schwartzTensorProduct₂ φ ψ)) := by
+            rw [hLchart_cutoff z (by simpa [sball, X] using hz)]
+        _ = χU z * Lchart z (φ z • ψ) := by
+            rw [schwartzPartialEval₁CLM_tensorProduct₂]
+        _ = Gchart ψ z * φ z := by
+            by_cases hzφ : z ∈ tsupport (φ : ComplexChartSpace m → ℂ)
+            · have hχ : χU z = 1 := by
+                exact hχU_one z (Metric.ball_subset_closedBall (hφ.2 hzφ))
+              have hLval : Lchart z ψ = Gchart ψ z := by
+                simpa [Gchart, P] using
+                  hLchart_value z (by simpa [sball, X] using hz) ψ hψ
+              rw [map_smul, hχ, hLval]
+              simp [smul_eq_mul]
+              ring
+            · have hφz : φ z = 0 := by
+                have hz_support :
+                    z ∉ Function.support
+                      (φ : ComplexChartSpace m → ℂ) := by
+                  intro hsupp
+                  exact hzφ (subset_closure hsupp)
+                simpa [Function.mem_support] using hz_support
+              simp [hφz]
+    have hset_all :
+        (∫ z in sball, Gchart ψ z * φ z) =
+          ∫ z : ComplexChartSpace m, Gchart ψ z * φ z := by
+      simpa [Ucov, sball, Gchart, P] using
+        closedBall_setIntegral_mul_eq_integral_of_supportsInOpen
+          (m := m) hUcov_open hUcov_closedBall (Gchart ψ) φ hG_cont hφ
+    calc
+      K (schwartzTensorProduct₂ φ ψ)
+          = A (schwartzTensorProduct₂ φ ψ) := rfl
+      _ = ∫ z in sball, Gchart ψ z * φ z := hpure_set
+      _ = ∫ z : ComplexChartSpace m, Gchart ψ z * φ z := hset_all
+
+end SCV

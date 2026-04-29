@@ -5581,27 +5581,16 @@ Proof transcript for the next target:
    theorem regularizedLocalEOW_pairingCLM_of_fixedWindow
        (ys : Fin m -> Fin m -> ℝ)
        (hli : LinearIndependent ℝ ys)
-       (δ Rcov Rcut r rcut rψ : ℝ)
+       (δ Rcov Rcut r : ℝ)
        (hRcov_pos : 0 < Rcov) (hRcov_cut : Rcov < Rcut)
        (hRcut_window :
          Metric.closedBall (0 : ComplexChartSpace m) Rcut ⊆
            Metric.ball (0 : ComplexChartSpace m) (δ / 2))
-       (hr : 0 < r) (hrcut : r < rcut)
-       (hAcut_le :
-         ‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖ *
-             rcut ≤ rψ)
        (χU : SchwartzMap (ComplexChartSpace m) ℂ)
        (χr χψ : SchwartzMap (Fin m -> ℝ) ℂ)
        (hχU_one :
          ∀ z ∈ Metric.closedBall (0 : ComplexChartSpace m) Rcov,
            χU z = 1)
-       (hχr_one :
-         ∀ t ∈ Metric.closedBall (0 : Fin m -> ℝ) r, χr t = 1)
-       (hχr_support :
-         tsupport (χr : (Fin m -> ℝ) -> ℂ) ⊆
-           Metric.closedBall 0 rcut)
-       (hχψ_one :
-         ∀ t ∈ Metric.closedBall (0 : Fin m -> ℝ) rψ, χψ t = 1)
        (Gorig : SchwartzMap (Fin m -> ℝ) ℂ ->
          ComplexChartSpace m -> ℂ)
        (Lchart : ComplexChartSpace m ->
@@ -5657,19 +5646,19 @@ Proof transcript for the next target:
          (∀ ψ, KernelSupportWithin ψ r ->
            DifferentiableOn ℂ (Gchart ψ)
              (Metric.ball (0 : ComplexChartSpace m) (δ / 2))) ∧
-         (∀ φ ψ,
+         (∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+             (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
            SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Ucov ->
            KernelSupportWithin ψ r ->
              K (schwartzTensorProduct₂ φ ψ) =
                ∫ z : ComplexChartSpace m, Gchart ψ z * φ z)
    ```
 
-   Before Lean implements the pairing theorem, the support/integral passage
-   must be available as explicit local infrastructure.  These helpers are not
-   wrappers around the pairing theorem: they are the missing analytic facts
-   that let a locally continuous coefficient be paired with a compactly
-   supported Schwartz test without assuming global regularity of the
-   coefficient.
+   The support/integral passage is now checked as explicit local
+   infrastructure in `SCV/DistributionalEOWSupport.lean`.  These helpers are
+   not wrappers around the pairing theorem: they are the analytic facts that
+   let a locally continuous coefficient be paired with a compactly supported
+   Schwartz test without assuming global regularity of the coefficient.
 
    ```lean
    theorem continuous_mul_of_continuousOn_supportsInOpen
@@ -5763,6 +5752,11 @@ Proof transcript for the next target:
       pushforward is supported in `closedBall 0 rψ`, the original-edge cutoff
       is removed by the same theorem, and
       `Lchart z ψ = Gchart ψ z`.
+      The downstream pairing theorem consumes only the resulting
+      `hLchart_cutoff`, `hLchart_value`, and `hLchart_bound` facts.  The
+      radii `rcut`, `rψ`, and the cutoff-removal hypotheses for `χr`/`χψ`
+      belong to this value-CLM step and should not be repeated as unused
+      assumptions on `regularizedLocalEOW_pairingCLM_of_fixedWindow`.
    4. Build the mixed CLM by the explicit slice formula
       ```lean
       K F =
@@ -7095,16 +7089,15 @@ Proof transcript for the next target:
        must be varying-kernel CLM limits, proved with
        `SchwartzMap.tempered_apply_tendsto_of_tendsto_filter`, not merely
        fixed-kernel boundary limits.
-   5b. `regularizedLocalEOW_pairingCLM_of_fixedWindow`: define `K` by the
-       actual cutoff envelope set integral, use `Lchart` only for the
-       finite-seminorm bound, and prove the supported product-test
-       representation by removing `χU`, `χr`, and `χψ`.  Before this theorem
-       is ported, add the local support-integral helpers
+   5b. `regularizedLocalEOW_pairingCLM_of_fixedWindow`: checked in
+       `SCV/LocalEOWPairingCLM.lean`.  It defines `K` by the actual cutoff
+       envelope set integral, uses `Lchart` only for linearity and the
+       finite-seminorm bound, and proves the supported product-test
+       representation by removing the chart cutoff on `tsupport φ` and using
+       the checked local support-integral helpers
        `continuous_mul_of_continuousOn_supportsInOpen`,
        `integrable_mul_of_continuousOn_supportsInOpen`, and
-       `closedBall_setIntegral_mul_eq_integral_of_supportsInOpen`; they are
-       the exact bridge from local continuity on `Ucov` and
-       `tsupport φ ⊆ Ucov` to the all-space product-test integral.
+       `closedBall_setIntegral_mul_eq_integral_of_supportsInOpen`.
    6. `exists_positive_imag_mem_localEOWShiftedWindow_of_norm_lt`: checked;
       supplies the small-shift seed lemma for shifted overlaps.
    6b. `norm_realEmbed_eq`: checked in
@@ -15575,16 +15568,14 @@ This SCV blueprint should be considered ready only when:
 
 After the local/global covariance audit, the next recovery theorem is
 implementation-ready only in the local-descent order specified in Section 2.4.
-The first Lean target is the local support-integral helper package
+The local support-integral helper package
 `continuous_mul_of_continuousOn_supportsInOpen`,
 `integrable_mul_of_continuousOn_supportsInOpen`, and
-`closedBall_setIntegral_mul_eq_integral_of_supportsInOpen`, followed
-immediately by `regularizedLocalEOW_pairingCLM_of_fixedWindow`.  The pairing
-CLM is also preceded by the listed cutoff, partial-evaluation,
-chart-kernel value-CLM, cutoff-envelope continuity, and compact-uniform
-seminorm helpers.  The retired global-covariance surface
-`regularizedLocalEOW_productKernel_from_continuousEOW` must not be used as the
-next target.
+`closedBall_setIntegral_mul_eq_integral_of_supportsInOpen` is checked, and so
+is `regularizedLocalEOW_pairingCLM_of_fixedWindow` in the new small companion
+file `SCV/LocalEOWPairingCLM.lean`.  The retired global-covariance surface
+`regularizedLocalEOW_productKernel_from_continuousEOW` must not be used as a
+future target.
 
 The checked substrate remains as follows.  The first Lean file is
 `SCV/DistributionalEOWKernel.lean`; it
