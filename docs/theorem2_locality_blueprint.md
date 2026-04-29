@@ -1029,6 +1029,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
      `SCV.tsupport_localEOWAffineTestPushforwardCLM_subset`,
      `SCV.localEOWAffineTestPushforwardCLM_apply_realChart`,
      `SCV.integral_localEOWAffineTestPushforwardCLM_changeOfVariables`,
+     `SCV.tendstoUniformlyOn_const_comp_of_tendsto_of_eventually_mem`,
+     `SCV.coordSum_tendsto_positiveOrthant_nhdsWithin_Ioi`,
+     `SCV.coordNegSum_tendsto_negativeOrthant_nhdsWithin_Ioi`,
+     `SCV.localEOWChart_real_add_imag`,
      `SCV.chartOrthantBoundaryValue_from_uniformConeBoundaryValue`,
      `SCV.chartHolomorphy_from_originalHolomorphy`,
      `SCV.chartDistributionalEOW_local_envelope`, and
@@ -1040,7 +1044,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
      `s = ∑ j, -y j` and
      `η = s⁻¹ • localEOWRealLinearPart ys (-y)`.  The latter gives
      `localEOWRealLinearPart ys y = -s • η`, so it consumes exactly the final
-     `Fminus (x - εη i)` hypothesis.
+     `Fminus (x - εη i)` hypothesis.  The proof uses uniform convergence on
+     `localEOWSimplexDirections ys` through the generic helper
+     `tendstoUniformlyOn_const_comp_of_tendsto_of_eventually_mem`; this is
+     important because the normalized direction may vary with `y` and has no
+     single limit.  The coordinate sums tend to `0` within `Set.Ioi 0` by
+     `coordSum_tendsto_positiveOrthant_nhdsWithin_Ioi` and
+     `coordNegSum_tendsto_negativeOrthant_nhdsWithin_Ioi`, and
+     `localEOWChart_real_add_imag` performs the final chart-to-original
+     imaginary-coordinate rewrite.
    * The distribution in chart coordinates is not `T`; it is
      `localEOWAffineDistributionPullbackCLM x0 ys hli T`, and the smoothing
      kernels used in the regularized family are pushed to the original edge by

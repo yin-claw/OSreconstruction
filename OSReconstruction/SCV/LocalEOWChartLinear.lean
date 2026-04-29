@@ -638,6 +638,90 @@ theorem integral_localEOWAffineTestPushforwardCLM_changeOfVariables
           filter_upwards with u
           exact hrhs u
 
+/-- Compose a uniform-on-set limit to a constant with a parameter tending in
+the index filter and a point that remains in the uniformity set. -/
+theorem tendstoUniformlyOn_const_comp_of_tendsto_of_eventually_mem
+    {ι α β γ : Type*} [PseudoMetricSpace β]
+    {F : ι → α → β} {c : β}
+    {l : Filter ι} {q : Filter γ} {s : Set α}
+    {a : γ → ι} {b : γ → α}
+    (hF : TendstoUniformlyOn F (fun _ : α => c) l s)
+    (ha : Filter.Tendsto a q l)
+    (hb : ∀ᶠ x in q, b x ∈ s) :
+    Filter.Tendsto (fun x => F (a x) (b x)) q (nhds c) := by
+  rw [Metric.tendsto_nhds]
+  intro ε hε
+  have hε_event :
+      ∀ᶠ i in l, ∀ z ∈ s, dist ((fun _ : α => c) z) (F i z) < ε :=
+    (Metric.tendstoUniformlyOn_iff.mp hF) ε hε
+  have hε_event' :
+      ∀ᶠ x in q, ∀ z ∈ s, dist c (F (a x) z) < ε :=
+    ha.eventually hε_event
+  filter_upwards [hε_event', hb] with x hx hbx
+  simpa [dist_comm] using hx (b x) hbx
+
+/-- The coordinate sum tends to zero through positive reals on the strict
+positive orthant. -/
+theorem coordSum_tendsto_positiveOrthant_nhdsWithin_Ioi
+    {m : ℕ} (hm : 0 < m) :
+    Filter.Tendsto
+      (fun y : Fin m → ℝ => ∑ j, y j)
+      (nhdsWithin 0 {y : Fin m → ℝ | ∀ j, 0 < y j})
+      (nhdsWithin 0 (Set.Ioi 0)) := by
+  rw [tendsto_nhdsWithin_iff]
+  constructor
+  · have hcont : Continuous (fun y : Fin m → ℝ => ∑ j, y j) := by
+      fun_prop
+    have h0 : (∑ j, (0 : Fin m → ℝ) j) = 0 := by simp
+    simpa [h0] using
+      (hcont.tendsto (0 : Fin m → ℝ)).mono_left inf_le_left
+  · haveI : Nonempty (Fin m) := Fin.pos_iff_nonempty.mp hm
+    filter_upwards [self_mem_nhdsWithin] with y hy
+    exact Finset.sum_pos (fun j _hj => hy j) Finset.univ_nonempty
+
+/-- The negated coordinate sum tends to zero through positive reals on the
+strict negative orthant. -/
+theorem coordNegSum_tendsto_negativeOrthant_nhdsWithin_Ioi
+    {m : ℕ} (hm : 0 < m) :
+    Filter.Tendsto
+      (fun y : Fin m → ℝ => ∑ j, -y j)
+      (nhdsWithin 0 {y : Fin m → ℝ | ∀ j, y j < 0})
+      (nhdsWithin 0 (Set.Ioi 0)) := by
+  rw [tendsto_nhdsWithin_iff]
+  constructor
+  · have hcont : Continuous (fun y : Fin m → ℝ => ∑ j, -y j) := by
+      fun_prop
+    have h0 : (∑ j, -(0 : Fin m → ℝ) j) = 0 := by simp
+    simpa [h0] using
+      (hcont.tendsto (0 : Fin m → ℝ)).mono_left inf_le_left
+  · haveI : Nonempty (Fin m) := Fin.pos_iff_nonempty.mp hm
+    filter_upwards [self_mem_nhdsWithin] with y hy
+    exact Finset.sum_pos (fun j _hj => neg_pos.mpr (hy j))
+      Finset.univ_nonempty
+
+/-- Decompose a complex chart point with real part `u` and imaginary chart
+coordinate `y` into the real chart plus the chart-linear imaginary part. -/
+theorem localEOWChart_real_add_imag
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    (u y : Fin m → ℝ) :
+    localEOWChart x0 ys
+        (fun j => (u j : ℂ) + (y j : ℂ) * Complex.I) =
+      fun a =>
+        (localEOWRealChart x0 ys u a : ℂ) +
+          (localEOWRealLinearPart ys y a : ℂ) * Complex.I := by
+  ext a
+  simp [localEOWChart, localEOWRealChart, localEOWRealLinearPart,
+    add_mul, Finset.sum_add_distrib]
+  have hI :
+      (∑ x, (y x : ℂ) * I * (ys x a : ℂ)) =
+        (∑ x, (y x : ℂ) * (ys x a : ℂ)) * I := by
+    rw [Finset.sum_mul]
+    apply Finset.sum_congr rfl
+    intro x _hx
+    ring
+  rw [hI]
+  ring
+
 /-- Real-coordinate translation in the local chart corresponds to translation
 by the chart's linear part on the original real edge. -/
 theorem localEOWRealChart_sub
