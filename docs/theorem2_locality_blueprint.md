@@ -1766,6 +1766,13 @@ Implementation-readiness gate for the next Lean stage:
   follow those theorem names and proof dependencies literally; it must not
   invent a `SchwartzMap`-valued Bochner average, a global covariance quotient,
   or a new density/quotient axiom while filling this step.
+  File ownership is also fixed: the next local descent implementation belongs
+  in a companion file after `SCV/LocalProductDescent.lean` rather than growing
+  that near-threshold substrate file.  The right mixed-fiber
+  change-of-variables identity is the affine map `a ↦ t - a`; in Lean it is
+  decomposed as `integral_neg_eq_self` followed by
+  `integral_add_right_eq_self`, since `integral_sub_right_eq_self` alone has
+  the opposite sign convention.
 * Do **not** add another distributional EOW axiom or wrapper.  The checked SCV
   global recovery endpoint
   `SCV.regularizedEnvelope_chartEnvelope_from_productKernel` remains available

@@ -6158,12 +6158,13 @@ Proof transcript for the next target:
          ∀ z ∈ Udesc, ∀ t : Fin m -> ℝ, ‖t‖ ≤ r + rη ->
            z + realEmbed t ∈ Ucov)
        (hcov : ProductKernelRealTranslationCovariantLocal K Ucov (r + rη)) :
-       ∃ Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ,
-         ∀ φ ψ,
-           SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Udesc ->
-           KernelSupportWithin ψ r ->
-             K (schwartzTensorProduct₂ φ ψ) =
-               Hdist (realConvolutionTest φ ψ)
+      ∃ Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ,
+        ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+          SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Udesc ->
+          KernelSupportWithin ψ r ->
+            K (schwartzTensorProduct₂ φ ψ) =
+              Hdist (realConvolutionTest φ ψ)
    ```
 
    Proof transcript for local descent:
@@ -6752,6 +6753,19 @@ Proof transcript for the next target:
       directly by singleton constants and handles `0 < m` by transporting the
       positive flat theorem through `mixedBaseFiberFlatCLE`.
 
+      File-ownership lock for the remaining local descent work: the checked
+      substrate currently ends in `OSReconstruction/SCV/LocalProductDescent.lean`.
+      That file is close to the hard split threshold, so the next Lean stage
+      must go into a companion file, e.g.
+      `OSReconstruction/SCV/LocalProductDescentIntegrals.lean`, importing
+      `OSReconstruction.SCV.LocalProductDescent`.  `OSReconstruction/SCV.lean`
+      should import the companion immediately after `LocalProductDescent`.
+      The companion owns exactly the Step 4 mixed-fiber change-of-variables
+      identities, the three partial-evaluation identities, the scalarized local
+      quotient, and `translationCovariantProductKernel_descends_local`.
+      `LocalProductDescent.lean` stays the sorry-free substrate of dense
+      split tensors, scalarization, and parameter-test constructors.
+
    4. Prove
       the two parameterized Schwartz tests and their mixed-fiber integrals:
       ```lean
@@ -6906,8 +6920,7 @@ Proof transcript for the next target:
       using the measure-preserving affine map `u = t - a` and `hη_norm`.
       No density or quotient theorem is used in these two identities; they are
       direct scalar change-of-variables calculations.
-      The right identity should use
-      `MeasureTheory.integral_sub_right_eq_self`; the left identity should use
+      The left identity should use
       `MeasureTheory.integral_add_right_eq_self` after rewriting with
       `b = t + a`.  Concretely, in the left calculation first rewrite
       `φ (z - realEmbed a)` as
@@ -6916,9 +6929,19 @@ Proof transcript for the next target:
       `fun b => φ (z + realEmbed t - realEmbed b) * ψ b`; after that pull the
       fixed scalar `η t` by `integral_const_mul` or `integral_mul_const` to
       match the chosen parenthesization.  In the right calculation pull
-      `φ z * ψ t` out of the integral, use
-      `integral_sub_right_eq_self` on `fun u => η u`, and close with
-      `hη_norm`.  The needed integrability is supplied by the
+      `φ z * ψ t` out of the integral, then prove
+      `∫ a, η (t - a) = ∫ u, η u` by the exact Lean chain
+      ```
+      ∫ a, η (t - a)
+        = ∫ a, η (t + a)      -- `integral_neg_eq_self`, with `a ↦ -a`
+        = ∫ a, η (a + t)      -- pointwise `add_comm`
+        = ∫ a, η a            -- `integral_add_right_eq_self`
+      ```
+      and close with `hη_norm`.  A direct call to
+      `integral_sub_right_eq_self` proves invariance for `a ↦ η (a - t)`,
+      which has the wrong sign for the checked convention
+      `translateSchwartz a ψ x = ψ (x + a)`.
+      The needed integrability is supplied by the
       `mixedRealFiberIntegralCLM_apply`/`integrable_mixedRealFiber`
       infrastructure, not reproved ad hoc inside the algebra proof.
 
@@ -6982,7 +7005,11 @@ Proof transcript for the next target:
       The middle theorem is pure extensionality:
       both sides evaluate to `η (x - a) * ψ x`.  It is the support theorem
       needed to see that the translated right kernel is supported where `ψ`
-      is supported.
+      is supported.  Keep `κ a` as the displayed local abbreviation unless the
+      proof script genuinely benefits from a private helper; a public
+      production wrapper for `κ` is not needed because the mathematical
+      content is the partial-evaluation and translated-support identities
+      above.
       The theorems from Step 4 give
       `K (mixedRealFiberIntegralCLM A) = Hdist (realConvolutionTest φ ψ)` and
       `K (mixedRealFiberIntegralCLM B) = K (schwartzTensorProduct₂ φ ψ)`.
@@ -7045,9 +7072,11 @@ Proof transcript for the next target:
       If `κ a = 0`, the covariance identity for that parameter is trivial.
       Otherwise choose `t` with `κ a t ≠ 0`; then
       `t ∈ Function.support (κ a : P -> ℂ) ⊆ tsupport (κ a)`.  The checked
-      `SchwartzMap.tsupport_smulLeftCLM_subset` gives
-      `t ∈ tsupport η` and
-      `t ∈ tsupport (translateSchwartz a ψ)`, and
+      `SchwartzMap.tsupport_smulLeftCLM_subset` gives, for
+      `κ a = SchwartzMap.smulLeftCLM ℂ (η : P -> ℂ)
+        (translateSchwartz a ψ)`,
+      `.1 : t ∈ tsupport (translateSchwartz a ψ : P -> ℂ)` and
+      `.2 : t ∈ tsupport (η : P -> ℂ)`.  Then
       `tsupport_comp_subset_preimage` for the real translation gives
       `t + a ∈ tsupport ψ`.  Therefore
       `‖a‖ = ‖(t + a) - t‖ ≤ r + rη`.  This bound gives:
@@ -7093,10 +7122,10 @@ Proof transcript for the next target:
         `KernelSupportWithin.smulLeftCLM` on `hψ` to get radius `r`, and
         enlarge by `KernelSupportWithin.mono` and `r ≤ r+rη`.
       The bound `‖a‖ ≤ r+rη` itself comes from a point
-      `t` with `κ a t ≠ 0`: the support of `κ a` lies in both `tsupport η`
-      and `tsupport (translateSchwartz a ψ)`, while
-      `tsupport_comp_subset_preimage` for the real translation sends the
-      latter to `t+a ∈ tsupport ψ`; hence
+      `t` with `κ a t ≠ 0`: `.2` of
+      `SchwartzMap.tsupport_smulLeftCLM_subset` and `hη_support` give
+      `‖t‖ ≤ rη`; `.1` plus `tsupport_comp_subset_preimage` and `hψ` give
+      `‖t+a‖ ≤ r`; hence
       `‖a‖ = ‖(t+a)-t‖ ≤ ‖t+a‖ + ‖t‖ ≤ r+rη`.
       These scalar covariance equalities are the local replacement for global
       fiber invariance inside the scalarized parameter integral.  The
@@ -7139,17 +7168,19 @@ Proof transcript for the next target:
        (hψ_approx :
          ∀ θ : SchwartzMap (ComplexChartSpace m) ℂ,
            Tendsto (fun i => realConvolutionTest θ (ψι i)) l (nhds θ))
-       (hdesc_local :
-         ∀ φ ψ,
-           SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Udesc ->
-           KernelSupportWithin ψ r ->
-             K (schwartzTensorProduct₂ φ ψ) =
-               Hdist (realConvolutionTest φ ψ))
-       (hK_dbar_zero :
-         ∀ j φ ψ,
-           SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Udesc ->
-           KernelSupportWithin ψ r ->
-             K (schwartzTensorProduct₂ (dbarSchwartzCLM j φ) ψ) = 0) :
+      (hdesc_local :
+        ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+          SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Udesc ->
+          KernelSupportWithin ψ r ->
+            K (schwartzTensorProduct₂ φ ψ) =
+              Hdist (realConvolutionTest φ ψ))
+      (hK_dbar_zero :
+        ∀ (j : Fin m) (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+          SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Udesc ->
+          KernelSupportWithin ψ r ->
+            K (schwartzTensorProduct₂ (dbarSchwartzCLM j φ) ψ) = 0) :
        IsDistributionalHolomorphicOn Hdist Udesc
    ```
 
@@ -7174,12 +7205,13 @@ Proof transcript for the next target:
        (hG_holo :
          ∀ ψ, KernelSupportWithin ψ r ->
            DifferentiableOn ℂ (Gchart ψ) U0)
-       (hK_rep :
-         ∀ φ ψ,
-           SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Ucov ->
-           KernelSupportWithin ψ r ->
-             K (schwartzTensorProduct₂ φ ψ) =
-               ∫ z : ComplexChartSpace m, Gchart ψ z * φ z)
+      (hK_rep :
+        ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+          SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Ucov ->
+          KernelSupportWithin ψ r ->
+            K (schwartzTensorProduct₂ φ ψ) =
+              ∫ z : ComplexChartSpace m, Gchart ψ z * φ z)
        (j : Fin m)
        (φ : SchwartzMap (ComplexChartSpace m) ℂ)
        (hφ : SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Udesc)
@@ -7258,19 +7290,21 @@ Proof transcript for the next target:
            z + realEmbed t ∈ Udesc)
        (hG_holo : ∀ ψ, KernelSupportWithin ψ r ->
          DifferentiableOn ℂ (Gchart ψ) U0)
-       (hK_rep :
-         ∀ φ ψ,
-           SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Ucov ->
-           KernelSupportWithin ψ r ->
-             K (schwartzTensorProduct₂ φ ψ) =
-               ∫ z : ComplexChartSpace m, Gchart ψ z * φ z)
-       (Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ)
-       (hdesc_local :
-         ∀ φ ψ,
-           SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Udesc ->
-           KernelSupportWithin ψ r ->
-             K (schwartzTensorProduct₂ φ ψ) =
-               Hdist (realConvolutionTest φ ψ))
+      (hK_rep :
+        ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (η : SchwartzMap (Fin m -> ℝ) ℂ),
+          SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Ucov ->
+          KernelSupportWithin η r ->
+            K (schwartzTensorProduct₂ φ η) =
+              ∫ z : ComplexChartSpace m, Gchart η z * φ z)
+      (Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ)
+      (hdesc_local :
+        ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (η : SchwartzMap (Fin m -> ℝ) ℂ),
+          SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Udesc ->
+          KernelSupportWithin η r ->
+            K (schwartzTensorProduct₂ φ η) =
+              Hdist (realConvolutionTest φ η))
        (hCR : IsDistributionalHolomorphicOn Hdist Udesc)
        (hψ_nonneg : ∀ n t, 0 ≤ (ψn n t).re)
        (hψ_real : ∀ n t, (ψn n t).im = 0)
@@ -7910,9 +7944,11 @@ Kernel-recovery implementation substrate:
        {m : ℕ}
        (B : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ]
          (SchwartzMap (Fin m -> ℝ) ℂ ->L[ℂ] ℂ)) :
-       ∃! K :
-         SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ,
-         ∀ φ ψ, K (schwartzTensorProduct₂ φ ψ) = B φ ψ
+      ∃! K :
+        SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ,
+        ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+          K (schwartzTensorProduct₂ φ ψ) = B φ ψ
 
    -- Unimplemented cutoff-existence theorem.  The checked support lemmas
    -- below show how such a Schwartz cutoff acts once supplied.
@@ -8010,12 +8046,13 @@ Kernel-recovery implementation substrate:
 
    theorem translationCovariantProductKernel_descends
        {m : ℕ}
-       (K : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ)
-       (hcov : ProductKernelRealTranslationCovariantGlobal K) :
-       ∃ Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ,
-         ∀ φ ψ,
-           K (schwartzTensorProduct₂ φ ψ) =
-             Hdist (realConvolutionTest φ ψ)
+      (K : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ)
+      (hcov : ProductKernelRealTranslationCovariantGlobal K) :
+      ∃ Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ,
+        ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+          K (schwartzTensorProduct₂ φ ψ) =
+            Hdist (realConvolutionTest φ ψ)
 
    theorem translationCovariantProductKernel_descends_local
        {m : ℕ}
@@ -8030,12 +8067,13 @@ Kernel-recovery implementation substrate:
            z + realEmbed t ∈ Ucov)
        (hcov : ProductKernelRealTranslationCovariantLocal K Ucov (r + rη))
        :
-       ∃ Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ,
-         ∀ φ ψ,
-           SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Udesc ->
-           KernelSupportWithin ψ r ->
-             K (schwartzTensorProduct₂ φ ψ) =
-               Hdist (realConvolutionTest φ ψ)
+      ∃ Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ,
+        ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+          SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Udesc ->
+          KernelSupportWithin ψ r ->
+            K (schwartzTensorProduct₂ φ ψ) =
+              Hdist (realConvolutionTest φ ψ)
 
    theorem distributionalHolomorphic_regular
        (Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ)
@@ -8414,12 +8452,13 @@ Detailed kernel-recovery proof transcript:
    ```lean
    lemma regularizedEnvelope_productKernel_from_bilinear
        :
-       ∃ K :
-         SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ,
-         ∀ φ ψ,
-           SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Ucore ->
-             K (schwartzTensorProduct₂ φ ψ) =
-               regularizedEnvelopeBilinear φ ψ
+      ∃ K :
+        SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ,
+        ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+          SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Ucore ->
+            K (schwartzTensorProduct₂ φ ψ) =
+              regularizedEnvelopeBilinear φ ψ
    ```
    Do not use the existing homogeneous `SchwartzMap.productTensor ![φ, ψ]`
    here: that API tensors functions on repeated copies of one space.  The EOW
@@ -8443,13 +8482,14 @@ Detailed kernel-recovery proof transcript:
        K (schwartzTensorProduct₂ (complexTranslateSchwartz a φ) ψ) =
          K (schwartzTensorProduct₂ φ (translateSchwartz a ψ))
 
-   theorem translationCovariantProductKernel_descends
-       (K : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ)
-       (hcov : ProductKernelRealTranslationCovariantGlobal K) :
-       ∃ Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ,
-         ∀ φ ψ,
-           K (schwartzTensorProduct₂ φ ψ) =
-             Hdist (realConvolutionTest φ ψ)
+      theorem translationCovariantProductKernel_descends
+          (K : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ)
+          (hcov : ProductKernelRealTranslationCovariantGlobal K) :
+      ∃ Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ,
+        ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+          K (schwartzTensorProduct₂ φ ψ) =
+            Hdist (realConvolutionTest φ ψ)
    ```
    Here `realConvolutionTest φ ψ` is the complex-chart Schwartz test
    `z ↦ ∫ t, φ (z - realEmbed t) * ψ t`.  This is the precise Lean object
@@ -8475,9 +8515,11 @@ Exact product-kernel/descent subpackage:
        {m : ℕ}
        (B : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ]
          (SchwartzMap (Fin m -> ℝ) ℂ ->L[ℂ] ℂ)) :
-       ∃! K :
-         SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ,
-         ∀ φ ψ, K (schwartzTensorProduct₂ φ ψ) = B φ ψ
+      ∃! K :
+        SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ,
+        ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+          K (schwartzTensorProduct₂ φ ψ) = B φ ψ
    ```
    The proof obligations are:
    - product tensors are dense in the mixed product Schwartz space;
@@ -8678,12 +8720,13 @@ Exact product-kernel/descent subpackage:
        (hdense : ShearedProductTensorDense m)
        (K : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ)
        (hcov : ProductKernelRealTranslationCovariantGlobal K)
-       (η : SchwartzMap (Fin m -> ℝ) ℂ)
-       (hη : ∫ t : Fin m -> ℝ, η t = 1) :
-       ∃ Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ,
-         ∀ φ ψ,
-           K (schwartzTensorProduct₂ φ ψ) =
-             Hdist (realConvolutionTest φ ψ)
+      (η : SchwartzMap (Fin m -> ℝ) ℂ)
+      (hη : ∫ t : Fin m -> ℝ, η t = 1) :
+      ∃ Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ,
+        ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+          K (schwartzTensorProduct₂ φ ψ) =
+            Hdist (realConvolutionTest φ ψ)
    ```
 
    Proof transcript:
@@ -8821,12 +8864,13 @@ Exact product-kernel/descent subpackage:
        (hdense : ProductTensorDense m)
        (K : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ)
        (hcov : ProductKernelRealTranslationCovariantGlobal K)
-       (η : SchwartzMap (Fin m -> ℝ) ℂ)
-       (hη : ∫ t : Fin m -> ℝ, η t = 1) :
-       ∃ Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ,
-         ∀ φ ψ,
-           K (schwartzTensorProduct₂ φ ψ) =
-             Hdist (realConvolutionTest φ ψ)
+      (η : SchwartzMap (Fin m -> ℝ) ℂ)
+      (hη : ∫ t : Fin m -> ℝ, η t = 1) :
+      ∃ Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ,
+        ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+          K (schwartzTensorProduct₂ φ ψ) =
+            Hdist (realConvolutionTest φ ψ)
    ```
 
    This is a strict reduction of the live blocker: after this checked transport
@@ -9036,7 +9080,9 @@ Exact product-kernel/descent subpackage:
       theorem mixedProductCLM_zero_of_zero_on_productTensor
           {m : ℕ} (hm : 0 < m)
           (L : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ)
-          (hL : ∀ φ ψ, L (schwartzTensorProduct₂ φ ψ) = 0) :
+          (hL : ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+            (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+            L (schwartzTensorProduct₂ φ ψ) = 0) :
           L = 0 := by
         have hflat :
             flattenMixedFunctional m L = 0 :=
@@ -9084,7 +9130,9 @@ Exact product-kernel/descent subpackage:
             hconv M.isClosed_topologicalClosure hx
         -- scaling by real scalars and then by `Complex.I` proves
         -- `f` vanishes on `M.topologicalClosure`, hence on `M`.
-        have hf_prod : ∀ φ ψ,
+        have hf_prod :
+            ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+              (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
             f (schwartzTensorProduct₂ φ ψ) = 0 := by
           intro φ ψ
           exact hfS _ (Submodule.subset_span ⟨φ, ψ, rfl⟩)
@@ -10916,13 +10964,14 @@ Exact product-kernel/descent subpackage:
 
 4. Finish global descent:
    ```lean
-   theorem translationCovariantProductKernel_descends
-       (K : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ)
-       (hcov : ProductKernelRealTranslationCovariantGlobal K) :
-       ∃ Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ,
-         ∀ φ ψ,
-           K (schwartzTensorProduct₂ φ ψ) =
-             Hdist (realConvolutionTest φ ψ)
+      theorem translationCovariantProductKernel_descends
+          (K : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ)
+          (hcov : ProductKernelRealTranslationCovariantGlobal K) :
+      ∃ Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ,
+        ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+          K (schwartzTensorProduct₂ φ ψ) =
+            Hdist (realConvolutionTest φ ψ)
    ```
    Let `T := shearedProductKernelFunctional K`.  Apply the fiber-factorization
    theorem to `T`; then for product tensors use
