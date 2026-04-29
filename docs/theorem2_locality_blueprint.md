@@ -1263,7 +1263,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `docs/scv_infrastructure_blueprint.md`: the parametric
       Rudin-integrand bound over `closedBall 0 Rcut` with the inner Rudin side
       domains kept separate from the original holomorphy domains, and the final
-      cutoff-envelope continuity theorem.  The boundary limits in that stack
+      cutoff-envelope continuity theorem.  The parametric bound theorem itself
+      only uses continuity of `Fplus`/`Fminus` on the original side domains;
+      differentiability of the mollified side functions on `Dplus`/`Dminus`
+      is derived separately for the measurability input to dominated
+      continuity.  The boundary limits in that stack
       cannot be fixed-`z` limits: the kernel varies along the approaching
       Rudin arc.  The proof combines the checked local BHW/EOW side-value
       identities, the existing CLM boundary limits, and
@@ -1284,7 +1288,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
       Lean introduce
       `regularizedLocalEOW_pairingCLM_of_fixedWindow`; it must not revive the
       retired global `regularizedLocalEOW_productKernel_from_continuousEOW`
-      surface.  In the final `SCV.local_distributional_edge_of_the_wedge_envelope`
+      surface.  Its pure-tensor all-space integral representation must be
+      derived from support of `φ` inside the small covariance ball: the
+      all-space integrand is the closed-ball continuous integrand extended by
+      zero, so no global measurability of `Gchart ψ` is assumed.  In the final
+      `SCV.local_distributional_edge_of_the_wedge_envelope`
       implementation, `hcontinuousEOW` is not an extra assumption: it is
       obtained inside the proof by applying
       `SCV.localRealMollify_commonContinuousBoundary_of_clm` to `hplus_eval`,
