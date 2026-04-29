@@ -1395,13 +1395,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
       extracted local continuous EOW theorem.
 
    13. Let `ψρ` be the checked compactly supported approximate identity in
-       chart-kernel coordinates, with support eventually inside `closedBall 0 r`.
-       On the positive and negative wedge pieces, the side identities for
-       `Gchart ψρ` reduce to real mollification with the pushed kernels, and
-       the checked approximate-identity theorem gives convergence to
-       `FplusChart` and `FminusChart`.  The local recovery theorem proves that
-       the same sequence converges pointwise to the holomorphic representative
-       `H` on `Ucore`, so `H` is the desired local distributional EOW envelope.
+       chart-kernel coordinates, with support eventually inside
+       `closedBall 0 r`.  On the positive and negative wedge pieces, the side
+       identities for `Gchart ψρ` reduce to real mollification with the pushed
+       kernels, and the checked approximate-identity theorem gives convergence
+       to `FplusChart` and `FminusChart`.  The checked
+       `regularizedEnvelope_chartEnvelope_from_localCovariantProductKernel`
+       constructs `Hdist`, proves local distributional holomorphy from local
+       covariance, and proves that the same sequence converges pointwise to
+       the holomorphic representative `H` on `Ucore`.  Thus `H` is the desired
+       local distributional EOW envelope on the fixed chart window.
    14. Patch these chart envelopes over a basis of real edge boxes.  Overlap
        compatibility is by the ordinary identity theorem on positive or
        negative wedge pieces, reusing the same style as

@@ -2360,18 +2360,20 @@ overlap.  This is the exact replacement for the current global
     the support of `φ`.
 14. Descend locally to a chart distribution `Hdist` by the product-test
     sheared-fiber argument with margin
-    `Udesc + closedBall 0 (r + rη) ⊆ Ucov`; then prove local distributional
-    holomorphy of `Hdist` and recover the holomorphic representative by
-    `distributionalHolomorphic_regular`, the checked pointwise representation
-    bridge, and the checked delta-limit wedge-agreement theorem.  This replaces
-    the obsolete "global kernel by cutoff" shortcut.
+    `Udesc + closedBall 0 (r + rη) ⊆ Ucov`; then apply the checked
+    `regularizedEnvelope_chartEnvelope_from_localCovariantProductKernel`,
+    which constructs `Hdist`, proves local distributional holomorphy via the
+    localized `∂bar` theorem, and recovers the holomorphic representative by
+    the checked pointwise representation and delta-limit wedge-agreement
+    theorems.  This replaces the obsolete "global kernel by cutoff" shortcut.
 15. Let `ψρ` be a compactly supported approximate identity in chart-kernel
     coordinates with eventual support in `closedBall 0 r`.  On the plus/minus
     wedge pieces, the side identities for `Gchart ψρ` reduce through
     `realMollifyLocal_localEOWRealLinearKernelPushforwardCLM` to the
     chart-coordinate real mollifiers, and the existing approximate-identity
     theorem gives convergence to `FplusChart`/`FminusChart`.  Therefore the
-    recovered representative is the desired chart envelope.
+    representative returned by the local covariant recovery theorem is the
+    desired chart envelope.
 16. `distributionalEOW_extensions_compatible` proves agreement of two local
    chart envelopes on overlaps by the ordinary identity theorem: on every
    nonempty overlap the extensions agree with `Fplus` on a positive wedge
