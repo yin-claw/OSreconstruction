@@ -250,6 +250,72 @@ theorem localEOWAffineTestPushforwardCLM_apply
   simp [localEOWAffineTestPushforwardCLM,
     SchwartzMap.compCLMOfContinuousLinearEquiv_apply, sub_eq_add_neg]
 
+/-- The affine test pushforward has support contained in the affine image of the
+original chart-coordinate support. -/
+theorem tsupport_localEOWAffineTestPushforwardCLM_subset
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (φ : SchwartzMap (Fin m → ℝ) ℂ) :
+    tsupport
+        (localEOWAffineTestPushforwardCLM x0 ys hli φ :
+          (Fin m → ℝ) → ℂ) ⊆
+      (localEOWRealChart x0 ys) ''
+        tsupport (φ : (Fin m → ℝ) → ℂ) := by
+  let e := localEOWRealLinearCLE ys hli
+  have hsub :
+      tsupport ((φ : (Fin m → ℝ) → ℂ) ∘
+          fun y : Fin m → ℝ => e.symm y - e.symm x0) ⊆
+        (fun y : Fin m → ℝ => e.symm y - e.symm x0) ⁻¹'
+          tsupport (φ : (Fin m → ℝ) → ℂ) := by
+    exact tsupport_comp_subset_preimage (φ : (Fin m → ℝ) → ℂ)
+      ((e.symm.continuous.comp continuous_id).sub continuous_const)
+  intro y hy
+  have hfun :
+      (localEOWAffineTestPushforwardCLM x0 ys hli φ : (Fin m → ℝ) → ℂ) =
+        (φ : (Fin m → ℝ) → ℂ) ∘
+          fun y : Fin m → ℝ => e.symm y - e.symm x0 := by
+    funext y
+    simp [e, localEOWAffineTestPushforwardCLM_apply]
+  have hy' :
+      y ∈ tsupport ((φ : (Fin m → ℝ) → ℂ) ∘
+          fun y : Fin m → ℝ => e.symm y - e.symm x0) := by
+    simpa [hfun] using hy
+  refine ⟨e.symm y - e.symm x0, hsub hy', ?_⟩
+  have hlin :
+      localEOWRealLinearPart ys (e.symm y - e.symm x0) = y - x0 := by
+    calc
+      localEOWRealLinearPart ys (e.symm y - e.symm x0) =
+          e (e.symm y - e.symm x0) := by
+        simp [e]
+      _ = e (e.symm y) - e (e.symm x0) := by
+        simp
+      _ = y - x0 := by
+        simp
+  calc
+    localEOWRealChart x0 ys (e.symm y - e.symm x0) =
+        x0 + localEOWRealLinearPart ys (e.symm y - e.symm x0) := by
+      ext a
+      simp [localEOWRealChart, localEOWRealLinearPart]
+    _ = x0 + (y - x0) := by
+      rw [hlin]
+    _ = y := by
+      ext a
+      simp
+
+/-- Compact support is preserved by affine test pushforward. -/
+theorem HasCompactSupport.localEOWAffineTestPushforwardCLM
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    (hli : LinearIndependent ℝ ys)
+    {φ : SchwartzMap (Fin m → ℝ) ℂ}
+    (hφ : HasCompactSupport (φ : (Fin m → ℝ) → ℂ)) :
+    HasCompactSupport
+      (localEOWAffineTestPushforwardCLM x0 ys hli φ :
+        (Fin m → ℝ) → ℂ) := by
+  exact IsCompact.of_isClosed_subset
+    (hφ.image (continuous_localEOWRealChart x0 ys))
+    (isClosed_tsupport _)
+    (tsupport_localEOWAffineTestPushforwardCLM_subset x0 ys hli φ)
+
 /-- Absolute Jacobian of the local EOW real-linear chart. -/
 noncomputable def localEOWRealJacobianAbs
     (ys : Fin m → Fin m → ℝ) : ℝ :=

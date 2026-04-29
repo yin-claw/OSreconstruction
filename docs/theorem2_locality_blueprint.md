@@ -1040,12 +1040,18 @@ Proof decomposition of this theorem, without hiding the analytic work:
      `η = s⁻¹ • localEOWRealLinearPart ys (-y)`.  The latter gives
      `localEOWRealLinearPart ys y = -s • η`, so it consumes exactly the final
      `Fminus (x - εη i)` hypothesis.
-   * The distribution in chart coordinates is not `T`; it is
-     `localEOWAffineDistributionPullbackCLM x0 ys hli T`, and the smoothing
-     kernels used in the regularized family are pushed to the original edge by
-     `localEOWRealLinearKernelPushforwardCLM ys hli`.
-   * The local output must be a transported coordinate ball with transported
-     strict positive/negative side balls.  Patching consumes precisely these
+	   * The distribution in chart coordinates is not `T`; it is
+	     `localEOWAffineDistributionPullbackCLM x0 ys hli T`, and the smoothing
+	     kernels used in the regularized family are pushed to the original edge by
+	     `localEOWRealLinearKernelPushforwardCLM ys hli`.
+	   * The affine support half of this gate is checked:
+	     `HasCompactSupport.localEOWAffineTestPushforwardCLM` and
+	     `tsupport_localEOWAffineTestPushforwardCLM_subset`.  The next
+	     implementation target in this gate is the determinant change-of-variables
+	     theorem
+	     `integral_localEOWAffineTestPushforwardCLM_changeOfVariables`.
+	   * The local output must be a transported coordinate ball with transported
+	     strict positive/negative side balls.  Patching consumes precisely these
      shapes:
      `(localEOWComplexAffineEquiv x0 ys hli) '' Metric.ball 0 R`,
      `(localEOWComplexAffineEquiv x0 ys hli) '' StrictPositiveImagBall R`,
