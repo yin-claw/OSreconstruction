@@ -271,6 +271,9 @@ theorem regularizedEnvelope_chartEnvelope_from_localCovariantProductKernel
 def StrictPositiveImagBall
 def StrictNegativeImagBall
 lemma chartSlowGrowth_from_uniformConeSlowGrowth
+lemma HasCompactSupport.localEOWAffineTestPushforwardCLM
+lemma tsupport_localEOWAffineTestPushforwardCLM_subset
+lemma integral_localEOWAffineTestPushforwardCLM_changeOfVariables
 lemma chartOrthantBoundaryValue_from_uniformConeBoundaryValue
 lemma chartHolomorphy_from_originalHolomorphy
 lemma chartDistributionalEOW_local_envelope
@@ -459,7 +462,7 @@ Source ledger for the internal helper list:
 | `regularizedLocalEOW_productKernel_from_continuousEOW` | Retired as a one-shot target under its old global-covariance shape.  The local fixed-window family can supply linearity, value CLMs, and shifted-overlap covariance, but a local pairing extended by cutoff does not honestly give `ProductKernelRealTranslationCovariantGlobal K`.  For the pure-SCV local distributional EOW theorem, the route is now the local descent package: construct a localized mixed CLM, prove `ProductKernelRealTranslationCovariantLocal` under explicit support/margin hypotheses, descend locally to `Hdist`, and feed a local recovery consumer.  A genuinely global covariant `K` may still be sourced later from OS/Wightman translation-invariant data, but that is not the proof of the QFT-free SCV theorem. |
 | `regularizedEnvelope_deltaLimit_agreesOnWedges` | Approximate-identity recovery: once kernel recovery has produced a holomorphic `H`, compactly supported approximate identities show `H` agrees with the original plus/minus wedge functions on the shrunken wedge pieces. |
 | `local_continuous_edge_of_the_wedge_envelope` | Checked in `SCV/LocalContinuousEOWSideAgreement.lean`: local coordinate-ball continuous EOW extraction.  It packages the chart window, the Rudin envelope, holomorphy on `ball 0 (δ/2)`, agreement on the explicit strict positive/negative side balls, and real-boundary agreement on the coordinate real slice.  It intentionally does not claim agreement on arbitrary extra components of `Ωplus` or `Ωminus`. |
-| `chartSlowGrowth_from_uniformConeSlowGrowth`, `chartOrthantBoundaryValue_from_uniformConeBoundaryValue`, `chartHolomorphy_from_originalHolomorphy` | The exact chart-pullback layer for the final local distributional theorem.  The first theorem rewrites the final compact-subcone slow-growth hypotheses in fixed chart orthants using `localEOWRealLinearPart ys`; the second rewrites the final distributional boundary-value hypotheses into coordinate `nhdsWithin 0 {y | ∀ j, 0 < y j}` and `nhdsWithin 0 {y | ∀ j, y j < 0}` limits, including the affine distribution pullback and Jacobian; the third transports holomorphy of `Fplus/Fminus` to the chart side windows by composition with the complex affine chart.  These are not wrapper names: they are the sign, support, Jacobian, and compact-direction reductions that make the one-chart theorem honest. |
+| `chartSlowGrowth_from_uniformConeSlowGrowth`, `HasCompactSupport.localEOWAffineTestPushforwardCLM`, `tsupport_localEOWAffineTestPushforwardCLM_subset`, `integral_localEOWAffineTestPushforwardCLM_changeOfVariables`, `chartOrthantBoundaryValue_from_uniformConeBoundaryValue`, `chartHolomorphy_from_originalHolomorphy` | The exact chart-pullback layer for the final local distributional theorem.  The slow-growth theorem rewrites the final compact-subcone estimates in fixed chart orthants using `localEOWRealLinearPart ys`.  The support and change-of-variables theorems prove that a compactly supported chart test pushes to a compactly supported original-edge test in `E` and that the inverse determinant factor in `localEOWAffineDistributionPullbackCLM` converts original integrals into chart integrals.  The orthant boundary-value theorem then rewrites the final distributional boundary-value hypotheses into coordinate `nhdsWithin 0 {y | ∀ j, 0 < y j}` and `nhdsWithin 0 {y | ∀ j, y j < 0}` limits.  `chartHolomorphy_from_originalHolomorphy` transports holomorphy of `Fplus/Fminus` to the chart side windows.  These are not wrapper names: they are the sign, support, Jacobian, and compact-direction reductions that make the one-chart theorem honest. |
 | `chartDistributionalEOW_local_envelope` | Local distributional EOW envelope on one fixed-basis coordinate chart, obtained from the regularized-envelope family and delta-limit recovery after the chart-pullback layer above.  Its side identities are for `Fplus (localEOWChart x0 ys w)` and `Fminus (localEOWChart x0 ys w)` on the explicit strict positive/negative coordinate balls. |
 | `chartDistributionalEOW_transport_originalCoords` | Transports the coordinate envelope through `localEOWComplexAffineEquiv x0 ys hli` to an original-coordinate local patch.  This is genuine affine holomorphy/open-map content, not a rename; the output patch domain is the image of a coordinate ball and the side domains are the images of the strict positive/negative coordinate balls, exactly the shape consumed by the overlap/patching lemmas. |
 | `StrictPositiveImagBall`, `StrictNegativeImagBall`, `localEOWFixedBasis_overlap_positiveSeed`, `distributionalEOW_extensions_compatible`, `localDistributionalEOW_patch_extensions` | Reuse the now-public `SCV.local_extensions_consistent` identity-theorem pattern and the global patching pattern in `edge_of_the_wedge_theorem`, with the fixed-basis overlap seed described below.  The positive-seed lemma is the finite-dimensional geometry that makes patching honest: intersecting transported balls are convex and conjugation-invariant, hence meet the real slice, and the shared positive coordinate cone gives an open side seed. |
@@ -3372,6 +3375,48 @@ lemma chartSlowGrowth_from_uniformConeSlowGrowth
             (fun j => (u j : ℂ) + (v j : ℂ) * Complex.I))‖ ≤
             Aminus * ((∑ j, -v j)⁻¹) ^ Nminus)
 
+theorem HasCompactSupport.localEOWAffineTestPushforwardCLM
+    {m : ℕ}
+    (x0 : Fin m -> ℝ)
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    {φ : SchwartzMap (Fin m -> ℝ) ℂ}
+    (hφ : HasCompactSupport (φ : (Fin m -> ℝ) -> ℂ)) :
+    HasCompactSupport
+      (localEOWAffineTestPushforwardCLM x0 ys hli φ :
+        (Fin m -> ℝ) -> ℂ)
+
+lemma tsupport_localEOWAffineTestPushforwardCLM_subset
+    {m : ℕ}
+    (x0 : Fin m -> ℝ)
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (φ : SchwartzMap (Fin m -> ℝ) ℂ) :
+    tsupport
+        (localEOWAffineTestPushforwardCLM x0 ys hli φ :
+          (Fin m -> ℝ) -> ℂ) ⊆
+      (localEOWRealChart x0 ys) ''
+        tsupport (φ : (Fin m -> ℝ) -> ℂ)
+
+lemma integral_localEOWAffineTestPushforwardCLM_changeOfVariables
+    {m : ℕ}
+    (x0 : Fin m -> ℝ)
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (g : (Fin m -> ℝ) -> ℂ)
+    (φ : SchwartzMap (Fin m -> ℝ) ℂ)
+    (hint_orig :
+      Integrable
+        (fun x : Fin m -> ℝ =>
+          g x * localEOWAffineTestPushforwardCLM x0 ys hli φ x))
+    (hint_chart :
+      Integrable
+        (fun u : Fin m -> ℝ => g (localEOWRealChart x0 ys u) * φ u)) :
+    ((localEOWRealJacobianAbs ys)⁻¹ : ℂ) *
+      ∫ x : Fin m -> ℝ,
+        g x * localEOWAffineTestPushforwardCLM x0 ys hli φ x =
+    ∫ u : Fin m -> ℝ, g (localEOWRealChart x0 ys u) * φ u
+
 lemma chartOrthantBoundaryValue_from_uniformConeBoundaryValue
     {m : ℕ} (hm : 0 < m)
     (E C : Set (Fin m -> ℝ))
@@ -3410,14 +3455,10 @@ lemma chartOrthantBoundaryValue_from_uniformConeBoundaryValue
             (nhdsWithin 0 (Set.Ioi 0))
             Kη)
     (φ : SchwartzMap (Fin m -> ℝ) ℂ)
-    (hφ_push_compact :
-      HasCompactSupport
-        (localEOWAffineTestPushforwardCLM x0 ys hli φ :
-          (Fin m -> ℝ) -> ℂ))
-    (hφ_support :
-      tsupport
-        (localEOWAffineTestPushforwardCLM x0 ys hli φ :
-          (Fin m -> ℝ) -> ℂ) ⊆ E) :
+    (hφ_compact : HasCompactSupport (φ : (Fin m -> ℝ) -> ℂ))
+    (hφ_chart_support :
+      ∀ u ∈ tsupport (φ : (Fin m -> ℝ) -> ℂ),
+        localEOWRealChart x0 ys u ∈ E) :
     let FplusChart : ComplexChartSpace m -> ℂ :=
       fun w => Fplus (localEOWChart x0 ys w)
     let FminusChart : ComplexChartSpace m -> ℂ :=
@@ -3686,18 +3727,23 @@ Proof transcript for the chart-pullback layer:
    as `realEmbed (localEOWRealChart x0 ys u) - εη * I`.
 2. For `chartOrthantBoundaryValue_from_uniformConeBoundaryValue`, fix a chart
    test `φ`.  Push it to the original edge by
-   `localEOWAffineTestPushforwardCLM x0 ys hli φ`; the theorem hypotheses give
-   compact support and support inside `E`, so the final BV hypotheses apply.
+   `localEOWAffineTestPushforwardCLM x0 ys hli φ`.  Compact support is
+   `HasCompactSupport.localEOWAffineTestPushforwardCLM`; support inside `E`
+   follows from `tsupport_localEOWAffineTestPushforwardCLM_subset` and the
+   chart-side support hypothesis
+   `∀ u ∈ tsupport φ, localEOWRealChart x0 ys u ∈ E`.  Therefore the final BV
+   hypotheses apply to the pushed test.
    For positive chart directions `y`, set `s y = ∑ j, y j` and
    `η y = (s y)⁻¹ • localEOWRealLinearPart ys y`.  The map
    `y ↦ s y` tends to `0` within `Set.Ioi 0`, while `η y` stays in the compact
    set `localEOWSimplexDirections ys`.  Uniform convergence on that compact
    direction set gives the limit of the original-coordinate integrals.  The
-   affine change of variables
-   `x = localEOWRealChart x0 ys u` rewrites those integrals as the chart
-   integrals, and the factor
+   affine change-of-variables theorem
+   `integral_localEOWAffineTestPushforwardCLM_changeOfVariables` rewrites those
+   integrals as the chart integrals.  The factor
    `((localEOWRealJacobianAbs ys)⁻¹ : ℂ)` is exactly the factor in
-   `localEOWAffineDistributionPullbackCLM`.  For negative chart directions use
+   `localEOWAffineDistributionPullbackCLM`, so the target limit is `Tchart φ`.
+   For negative chart directions use
    `s y = ∑ j, -y j` and
    `η y = (s y)⁻¹ • localEOWRealLinearPart ys (-y)`.  Then
    `localEOWRealLinearPart ys y = -s y • η y`, so the original point is

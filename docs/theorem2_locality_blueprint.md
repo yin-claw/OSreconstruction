@@ -1025,6 +1025,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
    * The final theorem may enter Lean only after the one-chart theorem surface
      has no hidden hypothesis comments.  The proof-doc surface is now:
      `SCV.chartSlowGrowth_from_uniformConeSlowGrowth`,
+     `SCV.HasCompactSupport.localEOWAffineTestPushforwardCLM`,
+     `SCV.tsupport_localEOWAffineTestPushforwardCLM_subset`,
+     `SCV.integral_localEOWAffineTestPushforwardCLM_changeOfVariables`,
      `SCV.chartOrthantBoundaryValue_from_uniformConeBoundaryValue`,
      `SCV.chartHolomorphy_from_originalHolomorphy`,
      `SCV.chartDistributionalEOW_local_envelope`, and
