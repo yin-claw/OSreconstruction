@@ -1196,7 +1196,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
          `mixedRealFiberIntegralCLM` with
          `continuousLinearMap_apply_mixedRealFiberIntegralCLM_eq_integral`,
          so every parameter integral after applying `K` is an ordinary complex
-         integral.  The scalarization theorem is not a hidden
+         integral.  The mixed integral CLM is constructed directly by
+         `SchwartzMap.mkCLM` and finite seminorm estimates; the already checked
+         `HeadBlockIntegral.integrateHeadBlock` remains a source pattern, not
+         the CLM used here.  The scalarization theorem is not a hidden
          `SchwartzMap`-valued Bochner step: it constructs
          `mixedRealFiberIntegralScalarCLM K` by finite Schwartz-seminorm
          bounds.  The key bound is the named decay theorem
@@ -1225,7 +1228,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
          `r + rη`.  The compact-support half of
          `SupportsInOpen (complexTranslateSchwartz (-a) φ) Ucov` is a named
          translation-support helper, not an implicit property of the support
-         inclusion.
+         inclusion.  The local-descent CLEs use an explicit local
+         `realEmbedContinuousLinearMap`; the older `realEmbedCLM` helpers are
+         private implementation details and are not part of the route API.
       4. `SCV.regularizedEnvelope_chartEnvelope_from_localProductKernel`.  It
          consumes local distributional holomorphy of `Hdist` on `Udesc`; the
          CR proof is a separate immediately preceding step, not a hidden field.

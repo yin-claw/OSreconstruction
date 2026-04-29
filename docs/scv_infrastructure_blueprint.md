@@ -6097,6 +6097,17 @@ Proof transcript for the next target:
        (z : ComplexChartSpace m) (t : Fin m -> ℝ) :
        schwartzTensorProduct₂CLMLeft φ ψ (z,t) = φ z * ψ t
 
+   Implementation lock for `schwartzTensorProduct₂CLMLeft`: do not introduce a
+   new tensor abstraction.  Copy the checked finite-seminorm construction of
+   `schwartzTensorProduct₂CLMRight`, with the fixed factor now `φ` and the
+   variable factor `ψ`.  For output seminorm `(k,l)` use the finite family
+   `{(k,i), (0,i) | i ∈ range (l+1)}` on the variable real Schwartz factor,
+   and put the corresponding finite sum of fixed `φ` seminorms into the
+   constant.  The proof is the same Leibniz estimate as
+   `schwartzExternalProduct`/`schwartzTensorProduct₂CLMRight`, with
+   `ContinuousLinearMap.fst` and `ContinuousLinearMap.snd` swapped only in the
+   places forced by the variable factor.
+
    theorem shearedProductKernelFunctional_localQuotient_of_productCovariant
        {m : ℕ} {r rη : ℝ}
        (K : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ)
@@ -6153,6 +6164,21 @@ Proof transcript for the next target:
       `schwartzTensorProduct₂CLMRight`).  It is used only to form scalar
       continuous-linear-map compositions in the local quotient proof; it is
       not evidence for a `SchwartzMap`-valued parameter integral.
+      The later continuous-linear equivalences involving `realEmbed` must not
+      try to use the private `realEmbedCLM` names in
+      `DistributionalEOWKernel.lean` or `DistributionalEOWApproxIdentity.lean`.
+      In the new local-descent file, define a local helper
+      ```lean
+      def realEmbedContinuousLinearMap (m : ℕ) :
+          (Fin m -> ℝ) ->L[ℝ] ComplexChartSpace m
+      theorem realEmbedContinuousLinearMap_apply
+          (a : Fin m -> ℝ) :
+          realEmbedContinuousLinearMap m a = realEmbed a
+      ```
+      by `ContinuousLinearMap.pi fun i =>
+      Complex.ofRealCLM.comp (ContinuousLinearMap.proj i)`.  This is only the
+      linear-map form of the already checked `continuous_realEmbed` and
+      `norm_realEmbed_eq`; it adds no analytic assumption.
       Also prove the compact-support transport helper for complex-chart
       translations:
       ```lean
@@ -6219,6 +6245,12 @@ Proof transcript for the next target:
       `P := Fin m -> ℝ`; the temperate-growth lower-bound witness is
       `⟨1, 1 + ‖a‖, ...⟩`, from
       `‖b‖ ≤ ‖(b,a)‖ + ‖a‖ ≤ (1 + ‖a‖) * (1 + ‖(b,a)‖)`.
+      The function used in Lean is
+      `g a : B -> B × P := fun b => (b,a)`.  Its temperate-growth proof is
+      `const (0,a)` plus the inclusion
+      `ContinuousLinearMap.inl ℝ B P`; the lower-bound proof is the product
+      sup-norm inequality `‖b‖ ≤ ‖(b,a)‖` followed by
+      `‖b‖ ≤ (1 + ‖a‖) * (1 + ‖(b,a)‖)`.  The apply theorem is then `rfl`.
       Also expose the parameter-continuity theorem used by the scalar
       integrands:
       ```lean
@@ -6319,6 +6351,12 @@ Proof transcript for the next target:
       `fderiv ℝ (mixedRealFiberIntegralRaw A)` as
       `mixedRealFiberIntegralRaw (mixedBaseFDerivSchwartz A)`, exactly as the
       checked proof rewrites through `baseFDerivSchwartz`.
+      Existing `SCV.HeadBlockIntegral` is a useful checked source pattern, but
+      it is not by itself the required CLM: `integrateHeadBlock` is presently a
+      Schwartz-map construction with add/sub and translation lemmas, not a
+      continuous linear map from the triple Schwartz space.  The local descent
+      proof therefore constructs `mixedRealFiberIntegralCLM` directly with
+      `SchwartzMap.mkCLM`, using the finite-seminorm estimates above.
 
       The scalarization theorem is proved as an equality of two continuous
       linear scalar functionals on the triple Schwartz space.  First define
@@ -6395,6 +6433,10 @@ Proof transcript for the next target:
       `integral_const_mul` with these integrability lemmas.  Then
       `SchwartzMap.mkCLMtoNormedSpace` gives
       `mixedRealFiberIntegralScalarCLM`, and its apply theorem is `rfl`.
+      The scalar CLM is the only parameter integral used in the local quotient
+      proof.  There is no theorem asserting
+      `∫ a, schwartzPartialEval₂CLM a A` as a Bochner integral in Schwartz
+      space.
 
       To identify this scalar CLM with `L.comp mixedRealFiberIntegralCLM`,
       use dense product tensors in the split
@@ -6458,6 +6500,13 @@ Proof transcript for the next target:
         Fin.append
           (Fin.append (complexChartRealFlattenCLE m z) t) a.
       ```
+      Since the existing `ProductTensorDense_all` is hard-wired to the split
+      `ComplexChartSpace m × (Fin m -> ℝ)`, the mixed-base proof must factor
+      the flat Hermite argument in `ProductDensity.lean` into the stated
+      two-block theorem.  This is not a new density axiom: the proof again
+      applies `GaussianField.productHermite_schwartz_dense` to the real and
+      imaginary parts, with `exists_hermite_twoBlockFactors` supplying the
+      exact split of every flat Hermite product.
 
       On a tensor `mixedBaseFiberTensor G ξ`,
       `mixedRealFiberIntegralCLM` gives `(∫ a, ξ a) • G`, while
@@ -6746,6 +6795,30 @@ Proof transcript for the next target:
         =
       K (schwartzTensorProduct₂ φ (translateSchwartz (-a) (κ a))).
       ```
+      In Lean, the four hypotheses for this `hcov (-a)` call are built as
+      follows:
+      - `SupportsInOpen φ Ucov`: reuse the compact-support half of `hφ`; for
+        `z ∈ tsupport φ`, apply `hmargin z (hφ.2 hz) 0` and
+        `‖0‖ ≤ r + rη`, which follows from `hr_nonneg` and `hrη_nonneg`.
+      - `SupportsInOpen (complexTranslateSchwartz (-a) φ) Ucov`: apply
+        `SupportsInOpen.complexTranslateSchwartz_of_image_subset` to `hφ`.
+        If `y + realEmbed (-a) ∈ Udesc`, set
+        `u := y + realEmbed (-a)`; the nonzero-`κ a` support point gives
+        `‖a‖ ≤ r + rη`, so `hmargin u hu a` rewrites to `y ∈ Ucov`.
+      - `KernelSupportWithin (κ a) (r+rη)`: first use
+        `KernelSupportWithin.smulLeftCLM_of_leftSupport hη_support
+        (translateSchwartz a ψ)` to get radius `rη`, then enlarge by
+        `KernelSupportWithin.mono` and `rη ≤ r+rη`.
+      - `KernelSupportWithin (translateSchwartz (-a) (κ a)) (r+rη)`:
+        rewrite by `translateSchwartz_neg_smulLeft_eta_translate`; then use
+        `KernelSupportWithin.smulLeftCLM` on `hψ` to get radius `r`, and
+        enlarge by `KernelSupportWithin.mono` and `r ≤ r+rη`.
+      The bound `‖a‖ ≤ r+rη` itself comes from a point
+      `t` with `κ a t ≠ 0`: the support of `κ a` lies in both `tsupport η`
+      and `tsupport (translateSchwartz a ψ)`, while
+      `tsupport_comp_subset_preimage` for the real translation sends the
+      latter to `t+a ∈ tsupport ψ`; hence
+      `‖a‖ = ‖(t+a)-t‖ ≤ ‖t+a‖ + ‖t‖ ≤ r+rη`.
       These scalar covariance equalities are the local replacement for global
       fiber invariance inside the scalarized parameter integral.  The
       normalized cutoff identity is used only through the checked
