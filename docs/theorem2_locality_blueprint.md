@@ -1020,6 +1020,42 @@ Proof decomposition of this theorem, without hiding the analytic work:
      where the final real-edge cover, side-window component seed, and
      uniqueness clause are assembled.
 
+   Proof-doc readiness gate for this SCV theorem:
+
+   * The final theorem may enter Lean only after the one-chart theorem surface
+     has no hidden hypothesis comments.  The proof-doc surface is now:
+     `SCV.chartSlowGrowth_from_uniformConeSlowGrowth`,
+     `SCV.chartOrthantBoundaryValue_from_uniformConeBoundaryValue`,
+     `SCV.chartHolomorphy_from_originalHolomorphy`,
+     `SCV.chartDistributionalEOW_local_envelope`, and
+     `SCV.chartDistributionalEOW_transport_originalCoords`.
+   * `SCV.chartOrthantBoundaryValue_from_uniformConeBoundaryValue` is the
+     mandatory sign/Jacobian theorem.  Positive chart directions use
+     `s = ∑ j, y j` and
+     `η = s⁻¹ • localEOWRealLinearPart ys y`; negative chart directions use
+     `s = ∑ j, -y j` and
+     `η = s⁻¹ • localEOWRealLinearPart ys (-y)`.  The latter gives
+     `localEOWRealLinearPart ys y = -s • η`, so it consumes exactly the final
+     `Fminus (x - εη i)` hypothesis.
+   * The distribution in chart coordinates is not `T`; it is
+     `localEOWAffineDistributionPullbackCLM x0 ys hli T`, and the smoothing
+     kernels used in the regularized family are pushed to the original edge by
+     `localEOWRealLinearKernelPushforwardCLM ys hli`.
+   * The local output must be a transported coordinate ball with transported
+     strict positive/negative side balls.  Patching consumes precisely these
+     shapes:
+     `(localEOWComplexAffineEquiv x0 ys hli) '' Metric.ball 0 R`,
+     `(localEOWComplexAffineEquiv x0 ys hli) '' StrictPositiveImagBall R`,
+     and
+     `(localEOWComplexAffineEquiv x0 ys hli) '' StrictNegativeImagBall R`.
+   * The patching proof constructs
+     `U = ⋃ i, Uloc i`, `Uplus = ⋃ i, UplusLoc i`,
+     `Uminus = ⋃ i, UminusLoc i`, and defines `H` by any local
+     representative.  Well-definedness is exactly
+     `distributionalEOW_extensions_compatible`; uniqueness is exactly the
+     side-seeded identity theorem packaged in
+     `localDistributionalEOW_patch_extensions`.
+
    Proof transcript for the SCV theorem:
 
    1. Derive `hm : 0 < m` from `hC_ne` and `hC_not_zero`.  Then choose a
@@ -1152,7 +1188,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       translates the original real edge by
       `SCV.localEOWRealLinearPart ys a`, not by `a`.
 
-      The remaining proof-doc theorem surfaces, in exact order, are:
+      The local descent theorem surfaces, in exact order, are:
 
       1. `SCV.regularizedLocalEOW_pairingCLM_of_fixedWindow`.  It constructs a
          genuine mixed Schwartz CLM `K` by fixed cutoffs: a complex-chart
