@@ -488,4 +488,663 @@ theorem schwartzPartialEval₂CLM_finsetSeminorm_decay {m : ℕ}
     _ ≤ C * r * S := by
       gcongr
 
+/-- Raw real-fiber integral over the last real parameter with mixed base. -/
+def mixedRealFiberIntegralRaw {m : ℕ}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    (A : SchwartzMap
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V)
+    (b : ComplexChartSpace m × (Fin m → ℝ)) : V :=
+  ∫ a : Fin m → ℝ, A (b, a)
+
+@[simp]
+theorem mixedRealFiberIntegralRaw_apply {m : ℕ}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    (A : SchwartzMap
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V)
+    (b : ComplexChartSpace m × (Fin m → ℝ)) :
+    mixedRealFiberIntegralRaw A b = ∫ a : Fin m → ℝ, A (b, a) := by
+  rfl
+
+/-- Every fixed mixed-base fiber of a triple Schwartz map is Bochner
+integrable over the last real parameter. -/
+theorem integrable_mixedRealFiber {m : ℕ}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    (A : SchwartzMap
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V)
+    (b : ComplexChartSpace m × (Fin m → ℝ)) :
+    Integrable (fun a : Fin m → ℝ => A (b, a)) := by
+  let B := ComplexChartSpace m × (Fin m → ℝ)
+  let P := Fin m → ℝ
+  let μ : Measure P := volume
+  have hmeas : AEStronglyMeasurable (fun a : P => A (b, a)) μ := by
+    have hcont_pair : Continuous fun a : P => (b, a) := by
+      exact continuous_const.prodMk continuous_id
+    exact (A.continuous.comp hcont_pair).aestronglyMeasurable
+  have hnorm : Integrable (fun a : P => ‖a‖ ^ 0 * ‖A (b, a)‖) μ := by
+    refine integrable_of_le_of_pow_mul_le
+      (μ := μ) (f := fun a : P => A (b, a))
+      (C₁ := SchwartzMap.seminorm ℝ 0 0 A)
+      (C₂ := SchwartzMap.seminorm ℝ (0 + μ.integrablePower) 0 A) (k := 0)
+      ?hf ?hpow hmeas
+    · intro a
+      have h := SchwartzMap.le_seminorm ℝ 0 0 A (b, a)
+      simpa using h
+    · intro a
+      have ha_norm : ‖a‖ ≤ ‖(b, a)‖ := by
+        rw [Prod.norm_def]
+        exact le_max_right ‖b‖ ‖a‖
+      have hpow_le :
+          ‖a‖ ^ (0 + μ.integrablePower) ≤
+            ‖(b, a)‖ ^ (0 + μ.integrablePower) :=
+        pow_le_pow_left₀ (norm_nonneg _) ha_norm _
+      have h := SchwartzMap.le_seminorm ℝ (0 + μ.integrablePower) 0 A (b, a)
+      have h' :
+          ‖(b, a)‖ ^ (0 + μ.integrablePower) * ‖A (b, a)‖ ≤
+            SchwartzMap.seminorm ℝ (0 + μ.integrablePower) 0 A := by
+        simpa using h
+      exact (mul_le_mul_of_nonneg_right hpow_le (norm_nonneg _)).trans h'
+  rw [← integrable_norm_iff hmeas]
+  simpa using hnorm
+
+/-- The mixed-base derivative field of a triple Schwartz map. -/
+def mixedBaseFDerivSchwartz {m : ℕ}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    (A : SchwartzMap
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V) :
+    SchwartzMap
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ))
+      ((ComplexChartSpace m × (Fin m → ℝ)) →L[ℝ] V) := by
+  let B := ComplexChartSpace m × (Fin m → ℝ)
+  let P := Fin m → ℝ
+  exact
+    (SchwartzMap.postcompCLM
+      ((ContinuousLinearMap.inl ℝ B P).precomp V))
+      (SchwartzMap.fderivCLM ℝ (B × P) V A)
+
+@[simp]
+theorem mixedBaseFDerivSchwartz_apply {m : ℕ}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    (A : SchwartzMap
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V)
+    (b : ComplexChartSpace m × (Fin m → ℝ)) (a : Fin m → ℝ) :
+    mixedBaseFDerivSchwartz A (b, a) =
+      (fderiv ℝ
+        (A : ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) → V)
+        (b, a)).comp
+        (ContinuousLinearMap.inl ℝ
+          (ComplexChartSpace m × (Fin m → ℝ)) (Fin m → ℝ)) := by
+  simp [mixedBaseFDerivSchwartz]
+
+/-- Zeroth-order weighted decay of the raw mixed real-fiber integral. -/
+theorem exists_norm_pow_mul_mixedRealFiberIntegralRaw_le {m : ℕ}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    (A : SchwartzMap
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V)
+    (k : ℕ) :
+    ∃ C, ∀ b : ComplexChartSpace m × (Fin m → ℝ),
+      ‖b‖ ^ k * ‖mixedRealFiberIntegralRaw A b‖ ≤ C := by
+  let B := ComplexChartSpace m × (Fin m → ℝ)
+  let P := Fin m → ℝ
+  let μ : Measure P := volume
+  let C₁ : ℝ := SchwartzMap.seminorm ℝ k 0 A
+  let C₂ : ℝ := SchwartzMap.seminorm ℝ (k + μ.integrablePower) 0 A
+  refine ⟨2 ^ μ.integrablePower *
+      (∫ a : P, (1 + ‖a‖) ^ (-(μ.integrablePower : ℝ))) * (C₁ + C₂), ?_⟩
+  intro b
+  let c : ℝ := ‖b‖ ^ k
+  have hc_nonneg : 0 ≤ c := pow_nonneg (norm_nonneg _) _
+  have hbound :
+      ∫ a : P, ‖a‖ ^ 0 * ‖c • A (b, a)‖ ∂μ ≤
+        2 ^ μ.integrablePower *
+          (∫ a : P, (1 + ‖a‖) ^ (-(μ.integrablePower : ℝ))) * (C₁ + C₂) := by
+    refine integral_pow_mul_le_of_le_of_pow_mul_le (μ := μ) (k := 0)
+      (f := fun a : P => c • A (b, a)) (C₁ := C₁) (C₂ := C₂) ?hf ?hpow
+    · intro a
+      have hb_norm : ‖b‖ ≤ ‖(b, a)‖ := by
+        rw [Prod.norm_def]
+        exact le_max_left ‖b‖ ‖a‖
+      have hbpow : ‖b‖ ^ k ≤ ‖(b, a)‖ ^ k :=
+        pow_le_pow_left₀ (norm_nonneg _) hb_norm _
+      have h := SchwartzMap.le_seminorm ℝ k 0 A (b, a)
+      have h' : ‖(b, a)‖ ^ k * ‖A (b, a)‖ ≤ C₁ := by
+        simpa [C₁] using h
+      calc
+        ‖c • A (b, a)‖ = c * ‖A (b, a)‖ := by
+          simp [c, norm_smul]
+        _ = ‖b‖ ^ k * ‖A (b, a)‖ := rfl
+        _ ≤ ‖(b, a)‖ ^ k * ‖A (b, a)‖ := by
+          exact mul_le_mul_of_nonneg_right hbpow (norm_nonneg _)
+        _ ≤ C₁ := h'
+    · intro a
+      have hb_norm : ‖b‖ ≤ ‖(b, a)‖ := by
+        rw [Prod.norm_def]
+        exact le_max_left ‖b‖ ‖a‖
+      have ha_norm : ‖a‖ ≤ ‖(b, a)‖ := by
+        rw [Prod.norm_def]
+        exact le_max_right ‖b‖ ‖a‖
+      have hprod : ‖a‖ ^ (0 + μ.integrablePower) * c ≤
+          ‖(b, a)‖ ^ (k + μ.integrablePower) := by
+        have ha_pow :
+            ‖a‖ ^ μ.integrablePower ≤ ‖(b, a)‖ ^ μ.integrablePower :=
+          pow_le_pow_left₀ (norm_nonneg _) ha_norm _
+        have hb_pow : ‖b‖ ^ k ≤ ‖(b, a)‖ ^ k :=
+          pow_le_pow_left₀ (norm_nonneg _) hb_norm _
+        calc
+          ‖a‖ ^ (0 + μ.integrablePower) * c =
+              ‖a‖ ^ μ.integrablePower * ‖b‖ ^ k := by
+            simp [c]
+          _ ≤ ‖(b, a)‖ ^ μ.integrablePower * ‖(b, a)‖ ^ k :=
+            mul_le_mul ha_pow hb_pow (pow_nonneg (norm_nonneg _) _)
+              (pow_nonneg (norm_nonneg _) _)
+          _ = ‖(b, a)‖ ^ (μ.integrablePower + k) := by
+            rw [pow_add]
+          _ = ‖(b, a)‖ ^ (k + μ.integrablePower) := by
+            rw [add_comm]
+      have h := SchwartzMap.le_seminorm ℝ (k + μ.integrablePower) 0 A (b, a)
+      have h' : ‖(b, a)‖ ^ (k + μ.integrablePower) * ‖A (b, a)‖ ≤ C₂ := by
+        simpa [C₂] using h
+      calc
+        ‖a‖ ^ (0 + μ.integrablePower) * ‖c • A (b, a)‖
+            = (‖a‖ ^ (0 + μ.integrablePower) * c) * ‖A (b, a)‖ := by
+              simp [c, norm_smul, mul_assoc]
+        _ ≤ ‖(b, a)‖ ^ (k + μ.integrablePower) * ‖A (b, a)‖ :=
+          mul_le_mul_of_nonneg_right hprod (norm_nonneg _)
+        _ ≤ C₂ := h'
+  have hnorm_int :
+      ‖mixedRealFiberIntegralRaw A b‖ ≤ ∫ a : P, ‖A (b, a)‖ := by
+    simpa [mixedRealFiberIntegralRaw, μ] using
+      (norm_integral_le_integral_norm (μ := μ) (f := fun a : P => A (b, a)))
+  calc
+    ‖b‖ ^ k * ‖mixedRealFiberIntegralRaw A b‖
+        ≤ ‖b‖ ^ k * ∫ a : P, ‖A (b, a)‖ := by
+          gcongr
+    _ = ∫ a : P, ‖b‖ ^ k * ‖A (b, a)‖ := by
+          rw [← integral_const_mul]
+    _ = ∫ a : P, ‖a‖ ^ 0 * ‖c • A (b, a)‖ ∂μ := by
+          apply integral_congr_ae
+          filter_upwards with a
+          simp [c, norm_smul]
+    _ ≤ 2 ^ μ.integrablePower *
+          (∫ a : P, (1 + ‖a‖) ^ (-(μ.integrablePower : ℝ))) * (C₁ + C₂) := hbound
+
+/-- A single integrable last-parameter bound for the mixed-base derivative
+field, uniform in the mixed base point. -/
+lemma exists_integrable_bound_mixedBaseFDerivSchwartz {m : ℕ}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    (A : SchwartzMap
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V) :
+    ∃ bound : (Fin m → ℝ) → ℝ,
+      Integrable bound ∧
+      ∀ b a, ‖mixedBaseFDerivSchwartz A (b, a)‖ ≤ bound a := by
+  let B := ComplexChartSpace m × (Fin m → ℝ)
+  let P := Fin m → ℝ
+  let μ : Measure P := volume
+  let G : SchwartzMap (B × P) (B →L[ℝ] V) :=
+    mixedBaseFDerivSchwartz A
+  let C₁ : ℝ := SchwartzMap.seminorm ℝ 0 0 G
+  let C₂ : ℝ := SchwartzMap.seminorm ℝ (0 + μ.integrablePower) 0 G
+  refine ⟨fun a => 2 ^ μ.integrablePower * (C₁ + C₂) *
+      (1 + ‖a‖) ^ (-(μ.integrablePower : ℝ)), ?_, ?_⟩
+  · simpa [mul_assoc, mul_comm, mul_left_comm] using
+      (Measure.integrable_pow_neg_integrablePower μ).const_mul
+        (2 ^ μ.integrablePower * (C₁ + C₂))
+  · intro b a
+    have h1 : ‖G (b, a)‖ ≤ C₁ := by
+      have h := SchwartzMap.le_seminorm ℝ 0 0 G (b, a)
+      simpa [G, C₁] using h
+    have ha_norm : ‖a‖ ≤ ‖(b, a)‖ := by
+      rw [Prod.norm_def]
+      exact le_max_right ‖b‖ ‖a‖
+    have hpow_le :
+        ‖a‖ ^ (0 + μ.integrablePower) ≤ ‖(b, a)‖ ^ (0 + μ.integrablePower) :=
+      pow_le_pow_left₀ (norm_nonneg _) ha_norm _
+    have h2 : ‖a‖ ^ (0 + μ.integrablePower) * ‖G (b, a)‖ ≤ C₂ := by
+      have h := SchwartzMap.le_seminorm ℝ (0 + μ.integrablePower) 0 G (b, a)
+      have h' : ‖(b, a)‖ ^ (0 + μ.integrablePower) * ‖G (b, a)‖ ≤ C₂ := by
+        simpa [G, C₂] using h
+      exact (mul_le_mul_of_nonneg_right hpow_le (norm_nonneg _)).trans h'
+    have hmain := pow_mul_le_of_le_of_pow_mul_le (k := 0) (l := μ.integrablePower)
+      (x := ‖a‖) (f := ‖G (b, a)‖) (C₁ := C₁) (C₂ := C₂)
+      (norm_nonneg _) (norm_nonneg _) h1 h2
+    simpa [G, mul_assoc, mul_comm, mul_left_comm] using hmain
+
+/-- Differentiation under the mixed real-fiber integral. -/
+theorem hasFDerivAt_mixedRealFiberIntegralRaw {m : ℕ}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    (A : SchwartzMap
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V)
+    (b : ComplexChartSpace m × (Fin m → ℝ)) :
+    HasFDerivAt (mixedRealFiberIntegralRaw A)
+      (mixedRealFiberIntegralRaw (mixedBaseFDerivSchwartz A) b) b := by
+  let B := ComplexChartSpace m × (Fin m → ℝ)
+  let P := Fin m → ℝ
+  obtain ⟨bound, hbound_int, hbound⟩ := exists_integrable_bound_mixedBaseFDerivSchwartz A
+  have hs : (Set.univ : Set B) ∈ nhds b := Filter.univ_mem
+  have hA_meas :
+      ∀ᶠ b' in nhds b,
+        AEStronglyMeasurable (fun a : P => A (b', a))
+          (MeasureTheory.volume : MeasureTheory.Measure P) := by
+    exact Filter.Eventually.of_forall fun b' =>
+      (integrable_mixedRealFiber A b').aestronglyMeasurable
+  have hA_int :
+      Integrable (fun a : P => A (b, a))
+        (MeasureTheory.volume : MeasureTheory.Measure P) :=
+    integrable_mixedRealFiber A b
+  have hA'_meas :
+      AEStronglyMeasurable (fun a : P => mixedBaseFDerivSchwartz A (b, a))
+        (MeasureTheory.volume : MeasureTheory.Measure P) :=
+    (integrable_mixedRealFiber (mixedBaseFDerivSchwartz A) b).aestronglyMeasurable
+  have h_bound :
+      ∀ᵐ a ∂(MeasureTheory.volume : MeasureTheory.Measure P),
+        ∀ b' ∈ (Set.univ : Set B),
+          ‖mixedBaseFDerivSchwartz A (b', a)‖ ≤ bound a := by
+    exact Filter.Eventually.of_forall fun a b' _ => hbound b' a
+  have h_diff :
+      ∀ᵐ a ∂(MeasureTheory.volume : MeasureTheory.Measure P),
+        ∀ b' ∈ (Set.univ : Set B),
+          HasFDerivAt (fun b'' : B => A (b'', a))
+            (mixedBaseFDerivSchwartz A (b', a)) b' := by
+    refine Filter.Eventually.of_forall ?_
+    intro a b' _
+    let inl : B →L[ℝ] B × P :=
+      ContinuousLinearMap.inl ℝ B P
+    have hinner : HasFDerivAt (fun b'' : B => (b'', a)) inl b' := by
+      have hlin : HasFDerivAt (fun b'' : B => inl b'') inl b' :=
+        inl.hasFDerivAt
+      have hconst : (fun b'' : B => (b'', a)) =
+          fun b'' => inl b'' + (0, a) := by
+        funext b''
+        ext <;> simp [inl]
+      rw [hconst]
+      exact hlin.add_const (0, a)
+    have hAderiv :
+        HasFDerivAt (A : B × P → V)
+          (fderiv ℝ (A : B × P → V) (b', a)) (b', a) :=
+      A.differentiableAt.hasFDerivAt
+    simpa [inl] using hAderiv.comp b' hinner
+  simpa [mixedRealFiberIntegralRaw] using
+    (hasFDerivAt_integral_of_dominated_of_fderiv_le
+      (μ := (MeasureTheory.volume : MeasureTheory.Measure P))
+      (s := (Set.univ : Set B))
+      (x₀ := b)
+      (F := fun b' a => A (b', a))
+      (F' := fun b' a => mixedBaseFDerivSchwartz A (b', a))
+      hs hA_meas hA_int hA'_meas h_bound hbound_int h_diff)
+
+/-- The Fréchet derivative of the mixed raw fiber integral is the mixed fiber
+integral of the mixed-base derivative field. -/
+theorem fderiv_mixedRealFiberIntegralRaw_eq {m : ℕ}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    (A : SchwartzMap
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V) :
+    fderiv ℝ (mixedRealFiberIntegralRaw A) =
+      mixedRealFiberIntegralRaw (mixedBaseFDerivSchwartz A) := by
+  funext b
+  exact (hasFDerivAt_mixedRealFiberIntegralRaw A b).fderiv
+
+/-- Continuity of the mixed raw fiber integral. -/
+theorem continuous_mixedRealFiberIntegralRaw {m : ℕ}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    (A : SchwartzMap
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V) :
+    Continuous (mixedRealFiberIntegralRaw A) :=
+  continuous_iff_continuousAt.2 fun b =>
+    (hasFDerivAt_mixedRealFiberIntegralRaw A b).continuousAt
+
+theorem contDiff_nat_mixedRealFiberIntegralRaw {m : ℕ}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    (r : ℕ)
+    (A : SchwartzMap
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V) :
+    ContDiff ℝ r (mixedRealFiberIntegralRaw A) := by
+  induction r generalizing V A with
+  | zero =>
+      exact contDiff_zero.2 (continuous_mixedRealFiberIntegralRaw A)
+  | succ r ihr =>
+      exact (contDiff_succ_iff_hasFDerivAt (𝕜 := ℝ) (n := r)
+        (f := mixedRealFiberIntegralRaw A)).2 <| by
+        refine ⟨mixedRealFiberIntegralRaw (mixedBaseFDerivSchwartz A), ?_, ?_⟩
+        · exact ihr (A := mixedBaseFDerivSchwartz A)
+        · intro b
+          exact hasFDerivAt_mixedRealFiberIntegralRaw A b
+
+/-- Smoothness of the mixed raw fiber integral. -/
+theorem contDiff_mixedRealFiberIntegralRaw {m : ℕ}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    (A : SchwartzMap
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V) :
+    ContDiff ℝ (⊤ : ℕ∞) (mixedRealFiberIntegralRaw A) := by
+  rw [contDiff_infty]
+  intro r
+  exact contDiff_nat_mixedRealFiberIntegralRaw r A
+
+/-- Schwartz decay of all mixed-base derivatives of the raw fiber integral. -/
+theorem decay_mixedRealFiberIntegralRaw {m : ℕ}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℝ V] [CompleteSpace V]
+    (A : SchwartzMap
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V)
+    (k r : ℕ) :
+    ∃ C, ∀ b : ComplexChartSpace m × (Fin m → ℝ),
+      ‖b‖ ^ k * ‖iteratedFDeriv ℝ r (mixedRealFiberIntegralRaw A) b‖ ≤ C := by
+  induction r generalizing V A with
+  | zero =>
+      obtain ⟨C, hC⟩ := exists_norm_pow_mul_mixedRealFiberIntegralRaw_le A k
+      refine ⟨C, fun b => ?_⟩
+      simpa [norm_iteratedFDeriv_zero] using hC b
+  | succ r ihr =>
+      obtain ⟨C, hC⟩ := ihr (A := mixedBaseFDerivSchwartz A)
+      refine ⟨C, fun b => ?_⟩
+      calc
+        ‖b‖ ^ k * ‖iteratedFDeriv ℝ (r + 1) (mixedRealFiberIntegralRaw A) b‖
+            = ‖b‖ ^ k *
+                ‖iteratedFDeriv ℝ r (fderiv ℝ (mixedRealFiberIntegralRaw A)) b‖ := by
+              rw [norm_iteratedFDeriv_fderiv]
+        _ = ‖b‖ ^ k *
+              ‖iteratedFDeriv ℝ r
+                (mixedRealFiberIntegralRaw (mixedBaseFDerivSchwartz A)) b‖ := by
+              rw [fderiv_mixedRealFiberIntegralRaw_eq]
+        _ ≤ C := hC b
+
+/-- Uniform zeroth-derivative seminorm bound for the mixed real-fiber
+integral. -/
+theorem exists_seminorm_bound_mixedRealFiberIntegralRaw_zero {m : ℕ}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedSpace ℝ V]
+    [SMulCommClass ℝ ℂ V] [CompleteSpace V]
+    (k : ℕ) :
+    ∃ s : Finset (ℕ × ℕ), ∃ C : ℝ, 0 ≤ C ∧
+      ∀ (A : SchwartzMap
+          ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V)
+        (b : ComplexChartSpace m × (Fin m → ℝ)),
+        ‖b‖ ^ k * ‖mixedRealFiberIntegralRaw A b‖ ≤
+          C * s.sup (schwartzSeminormFamily ℂ
+            ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V) A := by
+  let B := ComplexChartSpace m × (Fin m → ℝ)
+  let P := Fin m → ℝ
+  let μ : Measure P := volume
+  let s : Finset (ℕ × ℕ) := {(k, 0), (k + μ.integrablePower, 0)}
+  let Aconst : ℝ :=
+    2 ^ μ.integrablePower *
+      ∫ a : P, (1 + ‖a‖) ^ (-(μ.integrablePower : ℝ))
+  refine ⟨s, 2 * Aconst, ?_, ?_⟩
+  · dsimp [Aconst]
+    positivity
+  · intro F b
+    let C₁ : ℝ := SchwartzMap.seminorm ℂ k 0 F
+    let C₂ : ℝ := SchwartzMap.seminorm ℂ (k + μ.integrablePower) 0 F
+    let S : ℝ := s.sup (schwartzSeminormFamily ℂ (B × P) V) F
+    have hC₁_le : C₁ ≤ S := by
+      have hmem : ((k, 0) : ℕ × ℕ) ∈ s := by simp [s]
+      exact (show (schwartzSeminormFamily ℂ (B × P) V ((k, 0) : ℕ × ℕ)) F ≤ S from
+        (Finset.le_sup (f := schwartzSeminormFamily ℂ (B × P) V) hmem) F)
+    have hC₂_le : C₂ ≤ S := by
+      have hmem : ((k + μ.integrablePower, 0) : ℕ × ℕ) ∈ s := by simp [s]
+      exact (show
+        (schwartzSeminormFamily ℂ (B × P) V
+          ((k + μ.integrablePower, 0) : ℕ × ℕ)) F ≤ S from
+        (Finset.le_sup (f := schwartzSeminormFamily ℂ (B × P) V) hmem) F)
+    have hbound :
+        ∫ a : P, ‖a‖ ^ 0 * ‖(‖b‖ ^ k : ℝ) • F (b, a)‖ ∂μ ≤
+          Aconst * (C₁ + C₂) := by
+      refine integral_pow_mul_le_of_le_of_pow_mul_le (μ := μ) (k := 0)
+        (f := fun a : P => (‖b‖ ^ k : ℝ) • F (b, a))
+        (C₁ := C₁) (C₂ := C₂) ?hf ?hpow
+      · intro a
+        have hb_norm : ‖b‖ ≤ ‖(b, a)‖ := by
+          rw [Prod.norm_def]
+          exact le_max_left ‖b‖ ‖a‖
+        have hbpow : ‖b‖ ^ k ≤ ‖(b, a)‖ ^ k :=
+          pow_le_pow_left₀ (norm_nonneg _) hb_norm _
+        have h := SchwartzMap.le_seminorm ℂ k 0 F (b, a)
+        have h' : ‖(b, a)‖ ^ k * ‖F (b, a)‖ ≤ C₁ := by
+          simpa [C₁] using h
+        calc
+          ‖(‖b‖ ^ k : ℝ) • F (b, a)‖ =
+              ‖b‖ ^ k * ‖F (b, a)‖ := by
+            rw [norm_smul, Real.norm_of_nonneg (pow_nonneg (norm_nonneg b) k)]
+          _ ≤ ‖(b, a)‖ ^ k * ‖F (b, a)‖ :=
+            mul_le_mul_of_nonneg_right hbpow (norm_nonneg _)
+          _ ≤ C₁ := h'
+      · intro a
+        have hb_norm : ‖b‖ ≤ ‖(b, a)‖ := by
+          rw [Prod.norm_def]
+          exact le_max_left ‖b‖ ‖a‖
+        have ha_norm : ‖a‖ ≤ ‖(b, a)‖ := by
+          rw [Prod.norm_def]
+          exact le_max_right ‖b‖ ‖a‖
+        have hprod : ‖a‖ ^ (0 + μ.integrablePower) * ‖b‖ ^ k ≤
+            ‖(b, a)‖ ^ (k + μ.integrablePower) := by
+          have ha_pow :
+              ‖a‖ ^ μ.integrablePower ≤ ‖(b, a)‖ ^ μ.integrablePower :=
+            pow_le_pow_left₀ (norm_nonneg _) ha_norm _
+          have hb_pow : ‖b‖ ^ k ≤ ‖(b, a)‖ ^ k :=
+            pow_le_pow_left₀ (norm_nonneg _) hb_norm _
+          calc
+            ‖a‖ ^ (0 + μ.integrablePower) * ‖b‖ ^ k =
+                ‖a‖ ^ μ.integrablePower * ‖b‖ ^ k := by simp
+            _ ≤ ‖(b, a)‖ ^ μ.integrablePower * ‖(b, a)‖ ^ k :=
+              mul_le_mul ha_pow hb_pow (pow_nonneg (norm_nonneg _) _)
+                (pow_nonneg (norm_nonneg _) _)
+            _ = ‖(b, a)‖ ^ (μ.integrablePower + k) := by rw [pow_add]
+            _ = ‖(b, a)‖ ^ (k + μ.integrablePower) := by rw [add_comm]
+        have h := SchwartzMap.le_seminorm ℂ (k + μ.integrablePower) 0 F (b, a)
+        have h' : ‖(b, a)‖ ^ (k + μ.integrablePower) * ‖F (b, a)‖ ≤ C₂ := by
+          simpa [C₂] using h
+        calc
+          ‖a‖ ^ (0 + μ.integrablePower) *
+              ‖(‖b‖ ^ k : ℝ) • F (b, a)‖
+              = (‖a‖ ^ (0 + μ.integrablePower) * ‖b‖ ^ k) *
+                  ‖F (b, a)‖ := by
+                rw [norm_smul, Real.norm_of_nonneg (pow_nonneg (norm_nonneg b) k)]
+                ring
+          _ ≤ ‖(b, a)‖ ^ (k + μ.integrablePower) * ‖F (b, a)‖ :=
+            mul_le_mul_of_nonneg_right hprod (norm_nonneg _)
+          _ ≤ C₂ := h'
+    have hnorm_int :
+        ‖mixedRealFiberIntegralRaw F b‖ ≤ ∫ a : P, ‖F (b, a)‖ := by
+      simpa [mixedRealFiberIntegralRaw, μ] using
+        (norm_integral_le_integral_norm (μ := μ) (f := fun a : P => F (b, a)))
+    calc
+      ‖b‖ ^ k * ‖mixedRealFiberIntegralRaw F b‖
+          ≤ ‖b‖ ^ k * ∫ a : P, ‖F (b, a)‖ := by
+            gcongr
+      _ = ∫ a : P, ‖b‖ ^ k * ‖F (b, a)‖ := by
+            rw [← integral_const_mul]
+      _ = ∫ a : P, ‖a‖ ^ 0 *
+              ‖(‖b‖ ^ k : ℝ) • F (b, a)‖ ∂μ := by
+            apply integral_congr_ae
+            filter_upwards with a
+            rw [norm_smul, Real.norm_of_nonneg (pow_nonneg (norm_nonneg b) k)]
+            simp
+      _ ≤ Aconst * (C₁ + C₂) := hbound
+      _ ≤ Aconst * (2 * S) := by
+            gcongr
+            linarith
+      _ = 2 * Aconst * S := by ring
+
+/-- Precomposition with the mixed-base inclusion on real-linear maps, viewed as
+a complex-linear continuous map because the scalar action is on the codomain. -/
+def mixedBasePrecompCLM {m : ℕ}
+    (V : Type*) [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedSpace ℝ V]
+    [SMulCommClass ℝ ℂ V] :
+    (((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) →L[ℝ] V) →L[ℂ]
+      ((ComplexChartSpace m × (Fin m → ℝ)) →L[ℝ] V) := by
+  let B := ComplexChartSpace m × (Fin m → ℝ)
+  let P := Fin m → ℝ
+  let inl : B →L[ℝ] B × P := ContinuousLinearMap.inl ℝ B P
+  let Llin : ((B × P) →L[ℝ] V) →ₗ[ℂ] (B →L[ℝ] V) :=
+    { toFun := fun T => T.comp inl
+      map_add' := by
+        intro T U
+        apply ContinuousLinearMap.ext
+        intro b
+        rfl
+      map_smul' := by
+        intro c T
+        apply ContinuousLinearMap.ext
+        intro b
+        rfl }
+  exact Llin.mkContinuous 1 (by
+    intro T
+    have hcomp : ‖T.comp inl‖ ≤ ‖T‖ * ‖inl‖ := T.opNorm_comp_le inl
+    have hinl : ‖inl‖ ≤ (1 : ℝ) := by
+      simpa [inl] using ContinuousLinearMap.norm_inl_le_one ℝ B P
+    calc
+      ‖Llin T‖ = ‖T.comp inl‖ := rfl
+      _ ≤ ‖T‖ * ‖inl‖ := hcomp
+      _ ≤ 1 * ‖T‖ := by
+        rw [one_mul]
+        exact mul_le_of_le_one_right (norm_nonneg T) hinl
+      _ = 1 * ‖T‖ := rfl)
+
+@[simp]
+theorem mixedBasePrecompCLM_apply {m : ℕ}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedSpace ℝ V]
+    [SMulCommClass ℝ ℂ V]
+    (T : (((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) →L[ℝ] V)) :
+    mixedBasePrecompCLM (m := m) V T =
+      T.comp (ContinuousLinearMap.inl ℝ
+        (ComplexChartSpace m × (Fin m → ℝ)) (Fin m → ℝ)) := by
+  rfl
+
+/-- The mixed-base derivative field as a continuous complex-linear map on the
+triple Schwartz space. -/
+def mixedBaseFDerivSchwartzCLM {m : ℕ}
+    (V : Type*) [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedSpace ℝ V]
+    [SMulCommClass ℝ ℂ V] [CompleteSpace V] :
+    SchwartzMap
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V →L[ℂ]
+      SchwartzMap
+        ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ))
+        ((ComplexChartSpace m × (Fin m → ℝ)) →L[ℝ] V) :=
+  (SchwartzMap.postcompCLM (mixedBasePrecompCLM (m := m) V)).comp
+    (SchwartzMap.fderivCLM ℂ
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V)
+
+@[simp]
+theorem mixedBaseFDerivSchwartzCLM_apply {m : ℕ}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedSpace ℝ V]
+    [SMulCommClass ℝ ℂ V] [CompleteSpace V]
+    (A : SchwartzMap
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V) :
+    mixedBaseFDerivSchwartzCLM V A = mixedBaseFDerivSchwartz A := by
+  ext p v <;>
+    simp [mixedBaseFDerivSchwartzCLM, mixedBasePrecompCLM, mixedBaseFDerivSchwartz]
+
+/-- Finite-supremum Schwartz seminorms of the mixed-base derivative field are
+controlled by finitely many Schwartz seminorms of the original triple test. -/
+theorem exists_seminorm_bound_mixedBaseFDerivSchwartz {m : ℕ}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedSpace ℝ V]
+    [SMulCommClass ℝ ℂ V] [CompleteSpace V]
+    (s0 : Finset (ℕ × ℕ)) :
+    ∃ s : Finset (ℕ × ℕ), ∃ C : ℝ, 0 ≤ C ∧
+      ∀ A : SchwartzMap
+          ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V,
+        s0.sup (schwartzSeminormFamily ℂ
+          ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ))
+          ((ComplexChartSpace m × (Fin m → ℝ)) →L[ℝ] V))
+          (mixedBaseFDerivSchwartz A) ≤
+        C * s.sup (schwartzSeminormFamily ℂ
+          ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V) A := by
+  let D := (ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)
+  let B := ComplexChartSpace m × (Fin m → ℝ)
+  let L := mixedBaseFDerivSchwartzCLM (m := m) V
+  let p := schwartzSeminormFamily ℂ D V
+  let q := schwartzSeminormFamily ℂ D (B →L[ℝ] V)
+  have hbounded : Seminorm.IsBounded p q L.toLinearMap := by
+    intro i
+    let qi : Seminorm ℂ (SchwartzMap D V) := (q i).comp L.toLinearMap
+    have hqi_cont : Continuous qi := by
+      exact ((schwartz_withSeminorms ℂ D (B →L[ℝ] V)).continuous_seminorm i).comp
+        L.continuous
+    obtain ⟨s, C, _hCne, hbound⟩ :=
+      Seminorm.bound_of_continuous (schwartz_withSeminorms ℂ D V) qi hqi_cont
+    exact ⟨s, C, hbound⟩
+  obtain ⟨Cnn, s, hsup⟩ := Seminorm.isBounded_sup hbounded s0
+  refine ⟨s, (Cnn : ℝ), Cnn.2, ?_⟩
+  intro A
+  have h := Seminorm.le_def.mp hsup A
+  simpa [L, p, q] using h
+
+/-- Uniform finite-seminorm bound for every mixed-base derivative of the real
+fiber integral. -/
+theorem exists_seminorm_bound_mixedRealFiberIntegralRaw_deriv {m : ℕ}
+    {V : Type*} [NormedAddCommGroup V] [NormedSpace ℂ V] [NormedSpace ℝ V]
+    [SMulCommClass ℝ ℂ V] [CompleteSpace V]
+    (k n : ℕ) :
+    ∃ s : Finset (ℕ × ℕ), ∃ C : ℝ, 0 ≤ C ∧
+      ∀ (A : SchwartzMap
+          ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V)
+        (b : ComplexChartSpace m × (Fin m → ℝ)),
+        ‖b‖ ^ k *
+          ‖iteratedFDeriv ℝ n (mixedRealFiberIntegralRaw A) b‖ ≤
+        C * s.sup (schwartzSeminormFamily ℂ
+          ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V) A := by
+  induction n generalizing V with
+  | zero =>
+      obtain ⟨s, C, hC, hbound⟩ :=
+        exists_seminorm_bound_mixedRealFiberIntegralRaw_zero (m := m) (V := V) k
+      refine ⟨s, C, hC, ?_⟩
+      intro A b
+      simpa [norm_iteratedFDeriv_zero] using hbound A b
+  | succ n ih =>
+      obtain ⟨s0, C0, hC0, hIH⟩ :=
+        ih (V := (ComplexChartSpace m × (Fin m → ℝ)) →L[ℝ] V)
+      obtain ⟨s, C1, hC1, hbase⟩ :=
+        exists_seminorm_bound_mixedBaseFDerivSchwartz (m := m) (V := V) s0
+      refine ⟨s, C0 * C1, mul_nonneg hC0 hC1, ?_⟩
+      intro A b
+      calc
+        ‖b‖ ^ k *
+            ‖iteratedFDeriv ℝ (n + 1) (mixedRealFiberIntegralRaw A) b‖
+            = ‖b‖ ^ k *
+                ‖iteratedFDeriv ℝ n
+                  (fderiv ℝ (mixedRealFiberIntegralRaw A)) b‖ := by
+              rw [norm_iteratedFDeriv_fderiv]
+        _ = ‖b‖ ^ k *
+              ‖iteratedFDeriv ℝ n
+                (mixedRealFiberIntegralRaw (mixedBaseFDerivSchwartz A)) b‖ := by
+              rw [fderiv_mixedRealFiberIntegralRaw_eq]
+        _ ≤ C0 * s0.sup (schwartzSeminormFamily ℂ
+              ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ))
+              ((ComplexChartSpace m × (Fin m → ℝ)) →L[ℝ] V))
+              (mixedBaseFDerivSchwartz A) :=
+            hIH (mixedBaseFDerivSchwartz A) b
+        _ ≤ C0 * (C1 * s.sup (schwartzSeminormFamily ℂ
+              ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V) A) := by
+            gcongr
+            exact hbase A
+        _ = (C0 * C1) * s.sup (schwartzSeminormFamily ℂ
+              ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) V) A := by
+            ring
+
+/-- Mixed real-fiber integration over the last real parameter as a continuous
+complex-linear map of Schwartz spaces. -/
+noncomputable def mixedRealFiberIntegralCLM {m : ℕ} :
+    SchwartzMap
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) ℂ →L[ℂ]
+      SchwartzMap (ComplexChartSpace m × (Fin m → ℝ)) ℂ :=
+  SchwartzMap.mkCLM (𝕜 := ℂ) (𝕜' := ℂ)
+    (fun A b => ∫ a : Fin m → ℝ, A (b, a))
+    (fun A B b => by
+      simpa using
+        (integral_add (integrable_mixedRealFiber A b) (integrable_mixedRealFiber B b)))
+    (fun c A b => by
+      simpa using
+        (integral_const_mul (μ := (volume : Measure (Fin m → ℝ))) c
+          (fun a : Fin m → ℝ => A (b, a))))
+    (fun A => contDiff_mixedRealFiberIntegralRaw A)
+    (fun kn => by
+      rcases kn with ⟨k, n⟩
+      simpa using
+        (exists_seminorm_bound_mixedRealFiberIntegralRaw_deriv (m := m) (V := ℂ) k n))
+
+@[simp]
+theorem mixedRealFiberIntegralCLM_apply {m : ℕ}
+    (A : SchwartzMap
+      ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) ℂ)
+    (z : ComplexChartSpace m) (t : Fin m → ℝ) :
+    mixedRealFiberIntegralCLM A (z, t) =
+      ∫ a : Fin m → ℝ, A ((z, t), a) := by
+  rfl
+
 end SCV

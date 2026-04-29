@@ -2078,11 +2078,24 @@ Current implementation order:
    `SCV.continuous_schwartzPartialEval₂CLM`,
    `SCV.schwartzPartialEval₂CLM_seminorm_decay_one`,
    `SCV.schwartzPartialEval₂CLM_finsetSeminorm_decay`,
+   `SCV.mixedRealFiberIntegralRaw`,
+   `SCV.integrable_mixedRealFiber`,
+   `SCV.mixedBaseFDerivSchwartz`,
+   `SCV.hasFDerivAt_mixedRealFiberIntegralRaw`,
+   `SCV.fderiv_mixedRealFiberIntegralRaw_eq`,
+   `SCV.contDiff_mixedRealFiberIntegralRaw`,
+   `SCV.decay_mixedRealFiberIntegralRaw`,
+   `SCV.exists_seminorm_bound_mixedRealFiberIntegralRaw_zero`,
+   `SCV.mixedBasePrecompCLM`,
+   `SCV.mixedBaseFDerivSchwartzCLM`,
+   `SCV.exists_seminorm_bound_mixedBaseFDerivSchwartz`,
+   `SCV.exists_seminorm_bound_mixedRealFiberIntegralRaw_deriv`,
+   `SCV.mixedRealFiberIntegralCLM`,
+   `SCV.mixedRealFiberIntegralCLM_apply`,
    `SCV.regularizedEnvelope_productKernel_dbar_eq_zero_local`, and
    `SCV.translationCovariantKernel_distributionalHolomorphic_local`.
    The remaining pure-SCV declarations on this route are now the local descent
    package
-   `SCV.mixedRealFiberIntegralCLM`,
    `SCV.mixedBaseFiberTensor`,
    `SCV.mixedBaseFiberTensor_apply`,
    `SCV.schwartzPartialEval₂CLM_mixedBaseFiberTensor`,

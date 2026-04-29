@@ -7416,9 +7416,26 @@ Proof transcript for the next target:
        source seminorms `(k,l)` and
        `(k + (volume : Measure (Fin m -> ℝ)).integrablePower, l)`, then
        aggregate over finite output-seminorm families.
+       The mixed real-fiber integral layer is checked in the same file:
+       `mixedRealFiberIntegralRaw`, `mixedRealFiberIntegralRaw_apply`,
+       `integrable_mixedRealFiber`, `mixedBaseFDerivSchwartz`,
+       `mixedBaseFDerivSchwartz_apply`,
+       `exists_norm_pow_mul_mixedRealFiberIntegralRaw_le`,
+       `exists_integrable_bound_mixedBaseFDerivSchwartz`,
+       `hasFDerivAt_mixedRealFiberIntegralRaw`,
+       `fderiv_mixedRealFiberIntegralRaw_eq`,
+       `continuous_mixedRealFiberIntegralRaw`,
+       `contDiff_mixedRealFiberIntegralRaw`,
+       `decay_mixedRealFiberIntegralRaw`,
+       `exists_seminorm_bound_mixedRealFiberIntegralRaw_zero`,
+       `mixedBasePrecompCLM`, `mixedBasePrecompCLM_apply`,
+       `mixedBaseFDerivSchwartzCLM`,
+       `mixedBaseFDerivSchwartzCLM_apply`,
+       `exists_seminorm_bound_mixedBaseFDerivSchwartz`,
+       `exists_seminorm_bound_mixedRealFiberIntegralRaw_deriv`,
+       `mixedRealFiberIntegralCLM`, and `mixedRealFiberIntegralCLM_apply`.
 
        Next local descent infrastructure:
-       `mixedRealFiberIntegralCLM`,
        `mixedBaseFiberTensor`, `mixedBaseFiberProductTensorDense_all`,
        `mixedRealFiberIntegralScalarCLM`,
        `mixedRealFiberIntegralScalarCLM_apply`,
