@@ -2718,7 +2718,10 @@ Current implementation order:
    assembly precisely: first derive the fixed-basis relatively compact side
    cone from `localEOWSimplexDirections ys` and convert the OS-II
    uniform-on-compact boundary hypotheses to raw `nhdsWithin` slice limits on
-   that side cone and its negative image; next package the two-sided
+   that side cone and its negative image.  The side cone must come with both
+   an open approach domain `Cplus ⊆ C` and a compact closed direction envelope
+   fed to `TendstoUniformlyOn`; using the whole ambient cone `C` as the raw
+   filter domain is not a valid substitute.  Next package the two-sided
    `sliceCLM_family_from_distributionalBoundary` from the checked one-sided
    `SCV.exists_cutoffSliceCLM_family_of_boundaryValue`, including the
    lower-side sign/filter conversion; then prove
@@ -2733,14 +2736,13 @@ Current implementation order:
    side approximate-identity limits obtained from
    `regularizedEnvelope_kernelLimit_from_representation`, not add a separate
    free `hkernel_limit`.
-   The next Lean packet should be split into
-   `OSReconstruction/SCV/LocalEOWSideCone.lean` for
+   `OSReconstruction/SCV/LocalEOWSideCone.lean` now checks
    `SCV.tendsto_neg_nhdsWithin_zero_neg_image` and
-   `SCV.localEOW_basisSideCone_rawBoundaryValue`, followed by
+   `SCV.localEOW_basisSideCone_rawBoundaryValue`.  The next Lean packet is
    `OSReconstruction/SCV/LocalDistributionalEOWSlice.lean` for
-   `SCV.sliceCLM_family_from_distributionalBoundary`; both are pure SCV
-   support files and should be imported by `OSReconstruction/SCV.lean` only
-   after their exact file checks and module builds pass.
+   `SCV.sliceCLM_family_from_distributionalBoundary`; it is pure SCV support
+   and should be imported by `OSReconstruction/SCV.lean` only after its exact
+   file check and module build pass.
    Then prove
    the OS45 instantiation
    `BHW.os45_adjacent_commonBoundaryEnvelope` and package its output as
