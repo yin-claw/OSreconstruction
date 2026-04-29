@@ -1136,7 +1136,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
          monotonicity for pushed kernels, finite-seminorm transport through the
          composed kernel Schwartz CLM, continuity of the varying-slice cutoff
          envelope integrand, and the cutoff-removal proof on tests supported
-         in `Ucov`.
+         in `Ucov`.  The pure-tensor representation must use the local
+         support-integral package now pinned in
+         `docs/scv_infrastructure_blueprint.md`:
+         `continuous_mul_of_continuousOn_supportsInOpen`,
+         `integrable_mul_of_continuousOn_supportsInOpen`, and
+         `closedBall_setIntegral_mul_eq_integral_of_supportsInOpen`.  These
+         are the exact facts that justify the all-space integral
+         `∫ z, Gchart ψ z * φ z` from continuity of `Gchart ψ` only on
+         `Ucov` and `tsupport φ ⊆ Ucov`; the proof must not assume global
+         measurability or continuity of `Gchart ψ`.
       2. `SCV.regularizedLocalEOW_pairingCLM_localCovariant`.  It proves
          `ProductKernelRealTranslationCovariantLocal K Ucov r`, not global
          covariance.  The proof expands both product pairings, changes
@@ -1325,7 +1334,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
       derives `hkernel_cont`, returns scalar `hbv_cont`, and packages the two
       side limits.  The final cutoff-envelope continuity theorem
       `SCV.continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand` is now
-      checked too, so the next Lean target is the mixed pairing CLM itself.
+      checked too.  The remaining proof-doc gate before Lean implementation is
+      the mixed pairing CLM route itself: first add the local support-integral
+      helper surfaces named above, then construct
+      `regularizedLocalEOW_pairingCLM_of_fixedWindow` by the actual
+      closed-ball cutoff-envelope integral and the explicit
+      `SchwartzMap.mkCLMtoNormedSpace` estimate.  That estimate uses the
+      finite-seminorm data from `hLchart_bound`, composes it with
+      `schwartzPartialEval₁CLM_compactSeminormBound`, bounds `χU` only on
+      `closedBall 0 Rcut`, and multiplies by
+      `(volume (Metric.closedBall 0 Rcut)).toReal`; no support hypothesis on
+      `χU` is part of this theorem.
       The checked parametric bound theorem only uses continuity of
       `Fplus`/`Fminus` on the original side domains;
       differentiability of the mollified side functions on `Dplus`/`Dminus`
@@ -1351,10 +1370,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
       Lean introduce
       `regularizedLocalEOW_pairingCLM_of_fixedWindow`; it must not revive the
       retired global `regularizedLocalEOW_productKernel_from_continuousEOW`
-      surface.  Its pure-tensor all-space integral representation must be
-      derived from support of `φ` inside the small covariance ball: the
-      all-space integrand is the closed-ball continuous integrand extended by
-      zero, so no global measurability of `Gchart ψ` is assumed.  In the final
+      surface.  Its pure-tensor all-space integral representation must first
+      prove the closed-ball identity by rewriting the actual integrand through
+      `hLchart_cutoff`, using `schwartzPartialEval₁CLM_tensorProduct₂`,
+      pulling `φ z` through `Lchart z`, applying `hLchart_value` to the
+      supported kernel `ψ`, and removing `χU` on `tsupport φ`.  Only then may
+      it invoke
+      `closedBall_setIntegral_mul_eq_integral_of_supportsInOpen`, deriving
+      `ContinuousOn (Gchart ψ) Ucov` from `hG_holo` and
+      `Ucov ⊆ closedBall 0 Rcut ⊆ ball 0 (δ / 2)`.  Thus the all-space
+      integrand is the closed-ball continuous integrand extended by zero, so
+      no global measurability of `Gchart ψ` is assumed.  In the final
       `SCV.local_distributional_edge_of_the_wedge_envelope`
       implementation, `hcontinuousEOW` is not an extra assumption: it is
       obtained inside the proof by applying

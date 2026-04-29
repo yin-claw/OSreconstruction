@@ -5664,6 +5664,65 @@ Proof transcript for the next target:
                ∫ z : ComplexChartSpace m, Gchart ψ z * φ z)
    ```
 
+   Before Lean implements the pairing theorem, the support/integral passage
+   must be available as explicit local infrastructure.  These helpers are not
+   wrappers around the pairing theorem: they are the missing analytic facts
+   that let a locally continuous coefficient be paired with a compactly
+   supported Schwartz test without assuming global regularity of the
+   coefficient.
+
+   ```lean
+   theorem continuous_mul_of_continuousOn_supportsInOpen
+       {U : Set (ComplexChartSpace m)}
+       (hU_open : IsOpen U)
+       (G : ComplexChartSpace m -> ℂ)
+       (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+       (hG : ContinuousOn G U)
+       (hφ : SupportsInOpen (φ : ComplexChartSpace m -> ℂ) U) :
+       Continuous (fun z : ComplexChartSpace m => G z * φ z)
+
+   theorem integrable_mul_of_continuousOn_supportsInOpen
+       {U : Set (ComplexChartSpace m)}
+       (hU_open : IsOpen U)
+       (G : ComplexChartSpace m -> ℂ)
+       (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+       (hG : ContinuousOn G U)
+       (hφ : SupportsInOpen (φ : ComplexChartSpace m -> ℂ) U) :
+       Integrable (fun z : ComplexChartSpace m => G z * φ z)
+
+   theorem closedBall_setIntegral_mul_eq_integral_of_supportsInOpen
+       {U : Set (ComplexChartSpace m)} {Rcut : ℝ}
+       (hU_open : IsOpen U)
+       (hU_closedBall :
+         U ⊆ Metric.closedBall (0 : ComplexChartSpace m) Rcut)
+       (G : ComplexChartSpace m -> ℂ)
+       (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+       (hG : ContinuousOn G U)
+       (hφ : SupportsInOpen (φ : ComplexChartSpace m -> ℂ) U) :
+       (∫ z in Metric.closedBall (0 : ComplexChartSpace m) Rcut,
+           G z * φ z) =
+         ∫ z : ComplexChartSpace m, G z * φ z
+   ```
+
+   Proof transcript for these helpers:
+
+   * For continuity, fix `z`.  If `z ∈ U`, `hU_open` upgrades
+     `hG.continuousWithinAt` to `ContinuousAt G z`, and multiplication by the
+     globally continuous Schwartz test gives continuity of `G * φ` at `z`.
+     If `z ∉ U`, then `hφ.2` gives `z ∉ tsupport φ`; use
+     `notMem_tsupport_iff_eventuallyEq` to make `φ` eventually zero near `z`,
+     so `G * φ` is eventually the zero function and is continuous there.
+   * For integrability, the support of `fun z => G z * φ z` is contained in
+     the support of `φ`, hence its topological support is contained in
+     `tsupport φ`.  Use `hφ.1` to get compact support and apply
+     `Continuous.integrable_of_hasCompactSupport` to the continuity helper.
+   * For the closed-ball equality, combine the integrability helper with
+     `MeasureTheory.setIntegral_eq_integral_of_forall_compl_eq_zero`.  If
+     `z ∉ closedBall 0 Rcut` and `φ z ≠ 0`, then `z ∈ Function.support φ`,
+     hence `z ∈ tsupport φ ⊆ U ⊆ closedBall 0 Rcut`, a contradiction; so the
+     integrand is zero off the closed ball.  The Lean proof uses only support
+     containment and does not inspect `G` outside `U`.
+
    Proof transcript for the pairing CLM:
 
    1. Choose radii for the two cutoff layers:
@@ -5685,8 +5744,11 @@ Proof transcript for the next target:
       `tsupport χr ⊆ closedBall 0 rcut`, while `χψ = 1` on
       `closedBall 0 rψ` and `tsupport χψ ⊆ closedBall 0 rψLarge`.  The
       product-kernel construction may use these cutoffs only to make global
-      Schwartz CLMs.  The later covariance statement removes them on supported
-      tests.
+      Schwartz CLMs.  For `χU`, the pairing theorem consumes only
+      `hχU_one` on `closedBall 0 Rcov`; no support hypothesis on `χU` is
+      required, because the mixed CLM integrates over `closedBall 0 Rcut` by
+      definition.  The later covariance statement removes all three cutoffs on
+      supported tests.
    3. Use `regularizedLocalEOW_originalFamily_compactValueCLM` to obtain
       `Lorig z`, uniformly bounded for `z ∈ closedBall 0 Rcut`, with
       `Lorig z η = G (χψ • η) z`.  Define the chart-kernel value CLM by
@@ -5732,22 +5794,36 @@ Proof transcript for the next target:
       Gorig (χψ • P (χr • schwartzPartialEval₁CLM z F)) z
         = Lchart z (schwartzPartialEval₁CLM z F).
       ```
-      Combine the compact bound for `Lchart` with
-      `schwartzPartialEval₁CLM_compactSeminormBound` to obtain
+      Write the finite-seminorm data from `hLchart_bound` as
+      `⟨sL, CL, hCL, hLbound⟩`.  Since `0 < Rcov < Rcut`, derive
+      `0 ≤ Rcut` and apply
+      `schwartzPartialEval₁CLM_compactSeminormBound Rcut hRcut_nonneg sL` to
+      obtain `⟨sPE, CPE, hCPE, hPE⟩`.  Combining the two estimates gives
       ```
       ‖Lchart z (schwartzPartialEval₁CLM z F)‖
-        ≤ Cmix * smix.sup p_mixed F
+        ≤ (CL * CPE) * sPE.sup p_mixed F
       ```
       uniformly for `z ∈ closedBall 0 Rcut`.  Bound the fixed cutoff on the
       compact ball by
       `Mχ := max M 0`, where `M` comes from
       `isCompact_closedBall.exists_bound_of_continuousOn` applied to
-      `fun z => ‖χU z‖`.  Then
+      `fun z => ‖χU z‖`; this uses only continuity of the Schwartz cutoff, not
+      compact support of `χU`.  With `s = closedBall 0 Rcut` and
+      `hs_fin : volume s < ⊤ := measure_closedBall_lt_top`, use
+      `MeasureTheory.norm_setIntegral_le_of_norm_le_const hs_fin` with the
+      pointwise estimate
       ```
-      ‖K F‖ ≤ (Mχ * Cmix * (volume (closedBall 0 Rcut)).toReal) *
-        smix.sup p_mixed F.
+      ‖χU z *
+        Gorig (χψ • P (χr • schwartzPartialEval₁CLM z F)) z‖
+        ≤ (Mχ * CL * CPE) * sPE.sup p_mixed F.
       ```
-      This is the `SchwartzMap.mkCLMtoNormedSpace` bound.
+      The final `mkCLMtoNormedSpace` constant is
+      ```
+      Cfinal = Mχ * CL * CPE * (volume (closedBall 0 Rcut)).toReal
+      ```
+      and `0 ≤ Cfinal` follows from
+      `0 ≤ Mχ`, `hCL`, `hCPE`, and `ENNReal.toReal_nonneg`.  This is the
+      exact `SchwartzMap.mkCLMtoNormedSpace` bound.
    7. For a pure tensor, use
       `schwartzPartialEval₁CLM_tensorProduct₂` to rewrite the slice as
       `φ z • ψ`.  After `hLchart_cutoff`, the integrand is
@@ -5760,17 +5836,45 @@ Proof transcript for the next target:
       the compact-ball integrand and the all-space target integrand vanish
       pointwise.
 
+      In Lean, first prove the closed-ball identity
+      ```lean
+      have hpure_set :
+        (∫ z in Metric.closedBall (0 : ComplexChartSpace m) Rcut,
+          χU z *
+            Gorig (χψ • P (χr •
+              schwartzPartialEval₁CLM z
+                (schwartzTensorProduct₂ φ ψ))) z) =
+        ∫ z in Metric.closedBall (0 : ComplexChartSpace m) Rcut,
+          Gchart ψ z * φ z := ...
+      ```
+      pointwise on the restricted measure.  The proof cases on
+      `z ∈ tsupport (φ : ComplexChartSpace m -> ℂ)`.  In the support case,
+      `hφ.2` gives `z ∈ Ucov`, hence
+      `z ∈ closedBall 0 Rcov`; use `hχU_one`, `map_smul`, and
+      `hLchart_value z hz ψ hψ`.  In the off-support case, derive
+      `φ z = 0` from `z ∉ tsupport φ`, so the left side is
+      `χU z * Lchart z (0 • ψ) = 0` and the right side is zero.
+
       The passage from the compact-ball set integral to
-      `∫ z, Gchart ψ z * φ z` must be proved by this support equality, not by
-      assuming global regularity of `Gchart ψ`.  Since
-      `tsupport φ ⊆ Ucov ⊆ Metric.closedBall 0 Rcut`, the all-space integrand
-      is a.e. equal to the closed-ball integrand extended by zero.  On the
-      closed ball, the integrand is the continuous cutoff-envelope integrand
-      after the `Lchart` rewrites; outside the closed ball it is zero because
-      `φ` is zero.  This supplies the measurability/integrability needed for
-      the all-space integral and yields the representation
-      `∫ z, Gchart ψ z * φ z` without any hidden global measurability
-      assumption on `Gchart ψ`.
+      `∫ z, Gchart ψ z * φ z` is then exactly the support-integral helper
+      above with `U = Ucov`, `G = Gchart ψ`, and the subset
+      `Ucov ⊆ closedBall 0 Rcut` coming from `hRcov_cut`.  The required
+      local continuity input is derived, not assumed:
+      ```lean
+      have hUcov_window :
+        Metric.ball (0 : ComplexChartSpace m) Rcov ⊆
+          Metric.ball (0 : ComplexChartSpace m) (δ / 2) :=
+        (Metric.ball_subset_closedBall.trans ?closedBall_to_window)
+      have hG_cont :
+        ContinuousOn (Gchart ψ) Ucov :=
+        (hG_holo ψ hψ).continuousOn.mono hUcov_window
+      ```
+      where `?closedBall_to_window` is `hRcut_window` after
+      `Metric.closedBall_subset_closedBall (le_of_lt hRcov_cut)`.  Thus the
+      all-space integrand is integrable because it is continuous with compact
+      support inside `Ucov`, and the closed-ball equality uses only
+      `tsupport φ ⊆ Ucov ⊆ closedBall 0 Rcut`.  No global measurability or
+      continuity of `Gchart ψ` is hidden in the representation theorem.
 
       The `hG_cont` input for
       `regularizedLocalEOW_pairingCLM_localCovariant` is not an additional
@@ -6994,7 +7098,13 @@ Proof transcript for the next target:
    5b. `regularizedLocalEOW_pairingCLM_of_fixedWindow`: define `K` by the
        actual cutoff envelope set integral, use `Lchart` only for the
        finite-seminorm bound, and prove the supported product-test
-       representation by removing `χU`, `χr`, and `χψ`.
+       representation by removing `χU`, `χr`, and `χψ`.  Before this theorem
+       is ported, add the local support-integral helpers
+       `continuous_mul_of_continuousOn_supportsInOpen`,
+       `integrable_mul_of_continuousOn_supportsInOpen`, and
+       `closedBall_setIntegral_mul_eq_integral_of_supportsInOpen`; they are
+       the exact bridge from local continuity on `Ucov` and
+       `tsupport φ ⊆ Ucov` to the all-space product-test integral.
    6. `exists_positive_imag_mem_localEOWShiftedWindow_of_norm_lt`: checked;
       supplies the small-shift seed lemma for shifted overlaps.
    6b. `norm_realEmbed_eq`: checked in
@@ -15465,10 +15575,14 @@ This SCV blueprint should be considered ready only when:
 
 After the local/global covariance audit, the next recovery theorem is
 implementation-ready only in the local-descent order specified in Section 2.4.
-The first Lean target is
-`regularizedLocalEOW_pairingCLM_of_fixedWindow`, preceded by the listed cutoff,
-partial-evaluation, and compact-uniform seminorm helpers.  The retired
-global-covariance surface
+The first Lean target is the local support-integral helper package
+`continuous_mul_of_continuousOn_supportsInOpen`,
+`integrable_mul_of_continuousOn_supportsInOpen`, and
+`closedBall_setIntegral_mul_eq_integral_of_supportsInOpen`, followed
+immediately by `regularizedLocalEOW_pairingCLM_of_fixedWindow`.  The pairing
+CLM is also preceded by the listed cutoff, partial-evaluation,
+chart-kernel value-CLM, cutoff-envelope continuity, and compact-uniform
+seminorm helpers.  The retired global-covariance surface
 `regularizedLocalEOW_productKernel_from_continuousEOW` must not be used as the
 next target.
 
