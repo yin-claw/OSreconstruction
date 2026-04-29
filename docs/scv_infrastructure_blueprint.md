@@ -196,8 +196,10 @@ theorem integral_mul_complexTranslateSchwartz_eq_shift_of_support
 theorem regularizedLocalEOW_pairingCLM_localCovariant
 theorem SupportsInOpen.complexTranslateSchwartz_of_image_subset
 theorem schwartzTensorProduct₂CLMLeft
-theorem shearedRealConvolutionTensor_eq_integral_productTranslations
-theorem fiberCutoffAverage_eq_self
+def schwartzPartialEval₂CLM
+def mixedRealFiberIntegralCLM
+theorem continuousLinearMap_apply_mixedRealFiberIntegralCLM_eq_integral
+theorem shearedProductKernelFunctional_localQuotient_of_productCovariant
 theorem translationCovariantProductKernel_descends_local
 theorem regularizedEnvelope_productKernel_dbar_eq_zero_local
 theorem translationCovariantKernel_distributionalHolomorphic_local
@@ -5945,32 +5947,26 @@ Proof transcript for the next target:
        (z : ComplexChartSpace m) (t : Fin m -> ℝ) :
        schwartzTensorProduct₂CLMLeft φ ψ (z,t) = φ z * ψ t
 
-   theorem shearedRealConvolutionTensor_eq_integral_productTranslations
+   theorem shearedProductKernelFunctional_localQuotient_of_productCovariant
        {m : ℕ} {r rη : ℝ}
+       (K : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ)
+       (Udesc Ucov : Set (ComplexChartSpace m))
+       (hr_nonneg : 0 ≤ r) (hrη_nonneg : 0 ≤ rη)
+       (η : SchwartzMap (Fin m -> ℝ) ℂ)
+       (hη_norm : ∫ t : Fin m -> ℝ, η t = 1)
+       (hη_support : KernelSupportWithin η rη)
+       (hmargin :
+         ∀ z ∈ Udesc, ∀ t : Fin m -> ℝ, ‖t‖ ≤ r + rη ->
+           z + realEmbed t ∈ Ucov)
+       (hcov : ProductKernelRealTranslationCovariantLocal K Ucov (r + rη))
        (φ : SchwartzMap (ComplexChartSpace m) ℂ)
-       (ψ η : SchwartzMap (Fin m -> ℝ) ℂ)
-       (hψ : KernelSupportWithin ψ r)
-       (hη : KernelSupportWithin η rη) :
-       (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
-           (realConvolutionShearCLE m).symm)
-         (schwartzTensorProduct₂ (realConvolutionTest φ ψ) η)
-       =
-       ∫ a : Fin m -> ℝ,
-         schwartzTensorProduct₂
-           (complexTranslateSchwartz (-a) φ)
-           (SchwartzMap.smulLeftCLM ℂ
-             (η : (Fin m -> ℝ) -> ℂ) (translateSchwartz a ψ))
-
-   theorem fiberCutoffAverage_eq_self
-       {m : ℕ} {r rη : ℝ}
-       (ψ η : SchwartzMap (Fin m -> ℝ) ℂ)
-       (hψ : KernelSupportWithin ψ r)
-       (hη : KernelSupportWithin η rη)
-       (hη_norm : ∫ t : Fin m -> ℝ, η t = 1) :
-       (∫ a : Fin m -> ℝ,
-         translateSchwartz (-a)
-           (SchwartzMap.smulLeftCLM ℂ
-             (η : (Fin m -> ℝ) -> ℂ) (translateSchwartz a ψ))) = ψ
+       (ψ : SchwartzMap (Fin m -> ℝ) ℂ)
+       (hφ : SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Udesc)
+       (hψ : KernelSupportWithin ψ r) :
+       K (schwartzTensorProduct₂ φ ψ) =
+         complexRealFiberTranslationDescentCLM
+           (shearedProductKernelFunctional K) η
+           (realConvolutionTest φ ψ)
 
    theorem translationCovariantProductKernel_descends_local
        (K : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ)
@@ -5998,13 +5994,15 @@ Proof transcript for the next target:
       `translationCovariantProductKernel_descends` or
       `map_eq_complexRealFiberTranslationDescentCLM_of_fiberTranslationInvariant`:
       those checked theorems require full fiber-translation invariance on
-      arbitrary mixed Schwartz tests.  Local product covariance is weaker, so
-      the descent proof here is a direct product-test averaging argument.
+      arbitrary mixed Schwartz tests.  Local product covariance is weaker.
+      Also do **not** introduce a Bochner integral with codomain
+      `SchwartzMap`: the local descent must be scalarized through the checked
+      real-fiber/head-block integration infrastructure.
    2. Prove the fixed-left tensor CLM
       `schwartzTensorProduct₂CLMLeft φ` (the analogue of the checked
-      `schwartzTensorProduct₂CLMRight`).  It is needed to move a Bochner
-      integral in the real-kernel variable through the tensor product and then
-      through `K`.
+      `schwartzTensorProduct₂CLMRight`).  It is used only to form scalar
+      continuous-linear-map compositions in the local quotient proof; it is
+      not evidence for a `SchwartzMap`-valued parameter integral.
       Also prove the compact-support transport helper for complex-chart
       translations:
       ```lean
@@ -6022,26 +6020,104 @@ Proof transcript for the next target:
       inverse translation `u ↦ u - realEmbed a`; the support-in-`V` component
       is `himage` applied to the defining relation
       `complexTranslateSchwartz a φ y = φ (y + realEmbed a)`.
-   3. Prove the sheared convolution expansion.  For
+   3. First prove the fixed-last-variable partial-evaluation CLM and the
+      mixed-base real-fiber integration CLM and its scalarization theorem:
+      ```lean
+      def schwartzPartialEval₂CLM
+          (a : Fin m -> ℝ) :
+          SchwartzMap
+            ((ComplexChartSpace m × (Fin m -> ℝ)) × (Fin m -> ℝ)) ℂ
+              ->L[ℂ]
+            SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ
+
+      theorem schwartzPartialEval₂CLM_apply
+          (a : Fin m -> ℝ)
+          (A : SchwartzMap
+            ((ComplexChartSpace m × (Fin m -> ℝ)) × (Fin m -> ℝ)) ℂ)
+          (z : ComplexChartSpace m) (t : Fin m -> ℝ) :
+          schwartzPartialEval₂CLM a A (z,t) = A ((z,t),a)
+
+      def mixedRealFiberIntegralCLM :
+          SchwartzMap
+            ((ComplexChartSpace m × (Fin m -> ℝ)) × (Fin m -> ℝ)) ℂ
+              ->L[ℂ]
+            SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ
+
+      theorem mixedRealFiberIntegralCLM_apply
+          (A : SchwartzMap
+            ((ComplexChartSpace m × (Fin m -> ℝ)) × (Fin m -> ℝ)) ℂ)
+          (z : ComplexChartSpace m) (t : Fin m -> ℝ) :
+          mixedRealFiberIntegralCLM A (z,t) =
+            ∫ a : Fin m -> ℝ, A ((z,t),a)
+
+      theorem continuousLinearMap_apply_mixedRealFiberIntegralCLM_eq_integral
+          (L : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ)
+          (A : SchwartzMap
+            ((ComplexChartSpace m × (Fin m -> ℝ)) × (Fin m -> ℝ)) ℂ) :
+          L (mixedRealFiberIntegralCLM A) =
+            ∫ a : Fin m -> ℝ,
+              L
+                ((schwartzPartialEval₂CLM a A :
+                  SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ))
+      ```
+      Here `schwartzPartialEval₂CLM` denotes the fixed-fiber partial
+      evaluation in the last real variable, with the evident product
+      association.  The new `mixedRealFiberIntegralCLM` is the same theorem as
+      `complexRealFiberIntegralCLM`, but with base variable
+      `ComplexChartSpace m × (Fin m -> ℝ)` instead of just
+      `ComplexChartSpace m`; its proof repeats the checked finite-seminorm
+      estimates with the product sup norm.  The scalarization proof is scalar,
+      not a Bochner integral in `SchwartzMap`: compose
+      `mixedRealFiberIntegralCLM` with `L`, unfold the pointwise integral
+      formula, and use the same dominated-integral estimates.  The right-hand
+      integral has codomain `ℂ`, so Lean's ordinary Bochner integral applies.
+
+   4. Prove
+      `shearedProductKernelFunctional_localQuotient_of_productCovariant`.
+      Let
+      ```
+      F =
+        (SchwartzMap.compCLMOfContinuousLinearEquiv ℂ
+          (realConvolutionShearCLE m)) (schwartzTensorProduct₂ φ ψ)
+      G = schwartzTensorProduct₂ (realConvolutionTest φ ψ) η.
+      ```
+      Then `complexRealFiberIntegral F = complexRealFiberIntegral G`: the
+      left side is `realConvolutionTest φ ψ` by definition, while the right
+      side is `(∫ t, η t) • realConvolutionTest φ ψ`, hence the same test by
+      `hη_norm` and `complexRealFiberIntegral_schwartzTensorProduct₂`.
+      Moreover
+      ```
+      T F = K (schwartzTensorProduct₂ φ ψ)
+      T G = Hdist (realConvolutionTest φ ψ).
+      ```
+      To compare `T F` and `T G`, build the two parameterized mixed tests whose
+      last-fiber evaluations are
+      ```
+      A a =
+        schwartzTensorProduct₂
+          (complexTranslateSchwartz (-a) φ)
+          (η • translateSchwartz a ψ)
+      B a =
+        schwartzTensorProduct₂ φ
+          (translateSchwartz (-a) (η • translateSchwartz a ψ)).
+      ```
+      The new `mixedRealFiberIntegralCLM`, after rebracketing the
+      variables, turns `A` into `G` and turns `B` into the unsheared product
+      tensor corresponding to `F`; these identifications are proved by the
+      pointwise formulas for `realConvolutionTest`,
+      `complexTranslateSchwartz_apply`, `translateSchwartz_apply`,
+      `schwartzTensorProduct₂_apply`, and the normalized integral
+      `hη_norm`.  Applying the scalarization theorem from Step 3 reduces the
+      desired equality to equality of two ordinary complex integrals over `a`.
+      The integrands have compact parameter support: if either side is
+      nonzero, support of `η` and `ψ` gives `‖a‖ ≤ r + rη`.
+   5. In the local quotient proof, the only translated product tensors that
+      occur have real-kernel factor
       `κ a := SchwartzMap.smulLeftCLM ℂ (η : (Fin m -> ℝ) -> ℂ)
-        (translateSchwartz a ψ)`,
-      ```
-      (realConvolutionTest φ ψ ⊗ η) ∘ (realConvolutionShearCLE m).symm
-        = ∫ a, schwartzTensorProduct₂
-            (complexTranslateSchwartz (-a) φ) (κ a).
-      ```
-      Pointwise, at `(z,t)`, the right side is
-      `∫ a, φ (z - realEmbed a) * η t * ψ (t + a)`, and the substitution
-      `s = t + a` gives exactly
-      `realConvolutionTest φ ψ (z + realEmbed t) * η t`.
-      The equality must be in Schwartz space, not only pointwise: compact
-      support of `ψ` and `η` implies the parameter `a` is supported in
-      `closedBall 0 (r + rη)`; continuity of translations and the checked
-      tensor CLMs give Bochner integrability.
-   4. For each `a`, set `κ a = η • translateSchwartz a ψ`.  If `κ a = 0`,
-      the covariance identity for that parameter is trivial.  Otherwise choose
-      `t ∈ tsupport (κ a)`.  Then `t ∈ tsupport η` and
-      `t + a ∈ tsupport ψ`, so
+        (translateSchwartz a ψ)`.
+      If `κ a = 0`, the covariance identity for that parameter is trivial.
+      Otherwise choose `t ∈ tsupport (κ a)`.  Then
+      `t ∈ tsupport η` and `t + a ∈ tsupport ψ`, so
       `‖a‖ = ‖(t + a) - t‖ ≤ r + rη`.  This bound gives:
       - `SupportsInOpen φ Ucov`, from `hφ` and `hmargin` with translation `0`
         using `0 ≤ r + rη`;
@@ -6064,36 +6140,19 @@ Proof transcript for the next target:
         =
       K (schwartzTensorProduct₂ φ (translateSchwartz (-a) (κ a))).
       ```
-   5. Integrate the equality in `a` and use continuity of `K` plus
-      `schwartzTensorProduct₂CLMLeft φ`:
-      ```
-      Hdist (realConvolutionTest φ ψ)
-        = ∫ a, K (schwartzTensorProduct₂
-            (complexTranslateSchwartz (-a) φ) (κ a))
-        = K (schwartzTensorProduct₂ φ
-            (∫ a, translateSchwartz (-a) (κ a))).
-      ```
-      The Bochner integrability on the right is proved with the same compact
-      parameter support as in the sheared expansion: if
-      `translateSchwartz (-a) (κ a)` is nonzero then its pointwise formula
-      supplies `x ∈ tsupport ψ` and `x - a ∈ tsupport η` for some `x`, hence
-      `‖a‖ ≤ r + rη`; on this closed ball, continuity of
-      `a ↦ translateSchwartz (-a) (κ a)` follows from the checked translation
-      CLM continuity and multiplication by the fixed Schwartz function `η`.
-   6. Prove the normalized cutoff-average identity
-      ```
-      ∫ a, translateSchwartz (-a) (η • translateSchwartz a ψ) = ψ.
-      ```
-      Pointwise at `x`, the integrand is `η (x - a) * ψ x`, so the integral is
-      `ψ x * ∫ a, η (x - a) = ψ x * ∫ a, η a = ψ x`.  Again the equality is
-      a Schwartz-space Bochner integral; compact support of `ψ` and `η`
-      supplies integrability, and the finite-seminorm bounds for translation
-      supply the topology proof.
-   7. Steps 5 and 6 yield
-      `Hdist (realConvolutionTest φ ψ) = K (schwartzTensorProduct₂ φ ψ)`.
-      This is the exact local product-test descent identity needed by the
-      recovery consumer.  No density theorem and no arbitrary-test fiber
-      quotient is invoked.
+      These scalar covariance equalities are the local replacement for global
+      fiber invariance inside the scalarized parameter integral.  The
+      normalized cutoff identity is used only through the checked
+      `complexRealFiberIntegral_schwartzTensorProduct₂`/pointwise
+      `mixedRealFiberIntegralCLM` calculations above, not as a
+      `SchwartzMap`-valued Bochner average.
+   6. `translationCovariantProductKernel_descends_local` now simply packages
+      `Hdist` and calls
+      `shearedProductKernelFunctional_localQuotient_of_productCovariant` for
+      every product test `φ, ψ` supported in `Udesc` and radius `r`.  The
+      result is the exact local product-test descent identity needed by the
+      recovery consumer.  No density theorem, no arbitrary-test global
+      quotient, and no unsupported Schwartz-valued Bochner integral is invoked.
 
 13. Once the local product-test descent identity exists, local
    distributional holomorphy and pointwise recovery are separate checked-style
@@ -6455,20 +6514,23 @@ Proof transcript for the next target:
        continuous scalar kernels multiplied by a translated Schwartz test.
    7. `regularizedLocalEOW_pairingCLM_localCovariant`: prove
       `ProductKernelRealTranslationCovariantLocal K Ucov r`.
-   8a. `schwartzTensorProduct₂CLMLeft`,
+   8a. `schwartzTensorProduct₂CLMLeft`, `schwartzPartialEval₂CLM`,
+       `mixedRealFiberIntegralCLM`,
+       `continuousLinearMap_apply_mixedRealFiberIntegralCLM_eq_integral`,
        `SupportsInOpen.complexTranslateSchwartz_of_image_subset` (checked in
-       `SCV/DistributionalEOWSupport.lean`),
-       `shearedRealConvolutionTensor_eq_integral_productTranslations`, and
-       `fiberCutoffAverage_eq_self`: direct local product-test descent
-       infrastructure.  These replace the previously tempting but invalid
-       shortcut of applying the checked global arbitrary-test fiber quotient to
-       a locally covariant cutoff kernel.
+       `SCV/DistributionalEOWSupport.lean`), and
+       `shearedProductKernelFunctional_localQuotient_of_productCovariant`:
+       local product-test descent infrastructure.  The quotient theorem is the
+       scalarized/local fiber-integral replacement for the invalid
+       `SchwartzMap`-valued averaging route; it replays the checked
+       real-fiber integral scalarization for the single sheared product pair
+       and guards every covariance use by the local support window.
    8b. `translationCovariantProductKernel_descends_local`: prove the local
-       product-test descent identity by averaging translated product tests
-       against the normalized fiber cutoff, applying
-       `ProductKernelRealTranslationCovariantLocal` only for parameters whose
-       supports force `‖a‖ ≤ r + rη`, and collapsing the averaged real kernel
-       back to `ψ`.
+       product-test descent identity by packaging
+       `complexRealFiberTranslationDescentCLM (shearedProductKernelFunctional K)
+       η` and applying the local quotient theorem.  The normalized cutoff is
+       used through `complexRealFiberIntegral_schwartzTensorProduct₂`, not by
+       forming an unsupported `SchwartzMap`-valued Bochner integral.
    9. `regularizedEnvelope_productKernel_dbar_eq_zero_local`: checked in
       `SCV/DistributionalEOWRepresentative.lean`; localizes the checked
       `∂bar` product-kernel annihilation theorem to the separated domains

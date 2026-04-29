@@ -1179,14 +1179,19 @@ Proof decomposition of this theorem, without hiding the analytic work:
          `Hdist := complexRealFiberTranslationDescentCLM
            (shearedProductKernelFunctional K) η` with a normalized real
          cutoff `η`, but it does not call the checked global arbitrary-test
-         fiber quotient.  Instead it proves the product-test identity directly:
-         expand the sheared convolution tensor as a Bochner integral of
-         translated product tensors, use local covariance only for parameters
-         whose nonzero kernel factor
+         fiber quotient.  Instead it proves a scalarized local quotient theorem
+         for the single sheared product pair; no `SchwartzMap`-valued Bochner
+         integral is introduced.  The local quotient first proves
+         fixed-fiber partial evaluation and
+         `mixedRealFiberIntegralCLM` with
+         `continuousLinearMap_apply_mixedRealFiberIntegralCLM_eq_integral`,
+         so every parameter integral after applying `K` is an ordinary complex
+         integral.  It then uses local covariance only for parameters whose
+         nonzero kernel factor
          `κ a = η • translateSchwartz a ψ` forces
-         `‖a‖ ≤ r + rη`, and collapse
-         `∫ a, translateSchwartz (-a) (η • translateSchwartz a ψ)` back to
-         `ψ` using `∫ η = 1`.  The margin
+         `‖a‖ ≤ r + rη`.  The normalized cutoff enters through
+         `complexRealFiberIntegral_schwartzTensorProduct₂` and `∫ η = 1`.
+         The margin
          `Udesc + closedBall 0 (r + rη) ⊆ Ucov` is exactly what makes the two
          complex-chart supports legal in those covariance calls, and the two
          kernel-support inputs are obtained by support containment in
@@ -1781,11 +1786,11 @@ Implementation-readiness gate for the next Lean stage:
      hypotheses;
   3. `translationCovariantProductKernel_descends_local`, the local analogue of
      the checked sheared-product descent theorem.  It is not an invocation of
-     the global arbitrary-test quotient; it uses the direct product-test
-     averaging lemmas
-     `shearedRealConvolutionTensor_eq_integral_productTranslations` and
-     `fiberCutoffAverage_eq_self`, with every covariance use guarded by the
-     local support window;
+     the global arbitrary-test quotient and it does not use a
+     `SchwartzMap`-valued averaging lemma.  It uses
+     `shearedProductKernelFunctional_localQuotient_of_productCovariant`, a
+     scalarized local fiber-integral quotient whose every covariance use is
+     guarded by the local support window;
   4. `regularizedEnvelope_chartEnvelope_from_localProductKernel`, replacing
      the global product-kernel consumer by local `Hdist`, local
      `IsDistributionalHolomorphicOn`, local product-test descent, and the
@@ -1810,7 +1815,8 @@ Implementation-readiness gate for the next Lean stage:
   interface; prove
   `tsupport_subset_preimage_tsupport_complexTranslateSchwartz`; prove the
   support-localized translated-test integral change-of-variables lemma; prove
-  local covariance; prove direct local product-test descent; prove
+  local covariance; prove the scalarized local quotient and local product-test
+  descent; prove
   `regularizedEnvelope_pointwiseRepresentation_of_localProductKernel`; and
   finish with `regularizedEnvelope_chartEnvelope_from_localProductKernel` using
   the explicit approximate-identity and side-agreement hypotheses.  The
@@ -2007,8 +2013,10 @@ Current implementation order:
    `SCV.integral_mul_complexTranslateSchwartz_eq_shift_of_support`,
    `SCV.regularizedLocalEOW_pairingCLM_localCovariant`,
    `SCV.schwartzTensorProduct₂CLMLeft`,
-   `SCV.shearedRealConvolutionTensor_eq_integral_productTranslations`,
-   `SCV.fiberCutoffAverage_eq_self`,
+   `SCV.schwartzPartialEval₂CLM`,
+   `SCV.mixedRealFiberIntegralCLM`,
+   `SCV.continuousLinearMap_apply_mixedRealFiberIntegralCLM_eq_integral`,
+   `SCV.shearedProductKernelFunctional_localQuotient_of_productCovariant`,
    `SCV.translationCovariantProductKernel_descends_local`,
    `SCV.regularizedEnvelope_pointwiseRepresentation_of_localProductKernel`,
    `SCV.regularizedEnvelope_chartEnvelope_from_localProductKernel`, and finally
