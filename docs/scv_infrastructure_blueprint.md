@@ -4518,7 +4518,8 @@ Proof transcript for the next target:
       This is exactly
       `KernelSupportWithin.smulLeftCLM_of_leftSupport hχψ_support _`.
       When a pointwise zero-outside-`closedBall` hypothesis is needed, combine
-      this support inclusion with `image_eq_zero_of_notMem_tsupport`.
+      this support inclusion with the checked
+      `KernelSupportWithin.eq_zero_of_not_mem_closedBall`.
 
    2. Prove a reusable varying-kernel real-mollifier continuity lemma:
       ```lean
@@ -5498,7 +5499,10 @@ Proof transcript for the next target:
        `KernelSupportWithin.chartKernelCutoffSlice` are also checked in the
        same file; the support theorem qualifies
        `SCV.localEOWRealLinearKernelPushforwardCLM` because the theorem lives
-       under the `KernelSupportWithin` namespace.  The remaining
+       under the `KernelSupportWithin` namespace.  The same file also checks
+       `KernelSupportWithin.eq_zero_of_not_mem_closedBall`, the pointwise
+       zero-off-support fact needed by the variable-kernel compact-support
+       hypotheses.  The remaining
        continuity-support targets before the mixed pairing CLM are
        `localRudin_varyingKernel_boundaryData_of_clm`,
        `exists_bound_localRudinIntegrand_varyingKernel`,

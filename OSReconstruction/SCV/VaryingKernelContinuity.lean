@@ -472,6 +472,14 @@ theorem KernelSupportWithin.chartKernelCutoffSlice
   intro z
   exact KernelSupportWithin.smulLeftCLM_of_leftSupport hχψ_support _
 
+/-- A kernel supported in a closed ball is pointwise zero outside that ball. -/
+theorem KernelSupportWithin.eq_zero_of_not_mem_closedBall
+    {ψ : SchwartzMap (Fin m → ℝ) ℂ} {r : ℝ}
+    (hψ : KernelSupportWithin ψ r) {x : Fin m → ℝ}
+    (hx : x ∉ Metric.closedBall (0 : Fin m → ℝ) r) :
+    ψ x = 0 :=
+  image_eq_zero_of_notMem_tsupport (fun hx_supp => hx (hψ hx_supp))
+
 /-- Continuity of the normalized local Rudin envelope when the smoothing kernel
 varies with the outer chart point, assuming a uniform bound on the circle
 integrand. -/
