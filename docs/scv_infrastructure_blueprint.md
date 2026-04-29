@@ -181,6 +181,7 @@ theorem seminorm_translateSchwartz_uniformOn
 theorem continuousOn_translateSchwartz_varyingKernel_of_fixedSupport
 theorem continuousOn_realMollifyLocal_varyingKernel_of_fixedSupport
 theorem localRudin_varyingKernel_boundaryData_of_clm
+theorem continuousOn_localRudinBoundaryCLM_varyingKernel_of_fixedSupport
 theorem exists_bound_localRudinIntegrand_varyingKernel
 theorem continuousOn_localRudinEnvelope_varyingKernel_of_bound
 theorem continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand
@@ -4901,9 +4902,12 @@ Proof transcript for the next target:
       ```
       Proof: first derive `η z t = 0` outside
       `Metric.closedBall 0 rψLarge` from `hη_support` and
-      `image_eq_zero_of_notMem_tsupport`, then apply
+      `KernelSupportWithin.eq_zero_of_not_mem_closedBall`, then apply
       `continuousOn_translateSchwartz_varyingKernel_of_fixedSupport` on
-      `Z ×ˢ E` and compose with `Tchart.continuous`.  For the positive
+      `Z ×ˢ E` and compose with `Tchart.continuous`.  This first component is
+      checked as
+      `continuousOn_localRudinBoundaryCLM_varyingKernel_of_fixedSupport`.
+      For the positive
       side-limit, work with the filter on
       `(Z ×ˢ sphere 0 1) ∩ {0 < im}`.  The side-evaluation identity
       `hplus_eval (η z) (hη_support z hz)` rewrites the mollifier to
@@ -5502,7 +5506,10 @@ Proof transcript for the next target:
        under the `KernelSupportWithin` namespace.  The same file also checks
        `KernelSupportWithin.eq_zero_of_not_mem_closedBall`, the pointwise
        zero-off-support fact needed by the variable-kernel compact-support
-       hypotheses.  The remaining
+       hypotheses, and
+       `continuousOn_localRudinBoundaryCLM_varyingKernel_of_fixedSupport`, the
+       boundary-branch continuity component of the CLM boundary-data theorem.
+       The remaining
        continuity-support targets before the mixed pairing CLM are
        `localRudin_varyingKernel_boundaryData_of_clm`,
        `exists_bound_localRudinIntegrand_varyingKernel`,

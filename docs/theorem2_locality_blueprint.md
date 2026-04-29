@@ -1233,8 +1233,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `(z,u) ↦ translateSchwartz (-u) (η z)`, and the
       varying-kernel Rudin-envelope dominated-continuity theorem.  The scalar
       evaluation/support theorems for the actual chart-kernel slice are now
-      checked in the same file.  The remaining proof-doc-ready layer is the
-      CLM boundary-data derivation, the
+      checked in the same file, as is the boundary-CLM continuity component of
+      the CLM boundary-data derivation.  The remaining proof-doc-ready layer is
+      the side-limit half of that boundary-data theorem, the
       parametric Rudin-integrand bound over `closedBall 0 Rcut` with the inner
       Rudin side domains separated from the original holomorphy domains, and
       the final cutoff-envelope continuity theorem.  The

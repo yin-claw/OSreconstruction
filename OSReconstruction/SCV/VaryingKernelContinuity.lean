@@ -480,6 +480,37 @@ theorem KernelSupportWithin.eq_zero_of_not_mem_closedBall
     ψ x = 0 :=
   image_eq_zero_of_notMem_tsupport (fun hx_supp => hx (hψ hx_supp))
 
+/-- Continuity of the moving boundary-value CLM branch used at the real edge
+of the parametric local Rudin circle. -/
+theorem continuousOn_localRudinBoundaryCLM_varyingKernel_of_fixedSupport
+    (Z : Set (ComplexChartSpace m)) (E : Set (Fin m → ℝ))
+    (η : ComplexChartSpace m → SchwartzMap (Fin m → ℝ) ℂ)
+    (Tchart : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ)
+    {rψLarge : ℝ}
+    (hE_compact : IsCompact E)
+    (hη_cont : ContinuousOn η Z)
+    (hη_support : ∀ z ∈ Z, KernelSupportWithin (η z) rψLarge) :
+    ContinuousOn
+      (fun p : ComplexChartSpace m × (Fin m → ℝ) =>
+        Tchart (translateSchwartz (-p.2) (η p.1)))
+      (Z ×ˢ E) := by
+  have hη_zero :
+      ∀ z ∈ Z, ∀ t ∉ Metric.closedBall (0 : Fin m → ℝ) rψLarge,
+        η z t = 0 := by
+    intro z hz t ht
+    exact KernelSupportWithin.eq_zero_of_not_mem_closedBall
+      (hη_support z hz) ht
+  have htrans :
+      ContinuousOn
+        (fun p : ComplexChartSpace m × (Fin m → ℝ) =>
+          translateSchwartz (-p.2) (η p.1))
+        (Z ×ˢ E) :=
+    continuousOn_translateSchwartz_varyingKernel_of_fixedSupport
+      Z E (Metric.closedBall (0 : Fin m → ℝ) rψLarge) η
+      hE_compact (isCompact_closedBall (0 : Fin m → ℝ) rψLarge)
+      hη_cont hη_zero
+  exact Tchart.continuous.comp_continuousOn htrans
+
 /-- Continuity of the normalized local Rudin envelope when the smoothing kernel
 varies with the outer chart point, assuming a uniform bound on the circle
 integrand. -/
