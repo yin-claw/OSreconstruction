@@ -2183,6 +2183,14 @@ Current implementation order:
    `SCV.KernelSupportWithin.smulLeftCLM_eq_of_eq_one_on_closedBall`,
    `SCV.exists_schwartz_cutoff_eq_one_on_closedBall`,
    `SCV.exists_closedBall_integral_clm_of_continuousOn`,
+   `SCV.realMollifyLocal_eq_sliceIntegral_translate`,
+   `SCV.realMollifyLocal_eq_sliceFunctional`,
+   `SCV.exists_cutoffSliceIntegral_clm_of_continuousOn`,
+   `SCV.realMollifyLocal_eq_cutoffSliceCLM`,
+   `SCV.tendsto_cutoffSliceCLM_of_boundaryValue`,
+   `SCV.exists_cutoffSliceCLM_family_of_boundaryValue`,
+   `SCV.zero_not_mem_localEOWSimplexDirections`,
+   `SCV.tendsto_neg_nhdsWithin_zero_neg_image`,
    `SCV.exists_realMollifyLocal_valueCLM_of_closedBall`,
    `SCV.exists_bound_realMollifyLocal_smulLeftCLM`,
    `SCV.exists_bound_localRudinEnvelope_smulLeftCLM_of_side_bounds`,
@@ -2706,8 +2714,34 @@ Current implementation order:
    `BHW.os45CommonChart_real_mem_pulledRealBranchDomain_pair` are now checked.
    The local covariant product-kernel assembly
    `SCV.regularizedEnvelope_chartEnvelope_from_localCovariantProductKernel` is
-   checked; next formalize the local distributional EOW envelope theorem
-   `SCV.local_distributional_edge_of_the_wedge_envelope`, then prove
+   checked.  The proof-doc route now exposes the remaining SCV envelope
+   assembly precisely: first derive the fixed-basis relatively compact side
+   cone from `localEOWSimplexDirections ys` and convert the OS-II
+   uniform-on-compact boundary hypotheses to raw `nhdsWithin` slice limits on
+   that side cone and its negative image; next package the two-sided
+   `sliceCLM_family_from_distributionalBoundary` from the checked one-sided
+   `SCV.exists_cutoffSliceCLM_family_of_boundaryValue`, including the
+   lower-side sign/filter conversion; then prove
+   `SCV.chartDistributionalEOW_local_envelope` with the chart-kernel family
+   `Gchart ψ = Gorig (localEOWRealLinearKernelPushforwardCLM ys hli ψ)`;
+   then transport and patch to formalize
+   `SCV.local_distributional_edge_of_the_wedge_envelope`.  The local recovery
+   theorem already performs the pointwise representation and delta-limit
+   agreement internally, so the one-chart proof must feed it
+   `exists_shrinking_normalized_schwartz_bump_sequence`,
+   `tendsto_realConvolutionTest_of_shrinking_normalized_support`, and the
+   side approximate-identity limits obtained from
+   `regularizedEnvelope_kernelLimit_from_representation`, not add a separate
+   free `hkernel_limit`.
+   The next Lean packet should be split into
+   `OSReconstruction/SCV/LocalEOWSideCone.lean` for
+   `SCV.tendsto_neg_nhdsWithin_zero_neg_image` and
+   `SCV.localEOW_basisSideCone_rawBoundaryValue`, followed by
+   `OSReconstruction/SCV/LocalDistributionalEOWSlice.lean` for
+   `SCV.sliceCLM_family_from_distributionalBoundary`; both are pure SCV
+   support files and should be imported by `OSReconstruction/SCV.lean` only
+   after their exact file checks and module builds pass.
+   Then prove
    the OS45 instantiation
    `BHW.os45_adjacent_commonBoundaryEnvelope` and package its output as
    `AdjacentOSEOWDifferenceEnvelope` while exporting the same patch `V` for
