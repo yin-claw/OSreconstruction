@@ -7204,7 +7204,18 @@ Proof transcript for the next target:
       product-test representation, support-localized change of variables, the
       shifted support transport lemma, and shifted-window covariance of
       `Gchart`.
-   8a. `schwartzTensorProduct₂CLMLeft`, `schwartzPartialEval₂CLM`,
+   8a. `realEmbedContinuousLinearMap`,
+       `realEmbedContinuousLinearMap_apply`,
+       `schwartzTensorProduct₂CLMLeft`,
+       `schwartzTensorProduct₂CLMLeft_apply`, and
+       `schwartzTensorProduct₂CLMLeft_eq`: checked in
+       `SCV/LocalProductDescent.lean`.  The tensor CLM is the fixed-left
+       product-test map needed for scalar CLM compositions; it is proved by an
+       explicit finite-seminorm Leibniz estimate and is not a global descent
+       theorem.
+
+       Next local descent infrastructure:
+       `schwartzPartialEval₂CLM`,
        `mixedRealFiberIntegralCLM`,
        `mixedBaseFiberTensor`, `mixedBaseFiberProductTensorDense_all`,
        `mixedRealFiberIntegralScalarCLM`,
