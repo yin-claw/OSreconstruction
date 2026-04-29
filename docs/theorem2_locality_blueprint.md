@@ -2810,6 +2810,26 @@ Current implementation order:
    truncating the side cones, while `rker` is the chart-kernel support radius
    used by the local covariant recovery theorem.  Reusing one variable `r` for
    both would hide a real smallness obligation.
+   The final chart scale is chosen as in the SCV blueprint:
+   `Rcore = rker = rη = σ`, `Rdesc = 4σ`, `Rcov = 8σ`, `Rcut = 16σ`, with
+   `128 * σ ≤ δ`, `σ < δside`, `σ < ρin`,
+   `(Fintype.card (Fin m) : ℝ) * σ < rpoly`, and
+   `‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖ * (2 * σ) ≤ rψOrig`.
+   These inequalities close the real-window, truncated-side-cone,
+   fixed-window coordinate-sum, pushed-kernel support, and local-recovery
+   margin obligations.  In particular, the proof of the actual fixed-window
+   `hplus/hminus` hypotheses for `Dplus/Dminus` has three separate components:
+   fixed-window polywedge membership in `Ωplus/Ωminus`, truncated tube-domain
+   membership in `TubeDomain CplusLoc/CminusLoc`, and affine real-window
+   membership.  The translate-margin and slice cutoff-one hypotheses both use
+   `localEOWAffineRealWindow_add_realEmbed`; the fact that the translated real
+   point lies where the cutoff equals `1` implies it lies in `tsupport χ`, so
+   `exists_localEOW_truncatedSideCones_for_sliceMargin` applies.  The
+   approximate-identity side limits are proved by
+   `regularizedEnvelope_kernelLimit_from_representation` on the positive and
+   negative chart-side neighborhoods, with the representation identity
+   unfolding `realMollifyLocal`; no free `hkernel_limit` or slow-growth input
+   is permitted in the one-chart theorem.
    Then prove
    the OS45 instantiation
    `BHW.os45_adjacent_commonBoundaryEnvelope` and package its output as
