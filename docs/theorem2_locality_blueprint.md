@@ -2741,9 +2741,13 @@ Current implementation order:
    `SCV.localEOW_basisSideCone_rawBoundaryValue`, and
    `OSReconstruction/SCV/LocalDistributionalEOWSlice.lean` now checks
    `SCV.sliceCLM_family_from_distributionalBoundary`.  The next Lean packet is
-   the one-chart envelope assembly `SCV.chartDistributionalEOW_local_envelope`:
-   feed the checked slice families into the fixed-window family, use the
-   chart-kernel transport
+   a small API strengthening needed by the one-chart envelope: expose the
+   explicit side-cone radius `ε` and closed direction envelope from
+   `SCV.localEOW_basisSideCone_rawBoundaryValue`, then truncate the side cones
+   by a small ball before calling the slice-family theorem so its holomorphy
+   margins are honest.  After that, prove
+   `SCV.chartDistributionalEOW_local_envelope`: feed the checked slice
+   families into the fixed-window family, use the chart-kernel transport
    `localEOWRealLinearKernelPushforwardCLM ys hli`, then call the local
    recovery stack with the existing approximate-identity inputs.
    Then prove

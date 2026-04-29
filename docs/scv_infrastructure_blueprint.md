@@ -3979,28 +3979,40 @@ Proof transcript for `chartDistributionalEOW_local_envelope`:
    `rwin = (r0 + (Fintype.card (Fin m) : ℝ) * (δ * 10)) / 2`; then
    `card * (δ * 10) < rwin < r0`, so all fixed-window hypotheses still hold
    by monotonicity.
-2. Choose the side cone used for the fixed window.  Let
-   `K0 = localEOWSimplexDirections ys`.  It is compact and lies in `C` by
-   `isCompact_localEOWSimplexDirections` and
-   `localEOWSimplexDirections_subset_cone`.  Since `C` is open and `K0` is
-   compact and avoids `0` by `zero_not_mem_localEOWSimplexDirections`; using
-   `hK0_compact.exists_cthickening_subset_open` for `C ∩ {η | η ≠ 0}`,
-   choose a thickening `K1` with compact closure inside `C`, still avoiding
-   `0`, and containing `K0`; then set
-   `Cplus = {y | ∃ s : ℝ, 0 < s ∧ ∃ η ∈ K1, y = s • η}` and
-   `Cminus = Neg.neg '' Cplus`.  This is the relatively compact conic window
-   on which the uniform-on-compact OS-II boundary hypotheses imply actual
-   `nhdsWithin 0 Cplus/Cminus` slice limits.  It is not the whole ambient
-   cone `C`.  The shrunken side domains are
+2. Choose the side cone used for the fixed window by calling the checked
+   `localEOW_basisSideCone_rawBoundaryValue` with `Traw = T.restrictScalars ℝ`.
+   It returns open `Cplus`, open `Cminus = Neg.neg '' Cplus`,
+   `localEOWSimplexDirections ys ⊆ Cplus`, `Cplus ⊆ C`, the positive
+   chart-imaginary membership
+   `localEOWRealLinearPart ys v ∈ Cplus`, and the raw plus/minus
+   `nhdsWithin 0 Cplus/Cminus` slice limits.  This is the relatively compact
+   conic window on which the uniform-on-compact OS-II boundary hypotheses imply
+   actual raw slice limits.  It is not the whole ambient cone `C`.  The
+   shrunken side domains are
    `Dplus = Ωplus ∩ TubeDomain Cplus` and
    `Dminus = Ωminus ∩ TubeDomain Cminus`, further intersected with the real
-   translation-margin window if needed.  Their openness comes from the open
-   conic construction and `IsOpen.preimage` for the imaginary-part map.  The
-   fixed polywedge membership in `Dplus/Dminus` is proved from the fixed-window
-   membership in `Ωplus/Ωminus` plus
-   `localEOWRealLinearPart_eq_sum_smul` and the simplex normalization:
-   positive chart imaginary part has direction in `K0 ⊆ K1`, while the
-   negative branch applies the same argument to `-v` and then negates.
+   translation-margin window.  This truncation is mandatory: the side cone is
+   an approach cone, generally unbounded, while the slice CLM margin requires
+   every `x + i y` with `x ∈ tsupport χ` and `y` in the chosen side set to lie
+   in `Ωplus/Ωminus`.  Therefore the Lean API used by this theorem must expose
+   the actual side radius `ε`, the identity `Cplus = localEOWSideCone ys ε`,
+   and the closed direction envelope
+   `localEOWSideDirectionClosure ys ε ⊆ C ∩ {η | η ≠ 0}`.  With the compact
+   lower norm bound `c ≤ ‖η‖`, choose a truncation radius `rside` so
+   `‖y‖ < rside` forces the scalar in any representation `y = s • η` to be
+   below the wedge radius supplied by `hlocal_wedge` for the real cutoff
+   support and the compact direction envelope.  Replace the slice-family side
+   sets by
+   `CplusLoc = Cplus ∩ Metric.ball 0 rside` and
+   `CminusLoc = Cminus ∩ Metric.ball 0 rside`.  The raw limits restrict from
+   `Cplus/Cminus` to `CplusLoc/CminusLoc` by `nhdsWithin_mono`, and the margin
+   hypotheses for `sliceCLM_family_from_distributionalBoundary` are now honest.
+   Their openness comes from the open side cones, the open ball, and
+   `IsOpen.preimage` for the imaginary-part map.  The fixed polywedge
+   membership in `Dplus/Dminus` is proved from the fixed-window membership in
+   `Ωplus/Ωminus` plus the returned positive chart-imaginary membership; the
+   negative branch applies the same argument to `-v` and then uses
+   `Cminus = Neg.neg '' Cplus`.
 3. Choose real support margins before any kernel is introduced.  Take nested
    real chart balls `B0 ⊂ B1 ⊂ B2 ⊂ Metric.closedBall 0 ρ0` so that real
    translations by the original-edge support radius stay in the next ball.
@@ -4011,22 +4023,21 @@ Proof transcript for `chartDistributionalEOW_local_envelope`:
    `‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖ * rker` is inside
    the original-edge margin.  For real translations expressed back in chart
    coordinates, choose the margin using the inverse operator norm as well.
-4. Build the two-sided slice CLMs from the distributional boundary hypotheses,
-   not as assumptions.  Choose a cutoff `χ` with `χ = 1` on `B1` and
-   `tsupport χ ⊆ B2`.  First derive the raw slice limits on `Cplus` and
-   `Cminus`: the plus limit applies `hplus_bv` to the compact direction set
-   `closure K1` and the cutoff test
-   `(SchwartzMap.smulLeftCLM ℂ χ φ)`; the lower limit composes `hminus_bv`
-   with the negation map from `Cminus` to `Cplus`, rewriting
-   `Fminus (x + i y)` as `Fminus (x - i η)`.  Then call the checked
-   one-sided theorem `exists_cutoffSliceCLM_family_of_boundaryValue` for the
-   plus and minus sides and package the outputs as
-   `sliceCLM_family_from_distributionalBoundary`.  The downstream complex
+4. Build the two-sided slice CLMs from the checked raw side limits, not as
+   assumptions.  Choose a cutoff `χ` with `χ = 1` on `B1` and
+   `tsupport χ ⊆ B2`.  Then call the checked
+   `sliceCLM_family_from_distributionalBoundary` with the plus/minus raw
+   limits restricted to `CplusLoc/CminusLoc`, the side margins for `χ`,
+   `Dplus ⊆ TubeDomain CplusLoc`,
+   `Dminus ⊆ TubeDomain CminusLoc`, and the translated-kernel cutoff-one
+   hypotheses for every `KernelSupportWithin ψ rψ`.  The downstream complex
    boundary distribution is the cutoff pullback
    `Tcut = T.comp (SchwartzMap.smulLeftCLM ℂ χ)`, and
-   `realMollifyLocal_eq_cutoffSliceCLM` gives the two evaluation fields for
-   every kernel with `KernelSupportWithin ψ rψ`, because the translated
-   support lies in `B1`.
+   the cutoff compatibility supplied to the slice theorem rewrites both limit
+   targets to `(Tcut.restrictScalars ℝ) φ`.  The theorem returns the two
+   evaluation fields for every kernel with `KernelSupportWithin ψ rψ`; the
+   translated support lies in `B1` by the support transport and cutoff
+   construction.
 5. Apply `regularizedLocalEOW_family_from_fixedWindow` to the original-side
    functions with `Tchart = Tcut`, the just-built `Tplus/Tminus`, the
    fixed-window data from step 1, and the side domains from step 2.  This
@@ -5052,6 +5063,18 @@ Proof transcript for the next target:
    The lower tendsto uses the same scalar/direction decomposition after
    composing with `y ↦ -y`, and then rewrites `Fminus (x + i y)` as
    `Fminus (x - i (s • η))`.
+
+   For the final one-chart theorem, the raw-boundary API must be used in an
+   explicit-radius form, because the subsequent slice CLM margin truncates the
+   side cone.  Before proving `chartDistributionalEOW_local_envelope`, add or
+   strengthen the checked theorem so it returns the same outputs above with
+   `Cplus` definitionally equal to `localEOWSideCone ys ε`, `Cminus`
+   definitionally equal to `Neg.neg '' Cplus`, and with the additional field
+   `localEOWSideDirectionClosure ys ε ⊆ C ∩ {η | η ≠ 0}`.  This is not a
+   wrapper: exposing `ε` and the closed direction envelope is the data needed
+   to prove the later truncated side-margin hypotheses from `hlocal_wedge`.
+   The existing existential theorem is recovered by forgetting `ε` and the
+   closure containment.
 
    The reusable lower-side filter lemma is:
 
