@@ -4794,8 +4794,8 @@ Proof transcript for the next target:
       `continuous_apply_translateSchwartz_of_isCompactSupport` route, and it is
       the exact input needed before applying `Tchart.continuous`.
 
-   4. Prove the missing uniform bound as a parametric version of the checked
-      compact-bound theorem:
+   4. The missing uniform bound is now checked as a parametric version of the
+      checked compact-bound theorem:
       ```lean
       theorem exists_bound_localRudinIntegrand_varyingKernel
           (hm : 0 < m)
@@ -4888,6 +4888,10 @@ Proof transcript for the next target:
               (realMollifyLocal Fplus (η z))
               (realMollifyLocal Fminus (η z)) z θ‖ ≤ M
       ```
+      This is checked in `SCV/VaryingKernelContinuity.lean`.  The theorem
+      supplies the domination input for the final cutoff-envelope continuity
+      theorem below.
+
       Here `Dplus` and `Dminus` are the inner local EOW side domains used by
       the Rudin circle, while `Ωplus` and `Ωminus` are the original domains on
       which the translated real-mollifier integrals evaluate `Fplus` and
@@ -6966,9 +6970,10 @@ Proof transcript for the next target:
        continuity.  The same file also checks
        `localRudin_varyingKernel_boundaryData_of_clm`, which derives
        `hkernel_cont`, returns scalar `hbv_cont`, and bundles the two side
-       limits.  The remaining
-       continuity-support targets before the mixed pairing CLM are
-       `exists_bound_localRudinIntegrand_varyingKernel`,
+       limits.  The same file now also checks
+       `exists_bound_localRudinIntegrand_varyingKernel`, the compact
+       parametric Rudin-integrand bound with the varying boundary branch.  The
+       remaining continuity-support target before the mixed pairing CLM is
        `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`: before
        defining the mixed integral, prove continuity of the actual cutoff
        envelope integrand

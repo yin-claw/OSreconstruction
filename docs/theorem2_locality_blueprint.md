@@ -1312,7 +1312,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
       real-seminorm uniform-on-compact translation estimate controlling both
       `k,l` and `0,l` seminorms, fixed-support joint continuity of
       `(z,u) ↦ translateSchwartz (-u) (η z)`, the varying-kernel
-      Rudin-envelope dominated-continuity theorem, the scalar
+      Rudin-envelope dominated-continuity theorem, the parametric
+      Rudin-integrand compact-bound theorem, the scalar
       evaluation/support theorems for the actual chart-kernel slice, and
       the boundary-CLM continuity component of the CLM boundary-data theorem.
       The plus and minus moving-kernel side-limit theorems
@@ -1322,12 +1323,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `hkernel_cont` as the Banach-Steinhaus input.  The bundled
       `localRudin_varyingKernel_boundaryData_of_clm` is also checked: it
       derives `hkernel_cont`, returns scalar `hbv_cont`, and packages the two
-      side limits.  The remaining Lean targets have exact proof transcripts in
-      `docs/scv_infrastructure_blueprint.md`: the parametric
-      Rudin-integrand bound over `closedBall 0 Rcut` with the inner Rudin side
-      domains kept separate from the original holomorphy domains, and the final
-      cutoff-envelope continuity theorem.  The parametric bound theorem itself
-      only uses continuity of `Fplus`/`Fminus` on the original side domains;
+      side limits.  The remaining Lean target before the mixed pairing CLM has
+      an exact proof transcript in `docs/scv_infrastructure_blueprint.md`: the
+      final cutoff-envelope continuity theorem.  The checked parametric bound
+      theorem only uses continuity of `Fplus`/`Fminus` on the original side domains;
       differentiability of the mollified side functions on `Dplus`/`Dminus`
       is derived separately for the measurability input to dominated
       continuity.  The boundary limits in that stack
@@ -1828,10 +1827,11 @@ Implementation-readiness gate for the next Lean stage:
   Rudin-integrand bound; prove
   `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`;
   construct the pairing CLM through the explicit post-continuity/value-CLM
-  interface; prove
-  `tsupport_subset_preimage_tsupport_complexTranslateSchwartz`; prove the
-  support-localized translated-test integral change-of-variables lemma; prove
-  local covariance; prove the scalarized local quotient and local product-test
+  interface; use the now-checked support transport theorem
+  `tsupport_subset_preimage_tsupport_complexTranslateSchwartz` and the
+  now-checked support-localized translated-test change-of-variables theorem
+  `integral_mul_complexTranslateSchwartz_eq_shift_of_support` to prove local
+  covariance; prove the scalarized local quotient and local product-test
   descent; prove
   `regularizedEnvelope_pointwiseRepresentation_of_localProductKernel`; and
   finish with `regularizedEnvelope_chartEnvelope_from_localProductKernel` using
@@ -2015,8 +2015,10 @@ Current implementation order:
    `SCV.regularizedEnvelope_pointwiseRepresentation_of_productKernel`,
    `SCV.regularizedEnvelope_deltaLimit_agreesOnWedges`, and
    `SCV.regularizedEnvelope_chartEnvelope_from_productKernel`, and
-   `SCV.local_continuous_edge_of_the_wedge_envelope`.  The local-descent
-   checked additions also include `SCV.norm_realEmbed_eq`,
+   `SCV.local_continuous_edge_of_the_wedge_envelope`.  The local-descent and
+   varying-kernel checked additions also include
+   `SCV.exists_bound_localRudinIntegrand_varyingKernel`,
+   `SCV.norm_realEmbed_eq`,
    `SCV.tsupport_subset_preimage_tsupport_complexTranslateSchwartz`,
    `SCV.integral_mul_complexTranslateSchwartz_eq_shift_of_support`,
    `SCV.SupportsInOpen.complexTranslateSchwartz_of_image_subset`,
@@ -2024,7 +2026,6 @@ Current implementation order:
    `SCV.translationCovariantKernel_distributionalHolomorphic_local`.
    The remaining pure-SCV declarations on this route are now the local descent
    package
-   `SCV.exists_bound_localRudinIntegrand_varyingKernel`,
    `SCV.continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`,
    `SCV.regularizedLocalEOW_pairingCLM_of_fixedWindow`,
    `SCV.regularizedLocalEOW_pairingCLM_localCovariant`,

@@ -1186,6 +1186,511 @@ theorem localRudin_varyingKernel_boundaryData_of_clm
       Fminus hDminus_sub Tminus Tchart hminus_eval hminus_limit x0 ys
       hδ hδρ hδsum η hZ_ball hη_support hkernel_cont hE_mem hminus
 
+/-- Uniform compact bound for the local Rudin circle integrand when the
+smoothing kernel varies with the outer chart point.  The proof is the checked
+compact-bound argument for `exists_bound_localRudinIntegrand`, with the compact
+parameter set enlarged from the chart ball to `Z × sphere 0 1` and with the
+real-edge branch supplied by the moving-kernel boundary CLM. -/
+theorem exists_bound_localRudinIntegrand_varyingKernel
+    (hm : 0 < m)
+    (Ωplus Ωminus Dplus Dminus : Set (ComplexChartSpace m))
+    (E : Set (Fin m → ℝ))
+    (hΩplus_open : IsOpen Ωplus)
+    (hΩminus_open : IsOpen Ωminus)
+    (Fplus Fminus : ComplexChartSpace m → ℂ)
+    (hFplus_cont : ContinuousOn Fplus Ωplus)
+    (hFminus_cont : ContinuousOn Fminus Ωminus)
+    {δ ρ r rψLarge : ℝ}
+    (hplus_margin_closed :
+      ∀ z ∈ Dplus, ∀ t ∈ Metric.closedBall (0 : Fin m → ℝ) rψLarge,
+        z + realEmbed t ∈ Ωplus)
+    (hminus_margin_closed :
+      ∀ z ∈ Dminus, ∀ t ∈ Metric.closedBall (0 : Fin m → ℝ) rψLarge,
+        z + realEmbed t ∈ Ωminus)
+    (Tchart : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ)
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    (hδ : 0 < δ) (hδρ : δ * 10 ≤ ρ)
+    (hδsum : (Fintype.card (Fin m) : ℝ) * (δ * 10) < r)
+    (Z : Set (ComplexChartSpace m))
+    (η : ComplexChartSpace m → SchwartzMap (Fin m → ℝ) ℂ)
+    (hZ_compact : IsCompact Z)
+    (hZ_ball :
+      Z ⊆ Metric.ball (0 : ComplexChartSpace m) (δ / 2))
+    (hη_eval_cont :
+      ContinuousOn
+        (fun p : ComplexChartSpace m × (Fin m → ℝ) => η p.1 p.2)
+        (Z ×ˢ Set.univ))
+    (hη_support : ∀ z ∈ Z, KernelSupportWithin (η z) rψLarge)
+    (hbv_cont :
+      ContinuousOn
+        (fun p : ComplexChartSpace m × (Fin m → ℝ) =>
+          Tchart (translateSchwartz (-p.2) (η p.1)))
+        (Z ×ˢ E))
+    (hplus_boundary :
+      ∀ z0 ∈ Z, ∀ l0 ∈ Metric.sphere (0 : ℂ) 1,
+        l0.im = 0 →
+          Filter.Tendsto
+            (fun p : ComplexChartSpace m × ℂ =>
+              realMollifyLocal Fplus (η p.1)
+                (localEOWChart x0 ys (localEOWSmp δ p.1 p.2)))
+            (nhdsWithin (z0, l0)
+              ((Z ×ˢ Metric.sphere (0 : ℂ) 1) ∩
+                {p : ComplexChartSpace m × ℂ | 0 < p.2.im}))
+            (nhds
+              (Tchart
+                (translateSchwartz
+                  (-(localEOWRealChart x0 ys
+                    (fun j => (localEOWSmp δ z0 l0 j).re)))
+                  (η z0)))))
+    (hminus_boundary :
+      ∀ z0 ∈ Z, ∀ l0 ∈ Metric.sphere (0 : ℂ) 1,
+        l0.im = 0 →
+          Filter.Tendsto
+            (fun p : ComplexChartSpace m × ℂ =>
+              realMollifyLocal Fminus (η p.1)
+                (localEOWChart x0 ys (localEOWSmp δ p.1 p.2)))
+            (nhdsWithin (z0, l0)
+              ((Z ×ˢ Metric.sphere (0 : ℂ) 1) ∩
+                {p : ComplexChartSpace m × ℂ | p.2.im < 0}))
+            (nhds
+              (Tchart
+                (translateSchwartz
+                  (-(localEOWRealChart x0 ys
+                    (fun j => (localEOWSmp δ z0 l0 j).re)))
+                  (η z0)))))
+    (hE_mem :
+      ∀ u ∈ Metric.closedBall (0 : Fin m → ℝ) ρ,
+        localEOWRealChart x0 ys u ∈ E)
+    (hplus :
+      ∀ u ∈ Metric.closedBall (0 : Fin m → ℝ) ρ,
+      ∀ v : Fin m → ℝ,
+        (∀ j, 0 ≤ v j) →
+        0 < ∑ j, v j →
+        (∑ j, v j) < r →
+          localEOWChart x0 ys
+            (fun j => (u j : ℂ) + (v j : ℂ) * Complex.I) ∈ Dplus)
+    (hminus :
+      ∀ u ∈ Metric.closedBall (0 : Fin m → ℝ) ρ,
+      ∀ v : Fin m → ℝ,
+        (∀ j, v j ≤ 0) →
+        0 < ∑ j, -v j →
+        (∑ j, -v j) < r →
+          localEOWChart x0 ys
+            (fun j => (u j : ℂ) + (v j : ℂ) * Complex.I) ∈ Dminus) :
+    ∃ M : ℝ, 0 ≤ M ∧ ∀ z ∈ Z, ∀ θ : ℝ,
+      ‖localRudinIntegrand δ x0 ys
+        (realMollifyLocal Fplus (η z))
+        (realMollifyLocal Fminus (η z)) z θ‖ ≤ M := by
+  have hδ_cnorm : ‖(δ : ℂ)‖ = δ := by
+    simp [Complex.norm_real, abs_of_pos hδ]
+  have cball_comp_le_half :
+      ∀ w ∈ Metric.closedBall (0 : ComplexChartSpace m) (δ / 2),
+        ∀ j, ‖w j / (δ : ℂ)‖ ≤ 1 / 2 := by
+    intro w hw j
+    rw [Metric.mem_closedBall, dist_zero_right] at hw
+    rw [norm_div, hδ_cnorm]
+    calc
+      ‖w j‖ / δ ≤ ‖w‖ / δ := by
+        gcongr
+        exact norm_le_pi_norm w j
+      _ ≤ (δ / 2) / δ := by gcongr
+      _ = 1 / 2 := by field_simp
+  have cball_comp_lt :
+      ∀ w ∈ Metric.closedBall (0 : ComplexChartSpace m) (δ / 2),
+        ∀ j, ‖w j / (δ : ℂ)‖ < 1 := by
+    intro w hw j
+    linarith [cball_comp_le_half w hw j]
+  have sphere_norm : ∀ l ∈ Metric.sphere (0 : ℂ) 1, ‖l‖ = 1 := by
+    intro l hl
+    rwa [← dist_zero_right]
+  have sphere_normSq : ∀ l ∈ Metric.sphere (0 : ℂ) 1,
+      Complex.normSq l = 1 := by
+    intro l hl
+    have h := sphere_norm l hl
+    rw [Complex.normSq_eq_norm_sq, h]
+    norm_num
+  have smp_cont : ContinuousOn
+      (fun p : ComplexChartSpace m × ℂ => localEOWSmp δ p.1 p.2)
+      (Metric.closedBall (0 : ComplexChartSpace m) (δ / 2) ×ˢ
+        Metric.closedBall (0 : ℂ) 1) := by
+    apply continuousOn_pi.mpr
+    intro j
+    show ContinuousOn
+      (fun p : ComplexChartSpace m × ℂ =>
+        (δ : ℂ) * moebiusProd (fun k => p.1 k / (δ : ℂ)) p.2 j)
+      (Metric.closedBall (0 : ComplexChartSpace m) (δ / 2) ×ˢ
+        Metric.closedBall (0 : ℂ) 1)
+    have h_proj : ContinuousOn
+        (fun p : ComplexChartSpace m × ℂ => (p.1 j / (δ : ℂ), p.2))
+        (Metric.closedBall (0 : ComplexChartSpace m) (δ / 2) ×ˢ
+          Metric.closedBall (0 : ℂ) 1) :=
+      (((continuous_apply j).comp continuous_fst).div_const _ |>.prodMk
+        continuous_snd).continuousOn
+    have h_maps : Set.MapsTo
+        (fun p : ComplexChartSpace m × ℂ => (p.1 j / (δ : ℂ), p.2))
+        (Metric.closedBall (0 : ComplexChartSpace m) (δ / 2) ×ˢ
+          Metric.closedBall (0 : ℂ) 1)
+        (Metric.ball (0 : ℂ) 1 ×ˢ Metric.closedBall (0 : ℂ) 1) := by
+      intro ⟨w, l⟩ ⟨hw, hl⟩
+      exact ⟨by
+          rw [Metric.mem_ball, dist_zero_right]
+          exact cball_comp_lt w hw j,
+        by rwa [Metric.mem_closedBall, dist_zero_right] at hl ⊢⟩
+    exact continuousOn_const.mul (moebiusRudin_continuousOn.comp h_proj h_maps)
+  have chart_smp_cont : ContinuousOn
+      (fun p : ComplexChartSpace m × ℂ =>
+        localEOWChart x0 ys (localEOWSmp δ p.1 p.2))
+      (Metric.closedBall (0 : ComplexChartSpace m) (δ / 2) ×ˢ
+        Metric.closedBall (0 : ℂ) 1) :=
+    (continuous_localEOWChart x0 ys).comp_continuousOn smp_cont
+  have real_chart_smp_cont : ContinuousOn
+      (fun p : ComplexChartSpace m × ℂ =>
+        localEOWRealChart x0 ys
+          (fun j => (localEOWSmp δ p.1 p.2 j).re))
+      (Metric.closedBall (0 : ComplexChartSpace m) (δ / 2) ×ˢ
+        Metric.closedBall (0 : ℂ) 1) := by
+    apply (continuous_localEOWRealChart x0 ys).comp_continuousOn
+    exact continuousOn_pi.mpr fun j =>
+      Complex.continuous_re.comp_continuousOn
+        ((continuous_apply j).comp_continuousOn smp_cont)
+  let S : Set (ComplexChartSpace m × ℂ) :=
+    Z ×ˢ Metric.sphere (0 : ℂ) 1
+  let sample : ComplexChartSpace m × ℂ → ComplexChartSpace m := fun p =>
+    localEOWChart x0 ys (localEOWSmp δ p.1 p.2)
+  let realSample : ComplexChartSpace m × ℂ → Fin m → ℝ := fun p =>
+    localEOWRealChart x0 ys (fun j => (localEOWSmp δ p.1 p.2 j).re)
+  have hS_sub :
+      S ⊆ Metric.closedBall (0 : ComplexChartSpace m) (δ / 2) ×ˢ
+        Metric.closedBall (0 : ℂ) 1 := by
+    intro p hp
+    exact ⟨Metric.ball_subset_closedBall (hZ_ball hp.1),
+      Metric.sphere_subset_closedBall hp.2⟩
+  have hsample_cont_S : ContinuousOn sample S := by
+    simpa [sample] using (chart_smp_cont.mono hS_sub)
+  have hrealSample_cont_S : ContinuousOn realSample S := by
+    simpa [realSample] using (real_chart_smp_cont.mono hS_sub)
+  have hsample_pos_mem :
+      ∀ p : ComplexChartSpace m × ℂ,
+        p ∈ S ∩ {p : ComplexChartSpace m × ℂ | 0 < p.2.im} →
+          sample p ∈ Dplus := by
+    intro p hp
+    rcases p with ⟨z, l⟩
+    rcases hp with ⟨⟨hz, hl⟩, him⟩
+    simpa [sample] using
+      localEOWChart_smp_upper_mem_of_delta_on_sphere hm Dplus x0 ys
+        hδ hδρ hδsum hplus
+        (Metric.ball_subset_closedBall (hZ_ball hz)) (sphere_norm l hl) him
+  have hsample_neg_mem :
+      ∀ p : ComplexChartSpace m × ℂ,
+        p ∈ S ∩ {p : ComplexChartSpace m × ℂ | p.2.im < 0} →
+          sample p ∈ Dminus := by
+    intro p hp
+    rcases p with ⟨z, l⟩
+    rcases hp with ⟨⟨hz, hl⟩, him⟩
+    simpa [sample] using
+      localEOWChart_smp_lower_mem_of_delta_on_sphere hm Dminus x0 ys
+        hδ hδρ hδsum hminus
+        (Metric.ball_subset_closedBall (hZ_ball hz)) (sphere_norm l hl) him
+  have hη_eval_pos :
+      ContinuousOn
+        (fun p : (ComplexChartSpace m × ℂ) × (Fin m → ℝ) =>
+          η p.1.1 p.2)
+        ((S ∩ {p : ComplexChartSpace m × ℂ | 0 < p.2.im}) ×ˢ
+          Set.univ) := by
+    have hproj_cont : ContinuousOn
+        (fun p : (ComplexChartSpace m × ℂ) × (Fin m → ℝ) =>
+          (p.1.1, p.2))
+        ((S ∩ {p : ComplexChartSpace m × ℂ | 0 < p.2.im}) ×ˢ
+          Set.univ) :=
+      (((continuous_fst.comp continuous_fst).prodMk
+        continuous_snd).continuousOn)
+    have hmaps : Set.MapsTo
+        (fun p : (ComplexChartSpace m × ℂ) × (Fin m → ℝ) =>
+          (p.1.1, p.2))
+        ((S ∩ {p : ComplexChartSpace m × ℂ | 0 < p.2.im}) ×ˢ
+          Set.univ)
+        (Z ×ˢ Set.univ) := by
+      intro p hp
+      exact ⟨hp.1.1.1, trivial⟩
+    exact hη_eval_cont.comp hproj_cont hmaps
+  have hη_eval_neg :
+      ContinuousOn
+        (fun p : (ComplexChartSpace m × ℂ) × (Fin m → ℝ) =>
+          η p.1.1 p.2)
+        ((S ∩ {p : ComplexChartSpace m × ℂ | p.2.im < 0}) ×ˢ
+          Set.univ) := by
+    have hproj_cont : ContinuousOn
+        (fun p : (ComplexChartSpace m × ℂ) × (Fin m → ℝ) =>
+          (p.1.1, p.2))
+        ((S ∩ {p : ComplexChartSpace m × ℂ | p.2.im < 0}) ×ˢ
+          Set.univ) :=
+      (((continuous_fst.comp continuous_fst).prodMk
+        continuous_snd).continuousOn)
+    have hmaps : Set.MapsTo
+        (fun p : (ComplexChartSpace m × ℂ) × (Fin m → ℝ) =>
+          (p.1.1, p.2))
+        ((S ∩ {p : ComplexChartSpace m × ℂ | p.2.im < 0}) ×ˢ
+          Set.univ)
+        (Z ×ˢ Set.univ) := by
+      intro p hp
+      exact ⟨hp.1.1.1, trivial⟩
+    exact hη_eval_cont.comp hproj_cont hmaps
+  have hplus_branch_cont : ContinuousOn
+      (fun p : ComplexChartSpace m × ℂ =>
+        realMollifyLocal Fplus (η p.1) (sample p))
+      (S ∩ {p : ComplexChartSpace m × ℂ | 0 < p.2.im}) := by
+    exact continuousOn_realMollifyLocal_varyingKernel_of_fixedSupport
+      (S := S ∩ {p : ComplexChartSpace m × ℂ | 0 < p.2.im})
+      (K := Metric.closedBall (0 : Fin m → ℝ) rψLarge)
+      (Fside := Fplus) (Ω := Ωplus) (w := sample)
+      (η := fun p : ComplexChartSpace m × ℂ => η p.1)
+      (hK := isCompact_closedBall (x := (0 : Fin m → ℝ)) (r := rψLarge))
+      (hΩ_open := hΩplus_open)
+      (hFside_cont := hFplus_cont)
+      (hw_cont := hsample_cont_S.mono Set.inter_subset_left)
+      (hη_eval_cont := hη_eval_pos)
+      (hη_zero := by
+        intro p hp t ht
+        exact KernelSupportWithin.eq_zero_of_not_mem_closedBall
+          (hη_support p.1 hp.1.1) ht)
+      (hmargin := by
+        intro p hp t ht
+        exact hplus_margin_closed (sample p) (hsample_pos_mem p hp) t ht)
+  have hminus_branch_cont : ContinuousOn
+      (fun p : ComplexChartSpace m × ℂ =>
+        realMollifyLocal Fminus (η p.1) (sample p))
+      (S ∩ {p : ComplexChartSpace m × ℂ | p.2.im < 0}) := by
+    exact continuousOn_realMollifyLocal_varyingKernel_of_fixedSupport
+      (S := S ∩ {p : ComplexChartSpace m × ℂ | p.2.im < 0})
+      (K := Metric.closedBall (0 : Fin m → ℝ) rψLarge)
+      (Fside := Fminus) (Ω := Ωminus) (w := sample)
+      (η := fun p : ComplexChartSpace m × ℂ => η p.1)
+      (hK := isCompact_closedBall (x := (0 : Fin m → ℝ)) (r := rψLarge))
+      (hΩ_open := hΩminus_open)
+      (hFside_cont := hFminus_cont)
+      (hw_cont := hsample_cont_S.mono Set.inter_subset_left)
+      (hη_eval_cont := hη_eval_neg)
+      (hη_zero := by
+        intro p hp t ht
+        exact KernelSupportWithin.eq_zero_of_not_mem_closedBall
+          (hη_support p.1 hp.1.1) ht)
+      (hmargin := by
+        intro p hp t ht
+        exact hminus_margin_closed (sample p) (hsample_neg_mem p hp) t ht)
+  let h : ComplexChartSpace m × ℂ → ℂ := fun p =>
+    if 0 < p.2.im then
+      realMollifyLocal Fplus (η p.1) (sample p)
+    else if p.2.im < 0 then
+      realMollifyLocal Fminus (η p.1) (sample p)
+    else
+      Tchart (translateSchwartz (-(realSample p)) (η p.1))
+  have hS_cpt : IsCompact S := by
+    simpa [S] using hZ_compact.prod (isCompact_sphere (0 : ℂ) 1)
+  have h_cont : ContinuousOn h S := by
+    intro ⟨z0, l0⟩ hzl0
+    rcases hzl0 with ⟨hz0, hl0⟩
+    have h_real_cwa : ContinuousWithinAt realSample S (z0, l0) :=
+      hrealSample_cont_S.continuousWithinAt ⟨hz0, hl0⟩
+    have him_pos_open :
+        IsOpen {p : ComplexChartSpace m × ℂ | 0 < p.2.im} :=
+      isOpen_lt continuous_const (Complex.continuous_im.comp continuous_snd)
+    have him_neg_open :
+        IsOpen {p : ComplexChartSpace m × ℂ | p.2.im < 0} :=
+      isOpen_lt (Complex.continuous_im.comp continuous_snd) continuous_const
+    by_cases h_pos : 0 < l0.im
+    · have h_ev : h =ᶠ[nhdsWithin (z0, l0) S]
+          fun p => realMollifyLocal Fplus (η p.1) (sample p) := by
+        filter_upwards [nhdsWithin_le_nhds
+          (him_pos_open.mem_nhds h_pos)] with ⟨z, l⟩ him
+        exact if_pos him
+      have hO_mem :
+          {p : ComplexChartSpace m × ℂ | 0 < p.2.im} ∈
+            nhdsWithin (z0, l0) S :=
+        nhdsWithin_le_nhds (him_pos_open.mem_nhds h_pos)
+      have hfilter :
+          nhdsWithin (z0, l0)
+              (S ∩ {p : ComplexChartSpace m × ℂ | 0 < p.2.im}) =
+            nhdsWithin (z0, l0) S := by
+        rw [Set.inter_comm]
+        exact nhdsWithin_inter_of_mem hO_mem
+      have hplus_cwa : ContinuousWithinAt
+          (fun p : ComplexChartSpace m × ℂ =>
+            realMollifyLocal Fplus (η p.1) (sample p)) S (z0, l0) := by
+        show Tendsto
+          (fun p : ComplexChartSpace m × ℂ =>
+            realMollifyLocal Fplus (η p.1) (sample p))
+          (nhdsWithin (z0, l0) S)
+          (nhds (realMollifyLocal Fplus (η z0) (sample (z0, l0))))
+        rw [← hfilter]
+        exact hplus_branch_cont (z0, l0) ⟨⟨hz0, hl0⟩, h_pos⟩
+      exact hplus_cwa.congr_of_eventuallyEq h_ev
+        (show h (z0, l0) =
+          realMollifyLocal Fplus (η z0) (sample (z0, l0)) from if_pos h_pos)
+    · by_cases h_neg : l0.im < 0
+      · have h_ev : h =ᶠ[nhdsWithin (z0, l0) S]
+            fun p => realMollifyLocal Fminus (η p.1) (sample p) := by
+          filter_upwards [nhdsWithin_le_nhds
+            (him_neg_open.mem_nhds h_neg)] with ⟨z, l⟩ him
+          simp only [h, if_neg (not_lt.mpr him.le), if_pos him]
+        have hO_mem :
+            {p : ComplexChartSpace m × ℂ | p.2.im < 0} ∈
+              nhdsWithin (z0, l0) S :=
+          nhdsWithin_le_nhds (him_neg_open.mem_nhds h_neg)
+        have hfilter :
+            nhdsWithin (z0, l0)
+                (S ∩ {p : ComplexChartSpace m × ℂ | p.2.im < 0}) =
+              nhdsWithin (z0, l0) S := by
+          rw [Set.inter_comm]
+          exact nhdsWithin_inter_of_mem hO_mem
+        have hminus_cwa : ContinuousWithinAt
+            (fun p : ComplexChartSpace m × ℂ =>
+              realMollifyLocal Fminus (η p.1) (sample p)) S (z0, l0) := by
+          show Tendsto
+            (fun p : ComplexChartSpace m × ℂ =>
+              realMollifyLocal Fminus (η p.1) (sample p))
+            (nhdsWithin (z0, l0) S)
+            (nhds (realMollifyLocal Fminus (η z0) (sample (z0, l0))))
+          rw [← hfilter]
+          exact hminus_branch_cont (z0, l0) ⟨⟨hz0, hl0⟩, h_neg⟩
+        exact hminus_cwa.congr_of_eventuallyEq h_ev
+          (show h (z0, l0) =
+            realMollifyLocal Fminus (η z0) (sample (z0, l0)) from by
+              simp only [h, if_neg (not_lt.mpr h_neg.le), if_pos h_neg])
+      · have him : l0.im = 0 :=
+          le_antisymm (not_lt.mp h_pos) (not_lt.mp h_neg)
+        set x' : Fin m → ℝ := realSample (z0, l0)
+        have hx'E : x' ∈ E := by
+          exact hE_mem _
+            (localEOWSmp_re_mem_closedBall hδ hδρ
+              (Metric.ball_subset_closedBall (hZ_ball hz0))
+              ((sphere_norm l0 hl0).le.trans (by norm_num)))
+        have h_val : h (z0, l0) =
+            Tchart (translateSchwartz (-x') (η z0)) := by
+          simp [h, x', h_pos, h_neg]
+        have cwa_pos : ContinuousWithinAt h
+            (S ∩ {p : ComplexChartSpace m × ℂ | 0 < p.2.im}) (z0, l0) := by
+          show Filter.Tendsto h _ (nhds (h (z0, l0)))
+          rw [h_val]
+          have ht := hplus_boundary z0 hz0 l0 hl0 him
+          have ht' := ht.congr' (eventually_nhdsWithin_of_forall
+            fun p hp => by
+              rcases p with ⟨z, l⟩
+              have himp : 0 < l.im := hp.2
+              change
+                realMollifyLocal Fplus (η z)
+                    (localEOWChart x0 ys (localEOWSmp δ z l)) =
+                  h (z, l)
+              simp [h, sample, himp])
+          simpa [x', realSample] using ht'
+        have cwa_neg : ContinuousWithinAt h
+            (S ∩ {p : ComplexChartSpace m × ℂ | p.2.im < 0}) (z0, l0) := by
+          show Filter.Tendsto h _ (nhds (h (z0, l0)))
+          rw [h_val]
+          have ht := hminus_boundary z0 hz0 l0 hl0 him
+          have ht' := ht.congr' (eventually_nhdsWithin_of_forall
+            fun p hp => by
+              rcases p with ⟨z, l⟩
+              have himp : l.im < 0 := hp.2
+              change
+                realMollifyLocal Fminus (η z)
+                    (localEOWChart x0 ys (localEOWSmp δ z l)) =
+                  h (z, l)
+              simp [h, sample, himp, not_lt.mpr himp.le])
+          simpa [x', realSample] using ht'
+        have cwa_zero : ContinuousWithinAt h
+            (S ∩ {p : ComplexChartSpace m × ℂ | p.2.im = 0}) (z0, l0) := by
+          show Filter.Tendsto h _ (nhds (h (z0, l0)))
+          rw [h_val]
+          let realParam : ComplexChartSpace m × ℂ →
+              ComplexChartSpace m × (Fin m → ℝ) := fun p => (p.1, realSample p)
+          have hrealParam_cwa : ContinuousWithinAt realParam
+              (S ∩ {p : ComplexChartSpace m × ℂ | p.2.im = 0}) (z0, l0) := by
+            have hfst : ContinuousWithinAt
+                (fun p : ComplexChartSpace m × ℂ => p.1)
+                (S ∩ {p : ComplexChartSpace m × ℂ | p.2.im = 0}) (z0, l0) :=
+              continuous_fst.continuousAt.continuousWithinAt
+            have hreal_side : ContinuousWithinAt realSample
+                (S ∩ {p : ComplexChartSpace m × ℂ | p.2.im = 0}) (z0, l0) :=
+              h_real_cwa.mono Set.inter_subset_left
+            show Tendsto realParam
+                (nhdsWithin (z0, l0)
+                  (S ∩ {p : ComplexChartSpace m × ℂ | p.2.im = 0}))
+                (nhds (realParam (z0, l0)))
+            simpa [realParam] using
+              Filter.Tendsto.prodMk_nhds hfst hreal_side
+          have hrealParam_maps : Set.MapsTo realParam
+              (S ∩ {p : ComplexChartSpace m × ℂ | p.2.im = 0})
+              (Z ×ˢ E) := by
+            intro p hp
+            rcases p with ⟨z, l⟩
+            rcases hp with ⟨⟨hz, hl⟩, _him0⟩
+            exact ⟨hz, hE_mem _
+              (localEOWSmp_re_mem_closedBall hδ hδρ
+                (Metric.ball_subset_closedBall (hZ_ball hz))
+                ((sphere_norm l hl).le.trans (by norm_num)))⟩
+          have hmem : realParam (z0, l0) ∈ Z ×ˢ E := by
+            exact ⟨hz0, hx'E⟩
+          have h_composed : Filter.Tendsto
+              (fun p : ComplexChartSpace m × ℂ =>
+                Tchart (translateSchwartz (-(realSample p)) (η p.1)))
+              (nhdsWithin (z0, l0)
+                (S ∩ {p : ComplexChartSpace m × ℂ | p.2.im = 0}))
+              (nhds (Tchart (translateSchwartz (-x') (η z0)))) := by
+            have ht := Filter.Tendsto.comp
+              (hbv_cont.continuousWithinAt hmem)
+              (hrealParam_cwa.tendsto_nhdsWithin hrealParam_maps)
+            simpa [realParam, x'] using ht
+          exact h_composed.congr' (eventually_nhdsWithin_of_forall
+            fun p hp => by
+              rcases p with ⟨z, l⟩
+              have him0 : l.im = 0 := hp.2
+              change
+                Tchart (translateSchwartz (-(realSample (z, l))) (η z)) =
+                  h (z, l)
+              simp [h, him0])
+        exact (cwa_pos.union (cwa_neg.union cwa_zero)).mono
+          (fun ⟨z, l⟩ hS => (lt_trichotomy l.im 0).elim
+            (fun hlt => Or.inr (Or.inl ⟨hS, hlt⟩))
+            (fun h => h.elim
+              (fun heq => Or.inr (Or.inr ⟨hS, heq⟩))
+              (fun hgt => Or.inl ⟨hS, hgt⟩)))
+  obtain ⟨M0, hM0⟩ := hS_cpt.exists_bound_of_continuousOn h_cont
+  let M : ℝ := max M0 0
+  refine ⟨M, le_max_right M0 0, ?_⟩
+  intro z hz θ
+  set l : ℂ := Complex.exp ((θ : ℂ) * Complex.I) with hl_def
+  have hl_sphere : l ∈ Metric.sphere (0 : ℂ) 1 := by
+    rw [Metric.mem_sphere, dist_zero_right]
+    exact Complex.norm_exp_ofReal_mul_I θ
+  have hzl : (z, l) ∈ S := ⟨hz, hl_sphere⟩
+  by_cases hsin_pos : 0 < Real.sin θ
+  · have hl_im : 0 < l.im := by
+      show 0 < (Complex.exp ((θ : ℂ) * Complex.I)).im
+      rw [Complex.exp_ofReal_mul_I_im]
+      exact hsin_pos
+    calc
+      ‖localRudinIntegrand δ x0 ys
+          (realMollifyLocal Fplus (η z))
+          (realMollifyLocal Fminus (η z)) z θ‖ = ‖h (z, l)‖ := by
+        simp [localRudinIntegrand, h, sample, hsin_pos, hl_def]
+      _ ≤ M0 := hM0 _ hzl
+      _ ≤ M := le_max_left M0 0
+  · by_cases hsin_neg : Real.sin θ < 0
+    · have hl_im : l.im < 0 := by
+        show (Complex.exp ((θ : ℂ) * Complex.I)).im < 0
+        rw [Complex.exp_ofReal_mul_I_im]
+        exact hsin_neg
+      calc
+        ‖localRudinIntegrand δ x0 ys
+            (realMollifyLocal Fplus (η z))
+            (realMollifyLocal Fminus (η z)) z θ‖ = ‖h (z, l)‖ := by
+          simp [localRudinIntegrand, h, sample, hsin_pos, hsin_neg, hl_def]
+        _ ≤ M0 := hM0 _ hzl
+        _ ≤ M := le_max_left M0 0
+    · simp only [localRudinIntegrand, if_neg hsin_pos, if_neg hsin_neg,
+        norm_zero]
+      exact le_max_right M0 0
+
 /-- Continuity of the normalized local Rudin envelope when the smoothing kernel
 varies with the outer chart point, assuming a uniform bound on the circle
 integrand. -/
