@@ -4044,29 +4044,47 @@ Proof transcript for `chartDistributionalEOW_local_envelope`:
    the original-edge margin.  For real translations expressed back in chart
    coordinates, choose the margin using the inverse operator norm as well.
 4. Build the two-sided slice CLMs from the checked raw side limits, not as
-   assumptions.  Choose a cutoff `χ` with `χ = 1` on `B1` and
+   assumptions.  Keep the distribution names separated throughout this step:
+   `Torig := T` is the original real-edge distribution in the OS-II boundary
+   hypotheses; `TcutOrig := Torig.comp (SchwartzMap.smulLeftCLM ℂ χ)` is the
+   original-coordinate distribution after the local real cutoff is inserted;
+   and the chart-coordinate distribution used only after kernel transport is
+   `Tcoord := localEOWAffineDistributionPullbackCLM x0 ys hli TcutOrig`.
+   The side-cone raw theorem and the slice CLM theorem still operate in the
+   original real-edge coordinates, so their raw limit target is
+   `(Torig.restrictScalars ℝ)`.
+
+   Choose a cutoff `χ` with `χ = 1` on `B1` and
    `tsupport χ ⊆ B2`.  Then call the checked
    `sliceCLM_family_from_distributionalBoundary` with the plus/minus raw
    limits restricted to `CplusLoc/CminusLoc`, the side margins for `χ`,
    `Dplus ⊆ TubeDomain CplusLoc`,
    `Dminus ⊆ TubeDomain CminusLoc`, and the translated-kernel cutoff-one
    hypotheses for every `KernelSupportWithin ψ rψ`.  The downstream complex
-   boundary distribution is the cutoff pullback
-   `Tcut = T.comp (SchwartzMap.smulLeftCLM ℂ χ)`, and
+   boundary distribution for the original fixed-window family is
+   `TcutOrig`, and
    the cutoff compatibility supplied to the slice theorem rewrites both limit
-   targets to `(Tcut.restrictScalars ℝ) φ`.  The theorem returns the two
+   targets to `(TcutOrig.restrictScalars ℝ) φ`.  The theorem returns the two
    evaluation fields for every kernel with `KernelSupportWithin ψ rψ`; the
    translated support lies in `B1` by the support transport and cutoff
    construction.
 5. Apply `regularizedLocalEOW_family_from_fixedWindow` to the original-side
-   functions with `Tchart = Tcut`, the just-built `Tplus/Tminus`, the
+   functions with `Tchart = TcutOrig`, the just-built `Tplus/Tminus`, the
    fixed-window data from step 1, and the side domains from step 2.  This
    produces the original-edge fixed-window family
    `Gorig η w =
     localRudinEnvelope δ x0 ys (realMollifyLocal Fplus η)
       (realMollifyLocal Fminus η) w`
    with holomorphy on `Metric.ball 0 (δ / 2)` and side identities against
-   original-edge kernels.
+   original-edge kernels.  Its real-edge identity is intentionally still in
+   original coordinates:
+   ```
+   Gorig η (realEmbed u) =
+     TcutOrig (translateSchwartz (-(localEOWRealChart x0 ys u)) η).
+   ```
+   The chart-coordinate distribution `Tcoord` is not substituted here; it is
+   recovered after the chart-kernel pushforward and the affine distribution
+   pullback have been applied.
 6. Pass to chart kernels only through the checked linear transport:
    `P = localEOWRealLinearKernelPushforwardCLM ys hli` and
    `Gchart ψ = Gorig (P ψ)`.  The side identities for `Gchart` are not
@@ -4075,7 +4093,18 @@ Proof transcript for `chartDistributionalEOW_local_envelope`:
    `realMollifyLocal_localEOWChart_kernelPushforwardCLM` to rewrite
    `realMollifyLocal Fplus (P ψ) (localEOWChart x0 ys w)` as
    `realMollifyLocal (fun ζ => Fplus (localEOWChart x0 ys ζ)) ψ w`, and
-   similarly on the lower side.  This is the chart-linear correction.
+   similarly on the lower side.  Thus the local recovery theorem is
+   instantiated with
+   ```
+   FplusCoord  := fun ζ => Fplus  (localEOWChart x0 ys ζ)
+   FminusCoord := fun ζ => Fminus (localEOWChart x0 ys ζ)
+   ```
+   and not with the untransported original functions.  This is the
+   chart-linear correction.  On the real edge, the compatibility between
+   `TcutOrig` and `Tcoord` is the affine pullback apply theorem together with
+   the checked change-of-variables identity
+   `integral_localEOWAffineTestPushforwardCLM_changeOfVariables`; no step
+   identifies chart coordinates with original real-edge coordinates.
 7. Use explicit local recovery radii.  One convenient choice is
    `Rcore = δ / 128`, `rker = δ / 128`, `rη = δ / 128`,
    `Rdesc = δ / 32`, `Rcov = δ / 16`, and `Rcut = δ / 4`.  These satisfy

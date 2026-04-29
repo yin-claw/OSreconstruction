@@ -2752,7 +2752,19 @@ Current implementation order:
    `SCV.chartDistributionalEOW_local_envelope`: feed the checked slice
    families into the fixed-window family, use the chart-kernel transport
    `localEOWRealLinearKernelPushforwardCLM ys hli`, then call the local
-   recovery stack with the existing approximate-identity inputs.
+   recovery stack with the existing approximate-identity inputs.  The
+   distribution bookkeeping is part of the proof surface: the side-cone and
+   slice-family steps use the original edge distribution `Torig`; the cutoff
+   fixed-window family uses
+   `TcutOrig = Torig.comp (SchwartzMap.smulLeftCLM ℂ χ)`; and the recovered
+   chart distribution is
+   `localEOWAffineDistributionPullbackCLM x0 ys hli TcutOrig`.  The local
+   recovery theorem is instantiated with the chart-side functions
+   `fun ζ => Fplus (localEOWChart x0 ys ζ)` and
+   `fun ζ => Fminus (localEOWChart x0 ys ζ)`, with the checked
+   `realMollifyLocal_localEOWChart_kernelPushforwardCLM` providing the
+   side-mollifier change of variables.  No step treats the chart kernel as an
+   original-coordinate kernel without this pushforward/Jacobian transport.
    Then prove
    the OS45 instantiation
    `BHW.os45_adjacent_commonBoundaryEnvelope` and package its output as
