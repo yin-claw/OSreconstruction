@@ -79,6 +79,70 @@ theorem norm_complexChart_re_lt_of_mem_ball {R : ℝ}
   rw [Metric.mem_ball, dist_zero_right] at hw
   exact lt_of_le_of_lt (norm_complexChart_re_le w) hw
 
+theorem StrictPositiveImagBall_im_nonneg {R : ℝ}
+    {w : ComplexChartSpace m}
+    (hw : w ∈ StrictPositiveImagBall (m := m) R) :
+    ∀ j, 0 ≤ (w j).im :=
+  fun j => (hw.2 j).le
+
+theorem StrictNegativeImagBall_im_nonpos {R : ℝ}
+    {w : ComplexChartSpace m}
+    (hw : w ∈ StrictNegativeImagBall (m := m) R) :
+    ∀ j, (w j).im ≤ 0 :=
+  fun j => (hw.2 j).le
+
+theorem StrictPositiveImagBall_im_sum_pos
+    (hm : 0 < m) {R : ℝ} {w : ComplexChartSpace m}
+    (hw : w ∈ StrictPositiveImagBall (m := m) R) :
+    0 < ∑ j, (w j).im := by
+  haveI : Nonempty (Fin m) := Fin.pos_iff_nonempty.mp hm
+  exact Finset.sum_pos (fun j _ => hw.2 j) Finset.univ_nonempty
+
+theorem StrictNegativeImagBall_neg_im_sum_pos
+    (hm : 0 < m) {R : ℝ} {w : ComplexChartSpace m}
+    (hw : w ∈ StrictNegativeImagBall (m := m) R) :
+    0 < ∑ j, - (w j).im := by
+  haveI : Nonempty (Fin m) := Fin.pos_iff_nonempty.mp hm
+  exact Finset.sum_pos (fun j _ => neg_pos.mpr (hw.2 j))
+    Finset.univ_nonempty
+
+theorem StrictPositiveImagBall_im_sum_le_card_mul {R : ℝ}
+    {w : ComplexChartSpace m}
+    (hw : w ∈ StrictPositiveImagBall (m := m) R) :
+    (∑ j, (w j).im) ≤ (Fintype.card (Fin m) : ℝ) * R := by
+  have hcoord : ∀ j, (w j).im ≤ R := by
+    intro j
+    have hnorm : ‖w‖ < R := by
+      simpa [Metric.mem_ball, dist_zero_right] using hw.1
+    exact (calc
+      (w j).im ≤ |(w j).im| := le_abs_self _
+      _ ≤ ‖w j‖ := Complex.abs_im_le_norm (w j)
+      _ ≤ ‖w‖ := norm_le_pi_norm w j
+      _ < R := hnorm).le
+  calc
+    ∑ j, (w j).im ≤ ∑ _j : Fin m, R :=
+      Finset.sum_le_sum (fun j _ => hcoord j)
+    _ = (Fintype.card (Fin m) : ℝ) * R := by simp
+
+theorem StrictNegativeImagBall_neg_im_sum_le_card_mul {R : ℝ}
+    {w : ComplexChartSpace m}
+    (hw : w ∈ StrictNegativeImagBall (m := m) R) :
+    (∑ j, - (w j).im) ≤ (Fintype.card (Fin m) : ℝ) * R := by
+  have hcoord : ∀ j, - (w j).im ≤ R := by
+    intro j
+    have hnorm : ‖w‖ < R := by
+      simpa [Metric.mem_ball, dist_zero_right] using hw.1
+    exact (calc
+      - (w j).im ≤ |-(w j).im| := le_abs_self _
+      _ = |(w j).im| := abs_neg _
+      _ ≤ ‖w j‖ := Complex.abs_im_le_norm (w j)
+      _ ≤ ‖w‖ := norm_le_pi_norm w j
+      _ < R := hnorm).le
+  calc
+    ∑ j, - (w j).im ≤ ∑ _j : Fin m, R :=
+      Finset.sum_le_sum (fun j _ => hcoord j)
+    _ = (Fintype.card (Fin m) : ℝ) * R := by simp
+
 /-- The imaginary part of the affine local EOW chart is the real-linear chart
 part applied to the coordinate imaginary vector. -/
 theorem localEOWChart_im_eq_realLinearPart_im
@@ -250,6 +314,102 @@ theorem localEOWChart_mem_TubeDomain_neg_truncatedSideCone_of_strictNegative
   rw [localEOWChart_im_eq_realLinearPart_im]
   exact localEOWRealLinearPart_im_mem_neg_truncatedSideCone_of_strictNegative
     hm ys hε hδside hRδ hw
+
+/-- Strict positive chart-side balls feed the fixed-window plus polywedge
+membership theorem once their radius has the required real and coordinate-sum
+smallness. -/
+theorem localEOWChart_mem_fixedWindow_of_strictPositiveImagBall
+    (hm : 0 < m)
+    (Ωplus : Set (ComplexChartSpace m))
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    {ρ r R : ℝ} (hRρ : R ≤ ρ)
+    (hcardR : (Fintype.card (Fin m) : ℝ) * R < r)
+    (hplus :
+      ∀ u ∈ Metric.closedBall (0 : Fin m → ℝ) ρ, ∀ v : Fin m → ℝ,
+        (∀ j, 0 ≤ v j) →
+        0 < ∑ j, v j →
+        (∑ j, v j) < r →
+          localEOWChart x0 ys
+            (fun j => (u j : ℂ) + (v j : ℂ) * Complex.I) ∈ Ωplus)
+    {w : ComplexChartSpace m}
+    (hw : w ∈ StrictPositiveImagBall (m := m) R) :
+    localEOWChart x0 ys w ∈ Ωplus := by
+  let u : Fin m → ℝ := fun j => (w j).re
+  let v : Fin m → ℝ := fun j => (w j).im
+  have hu : u ∈ Metric.closedBall (0 : Fin m → ℝ) ρ := by
+    rw [Metric.mem_closedBall, dist_zero_right]
+    have hnorm : ‖w‖ < R := by
+      simpa [Metric.mem_ball, dist_zero_right] using hw.1
+    calc
+      ‖u‖ ≤ ‖w‖ := by
+        simpa [u] using norm_complexChart_re_le w
+      _ ≤ R := hnorm.le
+      _ ≤ ρ := hRρ
+  have hv_nonneg : ∀ j, 0 ≤ v j := by
+    intro j
+    exact StrictPositiveImagBall_im_nonneg hw j
+  have hv_sum_pos : 0 < ∑ j, v j := by
+    simpa [v] using StrictPositiveImagBall_im_sum_pos hm hw
+  have hv_sum_lt : (∑ j, v j) < r := by
+    exact lt_of_le_of_lt
+      (by
+        simpa [v] using
+          StrictPositiveImagBall_im_sum_le_card_mul (m := m) hw)
+      hcardR
+  have hmem := hplus u hu v hv_nonneg hv_sum_pos hv_sum_lt
+  have hdecomp :
+      (fun j => ((u j : ℂ) + (v j : ℂ) * Complex.I)) = w := by
+    ext j
+    simp [u, v, Complex.re_add_im]
+  rwa [hdecomp] at hmem
+
+/-- Strict negative chart-side balls feed the fixed-window minus polywedge
+membership theorem once their radius has the required real and coordinate-sum
+smallness. -/
+theorem localEOWChart_mem_fixedWindow_of_strictNegativeImagBall
+    (hm : 0 < m)
+    (Ωminus : Set (ComplexChartSpace m))
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    {ρ r R : ℝ} (hRρ : R ≤ ρ)
+    (hcardR : (Fintype.card (Fin m) : ℝ) * R < r)
+    (hminus :
+      ∀ u ∈ Metric.closedBall (0 : Fin m → ℝ) ρ, ∀ v : Fin m → ℝ,
+        (∀ j, v j ≤ 0) →
+        0 < ∑ j, -v j →
+        (∑ j, -v j) < r →
+          localEOWChart x0 ys
+            (fun j => (u j : ℂ) + (v j : ℂ) * Complex.I) ∈ Ωminus)
+    {w : ComplexChartSpace m}
+    (hw : w ∈ StrictNegativeImagBall (m := m) R) :
+    localEOWChart x0 ys w ∈ Ωminus := by
+  let u : Fin m → ℝ := fun j => (w j).re
+  let v : Fin m → ℝ := fun j => (w j).im
+  have hu : u ∈ Metric.closedBall (0 : Fin m → ℝ) ρ := by
+    rw [Metric.mem_closedBall, dist_zero_right]
+    have hnorm : ‖w‖ < R := by
+      simpa [Metric.mem_ball, dist_zero_right] using hw.1
+    calc
+      ‖u‖ ≤ ‖w‖ := by
+        simpa [u] using norm_complexChart_re_le w
+      _ ≤ R := hnorm.le
+      _ ≤ ρ := hRρ
+  have hv_nonpos : ∀ j, v j ≤ 0 := by
+    intro j
+    exact StrictNegativeImagBall_im_nonpos hw j
+  have hv_sum_pos : 0 < ∑ j, -v j := by
+    simpa [v] using StrictNegativeImagBall_neg_im_sum_pos hm hw
+  have hv_sum_lt : (∑ j, -v j) < r := by
+    exact lt_of_le_of_lt
+      (by
+        simpa [v] using
+          StrictNegativeImagBall_neg_im_sum_le_card_mul (m := m) hw)
+      hcardR
+  have hmem := hminus u hu v hv_nonpos hv_sum_pos hv_sum_lt
+  have hdecomp :
+      (fun j => ((u j : ℂ) + (v j : ℂ) * Complex.I)) = w := by
+    ext j
+    simp [u, v, Complex.re_add_im]
+  rwa [hdecomp] at hmem
 
 /-- Original chart points whose inverse affine chart has small real part.  This
 is the real-window factor in the local side domains used by the one-chart

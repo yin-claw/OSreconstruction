@@ -1017,9 +1017,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
      `SCV.StrictNegativeImagBall`,
      `SCV.isOpen_StrictPositiveImagBall`,
      `SCV.isOpen_StrictNegativeImagBall`,
+     `SCV.StrictPositiveImagBall_im_nonneg`,
+     `SCV.StrictNegativeImagBall_im_nonpos`,
+     `SCV.StrictPositiveImagBall_im_sum_pos`,
+     `SCV.StrictNegativeImagBall_neg_im_sum_pos`,
+     `SCV.StrictPositiveImagBall_im_sum_le_card_mul`,
+     `SCV.StrictNegativeImagBall_neg_im_sum_le_card_mul`,
      `SCV.localEOWChart_im_eq_realLinearPart_im`,
      `SCV.localEOWChart_mem_TubeDomain_truncatedSideCone_of_strictPositive`,
      `SCV.localEOWChart_mem_TubeDomain_neg_truncatedSideCone_of_strictNegative`,
+     `SCV.localEOWChart_mem_fixedWindow_of_strictPositiveImagBall`,
+     `SCV.localEOWChart_mem_fixedWindow_of_strictNegativeImagBall`,
      `SCV.localEOWAffineRealWindow`,
      `SCV.isOpen_localEOWAffineRealWindow`,
      `SCV.localEOWComplexAffineEquiv_symm_localEOWChart`,
@@ -1146,6 +1154,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `localEOWSideCone ys ε ∩ ball 0 rside` and its negative image by the
       identity
       `Im (localEOWChart x0 ys w) = localEOWRealLinearPart ys (Im w)`.
+      It also records the fixed-window coordinate-sum facts that the Rudin
+      side theorem actually consumes: a strict positive ball point has
+      nonnegative imaginary coordinates, positive coordinate sum, and sum
+      bounded by `card * R`; the strict negative ball has the corresponding
+      statement for `-Im w`.  Therefore the final local scale must include the
+      explicit smallness condition
+      `(Fintype.card (Fin m) : ℝ) * Rcore < rpoly`, and the fixed-window
+      side membership is discharged by
+      `SCV.localEOWChart_mem_fixedWindow_of_strictPositiveImagBall` and
+      `SCV.localEOWChart_mem_fixedWindow_of_strictNegativeImagBall`.
       Thus the one-chart theorem does not need to reprove, or silently assume,
       that chart imaginary coordinates are original edge coordinates.  The
       affine real-window factor is likewise checked as

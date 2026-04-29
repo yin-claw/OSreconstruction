@@ -462,7 +462,7 @@ Source ledger for the internal helper list:
 | `zero_not_mem_localEOWSimplexDirections`, `tendsto_neg_nhdsWithin_zero_neg_image`, `localEOWSideDirectionWindow_subset_closure`, `isCompact_localEOWSideDirectionClosure`, `localEOWSimplexDirections_subset_sideDirectionWindow`, `exists_localEOWSideCone_radius`, `isOpen_localEOWSideCone`, `isOpen_neg_image`, `localEOWRealLinearPart_mem_localEOWSideCone`, `localEOWSideCone_subset_cone`, `localEOWSideCone_direction_norm_bound`, `localEOWSideCone_scalar_le_norm_div`, `localEOW_basisSideCone_rawBoundaryValue` | Checked in `SCV/LocalEOWSideCone.lean`: linear independence excludes `0` from the fixed-basis direction simplex; an open thickening of the simplex and compact closed envelope are constructed inside `C ∩ {η | η ≠ 0}`; the generated side cone is open, lies in `C`, and contains every positive chart-imaginary direction after normalization; compactness gives the uniform lower norm bound on directions, hence the scalar in `y = s • η` tends to zero with `y`; and continuity of negation converts the lower side to the negative-image filter.  The strengthened raw boundary theorem returns the chosen `ε`, the identities `Cplus = localEOWSideCone ys ε` and `Cminus = Neg.neg '' Cplus`, the closed-envelope containment, and the plus/minus raw `nhdsWithin` limits on this relatively compact conic window and its negative image. |
 | `exists_localEOW_truncatedSideCones_for_sliceMargin` | Checked in `SCV/LocalEOWSideCone.lean`: from the explicit `ε` side-cone data, the local wedge hypothesis, and a compactly supported cutoff `χ` with `tsupport χ ⊆ E`, choose a radius `rside > 0` and local side sets `CplusLoc = localEOWSideCone ys ε ∩ ball 0 rside`, `CminusLoc = Neg.neg '' CplusLoc`.  It proves openness, inclusion in the untruncated side cones, and the exact slice margins `x + i y ∈ Ωplus/Ωminus` for all `x ∈ tsupport χ`.  The proof uses the compact closed direction envelope and the scalar bound `s ≤ ‖y‖ / c`; it is the boundedness step between raw boundary limits and `sliceCLM_family_from_distributionalBoundary`. |
 | `exists_localEOWRealLinearPart_ball_subset` | Checked in `SCV/LocalEOWSideCone.lean`: by continuity at zero of the finite-dimensional linear map `localEOWRealLinearPart ys`, every positive original-side radius contains the image of a sufficiently small chart-coordinate ball.  This is the shrink used so strict positive/negative coordinate side balls land in the truncated side cones. |
-| `StrictPositiveImagBall`, `StrictNegativeImagBall`, `isOpen_StrictPositiveImagBall`, `isOpen_StrictNegativeImagBall`, `norm_complexChart_im_le`, `norm_complexChart_re_le`, `localEOWChart_im_eq_realLinearPart_im`, `localEOWRealLinearPart_im_mem_truncatedSideCone_of_strictPositive`, `localEOWRealLinearPart_im_mem_neg_truncatedSideCone_of_strictNegative`, `localEOWChart_mem_TubeDomain_truncatedSideCone_of_strictPositive`, `localEOWChart_mem_TubeDomain_neg_truncatedSideCone_of_strictNegative` | Checked in `SCV/LocalEOWChartEnvelope.lean`: the final recovery side balls are chart-coordinate balls, while the fixed-window side cones are original real-edge cones.  The file proves the missing bridge explicitly: `Im (localEOWChart x0 ys w) = localEOWRealLinearPart ys (Im w)`, positive strict chart coordinates land in `localEOWSideCone ys ε ∩ ball 0 rside` after the small linear-image radius, and negative strict chart coordinates land in `Neg.neg '' (localEOWSideCone ys ε ∩ ball 0 rside)`.  Thus `localEOWChart` sends the small strict coordinate side balls into the correct `TubeDomain` side sets without treating chart coordinates as original coordinates. |
+| `StrictPositiveImagBall`, `StrictNegativeImagBall`, `isOpen_StrictPositiveImagBall`, `isOpen_StrictNegativeImagBall`, `norm_complexChart_im_le`, `norm_complexChart_re_le`, `StrictPositiveImagBall_im_nonneg`, `StrictNegativeImagBall_im_nonpos`, `StrictPositiveImagBall_im_sum_pos`, `StrictNegativeImagBall_neg_im_sum_pos`, `StrictPositiveImagBall_im_sum_le_card_mul`, `StrictNegativeImagBall_neg_im_sum_le_card_mul`, `localEOWChart_im_eq_realLinearPart_im`, `localEOWRealLinearPart_im_mem_truncatedSideCone_of_strictPositive`, `localEOWRealLinearPart_im_mem_neg_truncatedSideCone_of_strictNegative`, `localEOWChart_mem_TubeDomain_truncatedSideCone_of_strictPositive`, `localEOWChart_mem_TubeDomain_neg_truncatedSideCone_of_strictNegative`, `localEOWChart_mem_fixedWindow_of_strictPositiveImagBall`, `localEOWChart_mem_fixedWindow_of_strictNegativeImagBall` | Checked in `SCV/LocalEOWChartEnvelope.lean`: the final recovery side balls are chart-coordinate balls, while the fixed-window side cones are original real-edge cones.  The file proves the missing bridge explicitly: `Im (localEOWChart x0 ys w) = localEOWRealLinearPart ys (Im w)`, positive strict chart coordinates land in `localEOWSideCone ys ε ∩ ball 0 rside` after the small linear-image radius, and negative strict chart coordinates land in `Neg.neg '' (localEOWSideCone ys ε ∩ ball 0 rside)`.  It also proves the coordinate-sum facts needed by the fixed-window Rudin polywedge hypotheses: from `w ∈ StrictPositiveImagBall R`, the vector `Im w` is nonnegative, has positive coordinate sum when `0 < m`, and has sum at most `card * R`; the negative side is the same statement for `-Im w`.  Therefore a final scale satisfying `card * R < rpoly` feeds the fixed-window side-membership theorem directly, without silently replacing coordinate-sum smallness by norm smallness. |
 | `localEOWAffineRealWindow`, `isOpen_localEOWAffineRealWindow`, `localEOWComplexAffineEquiv_symm_localEOWChart`, `localEOWChart_mem_affineRealWindow_of_re_norm_lt`, `localEOWChart_mem_affineRealWindow_of_mem_ball`, `localEOWAffineRealWindow_add_realEmbed` | Checked in `SCV/LocalEOWChartEnvelope.lean`: the real-window factor in the one-chart side domains is now a named inverse-affine chart window.  Openness is proved by continuity of `A.symm` followed by coordinatewise real part and norm.  Applying `localEOWChart` puts a coordinate point into the matching real window because `A.symm (localEOWChart x0 ys w) = w`.  The support-margin lemma proves the exact `2ρ` to `3ρ` enlargement under `z + realEmbed t` using `localEOWComplexAffineEquiv_symm_add_realEmbed` and the inverse-linear displacement bound `‖(localEOWRealLinearCLE ys hli).symm t‖ < ρ`. |
 | `sliceCLM_family_from_distributionalBoundary` | Checked in `SCV/LocalDistributionalEOWSlice.lean`: calls `exists_cutoffSliceCLM_family_of_boundaryValue` separately on the plus side cone and the negative-image minus side cone, extracts `Im w ∈ C±` from `D± ⊆ TubeDomain C±`, rewrites real-mollifier evaluations with `realMollifyLocal_eq_cutoffSliceCLM`, and rewrites both limit targets from `Traw (χ • φ)` to `(Tchart.restrictScalars ℝ) φ` using the explicit cutoff compatibility hypothesis `hTchart`. |
 | `localEOWRealChart`, `localEOWChart`, `continuous_localEOWRealChart`, `isCompact_localEOWRealChart_image`, `localEOWChart_real_imag`, `localEOWChart_twoSided_polywedge_mem` | Checked in `SCV/LocalContinuousEOW.lean`: public chart notation matching the private `Phi` shape in `TubeDomainExtension.lean`, compactness of real-chart images, decomposition of `localEOWChart x0 ys (u + i v)`, and the direct two-sided local wedge membership theorem in chart coordinates. |
@@ -4216,13 +4216,15 @@ envelope assembly once the raw distributional limits are supplied.
    ```
    128 * σ ≤ δ,
    σ < δside,
+   (Fintype.card (Fin m) : ℝ) * σ < rpoly,
    ‖e.toContinuousLinearMap‖ * (2 * σ) ≤ rψOrig.
    ```
    The first inequality also gives `16 * σ < δ / 2` and
    `2 * (8 * σ) < δ / 4`; the second sends strict side coordinate balls into
-   the truncated side cones; the third ensures every chart kernel used by the
-   pairing/covariance theorem pushes forward to an original-edge kernel inside
-   the fixed-window support radius.
+   the truncated side cones; the third is the fixed-window coordinate-sum
+   smallness needed for the Rudin polywedge hypotheses; the fourth ensures
+   every chart kernel used by the pairing/covariance theorem pushes forward to
+   an original-edge kernel inside the fixed-window support radius.
 
    Set
    ```
@@ -4243,6 +4245,20 @@ envelope assembly once the raw distributional limits are supplied.
    `z ∈ Udesc`, `‖t‖ ≤ rker + rη` implies
    `z + realEmbed t ∈ Ucov` by the same estimate.  The theorem returns
    `R = Rcore`.
+
+   The side membership of these final strict balls is now a checked
+   fixed-window calculation, not an informal inheritance from the larger
+   `δ / 2` ball.  For `w ∈ StrictPositiveImagBall Rcore`, take
+   `u = Re w` and `v = Im w`.  The ball hypothesis gives
+   `‖u‖ ≤ Rcore ≤ ρin`; strict positivity gives `0 ≤ v_j` and
+   `0 < ∑ j, v_j`; and
+   `StrictPositiveImagBall_im_sum_le_card_mul` plus
+   `card * Rcore < rpoly` gives `∑ j, v_j < rpoly`.  Hence
+   `localEOWChart_mem_fixedWindow_of_strictPositiveImagBall` applies to the
+   fixed-window `hplus` theorem with radius `rpoly`.  The lower side uses
+   `v = Im w`, nonpositivity, positivity of `∑ j, -v_j`, and
+   `StrictNegativeImagBall_neg_im_sum_le_card_mul`, then applies
+   `localEOWChart_mem_fixedWindow_of_strictNegativeImagBall`.
 8. Build the localized mixed Schwartz CLM by
    `regularizedLocalEOW_pairingCLM_of_fixedWindow`.  The inputs are the chart
    cutoff `χU = 1` on `closedBall 0 Rcov`, the real-kernel cutoff `χr = 1` on
