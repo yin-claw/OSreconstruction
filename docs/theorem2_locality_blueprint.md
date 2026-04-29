@@ -1020,6 +1020,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
      `SCV.localEOWChart_im_eq_realLinearPart_im`,
      `SCV.localEOWChart_mem_TubeDomain_truncatedSideCone_of_strictPositive`,
      `SCV.localEOWChart_mem_TubeDomain_neg_truncatedSideCone_of_strictNegative`,
+     `SCV.localEOWAffineRealWindow`,
+     `SCV.isOpen_localEOWAffineRealWindow`,
+     `SCV.localEOWComplexAffineEquiv_symm_localEOWChart`,
+     `SCV.localEOWAffineRealWindow_add_realEmbed`,
      `SCV.localEOWComplexAffineEquiv_symm_add_realEmbed`,
      `SCV.exists_localEOWRealLinearSymm_ball_subset`,
      `SCV.tendstoUniformlyOn_const_comp_of_tendsto_of_eventually_mem`,
@@ -1143,7 +1147,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
       identity
       `Im (localEOWChart x0 ys w) = localEOWRealLinearPart ys (Im w)`.
       Thus the one-chart theorem does not need to reprove, or silently assume,
-      that chart imaginary coordinates are original edge coordinates.  The checked
+      that chart imaginary coordinates are original edge coordinates.  The
+      affine real-window factor is likewise checked as
+      `SCV.localEOWAffineRealWindow`: it is open, contains
+      `localEOWChart x0 ys w` when the coordinate real part of `w` is small,
+      and expands from `2ρ` to `3ρ` under `z + realEmbed t` exactly when
+      `‖(localEOWRealLinearCLE ys hli).symm t‖ < ρ`.  The checked
       `SCV.chartSlowGrowth_from_uniformConeSlowGrowth` theorem remains an
       outer OS-II adapter if one is constructing `hplus_bv`/`hminus_bv` from
       slow-growth data, but it is not consumed by this one-chart core.

@@ -4,6 +4,7 @@ Released under Apache 2.0 license.
 Authors: ModularPhysics Contributors
 -/
 import OSReconstruction.SCV.LocalEOWSideCone
+import OSReconstruction.SCV.LocalEOWFixedBasis
 
 /-!
 # One-Chart Local EOW Envelope Geometry
@@ -249,5 +250,97 @@ theorem localEOWChart_mem_TubeDomain_neg_truncatedSideCone_of_strictNegative
   rw [localEOWChart_im_eq_realLinearPart_im]
   exact localEOWRealLinearPart_im_mem_neg_truncatedSideCone_of_strictNegative
     hm ys hε hδside hRδ hw
+
+/-- Original chart points whose inverse affine chart has small real part.  This
+is the real-window factor in the local side domains used by the one-chart
+distributional EOW proof. -/
+def localEOWAffineRealWindow
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    (hli : LinearIndependent ℝ ys) (R : ℝ) :
+    Set (ComplexChartSpace m) :=
+  {z | ‖(fun j : Fin m =>
+    (((localEOWComplexAffineEquiv x0 ys hli).symm z) j).re)‖ < R}
+
+theorem isOpen_localEOWAffineRealWindow
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    (hli : LinearIndependent ℝ ys) (R : ℝ) :
+    IsOpen (localEOWAffineRealWindow x0 ys hli R) := by
+  let A := localEOWComplexAffineEquiv x0 ys hli
+  have hreal :
+      Continuous fun z : ComplexChartSpace m =>
+        fun j : Fin m => ((A.symm z) j).re := by
+    refine continuous_pi ?_
+    intro j
+    exact Complex.continuous_re.comp
+      ((continuous_apply j).comp A.symm.continuous)
+  have hnorm : Continuous fun z : ComplexChartSpace m =>
+      ‖(fun j : Fin m => ((A.symm z) j).re)‖ :=
+    continuous_norm.comp hreal
+  simpa [localEOWAffineRealWindow, A] using
+    isOpen_lt hnorm continuous_const
+
+theorem localEOWComplexAffineEquiv_symm_localEOWChart
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    (hli : LinearIndependent ℝ ys) (w : ComplexChartSpace m) :
+    (localEOWComplexAffineEquiv x0 ys hli).symm
+        (localEOWChart x0 ys w) = w := by
+  simpa [localEOWComplexAffineEquiv_apply] using
+    (localEOWComplexAffineEquiv x0 ys hli).symm_apply_apply w
+
+/-- A chart point whose coordinate real part is small lies in the corresponding
+original affine real window after applying the local EOW chart. -/
+theorem localEOWChart_mem_affineRealWindow_of_re_norm_lt
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    (hli : LinearIndependent ℝ ys) {R : ℝ}
+    {w : ComplexChartSpace m}
+    (hw_re : ‖(fun j : Fin m => (w j).re)‖ < R) :
+    localEOWChart x0 ys w ∈ localEOWAffineRealWindow x0 ys hli R := by
+  dsimp [localEOWAffineRealWindow]
+  simpa [localEOWComplexAffineEquiv_symm_localEOWChart x0 ys hli w]
+    using hw_re
+
+theorem localEOWChart_mem_affineRealWindow_of_mem_ball
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    (hli : LinearIndependent ℝ ys) {R : ℝ}
+    {w : ComplexChartSpace m}
+    (hw : w ∈ Metric.ball 0 R) :
+    localEOWChart x0 ys w ∈ localEOWAffineRealWindow x0 ys hli R :=
+  localEOWChart_mem_affineRealWindow_of_re_norm_lt x0 ys hli
+    (norm_complexChart_re_lt_of_mem_ball hw)
+
+/-- Adding a small original real displacement moves the inverse-chart real
+window from radius `2 * ρ` to radius `3 * ρ`. -/
+theorem localEOWAffineRealWindow_add_realEmbed
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    (hli : LinearIndependent ℝ ys) {ρ : ℝ}
+    {z : ComplexChartSpace m}
+    (hz : z ∈ localEOWAffineRealWindow x0 ys hli (2 * ρ))
+    {t : Fin m → ℝ}
+    (ht : ‖(localEOWRealLinearCLE ys hli).symm t‖ < ρ) :
+    z + realEmbed t ∈ localEOWAffineRealWindow x0 ys hli (3 * ρ) := by
+  let A := localEOWComplexAffineEquiv x0 ys hli
+  let e := localEOWRealLinearCLE ys hli
+  let u : Fin m → ℝ := fun j => ((A.symm z) j).re
+  let v : Fin m → ℝ := e.symm t
+  have hsymm :
+      A.symm (z + realEmbed t) = A.symm z + realEmbed (e.symm t) := by
+    simpa [A, e] using
+      localEOWComplexAffineEquiv_symm_add_realEmbed x0 ys hli z t
+  have hreal :
+      (fun j : Fin m => ((A.symm (z + realEmbed t)) j).re) = u + v := by
+    rw [hsymm]
+    ext j
+    simp [u, v, realEmbed]
+  have hu : ‖u‖ < 2 * ρ := by
+    simpa [localEOWAffineRealWindow, A, u] using hz
+  have hv : ‖v‖ < ρ := by
+    simpa [v, e] using ht
+  dsimp [localEOWAffineRealWindow]
+  calc
+    ‖(fun j : Fin m => ((A.symm (z + realEmbed t)) j).re)‖ =
+        ‖u + v‖ := by rw [hreal]
+    _ ≤ ‖u‖ + ‖v‖ := norm_add_le u v
+    _ < 2 * ρ + ρ := add_lt_add hu hv
+    _ = 3 * ρ := by ring
 
 end SCV
