@@ -987,27 +987,59 @@ Proof decomposition of this theorem, without hiding the analytic work:
    constructed envelope domain without making a false claim about unrelated
    components of the ambient wedge sets.
 
+   Implementation-readiness correction for the final SCV theorem:
+
+   * The theorem statement intentionally has no explicit `hm : 0 < m`.  Lean
+     must derive it internally from `hC_ne` and `hC_not_zero` using
+     `SCV.positive_dimension_of_nonempty_not_zero`: if `m = 0`, every vector
+     `Fin 0 -> ℝ` is zero, contradicting `C.Nonempty` and `0 ∉ C`.
+   * Choose the cone basis `ys` **once globally** after deriving `hm`, and use
+     that same `ys` for every local edge point.  Patching cannot use unrelated
+     per-point bases: two local patches then need not have a common positive
+     side window on their overlap.  With one fixed basis, overlaps of
+     transported chart balls have a real point by conjugation/convexity, and a
+     small common positive-coordinate displacement seeds the identity theorem.
+   * The single-point checked helper
+     `SCV.exists_localContinuousEOW_chart_window` remains useful as a source
+     pattern, but the final proof should introduce the fixed-basis variant
+     `SCV.exists_localContinuousEOW_fixedBasis_chart_window`, whose proof is
+     the checked body after the `open_set_contains_basis` line:
+     `localEOWRealChart_closedBall_subset`,
+     `localEOWChart_twoSided_polywedge_mem`, and
+     `exists_localEOWSmp_delta`.
+   * The coordinate envelope returned by local descent must be transported
+     back through a complex affine chart equivalence
+     `SCV.localEOWComplexAffineEquiv x0 ys hli`.  The checked real-linear
+     kernel pushforward fixes the mollifier variables; it does not by itself
+     prove that `z ↦ Hcoord (A.symm z)` is holomorphic on an open original
+     chart image.
+
    Proof transcript for the SCV theorem:
 
-   1. For each compact real set `K ⊆ E` and compact direction set `Kη ⊆ C`,
+   1. Derive `hm : 0 < m` from `hC_ne` and `hC_not_zero`.  Then choose a
+      single global basis `ys : Fin m -> Fin m -> ℝ` with
+      `LinearIndependent ℝ ys` and `∀ j, ys j ∈ C` by
+      `SCV.localEOW_choose_cone_basis hm C hC_open hC_ne`.  Keep `ys` fixed
+      for every chart in the rest of the proof.
+   2. For each compact real set `K ⊆ E` and compact direction set `Kη ⊆ C`,
       use `hlocal_wedge` to get a radius `r > 0` so the truncated wedges
       `x ± i εη`, `x ∈ K`, `η ∈ Kη`, `0 < ε < r`, lie in `Ωplus/Ωminus`.
       This is the local replacement for a global tube hypothesis.
-   2. Use `hslow_plus` and `hslow_minus` on the same `K,Kη` to obtain explicit
+   3. Use `hslow_plus` and `hslow_minus` on the same `K,Kη` to obtain explicit
       polynomial slow-growth orders.  These bounds supply the integrability and
       equicontinuity estimates needed for distributional boundary values.
-   3. Use `hplus_bv` and `hminus_bv` as uniform compact-subcone boundary
+   4. Use `hplus_bv` and `hminus_bv` as uniform compact-subcone boundary
       convergence statements.  In the current Lean surface, compactly supported
       `SchwartzMap`s with `tsupport ⊆ E` represent the local test space
       `C_c^\infty(E)`.
-   4. First prove the pure-SCV local **continuous** EOW theorem
+   5. First prove the pure-SCV local **continuous** EOW theorem
       `SCV.local_continuous_edge_of_the_wedge_envelope`.  This is not a
       wrapper around the checked global `SCV.edge_of_the_wedge_theorem`, because
       that theorem is stated for global tubes.  The proof must extract the
       Cauchy-polydisc construction from `SCV/TubeDomainExtension.lean` and
       replace `Phi_pos_in_tube` / `Phi_neg_in_tube` by local compact-subcone
       membership lemmas using `hlocal_wedge`.
-   5. Use the **Streater-Wightman distributional EOW route** from Theorem
+   6. Use the **Streater-Wightman distributional EOW route** from Theorem
       2-16 of the Wightman book: real-direction convolution regularization,
       continuous EOW for each compactly supported smoothing kernel, kernel
       extraction by the Schwartz nuclear theorem, translation covariance, and
@@ -1016,7 +1048,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       separately normalized holomorphic primitives can differ by arbitrary
       transverse holomorphic functions, and the naive polynomial-correction
       shortcut is false.
-   6. At a real edge point `x0 ∈ E`, choose cone-basis vectors
+   7. At a real edge point `x0 ∈ E`, use the already fixed cone-basis vectors
       `ys : Fin m -> Fin m -> ℝ` with `ys j ∈ C`; the distribution pullback
       needs the real affine chart and its linear part
       `localEOWRealLinearPart ys`, while the immediate
@@ -1026,13 +1058,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `Metric.closedBall 0 ρ` mapped into `E`.  The positive and negative chart
       polywedges over the inner ball are then fed to
       `SCV.localEOWChart_twoSided_polywedge_mem`.
-   7. Pull `Fplus`, `Fminus`, and the common distribution `T` back to this
+   8. Pull `Fplus`, `Fminus`, and the common distribution `T` back to this
       chart.  The distribution pullback must include the determinant/Jacobian
       factor of the real linear chart.  Apply the local wedge hypothesis and
       the slow-growth hypotheses on the compact closed box and the compact
       simplex of positive chart directions to get one radius and one order
       `N0` valid for both signs.
-   8. Choose nested chart boxes `B0 ⋐ B1 ⋐ Echart` and a support radius
+   9. Choose nested chart boxes `B0 ⋐ B1 ⋐ Echart` and a support radius
       `rψ > 0` so `u ∈ B0` and `t ∈ closedBall 0 rψ` imply `u + t ∈ B1`.
       The checked closed-ball version is
       `SCV.localEOW_closedBall_support_margin`: from `ρ > 0`, take
@@ -1040,13 +1072,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `rψ = ρ/2`.  Shrink the positive and negative polywedges over `B0` so
       every real translate by such `t` remains inside the corresponding large
       local wedge over `B1`.
-   9. For each compactly supported Schwartz kernel `ψ` with
+   10. For each compactly supported Schwartz kernel `ψ` with
       `tsupport ψ ⊆ closedBall 0 rψ`, form the real-direction regularizations
       `Fplusψ z = ∫ t, FplusChart (z + realEmbed t) * ψ t` and
       `Fminusψ z = ∫ t, FminusChart (z + realEmbed t) * ψ t`.  Prove these are
       holomorphic on the shrunken chart polywedges by the local version of
       `SCV.differentiableOn_realMollify_tubeDomain`.
-   10. Define the common continuous boundary value
+   11. Define the common continuous boundary value
        `bvψ u = Tchart (translateSchwartz (-u) ψ)`.
        The proof is the checked CLM route, not an informal Fubini step:
        construct the side slice CLMs with
@@ -1055,14 +1087,25 @@ Proof decomposition of this theorem, without hiding the analytic work:
        identity, use `tendsto_cutoffSliceCLM_of_boundaryValue` for the
        plus/minus limits, and then apply
        `SCV.localRealMollify_commonContinuousBoundary_of_clm` to obtain
-       continuity of `bvψ` and the two continuous boundary traces.
-   11. Apply `SCV.local_continuous_edge_of_the_wedge_envelope` to the
+       continuity of `bvψ` and the two continuous boundary traces.  The
+       coordinate-cone plumbing is fixed as follows: the plus CLM tends to
+       `Tchart` as the coordinate imaginary vector tends to `0` within
+       `{y | ∀ j, 0 < y j}`; writing
+       `localEOWRealLinearPart ys y = (∑ j, y j) • η`, normalized
+       `η` lies in `localEOWSimplexDirections ys ⊆ C`, so this is exactly the
+       `Fplus (x + εη i)` boundary hypothesis.  The minus CLM tends to
+       `Tchart` as `y -> 0` within `{y | ∀ j, y j < 0}`; writing
+       `localEOWRealLinearPart ys y =
+        -((∑ j, -y j) • η)` reduces it to the final hypothesis
+       `Fminus (x - εη i)`.  This sign check is part of the proof, not a
+       convention left to tactic search.
+   12. Apply `SCV.local_continuous_edge_of_the_wedge_envelope` to the
        regularized pair for each `ψ`, producing `Gψ` on one fixed neighborhood
        `U0` determined only by `B0`, `B1`, `C`, and `rψ`.  The extracted local
        continuous EOW theorem must include uniqueness on `U0`; this is what
        makes linearity in `ψ` and real-translation covariance provable without
        arbitrary-choice artifacts.
-   12. Prove the local Streater-Wightman recovery package.  The old global
+   13. Prove the local Streater-Wightman recovery package.  The old global
        theorem surface
        `SCV.regularizedLocalEOW_productKernel_from_continuousEOW` is retired:
        a complex-chart cutoff extension of the local pairing does not produce
@@ -1316,12 +1359,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `realMollifyLocal_localEOWChart_translate_kernelPushforwardCLM` is the
       translated side-branch identity used by fixed-window covariance.
 
-      Before the mixed pairing CLM itself, Lean must next prove
-      `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`, so the set
-      integral defining `K` is an integral of the actual continuous cutoff
-      envelope and not of an arbitrary choice of `Lchart z`.  The proof doc for
-      this continuity step is now split into an implementation-ready helper
-      stack.  The checked layer in `SCV/VaryingKernelContinuity.lean` contains:
+      The mixed pairing CLM gate is now closed.  The formerly pending theorem
+      `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand` is checked,
+      so the set integral defining `K` is an integral of the actual continuous
+      cutoff envelope and not of an arbitrary choice of `Lchart z`.  The
+      checked layer in `SCV/VaryingKernelContinuity.lean` contains:
       continuity of the cutoff slice, varying-kernel real-mollifier continuity
       with fixed compact support and an open original side domain, the
       real-seminorm uniform-on-compact translation estimate controlling both
@@ -1394,7 +1436,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `hminus_eval`, `hplus_limit`, and `hminus_limit`, followed by the
       extracted local continuous EOW theorem.
 
-   13. Let `ψρ` be the checked compactly supported approximate identity in
+   14. Let `ψρ` be the checked compactly supported approximate identity in
        chart-kernel coordinates, with support eventually inside
        `closedBall 0 r`.  On the positive and negative wedge pieces, the side
        identities for `Gchart ψρ` reduce to real mollification with the pushed
@@ -1405,12 +1447,28 @@ Proof decomposition of this theorem, without hiding the analytic work:
        covariance, and proves that the same sequence converges pointwise to
        the holomorphic representative `H` on `Ucore`.  Thus `H` is the desired
        local distributional EOW envelope on the fixed chart window.
-   14. Patch these chart envelopes over a basis of real edge boxes.  Overlap
-       compatibility is by the ordinary identity theorem on positive or
-       negative wedge pieces, reusing the same style as
-       the now-public `SCV.local_extensions_consistent` identity-theorem
-       pattern in `SCV/TubeDomainExtension.lean`.
-   15. Extract the connected component needed by the OS45 consumer only after
+   15. Transport this coordinate envelope through
+       `A = SCV.localEOWComplexAffineEquiv x0 ys hli`:
+       `Uorig = A '' Ucore`, `UplusOrig = A '' DplusSmall`,
+       `UminusOrig = A '' DminusSmall`, and
+       `Horig z = H (A.symm z)`.  The transport lemmas prove openness of
+       these images, holomorphy of `Horig`, real-slice membership
+       `realEmbed x0 ∈ Uorig`, and side agreements with the original
+       `Fplus`/`Fminus`.
+   16. Patch the transported chart envelopes over the real edge cover.  Because
+       every patch uses the same global basis `ys`, overlap compatibility is
+       by the ordinary identity theorem on a common positive side window:
+       conjugation invariance and convexity put a real point `p` in any
+       nonempty overlap.  If `p` has real coordinates `u₁,u₂` in the two
+       charts, choose one small vector `v` with `∀ j, 0 < v j`; then
+       `localEOWChart x₁ ys (u₁ + I v)` and
+       `localEOWChart x₂ ys (u₂ + I v)` are the same original point
+       `p + I * localEOWRealLinearPart ys v`.  For `v` small enough this point
+       lies in both transported positive side windows, and both transported
+       envelopes equal `Fplus` there.  This is the fixed-basis version of the
+       now-public
+       `SCV.local_extensions_consistent` pattern.
+   17. Extract the connected component needed by the OS45 consumer only after
        the local extension `U,F` exists; connectedness is not an input to the
        SCV theorem.
 

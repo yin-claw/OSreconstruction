@@ -777,7 +777,14 @@ Current examples:
    explicit slow-growth bounds; this keeps the theorem in the OS-II
    distributional category instead of silently upgrading to pointwise boundary
    values.  The finite-order primitive shortcut is rejected because the
-   multi-variable integration constants are infinite-dimensional, and the false
+   multi-variable integration constants are infinite-dimensional, and the
+   final patching route has been sharpened further: derive `0 < m` from
+   `C.Nonempty` and `0 ∉ C`, choose one global cone basis in `C`, use a
+   fixed-basis local chart-window theorem at every edge point, transport each
+   coordinate envelope back through the complex affine chart equivalence, and
+   patch only after the fixed positive coordinate cone supplies common
+   identity-theorem seeds on overlaps.  This rules out the per-point-basis
+   shortcut that would leave overlap compatibility unjustified.  The false
    polynomial-correction shortcut is not used.  The checked
    real-mollification infrastructure in `SCV/LocalDistributionalEOW.lean`
    now supplies the checked regularized common-boundary extraction
@@ -1357,11 +1364,13 @@ Current examples:
 	   The theorem-2 blueprint records the still-needed local supplier surfaces
 	   `BHW.os45_adjacent_commonBoundaryEnvelope` and
 	   `bvt_F_selectedAdjacentDistributionalJostAnchorData_of_OSII`.  If the
-	   implementation introduces a local SCV helper such as
-	   `SCV.local_distributional_edge_of_the_wedge_envelope`, that helper must be
-	   only a QFT-free packaging of the already checked distributional-EOW
-	   machinery into the exact local chart-envelope data needed here; it is not
-	   a new theorem-2 assumption and not a replacement for the OS45 supplier.
+	   implementation of
+	   `SCV.local_distributional_edge_of_the_wedge_envelope` must be only a
+	   QFT-free packaging of the checked local distributional-EOW machinery into
+	   the exact local chart-envelope data needed here.  It must follow the
+	   fixed-basis/complex-affine-transport route recorded in
+	   `docs/scv_infrastructure_blueprint.md`; it is not a new theorem-2
+	   assumption and not a replacement for the OS45 supplier.
 	   `BHW.exists_sourceDistributionalUniquenessEnvironment_of_open_jost_patch`
 	   supplies the Gram environment for that same `V`; and
 	   `bvt_F_selectedAdjacentDistributionalJostAnchorData_of_OSII` fills the

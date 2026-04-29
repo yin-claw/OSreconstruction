@@ -163,8 +163,13 @@ surfaces.  The following names are already checked and should be used exactly:
 `translationCovariantKernel_distributionalHolomorphic`,
 `regularizedEnvelope_holomorphicDistribution_from_productKernel`,
 `regularizedEnvelope_pointwiseRepresentation_of_productKernel`,
-`regularizedEnvelope_deltaLimit_agreesOnWedges`, and
-`regularizedEnvelope_chartEnvelope_from_productKernel`.
+`regularizedEnvelope_deltaLimit_agreesOnWedges`,
+`regularizedEnvelope_chartEnvelope_from_productKernel`,
+`regularizedEnvelope_productKernel_dbar_eq_zero_local`,
+`translationCovariantKernel_distributionalHolomorphic_local`,
+`regularizedEnvelope_pointwiseRepresentation_of_localProductKernel`,
+`regularizedEnvelope_chartEnvelope_from_localProductKernel`, and
+`regularizedEnvelope_chartEnvelope_from_localCovariantProductKernel`.
 
 The public local-descent proof package is split as the following theorem
 surfaces plus the final envelope theorem.  Some entries are now checked; the
@@ -172,6 +177,16 @@ list is kept as the route ledger so the remaining Lean work consumes the same
 interfaces documented below:
 
 ```lean
+lemma positive_dimension_of_nonempty_not_zero
+lemma localEOW_choose_cone_basis
+lemma cone_positive_combination_mem
+lemma exists_localContinuousEOW_fixedBasis_chart_window
+def localEOWComplexLinearCLE
+def localEOWComplexAffineEquiv
+theorem localEOWComplexAffineEquiv_apply
+theorem localEOWComplexAffineEquiv_realEmbed
+theorem localEOWComplexAffineEquiv_image_open
+theorem differentiableOn_comp_localEOWComplexAffineEquiv_symm
 lemma sliceCLM_family_from_distributionalBoundary
 theorem continuous_schwartzPartialEval₁CLM
 theorem KernelSupportWithin.mono
@@ -254,6 +269,7 @@ theorem regularizedEnvelope_productKernel_dbar_eq_zero_local
 theorem translationCovariantKernel_distributionalHolomorphic_local
 theorem regularizedEnvelope_pointwiseRepresentation_of_localProductKernel
 theorem regularizedEnvelope_chartEnvelope_from_localProductKernel
+theorem regularizedEnvelope_chartEnvelope_from_localCovariantProductKernel
 lemma chartDistributionalEOW_local_envelope
 lemma distributionalEOW_extensions_compatible
 lemma localDistributionalEOW_patch_extensions
@@ -374,21 +390,25 @@ Source ledger for the internal helper list:
 
 | Helper | Source / justification |
 |---|---|
+| `positive_dimension_of_nonempty_not_zero` | Finite-dimensional sanity lemma for the final local theorem.  If `C.Nonempty` and `(0 : Fin m -> ℝ) ∉ C`, then `0 < m`; for `m = 0` every vector `Fin 0 -> ℝ` is definitionally equal to zero, contradicting the two hypotheses.  This lets the final theorem keep the natural OS-II cone hypotheses instead of adding an extra dimension assumption. |
 | `localWedge_truncated_maps_compact_subcone` | Direct compact-set use of the local wedge hypothesis. |
-| `localEOW_choose_cone_basis` | Existing `open_set_contains_basis` in `SCV/TubeDomainExtension.lean`. |
+| `localEOW_choose_cone_basis` | Existing `open_set_contains_basis` in `SCV/EOWMultiDim.lean`, after deriving `hm : 0 < m`.  For the final patched theorem this basis must be chosen once globally from `C`, not separately for each edge point; using one fixed linear part is what makes overlap side seeds compatible. |
+| `cone_positive_combination_mem` | Convex-cone bookkeeping: if `ys j ∈ C` and all coefficients are nonnegative with positive sum, normalize the coefficients to a convex combination in `C`, then rescale by the positive sum using `hC_cone`.  The checked simplex lemmas use the normalized version; this helper is the unnormalized form used when rewriting positive chart-imaginary directions. |
 | `localEOWCoefficientSimplex`, `localEOWSimplexDirections`, `isCompact_localEOWCoefficientSimplex`, `isCompact_localEOWSimplexDirections`, `localEOWSimplexDirections_subset_cone`, `localEOW_positive_imag_normalized_mem_simplex` | Checked in `SCV/LocalContinuousEOW.lean`: compact closed coefficient simplex, compact image under the finite-dimensional chart-direction map, convex-combination inclusion in the cone, and normalization of positive imaginary chart directions. |
 | `localEOWRealChart`, `localEOWChart`, `continuous_localEOWRealChart`, `isCompact_localEOWRealChart_image`, `localEOWChart_real_imag`, `localEOWChart_twoSided_polywedge_mem` | Checked in `SCV/LocalContinuousEOW.lean`: public chart notation matching the private `Phi` shape in `TubeDomainExtension.lean`, compactness of real-chart images, decomposition of `localEOWChart x0 ys (u + i v)`, and the direct two-sided local wedge membership theorem in chart coordinates. |
 | `localEOWRealLinearPart`, `localEOWRealChart_eq_x0_add_linearPart`, `localEOWRealChart_sub`, `localEOWRealChart_add`, `localEOWChart_sub_realEmbed`, `localEOWChart_add_realEmbed`, `localEOWRealLinearCLE`, `localEOWRealLinearCLE_apply`, `localEOWRealLinearPullbackCLM`, `localEOWRealLinearPullbackCLM_apply`, `KernelSupportWithin.localEOWRealLinearPullbackCLM`, `localEOWRealLinearPushforwardCLM`, `localEOWRealLinearPushforwardCLM_apply`, `KernelSupportWithin.localEOWRealLinearPushforwardCLM`, `localEOWRealLinearKernelPushforwardCLM`, `localEOWRealLinearKernelPushforwardCLM_apply`, `KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM`, `KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM_translateSchwartz`, `localEOWAffineTestPushforwardCLM`, `localEOWAffineDistributionPullbackCLM` | Checked in `SCV/LocalEOWChartLinear.lean`: explicit affine/linear bookkeeping for the local EOW chart.  A coordinate displacement `v` in the Rudin chart moves the original real edge by `localEOWRealLinearPart ys v`, not by `v` unless `ys` is the standard basis.  If `ys` is linearly independent, `localEOWRealLinearCLE ys hli` is the corresponding continuous linear equivalence and `localEOWRealLinearPullbackCLM ys hli ψ u = ψ (localEOWRealLinearPart ys u)` is the checked Schwartz test-function pullback.  Pullback of `KernelSupportWithin ψ r` is supported in radius `‖(localEOWRealLinearCLE ys hli).symm.toContinuousLinearMap‖ * r`.  The chart-to-original pushforward has apply theorem `localEOWRealLinearPushforwardCLM ys hli φ y = φ ((localEOWRealLinearCLE ys hli).symm y)` and transports support to radius `‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖ * r`.  The Jacobian-normalized kernel pushforward has apply theorem `localEOWRealLinearKernelPushforwardCLM ys hli φ y = ((localEOWRealJacobianAbs ys)⁻¹ : ℂ) * φ ((localEOWRealLinearCLE ys hli).symm y)`; the scalar determinant factor does not enlarge support, and a translated chart kernel has support radius `‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖ * (r + ‖a‖)`. |
+| `exists_localContinuousEOW_fixedBasis_chart_window` | New proof surface extracted from the checked `exists_localContinuousEOW_chart_window`: the final theorem chooses `ys` once, so the per-point window theorem must take `ys`, `∀ j, ys j ∈ C`, and `LinearIndependent ℝ ys` as inputs and return only the local radii and Rudin `δ` at `x0`.  Its proof is the already checked body after the `open_set_contains_basis` line: `localEOWRealChart_closedBall_subset`, `localEOWChart_twoSided_polywedge_mem`, and `exists_localEOWSmp_delta`. |
+| `localEOWComplexLinearCLE`, `localEOWComplexAffineEquiv`, `localEOWComplexAffineEquiv_apply`, `localEOWComplexAffineEquiv_realEmbed`, `localEOWComplexAffineEquiv_image_open`, `differentiableOn_comp_localEOWComplexAffineEquiv_symm` | Missing chart-to-original transport layer.  It complexifies the checked real linear chart basis, packages `w ↦ localEOWChart x0 ys w` as an affine homeomorphism, proves real-slice compatibility `realEmbed u ↦ realEmbed (localEOWRealChart x0 ys u)`, transports openness of coordinate windows to original chart windows, and transports holomorphy of the coordinate envelope back through the inverse affine map. |
 | `localEOW_chart_real_box` | Finite-dimensional topology: open preimage under a linear equivalence contains a small axis box. |
 | `localEOW_chart_positive_polywedge_mem`, `localEOW_chart_negative_polywedge_mem`, `localEOW_chart_twoSided_polywedge_mem` | Checked in `SCV/LocalContinuousEOW.lean`: local replacements for the existing `Phi_pos_in_tube` / `Phi_neg_in_tube` lemmas in `TubeDomainExtension.lean`, using `hlocal_wedge` on the compact real box and compact chart-direction simplex.  The two-sided theorem preserves the single radius supplied by `hlocal_wedge`. |
 | `localEOW_pullback_boundary_value` | Standard distribution pullback under an affine real-linear equivalence with Jacobian. |
 | `localEOW_uniform_slowGrowth_order` | Compactness plus maxima of the two local slow-growth orders. |
 | `localEOW_nested_axis_boxes`, `localEOW_support_margin` | Finite-dimensional topology: choose `B0 ⋐ B1 ⋐ E` and kernel-support radius `r` so `B0 + supp ψ ⊆ B1`. |
-| `continuousAt_localEOWSmp_param` | Next checked helper for `local_continuous_edge_of_the_wedge_envelope`: local public replacement for the private `scaledMoebiusProd_continuousAt` in `TubeDomainExtension.lean`.  It proves continuity in the Rudin parameter `w` of `w ↦ localEOWSmp δ w l` on the unit-radius denominator domain. |
-| `exists_localRudin_coordinate_update_margin` | Next checked helper for `local_continuous_edge_of_the_wedge_envelope`: finite-dimensional metric margin used by the parametric-integral theorem.  If `z` is inside `ball 0 (δ / 2)`, it chooses `ε' > 0` so changing one coordinate by distance at most `2ε'`, and every Cauchy circle centered within `ε'` with radius `ε'`, stays inside the same ball. |
-| `differentiableAt_localRudin_parametric_integral` | Next checked helper for `local_continuous_edge_of_the_wedge_envelope`: public replacement for the private Cauchy-estimate/Leibniz lemma `differentiableAt_parametric_integral`.  It proves holomorphy of one coordinate of the Rudin integral from a uniform bound, a local update margin, a.e. measurability, pointwise holomorphy away from the two circle-boundary angles, and vanishing on `sin θ = 0`. |
-| `exists_localContinuousEOW_chart_window` | Next checked helper for `local_continuous_edge_of_the_wedge_envelope`: chooses the actual local Rudin chart data at a real edge point.  It combines `open_set_contains_basis`, `localEOWRealChart_closedBall_subset`, `localEOWChart_twoSided_polywedge_mem`, and `exists_localEOWChart_smp_delta` to return a cone basis, a real closed ball inside `E`, a two-sided local polywedge radius, and one `δ` whose Rudin arcs stay in `Ωplus`/`Ωminus`. |
-| `localEOWChart_smp_upper_mem_of_delta_on_sphere`, `localEOWChart_smp_lower_mem_of_delta_on_sphere` | Next checked helpers for the local Rudin envelope integral: unlike `localEOWChart_smp_upper_mem_of_delta`, these allow a complex Rudin center `w`.  If `w ∈ closedBall 0 (δ/2)` and `‖l‖ = 1` with `Im l` positive/negative, then the scaled Möbius image maps into `Ωplus`/`Ωminus`.  This is the missing local replacement for the global `Phi_pos_in_tube`/`Phi_neg_in_tube` use in holomorphy of the Rudin integral. |
+| `continuousAt_localEOWSmp_param` | Checked in `SCV/LocalContinuousEOWEnvelope.lean`: local public replacement for the private `scaledMoebiusProd_continuousAt` in `TubeDomainExtension.lean`.  It proves continuity in the Rudin parameter `w` of `w ↦ localEOWSmp δ w l` on the unit-radius denominator domain. |
+| `exists_localRudin_coordinate_update_margin` | Checked in `SCV/LocalContinuousEOWEnvelope.lean`: finite-dimensional metric margin used by the parametric-integral theorem.  If `z` is inside `ball 0 (δ / 2)`, it chooses `ε' > 0` so changing one coordinate by distance at most `2ε'`, and every Cauchy circle centered within `ε'` with radius `ε'`, stays inside the same ball. |
+| `differentiableAt_localRudin_parametric_integral` | Checked in `SCV/LocalContinuousEOWEnvelope.lean`: public replacement for the private Cauchy-estimate/Leibniz lemma `differentiableAt_parametric_integral`.  It proves holomorphy of one coordinate of the Rudin integral from a uniform bound, a local update margin, a.e. measurability, pointwise holomorphy away from the two circle-boundary angles, and vanishing on `sin θ = 0`. |
+| `exists_localContinuousEOW_chart_window` | Checked in `SCV/LocalContinuousEOWEnvelope.lean`: chooses the actual local Rudin chart data at a real edge point.  It combines `open_set_contains_basis`, `localEOWRealChart_closedBall_subset`, `localEOWChart_twoSided_polywedge_mem`, and `exists_localEOWChart_smp_delta` to return a cone basis, a real closed ball inside `E`, a two-sided local polywedge radius, and one `δ` whose Rudin arcs stay in `Ωplus`/`Ωminus`.  The final distributional patching theorem uses the fixed-basis variant documented above instead of this per-point chooser. |
+| `localEOWChart_smp_upper_mem_of_delta_on_sphere`, `localEOWChart_smp_lower_mem_of_delta_on_sphere` | Checked in `SCV/LocalContinuousEOWEnvelope.lean`: unlike `localEOWChart_smp_upper_mem_of_delta`, these allow a complex Rudin center `w`.  If `w ∈ closedBall 0 (δ/2)` and `‖l‖ = 1` with `Im l` positive/negative, then the scaled Möbius image maps into `Ωplus`/`Ωminus`.  This is the local replacement for the global `Phi_pos_in_tube`/`Phi_neg_in_tube` use in holomorphy of the Rudin integral. |
 | `localRudinIntegrand`, `localRudinIntegral`, `localRudinEnvelope`, `aestronglyMeasurable_localRudinIntegrand`, `continuousAt_localRudinIntegrand_param`, `continuousAt_localRudinIntegral_of_bound`, `differentiableAt_localRudinIntegrand_update`, `localRudinIntegrand_zero_of_sin_eq_zero`, `differentiableAt_localRudinIntegral_of_bound`, `differentiableOn_localRudinIntegral_of_bound`, `differentiableOn_localRudinEnvelope_of_bound`, `exists_bound_localRudinIntegrand`, `differentiableOn_localRudinEnvelope`, `localRudinEnvelope_eq_boundary_of_real` | Checked in `SCV/LocalContinuousEOWEnvelope.lean`: the actual circle integrand used to define the local coordinate envelope, its integral and normalized envelope, its measurability on `[-π,π]`, pointwise continuity in the Rudin center, dominated continuity of the integral, coordinatewise holomorphy off the two boundary angles, its zero value at the boundary angles, coordinatewise holomorphy of the integral once a uniform compact bound is supplied, Osgood joint holomorphy on the coordinate ball, the compact-bound theorem itself, the final bound-free holomorphy theorem for the local Rudin envelope, and the real-boundary mean-value identity in terms of `localRudinEnvelope`.  The compact-bound proof is the local version of the `G_bound` block in `TubeDomainExtension.lean`, with boundary branch `bv` on the real edge. |
 | `localEOWLine`, `localEOWLine_im`, `localEOWLine_I`, `localEOWLine_real_im_zero`, `differentiable_localEOWLine`, `localEOWLine_zero_mem_ball`, `localEOWLine_norm_le_delta_ten_of_norm_le_two`, `localEOWLine_re_closedBall_of_norm_le_two`, `localEOWChart_line_upper_mem_of_delta`, `localEOWChart_line_lower_mem_of_delta`, `localEOWChart_line_upper_mem_of_delta_of_negative`, `localEOWChart_line_lower_mem_of_delta_of_negative`, `localEOWLine_affine_real_combo`, `localEOWLine_chart_real`, `tendsto_localEOWLine_upper_to_boundaryValue`, `tendsto_localEOWLine_lower_to_boundaryValue`, `tendsto_localEOWLine_upper_to_boundaryValue_of_negative`, `tendsto_localEOWLine_lower_to_boundaryValue_of_negative`, `localRudinEnvelope_line_eq_boundary_of_real`, `localRudinEnvelope_eq_plus_on_positive_ball`, `localRudinEnvelope_eq_minus_on_negative_ball` | Checked across `SCV/LocalContinuousEOWEnvelope.lean` and `SCV/LocalContinuousEOWSideAgreement.lean`: the local line-geometry and one-variable identity-theorem package replacing the inline `L(z)` estimates in `rudin_orthant_extension`.  For `ζ ∈ ball 0 (δ/2)`, `L(z)_j = Re ζ_j + z Im ζ_j`; `L` is differentiable, affine over real convex combinations, and `L(0)` remains in the small Rudin ball.  If `‖z‖ ≤ 2`, every coordinate is bounded by `δ * 10` and the real part stays in the `ρ`-chart ball.  Positive `ζ` maps upper/lower half-planes to the plus/minus sides, negative `ζ` swaps the sides, and the Rudin envelope is now proved to agree with the corresponding side branch on the strict positive/negative coordinate balls. |
 | `localEOWChart_ball_positive_mem_of_delta`, `localEOWChart_ball_negative_mem_of_delta` | Checked helpers for the side-agreement part of the local continuous EOW theorem: the small coordinate ball with strictly positive, respectively strictly negative, imaginary coordinates maps into `Ωplus`, respectively `Ωminus`.  These are the honest local side domains on which agreement is first proved; arbitrary extra components of an open `Ωplus/Ωminus` are not silently included. |
@@ -700,23 +720,31 @@ sets `U` to the same ball, so openness, convexity, conjugation stability,
 interval containment, and ball containment are direct.
 
 The local analogue of `local_extensions_consistent` should keep the same
-identity-theorem proof: if two local patches have a nonempty overlap, convexity
-and conjugation invariance put a real midpoint in the overlap, and
-`hlocal_wedge` supplies nearby plus-wedge points in the overlap.  Therefore the
-two local extensions agree on a nonempty open plus-wedge subset, and analytic
-continuation across the convex overlap gives equality everywhere on the
-overlap.  This is the exact replacement for the current global
-`nonempty_open_real_inter_tubeDomain` call; it is not an additional axiom.
+identity-theorem proof, but with one important correction: all patches in the
+final theorem must use the same cone basis `ys`.  If two transported local
+patches have a nonempty overlap, convexity and conjugation invariance put a
+real midpoint in the overlap.  Because the positive coordinate cone is the
+same for both patches, a sufficiently small common positive-coordinate
+imaginary displacement stays in the overlap and in both side windows.  The two
+local extensions therefore agree with `Fplus` on a nonempty open plus-side
+subset, and analytic continuation across the convex overlap gives equality
+everywhere on the overlap.  This is the exact replacement for the current
+global `nonempty_open_real_inter_tubeDomain` call; it is not an additional
+axiom.
 
 1. `localWedge_truncated_maps_compact_subcone` is the uniform
    compact-real-support / compact-direction-set consequence of the local wedge
    hypothesis.  It supplies a radius `r > 0` for all `x ∈ K`, all directions
    `η ∈ Kη`, and all `0 < ε < r`.
-2. `localEOW_choose_cone_basis` chooses a real basis
-   `ys : Fin m -> Fin m -> ℝ` with every `ys j ∈ C`.  Convexity and the cone
-   property imply that every nonzero positive linear combination of the `ys j`
-   lies in `C`.  This is the chart used by both local continuous EOW and the
-   Streater-Wightman regularization construction.
+2. Derive `hm : 0 < m` from `C.Nonempty` and `(0 : Fin m -> ℝ) ∉ C`, then use
+   `localEOW_choose_cone_basis` once to choose a global real basis
+   `ys : Fin m -> Fin m -> ℝ` with every `ys j ∈ C`.  The fixed-basis
+   discipline is mandatory for patching: per-point arbitrary bases would leave
+   no guaranteed common positive side seed on overlaps.  Convexity and the
+   cone property imply, via `cone_positive_combination_mem`, that every
+   nonzero nonnegative linear combination of the `ys j` lies in `C`.  This
+   single chart direction system is used by local continuous EOW,
+   Streater-Wightman regularization, local descent, and final patching.
 3. `localEOWRealChart_closedBall_subset` localizes the real edge.  For each
    `x0 ∈ E` and basis `ys`, pull `E` back by
    `u ↦ x0 + Σ j, u j • ys j`; because `E` is open, choose
@@ -2374,16 +2402,76 @@ overlap.  This is the exact replacement for the current global
     theorem gives convergence to `FplusChart`/`FminusChart`.  Therefore the
     representative returned by the local covariant recovery theorem is the
     desired chart envelope.
-16. `distributionalEOW_extensions_compatible` proves agreement of two local
-   chart envelopes on overlaps by the ordinary identity theorem: on every
-   nonempty overlap the extensions agree with `Fplus` on a positive wedge
-   subset, or with `Fminus` on a negative wedge subset.  The already-proved
-   distributional uniqueness theorem can still be used as a fallback on tube
-   shaped overlap charts, but it is not the envelope-construction step.
-17. `localDistributionalEOW_patch_extensions` follows the existing patching
+16. Prove the one-chart supplier
+   `chartDistributionalEOW_local_envelope` with the **fixed global basis**
+   `ys` chosen in step 2.  The theorem consumes
+   `exists_localContinuousEOW_fixedBasis_chart_window`, the
+   slice-CLM construction, the fixed-window regularized family, the checked
+   local product-kernel descent/recovery theorem, and the approximate-identity
+   side recovery.  Its output is a coordinate envelope `Hcoord` on a coordinate
+   ball around `0`, with strict positive/negative coordinate side agreements
+   for
+
+   ```lean
+   FplusChart w := Fplus (localEOWChart x0 ys w)
+   FminusChart w := Fminus (localEOWChart x0 ys w)
+   Tchart ψ := T (localEOWAffineTestPushforwardCLM x0 ys hli ψ)
+   ```
+
+   The boundary-value limits in this theorem use the coordinate orthants
+   `Cplus = {y | ∀ j, 0 < y j}` and
+   `Cminus = {y | ∀ j, y j < 0}`.  The plus reduction writes
+   `localEOWRealLinearPart ys y = (∑ j, y j) • η` with
+   `η ∈ localEOWSimplexDirections ys ⊆ C`; the minus reduction writes
+   `localEOWRealLinearPart ys y =
+    -((∑ j, -y j) • η)` with the same normalized
+   `η` built from `-y`.  This is the exact sign convention matching the final
+   hypotheses: plus uses `Fplus (x + εη i)`, while minus uses
+   `Fminus (x - εη i)` for `η ∈ C`.
+17. Transport the one-chart envelope back to original complex chart
+   coordinates using `localEOWComplexAffineEquiv`.  For
+   `A = localEOWComplexAffineEquiv x0 ys hli`, set
+
+   ```lean
+   Uorig := A '' Ucoord
+   UplusOrig := A '' UplusCoord
+   UminusOrig := A '' UminusCoord
+   Horig z := Hcoord (A.symm z)
+   ```
+
+   Then `Uorig`, `UplusOrig`, and `UminusOrig` are open, `Horig` is
+   holomorphic on `Uorig`, `realEmbed x0 ∈ Uorig`, and the side agreements are
+   literal identities with the original `Fplus` and `Fminus` on
+   `UplusOrig` and `UminusOrig`.  This is the step that uses the complex
+   affine chart transport layer; the checked real-linear kernel pushforward is
+   not by itself enough to state the final theorem in original coordinates.
+18. `distributionalEOW_extensions_compatible` proves agreement of two
+   transported local chart envelopes on overlaps by the ordinary identity
+   theorem.  The fixed-basis discipline is essential here.  Each transported
+   coordinate ball is a convex open set invariant under complex conjugation
+   and centered on the real edge.  If two such patches overlap at `z`, then
+   the conjugate point also lies in the overlap and convexity gives
+   `p = (z + conj z) / 2` in the real slice of the overlap.  Write the two
+   real chart coordinates of `p` as `u₁` and `u₂`, so
+   `p = localEOWChart x₁ ys (realEmbed u₁) =
+        localEOWChart x₂ ys (realEmbed u₂)`.
+   Since the coordinate domains are open, choose one vector `v` with
+   `∀ j, 0 < v j` and sufficiently small norm so that
+   `u₁ + I v` and `u₂ + I v` both remain in their coordinate domains.  The
+   shared linear part gives the same original point
+   `p + I * localEOWRealLinearPart ys v` from both charts, so this point lies
+   in both transported positive side windows; both local envelopes equal
+   `Fplus` there.  The identity theorem on the preconnected overlap then
+   proves equality everywhere on that overlap.  The negative side gives the
+   same fallback seed if the proof chooses the lower orthant.  This is the
+   local analogue of `SCV.local_extensions_consistent`, but with explicit side
+   windows instead of the global `TubeDomain C`.
+19. `localDistributionalEOW_patch_extensions` follows the existing patching
    pattern in `SCV.edge_of_the_wedge_theorem`: define the extension by local
    representatives and use compatibility to prove well-definedness and
-   holomorphy.
+   holomorphy.  The patched side windows are the unions of transported strict
+   side windows.  The uniqueness clause is then proved componentwise from the
+   same side-window seed condition exposed in the final theorem statement.
 
 This package is substantial SCV mathematics.  Do not replace it by a record of
 boundary-limit fields, and do not introduce it as an axiom.
@@ -2465,18 +2553,32 @@ lemma localWedge_truncated_maps_compact_subcone
           (fun a => (x a : ℂ) + (ε : ℂ) * (η a : ℂ) * Complex.I) ∈ Ωplus ∧
           (fun a => (x a : ℂ) - (ε : ℂ) * (η a : ℂ) * Complex.I) ∈ Ωminus
 
+lemma positive_dimension_of_nonempty_not_zero
+    {m : ℕ} {C : Set (Fin m -> ℝ)}
+    (hC_ne : C.Nonempty)
+    (hC_not_zero : (0 : Fin m -> ℝ) ∉ C) :
+    0 < m
+
 lemma localEOW_choose_cone_basis
     {m : ℕ}
+    (hm : 0 < m)
     (C : Set (Fin m -> ℝ))
     (hC_open : IsOpen C)
-    (hC_conv : Convex ℝ C)
-    (hC_ne : C.Nonempty)
-    (hC_cone : ∀ (t : ℝ), 0 < t -> ∀ y ∈ C, t • y ∈ C) :
+    (hC_ne : C.Nonempty) :
     ∃ (ys : Fin m -> Fin m -> ℝ),
       LinearIndependent ℝ ys ∧
-      (∀ j, ys j ∈ C) ∧
+      (∀ j, ys j ∈ C)
+
+lemma cone_positive_combination_mem
+    {m : ℕ}
+    (C : Set (Fin m -> ℝ))
+    (hC_conv : Convex ℝ C)
+    (hC_cone : ∀ (t : ℝ), 0 < t -> ∀ y ∈ C, t • y ∈ C)
+    (ys : Fin m -> Fin m -> ℝ)
+    (hys : ∀ j, ys j ∈ C) :
       (∀ a : Fin m -> ℝ,
-        (∀ j, 0 < a j) ->
+        (∀ j, 0 ≤ a j) ->
+        0 < ∑ j, a j ->
           (∑ j, a j • ys j) ∈ C)
 
 -- Checked in `SCV/LocalContinuousEOW.lean`; shown here as the active API:
@@ -2491,6 +2593,64 @@ def localEOWChart
     (x0 : Fin m -> ℝ)
     (ys : Fin m -> Fin m -> ℝ) :
     (Fin m -> ℂ) -> (Fin m -> ℂ)
+
+noncomputable def localEOWComplexLinearCLE
+    {m : ℕ}
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys) :
+    ComplexChartSpace m ≃L[ℂ] ComplexChartSpace m
+
+theorem localEOWComplexLinearCLE_apply
+    {m : ℕ}
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (w : ComplexChartSpace m) :
+    localEOWComplexLinearCLE ys hli w =
+      fun a => ∑ j, w j * (ys j a : ℂ)
+
+noncomputable def localEOWComplexAffineEquiv
+    {m : ℕ}
+    (x0 : Fin m -> ℝ)
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys) :
+    ComplexChartSpace m ≃ₜ ComplexChartSpace m
+
+theorem localEOWComplexAffineEquiv_apply
+    {m : ℕ}
+    (x0 : Fin m -> ℝ)
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (w : ComplexChartSpace m) :
+    localEOWComplexAffineEquiv x0 ys hli w = localEOWChart x0 ys w
+
+theorem localEOWComplexAffineEquiv_realEmbed
+    {m : ℕ}
+    (x0 u : Fin m -> ℝ)
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys) :
+    localEOWComplexAffineEquiv x0 ys hli (realEmbed u) =
+      realEmbed (localEOWRealChart x0 ys u)
+
+theorem localEOWComplexAffineEquiv_image_open
+    {m : ℕ}
+    (x0 : Fin m -> ℝ)
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    {U : Set (ComplexChartSpace m)}
+    (hU : IsOpen U) :
+    IsOpen (localEOWComplexAffineEquiv x0 ys hli '' U)
+
+theorem differentiableOn_comp_localEOWComplexAffineEquiv_symm
+    {m : ℕ}
+    (x0 : Fin m -> ℝ)
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    {U : Set (ComplexChartSpace m)}
+    {H : ComplexChartSpace m -> ℂ}
+    (hH : DifferentiableOn ℂ H U) :
+    DifferentiableOn ℂ
+      (fun z => H ((localEOWComplexAffineEquiv x0 ys hli).symm z))
+      (localEOWComplexAffineEquiv x0 ys hli '' U)
 
 def IsOpenAxisBox {m : ℕ} (B : Set (Fin m -> ℝ)) : Prop :=
   ∃ a b : Fin m -> ℝ,
@@ -2514,6 +2674,56 @@ lemma localEOWRealChart_closedBall_subset
       (∀ u : Fin m -> ℝ,
         u ∈ Metric.closedBall (0 : Fin m -> ℝ) ρ ->
           localEOWRealChart x0 ys u ∈ E)
+
+theorem exists_localContinuousEOW_fixedBasis_chart_window
+    {m : ℕ} (hm : 0 < m)
+    (Ωplus Ωminus : Set (Fin m -> ℂ))
+    (E C : Set (Fin m -> ℝ))
+    (hE_open : IsOpen E) (hC_conv : Convex ℝ C)
+    (hlocal_wedge :
+      ∀ K : Set (Fin m -> ℝ), IsCompact K -> K ⊆ E ->
+        ∀ Kη : Set (Fin m -> ℝ), IsCompact Kη -> Kη ⊆ C ->
+          ∃ r : ℝ, 0 < r ∧
+            ∀ x ∈ K, ∀ η ∈ Kη, ∀ ε : ℝ, 0 < ε -> ε < r ->
+              (fun a => (x a : ℂ) +
+                (ε : ℂ) * (η a : ℂ) * Complex.I) ∈ Ωplus ∧
+              (fun a => (x a : ℂ) -
+                (ε : ℂ) * (η a : ℂ) * Complex.I) ∈ Ωminus)
+    (x0 : Fin m -> ℝ) (hx0 : x0 ∈ E)
+    (ys : Fin m -> Fin m -> ℝ)
+    (hys_mem : ∀ j, ys j ∈ C)
+    (hli : LinearIndependent ℝ ys) :
+    ∃ ρ : ℝ, 0 < ρ ∧
+    ∃ r : ℝ, 0 < r ∧
+    ∃ δ : ℝ, 0 < δ ∧
+      δ * 10 ≤ ρ ∧
+      (Fintype.card (Fin m) : ℝ) * (δ * 10) < r ∧
+      (∀ u ∈ Metric.closedBall (0 : Fin m -> ℝ) ρ,
+        localEOWRealChart x0 ys u ∈ E) ∧
+      (∀ u ∈ Metric.closedBall (0 : Fin m -> ℝ) ρ, ∀ v : Fin m -> ℝ,
+        (∀ j, 0 ≤ v j) ->
+        0 < ∑ j, v j ->
+        (∑ j, v j) < r ->
+          localEOWChart x0 ys
+            (fun j => (u j : ℂ) + (v j : ℂ) * Complex.I) ∈ Ωplus) ∧
+      (∀ u ∈ Metric.closedBall (0 : Fin m -> ℝ) ρ, ∀ v : Fin m -> ℝ,
+        (∀ j, v j ≤ 0) ->
+        0 < ∑ j, -v j ->
+        (∑ j, -v j) < r ->
+          localEOWChart x0 ys
+            (fun j => (u j : ℂ) + (v j : ℂ) * Complex.I) ∈ Ωminus) ∧
+      (∀ {w : Fin m -> ℂ} {l : ℂ},
+        w ∈ Metric.closedBall (0 : Fin m -> ℂ) (δ / 2) ->
+        (∀ j, (w j).im = 0) ->
+        0 < l.im ->
+        ‖l‖ ≤ 2 ->
+          localEOWChart x0 ys (localEOWSmp δ w l) ∈ Ωplus) ∧
+      (∀ {w : Fin m -> ℂ} {l : ℂ},
+        w ∈ Metric.closedBall (0 : Fin m -> ℂ) (δ / 2) ->
+        (∀ j, (w j).im = 0) ->
+        l.im < 0 ->
+        ‖l‖ ≤ 2 ->
+          localEOWChart x0 ys (localEOWSmp δ w l) ∈ Ωminus)
 
 lemma localEOW_closedBall_support_margin
     {m : ℕ} {ρ : ℝ} (hρ : 0 < ρ) :
