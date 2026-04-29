@@ -291,4 +291,201 @@ theorem continuous_schwartzPartialEval₂CLM {m : ℕ}
     rfl
   simpa [B, P, hfun]
 
+/-- Singleton seminorm decay for fixed-last-variable partial evaluation.
+
+The two source seminorms control the origin and the radial tail in the fixed
+parameter. -/
+private theorem schwartzPartialEval₂CLM_seminorm_decay_one_bound {m : ℕ}
+    (k l : ℕ) :
+    let μ : Measure (Fin m → ℝ) := volume
+    let N := μ.integrablePower
+    let s : Finset (ℕ × ℕ) := {((k, l) : ℕ × ℕ), (k + N, l)}
+    let C : ℝ := (2 : ℝ) ^ N * 2
+    0 ≤ C ∧
+      ∀ (A : SchwartzMap
+          ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) ℂ)
+        (a : Fin m → ℝ),
+        SchwartzMap.seminorm ℂ k l (schwartzPartialEval₂CLM a A) ≤
+          C * (1 + ‖a‖) ^ (-(N : ℝ)) *
+            s.sup (schwartzSeminormFamily ℂ
+              ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) ℂ) A := by
+  let B := ComplexChartSpace m × (Fin m → ℝ)
+  let P := Fin m → ℝ
+  let μ : Measure P := volume
+  let N := μ.integrablePower
+  let s : Finset (ℕ × ℕ) := {((k, l) : ℕ × ℕ), (k + N, l)}
+  let C : ℝ := (2 : ℝ) ^ N * 2
+  change 0 ≤ C ∧
+      ∀ (A : SchwartzMap (B × P) ℂ) (a : P),
+        SchwartzMap.seminorm ℂ k l (schwartzPartialEval₂CLM a A) ≤
+          C * (1 + ‖a‖) ^ (-(N : ℝ)) *
+            s.sup (schwartzSeminormFamily ℂ (B × P) ℂ) A
+  refine ⟨by positivity, ?_⟩
+  intro A a
+  let S : ℝ := s.sup (schwartzSeminormFamily ℂ (B × P) ℂ) A
+  let r : ℝ := (1 + ‖a‖) ^ (-(N : ℝ))
+  have hS_nonneg : 0 ≤ S := apply_nonneg _ _
+  have hr_nonneg : 0 ≤ r := by positivity
+  have hC₁_le : SchwartzMap.seminorm ℂ k l A ≤ S := by
+    have hmem : ((k, l) : ℕ × ℕ) ∈ s := by simp [s]
+    exact (show
+      (schwartzSeminormFamily ℂ (B × P) ℂ ((k, l) : ℕ × ℕ)) A ≤ S from
+        (Finset.le_sup (f := schwartzSeminormFamily ℂ (B × P) ℂ) hmem) A)
+  have hC₂_le : SchwartzMap.seminorm ℂ (k + N) l A ≤ S := by
+    have hmem : ((k + N, l) : ℕ × ℕ) ∈ s := by simp [s]
+    exact (show
+      (schwartzSeminormFamily ℂ (B × P) ℂ ((k + N, l) : ℕ × ℕ)) A ≤ S from
+        (Finset.le_sup (f := schwartzSeminormFamily ℂ (B × P) ℂ) hmem) A)
+  apply SchwartzMap.seminorm_le_bound ℂ k l _ (mul_nonneg (mul_nonneg (by positivity) hr_nonneg) hS_nonneg)
+  intro b
+  let D : ℝ :=
+    ‖iteratedFDeriv ℝ l (fun x => (schwartzPartialEval₂CLM a A) x) b‖
+  let E : ℝ := ‖iteratedFDeriv ℝ l (⇑A) (b, a)‖
+  have hD_nonneg : 0 ≤ D := norm_nonneg _
+  have hE_nonneg : 0 ≤ E := norm_nonneg _
+  have hderiv : D ≤ E := by
+    simpa [D, E, schwartzPartialEval₂CLM_apply] using
+      norm_iteratedFDeriv_partialEval_le (f := A) (y := a) (l := l) (x := b)
+  have hb_norm : ‖b‖ ≤ ‖(b, a)‖ := by
+    rw [Prod.norm_def]
+    exact le_max_left ‖b‖ ‖a‖
+  have ha_norm : ‖a‖ ≤ ‖(b, a)‖ := by
+    rw [Prod.norm_def]
+    exact le_max_right ‖b‖ ‖a‖
+  have h₁ : ‖b‖ ^ k * D ≤ SchwartzMap.seminorm ℂ k l A := by
+    calc
+      ‖b‖ ^ k * D ≤ ‖b‖ ^ k * E :=
+        mul_le_mul_of_nonneg_left hderiv (pow_nonneg (norm_nonneg _) _)
+      _ ≤ ‖(b, a)‖ ^ k * E := by
+        exact mul_le_mul_of_nonneg_right
+          (pow_le_pow_left₀ (norm_nonneg _) hb_norm _) hE_nonneg
+      _ ≤ SchwartzMap.seminorm ℂ k l A :=
+        SchwartzMap.le_seminorm ℂ k l A (b, a)
+  have hpow_prod : ‖a‖ ^ N * ‖b‖ ^ k ≤ ‖(b, a)‖ ^ (k + N) := by
+    have ha_pow : ‖a‖ ^ N ≤ ‖(b, a)‖ ^ N :=
+      pow_le_pow_left₀ (norm_nonneg _) ha_norm _
+    have hb_pow : ‖b‖ ^ k ≤ ‖(b, a)‖ ^ k :=
+      pow_le_pow_left₀ (norm_nonneg _) hb_norm _
+    calc
+      ‖a‖ ^ N * ‖b‖ ^ k ≤ ‖(b, a)‖ ^ N * ‖(b, a)‖ ^ k :=
+        mul_le_mul ha_pow hb_pow (pow_nonneg (norm_nonneg _) _)
+          (pow_nonneg (norm_nonneg _) _)
+      _ = ‖(b, a)‖ ^ (N + k) := by rw [pow_add]
+      _ = ‖(b, a)‖ ^ (k + N) := by rw [add_comm]
+  have h₂ : ‖a‖ ^ N * (‖b‖ ^ k * D) ≤
+      SchwartzMap.seminorm ℂ (k + N) l A := by
+    calc
+      ‖a‖ ^ N * (‖b‖ ^ k * D) =
+          (‖a‖ ^ N * ‖b‖ ^ k) * D := by ring
+      _ ≤ ‖(b, a)‖ ^ (k + N) * E :=
+        mul_le_mul hpow_prod hderiv hD_nonneg
+          (pow_nonneg (norm_nonneg _) _)
+      _ ≤ SchwartzMap.seminorm ℂ (k + N) l A :=
+        SchwartzMap.le_seminorm ℂ (k + N) l A (b, a)
+  have hmain := pow_mul_le_of_le_of_pow_mul_le (k := 0) (l := N)
+    (x := ‖a‖) (f := ‖b‖ ^ k * D)
+    (C₁ := SchwartzMap.seminorm ℂ k l A)
+    (C₂ := SchwartzMap.seminorm ℂ (k + N) l A)
+    (norm_nonneg _) (mul_nonneg (pow_nonneg (norm_nonneg _) _) hD_nonneg)
+    h₁ (by simpa using h₂)
+  have hsum_le : SchwartzMap.seminorm ℂ k l A +
+      SchwartzMap.seminorm ℂ (k + N) l A ≤ 2 * S := by
+    linarith
+  calc
+    ‖b‖ ^ k *
+        ‖iteratedFDeriv ℝ l (fun x => (schwartzPartialEval₂CLM a A) x) b‖
+        = ‖b‖ ^ k * D := rfl
+    _ ≤ (2 : ℝ) ^ N *
+          (SchwartzMap.seminorm ℂ k l A +
+            SchwartzMap.seminorm ℂ (k + N) l A) * r := by
+      simpa [r] using hmain
+    _ ≤ (2 : ℝ) ^ N * (2 * S) * r := by
+      gcongr
+    _ = C * r * S := by
+      ring
+
+/-- Singleton finite-seminorm decay for fixed-last-variable partial
+evaluation. -/
+theorem schwartzPartialEval₂CLM_seminorm_decay_one {m : ℕ} (k l : ℕ) :
+    ∃ s : Finset (ℕ × ℕ), ∃ C : ℝ, 0 ≤ C ∧
+      ∀ (A : SchwartzMap
+          ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) ℂ)
+        (a : Fin m → ℝ),
+        SchwartzMap.seminorm ℂ k l (schwartzPartialEval₂CLM a A) ≤
+          C * (1 + ‖a‖) ^
+              (-((volume : Measure (Fin m → ℝ)).integrablePower : ℝ)) *
+            s.sup (schwartzSeminormFamily ℂ
+              ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) ℂ) A := by
+  let μ : Measure (Fin m → ℝ) := volume
+  let N := μ.integrablePower
+  let s : Finset (ℕ × ℕ) := {((k, l) : ℕ × ℕ), (k + N, l)}
+  let C : ℝ := (2 : ℝ) ^ N * 2
+  refine ⟨s, C, ?_, ?_⟩
+  · exact (schwartzPartialEval₂CLM_seminorm_decay_one_bound (m := m) k l).1
+  · intro A a
+    simpa [μ, N, s, C] using
+      (schwartzPartialEval₂CLM_seminorm_decay_one_bound (m := m) k l).2 A a
+
+/-- Finite-family seminorm decay for fixed-last-variable partial evaluation. -/
+theorem schwartzPartialEval₂CLM_finsetSeminorm_decay {m : ℕ}
+    (s0 : Finset (ℕ × ℕ)) :
+    ∃ s : Finset (ℕ × ℕ), ∃ C : ℝ, 0 ≤ C ∧
+      ∀ (A : SchwartzMap
+          ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) ℂ)
+        (a : Fin m → ℝ),
+        s0.sup (schwartzSeminormFamily ℂ
+            (ComplexChartSpace m × (Fin m → ℝ)) ℂ)
+            (schwartzPartialEval₂CLM a A) ≤
+          C * (1 + ‖a‖) ^
+              (-((volume : Measure (Fin m → ℝ)).integrablePower : ℝ)) *
+            s.sup (schwartzSeminormFamily ℂ
+              ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) ℂ) A := by
+  let μ : Measure (Fin m → ℝ) := volume
+  let N := μ.integrablePower
+  let source : ℕ × ℕ → Finset (ℕ × ℕ) :=
+    fun i => {i, (i.1 + N, i.2)}
+  let s : Finset (ℕ × ℕ) := s0.biUnion source
+  let C0 : ℝ := (2 : ℝ) ^ N * 2
+  let C : ℝ := ∑ i ∈ s0, C0
+  refine ⟨s, C, ?_, ?_⟩
+  · exact Finset.sum_nonneg fun _ _ => by positivity
+  intro A a
+  let S : ℝ := s.sup (schwartzSeminormFamily ℂ
+    ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) ℂ) A
+  let r : ℝ := (1 + ‖a‖) ^ (-(N : ℝ))
+  have hS_nonneg : 0 ≤ S := apply_nonneg _ _
+  have hr_nonneg : 0 ≤ r := by positivity
+  have htarget_nonneg : 0 ≤ C * r * S :=
+    mul_nonneg (mul_nonneg (Finset.sum_nonneg fun _ _ => by positivity) hr_nonneg) hS_nonneg
+  apply Seminorm.finset_sup_apply_le
+  · simpa [μ, N, s, C, S, r, mul_assoc] using htarget_nonneg
+  intro i hi
+  rcases i with ⟨k, l⟩
+  let sOne : Finset (ℕ × ℕ) := source (k, l)
+  let SOne : ℝ := sOne.sup (schwartzSeminormFamily ℂ
+    ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) ℂ) A
+  have hOne := (schwartzPartialEval₂CLM_seminorm_decay_one_bound (m := m) k l).2 A a
+  have hSOne_le : SOne ≤ S := by
+    apply Seminorm.finset_sup_apply_le
+    · exact hS_nonneg
+    intro j hj
+    exact (Seminorm.le_finset_sup_apply
+      (p := schwartzSeminormFamily ℂ
+        ((ComplexChartSpace m × (Fin m → ℝ)) × (Fin m → ℝ)) ℂ)
+      (s := s) (x := A)
+      (by
+        exact Finset.mem_biUnion.mpr ⟨(k, l), hi, hj⟩))
+  have hC0_nonneg : 0 ≤ C0 := by positivity
+  have hC0_le_C : C0 ≤ C := by
+    simpa [C] using Finset.single_le_sum (fun _ _ => hC0_nonneg) hi
+  calc
+    (schwartzSeminormFamily ℂ (ComplexChartSpace m × (Fin m → ℝ)) ℂ (k, l))
+        (schwartzPartialEval₂CLM a A)
+        ≤ C0 * r * SOne := by
+      simpa [μ, N, C0, sOne, SOne, source, r] using hOne
+    _ ≤ C0 * r * S := by
+      gcongr
+    _ ≤ C * r * S := by
+      gcongr
+
 end SCV

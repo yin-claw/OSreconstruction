@@ -7410,7 +7410,12 @@ Proof transcript for the next target:
        partial evaluation on the triple mixed Schwartz space by
        `SchwartzMap.compCLM` along `b ↦ (b,a)`, and prove parameter
        continuity by product-commuting the checked `schwartzPartialEval₁`
-       theorem.
+       theorem.  `schwartzPartialEval₂CLM_seminorm_decay_one` and
+       `schwartzPartialEval₂CLM_finsetSeminorm_decay` are now checked there as
+       well; they prove the integrable parameter-decay estimate from the two
+       source seminorms `(k,l)` and
+       `(k + (volume : Measure (Fin m -> ℝ)).integrablePower, l)`, then
+       aggregate over finite output-seminorm families.
 
        Next local descent infrastructure:
        `mixedRealFiberIntegralCLM`,
