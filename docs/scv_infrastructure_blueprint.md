@@ -4921,9 +4921,22 @@ Proof transcript for the next target:
       `sample (z0,l0) = realEmbed (realSample (z0,l0))` with
       `localEOWChart_smp_realEdge_eq_of_unit_real`.
 
-      The preceding `hbv_cont`, `hplus_boundary`, and `hminus_boundary`
-      hypotheses are supplied by one CLM boundary-data theorem, so they are not
-      new assumptions in the final chart-kernel instantiation:
+      The preceding scalar `hbv_cont`, the vector-valued translated-kernel
+      continuity needed by Banach-Steinhaus, and the two side limits are
+      supplied by one CLM boundary-data theorem, so they are not new assumptions
+      in the final chart-kernel instantiation.  Internally that theorem first
+      proves
+      ```
+      hkernel_cont :
+        ContinuousOn
+          (fun p : ComplexChartSpace m × (Fin m -> ℝ) =>
+            translateSchwartz (-p.2) (η p.1))
+          (Z ×ˢ E)
+      ```
+      from `continuousOn_translateSchwartz_varyingKernel_of_fixedSupport`,
+      then obtains the returned scalar `hbv_cont` by composing with
+      `Tchart.continuous`.  The split plus/minus side-limit theorems consume
+      `hkernel_cont`, not merely scalar `Tchart` continuity.
       ```lean
       theorem localRudin_varyingKernel_boundaryData_of_clm
           {Cplus Cminus : Set (Fin m -> ℝ)} {δ ρ r rψLarge : ℝ}
@@ -5027,8 +5040,9 @@ Proof transcript for the next target:
       `Metric.closedBall 0 rψLarge` from `hη_support` and
       `KernelSupportWithin.eq_zero_of_not_mem_closedBall`, then apply
       `continuousOn_translateSchwartz_varyingKernel_of_fixedSupport` on
-      `Z ×ˢ E` and compose with `Tchart.continuous`.  This first component is
-      checked as
+      `Z ×ˢ E` to get the vector-valued `hkernel_cont`.  Composing
+      `hkernel_cont` with `Tchart.continuous` gives the returned first
+      component, checked separately as
       `continuousOn_localRudinBoundaryCLM_varyingKernel_of_fixedSupport`.
       For the positive
       side-limit, work with the filter on
@@ -5039,8 +5053,8 @@ Proof transcript for the next target:
       `sample` is continuous, the endpoint is real by
       `localEOWChart_smp_realEdge_eq_of_unit_real`, and
       `hDplus_sub` maps the positive side into `TubeDomain Cplus`.  The
-      translated kernels tend by the just-proved `hbv_cont`, composed with the
-      continuous real-sample map.  Then
+      translated kernels tend by the just-proved vector-valued `hkernel_cont`,
+      composed with the continuous real-sample map.  Then
       `SchwartzMap.tempered_apply_tendsto_of_tendsto_filter` combines
       `hplus_limit` with this moving-kernel convergence.  For the negative
       side-limit, use the lower filter
@@ -5051,7 +5065,7 @@ Proof transcript for the next target:
       `localEOWChart_smp_lower_mem_of_delta_on_sphere` puts `sample` in
       `Dminus` and `hDminus_sub` maps `Dminus` into `TubeDomain Cminus`;
       the translated-kernel convergence is the same already checked
-      `hbv_cont` composition with `realSample`; and
+      `hkernel_cont` composition with `realSample`; and
       `SchwartzMap.tempered_apply_tendsto_of_tendsto_filter` combines
       `hminus_limit` with that kernel convergence.  The two split theorem
       statements below record these plus and minus proofs without relying on a
@@ -5089,10 +5103,10 @@ Proof transcript for the next target:
           (hZ_ball :
             Z ⊆ Metric.ball (0 : ComplexChartSpace m) (δ / 2))
           (hη_support : ∀ z ∈ Z, KernelSupportWithin (η z) rψLarge)
-          (hbv_cont :
+          (hkernel_cont :
             ContinuousOn
               (fun p : ComplexChartSpace m × (Fin m -> ℝ) =>
-                Tchart (translateSchwartz (-p.2) (η p.1)))
+                translateSchwartz (-p.2) (η p.1))
               (Z ×ˢ E))
           (hE_mem :
             ∀ u ∈ Metric.closedBall (0 : Fin m -> ℝ) ρ,
@@ -5150,10 +5164,10 @@ Proof transcript for the next target:
           (hZ_ball :
             Z ⊆ Metric.ball (0 : ComplexChartSpace m) (δ / 2))
           (hη_support : ∀ z ∈ Z, KernelSupportWithin (η z) rψLarge)
-          (hbv_cont :
+          (hkernel_cont :
             ContinuousOn
               (fun p : ComplexChartSpace m × (Fin m -> ℝ) =>
-                Tchart (translateSchwartz (-p.2) (η p.1)))
+                translateSchwartz (-p.2) (η p.1))
               (Z ×ˢ E))
           (hE_mem :
             ∀ u ∈ Metric.closedBall (0 : Fin m -> ℝ) ρ,
@@ -5220,8 +5234,8 @@ Proof transcript for the next target:
       hδ hδρ hδsum hplus` gives `sample p ∈ Dplus`; then
       `hDplus_sub` unfolds `TubeDomain Cplus` to obtain `imSample p ∈ Cplus`.
 
-      The moving-kernel boundary branch tends to the target by composing
-      `hbv_cont` with
+      The moving kernel tends in the Schwartz topology by composing
+      `hkernel_cont` with
       ```
       realParam p = (p.1, realSample p).
       ```
@@ -5232,12 +5246,12 @@ Proof transcript for the next target:
       `localEOWSmp_re_mem_closedBall hδ hδρ` plus `hE_mem`; the closed-ball
       input to `localEOWSmp_re_mem_closedBall` is again supplied by
       `hZ_ball` and `Metric.ball_subset_closedBall`.  Hence
-      `hbv_cont.tendsto_nhdsWithin` yields
+      `hkernel_cont.tendsto_nhdsWithin` yields
       ```
       Tendsto
-        (fun p => Tchart (translateSchwartz (-(realSample p)) (η p.1)))
+        (fun p => translateSchwartz (-(realSample p)) (η p.1))
         (nhdsWithin (z0,l0) (S ∩ {p | 0 < p.2.im}))
-        (nhds (Tchart (translateSchwartz (-(realSample (z0,l0))) (η z0)))).
+        (nhds (translateSchwartz (-(realSample (z0,l0))) (η z0))).
       ```
 
       Pointwise CLM convergence is
@@ -5249,11 +5263,29 @@ Proof transcript for the next target:
         (translateSchwartz (-(realSample p)) (η p.1)).
       ```
       Finally use `Filter.Tendsto.congr'` on the positive-side filter.  For
-      every eventually sampled `p = (z,l)`, `hplus_eval (η z)
-      (hη_support z hz)` rewrites
-      `realMollifyLocal Fplus (η z) (sample p)` to the displayed `Tplus`
-      expression because `sample p ∈ Dplus`, proved above by
-      `localEOWChart_smp_upper_mem_of_delta_on_sphere`.
+      every sampled `p = (z,l)` in that filter, the side membership just used
+      for the cone map gives `sample p ∈ Dplus`, and `hη_support z hz` gives
+      the fixed support hypothesis.  Therefore
+      `hplus_eval (η z) (hη_support z hz) (sample p) hsampleD`
+      rewrites the mollifier to
+      ```
+      Tplus (fun i => (sample p i).im)
+        (translateSchwartz (fun i => -(sample p i).re) (η z)).
+      ```
+      The two arguments of `Tplus` are exactly the moving-limit arguments:
+      `fun i => (sample p i).im = imSample p` by definition, and
+      ```
+      fun i => -(sample p i).re = -(realSample p)
+      ```
+      by extensionality and the real-coordinate identity obtained by unfolding
+      `sample`, `realSample`, `localEOWChart`, and `localEOWRealChart` (or,
+      equivalently, by applying `localEOWChart_real_imag` to the real and
+      imaginary parts of `localEOWSmp δ z l`).  This is not a new public lemma:
+      it is a local `have hsample_re : (fun i => (sample p i).re) =
+      realSample p := by ext i; simp [sample, realSample, localEOWChart,
+      localEOWRealChart]`, followed by `rw [hsample_re]`.  Thus the congruent
+      eventual function is precisely the one handled by
+      `SchwartzMap.tempered_apply_tendsto_of_tendsto_filter`.
 
       Lean proof of the minus theorem.  Use the same definitions `S`,
       `sample`, `realSample`, and `imSample`, the same continuity facts, and
@@ -5263,11 +5295,14 @@ Proof transcript for the next target:
       hδ hδρ hδsum hminus` gives `sample p ∈ Dminus`, and `hDminus_sub`
       gives `imSample p ∈ Cminus`.  Compose `hminus_limit` with this
       `nhdsWithin 0 Cminus` convergence, reuse the same moving-kernel
-      convergence from `hbv_cont`, apply
+      convergence from `hkernel_cont`, apply
       `SchwartzMap.tempered_apply_tendsto_of_tendsto_filter`, and finish by
       `Filter.Tendsto.congr'` using
       `hminus_eval (η z) (hη_support z hz)` and the lower-side domain
-      membership just proved.
+      membership just proved.  The final translate congruence is the same
+      local real-coordinate identity
+      `fun i => -(sample p i).re = -(realSample p)`; do not introduce a
+      separate minus-side wrapper for it.
 
       The same three-way `ContinuousWithinAt.union` patching argument as in
       the checked bound theorem gives `ContinuousOn H S`.  Since
@@ -5355,9 +5390,10 @@ Proof transcript for the next target:
             Tchart (translateSchwartz (-p.2) (η p.1)))
           (Z ×ˢ E),
       ```
-      produced from the fixed-support translation helper and `Tchart.continuous`.
-      Its second and third components are the plus/minus moving-kernel side
-      limits, with no extra assumptions: the theorem uses `hplus_eval`,
+      produced from the internally derived vector-valued `hkernel_cont` and
+      `Tchart.continuous`.  Its second and third components are the plus/minus
+      moving-kernel side limits, with no extra assumptions: the theorem uses
+      `hkernel_cont`, `hplus_eval`,
       `hminus_eval`, `hplus_limit`, `hminus_limit`,
       `hDplus_sub`, and `hDminus_sub` exactly as recorded above.
 
@@ -6040,10 +6076,13 @@ Proof transcript for the next target:
        hypotheses, and
        `continuousOn_localRudinBoundaryCLM_varyingKernel_of_fixedSupport`, the
        boundary-branch continuity component of the CLM boundary-data theorem.
-       The remaining
-       continuity-support targets before the mixed pairing CLM are
+       The same file now also checks the split moving-kernel side limits
        `tendsto_localRudinPlusBoundary_varyingKernel_of_clm`,
-       `tendsto_localRudinMinusBoundary_varyingKernel_of_clm`,
+       `tendsto_localRudinMinusBoundary_varyingKernel_of_clm`; their theorem
+       surfaces correctly consume vector-valued translated-kernel continuity
+       `hkernel_cont`, not merely the scalar `Tchart`-applied boundary
+       continuity.  The remaining
+       continuity-support targets before the mixed pairing CLM are
        `localRudin_varyingKernel_boundaryData_of_clm`,
        `exists_bound_localRudinIntegrand_varyingKernel`,
        `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`: before

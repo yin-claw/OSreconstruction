@@ -1252,11 +1252,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
       Rudin-envelope dominated-continuity theorem, the scalar
       evaluation/support theorems for the actual chart-kernel slice, and
       the boundary-CLM continuity component of the CLM boundary-data theorem.
-      The remaining Lean targets have exact proof transcripts in
-      `docs/scv_infrastructure_blueprint.md`: the plus and minus side-limit
-      theorems
+      The plus and minus moving-kernel side-limit theorems
       `tendsto_localRudinPlusBoundary_varyingKernel_of_clm` and
-      `tendsto_localRudinMinusBoundary_varyingKernel_of_clm`, the bundled
+      `tendsto_localRudinMinusBoundary_varyingKernel_of_clm` are now checked
+      in `SCV/VaryingKernelContinuity.lean`, with vector-valued
+      `hkernel_cont` as the Banach-Steinhaus input.  The remaining Lean targets
+      have exact proof transcripts in `docs/scv_infrastructure_blueprint.md`:
+      the bundled
       `localRudin_varyingKernel_boundaryData_of_clm`, the parametric
       Rudin-integrand bound over `closedBall 0 Rcut` with the inner Rudin side
       domains kept separate from the original holomorphy domains, and the final
@@ -1266,7 +1268,19 @@ Proof decomposition of this theorem, without hiding the analytic work:
       identities, the existing CLM boundary limits, and
       `SchwartzMap.tempered_apply_tendsto_of_tendsto_filter`; the
       moving-kernel convergence is exactly the fixed-support joint translation
-      helper.  Only after those targets are checked should Lean introduce
+      helper as a Schwartz-valued continuity statement, not merely the scalar
+      `Tchart`-applied continuity.  The bundled boundary-data theorem derives
+      both: vector-valued `hkernel_cont` for Banach-Steinhaus, then scalar
+      `hbv_cont` by composing with `Tchart.continuous`.  The last congruence
+      in each side-limit is also fixed: after
+      `hplus_eval` or `hminus_eval`, the side identity has
+      `translateSchwartz (fun i => -(sample p i).re)`, and the target moving
+      kernel has `translateSchwartz (-(realSample p))`; these are definitionally
+      reconciled by the local real-coordinate equality
+      `fun i => -(sample p i).re = -(realSample p)` obtained from
+      `localEOWChart`/`localEOWRealChart` (equivalently
+      `localEOWChart_real_imag`).  Only after those targets are checked should
+      Lean introduce
       `regularizedLocalEOW_pairingCLM_of_fixedWindow`; it must not revive the
       retired global `regularizedLocalEOW_productKernel_from_continuousEOW`
       surface.  In the final `SCV.local_distributional_edge_of_the_wedge_envelope`
@@ -1731,10 +1745,11 @@ Implementation-readiness gate for the next Lean stage:
   cutoff, SCV-local `schwartzPartialEval₁CLM` apply/tensor/seminorm package,
   compact `Lorig` value-CLM bound, chart-kernel value-CLM transport,
   chart-linear kernel pushforward API, and first varying-kernel continuity
-  layer are checked.  The remaining Lean order, now fully proof-documented in
-  `docs/scv_infrastructure_blueprint.md`, is: split the moving-kernel side
-  limits; bundle the CLM boundary data; prove the parametric Rudin-integrand
-  bound; prove `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`;
+  layer including the split moving-kernel side limits are checked.  The
+  remaining Lean order, now fully proof-documented in
+  `docs/scv_infrastructure_blueprint.md`, is: bundle the CLM boundary data;
+  prove the parametric Rudin-integrand bound; prove
+  `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`;
   construct the pairing CLM through the explicit post-continuity/value-CLM
   interface; prove local covariance; prove direct local product-test descent;
   prove `translationCovariantKernel_distributionalHolomorphic_local`; prove
