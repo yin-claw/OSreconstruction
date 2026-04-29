@@ -1021,6 +1021,20 @@ theorem chartOrthantBoundaryValue_from_uniformConeBoundaryValue
             rw [hpoint u]
     exact hminus_scaled.congr' hminus_eq
 
+/-- Pull holomorphy back through the affine local EOW chart on any coordinate
+set whose image lies in the original domain. -/
+theorem chartHolomorphy_from_originalHolomorphy
+    (Ω : Set (ComplexChartSpace m))
+    (x0 : Fin m → ℝ)
+    (ys : Fin m → Fin m → ℝ)
+    (F : ComplexChartSpace m → ℂ)
+    (Ucoord : Set (ComplexChartSpace m))
+    (hU_mem : ∀ w ∈ Ucoord, localEOWChart x0 ys w ∈ Ω)
+    (hF : DifferentiableOn ℂ F Ω) :
+    DifferentiableOn ℂ (fun w => F (localEOWChart x0 ys w)) Ucoord := by
+  simpa [Function.comp_def] using
+    hF.comp (differentiable_localEOWChart x0 ys).differentiableOn hU_mem
+
 /-- Real-coordinate translation in the local chart corresponds to translation
 by the chart's linear part on the original real edge. -/
 theorem localEOWRealChart_sub

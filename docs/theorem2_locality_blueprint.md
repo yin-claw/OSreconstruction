@@ -1067,7 +1067,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
      `(localEOWRealLinearCLE ys hli).hasFDerivAt.const_add x0`, the image of
      `Set.univ` is all of real space by the inverse
      `u = (localEOWRealLinearCLE ys hli).symm (x - x0)`, and the determinant
-     is exactly `localEOWRealJacobianAbs ys`.
+     is exactly `localEOWRealJacobianAbs ys`.  Holomorphy transport through
+     `localEOWChart` is also checked as
+     `SCV.chartHolomorphy_from_originalHolomorphy`.
    * The local output must be a transported coordinate ball with transported
      strict positive/negative side balls.  Patching consumes precisely these
      shapes:
