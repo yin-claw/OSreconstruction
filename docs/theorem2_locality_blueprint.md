@@ -1146,7 +1146,18 @@ Proof decomposition of this theorem, without hiding the analytic work:
          on the support of `φ`.  The theorem surface includes the local
          continuity input `hG_cont` on the covariance ball, derived from the
          fixed-window holomorphy of the regularized family, solely to justify
-         this all-space integral change of variables.  If `φ` is nonzero, the
+         this all-space integral change of variables.  That helper must take
+         compact support of `φ` and the explicit fact
+         `tsupport φ` translates backward into `Ucov`; otherwise the
+         right-hand shifted integrand would again be relying on hidden global
+         regularity of `Gchart ψ`.  The backward translation fact is not a
+         pointwise-support shortcut: it is supplied by the named
+         topological-support transport lemma
+         `tsupport_subset_preimage_tsupport_complexTranslateSchwartz`, proved
+         from `tsupport_comp_subset_preimage` applied to the inverse
+         translation and the identity
+         `complexTranslateSchwartz a φ (z - realEmbed a) = φ z`.  If `φ` is
+         nonzero, the
          support hypotheses for
          both `φ` and `complexTranslateSchwartz a φ` give witnesses
          `u ∈ Ucov` and `u - realEmbed a ∈ Ucov`, hence
@@ -1159,9 +1170,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
          `complexTranslateSchwartz a φ z = φ (z + realEmbed a)`, so the
          changed left integrand is `Gchart ψ (z - realEmbed a) * φ z`, and
          `hG_cov` rewrites it to
-         `Gchart (translateSchwartz a ψ) z * φ z` only on
-         `tsupport φ`.  Off `tsupport φ`, the factor `φ z` is zero; no global
-         regularity of `Gchart ψ` is used.
+         `Gchart (translateSchwartz a ψ) z * φ z` only after splitting on
+         `φ z = 0`: the zero branch is immediate, while the nonzero branch
+         gives `z ∈ Function.support φ ⊆ tsupport φ` and then both
+         `z ∈ Ucov` and `z - realEmbed a ∈ Ucov`.  No global regularity of
+         `Gchart ψ` is used.
       3. `SCV.translationCovariantProductKernel_descends_local`.  It defines
          `Hdist := complexRealFiberTranslationDescentCLM
            (shearedProductKernelFunctional K) η` with a normalized real
@@ -1183,12 +1196,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
          translation-support helper, not an implicit property of the support
          inclusion.
       4. `SCV.regularizedEnvelope_chartEnvelope_from_localProductKernel`.  It
-         first proves local distributional holomorphy of `Hdist` on `Udesc`
-         using the local descent identity and the checked `∂bar` product
-         integral theorem in its localized form: `hK_rep` is used only after
-         enlarging `SupportsInOpen (dbarSchwartzCLM j φ)` from `Udesc` to
-         `Ucov`, while holomorphy is restricted from `U0` back to `Udesc`.
-         Then it applies
+         consumes local distributional holomorphy of `Hdist` on `Udesc`; the
+         CR proof is a separate immediately preceding step, not a hidden field.
+         That step uses the local descent identity and the checked `∂bar`
+         product integral theorem in its localized form: `hK_rep` is used only
+         after enlarging `SupportsInOpen (dbarSchwartzCLM j φ)` from `Udesc`
+         to `Ucov`, while holomorphy is restricted from `U0` back to `Udesc`.
+         With `hCR` supplied this way, the recovery theorem applies
          `SCV.distributionalHolomorphic_regular`, the checked pointwise
          representation bridge with `Ucore ⊂ Udesc`, and the checked
          delta-limit wedge-agreement theorem.
@@ -1793,12 +1807,10 @@ Implementation-readiness gate for the next Lean stage:
   Rudin-integrand bound; prove
   `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`;
   construct the pairing CLM through the explicit post-continuity/value-CLM
-  interface; prove the support-localized translated-test integral
-  change-of-variables lemma; prove local covariance; prove direct local
-  product-test descent;
-  prove the separated-domain `∂bar` zero theorem
-  `regularizedEnvelope_productKernel_dbar_eq_zero_local`; prove
-  `translationCovariantKernel_distributionalHolomorphic_local`; prove
+  interface; prove
+  `tsupport_subset_preimage_tsupport_complexTranslateSchwartz`; prove the
+  support-localized translated-test integral change-of-variables lemma; prove
+  local covariance; prove direct local product-test descent; prove
   `regularizedEnvelope_pointwiseRepresentation_of_localProductKernel`; and
   finish with `regularizedEnvelope_chartEnvelope_from_localProductKernel` using
   the explicit approximate-identity and side-agreement hypotheses.  The
@@ -1981,15 +1993,24 @@ Current implementation order:
    `SCV.regularizedEnvelope_pointwiseRepresentation_of_productKernel`,
    `SCV.regularizedEnvelope_deltaLimit_agreesOnWedges`, and
    `SCV.regularizedEnvelope_chartEnvelope_from_productKernel`, and
-   `SCV.local_continuous_edge_of_the_wedge_envelope`.
+   `SCV.local_continuous_edge_of_the_wedge_envelope`.  The local-descent
+   checked additions also include `SCV.norm_realEmbed_eq`,
+   `SCV.SupportsInOpen.complexTranslateSchwartz_of_image_subset`,
+   `SCV.regularizedEnvelope_productKernel_dbar_eq_zero_local`, and
+   `SCV.translationCovariantKernel_distributionalHolomorphic_local`.
    The remaining pure-SCV declarations on this route are now the local descent
    package
+   `SCV.exists_bound_localRudinIntegrand_varyingKernel`,
+   `SCV.continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`,
    `SCV.regularizedLocalEOW_pairingCLM_of_fixedWindow`,
+   `SCV.tsupport_subset_preimage_tsupport_complexTranslateSchwartz`,
+   `SCV.integral_mul_complexTranslateSchwartz_eq_shift_of_support`,
    `SCV.regularizedLocalEOW_pairingCLM_localCovariant`,
    `SCV.schwartzTensorProduct₂CLMLeft`,
    `SCV.shearedRealConvolutionTensor_eq_integral_productTranslations`,
    `SCV.fiberCutoffAverage_eq_self`,
    `SCV.translationCovariantProductKernel_descends_local`,
+   `SCV.regularizedEnvelope_pointwiseRepresentation_of_localProductKernel`,
    `SCV.regularizedEnvelope_chartEnvelope_from_localProductKernel`, and finally
    `SCV.local_distributional_edge_of_the_wedge_envelope`.  The retired
    `SCV.regularizedLocalEOW_productKernel_from_continuousEOW` name may only be

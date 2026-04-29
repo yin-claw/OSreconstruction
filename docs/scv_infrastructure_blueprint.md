@@ -166,8 +166,10 @@ surfaces.  The following names are already checked and should be used exactly:
 `regularizedEnvelope_deltaLimit_agreesOnWedges`, and
 `regularizedEnvelope_chartEnvelope_from_productKernel`.
 
-The remaining public proof package should be split as the following theorem
-surfaces plus the final envelope theorem:
+The public local-descent proof package is split as the following theorem
+surfaces plus the final envelope theorem.  Some entries are now checked; the
+list is kept as the route ledger so the remaining Lean work consumes the same
+interfaces documented below:
 
 ```lean
 lemma sliceCLM_family_from_distributionalBoundary
@@ -188,11 +190,18 @@ theorem exists_bound_localRudinIntegrand_varyingKernel
 theorem continuousOn_localRudinEnvelope_varyingKernel_of_bound
 theorem continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand
 theorem regularizedLocalEOW_pairingCLM_of_fixedWindow
+theorem norm_realEmbed_eq
+theorem tsupport_subset_preimage_tsupport_complexTranslateSchwartz
+theorem integral_mul_complexTranslateSchwartz_eq_shift_of_support
 theorem regularizedLocalEOW_pairingCLM_localCovariant
+theorem SupportsInOpen.complexTranslateSchwartz_of_image_subset
 theorem schwartzTensorProduct₂CLMLeft
 theorem shearedRealConvolutionTensor_eq_integral_productTranslations
 theorem fiberCutoffAverage_eq_self
 theorem translationCovariantProductKernel_descends_local
+theorem regularizedEnvelope_productKernel_dbar_eq_zero_local
+theorem translationCovariantKernel_distributionalHolomorphic_local
+theorem regularizedEnvelope_pointwiseRepresentation_of_localProductKernel
 theorem regularizedEnvelope_chartEnvelope_from_localProductKernel
 lemma chartDistributionalEOW_local_envelope
 lemma distributionalEOW_extensions_compatible
@@ -353,6 +362,9 @@ Source ledger for the internal helper list:
 | `realMollifyLocal_translateSchwartz` | Checked in `SCV/LocalDistributionalEOW.lean`: translating the real smoothing kernel by `a` is exactly the same as evaluating the original real mollifier at `z - realEmbed a`.  This is the change-of-variables input for the fixed-window family covariance proof. |
 | `realMollifyLocal_localEOWRealLinearKernelPushforwardCLM` | Checked in `SCV/LocalDistributionalEOW.lean`: applying `realMollifyLocal` to the Jacobian-normalized chart-kernel pushforward equals the chart-coordinate integral `∫ u, F (z + realEmbed (localEOWRealLinearPart ys u)) * φ u`.  This is the chart-linear change-of-variables theorem needed before proving covariance for the regularized family. |
 | `localEOWShiftedWindow`, `isOpen_localEOWShiftedWindow`, `convex_localEOWShiftedWindow`, `isPreconnected_localEOWShiftedWindow`, `exists_positive_imag_mem_localEOWShiftedWindow_of_norm_lt` | Checked in `SCV/LocalDistributionalEOW.lean`: the honest shifted-overlap domain for local covariance is `Metric.ball 0 (δ / 2) ∩ {w | w - realEmbed a ∈ Metric.ball 0 (δ / 2)}`.  It is open, convex, and preconnected, so the identity theorem can propagate equality from a positive-imaginary seed in the overlap.  The seed exists whenever `‖a‖ < δ / 4`, using the constant imaginary point with imaginary part `δ / 8` and `norm_realEmbed_le`. |
+| `norm_realEmbed_eq` | Checked in `SCV/DistributionalEOWApproxIdentity.lean`: the finite sup norm of the complex-chart real embedding equals the original real sup norm.  The local covariance proof uses it to convert two support points `u` and `u - realEmbed a` in the covariance ball into the real shift bound `‖a‖ < δ / 4`. |
+| `SupportsInOpen.complexTranslateSchwartz_of_image_subset` | Checked in `SCV/DistributionalEOWSupport.lean`: complex-chart translation transports compact support by inverse translation and maps the translated topological support into a target open set under an explicit image hypothesis.  This is the support half of the direct local descent averaging theorem. |
+| `regularizedEnvelope_productKernel_dbar_eq_zero_local`, `translationCovariantKernel_distributionalHolomorphic_local` | Checked in `SCV/DistributionalEOWRepresentative.lean`: localized versions of the product-kernel `∂bar` annihilation theorem and the distributional-holomorphy passage.  They consume separated domains `Udesc ⊆ Ucov ⊆ U0`, local product-test descent, and approximate-identity convergence; they are not hidden hypotheses in the recovery consumer. |
 | `regularizedLocalEOW_fixedKernelEnvelope_from_clm` | Checked in `SCV/LocalDistributionalEOW.lean`: for one compactly supported smoothing kernel, combines the local real-mollifier holomorphy margins, the CLM common-boundary extraction, and the checked coordinate local continuous EOW theorem to produce the local coordinate envelope with strict positive/negative side agreements and uniqueness.  This is the fixed-kernel bridge; it does not yet prove linearity/continuity in the kernel or construct the product kernel `K`. |
 | `regularizedLocalEOW_fixedWindowEnvelope_from_clm` | Checked in `SCV/LocalDistributionalEOW.lean`: the same fixed-kernel bridge, but with the Rudin chart data `ys, ρ, r, δ` supplied once instead of existentially chosen.  Its output is the explicit function `localRudinEnvelope δ x0 ys (realMollifyLocal Fplus ψ) (realMollifyLocal Fminus ψ)` with holomorphy, strict side agreements, real-edge identity, and uniqueness.  This is required before building a coherent family `G ψ`; otherwise Lean could choose different local charts for different kernels. |
 | `regularizedLocalEOW_family_from_fixedWindow` | Checked in `SCV/LocalDistributionalEOW.lean`: packages the explicit fixed-window family `G ψ w = localRudinEnvelope δ x0 ys (realMollifyLocal Fplus ψ) (realMollifyLocal Fminus ψ) w` for every supported smoothing kernel.  It gives the exact family-level holomorphy, strict side-agreement, real-edge identity, and uniqueness facts needed before proving linearity, covariance, and the product-kernel construction. |
@@ -5780,15 +5792,46 @@ Proof transcript for the next target:
    `Gchart ψ` is only known on the covariance ball:
 
    ```lean
+   theorem tsupport_subset_preimage_tsupport_complexTranslateSchwartz
+       (a : Fin m -> ℝ)
+       (φ : SchwartzMap (ComplexChartSpace m) ℂ) :
+       tsupport (φ : ComplexChartSpace m -> ℂ) ⊆
+         (fun z : ComplexChartSpace m => z - realEmbed a) ⁻¹'
+           tsupport
+             (complexTranslateSchwartz a φ : ComplexChartSpace m -> ℂ)
+   ```
+
+   Proof transcript: apply `tsupport_comp_subset_preimage` to
+   `complexTranslateSchwartz a φ` and the continuous inverse translation
+   `z ↦ z - realEmbed a`.  The composed function is pointwise equal to `φ`,
+   because
+   ```
+   complexTranslateSchwartz a φ (z - realEmbed a)
+     = φ ((z - realEmbed a) + realEmbed a)
+     = φ z.
+   ```
+   This is the topological-support transport needed for local covariance.  It
+   is strictly stronger than the pointwise nonzero observation and gives, from
+   `SupportsInOpen (complexTranslateSchwartz a φ) U`,
+   ```
+   ∀ z ∈ tsupport (φ : ComplexChartSpace m -> ℂ),
+     z - realEmbed a ∈ U.
+   ```
+
+   ```lean
    theorem integral_mul_complexTranslateSchwartz_eq_shift_of_support
        (G : ComplexChartSpace m -> ℂ)
        (φ : SchwartzMap (ComplexChartSpace m) ℂ)
        (a : Fin m -> ℝ)
        (U : Set (ComplexChartSpace m))
        (hG_cont : ContinuousOn G U)
+       (hφ_compact : HasCompactSupport (φ : ComplexChartSpace m -> ℂ))
        (hφ_shift :
          SupportsInOpen
-           (complexTranslateSchwartz a φ : ComplexChartSpace m -> ℂ) U) :
+           (complexTranslateSchwartz a φ : ComplexChartSpace m -> ℂ) U)
+       (hshift_support :
+         ∀ z ∈ tsupport (φ : ComplexChartSpace m -> ℂ),
+           z - realEmbed a ∈ U) :
        (∫ y : ComplexChartSpace m,
           G y * complexTranslateSchwartz a φ y) =
          ∫ z : ComplexChartSpace m, G (z - realEmbed a) * φ z
@@ -5798,12 +5841,29 @@ Proof transcript for the next target:
    `f y = G y * complexTranslateSchwartz a φ y`.  The shifted support
    hypothesis gives `tsupport f ⊆ tsupport (complexTranslateSchwartz a φ) ⊆ U`,
    and `hG_cont` restricted to that compact support plus continuity of the
-   Schwartz factor gives integrability of `f`.  Apply translation invariance
-   of Haar/Lebesgue measure on `ComplexChartSpace m` to the translation
-   `y = z - realEmbed a`.  The pointwise translated integrand is
-   `G (z - realEmbed a) * φ z` by `complexTranslateSchwartz_apply`.  This
-   lemma is the only change-of-variables input used in the covariance proof;
-   it avoids assuming any global measurability or continuity of `G`.
+   Schwartz factor gives integrability of `f`.  The right-hand integrand is
+   supported inside `tsupport φ`, which is compact by `hφ_compact`; on this
+   compact set `hshift_support` places `z - realEmbed a` in `U`, so
+   `hG_cont` supplies the local continuity/measurability needed for
+   `z ↦ G (z - realEmbed a) * φ z`.  The Lean change-of-variables step should
+   use the additive Haar translation theorem exactly as:
+   ```
+   rw [← integral_add_right_eq_self
+     (-realEmbed a)
+     (f := fun y : ComplexChartSpace m =>
+       G y * complexTranslateSchwartz a φ y)]
+   ```
+   and then rewrite the translated integrand pointwise:
+   ```
+   complexTranslateSchwartz a φ (z - realEmbed a) = φ z
+   ```
+   by `complexTranslateSchwartz_apply` and coordinate extensionality.  The
+   compact-support/integrability proof for `f` is carried by
+   `hφ_shift`; the translated right-hand integrand inherits integrability from
+   this equality, and its local continuity can also be shown directly from
+   `hφ_compact` and `hshift_support`.  This lemma is the only
+   change-of-variables input used in the covariance proof; it avoids assuming
+   any global measurability or continuity of `G`.
 
    1. Expand the two sides with `hK_rep`.  The left expansion is legal because
       the covariance hypothesis already supplies
@@ -5812,7 +5872,9 @@ Proof transcript for the next target:
       `SupportsInOpen φ Ucov` and
       `KernelSupportWithin (translateSchwartz a ψ) r`.
    2. If `φ = 0`, both product tensors are zero.  Otherwise choose
-      `u` with `φ u ≠ 0`.  Then `u ∈ tsupport φ`, hence `u ∈ Ucov`.
+      `u` with `φ u ≠ 0` by extensionality of Schwartz maps.  Then
+      `u ∈ Function.support (φ : _ -> ℂ) ⊆ tsupport φ`, hence
+      `u ∈ Ucov`.
       Also
       ```
       complexTranslateSchwartz a φ (u - realEmbed a) = φ u,
@@ -5832,8 +5894,16 @@ Proof transcript for the next target:
    4. Change variables in the left integral
       `∫ z, Gchart ψ z * complexTranslateSchwartz a φ z` by
       `integral_mul_complexTranslateSchwartz_eq_shift_of_support`, using
-      `hG_cont ψ hψ` and the support hypothesis for
-      `complexTranslateSchwartz a φ`.  With the new variable still named `z`,
+      `hG_cont ψ hψ`, `hφ.1`, the support hypothesis for
+      `complexTranslateSchwartz a φ`, and
+      ```
+      hshift_support :
+        ∀ z ∈ tsupport (φ : ComplexChartSpace m -> ℂ),
+          z - realEmbed a ∈ Ucov
+      ```
+      obtained by composing
+      `tsupport_subset_preimage_tsupport_complexTranslateSchwartz a φ` with
+      the shifted support hypothesis.  With the new variable still named `z`,
       the integrand becomes
       ```
       Gchart ψ (z - realEmbed a) * φ z.
@@ -5841,10 +5911,12 @@ Proof transcript for the next target:
       The sign is forced by the checked convention
       `complexTranslateSchwartz_apply`:
       `complexTranslateSchwartz a φ y = φ (y + realEmbed a)`.
-   5. On `tsupport φ`, the support hypotheses give both
-      `z ∈ Ucov` and `z - realEmbed a ∈ Ucov`, because
-      `φ z ≠ 0` implies
-      `complexTranslateSchwartz a φ (z - realEmbed a) ≠ 0`.  The small-radius
+   5. Prove the post-change-of-variables integrands equal pointwise by
+      splitting on `φ z = 0`.  If `φ z = 0`, both sides vanish by the scalar
+      factor.  If `φ z ≠ 0`, then
+      `z ∈ Function.support (φ : _ -> ℂ) ⊆ tsupport φ`; the original support
+      hypothesis gives `z ∈ Ucov`, and the transported topological-support
+      inclusion from Step 4 gives `z - realEmbed a ∈ Ucov`.  The small-radius
       hypothesis gives `Ucov ⊆ Metric.ball 0 (δ / 2)`, hence
       `z ∈ localEOWShiftedWindow δ a`.  Therefore `hG_cov` rewrites
       ```
@@ -5854,7 +5926,6 @@ Proof transcript for the next target:
       ```
       Gchart (translateSchwartz a ψ) z.
       ```
-      Off `tsupport φ`, both integrands vanish by the scalar factor `φ z`.
       The all-space integral equality is therefore proved by support
       localization, not by any global measurability or global regularity
       statement for `Gchart ψ`.  The result is the right integral and hence the
@@ -6199,6 +6270,19 @@ Proof transcript for the next target:
          (∀ z ∈ Ucore ∩ DminusSmall, H z = Fminus z)
    ```
 
+   The recovery theorem above **consumes** `hCR`; it does not silently prove
+   distributional holomorphy.  The full local product-kernel route obtains
+   `hCR` immediately before calling it by:
+   1. applying `regularizedEnvelope_productKernel_dbar_eq_zero_local` with
+      `Udesc ⊆ Ucov ⊆ U0` to prove the local product-kernel annihilates
+      `dbarSchwartzCLM` product tests;
+   2. applying `translationCovariantKernel_distributionalHolomorphic_local`
+      to the local descent identity, the approximate-identity convergence
+      `realConvolutionTest θ (ψι i) -> θ`, and the local `∂bar` zero theorem.
+   Thus the CR regularity input is a checked-style theorem consumer with its
+   own hypotheses, not a field hidden in a wrapper and not an additional
+   assumption in the final SCV EOW assembly.
+
    Proof transcript for the local recovery consumer:
 
    1. Apply `distributionalHolomorphic_regular Hdist hm hUdesc_open hCR` to
@@ -6361,7 +6445,12 @@ Proof transcript for the next target:
        norms under `realEmbed`.  This turns the two complex-chart support
        points `u` and `u - realEmbed a` into the real shift bound
        `‖a‖ < δ / 4`.
-   6c. `integral_mul_complexTranslateSchwartz_eq_shift_of_support`: prove the
+   6c. `tsupport_subset_preimage_tsupport_complexTranslateSchwartz`: prove the
+       topological-support transport lemma for the inverse complex-chart
+       translation.  This is what turns shifted support of
+       `complexTranslateSchwartz a φ` into the all-`tsupport φ` hypothesis
+       needed by local change of variables.
+   6d. `integral_mul_complexTranslateSchwartz_eq_shift_of_support`: prove the
        support-localized all-space change-of-variables lemma for locally
        continuous scalar kernels multiplied by a translated Schwartz test.
    7. `regularizedLocalEOW_pairingCLM_localCovariant`: prove
