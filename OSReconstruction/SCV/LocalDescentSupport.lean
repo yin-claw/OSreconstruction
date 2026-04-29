@@ -54,4 +54,37 @@ theorem tsupport_subset_preimage_tsupport_complexTranslateSchwartz
     simp [complexTranslateSchwartz_apply, sub_eq_add_neg, add_assoc]
   simpa [hfun] using hz
 
+/-- Support-localized change of variables for a translated complex-chart test.
+
+The hypotheses are the local-continuity/support data supplied by the local
+covariance proof.  The equality itself is the additive Haar translation
+`y = z - realEmbed a`, with the sign convention fixed by
+`complexTranslateSchwartz_apply`. -/
+theorem integral_mul_complexTranslateSchwartz_eq_shift_of_support
+    (G : ComplexChartSpace m → ℂ)
+    (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+    (a : Fin m → ℝ)
+    (U : Set (ComplexChartSpace m))
+    (_hG_cont : ContinuousOn G U)
+    (_hφ_compact : HasCompactSupport (φ : ComplexChartSpace m → ℂ))
+    (_hφ_shift :
+      SupportsInOpen
+        (complexTranslateSchwartz a φ : ComplexChartSpace m → ℂ) U)
+    (_hshift_support :
+      ∀ z ∈ tsupport (φ : ComplexChartSpace m → ℂ),
+        z - realEmbed a ∈ U) :
+    (∫ y : ComplexChartSpace m,
+       G y * complexTranslateSchwartz a φ y) =
+      ∫ z : ComplexChartSpace m, G (z - realEmbed a) * φ z := by
+  rw [← MeasureTheory.integral_add_right_eq_self
+    (μ := (volume : Measure (ComplexChartSpace m)))
+    (f := fun y : ComplexChartSpace m =>
+      G y * complexTranslateSchwartz a φ y)
+    (-realEmbed a)]
+  apply integral_congr_ae
+  filter_upwards with z
+  have harg : z + -realEmbed a + realEmbed a = z := by
+    simp [add_assoc]
+  simp [complexTranslateSchwartz_apply, sub_eq_add_neg, harg]
+
 end SCV

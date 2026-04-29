@@ -2018,6 +2018,7 @@ Current implementation order:
    `SCV.local_continuous_edge_of_the_wedge_envelope`.  The local-descent
    checked additions also include `SCV.norm_realEmbed_eq`,
    `SCV.tsupport_subset_preimage_tsupport_complexTranslateSchwartz`,
+   `SCV.integral_mul_complexTranslateSchwartz_eq_shift_of_support`,
    `SCV.SupportsInOpen.complexTranslateSchwartz_of_image_subset`,
    `SCV.regularizedEnvelope_productKernel_dbar_eq_zero_local`, and
    `SCV.translationCovariantKernel_distributionalHolomorphic_local`.
@@ -2026,7 +2027,6 @@ Current implementation order:
    `SCV.exists_bound_localRudinIntegrand_varyingKernel`,
    `SCV.continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`,
    `SCV.regularizedLocalEOW_pairingCLM_of_fixedWindow`,
-   `SCV.integral_mul_complexTranslateSchwartz_eq_shift_of_support`,
    `SCV.regularizedLocalEOW_pairingCLM_localCovariant`,
    `SCV.schwartzTensorProduct₂CLMLeft`,
    `SCV.schwartzPartialEval₂CLM`,
