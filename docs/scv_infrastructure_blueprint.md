@@ -147,6 +147,7 @@ surfaces.  The following names are already checked and should be used exactly:
 `KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM_translateSchwartz`,
 `realMollifyLocal_localEOWRealLinearKernelPushforwardCLM`,
 `realMollifyLocal_localEOWChart_kernelPushforwardCLM`,
+`realMollifyLocal_localEOWChart_kernelPushforwardCLM_pullback`,
 `realMollifyLocal_localEOWChart_translate_kernelPushforwardCLM`,
 `localEOWShiftedWindow`,
 `isOpen_localEOWShiftedWindow`,
@@ -502,7 +503,7 @@ Source ledger for the internal helper list:
 | `integrable_realMollifyLocal_integrand_of_translate_margin` | Checked in `SCV/LocalDistributionalEOW.lean`: compact kernel support plus local holomorphy/continuity on all real translates gives Bochner integrability of `t ↦ F (z + realEmbed t) * ψ t`.  This discharges the honest integrability hypothesis in `realMollifyLocal_add_of_integrable` on the side domains. |
 | `localRealMollify_commonContinuousBoundary_of_clm` | Checked extraction step: if the plus/minus slice CLMs converge pointwise to the same chart distribution and correctly evaluate the translated kernels appearing in `realMollifyLocal`, then the regularized plus/minus sides have the same continuous boundary value `x ↦ T (translateSchwartz (-x) ψ)`.  The remaining hard input is constructing these slice CLMs from the OS-II distributional boundary-value hypotheses, not assuming common continuous boundary. |
 | `realMollifyLocal_translateSchwartz` | Checked in `SCV/LocalDistributionalEOW.lean`: translating the real smoothing kernel by `a` is exactly the same as evaluating the original real mollifier at `z - realEmbed a`.  This is the change-of-variables input for the fixed-window family covariance proof. |
-| `realMollifyLocal_localEOWRealLinearKernelPushforwardCLM` | Checked in `SCV/LocalDistributionalEOW.lean`: applying `realMollifyLocal` to the Jacobian-normalized chart-kernel pushforward equals the chart-coordinate integral `∫ u, F (z + realEmbed (localEOWRealLinearPart ys u)) * φ u`.  This is the chart-linear change-of-variables theorem needed before proving covariance for the regularized family. |
+| `realMollifyLocal_localEOWRealLinearKernelPushforwardCLM`, `realMollifyLocal_localEOWChart_kernelPushforwardCLM`, `realMollifyLocal_localEOWChart_kernelPushforwardCLM_pullback` | Checked in `SCV/LocalDistributionalEOW.lean`: applying `realMollifyLocal` to the Jacobian-normalized chart-kernel pushforward equals the chart-coordinate integral `∫ u, F (z + realEmbed (localEOWRealLinearPart ys u)) * φ u`.  At a local EOW chart point this becomes the direct pulled-back side-function identity `realMollifyLocal F (P φ) (localEOWChart x0 ys w) = realMollifyLocal (fun ζ => F (localEOWChart x0 ys ζ)) φ w`.  This is the chart-linear change-of-variables theorem needed before proving covariance and side agreement for the regularized family. |
 | `localEOWShiftedWindow`, `isOpen_localEOWShiftedWindow`, `convex_localEOWShiftedWindow`, `isPreconnected_localEOWShiftedWindow`, `exists_positive_imag_mem_localEOWShiftedWindow_of_norm_lt` | Checked in `SCV/LocalDistributionalEOW.lean`: the honest shifted-overlap domain for local covariance is `Metric.ball 0 (δ / 2) ∩ {w | w - realEmbed a ∈ Metric.ball 0 (δ / 2)}`.  It is open, convex, and preconnected, so the identity theorem can propagate equality from a positive-imaginary seed in the overlap.  The seed exists whenever `‖a‖ < δ / 4`, using the constant imaginary point with imaginary part `δ / 8` and `norm_realEmbed_le`. |
 | `norm_realEmbed_eq` | Checked in `SCV/DistributionalEOWApproxIdentity.lean`: the finite sup norm of the complex-chart real embedding equals the original real sup norm.  The local covariance proof uses it to convert two support points `u` and `u - realEmbed a` in the covariance ball into the real shift bound `‖a‖ < δ / 4`. |
 | `tsupport_subset_preimage_tsupport_complexTranslateSchwartz` | Checked in `SCV/LocalDescentSupport.lean`: topological support of `φ` is transported into the topological support of `complexTranslateSchwartz a φ` by the inverse real translation `z ↦ z - realEmbed a`.  This is the exact support input for the local covariance change-of-variables theorem. |
@@ -4195,7 +4196,7 @@ envelope assembly once the raw distributional limits are supplied.
    `Gchart ψ = Gorig (P ψ)`.  The side identities for `Gchart` are not
    definitional.  They use the fixed-window side identities for `Gorig (P ψ)`,
    the support theorem for `P ψ`, and
-   `realMollifyLocal_localEOWChart_kernelPushforwardCLM` to rewrite
+   `realMollifyLocal_localEOWChart_kernelPushforwardCLM_pullback` to rewrite
    `realMollifyLocal Fplus (P ψ) (localEOWChart x0 ys w)` as
    `realMollifyLocal (fun ζ => Fplus (localEOWChart x0 ys ζ)) ψ w`, and
    similarly on the lower side.  Thus the local recovery theorem is

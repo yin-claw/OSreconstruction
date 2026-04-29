@@ -1984,8 +1984,12 @@ Implementation-readiness gate for the next Lean stage:
   fixed-window uniqueness/covariance.
 * The immediate Lean-ready covariance support lemmas are the chart-local
   versions of that identity:
-  `SCV.realMollifyLocal_localEOWChart_kernelPushforwardCLM` and
+  `SCV.realMollifyLocal_localEOWChart_kernelPushforwardCLM`,
+  `SCV.realMollifyLocal_localEOWChart_kernelPushforwardCLM_pullback`, and
   `SCV.realMollifyLocal_localEOWChart_translate_kernelPushforwardCLM`.  The
+  pullback theorem is the direct side-agreement form
+  `realMollifyLocal F (P φ) (localEOWChart x0 ys w) =
+   realMollifyLocal (fun ζ => F (localEOWChart x0 ys ζ)) φ w`; the
   second theorem is the exact translated-kernel side-branch identity needed for
   the uniqueness proof of regularized-family covariance:
   pushing `translateSchwartz a φ` through the chart kernel and evaluating at
@@ -2791,7 +2795,7 @@ Current implementation order:
    recovery theorem is instantiated with the chart-side functions
    `fun ζ => Fplus (localEOWChart x0 ys ζ)` and
    `fun ζ => Fminus (localEOWChart x0 ys ζ)`, with the checked
-   `realMollifyLocal_localEOWChart_kernelPushforwardCLM` providing the
+   `realMollifyLocal_localEOWChart_kernelPushforwardCLM_pullback` providing the
    side-mollifier change of variables.  No step treats the chart kernel as an
    original-coordinate kernel without this pushforward/Jacobian transport.
    The two small chart-linear real-window helpers documented in the SCV

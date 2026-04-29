@@ -888,6 +888,21 @@ theorem realMollifyLocal_localEOWChart_kernelPushforwardCLM
   filter_upwards with u
   rw [localEOWChart_add_realEmbed]
 
+/-- Direct pulled-back side-function form of the chart-kernel pushforward
+identity.  This is the form consumed by the local product-kernel recovery,
+where the side functions live in Rudin chart coordinates. -/
+theorem realMollifyLocal_localEOWChart_kernelPushforwardCLM_pullback
+    (F : ComplexChartSpace m → ℂ)
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (φ : SchwartzMap (Fin m → ℝ) ℂ)
+    (w : ComplexChartSpace m) :
+    realMollifyLocal F (localEOWRealLinearKernelPushforwardCLM ys hli φ)
+        (localEOWChart x0 ys w) =
+      realMollifyLocal (fun ζ => F (localEOWChart x0 ys ζ)) φ w := by
+  rw [realMollifyLocal_localEOWChart_kernelPushforwardCLM]
+  rfl
+
 /-- Translating a chart-coordinate smoothing kernel before
 Jacobian-normalized pushforward is the same as translating the Rudin chart
 point in the opposite direction.  This is the side-branch identity used by
