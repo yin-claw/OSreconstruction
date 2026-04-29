@@ -271,6 +271,10 @@ theorem regularizedEnvelope_pointwiseRepresentation_of_localProductKernel
 theorem regularizedEnvelope_chartEnvelope_from_localProductKernel
 theorem regularizedEnvelope_chartEnvelope_from_localCovariantProductKernel
 lemma chartDistributionalEOW_local_envelope
+lemma chartDistributionalEOW_transport_originalCoords
+def StrictPositiveImagBall
+def StrictNegativeImagBall
+lemma localEOWFixedBasis_overlap_positiveSeed
 lemma distributionalEOW_extensions_compatible
 lemma localDistributionalEOW_patch_extensions
 theorem local_distributional_edge_of_the_wedge_envelope
@@ -454,8 +458,9 @@ Source ledger for the internal helper list:
 | `regularizedLocalEOW_productKernel_from_continuousEOW` | Retired as a one-shot target under its old global-covariance shape.  The local fixed-window family can supply linearity, value CLMs, and shifted-overlap covariance, but a local pairing extended by cutoff does not honestly give `ProductKernelRealTranslationCovariantGlobal K`.  For the pure-SCV local distributional EOW theorem, the route is now the local descent package: construct a localized mixed CLM, prove `ProductKernelRealTranslationCovariantLocal` under explicit support/margin hypotheses, descend locally to `Hdist`, and feed a local recovery consumer.  A genuinely global covariant `K` may still be sourced later from OS/Wightman translation-invariant data, but that is not the proof of the QFT-free SCV theorem. |
 | `regularizedEnvelope_deltaLimit_agreesOnWedges` | Approximate-identity recovery: once kernel recovery has produced a holomorphic `H`, compactly supported approximate identities show `H` agrees with the original plus/minus wedge functions on the shrunken wedge pieces. |
 | `local_continuous_edge_of_the_wedge_envelope` | Checked in `SCV/LocalContinuousEOWSideAgreement.lean`: local coordinate-ball continuous EOW extraction.  It packages the chart window, the Rudin envelope, holomorphy on `ball 0 (δ/2)`, agreement on the explicit strict positive/negative side balls, and real-boundary agreement on the coordinate real slice.  It intentionally does not claim agreement on arbitrary extra components of `Ωplus` or `Ωminus`. |
-| `chartDistributionalEOW_local_envelope` | Local distributional EOW envelope on one chart, obtained from the regularized-envelope family and delta-limit recovery. |
-| `distributionalEOW_extensions_compatible`, `localDistributionalEOW_patch_extensions` | Reuse the now-public `SCV.local_extensions_consistent` identity-theorem pattern and the global patching pattern in `edge_of_the_wedge_theorem`. |
+| `chartDistributionalEOW_local_envelope` | Local distributional EOW envelope on one fixed-basis coordinate chart, obtained from the regularized-envelope family and delta-limit recovery.  Its side identities are for `Fplus (localEOWChart x0 ys w)` and `Fminus (localEOWChart x0 ys w)` in coordinate variables. |
+| `chartDistributionalEOW_transport_originalCoords` | Transports the coordinate envelope through `localEOWComplexAffineEquiv x0 ys hli` to an original-coordinate local patch.  This is genuine affine holomorphy/open-map content, not a rename. |
+| `StrictPositiveImagBall`, `StrictNegativeImagBall`, `localEOWFixedBasis_overlap_positiveSeed`, `distributionalEOW_extensions_compatible`, `localDistributionalEOW_patch_extensions` | Reuse the now-public `SCV.local_extensions_consistent` identity-theorem pattern and the global patching pattern in `edge_of_the_wedge_theorem`, with the fixed-basis overlap seed described below.  The positive-seed lemma is the finite-dimensional geometry that makes patching honest: intersecting transported balls are convex and conjugation-invariant, hence meet the real slice, and the shared positive coordinate cone gives an open side seed. |
 
 Do not write this as "apply `SCV.edge_of_the_wedge_theorem`" without further
 work.  The checked theorem `SCV.edge_of_the_wedge_theorem` is stated for global
@@ -3337,29 +3342,184 @@ lemma regularizedEnvelope_deltaLimit_agreesOnWedges
     (∀ z ∈ Ucore ∩ DminusSmall, H z = Fminus z)
 
 lemma chartDistributionalEOW_local_envelope
-    {m : ℕ}
+    {m : ℕ} (hm : 0 < m)
     (Ωplus Ωminus : Set (Fin m -> ℂ))
     (E C : Set (Fin m -> ℝ))
+    (hE_open : IsOpen E)
+    (hC_conv : Convex ℝ C)
+    (hC_cone : ∀ (t : ℝ), 0 < t -> ∀ y ∈ C, t • y ∈ C)
+    (hlocal_wedge :
+      ∀ K : Set (Fin m -> ℝ), IsCompact K -> K ⊆ E ->
+        ∀ Kη : Set (Fin m -> ℝ), IsCompact Kη -> Kη ⊆ C ->
+          ∃ r : ℝ, 0 < r ∧
+            ∀ x ∈ K, ∀ η ∈ Kη, ∀ ε : ℝ, 0 < ε -> ε < r ->
+              (fun a => (x a : ℂ) +
+                (ε : ℂ) * (η a : ℂ) * Complex.I) ∈ Ωplus ∧
+              (fun a => (x a : ℂ) -
+                (ε : ℂ) * (η a : ℂ) * Complex.I) ∈ Ωminus)
+    (ys : Fin m -> Fin m -> ℝ)
+    (hys_mem : ∀ j, ys j ∈ C)
+    (hli : LinearIndependent ℝ ys)
     (x0 : Fin m -> ℝ) (hx0 : x0 ∈ E)
     (Fplus Fminus : (Fin m -> ℂ) -> ℂ)
     (T : SchwartzMap (Fin m -> ℝ) ℂ ->L[ℂ] ℂ)
-    -- exactly the `hlocal_wedge`, `hslow_plus`, `hslow_minus`,
-    -- `hplus_bv`, and `hminus_bv` hypotheses of
-    -- `SCV.local_distributional_edge_of_the_wedge_envelope`, specialized to
-    -- compact real boxes around `x0` and then transported by
-    -- `localEOWChart x0 ys`
+    -- plus the `hΩplus_open`, `hΩminus_open`, `hFplus`, `hFminus`,
+    -- `hslow_plus`, `hslow_minus`, `hplus_bv`, and `hminus_bv`
+    -- hypotheses of `SCV.local_distributional_edge_of_the_wedge_envelope`,
+    -- specialized to compact real boxes around `x0` and transported by the
+    -- fixed affine chart `localEOWChart x0 ys`
     :
-    ∃ (Ux0 Ux0plus Ux0minus : Set (Fin m -> ℂ))
-      (Hx0 : (Fin m -> ℂ) -> ℂ),
-      IsOpen Ux0 ∧
-      IsOpen Ux0plus ∧
-      IsOpen Ux0minus ∧
-      Ux0plus ⊆ Ux0 ∩ Ωplus ∧
-      Ux0minus ⊆ Ux0 ∩ Ωminus ∧
-      realEmbed x0 ∈ Ux0 ∧
-      DifferentiableOn ℂ Hx0 Ux0 ∧
-      (∀ z ∈ Ux0plus, Hx0 z = Fplus z) ∧
-      (∀ z ∈ Ux0minus, Hx0 z = Fminus z)
+    ∃ (ρ r δ : ℝ)
+      (Ucoord UplusCoord UminusCoord : Set (ComplexChartSpace m))
+      (Hcoord : ComplexChartSpace m -> ℂ),
+      0 < ρ ∧ 0 < r ∧ 0 < δ ∧
+      IsOpen Ucoord ∧
+      IsOpen UplusCoord ∧
+      IsOpen UminusCoord ∧
+      UplusCoord ⊆ Ucoord ∧
+      UminusCoord ⊆ Ucoord ∧
+      (∀ u ∈ Metric.closedBall (0 : Fin m -> ℝ) ρ,
+        localEOWRealChart x0 ys u ∈ E) ∧
+      realEmbed (0 : Fin m -> ℝ) ∈ Ucoord ∧
+      (∀ w ∈ UplusCoord, localEOWChart x0 ys w ∈ Ωplus) ∧
+      (∀ w ∈ UminusCoord, localEOWChart x0 ys w ∈ Ωminus) ∧
+      DifferentiableOn ℂ Hcoord Ucoord ∧
+      (∀ w ∈ UplusCoord,
+        Hcoord w = Fplus (localEOWChart x0 ys w)) ∧
+      (∀ w ∈ UminusCoord,
+        Hcoord w = Fminus (localEOWChart x0 ys w))
+
+lemma chartDistributionalEOW_transport_originalCoords
+    {m : ℕ}
+    (x0 : Fin m -> ℝ)
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (Ωplus Ωminus : Set (ComplexChartSpace m))
+    (Fplus Fminus : ComplexChartSpace m -> ℂ)
+    (Ucoord UplusCoord UminusCoord : Set (ComplexChartSpace m))
+    (Hcoord : ComplexChartSpace m -> ℂ)
+    (hU_open : IsOpen Ucoord)
+    (hUplus_open : IsOpen UplusCoord)
+    (hUminus_open : IsOpen UminusCoord)
+    (hUplus_sub : UplusCoord ⊆ Ucoord)
+    (hUminus_sub : UminusCoord ⊆ Ucoord)
+    (hzero_mem : realEmbed (0 : Fin m -> ℝ) ∈ Ucoord)
+    (hplus_mem : ∀ w ∈ UplusCoord, localEOWChart x0 ys w ∈ Ωplus)
+    (hminus_mem : ∀ w ∈ UminusCoord, localEOWChart x0 ys w ∈ Ωminus)
+    (hH_holo : DifferentiableOn ℂ Hcoord Ucoord)
+    (hH_plus :
+      ∀ w ∈ UplusCoord, Hcoord w = Fplus (localEOWChart x0 ys w))
+    (hH_minus :
+      ∀ w ∈ UminusCoord, Hcoord w = Fminus (localEOWChart x0 ys w)) :
+    ∃ (Uorig UplusOrig UminusOrig : Set (ComplexChartSpace m))
+      (Horig : ComplexChartSpace m -> ℂ),
+      IsOpen Uorig ∧
+      IsOpen UplusOrig ∧
+      IsOpen UminusOrig ∧
+      UplusOrig ⊆ Uorig ∩ Ωplus ∧
+      UminusOrig ⊆ Uorig ∩ Ωminus ∧
+      realEmbed x0 ∈ Uorig ∧
+      DifferentiableOn ℂ Horig Uorig ∧
+      (∀ z ∈ UplusOrig, Horig z = Fplus z) ∧
+      (∀ z ∈ UminusOrig, Horig z = Fminus z)
+
+def StrictPositiveImagBall {m : ℕ} (R : ℝ) : Set (ComplexChartSpace m) :=
+  Metric.ball (0 : ComplexChartSpace m) R ∩ {w | ∀ j, 0 < (w j).im}
+
+def StrictNegativeImagBall {m : ℕ} (R : ℝ) : Set (ComplexChartSpace m) :=
+  Metric.ball (0 : ComplexChartSpace m) R ∩ {w | ∀ j, (w j).im < 0}
+
+lemma localEOWFixedBasis_overlap_positiveSeed
+    {m : ℕ}
+    (x₁ x₂ : Fin m -> ℝ)
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    {R₁ R₂ : ℝ} (hR₁ : 0 < R₁) (hR₂ : 0 < R₂)
+    (hoverlap :
+      ((localEOWComplexAffineEquiv x₁ ys hli) ''
+          Metric.ball (0 : ComplexChartSpace m) R₁ ∩
+        (localEOWComplexAffineEquiv x₂ ys hli) ''
+          Metric.ball (0 : ComplexChartSpace m) R₂).Nonempty) :
+    (((localEOWComplexAffineEquiv x₁ ys hli) ''
+          StrictPositiveImagBall R₁) ∩
+       ((localEOWComplexAffineEquiv x₂ ys hli) ''
+          StrictPositiveImagBall R₂)).Nonempty
+
+lemma distributionalEOW_extensions_compatible
+    {m : ℕ}
+    (x₁ x₂ : Fin m -> ℝ)
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    {R₁ R₂ : ℝ} (hR₁ : 0 < R₁) (hR₂ : 0 < R₂)
+    (Fplus : ComplexChartSpace m -> ℂ)
+    (H₁ H₂ : ComplexChartSpace m -> ℂ)
+    (hH₁_holo :
+      DifferentiableOn ℂ H₁
+        ((localEOWComplexAffineEquiv x₁ ys hli) ''
+          Metric.ball (0 : ComplexChartSpace m) R₁))
+    (hH₂_holo :
+      DifferentiableOn ℂ H₂
+        ((localEOWComplexAffineEquiv x₂ ys hli) ''
+          Metric.ball (0 : ComplexChartSpace m) R₂))
+    (hH₁_plus :
+      ∀ z ∈ (localEOWComplexAffineEquiv x₁ ys hli) ''
+          StrictPositiveImagBall R₁, H₁ z = Fplus z)
+    (hH₂_plus :
+      ∀ z ∈ (localEOWComplexAffineEquiv x₂ ys hli) ''
+          StrictPositiveImagBall R₂, H₂ z = Fplus z) :
+    ∀ z ∈
+      ((localEOWComplexAffineEquiv x₁ ys hli) ''
+          Metric.ball (0 : ComplexChartSpace m) R₁ ∩
+        (localEOWComplexAffineEquiv x₂ ys hli) ''
+          Metric.ball (0 : ComplexChartSpace m) R₂),
+      H₁ z = H₂ z
+
+lemma localDistributionalEOW_patch_extensions
+    {m : ℕ}
+    (ι : Type*)
+    (E : Set (Fin m -> ℝ))
+    (Uloc UplusLoc UminusLoc : ι -> Set (ComplexChartSpace m))
+    (Hloc : ι -> ComplexChartSpace m -> ℂ)
+    (Ωplus Ωminus : Set (ComplexChartSpace m))
+    (Fplus Fminus : ComplexChartSpace m -> ℂ)
+    (hU_open : ∀ i, IsOpen (Uloc i))
+    (hUplus_open : ∀ i, IsOpen (UplusLoc i))
+    (hUminus_open : ∀ i, IsOpen (UminusLoc i))
+    (hUplus_sub : ∀ i, UplusLoc i ⊆ Uloc i)
+    (hUminus_sub : ∀ i, UminusLoc i ⊆ Uloc i)
+    (hUplus_ambient : ∀ i, UplusLoc i ⊆ Ωplus)
+    (hUminus_ambient : ∀ i, UminusLoc i ⊆ Ωminus)
+    (hH_holo : ∀ i, DifferentiableOn ℂ (Hloc i) (Uloc i))
+    (hH_plus : ∀ i z, z ∈ UplusLoc i -> Hloc i z = Fplus z)
+    (hH_minus : ∀ i z, z ∈ UminusLoc i -> Hloc i z = Fminus z)
+    (hcompat :
+      ∀ i j z, z ∈ Uloc i -> z ∈ Uloc j -> Hloc i z = Hloc j z)
+    (hcover_real : ∀ x ∈ E, ∃ i, realEmbed x ∈ Uloc i)
+    (hseed :
+      ∀ i z, z ∈ Uloc i ->
+        ∃ V : Set (ComplexChartSpace m),
+          IsOpen V ∧ IsPreconnected V ∧ z ∈ V ∧ V ⊆ Uloc i ∧
+            ((V ∩ UplusLoc i).Nonempty ∨ (V ∩ UminusLoc i).Nonempty)) :
+    ∃ (U Uplus Uminus : Set (ComplexChartSpace m))
+      (H : ComplexChartSpace m -> ℂ),
+      IsOpen U ∧
+      IsOpen Uplus ∧
+      IsOpen Uminus ∧
+      Uplus ⊆ U ∩ Ωplus ∧
+      Uminus ⊆ U ∩ Ωminus ∧
+      (∀ x ∈ E, realEmbed x ∈ U) ∧
+      (∀ i, Uloc i ⊆ U) ∧
+      DifferentiableOn ℂ H U ∧
+      (∀ z ∈ Uplus, H z = Fplus z) ∧
+      (∀ z ∈ Uminus, H z = Fminus z) ∧
+      (∀ z ∈ U, ∃ V : Set (ComplexChartSpace m),
+        IsOpen V ∧ IsPreconnected V ∧ z ∈ V ∧ V ⊆ U ∧
+          ((V ∩ Uplus).Nonempty ∨ (V ∩ Uminus).Nonempty)) ∧
+      (∀ G : ComplexChartSpace m -> ℂ,
+        DifferentiableOn ℂ G U ->
+        (∀ z ∈ Uplus, G z = Fplus z) ->
+        (∀ z ∈ Uminus, G z = Fminus z) ->
+          ∀ z ∈ U, G z = H z)
 ```
 
 The displayed `regularizedEnvelope_deltaLimit_agreesOnWedges` surface must not

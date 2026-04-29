@@ -1013,6 +1013,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
      kernel pushforward fixes the mollifier variables; it does not by itself
      prove that `z ↦ Hcoord (A.symm z)` is holomorphic on an open original
      chart image.
+   * Patching must go through the named fixed-basis overlap package:
+     `SCV.localEOWFixedBasis_overlap_positiveSeed`,
+     `SCV.distributionalEOW_extensions_compatible`, and
+     `SCV.localDistributionalEOW_patch_extensions`.  The patch theorem is also
+     where the final real-edge cover, side-window component seed, and
+     uniqueness clause are assembled.
 
    Proof transcript for the SCV theorem:
 
