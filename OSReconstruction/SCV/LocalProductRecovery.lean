@@ -222,4 +222,111 @@ theorem regularizedEnvelope_chartEnvelope_from_localProductKernel
       hG_plus hG_minus happrox_plus happrox_minus hkernel_limit
   exact ⟨H, hH_holo, hRep, hplus, hminus⟩
 
+/-- Local covariant product-kernel recovery.  This assembles local product-test
+descent, the localized `∂bar` annihilation theorem, distributional
+holomorphy, and the checked local chart-envelope recovery theorem. -/
+theorem regularizedEnvelope_chartEnvelope_from_localCovariantProductKernel
+    {m : ℕ} {r rη : ℝ}
+    (hm : 0 < m)
+    (K : SchwartzMap (ComplexChartSpace m × (Fin m → ℝ)) ℂ →L[ℂ] ℂ)
+    (Gchart : SchwartzMap (Fin m → ℝ) ℂ → ComplexChartSpace m → ℂ)
+    (Ucore Udesc Ucov U0 DplusSmall DminusSmall :
+      Set (ComplexChartSpace m))
+    (Fplus Fminus : ComplexChartSpace m → ℂ)
+    (ψn : ℕ → SchwartzMap (Fin m → ℝ) ℂ)
+    (hUcore_open : IsOpen Ucore)
+    (hUdesc_open : IsOpen Udesc)
+    (hcore_desc : Ucore ⊆ Udesc)
+    (hdesc_cov : Udesc ⊆ Ucov)
+    (hcov_window : Ucov ⊆ U0)
+    (hmargin_core :
+      ∀ z ∈ Ucore, ∀ t : Fin m → ℝ, ‖t‖ ≤ r →
+        z + realEmbed t ∈ Udesc)
+    (hr_nonneg : 0 ≤ r)
+    (hrη_nonneg : 0 ≤ rη)
+    (η : SchwartzMap (Fin m → ℝ) ℂ)
+    (hη_norm : ∫ t : Fin m → ℝ, η t = 1)
+    (hη_support : KernelSupportWithin η rη)
+    (hmargin_desc_cov :
+      ∀ z ∈ Udesc, ∀ t : Fin m → ℝ, ‖t‖ ≤ r + rη →
+        z + realEmbed t ∈ Ucov)
+    (hcov : ProductKernelRealTranslationCovariantLocal K Ucov (r + rη))
+    (hG_holo : ∀ ψ, KernelSupportWithin ψ r →
+      DifferentiableOn ℂ (Gchart ψ) U0)
+    (hK_rep :
+      ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+        (ψ : SchwartzMap (Fin m → ℝ) ℂ),
+        SupportsInOpen (φ : ComplexChartSpace m → ℂ) Ucov →
+        KernelSupportWithin ψ r →
+          K (schwartzTensorProduct₂ φ ψ) =
+            ∫ z : ComplexChartSpace m, Gchart ψ z * φ z)
+    (hψ_nonneg : ∀ n t, 0 ≤ (ψn n t).re)
+    (hψ_real : ∀ n t, (ψn n t).im = 0)
+    (hψ_norm : ∀ n, ∫ t : Fin m → ℝ, ψn n t = 1)
+    (hψ_support_shrink :
+      ∀ n, KernelSupportWithin (ψn n) (1 / (n + 1 : ℝ)))
+    (hψ_support_r : ∀ n, KernelSupportWithin (ψn n) r)
+    (hψ_approx :
+      ∀ θ : SchwartzMap (ComplexChartSpace m) ℂ,
+        Tendsto
+          (fun n => realConvolutionTest θ (ψn n))
+          atTop
+          (nhds θ))
+    (hG_plus :
+      ∀ᶠ n in atTop, ∀ z ∈ Ucore ∩ DplusSmall,
+        Gchart (ψn n) z = realMollifyLocal Fplus (ψn n) z)
+    (hG_minus :
+      ∀ᶠ n in atTop, ∀ z ∈ Ucore ∩ DminusSmall,
+        Gchart (ψn n) z = realMollifyLocal Fminus (ψn n) z)
+    (happrox_plus :
+      ∀ z ∈ Ucore ∩ DplusSmall,
+        Tendsto (fun n => realMollifyLocal Fplus (ψn n) z)
+          atTop (nhds (Fplus z)))
+    (happrox_minus :
+      ∀ z ∈ Ucore ∩ DminusSmall,
+        Tendsto (fun n => realMollifyLocal Fminus (ψn n) z)
+          atTop (nhds (Fminus z))) :
+    ∃ H : ComplexChartSpace m → ℂ,
+      DifferentiableOn ℂ H Udesc ∧
+      ∃ Hdist : SchwartzMap (ComplexChartSpace m) ℂ →L[ℂ] ℂ,
+        RepresentsDistributionOnComplexDomain Hdist H Udesc ∧
+        (∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+          (ψ : SchwartzMap (Fin m → ℝ) ℂ),
+          SupportsInOpen (φ : ComplexChartSpace m → ℂ) Udesc →
+          KernelSupportWithin ψ r →
+            K (schwartzTensorProduct₂ φ ψ) =
+              Hdist (realConvolutionTest φ ψ)) ∧
+        (∀ z ∈ Ucore ∩ DplusSmall, H z = Fplus z) ∧
+        (∀ z ∈ Ucore ∩ DminusSmall, H z = Fminus z) := by
+  obtain ⟨Hdist, hdesc_local⟩ :=
+    translationCovariantProductKernel_descends_local
+      K Udesc Ucov r rη hr_nonneg hrη_nonneg η hη_norm hη_support
+      hmargin_desc_cov hcov
+  have hK_dbar_zero :
+      ∀ (j : Fin m) (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+        (ψ : SchwartzMap (Fin m → ℝ) ℂ),
+        SupportsInOpen (φ : ComplexChartSpace m → ℂ) Udesc →
+        KernelSupportWithin ψ r →
+          K (schwartzTensorProduct₂ (dbarSchwartzCLM j φ) ψ) = 0 := by
+    intro j φ ψ hφ hψ
+    exact
+      regularizedEnvelope_productKernel_dbar_eq_zero_local
+        K Gchart Udesc Ucov U0 hUdesc_open hdesc_cov hcov_window
+        hG_holo hK_rep j φ hφ ψ hψ
+  have hCR : IsDistributionalHolomorphicOn Hdist Udesc :=
+    translationCovariantKernel_distributionalHolomorphic_local
+      (Hdist := Hdist) (K := K) (Udesc := Udesc) (ψι := ψn)
+      (hψ_support := Filter.Eventually.of_forall hψ_support_r)
+      (hψ_approx := hψ_approx)
+      (hdesc_local := hdesc_local)
+      (hK_dbar_zero := hK_dbar_zero)
+  obtain ⟨H, hH_holo, hRep, hplus, hminus⟩ :=
+    regularizedEnvelope_chartEnvelope_from_localProductKernel
+      hm K Gchart Ucore Udesc Ucov U0 DplusSmall DminusSmall
+      Fplus Fminus ψn hUcore_open hUdesc_open hcore_desc hdesc_cov
+      hcov_window hmargin_core hG_holo hK_rep Hdist hdesc_local hCR
+      hψ_nonneg hψ_real hψ_norm hψ_support_shrink hψ_support_r
+      hG_plus hG_minus happrox_plus happrox_minus
+  exact ⟨H, hH_holo, Hdist, hRep, hdesc_local, hplus, hminus⟩
+
 end SCV

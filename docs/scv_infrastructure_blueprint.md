@@ -7499,6 +7499,143 @@ Proof transcript for the next target:
    holomorphy domain `Udesc` explicit, and uses `Ucore` only for the final
    pointwise and wedge-agreement conclusions.
 
+   The next local assembly removes `hCR` as an input by proving it from local
+   product-test descent and the localized product-kernel `∂bar` theorem.  This
+   is still below the final `local_distributional_edge_of_the_wedge_envelope`:
+   the upstream fixed-window construction must supply `K`, `Gchart`,
+   `hK_rep`, local covariance, and the side-limit hypotheses.
+
+   ```lean
+   theorem regularizedEnvelope_chartEnvelope_from_localCovariantProductKernel
+       {r rη : ℝ}
+       (hm : 0 < m)
+       (K : SchwartzMap (ComplexChartSpace m × (Fin m -> ℝ)) ℂ ->L[ℂ] ℂ)
+       (Gchart : SchwartzMap (Fin m -> ℝ) ℂ -> ComplexChartSpace m -> ℂ)
+       (Ucore Udesc Ucov U0 DplusSmall DminusSmall :
+         Set (ComplexChartSpace m))
+       (Fplus Fminus : ComplexChartSpace m -> ℂ)
+       (ψn : ℕ -> SchwartzMap (Fin m -> ℝ) ℂ)
+       (hUcore_open : IsOpen Ucore)
+       (hUdesc_open : IsOpen Udesc)
+       (hcore_desc : Ucore ⊆ Udesc)
+       (hdesc_cov : Udesc ⊆ Ucov)
+       (hcov_window : Ucov ⊆ U0)
+       (hmargin_core :
+         ∀ z ∈ Ucore, ∀ t : Fin m -> ℝ, ‖t‖ ≤ r ->
+           z + realEmbed t ∈ Udesc)
+       (hr_nonneg : 0 ≤ r)
+       (hrη_nonneg : 0 ≤ rη)
+       (η : SchwartzMap (Fin m -> ℝ) ℂ)
+       (hη_norm : ∫ t : Fin m -> ℝ, η t = 1)
+       (hη_support : KernelSupportWithin η rη)
+       (hmargin_desc_cov :
+         ∀ z ∈ Udesc, ∀ t : Fin m -> ℝ, ‖t‖ ≤ r + rη ->
+           z + realEmbed t ∈ Ucov)
+       (hcov : ProductKernelRealTranslationCovariantLocal K Ucov (r + rη))
+       (hG_holo : ∀ ψ, KernelSupportWithin ψ r ->
+         DifferentiableOn ℂ (Gchart ψ) U0)
+       (hK_rep :
+         ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+           (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+           SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Ucov ->
+           KernelSupportWithin ψ r ->
+             K (schwartzTensorProduct₂ φ ψ) =
+               ∫ z : ComplexChartSpace m, Gchart ψ z * φ z)
+       (hψ_nonneg : ∀ n t, 0 ≤ (ψn n t).re)
+       (hψ_real : ∀ n t, (ψn n t).im = 0)
+       (hψ_norm : ∀ n, ∫ t : Fin m -> ℝ, ψn n t = 1)
+       (hψ_support_shrink :
+         ∀ n, KernelSupportWithin (ψn n) (1 / (n + 1 : ℝ)))
+       (hψ_support_r : ∀ n, KernelSupportWithin (ψn n) r)
+       (hψ_approx :
+         ∀ θ : SchwartzMap (ComplexChartSpace m) ℂ,
+           Tendsto (fun n => realConvolutionTest θ (ψn n))
+             atTop (nhds θ))
+       (hG_plus :
+         ∀ᶠ n in atTop, ∀ z ∈ Ucore ∩ DplusSmall,
+           Gchart (ψn n) z = realMollifyLocal Fplus (ψn n) z)
+       (hG_minus :
+         ∀ᶠ n in atTop, ∀ z ∈ Ucore ∩ DminusSmall,
+           Gchart (ψn n) z = realMollifyLocal Fminus (ψn n) z)
+       (happrox_plus :
+         ∀ z ∈ Ucore ∩ DplusSmall,
+           Tendsto (fun n => realMollifyLocal Fplus (ψn n) z)
+             atTop (nhds (Fplus z)))
+       (happrox_minus :
+         ∀ z ∈ Ucore ∩ DminusSmall,
+           Tendsto (fun n => realMollifyLocal Fminus (ψn n) z)
+             atTop (nhds (Fminus z))) :
+       ∃ H : ComplexChartSpace m -> ℂ,
+         DifferentiableOn ℂ H Udesc ∧
+         ∃ Hdist : SchwartzMap (ComplexChartSpace m) ℂ ->L[ℂ] ℂ,
+           RepresentsDistributionOnComplexDomain Hdist H Udesc ∧
+           (∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+             (ψ : SchwartzMap (Fin m -> ℝ) ℂ),
+             SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Udesc ->
+             KernelSupportWithin ψ r ->
+               K (schwartzTensorProduct₂ φ ψ) =
+                 Hdist (realConvolutionTest φ ψ)) ∧
+           (∀ z ∈ Ucore ∩ DplusSmall, H z = Fplus z) ∧
+           (∀ z ∈ Ucore ∩ DminusSmall, H z = Fminus z)
+   ```
+   Status: checked in `OSReconstruction/SCV/LocalProductRecovery.lean`.
+
+   Proof transcript:
+
+   1. Apply `translationCovariantProductKernel_descends_local` with
+      `η`, `hη_norm`, `hη_support`, `hmargin_desc_cov`, and local covariance
+      on radius `r + rη`.  This constructs the actual descended distribution
+      `Hdist` and the local product-test descent identity on `Udesc`.
+   2. Prove the product-kernel `∂bar` vanishing on `Udesc` by calling
+      `regularizedEnvelope_productKernel_dbar_eq_zero_local`; it uses
+      `hK_rep` only after enlarging the `dbarSchwartzCLM` test support from
+      `Udesc` to `Ucov`, and restricts `hG_holo` through
+      `Udesc ⊆ Ucov ⊆ U0`.
+   3. Apply `translationCovariantKernel_distributionalHolomorphic_local` with
+      `ψι := ψn`, support supplied by
+      `Filter.Eventually.of_forall hψ_support_r`, convergence supplied by
+      `hψ_approx`, the local descent identity from Step 1, and the `∂bar`
+      zero theorem from Step 2.  This proves
+      `hCR : IsDistributionalHolomorphicOn Hdist Udesc`.
+   4. Call the checked
+      `regularizedEnvelope_chartEnvelope_from_localProductKernel` with this
+      `Hdist`, local descent, and `hCR`.  Return `H`, `Hdist`, the
+      representation identity, local descent identity, and the two side
+      agreements.  No global product-kernel covariance or arbitrary-test
+      quotient enters this theorem.
+
+   Lean extraction is the following straight-line script:
+   ```lean
+   obtain ⟨Hdist, hdesc_local⟩ :=
+     translationCovariantProductKernel_descends_local
+       K Udesc Ucov r rη hr_nonneg hrη_nonneg η hη_norm hη_support
+       hmargin_desc_cov hcov
+   have hK_dbar_zero :
+       ∀ j φ ψ,
+         SupportsInOpen (φ : ComplexChartSpace m -> ℂ) Udesc ->
+         KernelSupportWithin ψ r ->
+           K (schwartzTensorProduct₂ (dbarSchwartzCLM j φ) ψ) = 0 := by
+     intro j φ ψ hφ hψ
+     exact regularizedEnvelope_productKernel_dbar_eq_zero_local
+       K Gchart Udesc Ucov U0 hUdesc_open hdesc_cov hcov_window
+       hG_holo hK_rep j φ hφ ψ hψ
+   have hCR : IsDistributionalHolomorphicOn Hdist Udesc :=
+     translationCovariantKernel_distributionalHolomorphic_local
+       (Hdist := Hdist) (K := K) (Udesc := Udesc) (ψι := ψn)
+       (hψ_support := Filter.Eventually.of_forall hψ_support_r)
+       (hψ_approx := hψ_approx)
+       (hdesc_local := hdesc_local)
+       (hK_dbar_zero := hK_dbar_zero)
+   obtain ⟨H, hH_holo, hRep, hplus, hminus⟩ :=
+     regularizedEnvelope_chartEnvelope_from_localProductKernel
+       hm K Gchart Ucore Udesc Ucov U0 DplusSmall DminusSmall
+       Fplus Fminus ψn hUcore_open hUdesc_open hcore_desc hdesc_cov
+       hcov_window hmargin_core hG_holo hK_rep Hdist hdesc_local hCR
+       hψ_nonneg hψ_real hψ_norm hψ_support_shrink hψ_support_r
+       hG_plus hG_minus happrox_plus happrox_minus
+   exact ⟨H, hH_holo, Hdist, hRep, hdesc_local, hplus, hminus⟩
+   ```
+
    Lean extraction order for the local package:
 
    1. `exists_complexChart_schwartz_cutoff_eq_one_on_closedBall`: checked; the
@@ -7702,11 +7839,11 @@ Proof transcript for the next target:
        `localDescentParamTestRight`, and
        `localDescentParamTestRight_apply`.
 
-       Next local descent infrastructure:
-       `SupportsInOpen.complexTranslateSchwartz_of_image_subset` (checked in
-       `SCV/DistributionalEOWSupport.lean`), and
-       `shearedProductKernelFunctional_localQuotient_of_productCovariant`:
-       local product-test descent infrastructure.  The quotient theorem is the
+       Local descent infrastructure:
+       `SupportsInOpen.complexTranslateSchwartz_of_image_subset` is checked in
+       `SCV/DistributionalEOWSupport.lean`, and
+       `shearedProductKernelFunctional_localQuotient_of_productCovariant` is
+       checked in `SCV/LocalProductDescentIntegrals.lean`.  The quotient theorem is the
        scalarized/local fiber-integral replacement for the invalid
        `SchwartzMap`-valued averaging route; it replays the checked
        real-fiber integral estimates on the mixed base, proves scalarization
@@ -7730,6 +7867,10 @@ Proof transcript for the next target:
        then `regularizedEnvelope_chartEnvelope_from_localProductKernel`: reuse
        the checked pointwise representation and delta-limit proof with
        `Ucore ⊂ Udesc`.
+   12. `regularizedEnvelope_chartEnvelope_from_localCovariantProductKernel`:
+       checked in `SCV/LocalProductRecovery.lean`; constructs `Hdist` by local
+       descent, proves local `∂bar` zero and distributional holomorphy, and
+       calls the checked local chart-envelope recovery theorem.
 
 Checked endpoint for the pointwise-representation bridge:
 

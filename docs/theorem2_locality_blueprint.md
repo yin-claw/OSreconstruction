@@ -2162,7 +2162,10 @@ Current implementation order:
    `SCV.regularizedEnvelope_chartEnvelope_from_localProductKernel`,
    `SCV.regularizedEnvelope_productKernel_dbar_eq_zero_local`, and
    `SCV.translationCovariantKernel_distributionalHolomorphic_local`.
-   The remaining pure-SCV declaration on this route is now
+   The local covariant product-kernel assembly
+   `SCV.regularizedEnvelope_chartEnvelope_from_localCovariantProductKernel` is
+   now checked in `SCV/LocalProductRecovery.lean`.  The remaining pure-SCV
+   declaration is
    `SCV.local_distributional_edge_of_the_wedge_envelope`.  The retired
    `SCV.regularizedLocalEOW_productKernel_from_continuousEOW` name may only be
    reused later as an assembly wrapper around those local theorems, not as a
@@ -2558,9 +2561,10 @@ Current implementation order:
    `BHW.wickRotate_ordered_mem_acrOne`,
    `BHW.adjacent_wick_traces_mem_acrOne`, and
    `BHW.os45CommonChart_real_mem_pulledRealBranchDomain_pair` are now checked.
-   The next theorem surface to formalize is the pure-SCV local distributional
-   EOW envelope theorem
-   `SCV.local_distributional_edge_of_the_wedge_envelope`; after that, prove
+   The local covariant product-kernel assembly
+   `SCV.regularizedEnvelope_chartEnvelope_from_localCovariantProductKernel` is
+   checked; next formalize the local distributional EOW envelope theorem
+   `SCV.local_distributional_edge_of_the_wedge_envelope`, then prove
    the OS45 instantiation
    `BHW.os45_adjacent_commonBoundaryEnvelope` and package its output as
    `AdjacentOSEOWDifferenceEnvelope` while exporting the same patch `V` for
