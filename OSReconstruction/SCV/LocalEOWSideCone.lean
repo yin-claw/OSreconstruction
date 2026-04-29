@@ -265,11 +265,14 @@ theorem localEOW_basisSideCone_rawBoundaryValue
             (fun _ : Fin m → ℝ => Traw φ)
             (nhdsWithin 0 (Set.Ioi 0))
             Kη) :
-    ∃ Cplus Cminus : Set (Fin m → ℝ),
+    ∃ ε : ℝ, ∃ Cplus Cminus : Set (Fin m → ℝ),
+      0 < ε ∧
+      Cplus = localEOWSideCone ys ε ∧
+      Cminus = Neg.neg '' Cplus ∧
+      localEOWSideDirectionClosure ys ε ⊆ C ∩ {η | η ≠ 0} ∧
       IsOpen Cplus ∧ IsOpen Cminus ∧
       localEOWSimplexDirections ys ⊆ Cplus ∧
       Cplus ⊆ C ∧
-      Cminus = Neg.neg '' Cplus ∧
       (∀ v, (∀ j, 0 ≤ v j) → 0 < ∑ j, v j →
         localEOWRealLinearPart ys v ∈ Cplus) ∧
       (∀ φ : SchwartzMap (Fin m → ℝ) ℂ,
@@ -318,8 +321,8 @@ theorem localEOW_basisSideCone_rawBoundaryValue
     dsimp [Cplus]
     exact localEOWRealLinearPart_mem_localEOWSideCone ys hε
       hv_nonneg hv_sum_pos
-  refine ⟨Cplus, Cminus, hCplus_open, hCminus_open, hsimplex_Cplus,
-    hCplus_C, rfl, himag_mem, ?_, ?_⟩
+  refine ⟨ε, Cplus, Cminus, hε, rfl, rfl, hεsub, hCplus_open,
+    hCminus_open, hsimplex_Cplus, hCplus_C, himag_mem, ?_, ?_⟩
   · intro φ hφ_compact hφ_support
     let Kcl : Set (Fin m → ℝ) := localEOWSideDirectionClosure ys ε
     let sideScalar : (Fin m → ℝ) → ℝ := fun y =>
@@ -568,5 +571,174 @@ theorem localEOW_basisSideCone_rawBoundaryValue
       ext i
       simp
     exact hminus_comp_minus.congr' hminus_eq_minus
+
+/-- Truncate the explicit local EOW side cones by a small ball so that a fixed
+compactly supported cutoff has honest one-sided holomorphy margins. -/
+theorem exists_localEOW_truncatedSideCones_for_sliceMargin
+    (E C : Set (Fin m → ℝ))
+    (Ωplus Ωminus : Set (ComplexChartSpace m))
+    (hlocal_wedge :
+      ∀ K : Set (Fin m → ℝ), IsCompact K → K ⊆ E →
+        ∀ Kη : Set (Fin m → ℝ), IsCompact Kη → Kη ⊆ C →
+          ∃ r : ℝ, 0 < r ∧
+            ∀ x ∈ K, ∀ η ∈ Kη, ∀ ε : ℝ, 0 < ε → ε < r →
+              (fun a => (x a : ℂ) +
+                (ε : ℂ) * (η a : ℂ) * Complex.I) ∈ Ωplus ∧
+              (fun a => (x a : ℂ) -
+                (ε : ℂ) * (η a : ℂ) * Complex.I) ∈ Ωminus)
+    (ys : Fin m → Fin m → ℝ)
+    {ε : ℝ}
+    (hε : 0 < ε)
+    (hclosure :
+      localEOWSideDirectionClosure ys ε ⊆ C ∩ {η | η ≠ 0})
+    (χ : SchwartzMap (Fin m → ℝ) ℂ)
+    (hχ_compact : HasCompactSupport (χ : (Fin m → ℝ) → ℂ))
+    (hχ_E : tsupport (χ : (Fin m → ℝ) → ℂ) ⊆ E) :
+    ∃ rside : ℝ, ∃ CplusLoc CminusLoc : Set (Fin m → ℝ),
+      0 < rside ∧
+      CplusLoc = localEOWSideCone ys ε ∩ Metric.ball 0 rside ∧
+      CminusLoc = Neg.neg '' CplusLoc ∧
+      IsOpen CplusLoc ∧ IsOpen CminusLoc ∧
+      CplusLoc ⊆ localEOWSideCone ys ε ∧
+      CminusLoc ⊆ Neg.neg '' localEOWSideCone ys ε ∧
+      (∀ y ∈ CplusLoc, ∀ x ∈ tsupport (χ : (Fin m → ℝ) → ℂ),
+        (fun i => (x i : ℂ) + ((y i : ℝ) : ℂ) * Complex.I) ∈ Ωplus) ∧
+      (∀ y ∈ CminusLoc, ∀ x ∈ tsupport (χ : (Fin m → ℝ) → ℂ),
+        (fun i => (x i : ℂ) + ((y i : ℝ) : ℂ) * Complex.I) ∈ Ωminus) := by
+  classical
+  let K : Set (Fin m → ℝ) := tsupport (χ : (Fin m → ℝ) → ℂ)
+  let Kη : Set (Fin m → ℝ) := localEOWSideDirectionClosure ys ε
+  have hK_compact : IsCompact K := by
+    simpa [K, HasCompactSupport] using hχ_compact
+  have hK_E : K ⊆ E := by
+    simpa [K] using hχ_E
+  have hKη_compact : IsCompact Kη := by
+    simpa [Kη] using isCompact_localEOWSideDirectionClosure ys ε
+  have hKη_C : Kη ⊆ C := by
+    intro η hη
+    exact (hclosure (by simpa [Kη] using hη)).1
+  obtain ⟨rwedge, hrwedge_pos, hwedge⟩ :=
+    hlocal_wedge K hK_compact hK_E Kη hKη_compact hKη_C
+  have hclosure_nonzero :
+      localEOWSideDirectionClosure ys ε ⊆ {η | η ≠ 0} := by
+    intro η hη
+    exact (hclosure hη).2
+  obtain ⟨c, hc_pos, hc_le⟩ :=
+    localEOWSideCone_direction_norm_bound ys ε hclosure_nonzero
+  let rside : ℝ := rwedge * c / 2
+  let CplusLoc : Set (Fin m → ℝ) :=
+    localEOWSideCone ys ε ∩ Metric.ball (0 : Fin m → ℝ) rside
+  let CminusLoc : Set (Fin m → ℝ) := Neg.neg '' CplusLoc
+  have hrside_pos : 0 < rside := by
+    dsimp [rside]
+    nlinarith [hrwedge_pos, hc_pos]
+  have hCplusLoc_open : IsOpen CplusLoc := by
+    dsimp [CplusLoc]
+    exact (isOpen_localEOWSideCone ys ε).inter isOpen_ball
+  have hCminusLoc_open : IsOpen CminusLoc := by
+    dsimp [CminusLoc]
+    exact isOpen_neg_image CplusLoc hCplusLoc_open
+  have hCplusLoc_sub : CplusLoc ⊆ localEOWSideCone ys ε := by
+    intro y hy
+    exact hy.1
+  have hCminusLoc_sub : CminusLoc ⊆ Neg.neg '' localEOWSideCone ys ε := by
+    rintro y ⟨yp, hyp, rfl⟩
+    exact ⟨yp, hyp.1, rfl⟩
+  have hplus_margin :
+      ∀ y ∈ CplusLoc, ∀ x ∈ tsupport (χ : (Fin m → ℝ) → ℂ),
+        (fun i => (x i : ℂ) + ((y i : ℝ) : ℂ) * Complex.I) ∈ Ωplus := by
+    intro y hy x hx
+    rcases hy.1 with ⟨s, hs, η, hη_window, hy_eq⟩
+    have hη_closure :
+        η ∈ localEOWSideDirectionClosure ys ε :=
+      localEOWSideDirectionWindow_subset_closure ys hε hη_window
+    have hs_lt : s < rwedge := by
+      have hy_norm : ‖y‖ < rside := by
+        simpa [CplusLoc, Metric.mem_ball, dist_eq_norm] using hy.2
+      have hy_norm_big : ‖y‖ < rwedge * c := by
+        dsimp [rside] at hy_norm
+        nlinarith [hy_norm, hrwedge_pos, hc_pos]
+      have hs_le : s ≤ ‖y‖ / c :=
+        localEOWSideCone_scalar_le_norm_div hc_pos hs
+          (hc_le η hη_closure) hy_eq
+      have hdiv_lt : ‖y‖ / c < rwedge :=
+        (div_lt_iff₀ hc_pos).2 (by simpa [mul_comm] using hy_norm_big)
+      exact lt_of_le_of_lt hs_le hdiv_lt
+    have hside := (hwedge x (by simpa [K] using hx) η
+      (by simpa [Kη] using hη_closure) s hs hs_lt).1
+    have hpoint :
+        (fun i => (x i : ℂ) + ((y i : ℝ) : ℂ) * Complex.I) =
+          (fun i => (x i : ℂ) +
+            (s : ℂ) * (η i : ℂ) * Complex.I) := by
+      ext i
+      have hyi : y i = s * η i := by
+        simpa [Pi.smul_apply] using congrFun hy_eq i
+      simp [hyi, mul_assoc]
+    simpa [hpoint] using hside
+  have hminus_margin :
+      ∀ y ∈ CminusLoc, ∀ x ∈ tsupport (χ : (Fin m → ℝ) → ℂ),
+        (fun i => (x i : ℂ) + ((y i : ℝ) : ℂ) * Complex.I) ∈ Ωminus := by
+    rintro y ⟨yp, hyp, rfl⟩ x hx
+    rcases hyp.1 with ⟨s, hs, η, hη_window, hyp_eq⟩
+    have hη_closure :
+        η ∈ localEOWSideDirectionClosure ys ε :=
+      localEOWSideDirectionWindow_subset_closure ys hε hη_window
+    have hs_lt : s < rwedge := by
+      have hyp_norm : ‖yp‖ < rside := by
+        simpa [CplusLoc, Metric.mem_ball, dist_eq_norm] using hyp.2
+      have hyp_norm_big : ‖yp‖ < rwedge * c := by
+        dsimp [rside] at hyp_norm
+        nlinarith [hyp_norm, hrwedge_pos, hc_pos]
+      have hs_le : s ≤ ‖yp‖ / c :=
+        localEOWSideCone_scalar_le_norm_div hc_pos hs
+          (hc_le η hη_closure) hyp_eq
+      have hdiv_lt : ‖yp‖ / c < rwedge :=
+        (div_lt_iff₀ hc_pos).2 (by simpa [mul_comm] using hyp_norm_big)
+      exact lt_of_le_of_lt hs_le hdiv_lt
+    have hside := (hwedge x (by simpa [K] using hx) η
+      (by simpa [Kη] using hη_closure) s hs hs_lt).2
+    have hpoint :
+        (fun i => (x i : ℂ) + (((-yp) i : ℝ) : ℂ) * Complex.I) =
+          (fun i => (x i : ℂ) -
+            (s : ℂ) * (η i : ℂ) * Complex.I) := by
+      ext i
+      have hypi : yp i = s * η i := by
+        simpa [Pi.smul_apply] using congrFun hyp_eq i
+      simp [hypi, sub_eq_add_neg, mul_assoc]
+    rw [hpoint]
+    exact hside
+  exact ⟨rside, CplusLoc, CminusLoc, hrside_pos, rfl, rfl,
+    hCplusLoc_open, hCminusLoc_open, hCplusLoc_sub, hCminusLoc_sub,
+    hplus_margin, hminus_margin⟩
+
+/-- A sufficiently small chart-coordinate ball maps inside any prescribed
+ball under the local EOW real-linear part. -/
+theorem exists_localEOWRealLinearPart_ball_subset
+    (ys : Fin m → Fin m → ℝ)
+    {rside : ℝ} (hrside : 0 < rside) :
+    ∃ δside : ℝ, 0 < δside ∧
+      ∀ v : Fin m → ℝ, ‖v‖ < δside →
+        ‖localEOWRealLinearPart ys v‖ < rside := by
+  let L₀ : (Fin m → ℝ) →ₗ[ℝ] (Fin m → ℝ) :=
+    { toFun := localEOWRealLinearPart ys
+      map_add' := localEOWRealLinearPart_add ys
+      map_smul' := localEOWRealLinearPart_smul ys }
+  let L : (Fin m → ℝ) →L[ℝ] (Fin m → ℝ) :=
+    ⟨L₀, L₀.continuous_of_finiteDimensional⟩
+  have hpre :
+      (fun v : Fin m → ℝ => localEOWRealLinearPart ys v) ⁻¹'
+          Metric.ball 0 rside ∈ nhds (0 : Fin m → ℝ) := by
+    have hball : Metric.ball (L 0) rside ∈ nhds (L 0) :=
+      Metric.ball_mem_nhds _ hrside
+    simpa [L, L₀, localEOWRealLinearPart_zero] using
+      L.continuous.continuousAt.preimage_mem_nhds hball
+  rcases Metric.mem_nhds_iff.mp hpre with ⟨δside, hδside_pos, hδside_sub⟩
+  refine ⟨δside, hδside_pos, ?_⟩
+  intro v hv
+  have hv_ball : v ∈ Metric.ball (0 : Fin m → ℝ) δside := by
+    simpa [Metric.mem_ball, dist_eq_norm] using hv
+  have hv_image := hδside_sub hv_ball
+  simpa [Metric.mem_ball, dist_eq_norm, localEOWRealLinearPart_zero] using
+    hv_image
 
 end SCV

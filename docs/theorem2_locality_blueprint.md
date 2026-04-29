@@ -2738,17 +2738,14 @@ Current implementation order:
    free `hkernel_limit`.
    `OSReconstruction/SCV/LocalEOWSideCone.lean` now checks
    `SCV.tendsto_neg_nhdsWithin_zero_neg_image` and
-   `SCV.localEOW_basisSideCone_rawBoundaryValue`, and
+   `SCV.localEOW_basisSideCone_rawBoundaryValue` in its strengthened explicit
+   `ε` form, and
    `OSReconstruction/SCV/LocalDistributionalEOWSlice.lean` now checks
-   `SCV.sliceCLM_family_from_distributionalBoundary`.  The next Lean packet is
-   a small API strengthening needed by the one-chart envelope: expose the
-   explicit side-cone radius `ε` and closed direction envelope from
-   `SCV.localEOW_basisSideCone_rawBoundaryValue`, then truncate the side cones
-   by a small ball before calling the slice-family theorem so its holomorphy
-   margins are honest.  The truncation radius also forces one more
-   finite-dimensional shrink of the Rudin coordinate radius so
-   `localEOWRealLinearPart ys v` actually lands in the truncated cone on the
-   strict coordinate side balls.  After that, prove
+   `SCV.sliceCLM_family_from_distributionalBoundary`.  The bounded side-margin
+   packet is now checked as
+   `SCV.exists_localEOW_truncatedSideCones_for_sliceMargin`, and the
+   coordinate-radius shrink is checked as
+   `SCV.exists_localEOWRealLinearPart_ball_subset`.  The next Lean target is
    `SCV.chartDistributionalEOW_local_envelope`: feed the checked slice
    families into the fixed-window family, use the chart-kernel transport
    `localEOWRealLinearKernelPushforwardCLM ys hli`, then call the local
