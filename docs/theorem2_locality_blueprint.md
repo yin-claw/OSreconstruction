@@ -2738,11 +2738,14 @@ Current implementation order:
    free `hkernel_limit`.
    `OSReconstruction/SCV/LocalEOWSideCone.lean` now checks
    `SCV.tendsto_neg_nhdsWithin_zero_neg_image` and
-   `SCV.localEOW_basisSideCone_rawBoundaryValue`.  The next Lean packet is
-   `OSReconstruction/SCV/LocalDistributionalEOWSlice.lean` for
-   `SCV.sliceCLM_family_from_distributionalBoundary`; it is pure SCV support
-   and should be imported by `OSReconstruction/SCV.lean` only after its exact
-   file check and module build pass.
+   `SCV.localEOW_basisSideCone_rawBoundaryValue`, and
+   `OSReconstruction/SCV/LocalDistributionalEOWSlice.lean` now checks
+   `SCV.sliceCLM_family_from_distributionalBoundary`.  The next Lean packet is
+   the one-chart envelope assembly `SCV.chartDistributionalEOW_local_envelope`:
+   feed the checked slice families into the fixed-window family, use the
+   chart-kernel transport
+   `localEOWRealLinearKernelPushforwardCLM ys hli`, then call the local
+   recovery stack with the existing approximate-identity inputs.
    Then prove
    the OS45 instantiation
    `BHW.os45_adjacent_commonBoundaryEnvelope` and package its output as
