@@ -394,6 +394,10 @@ content:
    The finite Wick/real trace membership in those components is reduced to
    the generic helper `SCV.path_endpoint_mem_connectedComponentIn` plus the
    explicit OS45 positive/negative path membership calculations.
+   Openness and connectedness of the side components are supplied by
+   `SCV.isOpen_connectedComponentIn_complexChart_of_isOpen` and
+   `SCV.isConnected_connectedComponentIn_of_mem` from finite-dimensional
+   local connectedness and the standard connected-component-in API.
    Do not replace this by a broad
    original-coordinate linear sign condition; that would reintroduce an
    unproved identity-theorem obligation on arbitrary overlap components.

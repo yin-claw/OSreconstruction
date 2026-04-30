@@ -6232,7 +6232,29 @@ Proof decomposition of this theorem, without hiding the analytic work:
       The connected components of the open sets
       `Ωplus ∩ SCV.ChartPositiveOrthant m` and
       `Ωminus ∩ SCV.ChartNegativeOrthant m` are open because the
-      finite-dimensional chart space is locally connected.
+      finite-dimensional chart space is locally connected.  The component
+      hypotheses consumed by the gluing helper should be supplied by these
+      pure topology lemmas:
+
+      ```lean
+      theorem SCV.isOpen_connectedComponentIn_complexChart_of_isOpen
+          {m : ℕ} {D : Set (SCV.ComplexChartSpace m)}
+          {z : SCV.ComplexChartSpace m}
+          (hD_open : IsOpen D) :
+          IsOpen (connectedComponentIn D z)
+
+      theorem SCV.isConnected_connectedComponentIn_of_mem
+          {X : Type*} [TopologicalSpace X]
+          {D : Set X} {z : X} (hz : z ∈ D) :
+          IsConnected (connectedComponentIn D z)
+      ```
+
+      The first theorem is finite-dimensional topology: products of `ℂ` are
+      locally path connected, hence locally connected, so connected components
+      of open subsets are open.  The second theorem is the standard
+      connected-component-in fact; if Mathlib already exposes it under a
+      different name, the OS45 file should use that name directly rather than
+      adding a wrapper with no proof content.
       The pure complex-analysis helper should have the following concrete
       shape:
 
