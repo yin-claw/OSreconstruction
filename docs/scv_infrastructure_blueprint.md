@@ -526,6 +526,7 @@ Source ledger for the internal helper list:
 | `regularizedLocalEOW_pairingCLM_localCovariant_from_fixedWindow` | Checked in `SCV/LocalEOWPairingCLM.lean`: fixed-window covariance adapter for the mixed pairing CLM.  It applies `regularizedLocalEOW_pairingCLM_localCovariant` with `Gchart ψ = localRudinEnvelope δ x0 ys (realMollifyLocal Fplus (P ψ)) (realMollifyLocal Fminus (P ψ))`, supplies the shifted-overlap covariance input by `regularizedLocalEOW_family_chartKernel_covariance_on_shiftedOverlap`, and discharges the two pushed-kernel support hypotheses separately with `KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM_of_le_four_mul`. |
 | `regularizedLocalEOW_chartEnvelope_from_fixedWindowScale` | Checked in `SCV/LocalEOWChartAssembly.lean`: the fixed-window keystone assembly.  It takes the already prepared fixed-window side domains, slice CLMs, cutoffs, one-chart scale inequalities, and closed support margins; constructs `Lorig`, transports it to `Lchart`, builds the mixed pairing CLM `K`, proves local covariance, chooses the descent kernel and shrinking approximate identity, and calls `regularizedEnvelope_chartEnvelope_from_oneChartScale`.  This is the final local recovery assembly below the still larger `chartDistributionalEOW_local_envelope`; it contains no slow-growth input and no untransported original-coordinate kernel. |
 | `localEOWPreparedSideDomains_from_fixedWindow` | Checked in `SCV/LocalEOWChartAssembly.lean`: packages the actual side domains used by `chartDistributionalEOW_local_envelope`, namely `Dplus = Ωplus ∩ TubeDomain (localEOWSideCone ys ε ∩ ball 0 rside) ∩ localEOWAffineRealWindow x0 ys hli (2ρ)` and the corresponding negative domain.  It proves openness, the projections to `Ω±` and `TubeDomain C±Loc`, and the fixed-window polywedge membership hypotheses for arbitrary `u ∈ closedBall 0 ρ` and signed coordinate imaginary vectors with coordinate sum below `rpoly`.  The proof uses nonnegative-coordinate norm control by the coordinate sum, `localEOWRealLinearPart_mem_localEOWSideCone`, the linear-part smallness radius `δside`, and `localEOWChart_mem_affineRealWindow_of_re_norm_lt`. |
+| `localEOWAffineTestPushforwardCLM_apply_re`, `localEOWAffineCutoff_one_of_affineRealWindow_add`, `localEOWAffineCutoff_one_on_translatedKernel` | Checked in `SCV/LocalEOWChartAssembly.lean`: affine cutoff-one infrastructure for the slice-family theorem.  Evaluating the affine pushed cutoff at `Re z` recovers the chart-coordinate cutoff at `Re (A.symm z)`.  Therefore a chart-coordinate cutoff equal to one on `closedBall 0 (3ρ)` is one at `Re z + t` whenever `z` lies in the affine real window of radius `2ρ` and the inverse-chart displacement `‖e.symm t‖ < ρ`.  Combining this with the support theorem for `translateSchwartz (-Re z) ψ` gives the exact cutoff-one hypothesis for `sliceCLM_family_from_distributionalBoundary`. |
 | `regularizedLocalEOW_family_add` | Checked in `SCV/LocalDistributionalEOW.lean`: additivity of the explicit fixed-window family on the supported-kernel class.  The proof uses `KernelSupportWithin.add`, side-domain additivity of `realMollifyLocal`, and the fixed-window uniqueness clause; it does not use real-linear slice CLMs as a substitute for complex-linearity. |
 | `regularizedLocalEOW_family_smul` | Checked in `SCV/LocalDistributionalEOW.lean`: complex homogeneity of the explicit fixed-window family on the supported-kernel class.  The proof uses `KernelSupportWithin.smul`, `realMollifyLocal_smul`, and the same fixed-window uniqueness clause. |
 | `realMollifyLocal_add_of_integrable`, `realMollifyLocal_smul` | Checked in `SCV/LocalDistributionalEOW.lean`: additivity and complex homogeneity of the real-direction mollifier in the smoothing kernel.  Additivity carries the honest Bochner-integrability hypotheses; complex homogeneity follows from `integral_smul`.  These lemmas avoid faking complex linearity through the currently real-linear slice functionals `Tplus/Tminus`. |
@@ -4572,6 +4573,36 @@ envelope assembly once the raw distributional limits are supplied.
    `localEOWChart_mem_affineRealWindow_of_re_norm_lt`.  The negative side is
    the same proof with `vneg j = -v j`, producing membership in
    `Neg.neg '' CplusLoc` by `localEOWRealLinearPart_neg`.
+
+   Exact affine cutoff-one package for the slice-family theorem:
+
+   ```
+   theorem localEOWAffineTestPushforwardCLM_apply_re :
+     localEOWAffineTestPushforwardCLM x0 ys hli χcoord (fun j => (z j).re)
+       = χcoord (fun j => ((localEOWComplexAffineEquiv x0 ys hli).symm z j).re)
+
+   theorem localEOWAffineCutoff_one_of_affineRealWindow_add :
+     χcoord = 1 on closedBall 0 (3ρ) ->
+     z ∈ localEOWAffineRealWindow x0 ys hli (2ρ) ->
+     ‖(localEOWRealLinearCLE ys hli).symm t‖ < ρ ->
+       localEOWAffineTestPushforwardCLM x0 ys hli χcoord
+         (fun j => (z j).re + t j) = 1
+
+   theorem localEOWAffineCutoff_one_on_translatedKernel :
+     χcoord = 1 on closedBall 0 (3ρ) ->
+     z ∈ localEOWAffineRealWindow x0 ys hli (2ρ) ->
+     (∀ t, ‖t‖ ≤ rψ -> ‖(localEOWRealLinearCLE ys hli).symm t‖ < ρ) ->
+     KernelSupportWithin ψ rψ ->
+     x ∈ tsupport (translateSchwartz (fun j => - (z j).re) ψ) ->
+       localEOWAffineTestPushforwardCLM x0 ys hli χcoord x = 1.
+   ```
+
+   The last theorem is the exact `hplus_cutoff_one`/`hminus_cutoff_one`
+   supplier for `sliceCLM_family_from_distributionalBoundary` once
+   `Dplus/Dminus` project to the affine real window.  The support point
+   satisfies `x - Re z ∈ tsupport ψ`, hence has norm at most `rψ`; the inverse
+   chart smallness hypothesis sends it into the `ρ` chart ball, and the
+   `2ρ -> 3ρ` affine-window lemma shows the coordinate cutoff is one.
    * The local recovery theorem is called with
      `Ucore = ball 0 σ`, `Udesc = ball 0 (4σ)`,
      `Ucov = ball 0 (8σ)`, `U0 = ball 0 (δ / 2)`, and

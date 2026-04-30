@@ -451,6 +451,131 @@ theorem localEOWPreparedSideDomains_from_fixedWindow
   exact ⟨hDplus_open, hDminus_open, hDplus_Ω, hDminus_Ω,
     hDplus_tube, hDminus_tube, hplus_mem, hminus_mem⟩
 
+/-- Evaluating an affine pushed chart-coordinate test at the real part of an
+original complex chart point evaluates the original test at the real part of
+the inverse affine chart coordinate. -/
+theorem localEOWAffineTestPushforwardCLM_apply_re
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (φ : SchwartzMap (Fin m → ℝ) ℂ) (z : ComplexChartSpace m) :
+    localEOWAffineTestPushforwardCLM x0 ys hli φ
+        (fun j : Fin m => (z j).re) =
+      φ (fun j : Fin m =>
+        (((localEOWComplexAffineEquiv x0 ys hli).symm z) j).re) := by
+  let A := localEOWComplexAffineEquiv x0 ys hli
+  let q : ComplexChartSpace m := A.symm z
+  have hchart : localEOWChart x0 ys q = z := by
+    rw [← localEOWComplexAffineEquiv_apply x0 ys hli q]
+    exact A.apply_symm_apply z
+  have hq_decomp :
+      (fun j : Fin m => ((q j).re : ℂ) + ((q j).im : ℂ) * Complex.I) = q := by
+    ext j
+    simp [Complex.re_add_im]
+  have hreal_chart :
+      localEOWRealChart x0 ys (fun j : Fin m => (q j).re) =
+        (fun j : Fin m => (z j).re) := by
+    have hdecomp :=
+      localEOWChart_real_add_imag x0 ys
+        (fun j : Fin m => (q j).re) (fun j : Fin m => (q j).im)
+    rw [hq_decomp] at hdecomp
+    have hreal := congrArg
+      (fun f : ComplexChartSpace m => fun j : Fin m => (f j).re)
+      (hdecomp.symm.trans hchart)
+    ext j
+    simpa using congrFun hreal j
+  calc
+    localEOWAffineTestPushforwardCLM x0 ys hli φ
+        (fun j : Fin m => (z j).re) =
+      localEOWAffineTestPushforwardCLM x0 ys hli φ
+        (localEOWRealChart x0 ys (fun j : Fin m => (q j).re)) := by
+        rw [hreal_chart]
+    _ = φ (fun j : Fin m => (q j).re) := by
+        simpa using
+          localEOWAffineTestPushforwardCLM_apply_realChart
+            x0 ys hli φ (fun j : Fin m => (q j).re)
+    _ = φ (fun j : Fin m => ((A.symm z) j).re) := rfl
+
+/-- A chart-coordinate cutoff equal to one on `closedBall 0 (3 * ρ)` remains
+one after affine pushforward at `Re z + t`, provided `z` lies in the
+`2 * ρ` affine real window and the inverse-chart displacement of `t` is
+smaller than `ρ`. -/
+theorem localEOWAffineCutoff_one_of_affineRealWindow_add
+    {ρ : ℝ}
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (χcoord : SchwartzMap (Fin m → ℝ) ℂ)
+    (hχcoord_one :
+      ∀ u ∈ Metric.closedBall (0 : Fin m → ℝ) (3 * ρ),
+        χcoord u = 1)
+    {z : ComplexChartSpace m}
+    (hz : z ∈ localEOWAffineRealWindow x0 ys hli (2 * ρ))
+    {t : Fin m → ℝ}
+    (ht : ‖(localEOWRealLinearCLE ys hli).symm t‖ < ρ) :
+    localEOWAffineTestPushforwardCLM x0 ys hli χcoord
+        (fun j : Fin m => (z j).re + t j) = 1 := by
+  let zt : ComplexChartSpace m := z + realEmbed t
+  have hzt_window :
+      zt ∈ localEOWAffineRealWindow x0 ys hli (3 * ρ) := by
+    simpa [zt] using
+      localEOWAffineRealWindow_add_realEmbed x0 ys hli hz ht
+  have hx_eq :
+      (fun j : Fin m => (z j).re + t j) =
+        (fun j : Fin m => (zt j).re) := by
+    ext j
+    simp [zt, realEmbed]
+  rw [hx_eq]
+  rw [localEOWAffineTestPushforwardCLM_apply_re]
+  apply hχcoord_one
+  rw [Metric.mem_closedBall, dist_zero_right]
+  exact le_of_lt (by
+    simpa [localEOWAffineRealWindow, zt] using hzt_window)
+
+/-- The affine pushed cutoff is one on the translated smoothing-kernel support
+used by the slice-family theorem. -/
+theorem localEOWAffineCutoff_one_on_translatedKernel
+    {ρ rψ : ℝ}
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (χcoord : SchwartzMap (Fin m → ℝ) ℂ)
+    (hχcoord_one :
+      ∀ u ∈ Metric.closedBall (0 : Fin m → ℝ) (3 * ρ),
+        χcoord u = 1)
+    {z : ComplexChartSpace m}
+    (hz : z ∈ localEOWAffineRealWindow x0 ys hli (2 * ρ))
+    (hsmall :
+      ∀ t : Fin m → ℝ, ‖t‖ ≤ rψ →
+        ‖(localEOWRealLinearCLE ys hli).symm t‖ < ρ)
+    {ψ : SchwartzMap (Fin m → ℝ) ℂ}
+    (hψ : KernelSupportWithin ψ rψ)
+    {x : Fin m → ℝ}
+    (hx : x ∈ tsupport
+      (translateSchwartz (fun j : Fin m => - (z j).re) ψ :
+        (Fin m → ℝ) → ℂ)) :
+    localEOWAffineTestPushforwardCLM x0 ys hli χcoord x = 1 := by
+  let a : Fin m → ℝ := fun j => - (z j).re
+  let t : Fin m → ℝ := x + a
+  have hsub :
+      tsupport ((ψ : (Fin m → ℝ) → ℂ) ∘
+          fun y : Fin m → ℝ => y + a) ⊆
+        (fun y : Fin m → ℝ => y + a) ⁻¹'
+          tsupport (ψ : (Fin m → ℝ) → ℂ) := by
+    exact tsupport_comp_subset_preimage (ψ : (Fin m → ℝ) → ℂ)
+      (continuous_id.add continuous_const)
+  have hx' : x ∈ tsupport ((ψ : (Fin m → ℝ) → ℂ) ∘
+      fun y : Fin m → ℝ => y + a) := by
+    simpa [a, translateSchwartz_apply] using hx
+  have ht_support : t ∈ tsupport (ψ : (Fin m → ℝ) → ℂ) := by
+    simpa [t] using hsub hx'
+  have ht_ball := hψ ht_support
+  have ht_norm : ‖t‖ ≤ rψ := by
+    simpa [Metric.mem_closedBall, dist_zero_right] using ht_ball
+  have hx_eq : x = fun j : Fin m => (z j).re + t j := by
+    ext j
+    simp [t, a]
+  rw [hx_eq]
+  exact localEOWAffineCutoff_one_of_affineRealWindow_add
+    x0 ys hli χcoord hχcoord_one hz (hsmall t ht_norm)
+
 /-- Assemble prepared fixed-window local EOW data into the scaled one-chart
 recovery theorem.
 
