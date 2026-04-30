@@ -6190,7 +6190,18 @@ Proof decomposition of this theorem, without hiding the analytic work:
       theorem SCV.strictNegativeImagBall_nonempty
           (hm : 0 < m) {R : ℝ} (hR : 0 < R) :
           (SCV.StrictNegativeImagBall (m := m) R).Nonempty
+
+      theorem SCV.disjoint_chartPositiveOrthant_chartNegativeOrthant
+          (hm : 0 < m) :
+          Disjoint (SCV.ChartPositiveOrthant m)
+            (SCV.ChartNegativeOrthant m)
       ```
+
+      The disjointness theorem explicitly uses `hm` to choose a coordinate;
+      for `m = 0` both coordinatewise strict predicates are vacuous, so this
+      hypothesis must not be omitted.  In the OS45 instantiation, `hm` is the
+      positive chart-dimension hypothesis already required by
+      `SCV.chartDistributionalEOW_local_envelope`.
 
       The exact-overlap rewrite used by the gluing theorem should be isolated
       as two pure topology lemmas:
@@ -6308,11 +6319,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
         hypotheses and the overlap equalities.
 
       The chart-orthant restrictions are open subsets of `Ωplus` and `Ωminus`
-      and are disjoint by the strict coordinate inequalities.  Their connected
-      components are open in the finite-dimensional complex configuration
-      space; if Mathlib does not infer this automatically, the OS45 file
-      should expose the small topology lemma for open subsets of finite
-      products of `ℂ`.
+      and are disjoint by
+      `SCV.disjoint_chartPositiveOrthant_chartNegativeOrthant hm`.  Their
+      connected components are open in the finite-dimensional complex
+      configuration space; if Mathlib does not infer this automatically, the
+      OS45 file should expose the small topology lemma for open subsets of
+      finite products of `ℂ`.
    11. Prove the OS45 side-component path lemmas.  For `x ∈ V`, let
       `y(x) = os45CommonEdgeRealPoint 1 x` and
       `η(x) = os45HalfTimeDirection 1 x`.  In chart real coordinates set

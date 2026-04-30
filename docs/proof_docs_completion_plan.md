@@ -398,6 +398,10 @@ content:
    `SCV.isOpen_connectedComponentIn_complexChart_of_isOpen` and
    `SCV.isConnected_connectedComponentIn_of_mem` from finite-dimensional
    local connectedness and the standard connected-component-in API.
+   Disjointness of the positive/negative side components uses the nonzero
+   chart dimension through
+   `SCV.disjoint_chartPositiveOrthant_chartNegativeOrthant`; do not omit
+   `hm : 0 < m`, since the zero-dimensional orthant predicates are vacuous.
    Do not replace this by a broad
    original-coordinate linear sign condition; that would reintroduce an
    unproved identity-theorem obligation on arbitrary overlap components.
