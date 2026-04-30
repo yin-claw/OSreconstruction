@@ -1232,10 +1232,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
        `bvψ u = TcutOrig (translateSchwartz (-u) ψ)`.
        The proof is the checked CLM route, not an informal Fubini step:
        construct the side slice CLMs with
-       `sliceCLM_family_from_distributionalBoundary`, use
+       `SCV.localEOWSliceCLMs_from_preparedDomains`, use
        `realMollifyLocal_eq_cutoffSliceCLM` for the finite-support integral
-       identity, use `tendsto_cutoffSliceCLM_of_boundaryValue` for the
-       plus/minus limits, and then apply
+       identity, use the cutoff-support slice limits targeting `TcutOrig` for
+       the plus/minus limits, and then apply
        `SCV.localRealMollify_commonContinuousBoundary_of_clm` to obtain
        continuity of `bvψ` and the two continuous boundary traces.  The
        coordinate-cone plumbing is fixed as follows: the plus raw limit is on
@@ -2801,10 +2801,12 @@ Current implementation order:
    that side cone and its negative image.  The side cone must come with both
    an open approach domain `Cplus ⊆ C` and a compact closed direction envelope
    fed to `TendstoUniformlyOn`; using the whole ambient cone `C` as the raw
-   filter domain is not a valid substitute.  Next package the two-sided
-   `sliceCLM_family_from_distributionalBoundary` from the checked one-sided
-   `SCV.exists_cutoffSliceCLM_family_of_boundaryValue`, including the
-   lower-side sign/filter conversion; then prove
+   filter domain is not a valid substitute.  Next insert the affine real
+   cutoff and package the two-sided slice CLMs through the checked
+   `SCV.localEOWSliceCLMs_from_preparedDomains`, which internally uses
+   `SCV.sliceCLM_family_from_distributionalBoundary_of_cutoffSupport` so the
+   raw OS-II boundary values are applied only to compactly supported tests
+   inside `E`; then prove
    `SCV.chartDistributionalEOW_local_envelope` with the chart-kernel family
    `Gchart ψ = Gorig (localEOWRealLinearKernelPushforwardCLM ys hli ψ)`;
    then transport and patch to formalize
@@ -2821,7 +2823,11 @@ Current implementation order:
    `SCV.localEOW_basisSideCone_rawBoundaryValue` in its strengthened explicit
    `ε` form, and
    `OSReconstruction/SCV/LocalDistributionalEOWSlice.lean` now checks
-   `SCV.sliceCLM_family_from_distributionalBoundary`.  The bounded side-margin
+   `SCV.sliceCLM_family_from_distributionalBoundary` and the cutoff-support
+   variant
+   `SCV.sliceCLM_family_from_distributionalBoundary_of_cutoffSupport`.  The
+   prepared-domain consumer is checked as
+   `SCV.localEOWSliceCLMs_from_preparedDomains`.  The bounded side-margin
    packet is now checked as
    `SCV.exists_localEOW_truncatedSideCones_for_sliceMargin`, and the
    coordinate-radius shrink is checked as
