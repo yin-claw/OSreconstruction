@@ -197,6 +197,110 @@ theorem StrictNegativeImagBall_add_realEmbed_mem_ball_of_norm_le {R r Rbig : ℝ
   · intro j
     simpa [realEmbed] using hw.2 j
 
+/-- Simultaneous small scale for the one-chart recovery assembly.  The larger
+side-neighborhood radius is `4 * σ`, while the mixed chart-kernel radius is
+`2 * σ`. -/
+theorem exists_oneChartRecoveryScale
+    {δ δside ρin rpoly rψOrig M : ℝ}
+    (hδ : 0 < δ)
+    (hδside : 0 < δside)
+    (hρin : 0 < ρin)
+    (hrpoly : 0 < rpoly)
+    (hrψOrig : 0 < rψOrig)
+    (hM : 0 ≤ M) :
+    ∃ σ : ℝ,
+      0 < σ ∧
+      128 * σ ≤ δ ∧
+      4 * σ < δside ∧
+      4 * σ < ρin ∧
+      (Fintype.card (Fin m) : ℝ) * (4 * σ) < rpoly ∧
+      M * (2 * σ) ≤ rψOrig := by
+  let c : ℝ := (Fintype.card (Fin m) : ℝ)
+  let bδ : ℝ := δ / 256
+  let bside : ℝ := δside / 8
+  let bρ : ℝ := ρin / 8
+  let bpoly : ℝ := rpoly / (8 * (c + 1))
+  let bψ : ℝ := rψOrig / (4 * (M + 1))
+  let σ : ℝ := min bδ (min bside (min bρ (min bpoly bψ)))
+  have hc_nonneg : 0 ≤ c := by
+    dsimp [c]
+    positivity
+  have hc1_pos : 0 < c + 1 := by positivity
+  have hM1_pos : 0 < M + 1 := by nlinarith
+  have hbδ_pos : 0 < bδ := by
+    dsimp [bδ]
+    positivity
+  have hbside_pos : 0 < bside := by
+    dsimp [bside]
+    positivity
+  have hbρ_pos : 0 < bρ := by
+    dsimp [bρ]
+    positivity
+  have hbpoly_pos : 0 < bpoly := by
+    dsimp [bpoly]
+    positivity
+  have hbψ_pos : 0 < bψ := by
+    dsimp [bψ]
+    positivity
+  have hσ_pos : 0 < σ := by
+    dsimp [σ]
+    exact lt_min hbδ_pos
+      (lt_min hbside_pos (lt_min hbρ_pos (lt_min hbpoly_pos hbψ_pos)))
+  have hσ_nonneg : 0 ≤ σ := hσ_pos.le
+  have hσ_le_bδ : σ ≤ bδ := by
+    dsimp [σ]
+    exact min_le_left _ _
+  have hσ_le_bside : σ ≤ bside := by
+    dsimp [σ]
+    exact (min_le_right _ _).trans (min_le_left _ _)
+  have hσ_le_bρ : σ ≤ bρ := by
+    dsimp [σ]
+    exact ((min_le_right _ _).trans (min_le_right _ _)).trans
+      (min_le_left _ _)
+  have hσ_le_bpoly : σ ≤ bpoly := by
+    dsimp [σ]
+    exact (((min_le_right _ _).trans (min_le_right _ _)).trans
+      (min_le_right _ _)).trans (min_le_left _ _)
+  have hσ_le_bψ : σ ≤ bψ := by
+    dsimp [σ]
+    exact (((min_le_right _ _).trans (min_le_right _ _)).trans
+      (min_le_right _ _)).trans (min_le_right _ _)
+  refine ⟨σ, hσ_pos, ?_, ?_, ?_, ?_, ?_⟩
+  · dsimp [bδ] at hσ_le_bδ
+    nlinarith
+  · dsimp [bside] at hσ_le_bside
+    nlinarith
+  · dsimp [bρ] at hσ_le_bρ
+    nlinarith
+  · dsimp [bpoly] at hσ_le_bpoly
+    have hden_poly : 0 < 8 * (c + 1) := by positivity
+    have hmul_poly : σ * (8 * (c + 1)) ≤ rpoly := by
+      exact (le_div_iff₀ hden_poly).mp hσ_le_bpoly
+    have hcoef : 8 * c ≤ 8 * (c + 1) := by nlinarith
+    have hσ8c_le : σ * (8 * c) ≤ σ * (8 * (c + 1)) :=
+      mul_le_mul_of_nonneg_left hcoef hσ_nonneg
+    have htwo : 2 * (c * (4 * σ)) ≤ rpoly := by
+      calc
+        2 * (c * (4 * σ)) = σ * (8 * c) := by ring
+        _ ≤ σ * (8 * (c + 1)) := hσ8c_le
+        _ ≤ rpoly := hmul_poly
+    have hhalf : c * (4 * σ) ≤ rpoly / 2 := by
+      exact (le_div_iff₀ (by norm_num : (0 : ℝ) < 2)).2 (by
+        simpa [mul_comm, mul_left_comm, mul_assoc] using htwo)
+    have hhalf_lt : rpoly / 2 < rpoly := by nlinarith
+    exact lt_of_le_of_lt hhalf hhalf_lt
+  · dsimp [bψ] at hσ_le_bψ
+    have hdenψ : 0 < 4 * (M + 1) := by positivity
+    have hmulψ : σ * (4 * (M + 1)) ≤ rψOrig := by
+      exact (le_div_iff₀ hdenψ).mp hσ_le_bψ
+    have hcoef : 2 * M ≤ 4 * (M + 1) := by nlinarith
+    have hleft : M * (2 * σ) ≤ σ * (4 * (M + 1)) := by
+      calc
+        M * (2 * σ) = σ * (2 * M) := by ring
+        _ ≤ σ * (4 * (M + 1)) :=
+          mul_le_mul_of_nonneg_left hcoef hσ_nonneg
+    exact hleft.trans hmulψ
+
 /-- The imaginary part of the affine local EOW chart is the real-linear chart
 part applied to the coordinate imaginary vector. -/
 theorem localEOWChart_im_eq_realLinearPart_im
