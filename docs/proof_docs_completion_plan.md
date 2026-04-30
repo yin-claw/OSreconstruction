@@ -202,9 +202,9 @@ content:
    `BHW.os45BranchHorizontalSourceGermAt_of_figure24_adjacent` are upstream
    one-branch OS I §4.5/BHW source suppliers.  They must also consume the
    closure-level ordered-sector fields from the selected `V`: the identity
-   supplier uses `hV_ordered_closure`, and the adjacent supplier uses
-   `hV_swap_ordered_closure` after relabelling.  These ordered fields are not
-   optional, because they are what make
+   supplier uses `hV_ordered_closure`, and the adjacent supplier uses both
+   `hV_ordered_closure` and `hV_swap_ordered_closure` after relabelling.  These
+   ordered fields are not optional, because they are what make
    `BHW.os45CommonEdge_mem_acrBranchDomain_of_ordered` available at the
    horizontal base point.  The adjacent supplier works on the relabelled
    ordered branch `x ∘ τ` and transports back by the checked OS45 reindexing

@@ -694,7 +694,7 @@ rcases BHW.os45_adjacent_identity_horizontalEdge_sourcePatch
     hV_horiz_id, hV_horiz_swap,
     hV_ordered_closure, hV_swap_ordered_closure,
     hV_horiz_id_closure, hV_horiz_swap_closure,
-    _hV_figPath⟩
+    hV_figPath_closure⟩
 
 -- The genuine OS45 common-boundary theorem, proved from the two
 -- `OS45OppositeTubeBranchGeometry` packets and the OS-II/ACR-one Wick branch
@@ -722,7 +722,8 @@ have hV_source_swap_closure :
   simpa [ρ, τ] using
     BHW.os45BranchHorizontalSourceGermAt_of_figure24_adjacent
       (d := d) hd OS lgc n i hi Ufig V
-      hUfig_open hUfig_source hV_swap_ordered_closure
+      hUfig_open hUfig_source hV_ordered_closure
+      hV_swap_ordered_closure hV_figPath_closure
       hV_closure_subset_Ufig
 
 have hCommon :
@@ -2853,6 +2854,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 (BHW.os45CommonEdgeRealPoint (d := d) (n := n)
                   (1 : Equiv.Perm (Fin n)) x) ∈
                 BHW.os45PulledRealBranchDomain (d := d) (n := n) τ))
+          (hV_ordered_closure :
+            ∀ x ∈ closure V,
+              x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+                (1 : Equiv.Perm (Fin n)))
           (hV_swap_ordered_closure :
             let τ : Equiv.Perm (Fin n) :=
               Equiv.swap i ⟨i.val + 1, hi⟩
