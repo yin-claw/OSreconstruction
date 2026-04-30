@@ -262,11 +262,22 @@ content:
    seed theorem records a distinguished `Gseed ∈ Wseed`, the source chart
    supplies a path from `Gseed` to
    `sourceMinkowskiGram d n (fun k => wickRotatePoint (x0 k))`, and
-   `BHW.swFigure24_wickToQuarterTurn_doubleETRealizationPath` supplies the
-   Streater-Wightman Figure-2-4 configuration-level path from the Wick
-   configuration to the OS45 quarter-turn configuration, together with a
-   second continuous ordinary-extended-tube realization of the adjacent
-   permuted Gram point.  The scalar theorem
+   the selected Figure-2-4 source patch supplies the path-stability field
+   `hV_figPath`.  That field is the actual Streater-Wightman Figure-2-4
+   configuration-level path from the Wick configuration to the OS45
+   quarter-turn configuration, together with a second continuous
+   ordinary-extended-tube realization of the adjacent permuted Gram point.
+   Its adjacent branch is the Figure-2-4 two-plane rotated realization from
+   the checked `AdjacentOverlapWitness.lean` model, made uniform around the
+   ordered seed by a compact-open shrink over `unitInterval`; it is not the
+   bare relabelled path `Γ t ∘ τ`.  The blueprint now pins the support names:
+   `BHW.os45Figure24IdentityPath`,
+   `BHW.figure24RotateAdjacentConfig`,
+   `BHW.figure24RotateAdjacentConfig_lorentz_inverse`, and
+   `BHW.figure24_adjacentTwoPlanePathSupport_at_orderedSeed`.  The optional theorem
+   `BHW.swFigure24_wickToQuarterTurn_doubleETRealizationPath` is only a
+   projection from `hV_figPath`, not an independent broad theorem about an
+   arbitrary real-open `V`.  The scalar theorem
    `BHW.swFigure24_wickToQuarterTurn_scalarPath` is then only the mechanical
    corollary `γ t = sourceMinkowskiGram d n (Γ t)`, with double-domain
    membership proved by

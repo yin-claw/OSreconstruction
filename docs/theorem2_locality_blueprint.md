@@ -692,7 +692,8 @@ rcases BHW.os45_adjacent_identity_horizontalEdge_sourcePatch
     hV_wick, hV_real, hV_geom, hV_swap_geom,
     hV_horiz_id, hV_horiz_swap,
     hV_ordered_closure, hV_swap_ordered_closure,
-    hV_horiz_id_closure, hV_horiz_swap_closure⟩
+    hV_horiz_id_closure, hV_horiz_swap_closure,
+    _hV_figPath⟩
 
 -- The genuine OS45 common-boundary theorem, proved from the two
 -- `OS45OppositeTubeBranchGeometry` packets and the OS-II/ACR-one Wick branch
@@ -3594,7 +3595,273 @@ Proof decomposition of this theorem, without hiding the analytic work:
       Streater-Wightman Figure-2-4 geometry, then obtain the scalar path by
       applying `sourceMinkowskiGram`.
 
-      The realization-level theorem is the genuine paper-geometry input:
+      The realization-level theorem is the genuine paper-geometry input, and
+      it must be produced by the **selected** Figure-2-4 source patch.  It is
+      not a theorem about an arbitrary later real-open `V` satisfying only the
+      broad Jost, ordered-sector, and horizontal pulled-domain fields.  Those
+      fields give the endpoint domain memberships; by themselves they do not
+      give a continuous ordinary-extended-tube realization of the adjacent
+      permuted Gram point along the whole Wick-to-quarter-turn deformation.
+
+      The Lean producer is therefore a path-stable refinement of the source
+      selector.  The selected `Ufig`/`V` packet must export the following field
+      before the scalar corridor theorem consumes it:
+
+      ```lean
+      hV_figPath :
+        let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+        let Q := BHW.os45QuarterTurnCLE (d := d) (n := n)
+        forall x, x ∈ V ->
+          let y :=
+            BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x
+          ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
+            Continuous Γ ∧
+            Continuous Δ ∧
+            Γ (0 : unitInterval) = (fun k => wickRotatePoint (x k)) ∧
+            Γ (1 : unitInterval) = Q.symm (BHW.realEmbed y) ∧
+            (forall t, Γ t ∈ BHW.ExtendedTube d n) ∧
+            (forall t, Δ t ∈ BHW.ExtendedTube d n) ∧
+            (forall t,
+              BHW.sourceMinkowskiGram d n (Δ t) =
+                BHW.sourcePermuteComplexGram n τ
+                  (BHW.sourceMinkowskiGram d n (Γ t)))
+      ```
+
+      This field is not a wrapper assumption.  Its proof belongs to the
+      Streater-Wightman Figure-2-4 selector:
+
+      1. Start with the explicit adjacent two-plane real witness already
+         formalized in
+         `ComplexLieGroups/AdjacentOverlapWitness.lean`.  In current Lean this
+         is the `swapWitnessReal`/`swapWitnessRealSwapped` model, the
+         `3-4-5` spatial rotation `spatialRotCLG12`, and the checked endpoint
+         theorem `BHW.adjacent_overlap_real_jost_witness_exists`.
+      2. Let
+         `c t := ((t : ℝ) / 2 : ℂ) +
+           (((1 : ℝ) - (t : ℝ) / 2 : ℝ) : ℂ) * Complex.I`
+         on `unitInterval`.  For `x ∈ V`, set
+         `Γ t k 0 := c t * (x k 0 : ℂ)` and
+         `Γ t k μ := (x k μ : ℂ)` for `μ ≠ 0`.  Then `Γ 0` is the Wick
+         configuration and `Γ 1 = Q.symm (realEmbed
+         (os45CommonEdgeRealPoint 1 x))` by
+         `os45QuarterTurnCLE_symm_apply`.  The identity ordered-sector field
+         proves `Γ t ∈ ForwardTube d n`, hence `Γ t ∈ ExtendedTube d n`,
+         because the imaginary time gaps are the positive scalar
+         `(1 - t/2)` times the ordered Euclidean time gaps and the spatial
+         imaginary parts are zero.
+      3. The adjacent realization is not `fun k => Γ t (τ k)`.  Instead use
+         the Figure-2-4 two-plane Lorentz-rotation witness from the checked
+         adjacent-overlap proof.  In Lean terms, promote the private rotation
+         data behind `realEmbed_swapWitnessRealSwapped_eq_action_rot` to a
+         public support theorem for the whole interpolation.  The support
+         theorem must state the actual realization:
+
+         ```lean
+         ∃ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ,
+           Continuous Δ ∧
+           (∀ t, Δ t ∈ BHW.ExtendedTube d n) ∧
+           ∀ t,
+             BHW.sourceMinkowskiGram d n (Δ t) =
+               BHW.sourcePermuteComplexGram n τ
+                 (BHW.sourceMinkowskiGram d n (Γ t))
+         ```
+
+         It may internally represent `Δ t` as a complex-Lorentz transform of a
+         pre-rotated adjacent interpolation, but the exported conclusion is
+         ordinary extended-tube membership, not bare membership of the
+         relabelled path in the forward tube.
+      4. The previous step is a compact-open argument, not a new analytic
+         theorem.  After the bounded ordered perturbation has selected
+         `xseed` inside the Figure-2-4 real environment, the explicit
+         two-plane inequalities are strict for the displayed one-parameter
+         interpolation at `xseed`.  The coordinate expressions are continuous
+         in `(x,t)`, and `unitInterval` is compact; shrink the real source
+         environment around `xseed` so the same extended-tube realization
+         certificate remains valid uniformly for all `t`.  This is why the
+         path field belongs to the selected source patch `V`, not to an
+         arbitrary open set with similar endpoint memberships.
+      5. The Gram identity is exactly Lorentz invariance plus permutation of
+         labels:
+         `sourceMinkowskiGram_complexLorentzAction`,
+         `BHW.sourceMinkowskiGram_perm`, and `τ = τ.symm` for adjacent swaps.
+         This is the point where the realization proof transports the kernel
+         through the local coordinates; no function values, no local EOW
+         conclusion, and no final `bvt_W` distribution appear.
+
+      Lean-ready subpacket for `hV_figPath`:
+
+      ```lean
+      def BHW.os45Figure24TimeCoeff (t : unitInterval) : ℂ :=
+        (((t : ℝ) / 2 : ℝ) : ℂ) +
+          (((1 : ℝ) - (t : ℝ) / 2 : ℝ) : ℂ) * Complex.I
+
+      def BHW.os45Figure24IdentityPath
+          (x : NPointDomain d n)
+          (t : unitInterval) :
+          Fin n -> Fin (d + 1) -> ℂ :=
+        fun k μ =>
+          if μ = 0 then BHW.os45Figure24TimeCoeff t * (x k 0 : ℂ)
+          else (x k μ : ℂ)
+
+      theorem BHW.os45Figure24IdentityPath_zero
+          (x : NPointDomain d n) :
+          BHW.os45Figure24IdentityPath (d := d) (n := n) x
+              (0 : unitInterval) =
+            (fun k => wickRotatePoint (x k))
+
+      theorem BHW.os45Figure24IdentityPath_one
+          (x : NPointDomain d n) :
+          let Q := BHW.os45QuarterTurnCLE (d := d) (n := n)
+          let y := BHW.os45CommonEdgeRealPoint (d := d) (n := n)
+            (1 : Equiv.Perm (Fin n)) x
+          BHW.os45Figure24IdentityPath (d := d) (n := n) x
+              (1 : unitInterval) =
+            Q.symm (BHW.realEmbed y)
+
+      theorem BHW.continuous_os45Figure24IdentityPath
+          (x : NPointDomain d n) :
+          Continuous (BHW.os45Figure24IdentityPath (d := d) (n := n) x)
+
+      theorem BHW.os45Figure24IdentityPath_mem_forwardTube
+          [NeZero d]
+          {x : NPointDomain d n}
+          (hx_ordered :
+            x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+              (1 : Equiv.Perm (Fin n))) :
+          ∀ t,
+            BHW.os45Figure24IdentityPath (d := d) (n := n) x t ∈
+              BHW.ForwardTube d n
+
+      def BHW.figure24Axis1 (hd : 2 <= d) : Fin (d + 1) := ⟨1, by omega⟩
+
+      def BHW.figure24Axis2 (hd : 2 <= d) : Fin (d + 1) := ⟨2, by omega⟩
+
+      def BHW.figure24RotateAdjacentConfig
+          (hd : 2 <= d)
+          (z : Fin n -> Fin (d + 1) -> ℂ) :
+          Fin n -> Fin (d + 1) -> ℂ :=
+        fun k μ =>
+          if μ = 0 then z k μ
+          else if μ = BHW.figure24Axis1 hd then
+            ((3 / 5 : ℝ) : ℂ) * z k (BHW.figure24Axis1 hd) -
+              ((4 / 5 : ℝ) : ℂ) * z k (BHW.figure24Axis2 hd)
+          else if μ = BHW.figure24Axis2 hd then
+            ((4 / 5 : ℝ) : ℂ) * z k (BHW.figure24Axis1 hd) +
+              ((3 / 5 : ℝ) : ℂ) * z k (BHW.figure24Axis2 hd)
+          else z k μ
+
+      theorem BHW.figure24RotateAdjacentConfig_lorentz_inverse
+          [NeZero d]
+          (hd : 2 <= d) :
+          ∃ Λfig : ComplexLorentzGroup d,
+            ∀ z : Fin n -> Fin (d + 1) -> ℂ,
+              BHW.complexLorentzAction Λfig
+                (BHW.figure24RotateAdjacentConfig (d := d) (n := n) hd z) =
+              z
+
+      theorem BHW.figure24_adjacentTwoPlaneRotationSupport
+          [NeZero d]
+          (hd : 2 <= d)
+          (i : Fin n) (hi : i.val + 1 < n) :
+          ∃ (xfig xrot : NPointDomain d n)
+            (Λfig : ComplexLorentzGroup d),
+            (∀ k : Fin n, xfig k 0 = 0) ∧
+            xfig ∈ BHW.JostSet d n ∧
+            BHW.realEmbed xfig ∈ BHW.ExtendedTube d n ∧
+            xrot ∈ BHW.ForwardJostSet d n
+              (Nat.succ_le_of_lt (Nat.lt_of_lt_of_le
+                (Nat.zero_lt_succ _) hd)) ∧
+            BHW.complexLorentzAction Λfig (BHW.realEmbed xrot) =
+              BHW.realEmbed
+                (fun k => xfig (Equiv.swap i ⟨i.val + 1, hi⟩ k))
+
+      theorem BHW.figure24_adjacentTwoPlanePathSupport_at_orderedSeed
+          [NeZero d]
+          (hd : 2 <= d)
+          (i : Fin n) (hi : i.val + 1 < n) :
+          let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+          ∃ xseed : NPointDomain d n,
+            xseed ∈ EuclideanOrderedPositiveTimeSector
+              (d := d) (n := n) (1 : Equiv.Perm (Fin n)) ∧
+            (fun k => xseed (τ k)) ∈
+              EuclideanOrderedPositiveTimeSector (d := d) (n := n) τ ∧
+            let Δseed : unitInterval -> Fin n -> Fin (d + 1) -> ℂ :=
+              fun t =>
+                BHW.figure24RotateAdjacentConfig (d := d) (n := n) hd
+                  (BHW.permAct (d := d) τ
+                    (BHW.os45Figure24IdentityPath
+                      (d := d) (n := n) xseed t))
+            Continuous Δseed ∧
+              (forall t, Δseed t ∈ BHW.ExtendedTube d n) ∧
+              (forall t,
+                BHW.sourceMinkowskiGram d n (Δseed t) =
+                  BHW.sourcePermuteComplexGram n τ
+                    (BHW.sourceMinkowskiGram d n
+                      (BHW.os45Figure24IdentityPath
+                        (d := d) (n := n) xseed t)))
+
+      theorem BHW.swFigure24_adjacentPathStableNeighborhood_exists
+          [NeZero d]
+          (hd : 2 <= d)
+          (i : Fin n) (hi : i.val + 1 < n) :
+          let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+          ∃ (Upath : Set (NPointDomain d n))
+            (xseed : NPointDomain d n),
+            IsOpen Upath ∧ xseed ∈ Upath ∧
+            (∀ x ∈ Upath,
+              x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+                (1 : Equiv.Perm (Fin n))) ∧
+            (∀ x ∈ Upath,
+              (fun k => x (τ k)) ∈
+                EuclideanOrderedPositiveTimeSector (d := d) (n := n) τ) ∧
+            (∀ x ∈ Upath,
+              ∃ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ,
+                Continuous Δ ∧
+                (forall t, Δ t ∈ BHW.ExtendedTube d n) ∧
+                (forall t,
+                  BHW.sourceMinkowskiGram d n (Δ t) =
+                    BHW.sourcePermuteComplexGram n τ
+                      (BHW.sourceMinkowskiGram d n
+                        (BHW.os45Figure24IdentityPath
+                          (d := d) (n := n) x t))))
+      ```
+
+      Proof transcript for
+      `BHW.swFigure24_adjacentPathStableNeighborhood_exists`: start from the
+      seed theorem
+      `BHW.figure24_adjacentTwoPlanePathSupport_at_orderedSeed`.  The
+      coordinate functions and all inequalities used by that certificate are
+      continuous in `(x,t)`; compactness of `unitInterval` gives one open
+      neighborhood `Upath` of the seed on which the same certificate works
+      uniformly.  Intersect `Upath` with the Figure-2-4 real environment and
+      the two ordered-sector preimages before taking the final precompact ball
+      `V` in
+      `BHW.os45_adjacent_identity_horizontalEdge_sourcePatch`.
+
+      Proof transcript for
+      `BHW.figure24_adjacentTwoPlanePathSupport_at_orderedSeed`: start from
+      `BHW.figure24_adjacentTwoPlaneRotationSupport` and apply the checked
+      bounded perturbation theorem to the equal-time witness.  Choose the
+      perturbation size small enough that the displayed Figure-2-4 spacelike
+      inequalities remain strict for the whole coefficient family in printed
+      Figure 2-4 and for the OS45 coefficient
+      `c t = t / 2 + (1 - t / 2) * I`.  The formula for `Δseed` is now
+      explicit: first relabel the identity interpolation by the adjacent swap,
+      then apply the public `3-4-5` two-plane rotation
+      `BHW.figure24RotateAdjacentConfig`.  The endpoint proof in
+      `AdjacentOverlapWitness.lean` already contains the matrix calculation
+      needed for `BHW.figure24RotateAdjacentConfig_lorentz_inverse`; the path
+      proof reuses that Lorentz-invariance theorem for the Gram identity and
+      repeats the forward-cone strict-inequality calculation with `t` left as
+      a parameter.  The only inequalities to check are
+      `0 <= (t : ℝ)`, `(t : ℝ) <= 1`, and the strict Figure-2-4 two-plane
+      spacelike inequalities after the bounded ordered perturbation.  This is
+      the last purely geometric calculation that must be written before the
+      Lean implementation starts.
+
+      With `hV_figPath` exported by the selected source patch, the
+      per-point theorem below is only the Lean projection used by the scalar
+      corridor:
 
       ```lean
       theorem BHW.swFigure24_wickToQuarterTurn_doubleETRealizationPath
@@ -3618,6 +3885,23 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 (BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x) ∈
                 BHW.os45PulledRealBranchDomain (d := d) (n := n)
                   (Equiv.swap i ⟨i.val + 1, hi⟩))
+          (hV_figPath :
+            let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+            let Q := BHW.os45QuarterTurnCLE (d := d) (n := n)
+            forall x, x ∈ V ->
+              let y :=
+                BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x
+              ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
+                Continuous Γ ∧
+                Continuous Δ ∧
+                Γ (0 : unitInterval) = (fun k => wickRotatePoint (x k)) ∧
+                Γ (1 : unitInterval) = Q.symm (BHW.realEmbed y) ∧
+                (forall t, Γ t ∈ BHW.ExtendedTube d n) ∧
+                (forall t, Δ t ∈ BHW.ExtendedTube d n) ∧
+                (forall t,
+                  BHW.sourceMinkowskiGram d n (Δ t) =
+                    BHW.sourcePermuteComplexGram n τ
+                      (BHW.sourceMinkowskiGram d n (Γ t))))
           {x0 : NPointDomain d n}
           (hx0V : x0 ∈ V) :
           let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
@@ -3637,48 +3921,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
                   (BHW.sourceMinkowskiGram d n (Γ t)))
       ```
 
-      Proof transcript for the realization theorem:
-
-      1. Use `hd : 2 <= d` to choose a non-time spatial axis and work in the
-         real two-plane used in Streater-Wightman Figure 2-4.  The paper's
-         displayed adjacent model is for the transposition `P(j,j+1)`; all
-         spectator difference vectors are kept fixed, and only the three
-         adjacent difference vectors in that two-plane move.
-      2. Apply the Figure-2-4 inequalities to the chosen adjacent source
-         environment, not to an arbitrary later reselected patch.  The vector
-         families appearing in the paper are spacelike for all nonnegative
-         coefficients, not all zero; adjoining the spectator coordinates
-         gives a real Jost point for both the ordinary extended tube and the
-         adjacent permuted extended tube.  The same strict inequalities hold
-         on a small real neighborhood, which is exactly why the proof must
-         start from `BHW.swFigure24_adjacentHorizontalRealEnvironment` and
-         then shrink to the ordered patch `V`.
-      3. Construct `Γ` as the continuous Figure-2-4 deformation from the Wick
-         configuration `fun k => wickRotatePoint (x0 k)` to the inverse
-         quarter-turn configuration `Q.symm (realEmbed y0)`.  On the identity
-         side, the ordered-time hypotheses and the checked OS45 identities
-         put the endpoints in the ordinary extended tube; the Figure-2-4
-         spacelike-cone inequalities keep the whole path in
-         `BHW.ExtendedTube d n`.
-      4. Construct `Δ` as the corresponding realization of the adjacent
-         permuted scalar point.  The theorem must not claim that
-         `fun k => Γ t (τ k)` lies in the ordinary forward tube.  Instead
-         `Δ t` is the ordinary extended-tube realization supplied by the
-         adjacent Figure-2-4 branch, and its Gram matrix is
-         `sourcePermuteComplexGram n τ (sourceMinkowskiGram d n (Γ t))`.
-      5. Continuity of `Γ` and `Δ` is finite-dimensional coordinate
-         continuity of the displayed Figure-2-4 formula.  The endpoint
-         identity for `Γ 1` uses
-         `os45QuarterTurnCLE_symm_apply`,
-         `os45CommonEdgeRealPoint`, and the definition of `wickRotatePoint`;
-         the adjacent endpoint membership uses the checked
-         `hV_horiz_swap` field.
-      6. This theorem has no function-value equality, no `SourceScalarRepresentativeData`,
-         no local EOW output, no global PET branch independence, and no
-         `bvt_W` term.  If the broad `V` hypotheses above are not sufficient
-         in Lean, the source-patch selector must be strengthened to return
-         this realization path as Figure-2-4 data; it must not be replaced by
-         an unproved scalar-path assumption.
+      Proof transcript for the realization theorem: unfold the two `let`
+      binders in `hV_figPath` and apply `hV_figPath x0 hx0V`.  The
+      mathematical work is the producer of `hV_figPath`, displayed above; this
+      projection theorem has no function-value equality, no
+      `SourceScalarRepresentativeData`, no local EOW output, no global PET
+      branch independence, and no `bvt_W` term.  If the call site can consume
+      `hV_figPath` directly, do not add this projection as a public theorem.
 
       The scalar path is then the mechanical corollary used by the corridor:
 
@@ -3704,6 +3953,23 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 (BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x) ∈
                 BHW.os45PulledRealBranchDomain (d := d) (n := n)
                   (Equiv.swap i ⟨i.val + 1, hi⟩))
+          (hV_figPath :
+            let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+            let Q := BHW.os45QuarterTurnCLE (d := d) (n := n)
+            forall x, x ∈ V ->
+              let y :=
+                BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x
+              ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
+                Continuous Γ ∧
+                Continuous Δ ∧
+                Γ (0 : unitInterval) = (fun k => wickRotatePoint (x k)) ∧
+                Γ (1 : unitInterval) = Q.symm (BHW.realEmbed y) ∧
+                (forall t, Γ t ∈ BHW.ExtendedTube d n) ∧
+                (forall t, Δ t ∈ BHW.ExtendedTube d n) ∧
+                (forall t,
+                  BHW.sourceMinkowskiGram d n (Δ t) =
+                    BHW.sourcePermuteComplexGram n τ
+                      (BHW.sourceMinkowskiGram d n (Γ t))))
           {x0 : NPointDomain d n}
           (hx0V : x0 ∈ V) :
           let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
@@ -3723,7 +3989,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
       ```
 
       Proof transcript: apply
-      `BHW.swFigure24_wickToQuarterTurn_doubleETRealizationPath` and set
+      `BHW.swFigure24_wickToQuarterTurn_doubleETRealizationPath` with
+      `hV_figPath`, or consume `hV_figPath x0 hx0V` directly, and set
       `γfig t := BHW.sourceMinkowskiGram d n (Γ t)`.  Continuity is
       `BHW.contDiff_sourceMinkowskiGram d n` composed with `hΓ_cont`.  The
       endpoint equations are the corresponding equations for `Γ`.  For each
@@ -3761,6 +4028,23 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 (BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x) ∈
                 BHW.os45PulledRealBranchDomain (d := d) (n := n)
                   (Equiv.swap i ⟨i.val + 1, hi⟩))
+          (hV_figPath :
+            let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+            let Q := BHW.os45QuarterTurnCLE (d := d) (n := n)
+            forall x, x ∈ V ->
+              let y :=
+                BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x
+              ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
+                Continuous Γ ∧
+                Continuous Δ ∧
+                Γ (0 : unitInterval) = (fun k => wickRotatePoint (x k)) ∧
+                Γ (1 : unitInterval) = Q.symm (BHW.realEmbed y) ∧
+                (forall t, Γ t ∈ BHW.ExtendedTube d n) ∧
+                (forall t, Δ t ∈ BHW.ExtendedTube d n) ∧
+                (forall t,
+                  BHW.sourceMinkowskiGram d n (Δ t) =
+                    BHW.sourcePermuteComplexGram n τ
+                      (BHW.sourceMinkowskiGram d n (Γ t))))
           {x0 : NPointDomain d n}
           (hx0V : x0 ∈ V)
           (hRep :
@@ -3802,8 +4086,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       scalar point, and the scalarization chart's double-domain field keeps
       this first segment inside `sourceDoublePermutationGramDomain d n τ`.
       Concatenate it with
-      `BHW.swFigure24_wickToQuarterTurn_scalarPath`, whose endpoint is the
-      OS45 quarter-turn scalar point.  The resulting `γ` starts in `Wseed`,
+      `BHW.swFigure24_wickToQuarterTurn_scalarPath`, passing the selected
+      source-patch field `hV_figPath`; its endpoint is the OS45 quarter-turn
+      scalar point.  The resulting `γ` starts in `Wseed`,
       ends at `sourceMinkowskiGram d n (Q.symm (realEmbed y0))`, and stays in
       the adjacent double scalar domain.  This theorem is source geometry and
       scalarization only; it must not use local EOW, real-edge adjacent
@@ -5051,7 +5336,23 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 (∀ x ∈ closure V,
                   BHW.realEmbed
                     (BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x) ∈
-                    BHW.os45PulledRealBranchDomain (d := d) (n := n) τ))
+                    BHW.os45PulledRealBranchDomain (d := d) (n := n) τ) ∧
+                (let Q := BHW.os45QuarterTurnCLE (d := d) (n := n)
+                 ∀ x ∈ V,
+                  let y :=
+                    BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x
+                  ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
+                    Continuous Γ ∧
+                    Continuous Δ ∧
+                    Γ (0 : unitInterval) =
+                      (fun k => wickRotatePoint (x k)) ∧
+                    Γ (1 : unitInterval) = Q.symm (BHW.realEmbed y) ∧
+                    (∀ t, Γ t ∈ BHW.ExtendedTube d n) ∧
+                    (∀ t, Δ t ∈ BHW.ExtendedTube d n) ∧
+                    (∀ t,
+                      BHW.sourceMinkowskiGram d n (Δ t) =
+                        BHW.sourcePermuteComplexGram n τ
+                          (BHW.sourceMinkowskiGram d n (Γ t)))))
          ```
 
          This is not a wrapper around `hV_ET` or `hV_swapET`: those hypotheses
@@ -5095,6 +5396,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
            the real patch into the complex configuration space; the source
            environment fields say exactly that `Hid x` and `Hτ x` lie in the
            relevant extended-tube domains.
+         - Build the path-stability field `hV_figPath` in the same source
+           patch, before any scalar theorem is called.  The identity
+           realization is the explicit interpolation
+           `Γ t k 0 = c t * x k 0`, `Γ t k μ = x k μ` for `μ ≠ 0`, with
+           `c t = t / 2 + (1 - t / 2) * I`.  The adjacent realization is the
+           Figure-2-4 rotated realization of the adjacent permuted Gram point,
+           not the bare relabelled path.  The proof uses the promoted
+           two-plane support from `AdjacentOverlapWitness.lean` and a
+           compact-open shrink around the ordered seed over `unitInterval`.
          - Intersect `Ufig` with the two ordered-sector preimages and with the
            open trace-domain preimages needed for the checked OS45 Wick/real
            fields.  The trace-domain fields can also be obtained from the
@@ -5109,7 +5419,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
            pulled-back Figure 2-4 inclusions give the new horizontal
            memberships in
            `BHW.os45PulledRealBranchDomain (d := d) (n := n) 1` and
-           `BHW.os45PulledRealBranchDomain (d := d) (n := n) τ`.
+           `BHW.os45PulledRealBranchDomain (d := d) (n := n) τ`, and the
+           compact-open path-stability shrink gives `hV_figPath` on `V`.
          - No equality of branch values is concluded here.  The theorem only
            selects the source patch on which the later one-branch boundary
            value construction is allowed to run.
