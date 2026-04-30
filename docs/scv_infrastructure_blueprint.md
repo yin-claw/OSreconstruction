@@ -314,6 +314,13 @@ lemma chartOrthantBoundaryValue_from_uniformConeBoundaryValue
 lemma chartHolomorphy_from_originalHolomorphy
 lemma chartDistributionalEOW_local_envelope
 lemma chartDistributionalEOW_transport_originalCoords
+lemma localEOWChart_change_basepoint
+lemma localEOWComplexAffineEquiv_sameBasis_transition
+def localEOWFixedBasisCoordinateOverlap
+lemma isOpen_localEOWFixedBasisCoordinateOverlap
+lemma convex_localEOWFixedBasisCoordinateOverlap
+lemma localEOWFixedBasis_coordinateOverlap_real_seed
+lemma localEOWFixedBasis_coordinateOverlap_positiveSeed
 lemma localEOWFixedBasis_overlap_positiveSeed
 lemma distributionalEOW_extensions_compatible
 lemma localDistributionalEOW_patch_extensions
@@ -556,8 +563,8 @@ Source ledger for the internal helper list:
 | `chartSlowGrowth_from_uniformConeSlowGrowth` | Checked outer adapter for OS-II slow-growth data.  It rewrites compact-subcone estimates in fixed chart orthants using `localEOWRealLinearPart ys`, with `localEOWRealLinearPart_eq_sum_smul` making the normalized cone direction exactly the simplex direction.  It is not a formal input to `chartDistributionalEOW_local_envelope` once the uniform distributional BV hypotheses are supplied. |
 | `localEOWRealLinearPart_eq_sum_smul`, `HasCompactSupport.localEOWAffineTestPushforwardCLM`, `tsupport_localEOWAffineTestPushforwardCLM_subset`, `localEOWAffineTestPushforwardCLM_apply_realChart`, `integral_localEOWAffineTestPushforwardCLM_changeOfVariables`, `tendstoUniformlyOn_const_comp_of_tendsto_of_eventually_mem`, `coordSum_tendsto_positiveOrthant_nhdsWithin_Ioi`, `coordNegSum_tendsto_negativeOrthant_nhdsWithin_Ioi`, `localEOWChart_real_add_imag`, `chartOrthantBoundaryValue_from_uniformConeBoundaryValue`, `chartHolomorphy_from_originalHolomorphy` | The checked chart-pullback support, Jacobian, sign/filter, and holomorphy layer.  The affine support lemmas are checked in `SCV/LocalEOWChartLinear.lean`: a compactly supported chart test pushes to a compactly supported original-edge test, and its pushed support is contained in the affine image of the chart support.  The real-chart evaluation identity proves that evaluating the pushed test at `localEOWRealChart x0 ys u` returns the original chart test value `φ u`; this is the pointwise cancellation that prevents treating chart coordinates as original coordinates.  The determinant change-of-variables lemma `integral_localEOWAffineTestPushforwardCLM_changeOfVariables` is checked and proves that the inverse determinant factor in `localEOWAffineDistributionPullbackCLM` converts original integrals into chart integrals.  The orthant BV theorem is checked: it uses one generic uniform-convergence composition helper, two coordinate-sum filter lemmas, and the complex-chart imaginary decomposition to rewrite distributional boundary-value hypotheses into coordinate `nhdsWithin 0 {y | ∀ j, 0 < y j}` and `nhdsWithin 0 {y | ∀ j, y j < 0}` limits.  Holomorphy transport is checked by composing the original `DifferentiableOn` hypothesis with `differentiable_localEOWChart`.  These are not wrapper names: they are sign, support, Jacobian, filter, and compact-direction reductions used by the one-chart theorem and its outer adapters. |
 | `chartDistributionalEOW_local_envelope` | Checked in `SCV/LocalEOWDistributionalEnvelope.lean`: the one fixed-basis local distributional EOW envelope.  It chooses the fixed continuous-EOW window, shrinks the real chart radius, extracts the explicit side cone and negative image from the compact-direction OS-II boundary-value hypotheses, inserts the affine pushed cutoff `χ`, truncates the side cones to get support margins, prepares `Dplus/Dminus`, builds the cutoff-support slice CLMs targeting `T.comp (SchwartzMap.smulLeftCLM ℂ χ)`, chooses the inverse-chart kernel radius and one-chart recovery scale, and calls `regularizedLocalEOW_chartEnvelope_from_fixedWindowScale`.  Its side identities are exactly `Fplus (localEOWChart x0 ys w)` and `Fminus (localEOWChart x0 ys w)` on the explicit strict positive/negative coordinate balls.  The statement does not take slow-growth hypotheses; those belong only to the outer construction of the distributional BV inputs. |
-| `chartDistributionalEOW_transport_originalCoords` | Transports the coordinate envelope through `localEOWComplexAffineEquiv x0 ys hli` to an original-coordinate local patch.  This is genuine affine holomorphy/open-map content, not a rename; the output patch domain is the image of a coordinate ball and the side domains are the images of the strict positive/negative coordinate balls, exactly the shape consumed by the overlap/patching lemmas. |
-| `localEOWFixedBasis_overlap_positiveSeed`, `distributionalEOW_extensions_compatible`, `localDistributionalEOW_patch_extensions` | Reuse the now-public `SCV.local_extensions_consistent` identity-theorem pattern and the global patching pattern in `edge_of_the_wedge_theorem`, with the fixed-basis overlap seed described below.  The positive-seed lemma is the finite-dimensional geometry that makes patching honest: intersecting transported balls are convex and conjugation-invariant, hence meet the real slice, and the shared positive coordinate cone gives an open side seed. |
+| `chartDistributionalEOW_transport_originalCoords` | Transports the coordinate envelope through `localEOWComplexAffineEquiv x0 ys hli` to an original-coordinate local patch.  This is genuine affine holomorphy/open-map content, not a rename; the output patch domain is the image of a coordinate ball and the side domains are the images of the strict positive/negative coordinate balls, exactly the shape consumed by the overlap/patching lemmas.  The transport output must include `IsPreconnected Uorig`, `UplusOrig.Nonempty`, and `UminusOrig.Nonempty`, because those are consumed by the patch seed and final uniqueness clauses. |
+| `localEOWChart_change_basepoint`, `localEOWComplexAffineEquiv_sameBasis_transition`, `localEOWFixedBasisCoordinateOverlap`, `isOpen_localEOWFixedBasisCoordinateOverlap`, `convex_localEOWFixedBasisCoordinateOverlap`, `localEOWFixedBasis_coordinateOverlap_real_seed`, `localEOWFixedBasis_coordinateOverlap_positiveSeed`, `localEOWFixedBasis_overlap_positiveSeed`, `distributionalEOW_extensions_compatible`, `localDistributionalEOW_patch_extensions` | Reuse the now-public `SCV.local_extensions_consistent` identity-theorem pattern and the global patching pattern in `edge_of_the_wedge_theorem`, with the fixed-basis overlap seed described below.  The positive-seed lemma is the finite-dimensional geometry that makes patching honest: after pulling an overlap back by the first affine chart, the overlap is exactly `Metric.ball 0 R₁ ∩ {w | w - realEmbed d ∈ Metric.ball 0 R₂}` with `d = (localEOWRealLinearCLE ys hli).symm (x₂ - x₁)`.  This coordinate overlap is open, convex, and conjugation-invariant; hence it meets the real slice, and a small constant positive imaginary displacement stays in both shifted balls. |
 
 Do not write this as "apply `SCV.edge_of_the_wedge_theorem`" without further
 work.  The checked theorem `SCV.edge_of_the_wedge_theorem` is stated for global
@@ -2554,31 +2561,77 @@ axiom.
    not by itself enough to state the final theorem in original coordinates.
 18. `distributionalEOW_extensions_compatible` proves agreement of two
    transported local chart envelopes on overlaps by the ordinary identity
-   theorem.  The fixed-basis discipline is essential here.  Each transported
-   coordinate ball is a convex open set invariant under complex conjugation
-   and centered on the real edge.  If two such patches overlap at `z`, then
-   the conjugate point also lies in the overlap and convexity gives
-   `p = (z + conj z) / 2` in the real slice of the overlap.  Write the two
-   real chart coordinates of `p` as `u₁` and `u₂`, so
-   `p = localEOWChart x₁ ys (realEmbed u₁) =
-        localEOWChart x₂ ys (realEmbed u₂)`.
-   Since the coordinate domains are open, choose one vector `v` with
-   `∀ j, 0 < v j` and sufficiently small norm so that
-   `u₁ + I v` and `u₂ + I v` both remain in their coordinate domains.  The
-   shared linear part gives the same original point
-   `p + I * localEOWRealLinearPart ys v` from both charts, so this point lies
-   in both transported positive side windows; both local envelopes equal
-   `Fplus` there.  The identity theorem on the preconnected overlap then
-   proves equality everywhere on that overlap.  The negative side gives the
-   same fallback seed if the proof chooses the lower orthant.  This is the
-   local analogue of `SCV.local_extensions_consistent`, but with explicit side
+   theorem.  The fixed-basis discipline is essential here.  Set
+
+	   ```lean
+	   A₁ := localEOWComplexAffineEquiv x₁ ys hli
+	   A₂ := localEOWComplexAffineEquiv x₂ ys hli
+	   d  := (localEOWRealLinearCLE ys hli).symm (x₂ - x₁)
+	   W  := Metric.ball (0 : ComplexChartSpace m) R₁ ∩
+	           {w | w - realEmbed d ∈
+	             Metric.ball (0 : ComplexChartSpace m) R₂}
+	   V  := A₁ '' W
+	   ```
+
+   The exact same-basis transition is
+
+	   ```lean
+	   A₂.symm (A₁ w) = w - realEmbed d
+	   ```
+
+   so `V` is identified with the original-coordinate overlap of the two
+   transported balls.  The set `W` is open and convex; it is also invariant
+   under coordinatewise conjugation because `d` is real and both coordinate
+   balls are conjugation-invariant.  From any nonempty overlap, pull back by
+   `A₁` to get `w ∈ W`; convexity and conjugation give
+   `realEmbed u = (w + conj w) / 2 ∈ W`.  Since `W` is open, choose `τ > 0`
+   with
+
+	   ```lean
+	   wτ := realEmbed u + fun _ => (τ : ℂ) * Complex.I
+	   ```
+
+   still in `W`.  Then `wτ ∈ StrictPositiveImagBall R₁`, and
+   `wτ - realEmbed d ∈ StrictPositiveImagBall R₂`.  Mapping by `A₁` gives a
+   point of the first transported positive side window; the transition formula
+   rewrites the same point as `A₂ (wτ - realEmbed d)`, so it also lies in the
+   second transported positive side window.  Both local envelopes equal
+   `Fplus` on an open neighborhood of this seed, and the identity theorem on
+   the preconnected overlap proves equality everywhere.  This is the local
+   analogue of `SCV.local_extensions_consistent`, but with explicit side
    windows instead of the global `TubeDomain C`.
 19. `localDistributionalEOW_patch_extensions` follows the existing patching
-   pattern in `SCV.edge_of_the_wedge_theorem`: define the extension by local
-   representatives and use compatibility to prove well-definedness and
-   holomorphy.  The patched side windows are the unions of transported strict
-   side windows.  The uniqueness clause is then proved componentwise from the
-   same side-window seed condition exposed in the final theorem statement.
+   pattern in `SCV.edge_of_the_wedge_theorem`: define the total extension by
+   ```
+   H z =
+     if hz : ∃ i, z ∈ Uloc i then
+       Hloc (Classical.choose hz) z
+     else 0
+   ```
+   and use compatibility to prove that this equals `Hloc i z` for every
+   explicit witness `z ∈ Uloc i`.  Holomorphy on the union is therefore local
+   on the chosen patch.  The patched side windows are the unions of transported
+   strict side windows.  The uniqueness clause is then proved componentwise
+   from the same side-window seed condition exposed in the final theorem
+   statement.
+20. The final `local_distributional_edge_of_the_wedge_envelope` assembles the
+   preceding pieces with the index type `ι = {x : Fin m -> ℝ // x ∈ E}`.  After
+   deriving `hm : 0 < m`, choose one global basis `ys` from `C` and reuse it
+   for every `i : ι`.  For each `i`, apply
+   `chartDistributionalEOW_local_envelope` at `x0 = i.1`, then immediately
+   apply `chartDistributionalEOW_transport_originalCoords`; store its
+   transported sets and function as `Uloc i`, `UplusLoc i`, `UminusLoc i`,
+   and `Hloc i`.  The real-edge cover is the transported fact
+   `realEmbed i.1 ∈ Uloc i`.  Compatibility for two indices is exactly
+   `distributionalEOW_extensions_compatible`, using the two transported
+   coordinate radii and the shared global `ys`.  The patch seed required by
+   `localDistributionalEOW_patch_extensions` is supplied by taking
+   `V = Uloc i`: transport gives `IsOpen (Uloc i)`, `IsPreconnected (Uloc i)`,
+   `z ∈ Uloc i`, `Uloc i ⊆ Uloc i`, and `UplusLoc i.Nonempty` (or the negative
+   companion).  The patch theorem then returns the global open neighborhood
+   of `realEmbed '' E`, the explicit side-window agreements, and the uniqueness
+   clause.  No side-connectedness of arbitrary components of `U ∩ Ωplus` or
+   `U ∩ Ωminus` is used.
 
 This package is substantial SCV mathematics.  Do not replace it by a record of
 boundary-limit fields, and do not introduce it as an axiom.
@@ -3767,12 +3820,83 @@ lemma chartDistributionalEOW_transport_originalCoords
       UplusOrig ⊆ Uorig ∩ Ωplus ∧
       UminusOrig ⊆ Uorig ∩ Ωminus ∧
       realEmbed x0 ∈ Uorig ∧
+      IsPreconnected Uorig ∧
+      UplusOrig.Nonempty ∧
+      UminusOrig.Nonempty ∧
       DifferentiableOn ℂ Horig Uorig ∧
       (∀ z ∈ UplusOrig, Horig z = Fplus z) ∧
       (∀ z ∈ UminusOrig, Horig z = Fminus z)
 
-lemma localEOWFixedBasis_overlap_positiveSeed
+lemma localEOWChart_change_basepoint
     {m : ℕ}
+    (x₁ x₂ : Fin m -> ℝ)
+    (ys : Fin m -> Fin m -> ℝ)
+    (w : ComplexChartSpace m) :
+    localEOWChart x₂ ys w =
+      localEOWChart x₁ ys w + realEmbed (x₂ - x₁)
+
+lemma localEOWComplexAffineEquiv_sameBasis_transition
+    {m : ℕ}
+    (x₁ x₂ : Fin m -> ℝ)
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (w : ComplexChartSpace m) :
+    (localEOWComplexAffineEquiv x₂ ys hli).symm
+      (localEOWComplexAffineEquiv x₁ ys hli w) =
+        w - realEmbed ((localEOWRealLinearCLE ys hli).symm (x₂ - x₁))
+
+def localEOWFixedBasisCoordinateOverlap
+    {m : ℕ}
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (x₁ x₂ : Fin m -> ℝ)
+    (R₁ R₂ : ℝ) : Set (ComplexChartSpace m) :=
+  let d : Fin m -> ℝ := (localEOWRealLinearCLE ys hli).symm (x₂ - x₁)
+  Metric.ball (0 : ComplexChartSpace m) R₁ ∩
+    {w | w - realEmbed d ∈ Metric.ball (0 : ComplexChartSpace m) R₂}
+
+lemma isOpen_localEOWFixedBasisCoordinateOverlap
+    {m : ℕ}
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (x₁ x₂ : Fin m -> ℝ)
+    (R₁ R₂ : ℝ) :
+    IsOpen (localEOWFixedBasisCoordinateOverlap ys hli x₁ x₂ R₁ R₂)
+
+lemma convex_localEOWFixedBasisCoordinateOverlap
+    {m : ℕ}
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (x₁ x₂ : Fin m -> ℝ)
+    (R₁ R₂ : ℝ) :
+    Convex ℝ (localEOWFixedBasisCoordinateOverlap ys hli x₁ x₂ R₁ R₂)
+
+lemma localEOWFixedBasis_coordinateOverlap_real_seed
+    {m : ℕ}
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (x₁ x₂ : Fin m -> ℝ)
+    {R₁ R₂ : ℝ}
+    (hoverlap :
+      (localEOWFixedBasisCoordinateOverlap ys hli x₁ x₂ R₁ R₂).Nonempty) :
+    ∃ u : Fin m -> ℝ,
+      realEmbed u ∈ localEOWFixedBasisCoordinateOverlap ys hli x₁ x₂ R₁ R₂
+
+lemma localEOWFixedBasis_coordinateOverlap_positiveSeed
+    {m : ℕ} (hm : 0 < m)
+    (ys : Fin m -> Fin m -> ℝ)
+    (hli : LinearIndependent ℝ ys)
+    (x₁ x₂ : Fin m -> ℝ)
+    {R₁ R₂ : ℝ} (hR₁ : 0 < R₁) (hR₂ : 0 < R₂)
+    (hoverlap :
+      (localEOWFixedBasisCoordinateOverlap ys hli x₁ x₂ R₁ R₂).Nonempty) :
+    let d : Fin m -> ℝ := (localEOWRealLinearCLE ys hli).symm (x₂ - x₁)
+    ∃ w : ComplexChartSpace m,
+      w ∈ StrictPositiveImagBall R₁ ∧
+      w - realEmbed d ∈ StrictPositiveImagBall R₂
+
+lemma localEOWFixedBasis_overlap_positiveSeed
+    {m : ℕ} (hm : 0 < m)
     (x₁ x₂ : Fin m -> ℝ)
     (ys : Fin m -> Fin m -> ℝ)
     (hli : LinearIndependent ℝ ys)
@@ -3788,7 +3912,7 @@ lemma localEOWFixedBasis_overlap_positiveSeed
           StrictPositiveImagBall R₂)).Nonempty
 
 lemma distributionalEOW_extensions_compatible
-    {m : ℕ}
+    {m : ℕ} (hm : 0 < m)
     (x₁ x₂ : Fin m -> ℝ)
     (ys : Fin m -> Fin m -> ℝ)
     (hli : LinearIndependent ℝ ys)
@@ -4812,35 +4936,108 @@ side identities.
 
 Proof transcript for the fixed-basis overlap and patching layer:
 
-1. For `localEOWFixedBasis_overlap_positiveSeed`, take a point in the overlap of
-   two transported coordinate balls.  Each transported ball is open, convex, and
-   stable under coordinatewise conjugation because the coordinate ball is so and
-   `localEOWComplexAffineEquiv` has real affine coefficients.  Hence the midpoint
-   of the point and its conjugate is a real point still in the overlap.  Pull this
-   real point back to real coordinate points `u₁,u₂` in the two balls.  Since the
-   coordinate balls are open, choose `τ > 0` so
-   `uᵢ + fun _ => (τ : ℂ) * Complex.I` remains in the corresponding coordinate
-   ball for `i = 1,2`.  Because the linear part `ys` is the same for both
-   patches, both lifted points map to the same original point
-   `zR + Complex.I • localEOWRealLinearPart ys (fun _ => τ)`.  This point lies in
-   both transported strict positive side balls.
-2. For `distributionalEOW_extensions_compatible`, use the positive seed from
-   step 1.  Both holomorphic functions equal the same `Fplus` on a nonempty open
-   subset of the overlap.  The overlap is preconnected because it is the
-   intersection of two convex transported balls; the ordinary identity theorem
-   gives equality on the whole overlap.
-3. For `localDistributionalEOW_patch_extensions`, define
+1. `localEOWChart_change_basepoint` is the componentwise affine identity
+   ```
+   localEOWChart x₂ ys w =
+     localEOWChart x₁ ys w + realEmbed (x₂ - x₁).
+   ```
+   It follows directly from `localEOWChart` and subtraction/addition in
+   `Fin m -> ℝ`.  This is not a wrapper: it is the sign convention that fixes
+   the overlap shift used by every later chart-change argument.
+2. `localEOWComplexAffineEquiv_sameBasis_transition` sets
+   `Aᵢ = localEOWComplexAffineEquiv xᵢ ys hli` and
+   `d = (localEOWRealLinearCLE ys hli).symm (x₂ - x₁)`.  Since
+   `A₂ (w - realEmbed d) = A₁ w`, applying `A₂.symm` gives
+   ```
+   A₂.symm (A₁ w) = w - realEmbed d.
+   ```
+   The sign is important: changing the base point from `x₁` to `x₂` subtracts
+   the coordinate displacement of `x₂ - x₁`.
+3. `localEOWFixedBasisCoordinateOverlap ys hli x₁ x₂ R₁ R₂` is
+   ```
+   Metric.ball (0 : ComplexChartSpace m) R₁ ∩
+     {w | w - realEmbed d ∈ Metric.ball (0 : ComplexChartSpace m) R₂}
+   ```
+   with the same `d`.  It is open by intersection of the open ball with the
+   preimage of the open ball under the continuous map
+   `w ↦ w - realEmbed d`.  It is convex over `ℝ` by convexity of balls and
+   preservation of affine combinations by real translation.
+4. `localEOWFixedBasis_coordinateOverlap_real_seed` starts from
+   `w ∈ localEOWFixedBasisCoordinateOverlap ...`.  Coordinatewise conjugation
+   preserves both ball memberships, and
+   `conj (w - realEmbed d) = conj w - realEmbed d` because `d` is real.
+   Convexity puts `(w + conj w) / 2` in the coordinate overlap.  This midpoint
+   is `realEmbed u` for `u j = (w j).re`, so the overlap contains a real seed.
+5. `localEOWFixedBasis_coordinateOverlap_positiveSeed` uses the preceding real
+   seed and openness of the coordinate overlap.  The map
+   `τ ↦ realEmbed u + fun _ => (τ : ℂ) * Complex.I` is continuous at `0`; since
+   the overlap is open and contains `realEmbed u`, choose `τ > 0` small enough
+   that
+   ```
+   wτ = realEmbed u + fun _ => (τ : ℂ) * Complex.I
+   ```
+   remains in the coordinate overlap.  Then `wτ` lies in
+   `StrictPositiveImagBall R₁`, and `wτ - realEmbed d` lies in
+   `StrictPositiveImagBall R₂`, because subtracting `realEmbed d` does not
+   change imaginary parts.  In Lean, choose `ε > 0` with
+   `Metric.ball (realEmbed u) ε` contained in the coordinate overlap, then
+   take `0 < τ < ε`; the estimate
+   `‖(fun _ => (τ : ℂ) * Complex.I)‖ ≤ τ` is proved componentwise from
+   `pi_norm_le_iff_of_nonneg`, `norm_mul`, `Complex.normSq_ofReal`, and
+   `Complex.normSq_I`, so `wτ ∈ Metric.ball (realEmbed u) ε`.
+6. For `localEOWFixedBasis_overlap_positiveSeed`, take a point in
+   ```
+   (A₁ '' Metric.ball 0 R₁) ∩ (A₂ '' Metric.ball 0 R₂).
+   ```
+   Pull it back by `A₁`; the transition theorem identifies the pullback
+   condition with membership in `localEOWFixedBasisCoordinateOverlap`.  Apply
+   `localEOWFixedBasis_coordinateOverlap_positiveSeed` to get `wτ` with
+   `wτ ∈ StrictPositiveImagBall R₁` and
+   `wτ - realEmbed d ∈ StrictPositiveImagBall R₂`.  The same transition gives
+   `A₁ wτ = A₂ (wτ - realEmbed d)`, so this one original-coordinate point lies
+   in both transported strict positive side balls.
+7. For `distributionalEOW_extensions_compatible`, set
+   ```
+   V = (A₁ '' Metric.ball 0 R₁) ∩ (A₂ '' Metric.ball 0 R₂).
+   ```
+   Equivalently, `V = A₁ '' localEOWFixedBasisCoordinateOverlap ...`.  The
+   coordinate overlap is convex, hence preconnected, and the continuous affine
+   map `A₁` sends it to a preconnected image.  The seed from step 6 lies in the
+   open set
+   ```
+   (A₁ '' StrictPositiveImagBall R₁) ∩
+     (A₂ '' StrictPositiveImagBall R₂) ⊆ V.
+   ```
+   On this open neighborhood both `H₁` and `H₂` equal the same `Fplus`.
+   Restrict the differentiability hypotheses to `V`, convert them to
+   `AnalyticOnNhd` by the same pattern as `SCV.local_extensions_consistent`,
+   and apply `AnalyticOnNhd.eqOn_of_preconnected_of_eventuallyEq` to prove
+   `H₁ z = H₂ z` for every `z ∈ V`.
+8. For `localDistributionalEOW_patch_extensions`, define
    `U = ⋃ i, Uloc i`, `Uplus = ⋃ i, UplusLoc i`,
    `Uminus = ⋃ i, UminusLoc i`, and
-   `H z = Hloc (Classical.choose hz) z` for any witness
-   `hz : ∃ i, z ∈ Uloc i`.  The compatibility hypothesis makes this definition
-   independent of the chosen witness.  Holomorphy is local on `U`: near any
-   `z ∈ U`, choose a patch containing it and use `hH_holo` there.  Side
+   ```
+   H z =
+     if hz : ∃ i, z ∈ Uloc i then
+       Hloc (Classical.choose hz) z
+     else 0.
+   ```
+   The compatibility hypothesis proves the key local rewriting lemma:
+   for every explicit `i` and `hz : z ∈ Uloc i`, `H z = Hloc i z`.  Indeed,
+   the chosen witness gives some `j` with `z ∈ Uloc j`, and `hcompat i j z`
+   identifies the two values.  Holomorphy is local on `U`: near any `z ∈ U`,
+   choose a patch containing it, use openness of that patch, rewrite `H` to
+   the corresponding `Hloc i` on the patch, and apply `hH_holo i`.  Side
    agreement follows by choosing the side patch witnessing membership in the
-   union.  The uniqueness clause uses `hseed`: on the seeded preconnected
-   neighborhood, both a competitor `G` and the representative `Hloc i` agree
-   with the same side function on a nonempty open side subset, so the identity
-   theorem gives equality at the target point.
+   union and using the same local rewrite.  The final seed clause in the
+   output is assembled patchwise: if `z ∈ Uloc i`, apply the input
+   `hseed i z` and then compose the inclusion `V ⊆ Uloc i` with
+   `Uloc i ⊆ U`; side nonemptiness is preserved by the union inclusions.
+   The uniqueness clause uses this seeded preconnected neighborhood.  On the
+   nonempty open side subset, a competitor `G` and the representative `Hloc i`
+   agree with the same side function.  The identity theorem gives equality on
+   that local seed, and the local rewrite identifies the globally defined `H`
+   with `Hloc i` there, hence equality at the target point.
 
 The displayed `regularizedEnvelope_deltaLimit_agreesOnWedges` surface must not
 be implemented by adding a free `hkernel_limit` assumption.  That would hide the

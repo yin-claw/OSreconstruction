@@ -1077,8 +1077,18 @@ Proof decomposition of this theorem, without hiding the analytic work:
      `SCV.tendsto_realMollifyLocal_strictNegativeImagBall`,
      `SCV.regularizedEnvelope_chartEnvelope_from_oneChartScale`,
      `SCV.regularizedLocalEOW_chartEnvelope_from_fixedWindowScale`,
-     `SCV.chartDistributionalEOW_local_envelope`, and
-     `SCV.chartDistributionalEOW_transport_originalCoords`.
+     `SCV.chartDistributionalEOW_local_envelope`,
+     `SCV.chartDistributionalEOW_transport_originalCoords`,
+     `SCV.localEOWChart_change_basepoint`,
+     `SCV.localEOWComplexAffineEquiv_sameBasis_transition`,
+     `SCV.localEOWFixedBasisCoordinateOverlap`,
+     `SCV.isOpen_localEOWFixedBasisCoordinateOverlap`,
+     `SCV.convex_localEOWFixedBasisCoordinateOverlap`,
+     `SCV.localEOWFixedBasis_coordinateOverlap_real_seed`,
+     `SCV.localEOWFixedBasis_coordinateOverlap_positiveSeed`,
+     `SCV.localEOWFixedBasis_overlap_positiveSeed`,
+     `SCV.distributionalEOW_extensions_compatible`, and
+     `SCV.localDistributionalEOW_patch_extensions`.
      `SCV.chartSlowGrowth_from_uniformConeSlowGrowth` remains documented as an
      outer OS-II boundary-value construction tool, but it is not a formal
      argument of `SCV.chartDistributionalEOW_local_envelope` once
@@ -1119,13 +1129,37 @@ Proof decomposition of this theorem, without hiding the analytic work:
      `(localEOWComplexAffineEquiv x0 ys hli) '' StrictPositiveImagBall R`,
      and
      `(localEOWComplexAffineEquiv x0 ys hli) '' StrictNegativeImagBall R`.
+     For two patches with the same basis `ys`, their overlap is pulled back to
+     the first chart as
+     `Metric.ball 0 R₁ ∩ {w | w - realEmbed d ∈ Metric.ball 0 R₂}`,
+     where `d = (localEOWRealLinearCLE ys hli).symm (x₂ - x₁)`.  The
+     transition formula
+     `(localEOWComplexAffineEquiv x₂ ys hli).symm
+       ((localEOWComplexAffineEquiv x₁ ys hli) w) = w - realEmbed d`
+     is the exact sign convention for this shift.  Openness, convexity,
+     conjugation invariance, the real seed, and the small positive-imaginary
+     displacement are all named helper lemmas before the compatibility theorem.
    * The patching proof constructs
      `U = ⋃ i, Uloc i`, `Uplus = ⋃ i, UplusLoc i`,
-     `Uminus = ⋃ i, UminusLoc i`, and defines `H` by any local
-     representative.  Well-definedness is exactly
+     `Uminus = ⋃ i, UminusLoc i`, and defines the total function
+     `H z = if hz : ∃ i, z ∈ Uloc i then Hloc (Classical.choose hz) z else 0`.
+     Compatibility proves the local rewrite `H z = Hloc i z` for every
+     explicit witness `z ∈ Uloc i`; holomorphy and side identities are then
+     local on that patch.  Well-definedness is exactly
      `distributionalEOW_extensions_compatible`; uniqueness is exactly the
      side-seeded identity theorem packaged in
      `localDistributionalEOW_patch_extensions`.
+   * The final SCV assembly uses `ι = {x : Fin m -> ℝ // x ∈ E}`.  For each
+     `i : ι`, call `SCV.chartDistributionalEOW_local_envelope` with the single
+     global basis `ys`, then call
+     `SCV.chartDistributionalEOW_transport_originalCoords` and store the
+     transported patch as `Uloc i`, `UplusLoc i`, `UminusLoc i`, `Hloc i`.
+     The real-edge cover is the transported fact `realEmbed i.1 ∈ Uloc i`.
+     The patch theorem's seed hypothesis is supplied by `V = Uloc i`, using
+     the transport outputs `IsOpen (Uloc i)`, `IsPreconnected (Uloc i)`, and
+     `UplusLoc i.Nonempty` (or the negative companion).  Pairwise
+     compatibility on overlaps is exactly
+     `SCV.distributionalEOW_extensions_compatible`.
 
    Proof transcript for the SCV theorem:
 
@@ -2939,7 +2973,12 @@ Current implementation order:
    `happrox_plus/happrox_minus` from the strict-side convergence theorems.
    The next SCV target is the genuine affine transport
    `SCV.chartDistributionalEOW_transport_originalCoords`, followed by the
-   patching theorem `SCV.local_distributional_edge_of_the_wedge_envelope`.
+   fixed-basis overlap package
+   `SCV.localEOWComplexAffineEquiv_sameBasis_transition`,
+   `SCV.localEOWFixedBasisCoordinateOverlap`,
+   `SCV.localEOWFixedBasis_overlap_positiveSeed`, and
+   `SCV.distributionalEOW_extensions_compatible`, then by the patching theorem
+   `SCV.local_distributional_edge_of_the_wedge_envelope`.
    Only after that prove the OS45 instantiation
    `BHW.os45_adjacent_commonBoundaryEnvelope` and package its output as
    `AdjacentOSEOWDifferenceEnvelope` while exporting the same patch `V` for
