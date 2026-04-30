@@ -334,18 +334,21 @@ bounded side windows needed for honest slice margins; and
 two one-sided cutoff slice CLM families without strengthening the OS-II raw
 boundary values beyond compactly supported tests in `E`; and
 `SCV.localEOWSliceCLMs_from_preparedDomains` applies that package to the
-prepared affine real-window domains.  The next
-implementation target is `chartDistributionalEOW_local_envelope`.  Do not
+prepared affine real-window domains.  The one-chart implementation target
+`SCV.chartDistributionalEOW_local_envelope` is now checked in
+`SCV/LocalEOWDistributionalEnvelope.lean`; the next SCV targets are the
+affine transport theorem `chartDistributionalEOW_transport_originalCoords`
+and then the local chart-cover patching theorem.  Do not
 instantiate any slice limit on the whole ambient cone `C` from the
 uniform-on-compact OS-II boundary hypothesis; the Lean route first shrinks to
 a conic neighborhood whose projective base has compact closure inside `C`, and
 then to a bounded local side window for the cutoff slice margins.
 
-Proof-doc completion criterion for this target: the one-chart theorem consumes
-the holomorphy hypotheses, the local wedge/margin hypothesis, and the two
-uniform distributional boundary-value hypotheses `hplus_bv`/`hminus_bv`
-directly.  It does **not** take the OS-II slow-growth estimates as formal
-arguments.  Slow-growth transport remains part of the outer OS-II
+Checked one-chart theorem criterion: the theorem consumes the holomorphy
+hypotheses, the local wedge/margin hypothesis, and the two uniform
+distributional boundary-value hypotheses `hplus_bv`/`hminus_bv` directly.  It
+does **not** take the OS-II slow-growth estimates as formal arguments.
+Slow-growth transport remains part of the outer OS-II
 boundary-value construction, where it helps prove or justify the distributional
 boundary-value hypotheses, but once those hypotheses are supplied there is no
 additional slow-growth use in the one-chart envelope proof.  Therefore the
@@ -552,7 +555,7 @@ Source ledger for the internal helper list:
 | `local_continuous_edge_of_the_wedge_envelope` | Checked in `SCV/LocalContinuousEOWSideAgreement.lean`: local coordinate-ball continuous EOW extraction.  It packages the chart window, the Rudin envelope, holomorphy on `ball 0 (δ/2)`, agreement on the explicit strict positive/negative side balls, and real-boundary agreement on the coordinate real slice.  It intentionally does not claim agreement on arbitrary extra components of `Ωplus` or `Ωminus`. |
 | `chartSlowGrowth_from_uniformConeSlowGrowth` | Checked outer adapter for OS-II slow-growth data.  It rewrites compact-subcone estimates in fixed chart orthants using `localEOWRealLinearPart ys`, with `localEOWRealLinearPart_eq_sum_smul` making the normalized cone direction exactly the simplex direction.  It is not a formal input to `chartDistributionalEOW_local_envelope` once the uniform distributional BV hypotheses are supplied. |
 | `localEOWRealLinearPart_eq_sum_smul`, `HasCompactSupport.localEOWAffineTestPushforwardCLM`, `tsupport_localEOWAffineTestPushforwardCLM_subset`, `localEOWAffineTestPushforwardCLM_apply_realChart`, `integral_localEOWAffineTestPushforwardCLM_changeOfVariables`, `tendstoUniformlyOn_const_comp_of_tendsto_of_eventually_mem`, `coordSum_tendsto_positiveOrthant_nhdsWithin_Ioi`, `coordNegSum_tendsto_negativeOrthant_nhdsWithin_Ioi`, `localEOWChart_real_add_imag`, `chartOrthantBoundaryValue_from_uniformConeBoundaryValue`, `chartHolomorphy_from_originalHolomorphy` | The checked chart-pullback support, Jacobian, sign/filter, and holomorphy layer.  The affine support lemmas are checked in `SCV/LocalEOWChartLinear.lean`: a compactly supported chart test pushes to a compactly supported original-edge test, and its pushed support is contained in the affine image of the chart support.  The real-chart evaluation identity proves that evaluating the pushed test at `localEOWRealChart x0 ys u` returns the original chart test value `φ u`; this is the pointwise cancellation that prevents treating chart coordinates as original coordinates.  The determinant change-of-variables lemma `integral_localEOWAffineTestPushforwardCLM_changeOfVariables` is checked and proves that the inverse determinant factor in `localEOWAffineDistributionPullbackCLM` converts original integrals into chart integrals.  The orthant BV theorem is checked: it uses one generic uniform-convergence composition helper, two coordinate-sum filter lemmas, and the complex-chart imaginary decomposition to rewrite distributional boundary-value hypotheses into coordinate `nhdsWithin 0 {y | ∀ j, 0 < y j}` and `nhdsWithin 0 {y | ∀ j, y j < 0}` limits.  Holomorphy transport is checked by composing the original `DifferentiableOn` hypothesis with `differentiable_localEOWChart`.  These are not wrapper names: they are sign, support, Jacobian, filter, and compact-direction reductions used by the one-chart theorem and its outer adapters. |
-| `chartDistributionalEOW_local_envelope` | Local distributional EOW envelope on one fixed-basis coordinate chart, obtained from the regularized-envelope family and delta-limit recovery after the side-cone raw BV, cutoff slice-family, affine cutoff, chart-kernel pushforward, and local covariant recovery layers above.  Its side identities are for `Fplus (localEOWChart x0 ys w)` and `Fminus (localEOWChart x0 ys w)` on the explicit strict positive/negative coordinate balls.  The statement does not take slow-growth hypotheses; those belong only to the outer construction of the distributional BV inputs. |
+| `chartDistributionalEOW_local_envelope` | Checked in `SCV/LocalEOWDistributionalEnvelope.lean`: the one fixed-basis local distributional EOW envelope.  It chooses the fixed continuous-EOW window, shrinks the real chart radius, extracts the explicit side cone and negative image from the compact-direction OS-II boundary-value hypotheses, inserts the affine pushed cutoff `χ`, truncates the side cones to get support margins, prepares `Dplus/Dminus`, builds the cutoff-support slice CLMs targeting `T.comp (SchwartzMap.smulLeftCLM ℂ χ)`, chooses the inverse-chart kernel radius and one-chart recovery scale, and calls `regularizedLocalEOW_chartEnvelope_from_fixedWindowScale`.  Its side identities are exactly `Fplus (localEOWChart x0 ys w)` and `Fminus (localEOWChart x0 ys w)` on the explicit strict positive/negative coordinate balls.  The statement does not take slow-growth hypotheses; those belong only to the outer construction of the distributional BV inputs. |
 | `chartDistributionalEOW_transport_originalCoords` | Transports the coordinate envelope through `localEOWComplexAffineEquiv x0 ys hli` to an original-coordinate local patch.  This is genuine affine holomorphy/open-map content, not a rename; the output patch domain is the image of a coordinate ball and the side domains are the images of the strict positive/negative coordinate balls, exactly the shape consumed by the overlap/patching lemmas. |
 | `localEOWFixedBasis_overlap_positiveSeed`, `distributionalEOW_extensions_compatible`, `localDistributionalEOW_patch_extensions` | Reuse the now-public `SCV.local_extensions_consistent` identity-theorem pattern and the global patching pattern in `edge_of_the_wedge_theorem`, with the fixed-basis overlap seed described below.  The positive-seed lemma is the finite-dimensional geometry that makes patching honest: intersecting transported balls are convex and conjugation-invariant, hence meet the real slice, and the shared positive coordinate cone gives an open side seed. |
 

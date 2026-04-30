@@ -2840,8 +2840,9 @@ Current implementation order:
    margins, and the one-chart scale inequalities, it constructs `Lorig`,
    `Lchart`, the mixed pairing CLM `K`, local covariance, the descent kernel,
    and the shrinking approximate-identity sequence, then call the checked
-   scaled recovery theorem.  The next Lean target is
-   `SCV.chartDistributionalEOW_local_envelope`, obtained by constructing those prepared
+   scaled recovery theorem.  This one-chart assembly is now checked as
+   `SCV.chartDistributionalEOW_local_envelope` in
+   `SCV/LocalEOWDistributionalEnvelope.lean`: it constructs those prepared
    fixed-window inputs from the raw OS-II boundary-value hypotheses.  The
    distribution bookkeeping is part of the proof surface: the side-cone and
    slice-family steps use the original edge distribution `Torig`; the cutoff
@@ -2936,8 +2937,10 @@ Current implementation order:
    `U0 = ball 0 (δ / 2)`, `DplusSmall = StrictPositiveImagBall σ`,
    `DminusSmall = StrictNegativeImagBall σ`, and derives
    `happrox_plus/happrox_minus` from the strict-side convergence theorems.
-   Then prove
-   the OS45 instantiation
+   The next SCV target is the genuine affine transport
+   `SCV.chartDistributionalEOW_transport_originalCoords`, followed by the
+   patching theorem `SCV.local_distributional_edge_of_the_wedge_envelope`.
+   Only after that prove the OS45 instantiation
    `BHW.os45_adjacent_commonBoundaryEnvelope` and package its output as
    `AdjacentOSEOWDifferenceEnvelope` while exporting the same patch `V` for
    Jost membership and both real extended-tube memberships;
