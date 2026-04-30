@@ -657,4 +657,144 @@ theorem regularizedLocalEOW_pairingCLM_localCovariant
               Gchart (translateSchwartz a ψ) z * φ z := hintegral
       _ = K (schwartzTensorProduct₂ φ (translateSchwartz a ψ)) := hright.symm
 
+/-- Local covariance for the mixed pairing CLM in the fixed-window EOW
+instantiation.
+
+This combines the pointwise shifted-overlap covariance theorem for the explicit
+fixed-window family with the support budget for chart-kernel pushforward.  The
+two kernel support hypotheses supplied by
+`ProductKernelRealTranslationCovariantLocal` are used separately; no step
+asserts that translating a chart kernel preserves a fixed support radius. -/
+theorem regularizedLocalEOW_pairingCLM_localCovariant_from_fixedWindow
+    {Cplus Cminus : Set (Fin m → ℝ)} {rψ ρ r δ Rcov Rmix σ : ℝ}
+    (hm : 0 < m) (hδ : 0 < δ)
+    (Ωplus Ωminus Dplus Dminus : Set (ComplexChartSpace m))
+    (E : Set (Fin m → ℝ))
+    (hΩplus_open : IsOpen Ωplus) (hΩminus_open : IsOpen Ωminus)
+    (hDplus_open : IsOpen Dplus) (hDminus_open : IsOpen Dminus)
+    (hE_open : IsOpen E)
+    (Fplus Fminus : ComplexChartSpace m → ℂ)
+    (hFplus_diff : DifferentiableOn ℂ Fplus Ωplus)
+    (hFminus_diff : DifferentiableOn ℂ Fminus Ωminus)
+    (hplus_margin :
+      ∀ ψ : SchwartzMap (Fin m → ℝ) ℂ, KernelSupportWithin ψ rψ →
+        ∀ z ∈ Dplus, ∀ t ∈ tsupport (ψ : (Fin m → ℝ) → ℂ),
+          z + realEmbed t ∈ Ωplus)
+    (hminus_margin :
+      ∀ ψ : SchwartzMap (Fin m → ℝ) ℂ, KernelSupportWithin ψ rψ →
+        ∀ z ∈ Dminus, ∀ t ∈ tsupport (ψ : (Fin m → ℝ) → ℂ),
+          z + realEmbed t ∈ Ωminus)
+    (hDplus_sub : Dplus ⊆ TubeDomain Cplus)
+    (hDminus_sub : Dminus ⊆ TubeDomain Cminus)
+    (Tplus Tminus :
+      (Fin m → ℝ) → SchwartzMap (Fin m → ℝ) ℂ →L[ℝ] ℂ)
+    (Tchart : SchwartzMap (Fin m → ℝ) ℂ →L[ℂ] ℂ)
+    (hplus_eval :
+      ∀ ψ : SchwartzMap (Fin m → ℝ) ℂ, KernelSupportWithin ψ rψ →
+        ∀ w ∈ Dplus,
+          realMollifyLocal Fplus ψ w =
+            Tplus (fun i => (w i).im)
+              (translateSchwartz (fun i => - (w i).re) ψ))
+    (hminus_eval :
+      ∀ ψ : SchwartzMap (Fin m → ℝ) ℂ, KernelSupportWithin ψ rψ →
+        ∀ w ∈ Dminus,
+          realMollifyLocal Fminus ψ w =
+            Tminus (fun i => (w i).im)
+              (translateSchwartz (fun i => - (w i).re) ψ))
+    (hplus_limit :
+      ∀ f : SchwartzMap (Fin m → ℝ) ℂ,
+        Tendsto (fun y => Tplus y f) (nhdsWithin 0 Cplus)
+          (nhds ((Tchart.restrictScalars ℝ) f)))
+    (hminus_limit :
+      ∀ f : SchwartzMap (Fin m → ℝ) ℂ,
+        Tendsto (fun y => Tminus y f) (nhdsWithin 0 Cminus)
+          (nhds ((Tchart.restrictScalars ℝ) f)))
+    (x0 : Fin m → ℝ) (ys : Fin m → Fin m → ℝ)
+    (hδρ : δ * 10 ≤ ρ)
+    (hδsum : (Fintype.card (Fin m) : ℝ) * (δ * 10) < r)
+    (hE_mem :
+      ∀ u ∈ Metric.closedBall (0 : Fin m → ℝ) ρ,
+        localEOWRealChart x0 ys u ∈ E)
+    (hplus :
+      ∀ u ∈ Metric.closedBall (0 : Fin m → ℝ) ρ, ∀ v : Fin m → ℝ,
+        (∀ j, 0 ≤ v j) →
+        0 < ∑ j, v j →
+        (∑ j, v j) < r →
+          localEOWChart x0 ys
+            (fun j => (u j : ℂ) + (v j : ℂ) * Complex.I) ∈ Dplus)
+    (hminus :
+      ∀ u ∈ Metric.closedBall (0 : Fin m → ℝ) ρ, ∀ v : Fin m → ℝ,
+        (∀ j, v j ≤ 0) →
+        0 < ∑ j, -v j →
+        (∑ j, -v j) < r →
+          localEOWChart x0 ys
+            (fun j => (u j : ℂ) + (v j : ℂ) * Complex.I) ∈ Dminus)
+    (hli : LinearIndependent ℝ ys)
+    (K : SchwartzMap (ComplexChartSpace m × (Fin m → ℝ)) ℂ →L[ℂ] ℂ)
+    (hRcov_small : 2 * Rcov < δ / 4)
+    (hRmix_le : Rmix ≤ 4 * σ)
+    (hA4 :
+      ‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖ *
+          (4 * σ) ≤ rψ)
+    (hK_rep :
+      ∀ (φ : SchwartzMap (ComplexChartSpace m) ℂ)
+        (ψ : SchwartzMap (Fin m → ℝ) ℂ),
+        SupportsInOpen (φ : ComplexChartSpace m → ℂ)
+          (Metric.ball (0 : ComplexChartSpace m) Rcov) →
+        KernelSupportWithin ψ Rmix →
+          K (schwartzTensorProduct₂ φ ψ) =
+            ∫ z : ComplexChartSpace m,
+              (localRudinEnvelope δ x0 ys
+                (realMollifyLocal Fplus
+                  (localEOWRealLinearKernelPushforwardCLM ys hli ψ))
+                (realMollifyLocal Fminus
+                  (localEOWRealLinearKernelPushforwardCLM ys hli ψ)) z) *
+                φ z)
+    (hG_cont :
+      ∀ ψ, KernelSupportWithin ψ Rmix →
+        ContinuousOn
+          (fun z : ComplexChartSpace m =>
+            localRudinEnvelope δ x0 ys
+              (realMollifyLocal Fplus
+                (localEOWRealLinearKernelPushforwardCLM ys hli ψ))
+              (realMollifyLocal Fminus
+                (localEOWRealLinearKernelPushforwardCLM ys hli ψ)) z)
+          (Metric.ball (0 : ComplexChartSpace m) Rcov)) :
+    ProductKernelRealTranslationCovariantLocal K
+      (Metric.ball (0 : ComplexChartSpace m) Rcov) Rmix := by
+  let Gchart : SchwartzMap (Fin m → ℝ) ℂ → ComplexChartSpace m → ℂ :=
+    fun ψ z =>
+      localRudinEnvelope δ x0 ys
+        (realMollifyLocal Fplus
+          (localEOWRealLinearKernelPushforwardCLM ys hli ψ))
+        (realMollifyLocal Fminus
+          (localEOWRealLinearKernelPushforwardCLM ys hli ψ)) z
+  apply regularizedLocalEOW_pairingCLM_localCovariant
+    (m := m) hm hδ K Gchart Rcov Rmix hRcov_small
+  · intro φ ψ hφ hψ
+    simpa [Gchart] using hK_rep φ ψ hφ hψ
+  · intro ψ hψ
+    simpa [Gchart] using hG_cont ψ hψ
+  · intro a ψ hψ hψ_shift hseed w hw
+    have hPψ :
+        KernelSupportWithin
+          (localEOWRealLinearKernelPushforwardCLM ys hli ψ) rψ :=
+      KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM_of_le_four_mul
+        ys hli hψ hRmix_le hA4
+    have hPψ_shift :
+        KernelSupportWithin
+          (localEOWRealLinearKernelPushforwardCLM ys hli
+            (translateSchwartz a ψ)) rψ :=
+      KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM_of_le_four_mul
+        ys hli hψ_shift hRmix_le hA4
+    simpa [Gchart] using
+      regularizedLocalEOW_family_chartKernel_covariance_on_shiftedOverlap
+        (m := m) (Cplus := Cplus) (Cminus := Cminus) (rψ := rψ)
+        (ρ := ρ) (r := r) (δ := δ) hm Ωplus Ωminus Dplus Dminus E
+        hΩplus_open hΩminus_open hDplus_open hDminus_open hE_open
+        Fplus Fminus hFplus_diff hFminus_diff hplus_margin hminus_margin
+        hDplus_sub hDminus_sub Tplus Tminus Tchart hplus_eval hminus_eval
+        hplus_limit hminus_limit x0 ys hδ hδρ hδsum hE_mem hplus hminus
+        hli ψ a hPψ hPψ_shift hseed w hw
+
 end SCV

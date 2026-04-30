@@ -521,6 +521,7 @@ Source ledger for the internal helper list:
 | `regularizedLocalEOW_fixedKernelEnvelope_from_clm` | Checked in `SCV/LocalDistributionalEOW.lean`: for one compactly supported smoothing kernel, combines the local real-mollifier holomorphy margins, the CLM common-boundary extraction, and the checked coordinate local continuous EOW theorem to produce the local coordinate envelope with strict positive/negative side agreements and uniqueness.  This is the fixed-kernel bridge; it does not yet prove linearity/continuity in the kernel or construct the product kernel `K`. |
 | `regularizedLocalEOW_fixedWindowEnvelope_from_clm` | Checked in `SCV/LocalDistributionalEOW.lean`: the same fixed-kernel bridge, but with the Rudin chart data `ys, ρ, r, δ` supplied once instead of existentially chosen.  Its output is the explicit function `localRudinEnvelope δ x0 ys (realMollifyLocal Fplus ψ) (realMollifyLocal Fminus ψ)` with holomorphy, strict side agreements, real-edge identity, and uniqueness.  This is required before building a coherent family `G ψ`; otherwise Lean could choose different local charts for different kernels. |
 | `regularizedLocalEOW_family_from_fixedWindow` | Checked in `SCV/LocalDistributionalEOW.lean`: packages the explicit fixed-window family `G ψ w = localRudinEnvelope δ x0 ys (realMollifyLocal Fplus ψ) (realMollifyLocal Fminus ψ) w` for every supported smoothing kernel.  It gives the exact family-level holomorphy, strict side-agreement, real-edge identity, and uniqueness facts needed before proving linearity, covariance, and the product-kernel construction. |
+| `regularizedLocalEOW_pairingCLM_localCovariant_from_fixedWindow` | Checked in `SCV/LocalEOWPairingCLM.lean`: fixed-window covariance adapter for the mixed pairing CLM.  It applies `regularizedLocalEOW_pairingCLM_localCovariant` with `Gchart ψ = localRudinEnvelope δ x0 ys (realMollifyLocal Fplus (P ψ)) (realMollifyLocal Fminus (P ψ))`, supplies the shifted-overlap covariance input by `regularizedLocalEOW_family_chartKernel_covariance_on_shiftedOverlap`, and discharges the two pushed-kernel support hypotheses separately with `KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM_of_le_four_mul`. |
 | `regularizedLocalEOW_family_add` | Checked in `SCV/LocalDistributionalEOW.lean`: additivity of the explicit fixed-window family on the supported-kernel class.  The proof uses `KernelSupportWithin.add`, side-domain additivity of `realMollifyLocal`, and the fixed-window uniqueness clause; it does not use real-linear slice CLMs as a substitute for complex-linearity. |
 | `regularizedLocalEOW_family_smul` | Checked in `SCV/LocalDistributionalEOW.lean`: complex homogeneity of the explicit fixed-window family on the supported-kernel class.  The proof uses `KernelSupportWithin.smul`, `realMollifyLocal_smul`, and the same fixed-window uniqueness clause. |
 | `realMollifyLocal_add_of_integrable`, `realMollifyLocal_smul` | Checked in `SCV/LocalDistributionalEOW.lean`: additivity and complex homogeneity of the real-direction mollifier in the smoothing kernel.  Additivity carries the honest Bochner-integrability hypotheses; complex homogeneity follows from `integral_smul`.  These lemmas avoid faking complex linearity through the currently real-linear slice functionals `Tplus/Tminus`. |
@@ -4388,8 +4389,11 @@ envelope assembly once the raw distributional limits are supplied.
    representation and holomorphy fields needed later for
    `KernelSupportWithin ψ rker` are obtained by monotonicity from
    `rker ≤ Rmix`.
-9. Prove local covariance by `regularizedLocalEOW_pairingCLM_localCovariant`.
-   The `hG_cov` input is exactly
+9. Prove local covariance by
+   `regularizedLocalEOW_pairingCLM_localCovariant_from_fixedWindow`, the
+   checked fixed-window adapter around
+   `regularizedLocalEOW_pairingCLM_localCovariant`.  Its pointwise `hG_cov`
+   input is exactly
    `regularizedLocalEOW_family_chartKernel_covariance_on_shiftedOverlap`.
    The covariance consumer supplies both
    `KernelSupportWithin ψ Rmix` and
@@ -4558,7 +4562,7 @@ envelope assembly once the raw distributional limits are supplied.
    | `Fplus`, `Fminus` | The coordinate side functions `FplusCoord ζ = Fplus (localEOWChart x0 ys ζ)` and `FminusCoord ζ = Fminus (localEOWChart x0 ys ζ)`. |
    | `ψn` | The sequence from `exists_shrinking_normalized_schwartz_bump_sequence` at `rker = σ`. |
    | `η`, `hη_norm`, `hη_support` | `exists_normalized_schwartz_bump_kernelSupportWithin` at radius `rη = σ`. |
-   | `hcov` | `regularizedLocalEOW_pairingCLM_localCovariant` at radius `Rmix = 2σ`, using `regularizedLocalEOW_family_chartKernel_covariance_on_shiftedOverlap`.  Its two kernel-support inputs are discharged separately from `KernelSupportWithin ψ Rmix` and `KernelSupportWithin (translateSchwartz a ψ) Rmix` by `KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM_of_le_four_mul` and `‖e‖ * RmixCut ≤ rψOne < rψLarge`; the translated-pushforward support lemma is only for callers that must derive a larger shifted radius from an unshifted kernel. |
+   | `hcov` | `regularizedLocalEOW_pairingCLM_localCovariant_from_fixedWindow` at radius `Rmix = 2σ`.  Internally it calls `regularizedLocalEOW_pairingCLM_localCovariant` and `regularizedLocalEOW_family_chartKernel_covariance_on_shiftedOverlap`; its two kernel-support inputs are discharged separately from `KernelSupportWithin ψ Rmix` and `KernelSupportWithin (translateSchwartz a ψ) Rmix` by `KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM_of_le_four_mul` and `‖e‖ * RmixCut ≤ rψOne < rψLarge`. |
    | `hG_holo` | First output of `regularizedLocalEOW_pairingCLM_of_fixedWindow` at radius `Rmix`, restricted to `σ` by `KernelSupportWithin.mono` since `σ ≤ 2σ`. |
    | `hK_rep` | Second output of `regularizedLocalEOW_pairingCLM_of_fixedWindow` at radius `Rmix`, restricted to `σ` by `KernelSupportWithin.mono`. |
    | `hψ_nonneg`, `hψ_real`, `hψ_norm`, `hψ_support_r` | `exists_shrinking_normalized_schwartz_bump_sequence` at `rker = σ`. |

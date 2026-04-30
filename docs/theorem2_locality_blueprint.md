@@ -1058,6 +1058,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
      `SCV.regularizedLocalEOW_pairingCLM_of_fixedWindow`,
      `SCV.regularizedLocalEOW_family_chartKernel_covariance_on_shiftedOverlap`,
      `SCV.regularizedLocalEOW_pairingCLM_localCovariant`,
+     `SCV.regularizedLocalEOW_pairingCLM_localCovariant_from_fixedWindow`,
      `SCV.exists_normalized_schwartz_bump_kernelSupportWithin`,
      `SCV.exists_shrinking_normalized_schwartz_bump_sequence`,
      `SCV.tendsto_realConvolutionTest_of_shrinking_normalized_support`,
@@ -2861,7 +2862,9 @@ Current implementation order:
    `tsupport χψ ⊆ closedBall 0 rψLarge` with `rψLarge` still inside the
    inverse-chart real-translation margin.  The original fixed-window family is
    instantiated at radius `rψLarge`; `rψOne` is only the smaller radius on
-   which `χψ` is removed.  For local covariance, the two hypotheses
+   which `χψ` is removed.  For local covariance, the checked adapter
+   `regularizedLocalEOW_pairingCLM_localCovariant_from_fixedWindow` applies
+   the shifted-overlap family covariance theorem.  Its two hypotheses
    `KernelSupportWithin ψ (2σ)` and
    `KernelSupportWithin (translateSchwartz a ψ) (2σ)` are pushed separately by
    `KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM_of_le_four_mul`
