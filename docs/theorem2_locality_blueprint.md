@@ -1052,6 +1052,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
      `SCV.StrictNegativeImagBall_mono`,
      `SCV.tendsto_realMollifyLocal_strictPositiveImagBall`,
      `SCV.tendsto_realMollifyLocal_strictNegativeImagBall`,
+     `SCV.regularizedEnvelope_chartEnvelope_from_oneChartScale`,
      `SCV.chartDistributionalEOW_local_envelope`, and
      `SCV.chartDistributionalEOW_transport_originalCoords`.
      `SCV.chartSlowGrowth_from_uniformConeSlowGrowth` remains documented as an
@@ -2856,6 +2857,12 @@ Current implementation order:
    real-translation margins for kernels supported in `closedBall 0 σ`.  The
    representation identity then unfolds `realMollifyLocal`; no free
    `hkernel_limit` or slow-growth input is permitted in the one-chart theorem.
+   The scaled local-recovery call itself is now checked as
+   `regularizedEnvelope_chartEnvelope_from_oneChartScale`: it fixes
+   `Ucore = ball 0 σ`, `Udesc = ball 0 (4σ)`, `Ucov = ball 0 (8σ)`,
+   `U0 = ball 0 (δ / 2)`, `DplusSmall = StrictPositiveImagBall σ`,
+   `DminusSmall = StrictNegativeImagBall σ`, and derives
+   `happrox_plus/happrox_minus` from the strict-side convergence theorems.
    Then prove
    the OS45 instantiation
    `BHW.os45_adjacent_commonBoundaryEnvelope` and package its output as
