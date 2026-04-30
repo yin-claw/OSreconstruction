@@ -1380,7 +1380,11 @@ Current examples:
 	   `bvt_F_selectedAdjacentDistributionalJostAnchorData_of_OSII`.  The old
 	   target `SCV.local_distributional_edge_of_the_wedge_envelope` remains a
 	   future global packaging theorem only; the current OS45 supplier consumes
-	   the checked `SCV.chartDistributionalEOW_local_envelope` directly.
+	   the checked `SCV.chartDistributionalEOW_local_envelope` directly.  The
+	   identity-order seed selection is now checked in
+	   `BHW.choose_os45_identity_real_open_edge_for_adjacent_swap`, and the
+	   same-patch domain/trace/geometry package is checked in
+	   `BHW.os45_adjacent_identity_localEOWGeometry`.
 	   `BHW.exists_sourceDistributionalUniquenessEnvironment_of_open_jost_patch`
 	   supplies the Gram environment for that same `V`; and
 	   `bvt_F_selectedAdjacentDistributionalJostAnchorData_of_OSII` fills the

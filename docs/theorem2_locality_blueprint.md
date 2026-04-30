@@ -369,9 +369,12 @@ In `ComplexLieGroups/AdjacentOverlapWitness.lean`:
 
 In `Wightman/Reconstruction/WickRotation/OSToWightmanLocalityOS45.lean`:
 
+- `exists_ordered_small_time_perturb_in_adjacent_overlap_of_lt`
 - `choose_os45_real_open_edge_for_adjacent_swap`
+- `choose_os45_identity_real_open_edge_for_adjacent_swap`
 - `choose_os45_real_open_edge_for_adjacent_swap_with_domains`
 - `os45_adjacent_localEOWGeometry`
+- `os45_adjacent_identity_localEOWGeometry`
 - `os45_adjacent_euclideanEdge_pairing_eq_on_timeSector`
 - `AdjacentOSEOWDifferenceEnvelope`
 - `bvt_F_adjacent_extendF_edgeDistribution_eq_of_osEOWDifferenceEnvelope`
@@ -473,6 +476,7 @@ theorem os45_adjacent_singleChart_commonBoundaryValue
     (lgc : OSLinearGrowthCondition d OS)
     (n : ℕ) (i : Fin n) (hi : i.val + 1 < n) :
     ∃ (V : Set (NPointDomain d n)) (rho : Equiv.Perm (Fin n)),
+      rho = (1 : Equiv.Perm (Fin n)) ∧
       IsOpen V ∧ IsConnected V ∧ V.Nonempty ∧
       (∀ x ∈ V, x ∈ BHW.JostSet d n) ∧
       (∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n) ∧
@@ -486,7 +490,13 @@ theorem os45_adjacent_singleChart_commonBoundaryValue
 
 Mathematical content:
 
-- choose `V` and `rho` from `os45_adjacent_localEOWGeometry`;
+- choose the equal-time adjacent Jost witness from
+  `adjacent_overlap_real_jost_witness_exists`, use the bounded perturbation
+  theorem
+  `exists_ordered_small_time_perturb_in_adjacent_overlap_of_lt`, and then take
+  a connected real-open ball around the perturbed point inside the raw
+  adjacent overlap and the two identity ordered sectors; the exported branch
+  label is `rho = 1`, not an arbitrary PET label;
 - export the Jost and both adjacent extended-tube membership facts for this
   **same** `V`; these side conditions must not be reselected later from a
   separate call to the geometry theorem;
@@ -584,9 +594,10 @@ Lean-ready common-chart supplier and checked direct-envelope transcript:
 
 ```lean
 let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
-rcases BHW.os45_adjacent_localEOWGeometry
+let ρ : Equiv.Perm (Fin n) := 1
+rcases BHW.os45_adjacent_identity_localEOWGeometry
     (d := d) (n := n) hd i hi with
-  ⟨V, ρ, hV_open, hV_conn, hV_ne, hV_jost, hV_ET, hV_swapET,
+  ⟨V, _xseed, hV_open, hV_conn, hV_ne, _hxseed, hV_jost, hV_ET, hV_swapET,
     hV_ordered, hV_swap_ordered, hV_wick, hV_real,
     hV_geom, hV_swap_geom⟩
 
@@ -2224,15 +2235,18 @@ Active single-chart decomposition of Slot 1 after the SCV keystone:
    `Uraw` is open.
 2. Work in the identity OS45 order.  The existing perturbation lemma
    `exists_ordered_small_time_perturb_in_adjacent_overlap` already returns
-   order `ρ = 1`; the implementation should expose the bounded version
-   `exists_ordered_small_time_perturb_in_adjacent_overlap_of_lt`, with an
-   extra input `a > 0` and output perturbation parameter `0 < ε < a`.  This is
-   the same proof with the final choice `ε < min δ a`.
+   order `ρ = 1`; the bounded version
+   `exists_ordered_small_time_perturb_in_adjacent_overlap_of_lt` is now
+   checked, with input `a > 0` and output perturbation parameter
+   `0 < ε < a`.
 3. Choose the perturbation `x₁ = adjacentTimePerturb x₀ ε` first, then take a
    connected real-open ball `V` around `x₁` inside the raw overlap and the two
    ordered sectors.  Set
    `y₁ = os45CommonEdgeRealPoint (d := d) (n := n) 1 x₁` and
-   `η₁ = os45HalfTimeDirection (d := d) (n := n) 1 x₁`.
+   `η₁ = os45HalfTimeDirection (d := d) (n := n) 1 x₁`.  This selector is
+   now checked as `BHW.choose_os45_identity_real_open_edge_for_adjacent_swap`,
+   and its domain/trace/geometry package is checked as
+   `BHW.os45_adjacent_identity_localEOWGeometry`.
 4. Choose the chart basis using
    `SCV.open_convex_cone_basis_with_positive_sum` with `η₁` after flattening.
    This makes the seed half-time ray strict-positive in chart coordinates and
@@ -3314,18 +3328,21 @@ Checked SCV declaration ledger:
    `U0 = ball 0 (δ / 2)`, `DplusSmall = StrictPositiveImagBall σ`,
    `DminusSmall = StrictNegativeImagBall σ`, and derives
    `happrox_plus/happrox_minus` from the strict-side convergence theorems.
-   The next SCV target is the genuine affine transport
-   `SCV.chartDistributionalEOW_transport_originalCoords`, followed by the
-   fixed-basis overlap package
+   The next active target is the OS45 identity-order instantiation, not the
+   global SCV transport/patching package.  Prove
+   `BHW.os45_adjacent_commonBoundaryEnvelope` by calling the checked
+   one-chart theorem `SCV.chartDistributionalEOW_local_envelope` directly at
+   the ordered horizontal edge, then package its output as
+   `AdjacentOSEOWDifferenceEnvelope` while exporting the same patch `V` for
+   Jost membership and both real extended-tube memberships.  The affine
+   transport and fixed-basis overlap targets
+   `SCV.chartDistributionalEOW_transport_originalCoords`,
    `SCV.localEOWComplexAffineEquiv_sameBasis_transition`,
    `SCV.localEOWFixedBasisCoordinateOverlap`,
-   `SCV.localEOWFixedBasis_overlap_positiveSeed`, and
-   `SCV.distributionalEOW_extensions_compatible`, then by the patching theorem
-   `SCV.local_distributional_edge_of_the_wedge_envelope`.
-   Only after that prove the OS45 instantiation
-   `BHW.os45_adjacent_commonBoundaryEnvelope` and package its output as
-   `AdjacentOSEOWDifferenceEnvelope` while exporting the same patch `V` for
-   Jost membership and both real extended-tube memberships;
+   `SCV.localEOWFixedBasis_overlap_positiveSeed`,
+   `SCV.distributionalEOW_extensions_compatible`, and
+   `SCV.local_distributional_edge_of_the_wedge_envelope` remain future global
+   SCV infrastructure, not prerequisites for Slot 1;
 3. use the checked
    `BHW.exists_sourceDistributionalUniquenessEnvironment_of_open_jost_patch`,
    the genuine Hall-Wightman scalar-product-variety real-environment theorem

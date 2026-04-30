@@ -355,6 +355,10 @@ The active OS45 consumer instead first chooses the ordered identity-sector
 perturbation, works at that ordered horizontal common edge, proves the two
 horizontal branch arguments are honest forward-tube points, and obtains
 `Hplus = Hminus` on the edge from `BHW.extendF_eq_on_forwardTube`.  The
+identity-order selector is now checked as
+`BHW.choose_os45_identity_real_open_edge_for_adjacent_swap`, and the same-patch
+trace/geometry package is checked as
+`BHW.os45_adjacent_identity_localEOWGeometry`.  The
 ordered horizontal-edge local wedge is the ordinary compactness/openness
 argument at this ordered edge.  The boundary-value input to
 `chartDistributionalEOW_local_envelope` is then a compact-cutoff continuous
