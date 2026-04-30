@@ -2176,10 +2176,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
       conclusion would require the adjacent-swapped sequence of the same
       imaginary times to be forward ordered.  An adjacent swap reverses that
       local time gap.  This retired theorem must remain out of production.
-   6. The next proof-doc task is to replace the following pointwise
-      horizontal-edge common-boundary packet with a true theorem.  First name the
-      identity-order branch differences, so later statements do not carry
-      unnamed `Hplus/Hminus` functions:
+   6. The following pointwise horizontal-edge common-boundary packet is kept
+      only as a retired anti-target.  The true replacement is the branchwise
+      source-germ/BV packet below, with explicit source compatibility fields
+      before any boundary CLM is constructed.  The old identity-order branch
+      difference names are recorded here only so later cleanup can recognize
+      and remove the stale `Hplus/Hminus` surface:
 
       ```lean
       noncomputable def BHW.os45CommonChartHplus_id
@@ -2485,6 +2487,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
             ∀ y ∈ closure E,
               BHW.realEmbed y ∈
                 BHW.os45PulledRealBranchDomain (d := d) (n := n) 1)
+          (hsource_id :
+            ∀ y ∈ closure E,
+              BHW.OS45BranchHorizontalSourceGermAt
+                (d := d) OS lgc n 1 y)
           (hlocal :
             ∀ K : Set (NPointDomain d n), IsCompact K -> K ⊆ E ->
               ∀ Kη : Set (NPointDomain d n), IsCompact Kη -> Kη ⊆ C ->
@@ -2528,6 +2534,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
               BHW.realEmbed y ∈
                 BHW.os45PulledRealBranchDomain (d := d) (n := n)
                   (Equiv.swap i ⟨i.val + 1, hi⟩))
+          (hsource_adjacent :
+            ∀ y ∈ closure E,
+              BHW.OS45BranchHorizontalSourceGermAt
+                (d := d) OS lgc n
+                  (Equiv.swap i ⟨i.val + 1, hi⟩) y)
           (hlocal :
             ∀ K : Set (NPointDomain d n), IsCompact K -> K ⊆ E ->
               ∀ Kη : Set (NPointDomain d n), IsCompact Kη -> Kη ⊆ C ->
@@ -2546,6 +2557,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (BHW.os45BHWBranchRepresentative (d := d) OS lgc n
               (Equiv.swap i ⟨i.val + 1, hi⟩))
       ```
+
+      These id/adjacent theorem surfaces are consumers of source compatibility,
+      not source suppliers.  The fields `hsource_id` and `hsource_adjacent`
+      must be supplied by the one-branch source-germ theorems after the
+      selected OS45 source patch is fixed.  The proof of each specialized
+      theorem is then a relabelled application of
+      `BHW.os45BranchHorizontalBV_branch`.  Omitting the source fields would
+      incorrectly convert domain geometry into analytic branch agreement; OS
+      II only gives the boundary value after the two formulas have first been
+      identified as restrictions of one local holomorphic germ.
 
       The non-bookkeeping analytic input in these proofs is the OS-II
       distributional boundary-value construction transported to the OS45
@@ -2597,9 +2618,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
          side window remains there.  Without this domain theorem, the theorem
          with arbitrary `C` would be false.
       4. The full CLM `Tβ` is produced by the branch-horizontal OS-II/BHW
-         boundary theorem: the OS-II continuation branch `Aβ` and the BHW
-         extended-tube branch `Bβ` are two representations of the same
-         one-branch analytic germ on the OS45 horizontal real environment.
+         boundary theorem using the explicit source hypothesis
+         `hsource : ∀ y ∈ closure E,
+           BHW.OS45BranchHorizontalSourceGermAt (d := d) OS lgc n β y`.
+         This source field is the mathematical content saying that the OS-II
+         continuation branch `Aβ` and the BHW extended-tube branch `Bβ` are
+         two representations of the same one-branch analytic germ on the OS45
+         horizontal real environment.
          The selected source patch is a connected ball with compact closure,
          and `BHW.os45CommonEdgeRealCLE` is a homeomorphism, so
          `E = BHW.os45CommonEdgeRealPoint β '' Vβ` is open with compact
@@ -3861,6 +3886,59 @@ Proof decomposition of this theorem, without hiding the analytic work:
       this is not optional, because it is what identifies the path-stability
       base point with the checked Figure-2-4 endpoint calculation.
 
+      The public rotation-support theorem is a wrapper around the concrete
+      calculation already present in `AdjacentOverlapWitness.lean`, but the
+      wrapper has mathematical content: it exposes exactly the real witness
+      needed by the source-patch path.  Instantiate
+      `xfig := swapWitnessReal hd i hi` and
+      `xrot := swapWitnessRealSwappedRot hd i hi`, with the public axes
+      `figure24Axis1 hd = e1 hd` and `figure24Axis2 hd = e2 hd`.  The
+      coordinate identity
+      `realEmbed xrot =
+        figure24RotateAdjacentConfig hd (realEmbed (fun k => xfig (τ k)))`
+      is proved by `ext k μ`, then the four cases
+      `μ = 0`, `μ = figure24Axis1 hd`, `μ = figure24Axis2 hd`, and the
+      remaining coordinates.  The nonzero/axis-distinct side conditions are
+      exactly the existing `e1_ne_zero`, `e2_ne_zero`, and `e2_ne_e1`
+      calculations, publicized under the `figure24Axis*` names.
+
+      The forward-Jost field for `xrot` is also a concrete finite inequality
+      check, not a topological assertion.  For every consecutive index `k`,
+      the time difference of `xrot` is `0`.  The first spatial-axis difference
+      is:
+
+      * at `k = i`,
+        `(3 / 5) * 2 + (-4 / 5) * 1 = 2 / 5 > 0`;
+      * at `k = ⟨i.val + 1, hi⟩`,
+        `(3 / 5) * (-1) + (-4 / 5) * (-1) = 1 / 5 > 0`;
+      * at every other `k`,
+        `(3 / 5) * Δe1 + (-4 / 5) * 0 > 0`, using the already checked
+        positivity of the swapped witness's first-axis difference.
+
+      Therefore `|Δtime| = 0 < Δaxis1`, which is precisely
+      `ForwardJostSet d n hd1`.  Applying
+      `forwardJostSet_subset_extendedTube hd1` gives the endpoint
+      `realEmbed xrot ∈ ExtendedTube d n`.  The Lorentz element exported by
+      `figure24RotateAdjacentConfig_lorentz_inverse` is the inverse of the
+      same `(3,4,5)` spatial rotation, so applying it to
+      `realEmbed xrot` recovers `realEmbed (fun k => xfig (τ k))`.
+
+      The identity path theorem is where the `0 ≤ t ≤ 1` arithmetic enters.
+      For `t : unitInterval`, use `t.property.1 : 0 ≤ (t : ℝ)` and
+      `t.property.2 : (t : ℝ) ≤ 1` to prove
+      `0 < 1 - (t : ℝ) / 2` by `nlinarith`.  If
+      `x` is in the identity ordered positive-time sector, every consecutive
+      Euclidean time gap `δk` is positive.  The imaginary part of the
+      corresponding consecutive difference in
+      `os45Figure24IdentityPath x t` has time component
+      `(1 - (t : ℝ) / 2) * δk` and all spatial components zero, while the
+      real part is irrelevant for forward-tube membership.  Thus the imaginary
+      difference lies in the open forward cone by `mul_pos`; this proves
+      `BHW.os45Figure24IdentityPath_mem_forwardTube`.  The endpoint theorems
+      are coordinate extensionality: at `t = 0`, the coefficient is `I`; at
+      `t = 1`, it is `1 / 2 + (1 / 2) * I`, exactly the inverse OS45
+      quarter-turn coordinate of `BHW.os45CommonEdgeRealPoint 1 x`.
+
       Define the two-variable path map
       `H x t :=
         figure24RotateAdjacentConfig hd
@@ -3897,13 +3975,21 @@ Proof decomposition of this theorem, without hiding the analytic work:
       Apply the checked bounded perturbation theorem
       `exists_ordered_small_time_perturb_in_adjacent_overlap_of_lt` to this
       `Upath`, the equal-time witness `xfig`, and the zero-time field
-      `∀ k, xfig k 0 = 0`.  It returns
-      `xseed = adjacentTimePerturb xfig ε` with `ε > 0`, `xseed ∈ Upath`,
-      `xseed` in the identity ordered positive-time sector, and
-      `(fun k => xseed (τ k))` in the `τ`-ordered sector.  With
-      `Δseed := H xseed`, continuity and
-      `∀ t, Δseed t ∈ ExtendedTube d n` are exactly the two fields already
-      proved for `H` and `Upath`.
+      `∀ k, xfig k 0 = 0`, with any fixed positive upper bound, for example
+      `a = 1`.  The theorem first obtains a metric ball around `0` in the
+      perturbation parameter from continuity of `adjacentTimePerturb`; it then
+      chooses `ε = min δ a / 2`, so `0 < ε`, `ε < a`, and the perturbed point
+      is still in `Upath`.  Its ordering conclusions are exactly the checked
+      formula `adjacentTimePerturb_mem_identity_sector`: after perturbation,
+      the time coordinate is `ε * ((k : ℝ) + 1)`, so all times are positive
+      and strictly increasing; after applying the adjacent swap, the same
+      identity-order calculation is rewritten by `Equiv.Perm.mul_apply`.
+      Thus the theorem returns `xseed = adjacentTimePerturb xfig ε` with
+      `ε > 0`, `xseed ∈ Upath`, `xseed` in the identity ordered positive-time
+      sector, and `(fun k => xseed (τ k))` in the `τ`-ordered sector.  With
+      `Δseed := H xseed`, continuity follows by fixing the first argument of
+      the continuous two-variable map `H`, and
+      `∀ t, Δseed t ∈ ExtendedTube d n` is the universal field of `Upath`.
 
       The Gram identity for `Δseed` is pointwise in `t`.  From
       `figure24RotateAdjacentConfig_lorentz_inverse`, choose `Λfig` with

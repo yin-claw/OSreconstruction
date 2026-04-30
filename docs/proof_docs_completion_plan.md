@@ -123,7 +123,13 @@ is now fixed: the source theorem is split in the theorem-2 blueprint into the
 genuine one-branch germ statement `BHW.os45BranchHorizontalCommonGerm` and its
 boundary-CLM consumer `BHW.os45BranchHorizontalBoundaryValue`, whose outputs
 exactly match the `acr_bv` and `bhw_bv` fields of
-`OS45BranchHorizontalBV`.  The only auxiliary cutoff lemma on this path is the
+`OS45BranchHorizontalBV`.  The specialized identity and adjacent branch BV
+surfaces are only consumers of this source layer: they must carry explicit
+`hsource_id` and `hsource_adjacent` hypotheses produced by the one-branch
+source-germ theorems, then call the generic branch theorem.  Domain
+membership, local side windows, and precompactness do not by themselves prove
+that the ACR and pulled BHW formulas are restrictions of one holomorphic germ.
+The only auxiliary cutoff lemma on this path is the
 pure real-analysis statement
 `SCV.exists_schwartz_cutoff_eq_one_on_compact_subset_open`; this is now checked
 in `OSReconstruction/SCV/DistributionalEOWCutoff.lean`.  The coordinate and
@@ -278,8 +284,14 @@ content:
    theorem must also export
    `realEmbed xrot = figure24RotateAdjacentConfig hd
      (realEmbed (fun k => xfig (τ k)))`; otherwise the compact-open
-   path-stability proof has no identified base point.  The only new generic
-   helper on this subroute is the finite-subcover tube lemma
+   path-stability proof has no identified base point.  Its proof transcript
+   now fixes the actual arithmetic: the identity path uses
+   `0 < 1 - (t : ℝ) / 2` for `t : unitInterval`, while the rotated adjacent
+   witness has first-axis consecutive differences `2 / 5` at `i`, `1 / 5` at
+   `i + 1`, and `(3 / 5) * Δe1` on all other gaps.  Thus the adjacent path
+   support is anchored in the checked `(3,4,5)` rotation calculation, not in a
+   vague strict-inequality claim.  The only new generic helper on this
+   subroute is the finite-subcover tube lemma
    `BHW.exists_open_nhds_forall_mem_of_compact_parameter`, and the Gram
    calculation uses the genuine scalar-product theorem
    `BHW.sourceMinkowskiGram_complexLorentzAction` plus
