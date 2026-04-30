@@ -1030,6 +1030,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
      `SCV.localEOWChart_mem_TubeDomain_neg_truncatedSideCone_of_strictNegative`,
      `SCV.localEOWChart_mem_fixedWindow_of_strictPositiveImagBall`,
      `SCV.localEOWChart_mem_fixedWindow_of_strictNegativeImagBall`,
+     `SCV.exists_oneChartRecoveryScale`,
+     `SCV.oneChartRecoveryScale_radius_margins`,
+     `SCV.oneChartRecoveryScale_core_translate_mem_desc`,
+     `SCV.oneChartRecoveryScale_desc_translate_mem_cov`,
+     `SCV.oneChartRecoveryScale_cov_ball_subset_half`,
+     `SCV.oneChartRecoveryScale_cut_closedBall_subset_half`,
      `SCV.localEOWAffineRealWindow`,
      `SCV.isOpen_localEOWAffineRealWindow`,
      `SCV.localEOWComplexAffineEquiv_symm_localEOWChart`,
@@ -1160,10 +1166,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
       side theorem actually consumes: a strict positive ball point has
       nonnegative imaginary coordinates, positive coordinate sum, and sum
       bounded by `card * R`; the strict negative ball has the corresponding
-      statement for `-Im w`.  Therefore the final local scale must include the
-      explicit smallness condition
-      `(Fintype.card (Fin m) : ℝ) * Rcore < rpoly`, and the fixed-window
-      side membership is discharged by
+      statement for `-Im w`.  Therefore the final local scale is chosen by
+      `SCV.exists_oneChartRecoveryScale`, not by ad hoc inequalities: with
+      `Rcore = σ`, `rker = σ`, and `Rdesc = 4 * σ`, it gives
+      `(Fintype.card (Fin m) : ℝ) * Rdesc < rpoly`, `Rdesc < δside`, and
+      `Rdesc < ρin`.  The fixed-window side membership on the final core and
+      on the larger approximate-identity side neighborhood is discharged by
       `SCV.localEOWChart_mem_fixedWindow_of_strictPositiveImagBall` and
       `SCV.localEOWChart_mem_fixedWindow_of_strictNegativeImagBall`.
       Thus the one-chart theorem does not need to reprove, or silently assume,

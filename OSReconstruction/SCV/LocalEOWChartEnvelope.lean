@@ -301,6 +301,88 @@ theorem exists_oneChartRecoveryScale
           mul_le_mul_of_nonneg_left hcoef hσ_nonneg
     exact hleft.trans hmulψ
 
+/-- Scalar radius margins forced by the one-chart recovery scale.  These are
+the finite arithmetic inequalities used by the local product-kernel recovery
+call. -/
+theorem oneChartRecoveryScale_radius_margins
+    {δ σ : ℝ} (hσ : 0 < σ) (hδ : 128 * σ ≤ δ) :
+    0 < 8 * σ ∧
+      8 * σ < 16 * σ ∧
+      16 * σ < δ / 2 ∧
+      2 * (8 * σ) < δ / 4 ∧
+      σ + σ < 4 * σ ∧
+      4 * σ + (σ + σ) < 8 * σ := by
+  constructor
+  · nlinarith
+  constructor
+  · nlinarith
+  constructor
+  · nlinarith
+  constructor
+  · nlinarith
+  constructor <;> nlinarith
+
+/-- A real translation by a kernel supported in the core radius sends the
+chart core ball into the descent ball. -/
+theorem oneChartRecoveryScale_core_translate_mem_desc
+    {σ : ℝ} (hσ : 0 < σ)
+    {z : ComplexChartSpace m} (hz : z ∈ Metric.ball 0 σ)
+    {t : Fin m → ℝ} (ht : ‖t‖ ≤ σ) :
+    z + realEmbed t ∈ Metric.ball (0 : ComplexChartSpace m) (4 * σ) := by
+  rw [Metric.mem_ball, dist_zero_right] at hz ⊢
+  have hreal_norm : ‖realEmbed t‖ ≤ ‖t‖ := by
+    rw [pi_norm_le_iff_of_nonneg (norm_nonneg t)]
+    intro j
+    simp [realEmbed, Complex.norm_real]
+    exact norm_le_pi_norm t j
+  calc
+    ‖z + realEmbed t‖ ≤ ‖z‖ + ‖realEmbed t‖ := norm_add_le _ _
+    _ ≤ ‖z‖ + ‖t‖ := add_le_add le_rfl hreal_norm
+    _ < σ + σ := add_lt_add_of_lt_of_le hz ht
+    _ < 4 * σ := by nlinarith
+
+/-- A real translation by the mixed recovery radius sends the descent ball into
+the covariance ball. -/
+theorem oneChartRecoveryScale_desc_translate_mem_cov
+    {σ : ℝ} (hσ : 0 < σ)
+    {z : ComplexChartSpace m} (hz : z ∈ Metric.ball 0 (4 * σ))
+    {t : Fin m → ℝ} (ht : ‖t‖ ≤ σ + σ) :
+    z + realEmbed t ∈ Metric.ball (0 : ComplexChartSpace m) (8 * σ) := by
+  rw [Metric.mem_ball, dist_zero_right] at hz ⊢
+  have hreal_norm : ‖realEmbed t‖ ≤ ‖t‖ := by
+    rw [pi_norm_le_iff_of_nonneg (norm_nonneg t)]
+    intro j
+    simp [realEmbed, Complex.norm_real]
+    exact norm_le_pi_norm t j
+  calc
+    ‖z + realEmbed t‖ ≤ ‖z‖ + ‖realEmbed t‖ := norm_add_le _ _
+    _ ≤ ‖z‖ + ‖t‖ := add_le_add le_rfl hreal_norm
+    _ < 4 * σ + (σ + σ) := add_lt_add_of_lt_of_le hz ht
+    _ < 8 * σ := by nlinarith
+
+/-- The covariance ball selected by the one-chart scale lies inside the
+holomorphy window. -/
+theorem oneChartRecoveryScale_cov_ball_subset_half
+    {δ σ : ℝ} (hσ : 0 < σ) (hδ : 128 * σ ≤ δ) :
+    Metric.ball (0 : ComplexChartSpace m) (8 * σ) ⊆
+      Metric.ball (0 : ComplexChartSpace m) (δ / 2) := by
+  intro z hz
+  rw [Metric.mem_ball, dist_zero_right] at hz ⊢
+  have hsmall : 8 * σ < δ / 2 := by nlinarith
+  exact lt_trans hz hsmall
+
+/-- The closed cutoff ball selected by the one-chart scale lies inside the
+holomorphy window. -/
+theorem oneChartRecoveryScale_cut_closedBall_subset_half
+    {δ σ : ℝ} (hσ : 0 < σ) (hδ : 128 * σ ≤ δ) :
+    Metric.closedBall (0 : ComplexChartSpace m) (16 * σ) ⊆
+      Metric.ball (0 : ComplexChartSpace m) (δ / 2) := by
+  intro z hz
+  rw [Metric.mem_closedBall, dist_zero_right] at hz
+  rw [Metric.mem_ball, dist_zero_right]
+  have hsmall : 16 * σ < δ / 2 := by nlinarith
+  exact lt_of_le_of_lt hz hsmall
+
 /-- The imaginary part of the affine local EOW chart is the real-linear chart
 part applied to the coordinate imaginary vector. -/
 theorem localEOWChart_im_eq_realLinearPart_im
