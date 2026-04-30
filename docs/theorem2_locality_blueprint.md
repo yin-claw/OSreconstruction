@@ -326,8 +326,13 @@ surfaces:
 - OS I Section 4.5 fixes the order
   `symmetry -> analytic continuation on S'_n -> BHW enlargement on S''_n ->
   Jost boundary locality`.
-- Streater-Wightman Figure 2-4 gives the adjacent common real environment for
-  neighboring permuted extended tubes.
+- Streater-Wightman Section 2-4 / Figure 2-4 gives the adjacent common real
+  environment for neighboring permuted extended tubes.  The local OCR text
+  explicitly treats one adjacent transposition and then says a sufficiently
+  small real neighborhood of the displayed Jost point is common to the two
+  extended-tube branches.  This justifies a selected-patch theorem, not a
+  global statement for every real Jost point satisfying auxiliary order
+  inequalities.
 - Streater-Wightman Theorem 3-6 is **not** a theorem-2 input: its proof uses
   local commutativity, which is exactly what theorem 2 is proving. It may only
   be used as bibliographic orientation for the standard terminology around
@@ -670,16 +675,19 @@ have hrealDiff :
       (d := d) (n := n) OS lgc τ ρ x
 ```
 
-Lean-ready common-chart supplier and checked direct-envelope transcript:
+Target common-chart supplier and checked direct-envelope transcript:
 
 ```lean
 let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
 let ρ : Equiv.Perm (Fin n) := 1
-rcases BHW.os45_adjacent_identity_localEOWGeometry
+rcases BHW.os45_adjacent_identity_horizontalEdge_sourcePatch
     (d := d) (n := n) hd i hi with
-  ⟨V, _xseed, hV_open, hV_conn, hV_ne, _hxseed, hV_jost, hV_ET, hV_swapET,
-    hV_ordered, hV_swap_ordered, hV_wick, hV_real,
-    hV_geom, hV_swap_geom⟩
+  ⟨V, _xseed, hV_open, hV_conn, hV_ne, _hxseed, hV_precompact,
+    hV_jost, hV_ET, hV_swapET, hV_ordered, hV_swap_ordered,
+    hV_wick, hV_real, hV_geom, hV_swap_geom,
+    hV_horiz_id, hV_horiz_swap,
+    hV_ordered_closure, hV_swap_ordered_closure,
+    hV_horiz_id_closure, hV_horiz_swap_closure⟩
 
 -- The genuine OS45 common-boundary theorem, proved from the two
 -- `OS45OppositeTubeBranchGeometry` packets and the OS-II/ACR-one Wick branch
@@ -713,6 +721,9 @@ have hCommon :
       hV_open hV_conn hV_ne hV_jost hV_ET hV_swapET
       hV_ordered hV_swap_ordered hV_wick hV_real
       hV_geom hV_swap_geom
+      hV_precompact hV_horiz_id hV_horiz_swap
+      hV_ordered_closure hV_swap_ordered_closure
+      hV_horiz_id_closure hV_horiz_swap_closure
 
 rcases hCommon with
   ⟨Uc, Hc, hUc_open, hUc_conn, hHc_holo,
@@ -731,12 +742,16 @@ OS45 common-boundary / EOW step.  Its proof obligations are the real
 mathematical content:
 
 1. construct the common OS45 chart domain from the two
-   `OS45OppositeTubeBranchGeometry` packets over the same `V`;
-2. identify the positive-side trace with the adjacent `bvt_F` Wick difference;
-3. identify the negative-side trace with the adjacent `extendF` real-edge
+   `OS45OppositeTubeBranchGeometry` packets over the same precompact `V`;
+2. use the source-patch horizontal edge membership to construct the two
+   branch-horizontal boundary CLMs `Tid` and `Tτ`;
+3. feed `Tdiff = Tτ - Tid` to the checked one-chart distributional EOW
+   theorem and glue the side components;
+4. identify the positive-side trace with the adjacent `bvt_F` Wick difference;
+5. identify the negative-side trace with the adjacent `extendF` real-edge
    difference using
    `BHW.os45PulledRealBranch_sub_eq_adjacentOS45RealEdgeDifference`;
-4. export connectedness of the one common chart domain used by both traces.
+6. export connectedness of the one common chart domain used by both traces.
 
 Corrected common-boundary content:
 
@@ -760,9 +775,11 @@ The adjacent branch label is not a new global PET branch law.  In the general
 `τ.symm * ρ`, evaluated on the relabelled real configuration
 `fun k => x (τ k)`.  For the active identity-order patch this is just `τ`.
 The hypotheses
-`hV_swap_ordered` and `hV_swapET` from
-`BHW.os45_adjacent_identity_localEOWGeometry` are exactly what let the ordinary
-OS-II ACR/BHW boundary construction be applied to that swapped configuration.
+`hV_swap_ordered`, `hV_swapET`, `hV_precompact`, the two horizontal
+pulled-branch memberships, and their closure-version order/horizontal fields from
+`BHW.os45_adjacent_identity_horizontalEdge_sourcePatch` are exactly what let
+the ordinary OS-II ACR/BHW boundary construction be applied to that swapped
+configuration.
 The common-chart identity
 `BHW.os45QuarterTurnConfig_reindexed_realBranch_eq` then transports the
 swapped branch back to the same OS45 horizontal chart point.  This is the
@@ -923,7 +940,38 @@ theorem BHW.os45_adjacent_commonBoundaryEnvelope
       ∀ x ∈ V,
         BHW.OS45OppositeTubeBranchGeometry (d := d) (n := n)
           ((Equiv.swap i ⟨i.val + 1, hi⟩).symm * ρ)
-          (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k))) :
+          (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)))
+    (hV_precompact : IsCompact (closure V))
+    (hV_horiz_id :
+      ∀ x ∈ V,
+        BHW.realEmbed
+          (BHW.os45CommonEdgeRealPoint (d := d) (n := n) ρ x) ∈
+          BHW.os45PulledRealBranchDomain (d := d) (n := n) ρ)
+    (hV_horiz_swap :
+      ∀ x ∈ V,
+        BHW.realEmbed
+          (BHW.os45CommonEdgeRealPoint (d := d) (n := n) ρ x) ∈
+          BHW.os45PulledRealBranchDomain (d := d) (n := n)
+            ((Equiv.swap i ⟨i.val + 1, hi⟩).symm * ρ))
+    (hV_ordered_closure :
+      ∀ x ∈ closure V,
+        x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) ρ)
+    (hV_swap_ordered_closure :
+      ∀ x ∈ closure V,
+        (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
+          EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+            ((Equiv.swap i ⟨i.val + 1, hi⟩).symm * ρ))
+    (hV_horiz_id_closure :
+      ∀ x ∈ closure V,
+        BHW.realEmbed
+          (BHW.os45CommonEdgeRealPoint (d := d) (n := n) ρ x) ∈
+          BHW.os45PulledRealBranchDomain (d := d) (n := n) ρ)
+    (hV_horiz_swap_closure :
+      ∀ x ∈ closure V,
+        BHW.realEmbed
+          (BHW.os45CommonEdgeRealPoint (d := d) (n := n) ρ x) ∈
+          BHW.os45PulledRealBranchDomain (d := d) (n := n)
+            ((Equiv.swap i ⟨i.val + 1, hi⟩).symm * ρ)) :
     ∃ (Uc : Set (Fin n -> Fin (d + 1) -> ℂ))
       (Hc : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ),
       IsOpen Uc ∧ IsConnected Uc ∧
@@ -2237,12 +2285,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
          Schwinger pairings under relabelling is exactly `OS.E3_symmetric`.
          These facts identify the Jost-supported restriction of `Tid`/`Tτ`
          with the OS Euclidean data, but they do not define the full CLMs.
-      4. Prove the ACR-side BV fields by applying the OS-II boundary-value
-         theorem `bvt_boundary_values` to the ordered identity branch and to
-         the ordered swapped branch.  The checked hypotheses are `hV_ordered`
-         and `hV_swap_ordered`, after the OS45 quarter-turn formulas rewrite
-         the approach directions into the corresponding forward-cone boundary
-         directions.  The checked Euclidean restriction theorem
+      4. Prove the ACR-side BV fields from the OS-II boundary-value
+         construction **after** the branch chart has been rewritten to an
+         ordinary ordered branch.  The phrase "apply `bvt_boundary_values`"
+         is not by itself a proof: that theorem is a physical forward-tube
+         boundary theorem with limit `bvt_W`, while the OS45 horizontal edge is
+         a real edge only in the quarter-turn chart.  The Lean proof must first
+         establish the branch-local horizontal boundary theorem below.  In
+         that theorem the OS-II growth/tempered boundary-value construction is
+         transported through the OS45 quarter-turn chart and the branch
+         relabelling; its output is the full chart-horizontal CLM `Tβ`, not a
+         direct `bvt_W` pullback.  The checked Euclidean restriction theorem
          `bvt_euclidean_restriction` and the existing compact-test model
          `BHW.os45_adjacent_euclideanEdge_pairing_eq_on_timeSector` are used
          only to verify the Euclidean/Jost restriction of these branch
@@ -2306,8 +2359,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (Fin n -> Fin (d + 1) -> ℂ) -> ℂ :=
         fun z =>
           bvt_F OS lgc n
-            (BHW.permAct (d := d) β
-              ((BHW.os45CommonChartCLE (d := d) (n := n) 1).symm z))
+            (BHW.permAct (d := d) β.symm
+              ((BHW.os45QuarterTurnCLE (d := d) (n := n)).symm z))
+
+      def BHW.os45ACRBranchDomain
+          (β : Equiv.Perm (Fin n)) :
+          Set (Fin n -> Fin (d + 1) -> ℂ) :=
+        {z |
+          (BHW.os45QuarterTurnCLE (d := d) (n := n)).symm z ∈
+            BHW.ForwardTube d n}
 
       noncomputable def BHW.os45BHWBranchRepresentative
           (OS : OsterwalderSchraderAxioms d)
@@ -2315,6 +2375,42 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (n : ℕ) (β : Equiv.Perm (Fin n)) :
           (Fin n -> Fin (d + 1) -> ℂ) -> ℂ :=
         BHW.os45PulledRealBranch (d := d) (n := n) OS lgc β
+
+      theorem BHW.os45BranchHorizontalBV_branch
+          [NeZero d]
+          (OS : OsterwalderSchraderAxioms d)
+          (lgc : OSLinearGrowthCondition d OS)
+          (n : ℕ) (β : Equiv.Perm (Fin n))
+          (Vβ E C : Set (NPointDomain d n))
+          (hVβ_ordered :
+            ∀ x ∈ Vβ,
+              x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) β)
+          (hVβ_ET :
+            ∀ x ∈ Vβ, BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+          (hEβ :
+            E = BHW.os45CommonEdgeRealPoint (d := d) (n := n) β '' Vβ)
+          (hE_open : IsOpen E)
+          (hE_precompact : IsCompact (closure E))
+          (hE_closure_acr :
+            ∀ y ∈ closure E,
+              BHW.realEmbed y ∈
+                BHW.os45ACRBranchDomain (d := d) (n := n) β)
+          (hE_closure_bhw :
+            ∀ y ∈ closure E,
+              BHW.realEmbed y ∈
+                BHW.os45PulledRealBranchDomain (d := d) (n := n) β)
+          (hlocal :
+            ∀ K : Set (NPointDomain d n), IsCompact K -> K ⊆ E ->
+              ∀ Kη : Set (NPointDomain d n), IsCompact Kη -> Kη ⊆ C ->
+                ∃ r : ℝ, 0 < r ∧
+                  ∀ y ∈ K, ∀ η ∈ Kη, ∀ ε : ℝ, 0 < ε -> ε < r ->
+                    BHW.realEdgeAddImag (d := d) (n := n) y η ε ∈
+                      BHW.os45ACRBranchDomain (d := d) (n := n) β ∧
+                    BHW.realEdgeAddImag (d := d) (n := n) y η (-ε) ∈
+                      BHW.os45PulledRealBranchDomain (d := d) (n := n) β) :
+          OS45BranchHorizontalBV OS lgc n β E C
+            (BHW.os45ACRBranchRepresentative (d := d) OS lgc n β)
+            (BHW.os45BHWBranchRepresentative (d := d) OS lgc n β)
 
       theorem BHW.os45BranchHorizontalBV_id
           [NeZero d]
@@ -2328,7 +2424,26 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (hV_ET :
             ∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n)
           (hE :
-            E = BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 '' V) :
+            E = BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 '' V)
+          (hE_open : IsOpen E)
+          (hE_precompact : IsCompact (closure E))
+          (hE_closure_acr :
+            ∀ y ∈ closure E,
+              BHW.realEmbed y ∈
+                BHW.os45ACRBranchDomain (d := d) (n := n) 1)
+          (hE_closure_bhw :
+            ∀ y ∈ closure E,
+              BHW.realEmbed y ∈
+                BHW.os45PulledRealBranchDomain (d := d) (n := n) 1)
+          (hlocal :
+            ∀ K : Set (NPointDomain d n), IsCompact K -> K ⊆ E ->
+              ∀ Kη : Set (NPointDomain d n), IsCompact Kη -> Kη ⊆ C ->
+                ∃ r : ℝ, 0 < r ∧
+                  ∀ y ∈ K, ∀ η ∈ Kη, ∀ ε : ℝ, 0 < ε -> ε < r ->
+                    BHW.realEdgeAddImag (d := d) (n := n) y η ε ∈
+                      BHW.os45ACRBranchDomain (d := d) (n := n) 1 ∧
+                    BHW.realEdgeAddImag (d := d) (n := n) y η (-ε) ∈
+                      BHW.os45PulledRealBranchDomain (d := d) (n := n) 1) :
           OS45BranchHorizontalBV OS lgc n 1 E C
             (BHW.os45ACRBranchRepresentative (d := d) OS lgc n 1)
             (BHW.os45BHWBranchRepresentative (d := d) OS lgc n 1)
@@ -2350,7 +2465,30 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
                   BHW.ExtendedTube d n)
           (hE :
-            E = BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 '' V) :
+            E = BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 '' V)
+          (hE_open : IsOpen E)
+          (hE_precompact : IsCompact (closure E))
+          (hE_closure_acr :
+            ∀ y ∈ closure E,
+              BHW.realEmbed y ∈
+                BHW.os45ACRBranchDomain (d := d) (n := n)
+                  (Equiv.swap i ⟨i.val + 1, hi⟩))
+          (hE_closure_bhw :
+            ∀ y ∈ closure E,
+              BHW.realEmbed y ∈
+                BHW.os45PulledRealBranchDomain (d := d) (n := n)
+                  (Equiv.swap i ⟨i.val + 1, hi⟩))
+          (hlocal :
+            ∀ K : Set (NPointDomain d n), IsCompact K -> K ⊆ E ->
+              ∀ Kη : Set (NPointDomain d n), IsCompact Kη -> Kη ⊆ C ->
+                ∃ r : ℝ, 0 < r ∧
+                  ∀ y ∈ K, ∀ η ∈ Kη, ∀ ε : ℝ, 0 < ε -> ε < r ->
+                    BHW.realEdgeAddImag (d := d) (n := n) y η ε ∈
+                      BHW.os45ACRBranchDomain (d := d) (n := n)
+                        (Equiv.swap i ⟨i.val + 1, hi⟩) ∧
+                    BHW.realEdgeAddImag (d := d) (n := n) y η (-ε) ∈
+                      BHW.os45PulledRealBranchDomain (d := d) (n := n)
+                        (Equiv.swap i ⟨i.val + 1, hi⟩)) :
           OS45BranchHorizontalBV OS lgc n
             (Equiv.swap i ⟨i.val + 1, hi⟩) E C
             (BHW.os45ACRBranchRepresentative (d := d) OS lgc n
@@ -2367,6 +2505,509 @@ Proof decomposition of this theorem, without hiding the analytic work:
       bookkeeping: `os45CommonEdgePullbackCLM` is
       `SchwartzMap.compCLMOfContinuousLinearEquiv` applied to the already
       checked `BHW.os45CommonEdgeRealCLE`.
+
+      Branch-local proof transcript for the two BV theorems:
+
+      1. For a branch label `β`, work first on the branch's own ordered real
+         patch `Vβ`.  For the identity branch, `β = 1` and `Vβ = V`.  For the
+         adjacent branch, `β = τ` and
+         `Vβ = {u | ∃ x ∈ V, u = fun k => x (τ k)}`.  The hypotheses
+         `hV_swap_ordered` and `hV_swapET` are transported to `Vβ` by the
+         finite relabelling homeomorphism.  The equality
+         `BHW.os45CommonEdgeRealPoint_adjacent_swap_eq` identifies
+         `BHW.os45CommonEdgeRealPoint β '' Vβ` with the original identity
+         edge `E`, so the final statement still lives on one common edge.
+      2. Define the two branch representatives on the branch chart:
+
+         ```lean
+         Aβ z = bvt_F OS lgc n
+           (BHW.permAct β.symm
+             ((BHW.os45QuarterTurnCLE (d := d) (n := n)).symm z))
+
+         Bβ z = BHW.extendF (bvt_F OS lgc n)
+           (BHW.permAct β.symm
+             ((BHW.os45QuarterTurnCLE (d := d) (n := n)).symm z))
+         ```
+
+         The ACR holomorphy proof rewrites `Aβ` on
+         `BHW.os45ACRBranchDomain β` by the total permutation-symmetry field of
+         `bvt_F_acrOne_package`, reducing it to the checked holomorphy of
+         `bvt_F OS lgc n` on `BHW.ForwardTube d n`.  This rewrite is a
+         branch-local use of OS symmetry; it is not a real-edge locality
+         statement.
+      3. The local wedge hypothesis in the theorem signature is essential.
+         It says uniformly on compact `K ⊆ E` and compact `Kη ⊆ C` that
+         `y + i ε η` lies in the ACR branch domain and `y - i ε η` lies in
+         the BHW pulled-real branch domain for small `ε > 0`.  This hypothesis
+         is not supplied by the opposite-tube coordinate formulas alone.  It
+         is part of the one-branch OS45 horizontal domain theorem: the ordered
+         formulas give the candidate half-time directions, while the BHW/Jost
+         common-real-environment input proves that the horizontal edge itself
+         lies in the two branch domains and that a sufficiently small conic
+         side window remains there.  Without this domain theorem, the theorem
+         with arbitrary `C` would be false.
+      4. The full CLM `Tβ` is produced by the branch-horizontal OS-II/BHW
+         boundary theorem: the OS-II continuation branch `Aβ` and the BHW
+         extended-tube branch `Bβ` are two representations of the same
+         one-branch analytic germ on the OS45 horizontal real environment.
+         The selected source patch is a connected ball with compact closure,
+         and `BHW.os45CommonEdgeRealCLE` is a homeomorphism, so
+         `E = BHW.os45CommonEdgeRealPoint β '' Vβ` is open with compact
+         closure.  The branch theorem first constructs the common one-branch
+         holomorphic germ on a complex neighborhood of
+         `BHW.realEmbed '' closure E`; its restriction to the real slice is a
+         smooth regular boundary value on a real neighborhood of `closure E`.
+         To expose the full Schwartz CLM required by the checked SCV EOW
+         theorem, choose a smooth compactly supported cutoff supported in that
+         real neighborhood and equal to one on `closure E`, and set
+         `Tβ φ = ∫ y, χ y * Hβ (BHW.realEmbed y) * φ y`.  Continuity follows
+         because `χ y * Hβ (BHW.realEmbed y)` is smooth with compact support.
+         For tests with `tsupport φ ⊆ E`, the cutoff is invisible, so the
+         displayed BV limits remain the local edge limits.  It must not define
+         `Tβ` as `bvt_W OS lgc n` precomposed with a chart map, because the
+         horizontal OS45 edge is not the physical real-time boundary.
+      5. For the ACR BV field, apply the branch-horizontal theorem to
+         compactly supported `φ` with `tsupport φ ⊆ E`, the compact direction
+         set `Kη`, and the plus-side domain membership from step 3.  The
+         resulting limit is exactly the `acr_bv` field of
+         `OS45BranchHorizontalBV`.
+      6. For the BHW BV field, use the same `Tβ` and the minus-side domain
+         membership from step 3.  The BHW representative is
+         `BHW.os45PulledRealBranch OS lgc β`; its holomorphy on
+         `BHW.os45PulledRealBranchDomain β` is already checked as
+         `BHW.os45PulledRealBranch_holomorphicOn`.
+      7. On compact tests supported in the selected Jost patch, the support
+         pullback theorem turns `tsupport φ ⊆ E` into support inside `Vβ`.
+         Then `BHW.zeroDiagonal_of_tsupport_subset_jostOverlap` upgrades the
+         pulled test to `ZeroDiagonalSchwartz`, and
+         `BHW.permuteZeroDiagonalSchwartz` handles the adjacent relabelling.
+         `bvt_euclidean_restriction` and `OS.E3_symmetric` identify these
+         compact Jost restrictions with the expected Euclidean Schwinger
+         pairings.  This is a check on `Tβ`'s restriction, not its definition.
+      8. After the identity and adjacent packets are built, rewrite the
+         adjacent packet from `Vβ` back to the original edge `E` using
+         `BHW.os45QuarterTurnConfig_reindexed_realBranch_eq`.  Only then form
+         `Tdiff = Tτ - Tid` and subtract the `acr_bv` and `bhw_bv` fields.
+         No step compares the identity and adjacent BHW branches pointwise, and
+         no step invokes the later Hall-Wightman source theorem or PET branch
+         independence.
+
+      Underlying one-branch common-germ theorem:
+
+      ```lean
+      theorem BHW.os45BranchHorizontalCommonGerm
+          [NeZero d]
+          (OS : OsterwalderSchraderAxioms d)
+          (lgc : OSLinearGrowthCondition d OS)
+          (n : ℕ) (β : Equiv.Perm (Fin n))
+          (Vβ E : Set (NPointDomain d n))
+          (hVβ_jost :
+            ∀ x ∈ Vβ, x ∈ BHW.JostSet d n)
+          (hVβ_ordered :
+            ∀ x ∈ Vβ,
+              x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) β)
+          (hVβ_ET :
+            ∀ x ∈ Vβ, BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+          (hEβ :
+            E = BHW.os45CommonEdgeRealPoint (d := d) (n := n) β '' Vβ)
+          (hE_open : IsOpen E)
+          (hE_precompact : IsCompact (closure E))
+          (hE_closure_acr :
+            ∀ y ∈ closure E,
+              BHW.realEmbed y ∈
+                BHW.os45ACRBranchDomain (d := d) (n := n) β)
+          (hE_closure_bhw :
+            ∀ y ∈ closure E,
+              BHW.realEmbed y ∈
+                BHW.os45PulledRealBranchDomain (d := d) (n := n) β) :
+          ∃ (U : Set (Fin n -> Fin (d + 1) -> ℂ))
+            (Hβ : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ),
+            IsOpen U ∧
+            BHW.realEmbed '' closure E ⊆ U ∧
+            DifferentiableOn ℂ Hβ U ∧
+            (∀ z ∈ U,
+              z ∈ BHW.os45ACRBranchDomain (d := d) (n := n) β ->
+                Hβ z =
+                  BHW.os45ACRBranchRepresentative (d := d) OS lgc n β z) ∧
+            (∀ z ∈ U,
+              z ∈ BHW.os45PulledRealBranchDomain (d := d) (n := n) β ->
+                Hβ z =
+                  BHW.os45BHWBranchRepresentative (d := d) OS lgc n β z)
+      ```
+
+      This theorem is the precise OS I §4.5 / BHW input for one branch.  It is
+      not an adjacent-branch equality theorem.  The proof uses the OS-II
+      symmetric ACR-one representative, the BHW extension of that same germ,
+      and the selected real Jost environment; precompactness of `E` lets the
+      source neighborhood be chosen around `closure E`.
+
+      Proof transcript for `BHW.os45BranchHorizontalCommonGerm`:
+
+      1. Pull `closure E` back through the checked homeomorphism
+         `BHW.os45CommonEdgeRealCLE β`.  Since `E =
+         BHW.os45CommonEdgeRealPoint β '' Vβ`, every point of `closure E` has
+         a unique preimage in `closure Vβ`; compactness is transported by the
+         homeomorphism.
+      2. At each preimage point, use the OS I §4.5 source statement: the
+         OS-II symmetric ACR representative and the BHW extended-tube
+         representative are two chart descriptions of the same single-branch
+         analytic germ on a neighborhood of the selected real Jost point.  The
+         ACR-side membership is `hE_closure_acr`; the BHW-side membership is
+         `hE_closure_bhw`.  The source statement is branch-local and does not
+         compare `β = 1` with `β = τ`.
+      3. The resulting neighborhoods cover the compact set
+         `BHW.realEmbed '' closure E`; choose a finite subcover.  On overlaps
+         the local germs agree because they are restrictions of the same
+         OS-II/BHW analytic continuation germ; equivalently, each overlap
+         contains a nonempty side wedge on which both descriptions agree with
+         the same ACR branch, and the identity theorem propagates equality.
+      4. Glue the finite family of local germs to one holomorphic function
+         `Hβ` on the union `U`.  The union is open, contains
+         `BHW.realEmbed '' closure E`, and the glued function agrees with
+         `BHW.os45ACRBranchRepresentative β` on `U ∩
+         BHW.os45ACRBranchDomain β` and with
+         `BHW.os45BHWBranchRepresentative β` on `U ∩
+         BHW.os45PulledRealBranchDomain β`.
+      5. Restricting `Hβ` to the real slice gives a smooth function on the real
+         open set `Ureal := {y | BHW.realEmbed y ∈ U}`.  Since `closure E` is
+         compact and contained in `Ureal`, the cutoff lemma can choose a
+         Schwartz cutoff supported in `Ureal` and equal to one on `closure E`.
+
+      Exact branch-boundary theorem derived from the common germ:
+
+      The only new cutoff infrastructure needed for this derivation is the
+      checked finite-dimensional smooth Urysohn lemma in Schwartz form:
+
+      ```lean
+      theorem SCV.exists_schwartz_cutoff_eq_one_on_compact_subset_open
+          {m : ℕ} {K U : Set (Fin m -> ℝ)}
+          (hK : IsCompact K) (hU : IsOpen U) (hKU : K ⊆ U) :
+          ∃ χ : SchwartzMap (Fin m -> ℝ) ℂ,
+            (∀ x ∈ K, χ x = 1) ∧
+            tsupport (χ : (Fin m -> ℝ) -> ℂ) ⊆ U
+      ```
+
+      This is pure real analysis and is now checked in
+      `OSReconstruction/SCV/DistributionalEOWCutoff.lean`.  It is not a
+      theorem-2 shortcut: it only turns the regular one-branch real-slice value
+      into a global Schwartz CLM after the source common germ has already been
+      proved.
+
+      ```lean
+      theorem BHW.os45BranchHorizontalBoundaryValue
+          [NeZero d]
+          (OS : OsterwalderSchraderAxioms d)
+          (lgc : OSLinearGrowthCondition d OS)
+          (n : ℕ) (β : Equiv.Perm (Fin n))
+          (Vβ E C : Set (NPointDomain d n))
+          (hVβ_jost :
+            ∀ x ∈ Vβ, x ∈ BHW.JostSet d n)
+          (hVβ_ordered :
+            ∀ x ∈ Vβ,
+              x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) β)
+          (hVβ_ET :
+            ∀ x ∈ Vβ, BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+          (hEβ :
+            E = BHW.os45CommonEdgeRealPoint (d := d) (n := n) β '' Vβ)
+          (hE_open : IsOpen E)
+          (hE_precompact : IsCompact (closure E))
+          (hE_closure_acr :
+            ∀ y ∈ closure E,
+              BHW.realEmbed y ∈
+                BHW.os45ACRBranchDomain (d := d) (n := n) β)
+          (hE_closure_bhw :
+            ∀ y ∈ closure E,
+              BHW.realEmbed y ∈
+                BHW.os45PulledRealBranchDomain (d := d) (n := n) β)
+          (hlocal :
+            ∀ K : Set (NPointDomain d n), IsCompact K -> K ⊆ E ->
+              ∀ Kη : Set (NPointDomain d n), IsCompact Kη -> Kη ⊆ C ->
+                ∃ r : ℝ, 0 < r ∧
+                  ∀ y ∈ K, ∀ η ∈ Kη, ∀ ε : ℝ, 0 < ε -> ε < r ->
+                    BHW.realEdgeAddImag (d := d) (n := n) y η ε ∈
+                      BHW.os45ACRBranchDomain (d := d) (n := n) β ∧
+                    BHW.realEdgeAddImag (d := d) (n := n) y η (-ε) ∈
+                      BHW.os45PulledRealBranchDomain (d := d) (n := n) β) :
+          ∃ T : SchwartzMap (NPointDomain d n) ℂ ->L[ℂ] ℂ,
+            (∀ Kη : Set (NPointDomain d n), IsCompact Kη -> Kη ⊆ C ->
+              ∀ φ : SchwartzMap (NPointDomain d n) ℂ,
+                HasCompactSupport (φ : NPointDomain d n -> ℂ) ->
+                tsupport (φ : NPointDomain d n -> ℂ) ⊆ E ->
+                TendstoUniformlyOn
+                  (fun (ε : ℝ) η =>
+                    ∫ y : NPointDomain d n,
+                      BHW.os45ACRBranchRepresentative
+                        (d := d) OS lgc n β
+                        (BHW.realEdgeAddImag (d := d) (n := n) y η ε) *
+                      φ y)
+                  (fun _ : NPointDomain d n => T φ)
+                  (nhdsWithin 0 (Set.Ioi 0)) Kη) ∧
+            (∀ Kη : Set (NPointDomain d n), IsCompact Kη -> Kη ⊆ C ->
+              ∀ φ : SchwartzMap (NPointDomain d n) ℂ,
+                HasCompactSupport (φ : NPointDomain d n -> ℂ) ->
+                tsupport (φ : NPointDomain d n -> ℂ) ⊆ E ->
+                TendstoUniformlyOn
+                  (fun (ε : ℝ) η =>
+                    ∫ y : NPointDomain d n,
+                      BHW.os45BHWBranchRepresentative
+                        (d := d) OS lgc n β
+                        (BHW.realEdgeAddImag (d := d) (n := n) y η (-ε)) *
+                      φ y)
+                  (fun _ : NPointDomain d n => T φ)
+                  (nhdsWithin 0 (Set.Ioi 0)) Kη)
+      ```
+
+      Proof source and order:
+
+      1. Use `bvt_F_acrOne_package` for the OS-II branch: holomorphy on
+         ACR-one, total finite-permutation symmetry, and Euclidean
+         restriction.  The permutation symmetry is used only to rewrite the
+         ACR branch representative on `os45ACRBranchDomain β` to the ordinary
+         forward-tube chart expression; it is not a boundary-locality claim.
+      2. Use `bvt_F_holomorphic`, `bvt_F_complexLorentzInvariant_forwardTube`,
+         `BHW.extendF_holomorphicOn`, and the definition of
+         `BHW.os45PulledRealBranch` for the BHW branch.  Local polynomial
+         bounds for the BHW branch are obtained from the local representation
+         of `extendF` near each point of the compact horizontal edge as
+         `bvt_F` composed with one inverse complex-Lorentz chart; compactness
+         gives finitely many such charts.
+      3. Use the local OS I §4.5 / Streater-Wightman Figure 2-4 common-real
+         environment to place the chosen OS45 horizontal edge inside the
+         **single branch** BHW domain.  This step is a patch-level geometric
+         source theorem for the selected adjacent real environment.  It is not
+         the later Hall-Wightman source theorem on all of `S''_n`, and it does
+         not compare the identity and adjacent branches with each other.
+      4. On that source patch, prove that the ACR representative and the BHW
+         pulled representative are the two side representatives of the same
+         one-branch analytic germ.  The equality input is the OS-II symmetric
+         `S'_n` datum on the selected Euclidean/Jost edge together with the
+         single-branch BHW enlargement of that germ.  This is exactly the
+         local common-boundary statement OS I uses before the final Jost
+         locality theorem; it must not be replaced by a pointwise
+         `extendF_eq_on_forwardTube` argument for a permuted horizontal point.
+      5. Define the branch boundary CLM from the common germ.  In the selected
+         source patch the common germ is holomorphic on a complex neighborhood of
+         `BHW.realEmbed '' closure E`, so the boundary distribution is regular:
+         it is integration against the real-slice function
+         `y ↦ Hβ (BHW.realEmbed y)` on a real neighborhood of `closure E`.
+         The extra hypotheses `hE_open : IsOpen E` and
+         `hE_precompact : IsCompact (closure E)` are exactly what turn this
+         into the displayed global CLM: choose a smooth cutoff supported inside
+         that real neighborhood and equal to one on `closure E` using
+         `SCV.exists_schwartz_cutoff_eq_one_on_compact_subset_open`, then integrate
+         the compactly supported smooth density
+         `χ y * Hβ (BHW.realEmbed y)`.  Compact supports and compact direction
+         sets are used for the boundary limits; no physical real-edge
+         distribution is used.
+      6. Prove the displayed uniform compact-direction BV limits from
+         continuity of the glued germ.  Given compact `K ⊆ E` and compact
+         `Kη ⊆ C`, `hlocal` gives a radius so the plus and minus side points
+         stay in the relevant branch domains.  Shrink the radius, using
+         openness of `U` and compactness of `K × Kη`, so both side points also
+         stay in the common-germ neighborhood.  On that smaller window the ACR
+         and BHW representatives are literally `Hβ`.  Uniform continuity of
+         `Hβ` on the compact image of
+         `(y,η,ε) ↦ realEdgeAddImag y η (±ε)` gives uniform convergence to
+         `Hβ (BHW.realEmbed y)` as `ε → 0+`, uniformly for `η ∈ Kη`.  Since
+         `φ` has compact support in `K` and the integrands are uniformly
+         bounded on the same compact image, dominated convergence gives the
+         integral convergence, again uniformly on `Kη`.
+      7. Verify the compact Jost restriction of `T` by transporting a
+         supported test through `BHW.os45CommonEdgePullbackCLM`, applying
+         `BHW.zeroDiagonal_of_tsupport_subset_jostOverlap`, and then using
+         `bvt_euclidean_restriction`.  For the adjacent branch, insert
+         `BHW.permuteZeroDiagonalSchwartz` before applying `OS.E3_symmetric`.
+         This verification is downstream evidence that the branch CLM has the
+         correct OS restriction; it is not the definition of `T`.
+
+      Concrete proof order for the `hlocal` domain hypothesis:
+
+      1. Name the branch domains
+
+         ```lean
+         Dplus β  := BHW.os45ACRBranchDomain (d := d) (n := n) β
+         Dminus β := BHW.os45PulledRealBranchDomain (d := d) (n := n) β
+         ```
+
+         `Dplus β` is open because it is the preimage of
+         `BHW.ForwardTube d n` under the continuous linear equivalence
+         `(BHW.os45QuarterTurnCLE).symm`.  `Dminus β` is open by the checked
+         theorem `BHW.isOpen_os45PulledRealBranchDomain`.
+      2. Prove the pure coordinate edge-membership theorem
+
+         ```lean
+         theorem BHW.os45CommonEdge_mem_acrBranchDomain_of_ordered
+             [NeZero d]
+             (β : Equiv.Perm (Fin n)) {x : NPointDomain d n}
+             (hx :
+               x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) β) :
+             BHW.realEmbed
+               (BHW.os45CommonEdgeRealPoint (d := d) (n := n) β x) ∈
+               BHW.os45ACRBranchDomain (d := d) (n := n) β
+         ```
+
+         Proof transcript: unfold `os45ACRBranchDomain` and
+         `os45QuarterTurnCLE_symm_apply`; the imaginary part of the time
+         coordinate is exactly
+         `os45CommonEdgeRealPoint β x`, hence the forward-cone differences are
+         half of the ordered Euclidean time differences.  The spatial
+         imaginary parts are zero.  Conclude with
+         `os45HalfTimeDirection_mem_forwardCone_of_ordered`.
+      3. Prove the BHW/Jost common-real-environment edge theorem in the
+         active adjacent patch form.  The formerly tempting pointwise surface
+         with only `x ∈ JostSet`, `realEmbed x ∈ ExtendedTube`, and ordered
+         time hypotheses is too broad for implementation: the paper supplies a
+         selected local real environment, not an all-Jost formula.  The
+         Lean-facing theorem should therefore be a strengthened OS45 selector:
+         choose, or shrink to, one patch carrying both the existing
+         `BHW.os45_adjacent_identity_localEOWGeometry` fields and the new
+         horizontal pulled-branch-domain facts.  It must not take an arbitrary
+         previously selected `V` and assert that `V` was already inside the
+         Figure-2-4 environment.
+
+         ```lean
+         theorem BHW.os45_adjacent_identity_horizontalEdge_sourcePatch
+             [NeZero d]
+             (hd : 2 <= d)
+             (i : Fin n) (hi : i.val + 1 < n) :
+             ∃ (V : Set (NPointDomain d n)) (xseed : NPointDomain d n),
+               IsOpen V ∧ IsConnected V ∧ V.Nonempty ∧ xseed ∈ V ∧
+               IsCompact (closure V) ∧
+               (∀ x ∈ V, x ∈ BHW.JostSet d n) ∧
+               (∀ x ∈ V, BHW.realEmbed x ∈ BHW.ExtendedTube d n) ∧
+               (∀ x ∈ V,
+                 BHW.realEmbed
+                   (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
+                     BHW.ExtendedTube d n) ∧
+               (∀ x ∈ V,
+                 x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+                   (1 : Equiv.Perm (Fin n))) ∧
+               (∀ x ∈ V,
+                 (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
+                   EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+                     (Equiv.swap i ⟨i.val + 1, hi⟩)) ∧
+               (∀ x ∈ V,
+                 (fun k => wickRotatePoint (x k)) ∈
+                   adjacentOS45WickSeedDomain (d := d) (n := n) i hi
+                     (1 : Equiv.Perm (Fin n))) ∧
+               (∀ x ∈ V,
+                 BHW.realEmbed x ∈
+                   adjacentOS45RealEdgeDomain (d := d) (n := n) i hi) ∧
+               (∀ x ∈ V,
+                 BHW.OS45OppositeTubeBranchGeometry (d := d) (n := n)
+                   (1 : Equiv.Perm (Fin n)) x) ∧
+               (∀ x ∈ V,
+                 BHW.OS45OppositeTubeBranchGeometry (d := d) (n := n)
+                   (Equiv.swap i ⟨i.val + 1, hi⟩)
+                   (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k))) ∧
+               (let τ : Equiv.Perm (Fin n) :=
+                  Equiv.swap i ⟨i.val + 1, hi⟩
+                (∀ x ∈ V,
+                  BHW.realEmbed
+                    (BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x) ∈
+                    BHW.os45PulledRealBranchDomain (d := d) (n := n) 1) ∧
+                (∀ x ∈ V,
+                  BHW.realEmbed
+                    (BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x) ∈
+                    BHW.os45PulledRealBranchDomain (d := d) (n := n) τ) ∧
+                (∀ x ∈ closure V,
+                  x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+                    (1 : Equiv.Perm (Fin n))) ∧
+                (∀ x ∈ closure V,
+                  (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
+                    EuclideanOrderedPositiveTimeSector (d := d) (n := n) τ) ∧
+                (∀ x ∈ closure V,
+                  BHW.realEmbed
+                    (BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x) ∈
+                    BHW.os45PulledRealBranchDomain (d := d) (n := n) 1) ∧
+                (∀ x ∈ closure V,
+                  BHW.realEmbed
+                    (BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x) ∈
+                    BHW.os45PulledRealBranchDomain (d := d) (n := n) τ))
+         ```
+
+         This is not a wrapper around `hV_ET` or `hV_swapET`: those hypotheses
+         put the lower real traces
+         `Q(realEmbed x) = y - iη` and
+         `Q(realEmbed (x ∘ τ)) = y - iη` in their pulled BHW branch domains.
+         The theorem above puts the **horizontal** quarter-turn edge `y`
+         itself in the pulled domains for the two one-branch representatives.
+         Its source is exactly the adjacent common-real-environment paragraph
+         in Streater-Wightman Section 2-4 / Figure 2-4, used in OS I §4.5:
+         for one adjacent transposition there is a real open Jost environment
+         common to the two relevant extended-tube branches.  The proof first
+         obtains the ordinary OS45 identity-order seed, intersects the raw
+         real-open patch with the preimage of this source environment under
+         the two continuous horizontal-edge maps, and then takes a connected
+         ball around the seed with compact closure.  The theorem does not
+         assert a global all-Jost fact and does not compare branch values.
+
+         Proof transcript for the selector:
+
+         - Start from the checked identity-order perturbation theorem
+           `BHW.os45_adjacent_identity_localEOWGeometry`; it supplies the
+           ordered patch, the Wick/real trace-domain fields, and the two
+           `OS45OppositeTubeBranchGeometry` packets, but not the horizontal
+           pulled-branch membership.
+         - Let
+           `Hid x = (BHW.os45QuarterTurnCLE (d := d) (n := n)).symm
+             (BHW.realEmbed (BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x))`
+           and
+           `Hτ x = BHW.permAct (d := d) τ.symm Hid x`, where
+           `τ = Equiv.swap i ⟨i.val + 1, hi⟩`.  These are continuous maps from
+           the real patch into the complex configuration space.
+         - Apply the Streater-Wightman Figure 2-4 real-environment theorem at
+           the adjacent seed.  It gives a real open source neighborhood whose
+           image is common to the identity and adjacent BHW extended-tube
+           branches.  Pull that neighborhood back along `Hid` and `Hτ`, then
+           intersect it with the checked OS45 perturbation patch and with the
+           open trace-domain conditions already present in
+           `BHW.os45_adjacent_identity_localEOWGeometry`.
+         - Choose a connected open ball around the seed whose closed ball is
+           still inside this finite intersection.  This gives
+           `IsCompact (closure V)` in the finite-dimensional real chart.  All
+           old geometry fields hold on the ball, and the order and horizontal
+           pulled-branch fields also hold on `closure V`, because the closed
+           ball was chosen inside the same finite intersection.  The two
+           pulled-back Figure 2-4 inclusions give the new horizontal
+           memberships in
+           `BHW.os45PulledRealBranchDomain (d := d) (n := n) 1` and
+           `BHW.os45PulledRealBranchDomain (d := d) (n := n) τ`.
+         - No equality of branch values is concluded here.  The theorem only
+           selects the source patch on which the later one-branch boundary
+           value construction is allowed to run.
+      4. With the two edge-membership theorems and the two openness facts,
+         prove the compact uniform local-wedge lemma
+
+         ```lean
+         theorem BHW.os45BranchHorizontal_localWedge_of_edgeDomain
+             [NeZero d]
+             (β : Equiv.Perm (Fin n))
+             (E C : Set (NPointDomain d n))
+             (hE_plus :
+               ∀ y ∈ E,
+                 BHW.realEmbed y ∈
+                   BHW.os45ACRBranchDomain (d := d) (n := n) β)
+             (hE_minus :
+               ∀ y ∈ E,
+                 BHW.realEmbed y ∈
+                   BHW.os45PulledRealBranchDomain (d := d) (n := n) β) :
+             ∀ K : Set (NPointDomain d n), IsCompact K -> K ⊆ E ->
+               ∀ Kη : Set (NPointDomain d n), IsCompact Kη -> Kη ⊆ C ->
+                 ∃ r : ℝ, 0 < r ∧
+                   ∀ y ∈ K, ∀ η ∈ Kη, ∀ ε : ℝ, 0 < ε -> ε < r ->
+                     BHW.realEdgeAddImag (d := d) (n := n) y η ε ∈
+                       BHW.os45ACRBranchDomain (d := d) (n := n) β ∧
+                     BHW.realEdgeAddImag (d := d) (n := n) y η (-ε) ∈
+                       BHW.os45PulledRealBranchDomain (d := d) (n := n) β
+         ```
+
+         Proof transcript: the map `(y,η,ε) ↦ realEdgeAddImag y η ε` is
+         continuous.  At `ε = 0`, it is `realEmbed y`, which lies in both
+         open branch domains by `hE_plus` and `hE_minus`.  Compactness of
+         `K × Kη` gives a uniform positive radius.  No cone convexity is used
+         here; cone data only controls which compact direction sets `Kη` are
+         later supplied by the one-chart EOW setup.
 
       The adjacent difference input is then:
 
@@ -2540,9 +3181,11 @@ Active single-chart decomposition of Slot 1 after the SCV keystone:
 7. Do not define a compact-cutoff boundary CLM from a continuous pointwise
    edge value.  The boundary CLMs are the branchwise horizontal distributions
    `Tid` and `Tτ` supplied by step 5; the branch-difference CLM is their
-   difference.  If a cutoff is introduced in Lean, it is only an implementation
-   device inside the proof of the branchwise BV statements, not the
-   mathematical definition of the common boundary.
+   difference.  A cutoff is allowed only after the one-branch common germ has
+   been constructed on a real neighborhood of `closure Eseed`; it turns that
+   regular branch boundary value into a full Schwartz CLM.  It is not a
+   substitute for the branchwise OS-II/BHW boundary construction and it never
+   defines a common boundary by assuming `Hplus = Hminus`.
 8. Apply `SCV.chartDistributionalEOW_local_envelope` at the ordered horizontal
    edge only after steps 5-7 provide true `hplus_bv` and `hminus_bv`
    hypotheses.  Its output is a local envelope `H0` on a small coordinate ball
@@ -2570,19 +3213,18 @@ Active single-chart decomposition of Slot 1 after the SCV keystone:
 12. Package the result with
     `BHW.adjacentOSEOWDifferenceEnvelope_of_commonChartEnvelope`.
 
-This decomposition is **not** Lean-ready yet.  The dependency shape of the
-branchwise horizontal ACR/BHW packet is now fixed: the adjacent packet is the
-ordinary OS-II branch for `x ∘ τ`, transported to the common OS45 chart, and
-the theorem slots for support pullback, zero-diagonal transport, full OS45
-branch CLMs, and branchwise BV have been exposed above.  The
-remaining proof-doc work before Lean is to expand the two branch BV theorem
-proofs into line-by-line transcripts showing exactly how
-`bvt_boundary_values` sees the OS45 quarter-turn approach directions.  Once
-that transcript is fully specified, the remaining Lean work is ordinary
-one-chart instantiation and side-component gluing.  The route avoids both
-retired gaps: the one-chart theorem is not applied at the equal-time edge, and
-finite traces are reached by holomorphic gluing through side components rather
-than forced inside the local EOW ball.
+This decomposition is now proof-doc complete for the next Slot 1 Lean pass.
+The source-patch selector shrinks the checked adjacent identity geometry to a
+precompact connected ball and adds the closure-level order and horizontal
+pulled-branch domain facts.  The one-branch boundary theorem is split into the
+source common-germ theorem, the pure cutoff lemma, and the regular
+boundary-CLM construction with uniform compact-direction limits.  The
+remaining work is Lean implementation of these named statements, followed by
+the already-specified compactness proof of `hlocal`, one-chart instantiation,
+and side-component gluing.  The route avoids both retired gaps: the one-chart
+theorem is not applied at the equal-time edge, and finite traces are reached by
+holomorphic gluing through side components rather than forced inside the local
+EOW ball.
 
 Coarse Slot 1 decomposition retained for context:
 

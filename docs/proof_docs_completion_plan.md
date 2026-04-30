@@ -61,10 +61,13 @@ it at an ordered identity-sector horizontal edge, but the next common-boundary
 surface is still proof-doc work, not Lean work.  Its dependency shape is fixed,
 and the branch CLM theorem slots are now exposed: the adjacent branch is the
 ordinary OS-II branch for the relabelled patch `x ∘ τ`, transported back by
-the OS45 reindexing identity.  The remaining proof-doc work is the
-line-by-line `bvt_boundary_values` transcript for the two OS45 quarter-turn
-approach directions.  The bounded identity perturbation and same-patch
-identity geometry are checked.  The proposed horizontal-edge forward-tube pair
+the OS45 reindexing identity.  The remaining proof-doc work is now concentrated
+on the one-branch OS-II/BHW horizontal boundary theorem; the
+compact-direction `hlocal` domain hypotheses are reduced to the documented
+openness/compactness lemma once the source patch supplies closure-level edge
+membership.
+The bounded identity perturbation and same-patch identity geometry are
+checked.  The proposed horizontal-edge forward-tube pair
 and pointwise equality `Hplus = Hminus` from two applications of
 `BHW.extendF_eq_on_forwardTube` are rejected: after the repo permutation action
 `permAct σ z = fun k => z (σ k)`, an adjacent swap reverses the relevant
@@ -88,6 +91,44 @@ the quarter-turn chart.
 The later Hall-Wightman source theorem consumes the resulting compact-test
 anchor and must not be used to construct it.  The global compact-direction
 `bvt_W` boundary transport remains useful elsewhere.
+The latest proof-doc tightening makes two additional constraints explicit.
+First, the branch BV theorem may not quantify over an arbitrary side cone:
+its statement must carry the compact-direction local wedge hypothesis saying
+that `y + i εη` lies in the ACR branch domain and `y - i εη` lies in the
+pulled BHW branch domain, uniformly for compact `K ⊆ E` and compact
+`Kη ⊆ C`.  This `hlocal` field is supplied by the one-branch OS45 horizontal
+domain theorem: the ordered OS45 formulas give the candidate half-time
+directions, but the BHW/Jost common-real-environment input is what puts the
+horizontal edge and a small conic side window inside the correct branch
+domains.  That input is now explicitly patch-level: the active theorem is the
+adjacent identity-order OS45 source-patch theorem putting the selected
+horizontal edge in the identity and swapped pulled branch domains.  It is not
+an all-Jost pointwise formula, and it is not supplied by hope or by total
+function values outside domains.  Second,
+the ACR branch representative is the branch-undone quarter-turn pullback
+`bvt_F (permAct β.symm ((os45QuarterTurnCLE).symm z))`; its holomorphy on the
+ACR branch domain is obtained by rewriting with the permutation-symmetry field
+of `bvt_F_acrOne_package`, reducing to the ordinary forward-tube
+holomorphy.  The local selector
+`BHW.os45_adjacent_identity_horizontalEdge_sourcePatch` is now transcript-level:
+it shrinks the checked adjacent identity-order patch to a connected ball with
+compact closure, so that it still carries the Wick/real trace-domain and
+opposite-tube geometry fields, and also puts the selected OS45 horizontal edge
+inside the two pulled BHW branch domains needed for the adjacent identity-order
+patch.  This precompactness is what lets the branch-horizontal common germ be
+cut off on a real neighborhood of `closure E` to produce the full Schwartz CLM
+required by the checked SCV EOW theorem.  The proof-doc route for this packet
+is now fixed: the source theorem is split in the theorem-2 blueprint into the
+genuine one-branch germ statement `BHW.os45BranchHorizontalCommonGerm` and its
+boundary-CLM consumer `BHW.os45BranchHorizontalBoundaryValue`, whose outputs
+exactly match the `acr_bv` and `bhw_bv` fields of
+`OS45BranchHorizontalBV`.  The only auxiliary cutoff lemma on this path is the
+pure real-analysis statement
+`SCV.exists_schwartz_cutoff_eq_one_on_compact_subset_open`; this is now checked
+in `OSReconstruction/SCV/DistributionalEOWCutoff.lean`.  The next work is Lean
+implementation of the branch/source statements; the `hlocal`
+compact-direction radius is then a continuity and compactness lemma from the
+openness of the two branch domains.
 
 ## 0. Paper-authority rule
 
