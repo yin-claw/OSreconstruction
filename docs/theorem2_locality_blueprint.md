@@ -1048,6 +1048,18 @@ Proof decomposition of this theorem, without hiding the analytic work:
      `SCV.localEOWChart_real_add_imag`,
      `SCV.chartOrthantBoundaryValue_from_uniformConeBoundaryValue`,
      `SCV.chartHolomorphy_from_originalHolomorphy`,
+     `SCV.exists_schwartz_cutoff_eq_one_on_closedBall`,
+     `SCV.exists_complexChart_schwartz_cutoff_eq_one_on_closedBall`,
+     `SCV.regularizedLocalEOW_family_from_fixedWindow`,
+     `SCV.regularizedLocalEOW_originalFamily_compactValueCLM`,
+     `SCV.regularizedLocalEOW_chartKernelFamily_valueCLM`,
+     `SCV.continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`,
+     `SCV.regularizedLocalEOW_pairingCLM_of_fixedWindow`,
+     `SCV.regularizedLocalEOW_family_chartKernel_covariance_on_shiftedOverlap`,
+     `SCV.regularizedLocalEOW_pairingCLM_localCovariant`,
+     `SCV.exists_normalized_schwartz_bump_kernelSupportWithin`,
+     `SCV.exists_shrinking_normalized_schwartz_bump_sequence`,
+     `SCV.tendsto_realConvolutionTest_of_shrinking_normalized_support`,
      `SCV.StrictPositiveImagBall_mono`,
      `SCV.StrictNegativeImagBall_mono`,
      `SCV.tendsto_realMollifyLocal_strictPositiveImagBall`,
@@ -2831,10 +2843,34 @@ Current implementation order:
    used by the local covariant recovery theorem.  Reusing one variable `r` for
    both would hide a real smallness obligation.
    The final chart scale is chosen as in the SCV blueprint:
-   `Rcore = rker = rη = σ`, `Rdesc = 4σ`, `Rcov = 8σ`, `Rcut = 16σ`, with
+   `Rcore = rker = rη = σ`, `Rmix = 2σ`, `RmixCut = 4σ`,
+   `Rdesc = 4σ`, `Rcov = 8σ`, `Rcut = 16σ`, with
    `128 * σ ≤ δ`, `4 * σ < δside`, `4 * σ < ρin`,
    `(Fintype.card (Fin m) : ℝ) * (4 * σ) < rpoly`, and
-   `‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖ * (2 * σ) ≤ rψOrig`.
+   `‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖ * (4 * σ) ≤ rψOne`.
+   Lean obtains the last inequality by calling
+   `exists_oneChartRecoveryScale` with
+   `M = 2 * ‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖`,
+   whose conclusion `(2 * M0) * (2 * σ) ≤ rψOne` rewrites to the required
+   `M0 * (4 * σ) ≤ rψOne`.
+   The cutoff radii are therefore fixed, not chosen later by convenience:
+   `χr = 1` on `closedBall 0 (2σ)` and
+   `tsupport χr ⊆ closedBall 0 (4σ)`, while
+   `χψ = 1` on `closedBall 0 rψOne` and
+   `tsupport χψ ⊆ closedBall 0 rψLarge` with `rψLarge` still inside the
+   inverse-chart real-translation margin.  The original fixed-window family is
+   instantiated at radius `rψLarge`; `rψOne` is only the smaller radius on
+   which `χψ` is removed.  For local covariance, the two hypotheses
+   `KernelSupportWithin ψ (2σ)` and
+   `KernelSupportWithin (translateSchwartz a ψ) (2σ)` are pushed separately by
+   `KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM` and then
+   enlarged through
+   `‖e‖ * (2σ) ≤ ‖e‖ * (4σ) ≤ rψOne < rψLarge`.  This avoids any hidden claim
+   that translation preserves a fixed support radius.  The continuity theorem
+   `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand` is called
+   with the compact real set
+   `localEOWRealChart x0 ys '' closedBall 0 ρin`, not with the global open
+   edge set.
    These inequalities close the real-window, truncated-side-cone,
    fixed-window coordinate-sum, pushed-kernel support, and local-recovery
    margin obligations on both the final core side ball and the larger

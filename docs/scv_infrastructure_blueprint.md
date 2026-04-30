@@ -467,8 +467,9 @@ Source ledger for the internal helper list:
 | `exists_localEOW_truncatedSideCones_for_sliceMargin` | Checked in `SCV/LocalEOWSideCone.lean`: from the explicit `ε` side-cone data, the local wedge hypothesis, and a compactly supported cutoff `χ` with `tsupport χ ⊆ E`, choose a radius `rside > 0` and local side sets `CplusLoc = localEOWSideCone ys ε ∩ ball 0 rside`, `CminusLoc = Neg.neg '' CplusLoc`.  It proves openness, inclusion in the untruncated side cones, and the exact slice margins `x + i y ∈ Ωplus/Ωminus` for all `x ∈ tsupport χ`.  The proof uses the compact closed direction envelope and the scalar bound `s ≤ ‖y‖ / c`; it is the boundedness step between raw boundary limits and `sliceCLM_family_from_distributionalBoundary`. |
 | `exists_localEOWRealLinearPart_ball_subset` | Checked in `SCV/LocalEOWSideCone.lean`: by continuity at zero of the finite-dimensional linear map `localEOWRealLinearPart ys`, every positive original-side radius contains the image of a sufficiently small chart-coordinate ball.  This is the shrink used so strict positive/negative coordinate side balls land in the truncated side cones. |
 | `StrictPositiveImagBall`, `StrictNegativeImagBall`, `isOpen_StrictPositiveImagBall`, `isOpen_StrictNegativeImagBall`, `norm_complexChart_im_le`, `norm_complexChart_re_le`, `StrictPositiveImagBall_im_nonneg`, `StrictNegativeImagBall_im_nonpos`, `StrictPositiveImagBall_im_sum_pos`, `StrictNegativeImagBall_neg_im_sum_pos`, `StrictPositiveImagBall_im_sum_le_card_mul`, `StrictNegativeImagBall_neg_im_sum_le_card_mul`, `StrictPositiveImagBall_add_realEmbed_mem_ball_of_norm_le`, `StrictNegativeImagBall_add_realEmbed_mem_ball_of_norm_le`, `localEOWChart_im_eq_realLinearPart_im`, `localEOWRealLinearPart_im_mem_truncatedSideCone_of_strictPositive`, `localEOWRealLinearPart_im_mem_neg_truncatedSideCone_of_strictNegative`, `localEOWChart_mem_TubeDomain_truncatedSideCone_of_strictPositive`, `localEOWChart_mem_TubeDomain_neg_truncatedSideCone_of_strictNegative`, `localEOWChart_mem_fixedWindow_of_strictPositiveImagBall`, `localEOWChart_mem_fixedWindow_of_strictNegativeImagBall` | Checked in `SCV/LocalEOWChartEnvelope.lean`: the final recovery side balls are chart-coordinate balls, while the fixed-window side cones are original real-edge cones.  The file proves the missing bridge explicitly: `Im (localEOWChart x0 ys w) = localEOWRealLinearPart ys (Im w)`, positive strict chart coordinates land in `localEOWSideCone ys ε ∩ ball 0 rside` after the small linear-image radius, and negative strict chart coordinates land in `Neg.neg '' (localEOWSideCone ys ε ∩ ball 0 rside)`.  It also proves the coordinate-sum facts needed by the fixed-window Rudin polywedge hypotheses: from `w ∈ StrictPositiveImagBall R`, the vector `Im w` is nonnegative, has positive coordinate sum when `0 < m`, and has sum at most `card * R`; the negative side is the same statement for `-Im w`.  The side approximate-identity and translate-margin uses need the additional explicit real-translation fact: adding `realEmbed t` leaves every imaginary coordinate unchanged and increases the chart norm by at most `‖t‖`, so `w ∈ StrictPositiveImagBall R`, `‖t‖ ≤ r`, and `R + r < Rbig` give `w + realEmbed t ∈ ball 0 Rbig` with strict positive imaginary coordinates, and similarly on the negative side.  Therefore `card * R < rpoly` feeds fixed-window side membership, and `Rcore + rker < Rside` feeds side approximate identities, without silently replacing coordinate-sum smallness by norm smallness or treating real translations as changing side signs. |
-| `exists_oneChartRecoveryScale` | Checked in `SCV/LocalEOWChartEnvelope.lean`: finite arithmetic scale selection for the one-chart assembly.  From positive `δ`, `δside`, `ρin`, `rpoly`, `rψOrig`, and a nonnegative operator norm bound `M`, choose `σ > 0` satisfying `128 * σ ≤ δ`, `4 * σ < δside`, `4 * σ < ρin`, `card * (4 * σ) < rpoly`, and `M * (2 * σ) ≤ rψOrig`.  This isolates the simultaneous smallness choice required by the tightened proof route, rather than solving the inequalities ad hoc inside `chartDistributionalEOW_local_envelope`. |
+| `exists_oneChartRecoveryScale` | Checked in `SCV/LocalEOWChartEnvelope.lean`: finite arithmetic scale selection for the one-chart assembly.  From positive `δ`, `δside`, `ρin`, `rpoly`, `rψOrig`, and a nonnegative operator norm bound `M`, choose `σ > 0` satisfying `128 * σ ≤ δ`, `4 * σ < δside`, `4 * σ < ρin`, `card * (4 * σ) < rpoly`, and `M * (2 * σ) ≤ rψOrig`.  This isolates the simultaneous smallness choice required by the tightened proof route, rather than solving the inequalities ad hoc inside `chartDistributionalEOW_local_envelope`.  In the final pairing-CLM call, instantiate it with `M = 2 * ‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖` so the returned inequality controls the pushed support of `χr • ψ` when `χr` is one on radius `2σ` and supported on radius `4σ`. |
 | `oneChartRecoveryScale_radius_margins`, `oneChartRecoveryScale_core_translate_mem_desc`, `oneChartRecoveryScale_desc_translate_mem_cov`, `oneChartRecoveryScale_cov_ball_subset_half`, `oneChartRecoveryScale_cut_closedBall_subset_half` | Checked in `SCV/LocalEOWChartEnvelope.lean`: the finite radius consequences of `128 * σ ≤ δ` and `0 < σ` used by the local product-kernel recovery call.  These supply `Rcov > 0`, `Rcov < Rcut`, `Rcut < δ / 2`, `2 * Rcov < δ / 4`, the core-to-descent and descent-to-covariance real-translation margins using `realEmbed`, and the open/closed ball containments needed for `Ucov ⊆ U0` and the cutoff integration window. |
+| `exists_normalized_schwartz_bump_kernelSupportWithin`, `exists_shrinking_normalized_schwartz_bump_sequence`, `tendsto_realConvolutionTest_of_shrinking_normalized_support` | Checked in `SCV/DistributionalEOWApproxIdentity.lean`: the descent kernel `η` is a normalized Schwartz kernel supported in the chosen radius, and the recovery sequence `ψn` has nonnegativity, real-valuedness, normalization, fixed support, shrinking support, and convergence of `realConvolutionTest θ (ψn n)` to `θ`.  These are the exact `η` and `ψn` suppliers for `regularizedEnvelope_chartEnvelope_from_oneChartScale`; no abstract approximate-identity axiom is used. |
 | `StrictPositiveImagBall_mono`, `StrictNegativeImagBall_mono`, `tendsto_realMollifyLocal_strictPositiveImagBall`, `tendsto_realMollifyLocal_strictNegativeImagBall` | Checked in `SCV/LocalEOWChartApproxIdentity.lean`: strict side balls are monotone in the radius, and real mollification by a shrinking normalized kernel recovers any continuous side function on the corresponding strict positive or negative chart-side neighborhood.  These are the final named `happrox_plus`/`happrox_minus` suppliers for the local recovery theorem; the representation step unfolds `realMollifyLocal`, while the convergence engine is the checked `regularizedEnvelope_kernelLimit_from_representation`. |
 | `regularizedEnvelope_chartEnvelope_from_oneChartScale` | Checked in `SCV/LocalEOWChartRecovery.lean`: specialization of `regularizedEnvelope_chartEnvelope_from_localCovariantProductKernel` to the one-chart radii `Rcore = r = rη = σ`, `Rdesc = 4 * σ`, `Rcov = 8 * σ`, and `U0 = ball 0 (δ / 2)`.  The proof supplies the open ball inclusions, real-translation margins, covariance-window containment, nonnegative radii, and strict-side approximate-identity limits from the checked scale and strict-side lemmas, leaving only the genuine analytic inputs: local covariance, chart-family holomorphy and product representation, side identities, and continuity of the two side functions on the strict neighborhoods. |
 | `localEOWAffineRealWindow`, `isOpen_localEOWAffineRealWindow`, `localEOWComplexAffineEquiv_symm_localEOWChart`, `localEOWChart_mem_affineRealWindow_of_re_norm_lt`, `localEOWChart_mem_affineRealWindow_of_mem_ball`, `localEOWAffineRealWindow_add_realEmbed` | Checked in `SCV/LocalEOWChartEnvelope.lean`: the real-window factor in the one-chart side domains is now a named inverse-affine chart window.  Openness is proved by continuity of `A.symm` followed by coordinatewise real part and norm.  Applying `localEOWChart` puts a coordinate point into the matching real window because `A.symm (localEOWChart x0 ys w) = w`.  The support-margin lemma proves the exact `2ρ` to `3ρ` enlargement under `z + realEmbed t` using `localEOWComplexAffineEquiv_symm_add_realEmbed` and the inverse-linear displacement bound `‖(localEOWRealLinearCLE ys hli).symm t‖ < ρ`. |
@@ -4104,15 +4105,19 @@ envelope assembly once the raw distributional limits are supplied.
 
    Apply the checked
    `exists_localEOWRealLinearSymm_ball_subset ys hli` with radius `ρin` and
-   choose `rψOrig > 0` small enough that
+   choose three original-kernel radii
    ```
-   ‖t‖ ≤ rψOrig -> ‖e.symm t‖ < ρin.
+   0 < rψOne < rψLarge < rψMargin
+   ```
+   such that
+   ```
+   ‖t‖ ≤ rψLarge -> ‖e.symm t‖ < ρin.
    ```
    Concretely, if the theorem returns `δsymm > 0` for strict
-   `‖t‖ < δsymm`, take `rψOrig = δsymm / 2`.  Then if
+   `‖t‖ < δsymm`, take `rψMargin = δsymm`,
+   `rψLarge = δsymm / 2`, and `rψOne = δsymm / 4`.  Then if
    `‖(fun j => ((A.symm z) j).re)‖ < 2 * ρin` and
-   `KernelSupportWithin ψ rψOrig`, every
-   `t ∈ tsupport ψ` satisfies
+   `t ∈ Metric.closedBall 0 rψLarge`, the translated point satisfies
    `‖(fun j => ((A.symm (z + realEmbed t)) j).re)‖ < 3 * ρin`, because
    ```
    A.symm (z + realEmbed t)
@@ -4124,19 +4129,39 @@ envelope assembly once the raw distributional limits are supplied.
    The real-window package is now checked as
    `localEOWAffineRealWindow`, `isOpen_localEOWAffineRealWindow`, and
    `localEOWAffineRealWindow_add_realEmbed`, so the future one-chart theorem
-   can use a named open real-window factor and a verified `2ρin -> 3ρin`
-   translate-margin step.
+   can use a named open real-window factor and a verified closed-ball
+   `2ρin -> 3ρin` translate-margin step.  For the `tsupport` margin used by
+   `regularizedLocalEOW_family_from_fixedWindow`, apply the same closed-ball
+   estimate to every support point of a kernel with
+   `KernelSupportWithin ψ rψLarge`.
 
    The support radius for a pushed chart kernel is controlled by
    `KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM`.  In the local
    recovery step below the mixed pairing/covariance radius is
-   `Rmix = rker + rη`, so choose the final chart-kernel scale `σ` with
-   `‖e.toContinuousLinearMap‖ * (2 * σ) ≤ rψOrig`; using
-   `‖e.toContinuousLinearMap‖ + 1` in the denominator is the Lean-safe way to
-   avoid a special case for the operator norm.  The pairing CLM is built for
-   kernels supported in radius `Rmix = 2 * σ`, and its representation is later
-   restricted to the smaller recovery radius `rker = σ` by
-   `KernelSupportWithin.mono`.
+   `Rmix = rker + rη = 2 * σ`.  The chart cutoff `χr` must be equal to `1` on
+   `closedBall 0 Rmix`, but it is a Schwartz cutoff, so it is supported in a
+   strictly larger closed ball.  Fix the support radius
+   `RmixCut = 4 * σ` by choosing `χr` with
+   ```
+   χr = 1 on closedBall 0 (2 * σ),
+   tsupport χr ⊆ closedBall 0 (4 * σ).
+   ```
+   Therefore the scale must budget
+   `‖e.toContinuousLinearMap‖ * (4 * σ) ≤ rψOne`, not merely the radius
+   `2 * σ`.  Lean obtains this from the checked
+   `exists_oneChartRecoveryScale` by passing
+   `M = 2 * ‖e.toContinuousLinearMap‖`; the theorem's conclusion
+   `M * (2 * σ) ≤ rψOne` is exactly the desired `‖e‖ * (4 * σ) ≤ rψOne`
+   after rewriting.  The original-edge cutoff `χψ` is chosen with
+   ```
+   χψ = 1 on closedBall 0 rψOne,
+   tsupport χψ ⊆ closedBall 0 rψLarge.
+   ```
+   Thus `χψ` is one on every pushed chart kernel produced from `χr • ψ`, and
+   its own support still lies inside the closed-ball margin where side
+   translations are valid.  The pairing CLM is built for kernels supported in
+   radius `Rmix = 2 * σ`, and its representation is later restricted to the
+   smaller recovery radius `rker = σ` by `KernelSupportWithin.mono`.
 4. Build the two-sided slice CLMs from the checked raw side limits, not as
    assumptions.  Keep the distribution names separated throughout this step:
    `Torig := T` is the original real-edge distribution in the OS-II boundary
@@ -4174,12 +4199,12 @@ envelope assembly once the raw distributional limits are supplied.
    limits restricted to `CplusLoc/CminusLoc`, the side margins for `χ`,
    `Dplus ⊆ TubeDomain CplusLoc`,
    `Dminus ⊆ TubeDomain CminusLoc`, and the translated-kernel cutoff-one
-   hypotheses for every `KernelSupportWithin ψ rψOrig`.  The downstream complex
+   hypotheses for every `KernelSupportWithin ψ rψLarge`.  The downstream complex
    boundary distribution for the original fixed-window family is
    `TcutOrig`, and
    the cutoff compatibility supplied to the slice theorem rewrites both limit
    targets to `(TcutOrig.restrictScalars ℝ) φ`.  The theorem returns the two
-   evaluation fields for every kernel with `KernelSupportWithin ψ rψOrig`; the
+   evaluation fields for every kernel with `KernelSupportWithin ψ rψLarge`; the
    translated support lies in `B1` by the support transport and cutoff
    construction.
 
@@ -4214,10 +4239,11 @@ envelope assembly once the raw distributional limits are supplied.
    localEOWRealLinearPart ys (Im w)` with the small `δside` radius, so later
    recovery side balls may be stated in chart coordinates without any hidden
    identification of chart and original real-edge coordinates.
-5. Apply `regularizedLocalEOW_family_from_fixedWindow` to the original-side
-   functions with `Tchart = TcutOrig`, the just-built `Tplus/Tminus`, the
-   fixed-window data from step 1 using `ρ = ρin` and `r = rpoly`, and the
-   side domains from step 2.  This
+5. Apply `regularizedLocalEOW_family_from_fixedWindow` at the original-kernel
+   support radius `rψLarge` to the original-side functions with
+   `Tchart = TcutOrig`, the just-built `Tplus/Tminus`, the fixed-window data
+   from step 1 using `ρ = ρin` and `r = rpoly`, and the side domains from
+   step 2.  This
    produces the original-edge fixed-window family
    `Gorig η w =
     localRudinEnvelope δ x0 ys (realMollifyLocal Fplus η)
@@ -4254,29 +4280,31 @@ envelope assembly once the raw distributional limits are supplied.
    identifies chart coordinates with original real-edge coordinates.
 7. Use one explicit small scale for local recovery.  After `rside`,
    `δside` from `exists_localEOWRealLinearPart_ball_subset`, `ρin`, and
-   `rψOrig` are known, choose `σ > 0` such that
+   the original-kernel one-radius `rψOne` are known, choose `σ > 0` such that
    ```
    128 * σ ≤ δ,
    4 * σ < δside,
    4 * σ < ρin,
    (Fintype.card (Fin m) : ℝ) * (4 * σ) < rpoly,
-   ‖e.toContinuousLinearMap‖ * (2 * σ) ≤ rψOrig.
+   ‖e.toContinuousLinearMap‖ * (4 * σ) ≤ rψOne.
    ```
+   In Lean this is still a direct use of `exists_oneChartRecoveryScale`: pass
+   `M = 2 * ‖e.toContinuousLinearMap‖`, and rewrite
+   `(2 * ‖e‖) * (2 * σ) ≤ rψOne` as `‖e‖ * (4 * σ) ≤ rψOne`.
    The first inequality also gives `16 * σ < δ / 2` and
    `2 * (8 * σ) < δ / 4`; the second sends the larger side-neighborhood
    strict balls of radius `Rdesc = 4 * σ` into the truncated side cones; the
    third gives the real-window and fixed-window real-coordinate smallness for
    both `Rcore` and `Rdesc`; the fourth is the fixed-window coordinate-sum
    smallness needed for the Rudin polywedge hypotheses on the same larger
-   side neighborhood; the fifth ensures every chart kernel used by the
-   pairing/covariance theorem
-   pushes forward to an original-edge kernel inside the fixed-window support
-   radius.
+   side neighborhood; the fifth ensures every chart kernel after the real
+   cutoff `χr` pushes forward into the original-edge radius on which `χψ = 1`.
 
    Set
    ```
-   Rcore = σ,      rker = σ,   rη = σ,
-   Rdesc = 4 * σ,  Rcov = 8 * σ,  Rcut = 16 * σ,
+   Rcore = σ,      rker = σ,     rη = σ,
+   Rmix = 2 * σ,   RmixCut = 4 * σ,
+   Rdesc = 4 * σ,  Rcov = 8 * σ, Rcut = 16 * σ,
    Ucore = Metric.ball 0 Rcore,
    Udesc = Metric.ball 0 Rdesc,
    Ucov  = Metric.ball 0 Rcov,
@@ -4321,20 +4349,61 @@ envelope assembly once the raw distributional limits are supplied.
 8. Build the localized mixed Schwartz CLM by
    `regularizedLocalEOW_pairingCLM_of_fixedWindow`.  The inputs are the chart
    cutoff `χU = 1` on `closedBall 0 Rcov`, the real-kernel cutoff `χr = 1` on
-   `closedBall 0 Rmix`, the original-edge cutoff `χψ` large enough for
-   `P (χr • ψ)`, the chart-kernel value CLM from
+   `closedBall 0 Rmix` with
+   `tsupport χr ⊆ closedBall 0 RmixCut`, the original-edge cutoff `χψ = 1` on
+   `closedBall 0 rψOne` with
+   `tsupport χψ ⊆ closedBall 0 rψLarge`, the chart-kernel value CLM from
    `regularizedLocalEOW_chartKernelFamily_valueCLM`, and the checked varying
    integrand continuity
-   `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`.  Its output
-   is a mixed CLM `K` and the product-test representation on tests supported
-   in `Ucov`.  Build this CLM at the radius `Rmix = rker + rη = 2 * σ`, not only
-   at the smaller recovery radius.  The representation and holomorphy fields
-   needed later for `KernelSupportWithin ψ rker` are obtained by monotonicity
-   from `rker ≤ Rmix`.
+   `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`.
+
+   Before the pairing theorem, call
+   `regularizedLocalEOW_originalFamily_compactValueCLM` with
+   `rLarge = rψLarge` and `Rcut = 16 * σ` to obtain `Lorig`; its closed-ball
+   side-margin hypotheses use the `rψLarge` margin from step 3, and its
+   cutoff support input is exactly
+   `tsupport χψ ⊆ closedBall 0 rψLarge`.  Then call
+   `regularizedLocalEOW_chartKernelFamily_valueCLM` with
+   `r = Rmix`, `rcut = RmixCut`, and `rψ = rψOne`.  Its support calculation is
+   ```
+   KernelSupportWithin (χr • ψ) RmixCut,
+   KernelSupportWithin (P (χr • ψ)) (‖e‖ * RmixCut),
+   ‖e‖ * RmixCut ≤ rψOne,
+   ```
+   so `χψ` can be removed on the pushed kernel.  This is the reason the scale
+   chooser above budgets `4 * σ`, not only `2 * σ`.
+
+   For `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand`, do not
+   pass the global open edge set as the compact parameter.  Pass the compact
+   chart-real image
+   `Kreal = localEOWRealChart x0 ys '' Metric.closedBall 0 ρin`; compactness
+   is `isCompact_closedBall.image continuous_localEOWRealChart`, and the
+   required `hE_mem` is tautological.  The theorem's closed side-margin inputs
+   are again the `rψLarge` margins from step 3, not the weaker `tsupport`
+   margins used by the fixed-window family.
+
+   The output is a mixed CLM `K` and the product-test representation on tests
+   supported in `Ucov`.  Build this CLM at the radius
+   `Rmix = rker + rη = 2 * σ`, not only at the smaller recovery radius.  The
+   representation and holomorphy fields needed later for
+   `KernelSupportWithin ψ rker` are obtained by monotonicity from
+   `rker ≤ Rmix`.
 9. Prove local covariance by `regularizedLocalEOW_pairingCLM_localCovariant`.
    The `hG_cov` input is exactly
    `regularizedLocalEOW_family_chartKernel_covariance_on_shiftedOverlap`.
-   In the nonzero support branch, the support hypotheses for `φ` and
+   The covariance consumer supplies both
+   `KernelSupportWithin ψ Rmix` and
+   `KernelSupportWithin (translateSchwartz a ψ) Rmix`.  Push each of these
+   separately through
+   `KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM`, then enlarge
+   from
+   `‖e.toContinuousLinearMap‖ * Rmix` to `rψLarge` using
+   `Rmix = 2σ ≤ 4σ = RmixCut`,
+   `‖e.toContinuousLinearMap‖ * RmixCut ≤ rψOne`, and
+   `rψOne < rψLarge`.  Thus no step asserts that translation itself preserves
+   a fixed support radius; the shifted support hypothesis is exactly the one
+   carried by `ProductKernelRealTranslationCovariantLocal`.  In the nonzero
+   support branch, the support hypotheses for `φ` and
    `complexTranslateSchwartz a φ` give
    `‖a‖ < 2 * Rcov < δ / 4`, hence
    `exists_positive_imag_mem_localEOWShiftedWindow_of_norm_lt` supplies the
@@ -4396,8 +4465,11 @@ envelope assembly once the raw distributional limits are supplied.
    * The simultaneous one-chart radii are selected once by
      `exists_oneChartRecoveryScale`.  Its output supplies the `δ / 2`
      holomorphy containment, the `Rdesc = 4σ` side-cone and fixed-window
-     coordinate-sum smallness, the `ρin` real-window smallness, and the pushed
-     kernel support bound.  The checked consequence lemmas
+     coordinate-sum smallness, and the `ρin` real-window smallness.  For the
+     pushed-kernel support bound, instantiate it with
+     `M = 2 * ‖(localEOWRealLinearCLE ys hli).toContinuousLinearMap‖`, so the
+     returned inequality controls the cutoff support radius
+     `RmixCut = 4σ`.  The checked consequence lemmas
      `oneChartRecoveryScale_radius_margins`,
      `oneChartRecoveryScale_core_translate_mem_desc`,
      `oneChartRecoveryScale_desc_translate_mem_cov`,
@@ -4422,7 +4494,10 @@ envelope assembly once the raw distributional limits are supplied.
      `z + realEmbed t` lies in the `3ρin` cutoff-one window, so the original
      real part lies in `tsupport χ` because `χ = 1` there.  The bounded
      side-cone margin theorem then gives membership in `Ωplus/Ωminus`;
-     the imaginary part is unchanged by real translation.
+     the imaginary part is unchanged by real translation.  The closed-ball
+     variants needed by `regularizedLocalEOW_originalFamily_compactValueCLM`
+     and `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand` use the
+     same proof with `t ∈ closedBall 0 rψLarge`.
    * The cutoff-one hypotheses passed to
      `sliceCLM_family_from_distributionalBoundary` use the same calculation
      with the support of `translateSchwartz (fun i => - (w i).re) ψ`.  The
@@ -4444,8 +4519,13 @@ envelope assembly once the raw distributional limits are supplied.
      `regularizedEnvelope_chartEnvelope_from_oneChartScale`.
    * `hG_holo` and the product-test representation are exactly the two
      outputs of `regularizedLocalEOW_pairingCLM_of_fixedWindow`, after
-     building the chart-kernel value CLM via
-     `regularizedLocalEOW_chartKernelFamily_valueCLM`.
+     building `Lorig` by `regularizedLocalEOW_originalFamily_compactValueCLM`
+     and transporting it to chart kernels by
+     `regularizedLocalEOW_chartKernelFamily_valueCLM`.  The continuity input
+     to the pairing theorem is
+     `continuousOn_regularizedLocalEOW_chartKernelSliceIntegrand` with compact
+     real set `localEOWRealChart x0 ys '' closedBall 0 ρin`, not the global
+     open edge set.
    * Local covariance is exactly
      `regularizedLocalEOW_pairingCLM_localCovariant`, using
      `regularizedLocalEOW_family_chartKernel_covariance_on_shiftedOverlap`
@@ -4467,6 +4547,27 @@ envelope assembly once the raw distributional limits are supplied.
    * No slow-growth hypothesis, global product-kernel covariance, free
      `hkernel_limit`, or untransported original-coordinate kernel is an input
      to `chartDistributionalEOW_local_envelope`.
+
+   Exact handoff to `regularizedEnvelope_chartEnvelope_from_oneChartScale`:
+
+   | Scaled-recovery input | Supplier in the one-chart proof |
+   |---|---|
+   | `hm` | The positive dimension hypothesis of `chartDistributionalEOW_local_envelope`, ultimately from the theorem input or `positive_dimension_of_nonempty_not_zero` in the outer patching theorem. |
+   | `hσ`, `hδ` | `exists_oneChartRecoveryScale` gives `0 < σ` and `128 * σ ≤ δ` after the doubled-norm support budget is included. |
+   | `K` | `regularizedLocalEOW_pairingCLM_of_fixedWindow`, built at `Rmix = 2σ` from `Lchart`, `χU`, `χr`, `χψ`, and the closed-ball continuity theorem. |
+   | `Gchart` | Definition `fun ψ => Gorig (localEOWRealLinearKernelPushforwardCLM ys hli ψ)`, where `Gorig` is the explicit fixed-window family from `regularizedLocalEOW_family_from_fixedWindow`. |
+   | `Fplus`, `Fminus` | The coordinate side functions `FplusCoord ζ = Fplus (localEOWChart x0 ys ζ)` and `FminusCoord ζ = Fminus (localEOWChart x0 ys ζ)`. |
+   | `ψn` | The sequence from `exists_shrinking_normalized_schwartz_bump_sequence` at `rker = σ`. |
+   | `η`, `hη_norm`, `hη_support` | `exists_normalized_schwartz_bump_kernelSupportWithin` at radius `rη = σ`. |
+   | `hcov` | `regularizedLocalEOW_pairingCLM_localCovariant` at radius `Rmix = 2σ`, using `regularizedLocalEOW_family_chartKernel_covariance_on_shiftedOverlap`.  Its two kernel-support inputs are discharged separately from `KernelSupportWithin ψ Rmix` and `KernelSupportWithin (translateSchwartz a ψ) Rmix` by `KernelSupportWithin.localEOWRealLinearKernelPushforwardCLM` plus `‖e‖ * Rmix ≤ ‖e‖ * RmixCut ≤ rψOne < rψLarge`; the translated-pushforward support lemma is only for callers that must derive a larger shifted radius from an unshifted kernel. |
+   | `hG_holo` | First output of `regularizedLocalEOW_pairingCLM_of_fixedWindow` at radius `Rmix`, restricted to `σ` by `KernelSupportWithin.mono` since `σ ≤ 2σ`. |
+   | `hK_rep` | Second output of `regularizedLocalEOW_pairingCLM_of_fixedWindow` at radius `Rmix`, restricted to `σ` by `KernelSupportWithin.mono`. |
+   | `hψ_nonneg`, `hψ_real`, `hψ_norm`, `hψ_support_r` | `exists_shrinking_normalized_schwartz_bump_sequence` at `rker = σ`. |
+   | `hψ_support_shrink` | The same sequence gives support in `min (σ / 2) (1 / (n+1))`; enlarge to `1 / (n+1)` by `KernelSupportWithin.mono` and `min_le_right`. |
+   | `hψ_approx` | `tendsto_realConvolutionTest_of_shrinking_normalized_support` applied to the preceding nonnegative, real-valued, normalized, shrinking-support sequence. |
+   | `hG_plus`, `hG_minus` | `Filter.Eventually.of_forall` from the fixed-window side identities for `Gorig (P ψn)`, support transport for `P ψn`, and `realMollifyLocal_localEOWChart_kernelPushforwardCLM_pullback`; the side-domain membership uses the strict-side fixed-window/tube/real-window lemmas at radius `σ`. |
+   | `hFplus_cont`, `hFminus_cont` | `chartHolomorphy_from_originalHolomorphy` on `StrictPositiveImagBall (4σ)` and `StrictNegativeImagBall (4σ)`, then `.continuousOn`; the domain maps into `Ωplus/Ωminus` by the fixed-window strict-side theorem with `card * (4σ) < rpoly` and `4σ < ρin`. |
+   | Radius/open/margin hypotheses | Internal to `regularizedEnvelope_chartEnvelope_from_oneChartScale`, discharged by `oneChartRecoveryScale_*` and the strict-side approximate-identity lemmas. |
 
 Proof transcript for `chartDistributionalEOW_transport_originalCoords`:
 set `A = localEOWComplexAffineEquiv x0 ys hli`,
