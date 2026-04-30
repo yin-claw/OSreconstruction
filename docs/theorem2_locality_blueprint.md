@@ -2819,6 +2819,25 @@ Proof decomposition of this theorem, without hiding the analytic work:
             ∀ x ∈ closure V,
               (fun k => x (τ k)) ∈
                 EuclideanOrderedPositiveTimeSector (d := d) (n := n) τ)
+          (hV_figPath_closure :
+            let τ : Equiv.Perm (Fin n) :=
+              Equiv.swap i ⟨i.val + 1, hi⟩
+            let Q := BHW.os45QuarterTurnCLE (d := d) (n := n)
+            ∀ x ∈ closure V,
+              let y :=
+                BHW.os45CommonEdgeRealPoint (d := d) (n := n)
+                  (1 : Equiv.Perm (Fin n)) x
+              ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
+                Continuous Γ ∧
+                Continuous Δ ∧
+                Γ (0 : unitInterval) = (fun k => wickRotatePoint (x k)) ∧
+                Γ (1 : unitInterval) = Q.symm (BHW.realEmbed y) ∧
+                (∀ t, Γ t ∈ BHW.ExtendedTube d n) ∧
+                (∀ t, Δ t ∈ BHW.ExtendedTube d n) ∧
+                (∀ t,
+                  BHW.sourceMinkowskiGram d n (Δ t) =
+                    BHW.sourcePermuteComplexGram n τ
+                      (BHW.sourceMinkowskiGram d n (Γ t))))
           (hVcl : closure V ⊆ Ufig) :
           ∀ x ∈ closure V,
             BHW.OS45BranchHorizontalSourceGermAt
@@ -2925,9 +2944,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
       its ordered field from `hV_swap_ordered_closure` for the closure points
       being packaged, and proves its horizontal BHW field from the last field
       of `hUfig_source` plus
-      `BHW.os45CommonEdgeRealPoint_adjacent_swap_eq`.  Applying the
-      one-branch theorem with `β = τ` and `x0 = fun k => x (τ k)` yields the
-      adjacent source germ at
+      `BHW.os45CommonEdgeRealPoint_adjacent_swap_eq`.  It also consumes
+      `hV_figPath_closure x hx`, because the Hall-Wightman scalar corridor
+      must connect the OS45 quarter-turn scalar point for this closure point
+      to the `S'_n` seed inside the adjacent double scalar domain.  Applying
+      the one-branch theorem with `β = τ` and `x0 = fun k => x (τ k)` yields
+      the adjacent source germ at
       `os45CommonEdgeRealPoint τ (fun k => x (τ k))`, which is rewritten to
       the identity common edge by `BHW.os45CommonEdgeRealPoint_adjacent_swap_eq`.
 
@@ -2943,8 +2965,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       For the identity supplier, after `β = 1`, the branch-specific pulled BHW
       argument is definitionally `Q.symm z`.  For the adjacent supplier, the
       proof must work on the relabelled ordered configuration `x ∘ τ`, apply
-      the same one-branch OS I §4.5 / BHW source construction there, and then
-      transport the result back to the identity common edge by
+      the same one-branch OS I §4.5 / BHW source construction there with the
+      pointwise Figure-2-4 path supplied by `hV_figPath_closure x hx`, and
+      then transport the result back to the identity common edge by
       `BHW.os45CommonEdgeRealPoint_adjacent_swap_eq` and
       `BHW.os45QuarterTurnConfig_reindexed_realBranch_eq`.  It must not prove
       or assume equality between the identity and adjacent BHW branches.
@@ -3280,9 +3303,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       simp-normalizing `β`.
 
       The adjacent source input is the genuine OS I §4.5 source theorem.  It
-      must carry the selected Figure-2-4 path field; without that field the
-      quarter-turn scalar point is not connected to the `S'_n` seed inside the
-      adjacent double scalar domain.
+      must carry the pointwise Figure-2-4 path field `hfig_x0`; without that
+      field the quarter-turn scalar point is not connected to the `S'_n` seed
+      inside the adjacent double scalar domain.
 
       ```lean
       theorem BHW.os45OneBranchScalarGramEq_sourceInput_adjacent
@@ -3312,27 +3335,26 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 (BHW.os45CommonEdgeRealPoint (d := d) (n := n)
                   (1 : Equiv.Perm (Fin n)) x) ∈
                 BHW.os45PulledRealBranchDomain (d := d) (n := n) τ)
-          (hV_figPath :
+          {x0 : NPointDomain d n}
+          (hx0V : x0 ∈ V)
+          (hfig_x0 :
             let τ : Equiv.Perm (Fin n) :=
               Equiv.swap i ⟨i.val + 1, hi⟩
             let Q := BHW.os45QuarterTurnCLE (d := d) (n := n)
-            forall x, x ∈ V ->
-              let y :=
-                BHW.os45CommonEdgeRealPoint (d := d) (n := n)
-                  (1 : Equiv.Perm (Fin n)) x
-              ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
-                Continuous Γ ∧
-                Continuous Δ ∧
-                Γ (0 : unitInterval) = (fun k => wickRotatePoint (x k)) ∧
-                Γ (1 : unitInterval) = Q.symm (BHW.realEmbed y) ∧
-                (forall t, Γ t ∈ BHW.ExtendedTube d n) ∧
-                (forall t, Δ t ∈ BHW.ExtendedTube d n) ∧
-                (forall t,
-                  BHW.sourceMinkowskiGram d n (Δ t) =
-                    BHW.sourcePermuteComplexGram n τ
-                      (BHW.sourceMinkowskiGram d n (Γ t))))
-          {x0 : NPointDomain d n}
-          (hx0V : x0 ∈ V) :
+            let y0 :=
+              BHW.os45CommonEdgeRealPoint (d := d) (n := n)
+                (1 : Equiv.Perm (Fin n)) x0
+            ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
+              Continuous Γ ∧
+              Continuous Δ ∧
+              Γ (0 : unitInterval) = (fun k => wickRotatePoint (x0 k)) ∧
+              Γ (1 : unitInterval) = Q.symm (BHW.realEmbed y0) ∧
+              (forall t, Γ t ∈ BHW.ExtendedTube d n) ∧
+              (forall t, Δ t ∈ BHW.ExtendedTube d n) ∧
+              (forall t,
+                BHW.sourceMinkowskiGram d n (Δ t) =
+                  BHW.sourcePermuteComplexGram n τ
+                    (BHW.sourceMinkowskiGram d n (Γ t)))) :
           let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
           let Q := BHW.os45QuarterTurnCLE (d := d) (n := n)
           let y0 :=
@@ -3363,7 +3385,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
       identity case.  Apply
       `BHW.os45AdjacentSPrimeSeedFigure24Path_of_compactWickPairingEq` with
       the same selected patch `V`, the swapped ordering field, the horizontal
-      pulled-domain field, and `hV_figPath`; this gives the `S'_n` seed
+      pulled-domain field, and the pointwise path field `hfig_x0`; this gives
+      the `S'_n` seed
       equality and the scalar path from the seed to the OS45 quarter-turn
       scalar point.  Apply
       `BHW.os45AdjacentQuarterTurnScalarCorridor_of_figure24` to thicken that
@@ -3411,7 +3434,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
          `BHW.os45AdjacentSPrimeSeedFigure24Path_of_compactWickPairingEq` to
          obtain the anchored local `S'_n` scalar seed `Wseed`, its seed
          equality, and the Figure-2-4 scalar path from the distinguished
-         seed point to the OS45 quarter-turn scalar point.  Then
+         seed point to the OS45 quarter-turn scalar point, using the pointwise
+         `hfig_x0` supplied on the theorem surface.  Then
          apply `BHW.os45AdjacentQuarterTurnScalarCorridor_of_figure24` with
          the double-domain relative-openness proof supplied by
          `BHW.sourceDoublePermutationGramDomain_relOpen_of_sourceExtendedTubeGramDomain`
@@ -4359,25 +4383,24 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 (BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x) ∈
                 BHW.os45PulledRealBranchDomain (d := d) (n := n)
                   (Equiv.swap i ⟨i.val + 1, hi⟩))
-          (hV_figPath :
-            let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
-            let Q := BHW.os45QuarterTurnCLE (d := d) (n := n)
-            forall x, x ∈ V ->
-              let y :=
-                BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x
-              ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
-                Continuous Γ ∧
-                Continuous Δ ∧
-                Γ (0 : unitInterval) = (fun k => wickRotatePoint (x k)) ∧
-                Γ (1 : unitInterval) = Q.symm (BHW.realEmbed y) ∧
-                (forall t, Γ t ∈ BHW.ExtendedTube d n) ∧
-                (forall t, Δ t ∈ BHW.ExtendedTube d n) ∧
-                (forall t,
-                  BHW.sourceMinkowskiGram d n (Δ t) =
-                    BHW.sourcePermuteComplexGram n τ
-                      (BHW.sourceMinkowskiGram d n (Γ t))))
           {x0 : NPointDomain d n}
           (hx0V : x0 ∈ V)
+          (hfig_x0 :
+            let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+            let Q := BHW.os45QuarterTurnCLE (d := d) (n := n)
+            let y0 :=
+              BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x0
+            ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
+              Continuous Γ ∧
+              Continuous Δ ∧
+              Γ (0 : unitInterval) = (fun k => wickRotatePoint (x0 k)) ∧
+              Γ (1 : unitInterval) = Q.symm (BHW.realEmbed y0) ∧
+              (forall t, Γ t ∈ BHW.ExtendedTube d n) ∧
+              (forall t, Δ t ∈ BHW.ExtendedTube d n) ∧
+              (forall t,
+                BHW.sourceMinkowskiGram d n (Δ t) =
+                  BHW.sourcePermuteComplexGram n τ
+                    (BHW.sourceMinkowskiGram d n (Γ t))))
           (hRep :
             BHW.SourceScalarRepresentativeData
               (d := d) n (bvt_F OS lgc n)) :
@@ -4417,9 +4440,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       scalar point, and the scalarization chart's double-domain field keeps
       this first segment inside `sourceDoublePermutationGramDomain d n τ`.
       Concatenate it with
-      `BHW.swFigure24_wickToQuarterTurn_scalarPath`, passing the selected
-      source-patch field `hV_figPath`; its endpoint is the OS45 quarter-turn
-      scalar point.  The resulting `γ` starts in `Wseed`,
+      the scalar path obtained from the pointwise Figure-2-4 realization
+      `hfig_x0`; its endpoint is the OS45 quarter-turn scalar point.  The
+      resulting `γ` starts in `Wseed`,
       ends at `sourceMinkowskiGram d n (Q.symm (realEmbed y0))`, and stays in
       the adjacent double scalar domain.  This theorem is source geometry and
       scalarization only; it must not use local EOW, real-edge adjacent
@@ -5008,11 +5031,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
          `BHW.isOpen_os45PulledRealBranchDomain`, shrink to an open `Uy`
          containing this base point and contained in the intersection of the
          two domains.  This is the pure topology part of the theorem.
-      3. `Aβ` is holomorphic on the ACR-side domain.  Unfolding `Aβ` gives
-         `bvt_F OS lgc n (Wβ z)`.  The OS-II ACR symmetry field
-         `bvt_F_perm OS lgc n` supplies this branch from the ordered
-         continuation; it is a one-branch analytic continuation statement, not
-         an equality of two BHW real-edge branches.
+      3. `Aβ` is holomorphic on the ACR-side domain, but not because
+         `Wβ z` is itself in the forward tube.  On
+         `os45ACRBranchDomain β`, the checked field is
+         `Q.symm z ∈ ForwardTube`; for nontrivial `β`, the relabelled point
+         `Wβ z` can lie outside the ordered forward tube.  The proof must
+         first use the total finite-permutation symmetry field
+         `bvt_F_perm OS lgc n` to rewrite
+         `bvt_F OS lgc n (Wβ z)` as `bvt_F OS lgc n (Q.symm z)`, and only
+         then use the ordinary holomorphy of `bvt_F` on `ForwardTube`.  This
+         is a one-branch OS-II ACR symmetry statement, not an equality of two
+         BHW real-edge branches.
       4. `Bβ` is holomorphic on the pulled BHW domain by the checked
          `BHW.os45PulledRealBranch_holomorphicOn`.
       5. The local common representative for this branch is
@@ -5025,12 +5054,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
          On `Uy ∩ os45PulledRealBranchDomain β`, agreement with `Bβ` is
          definitional after unfolding `BHW.os45PulledRealBranch`.
       6. On `Uy`, agreement with `Aβ` is the
-         one-branch OS I §4.5/BHW source input.  For `β = 1`, this reduces to
-         the ordinary forward-tube agreement of `extendF`.  For `β = τ`, apply
-         the same theorem to the swapped ordered branch `x ∘ τ` and transport
-         the chart point back by the checked reindexing identities.  This is
-         not the downstream adjacent scalar equality; it never compares
-         `H1` with `Hτ`.
+         one-branch OS I §4.5/BHW source input.  For `β = 1`, use
+         `BHW.os45OneBranchScalarGramEq_sourceInput_id` and the algebraic
+         reduction
+         `BHW.os45OneBranchACRBHWAgreement_of_scalarGramEq`.  For
+         `β = τ`, use
+         `BHW.os45OneBranchScalarGramEq_sourceInput_adjacent` with the
+         pointwise Figure-2-4 path `hfig_x0` coming from
+         `hV_figPath_closure`; then transport the chart point back by the
+         checked reindexing identities.  This is not the downstream adjacent
+         scalar equality; it never compares `H1` with `Hτ`.
       7. The source theorem must output `Uy` small enough that `Wβ z` remains
          in the branch's extended-tube/scalar-product source domain.  The
          membership at `BHW.realEmbed y0` is supplied by `hUfig_source` for the
@@ -5669,7 +5702,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
                     (BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x) ∈
                     BHW.os45PulledRealBranchDomain (d := d) (n := n) τ) ∧
                 (let Q := BHW.os45QuarterTurnCLE (d := d) (n := n)
-                 ∀ x ∈ V,
+                 ∀ x ∈ closure V,
                   let y :=
                     BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x
                   ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
@@ -5728,7 +5761,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
            environment fields say exactly that `Hid x` and `Hτ x` lie in the
            relevant extended-tube domains.
          - Build the path-stability field `hV_figPath` in the same source
-           patch, before any scalar theorem is called.  The identity
+           patch, before any scalar theorem is called, and keep it valid on
+           `closure V`.  The identity
            realization is the explicit interpolation
            `Γ t k 0 = c t * x k 0`, `Γ t k μ = x k μ` for `μ ≠ 0`, with
            `c t = t / 2 + (1 - t / 2) * I`.  The adjacent realization is the
@@ -5751,7 +5785,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
            memberships in
            `BHW.os45PulledRealBranchDomain (d := d) (n := n) 1` and
            `BHW.os45PulledRealBranchDomain (d := d) (n := n) τ`, and the
-           compact-open path-stability shrink gives `hV_figPath` on `V`.
+           compact-open path-stability shrink gives `hV_figPath` on
+           `closure V`.
          - No equality of branch values is concluded here.  The theorem only
            selects the source patch on which the later one-branch boundary
            value construction is allowed to run.
