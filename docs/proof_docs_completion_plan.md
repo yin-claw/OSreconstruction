@@ -57,12 +57,13 @@ The next implementation gate is:
 Current local Slot 1 correction: the OS45 common-chart/EOW supplier is no
 longer the equal-time/post-radius plan.  The checked SCV input is
 `SCV.chartDistributionalEOW_local_envelope`; the OS45 proof must instantiate
-it at an ordered identity-sector horizontal edge, but the next common-boundary
-surface is still proof-doc work, not Lean work.  Its dependency shape is fixed,
+it at an ordered identity-sector horizontal edge.  The common-boundary
+dependency shape is fixed,
 and the branch CLM theorem slots are now exposed: the adjacent branch is the
 ordinary OS-II branch for the relabelled patch `x ∘ τ`, transported back by
-the OS45 reindexing identity.  The remaining proof-doc work is now concentrated
-on the one-branch OS-II/BHW horizontal boundary theorem; the
+the OS45 reindexing identity.  The one-branch OS-II/BHW horizontal boundary
+theorem is now decomposed into named source, common-germ, and branch-BV
+theorems; the
 compact-direction `hlocal` domain hypotheses are reduced to the documented
 openness/compactness lemma once the source patch supplies closure-level edge
 membership.
@@ -97,7 +98,7 @@ its statement must carry the compact-direction local wedge hypothesis saying
 that `y + i εη` lies in the ACR branch domain and `y - i εη` lies in the
 pulled BHW branch domain, uniformly for compact `K ⊆ E` and compact
 `Kη ⊆ C`.  This `hlocal` field is supplied by the one-branch OS45 horizontal
-domain theorem: the ordered OS45 formulas give the candidate half-time
+domain theorem: the ordered OS45 formulas give the half-time
 directions, but the BHW/Jost common-real-environment input is what puts the
 horizontal edge and a small conic side window inside the correct branch
 domains.  That input is now explicitly patch-level: the active theorem is the
@@ -125,10 +126,208 @@ exactly match the `acr_bv` and `bhw_bv` fields of
 `OS45BranchHorizontalBV`.  The only auxiliary cutoff lemma on this path is the
 pure real-analysis statement
 `SCV.exists_schwartz_cutoff_eq_one_on_compact_subset_open`; this is now checked
-in `OSReconstruction/SCV/DistributionalEOWCutoff.lean`.  The next work is Lean
-implementation of the branch/source statements; the `hlocal`
-compact-direction radius is then a continuity and compactness lemma from the
-openness of the two branch domains.
+in `OSReconstruction/SCV/DistributionalEOWCutoff.lean`.  The coordinate and
+compactness layer for the local horizontal wedge is also now checked in
+`OSToWightmanLocalityOS45TraceMembership.lean`: `BHW.os45ACRBranchDomain`,
+`BHW.os45CommonEdge_mem_acrBranchDomain_of_ordered`,
+`BHW.realEdgeAddImag`, and
+`BHW.os45BranchHorizontal_localWedge_of_edgeDomain`.  These are pure
+quarter-turn/topology facts and do not supply the OS-I source theorem.  The
+Figure-2-4 selector and the source-patch shrink now have transcript-level
+proof plans.  The next work is still proof-document completion, not Lean
+implementation, until the analytic source statements have full proof
+transcripts.  The theorem-2 blueprint now fixes those transcripts for
+`BHW.OS45BranchHorizontalSourceGermAt`,
+`BHW.os45BranchHorizontalCommonGerm`, and the boundary-CLM consumer
+`BHW.os45BranchHorizontalBoundaryValue`; the next implementation work must
+follow those named theorem surfaces in that order.
+
+The source-patch selector now has an explicit implementation contract in the
+theorem-2 blueprint.  The Figure-2-4 environment theorem
+`BHW.swFigure24_adjacentHorizontalRealEnvironment` has been reclassified as a
+Lean-provable topology refinement of the checked witness theorem
+`BHW.adjacent_overlap_real_jost_witness_exists`: start from the equal-time
+adjacent witness, use the zero-time identities
+`os45CommonEdgeRealPoint 1 x0 = x0` and
+`Q.symm (realEmbed (os45CommonEdgeRealPoint 1 x0)) = realEmbed x0`, then take
+the finite intersection of the Jost-set preimage, the two ordinary
+extended-tube preimages, and the two OS45 horizontal pulled-domain preimages.
+Openness comes from `BHW.isOpen_jostSet`, `BHW.isOpen_extendedTube`,
+`BHW.isOpen_os45PulledRealBranchDomain`, and the relevant continuity lemmas.
+The ordered seed is then chosen by the checked bounded time perturbation
+inside this source environment.  The shrink from that source environment to a
+connected open patch with compact closure is the separate finite-dimensional
+topology lemma `BHW.exists_connected_open_precompact_subset`.  This separation
+is mandatory: the Figure-2-4 environment supplies branch domains only, while
+the topology lemma supplies `closure V` containment; neither theorem compares
+branch values or invokes `bvt_W`.  The remaining non-topological source
+content is the branch-value compatibility predicate
+`BHW.OS45BranchHorizontalSourceGermAt`; domain membership alone is not enough
+to identify the ACR and BHW formulas.  The theorem-2 blueprint now isolates
+the predicate as a **branch-specific** canonical-germ statement using
+`z ↦ extendF (bvt_F OS lgc n) (permAct β.symm (Q.symm z))`.  This is a
+route-hardening correction: using the unpermuted germ
+`z ↦ extendF (bvt_F OS lgc n) (Q.symm z)` for every branch would identify
+the identity and adjacent branch packets before the EOW step and would revive
+the retired tautological cancellation shortcut.
+
+The current proof-document pass now separates upstream and downstream source
+content:
+
+1. `hUfig_source` is explicitly only domain geometry.  It supplies Jost
+   membership, identity/adjacent extended-tube membership, and the two OS45
+   pulled-domain memberships; it does not compare branch values.
+2. `BHW.os45BranchHorizontalSourceGermAt_of_figure24_id` and
+   `BHW.os45BranchHorizontalSourceGermAt_of_figure24_adjacent` are upstream
+   one-branch OS I §4.5/BHW source suppliers.  They must also consume the
+   closure-level ordered-sector fields from the selected `V`: the identity
+   supplier uses `hV_ordered_closure`, and the adjacent supplier uses
+   `hV_swap_ordered_closure` after relabelling.  These ordered fields are not
+   optional, because they are what make
+   `BHW.os45CommonEdge_mem_acrBranchDomain_of_ordered` available at the
+   horizontal base point.  The adjacent supplier works on the relabelled
+   ordered branch `x ∘ τ` and transports back by the checked OS45 reindexing
+   identities.  It must not use an
+   `AdjacentOSEOWDifferenceEnvelope`, real-edge adjacent equality, final
+   `bvt_W` locality, or global PET branch independence.
+3. Both suppliers factor through the exact one-branch theorem
+   `BHW.os45BranchHorizontalSourceGermAt_of_oneBranch_sourcePatch`.  Its
+   genuine content is the BHW source/edge statement that, on one selected
+   Figure-2-4 source patch and for one fixed branch label `β`, the OS-II ACR
+   representative `bvt_F (permAct β.symm (Q.symm z))` and the pulled BHW
+   representative `extendF (bvt_F) (permAct β.symm (Q.symm z))` are two
+   continuations of the same local germ.  This is the next proof-doc target:
+   it must be expanded as a one-branch BHW theorem, not as adjacent equality.
+   The theorem is now split in the blueprint into a pure source-neighborhood
+   geometry part and the genuine value-agreement theorem
+   `BHW.os45OneBranchACRBHWAgreement_of_sourcePatch`.  The geometry fields
+   choose the neighborhood, use ordered-sector membership for the ACR side,
+   and ensure the pulled BHW argument lies in the extended tube; they do
+   **not** prove the ACR/BHW equality.  The agreement theorem is now further
+   split into the sharper source input
+   `BHW.os45OneBranchACRBHWAgreement_sourceInput`, which gives a neighborhood
+   contained in both branch domains and a `Set.EqOn` equality there, followed
+   by the packaging theorem
+   `BHW.os45OneBranchACRBHWAgreement_of_sourcePatch`.  The algebraic
+   reduction from local Gram equality to ACR/BHW equality is now named
+   `BHW.os45OneBranchACRBHWAgreement_of_scalarGramEq`: after a
+   `SourceScalarRepresentativeData` packet supplies equality of the two
+   scalar-product Gram arguments, the proof is just `branch_eq`,
+   `sourceMinkowskiGram_perm`, `bvt_F_perm`, and
+   `BHW.extendF_eq_on_forwardTube`.  The source input must supply that local
+   Gram equality from the explicit local `S'_n` source suppliers
+   `BHW.os45OneBranchScalarGramEq_sourceInput_id` and
+   `BHW.os45OneBranchScalarGramEq_sourceInput_adjacent`; the displayed
+   arbitrary-`β` conclusion shape in the blueprint is private assembly only.
+   These suppliers obtain the ordinary `SourceScalarRepresentativeData`,
+   construct a relatively open scalar neighbourhood inside the relevant double
+   scalar domain, prove equality of `Phi` and its permuted pullback from the
+   identity simplification or the OS-II symmetric `S'_n` seed, and then pull
+   the result back through
+   `sourceMinkowskiGram (Q.symm z)`.  This is the local Hall-Wightman/BHW
+   source theorem layer that the first theorem-2 Lean pass must implement
+   before touching the downstream EOW envelope.
+
+   The latest blueprint correction rejects the earlier real-environment seed
+   formulation.  At the OS45 horizontal edge the point
+   `sourceMinkowskiGram d n (Q.symm (realEmbed (os45CommonEdgeRealPoint β x)))`
+   is generally a complex quarter-turn scalar point, not
+   `sourceRealGramComplexify n (sourceRealMinkowskiGram d n x)`.  Therefore
+   the seed cannot be stated as direct equality on a real Minkowski Gram
+   environment.  The proof must instead use the OS §4.5 order:
+   `BHW.os45AdjacentSPrimeScalarSeed_of_compactWickPairingEq` obtains a
+   connected nonempty relatively open scalar seed in `S'_n` in two explicit
+   steps.  First
+   `BHW.os45AdjacentSPrimeSourceEq_of_compactWickPairingEq` proves equality
+   on a connected complex source-neighborhood `Usrc`, using the checked
+   compact Wick equality
+   `BHW.os45_adjacent_euclideanEdge_pairing_eq_on_timeSector`, the
+   Wick-section identity principle, and the explicit OS-I §4.5 adjacent
+   source-chart scalarization theorem
+   `BHW.os45AdjacentSPrimeScalarizationChart_of_figure24`, which puts
+   `sourceMinkowskiGram '' Usrc` inside the adjacent double scalar domain,
+   identifies the two `hRep.Phi` pullbacks with the two OS-II Wick branch
+   functions on the real section, and shrinks around the selected base point
+   `x0` so `x0 ∈ V0`.  Then a complex regular point is chosen near the Wick
+   source point for `x0` by `BHW.dense_sourceComplexGramRegularAt`, and scalar coordinates are
+   extracted with the all-arity connected local-image packet
+   `BHW.sourceComplexGramMap_localConnectedRelOpenImage_in_open_of_complexRegular_allArity`;
+   in the hard range this is the checked
+   `BHW.sourceComplexGramMap_localConnectedRelOpenImage_in_open_of_complexRegular`,
+   while in the easy range it uses the checked full symmetric-coordinate
+   identification of the source variety.  The path provenance needed by the
+   corridor is packaged in
+   `BHW.os45AdjacentSPrimeSeedFigure24Path_of_compactWickPairingEq`, whose
+   extra output is anchored at the same selected base point `x0`: the scalar
+   seed theorem records a distinguished `Gseed ∈ Wseed`, the source chart
+   supplies a path from `Gseed` to
+   `sourceMinkowskiGram d n (fun k => wickRotatePoint (x0 k))`, and
+   `BHW.swFigure24_wickToQuarterTurn_scalarPath` supplies the
+   Streater-Wightman Figure-2-4 scalar path from that Wick scalar point to the
+   OS45 quarter-turn scalar point inside the adjacent double scalar domain.
+   Its paper source is the local OCR of
+   `references/pct-spin-and-statistics-and-all-that-9781400884230_compress.pdf`
+   around printed page 73: the adjacent transposition `P(j,j+1)` and Figure
+   2-4 give a common real Jost environment for the ordinary and adjacent
+   permuted extended tubes;
+   `BHW.os45AdjacentQuarterTurnScalarCorridor_of_figure24` supplies the
+   Hall-Wightman/BHW connected scalar corridor from that seed to the selected
+   OS45 quarter-turn scalar neighbourhood by the Figure-2-4 scalar path and
+   the finite-dimensional topology theorems
+   `BHW.sourceComplexGramVariety_local_connectedRelOpen_basis` and
+   `BHW.sourceComplexGramVariety_connectedRelOpenTube_around_compactPath`.
+   The corridor assembly is now checked in
+   `OSToWightmanLocalityOS45TraceMembership.lean`: after the path `γ` is
+   supplied, it thickens `γ` by the connected source component, rewrites the
+   adjacent ACR edge through
+   `BHW.os45CommonEdgeRealPoint_adjacent_swap_eq`, and pulls the final scalar
+   tube back through `z ↦ sourceMinkowskiGram d n (Q.symm z)` while intersecting
+   the checked OS45 ACR and pulled BHW branch domains.
+   Equality propagation along that corridor is now checked in the generic
+   source theorem `BHW.os45AdjacentScalarEq_on_quarterTurnCorridor` in
+   `BHWPermutation/SourceComplexDensity.lean`; it is deliberately generic in
+   the represented function `F`, so the local theorem depends only on
+   `SourceScalarRepresentativeData` and the source-variety identity principle,
+   not on unrelated upstream `bvt_F` proof obligations.
+   The singular Schur branch of the local-basis theorem uses the explicit
+   rank-`<=` cone package
+   `BHW.matrixSymmetricRankLECone_small_connected`,
+   `BHW.isConnected_sourcePrincipalSchurGraph_rankLE_image`, and
+   `BHW.sourcePrincipalSchurGraph_rankLE_image_eq_openCoordinatePatch`; it is
+   not allowed to reuse the checked rank-exact cone theorem as if the
+   lower-rank source variety were rank-exact;
+   and
+   `BHW.os45AdjacentScalarEq_on_quarterTurnCorridor` propagates equality by
+   the source-variety identity theorem.  No real-edge `extendF` equality,
+   `AdjacentOSEOWDifferenceEnvelope`, final `bvt_W` locality, or global PET
+   branch-independence is allowed in these upstream source suppliers.
+
+   The generic arbitrary-`β` theorem is not licensed as a standalone
+   production source theorem until the same `S'_n` seed and BHW corridor are
+   proved for arbitrary `β`; on the active theorem-2 path it should be
+   implemented only as an assembly lemma consuming the scalar packet.  The
+   public scalar suppliers are
+   `BHW.os45OneBranchScalarGramEq_sourceInput_id` for `β = 1` and
+   `BHW.os45OneBranchScalarGramEq_sourceInput_adjacent` for the adjacent
+   swap; any generic helper is private assembly from an already constructed
+   scalar corridor.
+4. The compact common-germ theorem `BHW.os45BranchHorizontalCommonGerm` then
+   glues these branch-specific germs over `closure E`; the identity and
+   adjacent germs remain different branch packets.
+5. The branchwise BV construction gives `Tid` and `Tτ`; only after subtracting
+   those packets may `SCV.chartDistributionalEOW_local_envelope` be invoked.
+6. The scalar theorem `BHW.os45AdjacentScalarGerm_of_OSII_Figure24` is
+   downstream only.  It may be proved after
+   `BHW.os45_adjacent_commonBoundaryEnvelope` and
+   `bvt_F_adjacent_extendF_edgeDistribution_eq_of_osEOWDifferenceEnvelope`
+   have produced real-edge equality.  It is an audit/export of the EOW result,
+   not an input to the source suppliers.
+
+The theorem-2 local source route is now a Lean-facing implementation contract
+for the named support theorems above.  The previous circular dependence on
+the downstream scalar germ has been retired; implementation must still proceed
+in the documented order and may not skip ahead to local EOW, global PET branch
+independence, or final `bvt_W` locality.
 
 ## 0. Paper-authority rule
 
@@ -670,7 +869,7 @@ Current examples:
 	   `sourceComplexGramVariety_rankExact_inter_relOpen_isConnected_of_local_basis`
 	   is now checked.  The packet it reduced to has now also been closed: the
 	   source-specific local connected rank-exact basis theorem, the connected
-	   regular local-image strengthening, and the connected rank-exact cone lemma
+	   regular local-image strengthening, and the connected cone lemmas
 	   are all checked.  The principal minor support lemma for symmetric matrices is
 	   now checked in `BHWPermutation/SourceComplexSchurPatch.lean`; it uses
 	   the checked complex symmetric rank factorization to turn a full-rank row
@@ -681,15 +880,22 @@ Current examples:
 	   source-rank `≤` and exact-rank Schur consequences.  The hard mathematical
 	   proof was the source local-basis theorem, i.e. Hall-Wightman's local
 	   irreducibility/normality of the symmetric scalar-product determinantal
-	   variety; it is now checked by genuine Schur product charts plus the
-	   connected rank-exact cone lemma, with no zero-Schur wrapper hiding the
-	   lower-rank singular case.  The cone lemma is proved through real
+	   variety.  Two checked local-basis surfaces are now distinguished:
+	   `sourceComplexGramVariety_local_rankExact_connected_basis` supplies the
+	   connected rank-exact regular-locus input used by the identity-principle
+	   layer, while `sourceComplexGramVariety_local_connectedRelOpen_basis`
+	   supplies the actual connected rank-bounded source-variety tube.  The
+	   lower-rank tube is checked by genuine Schur product charts plus the
+	   connected rank-`<=` cone lemma, with no zero-Schur wrapper hiding the
+	   lower-rank singular case.  The cone lemmas are proved through real
 	   finite-dimensional content: nonzero scalar rank invariance, cone
-	   invariance of `sourceSymmetricRankExactStratum`, dot-Gram scaling,
+	   invariance of `sourceSymmetricRankExactStratum` and
+	   `sourceSymmetricRankLEVariety`, dot-Gram scaling,
 	   path-connectedness of the full-rank complex source-configuration
 	   Stiefel space using `MatrixLieGroup.GL_isPathConnected`, and the
-	   small-ball radial contraction argument.  The implementation should not
-	   cite "rank-exact cone connectedness" as an opaque geometric black box.
+	   small-ball radial contraction arguments.  The implementation should not
+	   cite "rank-exact cone connectedness" as an opaque geometric black box for
+	   rank-bounded topology.
 	   The first cone support file is now checked as
 	   `BHWPermutation/SourceComplexCone.lean`: it proves scalar rank
 	   invariance, exact-stratum cone invariance, dot-Gram scaling, the
@@ -708,7 +914,10 @@ Current examples:
 	   scaled middle path, the path-connectedness of
 	   `Metric.ball 0 ε ∩ sourceSymmetricRankExactStratum m r` for every
 	   `r ≤ m`, and the final neighborhood form
-	   `sourceSymmetricRankExactCone_small_connected`.  The cone blocker is
+	   `sourceSymmetricRankExactCone_small_connected`.  It also now checks
+	   scalar rank non-increase, rank-`<=` cone invariance, path-connectedness of
+	   `Metric.ball 0 ε ∩ sourceSymmetricRankLEVariety m r`, and
+	   `sourceSymmetricRankLECone_small_connected`.  The cone blocker is
 	   therefore closed.  The blueprint now spells out the next singular
 	   Schur-product implementation packet.  Its first production layer is now
 	   checked in `BHWPermutation/SourceComplexSchurGraph.lean`: the principal
@@ -734,10 +943,12 @@ Current examples:
 	   from an open ambient neighborhood `N0` of the graph point it returns open
 	   `A`, `B`, and `S` neighborhoods whose whole graph image lies in `N0`, with
 	   the `A` neighborhood contained in the determinant-unit locus.  The
-	   graph-image connectedness theorem
-	   `isConnected_sourcePrincipalSchurGraph_rankExact_image` and the
-	   rank-exact image-subset theorem
-	   `sourcePrincipalSchurGraph_rankExact_image_subset` are now checked too.
+	   graph-image connectedness theorems
+	   `isConnected_sourcePrincipalSchurGraph_rankExact_image` and
+	   `isConnected_sourcePrincipalSchurGraph_rankLE_image`, together with the
+	   rank-exact/rank-`<=` image-subset theorems
+	   `sourcePrincipalSchurGraph_rankExact_image_subset` and
+	   `sourcePrincipalSchurGraph_rankLE_image_subset`, are now checked too.
 	   The `A`-factor local topology is now checked through
 	   `isOpen_matrix_det_isUnit`, `exists_pos_ball_subset_isUnit_det`, and
 	   `isConnected_symmetric_matrix_ball`; these use the concrete Frobenius
@@ -778,11 +989,44 @@ Current examples:
 	   checked as well, so the final local-basis proof can use the open `A`
 	   neighborhood for relative openness and the symmetric `A` factor for
 	   connectedness without redoing set algebra.
+	   The rank-bounded analogues
+	   `sourcePrincipalSchurGraph_rankLE_image_eq_coordinatePatch` and
+	   `sourcePrincipalSchurGraph_rankLE_image_eq_openCoordinatePatch` are also
+	   checked, so the lower-rank connected source-variety tube is identified
+	   with the continuous image of the connected rank-`<=` Schur product.
 	   The singular topology target is now checked as
 	   `sourceComplexGramVariety_local_rankExact_connected_basis_singular`: it
 	   constructs the actual `Aset`, `Bset`, and `Sset` around a lower-rank
 	   point and proves the final radius-shrinking and assembly for the singular
-	   local-basis theorem.  The regular rank branch of that local-basis
+	   rank-exact local-basis theorem.  The rank-bounded singular tube is now
+	   separately checked as
+	   `sourceComplexGramVariety_local_connectedRelOpen_basis_singular`; the
+	   strict and all-arity connected local-basis theorems are checked as
+	   `sourceComplexGramVariety_local_connectedRelOpen_basis_strict` and
+	   `sourceComplexGramVariety_local_connectedRelOpen_basis`.  The easy-arity
+	   branch uses connected balls in the full symmetric affine space, while the
+	   strict lower-rank branch uses the rank-`<=` Schur tube.  The regular rank
+	   The compact-path source tube is now checked by a connected-component
+	   argument.  For a relatively open source-variety domain `D` and a point
+	   `Z0 ∈ D`, the component `connectedComponentIn D Z0` is relatively open:
+	   around each point of the component, the checked local connected basis
+	   supplies a connected relatively open neighborhood inside `D`, and
+	   `IsPreconnected.subset_connectedComponentIn` plus
+	   `connectedComponentIn_eq` places that neighborhood back inside the same
+	   component; the component is the union of these local neighborhoods.  The
+	   corresponding checked theorem chooses
+	   `Wtube = connectedComponentIn D (γ 0)`.  Connectedness and containment are
+	   the standard `connectedComponentIn` facts, the starting connected set
+	   `W0` lies in the component by
+	   `hW0_conn.isPreconnected.subset_connectedComponentIn`, and the path lies
+	   in the same component because `Set.range γ` is preconnected.  Thus no
+	   finite-subdivision or hidden path-chain lemma remains in this step.
+	   The checked declarations are
+	   `IsRelOpenInSourceComplexGramVariety.iUnion`,
+	   `sourceComplexGramVariety_connectedComponentIn_relOpen`, and
+	   `sourceComplexGramVariety_connectedRelOpenTube_around_compactPath`.
+	   The regular rank
+	   branch of the rank-exact local-basis
 	   theorem has also been tightened:
 	   `sourceComplexGramMap_localConnectedRelOpenImage_in_open_of_complexRegular`
 	   now returns `IsConnected O` for the produced relatively open
