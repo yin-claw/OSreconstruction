@@ -3041,14 +3041,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (n : Nat) (β : Equiv.Perm (Fin n))
           (U : Set (NPointDomain d n))
           (hU_open : IsOpen U)
-          (hU_jost : forall x, x ∈ U -> x ∈ BHW.JostSet d n)
+          (hU_jost : ∀ x, x ∈ U -> x ∈ BHW.JostSet d n)
           (hU_ordered :
-            forall x, x ∈ U ->
+            ∀ x, x ∈ U ->
               x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) β)
           (hU_ET :
-            forall x, x ∈ U -> BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+            ∀ x, x ∈ U -> BHW.realEmbed x ∈ BHW.ExtendedTube d n)
           (hU_horiz_bhw :
-            forall x, x ∈ U ->
+            ∀ x, x ∈ U ->
               BHW.realEmbed
                 (BHW.os45CommonEdgeRealPoint (d := d) (n := n) β x) ∈
                 BHW.os45PulledRealBranchDomain (d := d) (n := n) β)
@@ -3062,12 +3062,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
             IsOpen Uy ∧
             BHW.realEmbed
               (BHW.os45CommonEdgeRealPoint (d := d) (n := n) β x0) ∈ Uy ∧
-            (forall z, z ∈ Uy -> Wβ z ∈ BHW.ExtendedTube d n) ∧
+            (∀ z, z ∈ Uy -> Wβ z ∈ BHW.ExtendedTube d n) ∧
             DifferentiableOn ℂ
               (fun z =>
                 BHW.extendF (bvt_F OS lgc n) (Wβ z))
               Uy ∧
-            (forall z, z ∈ Uy ->
+            (∀ z, z ∈ Uy ->
               z ∈ BHW.os45ACRBranchDomain (d := d) (n := n) β ->
                 BHW.extendF (bvt_F OS lgc n) (Wβ z) =
                   BHW.os45ACRBranchRepresentative (d := d) OS lgc n β z)
@@ -3099,14 +3099,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (n : Nat) (β : Equiv.Perm (Fin n))
           (U : Set (NPointDomain d n))
           (hU_open : IsOpen U)
-          (hU_jost : forall x, x ∈ U -> x ∈ BHW.JostSet d n)
+          (hU_jost : ∀ x, x ∈ U -> x ∈ BHW.JostSet d n)
           (hU_ordered :
-            forall x, x ∈ U ->
+            ∀ x, x ∈ U ->
               x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) β)
           (hU_ET :
-            forall x, x ∈ U -> BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+            ∀ x, x ∈ U -> BHW.realEmbed x ∈ BHW.ExtendedTube d n)
           (hU_horiz_bhw :
-            forall x, x ∈ U ->
+            ∀ x, x ∈ U ->
               BHW.realEmbed
                 (BHW.os45CommonEdgeRealPoint (d := d) (n := n) β x) ∈
                 BHW.os45PulledRealBranchDomain (d := d) (n := n) β)
@@ -3157,7 +3157,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
             Uy ⊆ BHW.os45PulledRealBranchDomain (d := d) (n := n) β)
           (hGram :
             let Q := BHW.os45QuarterTurnCLE (d := d) (n := n)
-            forall z, z ∈ Uy ->
+            ∀ z, z ∈ Uy ->
               hRep.Phi
                 (BHW.sourcePermuteComplexGram n β.symm
                   (BHW.sourceMinkowskiGram d n (Q.symm z))) =
@@ -3223,14 +3223,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (n : Nat) (β : Equiv.Perm (Fin n))
           (U : Set (NPointDomain d n))
           (hU_open : IsOpen U)
-          (hU_jost : forall x, x ∈ U -> x ∈ BHW.JostSet d n)
+          (hU_jost : ∀ x, x ∈ U -> x ∈ BHW.JostSet d n)
           (hU_ordered :
-            forall x, x ∈ U ->
+            ∀ x, x ∈ U ->
               x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) β)
           (hU_ET :
-            forall x, x ∈ U -> BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+            ∀ x, x ∈ U -> BHW.realEmbed x ∈ BHW.ExtendedTube d n)
           (hU_horiz_bhw :
-            forall x, x ∈ U ->
+            ∀ x, x ∈ U ->
               BHW.realEmbed
                 (BHW.os45CommonEdgeRealPoint (d := d) (n := n) β x) ∈
                 BHW.os45PulledRealBranchDomain (d := d) (n := n) β)
@@ -3248,7 +3248,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
               BHW.realEmbed y0 ∈ Uy ∧
               Uy ⊆ BHW.os45ACRBranchDomain (d := d) (n := n) β ∩
                 BHW.os45PulledRealBranchDomain (d := d) (n := n) β ∧
-              (forall z, z ∈ Uy ->
+              (∀ z, z ∈ Uy ->
                 BHW.sourceMinkowskiGram d n (Q.symm z) ∈ Wscal) ∧
               Wscal ⊆ BHW.sourceDoublePermutationGramDomain d n β.symm ∧
               Set.EqOn
@@ -3282,15 +3282,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (n : Nat)
           (V : Set (NPointDomain d n))
           (hV_open : IsOpen V)
-          (hV_jost : forall x, x ∈ V -> x ∈ BHW.JostSet d n)
+          (hV_jost : ∀ x, x ∈ V -> x ∈ BHW.JostSet d n)
           (hV_ordered :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n)
                 (1 : Equiv.Perm (Fin n)))
           (hV_ET :
-            forall x, x ∈ V -> BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+            ∀ x, x ∈ V -> BHW.realEmbed x ∈ BHW.ExtendedTube d n)
           (hV_horiz_id :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               BHW.realEmbed
                 (BHW.os45CommonEdgeRealPoint (d := d) (n := n)
                   (1 : Equiv.Perm (Fin n)) x) ∈
@@ -3312,7 +3312,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
               BHW.realEmbed y0 ∈ Uy ∧
               Uy ⊆ BHW.os45ACRBranchDomain (d := d) (n := n) β ∩
                 BHW.os45PulledRealBranchDomain (d := d) (n := n) β ∧
-              (forall z, z ∈ Uy ->
+              (∀ z, z ∈ Uy ->
                 BHW.sourceMinkowskiGram d n (Q.symm z) ∈ Wscal) ∧
               Wscal ⊆ BHW.sourceDoublePermutationGramDomain d n β.symm ∧
               Set.EqOn
@@ -3348,21 +3348,21 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (n : Nat) (i : Fin n) (hi : i.val + 1 < n)
           (V : Set (NPointDomain d n))
           (hV_open : IsOpen V)
-          (hV_jost : forall x, x ∈ V -> x ∈ BHW.JostSet d n)
+          (hV_jost : ∀ x, x ∈ V -> x ∈ BHW.JostSet d n)
           (hV_ordered :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n)
                 (1 : Equiv.Perm (Fin n)))
           (hV_swap_ordered :
             let τ : Equiv.Perm (Fin n) :=
               Equiv.swap i ⟨i.val + 1, hi⟩
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               (fun k => x (τ k)) ∈
                 EuclideanOrderedPositiveTimeSector (d := d) (n := n) τ)
           (hV_horiz_swap :
             let τ : Equiv.Perm (Fin n) :=
               Equiv.swap i ⟨i.val + 1, hi⟩
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               BHW.realEmbed
                 (BHW.os45CommonEdgeRealPoint (d := d) (n := n)
                   (1 : Equiv.Perm (Fin n)) x) ∈
@@ -3381,9 +3381,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
               Continuous Δ ∧
               Γ (0 : unitInterval) = (fun k => wickRotatePoint (x0 k)) ∧
               Γ (1 : unitInterval) = Q.symm (BHW.realEmbed y0) ∧
-              (forall t, Γ t ∈ BHW.ExtendedTube d n) ∧
-              (forall t, Δ t ∈ BHW.ExtendedTube d n) ∧
-              (forall t,
+              (∀ t, Γ t ∈ BHW.ExtendedTube d n) ∧
+              (∀ t, Δ t ∈ BHW.ExtendedTube d n) ∧
+              (∀ t,
                 BHW.sourceMinkowskiGram d n (Δ t) =
                   BHW.sourcePermuteComplexGram n τ
                     (BHW.sourceMinkowskiGram d n (Γ t)))) :
@@ -3403,7 +3403,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
               BHW.realEmbed y0 ∈ Uy ∧
               Uy ⊆ BHW.os45ACRBranchDomain (d := d) (n := n) τ ∩
                 BHW.os45PulledRealBranchDomain (d := d) (n := n) τ ∧
-              (forall z, z ∈ Uy ->
+              (∀ z, z ∈ Uy ->
                 BHW.sourceMinkowskiGram d n (Q.symm z) ∈ Wscal) ∧
               Wscal ⊆ BHW.sourceDoublePermutationGramDomain d n τ ∧
               Set.EqOn
@@ -3513,14 +3513,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (n : Nat) (β : Equiv.Perm (Fin n))
           (U : Set (NPointDomain d n))
           (hU_open : IsOpen U)
-          (hU_jost : forall x, x ∈ U -> x ∈ BHW.JostSet d n)
+          (hU_jost : ∀ x, x ∈ U -> x ∈ BHW.JostSet d n)
           (hU_ordered :
-            forall x, x ∈ U ->
+            ∀ x, x ∈ U ->
               x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) β)
           (hU_ET :
-            forall x, x ∈ U -> BHW.realEmbed x ∈ BHW.ExtendedTube d n)
+            ∀ x, x ∈ U -> BHW.realEmbed x ∈ BHW.ExtendedTube d n)
           (hU_horiz_bhw :
-            forall x, x ∈ U ->
+            ∀ x, x ∈ U ->
               BHW.realEmbed
                 (BHW.os45CommonEdgeRealPoint (d := d) (n := n) β x) ∈
                 BHW.os45PulledRealBranchDomain (d := d) (n := n) β)
@@ -3533,7 +3533,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
               BHW.realEmbed y0 ∈ Uy ∧
               Uy ⊆ BHW.os45ACRBranchDomain (d := d) (n := n) β ∩
                 BHW.os45PulledRealBranchDomain (d := d) (n := n) β ∧
-              (forall z, z ∈ Uy ->
+              (∀ z, z ∈ Uy ->
                 BHW.sourceMinkowskiGram d n (Q.symm z) ∈
                   BHW.sourceDoublePermutationGramDomain d n β.symm)
       ```
@@ -3602,12 +3602,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (n : Nat) (i : Fin n) (hi : i.val + 1 < n)
           (V : Set (NPointDomain d n))
           (hV_open : IsOpen V)
-          (hV_jost : forall x, x ∈ V -> x ∈ BHW.JostSet d n)
+          (hV_jost : ∀ x, x ∈ V -> x ∈ BHW.JostSet d n)
           (hV_ordered :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) 1)
           (hV_swap_ordered :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
                 EuclideanOrderedPositiveTimeSector (d := d) (n := n)
                   (Equiv.swap i ⟨i.val + 1, hi⟩))
@@ -3629,17 +3629,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (Usrc : Set (Fin n -> Fin (d + 1) -> ℂ)),
               IsOpen V0 ∧ x0 ∈ V0 ∧ V0 ⊆ V ∧
               IsOpen Usrc ∧ IsConnected Usrc ∧ Usrc.Nonempty ∧
-              (forall x, x ∈ V0 ->
+              (∀ x, x ∈ V0 ->
                 (fun k => wickRotatePoint (x k)) ∈ Usrc) ∧
-              (forall z, z ∈ Usrc ->
+              (∀ z, z ∈ Usrc ->
                 BHW.sourceMinkowskiGram d n z ∈
                   BHW.sourceDoublePermutationGramDomain d n τ) ∧
               DifferentiableOn ℂ Φ0 Usrc ∧
               DifferentiableOn ℂ Φτ Usrc ∧
-              (forall x, x ∈ V0 ->
+              (∀ x, x ∈ V0 ->
                 Φ0 (fun k => wickRotatePoint (x k)) =
                   bvt_F OS lgc n (fun k => wickRotatePoint (x k))) ∧
-              (forall x, x ∈ V0 ->
+              (∀ x, x ∈ V0 ->
                 Φτ (fun k => wickRotatePoint (x k)) =
                   bvt_F OS lgc n
                     (fun k =>
@@ -3672,12 +3672,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (n : Nat) (i : Fin n) (hi : i.val + 1 < n)
           (V : Set (NPointDomain d n))
           (hV_open : IsOpen V)
-          (hV_jost : forall x, x ∈ V -> x ∈ BHW.JostSet d n)
+          (hV_jost : ∀ x, x ∈ V -> x ∈ BHW.JostSet d n)
           (hV_ordered :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) 1)
           (hV_swap_ordered :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
                 EuclideanOrderedPositiveTimeSector (d := d) (n := n)
                   (Equiv.swap i ⟨i.val + 1, hi⟩))
@@ -3691,9 +3691,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (Usrc : Set (Fin n -> Fin (d + 1) -> ℂ)),
               IsOpen V0 ∧ x0 ∈ V0 ∧ V0 ⊆ V ∧
               IsOpen Usrc ∧ IsConnected Usrc ∧ Usrc.Nonempty ∧
-              (forall x, x ∈ V0 ->
+              (∀ x, x ∈ V0 ->
                 (fun k => wickRotatePoint (x k)) ∈ Usrc) ∧
-              (forall z, z ∈ Usrc ->
+              (∀ z, z ∈ Usrc ->
                 BHW.sourceMinkowskiGram d n z ∈
                   BHW.sourceDoublePermutationGramDomain d n τ) ∧
               Set.EqOn
@@ -3746,7 +3746,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
               BHW.IsRelOpenInSourceComplexGramVariety d n O ∧
               IsConnected O ∧ O.Nonempty ∧
               O ⊆ BHW.sourceMinkowskiGram d n '' U ∧
-              (forall G, G ∈ O ->
+              (∀ G, G ∈ O ->
                 ∃ z ∈ U, BHW.sourceMinkowskiGram d n z = G)
       ```
 
@@ -3779,12 +3779,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (n : Nat) (i : Fin n) (hi : i.val + 1 < n)
           (V : Set (NPointDomain d n))
           (hV_open : IsOpen V)
-          (hV_jost : forall x, x ∈ V -> x ∈ BHW.JostSet d n)
+          (hV_jost : ∀ x, x ∈ V -> x ∈ BHW.JostSet d n)
           (hV_ordered :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) 1)
           (hV_swap_ordered :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
                 EuclideanOrderedPositiveTimeSector (d := d) (n := n)
                   (Equiv.swap i ⟨i.val + 1, hi⟩))
@@ -3862,7 +3862,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       hV_figPath :
         let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
         let Q := BHW.os45QuarterTurnCLE (d := d) (n := n)
-        forall x, x ∈ V ->
+        ∀ x, x ∈ V ->
           let y :=
             BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x
           ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
@@ -3870,9 +3870,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
             Continuous Δ ∧
             Γ (0 : unitInterval) = (fun k => wickRotatePoint (x k)) ∧
             Γ (1 : unitInterval) = Q.symm (BHW.realEmbed y) ∧
-            (forall t, Γ t ∈ BHW.ExtendedTube d n) ∧
-            (forall t, Δ t ∈ BHW.ExtendedTube d n) ∧
-            (forall t,
+            (∀ t, Γ t ∈ BHW.ExtendedTube d n) ∧
+            (∀ t, Δ t ∈ BHW.ExtendedTube d n) ∧
+            (∀ t,
               BHW.sourceMinkowskiGram d n (Δ t) =
                 BHW.sourcePermuteComplexGram n τ
                   (BHW.sourceMinkowskiGram d n (Γ t)))
@@ -4273,17 +4273,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (n : Nat) (i : Fin n) (hi : i.val + 1 < n)
           (V : Set (NPointDomain d n))
           (hV_open : IsOpen V)
-          (hV_jost : forall x, x ∈ V -> x ∈ BHW.JostSet d n)
+          (hV_jost : ∀ x, x ∈ V -> x ∈ BHW.JostSet d n)
           (hV_ordered :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) 1)
           (hV_swap_ordered :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
                 EuclideanOrderedPositiveTimeSector (d := d) (n := n)
                   (Equiv.swap i ⟨i.val + 1, hi⟩))
           (hV_horiz_swap :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               BHW.realEmbed
                 (BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x) ∈
                 BHW.os45PulledRealBranchDomain (d := d) (n := n)
@@ -4291,7 +4291,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (hV_figPath :
             let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
             let Q := BHW.os45QuarterTurnCLE (d := d) (n := n)
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               let y :=
                 BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x
               ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
@@ -4299,9 +4299,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 Continuous Δ ∧
                 Γ (0 : unitInterval) = (fun k => wickRotatePoint (x k)) ∧
                 Γ (1 : unitInterval) = Q.symm (BHW.realEmbed y) ∧
-                (forall t, Γ t ∈ BHW.ExtendedTube d n) ∧
-                (forall t, Δ t ∈ BHW.ExtendedTube d n) ∧
-                (forall t,
+                (∀ t, Γ t ∈ BHW.ExtendedTube d n) ∧
+                (∀ t, Δ t ∈ BHW.ExtendedTube d n) ∧
+                (∀ t,
                   BHW.sourceMinkowskiGram d n (Δ t) =
                     BHW.sourcePermuteComplexGram n τ
                       (BHW.sourceMinkowskiGram d n (Γ t))))
@@ -4316,9 +4316,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
             Continuous Δ ∧
             Γ (0 : unitInterval) = (fun k => wickRotatePoint (x0 k)) ∧
             Γ (1 : unitInterval) = Q.symm (BHW.realEmbed y0) ∧
-            (forall t, Γ t ∈ BHW.ExtendedTube d n) ∧
-            (forall t, Δ t ∈ BHW.ExtendedTube d n) ∧
-            (forall t,
+            (∀ t, Γ t ∈ BHW.ExtendedTube d n) ∧
+            (∀ t, Δ t ∈ BHW.ExtendedTube d n) ∧
+            (∀ t,
               BHW.sourceMinkowskiGram d n (Δ t) =
                 BHW.sourcePermuteComplexGram n τ
                   (BHW.sourceMinkowskiGram d n (Γ t)))
@@ -4341,17 +4341,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (n : Nat) (i : Fin n) (hi : i.val + 1 < n)
           (V : Set (NPointDomain d n))
           (hV_open : IsOpen V)
-          (hV_jost : forall x, x ∈ V -> x ∈ BHW.JostSet d n)
+          (hV_jost : ∀ x, x ∈ V -> x ∈ BHW.JostSet d n)
           (hV_ordered :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) 1)
           (hV_swap_ordered :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
                 EuclideanOrderedPositiveTimeSector (d := d) (n := n)
                   (Equiv.swap i ⟨i.val + 1, hi⟩))
           (hV_horiz_swap :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               BHW.realEmbed
                 (BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x) ∈
                 BHW.os45PulledRealBranchDomain (d := d) (n := n)
@@ -4359,7 +4359,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (hV_figPath :
             let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
             let Q := BHW.os45QuarterTurnCLE (d := d) (n := n)
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               let y :=
                 BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x
               ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
@@ -4367,9 +4367,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 Continuous Δ ∧
                 Γ (0 : unitInterval) = (fun k => wickRotatePoint (x k)) ∧
                 Γ (1 : unitInterval) = Q.symm (BHW.realEmbed y) ∧
-                (forall t, Γ t ∈ BHW.ExtendedTube d n) ∧
-                (forall t, Δ t ∈ BHW.ExtendedTube d n) ∧
-                (forall t,
+                (∀ t, Γ t ∈ BHW.ExtendedTube d n) ∧
+                (∀ t, Δ t ∈ BHW.ExtendedTube d n) ∧
+                (∀ t,
                   BHW.sourceMinkowskiGram d n (Δ t) =
                     BHW.sourcePermuteComplexGram n τ
                       (BHW.sourceMinkowskiGram d n (Γ t))))
@@ -4387,7 +4387,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
             γfig (1 : unitInterval) =
               BHW.sourceMinkowskiGram d n
                 (Q.symm (BHW.realEmbed y0)) ∧
-            (forall t,
+            (∀ t,
               γfig t ∈ BHW.sourceDoublePermutationGramDomain d n τ)
       ```
 
@@ -4416,17 +4416,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (n : Nat) (i : Fin n) (hi : i.val + 1 < n)
           (V : Set (NPointDomain d n))
           (hV_open : IsOpen V)
-          (hV_jost : forall x, x ∈ V -> x ∈ BHW.JostSet d n)
+          (hV_jost : ∀ x, x ∈ V -> x ∈ BHW.JostSet d n)
           (hV_ordered :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) 1)
           (hV_swap_ordered :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
                 EuclideanOrderedPositiveTimeSector (d := d) (n := n)
                   (Equiv.swap i ⟨i.val + 1, hi⟩))
           (hV_horiz_swap :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               BHW.realEmbed
                 (BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x) ∈
                 BHW.os45PulledRealBranchDomain (d := d) (n := n)
@@ -4443,9 +4443,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
               Continuous Δ ∧
               Γ (0 : unitInterval) = (fun k => wickRotatePoint (x0 k)) ∧
               Γ (1 : unitInterval) = Q.symm (BHW.realEmbed y0) ∧
-              (forall t, Γ t ∈ BHW.ExtendedTube d n) ∧
-              (forall t, Δ t ∈ BHW.ExtendedTube d n) ∧
-              (forall t,
+              (∀ t, Γ t ∈ BHW.ExtendedTube d n) ∧
+              (∀ t, Δ t ∈ BHW.ExtendedTube d n) ∧
+              (∀ t,
                 BHW.sourceMinkowskiGram d n (Δ t) =
                   BHW.sourcePermuteComplexGram n τ
                     (BHW.sourceMinkowskiGram d n (Γ t))))
@@ -4472,7 +4472,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
               γ (1 : unitInterval) =
                 BHW.sourceMinkowskiGram d n
                   (Q.symm (BHW.realEmbed y0)) ∧
-              (forall t,
+              (∀ t,
                 γ t ∈ BHW.sourceDoublePermutationGramDomain d n τ)
       ```
 
@@ -4532,7 +4532,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
             IsConnected
               (Sset ∩ {S : Matrix q q ℂ |
                 Sᵀ = S ∧ S.rank ≤ D - Fintype.card r}))
-          (hA_unit : forall A, A ∈ Aset -> IsUnit A.det) :
+          (hA_unit : ∀ A, A ∈ Aset -> IsUnit A.det) :
           IsConnected
             ((fun p : Matrix r r ℂ × Matrix r q ℂ × Matrix q q ℂ =>
                 BHW.sourcePrincipalSchurGraph n e p.1 p.2.1 p.2.2) ''
@@ -4548,7 +4548,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
           {Aset : Set (Matrix r r ℂ)}
           {Bset : Set (Matrix r q ℂ)}
           {Sset : Set (Matrix q q ℂ)}
-          (hA_unit : forall A, A ∈ Aset -> IsUnit A.det)
+          (hA_unit : ∀ A, A ∈ Aset -> IsUnit A.det)
           (hrD : Fintype.card r <= D)
           (hgraph_N0 :
             ((fun p : Matrix r r ℂ × Matrix r q ℂ × Matrix q q ℂ =>
@@ -4665,7 +4665,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (d n : Nat)
           {ι : Type*}
           {U : ι -> Set (Fin n -> Fin n -> ℂ)}
-          (hU : forall i, BHW.IsRelOpenInSourceComplexGramVariety d n (U i)) :
+          (hU : ∀ i, BHW.IsRelOpenInSourceComplexGramVariety d n (U i)) :
           BHW.IsRelOpenInSourceComplexGramVariety d n (⋃ i, U i)
 
       theorem BHW.sourceComplexGramVariety_connectedComponentIn_relOpen
@@ -4702,7 +4702,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (hD_rel : BHW.IsRelOpenInSourceComplexGramVariety d n D)
           {γ : unitInterval -> Fin n -> Fin n -> ℂ}
           (hγ_cont : Continuous γ)
-          (hγD : forall t, γ t ∈ D)
+          (hγD : ∀ t, γ t ∈ D)
           {W0 : Set (Fin n -> Fin n -> ℂ)}
           (hW0_rel : BHW.IsRelOpenInSourceComplexGramVariety d n W0)
           (hW0_conn : IsConnected W0)
@@ -4714,7 +4714,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
             IsConnected Wtube ∧
             W0 ⊆ Wtube ∧
             Wtube ⊆ D ∧
-            (forall t, γ t ∈ Wtube)
+            (∀ t, γ t ∈ Wtube)
       ```
 
       Proof transcript for the compact-path tube theorem: let
@@ -4730,7 +4730,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       by continuity of `γ` and connectedness of `unitInterval`; it contains
       `Zstart` and is contained in `D` by `hγD`, so another application of
       `IsPreconnected.subset_connectedComponentIn` gives
-      `forall t, γ t ∈ Wtube`.  The theorem name retains the compact-path
+      `∀ t, γ t ∈ Wtube`.  The theorem name retains the compact-path
       wording for downstream route stability, but the proof only needs
       connectedness of `unitInterval`.
 
@@ -4753,17 +4753,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (n : Nat) (i : Fin n) (hi : i.val + 1 < n)
           (V : Set (NPointDomain d n))
           (hV_open : IsOpen V)
-          (hV_jost : forall x, x ∈ V -> x ∈ BHW.JostSet d n)
+          (hV_jost : ∀ x, x ∈ V -> x ∈ BHW.JostSet d n)
           (hV_ordered :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) 1)
           (hV_swap_ordered :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
                 EuclideanOrderedPositiveTimeSector (d := d) (n := n)
                   (Equiv.swap i ⟨i.val + 1, hi⟩))
           (hV_horiz_swap :
-            forall x, x ∈ V ->
+            ∀ x, x ∈ V ->
               BHW.realEmbed
                 (BHW.os45CommonEdgeRealPoint (d := d) (n := n) 1 x) ∈
                 BHW.os45PulledRealBranchDomain (d := d) (n := n)
@@ -4794,7 +4794,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
                     (BHW.os45CommonEdgeRealPoint
                       (d := d) (n := n) 1 x0))))
           (hγ_double :
-            forall t,
+            ∀ t,
               γ t ∈
                 BHW.sourceDoublePermutationGramDomain d n
                   (Equiv.swap i ⟨i.val + 1, hi⟩)) :
@@ -4811,7 +4811,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
               BHW.realEmbed y0 ∈ Uy ∧
               Uy ⊆ BHW.os45ACRBranchDomain (d := d) (n := n) τ ∩
                 BHW.os45PulledRealBranchDomain (d := d) (n := n) τ ∧
-              (forall z, z ∈ Uy ->
+              (∀ z, z ∈ Uy ->
                 BHW.sourceMinkowskiGram d n (Q.symm z) ∈ Wscal) ∧
               Wscal ⊆ BHW.sourceDoublePermutationGramDomain d n τ
       ```
@@ -4875,7 +4875,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
          relatively open set `Wscal`.
       4. From the tube theorem, obtain `Wtube` with relative openness,
          connectedness, `Wseed ⊆ Wtube`, `Wtube ⊆ D`, and
-         `forall t, γ t ∈ Wtube`.  The endpoint identity `hγ_end` gives
+         `∀ t, γ t ∈ Wtube`.  The endpoint identity `hγ_end` gives
          `Zend := sourceMinkowskiGram d n (Q.symm (BHW.realEmbed y0)) ∈
          Wtube`.  Write `Wtube = O ∩ sourceComplexGramVariety d n`, with `O`
          open, and let
