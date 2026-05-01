@@ -52,6 +52,7 @@ local Slot 1:
    `BHW.sourceScalarRepresentativeData_bvt_F` via the five-stage ordinary
    Hall-Wightman source descent, and the adjacent `S'_n` package
    `BHW.os45Figure24_sourceChart_at`,
+   `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
    `BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`,
    `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
    `BHW.os45AdjacentSPrimeScalarizationChart_of_figure24`,
@@ -212,11 +213,14 @@ anchor membership in the pulled domains from the zero-time identities
 `BHW.isOpen_jostSet`, `BHW.isOpen_extendedTube`,
 `BHW.isOpen_os45PulledRealBranchDomain`, and the public finite-dimensional
 continuity helpers for `realEmbed`, point permutations, and the identity
-common-edge map.  Its path field is conditional on ordered identity-sector
-membership: `Γ` is `BHW.os45Figure24IdentityPath`, and `Δ` is the checked
-rotated Figure-2-4 realization from the compact-open path-stability
-neighborhood.  The theorem does not compare branch values or assert that the
-bare relabelled identity path is the adjacent branch.
+common-edge map.  Its current path field is conditional on ordered
+identity-sector membership: `Γ` is `BHW.os45Figure24IdentityPath`, and `Δ` is
+the checked rotated Figure-2-4 realization from the compact-open
+path-stability neighborhood.  The scalar-source docs now require the same
+checked compact-open proof to expose the deterministic canonical lift field
+`hV_adjLift_ET` on the open chart before the adjacent source-pairing theorem is
+ported.  The theorem does not compare branch values or assert that the bare
+relabelled identity path is the adjacent branch.
 
 The checked patch theorem
 `BHW.os45_adjacent_identity_horizontalEdge_sourcePatch` is then a
@@ -1013,6 +1017,7 @@ Germ-API migration transcript before any Hall-Wightman production theorem:
 Second, the adjacent `S'_n` seed package must be proved in the order
 documented below:
 `BHW.os45Figure24_sourceChart_at`,
+`BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
 `BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`,
 `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
 `BHW.os45AdjacentSPrimeScalarizationChart_of_figure24`,
@@ -1025,11 +1030,20 @@ replaced by final real-edge equality, `AdjacentOSEOWDifferenceEnvelope`,
 global PET branch independence, or a local boundary functional standing in
 for `bvt_W`.
 
-The adjacent scalar-trace theorem has one genuine upstream source sublemma:
-`BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`.  It must compare
-the permuted Hall-Wightman source pullback with the permuted Schwinger
-functional `OS.S n ψZ` in compact pairings on the selected Figure-2-4 chart.
-Only after that source-pairing statement is proved may
+The adjacent scalar-trace theorem has two genuine upstream source pieces.  The
+first is the OS-I §4.5 canonical-lift boundary theorem
+`BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`: it compares
+compact pairings of
+`x ↦ extendF (bvt_F OS lgc n) (hChart.adjLift x 0)` with the permuted
+Schwinger functional `OS.S n ψZ`, using the identity and swapped ordered-sector
+fields of the selected Figure-2-4 chart as the OS-I §4.5 `S'_n` input.  The
+second is
+`BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`: it rewrites the
+permuted Hall-Wightman source pullback to that deterministic canonical lift by
+`SourceScalarRepresentativeData.branch_eq` and
+`hChart.adjLift_sourceGram`.  This second theorem must not integrate an
+arbitrary existential `Δ_x`; the selected Figure-2-4 chart must carry the
+canonical lift itself.  Only after that source-pairing statement is proved may
 `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`
 rewrite `OS.S n ψZ` by `bvt_euclidean_restriction` and the finite permutation
 change of variables used in
@@ -1091,8 +1105,10 @@ call site.
 The theorem-2 blueprint now names the two implementation data carriers that
 must exist, or be kept as local variables with the same fields:
 `BHW.OS45Figure24SourceChartAt`, carrying `V0`, `Usrc`, Wick membership,
-Wick real-section equivalence, double-domain membership, and forward-tube
-membership of the identity Wick branch; and
+Wick real-section equivalence, double-domain membership, forward-tube
+membership of the identity Wick branch, and the deterministic fields
+`adjLift`, `adjLift_mem_extendedTube`, and `adjLift_sourceGram` for the
+canonical rotated Figure-2-4 adjacent lift; and
 `BHW.OS45AdjacentSPrimeScalarSeedWithSourceProvenance`, carrying the scalar
 seed together with `Usrc`, `zreg`, `Gseed`, `hwick_mem`, `zreg ∈ Usrc`, and
 the source-level double-domain field needed by the path segment.  These are
@@ -1102,14 +1118,18 @@ same OS I §4.5 / BHW seed proof.
 The source-chart constructor
 `BHW.os45Figure24_sourceChart_at` must consume the actual Figure-2-4
 path-stability field from the checked selector, not merely the ordered/Jost
-facts for an arbitrary `V`.  Its new `hV_figPath` input gives, for every
-`x ∈ V`, paths `Γ, Δ` with `Γ 0 = wick x`, both paths in the ordinary
-extended tube, and
-`sourceMinkowskiGram (Δ t) =
-sourcePermuteComplexGram τ (sourceMinkowskiGram (Γ t))`.  This is what proves
-the base Wick source Gram lies in the adjacent double scalar domain before
-the connected source neighborhood is chosen.  The topology shrink is then
-Lean-ready: use the explicit `BHW.wickRealSectionLeftInverse`,
+facts for an arbitrary `V`.  For the scalarization/source-pairing theorem its
+input is the canonical field
+`hV_adjLift_ET : ∀ x ∈ V, ∀ t,
+BHW.os45Figure24AdjacentLift hd τ x t ∈ ExtendedTube`; the scalar-Gram
+identity is the public algebraic theorem
+`BHW.os45Figure24AdjacentLift_sourceGram`.  These two facts prove that the
+base Wick source Gram lies in the adjacent double scalar domain before the
+connected source neighborhood is chosen, and they give the deterministic lift
+used under the compact pairing.  The separate closure-level existential
+`hV_figPath_closure` is still needed later for the scalar corridor path, but
+it is not the integrand supplier.  The topology shrink is then Lean-ready: use
+the explicit `BHW.wickRealSectionLeftInverse`,
 `BHW.continuous_wickRealSectionLeftInverse`,
 `BHW.continuous_wickRotateRealConfig`, and
 `BHW.exists_connected_sourceNeighborhood_with_wickPreimage`; set
@@ -1140,12 +1160,15 @@ and the OS-II adjacent Wick trace
 `x ↦ bvt_F OS lgc n (fun k => wickRotatePoint (x (τ k)))`.  The pointwise
 version is not an input to the seed proof; using it there is circular because
 it already asserts the adjacent `S'_n` scalarization on the Wick real section.
-Its proof is the local OS I §4.5/BHW scalar-trace comparison: use the OS-II
-ACR(1) Euclidean continuation package and compact-test permutation symmetry
-to identify pairings on the selected `S'_n` chart.  It must not be replaced by
-the global pointwise theorem `bvt_F_perm`, by final `bvt_W` locality, by
-`AdjacentOSEOWDifferenceEnvelope`, or by PET branch independence.  Until this
-theorem has a complete proof transcript, the adjacent `S'_n` package is not
+Its proof is the local OS I §4.5/BHW scalar-trace comparison in two steps:
+first prove the canonical-lift pairing theorem against `OS.S n ψZ`, then
+rewrite the canonical lift to the source pullback by `hRep.branch_eq`.
+Only after that may `bvt_euclidean_restriction` and the finite permutation
+change of variables identify the raw adjacent Wick pairing.  It must not be
+replaced by the global pointwise theorem `bvt_F_perm`, by final `bvt_W`
+locality, by `AdjacentOSEOWDifferenceEnvelope`, or by PET branch independence.
+Until the canonical-lift source-boundary theorem and its source-pullback
+rewrite have complete proof transcripts, the adjacent `S'_n` package is not
 Lean-ready.
 
 Readiness gate for production Lean: the theorem-2 blueprint must remain the
@@ -1273,8 +1296,9 @@ content:
    `BHW.continuous_wickRotateRealConfig` using Mathlib
    `ContinuousOn.comp'` and the explicit `MapsTo` proof
    `fun x hx => hwick_mem x hx`.  The integral equality for those scalar
-   pullbacks is the chain: adjacent source-pairing theorem, checked compact
-   Wick equality, and the identity pointwise scalarization rewritten under the
+   pullbacks is the chain: canonical-lift source-boundary theorem,
+   source-pullback rewrite by `hRep.branch_eq`, checked compact Wick equality,
+   and the identity pointwise scalarization rewritten under the
    integral.  The proof must not silently use continuity of unrelated total
    `bvt_F` values off the Wick section, and must not use
    `ContinuousOn.comp_continuous` unless the
@@ -1312,9 +1336,12 @@ content:
    source path along `Gseed_def`.  Defining `γseed : Path Gseed ...` after
    `subst Gseed` is not Lean-shaped.  Without this field the scalar-only seed
    has lost the endpoint needed by `Path.trans`.
-   Its adjacent branch is the Figure-2-4 two-plane rotated realization from
-   the checked `AdjacentOverlapWitness.lean` model, made uniform around the
-   same equal-time Figure-2-4 anchor by a compact-open shrink over
+   The selected source patch must also export the open-chart canonical lift
+   field `hV_adjLift_ET` for this same rotated realization; that field feeds
+   the source-pairing theorem, while `hV_figPath_closure` feeds the later
+   scalar path.  Its adjacent branch is the Figure-2-4 two-plane rotated
+   realization from the checked `AdjacentOverlapWitness.lean` model, made
+   uniform around the same equal-time Figure-2-4 anchor by a compact-open shrink over
    `unitInterval`; it is not the bare relabelled path `Γ t ∘ τ`.  The ordered
    seed is chosen only afterward inside `Ufig ∩ Upath`, and the final
    precompact `V` is then shrunk inside the ordered-sector preimages.  The
@@ -1439,14 +1466,14 @@ content:
    The selector construction must choose the ordered seed inside
    `Ufig ∩ Upath`, where `Upath` is the Figure-2-4 compact-open
    path-stability neighborhood around the same equal-time witness returned
-   with `Ufig`; this shared anchor is what makes the closure-level
-   `hV_figPath_closure` field legitimate.  The `Upath` path field is
-   conditional on the identity ordered-sector hypothesis: `Upath` itself is an
-   open neighborhood of an equal-time anchor, while the final selector obtains
-   the full `Γ, Δ` field on `closure V` by combining `closure V ⊆ Upath` with
-   `hV_ordered_closure`.  The implementation must not call two independent
-   existential theorems for `Ufig` and `Upath` and then assume the witnesses
-   agree.
+   with `Ufig`; this shared anchor is what makes both the open-chart
+   `hV_adjLift_ET` field and the closure-level `hV_figPath_closure` field
+   legitimate.  The `Upath` canonical-lift field is unconditional on `V` once
+   `closure V ⊆ Upath`; the full `Γ, Δ` closure path additionally uses
+   `hV_ordered_closure` to keep the identity path in the ordinary extended
+   tube up to the quarter-turn endpoint.  The implementation must not call two
+   independent existential theorems for `Ufig` and `Upath` and then assume the
+   witnesses agree.
 4. The compact common-germ theorem `BHW.os45BranchHorizontalCommonGerm` then
    glues these branch-specific germs over `closure E`; the identity and
    adjacent germs remain different branch packets.
@@ -3227,9 +3254,11 @@ This doc is complete only when:
    `BHW.os45OneBranchScalarGramEq_sourceInput_id`, and
    `BHW.os45OneBranchScalarGramEq_sourceInput_adjacent`, with no public
    arbitrary-`β` geometry-only source theorem;
-3. the Figure-2-4 selector is closure-ready: `Ufig` and `Upath` share one
-   anchor, the ordered seed is chosen inside `Ufig ∩ Upath`, and the exported
-   path field is `hV_figPath_closure`;
+3. the Figure-2-4 selector is source-ready and closure-ready: `Ufig` and
+   `Upath` share one anchor, the ordered seed is chosen inside
+   `Ufig ∩ Upath`, the exported open-chart canonical field is
+   `hV_adjLift_ET`, and the exported closure path field is
+   `hV_figPath_closure`;
 4. the branch-BV and local EOW theorem surfaces name the exact CLMs, side
    wedges, chart-linear kernel pushforwards, and gluing consumers, without
    treating the local boundary functional as `bvt_W`;
