@@ -1053,10 +1053,11 @@ order:
    theorems `hwLemma3_sourceGram_localVectorRealization_smallPerturbation`
    and `hwLemma3_sourceGram_localVectorRealization`,
    `hallWightman_localScalarChart_at` with its
-   max-rank/exceptional-rank local split, and the scalar germ-atlas/gluing
-   packet `HallWightmanScalarGermAtlas`,
+   max-rank/exceptional-rank local split,
    `hallWightman_localScalarChart_overlap_eq`,
-   `hallWightman_consistentScalarGermAtlas`,
+   the optional proof-local scalar germ-atlas/gluing packet
+   `HallWightmanScalarGermAtlas`,
+   `hallWightman_consistentScalarGermAtlas`, and
    `hallWightman_scalarGermAtlas_glue`, the pure topology helpers
    `continuousOn_of_open_nhdsWithin_control` and
    `continuousOn_openDomain_preimage_nhds`, and the active germ predicate
@@ -1254,7 +1255,10 @@ Current checked/unchecked boundary:
    ambient coordinate/inverse maps, the local selected-differential span of
    the source-Gram differential image, and the local scalar-differential PDE
    span needed to kill auxiliary derivatives pointwise, both sourced from
-   `hallWightman_maxRank_selectedScalarDifferentials_local`; the
+   `hallWightman_maxRank_selectedScalarDifferentials_local`; the selected
+   basis packet records `e = sourceGramExpectedDim d n`, because independence
+   alone does not prove spanning of the full source-Gram differential image;
+   the
    `hallWightman_powerSeries_from_PDE_span` surface therefore includes the
    maximal scalar-rank hypothesis used for the constant-rank shrink),
    `hallWightman_scalarGerm_continuous_locallyBounded`,
@@ -1264,8 +1268,8 @@ Current checked/unchecked boundary:
    `sourceGramVariety_removableAlongExceptionalRank`,
    `hallWightman_removableScalarChart_at`,
    `hallWightman_localScalarChart_eq_scalarValue`,
-   `HallWightmanScalarGermAtlas`,
    `hallWightman_localScalarChart_overlap_eq`,
+   optional proof-local `HallWightmanScalarGermAtlas`,
    `hallWightman_consistentScalarGermAtlas`,
    `hallWightman_scalarGermAtlas_glue`,
    `SourceVarietyGermHolomorphicOn`,

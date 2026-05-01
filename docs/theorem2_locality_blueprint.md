@@ -4890,11 +4890,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 Ψ (BHW.sourceMinkowskiGram d n w) =
                   BHW.extendF F w)
 
-      /-- The compatible scalar-product germ atlas produced by Hall-Wightman
-      Lemmas 4--7.  The `overlap_eq` field is equality of analytic germs on
-      the scalar Gram variety.  It is deliberately not full ambient-open
-      equality: arbitrary ambient representatives of the same analytic-space
-      germ can differ by functions vanishing on the variety. -/
+      /-- Optional proof-local compatible scalar-product germ atlas produced by
+      Hall-Wightman Lemmas 4--7.  If used in Lean, this packet should be
+      `private` or inlined inside
+      `sourceVarietyGermHolomorphicOn_extendF_descent`; it is not an additional
+      public source theorem surface.  The `overlap_eq` field is equality of
+      analytic germs on the scalar Gram variety.  It is deliberately not full
+      ambient-open equality: arbitrary ambient representatives of the same
+      analytic-space germ can differ by functions vanishing on the variety. -/
       structure BHW.HallWightmanScalarGermAtlas
           [NeZero d]
           (hd : 2 <= d)
@@ -4976,10 +4979,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (hΧ_branch w hw hG.1.2).symm
       ```
 
-      /-- Sheaf-style gluing on the source Gram analytic subspace.  The output
-      `phi` is a scalar function on the variety-domain side, with local
-      ambient representatives only modulo the source variety.  This is already
-      the active source-representative holomorphicity predicate. -/
+      /-- Optional proof-local sheaf-style gluing on the source Gram analytic
+      subspace.  This formalizes choice-independence of compatible chart
+      representatives, but the production route should not expose it as a
+      second public descent theorem: the direct descent proof below uses the
+      branch-defined `Phi` from
+      `hallWightman_scalarGerm_continuous_locallyBounded` and proves the germ
+      predicate for that same `Phi`. -/
       theorem BHW.hallWightman_scalarGermAtlas_glue
           [NeZero d]
           (hd : 2 <= d)
@@ -5025,9 +5031,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
       common scalar point realized by extended-tube configurations, `hBranch`
       equates the two values; analytic continuation on the connected
       relatively open chart overlap extends equality as a germ on the scalar
-      Gram variety.  The gluing theorem then defines the scalar-space function
-      `phi` by these compatible variety germs.  It does not yet define the
-      old strong total ambient `Phi`; the active route does not ask for one.
+      Gram variety.  A private gluing theorem can define a scalar-space
+      function by these compatible variety germs, but the active public
+      descent theorem must use the already branch-defined `Phi` from
+      `hallWightman_scalarGerm_continuous_locallyBounded`.  It must not
+      introduce a second scalar value function and then silently identify it
+      with the branch-law choice.
 
       The API-critical point is now separated cleanly.  Hall-Wightman gives
       equality of scalar-product germs on `S'_n`, i.e. equality on the source
@@ -5037,8 +5046,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `SourceVarietyHolomorphicOn` field would require the archived
       Cartan/Oka bridge and an independent Stein-domain theorem.
 
-      The remaining implementation contract for that gluing step is the
-      Hall-Wightman theorem producing this compatible germ atlas:
+      If the implementation uses the optional atlas as local proof
+      organization, its construction is the following private Hall-Wightman
+      chart-packet producer:
 
       ```lean
       /-- Hall-Wightman Lemmas 4--7 plus the scalar-product power-series
@@ -5065,7 +5075,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.HallWightmanScalarGermAtlas hd n F
       ```
 
-      Proof transcript for `BHW.hallWightman_consistentScalarGermAtlas`:
+      Proof transcript for the private
+      `BHW.hallWightman_consistentScalarGermAtlas`:
 
       1. For each `Z ∈ sourceExtendedTubeGramDomain d n`, split by
          `BHW.HWSourceGramMaxRank d n Z`.  In the max-rank case, use
@@ -5082,10 +5093,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
          for some `w ∈ ExtendedTube d n`; the two `branch_eq` fields then
          identify both chart values with `extendF F w`.  This is equality on
          the source Gram variety only, exactly the germ-overlap field.
-      3. This proof must happen before
-         `BHW.hallWightman_scalarGermAtlas_glue`.  The glue theorem is purely
-         formal once variety-germ `overlap_eq` is a field of the atlas; it may
-         not re-prove or assume equality of arbitrary ambient extensions.
+      3. If the private glue theorem is used, it is purely formal once
+         variety-germ `overlap_eq` is a field of the atlas; it may not re-prove
+         or assume equality of arbitrary ambient extensions.  The public
+         descent theorem still returns the branch-defined `Phi`, not an
+         unrelated glued choice.
 
       Lean-facing local-chart split:
 
@@ -5452,6 +5464,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (d n e : Nat)
           (z0 : Fin n -> Fin (d + 1) -> ℂ)
           (scalarCoord : (Fin n -> Fin n -> ℂ) -> Fin e -> ℂ) : Prop where
+        card_eq_expected :
+          e = BHW.sourceGramExpectedDim d n
         selected_linear :
           ∃ L : (Fin n -> Fin n -> ℂ) ->L[ℂ] (Fin e -> ℂ),
             scalarCoord = L
@@ -5544,8 +5558,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
           [NeZero d]
           (hd : 2 <= d)
           (n e : Nat)
+          {z0 : Fin n -> Fin (d + 1) -> ℂ}
           {Uvec : Set (Fin n -> Fin (d + 1) -> ℂ)}
           {scalarCoord : (Fin n -> Fin n -> ℂ) -> Fin e -> ℂ}
+          (hscalar :
+            BHW.SelectedScalarCoordinatesBasis d n e z0 scalarCoord)
           (hU_rank :
             ∀ z, z ∈ Uvec -> BHW.HWSourceGramMaxRankAt d n z)
           (z : Fin n -> Fin (d + 1) -> ℂ)
@@ -5861,7 +5878,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
           intro z hz i j
           exact
             BHW.sourceGramDifferential_image_basis_of_selected_minor
-              (d := d) hd n e hU_rank z hz hU_selected_indep i j
+              (d := d) hd n e hscalar hU_rank z hz hU_selected_indep i j
         have hPDE_span :
             ∀ z, z ∈ Uvec ->
               BHW.SourceScalarDifferentialsSpanInvariantPDE d n z := by
@@ -5877,7 +5894,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
       ordinary constant-rank/minor facts: the first shrinks to a nonvanishing
       selected scalar minor inside `ExtendedTube`; the second says that on such
       a patch the selected scalar differentials are a basis for the image of
-      the source Gram differential.  They are linear algebra and inverse
+      the source Gram differential.  The `SelectedScalarCoordinatesBasis`
+      field `card_eq_expected` is essential in the second helper: independence
+      alone only gives a subspace of the image, while `card_eq_expected`
+      together with `HWSourceGramMaxRankAt` supplies the dimension equality
+      needed to conclude spanning.  They are linear algebra and inverse
       function theorem support, not source-representative wrappers.
 
       The two differentiability helpers used below are part of this chart
@@ -20552,16 +20573,18 @@ implementation target if the global identity theorem is attacked directly:
 	   `SourceVarietyHolomorphicOn` definition in `SourceExtension.lean`.
 	   The active route consumes the germ theorem; the legacy strong theorem is
 	   its specialization via `SourceVarietyHolomorphicOn.to_germ`.
-	   The remaining hard analytic-content packet is the regular-stratum
-	   identity theorem: prove zero on
-	   `U ∩ sourceSymmetricRankExactStratum n (d+1)` from a nonempty relatively
-	   open zero set, using the Schur graph charts, codimension/local
-	   irreducibility, and ordinary SCV identity theorem on connected regular
-	   rank-stratum components.
-	0v. pin the remaining regular-rank-stratum identity theorem.  This is the
-	    next genuine Hall-Wightman analytic-content packet, and it is not yet
-	    discharged by the density/continuity lemmas above.  Split the theorem by
-	    arity:
+	   The regular-stratum identity packet is no longer the source-germ gate in
+	   its older unchecked form: the strong route and connected regular-locus
+	   support are now backed by the checked Schur/local-basis/connectedness
+	   infrastructure named below.  This section remains to pin the theorem
+	   shapes and dependency names that the germ route must consume; the
+	   implementation task is to use or port the germ predicate, not to restart
+	   the connected regular-locus proof or replace it by a source-space
+	   pullback shortcut.
+	0v. record the regular-rank-stratum identity theorem and its germ variant.
+	    This was the genuine analytic-content packet behind the source-variety
+	    identity principle; it is now backed by the checked infrastructure below.
+	    Split the theorem by arity:
 
 	    * if `n <= d + 1`, the source complex Gram variety is the full symmetric
 	      matrix space.  Transport to symmetric-coordinate affine space and use
@@ -20735,9 +20758,10 @@ implementation target if the global identity theorem is attacked directly:
 	      using `SourceVarietyGermHolomorphicOn.continuousOn` and the subset
 	      of `U` in the source Gram variety obtained from `hU_rel`.
 
-	   This packet is the next place where implementation must focus.  It must
-	   not be replaced by a source-space pullback theorem unless that theorem
-	   proves the same connected regular-locus/monodromy content.
+	   The production implementation should consume this packet through the
+	   checked theorem names below.  It must not replace the packet by a
+	   source-space pullback theorem unless that theorem proves the same
+	   connected regular-locus/monodromy content.
 
 	   Implementation refinement, 2026-04-27.  The proof of this packet must use
 	   the checked Schur/density declarations by their real names.  In
@@ -20759,14 +20783,13 @@ implementation target if the global identity theorem is attacked directly:
 	   BHW.sourceComplexGramVariety_relOpen_eqOn_zero_of_eqOn_rankExact
 	   ```
 
-	   The strict-branch implementation is not ready if it stops at these
-	   inputs.  Two genuine pieces still have to be written as Lean-ready proof
-	   docs before production code should start.  After checking the actual BHW
-	   infrastructure, the immediate route should use the selected complex Gram
-	   chart/local-image theorems already present in the repository, not a new
-	   rectangular Schur wrapper layer.  The Schur equations remain useful
-	   algebraic checks; the local propagation should be built from the checked
-	   source-Gram chart substrate.
+	   These inputs are the checked substrate for the strict branch.  After
+	   checking the actual BHW infrastructure, the immediate route should use the
+	   selected complex Gram chart/local-image theorems already present in the
+	   repository, not a new rectangular Schur wrapper layer.  The Schur
+	   equations remain useful algebraic checks; the local propagation should be
+	   built from the checked source-Gram chart substrate, with the germ theorem
+	   consumed at the public boundary.
 
 	   Checked local-chart inputs:
 

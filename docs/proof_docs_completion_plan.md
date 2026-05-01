@@ -423,13 +423,15 @@ implementation contract is:
    `continuousOn`, `of_subset_relOpen`, `sub`,
    `precomp_sourcePermuteComplexGram`, `comp_sourceMinkowskiGram`,
    `comp_differentiableOn_chart`, and
-   `sourceComplexGramVariety_identity_principle_germ`, the germ-atlas data
-   `BHW.HallWightmanScalarGermAtlas`, the source declaration
-   `BHW.hallWightman_consistentScalarGermAtlas`, and the variety-germ glue
-   `BHW.hallWightman_scalarGermAtlas_glue`.
-   That core is split further into
-   `BHW.hallWightman_localScalarChart_at` and
-   `BHW.hallWightman_scalarGermAtlas_glue`, with the separate local-chart
+   `sourceComplexGramVariety_identity_principle_germ`.
+   If an atlas is useful during implementation, `BHW.HallWightmanScalarGermAtlas`,
+   `BHW.hallWightman_consistentScalarGermAtlas`, and
+   `BHW.hallWightman_scalarGermAtlas_glue` are proof-local organization only:
+   they must be private or inlined into
+   `BHW.sourceVarietyGermHolomorphicOn_extendF_descent`, not exported as an
+   additional source theorem surface.
+   The direct descent core is split further into
+   `BHW.hallWightman_localScalarChart_at`, with the separate local-chart
    predicates `BHW.HWSourceGramMaxRank` and
    `BHW.HWSourceGramExceptionalRank` and sublemmas
    `BHW.hallWightman_maxRank_localScalarChart_at` and
@@ -468,11 +470,10 @@ implementation contract is:
    `BHW.hallWightman_removableScalarChart_at`, and
    `BHW.hallWightman_localScalarChart_eq_scalarValue`, so the power-series,
    boundedness/continuity, analytic exceptional-locus, and removability inputs
-   are no longer hidden in prose.  The chart constructors must also preserve
-   their provenance inside `BHW.HallWightmanScalarGermAtlas`, because the atlas
-   `overlap_eq` field is what makes variety-germ compatibility a theorem
-   before the scalar representative data is assembled.
-   That overlap field is discharged by
+   are no longer hidden in prose.  Chart constructors must still preserve
+   their branch-provenance fields until the descent theorem builds the
+   `SourceVarietyGermHolomorphicOn` local representatives.
+   The chart overlap compatibility is discharged by
    `BHW.hallWightman_localScalarChart_overlap_eq`: a scalar point in the
    overlap of two chart slices is first realized as an ordinary extended-tube
    Gram point using either chart's `U0_sub` field, and then both chart values
@@ -521,7 +522,12 @@ implementation contract is:
    image at each chart point, while `BHW.HWPowerSeriesCoordinateSplit.span_local`
    is filled after shrinking to the constant-rank non-exceptional chart.  The
    named source of both fields is
-   `BHW.hallWightman_maxRank_selectedScalarDifferentials_local`.
+   `BHW.hallWightman_maxRank_selectedScalarDifferentials_local`.  The
+   finite-dimensional basis packet must include
+   `SelectedScalarCoordinatesBasis.card_eq_expected : e =
+   BHW.sourceGramExpectedDim d n`; independence of the selected differentials
+   on the shrunken chart is not enough to prove that all source-Gram
+   coordinate differentials lie in their span without this dimension equality.
    `BHW.hallWightman_auxiliaryDerivative_zero` first differentiates
    `coordMap (coordSymmMap p) = p` to kill selected scalar derivatives on
    auxiliary tangents, then uses the selected-span field to kill all source
