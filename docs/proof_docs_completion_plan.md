@@ -1089,6 +1089,11 @@ The comparison theorem comes from the exact OS sequence
 E3 symmetry -> equations (4.1), (4.12), and (4.14) -> symmetric analytic
 continuation to the permuted tube -> Bargmann-Hall-Wightman single-valued
 complex-Lorentz continuation -> Jost real-environment boundary uniqueness.
+It must not be proved by constructing a completed `WightmanFunctions` object
+and using the existing `W_analytic_BHW` package, because that package consumes
+`Wfn.locally_commutative`, the theorem-2 output.  The comparison is an
+upstream OS-I §4.5 source theorem before locality, not a downstream consequence
+of locality.
 The Schwinger-valued raw theorem and the deterministic canonical-lift theorem
 are then obtained by the mechanical rewrites above.  Do not give the raw
 comparison theorem, the raw Schwinger-valued theorem, or the transported

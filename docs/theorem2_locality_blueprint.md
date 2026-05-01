@@ -9991,6 +9991,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
          locality and not pointwise permutation symmetry.
       5. Use `BHW.os45Figure24_permutedWick_mem_extendedTube_zero` only as the
          domain witness for the BHW side; it supplies no value equality.
+      6. Do **not** prove this comparison by invoking the existing
+         `W_analytic_BHW` package for a completed `WightmanFunctions` object:
+         that construction consumes `Wfn.locally_commutative`, which is exactly
+         the theorem-2 locality output.  The allowed source is the OS-I §4.5
+         route before locality: Euclidean symmetry and ACR(1) branch
+         selection, symmetric analytic continuation to the permuted tube,
+         Bargmann-Hall-Wightman single-valued continuation, and Jost
+         real-environment uniqueness.
 
       The public raw Schwinger-valued theorem below is then a mechanical
       consequence of this comparison theorem plus
