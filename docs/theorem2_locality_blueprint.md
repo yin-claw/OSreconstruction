@@ -15722,6 +15722,42 @@ Proof decomposition of this theorem, without hiding the analytic work:
           IsOpen {z : Fin n -> Fin (d + 1) -> ℂ |
             BHW.sourceMinkowskiGram d n z ∈ U}
 
+      Lean-shaped proof of the relative-open Gram-preimage helper:
+
+      ```lean
+      theorem BHW.IsRelOpenInSourceComplexGramVariety.sourceMinkowskiGram_preimage_open
+          (d n : Nat)
+          {U : Set (Fin n -> Fin n -> ℂ)}
+          (hU : BHW.IsRelOpenInSourceComplexGramVariety d n U) :
+          IsOpen {z : Fin n -> Fin (d + 1) -> ℂ |
+            BHW.sourceMinkowskiGram d n z ∈ U} := by
+        rcases hU with ⟨U0, hU0_open, hUeq⟩
+        have hpre :
+            {z : Fin n -> Fin (d + 1) -> ℂ |
+              BHW.sourceMinkowskiGram d n z ∈ U} =
+            {z : Fin n -> Fin (d + 1) -> ℂ |
+              BHW.sourceMinkowskiGram d n z ∈ U0} := by
+          ext z
+          constructor
+          · intro hz
+            rw [hUeq] at hz
+            exact hz.1
+          · intro hz
+            rw [hUeq]
+            exact ⟨hz, ⟨z, rfl⟩⟩
+        rw [hpre]
+        exact hU0_open.preimage
+          (BHW.contDiff_sourceMinkowskiGram d n).continuous
+      ```
+
+      The only mathematical point in this helper is definitional:
+      `sourceComplexGramVariety d n` is the full range of
+      `sourceMinkowskiGram d n`, so the variety conjunct in a relatively open
+      scalar set is automatic after precomposition with `sourceMinkowskiGram`.
+      The continuity input is the existing
+      `BHW.contDiff_sourceMinkowskiGram`; the source chart file must be
+      imported rather than reproving polynomial continuity locally.
+
       structure BHW.OS45Figure24SourceChartAt
           [NeZero d]
           (hd : 2 <= d)

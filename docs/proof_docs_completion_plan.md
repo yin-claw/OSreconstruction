@@ -1487,6 +1487,13 @@ without the later quarter-turn path.  Choose
 `Gseed = sourceMinkowskiGram d n zreg`, and use
 `BHW.sourceComplexGramMap_localConnectedRelOpenImage_in_open_of_complexRegular_allArity`
 inside `hChart.Usrc` to obtain the relatively open scalar seed `Wseed`.
+The source-chart construction's helper
+`BHW.IsRelOpenInSourceComplexGramVariety.sourceMinkowskiGram_preimage_open`
+is now pinned to a scratch-checked proof: unfold
+`IsRelOpenInSourceComplexGramVariety`, use that every
+`sourceMinkowskiGram d n z` lies in the full source Gram variety by
+`⟨z, rfl⟩`, and take the preimage of the ambient open set by the existing
+continuous map `(BHW.contDiff_sourceMinkowskiGram d n).continuous`.
 Set
 `D = BHW.sourceDoublePermutationGramDomain d n τ` and
 `Wscal = connectedComponentIn D Gseed`.  The rel-open field for `D` comes
