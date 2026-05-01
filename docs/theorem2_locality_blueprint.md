@@ -3025,7 +3025,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
       would have to name the exact proposition-level statements below and
       still carry no theorem-2, locality, PET, EOW, or OS-specific content.
 
-      Lean-shaped assembly after the analytic pieces are proved:
+      Scratch-checked assembly after the analytic pieces are proved
+      (with `SourceExtension.lean` imported):
 
       ```lean
       noncomputable def BHW.sourceScalarRepresentativeData_of_branchLaw ... := by
@@ -6004,6 +6005,77 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.extendF F z = BHW.extendF F w
       ```
 
+      Scratch-checked topology core for the singular-limit theorem.  The hard
+      Hall-Wightman input is exactly `hsingular`; after that the proof is
+      continuity of `extendF F` on `ExtendedTube d n`, complex Lorentz
+      invariance on each orbit curve, and uniqueness of limits in `ℂ`.
+
+      ```lean
+      theorem BHW.hw_sameSourceGram_singularLimit_extendF_eq ... := by
+        have hExtend_cont :
+            ContinuousOn (BHW.extendF F) (BHW.ExtendedTube d n) :=
+          (BHW.extendF_holomorphicOn n F hF_holo hF_cinv).continuousOn
+        have hleft_val :
+            ∀ t, BHW.extendF F (hsingular.curve_left t) =
+              BHW.extendF F z := by
+          intro t
+          rcases hsingular.curve_left_orbit t with ⟨Λ, hΛ⟩
+          rw [hΛ]
+          exact BHW.extendF_complexLorentzInvariant_of_cinv
+            (d := d) hd n F hF_holo hF_cinv Λ hz
+        have hright_val :
+            ∀ t, BHW.extendF F (hsingular.curve_right t) =
+              BHW.extendF F w := by
+          intro t
+          rcases hsingular.curve_right_orbit t with ⟨Λ, hΛ⟩
+          rw [hΛ]
+          exact BHW.extendF_complexLorentzInvariant_of_cinv
+            (d := d) hd n F hF_holo hF_cinv Λ hw
+        have hleft_lim :
+            Tendsto
+              (fun t : ℝ => BHW.extendF F (hsingular.curve_left t))
+              atTop (nhds (BHW.extendF F hsingular.base)) :=
+          (hExtend_cont.continuousWithinAt hsingular.base_mem).tendsto.comp
+            (tendsto_nhdsWithin_iff.mpr
+              ⟨hsingular.curve_left_tendsto_base,
+                Eventually.of_forall hsingular.curve_left_mem⟩)
+        have hright_lim :
+            Tendsto
+              (fun t : ℝ => BHW.extendF F (hsingular.curve_right t))
+              atTop (nhds (BHW.extendF F hsingular.base)) :=
+          (hExtend_cont.continuousWithinAt hsingular.base_mem).tendsto.comp
+            (tendsto_nhdsWithin_iff.mpr
+              ⟨hsingular.curve_right_tendsto_base,
+                Eventually.of_forall hsingular.curve_right_mem⟩)
+        have hz_lim :
+            Tendsto (fun _ : ℝ => BHW.extendF F z)
+              atTop (nhds (BHW.extendF F hsingular.base)) :=
+          Filter.Tendsto.congr'
+            (Eventually.of_forall fun t => hleft_val t) hleft_lim
+        have hw_lim :
+            Tendsto (fun _ : ℝ => BHW.extendF F w)
+              atTop (nhds (BHW.extendF F hsingular.base)) :=
+          Filter.Tendsto.congr'
+            (Eventually.of_forall fun t => hright_val t) hright_lim
+        have hz_eq_base :
+            BHW.extendF F z = BHW.extendF F hsingular.base :=
+          tendsto_nhds_unique tendsto_const_nhds hz_lim
+        have hw_eq_base :
+            BHW.extendF F w = BHW.extendF F hsingular.base :=
+          tendsto_nhds_unique tendsto_const_nhds hw_lim
+        exact hz_eq_base.trans hw_eq_base.symm
+      ```
+
+      The generic limit proof has been checked independently against Mathlib:
+      from `hf : ContinuousOn f S`, `base ∈ S`, curves `curve_left`,
+      `curve_right` with `∀ t, curve_* t ∈ S`, both tending to `base`, and
+      identities `f (curve_left t) = f z`,
+      `f (curve_right t) = f w`, the accepted Lean proof is precisely
+      `(hf.continuousWithinAt hbase).tendsto.comp
+      (tendsto_nhdsWithin_iff.mpr ⟨hcurve_tendsto,
+      Eventually.of_forall hcurve_mem⟩)`, then
+      `Filter.Tendsto.congr'` and `tendsto_nhds_unique`.
+
       Lean-shaped proof of the Hall-Wightman Lemma-2 alternative:
 
       ```lean
@@ -7057,58 +7129,57 @@ Proof decomposition of this theorem, without hiding the analytic work:
 
       ```lean
       theorem BHW.hw_sameSourceGram_singularLimit_extendF_eq ... := by
-        have hExt_holo :
-            DifferentiableOn ℂ (BHW.extendF F) (BHW.ExtendedTube d n) :=
-          BHW.extendF_holomorphicOn n F hF_holo hF_cinv
-        have hExt_cont :
+        have hExtend_cont :
             ContinuousOn (BHW.extendF F) (BHW.ExtendedTube d n) :=
-          hExt_holo.continuousOn
-        have hleft_base :
-            Tendsto (fun t => BHW.extendF F (hsingular.curve_left t))
-              atTop (nhds (BHW.extendF F hsingular.base)) :=
-          hExt_cont.tendsto hsingular.curve_left_tendsto_base
-            (eventually_of_forall hsingular.curve_left_mem)
-            hsingular.base_mem
-        have hright_base :
-            Tendsto (fun t => BHW.extendF F (hsingular.curve_right t))
-              atTop (nhds (BHW.extendF F hsingular.base)) :=
-          hExt_cont.tendsto hsingular.curve_right_tendsto_base
-            (eventually_of_forall hsingular.curve_right_mem)
-            hsingular.base_mem
-        have hleft_value :
-            ∀ t,
-              BHW.extendF F (hsingular.curve_left t) =
-                BHW.extendF F z := by
+          (BHW.extendF_holomorphicOn n F hF_holo hF_cinv).continuousOn
+        have hleft_val :
+            ∀ t, BHW.extendF F (hsingular.curve_left t) =
+              BHW.extendF F z := by
           intro t
           rcases hsingular.curve_left_orbit t with ⟨Λ, hΛ⟩
-          calc
-            BHW.extendF F (hsingular.curve_left t)
-                = BHW.extendF F (BHW.complexLorentzAction Λ z) := by
-                    rw [hΛ]
-            _ = BHW.extendF F z := by
-                    exact BHW.extendF_complexLorentzInvariant_of_cinv
-                      (d := d) hd n F hF_holo hF_cinv Λ hz
-        have hright_value :
-            ∀ t,
-              BHW.extendF F (hsingular.curve_right t) =
-                BHW.extendF F w := by
+          rw [hΛ]
+          exact BHW.extendF_complexLorentzInvariant_of_cinv
+            (d := d) hd n F hF_holo hF_cinv Λ hz
+        have hright_val :
+            ∀ t, BHW.extendF F (hsingular.curve_right t) =
+              BHW.extendF F w := by
           intro t
           rcases hsingular.curve_right_orbit t with ⟨Λ, hΛ⟩
-          calc
-            BHW.extendF F (hsingular.curve_right t)
-                = BHW.extendF F (BHW.complexLorentzAction Λ w) := by
-                    rw [hΛ]
-            _ = BHW.extendF F w := by
-                    exact BHW.extendF_complexLorentzInvariant_of_cinv
-                      (d := d) hd n F hF_holo hF_cinv Λ hw
+          rw [hΛ]
+          exact BHW.extendF_complexLorentzInvariant_of_cinv
+            (d := d) hd n F hF_holo hF_cinv Λ hw
+        have hleft_lim :
+            Tendsto
+              (fun t : ℝ => BHW.extendF F (hsingular.curve_left t))
+              atTop (nhds (BHW.extendF F hsingular.base)) :=
+          (hExtend_cont.continuousWithinAt hsingular.base_mem).tendsto.comp
+            (tendsto_nhdsWithin_iff.mpr
+              ⟨hsingular.curve_left_tendsto_base,
+                Eventually.of_forall hsingular.curve_left_mem⟩)
+        have hright_lim :
+            Tendsto
+              (fun t : ℝ => BHW.extendF F (hsingular.curve_right t))
+              atTop (nhds (BHW.extendF F hsingular.base)) :=
+          (hExtend_cont.continuousWithinAt hsingular.base_mem).tendsto.comp
+            (tendsto_nhdsWithin_iff.mpr
+              ⟨hsingular.curve_right_tendsto_base,
+                Eventually.of_forall hsingular.curve_right_mem⟩)
+        have hz_lim :
+            Tendsto (fun _ : ℝ => BHW.extendF F z)
+              atTop (nhds (BHW.extendF F hsingular.base)) :=
+          Filter.Tendsto.congr'
+            (Eventually.of_forall fun t => hleft_val t) hleft_lim
+        have hw_lim :
+            Tendsto (fun _ : ℝ => BHW.extendF F w)
+              atTop (nhds (BHW.extendF F hsingular.base)) :=
+          Filter.Tendsto.congr'
+            (Eventually.of_forall fun t => hright_val t) hright_lim
         have hz_base :
             BHW.extendF F z = BHW.extendF F hsingular.base :=
-          tendsto_nhds_unique tendsto_const_nhds
-            (hleft_base.congr' (eventually_of_forall hleft_value))
+          tendsto_nhds_unique tendsto_const_nhds hz_lim
         have hw_base :
             BHW.extendF F w = BHW.extendF F hsingular.base :=
-          tendsto_nhds_unique tendsto_const_nhds
-            (hright_base.congr' (eventually_of_forall hright_value))
+          tendsto_nhds_unique tendsto_const_nhds hw_lim
         exact hz_base.trans hw_base.symm
 
       theorem BHW.extendedTube_same_sourceGram_extendF_eq ... := by
@@ -9228,22 +9299,43 @@ Proof decomposition of this theorem, without hiding the analytic work:
         exact hO_sub_image hW
       ```
 
-      Lean-shaped relative-open assembly:
+      Scratch-checked relative-open assembly.  The explicit `hLocal`
+      wrapper is important: choosing directly from the theorem whose scalar
+      point is an implicit argument gives `O` indexed by the proof argument
+      alone, which makes the subtype-indexed union awkward.  Making the
+      scalar point explicit gives the intended `O Z hZ` family.
 
       ```lean
+      -- Requires importing
+      -- `OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceExtension`
+      -- for the scalar-domain definitions.
       theorem BHW.sourceExtendedTubeGramDomain_relOpen ... := by
         classical
-        choose O hO_open hZO hO_sub using
-          BHW.sourceExtendedTubeGramDomain_relOpen_at (d := d) hd (n := n)
-        refine ⟨⋃ Z : BHW.sourceExtendedTubeGramDomain d n, O Z.1 Z.2,
+        have hLocal :
+            ∀ Z : Fin n -> Fin n -> ℂ,
+              Z ∈ BHW.sourceExtendedTubeGramDomain d n ->
+                ∃ O : Set (Fin n -> Fin n -> ℂ),
+                  IsOpen O ∧ Z ∈ O ∧
+                  O ∩ BHW.sourceComplexGramVariety d n ⊆
+                    BHW.sourceExtendedTubeGramDomain d n := by
+          intro Z hZ
+          exact BHW.sourceExtendedTubeGramDomain_relOpen_at
+            (d := d) hd (n := n) hZ
+        choose O hO_open hZO hO_sub using hLocal
+        refine ⟨⋃ Z : {Z : Fin n -> Fin n -> ℂ //
+            Z ∈ BHW.sourceExtendedTubeGramDomain d n}, O Z.1 Z.2,
           isOpen_iUnion (fun Z => hO_open Z.1 Z.2), ?_⟩
         ext W
         constructor
         · intro hWdomain
-          exact ⟨⟨⟨W, hWdomain⟩, hZO W hWdomain⟩,
+          constructor
+          · exact Set.mem_iUnion.mpr
+              ⟨⟨W, hWdomain⟩, hZO W hWdomain⟩
+          · exact
             BHW.sourceExtendedTubeGramDomain_subset_sourceComplexGramVariety
-              (d := d) (n := n) hWdomain⟩
-        · rintro ⟨hWU0, hWvar⟩
+              (d := d) (n := n) hWdomain
+        · intro hW
+          rcases hW with ⟨hWU0, hWvar⟩
           rcases Set.mem_iUnion.mp hWU0 with ⟨Z, hWO⟩
           exact hO_sub Z.1 Z.2 ⟨hWO, hWvar⟩
       ```

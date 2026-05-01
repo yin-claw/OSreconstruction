@@ -479,6 +479,20 @@ implementation contract is:
    derived from extended-tube Lorentz invariance and continuity, not stored as
    an analytic field and not asserted as pairwise orbit equality of the two
    approximating curve values.
+   The final limit argument is now Lean-pinned in generic topology form:
+   from `hf : ContinuousOn f S`, `base ∈ S`, `∀ t, curve_left t ∈ S`,
+   `∀ t, curve_right t ∈ S`, both curves tending to `base`, and identities
+   `f (curve_left t) = f z`, `f (curve_right t) = f w`, first compose
+   `(hf.continuousWithinAt hbase).tendsto` with
+   `tendsto_nhdsWithin_iff.mpr ⟨hcurve_tendsto,
+   Eventually.of_forall hcurve_mem⟩`; then use
+   `Filter.Tendsto.congr'` to convert the two curve limits into constant
+   limits and `tendsto_nhds_unique` to get
+   `f z = f base = f w`.  In the Hall-Wightman branch-law proof, `f` is
+   `BHW.extendF F`, `S` is `BHW.ExtendedTube d n`, continuity is
+   `(BHW.extendF_holomorphicOn n F hF_holo hF_cinv).continuousOn`, and the
+   two constant-value identities come from each curve's Lorentz-orbit field
+   plus `BHW.extendF_complexLorentzInvariant_of_cinv`.
    The extended-tube Lorentz-invariance support theorem
    `BHW.extendF_complexLorentzInvariant_of_cinv` is now mechanically pinned:
    destruct `z ∈ ExtendedTube d n` as `z = complexLorentzAction Λ0 w0` with
@@ -685,6 +699,19 @@ implementation contract is:
    non-mechanical content in this theorem is the relative-openness line
    `BHW.sourceExtendedTubeGramDomain_relOpen`, whose proof is the Lemma-3
    local-realization packet below.
+   The assembly from the pointwise Lemma-3 form to the relative-open theorem
+   is now Lean-pinned: first make the point `Z` explicit by setting
+   `hLocal := fun Z hZ =>
+   BHW.sourceExtendedTubeGramDomain_relOpen_at (d := d) hd (n := n) hZ`;
+   then `choose O hO_open hZO hO_sub using hLocal`, take the ambient open set
+   `⋃ Z : {Z // Z ∈ sourceExtendedTubeGramDomain d n}, O Z.1 Z.2`, prove it
+   open by `isOpen_iUnion`, prove the forward inclusion by
+   `Set.mem_iUnion.mpr ⟨⟨W,hWdomain⟩, hZO W hWdomain⟩` plus
+   `BHW.sourceExtendedTubeGramDomain_subset_sourceComplexGramVariety`, and
+   prove the reverse inclusion by `Set.mem_iUnion.mp` followed by
+   `hO_sub Z.1 Z.2 ⟨hWO,hWvar⟩`.  Choosing directly from a theorem with
+   implicit `Z` gives an inconvenient proof-indexed family, so the explicit
+   `hLocal` line is part of the intended Lean proof.
    The local form is
    `BHW.sourceExtendedTubeGramDomain_relOpen_at`; its implementation is the
    Hall-Wightman Lemma-3 realization theorem
@@ -1123,7 +1150,13 @@ implementation contract is:
    direct `rcases hDesc` into the structure is not accepted by Lean's
    `Prop`-elimination rules.  This is not a new assumption: it is the
    noncomputable extraction of an already proved Hall-Wightman existence
-   theorem.
+   theorem.  The exact constructor proof has now been scratch-checked with
+   `SourceExtension.lean` imported: define
+   `Phi := Classical.choose hDesc`, take
+   `hPhi_spec := Classical.choose_spec hDesc`, and fill
+   `U`, `U_eq`, `U_relOpen`, `U_connected`, `Phi`, `Phi_holomorphic`, and
+   `branch_eq` directly from `sourceExtendedTubeGramDomain`, `hGeom`, and
+   `hPhi_spec`.
 5. `BHW.hallWightman_sourceScalarRepresentativeData` composes the preceding
    four obligations for a general forward-tube function; only then does
    `BHW.sourceScalarRepresentativeData_bvt_F` specialize it using
