@@ -492,6 +492,11 @@ implementation contract is:
    unspecified rank argument.  The low-rank proof must also expose the genuine
    linear algebra subfacts
    `BHW.hw_lowRank_selectedSpanFrame_of_sameSourceGram`,
+   `BHW.sourcePrincipalGramMatrix`,
+   `BHW.hw_selectedSpanCoeff`,
+   `BHW.hw_selectedSpanCoeff_projection_eq`,
+   `BHW.hw_lowRank_selected_residual_orthogonal`,
+   `BHW.hw_lowRank_residual_pairing_eq_of_sameSourceGram`,
    `BHW.hw_lowRank_alignedResidualFrame_of_sameSourceGram`,
    `BHW.ComplexMinkowskiNondegenerateSubspace`,
    `BHW.complexMinkowski_isotropicDualFrame_of_residualFrame`,
@@ -526,6 +531,13 @@ implementation contract is:
    `base_mem`, `contracted_left_mem`, and `contracted_right_mem` are theorem
    outputs, not assumptions and not consequences of closedness of the open
    extended tube.
+   The selected-span step is also explicit: the coefficients are the inverse
+   principal-Gram-block formula
+   `hw_selectedSpanCoeff n r I G i = row_i(G) * A⁻¹`, where
+   `A = sourcePrincipalGramMatrix n r I G`; residual orthogonality is the
+   finite identity `row_i * A⁻¹ * A = row_i`, and residual pairing equality
+   follows by expanding both sides as polynomials in the common source Gram
+   entries and rewriting by `hgram`.
    The later convergence proof must use the explicit contracted
    configurations and `Real.tendsto_exp_neg_atTop_nhds_zero`, not continuity
    of a noncomputably chosen `t ↦ contract t`.  The contraction data

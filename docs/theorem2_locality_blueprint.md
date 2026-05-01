@@ -4721,6 +4721,83 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (w i - ∑ b : Fin r, coeff i b • w (I b))
               (w j - ∑ b : Fin r, coeff j b • w (I b))
 
+      def BHW.sourcePrincipalGramMatrix
+          (n r : Nat)
+          (I : Fin r -> Fin n)
+          (G : Fin n -> Fin n -> ℂ) :
+          Matrix (Fin r) (Fin r) ℂ :=
+        Matrix.of fun a b => G (I a) (I b)
+
+      noncomputable def BHW.hw_selectedSpanCoeff
+          (n r : Nat)
+          (I : Fin r -> Fin n)
+          (G : Fin n -> Fin n -> ℂ)
+          (i : Fin n) :
+          Fin r -> ℂ :=
+        fun b =>
+          ∑ a : Fin r,
+            G i (I a) *
+              (BHW.sourcePrincipalGramMatrix n r I G)⁻¹ a b
+
+      theorem BHW.hw_selectedSpanCoeff_projection_eq
+          {G : Fin n -> Fin n -> ℂ}
+          {I : Fin r -> Fin n}
+          (hunit :
+            IsUnit
+              (BHW.sourcePrincipalGramMatrix n r I G).det)
+          (i : Fin n) (a : Fin r) :
+          ∑ b : Fin r,
+            BHW.hw_selectedSpanCoeff n r I G i b *
+              G (I b) (I a) =
+            G i (I a)
+
+      theorem BHW.hw_lowRank_selected_residual_orthogonal
+          [NeZero d]
+          {z : Fin n -> Fin (d + 1) -> ℂ}
+          {I : Fin r -> Fin n}
+          (hunit :
+            IsUnit
+              (BHW.sourcePrincipalGramMatrix n r I
+                (BHW.sourceMinkowskiGram d n z)).det) :
+          ∀ i a,
+            BHW.complexMinkowskiBilinear d
+              (z i -
+                ∑ b : Fin r,
+                  BHW.hw_selectedSpanCoeff n r I
+                    (BHW.sourceMinkowskiGram d n z) i b • z (I b))
+              (z (I a)) = 0
+
+      theorem BHW.hw_lowRank_residual_pairing_eq_of_sameSourceGram
+          [NeZero d]
+          {z w : Fin n -> Fin (d + 1) -> ℂ}
+          {I : Fin r -> Fin n}
+          (hunit :
+            IsUnit
+              (BHW.sourcePrincipalGramMatrix n r I
+                (BHW.sourceMinkowskiGram d n z)).det)
+          (hgram :
+            BHW.sourceMinkowskiGram d n z =
+              BHW.sourceMinkowskiGram d n w) :
+          ∀ i j,
+            BHW.complexMinkowskiBilinear d
+              (z i -
+                ∑ b : Fin r,
+                  BHW.hw_selectedSpanCoeff n r I
+                    (BHW.sourceMinkowskiGram d n z) i b • z (I b))
+              (z j -
+                ∑ b : Fin r,
+                  BHW.hw_selectedSpanCoeff n r I
+                    (BHW.sourceMinkowskiGram d n z) j b • z (I b)) =
+            BHW.complexMinkowskiBilinear d
+              (w i -
+                ∑ b : Fin r,
+                  BHW.hw_selectedSpanCoeff n r I
+                    (BHW.sourceMinkowskiGram d n z) i b • w (I b))
+              (w j -
+                ∑ b : Fin r,
+                  BHW.hw_selectedSpanCoeff n r I
+                    (BHW.sourceMinkowskiGram d n z) j b • w (I b))
+
       theorem BHW.hw_lowRank_selectedSpanFrame_of_sameSourceGram
           [NeZero d]
           (hd : 2 <= d)
@@ -5924,6 +6001,91 @@ Proof decomposition of this theorem, without hiding the analytic work:
       selected-span Gram equality to build the isometry of the two
       nondegenerate spans, then extend it to a full element of
       `ComplexLorentzGroup d` by `BHW.complexMinkowski_wittExtension`.
+
+      Lean-shaped selected-span coefficient construction:
+
+      ```lean
+      theorem BHW.hw_lowRank_selectedSpanFrame_of_sameSourceGram ... := by
+        let G := BHW.sourceMinkowskiGram d n z
+        let r := BHW.sourceGramMatrixRank n G
+        have hGsym : G ∈ BHW.sourceSymmetricMatrixSpace n := by
+          intro i j
+          exact BHW.sourceMinkowskiGram_symm d n z i j
+        have hrank :
+            (Matrix.of fun i j : Fin n => G i j).rank = r := by
+          rfl
+        rcases BHW.exists_sourcePrincipalMinor_ne_zero_of_sourceSymmetricRank
+            hGsym hrank with
+          ⟨I, hI_inj, hminor⟩
+        let A := BHW.sourcePrincipalGramMatrix n r I G
+        have hunit : IsUnit A.det := by
+          simpa [A, BHW.sourcePrincipalGramMatrix, BHW.sourceMatrixMinor]
+            using hminor
+        let coeff : Fin n -> Fin r -> ℂ :=
+          fun i => BHW.hw_selectedSpanCoeff n r I G i
+        have hsel :
+            ∀ a b,
+              BHW.sourceMinkowskiGram d n z (I a) (I b) =
+                BHW.sourceMinkowskiGram d n w (I a) (I b) := by
+          intro a b
+          simpa [G] using congrFun (congrFun hgram (I a)) (I b)
+        have hleft_orth :
+            ∀ i a,
+              BHW.complexMinkowskiBilinear d
+                (z i - ∑ b : Fin r, coeff i b • z (I b))
+                (z (I a)) = 0 := by
+          simpa [coeff, G] using
+            BHW.hw_lowRank_selected_residual_orthogonal
+              (d := d) (n := n) (r := r) (z := z) (I := I)
+              hunit
+        have hright_orth :
+            ∀ i a,
+              BHW.complexMinkowskiBilinear d
+                (w i - ∑ b : Fin r, coeff i b • w (I b))
+                (w (I a)) = 0 := by
+          -- Same coefficient formula, with the principal matrix rewritten by
+          -- `hgram`.
+          have hunitW :
+              IsUnit
+                (BHW.sourcePrincipalGramMatrix n r I
+                  (BHW.sourceMinkowskiGram d n w)).det := by
+            simpa [G, hgram] using hunit
+          simpa [coeff, G, hgram] using
+            BHW.hw_lowRank_selected_residual_orthogonal
+              (d := d) (n := n) (r := r) (z := w) (I := I)
+              hunitW
+        have hres_pair :
+            ∀ i j,
+              BHW.complexMinkowskiBilinear d
+                (z i - ∑ b : Fin r, coeff i b • z (I b))
+                (z j - ∑ b : Fin r, coeff j b • z (I b)) =
+              BHW.complexMinkowskiBilinear d
+                (w i - ∑ b : Fin r, coeff i b • w (I b))
+                (w j - ∑ b : Fin r, coeff j b • w (I b)) := by
+          simpa [coeff, G] using
+            BHW.hw_lowRank_residual_pairing_eq_of_sameSourceGram
+              (d := d) (n := n) (r := r) (z := z) (w := w)
+              (I := I) hunit hgram
+        refine ⟨r, I, rfl, ?_⟩
+        exact
+          { I_injective := hI_inj
+            principal_minor_ne := by simpa [G] using hminor
+            selected_gram_eq := hsel
+            coeff := coeff
+            left_residual_orth := hleft_orth
+            right_residual_orth := hright_orth
+            residual_pairing_eq := hres_pair }
+      ```
+
+      The support theorem
+      `BHW.hw_selectedSpanCoeff_projection_eq` is just
+      `row_i * A⁻¹ * A = row_i` for the selected principal Gram matrix
+      `A`; `BHW.hw_lowRank_selected_residual_orthogonal` expands the
+      bilinear pairing and applies that identity.  The residual pairing
+      equality theorem expands both residual pairings into a finite polynomial
+      in the common source Gram entries and the common coefficient formula,
+      then rewrites by `hgram`.  Thus no source regularity, connectedness, or
+      analytic continuation is used in this selected-span step.
 
       After applying that transform, the remaining discrepancy of `Λ0 z` from
       `w` lies in
