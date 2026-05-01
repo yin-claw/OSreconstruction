@@ -5081,20 +5081,25 @@ Proof decomposition of this theorem, without hiding the analytic work:
             ext μ
             simp [mul_assoc, Finset.mul_sum] }
 
+      def BHW.sourceCoefficientGramMap
+          (n : Nat)
+          (G : Fin n -> Fin n -> ℂ) :
+          (Fin n -> ℂ) →ₗ[ℂ] (Fin n -> ℂ) :=
+        { toFun := fun a j => ∑ i : Fin n, a i * G i j
+          map_add' := by
+            intro a b
+            ext j
+            simp [add_mul, Finset.sum_add_distrib]
+          map_smul' := by
+            intro c a
+            ext j
+            simp [mul_assoc, Finset.mul_sum] }
+
       def BHW.sourceCoefficientGramKernel
           (n : Nat)
           (G : Fin n -> Fin n -> ℂ) :
           Submodule ℂ (Fin n -> ℂ) :=
-        LinearMap.ker
-          { toFun := fun a j => ∑ i : Fin n, a i * G i j
-            map_add' := by
-              intro a b
-              ext j
-              simp [add_mul, Finset.sum_add_distrib]
-            map_smul' := by
-              intro c a
-              ext j
-              simp [mul_assoc, Finset.mul_sum] }
+        LinearMap.ker (BHW.sourceCoefficientGramMap n G)
 
       theorem BHW.sourceCoefficientEval_ker_le_gramKernel
           [NeZero d]
@@ -5359,6 +5364,112 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceCoefficientGramKernel`; its quotient rank is exactly
       `finrank M - finrank (restrictedMinkowskiRadical d M)`.
 
+      The first bridge is implemented through three explicit support facts,
+      not by identifying two different notions of rank informally:
+
+      ```lean
+      theorem BHW.sourceGramMatrixRank_eq_finrank_range_sourceCoefficientGramMap
+          (n : Nat)
+          (G : Fin n -> Fin n -> ℂ) :
+          BHW.sourceGramMatrixRank n G =
+            Module.finrank ℂ
+              (LinearMap.range (BHW.sourceCoefficientGramMap n G))
+
+      theorem BHW.sourceCoefficientGramKernel_eq_eval_preimage_radical
+          [NeZero d]
+          (n : Nat)
+          (z : Fin n -> Fin (d + 1) -> ℂ) :
+          BHW.sourceCoefficientGramKernel n
+              (BHW.sourceMinkowskiGram d n z) =
+            ((BHW.restrictedMinkowskiRadical d
+                (LinearMap.range (BHW.sourceCoefficientEval d n z))).map
+              (Submodule.subtype
+                (LinearMap.range (BHW.sourceCoefficientEval d n z)))).comap
+              (BHW.sourceCoefficientEval d n z)
+
+      theorem BHW.finrank_range_sourceCoefficientGramMap_eq_restrictedRank
+          [NeZero d]
+          (n : Nat)
+          (z : Fin n -> Fin (d + 1) -> ℂ) :
+          Module.finrank ℂ
+            (LinearMap.range
+              (BHW.sourceCoefficientGramMap n
+                (BHW.sourceMinkowskiGram d n z))) =
+          BHW.restrictedMinkowskiRank d
+            (LinearMap.range (BHW.sourceCoefficientEval d n z))
+      ```
+
+      Proof transcript for the first bridge:
+      `sourceGramMatrixRank_eq_finrank_range_sourceCoefficientGramMap` is the
+      standard finite-matrix identification of the rank of the matrix
+      `(G i j)` with the finrank of the range of the associated linear map
+      `a ↦ (j ↦ ∑ i, a i * G i j)`.  For the preimage-radical theorem, unfold
+      all three maps.  A coefficient vector `a` is in the scalar Gram kernel
+      exactly when, for every coefficient vector `b`,
+      `∑ i j, a i * b j * sourceMinkowskiGram d n z i j = 0`; after
+      rearranging finite sums, this says that the vector
+      `sourceCoefficientEval d n z a`, viewed as an element of
+      `M := LinearMap.range (sourceCoefficientEval d n z)`, pairs to zero
+      with every element of `M`, which is precisely membership in
+      `restrictedMinkowskiRadical d M`.
+
+      Lean-shaped proof of the quotient rank computation:
+
+      ```lean
+      theorem BHW.finrank_range_sourceCoefficientGramMap_eq_restrictedRank
+          ... := by
+        let E := Fin n -> ℂ
+        let evalZ := BHW.sourceCoefficientEval d n z
+        let M := LinearMap.range evalZ
+        let gramMap :=
+          BHW.sourceCoefficientGramMap n
+            (BHW.sourceMinkowskiGram d n z)
+        have hker_pre :
+            LinearMap.ker gramMap =
+              ((BHW.restrictedMinkowskiRadical d M).map
+                (Submodule.subtype M)).comap evalZ :=
+          BHW.sourceCoefficientGramKernel_eq_eval_preimage_radical
+            (d := d) n z
+        have hquot :
+            (E ⧸ LinearMap.ker evalZ) ≃ₗ[ℂ] M :=
+          evalZ.quotKerEquivRange
+        have hrad_quot :
+            ((LinearMap.ker gramMap).map
+              (Submodule.mkQ (LinearMap.ker evalZ))) ≃ₗ[ℂ]
+              BHW.restrictedMinkowskiRadical d M := by
+          -- Use `hker_pre` and `hquot`: the scalar Gram radical modulo
+          -- `ker evalZ` is exactly the restricted radical in `M`.
+          exact BHW.scalarGramKernel_quot_equiv_restrictedRadical
+            (d := d) n z hker_pre hquot
+        have hrank :
+            Module.finrank ℂ (LinearMap.range gramMap) =
+              Module.finrank ℂ M -
+                Module.finrank ℂ
+                  (BHW.restrictedMinkowskiRadical d M) := by
+          -- Rank-nullity for `gramMap`, then replace
+          -- `finrank E - finrank ker evalZ` by `finrank M` and
+          -- replace the extra quotient radical by `hrad_quot`.
+          exact
+            BHW.rank_sourceCoefficientGramMap_via_restrictedRadical
+              (d := d) n z hker_pre hquot hrad_quot
+        simpa [BHW.restrictedMinkowskiRank] using hrank
+
+      theorem BHW.sourceGramMatrixRank_eq_restrictedMinkowskiRank_range
+          ... := by
+        rw [BHW.sourceGramMatrixRank_eq_finrank_range_sourceCoefficientGramMap]
+        exact
+          BHW.finrank_range_sourceCoefficientGramMap_eq_restrictedRank
+            (d := d) n z
+      ```
+
+      The two helper names
+      `scalarGramKernel_quot_equiv_restrictedRadical` and
+      `rank_sourceCoefficientGramMap_via_restrictedRadical` are proof-local
+      linear algebra helpers if the implementation needs them; they are not
+      new mathematical route surfaces.  Their content is exactly quotienting
+      by `ker evalZ`, applying rank-nullity, and transporting the radical
+      through `evalZ.quotKerEquivRange`.
+
       The second bridge is
       `sourceGramMatrixRank_lt_orbitThreshold_of_range_degenerate`.  If the
       restricted radical is nonzero, then `M` is not the whole ambient space:
@@ -5376,6 +5487,100 @@ Proof decomposition of this theorem, without hiding the analytic work:
       finite-dimensional rank-radical step in Hall-Wightman Lemma 2; it is
       not the later source-map regularity theorem.
 
+      The rank-radical bridge is itself decomposed into the following
+      finite-dimensional support facts:
+
+      ```lean
+      theorem BHW.restrictedMinkowskiRadical_nontrivial_of_degenerate
+          [NeZero d]
+          {M : Submodule ℂ (Fin (d + 1) -> ℂ)}
+          (hdeg :
+            ¬ BHW.ComplexMinkowskiNondegenerateSubspace d M) :
+          0 < Module.finrank ℂ
+            (BHW.restrictedMinkowskiRadical d M)
+
+      theorem BHW.restrictedMinkowskiRank_lt_finrank_of_degenerate
+          [NeZero d]
+          {M : Submodule ℂ (Fin (d + 1) -> ℂ)}
+          (hdeg :
+            ¬ BHW.ComplexMinkowskiNondegenerateSubspace d M) :
+          BHW.restrictedMinkowskiRank d M <
+            Module.finrank ℂ M
+
+      theorem BHW.finrank_range_sourceCoefficientEval_le
+          [NeZero d]
+          (n : Nat)
+          (z : Fin n -> Fin (d + 1) -> ℂ) :
+          Module.finrank ℂ
+            (LinearMap.range (BHW.sourceCoefficientEval d n z)) <= n
+
+      theorem BHW.finrank_restrictedSpan_le_d_of_degenerate
+          [NeZero d]
+          (hd : 2 <= d)
+          {M : Submodule ℂ (Fin (d + 1) -> ℂ)}
+          (hdeg :
+            ¬ BHW.ComplexMinkowskiNondegenerateSubspace d M) :
+          Module.finrank ℂ M <= d
+      ```
+
+      Proof transcript for these support facts:
+      `restrictedMinkowskiRadical_nontrivial_of_degenerate` unfolds
+      `ComplexMinkowskiNondegenerateSubspace` and
+      `restrictedMinkowskiRadical`; the negated universal statement gives
+      `x : M` with `x ≠ 0` and zero pairing against every `y : M`, hence a
+      nonzero element of the radical and positive finrank.  The range bound is
+      the standard finite-dimensional inequality
+      `finrank (LinearMap.range evalZ) <= finrank (Fin n -> ℂ) = n`.
+      `restrictedMinkowskiRank_lt_finrank_of_degenerate` is then the arithmetic
+      statement
+      `finrank M - finrank radical < finrank M`: the radical is a subspace of
+      `M`, so its positive finrank is at most `finrank M`, and `Nat.sub_lt`
+      applies.
+      For `finrank_restrictedSpan_le_d_of_degenerate`, first prove
+      `M ≠ ⊤`; if `M = ⊤`, transport the ambient nondegeneracy of the complex
+      Minkowski form through the subtype equivalence and contradict `hdeg`.
+      A proper submodule of the `(d + 1)`-dimensional ambient space has
+      finrank `< d + 1`, hence `<= d`.
+
+      Lean-shaped proof of the rank-drop theorem:
+
+      ```lean
+      theorem BHW.sourceGramMatrixRank_lt_orbitThreshold_of_range_degenerate
+          ... := by
+        let M := LinearMap.range (BHW.sourceCoefficientEval d n z)
+        have hrad_pos :
+            0 < Module.finrank ℂ
+              (BHW.restrictedMinkowskiRadical d M) :=
+          BHW.restrictedMinkowskiRadical_nontrivial_of_degenerate
+            (d := d) hdeg
+        have hM_le_n : Module.finrank ℂ M <= n :=
+          BHW.finrank_range_sourceCoefficientEval_le
+            (d := d) n z
+        have hM_le_d : Module.finrank ℂ M <= d :=
+          BHW.finrank_restrictedSpan_le_d_of_degenerate
+            (d := d) hd hdeg
+        have hrank_lt_M :
+            BHW.restrictedMinkowskiRank d M <
+              Module.finrank ℂ M :=
+          BHW.restrictedMinkowskiRank_lt_finrank_of_degenerate
+            (d := d) hdeg
+        have hrank_lt_d :
+            BHW.restrictedMinkowskiRank d M < d :=
+          lt_of_lt_of_le hrank_lt_M hM_le_d
+        have hrank_lt_n :
+            BHW.restrictedMinkowskiRank d M < n :=
+          lt_of_lt_of_le hrank_lt_M hM_le_n
+        rw [BHW.sourceGramMatrixRank_eq_restrictedMinkowskiRank_range
+          (d := d) n z]
+        exact lt_min hrank_lt_d hrank_lt_n
+      ```
+
+      The displayed proof is meant to be implemented with Mathlib's actual
+      finite-dimensional submodule lemmas for `Module.finrank`; if a helper
+      name differs, the obligation is still exactly the three support facts
+      above.  No analyticity, connectedness, or BHW permutation machinery is
+      involved in this rank-drop theorem.
+
       Lean-shaped proof of the nondegeneracy theorem:
 
       ```lean
@@ -5387,6 +5592,34 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.sourceGramMatrixRank_lt_orbitThreshold_of_range_degenerate
             (d := d) hd n z hdeg
         exact not_lt_of_ge hzRank hlt
+      ```
+
+      Lean-shaped proof of the basic coefficient-kernel inclusion:
+
+      ```lean
+      theorem BHW.sourceCoefficientEval_ker_le_gramKernel ... := by
+        intro a ha
+        change
+          BHW.sourceCoefficientGramMap n
+            (BHW.sourceMinkowskiGram d n z) a = 0
+        ext j
+        have hEval_zero :
+            BHW.sourceCoefficientEval d n z a = 0 :=
+          LinearMap.mem_ker.mp ha
+        have hpair :
+            BHW.complexMinkowskiBilinear d
+              (BHW.sourceCoefficientEval d n z a) (z j) = 0 := by
+          rw [hEval_zero]
+          simp [BHW.complexMinkowskiBilinear]
+        -- Expanding the pairing of `∑ i, a i • z i` with `z j`
+        -- gives exactly the `j`th coordinate of the scalar Gram-kernel map.
+        simpa [BHW.sourceCoefficientEval,
+          BHW.sourceCoefficientGramMap,
+          BHW.sourceCoefficientGramKernel,
+          BHW.sourceMinkowskiGram,
+          BHW.complexMinkowskiBilinear,
+          Finset.mul_sum, Finset.sum_mul, Finset.sum_comm,
+          mul_assoc, mul_left_comm, mul_comm] using hpair
       ```
 
       Lean-shaped proof of the high-rank coefficient-kernel equality:
@@ -5408,13 +5641,32 @@ Proof decomposition of this theorem, without hiding the analytic work:
                   (evalZ a) (v : Fin (d + 1) -> ℂ) = 0 := by
             intro v
             rcases v with ⟨_, b, rfl⟩
+            have ha0 :
+                BHW.sourceCoefficientGramMap n
+                  (BHW.sourceMinkowskiGram d n z) a = 0 :=
+              LinearMap.mem_ker.mp ha
+            have ha0_coord :
+                ∀ j,
+                  BHW.sourceCoefficientGramMap n
+                    (BHW.sourceMinkowskiGram d n z) a j = 0 :=
+              fun j => congrFun ha0 j
             -- Expand the bilinear pairing of the two coefficient sums.
-            -- `ha` is exactly the statement that the left coefficient vector
-            -- lies in the scalar Gram kernel.
-            simpa [evalZ, BHW.sourceCoefficientEval,
-              BHW.sourceCoefficientGramKernel, BHW.sourceMinkowskiGram,
-              Finset.mul_sum, Finset.sum_mul, mul_assoc, mul_left_comm,
-              mul_comm] using congrFun ha b
+            -- It is a finite linear combination of the zero coordinates
+            -- of the scalar Gram map applied to `a`.
+            calc
+              BHW.complexMinkowskiBilinear d (evalZ a) (evalZ b)
+                  =
+                ∑ j : Fin n,
+                  b j *
+                    BHW.sourceCoefficientGramMap n
+                      (BHW.sourceMinkowskiGram d n z) a j := by
+                    simp [evalZ, BHW.sourceCoefficientEval,
+                      BHW.sourceCoefficientGramMap,
+                      BHW.sourceMinkowskiGram,
+                      BHW.complexMinkowskiBilinear,
+                      Finset.mul_sum, Finset.sum_mul, Finset.sum_comm,
+                      mul_assoc, mul_left_comm, mul_comm]
+              _ = 0 := by simp [ha0_coord]
           have hEval_mem : evalZ a ∈ LinearMap.range evalZ := ⟨a, rfl⟩
           have hEval_zero :
               (⟨evalZ a, hEval_mem⟩ :
@@ -5423,6 +5675,39 @@ Proof decomposition of this theorem, without hiding the analytic work:
           simpa [LinearMap.mem_ker] using
             congrArg Subtype.val hEval_zero
       ```
+
+      Lean-shaped proof of the kernel transport theorem used by the quotient
+      span isometry:
+
+      ```lean
+      theorem BHW.hw_highRank_sourceCoefficientEval_ker_eq_of_sameSourceGram
+          ... := by
+        let evalZ := BHW.sourceCoefficientEval d n z
+        let evalW := BHW.sourceCoefficientEval d n w
+        have hwRank : BHW.HWSourceGramOrbitRankAt d n w :=
+          (BHW.hwSourceGramOrbitRankAt_of_sourceGram_eq
+            (d := d) (n := n) hgram).1 hzRank
+        calc
+          LinearMap.ker evalZ
+              =
+            BHW.sourceCoefficientGramKernel n
+              (BHW.sourceMinkowskiGram d n z) :=
+                BHW.hw_highRank_eval_ker_eq_gramKernel
+                  (d := d) hd (n := n) hzRank
+          _ =
+            BHW.sourceCoefficientGramKernel n
+              (BHW.sourceMinkowskiGram d n w) := by
+                rw [hgram]
+          _ = LinearMap.ker evalW :=
+                (BHW.hw_highRank_eval_ker_eq_gramKernel
+                  (d := d) hd (n := n) hwRank).symm
+      ```
+
+      Thus the assignment on coefficient classes is genuinely well-defined:
+      the identity map on coefficient space descends only after the two kernel
+      equalities have been proved.  The proof does not use local source-map
+      regularity, connectedness of the scalar domain, or any adjacent
+      `S'_n`/PET information.
 
       The proof of
       `hw_sameSourceGram_singular_contractionData` is the paper's
@@ -5659,6 +5944,65 @@ Proof decomposition of this theorem, without hiding the analytic work:
       This is the same proof shape as the existing restricted-Lorentz theorem
       `extendF_complex_lorentz_invariant`, but using the already-complex
       invariance hypothesis directly.
+
+      Lean-shaped proof:
+
+      ```lean
+      theorem BHW.extendF_complexLorentzInvariant_of_cinv
+          [NeZero d]
+          (hd : 2 <= d)
+          (n : Nat)
+          (F : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
+          (_hF_holo : DifferentiableOn ℂ F (BHW.ForwardTube d n))
+          (hF_cinv :
+            ∀ (Λ : ComplexLorentzGroup d)
+              (z : Fin n -> Fin (d + 1) -> ℂ),
+              z ∈ BHW.ForwardTube d n ->
+              BHW.complexLorentzAction Λ z ∈ BHW.ForwardTube d n ->
+              F (BHW.complexLorentzAction Λ z) = F z)
+          (Λ : ComplexLorentzGroup d)
+          {z : Fin n -> Fin (d + 1) -> ℂ}
+          (hz : z ∈ BHW.ExtendedTube d n) :
+          BHW.extendF F (BHW.complexLorentzAction Λ z) =
+            BHW.extendF F z := by
+        classical
+        rcases Set.mem_iUnion.mp hz with ⟨Λ0, w0, hw0, hz_eq⟩
+        have hex_z :
+            ∃ (w : Fin n -> Fin (d + 1) -> ℂ),
+              w ∈ BHW.ForwardTube d n ∧
+                ∃ Γ : ComplexLorentzGroup d,
+                  z = BHW.complexLorentzAction Γ w :=
+          ⟨w0, hw0, Λ0, hz_eq⟩
+        have hex_Lz :
+            ∃ (w : Fin n -> Fin (d + 1) -> ℂ),
+              w ∈ BHW.ForwardTube d n ∧
+                ∃ Γ : ComplexLorentzGroup d,
+                  BHW.complexLorentzAction Λ z =
+                    BHW.complexLorentzAction Γ w := by
+          refine ⟨w0, hw0, Λ * Λ0, ?_⟩
+          rw [hz_eq, BHW.complexLorentzAction_mul]
+        simp only [BHW.extendF]
+        rw [dif_pos hex_Lz, dif_pos hex_z]
+        rcases hex_Lz.choose_spec with ⟨hwL, ΓL, hΓL⟩
+        rcases hex_z.choose_spec with ⟨hwZ, ΓZ, hΓZ⟩
+        exact
+          BHW.extendF_preimage_eq (d := d) n F hF_cinv
+            hwL hwZ
+            (Λ₁ := ΓL) (Λ₂ := Λ * ΓZ)
+            (by
+              calc
+                BHW.complexLorentzAction ΓL hex_Lz.choose
+                    = BHW.complexLorentzAction Λ z := hΓL.symm
+                _ =
+                  BHW.complexLorentzAction (Λ * ΓZ) hex_z.choose := by
+                    rw [hΓZ, BHW.complexLorentzAction_mul])
+      ```
+
+      The hypotheses `hd` and `_hF_holo` are present because the theorem is
+      consumed beside `extendF_holomorphicOn` in the Hall-Wightman branch-law
+      proof; the invariance calculation itself only needs `hF_cinv`,
+      `ExtendedTube` as the complex Lorentz orbit of `ForwardTube`, and
+      `extendF_preimage_eq`.
 
       Lean-shaped proof of the branch law after these Lemma-2 subfacts:
 
