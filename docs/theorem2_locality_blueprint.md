@@ -9972,38 +9972,145 @@ Proof decomposition of this theorem, without hiding the analytic work:
                     (fun k => wickRotatePoint (x k))) * φ x
       ```
 
-      Proof transcript for this comparison theorem:
+      ACR-status audit for the right hand side: the raw adjacent Wick section
+      `BHW.permAct τ (fun k => wickRotatePoint (x k))` is **not** presently
+      known to lie in `AnalyticContinuationRegion d n 1`.  The checked theorem
+      `BHW.adjacent_wick_traces_mem_acrOne i hi 1` gives the identity Wick
+      trace and, after the second adjacent relabeling, the identity Wick trace
+      again; it does not give raw adjacent membership.  Applying
+      `BHW.wickRotate_ordered_mem_acrOne τ` would require
+      `x ∈ EuclideanOrderedPositiveTimeSector τ`, whereas the Figure-2-4
+      hypotheses give `x ∈ ... 1` and `x ∘ τ ∈ ... τ`.  Therefore the term
+      `bvt_F OS lgc n (BHW.permAct τ (wick x))` in the comparison theorem is
+      used only as a total selected function whose compact pairing is
+      mechanically rewritten by the finite permutation change of variables to
+      the checked identity-Wick ACR pairing for the permuted test `ψZ`.  The
+      proof must not cite ACR holomorphy, ACR uniqueness, or
+      `bvt_F_acrOne_package.1` at the raw adjacent point.
 
-      1. Use the OS-II ACR(1) construction and E3 to identify
-         `z ↦ bvt_F OS lgc n z` on the adjacent ordered Wick branch as the
-         symmetric Euclidean compact-test branch selected by the permuted test
-         `ψZ`.
+      The purely mechanical right-side rewrite is:
+
+      ```lean
+      theorem BHW.os45SPrime_rawAdjacentWick_bvtF_pairing_eq_permutedSchwinger
+          [NeZero d]
+          (OS : OsterwalderSchraderAxioms d)
+          (lgc : OSLinearGrowthCondition d OS)
+          (n : Nat) (i : Fin n) (hi : i.val + 1 < n)
+          (V0 : Set (NPointDomain d n))
+          (hV0_jost : ∀ x, x ∈ V0 -> x ∈ BHW.JostSet d n) :
+          let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+          ∀ (φ : SchwartzNPoint d n)
+            (_hφ_comp :
+              HasCompactSupport (φ : NPointDomain d n -> ℂ))
+            (hφ_supp :
+              tsupport (φ : NPointDomain d n -> ℂ) ⊆ V0),
+            let φZ : ZeroDiagonalSchwartz d n :=
+              ⟨φ, zeroDiagonal_of_tsupport_subset_jostOverlap
+                (d := d) (n := n) V0 hV0_jost φ hφ_supp⟩
+            let ψZ : ZeroDiagonalSchwartz d n :=
+              permuteZeroDiagonalSchwartz (d := d) (n := n) τ.symm φZ
+            ∫ x : NPointDomain d n,
+                bvt_F OS lgc n
+                  (BHW.permAct (d := d) τ
+                    (fun k => wickRotatePoint (x k))) * φ x
+              =
+            OS.S n ψZ
+      ```
+
+      Lean-shaped proof of this support theorem:
+
+      ```lean
+      theorem BHW.os45SPrime_rawAdjacentWick_bvtF_pairing_eq_permutedSchwinger
+          ... := by
+        classical
+        let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+        intro φ hφ_comp hφ_supp
+        let φZ : ZeroDiagonalSchwartz d n :=
+          ⟨φ, zeroDiagonal_of_tsupport_subset_jostOverlap
+            (d := d) (n := n) V0 hV0_jost φ hφ_supp⟩
+        let ψZ : ZeroDiagonalSchwartz d n :=
+          permuteZeroDiagonalSchwartz (d := d) (n := n) τ.symm φZ
+        have hψ :
+            OS.S n ψZ =
+              ∫ x : NPointDomain d n,
+                bvt_F OS lgc n (fun k => wickRotatePoint (x k)) *
+                  φ (fun k => x (τ k)) := by
+          simpa [ψZ, φZ, τ] using
+            bvt_euclidean_restriction (d := d) OS lgc n ψZ
+        have hchange :
+            ∫ x : NPointDomain d n,
+                bvt_F OS lgc n
+                  (BHW.permAct (d := d) τ
+                    (fun k => wickRotatePoint (x k))) * φ x
+              =
+            ∫ x : NPointDomain d n,
+                bvt_F OS lgc n (fun k => wickRotatePoint (x k)) *
+                  φ (fun k => x (τ k)) := by
+          simpa [τ, BHW.permAct_wickRotatePoint, Equiv.swap_inv] using
+            (integral_perm_npoint_volume
+              (d := d) (n := n) τ
+              (fun x =>
+                bvt_F OS lgc n (fun k => wickRotatePoint (x k)) *
+                  φ (fun k => x (τ k)))).symm
+        exact hchange.trans hψ.symm
+      ```
+
+      Thus the real mathematical proof content of
+      `BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_bvt_F` is the
+      left-side theorem
+
+      ```lean
+      ∫ x, BHW.extendF (bvt_F OS lgc n)
+              (BHW.permAct τ (fun k => wickRotatePoint (x k))) * φ x
+        =
+      OS.S n ψZ
+      ```
+
+      on the same selected Figure-2-4 chart.  Once that OS-I §4.5 theorem is
+      proved, the displayed comparison theorem is the transitive composition
+      of this left-side equality with
+      `BHW.os45SPrime_rawAdjacentWick_bvtF_pairing_eq_permutedSchwinger`.  If
+      both lemmas are kept private in the implementation file, the public
+      comparison theorem still exposes the correct compact-support boundary
+      content without pretending that the raw adjacent point lies in ACR(1).
+
+      Proof transcript for the left-side OS-I §4.5 theorem:
+
+      1. Use the OS-II construction only at the identity Wick ACR branch after
+         the finite change of variables selecting `ψZ`; the compact branch is
+         `OS.S n ψZ` by `bvt_euclidean_restriction`.  If the proof is oriented
+         through the unpermuted test `φZ`, apply `OS.E3_symmetric` once to
+         identify `OS.S n φZ` with `OS.S n ψZ`.  This is compact-test
+         Schwinger symmetry, not pointwise permutation symmetry of the final
+         Wightman boundary distributions.
       2. Use equations (4.1), (4.12), and (4.14) of OS I to construct the
-         same symmetric analytic branch on the permuted tube containing
-         `BHW.permAct τ (fun k => wickRotatePoint (x k))`.
-      3. Apply Bargmann-Hall-Wightman to continue that branch
-         single-valuedly and complex-Lorentz invariantly to the ordinary
-         extended-tube realization supplied by Figure 2-4.
+         symmetric analytic datum on the adjacent permuted tube family whose
+         compact Euclidean boundary is the same `OS.S n ψZ` branch.
+      3. Apply Bargmann-Hall-Wightman to continue that datum single-valuedly
+         and complex-Lorentz invariantly to the ordinary extended-tube
+         realization supplied by Figure 2-4.  The only raw-section domain fact
+         used at this point is
+         `BHW.os45Figure24_permutedWick_mem_extendedTube_zero`.
       4. Apply the Jost real-environment uniqueness theorem on the selected
-         compact test family to identify the BHW branch with the ACR branch in
-         compact pairings.  This is a theorem about the equality of two
-         continuations of the same local Euclidean branch, not final Wightman
-         locality and not pointwise permutation symmetry.
-      5. Use `BHW.os45Figure24_permutedWick_mem_extendedTube_zero` only as the
-         domain witness for the BHW side; it supplies no value equality.
-      6. Do **not** prove this comparison by invoking the existing
+         compact test family to identify the BHW branch with the Euclidean
+         branch in compact pairings.  This is a theorem about the equality of
+         two continuations of the same local Euclidean branch, not final
+         Wightman locality, not global PET branch independence, and not a
+         pointwise permutation-symmetry shortcut.
+      5. Do **not** prove this comparison by invoking the existing
          `W_analytic_BHW` package for a completed `WightmanFunctions` object:
          that construction consumes `Wfn.locally_commutative`, which is exactly
          the theorem-2 locality output.  The allowed source is the OS-I §4.5
          route before locality: Euclidean symmetry and ACR(1) branch
-         selection, symmetric analytic continuation to the permuted tube,
-         Bargmann-Hall-Wightman single-valued continuation, and Jost
-         real-environment uniqueness.
+         selection on the identity Wick trace, symmetric analytic continuation
+         to the permuted tube, Bargmann-Hall-Wightman single-valued
+         continuation, and Jost real-environment uniqueness.
 
       The public raw Schwinger-valued theorem below is then a mechanical
-      consequence of this comparison theorem plus
-      `bvt_euclidean_restriction` and the finite permutation change of
-      variables.  Like the comparison theorem, it must **not** take
+      consequence of this comparison theorem plus the right-side support
+      theorem
+      `BHW.os45SPrime_rawAdjacentWick_bvtF_pairing_eq_permutedSchwinger`.
+      Like the comparison theorem, it must **not** take
       `hRep : SourceScalarRepresentativeData ...`; the scalar representative
       enters only in the downstream source-coordinate rewrite.
 
@@ -10075,32 +10182,22 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_bvt_F
             (d := d) hd OS lgc n i hi V hV_jost
             hV_ordered hV_swap_ordered hChart φ hφ_comp hφ_supp
-        have hψ :
-            OS.S n ψZ =
-              ∫ x : NPointDomain d n,
-                bvt_F OS lgc n (fun k => wickRotatePoint (x k)) *
-                  φ (fun k => x (τ k)) := by
-          simpa [ψZ, φZ, τ] using
-            bvt_euclidean_restriction (d := d) OS lgc n ψZ
-        have hchange :
+        have hbvt :
             ∫ x : NPointDomain d n,
                 bvt_F OS lgc n
                   (BHW.permAct (d := d) τ
                     (fun k => wickRotatePoint (x k))) * φ x
               =
-            ∫ x : NPointDomain d n,
-                bvt_F OS lgc n (fun k => wickRotatePoint (x k)) *
-                  φ (fun k => x (τ k)) := by
-          simpa [τ, BHW.permAct_wickRotatePoint, Equiv.swap_inv] using
-            (integral_perm_npoint_volume
-              (d := d) (n := n) τ
-              (fun x =>
-                bvt_F OS lgc n (fun k => wickRotatePoint (x k)) *
-                  φ (fun k => x (τ k)))).symm
-        exact hcompare.trans (hchange.trans hψ.symm)
+            OS.S n ψZ :=
+          BHW.os45SPrime_rawAdjacentWick_bvtF_pairing_eq_permutedSchwinger
+            (d := d) OS lgc n i hi hChart.V0
+            (fun x hx => hV_jost x (hChart.V0_sub hx))
+            φ hφ_comp hφ_supp
+        exact hcompare.trans hbvt
       ```
 
       Thus the only non-mechanical raw input is
+      the left-side OS-I §4.5/BHW/Jost equality packaged inside
       `BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_bvt_F`.  The
       Schwinger-valued raw theorem is not an independent source import, and it
       must not be rederived later as a second public theorem from the
@@ -14762,6 +14859,7 @@ in this order:
 	   `S'_n` package
 	   `BHW.os45Figure24_sourceChart_at`,
 	   `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`,
+	   `BHW.os45SPrime_rawAdjacentWick_bvtF_pairing_eq_permutedSchwinger`,
 	   `BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_bvt_F`,
 	   `BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
 	   `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
@@ -15041,6 +15139,7 @@ not as the next task.  The active next implementation order is:
    seed/path package
    `BHW.os45Figure24_sourceChart_at`,
    `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`,
+   `BHW.os45SPrime_rawAdjacentWick_bvtF_pairing_eq_permutedSchwinger`,
    `BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_bvt_F`,
    `BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
    `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,

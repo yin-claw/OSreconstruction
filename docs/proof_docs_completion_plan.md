@@ -53,6 +53,7 @@ local Slot 1:
    Hall-Wightman source descent, and the adjacent `S'_n` package
    `BHW.os45Figure24_sourceChart_at`,
    `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`,
+   `BHW.os45SPrime_rawAdjacentWick_bvtF_pairing_eq_permutedSchwinger`,
    `BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_bvt_F`,
    `BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
    `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
@@ -1022,6 +1023,7 @@ Second, the adjacent `S'_n` seed package must be proved in the order
 documented below:
 `BHW.os45Figure24_sourceChart_at`,
 `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`,
+`BHW.os45SPrime_rawAdjacentWick_bvtF_pairing_eq_permutedSchwinger`,
 `BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_bvt_F`,
 `BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
 `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
@@ -1052,14 +1054,26 @@ that raw section ordinary-extended-tube membership.  Second, the real OS-I
 `BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_bvt_F`:
 `∫ extendF (bvt_F OS lgc n) (permAct τ (wick x)) * φ x =
  ∫ bvt_F OS lgc n (permAct τ (wick x)) * φ x`.
-This theorem says that the ordinary BHW continuation and the OS-II ACR branch
-are the same continuation of the selected adjacent Euclidean germ in compact
-pairings.  It is not pointwise `extendF = bvt_F`, not local EOW, not final
-Wightman locality, not global PET branch independence, and not pointwise
-permutation symmetry.  Third, the Schwinger-valued raw theorem
-`BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger` is a
-mechanical consequence of the comparison theorem, `bvt_euclidean_restriction`
-for `ψZ`, and the finite permutation change of variables.  Fourth, the
+The raw adjacent Wick point is not currently known to be in
+`AnalyticContinuationRegion d n 1`: `adjacent_wick_traces_mem_acrOne` with
+`ρ = 1` gives the identity Wick trace twice after the adjacent relabeling, and
+the theorem `wickRotate_ordered_mem_acrOne τ` would require the unavailable
+hypothesis `x ∈ EuclideanOrderedPositiveTimeSector τ`.  Therefore this theorem
+must not be interpreted as pointwise agreement of `extendF` with an ACR branch
+at the raw adjacent point.  Its right side is used as a total selected
+function whose compact pairing is mechanically rewritten by
+`integral_perm_npoint_volume` and `bvt_euclidean_restriction` to `OS.S n ψZ`.
+The only hard OS-I §4.5 content is the left-side equality
+`∫ extendF (bvt_F OS lgc n) (permAct τ (wick x)) * φ x = OS.S n ψZ`.
+The public comparison theorem is then this hard equality composed with the
+mechanical right-side rewrite.  It is not pointwise `extendF = bvt_F`, not
+local EOW, not final Wightman locality, not global PET branch independence,
+and not pointwise permutation symmetry.  Third, the Schwinger-valued raw theorem
+`BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger` is
+the same hard left-side equality packaged with `φZ`, `ψZ`, and the finite
+permutation bookkeeping; if it is derived from the public comparison theorem,
+the derivation must first use the mechanical right-side support theorem
+`BHW.os45SPrime_rawAdjacentWick_bvtF_pairing_eq_permutedSchwinger`.  Fourth, the
 canonical-lift theorem
 `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger` transports that
 raw Schwinger-valued theorem back to the deterministic Figure-2-4 lift by the
@@ -1086,9 +1100,13 @@ helper `integral_perm_npoint_volume` must be exposed or reproved at the first
 public call site.
 
 The comparison theorem comes from the exact OS sequence
-E3 symmetry -> equations (4.1), (4.12), and (4.14) -> symmetric analytic
-continuation to the permuted tube -> Bargmann-Hall-Wightman single-valued
-complex-Lorentz continuation -> Jost real-environment boundary uniqueness.
+identity-Wick ACR boundary selection for `ψZ` -> optional E3 symmetry if the
+proof is oriented through `φZ` -> equations (4.1), (4.12), and (4.14) ->
+symmetric analytic continuation to the permuted tube ->
+Bargmann-Hall-Wightman single-valued complex-Lorentz continuation -> Jost
+real-environment boundary uniqueness.  The raw adjacent section enters this
+sequence on the `extendF` side through Figure-2-4 ordinary extended-tube
+membership, not through ACR membership.
 It must not be proved by constructing a completed `WightmanFunctions` object
 and using the existing `W_analytic_BHW` package, because that package consumes
 `Wfn.locally_commutative`, the theorem-2 output.  The comparison is an
@@ -1104,7 +1122,8 @@ existing helpers
 `BHW.extendF_eq_on_forwardTube` do not close this gate at
 `permAct τ (wick x)`: those helpers apply to real-embedded boundary points or
 ordinary forward-tube points, while the adjacent Wick section is a complex
-ordinary-extended-tube point selected by Figure-2-4.  Therefore this raw
+ordinary-extended-tube point selected by Figure-2-4 and is not supplied as an
+ACR(1) point by the existing trace-membership API.  Therefore this raw
 comparison theorem remains the exact BHW/Jost mathematical source
 obligation before any adjacent `S'_n` production Lean.
 
