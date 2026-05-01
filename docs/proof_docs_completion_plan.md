@@ -53,6 +53,10 @@ local Slot 1:
    Hall-Wightman source descent, and the adjacent `S'_n` package
    `BHW.os45Figure24_sourceChart_at`,
    `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`,
+   `BHW.OS45SPrimeFigure24LocalSourceSeedData`,
+   `BHW.os45SPrime_figure24SourceEqOnUsrc_of_compactWickPairing`,
+   `BHW.os45SPrime_figure24LocalSourceSeedData_of_OSI45`,
+   `BHW.os45SPrime_figure24LocalSourceEq_of_seedData`,
    `BHW.os45SPrime_figure24LocalSourceEq_of_BHWJost`,
    `BHW.os45SPrime_figure24LocalBranchCompatibility_of_BHWJost`,
    `BHW.os45SPrime_rawAdjacentWick_extendF_eq_identityWick_of_BHWJost`,
@@ -1027,6 +1031,10 @@ Second, the adjacent `S'_n` seed package must be proved in the order
 documented below:
 `BHW.os45Figure24_sourceChart_at`,
 `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`,
+`BHW.OS45SPrimeFigure24LocalSourceSeedData`,
+`BHW.os45SPrime_figure24SourceEqOnUsrc_of_compactWickPairing`,
+`BHW.os45SPrime_figure24LocalSourceSeedData_of_OSI45`,
+`BHW.os45SPrime_figure24LocalSourceEq_of_seedData`,
 `BHW.os45SPrime_figure24LocalSourceEq_of_BHWJost`,
 `BHW.os45SPrime_figure24LocalBranchCompatibility_of_BHWJost`,
 `BHW.os45SPrime_rawAdjacentWick_extendF_eq_identityWick_of_BHWJost`,
@@ -1064,14 +1072,66 @@ OS-I §4.5/BHW/Jost source theorem first appears as the scalar equality
 `BHW.os45SPrime_figure24LocalSourceEq_of_BHWJost`:
 for `Z = sourceMinkowskiGram d n (wick x)` on the selected source chart,
 `hRep.Phi (sourcePermuteComplexGram n τ Z) = hRep.Phi Z`.  This theorem
-must use the ordinary representative
-`hRep := BHW.sourceScalarRepresentativeData_bvt_F hd OS lgc n`, the local
-Figure-2-4 compact Schwinger/Jost seed, and the checked germ identity
-principle on the source corridor.  Its seed proof is the OS-I §4.5 chain:
-identity Wick ACR branch selection, one compact-test E3 symmetry if needed,
-equations (4.1), (4.12), and (4.14), BHW continuation of the single symmetric
-datum, and Jost real-environment uniqueness.  It is not allowed to choose a
-second scalar function or to infer off-variety equality of ambient extensions.
+is decomposed into
+`BHW.OS45SPrimeFigure24LocalSourceSeedData`,
+`BHW.os45SPrime_figure24LocalSourceSeedData_of_OSI45`, and
+`BHW.os45SPrime_figure24LocalSourceEq_of_seedData`.  The seed-data structure
+stores a nonempty relatively open scalar seed `Wseed`, a connected relatively
+open scalar corridor `Wscal`, `Wseed ⊆ Wscal`,
+`sourceMinkowskiGram '' hChart.Usrc ⊆ Wscal`, the double-domain inclusion
+for `Wscal`, and equality of
+`Z ↦ hRep.Phi (sourcePermuteComplexGram n τ Z)` with `hRep.Phi` on `Wseed`.
+The only producer `...LocalSourceSeedData_of_OSI45` must use the ordinary
+representative `hRep := BHW.sourceScalarRepresentativeData_bvt_F hd OS lgc n`
+and the strict OS-I §4.5 chain, but the raw Wick comparison uses the local
+Wick-source component of the adjacent double scalar domain.  The producer
+first proves the chart-local source equality
+`BHW.os45SPrime_figure24SourceEqOnUsrc_of_compactWickPairing` on
+`hChart.Usrc`: its two scalar pullbacks are holomorphic there by
+`SourceVarietyGermHolomorphicOn.comp_sourceMinkowskiGram` and
+`hChart.double_mem`; their compact Wick-section pairings are compared by
+`BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
+the checked compact Wick equality
+`os45_adjacent_euclideanEdge_pairing_eq_on_timeSector`, and the identity
+Wick scalarization from `hRep.branch_eq` plus
+`BHW.extendF_eq_on_forwardTube`; equality on `hChart.Usrc` follows by the
+compact-support separation theorem and
+`eqOn_openConnected_of_eqOn_wickRealSection`.
+
+After that chart equality is available, the seed data are constructed
+without the later quarter-turn path.  Choose
+`zreg ∈ hChart.Usrc` by
+`BHW.exists_regular_sourcePoint_in_open_neighborhood`, take
+`Gseed = sourceMinkowskiGram d n zreg`, and use
+`BHW.sourceComplexGramMap_localConnectedRelOpenImage_in_open_of_complexRegular_allArity`
+inside `hChart.Usrc` to obtain the relatively open scalar seed `Wseed`.
+Set
+`D = BHW.sourceDoublePermutationGramDomain d n τ` and
+`Wscal = connectedComponentIn D Gseed`.  The rel-open field for `D` comes
+from
+`BHW.sourceDoublePermutationGramDomain_relOpen_of_sourceExtendedTubeGramDomain`
+and `hRep.U_eq`; `Wscal` is relatively open by the checked
+`BHW.sourceComplexGramVariety_connectedComponentIn_relOpen`, connected by
+`isConnected_connectedComponentIn_iff.mpr`, and contained in `D` by
+`connectedComponentIn_subset`.  `Wseed ⊆ Wscal` and
+`sourceMinkowskiGram '' hChart.Usrc ⊆ Wscal` are both applications of
+`IsPreconnected.subset_connectedComponentIn`: first to the connected scalar
+seed, and then to the connected continuous image of `hChart.Usrc`.  The
+quarter-turn Figure-2-4 scalar path remains a separate later obligation for
+`BHW.os45AdjacentSPrimeSeedFigure24Path_of_compactWickPairingEq` and the
+horizontal source-germ corridor; it is not an input to the raw Wick source
+equality.
+
+The propagation theorem `...LocalSourceEq_of_seedData` is then implementation-level:
+it uses
+`SourceVarietyGermHolomorphicOn.precomp_sourcePermuteComplexGram`,
+`SourceVarietyGermHolomorphicOn.of_subset_relOpen`,
+`SourceVarietyGermHolomorphicOn.sub`, and
+`sourceComplexGramVariety_identity_principle` to propagate the seed equality
+from `Wseed` to `Wscal`, then evaluates at
+`sourceMinkowskiGram d n (wick x)` using `hChart.wick_mem` and
+`chartGram_subset`.  It is not allowed to choose a second scalar function or
+to infer off-variety equality of ambient extensions.
 The pointwise branch theorem
 `BHW.os45SPrime_figure24LocalBranchCompatibility_of_BHWJost` then evaluates
 this scalar equality with `SourceScalarRepresentativeData.branch_eq` on the
