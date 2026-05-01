@@ -522,7 +522,8 @@ implementation contract is:
    `BHW.hwLemma3_normalizedSchurSurjective`, and the transport theorem
    `BHW.hwLemma3_transport_from_normalForm`.  The final conversion from the
    quantitative `ε` theorem to arbitrary `Vsrc` is the finite-product
-   open-ball helper
+   open-ball helper `BHW.exists_coord_supnorm_ball_subset_of_isOpen` followed
+   by
    `BHW.hwLemma3_smallPerturbation_to_localVectorRealization`; it is not a
    replacement for Lemma 3.  The
    orbit-rank/low-rank split remains internal as

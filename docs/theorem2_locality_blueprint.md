@@ -5781,6 +5781,21 @@ Proof decomposition of this theorem, without hiding the analytic work:
       small-perturbation theorem by a finite-dimensional open-ball shrink:
 
       ```lean
+      /-- Finite-product topology helper: every open neighborhood of a source
+      configuration contains a coordinate sup-norm perturbation box.  The
+      output is phrased for additive perturbations because that is the exact
+      shape returned by Hall-Wightman's quantitative Lemma 3. -/
+      theorem BHW.exists_coord_supnorm_ball_subset_of_isOpen
+          {d n : Nat}
+          {x0 : Fin n -> Fin (d + 1) -> ℂ}
+          {U : Set (Fin n -> Fin (d + 1) -> ℂ)}
+          (hU_open : IsOpen U)
+          (hx0U : x0 ∈ U) :
+          ∃ ε : ℝ, 0 < ε ∧
+            ∀ v : Fin n -> Fin (d + 1) -> ℂ,
+              (∀ i μ, ‖v i μ‖ < ε) ->
+              (fun i μ => x0 i μ + v i μ) ∈ U
+
       theorem BHW.hwLemma3_smallPerturbation_to_localVectorRealization
           [NeZero d] (hd : 2 <= d) (n : Nat)
           {z0 : Fin n -> Fin (d + 1) -> ℂ}
@@ -5818,7 +5833,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
       finite-product metric fact that an open neighborhood of `z0` contains a
       coordinate sup-norm ball around `z0`.  It is the only topology used to
       pass from Hall-Wightman's quantitative `ε` statement to an arbitrary
-      source neighborhood `Vsrc`.
+      source neighborhood `Vsrc`.  Lean proof: use `Metric.mem_nhds_iff` to
+      choose an ordinary norm ball in the Pi space, then use finite
+      norm-equivalence (or the existing Pi sup-norm lemma, if available in
+      the local imports) to shrink the coordinate bound so that
+      `∀ i μ, ‖v i μ‖ < ε` implies
+      `‖(fun i μ => z0 i μ + v i μ) - z0‖ < ρ`.
 
       The quantitative theorem
       `BHW.hwLemma3_sourceGram_localVectorRealization_smallPerturbation` is
