@@ -1393,6 +1393,35 @@ derive
 the final finite permutation change of variables to identify the adjacent
 Wick trace pairing.
 
+The ordinary continuity/measurability side of the canonical-lift compact
+theorem is no longer an unnamed gap.  The theorem-2 blueprint now gives the
+Lean-shaped proof of
+`ContinuousOn (fun x => extendF (bvt_F OS lgc n) (hChart.adjLift x 0))
+hChart.V0`: transport `bvt_F_holomorphic` and
+`bvt_F_complexLorentzInvariant_forwardTube` across `BHW_forwardTube_eq`, take
+`(BHW.extendF_holomorphicOn n (bvt_F OS lgc n) ...).continuousOn`, compose
+`hChart.adjLift_continuousOn` with `x ↦ (x, 0)` into
+`hChart.V0 ×ˢ Set.univ`, and use
+`hChart.adjLift_mem_extendedTube` as the `MapsTo` proof.  This is ordinary
+analytic bookkeeping only; the remaining adjacent source-boundary content is
+the compact OS-I §4.5/BHW/Jost equality itself.
+
+The Jost/Ruelle source theorem used in that compact equality has also been
+re-pinned to the local scanned source.  In
+`references/general-theory-of-quantized-fields.pdf`, PDF page `83` (printed
+pages `150`--`151`), Appendix II proves uniqueness for two single-valued
+`L_+(ℂ)`-invariant analytic branches on adjacent/permuted tube domains when
+their real-boundary distributions agree; its generalized form allows the
+real-intersection hypothesis in spacetime dimension greater than two.  The
+theorem-2 route uses exactly the compact-test specialization: the OS-I
+adjacent branch from (4.1), (4.12), and (4.14) has the same Figure-2-4 real
+Jost boundary distribution as the ordinary BHW branch, so Jost/Ruelle
+uniqueness identifies the two branches on the component containing the
+canonical lift, and the adjacent boundary pairing is `OS.S n ψZ` by the same
+zero-diagonal compact-test symmetry.  This is still a genuine source theorem
+frontier, not a license to call raw adjacent pointwise equality, final
+locality, or Streater-Wightman Theorem 3-6.
+
 The raw pointwise theorem
 `BHW.os45SPrime_rawAdjacentWick_extendF_eq_identityWick_of_BHWJost`, the raw
 compact theorem

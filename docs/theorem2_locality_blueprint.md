@@ -11349,16 +11349,57 @@ Proof decomposition of this theorem, without hiding the analytic work:
                  BHW.extendF (bvt_F OS lgc n)
                    (hChart.adjLift x (0 : unitInterval)))
                hChart.V0 := by
-           -- `extendF` is holomorphic, hence continuous, on `ExtendedTube`;
-           -- compose with the public continuity of the canonical lift.
-           exact ?extendF_continuousOn_comp_adjLift
+           have hF_holo_BHW :
+               DifferentiableOn ℂ (bvt_F OS lgc n)
+                 (BHW.ForwardTube d n) := by
+             simpa [BHW_forwardTube_eq (d := d) (n := n)] using
+               bvt_F_holomorphic (d := d) OS lgc n
+           have hF_cinv_BHW :
+               ∀ (Λ : ComplexLorentzGroup d)
+                 (z : Fin n -> Fin (d + 1) -> ℂ),
+                 z ∈ BHW.ForwardTube d n ->
+                 BHW.complexLorentzAction Λ z ∈ BHW.ForwardTube d n ->
+                 bvt_F OS lgc n (BHW.complexLorentzAction Λ z) =
+                   bvt_F OS lgc n z := by
+             intro Λ z hz hΛz
+             exact bvt_F_complexLorentzInvariant_forwardTube
+               (d := d) OS lgc n Λ z
+               ((BHW_forwardTube_eq (d := d) (n := n)) ▸ hz)
+               ((BHW_forwardTube_eq (d := d) (n := n)) ▸ hΛz)
+           have hExtend_cont :
+               ContinuousOn (BHW.extendF (bvt_F OS lgc n))
+                 (BHW.ExtendedTube d n) :=
+             (BHW.extendF_holomorphicOn n (bvt_F OS lgc n)
+               hF_holo_BHW hF_cinv_BHW).continuousOn
+           have hadj0_cont :
+               ContinuousOn
+                 (fun x : NPointDomain d n =>
+                   hChart.adjLift x (0 : unitInterval))
+                 hChart.V0 := by
+             have hpair_cont :
+                 ContinuousOn
+                   (fun x : NPointDomain d n =>
+                     (x, (0 : unitInterval)))
+                   hChart.V0 :=
+               continuousOn_id.prod continuousOn_const
+             exact hChart.adjLift_continuousOn.comp hpair_cont
+               (by
+                 intro x hx
+                 exact ⟨hx, trivial⟩)
+           exact hExtend_cont.comp hadj0_cont
+             (by
+               intro x hx
+               exact hChart.adjLift_mem_extendedTube x hx
+                 (0 : unitInterval))
          ```
 
-         The missing `?extendF_continuousOn_comp_adjLift` is ordinary analytic
-         bookkeeping: it uses the BHW holomorphy/continuity of `extendF` on
-         `ExtendedTube`, `BHW.continuous_os45Figure24AdjacentLift`, and
+         This closes the ordinary continuity bookkeeping for the canonical
+         lift.  It uses only the checked BHW holomorphy/continuity of
+         `extendF` on `ExtendedTube`, the chart field
+         `adjLift_continuousOn` ultimately supplied by
+         `BHW.continuous_os45Figure24AdjacentLift`, and
          `hChart.adjLift_mem_extendedTube`.  It is not a substitute boundary
-         theorem.
+         theorem and it does not call any raw adjacent-Wick comparison.
 
       4. Jost real-environment uniqueness is applied to compact tests
          supported in the selected Jost patch `hChart.V0`.  The uniqueness
@@ -11387,6 +11428,87 @@ Proof decomposition of this theorem, without hiding the analytic work:
          If a private lemma is introduced for this line, its statement must be
          the compact equality above with the same hypotheses; a forwarding
          wrapper with weaker provenance is not allowed.
+
+         Jost source audit for this line.  The local scan of
+         `references/general-theory-of-quantized-fields.pdf`, PDF page `83`
+         (printed pages `150`--`151`), shows that the theorem OS I cites here
+         is the Ruelle/Jost uniqueness theorem for two analytic branches in
+         difference variables.  In Lean-facing terms, it is used only in the
+         following specialized form.  Let `W` be the ordinary BHW continuation
+         of the OS-I branch on the ordinary extended tube, and let `Wτ` be the
+         adjacent branch obtained from OS I equations (4.1), (4.12), and
+         (4.14), Euclidean symmetry of the compact zero-diagonal test, and BHW
+         continuation on the `τ`-permuted tube.  Both branches are
+         single-valued and `L_+(ℂ)`-invariant on their respective extended-tube
+         domains.  If their boundary distributions agree on the real Jost
+         neighborhood selected by Figure 2-4, then Jost/Ruelle uniqueness
+         identifies the two holomorphic branches on the connected component of
+         the intersection of those domains containing that real neighborhood.
+         Evaluating this branch identity on the deterministic canonical lift
+         and then taking the compact boundary value gives the displayed
+         equality.  The dimension hypothesis used here is exactly `2 <= d`:
+         spacetime dimension is `d + 1 > 2`, so the generalized Jost theorem's
+         real-intersection formulation applies.  This is a distributional
+         real-environment uniqueness theorem; it does not assert pointwise
+         equality of final Wightman boundary distributions and it is not
+         Streater-Wightman Theorem 3-6.
+
+         Expanded source transcript for the last line:
+
+         ```lean
+         have hOSI45_branch :
+             BHW.OS45CanonicalAdjacentBranchBoundaryData
+               hd OS lgc n i hi V hV_jost hV_ordered
+               hV_swap_ordered hChart φ hφ_comp hφ_supp := by
+           -- Source proof, not a wrapper:
+           -- * use (4.1) to put the compact zero-diagonal Schwinger test in
+           --   the ordered OS-I difference-variable branch;
+           -- * use (4.12) to identify its Fourier-Laplace transform with
+           --   the forward-tube analytic branch represented by `bvt_F`;
+           -- * use (4.14) and `bvt_F_complexLorentzInvariant_forwardTube`
+           --   to obtain the Lorentz-invariant analytic branch needed by BHW;
+           -- * apply BHW to obtain the single-valued adjacent extended-tube
+           --   branch for the deterministic Figure-2-4 lift;
+           -- * use the Figure-2-4 real Jost neighborhood and
+           --   `OS.E3_symmetric` for the compact test `ψZ` to prove the
+           --   common real-boundary distribution input for Jost/Ruelle
+           --   uniqueness.
+           -- This source proof must be implemented here, or kept as the
+           -- single honest theorem frontier with exactly the compact
+           -- conclusion below.  It may not be replaced by a second public
+           -- theorem that simply repackages the same equality.
+           exact by
+             -- no production placeholder may survive here
+             ...
+         have hunique_on_lift :
+             ∫ x : NPointDomain d n,
+                 BHW.extendF (bvt_F OS lgc n)
+                   (hChart.adjLift x (0 : unitInterval)) * φ x
+               =
+             hOSI45_branch.adjacentBoundaryPairing := by
+           exact
+             BHW.jostRuelle_uniqueContinuation_compactBoundary
+               (d := d) hd hOSI45_branch.jostRealEnvironment
+               hOSI45_branch.ordinaryBranch_holomorphic
+               hOSI45_branch.adjacentBranch_holomorphic
+               hOSI45_branch.ordinaryBranch_lorentzInvariant
+               hOSI45_branch.adjacentBranch_lorentzInvariant
+               hOSI45_branch.realBoundary_eq
+               hOSI45_branch.canonicalLift_mem_intersection
+               hLift_cont φ hφ_comp hφ_supp
+         have hadjacent_boundary :
+             hOSI45_branch.adjacentBoundaryPairing = OS.S n ψZ :=
+           hOSI45_branch.adjacentBoundary_eq_permutedSchwinger
+         exact hunique_on_lift.trans hadjacent_boundary
+         ```
+
+         The displayed `OS45CanonicalAdjacentBranchBoundaryData` and
+         `jostRuelle_uniqueContinuation_compactBoundary` names are proof-doc
+         labels for genuine source content.  If they are introduced in Lean,
+         they must be private implementation carriers or standard
+         Jost/Ruelle analytic theorems with the fields shown here; they must
+         not be public wrappers around
+         `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`.
 
       This is the only non-mechanical input in
       `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`.
