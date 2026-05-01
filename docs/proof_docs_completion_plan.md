@@ -746,9 +746,32 @@ implementation contract is:
    BHW.sourceGramMatrixRank n (BHW.sourceMinkowskiGram d n ζ0)` and records
    the source-index linear change, ambient Minkowski isometry, Gram
    congruence, variety preservation, and the two smallness estimates used to
-   pull the normalized realization back to the adapted base tuple.  The base
-   selected-block normalization also needs the arbitrary invertible symmetric
-   congruence theorem
+   pull the normalized realization back to the adapted base tuple.  Its
+   finite matrix assembly is not allowed to skip the intermediate
+   `[[A,0],[0,0]]` stage: the projection source change
+   `BHW.hwLemma3_projectionSourceChangeMatrix` sends
+   `[[A,Bᵀ],[B,C]]` to `[[A,0],[0,0]]` only after
+   `BHW.hwLemma3_schurComplement_eq_zero_of_rank_eq` proves
+   `C - B*A⁻¹*Bᵀ = 0`; the canonical identity block is produced only after
+   `BHW.complexSymmetric_invertible_congruence_to_identity` supplies
+   `P` with `P*A*Pᵀ = 1` and the head extension
+   `BHW.hwLemma3_extendHeadMatrix` is composed with the projection and
+   permutation matrices.  The exact support API is
+   `BHW.sourceHeadHeadBlock`, `BHW.sourceTailHeadBlock`,
+   `BHW.sourceTailTailBlock`,
+   `BHW.sourceBlockMatrix_of_headTailBlocks`,
+   `BHW.sourcePermutationMatrix`,
+   `BHW.sourceGramMatrixRank_sourcePermuteComplexGram`,
+   `BHW.sourcePermuteComplexGram_mem_sourceSymmetricMatrixSpace`,
+   `BHW.hwLemma3_normalFormSourceChangeMatrix`,
+   `BHW.hwLemma3_normalFormSourceChangeMatrix_isUnit`,
+   `BHW.hwLemma3_normalFormSourceChangeMatrix_canonicalGram`, and
+   `BHW.hwLemma3_normalFormSourceChange_tail_zero_of_adapted`.  The last
+   theorem is load-bearing: it converts the adaptedness equality between
+   source-span dimension and scalar rank into actual vanishing of the tail
+   vectors after projection; without adaptedness the statement is false.  The
+   base selected-block normalization also needs the arbitrary invertible
+   symmetric congruence theorem
    `BHW.complexSymmetric_invertible_congruence_to_identity`, decomposed into
    `BHW.complexSymmetric_invertible_orthogonalBasis`,
    `BHW.complexSymmetric_invertible_diagonalScaling`, and

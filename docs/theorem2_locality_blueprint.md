@@ -7796,6 +7796,341 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (LinearMap.range (BHW.sourceCoefficientEval d n z0)) = r) :
           ∃ T : BHW.HWLemma3NormalFormTransport d n r z0, True
 
+      theorem BHW.exists_sourcePermutation_movingPrincipalBlockToHead
+          (n r : Nat)
+          (hrn : r <= n)
+          {I : Fin r -> Fin n}
+          (hI : Function.Injective I) :
+          ∃ σ : Equiv.Perm (Fin n),
+            ∀ a : Fin r, σ (BHW.finSourceHead hrn a) = I a
+
+      def BHW.sourceBlockMatrix
+          (n r : Nat) (hrn : r <= n)
+          (A : Matrix (Fin r) (Fin r) ℂ)
+          (B : Matrix (Fin (n - r)) (Fin r) ℂ)
+          (C : Matrix (Fin (n - r)) (Fin (n - r)) ℂ) :
+          Fin n -> Fin n -> ℂ
+
+      def BHW.sourceHeadHeadBlock
+          (n r : Nat) (hrn : r <= n)
+          (G : Fin n -> Fin n -> ℂ) :
+          Matrix (Fin r) (Fin r) ℂ :=
+        fun a b => G (BHW.finSourceHead hrn a)
+          (BHW.finSourceHead hrn b)
+
+      def BHW.sourceTailHeadBlock
+          (n r : Nat) (hrn : r <= n)
+          (G : Fin n -> Fin n -> ℂ) :
+          Matrix (Fin (n - r)) (Fin r) ℂ :=
+        fun u a => G (BHW.finSourceTail hrn u)
+          (BHW.finSourceHead hrn a)
+
+      def BHW.sourceTailTailBlock
+          (n r : Nat) (hrn : r <= n)
+          (G : Fin n -> Fin n -> ℂ) :
+          Matrix (Fin (n - r)) (Fin (n - r)) ℂ :=
+        fun u v => G (BHW.finSourceTail hrn u)
+          (BHW.finSourceTail hrn v)
+
+      theorem BHW.sourceBlockMatrix_of_headTailBlocks
+          (n r : Nat) (hrn : r <= n)
+          (G : Fin n -> Fin n -> ℂ) :
+          BHW.sourceBlockMatrix n r hrn
+            (BHW.sourceHeadHeadBlock n r hrn G)
+            (BHW.sourceTailHeadBlock n r hrn G)
+            (BHW.sourceTailTailBlock n r hrn G) = G
+
+      theorem BHW.sourceHeadHeadBlock_symm_of_sourceSymmetric
+          (n r : Nat) (hrn : r <= n)
+          {G : Fin n -> Fin n -> ℂ}
+          (hG : G ∈ BHW.sourceSymmetricMatrixSpace n) :
+          (BHW.sourceHeadHeadBlock n r hrn G).transpose =
+            BHW.sourceHeadHeadBlock n r hrn G
+
+      def BHW.hwLemma3_projectionSourceChangeMatrix
+          (n r : Nat) (hrn : r <= n)
+          (A : Matrix (Fin r) (Fin r) ℂ)
+          (B : Matrix (Fin (n - r)) (Fin r) ℂ) :
+          Matrix (Fin n) (Fin n) ℂ
+
+      def BHW.hwLemma3_extendHeadMatrix
+          (n r : Nat) (hrn : r <= n)
+          (P : Matrix (Fin r) (Fin r) ℂ) :
+          Matrix (Fin n) (Fin n) ℂ
+
+      def BHW.sourcePermutationMatrix
+          (n : Nat) (σ : Equiv.Perm (Fin n)) :
+          Matrix (Fin n) (Fin n) ℂ
+
+      def BHW.hwLemma3_normalFormSourceChangeMatrix
+          (n r : Nat) (hrn : r <= n)
+          (σ : Equiv.Perm (Fin n))
+          (A : Matrix (Fin r) (Fin r) ℂ)
+          (B : Matrix (Fin (n - r)) (Fin r) ℂ)
+          (P : Matrix (Fin r) (Fin r) ℂ) :
+          Matrix (Fin n) (Fin n) ℂ :=
+        BHW.hwLemma3_extendHeadMatrix n r hrn P *
+          BHW.hwLemma3_projectionSourceChangeMatrix n r hrn A B *
+          BHW.sourcePermutationMatrix n σ
+
+      theorem BHW.hwLemma3_projectionSourceChangeMatrix_isUnit
+          (n r : Nat) (hrn : r <= n)
+          {A : Matrix (Fin r) (Fin r) ℂ}
+          {B : Matrix (Fin (n - r)) (Fin r) ℂ}
+          (hA : IsUnit A.det) :
+          IsUnit
+            (BHW.hwLemma3_projectionSourceChangeMatrix n r hrn A B).det
+
+      theorem BHW.hwLemma3_projectionSourceChangeMatrix_congruence
+          (n r : Nat) (hrn : r <= n)
+          {A : Matrix (Fin r) (Fin r) ℂ}
+          {B : Matrix (Fin (n - r)) (Fin r) ℂ}
+          {C : Matrix (Fin (n - r)) (Fin (n - r)) ℂ}
+          (hA : IsUnit A.det)
+          (hAsym : A.transpose = A)
+          (hSchur :
+            C - B * A⁻¹ * B.transpose = 0) :
+          BHW.sourceGramCongruence n
+            (BHW.hwLemma3_projectionSourceChangeMatrix n r hrn A B)
+            (BHW.sourceBlockMatrix n r hrn A B C) =
+          BHW.sourceBlockMatrix n r hrn A 0 0
+
+      theorem BHW.hwLemma3_extendHeadMatrix_isUnit
+          (n r : Nat) (hrn : r <= n)
+          {P : Matrix (Fin r) (Fin r) ℂ}
+          (hP : IsUnit P.det) :
+          IsUnit (BHW.hwLemma3_extendHeadMatrix n r hrn P).det
+
+      theorem BHW.hwLemma3_extendHeadMatrix_congruence
+          (n r : Nat) (hrn : r <= n)
+          {A : Matrix (Fin r) (Fin r) ℂ}
+          {P : Matrix (Fin r) (Fin r) ℂ} :
+          BHW.sourceGramCongruence n
+            (BHW.hwLemma3_extendHeadMatrix n r hrn P)
+            (BHW.sourceBlockMatrix n r hrn A 0 0) =
+          BHW.sourceBlockMatrix n r hrn (P * A * P.transpose) 0 0
+
+      theorem BHW.hwLemma3CanonicalGram_eq_sourceBlockMatrix
+          (n r : Nat) (hrn : r <= n) :
+          BHW.hwLemma3CanonicalGram n r =
+            BHW.sourceBlockMatrix n r hrn 1 0 0
+
+      theorem BHW.sourcePermutationMatrix_det_isUnit
+          (n : Nat) (σ : Equiv.Perm (Fin n)) :
+          IsUnit (BHW.sourcePermutationMatrix n σ).det
+
+      theorem BHW.sourceGramCongruence_sourcePermutationMatrix
+          (n : Nat) (σ : Equiv.Perm (Fin n))
+          (Z : Fin n -> Fin n -> ℂ) :
+          BHW.sourceGramCongruence n (BHW.sourcePermutationMatrix n σ) Z =
+            BHW.sourcePermuteComplexGram n σ Z
+
+      theorem BHW.sourceTupleLinearChange_sourcePermutationMatrix
+          (d n : Nat) (σ : Equiv.Perm (Fin n))
+          (z : Fin n -> Fin (d + 1) -> ℂ) :
+          BHW.sourceTupleLinearChange d n
+              (BHW.sourcePermutationMatrix n σ) z =
+            fun i => z (σ i)
+
+      theorem BHW.sourceGramMatrixRank_sourcePermuteComplexGram
+          (n : Nat) (σ : Equiv.Perm (Fin n))
+          (G : Fin n -> Fin n -> ℂ) :
+          BHW.sourceGramMatrixRank n
+            (BHW.sourcePermuteComplexGram n σ G) =
+          BHW.sourceGramMatrixRank n G
+
+      theorem BHW.sourcePermuteComplexGram_mem_sourceSymmetricMatrixSpace
+          (n : Nat) (σ : Equiv.Perm (Fin n))
+          {G : Fin n -> Fin n -> ℂ}
+          (hG : G ∈ BHW.sourceSymmetricMatrixSpace n) :
+          BHW.sourcePermuteComplexGram n σ G ∈
+            BHW.sourceSymmetricMatrixSpace n
+
+      theorem BHW.hwLemma3_schurComplement_eq_zero_of_rank_eq
+          (n r : Nat) (hrn : r <= n)
+          {G : Fin n -> Fin n -> ℂ}
+          {A : Matrix (Fin r) (Fin r) ℂ}
+          {B : Matrix (Fin (n - r)) (Fin r) ℂ}
+          {C : Matrix (Fin (n - r)) (Fin (n - r)) ℂ}
+          (hGsym : G ∈ BHW.sourceSymmetricMatrixSpace n)
+          (hBlock : G = BHW.sourceBlockMatrix n r hrn A B C)
+          (hRank : BHW.sourceGramMatrixRank n G = r)
+          (hA : IsUnit A.det) :
+          C - B * A⁻¹ * B.transpose = 0
+
+      theorem BHW.hwLemma3_normalFormSourceChangeMatrix_isUnit
+          (n r : Nat) (hrn : r <= n)
+          (σ : Equiv.Perm (Fin n))
+          {A : Matrix (Fin r) (Fin r) ℂ}
+          {B : Matrix (Fin (n - r)) (Fin r) ℂ}
+          {P : Matrix (Fin r) (Fin r) ℂ}
+          (hA : IsUnit A.det)
+          (hP : IsUnit P.det) :
+          IsUnit
+            (BHW.hwLemma3_normalFormSourceChangeMatrix
+              n r hrn σ A B P).det
+
+      theorem BHW.hwLemma3_normalFormSourceChangeMatrix_canonicalGram
+          (n r : Nat) (hrn : r <= n)
+          {G : Fin n -> Fin n -> ℂ}
+          {σ : Equiv.Perm (Fin n)}
+          {A : Matrix (Fin r) (Fin r) ℂ}
+          {B : Matrix (Fin (n - r)) (Fin r) ℂ}
+          {C : Matrix (Fin (n - r)) (Fin (n - r)) ℂ}
+          {P : Matrix (Fin r) (Fin r) ℂ}
+          (hBlock :
+            BHW.sourcePermuteComplexGram n σ G =
+              BHW.sourceBlockMatrix n r hrn A B C)
+          (hA : IsUnit A.det)
+          (hAsym : A.transpose = A)
+          (hSchur : C - B * A⁻¹ * B.transpose = 0)
+          (hP : P * A * P.transpose = 1) :
+          BHW.sourceGramCongruence n
+            (BHW.hwLemma3_normalFormSourceChangeMatrix
+              n r hrn σ A B P) G =
+          BHW.hwLemma3CanonicalGram n r
+
+      theorem BHW.hwLemma3_projectedTail_zero_of_adapted
+          [NeZero d] (hd : 2 <= d)
+          (n r : Nat)
+          {z0 : Fin n -> Fin (d + 1) -> ℂ}
+          (hr :
+            r = BHW.sourceGramMatrixRank n
+              (BHW.sourceMinkowskiGram d n z0))
+          (hspan :
+            Module.finrank ℂ
+              (LinearMap.range (BHW.sourceCoefficientEval d n z0)) =
+            BHW.sourceGramMatrixRank n
+              (BHW.sourceMinkowskiGram d n z0))
+          {I : Fin r -> Fin n}
+          (hminor :
+            BHW.sourceMatrixMinor n r I I
+              (BHW.sourceMinkowskiGram d n z0) ≠ 0) :
+          BHW.hwLemma3_selectedResidual d n r I
+            (BHW.sourceMinkowskiGram d n z0) z0 = 0
+
+      theorem BHW.hwLemma3_normalFormSourceChange_tail_zero_of_adapted
+          [NeZero d] (hd : 2 <= d)
+          (n r : Nat) (hrn : r <= n)
+          {z0 : Fin n -> Fin (d + 1) -> ℂ}
+          (hr :
+            r = BHW.sourceGramMatrixRank n
+              (BHW.sourceMinkowskiGram d n z0))
+          (hspan :
+            Module.finrank ℂ
+              (LinearMap.range (BHW.sourceCoefficientEval d n z0)) =
+            BHW.sourceGramMatrixRank n
+              (BHW.sourceMinkowskiGram d n z0))
+          {I : Fin r -> Fin n}
+          (hminor :
+            BHW.sourceMatrixMinor n r I I
+              (BHW.sourceMinkowskiGram d n z0) ≠ 0)
+          {σ : Equiv.Perm (Fin n)}
+          (hσ_head :
+            ∀ a : Fin r, σ (BHW.finSourceHead hrn a) = I a)
+          {A : Matrix (Fin r) (Fin r) ℂ}
+          {B : Matrix (Fin (n - r)) (Fin r) ℂ}
+          {C : Matrix (Fin (n - r)) (Fin (n - r)) ℂ}
+          {P : Matrix (Fin r) (Fin r) ℂ}
+          (hBlock :
+            BHW.sourcePermuteComplexGram n σ
+              (BHW.sourceMinkowskiGram d n z0) =
+            BHW.sourceBlockMatrix n r hrn A B C) :
+          ∀ u : Fin (n - r),
+            BHW.sourceTupleLinearChange d n
+              (BHW.hwLemma3_normalFormSourceChangeMatrix
+                n r hrn σ A B P) z0
+              (BHW.finSourceTail hrn u) = 0
+
+      theorem BHW.hwLemma3_head_orthonormal_of_canonicalGram
+          [NeZero d] (hd : 2 <= d)
+          (n r : Nat) (hrn : r <= n)
+          {y : Fin n -> Fin (d + 1) -> ℂ}
+          (hy :
+            BHW.sourceMinkowskiGram d n y =
+              BHW.hwLemma3CanonicalGram n r) :
+          ∀ a b : Fin r,
+            BHW.complexMinkowskiBilinear d
+              (y (BHW.finSourceHead hrn a))
+              (y (BHW.finSourceHead hrn b)) =
+            if a = b then 1 else 0
+
+      theorem BHW.hwLemma3_selectedFrame_to_standardLorentz
+          [NeZero d] (hd : 2 <= d)
+          (n r : Nat) (hrn : r <= n) (hrD : r <= d + 1)
+          {y : Fin n -> Fin (d + 1) -> ℂ}
+          (hy_head :
+            ∀ a b : Fin r,
+              BHW.complexMinkowskiBilinear d
+                (y (BHW.finSourceHead hrn a))
+                (y (BHW.finSourceHead hrn b)) =
+              if a = b then 1 else 0)
+          (hy_tail_zero :
+            ∀ u : Fin (n - r),
+              y (BHW.finSourceTail hrn u) = 0) :
+          ∃ Λ : ComplexLorentzGroup d,
+            BHW.complexLorentzAction Λ y =
+              BHW.hwLemma3CanonicalSource d n r
+
+      noncomputable def BHW.sourceTupleLinearChangeLinearEquiv
+          (d n : Nat)
+          {A : Matrix (Fin n) (Fin n) ℂ}
+          (hA : IsUnit A.det) :
+          (Fin n -> Fin (d + 1) -> ℂ) ≃ₗ[ℂ]
+            (Fin n -> Fin (d + 1) -> ℂ)
+
+      theorem BHW.sourceTupleLinearChangeLinearEquiv_apply
+          (d n : Nat)
+          {A : Matrix (Fin n) (Fin n) ℂ}
+          (hA : IsUnit A.det)
+          (z : Fin n -> Fin (d + 1) -> ℂ) :
+          BHW.sourceTupleLinearChangeLinearEquiv d n hA z =
+            BHW.sourceTupleLinearChange d n A z
+
+      noncomputable def BHW.complexLorentzActionLinearEquiv
+          (d n : Nat) (Λ : ComplexLorentzGroup d) :
+          (Fin n -> Fin (d + 1) -> ℂ) ≃ₗ[ℂ]
+            (Fin n -> Fin (d + 1) -> ℂ)
+
+      theorem BHW.complexLorentzActionLinearEquiv_apply
+          (d n : Nat) (Λ : ComplexLorentzGroup d)
+          (z : Fin n -> Fin (d + 1) -> ℂ) :
+          BHW.complexLorentzActionLinearEquiv d n Λ z =
+            BHW.complexLorentzAction Λ z
+
+      noncomputable def BHW.sourceGramCongruenceLinearEquiv
+          (n : Nat)
+          {A : Matrix (Fin n) (Fin n) ℂ}
+          (hA : IsUnit A.det) :
+          (Fin n -> Fin n -> ℂ) ≃ₗ[ℂ] (Fin n -> Fin n -> ℂ)
+
+      theorem BHW.sourceGramCongruenceLinearEquiv_apply
+          (n : Nat)
+          {A : Matrix (Fin n) (Fin n) ℂ}
+          (hA : IsUnit A.det)
+          (Z : Fin n -> Fin n -> ℂ) :
+          BHW.sourceGramCongruenceLinearEquiv n hA Z =
+            BHW.sourceGramCongruence n A Z
+
+      theorem BHW.linearEquiv_coord_ball_preimage
+          {ι κ : Type*} [Fintype ι] [Fintype κ]
+          (e : (ι -> κ -> ℂ) ≃ₗ[ℂ] (ι -> κ -> ℂ))
+          (x0 : ι -> κ -> ℂ)
+          {ηN : ℝ} (hηN : 0 < ηN) :
+          ∃ η : ℝ, 0 < η ∧
+            ∀ x,
+              (∀ i k, ‖x i k - x0 i k‖ < η) ->
+              ∀ i k, ‖e x i k - e x0 i k‖ < ηN
+
+      theorem BHW.linearEquiv_perturb_back_coord_bound
+          {ι κ : Type*} [Fintype ι] [Fintype κ]
+          (e : (ι -> κ -> ℂ) ≃ₗ[ℂ] (ι -> κ -> ℂ))
+          {ε : ℝ} (hε : 0 < ε) :
+          ∃ εN : ℝ, 0 < εN ∧
+            ∀ vN,
+              (∀ i k, ‖vN i k‖ < εN) ->
+              ∀ i k, ‖e.symm vN i k‖ < ε
+
       theorem BHW.hwLemma3_normalizedSchurSurjective
           [NeZero d] (hd : 2 <= d)
           (n r : Nat)
@@ -8350,6 +8685,205 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.sourceGramCongruence_mem_variety_iff`.  The two estimate fields
       are finite-dimensional continuity/norm equivalence for the fixed
       linear equivalences.
+
+      Implementation transcript for
+      `BHW.hwLemma3_normalFormTransportData`:
+
+      1. Let `G0 := sourceMinkowskiGram d n z0` and
+         `r := sourceGramMatrixRank n G0`.  The adaptedness hypothesis says
+         `finrank (range (sourceCoefficientEval d n z0)) = r`.
+      2. Choose an injective principal block
+         `I : Fin r -> Fin n` with nonzero determinant by
+         `exists_sourcePrincipalMinor_ne_zero_of_sourceSymmetricRank`.
+         Use `exists_sourcePermutation_movingPrincipalBlockToHead` to obtain a
+         source permutation `σ` moving that block to the first `r` source
+         labels.  Its matrix is invertible, and its Gram action is
+         `sourcePermuteComplexGram`.
+      3. In the permuted coordinates write the base Gram matrix as
+         `sourceBlockMatrix n r hrn A B C`, where `A` is the selected
+         `r × r` block, `B` is the tail-head block, and `C` is the tail-tail
+         block.  The selected determinant is a unit.  Since the full Gram rank
+         is `r`, the Schur complement satisfies
+         `C - B * A⁻¹ * B.transpose = 0`.
+      4. Apply `hwLemma3_projectionSourceChangeMatrix n r hrn A B`.  This is
+         the lower triangular source-coordinate matrix with identity on the
+         selected block and `-B * A⁻¹` in the tail-selected block.  Its
+         determinant is a unit, and its congruence sends the base Gram to
+         `[[A,0],[0,0]]`.
+      5. Apply `complexSymmetric_invertible_congruence_to_identity` to `A`,
+         obtaining `P` with `P * A * Pᵀ = 1`.  Extend `P` by the identity on
+         the tail source coordinates and compose with the previous source
+         changes.  The resulting invertible source matrix `M` satisfies
+         `sourceGramCongruence n M G0 = hwLemma3CanonicalGram n r`.
+      6. On vectors, `sourceTupleLinearChange d n M z0` has canonical Gram.
+         Its tail entries are zero by
+         `hwLemma3_normalFormSourceChange_tail_zero_of_adapted`, whose proof
+         uses `hwLemma3_projectedTail_zero_of_adapted`: after projection the
+         tail residual lies in the radical of the restricted form on the
+         adapted source span, and that radical has finrank zero because span
+         dimension equals scalar rank.  The first `r` vectors have Gram
+         matrix `1`.
+      7. Use `hwLemma3_selectedFrame_to_standardLorentz` to obtain
+         `Λ : ComplexLorentzGroup d` carrying the first `r` normalized
+         selected vectors to the standard canonical source frame and fixing
+         the zero tail.  Define
+         `toNormalVec z := complexLorentzAction Λ
+           (sourceTupleLinearChange d n M z)`.
+      8. Define `toNormalGram` as
+         `sourceGramCongruenceLinearEquiv n (A := M) hM_unit`.  The field
+         `gram_commute` is
+         `sourceMinkowskiGram_sourceTupleLinearChange` followed by Lorentz
+         invariance of `sourceMinkowskiGram`; `gram_variety_iff` is
+         `sourceGramCongruence_mem_variety_iff`; `gram_z0` is step 5.
+      9. The estimate fields are now purely finite-dimensional:
+         `gram_ball_to_normal_ball` is
+         `linearEquiv_coord_ball_preimage T.toNormalGram`, and
+         `perturb_back_small` is
+         `linearEquiv_perturb_back_coord_bound T.toNormalVec`, after rewriting
+         the target equation by `z0_to_canonical`.
+
+      Lean-shaped producer skeleton:
+
+      ```lean
+      theorem BHW.hwLemma3_normalFormTransportData ... := by
+        let G0 := BHW.sourceMinkowskiGram d n z0
+        have hr_le_n : r <= n := by
+          rw [hr]
+          exact BHW.sourceGramMatrixRank_le_arity (n := n) G0
+        have hr_le_D : r <= d + 1 := by
+          rw [hr]
+          exact BHW.sourceGramMatrixRank_le_spacetime_of_sourceGram
+            (d := d) (n := n) z0
+        have hG0sym : G0 ∈ BHW.sourceSymmetricMatrixSpace n := by
+          intro i j
+          exact BHW.sourceMinkowskiGram_symm d n z0 i j
+        rcases BHW.exists_sourcePrincipalMinor_ne_zero_of_sourceSymmetricRank
+            hG0sym
+            (by simpa [G0] using hr.symm) with
+          ⟨I, hI_inj, hminor⟩
+        rcases BHW.exists_sourcePermutation_movingPrincipalBlockToHead
+            n r hr_le_n hI_inj with
+          ⟨σ, hσ_head⟩
+        let Gp := BHW.sourcePermuteComplexGram n σ G0
+        let A : Matrix (Fin r) (Fin r) ℂ :=
+          BHW.sourceHeadHeadBlock n r hr_le_n Gp
+        let B : Matrix (Fin (n - r)) (Fin r) ℂ :=
+          BHW.sourceTailHeadBlock n r hr_le_n Gp
+        let C : Matrix (Fin (n - r)) (Fin (n - r)) ℂ :=
+          BHW.sourceTailTailBlock n r hr_le_n Gp
+        have hBlock :
+            Gp = BHW.sourceBlockMatrix n r hr_le_n A B C := by
+          simpa [A, B, C] using
+            (BHW.sourceBlockMatrix_of_headTailBlocks n r hr_le_n Gp).symm
+        have hGpsym : Gp ∈ BHW.sourceSymmetricMatrixSpace n := by
+          simpa [Gp] using
+            BHW.sourcePermuteComplexGram_mem_sourceSymmetricMatrixSpace
+              (n := n) σ hG0sym
+        have hGp_rank :
+            BHW.sourceGramMatrixRank n Gp = r := by
+          rw [Gp, BHW.sourceGramMatrixRank_sourcePermuteComplexGram]
+          exact hr.symm
+        have hA_symm : A.transpose = A :=
+          BHW.sourceHeadHeadBlock_symm_of_sourceSymmetric
+            n r hr_le_n hGpsym
+        have hA_unit : IsUnit A.det := by
+          simpa [A, Gp, hσ_head] using hminor
+        have hSchur : C - B * A⁻¹ * B.transpose = 0 :=
+          BHW.hwLemma3_schurComplement_eq_zero_of_rank_eq
+            (n := n) (r := r) hr_le_n hGpsym hBlock
+            hGp_rank hA_unit
+        rcases BHW.complexSymmetric_invertible_congruence_to_identity
+            (r := r) (A := A)
+            hA_symm
+            hA_unit with
+          ⟨P, hP_unit, hP_congr⟩
+        let M :=
+          BHW.hwLemma3_normalFormSourceChangeMatrix
+            n r hr_le_n σ A B P
+        have hM_unit : IsUnit M.det :=
+          BHW.hwLemma3_normalFormSourceChangeMatrix_isUnit
+            n r hr_le_n σ hA_unit hP_unit
+        have hM_canon :
+            BHW.sourceGramCongruence n M G0 =
+              BHW.hwLemma3CanonicalGram n r := by
+          simpa [M] using
+            BHW.hwLemma3_normalFormSourceChangeMatrix_canonicalGram
+              n r hr_le_n (G := G0) (σ := σ)
+              (A := A) (B := B) (C := C) (P := P)
+              (by simpa [Gp] using hBlock)
+              hA_unit hA_symm hSchur hP_congr
+        let y := BHW.sourceTupleLinearChange d n M z0
+        have hy_gram :
+            BHW.sourceMinkowskiGram d n y =
+              BHW.hwLemma3CanonicalGram n r := by
+          calc
+            BHW.sourceMinkowskiGram d n y =
+                BHW.sourceGramCongruence n M G0 := by
+              simpa [y, G0] using
+                BHW.sourceMinkowskiGram_sourceTupleLinearChange
+                  d n M z0
+            _ = BHW.hwLemma3CanonicalGram n r := hM_canon
+        have hy_tail_zero :
+            ∀ u : Fin (n - r), y (BHW.finSourceTail hr_le_n u) = 0 :=
+          BHW.hwLemma3_normalFormSourceChange_tail_zero_of_adapted
+            (d := d) hd n r hr_le_n (z0 := z0)
+            hr hspan hminor hσ_head
+            (A := A) (B := B) (C := C) (P := P)
+            (by simpa [G0, Gp] using hBlock)
+        rcases BHW.hwLemma3_selectedFrame_to_standardLorentz
+            (d := d) hd n r hr_le_n hr_le_D
+            (y := y)
+            (BHW.hwLemma3_head_orthonormal_of_canonicalGram
+              (d := d) hd n r hr_le_n hy_gram)
+            hy_tail_zero with
+          ⟨Λ, hΛy⟩
+        let Lvec : (Fin n -> Fin (d + 1) -> ℂ) ≃ₗ[ℂ]
+            (Fin n -> Fin (d + 1) -> ℂ) :=
+          BHW.sourceTupleLinearChangeLinearEquiv d n (A := M) hM_unit |>.trans
+            (BHW.complexLorentzActionLinearEquiv d n Λ)
+        let Lgram : (Fin n -> Fin n -> ℂ) ≃ₗ[ℂ]
+            (Fin n -> Fin n -> ℂ) :=
+          BHW.sourceGramCongruenceLinearEquiv n (A := M) hM_unit
+        refine ⟨{
+          toNormalVec := Lvec
+          toNormalGram := Lgram
+          z0_to_canonical := by simpa [Lvec, y] using hΛy
+          gram_commute := ?_
+          gram_variety_iff := ?_
+          gram_z0 := by simpa [Lgram] using hM_canon
+          gram_ball_to_normal_ball := ?_
+          perturb_back_small := ?_ }, trivial⟩
+        · intro z
+          simp [Lvec, Lgram,
+            BHW.sourceMinkowskiGram_sourceTupleLinearChange,
+            BHW.sourceMinkowskiGram_complexLorentzAction]
+        · intro Z
+          simpa [Lgram] using
+            BHW.sourceGramCongruence_mem_variety_iff
+              (d := d) (n := n) hM_unit Z
+        · intro ηN hηN
+          rcases BHW.linearEquiv_coord_ball_preimage Lgram G0 hηN with
+            ⟨η, hη, hsmall⟩
+          refine ⟨η, hη, ?_⟩
+          intro Z hZ
+          simpa [Lgram, hM_canon] using hsmall Z hZ
+        · intro ε hε
+          rcases BHW.linearEquiv_perturb_back_coord_bound Lvec hε with
+            ⟨εN, hεN, hbound⟩
+          refine ⟨εN, hεN, ?_⟩
+          intro vN hvN
+          refine ⟨Lvec.symm vN, hbound vN hvN, ?_⟩
+          calc
+            Lvec (fun i μ => z0 i μ + Lvec.symm vN i μ) =
+                Lvec z0 + vN := by
+              ext i μ
+              simp
+            _ =
+                fun i μ =>
+                  BHW.hwLemma3CanonicalSource d n r i μ + vN i μ := by
+              ext i μ
+              simpa [Lvec, y] using congrFun (congrFun hΛy i) μ
+      ```
 
       Lean-shaped transport proof of
       `BHW.hwLemma3_transport_from_normalForm`:
