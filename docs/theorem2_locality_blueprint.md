@@ -10325,6 +10325,186 @@ Proof decomposition of this theorem, without hiding the analytic work:
       comparison proof must consume the chart-local statement, not the later
       public package.
 
+      Lean-shaped proof of the chart-local source theorem:
+
+      ```lean
+      theorem BHW.os45SPrime_figure24SourceEqOnUsrc_of_compactWickPairing
+          ... := by
+        classical
+        let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+        let Φ0 : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ :=
+          fun z => hRep.Phi (BHW.sourceMinkowskiGram d n z)
+        let Φτ : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ :=
+          fun z =>
+            hRep.Phi
+              (BHW.sourcePermuteComplexGram n τ
+                (BHW.sourceMinkowskiGram d n z))
+        have hF_holo_BHW :
+            DifferentiableOn ℂ (bvt_F OS lgc n) (BHW.ForwardTube d n) := by
+          simpa [BHW_forwardTube_eq (d := d) (n := n)] using
+            bvt_F_holomorphic (d := d) OS lgc n
+        have hF_restricted_BHW :
+            ∀ (Λ : RestrictedLorentzGroup d)
+              (z : Fin n -> Fin (d + 1) -> ℂ),
+              z ∈ BHW.ForwardTube d n ->
+              bvt_F OS lgc n
+                (fun k μ => ∑ ν, (Λ.val.val μ ν : ℂ) * z k ν) =
+              bvt_F OS lgc n z := by
+          intro Λ z hz
+          exact bvt_F_restrictedLorentzInvariant_forwardTube
+            (d := d) OS lgc n Λ z
+            ((BHW_forwardTube_eq (d := d) (n := n)) ▸ hz)
+        have hΦ0_diff : DifferentiableOn ℂ Φ0 hChart.Usrc := by
+          have hGramU :
+              BHW.sourceMinkowskiGram d n '' hChart.Usrc ⊆ hRep.U := by
+            intro Z hZ
+            rcases hZ with ⟨z, hz, rfl⟩
+            rw [hRep.U_eq]
+            exact (hChart.double_mem z hz).1
+          exact BHW.SourceVarietyGermHolomorphicOn.comp_sourceMinkowskiGram
+            (d := d) (n := n) hRep.Phi_holomorphic hGramU
+        have hΦτ_diff : DifferentiableOn ℂ Φτ hChart.Usrc := by
+          have hpre :
+              BHW.SourceVarietyGermHolomorphicOn d n
+                (fun Z => hRep.Phi
+                  (BHW.sourcePermuteComplexGram n τ Z))
+                {Z | BHW.sourcePermuteComplexGram n τ Z ∈ hRep.U} := by
+            simpa using
+              BHW.SourceVarietyGermHolomorphicOn.precomp_sourcePermuteComplexGram
+                (d := d) (n := n) hRep.Phi_holomorphic τ
+          have hGramU :
+              BHW.sourceMinkowskiGram d n '' hChart.Usrc ⊆
+                {Z | BHW.sourcePermuteComplexGram n τ Z ∈ hRep.U} := by
+            intro Z hZ
+            rcases hZ with ⟨z, hz, rfl⟩
+            rw [hRep.U_eq]
+            exact (hChart.double_mem z hz).2
+          exact BHW.SourceVarietyGermHolomorphicOn.comp_sourceMinkowskiGram
+            (d := d) (n := n) hpre hGramU
+        have hΦ0_wick :
+            ∀ x, x ∈ hChart.V0 ->
+              Φ0 (fun k => wickRotatePoint (x k)) =
+                bvt_F OS lgc n (fun k => wickRotatePoint (x k)) := by
+          intro x hx
+          have hwET :
+              (fun k => wickRotatePoint (x k)) ∈ BHW.ExtendedTube d n :=
+            BHW.forwardTube_subset_extendedTube
+              (hChart.wick_id_forwardTube x hx)
+          calc
+            Φ0 (fun k => wickRotatePoint (x k))
+                = BHW.extendF (bvt_F OS lgc n)
+                    (fun k => wickRotatePoint (x k)) := by
+                    simpa [Φ0, hRep.U_eq] using
+                      hRep.branch_eq _ hwET
+            _ = bvt_F OS lgc n (fun k => wickRotatePoint (x k)) := by
+                    exact BHW.extendF_eq_on_forwardTube n
+                      (bvt_F OS lgc n) hF_holo_BHW
+                      hF_restricted_BHW _
+                      (hChart.wick_id_forwardTube x hx)
+        have hΦτ_pairing :
+            ∀ φ : SchwartzNPoint d n,
+              HasCompactSupport (φ : NPointDomain d n -> ℂ) ->
+              tsupport (φ : NPointDomain d n -> ℂ) ⊆ hChart.V0 ->
+                ∫ x : NPointDomain d n,
+                    Φτ (fun k => wickRotatePoint (x k)) * φ x
+                  =
+                ∫ x : NPointDomain d n,
+                    bvt_F OS lgc n
+                      (fun k => wickRotatePoint (x (τ k))) * φ x := by
+          simpa [Φτ, τ] using
+            BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24
+              (d := d) hd OS lgc n i hi V
+              hV_jost hV_ordered hV_swap_ordered hRep hChart
+        have hwick_eq :
+            ∀ x : NPointDomain d n,
+              x ∈ hChart.V0 ->
+                Φτ (fun k => wickRotatePoint (x k)) =
+                  Φ0 (fun k => wickRotatePoint (x k)) := by
+          have hcontΦτ_real :
+              ContinuousOn
+                (fun x : NPointDomain d n =>
+                  Φτ (fun k => wickRotatePoint (x k))) hChart.V0 :=
+            hΦτ_diff.continuousOn.comp'
+              (BHW.continuous_wickRotateRealConfig
+                (d := d) (n := n)).continuousOn
+              (by intro x hx; exact hChart.wick_mem x hx)
+          have hcontΦ0_real :
+              ContinuousOn
+                (fun x : NPointDomain d n =>
+                  Φ0 (fun k => wickRotatePoint (x k))) hChart.V0 :=
+            hΦ0_diff.continuousOn.comp'
+              (BHW.continuous_wickRotateRealConfig
+                (d := d) (n := n)).continuousOn
+              (by intro x hx; exact hChart.wick_mem x hx)
+          have hpoint :
+              Set.EqOn
+                (fun x : NPointDomain d n =>
+                  Φτ (fun k => wickRotatePoint (x k)))
+                (fun x : NPointDomain d n =>
+                  Φ0 (fun k => wickRotatePoint (x k)))
+                hChart.V0 := by
+            refine
+              SCV.eqOn_open_of_compactSupport_schwartz_integral_eq_of_continuousOn
+                hChart.V0_open hcontΦτ_real hcontΦ0_real ?compact_eq
+            intro φ hφ_comp hφ_supp
+            calc
+              ∫ x : NPointDomain d n,
+                  Φτ (fun k => wickRotatePoint (x k)) * φ x
+                  =
+                ∫ x : NPointDomain d n,
+                  bvt_F OS lgc n
+                    (fun k => wickRotatePoint (x (τ k))) * φ x :=
+                  hΦτ_pairing φ hφ_comp hφ_supp
+              _ =
+                ∫ x : NPointDomain d n,
+                  bvt_F OS lgc n
+                    (fun k => wickRotatePoint (x k)) * φ x :=
+                  os45_adjacent_euclideanEdge_pairing_eq_on_timeSector
+                    (d := d) OS lgc n i hi hChart.V0
+                    (fun x hx => hV_jost x (hChart.V0_sub hx))
+                    (1 : Equiv.Perm (Fin n))
+                    (fun x hx => hV_ordered x (hChart.V0_sub hx))
+                    (fun x hx => by
+                      simpa [τ, Equiv.swap_inv] using
+                        hV_swap_ordered x (hChart.V0_sub hx))
+                    φ hφ_supp
+              _ =
+                ∫ x : NPointDomain d n,
+                  Φ0 (fun k => wickRotatePoint (x k)) * φ x := by
+                  refine integral_congr_ae ?_
+                  filter_upwards with x
+                  by_cases hx : x ∈ hChart.V0
+                  · simpa [hΦ0_wick x hx]
+                  · have hφx : φ x = 0 := by
+                      exact
+                        (notMem_tsupport_iff_eventuallyEq.mp
+                          (fun hxSupp => hx (hφ_supp hxSupp))).self_of_nhds
+                    simp [hφx]
+          intro x hx
+          exact hpoint x hx
+        have hwick_ne :
+            ∃ x : NPointDomain d n,
+              (fun k => wickRotatePoint (x k)) ∈ hChart.Usrc :=
+          ⟨x0, hChart.wick_mem x0 hChart.x0_mem⟩
+        have hEqOnUsrc : Set.EqOn Φτ Φ0 hChart.Usrc :=
+          eqOn_openConnected_of_eqOn_wickRealSection
+            (d := d) (n := n)
+            hChart.Usrc hChart.Usrc_open hChart.Usrc_connected
+            hwick_ne Φτ Φ0 hΦτ_diff hΦ0_diff
+            (fun x hxU => by
+              have hxV0 : x ∈ hChart.V0 :=
+                (hChart.wick_realSection_iff x).1 hxU
+              exact hwick_eq x hxV0)
+        simpa [Φτ, Φ0, τ] using hEqOnUsrc
+      ```
+
+      The only non-mechanical input in this proof is
+      `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
+      whose proof remains the local OS-I §4.5 compact Schwinger/Jost
+      comparison between the permuted source pullback and the adjacent Wick
+      trace.  All later steps are analytic separation, connected-source
+      continuation, and checked source-germ pullback infrastructure.
+
       Then construct the seed packet as follows.  Choose a regular point
       `zreg ∈ hChart.Usrc` by
       `BHW.exists_regular_sourcePoint_in_open_neighborhood` and set

@@ -1096,7 +1096,10 @@ the checked compact Wick equality
 Wick scalarization from `hRep.branch_eq` plus
 `BHW.extendF_eq_on_forwardTube`; equality on `hChart.Usrc` follows by the
 compact-support separation theorem and
-`eqOn_openConnected_of_eqOn_wickRealSection`.
+`eqOn_openConnected_of_eqOn_wickRealSection`.  The theorem-2 blueprint now
+spells out the Lean-shaped proof of this theorem; after the scalar pullbacks
+and compact-support separation are in place, its only non-mechanical input is
+`BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`.
 
 After that chart equality is available, the seed data are constructed
 without the later quarter-turn path.  Choose
