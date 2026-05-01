@@ -1835,14 +1835,17 @@ locality, or Streater-Wightman Theorem 3-6.
 The theorem-2 blueprint now removes the last schematic `?osi45...` marker
 from the canonical-lift compact theorem.  The source boundary gate is pinned
 to two implementation-level pieces.  First,
-`BHW.OS45CanonicalAdjacentBranchBoundaryData` is a private/proof-local carrier
-for one compact test: it stores the exact `φZ`, `ψZ`, a connected analytic
-branch domain, the deterministic Figure-2-4 lift membership, the ordinary and
-adjacent analytic branches together with their holomorphy and complex-Lorentz
-invariance on that domain, the membership of the real Jost patch in the
-analytic domain, equality of the ordinary branch with
-`extendF (bvt_F OS lgc n)` on the lift, a real Jost patch with boundary
-distribution equality, and the adjacent lift pairing
+`BHW.JostRuelleCompactBoundaryData` is the OS-free generic carrier for the
+Ruelle/Jost uniqueness theorem: it stores a connected analytic branch domain,
+the compact lift, the ordinary and adjacent analytic branches, their
+holomorphy and complex-Lorentz invariance on that domain, a real Jost patch
+with common boundary distribution, and the support-level fact that the lift
+lies in the analytic domain wherever the compact test can contribute.
+`BHW.OS45CanonicalAdjacentBranchBoundaryData` is the OS-specific/proof-local
+carrier for one compact test: it stores the exact `φZ`, `ψZ`, the generic
+Jost/Ruelle data `jr`, the equality between `jr.lift` and the deterministic
+Figure-2-4 lift, equality of `jr.ordinaryBranch` with
+`extendF (bvt_F OS lgc n)` on that lift, and the adjacent lift pairing
 `= OS.S n ψZ`.  Its only allowed producer is
 `BHW.os45CanonicalAdjacentBranchBoundaryData_of_OSI45`, proved from OS I
 §4.5 equations (4.1), (4.12), and (4.14), the compact zero-diagonal Euclidean
@@ -1852,15 +1855,28 @@ wrapper around the canonical theorem.
 
 Second, the generic theorem
 `BHW.jostRuelle_uniqueContinuation_compactBoundary` now has an explicit
-Lean-facing signature: from the branch data above it proves equality of the
-ordinary and adjacent lift pairings by Ruelle/Jost uniqueness on the connected
-component containing the real Jost patch and the canonical lift.  It is a
-standard complex-analytic/Jost theorem with no OS, PET, EOW, scalar
-representative, locality, or `bvt_W` content.  With these pieces, the public
+Lean-facing signature: from `JostRuelleCompactBoundaryData` alone it proves
+equality of the ordinary and adjacent lift pairings by Ruelle/Jost uniqueness
+on the connected component containing the real Jost patch and the compact
+lift.  It is a standard complex-analytic/Jost theorem with no OS, PET, EOW,
+scalar representative, locality, or `bvt_W` content.  The proof transcript is
+now split into two OS-free analytic substeps:
+`BHW.jostRuelle_realPatch_eqOn_of_distributionEq`, which turns
+`D.realBoundary_eq` into pointwise equality on `D.jostPatch` by
+`SCV.eqOn_open_of_compactSupport_schwartz_integral_eq_of_continuousOn` and
+the continuity of the two holomorphic branches restricted along
+`BHW.realEmbed`, and
+`BHW.jostRuelle_branch_eqOn_connectedDomain`, which applies
+`BHW.identity_theorem_totally_real_product` to the holomorphic difference on
+the connected domain `D.Ω`.  The compact theorem then uses
+`D.lift_mem_of_support` on `tsupport φ` and
+`notMem_tsupport_iff_eventuallyEq` off the support to integrate the pointwise
+branch identity.  With these pieces, the public
 `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger` proof is the
 mechanical composition:
 ordinary lift integrand rewrite by `D.ordinary_eq_extendF_on_lift`, generic
-Jost/Ruelle lift-pairing equality, then
+Jost/Ruelle lift-pairing equality applied to `D.jr` and rewritten by
+`D.jr_lift_eq`, then
 `D.adjacent_lift_pairing_eq_permutedSchwinger`.  Therefore the adjacent
 `S'_n` proof docs are more precise, but still not production-Lean-ready until
 both `BHW.os45CanonicalAdjacentBranchBoundaryData_of_OSI45` and the generic

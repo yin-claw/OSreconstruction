@@ -14939,16 +14939,18 @@ Proof decomposition of this theorem, without hiding the analytic work:
                (d := d) hd OS lgc n i hi V hV_jost
                hV_ordered hV_swap_ordered hChart φ hφ_comp hφ_supp
            have huniq :=
-             BHW.jostRuelle_uniqueContinuation_compactBoundary
-               (d := d) hd OS lgc n i hi V hV_jost hChart
-               φ hφ_comp hφ_supp D
+             by
+               have huniq0 :=
+                 BHW.jostRuelle_uniqueContinuation_compactBoundary
+                   (d := d) hd n φ hφ_comp D.jr
+               simpa [D.jr_lift_eq] using huniq0
            have hord :
                ∫ x : NPointDomain d n,
                    BHW.extendF (bvt_F OS lgc n)
                      (hChart.adjLift x (0 : unitInterval)) * φ x
                  =
                ∫ x : NPointDomain d n,
-                   D.ordinaryBranch
+                   D.jr.ordinaryBranch
                      (hChart.adjLift x (0 : unitInterval)) * φ x := by
              refine integral_congr_ae ?_
              filter_upwards with x
@@ -15019,31 +15021,35 @@ Proof decomposition of this theorem, without hiding the analytic work:
          --   `OS.E3_symmetric` for the compact test `ψZ` to prove the
          --   common real-boundary distribution input for Jost/Ruelle
          --   uniqueness.
-         -- It must fill `D.ordinary_holo`, `D.adjacent_holo`,
-         -- `D.ordinary_lorentzInvariant`, `D.adjacent_lorentzInvariant`,
-         -- `D.jostPatch_realEmbed_mem`, `D.realBoundary_eq`,
-         -- `D.lift_mem`, and `D.adjacent_lift_pairing_eq_permutedSchwinger`.
+         -- It must fill `D.jr.ordinary_holo`, `D.jr.adjacent_holo`,
+         -- `D.jr.ordinary_lorentzInvariant`,
+         -- `D.jr.adjacent_lorentzInvariant`,
+         -- `D.jr.jostPatch_realEmbed_mem`, `D.jr.realBoundary_eq`,
+         -- `D.jr.lift_mem_of_support`, `D.jr_lift_eq`, and
+         -- `D.adjacent_lift_pairing_eq_permutedSchwinger`.
          -- This theorem may be kept as the single honest frontier, but it may
          -- not be replaced by a public theorem that simply repackages the
          -- compact conclusion below.
          have huniq :
              ∫ x : NPointDomain d n,
-                 D.ordinaryBranch
+                 D.jr.ordinaryBranch
                    (hChart.adjLift x (0 : unitInterval)) * φ x
                =
              ∫ x : NPointDomain d n,
-                 D.adjacentBranch
+                 D.jr.adjacentBranch
                    (hChart.adjLift x (0 : unitInterval)) * φ x :=
-           BHW.jostRuelle_uniqueContinuation_compactBoundary
-             (d := d) hd OS lgc n i hi V hV_jost hChart
-             φ hφ_comp hφ_supp D
+           by
+             have huniq0 :=
+               BHW.jostRuelle_uniqueContinuation_compactBoundary
+                 (d := d) hd n φ hφ_comp D.jr
+             simpa [D.jr_lift_eq] using huniq0
          have hord :
              ∫ x : NPointDomain d n,
                  BHW.extendF (bvt_F OS lgc n)
                    (hChart.adjLift x (0 : unitInterval)) * φ x
                =
              ∫ x : NPointDomain d n,
-                 D.ordinaryBranch
+                 D.jr.ordinaryBranch
                    (hChart.adjLift x (0 : unitInterval)) * φ x := by
            refine integral_congr_ae ?_
            filter_upwards with x
@@ -15076,6 +15082,107 @@ Proof decomposition of this theorem, without hiding the analytic work:
          Figure-2-4 Jost real-boundary comparison.
 
          ```lean
+         /-- OS-free compact Jost/Ruelle uniqueness input.  This is the
+         genuine generic analytic theorem surface: it mentions only the two
+         analytic branches, their common real Jost boundary distribution, and
+         the compact lift against which the resulting branch identity is
+         integrated.  It carries no OS axioms, no scalar representative, no
+         PET/EOW/locality term, and no `bvt_W`. -/
+         structure BHW.JostRuelleCompactBoundaryData
+             [NeZero d]
+             (hd : 2 <= d)
+             (n : Nat)
+             (φ : SchwartzNPoint d n)
+             (hφ_comp :
+               HasCompactSupport (φ : NPointDomain d n -> ℂ)) where
+           Ω : Set (Fin n -> Fin (d + 1) -> ℂ)
+           Ω_open : IsOpen Ω
+           Ω_connected : IsConnected Ω
+           lift : NPointDomain d n -> Fin n -> Fin (d + 1) -> ℂ
+           lift_mem_of_support :
+             ∀ x, x ∈ tsupport (φ : NPointDomain d n -> ℂ) ->
+               lift x ∈ Ω
+           jostPatch : Set (NPointDomain d n)
+           jostPatch_open : IsOpen jostPatch
+           jostPatch_nonempty : jostPatch.Nonempty
+           jostPatch_jost :
+             ∀ x, x ∈ jostPatch -> x ∈ BHW.JostSet d n
+           jostPatch_realEmbed_mem :
+             ∀ x, x ∈ jostPatch -> BHW.realEmbed x ∈ Ω
+           ordinaryBranch :
+             (Fin n -> Fin (d + 1) -> ℂ) -> ℂ
+           adjacentBranch :
+             (Fin n -> Fin (d + 1) -> ℂ) -> ℂ
+           ordinary_holo :
+             DifferentiableOn ℂ ordinaryBranch Ω
+           adjacent_holo :
+             DifferentiableOn ℂ adjacentBranch Ω
+           ordinary_lorentzInvariant :
+             ∀ (Λ : ComplexLorentzGroup d)
+               (z : Fin n -> Fin (d + 1) -> ℂ),
+               z ∈ Ω ->
+               BHW.complexLorentzAction Λ z ∈ Ω ->
+                 ordinaryBranch (BHW.complexLorentzAction Λ z) =
+                   ordinaryBranch z
+           adjacent_lorentzInvariant :
+             ∀ (Λ : ComplexLorentzGroup d)
+               (z : Fin n -> Fin (d + 1) -> ℂ),
+               z ∈ Ω ->
+               BHW.complexLorentzAction Λ z ∈ Ω ->
+                 adjacentBranch (BHW.complexLorentzAction Λ z) =
+                   adjacentBranch z
+           realBoundary_eq :
+             ∀ χ : SchwartzNPoint d n,
+               HasCompactSupport (χ : NPointDomain d n -> ℂ) ->
+               tsupport (χ : NPointDomain d n -> ℂ) ⊆ jostPatch ->
+                 ∫ x : NPointDomain d n,
+                     ordinaryBranch (BHW.realEmbed x) * χ x
+                   =
+                 ∫ x : NPointDomain d n,
+                     adjacentBranch (BHW.realEmbed x) * χ x
+
+         theorem BHW.jostRuelle_uniqueContinuation_compactBoundary
+             [NeZero d]
+             (hd : 2 <= d)
+             (n : Nat)
+             (φ : SchwartzNPoint d n)
+             (hφ_comp :
+               HasCompactSupport (φ : NPointDomain d n -> ℂ))
+             (D :
+               BHW.JostRuelleCompactBoundaryData hd n φ hφ_comp) :
+             ∫ x : NPointDomain d n,
+                 D.ordinaryBranch (D.lift x) * φ x
+               =
+             ∫ x : NPointDomain d n,
+                 D.adjacentBranch (D.lift x) * φ x
+
+         theorem BHW.jostRuelle_realPatch_eqOn_of_distributionEq
+             [NeZero d]
+             (hd : 2 <= d)
+             (n : Nat)
+             (φ : SchwartzNPoint d n)
+             (hφ_comp :
+               HasCompactSupport (φ : NPointDomain d n -> ℂ))
+             (D :
+               BHW.JostRuelleCompactBoundaryData hd n φ hφ_comp) :
+             Set.EqOn
+               (fun x : NPointDomain d n =>
+                 D.ordinaryBranch (BHW.realEmbed x))
+               (fun x : NPointDomain d n =>
+                 D.adjacentBranch (BHW.realEmbed x))
+               D.jostPatch
+
+         theorem BHW.jostRuelle_branch_eqOn_connectedDomain
+             [NeZero d]
+             (hd : 2 <= d)
+             (n : Nat)
+             (φ : SchwartzNPoint d n)
+             (hφ_comp :
+               HasCompactSupport (φ : NPointDomain d n -> ℂ))
+             (D :
+               BHW.JostRuelleCompactBoundaryData hd n φ hφ_comp) :
+             Set.EqOn D.ordinaryBranch D.adjacentBranch D.Ω
+
          structure BHW.OS45CanonicalAdjacentBranchBoundaryData
              [NeZero d]
              (hd : 2 <= d)
@@ -15104,111 +15211,85 @@ Proof decomposition of this theorem, without hiding the analytic work:
            ψZ_def :
              ψZ =
                permuteZeroDiagonalSchwartz (d := d) (n := n) τ.symm φZ
-           Ω : Set (Fin n -> Fin (d + 1) -> ℂ)
-           Ω_open : IsOpen Ω
-           Ω_connected : IsConnected Ω
-           lift_mem :
-             ∀ x, x ∈ hChart.V0 ->
-               hChart.adjLift x (0 : unitInterval) ∈ Ω
-           jostPatch : Set (NPointDomain d n)
-           jostPatch_open : IsOpen jostPatch
-           jostPatch_nonempty : jostPatch.Nonempty
-           jostPatch_sub_chart : jostPatch ⊆ hChart.V0
-           jostPatch_jost :
-             ∀ x, x ∈ jostPatch -> x ∈ BHW.JostSet d n
-           jostPatch_realEmbed_mem :
-             ∀ x, x ∈ jostPatch -> BHW.realEmbed x ∈ Ω
-           ordinaryBranch :
-             (Fin n -> Fin (d + 1) -> ℂ) -> ℂ
-           adjacentBranch :
-             (Fin n -> Fin (d + 1) -> ℂ) -> ℂ
-           ordinary_holo :
-             DifferentiableOn ℂ ordinaryBranch Ω
-           adjacent_holo :
-             DifferentiableOn ℂ adjacentBranch Ω
-           ordinary_lorentzInvariant :
-             ∀ (Λ : ComplexLorentzGroup d)
-               (z : Fin n -> Fin (d + 1) -> ℂ),
-               z ∈ Ω ->
-               BHW.complexLorentzAction Λ z ∈ Ω ->
-                 ordinaryBranch (BHW.complexLorentzAction Λ z) =
-                   ordinaryBranch z
-           adjacent_lorentzInvariant :
-             ∀ (Λ : ComplexLorentzGroup d)
-               (z : Fin n -> Fin (d + 1) -> ℂ),
-               z ∈ Ω ->
-               BHW.complexLorentzAction Λ z ∈ Ω ->
-                 adjacentBranch (BHW.complexLorentzAction Λ z) =
-                   adjacentBranch z
+           jr :
+             BHW.JostRuelleCompactBoundaryData hd n φ hφ_comp
+           jr_lift_eq :
+             ∀ x, jr.lift x =
+               hChart.adjLift x (0 : unitInterval)
            ordinary_eq_extendF_on_lift :
              ∀ x, x ∈ hChart.V0 ->
-               ordinaryBranch (hChart.adjLift x (0 : unitInterval)) =
+               jr.ordinaryBranch (hChart.adjLift x (0 : unitInterval)) =
                  BHW.extendF (bvt_F OS lgc n)
                    (hChart.adjLift x (0 : unitInterval))
-           realBoundary_eq :
-             ∀ χ : SchwartzNPoint d n,
-               HasCompactSupport (χ : NPointDomain d n -> ℂ) ->
-               tsupport (χ : NPointDomain d n -> ℂ) ⊆ jostPatch ->
-                 ∫ x : NPointDomain d n,
-                     ordinaryBranch (BHW.realEmbed x) * χ x
-                   =
-                 ∫ x : NPointDomain d n,
-                     adjacentBranch (BHW.realEmbed x) * χ x
            adjacent_lift_pairing_eq_permutedSchwinger :
              ∫ x : NPointDomain d n,
-                 adjacentBranch (hChart.adjLift x (0 : unitInterval)) *
+                 jr.adjacentBranch (hChart.adjLift x (0 : unitInterval)) *
                    φ x
                =
              OS.S n ψZ
          ```
 
-         The standard uniqueness theorem consumed by this data is the compact
-         Jost/Ruelle theorem, specialized to the finite source configuration
-         space.  It contains no OS, locality, PET, EOW, scalar representative,
-         or `bvt_W` content:
+         Proof transcript for the two generic subtheorems.  First,
+         `BHW.jostRuelle_realPatch_eqOn_of_distributionEq` applies
+         `SCV.eqOn_open_of_compactSupport_schwartz_integral_eq_of_continuousOn`
+         on `D.jostPatch` to the two real restrictions
+         `x ↦ D.ordinaryBranch (BHW.realEmbed x)` and
+         `x ↦ D.adjacentBranch (BHW.realEmbed x)`.  Their continuity on
+         `D.jostPatch` is
+         `D.ordinary_holo.continuousOn.comp' BHW.continuous_realEmbedNPoint.continuousOn`
+         and the analogous adjacent line, with `D.jostPatch_realEmbed_mem` as
+         the `MapsTo` proof.  The compact-test pairing input is exactly
+         `D.realBoundary_eq`; no OS axiom, scalar representative, PET
+         independence, or local EOW statement enters this extraction.
+
+         Second,
+         `BHW.jostRuelle_branch_eqOn_connectedDomain` applies the product
+         totally-real identity theorem
+         `BHW.identity_theorem_totally_real_product` to
+         `H z := D.ordinaryBranch z - D.adjacentBranch z` on `D.Ω`.  The
+         hypotheses are `D.Ω_open`, `D.Ω_connected`,
+         `D.ordinary_holo.sub D.adjacent_holo`, `D.jostPatch_open`,
+         `D.jostPatch_nonempty`, `D.jostPatch_realEmbed_mem`, and the real
+         zero statement supplied by
+         `BHW.jostRuelle_realPatch_eqOn_of_distributionEq`.  The
+         `D.jostPatch_jost`, `D.ordinary_lorentzInvariant`, and
+         `D.adjacent_lorentzInvariant` fields are not decorative: they are
+         the audit trail proving that the two branches supplied by the OS-I
+         producer are the BHW/Jost branches on the correct real environment.
+         The final connected-domain identity is the ordinary holomorphic
+         uniqueness step.
+
+         The proof of
+         `BHW.jostRuelle_uniqueContinuation_compactBoundary` then sets
+         `hΩeq := BHW.jostRuelle_branch_eqOn_connectedDomain ... D`,
+         proves equality of the two integrands for `x ∈ tsupport φ` from
+         `hΩeq (D.lift x) (D.lift_mem_of_support x hx)`, and uses
+         `notMem_tsupport_iff_eventuallyEq` off the support to close by
+         `integral_congr_ae`.  Thus the generic compact theorem has no hidden
+         Figure-2-4 or OS-specific content.  The proof does not know what
+         `bvt_F` is and does not evaluate
+         `SourceScalarRepresentativeData.branch_eq`.
+
+         Lean-shaped proof of the final generic compact theorem:
 
          ```lean
          theorem BHW.jostRuelle_uniqueContinuation_compactBoundary
-             [NeZero d]
-             (hd : 2 <= d)
-             (OS : OsterwalderSchraderAxioms d)
-             (lgc : OSLinearGrowthCondition d OS)
-             (n : Nat) (i : Fin n) (hi : i.val + 1 < n)
-             (V : Set (NPointDomain d n))
-             (hV_jost : ∀ x, x ∈ V -> x ∈ BHW.JostSet d n)
-             {x0 : NPointDomain d n}
-             (hChart :
-               BHW.OS45Figure24SourceChartAt hd OS lgc n i hi V x0)
-             (φ : SchwartzNPoint d n)
-             (hφ_comp :
-               HasCompactSupport (φ : NPointDomain d n -> ℂ))
-             (hφ_supp :
-               tsupport (φ : NPointDomain d n -> ℂ) ⊆ hChart.V0)
-             (D :
-               BHW.OS45CanonicalAdjacentBranchBoundaryData
-                 hd OS lgc n i hi V hV_jost hChart
-                 φ hφ_comp hφ_supp) :
-             ∫ x : NPointDomain d n,
-                 D.ordinaryBranch
-                   (hChart.adjLift x (0 : unitInterval)) * φ x
-               =
-             ∫ x : NPointDomain d n,
-                 D.adjacentBranch
-                   (hChart.adjLift x (0 : unitInterval)) * φ x
+             ... := by
+           classical
+           have hΩeq :
+               Set.EqOn D.ordinaryBranch D.adjacentBranch D.Ω :=
+             BHW.jostRuelle_branch_eqOn_connectedDomain
+               (d := d) hd n φ hφ_comp D
+           refine integral_congr_ae ?_
+           filter_upwards with x
+           by_cases hx : x ∈ tsupport (φ : NPointDomain d n -> ℂ)
+           · exact congrArg (fun c => c * φ x)
+               (hΩeq (D.lift x) (D.lift_mem_of_support x hx))
+           · have hφx : φ x = 0 := by
+               exact
+                 (notMem_tsupport_iff_eventuallyEq.mp hx).self_of_nhds
+             simp [hφx]
          ```
-
-         Proof transcript for the generic theorem: use `D.realBoundary_eq` on
-         compact tests supported in the real Jost patch; by
-         `D.ordinary_holo`, `D.adjacent_holo`,
-         `D.ordinary_lorentzInvariant`, `D.adjacent_lorentzInvariant`,
-         `D.jostPatch_realEmbed_mem`, and `D.Ω_connected`, apply the
-         Ruelle/Jost uniqueness theorem to identify the two analytic branches
-         on the component of `D.Ω` containing the real Jost patch.  The field
-         `D.lift_mem` puts the deterministic Figure-2-4 canonical lift in the
-         same connected domain, and continuity of the lift plus `hφ_comp`
-         permits integration of the resulting pointwise branch identity
-         against `φ`.  The proof does not know what `bvt_F` is and does not
-         evaluate `SourceScalarRepresentativeData.branch_eq`.
 
          With these two private/source-standard pieces, the public canonical
          compact theorem has no hidden placeholder:
@@ -15235,22 +15316,24 @@ Proof decomposition of this theorem, without hiding the analytic work:
                hV_ordered hV_swap_ordered hChart φ hφ_comp hφ_supp
            have huniq :
                ∫ x : NPointDomain d n,
-                   D.ordinaryBranch
+                   D.jr.ordinaryBranch
                      (hChart.adjLift x (0 : unitInterval)) * φ x
                  =
                ∫ x : NPointDomain d n,
-                   D.adjacentBranch
+                   D.jr.adjacentBranch
                      (hChart.adjLift x (0 : unitInterval)) * φ x :=
-             BHW.jostRuelle_uniqueContinuation_compactBoundary
-               (d := d) hd OS lgc n i hi V hV_jost hChart
-               φ hφ_comp hφ_supp D
+             by
+               have huniq0 :=
+                 BHW.jostRuelle_uniqueContinuation_compactBoundary
+                   (d := d) hd n φ hφ_comp D.jr
+               simpa [D.jr_lift_eq] using huniq0
            have hord :
                ∫ x : NPointDomain d n,
                    BHW.extendF (bvt_F OS lgc n)
                      (hChart.adjLift x (0 : unitInterval)) * φ x
                  =
                ∫ x : NPointDomain d n,
-                   D.ordinaryBranch
+                   D.jr.ordinaryBranch
                      (hChart.adjLift x (0 : unitInterval)) * φ x := by
              refine integral_congr_ae ?_
              filter_upwards with x
