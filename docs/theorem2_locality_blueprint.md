@@ -16533,7 +16533,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
       This helper is a one-line use of
       `(BHW.dense_sourceComplexGramRegularAt d n).exists_mem_open hU_open
       ⟨z0, hz0U⟩`; it is listed only because both the local image theorem and
-      the later path theorem need the returned membership proof.
+      the later path theorem need the returned membership proof.  The exact
+      proof has been scratch-checked with `SourceComplexDensity.lean`
+      imported:
+
+      ```lean
+      theorem BHW.exists_regular_sourcePoint_in_open_neighborhood ... := by
+        rcases (BHW.dense_sourceComplexGramRegularAt d n).exists_mem_open
+            hU_open ⟨z0, hz0U⟩ with
+          ⟨zreg, hzreg_regular, hzregU⟩
+        exact ⟨zreg, hzregU, hzreg_regular⟩
+      ```
 
       ```lean
       theorem BHW.os45AdjacentSPrimeScalarSeed_of_compactWickPairingEq
@@ -16647,7 +16657,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
           intro G hG
           rcases hW_realize G hG with ⟨z, hzUreg, hGz⟩
           have hzUsrc : z ∈ Usrc := hUreg_sub hzUreg
-          have hsrc := hEq_src z hzUsrc
+          have hsrc := hEq_src hzUsrc
           simpa [hGz] using hsrc
         exact ⟨Wseed, Gseed, hW_rel, hW_conn, hW_ne,
           hGseedW, hW_double, hW_eq⟩
@@ -16658,7 +16668,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       open neighborhood `Usrc`; it may be inlined in Lean.  It must return the
       membership proof `hzregUsrc`, because that proof is used both for the
       local image theorem and later for the path from `zreg` back to the Wick
-      source point.
+      source point.  The descent of source equality to `Wseed` has also been
+      scratch-checked: `Set.EqOn`'s point argument is implicit, so the Lean
+      call is `hEq_src hzUsrc`, not `hEq_src z hzUsrc`; then
+      `simpa [hGz]` rewrites the realized Gram point.
 
       The path theorem needs the same proof in a provenance-preserving form.
       This is an implementation structure, not a second mathematical result:

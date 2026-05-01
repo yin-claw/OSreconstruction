@@ -1533,10 +1533,19 @@ Equality on `hChart.Usrc` follows by compact-support separation and
 After that chart equality is available, the seed data are constructed
 without the later quarter-turn path.  Choose
 `zreg ∈ hChart.Usrc` by
-`BHW.exists_regular_sourcePoint_in_open_neighborhood`, take
+`BHW.exists_regular_sourcePoint_in_open_neighborhood`, whose proof is now
+scratch-checked from
+`(BHW.dense_sourceComplexGramRegularAt d n).exists_mem_open hU_open
+⟨z0,hz0U⟩`; the returned order is
+`⟨zreg, hzreg_regular, hzregU⟩`, so the exported witness is
+`⟨zreg, hzregU, hzreg_regular⟩`.  Then take
 `Gseed = sourceMinkowskiGram d n zreg`, and use
 `BHW.sourceComplexGramMap_localConnectedRelOpenImage_in_open_of_complexRegular_allArity`
 inside `hChart.Usrc` to obtain the relatively open scalar seed `Wseed`.
+When descending source equality to `Wseed`, the exact checked call is
+`have hsrc := hEq_src hzUsrc`, because `Set.EqOn` keeps the point argument
+implicit; after `hW_realize G hG = ⟨z,hzUreg,hGz⟩`, use
+`hzUsrc := hUreg_sub hzUreg` and close by `simpa [hGz] using hsrc`.
 The source-chart construction's helper
 `BHW.IsRelOpenInSourceComplexGramVariety.sourceMinkowskiGram_preimage_open`
 is now pinned to a scratch-checked proof: unfold
