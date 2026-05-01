@@ -2984,6 +2984,18 @@ Proof decomposition of this theorem, without hiding the analytic work:
       and not a Lean-ready route gate.  Adding the theorem names as wrappers
       or production `sorry`s would not be progress on this route.
 
+      In the current theorem-2 branch there is no approved production
+      source-import boundary for this packet.  Therefore "source import" in
+      this document is a proof-audit label only: before any Lean
+      implementation may consume the packet, each named surface must either
+      be a proved local theorem or be replaced by an already implemented,
+      sorry-free local support theorem with the same mathematical content.
+      It may not be introduced as a new `axiom`, as a theorem with `sorry` or
+      `admit`, or as a data-valued `noncomputable def` whose proof obligation
+      is hidden in a choice field.  A future user approval for a boundary
+      would have to name the exact proposition-level statements below and
+      still carry no theorem-2, locality, PET, EOW, or OS-specific content.
+
       Lean-shaped assembly after the analytic pieces are proved:
 
       ```lean
@@ -3051,6 +3063,32 @@ Proof decomposition of this theorem, without hiding the analytic work:
       theorem.  The source theorem is complete only after the following
       proof-doc subpacket is either formalized or imported as one explicitly
       approved BHW source boundary with the same fields:
+
+      Current no-gap certificate for this block.  The public data constructor
+      `BHW.sourceScalarRepresentativeData_bvt_F` is mathematically ready only
+      when the proof documents contain, for every theorem named in the
+      subpacket, all of the following items:
+
+      * the exact Lean statement with the repo conventions for
+        `ForwardTube`, `ExtendedTube`, `sourceMinkowskiGram`,
+        `sourceComplexGramVariety`, and `ComplexLorentzGroup d`;
+      * a proof transcript whose non-mechanical inputs are standard
+        Hall-Wightman/BHW, finite-dimensional linear algebra, or SCV support
+        theorems, and whose mechanical parts are reduced to local API names;
+      * a provenance note identifying whether the theorem is proved locally,
+        imported from an existing sorry-free support file, or still only a
+        proof-doc obligation;
+      * a negative dependency audit excluding global PET branch independence,
+        theorem-2 locality, local EOW envelopes, pointwise permutation
+        symmetry, and any downstream `bvt_W` construction.
+
+      As of this pass, the first, second, and fourth bullets are largely
+      pinned for the displayed theorem surfaces, but the third bullet still
+      marks the Hall-Wightman branch law, Lemma-3 relative-openness theorem,
+      max-rank scalar chart, scalar continuity/local-boundedness theorem, and
+      normal analytic-space removable theorem as unimplemented proof-doc
+      obligations.  This is the precise reason production Lean must still
+      stop before `BHW.sourceScalarRepresentativeData_bvt_F`.
 
       Local source-text audit, 2026-05-01: the OCR text
       `/tmp/hall_wightman_1957_current.txt`, generated from
@@ -3262,48 +3300,52 @@ Proof decomposition of this theorem, without hiding the analytic work:
             exact ⟨hW.1.2, hW.2⟩⟩
 
       theorem BHW.SourceVarietyGermHolomorphicOn.comp_sourceMinkowskiGram ... := by
-        -- Prove `DifferentiableWithinAt` at each `z ∈ Ω`.
         intro z hz
         have hZU :
             BHW.sourceMinkowskiGram d n z ∈ U :=
           hGramU ⟨z, hz, rfl⟩
         rcases hPhi _ hZU with
           ⟨U0, Ψ, hU0_open, hZU0, hΨ_diff, hEq, _hU0_sub⟩
-        -- Shrink the source neighborhood by continuity of
-        -- `sourceMinkowskiGram` so nearby Gram values lie in `U0`.
-        -- On that shrink all Gram values lie in `sourceComplexGramVariety`,
-        -- hence `Phi ∘ sourceMinkowskiGram = Ψ ∘ sourceMinkowskiGram`.
-        let sourceShrink :=
-          Ω ∩ {w | BHW.sourceMinkowskiGram d n w ∈ U0}
-        have hsourceShrink_subset_U0 :
-            ∀ {w}, w ∈ sourceShrink ->
-              BHW.sourceMinkowskiGram d n w ∈ U0 := by
-          intro w hw
-          exact hw.2
-        have hΨ_comp :
-            DifferentiableOn ℂ
-              (fun w => Ψ (BHW.sourceMinkowskiGram d n w)) sourceShrink :=
-          hΨ_diff.fun_comp
-            ((BHW.contDiff_sourceMinkowskiGram d n).differentiable
-              (by simp)).differentiableOn
-            hsourceShrink_subset_U0
-        have hlocal_eq :
-            Set.EqOn
-              (fun w => Phi (BHW.sourceMinkowskiGram d n w))
-              (fun w => Ψ (BHW.sourceMinkowskiGram d n w))
-              sourceShrink := by
-          intro w hw
-          exact hEq ⟨hsourceShrink_subset_U0 hw,
-            ⟨w, rfl⟩⟩
-        exact hΨ_comp.congr hlocal_eq.symm
+        have hΨ_at :
+            DifferentiableAt ℂ Ψ (BHW.sourceMinkowskiGram d n z) :=
+          hΨ_diff.differentiableAt hU0_open hZU0
+        have hGram_at :
+            DifferentiableAt ℂ (BHW.sourceMinkowskiGram d n) z :=
+          (BHW.contDiff_sourceMinkowskiGram d n).differentiableAt
+            (by simp)
+        have hΨ_comp_within :
+            DifferentiableWithinAt ℂ
+              (fun w => Ψ (BHW.sourceMinkowskiGram d n w)) Ω z :=
+          (hΨ_at.comp z hGram_at).differentiableWithinAt
+        have hpre_nhds :
+            {w : Fin n -> Fin (d + 1) -> ℂ |
+              BHW.sourceMinkowskiGram d n w ∈ U0} ∈ 𝓝 z :=
+          ((BHW.contDiff_sourceMinkowskiGram d n).continuous.continuousAt z)
+            .preimage_mem_nhds (hU0_open.mem_nhds hZU0)
+        have hlocal_eq_eventually :
+            (fun w => Phi (BHW.sourceMinkowskiGram d n w)) =ᶠ[𝓝[Ω] z]
+            (fun w => Ψ (BHW.sourceMinkowskiGram d n w)) :=
+          (mem_nhdsWithin_of_mem_nhds hpre_nhds).mono (by
+            intro w hwU0
+            exact hEq ⟨hwU0, ⟨w, rfl⟩⟩)
+        have hlocal_eq_at :
+            Phi (BHW.sourceMinkowskiGram d n z) =
+              Ψ (BHW.sourceMinkowskiGram d n z) :=
+          hEq ⟨hZU0, ⟨z, rfl⟩⟩
+        exact
+          hΨ_comp_within.congr_of_eventuallyEq
+            hlocal_eq_eventually hlocal_eq_at
       ```
 
-      The displayed `comp_sourceMinkowskiGram` ending is schematic Lean: the
-      implementation should phrase the last step as a local
-      `DifferentiableWithinAt` proof on the continuity shrink, then assemble
-      with `differentiableOn_iff_differentiableWithinAt`.  The mathematical
-      content is the local representative rewrite on the Gram-variety slice;
-      no off-variety equality is used.
+      The proof uses the exact Mathlib congruence API
+      `DifferentiableWithinAt.congr_of_eventuallyEq` from
+      `Mathlib.Analysis.Calculus.FDeriv.Congr`.  The equality event is only
+      on the within-filter `𝓝[Ω] z`, obtained by pulling back the open
+      representative neighborhood `U0` along the continuous Gram map.  This
+      is the crucial analytic-space point: all nearby Gram values are in the
+      source Gram variety by the witness `⟨w, rfl⟩`, so the local equality
+      `hEq` is used only on `U0 ∩ sourceComplexGramVariety d n`; no equality
+      of ambient representatives off the variety is assumed.
 
       Lean-facing standard-geometry inputs for these two audits:
 

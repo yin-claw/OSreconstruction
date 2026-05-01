@@ -397,6 +397,28 @@ implementation contract is:
    global-ambient holomorphy requirement but does not by itself implement
    `BHW.sourceScalarRepresentativeData_bvt_F`.
 
+   Current no-axiom clarification: no such source-import boundary is approved
+   on this branch.  Until the user explicitly approves one with exact
+   proposition-level statements, the phrase "source import" is only a
+   proof-document audit label.  Production Lean must contain real proofs of
+   the named surfaces, or consume already implemented sorry-free local support
+   theorems with the same mathematical content.  It may not add a new
+   `axiom`, a theorem-level `sorry`, an `admit`, or a data-valued
+   `noncomputable def` that hides the Hall-Wightman proof in a choice.  Any
+   future approved boundary must be standard BHW/Hall-Wightman, finite
+   linear-algebra, or SCV support only; it must not mention theorem-2
+   locality, PET independence, local EOW, final `bvt_W`, or OS-specific
+   branch conclusions.
+
+   Readiness status for this scalar-source packet: the theorem names,
+   dimension-general conventions, germ-holomorphic API, and Lean-shaped
+   assembly are now pinned.  The remaining mathematical gaps are exactly the
+   unimplemented proof obligations for the ordinary branch law, Lemma-3
+   relative openness, max-rank scalar chart, scalar continuity/local
+   boundedness, and normal analytic-space removability.  Therefore the proof
+   docs are still not at the "100% ready for production Lean" threshold for
+   `BHW.sourceScalarRepresentativeData_bvt_F`.
+
 1. `BHW.extendedTube_same_sourceGram_extendF_eq`: for `z,w ∈
    BHW.ExtendedTube d n`, equality of
    `BHW.sourceMinkowskiGram d n z` and
@@ -572,6 +594,16 @@ implementation contract is:
    `precomp_sourcePermuteComplexGram`, `comp_sourceMinkowskiGram`,
    `comp_differentiableOn_chart`, and
    `sourceComplexGramVariety_identity_principle`.
+   The `comp_sourceMinkowskiGram` proof must be phrased pointwise with
+   `DifferentiableWithinAt.congr_of_eventuallyEq`: after choosing the local
+   ambient representative `Ψ` on an open `U0`, pull `U0` back along the
+   continuous Gram map to get an event in `𝓝[Ω] z`, prove equality there by
+   the germ field on `U0 ∩ sourceComplexGramVariety d n` using the witness
+   `⟨w, rfl⟩`, compose the differentiability of `Ψ` with the polynomial Gram
+   map, and transfer differentiability to `Phi ∘ sourceMinkowskiGram` by the
+   exact Mathlib congruence theorem.  The docs must not use the old schematic
+   `DifferentiableOn.congr` proof on a smaller source-shrink as if it proved
+   differentiability on all of `Ω`.
    If an atlas is useful during implementation, `BHW.HallWightmanScalarGermAtlas`,
    `BHW.hallWightman_consistentScalarGermAtlas`, and
    `BHW.hallWightman_scalarGermAtlas_glue` are proof-local organization only:
