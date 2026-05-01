@@ -497,7 +497,9 @@ implementation contract is:
    `BHW.complexMinkowski_isotropicDualFrame_of_residualFrame`,
    `BHW.complexMinkowski_wittExtension_subspaceIsometry`,
    `BHW.complexMinkowski_isotropicContraction_partialIsometry`,
-   `BHW.complexMinkowski_isotropicContractionFamily`, and
+   `BHW.complexMinkowski_isotropicContractionFamily`,
+   `BHW.hw_isotropicFrame_base_mem_forwardTube_of_endpoint`,
+   `BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube`, and
    `BHW.hw_lowRank_isotropicContraction_staysIn_extendedTube`.  The printed
    four-dimensional Hall-Wightman proof collapses the residual frame to one
    null vector in ranks one and two; the dimension-general Lean route must
@@ -513,6 +515,17 @@ implementation contract is:
    scaling `q` by `Real.exp (-t)`, and scaling `qDual` by `Real.exp t`; then
    use the dual-pairing equations to prove this partial map preserves the
    complex Minkowski form before extending it to `ComplexLorentzGroup d`.
+   The tube-membership fields are sourced from Hall-Wightman's second and
+   third remarks after Lemma 2:
+   `BHW.hw_isotropicFrame_base_mem_forwardTube_of_endpoint` proves that
+   removing an orthogonal totally isotropic finite-frame component from a
+   forward-tube point leaves a forward-tube point, and
+   `BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube` proves that once
+   one coefficient tuple along the frame lies in the extended tube, every
+   coefficient tuple along that frame does, including the zero tuple.  Thus
+   `base_mem`, `contracted_left_mem`, and `contracted_right_mem` are theorem
+   outputs, not assumptions and not consequences of closedness of the open
+   extended tube.
    The later convergence proof must use the explicit contracted
    configurations and `Real.tendsto_exp_neg_atTop_nhds_zero`, not continuity
    of a noncomputably chosen `t ↦ contract t`.  The contraction data

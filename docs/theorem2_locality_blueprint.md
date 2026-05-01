@@ -4854,6 +4854,63 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 (contract t).val μ ν * qDual c ν) =
                   Real.exp t * qDual c μ)
 
+      /-- Hall-Wightman's second remark after Lemma 2, finite-frame version:
+      if a forward-tube point differs from a base configuration only by a
+      finite totally isotropic frame orthogonal to the base, then the base
+      configuration is still in the forward tube.  This is the load-bearing
+      input behind the low-rank limiting argument; it is not a closure
+      property of the open tube. -/
+      theorem BHW.hw_isotropicFrame_base_mem_forwardTube_of_endpoint
+          [NeZero d]
+          (hd : 2 <= d)
+          {ξ : Fin n -> Fin (d + 1) -> ℂ}
+          {s : Nat}
+          {a : Fin n -> Fin s -> ℂ}
+          {q : Fin s -> Fin (d + 1) -> ℂ}
+          (hξq :
+            (fun i μ => ξ i μ + ∑ c : Fin s, a i c * q c μ) ∈
+              BHW.ForwardTube d n)
+          (hq_pair_zero :
+            ∀ c c',
+              BHW.complexMinkowskiBilinear d (q c) (q c') = 0)
+          (hq_orth :
+            ∀ c i, BHW.complexMinkowskiBilinear d (q c) (ξ i) = 0) :
+          ξ ∈ BHW.ForwardTube d n
+
+      /-- Hall-Wightman's first consequence of the second and third remarks
+      after Lemma 2, finite-frame version.  Once one coefficient tuple along a
+      totally isotropic frame lies in the ordinary extended tube, every
+      coefficient tuple along the same frame lies in the ordinary extended
+      tube, including the zero tuple. -/
+      theorem BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube
+          [NeZero d]
+          (hd : 2 <= d)
+          {ξ : Fin n -> Fin (d + 1) -> ℂ}
+          {s : Nat}
+          {a : Fin n -> Fin s -> ℂ}
+          {q qDual : Fin s -> Fin (d + 1) -> ℂ}
+          (hξq :
+            (fun i μ => ξ i μ + ∑ c : Fin s, a i c * q c μ) ∈
+              BHW.ExtendedTube d n)
+          (hq_pair_zero :
+            ∀ c c',
+              BHW.complexMinkowskiBilinear d (q c) (q c') = 0)
+          (hqDual_pair_zero :
+            ∀ c c',
+              BHW.complexMinkowskiBilinear d (qDual c) (qDual c') = 0)
+          (hq_dual :
+            ∀ c c',
+              BHW.complexMinkowskiBilinear d (q c) (qDual c') =
+                if c = c' then (1 : ℂ) else 0)
+          (hq_orth :
+            ∀ c i, BHW.complexMinkowskiBilinear d (q c) (ξ i) = 0)
+          (hqDual_orth :
+            ∀ c i, BHW.complexMinkowskiBilinear d (qDual c) (ξ i) = 0) :
+          ξ ∈ BHW.ExtendedTube d n ∧
+          ∀ b : Fin n -> Fin s -> ℂ,
+            (fun i μ => ξ i μ + ∑ c : Fin s, b i c * q c μ) ∈
+              BHW.ExtendedTube d n
+
       /-- General finite-dimensional Witt extension for the complex Minkowski
       form.  Unlike the high-rank shortcut statement, the subspace here need
       not be nondegenerate: an isometry between two finite-dimensional
@@ -4969,6 +5026,36 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `Real.tendsto_exp_neg_atTop_nhds_zero`, followed by the continuous
       coercion `ℝ -> ℂ` and finite-sum continuity.
 
+      Proof transcript for the tube-stability theorems.  The forward-tube
+      theorem is Hall-Wightman's second remark after Lemma 2.  In the chosen
+      two-plane normal form for each isotropic direction, write the imaginary
+      parts of the forward-tube successive differences of
+      `ξ i + ∑ c, a i c • q c` in the basis
+      `w1 c, w2 c` plus an orthogonal remainder.  The positivity inequalities
+      defining the forward tube are unchanged when the coefficient components
+      along the isotropic directions are continuously decreased to zero; the
+      orthogonal remainders still have positive cone differences.  In Lean,
+      this is implemented after transporting the finite isotropic frame to a
+      Witt basis by
+      `BHW.complexMinkowski_wittExtension_subspaceIsometry`; the coordinate
+      calculation is finite and uses only `ForwardTube`, `InOpenForwardCone`,
+      `hq_pair_zero`, and `hq_orth`.
+
+      For the extended-tube theorem, write the endpoint as
+      `Λ0 • y` with `y ∈ ForwardTube d n`.  Apply the forward-tube theorem to
+      the transformed base and transformed isotropic frame to obtain the
+      transformed base in the forward tube.  Given arbitrary coefficients
+      `b`, use
+      `BHW.complexMinkowski_isotropicContractionFamily` for the transformed
+      frame: for sufficiently large `t`, the configuration with coefficients
+      `Real.exp (-t) * b` is inside the forward-tube neighborhood of the
+      transformed base; applying the inverse contraction gives the
+      transformed target with coefficients `b`, hence the original target is
+      in the extended tube.  Taking `b = 0` gives `ξ ∈ ExtendedTube d n`.
+      This is exactly Hall-Wightman's first consequence after the three
+      remarks following Lemma 2, generalized from one null vector to a finite
+      totally isotropic frame.
+
       /-- Hall-Wightman's tube lemma after Lemma 2: because the contraction is
       itself a complex Lorentz transformation, every contracted residual-frame
       configuration remains in the ordinary extended tube and converges to the
@@ -4979,12 +5066,25 @@ Proof decomposition of this theorem, without hiding the analytic work:
           {ξ : Fin n -> Fin (d + 1) -> ℂ}
           {s : Nat}
           {a : Fin n -> Fin s -> ℂ}
-          {q : Fin s -> Fin (d + 1) -> ℂ}
+          {q qDual : Fin s -> Fin (d + 1) -> ℂ}
           {contract : ℝ -> ComplexLorentzGroup d}
-          (hξ : ξ ∈ BHW.ExtendedTube d n)
           (hξq :
             (fun i μ => ξ i μ + ∑ c : Fin s, a i c * q c μ) ∈
               BHW.ExtendedTube d n)
+          (hq_pair_zero :
+            ∀ c c',
+              BHW.complexMinkowskiBilinear d (q c) (q c') = 0)
+          (hqDual_pair_zero :
+            ∀ c c',
+              BHW.complexMinkowskiBilinear d (qDual c) (qDual c') = 0)
+          (hq_dual :
+            ∀ c c',
+              BHW.complexMinkowskiBilinear d (q c) (qDual c') =
+                if c = c' then (1 : ℂ) else 0)
+          (hq_orth :
+            ∀ c i, BHW.complexMinkowskiBilinear d (q c) (ξ i) = 0)
+          (hqDual_orth :
+            ∀ c i, BHW.complexMinkowskiBilinear d (qDual c) (ξ i) = 0)
           (hcontract_fix_ξ :
             ∀ t i μ,
               (∑ ν : Fin (d + 1), (contract t).val μ ν * ξ i ν) = ξ i μ)
@@ -4992,6 +5092,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
             ∀ t c μ,
               (∑ ν : Fin (d + 1), (contract t).val μ ν * q c ν) =
                 Real.exp (-t) * q c μ) :
+          ξ ∈ BHW.ExtendedTube d n ∧
           (∀ t,
             (fun i μ =>
               ξ i μ + ∑ c : Fin s, Real.exp (-t) * a i c * q c μ) ∈
@@ -5854,6 +5955,106 @@ Proof decomposition of this theorem, without hiding the analytic work:
       remain in the extended tube; the scalar `Real.exp (-t)` tends to zero,
       so both contracted configurations tend to `ξ`.
 
+      The `base_mem`, `contracted_left_mem`, and `contracted_right_mem` fields
+      of `HWLowRankIsotropicNormalForm` are not independent assumptions.  They
+      are filled from
+      `BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube`, once for the
+      endpoint `BHW.complexLorentzAction Λ0 z` with coefficients `aLeft`, and
+      once for the endpoint `w` with coefficients `aRight`.  The base obtained
+      from the two applications is the same `ξ`; the contracted configurations
+      are the special coefficient choices
+      `fun i c => Real.exp (-t) * aLeft i c` and
+      `fun i c => Real.exp (-t) * aRight i c`.
+
+      Lean-shaped final assembly inside
+      `BHW.hw_lowRank_isotropicNormalForm_of_sameSourceGram` after the
+      selected span, residual frame, dual frame, and contraction family have
+      been constructed:
+
+      ```lean
+      have hleft_endpoint :
+          (fun i μ => ξ i μ + ∑ c : Fin s, aLeft i c * q c μ) ∈
+            BHW.ExtendedTube d n := by
+        simpa [left_eq] using
+          BHW.complexLorentzAction_mem_extendedTube
+            (d := d) n Λ0 hz
+      have hright_endpoint :
+          (fun i μ => ξ i μ + ∑ c : Fin s, aRight i c * q c μ) ∈
+            BHW.ExtendedTube d n := by
+        simpa [right_eq] using hw
+      rcases BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube
+          (d := d) hd hleft_endpoint
+          q_pair_zero qDual_pair_zero q_dual q_orth qDual_orth with
+        ⟨hbase_mem, hleft_all⟩
+      rcases BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube
+          (d := d) hd hright_endpoint
+          q_pair_zero qDual_pair_zero q_dual q_orth qDual_orth with
+        ⟨_, hright_all⟩
+      have hleft_contract_mem :
+          ∀ t,
+            (fun i μ =>
+              ξ i μ + ∑ c : Fin s, Real.exp (-t) * aLeft i c * q c μ) ∈
+              BHW.ExtendedTube d n := by
+        intro t
+        simpa [mul_assoc] using
+          hleft_all (fun i c => Real.exp (-t) * aLeft i c)
+      have hright_contract_mem :
+          ∀ t,
+            (fun i μ =>
+              ξ i μ + ∑ c : Fin s, Real.exp (-t) * aRight i c * q c μ) ∈
+              BHW.ExtendedTube d n := by
+        intro t
+        simpa [mul_assoc] using
+          hright_all (fun i c => Real.exp (-t) * aRight i c)
+      have hleft_tendsto :
+          Tendsto
+            (fun t : ℝ =>
+              fun i μ =>
+                ξ i μ + ∑ c : Fin s, Real.exp (-t) * aLeft i c * q c μ)
+            atTop (nhds ξ) := by
+        -- finite-coordinate continuity plus
+        -- `Real.tendsto_exp_neg_atTop_nhds_zero`
+        exact BHW.tendsto_isotropicResidual_exp_neg
+          (a := aLeft) (q := q)
+      have hright_tendsto :
+          Tendsto
+            (fun t : ℝ =>
+              fun i μ =>
+                ξ i μ + ∑ c : Fin s, Real.exp (-t) * aRight i c * q c μ)
+            atTop (nhds ξ) := by
+        exact BHW.tendsto_isotropicResidual_exp_neg
+          (a := aRight) (q := q)
+      exact
+        { Λ0 := Λ0
+          ξ := ξ
+          s := s
+          aLeft := aLeft
+          aRight := aRight
+          q := q
+          qDual := qDual
+          left_eq := left_eq
+          right_eq := right_eq
+          base_mem := hbase_mem
+          q_pair_zero := q_pair_zero
+          qDual_pair_zero := qDual_pair_zero
+          q_dual := q_dual
+          q_orth := q_orth
+          qDual_orth := qDual_orth
+          contract := contract
+          contract_fix_ξ := contract_fix_ξ
+          contract_scale_q := contract_scale_q
+          contract_scale_qDual := contract_scale_qDual
+          contracted_left_mem := hleft_contract_mem
+          contracted_right_mem := hright_contract_mem
+          contracted_left_tendsto := hleft_tendsto
+          contracted_right_tendsto := hright_tendsto }
+      ```
+
+      The helper `BHW.tendsto_isotropicResidual_exp_neg` is pure finite
+      topology: each coordinate is a finite sum of constants multiplied by
+      `Real.exp (-t)`, so it tends to zero; adding the constant coordinate
+      `ξ i μ` gives convergence to `ξ`.  It may be private in Lean.
+
       Proof transcript for
       `BHW.hw_lowRank_isotropicNormalForm_to_contractionData`: define
         `base := N.ξ`,
@@ -5868,10 +6069,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
               Real.exp (-t) * N.aRight i c * N.q c μ`.
         The left and right curves are in `BHW.ExtendedTube d n` by
         `N.contracted_left_mem t` and `N.contracted_right_mem t`.  The base
-        point is in the extended tube by Hall-Wightman's second remark after
-        Lemma 2: after a preliminary Lorentz move, removing the isotropic
-        residual coefficients leaves a configuration still in the ordinary
-        extended tube.  The two curves tend to `base` by `N.contracted_left_tendsto` and
+        point is in the extended tube by the `N.base_mem` field, which was
+        produced upstream by
+        `BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube`; it is not
+        inferred from closedness of `ExtendedTube`.  The two curves tend to
+        `base` by `N.contracted_left_tendsto` and
         `N.contracted_right_tendsto`.  For each `t`, the Lorentz transform
         `N.contract t * N.Λ0` carries `z` to `curve_left t`, and
         `N.contract t` carries `w` to `curve_right t`, by `N.left_eq`,
