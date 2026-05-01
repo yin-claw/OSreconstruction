@@ -435,6 +435,8 @@ implementation contract is:
    `BHW.hw_lowRank_alignedResidualFrame_of_sameSourceGram`,
    `BHW.ComplexMinkowskiNondegenerateSubspace`,
    `BHW.complexMinkowski_isotropicDualFrame_of_residualFrame`,
+   `BHW.complexMinkowski_wittExtension_subspaceIsometry`,
+   `BHW.complexMinkowski_isotropicContraction_partialIsometry`,
    `BHW.complexMinkowski_isotropicContractionFamily`, and
    `BHW.hw_lowRank_isotropicContraction_staysIn_extendedTube`.  The printed
    four-dimensional Hall-Wightman proof collapses the residual frame to one
@@ -443,7 +445,17 @@ implementation contract is:
    must store the dual isotropic frame fields used by the contraction:
    `qDual_pair_zero`, `q_dual`, `qDual_orth`, and the contraction-family
    field `contract_scale_qDual`; otherwise the Lorentz-family construction is
-   hidden behind an unexplained existence theorem.  The contraction data
+   hidden behind an unexplained existence theorem.  The contraction family is
+   split through the standard finite-dimensional Witt lemma
+   `BHW.complexMinkowski_wittExtension_subspaceIsometry`: first define the
+   partial isometry on
+   `span (range ξ) ⊔ span (range q) ⊔ span (range qDual)` fixing `ξ`,
+   scaling `q` by `Real.exp (-t)`, and scaling `qDual` by `Real.exp t`; then
+   use the dual-pairing equations to prove this partial map preserves the
+   complex Minkowski form before extending it to `ComplexLorentzGroup d`.
+   The later convergence proof must use the explicit contracted
+   configurations and `Real.tendsto_exp_neg_atTop_nhds_zero`, not continuity
+   of a noncomputably chosen `t ↦ contract t`.  The contraction data
    consists of two Lorentz-orbit curves, one from each endpoint, converging to
    the same base configuration; it is not a claim that the two approximating
    curve values are pairwise in one orbit.  The proof of those orbit fields
@@ -587,6 +599,7 @@ implementation contract is:
    `BHW.sourceGramDifferential_image_basis_of_selected_minor`,
    `BHW.hallWightman_maxRank_selectedScalarDifferentials_local`,
    `BHW.hallWightman_coordinateSplit_inverseFunction`,
+   `BHW.exists_sourceCoord_product_with_connected_aux_subset_open`,
    `BHW.auxiliaryCoordinateTangent`,
    `BHW.auxiliaryCoordinateTangent_selectedScalarDeriv_zero`,
    `BHW.hallWightman_auxiliaryTangent_sourceGramDifferentials_zero`,
@@ -652,7 +665,22 @@ implementation contract is:
    connected auxiliary component, so the theorem is false without this field.
    The proof defines `Ψs u := g (u, vbase)` for some `vbase ∈ Ua`, proves
    differentiability on `Us`, and uses connectedness of `Ua` to identify
-   `g (u,v)` with that base value for every `(u,v) ∈ Us × Ua`.  The full
+   `g (u,v)` with that base value for every `(u,v) ∈ Us × Ua`.  This
+   constancy step is the exact Mathlib theorem
+   `IsOpen.is_const_of_fderiv_eq_zero` from
+   `Mathlib.Analysis.Calculus.MeanValue`, applied to the fixed-`u`
+   auxiliary slice and `hUa_conn.isPreconnected`; before applying it, the
+   proof must identify the slice derivative with the auxiliary derivative by
+   the chain rule for `v ↦ (u, v)` and `ContinuousLinearMap.inr`.  The product
+   chart itself must be obtained by shrinking the inverse-function-theorem
+   coordinate target: `isOpen_prod_iff` gives a product neighborhood inside
+   the target, then the auxiliary factor is shrunk to a finite-dimensional
+   ball using `Metric.mem_nhds_iff`, `Metric.isOpen_ball`, and
+   `Metric.isConnected_ball`.  The final coordinate split must restrict the
+   local homeomorphism to this product so that
+   `C.Ucoord = Set.prod Us Ua` holds by definition; a mere inclusion
+   `Us × Ua ⊆ C.Ucoord` is not enough for the auxiliary-independence theorem.
+   The full
    scalar chart is obtained by shrinking `C.U0` to
    `C.U0 ∩ {Z | C.scalarCoord Z ∈ Us}` after writing
    `C.Ucoord = Us × Ua`; the selected-coordinate differentiability input is

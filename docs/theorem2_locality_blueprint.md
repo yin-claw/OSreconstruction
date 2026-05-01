@@ -4728,7 +4728,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       scales `q` by `exp (-t)` and `qDual` by `exp t`.  The dual scaling is
       part of the output so the proof that the family lies in
       `ComplexLorentzGroup d` is visible, not hidden inside a bare existence
-      of maps. -/
+      of maps.  In production declaration order, first prove the two support
+      theorems displayed immediately below this public surface:
+      `BHW.complexMinkowski_wittExtension_subspaceIsometry` and
+      `BHW.complexMinkowski_isotropicContraction_partialIsometry`. -/
       theorem BHW.complexMinkowski_isotropicContractionFamily
           [NeZero d]
           (hd : 2 <= d)
@@ -4762,6 +4765,121 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (∑ ν : Fin (d + 1),
                 (contract t).val μ ν * qDual c ν) =
                   Real.exp t * qDual c μ)
+
+      /-- General finite-dimensional Witt extension for the complex Minkowski
+      form.  Unlike the high-rank shortcut statement, the subspace here need
+      not be nondegenerate: an isometry between two finite-dimensional
+      subspaces of the ambient nondegenerate complex Minkowski space extends to
+      a global complex Lorentz transformation.  This is the standard Witt
+      lemma used by the low-rank contraction frame. -/
+      theorem BHW.complexMinkowski_wittExtension_subspaceIsometry
+          [NeZero d]
+          (hd : 2 <= d)
+          {M N : Submodule ℂ (Fin (d + 1) -> ℂ)}
+          (T : M ≃ₗ[ℂ] N)
+          (hT :
+            ∀ x y : M,
+              BHW.complexMinkowskiBilinear d
+                ((T x : N) : Fin (d + 1) -> ℂ)
+                ((T y : N) : Fin (d + 1) -> ℂ) =
+              BHW.complexMinkowskiBilinear d
+                (x : Fin (d + 1) -> ℂ)
+                (y : Fin (d + 1) -> ℂ)) :
+          ∃ Λ : ComplexLorentzGroup d,
+            ∀ x : M,
+              BHW.complexLorentzVectorAction Λ
+                (x : Fin (d + 1) -> ℂ) =
+              ((T x : N) : Fin (d + 1) -> ℂ)
+
+      /-- The partial finite-frame isometry underlying the low-rank null
+      boost.  Its domain is the span of the common base vectors, the residual
+      isotropic frame, and the dual residual frame.  It fixes every `ξ i`,
+      scales `q c` by `exp (-t)`, scales `qDual c` by `exp t`, and preserves
+      the complex Minkowski form on that span. -/
+      theorem BHW.complexMinkowski_isotropicContraction_partialIsometry
+          [NeZero d]
+          (hd : 2 <= d)
+          {n s : Nat}
+          {ξ : Fin n -> Fin (d + 1) -> ℂ}
+          {q : Fin s -> Fin (d + 1) -> ℂ}
+          {qDual : Fin s -> Fin (d + 1) -> ℂ}
+          (hq_pair_zero :
+            ∀ c c',
+              BHW.complexMinkowskiBilinear d (q c) (q c') = 0)
+          (hqDual_pair_zero :
+            ∀ c c',
+              BHW.complexMinkowskiBilinear d (qDual c) (qDual c') = 0)
+          (hq_dual :
+            ∀ c c',
+              BHW.complexMinkowskiBilinear d (q c) (qDual c') =
+                if c = c' then (1 : ℂ) else 0)
+          (hq_orth :
+            ∀ c i, BHW.complexMinkowskiBilinear d (q c) (ξ i) = 0)
+          (hqDual_orth :
+            ∀ c i, BHW.complexMinkowskiBilinear d (qDual c) (ξ i) = 0)
+          (t : ℝ) :
+          ∃ K : Submodule ℂ (Fin (d + 1) -> ℂ),
+          ∃ T : K ≃ₗ[ℂ] K,
+          ∃ hξ : ∀ i, ξ i ∈ K,
+          ∃ hq : ∀ c, q c ∈ K,
+          ∃ hqDual : ∀ c, qDual c ∈ K,
+            (∀ i,
+              ((T ⟨ξ i, hξ i⟩ : K) :
+                Fin (d + 1) -> ℂ) = ξ i) ∧
+            (∀ c,
+              ((T ⟨q c, hq c⟩ : K) :
+                Fin (d + 1) -> ℂ) =
+                fun μ => Real.exp (-t) * q c μ) ∧
+            (∀ c,
+              ((T ⟨qDual c, hqDual c⟩ : K) :
+                Fin (d + 1) -> ℂ) =
+                fun μ => Real.exp t * qDual c μ) ∧
+            (∀ x y : K,
+              BHW.complexMinkowskiBilinear d
+                ((T x : K) : Fin (d + 1) -> ℂ)
+                ((T y : K) : Fin (d + 1) -> ℂ) =
+              BHW.complexMinkowskiBilinear d
+                (x : Fin (d + 1) -> ℂ)
+                (y : Fin (d + 1) -> ℂ))
+
+      Proof transcript for the contraction family.  For each fixed `t`, put
+      `X := Submodule.span ℂ (Set.range ξ)`, `Q := Submodule.span ℂ
+      (Set.range q)`, `Qd := Submodule.span ℂ (Set.range qDual)`, and
+      `K := X ⊔ Q ⊔ Qd`.  The duality equations imply:
+
+      1. `q` is linearly independent, because pairing
+         `∑ c, a c • q c = 0` with `qDual c0` gives `a c0 = 0`.
+      2. `qDual` is linearly independent by the same argument, using symmetry
+         of `complexMinkowskiBilinear`.
+      3. `Q ∩ X = ⊥`: an element of `Q ∩ X` pairs trivially with every
+         `qDual c` by `hqDual_orth`, while the duality equation reads off its
+         `q`-coordinates.
+      4. `Qd ∩ (X ⊔ Q) = ⊥`: pair with every `q c` and use `hq_orth`,
+         `hq_pair_zero`, and `hq_dual`.
+
+      These four facts give a direct-sum coordinate decomposition of `K`.
+      Define `T_t` on `K` by
+      `x + qpart + qdpart ↦ x + Real.exp (-t) • qpart +
+      Real.exp t • qdpart`.  The displayed pairings show that `T_t`
+      preserves the complex Minkowski form on all pairs of generators:
+      the `X`-`X` block is fixed, the `X`-`Q` and `X`-`Qd` blocks are zero,
+      the `Q`-`Q` and `Qd`-`Qd` blocks are zero, and the `Q`-`Qd` block is
+      multiplied by `Real.exp (-t) * Real.exp t = 1`.  The inverse is the
+      same construction with `-t`, so this is a linear equivalence
+      `K ≃ₗ[ℂ] K`.  This proves
+      `BHW.complexMinkowski_isotropicContraction_partialIsometry`.
+
+      Then apply
+      `BHW.complexMinkowski_wittExtension_subspaceIsometry` to this partial
+      isometry for each `t`, and choose the returned Lorentz transformation
+      as `contract t`.  The three output formulas of
+      `BHW.complexMinkowski_isotropicContractionFamily` are obtained by
+      applying the extension equality to the generators `ξ i`, `q c`, and
+      `qDual c`.  No continuity of the chosen map `t ↦ contract t` is used
+      later; all limits in the low-rank branch are proved from the explicit
+      contracted configurations and the checked Mathlib scalar limit
+      `Real.tendsto_exp_neg_atTop_nhds_zero`, followed by the continuous
+      coercion `ℝ -> ℂ` and finite-sum continuity.
 
       /-- Hall-Wightman's tube lemma after Lemma 2: because the contraction is
       itself a complex Lorentz transformation, every contracted residual-frame
@@ -6798,6 +6916,47 @@ Proof decomposition of this theorem, without hiding the analytic work:
             ∀ v : Fin a -> ℂ,
               fderiv ℂ g p (0, v) = 0
 
+      /-- Product-neighborhood shrink used inside the inverse-function chart.
+      From an arbitrary open coordinate target around `(u0, v0)`, choose a
+      smaller product target whose auxiliary factor is an open connected ball.
+      The proof is purely finite-dimensional topology:
+      `isOpen_prod_iff.mp hU_open u0 v0 hp` gives open factors inside `U`;
+      then `Metric.mem_nhds_iff` shrinks the second factor to a ball and
+      `Metric.isConnected_ball` supplies connectedness. -/
+      theorem BHW.exists_sourceCoord_product_with_connected_aux_subset_open
+          {e a : Nat}
+          {U : Set ((Fin e -> ℂ) × (Fin a -> ℂ))}
+          {p : (Fin e -> ℂ) × (Fin a -> ℂ)}
+          (hU_open : IsOpen U) (hp : p ∈ U) :
+          ∃ Us Ua,
+            IsOpen Us ∧ IsOpen Ua ∧
+            p.1 ∈ Us ∧ p.2 ∈ Ua ∧
+            IsConnected Ua ∧ Ua.Nonempty ∧
+            Set.prod Us Ua ⊆ U
+
+      Lean-shaped proof:
+
+      ```lean
+      theorem BHW.exists_sourceCoord_product_with_connected_aux_subset_open
+          ... := by
+        rcases isOpen_prod_iff.mp hU_open p.1 p.2 hp with
+          ⟨Us0, Ua0, hUs0_open, hUa0_open, hp1, hp2, hprod_sub⟩
+        rcases Metric.mem_nhds_iff.mp (hUa0_open.mem_nhds hp2) with
+          ⟨r, hr, hball_sub⟩
+        refine ⟨Us0, Metric.ball p.2 r,
+          hUs0_open, Metric.isOpen_ball,
+          hp1, Metric.mem_ball_self hr,
+          Metric.isConnected_ball hr,
+          ⟨p.2, Metric.mem_ball_self hr⟩, ?_⟩
+        intro q hq
+        exact hprod_sub ⟨hq.1, hball_sub hq.2⟩
+      ```
+
+      The inverse-function theorem proof uses this helper only to choose the
+      smaller target product.  It must then restrict the local equivalence to
+      the preimage of `Set.prod Us Ua`, rather than leaving the original
+      target and recording a subset.
+
       /-- Finite-dimensional calculus support: a differentiable complex
       function with zero Frechet derivative on an open connected set is
       constant there.  This is used only to turn the zero auxiliary
@@ -6811,6 +6970,26 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (hf : DifferentiableOn ℂ f Ω)
           (hzero : ∀ x, x ∈ Ω -> fderiv ℂ f x = 0) :
           ∀ x, x ∈ Ω -> ∀ y, y ∈ Ω -> f x = f y
+
+      Lean-shaped proof of this support theorem should use the checked
+      Mathlib API directly:
+
+      ```lean
+      theorem BHW.eqOn_of_fderiv_eq_zero_of_isConnected_open ... := by
+        intro x hx y hy
+        exact hΩ_open.is_const_of_fderiv_eq_zero
+          hΩ_conn.isPreconnected
+          hf
+          (fun z hz => hzero z hz)
+          hx hy
+      ```
+
+      The needed theorem is
+      `IsOpen.is_const_of_fderiv_eq_zero` from
+      `Mathlib.Analysis.Calculus.MeanValue`; it takes an `IsPreconnected`
+      open set, so the local helper only converts `IsConnected Ω` to
+      `hΩ_conn.isPreconnected`.  Production may inline this Mathlib call
+      instead of exporting the helper if that keeps the support file cleaner.
 
       /-- Holomorphic functions on a product coordinate polydisc whose
       derivatives in all auxiliary directions vanish are pulled back from the
@@ -6835,6 +7014,80 @@ Proof decomposition of this theorem, without hiding the analytic work:
             U = Set.prod Us Ua ∧
             DifferentiableOn ℂ Ψs Us ∧
             ∀ p, p ∈ U -> g p = Ψs p.1
+
+      Lean-shaped proof of the product-independence theorem:
+
+      ```lean
+      theorem BHW.holomorphic_product_independent_of_auxiliary ... := by
+        rcases hU_product with
+          ⟨Us, Ua, hUs_open, hUa_open, hUa_conn, hUa_ne, rfl⟩
+        rcases hUa_ne with ⟨vbase, hvbase⟩
+        let Ψs : (Fin e -> ℂ) -> ℂ := fun u => g (u, vbase)
+        have hΨs_diff : DifferentiableOn ℂ Ψs Us := by
+          -- Slice `g` along the differentiable affine map
+          -- `u ↦ (u, vbase)`.  Use `hasFDerivAt_prodMk_left`/`inl`
+          -- or the corresponding `fun_prop` differentiability proof, and
+          -- the inclusion `(u, vbase) ∈ Us ×ˢ Ua`.
+          exact
+            hg.comp
+              ((differentiable_id.prodMk differentiable_const).differentiableOn)
+              (by intro u hu; exact ⟨hu, hvbase⟩)
+        have hconst_aux :
+            ∀ u, u ∈ Us -> ∀ v, v ∈ Ua -> g (u, v) = Ψs u := by
+          intro u hu v hv
+          let gu : (Fin a -> ℂ) -> ℂ := fun v => g (u, v)
+          have hgu_diff : DifferentiableOn ℂ gu Ua := by
+            -- Slice `g` along `v ↦ (u, v)` using
+            -- `hasFDerivAt_prodMk_right`/`inr`.
+            exact
+              hg.comp
+                ((differentiable_const.prodMk differentiable_id).differentiableOn)
+                (by intro v hv; exact ⟨hu, hv⟩)
+          have hgu_zero :
+              ∀ v, v ∈ Ua -> fderiv ℂ gu v = 0 := by
+            intro v hv
+            have hslice :
+                fderiv ℂ gu v =
+                  (fderiv ℂ g (u, v)).comp
+                    (ContinuousLinearMap.inr ℂ
+                      (Fin e -> ℂ) (Fin a -> ℂ)) := by
+              -- Chain rule for `gu = g ∘ fun v => (u, v)`.
+              -- Since `Us ×ˢ Ua` is open, `hg` gives differentiability at
+              -- `(u, v)`, and
+              -- `hasFDerivAt_prodMk_right` gives the derivative of the slice.
+              have hg_at :
+                  DifferentiableAt ℂ g (u, v) :=
+                hg.differentiableAt
+                  ((hUs_open.prod hUa_open).mem_nhds ⟨hu, hv⟩)
+              have hslice_at :
+                  HasFDerivAt (fun v : Fin a -> ℂ => (u, v))
+                    (ContinuousLinearMap.inr ℂ
+                      (Fin e -> ℂ) (Fin a -> ℂ)) v :=
+                hasFDerivAt_prodMk_right u v
+              simpa [gu, hslice_at.fderiv] using
+                (fderiv_comp'
+                  (x := v) (g := g)
+                  (f := fun v : Fin a -> ℂ => (u, v))
+                  hg_at hslice_at.differentiableAt)
+            apply ContinuousLinearMap.ext
+            intro dv
+            rw [hslice]
+            simpa [ContinuousLinearMap.comp_apply] using
+              haux (u, v) ⟨hu, hv⟩ dv
+          exact
+            (BHW.eqOn_of_fderiv_eq_zero_of_isConnected_open
+              hUa_open hUa_conn hgu_diff hgu_zero v hv vbase hvbase).trans
+              rfl
+        refine ⟨Us, Ua, Ψs, hUs_open, hUa_open, hUa_conn,
+          ⟨vbase, hvbase⟩, rfl, hΨs_diff, ?_⟩
+        intro p hp
+        exact hconst_aux p.1 hp.1 p.2 hp.2
+      ```
+
+      The displayed proof intentionally fixes `u` and applies constancy only
+      on the auxiliary factor `Ua`.  It never asserts that zero auxiliary
+      derivatives make `g` constant on the full product, and it never compares
+      different connected components of an auxiliary open set.
 
       /-- Reinflate a holomorphic function of the selected independent scalar
       coordinates to a holomorphic ambient scalar function on a neighborhood
@@ -7257,9 +7510,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
       vector neighborhood to the ordinary extended tube using
       `BHW.isOpen_extendedTube`; keep both the subtype homeomorphism `coord`
       and the ambient differentiable maps `coordMap`/`coordSymmMap`; shrink
-      the coordinate target to a product of finite-dimensional balls
-      `Us × Ua` around the base coordinate, with `Ua` open, connected, and
-      nonempty, so the auxiliary-independence theorem applies; define
+      the coordinate target by first applying
+      `BHW.exists_sourceCoord_product_with_connected_aux_subset_open` to the
+      inverse-function-theorem target open, and then restricting the local
+      homeomorphism to the preimage of the resulting product
+      `Us × Ua`.  The final `C.Ucoord` is definitionally this product, so the
+      field `C.Ucoord_product` is proved by `⟨Us, Ua, hUs_open, hUa_open,
+      hUa_conn, hUa_nonempty, rfl⟩`.  This restriction step is mandatory:
+      it is not enough to know a product lies inside the IFT image while
+      keeping the old larger coordinate target, because
+      `BHW.holomorphic_product_independent_of_auxiliary` needs equality
+      `C.Ucoord = Set.prod Us Ua`; define
       `U0` as a scalar neighborhood on which selected scalar coordinates are
       injective on `sourceComplexGramVariety d n`; and record
       `sourceGram_selected` by the first projection of the coordinate map.
