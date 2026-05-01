@@ -673,7 +673,18 @@ implementation contract is:
    low-rank construction of the adapted representative is sourced from the
    Hall-Wightman Lemma-2 residual-frame theorem plus
    `BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube`, setting the null
-   residual coefficients to zero while preserving scalar products.  The
+   residual coefficients to zero while preserving scalar products.  The proof
+   is now decomposed through
+   `BHW.sourceGramMatrixRank_pos_of_mem_extendedTube`,
+   `BHW.hwLemma3_selectedProjection`,
+   `BHW.hwLemma3_selectedResidual`,
+   `BHW.hwLemma3_selectedProjection_gram_eq`,
+   `BHW.hwLemma3_selectedProjection_span_finrank_eq_rank`, and
+   `BHW.hwLemma3_selectedResidual_isotropicFrameData`: choose a nonzero
+   principal rank block, project every source vector to the selected span,
+   prove the Schur residual has zero pairings, express that residual in a
+   finite totally isotropic frame, and then use the Hall-Wightman
+   all-coefficients extended-tube theorem with zero coefficients.  The
    theorem-2 blueprint now expands the adapted quantitative theorem down to
    Hall-Wightman's actual Lemma-3 algebra:
    `BHW.hwLemma3_selectedBlock_sqrt_near_identity` for the analytic square

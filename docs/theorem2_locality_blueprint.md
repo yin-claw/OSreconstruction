@@ -7419,6 +7419,98 @@ Proof decomposition of this theorem, without hiding the analytic work:
               BHW.sourceGramMatrixRank n
                 (BHW.sourceMinkowskiGram d n z0)
 
+      theorem BHW.sourceGramMatrixRank_pos_of_mem_extendedTube
+          [NeZero d] (hd : 2 <= d)
+          {n : Nat} [NeZero n]
+          {z0 : Fin n -> Fin (d + 1) -> ℂ}
+          (hz0 : z0 ∈ BHW.ExtendedTube d n) :
+          0 < BHW.sourceGramMatrixRank n
+            (BHW.sourceMinkowskiGram d n z0)
+
+      def BHW.hwLemma3_selectedProjection
+          (d n r : Nat)
+          (I : Fin r -> Fin n)
+          (G : Fin n -> Fin n -> ℂ)
+          (z0 : Fin n -> Fin (d + 1) -> ℂ) :
+          Fin n -> Fin (d + 1) -> ℂ :=
+        fun i μ =>
+          ∑ a : Fin r,
+            BHW.hw_selectedSpanCoeff n r I G i a * z0 (I a) μ
+
+      def BHW.hwLemma3_selectedResidual
+          (d n r : Nat)
+          (I : Fin r -> Fin n)
+          (G : Fin n -> Fin n -> ℂ)
+          (z0 : Fin n -> Fin (d + 1) -> ℂ) :
+          Fin n -> Fin (d + 1) -> ℂ :=
+        fun i μ =>
+          z0 i μ -
+            BHW.hwLemma3_selectedProjection d n r I G z0 i μ
+
+      theorem BHW.hwLemma3_selectedProjection_gram_eq
+          [NeZero d] (hd : 2 <= d)
+          (n r : Nat)
+          {z0 : Fin n -> Fin (d + 1) -> ℂ}
+          (hr :
+            r = BHW.sourceGramMatrixRank n
+              (BHW.sourceMinkowskiGram d n z0))
+          {I : Fin r -> Fin n}
+          (hminor :
+            BHW.sourceMatrixMinor n r I I
+              (BHW.sourceMinkowskiGram d n z0) ≠ 0) :
+          BHW.sourceMinkowskiGram d n
+            (BHW.hwLemma3_selectedProjection d n r I
+              (BHW.sourceMinkowskiGram d n z0) z0) =
+          BHW.sourceMinkowskiGram d n z0
+
+      theorem BHW.hwLemma3_selectedProjection_span_finrank_eq_rank
+          [NeZero d] (hd : 2 <= d)
+          (n r : Nat)
+          {z0 : Fin n -> Fin (d + 1) -> ℂ}
+          (hr :
+            r = BHW.sourceGramMatrixRank n
+              (BHW.sourceMinkowskiGram d n z0))
+          {I : Fin r -> Fin n}
+          (hminor :
+            BHW.sourceMatrixMinor n r I I
+              (BHW.sourceMinkowskiGram d n z0) ≠ 0) :
+          Module.finrank ℂ
+            (LinearMap.range
+              (BHW.sourceCoefficientEval d n
+                (BHW.hwLemma3_selectedProjection d n r I
+                  (BHW.sourceMinkowskiGram d n z0) z0))) =
+          r
+
+      theorem BHW.hwLemma3_selectedResidual_isotropicFrameData
+          [NeZero d] (hd : 2 <= d)
+          (n r : Nat)
+          {z0 : Fin n -> Fin (d + 1) -> ℂ}
+          (hr :
+            r = BHW.sourceGramMatrixRank n
+              (BHW.sourceMinkowskiGram d n z0))
+          {I : Fin r -> Fin n}
+          (hminor :
+            BHW.sourceMatrixMinor n r I I
+              (BHW.sourceMinkowskiGram d n z0) ≠ 0) :
+          ∃ (s : Nat)
+            (q : Fin s -> Fin (d + 1) -> ℂ)
+            (a : Fin n -> Fin s -> ℂ),
+            LinearIndependent ℂ q ∧
+            (∀ c e,
+              BHW.complexMinkowskiBilinear d (q c) (q e) = 0) ∧
+            (∀ c i,
+              BHW.complexMinkowskiBilinear d (q c)
+                (BHW.hwLemma3_selectedProjection d n r I
+                  (BHW.sourceMinkowskiGram d n z0) z0 i) = 0) ∧
+            (∀ i μ,
+              BHW.hwLemma3_selectedResidual d n r I
+                (BHW.sourceMinkowskiGram d n z0) z0 i μ =
+              ∑ c : Fin s, a i c * q c μ) ∧
+            (fun i μ =>
+              BHW.hwLemma3_selectedProjection d n r I
+                (BHW.sourceMinkowskiGram d n z0) z0 i μ +
+              ∑ c : Fin s, a i c * q c μ) = z0
+
       theorem BHW.hwSourceGramMaxRankAt_span_finrank_eq_sourceGramMatrixRank
           [NeZero d] (hd : 2 <= d)
           (n : Nat)
@@ -7428,6 +7520,119 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (LinearMap.range (BHW.sourceCoefficientEval d n z0)) =
           BHW.sourceGramMatrixRank n
             (BHW.sourceMinkowskiGram d n z0)
+
+      Proof transcript for
+      `BHW.hwLemma3_extendedTube_adaptedRankRepresentative`:
+
+      1. Put `G := sourceMinkowskiGram d n z0` and
+         `r := sourceGramMatrixRank n G`.  If `n = 0`, take `ζ0 := z0`;
+         the source span and scalar rank are both zero.  If `n > 0`, the
+         rank-zero case cannot occur for an ordinary extended-tube point:
+         destruct `hz0` as a complex Lorentz image of a forward-tube point,
+         use Lorentz invariance of the Gram matrix, and evaluate the
+         `(0,0)` scalar product.  The imaginary part of the first forward-tube
+         vector lies in the open forward cone, so its complex Minkowski square
+         is nonzero.  This is the support theorem
+         `BHW.sourceGramMatrixRank_pos_of_mem_extendedTube`.
+      2. For `0 < r`, use
+         `BHW.exists_sourcePrincipalMinor_ne_zero_of_sourceSymmetricRank` on
+         the symmetric matrix `G` to choose
+         `I : Fin r -> Fin n` with
+         `sourceMatrixMinor n r I I G ≠ 0`.  This is the same principal-block
+         choice as in Hall-Wightman's first paragraph of Lemma 3.
+      3. Define the selected projection
+         `ξ := BHW.hwLemma3_selectedProjection d n r I G z0`, where the
+         coefficients are the already documented
+         `BHW.hw_selectedSpanCoeff n r I G`.  Define the residual
+         `ρ := z0 - ξ`.  The selected coefficient identity
+         `BHW.hw_selectedSpanCoeff_projection_eq` gives
+         `B(ρ i, z0 (I a)) = 0` for every `i,a`.
+      4. The Schur-complement rank theorem gives
+         `B(ρ i, ρ j) = 0` for every `i,j`: the full Gram matrix has rank
+         exactly `r` and the selected principal block is invertible, so the
+         Schur complement of that block is zero.  Expanding the Schur
+         complement in the selected coefficients is precisely the residual
+         pairing.  Consequently `sourceMinkowskiGram d n ξ = G`; this is
+         exposed as `BHW.hwLemma3_selectedProjection_gram_eq`.
+      5. The vectors `ξ i` lie in the span of the selected vectors
+         `z0 (I a)`, while the selected principal minor proves those selected
+         vectors are linearly independent.  Hence the source span of `ξ` has
+         finrank `r`; the same Gram equality identifies this with
+         `sourceGramMatrixRank n G`.  This is
+         `BHW.hwLemma3_selectedProjection_span_finrank_eq_rank`.
+      6. Choose a finite independent frame `q : Fin s -> Fin (d + 1) -> ℂ`
+         for the span of the residuals `ρ i`, and coefficients
+         `a : Fin n -> Fin s -> ℂ` with
+         `ρ i = ∑ c, a i c • q c`.  The residual-pairing zero theorem gives
+         `B(q c, q e)=0`, and selected-residual orthogonality gives
+         `B(q c, ξ i)=0`.  This is the package
+         `BHW.hwLemma3_selectedResidual_isotropicFrameData`.
+      7. Since
+         `z0 = fun i => ξ i + ∑ c, a i c • q c` is in the extended tube,
+         Hall-Wightman's second/third remarks after Lemma 2, in the local
+         finite-frame form already used by the contraction proof, give
+         `ξ ∈ BHW.ExtendedTube d n`: apply
+         `BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube` to the
+         endpoint `z0`, the frame `q`, and the coefficient family `a`, then
+         specialize its returned all-coefficients field to the zero
+         coefficient family.  Take `ζ0 := ξ`.
+
+      Lean-shaped proof skeleton:
+
+      ```lean
+      theorem BHW.hwLemma3_extendedTube_adaptedRankRepresentative ... := by
+        by_cases hn : n = 0
+        · subst hn
+          refine ⟨z0, hz0, rfl, ?_⟩
+          simp [BHW.sourceGramMatrixRank, BHW.sourceCoefficientEval]
+        haveI : NeZero n := ⟨hn⟩
+        let G := BHW.sourceMinkowskiGram d n z0
+        let r := BHW.sourceGramMatrixRank n G
+        have hr_pos : 0 < r := by
+          simpa [r, G] using
+            BHW.sourceGramMatrixRank_pos_of_mem_extendedTube
+              (d := d) hd (n := n) hz0
+        have hGsym : G ∈ BHW.sourceSymmetricMatrixSpace n := by
+          intro i j
+          exact BHW.sourceMinkowskiGram_symm d n z0 i j
+        have hrank : (Matrix.of fun i j : Fin n => G i j).rank = r := rfl
+        rcases BHW.exists_sourcePrincipalMinor_ne_zero_of_sourceSymmetricRank
+            hGsym hrank with
+          ⟨I, hI_inj, hminor⟩
+        let ξ :=
+          BHW.hwLemma3_selectedProjection d n r I G z0
+        rcases BHW.hwLemma3_selectedResidual_isotropicFrameData
+            (d := d) hd n r (z0 := z0) (by rfl) hminor with
+          ⟨s, q, a, hq_li, hq_pair_zero, hq_orth_ξ,
+            hres_coeff, hz0_decomp⟩
+        have hendpoint :
+            (fun i μ => ξ i μ + ∑ c : Fin s, a i c * q c μ) ∈
+              BHW.ExtendedTube d n := by
+          simpa [ξ] using hz0_decomp.symm ▸ hz0
+        rcases BHW.complexMinkowski_isotropicDualFrame_of_residualFrame
+            (d := d) hd (ξ := ξ) (q := q)
+            hq_li hq_pair_zero hq_orth_ξ with
+          ⟨qDual, hqDual_pair_zero, hq_dual, hqDual_orth_ξ⟩
+        rcases BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube
+            (d := d) hd hendpoint
+            hq_pair_zero hqDual_pair_zero hq_dual
+            hq_orth_ξ hqDual_orth_ξ with
+          ⟨hbase_mem, _hall_coefficients⟩
+        refine ⟨ξ, hbase_mem, ?_, ?_⟩
+        · exact BHW.hwLemma3_selectedProjection_gram_eq
+            (d := d) hd n r (z0 := z0) (by rfl) hminor
+        · simpa [ξ, G, r] using
+            BHW.hwLemma3_selectedProjection_span_finrank_eq_rank
+              (d := d) hd n r (z0 := z0) (by rfl) hminor
+      ```
+
+      The call to `hw_isotropicFrame_allCoefficients_mem_extendedTube` uses
+      the same dual-frame fields as the Lemma-2 contraction packet:
+      `qDual_pair_zero`, `q_dual`, and `qDual_orth` are supplied by
+      `BHW.complexMinkowski_isotropicDualFrame_of_residualFrame`.  Thus the
+      adapted representative theorem reuses the existing Hall-Wightman
+      residual-frame infrastructure; it does not introduce a new
+      extended-tube assumption.
 
       /-- Finite-dimensional normal-form transport used in Hall-Wightman
       Lemma 3.  It records the source-index linear change and ambient
