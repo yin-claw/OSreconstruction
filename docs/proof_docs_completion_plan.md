@@ -1687,7 +1687,7 @@ Current examples:
    checked and consumed by the open-Jost-patch uniqueness theorem under the
    legacy strong API.  The analytic bookkeeping lemma
    `SourceVarietyHolomorphicOn.sub` is checked in `SourceExtension.lean`; the
-   corrected scalar-source route requires the parallel germ lemma
+   corrected scalar-source route now also has the parallel checked germ lemma
    `SourceVarietyGermHolomorphicOn.sub`.  The complex selected-coordinate
    local-IFT substrate
    is also checked in `SourceComplexChart.lean`
@@ -2166,10 +2166,12 @@ Current examples:
 	   `sourceComplexGramVariety_rankExact_inter_relOpen_isConnected`,
 	   `sourceComplexGramVariety_rankExact_identity_principle`, and the final
 	   legacy strong-API `sourceComplexGramVariety_identity_principle` in
-	   `BHWPermutation/SourceComplexDensity.lean`; the corrected route must
-	   expose the germ analogue
-	   `sourceComplexGramVariety_identity_principle` using the same
-	   rank-exact/continuity proof.
+	   `BHWPermutation/SourceComplexDensity.lean`; the corrected route now
+	   exposes the germ analogue under the same name,
+	   `sourceComplexGramVariety_identity_principle`, using the same
+	   rank-exact/continuity proof and
+	   `SourceVarietyGermHolomorphicOn.continuousOn` at the dense-extension
+	   step.
 	   The pairwise
 	   `sourceDistributionalUniquenessSetOnVariety_of_realEnvironment` proof is
 	   now checked in `BHWPermutation/SourceDistributionalUniqueness.lean` as the

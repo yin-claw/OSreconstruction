@@ -9411,9 +9411,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
          domain and `sourcePermuteComplexGram n β.symm Z0` lies in it as well,
          after rewriting by `BHW.sourceMinkowskiGram_perm`.
       3. For `BHW.os45OneBranchScalarGramEq_sourceInput_id`, set `β = 1`.
-         Choose a small relatively open scalar neighbourhood
-         `Wscal ⊆ hRep.U = sourceExtendedTubeGramDomain d n` around `Z0`.
-         Since `sourcePermuteComplexGram n 1 = id`,
+         Use `Wscal := hRep.U`; the packet requires relative openness and
+         equality on `Wscal`, not connectedness or a smaller scalar
+         corridor.  The chart neighborhood `Uy` is the open intersection of
+         the two branch domains with the preimage of this `Wscal` under
+         `z ↦ sourceMinkowskiGram d n (Q.symm z)`.  Since
+         `sourcePermuteComplexGram n 1 = id`,
          `BHW.sourceDoublePermutationGramDomain_one_eq` rewrites
          `sourceDoublePermutationGramDomain d n 1` to the ordinary scalar
          domain, and the equality
@@ -11590,26 +11593,22 @@ Proof decomposition of this theorem, without hiding the analytic work:
          `SourceVarietyGermHolomorphicOn d n H Wscal`.
       5. On `Wseed`, `hSeed` gives `H Z = 0` by `sub_eq_zero.mpr`; use
          `hWseed_subset`.
-      6. Apply the checked
-         `BHW.sourceComplexGramVariety_identity_principle`, whose legacy
-         strong-API specialization is checked as
+      6. Apply the checked germ-API theorem
          `BHW.sourceComplexGramVariety_identity_principle` in
          `BHWPermutation/SourceComplexDensity.lean`, with
          `U := Wscal`, `W := Wseed`, `H := H`, `hWscal_relOpen`,
          `hWscal_connected`, `hWseed_relOpen`, `hWseed_nonempty`,
-         `hWseed_subset`, and the zero result from step 5.
+         `hWseed_subset`, `hH_holo`, and the zero result from step 5.
       7. Convert `Set.EqOn H 0 Wscal` back to the displayed equality by
          `sub_eq_zero.mp`.
 
-      Lean migration note: the currently checked generic theorem
+      Lean status (2026-05-01): the generic theorem
       `BHW.os45AdjacentScalarEq_on_quarterTurnCorridor` in
-      `BHWPermutation/SourceComplexDensity.lean` uses the old strong
-      `SourceVarietyHolomorphicOn` field.  On the corrected route it must be
-      ported without changing its mathematical content by replacing the
-      holomorphy support with
-      `SourceVarietyGermHolomorphicOn.of_subset_relOpen`,
-      `SourceVarietyGermHolomorphicOn.precomp_sourcePermuteComplexGram`,
-      `SourceVarietyGermHolomorphicOn.sub`, and
+      `BHWPermutation/SourceComplexDensity.lean` has already been ported to
+      the germ API.  Its proof builds `hΨ_holo`, `hΦ_holo`, and `hH_holo`
+      using `SourceVarietyGermHolomorphicOn.of_subset_relOpen`,
+      `SourceVarietyGermHolomorphicOn.precomp_sourcePermuteComplexGram`, and
+      `SourceVarietyGermHolomorphicOn.sub`, then calls
       `BHW.sourceComplexGramVariety_identity_principle`.
 
       **(C) Pullback assembly.**  Compose the `Set.EqOn` result from
