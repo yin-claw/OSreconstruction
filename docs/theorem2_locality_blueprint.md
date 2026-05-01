@@ -7323,12 +7323,36 @@ Proof decomposition of this theorem, without hiding the analytic work:
       finite-product metric fact that an open neighborhood of `ζ0` contains a
       coordinate sup-norm ball around `ζ0`.  It is the only topology used to
       pass from Hall-Wightman's quantitative `ε` statement to an arbitrary
-      source neighborhood `Vsrc`.  Lean proof: use `Metric.mem_nhds_iff` to
-      choose an ordinary norm ball in the Pi space, then use finite
-      norm-equivalence (or the existing Pi sup-norm lemma, if available in
-      the local imports) to shrink the coordinate bound so that
-      `∀ i μ, ‖v i μ‖ < ε` implies
-      `‖(fun i μ => ζ0 i μ + v i μ) - ζ0‖ < ρ`.
+      source neighborhood `Vsrc`.  The Lean proof is scratch-checked with
+      the existing Pi sup-norm API; no separate norm-equivalence theorem is
+      needed:
+
+      ```lean
+      theorem BHW.exists_coord_supnorm_ball_subset_of_isOpen
+          {d n : Nat}
+          {x0 : Fin n -> Fin (d + 1) -> ℂ}
+          {U : Set (Fin n -> Fin (d + 1) -> ℂ)}
+          (hU_open : IsOpen U)
+          (hx0U : x0 ∈ U) :
+          ∃ ε : ℝ, 0 < ε ∧
+            ∀ v : Fin n -> Fin (d + 1) -> ℂ,
+              (∀ i μ, ‖v i μ‖ < ε) ->
+              (fun i μ => x0 i μ + v i μ) ∈ U := by
+        rcases Metric.mem_nhds_iff.mp (hU_open.mem_nhds hx0U) with
+          ⟨ρ, hρ_pos, hρ_sub⟩
+        refine ⟨ρ, hρ_pos, ?_⟩
+        intro v hv
+        have hv_row : ∀ i : Fin n, ‖v i‖ < ρ := by
+          intro i
+          exact (pi_norm_lt_iff hρ_pos).2 (hv i)
+        have hv_norm : ‖v‖ < ρ :=
+          (pi_norm_lt_iff hρ_pos).2 hv_row
+        have hdiff : (fun i μ => x0 i μ + v i μ) - x0 = v := by
+          ext i μ
+          simp
+        exact hρ_sub (by
+          simpa [Metric.mem_ball, dist_eq_norm, hdiff] using hv_norm)
+      ```
 
       The quantitative adapted-base theorem
       `BHW.hwLemma3_adaptedBase_transport_smallPerturbation_extendedTube` is

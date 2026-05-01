@@ -819,7 +819,10 @@ implementation contract is:
    of the adapted representative is the finite-product open-ball helper
    `BHW.exists_coord_supnorm_ball_subset_of_isOpen` followed by
    `BHW.hwLemma3_smallPerturbation_to_adapted_localVectorRealization`; it is
-   not a replacement for Lemma 3.  The exported relative-open theorem is the
+   not a replacement for Lemma 3.  The open-ball helper is now pinned to a
+   scratch-checked Lean proof using `Metric.mem_nhds_iff` and two nested
+   applications of `pi_norm_lt_iff`; no custom finite norm-equivalence lemma
+   is needed.  The exported relative-open theorem is the
    direct Lemma-3 scalar-neighborhood statement, not a prescribed-neighborhood
    theorem around the original representative.  On the maximal-rank locus,
    where Hall-Wightman Lemmas 5--7 need a scalar chart inside a prescribed
