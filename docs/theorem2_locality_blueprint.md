@@ -13981,6 +13981,264 @@ Proof decomposition of this theorem, without hiding the analytic work:
       is not valid to construct `hChart.adjLift` by an arbitrary choice of
       `Δ_x` under the compact integral.
 
+      Mandatory lift-promotion packet before adjacent `S'_n` Lean:
+
+      ```lean
+      def BHW.os45Figure24AdjacentLift
+          [NeZero d]
+          (hd : 2 <= d)
+          (τ : Equiv.Perm (Fin n))
+          (x : NPointDomain d n)
+          (t : unitInterval) :
+          Fin n -> Fin (d + 1) -> ℂ :=
+        BHW.figure24RotateAdjacentConfig (d := d) (n := n) hd
+          (BHW.permAct (d := d) τ
+            (BHW.os45Figure24IdentityPath (d := d) (n := n) x t))
+
+      theorem BHW.continuous_os45Figure24AdjacentLift
+          [NeZero d]
+          (hd : 2 <= d)
+          (τ : Equiv.Perm (Fin n)) :
+          Continuous
+            (fun p : NPointDomain d n × unitInterval =>
+              BHW.os45Figure24AdjacentLift
+                (d := d) (n := n) hd τ p.1 p.2) := by
+        simpa [BHW.os45Figure24AdjacentLift] using
+          BHW.continuous_figure24RotatedIdentityPath
+            (d := d) (n := n) hd τ
+
+      theorem BHW.os45Figure24AdjacentLift_sourceGram
+          [NeZero d]
+          (hd : 2 <= d)
+          (τ : Equiv.Perm (Fin n))
+          (x : NPointDomain d n)
+          (t : unitInterval) :
+          BHW.sourceMinkowskiGram d n
+              (BHW.os45Figure24AdjacentLift
+                (d := d) (n := n) hd τ x t)
+            =
+          BHW.sourcePermuteComplexGram n τ
+            (BHW.sourceMinkowskiGram d n
+              (BHW.os45Figure24IdentityPath (d := d) (n := n) x t)) := by
+        let Γ : Fin n -> Fin (d + 1) -> ℂ :=
+          BHW.os45Figure24IdentityPath (d := d) (n := n) x t
+        rcases BHW.figure24RotateAdjacentConfig_lorentz_inverse
+            (d := d) (n := n) hd with
+          ⟨Λinv, hΛinv⟩
+        have hInv :
+            BHW.complexLorentzAction Λinv
+                (BHW.os45Figure24AdjacentLift
+                  (d := d) (n := n) hd τ x t)
+              =
+            BHW.permAct (d := d) τ Γ := by
+          simpa [BHW.os45Figure24AdjacentLift, Γ] using
+            hΛinv (BHW.permAct (d := d) τ Γ)
+        have hLor :
+            BHW.sourceMinkowskiGram d n
+                (BHW.complexLorentzAction Λinv
+                  (BHW.os45Figure24AdjacentLift
+                    (d := d) (n := n) hd τ x t))
+              =
+            BHW.sourceMinkowskiGram d n
+                (BHW.os45Figure24AdjacentLift
+                  (d := d) (n := n) hd τ x t) :=
+          BHW.sourceMinkowskiGram_complexLorentzAction
+            (d := d) (n := n) Λinv
+            (BHW.os45Figure24AdjacentLift
+              (d := d) (n := n) hd τ x t)
+        calc
+          BHW.sourceMinkowskiGram d n
+              (BHW.os45Figure24AdjacentLift
+                (d := d) (n := n) hd τ x t)
+              =
+            BHW.sourceMinkowskiGram d n
+              (BHW.complexLorentzAction Λinv
+                (BHW.os45Figure24AdjacentLift
+                  (d := d) (n := n) hd τ x t)) := hLor.symm
+          _ = BHW.sourceMinkowskiGram d n
+              (BHW.permAct (d := d) τ Γ) := by
+                rw [hInv]
+          _ = BHW.sourcePermuteComplexGram n τ
+              (BHW.sourceMinkowskiGram d n Γ) := by
+                simpa [BHW.permAct, Γ] using
+                  BHW.sourceMinkowskiGram_perm d n τ Γ
+      ```
+
+      These three declarations are geometry only.  They use the already
+      checked Figure-2-4 rotation support, the checked continuity theorem
+      `BHW.continuous_figure24RotatedIdentityPath`, and source-Gram Lorentz
+      invariance.  They do not mention `bvt_F`, `SourceScalarRepresentativeData`,
+      OS I/II, EOW, PET, or locality.
+
+      The checked compact-open proof must then be re-exported in a
+      deterministic form:
+
+      ```lean
+      theorem BHW.swFigure24_adjacentPathStableCanonicalLift_exists
+          [NeZero d]
+          (hd : 2 <= d)
+          (i : Fin n) (hi : i.val + 1 < n) :
+          let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+          ∃ (Upath : Set (NPointDomain d n))
+            (xfig : NPointDomain d n),
+            IsOpen Upath ∧ xfig ∈ Upath ∧
+            (∀ k : Fin n, xfig k 0 = 0) ∧
+            xfig ∈ BHW.JostSet d n ∧
+            BHW.realEmbed xfig ∈ BHW.ExtendedTube d n ∧
+            BHW.realEmbed (fun k => xfig (τ k)) ∈
+              BHW.ExtendedTube d n ∧
+            (∀ x, x ∈ Upath -> ∀ t,
+              BHW.os45Figure24AdjacentLift
+                (d := d) (n := n) hd τ x t ∈
+                BHW.ExtendedTube d n) ∧
+            (∀ x, x ∈ Upath ->
+              ∃ (Γ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
+                Continuous Γ ∧
+                Γ (0 : unitInterval) = (fun k => wickRotatePoint (x k)) ∧
+                Γ (1 : unitInterval) =
+                  (BHW.os45QuarterTurnCLE (d := d) (n := n)).symm
+                    (BHW.realEmbed
+                      (BHW.os45CommonEdgeRealPoint
+                        (d := d) (n := n) 1 x)) ∧
+                (∀ t, Γ t ∈ BHW.ExtendedTube d n) ∧
+                (∀ t,
+                  BHW.sourceMinkowskiGram d n
+                    (BHW.os45Figure24AdjacentLift
+                      (d := d) (n := n) hd τ x t)
+                    =
+                  BHW.sourcePermuteComplexGram n τ
+                    (BHW.sourceMinkowskiGram d n (Γ t))))
+      ```
+
+      Proof transcript: repeat the checked proof of
+      `BHW.swFigure24_adjacentPathStableNeighborhood_exists` but do not hide
+      the map
+      `H (x,t) = BHW.os45Figure24AdjacentLift hd τ x t` behind an existential.
+      Use `BHW.continuous_os45Figure24AdjacentLift` as the continuity input to
+      `BHW.exists_open_nhds_forall_mem_of_compact_parameter`; the returned
+      `hUpath_path` is exactly the canonical field
+      `∀ x ∈ Upath, ∀ t, os45Figure24AdjacentLift hd τ x t ∈ ExtendedTube`.
+      For the second field set
+      `Γ := BHW.os45Figure24IdentityPath (d := d) (n := n) x`; its endpoint,
+      continuity, and extended-tube membership are
+      `BHW.os45Figure24IdentityPath_zero`,
+      `BHW.os45Figure24IdentityPath_one`,
+      `BHW.continuous_os45Figure24IdentityPath`, and
+      `BHW.os45Figure24IdentityPath_mem_forwardTube` followed by
+      `BHW.forwardTube_subset_extendedTube`.  The scalar-Gram identity is
+      `BHW.os45Figure24AdjacentLift_sourceGram`.  This theorem is not a
+      wrapper around the old existential statement: it exposes the deterministic
+      rotated lift needed by compact integration.
+
+      The selected source patch should then export a carrier whose fields are
+      the existing checked source-patch fields plus the deterministic lift
+      projection.  This is a genuine geometric data packet, not a convenience
+      wrapper, because it prevents the later scalarization proof from choosing
+      an arbitrary adjacent realization under the integral.
+
+      ```lean
+      structure BHW.OS45Figure24CanonicalSourcePatchData
+          [NeZero d]
+          (hd : 2 <= d)
+          (n : Nat) (i : Fin n) (hi : i.val + 1 < n) where
+        τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+        Ufig V : Set (NPointDomain d n)
+        xseed : NPointDomain d n
+        Ufig_open : IsOpen Ufig
+        V_open : IsOpen V
+        V_connected : IsConnected V
+        V_nonempty : V.Nonempty
+        xseed_mem : xseed ∈ V
+        closureV_compact : IsCompact (closure V)
+        closureV_sub_Ufig : closure V ⊆ Ufig
+        V_jost : ∀ x, x ∈ V -> x ∈ BHW.JostSet d n
+        V_ordered :
+          ∀ x, x ∈ V ->
+            x ∈ EuclideanOrderedPositiveTimeSector
+              (d := d) (n := n) (1 : Equiv.Perm (Fin n))
+        V_swap_ordered :
+          ∀ x, x ∈ V ->
+            (fun k => x (τ k)) ∈
+              EuclideanOrderedPositiveTimeSector (d := d) (n := n) τ
+        V_pulled_id :
+          ∀ x, x ∈ V ->
+            BHW.realEmbed
+              (BHW.os45CommonEdgeRealPoint
+                (d := d) (n := n) 1 x) ∈
+              BHW.os45PulledRealBranchDomain
+                (d := d) (n := n) 1
+        V_pulled_tau :
+          ∀ x, x ∈ V ->
+            BHW.realEmbed
+              (BHW.os45CommonEdgeRealPoint
+                (d := d) (n := n) 1 x) ∈
+              BHW.os45PulledRealBranchDomain
+                (d := d) (n := n) τ
+        closure_ordered :
+          ∀ x, x ∈ closure V ->
+            x ∈ EuclideanOrderedPositiveTimeSector
+              (d := d) (n := n) (1 : Equiv.Perm (Fin n))
+        closure_swap_ordered :
+          ∀ x, x ∈ closure V ->
+            (fun k => x (τ k)) ∈
+              EuclideanOrderedPositiveTimeSector (d := d) (n := n) τ
+        adjLift_mem_extendedTube :
+          ∀ x, x ∈ V -> ∀ t,
+            BHW.os45Figure24AdjacentLift
+              (d := d) (n := n) hd τ x t ∈
+              BHW.ExtendedTube d n
+        figPath_closure :
+          ∀ x, x ∈ closure V ->
+            let y :=
+              BHW.os45CommonEdgeRealPoint
+                (d := d) (n := n) 1 x
+            ∃ Γ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ,
+              Continuous Γ ∧
+              Γ (0 : unitInterval) = (fun k => wickRotatePoint (x k)) ∧
+              Γ (1 : unitInterval) =
+                (BHW.os45QuarterTurnCLE (d := d) (n := n)).symm
+                  (BHW.realEmbed y) ∧
+              (∀ t, Γ t ∈ BHW.ExtendedTube d n) ∧
+              (∀ t,
+                BHW.os45Figure24AdjacentLift
+                  (d := d) (n := n) hd τ x t ∈
+                  BHW.ExtendedTube d n) ∧
+              (∀ t,
+                BHW.sourceMinkowskiGram d n
+                  (BHW.os45Figure24AdjacentLift
+                    (d := d) (n := n) hd τ x t)
+                  =
+                BHW.sourcePermuteComplexGram n τ
+                  (BHW.sourceMinkowskiGram d n (Γ t)))
+
+      theorem BHW.os45_adjacent_identity_canonicalSourcePatch
+          [NeZero d]
+          (hd : 2 <= d)
+          (i : Fin n) (hi : i.val + 1 < n) :
+          BHW.OS45Figure24CanonicalSourcePatchData (d := d) hd n i hi
+      ```
+
+      Proof transcript: copy the checked proof of
+      `BHW.os45_adjacent_identity_horizontalEdge_sourcePatch`, but start from
+      `BHW.swFigure24_adjacentPathStableCanonicalLift_exists` instead of the
+      old existential path-stability theorem.  Intersect `Ufig` with
+      `Upath`, choose the same ordered perturbation inside
+      `Ufig ∩ Upath`, and perform the same precompact connected shrink.
+      The existing fields are filled exactly as in the checked theorem.  The
+      new `adjLift_mem_extendedTube` field is
+      `hUpath_adjLift x (hclosureV_Upath (subset_closure hx)) t` restricted
+      from `closure V` to `V`.  The new `figPath_closure` field uses
+      `Γ := BHW.os45Figure24IdentityPath x`,
+      `BHW.continuous_os45Figure24IdentityPath`,
+      `BHW.os45Figure24IdentityPath_zero`,
+      `BHW.os45Figure24IdentityPath_one`,
+      `BHW.os45Figure24IdentityPath_mem_forwardTube`,
+      `BHW.forwardTube_subset_extendedTube`, the canonical lift membership
+      from `hUpath_adjLift`, and
+      `BHW.os45Figure24AdjacentLift_sourceGram`.  This exposes both downstream
+      requirements: the open-chart deterministic lift for compact pairings and
+      the closure-level scalar path for the corridor.
+
       The canonical lift as a map is only deterministic geometry: it is an
       ordinary-extended-tube representative of the same raw adjacent Wick
       section.  The boundary theorem is the later compact-pairing statement

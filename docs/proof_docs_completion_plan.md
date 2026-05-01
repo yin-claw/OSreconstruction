@@ -1979,6 +1979,35 @@ extended-tube membership, source-Gram identity, Wick membership, and
 real-section equivalence fields.  A later Lean port may not substitute an
 arbitrary choice of adjacent lift under the compact integral.
 
+The lift/chart promotion proof is now pinned to exact theorem surfaces.  First
+define
+`BHW.os45Figure24AdjacentLift hd τ x t` as
+`BHW.figure24RotateAdjacentConfig hd
+  (BHW.permAct τ (BHW.os45Figure24IdentityPath x t))`.  Its continuity is
+`BHW.continuous_figure24RotatedIdentityPath` by `simpa`, and its source-Gram
+identity is the three-line calculation:
+apply `BHW.figure24RotateAdjacentConfig_lorentz_inverse`, rewrite the source
+Gram by `BHW.sourceMinkowskiGram_complexLorentzAction`, and finish with
+`BHW.sourceMinkowskiGram_perm`.  Then promote the checked compact-open proof to
+`BHW.swFigure24_adjacentPathStableCanonicalLift_exists`, whose output contains
+the deterministic field
+`∀ x ∈ Upath, ∀ t, BHW.os45Figure24AdjacentLift hd τ x t ∈
+BHW.ExtendedTube d n` and the identity-path scalar-Gram field with
+`Γ := BHW.os45Figure24IdentityPath x`.  This theorem repeats the existing
+compact-parameter neighborhood proof but exposes the actual map `H`; it is not
+a wrapper around an arbitrary existential `Δ`.
+
+The selector-to-chart carrier is now fixed as
+`BHW.OS45Figure24CanonicalSourcePatchData`, produced by
+`BHW.os45_adjacent_identity_canonicalSourcePatch`.  It repeats the checked
+`os45_adjacent_identity_horizontalEdge_sourcePatch` shrink, but starts from
+`BHW.swFigure24_adjacentPathStableCanonicalLift_exists` and stores two extra
+deterministic fields: open-chart membership
+`∀ x ∈ V, ∀ t, BHW.os45Figure24AdjacentLift hd τ x t ∈ ExtendedTube`, and a
+closure-level Figure-2-4 scalar path whose adjacent realization is exactly
+`BHW.os45Figure24AdjacentLift`, not an existentially chosen `Δ`.  This carrier
+is the source of the later `hV_adjLift_ET` and `hV_figPath_closure` inputs.
+
 New route correction for the adjacent scalarization chart: the Figure-2-4
 hypothesis
 `(fun k => x (τ k)) ∈ EuclideanOrderedPositiveTimeSector τ` does not imply
