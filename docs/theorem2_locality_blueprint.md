@@ -9809,8 +9809,182 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.sourceMinkowskiGram_perm`.  The new Lean port must expose it under
       a public name rather than reprove the same argument inside the integral.
 
-      The genuine OS-I §4.5 source-boundary theorem is the canonical-lift
-      pairing statement:
+      The canonical lift is not itself the source-boundary theorem.  It is a
+      deterministic ordinary-extended-tube representative of the same raw
+      adjacent Wick section.  The Lean port must first expose the Lorentz
+      normalization theorem below; the proof uses only Figure-2-4 geometry and
+      ordinary `extendF` Lorentz invariance.
+
+      ```lean
+      theorem BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero
+          [NeZero d]
+          (hd : 2 <= d)
+          (OS : OsterwalderSchraderAxioms d)
+          (lgc : OSLinearGrowthCondition d OS)
+          (n : Nat) (i : Fin n) (hi : i.val + 1 < n)
+          (V : Set (NPointDomain d n))
+          {x0 : NPointDomain d n}
+          (hChart :
+            BHW.OS45Figure24SourceChartAt hd OS lgc n i hi V x0) :
+          let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+          ∀ x, x ∈ hChart.V0 ->
+            BHW.extendF (bvt_F OS lgc n)
+              (hChart.adjLift x (0 : unitInterval))
+              =
+            BHW.extendF (bvt_F OS lgc n)
+              (BHW.permAct (d := d) τ
+                (fun k => wickRotatePoint (x k)))
+      ```
+
+      Lean-shaped proof:
+
+      ```lean
+      theorem BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero ... := by
+        classical
+        let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+        intro x hx
+        rcases BHW.figure24RotateAdjacentConfig_lorentz_inverse
+            (d := d) (n := n) hd with
+          ⟨Λinv, hΛinv⟩
+        have hET :
+            hChart.adjLift x (0 : unitInterval) ∈
+              BHW.ExtendedTube d n :=
+          hChart.adjLift_mem_extendedTube x hx (0 : unitInterval)
+        have hact :
+            BHW.complexLorentzAction Λinv
+                (hChart.adjLift x (0 : unitInterval))
+              =
+            BHW.permAct (d := d) τ
+              (fun k => wickRotatePoint (x k)) := by
+          calc
+            BHW.complexLorentzAction Λinv
+                (hChart.adjLift x (0 : unitInterval))
+                =
+              BHW.complexLorentzAction Λinv
+                (BHW.os45Figure24AdjacentLift
+                  (d := d) (n := n) hd τ x (0 : unitInterval)) := by
+                    rw [hChart.adjLift_def x (0 : unitInterval)]
+            _ =
+              BHW.permAct (d := d) τ
+                (BHW.os45Figure24IdentityPath
+                  (d := d) (n := n) x (0 : unitInterval)) := by
+                    simpa [BHW.os45Figure24AdjacentLift] using
+                      hΛinv
+                        (BHW.permAct (d := d) τ
+                          (BHW.os45Figure24IdentityPath
+                            (d := d) (n := n) x (0 : unitInterval)))
+            _ =
+              BHW.permAct (d := d) τ
+                (fun k => wickRotatePoint (x k)) := by
+                    simpa [BHW.os45Figure24IdentityPath_zero]
+        have hLor :
+            BHW.extendF (bvt_F OS lgc n)
+                (BHW.complexLorentzAction Λinv
+                  (hChart.adjLift x (0 : unitInterval)))
+              =
+            BHW.extendF (bvt_F OS lgc n)
+              (hChart.adjLift x (0 : unitInterval)) := by
+          exact
+            BHW.extendF_complex_lorentz_invariant
+              (d := d) n (bvt_F OS lgc n)
+              (by
+                simpa [BHW_forwardTube_eq (d := d) (n := n)] using
+                  bvt_F_holomorphic (d := d) OS lgc n)
+              (by
+                intro Λ z hz
+                exact bvt_F_restrictedLorentzInvariant_forwardTube
+                  (d := d) OS lgc n Λ z
+                  ((BHW_forwardTube_eq (d := d) (n := n)) ▸ hz))
+              Λinv (hChart.adjLift x (0 : unitInterval)) hET
+        simpa [hact] using hLor.symm
+      ```
+
+      The genuine OS-I §4.5 source-boundary theorem is the compact-test
+      boundary statement for the raw permuted Wick section inside the ordinary
+      BHW extension:
+
+      ```lean
+      theorem BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger
+          [NeZero d]
+          (hd : 2 <= d)
+          (OS : OsterwalderSchraderAxioms d)
+          (lgc : OSLinearGrowthCondition d OS)
+          (n : Nat) (i : Fin n) (hi : i.val + 1 < n)
+          (V : Set (NPointDomain d n))
+          (hV_jost : ∀ x, x ∈ V -> x ∈ BHW.JostSet d n)
+          (hV_ordered :
+            ∀ x, x ∈ V ->
+              x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) 1)
+          (hV_swap_ordered :
+            ∀ x, x ∈ V ->
+              (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
+                EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+                  (Equiv.swap i ⟨i.val + 1, hi⟩))
+          {x0 : NPointDomain d n}
+          (hChart :
+            BHW.OS45Figure24SourceChartAt hd OS lgc n i hi V x0) :
+          let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+          ∀ (φ : SchwartzNPoint d n)
+            (_hφ_comp :
+              HasCompactSupport (φ : NPointDomain d n -> ℂ))
+            (hφ_supp :
+              tsupport (φ : NPointDomain d n -> ℂ) ⊆ hChart.V0),
+            let φZ : ZeroDiagonalSchwartz d n :=
+              ⟨φ, zeroDiagonal_of_tsupport_subset_jostOverlap
+                (d := d) (n := n) hChart.V0
+                (fun x hx => hV_jost x (hChart.V0_sub hx)) φ
+                hφ_supp⟩
+            let ψZ : ZeroDiagonalSchwartz d n :=
+              permuteZeroDiagonalSchwartz (d := d) (n := n) τ.symm φZ
+            ∫ x : NPointDomain d n,
+                BHW.extendF (bvt_F OS lgc n)
+                  (BHW.permAct (d := d) τ
+                    (fun k => wickRotatePoint (x k))) * φ x
+              =
+            OS.S n ψZ
+      ```
+
+      This is the local Hall-Wightman/BHW import boundary for the selected
+      `S'_n` source chart if it is not proved internally.  It is deliberately
+      distributional: the conclusion is a compact-test boundary value, not a
+      pointwise assertion about the total function `bvt_F` at the adjacent
+      Wick trace.  The statement is local to the selected Figure-2-4 chart and
+      must not be replaced by `bvt_F_perm`, final `bvt_W` locality, local EOW,
+      PET branch independence, or a global permuted-extended-tube
+      single-valuedness theorem.
+
+      Proof transcript for this raw permuted-Wick source-boundary theorem:
+
+      1. Restrict the compact test to `hChart.V0` and build
+         `φZ : ZeroDiagonalSchwartz d n` from `hV_jost` and `hChart.V0_sub`.
+         Set
+         `ψZ := permuteZeroDiagonalSchwartz (d := d) (n := n) τ.symm φZ`.
+      2. Use `OS.E3_symmetric` only to identify the Euclidean compact germ:
+         `OS.S n φZ = OS.S n ψZ`.  This is the OS-I §4.5 symmetry input.
+         Do not use the pointwise permutation field from
+         `bvt_F_acrOne_package`; that field is not the local BHW source
+         theorem and would collapse the branch construction.
+      3. Use `bvt_euclidean_restriction` on `ψZ` to identify `OS.S n ψZ`
+         with the ACR(1) boundary pairing of the permuted Euclidean compact
+         germ.  The finite permutation change of variables used in
+         `os45_adjacent_euclideanEdge_pairing_eq_on_timeSector` is allowed
+         only at this Euclidean boundary level.
+      4. Apply the OS-I §4.5 Hall-Wightman step to that selected germ: the
+         symmetric analytic continuation on `S'_n` has, on the local
+         Figure-2-4 adjacent Wick section, the same compact boundary value as
+         the ordinary BHW extension
+         `extendF (bvt_F OS lgc n) (permAct τ (wick x))`.  Internally this
+         step is proved by the Hall-Wightman scalar-product branch law
+         `BHW.extendedTube_same_sourceGram_extendF_eq`, the local
+         Figure-2-4 source chart, and the OS-II ACR(1) compact boundary
+         construction; if source-imported, the exact statement above is the
+         import boundary.
+      5. The proof never evaluates `extendF_eq_on_forwardTube` at
+         `permAct τ (wick x)`.  The adjacent Wick section is placed in the
+         ordinary extended tube by the canonical Figure-2-4 Lorentz
+         normalization, not by ordered-positive-time forward-tube membership.
+
+      The canonical-lift pairing theorem is now a derived theorem:
 
       ```lean
       theorem BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger
@@ -9852,38 +10026,45 @@ Proof decomposition of this theorem, without hiding the analytic work:
             OS.S n ψZ
       ```
 
-      This theorem is the local Hall-Wightman/BHW import boundary for the
-      `S'_n` source chart if it is not proved internally.  Its statement is
-      deliberately about the canonical Figure-2-4 rotated lift, not the raw
-      adjacent Wick trace and not an arbitrary existence witness.
+      Its statement is deliberately about the canonical Figure-2-4 rotated
+      lift, not an arbitrary existence witness.  Its proof is a clean
+      consequence of the raw permuted-Wick source-boundary theorem and the
+      Lorentz normalization theorem above.
 
-      Proof transcript for the canonical-lift boundary theorem:
+      Lean-shaped proof of the canonical-lift pairing theorem:
 
-      1. Restrict the compact test to `hChart.V0` and build
-         `φZ : ZeroDiagonalSchwartz d n` from `hV_jost` and `hChart.V0_sub`.
-         Set
-         `ψZ := permuteZeroDiagonalSchwartz (d := d) (n := n) τ.symm φZ`.
-         The use of `hV_ordered` and `hV_swap_ordered` is exactly the OS-I
-         §4.5 hypothesis that the selected real chart represents the identity
-         and adjacent positive-time Euclidean orderings; do not replace it by
-         global pointwise permutation invariance of `bvt_F`.
-      2. Use the OS-II ACR(1) continuation datum selected by
-         `bvt_F_acrOne_package` only in its Euclidean reproduction/permutation
-         role for compact tests: the permuted test `ψZ` is the Euclidean
-         adjacent compact germ, and `OS.S n ψZ` is its Schwinger pairing.
-      3. Use the checked Figure-2-4 geometry to identify the analytic
-         continuation of this adjacent Euclidean germ with the ordinary
-         BHW/Hall-Wightman continuation evaluated at
-         `hChart.adjLift x 0`.  This is the paper's `S'_n` step:
-         the canonical lift is in the ordinary extended tube by
-         `hChart.adjLift_mem_extendedTube`, and its scalar products are the
-         adjacent permuted scalar products by `hChart.adjLift_sourceGram`.
-      4. The compact-pairing conclusion is then the boundary-value statement
-         for that one selected `S'_n` branch.  It may be source-imported only
-         with this exact compact-test statement, or proved internally from the
-         OS-II ACR(1) construction plus the Hall-Wightman/Jost Figure-2-4
-         source theorem.  It is not `bvt_F_perm`, not local EOW, not final
-         `bvt_W` locality, and not PET branch independence.
+      ```lean
+      theorem BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger ... := by
+        classical
+        let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+        intro φ hφ_comp hφ_supp
+        have hrewrite :
+            ∫ x : NPointDomain d n,
+                BHW.extendF (bvt_F OS lgc n)
+                  (hChart.adjLift x (0 : unitInterval)) * φ x
+              =
+            ∫ x : NPointDomain d n,
+                BHW.extendF (bvt_F OS lgc n)
+                  (BHW.permAct (d := d) τ
+                    (fun k => wickRotatePoint (x k))) * φ x := by
+          refine integral_congr_ae ?_
+          filter_upwards with x
+          by_cases hx : x ∈ hChart.V0
+          · have hxrw :=
+              BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero
+                (d := d) hd OS lgc n i hi V hChart x hx
+            simpa [τ, hxrw]
+          · have hφx : φ x = 0 := by
+              exact
+                (notMem_tsupport_iff_eventuallyEq.mp
+                  (fun hxSupp => hx (hφ_supp hxSupp))).self_of_nhds
+            simp [hφx]
+        exact hrewrite.trans
+          (BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger
+            (d := d) hd OS lgc n i hi V hV_jost
+            hV_ordered hV_swap_ordered hChart
+            φ hφ_comp hφ_supp)
+      ```
 
       ```lean
       theorem BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger
@@ -9932,12 +10113,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
             OS.S n ψZ
       ```
 
-      Mathematical content of this theorem: OS I §4.5 first constructs the
-      symmetric analytic continuation on `S'_n` from Euclidean permutation
-      symmetry before applying BHW.  The displayed theorem is the local
-      boundary-value form of that statement on the selected Figure-2-4
-      adjacent chart.  Its proof first identifies the BHW source pullback
-      `Φτ ∘ wick` with the canonical rotated Figure-2-4 lift by
+      Mathematical content of this theorem: after OS I §4.5 supplies the raw
+      permuted-Wick `extendF` boundary theorem and the canonical lift has been
+      normalized to that raw section, this theorem converts the result into
+      Hall-Wightman source coordinates.  Its proof first identifies the BHW
+      source pullback `Φτ ∘ wick` with the canonical rotated Figure-2-4 lift by
       `hRep.branch_eq` and `hChart.adjLift_sourceGram`, then applies
       `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`.  This is
       the exact place where the
@@ -14192,6 +14372,8 @@ in this order:
 	   `BHW.hallWightman_sourceScalarRepresentativeData`; and the adjacent
 	   `S'_n` package
 	   `BHW.os45Figure24_sourceChart_at`,
+	   `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`,
+	   `BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
 	   `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
 	   `BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`,
    `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
@@ -14467,6 +14649,8 @@ not as the next task.  The active next implementation order is:
    `HWSourceGramLowRank` at threshold `min d n`, and the adjacent `S'_n`
    seed/path package
    `BHW.os45Figure24_sourceChart_at`,
+   `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`,
+   `BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
    `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
    `BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`,
    `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
