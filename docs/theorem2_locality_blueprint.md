@@ -6702,6 +6702,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
         Ucoord_open : IsOpen Ucoord
         Ucoord_product :
           ∃ Us Ua, IsOpen Us ∧ IsOpen Ua ∧
+            IsConnected Ua ∧ Ua.Nonempty ∧
             Ucoord = Set.prod Us Ua
         coordMap_diff :
           DifferentiableOn ℂ coordMap Uvec
@@ -6797,6 +6798,20 @@ Proof decomposition of this theorem, without hiding the analytic work:
             ∀ v : Fin a -> ℂ,
               fderiv ℂ g p (0, v) = 0
 
+      /-- Finite-dimensional calculus support: a differentiable complex
+      function with zero Frechet derivative on an open connected set is
+      constant there.  This is used only to turn the zero auxiliary
+      derivatives in Hall-Wightman Lemma 5 into independence of the auxiliary
+      variable on one connected product polydisc. -/
+      theorem BHW.eqOn_of_fderiv_eq_zero_of_isConnected_open
+          {E : Type*} [NormedAddCommGroup E] [NormedSpace ℂ E]
+          [FiniteDimensional ℂ E]
+          {Ω : Set E} (hΩ_open : IsOpen Ω) (hΩ_conn : IsConnected Ω)
+          {f : E -> ℂ}
+          (hf : DifferentiableOn ℂ f Ω)
+          (hzero : ∀ x, x ∈ Ω -> fderiv ℂ f x = 0) :
+          ∀ x, x ∈ Ω -> ∀ y, y ∈ Ω -> f x = f y
+
       /-- Holomorphic functions on a product coordinate polydisc whose
       derivatives in all auxiliary directions vanish are pulled back from the
       scalar coordinate factor.  This is the analytic core of
@@ -6808,14 +6823,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (hU_open : IsOpen U)
           (hU_product :
             ∃ Us Ua, IsOpen Us ∧ IsOpen Ua ∧
+              IsConnected Ua ∧ Ua.Nonempty ∧
               U = Set.prod Us Ua)
           (hg : DifferentiableOn ℂ g U)
           (haux :
             ∀ p, p ∈ U ->
               ∀ v : Fin a -> ℂ,
                 fderiv ℂ g p (0, v) = 0) :
-          ∃ Ψs : (Fin e -> ℂ) -> ℂ,
-            DifferentiableOn ℂ Ψs {u | ∃ v, (u, v) ∈ U} ∧
+          ∃ Us Ua, ∃ Ψs : (Fin e -> ℂ) -> ℂ,
+            IsOpen Us ∧ IsOpen Ua ∧ IsConnected Ua ∧ Ua.Nonempty ∧
+            U = Set.prod Us Ua ∧
+            DifferentiableOn ℂ Ψs Us ∧
             ∀ p, p ∈ U -> g p = Ψs p.1
 
       /-- Reinflate a holomorphic function of the selected independent scalar
@@ -6829,10 +6847,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (n e a : Nat)
           {z0 : Fin n -> Fin (d + 1) -> ℂ}
           (C : BHW.HWPowerSeriesCoordinateSplit d n e a z0)
+          {Us : Set (Fin e -> ℂ)}
+          {Ua : Set (Fin a -> ℂ)}
           {Ψs : (Fin e -> ℂ) -> ℂ}
+          (hprod : C.Ucoord = Set.prod Us Ua)
+          (hUs_open : IsOpen Us)
           (hΨs_diff :
-            DifferentiableOn ℂ Ψs
-              {u | ∃ v : Fin a -> ℂ, (u, v) ∈ C.Ucoord}) :
+            DifferentiableOn ℂ Ψs Us) :
           ∃ U0 Ψ,
             IsOpen U0 ∧
             BHW.sourceMinkowskiGram d n z0 ∈ U0 ∧
@@ -7159,9 +7180,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (d := d) hd n e a F C hF_holo hF_cinv hg_branch
         rcases BHW.holomorphic_product_independent_of_auxiliary
             C.Ucoord_open C.Ucoord_product hg_diff haux with
-          ⟨Ψs, hΨs_diff, hΨs_eq⟩
+          ⟨Us, Ua, Ψs, hUs_open, hUa_open, hUa_conn, hUa_ne,
+            hprod, hΨs_diff, hΨs_eq⟩
         rcases BHW.hallWightman_selectedScalarFunction_to_fullGramChart
-            (d := d) hd n e a C hΨs_diff with
+            (d := d) hd n e a C hprod hUs_open hΨs_diff with
           ⟨U0, Ψ, hU0_open, hZU0, hU0_sub_C, hΨ_diff,
             hΨ_eq_selected⟩
         refine ⟨C.Uvec ∩ BHW.ExtendedTube d n, U0, Ψ,
@@ -7179,9 +7201,21 @@ Proof decomposition of this theorem, without hiding the analytic work:
           _ = Ψs (C.coord ⟨z, hz.1⟩).1.1 := by
                 rw [C.sourceGram_selected ⟨z, hz.1⟩]
           _ = g (C.coord ⟨z, hz.1⟩).1 := by
-                exact (hΨs_eq _ (C.coord ⟨z, hz.1⟩).2).symm
+                exact (hΨs_eq _ (by
+                  simpa [hprod] using (C.coord ⟨z, hz.1⟩).2)).symm
           _ = BHW.extendF F z := hg_branch ⟨z, hz.1⟩
       ```
+
+      The auxiliary product theorem has a real connectedness hypothesis.  Zero
+      derivative in auxiliary directions would only make `g u ·` constant on
+      each connected component of `Ua`; it would not identify two different
+      components.  Hall-Wightman's coordinate polydisc is therefore recorded as
+      `C.Ucoord = Us × Ua` with `Ua` connected and nonempty.  The proof chooses
+      `vbase ∈ Ua`, defines `Ψs u := g (u, vbase)`, proves differentiability
+      on `Us` by restricting `g` to the continuous linear slice
+      `u ↦ (u, vbase)`, and uses the finite-dimensional theorem that a
+      differentiable function with zero derivative on an open connected set is
+      constant to show `g (u,v) = Ψs u` for all `v ∈ Ua`.
 
       The support lemmas in this proof are the actual Hall-Wightman Lemma 5
       content.  `hallWightman_coord_pullback_extendF` is the analytic
@@ -7222,7 +7256,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `z ↦ (scalarCoord (sourceMinkowskiGram d n z), auxCoord z)`.  Shrink the
       vector neighborhood to the ordinary extended tube using
       `BHW.isOpen_extendedTube`; keep both the subtype homeomorphism `coord`
-      and the ambient differentiable maps `coordMap`/`coordSymmMap`; define
+      and the ambient differentiable maps `coordMap`/`coordSymmMap`; shrink
+      the coordinate target to a product of finite-dimensional balls
+      `Us × Ua` around the base coordinate, with `Ua` open, connected, and
+      nonempty, so the auxiliary-independence theorem applies; define
       `U0` as a scalar neighborhood on which selected scalar coordinates are
       injective on `sourceComplexGramVariety d n`; and record
       `sourceGram_selected` by the first projection of the coordinate map.
@@ -7642,15 +7679,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
       ```lean
       theorem BHW.hallWightman_selectedScalarFunction_to_fullGramChart
           ... := by
-        rcases C.Ucoord_product with
-          ⟨Us, Ua, hUs_open, hUa_open, hprod⟩
+        -- The theorem hypotheses include
+        -- `hprod : C.Ucoord = Set.prod Us Ua` and
+        -- `hUs_open : IsOpen Us`.
         let p0 := (C.coord ⟨z0, C.z0_mem⟩).1
         have hp0 : p0 ∈ C.Ucoord :=
           (C.coord ⟨z0, C.z0_mem⟩).2
         have hp0_Us : p0.1 ∈ Us := by
           simpa [p0, hprod] using hp0.1
-        have hp0_Ua : p0.2 ∈ Ua := by
-          simpa [p0, hprod] using hp0.2
         let U0 : Set (Fin n -> Fin n -> ℂ) :=
           C.U0 ∩ {Z | C.scalarCoord Z ∈ Us}
         let Ψ : (Fin n -> Fin n -> ℂ) -> ℂ :=
@@ -7665,12 +7701,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (hUs_open.preimage C.scalarCoord_diff.continuous)
         have hΨ_diff : DifferentiableOn ℂ Ψ U0 := by
           have hscalar_into :
-              C.scalarCoord '' U0 ⊆
-                {u | ∃ v : Fin a -> ℂ, (u, v) ∈ C.Ucoord} := by
+              C.scalarCoord '' U0 ⊆ Us := by
             intro u hu
             rcases hu with ⟨Z, hZU0, rfl⟩
-            refine ⟨p0.2, ?_⟩
-            simpa [hprod] using ⟨hZU0.2, hp0_Ua⟩
+            exact hZU0.2
           exact hΨs_diff.comp
             C.scalarCoord_diff.differentiableOn hscalar_into
         exact ⟨U0, Ψ, hU0_open, hZ0U0, Set.inter_subset_left,

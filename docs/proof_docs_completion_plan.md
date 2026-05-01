@@ -594,6 +594,7 @@ implementation contract is:
    `BHW.hallWightman_powerSeries_coordinateSplit`,
    `BHW.hallWightman_coord_pullback_extendF`,
    `BHW.hallWightman_auxiliaryDerivative_zero`,
+   `BHW.eqOn_of_fderiv_eq_zero_of_isConnected_open`,
    `BHW.holomorphic_product_independent_of_auxiliary`,
    `BHW.hallWightman_selectedScalarFunction_to_fullGramChart`,
    `BHW.hallWightman_powerSeries_from_PDE_span`,
@@ -642,15 +643,21 @@ implementation contract is:
    be applied to the Lemma-3 realization without that hypothesis.  In the
    Lemma-5 power-series proof, the selected-coordinate reinflation theorem
    `BHW.hallWightman_selectedScalarFunction_to_fullGramChart` must consume the
-   local product-domain differentiability
-   `{u | ∃ v, (u,v) ∈ C.Ucoord}` returned by
-   `BHW.holomorphic_product_independent_of_auxiliary`; it must not silently
-   strengthen this to differentiability on a global selected-coordinate image
-   of the source Gram variety.  The full scalar chart is obtained by shrinking
-   `C.U0` to `C.U0 ∩ {Z | C.scalarCoord Z ∈ Us}` after writing
-   `C.Ucoord = Us × Ua` and using the auxiliary coordinate of the base point as
-   the witness that each selected scalar coordinate lies in the product
-   projection.  The theorem
+   local selected-coordinate differentiability on the actual product factor
+   `Us` returned by `BHW.holomorphic_product_independent_of_auxiliary`; it must
+   not silently strengthen this to differentiability on a global
+   selected-coordinate image of the source Gram variety.  The product theorem
+   must require `C.Ucoord = Us × Ua` with `Ua` connected and nonempty: zero
+   derivative in auxiliary directions only proves independence on each
+   connected auxiliary component, so the theorem is false without this field.
+   The proof defines `Ψs u := g (u, vbase)` for some `vbase ∈ Ua`, proves
+   differentiability on `Us`, and uses connectedness of `Ua` to identify
+   `g (u,v)` with that base value for every `(u,v) ∈ Us × Ua`.  The full
+   scalar chart is obtained by shrinking `C.U0` to
+   `C.U0 ∩ {Z | C.scalarCoord Z ∈ Us}` after writing
+   `C.Ucoord = Us × Ua`; the selected-coordinate differentiability input is
+   exactly on `Us`, not on the larger projection set
+   `{u | ∃ v, (u,v) ∈ C.Ucoord}`.  The theorem
    `BHW.hallWightman_powerSeries_from_PDE_span` carries the maximal scalar-rank
    hypothesis `HWSourceGramMaxRankAt d n z0`; this is not redundant with the
    PDE-span hypothesis, because constant-rank shrinking is what makes the
