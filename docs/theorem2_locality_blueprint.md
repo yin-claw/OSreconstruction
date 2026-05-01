@@ -2760,6 +2760,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       Lean-shaped proof of the mechanical connectedness half:
 
       ```lean
+      -- Requires importing
+      -- `OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceComplexChart`
+      -- for `BHW.contDiff_sourceMinkowskiGram`.
       theorem BHW.sourceExtendedTubeGramDomain_relOpen_connected ... := by
         refine ⟨?hRelOpen, ?hConnected⟩
         · exact
@@ -3027,15 +3030,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
       ```lean
       noncomputable def BHW.sourceScalarRepresentativeData_of_branchLaw ... := by
         rcases hGeom with ⟨hRelOpen, hConn⟩
-        rcases hDesc with ⟨Phi, hPhi_holo, hBranchEq⟩
+        let Phi : (Fin n -> Fin n -> ℂ) -> ℂ := Classical.choose hDesc
+        have hPhi_spec := Classical.choose_spec hDesc
         exact
           { U := BHW.sourceExtendedTubeGramDomain d n
             U_eq := rfl
             U_relOpen := hRelOpen
             U_connected := hConn
             Phi := Phi
-            Phi_holomorphic := hPhi_holo
-            branch_eq := hBranchEq }
+            Phi_holomorphic := hPhi_spec.1
+            branch_eq := hPhi_spec.2 }
 
       noncomputable def BHW.hallWightman_sourceScalarRepresentativeData ... := by
         have hBranch :
@@ -3080,6 +3084,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (d := d) hd n (bvt_F OS lgc n)
           hF_holo_BHW hF_cinv_BHW
       ```
+
+      The `Classical.choose` extraction in
+      `sourceScalarRepresentativeData_of_branchLaw` is a Lean elimination
+      necessity, not a hidden mathematical assumption: `hDesc` is a proved
+      proposition-valued existence theorem, while the constructor returns the
+      data type `SourceScalarRepresentativeData`.  A direct
+      `rcases hDesc with ⟨Phi, ...⟩` is rejected because a proof of `Exists`
+      in `Prop` cannot be eliminated into a data-valued definition.
 
       Implementation-level source spine for this block:
 
@@ -6947,7 +6959,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `complexLorentzAction Λ z =
       complexLorentzAction (Λ * Λ₀) w₀`.  Unfold `BHW.extendF` at both
       points and use the checked preimage-independence lemma for `extendF`
-      (`extendF_preimage_eq` in the current BHW core support) with `hF_cinv`.
+      in the current BHW core support with `hF_cinv`.  The exact Lean call is
+      to `BHWCore.extendF_preimage_eq`, not to the production
+      `BHW.extendF_preimage_eq`: the latter is the older theorem whose
+      signature takes restricted real invariance and derives complex
+      invariance internally.  The definitions
+      `BHW.extendF`, `BHW.ForwardTube`, `BHW.ExtendedTube`, and
+      `BHW.complexLorentzAction` are definitionally equal to their
+      `BHWCore` counterparts, so this bridge is a `change`/`simpa` step, not a
+      new mathematical theorem.
       This is the same proof shape as the existing restricted-Lorentz theorem
       `extendF_complex_lorentz_invariant`, but using the already-complex
       invariance hypothesis directly.
@@ -6992,24 +7012,46 @@ Proof decomposition of this theorem, without hiding the analytic work:
         rw [dif_pos hex_Lz, dif_pos hex_z]
         rcases hex_Lz.choose_spec with ⟨hwL, ΓL, hΓL⟩
         rcases hex_z.choose_spec with ⟨hwZ, ΓZ, hΓZ⟩
+        change F hex_Lz.choose = F hex_z.choose
         exact
-          BHW.extendF_preimage_eq (d := d) n F hF_cinv
+          BHWCore.extendF_preimage_eq (d := d) n F
+            (by
+              intro Γ y hy hΓy
+              exact hF_cinv Γ y hy hΓy)
             hwL hwZ
             (Λ₁ := ΓL) (Λ₂ := Λ * ΓZ)
             (by
               calc
-                BHW.complexLorentzAction ΓL hex_Lz.choose
-                    = BHW.complexLorentzAction Λ z := hΓL.symm
+                BHWCore.complexLorentzAction ΓL hex_Lz.choose
+                    = BHWCore.complexLorentzAction Λ z := hΓL.symm
                 _ =
-                  BHW.complexLorentzAction (Λ * ΓZ) hex_z.choose := by
-                    rw [hΓZ, BHW.complexLorentzAction_mul])
+                  BHWCore.complexLorentzAction (Λ * ΓZ) hex_z.choose := by
+                    exact
+                      (congrArg (BHWCore.complexLorentzAction Λ) hΓZ).trans
+                        (BHWCore.complexLorentzAction_mul
+                          Λ ΓZ hex_z.choose).symm)
       ```
+
+      The final `congrArg` step is intentionally used instead of
+      `rw [hΓZ]`: `hex_z.choose` is dependent on the chosen proof of the
+      preimage existential, and unrestricted rewriting of `z` can make Lean
+      abstract a motive in which that choice no longer typechecks.  The
+      `congrArg`/`trans` form has been checked in a scratch Lean theorem
+      against `SourceExtension.lean`.
 
       The hypotheses `hd` and `_hF_holo` are present because the theorem is
       consumed beside `extendF_holomorphicOn` in the Hall-Wightman branch-law
       proof; the invariance calculation itself only needs `hF_cinv`,
       `ExtendedTube` as the complex Lorentz orbit of `ForwardTube`, and
-      `extendF_preimage_eq`.
+      `BHWCore.extendF_preimage_eq`.  If Lean does not unfold the definitional
+      equalities automatically, insert:
+
+      ```lean
+      change BHWCore.extendF F (BHWCore.complexLorentzAction Λ z) =
+        BHWCore.extendF F z
+      ```
+
+      before unfolding `extendF`.
 
       Lean-shaped proof of the branch law after these Lemma-2 subfacts:
 
@@ -7129,6 +7171,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       Lean-shaped proof:
 
       ```lean
+      -- Requires importing
+      -- `OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceComplexChart`
+      -- for `BHW.contDiff_sourceMinkowskiGram`; it is not exported by
+      -- `SourceExtension.lean` alone.
       theorem BHW.sourceExtendedTubeGramDomain_subset_sourceComplexGramVariety
           [NeZero d] (n : Nat) :
           BHW.sourceExtendedTubeGramDomain d n ⊆
@@ -7165,6 +7211,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
       ExtendedTube d n`; taking the union of these `O` over `Z ∈ S'_n`
       gives the relative-open witness.  This is where singular scalar-rank
       fibers are handled; no openness of a continuous image is used.
+
+      Import boundary: the connectedness line has been scratch-checked with
+      `SourceComplexChart.lean` imported.  A future scalar-representative file
+      should import the existing chart file for
+      `BHW.contDiff_sourceMinkowskiGram`, not duplicate the polynomial
+      continuity proof in `SourceExtension.lean`.
 
       Lean-facing local realization theorem:
 

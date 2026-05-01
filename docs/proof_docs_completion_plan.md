@@ -484,11 +484,22 @@ implementation contract is:
    destruct `z ∈ ExtendedTube d n` as `z = complexLorentzAction Λ0 w0` with
    `w0 ∈ ForwardTube d n`; build the two `extendF` preimage witnesses for
    `z` and `complexLorentzAction Λ z`; unfold `extendF`; and call the checked
-   `BHW.extendF_preimage_eq` with the equality
+   `BHWCore.extendF_preimage_eq` with the equality
    `complexLorentzAction ΓL wL =
    complexLorentzAction (Λ * ΓZ) wZ`, obtained from the two chosen witnesses
-   and `BHW.complexLorentzAction_mul`.  This support lemma uses `hF_cinv`,
-   not final locality, PET independence, or a source scalar representative.
+   and `BHWCore.complexLorentzAction_mul`.  This is deliberately the
+   `BHWCore` lemma: the production `BHW.extendF_preimage_eq` has the older
+   restricted-real-invariance signature, while the scalar-source Hall-Wightman
+   branch law assumes the direct complex-Lorentz invariance hypothesis.  The
+   functions and domains used by `SourceScalarRepresentativeData` are
+   definitionally equal to the `BHWCore` versions, so the implementation bridge
+   is `change`/`simpa`, not a new theorem route.  In the final equality passed
+   to `BHWCore.extendF_preimage_eq`, use
+   `(congrArg (BHWCore.complexLorentzAction Λ) hΓZ).trans
+   (BHWCore.complexLorentzAction_mul Λ ΓZ hex_z.choose).symm`, rather than
+   unrestricted `rw [hΓZ]`, because the chosen preimage term is dependent on
+   the preimage existential.  This support lemma uses `hF_cinv`, not final
+   locality, PET independence, or a source scalar representative.
    `BHW.hw_sameSourceGram_fiberAlternative` itself splits into
    `BHW.hw_sameSourceGram_regular_orbit` with
    `BHW.HWSourceGramOrbitRankAt d n z` and
@@ -665,7 +676,12 @@ implementation contract is:
    `hGram_cont := (BHW.contDiff_sourceMinkowskiGram d n).continuous`, take
    `(BHW.isConnected_extendedTube (d := d) (n := n)).image
    (BHW.sourceMinkowskiGram d n) hGram_cont.continuousOn`, and finish by
-   `simpa [BHW.sourceExtendedTubeGramDomain]`.  Thus the only
+   `simpa [BHW.sourceExtendedTubeGramDomain]`.  The declaration
+   `BHW.contDiff_sourceMinkowskiGram` lives in
+   `BHWPermutation/SourceComplexChart.lean`; a future scalar-representative
+   implementation must import that existing file or place the connectedness
+   theorem downstream of it, rather than duplicating the continuity proof in
+   `SourceExtension.lean`.  Thus the only
    non-mechanical content in this theorem is the relative-openness line
    `BHW.sourceExtendedTubeGramDomain_relOpen`, whose proof is the Lemma-3
    local-realization packet below.
@@ -1035,7 +1051,15 @@ implementation contract is:
 4. `BHW.sourceScalarRepresentativeData_of_branchLaw`: assemble
    `BHW.SourceScalarRepresentativeData` with
    `U = BHW.sourceExtendedTubeGramDomain d n`, using the relative-open,
-   connectedness, descent, and branch-equality fields.
+   connectedness, descent, and branch-equality fields.  Because the
+   constructor is data-valued while the descent theorem is proposition-valued,
+   the Lean assembly must extract the scalar representative by
+   `let Phi := Classical.choose hDesc` and use
+   `Classical.choose_spec hDesc` for `Phi_holomorphic` and `branch_eq`; a
+   direct `rcases hDesc` into the structure is not accepted by Lean's
+   `Prop`-elimination rules.  This is not a new assumption: it is the
+   noncomputable extraction of an already proved Hall-Wightman existence
+   theorem.
 5. `BHW.hallWightman_sourceScalarRepresentativeData` composes the preceding
    four obligations for a general forward-tube function; only then does
    `BHW.sourceScalarRepresentativeData_bvt_F` specialize it using
