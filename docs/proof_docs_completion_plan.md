@@ -53,6 +53,10 @@ local Slot 1:
    Hall-Wightman source descent, and the adjacent `S'_n` package
    `BHW.os45Figure24_sourceChart_at`,
    `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`,
+   `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
+   `BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary`,
+   `BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`,
+   `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
    `BHW.OS45SPrimeFigure24LocalSourceSeedData`,
    `BHW.os45SPrime_figure24SourceEqOnUsrc_of_compactWickPairing`,
    `BHW.os45SPrime_figure24LocalSourceSeedData_of_OSI45`,
@@ -64,10 +68,6 @@ local Slot 1:
    `BHW.os45SPrime_rawAdjacentWick_bvtF_pairing_eq_permutedSchwinger`,
    `BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_bvt_F`,
    `BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
-   `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
-   `BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary`,
-   `BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`,
-   `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
    `BHW.os45AdjacentSPrimeScalarizationChart_of_figure24`,
    `BHW.os45AdjacentSPrimeSourceEq_of_compactWickPairingEq`,
    `BHW.os45AdjacentSPrimeScalarSeed_of_compactWickPairingEq`, and
@@ -1063,6 +1063,10 @@ Second, the adjacent `S'_n` seed package must be proved in the order
 documented below:
 `BHW.os45Figure24_sourceChart_at`,
 `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`,
+`BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
+`BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary`,
+`BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`,
+`BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
 `BHW.OS45SPrimeFigure24LocalSourceSeedData`,
 `BHW.os45SPrime_figure24SourceEqOnUsrc_of_compactWickPairing`,
 `BHW.os45SPrime_figure24LocalSourceSeedData_of_OSI45`,
@@ -1074,10 +1078,6 @@ documented below:
 `BHW.os45SPrime_rawAdjacentWick_bvtF_pairing_eq_permutedSchwinger`,
 `BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_bvt_F`,
 `BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
-`BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
-`BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary`,
-`BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`,
-`BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
 `BHW.os45AdjacentSPrimeScalarizationChart_of_figure24`,
 `BHW.os45AdjacentSPrimeSourceEq_of_compactWickPairingEq`,
 `BHW.os45AdjacentSPrimeScalarSeed_of_compactWickPairingEq`, and
@@ -1088,50 +1088,64 @@ replaced by final real-edge equality, `AdjacentOSEOWDifferenceEnvelope`,
 global PET branch independence, or a local boundary functional standing in
 for `bvt_W`.
 
-The adjacent scalar-trace theorem has eight genuine upstream stages; the
-second stage is deliberately split into a scalar source equality and its
-pointwise branch-evaluation corollary.
-First,
-`BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero` is a checked-geometry
-normalization: using `BHW.figure24RotateAdjacentConfig_lorentz_inverse`,
-`BHW.extendF_complex_lorentz_invariant`,
-`bvt_F_holomorphic`, and
+The adjacent scalar-trace theorem has a non-circular upstream order.  First,
+`BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero` is checked geometry:
+using `BHW.figure24RotateAdjacentConfig_lorentz_inverse`,
+`BHW.extendF_complex_lorentz_invariant`, `bvt_F_holomorphic`, and
 `bvt_F_restrictedLorentzInvariant_forwardTube`, it rewrites the deterministic
-canonical lift `hChart.adjLift x 0` to the raw adjacent Wick section
-`BHW.permAct τ (fun k => wickRotatePoint (x k))` under `extendF` and also
-gives that raw section ordinary-extended-tube membership.  Second, the real
-OS-I §4.5/BHW/Jost source theorem first appears as the scalar equality
-`BHW.os45SPrime_figure24LocalSourceEq_of_BHWJost`:
-for `Z = sourceMinkowskiGram d n (wick x)` on the selected source chart,
-`hRep.Phi (sourcePermuteComplexGram n τ Z) = hRep.Phi Z`.  This theorem
-is decomposed into
-`BHW.OS45SPrimeFigure24LocalSourceSeedData`,
+canonical lift `hChart.adjLift x 0` to the raw adjacent Wick section under
+`extendF` and gives the raw section ordinary-extended-tube membership.  This
+normalization is not the boundary theorem and cannot replace it.
+
+Second, the genuine OS-I §4.5/BHW/Jost boundary input is the compact
+canonical-lift theorem
+`BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`.  Its proof must
+build `φZ`, `ψZ := permuteZeroDiagonalSchwartz τ.symm φZ`, use
+`bvt_euclidean_restriction` and, if needed, one `OS.E3_symmetric` call for
+the zero-diagonal compact tests; then it must spell out the OS I equations
+(4.1), (4.12), and (4.14), Bargmann-Hall-Wightman continuation, and Jost
+real-environment uniqueness for the selected Figure-2-4 chart.  This theorem
+is the source boundary gate.  It is not derived from
+`BHW.os45SPrime_rawAdjacentWick_extendF_eq_identityWick_of_BHWJost` or from
+any theorem that consumes local scalar source equality.
+
+Third,
+`BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary` and
+`BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger` are mechanical
+rewrites of the canonical theorem using
+`hRep.branch_eq`, `hChart.adjLift_sourceGram`, and the checked
+`bvt_euclidean_restriction` formula for `ψZ`.  Fourth,
+`BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`
+uses that source-pullback theorem plus the same finite permutation
+change-of-variables calculation as
+`os45_adjacent_euclideanEdge_pairing_eq_on_timeSector` to identify the raw
+adjacent Wick trace pairing.  The private helper
+`integral_perm_eq_self_locality` / `integral_perm_npoint_volume` must be
+exposed or reproved at the first public call site.
+
+Only after this adjacent trace theorem is available does the local scalar
+source equality enter.  The equality
+`BHW.os45SPrime_figure24LocalSourceEq_of_BHWJost` says that for
+`Z = sourceMinkowskiGram d n (wick x)` on the selected source chart,
+`hRep.Phi (sourcePermuteComplexGram n τ Z) = hRep.Phi Z`.  It is decomposed
+into `BHW.OS45SPrimeFigure24LocalSourceSeedData`,
 `BHW.os45SPrime_figure24LocalSourceSeedData_of_OSI45`, and
 `BHW.os45SPrime_figure24LocalSourceEq_of_seedData`.  The seed-data structure
 stores a nonempty relatively open scalar seed `Wseed`, a connected relatively
 open scalar corridor `Wscal`, `Wseed ⊆ Wscal`,
-`sourceMinkowskiGram '' hChart.Usrc ⊆ Wscal`, the double-domain inclusion
-for `Wscal`, and equality of
+`sourceMinkowskiGram '' hChart.Usrc ⊆ Wscal`, the double-domain inclusion for
+`Wscal`, and equality of
 `Z ↦ hRep.Phi (sourcePermuteComplexGram n τ Z)` with `hRep.Phi` on `Wseed`.
-The only producer `...LocalSourceSeedData_of_OSI45` must use the ordinary
-representative `hRep := BHW.sourceScalarRepresentativeData_bvt_F hd OS lgc n`
-and the strict OS-I §4.5 chain, but the raw Wick comparison uses the local
-Wick-source component of the adjacent double scalar domain.  The producer
-first proves the chart-local source equality
+The producer first proves
 `BHW.os45SPrime_figure24SourceEqOnUsrc_of_compactWickPairing` on
-`hChart.Usrc`: its two scalar pullbacks are holomorphic there by
+`hChart.Usrc`: its two scalar pullbacks are holomorphic by
 `SourceVarietyGermHolomorphicOn.comp_sourceMinkowskiGram` and
-`hChart.double_mem`; their compact Wick-section pairings are compared by
-`BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
-the checked compact Wick equality
-`os45_adjacent_euclideanEdge_pairing_eq_on_timeSector`, and the identity
-Wick scalarization from `hRep.branch_eq` plus
-`BHW.extendF_eq_on_forwardTube`; equality on `hChart.Usrc` follows by the
-compact-support separation theorem and
-`eqOn_openConnected_of_eqOn_wickRealSection`.  The theorem-2 blueprint now
-spells out the Lean-shaped proof of this theorem; after the scalar pullbacks
-and compact-support separation are in place, its only non-mechanical input is
-`BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`.
+`hChart.double_mem`; their compact Wick-section pairings are compared by the
+adjacent trace theorem above, the checked compact Wick equality
+`os45_adjacent_euclideanEdge_pairing_eq_on_timeSector`, and the identity Wick
+scalarization from `hRep.branch_eq` plus `BHW.extendF_eq_on_forwardTube`.
+Equality on `hChart.Usrc` follows by compact-support separation and
+`eqOn_openConnected_of_eqOn_wickRealSection`.
 
 After that chart equality is available, the seed data are constructed
 without the later quarter-turn path.  Choose

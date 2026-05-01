@@ -9982,13 +9982,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.complexLorentzAction_mem_extendedTube` applied to
       `hChart.adjLift_mem_extendedTube x hx 0`.
 
-      The raw adjacent-Wick compact-pairing theorem is itself split into a
-      genuine BHW/Jost comparison and a mechanical Euclidean rewrite.  The
-      comparison is the exact OS-I §4.5 content: on the selected Figure-2-4
-      chart, the ordinary BHW continuation `extendF (bvt_F OS lgc n)` on the
-      raw adjacent Wick section has the same compact pairing as the OS-II
-      ACR(1) branch `bvt_F OS lgc n` evaluated on that same complex section.
-      It is compact/distributional, not pointwise.
+      Downstream raw adjacent-Wick package.  The theorems in this block are
+      recorded only for the later extraction that occurs after the canonical
+      lift compact theorem, the source-pullback trace theorem, and the local
+      scalar source equality have all been proved.  They are not inputs to
+      `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
+      `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
+      or the source-seed proof.  In particular the raw adjacent section is a
+      total complex argument of `bvt_F`, not an ACR branch point supplied by
+      the checked trace-membership API.
 
       ```lean
       theorem BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_bvt_F
@@ -10110,11 +10112,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
         exact hchange.trans hψ.symm
       ```
 
-      Thus the hard mathematical proof content behind
-      `BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_bvt_F` is even more
-      local than the compact comparison: it is the Figure-2-4/BHW/Jost
-      branch equality between the raw adjacent ordinary-extended-tube point
-      and the identity Wick ordinary-forward-tube point,
+      After the upstream adjacent trace theorem has produced the local scalar
+      source equality, the remaining raw branch evaluation is the
+      Figure-2-4 source-coordinate specialization below.  It is downstream of
+      the compact source theorem because it evaluates
+      `SourceScalarRepresentativeData.branch_eq` at two ordinary
+      extended-tube realizations after their source-Gram equality has already
+      been propagated on the selected chart:
 
       ```lean
       theorem BHW.os45SPrime_rawAdjacentWick_extendF_eq_identityWick_of_BHWJost
@@ -10145,23 +10149,24 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (fun k => wickRotatePoint (x k))
       ```
 
-      This theorem is the local OS-I §4.5/BHW/Jost source boundary.  It is not
-      a global PET-independence theorem and must not be proved by calling the
-      global consumer
-      `BHW.permutedExtendedTube_singleValued_of_forwardTube_symmetry`.  Its
-      proof may internally use the same Hall-Wightman scalar-product
-      single-valuedness theorem, but only in the specialized Figure-2-4
-      setting: raw adjacent membership in the identity sector comes from
-      `BHW.os45Figure24_permutedWick_mem_extendedTube_zero`, membership in the
+      This theorem is not the local OS-I §4.5/BHW/Jost source boundary.  It is
+      the downstream pointwise evaluation of that boundary after the
+      canonical compact theorem has fed the adjacent trace theorem and the
+      trace theorem has fed the connected source-chart identity principle.  It
+      is also not a global PET-independence theorem and must not be proved by
+      calling the global consumer
+      `BHW.permutedExtendedTube_singleValued_of_forwardTube_symmetry`.  Raw
+      adjacent membership in the identity sector comes from
+      `BHW.os45Figure24_permutedWick_mem_extendedTube_zero`; membership in the
       adjacent sector comes from `hChart.wick_id_forwardTube` and
-      `BHW.permAct_mul`/`Equiv.swap_inv`, and the equality is anchored by the
-      selected OS-II compact Schwinger/Jost real-environment data.  No final
-      `bvt_W` locality, no `AdjacentOSEOWDifferenceEnvelope`, and no
-      prepackaged global branch-independence corollary may be used here.
+      `BHW.permAct_mul`/`Equiv.swap_inv`; the equality itself is anchored by
+      the already-proved local source equality.  No final `bvt_W` locality,
+      no `AdjacentOSEOWDifferenceEnvelope`, and no prepackaged global
+      branch-independence corollary may be used here.
 
-      The implementation-level source input for this theorem must be local to
-      the Figure-2-4 chart, not the downstream global PET package.  The
-      allowed theorem surface is:
+      The implementation-level source input for this theorem must be the
+      local source equality on the Figure-2-4 chart, not the downstream
+      global PET package.  The allowed theorem surface is:
 
       ```lean
       theorem BHW.os45SPrime_figure24LocalBranchCompatibility_of_BHWJost
@@ -10194,14 +10199,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
             BHW.extendF (bvt_F OS lgc n) (fun k => zraw (τ k))
       ```
 
-      This is the exact local OS-I §4.5/BHW/Jost theorem: equations (4.1),
-      (4.12), and (4.14) produce the symmetric adjacent `S'_n` datum on this
-      chart, BHW gives the single-valued complex-Lorentz continuation for
-      this datum on the two sector branches that meet at `zraw`, and Jost
-      real-environment uniqueness identifies the datum from the selected
-      compact Schwinger/Jost boundary.  It may be implemented inside the same
-      file as the raw comparison theorem, or as a source-support theorem, but
-      it must not be replaced by:
+      This is the exact downstream evaluation theorem once the local scalar
+      source equality has been established.  It is intentionally weaker than
+      the canonical compact boundary theorem: it does not reconstruct the
+      OS-I §4.5/BHW/Jost branch by itself, and it must not be used to prove
+      the adjacent trace theorem.  It may be implemented inside the same file
+      as the raw comparison theorem, or as a source-support theorem, but it
+      must not be replaced by:
 
       - `BHW.permutedExtendedTube_singleValued_of_forwardTube_symmetry`;
       - `bvt_F_distributionalJostAnchor_of_OSII`;
@@ -10209,7 +10213,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       - final `bvt_W` locality or pointwise `bvt_F_perm`.
 
       This local theorem is also not allowed to remain a one-line black box.
-      Its internal source step must be exposed as the scalar equality on the
+      Its input source step must be exposed as the scalar equality on the
       selected Figure-2-4 source chart:
 
       ```lean
@@ -10244,12 +10248,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
             hRep.Phi Z
       ```
 
-      The proof of this scalar source equality is the actual local
-      Hall-Wightman/Jost content.  It must be proved through an explicit
-      local seed-data packet, not by a one-line appeal to "BHW" or by importing
-      the later global PET package.  The seed-data packet records the exact
-      scalar source corridor on which the two local scalar branches are
-      propagated:
+      The proof of this scalar source equality is the connected source-chart
+      propagation fed by the adjacent trace theorem.  It must be proved
+      through an explicit local seed-data packet, not by a one-line appeal to
+      "BHW" or by importing the later global PET package.  The seed-data
+      packet records the exact scalar source corridor on which the two local
+      scalar branches are propagated:
 
       ```lean
       structure BHW.OS45SPrimeFigure24LocalSourceSeedData
@@ -10290,7 +10294,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
       ```
 
       The only producer of this packet in the local raw-comparison block is
-      the OS-I §4.5/BHW/Jost theorem:
+      the chart-local source theorem obtained from the already-proved
+      canonical compact trace input:
 
       ```lean
       theorem BHW.os45SPrime_figure24LocalSourceSeedData_of_OSI45
@@ -10319,11 +10324,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (d := d) hd OS lgc n i hi V hChart hRep
       ```
 
-      Its proof is the strict local OS-I §4.5 chain, but the local raw
-      comparison uses only the **Wick-source component** of the adjacent
-      double scalar domain.  The later quarter-turn Figure-2-4 path/corridor
-      package is reserved for the horizontal edge source germ; it is not an
-      input to this raw Wick source equality.
+      Its proof is the strict non-circular chain: canonical-lift compact
+      theorem -> source-pullback theorem -> adjacent trace theorem ->
+      compact-support separation on `hChart.Usrc` -> source identity
+      principle.  The local raw comparison uses only the
+      **Wick-source component** of the adjacent double scalar domain.  The
+      later quarter-turn Figure-2-4 path/corridor package is reserved for the
+      horizontal edge source germ; it is not an input to this raw Wick source
+      equality.
 
       First prove the source-chart equality on the already selected
       `hChart.Usrc`:
@@ -10938,8 +10946,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
       same OS-I §4.5 source mathematics, but it is not an input to this raw
       Figure-2-4 comparison theorem.
 
-      After this source theorem is available, the left-side compact theorem is
-      mechanical:
+      After this downstream source-evaluation theorem is available, the
+      left-side raw compact theorem is mechanical:
 
       ```lean
       theorem BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_permutedSchwinger
@@ -11065,45 +11073,41 @@ Proof decomposition of this theorem, without hiding the analytic work:
         exact hto_identity.trans (hφZ.symm.trans hE3)
       ```
 
-      Once this specialized OS-I §4.5 theorem and its mechanical compact
-      corollary are proved, the displayed comparison theorem is the transitive
-      composition of this left-side equality with
+      Once the downstream pointwise source-evaluation theorem and its
+      mechanical compact corollary are proved, the displayed comparison theorem
+      is the transitive composition of this left-side equality with
       `BHW.os45SPrime_rawAdjacentWick_bvtF_pairing_eq_permutedSchwinger`.  If
       both lemmas are kept private in the implementation file, the public
       comparison theorem still exposes the correct compact-support boundary
       content without pretending that the raw adjacent point lies in ACR(1).
 
-      Proof transcript for the specialized OS-I §4.5/BHW/Jost source theorem:
+      Downstream proof transcript for the raw compact theorem:
 
-      1. Use the OS-II construction only at the identity Wick ACR branch after
-         the finite change of variables selecting `ψZ`; the compact branch is
-         `OS.S n ψZ` by `bvt_euclidean_restriction`.  If the proof is oriented
-         through the unpermuted test `φZ`, apply `OS.E3_symmetric` once to
-         identify `OS.S n φZ` with `OS.S n ψZ`.  This is compact-test
-         Schwinger symmetry, not pointwise permutation symmetry of the final
+      1. Start from the already-established local scalar source equality on
+         `hChart.Usrc`.  This equality was obtained from the canonical compact
+         theorem and compact-support separation; it is not proved here.
+      2. Use `hRep.branch_eq` on the raw adjacent ordinary-extended-tube point
+         and on the identity Wick forward-tube point, with the source-Gram
+         algebra `sourceMinkowskiGram_perm`, to obtain the pointwise raw
+         branch equality on `hChart.V0`.
+      3. Under the compact-support hypothesis, replace the raw left integrand
+         by the identity Wick integrand on `hChart.V0`, and replace it by zero
+         off `hChart.V0`.
+      4. Rewrite the identity Wick compact pairing by
+         `bvt_euclidean_restriction`; if the theorem is oriented toward the
+         permuted test, use `OS.E3_symmetric` for the single zero-diagonal
+         compact-test equality `OS.S n φZ = OS.S n ψZ`.  This is compact-test
+         Schwinger symmetry, not pointwise permutation symmetry of final
          Wightman boundary distributions.
-      2. Use equations (4.1), (4.12), and (4.14) of OS I to construct the
-         symmetric analytic datum on the adjacent permuted tube family whose
-         compact Euclidean boundary is the same `OS.S n ψZ` branch.
-      3. Apply Bargmann-Hall-Wightman to continue that datum single-valuedly
-         and complex-Lorentz invariantly to the ordinary extended-tube
-         realization supplied by Figure 2-4.  The only raw-section domain fact
-         used at this point is
-         `BHW.os45Figure24_permutedWick_mem_extendedTube_zero`.
-      4. Apply the Jost real-environment uniqueness theorem on the selected
-         compact test family to identify the BHW branch with the Euclidean
-         branch in compact pairings.  This is a theorem about the equality of
-         two continuations of the same local Euclidean branch, not final
-         Wightman locality, not global PET branch independence, and not a
-         pointwise permutation-symmetry shortcut.
       5. Do **not** prove this comparison by invoking the existing
          `W_analytic_BHW` package for a completed `WightmanFunctions` object:
          that construction consumes `Wfn.locally_commutative`, which is exactly
-         the theorem-2 locality output.  The allowed source is the OS-I §4.5
-         route before locality: Euclidean symmetry and ACR(1) branch
-         selection on the identity Wick trace, symmetric analytic continuation
-         to the permuted tube, Bargmann-Hall-Wightman single-valued
-         continuation, and Jost real-environment uniqueness.
+         the theorem-2 locality output.  The allowed upstream source has
+         already been isolated as the canonical-lift compact theorem: Euclidean
+         symmetry and ACR(1) branch selection on the identity Wick trace,
+         symmetric analytic continuation to the permuted tube,
+         Bargmann-Hall-Wightman single-valued continuation, and Jost
+         real-environment uniqueness.
 
       The public raw Schwinger-valued theorem below is then a mechanical
       consequence of this comparison theorem plus the right-side support
@@ -11195,17 +11199,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
         exact hcompare.trans hbvt
       ```
 
-      Thus the only non-mechanical raw input is
-      the left-side OS-I §4.5/BHW/Jost equality packaged inside
-      `BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_bvt_F`.  The
-      Schwinger-valued raw theorem is not an independent source import, and it
-      must not be rederived later as a second public theorem from the
-      source-coordinate theorem.
+      Thus there is no remaining non-mechanical raw input.  The raw
+      Schwinger-valued theorem is a downstream extraction from the source
+      equality and the finite Euclidean rewrite; it must not be used to prove
+      the source equality, the adjacent trace theorem, or the canonical lift.
 
-      The canonical Figure-2-4 lift pairing theorem is the deterministic
-      transport of the raw Schwinger-valued theorem.  Like the raw comparison
-      and raw Schwinger-valued theorems, it does not take `hRep`; the scalar
-      representative enters only in the downstream source-pullback rewrite.
+      The canonical Figure-2-4 lift pairing theorem is the primitive
+      OS-I §4.5/BHW/Jost compact-boundary theorem.  Like the downstream raw
+      comparison and raw Schwinger-valued theorems, it does not take
+      `hRep`; the scalar representative enters only in the downstream
+      source-pullback rewrite.
 
       ```lean
       theorem BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger
@@ -11291,20 +11294,99 @@ Proof decomposition of this theorem, without hiding the analytic work:
 
       The placeholder in this pseudocode is not a theorem name and must not
       survive production.  It marks the source proof that has to be written
-      inside the public theorem (or as a private implementation lemma during
-      the same proof pass).  Its proof transcript is:
+      inside the public theorem (or, if readability requires it, as a private
+      implementation lemma with exactly the same mathematical content during
+      the same proof pass).  The production proof must establish the following
+      subclaims explicitly:
 
-      1. form `φZ` and `ψZ` exactly as above and rewrite `OS.S n ψZ` by
-         `bvt_euclidean_restriction`;
-      2. use OS I equations (4.1), (4.12), and (4.14) plus `OS.E3_symmetric`
-         as needed to identify the same compact Euclidean branch on the
-         adjacent `S'_n` side;
-      3. apply the Bargmann-Hall-Wightman invariant-function theorem to
-         continue this compact branch to the deterministic lift
-         `hChart.adjLift x 0` in the ordinary extended tube;
-      4. use the selected Jost real-environment uniqueness for the compact
-         test family on `hChart.V0` to identify the BHW continuation with the
-         OS-II Euclidean compact branch.
+      1. `φZ` is the zero-diagonal compact test supported in `hChart.V0`, and
+         `ψZ := permuteZeroDiagonalSchwartz τ.symm φZ` is the permuted
+         zero-diagonal test.  The exact Euclidean restriction API is
+
+         ```lean
+         have hψ_restrict :
+             OS.S n ψZ =
+               ∫ x : NPointDomain d n,
+                 bvt_F OS lgc n (fun k => wickRotatePoint (x k)) *
+                   φ (fun k => x (τ k)) := by
+           simpa [ψZ, φZ, τ] using
+             bvt_euclidean_restriction (d := d) OS lgc n ψZ
+         ```
+
+         If the OS-I argument is oriented through `φZ`, insert exactly one
+         call to `OS.E3_symmetric (σ := τ.symm)` to prove
+         `OS.S n φZ = OS.S n ψZ`.  This is the only Euclidean permutation
+         symmetry used here; it is not `bvt_F_perm` and not pointwise
+         Wightman locality.
+
+      2. The OS-I §4.1 construction identifies the same compact Euclidean
+         branch in reduced variables.  Equation (4.1) supplies the
+         translation-reduced Schwinger distribution on the ordered positive
+         time sector for the selected zero-diagonal test; equation (4.12)
+         identifies its Fourier-Laplace transform with the forward-tube
+         analytic branch represented in Lean by `bvt_F OS lgc n`; equation
+         (4.14) gives the infinitesimal Lorentz-invariance equations for that
+         transform.  In Lean this subclaim must not be a new axiom: it must be
+         proved from the existing `bvt_F_holomorphic`,
+         `bvt_euclidean_restriction`, and the local BHW/Jost infrastructure,
+         or be left as the single honest theorem-level production frontier
+         only after the exact statement is audited.
+
+      3. Bargmann-Hall-Wightman is then applied to the OS-I branch from step
+         2, not to a completed `WightmanFunctions` object.  The BHW conclusion
+         is the single-valued complex-Lorentz continuation of this branch to
+         the ordinary extended tube.  The deterministic Figure-2-4 geometry
+         supplies the point of evaluation:
+
+         ```lean
+         have hET :
+             ∀ x, x ∈ hChart.V0 ->
+               hChart.adjLift x (0 : unitInterval) ∈ BHW.ExtendedTube d n :=
+           fun x hx => hChart.adjLift_mem_extendedTube x hx 0
+         have hLift_cont :
+             ContinuousOn
+               (fun x : NPointDomain d n =>
+                 BHW.extendF (bvt_F OS lgc n)
+                   (hChart.adjLift x (0 : unitInterval)))
+               hChart.V0 := by
+           -- `extendF` is holomorphic, hence continuous, on `ExtendedTube`;
+           -- compose with the public continuity of the canonical lift.
+           exact ?extendF_continuousOn_comp_adjLift
+         ```
+
+         The missing `?extendF_continuousOn_comp_adjLift` is ordinary analytic
+         bookkeeping: it uses the BHW holomorphy/continuity of `extendF` on
+         `ExtendedTube`, `BHW.continuous_os45Figure24AdjacentLift`, and
+         `hChart.adjLift_mem_extendedTube`.  It is not a substitute boundary
+         theorem.
+
+      4. Jost real-environment uniqueness is applied to compact tests
+         supported in the selected Jost patch `hChart.V0`.  The uniqueness
+         input is that the BHW continuation from step 3 and the OS-I
+         Euclidean branch from steps 1-2 have the same boundary germ on the
+         real Jost environment selected by Figure 2-4.  The conclusion is the
+         compact pairing equality
+
+         ```lean
+         have hcanonical_boundary :
+             ∫ x : NPointDomain d n,
+                 BHW.extendF (bvt_F OS lgc n)
+                   (hChart.adjLift x (0 : unitInterval)) * φ x
+               =
+             OS.S n ψZ := by
+           -- OS I §4.5: equations (4.1), (4.12), (4.14), BHW continuation,
+           -- and Jost real-environment uniqueness for this compact test.
+           exact ?osi45_bhw_jost_canonical_compact_pairing
+         ```
+
+         This is the mathematical source boundary gate.  It is a compact
+         distributional theorem, not a pointwise theorem about
+         `permAct τ (wick x)`, and it must not call the local scalar source
+         equality, any raw adjacent-Wick theorem, final `bvt_W` locality,
+         `AdjacentOSEOWDifferenceEnvelope`, or global PET branch independence.
+         If a private lemma is introduced for this line, its statement must be
+         the compact equality above with the same hypotheses; a forwarding
+         wrapper with weaker provenance is not allowed.
 
       This is the only non-mechanical input in
       `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`.
@@ -11557,28 +11639,24 @@ Proof decomposition of this theorem, without hiding the analytic work:
          symmetric Euclidean compact-test branch selected by E3.  This is not
          local EOW, not final Wightman locality, not global PET branch
          independence, and not a pointwise permutation-symmetry shortcut.
-      5. Step 4 is supplied by the specialized branch theorem
-         `BHW.os45SPrime_rawAdjacentWick_extendF_eq_identityWick_of_BHWJost`,
-         its mechanical compact corollary
-         `BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_permutedSchwinger`,
-         and the Figure-2-4 Lorentz normalization
-         `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`.
-         Only after that theorem is available does the displayed ACR-kernel
-         theorem follow by step 1.  Production Lean may not introduce the
-         theorem above until the specialized OS-I §4.5/BHW/Jost branch
-         comparison has a complete proof or an explicitly approved
-         source-import boundary with that exact local branch conclusion.
+      5. Step 4 is supplied directly by
+         `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`.  The
+         ACR-kernel theorem is therefore derived from the canonical compact
+         theorem by `hRep.branch_eq`, `hChart.adjLift_sourceGram`, and the
+         Euclidean restriction for `ψZ`; it does not call the raw pointwise
+         branch theorem or any raw compact theorem.
 
-      The current proof-document gap is therefore the specialized raw
-      adjacent-Wick `extendF` branch comparison with the identity Wick
-      `extendF` branch, and its exact OS-I §4.5/Bargmann-Hall-Wightman/Jost
-      proof transcript.  The displayed raw comparison, raw Schwinger-valued,
-      and canonical-lift theorems are deterministic transports of that source
-      statement plus the checked finite-permutation and Figure-2-4 geometry.
+      The current adjacent proof-document gap is therefore the canonical-lift
+      OS-I §4.5/Bargmann-Hall-Wightman/Jost compact-boundary transcript, not a
+      specialized raw adjacent-Wick pointwise comparison.  The displayed raw
+      comparison and raw Schwinger-valued theorems are downstream
+      deterministic transports after the local scalar source equality exists.
       Adding any of these statements to Lean as a wrapper, `sorry`, `admit`,
-      or unapproved axiom would violate the implementation gate.
+      or unapproved axiom before the canonical compact proof is audited would
+      violate the implementation gate.
 
-      Once this source theorem is proved, the ACR-kernel form is mechanical:
+      Once the canonical-lift compact theorem is proved, the ACR-kernel form
+      is mechanical:
 
       ```lean
       theorem BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary ... := by
@@ -15903,6 +15981,10 @@ in this order:
 	   `S'_n` package
 	   `BHW.os45Figure24_sourceChart_at`,
 	   `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`,
+	   `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
+	   `BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary`,
+	   `BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`,
+	   `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
 	   `BHW.OS45SPrimeFigure24LocalSourceSeedData`,
 	   `BHW.os45SPrime_figure24SourceEqOnUsrc_of_compactWickPairing`,
 	   `BHW.os45SPrime_figure24LocalSourceSeedData_of_OSI45`,
@@ -15914,10 +15996,6 @@ in this order:
 	   `BHW.os45SPrime_rawAdjacentWick_bvtF_pairing_eq_permutedSchwinger`,
 	   `BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_bvt_F`,
 	   `BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
-	   `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
-	   `BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary`,
-	   `BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`,
-   `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
    `BHW.os45AdjacentSPrimeScalarizationChart_of_figure24`,
    `BHW.os45AdjacentSPrimeSourceEq_of_compactWickPairingEq`,
    `BHW.os45AdjacentSPrimeScalarSeed_of_compactWickPairingEq`, and
@@ -16191,6 +16269,10 @@ not as the next task.  The active next implementation order is:
    seed/path package
    `BHW.os45Figure24_sourceChart_at`,
    `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`,
+   `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
+   `BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary`,
+   `BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`,
+   `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
    `BHW.OS45SPrimeFigure24LocalSourceSeedData`,
    `BHW.os45SPrime_figure24SourceEqOnUsrc_of_compactWickPairing`,
    `BHW.os45SPrime_figure24LocalSourceSeedData_of_OSI45`,
@@ -16202,10 +16284,6 @@ not as the next task.  The active next implementation order is:
    `BHW.os45SPrime_rawAdjacentWick_bvtF_pairing_eq_permutedSchwinger`,
    `BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_bvt_F`,
    `BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
-   `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
-   `BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary`,
-   `BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`,
-   `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
    `BHW.os45AdjacentSPrimeScalarizationChart_of_figure24`,
    `BHW.os45AdjacentSPrimeSourceEq_of_compactWickPairingEq`,
    `BHW.os45AdjacentSPrimeScalarSeed_of_compactWickPairingEq`, and
