@@ -9907,6 +9907,59 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (hker : ∀ x, L x = 0 -> ℓ x = 0) :
           ∃ ψ : F ->L[ℂ] ℂ, ℓ = ψ.comp L
 
+      Lean-shaped proof of the factor-through support theorem:
+
+      ```lean
+      theorem BHW.continuousLinearFunctional_factor_through_of_vanishes_on_ker
+          ... := by
+        let Llin : E →ₗ[ℂ] F := L.toLinearMap
+        let elllin : E →ₗ[ℂ] ℂ := ℓ.toLinearMap
+        have hker_le :
+            LinearMap.ker Llin ≤ LinearMap.ker elllin := by
+          intro x hx
+          exact hker x hx
+        let lifted : (E ⧸ LinearMap.ker Llin) →ₗ[ℂ] ℂ :=
+          (LinearMap.ker Llin).liftQ elllin hker_le
+        let ψRange : LinearMap.range Llin →ₗ[ℂ] ℂ :=
+          lifted.comp Llin.quotKerEquivRange.symm.toLinearMap
+        rcases ψRange.exists_extend with ⟨ψlin, hψlin⟩
+        let ψ : F →L[ℂ] ℂ :=
+          ⟨ψlin, LinearMap.continuous_of_finiteDimensional ψlin⟩
+        refine ⟨ψ, ?_⟩
+        ext x
+        have hxrange :
+            (⟨Llin x, ⟨x, rfl⟩⟩ : LinearMap.range Llin) =
+              Llin.quotKerEquivRange (Submodule.Quotient.mk x) := by
+          ext
+          simp [LinearMap.quotKerEquivRange_apply_mk]
+        have hψ_apply :
+            ψlin (Llin x) = ψRange ⟨Llin x, ⟨x, rfl⟩⟩ := by
+          have h :=
+            congrArg
+              (fun f : LinearMap.range Llin →ₗ[ℂ] ℂ =>
+                f ⟨Llin x, ⟨x, rfl⟩⟩)
+              hψlin
+          simpa [LinearMap.comp_apply] using h
+        calc
+          ℓ x = elllin x := rfl
+          _ = lifted (Submodule.Quotient.mk x) := by
+                rw [Submodule.liftQ_apply]
+          _ = ψRange
+                (Llin.quotKerEquivRange (Submodule.Quotient.mk x)) := by
+                simp [ψRange]
+          _ = ψRange ⟨Llin x, ⟨x, rfl⟩⟩ := by
+                rw [← hxrange]
+          _ = ψlin (Llin x) := hψ_apply.symm
+          _ = ψ (L x) := rfl
+      ```
+
+      The proof is algebraic until the final coercion to a continuous linear
+      map: `LinearMap.exists_extend` extends the functional from
+      `LinearMap.range Llin` to the ambient codomain, and
+      `LinearMap.continuous_of_finiteDimensional` supplies continuity of the
+      extension.  The quotient step is `Submodule.liftQ` through
+      `LinearMap.ker Llin`, then `LinearMap.quotKerEquivRange`.
+
       theorem BHW.sourceGramDifferential_dual_coordinate_expansion
           (d n : Nat)
           (z0 : Fin n -> Fin (d + 1) -> ℂ)
@@ -9915,6 +9968,133 @@ Proof decomposition of this theorem, without hiding the analytic work:
             ψ.comp (BHW.sourceGramDifferential d n z0) =
               ∑ i : Fin n, ∑ j : Fin n,
                 c i j • BHW.sourceGramCoordinateDifferential d n z0 i j
+
+      Lean-shaped proof of the finite dual expansion:
+
+      ```lean
+      private def BHW.sourceGramTargetCoordinate (n : Nat) (i j : Fin n) :
+          (Fin n → Fin n → ℂ) →L[ℂ] ℂ :=
+        (ContinuousLinearMap.proj
+          (R := ℂ) (ι := Fin n) (φ := fun _ : Fin n => ℂ) j).comp
+          (ContinuousLinearMap.proj
+            (R := ℂ) (ι := Fin n)
+            (φ := fun _ : Fin n => Fin n → ℂ) i)
+
+      private theorem BHW.sourceGramTargetCoordinate_expand
+          (n : Nat)
+          (ψ : (Fin n → Fin n → ℂ) →L[ℂ] ℂ) :
+          ψ =
+            ∑ i : Fin n, ∑ j : Fin n,
+              (ψ (Pi.single i (Pi.single j (1 : ℂ)))) •
+                BHW.sourceGramTargetCoordinate n i j := by
+        ext Z
+        have hrow : ∀ i : Fin n,
+            Z i =
+              ∑ j : Fin n,
+                (Z i j) •
+                  (Pi.single (M := fun _ : Fin n => ℂ) j (1 : ℂ)) := by
+          intro i
+          ext j
+          rw [Finset.sum_apply]
+          calc
+            Z i j = ∑ x : Fin n, if j = x then Z i x else 0 := by
+              simp
+            _ =
+                ∑ x : Fin n,
+                  Z i x *
+                    (Pi.single (M := fun _ : Fin n => ℂ) x (1 : ℂ)) j := by
+              apply Finset.sum_congr rfl
+              intro x hx
+              by_cases h : j = x
+              · subst x
+                simp
+              · simp [h]
+        have hZ :
+            Z =
+              ∑ i : Fin n, ∑ j : Fin n,
+                (Z i j) •
+                  (Pi.single i (Pi.single j (1 : ℂ)) :
+                    Fin n → Fin n → ℂ) := by
+          ext i j
+          rw [Finset.sum_apply]
+          rw [Finset.sum_eq_single i]
+          · simpa using congrFun (hrow i) j
+          · intro b hb hbi
+            by_cases h : i = b
+            · exact False.elim (hbi h.symm)
+            · simp [h]
+          · intro hi
+            simp at hi
+        calc
+          ψ Z =
+              ψ (∑ i : Fin n, ∑ j : Fin n,
+                (Z i j) •
+                  (Pi.single i (Pi.single j (1 : ℂ)) :
+                    Fin n → Fin n → ℂ)) := by
+            rw [← hZ]
+          _ =
+              ∑ i : Fin n, ∑ j : Fin n,
+                (Z i j) *
+                  ψ (Pi.single i (Pi.single j (1 : ℂ))) := by
+            simp [map_sum, map_smul]
+          _ =
+              (∑ i : Fin n, ∑ j : Fin n,
+                (ψ (Pi.single i (Pi.single j (1 : ℂ)))) •
+                  BHW.sourceGramTargetCoordinate n i j) Z := by
+            simp [BHW.sourceGramTargetCoordinate, mul_comm]
+
+      private theorem BHW.sourceGramCoordinateDifferential_eq_targetCoordinate_comp
+          (d n : Nat)
+          (z0 : Fin n → Fin (d + 1) → ℂ)
+          (i j : Fin n) :
+          BHW.sourceGramCoordinateDifferential d n z0 i j =
+            (BHW.sourceGramTargetCoordinate n i j).comp
+              (BHW.sourceGramDifferential d n z0) := by
+        ext X
+        simpa [BHW.sourceGramTargetCoordinate]
+          using BHW.sourceGramCoordinateDifferential_apply d n z0 X i j
+
+      theorem BHW.sourceGramDifferential_dual_coordinate_expansion
+          (d n : Nat)
+          (z0 : Fin n → Fin (d + 1) → ℂ)
+          (ψ : (Fin n → Fin n → ℂ) →L[ℂ] ℂ) :
+          ∃ c : Fin n → Fin n → ℂ,
+            ψ.comp (BHW.sourceGramDifferential d n z0) =
+              ∑ i : Fin n, ∑ j : Fin n,
+                c i j • BHW.sourceGramCoordinateDifferential d n z0 i j := by
+        let c : Fin n → Fin n → ℂ :=
+          fun i j => ψ (Pi.single i (Pi.single j (1 : ℂ)))
+        refine ⟨c, ?_⟩
+        have hψ := BHW.sourceGramTargetCoordinate_expand n ψ
+        ext X
+        calc
+          (ψ.comp (BHW.sourceGramDifferential d n z0)) X =
+              ψ (BHW.sourceGramDifferential d n z0 X) := rfl
+          _ =
+              (∑ i : Fin n, ∑ j : Fin n,
+                c i j • BHW.sourceGramTargetCoordinate n i j)
+                (BHW.sourceGramDifferential d n z0 X) := by
+            rw [hψ]
+          _ =
+              (∑ i : Fin n, ∑ j : Fin n,
+                c i j •
+                  (BHW.sourceGramTargetCoordinate n i j).comp
+                    (BHW.sourceGramDifferential d n z0)) X := by
+            simp [c]
+          _ =
+              (∑ i : Fin n, ∑ j : Fin n,
+                c i j •
+                  BHW.sourceGramCoordinateDifferential d n z0 i j) X := by
+            simp [BHW.sourceGramCoordinateDifferential_eq_targetCoordinate_comp]
+      ```
+
+      This proof has no Hall-Wightman content hidden inside it: the only
+      ingredient is the finite coordinate-basis expansion of the ambient Gram
+      target.  The coefficient is explicitly
+      `c i j = ψ (Pi.single i (Pi.single j 1))`; after composition with
+      `sourceGramDifferential`, the coordinate projection is identified with
+      `sourceGramCoordinateDifferential` by extensionality and
+      `BHW.sourceGramCoordinateDifferential_apply`.
 
       /-- Coordinate split used in Hall-Wightman Lemma 5.  The vector
       variables near `z0` are written as scalar-product coordinates `u`

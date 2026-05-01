@@ -1085,10 +1085,24 @@ implementation contract is:
    expanded to implementation level: prove that the kernel of the source Gram
    differential at a max-rank point is exactly the range of infinitesimal
    Lorentz tangents, using the infinitesimal Witt-extension theorem, then
-	   factor every covector annihilating those tangents through the source Gram
-	   differential and expand the resulting finite-product dual functional in
-	   coordinate scalar-product differentials.
-	   In the
+   factor every covector annihilating those tangents through the source Gram
+   differential and expand the resulting finite-product dual functional in
+   coordinate scalar-product differentials.  The annihilator factor theorem
+   `BHW.continuousLinearFunctional_factor_through_of_vanishes_on_ker` is now
+   pinned to a scratch-checked Lean proof: lift `ℓ.toLinearMap` through
+   `Submodule.liftQ` on `LinearMap.ker L.toLinearMap`, identify the quotient
+   with `LinearMap.range L.toLinearMap` by `LinearMap.quotKerEquivRange`,
+   extend the resulting range functional to the ambient codomain with
+   `LinearMap.exists_extend`, and turn the extension into a continuous linear
+   map with `LinearMap.continuous_of_finiteDimensional`.  The finite dual
+   expansion theorem `BHW.sourceGramDifferential_dual_coordinate_expansion`
+   is also pinned to a scratch-checked Lean proof: expand
+   `ψ : (Fin n -> Fin n -> ℂ) ->L[ℂ] ℂ` in the finite coordinate basis
+   `Pi.single i (Pi.single j 1)`, compose the equality with
+   `sourceGramDifferential d n z0`, and identify each composed coordinate
+   probe with `sourceGramCoordinateDifferential d n z0 i j` using
+   `BHW.sourceGramCoordinateDifferential_apply`.
+   In the
    Lean-shaped proof, destruct
    `hZU : Z ∈ sourceExtendedTubeGramDomain d n` as
    `⟨z0, hz0, rfl⟩`, and when applying the helper to a realized
