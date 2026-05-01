@@ -2764,20 +2764,19 @@ Proof decomposition of this theorem, without hiding the analytic work:
       -- `OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceComplexChart`
       -- for `BHW.contDiff_sourceMinkowskiGram`.
       theorem BHW.sourceExtendedTubeGramDomain_relOpen_connected ... := by
-        refine ⟨?hRelOpen, ?hConnected⟩
-        · exact
-            BHW.sourceExtendedTubeGramDomain_relOpen
-              (d := d) hd n
-        · have hGram_cont :
-              Continuous (BHW.sourceMinkowskiGram d n) :=
-            (BHW.contDiff_sourceMinkowskiGram d n).continuous
-          have hImage :
-              IsConnected
-                ((BHW.sourceMinkowskiGram d n) ''
-                  BHW.ExtendedTube d n) :=
-            (BHW.isConnected_extendedTube (d := d) (n := n)).image
-              (BHW.sourceMinkowskiGram d n) hGram_cont.continuousOn
-          simpa [BHW.sourceExtendedTubeGramDomain] using hImage
+        exact ⟨
+          BHW.sourceExtendedTubeGramDomain_relOpen (d := d) hd n,
+          by
+            have hGram_cont :
+                Continuous (BHW.sourceMinkowskiGram d n) :=
+              (BHW.contDiff_sourceMinkowskiGram d n).continuous
+            have hImage :
+                IsConnected
+                  ((BHW.sourceMinkowskiGram d n) ''
+                    BHW.ExtendedTube d n) :=
+              (BHW.isConnected_extendedTube (d := d) (n := n)).image
+                (BHW.sourceMinkowskiGram d n) hGram_cont.continuousOn
+            simpa [BHW.sourceExtendedTubeGramDomain] using hImage⟩
       ```
 
       The only non-mechanical line in this theorem is therefore
@@ -4670,10 +4669,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
                hΩ_open hZΩ
                (BHW.sourceComplexGramVariety_maxRank_dense
                  (d := d) (n := n) hZV)
-               ?rewrite
-           ext W
-           simp [hU_eq, Set.inter_assoc, Set.left_comm,
-             Set.inter_left_comm]
+               (by
+                 ext W
+                 simp [hU_eq, Set.inter_assoc, Set.left_comm,
+                   Set.inter_left_comm])
          ```
 
          The last helper
@@ -5990,10 +5989,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (fun i μ =>
               ξ0 i μ + ∑ c : Fin s,
                 Real.exp (-t) * b i c * q0 c μ),
-            htFT, ?_⟩
-          exact
+            htFT,
             BHW.complexLorentzAction_inv_contract_scaled_isotropic
-              hfix hscale t b
+              hfix hscale t b⟩
         have hξ0_ET : ξ0 ∈ BHW.ExtendedTube d n := by
           simpa using hall_forward (fun _ _ => 0)
         constructor
@@ -10377,6 +10375,101 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.sourceGramDifferential d n z0 X = 0 ↔
             ∃ A : BHW.ComplexMinkowskiSkewGenerator d,
               X = BHW.lorentzInfinitesimalTangent d n A z0
+
+      Lean-shaped proof of the kernel theorem.  This is the
+      Hall-Wightman Lemmas 6--7 rank computation; it is not an analytic
+      continuation statement.
+
+      ```lean
+      theorem BHW.sourceGramDifferential_lorentzInfinitesimalTangent_zero
+          ... := by
+        ext i j
+        simp [BHW.sourceGramDifferential_apply,
+          BHW.lorentzInfinitesimalTangent,
+          BHW.complexMinkowskiBilinear, Finset.sum_add_distrib,
+          Finset.mul_sum, Finset.sum_mul, mul_assoc, mul_left_comm,
+          mul_comm]
+        -- After collecting the double sum, each `(μ,ν)` coefficient is
+        -- `metric μ * A.val μ ν + metric ν * A.val ν μ`, hence zero by
+        -- `A.skew μ ν`.
+        exact BHW.sum_skew_minkowski_generator_pair_zero A z0 i j
+
+      theorem BHW.sourceGramDifferential_kernel_eq_lorentzInfinitesimalTangent
+          ... := by
+        constructor
+        · intro hDq
+          let S := BHW.hwMaxRank_selectedRowsData
+            (d := d) hd n hz0Rank
+          have hcompat :
+              ∀ a b : Fin (min n (d + 1)),
+                BHW.complexMinkowskiBilinear d (X (S.I a)) (z0 (S.I b)) +
+                BHW.complexMinkowskiBilinear d (z0 (S.I a)) (X (S.I b)) =
+                  0 := by
+            intro a b
+            have h := congrFun (congrFun hDq (S.I a)) (S.I b)
+            simpa [BHW.sourceGramDifferential_apply] using h
+          rcases BHW.complexMinkowski_infinitesimalWittExtension
+              (d := d) hd
+              (u := fun a : Fin (min n (d + 1)) => z0 (S.I a))
+              (X := fun a : Fin (min n (d + 1)) => X (S.I a))
+              S.selected_independent S.selected_span_nondeg hcompat with
+            ⟨A, hA_selected⟩
+          refine ⟨A, ?_⟩
+          ext r μ
+          by_cases hD_le_n : d + 1 <= n
+          · have hspan_top :=
+              S.selected_span_top_of_spacetime_le_points hD_le_n
+            rcases
+              BHW.exists_coefficients_of_mem_span_finite_frame
+                (q := fun a : Fin (min n (d + 1)) => z0 (S.I a))
+                (v := z0 r)
+                (by
+                  simpa [hspan_top] : z0 r ∈
+                    Submodule.span ℂ
+                      (Set.range (fun a : Fin (min n (d + 1)) =>
+                        z0 (S.I a)))) with
+              ⟨c, hrel⟩
+            have hXrel :
+                X r =
+                  ∑ a : Fin (min n (d + 1)), c a • X (S.I a) :=
+              BHW.hwMaxRank_kernel_row_relation_transfer
+                (d := d) hd n S hDq hD_le_n hrel
+            calc
+              X r μ =
+                  (∑ a : Fin (min n (d + 1)), c a • X (S.I a)) μ := by
+                    rw [hXrel]
+              _ =
+                  (∑ a : Fin (min n (d + 1)), c a •
+                    BHW.lorentzInfinitesimalTangent d n A z0 (S.I a)) μ := by
+                    simp [hA_selected]
+              _ =
+                  BHW.lorentzInfinitesimalTangent d n A z0 r μ := by
+                    -- `lorentzInfinitesimalTangent` is linear in `z0`;
+                    -- rewrite `z0 r` by the coefficient relation `hrel`.
+                    simpa [BHW.lorentzInfinitesimalTangent, hrel,
+                      Finset.mul_sum, Finset.sum_mul, mul_assoc,
+                      mul_left_comm, mul_comm]
+          · have hn_le_D : n <= d + 1 := Nat.le_of_not_ge hD_le_n
+            rcases S.I_surjective_of_points_le_spacetime hn_le_D r with
+              ⟨a, ha⟩
+            subst r
+            simpa using congrFun (hA_selected a) μ
+        · rintro ⟨A, rfl⟩
+          exact
+            BHW.sourceGramDifferential_lorentzInfinitesimalTangent_zero
+              (d := d) (n := n) A z0
+      ```
+
+      The helper
+      `BHW.hwMaxRank_kernel_row_relation_transfer` is purely linear algebra.
+      If `z0 r = ∑ a, c a • z0 (S.I a)`, pair
+      `X r - ∑ a, c a • X (S.I a)` with every selected vector `z0 (S.I b)`;
+      the equality `Dq X = 0`, the selected relation, and bilinearity show all
+      pairings vanish.  Since the selected span is nondegenerate and, in the
+      case `d + 1 <= n`, is the whole ambient space, the vector itself is
+      zero.  In the case `n <= d + 1`, the selected index map is surjective,
+      so there are no unselected rows.  This is the point where maximal
+      scalar rank is used essentially.
 
       theorem BHW.continuousLinearFunctional_factor_through_of_vanishes_on_ker
           {E F : Type*}

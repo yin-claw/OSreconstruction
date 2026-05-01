@@ -174,9 +174,18 @@ Pseudo-code audit update (2026-05-01): the active scalar-source and adjacent
 assembly layers.  The branch-law quotient-span fields, low-rank orbit fields,
 Lemma-3 finite topology wrappers, max-rank dual-coordinate/fiber-product
 support, branch-defined continuity/local boundedness, and canonical compact
-integral rewrites are written with explicit Lean-shaped `by` blocks.  This
-does not make the route production-Lean-ready: the remaining blockers are the
-named mathematical producers above, especially the finite-dimensional
+integral rewrites are written with explicit Lean-shaped `by` blocks.  The
+max-rank kernel theorem is also now decomposed at proof-doc level: choose the
+selected-row datum, read the selected compatibility equations from
+`D(sourceMinkowskiGram) X = 0`, apply the infinitesimal Witt-extension theorem,
+and then split into the cases `d + 1 <= n` and `n <= d + 1`.  In the first
+case, selected rows span the ambient Minkowski space and the row-relation
+transfer lemma forces every unselected velocity row; in the second, the
+selected index map is surjective.  The reverse inclusion is the explicit
+skew-generator expansion showing
+`sourceGramDifferential_lorentzInfinitesimalTangent_zero`.  This does not make
+the route production-Lean-ready: the remaining blockers are the named
+mathematical producers above, especially the finite-dimensional
 Hall-Wightman geometry, the normal/removable analytic-space packet, and the
 OS I §4.5 canonical compact producer.  Remaining schematic holes elsewhere in
 `theorem2_locality_blueprint.md` are archived optional bridges or downstream
@@ -1271,6 +1280,23 @@ implementation contract is:
    `sourceGramDifferential d n z0`, and identify each composed coordinate
    probe with `sourceGramCoordinateDifferential d n z0 i j` using
    `BHW.sourceGramCoordinateDifferential_apply`.
+   The kernel theorem
+   `BHW.sourceGramDifferential_kernel_eq_lorentzInfinitesimalTangent` is now
+   pinned to a full finite-dimensional proof transcript as well.  The forward
+   implication first chooses `BHW.hwMaxRank_selectedRowsData`, extracts the
+   selected-row compatibility equations from `hDq :
+   sourceGramDifferential d n z0 X = 0`, and invokes
+   `BHW.complexMinkowski_infinitesimalWittExtension` to get a skew generator
+   matching the selected velocity rows.  If `d + 1 <= n`, the selected rows
+   span the whole ambient space; for an arbitrary row `r`, write `z0 r` as a
+   finite linear combination of selected rows and use
+   `BHW.hwMaxRank_kernel_row_relation_transfer` to prove the same relation for
+   `X r`, after which linearity of `lorentzInfinitesimalTangent` in `z0`
+   closes the row.  If `n <= d + 1`, `S.I` is surjective and every row is
+   already selected.  The reverse implication is the direct expansion
+   `BHW.sourceGramDifferential_lorentzInfinitesimalTangent_zero`, where the
+   double sum cancels coefficientwise by the Minkowski-skew relation.  This is
+   the exact Lemmas 6--7 rank computation, not an analytic-continuation step.
    Max-rank chart readiness is therefore a componentwise proof obligation,
    not a name-introduction task.  Production Lean for
    `BHW.hallWightman_powerSeries_from_PDE_span` may start only after the
