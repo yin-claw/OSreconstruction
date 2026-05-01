@@ -3456,26 +3456,23 @@ Proof decomposition of this theorem, without hiding the analytic work:
 
       /-- Hall-Wightman Lemma 3 in dimension `d + 1`: near any realized
       source Gram point, every nearby point of the rank-bounded symmetric
-      determinantal variety is realized by a uniformly small perturbation of
-      the chosen source vectors. -/
-      theorem BHW.hwLemma3_sourceGram_localVectorRealization_smallPerturbation
+      determinantal variety is realized by some ordinary extended-tube
+      source tuple.  The proof first chooses an adapted same-Gram
+      representative; it does not assert small perturbations around an
+      arbitrary representative of the scalar point. -/
+      theorem BHW.hwLemma3_sourceGram_localVectorRealization
           [NeZero d]
           (hd : 2 <= d)
           (n : Nat)
           {z0 : Fin n -> Fin (d + 1) -> ℂ}
-          (hz0 : z0 ∈ BHW.ExtendedTube d n)
-          {ε : ℝ}
-          (hε : 0 < ε) :
+          (hz0 : z0 ∈ BHW.ExtendedTube d n) :
           ∃ O : Set (Fin n -> Fin n -> ℂ),
             IsOpen O ∧
             BHW.sourceMinkowskiGram d n z0 ∈ O ∧
             ∀ Z, Z ∈ O ∩ BHW.sourceComplexGramVariety d n ->
-              ∃ v : Fin n -> Fin (d + 1) -> ℂ,
-                (∀ i μ, ‖v i μ‖ < ε) ∧
-                (fun i μ => z0 i μ + v i μ) ∈
-                  BHW.ExtendedTube d n ∧
-                BHW.sourceMinkowskiGram d n
-                  (fun i μ => z0 i μ + v i μ) = Z
+              ∃ z : Fin n -> Fin (d + 1) -> ℂ,
+                z ∈ BHW.ExtendedTube d n ∧
+                BHW.sourceMinkowskiGram d n z = Z
 
       /-- The source Gram variety is the existing repo symmetric
       determinantal variety of scalar matrices of rank at most `d + 1`,
@@ -4247,10 +4244,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
          construction: split off hyperbolic pairs for the radical, extend an
          isometry on the nondegenerate quotient, then add matching orthogonal
          complements.
-      3. `hwLemma3_sourceGram_localVectorRealization_smallPerturbation` is the
-         quantitative Hall-Wightman Lemma 3 in Schur-complement coordinates.
-         Choose a principal rank `r` minor
-         of `sourceMinkowskiGram d n z0`, move it to the upper-left block, and
+      3. `hwLemma3_adaptedBase_transport_smallPerturbation_extendedTube` is
+         the quantitative Hall-Wightman Lemma 3 in Schur-complement
+         coordinates.  The public theorem first replaces the given
+         extended-tube representative by an adapted same-Gram representative
+         whose vector span has dimension equal to the scalar rank; this is the
+         exact first reduction in Hall-Wightman's proof and avoids the false
+         operation of killing radical tail vectors by an invertible source
+         change.  For the adapted base, choose a principal rank `r` minor,
+         move it to the upper-left block, normalize it to the identity, and
          write nearby rank-`<= d + 1` matrices as
          `[[A, B], [Bᵀ, Bᵀ A⁻¹ B + S]]` with `S` symmetric of rank
          `<= d + 1 - r`.  Realize `A` and `B` by analytic perturbations of the
@@ -4259,8 +4261,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
          `complexMinkowski_realizeSmallSymmetricRankLE_inOrthogonalTail`.
          The estimates are Hall-Wightman's inequality (48), with `4 - r`
          replaced by `d + 1 - r`.  Choose `ε` smaller than the coordinate tube
-         radius of the open set `BHW.ExtendedTube d n`; then all realized
-         perturbations remain in the ordinary extended tube.
+         radius at the adapted representative; then all realized perturbations
+         remain in the ordinary extended tube.
       4. `sourceComplexGramVariety_eq_sourceSymmetricRankLEVariety` follows
          from the same Schur realization: every source Gram matrix is
          symmetric and has rank at most `d + 1`; conversely every complex
@@ -7050,70 +7052,48 @@ Proof decomposition of this theorem, without hiding the analytic work:
       Lean-facing local realization theorem:
 
       ```lean
-      /-- Hall-Wightman Lemma 3, source-coordinate form.  If `z0` is an
-      ordinary extended-tube realization of a scalar point and `Vsrc` is any
-      vector neighborhood of `z0` inside the ordinary extended tube, then a
-      scalar neighborhood of the Gram point inside the source Gram variety is
-      realized by vectors in `Vsrc`. -/
+      /-- Hall-Wightman Lemma 3 around an adapted representative.  The
+      adaptedness hypothesis says that the source-vector span has dimension
+      equal to the scalar Gram rank; only under this hypothesis can the
+      zero-tail canonical normal form be reached by invertible source and
+      Lorentz transformations. -/
+      theorem BHW.hwLemma3_adapted_sourceGram_localVectorRealization
+          [NeZero d] (hd : 2 <= d) (n : Nat)
+          {ζ0 : Fin n -> Fin (d + 1) -> ℂ}
+          (hζ0 : ζ0 ∈ BHW.ExtendedTube d n)
+          (hspan :
+            Module.finrank ℂ
+              (LinearMap.range (BHW.sourceCoefficientEval d n ζ0)) =
+            BHW.sourceGramMatrixRank n
+              (BHW.sourceMinkowskiGram d n ζ0))
+          {Vsrc : Set (Fin n -> Fin (d + 1) -> ℂ)}
+          (hVsrc_open : IsOpen Vsrc)
+          (hζ0Vsrc : ζ0 ∈ Vsrc)
+          (hVsrc_sub : Vsrc ⊆ BHW.ExtendedTube d n) :
+          ∃ O : Set (Fin n -> Fin n -> ℂ),
+            IsOpen O ∧
+            BHW.sourceMinkowskiGram d n ζ0 ∈ O ∧
+            O ∩ BHW.sourceComplexGramVariety d n ⊆
+              BHW.sourceMinkowskiGram d n '' Vsrc
+
+      /-- Public relative-open form of Lemma 3.  For an arbitrary
+      extended-tube representative `z0`, first replace it by the adapted
+      same-Gram representative supplied by
+      `hwLemma3_extendedTube_adaptedRankRepresentative`; the realizing
+      vectors for nearby scalar points need only lie in the extended tube,
+      not in a prescribed neighborhood of the original representative. -/
       theorem BHW.hwLemma3_sourceGram_localVectorRealization
           [NeZero d] (hd : 2 <= d) (n : Nat)
           {z0 : Fin n -> Fin (d + 1) -> ℂ}
-          (hz0 : z0 ∈ BHW.ExtendedTube d n)
-          {Vsrc : Set (Fin n -> Fin (d + 1) -> ℂ)}
-          (hVsrc_open : IsOpen Vsrc)
-          (hz0Vsrc : z0 ∈ Vsrc)
-          (hVsrc_sub : Vsrc ⊆ BHW.ExtendedTube d n) :
+          (hz0 : z0 ∈ BHW.ExtendedTube d n) :
           ∃ O : Set (Fin n -> Fin n -> ℂ),
             IsOpen O ∧
             BHW.sourceMinkowskiGram d n z0 ∈ O ∧
             O ∩ BHW.sourceComplexGramVariety d n ⊆
-              BHW.sourceMinkowskiGram d n '' Vsrc
-
-      theorem BHW.hwLemma3_sourceGram_localVectorRealization_orbitRank
-          [NeZero d] (hd : 2 <= d) (n : Nat)
-          {z0 : Fin n -> Fin (d + 1) -> ℂ}
-          (hz0 : z0 ∈ BHW.ExtendedTube d n)
-          (hRank : BHW.HWSourceGramOrbitRankAt d n z0)
-          {Vsrc : Set (Fin n -> Fin (d + 1) -> ℂ)}
-          (hVsrc_open : IsOpen Vsrc)
-          (hz0Vsrc : z0 ∈ Vsrc)
-          (hVsrc_sub : Vsrc ⊆ BHW.ExtendedTube d n) :
-          ∃ O : Set (Fin n -> Fin n -> ℂ),
-            IsOpen O ∧
-            BHW.sourceMinkowskiGram d n z0 ∈ O ∧
-            O ∩ BHW.sourceComplexGramVariety d n ⊆
-              BHW.sourceMinkowskiGram d n '' Vsrc
-
-      theorem BHW.hwLemma3_sourceGram_localVectorRealization_lowRank
-          [NeZero d] (hd : 2 <= d) (n : Nat)
-          {z0 : Fin n -> Fin (d + 1) -> ℂ}
-          (hz0 : z0 ∈ BHW.ExtendedTube d n)
-          (hRank : BHW.HWSourceGramLowRankAt d n z0)
-          {Vsrc : Set (Fin n -> Fin (d + 1) -> ℂ)}
-          (hVsrc_open : IsOpen Vsrc)
-          (hz0Vsrc : z0 ∈ Vsrc)
-          (hVsrc_sub : Vsrc ⊆ BHW.ExtendedTube d n) :
-          ∃ O : Set (Fin n -> Fin n -> ℂ),
-            IsOpen O ∧
-            BHW.sourceMinkowskiGram d n z0 ∈ O ∧
-            O ∩ BHW.sourceComplexGramVariety d n ⊆
-              BHW.sourceMinkowskiGram d n '' Vsrc
-
-      theorem BHW.hwLemma3_sourceGram_localVectorRealization ... := by
-        by_cases hRank : BHW.HWSourceGramOrbitRankAt d n z0
-        · exact BHW.hwLemma3_sourceGram_localVectorRealization_orbitRank
-            (d := d) hd n hz0 hRank hVsrc_open hz0Vsrc hVsrc_sub
-        · exact BHW.hwLemma3_sourceGram_localVectorRealization_lowRank
-            (d := d) hd n hz0
-            (by
-              simpa [BHW.HWSourceGramLowRankAt,
-                BHW.HWSourceGramOrbitRankAt] using
-                ((BHW.hwSourceGram_lowRank_iff_not_orbitRank
-                  (d := d) (n := n) hd).2 hRank))
-            hVsrc_open hz0Vsrc hVsrc_sub
+              BHW.sourceExtendedTubeGramDomain d n
       ```
 
-      The exported local theorem is obtained from the quantitative
+      The adapted local theorem is obtained from the quantitative
       small-perturbation theorem by a finite-dimensional open-ball shrink:
 
       ```lean
@@ -7132,17 +7112,22 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (∀ i μ, ‖v i μ‖ < ε) ->
               (fun i μ => x0 i μ + v i μ) ∈ U
 
-      theorem BHW.hwLemma3_smallPerturbation_to_localVectorRealization
+      theorem BHW.hwLemma3_smallPerturbation_to_adapted_localVectorRealization
           [NeZero d] (hd : 2 <= d) (n : Nat)
-          {z0 : Fin n -> Fin (d + 1) -> ℂ}
-          (hz0 : z0 ∈ BHW.ExtendedTube d n)
+          {ζ0 : Fin n -> Fin (d + 1) -> ℂ}
+          (hζ0 : ζ0 ∈ BHW.ExtendedTube d n)
+          (hspan :
+            Module.finrank ℂ
+              (LinearMap.range (BHW.sourceCoefficientEval d n ζ0)) =
+            BHW.sourceGramMatrixRank n
+              (BHW.sourceMinkowskiGram d n ζ0))
           {Vsrc : Set (Fin n -> Fin (d + 1) -> ℂ)}
           (hVsrc_open : IsOpen Vsrc)
-          (hz0Vsrc : z0 ∈ Vsrc)
+          (hζ0Vsrc : ζ0 ∈ Vsrc)
           (hVsrc_sub : Vsrc ⊆ BHW.ExtendedTube d n) :
           ∃ O : Set (Fin n -> Fin n -> ℂ),
             IsOpen O ∧
-            BHW.sourceMinkowskiGram d n z0 ∈ O ∧
+            BHW.sourceMinkowskiGram d n ζ0 ∈ O ∧
             O ∩ BHW.sourceComplexGramVariety d n ⊆
               BHW.sourceMinkowskiGram d n '' Vsrc
       ```
@@ -7150,37 +7135,37 @@ Proof decomposition of this theorem, without hiding the analytic work:
       Lean-shaped proof:
 
       ```lean
-      theorem BHW.hwLemma3_smallPerturbation_to_localVectorRealization
+      theorem BHW.hwLemma3_smallPerturbation_to_adapted_localVectorRealization
           ... := by
         rcases BHW.exists_coord_supnorm_ball_subset_of_isOpen
-            (x0 := z0) hVsrc_open hz0Vsrc with
+            (x0 := ζ0) hVsrc_open hζ0Vsrc with
           ⟨ε, hε_pos, hball_sub⟩
-        rcases BHW.hwLemma3_sourceGram_localVectorRealization_smallPerturbation
-            (d := d) hd n hz0 hε_pos with
+        rcases BHW.hwLemma3_adaptedBase_transport_smallPerturbation_extendedTube
+            (d := d) hd n hζ0 hspan hε_pos with
           ⟨O, hO_open, hZO, hO_realize⟩
         refine ⟨O, hO_open, hZO, ?_⟩
         intro Z hZ
-        rcases hO_realize Z hZ with ⟨v, hv_small, hET, hGram⟩
-        refine ⟨fun i μ => z0 i μ + v i μ, ?_, hGram⟩
+        rcases hO_realize Z hZ.2 hZ.1 with ⟨v, hv_small, hET, hGram⟩
+        refine ⟨fun i μ => ζ0 i μ + v i μ, ?_, hGram⟩
         exact hball_sub hv_small
       ```
 
       Here `exists_coord_supnorm_ball_subset_of_isOpen` is only the standard
-      finite-product metric fact that an open neighborhood of `z0` contains a
-      coordinate sup-norm ball around `z0`.  It is the only topology used to
+      finite-product metric fact that an open neighborhood of `ζ0` contains a
+      coordinate sup-norm ball around `ζ0`.  It is the only topology used to
       pass from Hall-Wightman's quantitative `ε` statement to an arbitrary
       source neighborhood `Vsrc`.  Lean proof: use `Metric.mem_nhds_iff` to
       choose an ordinary norm ball in the Pi space, then use finite
       norm-equivalence (or the existing Pi sup-norm lemma, if available in
       the local imports) to shrink the coordinate bound so that
       `∀ i μ, ‖v i μ‖ < ε` implies
-      `‖(fun i μ => z0 i μ + v i μ) - z0‖ < ρ`.
+      `‖(fun i μ => ζ0 i μ + v i μ) - ζ0‖ < ρ`.
 
-      The quantitative theorem
-      `BHW.hwLemma3_sourceGram_localVectorRealization_smallPerturbation` is
-      the real Hall-Wightman Lemma-3 content.  Its implementation must be
-      decomposed into the following finite-dimensional sublemmas, with
-      `D := d + 1`:
+      The quantitative adapted-base theorem
+      `BHW.hwLemma3_adaptedBase_transport_smallPerturbation_extendedTube` is
+      the real Hall-Wightman Lemma-3 content after the same-Gram adapted
+      representative has been chosen.  Its implementation must be decomposed
+      into the following finite-dimensional sublemmas, with `D := d + 1`:
 
       ```lean
       theorem BHW.hwLemma3_selectedBlock_sqrt_near_identity
@@ -7360,6 +7345,90 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (BHW.hwLemma3CanonicalSource d n r) =
           BHW.hwLemma3CanonicalGram n r
 
+      /-- Source-index linear change on an `n`-tuple of spacetime vectors.
+      This is the exact operation used in Hall-Wightman Lemma 3 before the
+      canonical block argument. -/
+      def BHW.sourceTupleLinearChange
+          (d n : Nat)
+          (A : Matrix (Fin n) (Fin n) ℂ)
+          (z : Fin n -> Fin (d + 1) -> ℂ) :
+          Fin n -> Fin (d + 1) -> ℂ :=
+        fun i μ => ∑ j : Fin n, A i j * z j μ
+
+      /-- The corresponding congruence action on source Gram matrices. -/
+      def BHW.sourceGramCongruence
+          (n : Nat)
+          (A : Matrix (Fin n) (Fin n) ℂ)
+          (Z : Fin n -> Fin n -> ℂ) :
+          Fin n -> Fin n -> ℂ :=
+        fun i j =>
+          ∑ a : Fin n, ∑ b : Fin n, A i a * Z a b * A j b
+
+      theorem BHW.sourceMinkowskiGram_sourceTupleLinearChange
+          (d n : Nat)
+          (A : Matrix (Fin n) (Fin n) ℂ)
+          (z : Fin n -> Fin (d + 1) -> ℂ) :
+          BHW.sourceMinkowskiGram d n
+            (BHW.sourceTupleLinearChange d n A z) =
+          BHW.sourceGramCongruence n A
+            (BHW.sourceMinkowskiGram d n z)
+
+      theorem BHW.sourceGramCongruence_mem_variety_iff
+          (d n : Nat)
+          {A : Matrix (Fin n) (Fin n) ℂ}
+          (hA : IsUnit A.det)
+          (Z : Fin n -> Fin n -> ℂ) :
+          BHW.sourceGramCongruence n A Z ∈
+              BHW.sourceComplexGramVariety d n ↔
+            Z ∈ BHW.sourceComplexGramVariety d n
+
+      /-- Algebraic normalizing congruence for an invertible complex symmetric
+      block.  This is the arbitrary-base analogue of the near-identity square
+      root used later for perturbations. -/
+      theorem BHW.complexSymmetric_invertible_congruence_to_identity
+          (r : Nat)
+          {A : Matrix (Fin r) (Fin r) ℂ}
+          (hSym : A.transpose = A)
+          (hInv : IsUnit A.det) :
+          ∃ P : Matrix (Fin r) (Fin r) ℂ,
+            IsUnit P.det ∧
+            P * A * P.transpose = 1
+
+      /-- Hall-Wightman's first reduction in Lemma 3: an extended-tube
+      scalar point admits a same-Gram extended-tube representative whose
+      source-vector span has dimension equal to the scalar Gram rank.
+
+      This is the step which prevents an invalid attempt to map an arbitrary
+      representative with extra radical vectors to the zero-tail canonical
+      tuple by an invertible source-coordinate change.  In the low-rank case
+      it is exactly Hall-Wightman's null-residual observation: after the
+      residual-frame normal form, the coefficients of the null residual frame
+      may be changed, in particular set to zero, while remaining in the
+      extended tube and without changing scalar products. -/
+      theorem BHW.hwLemma3_extendedTube_adaptedRankRepresentative
+          [NeZero d] (hd : 2 <= d)
+          (n : Nat)
+          {z0 : Fin n -> Fin (d + 1) -> ℂ}
+          (hz0 : z0 ∈ BHW.ExtendedTube d n) :
+          ∃ ζ0 : Fin n -> Fin (d + 1) -> ℂ,
+            ζ0 ∈ BHW.ExtendedTube d n ∧
+            BHW.sourceMinkowskiGram d n ζ0 =
+              BHW.sourceMinkowskiGram d n z0 ∧
+            Module.finrank ℂ
+              (LinearMap.range (BHW.sourceCoefficientEval d n ζ0)) =
+              BHW.sourceGramMatrixRank n
+                (BHW.sourceMinkowskiGram d n z0)
+
+      theorem BHW.hwSourceGramMaxRankAt_span_finrank_eq_sourceGramMatrixRank
+          [NeZero d] (hd : 2 <= d)
+          (n : Nat)
+          {z0 : Fin n -> Fin (d + 1) -> ℂ}
+          (hz0Rank : BHW.HWSourceGramMaxRankAt d n z0) :
+          Module.finrank ℂ
+            (LinearMap.range (BHW.sourceCoefficientEval d n z0)) =
+          BHW.sourceGramMatrixRank n
+            (BHW.sourceMinkowskiGram d n z0)
+
       /-- Finite-dimensional normal-form transport used in Hall-Wightman
       Lemma 3.  It records the source-index linear change and ambient
       Minkowski isometry that carry the chosen base tuple to the canonical
@@ -7415,7 +7484,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (r : Nat)
           (hr :
             r = BHW.sourceGramMatrixRank n
-              (BHW.sourceMinkowskiGram d n z0)) :
+              (BHW.sourceMinkowskiGram d n z0))
+          (hspan :
+            Module.finrank ℂ
+              (LinearMap.range (BHW.sourceCoefficientEval d n z0)) = r) :
           ∃ T : BHW.HWLemma3NormalFormTransport d n r z0, True
 
       theorem BHW.hwLemma3_normalizedSchurSurjective
@@ -7436,6 +7508,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
       theorem BHW.hwLemma3_transport_from_normalForm
           [NeZero d] (hd : 2 <= d) (n : Nat)
           {z0 : Fin n -> Fin (d + 1) -> ℂ}
+          (hspan :
+            Module.finrank ℂ
+              (LinearMap.range (BHW.sourceCoefficientEval d n z0)) =
+            BHW.sourceGramMatrixRank n
+              (BHW.sourceMinkowskiGram d n z0))
           {ε : ℝ} (hε : 0 < ε) :
           ∃ η : ℝ, 0 < η ∧
             ∀ Z : Fin n -> Fin n -> ℂ,
@@ -7460,25 +7537,31 @@ Proof decomposition of this theorem, without hiding the analytic work:
           {η : ℝ} (hη : 0 < η) :
           IsOpen (BHW.sourceGramCoordBall n G0 η)
 
-      /-- The final quantitative Lemma-3 bridge: choose the perturbation
-      radius small enough that the vector perturbation produced by the
-      normal-form realization remains in the ordinary extended tube. -/
-      theorem BHW.hwLemma3_transport_smallPerturbation_extendedTube
+      /-- The final quantitative Lemma-3 bridge for an adapted base: choose
+      the perturbation radius small enough that the vector perturbation
+      produced by the normal-form realization remains in the ordinary
+      extended tube. -/
+      theorem BHW.hwLemma3_adaptedBase_transport_smallPerturbation_extendedTube
           [NeZero d] (hd : 2 <= d) (n : Nat)
-          {z0 : Fin n -> Fin (d + 1) -> ℂ}
-          (hz0 : z0 ∈ BHW.ExtendedTube d n)
+          {ζ0 : Fin n -> Fin (d + 1) -> ℂ}
+          (hζ0 : ζ0 ∈ BHW.ExtendedTube d n)
+          (hspan :
+            Module.finrank ℂ
+              (LinearMap.range (BHW.sourceCoefficientEval d n ζ0)) =
+            BHW.sourceGramMatrixRank n
+              (BHW.sourceMinkowskiGram d n ζ0))
           {ε : ℝ} (hε : 0 < ε) :
           ∃ η : ℝ, 0 < η ∧
             ∀ Z : Fin n -> Fin n -> ℂ,
               Z ∈ BHW.sourceComplexGramVariety d n ->
               Z ∈ BHW.sourceGramCoordBall n
-                (BHW.sourceMinkowskiGram d n z0) η ->
+                (BHW.sourceMinkowskiGram d n ζ0) η ->
               ∃ v : Fin n -> Fin (d + 1) -> ℂ,
                 (∀ i μ, ‖v i μ‖ < ε) ∧
-                (fun i μ => z0 i μ + v i μ) ∈
+                (fun i μ => ζ0 i μ + v i μ) ∈
                   BHW.ExtendedTube d n ∧
                 BHW.sourceMinkowskiGram d n
-                  (fun i μ => z0 i μ + v i μ) = Z
+                  (fun i μ => ζ0 i μ + v i μ) = Z
       ```
 
       Proof transcript for the residual small-realization theorem:
@@ -7873,38 +7956,62 @@ Proof decomposition of this theorem, without hiding the analytic work:
 
       Proof transcript for the quantitative theorem:
 
-      1. Let `G0 := sourceMinkowskiGram d n z0` and
-         `r := sourceGramMatrixRank n G0`.  By finite matrix rank bounds and
-         `sourceComplexGramVariety_eq_rank_le`, `r <= n` and `r <= D`.
-      2. Choose a nonzero principal `r × r` minor using the checked
+      1. The base used for the neighborhood argument is not an arbitrary
+         extended-tube representative.  Given
+         `z0 ∈ BHW.ExtendedTube d n`, first apply
+         `BHW.hwLemma3_extendedTube_adaptedRankRepresentative` and replace
+         `z0` by a same-Gram representative `ζ0 ∈ BHW.ExtendedTube d n`
+         whose source-vector span has dimension exactly
+         `r := sourceGramMatrixRank n (sourceMinkowskiGram d n z0)`.
+         This is faithful to the first paragraph of Hall-Wightman Lemma 3,
+         where the vectors representing a rank-`r` scalar matrix are chosen
+         to span an `r`-dimensional manifold before the neighborhood
+         construction begins.  It is also load-bearing in Lean: an invertible
+         source-coordinate change cannot send nonzero radical tail vectors to
+         zero, so the zero-tail canonical reduction is valid only for this
+         adapted representative.  The low-rank construction of `ζ0` uses the
+         residual-frame theorem from Lemma 2 and the already documented
+         `BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube`, setting
+         the null residual coefficients to zero while preserving both
+         extended-tube membership and the scalar Gram matrix.
+      2. Let `Gζ := sourceMinkowskiGram d n ζ0` and
+         `r := sourceGramMatrixRank n Gζ`.  By finite matrix rank bounds and
+         `sourceComplexGramVariety_eq_rank_le`, `r <= n` and `r <= D`; by
+         adaptedness,
+         `Module.finrank ℂ (LinearMap.range
+           (BHW.sourceCoefficientEval d n ζ0)) = r`.
+      3. Choose a nonzero principal `r × r` minor using the checked
          `exists_sourcePrincipalMinor_ne_zero_of_sourceSymmetricRank`; after
          a finite permutation of labels, treat this block as the upper-left
          block.  The `r = 0` case is the same argument with the selected block
          empty and the whole nearby matrix handled by the residual realization
          theorem.
-      3. Use the selected block to put the base configuration in
+      4. Use the selected block to put the adapted base configuration in
          Hall-Wightman normal form: the first `r` source vectors have Gram
          matrix `1`, the remaining source vectors have selected coordinates
-         removed, and the base Gram becomes
-         `hwLemma3CanonicalGram n r`.  The transformations used here are
-         invertible finite-dimensional linear maps on source coordinates and
-         congruences on symmetric Gram matrices, so they send neighborhoods to
+         removed.  Since `ζ0` is adapted, those residual tail vectors are
+         actually zero: they lie both in the source span and in the radical of
+         the restricted form, whose dimension is zero after adaptedness.  The
+         base Gram becomes `hwLemma3CanonicalGram n r`.  The transformations
+         used here are invertible finite-dimensional source-coordinate
+         changes, congruences on symmetric Gram matrices, and one ambient
+         complex Minkowski isometry, so they send neighborhoods to
          neighborhoods and preserve the rank-bounded source variety.
-      4. For a nearby scalar matrix `Z = G0 + E`, write the normalized block
+      5. For a nearby scalar matrix `Z = Gζ + E`, write the normalized block
          decomposition as `[[1 + B1, Bᵀ], [B, C]]`.  For `E` small,
          `1 + B1` is invertible and its analytic square root is supplied by
          `hwLemma3_selectedBlock_sqrt_near_identity`; this chooses small
          perturbations of the first `r` source vectors.
-      5. Orthogonalize the remaining perturbations against the first `r`
+      6. Orthogonalize the remaining perturbations against the first `r`
          perturbed vectors exactly as in Hall-Wightman's equation (46).  The
          coefficients are `B * (1 + B1)⁻¹`, and the inverse is close to `1`;
          hence this change and its inverse preserve the chosen smallness
          bounds after shrinking `η`.
-      6. The lower-right residual is the Schur complement
+      7. The lower-right residual is the Schur complement
          `S := C - B * (1 + B1)⁻¹ * Bᵀ`.  Because the full block matrix has
          rank at most `D` and the selected block has rank `r`,
          `hwLemma3_schurComplement_rank_bound` gives `rank S <= D - r`.
-      7. Realize this small symmetric residual by small vectors in the
+      8. Realize this small symmetric residual by small vectors in the
          normalized orthogonal tail using
          `complexMinkowski_realizeSmallSymmetricRankLE_inOrthogonalTail`.
          This is the dimension-general form of Hall-Wightman's estimate (48),
@@ -7912,24 +8019,31 @@ Proof decomposition of this theorem, without hiding the analytic work:
          load-bearing: it ensures that the residual vectors do not change the
          selected block or the selected/residual cross scalar products after
          the orthogonalization step.
-      8. Add the selected-block perturbations and residual vectors, undo the
+      9. Add the selected-block perturbations and residual vectors, undo the
          orthogonalization and the initial normal-form transport, and shrink
          `η` one final time so every coordinate of the resulting perturbation
          is `< ε`.
 
-      The normal-form transport in steps 2--3 is exposed as
+      The normal-form transport in steps 3--4 is exposed as
       `BHW.HWLemma3NormalFormTransport`, not hidden in prose.  Its proof is
       finite-dimensional: choose the nonzero principal `r × r` minor, apply an
-      invertible source-index change so the selected block is first, apply the
-      symmetric square-root normalization from
-      `BHW.hwLemma3_selectedBlock_sqrt_near_identity` at the base block, and
-      use Witt extension to carry the normalized selected source vectors to
-      the first `r` standard orthogonal coordinates.  The induced congruence
-      on Gram matrices is `toNormalGram`; `gram_commute` is the direct
-      bilinear calculation, and `gram_variety_iff` follows because both the
-      source-index change and the ambient Lorentz isometry are invertible.
-      The two estimate fields are finite-dimensional continuity/norm
-      equivalence for the fixed linear equivalences.
+      invertible source-index change so the selected block is first, subtract
+      the selected-span projection from every tail vector, apply
+      `BHW.complexSymmetric_invertible_congruence_to_identity` to normalize
+      the selected Gram block to `1`, and use Witt extension to carry the
+      normalized selected source vectors to the first `r` standard orthogonal
+      coordinates.  The adaptedness hypothesis proves the projected tail
+      vectors are zero: their span is the radical of the restricted form on
+      `LinearMap.range (BHW.sourceCoefficientEval d n ζ0)`, and that radical
+      has finrank `0` because the restricted-rank theorem identifies the
+      scalar Gram rank with the span dimension.  The induced congruence on
+      Gram matrices is `toNormalGram`; `gram_commute` is the direct bilinear
+      calculation from
+      `BHW.sourceMinkowskiGram_sourceTupleLinearChange`, and
+      `gram_variety_iff` follows from
+      `BHW.sourceGramCongruence_mem_variety_iff`.  The two estimate fields
+      are finite-dimensional continuity/norm equivalence for the fixed
+      linear equivalences.
 
       Lean-shaped transport proof of
       `BHW.hwLemma3_transport_from_normalForm`:
@@ -7940,7 +8054,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
         let r := BHW.sourceGramMatrixRank n G0
         have hr : r = BHW.sourceGramMatrixRank n G0 := rfl
         rcases BHW.hwLemma3_normalFormTransportData
-            (d := d) hd n (z0 := z0) r hr with
+            (d := d) hd n (z0 := z0) r hr hspan with
           ⟨T, _⟩
         have hr_le_n : r <= n := by
           exact BHW.sourceGramMatrixRank_le_arity
@@ -7988,11 +8102,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
           _ = T.toNormalGram Z := hgramN.symm
       ```
 
-      The public small-perturbation Lemma-3 theorem has one additional
-      topological shrink that must be explicit in Lean.  Since
-      `BHW.ExtendedTube d n` is open and `hz0 : z0 ∈ BHW.ExtendedTube d n`,
+      The adapted small-perturbation Lemma-3 theorem has one additional
+      topological shrink that must be explicit in Lean.  Its perturbation
+      version is stated only for the adapted representative `ζ0`, not for an
+      arbitrary representative of the same scalar point.  Since
+      `BHW.ExtendedTube d n` is open and `hζ0 : ζ0 ∈ BHW.ExtendedTube d n`,
       `BHW.exists_coord_supnorm_ball_subset_of_isOpen` gives an
-      `εET > 0` such that every coordinate perturbation smaller than `εET`
+      `εET > 0` such that every coordinate perturbation of `ζ0` smaller than
+      `εET`
       stays inside the extended tube.  Apply
       `BHW.hwLemma3_transport_from_normalForm` with
       `ε' := min ε εET / 2`, then use
@@ -8003,17 +8120,18 @@ Proof decomposition of this theorem, without hiding the analytic work:
       Lean-shaped final quantitative assembly:
 
       ```lean
-      theorem BHW.hwLemma3_transport_smallPerturbation_extendedTube ... := by
+      theorem BHW.hwLemma3_adaptedBase_transport_smallPerturbation_extendedTube
+          ... := by
         rcases BHW.exists_coord_supnorm_ball_subset_of_isOpen
-            (x0 := z0)
+            (x0 := ζ0)
             (U := BHW.ExtendedTube d n)
-            (BHW.isOpen_extendedTube (d := d) (n := n)) hz0 with
+            (BHW.isOpen_extendedTube (d := d) (n := n)) hζ0 with
           ⟨εET, hεET_pos, hET_ball⟩
         let ε' : ℝ := min ε εET / 2
         have hε'_pos : 0 < ε' := by
           positivity
         rcases BHW.hwLemma3_transport_from_normalForm
-            (d := d) hd n (z0 := z0) hε'_pos with
+            (d := d) hd n (z0 := ζ0) hspan hε'_pos with
           ⟨η, hη_pos, hrealize⟩
         refine ⟨η, hη_pos, ?_⟩
         intro Z hZvar hZball
@@ -8028,20 +8146,32 @@ Proof decomposition of this theorem, without hiding the analytic work:
             dsimp [ε']; nlinarith [min_le_right ε εET])
         exact ⟨v, hv_target, hET_ball v hv_ET, hgram⟩
 
-      theorem BHW.hwLemma3_sourceGram_localVectorRealization_smallPerturbation
+      theorem BHW.hwLemma3_sourceGram_localVectorRealization
           ... := by
-        rcases BHW.hwLemma3_transport_smallPerturbation_extendedTube
-            (d := d) hd n hz0 hε with
+        rcases BHW.hwLemma3_extendedTube_adaptedRankRepresentative
+            (d := d) hd n hz0 with
+          ⟨ζ0, hζ0, hζ0Gram, hζ0span⟩
+        let r := BHW.sourceGramMatrixRank n
+          (BHW.sourceMinkowskiGram d n ζ0)
+        have hspan :
+            Module.finrank ℂ
+              (LinearMap.range (BHW.sourceCoefficientEval d n ζ0)) = r := by
+          simpa [r, hζ0Gram] using hζ0span
+        have hε : 0 < (1 : ℝ) := by norm_num
+        rcases BHW.hwLemma3_adaptedBase_transport_smallPerturbation_extendedTube
+            (d := d) hd n hζ0 hspan hε with
           ⟨η, hη_pos, hrealize⟩
         let O : Set (Fin n -> Fin n -> ℂ) :=
           BHW.sourceGramCoordBall n
-            (BHW.sourceMinkowskiGram d n z0) η
+            (BHW.sourceMinkowskiGram d n ζ0) η
         refine ⟨O, BHW.isOpen_sourceGramCoordBall n _ hη_pos, ?_, ?_⟩
         · intro i j
-          simp [O, BHW.sourceGramCoordBall]
+          simp [O, BHW.sourceGramCoordBall, hζ0Gram]
           exact hη_pos
         · intro Z hZ
-          exact hrealize Z hZ.2 hZ.1
+          rcases hrealize Z hZ.2 hZ.1 with
+            ⟨v, _hv_small, hzeta_v, hgram⟩
+          exact ⟨fun i μ => ζ0 i μ + v i μ, hzeta_v, hgram⟩
       ```
 
       The orbit-rank and low-rank wrappers are only organizational views of
@@ -8057,16 +8187,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
       ```lean
       theorem BHW.sourceExtendedTubeGramDomain_relOpen_at ... := by
         rcases hZ with ⟨z0, hz0, rfl⟩
-        rcases mem_nhds_iff.mp
-            ((BHW.isOpen_extendedTube (d := d) (n := n)).mem_nhds hz0) with
-          ⟨Vsrc, hVsrc_sub, hVsrc_open, hz0Vsrc⟩
         rcases BHW.hwLemma3_sourceGram_localVectorRealization
-            (d := d) hd n hz0 hVsrc_open hz0Vsrc hVsrc_sub with
+            (d := d) hd n hz0 with
           ⟨O, hO_open, hZO, hO_sub_image⟩
         refine ⟨O, hO_open, hZO, ?_⟩
         intro W hW
-        rcases hO_sub_image hW with ⟨z, hzVsrc, rfl⟩
-        exact ⟨z, hVsrc_sub hzVsrc, rfl⟩
+        exact hO_sub_image hW
       ```
 
       Lean-shaped relative-open assembly:
@@ -10115,20 +10241,42 @@ Proof decomposition of this theorem, without hiding the analytic work:
               hphi_branch z0 hz0
             have hExt_in_T : BHW.extendF F z0 ∈ T := by
               simpa [hz0_value] using hphiZT
+            rcases BHW.hwLemma3_extendedTube_adaptedRankRepresentative
+                (d := d) hd n hz0 with
+              ⟨ζ0, hζ0, hζ0Gram, hζ0span⟩
+            have hζ0_value :
+                phi (BHW.sourceMinkowskiGram d n ζ0) =
+                  BHW.extendF F ζ0 :=
+              hphi_branch ζ0 hζ0
+            have hExtζ_in_T : BHW.extendF F ζ0 ∈ T := by
+              have hsame :
+                  phi (BHW.sourceMinkowskiGram d n ζ0) =
+                    phi (BHW.sourceMinkowskiGram d n z0) := by
+                rw [hζ0Gram]
+              simpa [hζ0_value, hz0_value] using
+                hsame.symm ▸ hphiZT
             rcases
               BHW.continuousOn_openDomain_preimage_nhds
                 (BHW.isOpen_extendedTube (d := d) (n := n))
-                hExt_cont hz0 hT_open hExt_in_T with
-              ⟨Vsrc, hVsrc_open, hz0Vsrc, hVsrc_sub_T⟩
+                hExt_cont hζ0 hT_open hExtζ_in_T with
+              ⟨Vsrc, hVsrc_open, hζ0Vsrc, hVsrc_sub_T⟩
             let Vtube := Vsrc ∩ BHW.ExtendedTube d n
             have hVtube_open : IsOpen Vtube :=
               hVsrc_open.inter (BHW.isOpen_extendedTube (d := d) (n := n))
-            have hz0Vtube : z0 ∈ Vtube := ⟨hz0Vsrc, hz0⟩
+            have hζ0Vtube : ζ0 ∈ Vtube := ⟨hζ0Vsrc, hζ0⟩
             have hVtube_sub : Vtube ⊆ BHW.ExtendedTube d n := Set.inter_subset_right
-            rcases BHW.hwLemma3_sourceGram_localVectorRealization
-                (d := d) hd n hz0 hVtube_open hz0Vtube hVtube_sub with
+            let r := BHW.sourceGramMatrixRank n
+              (BHW.sourceMinkowskiGram d n ζ0)
+            have hspan :
+                Module.finrank ℂ
+                  (LinearMap.range (BHW.sourceCoefficientEval d n ζ0)) =
+                r := by
+              simpa [r, hζ0Gram] using hζ0span
+            rcases BHW.hwLemma3_adapted_sourceGram_localVectorRealization
+                (d := d) hd n hζ0 hspan
+                hVtube_open hζ0Vtube hVtube_sub with
               ⟨O, hO_open, hZO, hO_image⟩
-            refine ⟨O, hO_open, hZO, ?_⟩
+            refine ⟨O, hO_open, by simpa [hζ0Gram] using hZO, ?_⟩
             intro G hGO hGdomain
             have hGvar : G ∈ BHW.sourceComplexGramVariety d n :=
               hU_sub hGdomain
@@ -10148,20 +10296,37 @@ Proof decomposition of this theorem, without hiding the analytic work:
           have hC_pos : ‖BHW.extendF F z0‖ < C := by linarith
           have hNorm_open : IsOpen {c : ℂ | ‖c‖ < C} :=
             isOpen_lt continuous_norm continuous_const
+          rcases BHW.hwLemma3_extendedTube_adaptedRankRepresentative
+              (d := d) hd n hz0 with
+            ⟨ζ0, hζ0, hζ0Gram, hζ0span⟩
+          have hζ_bound : ‖BHW.extendF F ζ0‖ < C := by
+            have hsame_value :
+                BHW.extendF F ζ0 = BHW.extendF F z0 := by
+              exact hBranch hζ0 hz0 hζ0Gram
+            simpa [hsame_value] using hC_pos
           rcases
             BHW.continuousOn_openDomain_preimage_nhds
               (BHW.isOpen_extendedTube (d := d) (n := n))
-              hExt_cont hz0 hNorm_open hC_pos with
-            ⟨Vsrc, hVsrc_open, hz0Vsrc, hVsrc_bound⟩
+              hExt_cont hζ0 hNorm_open hζ_bound with
+            ⟨Vsrc, hVsrc_open, hζ0Vsrc, hVsrc_bound⟩
           let Vtube := Vsrc ∩ BHW.ExtendedTube d n
           have hVtube_open : IsOpen Vtube :=
             hVsrc_open.inter (BHW.isOpen_extendedTube (d := d) (n := n))
-          have hz0Vtube : z0 ∈ Vtube := ⟨hz0Vsrc, hz0⟩
+          have hζ0Vtube : ζ0 ∈ Vtube := ⟨hζ0Vsrc, hζ0⟩
           have hVtube_sub : Vtube ⊆ BHW.ExtendedTube d n := Set.inter_subset_right
-          rcases BHW.hwLemma3_sourceGram_localVectorRealization
-              (d := d) hd n hz0 hVtube_open hz0Vtube hVtube_sub with
+          let r := BHW.sourceGramMatrixRank n
+            (BHW.sourceMinkowskiGram d n ζ0)
+          have hspan :
+              Module.finrank ℂ
+                (LinearMap.range (BHW.sourceCoefficientEval d n ζ0)) =
+              r := by
+            simpa [r, hζ0Gram] using hζ0span
+          rcases BHW.hwLemma3_adapted_sourceGram_localVectorRealization
+              (d := d) hd n hζ0 hspan
+              hVtube_open hζ0Vtube hVtube_sub with
             ⟨O, hO_open, hZO, hO_image⟩
-          refine ⟨O, hO_open, hZO, C, hC_nonneg, ?_⟩
+          refine ⟨O, hO_open, by simpa [hζ0Gram] using hZO, C,
+            hC_nonneg, ?_⟩
           intro G hG
           have hGvar : G ∈ BHW.sourceComplexGramVariety d n :=
             hU_sub hG.2
@@ -10358,8 +10523,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
             hU0_open, hZU0, hΨ_diff, hΨ_branch_vec⟩
         -- Hall-Wightman Lemma 3 shrinks the scalar chart so every nearby
         -- scalar-variety point has an extended-tube realization inside `Uvec`.
-        rcases BHW.hwLemma3_sourceGram_localVectorRealization
-            (d := d) hd n hz0 hUvec_open hz0Uvec hUvec_sub with
+        have hspan_adapted :
+            Module.finrank ℂ
+              (LinearMap.range (BHW.sourceCoefficientEval d n z0)) =
+            BHW.sourceGramMatrixRank n
+              (BHW.sourceMinkowskiGram d n z0) :=
+          BHW.hwSourceGramMaxRankAt_span_finrank_eq_sourceGramMatrixRank
+            (d := d) hd n hz0Rank
+        rcases BHW.hwLemma3_adapted_sourceGram_localVectorRealization
+            (d := d) hd n hz0 hspan_adapted
+            hUvec_open hz0Uvec hUvec_sub with
           ⟨O, hO_open, hZO, hO_sub_image⟩
         let Uscalar := U0 ∩ O
         refine ⟨Uscalar, Ψ, hU0_open.inter hO_open,

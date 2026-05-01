@@ -285,7 +285,9 @@ implementation contract is:
    `BHW.complexMinkowskiOrthogonalModel`,
    `BHW.complexMinkowskiOrthogonalModel_preserves_bilinear`,
    `BHW.complexMinkowski_wittExtension`,
-   `BHW.hwLemma3_sourceGram_localVectorRealization_smallPerturbation`,
+   `BHW.hwLemma3_extendedTube_adaptedRankRepresentative`,
+   `BHW.hwLemma3_adaptedBase_transport_smallPerturbation_extendedTube`,
+   `BHW.hwLemma3_adapted_sourceGram_localVectorRealization`,
    `BHW.hwLemma3_sourceGram_localVectorRealization`,
    `BHW.sourceComplexGramVariety_eq_sourceSymmetricRankLEVariety`,
    `BHW.sourceComplexGramVariety_eq_rank_le`,
@@ -661,12 +663,19 @@ implementation contract is:
    `BHW.sourceExtendedTubeGramDomain_relOpen_at`; its implementation is the
    Hall-Wightman Lemma-3 realization theorem
    `BHW.hwLemma3_sourceGram_localVectorRealization`: choose an extended-tube
-   realization `z0` of the scalar point, choose a small coordinate ball around
-   `z0` inside the ordinary extended tube, and use the quantitative
-   `BHW.hwLemma3_sourceGram_localVectorRealization_smallPerturbation` theorem
-   to realize every nearby scalar point in the source Gram variety by a
-   perturbation still inside that ball.  The theorem-2 blueprint now expands
-   the quantitative theorem down to Hall-Wightman's actual Lemma-3 algebra:
+   realization `z0` of the scalar point, then first replace it by the
+   adapted same-Gram representative supplied by
+   `BHW.hwLemma3_extendedTube_adaptedRankRepresentative`.  This adapted
+   representative is still in the ordinary extended tube and has
+   source-vector span dimension equal to the scalar Gram rank.  This
+   replacement is mandatory: an invertible source-coordinate change cannot
+   kill nonzero radical tail vectors of an arbitrary representative.  The
+   low-rank construction of the adapted representative is sourced from the
+   Hall-Wightman Lemma-2 residual-frame theorem plus
+   `BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube`, setting the null
+   residual coefficients to zero while preserving scalar products.  The
+   theorem-2 blueprint now expands the adapted quantitative theorem down to
+   Hall-Wightman's actual Lemma-3 algebra:
    `BHW.hwLemma3_selectedBlock_sqrt_near_identity` for the analytic square
    root of the selected principal block near `1`; this is now pinned to the
    finite matrix binomial series
@@ -720,27 +729,39 @@ implementation contract is:
    last informal "Schur realization" step from Lemma 3.  The normal-form
    transport must be an explicit finite-dimensional packet,
    `BHW.HWLemma3NormalFormTransport` with producer
-   `BHW.hwLemma3_normalFormTransportData`; this records the source-index
-   linear change, ambient Minkowski isometry, Gram congruence, variety
-   preservation, and the two smallness estimates used to pull the normalized
-   realization back to the original base tuple.  Then come the normalized
+   `BHW.hwLemma3_normalFormTransportData`; this now takes the adaptedness
+   hypothesis
+   `Module.finrank ℂ (LinearMap.range (BHW.sourceCoefficientEval d n ζ0)) =
+   BHW.sourceGramMatrixRank n (BHW.sourceMinkowskiGram d n ζ0)` and records
+   the source-index linear change, ambient Minkowski isometry, Gram
+   congruence, variety preservation, and the two smallness estimates used to
+   pull the normalized realization back to the adapted base tuple.  The base
+   selected-block normalization also needs the arbitrary invertible symmetric
+   congruence theorem
+   `BHW.complexSymmetric_invertible_congruence_to_identity`, while the
+   perturbative selected block still uses
+   `BHW.hwLemma3_selectedBlock_sqrt_near_identity`.  Then come the normalized
    surjectivity theorem
    `BHW.hwLemma3_normalizedSchurSurjective` and the transport theorem
-   `BHW.hwLemma3_transport_from_normalForm`.  The public quantitative theorem
+   `BHW.hwLemma3_transport_from_normalForm`.  The adapted quantitative theorem
    also needs the explicit extended-tube shrink:
    `BHW.sourceGramCoordBall`, `BHW.isOpen_sourceGramCoordBall`, and
-   `BHW.hwLemma3_transport_smallPerturbation_extendedTube`; this is where the
-   perturbation radius is made small enough that the realized source vectors
-   remain in `BHW.ExtendedTube d n`.  The final conversion from the
-   quantitative `ε` theorem to arbitrary `Vsrc` is the finite-product
-   open-ball helper `BHW.exists_coord_supnorm_ball_subset_of_isOpen` followed
-   by
-   `BHW.hwLemma3_smallPerturbation_to_localVectorRealization`; it is not a
-   replacement for Lemma 3.  The
-   orbit-rank/low-rank split remains internal as
-   `BHW.hwLemma3_sourceGram_localVectorRealization_orbitRank` and
-   `BHW.hwLemma3_sourceGram_localVectorRealization_lowRank`, but the exported
-   relative-open theorem is the direct Lemma-3 neighborhood statement.  The
+   `BHW.hwLemma3_adaptedBase_transport_smallPerturbation_extendedTube`; this
+   is where the perturbation radius is made small enough that the realized
+   adapted-base perturbations remain in `BHW.ExtendedTube d n`.  The final
+   conversion from the quantitative `ε` theorem to an arbitrary neighborhood
+   of the adapted representative is the finite-product open-ball helper
+   `BHW.exists_coord_supnorm_ball_subset_of_isOpen` followed by
+   `BHW.hwLemma3_smallPerturbation_to_adapted_localVectorRealization`; it is
+   not a replacement for Lemma 3.  The exported relative-open theorem is the
+   direct Lemma-3 scalar-neighborhood statement, not a prescribed-neighborhood
+   theorem around the original representative.  On the maximal-rank locus,
+   where Hall-Wightman Lemmas 5--7 need a scalar chart inside a prescribed
+   vector neighborhood, the adaptedness is supplied directly by
+   `BHW.hwSourceGramMaxRankAt_span_finrank_eq_sourceGramMatrixRank`, so the
+   chart proof uses
+   `BHW.hwLemma3_adapted_sourceGram_localVectorRealization` rather than the
+   public arbitrary-representative theorem.  The
    global relative-open field is the union of those ambient neighborhoods,
    plus the elementary inclusion
    `BHW.sourceExtendedTubeGramDomain_subset_sourceComplexGramVariety`.  That
