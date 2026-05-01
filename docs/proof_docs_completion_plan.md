@@ -93,6 +93,55 @@ downstream package is still the alternative to BHW/PET monodromy through
 `hOrbit`; it must not be used to manufacture the local source-germ or EOW
 inputs.
 
+Readiness status for production Lean on the scalar-source layer
+(2026-05-01): **not ready**.  The proof documents now expose the correct
+ordinary Hall-Wightman theorem surfaces, but a named surface is not yet a
+proof.  Do not start Lean for `BHW.sourceScalarRepresentativeData_bvt_F`,
+the adjacent `S'_n` package, or the branch-local source-germ layer until the
+following six blockers are discharged in the blueprint with implementation
+transcripts or replaced by already implemented sorry-free support theorems
+with the same mathematical content:
+
+1. `BHW.extendedTube_same_sourceGram_extendF_eq`: the same-source-Gram branch
+   law must prove both the high scalar-rank complex Lorentz orbit case and the
+   low-rank Hall-Wightman singular contraction/continuity case.  The rank
+   split is `min d n <= sourceGramMatrixRank` versus `< min d n`; it is not
+   `SourceComplexGramRegularAt`.
+2. `BHW.sourceExtendedTubeGramDomain_relOpen`: Hall-Wightman Lemma 3 must
+   produce local vector realizations inside the ordinary extended tube for
+   nearby scalar-variety points, including singular rank.  The connectedness
+   half is mechanical, but relative openness is not a continuous-image
+   theorem.
+3. `BHW.sourceVarietyGermHolomorphicOn_extendF_descent`: the scalar value
+   function must be the branch-defined `Phi`, and the proof must give
+   `SourceVarietyGermHolomorphicOn` charts on the source Gram analytic
+   variety.  Equality of ambient representatives off the variety is not
+   allowed.
+4. The Hall-Wightman Lemmas 4--7 chart package must be complete:
+   max-rank power-series scalar charts, invariant PDE/auxiliary-coordinate
+   independence, continuity and local boundedness of the branch-defined
+   scalar value, and removable singularity across the exceptional
+   determinantal locus.
+5. The normal analytic-space support must be real SCV/algebraic geometry:
+   `sourceComplexGramVariety_normal`,
+   `sourceComplexGramVariety_relOpen_subset_closure_inter_maxRank`,
+   `sourceGramVariety_normal_riemannExtension`, and the symmetric
+   determinantal Serre/CM/R1 subpacket.  These may be proved locally or
+   imported from sorry-free support, but may not be replaced by vacuous
+   predicates, axioms, or theorem-2-specific wrappers.
+6. The OS I §4.5 canonical compact producer
+   `BHW.os45CanonicalAdjacentBranchBoundaryData_of_OSI45` must be proved from
+   equations (4.1), (4.12), (4.14), compact zero-diagonal Euclidean symmetry,
+   BHW continuation, and Jost/Ruelle real-environment uniqueness.  The generic
+   `BHW.JostRuelleCompactBoundaryData` theorem is OS-free; the OS-specific
+   producer is still genuine source mathematics, not a forwarding wrapper.
+
+No approved source-import boundary exists for these blockers.  If a future
+session proposes such a boundary, it must be proposition-valued, exact in
+parameters and conclusions, contain no OS/EOW/PET/locality/bvt_W language
+except where the OS I §4.5 compact producer necessarily mentions OS data, and
+be explicitly approved before any production Lean consumes it.
+
 Current local Slot 1 correction: the OS45 common-chart/EOW supplier is no
 longer the equal-time/post-radius plan.  The checked SCV input is
 `SCV.chartDistributionalEOW_local_envelope`; the OS45 proof must instantiate

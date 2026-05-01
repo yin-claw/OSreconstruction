@@ -3025,6 +3025,84 @@ Proof decomposition of this theorem, without hiding the analytic work:
       would have to name the exact proposition-level statements below and
       still carry no theorem-2, locality, PET, EOW, or OS-specific content.
 
+      Implementation-readiness ledger for this packet:
+
+      ```lean
+      /-- Proposition-valued ordinary Hall-Wightman source descent.  This is
+      the only honest shape for a future source-import boundary for the
+      ordinary scalar representative.  It is not active in the current branch;
+      without explicit approval it must be proved locally through the
+      component theorems below. -/
+      theorem BHW.hallWightman_sourceScalarRepresentativeData_exists
+          [NeZero d]
+          (hd : 2 <= d)
+          (n : Nat)
+          (F : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
+          (hF_holo : DifferentiableOn ℂ F (BHW.ForwardTube d n))
+          (hF_cinv :
+            ∀ (Λ : ComplexLorentzGroup d)
+              (z : Fin n -> Fin (d + 1) -> ℂ),
+              z ∈ BHW.ForwardTube d n ->
+              BHW.complexLorentzAction Λ z ∈ BHW.ForwardTube d n ->
+              F (BHW.complexLorentzAction Λ z) = F z) :
+          ∃ hRep : BHW.SourceScalarRepresentativeData (d := d) n F, True
+      ```
+
+      This existence theorem would be only an approved import boundary for the
+      **ordinary** Hall-Wightman source theorem.  It must not mention
+      `OsterwalderSchraderAxioms`, Figure 2-4, EOW, PET, final locality,
+      `bvt_W`, or the adjacent `S'_n` package.  If it is ever approved, the
+      exported data object is then the mechanical choice
+
+      ```lean
+      noncomputable def BHW.hallWightman_sourceScalarRepresentativeData ... :=
+        Classical.choose
+          (BHW.hallWightman_sourceScalarRepresentativeData_exists
+            (d := d) hd n F hF_holo hF_cinv)
+      ```
+
+      and the proof that this chosen object has the required fields is
+      `Classical.choose_spec`.  In the current no-boundary route this theorem
+      is replaced by the five explicit local obligations:
+      `BHW.extendedTube_same_sourceGram_extendF_eq`,
+      `BHW.sourceExtendedTubeGramDomain_relOpen_connected`,
+      `BHW.sourceVarietyGermHolomorphicOn_extendF_descent`,
+      `BHW.sourceScalarRepresentativeData_of_branchLaw`, and
+      `BHW.hallWightman_sourceScalarRepresentativeData`.  The first three are
+      genuine mathematical source theorems; the last two are assembly only
+      after the first three have complete proofs.
+
+      Lean must stop at this line unless the following audit questions all
+      have affirmative answers in the blueprint:
+
+      * Does the same-source-Gram branch law prove the high-rank Lorentz orbit
+        theorem and the low-rank singular contraction limit, using
+        `BHW.extendF_complexLorentzInvariant_of_cinv` and
+        `BHW.extendF_holomorphicOn` only after the Hall-Wightman geometric data
+        are constructed?
+      * Does Lemma 3 prove relative openness by local vector realization in
+        `ExtendedTube d n`, rather than by openness of a continuous image?
+      * Does the descent proof return the branch-defined scalar value `Phi`
+        with variety-germ holomorphic charts, not a second glued ambient
+        function and not equality off `sourceComplexGramVariety d n`?
+      * Does the max-rank chart use the threshold `min (d + 1) n` and the
+        invariant-PDE/power-series theorem, while the Lemma-2 orbit law uses
+        the different threshold `min d n`?
+      * Is the removable singularity step backed by
+        `sourceComplexGramVariety_normal`,
+        `sourceComplexGramVariety_relOpen_subset_closure_inter_maxRank`, and
+        `sourceGramVariety_normal_riemannExtension`, with the symmetric
+        determinantal normality packet proved or imported as genuine
+        finite-dimensional SCV/algebraic geometry?
+      * Is every future specialization to `bvt_F OS lgc n` only the transport
+        of `bvt_F_holomorphic` and
+        `bvt_F_complexLorentzInvariant_forwardTube` across
+        `BHW_forwardTube_eq`, with no theorem-2 locality or adjacent branch
+        information?
+
+      Until all six answers are yes, `BHW.sourceScalarRepresentativeData_bvt_F`
+      is not production-Lean-ready.
+
       Scratch-checked assembly after the analytic pieces are proved
       (with `SourceExtension.lean` imported):
 
