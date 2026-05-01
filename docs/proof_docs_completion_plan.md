@@ -676,7 +676,11 @@ implementation contract is:
    identity, and an entrywise smallness estimate obtained from
    `BHW.matrix_opNorm_le_card_mul_sup_entry`,
    `BHW.hwLemma3_schurComplement_rank_bound` for the lower-right residual
-   rank `<= d + 1 - r`,
+   rank `<= d + 1 - r`; this is now pinned to the block Gaussian
+   factorization
+   `[[A,Bᵀ],[B,C]] = L * [[A,0],[0,C-B*A⁻¹*Bᵀ]] * Lᵀ`, invertibility of
+   `L`, symmetry of the selected block `A`, block-diagonal rank additivity,
+   and `Nat.add_le_iff_le_sub`,
    `BHW.complexSymmetric_takagi_rankLE` and
    `BHW.complexSymmetric_factorSmall_rankLE` for the finite-dimensional
    Takagi/Bargmann factorization and its small-factor estimate,

@@ -7203,6 +7203,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
           {A : Matrix (Fin r) (Fin r) ℂ}
           {B : Matrix (Fin m) (Fin r) ℂ}
           {C : Matrix (Fin m) (Fin m) ℂ}
+          (hA_symm : A.transpose = A)
           (hA_inv : IsUnit A.det)
           (hRank :
             Matrix.rank
@@ -7490,6 +7491,50 @@ Proof decomposition of this theorem, without hiding the analytic work:
          theorem gives `P * Pᵀ = 1 + B`.  This closes the selected-block
          square-root theorem without importing spectral theory or any
          Hall-Wightman-specific assumption.
+      0b. Prove `hwLemma3_schurComplement_rank_bound` by the standard block
+          Gaussian factorization.  For an invertible selected block `A`, put
+          `S := C - B * A⁻¹ * B.transpose` and
+
+          ```lean
+          L :=
+            Matrix.fromBlocks
+              (1 : Matrix (Fin r) (Fin r) ℂ)
+              0
+              (B * A⁻¹)
+              (1 : Matrix (Fin m) (Fin m) ℂ)
+          ```
+
+          Then
+
+          ```lean
+          Matrix.fromBlocks A B.transpose B C =
+            L *
+              Matrix.fromBlocks A 0 0 S *
+            L.transpose
+          ```
+
+          and `L` is invertible with inverse obtained by replacing
+          `B * A⁻¹` by `-(B * A⁻¹)`.  Therefore left and right multiplication
+          by `L` do not change matrix rank, and
+
+          ```lean
+          theorem BHW.matrix_rank_fromBlocks_schurComplement_eq
+              {A : Matrix (Fin r) (Fin r) ℂ}
+              {B : Matrix (Fin m) (Fin r) ℂ}
+              {C : Matrix (Fin m) (Fin m) ℂ}
+              (hA_symm : A.transpose = A)
+              (hA_inv : IsUnit A.det) :
+              Matrix.rank (Matrix.fromBlocks A B.transpose B C) =
+                r + Matrix.rank (C - B * A⁻¹ * B.transpose)
+          ```
+
+          The block-diagonal rank line uses `rank A = r` from `hA_inv` and
+          `rank (fromBlocks A 0 0 S) = rank A + rank S`; `hA_symm` is used
+          only to rewrite the upper-right block
+          `A * (B * A⁻¹)ᵀ` to `Bᵀ`.  From
+          `rank full <= D`, obtain `r <= D`; then `Nat.add_le_iff_le_sub`
+          gives `rank S <= D - r`.  This is pure finite matrix algebra and
+          is the exact proof of the Schur-rank theorem used in Lemma 3.
       1. Prove `complexSymmetric_takagi_rankLE` by the standard
          Autonne-Takagi/Bargmann factorization for complex symmetric matrices:
          choose unitary `U` and nonnegative singular values `σ a` with
@@ -7618,7 +7663,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
            ∑ a b, L u a * A a b * L v b`.  By
          `hwLemma3_schurComplement_rank_bound`, using
          `Z ∈ sourceComplexGramVariety d n` and
-         `sourceComplexGramVariety_eq_rank_le`, `rank S <= d + 1 - r`.
+         `sourceComplexGramVariety_eq_rank_le`, plus symmetry of the selected
+         block `A`, `rank S <= d + 1 - r`.
          Smallness of `S` follows from smallness of `Z - Gcan`,
          `P - 1`, `A⁻¹ - 1`, and `L`.
       4. Apply
