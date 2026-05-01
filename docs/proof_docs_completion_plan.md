@@ -271,6 +271,15 @@ implementation contract is:
    `BHW.sourceComplexGramVariety_eq_rank_le`,
    `BHW.sourceComplexGramVariety_normal`,
    `BHW.sourceComplexGramVariety_relOpen_subset_closure_inter_maxRank`,
+   with the determinantal normality subpacket
+   `BHW.AnalyticSingularLocus`,
+   `BHW.symmetricRankLEMatrixSet`,
+   `BHW.sourceSymmetricRankLEVariety_schurLocalProductModel`,
+   `BHW.sourceSymmetricRankLEVariety_singularLocus_eq_lowerRank`,
+   `BHW.sourceSymmetricRankExactStratum_complexDimension`,
+   `BHW.sourceSymmetricRankLEVariety_lowerRank_codim`,
+   `BHW.sourceSymmetricRankLEVariety_lowerRank_codim_ge_two`,
+   and `BHW.sourceSymmetricRankLEVariety_reduced_cohenMacaulay`,
    `BHW.sourceSymmetricRankLEVariety_cohenMacaulay`,
    `BHW.sourceSymmetricRankLEVariety_regularInCodimOne`,
    `BHW.normalAnalyticSubvariety_of_serre`, and
@@ -281,7 +290,13 @@ implementation contract is:
    `BHW.IsAnalyticSubvarietyIn`,
    `BHW.NormalAnalyticSubvariety`,
    `BHW.CohenMacaulayAnalyticSubvariety`, and
-   `BHW.RegularInCodimensionOne`.  These predicates must be genuine
+   `BHW.RegularInCodimensionOne`, plus the normality-packet support
+   predicates
+   `BHW.AnalyticLocalRingRegular`,
+   `BHW.ReducedAnalyticSubvariety`,
+   `BHW.ComplexAnalyticDimension`,
+   `BHW.AnalyticCodimensionIn`, and
+   `BHW.AnalyticLocalProductModelAt`.  These predicates must be genuine
    finite-dimensional SCV/local-ring notions or imports from the local SCV
    support library; they cannot be implemented as vacuous placeholders or as
    wrappers around the target scalar representative theorem.  The active
@@ -307,6 +322,24 @@ implementation contract is:
    of the maximal-rank locus in every relatively open source-variety patch, to
    produce those local variety-germ representatives; they do not produce one
    global ambient function holomorphic off the variety.
+
+   The determinantal normality subpacket is now pinned to a precise proof
+   order.  First, the checked Schur-graph infrastructure supplies the local
+   product model: on a determinant-unit principal patch,
+   `sourcePrincipalSchurGraph_rankLE_image_eq_openCoordinatePatch` identifies
+   `sourceSymmetricRankLEVariety n D` with a smooth `(A,B)` factor times the
+   smaller cone `BHW.symmetricRankLEMatrixSet q (D-r)` in the Schur
+   coordinate, with `q` the complementary finite index type.  Second,
+   this model proves the singular-locus equality
+   `Sing(rank <= D) = rank <= D-1` in the range `0 < D < n`, while `D = 0`
+   and `n <= D` are smooth cases.  Third, the selected-chart dimension formula
+   gives codimension `n - D + 1`, hence at least two in the singular range.
+   Fourth, the standard symmetric-determinantal reduced Cohen-Macaulay theorem
+   is combined with Serre's criterion to produce normality.  Any Lean
+   implementation must follow this packet or import this exact
+   symmetric-determinantal theorem as a standard finite-dimensional
+   algebraic-geometry input; it cannot replace the packet by a source-scalar
+   representative wrapper.
 
    The theorem-2 blueprint still archives the stronger Siu/Cartan package
    `BHW.SteinOpen`,

@@ -3500,12 +3500,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
       ```
 
       The auxiliary names `AnalyticLocalRingNormal`,
-      `AnalyticLocalRingCohenMacaulay`, and `SingularLocusCodimAtLeast` are
-      intentionally standard analytic/algebraic-geometry predicates.  If the
-      repo has no such API when the Lean port reaches this layer, it must add
-      the genuine local-ring/stratification definitions or import them from a
-      local SCV support file; replacing them by `True` or by the target
-      normality theorem would violate the no-wrapper/no-placeholder rule.
+      `AnalyticLocalRingCohenMacaulay`, `AnalyticLocalRingRegular`,
+      `SingularLocusCodimAtLeast`, `ReducedAnalyticSubvariety`,
+      `ComplexAnalyticDimension`, `AnalyticCodimensionIn`, and
+      `AnalyticLocalProductModelAt` are intentionally standard
+      analytic/algebraic-geometry predicates.  If the repo has no such API
+      when the Lean port reaches this layer, it must add the genuine
+      local-ring/stratification definitions or import them from a local SCV
+      support file; replacing them by `True` or by the target normality
+      theorem would violate the no-wrapper/no-placeholder rule.
 
       /-- Normality of the symmetric determinantal source Gram variety.  The
       proof is the standard finite-dimensional algebraic-geometry theorem:
@@ -3543,6 +3546,111 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (n D : Nat) :
           BHW.RegularInCodimensionOne
             (BHW.sourceSymmetricRankLEVariety n D)
+
+      The normality invocation is Lean-ready only after the following
+      determinantal subpacket is present.  These names are still
+      finite-dimensional analytic geometry, not BHW locality content; their
+      purpose is to prevent `sourceComplexGramVariety_normal` from becoming a
+      black-box assertion that hides singular-rank work.
+
+      ```lean
+      /-- The ordinary analytic singular locus of an analytic subvariety,
+      defined by non-regularity of the analytic local ring. -/
+      def BHW.AnalyticSingularLocus
+          {n : Nat}
+          (V : Set (Fin n -> Fin n -> ℂ)) :
+          Set (Fin n -> Fin n -> ℂ) :=
+        {Z | Z ∈ V ∧
+          ¬ BHW.AnalyticLocalRingRegular V Z}
+
+      /-- Symmetric rank-bounded matrix cone on an arbitrary finite index
+      type.  This avoids pretending that a Schur-complement block indexed by
+      `q` is definitionally a `Fin (Fintype.card q)` source matrix.  Whenever
+      a `Fin`-indexed version is needed, transport through a chosen
+      equivalence `q ≃ Fin (Fintype.card q)`. -/
+      def BHW.symmetricRankLEMatrixSet
+          (q : Type*) [Fintype q] [DecidableEq q]
+          (D : Nat) : Set (Matrix q q ℂ) :=
+        {S | Sᵀ = S ∧ S.rank <= D}
+
+      /-- Local Schur product model for the symmetric rank-bounded variety.
+      Around a point whose selected principal block has size `r` and
+      invertible determinant, the rank-`<= D` variety is analytically
+      isomorphic to a smooth factor `(A,B)` times the smaller symmetric
+      rank-`<= D-r` cone in the Schur-complement coordinate `S`.  The
+      implementation uses the checked graph
+      `BHW.sourcePrincipalSchurGraph` and its checked membership theorem
+      `BHW.sourcePrincipalSchurGraph_mem_rankLE_iff`; the theorem below is
+      the genuine analytic-local-product packaging of those checked
+      coordinate equalities. -/
+      theorem BHW.sourceSymmetricRankLEVariety_schurLocalProductModel
+          (n D : Nat)
+          {r q : Type*} [Fintype r] [Fintype q]
+          [DecidableEq r] [DecidableEq q]
+          (e : Fin n ≃ r ⊕ q)
+          {Z0 : Fin n -> Fin n -> ℂ}
+          (hZ0_rank :
+            Z0 ∈ BHW.sourceSymmetricRankExactStratum n (Fintype.card r))
+          (hA0_unit :
+            IsUnit
+              ((((Matrix.of fun i j : Fin n => Z0 i j).reindex e e)
+                .toBlocks₁₁).det))
+          (hrD : Fintype.card r <= D) :
+          BHW.AnalyticLocalProductModelAt
+            (BHW.sourceSymmetricRankLEVariety n D)
+            Z0
+            (BHW.symmetricRankLEMatrixSet q (D - Fintype.card r))
+            (0 : Matrix q q ℂ)
+
+      /-- In the nontrivial range `0 < D < n`, the analytic singular locus of
+      the symmetric rank-`<= D` variety is exactly the lower-rank variety
+      rank `<= D - 1`.  For `D = 0` the variety is a point, and for
+      `n <= D` it is the full symmetric vector space; those easy cases are
+      handled separately by the normality proof. -/
+      theorem BHW.sourceSymmetricRankLEVariety_singularLocus_eq_lowerRank
+          (n D : Nat) (hD0 : 0 < D) (hDlt : D < n) :
+          BHW.AnalyticSingularLocus
+              (BHW.sourceSymmetricRankLEVariety n D) =
+            BHW.sourceSymmetricRankLEVariety n (D - 1)
+
+      /-- Complex dimension of the rank-exact symmetric stratum.  This is the
+      Hall-Wightman count `n*D - D*(D-1)/2`, proved through the selected
+      Schur chart dimension theorem already documented for the global source
+      identity principle. -/
+      theorem BHW.sourceSymmetricRankExactStratum_complexDimension
+          (n D : Nat) (hDle : D <= n) :
+          BHW.ComplexAnalyticDimension
+            (BHW.sourceSymmetricRankExactStratum n D) =
+            n * D - (D * (D - 1)) / 2
+
+      /-- Codimension of the lower-rank singular locus inside the
+      rank-`<= D` symmetric determinantal variety.  In the singular range
+      `0 < D < n` this is `n - D + 1`, hence at least two. -/
+      theorem BHW.sourceSymmetricRankLEVariety_lowerRank_codim
+          (n D : Nat) (hD0 : 0 < D) (hDlt : D < n) :
+          BHW.AnalyticCodimensionIn
+              (BHW.sourceSymmetricRankLEVariety n D)
+              (BHW.sourceSymmetricRankLEVariety n (D - 1)) =
+            n - D + 1
+
+      theorem BHW.sourceSymmetricRankLEVariety_lowerRank_codim_ge_two
+          (n D : Nat) (hD0 : 0 < D) (hDlt : D < n) :
+          2 <=
+            BHW.AnalyticCodimensionIn
+              (BHW.sourceSymmetricRankLEVariety n D)
+              (BHW.sourceSymmetricRankLEVariety n (D - 1))
+
+      /-- Reduced Cohen-Macaulay theorem for symmetric determinantal
+      varieties over `ℂ`.  This may be implemented from the standard
+      straightening-law/Eagon-Northcott/Jozefiak-Pragacz package, but it may
+      not be replaced by a predicate that is definitionally true. -/
+      theorem BHW.sourceSymmetricRankLEVariety_reduced_cohenMacaulay
+          (n D : Nat) :
+          BHW.ReducedAnalyticSubvariety
+              (BHW.sourceSymmetricRankLEVariety n D) ∧
+            BHW.CohenMacaulayAnalyticSubvariety
+              (BHW.sourceSymmetricRankLEVariety n D)
+      ```
 
       theorem BHW.normalAnalyticSubvariety_of_serre
           {n : Nat}
@@ -4095,16 +4203,66 @@ Proof decomposition of this theorem, without hiding the analytic work:
          symmetry and the rank bound, never the bare rank condition.
       5. `sourceComplexGramVariety_normal` is not a QFT theorem.  The Lean port
          should prove or import the standard symmetric-determinantal package in
-         this order: first the Schur local model identifying a neighborhood of
-         a rank-`r` point in
-         `sourceSymmetricRankLEVariety n D` with an affine factor times the
-         smaller cone `sourceSymmetricRankLEVariety (n-r) (D-r)`;
-         then
-         `sourceSymmetricRankLEVariety_cohenMacaulay` and
-         `sourceSymmetricRankLEVariety_regularInCodimOne`; then
-         `normalAnalyticSubvariety_of_serre`; finally rewrite through
-         `sourceComplexGramVariety_eq_sourceSymmetricRankLEVariety`.  The
-         local Schur chart is the same algebraic chart family used in the
+         this order:
+
+         * `sourceSymmetricRankLEVariety_schurLocalProductModel`: choose a
+           rank-`r` principal block by symmetric Gaussian elimination and
+           reindex it by `e : Fin n ≃ r ⊕ q`.  On the determinant-unit patch,
+           use the checked coordinate equality
+           `sourcePrincipalSchurGraph_rankLE_image_eq_openCoordinatePatch`:
+           membership in `sourceSymmetricRankLEVariety n D` is equivalent to
+           the Schur coordinate
+           `S = C - Bᵀ A⁻¹ B` being symmetric and having rank
+           `<= D-r`.  The inverse chart is
+           `Z ↦ (A(Z), B(Z), S(Z))`; the forward chart is
+           `sourcePrincipalSchurGraph n e A B S`.  The block-recovery lemmas
+           `sourcePrincipalSchurGraph_toBlocks₁₁`,
+           `sourcePrincipalSchurGraph_toBlocks₁₂`, and
+           `sourcePrincipalSchurGraph_schurComplement` give
+           `to_inv_on` and `inv_to_on`.  All coordinate maps are holomorphic
+           on the determinant-unit patch because matrix inverse is
+           holomorphic there and the remaining operations are polynomial.
+         * `sourceSymmetricRankLEVariety_singularLocus_eq_lowerRank`: in the
+           nontrivial range `0 < D < n`, a rank-`D` point has residual cone
+           `rank <= 0`, hence the Schur product is smooth.  A rank
+           `r < D` point has residual cone `Sym_{n-r}^{<= D-r}` at `0`, with
+           `0 < D-r < n-r`; all defining `(D-r+1)`-minors have vanishing
+           linear part at `0`, so the Zariski tangent space is the whole
+           symmetric ambient space while the cone has smaller dimension.
+           Therefore those and only those points are singular.  The cases
+           `D = 0` and `n <= D` are separated before this theorem: a point and
+           the full symmetric vector space are smooth.
+         * `sourceSymmetricRankExactStratum_complexDimension`: the
+           determinant-unit Schur chart at rank `D` has free symmetric
+           `A`-coordinates and rectangular `B`-coordinates, with
+           `S = 0`; its dimension is
+           `D*(D+1)/2 + D*(n-D) = n*D - D*(D-1)/2`.  In Lean this reuses the
+           already documented checked dimension theorem
+           `finrank_sourceSelectedComplexSymCoordSubspace` and the arithmetic
+           packet
+           `sourceRankExactChartDim_sub_previous`.
+         * `sourceSymmetricRankLEVariety_lowerRank_codim`: subtract the same
+           dimension formula for ranks `D` and `D-1` to get
+           `n - D + 1`; because the singular case has `D < n`, this is at
+           least two.  This is the exact proof of
+           `sourceSymmetricRankLEVariety_regularInCodimOne`, not a phrase
+           "singular locus has codimension at least two".
+         * `sourceSymmetricRankLEVariety_reduced_cohenMacaulay`: use the
+           standard symmetric-determinantal straightening-law theorem over
+           `ℂ` (equivalently the Jozefiak-Pragacz resolution) to get reduced
+           and Cohen-Macaulay local rings.  If the Lean port imports this as a
+           standard algebraic-geometry theorem, the imported theorem must be
+           stated for symmetric determinantal varieties over an algebraically
+           closed field of characteristic zero and specialized to `ℂ`; it may
+           not mention OS, Wightman fields, locality, extended tubes, or the
+           scalar representative target.
+         * Apply `normalAnalyticSubvariety_of_serre` to
+           `sourceSymmetricRankLEVariety_cohenMacaulay` and
+           `sourceSymmetricRankLEVariety_regularInCodimOne`; finally rewrite
+           through
+           `sourceComplexGramVariety_eq_sourceSymmetricRankLEVariety`.
+
+         The local Schur chart is the same algebraic chart family used in the
          checked rank-exact source infrastructure, but here its role is
          commutative algebra/normality, not analytic continuation.
       6. `sourceComplexGramVariety_relOpen_subset_closure_inter_maxRank` is
