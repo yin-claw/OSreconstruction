@@ -9809,11 +9809,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.sourceMinkowskiGram_perm`.  The new Lean port must expose it under
       a public name rather than reprove the same argument inside the integral.
 
-      The canonical lift is not itself the source-boundary theorem.  It is a
-      deterministic ordinary-extended-tube representative of the same raw
-      adjacent Wick section.  The Lean port must first expose the Lorentz
-      normalization theorem below; the proof uses only Figure-2-4 geometry and
-      ordinary `extendF` Lorentz invariance.
+      The canonical lift as a map is only deterministic geometry: it is an
+      ordinary-extended-tube representative of the same raw adjacent Wick
+      section.  The boundary theorem is the later compact-pairing statement
+      for `extendF` evaluated on this lift.  The Lean port must first expose
+      the Lorentz normalization theorem below; that proof uses only
+      Figure-2-4 geometry and ordinary `extendF` Lorentz invariance.
 
       ```lean
       theorem BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero
@@ -9899,9 +9900,41 @@ Proof decomposition of this theorem, without hiding the analytic work:
         simpa [hact] using hLor.symm
       ```
 
-      The genuine OS-I §4.5 source-boundary theorem is the compact-test
-      boundary statement for the raw permuted Wick section inside the ordinary
-      BHW extension:
+      The same calculation also supplies the membership theorem needed when
+      `SourceScalarRepresentativeData.branch_eq` is applied to the raw
+      adjacent Wick section:
+
+      ```lean
+      theorem BHW.os45Figure24_permutedWick_mem_extendedTube_zero
+          [NeZero d]
+          (hd : 2 <= d)
+          (OS : OsterwalderSchraderAxioms d)
+          (lgc : OSLinearGrowthCondition d OS)
+          (n : Nat) (i : Fin n) (hi : i.val + 1 < n)
+          (V : Set (NPointDomain d n))
+          {x0 : NPointDomain d n}
+          (hChart :
+            BHW.OS45Figure24SourceChartAt hd OS lgc n i hi V x0) :
+          let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+          ∀ x, x ∈ hChart.V0 ->
+            BHW.permAct (d := d) τ
+              (fun k => wickRotatePoint (x k)) ∈
+                BHW.ExtendedTube d n
+      ```
+
+      Its proof is the `hact` part of
+      `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`, followed by
+      `BHW.complexLorentzAction_mem_extendedTube` applied to
+      `hChart.adjLift_mem_extendedTube x hx 0`.
+
+      The genuine OS-I §4.5 source-boundary theorem is the canonical-lift
+      compact-pairing statement displayed below.  The source-coordinate and
+      raw `extendF` statements are derived forms: the source-coordinate form
+      rewrites the canonical lift by `SourceScalarRepresentativeData.branch_eq`
+      and `hChart.adjLift_sourceGram`, while the raw form uses Lorentz
+      normalization at the raw permuted Wick section.  Keeping `hRep` explicit
+      here prevents these derived forms from hiding the ordinary
+      Hall-Wightman scalar representative dependency.
 
       ```lean
       theorem BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger
@@ -9920,6 +9953,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
                 EuclideanOrderedPositiveTimeSector (d := d) (n := n)
                   (Equiv.swap i ⟨i.val + 1, hi⟩))
+          (hRep :
+            BHW.SourceScalarRepresentativeData
+              (d := d) n (bvt_F OS lgc n))
           {x0 : NPointDomain d n}
           (hChart :
             BHW.OS45Figure24SourceChartAt hd OS lgc n i hi V x0) :
@@ -9944,51 +9980,87 @@ Proof decomposition of this theorem, without hiding the analytic work:
             OS.S n ψZ
       ```
 
-      This is the local Hall-Wightman/BHW source boundary for the selected
-      `S'_n` source chart.  It is deliberately distributional: the conclusion
-      is a compact-test boundary value, not a pointwise assertion about the
-      total function `bvt_F` at the adjacent Wick trace.  If this step is
-      described as source-imported in the proof docs, that means only an exact
-      cited theorem boundary; production Lean still needs a proof or an
-      already-approved implemented theorem, not a new axiom, `sorry`, or
-      `admit`.  The statement is local to the selected Figure-2-4 chart and
-      must not be replaced by `bvt_F_perm`, final `bvt_W` locality, local EOW,
-      PET branch independence, or a global permuted-extended-tube
-      single-valuedness theorem.
+      Lean-shaped proof of the raw `extendF` form, after the source-pullback
+      theorem has been declared:
 
-      Proof transcript for this raw permuted-Wick source-boundary theorem:
+      ```lean
+      theorem BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger ... := by
+        classical
+        let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+        let Φτ :=
+          fun z : Fin n -> Fin (d + 1) -> ℂ =>
+            hRep.Phi
+              (BHW.sourcePermuteComplexGram n τ
+                (BHW.sourceMinkowskiGram d n z))
+        intro φ hφ_comp hφ_supp
+        have hrewrite :
+            ∫ x : NPointDomain d n,
+                BHW.extendF (bvt_F OS lgc n)
+                  (BHW.permAct (d := d) τ
+                    (fun k => wickRotatePoint (x k))) * φ x
+              =
+            ∫ x : NPointDomain d n,
+                Φτ (fun k => wickRotatePoint (x k)) * φ x := by
+          refine integral_congr_ae ?_
+          filter_upwards with x
+          by_cases hx : x ∈ hChart.V0
+          · have hrawET :
+                BHW.permAct (d := d) τ
+                    (fun k => wickRotatePoint (x k)) ∈
+                  BHW.ExtendedTube d n :=
+              BHW.os45Figure24_permutedWick_mem_extendedTube_zero
+                (d := d) hd OS lgc n i hi V hChart x hx
+            have hGram :
+                BHW.sourceMinkowskiGram d n
+                    (BHW.permAct (d := d) τ
+                      (fun k => wickRotatePoint (x k)))
+                  =
+                BHW.sourcePermuteComplexGram n τ
+                  (BHW.sourceMinkowskiGram d n
+                    (fun k => wickRotatePoint (x k))) := by
+              simpa [BHW.permAct] using
+                BHW.sourceMinkowskiGram_perm d n τ
+                  (fun k => wickRotatePoint (x k))
+            have hbranch :
+                hRep.Phi
+                    (BHW.sourceMinkowskiGram d n
+                      (BHW.permAct (d := d) τ
+                        (fun k => wickRotatePoint (x k))))
+                  =
+                BHW.extendF (bvt_F OS lgc n)
+                  (BHW.permAct (d := d) τ
+                    (fun k => wickRotatePoint (x k))) :=
+              hRep.branch_eq _ hrawET
+            calc
+              BHW.extendF (bvt_F OS lgc n)
+                  (BHW.permAct (d := d) τ
+                    (fun k => wickRotatePoint (x k))) * φ x
+                  =
+                hRep.Phi
+                    (BHW.sourceMinkowskiGram d n
+                      (BHW.permAct (d := d) τ
+                        (fun k => wickRotatePoint (x k)))) * φ x := by
+                    rw [hbranch]
+              _ = Φτ (fun k => wickRotatePoint (x k)) * φ x := by
+                    simp [Φτ, hGram]
+          · have hφx : φ x = 0 := by
+              exact
+                (notMem_tsupport_iff_eventuallyEq.mp
+                  (fun hxSupp => hx (hφ_supp hxSupp))).self_of_nhds
+            simp [hφx]
+        exact hrewrite.trans
+          (BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger
+            (d := d) hd OS lgc n i hi V hV_jost
+            hV_ordered hV_swap_ordered hRep hChart
+            φ hφ_comp hφ_supp)
+      ```
 
-      1. Restrict the compact test to `hChart.V0` and build
-         `φZ : ZeroDiagonalSchwartz d n` from `hV_jost` and `hChart.V0_sub`.
-         Set
-         `ψZ := permuteZeroDiagonalSchwartz (d := d) (n := n) τ.symm φZ`.
-      2. Use `OS.E3_symmetric` only to identify the Euclidean compact germ:
-         `OS.S n φZ = OS.S n ψZ`.  This is the OS-I §4.5 symmetry input.
-         Do not use the pointwise permutation field from
-         `bvt_F_acrOne_package`; that field is not the local BHW source
-         theorem and would collapse the branch construction.
-      3. Use `bvt_euclidean_restriction` on `ψZ` to identify `OS.S n ψZ`
-         with the ACR(1) boundary pairing of the permuted Euclidean compact
-         germ.  The finite permutation change of variables used in
-         `os45_adjacent_euclideanEdge_pairing_eq_on_timeSector` is allowed
-         only at this Euclidean boundary level.
-      4. Apply the OS-I §4.5 Hall-Wightman step to that selected germ: the
-         symmetric analytic continuation on `S'_n` has, on the local
-         Figure-2-4 adjacent Wick section, the same compact boundary value as
-         the ordinary BHW extension
-         `extendF (bvt_F OS lgc n) (permAct τ (wick x))`.  Internally this
-         step is proved by the Hall-Wightman scalar-product branch law
-         `BHW.extendedTube_same_sourceGram_extendF_eq`, the local
-         Figure-2-4 source chart, and the OS-II ACR(1) compact boundary
-         construction.  If the proof docs cite this as an external
-         Hall-Wightman source theorem, the exact statement above is the
-         boundary; it is not permission to add an unproved production surface.
-      5. The proof never evaluates `extendF_eq_on_forwardTube` at
-         `permAct τ (wick x)`.  The adjacent Wick section is placed in the
-         ordinary extended tube by the canonical Figure-2-4 Lorentz
-         normalization, not by ordered-positive-time forward-tube membership.
+      Thus the raw `extendF` form is a mechanical consequence of the
+      source-coordinate theorem and must not be used as an independent source
+      import.
 
-      The canonical-lift pairing theorem is now a derived theorem:
+      The non-mechanical OS-I §4.5 theorem is the canonical Figure-2-4 lift
+      pairing theorem:
 
       ```lean
       theorem BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger
@@ -10007,6 +10079,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
                 EuclideanOrderedPositiveTimeSector (d := d) (n := n)
                   (Equiv.swap i ⟨i.val + 1, hi⟩))
+          (hRep :
+            BHW.SourceScalarRepresentativeData
+              (d := d) n (bvt_F OS lgc n))
           {x0 : NPointDomain d n}
           (hChart :
             BHW.OS45Figure24SourceChartAt hd OS lgc n i hi V x0) :
@@ -10030,45 +10105,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
             OS.S n ψZ
       ```
 
-      Its statement is deliberately about the canonical Figure-2-4 rotated
-      lift, not an arbitrary existence witness.  Its proof is a clean
-      consequence of the raw permuted-Wick source-boundary theorem and the
-      Lorentz normalization theorem above.
-
-      Lean-shaped proof of the canonical-lift pairing theorem:
-
-      ```lean
-      theorem BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger ... := by
-        classical
-        let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
-        intro φ hφ_comp hφ_supp
-        have hrewrite :
-            ∫ x : NPointDomain d n,
-                BHW.extendF (bvt_F OS lgc n)
-                  (hChart.adjLift x (0 : unitInterval)) * φ x
-              =
-            ∫ x : NPointDomain d n,
-                BHW.extendF (bvt_F OS lgc n)
-                  (BHW.permAct (d := d) τ
-                    (fun k => wickRotatePoint (x k))) * φ x := by
-          refine integral_congr_ae ?_
-          filter_upwards with x
-          by_cases hx : x ∈ hChart.V0
-          · have hxrw :=
-              BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero
-                (d := d) hd OS lgc n i hi V hChart x hx
-            simpa [τ, hxrw]
-          · have hφx : φ x = 0 := by
-              exact
-                (notMem_tsupport_iff_eventuallyEq.mp
-                  (fun hxSupp => hx (hφ_supp hxSupp))).self_of_nhds
-            simp [hφx]
-        exact hrewrite.trans
-          (BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger
-            (d := d) hd OS lgc n i hi V hV_jost
-            hV_ordered hV_swap_ordered hChart
-            φ hφ_comp hφ_supp)
-      ```
+      Its statement is deliberately about the deterministic canonical
+      Figure-2-4 rotated lift, not an arbitrary existence witness.  This is
+      the exact compact-support theorem that must be proved from OS-I §4.5 /
+      Bargmann-Hall-Wightman before any adjacent `S'_n` Lean implementation
+      starts.  The source-pullback, raw permuted-Wick, and any convenience
+      canonical aliases are mechanical consequences of this theorem plus
+      `hRep.branch_eq`, `hChart.adjLift_sourceGram`, and the Lorentz
+      normalization theorem above.  Do not add a second theorem name with the
+      same conclusion; this theorem is the source boundary gate.
 
       ```lean
       theorem BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger
@@ -10117,26 +10162,173 @@ Proof decomposition of this theorem, without hiding the analytic work:
             OS.S n ψZ
       ```
 
-      Mathematical content of this theorem: after OS I §4.5 supplies the raw
-      permuted-Wick `extendF` boundary theorem and the canonical lift has been
-      normalized to that raw section, this theorem converts the result into
-      Hall-Wightman source coordinates.  Its proof first identifies the BHW
-      source pullback `Φτ ∘ wick` with the canonical rotated Figure-2-4 lift by
-      `hRep.branch_eq` and `hChart.adjLift_sourceGram`, then applies
-      `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`.  This is
-      the exact place where the
-      Hall-Wightman source representative meets the OS-II compact-test data.
-      It is not a theorem about `bvt_W`, not a real-edge EOW theorem, and not
-      a PET branch-independence statement.
+      Mathematical role of this theorem: it is the source-coordinate form of
+      the canonical-lift boundary gate.  It says that the adjacent
+      source-coordinate branch
+      `Z ↦ hRep.Phi (sourcePermuteComplexGram n τ Z)`, pulled back along the
+      Wick real section, has the compact boundary distribution selected by
+      the Euclidean permuted test `ψZ`.  It is derived from the
+      canonical-lift theorem by source-Gram rewriting, not used to prove that
+      theorem.
 
-      Lean-shaped proof of this source-pullback theorem:
+      The implementation-level derivation obligations are:
+
+      1. Build `φZ` and
+         `ψZ := permuteZeroDiagonalSchwartz (d := d) (n := n) τ.symm φZ`.
+         `OS.E3_symmetric` supplies only the Euclidean symmetry
+         `OS.S n φZ = OS.S n ψZ`; it is not used as pointwise permutation
+         invariance of `bvt_F`.
+      2. Prove the source branch is holomorphic on the selected chart:
+         `hRep.Phi_holomorphic.precomp_sourcePermuteComplexGram τ`, restricted
+         to the chart domain by `hChart.double_mem`, then composed with
+         `sourceMinkowskiGram` on `hChart.Usrc` by
+         `SourceVarietyGermHolomorphicOn.comp_sourceMinkowskiGram`.
+      3. Rewrite the source pullback to the canonical lift on `hChart.V0`
+         using `hRep.branch_eq` and `hChart.adjLift_sourceGram`; outside
+         `hChart.V0`, the compact-support hypothesis gives `φ x = 0`.
+      4. Apply the canonical-lift source-boundary theorem
+         `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`.
+      5. Use `bvt_euclidean_restriction` only to rewrite the selected ACR(1)
+         compact germ as `OS.S n ψZ`.  The finite permutation change of
+         variables remains the checked one from
+         `os45_adjacent_euclideanEdge_pairing_eq_on_timeSector`.
+      6. The proof does not evaluate
+         `BHW.extendF_eq_on_forwardTube` at `wick (x ∘ τ)` or
+         `permAct τ (wick x)`.  The adjacent Wick section is not obtained from
+         ordered-positive-time forward-tube membership; it enters the ordinary
+         extended tube only through the Figure-2-4 canonical lift.
+
+      The canonical-lift theorem above is the mathematically primitive
+      boundary statement in this block.  For Lean bookkeeping it is useful to
+      isolate the source-coordinate ACR-kernel form below: the right hand side is
+      exactly the `bvt_euclidean_restriction` pairing for the permuted
+      zero-diagonal test `ψZ`.  Thus this theorem and
+      `BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger` differ
+      only by the already checked OS-II ACR boundary-value rewrite.  Neither
+      theorem may be treated as proved by that rewrite alone; the hard
+      content is still the canonical Figure-2-4 lift pairing, transported to
+      the source branch on the left by `hRep.branch_eq` and
+      `hChart.adjLift_sourceGram`.
+
+      The isolated ACR-kernel form is:
 
       ```lean
-      theorem BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger ... := by
+      theorem BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary
+          [NeZero d]
+          (hd : 2 <= d)
+          (OS : OsterwalderSchraderAxioms d)
+          (lgc : OSLinearGrowthCondition d OS)
+          (n : Nat) (i : Fin n) (hi : i.val + 1 < n)
+          (V : Set (NPointDomain d n))
+          (hV_jost : ∀ x, x ∈ V -> x ∈ BHW.JostSet d n)
+          (hV_ordered :
+            ∀ x, x ∈ V ->
+              x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) 1)
+          (hV_swap_ordered :
+            ∀ x, x ∈ V ->
+              (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
+                EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+                  (Equiv.swap i ⟨i.val + 1, hi⟩))
+          (hRep :
+            BHW.SourceScalarRepresentativeData
+              (d := d) n (bvt_F OS lgc n))
+          {x0 : NPointDomain d n}
+          (hChart :
+            BHW.OS45Figure24SourceChartAt hd OS lgc n i hi V x0) :
+          let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+          let Φτ :=
+            fun z : Fin n -> Fin (d + 1) -> ℂ =>
+              hRep.Phi
+                (BHW.sourcePermuteComplexGram n τ
+                  (BHW.sourceMinkowskiGram d n z))
+          ∀ (φ : SchwartzNPoint d n)
+            (_hφ_comp :
+              HasCompactSupport (φ : NPointDomain d n -> ℂ))
+            (hφ_supp :
+              tsupport (φ : NPointDomain d n -> ℂ) ⊆ hChart.V0),
+            ∫ x : NPointDomain d n,
+                Φτ (fun k => wickRotatePoint (x k)) * φ x
+              =
+            ∫ x : NPointDomain d n,
+                bvt_F OS lgc n (fun k => wickRotatePoint (x k)) *
+                  φ (fun k => x (τ k))
+      ```
+
+      Proof transcript required for this theorem:
+
+      1. Define
+         `φZ := ⟨φ, zeroDiagonal_of_tsupport_subset_jostOverlap ...⟩` and
+         `ψZ := permuteZeroDiagonalSchwartz (d := d) (n := n) τ.symm φZ`.
+         The right side is exactly `OS.S n ψZ` rewritten by the checked
+         theorem `bvt_euclidean_restriction`; this uses only the definitional
+         equation
+         `(permuteZeroDiagonalSchwartz τ.symm φZ).1 x =
+           φ (fun k => x (τ k))`.
+      2. The left side is the compact Wick real-section pairing of the
+         Hall-Wightman source branch
+         `Z ↦ hRep.Phi (sourcePermuteComplexGram n τ Z)` restricted to
+         `hChart.Usrc`.  Its holomorphy is obtained by
+         `hRep.Phi_holomorphic.precomp_sourcePermuteComplexGram τ`,
+         `hChart.double_mem`, and
+         `SourceVarietyGermHolomorphicOn.comp_sourceMinkowskiGram`.
+      3. On `hChart.V0`, the deterministic Figure-2-4 lift gives the
+         ordinary extended-tube realization of that same scalar point:
+         `hChart.adjLift_sourceGram x hx 0` rewrites
+         `sourceMinkowskiGram (hChart.adjLift x 0)` to
+         `sourcePermuteComplexGram τ (sourceMinkowskiGram (wick x))`.
+         Therefore `hRep.branch_eq` rewrites the left integrand to
+         `extendF (bvt_F OS lgc n) (hChart.adjLift x 0) * φ x`.  Outside
+         `hChart.V0`, `φ x = 0` by `hφ_supp`, so the rewrite is valid under
+         the integral without choosing any existential `Δ_x`.
+      4. The remaining equality
+
+         ```lean
+         ∫ x, BHW.extendF (bvt_F OS lgc n)
+                (hChart.adjLift x (0 : unitInterval)) * φ x
+           =
+         OS.S n ψZ
+         ```
+
+         is the genuine OS-I §4.5 Figure-2-4 `S'_n` boundary theorem.  It
+         says that the rotated adjacent ordinary-extended-tube realization
+         carried by the selected chart is the BHW continuation of the same
+         symmetric Euclidean compact-test branch selected by E3.  This is not
+         local EOW, not final Wightman locality, not global PET branch
+         independence, and not a pointwise permutation-symmetry shortcut.
+      5. Only after step 4 is supplied does the displayed ACR-kernel theorem
+         follow by step 1; and only then do the raw permuted-Wick and
+         canonical-lift forms follow by `hRep.branch_eq`, the Figure-2-4
+         source-Gram identity, and Lorentz normalization.  Production Lean may
+         not introduce the theorem above until step 4 has a complete proof or
+         an explicitly approved OS-I/Hall-Wightman source-import boundary with
+         the exact compact-support statement in step 4.
+
+      The current proof-document gap is exactly the theorem already displayed
+      above as
+      `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`.  It is the
+      precise local OS-I §4.5/Bargmann-Hall-Wightman source statement required
+      by the strict route; adding it to Lean as a wrapper, `sorry`, `admit`,
+      or unapproved axiom would violate the implementation gate.
+
+      Once this source theorem is proved, the ACR-kernel form is mechanical:
+
+      ```lean
+      theorem BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary ... := by
         classical
         let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+        let Φτ :=
+          fun z : Fin n -> Fin (d + 1) -> ℂ =>
+            hRep.Phi
+              (BHW.sourcePermuteComplexGram n τ
+                (BHW.sourceMinkowskiGram d n z))
         intro φ hφ_comp hφ_supp
-        have hrewrite :
+        let φZ : ZeroDiagonalSchwartz d n :=
+          ⟨φ, zeroDiagonal_of_tsupport_subset_jostOverlap
+            (d := d) (n := n) hChart.V0
+            (fun x hx => hV_jost x (hChart.V0_sub hx)) φ hφ_supp⟩
+        let ψZ : ZeroDiagonalSchwartz d n :=
+          permuteZeroDiagonalSchwartz (d := d) (n := n) τ.symm φZ
+        have hsource_to_lift :
             ∫ x : NPointDomain d n,
                 Φτ (fun k => wickRotatePoint (x k)) * φ x
               =
@@ -10176,19 +10368,82 @@ Proof decomposition of this theorem, without hiding the analytic work:
                     simp [Φτ, hGram]
               _ =
                 BHW.extendF (bvt_F OS lgc n)
-                    (hChart.adjLift x (0 : unitInterval)) * φ x := by
+                  (hChart.adjLift x (0 : unitInterval)) * φ x := by
                     rw [hbranch]
           · have hφx : φ x = 0 := by
               exact
                 (notMem_tsupport_iff_eventuallyEq.mp
                   (fun hxSupp => hx (hφ_supp hxSupp))).self_of_nhds
             simp [hφx]
-        exact hrewrite.trans
-          (BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger
+        have hlift :
+            ∫ x : NPointDomain d n,
+                BHW.extendF (bvt_F OS lgc n)
+                  (hChart.adjLift x (0 : unitInterval)) * φ x
+              =
+            OS.S n ψZ :=
+          BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger
             (d := d) hd OS lgc n i hi V hV_jost
-            hV_ordered hV_swap_ordered hChart
-            φ hφ_comp hφ_supp)
+            hV_ordered hV_swap_ordered hRep hChart
+            φ hφ_comp hφ_supp
+        have hψ :
+            OS.S n ψZ =
+              ∫ x : NPointDomain d n,
+                bvt_F OS lgc n (fun k => wickRotatePoint (x k)) *
+                  φ (fun k => x (τ k)) := by
+          simpa [ψZ, φZ, τ] using
+            bvt_euclidean_restriction (d := d) OS lgc n ψZ
+        exact hsource_to_lift.trans (hlift.trans hψ)
       ```
+
+      Lean-shaped proof skeleton for the source-pullback theorem after that
+      comparison is available:
+
+      ```lean
+      theorem BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger ... := by
+        classical
+        let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+        let Φτ :=
+          fun z : Fin n -> Fin (d + 1) -> ℂ =>
+            hRep.Phi
+              (BHW.sourcePermuteComplexGram n τ
+                (BHW.sourceMinkowskiGram d n z))
+        intro φ hφ_comp hφ_supp
+        let φZ : ZeroDiagonalSchwartz d n :=
+          ⟨φ, zeroDiagonal_of_tsupport_subset_jostOverlap
+            (d := d) (n := n) hChart.V0
+            (fun x hx => hV_jost x (hChart.V0_sub hx)) φ hφ_supp⟩
+        let ψZ : ZeroDiagonalSchwartz d n :=
+          permuteZeroDiagonalSchwartz (d := d) (n := n) τ.symm φZ
+        have hsrc_acr :
+            ∫ x : NPointDomain d n,
+                Φτ (fun k => wickRotatePoint (x k)) * φ x
+              =
+            ∫ x : NPointDomain d n,
+                bvt_F OS lgc n (fun k => wickRotatePoint (x k)) *
+                  φ (fun k => x (τ k)) := by
+          exact
+            BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary
+              (d := d) hd OS lgc n i hi V hV_jost
+              hV_ordered hV_swap_ordered hRep hChart
+              φ hφ_comp hφ_supp
+        have hψ :
+            OS.S n ψZ =
+              ∫ x : NPointDomain d n,
+                bvt_F OS lgc n (fun k => wickRotatePoint (x k)) *
+                  φ (fun k => x (τ k)) := by
+          simpa [ψZ, φZ, τ] using
+            bvt_euclidean_restriction (d := d) OS lgc n ψZ
+        exact hsrc_acr.trans hψ.symm
+      ```
+
+      The theorem
+      `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger` is the
+      remaining source proof transcript obligation.  The displayed
+      `BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary` theorem
+      is a genuine derived theorem, not a wrapper: it removes only the
+      already-checked Euclidean functional rewrite and the
+      `hRep.branch_eq`/Figure-2-4 source-Gram rewrite from the
+      Hall-Wightman comparison.
 
       The theorem
       `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`
@@ -14377,9 +14632,10 @@ in this order:
 	   `S'_n` package
 	   `BHW.os45Figure24_sourceChart_at`,
 	   `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`,
-	   `BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
 	   `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
+	   `BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary`,
 	   `BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`,
+	   `BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
    `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
    `BHW.os45AdjacentSPrimeScalarizationChart_of_figure24`,
    `BHW.os45AdjacentSPrimeSourceEq_of_compactWickPairingEq`,
@@ -14654,9 +14910,10 @@ not as the next task.  The active next implementation order is:
    seed/path package
    `BHW.os45Figure24_sourceChart_at`,
    `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`,
-   `BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
    `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
+   `BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary`,
    `BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`,
+   `BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
    `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
    `BHW.os45AdjacentSPrimeScalarizationChart_of_figure24`,
    `BHW.os45AdjacentSPrimeSourceEq_of_compactWickPairingEq`,

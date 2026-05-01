@@ -53,9 +53,10 @@ local Slot 1:
    Hall-Wightman source descent, and the adjacent `S'_n` package
    `BHW.os45Figure24_sourceChart_at`,
    `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`,
-   `BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
    `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
+   `BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary`,
    `BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`,
+   `BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
    `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
    `BHW.os45AdjacentSPrimeScalarizationChart_of_figure24`,
    `BHW.os45AdjacentSPrimeSourceEq_of_compactWickPairingEq`,
@@ -1020,9 +1021,10 @@ Second, the adjacent `S'_n` seed package must be proved in the order
 documented below:
 `BHW.os45Figure24_sourceChart_at`,
 `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`,
-`BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
 `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
+`BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary`,
 `BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`,
+`BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
 `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
 `BHW.os45AdjacentSPrimeScalarizationChart_of_figure24`,
 `BHW.os45AdjacentSPrimeSourceEq_of_compactWickPairingEq`,
@@ -1042,26 +1044,36 @@ normalization: using `BHW.figure24RotateAdjacentConfig_lorentz_inverse`,
 `bvt_F_holomorphic`, and
 `bvt_F_restrictedLorentzInvariant_forwardTube`, it rewrites the deterministic
 canonical lift `hChart.adjLift x 0` to the raw adjacent Wick section
-`BHW.permAct τ (fun k => wickRotatePoint (x k))` under `extendF`.  Second, the
-real OS-I §4.5 source-boundary theorem is
-`BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`: it compares
-compact pairings of
-`x ↦ extendF (bvt_F OS lgc n) (BHW.permAct τ (wick x))` with the permuted
-Schwinger functional `OS.S n ψZ`, using E3, `bvt_euclidean_restriction`, the
-selected ACR(1) compact boundary datum, and the Hall-Wightman source branch
-law on the local `S'_n` Figure-2-4 chart.  The canonical-lift theorem
-`BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger` is derived from
-those first two pieces by compact-support integrand rewriting; it is no longer
-the hidden source-import boundary.  "Source import" here means an exact
+`BHW.permAct τ (fun k => wickRotatePoint (x k))` under `extendF` and also gives
+that raw section ordinary-extended-tube membership.  Second, the real OS-I
+§4.5 source-boundary theorem is now isolated at the deterministic lift:
+`BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger` proves
+`∫ extendF (bvt_F OS lgc n) (hChart.adjLift x 0) * φ x = OS.S n ψZ`
+for compact tests supported in the selected chart.  This is the exact
+Figure-2-4 `S'_n` theorem: the rotated adjacent ordinary-extended-tube
+realization is the BHW continuation of the symmetric Euclidean compact-test
+branch selected by E3.  It is not local EOW, final Wightman locality, global
+PET branch independence, or pointwise permutation symmetry.  Third,
+`BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary` is the
+equivalent source-coordinate/ACR-kernel form: `hRep.branch_eq` and
+`hChart.adjLift_sourceGram` rewrite the Hall-Wightman source pullback to the
+deterministic lift pairing, while `bvt_euclidean_restriction` rewrites
+`OS.S n ψZ` as
+`∫ bvt_F OS lgc n (wick x) * φ (x ∘ τ)`.  The theorem
+`BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger` then follows by
+the same `bvt_euclidean_restriction` rewrite packaged against `OS.S n ψZ`.
+Fourth, the raw `extendF` theorem
+`BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger` and the
+source-pullback theorems are derived from the canonical-lift theorem by
+`SourceScalarRepresentativeData.branch_eq`, the raw/canonical Figure-2-4
+membership and Gram identities, Lorentz normalization, and compact-support
+integrand rewriting; they are no longer hidden source-import boundaries.
+"Source import" here means an exact
 documented external theorem boundary only; production Lean may consume it only
 after it has been proved or already exists as an approved implemented theorem,
-not by adding an axiom, `sorry`, or `admit`.  Third,
-`BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`: it rewrites the
-permuted Hall-Wightman source pullback to that deterministic canonical lift by
-`SourceScalarRepresentativeData.branch_eq` and
-`hChart.adjLift_sourceGram`.  This second theorem must not integrate an
-arbitrary existential `Δ_x`; the selected Figure-2-4 chart must carry the
-canonical lift itself.  Only after that source-pairing statement is proved may
+not by adding an axiom, `sorry`, or `admit`.  No theorem in this block may
+integrate an arbitrary existential `Δ_x`; the selected Figure-2-4 chart must
+carry the canonical lift itself.  Only after that source-pairing statement is proved may
 `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`
 rewrite `OS.S n ψZ` by `bvt_euclidean_restriction` and the finite permutation
 change of variables used in
@@ -1179,18 +1191,18 @@ and the OS-II adjacent Wick trace
 version is not an input to the seed proof; using it there is circular because
 it already asserts the adjacent `S'_n` scalarization on the Wick real section.
 Its proof is the local OS I §4.5/BHW scalar-trace comparison in three steps:
-first prove the raw permuted-Wick `extendF` pairing theorem
-`BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger` against
-`OS.S n ψZ`, then derive the canonical-lift pairing theorem by the
-Figure-2-4 Lorentz normalization, then rewrite the canonical lift to the
-source pullback by `hRep.branch_eq`.
+first prove the source-pullback pairing theorem
+`BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger` against
+`OS.S n ψZ`, then derive the raw permuted-Wick and canonical-lift pairing
+forms by `hRep.branch_eq` plus Figure-2-4 Lorentz normalization.
 Only after that may `bvt_euclidean_restriction` and the finite permutation
 change of variables identify the raw adjacent Wick pairing.  It must not be
 replaced by the global pointwise theorem `bvt_F_perm`, by final `bvt_W`
 locality, by `AdjacentOSEOWDifferenceEnvelope`, or by PET branch independence.
-Until the raw permuted-Wick source-boundary theorem, its canonical-lift
-normalization, and its source-pullback rewrite have complete proof
-transcripts, the adjacent `S'_n` package is not Lean-ready.
+Until `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger` has a
+complete OS-I §4.5/Bargmann-Hall-Wightman proof transcript, and until the
+source-pullback and raw permuted-Wick rewrites have complete mechanical
+transcripts from it, the adjacent `S'_n` package is not Lean-ready.
 
 Readiness gate for production Lean: the theorem-2 blueprint must remain the
 source of truth for Lean-shaped pseudocode.  The scalar-source theorem is not
@@ -1317,9 +1329,9 @@ content:
    `BHW.continuous_wickRotateRealConfig` using Mathlib
    `ContinuousOn.comp'` and the explicit `MapsTo` proof
    `fun x hx => hwick_mem x hx`.  The integral equality for those scalar
-   pullbacks is the chain: raw permuted-Wick source-boundary theorem,
-   canonical-lift normalization, source-pullback rewrite by `hRep.branch_eq`,
-   checked compact Wick equality, and the identity pointwise scalarization
+   pullbacks is the chain: canonical-lift Hall-Wightman boundary theorem,
+   source-pullback/raw Figure-2-4 rewrites by `hRep.branch_eq` and Lorentz
+   normalization, checked compact Wick equality, and the identity pointwise scalarization
    rewritten under the
    integral.  The proof must not silently use continuity of unrelated total
    `bvt_F` values off the Wick section, and must not use
