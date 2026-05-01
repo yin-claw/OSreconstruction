@@ -9577,6 +9577,20 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
                 EuclideanOrderedPositiveTimeSector (d := d) (n := n)
                   (Equiv.swap i ⟨i.val + 1, hi⟩))
+          (hV_figPath :
+            let τ : Equiv.Perm (Fin n) :=
+              Equiv.swap i ⟨i.val + 1, hi⟩
+            ∀ x, x ∈ V ->
+              ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
+                Continuous Γ ∧
+                Continuous Δ ∧
+                Γ (0 : unitInterval) = (fun k => wickRotatePoint (x k)) ∧
+                (∀ t, Γ t ∈ BHW.ExtendedTube d n) ∧
+                (∀ t, Δ t ∈ BHW.ExtendedTube d n) ∧
+                (∀ t,
+                  BHW.sourceMinkowskiGram d n (Δ t) =
+                    BHW.sourcePermuteComplexGram n τ
+                      (BHW.sourceMinkowskiGram d n (Γ t))))
           {x0 : NPointDomain d n}
           (hx0V : x0 ∈ V)
           (hRep :
@@ -9618,21 +9632,116 @@ Proof decomposition of this theorem, without hiding the analytic work:
       Proof transcript: shrink the selected Jost/ordered patch around the
       specified base point `x0` to one Figure-2-4 `S'_n` source chart `V0`
       with `x0 ∈ V0`.  The chart's scalar image is contained in the adjacent
-      double scalar-product domain.  The identity branch
-      scalarization uses `hRep.branch_eq`, `BHW.extendF_eq_on_forwardTube`,
-      `bvt_F_holomorphic`, `bvt_F_restrictedLorentzInvariant_forwardTube`,
-      and the ordered Wick membership of `x`.  The adjacent scalarization uses
-      the same one-branch Hall-Wightman scalar representative on the relabelled
-      ordered branch `x ∘ τ`, `BHW.sourceMinkowskiGram_perm`, and the
-      Figure-2-4 source chart's ordinary extended-tube realization of the
-      permuted scalar point.  The stronger
-      `bvt_F_complexLorentzInvariant_forwardTube` is still used upstream in
-      `BHW.sourceScalarRepresentativeData_bvt_F`, but the existing
-      forward-tube equality API has the restricted-Lorentz signature displayed
-      in the pseudocode.  This is the only place in the seed where the BHW
-      `S'_n` scalarization theorem enters.  It does not compare real-edge
-      `extendF` branches and it does not use local EOW, final `bvt_W`
-      locality, or global PET branch independence.
+      double scalar-product domain.  The identity branch scalarization is the
+      ordinary forward-tube case: it uses `hRep.branch_eq`,
+      `BHW.extendF_eq_on_forwardTube`, `bvt_F_holomorphic`,
+      `bvt_F_restrictedLorentzInvariant_forwardTube`, and the ordered Wick
+      membership of `x`.
+
+      **Important adjacent-trace correction.**  The adjacent Wick trace
+      `fun k => wickRotatePoint (x (τ k))` is not a forward-tube trace under
+      the Figure-2-4 hypotheses.  The local hypothesis
+      `hV_swap_ordered` says
+      `(fun k => x (τ k)) ∈ EuclideanOrderedPositiveTimeSector τ`; since
+      `EuclideanOrderedPositiveTimeSector τ` means that a further `τ`
+      relabelling is ordered, and `τ = τ.symm`, applying
+      `wickRotate_mem_forwardTube_of_mem_orderedPositiveTimeSector` to this
+      hypothesis gives the identity Wick trace `wick x`, not the adjacent raw
+      trace `wick (x ∘ τ)`.  Therefore the adjacent scalarization must not be
+      proved by `BHW.extendF_eq_on_forwardTube` at `wick (x ∘ τ)`, and the
+      source chart must not export a field named `wick_tau_forwardTube`.
+
+      The missing adjacent step is a genuine OS-II/BHW scalar-trace theorem:
+      on the Figure-2-4 `S'_n` source chart, the OS-II Euclidean adjacent Wick
+      trace is represented by the same Hall-Wightman source scalar
+      representative evaluated at the permuted source Gram.  This theorem is
+      not a wrapper and not pointwise permutation symmetry; it is the
+      source-backed BHW/Jost comparison that OS I §4.5 uses before the
+      corridor and real-edge EOW stage.
+
+      ```lean
+      theorem BHW.os45AdjacentWickTrace_sourceScalarRepresentative_eq_of_figure24
+          [NeZero d]
+          (hd : 2 <= d)
+          (OS : OsterwalderSchraderAxioms d)
+          (lgc : OSLinearGrowthCondition d OS)
+          (n : Nat) (i : Fin n) (hi : i.val + 1 < n)
+          (V : Set (NPointDomain d n))
+          (hV_open : IsOpen V)
+          (hV_jost : ∀ x, x ∈ V -> x ∈ BHW.JostSet d n)
+          (hV_ordered :
+            ∀ x, x ∈ V ->
+              x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) 1)
+          (hV_swap_ordered :
+            ∀ x, x ∈ V ->
+              (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
+                EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+                  (Equiv.swap i ⟨i.val + 1, hi⟩))
+          (hV_figPath :
+            let τ : Equiv.Perm (Fin n) :=
+              Equiv.swap i ⟨i.val + 1, hi⟩
+            ∀ x, x ∈ V ->
+              ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
+                Continuous Γ ∧
+                Continuous Δ ∧
+                Γ (0 : unitInterval) = (fun k => wickRotatePoint (x k)) ∧
+                (∀ t, Γ t ∈ BHW.ExtendedTube d n) ∧
+                (∀ t, Δ t ∈ BHW.ExtendedTube d n) ∧
+                (∀ t,
+                  BHW.sourceMinkowskiGram d n (Δ t) =
+                    BHW.sourcePermuteComplexGram n τ
+                      (BHW.sourceMinkowskiGram d n (Γ t))))
+          {x0 : NPointDomain d n}
+          (hx0V : x0 ∈ V)
+          (hRep :
+            BHW.SourceScalarRepresentativeData
+              (d := d) n (bvt_F OS lgc n))
+          (hChart :
+            BHW.OS45Figure24SourceChartAt hd OS lgc n i hi V x0) :
+          let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+          let Φτ :=
+            fun z : Fin n -> Fin (d + 1) -> ℂ =>
+              hRep.Phi
+                (BHW.sourcePermuteComplexGram n τ
+                  (BHW.sourceMinkowskiGram d n z))
+          ∀ x, x ∈ hChart.V0 ->
+            Φτ (fun k => wickRotatePoint (x k)) =
+              bvt_F OS lgc n
+                (fun k => wickRotatePoint (x (τ k)))
+      ```
+
+      Proof obligations for this new theorem:
+
+      1. Use only the OS-II ACR(1) continuation datum selected in
+         `bvt_F_acrOne_package`, OS Euclidean permutation symmetry on
+         zero-diagonal compact tests, and the Hall-Wightman/BHW source
+         representative `hRep`.  Do not invoke the global pointwise theorem
+         `bvt_F_perm` as a replacement for the local source theorem.
+      2. The source side is the holomorphic function
+         `z ↦ hRep.Phi (sourcePermuteComplexGram n τ
+         (sourceMinkowskiGram d n z))` on `hChart.Usrc`, with holomorphy
+         supplied by
+         `SourceVarietyGermHolomorphicOn.precomp_sourcePermuteComplexGram`
+         and
+         `SourceVarietyGermHolomorphicOn.comp_sourceMinkowskiGram`.
+      3. The OS-II trace side is the adjacent Wick trace appearing in
+         `os45_adjacent_euclideanEdge_pairing_eq_on_timeSector`.  Its local
+         continuity on `hChart.V0` is a conclusion of this scalar-trace
+         theorem, obtained by identifying it with the holomorphic source
+         pullback; it is not an independent global continuity property of the
+         total function `bvt_F`.
+      4. The equality is established on the Wick real section by the
+         OS-II compact-test identity plus the BHW source scalarization of the
+         permuted `S'_n` datum, then upgraded to pointwise equality on `V0`
+         by the checked compact-support uniqueness theorem.  This is exactly
+         the local OS I §4.5 source step; it is not local EOW, not final
+         `bvt_W` locality, and not global PET branch independence.
+
+      Until this theorem has a complete proof transcript, the adjacent
+      `S'_n` scalarization chart is not Lean-ready.  Any proof that replaces
+      it by `hRep.branch_eq` followed by
+      `BHW.extendF_eq_on_forwardTube` at `wick (x ∘ τ)` is rejected: it proves
+      the wrong membership statement.
 
       Lean-shaped pseudocode for the scalarization chart:
 
@@ -9645,8 +9754,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       equivalence
       `∀ x, (fun k => wickRotatePoint (x k)) ∈ Usrc ↔ x ∈ V0`,
       double-scalar-domain membership of every source Gram point in `Usrc`,
-      and forward-tube membership of the identity and adjacent Wick
-      configurations on `V0`.  The continuity input used below must be made a
+      and forward-tube membership of the identity Wick configuration on `V0`.
+      It deliberately does not carry adjacent raw-Wick forward-tube
+      membership.  The continuity input used below must be made a
       public finite-coordinate helper
       `BHW.continuous_wickRotateRealConfig (d := d) (n := n) :
       Continuous (fun x : NPointDomain d n => fun k => wickRotatePoint (x k))`;
@@ -9660,11 +9770,50 @@ Proof decomposition of this theorem, without hiding the analytic work:
       Lean-facing support surfaces for the helper:
 
       ```lean
+      def BHW.wickRealSectionLeftInverse
+          (d n : Nat)
+          (z : Fin n -> Fin (d + 1) -> ℂ) :
+          NPointDomain d n :=
+        fun k μ => if hμ : μ = 0 then (z k 0).im else (z k μ).re
+
+      theorem BHW.wickRealSectionLeftInverse_wickRotateRealConfig
+          (d n : Nat) (x : NPointDomain d n) :
+          BHW.wickRealSectionLeftInverse d n
+            (fun k => wickRotatePoint (x k)) = x
+
+      theorem BHW.continuous_wickRealSectionLeftInverse
+          (d n : Nat) :
+          Continuous (BHW.wickRealSectionLeftInverse d n)
+
       theorem BHW.continuous_wickRotateRealConfig
           (d n : Nat) :
           Continuous
             (fun x : NPointDomain d n =>
               fun k : Fin n => wickRotatePoint (x k))
+
+      theorem BHW.exists_connected_sourceNeighborhood_with_wickPreimage
+          (d n : Nat)
+          {Ω : Set (Fin n -> Fin (d + 1) -> ℂ)}
+          (hΩ_open : IsOpen Ω)
+          {x0 : NPointDomain d n}
+          (hz0Ω :
+            (fun k => wickRotatePoint (x0 k)) ∈ Ω)
+          {V : Set (NPointDomain d n)}
+          (hV_open : IsOpen V)
+          (hx0V : x0 ∈ V) :
+          ∃ Usrc : Set (Fin n -> Fin (d + 1) -> ℂ),
+            IsOpen Usrc ∧ IsConnected Usrc ∧
+            (fun k => wickRotatePoint (x0 k)) ∈ Usrc ∧
+            Usrc ⊆ Ω ∧
+            (∀ x : NPointDomain d n,
+              (fun k => wickRotatePoint (x k)) ∈ Usrc -> x ∈ V)
+
+      theorem BHW.IsRelOpenInSourceComplexGramVariety.sourceMinkowskiGram_preimage_open
+          (d n : Nat)
+          {U : Set (Fin n -> Fin n -> ℂ)}
+          (hU : BHW.IsRelOpenInSourceComplexGramVariety d n U) :
+          IsOpen {z : Fin n -> Fin (d + 1) -> ℂ |
+            BHW.sourceMinkowskiGram d n z ∈ U}
 
       structure BHW.OS45Figure24SourceChartAt
           [NeZero d]
@@ -9695,11 +9844,6 @@ Proof decomposition of this theorem, without hiding the analytic work:
         wick_id_forwardTube :
           ∀ x, x ∈ V0 ->
             (fun k => wickRotatePoint (x k)) ∈ BHW.ForwardTube d n
-        wick_tau_forwardTube :
-          ∀ x, x ∈ V0 ->
-            (fun k =>
-              wickRotatePoint (x (Equiv.swap i ⟨i.val + 1, hi⟩ k))) ∈
-              BHW.ForwardTube d n
 
       theorem BHW.os45Figure24_sourceChart_at
           [NeZero d]
@@ -9718,9 +9862,146 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
                 EuclideanOrderedPositiveTimeSector (d := d) (n := n)
                   (Equiv.swap i ⟨i.val + 1, hi⟩))
+          (hV_figPath :
+            let τ : Equiv.Perm (Fin n) :=
+              Equiv.swap i ⟨i.val + 1, hi⟩
+            ∀ x, x ∈ V ->
+              ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
+                Continuous Γ ∧
+                Continuous Δ ∧
+                Γ (0 : unitInterval) = (fun k => wickRotatePoint (x k)) ∧
+                (∀ t, Γ t ∈ BHW.ExtendedTube d n) ∧
+                (∀ t, Δ t ∈ BHW.ExtendedTube d n) ∧
+                (∀ t,
+                  BHW.sourceMinkowskiGram d n (Δ t) =
+                    BHW.sourcePermuteComplexGram n τ
+                      (BHW.sourceMinkowskiGram d n (Γ t))))
           {x0 : NPointDomain d n}
           (hx0V : x0 ∈ V) :
           BHW.OS45Figure24SourceChartAt hd OS lgc n i hi V x0
+      ```
+
+      The proof of
+      `BHW.exists_connected_sourceNeighborhood_with_wickPreimage` is pure
+      finite-dimensional topology.  Let
+      `L := BHW.wickRealSectionLeftInverse d n` and
+      `z0 := fun k => wickRotatePoint (x0 k)`.  By
+      `BHW.wickRealSectionLeftInverse_wickRotateRealConfig`, `L z0 = x0`.
+      The set `Ω ∩ L ⁻¹' V` is open and contains `z0`, using
+      `hΩ_open`, `hV_open.preimage
+      (BHW.continuous_wickRealSectionLeftInverse d n)`, and `hx0V`.
+      Choose a metric ball around `z0` contained in this intersection by
+      `Metric.mem_nhds_iff`; take `Usrc` to be that ball.  Its openness is
+      `Metric.isOpen_ball`, its connectedness is `Metric.isConnected_ball`,
+      it contains `z0`, and its inclusions into `Ω` and into the Wick preimage
+      of `V` are exactly the ball-subset conclusion.  No analytic theorem is
+      used in this helper.
+
+      With this helper the source chart is constructed as follows.  Put
+      `τ := Equiv.swap i ⟨i.val + 1, hi⟩`,
+      `z0 := fun k => wickRotatePoint (x0 k)`, and
+      `Ωdouble := {z | BHW.sourceMinkowskiGram d n z ∈
+      BHW.sourceDoublePermutationGramDomain d n τ}`.  Openness of `Ωdouble`
+      is the preimage of the relatively open double scalar domain: use
+      `BHW.sourceDoublePermutationGramDomain_relOpen_of_sourceExtendedTubeGramDomain`
+      together with `BHW.sourceExtendedTubeGramDomain_relOpen_connected` and
+      `(BHW.contDiff_sourceMinkowskiGram d n).continuous`.  Membership
+      `z0 ∈ Ωdouble` is the Figure-2-4 source realization at the selected
+      base point: the identity Wick trace lies in the ordinary forward tube by
+      `hV_ordered x0 hx0V`, while the adjacent permuted source Gram is
+      realized in the ordinary extended tube by the checked rotated
+      Figure-2-4 realization/path-stability packet.  Apply
+      `BHW.exists_connected_sourceNeighborhood_with_wickPreimage` to
+      `Ωdouble` and `V`; then define
+      `V0 := {x | (fun k => wickRotatePoint (x k)) ∈ Usrc}`.  The fields are
+      `V0_open` from `BHW.continuous_wickRotateRealConfig` and `Usrc_open`,
+      `x0_mem` from `z0 ∈ Usrc`, `V0_sub` from the helper's Wick-preimage
+      inclusion, `wick_mem` and `wick_realSection_iff` by the definition of
+      `V0`, `double_mem` from `Usrc ⊆ Ωdouble`, and
+      `wick_id_forwardTube` from `V0_sub`, `hV_ordered`, and
+      `wickRotate_mem_forwardTube_of_mem_orderedPositiveTimeSector 1`.
+
+      ```lean
+      theorem BHW.os45Figure24_sourceChart_at ... := by
+        classical
+        let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
+        let z0 : Fin n -> Fin (d + 1) -> ℂ :=
+          fun k => wickRotatePoint (x0 k)
+        let Ωdouble : Set (Fin n -> Fin (d + 1) -> ℂ) :=
+          {z | BHW.sourceMinkowskiGram d n z ∈
+            BHW.sourceDoublePermutationGramDomain d n τ}
+        have hΩ_open : IsOpen Ωdouble := by
+          have hUrel :
+              BHW.IsRelOpenInSourceComplexGramVariety d n
+                (BHW.sourceExtendedTubeGramDomain d n) :=
+            (BHW.sourceExtendedTubeGramDomain_relOpen_connected
+              (d := d) hd n).1
+          have hDoubleRel :
+              BHW.IsRelOpenInSourceComplexGramVariety d n
+                (BHW.sourceDoublePermutationGramDomain d n τ) :=
+            BHW.sourceDoublePermutationGramDomain_relOpen_of_sourceExtendedTubeGramDomain
+              (d := d) (n := n) hUrel τ
+          simpa [Ωdouble] using
+            BHW.IsRelOpenInSourceComplexGramVariety.sourceMinkowskiGram_preimage_open
+              (d := d) (n := n) hDoubleRel
+        have hz0Ω : z0 ∈ Ωdouble := by
+          rcases hV_figPath x0 hx0V with
+            ⟨Γ, Δ, hΓ_cont, hΔ_cont, hΓ0, hΓ_ET, hΔ_ET, hGram⟩
+          have hleft :
+              BHW.sourceMinkowskiGram d n z0 ∈
+                BHW.sourceExtendedTubeGramDomain d n := by
+            refine ⟨Γ (0 : unitInterval), hΓ_ET (0 : unitInterval), ?_⟩
+            simpa [z0] using hΓ0.symm
+          have hright :
+              BHW.sourcePermuteComplexGram n τ
+                (BHW.sourceMinkowskiGram d n z0) ∈
+                BHW.sourceExtendedTubeGramDomain d n := by
+            refine ⟨Δ (0 : unitInterval), hΔ_ET (0 : unitInterval), ?_⟩
+            calc
+              BHW.sourceMinkowskiGram d n (Δ (0 : unitInterval))
+                  = BHW.sourcePermuteComplexGram n τ
+                      (BHW.sourceMinkowskiGram d n (Γ (0 : unitInterval))) :=
+                    hGram (0 : unitInterval)
+              _ = BHW.sourcePermuteComplexGram n τ
+                      (BHW.sourceMinkowskiGram d n z0) := by
+                    rw [hΓ0]
+          exact ⟨hleft, hright⟩
+        rcases BHW.exists_connected_sourceNeighborhood_with_wickPreimage
+            (d := d) (n := n) hΩ_open hz0Ω hV_open hx0V with
+          ⟨Usrc, hUsrc_open, hUsrc_conn, hz0Usrc,
+            hUsrc_sub, hwick_preimage_sub⟩
+        let V0 : Set (NPointDomain d n) :=
+          {x | (fun k => wickRotatePoint (x k)) ∈ Usrc}
+        have hV0_open : IsOpen V0 := by
+          simpa [V0] using
+            hUsrc_open.preimage
+              (BHW.continuous_wickRotateRealConfig (d := d) (n := n))
+        have hx0V0 : x0 ∈ V0 := by simpa [V0, z0] using hz0Usrc
+        have hV0_sub : V0 ⊆ V := by
+          intro x hx
+          exact hwick_preimage_sub x (by simpa [V0] using hx)
+        have hdouble :
+            ∀ z, z ∈ Usrc ->
+              BHW.sourceMinkowskiGram d n z ∈
+                BHW.sourceDoublePermutationGramDomain d n τ := by
+          intro z hz
+          exact hUsrc_sub hz
+        have hwick_id_FT :
+            ∀ x, x ∈ V0 ->
+              (fun k => wickRotatePoint (x k)) ∈ BHW.ForwardTube d n := by
+          intro x hx
+          exact wickRotate_mem_forwardTube_of_mem_orderedPositiveTimeSector
+            (d := d) (n := n) (1 : Equiv.Perm (Fin n))
+            (hV_ordered x (hV0_sub hx))
+        exact
+          { V0 := V0, Usrc := Usrc,
+            V0_open := hV0_open, x0_mem := hx0V0, V0_sub := hV0_sub,
+            Usrc_open := hUsrc_open, Usrc_connected := hUsrc_conn,
+            Usrc_nonempty := ⟨z0, hz0Usrc⟩,
+            wick_mem := by intro x hx; simpa [V0] using hx,
+            wick_realSection_iff := by intro x; rfl,
+            double_mem := by simpa [τ, Ωdouble] using hdouble,
+            wick_id_forwardTube := hwick_id_FT }
       ```
 
       ```lean
@@ -9750,11 +10031,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
         -- Figure-2-4 / OS §4.5 source chart around the chosen base point.
         rcases BHW.os45Figure24_sourceChart_at
             (d := d) hd OS lgc n i hi V hV_open hV_jost
-            hV_ordered hV_swap_ordered hx0V with
+            hV_ordered hV_swap_ordered hV_figPath hx0V with
           ⟨V0, Usrc, hV0_open, hx0V0, hV0_sub,
             hUsrc_open, hUsrc_conn, hUsrc_ne,
             hwick_mem, hwick_realSection_iff,
-            hdouble, hwick_id_FT, hwick_tau_FT⟩
+            hdouble, hwick_id_FT⟩
         have hΦ0_diff : DifferentiableOn ℂ Φ0 Usrc := by
           have hGramU :
               BHW.sourceMinkowskiGram d n '' Usrc ⊆ hRep.U := by
@@ -9800,35 +10081,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
             ∀ x, x ∈ V0 -> Φτ (fun k => wickRotatePoint (x k)) =
               bvt_F OS lgc n
                 (fun k => wickRotatePoint (x (τ k))) := by
-          intro x hx
-          have hgram_perm :
-              BHW.sourcePermuteComplexGram n τ
-                (BHW.sourceMinkowskiGram d n
-                  (fun k => wickRotatePoint (x k))) =
-              BHW.sourceMinkowskiGram d n
-                (fun k => wickRotatePoint (x (τ k))) := by
-            simpa [τ] using
-              (BHW.sourceMinkowskiGram_perm
-                (d := d) (n := n) τ
-                (fun k => wickRotatePoint (x k))).symm
-          have hwET : (fun k => wickRotatePoint (x (τ k))) ∈
-              BHW.ExtendedTube d n :=
-            BHW.forwardTube_subset_extendedTube (hwick_tau_FT x hx)
-          calc
-            Φτ (fun k => wickRotatePoint (x k))
-                = hRep.Phi
-                    (BHW.sourceMinkowskiGram d n
-                      (fun k => wickRotatePoint (x (τ k)))) := by
-                    simp [Φτ, hgram_perm]
-            _ = BHW.extendF (bvt_F OS lgc n)
-                    (fun k => wickRotatePoint (x (τ k))) := by
-                    simpa [hRep.U_eq] using hRep.branch_eq _ hwET
-            _ = bvt_F OS lgc n
-                    (fun k => wickRotatePoint (x (τ k))) := by
-                    exact BHW.extendF_eq_on_forwardTube n
-                      (bvt_F OS lgc n)
-                      hF_holo_BHW hF_restricted_BHW
-                      _ (hwick_tau_FT x hx)
+          exact
+            BHW.os45AdjacentWickTrace_sourceScalarRepresentative_eq_of_figure24
+              (d := d) hd OS lgc n i hi V hV_open hV_jost
+              hV_ordered hV_swap_ordered hV_figPath hx0V hRep
+              { V0 := V0, Usrc := Usrc,
+                V0_open := hV0_open, x0_mem := hx0V0, V0_sub := hV0_sub,
+                Usrc_open := hUsrc_open, Usrc_connected := hUsrc_conn,
+                Usrc_nonempty := hUsrc_ne, wick_mem := hwick_mem,
+                wick_realSection_iff := hwick_realSection_iff,
+                double_mem := hdouble,
+                wick_id_forwardTube := hwick_id_FT }
         exact ⟨V0, Usrc, hV0_open, hx0V0, hV0_sub,
           hUsrc_open, hUsrc_conn, hUsrc_ne,
           hwick_mem, hwick_realSection_iff,
@@ -9856,6 +10119,20 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
                 EuclideanOrderedPositiveTimeSector (d := d) (n := n)
                   (Equiv.swap i ⟨i.val + 1, hi⟩))
+          (hV_figPath :
+            let τ : Equiv.Perm (Fin n) :=
+              Equiv.swap i ⟨i.val + 1, hi⟩
+            ∀ x, x ∈ V ->
+              ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
+                Continuous Γ ∧
+                Continuous Δ ∧
+                Γ (0 : unitInterval) = (fun k => wickRotatePoint (x k)) ∧
+                (∀ t, Γ t ∈ BHW.ExtendedTube d n) ∧
+                (∀ t, Δ t ∈ BHW.ExtendedTube d n) ∧
+                (∀ t,
+                  BHW.sourceMinkowskiGram d n (Δ t) =
+                    BHW.sourcePermuteComplexGram n τ
+                      (BHW.sourceMinkowskiGram d n (Γ t))))
           {x0 : NPointDomain d n}
           (hx0V : x0 ∈ V)
           (hRep :
@@ -9937,7 +10214,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (BHW.sourceMinkowskiGram d n z))
         rcases BHW.os45AdjacentSPrimeScalarizationChart_of_figure24
             (d := d) hd OS lgc n i hi V hV_open hV_jost
-            hV_ordered hV_swap_ordered hx0V hRep with
+            hV_ordered hV_swap_ordered hV_figPath hx0V hRep with
           ⟨V0, Usrc, hV0_open, hx0V0, hV0_sub,
             hUsrc_open, hUsrc_conn, hUsrc_ne,
             hwick_mem, hwick_realSection_iff,
@@ -10121,6 +10398,20 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
                 EuclideanOrderedPositiveTimeSector (d := d) (n := n)
                   (Equiv.swap i ⟨i.val + 1, hi⟩))
+          (hV_figPath :
+            let τ : Equiv.Perm (Fin n) :=
+              Equiv.swap i ⟨i.val + 1, hi⟩
+            ∀ x, x ∈ V ->
+              ∃ (Γ Δ : unitInterval -> Fin n -> Fin (d + 1) -> ℂ),
+                Continuous Γ ∧
+                Continuous Δ ∧
+                Γ (0 : unitInterval) = (fun k => wickRotatePoint (x k)) ∧
+                (∀ t, Γ t ∈ BHW.ExtendedTube d n) ∧
+                (∀ t, Δ t ∈ BHW.ExtendedTube d n) ∧
+                (∀ t,
+                  BHW.sourceMinkowskiGram d n (Δ t) =
+                    BHW.sourcePermuteComplexGram n τ
+                      (BHW.sourceMinkowskiGram d n (Γ t))))
           {x0 : NPointDomain d n}
           (hx0V : x0 ∈ V)
           (hRep :
@@ -10175,7 +10466,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
         let τ : Equiv.Perm (Fin n) := Equiv.swap i ⟨i.val + 1, hi⟩
         rcases BHW.os45AdjacentSPrimeSourceEq_of_compactWickPairingEq
             (d := d) hd OS lgc n i hi V hV_open hV_jost
-            hV_ordered hV_swap_ordered hx0V hRep with
+            hV_ordered hV_swap_ordered hV_figPath hx0V hRep with
           ⟨V0, Usrc, hV0_open, hx0V0, hV0_sub,
             hUsrc_open, hUsrc_conn, hUsrc_ne,
             hwick_mem, hdouble, hEq_src⟩
@@ -13487,6 +13778,8 @@ in this order:
    `BHW.sourceScalarRepresentativeData_of_branchLaw`, and
    `BHW.hallWightman_sourceScalarRepresentativeData`; and the adjacent
    `S'_n` package
+   `BHW.os45Figure24_sourceChart_at`,
+   `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_eq_of_figure24`,
    `BHW.os45AdjacentSPrimeScalarizationChart_of_figure24`,
    `BHW.os45AdjacentSPrimeSourceEq_of_compactWickPairingEq`,
    `BHW.os45AdjacentSPrimeScalarSeed_of_compactWickPairingEq`, and
@@ -13756,6 +14049,8 @@ not as the next task.  The active next implementation order is:
    `sourceGramMatrixRank` / `HWSourceGramOrbitRank` /
    `HWSourceGramLowRank` at threshold `min d n`, and the adjacent `S'_n`
    seed/path package
+   `BHW.os45Figure24_sourceChart_at`,
+   `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_eq_of_figure24`,
    `BHW.os45AdjacentSPrimeScalarizationChart_of_figure24`,
    `BHW.os45AdjacentSPrimeSourceEq_of_compactWickPairingEq`,
    `BHW.os45AdjacentSPrimeScalarSeed_of_compactWickPairingEq`, and

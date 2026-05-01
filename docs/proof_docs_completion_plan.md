@@ -51,6 +51,8 @@ local Slot 1:
    before any branch-local Lean pass:
    `BHW.sourceScalarRepresentativeData_bvt_F` via the five-stage ordinary
    Hall-Wightman source descent, and the adjacent `S'_n` package
+   `BHW.os45Figure24_sourceChart_at`,
+   `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_eq_of_figure24`,
    `BHW.os45AdjacentSPrimeScalarizationChart_of_figure24`,
    `BHW.os45AdjacentSPrimeSourceEq_of_compactWickPairingEq`,
    `BHW.os45AdjacentSPrimeScalarSeed_of_compactWickPairingEq`, and
@@ -1009,6 +1011,8 @@ Germ-API migration transcript before any Hall-Wightman production theorem:
 
 Second, the adjacent `S'_n` seed package must be proved in the order
 documented below:
+`BHW.os45Figure24_sourceChart_at`,
+`BHW.os45AdjacentWickTrace_sourceScalarRepresentative_eq_of_figure24`,
 `BHW.os45AdjacentSPrimeScalarizationChart_of_figure24`,
 `BHW.os45AdjacentSPrimeSourceEq_of_compactWickPairingEq`,
 `BHW.os45AdjacentSPrimeScalarSeed_of_compactWickPairingEq`, and
@@ -1074,12 +1078,58 @@ The theorem-2 blueprint now names the two implementation data carriers that
 must exist, or be kept as local variables with the same fields:
 `BHW.OS45Figure24SourceChartAt`, carrying `V0`, `Usrc`, Wick membership,
 Wick real-section equivalence, double-domain membership, and forward-tube
-membership of both Wick branches; and
+membership of the identity Wick branch; and
 `BHW.OS45AdjacentSPrimeScalarSeedWithSourceProvenance`, carrying the scalar
 seed together with `Usrc`, `zreg`, `Gseed`, `hwick_mem`, `zreg ∈ Usrc`, and
 the source-level double-domain field needed by the path segment.  These are
 not substitute theorem routes; they are provenance-preserving forms of the
 same OS I §4.5 / BHW seed proof.
+
+The source-chart constructor
+`BHW.os45Figure24_sourceChart_at` must consume the actual Figure-2-4
+path-stability field from the checked selector, not merely the ordered/Jost
+facts for an arbitrary `V`.  Its new `hV_figPath` input gives, for every
+`x ∈ V`, paths `Γ, Δ` with `Γ 0 = wick x`, both paths in the ordinary
+extended tube, and
+`sourceMinkowskiGram (Δ t) =
+sourcePermuteComplexGram τ (sourceMinkowskiGram (Γ t))`.  This is what proves
+the base Wick source Gram lies in the adjacent double scalar domain before
+the connected source neighborhood is chosen.  The topology shrink is then
+Lean-ready: use the explicit `BHW.wickRealSectionLeftInverse`,
+`BHW.continuous_wickRealSectionLeftInverse`,
+`BHW.continuous_wickRotateRealConfig`, and
+`BHW.exists_connected_sourceNeighborhood_with_wickPreimage`; set
+`V0 := {x | wick x ∈ Usrc}` so the reverse real-section equivalence is
+definitionally available.
+
+New route correction for the adjacent scalarization chart: the Figure-2-4
+hypothesis
+`(fun k => x (τ k)) ∈ EuclideanOrderedPositiveTimeSector τ` does not imply
+`(fun k => wickRotatePoint (x (τ k))) ∈ BHW.ForwardTube d n`.  Because
+`EuclideanOrderedPositiveTimeSector τ` already applies a further `τ`
+relabeling, and an adjacent swap is self-inverse, the standard theorem
+`wickRotate_mem_forwardTube_of_mem_orderedPositiveTimeSector` applied to that
+hypothesis returns the identity Wick trace, not the adjacent raw Wick trace.
+Therefore `BHW.OS45Figure24SourceChartAt` must not contain a
+`wick_tau_forwardTube` field, and
+`BHW.os45AdjacentSPrimeScalarizationChart_of_figure24` must not prove its
+adjacent Wick identity by `SourceScalarRepresentativeData.branch_eq` followed
+by `BHW.extendF_eq_on_forwardTube` at `wick (x ∘ τ)`.
+
+The genuine missing theorem is now named explicitly:
+`BHW.os45AdjacentWickTrace_sourceScalarRepresentative_eq_of_figure24`.  It
+must prove, on the Figure-2-4 source chart, that the OS-II adjacent Wick trace
+`bvt_F OS lgc n (fun k => wickRotatePoint (x (τ k)))` is represented by
+`hRep.Phi (sourcePermuteComplexGram n τ
+(sourceMinkowskiGram d n (fun k => wickRotatePoint (x k))))`.  Its proof is
+the local OS I §4.5/BHW scalar-trace comparison: use the OS-II ACR(1)
+Euclidean continuation package and compact-test permutation symmetry to
+identify the adjacent Wick trace with the permuted source scalar
+representative on the selected `S'_n` chart.  It must not be replaced by the
+global pointwise theorem `bvt_F_perm`, by final `bvt_W` locality, by
+`AdjacentOSEOWDifferenceEnvelope`, or by PET branch independence.  Until this
+theorem has a complete proof transcript, the adjacent `S'_n` package is not
+Lean-ready.
 
 Readiness gate for production Lean: the theorem-2 blueprint must remain the
 source of truth for Lean-shaped pseudocode.  The scalar-source theorem is not
@@ -1194,7 +1244,12 @@ content:
    `sourceMinkowskiGram '' Usrc` inside the adjacent double scalar domain,
    identifies the two `hRep.Phi` pullbacks with the two OS-II Wick branch
    functions on the real section, and shrinks around the selected base point
-   `x0` so `x0 ∈ V0`.  In the compact-Wick-to-pointwise step, continuity for
+   `x0` so `x0 ∈ V0`.  Its identity branch reduction is the ordinary
+   forward-tube `branch_eq`/`extendF_eq_on_forwardTube` argument; its adjacent
+   branch reduction is exactly
+   `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_eq_of_figure24`,
+   not an adjacent raw-Wick forward-tube argument.  In the
+   compact-Wick-to-pointwise step, continuity for
    the two `bvt_F` real-section functions must be obtained by first composing
    the differentiable scalar pullbacks with
    `BHW.continuous_wickRotateRealConfig` using Mathlib
