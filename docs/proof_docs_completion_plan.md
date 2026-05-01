@@ -1198,6 +1198,30 @@ implementation contract is:
    `sourceGramDifferential d n z0`, and identify each composed coordinate
    probe with `sourceGramCoordinateDifferential d n z0 i j` using
    `BHW.sourceGramCoordinateDifferential_apply`.
+   Max-rank chart readiness is therefore a componentwise proof obligation,
+   not a name-introduction task.  Production Lean for
+   `BHW.hallWightman_powerSeries_from_PDE_span` may start only after the
+   following subproofs have complete source-level transcripts:
+   `BHW.hallWightman_lorentzInfinitesimalEquations` from the explicit
+   complex-Lorentz `expCurve`;
+   `BHW.sourceGramDifferential_kernel_eq_lorentzInfinitesimalTangent` from
+   infinitesimal Witt extension;
+   `BHW.continuousLinearFunctional_factor_through_of_vanishes_on_ker` and
+   `BHW.sourceGramDifferential_dual_coordinate_expansion` for the dual
+   expansion;
+   `BHW.hallWightman_coordinateSplit_inverseFunction` with differentiable
+   `coordMap`/`coordSymmMap`, product equality
+   `C.Ucoord = Set.prod Us Ua`, and connected nonempty auxiliary factor;
+   `BHW.hallWightman_auxiliaryDerivative_zero` using the local selected-span
+   fields at every chart point;
+   `BHW.holomorphic_product_independent_of_auxiliary` using
+   `IsOpen.is_const_of_fderiv_eq_zero` on the fixed auxiliary slice; and
+   `BHW.hallWightman_selectedScalarFunction_to_fullGramChart` with source
+   variety domain control.  The assembly theorem
+   `BHW.hallWightman_maxRank_powerSeriesChart_at` may then add Lemma 3's
+   local realization and
+   `BHW.hallWightman_powerSeriesChart_branch_eq_of_sameGram`; it must not be
+   used to smuggle any of those pieces as assumptions.
    In the
    Lean-shaped proof, destruct
    `hZU : Z ∈ sourceExtendedTubeGramDomain d n` as

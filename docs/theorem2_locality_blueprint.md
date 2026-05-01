@@ -11072,6 +11072,70 @@ Proof decomposition of this theorem, without hiding the analytic work:
       These support lemmas must
       be proved before the theorem above; they are not wrappers around the
       final scalar representative.
+
+      Max-rank chart production-readiness gate.  The theorem
+      `BHW.hallWightman_powerSeries_from_PDE_span` is not allowed to enter
+      production Lean as a single opaque Hall-Wightman Lemma-5 name.  Its
+      proof term must already contain the following checked subproofs, in this
+      order:
+
+      ```lean
+      -- 1. Lemma 4: differentiate the actual complex-Lorentz exp curve.
+      have hPDE :
+          BHW.SatisfiesLorentzInvariantPDE d n (BHW.extendF F) z :=
+        BHW.hallWightman_lorentzInfinitesimalEquations
+          (d := d) hd n F hF_holo hF_cinv hz
+
+      -- 2. Lemmas 6--7: identify the kernel of the Gram differential with
+      -- infinitesimal Lorentz tangents, then factor and expand covectors.
+      have hSpan :
+          BHW.SourceScalarDifferentialsSpanInvariantPDE d n z :=
+        BHW.hallWightman_maxRank_scalarDifferentials_span_PDE
+          (d := d) hd n hzRank
+
+      -- 3. Lemma 5: build an actual differentiable product chart, not merely
+      -- a topological local equivalence.
+      rcases BHW.hallWightman_powerSeries_coordinateSplit
+          (d := d) hd n hz hzRank hSpan with
+        ⟨e, a, C⟩
+
+      -- 4. Pull back the extended branch through `C.coordSymmMap`, prove the
+      -- auxiliary derivative vanishes by the local selected-span fields, and
+      -- descend through the connected auxiliary factor.
+      rcases BHW.hallWightman_coord_pullback_extendF
+          (d := d) hd n e a F hF_holo_ext C with
+        ⟨g, hg_diff, hg_branch⟩
+      have haux :
+          ∀ p, p ∈ C.Ucoord ->
+            ∀ v : Fin a -> ℂ, fderiv ℂ g p (0, v) = 0 :=
+        BHW.hallWightman_auxiliaryDerivative_zero
+          (d := d) hd n e a F hF_holo_ext C
+          hF_holo hF_cinv hg_branch
+      rcases BHW.holomorphic_product_independent_of_auxiliary
+          C.Ucoord_product hg_diff haux with
+        ⟨Us, Ua, Ψs, hUs_open, hUa_open, hUa_conn, hUa_ne,
+          hprod, hΨs_diff, hΨs_eq⟩
+
+      -- 5. Reinflate from selected scalar coordinates to an ambient scalar
+      -- Gram chart on the source variety.
+      rcases BHW.hallWightman_selectedScalarFunction_to_fullGramChart
+          (d := d) hd n e a C hprod hUs_open hΨs_diff with
+        ⟨U0, Ψ, hU0_open, hZU0, hU0_sub_C, hΨ_diff,
+          hΨ_eq_selected⟩
+      ```
+
+      Each line above is a mathematical obligation, not an interface shim.
+      In particular, step 1 must use the explicit Lie-algebra membership and
+      `expCurve` derivative; step 2 must prove the infinitesimal Witt-extension
+      kernel equality before factoring covectors; step 3 must construct the
+      local product chart with `C.Ucoord = Set.prod Us Ua`, connected
+      nonempty auxiliary factor, differentiable coordinate maps, and local
+      selected-span fields; step 4 must prove constancy only on that connected
+      auxiliary factor; and step 5 must prove the selected-coordinate chart on
+      `sourceComplexGramVariety d n`, including the domain-control field used
+      later by the branch-law transport helper.  If any one of these items is
+      still only a theorem name or imported as theorem-2 content, the max-rank
+      Hall-Wightman chart is not production-Lean-ready.
       In production Lean, declare the local implementation structures
       `SelectedScalarCoordinatesBasis` and `HWVectorCoordinateSplitData` before
       `hallWightman_powerSeries_coordinateSplit`; they are shown in this block
