@@ -1613,6 +1613,10 @@ concatenation lemma" here.
 
 Local API audit, 2026-05-01: the names in the preceding paragraph have been
 checked against the local Mathlib tree.  The exact files are:
+`Mathlib/Analysis/LocallyConvex/WithSeminorms.lean` for the
+`NormedSpace.toLocallyConvexSpace` instance that lets
+`LocallyConvexSpace.toLocPathConnectedSpace` synthesize
+`LocPathConnectedSpace (Fin n -> Fin (d + 1) -> ℂ)`,
 `Mathlib/Topology/Connected/LocPathConnected.lean` for
 `IsOpen.isConnected_iff_isPathConnected`,
 `Mathlib/Topology/Connected/PathConnected.lean` for

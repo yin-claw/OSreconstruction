@@ -17253,7 +17253,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `Path.trans_range`, or `JoinedIn.trans` if the proof is kept in
       joined-in form; do not cite an unspecified path-concatenation lemma.
       Local API audit, 2026-05-01: these exact names exist in the local
-      Mathlib tree.  `IsOpen.isConnected_iff_isPathConnected` is in
+      Mathlib tree, but the finite-dimensional complex source-space
+      local-path-connectedness instance is not synthesized from those topology
+      imports alone.  Import
+      `Mathlib.Analysis.LocallyConvex.WithSeminorms` so
+      `NormedSpace.toLocallyConvexSpace` supplies
+      `LocallyConvexSpace ℝ (Fin n -> Fin (d + 1) -> ℂ)` and then
+      `LocallyConvexSpace.toLocPathConnectedSpace` supplies the
+      `LocPathConnectedSpace` instance used by
+      `IsOpen.isConnected_iff_isPathConnected`.
+      `IsOpen.isConnected_iff_isPathConnected` is in
       `Mathlib.Topology.Connected.LocPathConnected`; `JoinedIn.somePath`,
       `JoinedIn.somePath_mem`, and `JoinedIn.trans` are in
       `Mathlib.Topology.Connected.PathConnected`; `Path.trans` and
@@ -17293,6 +17302,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
         have hzwickUsrc : zwick0 ∈ Usrc :=
           hwick_mem x0 hx0V0
         subst Gseed
+        -- Requires `Mathlib.Analysis.LocallyConvex.WithSeminorms`, in
+        -- addition to the path-connectedness imports, so the Pi space over
+        -- `ℂ` has the `LocPathConnectedSpace` instance.
         have hUsrc_path : IsPathConnected Usrc :=
           (IsOpen.isConnected_iff_isPathConnected hUsrc_open).mp hUsrc_conn
         have hjoin : JoinedIn Usrc zreg zwick0 :=
