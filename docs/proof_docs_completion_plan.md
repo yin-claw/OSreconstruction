@@ -674,9 +674,15 @@ implementation contract is:
    disturb the selected block.  The canonical normal-form data are
    `BHW.hwLemma3CanonicalSource`,
    `BHW.hwLemma3CanonicalGram`, and
-   `BHW.sourceMinkowskiGram_hwLemma3CanonicalSource`, the normalized
+   `BHW.sourceMinkowskiGram_hwLemma3CanonicalSource`.  The normal-form
+   transport must be an explicit finite-dimensional packet,
+   `BHW.HWLemma3NormalFormTransport` with producer
+   `BHW.hwLemma3_normalFormTransportData`; this records the source-index
+   linear change, ambient Minkowski isometry, Gram congruence, variety
+   preservation, and the two smallness estimates used to pull the normalized
+   realization back to the original base tuple.  Then come the normalized
    surjectivity theorem
-   `BHW.hwLemma3_normalizedSchurSurjective`, and the transport theorem
+   `BHW.hwLemma3_normalizedSchurSurjective` and the transport theorem
    `BHW.hwLemma3_transport_from_normalForm`.  The public quantitative theorem
    also needs the explicit extended-tube shrink:
    `BHW.sourceGramCoordBall`, `BHW.isOpen_sourceGramCoordBall`, and

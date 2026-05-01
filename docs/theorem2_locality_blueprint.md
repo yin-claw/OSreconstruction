@@ -7100,6 +7100,64 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (BHW.hwLemma3CanonicalSource d n r) =
           BHW.hwLemma3CanonicalGram n r
 
+      /-- Finite-dimensional normal-form transport used in Hall-Wightman
+      Lemma 3.  It records the source-index linear change and ambient
+      Minkowski isometry that carry the chosen base tuple to the canonical
+      `r`-block tuple, together with the corresponding congruence map on
+      source Gram matrices and the smallness estimates needed to transport
+      perturbations back. -/
+      structure BHW.HWLemma3NormalFormTransport
+          [NeZero d]
+          (d n r : Nat)
+          (z0 : Fin n -> Fin (d + 1) -> ℂ) where
+        toNormalVec :
+          (Fin n -> Fin (d + 1) -> ℂ) ≃ₗ[ℂ]
+            (Fin n -> Fin (d + 1) -> ℂ)
+        toNormalGram :
+          (Fin n -> Fin n -> ℂ) ≃ₗ[ℂ] (Fin n -> Fin n -> ℂ)
+        z0_to_canonical :
+          toNormalVec z0 = BHW.hwLemma3CanonicalSource d n r
+        gram_commute :
+          ∀ z,
+            BHW.sourceMinkowskiGram d n (toNormalVec z) =
+              toNormalGram (BHW.sourceMinkowskiGram d n z)
+        gram_variety_iff :
+          ∀ Z,
+            toNormalGram Z ∈ BHW.sourceComplexGramVariety d n ↔
+              Z ∈ BHW.sourceComplexGramVariety d n
+        gram_z0 :
+          toNormalGram (BHW.sourceMinkowskiGram d n z0) =
+            BHW.hwLemma3CanonicalGram n r
+        gram_ball_to_normal_ball :
+          ∀ {ηN : ℝ}, 0 < ηN ->
+            ∃ η : ℝ, 0 < η ∧
+              ∀ Z,
+                (∀ i j,
+                  ‖Z i j - BHW.sourceMinkowskiGram d n z0 i j‖ < η) ->
+                (∀ i j,
+                  ‖toNormalGram Z i j -
+                    BHW.hwLemma3CanonicalGram n r i j‖ < ηN)
+        perturb_back_small :
+          ∀ {ε : ℝ}, 0 < ε ->
+            ∃ εN : ℝ, 0 < εN ∧
+              ∀ vN : Fin n -> Fin (d + 1) -> ℂ,
+                (∀ i μ, ‖vN i μ‖ < εN) ->
+                ∃ v : Fin n -> Fin (d + 1) -> ℂ,
+                  (∀ i μ, ‖v i μ‖ < ε) ∧
+                  toNormalVec (fun i μ => z0 i μ + v i μ) =
+                    fun i μ =>
+                      BHW.hwLemma3CanonicalSource d n r i μ + vN i μ
+
+      theorem BHW.hwLemma3_normalFormTransportData
+          [NeZero d] (hd : 2 <= d)
+          (n : Nat)
+          {z0 : Fin n -> Fin (d + 1) -> ℂ}
+          (r : Nat)
+          (hr :
+            r = BHW.sourceGramMatrixRank n
+              (BHW.sourceMinkowskiGram d n z0)) :
+          ∃ T : BHW.HWLemma3NormalFormTransport d n r z0, True
+
       theorem BHW.hwLemma3_normalizedSchurSurjective
           [NeZero d] (hd : 2 <= d)
           (n r : Nat)
@@ -7245,6 +7303,74 @@ Proof decomposition of this theorem, without hiding the analytic work:
          orthogonalization and the initial normal-form transport, and shrink
          `η` one final time so every coordinate of the resulting perturbation
          is `< ε`.
+
+      The normal-form transport in steps 2--3 is exposed as
+      `BHW.HWLemma3NormalFormTransport`, not hidden in prose.  Its proof is
+      finite-dimensional: choose the nonzero principal `r × r` minor, apply an
+      invertible source-index change so the selected block is first, apply the
+      symmetric square-root normalization from
+      `BHW.hwLemma3_selectedBlock_sqrt_near_identity` at the base block, and
+      use Witt extension to carry the normalized selected source vectors to
+      the first `r` standard orthogonal coordinates.  The induced congruence
+      on Gram matrices is `toNormalGram`; `gram_commute` is the direct
+      bilinear calculation, and `gram_variety_iff` follows because both the
+      source-index change and the ambient Lorentz isometry are invertible.
+      The two estimate fields are finite-dimensional continuity/norm
+      equivalence for the fixed linear equivalences.
+
+      Lean-shaped transport proof of
+      `BHW.hwLemma3_transport_from_normalForm`:
+
+      ```lean
+      theorem BHW.hwLemma3_transport_from_normalForm ... := by
+        let G0 := BHW.sourceMinkowskiGram d n z0
+        let r := BHW.sourceGramMatrixRank n G0
+        have hr : r = BHW.sourceGramMatrixRank n G0 := rfl
+        rcases BHW.hwLemma3_normalFormTransportData
+            (d := d) hd n (z0 := z0) r hr with
+          ⟨T, _⟩
+        have hr_le : r <= d + 1 := by
+          -- From `sourceComplexGramVariety_eq_rank_le` applied to `G0`.
+          exact BHW.sourceGramMatrixRank_le_spacetime_of_sourceGram
+            (d := d) (n := n) z0
+        rcases T.perturb_back_small hε with
+          ⟨εN, hεN_pos, hback⟩
+        rcases BHW.hwLemma3_normalizedSchurSurjective
+            (d := d) hd n r hr_le hεN_pos with
+          ⟨ηN, hηN_pos, hnorm⟩
+        rcases T.gram_ball_to_normal_ball hηN_pos with
+          ⟨η, hη_pos, hη_to_normal⟩
+        refine ⟨η, hη_pos, ?_⟩
+        intro Z hZvar hZsmall
+        have hZnorm_var :
+            T.toNormalGram Z ∈ BHW.sourceComplexGramVariety d n :=
+          (T.gram_variety_iff Z).2 hZvar
+        have hZnorm_small :
+            ∀ i j,
+              ‖T.toNormalGram Z i j -
+                BHW.hwLemma3CanonicalGram n r i j‖ < ηN :=
+          hη_to_normal Z hZsmall
+        rcases hnorm (T.toNormalGram Z) hZnorm_var hZnorm_small with
+          ⟨vN, hvN_small, hgramN⟩
+        rcases hback vN hvN_small with ⟨v, hv_small, hvec_back⟩
+        refine ⟨v, hv_small, ?_⟩
+        apply T.toNormalGram.injective
+        calc
+          T.toNormalGram
+              (BHW.sourceMinkowskiGram d n
+                (fun i μ => z0 i μ + v i μ))
+              =
+            BHW.sourceMinkowskiGram d n
+              (T.toNormalVec (fun i μ => z0 i μ + v i μ)) := by
+                rw [T.gram_commute]
+                rfl
+          _ =
+            BHW.sourceMinkowskiGram d n
+              (fun i μ =>
+                BHW.hwLemma3CanonicalSource d n r i μ + vN i μ) := by
+                rw [hvec_back]
+          _ = T.toNormalGram Z := hgramN.symm
+      ```
 
       The public small-perturbation Lemma-3 theorem has one additional
       topological shrink that must be explicit in Lean.  Since
