@@ -14382,50 +14382,63 @@ Proof decomposition of this theorem, without hiding the analytic work:
          Expanded source transcript for the last line:
 
          ```lean
-         have hOSI45_branch :
+         have D :
              BHW.OS45CanonicalAdjacentBranchBoundaryData
-               hd OS lgc n i hi V hV_jost hV_ordered
-               hV_swap_ordered hChart φ hφ_comp hφ_supp := by
-           -- Source proof, not a wrapper:
-           -- * use (4.1) to put the compact zero-diagonal Schwinger test in
-           --   the ordered OS-I difference-variable branch;
-           -- * use (4.12) to identify its Fourier-Laplace transform with
-           --   the forward-tube analytic branch represented by `bvt_F`;
-           -- * use (4.14) and `bvt_F_complexLorentzInvariant_forwardTube`
-           --   to obtain the Lorentz-invariant analytic branch needed by BHW;
-           -- * apply BHW to obtain the single-valued adjacent extended-tube
-           --   branch for the deterministic Figure-2-4 lift;
-           -- * use the Figure-2-4 real Jost neighborhood and
-           --   `OS.E3_symmetric` for the compact test `ψZ` to prove the
-           --   common real-boundary distribution input for Jost/Ruelle
-           --   uniqueness.
-           -- This source proof must be implemented here, or kept as the
-           -- single honest theorem frontier with exactly the compact
-           -- conclusion below.  It may not be replaced by a second public
-           -- theorem that simply repackages the same equality.
-           exact by
-             -- no production placeholder may survive here
-             ...
-         have hunique_on_lift :
+               hd OS lgc n i hi V hV_jost hChart
+               φ hφ_comp hφ_supp :=
+           BHW.os45CanonicalAdjacentBranchBoundaryData_of_OSI45
+             (d := d) hd OS lgc n i hi V hV_jost
+             hV_ordered hV_swap_ordered hChart φ hφ_comp hφ_supp
+         -- The producer above is the source proof, not a wrapper:
+         -- * use (4.1) to put the compact zero-diagonal Schwinger test in
+         --   the ordered OS-I difference-variable branch;
+         -- * use (4.12) to identify its Fourier-Laplace transform with
+         --   the forward-tube analytic branch represented by `bvt_F`;
+         -- * use (4.14) and `bvt_F_complexLorentzInvariant_forwardTube`
+         --   to obtain the Lorentz-invariant analytic branch needed by BHW;
+         -- * apply BHW to obtain the single-valued adjacent extended-tube
+         --   branch for the deterministic Figure-2-4 lift;
+         -- * use the Figure-2-4 real Jost neighborhood and
+         --   `OS.E3_symmetric` for the compact test `ψZ` to prove the
+         --   common real-boundary distribution input for Jost/Ruelle
+         --   uniqueness.
+         -- It must fill `D.ordinary_holo`, `D.adjacent_holo`,
+         -- `D.ordinary_lorentzInvariant`, `D.adjacent_lorentzInvariant`,
+         -- `D.jostPatch_realEmbed_mem`, `D.realBoundary_eq`,
+         -- `D.lift_mem`, and `D.adjacent_lift_pairing_eq_permutedSchwinger`.
+         -- This theorem may be kept as the single honest frontier, but it may
+         -- not be replaced by a public theorem that simply repackages the
+         -- compact conclusion below.
+         have huniq :
+             ∫ x : NPointDomain d n,
+                 D.ordinaryBranch
+                   (hChart.adjLift x (0 : unitInterval)) * φ x
+               =
+             ∫ x : NPointDomain d n,
+                 D.adjacentBranch
+                   (hChart.adjLift x (0 : unitInterval)) * φ x :=
+           BHW.jostRuelle_uniqueContinuation_compactBoundary
+             (d := d) hd OS lgc n i hi V hV_jost hChart
+             φ hφ_comp hφ_supp D
+         have hord :
              ∫ x : NPointDomain d n,
                  BHW.extendF (bvt_F OS lgc n)
                    (hChart.adjLift x (0 : unitInterval)) * φ x
                =
-             hOSI45_branch.adjacentBoundaryPairing := by
-           exact
-             BHW.jostRuelle_uniqueContinuation_compactBoundary
-               (d := d) hd hOSI45_branch.jostRealEnvironment
-               hOSI45_branch.ordinaryBranch_holomorphic
-               hOSI45_branch.adjacentBranch_holomorphic
-               hOSI45_branch.ordinaryBranch_lorentzInvariant
-               hOSI45_branch.adjacentBranch_lorentzInvariant
-               hOSI45_branch.realBoundary_eq
-               hOSI45_branch.canonicalLift_mem_intersection
-               hLift_cont φ hφ_comp hφ_supp
-         have hadjacent_boundary :
-             hOSI45_branch.adjacentBoundaryPairing = OS.S n ψZ :=
-           hOSI45_branch.adjacentBoundary_eq_permutedSchwinger
-         exact hunique_on_lift.trans hadjacent_boundary
+             ∫ x : NPointDomain d n,
+                 D.ordinaryBranch
+                   (hChart.adjLift x (0 : unitInterval)) * φ x := by
+           refine integral_congr_ae ?_
+           filter_upwards with x
+           by_cases hx : x ∈ hChart.V0
+           · rw [D.ordinary_eq_extendF_on_lift x hx]
+           · have hφx : φ x = 0 := by
+               exact
+                 (notMem_tsupport_iff_eventuallyEq.mp
+                   (fun hxSupp => hx (hφ_supp hxSupp))).self_of_nhds
+             simp [hφx]
+         exact hord.trans
+           (huniq.trans D.adjacent_lift_pairing_eq_permutedSchwinger)
          ```
 
          The displayed `OS45CanonicalAdjacentBranchBoundaryData` and
@@ -14486,6 +14499,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
            jostPatch_sub_chart : jostPatch ⊆ hChart.V0
            jostPatch_jost :
              ∀ x, x ∈ jostPatch -> x ∈ BHW.JostSet d n
+           jostPatch_realEmbed_mem :
+             ∀ x, x ∈ jostPatch -> BHW.realEmbed x ∈ Ω
            ordinaryBranch :
              (Fin n -> Fin (d + 1) -> ℂ) -> ℂ
            adjacentBranch :
@@ -14494,6 +14509,20 @@ Proof decomposition of this theorem, without hiding the analytic work:
              DifferentiableOn ℂ ordinaryBranch Ω
            adjacent_holo :
              DifferentiableOn ℂ adjacentBranch Ω
+           ordinary_lorentzInvariant :
+             ∀ (Λ : ComplexLorentzGroup d)
+               (z : Fin n -> Fin (d + 1) -> ℂ),
+               z ∈ Ω ->
+               BHW.complexLorentzAction Λ z ∈ Ω ->
+                 ordinaryBranch (BHW.complexLorentzAction Λ z) =
+                   ordinaryBranch z
+           adjacent_lorentzInvariant :
+             ∀ (Λ : ComplexLorentzGroup d)
+               (z : Fin n -> Fin (d + 1) -> ℂ),
+               z ∈ Ω ->
+               BHW.complexLorentzAction Λ z ∈ Ω ->
+                 adjacentBranch (BHW.complexLorentzAction Λ z) =
+                   adjacentBranch z
            ordinary_eq_extendF_on_lift :
              ∀ x, x ∈ hChart.V0 ->
                ordinaryBranch (hChart.adjLift x (0 : unitInterval)) =
@@ -14553,15 +14582,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
 
          Proof transcript for the generic theorem: use `D.realBoundary_eq` on
          compact tests supported in the real Jost patch; by
-         `D.ordinary_holo`, `D.adjacent_holo`, `D.Ω_connected`, and the
-         single-valued `L_+(ℂ)`-invariant BHW/Jost hypotheses used in the
-         producer, apply the Ruelle/Jost uniqueness theorem to identify the
-         two analytic branches on the component of `D.Ω` containing
-         `D.jostPatch`.  The field `D.lift_mem` puts the deterministic
-         Figure-2-4 canonical lift in that component, and continuity of the
-         lift plus `hφ_comp` permits integration of the resulting pointwise
-         branch identity against `φ`.  The proof does not know what `bvt_F`
-         is and does not evaluate `SourceScalarRepresentativeData.branch_eq`.
+         `D.ordinary_holo`, `D.adjacent_holo`,
+         `D.ordinary_lorentzInvariant`, `D.adjacent_lorentzInvariant`,
+         `D.jostPatch_realEmbed_mem`, and `D.Ω_connected`, apply the
+         Ruelle/Jost uniqueness theorem to identify the two analytic branches
+         on the component of `D.Ω` containing the real Jost patch.  The field
+         `D.lift_mem` puts the deterministic Figure-2-4 canonical lift in the
+         same connected domain, and continuity of the lift plus `hφ_comp`
+         permits integration of the resulting pointwise branch identity
+         against `φ`.  The proof does not know what `bvt_F` is and does not
+         evaluate `SourceScalarRepresentativeData.branch_eq`.
 
          With these two private/source-standard pieces, the public canonical
          compact theorem has no hidden placeholder:

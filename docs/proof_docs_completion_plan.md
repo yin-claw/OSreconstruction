@@ -1663,7 +1663,9 @@ to two implementation-level pieces.  First,
 `BHW.OS45CanonicalAdjacentBranchBoundaryData` is a private/proof-local carrier
 for one compact test: it stores the exact `φZ`, `ψZ`, a connected analytic
 branch domain, the deterministic Figure-2-4 lift membership, the ordinary and
-adjacent analytic branches, equality of the ordinary branch with
+adjacent analytic branches together with their holomorphy and complex-Lorentz
+invariance on that domain, the membership of the real Jost patch in the
+analytic domain, equality of the ordinary branch with
 `extendF (bvt_F OS lgc n)` on the lift, a real Jost patch with boundary
 distribution equality, and the adjacent lift pairing
 `= OS.S n ψZ`.  Its only allowed producer is
