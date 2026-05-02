@@ -49,37 +49,37 @@ local Slot 1:
    the closure-level Figure-2-4 path field;
 3. current proof-document frontier: finish the upstream scalar-source inputs
    before any branch-local Lean pass:
-   `BHW.sourceScalarRepresentativeData_bvt_F` via the five-stage ordinary
-   Hall-Wightman source descent, and the adjacent `S'_n` package
-   `BHW.os45Figure24_sourceChart_at`,
-   `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero`,
-   `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger`,
-   `BHW.os45SPrime_sourcePullback_pairing_eq_acrPermutedBoundary`,
-   `BHW.os45SPrime_sourcePullback_pairing_eq_permutedSchwinger`,
-   `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
-   `BHW.OS45SPrimeFigure24LocalSourceSeedData`,
-   `BHW.os45SPrime_figure24SourceEqOnUsrc_of_compactWickPairing`,
-   `BHW.os45SPrime_figure24LocalSourceSeedData_of_OSI45`,
-   `BHW.os45SPrime_figure24LocalSourceEq_of_seedData`,
-   `BHW.os45SPrime_figure24LocalSourceEq_of_BHWJost`,
-   `BHW.os45SPrime_figure24LocalBranchCompatibility_of_BHWJost`,
-   `BHW.os45SPrime_rawAdjacentWick_extendF_eq_identityWick_of_BHWJost`,
-   `BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_permutedSchwinger`,
-   `BHW.os45SPrime_rawAdjacentWick_bvtF_pairing_eq_permutedSchwinger`,
-   `BHW.os45SPrime_rawAdjacentWick_extendF_pairing_eq_bvt_F`,
-   `BHW.os45SPrime_permutedWickExtendF_pairing_eq_permutedSchwinger`,
-   `BHW.os45AdjacentSPrimeScalarizationChart_of_figure24`,
-   `BHW.os45AdjacentSPrimeSourceEq_of_compactWickPairingEq`,
-   `BHW.os45AdjacentSPrimeScalarSeed_of_compactWickPairingEq`, and
-   `BHW.os45AdjacentSPrimeSeedFigure24Path_of_compactWickPairingEq`;
+   the active proper-complex/oriented representative
+   `BHW.sourceOrientedScalarRepresentativeData_bvt_F` through
+   `BHW.sourceFullFrameDet_*`,
+   `BHW.same_sourceOrientedInvariant_detOneOrbit_or_singularLimit`,
+   `BHW.extendedTube_same_sourceOrientedInvariant_extendF_eq`,
+   `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected`,
+   `BHW.sourceOrientedVarietyGermHolomorphicOn_extendF_descent`,
+   `BHW.sourceOrientedScalarRepresentativeData_of_branchLaw`, and
+   `BHW.hallWightman_sourceOrientedScalarRepresentativeData`; and the
+   oriented adjacent `S'_n` package
+   `BHW.os45AdjacentSPrimeOrientedScalarizationChart_of_figure24`,
+   `BHW.os45AdjacentSPrimeOrientedSourceEq_of_compactWickPairingEq`,
+   `BHW.os45AdjacentSPrimeOrientedScalarSeed_of_compactWickPairingEq`,
+   `BHW.os45AdjacentSPrimeOrientedSeedFigure24Path`, and
+   `BHW.os45AdjacentSPrimeOrientedSeedFigure24Path_of_compactWickPairingEq`,
+   plus the oriented local source/branch compatibility names recorded in the
+   theorem-2 blueprint;
 4. only after those scalar-source inputs are proof-ready may the branch-local
-   source-germ layer be implemented through the scalar-packet surfaces
-   `BHW.os45OneBranchScalarGramEq_sourceInput_id`,
-   `BHW.os45OneBranchScalarGramEq_sourceInput_adjacent`,
-   `BHW.os45OneBranchACRBHWAgreement_of_scalarGramEq`,
-   `BHW.os45OneBranchACRBHWAgreement_sourceInput`,
-   `BHW.os45OneBranchACRBHWAgreement_of_sourcePatch`, and
-   `BHW.os45BranchHorizontalSourceGermAt_of_oneBranch_sourcePatch`;
+   source-germ layer be implemented through the oriented scalar-packet
+   surfaces
+   `BHW.os45OneBranchOrientedSourceEq_sourceInput_id`,
+   `BHW.os45OneBranchOrientedSourceEq_sourceInput_adjacent`,
+   `BHW.os45OneBranchOrientedACRBHWAgreement_sourceInput`,
+   `BHW.os45OneBranchOrientedACRBHWAgreement_of_sourcePatch`,
+   `BHW.os45BranchHorizontalSourceGermAt_of_orientedSourceEq`,
+   `BHW.os45BranchHorizontalOrientedSourceGermAt_of_figure24_id`,
+   `BHW.os45BranchHorizontalOrientedSourceGermAt_of_figure24_adjacent`,
+   `BHW.os45SPrime_figure24LocalOrientedSourceEq_of_BHWJost`, and
+   `BHW.os45SPrime_figure24LocalOrientedBranchCompatibility_of_BHWJost`.
+   The old pure-Gram names are archived as conditional side surfaces only if
+   a full-component Hall-Wightman source theorem is separately supplied;
 5. construct the identity and adjacent branch BV packets, subtract them, and
    call the checked one-chart local EOW/gluing route to produce
    `BHW.os45_adjacent_commonBoundaryEnvelope`.
@@ -93,14 +93,296 @@ downstream package is still the alternative to BHW/PET monodromy through
 `hOrbit`; it must not be used to manufacture the local source-germ or EOW
 inputs.
 
-Readiness status for production Lean on the scalar-source layer
-(2026-05-01): **not ready**.  The proof documents now expose the correct
-ordinary Hall-Wightman theorem surfaces, but a named surface is not yet a
-proof.  Do not start Lean for `BHW.sourceScalarRepresentativeData_bvt_F`,
-the adjacent `S'_n` package, or the branch-local source-germ layer until the
-following six blockers are discharged in the blueprint with implementation
-transcripts or replaced by already implemented sorry-free support theorems
-with the same mathematical content:
+Readiness status for the active scalar-source route (2026-05-02):
+**proof-doc route pinned; public wrapper Lean not ready**.  The proof
+documents now expose the correct proper-complex/oriented theorem surfaces, and
+the pure-Gram orientation/improper-component gate is explicit.  The active
+lower producer groups have implementation-level transcripts, so a future Lean
+pass has legitimate first targets inside the named finite-dimensional, SCV, or
+OS-I support lemmas.  This does **not** make the public constructors
+`BHW.sourceOrientedScalarRepresentativeData_bvt_F`, the oriented adjacent
+`S'_n` package, or the oriented branch-local source-germ layer valid first
+targets.  Those public surfaces may be assembled only after their lower
+producers are proved in Lean or replaced by already implemented sorry-free
+support theorems with the same mathematical content.  The paper-source audit
+separates Hall-Wightman's scalar-product theorem from OS I Section 4.5's
+proper-complex `L_+(C)` continuation formulation; theorem 2 now follows the
+latter, so `BHW.sourceScalarRepresentativeData_bvt_F` is not an active Lean
+target unless a separate full-component source-import decision is made.
+
+Latest readiness refinement, 2026-05-02: the oriented identity-principle
+subroute has an implementation-level transcript, including the max-rank
+connectedness/density conversions, complex max-rank chart propagation, and the
+continuity closure step.  The later proof-doc pass also pinned the
+implementation transcripts for the lower five source groups listed below.
+This does **not** open the public scalar-representative or adjacent wrapper
+theorems yet: these groups are now documented as mathematical proof
+obligations with named support lemmas, but they are not implemented or
+verified in Lean.
+
+- `BHW.same_sourceOrientedInvariant_detOneOrbit_or_singularLimit`, including
+  the high-rank determinant-ratio/Witt-extension orbit theorem and the
+  low-rank Hall-Wightman isotropic contraction data;
+- `BHW.sourceOrientedExtendedTube_localRealization`, including the full-frame
+  oriented local section, the arbitrary complex max-rank chart
+  `BHW.sourceOrientedMaxRankChart_at`, their shared
+  `BHW.SourceOrientedFullFrameMaxRankChartData` producer, and the
+  rank-deficient Schur/residual realization chart;
+- `BHW.sourceOrientedVarietyGermHolomorphicOn_extendF_descent`, including
+  quotient-value continuity/local boundedness at the exceptional locus,
+  analytic exceptional-rank codimension, oriented invariant-ring normality, and
+  the normal analytic-space Riemann extension;
+- the oriented real-patch uniqueness producer
+  `BHW.sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment`,
+  whose local chart/totally-real identity theorem, tangent-complexification
+  packet, and determinant-regular real subpatch producer are now
+  componentwise pinned, with production Lean not started;
+- the OS I §4.5 compact Figure-2-4 branch-difference theorem
+  `BHW.os45Figure24_sourcePatch_pairing_eq_swappedSourcePatch_of_OSI45` and
+  its source-patch compact partition.
+
+Until the lower support lemmas in these five groups are implemented or
+replaced by already checked sorry-free local support with the same
+mathematical content, public theorem-2 Lean remains closed.  If Lean work
+starts from this proof-doc state, the first target must be one of those lower
+finite-dimensional, SCV, or OS-I support lemmas, not a public
+scalar-representative or adjacent `S'_n` wrapper.
+
+Current Lemma-2 readiness clarification, 2026-05-02: the branch-law group
+`BHW.same_sourceOrientedInvariant_detOneOrbit_or_singularLimit` now has a
+componentwise implementation transcript in the theorem-2 blueprint.  The
+summary ledger must not describe the high-rank Witt repair, low-rank selected
+block, residual-frame alignment, dual-frame construction, contraction family,
+or singular two-curve limit as anonymous "proof-doc-only" gaps.  They are
+still unimplemented in production Lean, but their mathematical route is pinned
+to named support statements.  A future Lean pass may start inside this group
+only at one of those lower support statements, for example
+`BHW.extendF_complexLorentzInvariant_of_cinv`, the coefficient-kernel bridge,
+the restricted-rank bridge, the determinant-repaired Witt extension support,
+or the low-rank Schur/residual-frame support.  It must not start at the public
+branch-law wrapper or at
+`BHW.sourceOrientedScalarRepresentativeData_bvt_F`.
+
+Current oriented descent readiness clarification, 2026-05-02: the descent
+group `BHW.sourceOrientedVarietyGermHolomorphicOn_extendF_descent` now has a
+componentwise regular/removable transcript rather than a single amorphous
+"normality" gap.  The proof-doc entry points are
+`BHW.sourceOrientedQuotientValue_wellDefined`,
+`BHW.sourceOrientedQuotientValue_holomorphicOn_maxRank`,
+`BHW.sourceOrientedQuotientValue_continuous_locallyBounded`,
+the residual-chart compact-parameter continuity and boundedness lemmas,
+`BHW.sourceOrientedExceptionalRank_isAnalyticSubvariety`,
+`BHW.sourceOrientedMaxRank_dense_in_relOpen`,
+`BHW.sourceOrientedVariety_normal_riemannExtension`, and the invariant-ring
+normality chain
+`BHW.sourceOrientedInvariantRing_generated_by_gram_det`,
+`BHW.sourceOrientedInvariantRing_relations_kernel`,
+`BHW.sourceOrientedInvariantRing_integrallyClosed`, and
+`BHW.sourceOrientedAlgebraicCoordinateRing_iso_invariants`.  The only
+allowable external support boundary inside this chain is a standard
+finite-dimensional `SO` invariant-theory theorem with explicit
+pairing/volume generators and Cauchy-Binet kernel; it may not mention OS,
+Wightman functions, EOW, PET, locality, or theorem 2.  The public descent
+surface remains downstream of these support statements and is not the first
+Lean target.
+
+Current oriented real-uniqueness readiness clarification, 2026-05-02: the
+real-patch uniqueness group
+`BHW.sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment` now has
+a componentwise transcript in the theorem-2 blueprint.  The lower support
+targets are `BHW.sourceOrientedLocalTotallyRealIdentity_seed`,
+`BHW.sourceOrientedLocalChart_at`,
+`BHW.sourceOrientedLocalChart_totallyRealSlice`,
+`BHW.sourceOrientedLocalChart_shrink_to_domain_and_realPatch`,
+`BHW.SourceOrientedVarietyGermHolomorphicOn.to_chart`, the
+`LocalBiholomorphOnSourceOrientedVariety` inverse/differentiability fields,
+the tangent package
+`sourceFullFrameDetDifferential`,
+`sourceOrientedDifferentialCLM`,
+`sourceOrientedMinkowskiInvariant_hasFDerivAt`,
+`sourceOrientedDifferential_real_complexification`, and the real subpatch
+producer
+`os45Figure24_realPatch_orientedRegularSubpatch`.  The determinant-regular
+subpatch must be a nonempty open subpatch of the π-permuted Figure-2-4 real
+patch with fixed nonzero full-frame determinant, not the old pure-Gram
+`gramEnvironment`.  This producer remains a lower support target; the adjacent
+seed theorem may not assume oriented distributional uniqueness before this
+patch exists.
+
+Current compact Figure-2-4 branch-difference readiness clarification,
+2026-05-02: the OS I Section 4.5 compact producer
+`BHW.os45Figure24_sourcePatch_pairing_eq_swappedSourcePatch_of_OSI45` now has
+a componentwise transcript, but production Lean must start below that public
+surface.  The lower targets are
+`BHW.integrable_pairings_of_os45_adjacent_euclideanEdge_on_timeSector`,
+`BHW.integral_wickBranchDifference_mul_eq_zero_of_pairing_eq`,
+`BHW.integral_commonBoundary_wickTrace_eq_zero_of_wickDiff_zero`,
+`BHW.os45CommonBoundary_wickTrace_zero_of_compactPairing_zero`,
+`BHW.os45CommonBoundary_identity_of_wickTrace_zero`,
+`BHW.os45Figure24SourcePatch_sourceEnvironment`, and the source-patch compact
+partition carrying `V_sourcePatch` plus `V_orientedPath_closure`.  Only after
+those helpers exist should Lean assemble
+`BHW.os45Figure24_sourcePatch_pairing_eq_swappedSourcePatch_of_OSI45`, then
+`BHW.OS45CompactFigure24WickPairingEq`, and finally
+`BHW.sourceOrientedAdjacentTubeAnchor_of_compactWickPairingEq`.  The compact
+producer is a direct branch-difference theorem: checked Wick compact equality
+is converted to zero on the common Wick trace, propagated across the connected
+common chart by the totally-real identity theorem, and integrated on the real
+source trace.  It may not be replaced by separate real-branch `= OS.S`
+statements, half-time common-edge continuity of raw `extendF`, an
+`AdjacentOSEOWDifferenceEnvelope`, final locality, global PET branch
+independence, or local boundary-functional demotion.
+
+Full-frame max-rank chart refinement, 2026-05-02: the arbitrary complex chart
+`BHW.sourceOrientedMaxRankChart_at` is now separated from the extended-tube
+local section.  Both are produced from
+`BHW.SourceOrientedFullFrameMaxRankChartData`, whose coordinates are the
+selected full-frame slice parameter plus the mixed Gram rows.  The chart
+inverse reconstructs the selected full frame by the full-frame gauge local
+image theorem, reconstructs unselected vectors from mixed rows and the inverse
+selected Gram block, and checks all determinant coordinates by oriented
+relations and block determinant expansion.  The extended-tube section is then
+the same chart after an extra shrink keeping the reconstructed vector map in
+`BHW.ExtendedTube d n`.  Thus this subpacket now has the right proof shape,
+but production Lean is not started until the finite-dimensional full-frame
+gauge slice/local-image theorem and its determinant algebra are implemented.
+
+Full-frame reconstruction formula refinement, 2026-05-02: the blueprint now
+spells out the actual chart inverse used by
+`BHW.SourceOrientedFullFrameMaxRankChartData`.  The selected rows are the
+gauge-fixed frame `M0 + X`; each unselected row is
+`mixed * (sourceFullFrameGram d (M0 + X))⁻¹` expressed in that frame.  The new
+pseudo-code surfaces
+`BHW.sourceFullFrameGauge_reconstructVector_selected`,
+`BHW.sourceFullFrameGauge_reconstructVector_mixedGram`, and
+`BHW.sourceFullFrameGauge_reconstructVector_sourceInvariant_eq` make the
+selected/mixed-row algebra and determinant-coordinate recovery explicit.  This
+removes a chart-inverse gap, but does not close the full-frame blocker: the
+full-frame local image theorem and the oriented algebraic relations still have
+to be implemented before this packet is Lean-ready.
+
+Ambient-domain split refinement, 2026-05-02: the full-frame max-rank chart now
+stores both the relative variety chart domain `C.Ω` and an ambient open
+neighborhood `C.Ωamb`, with
+`C.Ω = C.Ωamb ∩ sourceOrientedGramVariety d n`.  The tube-valued section uses
+`C.Ωamb`, not the relative domain, and the blueprint now names the continuity
+shrink packet
+`BHW.SourceOrientedFullFrameMaxRankChartData.tubeShrink`.  Its proof first
+identifies the reconstructed center as a proper complex Lorentz transform of
+the original extended-tube source tuple, then shrinks the ambient neighborhood
+inside the open extended tube.  This fixes an implementation-level topology
+gap in the previous transcript, while leaving the finite-dimensional
+local-image and determinant-recovery proofs as real blockers.
+
+Full-frame chart constructor refinement, 2026-05-02: the constructor
+`BHW.sourceOrientedFullFrameMaxRankChartData_at` is now expanded into an
+implementation transcript.  It starts from a realizing tuple for
+`G0 ∈ sourceOrientedGramVariety`, selects `M0 := sourceFullFrameMatrix ι z0`,
+uses `G0.det ι ≠ 0` to obtain an invertible frame, calls
+`sourceFullFrameSlice_localImage_eq_variety`, shrinks the target to the
+determinant-nonzero sheet, defines `Ωamb` as the preimage of the local-image
+target under `sourceSelectedFrameOrientedCoord`, sets
+`Ω = Ωamb ∩ sourceOrientedGramVariety`, and defines the chart as
+`(localImage.inv selectedCoord, sourceSelectedMixedRows)`.  The chart image is
+proved to be `localImage.U ×ˢ univ`; the inverse is the explicit reconstructed
+source invariant.  This closes the constructor-shape gap, but the transcript
+still depends on the full-frame local-image theorem and determinant recovery
+subtheorems listed in the blueprint.
+
+Full-frame determinant-recovery refinement, 2026-05-02: the reconstruction
+proof no longer hides the phrase "block determinant expansion."  The blueprint
+now names the coefficient-row map `BHW.sourceSelectedFrameCoeff`, the Schur
+Gram theorem
+`BHW.sourceOrientedVariety_schurGram_eq_of_selectedDet_ne_zero`, the
+sign-sensitive determinant theorem
+`BHW.sourceOrientedVariety_det_eq_coeff_det_selected`, and the two recovery
+theorems
+`BHW.sourceFullFrameGauge_reconstructVector_gram_eq` and
+`BHW.sourceFullFrameGauge_reconstructVector_det_eq`.  The determinant proof is
+fixed by the identity
+`det(G[κ,ι]) = minkowskiMetricDet d * G.det κ * G.det ι`, the expansion
+`G[κ,ι] = Cκ * A`, and
+`det A = minkowskiMetricDet d * (G.det ι)^2`, so the selected determinant
+coordinate, not a square-root choice, fixes the special-orthogonal sheet.  The
+Schur proof is now pinned through
+`BHW.sourceSelectedFrameCoeff_vector_expansion`, reducing it to the ordinary
+finite-dimensional statement that a nonzero selected full-frame determinant
+makes the selected source vectors a basis and the Gram-inverse coefficient row
+recovers each source vector.
+
+Full-frame local-image refinement, 2026-05-02: the blueprint now expands the
+finite-dimensional local-image theorem behind the selected-frame gauge.  It
+records the actual derivative of
+`sourceFullFrameOrientedEquation d`,
+`Y ↦ det(H0.1) * trace(H0.1⁻¹ * Y.1)
+   - 2 * minkowskiMetricDet d * H0.2 * Y.2`, proves regularity in the
+determinant-coordinate direction, and corrects the target from an ambient
+zero-locus slogan to a regular zero locus inside the symmetric Gram-coordinate
+submodule.  The kernel calculation is pinned by `B := M0⁻¹ * X`, giving
+`B * η + η * Bᵀ = 0` and `trace B = 0`, hence the infinitesimal
+determinant-`1` Lorentz orbit.  The range calculation is pinned by
+rank-nullity and the explicit dimensions `D^2`, `D(D-1)/2`, and `D(D+1)/2`.
+The remaining work is now finite-dimensional Lean infrastructure for those
+matrix derivative, finrank, and local-implicit-image statements; this is still
+proof-doc-only and does not open production Lean.
+
+Full-frame local-image proof-body refinement, 2026-05-02: the blueprint now
+adds the proof bodies that the previous refinement only named.  The derivative
+packet is split through Jacobi's determinant formula
+`matrix_det_hasFDerivAt_trace`, the bilinear derivative of
+`M ↦ M * η * Mᵀ`, the determinant derivative of `M.det`, and their product as
+`sourceFullFrameOrientedGram_hasFDerivAt`.  Regularity now proves the
+determinant-coordinate direction is nonzero and packages the symmetric
+determinant direction explicitly.  The hypersurface local-image theorem now
+calls the finite-dimensional regular-zero-locus slice theorem with the actual
+slice derivative range and kernel, while the variety local-image theorem is
+only a restriction of the hypersurface inverse using
+`sourceFullFrameOrientedGramVarietyCoord_subset_hypersurface`.  This removes
+the previous named-but-unassembled local-image proof gap.  The packet remains
+proof-doc-only because the standard finite-dimensional support still has to be
+moved into Lean without new axioms or production sorrys.
+
+Full-frame slice/rank refinement, 2026-05-02: the selected-frame gauge slice
+packet is no longer just a complement slogan.  The blueprint now constructs
+`SourceFullFrameGaugeSliceData` by choosing a complement to the orbit tangent
+kernel, restricting `sourceFullFrameOrientedDifferentialCLM` to that
+complement, proving injectivity from `S ⊓ kernel = ⊥`, and proving
+surjectivity by decomposing any preimage as a slice vector plus a kernel
+vector.  The downstream theorem
+`sourceFullFrameSlice_restricted_range_eq_tangent` is now proved from the
+stored linear equivalence rather than from an unpinned complement API call.
+The rank proof is also corrected: the symmetric-plus-determinant coordinate
+submodule has dimension `D(D+1)/2 + 1`, the oriented equation has a nonzero
+determinant-coordinate derivative, and the tangent kernel therefore has
+dimension `D(D+1)/2`.  The proof-body transcript names the trace identity for
+the Gram differential, the kernel component equalities, the skew-matrix
+linear equivalence for the special Lorentz Lie algebra, and the finite
+rank-nullity/arithmetic helpers.  The standard helper surfaces
+`skewMatrixSubmodule_finrank`, `specialLorentzLieAlgebra_skewLinearEquiv`,
+`sourceSymmetricMatrix_withDet_factorization_finrank`,
+`matrix_inv_mul_three_of_isUnit`, and
+`sourceFullFrameOrientedTangentSpace_linearEquiv_kernel` are now explicit
+rather than implicit.  This closes a real finite-dimensional documentation
+gap, but production Lean for the packet is not started until those standard
+linear-algebra helper surfaces are implemented sorry-free in Lean.
+
+Paper-source fork audit.  Hall-Wightman Theorem I proves scalar-product
+dependence from the real orthochronous Lorentz invariance hypotheses, and its
+Lemma 1 discusses the extension through the space-inversion/improper component
+when constructing the single-valued continuation.  OS I Section 4.5, however,
+uses the Bargmann-Hall-Wightman theorem to obtain the proper-complex
+`L_+(C)` continuation required for locality.  The strict OS implementation
+therefore cannot identify equal ordinary source Gram matrices in the full
+scalar-rank case unless it also has the full-component Hall-Wightman source
+input.  The active route avoids that unsourced import by using the oriented
+source invariant: the ordinary Gram coordinates plus all ordered full-frame
+determinants.  Equality of these oriented data is exactly what converts the
+full-rank determinant ratio to `1`, while lower-rank fibres still go through
+the Hall-Wightman singular contraction theorem.  Consequently,
+`BHW.sourceScalarRepresentativeData_bvt_F` stays a conditional ordinary fork,
+and the production-bound target is
+`BHW.sourceOrientedScalarRepresentativeData_bvt_F` with its oriented adjacent
+`S'_n` consumers.
 
 1. `BHW.extendedTube_same_sourceGram_extendF_eq`: the same-source-Gram branch
    law must prove both the high scalar-rank complex Lorentz orbit case and the
@@ -110,7 +392,17 @@ with the same mathematical content:
    written as Lean-shaped proofs: source generators enter the quotient ranges
    by `Pi.single`, preservation of the restricted Minkowski form is the finite
    coefficient expansion against the common source Gram matrix, and Witt
-   extension then maps every source vector.  The low-rank normal-form-to-data
+   extension then maps every source vector in the determinant-compatible
+   cases.  A new orientation gate is now explicit: proper
+   `ComplexLorentzGroup d` invariance alone cannot prove full scalar-product
+   descent in scalar rank `d + 1`, because the determinant/pseudoscalar of a
+   full source frame is invariant under determinant-`1` Lorentz maps and
+   changes under an improper same-Gram frame.  The branch law therefore also
+   needs Hall-Wightman's improper/space-inversion component input, recorded as
+   `BHW.hallWightman_improperComponentInvariant_forwardTube` and
+   `BHW.hallWightmanFullComplexLorentzInvariantOnExtendedTube_eq`, or an
+   already implemented sorry-free full-complex-orthogonal Hall-Wightman source
+   theorem with the same content.  The low-rank normal-form-to-data
    step is also explicit: the orbit witnesses are exactly
    `N.contract t * N.Λ0` on the left and `N.contract t` on the right, with the
    finite coordinate proof using `N.left_eq`, `N.right_eq`,
@@ -163,11 +455,14 @@ with the same mathematical content:
    `adjacent_lift_pairing_eq_permutedSchwinger` must be assembled from those
    packets, not from scalar representatives or downstream source equality.
 
-No approved source-import boundary exists for these blockers.  If a future
-session proposes such a boundary, it must be proposition-valued, exact in
-parameters and conclusions, contain no OS/EOW/PET/locality/bvt_W language
-except where the OS I §4.5 compact producer necessarily mentions OS data, and
-be explicitly approved before any production Lean consumes it.
+No approved theorem-specific source-import boundary exists for these blockers.
+Standard finite-dimensional support theorems named above may be proved in
+local support files or consumed only if they are already sorry-free with the
+same statement.  If a future session proposes a new source boundary, it must
+be proposition-valued, exact in parameters and conclusions, contain no
+OS/EOW/PET/locality/bvt_W language except where the OS I §4.5 compact
+producer necessarily mentions OS data, and be explicitly approved before any
+production Lean consumes it.
 
 Local code audit after checkpoint `c789249` (2026-05-01): the supporting
 germ API is present, but the scalar-source producers are not.  The production
@@ -193,8 +488,8 @@ declarations for the adjacent compact-source gates
 `BHW.os45AdjacentSPrimeScalarSeed_of_compactWickPairingEq`, or
 `BHW.os45AdjacentSPrimeSeedFigure24Path_of_compactWickPairingEq`.  Therefore
 the available Lean support may be cited in proof docs, but it does not make
-the ordinary scalar representative or the adjacent `S'_n` seed package
-implementation-ready.
+the active scalar representative (or the conditional ordinary fork) or the
+adjacent `S'_n` seed package implementation-ready.
 
 Pseudo-code audit update (2026-05-01): the active scalar-source and adjacent
 `S'_n` transcripts no longer leave anonymous proof holes in the mechanical
@@ -404,13 +699,17 @@ implementation contract is:
    orbit threshold `3` becomes `d`, and the local scalar-chart maximum rank is
    `min (d + 1) n`.  The theorem-2 blueprint now names the needed standard
    geometry inputs:
-   `BHW.complexMinkowskiBilinear`,
+   `BHW.sourceComplexMinkowskiInner` as the production pairing name
+   (older blueprint shorthand `complexMinkowskiBilinear` is not a separate
+   API),
    `BHW.ComplexMinkowskiNondegenerateSubspace`,
    `BHW.standardComplexSymmetricBilinear`,
    `BHW.complexLorentzVectorAction`,
-   `BHW.complexMinkowskiOrthogonalModel`,
-   `BHW.complexMinkowskiOrthogonalModel_preserves_bilinear`,
+   the existing local model `BHW.complexMinkowskiToDotLinearEquiv`,
+   `BHW.sourceComplexMinkowskiInner_eq_dot_after_equiv`,
    `BHW.complexMinkowski_wittExtension`,
+   `BHW.complexMinkowski_wittExtension_detOne_of_sourceSpan`,
+   `BHW.complexMinkowski_wittExtension_or_improper_of_sourceSpan`,
    `BHW.hwLemma3_extendedTube_adaptedRankRepresentative`,
    `BHW.hwLemma3_adaptedBase_transport_smallPerturbation_extendedTube`,
    `BHW.hwLemma3_adapted_sourceGram_localVectorRealization`,
@@ -446,8 +745,109 @@ implementation contract is:
    `BHW.AnalyticCodimensionIn`, and
    `BHW.AnalyticLocalProductModelAt`.  These predicates must be genuine
    finite-dimensional SCV/local-ring notions or imports from the local SCV
-   support library; they cannot be implemented as vacuous placeholders or as
-   wrappers around the target scalar representative theorem.  The active
+   support library, and they must be polymorphic in the finite-dimensional
+   ambient complex vector space.  The ordinary scalar Gram space and the
+   oriented Gram-plus-volume space are different ambient types; a scalar-only
+   SCV predicate/theorem would not typecheck for the oriented route.  They
+   cannot be implemented as vacuous placeholders or as wrappers around the
+   target scalar representative theorem.  The active
+   finite-dimensional Witt packet is also not currently an import lookup:
+   local search found no ready `Witt`/`wittExtension`/`extend_isometry`
+   bilinear-form theorem.  The blueprint now decomposes
+   `BHW.complexMinkowski_wittExtension` through
+   `BHW.standardComplexSymmetric_wittExtension_restricted` and
+   `BHW.standardComplexSymmetric_wittExtension`: first expose
+   `BHW.standardComplexSymmetricBilinForm`, prove symmetry/reflexivity,
+   coordinate-basis nondegeneracy, and the dual-vector functional
+   representative, then run
+   restricted induction on subspace finrank with an explicit equality
+   `Module.finrank ℂ U = Module.finrank ℂ U'` for the two induction
+   ambients.  That equality is trivial for the top specialization and is
+   preserved after removing matching anisotropic lines or matching
+   hyperbolic planes by `LinearMap.BilinForm.finrank_orthogonal`.
+   The exact support APIs pinned for the induction are
+   `LinearMap.BilinForm.orthogonal`,
+   `LinearMap.BilinForm.mem_orthogonal_iff`,
+   `LinearMap.BilinForm.isCompl_span_singleton_orthogonal`,
+   `LinearMap.BilinForm.restrict_nondegenerate_orthogonal_spanSingleton`,
+   `LinearMap.BilinForm.restrict_nondegenerate_iff_isCompl_orthogonal`,
+   `LinearMap.BilinForm.toDual`,
+   `LinearMap.BilinForm.apply_toDual_symm_apply`,
+   `Submodule.exists_isCompl`, `Submodule.prodEquivOfIsCompl`,
+   `Submodule.linearProjOfIsCompl`, `LinearEquiv.toSpanNonzeroSingleton`,
+   `LinearMap.ofIsCompl`, and `LinearMap.exists_extend`.  The API call sites
+   are pinned in the blueprint in implementation form:
+   `(ℂ ∙ u).linearProjOfIsCompl C hC`,
+   `Submodule.linearProjOfIsCompl_apply_left hC`,
+   `Submodule.linearProjOfIsCompl_apply_right hC`,
+   `Submodule.prodEquivOfIsCompl_symm_apply_left/right hC`, and
+   `LinearMap.ofIsCompl_left_apply/right_apply hC`.  The radical
+   branch now has a Lean-shaped theorem and coordinate functional:
+   project along `M = ℂ∙u ⊔ C`, extract the scalar coefficient on
+   `ℂ∙u`, extend it to the current nondegenerate induction ambient `U` by
+   `LinearMap.exists_extend`, represent it inside `U` by
+   `(B.restrict U).toDual hU`, and normalize
+   `p := p0 - (B p0 p0 / 2) • u`.  The dual-vector orientation is explicitly
+   recorded: `apply_toDual_symm_apply` gives `B p0 v = ellU v`, and symmetry
+   supplies the left-oriented pairings used in the final statement.  The
+   anisotropic line and hyperbolic-plane split lemmas now also have exact
+   Lean statements; the latter proves nondegeneracy of
+   `span ℂ ({u,p} : Set U)` by the two-coordinate Gram matrix
+   `!![0, 1; 1, 0]`, then applies
+   `restrict_nondegenerate_iff_isCompl_orthogonal`.  The two induction
+   branches now specify the actual recursive ambients and product
+   reconstruction: the anisotropic branch uses
+   `U1 = BU.orthogonal (ℂ ∙ u)` and builds `T_C` with
+   `LinearEquiv.ofLinear` from codomain-restricted maps, while the radical
+   branch maps the chosen complement `C` into
+   `BU.orthogonal (span ℂ {u,p})` via
+   `(⊤ : Submodule ℂ C).map` of a codomain-restricted subtype map.  Both
+   branches assemble the global extension as
+   `decU.symm.trans ((Acomponent.prod A1).trans decU')` using
+   `Submodule.prodEquivOfIsCompl`.  The
+   anisotropic-or-radical dichotomy uses polarization
+   `B (x + y) (x + y) = 2 * B x y`, not a vague polynomial argument.
+   The high-rank orbit consumer must keep both the final equality orientation
+   and the determinant gate explicit.  The ordinary subspace Witt theorem
+   first gives a complex-orthogonal ambient extension of the span isometry.
+   The theorem-2 proper-orbit consumer is instead
+   `BHW.complexMinkowski_wittExtension_detOne_of_sourceSpan`, which also
+   consumes `BHW.HWSameSourceGramSOOrientationCompatible` and returns
+   `BHW.complexLorentzVectorAction Λ (z i) = w i`.  Without that
+   compatibility the honest theorem surface is
+   `BHW.complexMinkowski_wittExtension_or_improper_of_sourceSpan`, returning
+   either the determinant-`1` extension or
+   `BHW.HWSameSourceGramImproperOrbitData`.  The public orbit theorem is
+   stated as `w = BHW.complexLorentzAction Λ z`; the proof therefore closes
+   the component goal with `.symm`, not by relying on an untracked `simpa`
+   orientation.
+   The determinant-repair subpacket is now explicit:
+   `complexMinkowski_wittExtension_full_of_sourceSpan` first extends the span
+   isometry to `HallWightmanFullComplexLorentzGroup d`;
+   `fullComplexLorentz_to_complexLorentzGroup_of_det_one` converts determinant
+   `1` full elements to `ComplexLorentzGroup d`;
+   `sourceFullFrameDet_fullComplexLorentzAction` is the finite determinant
+   action formula for the full group;
+   `fullComplexLorentz_det_neg_reflection_fixing_sourceSpan` supplies the
+   determinant-flipping reflection on a proper source span; and
+   `fullComplexLorentz_det_eq_frameMapDet_of_fullRank` identifies the
+   determinant of a full-rank extension with
+   `HWFullRankSameGramFrameMapDet`.  Thus proper-span determinant repair and
+   full-rank oriented determinant compatibility are separate proof branches.
+   The reflection proof is decomposed further through
+   `sourceSpan_orthogonalComplement_nontrivial_of_proper`,
+   `complexMinkowskiOrthogonalSubmodule_nondegenerate`,
+   `exists_nonisotropic_in_nondegenerate_subspace`,
+   `fullComplexLorentzReflection`,
+   `fullComplexLorentzReflection_det`, and
+   `fullComplexLorentzReflection_fix_subspace`.  This removes the hidden
+   "choose a sign on the complement" step: the complement is nontrivial by the
+   rank inequality, nondegenerate by orthogonal-complement linear algebra, and
+   contains a nonisotropic vector by polarization.
+   Until these standard linear-algebra sublemmas are proved or imported
+   sorry-free, the high-rank orbit theorem remains blocked after the
+   span-isometry construction.
+   The active
    germ API
    `BHW.SourceVarietyGermHolomorphicOn`,
    `BHW.SourceVarietyGermHolomorphicOn.continuousOn`,
@@ -514,8 +914,7 @@ implementation contract is:
    `closure_inter_open_of_mem_open`.  This is the theorem
    `BHW.sourceComplexGramVariety_relOpen_subset_closure_inter_maxRank`; it is
    not an automatic consequence of analyticity of the exceptional locus.  Only
-   then may the OS-free
-   normal-space Riemann theorem
+   then may the OS-free finite-dimensional-polymorphic normal-space Riemann theorem
    `BHW.normalAnalyticSubvariety_weaklyHolomorphic_localExtension` be applied
    to the branch-defined scalar value `phi`, returning local ambient charts
    with the domain-control field
@@ -574,12 +973,755 @@ implementation contract is:
    locality, PET independence, local EOW, final `bvt_W`, or OS-specific
    branch conclusions.
 
+   The improper-component input now has an implementation-level source shape:
+   introduce a genuine `BHW.HallWightmanFullComplexLorentzGroup d` as
+   metric-preserving complex matrices with no determinant-`1` field, prove
+   `det ^ 2 = 1`, embed the existing `ComplexLorentzGroup d` as the
+   determinant-`1` component, and define the full action separately from
+   `BHW.complexLorentzAction`.  The real source predicate must quantify over
+   `LorentzLieGroup.FullLorentzGroup d` with
+   `LorentzLieGroup.IsOrthochronous d Λ`, not over
+   `RestrictedLorentzGroup d`.  A support theorem
+   `BHW.fullOrthochronousRealLorentz_preserves_forwardTube` is still missing:
+   the existing `ForwardTubeLorentz.orthochronous_preserves_forward_tube`
+   comments that properness is unused, but its Lean type is still specialized
+   to `LorentzGroup d`, so it cannot discharge determinant-`-1` invariance.
+   The repo already has bridge infrastructure in
+   `Bridge/AxiomBridge.lean`: `lorentzGroupEquiv`,
+   `lorentzGroupEquiv_val`, `lorentzGroupEquiv_symm_val`,
+   `isProperLorentz_iff_isProper`, and `isOrthochronous_iff` transport between
+   `LorentzLieGroup.FullLorentzGroup d` and the Wightman-layer
+   `FullLorentzGroup d`.  These names are transport support only; they do not
+   prove the missing `bvt_F` improper invariant.
+   Therefore `BHW.bvt_F_realOrthoChronousInvariant` is a real missing source
+   input, not a consequence of
+   `bvt_F_complexLorentzInvariant_forwardTube`.
+   This is not merely absent infrastructure: the local OS axiom structure
+   currently assumes Euclidean rotation invariance only for `SO(d+1)`
+   (`R.det = 1`), and the comment on
+   `OsterwalderSchraderAxioms.E1_rotation_invariant` explicitly notes that
+   full `O(d+1)` parity is not implied.  Thus the proof docs must still
+   locate a paper-sourced OS/BHW reason why the scalar branches have the
+   needed improper real orthochronous invariance, or else correct the
+   Hall-Wightman scalar-descent statement so it does not require parity.
+   Adding parity or silently treating `SO(d+1)` as `O(d+1)` is forbidden.
+   The source-text comparison is now explicit and was rechecked against the
+   local PDF extraction on 2026-05-02: Hall-Wightman Theorem I is the
+   scalar-product theorem, and its Lemma 1 treats the space-inversion/improper
+   component inside the invariant analytic-function argument.  Streater-
+   Wightman Theorem 2-11 and the OS I §4.5 reconstruction invocation are
+   stated for the restricted/proper Lorentz group and proper complex group
+   `L_+(C)`.  The OS `L_+(C)` continuation cannot be cited as full source-
+   Gram descent without resolving this component mismatch.
+   The implementation-level local-code audit now makes this mismatch exact:
+   `bvt_F_restrictedLorentzInvariant_forwardTube` quantifies only over
+   `RestrictedLorentzGroup d`, `bvt_F_complexLorentzInvariant_forwardTube`
+   quantifies only over the determinant-`1` `ComplexLorentzGroup d`, and
+   `OsterwalderSchraderAxioms.E1_rotation_invariant` assumes both
+   `R.transpose * R = 1` and `R.det = 1`.  The bridge theorems
+   `lorentzGroupEquiv`, `lorentzGroupEquiv_val`,
+   `lorentzGroupEquiv_symm_val`, `isProperLorentz_iff_isProper`, and
+   `isOrthochronous_iff` only transport matrix predicates between full
+   Lorentz APIs; they do not prove a `bvt_F` invariant under determinant-`-1`
+   orthochronous transformations.  Hence the exact missing full-component
+   theorem, if the pure scalar-product route is used, is
+   `BHW.bvt_F_realOrthoChronousInvariant [NeZero d] (hd : 2 <= d)
+   (OS : OsterwalderSchraderAxioms d) (lgc : OSLinearGrowthCondition d OS)
+   (n : Nat) :
+   BHW.HallWightmanRealOrthoChronousInvariant d n (bvt_F OS lgc n)`.
+   Its proof cannot be obtained by coercing a restricted Lorentz transform to
+   a full one or by dropping the determinant hypothesis; that would add parity
+   by hand.  Conversely, the theorem
+   `SourceScalarRepresentativeData` from holomorphy plus proper
+   `ComplexLorentzGroup d` invariance alone is forbidden: the
+   determinant/Vandermonde diagnostic below is a counterexample schema to
+   exactly that theorem.
+   The blueprint now records the finite-dimensional diagnostic explicitly:
+   for `d + 1 <= n`, the determinant of any ordered full source frame is an
+   entire determinant-`1` complex Lorentz invariant, transforms by
+   multiplication with `det A` under the full complex Lorentz group, and is
+   not determined by the ordered Gram matrix unless the improper component is
+   also quotiented.  This is the concrete counterexample schema showing that
+   the proper-only full-Gram descent theorem would be false.
+   The same diagnostic now also rules out finite source-permutation symmetry
+   as a repair: in the top-rank case `n = d + 1`, the product of the ordered
+   frame determinant with the Vandermonde of the diagonal Gram entries is
+   holomorphic, invariant under all source permutations, invariant under
+   determinant-`1` complex Lorentz transformations, and still changes sign
+   under an improper same-Gram full Lorentz transformation.  Therefore
+   `bvt_F_perm` or pointwise permutation symmetry cannot be used to bypass the
+   full-component/oriented source decision.
+   This is now a hard route-decision gate, not an implementation detail.  For
+   the strict OS I §4.5 theorem-2 route, the decision is to formalize the
+   proper-complex `L_+(C)` continuation through the oriented scalar-source API:
+   Gram data plus all ordered full-frame determinants, with every downstream
+   consumer migrated accordingly.  A full-component Hall-Wightman theorem
+   supplying `BHW.bvt_F_realOrthoChronousInvariant` remains only a conditional
+   side route for the pure-Gram constructor, and an "obstruction vanishes"
+   route remains closed until a paper source proves that exact cancellation
+   without adding parity, final locality, PET independence, or standalone
+   `bvt_F_perm`.
+   Strict-route selection guard: under the user's non-negotiable OS I §4.5 /
+   BHW-Jost route, the active target is the paper's BHW/Jost continuation
+   step, not an arbitrary strengthening.  The source audit now distinguishes
+   two paper-level statements that cannot be merged in Lean: Hall-Wightman's
+   own Theorem I is the scalar-product theorem, while OS I §4.5 invokes BHW
+   as a single-valued symmetric proper-complex `L_+(C)` continuation on the
+   extended/permuted domain.  The active theorem-2 source layer is therefore
+   the proper/oriented invariant API; the pure-Gram
+   `SourceScalarRepresentativeData` surface may not be reused on this route.
+   If the oriented package cannot be proved or source-imported, the proof docs
+   remain blocked rather than falling back to the pure-Gram theorem surface.
+   Current branch status: no local production theorem supplies
+   `BHW.bvt_F_realOrthoChronousInvariant`, and the OS axiom surface does not
+   contain full Euclidean `O(d+1)` invariance.  Hence
+   `BHW.sourceScalarRepresentativeData_bvt_F` is presently only a conditional
+   target for the full-component resolution, not an active production Lean
+   target.  Since the theorem-2 proof route now adopts the oriented
+   scalar-source API, `SourceScalarRepresentativeData` and every adjacent
+   `S'_n` consumer must be restated with the oriented invariant; the existing
+   pure-Gram data structure may not be reused with orientation hidden in
+   comments or hypotheses.  The theorem-2 blueprint now records the active
+   implementation shape:
+   `BHW.SourceOrientedGramData`,
+   `BHW.SourceOrientedGramData.gram`,
+   `BHW.SourceOrientedGramData.det`,
+   `BHW.SourceOrientedGramData.ext`,
+   `BHW.sourceOrientedMinkowskiInvariant`,
+   `BHW.sourceOrientedExtendedTubeDomain`,
+   `BHW.SourceOrientedVarietyGermHolomorphicOn`,
+   `BHW.IsRelOpenInSourceOrientedGramVariety.subset`,
+   `BHW.IsRelOpenInSourceOrientedGramVariety.to_isRelOpenIn`,
+   `BHW.IsRelOpenInSourceOrientedGramVariety.inter`,
+   `BHW.SourceOrientedVarietyGermHolomorphicOn.of_subset_relOpen`,
+   `BHW.SourceOrientedVarietyGermHolomorphicOn.sub`,
+   `BHW.sourcePermuteOrientedGram`,
+   `BHW.continuous_sourcePermuteOrientedGram`,
+   `BHW.differentiable_sourcePermuteOrientedGram`,
+   `BHW.IsRelOpenInSourceOrientedGramVariety.preimage_sourcePermuteOrientedGram`,
+   `BHW.extendedTube_same_sourceOrientedInvariant_extendF_eq`, and
+   `BHW.SourceOrientedScalarRepresentativeData`, now extended with the
+   oriented producer ladder
+   `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected`,
+   `BHW.sourceOrientedVarietyGermHolomorphicOn_extendF_descent`,
+   `BHW.sourceOrientedScalarRepresentativeData_of_branchLaw`, and
+   `BHW.hallWightman_sourceOrientedScalarRepresentativeData`, and
+   with the production ordering requirement that the generic
+   finite-dimensional SCV predicates are imported before the
+   `to_isRelOpenIn` conversion is declared,
+   `BHW.sourceOrientedScalarRepresentativeData_bvt_F`.  These names are
+   active proof-doc targets but are not production-Lean-ready until their
+   producer ledger is complete; their purpose is also to make clear that an
+   oriented proof cannot be fed through the existing pure-Gram
+   `SourceScalarRepresentativeData.branch_eq` API.
+   Lean-shape correction: `SourceOrientedGramData` is now a product-coordinate
+   type, not a raw record with untransported topology.  The `.gram` and `.det`
+   names are projection definitions on that product, so `IsOpen`,
+   `DifferentiableOn`, relative openness, connectedness, and germ-holomorphic
+   predicates are all stated on an actual finite-dimensional complex vector
+   space.
+   The binding oriented producer ledger is:
+   `sourceFullFrameMatrix`, `sourceFullFrameDet`, its
+   complex-Lorentz/permutation algebra, and its continuity theorem; the
+   assembly lemmas
+   `sourceOrientedMinkowskiInvariant_complexLorentzAction` and
+   `sourceOrientedMinkowskiInvariant_permAct`;
+   `same_sourceOrientedInvariant_detOneOrbit_or_singularLimit`;
+   `extendedTube_same_sourceOrientedInvariant_extendF_eq`;
+   `sourceOrientedExtendedTubeDomain_relOpen_connected`;
+   `sourceOrientedVarietyGermHolomorphicOn_extendF_descent`; and only then
+   the three assembly surfaces
+   `sourceOrientedScalarRepresentativeData_of_branchLaw`,
+   `hallWightman_sourceOrientedScalarRepresentativeData`, and
+   `sourceOrientedScalarRepresentativeData_bvt_F`.  The specialization to
+   `bvt_F` uses `bvt_F_holomorphic`,
+   `bvt_F_complexLorentzInvariant_forwardTube`, and `BHW_forwardTube_eq`;
+   it must not import the missing full-component/improper invariant.
+   Current oriented permutation API clarification, 2026-05-02:
+   `BHW.sourcePermuteOrientedGram_mem_variety_iff` is now pinned as a real
+   automorphism proof on the oriented source variety.  In the reverse
+   direction, if
+   `sourcePermuteOrientedGram d n τ G =
+   sourceOrientedMinkowskiInvariant d n z`, use the witness
+   `BHW.permAct (d := d) τ⁻¹ z`, rewrite by
+   `BHW.sourceOrientedMinkowskiInvariant_permAct`, cancel the Gram component
+   with `BHW.sourcePermuteComplexGram_inv_mul`, and cancel the determinant
+   component by composing the embeddings `τ⁻¹.toEmbedding` and
+   `τ.toEmbedding`.  The forward direction uses the witness
+   `BHW.permAct (d := d) τ z`.  This is the support needed by
+   `BHW.IsRelOpenInSourceOrientedGramVariety.preimage_sourcePermuteOrientedGram`
+   and by oriented germ precomposition; it is finite source-coordinate
+   algebra, not a scalar-representative or locality input.
+   Current oriented scalar-representative assembly clarification, 2026-05-02:
+   the theorem-2 blueprint now gives Lean-shaped bodies for
+   `BHW.sourceOrientedScalarRepresentativeData_of_branchLaw` and
+   `BHW.hallWightman_sourceOrientedScalarRepresentativeData`.  The first
+   constructor only chooses the descended `Phi`, stores the relative-open and
+   connected domain fields from `hGeom`, and copies the branch equation from
+   `Classical.choose_spec hDesc`.  The second first proves the oriented
+   extended-tube branch law, then calls
+   `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected` and
+   `BHW.sourceOrientedVarietyGermHolomorphicOn_extendF_descent`, and only
+   then assembles the representative.  The quotient value
+   `BHW.sourceOrientedQuotientValue_wellDefined` is also pinned with the
+   exact `dif_pos`/`Classical.choose_spec` proof: compare the chosen
+   preimage with the supplied one by the oriented branch law.  These are
+   assembly proofs; they do not reduce the required lower producer list.
+   The same cleanup pins the mechanical
+   `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected` body as the pair
+   of `BHW.sourceOrientedExtendedTubeDomain_relOpen` and
+   `BHW.sourceOrientedExtendedTubeDomain_connected`; the only real
+   mathematical content in that theorem remains the local realization theorem
+   feeding the relative-open half.
+   The oriented branch-law surface has been tightened: it must return an
+   actual `∃ Λ : ComplexLorentzGroup d, w = complexLorentzAction Λ z` orbit
+   alternative or the singular contraction data.  Returning only
+   `HWSameSourceGramSOOrientationCompatible` is too weak, because low-rank
+   fibres are orientation-compatible but still require the singular-limit
+   proof.  The blueprint now pins the determinant-ratio sublemmas needed to
+   turn equality of oriented full-frame determinants into determinant `1` for
+   the full-rank same-Gram frame map.
+   The oriented domain geometry has also been split: connectedness is a
+   mechanical continuous-image theorem from `isConnected_extendedTube` and
+   `continuous_sourceOrientedMinkowskiInvariant`; relative openness is the
+   separate `sourceOrientedExtendedTube_localRealization` theorem.  That
+   theorem must construct actual nearby extended-tube vectors realizing the
+   full oriented invariant, using selected full-frame charts in full rank and
+   Hall-Wightman adapted residual-frame charts in rank-deficient cases.
+   The max-rank section theorem is now split by arity: when `n < d + 1`, the
+   oriented chart reduces to the ordinary Gram max-rank chart because there
+   are no full-frame determinant coordinates; when `d + 1 <= n`, the
+   full-frame chart must use `SourceOrientedFullFrameGaugeChartData`, a
+   gauge-fixed special-orthogonal section with determinant coordinate
+   `G.det ι`.  The rank-deficient half is named separately as
+   `SourceOrientedRankDeficientRealizationData`; it must realize nearby
+   oriented-variety points by residual isotropic-frame variables inside
+   `ExtendedTube`, not by arbitrary ordinary Gram lifts.
+   The top-level local-realization theorem is now an assembly theorem only
+   after these two cases: `SourceOrientedLocalHolomorphicSectionData.to_localRealization`
+   converts the max-rank holomorphic section into local realization,
+   `SourceOrientedRankDeficientRealizationData.to_localRealization` converts
+   the residual chart into local realization, and
+   `sourceOrientedExtendedTube_localRealization` dispatches by
+   `SourceOrientedMaxRankAt`.  The relative-openness proof must index its
+   open union by the subtype of actual extended-tube points; it may not use
+   implicit proof placeholders or an arbitrary lift of an oriented invariant.
+   The full-frame gauge chart now has an implementation contract:
+   `SourceFullFrameOrientedGramData`,
+   `SourceFullFrameOrientedCoord`,
+   `SourceFullFrameOrientedGramData.toCoord`,
+   `SourceFullFrameOrientedGramData.ofCoord`,
+   `sourceFullFrameOrientedGramCoord`,
+   `sourceFullFrameOrientedGramVarietyCoord`,
+   `sourceFullFrameOrientedGramVarietyCoord_eq_image`,
+   `sourceFullFrameOrientedGram`,
+   `sourceFullFrameOrbitTangent`,
+   `sourceFullFrameOrientedDifferentialLinear`,
+   `sourceFullFrameOrientedDifferentialCLM`,
+   `SourceFullFrameGaugeSliceData`,
+   `sourceFullFrameGaugeSlice_exists`,
+   `sourceFullFrameOrientedDifferential_kernel_eq_orbitTangent`,
+   `sourceFullFrameOrientedDifferential_range_eq_tangent`,
+   `sourceFullFrameSlice_differential_linearEquiv`,
+   `sourceFullFrameOrientedEquation`,
+   `sourceFullFrameOrientedHypersurfaceCoord`,
+   `sourceFullFrameOrientedGramCoord_mem_hypersurface`,
+   `RegularZeroLocusAt` with explicit `deriv`, `value_zero`,
+   `has_deriv`, and `deriv_surj` fields,
+   `sourceFullFrameOrientedHypersurface_regularAt`,
+   `sourceFullFrameSlice_localImage_eq_hypersurface`,
+   `sourceFullFrameSlice_localImage_eq_variety`, and
+   `sourceFullFrameGaugeSection_of_localImage`.  The proof must use the
+   derivative calculation for `M η Mᵀ` and `det M`, choose a complement to the
+   infinitesimal determinant-`1` Lorentz orbit, and apply the finite-dimensional
+   holomorphic constant-rank/local-image theorem on that slice.  The
+   implementation order is fixed: define the oriented equation, hypersurface,
+   and tangent model before `SourceFullFrameGaugeSliceData`, prove the slice
+   local image into the smooth hypersurface first, and only then restrict the
+   inverse/right-inverse fields to the actual image variety.  This prevents a
+   circular proof of local variety-equals-hypersurface before the slice
+   inverse theorem is available.  All
+   openness, differentiability, tangent, and local-image statements in this
+   packet live in the explicit product vector space
+   `SourceFullFrameOrientedCoord d`; the raw
+   `SourceFullFrameOrientedGramData` structure is used only as an algebraic
+   record and is converted by `toCoord`/`ofCoord`.  The slice map
+   is not a submersion to the whole ambient `gram × det` space; it is first
+   locally biholomorphic onto the oriented full-frame hypersurface sheet, and
+   then onto the oriented full-frame image variety by restriction.  The
+   tangent target is now explicit:
+   `sourceFullFrameOrientedTangentSpace`,
+   `sourceFullFrameOrientedHypersurface_regularAt`,
+   `sourceFullFrameOrientedTangentSpace_eq_linearizedEquation`, and
+   `LocalHolomorphicImageEquiv`.  The local equation is
+   `det gram = minkowskiMetricDet d * det^2`, and its linearization is the
+   trace formula used as the target tangent space.  The proof must not choose
+   an unproved square-root branch or an unverified holomorphic Gram-Schmidt
+   section.  The associated max-rank local section data must also shrink the
+   whole ambient coordinate neighborhood into `ExtendedTube`, not merely the
+   variety slice; otherwise the proof of holomorphy for `extendF F` composed
+   with the section has no valid domain membership hypothesis.
+   The rank-deficient half has also been tightened: the proof must build
+   `SourceOrientedRankDeficientResidualChartData` before it may return
+   `SourceOrientedRankDeficientRealizationData`.  This residual chart stores a
+   compact closed parameter polydisc `K`, an open interior `P`, a continuous
+   residual-frame vector formula `toVec`, surjectivity of the invariant map
+   from `P` onto the nearby oriented variety, and max-rank density in
+   parameters.  The quotient-value support is then split into
+   `sourceOrientedQuotientValue_locallyBounded_of_residualChart` and
+   `sourceOrientedQuotientValue_continuous_of_residualChart`.  Arbitrary
+   choice of an extended-tube lift is now explicitly insufficient because it
+   gives neither boundedness nor continuity.  The residual chart itself is
+   now decomposed through Schur residual realization:
+   `SourceOrientedTailData`, `sourceTailOrientedInvariant`,
+   `sourceTailOrientedVariety_eq_algebraic`,
+   `sourceTailOrientedSmallRealization`,
+   `SourceOrientedSchurResidualData`,
+   `sourceOriented_schurResidualData`, and
+   `sourceOriented_reconstruct_from_schurResidual`.  The small tail theorem
+   must be proved constructively by the normalized Schur/gauge recursion; it
+   may not scale an arbitrary realizing tuple, because scaling changes the
+   prescribed Gram and determinant coordinates.  The blueprint now exposes
+   the induction cases:
+   `sourceTailOrientedSmallRealization_zeroGram`,
+   `sourceTailFullFrame_smallFactorWithDet`,
+   `sourceTailOrientedSmallRealization_fullRankStep`, and
+   `sourceTailOrientedSmallRealization_schurStep`, with an explicit
+   positive-tail-dimension hypothesis `0 < D`.  The Schur step now carries an
+   actual selected injection `ι : Fin r ↪ Fin m` and a nonzero principal minor
+   hypothesis; the wrapper
+   `sourceTailOrientedSmallRealization_of_selectedBlock` first chooses such a
+   minor by `sourceTail_exists_principalMinor_of_rank`, moves it to the head
+   block by `sourceTail_permute_to_head`, and only then calls the Schur
+   recursion.  The recursive hypothesis now also carries the guard
+   `0 < D - r`.  Tail source permutations are explicit through
+   `sourceTailPermuteOrientedData`, `sourceTailOrientedInvariant_perm`,
+   `sourceTailOrientedVariety_perm_iff`, and
+   `sourceTailSmallRealization_transport_perm`, so determinant coordinates
+   move by ordered-embedding composition with no hidden sign.  This avoids an
+   implementation-level hole where "selected rank" was named but no
+   invertible block was available to invert.  The full-rank tail case is no
+   longer hidden inside the Schur recursion: after choosing
+   `ι : Fin D ↪ Fin m`, factor the selected full residual Gram block with
+   determinant `T.det ι`, solve every other vector by mixed-Gram coefficients,
+   use the rank-`D` Schur-complement zero theorem for Gram equality, and use
+   the mixed-minor relation
+   `det(T.gram (ι ·) (κ ·)) = T.det ι * T.det κ` to recover all determinant
+   coordinates with the selected sign.  This is a genuine top-rank branch,
+   not an arbitrary Gram-factorization shortcut.
+   The final `sourceTailOrientedSmallRealization` theorem is assembled by
+   strong induction on tail arity and an explicit rank split, through
+   `sourceTailOrientedSmallRealization_zeroRank_bound`,
+   `sourceTailOrientedSmallRealization_fullRank_bound`, and
+   `sourceTailOrientedSmallRealization_intermediateRank_bound`.  Thus the
+   top-level theorem no longer hides the cases `rank = 0`, `rank = D`, and
+   `0 < rank < D` behind the word "recursion".  The top-level induction does
+   not bypass the three precomputed helpers after choosing the final
+   smallness constant: the zero branch calls `zeroRank_bound`, the full branch
+   calls `fullRank_bound`, and the intermediate branch calls
+   `intermediateRank_bound`.  In particular it does not pass a selected
+   principal minor into `fullRank_bound`; that helper is responsible for
+   selecting the full-rank minor and then calling
+   `sourceTailOrientedSmallRealization_fullRankStep`.  The top-level proof
+   only passes `hTvar`, the equality `sourceGramMatrixRank m T.gram = D`, and
+   the two smallness hypotheses in the full-rank branch.  Similarly, the
+   intermediate branch must call the precomputed
+   `sourceTailOrientedSmallRealization_intermediateRank_bound` helper, because
+   its smallness constant is one of the three values included in the final
+   `min`; it must not call `sourceTailOrientedSmallRealization_of_selectedBlock`
+   afresh after the top-level `η` has already been chosen.
+   The residual-chart producer is now split one layer further.  Before Lean
+   may implement `sourceOriented_rankDeficient_residualChart`, the blueprint
+   requires `SourceOrientedInvariantTransportEquiv`,
+   `SourceOrientedRankDeficientNormalFormData`,
+   `sourceOriented_rankDeficient_normalFormData`,
+   `SourceOrientedResidualPolydiscData`,
+   `sourceOriented_residualPolydiscData`,
+   `sourceOriented_residualPolydisc_tubeStability`,
+   `sourceOriented_residualPolydisc_imageSurj`, and
+   `sourceOriented_residualPolydisc_maxRankDense`.  These surfaces force the
+   ordinary Hall-Wightman adapted normal form, the residual coefficient
+   polydisc, the extended-tube stability shrink, Schur-tail image
+   surjectivity, and max-rank density to be proved before the residual chart
+   can be assembled.  The normal-form packet now separates the actual
+   extended-tube adapted representative `adaptedBase` from the canonical
+   normal coordinate source `normalBase = hwLemma3CanonicalSource d n r`.
+   The latter supplies the identity head block and zero tail, but is not
+   asserted to lie in `ExtendedTube`.  Tube membership after inverse
+   transport is stored only in
+   `SourceOrientedResidualPolydiscData.toOriginal_residualVector_mem_ET`.
+   This closes the previous gap where an arbitrary source-coordinate normal
+   form was implicitly treated as tube-preserving.  The residual data now also
+   stores its normal neighborhood `Ω`, image-surjectivity field, and max-rank
+   density field, produced by the explicit
+   `sourceOriented_rankDeficient_normalParameterPolydisc` theorem.  That
+   theorem uses head-factor, mixed-coefficient, and tail residual-vector
+   coordinates; it is not allowed to recover surjectivity later from an
+   arbitrary compact parameter set.  Its max-rank-density field is pinned by
+   `sourceTailOrientedMaxRank_dense_in_parameterOpen` plus
+   `sourceOrientedNormalParameterVector_maxRank_iff_tail`, so the density
+   argument perturbs only the Schur tail while the invertible head block stays
+   fixed.  The downstream compactness support is also explicit:
+   `sourceOrientedResidualChart_compactBound`,
+   `sourceOrientedResidualChart_quotient_eq_parameter`, and
+   `sourceOrientedResidualChart_clusterValue` are the only allowed route to
+   `sourceOrientedQuotientValue_locallyBounded_of_residualChart` and
+   `sourceOrientedQuotientValue_continuous_of_residualChart`.  This closes a
+   previous documentation gap where compactness and branch-law independence
+   were described in prose but not pinned as Lean-sized theorem surfaces.
+   The compactness support is now proof-script level: `compactBound` is
+   `R.K_compact.exists_bound_of_continuousOn` applied to
+   `extendF F ∘ R.toVec`; `quotient_eq_parameter` is a direct call to
+   `sourceOrientedQuotientValue_wellDefined`; local boundedness is
+   `compactBound` plus `R.image_surj`; and continuity is factored through the
+   finite-dimensional/first-countable compact-parameter helper
+   `SCV.continuousWithinAt_of_compact_parameter_surjection`.  That helper now
+   includes the base-domain hypothesis `hy0U : y0 ∈ U` and is proved by the
+   concrete Mathlib route
+   `Filter.tendsto_iff_seq_tendsto`,
+   `IsCompact.image_of_continuousOn`,
+   `IsCompact.tendsto_nhds_of_unique_mapClusterPt`,
+   `TopologicalSpace.FirstCountableTopology.tendsto_subseq`,
+   `IsCompact.tendsto_subseq'`, and `tendsto_nhds_unique`; it is not an
+   unconstrained topological-subnet placeholder.  In the residual-chart
+   application, `hy0U` is derived from the stored field
+   `R.center_mem_ET`; the compact-parameter center only has to satisfy
+   `R.toVec_c0_invariant`, not `R.toVec c0 = z0`.  The production
+   ordering is pinned: `sourceOrientedQuotientValue` and
+   `sourceOrientedQuotientValue_wellDefined` must appear before
+   `sourceOrientedResidualChart_quotient_eq_parameter`, even though the
+   latter is discussed inside the residual-chart packet.  The cluster-value
+   lemma uses `R.center_mem_ET` directly and compares fibres by the oriented
+   invariant equality; it does not try to identify the adapted residual
+   center source tuple with the original `z0`.
+   Low-rank same-Gram orientation is now explicit: not-max-rank gives
+   `sourceGramMatrixRank < d+1`; every full-frame determinant then vanishes
+   by the Gram-minor identity
+   `det Gram[ι] = minkowskiMetricDet d * sourceFullFrameDet(ι)^2`; hence an
+   adapted same-Gram representative has the same oriented invariant as the
+   original source tuple.
+   The auxiliary subset theorem
+   `sourceOrientedExtendedTubeDomain_subset_variety` is now stated and proved
+   definitionally by destructing the image witness.
+   The global continuity/local-boundedness theorem
+   `sourceOrientedQuotientValue_continuous_locallyBounded` is now pinned as a
+   pointwise split over an image witness `G0 = sourceOrientedMinkowskiInvariant
+   d n z0`: the max-rank branch uses
+   `sourceOrientedQuotientValue_holomorphicOn_maxRank` plus the purely
+   topological glue helpers
+   `SCV.continuousWithinAt_of_local_eqOn_relNeighborhood` and
+   `SCV.locallyBoundedAt_of_local_eqOn_relNeighborhood`; the exceptional
+   branch uses the residual-chart continuity and compact-bound theorems.  This
+   closes the former prose-only step between local sections/residual charts and
+   the `ContinuousOn`/`LocallyBoundedOn` hypotheses needed by the normal
+   Riemann theorem.
+   The oriented holomorphic descent is now fixed as a quotient construction
+   plus the regular/removable-singularity split: `sourceOrientedQuotientValue`
+   is defined from `extendF F` on an oriented invariant fibre,
+   `sourceOrientedQuotientValue_wellDefined` is proved by the oriented branch
+   law, max-rank holomorphy is obtained from
+   `sourceOrientedExtendedTube_holomorphicLocalSection`, and exceptional rank
+   is handled by `sourceOrientedVariety_normal_riemannExtension`.  A local
+   holomorphic section at every singular oriented quotient point is not a
+   valid theorem surface.  This prevents the Lean implementation from
+   inventing an unrelated ambient `Phi` and asserting branch equality only
+   afterward.
+   The oriented normal-variety support is now tied to explicit algebraic
+   equations: symmetry/rank of the Gram field, determinant alternation under
+   source-frame reindexing, and the Cauchy-Binet relation
+   `det(G[ι,κ]) = minkowskiMetricDet d * det_ι * det_κ`.  The required
+   theorem surfaces are `sourceOrientedAlgebraicRelations`,
+   `sourceOrientedAlgebraicVariety`,
+   `sourceOrientedGramVariety_eq_algebraic`, and
+   `sourceOrientedAlgebraicVariety_normal`.  These normality surfaces carry
+   `[NeZero d]` and `hd : 2 <= d`, matching the reductivity input for
+   `SO_{d+1}(ℂ)`; they are not dimension-free wrappers.  The normality route
+   is now decomposed through invariant rings:
+   `sourceTupleCoordinateRing`,
+   `specialComplexLorentzAlgebraicGroup`,
+   `sourceOrientedInvariantSubalgebra`,
+   `sourceOrientedInvariantRing_generated_by_gram_det`,
+   `sourceOrientedInvariantRing_relations_kernel`,
+   `sourceOrientedInvariantRing_integrallyClosed`,
+   `sourceOrientedAlgebraicCoordinateRing_iso_invariants`, and
+   `sourceOrientedAlgebraicVariety_normal_of_invariants`, followed by
+   `sourceOrientedGramVariety_normal_of_algebraic`.  These are the first and
+   second fundamental theorem for the special complex orthogonal group plus
+   the standard fact that linearly reductive invariants of an integrally
+   closed polynomial domain are integrally closed.  Normality may only come
+   from this algebraic SO-invariant model or an exact standard
+   invariant-theory import, not from the pure-Gram normality theorem.
+   The invariant-theory import boundary is now fixed at generator/kernel
+   level, not at the slogan "FFT/SFT for `SO`": the standard coordinate ideal
+   is generated by pairing symmetry, `(D + 1)` pairing minors, ordered-volume
+   alternation, and the Cauchy-Binet relations
+   `det(q[ι,κ]) = p_ι * p_κ`; the source-side transport inserts the fixed
+   factor `minkowskiMetricDet d`.  `sourceOrientedAlgebraicCoordinateRing_iso_invariants`
+   must be obtained by surjectivity plus
+   `Ideal.quotientKerAlgEquivOfSurjective`, after transporting the standard
+   kernel theorem through
+   `sourceMinkowskiToDotInvariantCoordinateEquiv`.  If this is sourced from
+   ordinary invariant theory rather than proved locally, the imported theorem
+   must have exactly this generator/kernel content, be sorry-free, and must
+   not be introduced as an axiom or as a theorem mentioning OS, Wightman
+   functions, EOW, locality, or theorem 2.
+   The removable step now also has explicit oriented inputs:
+   `sourceOrientedExceptionalRank_eq_lowerRank`,
+   `sourceOrientedExceptionalRank_isAnalyticSubvariety`, and
+   `sourceOrientedMaxRank_dense_in_relOpen`.  The normal-space Riemann
+   theorem is the same finite-dimensional-polymorphic
+   `normalAnalyticSubvariety_riemannExtension`/`weaklyHolomorphic` theorem
+   used by the ordinary scalar route, not a scalar-coordinate-only theorem.
+   The oriented call first converts
+   `IsRelOpenInSourceOrientedGramVariety` to the generic
+   `IsRelOpenIn`, then reorders the returned `(domain-control, EqOn)` pair
+   into the `SourceOrientedVarietyGermHolomorphicOn` field order.  It consumes
+   relative openness of `sourceOrientedExtendedTubeDomain`,
+   continuity/local boundedness of the quotient value, and max-rank local
+   charts; it may not silently assert removability from normality alone.
+   The oriented real-uniqueness anchor now has an explicit tangent/regularity
+   subpacket: `sourceFullFrameDetDifferential`,
+   `sourceFullFrameDetDifferentialLinear`,
+   `sourceFullFrameDetContinuousLinearMap`,
+   `sourceOrientedDifferential`,
+   `sourceOrientedDifferentialLinear`,
+   `sourceOrientedDifferentialCLM`,
+   `sourceOrientedMinkowskiInvariant_hasFDerivAt`,
+   `sourceOrientedDifferential_real_complexification`,
+   `sourceOrientedRegularAt_of_pureGram_regular_plus_detRank`, and
+   `sourceOrientedComplexifiedRealTangentEqualsComplexTangent_of_detJacobian`.
+   These are the finite-dimensional reasons the π-permuted real patch remains
+   a maximal totally real uniqueness set after determinant coordinates are
+   added; they cannot be inferred by reusing the pure-Gram tangent theorem.
+   The real-patch producer is now also explicit:
+   `SourceOrientedJacobianExpectedRankAt`,
+   `sourceOrientedRegularAt_iff_expectedRealJacobianRank`,
+   `sourceOrientedTotallyReal_of_expectedRealJacobianRank`,
+   `sourceOrientedRealEnvironment_smallArity_of_pureGram`,
+   `sourceOrientedRealEnvironment_fullFrameSubpatch`, and
+   `os45Figure24_realPatch_orientedRegularSubpatch`.  The adjacent compact
+   seed must shrink to a nonempty open oriented-regular subpatch; it may not
+   reuse the pure-Gram `gramEnvironment`, because that carrier has forgotten
+   determinant-coordinate signs.  The full-frame branch of that shrink is now
+   explicit through
+   `IsOS45Figure24CheckedRealPatch`,
+   `sourceRealFullFrameDet_nonzero_isOpen`,
+   `isOpen_realSourcePermuteImage`,
+   `nonempty_realSourcePermuteImage`, and
+   `os45Figure24_checkedRealPatch_fullFrameSubpatch`: after π-permutation,
+   choose a nonempty determinant-open subpatch with a fixed
+   `ι : Fin (d + 1) ↪ Fin n`, preserve the pure-Gram real environment on the
+   permuted patch, and only then call
+   `sourceOrientedRealEnvironment_fullFrameSubpatch`.
+   The oriented adjacent `S'_n` consumers now have concrete data shapes:
+   `OS45AdjacentSPrimeOrientedScalarizationChart`,
+   the proposition alias `OS45AdjacentSPrimeOrientedSourceEq`,
+   `OS45AdjacentSPrimeOrientedScalarSeed`, and
+   `OS45AdjacentSPrimeOrientedSeedFigure24Path` store the connected oriented
+   corridor `Wscal`, the seed domain `Wseed`, double-domain membership,
+   provenance from the Figure-2-4 source patch, and the final corridor
+   equality.  These structures prevent the active route from feeding an
+   oriented representative through pure-Gram `S'_n` theorem surfaces.
+   The oriented route has one additional OS45 obligation that the current
+   public pure-Gram source patch does not yet expose: every Figure-2-4
+   path/corridor theorem must carry
+   `BHW.OS45Figure24OrientedPathField`, proving equality of the full oriented
+   invariant along the selected path, not only equality of
+   `sourceMinkowskiGram`.  The local API audit narrows this obligation:
+   `BHW.figure24RotateAdjacentConfig_lorentz_inverse` already supplies a
+   `Λinv : ComplexLorentzGroup d` with
+   `complexLorentzAction Λinv (Δ t) = permAct τ (Γ t)`, and the underlying
+   `(3,4,5)` rotation has `proper := spatialRotMatrix12_det`.  Thus
+   determinant-`1` control of the specific Figure-2-4 rotation is checked.
+   What remains on the active oriented route starts with finite determinant
+   algebra:
+   `BHW.sourceFullFrameDet_permAct`,
+   `BHW.sourceOrientedMinkowskiInvariant_complexLorentzAction`, and
+   `BHW.sourceOrientedMinkowskiInvariant_permAct`, followed by a strengthened
+   environment theorem exposing the same `Γ` and `Δ` as the checked pure-Gram
+   patch.  It still cannot be recovered later by choosing arbitrary lifts of
+   the Gram path.
+   This strengthened environment is now split into explicit producer names:
+   `BHW.OS45Figure24RotatedPathFormulaField`,
+   `BHW.swFigure24_adjacentHorizontalEnvironmentWithRotatedPathStability`,
+   `BHW.OS45Figure24OrientedPathField_of_checked_figure24`, and the
+   canonical-patch extension
+   `BHW.OS45Figure24OrientedCanonicalSourcePatchData` produced by
+   `BHW.os45_adjacent_identity_canonicalSourcePatch_with_orientedPath`.  The
+   existing checked `hV_figPath_closure` field is pure-Gram only and is too
+   lossy for determinant signs; the oriented theorem must preserve the
+   definitional rotated path formula before projecting to Gram coordinates.
+   The determinant algebra now has implementation-grade pseudo-code in the
+   blueprint: the selected frame matrix is
+   `fun a μ => z (ι a) μ`, `complexLorentzAction Λ` sends it to
+   `Z * Λ.val.transpose`, `Matrix.det_mul`, `Matrix.det_transpose`, and
+   `Λ.proper` prove determinant invariance, and permutation transports
+   `ι` to `ι.trans σ.toEmbedding` without inserting a hidden row sign.
+   The blueprint now also records the oriented downstream migration ledger:
+   `BHW.sourceOrientedGramVariety`,
+   `BHW.sourceOrientedDoublePermutationDomain`,
+   `BHW.sourcePermuteOrientedGram_mem_variety_iff`,
+   `BHW.sourceOrientedDoublePermutationDomain_relOpen`,
+   `BHW.SourceOrientedVarietyGermHolomorphicOn.precomp_sourcePermuteOrientedGram`,
+   and `BHW.sourceOrientedGramVariety_identity_principle`, followed by the
+   oriented adjacent `S'_n` surfaces
+   `BHW.os45AdjacentSPrimeOrientedScalarizationChart_of_figure24`,
+   `BHW.os45AdjacentSPrimeOrientedSourceEq_of_compactWickPairingEq`,
+   `BHW.os45AdjacentSPrimeOrientedScalarSeed_of_compactWickPairingEq`, and
+   `BHW.os45AdjacentSPrimeOrientedSeedFigure24Path`, with the orchestration
+   wrapper
+   `BHW.os45AdjacentSPrimeOrientedSeedFigure24Path_of_compactWickPairingEq`.
+   The path-facing seed theorem now has an implementation-level assembly
+   proof: it stores the supplied `hOrientedPath`, calls
+   `BHW.os45AdjacentOrientedScalarEq_on_quarterTurnCorridor` to produce
+   `corridor_eq`, and uses the stored `hSeed.τ_eq` both to rewrite the
+   double-domain hypothesis from `hSeed.τ` to the fixed adjacent swap and to
+   rewrite the final corridor equality back into the structure's `hSeed.τ`
+   form.  This prevents a later Lean proof from accidentally propagating along
+   a different adjacent permutation.
+   These are not aliases for the pure-Gram names; they are required if the
+   strict proper-complex route uses
+   `SourceOrientedScalarRepresentativeData`.
+   One further correction is now explicit: the old
+   `SourceDistributionalAdjacentTubeAnchor.gramEnvironment` cannot be reused
+   on the oriented route, because it stores only real Gram matrices and has
+   forgotten the full-frame determinant signs.  The oriented route needs
+   `BHW.sourceRealOrientedMinkowskiInvariant`,
+   `BHW.sourceOrientedDistributionalUniquenessPatch`,
+   `BHW.SourceOrientedDistributionalAdjacentTubeAnchor`, and the generic
+   propagation theorem
+   `BHW.os45AdjacentOrientedScalarEq_on_quarterTurnCorridor`.  The hard
+   identity-principle input for that propagation is now decomposed in the
+   blueprint: `sourceOrientedGramVariety_identity_principle_smallArity`
+   transports the checked pure-Gram identity theorem across the empty
+   determinant-coordinate equivalence when `n < d + 1`;
+   `sourceOrientedGramVariety_maxRank_identity_principle` propagates zero on
+   the smooth oriented max-rank stratum; and
+   `sourceOrientedGramVariety_relOpen_eqOn_zero_of_eqOn_maxRank` extends the
+   result to all of a relatively open connected domain by continuity and
+   density of max rank.  The max-rank identity theorem is no longer just a
+   slogan: it now mirrors the checked pure-Gram clopen proof, with
+   `sourceOrientedRelOpen_inter_maxRank_nonempty`,
+   `sourceOrientedMaxRankChart_at`,
+   `SourceOrientedVarietyGermHolomorphicOn.to_maxRank_chart`, and
+   `sourceOrientedMaxRank_local_identity_near_point` supplying the local
+   analytic continuation step on arbitrary complex max-rank points.  The local
+   step is itself decomposed: `sourceOrientedMaxRankChart_shrink_to_relOpen`
+   shrinks the chart to a connected open image inside the given relative
+   domain; `LocalBiholomorphOnSourceOrientedVariety.image_relOpenIn_chart`
+   turns relative openness in the source variety into relative openness in the
+   chart image; and `SCV.identity_theorem_connected_open_zero` is the standard
+   connected-domain holomorphic identity theorem for a nonempty open zero
+   subset.  The
+   final continuity extension is pinned to the generic topology helper
+   `continuousOn_eqOn_zero_of_subset_closure` and to
+   `sourceOrientedMaxRank_dense_in_relOpen_inter`, not to a prose density
+   argument.  The remaining non-mechanical producers are
+   `sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected`, the complex
+   max-rank chart/local-identity packet, and the max-rank density theorem; the
+   corridor theorem itself is no longer an unnamed analytic gap.  The
+   max-rank connectedness producer is also now split: prove the exceptional
+   lower-rank locus is an analytic
+   subvariety of oriented complex codimension at least one, use the local
+   connected basis to get a locally path-connected analytic-space structure on
+   `sourceOrientedGramVariety d n`, and apply the ordinary SCV/topology theorem
+   `connected_relOpen_complement_of_analytic_codim_ge_one` to
+   `U \ SourceOrientedExceptionalRank`; the equality with
+   `U ∩ SourceOrientedMaxRankAt` is then definitional inside the oriented
+   variety.
+   The hard
+   source input in this mini-packet is the oriented real-patch uniqueness
+   predicate for the fixed adjacent pair `(i, hi)`, on the π-permuted real
+   patch `{y | ∃ x ∈ hAnchor.realPatch π, y = fun k => x (π k)}`;
+   `oriented_right_eq_perm_left` is only finite algebra from
+   `sourceOrientedMinkowskiInvariant_permAct`.  The oriented anchor must also
+   retain the real left/right extended-tube sector fields and the
+   `realPatch_commonEdge_contact` provenance field; oriented-domain image
+   membership alone is not enough to apply `hRep.branch_eq` to the specific
+   real points, and raw sector membership alone is not enough to prove that
+   the real common-edge patch meets `hChart.Wscal`.  This contact is with the
+   real common-edge source invariant via `hChart.commonEdge_mem`, not with
+   the quarter-turn complex endpoint carried by `hChart.quarterTurn_mem`.
+   The predicate `sourceOrientedDistributionalUniquenessPatch` is now
+   decomposed further: it must be produced from
+   `BHW.IsHWOrientedRealEnvironment` by
+   `BHW.sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment`,
+   through the local seed theorem
+   `BHW.sourceOrientedLocalTotallyRealIdentity_seed`.  That seed theorem uses
+   `BHW.sourceOrientedLocalChart_at`,
+   `BHW.sourceOrientedLocalChart_totallyRealSlice`,
+   `BHW.sourceOrientedLocalChart_shrink_to_domain_and_realPatch`,
+   `BHW.sourceOrientedRestrictedRealSlice`,
+   `BHW.sourceOrientedLocalChart_totallyRealSlice_restrict`,
+   `BHW.realCoord_seed_nonempty_open_in_restrictedSlice`,
+   `BHW.SourceOrientedVarietyGermHolomorphicOn.to_chart`, and
+   `SCV.identity_theorem_totally_real` to produce a nonempty relatively open
+   oriented subset `W ⊆ U` where two oriented germ-holomorphic functions
+   agree.  The shrink now returns both a connected oriented neighborhood `Ω`
+   and an open real seed `Eseed`, with `C.chart '' Ω` open and connected.
+   The blueprint pins `BHW.NonemptyOpenInTotallyRealSlice` as the exact input
+   to `SCV.identity_theorem_totally_real` on the restricted slice inside
+   `C.chart '' Ω`; the proof must not apply the identity theorem on the
+   larger `C.chart '' C.Ω` while the pulled-back functions are only
+   holomorphic on `C.chart '' Ω`.  The local slice data must also expose
+   `realCoord_openMap_on_E0`, since openness of the real seed image in the
+   restricted totally-real slice is a coordinate-chart theorem, not a formal
+   consequence of `IsOpen Eseed`.  `to_chart` is now factored through
+   `LocalBiholomorphOnSourceOrientedVariety`: the chart API exposes an inverse,
+   left/right inverse laws, inverse membership, and inverse differentiability/
+   continuity on the chart image.  The proof of
+   `LocalBiholomorphOnSourceOrientedVariety.germ_to_chart` is local: at
+   `y ∈ chart '' Ω`, use `ContinuousOn` of the inverse to shrink inside the
+   germ representative's ambient open set, compose that representative with
+   the differentiable inverse, and glue the local differentiability statements
+   by `differentiableOn_of_local_agreement`.  Thus `to_chart` returns an actual
+   holomorphic representative on `C.chart '' Ω` agreeing with the source germ
+   on `Ω`; it cannot choose a new scalar representative or forget the shrink
+   `Ω ⊆ C.Ω`.  Only then may
+   `sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment` call
+   `sourceOrientedGramVariety_identity_principle` to propagate the equality
+   over the connected `U`.  This is finite-dimensional invariant-theory/SCV
+   support, not a QFT axiom; it cannot be inferred from the pure-Gram
+   real-tangent theorem because the oriented determinant coordinates add
+   extra tangent equations.  The local chart producer is now pinned to the
+   finite-dimensional implicit-function theorem for
+   `sourceOrientedDefiningEquations`: prove
+   `sourceOrientedGramVariety_eq_zeroLocus_definingEquations`,
+   `sourceOrientedDefiningEquations_hasFDerivAt`, and
+   `sourceOrientedRegularAt_submersion_equations`, then apply
+   `localBiholomorphOn_zeroLocus_of_submersion`.  The totally-real slice is
+   produced only after the defining equations' real coefficients and the
+   tangent-complexification equality are proved.
+   Gemini Deep Research interaction
+   `v1_ChczMGoxYWNQTEphYWlfdU1QeFlpRTJBSRIXMzBqMWFjUExKYWFpX3VNUHhZaUUyQUk`
+   independently confirmed this route-risk classification: proper
+   determinant-`1` complex Lorentz invariance leaves the
+   determinant/pseudoscalar obstruction in full scalar rank, and
+   `BHW.bvt_F_realOrthoChronousInvariant` cannot be derived from local
+   `SO(d+1)` OS.E1 plus proper-complex invariance without adding parity.
+   This is an audit result, not a proof or an axiom approval.
+   The strengthened complex predicate itself is now pinned as forward-tube
+   overlap invariance for all
+   `BHW.HallWightmanFullComplexLorentzGroup d` elements:
+   `F (A • z) = F z` whenever both `z` and `A • z` lie in
+   `BHW.ForwardTube d n`.  The extended-tube improper equality then has a
+   concrete proof transcript: choose proper forward-tube preimages
+   `z = Γz • pz` and `w = Γw • qw`, form the full element
+   `Γw⁻¹ * A * Γz`, use the forward-tube overlap invariant to prove
+   `F qw = F pz`, and unfold the two `extendF` values by the same preimage
+   equality lemma used in the determinant-`1` case.  The finite support slots
+   still missing here are
+   `BHW.fullComplexLorentz_properInv_mul_full_mul_proper`,
+   `BHW.fullComplexLorentz_preimage_map_eq`, and
+   `BHW.extendF_eq_preimage_value`.
+
    Readiness status for this scalar-source packet: the theorem names,
    dimension-general conventions, germ-holomorphic API, and Lean-shaped
    assembly are now pinned.  The remaining mathematical gaps are exactly the
-   unimplemented proof obligations for the ordinary branch law, Lemma-3
-   relative openness, max-rank scalar chart, scalar continuity/local
-   boundedness, and normal analytic-space removability.  Therefore the proof
+   unimplemented proof obligations for the ordinary branch law, including the
+   newly explicit improper-component/orientation gate, Lemma-3 relative
+   openness, max-rank scalar chart, scalar continuity/local boundedness, and
+   normal analytic-space removability.  Therefore the proof
    docs are still not at the "100% ready for production Lean" threshold for
    `BHW.sourceScalarRepresentativeData_bvt_F`.
 
@@ -604,11 +1746,17 @@ implementation contract is:
    `BHW.sourceCoefficientEval`,
    `BHW.sourceCoefficientGramMap`,
    `BHW.sourceCoefficientGramKernel`,
+   `BHW.sourceCoefficientGramMap_apply_sourceMinkowskiGram`,
+   `BHW.sourceCoefficientEval_single`,
+   `BHW.sourceCoefficientGramMap_eq_zero_iff_eval_pair_eval_eq_zero`,
+   `BHW.sourceCoefficientEval_pair_eq_sum_gram`,
    `BHW.sourceCoefficientEval_ker_le_gramKernel`,
    `BHW.restrictedMinkowskiLeftMap`,
    `BHW.restrictedMinkowskiRadical`,
    `BHW.restrictedMinkowskiRank`,
+   `BHW.sourceCoefficientGramMap_eq_toLin_transpose`,
    `BHW.sourceGramMatrixRank_eq_finrank_range_sourceCoefficientGramMap`,
+   `BHW.sourceCoefficientEval_mem_restrictedMinkowskiRadical_iff`,
    `BHW.sourceCoefficientGramKernel_eq_eval_preimage_radical`,
    `BHW.finrank_range_sourceCoefficientGramMap_eq_restrictedRank`,
    `BHW.sourceGramMatrixRank_eq_restrictedMinkowskiRank_range`,
@@ -620,10 +1768,35 @@ implementation contract is:
    `BHW.hw_highRank_eval_range_nondegenerate`,
    `BHW.hw_highRank_eval_ker_eq_gramKernel`,
    `BHW.hw_highRank_sourceCoefficientEval_ker_eq_of_sameSourceGram`,
-   `BHW.HWHighRankSpanIsometryData`, and
-   `BHW.hw_highRank_spanIsometryData_of_sameSourceGram`, then
+   `BHW.hwHighRankSpanIsometry_apply_eval`,
+   `BHW.HWHighRankSpanIsometryData`,
+   whose fields must include `M_eq_range`, `N_eq_range`,
+   `M_nondegenerate`, and `N_nondegenerate`,
+   `BHW.hw_highRank_spanIsometryData_of_sameSourceGram`,
+   `BHW.complexMinkowski_wittExtension_full_of_sourceSpan`,
+   `BHW.fullComplexLorentz_to_complexLorentzGroup_of_det_one`,
+   `BHW.fullComplexLorentz_det_neg_reflection_fixing_sourceSpan`,
+   `BHW.sourceSpan_orthogonalComplement_nontrivial_of_proper`,
+   `BHW.complexMinkowskiOrthogonalSubmodule_nondegenerate`,
+   `BHW.exists_nonisotropic_in_nondegenerate_subspace`,
+   `BHW.fullComplexLorentzReflection`,
+   `BHW.fullComplexLorentzReflection_det`,
+   `BHW.fullComplexLorentzReflection_fix_subspace`,
+   `BHW.sourceFullFrameDet_fullComplexLorentzAction`,
+   `BHW.fullComplexLorentz_det_eq_frameMapDet_of_fullRank`,
+   `BHW.sourceFullFrameDet_ratio_eq_of_sameSourceGram_fullRank`,
+   `BHW.HWFullRankSameGramFrameMapDet`,
+   `BHW.hwFullRankSameGramFrameMapDet_eq_det_ratio_of_fullFrame`,
+   `BHW.HWSameSourceGramSOOrientationCompatible`,
+   `BHW.complexMinkowski_wittExtension_detOne_of_sourceSpan`,
+   `BHW.complexMinkowski_wittExtension_or_improper_of_sourceSpan`,
+   `BHW.HWSameSourceGramImproperOrbitData`, and
+   `BHW.hw_sameSourceGram_regular_orbit_or_improper`, then
+   the determinant-`1` branch uses
    `BHW.extendF_complexLorentzInvariant_of_cinv` with both `hF_holo` and
-   `hF_cinv`, and the singular
+   `hF_cinv`, the determinant-`-1` full-rank branch uses
+   `BHW.hallWightmanFullComplexLorentzInvariantOnExtendedTube_eq`, and the
+   singular
    two-curve limit theorem
    `BHW.hw_sameSourceGram_singularLimit_extendF_eq`.  The singular data must
    expose two endpoint Lorentz-orbit curves, one from `z` and one from `w`,
@@ -667,8 +1840,9 @@ implementation contract is:
    the preimage existential.  This support lemma uses `hF_cinv`, not final
    locality, PET independence, or a source scalar representative.
    `BHW.hw_sameSourceGram_fiberAlternative` itself splits into
-   `BHW.hw_sameSourceGram_regular_orbit` with
-   `BHW.HWSourceGramOrbitRankAt d n z` and
+   `BHW.hw_sameSourceGram_regular_orbit_or_improper` with
+   `BHW.HWSourceGramOrbitRankAt d n z` and either a determinant-`1` orbit or
+   improper full-complex-orthogonal orbit data, and
    `BHW.hw_sameSourceGram_singular_contractionData` with
    `BHW.HWSourceGramLowRankAt d n z`.  The low-rank branch must itself pass
    through the explicit isotropic residual-frame data
@@ -695,11 +1869,12 @@ implementation contract is:
    `BHW.exists_coefficients_of_mem_span_finite_frame`,
    `BHW.hw_lowRank_alignedResidualFrame_of_sameSourceGram`,
    `BHW.ComplexMinkowskiNondegenerateSubspace`,
+   `BHW.complexMinkowski_isotropicFrame_dualFrameIn`,
    `BHW.complexMinkowski_isotropicDualFrame_of_residualFrame`,
    `BHW.complexMinkowski_wittExtension_subspaceIsometry`,
    `BHW.complexMinkowski_isotropicContraction_partialIsometry`,
    `BHW.complexMinkowski_isotropicContractionFamily`,
-   `BHW.hw_isotropicFrame_base_mem_forwardTube_of_endpoint`,
+   `BHW.hw_isotropicFrame_base_mem_extendedTube_of_endpoint`,
    `BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube`, and
    `BHW.hw_lowRank_isotropicContraction_staysIn_extendedTube`.  The printed
    four-dimensional Hall-Wightman proof collapses the residual frame to one
@@ -708,7 +1883,17 @@ implementation contract is:
    must store the dual isotropic frame fields used by the contraction:
    `qDual_pair_zero`, `q_dual`, `qDual_orth`, and the contraction-family
    field `contract_scale_qDual`; otherwise the Lorentz-family construction is
-   hidden behind an unexplained existence theorem.  The contraction family is
+   hidden behind an unexplained existence theorem.  The dual-frame supplier is
+   now pinned as an induction inside the nondegenerate orthogonal complement
+   `N = BHW.complexMinkowskiOrthogonalSubmodule d M`: split
+   `q0` from `qtail`, use linear independence to get
+   `IsCompl (ℂ∙q0) (span range qtail)` in the totally isotropic span,
+   construct `p0 ∈ N` by the radical-partner theorem, split the hyperbolic
+   plane `span {q0,p0}`, recurse on `qtail` inside its nondegenerate
+   orthogonal complement, and assemble
+   `qDual 0 = p0`, `qDual (succ a) = qtailDual a`.  This keeps every dual
+   vector in `Mᗮ`; no ambient dual-vector choice outside the selected-span
+   orthogonal complement is allowed.  The contraction family is
    split through the standard finite-dimensional Witt lemma
    `BHW.complexMinkowski_wittExtension_subspaceIsometry`: first define the
    partial isometry on
@@ -718,19 +1903,43 @@ implementation contract is:
    complex Minkowski form before extending it to `ComplexLorentzGroup d`.
    The tube-membership fields are sourced from Hall-Wightman's second and
    third remarks after Lemma 2:
-   `BHW.hw_isotropicFrame_base_mem_forwardTube_of_endpoint` proves that
-   removing an orthogonal totally isotropic finite-frame component from a
-   forward-tube point leaves a forward-tube point, and
-   `BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube` proves that once
-   one coefficient tuple along the frame lies in the extended tube, every
+   `BHW.hw_isotropicFrame_base_mem_extendedTube_of_endpoint` proves that
+   removing an orthogonal totally isotropic finite-frame component from an
+   extended-tube point leaves an extended-tube point.  The precise proof no
+   longer asserts that deleting a complex null residual leaves a
+   forward-tube representative; that stronger statement is false.  The proof
+   instead uses the exact Hall-Wightman route: the second remark rewrites a
+   forward-tube point with one orthogonal null residual as
+   `η + β q`, where `η ∈ ForwardTube` and `q` has the standard real
+   spacelike null normal form relative to `η`.  The blueprint now expands
+   that second remark through the real/imaginary null split
+   `q = qre + i qim`, exclusion of the lightlike-collinear case by
+   non-orthogonality to a strict forward-cone difference, the coefficient
+   projection `ξ i = η i + β i q`, and the equation-(41) cone lemma
+   `forwardCone_remove_spacelikeOrthogonal_twoPlane`.  This normal-form
+   packet explicitly assumes `[NeZero n]`; the `n = 0` case is a separate
+   trivial empty-configuration branch and cannot be used to infer spacelike
+   normal form for an arbitrary null vector.  The third remark is
+   expanded through the explicit complex two-plane rotation
+   `complexMinkowski_twoPlaneComplexRotation_lorentz`: fix the orthogonal
+   complement of `span {u,v}` and act on the plane by
+   `u ↦ cosh t u + i sinh t v`,
+   `v ↦ -i sinh t u + cosh t v`, which preserves the complex Minkowski form
+   and scales `u + i v` by `exp t`.  This gives all coefficient choices in
+   `ExtendedTube`.  A finite induction over the residual frame gives
+   `BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube`.
+   This membership theorem needs only `q_pair_zero` and `q_orth`; the dual
+   frame data `qDual_pair_zero`, `q_dual`, and `qDual_orth` are required
+   later for the null-boost contraction family and the singular value-limit
+   argument, not for coefficient-freedom membership.
+   `BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube` then proves that
+   once one coefficient tuple along the frame lies in the extended tube, every
    coefficient tuple along that frame does, including the zero tuple.  The
    blueprint now expands the latter theorem into its actual Lean steps:
-   transport the endpoint to the forward tube, apply the finite-frame forward
-   deletion theorem to get the transformed base in `ForwardTube`, use openness
-   of `ForwardTube` plus `Real.tendsto_exp_neg_atTop_nhds_zero` to put
-   `ξ + exp(-t) b q` in the forward tube for large `t`, and then apply the
-   inverse of the explicit contraction Lorentz transformation to recover
-   `ξ + b q` in the extended tube.  Thus `base_mem`,
+   prove the one-null-vector coefficient theorem from the second and third
+   remarks, transport an arbitrary extended-tube endpoint to a forward-tube
+   representative, and finite-induct over the residual frame.  Thus
+   `base_mem`,
    `contracted_left_mem`, and `contracted_right_mem` are theorem outputs, not
    assumptions and not consequences of closedness of the open extended tube.
    The selected-span step is also explicit: the coefficients are the inverse
@@ -741,9 +1950,20 @@ implementation contract is:
    follows by expanding both sides as polynomials in the common source Gram
    entries and rewriting by `hgram`.  The residual-residual pairings are
    zero, not merely equal: with the selected principal block invertible and
-   the full source Gram matrix of rank exactly `r`, the Schur complement is
-   zero; after expanding the projection coefficients this is exactly
-   `BHW.hw_lowRank_selected_residual_pairing_zero`.
+   the full source Gram matrix of rank exactly `r`, the checked theorem
+   `BHW.rank_eq_card_iff_reindexed_rect_schur_complement_eq_zero` kills the
+   rectangular Schur complement after reindexing by
+   `BHW.selectedIndexSumEquiv I hI`.  The blueprint now pins the exact
+   bridge: `hI` is derived from `hminor` by
+   `BHW.sourceMatrixMinor_ne_zero_left_injective`, the upper-left unit is
+   supplied by `BHW.isUnit_selectedIndexSumEquiv_toBlocks₁₁_det`, selected
+   residuals are zero by `BHW.hw_selected_residual_selected_eq_zero`, and
+   complementary residual pairings are identified entrywise with
+   `BHW.reindexedRectSchurComplement` by
+   `BHW.hw_lowRank_selected_complement_residual_pairing_eq_schur`.  Thus
+   `BHW.hw_lowRank_selected_residual_pairing_zero` is a genuine indexed
+   Schur argument over all original indices, not a hidden complement-choice
+   slogan.
    The common residual frame is a separate two-stage Witt-geometric theorem:
    `BHW.hw_lowRank_selectedSpanAlignment_of_selectedSpanFrame` first builds
    the Lorentz transform aligning the selected `z` span with the selected `w`
@@ -765,10 +1985,18 @@ implementation contract is:
    the left residual subspace `Rz` into the span of that frame by the
    Witt-index dimension bound; then define the partial isometry on
    `M ⊔ Rz` as the identity on `M` and that injection on `Rz`, with codomain
-   `M ⊔ LinearMap.range Eleft`.  This correction is important: the map from
-   `Rz` is only an injective isometry into the frame span, not an equivalence
-   onto the whole maximal frame span, and the frame must be chosen to contain
-   `Rw` before Witt extension is applied.
+   `M ⊔ LinearMap.range Eleft`.  The blueprint now pins the missing
+   direct-sum proof: `BHW.complexMinkowski_disjoint_of_nondegenerate_orthogonal`
+   gives `Disjoint M Rz` and `Disjoint M (LinearMap.range Eleft)`, because an
+   intersection vector lies in `M` and is orthogonal to every vector of `M`;
+   `BHW.span_frame_orthogonal_to_subspace` transports pointwise
+   frame-orthogonality to the whole span containing `Eleft x`.  The helper
+   `BHW.directSum_identity_sum_isotropicEmbedding` is therefore a genuine
+   linear equivalence of the two sup submodules, and its preservation theorem
+   is the explicit block-pairing calculation.  This correction is important:
+   the map from `Rz` is only an injective isometry into the frame span, not an
+   equivalence onto the whole maximal frame span, and the frame must be chosen
+   to contain `Rw` before Witt extension is applied.
    The later convergence proof must use the explicit contracted
    configurations and `Real.tendsto_exp_neg_atTop_nhds_zero`, not continuity
    of a noncomputably chosen `t ↦ contract t`.  The contraction data
@@ -803,25 +2031,69 @@ implementation contract is:
    `sourceCoefficientEval`, and the quotient rank-nullity computation through
    `sourceCoefficientEval.quotKerEquivRange`.  The proof-local helpers
    `scalarGramKernel_quot_equiv_restrictedRadical` and
-   `rank_sourceCoefficientGramMap_via_restrictedRadical` may be used, but
-   they only expose quotient/rank-nullity bookkeeping and are not new route
-   surfaces.  Separately,
+   `finrank_range_eq_sub_finrank_ker_of_rank_nullity` may be used, but they
+   only expose quotient/rank-nullity bookkeeping and are not new route
+   surfaces: the quotient map is `Submodule.liftQ`, and the exact APIs are
+   `Submodule.range_liftQ`, `Submodule.ker_liftQ`, and
+   `LinearMap.finrank_range_add_finrank_ker`.  Separately,
    `sourceGramMatrixRank_lt_orbitThreshold_of_range_degenerate` proves that a
    nonzero restricted radical forces scalar rank below `min d n`.  That
    rank-drop theorem is decomposed into explicit finite-dimensional support:
    degeneracy gives positive restricted-radical finrank; positive radical
    finrank gives `restrictedMinkowskiRank d M < finrank M`; the source span
    has finrank `<= n`; and a degenerate restricted subspace is proper in the
-   `(d + 1)`-dimensional ambient space, so its finrank is `<= d`.  This
-   prevents the direct-orbit branch from silently replacing Hall-Wightman's
-   scalar-rank condition by a source-map regularity or span-nondegeneracy
-   assumption.
-   The coefficient-kernel transport is also pinned at Lean-pseudocode level:
+   `(d + 1)`-dimensional ambient space, so its finrank is `<= d`.  The exact
+   APIs are `Submodule.one_le_finrank_iff`, `Submodule.finrank_le`,
+   `LinearMap.finrank_range_le`, `Submodule.finrank_lt`,
+   `Module.finrank_fin_fun`, and the checked ambient nondegeneracy
+   `BHW.sourceComplexMinkowskiInner_left_nonDegenerate`; the final arithmetic
+   is `omega`/`Nat.lt_succ_iff`.  This prevents the direct-orbit branch from
+   silently replacing Hall-Wightman's scalar-rank condition by a source-map
+   regularity or span-nondegeneracy assumption.
+   The coefficient-kernel transport now has checked Lean support for its
+   first finite algebra layer in
+   `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceCoefficient.lean`:
    `BHW.sourceCoefficientGramMap` is the explicit linear map
    `a ↦ (j ↦ ∑ i, a i * G i j)`, its kernel is
-   `BHW.sourceCoefficientGramKernel`, and
-   `BHW.sourceCoefficientEval_ker_le_gramKernel` expands the pairing of
-   `∑ i, a i • z i` with each source vector `z j`, while
+   `BHW.sourceCoefficientGramKernel`, and the finite algebra lemma
+   `BHW.sourceCoefficientGramMap_apply_sourceMinkowskiGram` identifies each
+   coordinate with
+   `BHW.sourceComplexMinkowskiInner d (sourceCoefficientEval d n z a) (z j)`
+   using the already-checked
+   `sourceComplexMinkowskiInner_sum_smul_left` and
+   `sourceMinkowskiGram_apply_eq_complexInner`.  Then
+   `BHW.sourceCoefficientEval_ker_le_gramKernel` is the immediate `mem_ker`
+   consequence.  The reverse finite test uses
+   `BHW.sourceCoefficientEval_single`, and
+   `BHW.sourceCoefficientGramMap_eq_zero_iff_eval_pair_eval_eq_zero` turns the
+   scalar Gram kernel into the exact all-range orthogonality predicate needed
+   for the restricted radical.  The checked
+   `BHW.sourceCoefficientEval_pair_eq_sum_gram` also records that pairings of
+   coefficient-evaluated source vectors depend only on the source Gram matrix.
+   The finite-matrix identification
+   `BHW.sourceCoefficientGramMap_eq_toLin_transpose` is also checked; it pins
+   the coefficient Gram map to `Matrix.toLin' Gᵀ`.  The restricted form
+   definitions `BHW.restrictedMinkowskiLeftMap`,
+   `BHW.restrictedMinkowskiRadical`, and `BHW.restrictedMinkowskiRank` are
+   checked in `BHWPermutation/SourceRank.lean`, as is the subtype/range
+   membership bridge
+   `BHW.sourceCoefficientEval_mem_restrictedMinkowskiRadical_iff`: unfold
+   `restrictedMinkowskiRadical`, apply the restricted left map to
+   `⟨evalZ b, ⟨b, rfl⟩⟩`, and conversely destruct an arbitrary
+   `y : LinearMap.range evalZ` as `⟨_, b, rfl⟩`.  The scalar Gram kernel
+   preimage theorem `BHW.sourceCoefficientGramKernel_eq_eval_preimage_radical`
+   is now checked as well.  The matrix-rank entry
+   `BHW.sourceGramMatrixRank_eq_finrank_range_sourceCoefficientGramMap` is
+   checked by combining the transpose identification with
+   `Matrix.rank_transpose`, `Matrix.rank_eq_finrank_range_toLin`, and
+   `Matrix.toLin_eq_toLin'`.  The remaining quotient bridge must now apply
+   rank-nullity on `ker evalZ` and identify the quotient radical with the
+   restricted radical.  Thus
+   `BHW.restrictedMinkowskiLeftMap` itself is no longer an abstract
+   placeholder in the blueprint: it is the explicit linear map
+   `x ↦ (y ↦ sourceComplexMinkowskiInner d x y)`, with linearity discharged by
+   `sourceComplexMinkowskiInner_add_left/right` and
+   `sourceComplexMinkowskiInner_smul_left/right`.
    `BHW.hw_highRank_sourceCoefficientEval_ker_eq_of_sameSourceGram` rewrites
    both evaluation kernels through the common
    `sourceCoefficientGramKernel` and transports the orbit-rank hypothesis
@@ -830,12 +2102,45 @@ implementation contract is:
    `LinearMap.range (sourceCoefficientEval ...)` is well-defined only after
    the checked kernel equalities, not by the informal assignment
    `z i ↦ w i`.
+   The quotient-induced span isometry is now Lean-shaped as well:
+   `BHW.hwHighRankSpanIsometry_apply_eval` proves that the constructed map
+   sends `⟨evalZ a, ⟨a, rfl⟩⟩` to `⟨evalW a, ⟨a, rfl⟩⟩` using
+   `LinearMap.quotKerEquivRange_symm_apply_image`,
+   `LinearMap.quotKerEquivRange_apply_mk`, and
+   `Submodule.quotEquivOfEq_mk`; preservation of the pairing is reduced to
+   `BHW.sourceCoefficientEval_pair_eq_sum_gram` and the common Gram equality.
    The high-rank branch is equally not allowed to skip directly from equal
    Gram entries to a Lorentz transform: the proof must first identify the
    coefficient kernels of the two source tuples through the common scalar
    Gram kernel, descend the identity map on coefficient space to an isometry
-   of the two vector spans, and only then apply
-   `BHW.complexMinkowski_wittExtension`.
+   of the two vector spans, and only then apply the determinant-sensitive
+   extension alternative
+   `BHW.complexMinkowski_wittExtension_detOne_of_sourceSpan` /
+   `BHW.complexMinkowski_wittExtension_or_improper_of_sourceSpan`.
+
+   Lemma-2 readiness is now componentwise.  The branch law may move to Lean
+   only after the following rows have proof terms or checked local support:
+
+   | Subpacket | Status | Proof obligation |
+   | --- | --- | --- |
+   | Rank split predicates and complement lemmas | Implemented and exact-file checked in `BHWPermutation/SourceRank.lean`; umbrella import checked in `BHWPermutation.lean`. | Defines `sourceGramMatrixRank`, `sourceConfigGramMatrixRank`, `HWSourceGramOrbitRank`, `HWSourceGramLowRank`, `HWSourceGramOrbitRankAt`, `HWSourceGramLowRankAt`, `HWSourceGramMaxRank`, `HWSourceGramExceptionalRank`, `HWSourceGramMaxRankAt`, and `HWSourceGramExceptionalRankAt`; proves complement and same-Gram transport lemmas. |
+   | Coefficient maps and scalar Gram kernel | Implemented and exact-file checked in `BHWPermutation/SourceCoefficient.lean`; umbrella import checked in `BHWPermutation.lean`. | Defines `sourceCoefficientEval`, `sourceCoefficientGramMap`, and `sourceCoefficientGramKernel`; proves `sourceCoefficientGramMap_apply_sourceMinkowskiGram`, `sourceCoefficientEval_single`, `sourceCoefficientGramMap_eq_zero_iff_eval_pair_eval_eq_zero`, `sourceCoefficientEval_pair_eq_sum_gram`, and `sourceCoefficientEval_ker_le_gramKernel`. |
+   | Restricted-rank bridge | Transpose identity, radical membership, kernel-preimage, and matrix-rank/range bridge implemented; quotient rank-nullity still not implemented. | Prove `finrank_range_sourceCoefficientGramMap_eq_restrictedRank` by quotienting by `ker evalZ` using `Submodule.liftQ`, `Submodule.range_liftQ`, `Submodule.ker_liftQ`, and `LinearMap.finrank_range_add_finrank_ker`; then assemble `sourceGramMatrixRank_eq_restrictedMinkowskiRank_range`. |
+   | High-rank kernel transport | Lean-shaped proof-doc packet complete; not yet implemented. | Prove degenerate restricted span drops below `min d n`, transport `ker evalZ = gramKernel = ker evalW`, and keep the coefficient quotient well-defined before any `z i ↦ w i` assignment. |
+   | High-rank span isometry and orbit theorem | Proof transcript pinned; production Lean not started. | Descend the coefficient identity to `HWHighRankSpanIsometryData` via `hwHighRankSpanIsometry_apply_eval`, prove preservation by `sourceCoefficientEval_pair_eq_sum_gram`, then split the Witt extension into determinant-`1` proper orbit and determinant-`-1` improper full-complex-orthogonal orbit.  The oriented route avoids the improper full-rank branch by carrying full-frame determinant data and proving `sourceOriented_soCompatible_of_sameInvariant`; the conditional pure-Gram fork still needs Hall-Wightman's space-inversion/improper-component source input. |
+   | Low-rank selected principal block | Proof transcript pinned; principal-minor extraction checked locally. | The blueprint now spells out `hwLemma3_selectedProjection`, selected coefficients, projection Gram equality, Schur-zero residual pairing, and source-span finrank equality.  Lean may start at these finite algebra helpers only after the proof-doc gate chooses a concrete implementation file; the final branch-law wrapper must not be first. |
+   | Low-rank residual-frame alignment | Proof transcript pinned; production Lean not started. | Align selected spans first, extract the residual span, choose an independent common isotropic frame `q`, store explicit coefficient functions for both residual families, and prove pairwise isotropy plus orthogonality to the selected block from the zero Schur complement. |
+   | Dual frame and contraction family | Proof transcript pinned; production Lean not started. | Store `qDual_pair_zero`, `q_dual`, `qDual_orth`, build the finite partial boost scaling `q`/`qDual`, and Witt-extend it; the dual frame is used only for null-boost contraction and the two-curve value equality/limit, not for the coefficient-freedom membership theorem. |
+   | Tube stability and singular limit | Proof transcript pinned; corrected target for arbitrary endpoints is `ExtendedTube`, not `ForwardTube`. | Split off the trivial `n = 0` case.  For `[NeZero n]`, prove Hall-Wightman's second remark as `hw_secondRemark_forwardTube_singleNullResidual_normalForm`: real/imaginary null split, rule out the lightlike-collinear case by strict forward-cone non-orthogonality, project to `η + β q`, and apply the equation-(41) cone lemma.  Then prove the third-remark scaling theorem by the explicit complex two-plane rotation fixing the orthogonal complement and scaling `u + i v` by `exp t`; transport the one-null-vector coefficient theorem from a forward representative to an arbitrary extended-tube endpoint, and finite-induct to `hw_isotropicFrame_allCoefficients_mem_extendedTube`. |
+   | `extendF_complexLorentzInvariant_of_cinv` | Implemented and exact-file checked in `ComplexInvariance/Extend.lean`. | Unfold `extendF`, choose forward-tube preimages, and use the new direct-preimage helper `BHW.extendF_preimage_eq_of_cinv`; no PET/EOW/locality and no scalar-representative content. |
+
+   Therefore, after the theorem-2 proof-doc gate is fully closed, the first
+   remaining Lean target in this block is now the restricted-rank bridge or
+   another unimplemented finite-dimensional support theorem above, not the
+   final branch-law wrapper
+   `BHW.extendedTube_same_sourceGram_extendF_eq`.  This sentence is not
+   permission to start production Lean while the oriented scalar-source producer ledger above
+   remains open.
 2. `BHW.sourceExtendedTubeGramDomain_relOpen_connected`: the scalar image
    `BHW.sourceExtendedTubeGramDomain d n` is relatively open in
    `BHW.sourceComplexGramVariety d n` and connected.  Continuity of the Gram
@@ -887,6 +2192,18 @@ implementation contract is:
    residual coefficients to zero while preserving scalar products.  The proof
    is now decomposed through
    `BHW.sourceGramMatrixRank_pos_of_mem_extendedTube`,
+   with its support theorem
+   `BHW.openForwardCone_imag_complexSelfInner_ne_zero`: if
+   `v = x + iη` and `η ∈ BHW.InOpenForwardCone d`, then `B(v,v) ≠ 0`
+   because `BHW.sourceComplexMinkowskiInner_self_re_im` turns `B(v,v)=0`
+   into both `B(x,η)=0` and `B(x,x)=B(η,η)`, while
+   `BHW.openForwardCone_realMinkowskiSelf_pos` gives `B(η,η)>0`,
+   contradicting
+   `BHW.realMinkowski_self_nonpos_of_orthogonal_timelike`; a nonzero
+   forward-tube diagonal Gram entry then gives positive matrix rank by
+   `BHW.matrix_rank_pos_of_nonzero_entry`, and the extended-tube case follows
+   by `BHW.sourceMinkowskiGram_complexLorentzAction`.  The remaining adapted
+   representative construction is decomposed through
    `BHW.hwLemma3_selectedProjection`,
    `BHW.hwLemma3_selectedResidual`,
    `BHW.hwLemma3_selectedProjection_gram_eq`,
@@ -899,39 +2216,98 @@ implementation contract is:
    theorem-2 blueprint now expands the adapted quantitative theorem down to
    Hall-Wightman's actual Lemma-3 algebra:
    `BHW.hwLemma3_selectedBlock_sqrt_near_identity` for the analytic square
-   root of the selected principal block near `1`; this is now pinned to the
-   finite matrix binomial series
+   root of the selected principal block near `1`; this is now pinned to a
+   fully decomposed finite matrix binomial series packet under
+   `open scoped Matrix.Norms.Operator`, with imports
+   `Mathlib.Analysis.Analytic.Binomial`,
+   `Mathlib.Analysis.Matrix.Normed`,
+   `Mathlib.Analysis.Normed.Ring.InfiniteSum`, and
+   `Mathlib.Topology.Instances.Matrix`.  The `r = 0` selected-block case is
+   separated as a vacuous empty-matrix branch.  For `0 < r`, the support
+   layer defines
    `matrixSqrtOneAddNearZero r B =
-   ∑' m, Ring.choose (1/2 : ℂ) m • B^m`, with operator
-   norm convergence for `‖B‖ < 1`, symmetry under transpose, the square
-   identity, and an entrywise smallness estimate obtained from
+   ∑' m, Ring.choose (1/2 : ℂ) m • B^m` and proves scalar binomial
+   coefficient summability from `binomialSeries_radius_ge_one`, matrix-term
+   absolute summability by `norm_pow_le`, the Cauchy-product square identity
+   by
+   `tsum_mul_tsum_eq_tsum_sum_antidiagonal_of_summable_norm`, and the
+   coefficient convolution by `Ring.add_choose_eq`.  The transpose step is
+   pinned to `Matrix.transpose_tsum`, `Matrix.transpose_smul`, and
+   `Matrix.transpose_pow`; continuity at zero is isolated as the genuine
+   Banach-algebra theorem `BHW.scalarPowerSeries_tendsto_at_zero`; and the
+   final entrywise smallness uses
    `BHW.matrix_opNorm_le_card_mul_sup_entry`,
+   `BHW.matrix_norm_lt_of_entry_bound`, and
+   `BHW.matrix_entry_norm_le_linfty_opNorm`,
    `BHW.hwLemma3_schurComplement_rank_bound` for the lower-right residual
-   rank `<= d + 1 - r`; this is now pinned to the block Gaussian
-   factorization
-   `[[A,Bᵀ],[B,C]] = L * [[A,0],[0,C-B*A⁻¹*Bᵀ]] * Lᵀ`, invertibility of
-   `L`, symmetry of the selected block `A`, block-diagonal rank additivity,
-   and `Nat.add_le_iff_le_sub`,
+   rank `<= d + 1 - r`; this is now pinned to Mathlib's actual
+   `Matrix.fromBlocks_eq_of_invertible₁₁` from
+   `Mathlib.LinearAlgebra.Matrix.SchurComplement`.  The proof converts
+   `⅟A` to `A⁻¹` via `Matrix.invertibleOfIsUnitDet` and
+   `Matrix.invOf_eq_nonsing_inv`, drops the two block-triangular factors by
+   `Matrix.isUnit_fromBlocks_zero₁₂`,
+   `Matrix.isUnit_fromBlocks_zero₂₁`,
+   `Matrix.isUnit_iff_isUnit_det.mp`,
+   `Matrix.rank_mul_eq_right_of_isUnit_det`, and
+   `Matrix.rank_mul_eq_left_of_isUnit_det`, then proves the block-diagonal
+   rank theorem
+   `BHW.matrix_rank_fromBlocks_zero_zero` via
+   `Matrix.rank_eq_finrank_range_toLin`,
+   `LinearMap.toMatrix_prodMap`, `LinearMap.range_prodMap`, and
+   `Module.finrank_prod`.  The final arithmetic is
+   `Nat.le_sub_of_add_le`; symmetry of the selected block is available
+   upstream but is not used by the rank algebra,
    `BHW.complexSymmetric_takagi_rankLE` and
    `BHW.complexSymmetric_factorSmall_rankLE` for the finite-dimensional
    Takagi/Bargmann factorization and its small-factor estimate; the actual
    implementation route now factors through
-   `BHW.complexSymmetric_autonneTakagi_factor_rankLE_norm`, obtained from the
-   Autonne-Takagi theorem with unitary matrix, nonnegative singular values,
-   rank support, and the entry bound
-   `‖A i a‖ <= Real.sqrt ‖S‖`, then uses
-   `BHW.matrix_opNorm_le_card_mul_sup_entry` to make the factor entries
-   small,
-   `BHW.complexMinkowskiOrthogonalTailSubspace` and
+   `BHW.complexSymmetric_autonneTakagi_factor_rankLE_entryL1`, obtained from
+   the Autonne-Takagi theorem with unitary matrix, nonnegative singular
+   values, rank support, and the explicit entry-sum bound
+   `‖A i a‖ <= Real.sqrt (BHW.matrixEntryL1Bound m S)`, where
+   `matrixEntryL1Bound m S = ∑ p : Fin m × Fin m, ‖S p.1 p.2‖`.
+   This deliberately avoids relying on any ambient matrix norm instance.  The
+   blueprint now spells out the finite
+   Autonne theorem itself through the conjugate-linear map
+   `v ↦ S.mulVec (star v)`: square it to the positive Hermitian map
+   `S * Sᴴ`, use `Matrix.isHermitian_mul_conjTranspose_self` and
+   `Matrix.IsHermitian.eigenvectorUnitary`, prove that the conjugate-linear
+   map commutes with its square, maps each real eigenspace to itself, kills
+   the zero eigenspace, and on each positive eigenspace becomes the
+   conjugate-linear isometric involution `σ⁻¹ C`.  That fixed-basis theorem
+   is now decomposed through the semilinear-isometry API `E ≃ₗᵢ⋆[ℂ] E`:
+   define the real fixed
+   submodule `BHW.conjugationFixedSubmodule`, prove the explicit real-linear
+   decomposition `x = (x + Jx)/2 + I • ((-I) • (x - Jx)/2)`, deduce
+   `finrank ℝ fixed = finrank ℂ E` from `Module.finrank_prod`, prove fixed
+   vectors have real complex inner products by antiunitarity, and use
+   `OrthonormalBasis.mk` on the complex span of a real
+   `stdOrthonormalBasis` of the fixed submodule.  It then spells out the finite
+   support extraction: use `Fintype.nonempty_of_card_le` to embed the nonzero
+   singular-value subtype into `Fin k`, define the rectangular factor by
+   filling the corresponding columns and zeroing the complement, reindex the
+   range sum by `Finset.sum_embedding`/`Finset.sum_bij`, and bound entries by
+   the unitary-column lemma `BHW.matrix_unitary_entry_norm_le_one`, the
+   Frobenius-to-entry-sum singular-value estimate
+   `BHW.takagi_singularValue_le_entryL1Bound`, decomposed through
+   `BHW.takagi_frobenius_sum_sq` and `BHW.real_sqrt_sum_sq_le_sum`, and the
+   finite sum helper `BHW.matrixEntryL1Bound_lt_of_entry_bound` to make the
+   factor entries small,
+   `BHW.standardCoordinateTailSubspace`,
+   `BHW.complexMinkowskiOrthogonalTailSubspace`, and
+   `BHW.mem_complexMinkowskiOrthogonalTailSubspace_iff`, plus
    `BHW.complexMinkowski_realizeSmallSymmetricRankLE_inOrthogonalTail` for
    realizing the Schur residual in the orthogonal complement of the selected
-   normalized block, with the arithmetic and norm-control helpers
+   normalized block, with the arithmetic and coordinate-control helpers
    `BHW.exists_finTailEmbedding`,
    `BHW.tailEmbeddedFactorVectors`,
    `BHW.standardComplexSymmetricBilinear_tailEmbeddedFactor`,
    `BHW.tailEmbeddedFactorVectors_coord_bound`, and
-   `BHW.complexMinkowskiOrthogonalModel_symm_coord_bound`, and
-   `BHW.complexMinkowski_realizeSmallSymmetricRankLE` as only the `r = 0`
+   `BHW.complexMinkowskiToDotLinearEquiv_symm_coord_bound`.  The tail
+   embedding is now explicit (`ι a = ⟨r + a.val, by omega⟩`), and the
+   embedded-factor pairing proof is specified as a range/complement split
+   followed by reindexing over `Fin k`.
+   `BHW.complexMinkowski_realizeSmallSymmetricRankLE` is only the `r = 0`
    corollary of that tail theorem.  The normalized Schur proof must use the
    tail theorem, not the full-space corollary, or the residual vectors could
    disturb the selected block.  The canonical normal-form data are
@@ -956,7 +2332,8 @@ implementation contract is:
    `Module.finrank ℂ (LinearMap.range (BHW.sourceCoefficientEval d n ζ0)) =
    BHW.sourceGramMatrixRank n (BHW.sourceMinkowskiGram d n ζ0)` and records
    the source-index linear change, ambient Minkowski isometry, Gram
-   congruence, variety preservation, and the two smallness estimates used to
+   congruence, variety preservation, the oriented Gram-plus-determinant
+   transport induced by Cauchy-Binet, and the two smallness estimates used to
    pull the normalized realization back to the adapted base tuple.  Its
    finite matrix assembly is not allowed to skip the intermediate
    `[[A,0],[0,0]]` stage: the projection source change
@@ -1024,6 +2401,30 @@ implementation contract is:
    `⟨z, hzET, rfl⟩`, then prove
    `sourceMinkowskiGram d n z ∈ sourceComplexGramVariety d n` by the range
    witness `⟨z, rfl⟩`; `hzET` is unused for the variety-membership proof.
+
+   Lemma-3 readiness is componentwise.  The relative-open theorem may move
+   to Lean only after the local-realization rows below have proof terms or
+   checked local support:
+
+   | Subpacket | Status | Proof obligation |
+   | --- | --- | --- |
+   | Definitional subset and connectedness | Mechanical with checked support. | Use the image/range definitions, `BHW.isConnected_extendedTube`, and `BHW.contDiff_sourceMinkowskiGram`. |
+   | Pointwise-to-global relative-open assembly | Mechanical after local realization. | Choose explicit `sourceExtendedTubeGramDomain_relOpen_at` neighborhoods, form the subtype-indexed union, and use the subset lemma. |
+   | Adapted same-Gram representative | Proof transcript pinned; production Lean not started. | `hwLemma3_extendedTube_adaptedRankRepresentative` is reduced to the Lemma-2 residual-frame/all-coefficients extended-tube theorem, selected projection, Schur-zero residual theorem, and span-rank equality; the blueprint explicitly forbids source-changing an arbitrary representative to zero tail. |
+   | Principal block/projection/Schur-zero algebra | Proof transcript pinned; principal-minor extraction checked locally. | The blueprint now gives the selected coefficient definition, projection Gram equality, residual orthogonality, residual-residual zero via the Schur complement, and span-finrank theorem.  These are finite algebra support targets, not final wrappers. |
+   | Normal-form source transport | Proof transcript pinned; production Lean not started. | Source permutation, projection matrix, congruence-to-identity, canonical Gram congruence, tail-zero from adaptedness, Witt extension to the standard selected frame, and oriented invariant transport are all named with Lean-shaped constructor code. |
+   | Near-identity square root | Proof transcript pinned; pure matrix analysis. | The blueprint gives the binomial-series construction of `(1 + B)^(1/2)`, convergence via a scalar power-series majorant, transpose compatibility, the square identity, and entrywise estimates from matrix norm bounds. |
+   | Schur-rank/Takagi/tail factorization | Proof transcript pinned; pure finite linear algebra. | The proof is split into Mathlib Schur-complement rank factorization, Autonne-Takagi with rank support and explicit entry-L1 control, small factorization, and tail embedding with coordinate estimates. |
+   | Orthogonal-tail residual realization | Proof transcript pinned; production Lean not started. | Takagi factors are transported into `complexMinkowskiOrthogonalTailSubspace`, paired to the Schur complement, kept orthogonal to the selected block, and transported back through the Minkowski orthogonal model with norm control. |
+   | Normalized Schur realization and transport back | Proof transcript pinned; production Lean not started. | The normalized theorem assembles selected vectors, cross coefficients, and tail residuals, proves the Gram equality, then uses `HWLemma3NormalFormTransport` estimates to return to the adapted base. |
+   | Extended-tube shrink and arbitrary-neighborhood conversion | Proof transcript pinned; topology helper standard. | `exists_coord_supnorm_ball_subset_of_isOpen` is used with openness of `ExtendedTube`; `hwLemma3_adaptedBase_transport_smallPerturbation_extendedTube` combines the shrink with the transported realization. |
+   | Existing Schur/local-connectedness files | Checked support only. | `sourceComplexGramVariety_local_connectedRelOpen_basis*` and `sourcePrincipalSchurGraph_rankLE_image_eq_openCoordinatePatch` do not prove relative openness of the extended-tube Gram image. |
+
+   Therefore, after the theorem-2 proof-doc gate is fully closed, the first
+   Lean target in this block would be a finite-dimensional support theorem,
+   not the wrapper `BHW.sourceExtendedTubeGramDomain_relOpen_connected`.
+   This is a future implementation-order note, not permission to start
+   production Lean while the oriented scalar-source producer ledger remains open.
 3. `BHW.sourceVarietyGermHolomorphicOn_extendF_descent`: descend
    `BHW.extendF F` through `BHW.sourceMinkowskiGram d n` to a
    `BHW.SourceVarietyGermHolomorphicOn` scalar representative.  The branch law
@@ -1044,8 +2445,8 @@ implementation contract is:
    `comp_differentiableOn_chart`, and
    `sourceComplexGramVariety_identity_principle`.
    The `comp_sourceMinkowskiGram` proof must be phrased pointwise with
-   `DifferentiableWithinAt.congr_of_eventuallyEq`: after choosing the local
-   ambient representative `Ψ` on an open `U0`, pull `U0` back along the
+   `DifferentiableWithinAt.congr_of_eventuallyEq_of_mem`: after choosing the
+   local ambient representative `Ψ` on an open `U0`, pull `U0` back along the
    continuous Gram map to get an event in `𝓝[Ω] z`, prove equality there by
    the germ field on `U0 ∩ sourceComplexGramVariety d n` using the witness
    `⟨w, rfl⟩`, compose the differentiability of `Ψ` with the polynomial Gram
@@ -1126,7 +2527,9 @@ implementation contract is:
    consumer of `BHW.sourceGramVariety_normal_riemannExtension`: apply the
    normal analytic-space Riemann theorem to the max-rank chart section using
    `BHW.sourceComplexGramVariety_relOpen_subset_closure_inter_maxRank` for
-   the dense complement hypothesis.  The Riemann theorem internally uses the
+   the dense complement hypothesis.  The Riemann theorem is
+   finite-dimensional-polymorphic, though this ordinary specialization uses
+   the scalar Gram coordinate ambient type.  It internally uses the
    relative-open witness for `U` and returns the domain-control field
    `U0 ∩ BHW.sourceComplexGramVariety d n ⊆ U`.  Chart constructors must
    still preserve
@@ -1167,14 +2570,19 @@ implementation contract is:
    `hf : ContinuousOn f Ω`, `hxΩ`, and the open target neighborhood; it does
    not carry an unused `IsOpen Ω` hypothesis.  The open extended-tube theorem
    is still used later when forming `Vsrc ∩ BHW.ExtendedTube d n`, not in this
-   helper.  The first branch-defined value step is now scratch-checked:
-   define
-   `phi Z := if hZ : Z ∈ sourceExtendedTubeGramDomain d n then
-   extendF F (Classical.choose hZ) else 0`; for
-   `Z = sourceMinkowskiGram d n w`, use
-   `hZ := ⟨w, hw, rfl⟩`, the two fields of `Classical.choose_spec hZ`, and
+   helper.  The first branch-defined value step is now scratch-checked on the
+   honest subtype domain:
+   `BHW.sourceScalarValueOfExtendFOn d n F
+   (Z : {Z // Z ∈ sourceExtendedTubeGramDomain d n}) :=
+   extendF F (Classical.choose Z.2)`; for
+   `Z = sourceMinkowskiGram d n w`, use the subtype proof
+   `⟨w, hw, rfl⟩`, the two fields of `Classical.choose_spec`, and
    `hBranch hchoose_mem hw hchoose_gram` to prove
-   `phi (sourceMinkowskiGram d n w) = extendF F w`.
+   `BHW.sourceScalarValueOfExtendFOn_branch_eq`.  Any total ambient `phi`
+   with an `else` branch is only proof-local packaging for total-function
+   APIs and must not be exported as the production scalar representative.
+   This helper is only the branch-defined value well-definedness calculation;
+   it consumes the branch law and does not replace it.
    The max-rank chart helper
    `BHW.hallWightman_powerSeriesChart_branch_eq_of_sameGram` must carry the
    source-vector inclusion `Uvec ⊆ BHW.ExtendedTube d n`; the branch law cannot
@@ -1208,7 +2616,7 @@ implementation contract is:
    coordinate target: `isOpen_prod_iff` gives a product neighborhood inside
    the target, then the auxiliary factor is shrunk to a finite-dimensional
    ball using `Metric.mem_nhds_iff`, `Metric.isOpen_ball`, and
-   `Metric.isConnected_ball`.  The final coordinate split must restrict the
+   `isConnected_ball`.  The final coordinate split must restrict the
    local homeomorphism to this product so that
    `C.Ucoord = Set.prod Us Ua` holds by definition; a mere inclusion
    `Us × Ua ⊆ C.Ucoord` is not enough for the auxiliary-independence theorem.
@@ -1355,6 +2763,30 @@ implementation contract is:
    extended-tube point `w`, add the variety membership
    `⟨w, rfl⟩` to upgrade `sourceMinkowskiGram d n w ∈ U0 ∩ O` to
    membership in `(U0 ∩ O) ∩ sourceComplexGramVariety d n`.
+   Descent/max-rank/removable readiness is likewise componentwise.  The
+   descent theorem may move to Lean only after these local-chart and
+   removability rows have proof terms or checked local support:
+
+   | Subpacket | Status | Proof obligation |
+   | --- | --- | --- |
+   | Germ API and chart-to-`Phi` compatibility | Checked API plus scratch-pinned helper. | Use `SourceVarietyGermHolomorphicOn` and `hallWightman_localScalarChart_eq_scalarValue`; equality is only on the source Gram variety slice. |
+   | Branch-defined scalar value, continuity, local boundedness | Proof transcript pinned; production Lean not started. | `sourceScalarValueOfExtendFOn` defines the branch value on the subtype `sourceExtendedTubeGramDomain d n`, and `sourceScalarValueOfExtendFOn_branch_eq` proves well-definedness from the branch law.  The blueprint now proves continuity/local boundedness from Lemma-3 neighborhoods directly; ambient total functions remain proof-local API packaging with irrelevant off-domain values. |
+   | Lemma 4 infinitesimal PDE | Proof transcript pinned; production Lean not started. | Build the complex-Lorentz exp curve, compute its action derivative, and use differentiability plus extended-tube invariance of `extendF`. |
+   | Lemmas 6--7 kernel and dual span | Proof transcript pinned; production Lean not started. | Selected rows, infinitesimal Witt extension, row-relation transfer, covector factorization through the Gram differential, and finite coordinate-dual expansion. |
+   | Max-rank selected coordinates and vector split | Proof transcript pinned; production Lean not started. | Nonzero selected scalar minor at rank `min (d + 1) n`, constant-rank persistence, auxiliary coordinate complement, and finite-dimensional inverse function theorem. |
+   | Product target and auxiliary independence | Product-slice transcript pinned; production Lean not started. | Restrict the IFT target to `Set.prod Us Ua`, require connected nonempty `Ua`, prove zero auxiliary derivative, and apply `IsOpen.is_const_of_fderiv_eq_zero` only on the auxiliary slice. |
+   | Selected-coordinate reinflation | Lean-shaped transcript pinned; depends on coordinate split implementation. | Define the exact open `C.U0 ∩ {Z | C.scalarCoord Z ∈ Us}`, prove differentiability of `Ψs ∘ C.scalarCoord`, and keep source-variety domain control. |
+   | Max-rank scalar chart assembly | Assembly transcript pinned; not a first Lean target. | Combine the product chart with Lemma 3's adapted local realization and the branch-law transport helper only after the coordinate/PDE rows are implemented. |
+   | Exceptional analytic locus and dense complement | Determinantal transcript pinned; production Lean not started. | The blueprint identifies the exceptional rank locus as the analytic determinantal subset cut out by maximal scalar minors and proves density of the max-rank complement in relatively open source-variety domains by the Schur-product perturbation argument. |
+   | Normal analytic-space removability | SCV support transcript pinned; production Lean not started. | Normality is reduced to the symmetric determinantal variety, Schur local product model, singular-locus codimension, the reduced Cohen-Macaulay/Jozefiak-Pragacz coordinate-ring theorem, Serre assembly, and the normal analytic-space Riemann extension with continuity/local boundedness hypotheses. |
+   | `sourceVarietyGermHolomorphicOn_extendF_descent` | Mechanical only after all rows above. | Construct `SourceVarietyGermHolomorphicOn` for the same branch-defined `Phi`; do not glue in a second scalar value function. |
+
+   Therefore, after the theorem-2 proof-doc gate is fully closed, the first
+   Lean target in this descent block would be a lower support theorem, not
+   `BHW.sourceVarietyGermHolomorphicOn_extendF_descent`,
+   `BHW.hallWightman_localScalarChart_at`, or the final scalar-representative
+   constructor.  This is a future implementation-order note, not permission to
+   start production Lean while the oriented scalar-source producer ledger remains open.
 4. `BHW.sourceScalarRepresentativeData_of_branchLaw`: assemble
    `BHW.SourceScalarRepresentativeData` with
    `U = BHW.sourceExtendedTubeGramDomain d n`, using the relative-open,
@@ -1379,12 +2811,101 @@ implementation contract is:
    `bvt_F_holomorphic` and
    `bvt_F_complexLorentzInvariant_forwardTube`, both transported across
    `BHW_forwardTube_eq` to the `BHW.ForwardTube` API used by the source
-   theorem statement.
+   theorem statement, plus the now-explicit
+   `BHW.bvt_F_realOrthoChronousInvariant`/improper-component input needed for
+   full-rank same-Gram fibres.  Since that improper-component input is not
+   currently available from the local OS axioms, this specialization is
+   conditional rather than Lean-ready.
 
-None of these five surfaces is currently implemented in Lean; the current
-production file `BHWPermutation/SourceExtension.lean` intentionally keeps this
-Hall-Wightman/BHW branch-law theorem in proof docs until the proof or an
-approved source-import boundary is available.
+Scalar-source implementation ledger:
+
+| Surface | Current status | First missing mathematical input |
+| --- | --- | --- |
+| `BHW.extendedTube_same_sourceGram_extendF_eq` | Conditional pure-Gram transcript pinned; not an active Lean target on the oriented route. | Hall-Wightman Lemma-2 branch law: high-rank span isometry/Witt extension with determinant orientation/improper-component split, and low-rank isotropic contraction limit.  On the active route this is replaced by `BHW.extendedTube_same_sourceOrientedInvariant_extendF_eq`. |
+| `BHW.sourceExtendedTubeGramDomain_relOpen_connected` | Conditional pure-Gram transcript pinned; connectedness mechanical. | Relative openness consumes Lemma-3 local vector realization, including singular rank.  On the active route this is replaced by `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected`. |
+| `BHW.sourceVarietyGermHolomorphicOn_extendF_descent` | Conditional pure-Gram transcript pinned; not an active Lean target on the oriented route. | The germ API and mechanical glue are checked; max-rank scalar charts, continuity/local boundedness, and exceptional-rank removability supply the actual source proof.  On the active route this is replaced by `BHW.sourceOrientedVarietyGermHolomorphicOn_extendF_descent`. |
+| `BHW.sourceScalarRepresentativeData_of_branchLaw` | Mechanical after descent. | No new mathematics; `Classical.choose` from a proved descent existence and `hGeom`. |
+| `BHW.hallWightman_sourceScalarRepresentativeData` | Mechanical after the first three rows. | Composition of branch law, scalar-domain geometry, and descent. |
+| `BHW.sourceScalarRepresentativeData_bvt_F` | Conditional only; not an active Lean target on the current strict proper-complex OS surface. | If the full-component route is sourced, specialize to `bvt_F` using `bvt_F_holomorphic`, `bvt_F_complexLorentzInvariant_forwardTube`, `BHW.bvt_F_realOrthoChronousInvariant`, and `BHW_forwardTube_eq`; otherwise replace this pure-Gram surface by the oriented scalar-source API before migrating adjacent consumers. |
+
+The last three rows must not be implemented first as wrappers.  A future Lean
+pass starts only at a row whose missing mathematical input has a complete
+proof transcript or an approved source boundary.
+
+Source-to-Lean obligation matrix for the same scalar-source gate:
+
+| Source step | Required Lean surfaces | Current readiness |
+| --- | --- | --- |
+| Hall-Wightman Lemma 1 | `BHW.extendF_holomorphicOn`, `BHW.extendF_complex_lorentz_invariant`, `BHW.extendF_complexLorentzInvariant_of_cinv`, `BHW.HallWightmanFullComplexLorentzGroup`, `BHW.HallWightmanFullComplexLorentzInvariantOnForwardTube`, `BHW.fullOrthochronousRealLorentz_preserves_forwardTube`, `BHW.hallWightman_improperComponentInvariant_forwardTube`, and `BHW.hallWightmanFullComplexLorentzInvariantOnExtendedTube_eq` | Proper determinant-`1` `extendF` support now has a checked direct bridge in `ComplexInvariance/Extend.lean` via `BHW.extendF_preimage_eq_of_cinv`.  The conditional pure-Gram fork still needs the improper-component source input because proper invariance alone has a full-rank determinant obstruction; the active oriented fork avoids that input by carrying full-frame determinants. |
+| Lemma 2, high rank | `BHW.HWHighRankSpanIsometryData`, `BHW.hw_highRank_spanIsometryData_of_sameSourceGram`, `BHW.hw_sameSourceGram_regular_orbit` | Proof transcript pinned.  The coefficient quotient, common Gram kernel, nondegenerate restricted span, determinant-sensitive Witt extension, complement reflection, and oriented determinant repair are all decomposed; production Lean must start at those finite-dimensional support lemmas, not at the public orbit theorem. |
+| Lemma 2, low rank | `BHW.HWSameSourceGramSingularContractionData`, `BHW.hw_sameSourceGram_singular_contractionData`, `BHW.hw_sameSourceGram_singularLimit_extendF_eq` | Proof transcript pinned.  The residual isotropic-frame geometry, coefficient-freedom extended-tube theorem, null-boost contraction family, and two-curve continuity limit inside `ExtendedTube d n` are decomposed into named Lean surfaces. |
+| Lemma 3 | `BHW.hwLemma3_extendedTube_adaptedRankRepresentative`, `BHW.hwLemma3_adapted_sourceGram_localVectorRealization`, `BHW.sourceExtendedTubeGramDomain_relOpen` | Proof transcript pinned.  Connectedness is mechanical; relative openness is reduced to adapted same-Gram realization, normal-form transport, Schur/Takagi residual realization, and the final extended-tube shrink. |
+| Lemma 4 | `BHW.ComplexMinkowskiSkewGenerator`, `BHW.lorentzInfinitesimalTangent`, `BHW.hallWightman_lorentzInfinitesimalEquations` | Proof transcript pinned; production must differentiate the complex Lorentz exponential curve and use extended-tube invariance of `extendF`. |
+| Lemmas 5--7 | `BHW.sourceGramDifferential_*`, `BHW.hallWightman_maxRank_scalarDifferentials_span_PDE`, `BHW.hallWightman_powerSeries_from_PDE_span`, `BHW.hallWightman_maxRank_powerSeriesChart_at` | Proof transcript pinned.  The finite-dimensional kernel/rank theorem, selected-row data, auxiliary-coordinate split, and power-series independence at rank `min (d + 1) n` are recorded; production Lean must implement those rows before max-rank scalar charts. |
+| Continuity/local boundedness | `BHW.hallWightman_scalarGerm_continuous_locallyBounded` | Proof transcript pinned.  It uses Lemma 3 directly to transfer neighborhood control from `extendF`, avoids circular dependence on exceptional local charts, and supplies the weakly holomorphic input for removability. |
+| Removability on the scalar variety | `BHW.hwSourceGramExceptionalRank_isAnalyticSubvariety`, `BHW.sourceComplexGramVariety_normal`, `BHW.sourceComplexGramVariety_relOpen_subset_closure_inter_maxRank`, `BHW.sourceGramVariety_normal_riemannExtension`, `BHW.hallWightman_exceptionalRank_localScalarChart_at` | Proof transcript pinned with a standard SCV/algebraic support boundary.  The Lean port must prove or sorry-free import symmetric determinantal normality and the normal analytic-space Riemann theorem; it may not hide this behind theorem-2 wrapper surfaces. |
+
+Therefore the first Lean implementation target after the proof-doc gate must
+be one of these mathematical source rows, not
+`BHW.sourceScalarRepresentativeData_bvt_F` or any downstream adjacent
+`S'_n` wrapper.
+
+Local low-level source audit, 2026-05-01, updated 2026-05-02: the production
+source-complex files
+do contain rank-variety and Schur-chart substrate such as
+`sourceSymmetricRankLEVariety`,
+`sourceComplexGramVariety_eq_sourceSymmetricRankLEVariety`, local
+rank-exact identity support, and the germ pullback/identity APIs.  The
+rank-split and coefficient-map substrates are now checked in
+`BHWPermutation/SourceRank.lean` and
+`BHWPermutation/SourceCoefficient.lean`: `BHW.sourceGramMatrixRank`,
+`BHW.sourceConfigGramMatrixRank`, `BHW.HWSourceGramOrbitRank`,
+`BHW.HWSourceGramLowRank`, `BHW.HWSourceGramOrbitRankAt`,
+`BHW.HWSourceGramLowRankAt`, `BHW.HWSourceGramMaxRank`,
+`BHW.HWSourceGramExceptionalRank`, `BHW.HWSourceGramMaxRankAt`,
+`BHW.HWSourceGramExceptionalRankAt`, the rank complement/same-Gram transport
+lemmas, `BHW.sourceCoefficientEval`,
+`BHW.sourceCoefficientGramMap`, `BHW.sourceCoefficientGramKernel`,
+`BHW.sourceCoefficientGramMap_apply_sourceMinkowskiGram`,
+`BHW.sourceCoefficientEval_single`,
+`BHW.sourceCoefficientGramMap_eq_zero_iff_eval_pair_eval_eq_zero`,
+`BHW.sourceCoefficientEval_pair_eq_sum_gram`,
+`BHW.sourceCoefficientGramMap_eq_toLin_transpose`, and
+`BHW.sourceCoefficientEval_ker_le_gramKernel`, plus
+`BHW.restrictedMinkowskiLeftMap`, `BHW.restrictedMinkowskiRadical`,
+`BHW.restrictedMinkowskiRank`, and
+`BHW.sourceCoefficientEval_mem_restrictedMinkowskiRadical_iff`,
+`BHW.sourceCoefficientGramKernel_eq_eval_preimage_radical`, and
+`BHW.sourceGramMatrixRank_eq_finrank_range_sourceCoefficientGramMap`.  They do not currently contain
+production declarations named
+`BHW.finrank_range_sourceCoefficientGramMap_eq_restrictedRank`,
+`BHW.sourceGramMatrixRank_eq_restrictedMinkowskiRank_range`,
+`BHW.hwHighRankSpanIsometry_apply_eval`,
+`BHW.hw_highRank_spanIsometryData_of_sameSourceGram`,
+`BHW.HallWightmanFullComplexLorentzGroup`,
+`BHW.HallWightmanFullComplexLorentzInvariantOnForwardTube`,
+`BHW.realFullLorentzAction`,
+`BHW.fullOrthochronousRealLorentz_preserves_forwardTube`,
+`BHW.fullComplexLorentz_properInv_mul_full_mul_proper`,
+`BHW.fullComplexLorentz_preimage_map_eq`,
+`BHW.extendF_eq_preimage_value`,
+`BHW.hallWightman_improperComponentInvariant_forwardTube`,
+`BHW.hallWightmanFullComplexLorentzInvariantOnExtendedTube_eq`,
+`BHW.bvt_F_realOrthoChronousInvariant`,
+`BHW.hw_sameSourceGram_singularLimit_extendF_eq`,
+`BHW.hwLemma3_extendedTube_adaptedRankRepresentative`,
+`BHW.hwLemma3_adapted_sourceGram_localVectorRealization`,
+`BHW.hallWightman_maxRank_powerSeriesChart_at`,
+`BHW.hallWightman_scalarGerm_continuous_locallyBounded`,
+`BHW.hwSourceGramExceptionalRank_isAnalyticSubvariety`,
+`BHW.sourceComplexGramVariety_normal`, or
+`BHW.sourceGramVariety_normal_riemannExtension`.  These are proof-doc theorem
+slots, not checked local inputs.
+
+None of these theorem-slot surfaces is currently implemented in Lean; the
+current production file `BHWPermutation/SourceExtension.lean` intentionally
+keeps this Hall-Wightman/BHW branch-law theorem in proof docs until the proof
+or an approved source-import boundary is available.
 
 Current readiness verdict: production Lean must still stop before
 `BHW.sourceScalarRepresentativeData_bvt_F`.  The germ API and the downstream
@@ -1394,8 +2915,8 @@ Hall-Wightman scalar representative theorem still depends on either
 implementation of the named Lemma-2, Lemma-3, Lemma-5--7, and normal
 analytic-space removable packets, or an explicit user-approved source-import
 boundary with exactly those theorem statements and no theorem-2/locality
-content.  Adding the five theorem names to production without those proofs
-would be wrapper churn, not mathematical progress.
+content.  Adding the scalar-source theorem names to production without those
+proofs would be wrapper churn, not mathematical progress.
 
 Germ-API migration transcript before any Hall-Wightman production theorem:
 
@@ -1619,6 +3140,7 @@ Germ-API migration transcript before any Hall-Wightman production theorem:
 
    ```lean
    theorem BHW.SourceVarietyGermHolomorphicOn.comp_differentiableOn_chart
+       (d n N : ℕ)
        {D : Set (Fin N -> ℂ)}
        {Γ : (Fin N -> ℂ) -> (Fin n -> Fin n -> ℂ)}
        (hH : BHW.SourceVarietyGermHolomorphicOn d n H U)
@@ -1628,7 +3150,15 @@ Germ-API migration transcript before any Hall-Wightman production theorem:
        DifferentiableOn ℂ (fun z => H (Γ z)) D
    ```
 
-   and `sourceVariety_localChart_totallyReal_zero` now takes
+   This theorem is deliberately a finite-coordinate chart theorem, not an
+   arbitrary-index API.  Its current production file is
+   `BHWPermutation/SourceComplexLocalChart.lean`; the Gram-map pullback and
+   source-variety identity principle live in
+   `BHWPermutation/SourceComplexDensity.lean`, while the base germ structure,
+   restriction, subtraction, continuity, and permutation-precomposition lemmas
+   live in `BHWPermutation/SourceExtension.lean`.
+
+   `sourceVariety_localChart_totallyReal_zero` now takes
    `SourceVarietyGermHolomorphicOn`.  The selected-chart theorem already
    exports `hΓvar`; this is exactly the missing equality domain for the germ
    representative.  No new Hall-Wightman theorem is hidden here.
@@ -1670,6 +3200,15 @@ replaced by final real-edge equality, `AdjacentOSEOWDifferenceEnvelope`,
 global PET branch independence, or a local boundary functional standing in
 for `bvt_W`.
 
+Source-decision compatibility guard for this whole adjacent list: the displayed
+names are the pure-Gram version of the OS45 `S'_n` packet and are no longer
+the active theorem-2 implementation names.  The strict proper-complex route
+must rename and restate these consumers on the oriented API
+(`SourceOrientedScalarRepresentativeData`,
+`sourceOrientedMinkowskiInvariant`,
+`sourcePermuteOrientedGram`, and the oriented double-domain); no theorem in
+this list may remain as a pure-Gram wrapper around an oriented proof.
+
 The adjacent scalar-trace theorem has a non-circular upstream order.  First,
 `BHW.os45Figure24AdjacentLift_extendF_eq_permutedWick_zero` is checked geometry:
 using `BHW.figure24RotateAdjacentConfig_lorentz_inverse`,
@@ -1701,9 +3240,10 @@ rewrites of the canonical theorem using
 uses that source-pullback theorem plus the same finite permutation
 change-of-variables calculation as
 `os45_adjacent_euclideanEdge_pairing_eq_on_timeSector` to identify the raw
-adjacent Wick trace pairing.  The private helper
-`integral_perm_eq_self_locality` / `integral_perm_npoint_volume` must be
-exposed or reproved at the first public call site.
+adjacent Wick trace pairing.  The public theorem
+`integral_perm_eq_self` from `WickRotation/SchwingerAxioms.lean` is the
+intended support for that change of variables; the private helper
+`integral_perm_eq_self_locality` must not be imported or exposed.
 
 Only after this adjacent trace theorem is available does the local scalar
 source equality enter.  The equality
@@ -1756,9 +3296,14 @@ The same chart block now pins
 `BHW.exists_connected_sourceNeighborhood_with_wickPreimage`: set
 `L := BHW.wickRealSectionLeftInverse d n`,
 `W := Ω ∩ L ⁻¹' V`, choose a metric ball inside `W` by
-`Metric.mem_nhds_iff`, use `Metric.isConnected_ball` for connectedness, and
-recover `x ∈ V` from
-`BHW.wickRealSectionLeftInverse_wickRotateRealConfig`.
+`Metric.mem_nhds_iff`, take `Usrc` to be that ball, and set
+`V0 := {x | wick x ∈ Usrc}`.  The complex ball is connected by
+`isConnected_ball`; the real patch connectedness is the separate convexity
+lemma `BHW.isConnected_wickPreimage_ball`, using real-affineness of
+`x ↦ fun k => wickRotatePoint (x k)`.  Recover `V0 ⊆ V` from
+`BHW.wickRealSectionLeftInverse_wickRotateRealConfig`, and store
+`V0_connected` explicitly in `BHW.OS45Figure24SourceChartAt`; do not infer it
+from connectedness of `Usrc`.
 Set
 `D = BHW.sourceDoublePermutationGramDomain d n τ` and
 `Wscal = connectedComponentIn D Gseed`.  The rel-open field for `D` comes
@@ -1811,8 +3356,9 @@ change of variables used in
 `os45_adjacent_euclideanEdge_pairing_eq_on_timeSector`.  No theorem in this
 block may integrate an arbitrary existential `Δ_x`; the selected
 Figure-2-4 chart must carry the canonical lift itself.  The currently private
-helper `integral_perm_npoint_volume` must be exposed or reproved at the first
-public call site.
+helper `integral_perm_eq_self_locality` must not be imported by downstream
+files; public permutation changes of variables should use
+`integral_perm_eq_self` from `WickRotation/SchwingerAxioms.lean`.
 
 Only after the adjacent trace theorem and local scalar source equality have
 been proved do the raw adjacent-Wick theorems enter.  The local pointwise
@@ -1887,10 +3433,16 @@ the proof is phrased as joined-in data.  Do not cite an unspecified "path
 concatenation lemma" here.
 
 Local API audit, 2026-05-01: the names in the preceding paragraph have been
-checked against the local Mathlib tree.  The exact files are:
+checked against the local Mathlib tree.  A scratch Lean check shows that a
+standalone support file also needs `Mathlib/Analysis/Complex/Basic.lean`; with
+only the locally-convex and path imports, Lean does not synthesize
+`TopologicalSpace (Fin n -> Fin (d + 1) -> ℂ)`.  The exact files are:
+`Mathlib/Analysis/Complex/Basic.lean` for the complex topology,
 `Mathlib/Analysis/LocallyConvex/WithSeminorms.lean` for the
 `NormedSpace.toLocallyConvexSpace` instance that lets
-`LocallyConvexSpace.toLocPathConnectedSpace` synthesize
+`LocallyConvexSpace ℝ (Fin n -> Fin (d + 1) -> ℂ)` synthesize; the same
+import brings in `Mathlib/Topology/Algebra/Module/LocallyConvex.lean`, where
+`LocallyConvexSpace.toLocPathConnectedSpace` supplies
 `LocPathConnectedSpace (Fin n -> Fin (d + 1) -> ℂ)`,
 `Mathlib/Topology/Connected/LocPathConnected.lean` for
 `IsOpen.isConnected_iff_isPathConnected`,
@@ -1906,6 +3458,21 @@ explicit nonempty index set `t.Nonempty` and a relation of the form
 proof docs must not say merely "the connected union theorem applies": they
 must provide the active-label nonemptiness and the exact intersection graph
 relation if this package becomes active.
+Scratch Lean check, 2026-05-02: with imports
+`Mathlib.Analysis.Complex.Basic`,
+`Mathlib.Analysis.LocallyConvex.WithSeminorms`,
+`Mathlib.Topology.Connected.LocPathConnected`,
+`Mathlib.Topology.Connected.PathConnected`, and `Mathlib.Topology.Path`, the
+exact code
+`(IsOpen.isConnected_iff_isPathConnected hUsrc_open).mp hUsrc_conn`,
+`hUsrc_path.joinedIn zreg hzregUsrc zwick0 hzwickUsrc`,
+`let γsrc : Path zreg zwick0 := hjoin.somePath`,
+`have hγsrc_mem : ∀ t, γsrc t ∈ Usrc := hjoin.somePath_mem`, and
+`Path.trans_range γseed γfig` elaborates.  Thus this topology segment is
+checked support.  It does not make
+`BHW.os45AdjacentSPrimeSeedFigure24Path_of_compactWickPairingEq` production
+ready, because the source seed/provenance theorem and scalar double-domain
+realization are still the mathematical inputs.
 
 For the adjacent `S'_n` source-equality theorem, the exact analytic API is
 also pinned.  Pulling a scalar representative back to `Usrc` uses the germ
@@ -1930,15 +3497,15 @@ call site.
 The theorem-2 blueprint now names the two implementation data carriers that
 must exist, or be kept as local variables with the same fields:
 `BHW.OS45Figure24SourceChartAt`, carrying `V0`, `Usrc`, Wick membership,
-Wick real-section equivalence, double-domain membership, forward-tube
-membership of the identity Wick branch, and the deterministic fields
+`V0_connected`, Wick real-section equivalence, double-domain membership,
+forward-tube membership of the identity Wick branch, and the deterministic fields
 `adjLift`, `adjLift_mem_extendedTube`, and `adjLift_sourceGram` for the
 canonical rotated Figure-2-4 adjacent lift; and
 `BHW.OS45AdjacentSPrimeScalarSeedWithSourceProvenance`, carrying the scalar
-seed together with `Usrc`, `zreg`, `Gseed`, `hwick_mem`, `zreg ∈ Usrc`, and
-the source-level double-domain field needed by the path segment.  These are
-not substitute theorem routes; they are provenance-preserving forms of the
-same OS I §4.5 / BHW seed proof.
+seed together with `Usrc`, `zreg`, `Gseed`, `hwick_mem`, `V0_connected`,
+`zreg ∈ Usrc`, and the source-level double-domain field needed by the path
+segment.  These are not substitute theorem routes; they are
+provenance-preserving forms of the same OS I §4.5 / BHW seed proof.
 
 The source-chart constructor
 `BHW.os45Figure24_sourceChart_at` must consume the actual Figure-2-4
@@ -1959,7 +3526,10 @@ the explicit `BHW.wickRealSectionLeftInverse`,
 `BHW.continuous_wickRotateRealConfig`, and
 `BHW.exists_connected_sourceNeighborhood_with_wickPreimage`; set
 `V0 := {x | wick x ∈ Usrc}` so the reverse real-section equivalence is
-definitionally available.
+definitionally available, and prove/store `V0_connected` by
+`BHW.isConnected_wickPreimage_ball`.  This is part of the chart data because
+the later common-boundary envelope consumes connectedness of the real patch
+itself.
 
 Local code audit after checkpoint `996ebc1` (2026-05-01): the checked
 Figure-2-4 support in
@@ -1975,8 +3545,8 @@ provide production declarations for `BHW.os45Figure24AdjacentLift`,
 must keep the lift/chart promotion as an explicit pre-Lean task: either define
 the deterministic rotated lift and chart carrier from the checked selector
 fields, or consume the selector tuple directly with the same continuity,
-extended-tube membership, source-Gram identity, Wick membership, and
-real-section equivalence fields.  A later Lean port may not substitute an
+extended-tube membership, source-Gram identity, Wick membership,
+`V0_connected`, and real-section equivalence fields.  A later Lean port may not substitute an
 arbitrary choice of adjacent lift under the compact integral.
 
 The lift/chart promotion proof is now pinned to exact theorem surfaces.  First
@@ -2092,7 +3662,11 @@ carrier for one compact test: it stores the exact `φZ`, `ψZ`, the generic
 Jost/Ruelle data `jr`, the equality between `jr.lift` and the deterministic
 Figure-2-4 lift, equality of `jr.ordinaryBranch` with
 `extendF (bvt_F OS lgc n)` on that lift, and the adjacent lift pairing
-`= OS.S n ψZ`.  Its only allowed producer is
+`= OS.S n ψZ`.  The adjacent branch packet feeding this carrier also stores
+the OS-I real Jost boundary comparison
+`adjacent_realBoundary_eq_ordinary`; without that field the later
+real-boundary theorem would be false for an arbitrary analytic branch.  Its
+only allowed producer is
 `BHW.os45CanonicalAdjacentBranchBoundaryData_of_OSI45`, proved from OS I
 §4.5 equations (4.1), (4.12), and (4.14), the compact zero-diagonal Euclidean
 symmetry, BHW continuation, and the selected Figure-2-4 Jost real-boundary
@@ -2114,10 +3688,12 @@ the continuity of the two holomorphic branches restricted along
 `BHW.realEmbed`, and
 `BHW.jostRuelle_branch_eqOn_connectedDomain`, which applies
 `BHW.identity_theorem_totally_real_product` to the holomorphic difference on
-the connected domain `D.Ω`.  The compact theorem then uses
-`D.lift_mem_of_support` on `tsupport φ` and
-`notMem_tsupport_iff_eventuallyEq` off the support to integrate the pointwise
-branch identity.  With these pieces, the public
+the connected domain `D.Ω`.  The compact theorem then uses pointwise support
+reduction: if `(φ : NPointDomain d n -> ℂ) x = 0` both integrands vanish,
+and otherwise `Function.mem_support.mpr` plus `subset_tsupport _` gives
+`x ∈ tsupport φ`, so `D.lift_mem_of_support` and the connected-domain branch
+identity compare the two branch values at `D.lift x`.  The integral equality
+is then `MeasureTheory.integral_congr_ae`.  With these pieces, the public
 `BHW.os45SPrime_canonicalLift_pairing_eq_permutedSchwinger` proof is the
 mechanical composition:
 ordinary lift integrand rewrite by `D.ordinary_eq_extendF_on_lift`, generic
@@ -2128,6 +3704,27 @@ Jost/Ruelle lift-pairing equality applied to `D.jr` and rewritten by
 both `BHW.os45CanonicalAdjacentBranchBoundaryData_of_OSI45` and the generic
 Jost/Ruelle compact theorem are proved or replaced by an already checked
 sorry-free support theorem with the same mathematical content.
+
+The API instantiation for the generic Jost/Ruelle theorem is now pinned in
+the blueprint.  In
+`BHW.jostRuelle_realPatch_eqOn_of_distributionEq`, set
+`g x := D.ordinaryBranch (BHW.realEmbed x)` and
+`h x := D.adjacentBranch (BHW.realEmbed x)`, prove
+`ContinuousOn g D.jostPatch` and `ContinuousOn h D.jostPatch` by composing
+`D.ordinary_holo.continuousOn` and `D.adjacent_holo.continuousOn` with the
+continuous real embedding, and feed `D.realBoundary_eq` directly to
+`SCV.eqOn_open_of_compactSupport_schwartz_integral_eq_of_continuousOn`.
+If the theorem is placed in a lower BHW module, the real-embedding
+continuity must be proved locally or moved downward; the proof must not
+import the Figure-2-4 support file merely to use
+`BHW.continuous_realEmbedNPoint`.  In
+`BHW.jostRuelle_branch_eqOn_connectedDomain`, set
+`H z := D.ordinaryBranch z - D.adjacentBranch z`, use
+`D.ordinary_holo.sub D.adjacent_holo`, turn the real-patch equality into
+`H (BHW.realEmbed x) = 0` by `sub_eq_zero.mpr`, and apply
+`BHW.identity_theorem_totally_real_product` with
+`D.Ω_open`, `D.Ω_connected`, `D.jostPatch_open`,
+`D.jostPatch_nonempty`, and `D.jostPatch_realEmbed_mem`.
 
 Canonical-lift production readiness is now a four-part gate, not a theorem
 name.  First build the exact zero-diagonal compact tests
@@ -2142,37 +3739,263 @@ and are not to be inferred from bare `JostSet` membership.  Second prove
 `BHW.os45CanonicalAdjacentBranchBoundaryData_of_OSI45` from OS I §4.5
 equations (4.1), (4.12), and (4.14), Euclidean symmetry of `ψZ`, BHW
 continuation, and the Figure-2-4 real Jost boundary comparison.  The producer
-must now be assembled from the four Lean-facing packets named in the
+must now be assembled from the Lean-facing packets named in the
 blueprint: `BHW.OS45Figure24JostRuelleDomainData`,
 `BHW.OS45Figure24OrdinaryBranchData`,
-`BHW.OS45Figure24AdjacentBranchData`, and
+`BHW.OS45Figure24AdjacentBranchData`, and the mechanical extraction
 `BHW.os45Figure24_realBoundaryEq_of_OSI45`.  The domain packet exports the
 load-bearing field `Ω ⊆ BHW.ExtendedTube d n`; the ordinary branch packet is
 then definitionally the actual restriction of
 `BHW.extendF (bvt_F OS lgc n)` to `Ω`, with differentiability from
-`BHW.extendF_holomorphicOn.mono` and Lorentz invariance from
-`BHW.extendF_complexLorentzInvariant_of_cinv`.  This replaces the older
+`BHW.extendF_holomorphicOn.mono` and Lorentz invariance from the checked
+`BHW.extendF_complex_lorentz_invariant`, using
+`bvt_F_restrictedLorentzInvariant_forwardTube`.  This replaces the older
 tautological ordinary-branch line and prevents the producer from silently
 introducing a second ordinary analytic branch.  The adjacent branch packet
-must carry the OS-I branch's holomorphy, Lorentz invariance, and compact lift
-pairing `= OS.S n ψZ`; the real-boundary theorem must compare
-`Dord.ordinaryBranch` and `Dadj.adjacentBranch` on compact tests supported in
-`hChart.V0`.  The final producer then fills all `D.jr` branch,
+must carry the OS-I branch's holomorphy, Lorentz invariance, compact lift
+pairing `= OS.S n ψZ`, and the real-boundary provenance field
+`adjacent_realBoundary_eq_ordinary`; the theorem
+`BHW.os45Figure24_realBoundaryEq_of_OSI45` only rewrites this field through
+`Dord.ordinaryBranch_def`.  The final producer then fills all `D.jr` branch,
 Lorentz-invariance, real-boundary, lift-support, and adjacent pairing fields
-only from those four packets.  Third prove the OS-free
+from these packets.  Third prove the OS-free
 `BHW.jostRuelle_uniqueContinuation_compactBoundary` through
 `BHW.jostRuelle_realPatch_eqOn_of_distributionEq` and
 `BHW.jostRuelle_branch_eqOn_connectedDomain`.  Fourth derive the public
 canonical theorem only by rewriting the ordinary lift integrand with
-`D.ordinary_eq_extendF_on_lift`, using
-`notMem_tsupport_iff_eventuallyEq` off the compact support, applying the
-generic Jost/Ruelle equality to `D.jr`, rewriting by `D.jr_lift_eq`, and
-finishing with `D.adjacent_lift_pairing_eq_permutedSchwinger`.
+`D.ordinary_eq_extendF_on_lift`, using pointwise support reduction through
+`Function.mem_support.mpr` and `subset_tsupport _`, applying the generic
+Jost/Ruelle equality to `D.jr`, rewriting by `D.jr_lift_eq`, and finishing
+with `D.adjacent_lift_pairing_eq_permutedSchwinger`.
 Any dependency on `SourceScalarRepresentativeData`,
 `BHW.os45AdjacentWickTrace_sourceScalarRepresentative_pairing_eq_of_figure24`,
 `BHW.os45SPrime_figure24LocalSourceEq_of_BHWJost`, the raw pointwise
 comparison, final `bvt_W` locality, `AdjacentOSEOWDifferenceEnvelope`, or
 global PET branch independence means this gate has not been proved on route.
+
+The theorem-2 blueprint now includes the Lean-shaped record constructor for
+`BHW.os45CanonicalAdjacentBranchBoundaryData_of_OSI45`: define `τ`, `φZ`,
+`ψZ`; build `DΩ`, `Dord`, and `Dadj`; extract `hreal` from
+`Dadj.adjacent_realBoundary_eq_ordinary`; construct
+`JostRuelleCompactBoundaryData`; then fill `jr_lift_eq`,
+`ordinary_eq_extendF_on_lift`, and
+`adjacent_lift_pairing_eq_permutedSchwinger` by the corresponding packet
+fields.  The only non-mechanical subproducer left inside this assembly is the
+OS-I/BHW continuation theorem
+`BHW.os45_bhwJostContinuation_adjacentPermutedBranch`, whose output record
+`BHW.OS45AdjacentBHWJostContinuationData` stores the branch `Badj`, its
+holomorphy and Lorentz invariance on `DΩ.Ω`, real-boundary equality for all
+compact tests on `hChart.V0`, and the fixed canonical-lift pairing for `φ`.
+The blueprint further decomposes its proof through
+`BHW.os45_BHWJost_continue_adjacentBranch_from_OSI45`: continue
+`Dinit.branchτ` from
+`Dinit.Ωτ = BHW.permutedExtendedTubeSector d n Dinit.τ` to `DΩ.Ω`, transport
+Lorentz invariance from `Dlor`, prove the real-boundary distributional
+comparison for every compact `χ` on `hChart.V0`, and transport
+`Dinit.branchτ_boundary_pairing` to `x ↦ hChart.adjLift x 0`.  This lower
+theorem is exactly the formal OS I §4.5/BHW continuation input; it must not
+mention source representatives, EOW, PET monodromy, `bvt_W`, or final
+locality.
+
+Latest adjacent-continuation refinement, 2026-05-02: the lower theorem is now
+split once more through the local carrier
+`BHW.OS45BHWJostLocalContinuationData` and producer
+`BHW.os45_BHWJostLocalContinuationData_from_OSI45`.  This is the first genuine
+Lean target inside the adjacent BHW/Jost packet.  It must construct the local
+proper-complex Lorentz/Jost hull for the identity and selected adjacent tube,
+prove openness, connectedness, and membership for the whole initial adjacent
+tube `Dinit.Ωτ`, `DΩ.Ω`, the adjacent Wick edge, the real Jost patch, and the
+deterministic lift
+`x ↦ hChart.adjLift x 0`, and then obtain the analytic branch `WJ` with:
+holomorphy on the hull, complex-Lorentz invariance on the hull, agreement with
+`Dinit.branchτ` on all of `Dinit.Ωτ` and hence on the selected adjacent Wick
+edge, equality of ordinary and
+continued boundary-value distributions on every compact test supported in
+`hChart.V0`, and the compact lift pairing equal to `OS.S n ψZ`.
+
+Latest adjacent-hull/real-boundary refinement, 2026-05-02: the local hull is
+now fixed as a path component, not an unnamed connected open set.  Define the
+ambient domain as the union of proper-complex Lorentz images of
+`BHW.ExtendedTube d n` and of the selected adjacent sector
+`BHW.permutedExtendedTubeSector d n Dinit.τ`; choose
+`zτ0 := fun k => wickRotatePoint (x0 (Dinit.τ k))`; set
+`ΩJ := pathComponentIn Ambient zτ0`.  The proof uses
+`IsOpen.pathComponentIn`, `isPathConnected_pathComponentIn`,
+`IsOpen.isConnected_iff_isPathConnected`, `JoinedIn.trans`, and
+`JoinedIn.mono`.  The two nontrivial joining inputs are now named:
+`os45Figure24_joined_adjacentWick_to_adjLift0`, using
+`figure24RotateAdjacentConfig_lorentz_inverse` and a path in the proper
+complex Lorentz group, and
+`os45Figure24_joined_adjLift0_to_realPatch`, using the deterministic
+Figure-2-4 lift path.  This pins `Dinit.Ωτ ⊆ ΩJ` and `DΩ.Ω ⊆ ΩJ` without
+global PET independence.
+
+The real-boundary equality is also no longer a black-box phrase.  For every
+fresh compact test `χ` supported in `hChart.V0`, the proof must build fresh
+zero-diagonal data `χZ` and `ψχZ`, construct the corresponding initial
+adjacent branch datum from `(4.1)/(4.12)`, and use `(4.14)` through the
+Lorentz-invariant branch packet.  The comparison of `WJ (realEmbed x)` with
+the swapped ordinary branch is pointwise on the real patch, from
+`WJ = Dinit.branchτ` on `Dinit.Ωτ`,
+`Dinit.branchτ_eq_correctedExtendF`, and the swapped real-embedding
+membership `hV_swapET`.  The remaining compact equality is exactly the
+OS I §4.5 Figure-2-4 branch-difference theorem
+`BHW.os45Figure24_sourcePatch_pairing_eq_swappedSourcePatch_of_OSI45`.  If
+the producer is implemented in a different file, its signature must carry the
+chart-produced source-patch fields needed by that theorem: `V` open,
+`V ⊆ os45Figure24SourcePatch`, and the closure-level
+`OS45Figure24OrientedPathField` on `hChart.V0`.  It must not use the later
+generic `jostRuelle_uniqueContinuation_compactBoundary`, scalar
+representatives, PET independence, or final `bvt_W` locality.
+
+The proof-doc name
+`BHW.os45BHWJostHull d n Dinit.τ
+  (fun k => wickRotatePoint (x0 (Dinit.τ k)))`
+is only a local name for this OS I §4.5/Bargmann-Hall-Wightman path component.
+Production Lean may spell it with an existing local BHW continuation-domain
+API if the same fields are proved, but it may not be replaced by global PET
+independence, an EOW envelope, final locality, or a scalar-representative
+theorem.  Until this carrier theorem has a checked implementation or an
+already checked support theorem with exactly these fields, the adjacent branch
+packet is not production-Lean-ready.
+
+The carrier itself must split into lower support surfaces before Lean:
+`BHW.os45_BHWJostHullData_of_figure24` for the local open connected hull and
+all membership fields, `BHW.os45_BHWJostBranch_onLocalHull_of_OSI45` for the
+BHW continued branch and its agreement with `Dinit.branchτ` on all of
+`Dinit.Ωτ`, `BHW.os45_BHWJostRealBoundaryEq_of_OSI45` for the compact
+real-Jost boundary-value equality against the ordinary branch,
+`BHW.os45_BHWJostLiftTransport_onSupport_of_OSI45` for the pointwise support
+transport from the selected lift to the adjacent Wick edge, and
+`BHW.os45_BHWJostLiftPairing_of_OSI45` for the deterministic-lift compact
+pairing by integral congruence plus `Dinit.branchτ_boundary_pairing`.  The
+transport theorem is not a bare endpoint identity: the checked lift is the
+rotated two-plane realization.  It must use
+`BHW.figure24RotateAdjacentConfig_lorentz_inverse`, `hChart.adjLift_def`,
+`BHW.os45Figure24IdentityPath_zero`, `WJ`'s Lorentz invariance on `ΩJ`, and
+`WJ = Dinit.branchτ` on `Dinit.Ωτ` to identify the lift value with the
+adjacent Wick edge on `tsupport φ`.  Hiding this Lorentz-transport equality
+inside an integral rewrite would leave the proof docs incomplete.
+
+The local BHW branch theorem used in this carrier is now pinned to the
+Hall-Wightman Lemma-1 proof shape: prove local constancy of
+`A ↦ Dinit.branchτ (complexLorentzAction A z)` in complex Lorentz group
+charts by real-Lorentz invariance and the totally-real identity theorem; cover
+proper-complex Lorentz paths by finitely many such charts; prove
+single-valuedness for two representations of the same hull point using the
+Hall-Wightman curve/scalar-product construction; define `WJ` by a
+choice-independent chain; obtain holomorphy from the final chart and
+Lorentz-invariance by chain extension.  This is still a genuine lower BHW
+support theorem, not a wrapper and not a global PET-independence call.
+
+Canonical producer implementation ledger.  This table is the checkpoint
+against wrapper drift: the checked Euclidean edge theorem is a real input, but
+it is not the adjacent analytic branch producer.
+
+| Piece | Current status | Allowed inputs |
+| --- | --- | --- |
+| Zero-diagonal compact-test orientation | Checked local Lean input. | `zeroDiagonal_of_tsupport_subset_jostOverlap`, `permuteZeroDiagonalSchwartz`, `bvt_euclidean_restriction`, and one `OS.E3_symmetric` call. |
+| `os45_adjacent_euclideanEdge_pairing_eq_on_timeSector` | Checked local Lean input for the Euclidean edge equality on ordered sectors. | Its public theorem statement; do not depend on the private helper `integral_perm_eq_self_locality` outside `OSToWightmanLocalityOS45.lean`. |
+| `BHW.OS45Figure24JostRuelleDomainData` and `BHW.os45Figure24_jostRuelleDomainData_of_chart` | Lean-shaped proof pinned; production Lean not started. | Choose `Ω := BHW.ExtendedTube d n`; use `BHW.isOpen_extendedTube`, `BHW.isConnected_extendedTube`, `hV_ET`, and `hChart.adjLift_mem_extendedTube`.  The swapped real-embedding field remains on the surrounding canonical surface for adjacent-source use, but this domain constructor must not infer extended-tube membership from bare `JostSet` membership or choose a second domain. |
+| `BHW.OS45Figure24OrdinaryBranchData` and `BHW.os45Figure24_ordinaryBranchData_of_bvt_F` | Transcript pinned but production Lean not started; mechanically ready after domain data. | `bvt_F_holomorphic`, `bvt_F_complexLorentzInvariant_forwardTube`, `bvt_F_restrictedLorentzInvariant_forwardTube`, `BHW.extendF_holomorphicOn`, `BHW.extendF_complex_lorentz_invariant`, and `DΩ.Ω_sub_extendedTube`. |
+| `BHW.OS45BHWJostLocalContinuationData` and `BHW.os45_BHWJostLocalContinuationData_from_OSI45` | Component transcript pinned; production Lean not started. | OS I §4.5 plus the Bargmann-Hall-Wightman theorem only, split through `os45_BHWJostHullData_of_figure24`, `os45_BHWJostBranch_onLocalHull_of_OSI45`, `os45_BHWJostRealBoundaryEq_of_OSI45`, `os45_BHWJostLiftTransport_onSupport_of_OSI45`, and `os45_BHWJostLiftPairing_of_OSI45`: define the local hull as `pathComponentIn (os45BHWJostAmbient d n Dinit.τ) (fun k => wickRotatePoint (x0 (Dinit.τ k)))`, prove openness/connectedness/membership using the named `JoinedIn` Figure-2-4 paths, continue the adjacent branch to `WJ`, prove `WJ = Dinit.branchτ` on all of `Dinit.Ωτ`, prove complex-Lorentz invariance, prove real-boundary equality by fresh compact-test zero-diagonal data plus the source-patch branch-difference theorem, and prove deterministic-lift transport/pairing.  No source scalar representative, PET independence, EOW envelope, `bvt_W`, final locality, or generic Jost/Ruelle uniqueness. |
+| `BHW.OS45Figure24AdjacentBranchData` and `BHW.os45Figure24_adjacentBranchData_of_OSI45` | Assembly transcript pinned once the local continuation carrier above is supplied; production Lean not started. | OS I §4.5 equations (4.1), (4.12), (4.14), compact zero-diagonal Euclidean symmetry, and BHW continuation of the adjacent branch, split through `OS45AdjacentPermutedTubeBoundaryFunctional`, `OS45AdjacentPermutedTubeLorentzInvariantBranch`, `os45Figure24_adjacentBHWContinuation_to_JostDomain`, the continuation-data producer `os45_bhwJostContinuation_adjacentPermutedBranch`, the assembly theorem `os45_BHWJost_continue_adjacentBranch_from_OSI45`, and the lower carrier theorem `os45_BHWJostLocalContinuationData_from_OSI45`.  The data must carry `adjacent_realBoundary_eq_ordinary` for every compact test supported in `hChart.V0`; this is source content consumed by generic Jost/Ruelle uniqueness, not a consequence of the final lift pairing. |
+| `BHW.os45Figure24_realBoundaryEq_of_OSI45` | Mechanical extraction from adjacent branch provenance; production Lean not started. | Rewrite `Dord.ordinaryBranch` by `Dord.ordinaryBranch_def` and use `Dadj.adjacent_realBoundary_eq_ordinary`.  The source proof is in the adjacent BHW/Jost continuation packet; no scalar representative, local source equality, separate source-branch `= OS.S`, PET independence, or final locality. |
+| `BHW.os45Figure24_sourcePatch_pairing_eq_swappedSourcePatch_of_OSI45` | Proof transcript pinned; production Lean not started. | Direct OS45 branch-difference compact theorem: checked Wick compact equality for every compact test supported in the chart, `BHW.os45_adjacent_commonBoundaryEnvelope`, distributional separation on the Wick trace, totally-real identity on the common chart, and real-trace integration. The surface must carry `V ⊆ os45Figure24SourcePatch` and the oriented path field on `closure hChart.V0`, then obtain the ambient `Ufig` from `BHW.os45Figure24SourcePatch_sourceEnvironment` before calling the branch suppliers on `hChart.V0`. No separate real-branch `= OS.S` theorem. |
+| `BHW.os45CommonBoundary_wickTrace_zero_of_compactPairing_zero` and `BHW.os45CommonBoundary_identity_of_wickTrace_zero` | Proof transcript pinned; production Lean not started. | Genuine analytic extraction from the common-boundary envelope: universal compact Wick branch-difference vanishing gives pointwise zero on the Wick trace, then holomorphic identity on the connected common chart. The proof transcript now includes the integrability/bookkeeping helpers `BHW.integrable_pairings_of_os45_adjacent_euclideanEdge_on_timeSector`, `BHW.integral_wickBranchDifference_mul_eq_zero_of_pairing_eq`, and `BHW.integral_commonBoundary_wickTrace_eq_zero_of_wickDiff_zero`, plus the complex-linear Wick-time map `BHW.os45WickRotateCLE` and chart lemma `BHW.os45CommonChartCLE_wickRotateRealConfig_eq`. |
+| `BHW.os45CanonicalAdjacentBranchBoundaryData_of_OSI45` | Assembly transcript pinned; production Lean not started. | Field-by-field construction of `JostRuelleCompactBoundaryData`, `jr_lift_eq`, ordinary lift equality on the deterministic lift, and adjacent lift pairing `= OS.S n ψZ`, after the domain, ordinary-branch, adjacent-branch, and real-boundary packets above. It no longer carries individual source-to-Schwinger or lift-to-source PET-overlap fields. |
+| `BHW.jostRuelle_uniqueContinuation_compactBoundary` | OS-free analytic theorem; transcript pinned; production Lean not started. | `SCV.eqOn_open_of_compactSupport_schwartz_integral_eq_of_continuousOn`, `BHW.identity_theorem_totally_real_product`, support restriction via `tsupport`, and no OS/theorem-2 inputs. |
+
+The ledger is intentionally asymmetric.  The checked Euclidean edge theorem
+proves only the compact Wick/Schwinger equality on the real ordered edge; it
+does not create the adjacent analytic branch, the connected Jost/Ruelle
+domain, or the common real-boundary distribution.  Conversely, the ordinary
+branch packet is nearly mechanical once the domain packet exists, but it
+cannot be used to bypass the OS-I adjacent branch producer.
+
+The exact checked Euclidean edge theorem is:
+
+```lean
+theorem os45_adjacent_euclideanEdge_pairing_eq_on_timeSector
+    [NeZero d]
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : Nat) (i : Fin n) (hi : i.val + 1 < n)
+    (V : Set (NPointDomain d n))
+    (hV_jost : ∀ x ∈ V, x ∈ BHW.JostSet d n)
+    (ρ : Equiv.Perm (Fin n))
+    (_hV_ordered : ∀ x ∈ V,
+      x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) ρ)
+    (_hV_swap_ordered : ∀ x ∈ V,
+      (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
+        EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+          ((Equiv.swap i ⟨i.val + 1, hi⟩).symm * ρ))
+    (φ : SchwartzNPoint d n)
+    (hφ_tsupport :
+      tsupport (φ : NPointDomain d n -> ℂ) ⊆ V) :
+    ∫ x : NPointDomain d n,
+        bvt_F OS lgc n
+          (fun k =>
+            wickRotatePoint (x (Equiv.swap i ⟨i.val + 1, hi⟩ k))) * φ x
+      =
+    ∫ x : NPointDomain d n,
+        bvt_F OS lgc n (fun k => wickRotatePoint (x k)) * φ x
+```
+
+Thus the source-pairing proof must call it with `ρ := 1`, with the support
+proof restricted to the selected `V0`, and with the swapped ordered-sector
+field normalized from `τ` to `(Equiv.swap i ⟨i.val + 1, hi⟩).symm * 1` by
+`Equiv.swap_inv` and `mul_one`.  It does not take `hd`, `hV_open`, or a
+separate compact-support hypothesis.  If a downstream public theorem needs
+the same finite permutation change of variables, use the public
+`integral_perm_eq_self` from `WickRotation/SchwingerAxioms.lean`; do not
+reach for the private helper `integral_perm_eq_self_locality`.
+
+The adjacent branch producer must expose the OS-I §4.5 chain explicitly.  Its
+proof first fixes the zero-diagonal orientation
+`φZ`, `ψZ := permuteZeroDiagonalSchwartz τ.symm φZ`, with the checked edge
+theorem called at `ρ = 1` and the swapped-order hypothesis normalized by
+`Equiv.swap_inv` and `mul_one`.  It then uses `(4.1)` and `(4.12)` to identify
+the compact Euclidean edge distribution with the corrected OS-II Wightman
+analytic continuation on the adjacent permuted tube; `(4.12)` here means the
+repaired `bvt_F`/`OSLinearGrowthCondition` object, not the false OS-I Lemma
+8.8 route.  Equation `(4.14)` supplies Lorentz covariance, after which the
+Bargmann-Hall-Wightman theorem continues the adjacent branch across the
+connected Figure-2-4/Jost domain `DΩ.Ω`.  The field
+`adjacent_lift_pairing_eq_permutedSchwinger` is the continuation of that
+compact boundary identity to `x ↦ hChart.adjLift x 0`; it must not be proved
+from raw pointwise adjacent-Wick equality, local source equality, PET
+independence, EOW, or final `bvt_W` locality.
+
+Paper-transcript tightening for this gate: `(4.1)` is only the ordered-sector
+translation-reduced Schwinger distribution identity, `(4.12)` is the
+Fourier-Laplace Wightman construction now represented by the repaired
+`bvt_F`/`OSLinearGrowthCondition` route, and `(4.14)` is the infinitesimal
+Lorentz covariance equation feeding complex-Lorentz invariance before the BHW
+continuation.  Therefore the adjacent producer may move to Lean only after
+the proof either inlines, or introduces private carriers for, the three real
+subclaims named in the blueprint:
+`BHW.os45Figure24_adjacentInitialBoundary_of_OSI45_4_1_4_12`,
+`BHW.os45Figure24_adjacentLorentzInvariant_of_OSI45_4_14`, and
+`BHW.os45Figure24_adjacentBHWContinuation_to_JostDomain`.  The intermediate
+`OS45AdjacentPermutedTubeBoundaryFunctional` and
+`OS45AdjacentPermutedTubeLorentzInvariantBranch` data, if introduced, must be
+proof-local carriers with boundary support, the exact sector identity
+`Ωτ = BHW.permutedExtendedTubeSector d n τ`, the corrected Fourier-Laplace
+branch identity
+`branchτ z = BHW.extendF (bvt_F OS lgc n) (fun k => z (τ k))` on that sector,
+and Lorentz/BHW continuation fields.  They may not be `True` predicates,
+arbitrary branch choices, or wrappers around
+`OS45Figure24AdjacentBranchData`.  The blueprint now includes the
+implementation transcript for filling these fields: `Ωτ` is
+`BHW.permutedExtendedTubeSector d n τ`, holomorphy comes from
+`BHW.extendF_holomorphicOn` composed with the finite coordinate permutation,
+the compact boundary pairing is the `bvt_euclidean_restriction`/`OS.E3`
+calculation on the selected zero-diagonal test, and Lorentz invariance is
+`BHW.extendF_complex_lorentz_invariant` after commuting Lorentz action with
+the permutation.  The final continuation packet must additionally produce
+`adjacent_realBoundary_eq_ordinary`; otherwise generic Jost/Ruelle uniqueness
+would be fed a real-boundary equality that was never proved.
 
 The raw pointwise theorem
 `BHW.os45SPrime_rawAdjacentWick_extendF_eq_identityWick_of_BHWJost`, the raw
@@ -2208,13 +4031,107 @@ whether each named Hall-Wightman
 sublemma has a fully audited source proof or approved source-import boundary,
 not whether theorem-2 may bypass them.  The
 adjacent `S'_n` package is not implementation-ready unless the proof keeps the
-source-chart provenance needed by the path theorem: `V0`, `Usrc`, `zreg`,
-`Gseed`, the Wick real-section equivalence for `Usrc`, the specialized proof
-`zwick0 ∈ Usrc` or its source `hwick_mem`, and the Figure-2-4 realization path
-must all survive as explicit fields until
-`BHW.os45AdjacentSPrimeSeedFigure24Path_of_compactWickPairingEq` is proved.
-Discarding this provenance and recreating it later would be a documentation
-gap, not a Lean convenience.
+oriented source-chart provenance needed by the path theorem: the connected
+oriented corridor `Wscal`, the real-patch seed neighborhood `Wseed`, the
+oriented real patch, the Wick/quarter-turn membership proof, the double
+oriented-domain membership, and the Figure-2-4 oriented realization path must
+all survive as explicit fields until
+`BHW.os45AdjacentSPrimeOrientedSeedFigure24Path_of_compactWickPairingEq` is
+proved.  Discarding this provenance and recreating it later would be a
+documentation gap, not a Lean convenience.
+
+Compact Figure-2-4 correction for the next proof-doc pass: the real patch in
+`BHW.OS45CompactFigure24WickPairingEq` is the `π`-permuted canonical source
+patch, not the whole half-time common-edge image.  The half-time common edge is
+a boundary/Jost chart coordinate and is retained only through the separate
+`realPatch_commonEdge_contact` field, supplied by the equal-time seed
+`xseed_time0`.  The compact pairing proof therefore pulls tests back by the
+pure point-permutation homeomorphism
+`BHW.os45SourcePermutationHomeomorph`, proves sector membership from
+`V_ET`/`V_swapET`, and reduces the real-patch integral to the canonical source
+integral
+`∫ extendF (realEmbed u) ψ = ∫ extendF (realEmbed (u ∘ τ)) ψ`.
+The load-bearing producer for that reduction is the direct branch-difference
+theorem `BHW.os45Figure24_sourcePatch_pairing_eq_swappedSourcePatch_of_OSI45`;
+it is OS-I §4.5 common-boundary/EOW content, not a mechanical rewrite.
+Any proof that instead requires continuity of
+`extendF` on `realEmbed (os45CommonEdgeRealPoint ... u)` is off route unless a
+new genuine boundary-value theorem has first identified that expression with
+the appropriate OS45 pulled branch.
+
+The theorem-2 blueprint now retires the earlier individual real-branch
+comparison surfaces.  `bvt_euclidean_restriction` rewrites Schwinger
+functionals as Wick-rotated `bvt_F` pairings; it does not identify either
+real source branch
+`∫ extendF (realEmbed x) φ` or
+`∫ extendF (realEmbed (x ∘ τ)) φ` separately with `OS.S`.  The missing
+OS-I §4.5 content is instead the direct continuation of the **difference**:
+compact Wick branch-difference vanishing for every compact test supported in
+the chart is transported by
+`BHW.os45_adjacent_commonBoundaryEnvelope`,
+`BHW.os45CommonBoundary_wickTrace_zero_of_compactPairing_zero`, and
+`BHW.os45CommonBoundary_identity_of_wickTrace_zero` to compact real
+PET-overlap branch equality.  Until that branch-difference transcript is
+complete, the canonical `= OS.S n ψZ` theorem is not enough to start Lean on
+the corrected source-patch compact packet.
+
+Adjacent `S'_n` readiness ledger:
+
+| Surface or packet | Current status | Required input before Lean |
+| --- | --- | --- |
+| `BHW.swFigure24_adjacentPathStableNeighborhood_exists`, `BHW.swFigure24_adjacentHorizontalEnvironmentWithPathStability`, `BHW.os45_adjacent_identity_horizontalEdge_sourcePatch` | Checked local Lean geometry in `OSToWightmanLocalityOS45Figure24.lean`. | May supply `hV_adjLift_ET`, closure ordered-sector fields, and `hV_figPath_closure`; it supplies no scalar equality. |
+| `BHW.OS45Figure24RotatedPathFormulaField`, `BHW.swFigure24_adjacentHorizontalEnvironmentWithRotatedPathStability`, `BHW.OS45Figure24OrientedPathField_of_checked_figure24`, and `BHW.os45_adjacent_identity_canonicalSourcePatch_with_orientedPath` | Finite determinant-algebra transcript pinned over checked geometry; production Lean not started. | Must expose the same `Γ` and definitional rotated `Δ` from the checked Figure-2-4 proof, package it in the canonical source patch, and prove full oriented invariant equality using `sourceOrientedMinkowskiInvariant_complexLorentzAction` and `sourceOrientedMinkowskiInvariant_permAct`; no arbitrary lift of a pure-Gram path.  First Lean targets are the rotated-path determinant fields and the canonical source-patch packaging, not the adjacent scalar seed. |
+| `BHW.sourceOrientedGramVariety_local_connectedRelOpen_basis`, `BHW.sourceOrientedGramVariety_connectedComponentIn_relOpen`, `BHW.sourceOrientedGramVariety_connectedRelOpenTube_around_compactPath` | Source-geometry transcript pinned; production Lean not started. | Needed because oriented `Wscal` is now a connected component of the oriented adjacent double domain.  The component theorem mirrors the checked pure-Gram component theorem, but the local connected basis is genuine oriented invariant geometry: full-frame determinant slices at max rank and oriented Schur residual charts at deficient rank.  First Lean targets are the local connected basis and connected-component-in-rel-open support, not the Figure-2-4 seed wrapper. |
+| `BHW.os45AdjacentSPrimeOrientedScalarizationChart_of_figure24` | Constructor transcript pinned; production Lean not started. | Must combine the checked source patch with `sourceOrientedExtendedTubeDomain_relOpen_connected`, oriented double-domain relative openness, Wick real-section topology, and oriented germ pullback APIs.  Its `Wscal` must also store `Wscal_component : ∃ Gbase ∈ Wscal, Wscal = connectedComponentIn (sourceOrientedDoublePermutationDomain d n τ) Gbase`; closure-level quarter-turn membership is not justified from relative openness alone. |
+| `BHW.os45Figure24_sourcePatch_pairing_eq_swappedSourcePatch_of_OSI45` | Proof transcript pinned; production Lean not started. | Must prove compact PET-overlap equality by the branch-difference route: checked Wick compact equality for every compact test supported in the chart, `BHW.os45_adjacent_commonBoundaryEnvelope`, Wick-trace distributional zero, connected common-chart identity, and real-trace integration. Its surface now explicitly takes `V ⊆ os45Figure24SourcePatch` and the oriented path field on `closure hChart.V0`; the proof obtains `Ufig` from `BHW.os45Figure24SourcePatch_sourceEnvironment` before calling `BHW.os45BranchHorizontalOrientedSourceGermAt_of_figure24_id/adjacent` on `hChart.V0`. It cannot be replaced by individual real-branch `= OS.S` statements. |
+| `BHW.os45CommonBoundary_wickTrace_zero_of_compactPairing_zero` and `BHW.os45CommonBoundary_identity_of_wickTrace_zero` | Proof transcript pinned; production Lean not started. | The first applies the checked `SCV.eqOn_open_of_compactSupport_schwartz_integral_eq_of_continuousOn` to the Wick trace function `g`, with `ContinuousOn g V0` from `hHc_holo.continuousOn.comp`, and uses `BHW.integral_commonBoundary_wickTrace_eq_zero_of_wickDiff_zero` to rewrite the compact pairings. The second defines `Lρ := os45WickRotateCLE.trans (os45CommonChartCLE 1)`, `U' := Lρ ⁻¹' Uc`, `H' z := Hc (Lρ z)`, proves `IsConnected U'` by Mathlib `Homeomorph.isConnected_preimage` (`.2 hUc_conn`), and applies checked `BHW.identity_theorem_totally_real_product` on the standard real slice after `BHW.os45CommonChartCLE_wickRotateRealConfig_eq`. No scalar representative, PET, EOW shortcut, or locality input enters these two helpers. |
+| `BHW.OS45CompactFigure24WickPairingEq` and `BHW.sourceOrientedAdjacentTubeAnchor_of_compactWickPairingEq` | Compact packet shape fixed; production Lean not started because the direct source-patch branch-difference theorem above is downstream of lower OS-I/common-boundary helpers. | The compact packet now explicitly stores the `π`-permuted source real patches, left/right `ExtendedTube` sector fields, a separate equal-time common-edge contact, and compact distributional branch equality. The source-pullback uses `BHW.os45SourcePermutationHomeomorph`, `BHW.permuteSchwartz`, `BHW.tsupport_permuteSchwartz`, and `BHW.integral_perm_eq_self`; the canonical integral is over `extendF (realEmbed u)` and `extendF (realEmbed (u ∘ τ))`, not over `extendF` at the half-time common edge. The anchor assembly copies those fields and proves `oriented_left_mem`/`oriented_right_eq_perm_left` by finite source-invariant algebra (`sourceRealOrientedInvariant_left_mem_double_of_sectors`, `sourceRealOrientedInvariant_adjacent_perm_eq`); it does not identify the real common-edge contact with the quarter-turn path endpoint, does not quantify over unrelated adjacent pairs, and does not store oriented uniqueness, which is produced later after shrinking to a determinant-regular real subpatch. |
+| `BHW.Figure24LocalChartInput`, `BHW.os45Figure24SourcePatch_sourceEnvironment`, and the source-patch compact partition | Shape corrected for the oriented route; production Lean not started. | Every local chart input used by `os45CanonicalSourcePatch_extendF_eq` must now carry both `V_sourcePatch : V ⊆ os45Figure24SourcePatch d n i hi` and `V_orientedPath_closure : ∀ x ∈ closure V, OS45Figure24OrientedPathField d n i hi x`.  The compact branch-difference theorem obtains the ambient `Ufig` and source-domain tuple from `BHW.os45Figure24SourcePatch_sourceEnvironment`, then applies the branch suppliers to `hChart.V0`; `closure hChart.V0 ⊆ Ufig` is proved by `closure_mono (fun x hx => V_sourcePatch (hChart.V0_sub hx))` followed by the source-environment closure field.  The compact partition must use `BHW.os45_adjacent_identity_canonicalSourcePatch_with_orientedPath`, set `P := Poriented.toCanonical`, and fill the input fields by `P.V = os45Figure24SourcePatch` and `Poriented.orientedPath_closure`; otherwise the partition silently drops the determinant path or the pulled-domain source environment.  When a partition subchart `hChart.V0 ⊆ V` is used, transfer the oriented path field by `BHW.closure_sourceChart_sub_closure_input`.  The older pure-Gram `hV_figPath_closure` is insufficient for the active oriented source-germ suppliers. |
+| `BHW.sourceOrientedAnchor_compactBranchEq_pointwise_on_realPatch` | Proof-doc pseudo-code tightened. | Before using the scalar representative, convert `hAnchor.compact_branch_eq` to pointwise equality on the real patch by `SCV.eqOn_open_of_compactSupport_schwartz_integral_eq_of_continuousOn`, with continuity supplied by `extendF_continuousOn_realPatch_left/right`, the anchor's left/right sector fields, and the complex-Lorentz invariance input needed by `BHW.extendF_holomorphicOn`. |
+| `BHW.os45Figure24_checkedRealPatch_chartContact`, `BHW.os45Figure24_checkedRealPatch_shrink_into_orientedRelOpen`, `BHW.os45Figure24_realPatch_orientedRegularChartSubpatch` | Chart-compatible real-patch transcript pinned; production Lean not started. | First prove the raw checked real patch contacts `hChart.Wscal`; then shrink the checked patch through the relatively open chart preimage while preserving the checked OS45 real environment; only after that impose determinant-regular oriented environment. This supplies the explicit `hE_chart` membership needed by the seed theorem. |
+| `BHW.os45_oriented_seedNeighborhood_from_realPatch` | Pseudo-code corrected. | It no longer infers chart membership from raw anchor membership. It consumes `hE_chart` and chooses `Wseed := hChart.Wscal`, giving relative openness, connectedness, nonemptiness, double-domain membership, and real-patch image membership directly from the chart fields. |
+| `BHW.os45AdjacentSPrimeOrientedRealSeed_of_compactWickPairingEq` | Assembly transcript pinned; production Lean not started because its upstream producers remain first. | Use the chart-compatible real-patch shrink, prove equality on the shrunken real patch by `sourceOrientedScalarRepresentative_adjacent_seed_eq_on_patch` in the orientation `Φ (sourcePermuteOrientedGram τ (sourceRealOrientedMinkowskiInvariant y)) = Φ (sourceRealOrientedMinkowskiInvariant y)`, use `sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment` to get `seed_eq` on `Wseed`, and retain `realPatch`, `Wseed`, `Wseed_subset_Wscal`, `Wseed_double`, and `wick_mem`.  Its remaining blockers are upstream producer theorems: chart-compatible real-patch shrink, oriented real uniqueness, scalar representative branch equality, and the compact Figure-2-4 pairing packet. |
+| `BHW.os45AdjacentSPrimeOrientedSourceEq_of_realSeed` and `BHW.os45AdjacentSPrimeOrientedSourceEq_of_compactWickPairingEq` | Final orchestration only after the real seed. | Call `BHW.os45AdjacentOrientedScalarEq_on_quarterTurnCorridor` with the real seed and chart; do not reprove the identity principle or derive equality directly from compact Wick pairing without the seed object. |
+| `BHW.os45AdjacentSPrimeOrientedScalarSeed_of_compactWickPairingEq` | Assembly transcript pinned; production Lean not started because the real-seed producer is blocked. | Let `hRealSeed := os45AdjacentSPrimeOrientedRealSeed_of_compactWickPairingEq`, then call `BHW.os45AdjacentSPrimeOrientedScalarSeed_of_realSeed`.  The assembly packages the real seed and chart fields into the path-facing seed structure, including the actual permutation equality `τ_eq`, `Wseed_subset`, `Wscal_double`, and the chart's `Wscal_component`, so later closure proofs know that `Wscal` is the selected connected component of the oriented adjacent double domain. |
+| `BHW.os45AdjacentSPrimeOrientedSeedFigure24Path` | Assembly proof pinned. | Stores the provenance seed, the supplied closure path field, and `quarterTurn_mem_closure`, then calls `BHW.os45AdjacentOrientedScalarEq_on_quarterTurnCorridor`; the only subtle step is rewriting through `hSeed.τ_eq` so the seed's stored `τ` is the fixed adjacent swap. |
+| `BHW.os45AdjacentSPrimeOrientedQuarterTurnMem_closure_of_figure24Path` | Proof transcript pinned; production Lean not started. | Requires `V.Nonempty`, `IsConnected V`, `V ⊆ hSeed.V`, `OS45Figure24OrientedPathField` on `closure V`, continuity of the quarter-turn oriented scalar map, oriented double-domain membership from the endpoint `Γ, Δ` path, and the stored `Wscal_component`.  The exact topology APIs are `IsConnected.closure`, `IsConnected.image`, `IsPreconnected.subset_connectedComponentIn`, and `connectedComponentIn_eq`; do not use `closure V ⊆ hSeed.V` or a closedness/relative-openness shortcut. |
+| `BHW.os45AdjacentSPrimeOrientedSeedFigure24Path_of_compactWickPairingEq` | Assembly transcript pinned; production Lean not started because its producers are blocked. | Build `hChart`, `hSeed0`, restrict the seed to the local source patch `V` using only `V ⊆ hSeed.V`, transport the supplied oriented path field along the restricted seed, pass in `quarterTurn_mem_closure`, and call `BHW.os45AdjacentSPrimeOrientedSeedFigure24Path`.  It must **not** assume `closure V ⊆ hSeed.V`.  The checked `hV_figPath_closure` must be strengthened to `OS45Figure24OrientedPathField` on `closure V`, and `quarterTurn_mem_closure` must be proved by `BHW.os45AdjacentSPrimeOrientedQuarterTurnMem_closure_of_figure24Path` using connected-component propagation over `closure V`. |
+| Generic post-seed oriented corridor propagation | Assembly proof transcript pinned; production Lean not started until oriented infrastructure exists. | `BHW.os45AdjacentOrientedScalarEq_on_quarterTurnCorridor` mirrors the checked `BHW.os45AdjacentScalarEq_on_quarterTurnCorridor`: define `Φ G := hRep.Phi (sourcePermuteOrientedGram d n τ G)` and `Ψ := hRep.Phi`, obtain `hΨ_holo` by restricting `hRep.Phi_holomorphic` to `Wscal`, obtain `hΦ_holo` from `SourceOrientedVarietyGermHolomorphicOn.precomp_sourcePermuteOrientedGram`, subtract, prove zero on `Wseed` from `hSeed`, and apply `sourceOrientedGramVariety_identity_principle` on the connected relatively open `Wscal`.  The missing inputs are the oriented germ API, oriented identity principle, and oriented double-domain support, not the corridor argument itself. |
+
+Implementation detail for the real-seed proof: the continuity and
+compact-to-pointwise conversion for `extendF` require the local checked
+theorems `bvt_F_holomorphic` and
+`bvt_F_complexLorentzInvariant_forwardTube` in the Wick-rotation namespace,
+transported across `BHW_forwardTube_eq` to the `BHW.ForwardTube` API.  The
+restricted theorem `bvt_F_restrictedLorentzInvariant_forwardTube` is useful
+for real-Lorentz covariance statements elsewhere, but it is not enough for
+the `BHW.extendF_holomorphicOn` continuity input expected by
+`sourceOrientedScalarRepresentative_adjacent_seed_eq_on_patch`.
+Its equality direction is load-bearing: the seed uniqueness call compares
+`fun G => hRep.Phi (sourcePermuteOrientedGram d n τ G)` against
+`hRep.Phi`, so the real-patch hypothesis must be the same
+`permuted = identity` orientation.  Reversing that equality is not a harmless
+presentation choice, because it changes which holomorphic germ is the left
+side of the propagated `Set.EqOn`.
+
+The checked rows are geometry/topology inputs only.  The oriented
+scalar-equality rows remain blocked until the oriented scalar representative,
+oriented real-patch uniqueness, and OS-I compact adjacent branch producer are
+proved.
+
+Route correction for the next Lean pass: do not spend effort rebuilding the
+generic corridor identity-principle proof on the pure-Gram API.  On the
+active route, implement the oriented analog only after
+`sourceOrientedGramVariety_identity_principle` is ready.  Once the OS-specific
+compact pairing seed supplies
+`Set.EqOn (fun G => hRep.Phi (BHW.sourcePermuteOrientedGram d n τ G))
+hRep.Phi Wseed`, and the Figure-2-4 provenance/path theorem supplies a
+connected relatively open `Wscal` with `Wseed ⊆ Wscal` inside
+`sourceOrientedDoublePermutationDomain d n τ`, the intended consumer is
+`BHW.os45AdjacentOrientedScalarEq_on_quarterTurnCorridor`.  The still-missing
+mathematics is upstream: the oriented scalarization chart, the compact OS-I
+§4.5 adjacent pairing theorem, and the provenance-preserving oriented real
+seed package.
 
 The current proof-document pass now separates upstream and downstream source
 content:
@@ -2222,12 +4139,13 @@ content:
 1. `hUfig_source` is explicitly only domain geometry.  It supplies Jost
    membership, identity/adjacent extended-tube membership, and the two OS45
    pulled-domain memberships; it does not compare branch values.
-2. `BHW.os45BranchHorizontalSourceGermAt_of_figure24_id` and
-   `BHW.os45BranchHorizontalSourceGermAt_of_figure24_adjacent` are upstream
+2. `BHW.os45BranchHorizontalOrientedSourceGermAt_of_figure24_id` and
+   `BHW.os45BranchHorizontalOrientedSourceGermAt_of_figure24_adjacent` are upstream
    one-branch OS I §4.5/BHW source suppliers.  They must also consume the
    closure-level ordered-sector fields from the selected `V`: the identity
    supplier uses `hV_ordered_closure`, and the adjacent supplier uses both
-   `hV_ordered_closure` and `hV_swap_ordered_closure` after relabelling.  These
+   `hV_ordered_closure`, `hV_swap_ordered_closure`, and the oriented
+   Figure-2-4 path closure after relabelling.  These
    ordered fields are not optional, because they are what make
    `BHW.os45CommonEdge_mem_acrBranchDomain_of_ordered` available at the
    horizontal base point.  The adjacent scalar packet is produced in the
@@ -2240,8 +4158,9 @@ content:
    an
    `AdjacentOSEOWDifferenceEnvelope`, real-edge adjacent equality, final
    `bvt_W` locality, or global PET branch independence.
-3. Both suppliers factor through the exact one-branch theorem
-   `BHW.os45BranchHorizontalSourceGermAt_of_oneBranch_sourcePatch`.  Its
+3. Both suppliers factor through the exact one-branch conversion
+   `BHW.os45BranchHorizontalSourceGermAt_of_orientedSourceEq`, after first
+   constructing the branch's oriented scalar packet.  Its
    genuine content is the BHW source/edge statement that, on one selected
    Figure-2-4 source patch and for one fixed branch label `β`, the OS-II ACR
    representative `bvt_F (permAct β.symm (Q.symm z))` and the pulled BHW
@@ -2249,15 +4168,15 @@ content:
    continuations of the same local germ.  This former proof-doc target has now
    been expanded as a one-branch BHW theorem, not as adjacent equality.  The
    theorem is split in the blueprint into a pure source-neighborhood
-   geometry part and the genuine value-agreement theorem
-   `BHW.os45OneBranchACRBHWAgreement_of_sourcePatch`.  The geometry fields
+   geometry part and the genuine oriented value-agreement theorem
+   `BHW.os45OneBranchOrientedACRBHWAgreement_of_sourcePatch`.  The geometry fields
    choose the neighborhood, use ordered-sector membership for the ACR side,
    and ensure the pulled BHW argument lies in the extended tube; they do
    **not** prove the ACR/BHW equality.  Jost and ordinary extended-tube fields
    remain upstream in the scalar-packet suppliers; the generic source-patch
    assembly no longer carries them after `hScalar` is supplied.  The agreement
-   theorem is now further
-   split around the explicit scalar packet
+   theorem is now further split, on the archived pure-Gram side, around the
+   explicit scalar packet
    `BHW.OS45OneBranchScalarGramEqPacket`: the public identity and adjacent
    source suppliers produce this packet, while
    `BHW.os45OneBranchACRBHWAgreement_sourceInput` only consumes it and converts
@@ -2281,9 +4200,84 @@ content:
    scalar domain, prove equality of `Phi` and its permuted pullback from the
    identity simplification or the OS-II symmetric `S'_n` seed, and then pull
    the result back through
-   `sourceMinkowskiGram (Q.symm z)`.  This is the local Hall-Wightman/BHW
-   source theorem layer that the first theorem-2 Lean pass must implement
-   before touching the downstream EOW envelope.
+   `sourceMinkowskiGram (Q.symm z)`.  On the active theorem-2 route this
+   paragraph must be read through the oriented replacement names below: replace
+   the scalar packet by `BHW.OS45OneBranchOrientedSourceEqPacket`, replace
+   `SourceScalarRepresentativeData` by
+   `SourceOrientedScalarRepresentativeData`, and replace every Gram/double
+   domain by the oriented invariant and oriented double-domain.  The first
+   theorem-2 Lean pass must implement the oriented version before touching the
+   downstream EOW envelope.  The oriented algebraic reduction is now pinned in
+   the blueprint as
+   `BHW.os45OneBranchOrientedACRBHWAgreement_of_orientedScalarEq`: for
+   `u := Q.symm z` and
+   `w := BHW.permAct β.symm u`, it rewrites
+   `sourceOrientedMinkowskiInvariant w` by
+   `BHW.sourceOrientedMinkowskiInvariant_permAct d n β.symm u`, applies the
+   packet equality on
+   `sourceOrientedMinkowskiInvariant u`, rewrites both sides by
+   `SourceOrientedScalarRepresentativeData.branch_eq`, reduces the forward
+   side with `BHW.extendF_eq_on_forwardTube`, and finishes by
+   `bvt_F_perm OS lgc n β.symm u`.  This is the only allowed consumer-side
+   conversion from an oriented source packet to one-branch ACR/BHW equality.
+
+   Fork compatibility guard: the theorem surfaces named in this scalar-packet
+   order are pure-Gram surfaces.  In particular,
+   `BHW.os45BranchHorizontalSourceGermAt_of_oneBranch_sourcePatch`,
+   `BHW.os45OneBranchACRBHWAgreement_of_sourcePatch`,
+   `BHW.os45OneBranchACRBHWAgreement_sourceInput`,
+   `BHW.os45OneBranchACRBHWAgreement_of_scalarGramEq`,
+   `BHW.os45OneBranchScalarGramEq_sourceInput_id`,
+   `BHW.os45OneBranchScalarGramEq_sourceInput_adjacent`,
+   `BHW.os45SPrime_figure24LocalSourceEq_of_BHWJost`, and
+   `BHW.os45SPrime_figure24LocalBranchCompatibility_of_BHWJost` may be ported
+   only after `BHW.sourceScalarRepresentativeData_bvt_F` is available from the
+   full-component pure-Gram Hall-Wightman source gate.  Since the strict OS
+   §4.5 source decision is now the proper-complex/oriented repair, these names
+   must be replaced before Lean by the oriented packet and consumer names:
+   `BHW.os45OneBranchOrientedSourceEq_sourceInput_id`,
+   `BHW.os45OneBranchOrientedSourceEq_sourceInput_adjacent`,
+   `BHW.os45OneBranchOrientedACRBHWAgreement_sourceInput`,
+   `BHW.os45OneBranchOrientedACRBHWAgreement_of_sourcePatch`,
+   `BHW.os45BranchHorizontalSourceGermAt_of_orientedSourceEq`,
+   `BHW.os45BranchHorizontalOrientedSourceGermAt_of_figure24_id`,
+   `BHW.os45BranchHorizontalOrientedSourceGermAt_of_figure24_adjacent`,
+   `BHW.os45SPrime_figure24LocalOrientedSourceEq_of_BHWJost`, and
+   `BHW.os45SPrime_figure24LocalOrientedBranchCompatibility_of_BHWJost`.
+   The two active oriented packet producers now have explicit local
+   source-input shapes in the blueprint.  The identity producer
+   `BHW.os45OneBranchOrientedSourceEq_sourceInput_id` takes the oriented
+   scalar representative plus the base point's membership in the identity
+   ACR and pulled-BHW branch domains, chooses `Wscal := hRep.U`, builds `Uy`
+   from an ambient-open representative of `hRep.U_relOpen`, proves the double
+   domain by `BHW.sourceOrientedDoublePermutationDomain_one_eq`, and proves
+   equality by `BHW.sourcePermuteOrientedGram_one`.  The adjacent producer
+   `BHW.os45OneBranchOrientedSourceEq_sourceInput_adjacent` consumes an
+   `OS45AdjacentSPrimeOrientedSeedFigure24Path` packet, the base point's
+   adjacent ACR/pulled-domain memberships, and the quarter-turn oriented
+   scalar membership in `hPath.seed.Wscal`, supplied on closure points by
+   `hPath.quarterTurn_mem_closure`; it builds `Uy` from the same rel-open
+   pullback and uses `hPath.corridor_eq`, `hPath.seed.Wscal_double`,
+   `hPath.seed.τ_eq`, and the self-inverse adjacent swap to fill the packet.
+   This pins the only place where oriented Figure-2-4 path provenance enters
+   the one-branch source packet.
+   The adjacent Figure-2-4 branch-germ supplier now carries
+   `hV_open`, `hV_nonempty`, `hV_connected`, and
+   `V ⊆ BHW.os45Figure24SourcePatch`; these are needed to build the localized
+   seed/path packet and must be supplied by the oriented canonical source
+   patch.  The supplier transcript explicitly constructs `hRep`, `hCompact`,
+   `hQuarterTurn_mem_closure`, `hPath`, `hy_acr`, `hy_bhw`, `hy_scalar`, then
+   calls the adjacent packet producer and finally
+   `os45BranchHorizontalSourceGermAt_of_orientedSourceEq`.
+   The common-boundary envelope still consumes the neutral predicate
+   `OS45BranchHorizontalSourceGermAt`; on the active route that predicate must
+   be produced by these oriented suppliers, not by the archived pure-Gram
+   source-patch theorem.  The adjacent supplier must carry the oriented
+   Figure-2-4 path provenance; a pure-Gram `hV_figPath_closure` is too lossy
+   for the oriented scalar packet.
+   No mixed implementation is allowed: an oriented representative cannot feed
+   `OS45OneBranchScalarGramEqPacket`, and a pure-Gram source packet cannot be
+   justified from proper-complex determinant-`1` invariance alone.
 
    The latest blueprint correction rejects the earlier real-environment seed
    formulation.  At the OS45 horizontal edge the point
@@ -2392,7 +4386,9 @@ content:
    adjacent transposition inverse from `τ.symm` to `τ`.  The optional theorem
    `BHW.swFigure24_wickToQuarterTurn_doubleETRealizationPath` is only a
    projection from `hV_figPath_closure`, not an independent broad theorem about an
-   arbitrary real-open `V`.  The scalar theorem
+   arbitrary real-open `V`; its theorem surface should not retain the ordered,
+   Jost, or horizontal-edge hypotheses already consumed by the producer of
+   `hV_figPath_closure`.  The scalar theorem
    `BHW.swFigure24_wickToQuarterTurn_scalarPath` is then only the mechanical
    corollary `γ t = sourceMinkowskiGram d n (Γ t)`, with double-domain
    membership proved by
@@ -2452,12 +4448,13 @@ content:
    `BHW.sourcePermuteComplexGram_one`; do not rely on an unstated
    "definitional" simplification of the double-domain field.  The adjacent
    supplier must carry the selected
-   pointwise Figure-2-4 path field on its theorem surface.  The higher
-   `BHW.os45BranchHorizontalSourceGermAt_of_figure24_adjacent` supplier
-   therefore carries `hV_figPath_closure`; for each `x ∈ closure V` it passes
-   the corresponding path as `hfig_x0`.  Without that input, the OS45
+   oriented Figure-2-4 path field on its theorem surface.  The higher
+   `BHW.os45BranchHorizontalOrientedSourceGermAt_of_figure24_adjacent`
+   supplier therefore carries `hV_orientedPath_closure`; for each
+   `x ∈ closure V` it passes the corresponding path as the oriented
+   Figure-2-4 provenance.  Without that input, the OS45
    quarter-turn scalar point has not been connected to the `S'_n` seed inside
-   the adjacent double scalar domain, and the theorem would again be trying to
+   the adjacent oriented double scalar domain, and the theorem would again be trying to
    infer scalar branch agreement from domain membership.  The closure-point
    suppliers must also choose a fresh local open patch around each
    `x ∈ closure V`; they must not pass the original open `V` to a scalar input
@@ -2468,7 +4465,7 @@ content:
    source-germ assembly step separately transports to the relabelled patch
    `Uτ := {u | (fun k => u (τ k)) ∈ Ux}` and rewrites the scalar packet along
    `BHW.os45CommonEdgeRealPoint_adjacent_swap_eq` before calling
-   `BHW.os45BranchHorizontalSourceGermAt_of_oneBranch_sourcePatch`.  This
+   `BHW.os45BranchHorizontalSourceGermAt_of_orientedSourceEq`.  This
    preimage definition is equivalent to `{u | ∃ v ∈ Ux, u = fun k => v (τ k)}`
    for an adjacent swap, but it makes openness and basepoint membership
    Lean-direct.  The proof must explicitly transport all five one-branch
@@ -4271,16 +6268,21 @@ This doc is complete only when:
    selected Figure-2-4 source patch, branchwise horizontal source germs,
    branch BV packets, local EOW envelope, BHW/Jost source continuation, and
    final OS-II boundary transfer to `bvt_W`;
-2. the source layer is fixed at the scalar-packet surfaces
+2. the source layer is fixed at the oriented packet family named in the fork
+   compatibility guard, because theorem 2 follows OS I §4.5's proper-complex
+   `L_+(C)` continuation.  The pure-Gram scalar-packet surfaces
    `BHW.OS45OneBranchScalarGramEqPacket`,
    `BHW.os45OneBranchScalarGramEq_sourceInput_id`, and
-   `BHW.os45OneBranchScalarGramEq_sourceInput_adjacent`, with no public
-   arbitrary-`β` geometry-only source theorem;
+   `BHW.os45OneBranchScalarGramEq_sourceInput_adjacent` are conditional side
+   surfaces only after a full-component Hall-Wightman source gate is closed.
+   A mixed packet family is disallowed, and there is no public arbitrary-`β`
+   geometry-only source theorem;
 3. the Figure-2-4 selector is source-ready and closure-ready: `Ufig` and
    `Upath` share one anchor, the ordered seed is chosen inside
    `Ufig ∩ Upath`, the exported open-chart canonical field is
-   `hV_adjLift_ET`, and the exported closure path field is
-   `hV_figPath_closure`;
+   `hV_adjLift_ET`, and the exported closure path field on the active route is
+   the oriented field `hV_orientedPath_closure`; the older pure-Gram
+   `hV_figPath_closure` is retained only as checked geometric support;
 4. the branch-BV and local EOW theorem surfaces name the exact CLMs, side
    wedges, chart-linear kernel pushforwards, and gluing consumers, without
    treating the local boundary functional as `bvt_W`;
@@ -4291,21 +6293,34 @@ This doc is complete only when:
    quarter-turn bypass, boundary-functional demotion, generic PET branch
    independence, and the archived adjacent-word source cover are not active
    implementation options;
-7. the ordinary Hall-Wightman scalar representative packet separates checked
-   source-germ infrastructure from the missing producer theorems:
-   `BHW.extendedTube_same_sourceGram_extendF_eq`,
-   `BHW.sourceExtendedTubeGramDomain_relOpen_connected`,
-   `BHW.sourceVarietyGermHolomorphicOn_extendF_descent`,
-   `BHW.sourceScalarRepresentativeData_of_branchLaw`,
-   `BHW.hallWightman_sourceScalarRepresentativeData`, and
-   `BHW.sourceScalarRepresentativeData_bvt_F`; each name must have either a
-   complete proof transcript or an explicit "not Lean-ready" status;
-8. the adjacent `S'_n` packet keeps the canonical compact-boundary producer,
-   the OS-free Jost/Ruelle theorem, the source-chart seed data, and the
-   Figure-2-4 scalar path/corridor in non-circular order, with the exact
-   `Path.trans`/`JoinedIn` API pinned and no dependency on final locality,
-   global PET branch independence, `AdjacentOSEOWDifferenceEnvelope`, or a
-   local boundary functional demotion.
+7. the active oriented scalar-source packet separates checked source-germ
+   infrastructure from the missing producer theorems:
+   `BHW.same_sourceOrientedInvariant_detOneOrbit_or_singularLimit`,
+   `BHW.extendedTube_same_sourceOrientedInvariant_extendF_eq`,
+   `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected`,
+   `BHW.sourceOrientedVarietyGermHolomorphicOn_extendF_descent`,
+   `BHW.sourceOrientedScalarRepresentativeData_of_branchLaw`,
+   `BHW.hallWightman_sourceOrientedScalarRepresentativeData`, and
+   `BHW.sourceOrientedScalarRepresentativeData_bvt_F`; each active producer
+   name must have a complete proof transcript, its exact lower support
+   dependencies, and an explicit first Lean target.  If a name has only an
+   explicit "not Lean-ready" status, this checklist item is not yet complete.
+   The first four producer surfaces must also carry their component ledgers:
+   determinant-sensitive oriented branch law, Lemma-3 oriented local
+   realization, regular/removable holomorphic descent, invariant-ring
+   normality, and Figure-2-4 oriented path provenance.  The ordinary
+   pure-Gram packet remains a conditional side packet only if the separate
+   full-component/improper Hall-Wightman source input for `bvt_F` is
+   sourced/proved;
+8. the oriented adjacent `S'_n` packet keeps the canonical compact-boundary
+   producer, the OS-free Jost/Ruelle theorem, the oriented real-patch seed
+   data, and the Figure-2-4 oriented scalar path/corridor in non-circular
+   order, with the exact `Path.trans`/`JoinedIn` API pinned and no dependency
+   on final locality, global PET branch independence,
+   `AdjacentOSEOWDifferenceEnvelope`, or a local boundary functional demotion.
+   Its compact real patch must be the point-permuted source PET-overlap patch;
+   the half-time common edge may appear only as a separate contact/provenance
+   field and never as the domain on which raw `extendF` continuity is assumed.
 
 ## 4.3. `theorem4_cluster_blueprint.md`
 
