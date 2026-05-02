@@ -15794,13 +15794,25 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.restrictedMinkowskiLeftMap`,
       `BHW.restrictedMinkowskiRadical`, `BHW.restrictedMinkowskiRank`, and
       `BHW.sourceCoefficientEval_mem_restrictedMinkowskiRadical_iff`,
-      `BHW.sourceCoefficientGramKernel_eq_eval_preimage_radical`, and
-      `BHW.sourceGramMatrixRank_eq_finrank_range_sourceCoefficientGramMap`.
-      They do **not** currently contain production declarations named
-      `BHW.finrank_range_sourceCoefficientGramMap_eq_restrictedRank`,
-      `BHW.sourceGramMatrixRank_eq_restrictedMinkowskiRank_range`,
+      `BHW.sourceCoefficientGramKernel_eq_eval_preimage_radical`,
+      `BHW.sourceGramMatrixRank_eq_finrank_range_sourceCoefficientGramMap`,
+      `BHW.finrank_range_sourceCoefficientGramMap_eq_restrictedRank`, and
+      `BHW.sourceGramMatrixRank_eq_restrictedMinkowskiRank_range`, plus
+      `BHW.ComplexMinkowskiNondegenerateSubspace`,
+      `BHW.restrictedMinkowskiRadical_nontrivial_of_degenerate`,
+      `BHW.restrictedMinkowskiRank_lt_finrank_of_degenerate`,
+      `BHW.finrank_range_sourceCoefficientEval_le`,
+      `BHW.finrank_restrictedSpan_le_d_of_degenerate`,
+      `BHW.sourceGramMatrixRank_lt_orbitThreshold_of_range_degenerate`,
+      `BHW.hw_highRank_eval_range_nondegenerate`,
+      `BHW.hw_highRank_eval_ker_eq_gramKernel`, and
+      `BHW.hw_highRank_sourceCoefficientEval_ker_eq_of_sameSourceGram`, plus
+      `BHW.hwHighRankSpanIsometryOfKernelEq`,
       `BHW.hwHighRankSpanIsometry_apply_eval`,
-      `BHW.hw_highRank_spanIsometryData_of_sameSourceGram`,
+      `BHW.HWHighRankSpanIsometryData`,
+      `BHW.hw_highRank_spanIsometryData_of_sameSourceGram`, and
+      `BHW.HWHighRankSpanIsometryData_sourceGram_eq`.
+      They do **not** currently contain production declarations named
       `BHW.HallWightmanFullComplexLorentzGroup`,
       `BHW.HallWightmanFullComplexLorentzInvariantOnForwardTube`,
       `BHW.realFullLorentzAction`,
@@ -15966,7 +15978,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | Hall-Wightman source step | Lean-facing theorem/data surfaces | Readiness and exact remaining proof content |
       | --- | --- | --- |
       | Lemma 1: continuation to the extended tube and complex Lorentz invariance of the continuation. | Checked support surfaces: `BHW.extendF_holomorphicOn`, `BHW.extendF_complex_lorentz_invariant`, and the direct `hF_cinv` bridge `BHW.extendF_complexLorentzInvariant_of_cinv`. | Proper determinant-`1` bridge implemented in `ComplexInvariance/Extend.lean`: the proof unfolds `extendF`, chooses forward-tube preimages, and applies `BHW.extendF_preimage_eq_of_cinv`; it imports no PET, EOW, locality, final `bvt_W`, or scalar representative target. |
-      | Lemma 2, high scalar-rank branch: same scalar products imply one complex Lorentz orbit. | `BHW.HWSourceGramOrbitRankAt`, `BHW.HWHighRankSpanIsometryData`, `BHW.hw_highRank_spanIsometryData_of_sameSourceGram`, `BHW.hw_sameSourceGram_regular_orbit`. | Proof transcript pinned; production Lean not started.  The proof constructs the coefficient quotient, identifies the common Gram kernel, proves restricted-span nondegeneracy at rank at least `min d n`, applies finite-dimensional Witt extension, and then uses extended-tube Lorentz invariance of `extendF`; the full-rank pure-Gram case remains conditional on the full-component/improper input, while the active route records the oriented determinant repair separately. |
+      | Lemma 2, high scalar-rank branch: same scalar products imply one complex Lorentz orbit. | Checked finite support: `BHW.HWSourceGramOrbitRankAt`, `BHW.HWHighRankSpanIsometryData`, `BHW.hw_highRank_spanIsometryData_of_sameSourceGram`; remaining orbit surface: `BHW.hw_sameSourceGram_regular_orbit`. | Coefficient quotient, common Gram kernel, restricted-span nondegeneracy, and span-isometry data are implemented in `BHWPermutation/SourceRank.lean`.  The remaining proof-doc-only part is the determinant-sensitive Witt extension/orbit theorem; the full-rank pure-Gram case remains conditional on the full-component/improper input, while the active route records the oriented determinant repair separately. |
       | Lemma 2, low scalar-rank branch: singular same-Gram points are limits of two orbit curves with a common endpoint. | `BHW.HWSameSourceGramSingularContractionData`, `BHW.hw_sameSourceGram_singular_contractionData`, `BHW.hw_sameSourceGram_singularLimit_extendF_eq`. | Proof transcript pinned; production Lean not started.  The finite-dimensional data supplies the selected span, residual isotropic frame, dual frame, and contraction family.  Equality of values is then a topology limit from continuity of `extendF` on `ExtendedTube`; it is not stored as a field of the data and not a pairwise orbit equality. |
       | Lemma 3: scalar-product neighborhoods of the extended tube. | `BHW.hwLemma3_extendedTube_adaptedRankRepresentative`, `BHW.hwLemma3_adapted_sourceGram_localVectorRealization`, `BHW.hwLemma3_sourceGram_localVectorRealization`, `BHW.sourceExtendedTubeGramDomain_relOpen`. | Proof transcript pinned; production Lean not started.  The proof replaces an arbitrary realization by a same-Gram adapted realization, deletes residual isotropic-frame components in the singular case, and realizes all sufficiently near scalar-variety points inside `ExtendedTube d n`.  The connectedness half of `BHW.sourceExtendedTubeGramDomain_relOpen_connected` is mechanical; relative openness consumes the Lemma-3 realization theorem. |
       | Lemma 4: infinitesimal complex-Lorentz invariant differential equations. | `BHW.ComplexMinkowskiSkewGenerator`, `BHW.lorentzInfinitesimalTangent`, `BHW.SatisfiesLorentzInvariantPDE`, `BHW.hallWightman_lorentzInfinitesimalEquations`. | Proof transcript pinned; production Lean not started.  It differentiates the explicit complex Lorentz exponential curve at `0`, uses differentiability of `extendF` on the open extended tube, and uses extended-tube Lorentz invariance along that curve. |
@@ -21310,7 +21322,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       informal assignment `z i ↦ w i` until the coefficient kernels have been
       proved equal. -/
       structure BHW.HWHighRankSpanIsometryData
-          (d n : Nat) [NeZero d]
+          (d n : Nat)
           (z w : Fin n -> Fin (d + 1) -> ℂ) where
         M : Submodule ℂ (Fin (d + 1) -> ℂ)
         N : Submodule ℂ (Fin (d + 1) -> ℂ)
@@ -21327,14 +21339,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
         T : M ≃ₗ[ℂ] N
         T_preserves :
           ∀ x y : M,
-            BHW.sourceComplexMinkowskiInner d x y =
-              BHW.sourceComplexMinkowskiInner d (T x) (T y)
+            BHW.sourceComplexMinkowskiInner d
+                (x : Fin (d + 1) -> ℂ)
+                (y : Fin (d + 1) -> ℂ) =
+              BHW.sourceComplexMinkowskiInner d
+                (T x : Fin (d + 1) -> ℂ)
+                (T y : Fin (d + 1) -> ℂ)
         T_z :
           ∀ i, T ⟨z i, z_mem i⟩ = ⟨w i, w_mem i⟩
 
-      theorem BHW.hw_highRank_spanIsometryData_of_sameSourceGram
-          [NeZero d]
-          (hd : 2 <= d)
+      noncomputable def BHW.hw_highRank_spanIsometryData_of_sameSourceGram
+          (d n : Nat)
           {z w : Fin n -> Fin (d + 1) -> ℂ}
           (hzRank : BHW.HWSourceGramOrbitRankAt d n z)
           (hgram :
@@ -21343,7 +21358,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.HWHighRankSpanIsometryData d n z w
 
       theorem BHW.hwHighRankSpanIsometryData_sourceGram_eq
-          [NeZero d]
+          (d n : Nat)
+          {z w : Fin n -> Fin (d + 1) -> ℂ}
           (S : BHW.HWHighRankSpanIsometryData d n z w) :
           BHW.sourceMinkowskiGram d n z =
             BHW.sourceMinkowskiGram d n w := by
@@ -21359,8 +21375,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 rfl
           _ =
             BHW.sourceComplexMinkowskiInner d
-              (S.T ⟨z i, S.z_mem i⟩)
-              (S.T ⟨z j, S.z_mem j⟩) := by
+              (S.T ⟨z i, S.z_mem i⟩ : Fin (d + 1) -> ℂ)
+              (S.T ⟨z j, S.z_mem j⟩ : Fin (d + 1) -> ℂ) := by
                 rw [S.T_preserves]
           _ =
             BHW.sourceComplexMinkowskiInner d
@@ -21371,7 +21387,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 rfl
 
       theorem BHW.hwHighRankSpanIsometryData_domain_nondegenerate
-          [NeZero d]
+          (d n : Nat)
+          {z w : Fin n -> Fin (d + 1) -> ℂ}
           (S : BHW.HWHighRankSpanIsometryData d n z w) :
           BHW.ComplexMinkowskiNondegenerateSubspace d S.M :=
         S.M_nondegenerate
@@ -22297,7 +22314,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
 
       ```lean
       theorem BHW.restrictedMinkowskiRadical_nontrivial_of_degenerate
-          [NeZero d]
+          (d : Nat)
           {M : Submodule ℂ (Fin (d + 1) -> ℂ)}
           (hdeg :
             ¬ BHW.ComplexMinkowskiNondegenerateSubspace d M) :
@@ -22305,7 +22322,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (BHW.restrictedMinkowskiRadical d M)
 
       theorem BHW.restrictedMinkowskiRank_lt_finrank_of_degenerate
-          [NeZero d]
+          (d : Nat)
           {M : Submodule ℂ (Fin (d + 1) -> ℂ)}
           (hdeg :
             ¬ BHW.ComplexMinkowskiNondegenerateSubspace d M) :
@@ -22313,15 +22330,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
             Module.finrank ℂ M
 
       theorem BHW.finrank_range_sourceCoefficientEval_le
-          [NeZero d]
-          (n : Nat)
+          (d n : Nat)
           (z : Fin n -> Fin (d + 1) -> ℂ) :
           Module.finrank ℂ
             (LinearMap.range (BHW.sourceCoefficientEval d n z)) <= n
 
       theorem BHW.finrank_restrictedSpan_le_d_of_degenerate
-          [NeZero d]
-          (hd : 2 <= d)
+          (d : Nat)
           {M : Submodule ℂ (Fin (d + 1) -> ℂ)}
           (hdeg :
             ¬ BHW.ComplexMinkowskiNondegenerateSubspace d M) :
@@ -22358,22 +22373,19 @@ Proof decomposition of this theorem, without hiding the analytic work:
       ```lean
       theorem BHW.restrictedMinkowskiRadical_nontrivial_of_degenerate
           ... := by
-        rw [BHW.ComplexMinkowskiNondegenerateSubspace] at hdeg
-        push_neg at hdeg
-        rcases hdeg with ⟨x, horth, hx_ne⟩
-        have hx_rad :
-            x ∈ BHW.restrictedMinkowskiRadical d M := by
-          rw [BHW.restrictedMinkowskiRadical, LinearMap.mem_ker]
-          ext y
-          exact horth y
         have hrad_ne :
             BHW.restrictedMinkowskiRadical d M ≠ ⊥ := by
           intro hbot
-          have : x = 0 := by
-            have hx0 : x ∈ (⊥ : Submodule ℂ M) := by
-              simpa [hbot] using hx_rad
-            simpa using hx0
-          exact hx_ne this
+          apply hdeg
+          intro x horth
+          have hx_rad :
+              x ∈ BHW.restrictedMinkowskiRadical d M := by
+            rw [BHW.restrictedMinkowskiRadical, LinearMap.mem_ker]
+            ext y
+            simpa [BHW.restrictedMinkowskiLeftMap] using horth y
+          have hx_bot : x ∈ (⊥ : Submodule ℂ M) := by
+            simpa [hbot] using hx_rad
+          simpa using hx_bot
         exact Nat.lt_of_lt_of_le Nat.zero_lt_one
           ((Submodule.one_le_finrank_iff).2 hrad_ne)
 
@@ -22426,17 +22438,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
       theorem BHW.sourceGramMatrixRank_lt_orbitThreshold_of_range_degenerate
           ... := by
         let M := LinearMap.range (BHW.sourceCoefficientEval d n z)
-        have hrad_pos :
-            0 < Module.finrank ℂ
-              (BHW.restrictedMinkowskiRadical d M) :=
-          BHW.restrictedMinkowskiRadical_nontrivial_of_degenerate
-            (d := d) hdeg
         have hM_le_n : Module.finrank ℂ M <= n :=
           BHW.finrank_range_sourceCoefficientEval_le
-            (d := d) n z
+            d n z
         have hM_le_d : Module.finrank ℂ M <= d :=
           BHW.finrank_restrictedSpan_le_d_of_degenerate
-            (d := d) hd hdeg
+            (d := d) hdeg
         have hrank_lt_M :
             BHW.restrictedMinkowskiRank d M <
               Module.finrank ℂ M :=
@@ -22453,11 +22460,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
         exact lt_min hrank_lt_d hrank_lt_n
       ```
 
-      The displayed proof is meant to be implemented with Mathlib's actual
-      finite-dimensional submodule lemmas for `Module.finrank`; if a helper
-      name differs, the obligation is still exactly the three support facts
-      above.  No analyticity, connectedness, or BHW permutation machinery is
-      involved in this rank-drop theorem.
+      This packet is now implemented in `BHWPermutation/SourceRank.lean`
+      without `[NeZero d]` or `hd : 2 <= d`: the rank-radical argument uses
+      only finite-dimensional linear algebra and ambient nondegeneracy of
+      `sourceComplexMinkowskiInner`.  No analyticity, connectedness, or BHW
+      permutation machinery is involved in this rank-drop theorem.
 
       Lean-shaped proof of the nondegeneracy theorem:
 
@@ -22465,11 +22472,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
       theorem BHW.hw_highRank_eval_range_nondegenerate ... := by
         by_contra hdeg
         have hlt :
-            BHW.sourceGramMatrixRank n (BHW.sourceMinkowskiGram d n z) <
+          BHW.sourceGramMatrixRank n (BHW.sourceMinkowskiGram d n z) <
               min d n :=
           BHW.sourceGramMatrixRank_lt_orbitThreshold_of_range_degenerate
-            (d := d) hd n z hdeg
-        exact not_lt_of_ge hzRank hlt
+            d n z hdeg
+        have hge :
+            min d n <=
+              BHW.sourceGramMatrixRank n (BHW.sourceMinkowskiGram d n z) := by
+          simpa [BHW.HWSourceGramOrbitRankAt,
+            BHW.HWSourceGramOrbitRank] using hzRank
+        exact not_lt_of_ge hge hlt
       ```
 
       Lean-shaped proof of the basic coefficient-kernel inclusion:
@@ -22499,7 +22511,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
               BHW.ComplexMinkowskiNondegenerateSubspace d
                 (LinearMap.range evalZ) :=
             BHW.hw_highRank_eval_range_nondegenerate
-              (d := d) hd (n := n) hzRank
+              (d := d) (n := n) hzRank
           have horth :
               ∀ v : LinearMap.range evalZ,
                 BHW.sourceComplexMinkowskiInner d
@@ -22509,25 +22521,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
             have ha0 :
                 BHW.sourceCoefficientGramMap n
                   (BHW.sourceMinkowskiGram d n z) a = 0 :=
-              LinearMap.mem_ker.mp ha
-            have ha0_coord :
-                ∀ j,
-                  BHW.sourceCoefficientGramMap n
-                    (BHW.sourceMinkowskiGram d n z) a j = 0 :=
-              fun j => congrFun ha0 j
-            -- Expand the bilinear pairing of the two coefficient sums by
-            -- the named finite-sum support lemma above.
-            calc
-              BHW.sourceComplexMinkowskiInner d (evalZ a) (evalZ b)
-                  =
-                ∑ j : Fin n,
-                  b j *
-                    BHW.sourceCoefficientGramMap n
-                      (BHW.sourceMinkowskiGram d n z) a j := by
-                    exact
-                      BHW.sourceCoefficientEval_pair_eq_sum_gram
-                        (d := d) n z a b
-              _ = 0 := by simp [ha0_coord]
+              by
+                simpa [BHW.sourceCoefficientGramKernel] using
+                  (LinearMap.mem_ker.mp ha)
+            exact
+              (BHW.sourceCoefficientGramMap_eq_zero_iff_eval_pair_eval_eq_zero
+                d n z a).1 ha0 b
           have hEval_mem : evalZ a ∈ LinearMap.range evalZ := ⟨a, rfl⟩
           have hEval_zero :
               (⟨evalZ a, hEval_mem⟩ :
@@ -22546,22 +22545,23 @@ Proof decomposition of this theorem, without hiding the analytic work:
         let evalZ := BHW.sourceCoefficientEval d n z
         let evalW := BHW.sourceCoefficientEval d n w
         have hwRank : BHW.HWSourceGramOrbitRankAt d n w :=
-          (BHW.hwSourceGramOrbitRankAt_of_sourceGram_eq
-            (d := d) (n := n) hgram).1 hzRank
+          by
+            simpa [BHW.HWSourceGramOrbitRankAt,
+              BHW.HWSourceGramOrbitRank, hgram] using hzRank
         calc
           LinearMap.ker evalZ
               =
             BHW.sourceCoefficientGramKernel n
               (BHW.sourceMinkowskiGram d n z) :=
                 BHW.hw_highRank_eval_ker_eq_gramKernel
-                  (d := d) hd (n := n) hzRank
+                  (d := d) (n := n) hzRank
           _ =
             BHW.sourceCoefficientGramKernel n
               (BHW.sourceMinkowskiGram d n w) := by
                 rw [hgram]
           _ = LinearMap.ker evalW :=
                 (BHW.hw_highRank_eval_ker_eq_gramKernel
-                  (d := d) hd (n := n) hwRank).symm
+                  (d := d) (n := n) hwRank).symm
       ```
 
       Thus the assignment on coefficient classes is genuinely well-defined:
@@ -22589,38 +22589,28 @@ Proof decomposition of this theorem, without hiding the analytic work:
       ```lean
       theorem BHW.hwHighRankSpanIsometry_apply_eval
           ... :
-          T
+          BHW.hwHighRankSpanIsometryOfKernelEq (d := d) (n := n)
+            (z := z) (w := w) hker
             (⟨BHW.sourceCoefficientEval d n z a, ⟨a, rfl⟩⟩ :
               LinearMap.range (BHW.sourceCoefficientEval d n z)) =
             (⟨BHW.sourceCoefficientEval d n w a, ⟨a, rfl⟩⟩ :
               LinearMap.range (BHW.sourceCoefficientEval d n w)) := by
-        -- Here `T = QZ.symm.trans ((Submodule.quotEquivOfEq _ _ hker).trans QW)`.
-        -- `QZ.symm` sends `evalZ a` to the class of `a`;
-        -- `Submodule.quotEquivOfEq` keeps the same representative because
-        -- the kernels are equal; `QW` sends that class to `evalW a`.
-        simp [T, QZ, QW, hkerEquiv,
+        apply Subtype.ext
+        simp [BHW.hwHighRankSpanIsometryOfKernelEq,
           LinearMap.quotKerEquivRange_symm_apply_image,
           LinearMap.quotKerEquivRange_apply_mk,
           Submodule.quotEquivOfEq_mk]
 
-      theorem BHW.hw_highRank_spanIsometryData_of_sameSourceGram ... := by
+      noncomputable def BHW.hw_highRank_spanIsometryData_of_sameSourceGram
+          ... := by
         let evalZ := BHW.sourceCoefficientEval d n z
         let evalW := BHW.sourceCoefficientEval d n w
         have hker : LinearMap.ker evalZ = LinearMap.ker evalW :=
           BHW.hw_highRank_sourceCoefficientEval_ker_eq_of_sameSourceGram
-            (d := d) hd (n := n) hzRank hgram
-        let QZ : ((Fin n -> ℂ) ⧸ LinearMap.ker evalZ) ≃ₗ[ℂ]
-            LinearMap.range evalZ :=
-          evalZ.quotKerEquivRange
-        let QW : ((Fin n -> ℂ) ⧸ LinearMap.ker evalW) ≃ₗ[ℂ]
-            LinearMap.range evalW :=
-          evalW.quotKerEquivRange
-        let hkerEquiv :
-            ((Fin n -> ℂ) ⧸ LinearMap.ker evalZ) ≃ₗ[ℂ]
-              ((Fin n -> ℂ) ⧸ LinearMap.ker evalW) :=
-          Submodule.quotEquivOfEq _ _ hker
+            (d := d) (n := n) (z := z) (w := w) hgram hzRank
         let T : LinearMap.range evalZ ≃ₗ[ℂ] LinearMap.range evalW :=
-          QZ.symm.trans (hkerEquiv.trans QW)
+          BHW.hwHighRankSpanIsometryOfKernelEq (d := d) (n := n)
+            (z := z) (w := w) hker
         refine
           { M := LinearMap.range evalZ
             N := LinearMap.range evalW
@@ -22628,22 +22618,23 @@ Proof decomposition of this theorem, without hiding the analytic work:
             N_eq_range := rfl
             M_nondegenerate :=
               BHW.hw_highRank_eval_range_nondegenerate
-                (d := d) hd (n := n) hzRank
+                (d := d) (n := n) (z := z) hzRank
             N_nondegenerate :=
               BHW.hw_highRank_eval_range_nondegenerate
-                (d := d) hd (n := n)
-                (BHW.hwSourceGramOrbitRankAt_of_sourceGram_eq
-                  (d := d) (n := n) hgram hzRank)
+                (d := d) (n := n) (z := w)
+                (by
+                  simpa [BHW.HWSourceGramOrbitRankAt,
+                    BHW.HWSourceGramOrbitRank, hgram] using hzRank)
             z_mem := by
               intro i
               exact ⟨Pi.single i (1 : ℂ), by
-                ext μ
-                simp [evalZ, BHW.sourceCoefficientEval]⟩
+                simpa [evalZ] using
+                  BHW.sourceCoefficientEval_single d n z i⟩
             w_mem := by
               intro i
               exact ⟨Pi.single i (1 : ℂ), by
-                ext μ
-                simp [evalW, BHW.sourceCoefficientEval]⟩
+                simpa [evalW] using
+                  BHW.sourceCoefficientEval_single d n w i⟩
             T := T
             T_preserves := by
               intro x y
@@ -22658,15 +22649,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
                     ⟨evalW ax, ⟨ax, rfl⟩⟩ :=
                 BHW.hwHighRankSpanIsometry_apply_eval
                   (d := d) (n := n) (z := z) (w := w)
-                  (T := T) (QZ := QZ) (QW := QW)
-                  (hkerEquiv := hkerEquiv) ax
+                  hker ax
               have hTy :
                   T ⟨evalZ ay, ⟨ay, rfl⟩⟩ =
                     ⟨evalW ay, ⟨ay, rfl⟩⟩ :=
                 BHW.hwHighRankSpanIsometry_apply_eval
                   (d := d) (n := n) (z := z) (w := w)
-                  (T := T) (QZ := QZ) (QW := QW)
-                  (hkerEquiv := hkerEquiv) ay
+                  hker ay
               rw [hTx, hTy]
               rw [BHW.sourceCoefficientEval_pair_eq_sum_gram
                 (d := d) n z ax ay]
@@ -22682,14 +22671,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 BHW.sourceCoefficientEval_single (d := d) n w i] using
                 BHW.hwHighRankSpanIsometry_apply_eval
                   (d := d) (n := n) (z := z) (w := w)
-                  (T := T) (QZ := QZ) (QW := QW)
-                  (hkerEquiv := hkerEquiv)
+                  hker
                   (Pi.single i (1 : ℂ)) }
 
       theorem BHW.hw_sameSourceGram_regular_orbit ... := by
         let S : BHW.HWHighRankSpanIsometryData d n z w :=
           BHW.hw_highRank_spanIsometryData_of_sameSourceGram
-            (d := d) hd (n := n) hzOrbit hgram
+            (d := d) (n := n) hzOrbit hgram
         rcases
           BHW.complexMinkowski_wittExtension_detOne_of_sourceSpan
             (d := d) hd S hSO with
@@ -23429,9 +23417,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | --- | --- | --- |
       | Rank split predicates `sourceGramMatrixRank`, `HWSourceGramOrbitRank`, `HWSourceGramLowRank`, max/exceptional chart predicates, arithmetic complements, and same-Gram transport | Implemented and exact-file checked in `BHWPermutation/SourceRank.lean`; umbrella import checked in `BHWPermutation.lean`. | Pure matrix-rank definitions plus `Nat.lt_of_not_ge`, `not_lt_of_ge`, and definitional transport across equality of source Gram matrices; no Hall-Wightman geometry. |
       | Coefficient maps and scalar-kernel bridge: `sourceCoefficientEval`, `sourceCoefficientGramMap`, `sourceCoefficientGramKernel`, `sourceCoefficientGramMap_apply_sourceMinkowskiGram`, `sourceCoefficientEval_single`, `sourceCoefficientGramMap_eq_zero_iff_eval_pair_eval_eq_zero`, `sourceCoefficientEval_pair_eq_sum_gram`, `sourceCoefficientEval_ker_le_gramKernel` | Implemented and exact-file checked in `BHWPermutation/SourceCoefficient.lean`; umbrella import checked in `BHWPermutation.lean`. | Finite-sum linear maps, the checked local pairing `sourceComplexMinkowskiInner`, `sourceComplexMinkowskiInner_sum_smul_left`/`_right`, and `sourceMinkowskiGram_apply_eq_complexInner`; no analytic input. |
-      | Restricted-rank bridge: `sourceCoefficientGramMap_eq_toLin_transpose`, `sourceGramMatrixRank_eq_finrank_range_sourceCoefficientGramMap`, `sourceCoefficientEval_mem_restrictedMinkowskiRadical_iff`, `sourceGramMatrixRank_eq_restrictedMinkowskiRank_range`, and quotient/radical helpers | Transpose identity, radical membership, kernel-preimage, and matrix-rank/range bridge implemented; quotient rank-nullity still not implemented. | Next prove `finrank_range_sourceCoefficientGramMap_eq_restrictedRank` by quotienting by `ker evalZ` using `Submodule.liftQ`, `Submodule.range_liftQ`, `Submodule.ker_liftQ`, and `LinearMap.finrank_range_add_finrank_ker`; then assemble `sourceGramMatrixRank_eq_restrictedMinkowskiRank_range`. |
-      | High-rank nondegeneracy and kernel transport | Lean-shaped proof-doc packet complete; not yet implemented in production. | Degenerate restricted span forces scalar rank `< min d n` using `Submodule.one_le_finrank_iff`, `Submodule.finrank_lt`, and `sourceComplexMinkowskiInner_left_nonDegenerate`; then `ker evalZ = gramKernel = ker evalW` under same Gram.  This is the step that prevents using `z i ↦ w i` before well-definedness is proved. |
-      | High-rank span isometry, determinant orientation, and orbit theorem | Proof transcript pinned; production Lean not started. | Build `HWHighRankSpanIsometryData` from the common coefficient quotient using `hwHighRankSpanIsometry_apply_eval` and `sourceCoefficientEval_pair_eq_sum_gram`.  Start with full-complex Witt extension, then repair the determinant by a reflection on a nontrivial orthogonal complement in the proper-span case, or by the full-frame determinant-ratio equality in the full-ambient-rank case.  The determinant-`-1` full-rank branch is exposed as `HWSameSourceGramImproperOrbitData` and may be consumed only by the conditional full-component Hall-Wightman fork; the active oriented fork proves the determinant ratio is `1` before calling the proper orbit theorem. |
+      | Restricted-rank bridge: `sourceCoefficientGramMap_eq_toLin_transpose`, `sourceGramMatrixRank_eq_finrank_range_sourceCoefficientGramMap`, `sourceCoefficientEval_mem_restrictedMinkowskiRadical_iff`, `sourceCoefficientGramKernel_eq_eval_preimage_radical`, `finrank_range_sourceCoefficientGramMap_eq_restrictedRank`, and `sourceGramMatrixRank_eq_restrictedMinkowskiRank_range` | Implemented and exact-file checked in `BHWPermutation/SourceRank.lean`. | The checked proof quotients coefficient space by `ker sourceCoefficientEval` with `Submodule.liftQ`, uses `Submodule.range_liftQ`, identifies the lifted kernel with the restricted radical through `sourceCoefficientEval.quotKerEquivRange`, applies `LinearMap.finrank_range_add_finrank_ker`, and rewrites the scalar matrix rank through the transposed coefficient Gram map. |
+      | High-rank nondegeneracy and kernel transport | Implemented and exact-file checked in `BHWPermutation/SourceRank.lean`. | Degenerate restricted span forces scalar rank `< min d n` using `Submodule.one_le_finrank_iff`, `Submodule.finrank_lt`, and `sourceComplexMinkowskiInner_left_nonDegenerate`; then `ker evalZ = gramKernel = ker evalW` under same Gram.  This is the checked step that prevents using `z i ↦ w i` before well-definedness is proved. |
+      | High-rank span isometry data | Implemented and exact-file checked in `BHWPermutation/SourceRank.lean`. | Builds `HWHighRankSpanIsometryData` from the common coefficient quotient using `hwHighRankSpanIsometryOfKernelEq`, `hwHighRankSpanIsometry_apply_eval`, and `sourceCoefficientEval_pair_eq_sum_gram`; the producer is a `noncomputable def` because it returns data, while `HWHighRankSpanIsometryData_sourceGram_eq` is a proposition-valued theorem. |
+      | High-rank determinant orientation and orbit theorem | Proof transcript pinned; production Lean not started. | Start with full-complex Witt extension from `HWHighRankSpanIsometryData`, then repair the determinant by a reflection on a nontrivial orthogonal complement in the proper-span case, or by the full-frame determinant-ratio equality in the full-ambient-rank case.  The determinant-`-1` full-rank branch is exposed as `HWSameSourceGramImproperOrbitData` and may be consumed only by the conditional full-component Hall-Wightman fork; the active oriented fork proves the determinant ratio is `1` before calling the proper orbit theorem. |
       | Principal minor extraction for low-rank selected block | Principal-minor extraction checked locally; selected-frame construction transcript pinned. | `BHW.exists_sourcePrincipalMinor_ne_zero_of_sourceSymmetricRank` is checked in `BHWPermutation/SourceComplexSchurPatch.lean`; the selected-span frame uses the inverse principal Gram block coefficient formula and the Schur-complement exact-rank theorem displayed above. |
       | Low-rank selected-span frame and residual Schur-zero theorem | Proof transcript pinned; production Lean not started. | Inverse principal Gram block coefficients, residual orthogonality, residual-pairing equality from `hgram`, and residual-residual zero from the indexed Schur-complement theorem at exact rank.  The proof uses `selectedIndexSumEquiv` and case-splits on selected versus complementary indices; no block-matrix prose is left as a mathematical step. |
       | Selected-span alignment and common residual subspaces | Proof transcript pinned; production Lean not started. | First align the selected `z` and `w` spans by determinant-repaired Witt extension; only then put the two residual families in the common orthogonal complement.  Reversing this order is false.  The residual subspaces and their isotropy/orthogonality fields are extracted from the aligned decomposition. |
@@ -23442,8 +23431,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | `extendF_complexLorentzInvariant_of_cinv` | Implemented and exact-file checked in `ComplexInvariance/Extend.lean`, together with `BHW.extendF_preimage_eq_of_cinv`. | The proof unfolds `extendF`, chooses forward-tube preimages, and compares them by `complexLorentzAction_mul`; this is not a scalar representative theorem and does not use PET/EOW/locality. |
 
       After the theorem-2 proof-doc gate is fully closed, the first possible
-      remaining production Lean target in this Lemma-2 block is therefore one
-      of the finite-dimensional linear-algebra rows above, not
+      remaining production Lean target in this Lemma-2 block is therefore the
+      high-rank determinant-Witt row or one of the later
+      low-rank geometric rows above, not
       `BHW.extendedTube_same_sourceGram_extendF_eq` itself.  This is a future
       implementation-order note, not permission to start production Lean while
       the oriented scalar-source producer ledger remains open.  A

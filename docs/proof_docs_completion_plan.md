@@ -2125,9 +2125,10 @@ implementation contract is:
    | --- | --- | --- |
    | Rank split predicates and complement lemmas | Implemented and exact-file checked in `BHWPermutation/SourceRank.lean`; umbrella import checked in `BHWPermutation.lean`. | Defines `sourceGramMatrixRank`, `sourceConfigGramMatrixRank`, `HWSourceGramOrbitRank`, `HWSourceGramLowRank`, `HWSourceGramOrbitRankAt`, `HWSourceGramLowRankAt`, `HWSourceGramMaxRank`, `HWSourceGramExceptionalRank`, `HWSourceGramMaxRankAt`, and `HWSourceGramExceptionalRankAt`; proves complement and same-Gram transport lemmas. |
    | Coefficient maps and scalar Gram kernel | Implemented and exact-file checked in `BHWPermutation/SourceCoefficient.lean`; umbrella import checked in `BHWPermutation.lean`. | Defines `sourceCoefficientEval`, `sourceCoefficientGramMap`, and `sourceCoefficientGramKernel`; proves `sourceCoefficientGramMap_apply_sourceMinkowskiGram`, `sourceCoefficientEval_single`, `sourceCoefficientGramMap_eq_zero_iff_eval_pair_eval_eq_zero`, `sourceCoefficientEval_pair_eq_sum_gram`, and `sourceCoefficientEval_ker_le_gramKernel`. |
-   | Restricted-rank bridge | Transpose identity, radical membership, kernel-preimage, and matrix-rank/range bridge implemented; quotient rank-nullity still not implemented. | Prove `finrank_range_sourceCoefficientGramMap_eq_restrictedRank` by quotienting by `ker evalZ` using `Submodule.liftQ`, `Submodule.range_liftQ`, `Submodule.ker_liftQ`, and `LinearMap.finrank_range_add_finrank_ker`; then assemble `sourceGramMatrixRank_eq_restrictedMinkowskiRank_range`. |
-   | High-rank kernel transport | Lean-shaped proof-doc packet complete; not yet implemented. | Prove degenerate restricted span drops below `min d n`, transport `ker evalZ = gramKernel = ker evalW`, and keep the coefficient quotient well-defined before any `z i ↦ w i` assignment. |
-   | High-rank span isometry and orbit theorem | Proof transcript pinned; production Lean not started. | Descend the coefficient identity to `HWHighRankSpanIsometryData` via `hwHighRankSpanIsometry_apply_eval`, prove preservation by `sourceCoefficientEval_pair_eq_sum_gram`, then split the Witt extension into determinant-`1` proper orbit and determinant-`-1` improper full-complex-orthogonal orbit.  The oriented route avoids the improper full-rank branch by carrying full-frame determinant data and proving `sourceOriented_soCompatible_of_sameInvariant`; the conditional pure-Gram fork still needs Hall-Wightman's space-inversion/improper-component source input. |
+   | Restricted-rank bridge | Implemented and exact-file checked in `BHWPermutation/SourceRank.lean`. | The checked proof identifies scalar matrix rank with `finrank (range sourceCoefficientGramMap)`, quotients coefficient space by `ker sourceCoefficientEval` using `Submodule.liftQ` and `Submodule.range_liftQ`, identifies the lifted kernel with the restricted radical through `sourceCoefficientEval.quotKerEquivRange`, applies `LinearMap.finrank_range_add_finrank_ker`, and assembles `sourceGramMatrixRank_eq_restrictedMinkowskiRank_range`. |
+   | High-rank kernel transport | Implemented and exact-file checked in `BHWPermutation/SourceRank.lean`. | Defines `ComplexMinkowskiNondegenerateSubspace`; proves that a degenerate restricted span has positive radical finrank, hence restricted rank below span dimension, span dimension `<= n` and `<= d`, scalar rank `< min d n`, high-rank span nondegeneracy, `ker evalZ = gramKernel`, and same-Gram transport `ker evalZ = ker evalW`. |
+   | High-rank span isometry data | Implemented and exact-file checked in `BHWPermutation/SourceRank.lean`. | Constructs the quotient-induced isometry as `hwHighRankSpanIsometryOfKernelEq`, proves `hwHighRankSpanIsometry_apply_eval`, packages `HWHighRankSpanIsometryData` by `hw_highRank_spanIsometryData_of_sameSourceGram`, and proves `HWHighRankSpanIsometryData_sourceGram_eq`.  This closes the well-defined coefficient-quotient part before any Witt extension. |
+   | High-rank determinant/Witt orbit theorem | Proof transcript pinned; production Lean not started. | Starting from `HWHighRankSpanIsometryData`, split the Witt extension into determinant-`1` proper orbit and determinant-`-1` improper full-complex-orthogonal orbit.  The oriented route avoids the improper full-rank branch by carrying full-frame determinant data and proving `sourceOriented_soCompatible_of_sameInvariant`; the conditional pure-Gram fork still needs Hall-Wightman's space-inversion/improper-component source input. |
    | Low-rank selected principal block | Proof transcript pinned; principal-minor extraction checked locally. | The blueprint now spells out `hwLemma3_selectedProjection`, selected coefficients, projection Gram equality, Schur-zero residual pairing, and source-span finrank equality.  Lean may start at these finite algebra helpers only after the proof-doc gate chooses a concrete implementation file; the final branch-law wrapper must not be first. |
    | Low-rank residual-frame alignment | Proof transcript pinned; production Lean not started. | Align selected spans first, extract the residual span, choose an independent common isotropic frame `q`, store explicit coefficient functions for both residual families, and prove pairwise isotropy plus orthogonality to the selected block from the zero Schur complement. |
    | Dual frame and contraction family | Proof transcript pinned; production Lean not started. | Store `qDual_pair_zero`, `q_dual`, `qDual_orth`, build the finite partial boost scaling `q`/`qDual`, and Witt-extend it; the dual frame is used only for null-boost contraction and the two-curve value equality/limit, not for the coefficient-freedom membership theorem. |
@@ -2135,9 +2136,8 @@ implementation contract is:
    | `extendF_complexLorentzInvariant_of_cinv` | Implemented and exact-file checked in `ComplexInvariance/Extend.lean`. | Unfold `extendF`, choose forward-tube preimages, and use the new direct-preimage helper `BHW.extendF_preimage_eq_of_cinv`; no PET/EOW/locality and no scalar-representative content. |
 
    Therefore, after the theorem-2 proof-doc gate is fully closed, the first
-   remaining Lean target in this block is now the restricted-rank bridge or
-   another unimplemented finite-dimensional support theorem above, not the
-   final branch-law wrapper
+   remaining Lean target in this block is now the high-rank
+   determinant/Witt-extension support theorem above, not the final branch-law wrapper
    `BHW.extendedTube_same_sourceGram_extendF_eq`.  This sentence is not
    permission to start production Lean while the oriented scalar-source producer ledger above
    remains open.
@@ -2837,7 +2837,7 @@ Source-to-Lean obligation matrix for the same scalar-source gate:
 | Source step | Required Lean surfaces | Current readiness |
 | --- | --- | --- |
 | Hall-Wightman Lemma 1 | `BHW.extendF_holomorphicOn`, `BHW.extendF_complex_lorentz_invariant`, `BHW.extendF_complexLorentzInvariant_of_cinv`, `BHW.HallWightmanFullComplexLorentzGroup`, `BHW.HallWightmanFullComplexLorentzInvariantOnForwardTube`, `BHW.fullOrthochronousRealLorentz_preserves_forwardTube`, `BHW.hallWightman_improperComponentInvariant_forwardTube`, and `BHW.hallWightmanFullComplexLorentzInvariantOnExtendedTube_eq` | Proper determinant-`1` `extendF` support now has a checked direct bridge in `ComplexInvariance/Extend.lean` via `BHW.extendF_preimage_eq_of_cinv`.  The conditional pure-Gram fork still needs the improper-component source input because proper invariance alone has a full-rank determinant obstruction; the active oriented fork avoids that input by carrying full-frame determinants. |
-| Lemma 2, high rank | `BHW.HWHighRankSpanIsometryData`, `BHW.hw_highRank_spanIsometryData_of_sameSourceGram`, `BHW.hw_sameSourceGram_regular_orbit` | Proof transcript pinned.  The coefficient quotient, common Gram kernel, nondegenerate restricted span, determinant-sensitive Witt extension, complement reflection, and oriented determinant repair are all decomposed; production Lean must start at those finite-dimensional support lemmas, not at the public orbit theorem. |
+| Lemma 2, high rank | Checked finite support: `BHW.HWHighRankSpanIsometryData`, `BHW.hw_highRank_spanIsometryData_of_sameSourceGram`; remaining orbit surface: `BHW.hw_sameSourceGram_regular_orbit` | Coefficient quotient, common Gram kernel, nondegenerate restricted span, and span-isometry data are implemented in `BHWPermutation/SourceRank.lean`.  The determinant-sensitive Witt extension, complement reflection, and oriented determinant repair remain proof-doc-only; production Lean must start at those finite-dimensional support lemmas, not at the public orbit theorem. |
 | Lemma 2, low rank | `BHW.HWSameSourceGramSingularContractionData`, `BHW.hw_sameSourceGram_singular_contractionData`, `BHW.hw_sameSourceGram_singularLimit_extendF_eq` | Proof transcript pinned.  The residual isotropic-frame geometry, coefficient-freedom extended-tube theorem, null-boost contraction family, and two-curve continuity limit inside `ExtendedTube d n` are decomposed into named Lean surfaces. |
 | Lemma 3 | `BHW.hwLemma3_extendedTube_adaptedRankRepresentative`, `BHW.hwLemma3_adapted_sourceGram_localVectorRealization`, `BHW.sourceExtendedTubeGramDomain_relOpen` | Proof transcript pinned.  Connectedness is mechanical; relative openness is reduced to adapted same-Gram realization, normal-form transport, Schur/Takagi residual realization, and the final extended-tube shrink. |
 | Lemma 4 | `BHW.ComplexMinkowskiSkewGenerator`, `BHW.lorentzInfinitesimalTangent`, `BHW.hallWightman_lorentzInfinitesimalEquations` | Proof transcript pinned; production must differentiate the complex Lorentz exponential curve and use extended-tube invariance of `extendF`. |
@@ -2875,13 +2875,25 @@ lemmas, `BHW.sourceCoefficientEval`,
 `BHW.restrictedMinkowskiLeftMap`, `BHW.restrictedMinkowskiRadical`,
 `BHW.restrictedMinkowskiRank`, and
 `BHW.sourceCoefficientEval_mem_restrictedMinkowskiRadical_iff`,
-`BHW.sourceCoefficientGramKernel_eq_eval_preimage_radical`, and
-`BHW.sourceGramMatrixRank_eq_finrank_range_sourceCoefficientGramMap`.  They do not currently contain
-production declarations named
-`BHW.finrank_range_sourceCoefficientGramMap_eq_restrictedRank`,
-`BHW.sourceGramMatrixRank_eq_restrictedMinkowskiRank_range`,
+`BHW.sourceCoefficientGramKernel_eq_eval_preimage_radical`,
+`BHW.sourceGramMatrixRank_eq_finrank_range_sourceCoefficientGramMap`,
+`BHW.finrank_range_sourceCoefficientGramMap_eq_restrictedRank`, and
+`BHW.sourceGramMatrixRank_eq_restrictedMinkowskiRank_range`, plus
+`BHW.ComplexMinkowskiNondegenerateSubspace`,
+`BHW.restrictedMinkowskiRadical_nontrivial_of_degenerate`,
+`BHW.restrictedMinkowskiRank_lt_finrank_of_degenerate`,
+`BHW.finrank_range_sourceCoefficientEval_le`,
+`BHW.finrank_restrictedSpan_le_d_of_degenerate`,
+`BHW.sourceGramMatrixRank_lt_orbitThreshold_of_range_degenerate`,
+`BHW.hw_highRank_eval_range_nondegenerate`,
+`BHW.hw_highRank_eval_ker_eq_gramKernel`, and
+`BHW.hw_highRank_sourceCoefficientEval_ker_eq_of_sameSourceGram`, plus
+`BHW.hwHighRankSpanIsometryOfKernelEq`,
 `BHW.hwHighRankSpanIsometry_apply_eval`,
-`BHW.hw_highRank_spanIsometryData_of_sameSourceGram`,
+`BHW.HWHighRankSpanIsometryData`,
+`BHW.hw_highRank_spanIsometryData_of_sameSourceGram`, and
+`BHW.HWHighRankSpanIsometryData_sourceGram_eq`.  They do not currently contain
+production declarations named
 `BHW.HallWightmanFullComplexLorentzGroup`,
 `BHW.HallWightmanFullComplexLorentzInvariantOnForwardTube`,
 `BHW.realFullLorentzAction`,

@@ -127,6 +127,18 @@ def restrictedMinkowskiRank
     (M : Submodule ℂ (Fin (d + 1) → ℂ)) : ℕ :=
   Module.finrank ℂ M - Module.finrank ℂ (restrictedMinkowskiRadical d M)
 
+/-- Nondegeneracy of the complex Minkowski form after restriction to a source
+subspace. -/
+def ComplexMinkowskiNondegenerateSubspace
+    (d : ℕ)
+    (M : Submodule ℂ (Fin (d + 1) → ℂ)) : Prop :=
+  ∀ x : M,
+    (∀ y : M,
+      sourceComplexMinkowskiInner d
+        (x : Fin (d + 1) → ℂ)
+        (y : Fin (d + 1) → ℂ) = 0) →
+      x = 0
+
 /-- A coefficient-evaluated source vector lies in the restricted radical
 exactly when it pairs to zero with every coefficient-evaluated source vector. -/
 theorem sourceCoefficientEval_mem_restrictedMinkowskiRadical_iff
@@ -203,6 +215,430 @@ theorem sourceGramMatrixRank_eq_finrank_range_sourceCoefficientGramMap
     (Pi.basisFun ℂ (Fin n)) (Pi.basisFun ℂ (Fin n))]
   rw [Matrix.toLin_eq_toLin']
   rw [← sourceCoefficientGramMap_eq_toLin_transpose]
+
+/-- The range rank of the scalar Gram map is the rank of the complex
+Minkowski form restricted to the source span. -/
+theorem finrank_range_sourceCoefficientGramMap_eq_restrictedRank
+    (d n : ℕ)
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    Module.finrank ℂ
+        (LinearMap.range
+          (sourceCoefficientGramMap n (sourceMinkowskiGram d n z))) =
+      restrictedMinkowskiRank d
+        (LinearMap.range (sourceCoefficientEval d n z)) := by
+  let evalZ : (Fin n → ℂ) →ₗ[ℂ] (Fin (d + 1) → ℂ) :=
+    sourceCoefficientEval d n z
+  let M := LinearMap.range evalZ
+  let rad := restrictedMinkowskiRadical d M
+  let gramMap : (Fin n → ℂ) →ₗ[ℂ] (Fin n → ℂ) :=
+    sourceCoefficientGramMap n (sourceMinkowskiGram d n z)
+  have hK_le : LinearMap.ker evalZ ≤ LinearMap.ker gramMap := by
+    simpa [evalZ, gramMap, sourceCoefficientGramKernel] using
+      sourceCoefficientEval_ker_le_gramKernel d n z
+  let liftGram : ((Fin n → ℂ) ⧸ LinearMap.ker evalZ) →ₗ[ℂ] (Fin n → ℂ) :=
+    (LinearMap.ker evalZ).liftQ gramMap hK_le
+  have hrange_lift :
+      LinearMap.range liftGram = LinearMap.range gramMap := by
+    simpa [liftGram] using
+      Submodule.range_liftQ
+        (p := LinearMap.ker evalZ) (f := gramMap) hK_le
+  have hker_eq :
+      LinearMap.ker liftGram =
+        rad.comap
+          (evalZ.quotKerEquivRange :
+            ((Fin n → ℂ) ⧸ LinearMap.ker evalZ) →ₗ[ℂ] M) := by
+    ext q
+    induction q using Quotient.inductionOn with
+    | h a =>
+        change liftGram (Submodule.Quotient.mk a) = 0 ↔
+          evalZ.quotKerEquivRange (Submodule.Quotient.mk a) ∈ rad
+        simp only [liftGram, Submodule.liftQ_apply]
+        rw [sourceCoefficientGramMap_eq_zero_iff_eval_pair_eval_eq_zero]
+        simpa [evalZ, M, rad] using
+          (sourceCoefficientEval_mem_restrictedMinkowskiRadical_iff d n z a).symm
+  have hker_finrank :
+      Module.finrank ℂ (LinearMap.ker liftGram) =
+        Module.finrank ℂ rad := by
+    rw [hker_eq]
+    exact (LinearEquiv.ofSubmodule' evalZ.quotKerEquivRange rad).finrank_eq
+  have hquot_finrank :
+      Module.finrank ℂ ((Fin n → ℂ) ⧸ LinearMap.ker evalZ) =
+        Module.finrank ℂ M :=
+    evalZ.quotKerEquivRange.finrank_eq
+  have hnullity :
+      Module.finrank ℂ (LinearMap.range liftGram) +
+          Module.finrank ℂ (LinearMap.ker liftGram) =
+        Module.finrank ℂ ((Fin n → ℂ) ⧸ LinearMap.ker evalZ) :=
+    LinearMap.finrank_range_add_finrank_ker liftGram
+  have hsum :
+      Module.finrank ℂ (LinearMap.range gramMap) +
+          Module.finrank ℂ rad =
+        Module.finrank ℂ M := by
+    calc
+      Module.finrank ℂ (LinearMap.range gramMap) +
+          Module.finrank ℂ rad
+          = Module.finrank ℂ (LinearMap.range liftGram) +
+              Module.finrank ℂ (LinearMap.ker liftGram) := by
+                rw [hrange_lift, hker_finrank]
+      _ = Module.finrank ℂ ((Fin n → ℂ) ⧸ LinearMap.ker evalZ) := hnullity
+      _ = Module.finrank ℂ M := hquot_finrank
+  change
+    Module.finrank ℂ (LinearMap.range gramMap) =
+      Module.finrank ℂ M - Module.finrank ℂ rad
+  omega
+
+/-- The scalar Gram rank is the restricted Minkowski rank of the source
+span. -/
+theorem sourceGramMatrixRank_eq_restrictedMinkowskiRank_range
+    (d n : ℕ)
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    sourceGramMatrixRank n (sourceMinkowskiGram d n z) =
+      restrictedMinkowskiRank d
+        (LinearMap.range (sourceCoefficientEval d n z)) := by
+  rw [sourceGramMatrixRank_eq_finrank_range_sourceCoefficientGramMap]
+  exact finrank_range_sourceCoefficientGramMap_eq_restrictedRank d n z
+
+/-- Degeneracy of the restricted form is witnessed by a nonzero restricted
+radical. -/
+theorem restrictedMinkowskiRadical_nontrivial_of_degenerate
+    (d : ℕ)
+    {M : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hdeg : ¬ ComplexMinkowskiNondegenerateSubspace d M) :
+    0 < Module.finrank ℂ (restrictedMinkowskiRadical d M) := by
+  have hrad_ne : restrictedMinkowskiRadical d M ≠ ⊥ := by
+    intro hbot
+    apply hdeg
+    intro x horth
+    have hx_rad : x ∈ restrictedMinkowskiRadical d M := by
+      rw [restrictedMinkowskiRadical, LinearMap.mem_ker]
+      ext y
+      simpa [restrictedMinkowskiLeftMap] using horth y
+    have hx_bot : x ∈ (⊥ : Submodule ℂ M) := by
+      simpa [hbot] using hx_rad
+    simpa using hx_bot
+  exact Nat.lt_of_lt_of_le Nat.zero_lt_one
+    ((Submodule.one_le_finrank_iff).2 hrad_ne)
+
+/-- If the restricted form is degenerate, its restricted rank is strictly
+smaller than the subspace dimension. -/
+theorem restrictedMinkowskiRank_lt_finrank_of_degenerate
+    (d : ℕ)
+    {M : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hdeg : ¬ ComplexMinkowskiNondegenerateSubspace d M) :
+    restrictedMinkowskiRank d M < Module.finrank ℂ M := by
+  have hrad_pos :
+      0 < Module.finrank ℂ (restrictedMinkowskiRadical d M) :=
+    restrictedMinkowskiRadical_nontrivial_of_degenerate (d := d) hdeg
+  have hrad_le :
+      Module.finrank ℂ (restrictedMinkowskiRadical d M) ≤
+        Module.finrank ℂ M :=
+    Submodule.finrank_le (restrictedMinkowskiRadical d M)
+  simp [restrictedMinkowskiRank]
+  omega
+
+/-- The source coefficient span is generated by at most `n` source vectors. -/
+theorem finrank_range_sourceCoefficientEval_le
+    (d n : ℕ)
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    Module.finrank ℂ (LinearMap.range (sourceCoefficientEval d n z)) ≤ n := by
+  have h := LinearMap.finrank_range_le (sourceCoefficientEval d n z)
+  simpa [Module.finrank_fin_fun] using h
+
+/-- A degenerate restricted source subspace is a proper subspace of the
+ambient nondegenerate complex Minkowski space, hence has dimension at most
+`d`. -/
+theorem finrank_restrictedSpan_le_d_of_degenerate
+    (d : ℕ)
+    {M : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hdeg : ¬ ComplexMinkowskiNondegenerateSubspace d M) :
+    Module.finrank ℂ M ≤ d := by
+  have hM_ne_top : M ≠ ⊤ := by
+    intro htop
+    apply hdeg
+    intro x horth
+    apply Subtype.ext
+    apply sourceComplexMinkowskiInner_left_nonDegenerate d
+    intro v
+    have hvM : v ∈ M := by
+      rw [htop]
+      exact Submodule.mem_top
+    exact horth ⟨v, hvM⟩
+  have hlt :
+      Module.finrank ℂ M <
+        Module.finrank ℂ (Fin (d + 1) → ℂ) :=
+    Submodule.finrank_lt hM_ne_top
+  have hlt' : Module.finrank ℂ M < d + 1 := by
+    simpa [Module.finrank_fin_fun] using hlt
+  exact Nat.lt_succ_iff.mp hlt'
+
+/-- Degeneracy of the restricted source span forces Hall-Wightman's scalar
+rank below the orbit-rank threshold. -/
+theorem sourceGramMatrixRank_lt_orbitThreshold_of_range_degenerate
+    (d n : ℕ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hdeg :
+      ¬ ComplexMinkowskiNondegenerateSubspace d
+        (LinearMap.range (sourceCoefficientEval d n z))) :
+    sourceGramMatrixRank n (sourceMinkowskiGram d n z) < min d n := by
+  let M := LinearMap.range (sourceCoefficientEval d n z)
+  have hM_le_n : Module.finrank ℂ M ≤ n :=
+    finrank_range_sourceCoefficientEval_le d n z
+  have hM_le_d : Module.finrank ℂ M ≤ d :=
+    finrank_restrictedSpan_le_d_of_degenerate (d := d) hdeg
+  have hrank_lt_M :
+      restrictedMinkowskiRank d M < Module.finrank ℂ M :=
+    restrictedMinkowskiRank_lt_finrank_of_degenerate (d := d) hdeg
+  have hrank_lt_d : restrictedMinkowskiRank d M < d :=
+    lt_of_lt_of_le hrank_lt_M hM_le_d
+  have hrank_lt_n : restrictedMinkowskiRank d M < n :=
+    lt_of_lt_of_le hrank_lt_M hM_le_n
+  rw [sourceGramMatrixRank_eq_restrictedMinkowskiRank_range]
+  exact lt_min hrank_lt_d hrank_lt_n
+
+/-- In Hall-Wightman's high-rank branch, the source span is nondegenerate for
+the restricted complex Minkowski form. -/
+theorem hw_highRank_eval_range_nondegenerate
+    (d n : ℕ)
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hzRank : HWSourceGramOrbitRankAt d n z) :
+    ComplexMinkowskiNondegenerateSubspace d
+      (LinearMap.range (sourceCoefficientEval d n z)) := by
+  by_contra hdeg
+  have hlt :
+      sourceGramMatrixRank n (sourceMinkowskiGram d n z) < min d n :=
+    sourceGramMatrixRank_lt_orbitThreshold_of_range_degenerate d n z hdeg
+  have hge :
+      min d n ≤ sourceGramMatrixRank n (sourceMinkowskiGram d n z) := by
+    simpa [HWSourceGramOrbitRankAt, HWSourceGramOrbitRank] using hzRank
+  exact (not_lt_of_ge hge) hlt
+
+/-- In the high-rank branch, the coefficient-evaluation kernel is exactly the
+scalar Gram kernel. -/
+theorem hw_highRank_eval_ker_eq_gramKernel
+    (d n : ℕ)
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hzRank : HWSourceGramOrbitRankAt d n z) :
+    LinearMap.ker (sourceCoefficientEval d n z) =
+      sourceCoefficientGramKernel n (sourceMinkowskiGram d n z) := by
+  let evalZ := sourceCoefficientEval d n z
+  apply le_antisymm
+  · simpa [evalZ] using sourceCoefficientEval_ker_le_gramKernel d n z
+  · intro a ha
+    have ha0 :
+        sourceCoefficientGramMap n (sourceMinkowskiGram d n z) a = 0 := by
+      simpa [sourceCoefficientGramKernel] using
+        (LinearMap.mem_ker.mp ha)
+    have hNondeg :
+        ComplexMinkowskiNondegenerateSubspace d
+          (LinearMap.range evalZ) :=
+      hw_highRank_eval_range_nondegenerate (d := d) (n := n)
+        (z := z) hzRank
+    have horth :
+        ∀ v : LinearMap.range evalZ,
+          sourceComplexMinkowskiInner d
+            ((⟨evalZ a, ⟨a, rfl⟩⟩ :
+              LinearMap.range evalZ) : Fin (d + 1) → ℂ)
+            (v : Fin (d + 1) → ℂ) = 0 := by
+      intro v
+      rcases v with ⟨_, b, rfl⟩
+      exact
+        (sourceCoefficientGramMap_eq_zero_iff_eval_pair_eval_eq_zero
+          d n z a).1 ha0 b
+    have hEval_zero :
+        (⟨evalZ a, ⟨a, rfl⟩⟩ : LinearMap.range evalZ) = 0 :=
+      hNondeg ⟨evalZ a, ⟨a, rfl⟩⟩ horth
+    have hval : evalZ a = 0 :=
+      congrArg Subtype.val hEval_zero
+    simpa [evalZ, LinearMap.mem_ker] using hval
+
+/-- Same-source-Gram high-rank configurations have identical coefficient
+evaluation kernels. -/
+theorem hw_highRank_sourceCoefficientEval_ker_eq_of_sameSourceGram
+    (d n : ℕ)
+    {z w : Fin n → Fin (d + 1) → ℂ}
+    (hgram : sourceMinkowskiGram d n z = sourceMinkowskiGram d n w)
+    (hzRank : HWSourceGramOrbitRankAt d n z) :
+    LinearMap.ker (sourceCoefficientEval d n z) =
+      LinearMap.ker (sourceCoefficientEval d n w) := by
+  have hwRank : HWSourceGramOrbitRankAt d n w :=
+    by
+      simpa [HWSourceGramOrbitRankAt, HWSourceGramOrbitRank, hgram] using
+        hzRank
+  calc
+    LinearMap.ker (sourceCoefficientEval d n z)
+        =
+      sourceCoefficientGramKernel n (sourceMinkowskiGram d n z) :=
+        hw_highRank_eval_ker_eq_gramKernel (d := d) (n := n)
+          (z := z) hzRank
+    _ =
+      sourceCoefficientGramKernel n (sourceMinkowskiGram d n w) := by
+        rw [hgram]
+    _ = LinearMap.ker (sourceCoefficientEval d n w) :=
+        (hw_highRank_eval_ker_eq_gramKernel (d := d) (n := n)
+          (z := w) hwRank).symm
+
+/-- The coefficient-quotient isometry induced by equality of coefficient
+evaluation kernels. -/
+noncomputable def hwHighRankSpanIsometryOfKernelEq
+    (d n : ℕ)
+    {z w : Fin n → Fin (d + 1) → ℂ}
+    (hker :
+      LinearMap.ker (sourceCoefficientEval d n z) =
+        LinearMap.ker (sourceCoefficientEval d n w)) :
+    LinearMap.range (sourceCoefficientEval d n z) ≃ₗ[ℂ]
+      LinearMap.range (sourceCoefficientEval d n w) :=
+  let evalZ := sourceCoefficientEval d n z
+  let evalW := sourceCoefficientEval d n w
+  evalZ.quotKerEquivRange.symm.trans
+    ((Submodule.quotEquivOfEq
+      (LinearMap.ker evalZ) (LinearMap.ker evalW) hker).trans
+        evalW.quotKerEquivRange)
+
+/-- The quotient-induced high-rank span isometry sends each coefficient
+evaluation for `z` to the matching coefficient evaluation for `w`. -/
+theorem hwHighRankSpanIsometry_apply_eval
+    (d n : ℕ)
+    {z w : Fin n → Fin (d + 1) → ℂ}
+    (hker :
+      LinearMap.ker (sourceCoefficientEval d n z) =
+        LinearMap.ker (sourceCoefficientEval d n w))
+    (a : Fin n → ℂ) :
+    hwHighRankSpanIsometryOfKernelEq (d := d) (n := n)
+        (z := z) (w := w) hker
+      (⟨sourceCoefficientEval d n z a, ⟨a, rfl⟩⟩ :
+        LinearMap.range (sourceCoefficientEval d n z)) =
+      (⟨sourceCoefficientEval d n w a, ⟨a, rfl⟩⟩ :
+        LinearMap.range (sourceCoefficientEval d n w)) := by
+  apply Subtype.ext
+  simp [hwHighRankSpanIsometryOfKernelEq,
+    LinearMap.quotKerEquivRange_symm_apply_image,
+    LinearMap.quotKerEquivRange_apply_mk,
+    Submodule.quotEquivOfEq_mk]
+
+/-- The well-defined span isometry in Hall-Wightman's high-rank branch.
+The map is induced from the common coefficient quotient; it is not the
+informal assignment `z i ↦ w i` until the coefficient kernels have been
+proved equal. -/
+structure HWHighRankSpanIsometryData
+    (d n : ℕ)
+    (z w : Fin n → Fin (d + 1) → ℂ) where
+  M : Submodule ℂ (Fin (d + 1) → ℂ)
+  N : Submodule ℂ (Fin (d + 1) → ℂ)
+  M_eq_range :
+    M = LinearMap.range (sourceCoefficientEval d n z)
+  N_eq_range :
+    N = LinearMap.range (sourceCoefficientEval d n w)
+  M_nondegenerate :
+    ComplexMinkowskiNondegenerateSubspace d M
+  N_nondegenerate :
+    ComplexMinkowskiNondegenerateSubspace d N
+  z_mem : ∀ i, z i ∈ M
+  w_mem : ∀ i, w i ∈ N
+  T : M ≃ₗ[ℂ] N
+  T_preserves :
+    ∀ x y : M,
+      sourceComplexMinkowskiInner d
+          (x : Fin (d + 1) → ℂ)
+          (y : Fin (d + 1) → ℂ) =
+        sourceComplexMinkowskiInner d
+          (T x : Fin (d + 1) → ℂ)
+          (T y : Fin (d + 1) → ℂ)
+  T_z :
+    ∀ i, T ⟨z i, z_mem i⟩ = ⟨w i, w_mem i⟩
+
+/-- Same-source-Gram high-rank configurations have a well-defined
+pairing-preserving isometry between their source spans. -/
+noncomputable def hw_highRank_spanIsometryData_of_sameSourceGram
+    (d n : ℕ)
+    {z w : Fin n → Fin (d + 1) → ℂ}
+    (hzRank : HWSourceGramOrbitRankAt d n z)
+    (hgram : sourceMinkowskiGram d n z = sourceMinkowskiGram d n w) :
+    HWHighRankSpanIsometryData d n z w := by
+  let evalZ := sourceCoefficientEval d n z
+  let evalW := sourceCoefficientEval d n w
+  have hker : LinearMap.ker evalZ = LinearMap.ker evalW :=
+    hw_highRank_sourceCoefficientEval_ker_eq_of_sameSourceGram
+      (d := d) (n := n) (z := z) (w := w) hgram hzRank
+  let T : LinearMap.range evalZ ≃ₗ[ℂ] LinearMap.range evalW :=
+    hwHighRankSpanIsometryOfKernelEq (d := d) (n := n)
+      (z := z) (w := w) hker
+  have hwRank : HWSourceGramOrbitRankAt d n w := by
+    simpa [HWSourceGramOrbitRankAt, HWSourceGramOrbitRank, hgram] using
+      hzRank
+  refine
+    { M := LinearMap.range evalZ
+      N := LinearMap.range evalW
+      M_eq_range := rfl
+      N_eq_range := rfl
+      M_nondegenerate :=
+        hw_highRank_eval_range_nondegenerate (d := d) (n := n)
+          (z := z) hzRank
+      N_nondegenerate :=
+        hw_highRank_eval_range_nondegenerate (d := d) (n := n)
+          (z := w) hwRank
+      z_mem := ?_
+      w_mem := ?_
+      T := T
+      T_preserves := ?_
+      T_z := ?_ }
+  · intro i
+    exact ⟨Pi.single i (1 : ℂ), by
+      simpa [evalZ] using sourceCoefficientEval_single d n z i⟩
+  · intro i
+    exact ⟨Pi.single i (1 : ℂ), by
+      simpa [evalW] using sourceCoefficientEval_single d n w i⟩
+  · intro x y
+    rcases x with ⟨xv, hxv⟩
+    rcases hxv with ⟨ax, hax⟩
+    rcases y with ⟨yv, hyv⟩
+    rcases hyv with ⟨ay, hay⟩
+    subst xv
+    subst yv
+    have hTx :
+        T (⟨evalZ ax, ⟨ax, rfl⟩⟩ : LinearMap.range evalZ) =
+          (⟨evalW ax, ⟨ax, rfl⟩⟩ : LinearMap.range evalW) := by
+      simpa [T] using
+        hwHighRankSpanIsometry_apply_eval (d := d) (n := n)
+          (z := z) (w := w) hker ax
+    have hTy :
+        T (⟨evalZ ay, ⟨ay, rfl⟩⟩ : LinearMap.range evalZ) =
+          (⟨evalW ay, ⟨ay, rfl⟩⟩ : LinearMap.range evalW) := by
+      simpa [T] using
+        hwHighRankSpanIsometry_apply_eval (d := d) (n := n)
+          (z := z) (w := w) hker ay
+    rw [hTx, hTy]
+    rw [sourceCoefficientEval_pair_eq_sum_gram d n z ax ay]
+    rw [sourceCoefficientEval_pair_eq_sum_gram d n w ax ay]
+    apply Finset.sum_congr rfl
+    intro j _
+    simp [sourceCoefficientGramMap, hgram]
+  · intro i
+    have hsingle :
+        T
+          (⟨evalZ (Pi.single i (1 : ℂ)), ⟨Pi.single i (1 : ℂ), rfl⟩⟩ :
+            LinearMap.range evalZ) =
+          (⟨evalW (Pi.single i (1 : ℂ)), ⟨Pi.single i (1 : ℂ), rfl⟩⟩ :
+            LinearMap.range evalW) := by
+      simpa [T] using
+        hwHighRankSpanIsometry_apply_eval (d := d) (n := n)
+          (z := z) (w := w) hker (Pi.single i (1 : ℂ))
+    simpa [evalZ, evalW, sourceCoefficientEval_single d n z i,
+      sourceCoefficientEval_single d n w i] using hsingle
+
+/-- The span-isometry data preserves the source Gram matrix. -/
+theorem HWHighRankSpanIsometryData_sourceGram_eq
+    (d n : ℕ)
+    {z w : Fin n → Fin (d + 1) → ℂ}
+    (S : HWHighRankSpanIsometryData d n z w) :
+    sourceMinkowskiGram d n z = sourceMinkowskiGram d n w := by
+  ext i j
+  have hpres :=
+    S.T_preserves ⟨z i, S.z_mem i⟩ ⟨z j, S.z_mem j⟩
+  have hTi := S.T_z i
+  have hTj := S.T_z j
+  rw [sourceMinkowskiGram_apply_eq_complexInner,
+    sourceMinkowskiGram_apply_eq_complexInner]
+  simpa [hTi, hTj] using hpres
 
 /-- The low-rank branch is exactly the complement of the orbit-rank branch. -/
 theorem hwSourceGram_lowRank_iff_not_orbitRank
