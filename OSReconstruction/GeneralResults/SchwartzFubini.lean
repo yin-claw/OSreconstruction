@@ -67,21 +67,48 @@ axiom schwartz_clm_fubini_exchange {m : ℕ}
       (∀ ξ : Fin m → ℝ, Φ ξ = ∫ x : Fin m → ℝ, g x ξ * f x) ∧
       (T Φ = ∫ x : Fin m → ℝ, T (g x) * f x)
 
-/-- **CLM exchange for ℝ-parametric Schwartz-valued integrals.**
+/-- **Finite-dimensional real-parameter CLM exchange.**
 
-Analogous to `schwartz_clm_fubini_exchange` but for integration over `ℝ` with
-Schwartz functions on a (possibly different) domain `E`. Given a continuous
-ℂ-linear functional `w` on `SchwartzMap E ℂ` and a continuous family
-`G : ℝ → SchwartzMap E ℂ` with polynomial seminorm growth, the pointwise
-integral `Θ(ξ) = ∫ φ(t) · G(t)(ξ) dt` defines a Schwartz function, and
-`w(Θ) = ∫ w(G(t)) · φ(t) dt`.
+This is the finite-dimensional mixed-domain form needed by the GNS
+spectral-condition argument.  The parameter space is one-dimensional (`ℝ`),
+while the Schwartz functions live on a finite-dimensional real normed space
+`E`; in the current downstream uses, `E` is an `NPointSpacetime` finite product
+of real coordinates.
 
-Mathematical content: identical to `schwartz_clm_fubini_exchange` — the
-Schwartz-valued integral is well-defined by polynomial growth × rapid decay,
-and the CLM exchange follows from continuity of `w`. The generalization is
-that the integration domain (`ℝ`) may differ from the Schwartz domain (`E`). -/
+Given a continuous ℂ-linear functional `w` on `SchwartzMap E ℂ`, a continuous
+Schwartz-valued family `G : ℝ → SchwartzMap E ℂ` with polynomial seminorm
+growth in the real parameter, and a one-variable Schwartz test function `φ`,
+the pointwise integral
+
+`Θ ξ = ∫ t, φ t * G t ξ`
+
+defines a Schwartz function on `E`, and `w` commutes with this integral.
+
+This theorem is intentionally narrower than the previous arbitrary-domain
+surface: finite dimensionality is the exact setting required by GNS and is the
+setting in which this should be reducible to the existing same-domain axiom
+`schwartz_clm_fubini_exchange`.
+
+Lean-facing reduction plan from `schwartz_clm_fubini_exchange`:
+
+1. Choose a continuous linear equivalence `E ≃L[ℝ] (Fin N → ℝ)` and transport
+   `w` and `G t` to Schwartz functions on `Fin N → ℝ`.
+2. Split `Fin N → ℝ` as `ℝ × (Fin (N - 1) → ℝ)`.
+3. Choose a fixed Schwartz bump `ρ` on the tail coordinates with
+   `∫ u, ρ u = 1`.
+4. Apply `schwartz_clm_fubini_exchange` in dimension `N` to the padded data
+   `x ↦ G (x₀)` and `x ↦ φ x₀ * ρ x_tail`.
+5. Use finite-product Fubini and the normalization of `ρ` to collapse the
+   `Fin N → ℝ` integral back to the real-parameter integral above.
+6. Transport the resulting Schwartz function back along the chosen coordinate
+   equivalence.
+
+The remaining formal work is this coordinate-transport/padding/Fubini package;
+the mathematical content is the same Schwartz-valued integral exchange as the
+existing axiom, but with different finite-dimensional parameter and target
+domains. -/
 theorem schwartz_clm_fubini_exchange_real
-    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E] [FiniteDimensional ℝ E]
     (w : SchwartzMap E ℂ → ℂ) (hw_cont : Continuous w) (hw_lin : IsLinearMap ℂ w)
     (G : ℝ → SchwartzMap E ℂ) (hG_cont : Continuous G)
     (hG_poly : ∀ (k j : ℕ), ∃ (C : ℝ) (N : ℕ), 0 < C ∧ ∀ t : ℝ,
