@@ -128,6 +128,16 @@ theorems yet: these groups are now documented as mathematical proof
 obligations with named support lemmas, but they are not implemented or
 verified in Lean.
 
+Latest source-patch refinement, 2026-05-03: the strict OS I §4.5
+BHW/Jost source-patch theorem is still **not** ready for production Lean at
+the public wrapper.  The docs now reject the false generic extension claim
+"open subset meets connected hull, therefore extends."  The real first Lean
+targets are the exposed exponential near-identity support, the local
+scalar-product continuation chart on the starting sector, the one-step
+overlap continuation theorem, and the compact-path continuation-chain/atlas
+producer.  Only after those are proved may
+`BHW.os45_sourcePatch_bhwJostPairData_of_OSI45` be assembled.
+
 Latest local connected-basis refinement, 2026-05-02: the rank-deficient
 no-tube local-image branch now has a two-sided Schur parameter-box transcript.
 The proof docs no longer rely on a one-way small-tail realization estimate:
@@ -4553,10 +4563,64 @@ common-boundary envelope, or any theorem that already assumes locality.
    `Path.trans`.  No source scalar representative, EOW envelope, PET
    independence, or final locality is allowed in this hull theorem.
 
-   The branch continuation theorem used by the two branch producers must be
-   stated once, generically, at the local BHW/Jost level:
+   The branch continuation theorem used by the two branch producers must not
+   be stated as "an arbitrary holomorphic function on an open subset meeting
+   a connected hull extends to the hull."  That statement is false even in
+   one complex variable.  The BHW/Jost content is instead the construction of
+   a continuation atlas: local holomorphic branches covering the selected
+   hull, all compatible on overlaps and agreeing with the starting branch on
+   the starting sector.  The Lean-facing carrier is:
 
    ```lean
+   structure BHW.BHWSourcePatchContinuationAtlas
+       [NeZero d] (hd : 2 <= d)
+       (n : Nat) (τ : Equiv.Perm (Fin n))
+       (Ω0 U : Set (Fin n -> Fin (d + 1) -> ℂ))
+       (B0 : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ) where
+     ι : Type
+     chart : ι -> Set (Fin n -> Fin (d + 1) -> ℂ)
+     branch : ι -> (Fin n -> Fin (d + 1) -> ℂ) -> ℂ
+     chart_open : ∀ a, IsOpen (chart a)
+     chart_sub_U : ∀ a, chart a ⊆ U
+     cover_U : ∀ z, z ∈ U -> ∃ a, z ∈ chart a
+     branch_holo : ∀ a, DifferentiableOn ℂ (branch a) (chart a)
+     overlap_eq :
+       ∀ a b z, z ∈ chart a -> z ∈ chart b ->
+         branch a z = branch b z
+     base_agree :
+       ∀ a z, z ∈ chart a -> z ∈ Ω0 ->
+         branch a z = B0 z
+
+   theorem BHW.bhw_sourcePatchHull_has_continuationAtlas
+       [NeZero d] (hd : 2 <= d)
+       (n : Nat) (τ : Equiv.Perm (Fin n))
+       (Ω0 U : Set (Fin n -> Fin (d + 1) -> ℂ))
+       (B0 : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
+       (hΩ0_open : IsOpen Ω0)
+       (hU_open : IsOpen U)
+       (hU_connected : IsConnected U)
+       (hΩ0_sub_ambient :
+         Ω0 ⊆ BHW.os45SourcePatchBHWJostAmbient d n τ)
+       (hU_hull :
+         ∃ z0, U = BHW.os45SourcePatchBHWJostHull d n τ z0)
+       (hΩ0_meets_U : (Ω0 ∩ U).Nonempty)
+       (hB0_holo : DifferentiableOn ℂ B0 Ω0)
+       (hB0_realLorentz :
+         ∀ R : RestrictedLorentzGroup d, ∀ z, z ∈ Ω0 ->
+           BHW.complexLorentzAction (ComplexLorentzGroup.ofReal R) z ∈ Ω0 ->
+             B0 (BHW.complexLorentzAction (ComplexLorentzGroup.ofReal R) z) = B0 z) :
+       BHW.BHWSourcePatchContinuationAtlas hd n τ Ω0 U B0
+
+   theorem BHW.bhw_glue_sourcePatchContinuationAtlas
+       [NeZero d] (hd : 2 <= d)
+       (n : Nat) (τ : Equiv.Perm (Fin n))
+       (Ω0 U : Set (Fin n -> Fin (d + 1) -> ℂ))
+       (B0 : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
+       (A : BHW.BHWSourcePatchContinuationAtlas hd n τ Ω0 U B0) :
+       ∃ B : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ,
+         DifferentiableOn ℂ B U ∧
+         (∀ z, z ∈ Ω0 -> z ∈ U -> B z = B0 z)
+
    theorem BHW.bargmannHallWightman_continue_branch_on_sourcePatchHull
        [NeZero d] (hd : 2 <= d)
        (n : Nat) (τ : Equiv.Perm (Fin n))
@@ -4571,25 +4635,145 @@ common-boundary envelope, or any theorem that already assumes locality.
          ∃ z0, U = BHW.os45SourcePatchBHWJostHull d n τ z0)
        (hΩ0_meets_U : (Ω0 ∩ U).Nonempty)
        (hB0_holo : DifferentiableOn ℂ B0 Ω0)
-       (hB0_lorentzInvariant :
-         ∀ Λ z, z ∈ Ω0 ->
-           BHW.complexLorentzAction Λ z ∈ Ω0 ->
-             B0 (BHW.complexLorentzAction Λ z) = B0 z) :
+       (hB0_realLorentz :
+         ∀ R : RestrictedLorentzGroup d, ∀ z, z ∈ Ω0 ->
+           BHW.complexLorentzAction (ComplexLorentzGroup.ofReal R) z ∈ Ω0 ->
+             B0 (BHW.complexLorentzAction (ComplexLorentzGroup.ofReal R) z) = B0 z) :
        ∃ B : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ,
          DifferentiableOn ℂ B U ∧
-         (∀ Λ z, z ∈ U ->
-           BHW.complexLorentzAction Λ z ∈ U ->
-             B (BHW.complexLorentzAction Λ z) = B z) ∧
          (∀ z, z ∈ Ω0 -> z ∈ U -> B z = B0 z)
    ```
 
-   This is precisely the local Bargmann-Hall-Wightman/Jost theorem: real
-   orthochronous Lorentz invariance gives local constancy in proper-complex
-   Lorentz charts by the totally-real identity theorem; path chains in the
-   displayed hull give single-valued continuation; holomorphy is local in the
-   final chart.  It is allowed to use the Hall-Wightman Lemma-1 proof and OS I
-   `(4.14)` covariance input for `bvt_F`; it is not allowed to call global PET
-   branch independence, `fullExtendF`, source representatives, or locality.
+   `bhw_glue_sourcePatchContinuationAtlas` is the sheaf step: define `B z`
+   by choosing a chart containing `z`, use `A.overlap_eq` for independence of
+   the chart choice, prove holomorphy locally from `A.branch_holo`, and prove
+   agreement with `B0` from `A.base_agree`.  The hard theorem is
+   `bhw_sourcePatchHull_has_continuationAtlas`.  It is precisely the local
+   Bargmann-Hall-Wightman/Jost theorem: real orthochronous Lorentz invariance
+   gives local constancy in proper-complex Lorentz exponential charts; finite
+   continuation chains in the displayed hull give local branches; the
+   closed-chain argument gives overlap equality and single-valuedness.  It is
+   allowed to use the Hall-Wightman Lemma-1 proof and OS I `(4.14)` covariance
+   input for `bvt_F`; it is not allowed to call global PET branch
+   independence, `fullExtendF`, global source-representative packages, or
+   locality.
+
+   The atlas producer itself must be implemented through local scalar-product
+   continuation charts, not by postulating an atlas.  These charts are local
+   Hall-Wightman/Jost proof objects; they may use the scalar-product descent
+   argument inside their proof, but they must not consume the global
+   `SourceScalarRepresentativeData` package as an input.
+
+   ```lean
+   structure BHW.BHWJostLocalScalarContinuationChart
+       [NeZero d] (hd : 2 <= d)
+       (n : Nat) (τ : Equiv.Perm (Fin n))
+       (U : Set (Fin n -> Fin (d + 1) -> ℂ)) where
+     carrier : Set (Fin n -> Fin (d + 1) -> ℂ)
+     carrier_open : IsOpen carrier
+     carrier_sub_U : carrier ⊆ U
+     gramDomain : Set (Fin n -> Fin n -> ℂ)
+     gram_relOpen :
+       IsRelOpenInSourceComplexGramVariety d n gramDomain
+     gram_sub_variety :
+       gramDomain ⊆ sourceComplexGramVariety d n
+     gram_mem :
+       ∀ z, z ∈ carrier ->
+         BHW.sourceMinkowskiGram d n z ∈ gramDomain
+     Phi : (Fin n -> Fin n -> ℂ) -> ℂ
+     Phi_holo :
+       SourceVarietyGermHolomorphicOn d n Phi gramDomain
+     branch : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ
+     branch_eq_pullback :
+       ∀ z, z ∈ carrier ->
+         branch z = Phi (BHW.sourceMinkowskiGram d n z)
+     branch_holo : DifferentiableOn ℂ branch carrier
+     branch_same_sourceGram :
+       ∀ z w, z ∈ carrier -> w ∈ carrier ->
+         BHW.sourceMinkowskiGram d n z =
+           BHW.sourceMinkowskiGram d n w ->
+         branch z = branch w
+     branch_complexLorentzInvariant :
+       ∀ Λ z, z ∈ carrier ->
+         BHW.complexLorentzAction Λ z ∈ carrier ->
+           branch (BHW.complexLorentzAction Λ z) = branch z
+
+   theorem BHW.bhw_jost_initialScalarContinuationChart_at
+       [NeZero d] (hd : 2 <= d)
+       (n : Nat) (τ : Equiv.Perm (Fin n))
+       (Ω0 U : Set (Fin n -> Fin (d + 1) -> ℂ))
+       (B0 : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
+       (hΩ0_open : IsOpen Ω0)
+       (hU_open : IsOpen U)
+       (hB0_holo : DifferentiableOn ℂ B0 Ω0)
+       (hB0_realLorentz :
+         ∀ R : RestrictedLorentzGroup d, ∀ z, z ∈ Ω0 ->
+           BHW.complexLorentzAction (ComplexLorentzGroup.ofReal R) z ∈ Ω0 ->
+             B0 (BHW.complexLorentzAction (ComplexLorentzGroup.ofReal R) z) = B0 z)
+       {p : Fin n -> Fin (d + 1) -> ℂ}
+       (hp : p ∈ Ω0 ∩ U) :
+       ∃ C : BHW.BHWJostLocalScalarContinuationChart hd n τ U,
+       ∃ P : Set (Fin n -> Fin (d + 1) -> ℂ),
+         p ∈ P ∧
+         IsOpen P ∧ IsPreconnected P ∧ P.Nonempty ∧
+         P ⊆ Ω0 ∩ C.carrier ∧
+         Set.EqOn C.branch B0 P
+
+   theorem BHW.bhw_jost_localContinuationStep
+       [NeZero d] (hd : 2 <= d)
+       (n : Nat) (τ : Equiv.Perm (Fin n))
+       (U : Set (Fin n -> Fin (d + 1) -> ℂ))
+       (Cprev : BHW.BHWJostLocalScalarContinuationChart hd n τ U)
+       {p : Fin n -> Fin (d + 1) -> ℂ}
+       (hpC : p ∈ Cprev.carrier) :
+       ∃ N ∈ 𝓝 p, ∀ q, q ∈ N -> q ∈ U ->
+         ∃ Cnext : BHW.BHWJostLocalScalarContinuationChart hd n τ U,
+         ∃ P : Set (Fin n -> Fin (d + 1) -> ℂ),
+           q ∈ Cnext.carrier ∧
+           IsOpen P ∧ IsPreconnected P ∧ P.Nonempty ∧
+           P ⊆ Cprev.carrier ∩ Cnext.carrier ∧
+           Set.EqOn Cprev.branch Cnext.branch P
+
+   theorem BHW.bhw_jost_continuationChain_of_compactPath
+       [NeZero d] (hd : 2 <= d)
+       (n : Nat) (τ : Equiv.Perm (Fin n))
+       (Ω0 U : Set (Fin n -> Fin (d + 1) -> ℂ))
+       (B0 : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
+       (hΩ0_open : IsOpen Ω0)
+       (hU_open : IsOpen U)
+       (hB0_holo : DifferentiableOn ℂ B0 Ω0)
+       (hB0_realLorentz :
+         ∀ R : RestrictedLorentzGroup d, ∀ z, z ∈ Ω0 ->
+           BHW.complexLorentzAction (ComplexLorentzGroup.ofReal R) z ∈ Ω0 ->
+             B0 (BHW.complexLorentzAction (ComplexLorentzGroup.ofReal R) z) = B0 z)
+       {p z : Fin n -> Fin (d + 1) -> ℂ}
+       (hp0 : p ∈ Ω0 ∩ U)
+       (γ : Path p z)
+       (hγU : ∀ t, γ t ∈ U) :
+       BHW.BHWSourcePatchContinuationChain hd n τ Ω0 U B0 z
+   ```
+
+   The proof of `bhw_jost_initialScalarContinuationChart_at` is the local
+   Hall-Wightman descent theorem on the starting sector `Ω0`: the
+   near-identity Lorentz invariance proved above makes `B0` constant on local
+   proper-complex Lorentz fibres; the local source-Gram chart theorem
+   identifies those fibres with the fibres of `sourceMinkowskiGram`;
+   holomorphic descent gives a germ-holomorphic `Phi`; and the
+   regular/singular source-variety cases are handled by the already documented
+   Hall-Wightman rank split plus the normal-variety removable-singularity
+   step.  The `branch_same_sourceGram` field is obtained by the pullback
+   formula, and `branch_complexLorentzInvariant` uses
+   `sourceMinkowskiGram_complexLorentzAction`.  The one-step theorem
+   propagates from an already constructed scalar chart to nearby points in
+   `U`: the previous chart's branch, together with its stored same-Gram and
+   complex-Lorentz invariance fields, becomes the starting branch for the
+   next local descent.  The proof then shrinks the two scalar charts to an open
+   preconnected overlap patch and applies the scalar identity theorem on
+   `sourceComplexGramVariety` to prove equality of the pulled-back branches.
+   The compact-path theorem covers `γ '' Set.univ` by the neighborhoods from
+   `bhw_jost_localContinuationStep`, takes a finite ordered subdivision of
+   `unitInterval`, and stores the resulting charts, branches, and transition
+   patches in `BHWSourcePatchContinuationChain`.
 
    Its own implementation split is:
 
@@ -4635,15 +4819,34 @@ common-boundary envelope, or any theorem that already assumes locality.
        [NeZero d] (hd : 2 <= d)
        (n : Nat) (τ : Equiv.Perm (Fin n))
        (Ω0 U : Set (Fin n -> Fin (d + 1) -> ℂ))
+       (B0 : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
        (z : Fin n -> Fin (d + 1) -> ℂ) where
      m : Nat
      chart : Fin (m + 1) -> Set (Fin n -> Fin (d + 1) -> ℂ)
+     branch : Fin (m + 1) ->
+       (Fin n -> Fin (d + 1) -> ℂ) -> ℂ
      chart_open : ∀ j, IsOpen (chart j)
      chart_sub_U : ∀ j, chart j ⊆ U
-     start_overlap : (Ω0 ∩ chart 0).Nonempty
-     consecutive_overlap :
-       ∀ j : Fin m,
-         (chart (Fin.castSucc j) ∩ chart j.succ).Nonempty
+     branch_holo : ∀ j, DifferentiableOn ℂ (branch j) (chart j)
+     start_patch : Set (Fin n -> Fin (d + 1) -> ℂ)
+     start_patch_open : IsOpen start_patch
+     start_patch_nonempty : start_patch.Nonempty
+     start_patch_sub : start_patch ⊆ Ω0 ∩ chart 0
+     start_agree :
+       ∀ y, y ∈ start_patch -> branch 0 y = B0 y
+     transition_patch :
+       ∀ j : Fin m, Set (Fin n -> Fin (d + 1) -> ℂ)
+     transition_patch_open : ∀ j, IsOpen (transition_patch j)
+     transition_patch_nonempty : ∀ j, (transition_patch j).Nonempty
+     transition_patch_preconnected : ∀ j, IsPreconnected (transition_patch j)
+     transition_patch_sub_left :
+       ∀ j, transition_patch j ⊆ chart (Fin.castSucc j)
+     transition_patch_sub_right :
+       ∀ j, transition_patch j ⊆ chart j.succ
+     consecutive_agree :
+       ∀ j : Fin m, ∀ y,
+         y ∈ transition_patch j ->
+           branch (Fin.castSucc j) y = branch j.succ y
      final_mem : z ∈ chart (Fin.last m)
      chart_is_lorentz_step :
        ∀ j, ∃ Ωbase : Set (Fin n -> Fin (d + 1) -> ℂ),
@@ -4657,6 +4860,7 @@ common-boundary envelope, or any theorem that already assumes locality.
        [NeZero d] (hd : 2 <= d)
        (n : Nat) (τ : Equiv.Perm (Fin n))
        (Ω0 U : Set (Fin n -> Fin (d + 1) -> ℂ))
+       (B0 : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
        (hΩ0_open : IsOpen Ω0)
        (hΩ0_sub_ambient :
          Ω0 ⊆ BHW.os45SourcePatchBHWJostAmbient d n τ)
@@ -4664,9 +4868,14 @@ common-boundary envelope, or any theorem that already assumes locality.
        (hU_connected : IsConnected U)
        (hU_hull :
          ∃ z0, U = BHW.os45SourcePatchBHWJostHull d n τ z0)
-       (hΩ0_meets_U : (Ω0 ∩ U).Nonempty) :
+       (hΩ0_meets_U : (Ω0 ∩ U).Nonempty)
+       (hB0_holo : DifferentiableOn ℂ B0 Ω0)
+       (hB0_realLorentz :
+         ∀ R : RestrictedLorentzGroup d, ∀ z, z ∈ Ω0 ->
+           BHW.complexLorentzAction (ComplexLorentzGroup.ofReal R) z ∈ Ω0 ->
+             B0 (BHW.complexLorentzAction (ComplexLorentzGroup.ofReal R) z) = B0 z) :
        ∀ z, z ∈ U ->
-         BHW.BHWSourcePatchContinuationChain hd n τ Ω0 U z
+         BHW.BHWSourcePatchContinuationChain hd n τ Ω0 U B0 z
 
    noncomputable def BHW.bhw_continuedValueAlongChain
        [NeZero d] (hd : 2 <= d)
@@ -4674,7 +4883,8 @@ common-boundary envelope, or any theorem that already assumes locality.
        (Ω0 U : Set (Fin n -> Fin (d + 1) -> ℂ))
        (B0 : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
        {z : Fin n -> Fin (d + 1) -> ℂ}
-       (C : BHW.BHWSourcePatchContinuationChain hd n τ Ω0 U z) : ℂ
+       (C : BHW.BHWSourcePatchContinuationChain hd n τ Ω0 U B0 z) : ℂ :=
+     C.branch (Fin.last C.m) z
 
    theorem BHW.bhw_branch_chain_singleValued_on_sourcePatchHull
        [NeZero d] (hd : 2 <= d)
@@ -4692,11 +4902,11 @@ common-boundary envelope, or any theorem that already assumes locality.
            BHW.complexLorentzAction (ComplexLorentzGroup.ofReal R) z ∈ Ω0 ->
              B0 (BHW.complexLorentzAction (ComplexLorentzGroup.ofReal R) z) = B0 z)
        {z : Fin n -> Fin (d + 1) -> ℂ}
-       (C₁ C₂ : BHW.BHWSourcePatchContinuationChain hd n τ Ω0 U z) :
+       (C₁ C₂ : BHW.BHWSourcePatchContinuationChain hd n τ Ω0 U B0 z) :
        BHW.bhw_continuedValueAlongChain hd n τ Ω0 U B0 C₁ =
          BHW.bhw_continuedValueAlongChain hd n τ Ω0 U B0 C₂
 
-   theorem BHW.bhw_continue_branch_from_chains
+   theorem BHW.bhw_continuationAtlas_from_chains
        [NeZero d] (hd : 2 <= d)
        (n : Nat) (τ : Equiv.Perm (Fin n))
        (Ω0 U : Set (Fin n -> Fin (d + 1) -> ℂ))
@@ -4714,95 +4924,158 @@ common-boundary envelope, or any theorem that already assumes locality.
          ∀ R : RestrictedLorentzGroup d, ∀ z, z ∈ Ω0 ->
            BHW.complexLorentzAction (ComplexLorentzGroup.ofReal R) z ∈ Ω0 ->
              B0 (BHW.complexLorentzAction (ComplexLorentzGroup.ofReal R) z) = B0 z) :
-       ∃ B : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ,
-         DifferentiableOn ℂ B U ∧
-         (∀ Λ z, z ∈ U ->
-           BHW.complexLorentzAction Λ z ∈ U ->
-             B (BHW.complexLorentzAction Λ z) = B z) ∧
-         (∀ z, z ∈ Ω0 -> z ∈ U -> B z = B0 z)
+       BHW.BHWSourcePatchContinuationAtlas hd n τ Ω0 U B0
    ```
 
-   The first theorem is the totally-real identity theorem on a local chart of
-   the proper complex Lorentz group; the real slice is the real
-   orthochronous Lorentz subgroup.  The second theorem covers the compact
-   interval of a `Path` by finitely many such local charts and composes the
-   local constancy equalities.  The chain-carrier theorem is the only place
-   where the definition of the source-patch hull is used: since `U` is the
-   path component of the open ambient and `Ω0 ∩ U` is nonempty, compactness of
-   a path from `Ω0` to `z` gives a finite cover by local Lorentz charts with
-   consecutive nonempty overlaps.  The single-valuedness theorem is the
-   Hall-Wightman closed-chain step: two finite continuation chains ending at
-   the same hull point give the same branch value because their concatenation
-   is a closed chain in the selected component.  The final theorem defines
-   `B` by choosing such a finite chain to a neighborhood of `z`, uses
-   the single-valuedness theorem for choice independence, and proves
-   holomorphy on the final chart.  The public
-   `bargmannHallWightman_continue_branch_on_sourcePatchHull` is just this last
-   theorem with complex-Lorentz invariance converted to the real-Lorentz
-   hypothesis through the OS-I/BHW covariance field.
+   The first theorem is the near-identity identity theorem in the
+   proper-complex Lorentz group.  The second theorem covers the compact
+   interval of a group `Path` by finitely many translated near-identity
+   neighborhoods and composes the local constancy equalities.  The
+   chain-carrier theorem is the only place where the definition of the
+   source-patch hull is used: since `U` is the path component of the open
+   ambient and `Ω0 ∩ U` is nonempty, compactness of a path from `Ω0` to `z`
+   gives a finite cover by BHW/Jost continuation charts with explicit open
+   preconnected transition patches between consecutive charts.  The
+   single-valuedness theorem is the Hall-Wightman
+   closed-chain step: two finite continuation chains ending at the same hull
+   point give the same branch value because their concatenation is a closed
+   chain in the selected component.  The atlas theorem takes as index the
+   local terminal charts of all finite chains, uses each chain's terminal
+   `branch (Fin.last C.m)` as the local branch, uses
+   `bhw_continuedValueAlongChain` only as the point-value projection of that
+   branch, uses single-valuedness for overlap compatibility, and records base
+   agreement with `B0`.  The public
+   `bargmannHallWightman_continue_branch_on_sourcePatchHull` is
+   `bhw_continuationAtlas_from_chains` followed by
+   `bhw_glue_sourcePatchContinuationAtlas`.
 
-   The local theorem uses the following already-standard Lie-chart inputs,
-   which must be imported or proved before the BHW chain theorem:
+   The first local theorem is not implemented through an abstract
+   `LocalHomeomorph` placeholder.  It must be proved through the existing
+   exponential-neighborhood machinery in
+   `ComplexLieGroups/Connectedness/ComplexInvariance/Core.lean`.  The required
+   public support surfaces are:
 
    ```lean
-   theorem BHW.complexLorentzGroup_has_local_complex_chart
-       [NeZero d] (hd : 2 <= d) (Λ0 : ComplexLorentzGroup d) :
-       ∃ e : LocalHomeomorph (ComplexLorentzGroup d)
-             (Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ),
-         Λ0 ∈ e.source ∧ IsOpen e.source
+   theorem BHW.complexLorentz_exp_nhd_of_one
+       (ε : ℝ) (hε : 0 < ε) :
+       ∀ᶠ Λ in 𝓝 (1 : ComplexLorentzGroup d),
+         ∃ X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ,
+           ComplexLorentzGroup.IsInLieAlgebra X ∧
+           Λ.val = NormedSpace.exp X ∧
+           ‖X‖ < ε
 
-   theorem BHW.restrictedLorentz_slice_totallyReal_in_complexLorentz_chart
-       [NeZero d] (hd : 2 <= d)
-       (e : LocalHomeomorph (ComplexLorentzGroup d)
-             (Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ)) :
-       BHW.IsMaximalTotallyRealSubmanifold
-         (e.toFun '' (e.source ∩ Set.range
-           (ComplexLorentzGroup.ofReal : RestrictedLorentzGroup d ->
-             ComplexLorentzGroup d)))
-         e.target
+   def BHW.reMatrixCLie
+       (X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) :
+       Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ := fun i j => (X i j).re
 
-   theorem BHW.holomorphic_orbitValue_in_complexLorentz_chart
+   def BHW.imMatrixCLie
+       (X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) :
+       Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ := fun i j => (X i j).im
+
+   theorem BHW.reMatrixCLie_isInLorentzAlgebra
+       {X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ}
+       (hX : ComplexLorentzGroup.IsInLieAlgebra X) :
+       IsInLorentzAlgebra d (BHW.reMatrixCLie X)
+
+   theorem BHW.imMatrixCLie_isInLorentzAlgebra
+       {X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ}
+       (hX : ComplexLorentzGroup.IsInLieAlgebra X) :
+       IsInLorentzAlgebra d (BHW.imMatrixCLie X)
+
+   theorem BHW.matrix_re_im_decomp_CLie
+       (X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) :
+       X =
+         (BHW.reMatrixCLie X).map Complex.ofReal +
+           Complex.I • (BHW.imMatrixCLie X).map Complex.ofReal
+
+   theorem BHW.exp_map_ofReal_bridge
+       (Y : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) (s : ℝ) :
+       (NormedSpace.exp (s • Y) :
+           Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal =
+         (NormedSpace.exp ((s : ℂ) • Y.map Complex.ofReal) :
+           Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ)
+
+   theorem BHW.bhw_near_identity_invariance_on_open
        [NeZero d] (hd : 2 <= d)
        (n : Nat)
        (Ω : Set (Fin n -> Fin (d + 1) -> ℂ))
        (B : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
        (hΩ_open : IsOpen Ω)
        (hB_holo : DifferentiableOn ℂ B Ω)
+       (hB_realLorentz :
+         ∀ R : RestrictedLorentzGroup d, ∀ z, z ∈ Ω ->
+           BHW.complexLorentzAction (ComplexLorentzGroup.ofReal R) z ∈ Ω ->
+             B (BHW.complexLorentzAction (ComplexLorentzGroup.ofReal R) z) = B z)
        (z : Fin n -> Fin (d + 1) -> ℂ)
-       (e : LocalHomeomorph (ComplexLorentzGroup d)
-             (Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ)) :
-       DifferentiableOn ℂ
-         (fun Λ : ComplexLorentzGroup d =>
-           B (BHW.complexLorentzAction Λ z))
-         {Λ | Λ ∈ e.source ∧ BHW.complexLorentzAction Λ z ∈ Ω}
+       (hz : z ∈ Ω) :
+       ∀ᶠ Λ in 𝓝 (1 : ComplexLorentzGroup d),
+         BHW.complexLorentzAction Λ z ∈ Ω ->
+           B (BHW.complexLorentzAction Λ z) = B z
    ```
 
-   These are Lie/SCV facts about the determinant-one complex Lorentz group
-   `ComplexLorentzGroup d` and the embedded real proper-orthochronous group
-   `RestrictedLorentzGroup d`; they do not authorize an `O(1,d;ℂ)` or
-   improper-component argument.  With them,
-   `bhw_local_complexLorentz_invariance_of_real_invariance` applies the
-   totally-real identity theorem to
-   `Λ ↦ B (BHW.complexLorentzAction Λ z)` in a small chart around `1`.
+   `BHW.complexLorentz_exp_nhd_of_one` is the public form of the existing
+   private `exp_nhd_of_one`: the matrix exponential maps a sufficiently small
+   neighborhood of `0` in the complex Lorentz Lie algebra onto a neighborhood
+   of `1` in `ComplexLorentzGroup d`, with a norm-controlled logarithm.  The
+   real/imaginary support lemmas are the current private `reMatrix`,
+   `imMatrix`, `matrix_re_im_decomp`, `reMatrix_isInLorentzAlgebra`,
+   `imMatrix_isInLorentzAlgebra`, and `exp_map_ofReal_bridge` made available
+   at the BHW-Jost boundary.
 
-   The definition `bhw_continuedValueAlongChain` is not a black box.  Given a
-   chain `C`, choose `a0 ∈ Ω0 ∩ C.chart 0`.  On `C.chart 0`, define the first
-   local branch by the local chart theorem applied to `B0` and normalize it so
-   it agrees with `B0` on the nonempty open overlap with `Ω0`.  Inductively,
-   suppose `Bj` is holomorphic on `C.chart j`.  Choose
-   `aj ∈ C.chart j ∩ C.chart j.succ`; define `B(j+1)` on the next chart by
-   the same local Lorentz-chart continuation normalized by
-   `B(j+1) aj = Bj aj`.  The product totally-real identity theorem on each
-   chart overlap proves that this is independent of the chosen overlap point.
-   Finally
+   The proof of `bhw_near_identity_invariance_on_open` is an implementation
+   copy of the already checked `near_identity_core`, with `ForwardTube d n`
+   replaced by the arbitrary open set `Ω` and the real-invariance hypothesis
+   made conditional on both real-orbit points lying in `Ω`:
+
+   1. Continuity of
+      `A ↦ fun k μ => ∑ ν, (NormedSpace.exp A) μ ν * z k ν`, plus
+      `hΩ_open` and `hz`, gives `δ > 0` such that `‖A‖ < δ` implies
+      `exp(A) · z ∈ Ω`.
+   2. Apply `BHW.complexLorentz_exp_nhd_of_one (δ / 7)` and write every
+      nearby `Λ` as `Λ.val = exp X` with `X ∈ so(1,d;ℂ)` and `‖X‖ < δ/7`.
+   3. Decompose
+      `X = X₁ + I • X₂` with
+      `X₁ = (reMatrixCLie X).map Complex.ofReal` and
+      `X₂ = (imMatrixCLie X).map Complex.ofReal`; both real parts lie in
+      `so(1,d;ℝ)`.
+   4. For real `s` with `‖(s : ℂ)‖ < 2`, the bridge lemma identifies
+      `exp(X₁ + (s : ℂ) • X₂)` with
+      `ComplexLorentzGroup.ofReal (expLorentz d (Y₁ + s • Y₂) ...)`.
+      The norm bound keeps the orbit in `Ω`, so `hB_realLorentz` gives
+      `B(exp(X₁ + (s : ℂ) • X₂) · z) = B z`.
+   5. The one-variable function
+      `g s = B(exp(X₁ + s • X₂) · z) - B z` is holomorphic on
+      `Metric.ball 0 2`; it vanishes on a punctured real set accumulating at
+      `0`; `AnalyticOnNhd.eqOn_zero_of_preconnected_of_frequently_eq_zero`
+      on the convex ball gives `g = 0` there.  Evaluating at `s = I` and using
+      the decomposition of `X` proves the desired equality.
+
+   `bhw_local_complexLorentz_invariance_of_real_invariance` then converts the
+   filter statement into an open set `C` by
+   `Filter.Eventually.exists_mem` and `mem_nhds_iff`.  This is a
+   determinant-one/proper-complex `SO(1,d;ℂ)` argument throughout; no
+   `O(1,d;ℂ)` or improper component is introduced.
+
+   `bhw_continuedValueAlongChain` is now only the endpoint projection of a
+   chain that already carries its recursively constructed local branches.  The
+   producer of `BHWSourcePatchContinuationChain` is where the recursion lives:
+   choose `a0 ∈ Ω0 ∩ C.chart 0`; on `C.chart 0`, define the first local branch
+   by the local BHW/Jost continuation theorem applied to `B0` and normalize it
+   so it agrees with `B0` on the nonempty open overlap with `Ω0`.
+   Inductively, suppose `C.branch j` is holomorphic on `C.chart j`.  Choose
+   an open preconnected patch
+   `Pj ⊆ C.chart j ∩ C.chart j.succ`; define `C.branch j.succ` on the next
+   chart by the same local continuation, normalized to agree with
+   `C.branch j` on `Pj`.  The identity theorem on `Pj` proves independence of
+   the selected patch and gives the stored `consecutive_agree` field.
+   Therefore
 
    ```lean
    BHW.bhw_continuedValueAlongChain hd n τ Ω0 U B0 C =
-     Bm z
+     C.branch (Fin.last C.m) z
    ```
 
-   where `Bm` is the last recursively constructed local branch and
-   `C.final_mem : z ∈ C.chart (Fin.last C.m)`.  Single-valuedness compares two
+   with `C.final_mem : z ∈ C.chart (Fin.last C.m)`.  Single-valuedness compares two
    chains `C₁` and `C₂` by traversing `C₁`, then the reverse of `C₂`; the
    resulting closed finite chain returns to a chart meeting `Ω0`, where both
    branches agree with `B0` on a nonempty open set, so repeated identity
