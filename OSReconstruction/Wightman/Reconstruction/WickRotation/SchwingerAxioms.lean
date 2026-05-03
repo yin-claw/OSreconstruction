@@ -433,6 +433,22 @@ theorem wickRotatePoint_timeReflection (x : Fin (d + 1) → ℝ) (μ : Fin (d + 
   · subst hμ; simp [Complex.conj_ofReal]
   · simp [hμ, Complex.conj_ofReal]
 
+omit [NeZero d] in
+/-- Function-level form of `wickRotatePoint_timeReflection`, suitable for
+`simp_rw` at the lambda level inside `Fin.append`-shaped F_ext arguments. -/
+private theorem wickRotatePoint_timeReflection_fun (x : Fin (d + 1) → ℝ) :
+    wickRotatePoint (timeReflection d x) = fun μ => starRingEnd ℂ (wickRotatePoint x μ) := by
+  funext μ; exact wickRotatePoint_timeReflection x μ
+
+omit [NeZero d] in
+/-- Involutive property of `timeReflectionN d` on `NPointDomain d n`. -/
+private theorem timeReflectionN_involutive (x : NPointDomain d n) :
+    timeReflectionN d (timeReflectionN d x) = x := by
+  ext i μ
+  by_cases hμ : μ = 0
+  · subst hμ; simp [timeReflectionN, timeReflection]
+  · simp [timeReflectionN, timeReflection, hμ]
+
 /-- Reverse the point order and conjugate each complex coordinate. This is the
     complex-geometric involution underlying Wightman Hermiticity on Euclidean
     Wick points. -/
