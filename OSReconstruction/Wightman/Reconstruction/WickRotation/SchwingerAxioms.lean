@@ -2505,6 +2505,67 @@ private theorem mixed_back_forward_wick_in_translatedPET
       ring
     · simp [xs_shifted, xs, shift, wickRotatePoint, Fin.append_right, Function.comp, hμ]
 
+/-- F_ext at the back-forward Wick configuration equals
+    `(W_analytic_BHW Wfn (n+m)).val` at a translated PET configuration.
+
+    Combines `mixed_back_forward_wick_in_translatedPET` with
+    `F_ext_on_translatedPET_total_translation_invariant` and
+    `F_ext_on_translatedPET_total_eq_on_PET` to express the F_ext value
+    in terms of the BHW analytic function on PET.
+
+    The PET configuration is `joint + c` where `c` is the witness for
+    TranslatedPET membership (the wickRotatePoint of the uniform time shift). -/
+private theorem mixed_back_forward_wick_F_ext_eq_W_analytic_BHW
+    {d n m : ℕ} [NeZero d]
+    (Wfn : WightmanFunctions d)
+    (x_n : NPointDomain d n) (y : NPointDomain d m)
+    (hx_n : x_n ∈ OrderedPositiveTimeRegion d n)
+    (hy : y ∈ OrderedPositiveTimeRegion d m) :
+    ∃ (c : Fin (d + 1) → ℂ),
+      (fun k μ =>
+          Fin.append (wickRotatePoint ∘ timeReflectionN d x_n)
+            (wickRotatePoint ∘ y) k μ + c μ) ∈ PermutedExtendedTube d (n + m) ∧
+      F_ext_on_translatedPET_total Wfn
+          (Fin.append (wickRotatePoint ∘ timeReflectionN d x_n)
+            (wickRotatePoint ∘ y)) =
+        (W_analytic_BHW Wfn (n + m)).val
+          (fun k μ =>
+            Fin.append (wickRotatePoint ∘ timeReflectionN d x_n)
+              (wickRotatePoint ∘ y) k μ + c μ) := by
+  -- Get the TranslatedPET membership + witness from D.1.
+  have htrans : (fun k => Fin.append (wickRotatePoint ∘ timeReflectionN d x_n)
+        (wickRotatePoint ∘ y) k) ∈ TranslatedPET d (n + m) :=
+    mixed_back_forward_wick_in_translatedPET x_n y hx_n hy
+  -- Destructure the existence witness from TranslatedPET's def.
+  obtain ⟨c, hc⟩ := htrans
+  refine ⟨c, hc, ?_⟩
+  -- Re-derive TranslatedPET membership for the translation-invariance call.
+  have htrans' : (fun k => Fin.append (wickRotatePoint ∘ timeReflectionN d x_n)
+        (wickRotatePoint ∘ y) k) ∈ TranslatedPET d (n + m) :=
+    mixed_back_forward_wick_in_translatedPET x_n y hx_n hy
+  -- F_ext(z) = F_ext(z + c) by translation invariance
+  have h1 :
+      F_ext_on_translatedPET_total Wfn
+          (fun k => Fin.append (wickRotatePoint ∘ timeReflectionN d x_n)
+            (wickRotatePoint ∘ y) k) =
+        F_ext_on_translatedPET_total Wfn
+          (fun k μ =>
+            Fin.append (wickRotatePoint ∘ timeReflectionN d x_n)
+              (wickRotatePoint ∘ y) k μ + c μ) :=
+    F_ext_on_translatedPET_total_translation_invariant Wfn _ c htrans'
+  -- F_ext(z + c) = W_analytic_BHW(z + c) since z + c ∈ PET
+  have h2 :
+      F_ext_on_translatedPET_total Wfn
+          (fun k μ =>
+            Fin.append (wickRotatePoint ∘ timeReflectionN d x_n)
+              (wickRotatePoint ∘ y) k μ + c μ) =
+        (W_analytic_BHW Wfn (n + m)).val
+          (fun k μ =>
+            Fin.append (wickRotatePoint ∘ timeReflectionN d x_n)
+              (wickRotatePoint ∘ y) k μ + c μ) :=
+    F_ext_on_translatedPET_total_eq_on_PET Wfn _ hc
+  exact h1.trans h2
+
 /-- Reflection positivity for the Wick-restricted Schwinger family.
 
     This is the honest replacement for the deleted same-test-function bridge
