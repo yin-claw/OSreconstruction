@@ -2361,6 +2361,150 @@ private theorem hermitianRealOverlap_nonempty_of_two_le
     ⟨x, _, hxET, hrevET⟩
   exact ⟨x, hxET, by simpa [BHW.realEmbed] using hrevET⟩
 
+/-- TranslatedPET membership for the back-forward Wick configuration.
+
+    For `x_n ∈ OrderedPositiveTimeRegion d n` and
+    `y ∈ OrderedPositiveTimeRegion d m`, the joint configuration with first n
+    indices Wick-rotated from time-reflected `x_n` (negative imaginary time)
+    and last m indices Wick-rotated from `y` (positive imaginary time) lies
+    in `TranslatedPET d (n+m)`.
+
+    Witness construction: a uniform time shift `β > x_n_(n-1)_0` makes the
+    shifted configuration `xs_shifted` have all positive distinct time
+    components. By `euclidean_distinct_in_permutedTube`,
+    `wick(xs_shifted) ∈ PermutedExtendedTube`. Wick additivity then gives
+    `wick(xs) + wick(shift) ∈ PET`, i.e., `wick(xs) ∈ TranslatedPET`.
+
+    Geometric verification: after σ reverses the first n indices,
+    `(σ · (wick∘timeReflection x_n))_i = wick(timeReflection (x_n_(n-1-i)))`
+    has Im(time) = -x_n_(n-1-i)_0. With x_n in OPTR (strictly increasing),
+    -x_n_(n-1-i)_0 is strictly increasing in i. After uniform shift α:
+    α - x_n_(n-1-i)_0 is also strictly increasing in i and positive for
+    α > x_n_(n-1)_0. Successive ForwardTube cone conditions all hold.
+
+    Useful for the cluster theorem `W_analytic_cluster_integral` (under
+    appropriate `tsupport ⊆ OrderedPositiveTimeRegion` hypothesis on the
+    test functions) and any future Wick-restricted Schwinger work. -/
+private theorem mixed_back_forward_wick_in_translatedPET
+    {d n m : ℕ} [NeZero d]
+    (x_n : NPointDomain d n) (y : NPointDomain d m)
+    (hx_n : x_n ∈ OrderedPositiveTimeRegion d n)
+    (hy : y ∈ OrderedPositiveTimeRegion d m) :
+    (fun k => Fin.append (wickRotatePoint ∘ timeReflectionN d x_n)
+        (wickRotatePoint ∘ y) k) ∈ TranslatedPET d (n + m) := by
+  -- Build the joint Euclidean configuration `xs : NPointDomain d (n+m)`.
+  let xs : NPointDomain d (n + m) :=
+    Fin.append (timeReflectionN d x_n) y
+  -- Pick a uniform shift β > all relevant times so xs_shifted has all positive times.
+  let β : ℝ := 1 + (∑ i : Fin n, x_n i 0) + (∑ j : Fin m, y j 0)
+  let shift : SpacetimeDim d := fun μ => if μ = 0 then β else 0
+  let xs_shifted : NPointDomain d (n + m) := fun k μ => xs k μ + shift μ
+  -- Sums of positive terms are nonneg; β > 0.
+  have hsumxn_nn : 0 ≤ ∑ i : Fin n, x_n i 0 :=
+    Finset.sum_nonneg (fun i _ => le_of_lt (hx_n i).1)
+  have hsumy_nn : 0 ≤ ∑ j : Fin m, y j 0 :=
+    Finset.sum_nonneg (fun j _ => le_of_lt (hy j).1)
+  have hβ_pos : 0 < β := by dsimp [β]; linarith
+  -- Each x_n_i_0 ≤ sum, each y_j_0 ≤ sum.
+  have hxn_le_sum : ∀ i : Fin n, x_n i 0 ≤ ∑ k : Fin n, x_n k 0 :=
+    fun i => Finset.single_le_sum (f := fun k => x_n k 0)
+      (fun k _ => le_of_lt (hx_n k).1) (Finset.mem_univ i)
+  have hy_le_sum : ∀ j : Fin m, y j 0 ≤ ∑ k : Fin m, y k 0 :=
+    fun j => Finset.single_le_sum (f := fun k => y k 0)
+      (fun k _ => le_of_lt (hy k).1) (Finset.mem_univ j)
+  -- xs_shifted k 0 > 0 for all k.
+  have hpos : ∀ k : Fin (n + m), xs_shifted k 0 > 0 := by
+    intro k
+    refine Fin.addCases (motive := fun k => xs_shifted k 0 > 0) ?_ ?_ k
+    · intro i
+      have : xs_shifted (Fin.castAdd m i) 0 = -x_n i 0 + β := by
+        simp [xs_shifted, xs, shift, timeReflectionN, timeReflection,
+          Fin.append_left]
+      rw [this]
+      have := hxn_le_sum i
+      dsimp [β]; linarith
+    · intro j
+      have : xs_shifted (Fin.natAdd n j) 0 = y j 0 + β := by
+        simp [xs_shifted, xs, shift, Fin.append_right]
+      rw [this]
+      linarith [(hy j).1]
+  -- xs_shifted has distinct time components.
+  have hdistinct : ∀ i j : Fin (n + m), i ≠ j → xs_shifted i 0 ≠ xs_shifted j 0 := by
+    intro a b hab heq
+    apply hab
+    have hxs_eq : xs a 0 = xs b 0 := by
+      have heq' : xs a 0 + β = xs b 0 + β := by
+        have : xs_shifted a 0 = xs a 0 + β := by simp [xs_shifted, shift]
+        have : xs_shifted b 0 = xs b 0 + β := by simp [xs_shifted, shift]
+        linarith [heq]
+      linarith
+    refine Fin.addCases (motive := fun a => ∀ b : Fin (n + m), xs a 0 = xs b 0 → a = b)
+      ?_ ?_ a b hxs_eq
+    · intro i b hxsb
+      refine Fin.addCases (motive := fun b => xs (Fin.castAdd m i) 0 = xs b 0 →
+          Fin.castAdd m i = b) ?_ ?_ b hxsb
+      · intro i' hii'
+        have : -x_n i 0 = -x_n i' 0 := by
+          simpa [xs, timeReflectionN, timeReflection, Fin.append_left] using hii'
+        have hxi : x_n i 0 = x_n i' 0 := by linarith
+        have hii_eq : i = i' := by
+          by_contra hne
+          rcases lt_or_gt_of_ne hne with h | h
+          · exact (ne_of_lt ((hx_n i).2 i' h)) hxi
+          · exact (ne_of_lt ((hx_n i').2 i h)) hxi.symm
+        subst hii_eq; rfl
+      · intro j' hij
+        have hl : -x_n i 0 = y j' 0 := by
+          simpa [xs, timeReflectionN, timeReflection, Fin.append_left,
+            Fin.append_right] using hij
+        have hl_neg : -x_n i 0 < 0 := by linarith [(hx_n i).1]
+        linarith [(hy j').1]
+    · intro j b hxsb
+      refine Fin.addCases (motive := fun b => xs (Fin.natAdd n j) 0 = xs b 0 →
+          Fin.natAdd n j = b) ?_ ?_ b hxsb
+      · intro i' hji
+        have hl : y j 0 = -x_n i' 0 := by
+          simpa [xs, timeReflectionN, timeReflection, Fin.append_left,
+            Fin.append_right] using hji
+        have hl_neg : -x_n i' 0 < 0 := by linarith [(hx_n i').1]
+        linarith [(hy j).1]
+      · intro j' hjj'
+        have : y j 0 = y j' 0 := by
+          simpa [xs, Fin.append_right] using hjj'
+        have hjj_eq : j = j' := by
+          by_contra hne
+          rcases lt_or_gt_of_ne hne with h | h
+          · exact (ne_of_lt ((hy j).2 j' h)) this
+          · exact (ne_of_lt ((hy j').2 j h)) this.symm
+        subst hjj_eq; rfl
+  -- Apply euclidean_distinct_in_permutedTube to xs_shifted.
+  have hpet : (fun k => wickRotatePoint (xs_shifted k)) ∈ PermutedExtendedTube d (n + m) :=
+    euclidean_distinct_in_permutedTube xs_shifted hdistinct hpos
+  -- Witness c := wickRotatePoint shift for TranslatedPET.
+  refine ⟨wickRotatePoint shift, ?_⟩
+  convert hpet using 1
+  funext k μ
+  refine Fin.addCases (motive := fun k =>
+      Fin.append (wickRotatePoint ∘ timeReflectionN d x_n)
+          (wickRotatePoint ∘ y) k μ + wickRotatePoint shift μ =
+        wickRotatePoint (xs_shifted k) μ) ?_ ?_ k
+  · intro i
+    by_cases hμ : μ = 0
+    · subst hμ
+      simp [xs_shifted, xs, shift, timeReflectionN, timeReflection,
+        wickRotatePoint, Fin.append_left, Function.comp]
+      push_cast
+      ring
+    · simp [xs_shifted, xs, shift, timeReflectionN, timeReflection,
+        wickRotatePoint, Fin.append_left, Function.comp, hμ]
+  · intro j
+    by_cases hμ : μ = 0
+    · subst hμ
+      simp [xs_shifted, xs, shift, wickRotatePoint, Fin.append_right, Function.comp]
+      push_cast
+      ring
+    · simp [xs_shifted, xs, shift, wickRotatePoint, Fin.append_right, Function.comp, hμ]
+
 /-- Reflection positivity for the Wick-restricted Schwinger family.
 
     This is the honest replacement for the deleted same-test-function bridge
