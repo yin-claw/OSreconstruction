@@ -3804,6 +3804,58 @@ theorem W_analytic_cluster_integral (Wfn : WightmanFunctions d) (n m : ℕ)
             (∫ x : NPointDomain d m,
               F_ext_on_translatedPET_total Wfn
                 (fun k => wickRotatePoint (x k)) * g x)‖ < ε := by
+  classical
+  -- Step 1: Promote f, g to ZeroDiagonalSchwartz via the OPTR → vanishing
+  -- bridge. OPTR points have strictly distinct positive times → distinct
+  -- points → not on coincidence locus, so the OPTR support hypothesis lifts
+  -- through `VanishesToInfiniteOrderOnCoincidence_of_support_subset_orderedPositiveTimeRegion`.
+  have hf_zd : VanishesToInfiniteOrderOnCoincidence f :=
+    VanishesToInfiniteOrderOnCoincidence_of_support_subset_orderedPositiveTimeRegion
+      f hsupp_f
+  have hg_zd : VanishesToInfiniteOrderOnCoincidence g :=
+    VanishesToInfiniteOrderOnCoincidence_of_support_subset_orderedPositiveTimeRegion
+      g hsupp_g
+  let f_zd : ZeroDiagonalSchwartz d n := ⟨f, hf_zd⟩
+  let g_zd : ZeroDiagonalSchwartz d m := ⟨g, hg_zd⟩
+  -- Step 2: Integrability of the n-block and m-block integrals.
+  -- These are well-defined since f, g vanish on coincidence locus.
+  have _hf_int : MeasureTheory.Integrable
+      (fun x : NPointDomain d n =>
+        F_ext_on_translatedPET_total Wfn (fun k => wickRotatePoint (x k)) *
+          (f_zd.1 : NPointDomain d n → ℂ) x)
+      MeasureTheory.volume :=
+    wick_rotated_kernel_mul_zeroDiagonal_integrable Wfn f_zd
+  have _hg_int : MeasureTheory.Integrable
+      (fun x : NPointDomain d m =>
+        F_ext_on_translatedPET_total Wfn (fun k => wickRotatePoint (x k)) *
+          (g_zd.1 : NPointDomain d m → ℂ) x)
+      MeasureTheory.volume :=
+    wick_rotated_kernel_mul_zeroDiagonal_integrable Wfn g_zd
+  -- Step 3 (deferred): Joint integral analysis.
+  --
+  -- For |a| > R₀ sufficiently large, the joint integrand
+  --   F_ext_on_translatedPET_total Wfn (wick(append x_n (x_m + a))) ·
+  --     f(x_n) · g(x_m)
+  -- is bounded uniformly in a by an integrable function of (x_n, x_m), via
+  -- the polynomial-growth bound `hasForwardTubeGrowth_of_wightman` combined
+  -- with the OPTR support pulling configurations into the forward tube
+  -- (where infDist^{q+1} · ‖W_BHW‖ ≤ C(1+‖z‖)^N) and Schwartz decay of f, g.
+  --
+  -- Pointwise convergence on a.e. (x_n, x_m) follows from
+  -- `bhw_pointwise_cluster_forwardTube` applied to z_n = wick(x_n^{σ_n}),
+  -- z_m = wick(x_m^{σ_m}) where σ_n, σ_m are the time-orderings of each block
+  -- (a.e. configurations have distinct positive times, so the orderings are
+  -- well-defined permutations).
+  --
+  -- Fubini decomposition of the joint integral over `Fin (n+m)` into a
+  -- product of integrals over `Fin n` and `Fin m` is supplied by
+  -- `integral_fin_append_split` (PR #72), with the `wickRotatePoint`
+  -- composition pushed through `Fin.append` via `Fin.append_comp_apply`
+  -- and the test-function split via `tensorProduct_fin_append_apply`.
+  --
+  -- Combining: dominated-convergence application yields the asymptotic
+  -- estimate, with R chosen by an ε/3-style argument from the pointwise
+  -- bound and the dominator.
   sorry
 
 /-- The Schwinger functions satisfy clustering (OS axiom E4) for OPTR-supported
