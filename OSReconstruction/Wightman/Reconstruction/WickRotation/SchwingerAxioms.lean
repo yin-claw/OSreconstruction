@@ -3842,28 +3842,44 @@ theorem W_analytic_cluster_integral (Wfn : WightmanFunctions d) (n m : ℕ)
   -- last n-point time and the first m-point time. Hence the Wick-rotated
   -- joint config is in `ForwardTube d (n+m)` only on a measure-zero set.
   --
-  -- Three possible routes around the obstacle:
+  -- **Recommended route (iii) — Källén-Lehmann spectral.**
+  -- Bypass the BHW joint-tube hypothesis by going through the spectral
+  -- representation directly. Clustering of Schwinger functions is
+  -- equivalent to the absence of a Dirac mass at p = 0 in the truncated
+  -- correlation spectral measure (R4 + R2 → no zero-mode → cluster).
+  -- Prerequisites:
+  --   - SNAG theorem (axiomatized in `GeneralResults/SNAGTheorem.lean`,
+  --     2026-05-03; rated Standard, Reed-Simon VIII.12).
+  --   - Bochner (proved, `bochner` repo `Bochner/Main.lean:1190`).
+  --   - Schwartz Fourier (Mathlib `SchwartzMap.fourierTransformCLM`).
+  --   - Truncated/connected decomposition `W_n = ∑_π ∏ W^T_{|π_i|}` over
+  --     set partitions (pure combinatorics, ~few hundred lines).
+  -- This route is reusable across the Wightman lane (mass gap,
+  -- asymptotic completeness, particle interpretation, spectral form of
+  -- R3) and across sister projects (lgt, gaussian-field).
+  -- Estimated cost: ~6–9 weeks end-to-end if we avoid full Wightman GNS
+  -- by working with W_2(a, 0) as a continuous positive-definite scalar
+  -- function and applying Bochner directly (no GNS Hilbert space needed
+  -- for the vacuum spectral measure).
   --
-  -- (i) Generalize `bhw_pointwise_cluster_forwardTube` to a permuted variant
-  --     `bhw_pointwise_cluster_permutedForwardTube` whose joint hypothesis
-  --     is only a permuted ForwardTube. The proof would sort the joint
-  --     config by time and apply BHW permutation invariance, but the
-  --     cluster decomposition into `(n + m) → n × m` is sensitive to which
-  --     permutation is used, so the statement requires care.
+  -- **Fallback route (i) — permuted-ForwardTube cluster.**
+  -- Generalize `bhw_pointwise_cluster_forwardTube` to a permuted variant
+  -- whose joint hypothesis is only a permuted ForwardTube. The proof
+  -- sorts the joint config by time and applies BHW permutation
+  -- invariance; the cluster decomposition into `(n + m) → n × m` is
+  -- sensitive to which permutation is used, so the statement requires
+  -- care. ~1–2 weeks. Surgical, single-use; no broader reuse.
   --
-  -- (ii) Use `Wfn.cluster` (axiom R4) directly with carefully constructed
-  --      test functions concentrated on (x_n, x_m); the Poisson integral
-  --      representation lifts distributional cluster to pointwise cluster
-  --      on *each* block's tube. This is the OS-1973 §3 spectral route.
+  -- **Alternate route (ii) — direct Poisson lift.**
+  -- Use `Wfn.cluster` (R4) with carefully constructed test functions
+  -- concentrated on (x_n, x_m); the Poisson integral representation
+  -- lifts distributional cluster to pointwise cluster on each block's
+  -- tube. This is the OS-1973 §3 spectral route, but applied within
+  -- BHW rather than as a generic spectral statement; effectively a
+  -- specialization of (iii) to our setting. Roughly 3–4 weeks.
   --
-  -- (iii) Bypass the BHW extension by going directly through the spectral
-  --       (Källén-Lehmann) representation: clustering of Schwinger functions
-  --       is equivalent to absence of a Dirac mass at p = 0 in the
-  --       truncated-correlation spectral measure (R4 + R2 → cluster).
-  --       Requires Plancherel + connected-truncated decomposition
-  --       infrastructure not yet in this repo.
-  --
-  -- **Proof-strategy steps assuming route (i) or (ii):**
+  -- **Proof-strategy steps assuming route (i) or (ii) (kept inline as
+  -- they share most of the dominated-convergence assembly):**
   --
   -- 1. Pointwise convergence on a.e. (x_n, x_m): for a.e. configs (using
   --    `ae_pairwise_distinct_timeCoords`), each x_n, x_m has distinct
