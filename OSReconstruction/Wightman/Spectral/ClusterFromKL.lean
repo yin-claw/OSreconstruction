@@ -406,61 +406,105 @@ axiom WightmanTruncated_decomposition_formula
     -- on partitions, deferred to the discharge.
     True
 
-/-- **Spectral representation of n-point truncated functions** (textbook).
+/-! **NOTE (2026-05-04, Gemini vetting)**: an earlier draft included
+two axioms `truncated_npoint_spectral_representation` and
+`truncated_spectral_spatialFourier_decay` claiming the existence of
+spectral *measures* `ρ^T_n` for higher-point truncated functions
+`W^T_n` with n ≥ 3. **Both are mathematically FALSE.** For n ≥ 3,
+the truncated function `W^T_n` does NOT possess a Borel spectral
+measure — only the 2-point case does (via positivity
+`‖φ(f)Ω‖² ≥ 0`). For n ≥ 3, the Fourier transform of `W^T_n` is a
+tempered *distribution*, not a measure.
 
-Each truncated function `W^T_n` has a spectral representation on
-`(V^+)^{n-1}` (the truncated mass shell), generalizing the
-Källén-Lehmann representation for `W^T_2 = W_2 - W_1·W_1`:
+The correct textbook proof (Glimm-Jaffe §19.4; Ruelle's cluster
+theorem) uses **Wightman GNS Hilbert-space operator theory**, not
+n-point spectral measures. The right axiom set involves:
+* Wightman GNS construction (`H, Ω, φ, U(a)`).
+* SNAG applied to translation unitaries `U(a)` to get a joint PVM.
+* Schwinger ↔ GNS bridge: Wick-rotated integral as `⟨Ψ, U(a) Φ⟩`.
+* Vacuum atom subtraction → truncated state-specific spectral measure.
+* Riemann-Lebesgue on the state-specific measure.
 
-$$W^T_n(f_1 \otimes \cdots \otimes f_n) =
-  \int_{(V^+)^{n-1}} \prod_{k=1}^{n-1} \tilde f_E(p_k, \vec p_k)
-    \cdot \rho^T_n(p_1, \ldots, p_{n-1})\, dp_1 \cdots dp_{n-1},$$
+The two axioms below replace the false ones with the
+correct GNS-based approach. -/
 
-where `\rho^T_n` is the **truncated n-point spectral measure** on
-`(V^+)^{n-1}`, and `\tilde f_E` is the Schwinger Laplace-Fourier
-transform.
+/-- **Wightman GNS bridge** (textbook).
 
-By R4 cluster of distributions, the truncated spectral measures `ρ^T_n`
-have no zero-spatial-momentum atoms (in the cluster direction), which
-gives spatial Fourier decay as the cluster moves to infinity.
+Given a Wightman QFT and OPTR-supported test functions
+`f : SchwartzNPoint d n` (Schwinger-side test functions), there exist
+states `Ψ_f ∈ ℋ` (the Wightman GNS Hilbert space) and a strongly
+continuous unitary translation group `U(a) : ℋ → ℋ` such that the
+Wick-rotated boundary integral equals the inner product:
+$$\int F_\text{ext}(\text{wick}\,x)\, (f \otimes g_a)(x)\, dx
+  = \langle \Psi_f, U(a) \Psi_g \rangle_{\mathcal{H}}.$$
 
-**Reference**: Glimm-Jaffe §6.2 Theorem 6.2.3; Streater-Wightman §3.4
-Theorem 3-5.
+The states satisfy `Ψ_0 = ‖f‖^2_{Wightman} Ω` style normalization
+(specific Hilbert-space-norm inner products with vacuum).
 
-**Discharge**: from `Wfn.spectrum_condition` (R3) + `Wfn.cluster` (R4)
-+ Wightman GNS reconstruction. The full discharge requires GNS
-infrastructure (~weeks) but axiomatizing follows the project's
-discipline (textbook axiom with citation). -/
-axiom truncated_npoint_spectral_representation
-    (Wfn : WightmanFunctions d) (n : ℕ) (h_n : n ≥ 2) :
-    -- Statement abstracted: existence of a spectral measure ρ^T_n on
-    -- `(V^+)^{n-1}` with the Laplace-Fourier representation.
-    -- The full statement requires the spectral-measure API on products,
-    -- deferred to the discharge.
-    True
+**Reference**: Streater-Wightman §3.3 (Wightman reconstruction);
+Glimm-Jaffe §19.1–19.4 (GNS for Wightman + Schwinger).
 
-/-- **Spatial Fourier decay of truncated spectral measures** (textbook —
-the spectral form of R4 cluster, generalized to n points).
+**Discharge**: full Wightman GNS construction from R0–R4. ~3–6 weeks
+of focused work building Hilbert space, vacuum, field operators,
+translation unitaries, BHW analytic continuation bridges. Or accept
+as a textbook checkpoint axiom. -/
+axiom wightman_gns_schwinger_bridge
+    (Wfn : WightmanFunctions d) (n m : ℕ)
+    (f : SchwartzNPoint d n) (g : SchwartzNPoint d m)
+    (_hsupp_f : tsupport ((f : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+      OrderedPositiveTimeRegion d n)
+    (_hsupp_g : tsupport ((g : SchwartzNPoint d m) : NPointDomain d m → ℂ) ⊆
+      OrderedPositiveTimeRegion d m) :
+    -- Existence of GNS Hilbert space H, vacuum Ω, states Ψ_f, Ψ_g,
+    -- translation unitary U, all satisfying the Wick-rotated integral
+    -- bridge. Stated abstractly via existential.
+    ∃ (H : Type*) (_ : NormedAddCommGroup H) (_ : InnerProductSpace ℂ H)
+      (_ : CompleteSpace H)
+      (Ω : H) (Ψ_f Ψ_g : H)
+      (U : SpacetimeDim d → (H →L[ℂ] H)),
+    -- Translation group: strongly continuous unitary representation.
+    (∀ a, U a ∈ unitary (H →L[ℂ] H)) ∧
+    (∀ a b, U (a + b) = U a ∘L U b) ∧
+    (∀ ψ : H, Continuous (fun a => U a ψ)) ∧
+    -- Vacuum is normalized + invariant.
+    ‖Ω‖ = 1 ∧
+    (∀ a, U a Ω = Ω) ∧
+    -- Schwinger ↔ inner product bridge.
+    (∀ a : SpacetimeDim d, a 0 = 0 → ∀ (g_a : SchwartzNPoint d m),
+      (∀ x : NPointDomain d m, g_a x = g (fun i => x i - a)) →
+      (∫ x : NPointDomain d (n + m),
+          F_ext_on_translatedPET_total Wfn (fun k => wickRotatePoint (x k)) *
+          (f.tensorProduct g_a) x) = (@inner ℂ H _ Ψ_f (U a Ψ_g)))
 
-For the truncated n-point spectral measure `ρ^T_n` on `(V^+)^{n-1}`,
-when one cluster of indices is moved spatially to infinity, the
-corresponding spatial Fourier integral against `ρ^T_n` tends to 0.
+/-- **Vacuum is the unique zero-momentum eigenstate** (R4 spectral form).
 
-This is the **direct spectral statement** that makes the cluster proof
-work — it's essentially R4 in spectral coordinates.
+In the Wightman GNS Hilbert space, the joint spectral measure of the
+translation generators `(P^0, ⃗P)` (extracted via SNAG applied to
+`U(a)`) has its only `P = 0` atom on the 1-dimensional vacuum
+subspace. Equivalently: for the truncated state-specific measure
+`d⟨Ψ_f, dE(p) Ψ_g⟩` (where `Ψ_f, Ψ_g ⊥ Ω`), the atom at `p = 0` vanishes.
 
-**Reference**: Streater-Wightman §3.4 Theorem 3-5 (spectral cluster);
-Glimm-Jaffe §6.2 Theorem 6.2.3.
+This is the **spectral form of R4** uniqueness-of-vacuum + cluster.
 
-**Discharge**: from `truncated_npoint_spectral_representation` +
-`spectral_riemann_lebesgue` (Mathlib). ~200 lines combining the
-spectral support analysis with the Riemann-Lebesgue lemma. -/
-axiom truncated_spectral_spatialFourier_decay
-    (Wfn : WightmanFunctions d) (n : ℕ) (h_n : n ≥ 2) :
-    -- Statement abstracted: for the truncated spectral measure ρ^T_n,
-    -- spatial Fourier decay holds for any choice of "cluster direction"
-    -- (subset of indices to be moved together). Full statement requires
-    -- spectral measure API + cluster index choice; deferred.
+**Reference**: Streater-Wightman Theorem 3-3 (vacuum uniqueness);
+Glimm-Jaffe §6.1 Theorem 6.1.5.
+
+**Discharge**: from `Wfn.cluster` (R4) + Wightman reconstruction +
+SNAG applied to translation unitary. -/
+axiom vacuum_unique_zero_momentum
+    (Wfn : WightmanFunctions d) (n m : ℕ)
+    (f : SchwartzNPoint d n) (g : SchwartzNPoint d m)
+    (hsupp_f : tsupport ((f : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+      OrderedPositiveTimeRegion d n)
+    (hsupp_g : tsupport ((g : SchwartzNPoint d m) : NPointDomain d m → ℂ) ⊆
+      OrderedPositiveTimeRegion d m) :
+    -- Conclusion: there exists a finite complex Borel measure `μ_{f,g}` on
+    -- `SpacetimeDim d` (the joint spectral measure of (P^0, ⃗P) for the
+    -- (Ψ_f, Ψ_g) pair, modulo vacuum) with no atom at p = 0 such that
+    -- the Wick-rotated integral cluster bound holds via Fourier of μ_{f,g}.
+    -- Statement deferred — needs the GNS bridge from
+    -- `wightman_gns_schwinger_bridge` to express the inner product
+    -- ⟨Ψ_f, U(a) Ψ_g⟩ as a Fourier integral against μ_{f,g}.
     True
 
 /-- **Spectral cluster for the n-point truncated function** (textbook axiom).
