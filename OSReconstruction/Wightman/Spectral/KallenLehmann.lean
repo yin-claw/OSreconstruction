@@ -103,7 +103,11 @@ For each `f : SchwartzNPoint d 1`, there exists a finite positive Borel
 measure `μ` on `SpacetimeDim d` (= `Fin (d+1) → ℝ`, i.e. momentum space)
 such that the Wightman 2-point matrix element against `f̄ ⊗ T_a f` is the
 Fourier transform of `μ`:
-  `W_2(f̄ ⊗ T_a f) = ∫ exp(-i a·p) dμ(p)` for all `a : SpacetimeDim d`.
+  `W_2(f̄ ⊗ T_a f) = ∫ exp(+i ⟨a, p⟩) dμ(p)` for all `a : SpacetimeDim d`,
+where `⟨·, ·⟩` is the standard Euclidean inner product (matching Mathlib's
+`charFun` convention from Bochner). The forward light cone $V^+$ in
+Minkowski space maps to itself under $(p^0, \vec p) \mapsto (p^0, -\vec p)$,
+so the support condition (axiom A below) is identical in either convention.
 
 The measure has total mass `μ(univ) = W_2(f̄ ⊗ f)` (the value at `a = 0`),
 which is real and ≥ 0 by `Wfn.positive_definite`.
@@ -127,7 +131,7 @@ theorem vacuum_spectral_measure_W2 (Wfn : WightmanFunctions d)
       IsFiniteMeasure μ ∧
       ∀ a : SpacetimeDim d,
         spectralFunction Wfn f a =
-          ∫ p : SpacetimeDim d, Complex.exp (-Complex.I * (∑ i, (a i : ℂ) * (p i : ℂ))) ∂μ := by
+          ∫ p : SpacetimeDim d, Complex.exp (Complex.I * (∑ i, (a i : ℂ) * (p i : ℂ))) ∂μ := by
   -- Substantive proof deferred. Plan:
   -- 1. Prove `Continuous (spectralFunction Wfn f)`:
   --    composition of `Wfn.tempered 2` (CLM continuity) with continuity of
@@ -205,6 +209,88 @@ theorem spectralFunction_isPositiveDefinite (Wfn : WightmanFunctions d)
     _root_.IsPositiveDefinite (spectralFunction Wfn f) := by
   -- See plan in docstring. Deferred.
   sorry
+
+/-! ### Step 1C — Spectral support condition (axiom A) -/
+
+/-- **Spectral support in the closed forward light cone (R3 spectral form).**
+
+For any Wightman QFT and any Schwartz test function `f`, the vacuum
+spectral measure of `W_2` (= any finite positive Borel measure `μ`
+satisfying the Fourier inversion against `spectralFunction Wfn f`) is
+supported in the closed forward light cone $\overline{V^+}$.
+
+Equivalently, the joint spectrum of the energy-momentum operators (the
+generators of spacetime translations on the GNS Hilbert space) lies in
+$\overline{V^+}$ — i.e., positive energy + causal momenta.
+
+This is the **spectral form of R3** (the Wightman spectrum condition).
+Our `Wfn.spectrum_condition` packages R3 as analytic continuation of `W_n`
+into the forward tube; this axiom converts that analytic-side statement
+into the spectral-measure-side statement that downstream cluster
+arguments need.
+
+**Reference:** Streater-Wightman §3.4, Theorem 3-2 (spectrum condition);
+Reed-Simon Vol II §IX.8 pp. 318–319.
+
+**Strategy (deferred):** From `Wfn.spectrum_condition`, the analytic
+continuation `W_analytic` is bounded on the closed forward tube.
+Plancherel + the standard Paley-Wiener-type argument show that the
+Fourier transform (= our spectral measure `μ`) is supported in the
+dual cone — the closed forward light cone. ~3 weeks discharge cost.
+
+(NOT VERIFIED — to be vetted via Gemini deep-think + Codex.) -/
+axiom W2_spectral_support_in_forwardCone
+    {d : ℕ} [NeZero d] (Wfn : WightmanFunctions d)
+    (f : SchwartzSpacetime d)
+    (μ : Measure (SpacetimeDim d)) [IsFiniteMeasure μ]
+    (h_spec : ∀ a : SpacetimeDim d,
+      spectralFunction Wfn f a =
+        ∫ p : SpacetimeDim d,
+          Complex.exp (Complex.I * (∑ i, (a i : ℂ) * (p i : ℂ))) ∂μ) :
+    μ (MinkowskiSpace.ClosedForwardLightCone d)ᶜ = 0
+
+/-! ### Step 1D — Vacuum atom decomposition (axiom B) -/
+
+/-- **Atomic decomposition of the vacuum spectral measure at p = 0.**
+
+For any Wightman QFT and any Schwartz test function `f`, the Dirac atom
+at the origin of the vacuum spectral measure of `W_2` equals
+`|W_1(f)|²` (the squared modulus of the 1-point Wightman matrix element).
+
+Equivalently: the projection onto the vacuum subspace of the GNS Hilbert
+space contributes a `μ({0}) = |W_1(f)|² · δ_0` term to the spectral
+measure of `W_2(f̄ ⊗ T_a f)`.
+
+In the standard scalar field convention `Wfn.W 1 _ = 0` (vacuum is
+not a "field expectation"), this atom vanishes — the *truncated*
+spectral measure has no atom at the origin. Combined with axiom (A),
+this gives the spectral form of cluster: the truncated spectral measure
+is supported in the open forward cone $V^+ \setminus \{0\}$.
+
+This is the **spectral form of R4 cluster** (combined with vacuum
+uniqueness from R1 + R4), in the OS / Källén-Lehmann formulation.
+
+**Reference:** Streater-Wightman Theorem 3-3 (uniqueness of vacuum);
+Glimm-Jaffe Theorem 6.2.3 (Källén-Lehmann decomposition).
+
+**Strategy (deferred):** From `Wfn.cluster` (R4), the truncated 2-point
+function decays at spatial infinity; equivalently, by Bochner uniqueness,
+its spectral measure has no point mass at p = 0 in the truncated
+sector. The full spectral measure decomposition follows from R1
+(translation invariance picking out the constant mode at p = 0) plus
+the GNS reconstruction. ~2 weeks discharge cost.
+
+(NOT VERIFIED — to be vetted via Gemini deep-think + Codex.) -/
+axiom W2_spectral_atom_at_zero
+    {d : ℕ} [NeZero d] (Wfn : WightmanFunctions d)
+    (f : SchwartzSpacetime d)
+    (μ : Measure (SpacetimeDim d)) [IsFiniteMeasure μ]
+    (h_spec : ∀ a : SpacetimeDim d,
+      spectralFunction Wfn f a =
+        ∫ p : SpacetimeDim d,
+          Complex.exp (Complex.I * (∑ i, (a i : ℂ) * (p i : ℂ))) ∂μ) :
+    μ {(0 : SpacetimeDim d)} =
+      ENNReal.ofReal (‖Wfn.W 1 (onePointToFin1CLM d f)‖ ^ 2)
 
 end KallenLehmann
 end OSReconstruction
