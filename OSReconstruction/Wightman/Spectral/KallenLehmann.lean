@@ -71,6 +71,34 @@ noncomputable def spacetimeTranslate (a : SpacetimeDim d)
     spacetimeTranslate a f x = f (x - a) := by
   simp [spacetimeTranslate, SCV.translateSchwartz_apply, sub_eq_add_neg]
 
+/-- **Continuity of translation on Schwartz space** (standard).
+
+For any `f : SchwartzSpacetime d`, the map `a ↦ spacetimeTranslate a f` is
+continuous as a map `SpacetimeDim d → SchwartzSpacetime d` in the
+Schwartz Fréchet topology.
+
+**Reference:** Hörmander, *The Analysis of Linear Partial Differential
+Operators I*, Theorem 7.1.18 (translation is a continuous representation of
+`ℝⁿ` on `𝒮(ℝⁿ)`); Reed-Simon Vol I §V.3 (Schwartz space topology and group
+representations).
+
+**Strategy (deferred):** Convergence in Schwartz topology means convergence
+in every Schwartz seminorm `‖·‖_{k,n}` (sup over `x` of
+`‖x‖^k ‖∂^n f(x)‖`). For each fixed `(k, n)`, the function
+`a ↦ ‖x‖^k ‖∂^n f(x - a)‖` is uniformly bounded near `a₀` by a Schwartz
+decay estimate (`Schwartz seminorm of f` × `(1 + ‖x‖)^{-(k+1)}`-style),
+and tends pointwise to `‖x‖^k ‖∂^n f(x - a₀)‖` as `a → a₀`. Dominated
+convergence (or direct Schwartz-decay estimate) closes the seminorm
+convergence. This proof is ~50 lines once the Schwartz-seminorm-bound
+machinery is set up. The compact-support specialization is already in
+`SCV/DistributionalUniqueness.lean`
+(`tendsto_translateSchwartz_nhds_of_isCompactSupport`).
+
+(NOT VERIFIED — to be vetted. Standard textbook fact.) -/
+axiom continuous_spacetimeTranslate
+    {d : ℕ} [NeZero d] (f : SchwartzSpacetime d) :
+    Continuous (fun a : SpacetimeDim d => spacetimeTranslate a f)
+
 /-- The spectral function of a Wightman 2-point function against a
 spacetime test function `f`.
 
@@ -180,8 +208,15 @@ all Schwartz seminorms (each seminorm of `T_a f - T_b f` is bounded by
 theorem spectralFunction_continuous (Wfn : WightmanFunctions d)
     (f : SchwartzSpacetime d) :
     Continuous (spectralFunction Wfn f) := by
-  -- See plan in docstring. Deferred.
-  sorry
+  -- Decompose as the composition of four continuous maps:
+  --   a ↦ spacetimeTranslate a f                       -- by axiom
+  --   ↦ onePointToFin1CLM d (·)                        -- CLM
+  --   ↦ (onePointToFin1CLM d f).conjTensorProduct (·)  -- continuous_right
+  --   ↦ Wfn.W 2 (·)                                    -- R0
+  unfold spectralFunction
+  exact (Wfn.tempered 2).comp <|
+    (SchwartzMap.conjTensorProduct_continuous_right (onePointToFin1CLM d f)).comp <|
+      (onePointToFin1CLM d).continuous.comp (continuous_spacetimeTranslate f)
 
 /-! ### Step 1B — Positive-definiteness of the spectral function -/
 
