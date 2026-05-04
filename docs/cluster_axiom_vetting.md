@@ -82,6 +82,43 @@ The textbook proof (Glimm-Jaffe §19.4, Ruelle's cluster theorem) uses
 
 ---
 
+## Round 2 vetting outcomes (2026-05-04, Gemini chat)
+
+After applying the four fixes from the first round, re-vetted:
+
+* **`vacuum_expectation` correctness** — *Strictly correct without osConj*.
+  `⟨Ω, Ψ_f⟩ = ∫ F_ext(wick x) · f(x) dx` for OPTR-supported `f`. No
+  reflection needed because Ω is the trivial 0-point function (no second
+  state to time-order against).
+
+* **osConj asymmetry** — *Logically and physically consistent*.
+  `schwinger_bridge` uses `f.osConj.tensorProduct g_a` because the inner
+  product `⟨Ψ_f, U(a) Ψ_g⟩` is conjugate-linear in the bra and the bra is
+  physically a "negative-time / incoming" state. `vacuum_expectation` has
+  Ω as the bra — no reflection.
+
+* **`truncated_spectral_AC_marginal` placeholder `True`** — *Anti-pattern,
+  fix by replacing*. `True` makes the field vacuous. Cleaner formulation
+  bypasses the SNAG-PVM API entirely by axiomatizing the actual analytic
+  consequence:
+  ```
+  truncated_spatial_decay :
+    ∀ ψ φ : H, ⟨Ω, ψ⟩ = 0 → ⟨Ω, φ⟩ = 0 →
+      Tendsto (fun a => ⟨ψ, U(a) φ⟩) (spatial cobounded) (𝓝 0)
+  ```
+  Renamed accordingly. Applied 2026-05-04.
+
+* **No factorization axiom needed**. `quantize_add` + `quantize_smul` plus
+  Hilbert-space orthogonal decomposition `Ψ = ⟨Ω,Ψ⟩Ω + Ψ⊥` is sufficient:
+  the connected (Ψ⊥-Ψ⊥) term decays by `truncated_spatial_decay`; the
+  (Ω-Ω) term gives `⟨Ψ_f,Ω⟩⟨Ω,Ψ_g⟩` exactly via `vac_inv`; cross terms are
+  zero by `vacuum_unique` + orthogonality. No axiom needed for
+  `quantize (f.tensorProduct g_a)` factorization.
+
+**Status of round-2 fixes**: applied to `Spectral/ClusterFromKL.lean`.
+
+---
+
 ## Open issues from latest vetting (2026-05-04, Gemini)
 
 ### Issue 1: `wightman_gns_schwinger_bridge` bundling antipattern

@@ -560,33 +560,36 @@ class WightmanReconstruction {d : ℕ} [NeZero d] (Wfn : WightmanFunctions d) wh
       (hcf : tsupport ((c • f : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
         OrderedPositiveTimeRegion d n),
     quantize (c • f) hcf = c • quantize f hf
-  /-- **Truncated state-specific spectral measure has AC spatial marginal.**
+  /-- **Spatial decay of matrix elements on the orthogonal complement of `Ω`.**
 
-      For `f, g` OPTR-supported (giving states `Ψ_f := quantize f hf`,
-      `Ψ_g := quantize g hg`), let `μ_{f,g}` be the complex measure on
-      `SpacetimeDim d` defined by `μ_{f,g}(B) = ⟨Ψ_f - ⟨Ω,Ψ_f⟩Ω, E(B)(Ψ_g - ⟨Ω,Ψ_g⟩Ω)⟩`
-      (the truncated spectral measure, where E is the joint PVM from SNAG
-      applied to U(a)). Then the spatial marginal of |μ_{f,g}| is absolutely
-      continuous w.r.t. Lebesgue measure on `ℝ^d`.
+      For any pair of states `ψ, φ ∈ H` orthogonal to the vacuum, the matrix
+      element `⟨ψ, U(a) φ⟩` decays to 0 as the spatial part of `a` goes to
+      infinity (along the cobounded filter on `Fin d → ℝ`).
 
-      This is a textbook structural property of QFT spectral measures:
-      they're supported on mass hyperboloids `p² ≥ m²` which project to
-      AC spatial densities `dp⁰ / 2E_p`. Goes beyond R4 cluster (which only
-      gives no atom at `p = 0`).
+      This is the cluster-decay consequence of:
+      * The joint spectral measure `μ_{ψ,φ}` (from SNAG applied to `U`)
+        being supported on mass hyperboloids `p² ≥ m²` (no zero-spatial-momentum
+        atom on the vacuum-orthogonal complement, by `vacuum_unique`),
+      * which gives a Lebesgue-AC spatial marginal,
+      * combined with Riemann-Lebesgue.
 
-      Reference: Glimm-Jaffe §6.2 Theorem 6.2.3; Reed-Simon II §IX.8.
+      Per Gemini vetting: stating the decay consequence directly is cleaner
+      than carrying around a `Measure.map ≪ volume` placeholder for the SNAG
+      output. It is exactly the Hilbert-space-side fact that, together with
+      `vac_inv` + `vacuum_unique`, lets us conclude cluster decomposition by
+      orthogonal decomposition `Ψ = ⟨Ω,Ψ⟩Ω + Ψ⊥` and decay of the `⊥`-`⊥` term.
 
-      Stated abstractly here; the precise formulation requires invoking SNAG
-      to extract the joint PVM and computing the spatial marginal. -/
-  truncated_spectral_AC_marginal :
-    ∀ {n m : ℕ} (f : SchwartzNPoint d n) (g : SchwartzNPoint d m)
-      (hf : tsupport ((f : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
-        OrderedPositiveTimeRegion d n)
-      (hg : tsupport ((g : SchwartzNPoint d m) : NPointDomain d m → ℂ) ⊆
-        OrderedPositiveTimeRegion d m),
-    -- Stated via existence of an AC density bound; full statement requires
-    -- SNAG application + spectral marginal API.
-    True
+      **Reference**: Glimm-Jaffe §6.2 Theorem 6.2.3; Reed-Simon II §IX.8.
+
+      **Discharge**: derivable from `kallen_lehmann_representation` +
+      `spectral_riemann_lebesgue` + the no-atom-at-zero spectral form of R4. -/
+  truncated_spatial_decay :
+    ∀ (ψ φ : H), (@inner ℂ H _ Ω ψ) = 0 → (@inner ℂ H _ Ω φ) = 0 →
+      Filter.Tendsto
+        (fun a : SpacetimeDim d => (@inner ℂ H _ ψ (U a φ)))
+        (Filter.principal {a : SpacetimeDim d | a 0 = 0} ⊓
+          Bornology.cobounded (SpacetimeDim d))
+        (nhds 0)
 
 /-- **Spectral cluster for the n-point truncated function** (textbook axiom).
 
