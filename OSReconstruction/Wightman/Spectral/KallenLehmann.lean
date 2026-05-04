@@ -151,5 +151,60 @@ theorem vacuum_spectral_measure_W2 (Wfn : WightmanFunctions d)
   --    Bochner conclusion. Multiply through by φ_f(0).
   sorry
 
+/-! ### Step 1A — Continuity of the spectral function -/
+
+/-- The spectral function is continuous in the translation parameter `a`.
+
+Decomposes as the composition
+  `a ↦ spacetimeTranslate a f`              -- continuous (translation in
+                                               Schwartz topology)
+  `↦ onePointToFin1CLM d (·)`               -- continuous CLM
+  `↦ (onePointToFin1CLM d f).conjTensorProduct (·)` -- continuous via
+                                            -- `SchwartzMap.conjTensorProduct_continuous_right`
+  `↦ Wfn.W 2 (·)`                           -- continuous (R0, `Wfn.tempered`)
+of four continuous maps.
+
+The first link — Schwartz-topology continuity of `a ↦ spacetimeTranslate a f`
+for general Schwartz `f` (no compact-support hypothesis) — is the only
+technical content. Mathlib has it implicitly through the `SchwartzMap`
+continuous-translation API. Codebase has the compact-support specialization
+in `SCV/DistributionalUniqueness.lean`
+(`continuous_apply_translateSchwartz_of_isCompactSupport`); the general
+Schwartz case follows from the fact that translation acts continuously on
+all Schwartz seminorms (each seminorm of `T_a f - T_b f` is bounded by
+`‖a - b‖` times a Schwartz-bound on derivatives of `f`). -/
+theorem spectralFunction_continuous (Wfn : WightmanFunctions d)
+    (f : SchwartzSpacetime d) :
+    Continuous (spectralFunction Wfn f) := by
+  -- See plan in docstring. Deferred.
+  sorry
+
+/-! ### Step 1B — Positive-definiteness of the spectral function -/
+
+/-- The spectral function is positive-definite as a function on the additive
+group `(SpacetimeDim d, +)`, i.e. the matrix
+  `[φ_f(a_i - a_j)]_{i,j}` is positive semidefinite for any finite family
+of points `a_k : SpacetimeDim d`.
+
+Standard derivation from Wightman positivity (R2):
+1. For `c : Fin N → ℂ` and `a : Fin N → SpacetimeDim d`, set
+   `F := ∑_k c_k · T_{a_k} f`. Then
+   `Wfn.W 2 (F̄ ⊗ F) = ∑_{i,j} conj(c_i) c_j Wfn.W 2 (T_{a_i}f̄ ⊗ T_{a_j}f)`.
+2. By `Wfn.translation_invariant` (R1), each
+   `Wfn.W 2 (T_{a_i}f̄ ⊗ T_{a_j}f) = Wfn.W 2 (f̄ ⊗ T_{a_j - a_i}f)
+                                  = spectralFunction Wfn f (a_j - a_i)`.
+3. Wightman positivity `Wfn.positive_definite` applied to the length-1
+   Borchers sequence `[F]` gives `Re (W 2 (F̄ ⊗ F)) ≥ 0`. Since the
+   sesquilinear form is automatically Hermitian (from `Wfn.hermitian`),
+   the matrix is genuinely PSD.
+
+We use the standard Mathlib `IsPositiveDefinite` definition (a function
+`φ : G → ℂ` such that `∑ c_i conj(c_j) φ(a_i - a_j) ≥ 0`). -/
+theorem spectralFunction_isPositiveDefinite (Wfn : WightmanFunctions d)
+    (f : SchwartzSpacetime d) :
+    _root_.IsPositiveDefinite (spectralFunction Wfn f) := by
+  -- See plan in docstring. Deferred.
+  sorry
+
 end KallenLehmann
 end OSReconstruction
