@@ -521,52 +521,71 @@ class WightmanReconstruction {d : ℕ} [NeZero d] (Wfn : WightmanFunctions d) wh
         (f.osConj.tensorProduct g_a) x) =
       (@inner ℂ H _ (quantize f hf) (U a (quantize g hg)))
   /-- **Vacuum expectation bridge**: the standalone n-point Wick-rotated
-      integral against `f.osConj` (OS-reflected) equals the inner product
-      with the vacuum.
+      integral against `f` equals the inner product with the vacuum.
 
       This is the disconnected-piece bridge that, combined with
       `schwinger_bridge`, gives the cluster decomposition `⟨Ψ, U(a)Φ⟩ →
-      ⟨Ψ, Ω⟩⟨Ω, Φ⟩` after subtracting the vacuum projection. -/
+      ⟨Ψ, Ω⟩⟨Ω, Φ⟩` after subtracting the vacuum projection.
+
+      Per Gemini vetting: no time reflection needed here (vacuum corresponds
+      to the 0-point function, no joint configuration to time-order). -/
   vacuum_expectation :
     ∀ {n : ℕ} (f : SchwartzNPoint d n)
       (hf : tsupport ((f : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
         OrderedPositiveTimeRegion d n),
-    -- The vacuum expectation: ⟨Ω, Ψ_f⟩ equals an n-point Wick-rotated integral.
-    -- (Statement abstracted via the OSConj structure; the precise form
-    -- relates to ‖f‖_W via the OS quantization map's normalization.)
-    True
+    (@inner ℂ H _ Ω (quantize f hf)) =
+      ∫ x : NPointDomain d n,
+        F_ext_on_translatedPET_total Wfn (fun k => wickRotatePoint (x k)) * f x
+  /-- **Linearity of `quantize`** (additivity).
 
-/-- **Truncated state-specific measure has AC spatial marginal** (textbook).
+      Required for distribution-level manipulations in cluster proofs.
+      `quantize` is linear in the test function (after restriction to
+      OPTR-supported test functions, the OS quantization map factors
+      through the `°S` zero-diagonal subspace). -/
+  quantize_add :
+    ∀ {n : ℕ} (f₁ f₂ : SchwartzNPoint d n)
+      (hf₁ : tsupport ((f₁ : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+        OrderedPositiveTimeRegion d n)
+      (hf₂ : tsupport ((f₂ : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+        OrderedPositiveTimeRegion d n)
+      (hf₁₂ : tsupport (((f₁ + f₂ : SchwartzNPoint d n)) :
+          NPointDomain d n → ℂ) ⊆
+        OrderedPositiveTimeRegion d n),
+    quantize (f₁ + f₂) hf₁₂ = quantize f₁ hf₁ + quantize f₂ hf₂
+  /-- **`quantize` is ℂ-linear under scalar multiplication.** -/
+  quantize_smul :
+    ∀ {n : ℕ} (c : ℂ) (f : SchwartzNPoint d n)
+      (hf : tsupport ((f : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+        OrderedPositiveTimeRegion d n)
+      (hcf : tsupport ((c • f : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+        OrderedPositiveTimeRegion d n),
+    quantize (c • f) hcf = c • quantize f hf
+  /-- **Truncated state-specific spectral measure has AC spatial marginal.**
 
-For OPTR-supported `f, g` with the GNS-state pair `(Ψ_f, Ψ_g)`, the
-truncated state-specific measure `d⟨Ψ_f, dE(p) Ψ_g⟩` (where `E` is the
-joint PVM of energy-momentum from SNAG, restricted to the orthogonal
-complement of the vacuum) has an absolutely continuous spatial marginal.
+      For `f, g` OPTR-supported (giving states `Ψ_f := quantize f hf`,
+      `Ψ_g := quantize g hg`), let `μ_{f,g}` be the complex measure on
+      `SpacetimeDim d` defined by `μ_{f,g}(B) = ⟨Ψ_f - ⟨Ω,Ψ_f⟩Ω, E(B)(Ψ_g - ⟨Ω,Ψ_g⟩Ω)⟩`
+      (the truncated spectral measure, where E is the joint PVM from SNAG
+      applied to U(a)). Then the spatial marginal of |μ_{f,g}| is absolutely
+      continuous w.r.t. Lebesgue measure on `ℝ^d`.
 
-This goes beyond R4 cluster (which only gives no atom at `p = 0`). The
-spatial AC marginal follows from the support of the joint spectral measure
-on mass hyperboloids `p² ≥ m²`, which project to absolutely continuous
-densities `dp⁰ / 2E_p` on spatial momenta.
+      This is a textbook structural property of QFT spectral measures:
+      they're supported on mass hyperboloids `p² ≥ m²` which project to
+      AC spatial densities `dp⁰ / 2E_p`. Goes beyond R4 cluster (which only
+      gives no atom at `p = 0`).
 
-**Reference**: Glimm-Jaffe §6.2 Theorem 6.2.3; Reed-Simon II §IX.8
-(spectral support analysis).
+      Reference: Glimm-Jaffe §6.2 Theorem 6.2.3; Reed-Simon II §IX.8.
 
-**Discharge**: detailed Jost-Hepp-style mass hyperboloid analysis
-+ Radon-Nikodym derivatives. ~weeks of textbook content; or accept as a
-standalone axiom. -/
-axiom truncated_state_spectral_AC_marginal
-    {d : ℕ} [NeZero d] (Wfn : WightmanFunctions d)
-    [WR : WightmanReconstruction Wfn]
-    {n m : ℕ} (f : SchwartzNPoint d n) (g : SchwartzNPoint d m)
-    (hf : tsupport ((f : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
-      OrderedPositiveTimeRegion d n)
-    (hg : tsupport ((g : SchwartzNPoint d m) : NPointDomain d m → ℂ) ⊆
-      OrderedPositiveTimeRegion d m) :
-    -- Statement abstracted: the truncated state-specific measure exists
-    -- (via SNAG applied to U(a)), has no atom at p = 0 (R4 spectral form),
-    -- AND has absolutely continuous spatial marginal.
-    -- Full statement requires expressing the spectral measure structure
-    -- + AC marginal in the project's measure-theory API.
+      Stated abstractly here; the precise formulation requires invoking SNAG
+      to extract the joint PVM and computing the spatial marginal. -/
+  truncated_spectral_AC_marginal :
+    ∀ {n m : ℕ} (f : SchwartzNPoint d n) (g : SchwartzNPoint d m)
+      (hf : tsupport ((f : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+        OrderedPositiveTimeRegion d n)
+      (hg : tsupport ((g : SchwartzNPoint d m) : NPointDomain d m → ℂ) ⊆
+        OrderedPositiveTimeRegion d m),
+    -- Stated via existence of an AC density bound; full statement requires
+    -- SNAG application + spectral marginal API.
     True
 
 /-- **Spectral cluster for the n-point truncated function** (textbook axiom).
