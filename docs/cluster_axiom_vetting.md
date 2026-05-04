@@ -1,0 +1,217 @@
+# Cluster route axiom vetting log
+
+Vetting record for the textbook axioms used in the spectral / Källén-Lehmann
+route to closing `W_analytic_cluster_integral` (`r2e/kallen-lehmann-revival`
+branch).
+
+---
+
+## Vetted axioms
+
+### 1. `snag_theorem`
+**Verdict (Gemini chat, 2026-05-03)**: **Standard** — matches Reed-Simon I VIII.12 exactly.
+Hypotheses (strong continuity + group + unitary + identity) are textbook.
+Initial draft had axioms on all `Set α`; Gemini flagged as ZFC-inconsistent;
+fixed to use `MeasurableSet`-gated indexing.
+**Status**: on main from PR #81.
+
+### 2. `spectral_riemann_lebesgue`
+**Verdict (Gemini chat, 2026-05-04)**: **Likely correct** with cosmetic fix.
+Replaced ad-hoc null-set pull-back form with idiomatic
+`Measure.map (...) μ ≪ MeasureTheory.volume`.
+**Status**: in `GeneralResults/SpectralAnalysis.lean`.
+
+### 3. `continuous_translate_schwartz`
+**Verdict (Gemini chat, 2026-05-04)**: **Initially FALSE** — operator-norm
+continuity was the form I'd used; Gemini correctly noted that translation is
+**not** continuous in operator norm even on `L²`/Schwartz (oscillatory test
+functions show this). Only **strong continuity** holds (`∀ f, Continuous (a ↦ T_a f)`).
+Fixed accordingly. Matches Hörmander I 7.1.18.
+**Status**: in `GeneralResults/SpectralAnalysis.lean`.
+
+### 4. `W2_spectral_support_in_forwardCone`
+**Verdict (Gemini chat, 2026-05-03)**: **Standard** — matches Streater-Wightman 3-2.
+**Status**: in `Spectral/KallenLehmann.lean`, on main.
+
+### 5. `W2_spectral_atom_at_zero`
+**Verdict (Gemini chat, 2026-05-03)**: **Likely correct** — matches Streater-Wightman 3-3.
+**Status**: in `Spectral/KallenLehmann.lean`, on main.
+
+### 6. `vacuum_spectral_measure_W2`
+**Verdict (Gemini chat, 2026-05-03)**: **Standard** — direct Bochner application
+to the continuous PD function `a ↦ ⟨ψ, U(a) ψ⟩`. Mathematical content is a
+corollary of the proved `bochner_theorem` (BochnerMinlos).
+**Status**: in `Spectral/KallenLehmann.lean`, on main.
+
+### 7. `WightmanTruncated_decomposition_formula`
+**Verdict (Gemini chat, 2026-05-04)**: **Likely correct** with caveat.
+* The partition formula `W_n = ∑_π ∏ W^T_|B|` is correct.
+* Should be stated for **factorizable test functions only**
+  (`g_1 ⊗ ⋯ ⊗ g_n`); finite linear combinations are dense in
+  `SchwartzNPoint`, and continuity of `W_n` and `W^T_k` extends the
+  identity to general Schwartz tests automatically (no separate
+  justification needed).
+**Status**: in `Spectral/ClusterFromKL.lean`, factorizable form needs to be
+written out explicitly.
+
+---
+
+## Rejected axioms
+
+### `wickRotatedIntegral_eq_laplaceFourier_spectralIntegral` (initial draft)
+**Verdict (Gemini chat, 2026-05-04)**: **Mathematically false**. Two errors:
+1. Conclusion referenced `Wfn.W 1` (1-point distribution) but docstring
+   claimed it was about Wick-rotated 2-point integral.
+2. Used `f`-smeared spectral measure (from `kallen_lehmann_representation`)
+   instead of the universal vacuum spectral measure.
+**Action**: replaced with `wickRotated_W2_eq_laplaceFourier_spectralIntegral`
+in bilinear form using universal `ρ`.
+
+### `truncated_npoint_spectral_representation` and `truncated_spectral_spatialFourier_decay`
+**Verdict (Gemini chat, 2026-05-04)**: **Fatal category error**. For n ≥ 3,
+`W^T_n` does **not** possess a Borel spectral measure. Only the 2-point
+case has one (positivity `‖φ(f)Ω‖² ≥ 0`). For n ≥ 3, the Fourier transform
+of `W^T_n` is a tempered *distribution*, not a measure. The Källén-Lehmann
+representation does not generalize this way.
+
+The textbook proof (Glimm-Jaffe §19.4, Ruelle's cluster theorem) uses
+**Wightman GNS Hilbert-space operator theory**, not n-point spectral measures.
+
+**Action**: removed both axioms. Replaced with `wightman_gns_schwinger_bridge`
++ `vacuum_unique_zero_momentum`.
+
+---
+
+## Open issues from latest vetting (2026-05-04, Gemini)
+
+### Issue 1: `wightman_gns_schwinger_bridge` bundling antipattern
+
+The current statement bundles `H, Ω, Ψ_f, Ψ_g, U` + 5 properties into a
+single existential per `(f, g)` pair. **Antipattern**: each (f, g) pair
+generates a different, unrelated Hilbert space at the level of Lean types.
+
+**Fix**: convert to a `WightmanReconstruction` class parameterized by `Wfn`:
+
+```lean
+class WightmanReconstruction {d : ℕ} (Wfn : WightmanFunctions d) where
+  H : Type*
+  [normed : NormedAddCommGroup H]
+  [inner : InnerProductSpace ℂ H]
+  [complete : CompleteSpace H]
+  Ω : H
+  U : SpacetimeDim d → (H →L[ℂ] H)
+  quantize : {n : ℕ} → SchwartzNPoint d n → H
+  -- properties below as fields
+  unitary_rep : ∀ a, U a ∈ unitary (H →L[ℂ] H)
+  U_add : ∀ a b, U (a + b) = U a ∘L U b
+  strong_cont : ∀ ψ : H, Continuous (fun a => U a ψ)
+  vac_norm : ‖Ω‖ = 1
+  vac_inv : ∀ a, U a Ω = Ω
+  vacuum_unique : ∀ ψ : H, (∀ a, U a ψ = ψ) → ∃ c : ℂ, ψ = c • Ω
+```
+
+This makes the Hilbert space uniquely determined by `Wfn`, so all
+sub-claims (vacuum unique, Schwinger bridge, etc.) refer to the **same**
+H.
+
+### Issue 2: Domain escape (OS time reflection missing)
+
+The current bridge writes:
+
+```
+∫ F_ext(wick(x)) (f.tensorProduct g_a)(x) dx = ⟨Ψ_f, U(a) Ψ_g⟩
+```
+
+But **F_ext is undefined where the imaginary parts of consecutive points
+cross zero**. With both `f` and `g_a` in OPTR (positive ordered times),
+the joint config has imaginary times jumping from large (n-block end) to
+small (m-block start) — F_ext is divergent at this transition.
+
+**Fix**: apply OS time reflection (`osConj`) to `f` so that `f`-block
+times become negative-and-decreasing, and the appended `(f̃, g_a)` config
+has strictly increasing times globally.
+
+```lean
+∫ F_ext(wick x) (f.osConj.tensorProduct g_a)(x) dx = ⟨Ψ_f, U(a) Ψ_g⟩
+```
+
+This is the **OS bridge** the project's existing infrastructure was
+designed for — exactly what xi yin's PR #80 refactor preserved.
+
+### Issue 3: Missing vacuum expectation bridge
+
+To derive cluster `⟨Ψ_f, U(a) Ψ_g⟩ → ⟨Ψ_f, Ω⟩ ⟨Ω, Ψ_g⟩`, we need:
+
+```
+⟨Ω, Ψ_f⟩ = ∫ F_ext(wick x) (f̃.tensorProduct ?)(x) dx
+```
+
+(or an analogous standalone expression). The current bridge only relates
+the **joint** integral to the inner product; we need the **disconnected**
+integrals to also have GNS-side counterparts.
+
+**Fix**: extend the bridge axiom (or add a sister axiom) asserting
+`⟨Ω, Ψ_f⟩ = ∫ F_ext(wick x_n) f(x_n) dx_n` for OPTR-supported `f` (or the
+osConj-corrected version).
+
+### Issue 4: Riemann-Lebesgue AC marginal mismatch
+
+Our `spectral_riemann_lebesgue` requires the spectral measure to have an
+**absolutely continuous spatial marginal**. The vacuum-uniqueness axiom only
+guarantees no atom at `p = 0`. **No atom at 0 ≠ AC spatial marginal**:
+singular continuous measures exist.
+
+The textbook resolution: spectral measures of QFT operator-theoretic
+states are supported on mass hyperboloids `p² ≥ m²`, which naturally
+project to AC spatial marginals via `dp⁰ / 2E_p`. But this requires
+either:
+
+- **Detailed analysis** of mass hyperboloids (Jost-Hepp lemma and
+  Radon-Nikodym derivatives) — substantial textbook content (~weeks).
+- **Direct axiom** asserting AC spatial marginal as a property of the
+  truncated state-specific measure.
+
+**Recommended fix**: add an explicit axiom asserting AC spatial marginal
+on the truncated state-specific complex measure. Cited by Glimm-Jaffe
+§6.2 + Reed-Simon II §IX.8.
+
+---
+
+## Summary of open work
+
+After this round of vetting:
+
+1. **Refactor** `wightman_gns_schwinger_bridge` from existential bundling to
+   `WightmanReconstruction` class. **Substantial restructuring**.
+
+2. **Add** OS time reflection (`osConj`) on `f` in the Schwinger bridge.
+   Mechanical fix, ~1 line in the axiom statement.
+
+3. **Add** vacuum expectation bridge axiom: `⟨Ω, Ψ_f⟩ = ∫ F_ext(...) f(x)`.
+   ~10 lines.
+
+4. **Add** AC-spatial-marginal axiom for truncated state-specific measure.
+   ~10 lines.
+
+5. **Re-vet** the refactored axioms via Gemini.
+
+6. **Refactor** `cluster_2point_from_KL` and `cluster_npoint_from_KL`
+   proofs to use the new class-based + corrected axioms.
+
+Total: ~1–2 days of focused refactoring work.
+
+---
+
+## Key insight
+
+The vetting exercise has been **highly valuable**:
+
+- 2 out of 13 vetted axioms were **mathematically false** (`truncated_npoint_spectral_representation`, `truncated_spectral_spatialFourier_decay`).
+- 1 axiom was **silently wrong** (`continuous_translate_schwartz` with operator-norm continuity).
+- 1 axiom had a **statement-vs-docstring mismatch** (`wickRotatedIntegral_eq_laplaceFourier_spectralIntegral`).
+- 1 axiom had a **domain escape bug** flagged but not yet fixed
+  (`wightman_gns_schwinger_bridge` needs `osConj`).
+
+Without vetting, we would have spent weeks deriving from false foundations
+and getting wrong proofs. The textbook-axiom + Gemini-vetting workflow is
+working as designed.
