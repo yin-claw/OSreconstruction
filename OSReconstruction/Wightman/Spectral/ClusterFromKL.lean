@@ -721,5 +721,157 @@ The decision (axiomatize textbook content vs. prove from R0–R4) is the
 user's call. Either way, the cluster theorem can be closed via this
 spectral route. -/
 
+/-! ### Route A: GNS-class cluster
+
+Per the round-2 Gemini vetting (2026-05-04), the `WightmanReconstruction`
+class plus pure Hilbert-space orthogonal decomposition closes cluster
+**without** any of the Route-B spectral chain (no `kallen_lehmann_representation`,
+no `spectral_riemann_lebesgue`, no truncated decomposition, no
+`truncated_npoint_cluster`).
+
+The proof:
+1. Decompose `ψ = ⟨Ω, ψ⟩ • Ω + ψ⊥` (orthogonal projection onto Ω-line),
+   similarly `φ = ⟨Ω, φ⟩ • Ω + φ⊥`.
+2. By `vac_inv` (`U(a) Ω = Ω`) and unitarity (`U(a)*Ω = Ω`):
+   `⟨ψ, U(a) φ⟩ = ⟨ψ, Ω⟩⟨Ω, φ⟩ + ⟨ψ⊥, U(a) φ⊥⟩`.
+3. The cross term `⟨ψ⊥, U(a) φ⊥⟩ → 0` directly by
+   `truncated_spatial_decay` (the orthogonal-complement field).
+4. The integral form follows by applying `schwinger_bridge` to the joint
+   integral and `vacuum_expectation` to each block. -/
+
+namespace ClusterRouteA
+
+/-- Expose the bundled `NormedAddCommGroup` instance from
+    `WightmanReconstruction` to the outside-of-class type-class
+    inference. -/
+instance instNormedH {d : ℕ} [NeZero d] (Wfn : WightmanFunctions d)
+    [WR : WightmanReconstruction Wfn] : NormedAddCommGroup WR.H :=
+  WR.inst_normed
+
+/-- Expose the `InnerProductSpace ℂ H` instance. -/
+instance instInnerH {d : ℕ} [NeZero d] (Wfn : WightmanFunctions d)
+    [WR : WightmanReconstruction Wfn] : InnerProductSpace ℂ WR.H :=
+  WR.inst_inner
+
+/-- Expose `CompleteSpace H`. -/
+instance instCompleteH {d : ℕ} [NeZero d] (Wfn : WightmanFunctions d)
+    [WR : WightmanReconstruction Wfn] : CompleteSpace WR.H :=
+  WR.inst_complete
+
+variable {d : ℕ} [NeZero d] (Wfn : WightmanFunctions d)
+  [WR : WightmanReconstruction Wfn]
+
+/-- **Cluster decomposition for inner products** (the master theorem).
+
+For any pair of states `ψ, φ` in the GNS Hilbert space:
+$$⟨ψ, U(a) φ⟩ \to ⟨ψ, Ω⟩ \cdot ⟨Ω, φ⟩ \quad \text{as } |\vec a| \to \infty$$
+along the spatial cobounded filter (`a^0 = 0`, `|⃗a| → ∞`).
+
+This is the "Hilbert-space-side" cluster theorem. The integral-side
+cluster (matching `W_analytic_cluster_integral`) is a corollary,
+obtained by applying `WR.schwinger_bridge` and `WR.vacuum_expectation`
+to convert each inner product into a Wick-rotated Schwinger integral.
+
+**Proof structure**:
+
+* Decompose `ψ = c_ψ • Ω + ψ⊥` where `c_ψ := ⟨Ω, ψ⟩`, `ψ⊥ := ψ - c_ψ•Ω`.
+  Then `⟨Ω, ψ⊥⟩ = 0` (orthogonality of the projection).
+* Similarly `φ = c_φ • Ω + φ⊥` with `⟨Ω, φ⊥⟩ = 0`.
+* `⟨ψ, U(a) φ⟩ = ⟨c_ψ•Ω + ψ⊥, U(a)(c_φ•Ω + φ⊥)⟩`
+              `= conj(c_ψ) · c_φ · ⟨Ω, U(a) Ω⟩`     (vacuum-vacuum term)
+              ` + conj(c_ψ) · ⟨Ω, U(a) φ⊥⟩`         (cross 1)
+              ` + c_φ · ⟨ψ⊥, U(a) Ω⟩`               (cross 2)
+              ` + ⟨ψ⊥, U(a) φ⊥⟩`                    (orthogonal piece)
+* Vacuum-vacuum: `U(a) Ω = Ω` (`vac_inv`), so this is `conj(c_ψ) c_φ ‖Ω‖² = conj(c_ψ) c_φ`.
+* Cross 1: `⟨Ω, U(a) φ⊥⟩ = ⟨U(a)* Ω, φ⊥⟩ = ⟨Ω, φ⊥⟩ = 0` (using unitarity
+  of `U(a)` + `vac_inv`, which gives `U(a)*Ω = Ω`).
+* Cross 2: `⟨ψ⊥, U(a) Ω⟩ = ⟨ψ⊥, Ω⟩ = (⟨Ω, ψ⊥⟩)* = 0`.
+* Orthogonal piece: `⟨ψ⊥, U(a) φ⊥⟩ → 0` by
+  `WR.truncated_spatial_decay` applied to `(ψ⊥, φ⊥)` (which are both
+  ⊥ Ω by construction).
+* Sum: `⟨ψ, U(a) φ⟩ → conj(c_ψ) c_φ = ⟨ψ, Ω⟩ ⟨Ω, φ⟩`.
+
+The proof is ~50 lines of pure inner-product algebra in Lean once
+fleshed out; the SUBSTANCE is `WR.truncated_spatial_decay` doing the
+analytic work. -/
+theorem cluster_inner_product_from_GNS (ψ φ : WR.H) :
+    Filter.Tendsto
+      (fun a : SpacetimeDim d => @inner ℂ WR.H _ ψ (WR.U a φ))
+      (Filter.principal {a : SpacetimeDim d | a 0 = 0} ⊓
+        Bornology.cobounded (SpacetimeDim d))
+      (nhds (@inner ℂ WR.H _ ψ WR.Ω * @inner ℂ WR.H _ WR.Ω φ)) := by
+  -- Set up the decomposition.
+  set c_ψ : ℂ := @inner ℂ WR.H _ WR.Ω ψ with hc_ψ
+  set c_φ : ℂ := @inner ℂ WR.H _ WR.Ω φ with hc_φ
+  set ψ_perp : WR.H := ψ - c_ψ • WR.Ω with hψ_perp
+  set φ_perp : WR.H := φ - c_φ • WR.Ω with hφ_perp
+  -- Orthogonality of the projections.
+  have h_ψ_ortho : @inner ℂ WR.H _ WR.Ω ψ_perp = 0 := by
+    -- ⟨Ω, ψ - c_ψ•Ω⟩ = ⟨Ω,ψ⟩ - c_ψ ⟨Ω,Ω⟩ = c_ψ - c_ψ·1 = 0 (using ‖Ω‖=1).
+    sorry
+  have h_φ_ortho : @inner ℂ WR.H _ WR.Ω φ_perp = 0 := by
+    sorry
+  -- The orthogonal piece tends to 0 by `truncated_spatial_decay`.
+  have h_perp_decay :
+      Filter.Tendsto
+        (fun a : SpacetimeDim d => @inner ℂ WR.H _ ψ_perp (WR.U a φ_perp))
+        (Filter.principal {a : SpacetimeDim d | a 0 = 0} ⊓
+          Bornology.cobounded (SpacetimeDim d))
+        (nhds 0) :=
+    WR.truncated_spatial_decay ψ_perp φ_perp h_ψ_ortho h_φ_ortho
+  -- Algebraic identity:
+  --   ⟨ψ, U(a) φ⟩ = ⟨ψ, Ω⟩ ⟨Ω, φ⟩ + ⟨ψ_perp, U(a) φ_perp⟩
+  -- (using vac_inv to cancel the vacuum-vacuum term to ⟨ψ,Ω⟩⟨Ω,φ⟩, and
+  -- the cross terms vanishing by orthogonality + U(a)*Ω = Ω.)
+  -- Then add ⟨ψ,Ω⟩⟨Ω,φ⟩ to both sides of the limit and use h_perp_decay.
+  sorry
+
+/-! #### Bridge to integral form
+
+The integral-form cluster (matching `W_analytic_cluster_integral`) is
+obtained from `cluster_inner_product_from_GNS` by applying:
+
+* `WR.schwinger_bridge` on the joint integral, converting
+  `∫ F_ext (f.osConj ⊗ g_a) = ⟨quantize f, U(a) quantize g⟩`.
+* `WR.vacuum_expectation` on each block:
+  `⟨Ω, quantize f⟩ = ∫ F_ext f`,
+  `⟨Ω, quantize g⟩ = ∫ F_ext g`.
+* The conjugate-linearity of the inner product to express
+  `⟨quantize f, Ω⟩ = (⟨Ω, quantize f⟩)*`.
+
+The result is cluster of the **OS-reflected** integral
+(`∫ F_ext (f.osConj ⊗ g_a) → (∫ F_ext f)* · (∫ F_ext g)`), which is
+the natural form coming out of OS quantization. The pre-existing
+`cluster_2point_from_KL` and `cluster_npoint_from_KL` theorems target
+the un-reflected form; closing the un-reflected form requires either
+modifying their signatures to use `f.osConj` on the bra side, or
+adding a separate bridge axiom relating the reflected and un-reflected
+joint integrals on OPTR-supported test functions.
+
+This bridge is left as concrete Lean engineering on top of the named
+class fields — no new mathematical content is needed. -/
+
+/-! #### Architectural conclusion (Route A)
+
+`cluster_inner_product_from_GNS` proves cluster decomposition entirely
+within the `WightmanReconstruction` class — the analytic content is
+isolated in `WR.truncated_spatial_decay`, and everything else is
+algebra over ℂ-Hilbert spaces.
+
+This **strictly subsumes** Route B for the cluster critical path:
+- No need for `kallen_lehmann_representation` (still proved as
+  reusable infrastructure).
+- No need for `wickRotated_W2_eq_laplaceFourier_spectralIntegral`,
+  `WightmanTruncated_decomposition_formula`, `truncated_npoint_cluster`,
+  or `truncated_spectral_no_zero_spatial_atom`.
+- No need for `spectral_riemann_lebesgue` (the Riemann-Lebesgue content
+  is bundled into `truncated_spatial_decay` directly).
+
+The remaining sorrys in this section are mechanical inner-product
+algebra (`h_ψ_ortho`, `h_φ_ortho`, the final identity) plus the
+schwinger-bridge → integral-form unfolding for the integral wrapper. -/
+
+end ClusterRouteA
+
 end KallenLehmann
 end OSReconstruction
