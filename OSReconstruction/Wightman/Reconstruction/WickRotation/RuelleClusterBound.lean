@@ -170,14 +170,14 @@ Proof: bound `(1 + ‖x‖)^k ≤ 2^(k-1) · (1 + ‖x‖^k)`, splitting into a
 `‖f x‖` term (integrable: Schwartz functions are integrable) and a
 `‖x‖^k · ‖f x‖` term (integrable by `SchwartzMap.integrable_pow_mul`). -/
 lemma schwartz_integrable_add_pow_mul
-    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
-    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    [MeasurableSpace E] [BorelSpace E] [SecondCountableTopology E]
+    {μ : MeasureTheory.Measure E} [μ.HasTemperateGrowth]
     (f : SchwartzMap E ℂ) (k : ℕ) :
     MeasureTheory.Integrable
-      (fun x : E => (1 + ‖x‖) ^ k * ‖f x‖) (μ := MeasureTheory.volume) := by
+      (fun x : E => (1 + ‖x‖) ^ k * ‖f x‖) (μ := μ) := by
   -- Bound: (1 + ‖x‖)^k ≤ 2^(k-1) · (1 + ‖x‖^k).
   -- (Uses Mathlib's add_pow_le.)
-  set μ : MeasureTheory.Measure E := MeasureTheory.volume with hμ_def
   -- The dominator: 2^(k-1) · (‖f x‖ + ‖x‖^k · ‖f x‖). Each summand integrable.
   have h_dominator_int : MeasureTheory.Integrable
       (fun x : E => ((2 : ℝ) ^ (k - 1)) * (‖f x‖ + ‖x‖^k * ‖f x‖)) μ := by
@@ -344,11 +344,24 @@ theorem W_analytic_cluster_integral_via_ruelle
   have h_dominator_integrable :
       MeasureTheory.Integrable (fun p : NPointDomain d n × NPointDomain d m =>
         C_R * (1 + ‖p.1‖ + ‖p.2‖) ^ N_R * ‖f p.1‖ * ‖g p.2‖) := by
-    -- Bound: (1 + ‖x‖ + ‖y‖)^N ≤ (1 + ‖x‖)^N · (1 + ‖y‖)^N (since (1+a)(1+b) ≥ 1+a+b for a,b ≥ 0).
-    -- Then dominator ≤ C_R · [(1+‖x‖)^N |f x|] · [(1+‖y‖)^N |g y|].
-    -- Each factor is integrable on its respective NPointDomain via
-    -- SchwartzMap.integrable_pow_mul (expanding (1+t)^N = ∑ C(N,k) t^k).
-    -- The product is integrable by Integrable.prod_mul.
+    -- Strategy:
+    -- (a) Use `schwartz_integrable_add_pow_mul` (helper, proved above) to show
+    --     `(1 + ‖x‖)^N_R · ‖f x‖` integrable on `NPointDomain d n`.
+    -- (b) Same for `(1 + ‖y‖)^N_R · ‖g y‖` on `NPointDomain d m`.
+    -- (c) Apply `MeasureTheory.Integrable.mul_prod` to get the product
+    --     integrable on the product space (under the product measure).
+    -- (d) Identify `volume` on the product with `volume.prod volume`
+    --     (Pi → product equivalence; the project uses
+    --     `Fin.append`-style splits for this).
+    -- (e) Bound `(1 + ‖x‖ + ‖y‖)^N_R ≤ (1 + ‖x‖)^N_R · (1 + ‖y‖)^N_R`
+    --     via `(1+a)(1+b) = 1+a+b+ab ≥ 1+a+b` for a, b ≥ 0.
+    -- (f) Apply `Integrable.mono'`.
+    --
+    -- The `HasTemperateGrowth` instance for `volume : Measure (NPointDomain d n)`
+    -- (a Pi type Fin n → Fin (d+1) → ℝ) is the synthesis-level obstacle.
+    -- The project handles this for flat Pi types `Fin m → ℝ` (see
+    -- `PaleyWienerSchwartz.lean:3719`); the nested Pi may need a project-side
+    -- instance bridge or local-helper inlining. Routed to follow-up.
     sorry
   -- Step 5: apply DC to get Tendsto of the joint integral.
   have h_DC :
