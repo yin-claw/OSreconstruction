@@ -161,6 +161,49 @@ axiom ruelle_analytic_cluster_pointwise
       (nhds ((W_analytic_BHW Wfn n).val z₁ *
              (W_analytic_BHW Wfn m).val z₂))
 
+/-! ### Helper lemmas: Schwartz seminorms absorb polynomial growth -/
+
+/-- For a Schwartz function `f` on a finite-dim real inner-product space,
+the function `(1 + ‖x‖)^k · ‖f x‖` is integrable.
+
+Proof: bound `(1 + ‖x‖)^k ≤ 2^(k-1) · (1 + ‖x‖^k)`, splitting into a
+`‖f x‖` term (integrable: Schwartz functions are integrable) and a
+`‖x‖^k · ‖f x‖` term (integrable by `SchwartzMap.integrable_pow_mul`). -/
+lemma schwartz_integrable_add_pow_mul
+    {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℝ E]
+    [FiniteDimensional ℝ E] [MeasurableSpace E] [BorelSpace E]
+    (f : SchwartzMap E ℂ) (k : ℕ) :
+    MeasureTheory.Integrable
+      (fun x : E => (1 + ‖x‖) ^ k * ‖f x‖) (μ := MeasureTheory.volume) := by
+  -- Bound: (1 + ‖x‖)^k ≤ 2^(k-1) · (1 + ‖x‖^k).
+  -- (Uses Mathlib's add_pow_le.)
+  set μ : MeasureTheory.Measure E := MeasureTheory.volume with hμ_def
+  -- The dominator: 2^(k-1) · (‖f x‖ + ‖x‖^k · ‖f x‖). Each summand integrable.
+  have h_dominator_int : MeasureTheory.Integrable
+      (fun x : E => ((2 : ℝ) ^ (k - 1)) * (‖f x‖ + ‖x‖^k * ‖f x‖)) μ := by
+    refine MeasureTheory.Integrable.const_mul ?_ _
+    refine MeasureTheory.Integrable.add ?_ ?_
+    · exact (f.integrable (μ := μ)).norm
+    · exact f.integrable_pow_mul μ k
+  -- Pointwise bound
+  refine h_dominator_int.mono' ?_ ?_
+  · -- AEStronglyMeasurable
+    refine ((continuous_const.add continuous_norm).pow k).mul ?_ |>.aestronglyMeasurable
+    exact f.continuous.norm
+  · -- |(1+‖x‖)^k * ‖f x‖| ≤ 2^(k-1) * (‖f x‖ + ‖x‖^k * ‖f x‖)
+    refine Filter.Eventually.of_forall (fun x => ?_)
+    have h_pos : (0 : ℝ) ≤ (1 + ‖x‖) ^ k * ‖f x‖ := by positivity
+    rw [Real.norm_eq_abs, abs_of_nonneg h_pos]
+    have h_apl := add_pow_le (zero_le_one (α := ℝ)) (norm_nonneg x) k
+    -- h_apl : (1 + ‖x‖) ^ k ≤ 2^(k-1) * (1^k + ‖x‖^k)
+    have h_apl' : (1 + ‖x‖) ^ k ≤ 2^(k-1) * (1 + ‖x‖^k) := by
+      simpa using h_apl
+    have h_fnonneg : 0 ≤ ‖f x‖ := norm_nonneg _
+    calc (1 + ‖x‖) ^ k * ‖f x‖
+        ≤ 2^(k-1) * (1 + ‖x‖^k) * ‖f x‖ := by
+          exact mul_le_mul_of_nonneg_right h_apl' h_fnonneg
+      _ = 2^(k-1) * (‖f x‖ + ‖x‖^k * ‖f x‖) := by ring
+
 /-! ### Helper definitions for the cluster proof -/
 
 /-- The `a`-parametrized integrand on `NPointDomain d n × NPointDomain d m`,
@@ -301,7 +344,12 @@ theorem W_analytic_cluster_integral_via_ruelle
   have h_dominator_integrable :
       MeasureTheory.Integrable (fun p : NPointDomain d n × NPointDomain d m =>
         C_R * (1 + ‖p.1‖ + ‖p.2‖) ^ N_R * ‖f p.1‖ * ‖g p.2‖) := by
-    sorry  -- Schwartz seminorms absorb polynomial growth
+    -- Bound: (1 + ‖x‖ + ‖y‖)^N ≤ (1 + ‖x‖)^N · (1 + ‖y‖)^N (since (1+a)(1+b) ≥ 1+a+b for a,b ≥ 0).
+    -- Then dominator ≤ C_R · [(1+‖x‖)^N |f x|] · [(1+‖y‖)^N |g y|].
+    -- Each factor is integrable on its respective NPointDomain via
+    -- SchwartzMap.integrable_pow_mul (expanding (1+t)^N = ∑ C(N,k) t^k).
+    -- The product is integrable by Integrable.prod_mul.
+    sorry
   -- Step 5: apply DC to get Tendsto of the joint integral.
   have h_DC :
       Filter.Tendsto
