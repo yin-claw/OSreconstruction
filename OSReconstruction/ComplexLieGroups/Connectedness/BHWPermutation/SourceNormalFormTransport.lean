@@ -99,6 +99,86 @@ def sourceTupleLinearChange
     Fin n → Fin (d + 1) → ℂ :=
   fun i μ => ∑ a : Fin n, M i a * z a μ
 
+theorem sourceTupleLinearChange_mul
+    (d n : ℕ)
+    (M N : Matrix (Fin n) (Fin n) ℂ)
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    sourceTupleLinearChange d n (M * N) z =
+      sourceTupleLinearChange d n M (sourceTupleLinearChange d n N z) := by
+  ext i μ
+  calc
+    sourceTupleLinearChange d n (M * N) z i μ =
+        ∑ a : Fin n, ∑ b : Fin n, M i b * (N b a * z a μ) := by
+          simp [sourceTupleLinearChange, Matrix.mul_apply, Finset.sum_mul,
+            mul_assoc]
+    _ = ∑ b : Fin n, ∑ a : Fin n, M i b * (N b a * z a μ) := by
+          rw [Finset.sum_comm]
+    _ =
+        sourceTupleLinearChange d n M
+          (sourceTupleLinearChange d n N z) i μ := by
+          simp [sourceTupleLinearChange, Finset.mul_sum]
+
+theorem sourceTupleLinearChange_one
+    (d n : ℕ)
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    sourceTupleLinearChange d n 1 z = z := by
+  ext i μ
+  simp [sourceTupleLinearChange, Matrix.one_apply]
+
+/-- Linear map on source tuples induced by a source-label matrix. -/
+def sourceTupleLinearMap
+    (d n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ) :
+    (Fin n → Fin (d + 1) → ℂ) →ₗ[ℂ]
+      (Fin n → Fin (d + 1) → ℂ) where
+  toFun := sourceTupleLinearChange d n M
+  map_add' z w := by
+    ext i μ
+    simp [sourceTupleLinearChange, mul_add, Finset.sum_add_distrib]
+  map_smul' c z := by
+    ext i μ
+    simp [sourceTupleLinearChange, Finset.mul_sum, mul_left_comm]
+
+@[simp]
+theorem sourceTupleLinearMap_apply
+    (d n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ)
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    sourceTupleLinearMap d n M z =
+      sourceTupleLinearChange d n M z := rfl
+
+/-- Invertible source-label matrices induce linear equivalences of source
+tuples, applied independently in every spacetime coordinate. -/
+def sourceTupleLinearEquivOfMatrix
+    (d n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ)
+    (hM : IsUnit M.det) :
+    (Fin n → Fin (d + 1) → ℂ) ≃ₗ[ℂ]
+      (Fin n → Fin (d + 1) → ℂ) where
+  toLinearMap := sourceTupleLinearMap d n M
+  invFun := sourceTupleLinearChange d n M⁻¹
+  left_inv z := by
+    change sourceTupleLinearChange d n M⁻¹
+      (sourceTupleLinearChange d n M z) = z
+    rw [← sourceTupleLinearChange_mul]
+    rw [Matrix.nonsing_inv_mul (A := M) hM]
+    exact sourceTupleLinearChange_one d n z
+  right_inv z := by
+    change sourceTupleLinearChange d n M
+      (sourceTupleLinearChange d n M⁻¹ z) = z
+    rw [← sourceTupleLinearChange_mul]
+    rw [Matrix.mul_nonsing_inv (A := M) hM]
+    exact sourceTupleLinearChange_one d n z
+
+@[simp]
+theorem sourceTupleLinearEquivOfMatrix_apply
+    (d n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ)
+    (hM : IsUnit M.det)
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    sourceTupleLinearEquivOfMatrix d n M hM z =
+      sourceTupleLinearChange d n M z := rfl
+
 /-- Source-index congruence on scalar Gram matrices. -/
 def sourceGramCongruence
     (n : ℕ)
@@ -106,6 +186,206 @@ def sourceGramCongruence
     (Z : Fin n → Fin n → ℂ) :
     Fin n → Fin n → ℂ :=
   fun i j => ∑ a : Fin n, ∑ b : Fin n, M i a * Z a b * M j b
+
+theorem sourceGramCongruence_eq_matrix_mul
+    (n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ)
+    (Z : Fin n → Fin n → ℂ) :
+    Matrix.of (sourceGramCongruence n M Z) =
+      M * Matrix.of Z * M.transpose := by
+  ext i j
+  calc
+    Matrix.of (sourceGramCongruence n M Z) i j =
+        ∑ a : Fin n, ∑ b : Fin n, M i a * (Z a b * M j b) := by
+          simp [sourceGramCongruence, mul_assoc]
+    _ = ∑ b : Fin n, ∑ a : Fin n, M i a * (Z a b * M j b) := by
+          rw [Finset.sum_comm]
+    _ = (M * Matrix.of Z * M.transpose) i j := by
+          simp [Matrix.mul_apply, Matrix.transpose_apply, Finset.mul_sum,
+            mul_comm, mul_left_comm]
+
+theorem sourceGramCongruence_mul
+    (n : ℕ)
+    (M N : Matrix (Fin n) (Fin n) ℂ)
+    (Z : Fin n → Fin n → ℂ) :
+    sourceGramCongruence n (M * N) Z =
+      sourceGramCongruence n M (sourceGramCongruence n N Z) := by
+  change Matrix.of (sourceGramCongruence n (M * N) Z) =
+    Matrix.of (sourceGramCongruence n M (sourceGramCongruence n N Z))
+  rw [sourceGramCongruence_eq_matrix_mul,
+    sourceGramCongruence_eq_matrix_mul,
+    sourceGramCongruence_eq_matrix_mul]
+  simp [Matrix.transpose_mul, Matrix.mul_assoc]
+
+/-- Source-label block matrix for linear changes in the head/tail split. -/
+def sourceLinearBlockMatrix
+    (n r : ℕ) (hrn : r ≤ n)
+    (X : Matrix (Fin r) (Fin r) ℂ)
+    (Y : Matrix (Fin r) (Fin (n - r)) ℂ)
+    (Z : Matrix (Fin (n - r)) (Fin r) ℂ)
+    (W : Matrix (Fin (n - r)) (Fin (n - r)) ℂ) :
+    Matrix (Fin n) (Fin n) ℂ :=
+  let E := sourceHeadTailEquiv n r hrn
+  fun i j => (Matrix.fromBlocks X Y Z W) (E i) (E j)
+
+@[simp]
+theorem sourceLinearBlockMatrix_head_head
+    (n r : ℕ) (hrn : r ≤ n)
+    (X : Matrix (Fin r) (Fin r) ℂ)
+    (Y : Matrix (Fin r) (Fin (n - r)) ℂ)
+    (Z : Matrix (Fin (n - r)) (Fin r) ℂ)
+    (W : Matrix (Fin (n - r)) (Fin (n - r)) ℂ)
+    (a b : Fin r) :
+    sourceLinearBlockMatrix n r hrn X Y Z W
+        (finSourceHead hrn a) (finSourceHead hrn b) =
+      X a b := by
+  simp [sourceLinearBlockMatrix]
+
+@[simp]
+theorem sourceLinearBlockMatrix_head_tail
+    (n r : ℕ) (hrn : r ≤ n)
+    (X : Matrix (Fin r) (Fin r) ℂ)
+    (Y : Matrix (Fin r) (Fin (n - r)) ℂ)
+    (Z : Matrix (Fin (n - r)) (Fin r) ℂ)
+    (W : Matrix (Fin (n - r)) (Fin (n - r)) ℂ)
+    (a : Fin r) (u : Fin (n - r)) :
+    sourceLinearBlockMatrix n r hrn X Y Z W
+        (finSourceHead hrn a) (finSourceTail hrn u) =
+      Y a u := by
+  simp [sourceLinearBlockMatrix]
+
+@[simp]
+theorem sourceLinearBlockMatrix_tail_head
+    (n r : ℕ) (hrn : r ≤ n)
+    (X : Matrix (Fin r) (Fin r) ℂ)
+    (Y : Matrix (Fin r) (Fin (n - r)) ℂ)
+    (Z : Matrix (Fin (n - r)) (Fin r) ℂ)
+    (W : Matrix (Fin (n - r)) (Fin (n - r)) ℂ)
+    (u : Fin (n - r)) (a : Fin r) :
+    sourceLinearBlockMatrix n r hrn X Y Z W
+        (finSourceTail hrn u) (finSourceHead hrn a) =
+      Z u a := by
+  simp [sourceLinearBlockMatrix]
+
+@[simp]
+theorem sourceLinearBlockMatrix_tail_tail
+    (n r : ℕ) (hrn : r ≤ n)
+    (X : Matrix (Fin r) (Fin r) ℂ)
+    (Y : Matrix (Fin r) (Fin (n - r)) ℂ)
+    (Z : Matrix (Fin (n - r)) (Fin r) ℂ)
+    (W : Matrix (Fin (n - r)) (Fin (n - r)) ℂ)
+    (u v : Fin (n - r)) :
+    sourceLinearBlockMatrix n r hrn X Y Z W
+        (finSourceTail hrn u) (finSourceTail hrn v) =
+      W u v := by
+  simp [sourceLinearBlockMatrix]
+
+theorem sourceLinearBlockMatrix_reindex_headTail
+    (n r : ℕ) (hrn : r ≤ n)
+    (X : Matrix (Fin r) (Fin r) ℂ)
+    (Y : Matrix (Fin r) (Fin (n - r)) ℂ)
+    (Z : Matrix (Fin (n - r)) (Fin r) ℂ)
+    (W : Matrix (Fin (n - r)) (Fin (n - r)) ℂ) :
+    (sourceLinearBlockMatrix n r hrn X Y Z W).submatrix
+        (sourceHeadTailEquiv n r hrn).symm (sourceHeadTailEquiv n r hrn).symm =
+      Matrix.fromBlocks X Y Z W := by
+  ext x y
+  cases x with
+  | inl a =>
+      cases y with
+      | inl b => simp [sourceLinearBlockMatrix]
+      | inr v => simp [sourceLinearBlockMatrix]
+  | inr u =>
+      cases y with
+      | inl b => simp [sourceLinearBlockMatrix]
+      | inr v => simp [sourceLinearBlockMatrix]
+
+theorem sourceGramCongruence_reindex_headTail
+    (n r : ℕ) (hrn : r ≤ n)
+    (M : Matrix (Fin n) (Fin n) ℂ)
+    (Z : Fin n → Fin n → ℂ) :
+    (Matrix.of (sourceGramCongruence n M Z)).submatrix
+        (sourceHeadTailEquiv n r hrn).symm (sourceHeadTailEquiv n r hrn).symm =
+      M.submatrix (sourceHeadTailEquiv n r hrn).symm
+          (sourceHeadTailEquiv n r hrn).symm *
+        (Matrix.of Z).submatrix (sourceHeadTailEquiv n r hrn).symm
+          (sourceHeadTailEquiv n r hrn).symm *
+        (M.submatrix (sourceHeadTailEquiv n r hrn).symm
+          (sourceHeadTailEquiv n r hrn).symm).transpose := by
+  let E := (sourceHeadTailEquiv n r hrn).symm
+  rw [sourceGramCongruence_eq_matrix_mul]
+  rw [← Matrix.submatrix_mul_equiv
+      (M := M * Matrix.of Z) (N := M.transpose)
+      (e₁ := E) (e₂ := E) (e₃ := E),
+    ← Matrix.submatrix_mul_equiv
+      (M := M) (N := Matrix.of Z)
+      (e₁ := E) (e₂ := E) (e₃ := E),
+    Matrix.transpose_submatrix]
+
+theorem matrix_eq_of_sourceHeadTail_reindex_eq
+    (n r : ℕ) (hrn : r ≤ n)
+    {M N : Matrix (Fin n) (Fin n) ℂ}
+    (h :
+      M.submatrix (sourceHeadTailEquiv n r hrn).symm
+          (sourceHeadTailEquiv n r hrn).symm =
+        N.submatrix (sourceHeadTailEquiv n r hrn).symm
+          (sourceHeadTailEquiv n r hrn).symm) :
+    M = N := by
+  ext i j
+  have hij :=
+    congrFun (congrFun h (sourceHeadTailEquiv n r hrn i))
+      (sourceHeadTailEquiv n r hrn j)
+  simpa using hij
+
+theorem sourceLinearBlockMatrix_det_eq_fromBlocks_det
+    (n r : ℕ) (hrn : r ≤ n)
+    (X : Matrix (Fin r) (Fin r) ℂ)
+    (Y : Matrix (Fin r) (Fin (n - r)) ℂ)
+    (Z : Matrix (Fin (n - r)) (Fin r) ℂ)
+    (W : Matrix (Fin (n - r)) (Fin (n - r)) ℂ) :
+    (sourceLinearBlockMatrix n r hrn X Y Z W).det =
+      (Matrix.fromBlocks X Y Z W).det := by
+  let E := sourceHeadTailEquiv n r hrn
+  rw [← Matrix.det_submatrix_equiv_self E.symm
+    (sourceLinearBlockMatrix n r hrn X Y Z W)]
+  exact congrArg Matrix.det
+    (sourceLinearBlockMatrix_reindex_headTail n r hrn X Y Z W)
+
+/-- The Schur projection source change `tail ↦ tail - B A⁻¹ head`. -/
+def hwLemma3_projectionSourceChangeMatrix
+    (n r : ℕ) (hrn : r ≤ n)
+    (A : Matrix (Fin r) (Fin r) ℂ)
+    (B : Matrix (Fin (n - r)) (Fin r) ℂ) :
+    Matrix (Fin n) (Fin n) ℂ :=
+  sourceLinearBlockMatrix n r hrn 1 0 (-B * A⁻¹) 1
+
+theorem hwLemma3_projectionSourceChangeMatrix_det_isUnit
+    (n r : ℕ) (hrn : r ≤ n)
+    (A : Matrix (Fin r) (Fin r) ℂ)
+    (B : Matrix (Fin (n - r)) (Fin r) ℂ) :
+    IsUnit (hwLemma3_projectionSourceChangeMatrix n r hrn A B).det := by
+  apply isUnit_iff_ne_zero.mpr
+  rw [hwLemma3_projectionSourceChangeMatrix,
+    sourceLinearBlockMatrix_det_eq_fromBlocks_det,
+    Matrix.det_fromBlocks_zero₁₂]
+  simp
+
+/-- Extend a selected-head change by the identity on the source tail. -/
+def hwLemma3_extendHeadMatrix
+    (n r : ℕ) (hrn : r ≤ n)
+    (P : Matrix (Fin r) (Fin r) ℂ) :
+    Matrix (Fin n) (Fin n) ℂ :=
+  sourceLinearBlockMatrix n r hrn P 0 0 1
+
+theorem hwLemma3_extendHeadMatrix_det_isUnit
+    (n r : ℕ) (hrn : r ≤ n)
+    {P : Matrix (Fin r) (Fin r) ℂ}
+    (hP : IsUnit P.det) :
+    IsUnit (hwLemma3_extendHeadMatrix n r hrn P).det := by
+  rw [hwLemma3_extendHeadMatrix,
+    sourceLinearBlockMatrix_det_eq_fromBlocks_det,
+    Matrix.det_fromBlocks_zero₁₂]
+  simpa using hP
 
 /-- Canonical scalar Gram matrix for the Lemma-3 normal form.  The head block
 is the inherited Minkowski-signature diagonal, not the Euclidean identity. -/
@@ -186,6 +466,120 @@ theorem sourceBlockMatrix_reindex_headTail
       | inl b => simp [sourceBlockMatrix]
       | inr v => simp [sourceBlockMatrix]
 
+theorem sourceGramCongruence_sourceLinearBlockMatrix_sourceBlockMatrix_reindex
+    (n r : ℕ) (hrn : r ≤ n)
+    (X : Matrix (Fin r) (Fin r) ℂ)
+    (Y : Matrix (Fin r) (Fin (n - r)) ℂ)
+    (Z : Matrix (Fin (n - r)) (Fin r) ℂ)
+    (W : Matrix (Fin (n - r)) (Fin (n - r)) ℂ)
+    (A : Matrix (Fin r) (Fin r) ℂ)
+    (B : Matrix (Fin (n - r)) (Fin r) ℂ)
+    (C : Matrix (Fin (n - r)) (Fin (n - r)) ℂ) :
+    (Matrix.of
+      (sourceGramCongruence n
+        (sourceLinearBlockMatrix n r hrn X Y Z W)
+        (sourceBlockMatrix n r hrn A B C))).submatrix
+        (sourceHeadTailEquiv n r hrn).symm
+        (sourceHeadTailEquiv n r hrn).symm =
+      Matrix.fromBlocks X Y Z W *
+        Matrix.fromBlocks A B.transpose B C *
+          (Matrix.fromBlocks X Y Z W).transpose := by
+  rw [sourceGramCongruence_reindex_headTail,
+    sourceLinearBlockMatrix_reindex_headTail,
+    sourceBlockMatrix_reindex_headTail]
+
+theorem hwLemma3_projectionSourceChangeMatrix_congruence
+    (n r : ℕ) (hrn : r ≤ n)
+    {A : Matrix (Fin r) (Fin r) ℂ}
+    {B : Matrix (Fin (n - r)) (Fin r) ℂ}
+    {C : Matrix (Fin (n - r)) (Fin (n - r)) ℂ}
+    (hA : IsUnit A.det)
+    (hAsym : A.transpose = A) :
+    sourceGramCongruence n
+        (hwLemma3_projectionSourceChangeMatrix n r hrn A B)
+        (sourceBlockMatrix n r hrn A B C) =
+      sourceBlockMatrix n r hrn A 0 (C - B * A⁻¹ * B.transpose) := by
+  change Matrix.of
+      (sourceGramCongruence n
+        (hwLemma3_projectionSourceChangeMatrix n r hrn A B)
+        (sourceBlockMatrix n r hrn A B C)) =
+    Matrix.of (sourceBlockMatrix n r hrn A 0
+      (C - B * A⁻¹ * B.transpose))
+  apply matrix_eq_of_sourceHeadTail_reindex_eq n r hrn
+  calc
+    (Matrix.of
+      (sourceGramCongruence n
+        (hwLemma3_projectionSourceChangeMatrix n r hrn A B)
+        (sourceBlockMatrix n r hrn A B C))).submatrix
+        (sourceHeadTailEquiv n r hrn).symm
+        (sourceHeadTailEquiv n r hrn).symm =
+        Matrix.fromBlocks 1 0 (-B * A⁻¹) 1 *
+          Matrix.fromBlocks A B.transpose B C *
+            (Matrix.fromBlocks 1 0 (-B * A⁻¹) 1).transpose := by
+          simpa [hwLemma3_projectionSourceChangeMatrix] using
+            sourceGramCongruence_sourceLinearBlockMatrix_sourceBlockMatrix_reindex
+              n r hrn 1 0 (-B * A⁻¹) 1 A B C
+    _ = Matrix.fromBlocks A 0 0 (C - B * A⁻¹ * B.transpose) := by
+          have hAinvT : (A⁻¹).transpose = A⁻¹ := by
+            rw [Matrix.transpose_nonsing_inv, hAsym]
+          have hUpper :
+              A * (A⁻¹ * B.transpose) = B.transpose :=
+            Matrix.mul_nonsing_inv_cancel_left (A := A) B.transpose hA
+          have hLower : B * A⁻¹ * A = B :=
+            Matrix.nonsing_inv_mul_cancel_right (A := A) B hA
+          simp [Matrix.fromBlocks_multiply, Matrix.fromBlocks_transpose,
+            hAinvT, hUpper, hLower, ← Matrix.mul_assoc,
+            sub_eq_add_neg, add_comm]
+    _ =
+        (Matrix.of (sourceBlockMatrix n r hrn A 0
+          (C - B * A⁻¹ * B.transpose))).submatrix
+          (sourceHeadTailEquiv n r hrn).symm
+          (sourceHeadTailEquiv n r hrn).symm := by
+          simpa using
+            (sourceBlockMatrix_reindex_headTail n r hrn A
+              (0 : Matrix (Fin (n - r)) (Fin r) ℂ)
+              (C - B * A⁻¹ * B.transpose)).symm
+
+theorem hwLemma3_extendHeadMatrix_congruence
+    (n r : ℕ) (hrn : r ≤ n)
+    (P A : Matrix (Fin r) (Fin r) ℂ) :
+    sourceGramCongruence n
+        (hwLemma3_extendHeadMatrix n r hrn P)
+        (sourceBlockMatrix n r hrn A 0 0) =
+      sourceBlockMatrix n r hrn (P * A * P.transpose) 0 0 := by
+  change Matrix.of
+      (sourceGramCongruence n
+        (hwLemma3_extendHeadMatrix n r hrn P)
+        (sourceBlockMatrix n r hrn A 0 0)) =
+    Matrix.of (sourceBlockMatrix n r hrn (P * A * P.transpose) 0 0)
+  apply matrix_eq_of_sourceHeadTail_reindex_eq n r hrn
+  calc
+    (Matrix.of
+      (sourceGramCongruence n
+        (hwLemma3_extendHeadMatrix n r hrn P)
+        (sourceBlockMatrix n r hrn A 0 0))).submatrix
+        (sourceHeadTailEquiv n r hrn).symm
+        (sourceHeadTailEquiv n r hrn).symm =
+        Matrix.fromBlocks P 0 0 1 *
+          Matrix.fromBlocks A 0 0 0 *
+            (Matrix.fromBlocks P 0 0 1).transpose := by
+          simpa [hwLemma3_extendHeadMatrix] using
+            sourceGramCongruence_sourceLinearBlockMatrix_sourceBlockMatrix_reindex
+              n r hrn P 0 0 1 A 0 0
+    _ = Matrix.fromBlocks (P * A * P.transpose) 0 0 0 := by
+          simp [Matrix.fromBlocks_multiply, Matrix.fromBlocks_transpose,
+            Matrix.mul_assoc]
+    _ =
+        (Matrix.of (sourceBlockMatrix n r hrn
+          (P * A * P.transpose) 0 0)).submatrix
+          (sourceHeadTailEquiv n r hrn).symm
+          (sourceHeadTailEquiv n r hrn).symm := by
+          simpa using
+            (sourceBlockMatrix_reindex_headTail n r hrn
+              (P * A * P.transpose)
+              (0 : Matrix (Fin (n - r)) (Fin r) ℂ)
+              (0 : Matrix (Fin (n - r)) (Fin (n - r)) ℂ)).symm
+
 theorem sourceBlockMatrix_of_headTailBlocks
     (n r : ℕ) (hrn : r ≤ n)
     (G : Fin n → Fin n → ℂ)
@@ -226,6 +620,36 @@ theorem sourcePermutationMatrix_det_isUnit
   apply isUnit_iff_ne_zero.mpr
   simp [sourcePermutationMatrix]
 
+/-- Full source normal-form change: first permute the selected principal block
+to the head, then subtract its Schur projection from the tail, then apply the
+head normalizer. -/
+def hwLemma3_normalFormSourceChangeMatrix
+    (n r : ℕ) (hrn : r ≤ n)
+    (σ : Equiv.Perm (Fin n))
+    (A : Matrix (Fin r) (Fin r) ℂ)
+    (B : Matrix (Fin (n - r)) (Fin r) ℂ)
+    (P : Matrix (Fin r) (Fin r) ℂ) :
+    Matrix (Fin n) (Fin n) ℂ :=
+  hwLemma3_extendHeadMatrix n r hrn P *
+    hwLemma3_projectionSourceChangeMatrix n r hrn A B *
+      sourcePermutationMatrix n σ
+
+theorem hwLemma3_normalFormSourceChangeMatrix_det_isUnit
+    (n r : ℕ) (hrn : r ≤ n)
+    (σ : Equiv.Perm (Fin n))
+    {A : Matrix (Fin r) (Fin r) ℂ}
+    {B : Matrix (Fin (n - r)) (Fin r) ℂ}
+    {P : Matrix (Fin r) (Fin r) ℂ}
+    (_hA : IsUnit A.det)
+    (hP : IsUnit P.det) :
+    IsUnit (hwLemma3_normalFormSourceChangeMatrix
+      n r hrn σ A B P).det := by
+  rw [hwLemma3_normalFormSourceChangeMatrix, Matrix.det_mul, Matrix.det_mul]
+  simpa [mul_assoc] using
+    (hwLemma3_extendHeadMatrix_det_isUnit n r hrn hP).mul
+      ((hwLemma3_projectionSourceChangeMatrix_det_isUnit n r hrn A B).mul
+        (sourcePermutationMatrix_det_isUnit n σ))
+
 theorem sourceTupleLinearChange_sourcePermutationMatrix
     (d n : ℕ) (σ : Equiv.Perm (Fin n))
     (z : Fin n → Fin (d + 1) → ℂ) :
@@ -246,6 +670,35 @@ theorem sourceGramCongruence_sourcePermutationMatrix
   ext i j
   simp [sourceGramCongruence, sourcePermutationMatrix,
     sourcePermuteComplexGram, Equiv.Perm.permMatrix]
+
+theorem hwLemma3_normalFormSourceChangeMatrix_canonicalGram
+    (d n r : ℕ) (hrD : r < d + 1) (hrn : r ≤ n)
+    {G : Fin n → Fin n → ℂ}
+    {σ : Equiv.Perm (Fin n)}
+    {A : Matrix (Fin r) (Fin r) ℂ}
+    {B : Matrix (Fin (n - r)) (Fin r) ℂ}
+    {C : Matrix (Fin (n - r)) (Fin (n - r)) ℂ}
+    {P : Matrix (Fin r) (Fin r) ℂ}
+    (hBlock :
+      sourcePermuteComplexGram n σ G =
+        sourceBlockMatrix n r hrn A B C)
+    (hA : IsUnit A.det)
+    (hAsym : A.transpose = A)
+    (hSchur : C - B * A⁻¹ * B.transpose = 0)
+    (hP : P * A * P.transpose = sourceHeadMetric d r hrD) :
+    sourceGramCongruence n
+      (hwLemma3_normalFormSourceChangeMatrix n r hrn σ A B P) G =
+        hwLemma3CanonicalGram d n r hrD hrn := by
+  rw [hwLemma3_normalFormSourceChangeMatrix]
+  rw [sourceGramCongruence_mul]
+  rw [sourceGramCongruence_mul]
+  rw [sourceGramCongruence_sourcePermutationMatrix, hBlock]
+  rw [hwLemma3_projectionSourceChangeMatrix_congruence
+    (n := n) (r := r) (hrn := hrn) hA hAsym]
+  rw [hSchur]
+  rw [hwLemma3_extendHeadMatrix_congruence]
+  rw [hP]
+  rfl
 
 theorem sourceMinkowskiGram_sourceTupleLinearChange
     (d n : ℕ)

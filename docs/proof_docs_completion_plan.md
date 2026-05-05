@@ -4311,11 +4311,17 @@ implementation contract is:
    `BHW.sourceBlockMatrix_of_headTailBlocks` (with the source-symmetry
    hypothesis; the head/tail reconstruction from only `A`, `B`, and `C` is
    false for nonsymmetric matrices),
+   `BHW.sourceGramCongruence_eq_matrix_mul`,
+   `BHW.sourceGramCongruence_mul`,
+   `BHW.sourceLinearBlockMatrix`,
+   `BHW.sourceTupleLinearEquivOfMatrix`,
+   `BHW.hwLemma3_projectionSourceChangeMatrix_congruence`,
+   `BHW.hwLemma3_extendHeadMatrix_congruence`,
    `BHW.sourcePermutationMatrix`,
    `BHW.sourceGramMatrixRank_sourcePermuteComplexGram`,
    `BHW.sourcePermuteComplexGram_mem_sourceSymmetricMatrixSpace`,
    `BHW.hwLemma3_normalFormSourceChangeMatrix`,
-   `BHW.hwLemma3_normalFormSourceChangeMatrix_isUnit`,
+   `BHW.hwLemma3_normalFormSourceChangeMatrix_det_isUnit`,
    `BHW.hwLemma3_normalFormSourceChangeMatrix_canonicalGram`, and
    `BHW.hwLemma3_normalFormSourceChange_tail_zero_of_adapted`.  The last
    theorem is load-bearing: it converts the adaptedness equality between
