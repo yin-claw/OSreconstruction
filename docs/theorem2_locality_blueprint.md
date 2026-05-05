@@ -31731,22 +31731,22 @@ Proof decomposition of this theorem, without hiding the analytic work:
                   n r hrn σ A B P) z) =
               BHW.hwLemma3CanonicalSource d n r
 
-      noncomputable def BHW.sourceTupleLinearChangeLinearEquiv
+      def BHW.sourceTupleLinearEquivOfMatrix
           (d n : Nat)
-          {A : Matrix (Fin n) (Fin n) ℂ}
+          (A : Matrix (Fin n) (Fin n) ℂ)
           (hA : IsUnit A.det) :
           (Fin n -> Fin (d + 1) -> ℂ) ≃ₗ[ℂ]
             (Fin n -> Fin (d + 1) -> ℂ)
 
-      theorem BHW.sourceTupleLinearChangeLinearEquiv_apply
+      theorem BHW.sourceTupleLinearEquivOfMatrix_apply
           (d n : Nat)
-          {A : Matrix (Fin n) (Fin n) ℂ}
+          (A : Matrix (Fin n) (Fin n) ℂ)
           (hA : IsUnit A.det)
           (z : Fin n -> Fin (d + 1) -> ℂ) :
-          BHW.sourceTupleLinearChangeLinearEquiv d n hA z =
+          BHW.sourceTupleLinearEquivOfMatrix d n A hA z =
             BHW.sourceTupleLinearChange d n A z
 
-      noncomputable def BHW.complexLorentzActionLinearEquiv
+      def BHW.complexLorentzActionLinearEquiv
           (d n : Nat) (Λ : ComplexLorentzGroup d) :
           (Fin n -> Fin (d + 1) -> ℂ) ≃ₗ[ℂ]
             (Fin n -> Fin (d + 1) -> ℂ)
@@ -31757,19 +31757,46 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.complexLorentzActionLinearEquiv d n Λ z =
             BHW.complexLorentzAction Λ z
 
-      noncomputable def BHW.sourceGramCongruenceLinearEquiv
+      def BHW.sourceGramCongruenceLinearEquivOfMatrix
           (n : Nat)
-          {A : Matrix (Fin n) (Fin n) ℂ}
+          (A : Matrix (Fin n) (Fin n) ℂ)
           (hA : IsUnit A.det) :
           (Fin n -> Fin n -> ℂ) ≃ₗ[ℂ] (Fin n -> Fin n -> ℂ)
 
-      theorem BHW.sourceGramCongruenceLinearEquiv_apply
+      theorem BHW.sourceGramCongruenceLinearEquivOfMatrix_apply
           (n : Nat)
-          {A : Matrix (Fin n) (Fin n) ℂ}
+          (A : Matrix (Fin n) (Fin n) ℂ)
           (hA : IsUnit A.det)
           (Z : Fin n -> Fin n -> ℂ) :
-          BHW.sourceGramCongruenceLinearEquiv n hA Z =
+          BHW.sourceGramCongruenceLinearEquivOfMatrix n A hA Z =
             BHW.sourceGramCongruence n A Z
+
+      noncomputable def BHW.sourceFullFrameDetFunctionCoord
+          (d n : Nat)
+          (δ : (Fin (d + 1) ↪ Fin n) -> ℂ)
+          (f : Fin (d + 1) -> Fin n) : ℂ
+
+      noncomputable def BHW.sourceFullFrameDetSourceMatrixTransform
+          (d n : Nat)
+          (M : Matrix (Fin n) (Fin n) ℂ)
+          (δ : (Fin (d + 1) ↪ Fin n) -> ℂ) :
+          (Fin (d + 1) ↪ Fin n) -> ℂ
+
+      theorem BHW.sourceFullFrameDetSourceMatrixTransform_one
+          (d n : Nat)
+          (δ : (Fin (d + 1) ↪ Fin n) -> ℂ) :
+          BHW.sourceFullFrameDetSourceMatrixTransform d n 1 δ = δ
+
+      noncomputable def BHW.sourceOrientedGramDataSourceMatrixTransform
+          (d n : Nat)
+          (M : Matrix (Fin n) (Fin n) ℂ)
+          (G : BHW.SourceOrientedGramData d n) :
+          BHW.SourceOrientedGramData d n
+
+      theorem BHW.sourceOrientedGramDataSourceMatrixTransform_one
+          (d n : Nat)
+          (G : BHW.SourceOrientedGramData d n) :
+          BHW.sourceOrientedGramDataSourceMatrixTransform d n 1 G = G
 
       theorem BHW.linearEquiv_coord_ball_preimage
           {ι κ : Type*} [Fintype ι] [Fintype κ]
@@ -33152,7 +33179,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (Λ : ComplexLorentzGroup d) :
           let Lvec : (Fin n -> Fin (d + 1) -> ℂ) ≃ₗ[ℂ]
               (Fin n -> Fin (d + 1) -> ℂ) :=
-            BHW.sourceTupleLinearChangeLinearEquiv d n (A := M) hM_unit |>.trans
+            BHW.sourceTupleLinearEquivOfMatrix d n M hM_unit |>.trans
               (BHW.complexLorentzActionLinearEquiv d n Λ)
           ∃ Q : BHW.SourceOrientedInvariantTransportEquiv d n,
             (∀ z,
@@ -33166,17 +33193,27 @@ Proof decomposition of this theorem, without hiding the analytic work:
       ```
 
       Proof transcript: define `Q.toFun` on Gram coordinates by
-      `sourceGramCongruenceLinearEquiv n M hM_unit`; define its determinant
-      coordinates by Cauchy-Binet:
-      for every ordered full frame `ι : Fin (d+1) ↪ Fin n`,
-      `det(sourceFullFrameMatrix ι (sourceTupleLinearChange M z))` is the
-      finite sum over ordered full frames `κ` of
-      `det(M.submatrix ι κ) * sourceFullFrameDet d n κ z`.  The inverse uses
-      `M⁻¹` and the same formula.  `left_inv` and `right_inv` are Cauchy-Binet
-      for `M⁻¹ * M = 1` and `M * M⁻¹ = 1`.  Continuity is finite linearity in
-      coordinates.  `mem_variety_iff` is witnessed by applying `Lvec` or
-      `Lvec.symm` to a realizing tuple.  `maxRank_iff` follows from invariance
-      of matrix rank under invertible congruence.  Finally compose with
+      `sourceGramCongruenceLinearEquivOfMatrix n M hM_unit`; define its
+      determinant coordinates using the checked function-indexed coordinate
+      model
+      `sourceFullFrameDetSourceMatrixTransform d n M`.  The auxiliary
+      `sourceFullFrameDetFunctionCoord` extends ordered full-frame determinant
+      coordinates from embeddings to all functions `Fin (d+1) -> Fin n`, with
+      non-injective functions set to zero.  This is essential: summing directly
+      over all ordered embeddings would overcount permutations of the same
+      source frame, while the function-indexed formula has the checked identity
+      theorem `sourceFullFrameDetSourceMatrixTransform_one`.  The remaining
+      Cauchy-Binet proof is now the determinant-multilinearity theorem
+      ```
+      sourceFullFrameDet d n ι (sourceTupleLinearChange d n M z) =
+        sourceFullFrameDetSourceMatrixTransform d n M
+          (fun κ => sourceFullFrameDet d n κ z) ι
+      ```
+      and its inverse/composition consequences for `M⁻¹`.  Continuity is
+      finite linearity in coordinates.  `mem_variety_iff` is witnessed by
+      applying `Lvec` or `Lvec.symm` to a realizing tuple.  `maxRank_iff`
+      follows from invariance of matrix rank under invertible congruence.
+      Finally compose with
       `sourceOrientedMinkowskiInvariant_complexLorentzAction Λ`, which leaves
       both Gram and determinant coordinates unchanged because `Λ` is
       determinant `1`.
@@ -33237,7 +33274,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
          `toNormalVec z := complexLorentzAction Λ
            (sourceTupleLinearChange d n M z)`.
       8. Define `toNormalGram` as
-         `sourceGramCongruenceLinearEquiv n (A := M) hM_unit`.  The field
+         `sourceGramCongruenceLinearEquivOfMatrix n M hM_unit`.  The field
          `gram_commute` is
          `sourceMinkowskiGram_sourceTupleLinearChange` followed by Lorentz
          invariance of `sourceMinkowskiGram`; `gram_variety_iff` is
@@ -33249,7 +33286,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
          inverse equations returned by that theorem.
       10. The estimate fields are now purely finite-dimensional:
          `gram_ball_to_normal_ball` is
-         `linearEquiv_coord_ball_preimage T.toNormalGram`, and
+         `linearEquiv_coord_ball_preimage T.toNormalGram`, where
+         `toNormalGram` is built from
+         `sourceGramCongruenceLinearEquivOfMatrix n M hM_unit`, and
          `perturb_back_small` is
          `linearEquiv_perturb_back_coord_bound T.toNormalVec`, after rewriting
          the target equation by `z0_to_canonical`.
@@ -33343,11 +33382,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
           ⟨Λ, hΛy⟩
         let Lvec : (Fin n -> Fin (d + 1) -> ℂ) ≃ₗ[ℂ]
             (Fin n -> Fin (d + 1) -> ℂ) :=
-          BHW.sourceTupleLinearChangeLinearEquiv d n (A := M) hM_unit |>.trans
+          BHW.sourceTupleLinearEquivOfMatrix d n M hM_unit |>.trans
             (BHW.complexLorentzActionLinearEquiv d n Λ)
         let Lgram : (Fin n -> Fin n -> ℂ) ≃ₗ[ℂ]
             (Fin n -> Fin n -> ℂ) :=
-          BHW.sourceGramCongruenceLinearEquiv n (A := M) hM_unit
+          BHW.sourceGramCongruenceLinearEquivOfMatrix n M hM_unit
         rcases
           BHW.sourceOrientedInvariantTransportEquiv_of_sourceChange_lorentz
             (d := d) n hM_unit Λ with

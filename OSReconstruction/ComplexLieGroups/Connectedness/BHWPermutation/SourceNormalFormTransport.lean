@@ -180,6 +180,52 @@ theorem sourceTupleLinearEquivOfMatrix_apply
     sourceTupleLinearEquivOfMatrix d n M hM z =
       sourceTupleLinearChange d n M z := rfl
 
+/-- A complex Lorentz transformation acts linearly on ordered source tuples. -/
+def complexLorentzActionLinearMap
+    (d n : ℕ)
+    (Λ : ComplexLorentzGroup d) :
+    (Fin n → Fin (d + 1) → ℂ) →ₗ[ℂ]
+      (Fin n → Fin (d + 1) → ℂ) where
+  toFun := complexLorentzAction Λ
+  map_add' z w := by
+    ext i μ
+    simp [complexLorentzAction, complexLorentzVectorAction, mul_add,
+      Finset.sum_add_distrib]
+  map_smul' c z := by
+    ext i μ
+    simp [complexLorentzAction, complexLorentzVectorAction, Finset.mul_sum,
+      mul_left_comm]
+
+@[simp]
+theorem complexLorentzActionLinearMap_apply
+    (d n : ℕ)
+    (Λ : ComplexLorentzGroup d)
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    complexLorentzActionLinearMap d n Λ z =
+      complexLorentzAction Λ z := rfl
+
+/-- A complex Lorentz transformation acts by a linear equivalence on ordered
+source tuples. -/
+def complexLorentzActionLinearEquiv
+    (d n : ℕ)
+    (Λ : ComplexLorentzGroup d) :
+    (Fin n → Fin (d + 1) → ℂ) ≃ₗ[ℂ]
+      (Fin n → Fin (d + 1) → ℂ) where
+  toLinearMap := complexLorentzActionLinearMap d n Λ
+  invFun := complexLorentzAction Λ⁻¹
+  left_inv z := by
+    exact complexLorentzAction_inv Λ z
+  right_inv z := by
+    simpa using complexLorentzAction_inv (Λ := Λ⁻¹) z
+
+@[simp]
+theorem complexLorentzActionLinearEquiv_apply
+    (d n : ℕ)
+    (Λ : ComplexLorentzGroup d)
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    complexLorentzActionLinearEquiv d n Λ z =
+      complexLorentzAction Λ z := rfl
+
 /-- Source-index congruence on scalar Gram matrices. -/
 def sourceGramCongruence
     (n : ℕ)
@@ -217,6 +263,221 @@ theorem sourceGramCongruence_mul
     sourceGramCongruence_eq_matrix_mul,
     sourceGramCongruence_eq_matrix_mul]
   simp [Matrix.transpose_mul, Matrix.mul_assoc]
+
+theorem sourceGramCongruence_one
+    (n : ℕ)
+    (Z : Fin n → Fin n → ℂ) :
+    sourceGramCongruence n 1 Z = Z := by
+  ext i j
+  simp [sourceGramCongruence, Matrix.one_apply]
+
+/-- Source-index congruence is linear in the scalar Gram coordinate. -/
+def sourceGramCongruenceLinearMap
+    (n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ) :
+    (Fin n → Fin n → ℂ) →ₗ[ℂ] (Fin n → Fin n → ℂ) where
+  toFun := sourceGramCongruence n M
+  map_add' Z W := by
+    ext i j
+    calc
+      sourceGramCongruence n M (Z + W) i j =
+          ∑ a : Fin n, ∑ b : Fin n,
+            (M i a * Z a b * M j b +
+              M i a * W a b * M j b) := by
+            apply Finset.sum_congr rfl
+            intro a _
+            apply Finset.sum_congr rfl
+            intro b _
+            simp
+            ring
+      _ = sourceGramCongruence n M Z i j +
+          sourceGramCongruence n M W i j := by
+            simp [sourceGramCongruence, Finset.sum_add_distrib]
+  map_smul' c Z := by
+    ext i j
+    simp [sourceGramCongruence, Finset.mul_sum, mul_assoc, mul_left_comm]
+
+@[simp]
+theorem sourceGramCongruenceLinearMap_apply
+    (n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ)
+    (Z : Fin n → Fin n → ℂ) :
+    sourceGramCongruenceLinearMap n M Z =
+      sourceGramCongruence n M Z := rfl
+
+/-- Invertible source-label matrices induce linear equivalences on scalar
+Gram-coordinate matrices by congruence. -/
+def sourceGramCongruenceLinearEquivOfMatrix
+    (n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ)
+    (hM : IsUnit M.det) :
+    (Fin n → Fin n → ℂ) ≃ₗ[ℂ] (Fin n → Fin n → ℂ) where
+  toLinearMap := sourceGramCongruenceLinearMap n M
+  invFun := sourceGramCongruence n M⁻¹
+  left_inv Z := by
+    change sourceGramCongruence n M⁻¹ (sourceGramCongruence n M Z) = Z
+    rw [← sourceGramCongruence_mul]
+    rw [Matrix.nonsing_inv_mul (A := M) hM]
+    exact sourceGramCongruence_one n Z
+  right_inv Z := by
+    change sourceGramCongruence n M (sourceGramCongruence n M⁻¹ Z) = Z
+    rw [← sourceGramCongruence_mul]
+    rw [Matrix.mul_nonsing_inv (A := M) hM]
+    exact sourceGramCongruence_one n Z
+
+@[simp]
+theorem sourceGramCongruenceLinearEquivOfMatrix_apply
+    (n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ)
+    (hM : IsUnit M.det)
+    (Z : Fin n → Fin n → ℂ) :
+    sourceGramCongruenceLinearEquivOfMatrix n M hM Z =
+      sourceGramCongruence n M Z := rfl
+
+/-- Extend ordered full-frame determinant coordinates from embeddings to all
+source-label functions by putting the non-injective functions to zero.  This
+is the right coordinate model for Cauchy-Binet with ordered source frames:
+the sum is over functions, not over all embeddings with duplicated orderings. -/
+noncomputable def sourceFullFrameDetFunctionCoord
+    (d n : ℕ)
+    (δ : (Fin (d + 1) ↪ Fin n) → ℂ)
+    (f : Fin (d + 1) → Fin n) : ℂ :=
+  if hf : Function.Injective f then δ ⟨f, hf⟩ else 0
+
+@[simp]
+theorem sourceFullFrameDetFunctionCoord_of_injective
+    (d n : ℕ)
+    (δ : (Fin (d + 1) ↪ Fin n) → ℂ)
+    {f : Fin (d + 1) → Fin n}
+    (hf : Function.Injective f) :
+    sourceFullFrameDetFunctionCoord d n δ f = δ ⟨f, hf⟩ := by
+  simp [sourceFullFrameDetFunctionCoord, hf]
+
+@[simp]
+theorem sourceFullFrameDetFunctionCoord_of_not_injective
+    (d n : ℕ)
+    (δ : (Fin (d + 1) ↪ Fin n) → ℂ)
+    {f : Fin (d + 1) → Fin n}
+    (hf : ¬ Function.Injective f) :
+    sourceFullFrameDetFunctionCoord d n δ f = 0 := by
+  simp [sourceFullFrameDetFunctionCoord, hf]
+
+@[simp]
+theorem sourceFullFrameDetFunctionCoord_add
+    (d n : ℕ)
+    (δ ε : (Fin (d + 1) ↪ Fin n) → ℂ)
+    (f : Fin (d + 1) → Fin n) :
+    sourceFullFrameDetFunctionCoord d n (δ + ε) f =
+      sourceFullFrameDetFunctionCoord d n δ f +
+        sourceFullFrameDetFunctionCoord d n ε f := by
+  by_cases hf : Function.Injective f <;>
+    simp [sourceFullFrameDetFunctionCoord, hf]
+
+@[simp]
+theorem sourceFullFrameDetFunctionCoord_smul
+    (d n : ℕ)
+    (c : ℂ)
+    (δ : (Fin (d + 1) ↪ Fin n) → ℂ)
+    (f : Fin (d + 1) → Fin n) :
+    sourceFullFrameDetFunctionCoord d n (c • δ) f =
+      c * sourceFullFrameDetFunctionCoord d n δ f := by
+  by_cases hf : Function.Injective f <;>
+    simp [sourceFullFrameDetFunctionCoord, hf]
+
+/-- Determinant-coordinate action induced by a source-label matrix.  This is
+the Cauchy-Binet formula written as a function-indexed sum: non-injective
+functions contribute zero via `sourceFullFrameDetFunctionCoord`, so the
+identity matrix acts without overcounting ordered embeddings. -/
+noncomputable def sourceFullFrameDetSourceMatrixTransform
+    (d n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ)
+    (δ : (Fin (d + 1) ↪ Fin n) → ℂ) :
+    (Fin (d + 1) ↪ Fin n) → ℂ :=
+  fun ι =>
+    ∑ f : Fin (d + 1) → Fin n,
+      (∏ a : Fin (d + 1), M (ι a) (f a)) *
+        sourceFullFrameDetFunctionCoord d n δ f
+
+theorem sourceFullFrameDetSourceMatrixTransform_one
+    (d n : ℕ)
+    (δ : (Fin (d + 1) ↪ Fin n) → ℂ) :
+    sourceFullFrameDetSourceMatrixTransform d n 1 δ = δ := by
+  funext ι
+  rw [sourceFullFrameDetSourceMatrixTransform]
+  let fι : Fin (d + 1) → Fin n := fun a => ι a
+  rw [Finset.sum_eq_single fι]
+  · have hcoord :
+        sourceFullFrameDetFunctionCoord d n δ fι = δ ι := by
+      have hfι : Function.Injective fι := by
+        intro a b hab
+        exact ι.injective hab
+      have hι : (⟨fι, hfι⟩ : Fin (d + 1) ↪ Fin n) = ι := by
+        ext a
+        rfl
+      rw [sourceFullFrameDetFunctionCoord_of_injective d n δ hfι]
+      rw [hι]
+    simp [fι, hcoord]
+  · intro f _hf hne
+    have hdiff : ∃ a : Fin (d + 1), f a ≠ ι a := by
+      by_contra h
+      apply hne
+      funext a
+      by_contra ha
+      exact h ⟨a, ha⟩
+    rcases hdiff with ⟨a, ha⟩
+    have hprod :
+        (∏ b : Fin (d + 1), (1 : Matrix (Fin n) (Fin n) ℂ) (ι b) (f b)) =
+          0 := by
+      apply Finset.prod_eq_zero (Finset.mem_univ a)
+      have hneq : ι a ≠ f a := fun h => ha h.symm
+      simp [hneq]
+    simp [hprod]
+  · intro hnot
+    exact False.elim (hnot (Finset.mem_univ fι))
+
+/-- The determinant-coordinate source-matrix action is linear in the
+determinant-coordinate data. -/
+noncomputable def sourceFullFrameDetSourceMatrixTransformLinearMap
+    (d n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ) :
+    (((Fin (d + 1) ↪ Fin n) → ℂ) →ₗ[ℂ]
+      ((Fin (d + 1) ↪ Fin n) → ℂ)) where
+  toFun := sourceFullFrameDetSourceMatrixTransform d n M
+  map_add' δ ε := by
+    funext ι
+    simp [sourceFullFrameDetSourceMatrixTransform,
+      Finset.sum_add_distrib, mul_add]
+  map_smul' c δ := by
+    funext ι
+    simp [sourceFullFrameDetSourceMatrixTransform, Finset.mul_sum,
+      mul_left_comm]
+
+@[simp]
+theorem sourceFullFrameDetSourceMatrixTransformLinearMap_apply
+    (d n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ)
+    (δ : (Fin (d + 1) ↪ Fin n) → ℂ) :
+    sourceFullFrameDetSourceMatrixTransformLinearMap d n M δ =
+      sourceFullFrameDetSourceMatrixTransform d n M δ := rfl
+
+/-- Source-label matrix action on the full oriented invariant coordinate
+space: Gram coordinates transform by congruence, determinant coordinates by
+the ordered function-indexed Cauchy-Binet transform. -/
+noncomputable def sourceOrientedGramDataSourceMatrixTransform
+    (d n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ)
+    (G : SourceOrientedGramData d n) :
+    SourceOrientedGramData d n :=
+  (sourceGramCongruence n M G.gram,
+    sourceFullFrameDetSourceMatrixTransform d n M G.det)
+
+theorem sourceOrientedGramDataSourceMatrixTransform_one
+    (d n : ℕ)
+    (G : SourceOrientedGramData d n) :
+    sourceOrientedGramDataSourceMatrixTransform d n 1 G = G := by
+  apply SourceOrientedGramData.ext
+  · exact sourceGramCongruence_one n G.gram
+  · exact sourceFullFrameDetSourceMatrixTransform_one d n G.det
 
 /-- Source-label block matrix for linear changes in the head/tail split. -/
 def sourceLinearBlockMatrix

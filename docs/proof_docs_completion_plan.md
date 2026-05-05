@@ -4295,7 +4295,16 @@ implementation contract is:
    the source-index linear change, ambient Minkowski isometry, Gram
    congruence, variety preservation, the oriented Gram-plus-determinant
    transport induced by Cauchy-Binet, and the two smallness estimates used to
-   pull the normalized realization back to the adapted base tuple.  Its
+   pull the normalized realization back to the adapted base tuple.  The
+   determinant-coordinate transport is now pinned to the checked
+   function-indexed model
+   `BHW.sourceFullFrameDetSourceMatrixTransform`, using
+   `BHW.sourceFullFrameDetFunctionCoord` to set non-injective source-label
+   functions to zero.  This avoids the false overcount that would come from
+   summing directly over all ordered embeddings of the same source frame; the
+   identity action is checked as
+   `BHW.sourceFullFrameDetSourceMatrixTransform_one` and
+   `BHW.sourceOrientedGramDataSourceMatrixTransform_one`.  Its
    finite matrix assembly is not allowed to skip the intermediate
    `[[A,0],[0,0]]` stage: the projection source change
    `BHW.hwLemma3_projectionSourceChangeMatrix` sends
@@ -4313,6 +4322,12 @@ implementation contract is:
    false for nonsymmetric matrices),
    `BHW.sourceGramCongruence_eq_matrix_mul`,
    `BHW.sourceGramCongruence_mul`,
+   `BHW.sourceGramCongruenceLinearEquivOfMatrix`,
+   `BHW.complexLorentzActionLinearEquiv`,
+   `BHW.sourceFullFrameDetFunctionCoord`,
+   `BHW.sourceFullFrameDetSourceMatrixTransform`,
+   `BHW.sourceFullFrameDetSourceMatrixTransformLinearMap`,
+   `BHW.sourceOrientedGramDataSourceMatrixTransform`,
    `BHW.sourceLinearBlockMatrix`,
    `BHW.sourceTupleLinearEquivOfMatrix`,
    `BHW.hwLemma3_projectionSourceChangeMatrix_congruence`,
