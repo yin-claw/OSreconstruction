@@ -315,18 +315,72 @@ This is the missing piece for proving `W_analytic_cluster_integral`
 (the integral-form E4 cluster on the constructed Schwinger functions)
 directly from `Wfn.cluster` (the R4 axiom field).
 
-**Proof**: by deformation invariance. `g_deform` has zero `s`-derivative
-on `(0, 1]`, so by the FTC on `[ε, 1]` for any `ε > 0`, `g_deform 1 =
-g_deform ε`. Taking `ε → 0⁺`, `g_deform ε → Wfn.W n f`. Therefore
-`g_deform 1 = Wfn.W n f`, and `g_deform 1` equals the Wick-rotated
-pairing by `g_deform_one_eq_pairing`. -/
+**Proof structure**:
+1. From `g_deform_deriv_zero`, `g_deform` is constant on `(0, 1]`.
+2. Combined with `g_deform_tendsto_W` (the limit at `0⁺` equals
+   `Wfn.W n f`) and the constancy, the value of `g_deform` at any
+   `s ∈ (0, 1]` equals `Wfn.W n f`.
+3. In particular, `g_deform Wfn n f 1 = Wfn.W n f`.
+4. By `g_deform_one_eq_pairing`, `g_deform Wfn n f 1` is the
+   Wick-rotated boundary pairing. -/
 theorem wickRotatedBoundaryPairing_eq_W
     (Wfn : WightmanFunctions d) (n : ℕ)
     (f : SchwartzNPoint d n)
     (hsupp : tsupport ((f : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
       OrderedPositiveTimeRegion d n) :
     wickRotatedBoundaryPairing Wfn n f = Wfn.W n f := by
-  sorry
+  -- Step 1: g_deform is constant on (0, 1] (from #35 via MVT-style).
+  -- Specifically: any two points in (0, 1] give the same g_deform value.
+  have h_const : ∀ s ∈ Set.Ioc (0 : ℝ) 1,
+      g_deform Wfn n f s = g_deform Wfn n f 1 := by
+    intro s hs
+    -- Convex (Ioc 0 1) + derivative-zero everywhere → constant.
+    refine Convex.is_const_of_fderivWithin_eq_zero (𝕜 := ℝ)
+      (convex_Ioc 0 1) ?_ ?_ hs ⟨zero_lt_one, le_refl 1⟩
+    · -- DifferentiableOn ℝ (g_deform Wfn n f) (Ioc 0 1)
+      intro x hx
+      exact (g_deform_deriv_zero Wfn n f hsupp x hx).differentiableAt
+        |>.differentiableWithinAt
+    · -- fderivWithin = 0 at every x ∈ Ioc 0 1
+      intro x hx
+      have h_deriv_at := g_deform_deriv_zero Wfn n f hsupp x hx
+      have h_deriv_within : HasDerivWithinAt (g_deform Wfn n f) 0
+          (Set.Ioc (0 : ℝ) 1) x := h_deriv_at.hasDerivWithinAt
+      have h_unique : UniqueDiffWithinAt ℝ (Set.Ioc (0 : ℝ) 1) x :=
+        uniqueDiffOn_Ioc 0 1 x hx
+      have h_fd := h_deriv_within.hasFDerivWithinAt.fderivWithin h_unique
+      -- h_fd : fderivWithin ... = toSpanSingleton ℝ 0; toSpanSingleton_zero rewrites RHS to 0.
+      simp at h_fd
+      exact h_fd
+  -- Step 2: from constancy + #37, derive g_deform 1 = Wfn.W n f.
+  have h_tendsto := g_deform_tendsto_W Wfn n f hsupp
+  -- The deformation is eventually equal to its value at 1 along the
+  -- nhdsWithin filter (since (0, 1] ∈ nhdsWithin 0 (Ioi 0)).
+  have h_const_eventual :
+      (g_deform Wfn n f) =ᶠ[nhdsWithin 0 (Set.Ioi 0)]
+      (fun _ => g_deform Wfn n f 1) := by
+    rw [Filter.eventuallyEq_iff_exists_mem]
+    -- The neighborhood: any open `Iio b` with `b ≤ 1` and `0 ∈ Iio b`.
+    -- Use `Iio 1`: contains 0 (since `0 < 1`), and `Iio 1 ∩ Ioi 0 = Ioo 0 1 ⊆ Ioc 0 1`.
+    refine ⟨Set.Ioc (0 : ℝ) 1, ?_, fun s hs => h_const s hs⟩
+    rw [mem_nhdsWithin]
+    refine ⟨Set.Iio (1 : ℝ), isOpen_Iio, by norm_num, ?_⟩
+    intro s hs
+    -- hs : s ∈ Iio 1 ∩ Ioi 0, i.e., s < 1 ∧ 0 < s.
+    exact ⟨hs.2, le_of_lt hs.1⟩
+  have h_limit_eq_one :
+      Filter.Tendsto (g_deform Wfn n f) (nhdsWithin 0 (Set.Ioi 0))
+        (nhds (g_deform Wfn n f 1)) := by
+    rw [Filter.tendsto_congr' h_const_eventual]
+    exact tendsto_const_nhds
+  -- Uniqueness of limits.
+  have h_one_eq : g_deform Wfn n f 1 = Wfn.W n f := by
+    -- nhdsWithin 0 (Ioi 0) ≠ ⊥ (the right limit at 0 from above is non-trivial).
+    haveI : (nhdsWithin (0 : ℝ) (Set.Ioi 0)).NeBot := by infer_instance
+    exact tendsto_nhds_unique h_limit_eq_one h_tendsto
+  -- Step 3: combine with #36.
+  rw [← g_deform_one_eq_pairing Wfn n f hsupp]
+  exact h_one_eq
 
 /-! ### Joint case (for `W_analytic_cluster_integral`)
 
