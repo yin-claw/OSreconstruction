@@ -16,6 +16,22 @@ open scoped Matrix.Norms.Operator ComplexOrder ComplexConjugate
 
 namespace BHW
 
+/-- The unitary matrix whose columns are a complex orthonormal basis of
+`EuclideanSpace ℂ (Fin m)`. -/
+noncomputable def matrixUnitaryOfOrthonormalBasis
+    (m : ℕ) (b : OrthonormalBasis (Fin m) ℂ (EuclideanSpace ℂ (Fin m))) :
+    Matrix.unitaryGroup (Fin m) ℂ :=
+  ⟨(EuclideanSpace.basisFun (Fin m) ℂ).toBasis.toMatrix b.toBasis,
+    (EuclideanSpace.basisFun (Fin m) ℂ).toMatrix_orthonormalBasis_mem_unitary b⟩
+
+@[simp]
+theorem matrixUnitaryOfOrthonormalBasis_apply
+    (m : ℕ) (b : OrthonormalBasis (Fin m) ℂ (EuclideanSpace ℂ (Fin m)))
+    (i a : Fin m) :
+    ((matrixUnitaryOfOrthonormalBasis m b : Matrix.unitaryGroup (Fin m) ℂ) :
+      Matrix (Fin m) (Fin m) ℂ) i a = (b a : EuclideanSpace ℂ (Fin m)) i :=
+  rfl
+
 /-- The transpose of a unitary complex matrix also has the needed left inverse. -/
 theorem matrix_unitary_star_transpose_mul_transpose
     (m : ℕ) (U : Matrix.unitaryGroup (Fin m) ℂ) :
@@ -67,5 +83,26 @@ theorem complexSymmetric_takagi_matrix_eq_of_col_eigen
           Matrix.diagonal (fun a => (σ a : ℂ)) *
           (U : Matrix (Fin m) (Fin m) ℂ).transpose := by
       rw [Matrix.mul_assoc]
+
+/-- An orthonormal basis satisfying the Takagi conjugate-linear eigenvector
+equation produces the corresponding unitary Takagi matrix identity. -/
+theorem complexSymmetric_takagi_exists_unitary_of_orthonormalBasis_col_eigen
+    (m : ℕ) (S : Matrix (Fin m) (Fin m) ℂ)
+    (b : OrthonormalBasis (Fin m) ℂ (EuclideanSpace ℂ (Fin m)))
+    (σ : Fin m → ℝ)
+    (hcol : ∀ a : Fin m,
+      takagiConjugateLinearEuclideanMap m S (b a) = (σ a : ℂ) • b a) :
+    ∃ U : Matrix.unitaryGroup (Fin m) ℂ,
+      S =
+        (U : Matrix (Fin m) (Fin m) ℂ) *
+          Matrix.diagonal (fun a => (σ a : ℂ)) *
+          (U : Matrix (Fin m) (Fin m) ℂ).transpose := by
+  let U := matrixUnitaryOfOrthonormalBasis m b
+  refine ⟨U, ?_⟩
+  apply complexSymmetric_takagi_matrix_eq_of_col_eigen
+  intro a
+  ext i
+  have h := congrArg (fun v : EuclideanSpace ℂ (Fin m) => (v : Fin m → ℂ) i) (hcol a)
+  simpa [U, takagiConjugateLinearEuclideanMap, smul_eq_mul] using h
 
 end BHW

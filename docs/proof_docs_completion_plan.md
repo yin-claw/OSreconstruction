@@ -4041,7 +4041,10 @@ implementation contract is:
    `BHW.complexSymmetric_takagi_matrix_eq_of_col_eigen` proves that any
    unitary matrix whose columns satisfy
    `S *ᵥ star u_a = (σ a : ℂ) • u_a` automatically gives
-   `S = U * diagonal σ * Uᵀ`.  It then
+   `S = U * diagonal σ * Uᵀ`; the same file checks
+   `BHW.complexSymmetric_takagi_exists_unitary_of_orthonormalBasis_col_eigen`,
+   which turns an orthonormal Euclidean basis satisfying this column equation
+   into the required unitary matrix.  It then
    spells out the finite
    support extraction: use `Fintype.nonempty_of_card_le` to embed the nonzero
    singular-value subtype into `Fin k`, define the rectangular factor by
