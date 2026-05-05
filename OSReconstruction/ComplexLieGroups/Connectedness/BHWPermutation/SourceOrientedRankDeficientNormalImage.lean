@@ -1,4 +1,5 @@
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedRankDeficientCanonical
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedSchurParameter
 
 /-!
 # Normal-parameter images in the oriented source variety
@@ -261,6 +262,51 @@ theorem originalNormalVarietyPoint_maxRank_iff
         (sourceOrientedNormalParameterVarietyPoint d n N.r N.hrD N.hrn p).1 :=
   N.varietyTransport.invFun_maxRank_iff
     (sourceOrientedNormalParameterVarietyPoint d n N.r N.hrD N.hrn p)
+
+/-- On the invertible-head normal-parameter box, max-rank of the transported
+original image is exactly full residual-tail rank in the shifted Schur
+coordinate. -/
+theorem originalNormalVarietyPoint_maxRank_iff_tail_rank
+    {d n : ℕ}
+    {G0 : SourceOrientedGramData d n}
+    (hn : d + 1 ≤ n)
+    (N : SourceOrientedRankDeficientAlgebraicNormalFormData d n G0)
+    (p : SourceOrientedRankDeficientNormalParameter d n N.r N.hrD N.hrn)
+    (hH : IsUnit p.head.det) :
+    SourceOrientedMaxRankAt d n (N.originalNormalVarietyPoint p).1 ↔
+      (sourceOrientedNormalParameterSchurTail d n N.r N.hrD N.hrn p).rank =
+        d + 1 - N.r := by
+  rw [N.originalNormalVarietyPoint_maxRank_iff]
+  rw [sourceOrientedNormalParameterVarietyPoint_eq_sourcePrincipalSchurGraph
+    d n N.r N.hrD N.hrn p hH]
+  have hA : IsUnit
+      (sourceOrientedNormalParameterSchurHead d n N.r N.hrD N.hrn p).det := by
+    change IsUnit (p.head * sourceHeadMetric d N.r N.hrD * p.headᵀ).det
+    have hη : IsUnit (sourceHeadMetric d N.r N.hrD).det :=
+      sourceHeadMetric_det_isUnit d N.r N.hrD
+    have hHt : IsUnit p.headᵀ.det := Matrix.isUnit_det_transpose p.head hH
+    rw [Matrix.det_mul, Matrix.det_mul]
+    exact (hH.mul hη).mul hHt
+  have hAsym :
+      (sourceOrientedNormalParameterSchurHead d n N.r N.hrD N.hrn p)ᵀ =
+        sourceOrientedNormalParameterSchurHead d n N.r N.hrD N.hrn p := by
+    exact sourceNormalHeadGram_transpose d n N.r N.hrD N.hrn p
+  have hSsym :
+      (sourceOrientedNormalParameterSchurTail d n N.r N.hrD N.hrn p)ᵀ =
+        sourceOrientedNormalParameterSchurTail d n N.r N.hrD N.hrn p := by
+    ext u v
+    simp [sourceOrientedNormalParameterSchurTail, sourceShiftedTailGram,
+      sourceVectorMinkowskiInner_comm]
+  have hrDle : Fintype.card (Fin N.r) ≤ d + 1 := by
+    simpa using Nat.le_of_lt N.hrD
+  simpa using
+    (sourceOrientedMaxRankAt_sourcePrincipalSchurGraph_iff_residual_rank
+      (d := d) (n := n) hn (sourceHeadTailEquiv n N.r N.hrn)
+      (A := sourceOrientedNormalParameterSchurHead d n N.r N.hrD N.hrn p)
+      (B := sourceOrientedNormalParameterSchurMixed d n N.r N.hrD N.hrn p)
+      (S := sourceOrientedNormalParameterSchurTail d n N.r N.hrD N.hrn p)
+      hA hAsym hSsym hrDle
+      (sourceOrientedNormalParameterVarietyPoint d n N.r N.hrD N.hrn p).1.det)
 
 end SourceOrientedRankDeficientAlgebraicNormalFormData
 
