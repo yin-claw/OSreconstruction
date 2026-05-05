@@ -31798,6 +31798,52 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (G : BHW.SourceOrientedGramData d n) :
           BHW.sourceOrientedGramDataSourceMatrixTransform d n 1 G = G
 
+      theorem BHW.sourceFullFrameDetFunctionCoord_sourceFullFrameDet
+          (d n : Nat)
+          (z : Fin n -> Fin (d + 1) -> ℂ)
+          (f : Fin (d + 1) -> Fin n) :
+          BHW.sourceFullFrameDetFunctionCoord d n
+              (fun κ => BHW.sourceFullFrameDet d n κ z) f =
+            (Matrix.detRowAlternating :
+                (Fin (d + 1) -> ℂ) [⋀^Fin (d + 1)]→ₗ[ℂ] ℂ)
+              (fun a => fun μ => z (f a) μ)
+
+      theorem BHW.sourceFullFrameDet_sourceTupleLinearChange
+          (d n : Nat)
+          (M : Matrix (Fin n) (Fin n) ℂ)
+          (z : Fin n -> Fin (d + 1) -> ℂ)
+          (ι : Fin (d + 1) ↪ Fin n) :
+          BHW.sourceFullFrameDet d n ι
+              (BHW.sourceTupleLinearChange d n M z) =
+            BHW.sourceFullFrameDetSourceMatrixTransform d n M
+              (fun κ => BHW.sourceFullFrameDet d n κ z) ι
+
+      theorem BHW.sourceOrientedMinkowskiInvariant_sourceTupleLinearChange
+          (d n : Nat)
+          (M : Matrix (Fin n) (Fin n) ℂ)
+          (z : Fin n -> Fin (d + 1) -> ℂ) :
+          BHW.sourceOrientedMinkowskiInvariant d n
+              (BHW.sourceTupleLinearChange d n M z) =
+            BHW.sourceOrientedGramDataSourceMatrixTransform d n M
+              (BHW.sourceOrientedMinkowskiInvariant d n z)
+
+      theorem BHW.sourceOrientedGramDataSourceMatrixTransform_mem_variety
+          (d n : Nat)
+          (M : Matrix (Fin n) (Fin n) ℂ)
+          {G : BHW.SourceOrientedGramData d n}
+          (hG : G ∈ BHW.sourceOrientedGramVariety d n) :
+          BHW.sourceOrientedGramDataSourceMatrixTransform d n M G ∈
+            BHW.sourceOrientedGramVariety d n
+
+      noncomputable def BHW.sourceOrientedGramVarietySourceMatrixEquivOfMatrix
+          (d n : Nat)
+          (M : Matrix (Fin n) (Fin n) ℂ)
+          (hM : IsUnit M.det) :
+          {G : BHW.SourceOrientedGramData d n //
+              G ∈ BHW.sourceOrientedGramVariety d n} ≃
+            {G : BHW.SourceOrientedGramData d n //
+              G ∈ BHW.sourceOrientedGramVariety d n}
+
       theorem BHW.linearEquiv_coord_ball_preimage
           {ι κ : Type*} [Fintype ι] [Fintype κ]
           (e : (ι -> κ -> ℂ) ≃ₗ[ℂ] (ι -> κ -> ℂ))
@@ -33192,30 +33238,41 @@ Proof decomposition of this theorem, without hiding the analytic work:
                   (BHW.sourceOrientedMinkowskiInvariant d n z))
       ```
 
-      Proof transcript: define `Q.toFun` on Gram coordinates by
-      `sourceGramCongruenceLinearEquivOfMatrix n M hM_unit`; define its
-      determinant coordinates using the checked function-indexed coordinate
-      model
-      `sourceFullFrameDetSourceMatrixTransform d n M`.  The auxiliary
-      `sourceFullFrameDetFunctionCoord` extends ordered full-frame determinant
-      coordinates from embeddings to all functions `Fin (d+1) -> Fin n`, with
-      non-injective functions set to zero.  This is essential: summing directly
-      over all ordered embeddings would overcount permutations of the same
-      source frame, while the function-indexed formula has the checked identity
-      theorem `sourceFullFrameDetSourceMatrixTransform_one`.  The remaining
-      Cauchy-Binet proof is now the determinant-multilinearity theorem
-      ```
-      sourceFullFrameDet d n ι (sourceTupleLinearChange d n M z) =
-        sourceFullFrameDetSourceMatrixTransform d n M
-          (fun κ => sourceFullFrameDet d n κ z) ι
-      ```
-      and its inverse/composition consequences for `M⁻¹`.  Continuity is
-      finite linearity in coordinates.  `mem_variety_iff` is witnessed by
-      applying `Lvec` or `Lvec.symm` to a realizing tuple.  `maxRank_iff`
-      follows from invariance of matrix rank under invertible congruence.
-      Finally compose with
-      `sourceOrientedMinkowskiInvariant_complexLorentzAction Λ`, which leaves
-      both Gram and determinant coordinates unchanged because `Λ` is
+      Corrected proof transcript: the function-indexed determinant transform
+      is the checked row-multilinearity/Cauchy-Binet formula on actual
+      determinant coordinates, not a standalone linear equivalence of the full
+      ordered-embedding coordinate space.  The checked theorem is now
+      `BHW.sourceFullFrameDet_sourceTupleLinearChange`, proved by applying
+      `Matrix.detRowAlternating.toMultilinearMap.map_sum` to expand rows,
+      `map_smul_univ` to extract the coefficient product, and
+      `AlternatingMap.map_eq_zero_of_not_injective` to kill non-injective
+      functions.  Consequently
+      `BHW.sourceOrientedMinkowskiInvariant_sourceTupleLinearChange` and
+      `BHW.sourceOrientedGramDataSourceMatrixTransform_mem_variety` are
+      checked, and invertible source matrices act by the checked subtype
+      equivalence
+      `BHW.sourceOrientedGramVarietySourceMatrixEquivOfMatrix`.
+
+      The previous ambient-homeomorphism shortcut is not allowed: the
+      transform
+      `sourceFullFrameDetSourceMatrixTransform d n M` has `T_1 = id` on all
+      ordered-coordinate functions and is correct on actual alternating
+      determinant coordinates, but it is not functorial/invertible on arbitrary
+      independent ordered-frame coordinates.  Therefore the old target
+      `sourceOrientedInvariantTransportEquiv_of_sourceChange_lorentz` is not a
+      mechanical Lean target until one of the following is provided:
+      a full finite-dimensional extension of exterior-power transport from the
+      alternating determinant-coordinate subspace to the ambient ordered
+      coordinate space, or a downstream replacement of
+      `SourceOrientedInvariantTransportEquiv` by a variety-relative
+      homeomorphism/subtype transport.  The variety-level equivalence already
+      proves the source-change action needed on the actual oriented variety;
+      the remaining design choice is how the normal-form local-image API should
+      consume relative open sets and max-rank connectedness.  `maxRank_iff`
+      for any accepted transport still follows only from Gram rank invariance
+      under invertible congruence.  The complex Lorentz factor remains
+      harmless: `sourceOrientedMinkowskiInvariant_complexLorentzAction Λ`
+      leaves both Gram and determinant coordinates unchanged because `Λ` is
       determinant `1`.
 
       Implementation transcript for

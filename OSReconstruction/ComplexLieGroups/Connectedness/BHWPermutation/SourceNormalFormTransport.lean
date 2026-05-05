@@ -479,6 +479,87 @@ theorem sourceOrientedGramDataSourceMatrixTransform_one
   · exact sourceGramCongruence_one n G.gram
   · exact sourceFullFrameDetSourceMatrixTransform_one d n G.det
 
+/-- For determinant coordinates coming from an actual source tuple, the
+function-coordinate extension is exactly the row-alternating determinant.
+Non-injective source-label functions vanish by alternation. -/
+theorem sourceFullFrameDetFunctionCoord_sourceFullFrameDet
+    (d n : ℕ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (f : Fin (d + 1) → Fin n) :
+    sourceFullFrameDetFunctionCoord d n
+        (fun κ => sourceFullFrameDet d n κ z) f =
+      (Matrix.detRowAlternating :
+          (Fin (d + 1) → ℂ) [⋀^Fin (d + 1)]→ₗ[ℂ] ℂ)
+        (fun a => fun μ => z (f a) μ) := by
+  by_cases hf : Function.Injective f
+  · rw [sourceFullFrameDetFunctionCoord_of_injective d n
+      (fun κ => sourceFullFrameDet d n κ z) hf]
+    rfl
+  · rw [sourceFullFrameDetFunctionCoord_of_not_injective d n
+      (fun κ => sourceFullFrameDet d n κ z) hf]
+    symm
+    apply AlternatingMap.map_eq_zero_of_not_injective
+    intro hrow
+    apply hf
+    intro a b hab
+    apply hrow
+    funext μ
+    simp [hab]
+
+/-- Cauchy-Binet for a source-label linear change, written in the
+function-indexed determinant-coordinate model. -/
+theorem sourceFullFrameDet_sourceTupleLinearChange
+    (d n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (ι : Fin (d + 1) ↪ Fin n) :
+    sourceFullFrameDet d n ι (sourceTupleLinearChange d n M z) =
+      sourceFullFrameDetSourceMatrixTransform d n M
+        (fun κ => sourceFullFrameDet d n κ z) ι := by
+  let F :
+      (Fin (d + 1) → ℂ) [⋀^Fin (d + 1)]→ₗ[ℂ] ℂ :=
+    Matrix.detRowAlternating
+  rw [sourceFullFrameDetSourceMatrixTransform]
+  change
+    F (fun a => fun μ => ∑ b : Fin n, M (ι a) b * z b μ) =
+      ∑ f : Fin (d + 1) → Fin n,
+        (∏ a : Fin (d + 1), M (ι a) (f a)) *
+          sourceFullFrameDetFunctionCoord d n
+            (fun κ => sourceFullFrameDet d n κ z) f
+  calc
+    F (fun a => fun μ => ∑ b : Fin n, M (ι a) b * z b μ)
+        =
+      F (fun a =>
+          ∑ b : Fin n, M (ι a) b • (fun μ => z b μ)) := by
+        congr 1
+        ext a μ
+        simp
+    _ =
+      ∑ f : Fin (d + 1) → Fin n,
+        F (fun a => M (ι a) (f a) • (fun μ => z (f a) μ)) := by
+        simpa using
+          (F.toMultilinearMap.map_sum
+            (g := fun a b => M (ι a) b • (fun μ => z b μ)))
+    _ =
+      ∑ f : Fin (d + 1) → Fin n,
+        (∏ a : Fin (d + 1), M (ι a) (f a)) *
+          F (fun a => fun μ => z (f a) μ) := by
+        apply Finset.sum_congr rfl
+        intro f _hf
+        have hsmul :=
+          F.toMultilinearMap.map_smul_univ
+            (fun a : Fin (d + 1) => M (ι a) (f a))
+            (fun a : Fin (d + 1) => fun μ => z (f a) μ)
+        simpa using hsmul
+    _ =
+      ∑ f : Fin (d + 1) → Fin n,
+        (∏ a : Fin (d + 1), M (ι a) (f a)) *
+          sourceFullFrameDetFunctionCoord d n
+            (fun κ => sourceFullFrameDet d n κ z) f := by
+        apply Finset.sum_congr rfl
+        intro f _hf
+        rw [sourceFullFrameDetFunctionCoord_sourceFullFrameDet]
+
 /-- Source-label block matrix for linear changes in the head/tail split. -/
 def sourceLinearBlockMatrix
     (n r : ℕ) (hrn : r ≤ n)
@@ -1117,6 +1198,89 @@ theorem sourceMinkowskiGram_sourceTupleLinearChange
         sourceGramCongruence n M (sourceMinkowskiGram d n z) i j := by
           simp [sourceMinkowskiGram, sourceGramCongruence,
             Finset.mul_sum, mul_comm, mul_left_comm]
+
+/-- Source-label linear changes transport the full oriented source invariant
+by the Gram congruence and function-indexed determinant transform. -/
+theorem sourceOrientedMinkowskiInvariant_sourceTupleLinearChange
+    (d n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ)
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    sourceOrientedMinkowskiInvariant d n
+        (sourceTupleLinearChange d n M z) =
+      sourceOrientedGramDataSourceMatrixTransform d n M
+        (sourceOrientedMinkowskiInvariant d n z) := by
+  apply SourceOrientedGramData.ext
+  · exact sourceMinkowskiGram_sourceTupleLinearChange d n M z
+  · funext ι
+    exact sourceFullFrameDet_sourceTupleLinearChange d n M z ι
+
+/-- The source-matrix oriented coordinate transform preserves the oriented
+source variety.  This is the safe variety-level statement: no invertibility of
+the determinant-coordinate transform on arbitrary non-alternating ordered-frame
+coordinates is asserted. -/
+theorem sourceOrientedGramDataSourceMatrixTransform_mem_variety
+    (d n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ)
+    {G : SourceOrientedGramData d n}
+    (hG : G ∈ sourceOrientedGramVariety d n) :
+    sourceOrientedGramDataSourceMatrixTransform d n M G ∈
+      sourceOrientedGramVariety d n := by
+  rcases hG with ⟨z, hz⟩
+  refine ⟨sourceTupleLinearChange d n M z, ?_⟩
+  rw [← hz]
+  exact sourceOrientedMinkowskiInvariant_sourceTupleLinearChange d n M z
+
+/-- Source-matrix transport as a self-map of the oriented source variety
+subtype. -/
+noncomputable def sourceOrientedGramVarietySourceMatrixMap
+    (d n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ) :
+    {G : SourceOrientedGramData d n // G ∈ sourceOrientedGramVariety d n} →
+      {G : SourceOrientedGramData d n // G ∈ sourceOrientedGramVariety d n} :=
+  fun G =>
+    ⟨sourceOrientedGramDataSourceMatrixTransform d n M G.1,
+      sourceOrientedGramDataSourceMatrixTransform_mem_variety d n M G.2⟩
+
+/-- Invertible source matrices act by equivalences on the oriented source
+variety.  The proof is variety-level: it uses tuple-level inverse source
+changes, avoiding any false claim that the function-indexed ordered determinant
+coordinate transform is invertible on all independent coordinates. -/
+noncomputable def sourceOrientedGramVarietySourceMatrixEquivOfMatrix
+    (d n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ)
+    (hM : IsUnit M.det) :
+    {G : SourceOrientedGramData d n // G ∈ sourceOrientedGramVariety d n} ≃
+      {G : SourceOrientedGramData d n // G ∈ sourceOrientedGramVariety d n} where
+  toFun := sourceOrientedGramVarietySourceMatrixMap d n M
+  invFun := sourceOrientedGramVarietySourceMatrixMap d n M⁻¹
+  left_inv G := by
+    rcases G with ⟨G, hG⟩
+    rcases hG with ⟨z, hz⟩
+    apply Subtype.ext
+    change
+      sourceOrientedGramDataSourceMatrixTransform d n M⁻¹
+        (sourceOrientedGramDataSourceMatrixTransform d n M G) = G
+    rw [← hz]
+    rw [← sourceOrientedMinkowskiInvariant_sourceTupleLinearChange d n M z]
+    rw [← sourceOrientedMinkowskiInvariant_sourceTupleLinearChange d n M⁻¹
+      (sourceTupleLinearChange d n M z)]
+    rw [← sourceTupleLinearChange_mul]
+    rw [Matrix.nonsing_inv_mul (A := M) hM]
+    rw [sourceTupleLinearChange_one]
+  right_inv G := by
+    rcases G with ⟨G, hG⟩
+    rcases hG with ⟨z, hz⟩
+    apply Subtype.ext
+    change
+      sourceOrientedGramDataSourceMatrixTransform d n M
+        (sourceOrientedGramDataSourceMatrixTransform d n M⁻¹ G) = G
+    rw [← hz]
+    rw [← sourceOrientedMinkowskiInvariant_sourceTupleLinearChange d n M⁻¹ z]
+    rw [← sourceOrientedMinkowskiInvariant_sourceTupleLinearChange d n M
+      (sourceTupleLinearChange d n M⁻¹ z)]
+    rw [← sourceTupleLinearChange_mul]
+    rw [Matrix.mul_nonsing_inv (A := M) hM]
+    rw [sourceTupleLinearChange_one]
 
 /-- Coefficient evaluation after a source-label linear change is coefficient
 evaluation against the original tuple after right multiplication of source

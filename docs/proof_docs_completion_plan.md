@@ -4304,7 +4304,22 @@ implementation contract is:
    summing directly over all ordered embeddings of the same source frame; the
    identity action is checked as
    `BHW.sourceFullFrameDetSourceMatrixTransform_one` and
-   `BHW.sourceOrientedGramDataSourceMatrixTransform_one`.  Its
+   `BHW.sourceOrientedGramDataSourceMatrixTransform_one`.  The actual
+   row-multilinearity/Cauchy-Binet theorem is now checked as
+   `BHW.sourceFullFrameDet_sourceTupleLinearChange`, with the non-injective
+   terms killed by `Matrix.detRowAlternating`; the oriented invariant
+   transport-on-actual-tuples theorem
+   `BHW.sourceOrientedMinkowskiInvariant_sourceTupleLinearChange` and the
+   variety-subtype source-matrix equivalence
+   `BHW.sourceOrientedGramVarietySourceMatrixEquivOfMatrix` are also checked.
+   Importantly, the function-indexed determinant transform is not claimed to
+   be a linear equivalence on the full independent ordered-frame coordinate
+   space: it is correct on the alternating determinant coordinates realized by
+   source tuples.  A full ambient `SourceOrientedInvariantTransportEquiv`
+   still requires either an explicit finite-dimensional extension of the
+   exterior-power action from the alternating determinant-coordinate subspace
+   to the ambient product coordinates, or a downstream switch to the checked
+   variety-relative transport interface.  Its
    finite matrix assembly is not allowed to skip the intermediate
    `[[A,0],[0,0]]` stage: the projection source change
    `BHW.hwLemma3_projectionSourceChangeMatrix` sends
@@ -4328,6 +4343,11 @@ implementation contract is:
    `BHW.sourceFullFrameDetSourceMatrixTransform`,
    `BHW.sourceFullFrameDetSourceMatrixTransformLinearMap`,
    `BHW.sourceOrientedGramDataSourceMatrixTransform`,
+   `BHW.sourceFullFrameDetFunctionCoord_sourceFullFrameDet`,
+   `BHW.sourceFullFrameDet_sourceTupleLinearChange`,
+   `BHW.sourceOrientedMinkowskiInvariant_sourceTupleLinearChange`,
+   `BHW.sourceOrientedGramDataSourceMatrixTransform_mem_variety`,
+   `BHW.sourceOrientedGramVarietySourceMatrixEquivOfMatrix`,
    `BHW.sourceLinearBlockMatrix`,
    `BHW.sourceTupleLinearEquivOfMatrix`,
    `BHW.hwLemma3_projectionSourceChangeMatrix_congruence`,
@@ -4424,7 +4444,7 @@ implementation contract is:
    | Pointwise-to-global relative-open assembly | Mechanical after local realization. | Choose explicit `sourceExtendedTubeGramDomain_relOpen_at` neighborhoods, form the subtype-indexed union, and use the subset lemma. |
    | Adapted same-Gram representative | Proof transcript pinned; production Lean not started. | `hwLemma3_extendedTube_adaptedRankRepresentative` is reduced to the Lemma-2 residual-frame/all-coefficients extended-tube theorem, selected projection, Schur-zero residual theorem, and span-rank equality; the blueprint explicitly forbids source-changing an arbitrary representative to zero tail. |
    | Principal block/projection/Schur-zero algebra | Proof transcript pinned; principal-minor extraction checked locally. | The blueprint now gives the selected coefficient definition, projection Gram equality, residual orthogonality, residual-residual zero via the Schur complement, and span-finrank theorem.  These are finite algebra support targets, not final wrappers. |
-   | Normal-form source transport | Core source-change, canonical-Gram, adapted tail-zero, and selected-head Witt/Lorentz orbit layer checked in `SourceNormalFormTransport.lean`; oriented invariant transport fields remain. | Source permutation, projection matrix, congruence-to-identity, canonical Gram congruence, coefficient-span/rank preservation, tail-zero from adaptedness, and the complex Lorentz transport to `hwLemma3CanonicalSource` are checked.  The remaining normal-form transport work is the Cauchy-Binet oriented invariant transport fields and the finite-dimensional estimate packaging around the resulting linear equivalences. |
+   | Normal-form source transport | Core source-change, canonical-Gram, adapted tail-zero, selected-head Witt/Lorentz orbit layer, actual determinant Cauchy-Binet, and variety-subtype source-matrix equivalence checked in `SourceNormalFormTransport.lean`; ambient oriented transport packaging remains. | Source permutation, projection matrix, congruence-to-identity, canonical Gram congruence, coefficient-span/rank preservation, tail-zero from adaptedness, the complex Lorentz transport to `hwLemma3CanonicalSource`, row-multilinearity for full-frame determinants, oriented invariant transport on actual tuples, and the variety-subtype equivalence for invertible source matrices are checked.  The remaining normal-form transport work is not Cauchy-Binet itself; it is choosing and checking the correct consumer interface for source-change transport: either a finite-dimensional ambient extension of exterior-power transport from the alternating determinant-coordinate subspace, or a replacement of the old ambient `SourceOrientedInvariantTransportEquiv` use by the checked variety-relative transport.  Finite-dimensional estimate packaging around the resulting source-vector linear equivalences still remains. |
    | Near-identity square root | Proof transcript pinned; pure matrix analysis. | The blueprint gives the binomial-series construction of `(1 + B)^(1/2)`, convergence via a scalar power-series majorant, transpose compatibility, the square identity, and entrywise estimates from matrix norm bounds. |
    | Schur-rank/Takagi/tail factorization | Proof transcript pinned; pure finite linear algebra. | The proof is split into Mathlib Schur-complement rank factorization, Autonne-Takagi with rank support and explicit entry-L1 control, small factorization, and tail embedding with coordinate estimates. |
    | Orthogonal-tail residual realization | Proof transcript pinned; production Lean not started. | Takagi factors are transported into `complexMinkowskiOrthogonalTailSubspace`, paired to the Schur complement, kept orthogonal to the selected block, and transported back through the Minkowski orthogonal model with norm control. |
