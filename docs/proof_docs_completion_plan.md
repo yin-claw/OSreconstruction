@@ -3964,7 +3964,7 @@ implementation contract is:
    `BHW.complexSymmetric_factorSmall_rankLE` for the finite-dimensional
    Takagi/Bargmann factorization and its small-factor estimate; the actual
    implementation route now factors through
-   `BHW.complexSymmetric_autonneTakagi_factor_rankLE_entryL1`, obtained from
+   `BHW.complexSymmetric_autonneTakagi_entryL1`, obtained from
    the Autonne-Takagi theorem with unitary matrix, nonnegative singular
    values, rank support, and the explicit entry-sum bound
    `‖A i a‖ <= Real.sqrt (BHW.matrixEntryL1Bound m S)`, where
@@ -3997,9 +3997,7 @@ implementation contract is:
    `complexSymmetric_entryL1_of_takagiDiagonalData_rankSupport`,
    `complexSymmetric_factorSmall_rankLE_of_entryL1`, and
    `sourceComplexSymmetric_factorSmall_rankLE_of_entryL1`.  Thus the small
-   factor theorem no longer has a hidden estimate step: once the entry-L1
-   Autonne-Takagi factorization is proved, the source-coordinate small
-   same-Gram theorem is mechanical.  The checked Autonne support now proves
+   factor theorem no longer has a hidden estimate step.  The checked Autonne support now proves
    that the conjugate-linear map `v ↦ S.mulVec (star v)` squares to the
    positive Hermitian map `S * Sᴴ`, commutes with that square, maps each real
    eigenspace to itself, kills the zero eigenspace, and supplies the
@@ -4032,15 +4030,24 @@ implementation contract is:
    `finrank ℝ fixed = finrank ℂ E` from `Module.finrank_prod` and
    `finrank_real_of_complex`, and constructs
    `BHW.conjugationFixedComplexOrthonormalBasis`, with checked pointwise
-   fixedness `BHW.conjugationFixedComplexOrthonormalBasis_fixed`.  Thus the
-   remaining Autonne work no longer includes the local fixed-basis column
-   equations; it is now the global finite-dimensional collection step: combine
-   the checked positive-eigenspace fixed bases and a zero-eigenspace
-   orthonormal basis into one `OrthonormalBasis (Fin m) ℂ
-   (EuclideanSpace ℂ (Fin m))`, carry the Hermitian-square eigenvalue labels
-   `lambda : Fin m -> ℝ`, prove nonnegativity and the rank-support identity
-   for `Real.sqrt ∘ lambda`, and feed this fixed Hermitian eigenbasis into the
-   checked assembly bridge.  The singular-value entry-L1 bound for any
+   fixedness `BHW.conjugationFixedComplexOrthonormalBasis_fixed`.  The global
+   finite-dimensional collection step is now checked in
+   `BHWPermutation/SourceComplexTakagiGlobal.lean`: it identifies
+   `BHW.takagiHermitianEigenspace m S lambda` with Mathlib's eigenspace of
+   `(S * Sᴴ).toEuclideanLin`, proves those Hermitian-square eigenvalues are
+   real and nonnegative, builds
+   `BHW.takagiHermitianSquareEigenvalueFixedBasis` by using the checked fixed
+   basis on positive eigenspaces and `stdOrthonormalBasis` on the zero
+   eigenspace, collects these bases through
+   `DirectSum.IsInternal.collectedOrthonormalBasis`, reindexes the collected
+   Sigma basis to `Fin m`, proves the global column equation
+   `BHW.takagiHermitianSquareFixedEigenbasis_col_eigen`, and proves rank
+   support from unitary diagonalization via `Matrix.rank_mul_eq_left_of_isUnit_det`,
+   `Matrix.rank_mul_eq_right_of_isUnit_det`, and `Matrix.rank_diagonal`.
+   Consequently `BHW.complexSymmetric_autonneTakagi_entryL1`,
+   `BHW.complexSymmetric_factorSmall_rankLE`, and
+   `BHW.sourceComplexSymmetric_factorSmall_rankLE` are checked without any
+   remaining `hentry` parameter.  The singular-value entry-L1 bound for any
    produced Takagi diagonalization is now checked in
    `BHWPermutation/SourceComplexTakagiEntry.lean` as
    `BHW.takagi_singularValue_le_entryL1Bound`: it multiplies the Takagi
@@ -4064,10 +4071,9 @@ implementation contract is:
    Hermitian-square eigenbasis whose positive-eigenvalue vectors are fixed by
    the normalized Takagi conjugation, and
    `BHW.complexSymmetric_entryL1_of_fixedHermitianEigenbasis`, which composes
-   that bridge with the checked entry-L1/rank-support endpoint.  Therefore the
-   last finite-dimensional blocker for the small-factor theorem is exactly the
-   global fixed Hermitian eigenbasis construction, not the matrix diagonal
-   identity or the entry estimate.  It then
+   that bridge with the checked entry-L1/rank-support endpoint.  The global
+   file consumes this bridge and closes the finite-dimensional Autonne-Takagi
+   small-factor blocker.  It then
    spells out the finite
    support extraction: use `Fintype.nonempty_of_card_le` to embed the nonzero
    singular-value subtype into `Fin k`, define the rectangular factor by
