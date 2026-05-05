@@ -8510,7 +8510,61 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (Head.factor
                 (BHW.sourceOrientedSchurHeadBlockSymm
                   d n r hrD hrn hGvar)) ∈
+              BHW.sourceShiftedTailOrientedVariety d r hrD (n - r)
+
+      structure BHW.SourceOrientedHeadGaugeNormalParameterData
+          (d n r : Nat)
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          {G : BHW.SourceOrientedGramData d n}
+          (hGvar : G ∈ BHW.sourceOrientedGramVariety d n)
+          (Head : BHW.SourceRankDeficientHeadGaugeData d r hrD) where
+        p : BHW.SourceOrientedRankDeficientNormalParameter
+          d n r hrD hrn
+        invariant_eq :
+          G =
+            BHW.sourceOrientedMinkowskiInvariant d n
+              (BHW.sourceOrientedNormalParameterVector
+                d n r hrD hrn p)
+        head_eq :
+          Head.factor
+              (BHW.sourceOrientedSchurHeadBlockSymm
+                d n r hrD hrn hGvar) =
+            p.head
+
+      theorem BHW.SourceOrientedHeadGaugeNormalParameterData.residualTail_mem_variety
+          (d n r : Nat)
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          {G : BHW.SourceOrientedGramData d n}
+          {hGvar : G ∈ BHW.sourceOrientedGramVariety d n}
+          (Head : BHW.SourceRankDeficientHeadGaugeData d r hrD)
+          (hHead :
+            BHW.sourceOrientedSchurHeadBlockSymm
+              d n r hrD hrn hGvar ∈ Head.U)
+          (D :
+            BHW.SourceOrientedHeadGaugeNormalParameterData
+              d n r hrD hrn hGvar Head) :
+          BHW.sourceOrientedSchurResidualTailData d n r hrD hrn G
+              (Head.factor
+                (BHW.sourceOrientedSchurHeadBlockSymm
+                  d n r hrD hrn hGvar)) ∈
             BHW.sourceShiftedTailOrientedVariety d r hrD (n - r)
+
+      def BHW.SourceOrientedHeadGaugeNormalParameterData.schurResidualData
+          (d n r : Nat)
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          {G : BHW.SourceOrientedGramData d n}
+          (hGvar : G ∈ BHW.sourceOrientedGramVariety d n)
+          (Head : BHW.SourceRankDeficientHeadGaugeData d r hrD)
+          (hHead :
+            BHW.sourceOrientedSchurHeadBlockSymm
+              d n r hrD hrn hGvar ∈ Head.U)
+          (D :
+            BHW.SourceOrientedHeadGaugeNormalParameterData
+              d n r hrD hrn hGvar Head) :
+          BHW.SourceOrientedSchurResidualData d n r hrD hrn G
 
       def BHW.sourceOriented_schurResidualData_of_tail_mem
           (d n r : Nat)
@@ -8587,6 +8641,84 @@ Proof decomposition of this theorem, without hiding the analytic work:
       the shifted residual tail has been realized by `q`.  The checked data
       structure deliberately stores only the residual fields and does not hide
       the head-gauge/tail-membership producer as a field.
+
+      The theorem `sourceOrientedSchurResidualTailData_mem_variety` must now
+      be proved through the normal-parameter data surface above, not by an
+      isolated existential tail argument.  Its precise remaining producer is:
+
+      ```lean
+      theorem BHW.sourceOriented_headGaugeNormalParameterData
+          [NeZero d]
+          (hd : 2 <= d)
+          {n r : Nat}
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          (Head : BHW.SourceRankDeficientHeadGaugeData d r hrD)
+          {G : BHW.SourceOrientedGramData d n}
+          (hGvar : G ∈ BHW.sourceOrientedGramVariety d n)
+          (hHead :
+            BHW.sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈
+              Head.U) :
+          BHW.SourceOrientedHeadGaugeNormalParameterData
+            d n r hrD hrn hGvar Head
+      ```
+
+      Proof transcript for this producer:
+
+      1. Choose `z` with
+         `hGvar = ⟨z, rfl⟩`.  Let
+         `Acoord := sourceOrientedSchurHeadBlockSymm ... hGvar` and
+         `H := Head.factor Acoord`.  The head-gauge equation gives
+         `H * sourceHeadMetric d r hrD * Hᵀ = A`, where `A` is the actual
+         selected head Gram block of `z`; `Head.factor_det_unit` gives
+         `IsUnit H.det`.
+      2. Define the gauge head frame
+         `y a := sourceOrientedNormalHeadVector d n r hrD hrn
+           {head := H, mixed := 0, tail := 0} a`.  The checked normal-head
+         formula gives `<y a,y b> = A a b`, matching the actual head frame
+         `x a := z (finSourceHead hrn a)`.
+      3. Use `sourceHeadRows_linearIndependent_of_headGauge` to get
+         linear independence of `x`.  Since `H` is invertible, the `y` frame
+         spans the canonical head coordinate subspace and is also
+         nondegenerate.  The equality of the two restricted bilinear forms
+         defines an isometry `span x ≃ span y`.
+      4. Apply the determinant-one complex Witt extension theorem to extend
+         this finite-dimensional isometry to some
+         `Λ : ComplexLorentzGroup d` with
+         `complexLorentzAction Λ z (finSourceHead hrn a) = y a` for all
+         `a`.  The determinant repair uses `r < d + 1`, so the orthogonal
+         complement of the selected head span has positive dimension; over
+         `ℂ`, a one-dimensional complement is already enough to flip the
+         determinant if the initial Witt extension has determinant `-1`.
+      5. Put `w := complexLorentzAction Λ z`.  Define
+         `L := sourceSchurMixedCoeff n r hrn G A`.  For each tail label,
+         subtract the head projection
+         `∑ a, L u a • y a`.  The Schur identity
+         `L * A = sourceOrientedSchurMixedBlock` and the equality of the
+         transformed head frame prove the residual vector is orthogonal to
+         every `y a`.  Because the `y a` span the first `r` canonical
+         coordinates, this residual vector has zero head coordinates and is
+         therefore `sourceTailEmbed d r hrD (q u)` for a unique tail coordinate
+         vector `q u`.
+      6. Define
+         `p := { head := H, mixed := L, tail := q }`.  The previous two
+         steps prove pointwise
+         `w = sourceOrientedNormalParameterVector d n r hrD hrn p`.  Proper
+         complex Lorentz invariance of `sourceOrientedMinkowskiInvariant`
+         gives
+         `G = sourceOrientedMinkowskiInvariant d n
+           (sourceOrientedNormalParameterVector d n r hrD hrn p)`, and
+         the head equality is `rfl`.
+      7. The checked consumer
+         `SourceOrientedHeadGaugeNormalParameterData.residualTail_mem_variety`
+         now gives `sourceOrientedSchurResidualTailData_mem_variety`, and
+         `SourceOrientedHeadGaugeNormalParameterData.schurResidualData` gives
+         the full `SourceOrientedSchurResidualData`.
+
+      This is the exact finite-dimensional Witt theorem that remains before
+      the Schur residual producer is Lean-mechanical.  It is not a new axiom
+      candidate and it is not allowed to mention OS, Wightman functions, EOW,
+      PET, or locality.
 
       The residual polydisc is not an arbitrary compact parameter set.  It is
       the finite product of the normal-form head factor, mixed coefficient,
@@ -12873,6 +13005,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | `BHW.sourceOrientedSchurHeadBlock`, `BHW.sourceOrientedSchurHeadBlock_apply`, `BHW.sourceOrientedSchurMixedBlock`, `BHW.sourceOrientedSchurTailBlock`, `BHW.sourceSchurMixedCoeff`, `BHW.sourceSchurMixedCoeff_mul_headBlock`, `BHW.sourceSchurComplement`, `BHW.sourceSchurResidualDeterminants`, `BHW.sourceShiftedTailOrientedVariety`, `BHW.SourceOrientedSchurResidualData`, `BHW.SourceOrientedSchurResidualData.L_mul_A`, `BHW.sourceVectorMinkowskiInner_comm`, `BHW.sourceVectorMinkowskiInner_sub_left`, `BHW.sourceVectorMinkowskiInner_sub_right`, `BHW.sourceActualSchurResidualVector`, `BHW.sourceActualSchurResidualVector_decomp`, `BHW.sourceActualSchurResidualVector_inner_head`, `BHW.sourceActualSchurResidualVector_head_inner`, `BHW.sourceActualSchurResidualVector_inner_residual`, `BHW.sourceActualSchurSelectedOriginalMatrix`, `BHW.sourceActualSchurSelectedResidualMatrix`, `BHW.sourceSchurHeadTailRowOperation`, `BHW.sourceSchurHeadTailRowOperation_det`, `BHW.sourceActualSchurResidual_selectedFrameDet`, `BHW.sourceActualSchurResidual_selectedFrameDet_eq_headFactor_mul_tail_det`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_gram`, `BHW.sourceNormalFullFrameDetFromSchur_headTail`, `BHW.sourceNormalFullFrameDetFromSchur_headTail_eq_source_det`, `BHW.sourceOrientedSchur_fullFrameDet_reconstruct_of_headTailPropagation`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_det_of_fullFrameReconstruct`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_of_fullFrameReconstruct` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedSchurResidual.lean`. | Schur residual coordinate packet, actual residual-vector setup, ordinary Gram realization, selected head-tail determinant calibration, and determinant/full-data consumers.  The Gram theorem uses `hGvar` to get symmetry of the source Gram and uses `L * A = mixed`; the actual residual-vector theorems decompose each tail vector, prove residual orthogonality to the selected head span, and identify the actual residual Gram matrix with the stored Schur-complement tail Gram `R.tail.gram`; the selected actual-residual row-operation theorem proves that replacing selected tail rows by actual Schur residual rows leaves the selected head-tail determinant unchanged, via a determinant-one block lower-triangular row operation, and its calibrated form identifies those selected actual residual determinants with `R.headFactor.det * R.tail.det`; the selected stored-frame theorem proves the residual determinant quotient really recovers `G.det` on frames of the form `head ∪ lam`; the checked head-tail-propagation consumer shows that a single oriented-variety determinant propagation theorem mechanically implies full Schur determinant reconstruction; the checked consumers turn the already checked normal-parameter finite Laplace formula plus a supplied full-frame reconstruction equality over `G` into determinant-coordinate and full oriented-data equality for the realized normal tuple.  The unconditional hard-range propagation and Schur reconstruction theorem is supplied by the next `SourceOrientedSchurPropagation.lean` row; after that, residual data production continues through the checked head-gauge interface in the next row. |
       | `BHW.SourceSymmetricMatrixCoord`, `BHW.sourceHeadMetricSymmCoord`, `BHW.sourceOrientedSchurHeadBlockSymm`, `BHW.SourceRankDeficientHeadGaugeData`, `BHW.sourceOrientedSchurResidualTailData`, `BHW.sourceOrientedSchurHeadBlock_det_isUnit_of_headGauge`, `BHW.sourceOriented_schurResidualData_of_tail_mem` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedHeadGauge.lean`. | Head-gauge and residual-data producer interface.  The selected Schur head block is bundled as a symmetric matrix only after `G ∈ sourceOrientedGramVariety d n`; this corrects the earlier impossible ambient use of a symmetric-subtype open set.  The checked constructor proves that once a local signature-relative head factor is available and the explicit residual tail datum is shown to lie in `sourceShiftedTailOrientedVariety`, the full `SourceOrientedSchurResidualData` packet is mechanical.  Thus the genuine remaining algebraic producer is `sourceOrientedSchurResidualTailData_mem_variety`, not another wrapper around residual data and not an extra `hA_unit` assumption. |
       | `BHW.sourceHeadRows_linearIndependent_of_headGauge`, `BHW.sourceOrientedGramVariety_notMaxRank_of_headGauge_headTailDet_eq_zero`, `BHW.exists_headTail_fullFrameDet_ne_zero_of_headGauge_maxRank`, `BHW.sourceOrientedGramVariety_det_eq_of_gram_eq_headTailDet_eq_of_headGauge`, `BHW.sourceOrientedGramData_eq_of_gram_eq_headTailDet_eq_of_headGauge` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedHeadGaugeSupport.lean`. | Head-gauge specialization of the checked Schur propagation support.  A local signature-relative head gauge now immediately supplies actual head-row linear independence for any realizing source tuple, the all-zero selected head-tail determinant contradiction, the max-rank existence of a nonzero selected `head ∪ lam` full-frame determinant, and determinant/full-data equality from ordinary Gram equality plus selected head-tail determinant equality.  This is the finite-dimensional consumer surface for the remaining local Witt/head-normalization theorem: that theorem must still produce the normal-parameter comparison and selected head-tail determinant agreement; this row only removes determinant-propagation bookkeeping after the head gauge is available. |
+      | `BHW.SourceOrientedHeadGaugeNormalParameterData`, `BHW.SourceOrientedHeadGaugeNormalParameterData.head_det_unit`, `BHW.SourceOrientedHeadGaugeNormalParameterData.residualTail_mem_variety`, `BHW.SourceOrientedHeadGaugeNormalParameterData.schurResidualData` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedHeadGaugeNormal.lean`. | Exact consumer surface for the remaining Witt/head-normalization theorem.  The data stores a normal-parameter representative of `G` whose head coordinate is precisely the local head-gauge factor.  From that data, residual-tail membership follows by the checked normal-parameter tail theorem, and the full Schur residual packet follows by the checked head-gauge constructor.  Therefore the next hard producer is now precisely `sourceOriented_headGaugeNormalParameterData`: choose a realizing source tuple, use determinant-one complex Witt extension to carry the selected actual head frame to the gauge head frame, decompose transformed tail labels into mixed head coefficients plus shifted tail coordinates, and use proper Lorentz invariance of the oriented invariant. |
       | `BHW.sourceOrientedSchurHeadBlock_normalParameter`, `BHW.sourceOrientedSchurMixedBlock_normalParameter`, `BHW.sourceSchurMixedCoeff_normalParameter`, `BHW.sourceSchurComplement_normalParameter`, `BHW.sourceOrientedSchurResidualTailData_normalParameter`, `BHW.sourceOrientedSchurResidualTailData_normalParameter_mem_variety`, `BHW.sourceOrientedSchurResidualTailData_mem_variety_of_eq_normalParameter` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedSchurTailNormal.lean`. | Forward normal-parameter sanity theorem for the residual-tail producer.  If `G` is already the oriented invariant of a normal-parameter source tuple and the chosen head factor is the parameter head, then the explicit Schur residual tail datum is exactly `sourceShiftedTailOrientedInvariant p.tail`; hence it lies on the shifted-tail variety.  The equality-transport bridge packages the immediate consumer form needed after the local Witt/head-gauge normal-form step identifies a source-variety point with such a normal-parameter representative.  This proves the residual-tail definition has the correct forward behavior and supplies the polynomial-estimate anchor for the remaining all-variety membership theorem. |
       | `BHW.sourceOriented_reconstruct_from_schurResidual`, `BHW.exists_sourceOriented_reconstruct_from_schurResidual` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedSchurReconstruct.lean`. | Endpoint reconstruction from already-produced Schur residual data and a realizing shifted-tail tuple.  The theorem is the exact normal-parameter specialization of `sourceOrientedNormalParameterVector_realizes_schur` in the hard range `d + 1 <= n`; it introduces no new mathematical assumption and leaves the genuine producer obligation at `sourceOrientedSchurResidualTailData_mem_variety`, where the head-gauge factor and shifted-tail membership must be constructed. |
       | `BHW.sourceHeadRows_linearIndependent_of_schurHeadBlock_isUnit`, `BHW.exists_headTail_fullFrameDet_ne_zero_of_headRows_linearIndependent_span_top`, `BHW.sourceOrientedGramVariety_notMaxRank_of_headTailDet_eq_zero`, `BHW.sourceOrientedGramVariety_det_eq_zero_of_not_maxRank`, `BHW.sourceOrientedGramVariety_det_eq_of_gram_eq_of_not_maxRank`, `BHW.sourceOrientedGramVariety_det_eq_of_gram_eq_headTailDet_eq_of_exists_nonzero`, `BHW.sourceOrientedGramVariety_det_eq_of_gram_eq_headTailDet_eq_of_allZero_notMaxRank`, `BHW.sourceOrientedGramVariety_det_eq_of_gram_eq_headTailDet_eq`, `BHW.sourceOrientedSchur_fullFrameDet_reconstruct`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_det`, `BHW.sourceOrientedNormalParameterVector_realizes_schur` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedSchurPropagation.lean`. | Hard-range determinant propagation and Schur reconstruction closure.  The nonzero selected-head-tail branch uses the full-frame chart identity.  The all-zero branch proves non-max-rank by contrapositive: invertible head Gram block gives head-row linear independence; max-rank gives a spanning full frame; quotienting by the head span lets tail quotient images extend the head rows to a full frame, contradicting selected head-tail determinant vanishing.  Therefore same Gram plus selected head-tail determinant agreement implies all determinant coordinates agree, and the residual Schur consumer now yields hard-range full-frame determinant reconstruction and normal-parameter oriented-data realization.  The next producer target is constructing `SourceOrientedSchurResidualData`; this row no longer has a Plucker/Cauchy-Binet propagation gap. |

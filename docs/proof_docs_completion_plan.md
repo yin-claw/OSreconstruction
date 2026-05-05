@@ -2875,8 +2875,22 @@ implementation contract is:
    future normal-form comparison to ordinary Gram equality plus the selected
    head-tail determinant coordinates.  This is the precise finite-dimensional
    consumer that the local Witt/head-normalizing producer must feed; it still
-   does not prove the tail-membership theorem by itself.  The forward
-   normal-parameter check is
+   does not prove the tail-membership theorem by itself.  The next checked
+   interface is `SourceOrientedHeadGaugeNormal.lean`: it defines
+   `SourceOrientedHeadGaugeNormalParameterData`, storing a normal-parameter
+   representative `p` with
+   `G = sourceOrientedMinkowskiInvariant (sourceOrientedNormalParameterVector p)`
+   and with `p.head` exactly the head-gauge factor of the selected Schur head
+   block.  From this data, `residualTail_mem_variety` and
+   `schurResidualData` are now mechanical.  Therefore the remaining hard
+   theorem is no longer an unstructured tail-membership assertion: it is the
+   Witt/head-normalization producer for that data.  Its proof must choose a
+   realizing source tuple, use the head-gauge equation to match the actual
+   selected nondegenerate head frame to the gauge head frame, extend that
+   frame isometry by determinant-one complex Witt extension, decompose the
+   transformed tail labels into mixed head coefficients plus standard shifted
+   tail coordinates, and use proper Lorentz invariance of the oriented
+   invariant.  The forward normal-parameter check is
    now also in Lean:
    `sourceOrientedSchurResidualTailData_normalParameter` identifies the
    explicit residual tail datum of a normal-parameter invariant with
