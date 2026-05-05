@@ -19,6 +19,233 @@ open Complex Topology Matrix LorentzLieGroup Classical Filter NormedSpace
 
 namespace BHW
 
+/-- The inverse Wick scale also squares to the complex Minkowski signature. -/
+theorem complexMinkowskiDotInvScale_sq
+    (d : ℕ) (μ : Fin (d + 1)) :
+    complexMinkowskiDotInvScale d μ * complexMinkowskiDotInvScale d μ =
+      (MinkowskiSpace.metricSignature d μ : ℂ) := by
+  by_cases hμ : μ = 0 <;>
+    simp [complexMinkowskiDotInvScale, MinkowskiSpace.metricSignature, hμ]
+
+theorem complexMinkowskiDotInvScale_ne_zero
+    (d : ℕ) (μ : Fin (d + 1)) :
+    complexMinkowskiDotInvScale d μ ≠ 0 := by
+  by_cases hμ : μ = 0 <;>
+    simp [complexMinkowskiDotInvScale, hμ]
+
+theorem complexMinkowskiDotScale_mul_invScale
+    (d : ℕ) (μ : Fin (d + 1)) :
+    complexMinkowskiDotScale d μ * complexMinkowskiDotInvScale d μ = 1 := by
+  rw [mul_comm]
+  exact complexMinkowskiDotInvScale_mul_scale d μ
+
+/-- The inverse Wick-scaled coordinates of a source vector. -/
+def complexMinkowskiInvDotVector
+    (d : ℕ) (v : Fin (d + 1) → ℂ) :
+    Fin (d + 1) → ℂ :=
+  fun μ => complexMinkowskiDotInvScale d μ * v μ
+
+/-- The complex Minkowski pairing is also the ordinary dot pairing after
+inverse Wick scaling. -/
+theorem sourceVectorMinkowskiInner_eq_dot_after_invScale
+    (d : ℕ) (u v : Fin (d + 1) → ℂ) :
+    sourceVectorMinkowskiInner d u v =
+      ∑ μ : Fin (d + 1),
+        complexMinkowskiInvDotVector d u μ *
+          complexMinkowskiInvDotVector d v μ := by
+  unfold sourceVectorMinkowskiInner complexMinkowskiInvDotVector
+  apply Finset.sum_congr rfl
+  intro μ _
+  rw [← complexMinkowskiDotInvScale_sq d μ]
+  ring
+
+/-- In inverse Wick-scaled dot coordinates, `fromSOComplex A` acts by the
+ordinary matrix `A`. -/
+theorem complexMinkowskiInvDotVector_complexLorentzVectorAction_fromSOComplex
+    (d : ℕ) (A : SOComplex (d + 1)) (v : Fin (d + 1) → ℂ) :
+    complexMinkowskiInvDotVector d
+        (complexLorentzVectorAction (ComplexLorentzGroup.fromSOComplex A) v) =
+      A.val *ᵥ complexMinkowskiInvDotVector d v := by
+  ext μ
+  calc
+    complexMinkowskiInvDotVector d
+        (complexLorentzVectorAction (ComplexLorentzGroup.fromSOComplex A) v) μ
+        = complexMinkowskiDotInvScale d μ *
+            ∑ ν : Fin (d + 1),
+              (complexMinkowskiDotScale d μ * A.val μ ν *
+                complexMinkowskiDotInvScale d ν) * v ν := by
+            simp [complexMinkowskiInvDotVector, complexLorentzVectorAction,
+              ComplexLorentzGroup.fromSOComplex_val_apply,
+              complexMinkowskiDotScale, complexMinkowskiDotInvScale]
+    _ = ∑ ν : Fin (d + 1),
+          (complexMinkowskiDotInvScale d μ * complexMinkowskiDotScale d μ) *
+            (A.val μ ν * (complexMinkowskiDotInvScale d ν * v ν)) := by
+            rw [Finset.mul_sum]
+            apply Finset.sum_congr rfl
+            intro ν _
+            ring
+    _ = ∑ ν : Fin (d + 1),
+          A.val μ ν * (complexMinkowskiDotInvScale d ν * v ν) := by
+            rw [complexMinkowskiDotInvScale_mul_scale]
+            simp
+    _ = (A.val *ᵥ complexMinkowskiInvDotVector d v) μ := by
+            simp [complexMinkowskiInvDotVector, Matrix.mulVec, dotProduct]
+
+/-- The signed dot-scale attached to the `a`th Minkowski prefix coordinate. -/
+def minkowskiPrefixSigma (m r : ℕ) (a : Fin r) : ℂ :=
+  complexMinkowskiDotInvScale (m + r) (SOComplex.prefixCol m r a)
+
+theorem minkowskiPrefixSigma_ne_zero
+    (m r : ℕ) (a : Fin r) :
+    minkowskiPrefixSigma m r a ≠ 0 :=
+  complexMinkowskiDotInvScale_ne_zero (m + r) (SOComplex.prefixCol m r a)
+
+theorem minkowskiPrefixSigma_sq
+    (m r : ℕ) (a : Fin r) :
+    minkowskiPrefixSigma m r a ^ 2 =
+      (MinkowskiSpace.metricSignature (m + r)
+        (SOComplex.prefixCol m r a) : ℂ) := by
+  simp [minkowskiPrefixSigma, sq, complexMinkowskiDotInvScale_sq]
+
+/-- Determinant-one complex Lorentz transitivity for a source frame whose Gram
+matrix is the standard Minkowski prefix metric. -/
+theorem complexMinkowski_detOneWittExtension_to_canonicalPrefixFrame
+    (m r : ℕ)
+    (x : Fin r → Fin (m + r + 1) → ℂ)
+    (hgram :
+      ∀ a b : Fin r,
+        sourceVectorMinkowskiInner (m + r) (x a) (x b) =
+          if a = b then
+            (MinkowskiSpace.metricSignature (m + r)
+              (SOComplex.prefixCol m r a) : ℂ)
+          else 0) :
+    ∃ Λ : ComplexLorentzGroup (m + r),
+      ∀ a : Fin r,
+        complexLorentzVectorAction Λ (x a) =
+          fun μ => if μ = SOComplex.prefixCol m r a then 1 else 0 := by
+  let σ : Fin r → ℂ := minkowskiPrefixSigma m r
+  let xdot : Fin r → Fin (m + r + 1) → ℂ :=
+    fun a => complexMinkowskiInvDotVector (m + r) (x a)
+  have hσ : ∀ a : Fin r, σ a ≠ 0 := by
+    intro a
+    exact minkowskiPrefixSigma_ne_zero m r a
+  have hdotGram :
+      ∀ a b : Fin r,
+        (∑ k : Fin (m + r + 1), xdot a k * xdot b k) =
+          if a = b then (σ a) ^ 2 else 0 := by
+    intro a b
+    rw [← sourceVectorMinkowskiInner_eq_dot_after_invScale (m + r) (x a) (x b)]
+    rw [hgram a b]
+    by_cases hab : a = b
+    · subst hab
+      simp [σ, minkowskiPrefixSigma_sq]
+    · simp [hab]
+  obtain ⟨A, hA⟩ :=
+    SOComplex.exists_so_with_signedPrefixCols m r σ hσ xdot hdotGram
+  refine ⟨ComplexLorentzGroup.fromSOComplex A⁻¹, ?_⟩
+  intro a
+  have hAinv_xdot :
+      (A⁻¹).val *ᵥ xdot a =
+        fun μ => if μ = SOComplex.prefixCol m r a then σ a else 0 := by
+    ext μ
+    have horth := congrFun (congrFun A.orthogonal μ) (SOComplex.prefixCol m r a)
+    simp only [Matrix.mul_apply, Matrix.transpose_apply, Matrix.one_apply] at horth
+    calc
+      ((A⁻¹).val *ᵥ xdot a) μ
+          = ∑ k : Fin (m + r + 1), A.val k μ * xdot a k := by
+              simp [Matrix.mulVec, dotProduct, SOComplex.inv_val_apply]
+      _ = ∑ k : Fin (m + r + 1),
+            A.val k μ * (σ a * A.val k (SOComplex.prefixCol m r a)) := by
+              apply Finset.sum_congr rfl
+              intro k _
+              rw [hA a k]
+      _ = σ a *
+            ∑ k : Fin (m + r + 1),
+              A.val k μ * A.val k (SOComplex.prefixCol m r a) := by
+              rw [Finset.mul_sum]
+              apply Finset.sum_congr rfl
+              intro k _
+              ring
+      _ = σ a * (if μ = SOComplex.prefixCol m r a then 1 else 0) := by
+              rw [horth]
+      _ = (if μ = SOComplex.prefixCol m r a then σ a else 0) := by
+              by_cases hμ : μ = SOComplex.prefixCol m r a <;> simp [hμ]
+  have hdot_action :
+      complexMinkowskiInvDotVector (m + r)
+          (complexLorentzVectorAction
+            (ComplexLorentzGroup.fromSOComplex A⁻¹) (x a)) =
+        fun μ => if μ = SOComplex.prefixCol m r a then σ a else 0 := by
+    calc
+      complexMinkowskiInvDotVector (m + r)
+          (complexLorentzVectorAction
+            (ComplexLorentzGroup.fromSOComplex A⁻¹) (x a))
+          = (A⁻¹).val *ᵥ xdot a := by
+              rw [complexMinkowskiInvDotVector_complexLorentzVectorAction_fromSOComplex]
+      _ = fun μ => if μ = SOComplex.prefixCol m r a then σ a else 0 := hAinv_xdot
+  ext μ
+  by_cases hμ : μ = SOComplex.prefixCol m r a
+  · subst hμ
+    have hμdot :
+        complexMinkowskiDotInvScale (m + r) (SOComplex.prefixCol m r a) *
+          complexLorentzVectorAction
+            (ComplexLorentzGroup.fromSOComplex A⁻¹) (x a)
+            (SOComplex.prefixCol m r a) =
+          σ a := by
+      simpa [complexMinkowskiInvDotVector] using
+        congrFun hdot_action (SOComplex.prefixCol m r a)
+    calc
+      complexLorentzVectorAction (ComplexLorentzGroup.fromSOComplex A⁻¹) (x a)
+          (SOComplex.prefixCol m r a)
+          = 1 *
+              complexLorentzVectorAction
+                (ComplexLorentzGroup.fromSOComplex A⁻¹) (x a)
+                (SOComplex.prefixCol m r a) := by rw [one_mul]
+      _ = (complexMinkowskiDotScale (m + r) (SOComplex.prefixCol m r a) *
+            complexMinkowskiDotInvScale (m + r) (SOComplex.prefixCol m r a)) *
+              complexLorentzVectorAction
+                (ComplexLorentzGroup.fromSOComplex A⁻¹) (x a)
+                (SOComplex.prefixCol m r a) := by
+            rw [complexMinkowskiDotScale_mul_invScale]
+      _ = complexMinkowskiDotScale (m + r) (SOComplex.prefixCol m r a) *
+            (complexMinkowskiDotInvScale (m + r) (SOComplex.prefixCol m r a) *
+              complexLorentzVectorAction
+                (ComplexLorentzGroup.fromSOComplex A⁻¹) (x a)
+                (SOComplex.prefixCol m r a)) := by ring
+      _ = complexMinkowskiDotScale (m + r) (SOComplex.prefixCol m r a) *
+            σ a := by
+            rw [hμdot]
+      _ = 1 := by
+            simp [σ, minkowskiPrefixSigma, complexMinkowskiDotScale_mul_invScale]
+      _ = (fun μ => if μ = SOComplex.prefixCol m r a then 1 else 0)
+            (SOComplex.prefixCol m r a) := by
+            simp
+  · calc
+      complexLorentzVectorAction (ComplexLorentzGroup.fromSOComplex A⁻¹) (x a) μ
+          = 1 *
+              complexLorentzVectorAction
+                (ComplexLorentzGroup.fromSOComplex A⁻¹) (x a) μ := by
+            rw [one_mul]
+      _ = (complexMinkowskiDotScale (m + r) μ *
+            complexMinkowskiDotInvScale (m + r) μ) *
+              complexLorentzVectorAction
+                (ComplexLorentzGroup.fromSOComplex A⁻¹) (x a) μ := by
+            rw [complexMinkowskiDotScale_mul_invScale]
+      _ = complexMinkowskiDotScale (m + r) μ *
+            (complexMinkowskiDotInvScale (m + r) μ *
+              complexLorentzVectorAction
+                (ComplexLorentzGroup.fromSOComplex A⁻¹) (x a) μ) := by ring
+      _ = 0 := by
+            rw [show
+              complexMinkowskiDotInvScale (m + r) μ *
+                complexLorentzVectorAction
+                  (ComplexLorentzGroup.fromSOComplex A⁻¹) (x a) μ =
+                0 by
+                  simpa [complexMinkowskiInvDotVector, hμ] using
+                    congrFun hdot_action μ]
+            ring
+      _ = (fun μ => if μ = SOComplex.prefixCol m r a then 1 else 0) μ := by
+            simp [hμ]
+
 /-- Normal-parameter representative data matched to a local head gauge.
 
 The hard geometric producer for this structure is the finite-dimensional

@@ -15,6 +15,22 @@ open Complex Matrix Classical
 
 namespace SOComplex
 
+/-- The `a`th prefix column of an ambient `m + r + 1` dimensional frame. -/
+def prefixCol (m r : ℕ) (a : Fin r) : Fin (m + r + 1) :=
+  ⟨a.val, by omega⟩
+
+@[simp]
+theorem prefixCol_zero {m r : ℕ} :
+    prefixCol m (r + 1) (0 : Fin (r + 1)) = 0 := by
+  ext
+  simp [prefixCol]
+
+@[simp]
+theorem prefixCol_succ {m r : ℕ} (a : Fin r) :
+    prefixCol m (r + 1) a.succ = (prefixCol m r a).succ := by
+  ext
+  simp [prefixCol]
+
 @[simp]
 theorem inv_val_apply {n : ℕ} (A : SOComplex n) (i j : Fin n) :
     (A⁻¹).val i j = A.val j i := by
@@ -192,6 +208,149 @@ theorem tail_dot_eq_of_inv_mulVec_signed_col_orth {m : ℕ}
     _ = ∑ k : Fin (m + 2), w k * u k := by
         simpa [w', u'] using dot_mulVec_eq (A⁻¹) w u
     _ = c := hwu
+
+/-- Tail Gram table after one signed first-column normalization. -/
+theorem tail_frame_dot_eq_of_inv_mulVec_signed_col_orth {m r : ℕ}
+    (A : SOComplex (m + 2)) {σ : ℂ} (hσ : σ ≠ 0)
+    {v₀ : Fin (m + 2) → ℂ}
+    (v : Fin r → Fin (m + 2) → ℂ)
+    (hA : ∀ k : Fin (m + 2), σ * A.val k 0 = v₀ k)
+    (horth : ∀ a : Fin r, ∑ k : Fin (m + 2), v₀ k * v a k = 0)
+    (a b : Fin r) :
+    (∑ i : Fin (m + 1),
+      ((A⁻¹).val *ᵥ v a) i.succ * ((A⁻¹).val *ᵥ v b) i.succ) =
+      ∑ k : Fin (m + 2), v a k * v b k := by
+  exact
+    tail_dot_eq_of_inv_mulVec_signed_col_orth
+      A hσ hA (horth a) (horth b) rfl
+
+/-- The first column of the assembled matrix `A * embed B` keeps the signed
+first-column data supplied by `A`. -/
+theorem signed_mul_embed_col_zero_eq {m : ℕ}
+    (A : SOComplex (m + 2)) (B : SOComplex (m + 1))
+    {σ : ℂ} {v : Fin (m + 2) → ℂ}
+    (hA : ∀ k : Fin (m + 2), σ * A.val k 0 = v k)
+    (k : Fin (m + 2)) :
+    σ * (A * embed B).val k 0 = v k := by
+  rw [mul_embed_val_col_zero]
+  exact hA k
+
+/-- Final column rewrite for the signed-frame induction: if the recursive tail
+matrix `B` has the signed tail coordinates of `A⁻¹ v` as column `j`, then
+`A * embed B` has the original vector `v` as the corresponding successor
+column. -/
+theorem signed_mul_embed_col_succ_eq_of_tail {m : ℕ}
+    (A : SOComplex (m + 2)) (B : SOComplex (m + 1))
+    {σ : ℂ} {v : Fin (m + 2) → ℂ}
+    (j : Fin (m + 1))
+    (hB :
+      ∀ l : Fin (m + 1),
+        σ * B.val l j = ((A⁻¹).val *ᵥ v) l.succ)
+    (hzero : ((A⁻¹).val *ᵥ v) (0 : Fin (m + 2)) = 0)
+    (k : Fin (m + 2)) :
+    σ * (A * embed B).val k j.succ = v k := by
+  let w : Fin (m + 2) → ℂ := (A⁻¹).val *ᵥ v
+  have htail :
+      σ * (∑ l : Fin (m + 1), A.val k l.succ * B.val l j) =
+        ∑ l : Fin (m + 1), A.val k l.succ * w l.succ := by
+    rw [Finset.mul_sum]
+    apply Finset.sum_congr rfl
+    intro l _
+    calc
+      σ * (A.val k l.succ * B.val l j)
+          = A.val k l.succ * (σ * B.val l j) := by ring
+      _ = A.val k l.succ * w l.succ := by rw [hB l]
+  have hfull :
+      (∑ l : Fin (m + 1), A.val k l.succ * w l.succ) =
+        ∑ q : Fin (m + 2), A.val k q * w q := by
+    conv_rhs => rw [Fin.sum_univ_succ]
+    simp [w, hzero]
+  calc
+    σ * (A * embed B).val k j.succ
+        = σ * (∑ l : Fin (m + 1), A.val k l.succ * B.val l j) := by
+            rw [mul_embed_val_col_succ]
+    _ = ∑ l : Fin (m + 1), A.val k l.succ * w l.succ := htail
+    _ = ∑ q : Fin (m + 2), A.val k q * w q := hfull
+    _ = (A.val *ᵥ w) k := by rfl
+    _ = v k := by
+        exact congrFun (mulVec_inv_mulVec A v) k
+
+/-- Signed prefix-frame transitivity for the standard complex symmetric dot
+form.  A dot-orthogonal prefix frame with diagonal signed squares `σ a ^ 2`
+is realized as the corresponding signed prefix columns of some element of
+`SOComplex`. -/
+theorem exists_so_with_signedPrefixCols
+    (m r : ℕ)
+    (σ : Fin r → ℂ)
+    (hσ : ∀ a : Fin r, σ a ≠ 0)
+    (v : Fin r → Fin (m + r + 1) → ℂ)
+    (hgram :
+      ∀ a b : Fin r,
+        (∑ k : Fin (m + r + 1), v a k * v b k) =
+          if a = b then (σ a) ^ 2 else 0) :
+    ∃ A : SOComplex (m + r + 1),
+      ∀ (a : Fin r) (k : Fin (m + r + 1)),
+        σ a * A.val k (prefixCol m r a) = v a k := by
+  induction r with
+  | zero =>
+      refine ⟨1, ?_⟩
+      intro a
+      exact Fin.elim0 a
+  | succ r ih =>
+      let σ0 : ℂ := σ 0
+      let v0 : Fin (m + (r + 1) + 1) → ℂ := v 0
+      have hσ0 : σ0 ≠ 0 := hσ 0
+      have hv0_sq : ∑ k : Fin (m + (r + 1) + 1), v0 k ^ 2 = σ0 ^ 2 := by
+        have h := hgram 0 0
+        simpa [v0, σ0, sq] using h
+      obtain ⟨A0, hA0⟩ :=
+        exists_so_with_firstCol_of_sq (m := m + r) σ0 hσ0 v0 hv0_sq
+      let tailσ : Fin r → ℂ := fun a => σ a.succ
+      let tailv : Fin r → Fin (m + r + 1) → ℂ :=
+        fun a i => ((A0⁻¹).val *ᵥ v a.succ) i.succ
+      have htailσ : ∀ a : Fin r, tailσ a ≠ 0 := by
+        intro a
+        exact hσ a.succ
+      have horth :
+          ∀ a : Fin r,
+            ∑ k : Fin (m + (r + 1) + 1), v0 k * v a.succ k = 0 := by
+        intro a
+        have h := hgram 0 a.succ
+        simpa [v0] using h
+      have htailGram :
+          ∀ a b : Fin r,
+            (∑ k : Fin (m + r + 1), tailv a k * tailv b k) =
+              if a = b then (tailσ a) ^ 2 else 0 := by
+        intro a b
+        calc
+          (∑ k : Fin (m + r + 1), tailv a k * tailv b k)
+              =
+                ∑ k : Fin (m + (r + 1) + 1),
+                  v a.succ k * v b.succ k := by
+                  simpa [tailv] using
+                    tail_frame_dot_eq_of_inv_mulVec_signed_col_orth
+                      A0 hσ0 (fun a : Fin r => v a.succ) hA0 horth a b
+          _ = if a = b then (tailσ a) ^ 2 else 0 := by
+              have h := hgram a.succ b.succ
+              by_cases hab : a = b
+              · subst hab
+                simpa [tailσ] using h
+              · have hs : a.succ ≠ b.succ := fun h =>
+                  hab (Fin.succ_injective _ h)
+                simpa [tailσ, hs, hab] using h
+      obtain ⟨B, hB⟩ := ih tailσ htailσ tailv htailGram
+      refine ⟨A0 * embed B, ?_⟩
+      intro a k
+      refine Fin.cases ?_ ?_ a
+      · change σ0 * (A0 * embed B).val k 0 = v0 k
+        exact signed_mul_embed_col_zero_eq A0 B hA0 k
+      · intro a
+        have hzero :
+            ((A0⁻¹).val *ᵥ v a.succ) (0 : Fin (m + (r + 1) + 1)) = 0 :=
+          inv_mulVec_zero_eq_zero_of_signed_col_orth A0 hσ0 hA0 (horth a)
+        simpa [tailσ, tailv] using
+          signed_mul_embed_col_succ_eq_of_tail
+            A0 B (prefixCol m r a) (hB a) hzero k
 
 end SOComplex
 
