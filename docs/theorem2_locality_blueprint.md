@@ -13333,6 +13333,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | `BHW.sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_local_basis`, `BHW.sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected`, `BHW.sourceOrientedMaxRank_local_connectedMaxRank_basis_fullFrame`, `BHW.sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_exceptionalLocalBasis`, `BHW.sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_rankDeficientMaxRankLocalImageProducer`, `BHW.exists_preconnectedRelOpen_maxRankSeed_inside`, `BHW.BHWJostOrientedFiniteOverlapPropagationData`, `BHW.BHWJostOrientedFiniteOverlapPropagationData.to_closedLoopSeed`, `BHW.BHWJostOrientedSourcePatchContinuationChain.exists_terminalSeed_of_finiteOverlapDomains`, `BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData`, `BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData.to_finiteOverlapPropagationData`, `BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData.to_closedLoopSeed`, `BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData.to_orientedMonodromy`, `BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData.to_sourceMonodromy`, `BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData.exists_of_positiveDomains`, `BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData.exists_of_zeroTransitions` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedBHWFiniteOverlap.lean`. | Terminal finite-overlap interface for the remaining BHW/Jost monodromy theorem.  The max-rank assembly lemmas reduce connectedness of `D ∩ MaxRank` to connectedness of `D`, hard-range max-rank density, and a local connected max-rank basis; the max-rank-center local case is checked from the full-frame chart shrinker, leaving only the exceptional-rank local-image case as the local topology input.  The rank-deficient max-rank local-image adapter is now checked, so a future concrete Schur/residual producer of `SourceOrientedRankDeficientMaxRankLocalImageData` feeds the connectedness consumer directly.  The seed extractor shrinks any nonempty relatively open oriented patch to a nonempty preconnected relatively open max-rank seed.  The terminal data records the final connected max-rank domain, terminal equality seed, and closing-patch containment that the ordered finite-overlap propagation must produce.  The consumer theorem is mechanical and calls `BHWJostOrientedMaxRankClosedLoopSeed.exists_of_connectedDomainPropagation`; the finite-overlap induction theorem iterates `exists_propagatedSeed_to_right` across an ordered family of connected max-rank domains whose adjacency containments absorb each newly produced seed and records whether the terminal seed came from the initial seed or last transition patch.  The closed-loop domain-data consumers combine this induction with zero/positive provenance to package all the way into `BHWJostOrientedMaxRankClosedLoopSeed`, oriented monodromy, and source monodromy; the positive-length constructor extracts the initial seed from the first connected overlap domain, and the zero-transition edge case is reduced to extracting a seed inside the closing patch, assuming the closing max-rank part is connected.  The hard theorem is now the source-backed producer for the specific strict OS I §4.5 BHW/Jost loops, proving the ordered overlap domains, the exceptional local connected max-rank basis where needed, adjacency containments, and closing domain.  An arbitrary closed-loop statement with only `L` and `hn` is not a Lean-ready theorem surface.  No new `sorry` or axiom is introduced. |
       | `BHW.sourceGramMatrixRank_le_spacetime_source_min`, `BHW.sourceOriented_notMaxRank_sourceGramMatrixRank_lt_min`, `BHW.sourceOriented_notMaxRank_sourceGramMatrixRank_lt_fullFrame`, `BHW.sourceOrientedMaxRankAt_iff_of_gram_eq`, `BHW.sourceOrientedExceptionalRank_iff_of_gram_eq`, `BHW.sourceOrientedMaxRankAt_iff_sourceGramMatrixRank_eq_fullFrame`, `BHW.sourceOrientedMaxRankAt_invariant_iff_sourceGramMatrixRank_eq_fullFrame`, `BHW.sourceOrientedMaxRankAt_invariant_iff_hwSourceGramMaxRankAt`, `BHW.hwSourceGramMaxRankAt_of_sourceOrientedInvariant_eq`, `BHW.sourceOrientedExceptionalRank_invariant_iff_hwSourceGramExceptionalRankAt`, `BHW.hwSourceGramExceptionalRankAt_of_sourceOrientedInvariant_eq` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedRankBridge.lean`. | Rank bridge between the strict oriented max/exceptional-rank predicates and the existing scalar source-rank API.  The rank upper bound for actual source configurations is proved from the restricted-Minkowski-rank formula and finite-dimensional span bounds, so the equality-style oriented max-rank predicate is equivalent to the scalar `min (d+1) n ≤ rank` predicate.  Failure of oriented max-rank for an actual source configuration now gives strict rank deficiency below both `min (d+1) n` and `d+1`, which is the checked input for choosing the normal-form rank.  In the hard range `d + 1 ≤ n`, the max-rank predicate is also exposed directly as the ordinary full-frame equation `sourceGramMatrixRank n G.gram = d + 1`, both for arbitrary oriented Gram data and for actual source invariants.  This is support for the upcoming exceptional Schur/residual parameter connectedness proof, not a new analytic input. |
       | `BHW.sourceGramMatrixRank_le_arity`, `BHW.sourceFullFrameDet_eq_zero_of_sourceRank_lt`, `BHW.sourceOrientedMinkowskiInvariant_eq_of_sameGram_rank_lt` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedLowRankDeterminants.lean`. | Low-rank determinant bridge for the normal-form route.  The arity bound is the direct `Matrix.rank_le_width` support for choosing `hrn : r ≤ n`.  If the ordinary source Gram matrix has rank `< d + 1`, a nonzero selected full-frame determinant would make the selected full-frame Gram determinant nonzero by `sourceFullFrameGram_det_eq`, hence force a nonzero `(d+1) × (d+1)` minor of the ordinary source Gram matrix and contradict the checked nonzero-minor rank bound.  Therefore all oriented determinant coordinates vanish in the strict low-rank branch, and same ordinary Gram implies equality of the full oriented source invariant. |
+      | `BHW.finCastLEEmbedding`, `BHW.sourceComplexPad`, `BHW.sourceComplexDotGram_padded_eq`, `BHW.sourceGramMatrixRank_le_finrank_sourceCoefficientEval_range`, `BHW.sourceGramMatrixRank_le_spacetime_of_mem_sourceComplexGramVariety`, `BHW.finrank_sourceCoefficientEval_range_le_of_paddedDot`, `BHW.sourceComplexGramVariety_exists_adaptedSourceRepresentative`, `BHW.sourceOriented_lowRank_exists_adaptedRepresentative` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedAdaptedRepresentative.lean`. | Algebraic adapted-representative gate for the rank-deficient no-tube normal-form route.  The file replaces the false shortcut that an arbitrary realization has source-span dimension equal to Gram rank.  It factors an exact-rank ordinary symmetric Gram matrix as a full-rank dot-Gram in exactly `r` coordinates, pads those coordinates into `Fin (d+1)`, transports through `complexMinkowskiToDotLinearEquiv.symm`, proves the padded dot Gram is unchanged, bounds the coefficient span by the padded `r`-coordinate subspace, and uses the general rank-versus-span inequality for the reverse bound.  In the strict oriented low-rank branch, the checked low-rank determinant theorem then upgrades same ordinary Gram to equality of the full oriented invariant. |
       | `BHW.sourcePrincipalSchurGraph_sourceGramMatrixRank_eq_iff_residual_rank`, `BHW.sourceOrientedMaxRankAt_sourcePrincipalSchurGraph_iff_residual_rank`, `BHW.sourcePrincipalSchur_orientedMaxRank_parameterSet_eq`, `BHW.isConnected_sourcePrincipalSchur_orientedMaxRank_parameterSet`, `BHW.isConnected_sourcePrincipalSchur_transported_orientedMaxRank_parameterSet`, `BHW.isConnected_sourcePrincipalSchur_transported_orientedMaxRank_preimage_of_eq` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedSchurParameter.lean`. | Principal-Schur residual bridge for the exceptional max-rank parameter proof.  It combines the ordinary Schur rank formula, the hard-range oriented max-rank rewrite, the transport inverse max-rank equivalence, and the checked product connectedness theorem to show that the parameter subset whose inverse-transported oriented Schur-graph image is max-rank is connected exactly when the residual exact-rank cone is connected.  The final preimage theorem lets the concrete normal-form producer use any parameter-box image that agrees on the box with the transported Schur graph; the endpoint reconstruction equality is now supplied by `SourceOrientedSchurReconstruct.lean`, so the remaining obligation is producing the Schur residual data and proving the concrete parameter image agrees with that Schur graph on the chosen box.  The determinant coordinates are arbitrary functions of the parameter and disappear because `SourceOrientedMaxRankAt` only reads the ordinary Gram coordinate.  No BHW analytic input is hidden here. |
       | `BHW.finSourceHead`, `BHW.finSourceTail`, `BHW.finSourceHead_val`, `BHW.finSourceTail_val`, `BHW.finSourceHead_injective`, `BHW.finSourceTail_injective`, `BHW.finSourceHead_ne_finSourceTail`, `BHW.finSourceHead_tail_cases`, `BHW.SourceOrientedRankDeficientNormalParameter`, `BHW.sourceOrientedNormalParameterCoord`, `BHW.instTopologicalSpaceSourceOrientedRankDeficientNormalParameter`, `BHW.continuous_sourceOrientedNormalParameterCoord`, `BHW.continuous_sourceOrientedNormalParameter_head`, `BHW.continuous_sourceOrientedNormalParameter_mixed`, `BHW.continuous_sourceOrientedNormalParameter_tail`, `BHW.sourceOrientedNormalCenterParameter`, `BHW.sourceTailEmbed`, `BHW.sourceTailEmbed_head`, `BHW.sourceTailEmbed_tail`, `BHW.sourceTailEmbed_zero`, `BHW.hwLemma3CanonicalSource`, `BHW.hwLemma3CanonicalSource_head_apply`, `BHW.hwLemma3CanonicalSource_head_head`, `BHW.hwLemma3CanonicalSource_head_of_tailCoord`, `BHW.hwLemma3CanonicalSource_tail`, `BHW.sourceHeadMetric`, `BHW.sourceHeadMetric_apply`, `BHW.sourceHeadMetric_transpose`, `BHW.sourceHeadMetric_det_isUnit`, `BHW.sourceTailMetric`, `BHW.sourceTailMetric_apply`, `BHW.sourceTailMetric_det_isUnit`, `BHW.sourceTailMetricScale`, `BHW.sourceTailMetricScale_ne_zero`, `BHW.sourceTailMetricScale_mul_self`, `BHW.sourceTailMetricDetScale`, `BHW.sourceTailMetricDetScale_ne_zero`, `BHW.sourceVectorMinkowskiInner`, `BHW.sourceShiftedTailGram`, `BHW.sourceShiftedTailGram_apply`, `BHW.sourceVectorMinkowskiInner_add_right`, `BHW.sourceVectorMinkowskiInner_add_left`, `BHW.sourceVectorMinkowskiInner_sum_right`, `BHW.sourceVectorMinkowskiInner_sum_left`, `BHW.sourceVectorMinkowskiInner_smul_right`, `BHW.sourceVectorMinkowskiInner_smul_left`, `BHW.sourceMinkowskiGram_hwLemma3CanonicalSource_head`, `BHW.hwLemma3CanonicalSource_head_unit`, `BHW.sourceVectorMinkowskiInner_hwLemma3CanonicalSource_head`, `BHW.sourceOrientedNormalHeadVector`, `BHW.sourceOrientedNormalHeadVector_center`, `BHW.continuous_sourceOrientedNormalHeadVector`, `BHW.sourceVectorMinkowskiInner_sourceOrientedNormalHeadVector`, `BHW.sourceNormalHeadGram_transpose`, `BHW.sourceVectorMinkowskiInner_headVector_sourceTailEmbed`, `BHW.sourceVectorMinkowskiInner_sourceTailEmbed_headVector`, `BHW.sourceOrientedNormalParameterVector`, `BHW.sourceOrientedNormalParameterVector_head`, `BHW.sourceOrientedNormalParameterVector_tail`, `BHW.sourceVectorMinkowskiInner_head_tailParameterVector`, `BHW.sourceVectorMinkowskiInner_tailParameterVector_head`, `BHW.sourceVectorMinkowskiInner_mixedHeadPart_sourceTailEmbed`, `BHW.sourceVectorMinkowskiInner_sourceTailEmbed_mixedHeadPart`, `BHW.sourceVectorMinkowskiInner_mixedHeadPart_mixedHeadPart`, `BHW.sourceVectorMinkowskiInner_tailParameterVector_tail`, `BHW.continuous_sourceOrientedNormalParameterVector`, `BHW.sourceOrientedNormalParameterVector_center` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedNormalParameter.lean`. | Concrete normal-parameter algebra for the rank-deficient Schur producer.  The checked file fixes the finite source-label split `Fin n = head ⊔ tail`, the finite product topology, continuous coordinate projections, padded shifted-tail embedding, canonical source/normal-parameter center equality, signature-diagonal head and shifted-tail metrics, explicit shifted-to-Euclidean tail normalizing scalars, bilinearity of the ambient Minkowski form, head/head, head/tail, tail/head, and tail/tail Gram formulas for the normal parameter vector, and continuity of the normal source tuple.  The ordinary Gram part of `sourceOrientedNormalParameterVector_realizes_schur` is reduced to checked block identities; determinant recovery for ordered full frames is now supplied downstream by `SourceOrientedSchurPropagation.lean`, so the remaining theorem-2 producer work here is the shifted-tail realization/normalization packet. |
       | `BHW.matrixEntryL1Bound`, `BHW.matrixEntryL1Bound_nonneg`, `BHW.matrixEntryL1Bound_lt_of_entry_bound`, `BHW.exists_pos_mul_sqrt_lt`, `BHW.real_sqrt_lt_of_lt_mul_bound`, `BHW.takagiConjugateLinearMap`, `BHW.takagiConjugateLinearMap_add`, `BHW.takagiConjugateLinearMap_smul`, `BHW.takagiConjugateLinearMap_sq`, `BHW.takagiConjugateLinearMap_commutes_square`, `BHW.takagiConjugateLinearMap_mem_eigenspace`, `BHW.takagiConjugateLinearMap_conjTranspose_mulVec_eq_star`, `BHW.takagiConjugateLinearMap_zero_eigenspace_eq_zero`, `BHW.takagiHermitianSquare_isHermitian`, `BHW.takagiHermitianSquare_spectralTheorem`, `BHW.takagiHermitianSquare_eigenvalue_nonneg`, `BHW.takagiHermitianSquare_singularValue_nonneg`, `BHW.takagiHermitianSquare_eigenvalue_rankSupport`, `BHW.takagiHermitianSquare_singularValue_rankSupport`, `BHW.matrix_unitary_entry_norm_le_one`, `BHW.matrix_unitary_entry_mul_real_sqrt_norm_le_sqrt`, `BHW.complexSymmetric_takagi_factor_from_supportEmbedding`, `BHW.complexSymmetric_entryL1_of_takagiDiagonalData`, `BHW.complexSymmetric_entryL1_of_takagiDiagonalData_rankSupport`, `BHW.complexSymmetric_factorSmall_rankLE_of_entryL1`, `BHW.sourceComplexSymmetric_factorSmall_rankLE_of_entryL1` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceComplexSmallFactor.lean`. | Quantitative finite-entry reducer and first Autonne-Takagi spectral layer for the Euclidean tail full-rank branch.  The checked file proves the entry-`ℓ¹` bound from a uniform entry bound, chooses a positive `δ` with `sqrt(C_m δ) < ε`, proves the conjugate-linear Takagi map `v ↦ S *ᵥ star v` is additive/semilinear, squares to `S * Sᴴ`, commutes with that square, preserves real eigenspaces, kills the zero eigenspace, and identifies the Hermitian-square spectral data with nonnegative singular values whose nonzero support has cardinal `S.rank`.  It also exposes the unitary-entry estimate needed in the Takagi norm bound, checks the finite support-embedding reindexing from a diagonal Takagi decomposition to a rectangular `m × k` factor, and turns bounded diagonal Takagi data into the entry-controlled factor and then the parameterized small matrix/source-coordinate same-Gram factor theorem.  The unparameterized Autonne-Takagi entry theorem and small-factor consumers are now checked in `SourceComplexTakagiGlobal.lean`. |
@@ -14273,6 +14274,124 @@ Proof decomposition of this theorem, without hiding the analytic work:
               orientedTransport.invFun
                 (BHW.sourceOrientedMinkowskiInvariant d n z)
 
+      -- Algebraic-adapted representative gate.  The normal-form transport
+      -- may not be applied to an arbitrary source realization of `G0`: a
+      -- realization can contain radical tail vectors, so its source span can
+      -- have dimension strictly larger than the scalar Gram rank.  The
+      -- no-tube local-image proof first replaces the ordinary Gram coordinate
+      -- by a same-Gram representative whose source span has the correct
+      -- dimension.  This is purely finite-dimensional algebra, unlike the
+      -- extended-tube adapted representative used in Lemma 3.
+      theorem BHW.sourceComplexGramVariety_exists_adaptedSourceRepresentative
+          (d n : Nat)
+          {G : Fin n -> Fin n -> ℂ}
+          (hG : G ∈ BHW.sourceComplexGramVariety d n) :
+          ∃ z : Fin n -> Fin (d + 1) -> ℂ,
+            BHW.sourceMinkowskiGram d n z = G ∧
+            Module.finrank ℂ
+              (LinearMap.range (BHW.sourceCoefficientEval d n z)) =
+              BHW.sourceGramMatrixRank n G := by
+        classical
+        let r := BHW.sourceGramMatrixRank n G
+        have hGsym : G ∈ BHW.sourceSymmetricMatrixSpace n :=
+          BHW.sourceComplexGramVariety_subset_sourceSymmetricMatrixSpace
+            d n hG
+        have hr_exact :
+            G ∈ BHW.sourceSymmetricRankExactStratum n r :=
+          by
+            refine ⟨hGsym, ?_⟩
+            have hM : (Matrix.of fun i j : Fin n => G i j) = G := by
+              ext i j
+              rfl
+            simp [r, BHW.sourceGramMatrixRank, hM]
+        have hrD : r <= d + 1 := by
+          -- From `hG` and
+          -- `sourceComplexGramVariety_eq_rank_le`, or equivalently from
+          -- `sourceComplexGramVariety_subset_sourceSymmetricRankLEVariety`.
+          exact BHW.sourceGramMatrixRank_le_spacetime_of_mem_sourceComplexGramVariety
+            (d := d) (n := n) (G := G) hG
+        rcases BHW.exists_fullRank_sourceComplexDotGram_of_rankExact
+            (m := n) (r := r) hr_exact with
+          ⟨A, _hA_full, hA_gram⟩
+        let Apad : Fin n -> Fin (d + 1) -> ℂ :=
+          BHW.sourceComplexPad d n r hrD A
+        let z : Fin n -> Fin (d + 1) -> ℂ :=
+          fun i => (BHW.complexMinkowskiToDotLinearEquiv d).symm (Apad i)
+        have hzGram : BHW.sourceMinkowskiGram d n z = G := by
+          rw [BHW.sourceMinkowskiGram_eq_dotGram_after_equiv]
+          have hrow :
+              (fun i =>
+                BHW.complexMinkowskiToDotLinearEquiv d
+                  ((BHW.complexMinkowskiToDotLinearEquiv d).symm
+                    (Apad i))) = Apad := by
+            ext i μ
+            exact congrFun
+              ((BHW.complexMinkowskiToDotLinearEquiv d).apply_symm_apply
+                (Apad i)) μ
+          rw [hrow]
+          rw [show BHW.sourceComplexDotGram (d + 1) n Apad =
+              BHW.sourceComplexDotGram r n A by
+            simpa [Apad] using
+              BHW.sourceComplexDotGram_padded_eq d n r hrD A]
+          exact hA_gram
+        have hspan_le :
+            Module.finrank ℂ
+              (LinearMap.range (BHW.sourceCoefficientEval d n z)) <= r := by
+          -- The coefficient-evaluation range is contained in the `r`-dimensional
+          -- padded coordinate subspace because every `Apad i` has zero tail;
+          -- transport through `complexMinkowskiToDotLinearEquiv.symm`.
+          simpa [z, Apad] using
+            BHW.finrank_sourceCoefficientEval_range_le_of_paddedDot
+              (d := d) (n := n) (r := r) hrD A
+        have hrank_eq :
+            BHW.sourceGramMatrixRank n
+              (BHW.sourceMinkowskiGram d n z) = r := by
+          simpa [hzGram, r]
+        have hrank_le_span :
+            r <= Module.finrank ℂ
+              (LinearMap.range (BHW.sourceCoefficientEval d n z)) := by
+          -- `sourceGramMatrixRank_eq_restrictedMinkowskiRank_range` and
+          -- `restrictedMinkowskiRank <= finrank`.
+          simpa [hrank_eq] using
+            BHW.sourceGramMatrixRank_le_finrank_sourceCoefficientEval_range
+              (d := d) (n := n) z
+        exact ⟨z, hzGram, by
+          simpa [r] using le_antisymm hspan_le hrank_le_span⟩
+
+      theorem BHW.sourceOriented_lowRank_exists_adaptedRepresentative
+          (d n : Nat)
+          {G0 : BHW.SourceOrientedGramData d n}
+          (hG0 : G0 ∈ BHW.sourceOrientedGramVariety d n)
+          (hlow : ¬ BHW.SourceOrientedMaxRankAt d n G0) :
+          ∃ z0 : Fin n -> Fin (d + 1) -> ℂ,
+            BHW.sourceOrientedMinkowskiInvariant d n z0 = G0 ∧
+            Module.finrank ℂ
+              (LinearMap.range (BHW.sourceCoefficientEval d n z0)) =
+              BHW.sourceGramMatrixRank n
+                (BHW.sourceMinkowskiGram d n z0) := by
+        classical
+        rcases hG0 with ⟨zRaw, hzRaw⟩
+        subst hzRaw
+        have hraw_low :
+            BHW.sourceGramMatrixRank n
+              (BHW.sourceMinkowskiGram d n zRaw) < d + 1 :=
+          BHW.sourceOriented_notMaxRank_sourceGramMatrixRank_lt_fullFrame
+            d n zRaw hlow
+        have hGvar :
+            BHW.sourceMinkowskiGram d n zRaw ∈
+              BHW.sourceComplexGramVariety d n := by
+          exact ⟨zRaw, rfl⟩
+        rcases BHW.sourceComplexGramVariety_exists_adaptedSourceRepresentative
+            (d := d) (n := n) hGvar with
+          ⟨z0, hz0Gram, hz0span⟩
+        have hsame :
+            BHW.sourceOrientedMinkowskiInvariant d n zRaw =
+              BHW.sourceOrientedMinkowskiInvariant d n z0 := by
+          exact
+            BHW.sourceOrientedMinkowskiInvariant_eq_of_sameGram_rank_lt
+              d n (z := zRaw) (w := z0) hz0Gram.symm hraw_low
+        exact ⟨z0, hsame.symm, by simpa [hz0Gram] using hz0span⟩
+
       theorem BHW.sourceOriented_rankDeficient_algebraicNormalFormData
           [NeZero d]
           (hd : 2 <= d)
@@ -14283,13 +14402,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (hlow : ¬ BHW.SourceOrientedMaxRankAt d n G0) :
           BHW.SourceOrientedRankDeficientAlgebraicNormalFormData d n G0 := by
         classical
-        rcases hG0 with ⟨z0, hz0⟩
-        subst hz0
+        rcases
+          BHW.sourceOriented_lowRank_exists_adaptedRepresentative
+            (d := d) (n := n) hG0 hlow with
+          ⟨z0, hz0_realizes, hspan_adapted⟩
         have hrank_lt :
             BHW.sourceGramMatrixRank n
               (BHW.sourceMinkowskiGram d n z0) < d + 1 :=
           BHW.sourceOriented_notMaxRank_sourceGramMatrixRank_lt_fullFrame
-            d n z0 hlow
+            d n z0 (by simpa [hz0_realizes] using hlow)
         let r :=
           BHW.sourceGramMatrixRank n
             (BHW.sourceMinkowskiGram d n z0)
@@ -14300,8 +14421,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
         have hspan :
             Module.finrank ℂ
               (LinearMap.range (BHW.sourceCoefficientEval d n z0)) = r :=
-          BHW.sourceCoefficientEval_finrank_range_eq_sourceGramRank
-            (d := d) (n := n) z0
+          by simpa [r] using hspan_adapted
         rcases
           BHW.hwLemma3_normalFormTransportData
             (d := d) hd n (z0 := z0) r rfl hspan with
@@ -14312,7 +14432,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (d := d) (n := n) r Tnormal
         refine
           { z0 := z0
-            z0_realizes := rfl
+            z0_realizes := hz0_realizes
             r := r
             hrD := hrD
             hrn := hrn

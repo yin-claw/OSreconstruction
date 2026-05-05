@@ -367,6 +367,33 @@ rank bound.  It also checks
 strict low-rank branch ordinary Gram equality already gives equality of the
 full oriented invariant.
 
+The no-tube rank-deficient algebraic normal-form proof now has a checked
+adapted-representative gate in
+`OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedAdaptedRepresentative.lean`.
+It may not call `hwLemma3_normalFormTransportData` on an arbitrary realization
+of a source-oriented variety point, because radical tail vectors can make
+`finrank (range sourceCoefficientEval)` strictly larger than the ordinary Gram
+rank.  The checked finite-dimensional theorem
+`BHW.sourceComplexGramVariety_exists_adaptedSourceRepresentative` says that
+for any ordinary algebraic source Gram point, there is a same-Gram
+representative whose source-vector span dimension is exactly
+`sourceGramMatrixRank`.  Its proof is not an extended-tube argument; it uses
+exact-rank symmetric dot-Gram factorization
+(`exists_fullRank_sourceComplexDotGram_of_rankExact`), pads the rank
+coordinates into `Fin (d+1)`, transports through
+`complexMinkowskiToDotLinearEquiv.symm`, proves
+`sourceComplexDotGram_padded_eq`, and compares the coefficient span with the
+padded coordinate subspace via
+`finrank_sourceCoefficientEval_range_le_of_paddedDot` and
+`sourceGramMatrixRank_le_finrank_sourceCoefficientEval_range`.  The checked
+oriented low-rank theorem
+`BHW.sourceOriented_lowRank_exists_adaptedRepresentative` then combines this
+with `sourceOrientedMinkowskiInvariant_eq_of_sameGram_rank_lt`, so the adapted
+representative realizes the original full oriented invariant.  This replaces
+the false shortcut
+`sourceCoefficientEval_finrank_range_eq_sourceGramRank`, which must not be
+introduced as a theorem.
+
 Latest local connected-basis refinement, 2026-05-05: the rank-deficient
 no-tube local-image branch uses the checked one-way shifted-tail realization
 for Schur image-surjectivity.  The proof docs no longer require a same-radius
