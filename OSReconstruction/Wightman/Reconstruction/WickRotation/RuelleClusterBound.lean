@@ -161,6 +161,37 @@ axiom ruelle_analytic_cluster_pointwise
       (nhds ((W_analytic_BHW Wfn n).val z₁ *
              (W_analytic_BHW Wfn m).val z₂))
 
+/-! ### Helper definitions for the cluster proof -/
+
+/-- The `a`-parametrized integrand on `NPointDomain d n × NPointDomain d m`,
+after the substitution `y = x_m - a`. Equals
+`F_ext(wick(append x_n (y + a))) · f(x_n) · g(y)`. -/
+noncomputable def clusterIntegrand
+    (Wfn : WightmanFunctions d) {n m : ℕ}
+    (f : SchwartzNPoint d n) (g : SchwartzNPoint d m)
+    (a : SpacetimeDim d) :
+    NPointDomain d n × NPointDomain d m → ℂ :=
+  fun p =>
+    F_ext_on_translatedPET_total Wfn
+      (Fin.append
+        (fun k => wickRotatePoint (p.1 k))
+        (fun k μ => wickRotatePoint (p.2 k) μ +
+          (if μ = 0 then (0 : ℂ) else (a μ : ℂ)))) *
+    (f p.1) * (g p.2)
+
+/-- The limit integrand: factorized form `F_ext(wick x_n) · F_ext(wick y) ·
+f(x_n) · g(y)`. -/
+noncomputable def clusterLimitIntegrand
+    (Wfn : WightmanFunctions d) {n m : ℕ}
+    (f : SchwartzNPoint d n) (g : SchwartzNPoint d m) :
+    NPointDomain d n × NPointDomain d m → ℂ :=
+  fun p =>
+    F_ext_on_translatedPET_total Wfn
+      (fun k => wickRotatePoint (p.1 k)) *
+    F_ext_on_translatedPET_total Wfn
+      (fun k => wickRotatePoint (p.2 k)) *
+    (f p.1) * (g p.2)
+
 /-! ### W_analytic_cluster_integral via Ruelle + DC -/
 
 /-- **Cluster theorem for the Wick-rotated boundary integral**.
@@ -222,6 +253,78 @@ theorem W_analytic_cluster_integral_via_ruelle
             (∫ x : NPointDomain d m,
               F_ext_on_translatedPET_total Wfn
                 (fun k => wickRotatePoint (x k)) * g x)‖ < ε := by
+  -- The limit value: product of single-block integrals.
+  set L_n : ℂ := ∫ x : NPointDomain d n,
+      F_ext_on_translatedPET_total Wfn (fun k => wickRotatePoint (x k)) * f x
+    with hL_n
+  set L_m : ℂ := ∫ x : NPointDomain d m,
+      F_ext_on_translatedPET_total Wfn (fun k => wickRotatePoint (x k)) * g x
+    with hL_m
+  -- Strategy: show the joint integral, viewed as a function of `a`, tends
+  -- to L_n * L_m along the spatial-cobounded filter. Then convert to ε-R.
+  --
+  -- Step 1 (change of variables): the joint integral as a function of `a`
+  -- equals the integral of `clusterIntegrand` over `NPointDomain d n ×
+  -- NPointDomain d m` (after Fubini-split + Lebesgue-translation by `a`
+  -- on the m-block).
+  have h_change_of_var :
+    ∀ (a : SpacetimeDim d), a 0 = 0 →
+      ∀ (g_a : SchwartzNPoint d m),
+        (∀ x : NPointDomain d m, g_a x = g (fun i => x i - a)) →
+        (∫ x : NPointDomain d (n + m),
+            F_ext_on_translatedPET_total Wfn
+              (fun k => wickRotatePoint (x k)) * (f.tensorProduct g_a) x) =
+        ∫ p : NPointDomain d n × NPointDomain d m, clusterIntegrand Wfn f g a p := by
+    sorry  -- Fubini + Lebesgue translation invariance
+  -- Step 2 (Fubini on the limit): the limit integrand integrates to L_n · L_m.
+  have h_limit_eq_product :
+      (∫ p : NPointDomain d n × NPointDomain d m, clusterLimitIntegrand Wfn f g p)
+        = L_n * L_m := by
+    sorry  -- Fubini on `clusterLimitIntegrand`
+  -- Step 3 (pointwise limit): for each (x_n, y) with x_n ∈ OPTR-n and
+  -- y ∈ OPTR-m, the cluster integrand at parameter `a` tends to the limit
+  -- integrand as |⃗a| → ∞ along {a 0 = 0} ⊓ cobounded.
+  have h_pointwise :
+      ∀ᵐ p : NPointDomain d n × NPointDomain d m,
+        Filter.Tendsto (fun a => clusterIntegrand Wfn f g a p)
+          (Filter.principal {a : SpacetimeDim d | a 0 = 0} ⊓
+            Bornology.cobounded (SpacetimeDim d))
+          (nhds (clusterLimitIntegrand Wfn f g p)) := by
+    sorry  -- via ruelle_analytic_cluster_pointwise on OPTR support
+  -- Step 4 (dominator): construct a uniform-in-a integrable dominator on
+  -- (NPointDomain d n × NPointDomain d m), valid for `|⃗a|` large enough.
+  obtain ⟨C_R, N_R, R_R, hC_R_pos, hR_R_pos, h_ruelle⟩ :=
+    ruelle_analytic_cluster_bound Wfn n m
+  -- The dominator: C_R · (1+‖x_n‖+‖y‖)^N_R · |f(x_n)| · |g(y)|.
+  -- Schwartz seminorms make this integrable when N_R is absorbed by f's
+  -- and g's seminorms.
+  have h_dominator_integrable :
+      MeasureTheory.Integrable (fun p : NPointDomain d n × NPointDomain d m =>
+        C_R * (1 + ‖p.1‖ + ‖p.2‖) ^ N_R * ‖f p.1‖ * ‖g p.2‖) := by
+    sorry  -- Schwartz seminorms absorb polynomial growth
+  -- Step 5: apply DC to get Tendsto of the joint integral.
+  have h_DC :
+      Filter.Tendsto
+        (fun a : SpacetimeDim d =>
+          ∫ p : NPointDomain d n × NPointDomain d m, clusterIntegrand Wfn f g a p)
+        (Filter.principal {a : SpacetimeDim d | a 0 = 0} ⊓
+          Bornology.cobounded (SpacetimeDim d))
+        (nhds (∫ p : NPointDomain d n × NPointDomain d m,
+          clusterLimitIntegrand Wfn f g p)) := by
+    sorry  -- MeasureTheory.tendsto_integral_filter_of_dominated_convergence
+  -- Step 6: combine — joint integral tends to L_n * L_m.
+  have h_joint_tendsto :
+      Filter.Tendsto
+        (fun a : SpacetimeDim d =>
+          ∫ p : NPointDomain d n × NPointDomain d m, clusterIntegrand Wfn f g a p)
+        (Filter.principal {a : SpacetimeDim d | a 0 = 0} ⊓
+          Bornology.cobounded (SpacetimeDim d))
+        (nhds (L_n * L_m)) := by
+    rw [← h_limit_eq_product]
+    exact h_DC
+  -- Step 7: convert Tendsto to ∃ R bound form.
+  -- The filter `principal {a 0 = 0} ⊓ cobounded` contains sets of the form
+  -- `{a | a 0 = 0 ∧ ‖a⃗‖² > R²}` for any R. Use Tendsto's eventual ε-bound.
   sorry
 
 end OSReconstruction
