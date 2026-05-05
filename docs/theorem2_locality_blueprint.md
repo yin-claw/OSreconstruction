@@ -8900,7 +8900,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
          `sigma a = I` for the time coordinate, `1` otherwise.  The base case
          is `SOComplex.one`; the one-column step reduces the signed vector to
          unit norm by dividing by `sigma a` and then uses the existing checked
-         `SOComplex.exists_so_with_firstCol` for dimensions `m + 2`.
+         `SOComplex.exists_so_with_firstCol_of_sq`, itself a checked wrapper
+         around `SOComplex.exists_so_with_firstCol`, for dimensions `m + 2`.
       3. In the induction step, first use
          `SOComplex.exists_so_with_firstCol` to get `A0` with first column
          equal to the first frame vector.  For every remaining frame vector
@@ -8909,11 +8910,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
          `(r-1)`-frame in `Fin (N-1)`.  Apply the induction hypothesis there
          to obtain `B : SOComplex (N-1)`, embed it as
          `SOComplex.embed B`, and set `A := A0 * SOComplex.embed B`.  The
-         checked private stabilizer proof in `SOConnected.lean` follows this
-         same row/column mechanism; if production Lean needs it outside that
-         file, expose the non-private consequences
-         `SOComplex.embed_val_zero_zero`, `SOComplex.embed_val_succ_succ`, and
-         `SOComplex.of_first_col_e0_data` instead of duplicating algebra.
+         checked stabilizer proof in `SOConnected.lean` follows this same
+         row/column mechanism.  The required public consequences are now
+         checked as `SOComplex.embed_val_zero_zero`,
+         `SOComplex.embed_val_zero_succ`, `SOComplex.embed_val_succ_zero`,
+         `SOComplex.embed_val_succ_succ`, and
+         `SOComplex.of_first_col_e0`, so production Lean should call those
+         instead of duplicating the block algebra.
       4. The local theorem does not need a general symmetric-congruence
          theorem: the head gauge already supplies the factor `H` with
          common Gram `H * sourceHeadMetric d r hrD * Hᵀ`.  Define normalized

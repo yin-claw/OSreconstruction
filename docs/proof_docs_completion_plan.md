@@ -2945,6 +2945,13 @@ implementation contract is:
    `ComplexLorentzGroup.fromSOComplex`.  The future theorem should be a
    Type-valued `complexMinkowski_detOneWittExtension_to_headFactorFrame`/
    `sourceOriented_headGaugeWittData`, not a Prop-valued existence theorem.
+   The stabilizer support needed for the induction is now checked and public
+   in `SOConnected.lean`: `SOComplex.embed_val_zero_zero`,
+   `SOComplex.embed_val_zero_succ`, `SOComplex.embed_val_succ_zero`,
+   `SOComplex.embed_val_succ_succ`, and `SOComplex.of_first_col_e0`.  The
+   signed one-column step is checked as `SOComplex.exists_so_with_firstCol_of_sq`:
+   a vector of square norm `σ ^ 2` with `σ ≠ 0` is the `σ`-multiple of the
+   first column of an `SOComplex` element.
    The forward normal-parameter check is
    now also in Lean:
    `sourceOrientedSchurResidualTailData_normalParameter` identifies the
