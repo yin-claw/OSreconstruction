@@ -8812,6 +8812,69 @@ Proof decomposition of this theorem, without hiding the analytic work:
                   tail := q }
       ```
 
+      Checked SOComplex support for the finite Witt constructor:
+
+      ```lean
+      theorem SOComplex.inv_mulVec_zero_eq_sum_col
+          {n : Nat} [NeZero n]
+          (A : SOComplex n) (w : Fin n -> ℂ) :
+          ((A⁻¹).val *ᵥ w) (0 : Fin n) =
+            ∑ k : Fin n, A.val k (0 : Fin n) * w k
+
+      theorem SOComplex.inv_mulVec_zero_eq_zero_of_signed_col_orth
+          {n : Nat} [NeZero n]
+          (A : SOComplex n) {σ : ℂ} (hσ : σ ≠ 0)
+          {v w : Fin n -> ℂ}
+          (hA : ∀ k : Fin n, σ * A.val k (0 : Fin n) = v k)
+          (horth : ∑ k : Fin n, v k * w k = 0) :
+          ((A⁻¹).val *ᵥ w) (0 : Fin n) = 0
+
+      theorem SOComplex.tail_sq_eq_of_inv_mulVec_signed_col_orth
+          {m : Nat}
+          (A : SOComplex (m + 2)) {σ τ : ℂ} (hσ : σ ≠ 0)
+          {v w : Fin (m + 2) -> ℂ}
+          (hA : ∀ k : Fin (m + 2), σ * A.val k 0 = v k)
+          (hvw : ∑ k : Fin (m + 2), v k * w k = 0)
+          (hww : ∑ k : Fin (m + 2), w k ^ 2 = τ ^ 2) :
+          ∑ i : Fin (m + 1), ((A⁻¹).val *ᵥ w) i.succ ^ 2 = τ ^ 2
+
+      theorem SOComplex.tail_dot_eq_of_inv_mulVec_signed_col_orth
+          {m : Nat}
+          (A : SOComplex (m + 2)) {σ : ℂ} (hσ : σ ≠ 0)
+          {v w u : Fin (m + 2) -> ℂ} {c : ℂ}
+          (hA : ∀ k : Fin (m + 2), σ * A.val k 0 = v k)
+          (hvw : ∑ k : Fin (m + 2), v k * w k = 0)
+          (hvu : ∑ k : Fin (m + 2), v k * u k = 0)
+          (hwu : ∑ k : Fin (m + 2), w k * u k = c) :
+          ∑ i : Fin (m + 1),
+            ((A⁻¹).val *ᵥ w) i.succ * ((A⁻¹).val *ᵥ u) i.succ = c
+
+      theorem SOComplex.mul_embed_val_col_zero
+          {m : Nat}
+          (A : SOComplex (m + 2)) (B : SOComplex (m + 1))
+          (k : Fin (m + 2)) :
+          (A * SOComplex.embed B).val k 0 = A.val k 0
+
+      theorem SOComplex.mul_embed_val_col_succ
+          {m : Nat}
+          (A : SOComplex (m + 2)) (B : SOComplex (m + 1))
+          (k : Fin (m + 2)) (j : Fin (m + 1)) :
+          (A * SOComplex.embed B).val k j.succ =
+            ∑ l : Fin (m + 1), A.val k l.succ * B.val l j
+      ```
+
+      The signed-prefix-frame induction should now be implemented literally:
+      normalize the first vector by
+      `SOComplex.exists_so_with_firstCol_of_sq`; use
+      `inv_mulVec_zero_eq_zero_of_signed_col_orth` to show the remaining
+      transformed vectors live in the tail; use the two `tail_*` lemmas to
+      transfer the remaining Gram table; recursively normalize the tail; and
+      assemble the final determinant-one matrix as `A₀ * SOComplex.embed B`.
+      The `mul_embed` column formulas are the checked final rewrite, and
+      `SOComplex.mulVec_inv_mulVec` is the checked identity turning the
+      embedded tail vector back into the original vector after left
+      multiplication by `A₀`.
+
       Proof transcript for this producer:
 
       1. Choose `z` with

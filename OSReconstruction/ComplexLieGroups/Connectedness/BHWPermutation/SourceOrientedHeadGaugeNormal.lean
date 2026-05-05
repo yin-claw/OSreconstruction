@@ -1,3 +1,4 @@
+import OSReconstruction.ComplexLieGroups.SOFrameTransitivity
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedHeadGaugeSupport
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedSchurTailNormal
 

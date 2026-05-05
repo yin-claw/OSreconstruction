@@ -385,7 +385,7 @@ theorem sourceFullFrameMatrix_complexLorentzAction
     sourceFullFrameMatrix d n ι (complexLorentzAction Λ z) =
       sourceFullFrameMatrix d n ι z * Λ.val.transpose := by
   ext a μ
-  simp [sourceFullFrameMatrix, complexLorentzAction, Matrix.mul_apply,
+  simp [sourceFullFrameMatrix, complexLorentzAction, complexLorentzVectorAction, Matrix.mul_apply,
     Matrix.transpose_apply, mul_comm]
 
 /-- Proper complex Lorentz transformations preserve every full-frame

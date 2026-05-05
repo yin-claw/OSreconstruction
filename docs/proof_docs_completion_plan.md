@@ -2952,7 +2952,28 @@ implementation contract is:
    `SOComplex.embed_mulVec_succ`, and `SOComplex.of_first_col_e0`.  The
    signed one-column step is checked as `SOComplex.exists_so_with_firstCol_of_sq`:
    a vector of square norm `σ ^ 2` with `σ ≠ 0` is the `σ`-multiple of the
-   first column of an `SOComplex` element.
+   first column of an `SOComplex` element.  The one-column descent algebra is
+   now also checked in `SOFrameTransitivity.lean`:
+   `SOComplex.inv_mulVec_zero_eq_sum_col`,
+   `SOComplex.inv_mulVec_zero_eq_zero_of_signed_col_orth`,
+   `SOComplex.dot_mulVec_eq`, `SOComplex.sumSq_mulVec_eq`,
+   `SOComplex.mulVec_inv_mulVec`, `SOComplex.inv_mulVec_mulVec`,
+   `SOComplex.sum_tail_sq_eq_of_zero_head`,
+   `SOComplex.sum_tail_mul_eq_of_zero_heads`,
+   `SOComplex.tail_sq_eq_of_inv_mulVec_signed_col_orth`,
+   `SOComplex.tail_dot_eq_of_inv_mulVec_signed_col_orth`,
+   `SOComplex.mul_embed_val_col_zero`, and
+   `SOComplex.mul_embed_val_col_succ`.  These lemmas give the exact induction
+   step for signed prefix frames: choose `A₀` with first column `v₀ / σ₀`;
+   every remaining frame vector has zero first coordinate after `A₀⁻¹`
+   because it is orthogonal to `v₀`; dropping that coordinate preserves all
+   remaining square norms and pairwise dot products; recursively normalize the
+   tail frame by `B`; and assemble the ambient matrix as `A₀ * SOComplex.embed B`.
+   The two checked `mul_embed` lemmas prove the first column is still `A₀`'s
+   first column and the later columns are exactly `A₀` applied to the embedded
+   normalized tail columns.  The next production target is therefore the
+   induction theorem packaging this transcript, not another bilinear-algebra
+   helper.
    The forward normal-parameter check is
    now also in Lean:
    `sourceOrientedSchurResidualTailData_normalParameter` identifies the

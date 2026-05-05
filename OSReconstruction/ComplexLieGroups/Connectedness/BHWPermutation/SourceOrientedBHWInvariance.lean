@@ -586,9 +586,9 @@ theorem bhw_near_identity_invariance_on_open
   have haction_eq : complexLorentzAction Λ z =
       fun k μ => ∑ ν, (exp X : Matrix _ _ ℂ) μ ν * z k ν := by
     ext k μ
-    simp only [complexLorentzAction]
-    congr 1
-    ext ν
+    simp only [complexLorentzAction, complexLorentzVectorAction]
+    apply Finset.sum_congr rfl
+    intro ν _
     rw [← hΛ_eq]
   rw [haction_eq]
   exact bhw_near_identity_core_on_open

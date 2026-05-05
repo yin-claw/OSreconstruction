@@ -2122,15 +2122,17 @@ private theorem source_permutedExtendedTubeSector_complexLorentzAction_iff
                 simp [source_lorentz_perm_commute]
         _ = fun k => z (π k) := by
                 rw [complexLorentzAction_inv]
-    simpa [permutedExtendedTubeSector, hrewrite] using h'
+    rw [hrewrite] at h'
+    simpa [permutedExtendedTubeSector] using h'
   · intro h
     have h' : complexLorentzAction Λ (fun k => z (π k)) ∈ ExtendedTube d n :=
       source_complexLorentzAction_mem_extendedTube n Λ h
     have hrewrite :
         (fun k => (complexLorentzAction Λ z) (π k)) =
-          complexLorentzAction Λ (fun k => z (π k)) := by
+      complexLorentzAction Λ (fun k => z (π k)) := by
       simp [source_lorentz_perm_commute]
-    simpa [permutedExtendedTubeSector, hrewrite] using h'
+    rw [← hrewrite] at h'
+    simpa [permutedExtendedTubeSector] using h'
 
 /-- The raw permuted forward-tube branch is holomorphic on its permuted
 forward-tube sector.  This packages the `S'_n` datum before BHW enlargement. -/

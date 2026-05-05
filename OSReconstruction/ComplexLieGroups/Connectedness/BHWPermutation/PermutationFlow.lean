@@ -910,9 +910,10 @@ private theorem permForwardOverlapSlice_convex
     trans (↑a * ∑ ν, Λ.val μ ν * (permAct (d := d) σ w₁) k ν +
         ↑b * ∑ ν, Λ.val μ ν * (permAct (d := d) σ w₂) k ν)
     · rw [Finset.mul_sum, Finset.mul_sum, ← Finset.sum_add_distrib]
-      congr 1
-      ext ν
-      ring
+      apply Finset.sum_congr rfl
+      intro ν _
+      simp only [permAct, Pi.add_apply, Pi.smul_apply, Complex.real_smul]
+      ring_nf
     · rfl
   rw [hlin]
   exact forwardTube_convex hw₁.2 hw₂.2 ha hb hab
@@ -2010,7 +2011,8 @@ private theorem permutation_extension_from_invariance (n : ℕ)
         have hcond :
             complexLorentzAction Λ⁻¹
               (fun k => (complexLorentzAction Λ z) (σ k)) ∈ ForwardTube d n := by
-          simpa [hrewrite] using hzσFT
+          rw [hrewrite]
+          exact hzσFT
         have hstep :
             F (complexLorentzAction Λ⁻¹
               (fun k => (complexLorentzAction Λ z) (σ k))) =
@@ -2020,7 +2022,8 @@ private theorem permutation_extension_from_invariance (n : ℕ)
         have hleft : F_σ (complexLorentzAction Λ z) = F (complexLorentzAction Λ z) := by
           simp [F_σ, hΛzFT]
         have hstep' : F (fun k => z (σ k)) = F (complexLorentzAction Λ z) := by
-          simpa [hrewrite] using hstep
+          rw [hrewrite] at hstep
+          exact hstep
         exact hleft.trans (hstep'.symm.trans hright.symm)
       · have hzσFT : (fun k => z (σ k)) ∈ ForwardTube d n := by
           simpa [σFT] using hzσ
