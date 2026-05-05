@@ -3970,7 +3970,17 @@ implementation contract is:
    `‖A i a‖ <= Real.sqrt (BHW.matrixEntryL1Bound m S)`, where
    `matrixEntryL1Bound m S = ∑ p : Fin m × Fin m, ‖S p.1 p.2‖`.
    This deliberately avoids relying on any ambient matrix norm instance.  The
-   blueprint now spells out the finite
+   finite entry-size reducer is checked in
+   `BHWPermutation/SourceComplexSmallFactor.lean`:
+   `matrixEntryL1Bound_nonneg`,
+   `matrixEntryL1Bound_lt_of_entry_bound`,
+   `exists_pos_mul_sqrt_lt`,
+   `real_sqrt_lt_of_lt_mul_bound`,
+   `complexSymmetric_factorSmall_rankLE_of_entryL1`, and
+   `sourceComplexSymmetric_factorSmall_rankLE_of_entryL1`.  Thus the small
+   factor theorem no longer has a hidden estimate step: once the entry-L1
+   Autonne-Takagi factorization is proved, the source-coordinate small
+   same-Gram theorem is mechanical.  The blueprint now spells out the finite
    Autonne theorem itself through the conjugate-linear map
    `v ↦ S.mulVec (star v)`: square it to the positive Hermitian map
    `S * Sᴴ`, use `Matrix.isHermitian_mul_conjTranspose_self` and
