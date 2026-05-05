@@ -150,6 +150,68 @@ theorem sourceOriented_headGauge_normalHead_linearIndependent
       (sourceOrientedNormalParameterVector d n r hrD hrn p0) hA
   simpa [sourceOrientedNormalParameterVector_head] using hLI
 
+/-- Checked same-Gram frame data supplied by a local head gauge.
+
+The hard Witt theorem should consume precisely this finite-dimensional packet:
+the actual selected head frame and the gauge normal head frame are linearly
+independent and have the same nondegenerate Gram matrix. -/
+structure SourceOrientedHeadGaugeFrameSameGramData
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hz : G = sourceOrientedMinkowskiInvariant d n z) where
+  actual_linearIndependent :
+    LinearIndependent ℂ (fun a : Fin r => z (finSourceHead hrn a))
+  normal_linearIndependent :
+    LinearIndependent ℂ
+      (fun a : Fin r =>
+        sourceOrientedNormalHeadVector d n r hrD hrn
+          (sourceOrientedHeadGaugeHeadParameter d n r hrD hrn hGvar Head) a)
+  same_gram :
+    ∀ a b : Fin r,
+      sourceVectorMinkowskiInner d
+          (z (finSourceHead hrn a))
+          (z (finSourceHead hrn b)) =
+        sourceVectorMinkowskiInner d
+          (sourceOrientedNormalHeadVector d n r hrD hrn
+            (sourceOrientedHeadGaugeHeadParameter d n r hrD hrn hGvar Head) a)
+          (sourceOrientedNormalHeadVector d n r hrD hrn
+            (sourceOrientedHeadGaugeHeadParameter d n r hrD hrn hGvar Head) b)
+  headGram_det_unit :
+    IsUnit (sourceOrientedSchurHeadBlock n r hrn G).det
+
+/-- A local head gauge mechanically produces the same-Gram frame packet needed
+by the remaining determinant-one Witt step. -/
+def sourceOriented_headGaugeFrameSameGramData
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hz : G = sourceOrientedMinkowskiInvariant d n z) :
+    SourceOrientedHeadGaugeFrameSameGramData
+      d n r hrD hrn Head hGvar hHead hz where
+  actual_linearIndependent :=
+    sourceHeadRows_linearIndependent_of_headGauge
+      d n r hrD hrn hGvar Head hHead hz
+  normal_linearIndependent :=
+    sourceOriented_headGauge_normalHead_linearIndependent
+      d n r hrD hrn hGvar Head hHead
+  same_gram :=
+    sourceOriented_headGauge_actualHeadGram_eq_normalHeadGram
+      d n r hrD hrn hGvar Head hHead hz
+  headGram_det_unit :=
+    sourceOrientedSchurHeadBlock_det_isUnit_of_headGauge
+      d n r hrD hrn hGvar Head hHead
+
 /-- Pairing a vector against a canonical head coordinate vector extracts the
 corresponding diagonal-sign-weighted head coordinate. -/
 theorem sourceVectorMinkowskiInner_right_hwLemma3CanonicalSource_head
@@ -494,6 +556,52 @@ def sourceOriented_headGaugeNormalParameterData_of_lorentz_head_normalized
               rw [hq]
       head_eq := by
         rfl }
+
+/-- Typed output of the remaining determinant-one Witt head-normalization
+theorem.
+
+This is deliberately a `Type`-valued structure rather than a bare existential:
+the downstream normal-parameter data contains computed tail coordinates, so
+Lean must be able to use the chosen Lorentz element constructively. -/
+structure SourceOrientedHeadGaugeWittData
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hz : G = sourceOrientedMinkowskiInvariant d n z) where
+  Λ : ComplexLorentzGroup d
+  head_normalized :
+    ∀ a : Fin r,
+      complexLorentzAction Λ z (finSourceHead hrn a) =
+        sourceOrientedNormalHeadVector d n r hrD hrn
+          (sourceOrientedHeadGaugeHeadParameter d n r hrD hrn hGvar Head) a
+
+namespace SourceOrientedHeadGaugeWittData
+
+/-- The checked consumer from typed Witt head-normalization data to matched
+normal-parameter data. -/
+def normalParameterData
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hz : G = sourceOrientedMinkowskiInvariant d n z)
+    (W : SourceOrientedHeadGaugeWittData
+      d n r hrD hrn Head hGvar hHead hz) :
+    SourceOrientedHeadGaugeNormalParameterData
+      d n r hrD hrn hGvar Head :=
+  sourceOriented_headGaugeNormalParameterData_of_lorentz_head_normalized
+    d n r hrD hrn Head hGvar hHead hz W.Λ W.head_normalized
+
+end SourceOrientedHeadGaugeWittData
 
 namespace SourceOrientedHeadGaugeNormalParameterData
 

@@ -2894,7 +2894,12 @@ implementation contract is:
    `sourceOriented_headGauge_actualHeadGram_eq_normalHeadGram` proves equality
    of the actual selected head Gram with the gauge normal-head Gram, and
    `sourceOriented_headGauge_normalHead_linearIndependent` proves linear
-   independence of that gauge head frame.  The next algebraic layer is also
+   independence of that gauge head frame.  The checked packet
+   `SourceOrientedHeadGaugeFrameSameGramData` and constructor
+   `sourceOriented_headGaugeFrameSameGramData` package precisely the
+   finite-dimensional input to the remaining Witt theorem: actual-head linear
+   independence, normal-head linear independence, same Gram, and invertibility
+   of the selected head Gram.  The next algebraic layer is also
    checked: `sourceVectorMinkowskiInner_right_hwLemma3CanonicalSource_head`
    extracts canonical head coordinates from pairings with the model head
    vectors,
@@ -2914,7 +2919,12 @@ implementation contract is:
    `sourceOriented_headGaugeNormalParameterData_of_lorentz_head_tail` is
    checked as well, so future Lean can prove head and tail normalized
    equalities separately and assemble the data by the checked head/tail source
-   split.  Therefore the remaining hard theorem is no longer an unstructured
+   split.  The typed output of the future Witt theorem is now fixed as
+   `SourceOrientedHeadGaugeWittData`, with checked consumer
+   `SourceOrientedHeadGaugeWittData.normalParameterData`; this avoids the
+   invalid pattern of extracting a Lorentz witness from a Prop-valued
+   existential to build Type-valued tail-coordinate data.  Therefore the
+   remaining hard theorem is no longer an unstructured
    tail-membership assertion and no longer includes Schur tail-coordinate
    bookkeeping: it is the determinant-one Witt/head-normalization producer for
    that data.  Its proof must choose a
