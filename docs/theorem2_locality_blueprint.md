@@ -8914,7 +8914,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
          row/column mechanism.  The required public consequences are now
          checked as `SOComplex.embed_val_zero_zero`,
          `SOComplex.embed_val_zero_succ`, `SOComplex.embed_val_succ_zero`,
-         `SOComplex.embed_val_succ_succ`, and
+         `SOComplex.embed_val_succ_succ`, `SOComplex.embed_mulVec_zero`,
+         `SOComplex.embed_mulVec_succ`, and
          `SOComplex.of_first_col_e0`, so production Lean should call those
          instead of duplicating the block algebra.
       4. The local theorem does not need a general symmetric-congruence

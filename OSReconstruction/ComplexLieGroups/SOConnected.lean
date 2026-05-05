@@ -1101,6 +1101,24 @@ theorem embed_val_succ_succ {m : ℕ} (B : SOComplex m) (i j : Fin m) :
     (embed B).val i.succ j.succ = B.val i j := by
   rfl
 
+@[simp]
+theorem embed_mulVec_zero {m : ℕ}
+    (B : SOComplex m) (v : Fin (m + 1) → ℂ) :
+    ((embed B).val *ᵥ v) 0 = v 0 := by
+  change (∑ j : Fin (m + 1), (embed B).val 0 j * v j) = v 0
+  rw [Fin.sum_univ_succ]
+  simp
+
+@[simp]
+theorem embed_mulVec_succ {m : ℕ}
+    (B : SOComplex m) (v : Fin (m + 1) → ℂ) (i : Fin m) :
+    ((embed B).val *ᵥ v) i.succ =
+      (B.val *ᵥ (fun j : Fin m => v j.succ)) i := by
+  change (∑ j : Fin (m + 1), (embed B).val i.succ j * v j) =
+    ∑ j : Fin m, B.val i j * v j.succ
+  rw [Fin.sum_univ_succ]
+  simp
+
 /-- The embedding is continuous. -/
 theorem embed_continuous {m : ℕ} : Continuous (embed : SOComplex m → SOComplex (m + 1)) := by
   have hind : IsInducing (SOComplex.val : SOComplex (m + 1) → _) := ⟨rfl⟩
