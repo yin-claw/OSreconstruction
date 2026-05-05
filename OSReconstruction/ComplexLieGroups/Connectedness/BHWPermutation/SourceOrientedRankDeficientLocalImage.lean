@@ -208,6 +208,35 @@ end SourceOrientedRankDeficientVarietyLocalImageData
 
 namespace SourceOrientedRankDeficientMaxRankLocalImageData
 
+/-- Build the strengthened max-rank local-image packet from a subtype-valued
+local image, once the concrete producer proves connectedness of the max-rank
+preimage in parameter space. -/
+def ofSubtype
+    {P : Type*} [TopologicalSpace P]
+    {G0 : SourceOrientedGramData d n}
+    {N0 : Set (SourceOrientedGramData d n)}
+    {parameterBox : Set P}
+    (parameterBox_open : IsOpen parameterBox)
+    (parameterBox_connected : IsConnected parameterBox)
+    {p0 : P}
+    (p0_mem : p0 ∈ parameterBox)
+    {imageV : P → SourceOrientedVariety d n}
+    (imageV_continuousOn : ContinuousOn imageV parameterBox)
+    (center_eq : (imageV p0).1 = G0)
+    (imageV_open : IsOpen (imageV '' parameterBox))
+    (imageV_sub :
+      sourceOrientedVarietyUnderlyingSet d n (imageV '' parameterBox) ⊆
+        N0 ∩ sourceOrientedGramVariety d n)
+    (hpreimage_connected :
+      IsConnected (parameterBox ∩
+        {p | SourceOrientedMaxRankAt d n (imageV p).1})) :
+    SourceOrientedRankDeficientMaxRankLocalImageData
+      (d := d) (n := n) (P := P) G0 N0 :=
+  (SourceOrientedRankDeficientVarietyLocalImageData.ofSubtype
+      (d := d) (n := n) parameterBox_open parameterBox_connected p0_mem
+      imageV_continuousOn center_eq imageV_open imageV_sub)
+    |>.to_maxRankLocalImageData_of_connected_preimage hpreimage_connected
+
 /-- A strengthened rank-deficient local-image packet yields the exact
 exceptional local basis patch consumed by max-rank connectedness assembly. -/
 theorem to_connectedMaxRankPatch

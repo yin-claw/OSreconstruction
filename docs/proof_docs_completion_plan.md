@@ -339,7 +339,12 @@ extracts a new nonempty preconnected relatively open max-rank seed inside that
    checked: a concrete producer may work internally with an
    `imageV : P -> BHW.SourceOrientedVariety d n`, prove `imageV '' P` open in
    the subtype and contained in the requested ambient neighborhood, and then
-   expose the existing ambient packet by composing with `Subtype.val`.
+   expose the existing ambient packet by composing with `Subtype.val`.  The
+   strengthened constructor
+   `BHW.SourceOrientedRankDeficientMaxRankLocalImageData.ofSubtype` is checked
+   as well: after the Schur connectedness theorem proves the max-rank
+   preimage connected in parameter space, it directly returns the finite-overlap
+   packet.
    The remaining work is to produce the terminal closing domain and assemble
    the resulting terminal
    seed into `BHWJostOrientedFiniteOverlapPropagationData`; once that data is

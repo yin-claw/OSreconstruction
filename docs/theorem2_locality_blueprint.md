@@ -14618,6 +14618,36 @@ Proof decomposition of this theorem, without hiding the analytic work:
           R.to_maxRankLocalImageData_of_connected_preimage
             hpreimage_connected
 
+      def BHW.SourceOrientedRankDeficientMaxRankLocalImageData.ofSubtype
+          {P : Type*} [TopologicalSpace P]
+          {G0 : BHW.SourceOrientedGramData d n}
+          {N0 : Set (BHW.SourceOrientedGramData d n)}
+          {parameterBox : Set P}
+          (parameterBox_open : IsOpen parameterBox)
+          (parameterBox_connected : IsConnected parameterBox)
+          {p0 : P}
+          (p0_mem : p0 ∈ parameterBox)
+          {imageV : P -> BHW.SourceOrientedVariety d n}
+          (imageV_continuousOn : ContinuousOn imageV parameterBox)
+          (center_eq : (imageV p0).1 = G0)
+          (imageV_open : IsOpen (imageV '' parameterBox))
+          (imageV_sub :
+            BHW.sourceOrientedVarietyUnderlyingSet d n
+                (imageV '' parameterBox) ⊆
+              N0 ∩ BHW.sourceOrientedGramVariety d n)
+          (hpreimage_connected :
+            IsConnected (parameterBox ∩
+              {p | BHW.SourceOrientedMaxRankAt d n (imageV p).1})) :
+          BHW.SourceOrientedRankDeficientMaxRankLocalImageData
+            (d := d) (n := n) (P := P) G0 N0 := by
+        -- Checked in production Lean by composing `ofSubtype` with
+        -- `to_maxRankLocalImageData_of_connected_preimage`.
+        exact
+          BHW.SourceOrientedRankDeficientMaxRankLocalImageData.ofSubtype
+            (d := d) (n := n) parameterBox_open parameterBox_connected
+            p0_mem imageV_continuousOn center_eq imageV_open imageV_sub
+            hpreimage_connected
+
       theorem BHW.sourceOrientedRankDeficientConnectedMaxRankPatchAt_of_localImageProducer
           (rankDeficientLocalImageAt :
             ∀ {G0 : BHW.SourceOrientedGramData d n},
