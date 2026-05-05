@@ -271,6 +271,7 @@ it provides
 `BHW.sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected`,
 `BHW.sourceOrientedMaxRank_local_connectedMaxRank_basis_fullFrame`,
 `BHW.sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_exceptionalLocalBasis`,
+`BHW.sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_rankDeficientMaxRankLocalImageProducer`,
 `BHW.BHWJostOrientedFiniteOverlapPropagationData`,
 `BHW.BHWJostOrientedFiniteOverlapPropagationData.to_closedLoopSeed`, and
 `BHW.exists_preconnectedRelOpen_maxRankSeed_inside`, plus

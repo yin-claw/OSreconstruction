@@ -1,4 +1,5 @@
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedBHWInvariance
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedRankDeficientLocalImage
 
 /-!
 # Finite-overlap terminal data for the BHW/Jost source route
@@ -250,6 +251,32 @@ theorem sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_exception
       · have hGvar : G ∈ sourceOrientedGramVariety d n :=
           IsRelOpenInSourceOrientedGramVariety.subset hU_rel hGU
         exact hexceptional G hGU ⟨hGvar, hGmax⟩ N0 hN0_open hGN0)
+
+/-- Max-rank connectedness of a connected relatively open oriented source
+domain follows from the strengthened rank-deficient local-image producer. -/
+theorem sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_rankDeficientMaxRankLocalImageProducer
+    (hn : d + 1 ≤ n)
+    (rankDeficientLocalImageAt :
+      ∀ {G0 : SourceOrientedGramData d n},
+        G0 ∈ sourceOrientedGramVariety d n →
+        SourceOrientedExceptionalRank d n G0 →
+        ∀ {N0 : Set (SourceOrientedGramData d n)},
+          IsOpen N0 → G0 ∈ N0 →
+          Σ P : Type, Σ _ : TopologicalSpace P,
+            SourceOrientedRankDeficientMaxRankLocalImageData
+              (d := d) (n := n) (P := P) G0 N0)
+    {U : Set (SourceOrientedGramData d n)}
+    (hU_rel : IsRelOpenInSourceOrientedGramVariety d n U)
+    (hU_conn : IsConnected U) :
+    IsConnected (U ∩ {G | SourceOrientedMaxRankAt d n G}) :=
+  sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_exceptionalLocalBasis
+    (d := d) (n := n) hn hU_rel hU_conn
+    (by
+      intro G hGU hex N0 hN0_open hGN0
+      exact
+        sourceOrientedRankDeficientConnectedMaxRankPatchAt_of_localImageProducer
+          (d := d) (n := n) rankDeficientLocalImageAt
+          hU_rel hGU hex hN0_open hGN0)
 
 /-- Every nonempty relatively open source-oriented patch contains a nonempty
 preconnected relatively open seed in the max-rank stratum, in the hard range
