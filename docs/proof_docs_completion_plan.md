@@ -2870,9 +2870,11 @@ implementation contract is:
    explicit residual tail datum of a normal-parameter invariant with
    `sourceShiftedTailOrientedInvariant p.tail`, and
    `sourceOrientedSchurResidualTailData_normalParameter_mem_variety` gives the
-   corresponding shifted-tail-variety membership.  The all-variety membership
-   theorem must extend this calculation through the local head gauge, not
-   redefine the residual tail.
+   corresponding shifted-tail-variety membership.  The equality-transport
+   bridge `sourceOrientedSchurResidualTailData_mem_variety_of_eq_normalParameter`
+   is also checked for the next Witt/head-gauge normal-form step.  The
+   all-variety membership theorem must extend this calculation through the
+   local head gauge, not redefine the residual tail.
    The final `sourceTailOrientedSmallRealization` theorem is now assembled by
    a two-way rank split, not a strong Schur induction.  The top-rank branch
    calls `sourceTailOrientedSmallRealization_fullRank_bound`; the lower-rank

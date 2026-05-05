@@ -164,4 +164,26 @@ theorem sourceOrientedSchurResidualTailData_normalParameter_mem_variety
   refine ⟨p.tail, ?_⟩
   exact (sourceOrientedSchurResidualTailData_normalParameter d n r hrD hrn p hH).symm
 
+/-- Transport the normal-parameter residual-tail membership across an already
+identified normal-parameter representative and the matching head factor. -/
+theorem sourceOrientedSchurResidualTailData_mem_variety_of_eq_normalParameter
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    {G : SourceOrientedGramData d n}
+    {headFactor : Matrix (Fin r) (Fin r) ℂ}
+    (p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn)
+    (hG :
+      G =
+        sourceOrientedMinkowskiInvariant d n
+          (sourceOrientedNormalParameterVector d n r hrD hrn p))
+    (hhead : headFactor = p.head)
+    (hH : IsUnit p.head.det) :
+    sourceOrientedSchurResidualTailData d n r hrD hrn G headFactor ∈
+      sourceShiftedTailOrientedVariety d r hrD (n - r) := by
+  subst G
+  subst headFactor
+  exact sourceOrientedSchurResidualTailData_normalParameter_mem_variety
+    d n r hrD hrn p hH
+
 end BHW
