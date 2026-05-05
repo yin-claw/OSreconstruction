@@ -1,5 +1,27 @@
 # Route A cluster plan — discharge of `W_analytic_cluster_integral`
 
+> **SUPERSEDED 2026-05-04.** This document captured Route A (cluster via
+> the GNS-class `cluster_inner_product_from_GNS`). On further analysis,
+> Route A delivers cluster of the OS-**reflected** integral, but the
+> R→E direction's E4 verification needs the **un-reflected** form
+> (constructed Schwinger functions = `wickRotatedBoundaryPairing` on
+> `f.tensorProduct g_a`, no `osConj`). For real test functions the
+> *limits* match, but the integrals at finite `a` integrate over
+> different time-support regions, so Route A is genuinely off the E4
+> critical path.
+>
+> The live target is now the W-to-integral bridge documented in
+> [`docs/wick_rotated_pairing_eq_W_plan.md`](wick_rotated_pairing_eq_W_plan.md).
+> That plan goes through `Wfn.cluster` (R4 axiom field) + a bridge
+> `wickRotatedBoundaryPairing Wfn n f = Wfn.W n f` for OPTR-supported
+> `f` — proving the un-reflected form directly.
+>
+> Route A's `cluster_inner_product_from_GNS` and
+> `cluster_npoint_OS_form_inner_limit` are kept in
+> `Wightman/Spectral/ClusterFromKL.lean` as **infrastructure for future
+> GNS-side theorems** (mass gap, asymptotic completeness, particle
+> interpretation) — not as critical-path E4 work.
+
 Status as of 2026-05-04. Captures the GNS-class cluster route after
 Round-2 Gemini vetting and Codex's corrections to my over-optimistic
 summary.
