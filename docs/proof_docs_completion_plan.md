@@ -2787,7 +2787,8 @@ implementation contract is:
    `sourceShiftedTailOrientedInvariant`, and
    `sourceShiftedTailSmallRealization`,
    `SourceOrientedSchurResidualData`,
-   `sourceOriented_schurResidualData`, and the checked endpoint
+   `sourceOriented_schurResidualData_of_tail_mem` fed by
+   `sourceOrientedSchurResidualTailData_mem_variety`, and the checked endpoint
    `sourceOriented_reconstruct_from_schurResidual`.  The small tail theorem
    is proved constructively by quantitative Takagi same-Gram factorization
    plus determinant-sheet repair/vanishing; it does not scale an arbitrary
@@ -2853,9 +2854,17 @@ implementation contract is:
    `exists_sourceOriented_reconstruct_from_schurResidual`: once
    `SourceOrientedSchurResidualData` exists and its shifted tail is realized,
    the hard-range Schur propagation theorem reconstructs the original
-   oriented datum.  The remaining producer work is therefore concentrated in
-   `sourceOriented_schurResidualData`, plus the local radius/head-gauge
-   choices needed to feed it.
+   oriented datum.  The head-gauge interface is now checked in
+   `SourceOrientedHeadGauge.lean`: the symmetric head block is bundled only
+   after the hypothesis `G ∈ sourceOrientedGramVariety d n`, and
+   `sourceOriented_schurResidualData_of_tail_mem` proves that a local
+   signature-relative head factor plus membership of the explicit residual
+   tail datum in the shifted-tail variety mechanically constructs
+   `SourceOrientedSchurResidualData`.  The remaining producer work is therefore
+   concentrated in the true tail-membership theorem for that explicit residual
+   datum, plus the analytic inverse-function producer
+   `sourceRankDeficientHeadGauge_at_sourceMetric` and the local radius choices
+   needed to feed the residual chart.
    The final `sourceTailOrientedSmallRealization` theorem is now assembled by
    a two-way rank split, not a strong Schur induction.  The top-rank branch
    calls `sourceTailOrientedSmallRealization_fullRank_bound`; the lower-rank
