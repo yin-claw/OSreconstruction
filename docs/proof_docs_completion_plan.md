@@ -402,6 +402,15 @@ step is now checked separately as
 proof should use it before transporting by the normal-parameter coordinate
 equivalence via the checked helper
 `BHW.isConnected_preimage_continuousLinearEquiv`.
+The pure principal-Schur oriented max-rank slice is now checked in
+`SourceOrientedSchurParameter.lean`:
+`BHW.sourcePrincipalSchur_orientedMaxRank_parameterSet_eq` rewrites the
+max-rank parameter predicate to residual exact rank, and
+`BHW.isConnected_sourcePrincipalSchur_orientedMaxRank_parameterSet` packages
+the resulting product connectedness.  Consequently the remaining oriented
+normal-form proof only has to identify `(toInv c).gram` with the transported
+principal Schur graph and then move connectedness through the finite
+normal-parameter coordinate equivalence.
 There is no additional two-sheet obstruction from the determinant coordinates:
 `SourceOrientedMaxRankAt` is defined only from `G.gram`, and the determinant
 coordinates are continuous functions of the same source-vector parameters on
@@ -413,13 +422,15 @@ this local image.  The exact Lean proof should therefore:
    invariance, and
    `sourceOrientedMaxRankAt_iff_sourceGramMatrixRank_eq_fullFrame` to ordinary
    source-matrix rank `sourceGramMatrixRank n ((toInv c).gram) = d + 1`;
-3. use the principal Schur rank theorem to identify this set with the product
-   of the head ball, mixed ball, and
+3. identify the normal parameter coordinates with a principal Schur graph and
+   use `sourcePrincipalSchur_orientedMaxRank_parameterSet_eq` to identify this
+   set with the product of the head ball, mixed ball, and
    `C ∩ {S | Sᵀ = S ∧ S.rank = (d + 1) - N.r}`;
 4. invoke `isConnected_symmetric_matrix_ball`, `isConnected_matrix_ball`, and
-   `matrixSymmetricRankExactCone_small_connected`, combine them with
-   `isConnected_sourcePrincipalSchur_rankExact_parameterSet`, then transport
-   connectedness through the finite coordinate equivalence with
+   `matrixSymmetricRankExactCone_small_connected`, combine them with the
+   checked
+   `isConnected_sourcePrincipalSchur_orientedMaxRank_parameterSet`, then
+   transport connectedness through the finite coordinate equivalence with
    `isConnected_preimage_continuousLinearEquiv`.
 The remaining implementation targets are the concrete exceptional
 Schur/residual max-rank-connected local-image producer and the source-backed
