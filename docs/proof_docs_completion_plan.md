@@ -2519,7 +2519,11 @@ implementation contract is:
    ordinary Hall-Wightman adapted normal form, the residual coefficient
    polydisc, the extended-tube stability shrink, Schur-tail image
    surjectivity, and max-rank density to be proved before the residual chart
-   can be assembled.  The normal-form packet now separates the actual
+   can be assembled.  The transport interface is now checked in
+   `SourceOrientedTransport.lean` as a homeomorphism preserving the oriented
+   variety and max-rank predicate, with derived inverse-image openness and
+   inverse max-rank/variety preservation lemmas.  The normal-form packet now
+   separates the actual
    extended-tube adapted representative `adaptedBase` from the canonical
    normal coordinate source `normalBase = hwLemma3CanonicalSource d n r`.
    The latter supplies the identity head block and zero tail, but is not
