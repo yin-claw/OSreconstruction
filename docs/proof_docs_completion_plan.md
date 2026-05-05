@@ -392,7 +392,8 @@ connected symmetric head ball, connected mixed ball, and
 parameter-side product step is now checked separately as
 `BHW.isConnected_sourcePrincipalSchur_rankExact_parameterSet`; the oriented
 proof should use it before transporting by the normal-parameter coordinate
-equivalence.
+equivalence via the checked helper
+`BHW.isConnected_preimage_continuousLinearEquiv`.
 There is no additional two-sheet obstruction from the determinant coordinates:
 `SourceOrientedMaxRankAt` is defined only from `G.gram`, and the determinant
 coordinates are continuous functions of the same source-vector parameters on
@@ -408,7 +409,8 @@ this local image.  The exact Lean proof should therefore:
 4. invoke `isConnected_symmetric_matrix_ball`, `isConnected_matrix_ball`, and
    `matrixSymmetricRankExactCone_small_connected`, combine them with
    `isConnected_sourcePrincipalSchur_rankExact_parameterSet`, then transport
-   connectedness through the finite coordinate equivalence.
+   connectedness through the finite coordinate equivalence with
+   `isConnected_preimage_continuousLinearEquiv`.
 The remaining implementation targets are the concrete exceptional
 Schur/residual max-rank-connected local-image producer and the source-backed
 finite-overlap domains; Lean work should still not start at the public adjacent

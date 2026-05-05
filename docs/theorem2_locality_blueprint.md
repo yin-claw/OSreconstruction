@@ -12539,7 +12539,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
           -- The checked parameter-side product lemma
           -- `isConnected_sourcePrincipalSchur_rankExact_parameterSet` combines
           -- the three factors before the linear coordinate equivalence
-          -- transports this to the displayed parameter set.
+          -- transports this to the displayed parameter set by
+          -- `isConnected_preimage_continuousLinearEquiv`.
           --
           -- The determinant coordinates do not split this set into separate
           -- local branches: `SourceOrientedMaxRankAt` only reads `G.gram`, and

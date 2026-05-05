@@ -15,6 +15,27 @@ open Complex Topology Matrix LorentzLieGroup Classical Filter NormedSpace
 
 namespace BHW
 
+/-- Connectedness is transported through the preimage of a continuous linear
+equivalence.  This is the finite-coordinate step used after identifying a
+Schur parameter slice in product coordinates. -/
+theorem isConnected_preimage_continuousLinearEquiv
+    {E F : Type*}
+    [NormedAddCommGroup E] [NormedSpace ℂ E]
+    [NormedAddCommGroup F] [NormedSpace ℂ F]
+    (e : E ≃L[ℂ] F)
+    {S : Set F}
+    (hS : IsConnected S) :
+    IsConnected (e ⁻¹' S) := by
+  have himage : e.symm '' S = e ⁻¹' S := by
+    ext x
+    constructor
+    · rintro ⟨y, hy, rfl⟩
+      simpa using hy
+    · intro hx
+      exact ⟨e x, hx, by simp⟩
+  rw [← himage]
+  exact hS.image e.symm e.symm.continuous.continuousOn
+
 /-- The Schur parameter set with an exact-rank residual coordinate is
 connected when the head, mixed, and exact residual pieces are connected. -/
 theorem isConnected_sourcePrincipalSchur_rankExact_parameterSet
