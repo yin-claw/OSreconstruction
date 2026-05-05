@@ -1,3 +1,4 @@
+import Mathlib.Data.Fintype.Sort
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedNormalParameter
 
 /-!
@@ -180,6 +181,107 @@ theorem sourceFullFrameDet_normalParameter_headTail
   simpa using
     sourceFullFrameDet_normalParameter_headTail_raw d n r hrD hrn p lam
 
+/-- Matrix formed by adjoining an `(r + D) × r` block to an
+`(r + D) × D` block.  The first `r` columns come from `M`; the remaining
+`D` columns come from `Q`. -/
+def matrixBlockColumns
+    (r D : ℕ)
+    (M : Matrix (Fin (r + D)) (Fin r) ℂ)
+    (Q : Matrix (Fin (r + D)) (Fin D) ℂ) :
+    Matrix (Fin (r + D)) (Fin (r + D)) ℂ :=
+  fun i j =>
+    if h : j.val < r then
+      M i ⟨j.val, h⟩
+    else
+      Q i ⟨j.val - r, by omega⟩
+
+@[simp]
+theorem matrixRowSubset_compl_card
+    (r D : ℕ)
+    (s : Finset (Fin (r + D)))
+    (hs : s.card = r) :
+    sᶜ.card = D := by
+  rw [Finset.card_compl, hs, Fintype.card_fin]
+  omega
+
+/-- The canonical increasing enumeration of a chosen `r`-row subset. -/
+def matrixRowSubsetHeadRows
+    (r D : ℕ)
+    (s : Finset (Fin (r + D)))
+    (hs : s.card = r) :
+    Fin r ↪ Fin (r + D) :=
+  (s.orderEmbOfFin hs).toEmbedding
+
+/-- The canonical increasing enumeration of the complement of a chosen
+`r`-row subset. -/
+def matrixRowSubsetTailRows
+    (r D : ℕ)
+    (s : Finset (Fin (r + D)))
+    (hs : s.card = r) :
+    Fin D ↪ Fin (r + D) :=
+  (sᶜ.orderEmbOfFin (matrixRowSubset_compl_card r D s hs)).toEmbedding
+
+/-- The canonical row equivalence that puts a chosen row subset first and its
+complement second, preserving the internal order on each part. -/
+noncomputable def matrixRowSubsetSumEquiv
+    (r D : ℕ)
+    (s : Finset (Fin (r + D)))
+    (hs : s.card = r) :
+    Fin r ⊕ Fin D ≃ Fin (r + D) :=
+  finSumEquivOfFinset (s := s) hs
+    (matrixRowSubset_compl_card r D s hs)
+
+@[simp]
+theorem matrixRowSubsetSumEquiv_inl
+    (r D : ℕ)
+    (s : Finset (Fin (r + D)))
+    (hs : s.card = r)
+    (a : Fin r) :
+    matrixRowSubsetSumEquiv r D s hs (Sum.inl a) =
+      matrixRowSubsetHeadRows r D s hs a := by
+  simp [matrixRowSubsetSumEquiv, matrixRowSubsetHeadRows]
+
+@[simp]
+theorem matrixRowSubsetSumEquiv_inr
+    (r D : ℕ)
+    (s : Finset (Fin (r + D)))
+    (hs : s.card = r)
+    (u : Fin D) :
+    matrixRowSubsetSumEquiv r D s hs (Sum.inr u) =
+      matrixRowSubsetTailRows r D s hs u := by
+  simp [matrixRowSubsetSumEquiv, matrixRowSubsetTailRows]
+
+/-- The row-shuffle sign in the finite Laplace expansion along the first
+`r` columns and the last `D` columns. -/
+noncomputable def matrixRowSubsetLaplaceSign
+    (r D : ℕ)
+    (s : Finset (Fin (r + D)))
+    (hs : s.card = r) : ℂ :=
+  ((Equiv.Perm.sign
+    ((finSumFinEquiv : (Fin r ⊕ Fin D) ≃ Fin (r + D)).symm.trans
+      (matrixRowSubsetSumEquiv r D s hs)) : ℤ) : ℂ)
+
+/-- The summand attached to one ordered row subset in the finite Laplace
+expansion of a block-column determinant. -/
+noncomputable def matrixBlockColumnLaplaceTerm
+    (r D : ℕ)
+    (M : Matrix (Fin (r + D)) (Fin r) ℂ)
+    (Q : Matrix (Fin (r + D)) (Fin D) ℂ)
+    (S : {s : Finset (Fin (r + D)) // s.card = r}) : ℂ :=
+  matrixRowSubsetLaplaceSign r D S.1 S.2 *
+    Matrix.det
+      (fun a b => M (matrixRowSubsetHeadRows r D S.1 S.2 a) b) *
+    Matrix.det
+      (fun a b => Q (matrixRowSubsetTailRows r D S.1 S.2 a) b)
+
+/-- The finite row-subset Laplace sum for a block-column determinant. -/
+noncomputable def matrixBlockColumnLaplaceSum
+    (r D : ℕ)
+    (M : Matrix (Fin (r + D)) (Fin r) ℂ)
+    (Q : Matrix (Fin (r + D)) (Fin D) ℂ) : ℂ :=
+  ∑ S : {s : Finset (Fin (r + D)) // s.card = r},
+    matrixBlockColumnLaplaceTerm r D M Q S
+
 /-- Head-column coefficients for an arbitrary ordered full frame in the
 rank-deficient Schur normal form.  Selected head labels contribute standard
 basis rows; tail labels contribute their stored mixed rows. -/
@@ -234,5 +336,33 @@ def sourceNormalFullFrameTailRowsDet
             _ = ι (rows ν) := (Classical.choose_spec (htail ν)).symm }
   else
     0
+
+/-- The Schur/Laplace determinant formula for an arbitrary ordered full frame,
+expressed using the chosen head factor, mixed Schur coefficients, and
+shifted-tail oriented determinant coordinates. -/
+def sourceNormalFullFrameDetFromSchur
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (H : Matrix (Fin r) (Fin r) ℂ)
+    (L : Matrix (Fin (n - r)) (Fin r) ℂ)
+    (T : SourceShiftedTailOrientedData d r hrD (n - r))
+    (ι : Fin (d + 1) ↪ Fin n) : ℂ :=
+  ∑ S : {s : Finset (Fin (r + (d + 1 - r))) // s.card = r},
+    matrixRowSubsetLaplaceSign r (d + 1 - r) S.1 S.2 *
+      Matrix.det
+        (fun a b =>
+          sourceNormalFullFrameHeadBlock d n r hrn H L ι
+            (Fin.cast (Nat.add_sub_of_le (Nat.le_of_lt hrD))
+              (matrixRowSubsetHeadRows r (d + 1 - r) S.1 S.2 a)) b) *
+      sourceNormalFullFrameTailRowsDet d n r hrD hrn T ι
+        { toFun := fun μ =>
+            Fin.cast (Nat.add_sub_of_le (Nat.le_of_lt hrD))
+              (matrixRowSubsetTailRows r (d + 1 - r) S.1 S.2 μ)
+          inj' := by
+            intro μ ν hμν
+            exact (matrixRowSubsetTailRows r (d + 1 - r) S.1 S.2).injective
+              (Fin.cast_injective
+                (Nat.add_sub_of_le (Nat.le_of_lt hrD)) hμν) }
 
 end BHW

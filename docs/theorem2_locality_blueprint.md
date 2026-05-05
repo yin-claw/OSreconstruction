@@ -9228,51 +9228,97 @@ Proof decomposition of this theorem, without hiding the analytic work:
       Schur determinant formula:
 
       ```lean
-      structure BHW.MatrixBlockColumnRowSplit
-          (r D : Nat) where
-        headRows : Fin r ↪ Fin (r + D)
-        tailRows : Fin D ↪ Fin (r + D)
-        headRows_strict :
-          StrictMono fun a : Fin r => (headRows a).val
-        tailRows_strict :
-          StrictMono fun u : Fin D => (tailRows u).val
-        disjoint :
-          Disjoint (Set.range headRows) (Set.range tailRows)
-        exhaustive :
-          ∀ i : Fin (r + D),
-            (∃ a, headRows a = i) ∨ (∃ u, tailRows u = i)
+      def BHW.matrixBlockColumns
+          (r D : Nat)
+          (M : Matrix (Fin (r + D)) (Fin r) ℂ)
+          (Q : Matrix (Fin (r + D)) (Fin D) ℂ) :
+          Matrix (Fin (r + D)) (Fin (r + D)) ℂ :=
+        fun i j =>
+          if h : j.val < r then
+            M i ⟨j.val, h⟩
+          else
+            Q i ⟨j.val - r, by omega⟩
 
-      noncomputable instance BHW.instFintypeMatrixBlockColumnRowSplit
-          (r D : Nat) :
-          Fintype (BHW.MatrixBlockColumnRowSplit r D)
+      theorem BHW.matrixRowSubset_compl_card
+          (r D : Nat)
+          (s : Finset (Fin (r + D)))
+          (hs : s.card = r) :
+          sᶜ.card = D
 
-      noncomputable def BHW.MatrixBlockColumnRowSplit.rowEquiv
-          {r D : Nat}
-          (S : BHW.MatrixBlockColumnRowSplit r D) :
-          (Fin r ⊕ Fin D) ≃ Fin (r + D)
+      def BHW.matrixRowSubsetHeadRows
+          (r D : Nat)
+          (s : Finset (Fin (r + D)))
+          (hs : s.card = r) :
+          Fin r ↪ Fin (r + D) :=
+        (s.orderEmbOfFin hs).toEmbedding
 
-      noncomputable def BHW.MatrixBlockColumnRowSplit.sign
-          {r D : Nat}
-          (S : BHW.MatrixBlockColumnRowSplit r D) : ℂ :=
+      def BHW.matrixRowSubsetTailRows
+          (r D : Nat)
+          (s : Finset (Fin (r + D)))
+          (hs : s.card = r) :
+          Fin D ↪ Fin (r + D) :=
+        (sᶜ.orderEmbOfFin
+          (BHW.matrixRowSubset_compl_card r D s hs)).toEmbedding
+
+      noncomputable def BHW.matrixRowSubsetSumEquiv
+          (r D : Nat)
+          (s : Finset (Fin (r + D)))
+          (hs : s.card = r) :
+          Fin r ⊕ Fin D ≃ Fin (r + D) :=
+        finSumEquivOfFinset (s := s) hs
+          (BHW.matrixRowSubset_compl_card r D s hs)
+
+      theorem BHW.matrixRowSubsetSumEquiv_inl
+          (r D : Nat)
+          (s : Finset (Fin (r + D)))
+          (hs : s.card = r)
+          (a : Fin r) :
+          BHW.matrixRowSubsetSumEquiv r D s hs (Sum.inl a) =
+            BHW.matrixRowSubsetHeadRows r D s hs a
+
+      theorem BHW.matrixRowSubsetSumEquiv_inr
+          (r D : Nat)
+          (s : Finset (Fin (r + D)))
+          (hs : s.card = r)
+          (u : Fin D) :
+          BHW.matrixRowSubsetSumEquiv r D s hs (Sum.inr u) =
+            BHW.matrixRowSubsetTailRows r D s hs u
+
+      noncomputable def BHW.matrixRowSubsetLaplaceSign
+          (r D : Nat)
+          (s : Finset (Fin (r + D)))
+          (hs : s.card = r) : ℂ :=
         ((Equiv.Perm.sign
-          ((finSumFinEquiv : (Fin r ⊕ Fin D) ≃ Fin (r + D)).symm.trans
-            S.rowEquiv) : ℤ) : ℂ)
+          ((finSumFinEquiv :
+                (Fin r ⊕ Fin D) ≃ Fin (r + D)).symm.trans
+            (BHW.matrixRowSubsetSumEquiv r D s hs)) : ℤ) : ℂ)
+
+      noncomputable def BHW.matrixBlockColumnLaplaceTerm
+          (r D : Nat)
+          (M : Matrix (Fin (r + D)) (Fin r) ℂ)
+          (Q : Matrix (Fin (r + D)) (Fin D) ℂ)
+          (S : {s : Finset (Fin (r + D)) // s.card = r}) : ℂ :=
+        BHW.matrixRowSubsetLaplaceSign r D S.1 S.2 *
+          Matrix.det
+            (fun a b =>
+              M (BHW.matrixRowSubsetHeadRows r D S.1 S.2 a) b) *
+          Matrix.det
+            (fun a b =>
+              Q (BHW.matrixRowSubsetTailRows r D S.1 S.2 a) b)
+
+      noncomputable def BHW.matrixBlockColumnLaplaceSum
+          (r D : Nat)
+          (M : Matrix (Fin (r + D)) (Fin r) ℂ)
+          (Q : Matrix (Fin (r + D)) (Fin D) ℂ) : ℂ :=
+        ∑ S : {s : Finset (Fin (r + D)) // s.card = r},
+          BHW.matrixBlockColumnLaplaceTerm r D M Q S
 
       theorem BHW.matrix_det_blockColumn_laplace
           (r D : Nat)
           (M : Matrix (Fin (r + D)) (Fin r) ℂ)
           (Q : Matrix (Fin (r + D)) (Fin D) ℂ) :
-          (Matrix.of fun i j =>
-              if h : j.val < r then
-                M i ⟨j.val, h⟩
-              else
-                Q i ⟨j.val - r, by omega⟩).det =
-            ∑ S : BHW.MatrixBlockColumnRowSplit r D,
-              BHW.MatrixBlockColumnRowSplit.sign S *
-                (Matrix.det
-                  (fun a b => M (S.headRows a) b)) *
-                (Matrix.det
-                  (fun a b => Q (S.tailRows a) b))
+          (BHW.matrixBlockColumns r D M Q).det =
+            BHW.matrixBlockColumnLaplaceSum r D M Q
 
       def BHW.sourceNormalFullFrameCoeff
           (d n r : Nat)
@@ -9334,23 +9380,28 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (L : Matrix (Fin (n - r)) (Fin r) ℂ)
           (T : BHW.SourceShiftedTailOrientedData d r hrD (n - r))
           (ι : Fin (d + 1) ↪ Fin n) : ℂ :=
-        ∑ S : BHW.MatrixBlockColumnRowSplit r (d + 1 - r),
-          S.sign *
+        ∑ S :
+            {s : Finset (Fin (r + (d + 1 - r))) // s.card = r},
+          BHW.matrixRowSubsetLaplaceSign r (d + 1 - r) S.1 S.2 *
             (Matrix.det
               (fun a b =>
                 BHW.sourceNormalFullFrameHeadBlock
                   d n r hrn H L ι
                   (Fin.cast (Nat.add_sub_of_le (Nat.le_of_lt hrD))
-                    (S.headRows a)) b)) *
+                    (BHW.matrixRowSubsetHeadRows
+                      r (d + 1 - r) S.1 S.2 a)) b)) *
             BHW.sourceNormalFullFrameTailRowsDet
               d n r hrD hrn T ι
               { toFun := fun μ =>
                   Fin.cast (Nat.add_sub_of_le (Nat.le_of_lt hrD))
-                    (S.tailRows μ)
+                    (BHW.matrixRowSubsetTailRows
+                      r (d + 1 - r) S.1 S.2 μ)
                 inj' := by
                   intro μ ν hμν
-                  exact S.tailRows.injective
-                    (Fin.cast_injective.mp hμν) }
+                  exact (BHW.matrixRowSubsetTailRows
+                    r (d + 1 - r) S.1 S.2).injective
+                    (Fin.cast_injective
+                      (Nat.add_sub_of_le (Nat.le_of_lt hrD)) hμν) }
 
       theorem BHW.sourceFullFrameDet_normalParameter_eq_schurFormula
           [NeZero d]
@@ -9410,12 +9461,20 @@ Proof decomposition of this theorem, without hiding the analytic work:
       actual head-coordinate columns.  The residual-tail contribution for an
       ordered row subset is zero unless every chosen row is a tail source
       label; in the nonzero case it is exactly `T.det` of the induced ordered
-      embedding into `Fin (n-r)`.  These three definition layers
+      embedding into `Fin (n-r)`.  These four definition layers
       (`sourceNormalFullFrameCoeff`, `sourceNormalFullFrameHeadBlock`, and
-      `sourceNormalFullFrameTailRowsDet`) are now checked in Lean.  The finite theorem
+      `sourceNormalFullFrameTailRowsDet`, plus
+      `sourceNormalFullFrameDetFromSchur`) are now checked in Lean.  The row
+      subset bookkeeping definitions `matrixBlockColumns`,
+      `matrixRowSubset_compl_card`, `matrixRowSubsetHeadRows`,
+      `matrixRowSubsetTailRows`, `matrixRowSubsetSumEquiv`,
+      `matrixRowSubsetLaplaceSign`, `matrixBlockColumnLaplaceTerm`, and
+      `matrixBlockColumnLaplaceSum` are also checked in Lean; they use
+      mathlib's `Finset.orderEmbOfFin` and `finSumEquivOfFinset` rather than a
+      custom split structure.  The finite theorem
       `matrix_det_blockColumn_laplace` is the ordinary determinant Laplace
       expansion along the first `r` columns and the last `d+1-r` columns, with
-      `MatrixBlockColumnRowSplit.sign` carrying the row-shuffle sign.  Thus
+      `matrixRowSubsetLaplaceSign` carrying the row-shuffle sign.  Thus
       `sourceFullFrameDet_normalParameter_eq_schurFormula` is proved by
       rewriting the selected full-frame matrix as `[headBlock | residualTail]`
       and applying this Laplace theorem.  No determinant relation from the
@@ -9424,19 +9483,28 @@ Proof decomposition of this theorem, without hiding the analytic work:
 
       Implementation transcript for `matrix_det_blockColumn_laplace`: unfold
       `Matrix.det_apply'` for the concatenated matrix.  For a permutation
-      `σ : Equiv.Perm (Fin (r+D))`, let `Sσ` be the canonical split whose
-      head rows are the increasing enumeration of
-      `σ '' {j | j.val < r}` and whose tail rows are the increasing
-      enumeration of the complement.  Terms whose row split is not exhaustive
-      are impossible by bijectivity of `σ`.  Reindex the finite sum by
-      `(S, σ_head, σ_tail)`, where `σ_head` and `σ_tail` are the induced
-      internal permutations of `Fin r` and `Fin D`; the sign factor decomposes
-      as `S.sign * σ_head.sign * σ_tail.sign`.  The product over the first
-      `r` columns becomes the Leibniz product for
-      `(fun a b => M (S.headRows a) b).det`, and the product over the last
-      `D` columns becomes the Leibniz product for
-      `(fun a b => Q (S.tailRows a) b).det`.  This is finite
-      Cauchy-Binet/Laplace only; it does not use source geometry.
+      `σ : Equiv.Perm (Fin (r+D))`, set
+      `sσ := (Finset.univ.image fun a : Fin r =>
+        σ (finSourceHead (Nat.le_add_right r D) a))`.  Prove
+      `hsσ : sσ.card = r` from `σ.injective` and
+      `finSourceHead_injective`; then `matrixRowSubsetHeadRows r D sσ hsσ`
+      is the increasing enumeration of the rows hit by the first `r` columns,
+      and `matrixRowSubsetTailRows r D sσ hsσ` is the increasing enumeration
+      of the complement.  The permutation decomposes uniquely as
+      `σ = matrixRowSubsetSumEquiv r D sσ hsσ ∘
+        Equiv.Perm.sumCongr σ_head σ_tail ∘ finSumFinEquiv.symm`,
+      where `σ_head` and `σ_tail` are the internal order permutations obtained
+      by applying the inverse ordered-subset equivalences to the two row
+      families.  Reindex `∑ σ` by the subtype
+      `{s : Finset (Fin (r+D)) // s.card = r}` together with these two
+      internal permutations.  The sign factor decomposes by
+      `Equiv.Perm.sign_trans` and `Equiv.Perm.sign_sumCongr` as
+      `matrixRowSubsetLaplaceSign r D s hs * σ_head.sign * σ_tail.sign`.
+      The product over the first `r` columns becomes the Leibniz product for
+      `(fun a b => M (matrixRowSubsetHeadRows r D s hs a) b).det`, and the
+      product over the last `D` columns becomes the Leibniz product for
+      `(fun a b => Q (matrixRowSubsetTailRows r D s hs a) b).det`.  This is
+      finite Cauchy-Binet/Laplace only; it does not use source geometry.
 
       The theorem `sourceOrientedSchur_fullFrameDet_reconstruct` is the only
       place where non-selected full-frame determinants are recovered from the
