@@ -2894,19 +2894,35 @@ implementation contract is:
    `sourceOriented_headGauge_actualHeadGram_eq_normalHeadGram` proves equality
    of the actual selected head Gram with the gauge normal-head Gram, and
    `sourceOriented_headGauge_normalHead_linearIndependent` proves linear
-   independence of that gauge head frame.  The blockwise constructor
+   independence of that gauge head frame.  The next algebraic layer is also
+   checked: `sourceVectorMinkowskiInner_right_hwLemma3CanonicalSource_head`
+   extracts canonical head coordinates from pairings with the model head
+   vectors,
+   `sourceOriented_headGauge_headCoord_eq_zero_of_orthogonal_normalHead`
+   proves that a vector orthogonal to the gauge normal head frame has zero
+   canonical head coordinates,
+   `eq_sourceTailEmbed_of_headCoord_eq_zero` identifies such a vector with its
+   shifted-tail embedding, and
+   `sourceOriented_headGaugeTailCoordinatesAfterWittData`/
+   `sourceOriented_headGauge_tailCoordinates_after_witt` construct the Schur
+   mixed coefficients plus shifted-tail coordinates once a Lorentz
+   transformation has normalized the selected head frame.  Consequently
+   `sourceOriented_headGaugeNormalParameterData_of_lorentz_head_normalized`
+   is checked: the remaining Witt proof only needs to provide the head-frame
+   normalization, and the normal-parameter data is then assembled
+   constructively.  The blockwise constructor
    `sourceOriented_headGaugeNormalParameterData_of_lorentz_head_tail` is
    checked as well, so future Lean can prove head and tail normalized
    equalities separately and assemble the data by the checked head/tail source
-   split.  Therefore the remaining hard
-   theorem is no longer an unstructured tail-membership assertion: it is the
-   Witt/head-normalization producer for that data.  Its proof must choose a
+   split.  Therefore the remaining hard theorem is no longer an unstructured
+   tail-membership assertion and no longer includes Schur tail-coordinate
+   bookkeeping: it is the determinant-one Witt/head-normalization producer for
+   that data.  Its proof must choose a
    realizing source tuple, use the head-gauge equation to match the actual
    selected nondegenerate head frame to the gauge head frame, extend that
-   frame isometry by determinant-one complex Witt extension, decompose the
-   transformed tail labels into mixed head coefficients plus standard shifted
-   tail coordinates, and use proper Lorentz invariance of the oriented
-   invariant.  The forward normal-parameter check is
+   frame isometry by determinant-one complex Witt extension, and use the
+   checked constructive tail-coordinate bridge plus proper Lorentz invariance
+   of the oriented invariant.  The forward normal-parameter check is
    now also in Lean:
    `sourceOrientedSchurResidualTailData_normalParameter` identifies the
    explicit residual tail datum of a normal-parameter invariant with

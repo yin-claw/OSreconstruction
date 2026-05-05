@@ -150,6 +150,351 @@ theorem sourceOriented_headGauge_normalHead_linearIndependent
       (sourceOrientedNormalParameterVector d n r hrD hrn p0) hA
   simpa [sourceOrientedNormalParameterVector_head] using hLI
 
+/-- Pairing a vector against a canonical head coordinate vector extracts the
+corresponding diagonal-sign-weighted head coordinate. -/
+theorem sourceVectorMinkowskiInner_right_hwLemma3CanonicalSource_head
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (v : Fin (d + 1) → ℂ)
+    (a : Fin r) :
+    sourceVectorMinkowskiInner d v
+        (hwLemma3CanonicalSource d n r (finSourceHead hrn a)) =
+      (MinkowskiSpace.metricSignature d
+          (finSourceHead (Nat.le_of_lt hrD) a) : ℂ) *
+        v (finSourceHead (Nat.le_of_lt hrD) a) := by
+  rw [sourceVectorMinkowskiInner]
+  rw [Finset.sum_eq_single (finSourceHead (Nat.le_of_lt hrD) a)]
+  · rw [hwLemma3CanonicalSource_head_apply (hrD := hrD)]
+    simp
+  · intro μ _hμ hne
+    have hzero :
+        hwLemma3CanonicalSource d n r (finSourceHead hrn a) μ = 0 := by
+      rw [hwLemma3CanonicalSource_head_apply (hrD := hrD)]
+      simp [hne]
+    simp [hzero]
+  · intro hnot
+    exact False.elim (hnot (Finset.mem_univ _))
+
+/-- A vector orthogonal to every gauge normal head vector has zero canonical
+head coordinates. -/
+theorem sourceOriented_headGauge_headCoord_eq_zero_of_orthogonal_normalHead
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
+    {v : Fin (d + 1) → ℂ}
+    (horth :
+      ∀ a : Fin r,
+        sourceVectorMinkowskiInner d v
+          (sourceOrientedNormalHeadVector d n r hrD hrn
+            (sourceOrientedHeadGaugeHeadParameter d n r hrD hrn hGvar Head) a) =
+          0)
+    (a : Fin r) :
+    v (finSourceHead (Nat.le_of_lt hrD) a) = 0 := by
+  let p0 := sourceOrientedHeadGaugeHeadParameter d n r hrD hrn hGvar Head
+  let H := p0.head
+  let u : Fin r → ℂ := fun b =>
+    (MinkowskiSpace.metricSignature d
+      (finSourceHead (Nat.le_of_lt hrD) b) : ℂ) *
+      v (finSourceHead (Nat.le_of_lt hrD) b)
+  have hHdet : IsUnit H.det := by
+    simpa [H, p0, sourceOrientedHeadGaugeHeadParameter] using
+      Head.factor_det_unit
+        (sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar) hHead
+  have hHu : H.mulVec u = 0 := by
+    ext b
+    have hpair :
+        sourceVectorMinkowskiInner d v
+          (sourceOrientedNormalHeadVector d n r hrD hrn p0 b) =
+        H.mulVec u b := by
+      change
+        sourceVectorMinkowskiInner d v
+          (fun μ =>
+            ∑ c : Fin r,
+              p0.head b c *
+                hwLemma3CanonicalSource d n r (finSourceHead hrn c) μ) =
+          H.mulVec u b
+      rw [sourceVectorMinkowskiInner_sum_right]
+      simp_rw [sourceVectorMinkowskiInner_smul_right]
+      simp_rw [
+        sourceVectorMinkowskiInner_right_hwLemma3CanonicalSource_head
+          d n r hrD hrn v]
+      simp [H, u, Matrix.mulVec, dotProduct]
+    exact hpair.symm.trans (horth b)
+  have hu : u = 0 := by
+    have hleft :
+        H⁻¹.mulVec (H.mulVec u) = H⁻¹.mulVec (0 : Fin r → ℂ) := by
+      rw [hHu]
+    rw [Matrix.mulVec_mulVec, Matrix.nonsing_inv_mul H hHdet,
+      Matrix.one_mulVec] at hleft
+    simpa using hleft
+  have ha := congrFun hu a
+  have hmetric_ne :
+      (MinkowskiSpace.metricSignature d
+        (finSourceHead (Nat.le_of_lt hrD) a) : ℂ) ≠ 0 := by
+    by_cases h0 : finSourceHead (Nat.le_of_lt hrD) a = 0
+    · simp [MinkowskiSpace.metricSignature, h0]
+    · simp [MinkowskiSpace.metricSignature, h0]
+  exact (mul_eq_zero.mp ha).resolve_left hmetric_ne
+
+/-- A spacetime vector with zero canonical head coordinates is exactly the
+tail embedding of its canonical tail coordinates. -/
+theorem eq_sourceTailEmbed_of_headCoord_eq_zero
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (v : Fin (d + 1) → ℂ)
+    (hhead : ∀ a : Fin r, v (finSourceHead (Nat.le_of_lt hrD) a) = 0) :
+    v =
+      sourceTailEmbed d r hrD
+        (fun u : Fin (d + 1 - r) =>
+          v (finSourceTail (Nat.le_of_lt hrD) u)) := by
+  ext μ
+  rcases finSourceHead_tail_cases (Nat.le_of_lt hrD) μ with
+    ⟨a, rfl⟩ | ⟨u, rfl⟩
+  · simp [sourceTailEmbed, hhead a]
+  · simp [sourceTailEmbed]
+
+/-- Constructive tail-coordinate data after a Lorentz transformation has
+normalized the selected head frame to the gauge normal head frame. -/
+def sourceOriented_headGaugeTailCoordinatesAfterWittData
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hz : G = sourceOrientedMinkowskiInvariant d n z)
+    (Λ : ComplexLorentzGroup d)
+    (hΛhead :
+      ∀ a : Fin r,
+        complexLorentzAction Λ z (finSourceHead hrn a) =
+          sourceOrientedNormalHeadVector d n r hrD hrn
+            (sourceOrientedHeadGaugeHeadParameter d n r hrD hrn hGvar Head) a) :
+    { q : Fin (n - r) → Fin (d + 1 - r) → ℂ //
+      let H :=
+        Head.factor (sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar)
+      let L :=
+        sourceSchurMixedCoeff n r hrn G
+          (sourceOrientedSchurHeadBlock n r hrn G)
+      complexLorentzAction Λ z =
+        sourceOrientedNormalParameterVector d n r hrD hrn
+          { head := H
+            mixed := L
+            tail := q } } := by
+  let A := sourceOrientedSchurHeadBlock n r hrn G
+  let H := Head.factor (sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar)
+  let L := sourceSchurMixedCoeff n r hrn G A
+  let p0 := sourceOrientedHeadGaugeHeadParameter d n r hrD hrn hGvar Head
+  let y : Fin r → Fin (d + 1) → ℂ := fun a =>
+    sourceOrientedNormalHeadVector d n r hrD hrn p0 a
+  let w := complexLorentzAction Λ z
+  let res : Fin (n - r) → Fin (d + 1) → ℂ := fun u μ =>
+    w (finSourceTail hrn u) μ - ∑ a : Fin r, L u a * y a μ
+  let q : Fin (n - r) → Fin (d + 1 - r) → ℂ := fun u β =>
+    res u (finSourceTail (Nat.le_of_lt hrD) β)
+  refine ⟨q, ?_⟩
+  let p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn :=
+    { head := H
+      mixed := L
+      tail := q }
+  change w = sourceOrientedNormalParameterVector d n r hrD hrn p
+  have hAunit : IsUnit A.det := by
+    simpa [A] using
+      sourceOrientedSchurHeadBlock_det_isUnit_of_headGauge
+        d n r hrD hrn hGvar Head hHead
+  have hLmul :
+      L * A = sourceOrientedSchurMixedBlock n r hrn G := by
+    simpa [L, A] using
+      sourceSchurMixedCoeff_mul_headBlock n r hrn G A hAunit
+  have hfactor : H * sourceHeadMetric d r hrD * Hᵀ = A := by
+    simpa [H, A] using
+      Head.factor_gram
+        (sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar) hHead
+  have hygram :
+      ∀ a b : Fin r, sourceVectorMinkowskiInner d (y a) (y b) = A a b := by
+    intro a b
+    calc
+      sourceVectorMinkowskiInner d (y a) (y b) =
+          (p0.head * sourceHeadMetric d r hrD * p0.headᵀ) a b := by
+            simp [y, p0,
+              sourceVectorMinkowskiInner_sourceOrientedNormalHeadVector]
+      _ = A a b := by
+            simpa [p0, sourceOrientedHeadGaugeHeadParameter, H] using
+              congrFun (congrFun hfactor a) b
+  have hgramW : sourceMinkowskiGram d n w = G.gram := by
+    calc
+      sourceMinkowskiGram d n w =
+          sourceMinkowskiGram d n z := by
+            exact sourceMinkowskiGram_complexLorentzAction
+              (d := d) (n := n) Λ z
+      _ = G.gram := by
+            rw [hz]
+            rfl
+  have htail_head :
+      ∀ u a,
+        sourceVectorMinkowskiInner d (w (finSourceTail hrn u)) (y a) =
+          sourceOrientedSchurMixedBlock n r hrn G u a := by
+    intro u a
+    calc
+      sourceVectorMinkowskiInner d (w (finSourceTail hrn u)) (y a) =
+          sourceVectorMinkowskiInner d
+            (w (finSourceTail hrn u)) (w (finSourceHead hrn a)) := by
+            have hyw : y a = w (finSourceHead hrn a) :=
+              (hΛhead a).symm
+            rw [hyw]
+      _ = sourceMinkowskiGram d n w (finSourceTail hrn u)
+            (finSourceHead hrn a) := rfl
+      _ = G.gram (finSourceTail hrn u) (finSourceHead hrn a) := by
+            rw [hgramW]
+      _ = sourceOrientedSchurMixedBlock n r hrn G u a := rfl
+  have hres_orth :
+      ∀ u a, sourceVectorMinkowskiInner d (res u) (y a) = 0 := by
+    intro u a
+    calc
+      sourceVectorMinkowskiInner d (res u) (y a) =
+          sourceOrientedSchurMixedBlock n r hrn G u a -
+            (L * A) u a := by
+            simp [res, sourceVectorMinkowskiInner_sub_left,
+              sourceVectorMinkowskiInner_sum_left,
+              sourceVectorMinkowskiInner_smul_left, htail_head, hygram,
+              Matrix.mul_apply]
+      _ = 0 := by
+            rw [hLmul]
+            simp
+  have hres_tail :
+      ∀ u, res u = sourceTailEmbed d r hrD (q u) := by
+    intro u
+    apply eq_sourceTailEmbed_of_headCoord_eq_zero d r hrD
+    intro a
+    exact
+      sourceOriented_headGauge_headCoord_eq_zero_of_orthogonal_normalHead
+        d n r hrD hrn hGvar Head hHead (hres_orth u) a
+  ext i μ
+  rcases finSourceHead_tail_cases hrn i with ⟨a, rfl⟩ | ⟨u, rfl⟩
+  · calc
+      w (finSourceHead hrn a) μ = y a μ := congrFun (hΛhead a) μ
+      _ = sourceOrientedNormalParameterVector d n r hrD hrn p
+          (finSourceHead hrn a) μ := by
+            simp [p, y, p0, sourceOrientedNormalParameterVector_head,
+              sourceOrientedHeadGaugeHeadParameter, H, sourceOrientedNormalHeadVector]
+  · have htail :
+        w (finSourceTail hrn u) =
+          (fun μ =>
+            (∑ a : Fin r,
+              L u a *
+                sourceOrientedNormalHeadVector d n r hrD hrn p a μ) +
+              sourceTailEmbed d r hrD (q u) μ) := by
+      ext ν
+      have hresν := congrFun (hres_tail u) ν
+      rw [sub_eq_iff_eq_add] at hresν
+      simpa [res, q, y, p, p0, sourceOrientedHeadGaugeHeadParameter, H,
+        sourceOrientedNormalHeadVector, add_comm, add_left_comm, add_assoc]
+        using hresν
+    calc
+      w (finSourceTail hrn u) μ =
+          ((fun μ =>
+            (∑ a : Fin r,
+              L u a *
+                sourceOrientedNormalHeadVector d n r hrD hrn p a μ) +
+              sourceTailEmbed d r hrD (q u) μ) μ) := congrFun htail μ
+      _ = sourceOrientedNormalParameterVector d n r hrD hrn p
+          (finSourceTail hrn u) μ := by
+            rw [sourceOrientedNormalParameterVector_tail]
+
+/-- After a Lorentz transformation has normalized the selected head frame to
+the gauge normal head frame, the transformed tail labels have the corresponding
+Schur mixed coordinates plus canonical shifted-tail coordinates. -/
+theorem sourceOriented_headGauge_tailCoordinates_after_witt
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hz : G = sourceOrientedMinkowskiInvariant d n z)
+    (Λ : ComplexLorentzGroup d)
+    (hΛhead :
+      ∀ a : Fin r,
+        complexLorentzAction Λ z (finSourceHead hrn a) =
+          sourceOrientedNormalHeadVector d n r hrD hrn
+            (sourceOrientedHeadGaugeHeadParameter d n r hrD hrn hGvar Head) a) :
+    ∃ q : Fin (n - r) → Fin (d + 1 - r) → ℂ,
+      let H :=
+        Head.factor (sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar)
+      let L :=
+        sourceSchurMixedCoeff n r hrn G
+          (sourceOrientedSchurHeadBlock n r hrn G)
+      complexLorentzAction Λ z =
+        sourceOrientedNormalParameterVector d n r hrD hrn
+          { head := H
+            mixed := L
+            tail := q } := by
+  let Q :=
+    sourceOriented_headGaugeTailCoordinatesAfterWittData
+      d n r hrD hrn Head hGvar hHead hz Λ hΛhead
+  exact ⟨Q.1, Q.2⟩
+
+/-- Once the determinant-one Witt step supplies a Lorentz transformation
+normalizing the selected head frame, the matched head-gauge normal-parameter
+data is fully mechanical. -/
+def sourceOriented_headGaugeNormalParameterData_of_lorentz_head_normalized
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hz : G = sourceOrientedMinkowskiInvariant d n z)
+    (Λ : ComplexLorentzGroup d)
+    (hΛhead :
+      ∀ a : Fin r,
+        complexLorentzAction Λ z (finSourceHead hrn a) =
+          sourceOrientedNormalHeadVector d n r hrD hrn
+            (sourceOrientedHeadGaugeHeadParameter d n r hrD hrn hGvar Head) a) :
+    SourceOrientedHeadGaugeNormalParameterData
+      d n r hrD hrn hGvar Head := by
+  let Q :=
+    sourceOriented_headGaugeTailCoordinatesAfterWittData
+      d n r hrD hrn Head hGvar hHead hz Λ hΛhead
+  let q := Q.1
+  let H :=
+    Head.factor (sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar)
+  let L :=
+    sourceSchurMixedCoeff n r hrn G
+      (sourceOrientedSchurHeadBlock n r hrn G)
+  let p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn :=
+    { head := H
+      mixed := L
+      tail := q }
+  have hq :
+      complexLorentzAction Λ z =
+        sourceOrientedNormalParameterVector d n r hrD hrn p := by
+    simpa [q, H, L, p] using Q.2
+  exact
+    { p := p
+      invariant_eq := by
+        calc
+          G = sourceOrientedMinkowskiInvariant d n z := hz
+          _ = sourceOrientedMinkowskiInvariant d n
+                (complexLorentzAction Λ z) := by
+              exact (sourceOrientedMinkowskiInvariant_complexLorentzAction
+                (d := d) (n := n) Λ z).symm
+          _ = sourceOrientedMinkowskiInvariant d n
+                (sourceOrientedNormalParameterVector d n r hrD hrn p) := by
+              rw [hq]
+      head_eq := by
+        rfl }
+
 namespace SourceOrientedHeadGaugeNormalParameterData
 
 /-- The matched head-gauge normal-parameter head is invertible. -/
