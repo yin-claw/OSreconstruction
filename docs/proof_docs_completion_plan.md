@@ -2901,7 +2901,7 @@ implementation contract is:
    independence of that gauge head frame.  The checked packet
    `SourceOrientedHeadGaugeFrameSameGramData` and constructor
    `sourceOriented_headGaugeFrameSameGramData` package precisely the
-   finite-dimensional input to the remaining Witt theorem: actual-head linear
+   finite-dimensional input to the checked Witt theorem: actual-head linear
    independence, normal-head linear independence, same Gram, and invertibility
    of the selected head Gram.  The next algebraic layer is also
    checked: `sourceVectorMinkowskiInner_right_hwLemma3CanonicalSource_head`
@@ -2917,34 +2917,24 @@ implementation contract is:
    mixed coefficients plus shifted-tail coordinates once a Lorentz
    transformation has normalized the selected head frame.  Consequently
    `sourceOriented_headGaugeNormalParameterData_of_lorentz_head_normalized`
-   is checked: the remaining Witt proof only needs to provide the head-frame
-   normalization, and the normal-parameter data is then assembled
-   constructively.  The blockwise constructor
+   is checked: once head-frame normalization is supplied, the normal-parameter
+   data is assembled constructively.  The blockwise constructor
    `sourceOriented_headGaugeNormalParameterData_of_lorentz_head_tail` is
    checked as well, so future Lean can prove head and tail normalized
    equalities separately and assemble the data by the checked head/tail source
-   split.  The typed output of the future Witt theorem is now fixed as
-   `SourceOrientedHeadGaugeWittData`, with checked consumer
+   split.  The typed output of the Witt theorem is now checked as
+   `SourceOrientedHeadGaugeWittData`, with checked producer
+   `sourceOriented_headGaugeWittData` and checked consumer
    `SourceOrientedHeadGaugeWittData.normalParameterData`; this avoids the
    invalid pattern of extracting a Lorentz witness from a Prop-valued
-   existential to build Type-valued tail-coordinate data.  Therefore the
-   remaining hard theorem is no longer an unstructured
-   tail-membership assertion and no longer includes Schur tail-coordinate
-   bookkeeping: it is the determinant-one Witt/head-normalization producer for
-   that data.  Its proof must choose a
-   realizing source tuple, use the head-gauge equation to match the actual
-   selected nondegenerate head frame to the gauge head frame, extend that
-   frame isometry by determinant-one complex Witt extension, and use the
-   checked constructive tail-coordinate bridge plus proper Lorentz invariance
-   of the oriented invariant.  The implementation route for this finite
-   theorem is now pinned: normalize the actual head frame by the checked
-   head factor `H`, transport the signed canonical head frame through
-   `complexMinkowskiToDotLinearEquiv`, prove signed `SOComplex`
-   head-frame transitivity by induction from the checked
-   `SOComplex.exists_so_with_firstCol` and `SOComplex.embed`, then return by
-   `ComplexLorentzGroup.fromSOComplex`.  The future theorem should be a
-   Type-valued `complexMinkowski_detOneWittExtension_to_headFactorFrame`/
-   `sourceOriented_headGaugeWittData`, not a Prop-valued existence theorem.
+   existential to build Type-valued tail-coordinate data.  The determinant-one
+   Witt/head-normalization producer for that data is now checked as the
+   Type-valued `complexMinkowski_detOneWittExtension_to_headFactorFrame`.
+   Its proof normalizes the actual head frame by the checked head factor `H`,
+   uses the checked signed `SOComplex` prefix-frame transitivity and Wick
+   transport to reach the canonical head frame, then recomposes through `H`
+   to reach the gauge normal head frame.  The fully assembled
+   `sourceOriented_headGaugeNormalParameterData` is now checked as well.
    The stabilizer support needed for the induction is now checked and public
    in `SOConnected.lean`: `SOComplex.embed_val_zero_zero`,
    `SOComplex.embed_val_zero_succ`, `SOComplex.embed_val_succ_zero`,

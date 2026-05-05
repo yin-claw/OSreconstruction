@@ -109,7 +109,7 @@ theorem minkowskiPrefixSigma_sq
 
 /-- Determinant-one complex Lorentz transitivity for a source frame whose Gram
 matrix is the standard Minkowski prefix metric. -/
-theorem complexMinkowski_detOneWittExtension_to_canonicalPrefixFrame
+def complexMinkowski_detOneWittExtension_to_canonicalPrefixFrame
     (m r : ℕ)
     (x : Fin r → Fin (m + r + 1) → ℂ)
     (hgram :
@@ -119,10 +119,10 @@ theorem complexMinkowski_detOneWittExtension_to_canonicalPrefixFrame
             (MinkowskiSpace.metricSignature (m + r)
               (SOComplex.prefixCol m r a) : ℂ)
           else 0) :
-    ∃ Λ : ComplexLorentzGroup (m + r),
+    { Λ : ComplexLorentzGroup (m + r) //
       ∀ a : Fin r,
         complexLorentzVectorAction Λ (x a) =
-          fun μ => if μ = SOComplex.prefixCol m r a then 1 else 0 := by
+          fun μ => if μ = SOComplex.prefixCol m r a then 1 else 0 } := by
   let σ : Fin r → ℂ := minkowskiPrefixSigma m r
   let xdot : Fin r → Fin (m + r + 1) → ℂ :=
     fun a => complexMinkowskiInvDotVector (m + r) (x a)
@@ -140,8 +140,14 @@ theorem complexMinkowski_detOneWittExtension_to_canonicalPrefixFrame
     · subst hab
       simp [σ, minkowskiPrefixSigma_sq]
     · simp [hab]
-  obtain ⟨A, hA⟩ :=
-    SOComplex.exists_so_with_signedPrefixCols m r σ hσ xdot hdotGram
+  let A : SOComplex (m + r + 1) :=
+    Classical.choose
+      (SOComplex.exists_so_with_signedPrefixCols m r σ hσ xdot hdotGram)
+  have hA :
+      ∀ (a : Fin r) (k : Fin (m + r + 1)),
+        σ a * A.val k (SOComplex.prefixCol m r a) = xdot a k :=
+    Classical.choose_spec
+      (SOComplex.exists_so_with_signedPrefixCols m r σ hσ xdot hdotGram)
   refine ⟨ComplexLorentzGroup.fromSOComplex A⁻¹, ?_⟩
   intro a
   have hAinv_xdot :
@@ -245,6 +251,295 @@ theorem complexMinkowski_detOneWittExtension_to_canonicalPrefixFrame
             ring
       _ = (fun μ => if μ = SOComplex.prefixCol m r a then 1 else 0) μ := by
             simp [hμ]
+
+/-- Reindexing the ambient `Fin (d+1)` coordinates along an equality of
+spacetime dimensions preserves the source Minkowski pairing. -/
+theorem sourceVectorMinkowskiInner_cast_eq
+    {D E : ℕ} (h : D = E)
+    (u v : Fin (E + 1) → ℂ) :
+    sourceVectorMinkowskiInner D
+        (fun μ : Fin (D + 1) => u (Fin.cast (by omega : D + 1 = E + 1) μ))
+        (fun μ : Fin (D + 1) => v (Fin.cast (by omega : D + 1 = E + 1) μ)) =
+      sourceVectorMinkowskiInner E u v := by
+  subst E
+  simp
+
+/-- The Minkowski signature is invariant under the same ambient `Fin` cast. -/
+theorem minkowskiMetricSignature_cast_eq
+    {D E : ℕ} (h : D = E) (μ : Fin (D + 1)) :
+    MinkowskiSpace.metricSignature D μ =
+      MinkowskiSpace.metricSignature E
+        (Fin.cast (by omega : D + 1 = E + 1) μ) := by
+  subst E
+  simp
+
+/-- Reindexing a Lorentz transformation along an equality of spacetime
+dimensions commutes with the pointwise vector action. -/
+theorem complexLorentzVectorAction_cast_eq
+    {D E : ℕ} (h : D = E)
+    (Λ : ComplexLorentzGroup D) (v : Fin (E + 1) → ℂ) :
+    complexLorentzVectorAction (h ▸ Λ) v =
+      fun μ : Fin (E + 1) =>
+        complexLorentzVectorAction Λ
+          (fun ν : Fin (D + 1) =>
+            v (Fin.cast (by omega : D + 1 = E + 1) ν))
+          (Fin.cast (by omega : E + 1 = D + 1) μ) := by
+  subst E
+  simp
+
+/-- Determinant-one complex Lorentz transitivity for the canonical selected
+head coordinates `0, ..., r-1` inside `Fin (d+1)`. -/
+def complexMinkowski_detOneWittExtension_to_canonicalHeadFrame
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (x : Fin r → Fin (d + 1) → ℂ)
+    (hgram :
+      ∀ a b : Fin r,
+        sourceVectorMinkowskiInner d (x a) (x b) =
+          if a = b then
+            (MinkowskiSpace.metricSignature d
+              (finSourceHead (Nat.le_of_lt hrD) a) : ℂ)
+          else 0) :
+    { Λ : ComplexLorentzGroup d //
+      ∀ a : Fin r,
+        complexLorentzVectorAction Λ (x a) =
+          fun μ => if μ = finSourceHead (Nat.le_of_lt hrD) a then 1 else 0 } := by
+  let D := (d - r) + r
+  let hD : D = d := by omega
+  let hN : D + 1 = d + 1 := by omega
+  let x' : Fin r → Fin (D + 1) → ℂ :=
+    fun a μ => x a (Fin.cast hN μ)
+  have hgram' :
+      ∀ a b : Fin r,
+        sourceVectorMinkowskiInner D (x' a) (x' b) =
+          if a = b then
+            (MinkowskiSpace.metricSignature D
+              (SOComplex.prefixCol (d - r) r a) : ℂ)
+          else 0 := by
+    intro a b
+    calc
+      sourceVectorMinkowskiInner D (x' a) (x' b)
+          = sourceVectorMinkowskiInner d (x a) (x b) := by
+              simpa [D, x', hN] using
+                sourceVectorMinkowskiInner_cast_eq hD (x a) (x b)
+      _ = if a = b then
+            (MinkowskiSpace.metricSignature d
+              (finSourceHead (Nat.le_of_lt hrD) a) : ℂ)
+          else 0 := hgram a b
+      _ = if a = b then
+            (MinkowskiSpace.metricSignature D
+              (SOComplex.prefixCol (d - r) r a) : ℂ)
+          else 0 := by
+          by_cases hab : a = b
+          · subst b
+            have hprefix :
+                Fin.cast hN (SOComplex.prefixCol (d - r) r a) =
+                  finSourceHead (Nat.le_of_lt hrD) a := by
+              ext
+              simp [D, SOComplex.prefixCol, finSourceHead]
+            simp
+            rw [← hprefix]
+            exact_mod_cast
+              (minkowskiMetricSignature_cast_eq hD
+                (SOComplex.prefixCol (d - r) r a)).symm
+          · simp [hab]
+  obtain ⟨Λ0, hΛ0⟩ :=
+    complexMinkowski_detOneWittExtension_to_canonicalPrefixFrame
+      (d - r) r x' hgram'
+  refine ⟨hD ▸ Λ0, ?_⟩
+  intro a
+  ext μ
+  have hact := congrFun (hΛ0 a) (Fin.cast (by omega : d + 1 = D + 1) μ)
+  have hcast_eq :
+      Fin.cast (by omega : d + 1 = D + 1) μ =
+        SOComplex.prefixCol (d - r) r a ↔
+      μ = finSourceHead (Nat.le_of_lt hrD) a := by
+    constructor
+    · intro h
+      apply Fin.ext
+      have hv := congrArg Fin.val h
+      simpa [D, SOComplex.prefixCol, finSourceHead] using hv
+    · intro h
+      subst μ
+      ext
+      simp [D, SOComplex.prefixCol, finSourceHead]
+  calc
+    complexLorentzVectorAction (hD ▸ Λ0) (x a) μ
+        = complexLorentzVectorAction Λ0 (x' a)
+            (Fin.cast (by omega : d + 1 = D + 1) μ) := by
+            simpa [x', D, hN] using
+              congrFun (complexLorentzVectorAction_cast_eq hD Λ0 (x a)) μ
+    _ = (fun μ : Fin (D + 1) =>
+          if μ = SOComplex.prefixCol (d - r) r a then 1 else 0)
+          (Fin.cast (by omega : d + 1 = D + 1) μ) := hact
+    _ = (fun μ => if μ = finSourceHead (Nat.le_of_lt hrD) a then 1 else 0)
+          μ := by
+          change (if Fin.cast (by omega : d + 1 = D + 1) μ =
+              SOComplex.prefixCol (d - r) r a then 1 else 0) =
+            (if μ = finSourceHead (Nat.le_of_lt hrD) a then 1 else 0)
+          by_cases hμ : μ = finSourceHead (Nat.le_of_lt hrD) a
+          · rw [if_pos (hcast_eq.mpr hμ), if_pos hμ]
+          · have hc :
+                Fin.cast (by omega : d + 1 = D + 1) μ ≠
+                  SOComplex.prefixCol (d - r) r a := by
+              intro hc
+              exact hμ (hcast_eq.mp hc)
+            rw [if_neg hc, if_neg hμ]
+
+/-- The Lorentz vector action distributes over finite complex linear
+combinations. -/
+theorem complexLorentzVectorAction_linearCombination
+    {d : ℕ} {ι : Type*} [Fintype ι]
+    (Λ : ComplexLorentzGroup d) (c : ι → ℂ)
+    (v : ι → Fin (d + 1) → ℂ) :
+    complexLorentzVectorAction Λ (fun μ => ∑ i, c i * v i μ) =
+      fun μ => ∑ i, c i * complexLorentzVectorAction Λ (v i) μ := by
+  calc
+    complexLorentzVectorAction Λ (fun μ => ∑ i, c i * v i μ)
+        = fun μ => ∑ i,
+            complexLorentzVectorAction Λ (fun μ => c i * v i μ) μ := by
+            simpa using
+              complexLorentzVectorAction_sum Λ (fun i μ => c i * v i μ)
+    _ = fun μ => ∑ i, c i * complexLorentzVectorAction Λ (v i) μ := by
+            ext μ
+            apply Finset.sum_congr rfl
+            intro i _
+            exact congrFun (complexLorentzVectorAction_smul Λ (c i) (v i)) μ
+
+/-- Determinant-one complex Lorentz transitivity from a selected head frame to
+the head-gauge factor frame. -/
+def complexMinkowski_detOneWittExtension_to_headFactorFrame
+    [NeZero d]
+    (_hd : 2 ≤ d)
+    {n r : ℕ}
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (H : Matrix (Fin r) (Fin r) ℂ)
+    (hHdet : IsUnit H.det)
+    (x y : Fin r → Fin (d + 1) → ℂ)
+    (_hx : LinearIndependent ℂ x)
+    (hy :
+      y =
+        fun a =>
+          sourceOrientedNormalHeadVector d n r hrD hrn
+            { head := H, mixed := 0, tail := 0 } a)
+    (hxGram :
+      ∀ a b,
+        sourceVectorMinkowskiInner d (x a) (x b) =
+          (H * sourceHeadMetric d r hrD * H.transpose) a b) :
+    { Λ : ComplexLorentzGroup d //
+      ∀ a, complexLorentzVectorAction Λ (x a) = y a } := by
+  let Hinv := H⁻¹
+  let x0 : Fin r → Fin (d + 1) → ℂ :=
+    fun a μ => ∑ b : Fin r, Hinv a b * x b μ
+  have hgram0 :
+      ∀ a b : Fin r,
+        sourceVectorMinkowskiInner d (x0 a) (x0 b) =
+          if a = b then
+            (MinkowskiSpace.metricSignature d
+              (finSourceHead (Nat.le_of_lt hrD) a) : ℂ)
+          else 0 := by
+    intro a b
+    let Gram := H * sourceHeadMetric d r hrD * Hᵀ
+    have hraw :
+        sourceVectorMinkowskiInner d (x0 a) (x0 b) =
+          sourceHeadMetric d r hrD a b := by
+      calc
+        sourceVectorMinkowskiInner d (x0 a) (x0 b)
+            = ∑ i : Fin r, H⁻¹ a i *
+                ∑ j : Fin r, H⁻¹ b j *
+                  sourceVectorMinkowskiInner d (x i) (x j) := by
+                change sourceVectorMinkowskiInner d
+                  (fun μ => ∑ i : Fin r, H⁻¹ a i * x i μ)
+                  (fun μ => ∑ j : Fin r, H⁻¹ b j * x j μ) = _
+                rw [sourceVectorMinkowskiInner_sum_left]
+                simp_rw [sourceVectorMinkowskiInner_smul_left]
+                simp_rw [sourceVectorMinkowskiInner_sum_right]
+                simp_rw [sourceVectorMinkowskiInner_smul_right]
+        _ = ∑ i : Fin r, H⁻¹ a i *
+                ∑ j : Fin r, H⁻¹ b j * Gram i j := by
+                apply Finset.sum_congr rfl
+                intro i _
+                congr 1
+                apply Finset.sum_congr rfl
+                intro j _
+                rw [hxGram]
+        _ = ∑ j : Fin r, H⁻¹ b j * ∑ i : Fin r, H⁻¹ a i * Gram i j := by
+                simp_rw [Finset.mul_sum]
+                rw [Finset.sum_comm]
+                apply Finset.sum_congr rfl
+                intro j _
+                apply Finset.sum_congr rfl
+                intro i _
+                ring
+        _ = ((H⁻¹ * Gram * (H⁻¹)ᵀ) a b) := by
+                simp [Matrix.mul_apply, Matrix.transpose_apply,
+                  mul_comm]
+        _ = sourceHeadMetric d r hrD a b := by
+                calc
+                  (H⁻¹ * Gram * (H⁻¹)ᵀ) a b =
+                      ((H⁻¹ * H) * sourceHeadMetric d r hrD *
+                        (Hᵀ * (H⁻¹)ᵀ)) a b := by
+                      simp [Gram, Matrix.mul_assoc]
+                  _ = ((1 : Matrix (Fin r) (Fin r) ℂ) *
+                        sourceHeadMetric d r hrD *
+                        (1 : Matrix (Fin r) (Fin r) ℂ)) a b := by
+                      rw [Matrix.nonsing_inv_mul H hHdet]
+                      have ht :
+                          Hᵀ * (H⁻¹)ᵀ =
+                            (1 : Matrix (Fin r) (Fin r) ℂ) := by
+                        rw [← Matrix.transpose_mul,
+                          Matrix.nonsing_inv_mul H hHdet]
+                        simp
+                      rw [ht]
+                  _ = sourceHeadMetric d r hrD a b := by simp
+    simpa [sourceHeadMetric_apply] using hraw
+  obtain ⟨Λ, hΛ0⟩ :=
+    complexMinkowski_detOneWittExtension_to_canonicalHeadFrame
+      d r hrD x0 hgram0
+  refine ⟨Λ, ?_⟩
+  intro a
+  have hx_decomp :
+      x a = fun μ => ∑ b : Fin r, H a b * x0 b μ := by
+    ext μ
+    calc
+      x a μ =
+          ((1 : Matrix (Fin r) (Fin r) ℂ) *ᵥ
+            (fun c : Fin r => x c μ)) a := by
+            simp
+      _ = ((H * H⁻¹) *ᵥ (fun c : Fin r => x c μ)) a := by
+            rw [Matrix.mul_nonsing_inv H hHdet]
+      _ = (H *ᵥ (H⁻¹ *ᵥ (fun c : Fin r => x c μ))) a := by
+            rw [Matrix.mulVec_mulVec]
+      _ = ∑ b : Fin r, H a b * x0 b μ := by
+            simp [x0, Hinv, Matrix.mulVec, dotProduct]
+  calc
+    complexLorentzVectorAction Λ (x a)
+        = complexLorentzVectorAction Λ
+            (fun μ => ∑ b : Fin r, H a b * x0 b μ) := by
+            rw [hx_decomp]
+    _ = fun μ => ∑ b : Fin r,
+          H a b * complexLorentzVectorAction Λ (x0 b) μ := by
+            exact
+              complexLorentzVectorAction_linearCombination
+                Λ (fun b => H a b) x0
+    _ = fun μ => ∑ b : Fin r, H a b *
+          (if μ = finSourceHead (Nat.le_of_lt hrD) b then 1 else 0) := by
+            ext μ
+            apply Finset.sum_congr rfl
+            intro b _
+            rw [congrFun (hΛ0 b) μ]
+    _ = y a := by
+            rw [hy]
+            ext μ
+            change
+              (∑ b : Fin r, H a b *
+                (if μ = finSourceHead (Nat.le_of_lt hrD) b then 1 else 0)) =
+              ∑ b : Fin r, H a b *
+                hwLemma3CanonicalSource d n r (finSourceHead hrn b) μ
+            apply Finset.sum_congr rfl
+            intro b _
+            rw [hwLemma3CanonicalSource_head_apply d n r hrD hrn b μ]
 
 /-- Normal-parameter representative data matched to a local head gauge.
 
@@ -830,6 +1125,83 @@ def normalParameterData
     d n r hrD hrn Head hGvar hHead hz W.Λ W.head_normalized
 
 end SourceOrientedHeadGaugeWittData
+
+/-- The local head gauge supplies the finite-dimensional Witt data normalizing
+the selected actual head frame to the gauge normal head frame. -/
+def sourceOriented_headGaugeWittData
+    [NeZero d]
+    (hd : 2 ≤ d)
+    {n r : ℕ}
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hz : G = sourceOrientedMinkowskiInvariant d n z) :
+    SourceOrientedHeadGaugeWittData
+      d n r hrD hrn Head hGvar hHead hz := by
+  let Acoord := sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar
+  let H := Head.factor Acoord
+  let p0 := sourceOrientedHeadGaugeHeadParameter d n r hrD hrn hGvar Head
+  let x : Fin r → Fin (d + 1) → ℂ := fun a => z (finSourceHead hrn a)
+  let y : Fin r → Fin (d + 1) → ℂ := fun a =>
+    sourceOrientedNormalHeadVector d n r hrD hrn p0 a
+  let F :=
+    sourceOriented_headGaugeFrameSameGramData
+      d n r hrD hrn Head hGvar hHead hz
+  have hHdet : IsUnit H.det := by
+    simpa [H, Acoord] using Head.factor_det_unit Acoord hHead
+  have hy :
+      y =
+        fun a =>
+          sourceOrientedNormalHeadVector d n r hrD hrn
+            { head := H, mixed := 0, tail := 0 } a := by
+    rfl
+  have hxGram :
+      ∀ a b,
+        sourceVectorMinkowskiInner d (x a) (x b) =
+          (H * sourceHeadMetric d r hrD * H.transpose) a b := by
+    intro a b
+    calc
+      sourceVectorMinkowskiInner d (x a) (x b) =
+          sourceVectorMinkowskiInner d (y a) (y b) := by
+            exact F.same_gram a b
+      _ = (H * sourceHeadMetric d r hrD * H.transpose) a b := by
+            simpa [x, y, p0, H, Acoord,
+              sourceOrientedHeadGaugeHeadParameter] using
+              sourceVectorMinkowskiInner_sourceOrientedNormalHeadVector
+                d n r hrD hrn p0 a b
+  let W :=
+    complexMinkowski_detOneWittExtension_to_headFactorFrame
+      hd hrD hrn H hHdet x y F.actual_linearIndependent hy hxGram
+  exact
+    { Λ := W.1
+      head_normalized := by
+        intro a
+        simpa [x, y, complexLorentzAction] using W.2 a }
+
+/-- Full matched head-gauge normal-parameter data produced by the checked
+finite-dimensional Witt normalizer and the checked Schur tail-coordinate
+consumer. -/
+def sourceOriented_headGaugeNormalParameterData
+    [NeZero d]
+    (hd : 2 ≤ d)
+    {n r : ℕ}
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hz : G = sourceOrientedMinkowskiInvariant d n z) :
+    SourceOrientedHeadGaugeNormalParameterData
+      d n r hrD hrn hGvar Head :=
+  (sourceOriented_headGaugeWittData
+    hd hrD hrn Head hGvar hHead hz).normalParameterData
+    d n r hrD hrn Head hGvar hHead hz
 
 namespace SourceOrientedHeadGaugeNormalParameterData
 
