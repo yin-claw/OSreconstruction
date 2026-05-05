@@ -7854,8 +7854,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
       as `B_G`, and define
       `L_G := B_G * A_G⁻¹` and the residual Schur complement
       `S_G := C_G - B_G * A_G⁻¹ * B_Gᵀ`.  The determinant coordinates induce
-      residual determinant coordinates by dividing the full-frame determinant
-      fields by the selected head determinant after the same normalization:
+      residual determinant coordinates only after the local head gauge has
+      chosen an actual factor `H_G` with
+      `H_G * sourceHeadMetric d r hrD * H_Gᵀ = A_G`; the selected
+      head-tail full-frame determinants are divided by `H_G.det`, not by a
+      quantity recoverable from `A_G` alone:
 
       ```lean
       structure BHW.SourceOrientedTailData
@@ -8401,6 +8404,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
             G.gram (BHW.finSourceHead hrn a)
               (BHW.finSourceHead hrn b)
         A_unit : IsUnit A.det
+        headFactor : Matrix (Fin r) (Fin r) ℂ
+        headFactor_gram :
+          headFactor * BHW.sourceHeadMetric d r hrD *
+              headFactor.transpose =
+            A
+        headFactor_det_unit : IsUnit headFactor.det
         L : Matrix (Fin (n - r)) (Fin r) ℂ
         L_eq :
           L = BHW.sourceSchurMixedCoeff n r hrn G.gram A
@@ -8410,7 +8419,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
             BHW.sourceSchurComplement n r hrn G.gram A
         tail_det_eq :
           tail.det =
-            BHW.sourceSchurResidualDeterminants d n r hrD hrn G A
+            BHW.sourceSchurResidualDeterminants
+              d n r hrD hrn G headFactor
         tail_mem :
           tail ∈
             BHW.sourceShiftedTailOrientedVariety d r hrD (n - r)
@@ -8421,8 +8431,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
           {n r : Nat}
           (hrD : r < d + 1)
           (hrn : r <= n)
+          (Head : BHW.SourceRankDeficientHeadGaugeData d r hrD)
           {G : BHW.SourceOrientedGramData d n}
           (hGvar : G ∈ BHW.sourceOrientedGramVariety d n)
+          (hA_mem :
+            BHW.sourceOrientedSchurHeadBlock d n r hrD hrn G ∈ Head.U)
           (hA_unit :
             IsUnit
               (Matrix.det
@@ -8758,8 +8771,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
           {p :
             BHW.SourceOrientedRankDeficientNormalParameter d n r hrD hrn}
           (hhead :
-            p.head * BHW.sourceHeadMetric d r hrD * p.head.transpose =
-              R.A)
+            p.head = R.headFactor)
           (hmixed : p.mixed = R.L)
           (htail :
             BHW.sourceShiftedTailOrientedInvariant d r hrD (n - r) p.tail =
@@ -8812,12 +8824,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
       source labels.  Continuity is a finite sum of coordinate projections.
       Because `sourceMinkowskiGram` uses the Lorentz signature, the canonical
       head Gram block is not the Euclidean identity.  It is the checked
-      diagonal `sourceHeadMetric d r hrD`; consequently the head-factor
-      hypothesis in the Schur reconstruction theorem is
-      `p.head * sourceHeadMetric d r hrD * p.head.transpose = R.A`.  Any
-      implementation that tries to prove `p.head * p.head.transpose = R.A`
-      is using the wrong normal form unless it first changes the canonical
-      source vectors by explicit square-root/sign normalization.
+      diagonal `sourceHeadMetric d r hrD`; consequently the chosen local head
+      factor `R.headFactor` is stored in the Schur residual data with
+      `R.headFactor * sourceHeadMetric d r hrD * R.headFactor.transpose =
+      R.A`, and the full reconstruction theorem requires
+      `p.head = R.headFactor`.  The weaker Gram equality is enough for ordinary
+      Gram entries but not for determinant coordinates, because changing the
+      head factor by an orthogonal determinant sign rescales the residual tail
+      determinant sheet.
       The checked bilinear lemma
       `sourceVectorMinkowskiInner_sourceOrientedNormalHeadVector` is the first
       nontrivial algebraic block of the reconstruction proof: head/head Gram
@@ -8931,22 +8945,159 @@ Proof decomposition of this theorem, without hiding the analytic work:
 
       The determinant formula in
       `sourceSchurResidualDeterminants` is the cofactor/wedge formula for
-      full-frame determinants after the selected head vectors have been
-      normalized: for frames containing the selected head block it is
-      `G.det(head ∪ λ) / det_head(G)`, with the sign fixed by the ordered
-      embedding; frames not containing the selected head block are then
-      recovered by multilinearity from the head coordinates, mixed
-      coefficients `L`, and the tail determinants.  The proof of
+      full-frame determinants after the local head gauge has selected the
+      actual factor `H`: for frames containing the selected head block it is
+      `G.det(head ∪ λ) / H.det`, with the sign fixed by the ordered embedding;
+      frames not containing the selected head block are then recovered by
+      multilinearity from the head coordinates, mixed coefficients `L`, and
+      the tail determinants.  The proof of
       `tail_mem` uses only the oriented algebraic relations: Schur
       Cauchy-Binet for the Gram minors, alternation of the full determinant
       fields, and invertibility of `A`.  The reconstruction theorem defines
       head vectors from the signature-relative holomorphic gauge chart
       `H ↦ H * sourceHeadMetric d r hrD * Hᵀ` for `A`, tail vectors as
       `∑ a, L u a • head_a + residual(q u)`, and checks Gram and all full
-      determinant coordinates by block determinant expansion.  After applying
+      determinant coordinates by the explicit determinant surfaces below.
+      After applying
       the inverse normal-form transport from ordinary Lemma 3 and shrinking
       the coordinate ball, this gives the `toVec` map in
       `SourceOrientedRankDeficientResidualChartData`.
+
+      The determinant recovery part must be implemented through explicit
+      finite determinant surfaces, not by appealing to "the block formula" in
+      prose.  The selected-head case is the primitive calculation:
+
+      ```lean
+      def BHW.sourceFullFrameEmbeddingOfHeadTail
+          (d n r : Nat)
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          (λ : Fin (d + 1 - r) ↪ Fin (n - r)) :
+          Fin (d + 1) ↪ Fin n
+
+      theorem BHW.sourceFullFrameEmbeddingOfHeadTail_head
+          (d n r : Nat)
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          (λ : Fin (d + 1 - r) ↪ Fin (n - r))
+          (a : Fin r) :
+          BHW.sourceFullFrameEmbeddingOfHeadTail d n r hrD hrn λ
+              (BHW.finSourceHead (Nat.le_of_lt hrD) a) =
+            BHW.finSourceHead hrn a
+
+      theorem BHW.sourceFullFrameEmbeddingOfHeadTail_tail
+          (d n r : Nat)
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          (λ : Fin (d + 1 - r) ↪ Fin (n - r))
+          (u : Fin (d + 1 - r)) :
+          BHW.sourceFullFrameEmbeddingOfHeadTail d n r hrD hrn λ
+              (BHW.finSourceTail (Nat.le_of_lt hrD) u) =
+            BHW.finSourceTail hrn (λ u)
+
+      theorem BHW.sourceFullFrameDet_normalParameter_headTail
+          [NeZero d]
+          (hd : 2 <= d)
+          (n r : Nat)
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          (p :
+            BHW.SourceOrientedRankDeficientNormalParameter d n r hrD hrn)
+          (λ : Fin (d + 1 - r) ↪ Fin (n - r)) :
+          BHW.sourceFullFrameDet d n
+              (BHW.sourceFullFrameEmbeddingOfHeadTail d n r hrD hrn λ)
+              (BHW.sourceOrientedNormalParameterVector d n r hrD hrn p) =
+            p.head.det *
+              (BHW.sourceShiftedTailOrientedInvariant
+                d r hrD (n - r) p.tail).det λ
+      ```
+
+      Proof of `sourceFullFrameDet_normalParameter_headTail`: use
+      `sourceFullFrameEmbeddingOfHeadTail_head/tail` to rewrite the selected
+      full-frame matrix in head/tail row order.  For every selected tail row,
+      subtract the stored mixed linear combination of the selected head rows.
+      This row operation has determinant `1`; the matrix becomes block lower
+      triangular with head block `p.head`, upper-right block `0`, lower-left
+      block `0`, and lower-right block `(fun u μ => p.tail (λ u) μ)`.  Apply
+      the finite block-triangular determinant theorem, with no sign because
+      the embedding orders the first `r` rows by `finSourceHead` and the last
+      `d+1-r` rows by `finSourceTail`.
+
+      Arbitrary ordered full frames are recovered through a single explicit
+      Schur determinant formula:
+
+      ```lean
+      def BHW.sourceNormalFullFrameDetFromSchur
+          (d n r : Nat)
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          (H : Matrix (Fin r) (Fin r) ℂ)
+          (L : Matrix (Fin (n - r)) (Fin r) ℂ)
+          (T : BHW.SourceShiftedTailOrientedData d r hrD (n - r))
+          (ι : Fin (d + 1) ↪ Fin n) : ℂ
+
+      theorem BHW.sourceFullFrameDet_normalParameter_eq_schurFormula
+          [NeZero d]
+          (hd : 2 <= d)
+          (n r : Nat)
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          (p :
+            BHW.SourceOrientedRankDeficientNormalParameter d n r hrD hrn)
+          (ι : Fin (d + 1) ↪ Fin n) :
+          BHW.sourceFullFrameDet d n ι
+              (BHW.sourceOrientedNormalParameterVector d n r hrD hrn p) =
+            BHW.sourceNormalFullFrameDetFromSchur d n r hrD hrn
+              p.head p.mixed
+              (BHW.sourceShiftedTailOrientedInvariant
+                d r hrD (n - r) p.tail)
+              ι
+
+      theorem BHW.sourceOrientedSchur_fullFrameDet_reconstruct
+          [NeZero d]
+          (hd : 2 <= d)
+          {n r : Nat}
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          {G : BHW.SourceOrientedGramData d n}
+          (R : BHW.SourceOrientedSchurResidualData d n r hrD hrn G)
+          (ι : Fin (d + 1) ↪ Fin n) :
+          BHW.sourceNormalFullFrameDetFromSchur d n r hrD hrn
+              R.headFactor R.L R.tail ι =
+            G.det ι
+
+      theorem BHW.sourceOrientedNormalParameterVector_realizes_schur_det
+          [NeZero d]
+          (hd : 2 <= d)
+          (n r : Nat)
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          {G : BHW.SourceOrientedGramData d n}
+          (R : BHW.SourceOrientedSchurResidualData d n r hrD hrn G)
+          {p :
+            BHW.SourceOrientedRankDeficientNormalParameter d n r hrD hrn}
+          (hhead :
+            p.head = R.headFactor)
+          (hmixed : p.mixed = R.L)
+          (htail :
+            BHW.sourceShiftedTailOrientedInvariant d r hrD (n - r) p.tail =
+              R.tail) :
+          (BHW.sourceOrientedMinkowskiInvariant d n
+            (BHW.sourceOrientedNormalParameterVector
+              d n r hrD hrn p)).det = G.det
+      ```
+
+      `sourceNormalFullFrameDetFromSchur` is defined by expanding each selected
+      source label of `ι` through `finSourceHead_tail_cases`: head labels
+      contribute the corresponding row of the head block, tail labels
+      contribute the mixed row `L u` in head columns and the residual
+      tail row recorded by `T.det` in the top exterior degree.  Its selected
+      head-tail specialization reduces to
+      `det_head_factor * T.det λ`; the arbitrary-frame theorem is then the
+      finite Plucker/Cauchy-Binet recovery from the oriented algebraic
+      relations of `G` and the definition of `R.tail_det_eq`.  This theorem is
+      the only place where non-selected full-frame determinants are recovered;
+      downstream code must call it rather than redoing multilinearity.
 
       From this chart the local analytic estimates become genuine theorem
       surfaces:
@@ -13744,7 +13895,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (BHW.sourceOrientedSchurHeadBlock
               d n N.r N.hrD N.hrn G)
         have hMhead_gram :
-            Mhead * Mhead.transpose =
+            Mhead * BHW.sourceHeadMetric d N.r N.hrD *
+                Mhead.transpose =
               (BHW.sourceOrientedSchurHeadBlock
                 d n N.r N.hrD N.hrn G :
                 Matrix (Fin N.r) (Fin N.r) ℂ) :=
@@ -13758,7 +13910,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
         let R :=
           BHW.sourceOriented_schurResidualData
             (d := d) hd (n := n)
-            (r := N.r) N.hrD N.hrn hG.2
+            (r := N.r) N.hrD N.hrn Head hG.2 hHead
             (BHW.sourceOrientedSchurHeadBlock_unit
               (d := d) (n := n) N hG hMhead_unit)
         have htailSmall := S.tail_small G hG
@@ -13788,7 +13940,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 d n N.r N.hrD N.hrn p) = G :=
           BHW.sourceOrientedNormalParameterVector_realizes_schur
             (d := d) hd n N.r N.hrD N.hrn R
-            hMhead_gram rfl hq_tail
+            (by simp [p, R, Mhead]) rfl hq_tail
         simpa [S.normalParam, p] using hp_realizes
 
       theorem BHW.sourceOriented_rankDeficient_chooseNormalParameterBall

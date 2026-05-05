@@ -515,6 +515,27 @@ may be consumed only through an explicit finite diagonal normalization
 equivalence that rescales determinant coordinates by the product of the
 coordinate scalars; otherwise it proves the wrong tail theorem.
 
+Determinant-readiness correction: the proof docs now pin determinant recovery
+for the normal parameter vector as explicit finite theorem surfaces and record
+that determinant recovery depends on the chosen head factor, not only on the
+head Gram block.  `SourceOrientedSchurResidualData` must store
+`headFactor` with
+`headFactor * sourceHeadMetric d r hrD * headFactor.transpose = A`, and the
+full reconstruction theorem must require `p.head = R.headFactor`; the weaker
+Gram equality is insufficient for determinant coordinates.  The primitive
+selected-frame calculation is
+`sourceFullFrameDet_normalParameter_headTail`, using the embedding
+`sourceFullFrameEmbeddingOfHeadTail`; it proves that frames containing the
+selected head block have determinant
+`p.head.det * (sourceShiftedTailOrientedInvariant ... p.tail).det λ`.
+Arbitrary ordered full frames are then routed through
+`sourceNormalFullFrameDetFromSchur`,
+`sourceFullFrameDet_normalParameter_eq_schurFormula`, and
+`sourceOrientedSchur_fullFrameDet_reconstruct`, so the final determinant field
+of `sourceOrientedNormalParameterVector_realizes_schur` is a mechanical call to
+`sourceOrientedNormalParameterVector_realizes_schur_det`.  No downstream proof
+may use an unnamed "block determinant expansion" anymore.
+
 - `BHW.same_sourceOrientedInvariant_detOneOrbit_or_singularLimit`, including
   the high-rank determinant-ratio/Witt-extension orbit theorem and the
   low-rank Hall-Wightman isotropic contraction data;
