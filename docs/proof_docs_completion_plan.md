@@ -539,14 +539,19 @@ The finite normalization layer is now checked in
 `sourceShiftedTailInvariant_toEuclidean`,
 `sourceShiftedTailVariety_toEuclidean_iff`,
 `sourceShiftedTailDataToEuclidean_injective`, and
-`sourceShiftedTailInvariant_eq_of_toEuclidean_eq`.  The next theorem
-`sourceShiftedTailCompatibleSmallRealization` should now build the explicit
-normalization, call the Euclidean compatible theorem on
-`sourceShiftedTailDataToEuclidean T`, scale the realizing tuple back by
-`scale⁻¹`, use the norm-one scale lemmas for both directions of the
-`epsilon`/`eta` estimates, and use
+`sourceShiftedTailInvariant_eq_of_toEuclidean_eq`.  The estimate-compatible
+packet wrapper is also checked there:
+`SourceTailOrientedCompatibleSmallRealization`,
+`SourceShiftedTailCompatibleSmallRealization`, and
+`sourceShiftedTailCompatibleSmallRealization_of_euclidean`.  It builds the
+explicit normalization, calls the Euclidean compatible packet on
+`sourceShiftedTailDataToEuclidean T`, scales the realizing tuple back by
+`scale⁻¹`, uses the norm-one scale lemmas for both directions of the
+`epsilon`/`eta` estimates, and uses
 `sourceShiftedTailInvariant_eq_of_toEuclidean_eq` to recover the shifted
-invariant equality.
+invariant equality.  The remaining tail theorem is now the Euclidean
+compatible small-realization induction itself, not the shifted-signature
+transport.
 
 Determinant-readiness correction: the proof docs now pin determinant recovery
 for the normal parameter vector as explicit finite theorem surfaces and record

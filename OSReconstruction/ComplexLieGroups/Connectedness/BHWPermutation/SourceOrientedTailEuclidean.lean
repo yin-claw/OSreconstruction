@@ -307,4 +307,144 @@ theorem sourceShiftedTailInvariant_eq_of_toEuclidean_eq
   rw [← hE]
   exact (sourceShiftedTailInvariant_toEuclidean d r m hrD N q).symm
 
+/-- Estimate-compatible Euclidean small-realization packet for the tail model.
+It stores both directions needed by the rank-deficient Schur chart: small data
+are realized by small vectors, and small vectors have small invariant data. -/
+structure SourceTailOrientedCompatibleSmallRealization
+    (D m : ℕ) where
+  epsilon : ℝ
+  epsilon_pos : 0 < epsilon
+  eta : ℝ
+  eta_pos : 0 < eta
+  realize :
+    ∀ T : SourceTailOrientedData D m,
+      T ∈ sourceTailOrientedVariety D m →
+      (∀ u v, ‖T.gram u v‖ < eta) →
+      (∀ ι, ‖T.det ι‖ < eta) →
+      ∃ q : Fin m → Fin D → ℂ,
+        (∀ u μ, ‖q u μ‖ < epsilon) ∧
+        sourceTailOrientedInvariant D m q = T
+  self_image_small :
+    ∀ q : Fin m → Fin D → ℂ,
+      (∀ u μ, ‖q u μ‖ < epsilon) →
+      (∀ u v, ‖(sourceTailOrientedInvariant D m q).gram u v‖ < eta) ∧
+      (∀ ι, ‖(sourceTailOrientedInvariant D m q).det ι‖ < eta)
+
+/-- Estimate-compatible shifted-tail small-realization packet.  This is the
+shifted-signature analogue consumed by the source-oriented Schur chart. -/
+structure SourceShiftedTailCompatibleSmallRealization
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (m : ℕ) where
+  epsilon : ℝ
+  epsilon_pos : 0 < epsilon
+  eta : ℝ
+  eta_pos : 0 < eta
+  realize :
+    ∀ T : SourceShiftedTailOrientedData d r hrD m,
+      T ∈ sourceShiftedTailOrientedVariety d r hrD m →
+      (∀ u v, ‖T.gram u v‖ < eta) →
+      (∀ ι, ‖T.det ι‖ < eta) →
+      ∃ q : Fin m → Fin (d + 1 - r) → ℂ,
+        (∀ u μ, ‖q u μ‖ < epsilon) ∧
+        sourceShiftedTailOrientedInvariant d r hrD m q = T
+  self_image_small :
+    ∀ q : Fin m → Fin (d + 1 - r) → ℂ,
+      (∀ u μ, ‖q u μ‖ < epsilon) →
+      (∀ u v,
+        ‖(sourceShiftedTailOrientedInvariant d r hrD m q).gram u v‖ < eta) ∧
+      (∀ ι,
+        ‖(sourceShiftedTailOrientedInvariant d r hrD m q).det ι‖ < eta)
+
+/-- The shifted-tail compatible small-realization packet follows mechanically
+from the Euclidean one by diagonal normalization. -/
+def sourceShiftedTailCompatibleSmallRealization_of_euclidean
+    (d r m : ℕ)
+    (hrD : r < d + 1)
+    (E : SourceTailOrientedCompatibleSmallRealization (d + 1 - r) m) :
+    SourceShiftedTailCompatibleSmallRealization d r hrD m := by
+  classical
+  let N := sourceShiftedTailMetricNormalization d r hrD
+  have hscale_norm : ∀ μ : Fin (d + 1 - r), ‖N.scale μ‖ = 1 := by
+    intro μ
+    simp [N, sourceShiftedTailMetricNormalization, sourceTailMetricScale_norm]
+  have hdet_norm : ‖N.detScale‖ = 1 := by
+    simp [N, sourceShiftedTailMetricNormalization, sourceTailMetricDetScale_norm]
+  refine
+    { epsilon := E.epsilon
+      epsilon_pos := E.epsilon_pos
+      eta := E.eta
+      eta_pos := E.eta_pos
+      realize := ?_
+      self_image_small := ?_ }
+  · intro T hTvar hTgram hTdet
+    have hTEvar :
+        sourceShiftedTailDataToEuclidean d r m hrD N T ∈
+          sourceTailOrientedVariety (d + 1 - r) m := by
+      exact (sourceShiftedTailVariety_toEuclidean_iff d r m hrD N T).2 hTvar
+    have hTEgram :
+        ∀ u v, ‖(sourceShiftedTailDataToEuclidean d r m hrD N T).gram u v‖ <
+          E.eta := by
+      intro u v
+      exact hTgram u v
+    have hTEdet :
+        ∀ ι, ‖(sourceShiftedTailDataToEuclidean d r m hrD N T).det ι‖ <
+          E.eta := by
+      intro ι
+      calc
+        ‖(sourceShiftedTailDataToEuclidean d r m hrD N T).det ι‖
+            = ‖N.detScale * T.det ι‖ := rfl
+        _ = ‖T.det ι‖ := by simp [hdet_norm]
+        _ < E.eta := hTdet ι
+    rcases E.realize
+        (sourceShiftedTailDataToEuclidean d r m hrD N T)
+        hTEvar hTEgram hTEdet with
+      ⟨qE, hqE_small, hqE_realizes⟩
+    let q : Fin m → Fin (d + 1 - r) → ℂ :=
+      fun u μ => (N.scale μ)⁻¹ * qE u μ
+    refine ⟨q, ?_, ?_⟩
+    · intro u μ
+      calc
+        ‖q u μ‖ = ‖qE u μ‖ := by
+          simp [q, norm_inv, hscale_norm μ]
+        _ < E.epsilon := hqE_small u μ
+    · apply sourceShiftedTailInvariant_eq_of_toEuclidean_eq d r m hrD N q T
+      calc
+        sourceTailOrientedInvariant (d + 1 - r) m
+            (fun u μ => N.scale μ * q u μ)
+            = sourceTailOrientedInvariant (d + 1 - r) m qE := by
+              congr
+              ext u μ
+              simp [q, N.scale_ne_zero μ]
+        _ = sourceShiftedTailDataToEuclidean d r m hrD N T := hqE_realizes
+  · intro q hq_small
+    have hqE_small :
+        ∀ u μ, ‖N.scale μ * q u μ‖ < E.epsilon := by
+      intro u μ
+      calc
+        ‖N.scale μ * q u μ‖ = ‖q u μ‖ := by
+          simp [hscale_norm μ]
+        _ < E.epsilon := hq_small u μ
+    rcases E.self_image_small (fun u μ => N.scale μ * q u μ) hqE_small with
+      ⟨hgramE, hdetE⟩
+    constructor
+    · intro u v
+      have h := hgramE u v
+      simpa [sourceShiftedTailInvariant_toEuclidean, sourceShiftedTailDataToEuclidean]
+        using h
+    · intro ι
+      have h := hdetE ι
+      have h' :
+          ‖N.detScale *
+              (sourceShiftedTailOrientedInvariant d r hrD m q).det ι‖ <
+            E.eta := by
+        simpa [sourceShiftedTailInvariant_toEuclidean,
+          sourceShiftedTailDataToEuclidean] using h
+      calc
+        ‖(sourceShiftedTailOrientedInvariant d r hrD m q).det ι‖
+            = ‖N.detScale *
+                (sourceShiftedTailOrientedInvariant d r hrD m q).det ι‖ := by
+              simp [hdet_norm]
+        _ < E.eta := h'
+
 end BHW
