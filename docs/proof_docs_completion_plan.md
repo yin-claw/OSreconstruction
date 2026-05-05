@@ -4301,14 +4301,16 @@ implementation contract is:
    `BHW.hwLemma3_projectionSourceChangeMatrix` sends
    `[[A,Bᵀ],[B,C]]` to `[[A,0],[0,0]]` only after
    `BHW.hwLemma3_schurComplement_eq_zero_of_rank_eq` proves
-   `C - B*A⁻¹*Bᵀ = 0`; the canonical identity block is produced only after
-   `BHW.complexSymmetric_invertible_congruence_to_identity` supplies
-   `P` with `P*A*Pᵀ = 1` and the head extension
+   `C - B*A⁻¹*Bᵀ = 0`; the canonical head-metric block is produced only after
+   `BHW.complexSymmetric_invertible_congruence_to_sourceHeadMetric` supplies
+   `P` with `P*A*Pᵀ = sourceHeadMetric d r hrD` and the head extension
    `BHW.hwLemma3_extendHeadMatrix` is composed with the projection and
    permutation matrices.  The exact support API is
    `BHW.sourceHeadHeadBlock`, `BHW.sourceTailHeadBlock`,
    `BHW.sourceTailTailBlock`,
-   `BHW.sourceBlockMatrix_of_headTailBlocks`,
+   `BHW.sourceBlockMatrix_of_headTailBlocks` (with the source-symmetry
+   hypothesis; the head/tail reconstruction from only `A`, `B`, and `C` is
+   false for nonsymmetric matrices),
    `BHW.sourcePermutationMatrix`,
    `BHW.sourceGramMatrixRank_sourcePermuteComplexGram`,
    `BHW.sourcePermuteComplexGram_mem_sourceSymmetricMatrixSpace`,
@@ -4320,14 +4322,18 @@ implementation contract is:
    source-span dimension and scalar rank into actual vanishing of the tail
    vectors after projection; without adaptedness the statement is false.  The
    base selected-block normalization also needs the arbitrary invertible
-   symmetric congruence theorem
+   symmetric congruence theorem to the inherited source-head metric,
+   `BHW.complexSymmetric_invertible_congruence_to_sourceHeadMetric`, obtained
+   from the identity-normalization theorem
    `BHW.complexSymmetric_invertible_congruence_to_identity`, decomposed into
    `BHW.complexSymmetric_invertible_orthogonalBasis`,
    `BHW.complexSymmetric_invertible_diagonalScaling`, and
    `BHW.basis_smul_nonzero`: use an orthogonal basis for the nondegenerate
    symmetric bilinear form `Matrix.toBilin' A`, prove every diagonal value is
-   nonzero, scale by square roots of inverse diagonal values over `ℂ`, and
-   read off the row-matrix congruence `P * A * Pᵀ = 1`.  The
+   nonzero, scale by square roots of inverse diagonal values over `ℂ`, compose
+   with the fixed diagonal congruence between `1` and `sourceHeadMetric d r hrD`,
+   and read off the row-matrix congruence
+   `P * A * Pᵀ = sourceHeadMetric d r hrD`.  The
    perturbative selected block still uses
    `BHW.hwLemma3_selectedBlock_sqrt_near_identity`.  Then come the normalized
    surjectivity theorem

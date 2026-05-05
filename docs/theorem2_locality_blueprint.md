@@ -13334,6 +13334,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | `BHW.sourceGramMatrixRank_le_spacetime_source_min`, `BHW.sourceOriented_notMaxRank_sourceGramMatrixRank_lt_min`, `BHW.sourceOriented_notMaxRank_sourceGramMatrixRank_lt_fullFrame`, `BHW.sourceOrientedMaxRankAt_iff_of_gram_eq`, `BHW.sourceOrientedExceptionalRank_iff_of_gram_eq`, `BHW.sourceOrientedMaxRankAt_iff_sourceGramMatrixRank_eq_fullFrame`, `BHW.sourceOrientedMaxRankAt_invariant_iff_sourceGramMatrixRank_eq_fullFrame`, `BHW.sourceOrientedMaxRankAt_invariant_iff_hwSourceGramMaxRankAt`, `BHW.hwSourceGramMaxRankAt_of_sourceOrientedInvariant_eq`, `BHW.sourceOrientedExceptionalRank_invariant_iff_hwSourceGramExceptionalRankAt`, `BHW.hwSourceGramExceptionalRankAt_of_sourceOrientedInvariant_eq` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedRankBridge.lean`. | Rank bridge between the strict oriented max/exceptional-rank predicates and the existing scalar source-rank API.  The rank upper bound for actual source configurations is proved from the restricted-Minkowski-rank formula and finite-dimensional span bounds, so the equality-style oriented max-rank predicate is equivalent to the scalar `min (d+1) n ≤ rank` predicate.  Failure of oriented max-rank for an actual source configuration now gives strict rank deficiency below both `min (d+1) n` and `d+1`, which is the checked input for choosing the normal-form rank.  In the hard range `d + 1 ≤ n`, the max-rank predicate is also exposed directly as the ordinary full-frame equation `sourceGramMatrixRank n G.gram = d + 1`, both for arbitrary oriented Gram data and for actual source invariants.  This is support for the upcoming exceptional Schur/residual parameter connectedness proof, not a new analytic input. |
       | `BHW.sourceGramMatrixRank_le_arity`, `BHW.sourceFullFrameDet_eq_zero_of_sourceRank_lt`, `BHW.sourceOrientedMinkowskiInvariant_eq_of_sameGram_rank_lt` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedLowRankDeterminants.lean`. | Low-rank determinant bridge for the normal-form route.  The arity bound is the direct `Matrix.rank_le_width` support for choosing `hrn : r ≤ n`.  If the ordinary source Gram matrix has rank `< d + 1`, a nonzero selected full-frame determinant would make the selected full-frame Gram determinant nonzero by `sourceFullFrameGram_det_eq`, hence force a nonzero `(d+1) × (d+1)` minor of the ordinary source Gram matrix and contradict the checked nonzero-minor rank bound.  Therefore all oriented determinant coordinates vanish in the strict low-rank branch, and same ordinary Gram implies equality of the full oriented source invariant. |
       | `BHW.finCastLEEmbedding`, `BHW.sourceComplexPad`, `BHW.sourceComplexDotGram_padded_eq`, `BHW.sourceGramMatrixRank_le_finrank_sourceCoefficientEval_range`, `BHW.sourceGramMatrixRank_le_spacetime_of_mem_sourceComplexGramVariety`, `BHW.finrank_sourceCoefficientEval_range_le_of_paddedDot`, `BHW.sourceComplexGramVariety_exists_adaptedSourceRepresentative`, `BHW.sourceOriented_lowRank_exists_adaptedRepresentative` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedAdaptedRepresentative.lean`. | Algebraic adapted-representative gate for the rank-deficient no-tube normal-form route.  The file replaces the false shortcut that an arbitrary realization has source-span dimension equal to Gram rank.  It factors an exact-rank ordinary symmetric Gram matrix as a full-rank dot-Gram in exactly `r` coordinates, pads those coordinates into `Fin (d+1)`, transports through `complexMinkowskiToDotLinearEquiv.symm`, proves the padded dot Gram is unchanged, bounds the coefficient span by the padded `r`-coordinate subspace, and uses the general rank-versus-span inequality for the reverse bound.  In the strict oriented low-rank branch, the checked low-rank determinant theorem then upgrades same ordinary Gram to equality of the full oriented invariant. |
+      | `BHW.sourceHeadTailEquiv`, `BHW.sourceBlockMatrix`, `BHW.sourceHeadHeadBlock`, `BHW.sourceTailHeadBlock`, `BHW.sourceTailTailBlock`, `BHW.sourceBlockMatrix_reindex_headTail`, `BHW.sourceBlockMatrix_of_headTailBlocks`, `BHW.sourceTupleLinearChange`, `BHW.sourceGramCongruence`, `BHW.hwLemma3CanonicalGram`, `BHW.hwLemma3CanonicalGram_eq_sourceBlockMatrix`, `BHW.sourcePermutationMatrix`, `BHW.sourcePermutationMatrix_det_isUnit`, `BHW.sourceTupleLinearChange_sourcePermutationMatrix`, `BHW.sourceGramCongruence_sourcePermutationMatrix`, `BHW.sourceMinkowskiGram_sourceTupleLinearChange`, `BHW.sourceMinkowskiGram_hwLemma3CanonicalSource`, `BHW.hwLemma3_schurComplement_eq_zero_of_rank_eq`, `BHW.sourceGramMatrixRank_sourcePermuteComplexGram`, `BHW.sourcePermuteComplexGram_mem_sourceSymmetricMatrixSpace`, `BHW.exists_sourcePermutation_movingPrincipalBlockToHead` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceNormalFormTransport.lean`. | First finite normal-form transport block.  The checked file gives the source head/tail equivalence, reconstructs symmetric source Gram matrices from the three Schur blocks, defines the source-index tuple action and induced Gram congruence, identifies the canonical Gram as `sourceHeadMetric d r hrD` in the head block with zero tail, proves that the canonical source realizes that Gram, proves that exact rank plus an invertible selected block forces Schur complement zero, proves that permutation matrices implement the existing source permutation on both tuples and Gram matrices, proves source Gram rank and symmetry are preserved by permutation, and extends any injective selected principal block to a source permutation moving it to the head labels.  The symmetry hypothesis on block reconstruction is essential: using only `A`, `B`, and `C` cannot reconstruct a nonsymmetric matrix, and the canonical head block is the Minkowski-signature `sourceHeadMetric`, not the Euclidean identity. |
       | `BHW.sourcePrincipalSchurGraph_sourceGramMatrixRank_eq_iff_residual_rank`, `BHW.sourceOrientedMaxRankAt_sourcePrincipalSchurGraph_iff_residual_rank`, `BHW.sourcePrincipalSchur_orientedMaxRank_parameterSet_eq`, `BHW.isConnected_sourcePrincipalSchur_orientedMaxRank_parameterSet`, `BHW.isConnected_sourcePrincipalSchur_transported_orientedMaxRank_parameterSet`, `BHW.isConnected_sourcePrincipalSchur_transported_orientedMaxRank_preimage_of_eq` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedSchurParameter.lean`. | Principal-Schur residual bridge for the exceptional max-rank parameter proof.  It combines the ordinary Schur rank formula, the hard-range oriented max-rank rewrite, the transport inverse max-rank equivalence, and the checked product connectedness theorem to show that the parameter subset whose inverse-transported oriented Schur-graph image is max-rank is connected exactly when the residual exact-rank cone is connected.  The final preimage theorem lets the concrete normal-form producer use any parameter-box image that agrees on the box with the transported Schur graph; the endpoint reconstruction equality is now supplied by `SourceOrientedSchurReconstruct.lean`, so the remaining obligation is producing the Schur residual data and proving the concrete parameter image agrees with that Schur graph on the chosen box.  The determinant coordinates are arbitrary functions of the parameter and disappear because `SourceOrientedMaxRankAt` only reads the ordinary Gram coordinate.  No BHW analytic input is hidden here. |
       | `BHW.finSourceHead`, `BHW.finSourceTail`, `BHW.finSourceHead_val`, `BHW.finSourceTail_val`, `BHW.finSourceHead_injective`, `BHW.finSourceTail_injective`, `BHW.finSourceHead_ne_finSourceTail`, `BHW.finSourceHead_tail_cases`, `BHW.SourceOrientedRankDeficientNormalParameter`, `BHW.sourceOrientedNormalParameterCoord`, `BHW.instTopologicalSpaceSourceOrientedRankDeficientNormalParameter`, `BHW.continuous_sourceOrientedNormalParameterCoord`, `BHW.continuous_sourceOrientedNormalParameter_head`, `BHW.continuous_sourceOrientedNormalParameter_mixed`, `BHW.continuous_sourceOrientedNormalParameter_tail`, `BHW.sourceOrientedNormalCenterParameter`, `BHW.sourceTailEmbed`, `BHW.sourceTailEmbed_head`, `BHW.sourceTailEmbed_tail`, `BHW.sourceTailEmbed_zero`, `BHW.hwLemma3CanonicalSource`, `BHW.hwLemma3CanonicalSource_head_apply`, `BHW.hwLemma3CanonicalSource_head_head`, `BHW.hwLemma3CanonicalSource_head_of_tailCoord`, `BHW.hwLemma3CanonicalSource_tail`, `BHW.sourceHeadMetric`, `BHW.sourceHeadMetric_apply`, `BHW.sourceHeadMetric_transpose`, `BHW.sourceHeadMetric_det_isUnit`, `BHW.sourceTailMetric`, `BHW.sourceTailMetric_apply`, `BHW.sourceTailMetric_det_isUnit`, `BHW.sourceTailMetricScale`, `BHW.sourceTailMetricScale_ne_zero`, `BHW.sourceTailMetricScale_mul_self`, `BHW.sourceTailMetricDetScale`, `BHW.sourceTailMetricDetScale_ne_zero`, `BHW.sourceVectorMinkowskiInner`, `BHW.sourceShiftedTailGram`, `BHW.sourceShiftedTailGram_apply`, `BHW.sourceVectorMinkowskiInner_add_right`, `BHW.sourceVectorMinkowskiInner_add_left`, `BHW.sourceVectorMinkowskiInner_sum_right`, `BHW.sourceVectorMinkowskiInner_sum_left`, `BHW.sourceVectorMinkowskiInner_smul_right`, `BHW.sourceVectorMinkowskiInner_smul_left`, `BHW.sourceMinkowskiGram_hwLemma3CanonicalSource_head`, `BHW.hwLemma3CanonicalSource_head_unit`, `BHW.sourceVectorMinkowskiInner_hwLemma3CanonicalSource_head`, `BHW.sourceOrientedNormalHeadVector`, `BHW.sourceOrientedNormalHeadVector_center`, `BHW.continuous_sourceOrientedNormalHeadVector`, `BHW.sourceVectorMinkowskiInner_sourceOrientedNormalHeadVector`, `BHW.sourceNormalHeadGram_transpose`, `BHW.sourceVectorMinkowskiInner_headVector_sourceTailEmbed`, `BHW.sourceVectorMinkowskiInner_sourceTailEmbed_headVector`, `BHW.sourceOrientedNormalParameterVector`, `BHW.sourceOrientedNormalParameterVector_head`, `BHW.sourceOrientedNormalParameterVector_tail`, `BHW.sourceVectorMinkowskiInner_head_tailParameterVector`, `BHW.sourceVectorMinkowskiInner_tailParameterVector_head`, `BHW.sourceVectorMinkowskiInner_mixedHeadPart_sourceTailEmbed`, `BHW.sourceVectorMinkowskiInner_sourceTailEmbed_mixedHeadPart`, `BHW.sourceVectorMinkowskiInner_mixedHeadPart_mixedHeadPart`, `BHW.sourceVectorMinkowskiInner_tailParameterVector_tail`, `BHW.continuous_sourceOrientedNormalParameterVector`, `BHW.sourceOrientedNormalParameterVector_center` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedNormalParameter.lean`. | Concrete normal-parameter algebra for the rank-deficient Schur producer.  The checked file fixes the finite source-label split `Fin n = head ⊔ tail`, the finite product topology, continuous coordinate projections, padded shifted-tail embedding, canonical source/normal-parameter center equality, signature-diagonal head and shifted-tail metrics, explicit shifted-to-Euclidean tail normalizing scalars, bilinearity of the ambient Minkowski form, head/head, head/tail, tail/head, and tail/tail Gram formulas for the normal parameter vector, and continuity of the normal source tuple.  The ordinary Gram part of `sourceOrientedNormalParameterVector_realizes_schur` is reduced to checked block identities; determinant recovery for ordered full frames is now supplied downstream by `SourceOrientedSchurPropagation.lean`, so the remaining theorem-2 producer work here is the shifted-tail realization/normalization packet. |
       | `BHW.matrixEntryL1Bound`, `BHW.matrixEntryL1Bound_nonneg`, `BHW.matrixEntryL1Bound_lt_of_entry_bound`, `BHW.exists_pos_mul_sqrt_lt`, `BHW.real_sqrt_lt_of_lt_mul_bound`, `BHW.takagiConjugateLinearMap`, `BHW.takagiConjugateLinearMap_add`, `BHW.takagiConjugateLinearMap_smul`, `BHW.takagiConjugateLinearMap_sq`, `BHW.takagiConjugateLinearMap_commutes_square`, `BHW.takagiConjugateLinearMap_mem_eigenspace`, `BHW.takagiConjugateLinearMap_conjTranspose_mulVec_eq_star`, `BHW.takagiConjugateLinearMap_zero_eigenspace_eq_zero`, `BHW.takagiHermitianSquare_isHermitian`, `BHW.takagiHermitianSquare_spectralTheorem`, `BHW.takagiHermitianSquare_eigenvalue_nonneg`, `BHW.takagiHermitianSquare_singularValue_nonneg`, `BHW.takagiHermitianSquare_eigenvalue_rankSupport`, `BHW.takagiHermitianSquare_singularValue_rankSupport`, `BHW.matrix_unitary_entry_norm_le_one`, `BHW.matrix_unitary_entry_mul_real_sqrt_norm_le_sqrt`, `BHW.complexSymmetric_takagi_factor_from_supportEmbedding`, `BHW.complexSymmetric_entryL1_of_takagiDiagonalData`, `BHW.complexSymmetric_entryL1_of_takagiDiagonalData_rankSupport`, `BHW.complexSymmetric_factorSmall_rankLE_of_entryL1`, `BHW.sourceComplexSymmetric_factorSmall_rankLE_of_entryL1` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceComplexSmallFactor.lean`. | Quantitative finite-entry reducer and first Autonne-Takagi spectral layer for the Euclidean tail full-rank branch.  The checked file proves the entry-`ℓ¹` bound from a uniform entry bound, chooses a positive `δ` with `sqrt(C_m δ) < ε`, proves the conjugate-linear Takagi map `v ↦ S *ᵥ star v` is additive/semilinear, squares to `S * Sᴴ`, commutes with that square, preserves real eigenspaces, kills the zero eigenspace, and identifies the Hermitian-square spectral data with nonnegative singular values whose nonzero support has cardinal `S.rank`.  It also exposes the unitary-entry estimate needed in the Takagi norm bound, checks the finite support-embedding reindexing from a diagonal Takagi decomposition to a rectangular `m × k` factor, and turns bounded diagonal Takagi data into the entry-controlled factor and then the parameterized small matrix/source-coordinate same-Gram factor theorem.  The unparameterized Autonne-Takagi entry theorem and small-factor consumers are now checked in `SourceComplexTakagiGlobal.lean`. |
@@ -30788,15 +30789,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
           Fin n -> Fin (d + 1) -> ℂ
 
       def BHW.hwLemma3CanonicalGram
-          (n r : Nat) :
+          (d n r : Nat) (hrD : r < d + 1) (hrn : r <= n) :
           Fin n -> Fin n -> ℂ
 
       theorem BHW.sourceMinkowskiGram_hwLemma3CanonicalSource
           [NeZero d] (hd : 2 <= d)
-          (n r : Nat) (hrn : r <= n) (hrD : r <= d + 1) :
+          (n r : Nat) (hrD : r < d + 1) (hrn : r <= n) :
           BHW.sourceMinkowskiGram d n
             (BHW.hwLemma3CanonicalSource d n r) =
-          BHW.hwLemma3CanonicalGram n r
+          BHW.hwLemma3CanonicalGram d n r hrD hrn
 
       /-- Source-index linear change on an `n`-tuple of spacetime vectors.
       This is the exact operation used in Hall-Wightman Lemma 3 before the
@@ -31261,6 +31262,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
           [NeZero d]
           (d n r : Nat)
           (z0 : Fin n -> Fin (d + 1) -> ℂ) where
+        rank_lt_spacetime : r < d + 1
+        rank_le_arity : r <= n
         toNormalVec :
           (Fin n -> Fin (d + 1) -> ℂ) ≃ₗ[ℂ]
             (Fin n -> Fin (d + 1) -> ℂ)
@@ -31290,7 +31293,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 (BHW.sourceOrientedMinkowskiInvariant d n z)
         gram_z0 :
           toNormalGram (BHW.sourceMinkowskiGram d n z0) =
-            BHW.hwLemma3CanonicalGram n r
+            BHW.hwLemma3CanonicalGram d n r rank_lt_spacetime rank_le_arity
         gram_ball_to_normal_ball :
           ∀ {ηN : ℝ}, 0 < ηN ->
             ∃ η : ℝ, 0 < η ∧
@@ -31299,7 +31302,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
                   ‖Z i j - BHW.sourceMinkowskiGram d n z0 i j‖ < η) ->
                 (∀ i j,
                   ‖toNormalGram Z i j -
-                    BHW.hwLemma3CanonicalGram n r i j‖ < ηN)
+                    BHW.hwLemma3CanonicalGram d n r
+                      rank_lt_spacetime rank_le_arity i j‖ < ηN)
         perturb_back_small :
           ∀ {ε : ℝ}, 0 < ε ->
             ∃ εN : ℝ, 0 < εN ∧
@@ -31319,6 +31323,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (hr :
             r = BHW.sourceGramMatrixRank n
               (BHW.sourceMinkowskiGram d n z0))
+          (hrD : r < d + 1)
           (hspan :
             Module.finrank ℂ
               (LinearMap.range (BHW.sourceCoefficientEval d n z0)) = r) :
@@ -31362,7 +31367,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
 
       theorem BHW.sourceBlockMatrix_of_headTailBlocks
           (n r : Nat) (hrn : r <= n)
-          (G : Fin n -> Fin n -> ℂ) :
+          (G : Fin n -> Fin n -> ℂ)
+          (hG : G ∈ BHW.sourceSymmetricMatrixSpace n) :
           BHW.sourceBlockMatrix n r hrn
             (BHW.sourceHeadHeadBlock n r hrn G)
             (BHW.sourceTailHeadBlock n r hrn G)
@@ -31439,9 +31445,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.sourceBlockMatrix n r hrn (P * A * P.transpose) 0 0
 
       theorem BHW.hwLemma3CanonicalGram_eq_sourceBlockMatrix
-          (n r : Nat) (hrn : r <= n) :
-          BHW.hwLemma3CanonicalGram n r =
-            BHW.sourceBlockMatrix n r hrn 1 0 0
+          (d n r : Nat) (hrD : r < d + 1) (hrn : r <= n) :
+          BHW.hwLemma3CanonicalGram d n r hrD hrn =
+            BHW.sourceBlockMatrix n r hrn
+              (BHW.sourceHeadMetric d r hrD) 0 0
 
       theorem BHW.sourcePermutationMatrix_det_isUnit
           (n : Nat) (σ : Equiv.Perm (Fin n)) :
@@ -31499,7 +31506,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
               n r hrn σ A B P).det
 
       theorem BHW.hwLemma3_normalFormSourceChangeMatrix_canonicalGram
-          (n r : Nat) (hrn : r <= n)
+          (d n r : Nat) (hrD : r < d + 1) (hrn : r <= n)
           {G : Fin n -> Fin n -> ℂ}
           {σ : Equiv.Perm (Fin n)}
           {A : Matrix (Fin r) (Fin r) ℂ}
@@ -31512,11 +31519,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (hA : IsUnit A.det)
           (hAsym : A.transpose = A)
           (hSchur : C - B * A⁻¹ * B.transpose = 0)
-          (hP : P * A * P.transpose = 1) :
+          (hP : P * A * P.transpose = BHW.sourceHeadMetric d r hrD) :
           BHW.sourceGramCongruence n
             (BHW.hwLemma3_normalFormSourceChangeMatrix
               n r hrn σ A B P) G =
-          BHW.hwLemma3CanonicalGram n r
+          BHW.hwLemma3CanonicalGram d n r hrD hrn
 
       theorem BHW.hwLemma3_projectedTail_zero_of_adapted
           [NeZero d] (hd : 2 <= d)
@@ -31570,29 +31577,29 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 n r hrn σ A B P) z0
               (BHW.finSourceTail hrn u) = 0
 
-      theorem BHW.hwLemma3_head_orthonormal_of_canonicalGram
+      theorem BHW.hwLemma3_head_metric_of_canonicalGram
           [NeZero d] (hd : 2 <= d)
-          (n r : Nat) (hrn : r <= n)
+          (n r : Nat) (hrD : r < d + 1) (hrn : r <= n)
           {y : Fin n -> Fin (d + 1) -> ℂ}
           (hy :
             BHW.sourceMinkowskiGram d n y =
-              BHW.hwLemma3CanonicalGram n r) :
+              BHW.hwLemma3CanonicalGram d n r hrD hrn) :
           ∀ a b : Fin r,
             BHW.sourceComplexMinkowskiInner d
               (y (BHW.finSourceHead hrn a))
               (y (BHW.finSourceHead hrn b)) =
-            if a = b then 1 else 0
+            BHW.sourceHeadMetric d r hrD a b
 
       theorem BHW.hwLemma3_selectedFrame_to_standardLorentz
           [NeZero d] (hd : 2 <= d)
-          (n r : Nat) (hrn : r <= n) (hrD : r <= d + 1)
+          (n r : Nat) (hrD : r < d + 1) (hrn : r <= n)
           {y : Fin n -> Fin (d + 1) -> ℂ}
           (hy_head :
             ∀ a b : Fin r,
               BHW.sourceComplexMinkowskiInner d
                 (y (BHW.finSourceHead hrn a))
                 (y (BHW.finSourceHead hrn b)) =
-              if a = b then 1 else 0)
+              BHW.sourceHeadMetric d r hrD a b)
           (hy_tail_zero :
             ∀ u : Fin (n - r),
               y (BHW.finSourceTail hrn u) = 0) :
@@ -31663,12 +31670,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
           [NeZero d] (hd : 2 <= d)
           (n r : Nat)
           (hrn : r <= n)
-          (hrD : r <= d + 1)
+          (hrD : r < d + 1)
           {ε : ℝ} (hε : 0 < ε) :
           ∃ η : ℝ, 0 < η ∧
             ∀ Z : Fin n -> Fin n -> ℂ,
               Z ∈ BHW.sourceComplexGramVariety d n ->
-              (∀ i j, ‖Z i j - BHW.hwLemma3CanonicalGram n r i j‖ < η) ->
+              (∀ i j,
+                ‖Z i j - BHW.hwLemma3CanonicalGram d n r hrD hrn i j‖ < η) ->
               ∃ v : Fin n -> Fin (d + 1) -> ℂ,
                 (∀ i μ, ‖v i μ‖ < ε) ∧
                 BHW.sourceMinkowskiGram d n
@@ -32813,12 +32821,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
           [NeZero d] (hd : 2 <= d)
           (n r : Nat)
           (hrn : r <= n)
-          (hrD : r <= d + 1)
+          (hrD : r < d + 1)
           {ε : ℝ} (hε : 0 < ε) :
           ∃ η : ℝ, 0 < η ∧
             ∀ Z : Fin n -> Fin n -> ℂ,
               Z ∈ BHW.sourceComplexGramVariety d n ->
-              (∀ i j, ‖Z i j - BHW.hwLemma3CanonicalGram n r i j‖ < η) ->
+              (∀ i j,
+                ‖Z i j - BHW.hwLemma3CanonicalGram d n r hrD hrn i j‖ < η) ->
               ∃ (P : Matrix (Fin r) (Fin r) ℂ)
                 (L : Matrix (Fin (n - r)) (Fin r) ℂ)
                 (q : Fin (n - r) -> Fin (d + 1) -> ℂ)
@@ -32944,11 +32953,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
          theorem.
       4. Use the selected block to put the adapted base configuration in
          Hall-Wightman normal form: the first `r` source vectors have Gram
-         matrix `1`, the remaining source vectors have selected coordinates
+         matrix `sourceHeadMetric d r hrD`, the remaining source vectors have selected coordinates
          removed.  Since `ζ0` is adapted, those residual tail vectors are
          actually zero: they lie both in the source span and in the radical of
          the restricted form, whose dimension is zero after adaptedness.  The
-         base Gram becomes `hwLemma3CanonicalGram n r`.  The transformations
+         base Gram becomes `hwLemma3CanonicalGram d n r hrD hrn`.  The transformations
          used here are invertible finite-dimensional source-coordinate
          changes, congruences on symmetric Gram matrices, and one ambient
          complex Minkowski isometry, so they send neighborhoods to
@@ -32985,8 +32994,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
       finite-dimensional: choose the nonzero principal `r × r` minor, apply an
       invertible source-index change so the selected block is first, subtract
       the selected-span projection from every tail vector, apply
-      `BHW.complexSymmetric_invertible_congruence_to_identity` to normalize
-      the selected Gram block to `1`, and use Witt extension to carry the
+      `BHW.complexSymmetric_invertible_congruence_to_sourceHeadMetric` to normalize
+      the selected Gram block to `sourceHeadMetric d r hrD`, and use Witt extension to carry the
       normalized selected source vectors to the first `r` standard orthogonal
       coordinates.  The adaptedness hypothesis proves the projected tail
       vectors are zero: their span is the radical of the restricted form on
@@ -33072,11 +33081,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
          selected block and `-B * A⁻¹` in the tail-selected block.  Its
          determinant is a unit, and its congruence sends the base Gram to
          `[[A,0],[0,0]]`.
-      5. Apply `complexSymmetric_invertible_congruence_to_identity` to `A`,
-         obtaining `P` with `P * A * Pᵀ = 1`.  Extend `P` by the identity on
+      5. Apply `complexSymmetric_invertible_congruence_to_sourceHeadMetric`
+         to `A`, obtaining `P` with
+         `P * A * Pᵀ = sourceHeadMetric d r hrD`.  Extend `P` by the identity on
          the tail source coordinates and compose with the previous source
          changes.  The resulting invertible source matrix `M` satisfies
-         `sourceGramCongruence n M G0 = hwLemma3CanonicalGram n r`.
+         `sourceGramCongruence n M G0 =
+         hwLemma3CanonicalGram d n r hrD hr_le_n`.
       6. On vectors, `sourceTupleLinearChange d n M z0` has canonical Gram.
          Its tail entries are zero by
          `hwLemma3_normalFormSourceChange_tail_zero_of_adapted`, whose proof
@@ -33084,7 +33095,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
          tail residual lies in the radical of the restricted form on the
          adapted source span, and that radical has finrank zero because span
          dimension equals scalar rank.  The first `r` vectors have Gram
-         matrix `1`.
+         matrix `sourceHeadMetric d r hrD`.
       7. Use `hwLemma3_selectedFrame_to_standardLorentz` to obtain
          `Λ : ComplexLorentzGroup d` carrying the first `r` normalized
          selected vectors to the standard canonical source frame and fixing
@@ -33117,10 +33128,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
         have hr_le_n : r <= n := by
           rw [hr]
           exact BHW.sourceGramMatrixRank_le_arity (n := n) G0
-        have hr_le_D : r <= d + 1 := by
-          rw [hr]
-          exact BHW.sourceGramMatrixRank_le_spacetime_of_sourceGram
-            (d := d) (n := n) z0
+        have hr_lt_D : r < d + 1 := hrD
         have hG0sym : G0 ∈ BHW.sourceSymmetricMatrixSpace n := by
           intro i j
           exact BHW.sourceMinkowskiGram_symm d n z0 i j
@@ -33138,14 +33146,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.sourceTailHeadBlock n r hr_le_n Gp
         let C : Matrix (Fin (n - r)) (Fin (n - r)) ℂ :=
           BHW.sourceTailTailBlock n r hr_le_n Gp
-        have hBlock :
-            Gp = BHW.sourceBlockMatrix n r hr_le_n A B C := by
-          simpa [A, B, C] using
-            (BHW.sourceBlockMatrix_of_headTailBlocks n r hr_le_n Gp).symm
         have hGpsym : Gp ∈ BHW.sourceSymmetricMatrixSpace n := by
           simpa [Gp] using
             BHW.sourcePermuteComplexGram_mem_sourceSymmetricMatrixSpace
               (n := n) σ hG0sym
+        have hBlock :
+            Gp = BHW.sourceBlockMatrix n r hr_le_n A B C := by
+          simpa [A, B, C] using
+            (BHW.sourceBlockMatrix_of_headTailBlocks n r hr_le_n Gp hGpsym).symm
         have hGp_rank :
             BHW.sourceGramMatrixRank n Gp = r := by
           rw [Gp, BHW.sourceGramMatrixRank_sourcePermuteComplexGram]
@@ -33159,8 +33167,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.hwLemma3_schurComplement_eq_zero_of_rank_eq
             (n := n) (r := r) hr_le_n hGpsym hBlock
             hGp_rank hA_unit
-        rcases BHW.complexSymmetric_invertible_congruence_to_identity
-            (r := r) (A := A)
+        rcases BHW.complexSymmetric_invertible_congruence_to_sourceHeadMetric
+            (d := d) (r := r) (hrD := hrD) (A := A)
             hA_symm
             hA_unit with
           ⟨P, hP_unit, hP_congr⟩
@@ -33172,24 +33180,24 @@ Proof decomposition of this theorem, without hiding the analytic work:
             n r hr_le_n σ hA_unit hP_unit
         have hM_canon :
             BHW.sourceGramCongruence n M G0 =
-              BHW.hwLemma3CanonicalGram n r := by
+              BHW.hwLemma3CanonicalGram d n r hrD hr_le_n := by
           simpa [M] using
             BHW.hwLemma3_normalFormSourceChangeMatrix_canonicalGram
-              n r hr_le_n (G := G0) (σ := σ)
+              d n r hrD hr_le_n (G := G0) (σ := σ)
               (A := A) (B := B) (C := C) (P := P)
               (by simpa [Gp] using hBlock)
               hA_unit hA_symm hSchur hP_congr
         let y := BHW.sourceTupleLinearChange d n M z0
         have hy_gram :
             BHW.sourceMinkowskiGram d n y =
-              BHW.hwLemma3CanonicalGram n r := by
+              BHW.hwLemma3CanonicalGram d n r hrD hr_le_n := by
           calc
             BHW.sourceMinkowskiGram d n y =
                 BHW.sourceGramCongruence n M G0 := by
               simpa [y, G0] using
                 BHW.sourceMinkowskiGram_sourceTupleLinearChange
                   d n M z0
-            _ = BHW.hwLemma3CanonicalGram n r := hM_canon
+            _ = BHW.hwLemma3CanonicalGram d n r hrD hr_le_n := hM_canon
         have hy_tail_zero :
             ∀ u : Fin (n - r), y (BHW.finSourceTail hr_le_n u) = 0 :=
           BHW.hwLemma3_normalFormSourceChange_tail_zero_of_adapted
@@ -33198,10 +33206,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (A := A) (B := B) (C := C) (P := P)
             (by simpa [G0, Gp] using hBlock)
         rcases BHW.hwLemma3_selectedFrame_to_standardLorentz
-            (d := d) hd n r hr_le_n hr_le_D
+            (d := d) hd n r hrD hr_le_n
             (y := y)
-            (BHW.hwLemma3_head_orthonormal_of_canonicalGram
-              (d := d) hd n r hr_le_n hy_gram)
+            (BHW.hwLemma3_head_metric_of_canonicalGram
+              (d := d) hd n r hrD hr_le_n hy_gram)
             hy_tail_zero with
           ⟨Λ, hΛy⟩
         let Lvec : (Fin n -> Fin (d + 1) -> ℂ) ≃ₗ[ℂ]
@@ -33272,19 +33280,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
         let r := BHW.sourceGramMatrixRank n G0
         have hr : r = BHW.sourceGramMatrixRank n G0 := rfl
         rcases BHW.hwLemma3_normalFormTransportData
-            (d := d) hd n (z0 := z0) r hr hspan with
+            (d := d) hd n (z0 := z0) r hr hrD hspan with
           ⟨T, _⟩
-        have hr_le_n : r <= n := by
-          exact BHW.sourceGramMatrixRank_le_arity
-            (n := n) G0
-        have hr_le_D : r <= d + 1 := by
-          -- From `sourceComplexGramVariety_eq_rank_le` applied to `G0`.
-          exact BHW.sourceGramMatrixRank_le_spacetime_of_sourceGram
-            (d := d) (n := n) z0
         rcases T.perturb_back_small hε with
           ⟨εN, hεN_pos, hback⟩
         rcases BHW.hwLemma3_normalizedSchurSurjective
-            (d := d) hd n r hr_le_n hr_le_D hεN_pos with
+            (d := d) hd n r T.rank_le_arity T.rank_lt_spacetime hεN_pos with
           ⟨ηN, hηN_pos, hnorm⟩
         rcases T.gram_ball_to_normal_ball hηN_pos with
           ⟨η, hη_pos, hη_to_normal⟩
@@ -33296,7 +33297,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
           have hZnorm_small :
               ∀ i j,
                 ‖T.toNormalGram Z i j -
-                  BHW.hwLemma3CanonicalGram n r i j‖ < ηN :=
+                  BHW.hwLemma3CanonicalGram d n r
+                    T.rank_lt_spacetime T.rank_le_arity i j‖ < ηN :=
             hη_to_normal Z hZsmall
           rcases hnorm (T.toNormalGram Z) hZnorm_var hZnorm_small with
             ⟨vN, hvN_small, hgramN⟩
