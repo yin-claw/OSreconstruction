@@ -528,14 +528,25 @@ equivalence that rescales determinant coordinates by the product of the
 coordinate scalars.  The scalar and product nonzero facts are now checked as
 `sourceTailMetricScale_ne_zero` and `sourceTailMetricDetScale_ne_zero`;
 otherwise the Euclidean theorem proves the wrong tail theorem.
-The blueprint now gives the implementation transcript for
-`sourceShiftedTailCompatibleSmallRealization`: build the explicit
-normalization `sourceShiftedTailMetricNormalization`, call the Euclidean
-compatible theorem on `sourceShiftedTailDataToEuclidean T`, scale the realizing
-tuple back by `scale⁻¹`, use the norm-one scale lemmas for both directions of
-the `epsilon`/`eta` estimates, and use
-`sourceShiftedTailDataToEuclidean_injective` to recover the shifted invariant
-equality.
+The finite normalization layer is now checked in
+`SourceOrientedTailEuclidean.lean`: `SourceTailOrientedData`,
+`sourceTailOrientedInvariant`, `sourceTailOrientedVariety`,
+`sourceTailPermuteOrientedData`, `sourceTailOrientedInvariant_perm`,
+`sourceTailOrientedVariety_perm_iff`,
+`SourceShiftedTailMetricNormalization`,
+`sourceShiftedTailMetricNormalization`,
+`sourceShiftedTailDataToEuclidean`,
+`sourceShiftedTailInvariant_toEuclidean`,
+`sourceShiftedTailVariety_toEuclidean_iff`,
+`sourceShiftedTailDataToEuclidean_injective`, and
+`sourceShiftedTailInvariant_eq_of_toEuclidean_eq`.  The next theorem
+`sourceShiftedTailCompatibleSmallRealization` should now build the explicit
+normalization, call the Euclidean compatible theorem on
+`sourceShiftedTailDataToEuclidean T`, scale the realizing tuple back by
+`scale⁻¹`, use the norm-one scale lemmas for both directions of the
+`epsilon`/`eta` estimates, and use
+`sourceShiftedTailInvariant_eq_of_toEuclidean_eq` to recover the shifted
+invariant equality.
 
 Determinant-readiness correction: the proof docs now pin determinant recovery
 for the normal parameter vector as explicit finite theorem surfaces and record
@@ -597,9 +608,10 @@ exterior support lemmas include
 `BHW.powersetCard_univ_orderEmb_id`,
 `BHW.exteriorAlgebra_top_repr_iMulti_matrixColumns`,
 `BHW.exteriorAlgebra_iMulti_matrixColumns_eq_sum_minors`, and
-`BHW.exteriorAlgebra_basis_mul_iMulti_compl_repr`.  The remaining determinant
-work over `G` is therefore no longer finite row algebra; it is the separate
-reconstruction equality `sourceOrientedSchur_fullFrameDet_reconstruct`.
+`BHW.exteriorAlgebra_basis_mul_iMulti_compl_repr`.  The determinant work over
+`G` is therefore no longer finite row algebra; it is the oriented source-variety
+propagation equality `sourceOrientedSchur_fullFrameDet_reconstruct`, now
+checked in `SourceOrientedSchurPropagation.lean`.
 The Schur residual coordinate packet consuming this determinant algebra is now
 also checked in
 `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedSchurResidual.lean`:
@@ -635,15 +647,16 @@ checked determinant consumer
 `BHW.sourceOrientedNormalParameterVector_realizes_schur_det_of_fullFrameReconstruct`
 together with the full oriented-data consumer
 `BHW.sourceOrientedNormalParameterVector_realizes_schur_of_fullFrameReconstruct`.
-That consumer deliberately keeps the genuine Plucker/Cauchy-Binet
-reconstruction theorem as an explicit hypothesis.  The future
-`sourceOrientedSchur_fullFrameDet_reconstruct` theorem must take
+That consumer deliberately kept the genuine Plucker/Cauchy-Binet
+reconstruction theorem as an explicit hypothesis until the propagation theorem
+was checked.  The checked hard-range
+`sourceOrientedSchur_fullFrameDet_reconstruct` theorem takes
 `hGvar : G ∈ sourceOrientedGramVariety d n`; without this range hypothesis,
 the unselected determinant coordinates of the product-coordinate datum `G` are
 arbitrary and the reconstruction statement is false.  Thus arbitrary ordered
 full frames are routed through the finite Laplace theorem
 `matrix_det_blockColumn_laplace`, `sourceNormalFullFrameDetFromSchur`,
-`sourceFullFrameDet_normalParameter_eq_schurFormula`, and the still-open
+`sourceFullFrameDet_normalParameter_eq_schurFormula`, and the checked
 `sourceOrientedSchur_fullFrameDet_reconstruct`.  Its selected head-tail
 specialization is already checked by
 `sourceNormalFullFrameDetFromSchur_headTail_eq_source_det`, using
