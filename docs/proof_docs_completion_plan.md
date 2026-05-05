@@ -2787,7 +2787,7 @@ implementation contract is:
    `sourceShiftedTailOrientedInvariant`, and
    `sourceShiftedTailSmallRealization`,
    `SourceOrientedSchurResidualData`,
-   `sourceOriented_schurResidualData`, and
+   `sourceOriented_schurResidualData`, and the checked endpoint
    `sourceOriented_reconstruct_from_schurResidual`.  The small tail theorem
    is proved constructively by quantitative Takagi same-Gram factorization
    plus determinant-sheet repair/vanishing; it does not scale an arbitrary
@@ -2848,6 +2848,14 @@ implementation contract is:
    `sourceTailOrientedSmallRealization_fullRank_bound`.  This is a genuine top-rank branch, not an arbitrary
    Gram-factorization shortcut, and it avoids unstable inverse estimates in
    small blocks.
+   The Schur reconstruction endpoint is also checked separately as
+   `sourceOriented_reconstruct_from_schurResidual` and
+   `exists_sourceOriented_reconstruct_from_schurResidual`: once
+   `SourceOrientedSchurResidualData` exists and its shifted tail is realized,
+   the hard-range Schur propagation theorem reconstructs the original
+   oriented datum.  The remaining producer work is therefore concentrated in
+   `sourceOriented_schurResidualData`, plus the local radius/head-gauge
+   choices needed to feed it.
    The final `sourceTailOrientedSmallRealization` theorem is now assembled by
    a two-way rank split, not a strong Schur induction.  The top-rank branch
    calls `sourceTailOrientedSmallRealization_fullRank_bound`; the lower-rank
