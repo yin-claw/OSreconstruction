@@ -275,7 +275,8 @@ finite-overlap family of connected max-rank domains.  The same file also checks
 `BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData`,
 `BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData.to_finiteOverlapPropagationData`,
 `BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData.to_closedLoopSeed`, and
-`BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData.exists_of_zeroTransitions`.
+`BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData.exists_of_positiveDomains`
+and `BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData.exists_of_zeroTransitions`.
    This closes the
    previous-branch-as-seed gap for local proper-complex invariance: an already
 constructed holomorphic branch on an open source carrier can now be used as
@@ -7689,6 +7690,59 @@ common-boundary envelope, or any theorem that already assumes locality.
 
    Once this producer exists, the old seed theorem is one line: obtain `⟨P⟩`
    from this theorem and call `P.to_closedLoopSeed`.
+
+   The positive-length data constructor is also checked:
+
+   ```lean
+   theorem BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData
+       .exists_of_positiveDomains
+       (hn : d + 1 <= n)
+       (hpos : L.chain.m ≠ 0)
+       (stepDomain : (j : Fin L.chain.m) ->
+         Set (BHW.SourceOrientedGramData d n))
+       (stepDomain_relOpen :
+         ∀ j, BHW.IsRelOpenInSourceOrientedGramVariety d n (stepDomain j))
+       (stepDomain_maxRank_connected :
+         ∀ j, IsConnected
+           (stepDomain j ∩ {G | BHW.SourceOrientedMaxRankAt d n G}))
+       (stepDomain_sub_start :
+         ∀ j, stepDomain j ⊆ (L.chain.localChart 0).orientedDomain)
+       (stepDomain_sub_left :
+         ∀ j, stepDomain j ⊆
+           (L.chain.localChart (Fin.castSucc j)).orientedDomain)
+       (transition_sub_stepDomain :
+         ∀ j, (L.chain.oriented_transition j).orientedPatch ⊆
+           stepDomain j)
+       (transition_sub_nextDomain :
+         ∀ (j : Fin L.chain.m) (hnext : j.val + 1 < L.chain.m),
+           (L.chain.oriented_transition j).orientedPatch ⊆
+             stepDomain ⟨j.val + 1, hnext⟩)
+       (closingDomain : Set (BHW.SourceOrientedGramData d n))
+       (closingDomain_relOpen :
+         BHW.IsRelOpenInSourceOrientedGramVariety d n closingDomain)
+       (closingDomain_maxRank_connected :
+         IsConnected
+           (closingDomain ∩ {G | BHW.SourceOrientedMaxRankAt d n G}))
+       (closingDomain_sub_final :
+         closingDomain ⊆
+           (L.chain.localChart (Fin.last L.chain.m)).orientedDomain)
+       (closingDomain_sub_start :
+         closingDomain ⊆ (L.chain.localChart 0).orientedDomain)
+       (closingPatch_sub_closingDomain :
+         L.closing_orientedPatch ⊆ closingDomain)
+       (closingDomain_contains_lastTransition_of_pos :
+         ∀ hpos : L.chain.m ≠ 0,
+           (L.chain.oriented_transition
+             ⟨L.chain.m.pred, Nat.pred_lt hpos⟩).orientedPatch ⊆
+               closingDomain) :
+       Nonempty
+         (BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData L)
+   ```
+
+   This theorem extracts the initial seed from the first overlap domain using
+   `exists_preconnectedRelOpen_maxRankSeed_inside`.  Consequently the
+   positive-length BHW/Jost proof now has to produce only the ordered connected
+   domains, adjacency containments, and closing domain.
 
    The zero-transition closed-loop edge case is already checked:
 

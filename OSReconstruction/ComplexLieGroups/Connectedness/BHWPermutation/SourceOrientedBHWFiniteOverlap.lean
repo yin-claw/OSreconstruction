@@ -377,6 +377,91 @@ theorem to_closedLoopSeed
   rcases P.to_finiteOverlapPropagationData with ⟨Pterminal⟩
   exact Pterminal.to_closedLoopSeed
 
+/-- Positive-length closed loops produce finite-overlap domain data from the
+ordered overlap domains and the closing domain.  The initial max-rank seed is
+extracted automatically from the first connected overlap domain. -/
+theorem exists_of_positiveDomains
+    (hn : d + 1 ≤ n)
+    (hpos : L.chain.m ≠ 0)
+    (stepDomain : (j : Fin L.chain.m) → Set (SourceOrientedGramData d n))
+    (stepDomain_relOpen :
+      ∀ j, IsRelOpenInSourceOrientedGramVariety d n (stepDomain j))
+    (stepDomain_maxRank_connected :
+      ∀ j, IsConnected (stepDomain j ∩ {G | SourceOrientedMaxRankAt d n G}))
+    (stepDomain_sub_start :
+      ∀ j, stepDomain j ⊆ (L.chain.localChart 0).orientedDomain)
+    (stepDomain_sub_left :
+      ∀ j,
+        stepDomain j ⊆
+          (L.chain.localChart (Fin.castSucc j)).orientedDomain)
+    (transition_sub_stepDomain :
+      ∀ j, (L.chain.oriented_transition j).orientedPatch ⊆ stepDomain j)
+    (transition_sub_nextDomain :
+      ∀ (j : Fin L.chain.m) (hnext : j.val + 1 < L.chain.m),
+        (L.chain.oriented_transition j).orientedPatch ⊆
+          stepDomain ⟨j.val + 1, hnext⟩)
+    (closingDomain : Set (SourceOrientedGramData d n))
+    (closingDomain_relOpen :
+      IsRelOpenInSourceOrientedGramVariety d n closingDomain)
+    (closingDomain_maxRank_connected :
+      IsConnected (closingDomain ∩ {G | SourceOrientedMaxRankAt d n G}))
+    (closingDomain_sub_final :
+      closingDomain ⊆
+        (L.chain.localChart (Fin.last L.chain.m)).orientedDomain)
+    (closingDomain_sub_start :
+      closingDomain ⊆ (L.chain.localChart 0).orientedDomain)
+    (closingPatch_sub_closingDomain :
+      L.closing_orientedPatch ⊆ closingDomain)
+    (closingDomain_contains_lastTransition_of_pos :
+      ∀ hpos : L.chain.m ≠ 0,
+        (L.chain.oriented_transition
+          ⟨L.chain.m.pred, Nat.pred_lt hpos⟩).orientedPatch ⊆
+            closingDomain) :
+    Nonempty (BHWJostOrientedClosedLoopFiniteOverlapDomainData L) := by
+  let j0 : Fin L.chain.m := ⟨0, Nat.pos_of_ne_zero hpos⟩
+  have hD0_nonempty : (stepDomain j0).Nonempty := by
+    rcases (stepDomain_maxRank_connected j0).nonempty with ⟨G, hG⟩
+    exact ⟨G, hG.1⟩
+  rcases exists_preconnectedRelOpen_maxRankSeed_inside
+      (d := d) (n := n) hn (stepDomain_relOpen j0) hD0_nonempty with
+    ⟨seed0, hseed0_rel, hseed0_pre, hseed0_nonempty, hseed0_sub⟩
+  refine ⟨?P⟩
+  exact
+    { hn := hn
+      initialSeed := seed0
+      initialSeed_relOpen := hseed0_rel
+      initialSeed_preconnected := hseed0_pre
+      initialSeed_nonempty := hseed0_nonempty
+      initialSeed_sub_max := by
+        intro G hG
+        exact (hseed0_sub hG).2
+      stepDomain := stepDomain
+      stepDomain_relOpen := stepDomain_relOpen
+      stepDomain_maxRank_connected := stepDomain_maxRank_connected
+      stepDomain_sub_start := stepDomain_sub_start
+      stepDomain_sub_left := stepDomain_sub_left
+      transition_sub_stepDomain := transition_sub_stepDomain
+      initialSeed_sub_firstDomain := by
+        intro h0 G hG
+        have hG0 : G ∈ stepDomain j0 := (hseed0_sub hG).1
+        have hj : (⟨0, h0⟩ : Fin L.chain.m) = j0 := by
+          apply Fin.ext
+          rfl
+        simpa [hj]
+          using hG0
+      transition_sub_nextDomain := transition_sub_nextDomain
+      closingDomain := closingDomain
+      closingDomain_relOpen := closingDomain_relOpen
+      closingDomain_maxRank_connected := closingDomain_maxRank_connected
+      closingDomain_sub_final := closingDomain_sub_final
+      closingDomain_sub_start := closingDomain_sub_start
+      closingPatch_sub_closingDomain := closingPatch_sub_closingDomain
+      closingDomain_contains_initialSeed_of_zero := by
+        intro hm
+        exact False.elim (hpos hm)
+      closingDomain_contains_lastTransition_of_pos :=
+        closingDomain_contains_lastTransition_of_pos }
+
 /-- Zero-transition closed loops produce finite-overlap domain data directly
 from the closing oriented patch, provided its max-rank part is connected. -/
 theorem exists_of_zeroTransitions
