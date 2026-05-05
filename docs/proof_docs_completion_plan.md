@@ -2788,23 +2788,22 @@ implementation contract is:
    the shifted compatible paired form obtained from the same induction by
    diagonal normalization, with one tail `epsilon` for the parameter box and
    one tail `eta` for the Schur data box, plus both inclusions between those
-   boxes.  The blueprint now exposes the Euclidean induction
+   boxes.  The blueprint now exposes the checked Euclidean small-realization
    cases:
    `sourceTailOrientedSmallRealization_zeroGram`,
    `sourceTailFullFrame_factorWithDet`,
-   `sourceTailFullFrame_smallFactorWithDet`,
-   `sourceTailOrientedSmallRealization_fullRankStep`, and
-   `sourceTailOrientedSmallRealization_schurStep`, with an explicit
-   positive-tail-dimension hypothesis `0 < D`.  The Schur step now carries an
-   actual selected injection `ι : Fin r ↪ Fin m` and a nonzero principal minor
-   hypothesis; the wrapper
-   `sourceTailOrientedSmallRealization_of_selectedBlock` first chooses such a
-   minor by `sourceTail_exists_principalMinor_of_rank`, whose variety
-   hypothesis is essential because the principal-minor conclusion uses
-   symmetry of the Euclidean tail Gram coordinate.  It then moves the selected
-   block to the head block by `sourceTail_permute_to_head`, and only then calls
-   the Schur recursion.  The recursive hypothesis now also carries the guard
-   `0 < D - r`.  Tail source permutations are explicit through
+   `sourceTailOrientedSmallRealization_fullRankStep`,
+   `sourceTailOrientedSmallRealization_fullRank_bound`,
+   `sourceTailOrientedSmallRealization_rankLt_bound`, and
+   `sourceTailOrientedSmallRealization`, with an explicit
+   positive-tail-dimension hypothesis `0 < D`.  The earlier intermediate
+   Schur recursion is no longer an active Euclidean-tail blocker after the
+   global quantitative Takagi theorem: if `sourceGramMatrixRank m T.gram < D`,
+   every full `D × D` determinant coordinate of a tail-variety point is forced
+   to vanish by `sourceTailOrientedVariety_selectedGram_det` and
+   `sourceMatrix_minors_eq_zero_of_rank_le`.  Thus a small same-Gram factor
+   already realizes the full oriented datum in the rank-deficient branch.
+   Tail source permutations remain explicit through
    `sourceTailPermuteOrientedData`, `sourceTailOrientedInvariant_perm`,
    `sourceTailOrientedVariety_perm_iff`, and
    `sourceTailSmallRealization_transport_perm`, so determinant coordinates
@@ -2812,12 +2811,14 @@ implementation contract is:
    implementation-level hole where "selected rank" was named but no
    invertible block was available to invert.  The full-rank tail case is no
    longer hidden inside the Schur recursion: after choosing
-   `ι : Fin D ↪ Fin m`, factor the selected full residual Gram block with
-   determinant `T.det ι`.  The determinant-orientation core is checked as
-   `sourceTailFullFrame_factorWithDet`; the remaining
-   `sourceTailFullFrame_smallFactorWithDet` obligation is the quantitative
-   small-entry refinement of that same factorization.  The equality
-   `det(A) = (T.det ι)^2` is exposed for arbitrary tail-variety points as
+   `ι : Fin D ↪ Fin m`, use it only to fix the determinant sheet.  The
+   determinant-orientation core is checked as
+   `sourceTailFullFrame_factorWithDet`, but the active full-rank realization
+   no longer needs a separate quantitative selected-block theorem: the checked
+   `SourceOrientedTailSmallRealization.lean` route factors the entire
+   rank-`D` Gram matrix by `sourceComplexSymmetric_factorSmall_rankLE` and
+   then repairs the selected determinant by reflection.  The equality
+   `det(A) = (T.det ι)^2` remains exposed for arbitrary tail-variety points as
    `sourceTailOrientedVariety_selectedGram_det`, not reproved from a hidden
    witness in the full-rank step.  The full-rank realization route should
    factor the entire small rank-`D` Gram matrix, not solve remaining rows by
@@ -2830,32 +2831,21 @@ implementation contract is:
    `sourceTailOrientedInvariant_mixedGram_det` for the factor, canceling the
    nonzero selected determinant.  The assembled sign-repair consumer is
    checked as
-   `sourceTailOrientedInvariant_or_reflection_eq_of_gram_eq`, so the full-rank
-   branch now waits only on the quantitative small same-Gram factorization
-   theorem.  This is a genuine top-rank branch, not an arbitrary
+   `sourceTailOrientedInvariant_or_reflection_eq_of_gram_eq`, and the
+   quantitative small same-Gram factorization theorem is now checked as
+   `sourceComplexSymmetric_factorSmall_rankLE`; together they prove
+   `sourceTailOrientedSmallRealization_fullRankStep` and
+   `sourceTailOrientedSmallRealization_fullRank_bound`.  This is a genuine top-rank branch, not an arbitrary
    Gram-factorization shortcut, and it avoids unstable inverse estimates in
    small blocks.
-   The final `sourceTailOrientedSmallRealization` theorem is assembled by
-   strong induction on tail arity and an explicit rank split, through
-   `sourceTailOrientedSmallRealization_zeroRank_bound`,
-   `sourceTailOrientedSmallRealization_fullRank_bound`, and
-   `sourceTailOrientedSmallRealization_intermediateRank_bound`.  Thus the
-   top-level theorem no longer hides the cases `rank = 0`, `rank = D`, and
-   `0 < rank < D` behind the word "recursion".  The top-level induction does
-   not bypass the three precomputed helpers after choosing the final
-   smallness constant: the zero branch calls `zeroRank_bound`, the full branch
-   calls `fullRank_bound`, and the intermediate branch calls
-   `intermediateRank_bound`.  In particular it does not pass a selected
-   principal minor into `fullRank_bound`; that helper is responsible for
-   selecting the full-rank minor and then calling
-   `sourceTailOrientedSmallRealization_fullRankStep`.  The top-level proof
-   only passes `hTvar`, the equality `sourceGramMatrixRank m T.gram = D`, and
-   the two smallness hypotheses in the full-rank branch.  Similarly, the
-   intermediate branch must call the precomputed
-   `sourceTailOrientedSmallRealization_intermediateRank_bound` helper, because
-   its smallness constant is one of the three values included in the final
-   `min`; it must not call `sourceTailOrientedSmallRealization_of_selectedBlock`
-   afresh after the top-level `η` has already been chosen.
+   The final `sourceTailOrientedSmallRealization` theorem is now assembled by
+   a two-way rank split, not a strong Schur induction.  The top-rank branch
+   calls `sourceTailOrientedSmallRealization_fullRank_bound`; the lower-rank
+   branch calls `sourceTailOrientedSmallRealization_rankLt_bound` after using
+   `sourceTailOrientedVariety_rank_le` to turn `rank ≠ D` into `rank < D`.
+   The determinant-smallness hypothesis remains in the public theorem surface
+   for compatibility with the paired box producer, but the checked realization
+   proof uses only Gram smallness plus the variety relations.
    The residual-chart producer is now split one layer further.  Before Lean
    may implement `sourceOriented_rankDeficient_residualChart`, the blueprint
    requires `SourceOrientedInvariantTransportEquiv`,

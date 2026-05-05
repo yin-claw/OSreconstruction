@@ -7937,24 +7937,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
       algebraic model, but specialized to a small neighborhood of the zero
       tail.  Its proof is finite dimensional and constructive; it must not
       take an arbitrary realizing tuple and scale it, because scaling changes
-      the prescribed Gram and determinant coordinates.  Instead, repeat the
-      normalized Schur realization used in ordinary Lemma 3, with the
-      determinant sheet fixed at each max-rank residual step by the
-      full-frame gauge chart and with lower residual rank handled by the same
-      Schur recursion.  Equivalently, prove it by induction on `D + m`:
-      choose a nonzero principal block if the tail Gram has positive rank,
-      construct the head part by the small symmetric square-root/gauge chart,
-      pass to the smaller Schur complement with its induced determinant
-      coordinates, and use the determinant coordinate of a selected full
-      residual frame to choose the special-orthogonal sheet.  If the tail
-      Gram is zero, the oriented algebraic relations force every positive
-      size determinant coordinate to be zero, and `q = 0` realizes the data.
-      All estimates are the same finite-coordinate estimates as
-      `hwLemma3_normalizedSchurBlockRealization`, with determinant-coordinate
-      bounds added to keep the selected gauge chart inside its domain.
+      the prescribed Gram and determinant coordinates.  The checked route now
+      uses the global quantitative Autonne-Takagi factorization instead of a
+      separate intermediate-rank Schur recursion.  For rank `D`, factor the
+      whole small Gram matrix and repair the two possible determinant sheets by
+      one coordinate reflection.  For rank `< D`, every full `D × D`
+      determinant coordinate is forced to vanish, so the same small Gram
+      factor already realizes the complete oriented datum.  If the tail Gram
+      is zero, this specializes to the older zero-tuple case.
 
-      The induction must expose the following cases; otherwise the small-tail
-      theorem is still too opaque for implementation:
+      The implementation exposes the following cases; otherwise the small-tail
+      theorem would still be too opaque for downstream use:
 
       ```lean
       theorem BHW.sourceTailOrientedSmallRealization_zeroGram
@@ -8043,21 +8036,6 @@ Proof decomposition of this theorem, without hiding the analytic work:
             M * M.transpose = A ∧
             M.det = δ
 
-      theorem BHW.sourceTailFullFrame_smallFactorWithDet
-          (D : Nat)
-          (hD : 0 < D)
-          {A : Matrix (Fin D) (Fin D) ℂ}
-          {δ : ℂ}
-          (hA_symm : A.transpose = A)
-          (hδ : A.det = δ ^ 2)
-          {ε : ℝ} (hε : 0 < ε)
-          (hA_small : ∀ i j, ‖A i j‖ < BHW.tailFrameSmallBound D ε)
-          (hδ_small : ‖δ‖ < BHW.tailFrameDetSmallBound D ε) :
-          ∃ M : Matrix (Fin D) (Fin D) ℂ,
-            (∀ i μ, ‖M i μ‖ < ε) ∧
-            (fun i j => ∑ μ : Fin D, M i μ * M j μ) = A ∧
-            M.det = δ
-
       theorem BHW.sourceTailOrientedSmallRealization_fullRankStep
           (D m : Nat)
           (hD : 0 < D)
@@ -8077,34 +8055,28 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 (∀ u μ, ‖q u μ‖ < ε) ∧
                 BHW.sourceTailOrientedInvariant D m q = T
 
-      theorem BHW.sourceTailOrientedSmallRealization_schurStep
-          (D m r : Nat)
+      theorem BHW.sourceTailOrientedVariety_rank_le
+          (D m : Nat)
+          {T : BHW.SourceTailOrientedData D m}
+          (hTvar : T ∈ BHW.sourceTailOrientedVariety D m) :
+          (Matrix.of fun i j : Fin m => T.gram i j).rank <= D
+
+      theorem BHW.sourceTailOrientedVariety_det_eq_zero_of_rank_lt
+          (D m : Nat)
           (hD : 0 < D)
-          (hrD : r < D)
-          (hrm : r <= m)
-          (hr_pos : 0 < r)
-          (ι : Fin r ↪ Fin m)
-          (hind :
-            ∀ m',
-              0 < D - r ->
-              m' < m ->
-              ∀ {ε : ℝ}, 0 < ε ->
-                ∃ η : ℝ, 0 < η ∧
-                  ∀ T : BHW.SourceTailOrientedData (D - r) m',
-                    T ∈ BHW.sourceTailOrientedVariety (D - r) m' ->
-                    (∀ u v, ‖T.gram u v‖ < η) ->
-                    (∀ ι, ‖T.det ι‖ < η) ->
-                    ∃ q : Fin m' -> Fin (D - r) -> ℂ,
-                      (∀ u μ, ‖q u μ‖ < ε) ∧
-                      BHW.sourceTailOrientedInvariant (D - r) m' q = T)
+          {T : BHW.SourceTailOrientedData D m}
+          (hTvar : T ∈ BHW.sourceTailOrientedVariety D m)
+          (hrank_lt : BHW.sourceGramMatrixRank m T.gram < D) :
+          T.det = 0
+
+      theorem BHW.sourceTailOrientedSmallRealization_rankLt_bound
+          (D m : Nat)
+          (hD : 0 < D)
           {ε : ℝ} (hε : 0 < ε) :
           ∃ η : ℝ, 0 < η ∧
             ∀ T : BHW.SourceTailOrientedData D m,
               T ∈ BHW.sourceTailOrientedVariety D m ->
-              BHW.sourceGramMatrixRank m T.gram = r ->
-              IsUnit
-                (Matrix.det
-                  (fun a b => T.gram (ι a) (ι b))) ->
+              BHW.sourceGramMatrixRank m T.gram < D ->
               (∀ u v, ‖T.gram u v‖ < η) ->
               (∀ ι, ‖T.det ι‖ < η) ->
               ∃ q : Fin m -> Fin D -> ℂ,
@@ -8117,13 +8089,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
       some `M0` with `M0 * M0ᵀ = A`; the relation `A.det = δ^2` implies
       `M0.det = δ` or `M0.det = -δ`; if needed, right-multiply by the fixed
       reflection `diag(-1,1,...,1)` to flip the determinant without changing
-      the Gram.  The still-open
-      `sourceTailFullFrame_smallFactorWithDet` must add the quantitative
-      small-entry bounds to this orientation core; it may not re-hide the
-      determinant sign issue.
+      the Gram.  The active top-rank small-tail proof does not require a
+      separate quantitative selected-block factor theorem.  Instead,
+      `SourceOrientedTailSmallRealization.lean` factors the whole tail Gram
+      matrix by the checked `sourceComplexSymmetric_factorSmall_rankLE`, then
+      uses the selected block only to choose between the two determinant
+      sheets.
 
       The top-rank residual case `sourceTailOrientedSmallRealization_fullRankStep`
-      is separate from the Schur recursion, but it should not solve the
+      is a direct same-Gram factorization branch, and it should not solve the
       remaining rows by explicit inverse coefficients.  The cleaner route is:
       factor the whole small rank-`D` symmetric Gram matrix `T.gram` by
       `sourceComplexSymmetric_factorSmall_rankLE`, giving a small
@@ -8139,19 +8113,28 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `det(q ∘ ι) * det(q ∘ κ)` for the factor and
       `T.det ι * T.det κ` for `T`, and the selected determinant is nonzero.
       This sign-propagation argument is now checked as
-      `sourceTailOrientedInvariant_or_reflection_eq_of_gram_eq`; the only
-      remaining unimplemented input to the full-rank branch is the
-      quantitative small same-Gram factorization theorem.
+      `sourceTailOrientedInvariant_or_reflection_eq_of_gram_eq`; the
+      quantitative small same-Gram factorization is now checked as
+      `sourceComplexSymmetric_factorSmall_rankLE`.  Consequently
+      `sourceTailOrientedSmallRealization_fullRankStep` and
+      `sourceTailOrientedSmallRealization_fullRank_bound` are production Lean
+      in `SourceOrientedTailSmallRealization.lean`.
 
-      The intermediate Schur step then handles exactly `0 < r < D`: it uses
-      the selected head frame, computes mixed coefficients with `A⁻¹`, calls
-      the induction hypothesis on the smaller residual tail of dimension
-      `D - r`, and reconstructs the full tail tuple.  The estimates are
-      produced by choosing the head, mixed, and residual bounds in the order
-      used in ordinary `hwLemma3_transport_from_normalForm`.
+      The lower-rank branch handles all `rank < D`, including the old
+      intermediate range `0 < rank < D`.  The checked theorem
+      `sourceTailOrientedVariety_rank_le` obtains the rank bound from the
+      range description of `sourceTailOrientedVariety` and
+      `sourceSymmetricRankLEVariety_eq_rank_le`.  Then
+      `sourceTailOrientedVariety_det_eq_zero_of_rank_lt` proves every full
+      determinant coordinate is zero: rank `< D` gives all `D × D` Gram minors
+      zero by `sourceMatrix_minors_eq_zero_of_rank_le`, and the selected-Gram
+      square identity forces `T.det ι = 0`.  Applying the same argument to the
+      small same-Gram factor shows its determinant coordinates are also zero,
+      so Gram equality is already equality of oriented data.
 
-      Before calling the Schur step, the proof chooses the selected block and
-      normalizes it to the head coordinates:
+      The selected-block and source-permutation helpers remain useful support
+      for Schur residual charts, but they are no longer called by the Euclidean
+      tail small-realization theorem:
 
       ```lean
       theorem BHW.sourceTail_exists_principalMinor_of_rank
@@ -8185,43 +8168,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (∀ u μ, ‖q u μ‖ < ε) ∧
             BHW.sourceTailOrientedInvariant D m q = T
 
-      theorem BHW.sourceTailOrientedSmallRealization_of_selectedBlock
-          (D m r : Nat)
-          (hD : 0 < D)
-          (hrD : r < D)
-          (hrm : r <= m)
-          (hr_pos : 0 < r)
-          {ε : ℝ} (hε : 0 < ε) :
-          ∃ η : ℝ, 0 < η ∧
-            ∀ T : BHW.SourceTailOrientedData D m,
-              T ∈ BHW.sourceTailOrientedVariety D m ->
-              BHW.sourceGramMatrixRank m T.gram = r ->
-              (∀ u v, ‖T.gram u v‖ < η) ->
-              (∀ ι, ‖T.det ι‖ < η) ->
-              ∃ q : Fin m -> Fin D -> ℂ,
-                (∀ u μ, ‖q u μ‖ < ε) ∧
-                BHW.sourceTailOrientedInvariant D m q = T
       ```
 
-      Proof transcript for
-      `sourceTailOrientedSmallRealization_of_selectedBlock`: choose `ι` by
-      the principal-minor theorem.  The variety hypothesis is essential:
-      arbitrary nonsymmetric rank-`r` Gram-coordinate matrices need not have a
-      nonzero principal `r × r` minor, while Euclidean tail-variety points do
-      because their Gram coordinate is symmetric.  Then use
-      `sourceTail_permute_to_head` to move the selected block to the head
-      block, apply
-      `sourceTailOrientedSmallRealization_schurStep` in head coordinates, and
-      then undo the source permutation by
-      `sourceTailSmallRealization_transport_perm`.  Source-label permutation
-      transports determinant coordinates by ordered-embedding composition
-      `ι.trans σ.toEmbedding`; there is no extra row sign because the ordered
-      embedding itself is transported.  If two embeddings with the same image
-      are compared later, the determinant alternation relation supplies the
-      sign.
+      Source-label permutation transports determinant coordinates by
+      ordered-embedding composition `ι.trans σ.toEmbedding`; there is no extra
+      row sign because the ordered embedding itself is transported.  If two
+      embeddings with the same image are compared later, the determinant
+      alternation relation supplies the sign.
 
-      The top-level small-tail theorem is now a three-way rank recursion, not
-      a single Schur call:
+      The top-level small-tail theorem is now a two-way rank split:
 
       ```lean
       theorem BHW.sourceTailOrientedSmallRealization_zeroRank_bound
@@ -8252,26 +8207,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 (∀ u μ, ‖q u μ‖ < ε) ∧
                 BHW.sourceTailOrientedInvariant D m q = T
 
-      theorem BHW.sourceTailOrientedSmallRealization_intermediateRank_bound
+      theorem BHW.sourceTailOrientedSmallRealization_rankLt_bound
           (D m : Nat)
           (hD : 0 < D)
-          (hind :
-            ∀ m' < m,
-              ∀ D', 0 < D' ->
-              ∀ {ε : ℝ}, 0 < ε ->
-                ∃ η : ℝ, 0 < η ∧
-                  ∀ T : BHW.SourceTailOrientedData D' m',
-                    T ∈ BHW.sourceTailOrientedVariety D' m' ->
-                    (∀ u v, ‖T.gram u v‖ < η) ->
-                    (∀ ι, ‖T.det ι‖ < η) ->
-                    ∃ q : Fin m' -> Fin D' -> ℂ,
-                      (∀ u μ, ‖q u μ‖ < ε) ∧
-                      BHW.sourceTailOrientedInvariant D' m' q = T)
           {ε : ℝ} (hε : 0 < ε) :
           ∃ η : ℝ, 0 < η ∧
             ∀ T : BHW.SourceTailOrientedData D m,
               T ∈ BHW.sourceTailOrientedVariety D m ->
-              0 < BHW.sourceGramMatrixRank m T.gram ->
               BHW.sourceGramMatrixRank m T.gram < D ->
               (∀ u v, ‖T.gram u v‖ < η) ->
               (∀ ι, ‖T.det ι‖ < η) ->
@@ -8281,60 +8223,33 @@ Proof decomposition of this theorem, without hiding the analytic work:
 
       theorem BHW.sourceTailOrientedSmallRealization ... := by
         classical
-        induction m using Nat.strong_induction_on generalizing D with
-        | h m hind =>
-          intro D hD ε hε
-          obtain ⟨η0, hη0_pos, hzero⟩ :=
-            BHW.sourceTailOrientedSmallRealization_zeroRank_bound
-              D m hD hε
-          obtain ⟨ηFull, hηFull_pos, hfull⟩ :=
-            BHW.sourceTailOrientedSmallRealization_fullRank_bound
-              D m hD hε
-          obtain ⟨ηMid, hηMid_pos, hmid⟩ :=
-            BHW.sourceTailOrientedSmallRealization_intermediateRank_bound
-              D m hD hind hε
-          let η := min η0 (min ηFull ηMid)
-          have hη_zero : η <= η0 := by
-            exact min_le_left _ _
-          have hη_full : η <= ηFull := by
-            exact le_trans (min_le_right _ _)
-              (min_le_left _ _)
-          have hη_mid : η <= ηMid := by
-            exact le_trans (min_le_right _ _)
-              (min_le_right _ _)
-          refine ⟨η, ?_, ?_⟩
-          · positivity
-          · intro T hTvar hTgramSmall hTdetSmall
-            let r := BHW.sourceGramMatrixRank m T.gram
-            by_cases hr0 : r = 0
-            · exact
-                hzero T hTvar hr0
-                  (fun u v => lt_of_lt_of_le (hTgramSmall u v) hη_zero)
-                  (fun ι => lt_of_lt_of_le (hTdetSmall ι) hη_zero)
-            · by_cases hrD : r = D
-              · exact
-                  hfull T hTvar hrD
-                    (fun u v => lt_of_lt_of_le (hTgramSmall u v) hη_full)
-                    (fun ι => lt_of_lt_of_le (hTdetSmall ι) hη_full)
-              · have hr_pos : 0 < r := Nat.pos_of_ne_zero hr0
-                have hr_lt_D : r < D :=
-                  lt_of_le_of_ne
-                    (BHW.sourceTail_rank_le_dimension D m T hTvar)
-                    hrD
-                exact
-                  hmid T hTvar hr_pos hr_lt_D
-                    (fun u v => lt_of_lt_of_le (hTgramSmall u v) hη_mid)
-                    (fun ι => lt_of_lt_of_le (hTdetSmall ι) hη_mid)
+        obtain ⟨ηFull, hηFull_pos, hfull⟩ :=
+          BHW.sourceTailOrientedSmallRealization_fullRank_bound D m hD hε
+        obtain ⟨ηLow, hηLow_pos, hlow⟩ :=
+          BHW.sourceTailOrientedSmallRealization_rankLt_bound D m hD hε
+        let η := min ηFull ηLow
+        refine ⟨η, lt_min hηFull_pos hηLow_pos, ?_⟩
+        intro T hTvar hTgramSmall hTdetSmall
+        let r := BHW.sourceGramMatrixRank m T.gram
+        by_cases hr : r = D
+        · exact
+            hfull T hTvar hr
+              (fun u v => lt_of_lt_of_le (hTgramSmall u v) (min_le_left _ _))
+              (fun ι => lt_of_lt_of_le (hTdetSmall ι) (min_le_left _ _))
+        · have hrle : r <= D := by
+            simpa [r] using BHW.sourceTailOrientedVariety_rank_le D m hTvar
+          have hrlt : r < D := lt_of_le_of_ne hrle hr
+          exact
+            hlow T hTvar hrlt
+              (fun u v => lt_of_lt_of_le (hTgramSmall u v) (min_le_right _ _))
+              (fun ι => lt_of_lt_of_le (hTdetSmall ι) (min_le_right _ _))
       ```
 
-      The three helper bounds are only packaging conveniences:
-      `zeroRank_bound` invokes `sourceTailOrientedSmallRealization_zeroGram`,
-      `fullRank_bound` chooses a full principal minor and calls
-      `sourceTailOrientedSmallRealization_fullRankStep`, and
-      `intermediateRank_bound` chooses a positive rank `r < D` and calls
-      `sourceTailOrientedSmallRealization_of_selectedBlock`.  No case may use
-      an arbitrary preexisting realization of `T`, because the estimates and
-      determinant sheet would be lost.
+      The public determinant-smallness hypotheses are retained because the
+      later compatible-box producer uses the same input shape, but the checked
+      one-way realization proof only needs Gram smallness and the algebraic
+      variety relations.  No case uses an arbitrary preexisting realization of
+      `T`, because the estimates would be lost.
 
       The local-image proof below needs the estimate-compatible strengthening
       of the same induction, not just the one-way statement above.  The
@@ -8343,8 +8258,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `epsilon`, `eta`, a realization theorem for every tail datum in the
       `eta`-box, and the reverse inclusion saying that every vector tuple in
       the `epsilon`-box has oriented tail data in the `eta`-box.  This is not
-      an extra theorem route; it is the same zero/full-rank/intermediate-rank
-      induction with the finite polynomial estimates carried along.  The
+      an extra theorem route; it is the same two-rank-split realization with
+      the finite polynomial estimates carried along.  The
       rank-deficient Schur neighborhood uses this paired theorem so the
       connected parameter box and the ambient Schur neighborhood are
       compatible in both directions.
@@ -12962,7 +12877,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | `BHW.matrix_unitary_col_star_mul_eq_ite`, `BHW.matrix_unitary_col_mul_star_eq_ite`, `BHW.matrix_unitary_transpose_mul_star_transpose`, `BHW.takagi_diagonal_extraction`, `BHW.takagi_singularValue_le_entryL1Bound`, `BHW.complexSymmetric_entryL1_of_autonneTakagiDiagonalization` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceComplexTakagiEntry.lean`. | Entry-bound layer for an already-produced Takagi diagonalization.  The checked file proves the column orthogonality identities needed to treat `Uᵀ` as unitary on the extraction side, multiplies `S = U * diagonal σ * Uᵀ` by the unitary inverses, extracts each `(σ a : ℂ)` as a finite double sum against the `a`th column of `U`, and bounds that sum by the explicit entry-`ℓ¹` size `BHW.matrixEntryL1Bound m S` using `BHW.matrix_unitary_entry_norm_le_one`.  It also feeds this estimate and the rank-support identity into the existing support-embedding theorem to produce the rectangular entry-controlled factor.  This replaces the older Frobenius-norm detour for the singular-value estimate; the global Takagi diagonalization and rank support are now supplied by `SourceComplexTakagiGlobal.lean`. |
       | `BHW.matrixUnitaryOfOrthonormalBasis`, `BHW.matrixUnitaryOfOrthonormalBasis_apply`, `BHW.matrix_unitary_star_transpose_mul_transpose`, `BHW.complexSymmetric_takagi_matrix_eq_of_col_eigen`, `BHW.complexSymmetric_takagi_exists_unitary_of_orthonormalBasis_col_eigen`, `BHW.complexSymmetric_takagi_exists_unitary_of_fixedHermitianEigenbasis`, `BHW.complexSymmetric_entryL1_of_fixedHermitianEigenbasis` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceComplexTakagiAssembly.lean`. | Algebraic endpoint of the Takagi assembly.  If a unitary matrix has columns `u_a` satisfying `S *ᵥ star u_a = (σ a : ℂ) • u_a`, the checked theorem proves `S = U * diagonal σ * Uᵀ` by rewriting `S * star Uᵀ = U * diagonal σ` columnwise and multiplying by the checked inverse of `star Uᵀ`.  The file also turns an orthonormal Euclidean basis satisfying the same column equation into such a unitary matrix, and composes the local phase lemmas into a fixed-Hermitian-eigenbasis bridge.  The global fixed Hermitian-square eigenbasis construction is now checked in `SourceComplexTakagiGlobal.lean`. |
       | `BHW.takagiHermitianEigenspace_eq_eigenspace_toEuclideanLin`, `BHW.takagiHermitianSquare_eigenvalue_real`, `BHW.takagiHermitianSquare_eigenvalue_nonneg_of_eigenvalue`, `BHW.takagiHermitianSquareEigenvalueFixedBasis`, `BHW.takagiHermitianSquareEigenvalueFixedBasis_col_eigen`, `BHW.takagiHermitianSquareFixedEigenbasisSigma`, `BHW.takagiHermitianSquareFixedEigenbasisSigma_col_eigen`, `BHW.takagiHermitianSquareFixedEigenbasis`, `BHW.takagiHermitianSquareFixedEigenbasisLambda`, `BHW.takagiHermitianSquareFixedEigenbasisLambda_nonneg`, `BHW.takagiHermitianSquareFixedEigenbasis_col_eigen`, `BHW.takagi_rankSupport_of_unitary_diagonalization`, `BHW.complexSymmetric_autonneTakagi_entryL1`, `BHW.complexSymmetric_factorSmall_rankLE`, `BHW.sourceComplexSymmetric_factorSmall_rankLE` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceComplexTakagiGlobal.lean`. | Global Autonne-Takagi closure.  The file identifies the custom Takagi eigenspaces with Mathlib eigenspaces of `(S * Sᴴ).toEuclideanLin`, proves eigenvalues are real and nonnegative, chooses fixed bases on positive eigenspaces and a standard zero-eigenspace basis, collects them via `DirectSum.IsInternal.collectedOrthonormalBasis`, reindexes the Sigma basis to `Fin m`, proves the final column equation, derives rank support from unitary diagonalization using rank invariance under invertible factors and `Matrix.rank_diagonal`, and discharges the previously parameterized entry-L1/small-factor/source-small-factor theorems with no new axiom or sorry. |
-      | `BHW.SourceTailOrientedData`, `BHW.SourceTailOrientedData.ext`, `BHW.SourceShiftedTailOrientedData.ext`, `BHW.sourceTailOrientedInvariant`, `BHW.sourceTailOrientedInvariant_gram`, `BHW.sourceTailOrientedInvariant_det`, `BHW.sourceTailOrientedVariety`, `BHW.sourceTailOrientedInvariant_selectedGram_det`, `BHW.sourceTailOrientedVariety_selectedGram_det`, `BHW.sourceTailOrientedInvariant_mixedGram_det`, `BHW.sourceTailOrientedVariety_mixedGram_det`, `BHW.sourceTailOrientedInvariant_reflection`, `BHW.sourceTail_reflection_norm`, `BHW.sourceTailOrientedInvariant_eq_of_gram_eq_selectedDet`, `BHW.sourceTailOrientedInvariant_or_reflection_eq_of_gram_eq`, `BHW.sourceTailOrientedVariety_det_eq_zero_of_gram_eq_zero`, `BHW.sourceTailOrientedSmallRealization_zeroGram`, `BHW.sourceTailOrientedSmallRealization_zeroRank_bound`, `BHW.sourceTailPermuteOrientedData`, `BHW.sourceTailOrientedInvariant_perm`, `BHW.sourceTailPermuteOrientedData_symm_apply`, `BHW.sourceTailOrientedVariety_perm_iff`, `BHW.sourceTail_exists_principalMinor_of_rank`, `BHW.sourceTailFullFrame_factorWithDet`, `BHW.sourceTail_permute_to_head`, `BHW.sourceTailSmallRealization_transport_perm`, `BHW.SourceShiftedTailMetricNormalization`, `BHW.sourceShiftedTailMetricNormalization`, `BHW.sourceShiftedTailDataToEuclidean`, `BHW.sourceVectorMinkowskiInner_sourceTailEmbed_tail`, `BHW.sourceShiftedTailInvariant_toEuclidean`, `BHW.sourceShiftedTailDataToEuclidean_injective`, `BHW.sourceShiftedTailVariety_toEuclidean_iff`, `BHW.sourceShiftedTailInvariant_eq_of_toEuclidean_eq`, `BHW.SourceTailOrientedCompatibleSmallRealization`, `BHW.SourceShiftedTailCompatibleSmallRealization`, `BHW.sourceShiftedTailCompatibleSmallRealization_of_euclidean` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedTailEuclidean.lean`. | Finite diagonal normalization bridge from the shifted residual-tail metric to the Euclidean tail model, plus the zero-Gram/zero-rank Euclidean induction case.  The Euclidean tail data model, selected-Gram determinant-square identity for realized tuples and variety points, mixed-minor determinant identities, coordinate reflection with norm preservation, selected-determinant sign-repair propagation, zero-Gram determinant vanishing, zero-rank estimate wrapper, symmetric-rank principal-minor selection for variety points, full-frame determinant-orientation repair, finite selected-label permutation-to-head, source-label permutation transport, determinant-coordinate transport with no hidden row sign, canonical shifted-tail metric normalization, scaled-invariant equality, variety-membership equivalence, injective descent back to shifted data, and the estimate-compatible shifted packet derived from a Euclidean compatible packet are checked.  The remaining tail theorem is now the positive/full/intermediate-rank Euclidean compatible small-realization induction; no analytic BHW input is hidden in this normalization layer. |
+      | `BHW.SourceTailOrientedData`, `BHW.SourceTailOrientedData.ext`, `BHW.SourceShiftedTailOrientedData.ext`, `BHW.sourceTailOrientedInvariant`, `BHW.sourceTailOrientedInvariant_gram`, `BHW.sourceTailOrientedInvariant_det`, `BHW.sourceTailOrientedVariety`, `BHW.sourceTailOrientedInvariant_selectedGram_det`, `BHW.sourceTailOrientedVariety_selectedGram_det`, `BHW.sourceTailOrientedInvariant_mixedGram_det`, `BHW.sourceTailOrientedVariety_mixedGram_det`, `BHW.sourceTailOrientedInvariant_reflection`, `BHW.sourceTail_reflection_norm`, `BHW.sourceTailOrientedInvariant_eq_of_gram_eq_selectedDet`, `BHW.sourceTailOrientedInvariant_or_reflection_eq_of_gram_eq`, `BHW.sourceTailOrientedVariety_det_eq_zero_of_gram_eq_zero`, `BHW.sourceTailOrientedSmallRealization_zeroGram`, `BHW.sourceTailOrientedSmallRealization_zeroRank_bound`, `BHW.sourceTailPermuteOrientedData`, `BHW.sourceTailOrientedInvariant_perm`, `BHW.sourceTailPermuteOrientedData_symm_apply`, `BHW.sourceTailOrientedVariety_perm_iff`, `BHW.sourceTail_exists_principalMinor_of_rank`, `BHW.sourceTailFullFrame_factorWithDet`, `BHW.sourceTail_permute_to_head`, `BHW.sourceTailSmallRealization_transport_perm`, `BHW.SourceShiftedTailMetricNormalization`, `BHW.sourceShiftedTailMetricNormalization`, `BHW.sourceShiftedTailDataToEuclidean`, `BHW.sourceVectorMinkowskiInner_sourceTailEmbed_tail`, `BHW.sourceShiftedTailInvariant_toEuclidean`, `BHW.sourceShiftedTailDataToEuclidean_injective`, `BHW.sourceShiftedTailVariety_toEuclidean_iff`, `BHW.sourceShiftedTailInvariant_eq_of_toEuclidean_eq`, `BHW.SourceTailOrientedCompatibleSmallRealization`, `BHW.SourceShiftedTailCompatibleSmallRealization`, `BHW.sourceShiftedTailCompatibleSmallRealization_of_euclidean` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedTailEuclidean.lean`. | Finite diagonal normalization bridge from the shifted residual-tail metric to the Euclidean tail model, plus the zero-Gram/zero-rank Euclidean induction case.  The Euclidean tail data model, selected-Gram determinant-square identity for realized tuples and variety points, mixed-minor determinant identities, coordinate reflection with norm preservation, selected-determinant sign-repair propagation, zero-Gram determinant vanishing, zero-rank estimate wrapper, symmetric-rank principal-minor selection for variety points, full-frame determinant-orientation repair, finite selected-label permutation-to-head, source-label permutation transport, determinant-coordinate transport with no hidden row sign, canonical shifted-tail metric normalization, scaled-invariant equality, variety-membership equivalence, injective descent back to shifted data, and the estimate-compatible shifted packet derived from a Euclidean compatible packet are checked.  The remaining Euclidean tail theorem is now the positive intermediate-rank Schur induction plus the final compatible-packet assembly; no analytic BHW input is hidden in this normalization layer. |
+      | `BHW.sourceTailOrientedVariety_rank_le`, `BHW.sourceTailOrientedVariety_det_eq_zero_of_rank_lt`, `BHW.sourceTailOrientedSmallRealization_fullRankStep`, `BHW.sourceTailOrientedSmallRealization_fullRank_bound`, `BHW.sourceTailOrientedSmallRealization_rankLt_bound`, `BHW.sourceTailOrientedSmallRealization` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedTailSmallRealization.lean`. | Euclidean tail small realization.  The top-rank proof uses `sourceComplexSymmetric_factorSmall_rankLE` to factor the whole small rank-`D` Gram coordinate, uses a selected invertible principal minor only to prove `T.det ι ≠ 0`, and invokes `sourceTailOrientedInvariant_or_reflection_eq_of_gram_eq` to choose the correct determinant sheet without changing coordinate norms.  The rank-`< D` proof shows all full determinant coordinates vanish on both the target variety point and the same-Gram factor, so no determinant-sheet information remains to repair.  The final theorem is a two-rank split whose smallness constant is independent of any selected injection. |
       | `BHW.sourceOrientedSchurHeadBlock`, `BHW.sourceOrientedSchurHeadBlock_apply`, `BHW.sourceOrientedSchurMixedBlock`, `BHW.sourceOrientedSchurTailBlock`, `BHW.sourceSchurMixedCoeff`, `BHW.sourceSchurMixedCoeff_mul_headBlock`, `BHW.sourceSchurComplement`, `BHW.sourceSchurResidualDeterminants`, `BHW.sourceShiftedTailOrientedVariety`, `BHW.SourceOrientedSchurResidualData`, `BHW.SourceOrientedSchurResidualData.L_mul_A`, `BHW.sourceVectorMinkowskiInner_comm`, `BHW.sourceVectorMinkowskiInner_sub_left`, `BHW.sourceVectorMinkowskiInner_sub_right`, `BHW.sourceActualSchurResidualVector`, `BHW.sourceActualSchurResidualVector_decomp`, `BHW.sourceActualSchurResidualVector_inner_head`, `BHW.sourceActualSchurResidualVector_head_inner`, `BHW.sourceActualSchurResidualVector_inner_residual`, `BHW.sourceActualSchurSelectedOriginalMatrix`, `BHW.sourceActualSchurSelectedResidualMatrix`, `BHW.sourceSchurHeadTailRowOperation`, `BHW.sourceSchurHeadTailRowOperation_det`, `BHW.sourceActualSchurSelectedResidualMatrix_eq_rowOperation_mul`, `BHW.sourceActualSchurResidual_selectedFrameDet`, `BHW.sourceActualSchurResidual_selectedFrameDet_eq_headFactor_mul_tail_det`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_gram`, `BHW.sourceNormalFullFrameDetFromSchur_headTail`, `BHW.sourceNormalFullFrameDetFromSchur_headTail_eq_source_det`, `BHW.sourceOrientedSchur_fullFrameDet_reconstruct_of_headTailPropagation`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_det_of_fullFrameReconstruct`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_of_fullFrameReconstruct` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedSchurResidual.lean`. | Schur residual coordinate packet, actual residual-vector setup, ordinary Gram realization, selected head-tail determinant calibration, and determinant/full-data consumers.  The Gram theorem uses `hGvar` to get symmetry of the source Gram and uses `L * A = mixed`; the actual residual-vector theorems decompose each tail vector, prove residual orthogonality to the selected head span, and identify the actual residual Gram matrix with the stored Schur-complement tail Gram `R.tail.gram`; the selected actual-residual row-operation theorem proves that replacing selected tail rows by actual Schur residual rows leaves the selected head-tail determinant unchanged, via a determinant-one block lower-triangular row operation, and its calibrated form identifies those selected actual residual determinants with `R.headFactor.det * R.tail.det`; the selected stored-frame theorem proves the residual determinant quotient really recovers `G.det` on frames of the form `head ∪ lam`; the checked head-tail-propagation consumer shows that a single oriented-variety determinant propagation theorem mechanically implies full Schur determinant reconstruction; the checked consumers turn the already checked normal-parameter finite Laplace formula plus a supplied full-frame reconstruction equality over `G` into determinant-coordinate and full oriented-data equality for the realized normal tuple.  The unconditional hard-range propagation and Schur reconstruction theorem is supplied by the next `SourceOrientedSchurPropagation.lean` row; after that, the remaining producer/reconstruction targets are `sourceOriented_schurResidualData` and `sourceOriented_reconstruct_from_schurResidual`. |
       | `BHW.sourceHeadRows_linearIndependent_of_schurHeadBlock_isUnit`, `BHW.exists_headTail_fullFrameDet_ne_zero_of_headRows_linearIndependent_span_top`, `BHW.sourceOrientedGramVariety_notMaxRank_of_headTailDet_eq_zero`, `BHW.sourceOrientedGramVariety_det_eq_zero_of_not_maxRank`, `BHW.sourceOrientedGramVariety_det_eq_of_gram_eq_of_not_maxRank`, `BHW.sourceOrientedGramVariety_det_eq_of_gram_eq_headTailDet_eq_of_exists_nonzero`, `BHW.sourceOrientedGramVariety_det_eq_of_gram_eq_headTailDet_eq_of_allZero_notMaxRank`, `BHW.sourceOrientedGramVariety_det_eq_of_gram_eq_headTailDet_eq`, `BHW.sourceOrientedSchur_fullFrameDet_reconstruct`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_det`, `BHW.sourceOrientedNormalParameterVector_realizes_schur` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedSchurPropagation.lean`. | Hard-range determinant propagation and Schur reconstruction closure.  The nonzero selected-head-tail branch uses the full-frame chart identity.  The all-zero branch proves non-max-rank by contrapositive: invertible head Gram block gives head-row linear independence; max-rank gives a spanning full frame; quotienting by the head span lets tail quotient images extend the head rows to a full frame, contradicting selected head-tail determinant vanishing.  Therefore same Gram plus selected head-tail determinant agreement implies all determinant coordinates agree, and the residual Schur consumer now yields hard-range full-frame determinant reconstruction and normal-parameter oriented-data realization.  The next producer target is constructing `SourceOrientedSchurResidualData`; this row no longer has a Plucker/Cauchy-Binet propagation gap. |
       | `BHW.sourceOrientedMaxRankChartData_of_maxRankAt_fullFrame`, `BHW.sourceOrientedGramVariety_local_connectedRelOpen_basis_of_fullFrameMaxRank_and_localImage`, `BHW.sourceOrientedGramVariety_connectedRelOpenTube_around_compactPath_of_fullFrameMaxRank_and_localImage`, `BHW.sourceOrientedRelOpen_inter_maxRank_relOpen`, `BHW.sourceOrientedMaxRank_dense_in_relOpen_inter`, `BHW.sourceOrientedRelOpen_inter_maxRank_nonempty`, `BHW.sourceOrientedGramVariety_maxRank_identity_principle_of_connected`, `BHW.sourceOrientedGramVariety_maxRank_identity_principle_of_connected_fullFrame`, `BHW.sourceOrientedGramVariety_maxRank_eqOn_of_connected_fullFrame`, `BHW.sourceOrientedGramVariety_relOpen_eqOn_zero_of_eqOn_maxRank`, `BHW.sourceOrientedGramVariety_identity_principle_of_connected_maxRank_fullFrame`, `BHW.sourceOrientedGramVariety_eqOn_of_connected_maxRank_fullFrame`, `BHW.bhw_jost_closedChain_orientedMaxRankMonodromy_of_seed`, `BHW.bhw_jost_closedChain_sourceMonodromy_on_maxRankClosingPatch_of_seed`, `BHW.bhw_jost_closedChain_orientedMonodromy_of_seed`, `BHW.bhw_jost_closedChain_sourceMonodromy_of_seed` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedFullFrameMaxRankProducer.lean` and `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedMaxRankIdentity.lean`. | The hard-range full-frame producer now removes the abstract max-rank chart hypothesis: oriented max rank of a source-variety point gives a nonzero selected full-frame determinant, hence a finite-coordinate max-rank chart.  The max-rank locus is relatively open inside the oriented source variety by the determinant-nonzero union characterization, and it is dense in every relatively open oriented patch by pulling back to source tuples and using `dense_sourceComplexGramRegularAt`.  The max-rank identity theorem is the checked clopen propagation on the connected max-rank subtype; density and continuity extend it to all ranks once the max-rank part of the domain is connected.  The closed-loop seed consumers turn a stored `BHWJostOrientedMaxRankClosedLoopSeed` into terminal-initial oriented germ equality and source-branch equality first on max-rank closing points and then on the whole closing patch.  This does not prove the Hall-Wightman closed-loop seed itself and it still takes connectedness of the closing max-rank part as an explicit geometric input. |
