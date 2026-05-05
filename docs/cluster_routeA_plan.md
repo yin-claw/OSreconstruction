@@ -70,35 +70,22 @@ scoped — they're forward-looking infrastructure.
 
 ## Open subproblems on the path to `W_analytic_cluster_integral`
 
-### Subproblem 1 — `h_main_id` (algebraic identity)
+### ~~Subproblem 1 — `h_main_id` (algebraic identity)~~  *[CLOSED 2026-05-04]*
 
-**Where**: `ClusterFromKL.lean`, body of `cluster_inner_product_from_GNS`.
+`cluster_inner_product_from_GNS` is fully proved (commit `323bc58`).
+The `h_main_id` algebra closes via a two-step decomposition:
 
-**Goal**:
-```
-⟨ψ, U(a) φ⟩ = ⟨ψ, Ω⟩ · ⟨Ω, φ⟩ + ⟨ψ_perp, U(a) φ_perp⟩
-```
-where `ψ_perp := ψ - ⟨Ω, ψ⟩ • Ω`, similarly for φ_perp.
+1. Rewrite `WR.U a φ = c_φ • Ω + WR.U a φ_perp` (using `vac_inv`).
+   Distribute via `inner_add_right` + `inner_smul_right`.
+2. For the cross term `⟨ψ, U(a) φ_perp⟩`: rewrite `ψ = c_ψ • Ω + ψ_perp`,
+   distribute via `inner_add_left` + `inner_smul_left`, and the
+   `(starRingEnd ℂ) c_ψ * ⟨Ω, φ_perp⟩` term vanishes by `h_φ_ortho`.
+3. `ring` after substituting `c_φ = ⟨Ω, φ⟩`.
 
-**Substance**: pure inner-product algebra. No new mathematical input;
-no class field needed beyond what's already in scope.
-
-**Required Lean machinery**:
-- `inner_add_left`, `inner_add_right` for distribution
-- `inner_smul_left` (pulls `starRingEnd 𝕜 c`), `inner_smul_right`
-  (pulls `c`)
-- `inner_conj_symm` for the `⟨ψ, Ω⟩ ↔ starRingEnd ⟨Ω, ψ⟩` flip
-- `h_omega_self`, `h_omega_U_invariant`, `h_φ_ortho`, `h_ψ_ortho` —
-  already proved in scope
-- `RCLike.starRingEnd_apply` or `Complex.conj` simp lemmas
-
-**Estimated effort**: ~30–50 lines. The session blocker was the
-`starRingEnd 𝕜 ⟪y, x⟫` ↔ `⟪x, y⟫` direction in Mathlib's
-`inner_conj_symm` (the version in the project's lockfile has the
-`starRingEnd` on the LHS). A `calc` block is probably cleaner than
-direct `rw` chaining.
-
-**Owner**: anyone — pure Lean engineering.
+Key insight: the `starRingEnd` / `inner_conj_symm` direction issue is
+sidestepped by decomposing `ψ` only in the cross term (where the
+conj-linear scalar gets multiplied by 0). No top-level conversion
+between `⟨ψ, Ω⟩` and `starRingEnd c_ψ` is needed.
 
 ---
 
@@ -247,9 +234,8 @@ All conditional on: Subproblem 4 — WightmanReconstruction instance.
 
 ## Action items, in order
 
-1. **(Mechanical, ~1–2 hours)** Close `h_main_id` in
-   `cluster_inner_product_from_GNS`. Pure Lean engineering. Clears the
-   first sorry in the Route A chain.
+1. ~~**(Mechanical, ~1–2 hours)** Close `h_main_id`~~ — **DONE** (2026-05-04).
+   `cluster_inner_product_from_GNS` is sorry-free.
 
 2. **(Mechanical, ~half day)** Write `cluster_2point_OS_form` using
    `schwinger_bridge` + `vacuum_expectation`. ~50 lines. This wraps
