@@ -4035,7 +4035,13 @@ implementation contract is:
    `BHW.matrixEntryL1Bound m S`.  The same file also checks
    `BHW.complexSymmetric_entryL1_of_autonneTakagiDiagonalization`, so once the
    unitary diagonalization and rank-support identity exist, the rectangular
-   entry-controlled factor follows immediately.  It then
+   entry-controlled factor follows immediately.  The final matrix-identity
+   assembly is also separated and checked in
+   `BHWPermutation/SourceComplexTakagiAssembly.lean`:
+   `BHW.complexSymmetric_takagi_matrix_eq_of_col_eigen` proves that any
+   unitary matrix whose columns satisfy
+   `S *ᵥ star u_a = (σ a : ℂ) • u_a` automatically gives
+   `S = U * diagonal σ * Uᵀ`.  It then
    spells out the finite
    support extraction: use `Fintype.nonempty_of_card_le` to embed the nonzero
    singular-value subtype into `Fin k`, define the rectangular factor by
