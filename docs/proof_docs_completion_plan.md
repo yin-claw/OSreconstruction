@@ -658,19 +658,15 @@ Schur residual rows without changing the selected full-frame determinant, and
 `sourceActualSchurResidual_selectedFrameDet_eq_headFactor_mul_tail_det`
 combines it with `R.tail_det_eq` to prove the exact selected calibration
 `det(actual head + actual residual_lam) = R.headFactor.det * R.tail.det lam`.
-Thus the remaining work is the non-selected complement-volume propagation
-theorem: first prove the finite multilinear expansion for arbitrary selected
-frames by substituting `tail = headProjection + actualResidual`, expanding the
-determinant, and killing repeated-head terms by alternation; then use the
-shifted-tail oriented variety relations plus selected determinant calibration
-to replace the actual complement-volume minors by `R.tail.det` in every row
-subset of that expansion.  The checked selected row-operation theorem is only
-the calibration case where the chosen frame contains the whole head block; it
-is not a valid shortcut for arbitrary ordered full frames.  Gemini was
-consulted on 2026-05-05 and agreed that the remaining theorem is precisely an
-oriented residual-volume uniqueness/propagation input; it also warned that a
-Gram-only comparison and a naive arbitrary-frame row-operation argument are
-false.  The hard input is now isolated as
+The arbitrary-frame reconstruction is routed through an oriented-variety
+determinant propagation theorem, not through a row-operation shortcut.  The
+checked selected row-operation theorem is only the calibration case where the
+chosen frame contains the whole head block; it is not a valid shortcut for
+arbitrary ordered full frames.  Gemini was consulted on 2026-05-05 and agreed
+that the missing theorem was precisely an oriented residual-volume
+uniqueness/propagation input; it also warned that a Gram-only comparison and a
+naive arbitrary-frame row-operation argument are false.  The hard input is now
+isolated as
 `sourceOrientedGramVariety_det_eq_of_gram_eq_headTailDet_eq`: if two points of
 `sourceOrientedGramVariety d n` have the same Gram coordinate, an invertible
 selected head Gram block, and matching determinant coordinates on every
@@ -682,22 +678,63 @@ as
 if some selected `head ∪ lam` determinant is nonzero, it reduces to the
 existing full-frame chart identity
 `sourceOrientedGramData_eq_of_selectedCoord_eq_mixedRows_eq`.  Thus the only
-remaining branch of the propagation input is the low-rank case where every
-selected head-tail full-frame determinant vanishes; that branch must use the
-shifted-tail oriented rank-deficient relations to propagate zero/equality to
-all ordered full-frame determinant coordinates.  The checked theorem
+other branch of the propagation input is the low-rank case where every
+selected head-tail full-frame determinant vanishes.  The low branch is now
+closed in checked Lean by the rank-theoretic bridge
+`sourceOrientedGramVariety_det_eq_zero_of_not_maxRank` and the conditional
+assembly theorem
+`sourceOrientedGramVariety_det_eq_of_gram_eq_headTailDet_eq_of_allZero_notMaxRank`.
+The first says that any source-variety point outside the oriented max-rank
+locus has all full-frame determinant coordinates zero, because a single
+nonzero determinant would imply `SourceOrientedMaxRankAt` by the checked
+full-frame producer.  The second says that the full propagation theorem follows
+from the following now-checked hard-range lemma:
+
+```lean
+theorem BHW.sourceOrientedGramVariety_notMaxRank_of_headTailDet_eq_zero
+    (d n r : Nat)
+    (hn : d + 1 <= n)
+    (hrD : r < d + 1)
+    (hrn : r <= n)
+    {G : BHW.SourceOrientedGramData d n}
+    (hG : G ∈ BHW.sourceOrientedGramVariety d n)
+    (hA :
+      IsUnit (BHW.sourceOrientedSchurHeadBlock n r hrn G).det)
+    (hzero :
+      ∀ lam : Fin (d + 1 - r) ↪ Fin (n - r),
+        G.det
+          (BHW.sourceFullFrameEmbeddingOfHeadTail
+            d n r hrD hrn lam) = 0) :
+    ¬ BHW.SourceOrientedMaxRankAt d n G
+```
+
+This lemma is now checked in
+`SourceOrientedSchurPropagation.lean`.  Its proof uses the contrapositive:
+if `G` is max-rank and the selected head Gram block is invertible, then some
+selected `head ∪ lam` full-frame determinant is nonzero.  The finite
+basis-extension theorem is also checked there as
+`exists_headTail_fullFrameDet_ne_zero_of_headRows_linearIndependent_span_top`:
+after quotienting the source span by the head-row span, choose a linearly
+independent quotient basis from the tail images and lift it to tail labels.
+Together with
+`sourceHeadRows_linearIndependent_of_schurHeadBlock_isUnit`, this proves
+`sourceOrientedGramVariety_notMaxRank_of_headTailDet_eq_zero`, closes the
+all-zero branch, and gives the hard-range theorem
+`sourceOrientedGramVariety_det_eq_of_gram_eq_headTailDet_eq`.  The checked theorem
 `sourceOrientedSchur_fullFrameDet_reconstruct_of_headTailPropagation` proves
 that this one propagation theorem mechanically gives the Schur full-frame
 determinant reconstruction by building the normal parameter from `R.tail_mem`,
 calling the checked Gram realization theorem, checking selected head-tail
 determinants, and rewriting through
-`sourceFullFrameDet_normalParameter_eq_schurFormula`.  Once the propagation
-theorem is proved, the final
-`sourceOrientedNormalParameterVector_realizes_schur` theorem is a mechanical
-call to the checked
-`sourceOrientedNormalParameterVector_realizes_schur_of_fullFrameReconstruct`
-or its future no-hypothesis wrapper.  No downstream proof may use an unnamed
-"block determinant expansion" anymore.
+`sourceFullFrameDet_normalParameter_eq_schurFormula`.  The no-hypothesis
+hard-range wrappers are also checked:
+`sourceOrientedSchur_fullFrameDet_reconstruct`,
+`sourceOrientedNormalParameterVector_realizes_schur_det`, and
+`sourceOrientedNormalParameterVector_realizes_schur`.  No downstream proof may
+use an unnamed "block determinant expansion" anymore.  The next producer-level
+target is the existence/construction of the concrete
+`SourceOrientedSchurResidualData` packet from a rank-deficient source-variety
+point with an invertible selected head block.
 
 - `BHW.same_sourceOrientedInvariant_detOneOrbit_or_singularLimit`, including
   the high-rank determinant-ratio/Witt-extension orbit theorem and the
