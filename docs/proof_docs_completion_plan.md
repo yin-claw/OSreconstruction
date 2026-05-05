@@ -1777,7 +1777,11 @@ implementation contract is:
    API),
    `BHW.ComplexMinkowskiNondegenerateSubspace`,
    `BHW.standardComplexSymmetricBilinear`,
-   `BHW.complexLorentzVectorAction`,
+   checked `BHW.complexLorentzVectorAction`,
+   `BHW.complexLorentzVectorAction_add`,
+   `BHW.complexLorentzVectorAction_smul`, and
+   `BHW.complexLorentzVectorAction_sum` in
+   `OSReconstruction/ComplexLieGroups/Connectedness/Action.lean`,
    the existing local model `BHW.complexMinkowskiToDotLinearEquiv`,
    `BHW.sourceComplexMinkowskiInner_eq_dot_after_equiv`,
    `BHW.complexMinkowski_wittExtension`,
@@ -2932,7 +2936,16 @@ implementation contract is:
    selected nondegenerate head frame to the gauge head frame, extend that
    frame isometry by determinant-one complex Witt extension, and use the
    checked constructive tail-coordinate bridge plus proper Lorentz invariance
-   of the oriented invariant.  The forward normal-parameter check is
+   of the oriented invariant.  The implementation route for this finite
+   theorem is now pinned: normalize the actual head frame by the checked
+   head factor `H`, transport the signed canonical head frame through
+   `complexMinkowskiToDotLinearEquiv`, prove signed `SOComplex`
+   head-frame transitivity by induction from the checked
+   `SOComplex.exists_so_with_firstCol` and `SOComplex.embed`, then return by
+   `ComplexLorentzGroup.fromSOComplex`.  The future theorem should be a
+   Type-valued `complexMinkowski_detOneWittExtension_to_headFactorFrame`/
+   `sourceOriented_headGaugeWittData`, not a Prop-valued existence theorem.
+   The forward normal-parameter check is
    now also in Lean:
    `sourceOrientedSchurResidualTailData_normalParameter` identifies the
    explicit residual tail datum of a normal-parameter invariant with

@@ -8716,28 +8716,30 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.SourceOrientedHeadGaugeNormalParameterData
             d n r hrD hrn hGvar Head
 
-      theorem BHW.complexMinkowski_detOneWittExtension_of_frame_sameGram
+      def BHW.complexMinkowski_detOneWittExtension_to_headFactorFrame
           [NeZero d]
           (hd : 2 <= d)
-          {r : Nat}
+          {n r : Nat}
           (hrD : r < d + 1)
+          (hrn : r <= n)
+          (H : Matrix (Fin r) (Fin r) ℂ)
+          (hHdet : IsUnit H.det)
           (x y : Fin r -> Fin (d + 1) -> ℂ)
           (hx : LinearIndependent ℂ x)
-          (hy : LinearIndependent ℂ y)
-          (hxGramUnit :
-            IsUnit
-              (Matrix.det
-                (fun a b : Fin r =>
-                  BHW.sourceVectorMinkowskiInner d (x a) (x b))))
-          (hgram :
+          (hy :
+            y =
+              fun a =>
+                BHW.sourceOrientedNormalHeadVector d n r hrD hrn
+                  { head := H, mixed := 0, tail := 0 } a)
+          (hxGram :
             ∀ a b,
               BHW.sourceVectorMinkowskiInner d (x a) (x b) =
-                BHW.sourceVectorMinkowskiInner d (y a) (y b)) :
-          ∃ Λ : ComplexLorentzGroup d,
-            ∀ a μ,
-              (∑ ν : Fin (d + 1), Λ.val μ ν * x a ν) = y a μ
+                (H * BHW.sourceHeadMetric d r hrD * H.transpose) a b) :
+          { Λ : ComplexLorentzGroup d //
+            ∀ a,
+              BHW.complexLorentzVectorAction Λ (x a) = y a }
 
-      theorem BHW.sourceOriented_headGauge_detOneWittHeadFrame
+      def BHW.sourceOriented_headGaugeWittData
           [NeZero d]
           (hd : 2 <= d)
           {n r : Nat}
@@ -8751,12 +8753,28 @@ Proof decomposition of this theorem, without hiding the analytic work:
               Head.U)
           {z : Fin n -> Fin (d + 1) -> ℂ}
           (hz : G = BHW.sourceOrientedMinkowskiInvariant d n z) :
-          ∃ Λ : ComplexLorentzGroup d,
-            ∀ a,
-              BHW.complexLorentzAction Λ z (BHW.finSourceHead hrn a) =
-                BHW.sourceOrientedNormalHeadVector d n r hrD hrn
-                  (BHW.sourceOrientedHeadGaugeHeadParameter
-                    d n r hrD hrn hGvar Head) a
+          BHW.SourceOrientedHeadGaugeWittData
+            d n r hrD hrn Head hGvar hHead hz
+
+      def BHW.sourceOriented_headGaugeNormalParameterData
+          [NeZero d]
+          (hd : 2 <= d)
+          {n r : Nat}
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          (Head : BHW.SourceRankDeficientHeadGaugeData d r hrD)
+          {G : BHW.SourceOrientedGramData d n}
+          (hGvar : G ∈ BHW.sourceOrientedGramVariety d n)
+          (hHead :
+            BHW.sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈
+              Head.U)
+          {z : Fin n -> Fin (d + 1) -> ℂ}
+          (hz : G = BHW.sourceOrientedMinkowskiInvariant d n z) :
+          BHW.SourceOrientedHeadGaugeNormalParameterData
+            d n r hrD hrn hGvar Head :=
+        (BHW.sourceOriented_headGaugeWittData
+          hd hrD hrn Head hGvar hHead hz).normalParameterData
+          d n r hrD hrn Head hGvar hHead hz
 
       theorem BHW.sourceOriented_headGauge_tailCoordinates_after_witt
           [NeZero d]
@@ -8818,16 +8836,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
          `sourceOrientedSchurHeadBlock_det_isUnit_of_headGauge`, so both spans
          are nondegenerate and the equality of restricted bilinear forms
          defines an isometry `span x ≃ span y`.
-      4. Apply
-         `complexMinkowski_detOneWittExtension_of_frame_sameGram`, or the
-         specialized wrapper
-         `sourceOriented_headGauge_detOneWittHeadFrame`, to extend this
-         finite-dimensional isometry to some `Λ : ComplexLorentzGroup d` with
-         `complexLorentzAction Λ z (finSourceHead hrn a) = y a` for all
-         `a`.  The determinant repair uses `r < d + 1`, so the orthogonal
-         complement of the selected head span has positive dimension; over
-         `ℂ`, a one-dimensional complement is already enough to flip the
-         determinant if the initial Witt extension has determinant `-1`.
+      4. Apply the typed finite-dimensional constructor
+         `complexMinkowski_detOneWittExtension_to_headFactorFrame`, or
+         equivalently the specialized producer
+         `sourceOriented_headGaugeWittData`, to obtain
+         `W : SourceOrientedHeadGaugeWittData ...`.  This data contains
+         `W.Λ : ComplexLorentzGroup d` and the head normalization
+         `complexLorentzAction W.Λ z (finSourceHead hrn a) = y a` for all
+         `a`.  The theorem must return this Type-valued data, not merely
+         `∃ Λ, ...`, because the checked tail-coordinate descent constructs a
+         Type-valued normal-parameter witness from the chosen `Λ`.
       5. Put `w := complexLorentzAction Λ z`.  Define
          `L := sourceSchurMixedCoeff n r hrn G A`.  For each tail label,
          subtract the head projection
@@ -8861,37 +8879,71 @@ Proof decomposition of this theorem, without hiding the analytic work:
       PET, or locality.
 
       Subproof transcript for
-      `complexMinkowski_detOneWittExtension_of_frame_sameGram`:
+      `complexMinkowski_detOneWittExtension_to_headFactorFrame`:
 
-      1. Let
-         `X := Submodule.span ℂ (Set.range x)` and
-         `Y := Submodule.span ℂ (Set.range y)`.  Use `hx` and `hy` to build
-         the finite bases of `X` and `Y` induced by `x` and `y`.
-      2. The matrix
-         `Axy a b := sourceVectorMinkowskiInner d (x a) (x b)` is invertible
-         by `hxGramUnit`.  Therefore the restricted bilinear form on `X` is
-         nondegenerate: if `u = sum c_a x_a` pairs to zero with every `x_b`,
-         then the row vector `c * Axy` is zero, hence `c = 0`.
-         Transport this proof through `hgram` to get nondegeneracy of `Y`.
-      3. Define `T : X ≃ₗ[ℂ] Y` by sending the `x`-basis to the `y`-basis.
-         To prove `T` is an isometry, expand arbitrary `u,v : X` in the
-         `x`-basis and use `hgram` termwise in the finite double sum.
-      4. Apply the ordinary finite-dimensional Witt extension theorem for the
-         complex Minkowski form to get a full complex orthogonal map `Afull`
-         extending `T`.  At this point `Afull` may have determinant `1` or
-         `-1`.
-      5. If `det Afull = 1`, convert it to `ComplexLorentzGroup d` and finish.
-         If `det Afull = -1`, use `r < d + 1` and nondegeneracy of `Y` to get
-         `0 < finrank Yperp`.  Since `Yperp` is nondegenerate, choose
-         `v : Yperp` with `<v,v> != 0`.
-      6. Define the complement reflection `R`: it fixes `Y`, sends `v` to
-         `-v`, and fixes the orthogonal hyperplane to `v` inside `Yperp`.
-         Prove `R` preserves the bilinear form, fixes each `y a`, and has
-         determinant `-1`.  The same proof works when `finrank Yperp = 1`:
-         the orthogonal hyperplane is zero, and `R` is just `v |-> -v`.
-      7. Then `R * Afull` extends the original frame map and has determinant
-         `(-1) * (-1) = 1`.  Convert this determinant-one full orthogonal map
-         to `ComplexLorentzGroup d`, yielding the stated `Λ`.
+      1. Use `complexMinkowskiToDotLinearEquiv d` to transport `x` and `y` to
+         the standard symmetric dot form.  The checked identity
+         `sourceComplexMinkowskiInner_eq_dot_after_equiv` rewrites every Gram
+         equality, and `complexMinkowskiToDotLinearEquiv` transports linear
+         independence.  Work from this point in `SOComplex (d + 1)`, then
+         return through `ComplexLorentzGroup.fromSOComplex`.
+      2. Prove the reusable typed theorem
+         `SOComplex.exists_so_with_signedFirstCols` by induction on `r`.  Its
+         input is a signed dot-orthogonal `r`-frame
+         `v : Fin r -> Fin N -> ℂ` with Gram
+         `diag eps`, where each `eps a` is `1` or `-1` and `r < N`; its
+         output is `{A : SOComplex N // ∀ a k,
+         A.val k (finSourceHead hrD a) = v a k / sigma a}` relative to the
+         standard signed frame `sigma a • e_a`, with `(sigma a)^2 = eps a`.
+         For the head metric, take `eps a =
+         MinkowskiSpace.metricSignature d (finSourceHead ... a)` and
+         `sigma a = I` for the time coordinate, `1` otherwise.  The base case
+         is `SOComplex.one`; the one-column step reduces the signed vector to
+         unit norm by dividing by `sigma a` and then uses the existing checked
+         `SOComplex.exists_so_with_firstCol` for dimensions `m + 2`.
+      3. In the induction step, first use
+         `SOComplex.exists_so_with_firstCol` to get `A0` with first column
+         equal to the first frame vector.  For every remaining frame vector
+         `v a`, prove `(A0⁻¹.val *ᵥ v a) 0 = 0` from orthogonality to the
+         first column.  Drop the zero coordinate to obtain a dot-orthonormal
+         `(r-1)`-frame in `Fin (N-1)`.  Apply the induction hypothesis there
+         to obtain `B : SOComplex (N-1)`, embed it as
+         `SOComplex.embed B`, and set `A := A0 * SOComplex.embed B`.  The
+         checked private stabilizer proof in `SOConnected.lean` follows this
+         same row/column mechanism; if production Lean needs it outside that
+         file, expose the non-private consequences
+         `SOComplex.embed_val_zero_zero`, `SOComplex.embed_val_succ_succ`, and
+         `SOComplex.of_first_col_e0_data` instead of duplicating algebra.
+      4. The local theorem does not need a general symmetric-congruence
+         theorem: the head gauge already supplies the factor `H` with
+         common Gram `H * sourceHeadMetric d r hrD * Hᵀ`.  Define normalized
+         source vectors
+         `x' a := ∑ b, H⁻¹ a b • x b`.  By `Matrix.nonsing_inv_mul` from
+         `hHdet`, the Gram of `x'` is exactly `sourceHeadMetric d r hrD`, and
+         the target frame becomes the canonical head frame.  After Wick
+         transport, this is the signed dot-orthogonal head frame described in
+         the previous step, with the time-like sign represented by the
+         standard vector `I • e_0`.
+      5. Apply `SOComplex.exists_so_with_signedFirstCols` to the transported
+         normalized source frame to get `Ax` sending the standard signed head
+         frame to `x'`.  Then `A := Ax⁻¹` sends `x'` to the standard head
+         frame.
+         Transporting back through `H` gives `A` sends the original
+         transported `x a` to the transported normal head vector `y a`.
+         Since `Ax` is in `SOComplex`, determinant `1` is automatic; no
+         separate determinant-repair reflection is needed on this SOComplex
+         transitivity route.  The only edge case is `r = 0`, where the output
+         is `SOComplex.one`; `r < d + 1` guarantees the induction never asks
+         for a full-frame stabilizer step with zero complement.
+      6. Convert `A : SOComplex (d + 1)` to
+         `Λ := ComplexLorentzGroup.fromSOComplex A`.  Use the Wick matrices
+         in `fromSOComplex` and `complexMinkowskiToDotLinearEquiv_apply` to
+         prove
+         `complexLorentzVectorAction Λ (x a) = y a`; then wrap `Λ` in the
+         returned subtype.  The source-oriented producer
+         `sourceOriented_headGaugeWittData` obtains its input frame packet
+         from the checked `sourceOriented_headGaugeFrameSameGramData` and
+         packages the resulting `Λ` as `SourceOrientedHeadGaugeWittData`.
 
       Subproof transcript for
       `sourceOriented_headGauge_tailCoordinates_after_witt`:
