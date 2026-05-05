@@ -551,7 +551,16 @@ explicit normalization, calls the Euclidean compatible packet on
 `sourceShiftedTailInvariant_eq_of_toEuclidean_eq` to recover the shifted
 invariant equality.  The remaining tail theorem is now the Euclidean
 compatible small-realization induction itself, not the shifted-signature
-transport.
+transport.  The first Euclidean induction case is checked:
+`sourceTailOrientedInvariant_selectedGram_det` proves that a selected Gram
+determinant is the square of the selected tail determinant,
+`sourceTailOrientedVariety_det_eq_zero_of_gram_eq_zero` proves zero Gram
+forces all top determinants to vanish in positive tail dimension, and
+`sourceTailOrientedSmallRealization_zeroGram` realizes such data by the zero
+tail tuple.  The estimate wrapper
+`sourceTailOrientedSmallRealization_zeroRank_bound` is checked too: rank zero
+is converted to zero Gram and then realized by the zero tuple with an arbitrary
+positive `epsilon`.
 
 Determinant-readiness correction: the proof docs now pin determinant recovery
 for the normal parameter vector as explicit finite theorem surfaces and record

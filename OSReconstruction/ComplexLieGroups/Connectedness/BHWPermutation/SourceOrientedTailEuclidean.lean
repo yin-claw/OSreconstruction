@@ -1,4 +1,5 @@
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedSchurResidual
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceRank
 
 /-!
 # Euclidean tail model for source-oriented Schur residuals
@@ -13,6 +14,32 @@ noncomputable section
 open Complex Topology Matrix LorentzLieGroup Classical Filter NormedSpace
 
 namespace BHW
+
+private theorem matrix_eq_zero_of_rank_eq_zero_tail
+    {m n : Type*} [Fintype m] [Fintype n] [DecidableEq n]
+    (A : Matrix m n ℂ) (hA : A.rank = 0) :
+    A = 0 := by
+  have hfin : Module.finrank ℂ (LinearMap.range A.mulVecLin) = 0 := by
+    simpa [Matrix.rank] using hA
+  have hrange : LinearMap.range A.mulVecLin = ⊥ := by
+    rw [← Submodule.finrank_eq_zero]
+    exact hfin
+  have hmul : A.mulVecLin = 0 := by
+    apply LinearMap.ext
+    intro v
+    ext i
+    have hv : A.mulVecLin v ∈ LinearMap.range A.mulVecLin :=
+      LinearMap.mem_range_self A.mulVecLin v
+    rw [hrange] at hv
+    have hz : A.mulVecLin v = 0 := by
+      simpa using hv
+    exact congr_fun hz i
+  ext i j
+  have hz : A.mulVecLin (Pi.single j (1 : ℂ)) i = 0 := by
+    have hfun := congr_fun (LinearMap.congr_fun hmul (Pi.single j (1 : ℂ))) i
+    simpa using hfun
+  simpa [Matrix.mulVecLin, Matrix.mulVec, dotProduct, Pi.single_apply,
+    Finset.sum_eq_single j] using hz
 
 /-- Euclidean tail oriented coordinates: ordinary dot-product Gram coordinates
 and all top tail determinants. -/
@@ -76,6 +103,107 @@ def sourceTailOrientedVariety
     (D m : ℕ) :
     Set (SourceTailOrientedData D m) :=
   Set.range (sourceTailOrientedInvariant D m)
+
+/-- For Euclidean tail data coming from a tuple, the determinant of a selected
+Gram block is the square of the corresponding selected tail determinant. -/
+theorem sourceTailOrientedInvariant_selectedGram_det
+    (D m : ℕ)
+    (q : Fin m → Fin D → ℂ)
+    (ι : Fin D ↪ Fin m) :
+    Matrix.det (fun a b : Fin D =>
+        (sourceTailOrientedInvariant D m q).gram (ι a) (ι b)) =
+      (sourceTailOrientedInvariant D m q).det ι *
+        (sourceTailOrientedInvariant D m q).det ι := by
+  let M : Matrix (Fin D) (Fin D) ℂ := fun a μ => q (ι a) μ
+  have hgram :
+      (fun a b : Fin D =>
+        (sourceTailOrientedInvariant D m q).gram (ι a) (ι b)) =
+        M * Mᵀ := by
+    ext a b
+    simp [sourceTailOrientedInvariant, M, Matrix.mul_apply,
+      Matrix.transpose_apply]
+  calc
+    Matrix.det (fun a b : Fin D =>
+        (sourceTailOrientedInvariant D m q).gram (ι a) (ι b))
+        = Matrix.det (M * Mᵀ) := by rw [hgram]
+    _ = Matrix.det M * Matrix.det M := by
+        rw [Matrix.det_mul, Matrix.det_transpose]
+    _ = (sourceTailOrientedInvariant D m q).det ι *
+        (sourceTailOrientedInvariant D m q).det ι := by
+          rfl
+
+/-- On the Euclidean tail variety in positive tail dimension, zero Gram
+coordinates force all top determinant coordinates to vanish. -/
+theorem sourceTailOrientedVariety_det_eq_zero_of_gram_eq_zero
+    (D m : ℕ)
+    (hD : 0 < D)
+    {T : SourceTailOrientedData D m}
+    (hT : T ∈ sourceTailOrientedVariety D m)
+    (hgram : T.gram = 0) :
+    T.det = 0 := by
+  rcases hT with ⟨q, rfl⟩
+  funext ι
+  have hsquare := sourceTailOrientedInvariant_selectedGram_det D m q ι
+  have hsel_zero :
+      (fun a b : Fin D =>
+        (sourceTailOrientedInvariant D m q).gram (ι a) (ι b)) = 0 := by
+    ext a b
+    exact congrFun (congrFun hgram (ι a)) (ι b)
+  have hzero :
+      (sourceTailOrientedInvariant D m q).det ι *
+          (sourceTailOrientedInvariant D m q).det ι = 0 := by
+    rw [← hsquare, hsel_zero]
+    exact Matrix.det_zero (Fin.pos_iff_nonempty.mp hD)
+  exact mul_self_eq_zero.mp hzero
+
+/-- Zero-Gram Euclidean tail data are realized by the zero tail tuple. -/
+theorem sourceTailOrientedSmallRealization_zeroGram
+    (D m : ℕ)
+    (hD : 0 < D)
+    (T : SourceTailOrientedData D m)
+    (hTvar : T ∈ sourceTailOrientedVariety D m)
+    (hgram_zero : T.gram = 0) :
+    T.det = 0 ∧
+      sourceTailOrientedInvariant D m (fun _ _ => 0) = T := by
+  have hdet :=
+    sourceTailOrientedVariety_det_eq_zero_of_gram_eq_zero
+      D m hD hTvar hgram_zero
+  refine ⟨hdet, ?_⟩
+  apply SourceTailOrientedData.ext
+  · ext u v
+    rw [hgram_zero]
+    simp [sourceTailOrientedInvariant]
+  · funext ι
+    rw [hdet]
+    simp [sourceTailOrientedInvariant]
+    exact Matrix.det_zero (Fin.pos_iff_nonempty.mp hD)
+
+/-- Estimate wrapper for the zero-rank Euclidean tail case. -/
+theorem sourceTailOrientedSmallRealization_zeroRank_bound
+    (D m : ℕ)
+    (hD : 0 < D)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ η : ℝ, 0 < η ∧
+      ∀ T : SourceTailOrientedData D m,
+        T ∈ sourceTailOrientedVariety D m →
+        sourceGramMatrixRank m T.gram = 0 →
+        (∀ u v, ‖T.gram u v‖ < η) →
+        (∀ ι, ‖T.det ι‖ < η) →
+        ∃ q : Fin m → Fin D → ℂ,
+          (∀ u μ, ‖q u μ‖ < ε) ∧
+          sourceTailOrientedInvariant D m q = T := by
+  refine ⟨1, by norm_num, ?_⟩
+  intro T hTvar hrank _hgramSmall _hdetSmall
+  have hgram_zero : T.gram = 0 := by
+    exact
+      matrix_eq_zero_of_rank_eq_zero_tail T.gram
+        (by simpa [sourceGramMatrixRank] using hrank)
+  rcases sourceTailOrientedSmallRealization_zeroGram
+      D m hD T hTvar hgram_zero with
+    ⟨_hdet, hzero_realizes⟩
+  refine ⟨fun _ _ => 0, ?_, hzero_realizes⟩
+  intro u μ
+  simpa using hε
 
 /-- Source-label permutation action on Euclidean tail oriented data. -/
 def sourceTailPermuteOrientedData
