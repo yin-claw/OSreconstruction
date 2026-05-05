@@ -356,16 +356,17 @@ spacetime/source minimum upper bound plus failure of the equality defining
 `sourceGramMatrixRank_eq_restrictedMinkowskiRank_range`,
 `finrank_range_sourceCoefficientEval_le`, and `Submodule.finrank_le`.
 
-Latest local connected-basis refinement, 2026-05-02: the rank-deficient
-no-tube local-image branch now has a two-sided Schur parameter-box transcript.
-The proof docs no longer rely on a one-way small-tail realization estimate:
-`SourceShiftedTailCompatibleSmallRealization` supplies matching shifted-tail
-`epsilon`/`eta` boxes after the finite diagonal normalization from the
-ambient shifted metric to the Euclidean tail model, and
-`SourceOrientedRankDeficientSchurNeighborhoodData.schurParam_mem` stores the
-fact that every head-gauge/mixed/tail parameter extracted from
-`Ωnf ∩ sourceOrientedGramVariety` belongs to the connected parameter box.
-This removes the old one-way-realization theorem-shape gap in the local
+Latest local connected-basis refinement, 2026-05-05: the rank-deficient
+no-tube local-image branch uses the checked one-way shifted-tail realization
+for Schur image-surjectivity.  The proof docs no longer require a same-radius
+compatible-box theorem at the tail layer:
+`sourceShiftedTailSmallRealization` supplies the small residual tail tuple
+after the finite diagonal normalization from the ambient shifted metric to the
+Euclidean tail model, and the forward containment of the chosen
+head-gauge/mixed/tail parameter box is a separate continuity/polynomial-shrink
+obligation stored in the residual-polydisc/local-image data.  This removes the
+old theorem-shape gap without imposing an artificial bidirectional estimate on
+the quadratic tail invariant map in the local
 `sourceOrientedGramVariety_local_connectedRelOpen_basis` transcript; the
 remaining local-image producer obligations are now explicit shifted-tail
 normalization, determinant recovery, and rank-slice connectedness theorems.
@@ -521,9 +522,10 @@ not allowed to silently use the Euclidean tail dot product on
 for `0 < r`, the time direction has already been selected into the head block.
 The proof docs now require shifted-tail oriented data
 `SourceShiftedTailOrientedData`, shifted invariant
-`sourceShiftedTailOrientedInvariant`, and shifted max-rank density/compatible
-small realization theorems.  The existing standard tail-realization induction
-may be consumed only through an explicit finite diagonal normalization
+`sourceShiftedTailOrientedInvariant`, and shifted one-way small realization
+together with a local normal-parameter radius choice.  The existing standard
+tail-realization theorem may be consumed only through an explicit finite
+diagonal normalization
 equivalence that rescales determinant coordinates by the product of the
 coordinate scalars.  The scalar and product nonzero facts are now checked as
 `sourceTailMetricScale_ne_zero` and `sourceTailMetricDetScale_ne_zero`;
@@ -539,19 +541,24 @@ The finite normalization layer is now checked in
 `sourceShiftedTailInvariant_toEuclidean`,
 `sourceShiftedTailVariety_toEuclidean_iff`,
 `sourceShiftedTailDataToEuclidean_injective`, and
-`sourceShiftedTailInvariant_eq_of_toEuclidean_eq`.  The estimate-compatible
-packet wrapper is also checked there:
+`sourceShiftedTailInvariant_eq_of_toEuclidean_eq`.  The older
+estimate-compatible packet wrappers are also checked there as data/converter
+infrastructure:
 `SourceTailOrientedCompatibleSmallRealization`,
 `SourceShiftedTailCompatibleSmallRealization`, and
-`sourceShiftedTailCompatibleSmallRealization_of_euclidean`.  It builds the
-explicit normalization, calls the Euclidean compatible packet on
+`sourceShiftedTailCompatibleSmallRealization_of_euclidean`.  They are not the
+active local-image dependency.  The active shifted theorem is
+`sourceShiftedTailSmallRealization` in
+`SourceOrientedTailSmallRealization.lean`: it builds the explicit
+normalization, calls the checked Euclidean one-way theorem on
 `sourceShiftedTailDataToEuclidean T`, scales the realizing tuple back by
-`scale⁻¹`, uses the norm-one scale lemmas for both directions of the
-`epsilon`/`eta` estimates, and uses
-`sourceShiftedTailInvariant_eq_of_toEuclidean_eq` to recover the shifted
-invariant equality.  The remaining tail theorem is now the Euclidean
-compatible small-realization induction itself, not the shifted-signature
-transport.  The first Euclidean induction case is checked:
+`scale⁻¹`, uses the norm-one scale lemmas for the realization estimate, and
+uses `sourceShiftedTailInvariant_eq_of_toEuclidean_eq` to recover the shifted
+invariant equality.  The normal Schur chart must choose its parameter tail
+radius and residual-data radius in one local finite-dimensional estimate
+theorem; it must not obtain forward containment by destructing an abstract
+existential one-way theorem and hoping the returned radius has a compatible
+size.  The first Euclidean induction case is checked:
 `sourceTailOrientedInvariant_selectedGram_det` proves that a selected Gram
 determinant is the square of the selected tail determinant,
 `sourceTailOrientedVariety_det_eq_zero_of_gram_eq_zero` proves zero Gram
@@ -2775,20 +2782,23 @@ implementation contract is:
    `SourceTailOrientedData`, `sourceTailOrientedInvariant`,
    `sourceTailOrientedVariety_eq_algebraic`, and
    `sourceTailOrientedSmallRealization` proves the finite constructive
-   induction, while the OS-source residual chart consumes only the shifted
+   theorem, while the OS-source residual chart consumes only the shifted
    wrapper `SourceShiftedTailOrientedData`,
    `sourceShiftedTailOrientedInvariant`, and
-   `sourceShiftedTailCompatibleSmallRealization`,
+   `sourceShiftedTailSmallRealization`,
    `SourceOrientedSchurResidualData`,
    `sourceOriented_schurResidualData`, and
    `sourceOriented_reconstruct_from_schurResidual`.  The small tail theorem
-   must be proved constructively by the normalized Schur/gauge recursion; it
-   may not scale an arbitrary realizing tuple, because scaling changes the
-   prescribed Gram and determinant coordinates.  The local-image consumer uses
-   the shifted compatible paired form obtained from the same induction by
-   diagonal normalization, with one tail `epsilon` for the parameter box and
-   one tail `eta` for the Schur data box, plus both inclusions between those
-   boxes.  The blueprint now exposes the checked Euclidean small-realization
+   is proved constructively by quantitative Takagi same-Gram factorization
+   plus determinant-sheet repair/vanishing; it does not scale an arbitrary
+   realizing tuple, because scaling changes the prescribed Gram and determinant
+   coordinates.  The local-image consumer should not require a single-radius
+   compatible-box theorem at this layer.  It uses the one-way shifted
+   realization for Schur image-surjectivity, while the forward inclusion of a
+   small parameter box into the ambient Schur neighborhood is supplied
+   separately by continuity/polynomial shrink estimates for the normal
+   parameter map.  The blueprint now exposes the checked Euclidean
+   small-realization
    cases:
    `sourceTailOrientedSmallRealization_zeroGram`,
    `sourceTailFullFrame_factorWithDet`,
@@ -9014,7 +9024,7 @@ Adjacent `S'_n` readiness ledger:
 | --- | --- | --- |
 | `BHW.swFigure24_adjacentPathStableNeighborhood_exists`, `BHW.swFigure24_adjacentHorizontalEnvironmentWithPathStability`, `BHW.os45_adjacent_identity_horizontalEdge_sourcePatch` | Checked local Lean geometry in `OSToWightmanLocalityOS45Figure24.lean`. | May supply `hV_adjLift_ET`, closure ordered-sector fields, and `hV_figPath_closure`; it supplies no scalar equality. |
 | `BHW.OS45Figure24RotatedPathFormulaField`, `BHW.swFigure24_adjacentPathStableNeighborhood_rotated_exists`, `BHW.OS45Figure24OrientedPathField_of_checked_figure24`, `BHW.swFigure24_adjacentHorizontalEnvironmentWithRotatedPathStability`, `BHW.os45_adjacent_identity_horizontalEdge_sourcePatch_with_orientedPath`, `BHW.os45Figure24AdjacentLift`, `BHW.continuous_os45Figure24AdjacentLift`, `BHW.os45Figure24AdjacentLift_sourceGram`, `BHW.swFigure24_adjacentPathStableCanonicalLift_exists`, `BHW.OS45Figure24CanonicalSourcePatchData`, `BHW.OS45Figure24OrientedCanonicalSourcePatchData`, `BHW.exists_os45_adjacent_identity_canonicalSourcePatch_with_orientedPath`, `BHW.os45_adjacent_identity_canonicalSourcePatch_with_orientedPath`, and `BHW.os45_adjacent_identity_canonicalSourcePatch` | Checked in `OSToWightmanLocalityOS45Figure24.lean`.  The final canonical packet is now packaged as an existential theorem in `Prop` plus `noncomputable def` selectors, which is the correct Lean shape for data chosen from upstream existence theorems. | The checked slice exposes the definitional rotated `Δ t = figure24RotateAdjacentConfig hd (permAct τ (os45Figure24IdentityPath x t))`, the deterministic lift `os45Figure24AdjacentLift`, source-Gram identity for that lift, full oriented invariant equality using `sourceOrientedMinkowskiInvariant_complexLorentzAction` and `sourceOrientedMinkowskiInvariant_permAct`, the corrected `xseed`/`xcontact = os45CommonEdgeRealPoint 1 xseed` contact fields, the whole segment containment needed for the compact shrink, and the closure-level oriented path field needed by the strict adjacent `S'_n` source-germ suppliers. |
-| `BHW.sourceOrientedGramVariety_local_connectedRelOpen_basis`, `BHW.sourceOrientedGramVariety_connectedComponentIn_relOpen`, `BHW.sourceOrientedGramVariety_connectedRelOpenTube_around_compactPath` | Source-geometry transcript partially checked: max-rank chart topology/germ-pullback/local-identity is checked in `SourceOrientedLocalChart.lean`; connected-component and path-tube assembly are checked in `SourceOrientedConnected.lean`; the stratum dispatcher is checked in `SourceOrientedLocalBasis.lean`; the rank-deficient local-image output interface is checked in `SourceOrientedRankDeficientLocalImage.lean`. | Needed because oriented `Wscal` is now a connected component of the oriented adjacent double domain.  The component theorem is now Lean, conditional only on a local connected basis: write `D = D0 ∩ sourceOrientedGramVariety`, index local connected patches by `{G // G ∈ connectedComponentIn D G0}`, get each patch from the local basis inside `D0`, put it into the component by `IsPreconnected.subset_connectedComponentIn`, identify components by `connectedComponentIn_eq`, and take an indexed union using `IsRelOpenInSourceOrientedGramVariety.iUnion`.  The local connected basis is decomposed into two producer inputs.  Max-rank patches use the checked `SourceOrientedMaxRankChartData.exists_connected_chartBall`, `inv_image_openBall_relOpen`, `connectedPatch_inside_open`, `shrink_to_relOpen`, finite-coordinate transport `finiteDimensionalCoordinateEquiv`, `to_finrankCoordinateChart`, and `local_identity_near_point_finiteDimensional`.  Germ pullback and relative-openness transfer through such a chart are checked as `LocalBiholomorphOnSourceOrientedVariety.germ_to_chart`, `SourceOrientedVarietyGermHolomorphicOn.to_maxRank_chart`, and `LocalBiholomorphOnSourceOrientedVariety.image_relOpenIn_chart`.  The chart-local identity theorem is checked as `SourceOrientedMaxRankChartData.local_identity_near_point` for finite coordinate models, using the finite-dimensional `SCV.identity_theorem_connected_open_zero`; the earlier arbitrary-normed-model identity statement is intentionally not used.  The chart packet explicitly carries `chart_continuousOn`, since relative openness of inverse-image patches otherwise would be unjustified.  Rank-deficient patches now have the checked abstract packet `SourceOrientedRankDeficientVarietyLocalImageData` and extraction theorem `to_connectedRelOpenPatch`; the concrete no-tube algebraic local-image producer still must be built from `SourceOrientedRankDeficientAlgebraicNormalFormData`, the signature-metric head gauge `SourceRankDeficientHeadGaugeData`, Schur residual extraction, and a compatible tail small-realization pair.  The algebraic parameter-ball output must carry its normal image neighborhood `Ωnf` explicitly, the connected parameter box must store the same tail `epsilon` used by realization, the Schur neighborhood must store the same tail `eta`, and `schurParam_mem` must record that extracted head/mixed/tail parameters land back in that box.  The extended-tube compact residual chart is explicitly not an input to this basis theorem.  Next Lean targets are the finite-coordinate max-rank chart producer and the concrete rank-deficient Schur/residual local-image producer; not connected-component support and not the Figure-2-4 seed wrapper. |
+| `BHW.sourceOrientedGramVariety_local_connectedRelOpen_basis`, `BHW.sourceOrientedGramVariety_connectedComponentIn_relOpen`, `BHW.sourceOrientedGramVariety_connectedRelOpenTube_around_compactPath` | Source-geometry transcript partially checked: max-rank chart topology/germ-pullback/local-identity is checked in `SourceOrientedLocalChart.lean`; connected-component and path-tube assembly are checked in `SourceOrientedConnected.lean`; the stratum dispatcher is checked in `SourceOrientedLocalBasis.lean`; the rank-deficient local-image output interface is checked in `SourceOrientedRankDeficientLocalImage.lean`. | Needed because oriented `Wscal` is now a connected component of the oriented adjacent double domain.  The component theorem is now Lean, conditional only on a local connected basis: write `D = D0 ∩ sourceOrientedGramVariety`, index local connected patches by `{G // G ∈ connectedComponentIn D G0}`, get each patch from the local basis inside `D0`, put it into the component by `IsPreconnected.subset_connectedComponentIn`, identify components by `connectedComponentIn_eq`, and take an indexed union using `IsRelOpenInSourceOrientedGramVariety.iUnion`.  The local connected basis is decomposed into two producer inputs.  Max-rank patches use the checked `SourceOrientedMaxRankChartData.exists_connected_chartBall`, `inv_image_openBall_relOpen`, `connectedPatch_inside_open`, `shrink_to_relOpen`, finite-coordinate transport `finiteDimensionalCoordinateEquiv`, `to_finrankCoordinateChart`, and `local_identity_near_point_finiteDimensional`.  Germ pullback and relative-openness transfer through such a chart are checked as `LocalBiholomorphOnSourceOrientedVariety.germ_to_chart`, `SourceOrientedVarietyGermHolomorphicOn.to_maxRank_chart`, and `LocalBiholomorphOnSourceOrientedVariety.image_relOpenIn_chart`.  The chart-local identity theorem is checked as `SourceOrientedMaxRankChartData.local_identity_near_point` for finite coordinate models, using the finite-dimensional `SCV.identity_theorem_connected_open_zero`; the earlier arbitrary-normed-model identity statement is intentionally not used.  The chart packet explicitly carries `chart_continuousOn`, since relative openness of inverse-image patches otherwise would be unjustified.  Rank-deficient patches now have the checked abstract packet `SourceOrientedRankDeficientVarietyLocalImageData` and extraction theorem `to_connectedRelOpenPatch`; the concrete no-tube algebraic local-image producer still must be built from `SourceOrientedRankDeficientAlgebraicNormalFormData`, the signature-metric head gauge `SourceRankDeficientHeadGaugeData`, Schur residual extraction, `sourceShiftedTailSmallRealization`, and the local tail-radius choice `SourceOrientedRankDeficientTailRadiusChoice`.  The algebraic parameter-ball output must carry its normal image neighborhood `Ωnf` explicitly, the connected parameter box must store the chosen tail `epsilon`, the Schur neighborhood must store the paired tail `eta`, `normalParam_tail_small` must prove forward containment of the normal-parameter box, and `schurParam_mem` must record that extracted head/mixed/tail parameters land back in that box.  The extended-tube compact residual chart is explicitly not an input to this basis theorem.  Next Lean targets are the finite-coordinate max-rank chart producer and the concrete rank-deficient Schur/residual local-image producer; not connected-component support and not the Figure-2-4 seed wrapper. |
 | `BHW.os45AdjacentSPrimeOrientedScalarizationChart_of_figure24` | Constructor transcript pinned; production Lean not started. | Must combine the checked source patch with `sourceOrientedExtendedTubeDomain_relOpen_connected`, oriented double-domain relative openness, Wick real-section topology, and oriented germ pullback APIs.  Its `Wscal` must also store `Wscal_component : ∃ Gbase ∈ Wscal, Wscal = connectedComponentIn (sourceOrientedDoublePermutationDomain d n τ) Gbase`; closure-level quarter-turn membership is not justified from relative openness alone. |
 | `BHW.os45Figure24_sourcePatch_pairing_eq_swappedSourcePatch_of_OSI45` | Route-cycle corrected; direct producer transcript pinned, production Lean must start below the public surface. | Must prove compact PET-overlap equality directly from OS I §4.5/BHW-Jost data: checked Wick compact equality for every compact test supported in the chart, zero-diagonal/ordered-sector conversion through equations (4.1), (4.12), and (4.14), `BHW.OS45SourcePatchBHWJostPairData`, `BHW.os45_sourcePatch_bhwJostPairData_of_OSI45`, `BHW.OS45SourcePatchBHWJostDifferenceData`, `BHW.os45_sourcePatch_bhwJostDifferenceData_of_OSI45`, `BHW.os45_sourcePatch_realTrace_zero_of_wickDistributionZero`, and compact-test real-boundary identification of the ordinary and adjacent source traces.  It cannot use `BHW.os45_adjacent_commonBoundaryEnvelope`, the oriented branch-germ suppliers, the oriented adjacent `S'_n` seed/path package, individual real-branch `= OS.S` statements, PET independence, final locality, or the later OS-specific `JostRuelleCompactBoundaryData` package that consumes this compact theorem. |
 | `BHW.os45CommonBoundary_wickTrace_zero_of_compactPairing_zero` and `BHW.os45CommonBoundary_identity_of_wickTrace_zero` | Proof transcript pinned; production Lean not started. | The first applies the checked `SCV.eqOn_open_of_compactSupport_schwartz_integral_eq_of_continuousOn` to the Wick trace function `g`, with `ContinuousOn g V0` from `hHc_holo.continuousOn.comp`, and uses `BHW.integral_commonBoundary_wickTrace_eq_zero_of_wickDiff_zero` to rewrite the compact pairings. The second defines `Lρ := os45WickRotateCLE.trans (os45CommonChartCLE 1)`, `U' := Lρ ⁻¹' Uc`, `H' z := Hc (Lρ z)`, proves `IsConnected U'` by Mathlib `Homeomorph.isConnected_preimage` (`.2 hUc_conn`), and applies checked `BHW.identity_theorem_totally_real_product` on the standard real slice after `BHW.os45CommonChartCLE_wickRotateRealConfig_eq`. No scalar representative, PET, EOW shortcut, or locality input enters these two helpers. |

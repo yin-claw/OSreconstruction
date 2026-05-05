@@ -300,4 +300,70 @@ theorem sourceTailOrientedSmallRealization
         (fun u v => lt_of_lt_of_le (hgramSmall u v) (min_le_right _ _))
         (fun ι => lt_of_lt_of_le (hdetSmall ι) (min_le_right _ _))
 
+/-- Shifted-tail one-way small realization, obtained from the Euclidean
+small-realization theorem by the diagonal metric normalization. -/
+theorem sourceShiftedTailSmallRealization
+    (d r m : ℕ)
+    (hrD : r < d + 1)
+    {ε : ℝ} (hε : 0 < ε) :
+    ∃ η : ℝ, 0 < η ∧
+      ∀ T : SourceShiftedTailOrientedData d r hrD m,
+        T ∈ sourceShiftedTailOrientedVariety d r hrD m →
+        (∀ u v, ‖T.gram u v‖ < η) →
+        (∀ ι, ‖T.det ι‖ < η) →
+        ∃ q : Fin m → Fin (d + 1 - r) → ℂ,
+          (∀ u μ, ‖q u μ‖ < ε) ∧
+          sourceShiftedTailOrientedInvariant d r hrD m q = T := by
+  classical
+  let N := sourceShiftedTailMetricNormalization d r hrD
+  have hDtail : 0 < d + 1 - r := by omega
+  rcases sourceTailOrientedSmallRealization (d + 1 - r) m hDtail hε with
+    ⟨η, hη_pos, hrealize⟩
+  refine ⟨η, hη_pos, ?_⟩
+  intro T hTvar hTgram hTdet
+  have hdet_norm : ‖N.detScale‖ = 1 := by
+    simp [N, sourceShiftedTailMetricNormalization, sourceTailMetricDetScale_norm]
+  have hTEvar :
+      sourceShiftedTailDataToEuclidean d r m hrD N T ∈
+        sourceTailOrientedVariety (d + 1 - r) m := by
+    exact (sourceShiftedTailVariety_toEuclidean_iff d r m hrD N T).2 hTvar
+  have hTEgram :
+      ∀ u v,
+        ‖(sourceShiftedTailDataToEuclidean d r m hrD N T).gram u v‖ < η := by
+    intro u v
+    exact hTgram u v
+  have hTEdet :
+      ∀ ι,
+        ‖(sourceShiftedTailDataToEuclidean d r m hrD N T).det ι‖ < η := by
+    intro ι
+    calc
+      ‖(sourceShiftedTailDataToEuclidean d r m hrD N T).det ι‖
+          = ‖N.detScale * T.det ι‖ := rfl
+      _ = ‖T.det ι‖ := by simp [hdet_norm]
+      _ < η := hTdet ι
+  rcases hrealize
+      (sourceShiftedTailDataToEuclidean d r m hrD N T)
+      hTEvar hTEgram hTEdet with
+    ⟨qE, hqE_small, hqE_realizes⟩
+  let q : Fin m → Fin (d + 1 - r) → ℂ :=
+    fun u μ => (N.scale μ)⁻¹ * qE u μ
+  have hscale_norm : ∀ μ : Fin (d + 1 - r), ‖N.scale μ‖ = 1 := by
+    intro μ
+    simp [N, sourceShiftedTailMetricNormalization, sourceTailMetricScale_norm]
+  refine ⟨q, ?_, ?_⟩
+  · intro u μ
+    calc
+      ‖q u μ‖ = ‖qE u μ‖ := by
+        simp [q, norm_inv, hscale_norm μ]
+      _ < ε := hqE_small u μ
+  · apply sourceShiftedTailInvariant_eq_of_toEuclidean_eq d r m hrD N q T
+    calc
+      sourceTailOrientedInvariant (d + 1 - r) m
+          (fun u μ => N.scale μ * q u μ)
+          = sourceTailOrientedInvariant (d + 1 - r) m qE := by
+            congr
+            ext u μ
+            simp [q, N.scale_ne_zero μ]
+      _ = sourceShiftedTailDataToEuclidean d r m hrD N T := hqE_realizes
+
 end BHW
