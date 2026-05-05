@@ -4329,17 +4329,20 @@ implementation contract is:
    vectors after projection; without adaptedness the statement is false.  The
    base selected-block normalization also needs the arbitrary invertible
    symmetric congruence theorem to the inherited source-head metric,
-   `BHW.complexSymmetric_invertible_congruence_to_sourceHeadMetric`, obtained
-   from the identity-normalization theorem
-   `BHW.complexSymmetric_invertible_congruence_to_identity`, decomposed into
-   `BHW.complexSymmetric_invertible_orthogonalBasis`,
-   `BHW.complexSymmetric_invertible_diagonalScaling`, and
-   `BHW.basis_smul_nonzero`: use an orthogonal basis for the nondegenerate
-   symmetric bilinear form `Matrix.toBilin' A`, prove every diagonal value is
-   nonzero, scale by square roots of inverse diagonal values over `ℂ`, compose
-   with the fixed diagonal congruence between `1` and `sourceHeadMetric d r hrD`,
-   and read off the row-matrix congruence
-   `P * A * Pᵀ = sourceHeadMetric d r hrD`.  The
+   `BHW.complexSymmetric_invertible_congruence_to_sourceHeadMetric`.  This is
+   now checked by the exact-rank dot-Gram route, not by the older
+   orthogonal-basis placeholder: `A` is viewed as an exact-rank symmetric
+   source matrix, `BHW.exists_fullRank_sourceComplexDotGram_of_rankExact`
+   gives `A = Q*Qᵀ`, determinant nonvanishing forces `IsUnit Q.det`,
+   `Q⁻¹` normalizes `A` to `1`, and the checked diagonal square-root
+   `BHW.sourceHeadMetricSquareRoot` carries `1` to
+   `sourceHeadMetric d r hrD`.  The exact checked support names are
+   `BHW.sourceComplexDotGram_matrix_eq_mul_transpose`,
+   `BHW.complexSymmetric_invertible_congruence_to_identity`,
+   `BHW.sourceHeadMetricSquareRoot_det_isUnit`,
+   `BHW.sourceHeadMetricSquareRoot_congruence`, and
+   `BHW.complexSymmetric_invertible_congruence_to_sourceHeadMetric`.
+   The
    perturbative selected block still uses
    `BHW.hwLemma3_selectedBlock_sqrt_near_identity`.  Then come the normalized
    surjectivity theorem

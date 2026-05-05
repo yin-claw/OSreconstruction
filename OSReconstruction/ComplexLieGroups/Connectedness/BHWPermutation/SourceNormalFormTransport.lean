@@ -607,6 +607,134 @@ theorem sourceHeadHeadBlock_symm_of_sourceSymmetric
   ext a b
   exact hG (finSourceHead hrn b) (finSourceHead hrn a)
 
+/-- Matrix form of the ordinary complex dot-Gram map. -/
+theorem sourceComplexDotGram_matrix_eq_mul_transpose
+    (D n : ℕ)
+    (z : Fin n → Fin D → ℂ) :
+    Matrix.of (sourceComplexDotGram D n z) =
+      (Matrix.of fun i a => z i a) *
+        (Matrix.of fun i a => z i a).transpose := by
+  ext i j
+  simp [sourceComplexDotGram, Matrix.mul_apply]
+
+/-- Any invertible complex symmetric matrix is congruent to the identity.
+The proof uses the existing exact-rank dot-Gram factorization: write
+`A = Q Qᵀ`; then invertibility of `A` forces `Q` invertible. -/
+theorem complexSymmetric_invertible_congruence_to_identity
+    (r : ℕ)
+    {A : Matrix (Fin r) (Fin r) ℂ}
+    (hSym : A.transpose = A)
+    (hInv : IsUnit A.det) :
+    ∃ P : Matrix (Fin r) (Fin r) ℂ,
+      IsUnit P.det ∧
+        P * A * P.transpose = 1 := by
+  let Z : Fin r → Fin r → ℂ := fun i j => A i j
+  have hZ : Z ∈ sourceSymmetricRankExactStratum r r := by
+    constructor
+    · intro i j
+      change A i j = A j i
+      have hij := congrFun (congrFun hSym j) i
+      simpa [Matrix.transpose_apply] using hij
+    · change A.rank = r
+      have hAunit : IsUnit A := (Matrix.isUnit_iff_isUnit_det A).mpr hInv
+      simpa using Matrix.rank_of_isUnit A hAunit
+  rcases exists_fullRank_sourceComplexDotGram_of_rankExact hZ with
+    ⟨Qfun, _hQfull, hQeq⟩
+  let Q : Matrix (Fin r) (Fin r) ℂ := Matrix.of fun i a => Qfun i a
+  have hAeq : A = Q * Q.transpose := by
+    change Matrix.of Z = Q * Q.transpose
+    have h := congrArg Matrix.of hQeq
+    exact h.symm.trans (by simpa [Q] using
+      sourceComplexDotGram_matrix_eq_mul_transpose r r Qfun)
+  have hdetQ_ne : Q.det ≠ 0 := by
+    have hdetprod : Q.det * Q.det ≠ 0 := by
+      have hdet_eq : A.det = Q.det * Q.det := by
+        rw [hAeq, Matrix.det_mul, Matrix.det_transpose]
+      intro hzero
+      exact hInv.ne_zero (by simpa [hdet_eq] using hzero)
+    exact fun hzero => hdetprod (by simp [hzero])
+  have hQdet : IsUnit Q.det := isUnit_iff_ne_zero.mpr hdetQ_ne
+  refine ⟨Q⁻¹, Matrix.isUnit_nonsing_inv_det Q hQdet, ?_⟩
+  rw [hAeq]
+  calc
+    Q⁻¹ * (Q * Q.transpose) * (Q⁻¹).transpose =
+        (Q⁻¹ * Q) * (Q.transpose * (Q⁻¹).transpose) := by
+          simp [Matrix.mul_assoc]
+    _ = 1 * (Q.transpose * (Q⁻¹).transpose) := by
+          rw [Matrix.nonsing_inv_mul (A := Q) hQdet]
+    _ = Q.transpose * (Q⁻¹).transpose := by simp
+    _ = Q.transpose * (Q.transpose)⁻¹ := by
+          rw [Matrix.transpose_nonsing_inv]
+    _ = 1 := by
+          rw [Matrix.mul_nonsing_inv (A := Q.transpose)
+            (Matrix.isUnit_det_transpose Q hQdet)]
+
+/-- Diagonal square-root of the canonical source head metric. -/
+def sourceHeadMetricSquareRoot
+    (d r : ℕ) (hrD : r < d + 1) :
+    Matrix (Fin r) (Fin r) ℂ :=
+  Matrix.diagonal fun a =>
+    complexSquareRootChoice
+      (MinkowskiSpace.metricSignature d
+        (finSourceHead (Nat.le_of_lt hrD) a) : ℂ)
+
+theorem sourceHeadMetricSquareRoot_det_isUnit
+    (d r : ℕ) (hrD : r < d + 1) :
+    IsUnit (sourceHeadMetricSquareRoot d r hrD).det := by
+  rw [sourceHeadMetricSquareRoot]
+  simp only [det_diagonal]
+  apply isUnit_iff_ne_zero.mpr
+  apply Finset.prod_ne_zero_iff.mpr
+  intro a _ha hsqrt_zero
+  have hsq := complexSquareRootChoice_mul_self
+    (MinkowskiSpace.metricSignature d
+      (finSourceHead (Nat.le_of_lt hrD) a) : ℂ)
+  have hmetric_zero :
+      (MinkowskiSpace.metricSignature d
+        (finSourceHead (Nat.le_of_lt hrD) a) : ℂ) = 0 := by
+    rw [← hsq, hsqrt_zero, zero_mul]
+  by_cases hzero : finSourceHead (Nat.le_of_lt hrD) a = (0 : Fin (d + 1))
+  · simp [MinkowskiSpace.metricSignature, hzero] at hmetric_zero
+  · simp [MinkowskiSpace.metricSignature, hzero] at hmetric_zero
+
+theorem sourceHeadMetricSquareRoot_congruence
+    (d r : ℕ) (hrD : r < d + 1) :
+    sourceHeadMetricSquareRoot d r hrD * 1 *
+        (sourceHeadMetricSquareRoot d r hrD).transpose =
+      sourceHeadMetric d r hrD := by
+  ext a b
+  by_cases hab : a = b
+  · subst b
+    simp [sourceHeadMetricSquareRoot, sourceHeadMetric,
+      complexSquareRootChoice_mul_self]
+  · simp [sourceHeadMetricSquareRoot, sourceHeadMetric, hab]
+
+/-- Any invertible complex symmetric head block is congruent to the canonical
+Minkowski-signature source head metric. -/
+theorem complexSymmetric_invertible_congruence_to_sourceHeadMetric
+    (d r : ℕ) (hrD : r < d + 1)
+    {A : Matrix (Fin r) (Fin r) ℂ}
+    (hSym : A.transpose = A)
+    (hInv : IsUnit A.det) :
+    ∃ P : Matrix (Fin r) (Fin r) ℂ,
+      IsUnit P.det ∧
+        P * A * P.transpose = sourceHeadMetric d r hrD := by
+  rcases complexSymmetric_invertible_congruence_to_identity
+      r hSym hInv with
+    ⟨P0, hP0det, hP0⟩
+  let D := sourceHeadMetricSquareRoot d r hrD
+  refine ⟨D * P0, ?_, ?_⟩
+  · rw [Matrix.det_mul]
+    exact (sourceHeadMetricSquareRoot_det_isUnit d r hrD).mul hP0det
+  · calc
+      (D * P0) * A * (D * P0).transpose =
+          D * (P0 * A * P0.transpose) * D.transpose := by
+            rw [Matrix.transpose_mul]
+            simp [Matrix.mul_assoc]
+      _ = D * 1 * D.transpose := by rw [hP0]
+      _ = sourceHeadMetric d r hrD := by
+            simpa [D] using sourceHeadMetricSquareRoot_congruence d r hrD
+
 /-- A permutation matrix for source labels.  Its left action on a tuple sends
 the `i`-th output source vector to the old `σ i` source vector. -/
 def sourcePermutationMatrix

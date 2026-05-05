@@ -13334,7 +13334,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | `BHW.sourceGramMatrixRank_le_spacetime_source_min`, `BHW.sourceOriented_notMaxRank_sourceGramMatrixRank_lt_min`, `BHW.sourceOriented_notMaxRank_sourceGramMatrixRank_lt_fullFrame`, `BHW.sourceOrientedMaxRankAt_iff_of_gram_eq`, `BHW.sourceOrientedExceptionalRank_iff_of_gram_eq`, `BHW.sourceOrientedMaxRankAt_iff_sourceGramMatrixRank_eq_fullFrame`, `BHW.sourceOrientedMaxRankAt_invariant_iff_sourceGramMatrixRank_eq_fullFrame`, `BHW.sourceOrientedMaxRankAt_invariant_iff_hwSourceGramMaxRankAt`, `BHW.hwSourceGramMaxRankAt_of_sourceOrientedInvariant_eq`, `BHW.sourceOrientedExceptionalRank_invariant_iff_hwSourceGramExceptionalRankAt`, `BHW.hwSourceGramExceptionalRankAt_of_sourceOrientedInvariant_eq` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedRankBridge.lean`. | Rank bridge between the strict oriented max/exceptional-rank predicates and the existing scalar source-rank API.  The rank upper bound for actual source configurations is proved from the restricted-Minkowski-rank formula and finite-dimensional span bounds, so the equality-style oriented max-rank predicate is equivalent to the scalar `min (d+1) n ≤ rank` predicate.  Failure of oriented max-rank for an actual source configuration now gives strict rank deficiency below both `min (d+1) n` and `d+1`, which is the checked input for choosing the normal-form rank.  In the hard range `d + 1 ≤ n`, the max-rank predicate is also exposed directly as the ordinary full-frame equation `sourceGramMatrixRank n G.gram = d + 1`, both for arbitrary oriented Gram data and for actual source invariants.  This is support for the upcoming exceptional Schur/residual parameter connectedness proof, not a new analytic input. |
       | `BHW.sourceGramMatrixRank_le_arity`, `BHW.sourceFullFrameDet_eq_zero_of_sourceRank_lt`, `BHW.sourceOrientedMinkowskiInvariant_eq_of_sameGram_rank_lt` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedLowRankDeterminants.lean`. | Low-rank determinant bridge for the normal-form route.  The arity bound is the direct `Matrix.rank_le_width` support for choosing `hrn : r ≤ n`.  If the ordinary source Gram matrix has rank `< d + 1`, a nonzero selected full-frame determinant would make the selected full-frame Gram determinant nonzero by `sourceFullFrameGram_det_eq`, hence force a nonzero `(d+1) × (d+1)` minor of the ordinary source Gram matrix and contradict the checked nonzero-minor rank bound.  Therefore all oriented determinant coordinates vanish in the strict low-rank branch, and same ordinary Gram implies equality of the full oriented source invariant. |
       | `BHW.finCastLEEmbedding`, `BHW.sourceComplexPad`, `BHW.sourceComplexDotGram_padded_eq`, `BHW.sourceGramMatrixRank_le_finrank_sourceCoefficientEval_range`, `BHW.sourceGramMatrixRank_le_spacetime_of_mem_sourceComplexGramVariety`, `BHW.finrank_sourceCoefficientEval_range_le_of_paddedDot`, `BHW.sourceComplexGramVariety_exists_adaptedSourceRepresentative`, `BHW.sourceOriented_lowRank_exists_adaptedRepresentative` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedAdaptedRepresentative.lean`. | Algebraic adapted-representative gate for the rank-deficient no-tube normal-form route.  The file replaces the false shortcut that an arbitrary realization has source-span dimension equal to Gram rank.  It factors an exact-rank ordinary symmetric Gram matrix as a full-rank dot-Gram in exactly `r` coordinates, pads those coordinates into `Fin (d+1)`, transports through `complexMinkowskiToDotLinearEquiv.symm`, proves the padded dot Gram is unchanged, bounds the coefficient span by the padded `r`-coordinate subspace, and uses the general rank-versus-span inequality for the reverse bound.  In the strict oriented low-rank branch, the checked low-rank determinant theorem then upgrades same ordinary Gram to equality of the full oriented invariant. |
-      | `BHW.sourceHeadTailEquiv`, `BHW.sourceBlockMatrix`, `BHW.sourceHeadHeadBlock`, `BHW.sourceTailHeadBlock`, `BHW.sourceTailTailBlock`, `BHW.sourceBlockMatrix_reindex_headTail`, `BHW.sourceBlockMatrix_of_headTailBlocks`, `BHW.sourceTupleLinearChange`, `BHW.sourceTupleLinearChange_mul`, `BHW.sourceTupleLinearEquivOfMatrix`, `BHW.sourceGramCongruence`, `BHW.sourceGramCongruence_eq_matrix_mul`, `BHW.sourceGramCongruence_mul`, `BHW.sourceLinearBlockMatrix`, `BHW.sourceLinearBlockMatrix_det_eq_fromBlocks_det`, `BHW.hwLemma3CanonicalGram`, `BHW.hwLemma3CanonicalGram_eq_sourceBlockMatrix`, `BHW.hwLemma3_projectionSourceChangeMatrix`, `BHW.hwLemma3_projectionSourceChangeMatrix_det_isUnit`, `BHW.hwLemma3_projectionSourceChangeMatrix_congruence`, `BHW.hwLemma3_extendHeadMatrix`, `BHW.hwLemma3_extendHeadMatrix_det_isUnit`, `BHW.hwLemma3_extendHeadMatrix_congruence`, `BHW.sourcePermutationMatrix`, `BHW.sourcePermutationMatrix_det_isUnit`, `BHW.hwLemma3_normalFormSourceChangeMatrix`, `BHW.hwLemma3_normalFormSourceChangeMatrix_det_isUnit`, `BHW.sourceTupleLinearChange_sourcePermutationMatrix`, `BHW.sourceGramCongruence_sourcePermutationMatrix`, `BHW.hwLemma3_normalFormSourceChangeMatrix_canonicalGram`, `BHW.sourceMinkowskiGram_sourceTupleLinearChange`, `BHW.sourceMinkowskiGram_hwLemma3CanonicalSource`, `BHW.hwLemma3_schurComplement_eq_zero_of_rank_eq`, `BHW.sourceGramMatrixRank_sourcePermuteComplexGram`, `BHW.sourcePermuteComplexGram_mem_sourceSymmetricMatrixSpace`, `BHW.exists_sourcePermutation_movingPrincipalBlockToHead` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceNormalFormTransport.lean`. | Finite normal-form transport block.  The checked file gives the source head/tail equivalence, reconstructs symmetric source Gram matrices from the three Schur blocks, defines the source-index tuple action and induced Gram congruence, upgrades invertible source matrices to linear equivalences on source tuples, identifies the canonical Gram as `sourceHeadMetric d r hrD` in the head block with zero tail, proves the Schur projection congruence with exact residual `C - B*A⁻¹*Bᵀ`, proves the head-extension congruence, composes permutation/projection/head-extension into the checked canonical-Gram theorem, proves that the canonical source realizes that Gram, proves that exact rank plus an invertible selected block forces Schur complement zero, proves that permutation matrices implement the existing source permutation on both tuples and Gram matrices, proves source Gram rank and symmetry are preserved by permutation, and extends any injective selected principal block to a source permutation moving it to the head labels.  The symmetry hypothesis on block reconstruction is essential: using only `A`, `B`, and `C` cannot reconstruct a nonsymmetric matrix, and the canonical head block is the Minkowski-signature `sourceHeadMetric`, not the Euclidean identity. |
+      | `BHW.sourceHeadTailEquiv`, `BHW.sourceBlockMatrix`, `BHW.sourceHeadHeadBlock`, `BHW.sourceTailHeadBlock`, `BHW.sourceTailTailBlock`, `BHW.sourceBlockMatrix_reindex_headTail`, `BHW.sourceBlockMatrix_of_headTailBlocks`, `BHW.sourceTupleLinearChange`, `BHW.sourceTupleLinearChange_mul`, `BHW.sourceTupleLinearEquivOfMatrix`, `BHW.sourceGramCongruence`, `BHW.sourceGramCongruence_eq_matrix_mul`, `BHW.sourceGramCongruence_mul`, `BHW.sourceLinearBlockMatrix`, `BHW.sourceLinearBlockMatrix_det_eq_fromBlocks_det`, `BHW.hwLemma3CanonicalGram`, `BHW.hwLemma3CanonicalGram_eq_sourceBlockMatrix`, `BHW.hwLemma3_projectionSourceChangeMatrix`, `BHW.hwLemma3_projectionSourceChangeMatrix_det_isUnit`, `BHW.hwLemma3_projectionSourceChangeMatrix_congruence`, `BHW.hwLemma3_extendHeadMatrix`, `BHW.hwLemma3_extendHeadMatrix_det_isUnit`, `BHW.hwLemma3_extendHeadMatrix_congruence`, `BHW.sourcePermutationMatrix`, `BHW.sourcePermutationMatrix_det_isUnit`, `BHW.hwLemma3_normalFormSourceChangeMatrix`, `BHW.hwLemma3_normalFormSourceChangeMatrix_det_isUnit`, `BHW.sourceTupleLinearChange_sourcePermutationMatrix`, `BHW.sourceGramCongruence_sourcePermutationMatrix`, `BHW.hwLemma3_normalFormSourceChangeMatrix_canonicalGram`, `BHW.sourceMinkowskiGram_sourceTupleLinearChange`, `BHW.sourceMinkowskiGram_hwLemma3CanonicalSource`, `BHW.sourceComplexDotGram_matrix_eq_mul_transpose`, `BHW.complexSymmetric_invertible_congruence_to_identity`, `BHW.sourceHeadMetricSquareRoot`, `BHW.sourceHeadMetricSquareRoot_det_isUnit`, `BHW.sourceHeadMetricSquareRoot_congruence`, `BHW.complexSymmetric_invertible_congruence_to_sourceHeadMetric`, `BHW.hwLemma3_schurComplement_eq_zero_of_rank_eq`, `BHW.sourceGramMatrixRank_sourcePermuteComplexGram`, `BHW.sourcePermuteComplexGram_mem_sourceSymmetricMatrixSpace`, `BHW.exists_sourcePermutation_movingPrincipalBlockToHead` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceNormalFormTransport.lean`. | Finite normal-form transport block.  The checked file gives the source head/tail equivalence, reconstructs symmetric source Gram matrices from the three Schur blocks, defines the source-index tuple action and induced Gram congruence, upgrades invertible source matrices to linear equivalences on source tuples, identifies the canonical Gram as `sourceHeadMetric d r hrD` in the head block with zero tail, proves the Schur projection congruence with exact residual `C - B*A⁻¹*Bᵀ`, proves the head-extension congruence, proves the arbitrary invertible symmetric head-block congruence to `sourceHeadMetric` via the checked exact-rank dot-Gram factorization and a diagonal square-root of the signature metric, composes permutation/projection/head-extension into the checked canonical-Gram theorem, proves that the canonical source realizes that Gram, proves that exact rank plus an invertible selected block forces Schur complement zero, proves that permutation matrices implement the existing source permutation on both tuples and Gram matrices, proves source Gram rank and symmetry are preserved by permutation, and extends any injective selected principal block to a source permutation moving it to the head labels.  The symmetry hypothesis on block reconstruction is essential: using only `A`, `B`, and `C` cannot reconstruct a nonsymmetric matrix, and the canonical head block is the Minkowski-signature `sourceHeadMetric`, not the Euclidean identity. |
       | `BHW.sourcePrincipalSchurGraph_sourceGramMatrixRank_eq_iff_residual_rank`, `BHW.sourceOrientedMaxRankAt_sourcePrincipalSchurGraph_iff_residual_rank`, `BHW.sourcePrincipalSchur_orientedMaxRank_parameterSet_eq`, `BHW.isConnected_sourcePrincipalSchur_orientedMaxRank_parameterSet`, `BHW.isConnected_sourcePrincipalSchur_transported_orientedMaxRank_parameterSet`, `BHW.isConnected_sourcePrincipalSchur_transported_orientedMaxRank_preimage_of_eq` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedSchurParameter.lean`. | Principal-Schur residual bridge for the exceptional max-rank parameter proof.  It combines the ordinary Schur rank formula, the hard-range oriented max-rank rewrite, the transport inverse max-rank equivalence, and the checked product connectedness theorem to show that the parameter subset whose inverse-transported oriented Schur-graph image is max-rank is connected exactly when the residual exact-rank cone is connected.  The final preimage theorem lets the concrete normal-form producer use any parameter-box image that agrees on the box with the transported Schur graph; the endpoint reconstruction equality is now supplied by `SourceOrientedSchurReconstruct.lean`, so the remaining obligation is producing the Schur residual data and proving the concrete parameter image agrees with that Schur graph on the chosen box.  The determinant coordinates are arbitrary functions of the parameter and disappear because `SourceOrientedMaxRankAt` only reads the ordinary Gram coordinate.  No BHW analytic input is hidden here. |
       | `BHW.finSourceHead`, `BHW.finSourceTail`, `BHW.finSourceHead_val`, `BHW.finSourceTail_val`, `BHW.finSourceHead_injective`, `BHW.finSourceTail_injective`, `BHW.finSourceHead_ne_finSourceTail`, `BHW.finSourceHead_tail_cases`, `BHW.SourceOrientedRankDeficientNormalParameter`, `BHW.sourceOrientedNormalParameterCoord`, `BHW.instTopologicalSpaceSourceOrientedRankDeficientNormalParameter`, `BHW.continuous_sourceOrientedNormalParameterCoord`, `BHW.continuous_sourceOrientedNormalParameter_head`, `BHW.continuous_sourceOrientedNormalParameter_mixed`, `BHW.continuous_sourceOrientedNormalParameter_tail`, `BHW.sourceOrientedNormalCenterParameter`, `BHW.sourceTailEmbed`, `BHW.sourceTailEmbed_head`, `BHW.sourceTailEmbed_tail`, `BHW.sourceTailEmbed_zero`, `BHW.hwLemma3CanonicalSource`, `BHW.hwLemma3CanonicalSource_head_apply`, `BHW.hwLemma3CanonicalSource_head_head`, `BHW.hwLemma3CanonicalSource_head_of_tailCoord`, `BHW.hwLemma3CanonicalSource_tail`, `BHW.sourceHeadMetric`, `BHW.sourceHeadMetric_apply`, `BHW.sourceHeadMetric_transpose`, `BHW.sourceHeadMetric_det_isUnit`, `BHW.sourceTailMetric`, `BHW.sourceTailMetric_apply`, `BHW.sourceTailMetric_det_isUnit`, `BHW.sourceTailMetricScale`, `BHW.sourceTailMetricScale_ne_zero`, `BHW.sourceTailMetricScale_mul_self`, `BHW.sourceTailMetricDetScale`, `BHW.sourceTailMetricDetScale_ne_zero`, `BHW.sourceVectorMinkowskiInner`, `BHW.sourceShiftedTailGram`, `BHW.sourceShiftedTailGram_apply`, `BHW.sourceVectorMinkowskiInner_add_right`, `BHW.sourceVectorMinkowskiInner_add_left`, `BHW.sourceVectorMinkowskiInner_sum_right`, `BHW.sourceVectorMinkowskiInner_sum_left`, `BHW.sourceVectorMinkowskiInner_smul_right`, `BHW.sourceVectorMinkowskiInner_smul_left`, `BHW.sourceMinkowskiGram_hwLemma3CanonicalSource_head`, `BHW.hwLemma3CanonicalSource_head_unit`, `BHW.sourceVectorMinkowskiInner_hwLemma3CanonicalSource_head`, `BHW.sourceOrientedNormalHeadVector`, `BHW.sourceOrientedNormalHeadVector_center`, `BHW.continuous_sourceOrientedNormalHeadVector`, `BHW.sourceVectorMinkowskiInner_sourceOrientedNormalHeadVector`, `BHW.sourceNormalHeadGram_transpose`, `BHW.sourceVectorMinkowskiInner_headVector_sourceTailEmbed`, `BHW.sourceVectorMinkowskiInner_sourceTailEmbed_headVector`, `BHW.sourceOrientedNormalParameterVector`, `BHW.sourceOrientedNormalParameterVector_head`, `BHW.sourceOrientedNormalParameterVector_tail`, `BHW.sourceVectorMinkowskiInner_head_tailParameterVector`, `BHW.sourceVectorMinkowskiInner_tailParameterVector_head`, `BHW.sourceVectorMinkowskiInner_mixedHeadPart_sourceTailEmbed`, `BHW.sourceVectorMinkowskiInner_sourceTailEmbed_mixedHeadPart`, `BHW.sourceVectorMinkowskiInner_mixedHeadPart_mixedHeadPart`, `BHW.sourceVectorMinkowskiInner_tailParameterVector_tail`, `BHW.continuous_sourceOrientedNormalParameterVector`, `BHW.sourceOrientedNormalParameterVector_center` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedNormalParameter.lean`. | Concrete normal-parameter algebra for the rank-deficient Schur producer.  The checked file fixes the finite source-label split `Fin n = head ⊔ tail`, the finite product topology, continuous coordinate projections, padded shifted-tail embedding, canonical source/normal-parameter center equality, signature-diagonal head and shifted-tail metrics, explicit shifted-to-Euclidean tail normalizing scalars, bilinearity of the ambient Minkowski form, head/head, head/tail, tail/head, and tail/tail Gram formulas for the normal parameter vector, and continuity of the normal source tuple.  The ordinary Gram part of `sourceOrientedNormalParameterVector_realizes_schur` is reduced to checked block identities; determinant recovery for ordered full frames is now supplied downstream by `SourceOrientedSchurPropagation.lean`, so the remaining theorem-2 producer work here is the shifted-tail realization/normalization packet. |
       | `BHW.matrixEntryL1Bound`, `BHW.matrixEntryL1Bound_nonneg`, `BHW.matrixEntryL1Bound_lt_of_entry_bound`, `BHW.exists_pos_mul_sqrt_lt`, `BHW.real_sqrt_lt_of_lt_mul_bound`, `BHW.takagiConjugateLinearMap`, `BHW.takagiConjugateLinearMap_add`, `BHW.takagiConjugateLinearMap_smul`, `BHW.takagiConjugateLinearMap_sq`, `BHW.takagiConjugateLinearMap_commutes_square`, `BHW.takagiConjugateLinearMap_mem_eigenspace`, `BHW.takagiConjugateLinearMap_conjTranspose_mulVec_eq_star`, `BHW.takagiConjugateLinearMap_zero_eigenspace_eq_zero`, `BHW.takagiHermitianSquare_isHermitian`, `BHW.takagiHermitianSquare_spectralTheorem`, `BHW.takagiHermitianSquare_eigenvalue_nonneg`, `BHW.takagiHermitianSquare_singularValue_nonneg`, `BHW.takagiHermitianSquare_eigenvalue_rankSupport`, `BHW.takagiHermitianSquare_singularValue_rankSupport`, `BHW.matrix_unitary_entry_norm_le_one`, `BHW.matrix_unitary_entry_mul_real_sqrt_norm_le_sqrt`, `BHW.complexSymmetric_takagi_factor_from_supportEmbedding`, `BHW.complexSymmetric_entryL1_of_takagiDiagonalData`, `BHW.complexSymmetric_entryL1_of_takagiDiagonalData_rankSupport`, `BHW.complexSymmetric_factorSmall_rankLE_of_entryL1`, `BHW.sourceComplexSymmetric_factorSmall_rankLE_of_entryL1` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceComplexSmallFactor.lean`. | Quantitative finite-entry reducer and first Autonne-Takagi spectral layer for the Euclidean tail full-rank branch.  The checked file proves the entry-`ℓ¹` bound from a uniform entry bound, chooses a positive `δ` with `sqrt(C_m δ) < ε`, proves the conjugate-linear Takagi map `v ↦ S *ᵥ star v` is additive/semilinear, squares to `S * Sᴴ`, commutes with that square, preserves real eigenspaces, kills the zero eigenspace, and identifies the Hermitian-square spectral data with nonnegative singular values whose nonzero support has cardinal `S.rank`.  It also exposes the unitary-entry estimate needed in the Takagi norm bound, checks the finite support-embedding reindexing from a diagonal Takagi decomposition to a rectangular `m × k` factor, and turns bounded diagonal Takagi data into the entry-controlled factor and then the parameterized small matrix/source-coordinate same-Gram factor theorem.  The unparameterized Autonne-Takagi entry theorem and small-factor consumers are now checked in `SourceComplexTakagiGlobal.lean`. |
@@ -30848,106 +30848,120 @@ Proof decomposition of this theorem, without hiding the analytic work:
             IsUnit P.det ∧
             P * A * P.transpose = 1
 
-      theorem BHW.complexSymmetric_invertible_orthogonalBasis
-          (r : Nat)
+      theorem BHW.sourceComplexDotGram_matrix_eq_mul_transpose
+          (D n : Nat)
+          (z : Fin n -> Fin D -> ℂ) :
+          Matrix.of (BHW.sourceComplexDotGram D n z) =
+            (Matrix.of fun i a => z i a) *
+              (Matrix.of fun i a => z i a).transpose
+
+      def BHW.sourceHeadMetricSquareRoot
+          (d r : Nat) (hrD : r < d + 1) :
+          Matrix (Fin r) (Fin r) ℂ
+
+      theorem BHW.sourceHeadMetricSquareRoot_det_isUnit
+          (d r : Nat) (hrD : r < d + 1) :
+          IsUnit (BHW.sourceHeadMetricSquareRoot d r hrD).det
+
+      theorem BHW.sourceHeadMetricSquareRoot_congruence
+          (d r : Nat) (hrD : r < d + 1) :
+          BHW.sourceHeadMetricSquareRoot d r hrD * 1 *
+              (BHW.sourceHeadMetricSquareRoot d r hrD).transpose =
+            BHW.sourceHeadMetric d r hrD
+
+      theorem BHW.complexSymmetric_invertible_congruence_to_sourceHeadMetric
+          (d r : Nat) (hrD : r < d + 1)
           {A : Matrix (Fin r) (Fin r) ℂ}
           (hSym : A.transpose = A)
           (hInv : IsUnit A.det) :
-          ∃ b : Basis (Fin r) ℂ (Fin r -> ℂ),
-            (Matrix.toBilin' A).IsOrthoᵢ b ∧
-            ∀ i, Matrix.toBilin' A (b i) (b i) ≠ 0
-
-      theorem BHW.complexSymmetric_invertible_diagonalScaling
-          (r : Nat)
-          {A : Matrix (Fin r) (Fin r) ℂ}
-          {b : Basis (Fin r) ℂ (Fin r -> ℂ)}
-          (hb_ortho : (Matrix.toBilin' A).IsOrthoᵢ b)
-          (hb_diag : ∀ i, Matrix.toBilin' A (b i) (b i) ≠ 0) :
-          ∃ s : Fin r -> ℂ,
-            (∀ i,
-              s i * s i * Matrix.toBilin' A (b i) (b i) = 1)
-
-      theorem BHW.basis_smul_nonzero
-          {ι V : Type*} [Fintype ι] [DecidableEq ι]
-          [AddCommGroup V] [Module ℂ V]
-          (b : Basis ι ℂ V)
-          (s : ι -> ℂ)
-          (hs : ∀ i, s i ≠ 0) :
-          ∃ b' : Basis ι ℂ V, ∀ i, b' i = s i • b i
+          ∃ P : Matrix (Fin r) (Fin r) ℂ,
+            IsUnit P.det ∧
+            P * A * P.transpose = BHW.sourceHeadMetric d r hrD
 
       Proof transcript for
       `BHW.complexSymmetric_invertible_congruence_to_identity`:
 
-      1. Let `B := Matrix.toBilin' A` on `Fin r -> ℂ`.  The hypothesis
-         `hSym : A.transpose = A` says `B` is symmetric; the determinant-unit
-         hypothesis says the left map of `B` is a linear equivalence, hence
-         `B` has zero radical.
-      2. Apply Mathlib's symmetric-bilinear orthogonal-basis theorem
-         `LinearMap.BilinForm.exists_orthogonal_basis` to obtain
-         `b : Basis (Fin r) ℂ (Fin r -> ℂ)` with `B.IsOrthoᵢ b`.  Because
-         `B` is nondegenerate, no diagonal value `B (b i) (b i)` can vanish:
-         if it did, orthogonality would make `b i` pair to zero with every
-         basis vector and hence with every vector, contradicting
-         nondegeneracy.  This is packaged as
-         `BHW.complexSymmetric_invertible_orthogonalBasis`.
-      3. For each `i`, choose `s i` with
-         `(s i)^2 * B (b i) (b i) = 1`.  Since `ℂ` is algebraically closed and
-         `B (b i) (b i) ≠ 0`, take
-         `s i := complexSquareRootChoice ((B (b i) (b i))⁻¹)`.  This is
-         `BHW.complexSymmetric_invertible_diagonalScaling`.
-      4. Let `u i := s i • b i`.  Then `u` is a basis, and its Gram matrix
-         for `B` is the identity: off-diagonal entries vanish by
-         `hb_ortho`, while diagonal entries are `1` by the scaling equation.
-      5. Let `P` be the matrix whose `i`th row is the coordinate vector of
-         `u i` in the standard basis.  Equivalently, `P` is the change-of-basis
-         matrix from the standard basis to `u`, with the orientation chosen so
-         `P * A * P.transpose` is the matrix of `B` on the row vectors `u i`.
-         Since `u` is a basis, `P.det` is a unit.  The matrix-entry
-         calculation gives `P * A * P.transpose = 1`.
+      1. Let `Z i j := A i j`.  The symmetry hypothesis gives
+         `Z ∈ sourceSymmetricMatrixSpace r`, and `hInv` gives
+         `(Matrix.of Z).rank = r` by `Matrix.rank_of_isUnit`; therefore
+         `Z ∈ BHW.sourceSymmetricRankExactStratum r r`.
+      2. Apply the checked exact-rank factorization theorem
+         `BHW.exists_fullRank_sourceComplexDotGram_of_rankExact` to get
+         `Qfun : Fin r -> Fin r -> ℂ` with
+         `BHW.sourceComplexDotGram r r Qfun = Z`.  With
+         `Q := Matrix.of fun i a => Qfun i a`, the checked matrix identity
+         `BHW.sourceComplexDotGram_matrix_eq_mul_transpose` rewrites this as
+         `A = Q * Q.transpose`.
+      3. Taking determinants gives
+         `A.det = Q.det * Q.det`.  Since `A.det` is a unit, `Q.det ≠ 0`, hence
+         `IsUnit Q.det`.
+      4. Take `P := Q⁻¹`.  The inverse identities
+         `Matrix.nonsing_inv_mul`, `Matrix.mul_nonsing_inv`, and
+         `Matrix.transpose_nonsing_inv` give
+         `Q⁻¹ * A * (Q⁻¹).transpose = 1`; `P.det` is a unit by
+         `Matrix.isUnit_nonsing_inv_det`.
+      5. For the canonical source head metric, define
+         `BHW.sourceHeadMetricSquareRoot d r hrD` as the diagonal matrix whose
+         entries are `complexSquareRootChoice` of the corresponding
+         `MinkowskiSpace.metricSignature` entry.  Then
+         `sourceHeadMetricSquareRoot * 1 * sourceHeadMetricSquareRootᵀ =
+         sourceHeadMetric d r hrD`, and its determinant is a unit because
+         every signature entry is `±1`.
+      6. Compose the identity normalizer with this diagonal square-root:
+         if `P0 * A * P0ᵀ = 1`, then
+         `(D * P0) * A * (D * P0)ᵀ = sourceHeadMetric d r hrD`.
 
       Lean-shaped proof skeleton:
 
       ```lean
       theorem BHW.complexSymmetric_invertible_congruence_to_identity
           ... := by
-        let B : LinearMap.BilinForm ℂ (Fin r -> ℂ) := Matrix.toBilin' A
-        rcases BHW.complexSymmetric_invertible_orthogonalBasis
-            (r := r) hSym hInv with
-          ⟨b, hb_ortho, hb_diag⟩
-        rcases BHW.complexSymmetric_invertible_diagonalScaling
-            (r := r) (A := A) hb_ortho hb_diag with
-          ⟨s, hs⟩
-        have hs_ne : ∀ i, s i ≠ 0 := by
-          intro i hs0
-          have := hs i
-          simp [hs0, hb_diag i] at this
-        rcases BHW.basis_smul_nonzero b s hs_ne with
-          ⟨u, hu_apply⟩
-        let P : Matrix (Fin r) (Fin r) ℂ :=
-          fun i j => (Pi.basisFun ℂ (Fin r)).repr (u i) j
-        have hP_unit : IsUnit P.det := by
-          -- `P` is the basis matrix of `u` in the standard basis.
-          exact BHW.isUnit_det_basis_rowMatrix u
-        have hentries :
-            ∀ i j, (P * A * P.transpose) i j = if i = j then 1 else 0 := by
-          intro i j
-          by_cases hij : i = j
-          · subst j
-            simpa [P, B, hu_apply, Matrix.toBilin'_apply, hs i]
-          · simpa [P, B, hu_apply, Matrix.toBilin'_apply, hij,
-              hb_ortho hij] using hb_ortho hij
-        refine ⟨P, hP_unit, by
-          ext i j
-          simpa [Matrix.one_apply] using hentries i j⟩
+        let Z : Fin r -> Fin r -> ℂ := fun i j => A i j
+        have hZ : Z ∈ BHW.sourceSymmetricRankExactStratum r r := by
+          constructor
+          · intro i j
+            change A i j = A j i
+            have hij := congrFun (congrFun hSym j) i
+            simpa [Matrix.transpose_apply] using hij
+          · change A.rank = r
+            have hAunit : IsUnit A :=
+              (Matrix.isUnit_iff_isUnit_det A).mpr hInv
+            simpa using Matrix.rank_of_isUnit A hAunit
+        rcases BHW.exists_fullRank_sourceComplexDotGram_of_rankExact hZ with
+          ⟨Qfun, _hQfull, hQeq⟩
+        let Q : Matrix (Fin r) (Fin r) ℂ :=
+          Matrix.of fun i a => Qfun i a
+        have hAeq : A = Q * Q.transpose := by
+          change Matrix.of Z = Q * Q.transpose
+          have h := congrArg Matrix.of hQeq
+          exact h.symm.trans (by
+            simpa [Q] using
+              BHW.sourceComplexDotGram_matrix_eq_mul_transpose r r Qfun)
+        have hQdet : IsUnit Q.det := by
+          apply isUnit_iff_ne_zero.mpr
+          intro hzero
+          have hdet_eq : A.det = Q.det * Q.det := by
+            rw [hAeq, Matrix.det_mul, Matrix.det_transpose]
+          exact hInv.ne_zero (by simpa [hdet_eq, hzero])
+        refine ⟨Q⁻¹, Matrix.isUnit_nonsing_inv_det Q hQdet, ?_⟩
+        rw [hAeq]
+        calc
+          Q⁻¹ * (Q * Q.transpose) * (Q⁻¹).transpose =
+              (Q⁻¹ * Q) * (Q.transpose * (Q⁻¹).transpose) := by
+                simp [Matrix.mul_assoc]
+          _ = 1 * (Q.transpose * (Q⁻¹).transpose) := by
+                rw [Matrix.nonsing_inv_mul (A := Q) hQdet]
+          _ = Q.transpose * (Q.transpose)⁻¹ := by
+                simp [Matrix.transpose_nonsing_inv]
+          _ = 1 := by
+                rw [Matrix.mul_nonsing_inv (A := Q.transpose)
+                  (Matrix.isUnit_det_transpose Q hQdet)]
       ```
 
-      The displayed `u` construction can be implemented more simply using
-      Mathlib's existing basis scaling API if available, for example a
-      `Basis.map` by the diagonal linear equivalence in the `b` coordinates.
-      The mathematical obligation is exactly the four finite-dimensional
-      facts above: symmetric bilinear orthogonal basis, nonzero diagonal from
-      nondegeneracy, square-root scaling over `ℂ`, and the row-matrix
-      congruence calculation.
+      This is now checked in
+      `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceNormalFormTransport.lean`;
+      the old orthogonal-basis decomposition is no longer a production target
+      for the base head-block normalizer.
 
       /-- Hall-Wightman's first reduction in Lemma 3: an extended-tube
       scalar point admits a same-Gram extended-tube representative whose
@@ -33461,7 +33475,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | Pointwise-to-global relative-open assembly | Mechanically ready after local realization. | Choose explicit neighborhoods from `sourceExtendedTubeGramDomain_relOpen_at`, form the subtype-indexed union, and use `sourceExtendedTubeGramDomain_subset_sourceComplexGramVariety`; no Hall-Wightman geometry occurs here. |
       | Adapted same-Gram representative `hwLemma3_extendedTube_adaptedRankRepresentative` | Proof transcript pinned; production Lean not started. | Reduced to the Lemma-2 residual-frame/all-coefficients extended-tube theorem, selected projection, Schur-zero residual theorem, and span-rank equality; the blueprint explicitly forbids source-changing an arbitrary representative to zero tail. |
       | Principal block, projection, and Schur-zero residual algebra | Proof transcript pinned; principal-minor extraction checked locally. | The selected coefficient definition, projection Gram equality, residual orthogonality, residual-residual zero via the Schur complement, and span-finrank theorem are finite algebra support targets, not final wrappers. |
-      | Normal-form source transport | Proof transcript pinned; production Lean not started. | Build the source permutation, projection matrix, invertible symmetric congruence to identity, canonical Gram congruence, tail-zero theorem from adaptedness, Witt extension carrying the selected frame to the standard model, and the oriented invariant transport fields. |
+      | Normal-form source transport | Core finite source-change and head-normalization layer checked in `SourceNormalFormTransport.lean`; tail-zero/adaptedness, Witt extension to the standard frame, and oriented invariant transport fields remain. | The checked layer builds the source permutation, projection matrix, invertible symmetric congruence to `sourceHeadMetric`, and canonical Gram congruence.  The remaining work is the load-bearing tail-zero theorem from adaptedness, the complex-Lorentz/Witt transport carrying the selected frame to the canonical source, and the Cauchy-Binet oriented invariant transport fields. |
       | Near-identity selected-block square root | Proof transcript pinned; pure matrix analysis. | Define the finite matrix binomial series for `(1 + B)^(1/2)`, prove convergence via a scalar power-series majorant, transpose compatibility, square identity, and entrywise smallness via `matrix_opNorm_le_card_mul_sup_entry`. |
       | Schur-rank bound and Takagi residual factorization | Proof transcript pinned; pure finite linear algebra. | Prove block Gaussian rank equality, Autonne-Takagi with rank support and explicit entry-L1 control, small factorization, and tail embedding with coordinate estimates. |
       | Orthogonal-tail residual realization | Proof transcript pinned; production Lean not started. | Transport the Takagi factors into `complexMinkowskiOrthogonalTailSubspace`, prove they pair to the Schur complement and are orthogonal to the selected block, then transport back through the Minkowski orthogonal model with norm control. |
