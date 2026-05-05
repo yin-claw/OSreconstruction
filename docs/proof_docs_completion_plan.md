@@ -479,12 +479,11 @@ the normal Schur parameter is supplied as a
 with `(sourcePrincipalSchurGraph ..., δ p)`, and the max-rank slice is then
 definitionally the same connected product slice by
 `BHW.SourceOrientedVarietyTransportEquiv.invFun_maxRank_iff`.  Consequently
-the remaining oriented normal-form proof only has to construct the normal
-subtype-valued parameter map, prove this subtype point has underlying value
-`(sourcePrincipalSchurGraph ..., δ p)` on the parameter box, prove that the
-actual image agrees with
-`(N.sourceMatrixVarietyTransport.invFun (normal p)).1`, and then move
-connectedness through the finite normal-parameter coordinate equivalence.
+the remaining oriented normal-form proof only has to identify the checked
+normal subtype-valued parameter map with the principal Schur graph on the
+parameter box, prove that the concrete image agrees with
+`(N.originalNormalVarietyPoint p).1`, and then move connectedness through the
+finite normal-parameter coordinate equivalence.
 There is no additional two-sheet obstruction from the determinant coordinates:
 `SourceOrientedMaxRankAt` is defined only from `G.gram`, and the determinant
 coordinates are continuous functions of the same source-vector parameters on
@@ -854,6 +853,21 @@ puts that center in every local head gauge by `Head.center_mem`, and
 checked Witt/head-normalization consumer at the canonical center.  The local
 image producer can therefore start from an honest centered head-gauge chart,
 not from an abstract or global square-root branch.
+The next subtype-valued transport layer is also checked in
+`SourceOrientedRankDeficientNormalImage.lean`: the normal-parameter map
+`sourceOrientedNormalParameterVarietyPoint` lands in
+`SourceOrientedVariety d n`, is continuous, and sends
+`sourceOrientedNormalCenterParameter` to
+`hwLemma3CanonicalSourceOrientedVariety`; for any algebraic normal-form packet
+`N`, `N.originalNormalVarietyPoint` is the inverse-transported normal image,
+is continuous, is centered at the original exceptional point, and rewrites
+max-rank through `N.varietyTransport.invFun_maxRank_iff`.  This removes the
+remaining ambient-transport placeholder from the local-image producer surface.
+On the invertible-head part of the normal-parameter box, the same file proves
+`sourceOrientedNormalParameterVarietyPoint_gram_sourcePrincipalSchurGraph` and
+`sourceOrientedNormalParameterVarietyPoint_eq_sourcePrincipalSchurGraph`, so the
+normal point supplies the exact `hnormal` equality required by
+`isConnected_sourcePrincipalSchur_varietyTransported_orientedMaxRank_preimage_of_eq`.
 
 - `BHW.same_sourceOrientedInvariant_detOneOrbit_or_singularLimit`, including
   the high-rank determinant-ratio/Witt-extension orbit theorem and the
@@ -3073,8 +3087,14 @@ implementation contract is:
    for compatibility with the paired box producer, but the checked realization
    proof uses only Gram smallness plus the variety relations.
    The residual-chart producer is now split one layer further.  Before Lean
-   may implement `sourceOriented_rankDeficient_residualChart`, the blueprint
-   requires `SourceOrientedInvariantTransportEquiv`,
+   may implement the extended-tube residual chart, the blueprint requires only
+   genuine ambient transports where they are mathematically available, and uses
+   the checked variety-relative transport interface for source-matrix normal
+   forms.  The active no-tube algebraic producer is based on
+   `SourceOrientedRankDeficientAlgebraicNormalFormData` and
+   `SourceOrientedRankDeficientAlgebraicNormalFormData.originalNormalVarietyPoint`;
+   the older `SourceOrientedInvariantTransportEquiv` shortcut is not permitted
+   for source changes.  The remaining extended-tube residual-chart surfaces are
    `SourceOrientedRankDeficientNormalFormData`,
    `sourceOriented_rankDeficient_normalFormData`,
    `SourceOrientedResidualPolydiscData`,
@@ -4510,11 +4530,11 @@ implementation contract is:
    | Pointwise-to-global relative-open assembly | Mechanical after local realization. | Choose explicit `sourceExtendedTubeGramDomain_relOpen_at` neighborhoods, form the subtype-indexed union, and use the subset lemma. |
    | Adapted same-Gram representative | Proof transcript pinned; production Lean not started. | `hwLemma3_extendedTube_adaptedRankRepresentative` is reduced to the Lemma-2 residual-frame/all-coefficients extended-tube theorem, selected projection, Schur-zero residual theorem, and span-rank equality; the blueprint explicitly forbids source-changing an arbitrary representative to zero tail. |
    | Principal block/projection/Schur-zero algebra | Proof transcript pinned; principal-minor extraction checked locally. | The blueprint now gives the selected coefficient definition, projection Gram equality, residual orthogonality, residual-residual zero via the Schur complement, and span-finrank theorem.  These are finite algebra support targets, not final wrappers. |
-   | Normal-form source transport | Core source-change, canonical-Gram, adapted tail-zero, selected-head Witt/Lorentz orbit layer, actual determinant Cauchy-Binet, variety-relative source-matrix transport, and the exceptional-to-canonical transport theorem are checked in `SourceNormalFormTransport.lean`/`SourceOrientedTransport.lean`; downstream local-image construction remains. | Source permutation, projection matrix, congruence-to-identity, canonical Gram congruence, coefficient-span/rank preservation, tail-zero from adaptedness, the complex Lorentz transport to `hwLemma3CanonicalSource`, row-multilinearity for full-frame determinants, oriented invariant transport on actual tuples, the variety-subtype homeomorphism for invertible source matrices, max-rank preservation, `sourceOriented_lowRank_exists_normalFormSourceMatrix_to_canonical`, and `sourceOriented_lowRank_exists_normalFormVarietyTransport_from_canonical` are checked.  The old ambient `SourceOrientedInvariantTransportEquiv` source-change target is rejected for determinant coordinates; downstream normal-form local-image code must consume the checked `SourceOrientedVarietyTransportEquiv` interface.  Finite-dimensional estimate packaging around the canonical Schur/residual local image still remains. |
+   | Normal-form source transport | Core source-change, canonical-Gram, adapted tail-zero, selected-head Witt/Lorentz orbit layer, actual determinant Cauchy-Binet, variety-relative source-matrix transport, exceptional-to-canonical transport, and the subtype-valued transported normal-parameter image are checked in `SourceNormalFormTransport.lean`/`SourceOrientedTransport.lean`/`SourceOrientedRankDeficientNormalImage.lean`; downstream local-image construction remains. | Source permutation, projection matrix, congruence-to-identity, canonical Gram congruence, coefficient-span/rank preservation, tail-zero from adaptedness, the complex Lorentz transport to `hwLemma3CanonicalSource`, row-multilinearity for full-frame determinants, oriented invariant transport on actual tuples, the variety-subtype homeomorphism for invertible source matrices, max-rank preservation, `sourceOriented_lowRank_exists_normalFormSourceMatrix_to_canonical`, `sourceOriented_lowRank_exists_normalFormVarietyTransport_from_canonical`, `sourceOrientedNormalParameterVarietyPoint`, `SourceOrientedRankDeficientAlgebraicNormalFormData.originalNormalVarietyPoint`, and the invertible-head principal-Schur equality `sourceOrientedNormalParameterVarietyPoint_eq_sourcePrincipalSchurGraph` are checked.  The old ambient `SourceOrientedInvariantTransportEquiv` source-change target is rejected for determinant coordinates; downstream normal-form local-image code must consume the checked `SourceOrientedVarietyTransportEquiv` interface.  Finite-dimensional estimate packaging around the canonical Schur/residual local image still remains. |
    | Near-identity square root | Proof transcript pinned; pure matrix analysis. | The blueprint gives the binomial-series construction of `(1 + B)^(1/2)`, convergence via a scalar power-series majorant, transpose compatibility, the square identity, and entrywise estimates from matrix norm bounds. |
    | Schur-rank/Takagi/tail factorization | Proof transcript pinned; pure finite linear algebra. | The proof is split into Mathlib Schur-complement rank factorization, Autonne-Takagi with rank support and explicit entry-L1 control, small factorization, and tail embedding with coordinate estimates. |
    | Orthogonal-tail residual realization | Proof transcript pinned; production Lean not started. | Takagi factors are transported into `complexMinkowskiOrthogonalTailSubspace`, paired to the Schur complement, kept orthogonal to the selected block, and transported back through the Minkowski orthogonal model with norm control. |
-   | Normalized Schur realization and transport back | The canonical normal-form transport-to-center theorem is checked; the concrete local-image producer is not yet implemented. | The normalized theorem assembles selected vectors, cross coefficients, and tail residuals, proves the oriented Gram/determinant equality by `sourceOrientedNormalParameterVector_realizes_schur`, then transports the resulting subtype-valued normal image back with the checked `SourceOrientedVarietyTransportEquiv` from `sourceOriented_lowRank_exists_normalFormVarietyTransport_from_canonical`. |
+   | Normalized Schur realization and transport back | The canonical normal-form transport-to-center theorem, subtype-valued transported normal image, and invertible-head principal-Schur equality are checked; the concrete local-image producer is not yet implemented. | The normalized theorem assembles selected vectors, cross coefficients, and tail residuals, proves the oriented Gram/determinant equality by `sourceOrientedNormalParameterVector_realizes_schur`, identifies the resulting normal point with `sourceOrientedNormalParameterVarietyPoint`, rewrites its ordinary coordinate by `sourceOrientedNormalParameterVarietyPoint_eq_sourcePrincipalSchurGraph` on the invertible-head box, then uses `N.originalNormalVarietyPoint` to transport it back through the checked `SourceOrientedVarietyTransportEquiv` from `sourceOriented_lowRank_exists_normalFormVarietyTransport_from_canonical`. |
    | Extended-tube shrink and arbitrary-neighborhood conversion | Proof transcript pinned; topology helper standard. | `exists_coord_supnorm_ball_subset_of_isOpen` is used with openness of `ExtendedTube`; `hwLemma3_adaptedBase_transport_smallPerturbation_extendedTube` combines the shrink with the transported realization. |
    | Existing Schur/local-connectedness files | Checked support only. | `sourceComplexGramVariety_local_connectedRelOpen_basis*` and `sourcePrincipalSchurGraph_rankLE_image_eq_openCoordinatePatch` do not prove relative openness of the extended-tube Gram image. |
 
