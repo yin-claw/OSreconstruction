@@ -9345,29 +9345,34 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (r D : Nat)
           (s : Finset (Fin (r + D)))
           (hs : s.card = r) : ℂ :=
-        ((Equiv.Perm.sign
-          ((finSumFinEquiv :
-                (Fin r ⊕ Fin D) ≃ Fin (r + D)).symm.trans
-            (BHW.matrixRowSubsetSumEquiv r D s hs)) : ℤ) : ℂ)
+        let S : Set.powersetCard (Fin (r + D)) r :=
+          ⟨s, by simpa [Set.powersetCard.mem_iff] using hs⟩
+        let T : Set.powersetCard (Fin (r + D)) D :=
+          Set.powersetCard.compl (α := Fin (r + D)) (n := r) (m := D)
+            (by simp [Nat.add_comm]) S
+        let hdisj : Disjoint S.val T.val := by
+          change Disjoint S.val S.valᶜ
+          exact disjoint_compl_right
+        (((Set.powersetCard.permOfDisjoint hdisj).sign : ℤ) : ℂ)
 
       noncomputable def BHW.matrixBlockColumnLaplaceTerm
           (r D : Nat)
           (M : Matrix (Fin (r + D)) (Fin r) ℂ)
           (Q : Matrix (Fin (r + D)) (Fin D) ℂ)
-          (S : {s : Finset (Fin (r + D)) // s.card = r}) : ℂ :=
-        BHW.matrixRowSubsetLaplaceSign r D S.1 S.2 *
+          (S : Set.powersetCard (Fin (r + D)) r) : ℂ :=
+        BHW.matrixRowSubsetLaplaceSign r D S.val S.prop *
           Matrix.det
             (fun a b =>
-              M (BHW.matrixRowSubsetHeadRows r D S.1 S.2 a) b) *
+              M (BHW.matrixRowSubsetHeadRows r D S.val S.prop a) b) *
           Matrix.det
             (fun a b =>
-              Q (BHW.matrixRowSubsetTailRows r D S.1 S.2 a) b)
+              Q (BHW.matrixRowSubsetTailRows r D S.val S.prop a) b)
 
       noncomputable def BHW.matrixBlockColumnLaplaceSum
           (r D : Nat)
           (M : Matrix (Fin (r + D)) (Fin r) ℂ)
           (Q : Matrix (Fin (r + D)) (Fin D) ℂ) : ℂ :=
-        ∑ S : {s : Finset (Fin (r + D)) // s.card = r},
+        ∑ S : Set.powersetCard (Fin (r + D)) r,
           BHW.matrixBlockColumnLaplaceTerm r D M Q S
 
       theorem BHW.matrix_det_blockColumn_laplace
@@ -9594,33 +9599,30 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (L : Matrix (Fin (n - r)) (Fin r) ℂ)
           (T : BHW.SourceShiftedTailOrientedData d r hrD (n - r))
           (ι : Fin (d + 1) ↪ Fin n) : ℂ :=
-        ∑ S :
-            {s : Finset (Fin (r + (d + 1 - r))) // s.card = r},
-          BHW.matrixRowSubsetLaplaceSign r (d + 1 - r) S.1 S.2 *
+        ∑ S : Set.powersetCard (Fin (r + (d + 1 - r))) r,
+          BHW.matrixRowSubsetLaplaceSign r (d + 1 - r) S.val S.prop *
             (Matrix.det
               (fun a b =>
                 BHW.sourceNormalFullFrameHeadBlock
                   d n r hrn H L ι
                   (Fin.cast (Nat.add_sub_of_le (Nat.le_of_lt hrD))
                     (BHW.matrixRowSubsetHeadRows
-                      r (d + 1 - r) S.1 S.2 a)) b)) *
+                      r (d + 1 - r) S.val S.prop a)) b)) *
             BHW.sourceNormalFullFrameTailRowsDet
               d n r hrD hrn T ι
               { toFun := fun μ =>
                   Fin.cast (Nat.add_sub_of_le (Nat.le_of_lt hrD))
                     (BHW.matrixRowSubsetTailRows
-                      r (d + 1 - r) S.1 S.2 μ)
+                      r (d + 1 - r) S.val S.prop μ)
                 inj' := by
                   intro μ ν hμν
                   exact (BHW.matrixRowSubsetTailRows
-                    r (d + 1 - r) S.1 S.2).injective
+                    r (d + 1 - r) S.val S.prop).injective
                     (Fin.cast_injective
                       (Nat.add_sub_of_le (Nat.le_of_lt hrD)) hμν) }
 
       theorem BHW.sourceFullFrameDet_normalParameter_eq_schurFormula
-          [NeZero d]
-          (hd : 2 <= d)
-          (n r : Nat)
+          (d n r : Nat)
           (hrD : r < d + 1)
           (hrn : r <= n)
           (p :
@@ -9644,12 +9646,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (d n r : Nat)
           (hrD : r < d + 1)
           (hrn : r <= n)
-          (p : BHW.SourceOrientedRankDeficientNormalParameter
-            d n r hrD hrn)
+          (p :
+            BHW.SourceOrientedRankDeficientNormalParameter d n r hrD hrn)
           (ι : Fin (d + 1) ↪ Fin n) :
           BHW.sourceFullFrameDet d n ι
-              (BHW.sourceOrientedNormalParameterVector
-                d n r hrD hrn p) =
+              (BHW.sourceOrientedNormalParameterVector d n r hrD hrn p) =
             BHW.sourceNormalFullFrameDetFromSchur d n r hrD hrn
               p.head p.mixed
               (BHW.sourceShiftedTailOrientedInvariant
@@ -9733,50 +9734,30 @@ Proof decomposition of this theorem, without hiding the analytic work:
       variety is used in this theorem; it is pure finite row algebra for the
       explicit normal parameter vector.
       The conditional theorem
-      `sourceFullFrameDet_normalParameter_eq_schurFormula_of_laplace` is now
-      checked in Lean and proves exactly this implication from the finite
-      theorem `matrix_det_blockColumn_laplace`.  Therefore, once
-      `matrix_det_blockColumn_laplace` is proved, the unconditional
-      `sourceFullFrameDet_normalParameter_eq_schurFormula` is a one-line call
-      to the conditional theorem.
+      `sourceFullFrameDet_normalParameter_eq_schurFormula_of_laplace` is still
+      checked as a reusable bridge from a supplied finite Laplace theorem, but
+      the unconditional theorem
+      `sourceFullFrameDet_normalParameter_eq_schurFormula` now supplies that
+      bridge with the checked theorem `matrix_det_blockColumn_laplace`.
 
-      The verified exterior-power route for proving
-      `matrix_det_blockColumn_laplace` starts with the checked lemma
-      `exteriorPower_repr_iMulti_matrixColumns`.  It specializes
-      `exteriorPower.basis_repr_apply` and
-      `exteriorPower.ιMultiDual_apply_ιMulti` to matrix columns, giving the
-      exact ordered-minor determinant as the coordinate of
-      `exteriorPower.ιMulti` in the basis
-      `(Pi.basisFun ℂ (Fin N)).exteriorPower k`.  The remaining exterior proof
-      should combine the expansions for the `M` and `Q` column wedges, use
-      `ExteriorAlgebra.basis_mul_of_not_disjoint` to kill non-complementary
-      row subsets, and use `ExteriorAlgebra.basis_mul_of_disjoint` plus
-      `Set.powersetCard.compl`/`Set.powersetCard.disjUnion` to identify the
-      surviving sign with `matrixRowSubsetLaplaceSign`.
-
-      Implementation transcript for `matrix_det_blockColumn_laplace`: unfold
-      `Matrix.det_apply'` for the concatenated matrix.  For a permutation
-      `σ : Equiv.Perm (Fin (r+D))`, set
-      `sσ := (Finset.univ.image fun a : Fin r =>
-        σ (finSourceHead (Nat.le_add_right r D) a))`.  Prove
-      `hsσ : sσ.card = r` from `σ.injective` and
-      `finSourceHead_injective`; then `matrixRowSubsetHeadRows r D sσ hsσ`
-      is the increasing enumeration of the rows hit by the first `r` columns,
-      and `matrixRowSubsetTailRows r D sσ hsσ` is the increasing enumeration
-      of the complement.  The permutation decomposes uniquely as
-      `σ = matrixRowSubsetSumEquiv r D sσ hsσ ∘
-        Equiv.Perm.sumCongr σ_head σ_tail ∘ finSumFinEquiv.symm`,
-      where `σ_head` and `σ_tail` are the internal order permutations obtained
-      by applying the inverse ordered-subset equivalences to the two row
-      families.  Reindex `∑ σ` by the subtype
-      `{s : Finset (Fin (r+D)) // s.card = r}` together with these two
-      internal permutations.  The sign factor decomposes by
-      `Equiv.Perm.sign_trans` and `Equiv.Perm.sign_sumCongr` as
-      `matrixRowSubsetLaplaceSign r D s hs * σ_head.sign * σ_tail.sign`.
-      The product over the first `r` columns becomes the Leibniz product for
-      `(fun a b => M (matrixRowSubsetHeadRows r D s hs a) b).det`, and the
-      product over the last `D` columns becomes the Leibniz product for
-      `(fun a b => Q (matrixRowSubsetTailRows r D s hs a) b).det`.  This is
+      Checked implementation transcript for `matrix_det_blockColumn_laplace`:
+      first rewrite the determinant as the top full-exterior-algebra coordinate
+      using `exteriorAlgebra_top_repr_iMulti_matrixColumns`.  Rewrite the wedge
+      of the concatenated block columns with
+      `matrixBlockColumns_iMulti_eq_mul`.  Expand the head wedge with
+      `exteriorAlgebra_iMulti_matrixColumns_eq_sum_minors`, distribute
+      multiplication and the basis-coordinate map over the finite sum, and
+      evaluate each summand by
+      `exteriorAlgebra_basis_mul_iMulti_compl_repr`.  That coefficient lemma
+      expands the tail wedge, kills non-complementary row subsets with
+      `ExteriorAlgebra.basis_mul_of_not_disjoint`, uses
+      `ExteriorAlgebra.basis_mul_of_disjoint` on the complementary subset
+      `Set.powersetCard.compl`, identifies the disjoint-union top index with
+      `Finset.univ`, and matches the surviving `permOfDisjoint` sign with
+      `matrixRowSubsetLaplaceSign`.  The head and tail minor row enumerations
+      are the `Set.powersetCard.ofFinEmbEquiv.symm` order embeddings, which are
+      definitionally the `matrixRowSubsetHeadRows` and
+      `matrixRowSubsetTailRows` order embeddings after unfolding.  This is
       finite Cauchy-Binet/Laplace only; it does not use source geometry.
 
       The theorem `sourceOrientedSchur_fullFrameDet_reconstruct` is the only

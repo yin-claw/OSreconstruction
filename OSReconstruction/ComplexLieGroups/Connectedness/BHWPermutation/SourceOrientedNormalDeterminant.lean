@@ -1,4 +1,5 @@
 import Mathlib.Data.Fintype.Sort
+import Mathlib.LinearAlgebra.ExteriorAlgebra.Basis
 import Mathlib.LinearAlgebra.ExteriorPower.Basis
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedNormalParameter
 
@@ -242,6 +243,35 @@ theorem matrixBlockColumns_reindex_finSum
   cases row <;> cases col <;>
     simp [Matrix.reindex_apply, matrixBlockColumns]
 
+/-- The exterior product of all columns of a block-column matrix is the
+product of the exterior products of the two column blocks. -/
+theorem matrixBlockColumns_iMulti_eq_mul
+    (r D : ℕ)
+    (M : Matrix (Fin (r + D)) (Fin r) ℂ)
+    (Q : Matrix (Fin (r + D)) (Fin D) ℂ) :
+    ExteriorAlgebra.ιMulti ℂ (r + D)
+        (fun j : Fin (r + D) => fun i : Fin (r + D) =>
+          matrixBlockColumns r D M Q i j) =
+      ExteriorAlgebra.ιMulti ℂ r
+          (fun a : Fin r => fun i : Fin (r + D) => M i a) *
+        ExteriorAlgebra.ιMulti ℂ D
+          (fun u : Fin D => fun i : Fin (r + D) => Q i u) := by
+  rw [ExteriorAlgebra.ιMulti_mul_ιMulti]
+  congr
+  funext j
+  refine Fin.addCases (motive := fun j =>
+    (fun i : Fin (r + D) => matrixBlockColumns r D M Q i j) =
+      Fin.append (fun a : Fin r => fun i : Fin (r + D) => M i a)
+        (fun u : Fin D => fun i : Fin (r + D) => Q i u) j) ?_ ?_ j
+  · intro a
+    funext i
+    rw [Fin.append_left]
+    simp [matrixBlockColumns]
+  · intro u
+    funext i
+    rw [Fin.append_right]
+    simp [matrixBlockColumns]
+
 /-- Exterior-power coefficient form of the ordered-minor determinant.  For a
 matrix whose columns are vectors in `Fin N → ℂ`, the coordinate of their
 exterior product at an ordered `k`-subset is the determinant of the
@@ -261,6 +291,120 @@ theorem exteriorPower_repr_iMulti_matrixColumns
     (M := fun i j : Fin k =>
       A (Set.powersetCard.ofFinEmbEquiv.symm s i) j)]
   rfl
+
+/-- For a homogeneous exterior-power element, its coordinate in the full
+exterior-algebra basis at an ordered `N`-subset agrees with its coordinate in
+the degree-`N` exterior-power basis. -/
+theorem exteriorAlgebra_repr_of_mem
+    (N : ℕ)
+    (x : ⋀[ℂ]^N (Fin N → ℂ))
+    (s : Set.powersetCard (Fin N) N) :
+    ((Pi.basisFun ℂ (Fin N)).ExteriorAlgebra.repr
+        (x : ExteriorAlgebra ℂ (Fin N → ℂ))) s.val =
+      ((Pi.basisFun ℂ (Fin N)).exteriorPower N).repr x s := by
+  change (((DirectSum.Decomposition.isInternal
+      (fun n => ⋀[ℂ]^n (Fin N → ℂ))).collectedBasis
+        (fun n => (Pi.basisFun ℂ (Fin N)).exteriorPower n)).reindex
+          Set.powersetCard.prodEquiv).repr
+        (x : ExteriorAlgebra ℂ (Fin N → ℂ)) s.val = _
+  simp [Module.Basis.reindex]
+  have hidx :
+      (⟨(s.val).card, Set.powersetCard.ofCard (s := s.val) rfl⟩ :
+        Sigma fun n => Set.powersetCard (Fin N) n) =
+        ⟨N, s⟩ := by
+    rw [Sigma.mk.inj_iff]
+    constructor
+    · exact s.prop
+    · rw [Subtype.heq_iff_coe_eq]
+      · rfl
+      · intro t
+        rw [s.prop]
+  rw [hidx]
+  exact
+    DirectSum.IsInternal.collectedBasis_repr_of_mem
+      (DirectSum.Decomposition.isInternal
+        (fun n => ⋀[ℂ]^n (Fin N → ℂ)))
+      (fun n => (Pi.basisFun ℂ (Fin N)).exteriorPower n)
+      (x.property :
+        (x : ExteriorAlgebra ℂ (Fin N → ℂ)) ∈ ⋀[ℂ]^N (Fin N → ℂ))
+      (a := s)
+
+@[simp]
+theorem powersetCard_univ_orderEmb_id
+    (N : ℕ)
+    (S : Set.powersetCard (Fin N) N)
+    (hS : (S : Finset (Fin N)) = Finset.univ)
+    (i : Fin N) :
+    Set.powersetCard.ofFinEmbEquiv.symm S i = i := by
+  have horder :
+      Set.powersetCard.ofFinEmbEquiv.symm S =
+        (OrderIso.refl (Fin N)).toOrderEmbedding := by
+    rw [Set.powersetCard.ofFinEmbEquiv_symm_apply]
+    exact (Finset.orderEmbOfFin_unique' S.prop
+      (f := (OrderIso.refl (Fin N)).toOrderEmbedding) (by
+        intro x
+        rw [hS]
+        simp)).symm
+  exact congrFun (congrArg DFunLike.coe horder) i
+
+/-- Top-degree exterior-algebra coordinate form of the determinant. -/
+theorem exteriorAlgebra_top_repr_iMulti_matrixColumns
+    (N : ℕ)
+    (A : Matrix (Fin N) (Fin N) ℂ) :
+    ((Pi.basisFun ℂ (Fin N)).ExteriorAlgebra.repr
+        (ExteriorAlgebra.ιMulti ℂ N
+          (fun j : Fin N => fun i : Fin N => A i j))) Finset.univ =
+      Matrix.det A := by
+  let S : Set.powersetCard (Fin N) N :=
+    Set.powersetCard.ofCard (s := (Finset.univ : Finset (Fin N))) (by simp)
+  have hS : (S : Finset (Fin N)) = Finset.univ := rfl
+  have hrepr := exteriorAlgebra_repr_of_mem N
+    (exteriorPower.ιMulti ℂ N
+      (fun j : Fin N => fun i : Fin N => A i j)) S
+  have hminor := exteriorPower_repr_iMulti_matrixColumns N N A S
+  rw [hminor] at hrepr
+  rw [hS] at hrepr
+  have hmat :
+      (fun i j : Fin N =>
+        A (Set.powersetCard.ofFinEmbEquiv.symm S i) j) = A := by
+    ext i j
+    rw [powersetCard_univ_orderEmb_id N S hS i]
+  rw [hmat] at hrepr
+  exact hrepr
+
+/-- Expansion of an exterior product of matrix columns in the full exterior
+algebra basis. -/
+theorem exteriorAlgebra_iMulti_matrixColumns_eq_sum_minors
+    (N k : ℕ)
+    (A : Matrix (Fin N) (Fin k) ℂ) :
+    ExteriorAlgebra.ιMulti ℂ k
+        (fun j : Fin k => fun i : Fin N => A i j) =
+      ∑ s : Set.powersetCard (Fin N) k,
+        Matrix.det
+            (fun i j : Fin k =>
+              A (Set.powersetCard.ofFinEmbEquiv.symm s i) j) •
+          (Pi.basisFun ℂ (Fin N)).ExteriorAlgebra s.val := by
+  let x : ⋀[ℂ]^k (Fin N → ℂ) :=
+    exteriorPower.ιMulti ℂ k
+      (fun j : Fin k => fun i : Fin N => A i j)
+  change (x : ExteriorAlgebra ℂ (Fin N → ℂ)) = _
+  have hsum := ((Pi.basisFun ℂ (Fin N)).exteriorPower k).sum_repr x
+  have hcoe := congrArg
+    (fun y : ⋀[ℂ]^k (Fin N → ℂ) =>
+      (y : ExteriorAlgebra ℂ (Fin N → ℂ))) hsum
+  change ((↑(∑ i,
+        ((Module.Basis.exteriorPower k (Pi.basisFun ℂ (Fin N))).repr x) i •
+          (Module.Basis.exteriorPower k
+            (Pi.basisFun ℂ (Fin N))) i) :
+      ExteriorAlgebra ℂ (Fin N → ℂ)) = ↑x) at hcoe
+  rw [← hcoe]
+  rw [Submodule.coe_sum]
+  simp_rw [Submodule.coe_smul_of_tower]
+  apply Finset.sum_congr rfl
+  intro s _hs
+  rw [exteriorPower_repr_iMulti_matrixColumns]
+  congr 1
+  exact (ExteriorAlgebra.basis_eq_coe_basis (Pi.basisFun ℂ (Fin N)) s).symm
 
 @[simp]
 theorem matrixRowSubset_compl_card
@@ -324,9 +468,15 @@ noncomputable def matrixRowSubsetLaplaceSign
     (r D : ℕ)
     (s : Finset (Fin (r + D)))
     (hs : s.card = r) : ℂ :=
-  ((Equiv.Perm.sign
-    ((finSumFinEquiv : (Fin r ⊕ Fin D) ≃ Fin (r + D)).symm.trans
-      (matrixRowSubsetSumEquiv r D s hs)) : ℤ) : ℂ)
+  let S : Set.powersetCard (Fin (r + D)) r :=
+    ⟨s, by simpa [Set.powersetCard.mem_iff] using hs⟩
+  let T : Set.powersetCard (Fin (r + D)) D :=
+    Set.powersetCard.compl (α := Fin (r + D)) (n := r) (m := D)
+      (by simp [Nat.add_comm]) S
+  let hdisj : Disjoint S.val T.val := by
+    change Disjoint S.val S.valᶜ
+    exact disjoint_compl_right
+  (((Set.powersetCard.permOfDisjoint hdisj).sign : ℤ) : ℂ)
 
 /-- The summand attached to one ordered row subset in the finite Laplace
 expansion of a block-column determinant. -/
@@ -334,20 +484,152 @@ noncomputable def matrixBlockColumnLaplaceTerm
     (r D : ℕ)
     (M : Matrix (Fin (r + D)) (Fin r) ℂ)
     (Q : Matrix (Fin (r + D)) (Fin D) ℂ)
-    (S : {s : Finset (Fin (r + D)) // s.card = r}) : ℂ :=
-  matrixRowSubsetLaplaceSign r D S.1 S.2 *
+    (S : Set.powersetCard (Fin (r + D)) r) : ℂ :=
+  matrixRowSubsetLaplaceSign r D S.val S.prop *
     Matrix.det
-      (fun a b => M (matrixRowSubsetHeadRows r D S.1 S.2 a) b) *
+      (fun a b => M (matrixRowSubsetHeadRows r D S.val S.prop a) b) *
     Matrix.det
-      (fun a b => Q (matrixRowSubsetTailRows r D S.1 S.2 a) b)
+      (fun a b => Q (matrixRowSubsetTailRows r D S.val S.prop a) b)
 
 /-- The finite row-subset Laplace sum for a block-column determinant. -/
 noncomputable def matrixBlockColumnLaplaceSum
     (r D : ℕ)
     (M : Matrix (Fin (r + D)) (Fin r) ℂ)
     (Q : Matrix (Fin (r + D)) (Fin D) ℂ) : ℂ :=
-  ∑ S : {s : Finset (Fin (r + D)) // s.card = r},
+  ∑ S : Set.powersetCard (Fin (r + D)) r,
     matrixBlockColumnLaplaceTerm r D M Q S
+
+/-- Coefficient of a fixed head-row exterior basis vector times the tail-column
+exterior product.  Only the complementary tail rows survive in top degree. -/
+theorem exteriorAlgebra_basis_mul_iMulti_compl_repr
+    (r D : ℕ)
+    (Q : Matrix (Fin (r + D)) (Fin D) ℂ)
+    (S : Set.powersetCard (Fin (r + D)) r) :
+    ((Pi.basisFun ℂ (Fin (r + D))).ExteriorAlgebra.repr
+      ((Pi.basisFun ℂ (Fin (r + D))).ExteriorAlgebra S.val *
+        ExteriorAlgebra.ιMulti ℂ D
+          (fun u : Fin D => fun i : Fin (r + D) => Q i u))) Finset.univ =
+      matrixRowSubsetLaplaceSign r D S.val S.prop *
+        Matrix.det
+          (fun a b : Fin D =>
+            Q (matrixRowSubsetTailRows r D S.val S.prop a) b) := by
+  let T : Set.powersetCard (Fin (r + D)) D :=
+    Set.powersetCard.compl (α := Fin (r + D)) (n := r) (m := D)
+      (by simp [Nat.add_comm]) S
+  have hdisj : Disjoint S.val T.val := by
+    change Disjoint S.val S.valᶜ
+    exact disjoint_compl_right
+  have hQ := exteriorAlgebra_iMulti_matrixColumns_eq_sum_minors (r + D) D Q
+  rw [hQ]
+  rw [Finset.mul_sum]
+  simp_rw [mul_smul_comm]
+  rw [map_sum]
+  simp_rw [map_smul]
+  rw [Finset.sum_eq_single T]
+  · have hmul := ExteriorAlgebra.basis_mul_of_disjoint
+      (Pi.basisFun ℂ (Fin (r + D))) (s := S) (t := T) hdisj
+    rw [hmul]
+    have hsign :
+        (((Set.powersetCard.permOfDisjoint hdisj).sign : ℤ) : ℂ) =
+          matrixRowSubsetLaplaceSign r D S.val S.prop := by
+      simp [matrixRowSubsetLaplaceSign, T]
+    rw [← hsign]
+    have htop :
+        (Set.powersetCard.disjUnion hdisj).val =
+          (Finset.univ : Finset (Fin (r + D))) := by
+      ext x
+      simp [T]
+    have hcoord :
+        ((Pi.basisFun ℂ (Fin (r + D))).ExteriorAlgebra.repr
+          ((Set.powersetCard.permOfDisjoint hdisj).sign •
+            (Pi.basisFun ℂ (Fin (r + D))).ExteriorAlgebra
+              (Set.powersetCard.disjUnion hdisj).val)) Finset.univ =
+          (((Set.powersetCard.permOfDisjoint hdisj).sign : ℤ) : ℂ) := by
+      rw [← htop]
+      change
+        ((Pi.basisFun ℂ (Fin (r + D))).ExteriorAlgebra.repr
+          ((((Set.powersetCard.permOfDisjoint hdisj).sign : ℤ) : ℂ) •
+            (Pi.basisFun ℂ (Fin (r + D))).ExteriorAlgebra
+              (Set.powersetCard.disjUnion hdisj).val))
+          (Set.powersetCard.disjUnion hdisj).val =
+          (((Set.powersetCard.permOfDisjoint hdisj).sign : ℤ) : ℂ)
+      simp
+    rw [Finsupp.smul_apply, hcoord]
+    have htailRows :
+        (fun i j : Fin D => Q (Set.powersetCard.ofFinEmbEquiv.symm T i) j) =
+          (fun a b : Fin D =>
+            Q (matrixRowSubsetTailRows r D S.val S.prop a) b) := by
+      ext a b
+      simp [T, matrixRowSubsetTailRows,
+        Set.powersetCard.ofFinEmbEquiv_symm_apply]
+    rw [htailRows]
+    exact mul_comm _ _
+  · intro U _hU hUT
+    by_cases hSU : Disjoint S.val U.val
+    · have hUeq : U = T := by
+        apply Set.powersetCard.eq_iff_subset.mpr
+        intro x hx
+        change x ∈ S.valᶜ
+        rw [Finset.mem_compl]
+        intro hxS
+        exact Finset.disjoint_left.mp hSU hxS hx
+      exact (hUT hUeq).elim
+    · have hmul := ExteriorAlgebra.basis_mul_of_not_disjoint
+        (Pi.basisFun ℂ (Fin (r + D))) (s := S) (t := U) hSU
+      rw [hmul]
+      simp
+  · intro hT
+    exact (hT (Finset.mem_univ T)).elim
+
+/-- Finite Laplace expansion of a determinant whose first `r` columns are `M`
+and last `D` columns are `Q`, grouped by the chosen rows of the first block. -/
+theorem matrix_det_blockColumn_laplace
+    (r D : ℕ)
+    (M : Matrix (Fin (r + D)) (Fin r) ℂ)
+    (Q : Matrix (Fin (r + D)) (Fin D) ℂ) :
+    (matrixBlockColumns r D M Q).det =
+      matrixBlockColumnLaplaceSum r D M Q := by
+  rw [← exteriorAlgebra_top_repr_iMulti_matrixColumns
+    (r + D) (matrixBlockColumns r D M Q)]
+  rw [matrixBlockColumns_iMulti_eq_mul]
+  have hM := exteriorAlgebra_iMulti_matrixColumns_eq_sum_minors (r + D) r M
+  rw [hM]
+  rw [Finset.sum_mul]
+  simp_rw [smul_mul_assoc]
+  rw [map_sum]
+  simp_rw [map_smul]
+  simp_rw [Finsupp.finset_sum_apply]
+  simp_rw [Finsupp.smul_apply]
+  unfold matrixBlockColumnLaplaceSum matrixBlockColumnLaplaceTerm
+  change
+    (∑ S : Set.powersetCard (Fin (r + D)) r,
+      (Matrix.det
+          (fun i j : Fin r =>
+            M (Set.powersetCard.ofFinEmbEquiv.symm S i) j)) •
+        (((Pi.basisFun ℂ (Fin (r + D))).ExteriorAlgebra.repr
+          ((Pi.basisFun ℂ (Fin (r + D))).ExteriorAlgebra S.val *
+            ExteriorAlgebra.ιMulti ℂ D
+              (fun u : Fin D => fun i : Fin (r + D) => Q i u))) Finset.univ)) =
+      ∑ S : Set.powersetCard (Fin (r + D)) r,
+        (matrixRowSubsetLaplaceSign r D S.val S.prop *
+            Matrix.det
+              (fun a b : Fin r =>
+                M (matrixRowSubsetHeadRows r D S.val S.prop a) b)) *
+          Matrix.det
+            (fun a b : Fin D =>
+              Q (matrixRowSubsetTailRows r D S.val S.prop a) b)
+  apply Finset.sum_congr rfl
+  intro S _hS
+  rw [exteriorAlgebra_basis_mul_iMulti_compl_repr]
+  have hheadRows :
+      (fun i j : Fin r => M (Set.powersetCard.ofFinEmbEquiv.symm S i) j) =
+        (fun a b : Fin r =>
+          M (matrixRowSubsetHeadRows r D S.val S.prop a) b) := by
+    ext a b
+    simp [matrixRowSubsetHeadRows,
+      Set.powersetCard.ofFinEmbEquiv_symm_apply]
+  rw [hheadRows]
+  simp [smul_eq_mul, mul_left_comm, mul_assoc]
 
 /-- Head-column coefficients for an arbitrary ordered full frame in the
 rank-deficient Schur normal form.  Selected head labels contribute standard
@@ -655,20 +937,20 @@ def sourceNormalFullFrameDetFromSchur
     (L : Matrix (Fin (n - r)) (Fin r) ℂ)
     (T : SourceShiftedTailOrientedData d r hrD (n - r))
     (ι : Fin (d + 1) ↪ Fin n) : ℂ :=
-  ∑ S : {s : Finset (Fin (r + (d + 1 - r))) // s.card = r},
-    matrixRowSubsetLaplaceSign r (d + 1 - r) S.1 S.2 *
+  ∑ S : Set.powersetCard (Fin (r + (d + 1 - r))) r,
+    matrixRowSubsetLaplaceSign r (d + 1 - r) S.val S.prop *
       Matrix.det
         (fun a b =>
           sourceNormalFullFrameHeadBlock d n r hrn H L ι
             (Fin.cast (Nat.add_sub_of_le (Nat.le_of_lt hrD))
-              (matrixRowSubsetHeadRows r (d + 1 - r) S.1 S.2 a)) b) *
+              (matrixRowSubsetHeadRows r (d + 1 - r) S.val S.prop a)) b) *
       sourceNormalFullFrameTailRowsDet d n r hrD hrn T ι
         { toFun := fun μ =>
             Fin.cast (Nat.add_sub_of_le (Nat.le_of_lt hrD))
-              (matrixRowSubsetTailRows r (d + 1 - r) S.1 S.2 μ)
+              (matrixRowSubsetTailRows r (d + 1 - r) S.val S.prop μ)
           inj' := by
             intro μ ν hμν
-            exact (matrixRowSubsetTailRows r (d + 1 - r) S.1 S.2).injective
+            exact (matrixRowSubsetTailRows r (d + 1 - r) S.val S.prop).injective
               (Fin.cast_injective
                 (Nat.add_sub_of_le (Nat.le_of_lt hrD)) hμν) }
 
@@ -720,11 +1002,26 @@ theorem sourceFullFrameDet_normalParameter_eq_schurFormula_of_laplace
     p.tail ι
     { toFun := fun μ =>
         Fin.cast (Nat.add_sub_of_le (Nat.le_of_lt hrD))
-          (matrixRowSubsetTailRows r (d + 1 - r) S.1 S.2 μ)
+          (matrixRowSubsetTailRows r (d + 1 - r) S.val S.prop μ)
       inj' := by
         intro μ ν hμν
-        exact (matrixRowSubsetTailRows r (d + 1 - r) S.1 S.2).injective
+        exact (matrixRowSubsetTailRows r (d + 1 - r) S.val S.prop).injective
           (Fin.cast_injective
             (Nat.add_sub_of_le (Nat.le_of_lt hrD)) hμν) }
+
+theorem sourceFullFrameDet_normalParameter_eq_schurFormula
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn)
+    (ι : Fin (d + 1) ↪ Fin n) :
+    sourceFullFrameDet d n ι
+        (sourceOrientedNormalParameterVector d n r hrD hrn p) =
+      sourceNormalFullFrameDetFromSchur d n r hrD hrn
+        p.head p.mixed
+        (sourceShiftedTailOrientedInvariant d r hrD (n - r) p.tail)
+        ι :=
+  sourceFullFrameDet_normalParameter_eq_schurFormula_of_laplace
+    matrix_det_blockColumn_laplace d n r hrD hrn p ι
 
 end BHW

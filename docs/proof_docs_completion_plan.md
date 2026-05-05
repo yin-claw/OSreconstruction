@@ -571,9 +571,15 @@ has also started in Lean with checked definitions
 block evaluation lemmas, the two normal-parameter coordinate projection
 theorems, and the arbitrary-frame matrix identity
 `BHW.sourceFullFrameMatrix_normalParameter_eq_blockColumns` are also checked.
-Most importantly,
-`BHW.sourceFullFrameDet_normalParameter_eq_schurFormula_of_laplace` now proves
-the normal-parameter determinant reconstruction from the single finite theorem
+Most importantly, the finite determinant blocker is now discharged in Lean.
+`BHW.matrix_det_blockColumn_laplace` proves the ordinary row-subset Laplace
+expansion for `BHW.matrixBlockColumns` by an exterior-algebra top-coordinate
+argument, and
+`BHW.sourceFullFrameDet_normalParameter_eq_schurFormula` is now the
+unconditional normal-parameter determinant reconstruction theorem.  The
+conditional theorem
+`BHW.sourceFullFrameDet_normalParameter_eq_schurFormula_of_laplace` remains as
+a checked reusable bridge, but its hypothesis is now supplied by
 `BHW.matrix_det_blockColumn_laplace`.  The finite Laplace bookkeeping now
 uses checked ordered-row-subset definitions
 `BHW.matrixBlockColumns`, `BHW.matrixBlockColumns_inl`,
@@ -582,12 +588,18 @@ uses checked ordered-row-subset definitions
 `BHW.matrixRowSubsetHeadRows`, `BHW.matrixRowSubsetTailRows`,
 `BHW.matrixRowSubsetSumEquiv`, `BHW.matrixRowSubsetLaplaceSign`,
 `BHW.matrixBlockColumnLaplaceTerm`, and
-`BHW.matrixBlockColumnLaplaceSum`.  The exterior-power coefficient lemma
-`BHW.exteriorPower_repr_iMulti_matrixColumns` is also checked and pins the
-ordered-minor determinant as the coordinate of `exteriorPower.ιMulti` in
-`(Pi.basisFun ℂ (Fin N)).exteriorPower k`; the still-open part is the
-canonical finite row-subset Laplace theorem and the reconstruction equality
-over `G`.
+`BHW.matrixBlockColumnLaplaceSum`, with row subsets represented by
+`Set.powersetCard` to match mathlib's exterior-algebra basis.  The checked
+exterior support lemmas include
+`BHW.matrixBlockColumns_iMulti_eq_mul`,
+`BHW.exteriorPower_repr_iMulti_matrixColumns`,
+`BHW.exteriorAlgebra_repr_of_mem`,
+`BHW.powersetCard_univ_orderEmb_id`,
+`BHW.exteriorAlgebra_top_repr_iMulti_matrixColumns`,
+`BHW.exteriorAlgebra_iMulti_matrixColumns_eq_sum_minors`, and
+`BHW.exteriorAlgebra_basis_mul_iMulti_compl_repr`.  The remaining determinant
+work over `G` is therefore no longer finite row algebra; it is the separate
+reconstruction equality `sourceOrientedSchur_fullFrameDet_reconstruct`.
 Arbitrary ordered full frames are then routed through
 the finite Laplace theorem `matrix_det_blockColumn_laplace`,
 `sourceNormalFullFrameDetFromSchur`,
