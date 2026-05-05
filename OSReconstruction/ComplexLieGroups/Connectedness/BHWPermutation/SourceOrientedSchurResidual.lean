@@ -112,6 +112,55 @@ structure SourceOrientedSchurResidualData
     tail.det = sourceSchurResidualDeterminants d n r hrD hrn G headFactor
   tail_mem : tail ∈ sourceShiftedTailOrientedVariety d r hrD (n - r)
 
+/-- On selected head-tail full frames, the Schur determinant formula collapses
+to the chosen head determinant times the stored residual-tail determinant. -/
+theorem sourceNormalFullFrameDetFromSchur_headTail
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    {G : SourceOrientedGramData d n}
+    (R : SourceOrientedSchurResidualData d n r hrD hrn G)
+    (lam : Fin (d + 1 - r) ↪ Fin (n - r)) :
+    sourceNormalFullFrameDetFromSchur d n r hrD hrn
+        R.headFactor R.L R.tail
+        (sourceFullFrameEmbeddingOfHeadTail d n r hrD hrn lam) =
+      R.headFactor.det * R.tail.det lam := by
+  rcases R.tail_mem with ⟨q, hq⟩
+  let p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn :=
+    { head := R.headFactor
+      mixed := R.L
+      tail := q }
+  have hschur :=
+    sourceFullFrameDet_normalParameter_eq_schurFormula
+      d n r hrD hrn p
+      (sourceFullFrameEmbeddingOfHeadTail d n r hrD hrn lam)
+  have hheadTail :=
+    sourceFullFrameDet_normalParameter_headTail d n r hrD hrn p lam
+  simpa [p, hq] using hschur.symm.trans hheadTail
+
+/-- The selected head-tail specialization agrees with the corresponding stored
+determinant coordinate of the original oriented datum. -/
+theorem sourceNormalFullFrameDetFromSchur_headTail_eq_source_det
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    {G : SourceOrientedGramData d n}
+    (R : SourceOrientedSchurResidualData d n r hrD hrn G)
+    (lam : Fin (d + 1 - r) ↪ Fin (n - r)) :
+    sourceNormalFullFrameDetFromSchur d n r hrD hrn
+        R.headFactor R.L R.tail
+        (sourceFullFrameEmbeddingOfHeadTail d n r hrD hrn lam) =
+      G.det (sourceFullFrameEmbeddingOfHeadTail d n r hrD hrn lam) := by
+  rw [sourceNormalFullFrameDetFromSchur_headTail]
+  have htail :
+      R.tail.det lam =
+        G.det (sourceFullFrameEmbeddingOfHeadTail d n r hrD hrn lam) /
+          R.headFactor.det := by
+    simpa [sourceSchurResidualDeterminants] using
+      congrFun R.tail_det_eq lam
+  rw [htail]
+  field_simp [R.headFactor_det_unit.ne_zero]
+
 /-- Mechanical determinant-coordinate consumer for the normal-parameter Schur
 route.  The hard input is the genuine full-frame reconstruction theorem over
 the original oriented datum `G`, supplied as `hdet`. -/
@@ -152,4 +201,3 @@ theorem sourceOrientedNormalParameterVector_realizes_schur_det_of_fullFrameRecon
     _ = G.det ι := hdet ι
 
 end BHW
-

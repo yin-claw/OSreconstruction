@@ -609,15 +609,26 @@ also checked in
 `BHW.sourceOrientedSchurTailBlock`, `BHW.sourceSchurMixedCoeff`,
 `BHW.sourceSchurComplement`, `BHW.sourceSchurResidualDeterminants`,
 `BHW.sourceShiftedTailOrientedVariety`,
-`BHW.SourceOrientedSchurResidualData`, and the checked determinant consumer
+`BHW.SourceOrientedSchurResidualData`,
+`BHW.sourceNormalFullFrameDetFromSchur_headTail`,
+`BHW.sourceNormalFullFrameDetFromSchur_headTail_eq_source_det`, and the
+checked determinant consumer
 `BHW.sourceOrientedNormalParameterVector_realizes_schur_det_of_fullFrameReconstruct`.
 That consumer deliberately keeps the genuine Plucker/Cauchy-Binet
-reconstruction theorem as an explicit hypothesis.  Thus arbitrary ordered full
-frames are routed through the finite Laplace theorem
+reconstruction theorem as an explicit hypothesis.  The future
+`sourceOrientedSchur_fullFrameDet_reconstruct` theorem must take
+`hGvar : G ∈ sourceOrientedGramVariety d n`; without this range hypothesis,
+the unselected determinant coordinates of the product-coordinate datum `G` are
+arbitrary and the reconstruction statement is false.  Thus arbitrary ordered
+full frames are routed through the finite Laplace theorem
 `matrix_det_blockColumn_laplace`, `sourceNormalFullFrameDetFromSchur`,
 `sourceFullFrameDet_normalParameter_eq_schurFormula`, and the still-open
-`sourceOrientedSchur_fullFrameDet_reconstruct`; once that theorem is proved,
-the final determinant field of
+`sourceOrientedSchur_fullFrameDet_reconstruct`.  Its selected head-tail
+specialization is already checked by
+`sourceNormalFullFrameDetFromSchur_headTail_eq_source_det`, using
+`R.tail_det_eq` and cancellation by `R.headFactor_det_unit`; the remaining
+work is only the non-selected Plucker/Cauchy-Binet propagation.  Once that
+theorem is proved, the final determinant field of
 `sourceOrientedNormalParameterVector_realizes_schur` is a mechanical call to
 the checked
 `sourceOrientedNormalParameterVector_realizes_schur_det_of_fullFrameReconstruct`
