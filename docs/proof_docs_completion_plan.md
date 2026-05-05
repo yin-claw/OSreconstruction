@@ -483,7 +483,11 @@ metric and Gram coordinates `BHW.sourceTailMetric`,
 embedding `BHW.sourceFullFrameEmbeddingOfHeadTail` with its head/tail
 evaluation theorems, the checked head/tail sum equivalence
 `BHW.sourceHeadTailSumEquiv` with its inl/inr evaluation theorems, and
-`BHW.sourceShiftedTailGram`, the checked
+`BHW.sourceShiftedTailGram`, the checked shifted-tail oriented data and
+projection API `BHW.SourceShiftedTailOrientedData`,
+`BHW.sourceShiftedTailOrientedInvariant`,
+`BHW.sourceShiftedTailOrientedInvariant_gram`, and
+`BHW.sourceShiftedTailOrientedInvariant_det`, the checked
 head/head normal parameter Gram formula
 `BHW.sourceVectorMinkowskiInner_sourceOrientedNormalHeadVector`, the checked
 head/tail orthogonality and mixed-block formulas
@@ -555,8 +559,9 @@ matrix is exactly
 checked as `BHW.sourceFullFrameMatrix_normalParameter_headTail_blocks`.
 Taking determinants gives the checked raw selected-frame theorem
 `BHW.sourceFullFrameDet_normalParameter_headTail_raw`; the remaining
-shifted-tail wrapper only has to identify the raw bottom-right determinant
-with the determinant coordinate of `sourceShiftedTailOrientedInvariant`.
+shifted-tail wrapper is now checked as
+`BHW.sourceFullFrameDet_normalParameter_headTail` using
+`sourceShiftedTailOrientedInvariant_det`.
 Arbitrary ordered full frames are then routed through
 the finite Laplace theorem `matrix_det_blockColumn_laplace`,
 `sourceNormalFullFrameDetFromSchur`,

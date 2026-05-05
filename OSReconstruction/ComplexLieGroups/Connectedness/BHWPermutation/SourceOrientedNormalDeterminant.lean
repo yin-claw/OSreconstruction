@@ -76,6 +76,46 @@ theorem sourceOrientedNormalHeadVector_tailCoord
   rw [sourceOrientedNormalHeadVector]
   simp
 
+/-- Shifted residual-tail oriented coordinates: the shifted Gram matrix and all
+top residual-tail determinants. -/
+structure SourceShiftedTailOrientedData
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (m : ℕ) where
+  gram : Matrix (Fin m) (Fin m) ℂ
+  det : (Fin (d + 1 - r) ↪ Fin m) → ℂ
+
+/-- The shifted-tail oriented invariant of a residual-tail source tuple. -/
+def sourceShiftedTailOrientedInvariant
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (m : ℕ)
+    (q : Fin m → Fin (d + 1 - r) → ℂ) :
+    SourceShiftedTailOrientedData d r hrD m where
+  gram := sourceShiftedTailGram d r hrD m q
+  det := fun lam => Matrix.det (fun u μ : Fin (d + 1 - r) => q (lam u) μ)
+
+@[simp]
+theorem sourceShiftedTailOrientedInvariant_gram
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (m : ℕ)
+    (q : Fin m → Fin (d + 1 - r) → ℂ) :
+    (sourceShiftedTailOrientedInvariant d r hrD m q).gram =
+      sourceShiftedTailGram d r hrD m q := by
+  rfl
+
+@[simp]
+theorem sourceShiftedTailOrientedInvariant_det
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (m : ℕ)
+    (q : Fin m → Fin (d + 1 - r) → ℂ)
+    (lam : Fin (d + 1 - r) ↪ Fin m) :
+    (sourceShiftedTailOrientedInvariant d r hrD m q).det lam =
+      Matrix.det (fun u μ : Fin (d + 1 - r) => q (lam u) μ) := by
+  rfl
+
 theorem sourceFullFrameMatrix_normalParameter_headTail_blocks
     (d n r : ℕ)
     (hrD : r < d + 1)
@@ -125,5 +165,19 @@ theorem sourceFullFrameDet_normalParameter_headTail_raw
   have hdet := congrArg Matrix.det hblocks
   rw [Matrix.det_reindex_self] at hdet
   simpa [sourceFullFrameDet] using hdet
+
+theorem sourceFullFrameDet_normalParameter_headTail
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn)
+    (lam : Fin (d + 1 - r) ↪ Fin (n - r)) :
+    sourceFullFrameDet d n
+        (sourceFullFrameEmbeddingOfHeadTail d n r hrD hrn lam)
+        (sourceOrientedNormalParameterVector d n r hrD hrn p) =
+      p.head.det *
+        (sourceShiftedTailOrientedInvariant d r hrD (n - r) p.tail).det lam := by
+  simpa using
+    sourceFullFrameDet_normalParameter_headTail_raw d n r hrD hrn p lam
 
 end BHW

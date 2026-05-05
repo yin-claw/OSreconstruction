@@ -9181,9 +9181,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 (fun u μ : Fin (d + 1 - r) => p.tail (lam u) μ)
 
       theorem BHW.sourceFullFrameDet_normalParameter_headTail
-          [NeZero d]
-          (hd : 2 <= d)
-          (n r : Nat)
+          (d n r : Nat)
           (hrD : r < d + 1)
           (hrn : r <= n)
           (p :
@@ -9211,6 +9209,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceTailEmbed_tail` and the head-vector tail-coordinate zero lemma to
       reduce to `p.tail (lam u) μ`.
 
+      The structure `SourceShiftedTailOrientedData`, the invariant
+      `sourceShiftedTailOrientedInvariant`, and its Gram/determinant projection
+      theorems are now checked in the determinant companion file.
+
       Proof of `sourceFullFrameDet_normalParameter_headTail_raw`: take
       determinants in `sourceFullFrameMatrix_normalParameter_headTail_blocks`,
       use `Matrix.det_reindex_self` to remove the head/tail reindexing, and
@@ -9218,7 +9220,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrameDet_normalParameter_headTail`: rewrite by the raw theorem
       and identify the bottom-right determinant with
       `(sourceShiftedTailOrientedInvariant d r hrD (n-r) p.tail).det lam` by
-      the definition of the shifted-tail determinant coordinate.  No row
+      the checked theorem `sourceShiftedTailOrientedInvariant_det`.  No row
       operation theorem is needed here; the matrix is already block lower
       triangular after the explicit reindexing.
 
