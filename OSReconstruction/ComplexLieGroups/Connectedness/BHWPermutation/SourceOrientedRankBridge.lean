@@ -59,6 +59,29 @@ theorem sourceGramMatrixRank_le_spacetime_source_min
   rw [sourceGramMatrixRank_eq_restrictedMinkowskiRank_range]
   exact le_min (le_trans hrank_le_M hle_d1) (le_trans hrank_le_M hle_n)
 
+/-- In the hard source range `d + 1 ≤ n`, oriented max-rank is the
+full spacetime-frame rank equation on the ordinary Gram coordinate. -/
+theorem sourceOrientedMaxRankAt_iff_sourceGramMatrixRank_eq_fullFrame
+    (hn : d + 1 ≤ n)
+    (G : SourceOrientedGramData d n) :
+    SourceOrientedMaxRankAt d n G ↔
+      sourceGramMatrixRank n G.gram = d + 1 := by
+  simp [SourceOrientedMaxRankAt, Nat.min_eq_left hn]
+
+/-- In the hard source range, the oriented max-rank predicate on an actual
+source configuration is just the full-frame ordinary source Gram rank
+equation. -/
+theorem sourceOrientedMaxRankAt_invariant_iff_sourceGramMatrixRank_eq_fullFrame
+    (hn : d + 1 ≤ n)
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    SourceOrientedMaxRankAt d n
+        (sourceOrientedMinkowskiInvariant d n z) ↔
+      sourceGramMatrixRank n (sourceMinkowskiGram d n z) = d + 1 := by
+  simpa [sourceOrientedMinkowskiInvariant, SourceOrientedGramData.gram] using
+    sourceOrientedMaxRankAt_iff_sourceGramMatrixRank_eq_fullFrame
+      (d := d) (n := n) hn
+      (sourceOrientedMinkowskiInvariant d n z)
+
 /-- On actual source configurations, oriented max-rank equality is equivalent
 to the older scalar max-rank `≤` predicate. -/
 theorem sourceOrientedMaxRankAt_invariant_iff_hwSourceGramMaxRankAt

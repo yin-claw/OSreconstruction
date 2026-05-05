@@ -389,7 +389,15 @@ same product-connectedness pattern as the checked ordinary singular theorem
 `sourceComplexGramVariety_local_rankExact_connected_basis_singular`, using the
 connected symmetric head ball, connected mixed ball, and
 `matrixSymmetricRankExactCone_small_connected` for the residual tail.  The
-parameter-side product step is now checked separately as
+hard-range rewrite from oriented max-rank to ordinary full-frame rank is now
+checked as
+`BHW.sourceOrientedMaxRankAt_iff_sourceGramMatrixRank_eq_fullFrame`, with the
+actual-source specialization
+`BHW.sourceOrientedMaxRankAt_invariant_iff_sourceGramMatrixRank_eq_fullFrame`.
+The oriented parameter proof should call the first theorem after rewriting
+`(toInv c).gram`; it should call the second only when the normal parameter map
+is still expressed as an actual source vector.  The parameter-side product
+step is now checked separately as
 `BHW.isConnected_sourcePrincipalSchur_rankExact_parameterSet`; the oriented
 proof should use it before transporting by the normal-parameter coordinate
 equivalence via the checked helper
@@ -402,7 +410,9 @@ this local image.  The exact Lean proof should therefore:
 1. define
    `parameterMaxRank = P ∩ {c | SourceOrientedMaxRankAt d n (toInv c)}`;
 2. rewrite the predicate through `toInv`, the oriented-transport rank
-   invariance, and `SourceOrientedMaxRankAt` to ordinary source-matrix rank;
+   invariance, and
+   `sourceOrientedMaxRankAt_iff_sourceGramMatrixRank_eq_fullFrame` to ordinary
+   source-matrix rank `sourceGramMatrixRank n ((toInv c).gram) = d + 1`;
 3. use the principal Schur rank theorem to identify this set with the product
    of the head ball, mixed ball, and
    `C ∩ {S | Sᵀ = S ∧ S.rank = (d + 1) - N.r}`;
