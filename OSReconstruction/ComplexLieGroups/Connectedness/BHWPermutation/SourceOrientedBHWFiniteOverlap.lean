@@ -18,6 +18,41 @@ namespace BHW
 
 variable {d n : ℕ}
 
+/-- Every nonempty relatively open source-oriented patch contains a nonempty
+preconnected relatively open seed in the max-rank stratum, in the hard range
+`d + 1 ≤ n`.  This is the seed-extraction helper used at the start and close
+of finite-overlap propagation arguments. -/
+theorem exists_preconnectedRelOpen_maxRankSeed_inside
+    (hn : d + 1 ≤ n)
+    {W : Set (SourceOrientedGramData d n)}
+    (hW_rel : IsRelOpenInSourceOrientedGramVariety d n W)
+    (hW_nonempty : W.Nonempty) :
+    ∃ seed : Set (SourceOrientedGramData d n),
+      IsRelOpenInSourceOrientedGramVariety d n seed ∧
+      IsPreconnected seed ∧
+      seed.Nonempty ∧
+      seed ⊆ W ∩ {G | SourceOrientedMaxRankAt d n G} := by
+  let Wmax : Set (SourceOrientedGramData d n) :=
+    W ∩ {G | SourceOrientedMaxRankAt d n G}
+  have hWmax_rel : IsRelOpenInSourceOrientedGramVariety d n Wmax :=
+    sourceOrientedRelOpen_inter_maxRank_relOpen
+      (d := d) (n := n) hn hW_rel
+  have hWmax_nonempty : Wmax.Nonempty :=
+    sourceOrientedRelOpen_inter_maxRank_nonempty
+      (d := d) (n := n) hn hW_rel hW_nonempty
+  rcases hWmax_nonempty with ⟨G0, hG0Wmax⟩
+  have hG0var : G0 ∈ sourceOrientedGramVariety d n :=
+    IsRelOpenInSourceOrientedGramVariety.subset hW_rel hG0Wmax.1
+  rcases sourceOrientedMaxRankChartData_of_maxRankAt_fullFrame
+      (d := d) (n := n) hn hG0var hG0Wmax.2 with
+    ⟨_m, C⟩
+  rcases C.connectedMaxRankPatch_inside_relOpen hWmax_rel hG0Wmax with
+    ⟨P, hP_sub⟩
+  refine ⟨P.V, P.V_relOpen, P.V_connected.isPreconnected,
+    ⟨G0, P.center_mem⟩, ?_⟩
+  intro G hG
+  exact (hP_sub hG).1
+
 /-- Terminal finite-overlap propagation data for a closed oriented BHW/Jost
 continuation loop.  This is the honest output expected from the remaining
 Hall-Wightman/Jost finite-overlap construction: a connected max-rank terminal

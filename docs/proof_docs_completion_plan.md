@@ -268,6 +268,7 @@ The terminal finite-overlap data interface is checked in
 `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedBHWFiniteOverlap.lean`;
 it provides `BHW.BHWJostOrientedFiniteOverlapPropagationData` and
 `BHW.BHWJostOrientedFiniteOverlapPropagationData.to_closedLoopSeed`, plus
+`BHW.exists_preconnectedRelOpen_maxRankSeed_inside`,
 `BHW.BHWJostOrientedSourcePatchContinuationChain.exists_terminalSeed_of_finiteOverlapDomains`,
 which iterates the checked one-step propagation theorem across an ordered
 finite-overlap family of connected max-rank domains.  The same file also checks
@@ -7584,6 +7585,10 @@ common-boundary envelope, or any theorem that already assumes locality.
    valid incoming seed for the next domain.  The theorem also exposes the
    terminal seed provenance: for `C.m = 0` the terminal seed remains inside
    `seed0`; for `C.m ≠ 0` it lies inside the last oriented transition patch.
+   The helper `BHW.exists_preconnectedRelOpen_maxRankSeed_inside` supplies the
+   initial seed from any nonempty relatively open oriented patch in the hard
+   range, by choosing a max-rank point and shrinking a full-frame chart inside
+   `W ∩ MaxRank`.
    Therefore the hard BHW/Jost theorem no longer has to prove a Lean induction
    principle.  It must now produce: the initial max-rank seed, the ordered
    domains `D j`, the connectedness of each `D j ∩ MaxRank`, the current and
