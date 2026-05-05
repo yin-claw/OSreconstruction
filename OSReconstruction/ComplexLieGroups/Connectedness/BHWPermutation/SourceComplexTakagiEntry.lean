@@ -169,4 +169,28 @@ theorem takagi_singularValue_le_entryL1Bound
     _ ≤ ∑ p : Fin m × Fin m, ‖S p.2 p.1‖ := hsum_le
     _ = matrixEntryL1Bound m S := hswap
 
+/-- Once the Takagi diagonalization and rank-support identity are available,
+the entry-controlled rectangular factor is now mechanical. -/
+theorem complexSymmetric_entryL1_of_autonneTakagiDiagonalization
+    (m k : ℕ)
+    {S : Matrix (Fin m) (Fin m) ℂ}
+    {U : Matrix.unitaryGroup (Fin m) ℂ}
+    {σ : Fin m → ℝ}
+    (hσ_nonneg : ∀ a, 0 ≤ σ a)
+    (hTakagi :
+      S =
+        (U : Matrix (Fin m) (Fin m) ℂ) *
+          Matrix.diagonal (fun a => (σ a : ℂ)) *
+          (U : Matrix (Fin m) (Fin m) ℂ).transpose)
+    (hrankSupport : Fintype.card {a : Fin m // σ a ≠ 0} = S.rank)
+    (hRank : S.rank ≤ k) :
+    ∃ A : Matrix (Fin m) (Fin k) ℂ,
+      S = A * A.transpose ∧
+      ∀ i a, ‖A i a‖ ≤ Real.sqrt (matrixEntryL1Bound m S) := by
+  exact complexSymmetric_entryL1_of_takagiDiagonalData_rankSupport
+    (m := m) (k := k) (S := S) (U := U) (σ := σ)
+    hσ_nonneg hTakagi hrankSupport hRank
+    (takagi_singularValue_le_entryL1Bound (m := m) (S := S) (U := U)
+      (σ := σ) hσ_nonneg hTakagi)
+
 end BHW

@@ -4032,7 +4032,10 @@ implementation contract is:
    `BHW.takagi_singularValue_le_entryL1Bound`: it multiplies the Takagi
    identity by the unitary inverses, extracts `(σ a : ℂ)` as a finite double
    sum against the `a`th unitary column, and bounds that sum entrywise by
-   `BHW.matrixEntryL1Bound m S`.  It then
+   `BHW.matrixEntryL1Bound m S`.  The same file also checks
+   `BHW.complexSymmetric_entryL1_of_autonneTakagiDiagonalization`, so once the
+   unitary diagonalization and rank-support identity exist, the rectangular
+   entry-controlled factor follows immediately.  It then
    spells out the finite
    support extraction: use `Fintype.nonempty_of_card_le` to embed the nonzero
    singular-value subtype into `Fin k`, define the rectangular factor by
