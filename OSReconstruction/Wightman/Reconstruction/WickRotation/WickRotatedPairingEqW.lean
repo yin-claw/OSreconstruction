@@ -424,4 +424,63 @@ theorem wickRotatedBoundaryPairing_eq_W_joint
       Wfn.W (n + m) (f.tensorProduct g_a) := by
   sorry
 
+/-! ### Closing the OS axiom E4 cluster theorem -/
+
+/-- **Closes `W_analytic_cluster_integral` via R4 + W-to-integral bridge.**
+
+Re-proves the un-reflected integral-form cluster theorem (matching
+`SchwingerAxioms.lean:3786`) directly from `Wfn.cluster` (the R4 axiom
+field) by:
+
+1. Extracting the R4 cluster bound at the W-evaluation level.
+2. Converting each `Wfn.W` to an integral via
+   `wickRotatedBoundaryPairing_eq_W` (single block) and
+   `wickRotatedBoundaryPairing_eq_W_joint` (joint).
+3. Substituting to get the integral-form bound.
+
+This is the architectural target the whole bridge plan was set up to
+deliver. The signature is identical to `W_analytic_cluster_integral`
+(un-reflected `f.tensorProduct g_a`), so this theorem can be used to
+close that target via `exact`.
+
+Conditional on the bridges being filled in (currently #35, #37, #39
+sorrys upstream). -/
+theorem W_analytic_cluster_integral_via_R4
+    (Wfn : WightmanFunctions d) (n m : ℕ)
+    (f : SchwartzNPoint d n) (g : SchwartzNPoint d m)
+    (hsupp_f : tsupport ((f : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
+      OrderedPositiveTimeRegion d n)
+    (hsupp_g : tsupport ((g : SchwartzNPoint d m) : NPointDomain d m → ℂ) ⊆
+      OrderedPositiveTimeRegion d m)
+    (ε : ℝ) (hε : ε > 0) :
+    ∃ R : ℝ, R > 0 ∧
+      ∀ a : SpacetimeDim d, a 0 = 0 →
+        (∑ i : Fin d, (a (Fin.succ i)) ^ 2) > R ^ 2 →
+        ∀ (g_a : SchwartzNPoint d m),
+          (∀ x : NPointDomain d m, g_a x = g (fun i => x i - a)) →
+          ‖(∫ x : NPointDomain d (n + m),
+              F_ext_on_translatedPET_total Wfn
+                (fun k => wickRotatePoint (x k)) *
+              (f.tensorProduct g_a) x) -
+            (∫ x : NPointDomain d n,
+              F_ext_on_translatedPET_total Wfn
+                (fun k => wickRotatePoint (x k)) * f x) *
+            (∫ x : NPointDomain d m,
+              F_ext_on_translatedPET_total Wfn
+                (fun k => wickRotatePoint (x k)) * g x)‖ < ε := by
+  -- Step 1: extract R from R4 (Wfn.cluster).
+  obtain ⟨R, hR_pos, h_clust⟩ := Wfn.cluster n m f g ε hε
+  refine ⟨R, hR_pos, fun a ha0 ha_large g_a hga => ?_⟩
+  have h_clust_a := h_clust a ha0 ha_large g_a hga
+  -- h_clust_a : ‖Wfn.W (n+m) (f.tensorProduct g_a) - Wfn.W n f * Wfn.W m g‖ < ε
+  -- Step 2: convert each `Wfn.W` evaluation to its integral form via the bridges.
+  have h_bridge_f := wickRotatedBoundaryPairing_eq_W Wfn n f hsupp_f
+  have h_bridge_g := wickRotatedBoundaryPairing_eq_W Wfn m g hsupp_g
+  have h_bridge_joint :=
+    wickRotatedBoundaryPairing_eq_W_joint Wfn n m f g hsupp_f hsupp_g a ha0 g_a hga
+  -- `wickRotatedBoundaryPairing` unfolds to the integral; rewrite at h_clust_a.
+  rw [← h_bridge_joint, ← h_bridge_f, ← h_bridge_g] at h_clust_a
+  unfold wickRotatedBoundaryPairing at h_clust_a
+  exact h_clust_a
+
 end OSReconstruction
