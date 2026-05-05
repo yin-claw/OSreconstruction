@@ -223,6 +223,188 @@ def hwLemma3CanonicalSource
     else
       0
 
+@[simp]
+theorem hwLemma3CanonicalSource_head_apply
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (a : Fin r)
+    (μ : Fin (d + 1)) :
+    hwLemma3CanonicalSource d n r (finSourceHead hrn a) μ =
+      if μ = finSourceHead (Nat.le_of_lt hrD) a then 1 else 0 := by
+  by_cases h : μ = finSourceHead (Nat.le_of_lt hrD) a
+  · subst μ
+    simp [hwLemma3CanonicalSource]
+  · have hval : a.val ≠ μ.val := by
+      intro hv
+      apply h
+      apply Fin.ext
+      simpa [finSourceHead] using hv.symm
+    simp [hwLemma3CanonicalSource, h, hval]
+
+@[simp]
+theorem hwLemma3CanonicalSource_head_head
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (a b : Fin r) :
+    hwLemma3CanonicalSource d n r (finSourceHead hrn a)
+        (finSourceHead (Nat.le_of_lt hrD) b) =
+      if a = b then 1 else 0 := by
+  by_cases h : a = b
+  · subst b
+    simp [hwLemma3CanonicalSource]
+  · have hval : a.val ≠ b.val := by
+      intro hv
+      exact h (Fin.ext hv)
+    simp [hwLemma3CanonicalSource, h, hval]
+
+@[simp]
+theorem hwLemma3CanonicalSource_tail
+    (d n r : ℕ)
+    (hrn : r ≤ n)
+    (u : Fin (n - r)) :
+    hwLemma3CanonicalSource d n r (finSourceTail hrn u) = 0 := by
+  ext μ
+  simp [hwLemma3CanonicalSource]
+
+/-- The canonical head Gram block is the Minkowski-signature diagonal, not the
+Euclidean identity block. -/
+def sourceHeadMetric
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    Matrix (Fin r) (Fin r) ℂ :=
+  Matrix.diagonal fun a =>
+    (MinkowskiSpace.metricSignature d
+      (finSourceHead (Nat.le_of_lt hrD) a) : ℂ)
+
+@[simp]
+theorem sourceHeadMetric_apply
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (a b : Fin r) :
+    sourceHeadMetric d r hrD a b =
+      if a = b then
+        (MinkowskiSpace.metricSignature d
+          (finSourceHead (Nat.le_of_lt hrD) a) : ℂ)
+      else 0 := by
+  by_cases h : a = b <;> simp [sourceHeadMetric, h]
+
+theorem sourceHeadMetric_transpose
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    (sourceHeadMetric d r hrD)ᵀ = sourceHeadMetric d r hrD := by
+  ext a b
+  by_cases h : a = b
+  · subst b
+    simp
+  · have hba : b ≠ a := fun hb => h hb.symm
+    simp [h, hba]
+
+theorem sourceHeadMetric_det_isUnit
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    IsUnit (sourceHeadMetric d r hrD).det := by
+  rw [sourceHeadMetric]
+  simp only [det_diagonal]
+  apply isUnit_iff_ne_zero.mpr
+  apply Finset.prod_ne_zero_iff.mpr
+  intro a _ha
+  by_cases hzero : finSourceHead (Nat.le_of_lt hrD) a = (0 : Fin (d + 1))
+  · simp [MinkowskiSpace.metricSignature, hzero]
+  · simp [MinkowskiSpace.metricSignature, hzero]
+
+/-- The complex Minkowski bilinear form on two source vectors. -/
+def sourceVectorMinkowskiInner
+    (d : ℕ)
+    (x y : Fin (d + 1) → ℂ) : ℂ :=
+  ∑ μ : Fin (d + 1),
+    (MinkowskiSpace.metricSignature d μ : ℂ) * x μ * y μ
+
+theorem sourceMinkowskiGram_hwLemma3CanonicalSource_head
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (a b : Fin r) :
+    sourceMinkowskiGram d n (hwLemma3CanonicalSource d n r)
+        (finSourceHead hrn a) (finSourceHead hrn b) =
+      sourceHeadMetric d r hrD a b := by
+  classical
+  by_cases hab : a = b
+  · subst b
+    rw [sourceHeadMetric_apply]
+    simp only [if_true]
+    rw [sourceMinkowskiGram]
+    rw [Finset.sum_eq_single (finSourceHead (Nat.le_of_lt hrD) a)]
+    · have hone :
+          hwLemma3CanonicalSource d n r (finSourceHead hrn a)
+            (finSourceHead (Nat.le_of_lt hrD) a) = 1 := by
+        rw [hwLemma3CanonicalSource_head_apply (hrD := hrD)]
+        simp
+      simp [hone]
+    · intro μ _hμ hne
+      have hz :
+          hwLemma3CanonicalSource d n r (finSourceHead hrn a) μ = 0 := by
+        rw [hwLemma3CanonicalSource_head_apply (hrD := hrD)]
+        simp [hne]
+      simp [hz]
+    · intro hnot
+      simp at hnot
+  · rw [sourceHeadMetric_apply]
+    simp only [hab, if_false]
+    rw [sourceMinkowskiGram]
+    rw [Finset.sum_eq_zero]
+    intro μ _hμ
+    by_cases hμa : μ = finSourceHead (Nat.le_of_lt hrD) a
+    · subst μ
+      have hne :
+          finSourceHead (Nat.le_of_lt hrD) a ≠
+            finSourceHead (Nat.le_of_lt hrD) b := by
+        intro hEq
+        exact hab ((finSourceHead_injective (Nat.le_of_lt hrD)) hEq)
+      have hz :
+          hwLemma3CanonicalSource d n r (finSourceHead hrn b)
+            (finSourceHead (Nat.le_of_lt hrD) a) = 0 := by
+        rw [hwLemma3CanonicalSource_head_apply (hrD := hrD)]
+        simp [hne]
+      simp [hz]
+    · have hz :
+          hwLemma3CanonicalSource d n r (finSourceHead hrn a) μ = 0 := by
+        rw [hwLemma3CanonicalSource_head_apply (hrD := hrD)]
+        simp [hμa]
+      simp [hz]
+
+theorem hwLemma3CanonicalSource_head_unit
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n) :
+    IsUnit
+      (Matrix.det
+        (fun a b : Fin r =>
+          sourceMinkowskiGram d n (hwLemma3CanonicalSource d n r)
+            (finSourceHead hrn a) (finSourceHead hrn b))) := by
+  have hmat :
+      (fun a b : Fin r =>
+        sourceMinkowskiGram d n (hwLemma3CanonicalSource d n r)
+          (finSourceHead hrn a) (finSourceHead hrn b)) =
+        sourceHeadMetric d r hrD := by
+    ext a b
+    exact sourceMinkowskiGram_hwLemma3CanonicalSource_head d n r hrD hrn a b
+  rw [hmat]
+  exact sourceHeadMetric_det_isUnit d r hrD
+
+@[simp]
+theorem sourceVectorMinkowskiInner_hwLemma3CanonicalSource_head
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (a b : Fin r) :
+    sourceVectorMinkowskiInner d
+        (hwLemma3CanonicalSource d n r (finSourceHead hrn a))
+        (hwLemma3CanonicalSource d n r (finSourceHead hrn b)) =
+      sourceHeadMetric d r hrD a b :=
+  sourceMinkowskiGram_hwLemma3CanonicalSource_head d n r hrD hrn a b
+
 /-- Head vectors after applying the head-factor coordinate. -/
 def sourceOrientedNormalHeadVector
     (d n r : ℕ)
@@ -286,6 +468,25 @@ theorem continuous_sourceOrientedNormalHeadVector
           (d := d) (n := n) (r := r) (hrD := hrD) (hrn := hrn)))
   exact hhead_ab.mul continuous_const
 
+theorem sourceVectorMinkowskiInner_sourceOrientedNormalHeadVector
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn)
+    (a b : Fin r) :
+    sourceVectorMinkowskiInner d
+        (sourceOrientedNormalHeadVector d n r hrD hrn p a)
+        (sourceOrientedNormalHeadVector d n r hrD hrn p b) =
+      (p.head * sourceHeadMetric d r hrD * p.headᵀ) a b := by
+  simp only [sourceVectorMinkowskiInner, sourceOrientedNormalHeadVector,
+    Matrix.mul_apply, Matrix.transpose_apply, Finset.mul_sum, Finset.sum_mul]
+  rw [Finset.sum_comm]
+  simp_rw [hwLemma3CanonicalSource_head_apply
+    (d := d) (n := n) (r := r) (hrD := hrD) (hrn := hrn)]
+  simp [sourceHeadMetric_apply,
+    (finSourceHead_injective (Nat.le_of_lt hrD)).eq_iff,
+    mul_assoc, mul_left_comm, mul_comm]
+
 /-- Source tuple associated to a normal-form parameter.  Head source labels use
 the head-factor vectors; tail labels are a mixed head combination plus an
 embedded orthogonal-tail vector. -/
@@ -305,6 +506,34 @@ def sourceOrientedNormalParameterVector
           p.mixed u a *
             sourceOrientedNormalHeadVector d n r hrD hrn p a μ) +
         sourceTailEmbed d r hrD (p.tail u) μ
+
+theorem sourceOrientedNormalParameterVector_head
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn)
+    (a : Fin r) :
+    sourceOrientedNormalParameterVector d n r hrD hrn p
+        (finSourceHead hrn a) =
+      sourceOrientedNormalHeadVector d n r hrD hrn p a := by
+  ext μ
+  simp [sourceOrientedNormalParameterVector]
+
+theorem sourceOrientedNormalParameterVector_tail
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn)
+    (u : Fin (n - r)) :
+    sourceOrientedNormalParameterVector d n r hrD hrn p
+        (finSourceTail hrn u) =
+      fun μ =>
+        (∑ a : Fin r,
+          p.mixed u a *
+            sourceOrientedNormalHeadVector d n r hrD hrn p a μ) +
+        sourceTailEmbed d r hrD (p.tail u) μ := by
+  ext μ
+  simp [sourceOrientedNormalParameterVector]
 
 /-- The normal-parameter source tuple is continuous in the finite product
 coordinates. -/
