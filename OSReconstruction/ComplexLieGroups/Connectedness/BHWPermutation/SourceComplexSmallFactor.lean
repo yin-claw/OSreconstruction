@@ -1,5 +1,6 @@
 import Mathlib.Data.Real.Sqrt
 import Mathlib.Analysis.CStarAlgebra.Matrix
+import Mathlib.Analysis.Matrix.PosDef
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceComplexGlobalIdentity
 
 /-!
@@ -13,7 +14,7 @@ statement needed by the Euclidean tail realization route.
 noncomputable section
 
 open Complex Topology Matrix LorentzLieGroup Classical Filter NormedSpace Polynomial Module
-open scoped Matrix.Norms.Operator
+open scoped Matrix.Norms.Operator ComplexOrder
 
 namespace BHW
 
@@ -72,6 +73,199 @@ theorem real_sqrt_lt_of_lt_mul_bound
     (hsmall : Real.sqrt (C * δ) < ε) :
     Real.sqrt x < ε := by
   exact (Real.sqrt_lt_sqrt hx hxlt).trans hsmall
+
+/-- The conjugate-linear map `v ↦ S *ᵥ star v` used in the
+Autonne-Takagi construction. -/
+def takagiConjugateLinearMap
+    (m : ℕ) (S : Matrix (Fin m) (Fin m) ℂ) :
+    (Fin m → ℂ) → (Fin m → ℂ) :=
+  fun v => S *ᵥ star v
+
+theorem takagiConjugateLinearMap_add
+    (m : ℕ) (S : Matrix (Fin m) (Fin m) ℂ)
+    (v w : Fin m → ℂ) :
+    takagiConjugateLinearMap m S (v + w) =
+      takagiConjugateLinearMap m S v + takagiConjugateLinearMap m S w := by
+  ext i
+  simp [takagiConjugateLinearMap, Matrix.mulVec, dotProduct, Finset.sum_add_distrib,
+    mul_add]
+
+theorem takagiConjugateLinearMap_smul
+    (m : ℕ) (S : Matrix (Fin m) (Fin m) ℂ)
+    (c : ℂ) (v : Fin m → ℂ) :
+    takagiConjugateLinearMap m S (c • v) =
+      star c • takagiConjugateLinearMap m S v := by
+  ext i
+  simp [takagiConjugateLinearMap, Matrix.mulVec, dotProduct, Finset.mul_sum,
+    mul_left_comm]
+
+/-- Under symmetry, the square of the conjugate-linear Takagi map is the
+positive Hermitian square `S * Sᴴ`. -/
+theorem takagiConjugateLinearMap_sq
+    (m : ℕ)
+    {S : Matrix (Fin m) (Fin m) ℂ}
+    (hSym : S.transpose = S) :
+    (fun v : Fin m → ℂ =>
+      takagiConjugateLinearMap m S
+        (takagiConjugateLinearMap m S v)) =
+    fun v => (S * Sᴴ) *ᵥ v := by
+  have hSym_apply : ∀ a b : Fin m, S a b = S b a := by
+    intro a b
+    simpa [Matrix.transpose_apply] using congrFun (congrFun hSym b) a
+  funext v
+  ext i
+  simp only [takagiConjugateLinearMap, Matrix.mulVec, dotProduct, Pi.star_apply, star_sum,
+    StarMul.star_mul, star_star, Matrix.mul_apply, Matrix.conjTranspose_apply, Finset.mul_sum,
+    Finset.sum_mul, mul_assoc]
+  rw [Finset.sum_comm]
+  apply Finset.sum_congr rfl
+  intro k _hk
+  apply Finset.sum_congr rfl
+  intro j _hj
+  rw [hSym_apply j k]
+  ring_nf
+
+theorem takagiConjugateLinearMap_commutes_square
+    (m : ℕ)
+    {S : Matrix (Fin m) (Fin m) ℂ}
+    (hSym : S.transpose = S) :
+    (fun v : Fin m → ℂ =>
+      takagiConjugateLinearMap m S ((S * Sᴴ) *ᵥ v)) =
+    fun v =>
+      (S * Sᴴ) *ᵥ (takagiConjugateLinearMap m S v) := by
+  have hsq := takagiConjugateLinearMap_sq (m := m) (S := S) hSym
+  funext v
+  rw [← congrFun hsq v]
+  rw [← congrFun hsq (takagiConjugateLinearMap m S v)]
+
+theorem takagiConjugateLinearMap_mem_eigenspace
+    (m : ℕ)
+    {S : Matrix (Fin m) (Fin m) ℂ}
+    (hSym : S.transpose = S)
+    {lambda : ℝ} {v : Fin m → ℂ}
+    (hv : (S * Sᴴ) *ᵥ v = (lambda : ℂ) • v) :
+    (S * Sᴴ) *ᵥ (takagiConjugateLinearMap m S v) =
+      (lambda : ℂ) • takagiConjugateLinearMap m S v := by
+  have hcomm :=
+    congrFun (takagiConjugateLinearMap_commutes_square (m := m) (S := S) hSym) v
+  rw [← hcomm, hv]
+  rw [takagiConjugateLinearMap_smul]
+  simp
+
+theorem takagiConjugateLinearMap_conjTranspose_mulVec_eq_star
+    (m : ℕ)
+    {S : Matrix (Fin m) (Fin m) ℂ}
+    (hSym : S.transpose = S)
+    (v : Fin m → ℂ) :
+    Sᴴ *ᵥ v = star (takagiConjugateLinearMap m S v) := by
+  have hSym_apply : ∀ a b : Fin m, S a b = S b a := by
+    intro a b
+    simpa [Matrix.transpose_apply] using congrFun (congrFun hSym b) a
+  ext i
+  simp only [takagiConjugateLinearMap, Matrix.mulVec, dotProduct, Matrix.conjTranspose_apply,
+    Pi.star_apply, star_sum, StarMul.star_mul, star_star]
+  apply Finset.sum_congr rfl
+  intro j _hj
+  rw [hSym_apply j i]
+  ring_nf
+
+theorem takagiConjugateLinearMap_zero_eigenspace_eq_zero
+    (m : ℕ)
+    {S : Matrix (Fin m) (Fin m) ℂ}
+    (hSym : S.transpose = S)
+    {v : Fin m → ℂ}
+    (hv : (S * Sᴴ) *ᵥ v = 0) :
+    takagiConjugateLinearMap m S v = 0 := by
+  have hker : Sᴴ *ᵥ v = 0 := by
+    exact (Matrix.self_mul_conjTranspose_mulVec_eq_zero S v).mp hv
+  have hstar : star (takagiConjugateLinearMap m S v) = 0 := by
+    rw [← takagiConjugateLinearMap_conjTranspose_mulVec_eq_star
+      (m := m) (S := S) hSym v]
+    exact hker
+  exact star_eq_zero.mp hstar
+
+theorem takagiHermitianSquare_isHermitian
+    (m : ℕ) (S : Matrix (Fin m) (Fin m) ℂ) :
+    (S * Sᴴ).IsHermitian := by
+  exact Matrix.isHermitian_mul_conjTranspose_self S
+
+/-- Spectral theorem for the positive Hermitian square in the exact unitary
+matrix form used as the input to the Takagi construction. -/
+theorem takagiHermitianSquare_spectralTheorem
+    (m : ℕ) (S : Matrix (Fin m) (Fin m) ℂ) :
+    let hH := Matrix.isHermitian_mul_conjTranspose_self S
+    let U := Matrix.IsHermitian.eigenvectorUnitary hH
+    S * Sᴴ =
+      (U : Matrix (Fin m) (Fin m) ℂ) *
+        Matrix.diagonal (fun a => ((hH.eigenvalues a : ℝ) : ℂ)) *
+        star (U : Matrix (Fin m) (Fin m) ℂ) := by
+  intro hH U
+  have hs := hH.spectral_theorem
+  simpa [U, hH, Unitary.conjStarAlgAut_apply, Function.comp_def] using hs
+
+theorem takagiHermitianSquare_eigenvalue_nonneg
+    (m : ℕ) (S : Matrix (Fin m) (Fin m) ℂ) (a : Fin m) :
+    0 ≤ (Matrix.isHermitian_mul_conjTranspose_self S).eigenvalues a := by
+  exact Matrix.eigenvalues_self_mul_conjTranspose_nonneg S a
+
+theorem takagiHermitianSquare_singularValue_nonneg
+    (m : ℕ) (S : Matrix (Fin m) (Fin m) ℂ) (a : Fin m) :
+    0 ≤ Real.sqrt ((Matrix.isHermitian_mul_conjTranspose_self S).eigenvalues a) := by
+  exact Real.sqrt_nonneg _
+
+theorem takagiHermitianSquare_eigenvalue_rankSupport
+    (m : ℕ) (S : Matrix (Fin m) (Fin m) ℂ) :
+    Fintype.card
+        {a : Fin m // (Matrix.isHermitian_mul_conjTranspose_self S).eigenvalues a ≠ 0} =
+      Matrix.rank S := by
+  have hH := Matrix.isHermitian_mul_conjTranspose_self S
+  have hcard : Matrix.rank (S * Sᴴ) =
+      Fintype.card {a : Fin m // hH.eigenvalues a ≠ 0} :=
+    hH.rank_eq_card_non_zero_eigs
+  rw [← hcard]
+  exact Matrix.rank_self_mul_conjTranspose S
+
+theorem takagiHermitianSquare_singularValue_rankSupport
+    (m : ℕ) (S : Matrix (Fin m) (Fin m) ℂ) :
+    Fintype.card
+        {a : Fin m //
+          Real.sqrt ((Matrix.isHermitian_mul_conjTranspose_self S).eigenvalues a) ≠ 0} =
+      Matrix.rank S := by
+  have hnonneg :
+      ∀ a : Fin m, 0 ≤ (Matrix.isHermitian_mul_conjTranspose_self S).eigenvalues a := by
+    intro a
+    exact takagiHermitianSquare_eigenvalue_nonneg m S a
+  have hcard :
+      Fintype.card
+          {a : Fin m //
+            Real.sqrt ((Matrix.isHermitian_mul_conjTranspose_self S).eigenvalues a) ≠ 0} =
+        Fintype.card
+          {a : Fin m // (Matrix.isHermitian_mul_conjTranspose_self S).eigenvalues a ≠ 0} := by
+    apply Fintype.card_congr
+    refine ⟨?toFun, ?invFun, ?left_inv, ?right_inv⟩
+    · intro a
+      refine ⟨a.1, ?_⟩
+      intro hz
+      apply a.2
+      simp [hz]
+    · intro a
+      refine ⟨a.1, ?_⟩
+      intro hsqrtz
+      apply a.2
+      have hsq :
+          (Real.sqrt
+            ((Matrix.isHermitian_mul_conjTranspose_self S).eigenvalues a.1)) ^ 2 = 0 := by
+        simp [hsqrtz]
+      have hval :
+          (Matrix.isHermitian_mul_conjTranspose_self S).eigenvalues a.1 = 0 := by
+        rw [← Real.sq_sqrt (hnonneg a.1), hsq]
+      exact hval
+    · intro a
+      rfl
+    · intro a
+      rfl
+  rw [hcard]
+  exact takagiHermitianSquare_eigenvalue_rankSupport m S
 
 /-- Entries of a unitary matrix have norm at most one. -/
 theorem matrix_unitary_entry_norm_le_one

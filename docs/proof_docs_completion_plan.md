@@ -3976,6 +3976,20 @@ implementation contract is:
    `matrixEntryL1Bound_lt_of_entry_bound`,
    `exists_pos_mul_sqrt_lt`,
    `real_sqrt_lt_of_lt_mul_bound`,
+   `takagiConjugateLinearMap`,
+   `takagiConjugateLinearMap_add`,
+   `takagiConjugateLinearMap_smul`,
+   `takagiConjugateLinearMap_sq`,
+   `takagiConjugateLinearMap_commutes_square`,
+   `takagiConjugateLinearMap_mem_eigenspace`,
+   `takagiConjugateLinearMap_conjTranspose_mulVec_eq_star`,
+   `takagiConjugateLinearMap_zero_eigenspace_eq_zero`,
+   `takagiHermitianSquare_isHermitian`,
+   `takagiHermitianSquare_spectralTheorem`,
+   `takagiHermitianSquare_eigenvalue_nonneg`,
+   `takagiHermitianSquare_singularValue_nonneg`,
+   `takagiHermitianSquare_eigenvalue_rankSupport`,
+   `takagiHermitianSquare_singularValue_rankSupport`,
    `matrix_unitary_entry_norm_le_one`,
    `matrix_unitary_entry_mul_real_sqrt_norm_le_sqrt`,
    `complexSymmetric_takagi_factor_from_supportEmbedding`,
@@ -3985,14 +3999,17 @@ implementation contract is:
    `sourceComplexSymmetric_factorSmall_rankLE_of_entryL1`.  Thus the small
    factor theorem no longer has a hidden estimate step: once the entry-L1
    Autonne-Takagi factorization is proved, the source-coordinate small
-   same-Gram theorem is mechanical.  The blueprint now spells out the finite
-   Autonne theorem itself through the conjugate-linear map
-   `v ↦ S.mulVec (star v)`: square it to the positive Hermitian map
-   `S * Sᴴ`, use `Matrix.isHermitian_mul_conjTranspose_self` and
-   `Matrix.IsHermitian.eigenvectorUnitary`, prove that the conjugate-linear
-   map commutes with its square, maps each real eigenspace to itself, kills
-   the zero eigenspace, and on each positive eigenspace becomes the
-   conjugate-linear isometric involution `σ⁻¹ C`.  That fixed-basis theorem
+   same-Gram theorem is mechanical.  The checked Autonne support now proves
+   that the conjugate-linear map `v ↦ S.mulVec (star v)` squares to the
+   positive Hermitian map `S * Sᴴ`, commutes with that square, maps each real
+   eigenspace to itself, kills the zero eigenspace, and supplies the
+   Hermitian-square spectral theorem plus nonnegative singular-value
+   rank-support identity.  The remaining Autonne theorem is therefore the
+   positive-eigenspace phase/fixed-basis assembly: on each positive eigenspace
+   the normalized conjugate-linear map must be bundled as an isometric
+   involution, a fixed orthonormal basis must be chosen, and those bases must
+   be assembled into the unitary Takagi matrix with the entry-L1 singular
+   value estimate.  That fixed-basis theorem
    is now decomposed through the semilinear-isometry API `E ≃ₗᵢ⋆[ℂ] E`:
    define the real fixed
    submodule `BHW.conjugationFixedSubmodule`, prove the explicit real-linear
