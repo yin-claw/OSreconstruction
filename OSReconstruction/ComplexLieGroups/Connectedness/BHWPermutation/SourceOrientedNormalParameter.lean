@@ -368,6 +368,56 @@ theorem sourceTailMetric_det_isUnit
   · simp [MinkowskiSpace.metricSignature, hzero]
   · simp [MinkowskiSpace.metricSignature, hzero]
 
+/-- Coordinate scalar turning the shifted tail metric into the Euclidean dot
+product over `ℂ`: use `I` on an inherited time coordinate and `1` otherwise. -/
+def sourceTailMetricScale
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (u : Fin (d + 1 - r)) : ℂ :=
+  if finSourceTail (Nat.le_of_lt hrD) u = (0 : Fin (d + 1)) then
+    Complex.I
+  else
+    1
+
+theorem sourceTailMetricScale_ne_zero
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (u : Fin (d + 1 - r)) :
+    sourceTailMetricScale d r hrD u ≠ 0 := by
+  unfold sourceTailMetricScale
+  by_cases hzero : finSourceTail (Nat.le_of_lt hrD) u = (0 : Fin (d + 1))
+  · simp [hzero]
+  · simp [hzero]
+
+theorem sourceTailMetricScale_mul_self
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (u : Fin (d + 1 - r)) :
+    sourceTailMetricScale d r hrD u *
+        sourceTailMetricScale d r hrD u =
+      (MinkowskiSpace.metricSignature d
+        (finSourceTail (Nat.le_of_lt hrD) u) : ℂ) := by
+  unfold sourceTailMetricScale
+  by_cases hzero : finSourceTail (Nat.le_of_lt hrD) u = (0 : Fin (d + 1))
+  · simp [MinkowskiSpace.metricSignature, hzero]
+  · simp [MinkowskiSpace.metricSignature, hzero]
+
+/-- Product of the shifted-tail normalizing scalars.  This is the determinant
+rescaling factor for full tail-frame determinant coordinates. -/
+def sourceTailMetricDetScale
+    (d r : ℕ)
+    (hrD : r < d + 1) : ℂ :=
+  ∏ u : Fin (d + 1 - r), sourceTailMetricScale d r hrD u
+
+theorem sourceTailMetricDetScale_ne_zero
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    sourceTailMetricDetScale d r hrD ≠ 0 := by
+  rw [sourceTailMetricDetScale]
+  apply Finset.prod_ne_zero_iff.mpr
+  intro u _hu
+  exact sourceTailMetricScale_ne_zero d r hrD u
+
 /-- The complex Minkowski bilinear form on two source vectors. -/
 def sourceVectorMinkowskiInner
     (d : ℕ)

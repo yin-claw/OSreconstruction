@@ -475,7 +475,10 @@ topology and continuous projections
 head-block unit theorem `BHW.hwLemma3CanonicalSource_head_unit`, the vector
 bilinear form `BHW.sourceVectorMinkowskiInner`, the shifted residual-tail
 metric and Gram coordinates `BHW.sourceTailMetric`,
-`BHW.sourceTailMetric_det_isUnit`, and `BHW.sourceShiftedTailGram`, the checked
+`BHW.sourceTailMetric_det_isUnit`, the explicit diagonal normalizing scalars
+`BHW.sourceTailMetricScale`, `BHW.sourceTailMetricScale_ne_zero`,
+`BHW.sourceTailMetricScale_mul_self`, `BHW.sourceTailMetricDetScale`, and
+`BHW.sourceTailMetricDetScale_ne_zero`, and `BHW.sourceShiftedTailGram`, the checked
 head/head normal parameter Gram formula
 `BHW.sourceVectorMinkowskiInner_sourceOrientedNormalHeadVector`, the checked
 head/tail orthogonality and mixed-block formulas
@@ -513,7 +516,9 @@ The proof docs now require shifted-tail oriented data
 small realization theorems.  The existing standard tail-realization induction
 may be consumed only through an explicit finite diagonal normalization
 equivalence that rescales determinant coordinates by the product of the
-coordinate scalars; otherwise it proves the wrong tail theorem.
+coordinate scalars.  The scalar and product nonzero facts are now checked as
+`sourceTailMetricScale_ne_zero` and `sourceTailMetricDetScale_ne_zero`;
+otherwise the Euclidean theorem proves the wrong tail theorem.
 
 Determinant-readiness correction: the proof docs now pin determinant recovery
 for the normal parameter vector as explicit finite theorem surfaces and record
