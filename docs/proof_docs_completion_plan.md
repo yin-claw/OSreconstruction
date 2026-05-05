@@ -4322,11 +4322,23 @@ implementation contract is:
    `BHW.sourcePermuteComplexGram_mem_sourceSymmetricMatrixSpace`,
    `BHW.hwLemma3_normalFormSourceChangeMatrix`,
    `BHW.hwLemma3_normalFormSourceChangeMatrix_det_isUnit`,
-   `BHW.hwLemma3_normalFormSourceChangeMatrix_canonicalGram`, and
-   `BHW.hwLemma3_normalFormSourceChange_tail_zero_of_adapted`.  The last
-   theorem is load-bearing: it converts the adaptedness equality between
-   source-span dimension and scalar rank into actual vanishing of the tail
-   vectors after projection; without adaptedness the statement is false.  The
+   `BHW.hwLemma3_normalFormSourceChangeMatrix_canonicalGram`,
+   `BHW.complexMinkowskiNondegenerate_of_restrictedRank_eq_finrank`,
+   `BHW.complexMinkowskiNondegenerate_eval_range_of_adapted`, and
+   `BHW.hwLemma3_canonicalGram_tail_zero_of_adapted`.  The source-change
+   adaptedness bridge is also checked:
+   `BHW.sourceCoefficientEval_sourceTupleLinearChange`,
+   `BHW.sourceCoefficientEval_range_sourceTupleLinearChange_eq`,
+   `BHW.sourceGramMatrixRank_sourceGramCongruence`,
+   `BHW.sourceTupleLinearChange_adapted_of_isUnit`,
+   `BHW.sourceTupleLinearChange_tail_zero_of_canonicalGram_adapted`, and
+   `BHW.hwLemma3_normalFormSourceChange_tail_zero_of_adapted`.  The checked
+   canonical-tail theorem is load-bearing: it converts the adaptedness
+   equality between source-span dimension and scalar rank into actual
+   vanishing of tail vectors once the normalized Gram is canonical; without
+   adaptedness the statement is false.  The normal-form source-change wrapper
+   then applies the checked preservation of coefficient-span dimension and
+   scalar Gram rank under invertible source matrices.  The
    base selected-block normalization also needs the arbitrary invertible
    symmetric congruence theorem to the inherited source-head metric,
    `BHW.complexSymmetric_invertible_congruence_to_sourceHeadMetric`.  This is

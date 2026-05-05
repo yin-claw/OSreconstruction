@@ -856,6 +856,113 @@ theorem sourceMinkowskiGram_sourceTupleLinearChange
           simp [sourceMinkowskiGram, sourceGramCongruence,
             Finset.mul_sum, mul_comm, mul_left_comm]
 
+/-- Coefficient evaluation after a source-label linear change is coefficient
+evaluation against the original tuple after right multiplication of source
+coefficients by the same matrix. -/
+theorem sourceCoefficientEval_sourceTupleLinearChange
+    (d n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (a : Fin n → ℂ) :
+    sourceCoefficientEval d n (sourceTupleLinearChange d n M z) a =
+      sourceCoefficientEval d n z (sourceCoefficientGramMap n M a) := by
+  ext μ
+  calc
+    sourceCoefficientEval d n (sourceTupleLinearChange d n M z) a μ =
+        ∑ i : Fin n, ∑ j : Fin n, a i * (M i j * z j μ) := by
+          simp [sourceCoefficientEval, sourceTupleLinearChange, Pi.smul_apply,
+            Finset.mul_sum]
+    _ = ∑ j : Fin n, ∑ i : Fin n, a i * (M i j * z j μ) := by
+          rw [Finset.sum_comm]
+    _ = sourceCoefficientEval d n z (sourceCoefficientGramMap n M a) μ := by
+          simp [sourceCoefficientEval, sourceCoefficientGramMap,
+            Finset.mul_sum, mul_comm, mul_left_comm]
+
+theorem sourceCoefficientEval_sourceTupleLinearChange_linear
+    (d n : ℕ)
+    (M : Matrix (Fin n) (Fin n) ℂ)
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    sourceCoefficientEval d n (sourceTupleLinearChange d n M z) =
+      (sourceCoefficientEval d n z).comp (sourceCoefficientGramMap n M) := by
+  apply LinearMap.ext
+  intro a
+  exact sourceCoefficientEval_sourceTupleLinearChange d n M z a
+
+/-- Right multiplication of coefficient rows by an invertible source matrix is
+surjective. -/
+theorem sourceCoefficientGramMap_range_eq_top_of_isUnit_det
+    (n : ℕ) {M : Matrix (Fin n) (Fin n) ℂ}
+    (hM : IsUnit M.det) :
+    LinearMap.range (sourceCoefficientGramMap n M) = ⊤ := by
+  apply LinearMap.range_eq_top.mpr
+  intro a
+  let Minv : Matrix (Fin n) (Fin n) ℂ := M⁻¹
+  refine ⟨sourceCoefficientGramMap n Minv a, ?_⟩
+  ext j
+  calc
+    sourceCoefficientGramMap n M (sourceCoefficientGramMap n Minv a) j =
+        ∑ i : Fin n, ∑ k : Fin n, a k * (Minv k i * M i j) := by
+          simp [sourceCoefficientGramMap, Finset.sum_mul, Minv, mul_assoc]
+    _ = ∑ k : Fin n, a k * ∑ i : Fin n, Minv k i * M i j := by
+          rw [Finset.sum_comm]
+          simp [Finset.mul_sum]
+    _ = ∑ k : Fin n, a k * (1 : Matrix (Fin n) (Fin n) ℂ) k j := by
+          apply Finset.sum_congr rfl
+          intro k _hk
+          have hmul := Matrix.nonsing_inv_mul (A := M) hM
+          exact congrArg (fun x => a k * x)
+            (congrFun (congrFun hmul k) j)
+    _ = a j := by
+          simp [Matrix.one_apply]
+
+/-- Invertible source-label changes preserve the source-vector span. -/
+theorem sourceCoefficientEval_range_sourceTupleLinearChange_eq
+    (d n : ℕ)
+    {M : Matrix (Fin n) (Fin n) ℂ}
+    (hM : IsUnit M.det)
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    LinearMap.range
+        (sourceCoefficientEval d n (sourceTupleLinearChange d n M z)) =
+      LinearMap.range (sourceCoefficientEval d n z) := by
+  rw [sourceCoefficientEval_sourceTupleLinearChange_linear]
+  rw [LinearMap.range_comp_of_range_eq_top
+    (sourceCoefficientEval d n z)
+    (sourceCoefficientGramMap_range_eq_top_of_isUnit_det n hM)]
+
+theorem sourceGramMatrixRank_sourceGramCongruence
+    (n : ℕ) {M : Matrix (Fin n) (Fin n) ℂ}
+    (hM : IsUnit M.det)
+    (Z : Fin n → Fin n → ℂ) :
+    sourceGramMatrixRank n (sourceGramCongruence n M Z) =
+      sourceGramMatrixRank n Z := by
+  change (Matrix.of (sourceGramCongruence n M Z)).rank = (Matrix.of Z).rank
+  rw [sourceGramCongruence_eq_matrix_mul]
+  rw [Matrix.rank_mul_eq_left_of_isUnit_det
+    (A := M.transpose) (B := M * Matrix.of Z)
+    (Matrix.isUnit_det_transpose M hM)]
+  rw [Matrix.rank_mul_eq_right_of_isUnit_det
+    (A := M) (B := Matrix.of Z) hM]
+
+/-- Invertible source-label changes preserve adaptedness: the coefficient
+span dimension still equals the scalar Gram rank. -/
+theorem sourceTupleLinearChange_adapted_of_isUnit
+    (d n : ℕ)
+    {M : Matrix (Fin n) (Fin n) ℂ}
+    (hM : IsUnit M.det)
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hadapt :
+      Module.finrank ℂ (LinearMap.range (sourceCoefficientEval d n z)) =
+        sourceGramMatrixRank n (sourceMinkowskiGram d n z)) :
+    Module.finrank ℂ
+        (LinearMap.range
+          (sourceCoefficientEval d n (sourceTupleLinearChange d n M z))) =
+      sourceGramMatrixRank n
+        (sourceMinkowskiGram d n (sourceTupleLinearChange d n M z)) := by
+  rw [sourceCoefficientEval_range_sourceTupleLinearChange_eq d n hM z]
+  rw [sourceMinkowskiGram_sourceTupleLinearChange]
+  rw [sourceGramMatrixRank_sourceGramCongruence n hM]
+  exact hadapt
+
 theorem sourceMinkowskiGram_hwLemma3CanonicalSource
     (d n r : ℕ)
     (hrD : r < d + 1)
@@ -874,6 +981,142 @@ theorem sourceMinkowskiGram_hwLemma3CanonicalSource
     · simp [hwLemma3CanonicalGram, sourceMinkowskiGram, htail_i]
     · have htail_j := hwLemma3CanonicalSource_tail d n r hrn v
       simp [hwLemma3CanonicalGram, sourceMinkowskiGram, htail_i, htail_j]
+
+/-- If the restricted Minkowski rank equals the source-span dimension, then
+the restricted form on that source span is nondegenerate. -/
+theorem complexMinkowskiNondegenerate_of_restrictedRank_eq_finrank
+    (d : ℕ) {M : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (h : restrictedMinkowskiRank d M = Module.finrank ℂ M) :
+    ComplexMinkowskiNondegenerateSubspace d M := by
+  by_contra hdeg
+  have hlt := restrictedMinkowskiRank_lt_finrank_of_degenerate (d := d) hdeg
+  rw [h] at hlt
+  exact Nat.lt_irrefl _ hlt
+
+/-- An adapted source tuple, whose coefficient-span dimension equals its
+scalar Gram rank, has nondegenerate restricted Minkowski form on its source
+span. -/
+theorem complexMinkowskiNondegenerate_eval_range_of_adapted
+    (d n : ℕ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hadapt :
+      Module.finrank ℂ (LinearMap.range (sourceCoefficientEval d n z)) =
+        sourceGramMatrixRank n (sourceMinkowskiGram d n z)) :
+    ComplexMinkowskiNondegenerateSubspace d
+      (LinearMap.range (sourceCoefficientEval d n z)) := by
+  apply complexMinkowskiNondegenerate_of_restrictedRank_eq_finrank
+  rw [← sourceGramMatrixRank_eq_restrictedMinkowskiRank_range]
+  exact hadapt.symm
+
+/-- In the Lemma-3 canonical Gram normal form, adaptedness forces every tail
+source vector to vanish.  Without adaptedness the zero tail Gram block would
+only say that the tail vectors are radical/isotropic. -/
+theorem hwLemma3_canonicalGram_tail_zero_of_adapted
+    (d n r : ℕ) (hrD : r < d + 1) (hrn : r ≤ n)
+    {w : Fin n → Fin (d + 1) → ℂ}
+    (hGram : sourceMinkowskiGram d n w = hwLemma3CanonicalGram d n r hrD hrn)
+    (hadapt :
+      Module.finrank ℂ (LinearMap.range (sourceCoefficientEval d n w)) =
+        sourceGramMatrixRank n (sourceMinkowskiGram d n w)) :
+    ∀ u : Fin (n - r), w (finSourceTail hrn u) = 0 := by
+  let evalW := sourceCoefficientEval d n w
+  let M := LinearMap.range evalW
+  have hNondeg : ComplexMinkowskiNondegenerateSubspace d M := by
+    simpa [evalW, M] using
+      complexMinkowskiNondegenerate_eval_range_of_adapted d n w hadapt
+  intro u
+  let t : Fin n := finSourceTail hrn u
+  let coeffTail : Fin n → ℂ := Pi.single t 1
+  have htail_eval : evalW coeffTail = w t := by
+    simpa [evalW, coeffTail, t] using sourceCoefficientEval_single d n w t
+  have htail_mem : w t ∈ M :=
+    ⟨coeffTail, htail_eval⟩
+  have htail_row_zero : ∀ j : Fin n, sourceMinkowskiGram d n w t j = 0 := by
+    intro j
+    have hentry := congrFun (congrFun hGram t) j
+    rcases finSourceHead_tail_cases hrn j with ⟨a, rfl⟩ | ⟨v, rfl⟩
+    · simpa [t, hwLemma3CanonicalGram] using hentry
+    · simpa [t, hwLemma3CanonicalGram] using hentry
+  have hgramMap_zero :
+      sourceCoefficientGramMap n (sourceMinkowskiGram d n w) coeffTail = 0 := by
+    ext j
+    rw [sourceCoefficientGramMap]
+    simp only [LinearMap.coe_mk, AddHom.coe_mk]
+    rw [Finset.sum_eq_single t]
+    · simp [coeffTail, htail_row_zero j]
+    · intro i _hi hit
+      simp [coeffTail, Pi.single_eq_of_ne hit]
+    · intro htmem
+      exact False.elim (htmem (Finset.mem_univ t))
+  have horth_eval : ∀ b : Fin n → ℂ,
+      sourceComplexMinkowskiInner d (evalW coeffTail) (evalW b) = 0 :=
+    (sourceCoefficientGramMap_eq_zero_iff_eval_pair_eval_eq_zero d n w
+      coeffTail).1 hgramMap_zero
+  have horth : ∀ y : M,
+      sourceComplexMinkowskiInner d
+        ((⟨w t, htail_mem⟩ : M) : Fin (d + 1) → ℂ)
+        (y : Fin (d + 1) → ℂ) = 0 := by
+    intro y
+    rcases y with ⟨_, b, rfl⟩
+    simpa [htail_eval] using horth_eval b
+  have hzero_sub : (⟨w t, htail_mem⟩ : M) = 0 :=
+    hNondeg ⟨w t, htail_mem⟩ horth
+  exact congrArg Subtype.val hzero_sub
+
+/-- If an invertible source change sends the source Gram to the canonical
+Lemma-3 Gram and the original tuple is adapted, then the changed tuple has
+zero tail vectors. -/
+theorem sourceTupleLinearChange_tail_zero_of_canonicalGram_adapted
+    (d n r : ℕ) (hrD : r < d + 1) (hrn : r ≤ n)
+    {M : Matrix (Fin n) (Fin n) ℂ}
+    (hM : IsUnit M.det)
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hGram : sourceGramCongruence n M (sourceMinkowskiGram d n z) =
+      hwLemma3CanonicalGram d n r hrD hrn)
+    (hadapt :
+      Module.finrank ℂ (LinearMap.range (sourceCoefficientEval d n z)) =
+        sourceGramMatrixRank n (sourceMinkowskiGram d n z)) :
+    ∀ u : Fin (n - r),
+      sourceTupleLinearChange d n M z (finSourceTail hrn u) = 0 := by
+  let w := sourceTupleLinearChange d n M z
+  have hwGram :
+      sourceMinkowskiGram d n w =
+        hwLemma3CanonicalGram d n r hrD hrn := by
+    simpa [w, sourceMinkowskiGram_sourceTupleLinearChange] using hGram
+  have hwAdapt :
+      Module.finrank ℂ (LinearMap.range (sourceCoefficientEval d n w)) =
+        sourceGramMatrixRank n (sourceMinkowskiGram d n w) := by
+    simpa [w] using sourceTupleLinearChange_adapted_of_isUnit d n hM hadapt
+  exact hwLemma3_canonicalGram_tail_zero_of_adapted d n r hrD hrn hwGram hwAdapt
+
+/-- Tail-zero for the concrete normal-form source-change matrix. -/
+theorem hwLemma3_normalFormSourceChange_tail_zero_of_adapted
+    (d n r : ℕ) (hrD : r < d + 1) (hrn : r ≤ n)
+    (σ : Equiv.Perm (Fin n))
+    {A : Matrix (Fin r) (Fin r) ℂ}
+    {B : Matrix (Fin (n - r)) (Fin r) ℂ}
+    {P : Matrix (Fin r) (Fin r) ℂ}
+    (hA : IsUnit A.det)
+    (hP : IsUnit P.det)
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hGram :
+      sourceGramCongruence n
+        (hwLemma3_normalFormSourceChangeMatrix n r hrn σ A B P)
+        (sourceMinkowskiGram d n z) =
+          hwLemma3CanonicalGram d n r hrD hrn)
+    (hadapt :
+      Module.finrank ℂ (LinearMap.range (sourceCoefficientEval d n z)) =
+        sourceGramMatrixRank n (sourceMinkowskiGram d n z)) :
+    ∀ u : Fin (n - r),
+      sourceTupleLinearChange d n
+        (hwLemma3_normalFormSourceChangeMatrix n r hrn σ A B P) z
+        (finSourceTail hrn u) = 0 := by
+  apply sourceTupleLinearChange_tail_zero_of_canonicalGram_adapted
+    (d := d) (n := n) (r := r) (hrD := hrD) (hrn := hrn)
+    (M := hwLemma3_normalFormSourceChangeMatrix n r hrn σ A B P)
+  · exact hwLemma3_normalFormSourceChangeMatrix_det_isUnit n r hrn σ hA hP
+  · exact hGram
+  · exact hadapt
 
 theorem hwLemma3_schurComplement_eq_zero_of_rank_eq
     (n r : ℕ) (hrn : r ≤ n)
