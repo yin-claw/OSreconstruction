@@ -875,16 +875,22 @@ theorem cluster_inner_product_from_GNS (ψ φ : WR.H) :
     have hUφ : WR.U a φ = c_φ • WR.Ω + WR.U a φ_perp := by
       conv_lhs => rw [hφ_eq]
       rw [map_add, ContinuousLinearMap.map_smul, WR.vac_inv]
-    -- Algebraic expansion: with ψ = c_ψ•Ω + ψ_perp, φ = c_φ•Ω + φ_perp,
-    -- and U(a) φ = c_φ•Ω + U(a) φ_perp (vac_inv), the inner product
-    -- ⟨ψ, U(a) φ⟩ expands to four terms. Three vanish or simplify to
-    -- the constant via h_omega_self, h_omega_U_invariant, h_φ_ortho,
-    -- h_ψ_ortho (with conjugation flip on the left side); the fourth
-    -- is ⟨ψ_perp, U(a) φ_perp⟩.
-    -- Tedious Lean (~30 lines of inner_add/sub/smul rewriting plus
-    -- conjugation bookkeeping in `starRingEnd`/`star` form). Routed
-    -- to follow-up.
-    sorry
+    -- Algebraic expansion via two-step decomposition:
+    --   1. Rewrite the right slot via hUφ, distribute, pull c_φ out.
+    --   2. The remaining ⟨ψ, U(a) φ_perp⟩: rewrite ψ via hψ_eq,
+    --      distribute, the (starRingEnd ℂ) c_ψ * ⟨Ω, U(a) φ_perp⟩ term
+    --      vanishes by h_omega_U_invariant + h_φ_ortho.
+    rw [hUφ, inner_add_right, inner_smul_right]
+    -- Goal: c_φ * ⟨ψ, Ω⟩ + ⟨ψ, U(a) φ_perp⟩
+    --     = ⟨ψ, Ω⟩ * ⟨Ω, φ⟩ + ⟨ψ_perp, U(a) φ_perp⟩
+    -- Show the second LHS inner product reduces to ⟨ψ_perp, U(a) φ_perp⟩.
+    have h_ψ_inner : @inner ℂ WR.H _ ψ ((WR.U a) φ_perp) =
+                     @inner ℂ WR.H _ ψ_perp ((WR.U a) φ_perp) := by
+      conv_lhs => rw [hψ_eq]
+      rw [inner_add_left, inner_smul_left, h_omega_U_invariant a φ_perp, h_φ_ortho]
+      ring
+    rw [h_ψ_inner, hc_φ_def]
+    ring
   -- Step 4: combine the algebraic identity with the perp-decay.
   -- Both sides → ⟨ψ, Ω⟩⟨Ω, φ⟩ + 0 = ⟨ψ, Ω⟩⟨Ω, φ⟩.
   have h_perp_decay :
