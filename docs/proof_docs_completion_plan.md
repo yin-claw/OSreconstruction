@@ -4004,22 +4004,30 @@ implementation contract is:
    positive Hermitian map `S * Sᴴ`, commutes with that square, maps each real
    eigenspace to itself, kills the zero eigenspace, and supplies the
    Hermitian-square spectral theorem plus nonnegative singular-value
-   rank-support identity.  The remaining Autonne theorem is therefore the
-   positive-eigenspace phase/fixed-basis assembly: on each positive eigenspace
-   the normalized conjugate-linear map must be bundled as an isometric
-   involution, a fixed orthonormal basis must be chosen, and those bases must
-   be assembled into the unitary Takagi matrix with the entry-L1 singular
-   value estimate.  The first fixed-basis layer is checked in
+   rank-support identity.  The positive-eigenspace phase step is now checked
+   separately in `BHWPermutation/SourceComplexTakagiPhase.lean`.  It uses
+   `EuclideanSpace ℂ (Fin m)`, not raw functions with the product/sup norm,
+   defines `BHW.takagiHermitianEigenspace`, proves the Euclidean norm-square
+   and norm identities for `v ↦ S.mulVec (star v)` on each eigenspace, and
+   bundles the normalized positive-eigenvalue map as
+   `BHW.takagiPositiveEigenspaceConjugation`.  The fixed-basis real-form layer
+   is checked in
    `BHWPermutation/SourceComplexTakagiFixed.lean`: it defines the real fixed
-   submodule `BHW.conjugationFixedSubmodule`, proves the explicit real-linear
+   submodule `BHW.conjugationFixedSubmodule`, installs the induced real inner
+   product and finite-dimensional instances, proves the antiunitary identity
+   `BHW.conjugateLinearIsometry_inner_map_map`, proves the explicit real-linear
    decomposition `x = (x + Jx)/2 + I • (I • (Jx - x)/2)`, proves
    injectivity and surjectivity of `(p,q) ↦ p + I • q`, bundles this as the
-   real-linear equivalence `BHW.conjugationFixedPairLinearEquiv`, and deduces
+   real-linear equivalence `BHW.conjugationFixedPairLinearEquiv`, deduces
    `finrank ℝ fixed = finrank ℂ E` from `Module.finrank_prod` and
-   `finrank_real_of_complex`.  The remaining fixed-basis work is now to prove
-   fixed vectors have real complex inner products by antiunitarity and use
-   `OrthonormalBasis.mk` on the complex span of a real
-   `stdOrthonormalBasis` of the fixed submodule.  It then spells out the finite
+   `finrank_real_of_complex`, and constructs
+   `BHW.conjugationFixedComplexOrthonormalBasis`.  Thus the remaining
+   Autonne work starts after fixed-basis selection: apply
+   `BHW.conjugationFixedComplexOrthonormalBasis` to
+   `BHW.takagiPositiveEigenspaceConjugation` on each positive eigenspace,
+   assemble the resulting fixed eigenbases into the unitary Takagi matrix, and
+   prove the diagonal identity plus entry-L1 singular-value bound.  It then
+   spells out the finite
    support extraction: use `Fintype.nonempty_of_card_le` to embed the nonzero
    singular-value subtype into `Fin k`, define the rectangular factor by
    filling the corresponding columns and zeroing the complement, reindex the

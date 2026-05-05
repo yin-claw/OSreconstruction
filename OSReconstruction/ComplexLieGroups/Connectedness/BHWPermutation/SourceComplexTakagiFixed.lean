@@ -38,6 +38,66 @@ def conjugationFixedSubmodule
         rw [hstar, hx]
       _ = a • x := Complex.coe_smul a x
 
+/-- The fixed submodule inherits the real inner product induced by the ambient
+complex inner product. -/
+instance conjugationFixedSubmodule_innerProductSpaceReal
+    (J : E ≃ₗᵢ⋆[ℂ] E) :
+    InnerProductSpace ℝ (conjugationFixedSubmodule (E := E) J) := by
+  letI : InnerProductSpace ℝ E := InnerProductSpace.complexToReal
+  infer_instance
+
+/-- If the ambient complex Hilbert space is finite-dimensional, so is the fixed
+real form. -/
+instance conjugationFixedSubmodule_finiteDimensionalReal
+    [FiniteDimensional ℂ E] (J : E ≃ₗᵢ⋆[ℂ] E) :
+    FiniteDimensional ℝ (conjugationFixedSubmodule (E := E) J) := by
+  letI : FiniteDimensional ℝ E := FiniteDimensional.complexToReal E
+  infer_instance
+
+/-- A conjugate-linear isometry is antiunitary: it conjugates inner products. -/
+theorem conjugateLinearIsometry_inner_map_map
+    (J : E ≃ₗᵢ⋆[ℂ] E) (x y : E) :
+    inner ℂ (J x) (J y) = star (inner ℂ x y) := by
+  rw [inner_eq_sum_norm_sq_div_four]
+  rw [inner_eq_sum_norm_sq_div_four (x := x) (y := y)]
+  have h_add : J x + J y = J (x + y) := by rw [map_add]
+  have h_sub : J x - J y = J (x - y) := by rw [map_sub]
+  have h_minusI : J x - (RCLike.I : ℂ) • J y =
+      J (x + (RCLike.I : ℂ) • y) := by
+    rw [map_add, map_smulₛₗ, RCLike.conj_I]
+    module
+  have h_plusI : J x + (RCLike.I : ℂ) • J y =
+      J (x - (RCLike.I : ℂ) • y) := by
+    rw [map_sub, map_smulₛₗ, RCLike.conj_I]
+    module
+  rw [h_add, h_sub, h_minusI, h_plusI]
+  rw [LinearIsometryEquiv.norm_map, LinearIsometryEquiv.norm_map,
+    LinearIsometryEquiv.norm_map, LinearIsometryEquiv.norm_map]
+  simp
+  ring
+
+/-- Inner products of fixed vectors are real. -/
+theorem conjugationFixed_inner_im_eq_zero
+    (J : E ≃ₗᵢ⋆[ℂ] E)
+    (x y : conjugationFixedSubmodule (E := E) J) :
+    Complex.im (inner ℂ (x : E) (y : E)) = 0 := by
+  have h := conjugateLinearIsometry_inner_map_map J (x : E) (y : E)
+  rw [x.2, y.2] at h
+  exact Complex.conj_eq_iff_im.mp h.symm
+
+/-- On fixed vectors, the complex inner product is the real inner product
+coerced to `ℂ`. -/
+theorem conjugationFixed_inner_eq_ofReal_real_inner
+    (J : E ≃ₗᵢ⋆[ℂ] E)
+    (x y : conjugationFixedSubmodule (E := E) J) :
+    inner ℂ (x : E) (y : E) = (inner ℝ x y : ℂ) := by
+  apply Complex.ext
+  · letI : InnerProductSpace ℝ E := InnerProductSpace.complexToReal
+    change (inner ℂ (x : E) (y : E)).re = inner ℝ (x : E) (y : E)
+    rw [real_inner_eq_re_inner]
+    rfl
+  · simp [conjugationFixed_inner_im_eq_zero J x y]
+
 /-- The fixed real part `(x + Jx)/2`. -/
 theorem conjugationFixed_realPart_mem
     (J : E ≃ₗᵢ⋆[ℂ] E) (hJ_sq : ∀ x, J (J x) = x) (x : E) :
@@ -249,5 +309,43 @@ theorem conjugationFixedSubmodule_finrank
   rw [Module.finrank_prod] at hprod
   rw [finrank_real_of_complex E] at hprod
   omega
+
+/-- A real orthonormal basis of the fixed real form, indexed by the ambient
+complex dimension. -/
+noncomputable def conjugationFixedRealOrthonormalBasis
+    [FiniteDimensional ℂ E]
+    (J : E ≃ₗᵢ⋆[ℂ] E) (hJ_sq : ∀ x, J (J x) = x) :
+    OrthonormalBasis (Fin (Module.finrank ℂ E)) ℝ
+      (conjugationFixedSubmodule (E := E) J) :=
+  (stdOrthonormalBasis ℝ (conjugationFixedSubmodule (E := E) J)).reindex
+    (finCongr (conjugationFixedSubmodule_finrank J hJ_sq))
+
+/-- The fixed real orthonormal basis is orthonormal for the ambient complex
+inner product after coercion to `E`. -/
+theorem conjugationFixed_complexOrthonormal
+    [FiniteDimensional ℂ E]
+    (J : E ≃ₗᵢ⋆[ℂ] E) (hJ_sq : ∀ x, J (J x) = x) :
+    Orthonormal ℂ
+      (fun i : Fin (Module.finrank ℂ E) =>
+        (conjugationFixedRealOrthonormalBasis J hJ_sq i : E)) := by
+  rw [orthonormal_iff_ite]
+  intro i j
+  rw [conjugationFixed_inner_eq_ofReal_real_inner J]
+  rw [OrthonormalBasis.inner_eq_ite]
+  by_cases hij : i = j <;> simp [hij]
+
+/-- A complex orthonormal basis of `E` consisting of fixed vectors of `J`. -/
+noncomputable def conjugationFixedComplexOrthonormalBasis
+    [FiniteDimensional ℂ E]
+    (J : E ≃ₗᵢ⋆[ℂ] E) (hJ_sq : ∀ x, J (J x) = x) :
+    OrthonormalBasis (Fin (Module.finrank ℂ E)) ℂ E := by
+  let v : Fin (Module.finrank ℂ E) → E := fun i =>
+    (conjugationFixedRealOrthonormalBasis J hJ_sq i : E)
+  have hon : Orthonormal ℂ v := by
+    simpa [v] using conjugationFixed_complexOrthonormal J hJ_sq
+  have hli : LinearIndependent ℂ v := hon.linearIndependent
+  have hspan : Submodule.span ℂ (Set.range v) = ⊤ := by
+    exact hli.span_eq_top_of_card_eq_finrank' (by simp)
+  exact OrthonormalBasis.mk hon hspan.ge
 
 end BHW

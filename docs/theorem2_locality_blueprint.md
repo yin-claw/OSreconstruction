@@ -12957,7 +12957,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | `BHW.sourcePrincipalSchurGraph_sourceGramMatrixRank_eq_iff_residual_rank`, `BHW.sourceOrientedMaxRankAt_sourcePrincipalSchurGraph_iff_residual_rank`, `BHW.sourcePrincipalSchur_orientedMaxRank_parameterSet_eq`, `BHW.isConnected_sourcePrincipalSchur_orientedMaxRank_parameterSet`, `BHW.isConnected_sourcePrincipalSchur_transported_orientedMaxRank_parameterSet`, `BHW.isConnected_sourcePrincipalSchur_transported_orientedMaxRank_preimage_of_eq` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedSchurParameter.lean`. | Principal-Schur residual bridge for the exceptional max-rank parameter proof.  It combines the ordinary Schur rank formula, the hard-range oriented max-rank rewrite, the transport inverse max-rank equivalence, and the checked product connectedness theorem to show that the parameter subset whose inverse-transported oriented Schur-graph image is max-rank is connected exactly when the residual exact-rank cone is connected.  The final preimage theorem lets the concrete normal-form producer use any parameter-box image that agrees on the box with the transported Schur graph, so the remaining obligation is the actual normal-coordinate reconstruction equality.  The determinant coordinates are arbitrary functions of the parameter and disappear because `SourceOrientedMaxRankAt` only reads the ordinary Gram coordinate.  No BHW analytic input is hidden here. |
       | `BHW.finSourceHead`, `BHW.finSourceTail`, `BHW.finSourceHead_val`, `BHW.finSourceTail_val`, `BHW.finSourceHead_injective`, `BHW.finSourceTail_injective`, `BHW.finSourceHead_ne_finSourceTail`, `BHW.finSourceHead_tail_cases`, `BHW.SourceOrientedRankDeficientNormalParameter`, `BHW.sourceOrientedNormalParameterCoord`, `BHW.instTopologicalSpaceSourceOrientedRankDeficientNormalParameter`, `BHW.continuous_sourceOrientedNormalParameterCoord`, `BHW.continuous_sourceOrientedNormalParameter_head`, `BHW.continuous_sourceOrientedNormalParameter_mixed`, `BHW.continuous_sourceOrientedNormalParameter_tail`, `BHW.sourceOrientedNormalCenterParameter`, `BHW.sourceTailEmbed`, `BHW.sourceTailEmbed_head`, `BHW.sourceTailEmbed_tail`, `BHW.sourceTailEmbed_zero`, `BHW.hwLemma3CanonicalSource`, `BHW.hwLemma3CanonicalSource_head_apply`, `BHW.hwLemma3CanonicalSource_head_head`, `BHW.hwLemma3CanonicalSource_head_of_tailCoord`, `BHW.hwLemma3CanonicalSource_tail`, `BHW.sourceHeadMetric`, `BHW.sourceHeadMetric_apply`, `BHW.sourceHeadMetric_transpose`, `BHW.sourceHeadMetric_det_isUnit`, `BHW.sourceTailMetric`, `BHW.sourceTailMetric_apply`, `BHW.sourceTailMetric_det_isUnit`, `BHW.sourceTailMetricScale`, `BHW.sourceTailMetricScale_ne_zero`, `BHW.sourceTailMetricScale_mul_self`, `BHW.sourceTailMetricDetScale`, `BHW.sourceTailMetricDetScale_ne_zero`, `BHW.sourceVectorMinkowskiInner`, `BHW.sourceShiftedTailGram`, `BHW.sourceShiftedTailGram_apply`, `BHW.sourceVectorMinkowskiInner_add_right`, `BHW.sourceVectorMinkowskiInner_add_left`, `BHW.sourceVectorMinkowskiInner_sum_right`, `BHW.sourceVectorMinkowskiInner_sum_left`, `BHW.sourceVectorMinkowskiInner_smul_right`, `BHW.sourceVectorMinkowskiInner_smul_left`, `BHW.sourceMinkowskiGram_hwLemma3CanonicalSource_head`, `BHW.hwLemma3CanonicalSource_head_unit`, `BHW.sourceVectorMinkowskiInner_hwLemma3CanonicalSource_head`, `BHW.sourceOrientedNormalHeadVector`, `BHW.sourceOrientedNormalHeadVector_center`, `BHW.continuous_sourceOrientedNormalHeadVector`, `BHW.sourceVectorMinkowskiInner_sourceOrientedNormalHeadVector`, `BHW.sourceNormalHeadGram_transpose`, `BHW.sourceVectorMinkowskiInner_headVector_sourceTailEmbed`, `BHW.sourceVectorMinkowskiInner_sourceTailEmbed_headVector`, `BHW.sourceOrientedNormalParameterVector`, `BHW.sourceOrientedNormalParameterVector_head`, `BHW.sourceOrientedNormalParameterVector_tail`, `BHW.sourceVectorMinkowskiInner_head_tailParameterVector`, `BHW.sourceVectorMinkowskiInner_tailParameterVector_head`, `BHW.sourceVectorMinkowskiInner_mixedHeadPart_sourceTailEmbed`, `BHW.sourceVectorMinkowskiInner_sourceTailEmbed_mixedHeadPart`, `BHW.sourceVectorMinkowskiInner_mixedHeadPart_mixedHeadPart`, `BHW.sourceVectorMinkowskiInner_tailParameterVector_tail`, `BHW.continuous_sourceOrientedNormalParameterVector`, `BHW.sourceOrientedNormalParameterVector_center` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedNormalParameter.lean`. | Concrete normal-parameter algebra for the rank-deficient Schur producer.  The checked file fixes the finite source-label split `Fin n = head ⊔ tail`, the finite product topology, continuous coordinate projections, padded shifted-tail embedding, canonical source/normal-parameter center equality, signature-diagonal head and shifted-tail metrics, explicit shifted-to-Euclidean tail normalizing scalars, bilinearity of the ambient Minkowski form, head/head, head/tail, tail/head, and tail/tail Gram formulas for the normal parameter vector, and continuity of the normal source tuple.  The ordinary Gram part of `sourceOrientedNormalParameterVector_realizes_schur` is reduced to checked block identities; determinant recovery for ordered full frames is now supplied downstream by `SourceOrientedSchurPropagation.lean`, so the remaining theorem-2 producer work here is the shifted-tail realization/normalization packet. |
       | `BHW.matrixEntryL1Bound`, `BHW.matrixEntryL1Bound_nonneg`, `BHW.matrixEntryL1Bound_lt_of_entry_bound`, `BHW.exists_pos_mul_sqrt_lt`, `BHW.real_sqrt_lt_of_lt_mul_bound`, `BHW.takagiConjugateLinearMap`, `BHW.takagiConjugateLinearMap_add`, `BHW.takagiConjugateLinearMap_smul`, `BHW.takagiConjugateLinearMap_sq`, `BHW.takagiConjugateLinearMap_commutes_square`, `BHW.takagiConjugateLinearMap_mem_eigenspace`, `BHW.takagiConjugateLinearMap_conjTranspose_mulVec_eq_star`, `BHW.takagiConjugateLinearMap_zero_eigenspace_eq_zero`, `BHW.takagiHermitianSquare_isHermitian`, `BHW.takagiHermitianSquare_spectralTheorem`, `BHW.takagiHermitianSquare_eigenvalue_nonneg`, `BHW.takagiHermitianSquare_singularValue_nonneg`, `BHW.takagiHermitianSquare_eigenvalue_rankSupport`, `BHW.takagiHermitianSquare_singularValue_rankSupport`, `BHW.matrix_unitary_entry_norm_le_one`, `BHW.matrix_unitary_entry_mul_real_sqrt_norm_le_sqrt`, `BHW.complexSymmetric_takagi_factor_from_supportEmbedding`, `BHW.complexSymmetric_entryL1_of_takagiDiagonalData`, `BHW.complexSymmetric_entryL1_of_takagiDiagonalData_rankSupport`, `BHW.complexSymmetric_factorSmall_rankLE_of_entryL1`, `BHW.sourceComplexSymmetric_factorSmall_rankLE_of_entryL1` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceComplexSmallFactor.lean`. | Quantitative finite-entry reducer and first Autonne-Takagi spectral layer for the Euclidean tail full-rank branch.  The checked file proves the entry-`ℓ¹` bound from a uniform entry bound, chooses a positive `δ` with `sqrt(C_m δ) < ε`, proves the conjugate-linear Takagi map `v ↦ S *ᵥ star v` is additive/semilinear, squares to `S * Sᴴ`, commutes with that square, preserves real eigenspaces, kills the zero eigenspace, and identifies the Hermitian-square spectral data with nonnegative singular values whose nonzero support has cardinal `S.rank`.  It also exposes the unitary-entry estimate needed in the Takagi norm bound, checks the finite support-embedding reindexing from a diagonal Takagi decomposition to a rectangular `m × k` factor, and turns bounded diagonal Takagi data into the entry-controlled factor and then the small matrix/source-coordinate same-Gram factor theorem.  The remaining hard linear-algebra theorem is now narrowed to the positive-eigenspace phase/fixed-basis assembly for `complexSymmetric_autonneTakagi_factor_rankLE_entryL1`: bundle the normalized conjugate-linear map on each positive eigenspace as an isometric involution, choose fixed orthonormal bases, assemble the unitary Takagi matrix, and prove the entry-`ℓ¹` singular-value bound. |
-      | `BHW.conjugationFixedSubmodule`, `BHW.conjugationFixed_realPart_mem`, `BHW.conjugationFixed_imagPart_mem`, `BHW.conjugationFixedRealPart`, `BHW.conjugationFixedImagPart`, `BHW.conjugationFixed_decomposition_apply`, `BHW.conjugationFixed_decomposition_surjective`, `BHW.conjugationFixed_decomposition_injective`, `BHW.conjugationFixedPairToComplex`, `BHW.conjugationFixedPairLinearEquiv`, `BHW.conjugationFixedSubmodule_finrank` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceComplexTakagiFixed.lean`. | Fixed-real-form layer for the positive-eigenspace Autonne phase theorem.  For any conjugate-linear isometric involution `J`, the checked file defines the real fixed submodule, proves the explicit decomposition `x = (x+Jx)/2 + I • (I • (Jx-x)/2)` into fixed vectors, proves uniqueness of this decomposition, bundles `(p,q) ↦ p + I • q` as a real-linear equivalence from `fixed × fixed` to `E`, and derives `finrank ℝ fixed = finrank ℂ E`.  The remaining fixed-basis theorem now needs the antiunitary inner-product realness for fixed vectors and the construction of a complex orthonormal basis of fixed vectors from `stdOrthonormalBasis ℝ fixed`; the dimension and decomposition bookkeeping is no longer open. |
+      | `BHW.conjugationFixedSubmodule`, `BHW.conjugationFixedSubmodule_innerProductSpaceReal`, `BHW.conjugationFixedSubmodule_finiteDimensionalReal`, `BHW.conjugateLinearIsometry_inner_map_map`, `BHW.conjugationFixed_inner_im_eq_zero`, `BHW.conjugationFixed_inner_eq_ofReal_real_inner`, `BHW.conjugationFixed_realPart_mem`, `BHW.conjugationFixed_imagPart_mem`, `BHW.conjugationFixedRealPart`, `BHW.conjugationFixedImagPart`, `BHW.conjugationFixed_decomposition_apply`, `BHW.conjugationFixed_decomposition_surjective`, `BHW.conjugationFixed_decomposition_injective`, `BHW.conjugationFixedPairToComplex`, `BHW.conjugationFixedPairLinearEquiv`, `BHW.conjugationFixedSubmodule_finrank`, `BHW.conjugationFixedRealOrthonormalBasis`, `BHW.conjugationFixed_complexOrthonormal`, `BHW.conjugationFixedComplexOrthonormalBasis` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceComplexTakagiFixed.lean`. | Fixed-real-form and fixed-basis layer for the positive-eigenspace Autonne phase theorem.  For any conjugate-linear isometric involution `J`, the checked file defines the real fixed submodule, installs the induced real Hilbert-space and finite-dimensional instances, proves antiunitarity by the complex polarization identity, proves fixed-vector complex inner products are real and equal to the induced real inner product, proves the explicit decomposition `x = (x+Jx)/2 + I • (I • (Jx-x)/2)` into fixed vectors, proves uniqueness of this decomposition, bundles `(p,q) ↦ p + I • q` as a real-linear equivalence from `fixed × fixed` to `E`, derives `finrank ℝ fixed = finrank ℂ E`, and constructs a complex orthonormal basis of fixed vectors from `stdOrthonormalBasis ℝ fixed` using `OrthonormalBasis.mk` and the finite-dimensional span theorem.  The remaining Autonne work is now the positive-eigenspace restriction/normalization and assembly into the unitary Takagi matrix with the entry-`ℓ¹` singular-value bound. |
+      | `BHW.takagiConjugateLinearEuclideanMap`, `BHW.takagiConjugateLinearEuclideanMap_add`, `BHW.takagiConjugateLinearEuclideanMap_smul`, `BHW.takagiHermitianEigenspace`, `BHW.takagiConjugateLinearEuclideanMap_norm_sq_of_eigen`, `BHW.takagiConjugateLinearEuclideanMap_norm_of_eigen`, `BHW.takagiConjugateLinearEuclideanMap_normalized_norm_of_eigen`, `BHW.takagiPositiveEigenspaceConjugation` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceComplexTakagiPhase.lean`. | Positive-eigenspace phase layer for Autonne-Takagi.  The checked file deliberately works in `EuclideanSpace ℂ (Fin m)`, avoiding the raw-function product/sup-norm trap, packages the Hermitian-square eigenspace as a complex submodule, proves `‖S *ᵥ star v‖² = lambda * ‖v‖²` and the corresponding norm identity on that eigenspace, and bundles the normalized positive-eigenvalue map `lambda^{-1/2} S *ᵥ star v` as a conjugate-linear isometric involution.  The remaining Autonne work is now the assembly step: apply the fixed-basis theorem to each positive eigenspace, concatenate the resulting fixed orthonormal bases into a unitary matrix, prove `S = U * diagonal σ * Uᵀ`, and carry the already checked rank-support and entry-`ℓ¹` estimates through the finite support embedding. |
       | `BHW.SourceTailOrientedData`, `BHW.SourceTailOrientedData.ext`, `BHW.SourceShiftedTailOrientedData.ext`, `BHW.sourceTailOrientedInvariant`, `BHW.sourceTailOrientedInvariant_gram`, `BHW.sourceTailOrientedInvariant_det`, `BHW.sourceTailOrientedVariety`, `BHW.sourceTailOrientedInvariant_selectedGram_det`, `BHW.sourceTailOrientedVariety_selectedGram_det`, `BHW.sourceTailOrientedInvariant_mixedGram_det`, `BHW.sourceTailOrientedVariety_mixedGram_det`, `BHW.sourceTailOrientedInvariant_reflection`, `BHW.sourceTail_reflection_norm`, `BHW.sourceTailOrientedInvariant_eq_of_gram_eq_selectedDet`, `BHW.sourceTailOrientedInvariant_or_reflection_eq_of_gram_eq`, `BHW.sourceTailOrientedVariety_det_eq_zero_of_gram_eq_zero`, `BHW.sourceTailOrientedSmallRealization_zeroGram`, `BHW.sourceTailOrientedSmallRealization_zeroRank_bound`, `BHW.sourceTailPermuteOrientedData`, `BHW.sourceTailOrientedInvariant_perm`, `BHW.sourceTailPermuteOrientedData_symm_apply`, `BHW.sourceTailOrientedVariety_perm_iff`, `BHW.sourceTail_exists_principalMinor_of_rank`, `BHW.sourceTailFullFrame_factorWithDet`, `BHW.sourceTail_permute_to_head`, `BHW.sourceTailSmallRealization_transport_perm`, `BHW.SourceShiftedTailMetricNormalization`, `BHW.sourceShiftedTailMetricNormalization`, `BHW.sourceShiftedTailDataToEuclidean`, `BHW.sourceVectorMinkowskiInner_sourceTailEmbed_tail`, `BHW.sourceShiftedTailInvariant_toEuclidean`, `BHW.sourceShiftedTailDataToEuclidean_injective`, `BHW.sourceShiftedTailVariety_toEuclidean_iff`, `BHW.sourceShiftedTailInvariant_eq_of_toEuclidean_eq`, `BHW.SourceTailOrientedCompatibleSmallRealization`, `BHW.SourceShiftedTailCompatibleSmallRealization`, `BHW.sourceShiftedTailCompatibleSmallRealization_of_euclidean` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedTailEuclidean.lean`. | Finite diagonal normalization bridge from the shifted residual-tail metric to the Euclidean tail model, plus the zero-Gram/zero-rank Euclidean induction case.  The Euclidean tail data model, selected-Gram determinant-square identity for realized tuples and variety points, mixed-minor determinant identities, coordinate reflection with norm preservation, selected-determinant sign-repair propagation, zero-Gram determinant vanishing, zero-rank estimate wrapper, symmetric-rank principal-minor selection for variety points, full-frame determinant-orientation repair, finite selected-label permutation-to-head, source-label permutation transport, determinant-coordinate transport with no hidden row sign, canonical shifted-tail metric normalization, scaled-invariant equality, variety-membership equivalence, injective descent back to shifted data, and the estimate-compatible shifted packet derived from a Euclidean compatible packet are checked.  The remaining tail theorem is now the positive/full/intermediate-rank Euclidean compatible small-realization induction; no analytic BHW input is hidden in this normalization layer. |
       | `BHW.sourceOrientedSchurHeadBlock`, `BHW.sourceOrientedSchurHeadBlock_apply`, `BHW.sourceOrientedSchurMixedBlock`, `BHW.sourceOrientedSchurTailBlock`, `BHW.sourceSchurMixedCoeff`, `BHW.sourceSchurMixedCoeff_mul_headBlock`, `BHW.sourceSchurComplement`, `BHW.sourceSchurResidualDeterminants`, `BHW.sourceShiftedTailOrientedVariety`, `BHW.SourceOrientedSchurResidualData`, `BHW.SourceOrientedSchurResidualData.L_mul_A`, `BHW.sourceVectorMinkowskiInner_comm`, `BHW.sourceVectorMinkowskiInner_sub_left`, `BHW.sourceVectorMinkowskiInner_sub_right`, `BHW.sourceActualSchurResidualVector`, `BHW.sourceActualSchurResidualVector_decomp`, `BHW.sourceActualSchurResidualVector_inner_head`, `BHW.sourceActualSchurResidualVector_head_inner`, `BHW.sourceActualSchurResidualVector_inner_residual`, `BHW.sourceActualSchurSelectedOriginalMatrix`, `BHW.sourceActualSchurSelectedResidualMatrix`, `BHW.sourceSchurHeadTailRowOperation`, `BHW.sourceSchurHeadTailRowOperation_det`, `BHW.sourceActualSchurSelectedResidualMatrix_eq_rowOperation_mul`, `BHW.sourceActualSchurResidual_selectedFrameDet`, `BHW.sourceActualSchurResidual_selectedFrameDet_eq_headFactor_mul_tail_det`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_gram`, `BHW.sourceNormalFullFrameDetFromSchur_headTail`, `BHW.sourceNormalFullFrameDetFromSchur_headTail_eq_source_det`, `BHW.sourceOrientedSchur_fullFrameDet_reconstruct_of_headTailPropagation`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_det_of_fullFrameReconstruct`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_of_fullFrameReconstruct` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedSchurResidual.lean`. | Schur residual coordinate packet, actual residual-vector setup, ordinary Gram realization, selected head-tail determinant calibration, and determinant/full-data consumers.  The Gram theorem uses `hGvar` to get symmetry of the source Gram and uses `L * A = mixed`; the actual residual-vector theorems decompose each tail vector, prove residual orthogonality to the selected head span, and identify the actual residual Gram matrix with the stored Schur-complement tail Gram `R.tail.gram`; the selected actual-residual row-operation theorem proves that replacing selected tail rows by actual Schur residual rows leaves the selected head-tail determinant unchanged, via a determinant-one block lower-triangular row operation, and its calibrated form identifies those selected actual residual determinants with `R.headFactor.det * R.tail.det`; the selected stored-frame theorem proves the residual determinant quotient really recovers `G.det` on frames of the form `head ∪ lam`; the checked head-tail-propagation consumer shows that a single oriented-variety determinant propagation theorem mechanically implies full Schur determinant reconstruction; the checked consumers turn the already checked normal-parameter finite Laplace formula plus a supplied full-frame reconstruction equality over `G` into determinant-coordinate and full oriented-data equality for the realized normal tuple.  The unconditional hard-range propagation and Schur reconstruction theorem is supplied by the next `SourceOrientedSchurPropagation.lean` row; after that, the remaining producer/reconstruction targets are `sourceOriented_schurResidualData` and `sourceOriented_reconstruct_from_schurResidual`. |
       | `BHW.sourceHeadRows_linearIndependent_of_schurHeadBlock_isUnit`, `BHW.exists_headTail_fullFrameDet_ne_zero_of_headRows_linearIndependent_span_top`, `BHW.sourceOrientedGramVariety_notMaxRank_of_headTailDet_eq_zero`, `BHW.sourceOrientedGramVariety_det_eq_zero_of_not_maxRank`, `BHW.sourceOrientedGramVariety_det_eq_of_gram_eq_of_not_maxRank`, `BHW.sourceOrientedGramVariety_det_eq_of_gram_eq_headTailDet_eq_of_exists_nonzero`, `BHW.sourceOrientedGramVariety_det_eq_of_gram_eq_headTailDet_eq_of_allZero_notMaxRank`, `BHW.sourceOrientedGramVariety_det_eq_of_gram_eq_headTailDet_eq`, `BHW.sourceOrientedSchur_fullFrameDet_reconstruct`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_det`, `BHW.sourceOrientedNormalParameterVector_realizes_schur` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedSchurPropagation.lean`. | Hard-range determinant propagation and Schur reconstruction closure.  The nonzero selected-head-tail branch uses the full-frame chart identity.  The all-zero branch proves non-max-rank by contrapositive: invertible head Gram block gives head-row linear independence; max-rank gives a spanning full frame; quotienting by the head span lets tail quotient images extend the head rows to a full frame, contradicting selected head-tail determinant vanishing.  Therefore same Gram plus selected head-tail determinant agreement implies all determinant coordinates agree, and the residual Schur consumer now yields hard-range full-frame determinant reconstruction and normal-parameter oriented-data realization.  The next producer target is constructing `SourceOrientedSchurResidualData`; this row no longer has a Plucker/Cauchy-Binet propagation gap. |
@@ -31776,38 +31777,51 @@ Proof decomposition of this theorem, without hiding the analytic work:
                ∀ i, J (b i) = b i
          ```
 
-         This fixed-basis theorem is not a black box.  In Lean it should be
-         implemented through the bundled semilinear-isometry API from
-         `Mathlib.Analysis.Normed.Operator.LinearIsometry`; the raw hypotheses
-         above first produce a conjugate-linear isometric equivalence
-         `Jiso : E ≃ₗᵢ⋆[ℂ] E` whose inverse is `J` itself.  The real-form
-         construction is then decomposed as follows.
+         This fixed-basis theorem is not a black box.  Its generic real-form
+         and basis construction is now checked in
+         `SourceComplexTakagiFixed.lean` through the bundled
+         semilinear-isometry API from
+         `Mathlib.Analysis.Normed.Operator.LinearIsometry`.  The
+         positive-eigenspace phase task is also now checked in
+         `SourceComplexTakagiPhase.lean`: for each `lambda > 0`, the
+         eigenspace of `S * Sᴴ` is packaged as a submodule of
+         `EuclideanSpace ℂ (Fin m)`, the norm identity for
+         `v ↦ S *ᵥ star v` is proved there, and the normalized map is bundled
+         as the required `Jiso : Eλ ≃ₗᵢ⋆[ℂ] Eλ`.  Thus the remaining Autonne
+         proof starts after fixed eigenspace bases: assemble those bases into
+         one unitary matrix and prove the diagonal Takagi identity and
+         quantitative support bound.  The checked generic layer is:
 
          ```lean
          def BHW.conjugationFixedSubmodule
              {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
-             (J : E ≃ₗᵢ⋆[ℂ] E)
-             (hJ_sq : ∀ x, J (J x) = x) :
-             Submodule ℝ E :=
-           { carrier := {x | J x = x}
-             zero_mem' := by simp
-             add_mem' := by
-               intro x y hx hy
-               simpa [hx, hy] using map_add J x y
-             smul_mem' := by
-               intro a x hx
-               -- `J` is `starRingEnd ℂ`-semilinear and
-               -- `star (algebraMap ℝ ℂ a) = algebraMap ℝ ℂ a`.
-               simpa [hx, Complex.conj_ofReal] using map_smulₛₗ J (a : ℂ) x }
+             (J : E ≃ₗᵢ⋆[ℂ] E) :
+             Submodule ℝ E
 
-         theorem BHW.conjugation_fixed_decomposition
+         instance BHW.conjugationFixedSubmodule_innerProductSpaceReal
+             {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
+             (J : E ≃ₗᵢ⋆[ℂ] E) :
+             InnerProductSpace ℝ (BHW.conjugationFixedSubmodule J)
+
+         theorem BHW.conjugateLinearIsometry_inner_map_map
+             {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
+             (J : E ≃ₗᵢ⋆[ℂ] E) (x y : E) :
+             inner ℂ (J x) (J y) = star (inner ℂ x y)
+
+         theorem BHW.conjugationFixed_decomposition_apply
              {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
              (J : E ≃ₗᵢ⋆[ℂ] E)
-             (hJ_sq : ∀ x, J (J x) = x) :
-             Function.Bijective
+             (hJ_sq : ∀ x, J (J x) = x) (x : E) :
+             (BHW.conjugationFixedRealPart J hJ_sq x : E) +
+               Complex.I • (BHW.conjugationFixedImagPart J hJ_sq x : E) = x
+
+         theorem BHW.conjugationFixed_decomposition_injective
+             {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
+             (J : E ≃ₗᵢ⋆[ℂ] E) :
+             Function.Injective
                (fun p :
-                 BHW.conjugationFixedSubmodule J hJ_sq ×
-                   BHW.conjugationFixedSubmodule J hJ_sq =>
+                 BHW.conjugationFixedSubmodule J ×
+                   BHW.conjugationFixedSubmodule J =>
                  (p.1 : E) + Complex.I • (p.2 : E))
 
          theorem BHW.conjugationFixedSubmodule_finrank
@@ -31815,40 +31829,77 @@ Proof decomposition of this theorem, without hiding the analytic work:
              [FiniteDimensional ℂ E]
              (J : E ≃ₗᵢ⋆[ℂ] E)
              (hJ_sq : ∀ x, J (J x) = x) :
-             Module.finrank ℝ (BHW.conjugationFixedSubmodule J hJ_sq) =
+             Module.finrank ℝ (BHW.conjugationFixedSubmodule J) =
                Module.finrank ℂ E
 
-         theorem BHW.conjugation_fixed_inner_real
+         theorem BHW.conjugationFixed_inner_im_eq_zero
              {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
              (J : E ≃ₗᵢ⋆[ℂ] E)
-             (hJ_sq : ∀ x, J (J x) = x)
-             {x y : BHW.conjugationFixedSubmodule J hJ_sq} :
+             (x y : BHW.conjugationFixedSubmodule J) :
              (⟪(x : E), (y : E)⟫_ℂ).im = 0
 
-         theorem BHW.conjugation_fixed_realONB_complex_total
+         theorem BHW.conjugationFixed_complexOrthonormal
              {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
              [FiniteDimensional ℂ E]
              (J : E ≃ₗᵢ⋆[ℂ] E)
-             (hJ_sq : ∀ x, J (J x) = x)
-             (bR :
-               OrthonormalBasis
-                 (Fin (Module.finrank ℝ
-                   (BHW.conjugationFixedSubmodule J hJ_sq)))
-                 ℝ (BHW.conjugationFixedSubmodule J hJ_sq)) :
-             ⊤ <=
-               Submodule.span ℂ
-                 (Set.range
-                   (fun i =>
-                     ((bR i :
-                       BHW.conjugationFixedSubmodule J hJ_sq) : E)))
+             (hJ_sq : ∀ x, J (J x) = x) :
+             Orthonormal ℂ
+               (fun i : Fin (Module.finrank ℂ E) =>
+                 (BHW.conjugationFixedRealOrthonormalBasis J hJ_sq i : E))
+
+         noncomputable def BHW.conjugationFixedComplexOrthonormalBasis
+             {E : Type*} [NormedAddCommGroup E] [InnerProductSpace ℂ E]
+             [FiniteDimensional ℂ E]
+             (J : E ≃ₗᵢ⋆[ℂ] E)
+             (hJ_sq : ∀ x, J (J x) = x) :
+             OrthonormalBasis (Fin (Module.finrank ℂ E)) ℂ E
          ```
 
-         Proof transcript for these four helpers:
+         The checked positive-eigenspace phase layer is:
 
-         * For `conjugation_fixed_decomposition`, the inverse map sends
+         ```lean
+         def BHW.takagiHermitianEigenspace
+             (m : ℕ) (S : Matrix (Fin m) (Fin m) ℂ) (lambda : ℝ) :
+             Submodule ℂ (EuclideanSpace ℂ (Fin m))
+
+         theorem BHW.takagiConjugateLinearEuclideanMap_norm_sq_of_eigen
+             (m : ℕ) {S : Matrix (Fin m) (Fin m) ℂ} (hSym : S.transpose = S)
+             {lambda : ℝ} {v : EuclideanSpace ℂ (Fin m)}
+             (hv : (S * Sᴴ) *ᵥ (v : Fin m → ℂ) =
+               (lambda : ℂ) • (v : Fin m → ℂ)) :
+             ‖BHW.takagiConjugateLinearEuclideanMap m S v‖ ^ 2 =
+               lambda * ‖v‖ ^ 2
+
+         theorem BHW.takagiConjugateLinearEuclideanMap_normalized_norm_of_eigen
+             (m : ℕ) {S : Matrix (Fin m) (Fin m) ℂ} (hSym : S.transpose = S)
+             {lambda : ℝ} (hlambda : 0 < lambda)
+             {v : EuclideanSpace ℂ (Fin m)}
+             (hv : (S * Sᴴ) *ᵥ (v : Fin m → ℂ) =
+               (lambda : ℂ) • (v : Fin m → ℂ)) :
+             ‖(((Real.sqrt lambda)⁻¹ : ℝ) : ℂ) •
+               BHW.takagiConjugateLinearEuclideanMap m S v‖ = ‖v‖
+
+         noncomputable def BHW.takagiPositiveEigenspaceConjugation
+             (m : ℕ) {S : Matrix (Fin m) (Fin m) ℂ}
+             (hSym : S.transpose = S)
+             {lambda : ℝ} (hlambda : 0 < lambda) :
+             BHW.takagiHermitianEigenspace m S lambda ≃ₗᵢ⋆[ℂ]
+               BHW.takagiHermitianEigenspace m S lambda
+         ```
+
+         Proof transcript for the checked helpers:
+
+         * `conjugateLinearIsometry_inner_map_map` expands both sides by
+           `inner_eq_sum_norm_sq_div_four`.  The semilinear identities
+           `J (x + y) = J x + J y`, `J (x - y) = J x - J y`,
+           `J (x + I • y) = J x - I • J y`, and
+           `J (x - I • y) = J x + I • J y`, together with
+           `LinearIsometryEquiv.norm_map`, turn the left-hand polarization
+           formula into the conjugate of the right-hand formula.
+         * For `conjugationFixed_decomposition_apply`, the inverse map sends
            `x : E` to
            `u = (1 / 2 : ℝ) • (x + J x)` and
-           `v = (1 / 2 : ℝ) • ((-Complex.I) • (x - J x))`.  The identities
+           `v = (1 / 2 : ℝ) • (Complex.I • (J x - x))`.  The identities
            `J u = u`, `J v = v`, and `u + I • v = x` are direct algebra from
            semilinearity, `J (I • y) = -I • J y`, and `hJ_sq`.
          * `conjugationFixedSubmodule_finrank` compares real dimensions in
@@ -31858,26 +31909,18 @@ Proof decomposition of this theorem, without hiding the analytic work:
            `Module.finrank ℝ E = 2 * Module.finrank ℂ E`, while
            `Module.finrank_prod` gives twice the real dimension of the fixed
            subspace.  Cancel the factor `2`.
-         * `conjugation_fixed_inner_real` uses antiunitarity:
+         * `conjugationFixed_inner_im_eq_zero` uses antiunitarity:
            `⟪J x, J y⟫ = star ⟪x,y⟫`.  Since `x` and `y` are fixed, the
            inner product equals its conjugate, hence its imaginary part is
            zero.
-         * For `conjugation_fixed_realONB_complex_total`, write any
-           `x : E` as `u + I • v` by the decomposition theorem.  Both fixed
-           vectors `u` and `v` lie in the real span of the real orthonormal
-           basis `bR`; the same finite sums are also complex linear
-           combinations in `E`, so `x` lies in the complex span.
-
-         With these helpers, choose
-         `bR := stdOrthonormalBasis ℝ
-           (BHW.conjugationFixedSubmodule Jiso hJ_sq)` and reindex it by
-         `conjugationFixedSubmodule_finrank`.  The resulting function
-         `b : Fin (Module.finrank ℂ E) -> E` is fixed by `J`, orthonormal
-         over `ℂ` by `conjugation_fixed_inner_real` plus the real
-         orthonormality of `bR`, and spans over `ℂ` by
-         `conjugation_fixed_realONB_complex_total`.  Therefore
-         `OrthonormalBasis.mk` produces the desired complex orthonormal basis
-         fixed by `J`.
+         * `conjugationFixedComplexOrthonormalBasis` chooses
+           `stdOrthonormalBasis ℝ (BHW.conjugationFixedSubmodule J)`, reindexes
+           it by `conjugationFixedSubmodule_finrank`, proves the coerced
+           family is complex-orthonormal from
+           `conjugationFixed_inner_eq_ofReal_real_inner`, then invokes
+           `OrthonormalBasis.mk`.  The complex span condition is discharged
+           by `hon.linearIndependent.span_eq_top_of_card_eq_finrank'`, because
+           the index type is already `Fin (Module.finrank ℂ E)`.
 
          Applying this on every positive eigenspace gives an orthonormal
          basis `u a` with `S.mulVec (star (u a)) = σ a • u a`.  If `U` is
