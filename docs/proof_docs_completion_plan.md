@@ -607,13 +607,19 @@ also checked in
 `BHW.sourceOrientedSchurHeadBlock_apply`,
 `BHW.sourceOrientedSchurMixedBlock`,
 `BHW.sourceOrientedSchurTailBlock`, `BHW.sourceSchurMixedCoeff`,
-`BHW.sourceSchurComplement`, `BHW.sourceSchurResidualDeterminants`,
+`BHW.sourceSchurMixedCoeff_mul_headBlock`, `BHW.sourceSchurComplement`,
+`BHW.sourceSchurResidualDeterminants`,
 `BHW.sourceShiftedTailOrientedVariety`,
 `BHW.SourceOrientedSchurResidualData`,
+`BHW.SourceOrientedSchurResidualData.L_mul_A`,
+`BHW.sourceVectorMinkowskiInner_comm`,
+`BHW.sourceOrientedNormalParameterVector_realizes_schur_gram`,
 `BHW.sourceNormalFullFrameDetFromSchur_headTail`,
 `BHW.sourceNormalFullFrameDetFromSchur_headTail_eq_source_det`, and the
 checked determinant consumer
-`BHW.sourceOrientedNormalParameterVector_realizes_schur_det_of_fullFrameReconstruct`.
+`BHW.sourceOrientedNormalParameterVector_realizes_schur_det_of_fullFrameReconstruct`
+together with the full oriented-data consumer
+`BHW.sourceOrientedNormalParameterVector_realizes_schur_of_fullFrameReconstruct`.
 That consumer deliberately keeps the genuine Plucker/Cauchy-Binet
 reconstruction theorem as an explicit hypothesis.  The future
 `sourceOrientedSchur_fullFrameDet_reconstruct` theorem must take
@@ -628,10 +634,10 @@ specialization is already checked by
 `sourceNormalFullFrameDetFromSchur_headTail_eq_source_det`, using
 `R.tail_det_eq` and cancellation by `R.headFactor_det_unit`; the remaining
 work is only the non-selected Plucker/Cauchy-Binet propagation.  Once that
-theorem is proved, the final determinant field of
-`sourceOrientedNormalParameterVector_realizes_schur` is a mechanical call to
-the checked
-`sourceOrientedNormalParameterVector_realizes_schur_det_of_fullFrameReconstruct`
+theorem is proved, the final
+`sourceOrientedNormalParameterVector_realizes_schur` theorem is a mechanical
+call to the checked
+`sourceOrientedNormalParameterVector_realizes_schur_of_fullFrameReconstruct`
 or its future no-hypothesis wrapper.  No downstream proof may use an unnamed
 "block determinant expansion" anymore.
 

@@ -8897,6 +8897,24 @@ Proof decomposition of this theorem, without hiding the analytic work:
           Continuous
             (BHW.sourceOrientedNormalParameterVector d n r hrD hrn)
 
+      theorem BHW.sourceOrientedNormalParameterVector_realizes_schur_gram
+          (d n r : Nat)
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          {G : BHW.SourceOrientedGramData d n}
+          (hGvar : G ∈ BHW.sourceOrientedGramVariety d n)
+          (R : BHW.SourceOrientedSchurResidualData d n r hrD hrn G)
+          {p :
+            BHW.SourceOrientedRankDeficientNormalParameter d n r hrD hrn}
+          (hhead : p.head = R.headFactor)
+          (hmixed : p.mixed = R.L)
+          (htail :
+            BHW.sourceShiftedTailOrientedInvariant d r hrD (n - r) p.tail =
+              R.tail) :
+          (BHW.sourceOrientedMinkowskiInvariant d n
+            (BHW.sourceOrientedNormalParameterVector
+              d n r hrD hrn p)).gram = G.gram
+
       theorem BHW.sourceOrientedNormalParameterVector_realizes_schur
           [NeZero d]
           (hd : 2 <= d)
@@ -8982,14 +9000,18 @@ Proof decomposition of this theorem, without hiding the analytic work:
       tail/tail entries are
       `mixed * (H η Hᵀ) * mixedᵀ + sourceShiftedTailGram p.tail`, with the
       residual tail Gram computed using the shifted ambient metric.  The
-      remaining algebraic block for
+      ordinary Gram realization is now checked as
+      `sourceOrientedNormalParameterVector_realizes_schur_gram`; it uses
+      `hGvar` only to obtain symmetry of `G.gram`, then applies the checked
+      cancellation `SourceOrientedSchurResidualData.L_mul_A`.  The remaining
+      algebraic block for
       `sourceOrientedNormalParameterVector_realizes_schur` is determinant
-      recovery for ordered full frames together with the shifted-tail
-      realization/normalization packet, not another Gram identity.
-      The realization theorem is exactly the Schur reconstruction theorem
-      above with the explicit parameter vector substituted; its determinant
-      part is the same ordered block expansion used in
-      `sourceOriented_reconstruct_from_schurResidual`.
+      recovery for non-selected ordered full frames, not another Gram identity.
+      The full realization consumer assuming that determinant reconstruction
+      is checked as
+      `sourceOrientedNormalParameterVector_realizes_schur_of_fullFrameReconstruct`.
+      The shifted-tail realization/normalization packet remains part of the
+      producer theorem `sourceOriented_schurResidualData`, not this consumer.
       The max-rank equivalence is Schur rank additivity: the invertible head
       block contributes rank `r`, the mixed rows do not change rank after
       Schur reduction, and
@@ -9751,6 +9773,28 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (BHW.sourceOrientedMinkowskiInvariant d n
             (BHW.sourceOrientedNormalParameterVector
               d n r hrD hrn p)).det = G.det
+
+      theorem BHW.sourceOrientedNormalParameterVector_realizes_schur_of_fullFrameReconstruct
+          (d n r : Nat)
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          {G : BHW.SourceOrientedGramData d n}
+          (hGvar : G ∈ BHW.sourceOrientedGramVariety d n)
+          (R : BHW.SourceOrientedSchurResidualData d n r hrD hrn G)
+          {p :
+            BHW.SourceOrientedRankDeficientNormalParameter d n r hrD hrn}
+          (hhead : p.head = R.headFactor)
+          (hmixed : p.mixed = R.L)
+          (htail :
+            BHW.sourceShiftedTailOrientedInvariant d r hrD (n - r) p.tail =
+              R.tail)
+          (hdet :
+            ∀ ι : Fin (d + 1) ↪ Fin n,
+              BHW.sourceNormalFullFrameDetFromSchur d n r hrD hrn
+                R.headFactor R.L R.tail ι = G.det ι) :
+          BHW.sourceOrientedMinkowskiInvariant d n
+            (BHW.sourceOrientedNormalParameterVector
+              d n r hrD hrn p) = G
       ```
 
       `sourceNormalFullFrameDetFromSchur` is now a concrete Laplace expansion.
@@ -9810,6 +9854,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       full-frame reconstruction hypothesis.  The no-hypothesis wrapper
       `sourceOrientedNormalParameterVector_realizes_schur_det` remains future
       work until `sourceOrientedSchur_fullFrameDet_reconstruct` is proved.
+      The full oriented-data consumer
+      `sourceOrientedNormalParameterVector_realizes_schur_of_fullFrameReconstruct`
+      is checked as the product-coordinate extensionality assembly of the
+      checked Gram theorem and this determinant consumer.
       The selected head-tail specialization of that reconstruction is now
       checked separately as
       `sourceNormalFullFrameDetFromSchur_headTail` and
@@ -12538,7 +12586,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | `BHW.sourceGramMatrixRank_le_spacetime_source_min`, `BHW.sourceOriented_notMaxRank_sourceGramMatrixRank_lt_min`, `BHW.sourceOriented_notMaxRank_sourceGramMatrixRank_lt_fullFrame`, `BHW.sourceOrientedMaxRankAt_iff_of_gram_eq`, `BHW.sourceOrientedExceptionalRank_iff_of_gram_eq`, `BHW.sourceOrientedMaxRankAt_iff_sourceGramMatrixRank_eq_fullFrame`, `BHW.sourceOrientedMaxRankAt_invariant_iff_sourceGramMatrixRank_eq_fullFrame`, `BHW.sourceOrientedMaxRankAt_invariant_iff_hwSourceGramMaxRankAt`, `BHW.hwSourceGramMaxRankAt_of_sourceOrientedInvariant_eq`, `BHW.sourceOrientedExceptionalRank_invariant_iff_hwSourceGramExceptionalRankAt`, `BHW.hwSourceGramExceptionalRankAt_of_sourceOrientedInvariant_eq` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedRankBridge.lean`. | Rank bridge between the strict oriented max/exceptional-rank predicates and the existing scalar source-rank API.  The rank upper bound for actual source configurations is proved from the restricted-Minkowski-rank formula and finite-dimensional span bounds, so the equality-style oriented max-rank predicate is equivalent to the scalar `min (d+1) n ≤ rank` predicate.  Failure of oriented max-rank for an actual source configuration now gives strict rank deficiency below both `min (d+1) n` and `d+1`, which is the checked input for choosing the normal-form rank.  In the hard range `d + 1 ≤ n`, the max-rank predicate is also exposed directly as the ordinary full-frame equation `sourceGramMatrixRank n G.gram = d + 1`, both for arbitrary oriented Gram data and for actual source invariants.  This is support for the upcoming exceptional Schur/residual parameter connectedness proof, not a new analytic input. |
       | `BHW.sourcePrincipalSchurGraph_sourceGramMatrixRank_eq_iff_residual_rank`, `BHW.sourceOrientedMaxRankAt_sourcePrincipalSchurGraph_iff_residual_rank`, `BHW.sourcePrincipalSchur_orientedMaxRank_parameterSet_eq`, `BHW.isConnected_sourcePrincipalSchur_orientedMaxRank_parameterSet`, `BHW.isConnected_sourcePrincipalSchur_transported_orientedMaxRank_parameterSet`, `BHW.isConnected_sourcePrincipalSchur_transported_orientedMaxRank_preimage_of_eq` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedSchurParameter.lean`. | Principal-Schur residual bridge for the exceptional max-rank parameter proof.  It combines the ordinary Schur rank formula, the hard-range oriented max-rank rewrite, the transport inverse max-rank equivalence, and the checked product connectedness theorem to show that the parameter subset whose inverse-transported oriented Schur-graph image is max-rank is connected exactly when the residual exact-rank cone is connected.  The final preimage theorem lets the concrete normal-form producer use any parameter-box image that agrees on the box with the transported Schur graph, so the remaining obligation is the actual normal-coordinate reconstruction equality.  The determinant coordinates are arbitrary functions of the parameter and disappear because `SourceOrientedMaxRankAt` only reads the ordinary Gram coordinate.  No BHW analytic input is hidden here. |
       | `BHW.finSourceHead`, `BHW.finSourceTail`, `BHW.finSourceHead_val`, `BHW.finSourceTail_val`, `BHW.finSourceHead_injective`, `BHW.finSourceTail_injective`, `BHW.finSourceHead_ne_finSourceTail`, `BHW.finSourceHead_tail_cases`, `BHW.SourceOrientedRankDeficientNormalParameter`, `BHW.sourceOrientedNormalParameterCoord`, `BHW.instTopologicalSpaceSourceOrientedRankDeficientNormalParameter`, `BHW.continuous_sourceOrientedNormalParameterCoord`, `BHW.continuous_sourceOrientedNormalParameter_head`, `BHW.continuous_sourceOrientedNormalParameter_mixed`, `BHW.continuous_sourceOrientedNormalParameter_tail`, `BHW.sourceOrientedNormalCenterParameter`, `BHW.sourceTailEmbed`, `BHW.sourceTailEmbed_head`, `BHW.sourceTailEmbed_tail`, `BHW.sourceTailEmbed_zero`, `BHW.hwLemma3CanonicalSource`, `BHW.hwLemma3CanonicalSource_head_apply`, `BHW.hwLemma3CanonicalSource_head_head`, `BHW.hwLemma3CanonicalSource_head_of_tailCoord`, `BHW.hwLemma3CanonicalSource_tail`, `BHW.sourceHeadMetric`, `BHW.sourceHeadMetric_apply`, `BHW.sourceHeadMetric_transpose`, `BHW.sourceHeadMetric_det_isUnit`, `BHW.sourceTailMetric`, `BHW.sourceTailMetric_apply`, `BHW.sourceTailMetric_det_isUnit`, `BHW.sourceTailMetricScale`, `BHW.sourceTailMetricScale_ne_zero`, `BHW.sourceTailMetricScale_mul_self`, `BHW.sourceTailMetricDetScale`, `BHW.sourceTailMetricDetScale_ne_zero`, `BHW.sourceVectorMinkowskiInner`, `BHW.sourceShiftedTailGram`, `BHW.sourceShiftedTailGram_apply`, `BHW.sourceVectorMinkowskiInner_add_right`, `BHW.sourceVectorMinkowskiInner_add_left`, `BHW.sourceVectorMinkowskiInner_sum_right`, `BHW.sourceVectorMinkowskiInner_sum_left`, `BHW.sourceVectorMinkowskiInner_smul_right`, `BHW.sourceVectorMinkowskiInner_smul_left`, `BHW.sourceMinkowskiGram_hwLemma3CanonicalSource_head`, `BHW.hwLemma3CanonicalSource_head_unit`, `BHW.sourceVectorMinkowskiInner_hwLemma3CanonicalSource_head`, `BHW.sourceOrientedNormalHeadVector`, `BHW.sourceOrientedNormalHeadVector_center`, `BHW.continuous_sourceOrientedNormalHeadVector`, `BHW.sourceVectorMinkowskiInner_sourceOrientedNormalHeadVector`, `BHW.sourceNormalHeadGram_transpose`, `BHW.sourceVectorMinkowskiInner_headVector_sourceTailEmbed`, `BHW.sourceVectorMinkowskiInner_sourceTailEmbed_headVector`, `BHW.sourceOrientedNormalParameterVector`, `BHW.sourceOrientedNormalParameterVector_head`, `BHW.sourceOrientedNormalParameterVector_tail`, `BHW.sourceVectorMinkowskiInner_head_tailParameterVector`, `BHW.sourceVectorMinkowskiInner_tailParameterVector_head`, `BHW.sourceVectorMinkowskiInner_mixedHeadPart_sourceTailEmbed`, `BHW.sourceVectorMinkowskiInner_sourceTailEmbed_mixedHeadPart`, `BHW.sourceVectorMinkowskiInner_mixedHeadPart_mixedHeadPart`, `BHW.sourceVectorMinkowskiInner_tailParameterVector_tail`, `BHW.continuous_sourceOrientedNormalParameterVector`, `BHW.sourceOrientedNormalParameterVector_center` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedNormalParameter.lean`. | Concrete normal-parameter algebra for the rank-deficient Schur producer.  The checked file fixes the finite source-label split `Fin n = head ⊔ tail`, the finite product topology, continuous coordinate projections, padded shifted-tail embedding, canonical source/normal-parameter center equality, signature-diagonal head and shifted-tail metrics, explicit shifted-to-Euclidean tail normalizing scalars, bilinearity of the ambient Minkowski form, head/head, head/tail, tail/head, and tail/tail Gram formulas for the normal parameter vector, and continuity of the normal source tuple.  The ordinary Gram part of `sourceOrientedNormalParameterVector_realizes_schur` is now reduced to checked block identities; the remaining theorem-2 producer work is determinant recovery for ordered full frames plus the shifted-tail realization/normalization packet. |
-      | `BHW.sourceOrientedSchurHeadBlock`, `BHW.sourceOrientedSchurHeadBlock_apply`, `BHW.sourceOrientedSchurMixedBlock`, `BHW.sourceOrientedSchurTailBlock`, `BHW.sourceSchurMixedCoeff`, `BHW.sourceSchurComplement`, `BHW.sourceSchurResidualDeterminants`, `BHW.sourceShiftedTailOrientedVariety`, `BHW.SourceOrientedSchurResidualData`, `BHW.sourceNormalFullFrameDetFromSchur_headTail`, `BHW.sourceNormalFullFrameDetFromSchur_headTail_eq_source_det`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_det_of_fullFrameReconstruct` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedSchurResidual.lean`. | Schur residual coordinate packet, selected head-tail determinant calibration, and determinant-field consumer.  The selected-frame theorem proves the stored residual determinant quotient really recovers `G.det` on frames of the form `head ∪ lam`; the checked consumer turns the already checked normal-parameter finite Laplace formula plus a supplied full-frame reconstruction equality over `G` into determinant-coordinate equality for the realized normal tuple.  It does not prove `sourceOrientedSchur_fullFrameDet_reconstruct`; that Plucker/Cauchy-Binet reconstruction over non-selected full frames of the original oriented datum is still the next determinant theorem, while `sourceOriented_schurResidualData` and `sourceOriented_reconstruct_from_schurResidual` remain the producer/reconstruction targets. |
+      | `BHW.sourceOrientedSchurHeadBlock`, `BHW.sourceOrientedSchurHeadBlock_apply`, `BHW.sourceOrientedSchurMixedBlock`, `BHW.sourceOrientedSchurTailBlock`, `BHW.sourceSchurMixedCoeff`, `BHW.sourceSchurMixedCoeff_mul_headBlock`, `BHW.sourceSchurComplement`, `BHW.sourceSchurResidualDeterminants`, `BHW.sourceShiftedTailOrientedVariety`, `BHW.SourceOrientedSchurResidualData`, `BHW.SourceOrientedSchurResidualData.L_mul_A`, `BHW.sourceVectorMinkowskiInner_comm`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_gram`, `BHW.sourceNormalFullFrameDetFromSchur_headTail`, `BHW.sourceNormalFullFrameDetFromSchur_headTail_eq_source_det`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_det_of_fullFrameReconstruct`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_of_fullFrameReconstruct` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedSchurResidual.lean`. | Schur residual coordinate packet, ordinary Gram realization, selected head-tail determinant calibration, and determinant/full-data consumers.  The Gram theorem uses `hGvar` to get symmetry of the source Gram and uses `L * A = mixed`; the selected-frame theorem proves the stored residual determinant quotient really recovers `G.det` on frames of the form `head ∪ lam`; the checked consumers turn the already checked normal-parameter finite Laplace formula plus a supplied full-frame reconstruction equality over `G` into determinant-coordinate and full oriented-data equality for the realized normal tuple.  It does not prove `sourceOrientedSchur_fullFrameDet_reconstruct`; that Plucker/Cauchy-Binet reconstruction over non-selected full frames of the original oriented datum is still the next determinant theorem, while `sourceOriented_schurResidualData` and `sourceOriented_reconstruct_from_schurResidual` remain the producer/reconstruction targets. |
       | `BHW.sourceOrientedMaxRankChartData_of_maxRankAt_fullFrame`, `BHW.sourceOrientedGramVariety_local_connectedRelOpen_basis_of_fullFrameMaxRank_and_localImage`, `BHW.sourceOrientedGramVariety_connectedRelOpenTube_around_compactPath_of_fullFrameMaxRank_and_localImage`, `BHW.sourceOrientedRelOpen_inter_maxRank_relOpen`, `BHW.sourceOrientedMaxRank_dense_in_relOpen_inter`, `BHW.sourceOrientedRelOpen_inter_maxRank_nonempty`, `BHW.sourceOrientedGramVariety_maxRank_identity_principle_of_connected`, `BHW.sourceOrientedGramVariety_maxRank_identity_principle_of_connected_fullFrame`, `BHW.sourceOrientedGramVariety_maxRank_eqOn_of_connected_fullFrame`, `BHW.sourceOrientedGramVariety_relOpen_eqOn_zero_of_eqOn_maxRank`, `BHW.sourceOrientedGramVariety_identity_principle_of_connected_maxRank_fullFrame`, `BHW.sourceOrientedGramVariety_eqOn_of_connected_maxRank_fullFrame`, `BHW.bhw_jost_closedChain_orientedMaxRankMonodromy_of_seed`, `BHW.bhw_jost_closedChain_sourceMonodromy_on_maxRankClosingPatch_of_seed`, `BHW.bhw_jost_closedChain_orientedMonodromy_of_seed`, `BHW.bhw_jost_closedChain_sourceMonodromy_of_seed` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedFullFrameMaxRankProducer.lean` and `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedMaxRankIdentity.lean`. | The hard-range full-frame producer now removes the abstract max-rank chart hypothesis: oriented max rank of a source-variety point gives a nonzero selected full-frame determinant, hence a finite-coordinate max-rank chart.  The max-rank locus is relatively open inside the oriented source variety by the determinant-nonzero union characterization, and it is dense in every relatively open oriented patch by pulling back to source tuples and using `dense_sourceComplexGramRegularAt`.  The max-rank identity theorem is the checked clopen propagation on the connected max-rank subtype; density and continuity extend it to all ranks once the max-rank part of the domain is connected.  The closed-loop seed consumers turn a stored `BHWJostOrientedMaxRankClosedLoopSeed` into terminal-initial oriented germ equality and source-branch equality first on max-rank closing points and then on the whole closing patch.  This does not prove the Hall-Wightman closed-loop seed itself and it still takes connectedness of the closing max-rank part as an explicit geometric input. |
       | `BHW.same_sourceOrientedInvariant_detOneOrbit_or_singularLimit` | Componentwise proof transcript pinned; production Lean not started. | Split by `HWSourceGramOrbitRankAt`.  In the orbit-rank branch, extract Gram equality and determinant equality from `SourceOrientedGramData`, prove `HWSameSourceGramSOOrientationCompatible` via a nonzero full-frame determinant and the determinant-ratio formula for `HWFullRankSameGramFrameMapDet`, then call `hw_sameSourceGram_regular_orbit`.  In the low-rank branch, call the Hall-Wightman residual-frame contraction producer.  The lower support transcript expands coefficient kernels, restricted-rank nondegeneracy, determinant-repaired Witt extension, selected Schur residuals, common isotropic residual frames, dual frames, contraction curves, and the singular topology limit; the missing work is implementation, not a remaining theorem-shape gap in this row. |
       | `BHW.extendedTube_same_sourceOrientedInvariant_extendF_eq` | Assembly transcript pinned; not production-Lean-ready until the previous row's Hall-Wightman producers exist. | Apply the previous row's actual orbit alternative to determinant-`1` complex Lorentz invariance of `extendF` via `extendF_complexLorentzInvariant_of_cinv`; apply the singular alternative by the checked topology-limit transcript for `hw_sameSourceGram_singularLimit_extendF_eq`.  This theorem has no independent route choice and must not be implemented before `same_sourceOrientedInvariant_detOneOrbit_or_singularLimit`. |

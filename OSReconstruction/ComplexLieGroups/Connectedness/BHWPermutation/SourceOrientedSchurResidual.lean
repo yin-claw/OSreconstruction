@@ -69,6 +69,26 @@ def sourceSchurComplement
   let L := sourceSchurMixedCoeff n r hrn G A
   sourceOrientedSchurTailBlock n r hrn G - L * A * L.transpose
 
+/-- The Schur mixed coefficients recover the mixed Gram block after multiplying
+back by the invertible principal head block. -/
+theorem sourceSchurMixedCoeff_mul_headBlock
+    (n r : ℕ)
+    (hrn : r ≤ n)
+    (G : SourceOrientedGramData d n)
+    (A : Matrix (Fin r) (Fin r) ℂ)
+    (hA : IsUnit A.det) :
+    sourceSchurMixedCoeff n r hrn G A * A =
+      sourceOrientedSchurMixedBlock n r hrn G := by
+  rw [sourceSchurMixedCoeff, Matrix.mul_assoc, Matrix.nonsing_inv_mul A hA,
+    Matrix.mul_one]
+
+  theorem sourceVectorMinkowskiInner_comm
+    (d : ℕ)
+    (x y : Fin (d + 1) → ℂ) :
+    sourceVectorMinkowskiInner d x y =
+      sourceVectorMinkowskiInner d y x := by
+  simp [sourceVectorMinkowskiInner, mul_comm, mul_left_comm]
+
 /-- Selected residual-tail full-frame determinant coordinates extracted from
 the original oriented determinant coordinate and the chosen head factor. -/
 def sourceSchurResidualDeterminants
@@ -111,6 +131,110 @@ structure SourceOrientedSchurResidualData
   tail_det_eq :
     tail.det = sourceSchurResidualDeterminants d n r hrD hrn G headFactor
   tail_mem : tail ∈ sourceShiftedTailOrientedVariety d r hrD (n - r)
+
+/-- Residual-data specialization of
+`sourceSchurMixedCoeff_mul_headBlock`. -/
+theorem SourceOrientedSchurResidualData.L_mul_A
+    {d n r : ℕ}
+    {hrD : r < d + 1}
+    {hrn : r ≤ n}
+    {G : SourceOrientedGramData d n}
+    (R : SourceOrientedSchurResidualData d n r hrD hrn G) :
+    R.L * R.A = sourceOrientedSchurMixedBlock n r hrn G := by
+  rw [R.L_eq]
+  exact sourceSchurMixedCoeff_mul_headBlock n r hrn G R.A R.A_unit
+
+/-- The normal Schur parameter realizes the ordinary Gram coordinates.  The
+range hypothesis is needed because arbitrary product-coordinate `G.gram` need
+not be symmetric. -/
+theorem sourceOrientedNormalParameterVector_realizes_schur_gram
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (R : SourceOrientedSchurResidualData d n r hrD hrn G)
+    {p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn}
+    (hhead : p.head = R.headFactor)
+    (hmixed : p.mixed = R.L)
+    (htail :
+      sourceShiftedTailOrientedInvariant d r hrD (n - r) p.tail = R.tail) :
+    (sourceOrientedMinkowskiInvariant d n
+      (sourceOrientedNormalParameterVector d n r hrD hrn p)).gram = G.gram := by
+  rcases hGvar with ⟨z, rfl⟩
+  funext i j
+  rcases finSourceHead_tail_cases hrn i with ⟨a, hi⟩ | ⟨u, hi⟩
+  · rcases finSourceHead_tail_cases hrn j with ⟨b, hj⟩ | ⟨v, hj⟩
+    · rw [hi, hj]
+      change
+        sourceVectorMinkowskiInner d
+            (sourceOrientedNormalParameterVector d n r hrD hrn p
+              (finSourceHead hrn a))
+            (sourceOrientedNormalParameterVector d n r hrD hrn p
+              (finSourceHead hrn b)) =
+          sourceMinkowskiGram d n z (finSourceHead hrn a)
+            (finSourceHead hrn b)
+      rw [sourceOrientedNormalParameterVector_head,
+        sourceOrientedNormalParameterVector_head,
+        sourceVectorMinkowskiInner_sourceOrientedNormalHeadVector]
+      rw [hhead, R.headFactor_gram, R.A_eq]
+      rfl
+    · rw [hi, hj]
+      change
+        sourceVectorMinkowskiInner d
+            (sourceOrientedNormalParameterVector d n r hrD hrn p
+              (finSourceHead hrn a))
+            (sourceOrientedNormalParameterVector d n r hrD hrn p
+              (finSourceTail hrn v)) =
+          sourceMinkowskiGram d n z (finSourceHead hrn a)
+            (finSourceTail hrn v)
+      rw [sourceVectorMinkowskiInner_comm]
+      rw [sourceOrientedNormalParameterVector_head,
+        sourceVectorMinkowskiInner_tailParameterVector_head]
+      rw [hhead, hmixed, R.headFactor_gram]
+      have hLA := R.L_mul_A
+      have hentry :
+          (R.L * R.A) v a =
+            sourceMinkowskiGram d n z (finSourceTail hrn v)
+              (finSourceHead hrn a) := by
+        simpa [sourceOrientedSchurMixedBlock] using
+          congrFun (congrFun hLA v) a
+      rw [sourceMinkowskiGram_symm d n z (finSourceHead hrn a)
+        (finSourceTail hrn v)]
+      exact hentry
+  · rcases finSourceHead_tail_cases hrn j with ⟨a, hj⟩ | ⟨v, hj⟩
+    · rw [hi, hj]
+      change
+        sourceVectorMinkowskiInner d
+            (sourceOrientedNormalParameterVector d n r hrD hrn p
+              (finSourceTail hrn u))
+            (sourceOrientedNormalParameterVector d n r hrD hrn p
+              (finSourceHead hrn a)) =
+          sourceMinkowskiGram d n z (finSourceTail hrn u)
+            (finSourceHead hrn a)
+      rw [sourceOrientedNormalParameterVector_head,
+        sourceVectorMinkowskiInner_tailParameterVector_head]
+      rw [hhead, hmixed, R.headFactor_gram]
+      have hLA := R.L_mul_A
+      simpa [sourceOrientedSchurMixedBlock] using
+        congrFun (congrFun hLA u) a
+    · rw [hi, hj]
+      change
+        sourceVectorMinkowskiInner d
+            (sourceOrientedNormalParameterVector d n r hrD hrn p
+              (finSourceTail hrn u))
+            (sourceOrientedNormalParameterVector d n r hrD hrn p
+              (finSourceTail hrn v)) =
+          sourceMinkowskiGram d n z (finSourceTail hrn u)
+            (finSourceTail hrn v)
+      rw [sourceVectorMinkowskiInner_tailParameterVector_tail]
+      rw [hhead, hmixed, R.headFactor_gram]
+      have htailGram :
+          sourceShiftedTailGram d r hrD (n - r) p.tail = R.tail.gram := by
+        simpa using congrArg SourceShiftedTailOrientedData.gram htail
+      rw [htailGram, R.tail_gram_eq]
+      simp [sourceSchurComplement, sourceOrientedSchurTailBlock, R.L_eq,
+        sourceOrientedMinkowskiInvariant, SourceOrientedGramData.gram]
 
 /-- On selected head-tail full frames, the Schur determinant formula collapses
 to the chosen head determinant times the stored residual-tail determinant. -/
@@ -199,5 +323,34 @@ theorem sourceOrientedNormalParameterVector_realizes_schur_det_of_fullFrameRecon
             R.headFactor R.L R.tail ι := by
           rw [hhead, hmixed, htail]
     _ = G.det ι := hdet ι
+
+/-- Full oriented-data consumer for the normal-parameter Schur route, assuming
+the remaining Plucker/Cauchy-Binet full-frame reconstruction theorem over
+`G`. -/
+theorem sourceOrientedNormalParameterVector_realizes_schur_of_fullFrameReconstruct
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (R : SourceOrientedSchurResidualData d n r hrD hrn G)
+    {p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn}
+    (hhead : p.head = R.headFactor)
+    (hmixed : p.mixed = R.L)
+    (htail :
+      sourceShiftedTailOrientedInvariant d r hrD (n - r) p.tail = R.tail)
+    (hdet :
+      ∀ ι : Fin (d + 1) ↪ Fin n,
+        sourceNormalFullFrameDetFromSchur d n r hrD hrn
+          R.headFactor R.L R.tail ι = G.det ι) :
+    sourceOrientedMinkowskiInvariant d n
+      (sourceOrientedNormalParameterVector d n r hrD hrn p) = G := by
+  apply SourceOrientedGramData.ext
+  · exact
+      sourceOrientedNormalParameterVector_realizes_schur_gram
+        d n r hrD hrn hGvar R hhead hmixed htail
+  · exact
+      sourceOrientedNormalParameterVector_realizes_schur_det_of_fullFrameReconstruct
+        d n r hrD hrn R hhead hmixed htail hdet
 
 end BHW
