@@ -95,6 +95,76 @@ noncomputable def sourceOrientedNormalParameterSchurTail
     Matrix (Fin (n - r)) (Fin (n - r)) ℂ :=
   sourceShiftedTailGram d r hrD (n - r) p.tail
 
+/-- Each coordinate of the padded tail embedding is continuous in the tail
+coordinate vector. -/
+theorem continuous_sourceTailEmbed_apply
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (μ : Fin (d + 1)) :
+    Continuous (fun q : Fin (d + 1 - r) → ℂ =>
+      sourceTailEmbed d r hrD q μ) := by
+  unfold sourceTailEmbed
+  split
+  · fun_prop
+  · fun_prop
+
+/-- The shifted tail Gram map is continuous in finite tail coordinates. -/
+theorem continuous_sourceShiftedTailGram
+    (d r m : ℕ)
+    (hrD : r < d + 1) :
+    Continuous (sourceShiftedTailGram d r hrD m) := by
+  unfold sourceShiftedTailGram sourceVectorMinkowskiInner
+  apply continuous_pi
+  intro u
+  apply continuous_pi
+  intro v
+  refine continuous_finset_sum _ ?_
+  intro μ _
+  have hu : Continuous (fun q : Fin m → Fin (d + 1 - r) → ℂ =>
+      sourceTailEmbed d r hrD (q u) μ) :=
+    (continuous_sourceTailEmbed_apply d r hrD μ).comp (continuous_apply u)
+  have hv : Continuous (fun q : Fin m → Fin (d + 1 - r) → ℂ =>
+      sourceTailEmbed d r hrD (q v) μ) :=
+    (continuous_sourceTailEmbed_apply d r hrD μ).comp (continuous_apply v)
+  fun_prop
+
+/-- The normal-parameter Schur head block is continuous. -/
+theorem continuous_sourceOrientedNormalParameterSchurHead
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n) :
+    Continuous
+      (sourceOrientedNormalParameterSchurHead d n r hrD hrn) := by
+  unfold sourceOrientedNormalParameterSchurHead
+  have hh := continuous_sourceOrientedNormalParameter_head
+    (d := d) (n := n) (r := r) (hrD := hrD) (hrn := hrn)
+  fun_prop
+
+/-- The normal-parameter Schur mixed block is continuous. -/
+theorem continuous_sourceOrientedNormalParameterSchurMixed
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n) :
+    Continuous
+      (sourceOrientedNormalParameterSchurMixed d n r hrD hrn) := by
+  unfold sourceOrientedNormalParameterSchurMixed
+  have hm := continuous_sourceOrientedNormalParameter_mixed
+    (d := d) (n := n) (r := r) (hrD := hrD) (hrn := hrn)
+  have hhead := continuous_sourceOrientedNormalParameterSchurHead d n r hrD hrn
+  fun_prop
+
+/-- The normal-parameter Schur residual-tail block is continuous. -/
+theorem continuous_sourceOrientedNormalParameterSchurTail
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n) :
+    Continuous
+      (sourceOrientedNormalParameterSchurTail d n r hrD hrn) := by
+  unfold sourceOrientedNormalParameterSchurTail
+  exact (continuous_sourceShiftedTailGram d r (n - r) hrD).comp
+    (continuous_sourceOrientedNormalParameter_tail
+      (d := d) (n := n) (r := r) (hrD := hrD) (hrn := hrn))
+
 /-- On the invertible-head part of normal-parameter space, the ordinary Gram
 coordinate of the normal image is the principal Schur graph with residual
 `sourceShiftedTailGram`. -/

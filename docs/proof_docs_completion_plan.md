@@ -528,6 +528,15 @@ removes another informal shrink from
 surjectivity step is Schur extraction and tail realization on the shrunken
 normal neighborhood.
 
+The normal Schur-coordinate continuity layer is also checked:
+`BHW.continuous_sourceTailEmbed_apply`,
+`BHW.continuous_sourceShiftedTailGram`,
+`BHW.continuous_sourceOrientedNormalParameterSchurHead`,
+`BHW.continuous_sourceOrientedNormalParameterSchurMixed`, and
+`BHW.continuous_sourceOrientedNormalParameterSchurTail`.  These are the named
+finite-coordinate continuity facts used by the estimate/shrink proof for the
+head, mixed, and residual-tail Schur coordinates.
+
 The first normal-parameter support layer is now checked in
 `SourceOrientedNormalParameter.lean`.  The file supplies the finite head/tail
 source-label split

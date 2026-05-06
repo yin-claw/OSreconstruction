@@ -15615,6 +15615,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
         --    `sourceShiftedTailSmallRealization`;
         -- 5. the polynomial image of the parameter ball is contained in the
         --    ambient normal image neighborhood `Ωnf`.
+        -- The continuity of the normal Schur head/mixed/tail maps is now
+        -- checked as `continuous_sourceOrientedNormalParameterSchurHead`,
+        -- `continuous_sourceOrientedNormalParameterSchurMixed`, and
+        -- `continuous_sourceOrientedNormalParameterSchurTail`.
         -- All five shrinkings are finite-coordinate continuity estimates at
         -- the canonical normal point: the head block is the signature
         -- diagonal `sourceHeadMetric d N.r N.hrD`, the mixed block is `0`,
