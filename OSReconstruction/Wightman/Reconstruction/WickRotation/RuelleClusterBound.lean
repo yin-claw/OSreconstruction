@@ -541,11 +541,40 @@ theorem W_analytic_cluster_integral_via_ruelle
           (Metric.closedBall (0 : SpacetimeDim d) R_R)ᶜ, ?_, ?_⟩
         · exact (Metric.hasBasis_cobounded_compl_closedBall (0 : SpacetimeDim d)).mem_of_mem
             trivial
-        · intro a ⟨ha₀, _hball⟩
+        · intro a ⟨ha₀, hball⟩
           refine ⟨ha₀, ?_⟩
-          -- Need: ‖a‖ > R_R + a 0 = 0 → ∑ (a (succ i))² > R_R².
-          -- Pi sup-norm + nonneg max bound: routed to follow-up.
-          sorry
+          -- ‖a‖ > R_R (sup-norm) and a 0 = 0 → ∑ (a (succ i))² > R_R².
+          have h_norm : ‖a‖ > R_R := by
+            simpa [Metric.mem_closedBall, dist_zero_right, not_le] using hball
+          -- Pi sup-norm: ∃ i with ‖a i‖ > R_R. For a 0 = 0, i ≠ 0, so i = succ j.
+          have h_exists : ∃ i : Fin (d + 1), R_R < ‖a i‖ := by
+            by_contra h_neg
+            push_neg at h_neg
+            haveI : Nonempty (Fin (d + 1)) := ⟨0⟩
+            have h_le : ‖a‖ ≤ R_R := (pi_norm_le_iff_of_nonempty _).mpr h_neg
+            linarith
+          obtain ⟨i, hi⟩ := h_exists
+          -- i ≠ 0: since |a 0| = 0 < R_R < ‖a i‖.
+          have hi_ne_zero : i ≠ 0 := by
+            intro hi₀
+            rw [hi₀, ha₀] at hi
+            simp at hi
+            linarith [hR_R_pos]
+          -- i = Fin.succ j for some j.
+          obtain ⟨j, hj⟩ := Fin.exists_succ_eq.mpr hi_ne_zero
+          -- |a (succ j)| > R_R, so (a (succ j))² > R_R².
+          rw [← hj] at hi
+          have h_sq : (a (Fin.succ j))^2 > R_R^2 := by
+            have h_abs : R_R < |a (Fin.succ j)| := hi
+            have h_R_nonneg : (0 : ℝ) ≤ R_R := le_of_lt hR_R_pos
+            calc R_R^2 < (|a (Fin.succ j)|)^2 :=
+                  pow_lt_pow_left₀ h_abs h_R_nonneg two_ne_zero
+              _ = (a (Fin.succ j))^2 := sq_abs _
+          -- Sum over Fin d: ∑ ≥ (a (succ j))² > R_R².
+          calc R_R^2 < (a (Fin.succ j))^2 := h_sq
+            _ ≤ ∑ i : Fin d, (a (Fin.succ i))^2 := by
+                exact Finset.single_le_sum (f := fun i => (a (Fin.succ i))^2)
+                  (fun _ _ => sq_nonneg _) (Finset.mem_univ j)
       · intro a ha
         refine Filter.Eventually.of_forall (fun p => ?_)
         -- ha : a 0 = 0 ∧ ∑ (a (succ i))² > R_R².
