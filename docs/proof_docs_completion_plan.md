@@ -365,6 +365,21 @@ constructors above.  Thus the future closed-path theorem can target the
 natural same-endpoint chain object and does not also need to prove the atlas
 local-chart packaging.
 
+The finite one-step propagation layer is now split into
+`OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedContinuationUniqueness.lean`.
+It checks
+`BHW.bhw_jost_orientedTerminalComparison_of_sharedTransferSkeleton`, a
+noncomputable data constructor which takes a fixed finite node list, the same
+center-forgotten transfer control at each adjacent step, one-step uniqueness
+for every stored control, two chart sequences produced by those same transfer
+calls, and initial branch equality on a source seed.  It then inductively
+feeds the terminal comparison patch from step `j` as the source seed for step
+`j+1`, applies `BHWJostOrientedTransferControlHasUniqueNext`, rewrites the
+produced transfer charts by the stored `step_chart_A/B` equations, and returns
+`BHWLocalChartTerminalComparisonData` at the final node.  This closes the
+former prose-only finite uniqueness induction for shared skeletons; it still
+does not compare different selected paths or prove closed-path monodromy.
+
 The open-chart BHW near-identity input is now checked in
 `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedBHWInvariance.lean`.
 It provides `BHW.complexLorentz_exp_nhd_of_one`,
@@ -8422,6 +8437,18 @@ common-boundary envelope, or any theorem that already assumes locality.
    valid derived theorem, but it should be proved by the checked retargeted
    bridge after closed-path monodromy has produced the same-endpoint
    comparison data.  The checked
+   finite propagation constructor
+   `BHW.bhw_jost_orientedTerminalComparison_of_sharedTransferSkeleton`
+   handles the case where the two branches have a common finite node/control
+   skeleton: base equality on a source seed propagates along all steps by
+   reusing each previous terminal comparison patch as the next step's
+   `sourceSeed` and applying the stored `HasUniqueNext` theorem.  This is the
+   Lean-ready transcript for the repeated one-step uniqueness part of the
+   terminal comparison proof.  The remaining non-mechanical work is to obtain,
+   from the closed-path/source monodromy construction, either such a shared
+   skeleton comparison problem or the retargeted same-endpoint
+   `BHWOrientedTerminalChainComparisonData` consumed by the bridge.
+   The checked
    theorem `BHW.bhw_jost_orientedGluedBranch_of_certifiedTraces` composes
    certified selected traces, certified terminal-point comparison, and the
    initial chart to produce the glued holomorphic source-patch branch on `U`.

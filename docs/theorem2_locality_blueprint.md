@@ -45393,7 +45393,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
             `bhw_jost_orientedTerminalPointComparison_of_transferTraces`
             theorem is now a derived chart-packaging theorem: after closed
             monodromy supplies same-endpoint comparison of the two retargeted
-            chains, the bridge above supplies the local chart comparison.  The checked theorem
+            chains, the bridge above supplies the local chart comparison.  The
+            finite one-step propagation constructor
+            `BHW.bhw_jost_orientedTerminalComparison_of_sharedTransferSkeleton`
+            is also checked: for two chart sequences built over the same
+            finite node list and the same transfer controls, it propagates
+            initial source-seed equality step by step by applying
+            `BHWJostOrientedTransferControlHasUniqueNext` and rewriting by the
+            stored chart-production equations.  Thus the repeated finite
+            uniqueness part is no longer a prose gap; the remaining hard work
+            is to obtain the closed-return seed or same-endpoint retargeted
+            comparison from the BHW/Jost monodromy construction.  The checked theorem
             `BHW.bhw_jost_orientedGluedBranch_of_certifiedTraces` composes
             certified selected traces, certified terminal-point comparison,
             and the initial chart to produce the glued holomorphic
