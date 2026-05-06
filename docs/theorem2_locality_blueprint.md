@@ -45029,6 +45029,25 @@ Proof decomposition of this theorem, without hiding the analytic work:
             arbitrary chain theorem:
 
             ```lean
+            structure BHW.BHWJostOrientedBranchFreeTransferControl
+                [NeZero d] (hd : 2 ≤ d)
+                (n : Nat) (τ : Equiv.Perm (Fin n))
+                (U : Set (Fin n -> Fin (d + 1) -> ℂ)) where
+              N : Set (Fin n -> Fin (d + 1) -> ℂ)
+              N_open : IsOpen N
+              transferChart :
+                ∀ p q, p ∈ N -> p ∈ U -> q ∈ N -> q ∈ U ->
+                ∀ Cprev : BHWJostLocalOrientedContinuationChart hd n τ U,
+                  p ∈ Cprev.carrier ->
+                    BHWJostLocalOrientedContinuationChart hd n τ U
+              transferTransition :
+                ∀ p q (hpN : p ∈ N) (hpU : p ∈ U)
+                  (hqN : q ∈ N) (hqU : q ∈ U)
+                  (Cprev : BHWJostLocalOrientedContinuationChart hd n τ U)
+                  (hpC : p ∈ Cprev.carrier),
+                    BHWJostOrientedTransitionData hd n τ U Cprev
+                      (transferChart p q hpN hpU hqN hqU Cprev hpC) p q
+
             structure BHW.BHWJostOrientedTransferContinuationTrace
                 [NeZero d] (hd : 2 ≤ d)
                 (n : Nat) (τ : Equiv.Perm (Fin n))
@@ -45040,16 +45059,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
                   hd n τ Ω0 U B0 p0 z
               stepControl :
                 (j : Fin chain.m) ->
-                  Σ center : Fin n -> Fin (d + 1) -> ℂ,
-                    BHWJostOrientedBranchFreeTransferNeighborhood
-                      hd n τ U center
+                  BHWJostOrientedBranchFreeTransferControl hd n τ U
               step_left_mem :
-                ∀ j, chain.node (Fin.castSucc j) ∈ (stepControl j).2.N
+                ∀ j, chain.node (Fin.castSucc j) ∈ (stepControl j).N
               step_right_mem :
-                ∀ j, chain.node j.succ ∈ (stepControl j).2.N
-              step_transfer_eq :
+                ∀ j, chain.node j.succ ∈ (stepControl j).N
+              step_transfer_chart_eq :
                 ∀ j,
-                  (stepControl j).2.transfer
+                  (stepControl j).transferChart
                     (chain.node (Fin.castSucc j)) (chain.node j.succ)
                     (step_left_mem j)
                     (chain.chart_sub_U (Fin.castSucc j)
@@ -45060,7 +45077,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
                     (by
                       simpa [chain.chart_eq_local (Fin.castSucc j)]
                         using chain.node_mem (Fin.castSucc j)) =
-                    ⟨chain.localChart j.succ, chain.oriented_transition j⟩
+                    chain.localChart j.succ
             ```
 
             For atlas overlaps we usually observe a trace at a point in its
@@ -45116,11 +45133,19 @@ Proof decomposition of this theorem, without hiding the analytic work:
             ```
 
             `base` is the zero-step chain with all transfer-provenance fields
-            over `Fin 0`.  The trace stores the branch-free control as a
-            sigma-centered neighborhood because compact-cover subdivision
-            chooses a cover center for each interval, not necessarily the
-            left endpoint.  `ofTracePoint` observes a trace at any terminal
-            chart point; `atEndpoint` observes it at `T.chain.final_mem`.
+            over `Fin 0`.  The compact-cover subdivision still chooses
+            centered `BHWJostOrientedBranchFreeTransferNeighborhood`s, but
+            after the interval has selected an actual transfer set the trace
+            stores the center-forgotten
+            `BHWJostOrientedBranchFreeTransferControl`.  This keeps exactly
+            the endpoint-membership and produced-next-chart provenance used
+            by the trace induction.  The checked helper
+            `BHWJostOrientedBranchFreeTransferNeighborhood.toTransferControl`
+            performs the forgetting, and the checked constructor
+            `BHWJostOrientedTransferContinuationTrace.snocAtTerminalNode`
+            appends one such transfer-control step to an existing trace.
+            `ofTracePoint` observes a trace at any terminal chart point;
+            `atEndpoint` observes it at `T.chain.final_mem`.
 
             The local output used by the trace induction is the chart-level
             analogue of terminal chain comparison:

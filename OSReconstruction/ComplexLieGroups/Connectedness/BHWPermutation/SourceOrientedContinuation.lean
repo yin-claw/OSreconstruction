@@ -1002,6 +1002,50 @@ theorem transfer_branch_agree_at_source
 
 end BHWJostOrientedBranchFreeTransferNeighborhood
 
+/-- The center-independent transfer control stored in a finite trace after a
+compact cover has selected the actual branch-free transfer neighborhood for a
+step.  The center is used to obtain the cover and subdivision; the trace
+induction only needs the selected set and the transfer operation. -/
+structure BHWJostOrientedBranchFreeTransferControl
+    [NeZero d] (hd : 2 ≤ d)
+    (n : ℕ) (τ : Equiv.Perm (Fin n))
+    (U : Set (Fin n → Fin (d + 1) → ℂ)) where
+  N : Set (Fin n → Fin (d + 1) → ℂ)
+  N_open : IsOpen N
+  transferChart :
+    ∀ p q, p ∈ N → p ∈ U → q ∈ N → q ∈ U →
+    ∀ Cprev : BHWJostLocalOrientedContinuationChart hd n τ U,
+      p ∈ Cprev.carrier →
+        BHWJostLocalOrientedContinuationChart hd n τ U
+  transferTransition :
+    ∀ p q (hpN : p ∈ N) (hpU : p ∈ U) (hqN : q ∈ N) (hqU : q ∈ U)
+      (Cprev : BHWJostLocalOrientedContinuationChart hd n τ U)
+      (hpC : p ∈ Cprev.carrier),
+        BHWJostOrientedTransitionData hd n τ U Cprev
+          (transferChart p q hpN hpU hqN hqU Cprev hpC) p q
+
+namespace BHWJostOrientedBranchFreeTransferNeighborhood
+
+variable [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
+variable {U : Set (Fin n → Fin (d + 1) → ℂ)}
+variable {center : Fin n → Fin (d + 1) → ℂ}
+
+/-- Forget the center of a branch-free transfer neighborhood after it has
+served its compact-cover role. -/
+def toTransferControl
+    (N : BHWJostOrientedBranchFreeTransferNeighborhood hd n τ U center) :
+    BHWJostOrientedBranchFreeTransferControl hd n τ U where
+  N := N.N
+  N_open := N.N_open
+  transferChart :=
+    fun p q hpN hpU hqN hqU Cprev hpC =>
+      (N.transfer p q hpN hpU hqN hqU Cprev hpC).1
+  transferTransition :=
+    fun p q hpN hpU hqN hqU Cprev hpC =>
+      (N.transfer p q hpN hpU hqN hqU Cprev hpC).2
+
+end BHWJostOrientedBranchFreeTransferNeighborhood
+
 /-- Transfer-neighborhood specialization of the path subdivision theorem.
 This is the compactness step used before recursively applying branch-free
 local continuation transfers. -/
@@ -1832,15 +1876,14 @@ structure BHWJostOrientedTransferContinuationTrace
   chain : BHWJostOrientedSourcePatchContinuationChain hd n τ Ω0 U B0 p0 z
   stepControl :
     (j : Fin chain.m) →
-      Σ center : Fin n → Fin (d + 1) → ℂ,
-        BHWJostOrientedBranchFreeTransferNeighborhood hd n τ U center
+      BHWJostOrientedBranchFreeTransferControl hd n τ U
   step_left_mem :
-    ∀ j, chain.node (Fin.castSucc j) ∈ (stepControl j).2.N
+    ∀ j, chain.node (Fin.castSucc j) ∈ (stepControl j).N
   step_right_mem :
-    ∀ j, chain.node j.succ ∈ (stepControl j).2.N
-  step_transfer_eq :
+    ∀ j, chain.node j.succ ∈ (stepControl j).N
+  step_transfer_chart_eq :
     ∀ j,
-      (stepControl j).2.transfer
+      (stepControl j).transferChart
         (chain.node (Fin.castSucc j)) (chain.node j.succ)
         (step_left_mem j)
         (chain.chart_sub_U (Fin.castSucc j)
@@ -1851,7 +1894,7 @@ structure BHWJostOrientedTransferContinuationTrace
         (by
           simpa [chain.chart_eq_local (Fin.castSucc j)]
             using chain.node_mem (Fin.castSucc j)) =
-        ⟨chain.localChart j.succ, chain.oriented_transition j⟩
+        chain.localChart j.succ
 
 namespace BHWJostOrientedTransferContinuationTrace
 
@@ -1890,7 +1933,7 @@ def base
   step_right_mem := by
     intro j
     exact Fin.elim0 j
-  step_transfer_eq := by
+  step_transfer_chart_eq := by
     intro j
     exact Fin.elim0 j
 

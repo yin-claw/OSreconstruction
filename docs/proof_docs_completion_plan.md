@@ -7998,6 +7998,25 @@ common-boundary envelope, or any theorem that already assumes locality.
    chain theorem:
 
    ```lean
+   structure BHW.BHWJostOrientedBranchFreeTransferControl
+       [NeZero d] (hd : 2 ≤ d)
+       (n : Nat) (τ : Equiv.Perm (Fin n))
+       (U : Set (Fin n -> Fin (d + 1) -> ℂ)) where
+     N : Set (Fin n -> Fin (d + 1) -> ℂ)
+     N_open : IsOpen N
+     transferChart :
+       ∀ p q, p ∈ N -> p ∈ U -> q ∈ N -> q ∈ U ->
+       ∀ Cprev : BHWJostLocalOrientedContinuationChart hd n τ U,
+         p ∈ Cprev.carrier ->
+           BHWJostLocalOrientedContinuationChart hd n τ U
+     transferTransition :
+       ∀ p q (hpN : p ∈ N) (hpU : p ∈ U)
+         (hqN : q ∈ N) (hqU : q ∈ U)
+         (Cprev : BHWJostLocalOrientedContinuationChart hd n τ U)
+         (hpC : p ∈ Cprev.carrier),
+           BHWJostOrientedTransitionData hd n τ U Cprev
+             (transferChart p q hpN hpU hqN hqU Cprev hpC) p q
+
    structure BHW.BHWJostOrientedTransferContinuationTrace
        [NeZero d] (hd : 2 ≤ d)
        (n : Nat) (τ : Equiv.Perm (Fin n))
@@ -8007,19 +8026,17 @@ common-boundary envelope, or any theorem that already assumes locality.
      chain :
        BHWJostOrientedSourcePatchContinuationChain hd n τ Ω0 U B0 p0 z
      -- the actual finite source nodes and the controlling branch-free
-     -- neighborhoods used to produce each step of `chain`
+     -- transfer controls used to produce each next chart of `chain`
      stepControl :
        (j : Fin chain.m) ->
-         Σ center : Fin n -> Fin (d + 1) -> ℂ,
-           BHWJostOrientedBranchFreeTransferNeighborhood
-             hd n τ U center
+         BHWJostOrientedBranchFreeTransferControl hd n τ U
      step_left_mem :
-       ∀ j, chain.node (Fin.castSucc j) ∈ (stepControl j).2.N
+       ∀ j, chain.node (Fin.castSucc j) ∈ (stepControl j).N
      step_right_mem :
-       ∀ j, chain.node j.succ ∈ (stepControl j).2.N
-     step_transfer_eq :
+       ∀ j, chain.node j.succ ∈ (stepControl j).N
+     step_transfer_chart_eq :
        ∀ j,
-         (stepControl j).2.transfer
+         (stepControl j).transferChart
            (chain.node (Fin.castSucc j)) (chain.node j.succ)
            (step_left_mem j)
            (chain.chart_sub_U (Fin.castSucc j)
@@ -8030,7 +8047,7 @@ common-boundary envelope, or any theorem that already assumes locality.
            (by
              simpa [chain.chart_eq_local (Fin.castSucc j)]
                using chain.node_mem (Fin.castSucc j)) =
-           ⟨chain.localChart j.succ, chain.oriented_transition j⟩
+           chain.localChart j.succ
    ```
 
    For atlas overlaps we usually observe a trace at a point in its terminal
@@ -8086,10 +8103,18 @@ common-boundary envelope, or any theorem that already assumes locality.
    ```
 
    `base` is the zero-step chain with all transfer-provenance fields over
-   `Fin 0`.  The trace deliberately stores the branch-free control as a
-   sigma-centered neighborhood: in the compact-cover construction the
-   controlling neighborhood is centered at the chosen cover point, not
-   necessarily at the left subdivision endpoint.  `ofTracePoint` is the exact
+   `Fin 0`.  The compact-cover construction still uses centered
+   `BHWJostOrientedBranchFreeTransferNeighborhood`s to obtain the finite
+   subdivision, but after a subdivision interval has selected an actual
+   transfer set the trace stores the center-forgotten
+   `BHWJostOrientedBranchFreeTransferControl`.  This is the exact data needed
+   by the trace induction: membership of the two step endpoints in the
+   selected set and equality between the produced `transferChart` and the next
+   local chart of the chain.  The helper
+   `BHWJostOrientedBranchFreeTransferNeighborhood.toTransferControl` performs
+   this forgetting, and
+   `BHWJostOrientedTransferContinuationTrace.snocAtTerminalNode` appends one
+   checked transfer-control step to a trace.  `ofTracePoint` is the exact
    atlas-overlap observation map, and `atEndpoint` is its specialization using
    `T.chain.final_mem`.
 
