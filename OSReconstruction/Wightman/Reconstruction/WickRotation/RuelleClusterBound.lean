@@ -226,15 +226,47 @@ theorem joint_wick_config_in_PET
                 (fun k μ => wickRotatePoint (p₂ k) μ +
                   (if μ = 0 then (0 : ℂ) else (a μ : ℂ)))) ∈
       PermutedExtendedTube d (n + m) := by
-  -- Strategy: express the joint complex config as `wickRotatePoint`
-  -- composed with a real config (joint with shifted m-block spatial),
-  -- then apply `euclidean_distinct_in_permutedTube`.
-  -- The spatial-shift-by-a doesn't affect the wick rotation's imaginary
-  -- parts (a 0 = 0), so the joint config equals
-  -- `fun k => wickRotatePoint (xs k)` where
-  --   xs := Fin.append p₁ (fun j => p₂ j + a)  (real-valued, joint)
-  -- Then `euclidean_distinct_in_permutedTube xs h_distinct_joint hpos_joint`.
-  sorry
+  -- Define the underlying joint real config (with spatial-a shift on m-block).
+  set xs : NPointDomain d (n + m) :=
+    Fin.append p₁ (fun j => p₂ j + a) with hxs_def
+  -- Show: joint complex config = (wickRotatePoint ∘ xs).
+  have h_eq :
+      (Fin.append (fun k => wickRotatePoint (p₁ k))
+                  (fun k μ => wickRotatePoint (p₂ k) μ +
+                    (if μ = 0 then (0 : ℂ) else (a μ : ℂ)))) =
+      (fun k => wickRotatePoint (xs k)) := by
+    funext k μ
+    refine Fin.addCases (fun i' => ?_) (fun j' => ?_) k
+    · -- k = Fin.castAdd m i', joint config gives wick(p₁ i'), xs gives wick(p₁ i').
+      simp [Fin.append_left, hxs_def]
+    · -- k = Fin.natAdd n j', joint config gives wick(p₂ j') + (0, a),
+      -- xs gives wick(p₂ j' + a).
+      simp [Fin.append_right, hxs_def]
+      by_cases hμ : μ = 0
+      · subst hμ
+        simp [wickRotatePoint, ha₀]
+      · simp [wickRotatePoint, hμ]
+  rw [h_eq]
+  -- Apply euclidean_distinct_in_permutedTube to xs.
+  apply euclidean_distinct_in_permutedTube xs
+  · -- distinct: xs i 0 ≠ xs j 0 for i ≠ j.
+    intro i j hij
+    have h_xs_time : ∀ k : Fin (n + m),
+        xs k 0 = Fin.append (fun k => p₁ k 0) (fun k => p₂ k 0) k := by
+      intro k
+      refine Fin.addCases (fun i' => ?_) (fun j' => ?_) k
+      · simp [hxs_def, Fin.append_left]
+      · simp [hxs_def, Fin.append_right, ha₀]
+    rw [h_xs_time, h_xs_time]
+    exact h_distinct_joint i j hij
+  · -- positive: xs i 0 > 0.
+    intro k
+    refine Fin.addCases (fun i' => ?_) (fun j' => ?_) k
+    · simp [hxs_def, Fin.append_left]
+      exact hp₁_pos i'
+    · simp [hxs_def, Fin.append_right]
+      have := hp₂_pos j'
+      linarith [ha₀]
 
 /-- **The joint F_ext bridge**: `F_ext_on_translatedPET_total =
 W_analytic_BHW` on the joint Wick-rotated config (with spatial m-block
