@@ -209,6 +209,8 @@ the local chart provenance field
 `BHW.BHWJostOrientedTransitionData.orientedPatch_connected`,
 `BHW.BHWJostOrientedSourceNormalFormGeometryPatch.orientedDomain_connected`,
 `BHW.BHWJostOrientedClosedContinuationLoop.closing_orientedPatch_connected`,
+`BHW.BHWJostOrientedClosedContinuationLoop.exists_initial_final_source_realizations_of_closing`,
+`BHW.BHWJostOrientedClosedContinuationLoop.exists_initial_final_source_realizations_branch_eqs_of_closing`,
 `BHW.BHWJostOrientedBranchFreeTransferNeighborhood.ofSourceNormalFormPatch`,
 `BHW.BHWJostOrientedBranchFreeTransferNeighborhood.transfer_source_mem_next`,
 `BHW.BHWJostOrientedBranchFreeTransferNeighborhood.transfer_target_mem_next`,
@@ -228,7 +230,12 @@ and
 `BHW.BHWJostOrientedSourcePatchContinuationChain.localChart_consecutive_agree`
 now derives chart agreement from the stored chain-level branch equality and
 `branch_eq_local`; the earlier field `transition_patch_eq_sourcePatch` has
-been removed as redundant.  This introduces no new `sorry` and does not prove
+been removed as redundant.  The closing oriented-patch representative helpers
+now expose the initial/terminal source representatives, plus the
+`branch_eq_orientedPullback` rewrites, for every invariant in
+`L.closing_orientedPatch`; the remaining terminal-seed producer can therefore
+focus on the genuine closed-path source-branch equality.  This introduces no
+new `sorry` and does not prove
 the hard Hall-Wightman/Jost closed-loop seed theorem; that seed remains the
 next genuine mathematical blocker after the local descent producers are in
 place.
@@ -7822,9 +7829,12 @@ common-boundary envelope, or any theorem that already assumes locality.
    the continued branch germ through the finite closed path using the current
    local chart at each step, then chooses a nonempty relatively open max-rank
    seed inside `L.closing_orientedPatch`.  For each `G` in that seed it
-   supplies source representatives `y0` and `yF` in the initial and terminal
-   carriers with oriented invariant `G`, plus equality of the terminal and
-   initial source branch values.  The checked constructor
+   uses
+   `BHWJostOrientedClosedContinuationLoop.exists_initial_final_source_realizations_of_closing`
+   (or its branch-rewrite variant) to obtain source representatives `y0` and
+   `yF` in the initial and terminal carriers with oriented invariant `G`.
+   The only new analytic content is equality of the terminal and initial
+   source branch values for those representatives.  The checked constructor
    `BHWJostOrientedClosingPatchTerminalSeedData.of_sourceRealized_branch_eq`
    rewrites this source-level equality into the required terminal/initial
    `Psi` equality.  The endpoint consumer is
@@ -9180,7 +9190,14 @@ common-boundary envelope, or any theorem that already assumes locality.
    `yF` in the initial and terminal carriers with oriented invariant `G`, plus
    equality of the corresponding source branches.  The constructor rewrites
    both sides through `branch_eq_orientedPullback`, so the hard proof no longer
-   has to manipulate `Psi` values directly.  Its method
+   has to manipulate `Psi` values directly.
+   The representative side of this input is now checked for every
+   `G ∈ L.closing_orientedPatch` by
+   `BHWJostOrientedClosedContinuationLoop.exists_initial_final_source_realizations_of_closing`
+   and
+   `BHWJostOrientedClosedContinuationLoop.exists_initial_final_source_realizations_branch_eqs_of_closing`;
+   the unproved part is precisely the source-branch equality supplied by the
+   genuine closed-path continuation.  Its method
    `to_finiteOverlapPropagationData` calls the constructor above, its method
    `to_closedLoopSeed` reaches the identity-principle seed layer, its method
    `to_orientedMonodromy_headSliceIFT` gives oriented monodromy on the closing

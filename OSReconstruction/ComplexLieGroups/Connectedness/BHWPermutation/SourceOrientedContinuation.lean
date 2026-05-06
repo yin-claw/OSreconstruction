@@ -1663,6 +1663,51 @@ theorem closing_orientedPatch_connected
     IsConnected L.closing_orientedPatch :=
   ⟨L.closing_orientedPatch_nonempty, L.closing_orientedPatch_preconnected⟩
 
+/-- Every point of the closing oriented patch has source representatives in
+the initial and terminal chart carriers. -/
+theorem exists_initial_final_source_realizations_of_closing
+    (L : BHWJostOrientedClosedContinuationLoop hd n τ Ω0 U B0 p0)
+    {G : SourceOrientedGramData d n}
+    (hG : G ∈ L.closing_orientedPatch) :
+    ∃ y0 yF,
+      y0 ∈ (L.chain.localChart 0).carrier ∧
+      yF ∈ (L.chain.localChart (Fin.last L.chain.m)).carrier ∧
+      sourceOrientedMinkowskiInvariant d n y0 = G ∧
+      sourceOrientedMinkowskiInvariant d n yF = G := by
+  have hGstart : G ∈ (L.chain.localChart 0).orientedDomain :=
+    L.closing_orientedPatch_sub_start hG
+  have hGfinal :
+      G ∈ (L.chain.localChart (Fin.last L.chain.m)).orientedDomain :=
+    L.closing_orientedPatch_sub_final hG
+  rcases (L.chain.localChart 0).oriented_realizes G hGstart with
+    ⟨y0, hy0, hy0G⟩
+  rcases (L.chain.localChart (Fin.last L.chain.m)).oriented_realizes
+      G hGfinal with
+    ⟨yF, hyF, hyFG⟩
+  exact ⟨y0, yF, hy0, hyF, hy0G, hyFG⟩
+
+/-- The source representatives of a closing oriented point can be chosen with
+their branch values rewritten as the corresponding oriented germs. -/
+theorem exists_initial_final_source_realizations_branch_eqs_of_closing
+    (L : BHWJostOrientedClosedContinuationLoop hd n τ Ω0 U B0 p0)
+    {G : SourceOrientedGramData d n}
+    (hG : G ∈ L.closing_orientedPatch) :
+    ∃ y0 yF,
+      y0 ∈ (L.chain.localChart 0).carrier ∧
+      yF ∈ (L.chain.localChart (Fin.last L.chain.m)).carrier ∧
+      sourceOrientedMinkowskiInvariant d n y0 = G ∧
+      sourceOrientedMinkowskiInvariant d n yF = G ∧
+      (L.chain.localChart 0).branch y0 =
+        (L.chain.localChart 0).Psi G ∧
+      (L.chain.localChart (Fin.last L.chain.m)).branch yF =
+        (L.chain.localChart (Fin.last L.chain.m)).Psi G := by
+  rcases L.exists_initial_final_source_realizations_of_closing hG with
+    ⟨y0, yF, hy0, hyF, hy0G, hyFG⟩
+  refine ⟨y0, yF, hy0, hyF, hy0G, hyFG, ?_, ?_⟩
+  · rw [(L.chain.localChart 0).branch_eq_orientedPullback y0 hy0, hy0G]
+  · rw [(L.chain.localChart (Fin.last L.chain.m)).branch_eq_orientedPullback
+      yF hyF, hyFG]
+
 /-- Oriented monodromy on the closing invariant patch descends to equality of
 the terminal and initial source branches on the closing source patch. -/
 theorem terminal_branch_eq_initial_branch_of_orientedMonodromy
