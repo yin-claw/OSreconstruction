@@ -610,6 +610,12 @@ does **not** need a separate global proof that
 `sourceOrientedVarietyUnderlyingSet (N.varietyTransport.invFun '' Ω)` lies in
 `N0`; it only needs the normal-ball membership supplied by the shrink theorem
 and the canonical Schur extraction/surjectivity proof.
+For the strengthened max-rank packet, the checked adapter
+`BHW.SourceOrientedRankDeficientMaxRankLocalImageData.ofNormalImageTransport_of_tailRank_connected`
+now takes the connectedness hypothesis in the final residual-tail form:
+`parameterBox ∩ {p | rank (sourceOrientedNormalParameterSchurTail p) =
+d + 1 - N.r}`.  The producer no longer has to restate that as a transported
+`SourceOrientedMaxRankAt` preimage.
 
 The head-gauge shrink layer is now checked in
 `SourceOrientedHeadGaugeSupport.lean`:

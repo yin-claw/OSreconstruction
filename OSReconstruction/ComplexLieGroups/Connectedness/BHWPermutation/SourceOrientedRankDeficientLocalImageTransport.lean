@@ -245,6 +245,54 @@ noncomputable def ofNormalImageTransport_of_parameter_mem
         exact himage p hp)
       hpreimage_connected
 
+/-- Strengthened transport adapter whose connectedness hypothesis is already
+rewritten to the residual-tail exact-rank slice.  This is the final topology
+shape expected from the Schur-window connectedness proof. -/
+noncomputable def ofNormalImageTransport_of_tailRank_connected
+    {G0 : SourceOrientedGramData d n}
+    (hn : d + 1 ≤ n)
+    (N : SourceOrientedRankDeficientAlgebraicNormalFormData d n G0)
+    {N0 : Set (SourceOrientedGramData d n)}
+    {parameterBox :
+      Set (SourceOrientedRankDeficientNormalParameter d n N.r N.hrD N.hrn)}
+    (parameterBox_open : IsOpen parameterBox)
+    (parameterBox_connected : IsConnected parameterBox)
+    (center_mem :
+      sourceOrientedNormalCenterParameter d n N.r N.hrD N.hrn ∈ parameterBox)
+    (hhead :
+      parameterBox ⊆
+        {p : SourceOrientedRankDeficientNormalParameter d n N.r N.hrD N.hrn |
+          IsUnit p.head.det})
+    {Ω : Set (SourceOrientedVariety d n)}
+    (hΩ_open : IsOpen Ω)
+    (hsurj :
+      Ω ⊆
+        sourceOrientedNormalParameterVarietyPoint d n N.r N.hrD N.hrn ''
+          parameterBox)
+    (hmem :
+      ∀ p ∈ parameterBox,
+        sourceOrientedNormalParameterVarietyPoint d n N.r N.hrD N.hrn p ∈ Ω)
+    (himage :
+      ∀ p ∈ parameterBox,
+        (N.originalNormalVarietyPoint p).1 ∈
+          N0 ∩ sourceOrientedGramVariety d n)
+    (htailRank_connected :
+      IsConnected (parameterBox ∩
+        {p |
+          (sourceOrientedNormalParameterSchurTail d n N.r N.hrD N.hrn p).rank =
+            d + 1 - N.r})) :
+    SourceOrientedRankDeficientMaxRankLocalImageData
+      (d := d) (n := n)
+      (P := SourceOrientedRankDeficientNormalParameter d n N.r N.hrD N.hrn)
+      G0 N0 := by
+  refine
+    SourceOrientedRankDeficientMaxRankLocalImageData.ofNormalImageTransport_of_parameter_mem
+      (d := d) (n := n) N
+      parameterBox_open parameterBox_connected center_mem
+      hΩ_open hsurj hmem himage ?_
+  rw [N.parameterBox_maxRank_preimage_eq_tailRank hn hhead]
+  exact htailRank_connected
+
 end SourceOrientedRankDeficientMaxRankLocalImageData
 
 end BHW
