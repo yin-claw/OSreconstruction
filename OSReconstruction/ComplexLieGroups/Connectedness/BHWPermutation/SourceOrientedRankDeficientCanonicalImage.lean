@@ -1,6 +1,7 @@
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedRankDeficientSchurWindowShrink
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedRankDeficientSliceParameter
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedHeadGaugeNormal
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedHeadSliceGaugeIFT
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedSchurTailSliceNormal
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedSchurReconstruct
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceComplexSchurGraph
@@ -990,6 +991,46 @@ noncomputable def maxRankLocalImageData_of_headSliceGaugeSchurWindow
         (headRadius := headRadius) (mixedRadius := mixedRadius)
         Tail hdomain)
 
+/-- Concrete sliced head-gauge local-image producer, using the checked
+finite-dimensional IFT head-slice gauge at the canonical head metric. -/
+noncomputable def maxRankLocalImageData_of_headSliceIFTSchurWindow
+    [NeZero d]
+    (hd : 2 ≤ d)
+    {G0 : SourceOrientedGramData d n}
+    (hn : d + 1 ≤ n)
+    (N : SourceOrientedRankDeficientAlgebraicNormalFormData d n G0)
+    {N0 : Set (SourceOrientedGramData d n)}
+    (hN0_open : IsOpen N0)
+    (hG0N0 : G0 ∈ N0) :
+    Σ P : Type, Σ _ : TopologicalSpace P,
+      SourceOrientedRankDeficientMaxRankLocalImageData
+        (d := d) (n := n) (P := P) G0 N0 :=
+  N.maxRankLocalImageData_of_headSliceGaugeSchurWindow
+    hd hn (sourceRankDeficientHeadSliceGaugeData d N.r N.hrD)
+    hN0_open hG0N0
+
 end SourceOrientedRankDeficientAlgebraicNormalFormData
+
+/-- Arbitrary exceptional-rank local-image producer obtained by transporting to
+canonical normal form and using the checked sliced-head IFT gauge there. -/
+noncomputable def sourceOrientedRankDeficientMaxRankLocalImageData_of_headSliceIFT
+    [NeZero d]
+    (hd : 2 ≤ d)
+    (hn : d + 1 ≤ n)
+    {G0 : SourceOrientedGramData d n}
+    (hG0 : G0 ∈ sourceOrientedGramVariety d n)
+    (hex : SourceOrientedExceptionalRank d n G0)
+    {N0 : Set (SourceOrientedGramData d n)}
+    (hN0_open : IsOpen N0)
+    (hG0N0 : G0 ∈ N0) :
+    Σ P : Type, Σ _ : TopologicalSpace P,
+      SourceOrientedRankDeficientMaxRankLocalImageData
+        (d := d) (n := n) (P := P) G0 N0 := by
+  let N :=
+    sourceOriented_rankDeficient_algebraicNormalFormData
+      d n hG0 hex.2
+  exact
+    N.maxRankLocalImageData_of_headSliceIFTSchurWindow
+      hd hn hN0_open hG0N0
 
 end BHW

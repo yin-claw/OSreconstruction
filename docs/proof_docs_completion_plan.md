@@ -946,10 +946,28 @@ OS positivity, Wightman functions, and the later monodromy atlas.  The
 coordinate-window neighborhood-basis helper, strict derivative, raw
 `OpenPartialHomeomorph` packaging, determinant-unit shrink, left inverse, and
 final structure fill are now checked in
-`BHW.sourceRankDeficientHeadSliceGaugeData`.  The next rank-deficient
-local-image implementation step is to consume this concrete producer in the
-existing sliced Schur/local-image wrapper instead of passing it as a
-parameter.
+`BHW.sourceRankDeficientHeadSliceGaugeData`.  This concrete producer is now
+consumed by the checked canonical local-image wrapper
+`BHW.SourceOrientedRankDeficientAlgebraicNormalFormData.maxRankLocalImageData_of_headSliceIFTSchurWindow`,
+so the canonical rank-deficient local-image packet no longer carries a free
+`Head : SourceRankDeficientHeadSliceGaugeData d r hrD` parameter at its public
+entry point.  The arbitrary exceptional-rank producer
+`BHW.sourceOrientedRankDeficientMaxRankLocalImageData_of_headSliceIFT` is also
+checked: it chooses the existing algebraic normal-form transport for `G0`,
+uses the canonical `headSliceIFTSchurWindow` packet there, and transports the
+result back to the requested neighborhood.  The hard-range connectedness
+consumer now uses this producer directly in
+`BHW.sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_headSliceIFT`,
+closing the previous rank-deficient-local-image hypothesis in the
+finite-overlap topology layer.
+The closed-loop finite-overlap domain constructors now also have
+connected-domain forms,
+`BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData.exists_of_positiveConnectedDomains_headSliceIFT`
+and
+`BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData.exists_of_zeroTransitions_headSliceIFT`.
+These take connected relatively open overlap/closing domains and derive the
+needed max-rank connectedness internally from the checked sliced-head IFT
+local-image producer.
 
 The first normal-parameter support layer is now checked in
 `SourceOrientedNormalParameter.lean`.  The file supplies the finite head/tail

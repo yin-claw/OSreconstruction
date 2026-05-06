@@ -1,5 +1,6 @@
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedBHWInvariance
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedRankDeficientLocalImage
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedRankDeficientCanonicalImage
 
 /-!
 # Finite-overlap terminal data for the BHW/Jost source route
@@ -277,6 +278,24 @@ theorem sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_rankDefic
         sourceOrientedRankDeficientConnectedMaxRankPatchAt_of_localImageProducer
           (d := d) (n := n) rankDeficientLocalImageAt
           hU_rel hGU hex hN0_open hGN0)
+
+/-- Unconditional hard-range connectedness of the max-rank part of a connected
+relatively open oriented source patch, using the checked sliced-head IFT
+rank-deficient local-image producer. -/
+theorem sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_headSliceIFT
+    [NeZero d]
+    (hd : 2 ≤ d)
+    (hn : d + 1 ≤ n)
+    {U : Set (SourceOrientedGramData d n)}
+    (hU_rel : IsRelOpenInSourceOrientedGramVariety d n U)
+    (hU_conn : IsConnected U) :
+    IsConnected (U ∩ {G | SourceOrientedMaxRankAt d n G}) :=
+  sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_rankDeficientMaxRankLocalImageProducer
+    (d := d) (n := n) hn
+    (fun {_G0} hG0 hex {_N0} hN0_open hG0N0 =>
+      BHW.sourceOrientedRankDeficientMaxRankLocalImageData_of_headSliceIFT
+        (d := d) (n := n) hd hn hG0 hex hN0_open hG0N0)
+    hU_rel hU_conn
 
 /-- Every nonempty relatively open source-oriented patch contains a nonempty
 preconnected relatively open seed in the max-rank stratum, in the hard range
@@ -754,6 +773,62 @@ theorem exists_of_positiveDomains
       closingDomain_contains_lastTransition_of_pos :=
         closingDomain_contains_lastTransition_of_pos }
 
+/-- Positive-length closed loops produce finite-overlap domain data from
+connected ordered overlap domains and a connected closing domain.  The
+max-rank connectedness hypotheses are discharged by the checked sliced-head
+IFT rank-deficient local-image producer. -/
+theorem exists_of_positiveConnectedDomains_headSliceIFT
+    (hn : d + 1 ≤ n)
+    (hpos : L.chain.m ≠ 0)
+    (stepDomain : (j : Fin L.chain.m) → Set (SourceOrientedGramData d n))
+    (stepDomain_relOpen :
+      ∀ j, IsRelOpenInSourceOrientedGramVariety d n (stepDomain j))
+    (stepDomain_connected :
+      ∀ j, IsConnected (stepDomain j))
+    (stepDomain_sub_start :
+      ∀ j, stepDomain j ⊆ (L.chain.localChart 0).orientedDomain)
+    (stepDomain_sub_left :
+      ∀ j,
+        stepDomain j ⊆
+          (L.chain.localChart (Fin.castSucc j)).orientedDomain)
+    (transition_sub_stepDomain :
+      ∀ j, (L.chain.oriented_transition j).orientedPatch ⊆ stepDomain j)
+    (transition_sub_nextDomain :
+      ∀ (j : Fin L.chain.m) (hnext : j.val + 1 < L.chain.m),
+        (L.chain.oriented_transition j).orientedPatch ⊆
+          stepDomain ⟨j.val + 1, hnext⟩)
+    (closingDomain : Set (SourceOrientedGramData d n))
+    (closingDomain_relOpen :
+      IsRelOpenInSourceOrientedGramVariety d n closingDomain)
+    (closingDomain_connected : IsConnected closingDomain)
+    (closingDomain_sub_final :
+      closingDomain ⊆
+        (L.chain.localChart (Fin.last L.chain.m)).orientedDomain)
+    (closingDomain_sub_start :
+      closingDomain ⊆ (L.chain.localChart 0).orientedDomain)
+    (closingPatch_sub_closingDomain :
+      L.closing_orientedPatch ⊆ closingDomain)
+    (closingDomain_contains_lastTransition_of_pos :
+      ∀ hpos : L.chain.m ≠ 0,
+        (L.chain.oriented_transition
+          ⟨L.chain.m.pred, Nat.pred_lt hpos⟩).orientedPatch ⊆
+            closingDomain) :
+    Nonempty (BHWJostOrientedClosedLoopFiniteOverlapDomainData L) :=
+  exists_of_positiveDomains
+    (d := d) (n := n) hn hpos
+    stepDomain stepDomain_relOpen
+    (fun j =>
+      sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_headSliceIFT
+        (d := d) (n := n) hd hn (stepDomain_relOpen j)
+        (stepDomain_connected j))
+    stepDomain_sub_start stepDomain_sub_left
+    transition_sub_stepDomain transition_sub_nextDomain
+    closingDomain closingDomain_relOpen
+    (sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_headSliceIFT
+      (d := d) (n := n) hd hn closingDomain_relOpen closingDomain_connected)
+    closingDomain_sub_final closingDomain_sub_start closingPatch_sub_closingDomain
+    closingDomain_contains_lastTransition_of_pos
+
 /-- Zero-transition closed loops produce finite-overlap domain data directly
 from the closing oriented patch, provided its max-rank part is connected. -/
 theorem exists_of_zeroTransitions
@@ -801,6 +876,20 @@ theorem exists_of_zeroTransitions
       closingDomain_contains_lastTransition_of_pos := by
         intro hpos
         exact False.elim (hpos hm) }
+
+/-- Zero-transition closed loops produce finite-overlap domain data directly
+from a connected closing oriented patch.  The max-rank connectedness input is
+derived by the checked sliced-head IFT rank-deficient local-image producer. -/
+theorem exists_of_zeroTransitions_headSliceIFT
+    (hn : d + 1 ≤ n)
+    (hm : L.chain.m = 0)
+    (hclosing_connected : IsConnected L.closing_orientedPatch) :
+    Nonempty (BHWJostOrientedClosedLoopFiniteOverlapDomainData L) :=
+  exists_of_zeroTransitions
+    (d := d) (n := n) hn hm
+    (sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_headSliceIFT
+      (d := d) (n := n) hd hn L.closing_orientedPatch_relOpen
+      hclosing_connected)
 
 end BHWJostOrientedClosedLoopFiniteOverlapDomainData
 
