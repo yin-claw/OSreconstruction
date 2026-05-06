@@ -612,6 +612,58 @@ def of_sourceRealized_branch_eq
       _ = (L.chain.localChart 0).branch y0 := hbranch
       _ = (L.chain.localChart 0).Psi G := hstart
 
+/-- If the Hall-Wightman/Jost closed-path argument proves source-branch
+equality for all matching initial/final representatives over the closing
+oriented patch, then the max-rank terminal seed can be extracted
+mechanically. -/
+def of_closingPatch_sourceBranch_eq
+    (hn : d + 1 ≤ n)
+    (hsource_eq :
+      ∀ G, G ∈ L.closing_orientedPatch →
+        ∀ y0 yF,
+          y0 ∈ (L.chain.localChart 0).carrier →
+          yF ∈ (L.chain.localChart (Fin.last L.chain.m)).carrier →
+          sourceOrientedMinkowskiInvariant d n y0 = G →
+          sourceOrientedMinkowskiInvariant d n yF = G →
+            (L.chain.localChart (Fin.last L.chain.m)).branch yF =
+              (L.chain.localChart 0).branch y0) :
+    BHWJostOrientedClosingPatchTerminalSeedData L :=
+  let hseed_exists :=
+    exists_preconnectedRelOpen_maxRankSeed_inside
+      (d := d) (n := n) hn L.closing_orientedPatch_relOpen
+      L.closing_orientedPatch_nonempty
+  let terminalSeed := Classical.choose hseed_exists
+  have hseed_spec :
+      IsRelOpenInSourceOrientedGramVariety d n terminalSeed ∧
+        IsPreconnected terminalSeed ∧
+        terminalSeed.Nonempty ∧
+        terminalSeed ⊆
+          L.closing_orientedPatch ∩ {G | SourceOrientedMaxRankAt d n G} :=
+    Classical.choose_spec hseed_exists
+  have hseed_rel :
+      IsRelOpenInSourceOrientedGramVariety d n terminalSeed := hseed_spec.1
+  have hseed_nonempty : terminalSeed.Nonempty := hseed_spec.2.2.1
+  have hseed_sub :
+      terminalSeed ⊆
+        L.closing_orientedPatch ∩ {G | SourceOrientedMaxRankAt d n G} :=
+    hseed_spec.2.2.2
+  by
+    exact
+      of_sourceRealized_branch_eq
+      (d := d) (n := n) (hd := hd) (τ := τ)
+      (Ω0 := Ω0) (U := U) (B0 := B0) (p0 := p0) (L := L)
+      hn hseed_rel hseed_nonempty
+      (fun G hG => (hseed_sub hG).1)
+      (fun G hG => (hseed_sub hG).2)
+      (fun G hG => by
+        have hGclosing : G ∈ L.closing_orientedPatch := (hseed_sub hG).1
+        rcases L.exists_initial_final_source_realizations_of_closing
+            hGclosing with
+          ⟨y0, yF, hy0, hyF, hy0G, hyFG⟩
+        exact
+          ⟨y0, yF, hy0, hyF, hy0G, hyFG,
+            hsource_eq G hGclosing y0 yF hy0 hyF hy0G hyFG⟩)
+
 /-- Closing-patch terminal-seed data packages into the terminal finite-overlap
 interface by taking the closing oriented patch itself as terminal domain. -/
 def to_finiteOverlapPropagationData

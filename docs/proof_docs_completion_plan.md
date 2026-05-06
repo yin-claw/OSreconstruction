@@ -292,6 +292,7 @@ it provides
 `BHW.BHWJostOrientedFiniteOverlapPropagationData.sourceMonodromy_of_terminalSeedOnClosingPatch_headSliceIFT`,
 `BHW.BHWJostOrientedClosingPatchTerminalSeedData`,
 `BHW.BHWJostOrientedClosingPatchTerminalSeedData.of_sourceRealized_branch_eq`,
+`BHW.BHWJostOrientedClosingPatchTerminalSeedData.of_closingPatch_sourceBranch_eq`,
 `BHW.BHWJostOrientedClosingPatchTerminalSeedData.to_finiteOverlapPropagationData`,
 `BHW.BHWJostOrientedClosingPatchTerminalSeedData.to_closedLoopSeed`,
 `BHW.BHWJostOrientedClosingPatchTerminalSeedData.to_orientedMonodromy_headSliceIFT`,
@@ -7837,7 +7838,12 @@ common-boundary envelope, or any theorem that already assumes locality.
    source branch values for those representatives.  The checked constructor
    `BHWJostOrientedClosingPatchTerminalSeedData.of_sourceRealized_branch_eq`
    rewrites this source-level equality into the required terminal/initial
-   `Psi` equality.  The endpoint consumer is
+   `Psi` equality.  If the Hall-Wightman/Jost argument proves this branch
+   equality uniformly for all matching representatives over
+   `L.closing_orientedPatch`, call the stronger checked constructor
+   `BHWJostOrientedClosingPatchTerminalSeedData.of_closingPatch_sourceBranch_eq`;
+   it performs the max-rank seed extraction and representative choice
+   automatically.  The endpoint consumer is
    `BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData`.
 
    The theorem `bhw_jost_closedChain_orientedMaxRankMonodromy_of_seed` is then
@@ -9197,7 +9203,12 @@ common-boundary envelope, or any theorem that already assumes locality.
    and
    `BHWJostOrientedClosedContinuationLoop.exists_initial_final_source_realizations_branch_eqs_of_closing`;
    the unproved part is precisely the source-branch equality supplied by the
-   genuine closed-path continuation.  Its method
+   genuine closed-path continuation.  The stronger constructor
+   `of_closingPatch_sourceBranch_eq` goes one step further: from source-branch
+   equality for all matching representatives over `L.closing_orientedPatch`,
+   it uses the checked max-rank seed extractor and the closing-patch
+   representative helper to produce the terminal-seed package directly.  Its
+   method
    `to_finiteOverlapPropagationData` calls the constructor above, its method
    `to_closedLoopSeed` reaches the identity-principle seed layer, its method
    `to_orientedMonodromy_headSliceIFT` gives oriented monodromy on the closing
