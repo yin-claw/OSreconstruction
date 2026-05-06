@@ -299,6 +299,7 @@ it provides
 `BHW.BHWJostOrientedClosingPatchTerminalSeedData.to_orientedMonodromy_headSliceIFT`,
 `BHW.BHWJostOrientedClosingPatchTerminalSeedData.to_sourceMonodromy_headSliceIFT`,
 `BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData`,
+`BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatch_exists_sourceBranch_eq`,
 and
 `BHW.exists_preconnectedRelOpen_maxRankSeed_inside`, plus
 `BHW.BHWJostOrientedSourcePatchContinuationChain.exists_terminalSeed_of_finiteOverlapDomains`,
@@ -7848,8 +7849,11 @@ common-boundary envelope, or any theorem that already assumes locality.
    automatically.  If the Hall-Wightman/Jost argument naturally proves the
    stronger universal equality for all matching representatives, the checked
    constructor `of_closingPatch_sourceBranch_eq` is also available.  The
-   endpoint consumer is
-   `BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData`.
+   terminal-seed endpoint consumer is
+   `BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData`,
+   while the direct preferred endpoint from existential closing-patch equality
+   is
+   `BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatch_exists_sourceBranch_eq`.
 
    The theorem `bhw_jost_closedChain_orientedMaxRankMonodromy_of_seed` is then
    the identity-principle propagation, not the monodromy theorem.  Let

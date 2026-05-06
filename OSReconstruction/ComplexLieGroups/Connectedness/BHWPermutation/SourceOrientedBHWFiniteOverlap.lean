@@ -764,6 +764,34 @@ theorem bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData
       L.closing_patch :=
   P.to_sourceMonodromy_headSliceIFT
 
+/-- Public source-monodromy endpoint for the preferred accumulated-germ
+closed-loop input: one source-realized terminal/initial branch equality above
+each point of the closing oriented patch. -/
+theorem bhw_jost_closedChain_sourceMonodromy_of_closingPatch_exists_sourceBranch_eq
+    [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
+    {Ω0 U : Set (Fin n → Fin (d + 1) → ℂ)}
+    {B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+    {p0 : Fin n → Fin (d + 1) → ℂ}
+    {L : BHWJostOrientedClosedContinuationLoop hd n τ Ω0 U B0 p0}
+    (hn : d + 1 ≤ n)
+    (hsource_eq :
+      ∀ G, G ∈ L.closing_orientedPatch →
+        ∃ y0 yF,
+          y0 ∈ (L.chain.localChart 0).carrier ∧
+          yF ∈ (L.chain.localChart (Fin.last L.chain.m)).carrier ∧
+          sourceOrientedMinkowskiInvariant d n y0 = G ∧
+          sourceOrientedMinkowskiInvariant d n yF = G ∧
+          (L.chain.localChart (Fin.last L.chain.m)).branch yF =
+            (L.chain.localChart 0).branch y0) :
+    Set.EqOn
+      (L.chain.branch (Fin.last L.chain.m))
+      B0
+      L.closing_patch :=
+  (BHWJostOrientedClosingPatchTerminalSeedData.of_closingPatch_exists_sourceBranch_eq
+    (d := d) (n := n) (hd := hd) (τ := τ)
+    (Ω0 := Ω0) (U := U) (B0 := B0) (p0 := p0) (L := L)
+    hn hsource_eq).to_sourceMonodromy_headSliceIFT
+
 namespace BHWJostOrientedSourcePatchContinuationChain
 
 variable [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
