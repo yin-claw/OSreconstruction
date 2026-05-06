@@ -518,8 +518,13 @@ theorem W_analytic_cluster_integral_via_ruelle
         (g.continuous.comp continuous_snd).aestronglyMeasurable
       refine MeasureTheory.AEStronglyMeasurable.mul ?_
         (f.continuous.comp continuous_fst).aestronglyMeasurable
-      -- F_ext_on_translatedPET_total composed with the wick-rotated config
-      -- is measurable (F_ext_total measurable + continuous composition).
+      -- F_ext_on_translatedPET_total composed with the joint Wick-rotated
+      -- config (with m-block shifted by `(0, a)`) is AEStronglyMeasurable.
+      -- The single-block case is `bhw_euclidean_kernel_measurable`
+      -- (`SchwingerTemperedness.lean:616`); the joint case is structurally
+      -- the same: continuous shift + Wick rotation + measurability of
+      -- F_ext_on_translatedPET_total via PET membership.
+      -- ~50 lines following the model of the single-block lemma.
       sorry
     · -- The eventually-in-a bound `‖clusterIntegrand a p‖ ≤ bound p` for
       -- `‖a⃗‖ > R_R` (where R_R is from Ruelle's bound).
