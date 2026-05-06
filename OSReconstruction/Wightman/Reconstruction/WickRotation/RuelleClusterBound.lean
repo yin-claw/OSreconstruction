@@ -161,6 +161,37 @@ axiom ruelle_analytic_cluster_pointwise
       (nhds ((W_analytic_BHW Wfn n).val z₁ *
              (W_analytic_BHW Wfn m).val z₂))
 
+/-! ### Wick rotation preserves Pi sup-norm -/
+
+/-- Wick rotation preserves the per-component norm: `|wick x μ| = |x μ|`. -/
+theorem wickRotatePoint_norm_component (x : Fin (d+1) → ℝ) (μ : Fin (d+1)) :
+    ‖wickRotatePoint x μ‖ = ‖x μ‖ := by
+  by_cases hμ : μ = 0
+  · subst hμ
+    simp [wickRotatePoint, norm_mul, Complex.norm_I, Complex.norm_real,
+      Real.norm_eq_abs]
+  · simp [wickRotatePoint, hμ, Complex.norm_real, Real.norm_eq_abs]
+
+/-- Wick rotation preserves the Pi sup-norm at each spacetime point. -/
+theorem wickRotatePoint_norm_eq (x : SpacetimeDim d) :
+    ‖wickRotatePoint x‖ = ‖x‖ := by
+  simp only [Pi.norm_def]
+  congr 1
+  apply Finset.sup_congr rfl
+  intro μ _
+  ext
+  exact wickRotatePoint_norm_component x μ
+
+/-- Lifted: Wick rotation per-point preserves the joint Pi sup-norm. -/
+theorem wickRotate_norm_eq {k : ℕ} (x : NPointDomain d k) :
+    ‖fun j => wickRotatePoint (x j)‖ = ‖x‖ := by
+  simp only [Pi.norm_def]
+  congr 1
+  apply Finset.sup_congr rfl
+  intro j _
+  ext
+  exact wickRotatePoint_norm_eq (x j)
+
 /-! ### OPTR Wick rotation lands in the forward tube -/
 
 /-- For OPTR-supported configurations, the Wick rotation lands in the
