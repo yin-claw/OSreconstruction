@@ -63,6 +63,68 @@ theorem integral_wickBranchDifference_mul_eq_zero_of_pairing_eq
         exact MeasureTheory.integral_sub hτ_int hid_int
     _ = 0 := sub_eq_zero.mpr hpair
 
+/-- The OS45 Euclidean-edge compact pairing equality gives the Wick-side
+branch-difference distributional zero used by the BHW/Jost pair-data carrier,
+with integrability kept explicit.
+
+This is the checked bridge from the OS §4.5 Euclidean symmetry layer to the
+`hwick_zero` input of `os45_pairData_difference_realTrace_zero_of_wickDistributionZero`. -/
+theorem os45_wickBranchDifference_zero_of_euclideanEdge_pairing_eq_on_timeSector
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) (i : Fin n) (hi : i.val + 1 < n)
+    (V : Set (NPointDomain d n))
+    (hV_jost : ∀ x ∈ V, x ∈ BHW.JostSet d n)
+    (ρ : Equiv.Perm (Fin n))
+    (hV_ordered : ∀ x ∈ V,
+      x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n) ρ)
+    (hV_swap_ordered : ∀ x ∈ V,
+      (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k)) ∈
+        EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+          ((Equiv.swap i ⟨i.val + 1, hi⟩).symm * ρ))
+    (hτ_int :
+      ∀ ψ : SchwartzNPoint d n,
+        HasCompactSupport (ψ : NPointDomain d n → ℂ) →
+        tsupport (ψ : NPointDomain d n → ℂ) ⊆ V →
+        Integrable
+          (fun u : NPointDomain d n =>
+            bvt_F OS lgc n
+              (fun k => wickRotatePoint
+                (u (Equiv.swap i ⟨i.val + 1, hi⟩ k))) * ψ u))
+    (hid_int :
+      ∀ ψ : SchwartzNPoint d n,
+        HasCompactSupport (ψ : NPointDomain d n → ℂ) →
+        tsupport (ψ : NPointDomain d n → ℂ) ⊆ V →
+        Integrable
+          (fun u : NPointDomain d n =>
+            bvt_F OS lgc n (fun k => wickRotatePoint (u k)) * ψ u)) :
+    ∀ ψ : SchwartzNPoint d n,
+      HasCompactSupport (ψ : NPointDomain d n → ℂ) →
+      tsupport (ψ : NPointDomain d n → ℂ) ⊆ V →
+      ∫ u : NPointDomain d n,
+          (bvt_F OS lgc n
+              (fun k => wickRotatePoint
+                (u (Equiv.swap i ⟨i.val + 1, hi⟩ k))) -
+            bvt_F OS lgc n (fun k => wickRotatePoint (u k))) *
+            ψ u = 0 := by
+  intro ψ hψ_comp hψ_supp
+  have hpair :
+      (∫ u : NPointDomain d n,
+          bvt_F OS lgc n
+            (fun k => wickRotatePoint
+              (u (Equiv.swap i ⟨i.val + 1, hi⟩ k))) * ψ u)
+        =
+      ∫ u : NPointDomain d n,
+          bvt_F OS lgc n (fun k => wickRotatePoint (u k)) * ψ u :=
+    BHW.os45_adjacent_euclideanEdge_pairing_eq_on_timeSector
+      (d := d) OS lgc n i hi V hV_jost ρ hV_ordered
+      hV_swap_ordered ψ hψ_supp
+  exact
+    BHW.integral_wickBranchDifference_mul_eq_zero_of_pairing_eq
+      (d := d) OS lgc n (Equiv.swap i ⟨i.val + 1, hi⟩) ψ
+      (hτ_int ψ hψ_comp hψ_supp)
+      (hid_int ψ hψ_comp hψ_supp) hpair
+
 /-- Pair of ordinary/adjacent BHW-Jost branches on one selected OS45 source
 patch hull.
 
