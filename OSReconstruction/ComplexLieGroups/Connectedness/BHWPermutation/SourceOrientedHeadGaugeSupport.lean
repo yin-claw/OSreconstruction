@@ -18,6 +18,75 @@ open Complex Topology Matrix LorentzLieGroup Classical Filter NormedSpace
 
 namespace BHW
 
+/-- A local head-gauge factor is continuous at the chart center, because the
+chart domain is open and contains the center. -/
+theorem sourceRankDeficientHeadGauge_factor_continuousAt_center
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (Head : SourceRankDeficientHeadGaugeData d r hrD) :
+    ContinuousAt Head.factor (sourceHeadMetricSymmCoord d r hrD) := by
+  exact
+    Head.factor_continuousOn.continuousAt
+      (Head.U_open.mem_nhds Head.center_mem)
+
+/-- Any neighborhood of the identity factor can be enforced by shrinking the
+head-gauge chart around the canonical head metric. -/
+theorem sourceRankDeficientHeadGauge_exists_factor_nhds
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    {V : Set (Matrix (Fin r) (Fin r) ℂ)}
+    (hV : V ∈ 𝓝 (1 : Matrix (Fin r) (Fin r) ℂ)) :
+    ∃ W : Set (SourceSymmetricMatrixCoord r),
+      W ∈ 𝓝 (sourceHeadMetricSymmCoord d r hrD) ∧
+        W ⊆ Head.U ∧
+        ∀ A ∈ W, Head.factor A ∈ V := by
+  let A0 := sourceHeadMetricSymmCoord d r hrD
+  have hV' : V ∈ 𝓝 (Head.factor A0) := by
+    simpa [A0, Head.factor_center] using hV
+  have hpre : Head.factor ⁻¹' V ∈ 𝓝 A0 :=
+    (sourceRankDeficientHeadGauge_factor_continuousAt_center d r hrD Head) hV'
+  have hU : Head.U ∈ 𝓝 A0 := by
+    simpa [A0] using Head.U_open.mem_nhds Head.center_mem
+  refine ⟨Head.U ∩ Head.factor ⁻¹' V, Filter.inter_mem hU hpre, ?_, ?_⟩
+  · exact Set.inter_subset_left
+  · intro A hA
+    exact hA.2
+
+/-- Coordinate form of the head-gauge factor shrink: the factor matrix can be
+kept entrywise close to the identity after shrinking the gauge chart. -/
+theorem sourceRankDeficientHeadGauge_exists_factor_coordinate_bound
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    {ρ : ℝ}
+    (hρ : 0 < ρ) :
+    ∃ W : Set (SourceSymmetricMatrixCoord r),
+      W ∈ 𝓝 (sourceHeadMetricSymmCoord d r hrD) ∧
+        W ⊆ Head.U ∧
+        ∀ A ∈ W,
+          ∀ a b,
+            ‖Head.factor A a b -
+              (1 : Matrix (Fin r) (Fin r) ℂ) a b‖ < ρ := by
+  have hV :
+      {M : Matrix (Fin r) (Fin r) ℂ |
+        ∀ a b, ‖M a b - (1 : Matrix (Fin r) (Fin r) ℂ) a b‖ < ρ} ∈
+        𝓝 (1 : Matrix (Fin r) (Fin r) ℂ) := by
+    have hopen :
+        IsOpen
+          {M : Matrix (Fin r) (Fin r) ℂ |
+            ∀ a b, ‖M a b - (1 : Matrix (Fin r) (Fin r) ℂ) a b‖ < ρ} := by
+      simp only [Set.setOf_forall]
+      apply isOpen_iInter_of_finite
+      intro a
+      apply isOpen_iInter_of_finite
+      intro b
+      exact isOpen_lt (by fun_prop) continuous_const
+    exact hopen.mem_nhds (by intro a b; simpa using hρ)
+  simpa using
+    sourceRankDeficientHeadGauge_exists_factor_nhds
+      d r hrD Head hV
+
 /-- A local head gauge makes the actual selected head rows linearly
 independent for every realizing source tuple. -/
 theorem sourceHeadRows_linearIndependent_of_headGauge

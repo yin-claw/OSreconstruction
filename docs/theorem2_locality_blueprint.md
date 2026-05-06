@@ -15461,6 +15461,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
         -- `exists_normalParameterBall_image_subset_open_head_schur_and_coordinate_bounds`;
         -- this leaves only the head-gauge/shifted-tail quantitative choices
         -- and the reverse Schur-extraction realization as genuine blockers.
+        -- For the head-gauge factor itself, the chart-internal shrink is now
+        -- checked as
+        -- `sourceRankDeficientHeadGauge_exists_factor_coordinate_bound`; this
+        -- consumes an already supplied `SourceRankDeficientHeadGaugeData` and
+        -- does not replace the still-separate head-gauge existence theorem.
         let encode :=
           BHW.sourceOrientedNormalParameterFiniteCoordHomeomorph
             (d := d) (n := n) (r := N.r)
