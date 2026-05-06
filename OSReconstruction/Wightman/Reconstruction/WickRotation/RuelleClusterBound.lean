@@ -612,20 +612,55 @@ theorem W_analytic_cluster_integral_via_ruelle
         (nhds (L_n * L_m)) := by
     rw [← h_limit_eq_product]
     exact h_DC
-  -- Step 7: convert Tendsto along `principal {a 0 = 0} ⊓ cobounded` to
-  -- the existential ε-R form. Strategy:
+  -- Step 7: convert Tendsto to ∃ R bound form.
   -- (1) From h_joint_tendsto + ε > 0: ∀ᶠ a in filter, ‖F a - L_n L_m‖ < ε.
-  -- (2) Decompose the filter membership: ∃ R₀, {a 0 = 0} ∩ (closedBall 0 R₀)ᶜ ⊆
-  --     {a | ‖F a - L_n L_m‖ < ε}.
-  -- (3) For a 0 = 0 + ‖a‖_sup > R₀: at least one spatial component exceeds R₀,
-  --     so ∑ (a (succ i))² > R₀².
-  -- (4) Set R := R₀ in the existential.
-  --
-  -- Plus: undo the change-of-variables (Step 1 sorry above) to identify the
-  -- joint integral with `∫ x : NPointDomain d (n+m), F_ext (f.tensorProduct g_a) x`.
-  --
-  -- Filter manipulation + change-of-variables undoing. Routed to follow-up
-  -- after Steps 1, 3 are filled.
-  sorry
+  have h_event : ∀ᶠ a : SpacetimeDim d in
+      Filter.principal {a : SpacetimeDim d | a 0 = 0} ⊓
+        Bornology.cobounded (SpacetimeDim d),
+      ‖(∫ p : NPointDomain d n × NPointDomain d m, clusterIntegrand Wfn f g a p) -
+        L_n * L_m‖ < ε := by
+    have h_metric : Filter.Tendsto
+        (fun a : SpacetimeDim d =>
+          (∫ p : NPointDomain d n × NPointDomain d m, clusterIntegrand Wfn f g a p) -
+          L_n * L_m)
+        (Filter.principal {a : SpacetimeDim d | a 0 = 0} ⊓
+          Bornology.cobounded (SpacetimeDim d))
+        (nhds 0) := by
+      simpa using h_joint_tendsto.sub_const (L_n * L_m)
+    rw [Metric.tendsto_nhds] at h_metric
+    have := h_metric ε hε
+    simpa [dist_zero_right] using this
+  -- (2) Decompose: get R₀ such that {a 0 = 0} ∩ (closedBall 0 R₀)ᶜ ⊆ S_ε.
+  rw [Filter.eventually_iff_exists_mem] at h_event
+  obtain ⟨S, hS_mem, hS_bound⟩ := h_event
+  rw [Filter.mem_inf_iff_superset] at hS_mem
+  obtain ⟨T₁, hT₁_mem, T₂, hT₂_mem, hT_sub⟩ := hS_mem
+  rw [Filter.mem_principal] at hT₁_mem
+  obtain ⟨R₀, _, hR₀_sub⟩ :=
+    (Metric.hasBasis_cobounded_compl_closedBall (0 : SpacetimeDim d)).mem_iff.mp hT₂_mem
+  -- (3) Choose R := max R₀ 1 · (d + 1), ensuring R > 0 and the spatial-sum-squared
+  --     condition implies ‖a‖_sup > R₀.
+  set R₁ : ℝ := max R₀ 1 with hR₁_def
+  have hR₁_pos : 0 < R₁ := lt_max_of_lt_right one_pos
+  refine ⟨R₁ * (d + 1), by positivity, fun a ha₀ ha_large g_a hg_a => ?_⟩
+  -- (4) Show `a ∈ T₁ ∩ T₂` to invoke hS_bound.
+  have ha_in_T₁ : a ∈ T₁ := hT₁_mem ha₀
+  have ha_in_T₂ : a ∈ T₂ := by
+    apply hR₀_sub
+    -- a ∉ closedBall 0 R₀ ↔ ‖a‖ > R₀.
+    rw [Set.mem_compl_iff, Metric.mem_closedBall, dist_zero_right, not_le]
+    -- Spatial bound: (d+1) · ‖a‖² ≥ ∑ (a (succ i))² > (R₁ (d+1))² gives
+    -- ‖a‖² > R₁² (d+1) ≥ R₁² ≥ R₀² + something positive, hence ‖a‖ > R₀.
+    -- Algebraic conversion routed to follow-up: ~30 lines of nlinarith
+    -- with `pow_le_pow_left₀` + `Finset.sum_const` + multiplicative
+    -- inequality manipulation.
+    sorry
+  -- Bound the cluster integral via hS_bound.
+  have h_in_S : a ∈ S := hT_sub ⟨ha_in_T₁, ha_in_T₂⟩
+  have h_cluster_bound : ‖(∫ p : NPointDomain d n × NPointDomain d m,
+      clusterIntegrand Wfn f g a p) - L_n * L_m‖ < ε := hS_bound a h_in_S
+  -- Convert via h_change_of_var: joint integral = cluster integrand integral.
+  rw [h_change_of_var a ha₀ g_a hg_a]
+  exact h_cluster_bound
 
 end OSReconstruction
