@@ -340,7 +340,28 @@ theorem W_analytic_cluster_integral_via_ruelle
   have h_limit_eq_product :
       (∫ p : NPointDomain d n × NPointDomain d m, clusterLimitIntegrand Wfn f g p)
         = L_n * L_m := by
-    sorry  -- Fubini on `clusterLimitIntegrand`
+    -- clusterLimitIntegrand factors: A(p.1) · B(p.2) where
+    -- A(x) = F_ext(wick x) · f(x), B(y) = F_ext(wick y) · g(y).
+    -- volume on the product = volume.prod volume (rfl), so apply
+    -- Fubini-Tonelli's product formula `integral_prod_mul`.
+    rw [show (MeasureTheory.volume :
+        MeasureTheory.Measure (NPointDomain d n × NPointDomain d m)) =
+      MeasureTheory.volume.prod MeasureTheory.volume from rfl]
+    unfold clusterLimitIntegrand
+    rw [hL_n, hL_m]
+    -- Goal: ∫ p, (F_ext(wick p.1) * F_ext(wick p.2)) * f(p.1) * g(p.2)
+    --       = (∫ x, F_ext(wick x) * f x) * (∫ y, F_ext(wick y) * g y)
+    rw [show ((∫ x : NPointDomain d n,
+          F_ext_on_translatedPET_total Wfn (fun k => wickRotatePoint (x k)) * f x)
+        * (∫ y : NPointDomain d m,
+          F_ext_on_translatedPET_total Wfn (fun k => wickRotatePoint (y k)) * g y))
+        = ∫ p : NPointDomain d n × NPointDomain d m,
+          (F_ext_on_translatedPET_total Wfn (fun k => wickRotatePoint (p.1 k)) * f p.1) *
+          (F_ext_on_translatedPET_total Wfn (fun k => wickRotatePoint (p.2 k)) * g p.2)
+        from (MeasureTheory.integral_prod_mul _ _).symm]
+    congr 1
+    ext p
+    ring
   -- Step 3 (pointwise limit): for each (x_n, y) with x_n ∈ OPTR-n and
   -- y ∈ OPTR-m, the cluster integrand at parameter `a` tends to the limit
   -- integrand as |⃗a| → ∞ along {a 0 = 0} ⊓ cobounded.
@@ -456,8 +477,21 @@ theorem W_analytic_cluster_integral_via_ruelle
       rw [Filter.eventually_iff_exists_mem]
       refine ⟨{a : SpacetimeDim d | a 0 = 0 ∧
         (∑ i : Fin d, (a (Fin.succ i))^2) > R_R^2}, ?_, ?_⟩
-      · -- This set is in the filter `principal {a 0 = 0} ⊓ cobounded`.
-        sorry
+      · -- This set is in `principal {a 0 = 0} ⊓ cobounded`. Decompose:
+        -- {a 0 = 0} ∈ principal, (closedBall 0 R_R)ᶜ ∈ cobounded; their
+        -- intersection is contained in {a | a 0 = 0 ∧ ‖a⃗‖² > R_R²}
+        -- because (sup-norm) ‖a‖² ≤ ∑ |a i|², and for a 0 = 0,
+        -- ∑ |a i|² = ∑_{i ≥ 1} (a (succ i))².
+        rw [Filter.mem_inf_iff_superset]
+        refine ⟨{a : SpacetimeDim d | a 0 = 0}, Filter.mem_principal_self _,
+          (Metric.closedBall (0 : SpacetimeDim d) R_R)ᶜ, ?_, ?_⟩
+        · exact (Metric.hasBasis_cobounded_compl_closedBall (0 : SpacetimeDim d)).mem_of_mem
+            trivial
+        · intro a ⟨ha₀, _hball⟩
+          refine ⟨ha₀, ?_⟩
+          -- Need: ‖a‖ > R_R + a 0 = 0 → ∑ (a (succ i))² > R_R².
+          -- Pi sup-norm + nonneg max bound: routed to follow-up.
+          sorry
       · intro a ha
         refine Filter.Eventually.of_forall (fun p => ?_)
         -- Bound |F_ext_total| by Ruelle, and combine with f, g norms.
