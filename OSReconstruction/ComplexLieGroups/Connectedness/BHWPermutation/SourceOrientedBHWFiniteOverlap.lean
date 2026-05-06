@@ -574,6 +574,23 @@ def to_finiteOverlapPropagationData
       P.hn P.terminalSeed_relOpen P.terminalSeed_nonempty
       P.terminalSeed_sub_closing P.terminalSeed_sub_max P.terminalSeed_eq
 
+/-- Closing-patch terminal-seed data packages into the closed-loop max-rank
+seed consumed by the identity-principle monodromy layer. -/
+theorem to_closedLoopSeed
+    (P : BHWJostOrientedClosingPatchTerminalSeedData L) :
+    Nonempty (BHWJostOrientedMaxRankClosedLoopSeed hd n τ Ω0 U B0 L) :=
+  P.to_finiteOverlapPropagationData.to_closedLoopSeed
+
+/-- Closing-patch terminal-seed data gives oriented monodromy on the closing
+patch. -/
+theorem to_orientedMonodromy_headSliceIFT
+    (P : BHWJostOrientedClosingPatchTerminalSeedData L) :
+    Set.EqOn
+      (L.chain.localChart (Fin.last L.chain.m)).Psi
+      (L.chain.localChart 0).Psi
+      L.closing_orientedPatch :=
+  P.to_finiteOverlapPropagationData.to_orientedMonodromy_headSliceIFT
+
 /-- Closing-patch terminal-seed data gives source monodromy by the checked
 terminal finite-overlap consumer. -/
 theorem to_sourceMonodromy_headSliceIFT

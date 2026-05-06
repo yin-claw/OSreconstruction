@@ -46355,8 +46355,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
             `BHWJostOrientedClosingPatchTerminalSeedData L`.  It stores
             `hn`, the terminal seed, relative openness, nonemptiness,
             containment in `L.closing_orientedPatch`, max-rank containment,
-            and terminal/initial oriented-germ equality.  The stable public
-            endpoint is:
+            and terminal/initial oriented-germ equality.  Its methods
+            `to_closedLoopSeed`, `to_orientedMonodromy_headSliceIFT`, and
+            `to_sourceMonodromy_headSliceIFT` expose the checked consumer
+            ladder.  The stable public endpoint is:
 
             ```lean
             theorem BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData

@@ -285,6 +285,8 @@ it provides
 `BHW.BHWJostOrientedFiniteOverlapPropagationData.sourceMonodromy_of_terminalSeedOnClosingPatch_headSliceIFT`,
 `BHW.BHWJostOrientedClosingPatchTerminalSeedData`,
 `BHW.BHWJostOrientedClosingPatchTerminalSeedData.to_finiteOverlapPropagationData`,
+`BHW.BHWJostOrientedClosingPatchTerminalSeedData.to_closedLoopSeed`,
+`BHW.BHWJostOrientedClosingPatchTerminalSeedData.to_orientedMonodromy_headSliceIFT`,
 `BHW.BHWJostOrientedClosingPatchTerminalSeedData.to_sourceMonodromy_headSliceIFT`,
 `BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData`,
 and
@@ -9177,7 +9179,10 @@ common-boundary envelope, or any theorem that already assumes locality.
    `L.closing_orientedPatch`, and terminal/initial oriented-germ equality on
    that seed.  Its method
    `to_finiteOverlapPropagationData` calls the constructor above, its method
-   `to_sourceMonodromy_headSliceIFT` closes the source-monodromy goal, and the
+   `to_closedLoopSeed` reaches the identity-principle seed layer, its method
+   `to_orientedMonodromy_headSliceIFT` gives oriented monodromy on the closing
+   patch, its method `to_sourceMonodromy_headSliceIFT` closes the
+   source-monodromy goal, and the
    stable public endpoint is
    `BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData`.
    This is the preferred Lean target for a patch-by-patch accumulated-germ
