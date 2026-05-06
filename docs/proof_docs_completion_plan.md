@@ -809,6 +809,13 @@ tuple window, transported through the checked normal-parameter coordinate
 homeomorphism.  The remaining rank-deficient local-image work is therefore the
 Schur/residual image and shrink theorem, not the connectedness of the
 parameter window and not a compatible-radius estimate.
+The max-rank-slice topology of this same window is now split at the correct
+frontier by
+`BHW.isConnected_sourceOrientedRankDeficientSchurParameterWindow_tailRank`:
+connectedness of the full Schur-parameter window restricted to residual-tail
+exact rank follows from connectedness of the tail-coordinate exact-rank slice.
+Thus the remaining connectedness blocker is purely the residual-tail geometry,
+not the head/mixed product topology or the normal-coordinate homeomorphism.
 
 The first Euclidean induction case is checked:
 `sourceTailOrientedInvariant_selectedGram_det` proves that a selected Gram

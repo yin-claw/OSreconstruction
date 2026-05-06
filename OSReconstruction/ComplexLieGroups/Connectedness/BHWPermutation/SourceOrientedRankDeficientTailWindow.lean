@@ -646,6 +646,80 @@ theorem isConnected_sourceOrientedRankDeficientSchurParameterWindow
   rw [heq]
   exact hpre
 
+/-- Connectedness of the full Schur-parameter window restricted to the
+residual-tail exact-rank slice reduces to the corresponding tail-coordinate
+connectedness theorem. -/
+theorem isConnected_sourceOrientedRankDeficientSchurParameterWindow_tailRank
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    {headRadius mixedRadius : ℝ}
+    (hheadRadius : 0 < headRadius)
+    (hmixedRadius : 0 < mixedRadius)
+    (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn)
+    (htailRank_conn :
+      IsConnected (sourceShiftedTailTupleWindow d n r hrD hrn Tail ∩
+        {q : Fin (n - r) → Fin (d + 1 - r) → ℂ |
+          (sourceShiftedTailGram d r hrD (n - r) q).rank = d + 1 - r})) :
+    IsConnected
+      (sourceOrientedRankDeficientSchurParameterWindow
+          d n r hrD hrn headRadius mixedRadius Tail ∩
+        {p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn |
+          (sourceOrientedNormalParameterSchurTail d n r hrD hrn p).rank =
+            d + 1 - r}) := by
+  let H : Set (Matrix (Fin r) (Fin r) ℂ) :=
+    sourceOrientedHeadCoordinateWindow r headRadius
+  let M : Set (Matrix (Fin (n - r)) (Fin r) ℂ) :=
+    sourceOrientedMixedCoordinateWindow n r mixedRadius
+  let T : Set (Fin (n - r) → Fin (d + 1 - r) → ℂ) :=
+    sourceShiftedTailTupleWindow d n r hrD hrn Tail ∩
+      {q : Fin (n - r) → Fin (d + 1 - r) → ℂ |
+        (sourceShiftedTailGram d r hrD (n - r) q).rank = d + 1 - r}
+  let S :
+      Set (Matrix (Fin r) (Fin r) ℂ ×
+        Matrix (Fin (n - r)) (Fin r) ℂ ×
+          (Fin (n - r) → Fin (d + 1 - r) → ℂ)) :=
+    H ×ˢ (M ×ˢ T)
+  have hhead_conn : IsConnected H :=
+    isConnected_sourceOrientedHeadCoordinateWindow r hheadRadius
+  have hmixed_conn : IsConnected M :=
+    isConnected_sourceOrientedMixedCoordinateWindow n r hmixedRadius
+  have htail_conn : IsConnected T := by
+    dsimp [T]
+    exact htailRank_conn
+  have hS : IsConnected S := by
+    dsimp [S]
+    exact hhead_conn.prod (hmixed_conn.prod htail_conn)
+  let e :=
+    sourceOrientedNormalParameterCoordHomeomorph
+      (d := d) (n := n) (r := r) (hrD := hrD) (hrn := hrn)
+  have himage : e.symm '' S = e ⁻¹' S := by
+    ext p
+    constructor
+    · rintro ⟨x, hx, rfl⟩
+      simpa using hx
+    · intro hp
+      exact ⟨e p, hp, by simp [e]⟩
+  have hpre : IsConnected (e ⁻¹' S) := by
+    rw [← himage]
+    exact hS.image e.symm e.symm.continuous.continuousOn
+  have heq :
+      sourceOrientedRankDeficientSchurParameterWindow
+            d n r hrD hrn headRadius mixedRadius Tail ∩
+          {p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn |
+            (sourceOrientedNormalParameterSchurTail d n r hrD hrn p).rank =
+              d + 1 - r} =
+        e ⁻¹' S := by
+    ext p
+    simp [sourceOrientedRankDeficientSchurParameterWindow, S, H, M, T, e,
+      sourceOrientedRankDeficientTailWindow, sourceShiftedTailTupleWindow,
+      sourceOrientedNormalParameterSchurTail,
+      sourceOrientedNormalParameterCoordHomeomorph,
+      sourceOrientedNormalParameterCoordEquiv, sourceOrientedNormalParameterCoord]
+    tauto
+  rw [heq]
+  exact hpre
+
 theorem sourceOrientedNormalCenterParameter_mem_schurParameterWindow
     (d n r : ℕ)
     (hrD : r < d + 1)
