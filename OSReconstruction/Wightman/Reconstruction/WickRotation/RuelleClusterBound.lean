@@ -161,6 +161,23 @@ axiom ruelle_analytic_cluster_pointwise
       (nhds ((W_analytic_BHW Wfn n).val z₁ *
              (W_analytic_BHW Wfn m).val z₂))
 
+/-! ### Pi-instance bridge: HasTemperateGrowth for volume on NPointDomain
+
+`NPointDomain d n = Fin n → Fin (d+1) → ℝ` is a *nested* Pi type. Mathlib's
+`isAddHaarMeasure_volume_pi` provides `IsAddHaarMeasure` for FLAT Pi
+`ι → ℝ`, but the instance doesn't propagate to nested Pi automatically.
+
+The project already uses the workaround
+`MeasureTheory.Measure.instIsAddHaarMeasureForallVolumeOfMeasurableAddOfSigmaFinite`
+(see `SchwingerTemperedness.lean:1489`); we adopt it as a project-level
+instance so type-class synthesis works throughout. -/
+
+/-- `(volume : Measure (NPointDomain d n))` is `IsAddHaarMeasure`. -/
+instance NPointDomain.volume_isAddHaarMeasure (d n : ℕ) :
+    (MeasureTheory.volume :
+      MeasureTheory.Measure (NPointDomain d n)).IsAddHaarMeasure :=
+  MeasureTheory.Measure.instIsAddHaarMeasureForallVolumeOfMeasurableAddOfSigmaFinite
+
 /-! ### Helper lemmas: Schwartz seminorms absorb polynomial growth -/
 
 /-- For a Schwartz function `f` on a finite-dim real inner-product space,
@@ -344,21 +361,68 @@ theorem W_analytic_cluster_integral_via_ruelle
   have h_dominator_integrable :
       MeasureTheory.Integrable (fun p : NPointDomain d n × NPointDomain d m =>
         C_R * (1 + ‖p.1‖ + ‖p.2‖) ^ N_R * ‖f p.1‖ * ‖g p.2‖) := by
-    -- The math: bound (1 + ‖x‖ + ‖y‖)^N ≤ (1 + ‖x‖)^N · (1 + ‖y‖)^N,
-    -- then use Schwartz seminorms to absorb polynomial growth.
-    --
-    -- The Lean obstacle: `(volume : Measure (NPointDomain d n)).HasTemperateGrowth`
-    -- is not synthesizable for the nested Pi `NPointDomain d n =
-    -- Fin n → Fin (d+1) → ℝ`. The `IsAddHaarMeasure.instHasTemperateGrowth`
-    -- requires `[FiniteDimensional ℝ E]` etc., but the implicit chain through
-    -- the Pi instances doesn't resolve. Working around requires either:
-    -- (a) A project-side instance bridge `Pi.instHasTemperateGrowth` lifting
-    --     the IsAddHaarMeasure structure on NPointDomain;
-    -- (b) Re-routing through `EuclideanSpace ℝ (Fin (n*(d+1)))` via a
-    --     measure-preserving equivalence.
-    -- The validated helper `schwartz_integrable_add_pow_mul` (above) gives
-    -- the math content; the bridge is Lean engineering. Routed to follow-up.
-    sorry
+    -- A(x) = (1 + ‖x‖)^N_R · ‖f x‖ integrable on NPointDomain d n
+    -- (using the IsAddHaarMeasure instance bridge above).
+    have hA : MeasureTheory.Integrable
+        (fun x : NPointDomain d n => (1 + ‖x‖) ^ N_R * ‖f x‖) :=
+      schwartz_integrable_add_pow_mul (μ := MeasureTheory.volume) f N_R
+    have hB : MeasureTheory.Integrable
+        (fun y : NPointDomain d m => (1 + ‖y‖) ^ N_R * ‖g y‖) :=
+      schwartz_integrable_add_pow_mul (μ := MeasureTheory.volume) g N_R
+    -- A(p.1) · B(p.2) integrable on the product.
+    have hAB : MeasureTheory.Integrable
+        (fun p : NPointDomain d n × NPointDomain d m =>
+          ((1 + ‖p.1‖)^N_R * ‖f p.1‖) * ((1 + ‖p.2‖)^N_R * ‖g p.2‖))
+        (μ := MeasureTheory.volume.prod MeasureTheory.volume) :=
+      hA.mul_prod hB
+    -- Identify volume on the product with volume.prod volume.
+    rw [show (MeasureTheory.volume :
+        MeasureTheory.Measure (NPointDomain d n × NPointDomain d m)) =
+      MeasureTheory.volume.prod MeasureTheory.volume from rfl]
+    -- Bound the original by C_R · A(x) · B(y), using
+    -- (1 + ‖x‖ + ‖y‖)^N_R ≤ (1 + ‖x‖)^N_R · (1 + ‖y‖)^N_R.
+    refine (hAB.const_mul C_R).mono' ?_ ?_
+    · -- AEStronglyMeasurable of the original.
+      refine MeasureTheory.AEStronglyMeasurable.mul ?_ ?_
+      refine MeasureTheory.AEStronglyMeasurable.mul ?_ ?_
+      · -- Continuous: C_R · (1 + ‖p.1‖ + ‖p.2‖)^N_R
+        refine ((continuous_const.add (continuous_norm.comp continuous_fst)).add
+          (continuous_norm.comp continuous_snd)).pow N_R |>.const_mul C_R
+          |>.aestronglyMeasurable
+      · -- ‖f p.1‖ continuous
+        exact (f.continuous.norm.comp continuous_fst).aestronglyMeasurable
+      · exact (g.continuous.norm.comp continuous_snd).aestronglyMeasurable
+    · refine Filter.Eventually.of_forall (fun p => ?_)
+      have h_C_pos : (0 : ℝ) ≤ C_R := le_of_lt hC_R_pos
+      have h_fnonneg : (0 : ℝ) ≤ ‖f p.1‖ := norm_nonneg _
+      have h_gnonneg : (0 : ℝ) ≤ ‖g p.2‖ := norm_nonneg _
+      have h_p1_nonneg : (0 : ℝ) ≤ ‖p.1‖ := norm_nonneg _
+      have h_p2_nonneg : (0 : ℝ) ≤ ‖p.2‖ := norm_nonneg _
+      have h_lhs_nonneg : (0 : ℝ) ≤
+          C_R * (1 + ‖p.1‖ + ‖p.2‖) ^ N_R * ‖f p.1‖ * ‖g p.2‖ := by positivity
+      have h_rhs_pos : (0 : ℝ) ≤
+          C_R * (((1 + ‖p.1‖)^N_R * ‖f p.1‖) * ((1 + ‖p.2‖)^N_R * ‖g p.2‖)) := by
+        positivity
+      rw [Real.norm_eq_abs, abs_of_nonneg h_lhs_nonneg]
+      -- Bound (1 + ‖p.1‖ + ‖p.2‖) ≤ (1 + ‖p.1‖) * (1 + ‖p.2‖) via mul_nonneg.
+      have h_bound : (1 + ‖p.1‖ + ‖p.2‖) ≤ (1 + ‖p.1‖) * (1 + ‖p.2‖) := by
+        nlinarith [mul_nonneg h_p1_nonneg h_p2_nonneg]
+      have h_bound' : (1 + ‖p.1‖ + ‖p.2‖)^N_R ≤
+          (1 + ‖p.1‖)^N_R * (1 + ‖p.2‖)^N_R := by
+        rw [← mul_pow]
+        exact pow_le_pow_left₀ (by positivity : (0 : ℝ) ≤ 1 + ‖p.1‖ + ‖p.2‖)
+          h_bound N_R
+      -- Multiply by `C_R * ‖f p.1‖ * ‖g p.2‖ ≥ 0` on both sides.
+      have h_factor_nonneg : (0 : ℝ) ≤ C_R * ‖f p.1‖ * ‖g p.2‖ := by positivity
+      have key :
+          C_R * ‖f p.1‖ * ‖g p.2‖ * (1 + ‖p.1‖ + ‖p.2‖)^N_R ≤
+          C_R * ‖f p.1‖ * ‖g p.2‖ * ((1 + ‖p.1‖)^N_R * (1 + ‖p.2‖)^N_R) :=
+        mul_le_mul_of_nonneg_left h_bound' h_factor_nonneg
+      have lhs_eq : C_R * (1 + ‖p.1‖ + ‖p.2‖)^N_R * ‖f p.1‖ * ‖g p.2‖ =
+          C_R * ‖f p.1‖ * ‖g p.2‖ * (1 + ‖p.1‖ + ‖p.2‖)^N_R := by ring
+      have rhs_eq : C_R * (((1 + ‖p.1‖)^N_R * ‖f p.1‖) * ((1 + ‖p.2‖)^N_R * ‖g p.2‖)) =
+          C_R * ‖f p.1‖ * ‖g p.2‖ * ((1 + ‖p.1‖)^N_R * (1 + ‖p.2‖)^N_R) := by ring
+      linarith [key, lhs_eq, rhs_eq]
   -- Step 5: apply DC to get Tendsto of the joint integral.
   have h_DC :
       Filter.Tendsto
