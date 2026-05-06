@@ -14657,7 +14657,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
         -- and a small connected open ball `P` around the encoded normal
         -- center.  Shrink it so the selected head Gram block remains
         -- invertible and so the inverse variety transport of the normal
-        -- subtype image lies inside `N0`.
+        -- subtype image lies inside `N0`; the transported open-neighborhood
+        -- and invertible-head shrink is now checked as
+        -- `SourceOrientedRankDeficientAlgebraicNormalFormData.exists_normalParameterBall_image_subset_open_and_head`.
         rcases
           BHW.sourceOriented_rankDeficient_algebraicParameterBall
             (d := d) hd n N hN0_open hG0N0 with

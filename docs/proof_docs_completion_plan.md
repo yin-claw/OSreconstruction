@@ -516,6 +516,18 @@ Schur/residual max-rank-connected local-image producer, now using
 source-backed finite-overlap domains; Lean work should still not start at the
 public adjacent seed or scalar-representative wrappers.
 
+The transported neighborhood shrink for the exceptional normal image is now
+checked as
+`BHW.SourceOrientedRankDeficientAlgebraicNormalFormData.exists_normalParameterBall_image_subset_open_and_head`.
+Given an ambient open set `N0` containing the original exceptional point, it
+chooses a positive-radius normal-parameter ball that is open, connected,
+contains the center, lies in the invertible-head locus, and whose transported
+normal-variety image lies in `N0 ∩ sourceOrientedGramVariety d n`.  This
+removes another informal shrink from
+`sourceOriented_rankDeficient_algebraicParameterBall`; the remaining hard
+surjectivity step is Schur extraction and tail realization on the shrunken
+normal neighborhood.
+
 The first normal-parameter support layer is now checked in
 `SourceOrientedNormalParameter.lean`.  The file supplies the finite head/tail
 source-label split
@@ -543,6 +555,9 @@ checked pullback parameter ball
 `BHW.sourceOrientedNormalParameterBall_open_connected_center`,
 `BHW.exists_sourceOrientedNormalParameterBall_subset_of_mem_nhds_center`, and
 `BHW.exists_sourceOrientedNormalParameterBall_subset_head_det_isUnit`, the
+transported open-neighborhood shrink
+`BHW.SourceOrientedRankDeficientAlgebraicNormalFormData.exists_normalParameterBall_image_subset_open_and_head`,
+the
 checked open
 invertible-head locus and center-neighborhood theorem
 `BHW.isOpen_sourceOrientedNormalParameter_head_det_isUnit` and
