@@ -15145,6 +15145,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
       -- `exists_sourceOrientedNormalParameterBall_subset_coordinate_bounds`;
       -- it is exactly the checked ball-based replacement for the retired
       -- `sourceOrientedRankDeficientParameterBox_open_connected` step.
+      -- The one-shot assembly of ambient image, invertible-head,
+      -- Schur-neighborhood, and raw-coordinate shrinks is now checked as
+      -- `SourceOrientedRankDeficientAlgebraicNormalFormData.exists_normalParameterBall_image_subset_open_head_schur_and_coordinate_bounds`,
+      -- using `sourceOrientedNormalParameterBall_mono` to pass to a smaller
+      -- common radius.
 
       theorem BHW.sourceOrientedSchurEstimateNeighborhood_shrink
           [NeZero d]
@@ -15452,6 +15457,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
         -- `sourceOrientedNormalParameter_head_det_isUnit_mem_nhds_center`
         -- give the determinant-unit neighborhood needed before applying the
         -- checked max-rank-to-tail-rank bridge.
+        -- The common-radius topological assembly can now be discharged by
+        -- `exists_normalParameterBall_image_subset_open_head_schur_and_coordinate_bounds`;
+        -- this leaves only the head-gauge/shifted-tail quantitative choices
+        -- and the reverse Schur-extraction realization as genuine blockers.
         let encode :=
           BHW.sourceOrientedNormalParameterFiniteCoordHomeomorph
             (d := d) (n := n) (r := N.r)

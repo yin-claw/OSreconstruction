@@ -26,6 +26,22 @@ def sourceOrientedNormalParameterBall
     (d := d) (n := n) (r := r) (hrD := hrD) (hrn := hrn)) ⁻¹'
       sourceOrientedNormalParameterFiniteCoordBall d n r ε
 
+/-- Normal-parameter balls are monotone in the radius. -/
+theorem sourceOrientedNormalParameterBall_mono
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    {ε₁ ε₂ : ℝ}
+    (hε : ε₁ ≤ ε₂) :
+    sourceOrientedNormalParameterBall (d := d) (n := n) (r := r)
+      (hrD := hrD) (hrn := hrn) ε₁ ⊆
+    sourceOrientedNormalParameterBall (d := d) (n := n) (r := r)
+      (hrD := hrD) (hrn := hrn) ε₂ := by
+  intro p hp
+  simpa [sourceOrientedNormalParameterBall,
+    sourceOrientedNormalParameterFiniteCoordBall] using
+    Metric.ball_subset_ball hε hp
+
 /-- The finite-coordinate pullback ball is open, connected, and contains the
 normal center. -/
 theorem sourceOrientedNormalParameterBall_open_connected_center

@@ -552,6 +552,19 @@ neighborhoods of the center Schur head, mixed, and residual-tail coordinates,
 and arbitrary positive raw head/mixed/tail coordinate radii, pull back to a
 positive connected normal-parameter ball.
 
+The combined normal-ball shrink is now checked in
+`SourceOrientedRankDeficientNormalShrink.lean`, with ball monotonicity
+`BHW.sourceOrientedNormalParameterBall_mono` in
+`SourceOrientedNormalParameterBall.lean`.  The theorem
+`BHW.SourceOrientedRankDeficientAlgebraicNormalFormData.exists_normalParameterBall_image_subset_open_head_schur_and_coordinate_bounds`
+chooses one positive normal-parameter ball satisfying all current topological
+shrink requirements at once: open/connected/center, invertible head, image
+inside an ambient open set and the source variety, Schur-coordinate
+neighborhood constraints, and raw coordinate radius bounds.  The remaining
+unproved part of the finite estimate theorem is therefore not topology but the
+choice of the Schur neighborhoods/radii from the head gauge and shifted-tail
+realization estimates.
+
 The first normal-parameter support layer is now checked in
 `SourceOrientedNormalParameter.lean`.  The file supplies the finite head/tail
 source-label split
