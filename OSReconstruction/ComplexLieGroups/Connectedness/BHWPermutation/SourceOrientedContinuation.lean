@@ -292,6 +292,24 @@ theorem exists_open_preconnected_neighborhood_subset
   · exact (convex_ball p ε).isPreconnected
   · exact ⟨p, Metric.mem_ball_self hε_pos⟩
 
+/-- In a real normed vector space, path components of open subsets are open.
+This is the local-path-connectedness fact needed for OS45 source-patch hulls. -/
+theorem isOpen_pathComponentIn_of_isOpen_normed
+    {E : Type*} [NormedAddCommGroup E] [NormedSpace ℝ E]
+    {s : Set E} (hs : IsOpen s) {p : E} (hp : p ∈ s) :
+    IsOpen (pathComponentIn s p) := by
+  refine BHW.isOpen_pathComponentIn_of_eventually_joined ?_ p hp
+  intro x hx
+  rcases Metric.isOpen_iff.mp hs x hx with ⟨ε, hε_pos, hε_sub⟩
+  filter_upwards [Metric.ball_mem_nhds x hε_pos] with y hy
+  have hx_ball : x ∈ Metric.ball x ε := Metric.mem_ball_self hε_pos
+  have hseg :
+      segment ℝ x y ⊆ s :=
+    fun z hz => hε_sub ((convex_ball x ε).segment_subset hx_ball hy hz)
+  have hjoined : JoinedIn s x y :=
+    JoinedIn.of_segment_subset hseg
+  exact ⟨hjoined.somePath, fun t => hjoined.somePath_mem t⟩
+
 /-- Permuting source labels is continuous in the finite product topology. -/
 theorem continuous_permAct (σ : Equiv.Perm (Fin n)) :
     Continuous (permAct (d := d) σ) := by
@@ -308,6 +326,15 @@ theorem isOpen_os45SourcePatchBHWJostAmbient
   exact isOpen_extendedTube.union
     (isOpen_extendedTube.preimage
       (continuous_permAct (d := d) (n := n) τ))
+
+/-- The OS45 source-patch BHW/Jost hull is open whenever its base point lies
+in the ambient. -/
+theorem os45SourcePatchBHWJostHull_open
+    (τ : Equiv.Perm (Fin n)) (z0 : Fin n → Fin (d + 1) → ℂ)
+    (hz0 : z0 ∈ os45SourcePatchBHWJostAmbient d n τ) :
+    IsOpen (os45SourcePatchBHWJostHull d n τ z0) :=
+  isOpen_pathComponentIn_of_isOpen_normed
+    (isOpen_os45SourcePatchBHWJostAmbient d n τ) hz0
 
 /-- Maximal oriented source rank: maximal rank of the ordinary Gram
 coordinate, carried on the oriented invariant space. -/
