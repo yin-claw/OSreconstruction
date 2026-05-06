@@ -95,7 +95,7 @@ theorem isOpen_sourceOrientedHeadGaugeSchurHeadWindow
     (d n r : ℕ)
     (hrD : r < d + 1)
     (hrn : r ≤ n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     (headRadius : ℝ) :
     IsOpen
       {Gv : SourceOrientedVariety d n |
@@ -129,7 +129,7 @@ theorem continuousOn_sourceSchurMixedCoeff_headGaugePatch
     (d n r : ℕ)
     (hrD : r < d + 1)
     (hrn : r ≤ n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD) :
+    (Head : SourceRankDeficientHeadFactorData d r hrD) :
     ContinuousOn
       (fun Gv : SourceOrientedVariety d n =>
         sourceSchurMixedCoeff n r hrn Gv.1
@@ -153,7 +153,7 @@ theorem continuousOn_sourceSchurMixedCoeff_headGaugePatch
         {A : Matrix (Fin r) (Fin r) ℂ | IsUnit A.det} := by
     intro Gv hGv
     exact
-      sourceOrientedSchurHeadBlock_det_isUnit_of_headGauge
+      sourceOrientedSchurHeadBlock_det_isUnit_of_headFactor
         d n r hrD hrn Gv.2 Head hGv
   have hInv_on : ContinuousOn (fun Gv => (Amap Gv)⁻¹) S := by
     intro Gv hGv
@@ -194,7 +194,7 @@ theorem isOpen_sourceOrientedHeadGaugeSchurHeadMixedWindow
     (d n r : ℕ)
     (hrD : r < d + 1)
     (hrn : r ≤ n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     (headRadius mixedRadius : ℝ) :
     IsOpen
       {Gv : SourceOrientedVariety d n |
@@ -241,7 +241,7 @@ theorem continuousOn_sourceSchurComplement_headGaugePatch
     (d n r : ℕ)
     (hrD : r < d + 1)
     (hrn : r ≤ n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD) :
+    (Head : SourceRankDeficientHeadFactorData d r hrD) :
     ContinuousOn
       (fun Gv : SourceOrientedVariety d n =>
         sourceSchurComplement n r hrn Gv.1
@@ -278,7 +278,7 @@ theorem continuousOn_sourceSchurResidualDeterminant_headGaugePatch
     (d n r : ℕ)
     (hrD : r < d + 1)
     (hrn : r ≤ n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     (ι : Fin (d + 1 - r) ↪ Fin (n - r)) :
     ContinuousOn
       (fun Gv : SourceOrientedVariety d n =>
@@ -331,7 +331,7 @@ def sourceOrientedHeadGaugeSchurExtractedImage
     (d n r : ℕ)
     (hrD : r < d + 1)
     (hrn : r ≤ n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     (headRadius mixedRadius : ℝ)
     (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn) :
     Set (SourceOrientedVariety d n) :=
@@ -353,7 +353,7 @@ theorem isOpen_sourceOrientedHeadGaugeSchurExtractedImage
     (d n r : ℕ)
     (hrD : r < d + 1)
     (hrn : r ≤ n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     (headRadius mixedRadius : ℝ)
     (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn) :
     IsOpen
@@ -446,7 +446,7 @@ theorem sourceOrientedNormalParameterVarietyPoint_mem_headGaugeSchurExtractedIma
         d n r hrD hrn headRadius mixedRadius Tail) :
     sourceOrientedNormalParameterVarietyPoint d n r hrD hrn p ∈
       sourceOrientedHeadGaugeSchurExtractedImage
-        d n r hrD hrn Head headRadius mixedRadius Tail := by
+        d n r hrD hrn Head.toHeadFactorData headRadius mixedRadius Tail := by
   let Gv := sourceOrientedNormalParameterVarietyPoint d n r hrD hrn p
   let Acoord := sourceOrientedSchurHeadBlockSymm d n r hrD hrn Gv.2
   let H := Head.factor Acoord
@@ -516,7 +516,7 @@ theorem sourceOrientedHeadGaugeSchurExtractedImage_subset_normalParameter_image
     {r : ℕ}
     (hrD : r < d + 1)
     (hrn : r ≤ n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     (headRadius mixedRadius : ℝ)
     (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn) :
     sourceOrientedHeadGaugeSchurExtractedImage
@@ -544,20 +544,20 @@ theorem sourceOrientedHeadGaugeSchurExtractedImage_subset_normalParameter_image
   dsimp only at hGv
   rcases hGv with ⟨hHeadU, hH_window, hL_window, hT_gram, hT_det⟩
   let R : SourceOrientedSchurResidualData d n r hrD hrn Gv.1 :=
-    sourceOriented_schurResidualData_of_headGauge
+    sourceOriented_schurResidualData_of_headFactor
       hd hrD hrn Head Gv.2 hHeadU
   have hT_mem :
       T ∈ sourceShiftedTailOrientedVariety d r hrD (n - r) := by
     simpa [T, H, Acoord] using
-      sourceOrientedSchurResidualTailData_mem_variety
+      sourceOrientedSchurResidualTailData_mem_variety_headFactor
         hd hrD hrn Head Gv.2 hHeadU
   rcases Tail.tailRealize T hT_mem hT_gram hT_det with
     ⟨q, hq_coord, hqT⟩
   have hqR :
       sourceShiftedTailOrientedInvariant d r hrD (n - r) q = R.tail := by
     simpa [R, T, H, Acoord,
-      sourceOriented_schurResidualData_of_headGauge,
-      sourceOriented_schurResidualData_of_tail_mem] using hqT
+      sourceOriented_schurResidualData_of_headFactor,
+      sourceOriented_schurResidualData_of_tail_mem_headFactor] using hqT
   let p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn :=
     { head := R.headFactor
       mixed := R.L
@@ -567,11 +567,11 @@ theorem sourceOrientedHeadGaugeSchurExtractedImage_subset_normalParameter_image
         d n r hrD hrn headRadius mixedRadius Tail := by
     refine ⟨?_, ?_, ?_⟩
     · simpa [p, R, H, Acoord,
-        sourceOriented_schurResidualData_of_headGauge,
-        sourceOriented_schurResidualData_of_tail_mem] using hH_window
+        sourceOriented_schurResidualData_of_headFactor,
+        sourceOriented_schurResidualData_of_tail_mem_headFactor] using hH_window
     · simpa [p, R, L, H, Acoord,
-        sourceOriented_schurResidualData_of_headGauge,
-        sourceOriented_schurResidualData_of_tail_mem] using hL_window
+        sourceOriented_schurResidualData_of_headFactor,
+        sourceOriented_schurResidualData_of_tail_mem_headFactor] using hL_window
     · refine ⟨?_, ?_, ?_⟩
       · simpa [p] using hq_coord
       · intro u v
@@ -594,6 +594,53 @@ theorem sourceOrientedHeadGaugeSchurExtractedImage_subset_normalParameter_image
     sourceOriented_reconstruct_from_schurResidual
       d n r hn hrD hrn Gv.2 R hqR
   simpa [sourceOrientedNormalParameterVarietyPoint, p] using hrecon
+
+/-- Sliced-gauge name for the generic head-factor extracted Schur image. -/
+def sourceOrientedHeadSliceGaugeSchurExtractedImage
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadSliceGaugeData d r hrD)
+    (headRadius mixedRadius : ℝ)
+    (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn) :
+    Set (SourceOrientedVariety d n) :=
+  sourceOrientedHeadGaugeSchurExtractedImage
+    d n r hrD hrn Head.toHeadFactorData headRadius mixedRadius Tail
+
+/-- The sliced-gauge extracted Schur image is open. -/
+theorem isOpen_sourceOrientedHeadSliceGaugeSchurExtractedImage
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadSliceGaugeData d r hrD)
+    (headRadius mixedRadius : ℝ)
+    (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn) :
+    IsOpen
+      (sourceOrientedHeadSliceGaugeSchurExtractedImage
+        d n r hrD hrn Head headRadius mixedRadius Tail) := by
+  simpa [sourceOrientedHeadSliceGaugeSchurExtractedImage] using
+    isOpen_sourceOrientedHeadGaugeSchurExtractedImage
+      d n r hrD hrn Head.toHeadFactorData headRadius mixedRadius Tail
+
+/-- Reverse inclusion for the sliced-gauge extracted image. -/
+theorem sourceOrientedHeadSliceGaugeSchurExtractedImage_subset_normalParameter_image
+    [NeZero d]
+    (hd : 2 ≤ d)
+    (hn : d + 1 ≤ n)
+    {r : ℕ}
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadSliceGaugeData d r hrD)
+    (headRadius mixedRadius : ℝ)
+    (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn) :
+    sourceOrientedHeadSliceGaugeSchurExtractedImage
+        d n r hrD hrn Head headRadius mixedRadius Tail ⊆
+      sourceOrientedNormalParameterVarietyPoint d n r hrD hrn ''
+        sourceOrientedRankDeficientSchurParameterWindow
+          d n r hrD hrn headRadius mixedRadius Tail := by
+  simpa [sourceOrientedHeadSliceGaugeSchurExtractedImage] using
+    sourceOrientedHeadGaugeSchurExtractedImage_subset_normalParameter_image
+      hd hn hrD hrn Head.toHeadFactorData headRadius mixedRadius Tail
 
 /-- The canonical Schur/residual image theorem for a fixed head-gauge-compatible
 Schur window.  The open image is the extracted Schur image set above; openness
@@ -622,13 +669,13 @@ theorem sourceOrientedHeadGaugeSchurWindowCanonicalImage
           sourceOrientedNormalParameterVarietyPoint d n r hrD hrn p ∈ Ω) := by
   refine
     ⟨sourceOrientedHeadGaugeSchurExtractedImage
-        d n r hrD hrn Head headRadius mixedRadius Tail,
+        d n r hrD hrn Head.toHeadFactorData headRadius mixedRadius Tail,
       isOpen_sourceOrientedHeadGaugeSchurExtractedImage
-        d n r hrD hrn Head headRadius mixedRadius Tail,
+        d n r hrD hrn Head.toHeadFactorData headRadius mixedRadius Tail,
       ?_, ?_⟩
   · exact
       sourceOrientedHeadGaugeSchurExtractedImage_subset_normalParameter_image
-        hd hn hrD hrn Head headRadius mixedRadius Tail
+        hd hn hrD hrn Head.toHeadFactorData headRadius mixedRadius Tail
   · intro p hp
     exact
       sourceOrientedNormalParameterVarietyPoint_mem_headGaugeSchurExtractedImage

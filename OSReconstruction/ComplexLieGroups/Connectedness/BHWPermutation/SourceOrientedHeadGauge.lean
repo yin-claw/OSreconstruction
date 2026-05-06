@@ -210,7 +210,9 @@ structure SourceRankDeficientHeadFactorData
     (d r : ℕ)
     (hrD : r < d + 1) where
   U : Set (SourceSymmetricMatrixCoord r)
+  U_open : IsOpen U
   factor : SourceSymmetricMatrixCoord r → Matrix (Fin r) (Fin r) ℂ
+  factor_continuousOn : ContinuousOn factor U
   factor_gram :
     ∀ A ∈ U,
       factor A * sourceHeadMetric d r hrD * (factor A)ᵀ =
@@ -226,7 +228,9 @@ def toHeadFactorData
     (Head : SourceRankDeficientHeadGaugeData d r hrD) :
     SourceRankDeficientHeadFactorData d r hrD where
   U := Head.U
+  U_open := Head.U_open
   factor := Head.factor
+  factor_continuousOn := Head.factor_continuousOn
   factor_gram := Head.factor_gram
   factor_det_unit := Head.factor_det_unit
 
@@ -242,7 +246,10 @@ def toHeadFactorData
     (Head : SourceRankDeficientHeadSliceGaugeData d r hrD) :
     SourceRankDeficientHeadFactorData d r hrD where
   U := Head.U
+  U_open := Head.U_open
   factor := fun A => (Head.factor A).1
+  factor_continuousOn := by
+    exact continuous_subtype_val.comp_continuousOn Head.factor_continuousOn
   factor_gram := Head.factor_gram
   factor_det_unit := Head.factor_det_unit
 

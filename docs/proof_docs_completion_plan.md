@@ -810,10 +810,16 @@ runs the existing Witt/head-normalization argument against
 `sourceOrientedSchurResidualTailData_mem_variety_headSliceGauge` applies it to
 `Head.toHeadFactorData`, where the factor is `(Head.factor A).1`.  The companion
 constructor `sourceOriented_schurResidualData_of_headSliceGauge` is also
-checked.  The next sliced reverse-image blocker is therefore the actual sliced
-Schur extracted-image theorem: define the slice-aware head-coordinate window
-and reprove the canonical-image reverse inclusion using the checked sliced
-residual packet.
+checked.  The extracted-image openness and reverse-inclusion half have also
+been refactored through the same head-factor interface:
+`sourceOrientedHeadSliceGaugeSchurExtractedImage`,
+`isOpen_sourceOrientedHeadSliceGaugeSchurExtractedImage`, and
+`sourceOrientedHeadSliceGaugeSchurExtractedImage_subset_normalParameter_image`
+are checked.  The next sliced canonical-image blocker is therefore the forward
+parameter-window half: replace the old ambient-matrix head window by a genuine
+slice parameter space whose head component lies in a connected open
+neighborhood of `sourceHeadGaugeSliceCenter`, then prove normal-parameter
+points from that sliced box land in the checked sliced extracted image.
 
 The first normal-parameter support layer is now checked in
 `SourceOrientedNormalParameter.lean`.  The file supplies the finite head/tail
