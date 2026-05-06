@@ -1,5 +1,6 @@
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedRankDeficientNormalShrink
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedRankDeficientTailRankConnected
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedRankDeficientSliceParameter
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedRankDeficientLocalImageTransport
 
 /-!
@@ -230,6 +231,131 @@ theorem exists_schurParameterWindow_image_subset_open_headDomain_tailRank_connec
     exact hball_image p (hW_sub_ball hp)
   · simpa [W] using hW_tailRank_conn
 
+/-- Sliced-head-domain version of
+`exists_schurParameterWindow_image_subset_open_headDomain_tailRank_connected`.
+The chosen parameter space is the genuine sliced Schur window; the old normal
+ball estimates are consumed after forgetting the slice proof on the head. -/
+theorem exists_slicedSchurParameterWindow_image_subset_open_headDomain_tailRank_connected
+    {d n : ℕ}
+    {G0 : SourceOrientedGramData d n}
+    (hn : d + 1 ≤ n)
+    (N : SourceOrientedRankDeficientAlgebraicNormalFormData d n G0)
+    {headDomain : Set (SourceHeadGaugeSlice d N.r N.hrD)}
+    {headDomainRadius : ℝ}
+    (hheadDomainRadius : 0 < headDomainRadius)
+    (hheadDomain :
+      sourceHeadGaugeSliceCoordinateWindow d N.r N.hrD headDomainRadius ⊆
+        headDomain)
+    {N0 : Set (SourceOrientedGramData d n)}
+    (hN0_open : IsOpen N0)
+    (hG0N0 : G0 ∈ N0) :
+    ∃ (headRadius mixedRadius : ℝ)
+      (Tail : SourceOrientedRankDeficientTailWindowChoice d n N.r N.hrD N.hrn),
+      0 < headRadius ∧
+        0 < mixedRadius ∧
+        sourceHeadGaugeSliceCoordinateWindow d N.r N.hrD headRadius ⊆
+          headDomain ∧
+        IsOpen
+          (sourceOrientedRankDeficientSlicedSchurParameterWindow
+            d n N.r N.hrD N.hrn headRadius mixedRadius Tail) ∧
+        IsConnected
+          (sourceOrientedRankDeficientSlicedSchurParameterWindow
+            d n N.r N.hrD N.hrn headRadius mixedRadius Tail) ∧
+        sourceOrientedSlicedNormalCenterParameter d n N.r N.hrD N.hrn ∈
+          sourceOrientedRankDeficientSlicedSchurParameterWindow
+            d n N.r N.hrD N.hrn headRadius mixedRadius Tail ∧
+        (∀ p,
+          p ∈ sourceOrientedRankDeficientSlicedSchurParameterWindow
+            d n N.r N.hrD N.hrn headRadius mixedRadius Tail →
+          IsUnit p.toNormalParameter.head.det) ∧
+        (∀ p,
+          p ∈ sourceOrientedRankDeficientSlicedSchurParameterWindow
+            d n N.r N.hrD N.hrn headRadius mixedRadius Tail →
+            (N.originalNormalVarietyPoint p.toNormalParameter).1 ∈
+              N0 ∩ sourceOrientedGramVariety d n) ∧
+        IsConnected
+          (sourceOrientedRankDeficientSlicedSchurParameterWindow
+              d n N.r N.hrD N.hrn headRadius mixedRadius Tail ∩
+            {p : SourceOrientedRankDeficientSlicedNormalParameter d n N.r N.hrD N.hrn |
+              (sourceOrientedNormalParameterSchurTail d n N.r N.hrD N.hrn
+                p.toNormalParameter).rank =
+                d + 1 - N.r}) := by
+  rcases N.exists_normalParameterBall_image_subset_open_and_head
+      hN0_open hG0N0 with
+    ⟨ε₀, hε₀, _hball_open, _hball_conn, _hball_center, hball_head,
+      hball_image⟩
+  let δ : ℝ := headDomainRadius
+  have hδ : 0 < δ := hheadDomainRadius
+  let ε : ℝ := min ε₀ δ
+  have hε : 0 < ε := lt_min hε₀ hδ
+  have hε_le₀ : ε ≤ ε₀ := by
+    dsimp [ε]
+    exact min_le_left _ _
+  have hε_leδ : ε ≤ δ := by
+    dsimp [ε]
+    exact min_le_right _ _
+  let ρ : ℝ := ε / 2
+  have hρ_pos : 0 < ρ := by
+    positivity
+  have hρ_le_ε : ρ ≤ ε := by
+    dsimp [ρ]
+    linarith
+  have hρ_le₀ : ρ ≤ ε₀ := le_trans hρ_le_ε hε_le₀
+  have hρ_leδ : ρ ≤ δ := le_trans hρ_le_ε hε_leδ
+  let Tail : SourceOrientedRankDeficientTailWindowChoice d n N.r N.hrD N.hrn :=
+    sourceOriented_rankDeficient_tailWindowChoice
+      d n N.r N.hrD N.hrn hρ_pos
+  have htail_le : Tail.tailCoordRadius ≤ ε₀ := by
+    simpa [Tail, sourceOriented_rankDeficient_tailWindowChoice] using hρ_le₀
+  let W : Set (SourceOrientedRankDeficientSlicedNormalParameter d n N.r N.hrD N.hrn) :=
+    sourceOrientedRankDeficientSlicedSchurParameterWindow
+      d n N.r N.hrD N.hrn ρ ρ Tail
+  have hW_headDomain :
+      sourceHeadGaugeSliceCoordinateWindow d N.r N.hrD ρ ⊆ headDomain := by
+    intro H hH
+    exact hheadDomain (by
+      intro a b
+      exact lt_of_lt_of_le (hH a b) hρ_leδ)
+  have hW_sub_ball :
+      ∀ p ∈ W,
+        p.toNormalParameter ∈
+          sourceOrientedNormalParameterBall (d := d) (n := n) (r := N.r)
+            (hrD := N.hrD) (hrn := N.hrn) ε₀ := by
+    intro p hp
+    exact
+      sourceOrientedRankDeficientSchurParameterWindow_subset_normalParameterBall
+        d n N.r N.hrD N.hrn hε₀ hρ_le₀ hρ_le₀ Tail htail_le
+        (sourceOrientedSlicedSchurParameterWindow_toNormalParameter_mem hp)
+  rcases sourceOrientedRankDeficientSlicedSchurParameterWindow_open_connected
+      d n N.r N.hrD N.hrn hρ_pos hρ_pos Tail with
+    ⟨hW_open, hW_conn, hW_center⟩
+  have htailRank_conn :
+      IsConnected
+        (sourceShiftedTailTupleWindow d n N.r N.hrD N.hrn Tail ∩
+          {q : Fin (n - N.r) → Fin (d + 1 - N.r) → ℂ |
+            (sourceShiftedTailGram d N.r N.hrD (n - N.r) q).rank =
+              d + 1 - N.r}) :=
+    isConnected_sourceShiftedTailTupleWindow_tailRank
+      d n N.r N.hrD N.hrn hn Tail
+  have hW_tailRank_conn :
+      IsConnected
+        (W ∩
+          {p : SourceOrientedRankDeficientSlicedNormalParameter d n N.r N.hrD N.hrn |
+            (sourceOrientedNormalParameterSchurTail d n N.r N.hrD N.hrn
+              p.toNormalParameter).rank =
+              d + 1 - N.r}) := by
+    exact
+      isConnected_sourceOrientedRankDeficientSlicedSchurParameterWindow_tailRank
+        d n N.r N.hrD N.hrn hρ_pos hρ_pos Tail htailRank_conn
+  refine
+    ⟨ρ, ρ, Tail, hρ_pos, hρ_pos, hW_headDomain, hW_open, hW_conn,
+      hW_center, ?_, ?_, ?_⟩
+  · intro p hp
+    exact hball_head (hW_sub_ball p hp)
+  · intro p hp
+    exact hball_image p.toNormalParameter (hW_sub_ball p hp)
+  · simpa [W] using hW_tailRank_conn
+
 /-- If the head-coordinate part of a Schur window is contained in the
 near-identity factor domain of a head gauge, then on that window the
 gauge-selected residual tail of a normal image is exactly the stored shifted
@@ -421,6 +547,164 @@ noncomputable def maxRankLocalImageData_of_schurWindowCanonicalImage
         (N0 := N0) (parameterBox := W)
         hW_open hW_conn hcenter hhead hΩ_open hsurj hmem himage
         (by simpa [W] using htailRank_conn)
+
+/-- Sliced-head-gauge assembly of the strengthened rank-deficient local-image
+packet.  This is the constructible replacement for the legacy ambient
+head-gauge assembly: the parameter space is the sliced Schur window, and the
+canonical-image input receives the slice-domain radius containment explicitly. -/
+noncomputable def maxRankLocalImageData_of_slicedSchurWindowCanonicalImage
+    {d n : ℕ}
+    {G0 : SourceOrientedGramData d n}
+    (hn : d + 1 ≤ n)
+    (N : SourceOrientedRankDeficientAlgebraicNormalFormData d n G0)
+    (Head : SourceRankDeficientHeadSliceGaugeData d N.r N.hrD)
+    {N0 : Set (SourceOrientedGramData d n)}
+    (hN0_open : IsOpen N0)
+    (hG0N0 : G0 ∈ N0)
+    (hcanonical :
+      ∀ {headRadius mixedRadius : ℝ}
+        {Tail : SourceOrientedRankDeficientTailWindowChoice d n N.r N.hrD N.hrn},
+        0 < headRadius →
+          0 < mixedRadius →
+            sourceHeadGaugeSliceCoordinateWindow d N.r N.hrD headRadius ⊆
+              Head.factorDomain →
+              ∃ Ω : Set (SourceOrientedVariety d n),
+                IsOpen Ω ∧
+                  Ω ⊆
+                    sourceOrientedSlicedNormalParameterVarietyPoint
+                        d n N.r N.hrD N.hrn ''
+                      sourceOrientedRankDeficientSlicedSchurParameterWindow
+                        d n N.r N.hrD N.hrn headRadius mixedRadius Tail ∧
+                  (∀ p,
+                    p ∈ sourceOrientedRankDeficientSlicedSchurParameterWindow
+                      d n N.r N.hrD N.hrn headRadius mixedRadius Tail →
+                    sourceOrientedSlicedNormalParameterVarietyPoint
+                      d n N.r N.hrD N.hrn p ∈ Ω)) :
+    Σ P : Type, Σ _ : TopologicalSpace P,
+      SourceOrientedRankDeficientMaxRankLocalImageData
+        (d := d) (n := n) (P := P) G0 N0 := by
+  let hdomain_exists := Head.factorDomain_coordinate
+  let headDomainRadius := Classical.choose hdomain_exists
+  let hdomain_spec := Classical.choose_spec hdomain_exists
+  let hshrink_exists :=
+    N.exists_slicedSchurParameterWindow_image_subset_open_headDomain_tailRank_connected
+      hn (headDomain := Head.factorDomain)
+      (headDomainRadius := headDomainRadius)
+      hdomain_spec.1 hdomain_spec.2 hN0_open hG0N0
+  let headRadius := Classical.choose hshrink_exists
+  let hshrink_exists₁ := Classical.choose_spec hshrink_exists
+  let mixedRadius := Classical.choose hshrink_exists₁
+  let hshrink_exists₂ := Classical.choose_spec hshrink_exists₁
+  let Tail := Classical.choose hshrink_exists₂
+  let hshrink := Classical.choose_spec hshrink_exists₂
+  rcases hshrink with
+    ⟨hheadRadius, hmixedRadius, hdomain, hW_open, hW_conn, hcenter,
+      hhead, himage, htailRank_conn⟩
+  let W : Set (SourceOrientedRankDeficientSlicedNormalParameter d n N.r N.hrD N.hrn) :=
+    sourceOrientedRankDeficientSlicedSchurParameterWindow
+      d n N.r N.hrD N.hrn headRadius mixedRadius Tail
+  let hcanonical_exists :=
+    hcanonical (headRadius := headRadius) (mixedRadius := mixedRadius)
+      (Tail := Tail) hheadRadius hmixedRadius hdomain
+  let Ω := Classical.choose hcanonical_exists
+  let hcanonical_spec := Classical.choose_spec hcanonical_exists
+  have hΩ_open : IsOpen Ω := hcanonical_spec.1
+  have hsurj :
+      Ω ⊆
+        sourceOrientedSlicedNormalParameterVarietyPoint
+            d n N.r N.hrD N.hrn '' W := by
+    simpa [W] using hcanonical_spec.2.1
+  have hmem :
+      ∀ p, p ∈ W →
+        sourceOrientedSlicedNormalParameterVarietyPoint
+          d n N.r N.hrD N.hrn p ∈ Ω := by
+    simpa [W] using hcanonical_spec.2.2
+  let imageV :
+      SourceOrientedRankDeficientSlicedNormalParameter d n N.r N.hrD N.hrn →
+        SourceOrientedVariety d n :=
+    fun p =>
+      N.varietyTransport.invFun
+        (sourceOrientedSlicedNormalParameterVarietyPoint
+          d n N.r N.hrD N.hrn p)
+  have himage_eq :
+      imageV '' W = N.varietyTransport.invFun '' Ω := by
+    simpa [imageV] using
+      (sourceOrientedVarietyTransport_invFun_image_eq
+        (d := d) (n := n) N.varietyTransport
+        (α := SourceOrientedRankDeficientSlicedNormalParameter
+          d n N.r N.hrD N.hrn)
+        (Ω := Ω) (s := W)
+        (f := sourceOrientedSlicedNormalParameterVarietyPoint
+          d n N.r N.hrD N.hrn)
+        hsurj hmem)
+  have hcont_imageV : Continuous imageV :=
+    N.varietyTransport.continuous_invFun.comp
+      (continuous_sourceOrientedSlicedNormalParameterVarietyPoint
+        d n N.r N.hrD N.hrn)
+  have hcenter_eq :
+      (imageV (sourceOrientedSlicedNormalCenterParameter
+        d n N.r N.hrD N.hrn)).1 = G0 := by
+    simpa [imageV, sourceOrientedSlicedNormalParameterVarietyPoint,
+      SourceOrientedRankDeficientAlgebraicNormalFormData.originalNormalVarietyPoint]
+      using N.originalNormalVarietyPoint_center
+  have himage_sub :
+      sourceOrientedVarietyUnderlyingSet d n (imageV '' W) ⊆
+        N0 ∩ sourceOrientedGramVariety d n := by
+    rw [sourceOrientedVarietyUnderlyingSet_image]
+    intro G hG
+    rcases hG with ⟨p, hp, hGp⟩
+    rw [← hGp]
+    simpa [imageV,
+      SourceOrientedRankDeficientAlgebraicNormalFormData.originalNormalVarietyPoint,
+      sourceOrientedSlicedNormalParameterVarietyPoint] using himage p hp
+  have hpre_eq :
+      W ∩ {p |
+          SourceOrientedMaxRankAt d n (imageV p).1} =
+        W ∩ {p |
+          (sourceOrientedNormalParameterSchurTail
+            d n N.r N.hrD N.hrn p.toNormalParameter).rank =
+            d + 1 - N.r} := by
+    ext p
+    constructor
+    · rintro ⟨hp, hmax⟩
+      exact
+        ⟨hp,
+          (N.originalNormalVarietyPoint_maxRank_iff_tail_rank
+            hn p.toNormalParameter (hhead p hp)).1 (by
+              simpa [imageV,
+                SourceOrientedRankDeficientAlgebraicNormalFormData.originalNormalVarietyPoint,
+                sourceOrientedSlicedNormalParameterVarietyPoint] using hmax)⟩
+    · rintro ⟨hp, hrank⟩
+      have hmax :
+          SourceOrientedMaxRankAt d n
+            (N.originalNormalVarietyPoint p.toNormalParameter).1 :=
+        (N.originalNormalVarietyPoint_maxRank_iff_tail_rank
+          hn p.toNormalParameter (hhead p hp)).2 hrank
+      exact
+        ⟨hp, by
+          simpa [imageV,
+            SourceOrientedRankDeficientAlgebraicNormalFormData.originalNormalVarietyPoint,
+            sourceOrientedSlicedNormalParameterVarietyPoint] using hmax⟩
+  have hpre_connected :
+      IsConnected
+        (W ∩ {p |
+          SourceOrientedMaxRankAt d n (imageV p).1}) := by
+    rw [hpre_eq]
+    simpa [W, headRadius, mixedRadius, Tail] using htailRank_conn
+  refine
+    ⟨SourceOrientedRankDeficientSlicedNormalParameter d n N.r N.hrD N.hrn,
+      inferInstance, ?_⟩
+  exact
+    SourceOrientedRankDeficientMaxRankLocalImageData.ofSubtype
+      (d := d) (n := n)
+      hW_open hW_conn hcenter
+      hcont_imageV.continuousOn
+      hcenter_eq
+      (by
+        rw [himage_eq]
+        exact N.varietyTransport.isOpen_invFun_image hΩ_open)
+      himage_sub
+      hpre_connected
 
 /-- Head-gauge-aware assembly of the strengthened rank-deficient local-image
 packet.  This is the honest surface for the canonical Schur/residual image

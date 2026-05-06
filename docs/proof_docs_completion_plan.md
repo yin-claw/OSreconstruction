@@ -706,12 +706,19 @@ transport adapters, but this last wrapper is only conditional on the legacy
 full-matrix head-gauge interface.  A sanity check with Gemini on 2026-05-05
 confirmed the mathematical issue: for `r >= 2`, `H ↦ H η Hᵀ` is not locally
 injective on any full open matrix neighborhood of `1`, because of the local
-complex orthogonal stabilizer.  Therefore the constructible route must replace
-the full head window by a transverse slice.  The next producer-level blocker is
-not canonical-image openness or surjectivity; it is the sliced head-gauge
-chart, stated in Lean as `SourceRankDeficientHeadSliceGaugeData`, followed by
-the sliced Schur parameter-window version of the checked canonical-image
-packet.
+complex orthogonal stabilizer.  Therefore the constructible route replaces
+the full head window by a transverse slice.  The sliced parameter-window and
+canonical-image packet are now checked:
+`SourceOrientedRankDeficientSlicedNormalParameter`,
+`sourceOrientedRankDeficientSlicedSchurParameterWindow`,
+`sourceOrientedRankDeficientSlicedSchurParameterWindow_open_connected`,
+`isConnected_sourceOrientedRankDeficientSlicedSchurParameterWindow_tailRank`,
+`sourceOrientedHeadSliceGaugeSchurWindowCanonicalImage`, and
+`SourceOrientedRankDeficientAlgebraicNormalFormData.maxRankLocalImageData_of_headSliceGaugeSchurWindow`
+give the constructible local-image producer once a
+`SourceRankDeficientHeadSliceGaugeData` chart is supplied.  The next
+producer-level blocker is therefore the finite-dimensional inverse-function
+construction of that sliced head-gauge chart at the canonical head metric.
 
 The downstream transport adapter for that producer is now checked in
 `SourceOrientedRankDeficientLocalImageTransport.lean`.  The theorems
@@ -746,9 +753,13 @@ d + 1 - N.r}`.  The producer no longer has to restate that as a transported
 `SourceOrientedMaxRankAt` preimage.  On the corrected route the parameter box
 is not the full head-matrix polydisc: its head coordinate is an open connected
 neighborhood inside the slice source of `SourceRankDeficientHeadSliceGaugeData`.
-The remaining local-image inputs are the sliced canonical normal image
-`Omega`, its openness in `SourceOrientedVariety d n`, and the two
-Schur-extraction inclusions between `Omega` and the sliced parameter window.
+This sliced transport has now been implemented directly through the abstract
+`ofSubtype` adapter: the image map is
+`N.varietyTransport.invFun ∘ sourceOrientedSlicedNormalParameterVarietyPoint`,
+openness is the inverse image of the checked extracted image, and the max-rank
+preimage is rewritten pointwise by
+`originalNormalVarietyPoint_maxRank_iff_tail_rank` after forgetting the slice
+proof on the head coordinate.
 
 The head-gauge shrink layer is now checked in
 `SourceOrientedHeadGaugeSupport.lean`:
@@ -815,11 +826,15 @@ been refactored through the same head-factor interface:
 `sourceOrientedHeadSliceGaugeSchurExtractedImage`,
 `isOpen_sourceOrientedHeadSliceGaugeSchurExtractedImage`, and
 `sourceOrientedHeadSliceGaugeSchurExtractedImage_subset_normalParameter_image`
-are checked.  The next sliced canonical-image blocker is therefore the forward
-parameter-window half: replace the old ambient-matrix head window by a genuine
-slice parameter space whose head component lies in a connected open
-neighborhood of `sourceHeadGaugeSliceCenter`, then prove normal-parameter
-points from that sliced box land in the checked sliced extracted image.
+are checked.  The forward and reverse sliced parameter-window packet is now
+also checked in `SourceOrientedRankDeficientSliceParameter.lean`,
+`SourceOrientedRankDeficientSchurWindowShrink.lean`, and
+`SourceOrientedRankDeficientCanonicalImage.lean`.  The old ambient-matrix head
+window has been replaced by a genuine slice-head parameter space, its
+coordinate window is path-connected by the straight segment inside the affine
+slice, and the checked local-image wrapper consumes the sliced canonical-image
+theorem.  The remaining local producer target is the inverse-function theorem
+construction of `SourceRankDeficientHeadSliceGaugeData`.
 
 The first normal-parameter support layer is now checked in
 `SourceOrientedNormalParameter.lean`.  The file supplies the finite head/tail
