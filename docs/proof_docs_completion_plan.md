@@ -7754,16 +7754,19 @@ common-boundary envelope, or any theorem that already assumes locality.
    ```
 
    Superseded-signature warning for the displayed monodromy block: the
-   theorem names remain the intended downstream consumers, but the displayed
-   `bhw_jost_orientedMaxRankClosedLoopSeed_of_BHW` hypothesis list is too
-   weak if read as an arbitrary-closed-loop theorem.  Its hard-range proof must
-   first obtain source-backed
-   `BHWJostOrientedClosedLoopFiniteOverlapDomainData` for the particular loop
-   produced by the strict OS I §4.5 BHW/Jost atlas; it may not consume only
+   downstream monodromy names remain intended consumers, but the displayed
+   seed-producer surface `bhw_jost_orientedMaxRankClosedLoopSeed_of_BHW`
+   hypothesis list is too weak if read as an arbitrary-closed-loop theorem.
+   Its hard-range proof must
+   first obtain source-backed data for the particular loop produced by the
+   strict OS I §4.5 BHW/Jost atlas.  On the large-start-domain route that data
+   is `BHWJostOrientedClosedLoopFiniteOverlapDomainData`; on the preferred
+   patch-by-patch route it is
+   `BHWJostOrientedClosingPatchTerminalSeedData`.  It may not consume only
    `hU_open`, `hU_connected`, and an arbitrary
-   `BHWJostOrientedClosedContinuationLoop`.  The checked finite-overlap
-   consumers below are the replacement implementation surface for that seed
-   producer.
+   `BHWJostOrientedClosedContinuationLoop`.  The checked finite-overlap and
+   terminal-seed consumers below are the replacement implementation surfaces
+   for that seed producer.
 
    The checked chain surface deliberately has no
    `transition_patch_eq_sourcePatch` field.  The `snoc` constructor stores
@@ -7793,47 +7796,39 @@ common-boundary envelope, or any theorem that already assumes locality.
    split.  If `n < d + 1`, the oriented determinant coordinates are vacuous,
    and `bhw_jost_closedChain_orientedMonodromy_smallArity` transports the
    checked pure-Gram small-arity identity-principle proof across the oriented
-   coordinate equivalence.  In the remaining case, first call the genuine
-   Hall-Wightman/Jost loop input
-   `bhw_jost_orientedMaxRankClosedLoopSeed_of_BHW`.  This theorem is the real
+   coordinate equivalence.  In the remaining case, first call one of the
+   genuine Hall-Wightman/Jost loop inputs now exposed in Lean: either the
+   large-start-domain package
+   `BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData L`, or, on
+   the patch-by-patch route, the accumulated-germ package
+   `BHWJostOrientedClosingPatchTerminalSeedData L`.  This theorem is the real
    monodromy content, but it must not be implemented as a global source
    representative shortcut or as a "common seed in every transition patch"
    shortcut.  The checked `of_commonTransitionSeed` constructor is only a
    sufficient degenerate telescope case; for a moving closed chain the common
    intersection of all transition patches need not be nonempty.
 
-   The Lean-ready statement of the Hall-Wightman Lemma-1 argument is instead
-   a finite-overlap propagation trace.  Fix
-   `Φ := (L.chain.localChart 0).Psi`.  For every transition
-   `j : Fin L.chain.m`, the BHW/Jost geometry must supply a relatively open
-   intermediate oriented domain
-   `D j : Set (SourceOrientedGramData d n)` with
-   `IsConnected (D j ∩ {G | SourceOrientedMaxRankAt d n G})`,
-   `D j ⊆ (L.chain.localChart (Fin.castSucc j)).orientedDomain`,
-   `D j ⊆ (L.chain.localChart 0).orientedDomain`, and
-   `(L.chain.oriented_transition j).orientedPatch ⊆ D j`.  The incoming
-   equality seed for step `j` must be a nonempty relatively open max-rank seed
-   inside `D j` on which
-   `Φ = (L.chain.localChart (Fin.castSucc j)).Psi`.  Then the checked theorem
-   `BHWJostOrientedTransitionData.exists_propagatedSeed_to_right` produces a
-   fresh nonempty preconnected relatively open max-rank seed inside the next
-   transition patch on which
-   `Φ = (L.chain.localChart j.succ).Psi`.
+   There are two distinct Lean-ready statements of the Hall-Wightman Lemma-1
+   argument.  If the source-backed construction really produces a large
+   starting oriented domain covering the whole finite-overlap ribbon, it may
+   use the checked finite-overlap trace with
+   `Φ := (L.chain.localChart 0).Psi` and return
+   `BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData L`.  This
+   route explicitly requires every positive step domain and closing domain to
+   lie in `(L.chain.localChart 0).orientedDomain`.
 
-   Consecutive steps are glued by the finite-overlap covering condition:
-   the target seed produced inside the `j`-th transition patch must lie in the
-   next connected domain `D j.succ`, which is achieved by choosing
-   `D j.succ` to contain that previous transition patch.  Thus the BHW/Jost
-   proof supplies the ordered domains, not a single global branch.  The final
-   output is a terminal seed `seedF` and a closing domain `Dclose` such that
-   `Dclose` is relatively open, `Dclose ∩ MaxRank` is connected,
-   `Dclose ⊆ (L.chain.localChart (Fin.last L.chain.m)).orientedDomain`,
-   `Dclose ⊆ (L.chain.localChart 0).orientedDomain`,
-   `L.closing_orientedPatch ⊆ Dclose`, `seedF ⊆ Dclose ∩ MaxRank`, and
-   `Set.EqOn (L.chain.localChart (Fin.last L.chain.m)).Psi
-     (L.chain.localChart 0).Psi seedF`.  The checked theorem
-   `BHWJostOrientedMaxRankClosedLoopSeed.exists_of_connectedDomainPropagation`
-   then turns this terminal propagation data into the exact closed-loop seed.
+   If the construction is patch-by-patch, the Lean-ready target is instead
+   `BHWJostOrientedClosingPatchTerminalSeedData L`.  The hard proof carries
+   the continued branch germ through the finite closed path using the current
+   local chart at each step, then chooses a nonempty relatively open max-rank
+   seed inside `L.closing_orientedPatch`.  For each `G` in that seed it
+   supplies source representatives `y0` and `yF` in the initial and terminal
+   carriers with oriented invariant `G`, plus equality of the terminal and
+   initial source branch values.  The checked constructor
+   `BHWJostOrientedClosingPatchTerminalSeedData.of_sourceRealized_branch_eq`
+   rewrites this source-level equality into the required terminal/initial
+   `Psi` equality.  The endpoint consumer is
+   `BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData`.
 
    The theorem `bhw_jost_closedChain_orientedMaxRankMonodromy_of_seed` is then
    the identity-principle propagation, not the monodromy theorem.  Let
@@ -7853,12 +7848,13 @@ common-boundary envelope, or any theorem that already assumes locality.
    `S.seed_relOpen`, `S.seed_nonempty`, and `S.seed_sub`; and the zero
    statement from `S.seed_eq` after rewriting subtraction.  The extra
    `W ⊆ MaxRank` hypothesis is exactly `S.seed_sub`'s second projection.
-   This gives
-   equality on the whole max-rank part of the closing patch.  Finally
-   `bhw_jost_closedChain_orientedMaxRankMonodromy_trivial` is the two-line
-   assembly: obtain `⟨S⟩` from
-   `bhw_jost_orientedMaxRankClosedLoopSeed_of_BHW`, then call
-   `bhw_jost_closedChain_orientedMaxRankMonodromy_of_seed`.
+   This gives equality on the whole max-rank part of the closing patch.
+   Finally `bhw_jost_closedChain_orientedMaxRankMonodromy_trivial` is a
+   consumer assembly: obtain the checked large-start-domain package or the
+   checked closing-patch terminal-seed package from the genuine BHW/Jost
+   source proof, then call its `to_closedLoopSeed`/monodromy consumer.  The
+   old `bhw_jost_orientedMaxRankClosedLoopSeed_of_BHW` name should not be
+   implemented as a separate arbitrary-loop theorem.
 
    `bhw_jost_closedChain_orientedMonodromy_extend_from_maxRank` is then
    mechanical.  Let
