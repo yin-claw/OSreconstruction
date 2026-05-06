@@ -972,7 +972,8 @@ theorem W_analytic_cluster_integral_via_ruelle
                 exact Finset.single_le_sum (f := fun i => (a (Fin.succ i))^2)
                   (fun _ _ => sq_nonneg _) (Finset.mem_univ j)
       · intro a ha
-        refine Filter.Eventually.of_forall (fun p => ?_)
+        filter_upwards [ae_pairwise_distinct_jointTimeCoords (d := d) (n := n) (m := m)]
+          with p h_distinct_joint
         -- ha : a 0 = 0 ∧ ∑ (a (succ i))² > R_R².
         -- We bound `‖clusterIntegrand a p‖` by the dominator.
         unfold clusterIntegrand
@@ -984,20 +985,47 @@ theorem W_analytic_cluster_integral_via_ruelle
               wick_OPTR_in_forwardTube n p.1 hp1
             have hw2 : (fun k => wickRotatePoint (p.2 k)) ∈ ForwardTube d m :=
               wick_OPTR_in_forwardTube m p.2 hp2
+            have hp1_pos : ∀ i : Fin n, p.1 i 0 > 0 := fun i => (hp1 i).1
+            have hp2_pos : ∀ i : Fin m, p.2 i 0 > 0 := fun i => (hp2 i).1
             -- Apply Ruelle's bound to the joint analytic continuation.
             have h_ruelle_bound :=
               h_ruelle (fun k => wickRotatePoint (p.1 k))
                 (fun k => wickRotatePoint (p.2 k)) hw1 hw2 a ha.1 ha.2
             -- Use ‖wick z‖ = ‖z‖ to convert Ruelle's bound to dominator form.
             rw [wickRotate_norm_eq, wickRotate_norm_eq] at h_ruelle_bound
-            -- Now h_ruelle_bound bounds ‖W_analytic_BHW(joint)‖ in terms of
-            -- (1 + ‖p.1‖ + ‖p.2‖)^N_R. We need:
-            --   F_ext_on_translatedPET_total Wfn (joint) = W_analytic_BHW Wfn (n+m) (joint)
-            -- via PET membership of the joint config (joint distinct positive
-            -- times → euclidean_distinct_in_permutedTube; boundary measure-zero).
-            -- Plus norm_mul on the f, g factors.
-            -- F_ext-bridge for joint config: routed to follow-up.
-            sorry
+            -- Bridge F_ext_on_translatedPET_total ↔ W_analytic_BHW on the joint
+            -- config via joint_F_ext_eq_W_analytic (uses h_distinct_joint).
+            have h_bridge :
+                F_ext_on_translatedPET_total Wfn
+                  (Fin.append (fun k => wickRotatePoint (p.1 k))
+                    (fun k μ => wickRotatePoint (p.2 k) μ +
+                      (if μ = 0 then (0 : ℂ) else (a μ : ℂ)))) =
+                (W_analytic_BHW Wfn (n + m)).val
+                  (Fin.append (fun k => wickRotatePoint (p.1 k))
+                    (fun k μ => wickRotatePoint (p.2 k) μ +
+                      (if μ = 0 then (0 : ℂ) else (a μ : ℂ)))) :=
+              joint_F_ext_eq_W_analytic Wfn n m p.1 p.2 a ha.1 hp1_pos hp2_pos
+                h_distinct_joint
+            -- Bound ‖F_ext_total ... * f p.1 * g p.2‖.
+            rw [h_bridge]
+            -- Goal: ‖W_analytic_BHW(joint) * f(p.1) * g(p.2)‖ ≤ dominator
+            -- Use norm_mul to split, then h_ruelle_bound on the W_analytic factor.
+            rw [norm_mul, norm_mul]
+            -- Goal: ‖W_analytic(joint)‖ * ‖f(p.1)‖ * ‖g(p.2)‖ ≤
+            --       C_R * (1 + ‖p.1‖ + ‖p.2‖)^N_R * ‖f(p.1)‖ * ‖g(p.2)‖
+            have h_fg_nonneg : (0 : ℝ) ≤ ‖f p.1‖ * ‖g p.2‖ := by positivity
+            have h_factor_nonneg : (0 : ℝ) ≤ ‖f p.1‖ := norm_nonneg _
+            have h_g_nonneg : (0 : ℝ) ≤ ‖g p.2‖ := norm_nonneg _
+            calc ‖(W_analytic_BHW Wfn (n + m)).val
+                    (Fin.append (fun k => wickRotatePoint (p.1 k))
+                      (fun k μ => wickRotatePoint (p.2 k) μ +
+                        (if μ = 0 then (0 : ℂ) else (a μ : ℂ))))‖
+                  * ‖f p.1‖ * ‖g p.2‖
+                ≤ (C_R * (1 + ‖p.1‖ + ‖p.2‖) ^ N_R) * ‖f p.1‖ * ‖g p.2‖ := by
+                  exact mul_le_mul_of_nonneg_right
+                    (mul_le_mul_of_nonneg_right h_ruelle_bound h_factor_nonneg)
+                    h_g_nonneg
+              _ = C_R * (1 + ‖p.1‖ + ‖p.2‖) ^ N_R * ‖f p.1‖ * ‖g p.2‖ := by ring
           · -- p.2 ∉ OPTR-m: g(p.2) = 0, integrand = 0, bound trivial.
             have h_g_zero : (g : NPointDomain d m → ℂ) p.2 = 0 :=
               image_eq_zero_of_notMem_tsupport (fun hxts => hp2 (hsupp_g hxts))
