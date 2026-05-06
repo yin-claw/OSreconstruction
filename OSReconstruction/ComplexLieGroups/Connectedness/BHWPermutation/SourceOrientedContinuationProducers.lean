@@ -190,6 +190,182 @@ theorem exists_glued_branch
 
 end BHWOrientedContinuationChainAtlasData
 
+/-- Trace-level data sufficient to assemble a source-patch continuation
+atlas.  Unlike an arbitrary chain-atlas producer, this records the actual
+branch-free transfer trace selected for each terminal point and asks for the
+local terminal-point comparison theorem only for such traced continuations. -/
+structure BHWOrientedContinuationTraceAtlasData
+    [NeZero d] (hd : 2 ≤ d)
+    (n : ℕ) (τ : Equiv.Perm (Fin n))
+    (Ω0 U : Set (Fin n → Fin (d + 1) → ℂ))
+    (B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ) where
+  p0 : Fin n → Fin (d + 1) → ℂ
+  base_mem : p0 ∈ Ω0 ∩ U
+  traceAt :
+    ∀ z, z ∈ U →
+      BHWJostOrientedTransferContinuationTrace hd n τ Ω0 U B0 p0 z
+  terminalPointComparison :
+    ∀ {y : Fin n → Fin (d + 1) → ℂ}
+      (T₁ T₂ :
+        BHWJostOrientedTransferTerminalPointTrace
+          hd n τ Ω0 U B0 p0 y),
+      BHWLocalChartTerminalComparisonData
+        (T₁.trace.chain.localChart (Fin.last T₁.trace.chain.m))
+        (T₂.trace.chain.localChart (Fin.last T₂.trace.chain.m)) y
+  terminal_base_agree :
+    ∀ z (hz : z ∈ Ω0 ∩ U),
+      ((traceAt z hz.2).chain.branch
+        (Fin.last (traceAt z hz.2).chain.m)) z = B0 z
+
+namespace BHWOrientedContinuationTraceAtlasData
+
+variable [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
+variable {Ω0 U : Set (Fin n → Fin (d + 1) → ℂ)}
+variable {B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+
+/-- Forget trace provenance and retain only the terminal continuation chain
+selected for each point of `U`. -/
+def chainAt
+    (D : BHWOrientedContinuationTraceAtlasData hd n τ Ω0 U B0) :
+    ∀ z, z ∈ U →
+      BHWJostOrientedSourcePatchContinuationChain
+        hd n τ Ω0 U B0 D.p0 z :=
+  fun z hz => (D.traceAt z hz).chain
+
+/-- Trace-level terminal-point comparison gives the terminal overlap field
+of the ordinary chain-atlas data. -/
+noncomputable def to_chainAtlasData
+    (D : BHWOrientedContinuationTraceAtlasData hd n τ Ω0 U B0) :
+    BHWOrientedContinuationChainAtlasData hd n τ Ω0 U B0 where
+  p0 := D.p0
+  base_mem := D.base_mem
+  chainAt := D.chainAt
+  terminal_overlap_eq := by
+    intro a b y hy
+    rcases hy with ⟨hya, hyb⟩
+    let Ta :=
+      BHWJostOrientedTransferTerminalPointTrace.ofTracePoint
+        (D.traceAt a.1 a.2) hya
+    let Tb :=
+      BHWJostOrientedTransferTerminalPointTrace.ofTracePoint
+        (D.traceAt b.1 b.2) hyb
+    let P := D.terminalPointComparison Ta Tb
+    have hlocal :
+        ((D.traceAt a.1 a.2).chain.localChart
+            (Fin.last (D.traceAt a.1 a.2).chain.m)).branch y =
+          ((D.traceAt b.1 b.2).chain.localChart
+            (Fin.last (D.traceAt b.1 b.2).chain.m)).branch y := by
+      simpa [Ta, Tb] using
+        BHWLocalChartTerminalComparisonData.branch_eq_at_endpoint P
+    calc
+      ((D.traceAt a.1 a.2).chain.branch
+          (Fin.last (D.traceAt a.1 a.2).chain.m)) y =
+          ((D.traceAt a.1 a.2).chain.localChart
+            (Fin.last (D.traceAt a.1 a.2).chain.m)).branch y :=
+        (D.traceAt a.1 a.2).chain.branch_eq_local
+          (Fin.last (D.traceAt a.1 a.2).chain.m) y hya
+      _ =
+          ((D.traceAt b.1 b.2).chain.localChart
+            (Fin.last (D.traceAt b.1 b.2).chain.m)).branch y :=
+        hlocal
+      _ =
+          ((D.traceAt b.1 b.2).chain.branch
+            (Fin.last (D.traceAt b.1 b.2).chain.m)) y :=
+        ((D.traceAt b.1 b.2).chain.branch_eq_local
+          (Fin.last (D.traceAt b.1 b.2).chain.m) y hyb).symm
+  terminal_base_agree := D.terminal_base_agree
+
+/-- Trace-atlas data immediately gives a source-patch continuation atlas. -/
+noncomputable def to_sourcePatchContinuationAtlas
+    (D : BHWOrientedContinuationTraceAtlasData hd n τ Ω0 U B0) :
+    BHWSourcePatchContinuationAtlas hd n τ Ω0 U B0 :=
+  D.to_chainAtlasData.to_sourcePatchContinuationAtlas
+
+/-- Trace-atlas data immediately gives a glued holomorphic branch on `U`. -/
+theorem exists_glued_branch
+    (D : BHWOrientedContinuationTraceAtlasData hd n τ Ω0 U B0) :
+    ∃ B : (Fin n → Fin (d + 1) → ℂ) → ℂ,
+      DifferentiableOn ℂ B U ∧
+      (∀ z, z ∈ Ω0 → z ∈ U → B z = B0 z) :=
+  D.to_chainAtlasData.exists_glued_branch
+
+/-- Terminal-point comparison plus an initial chart normalized by `B0`
+supplies all trace-atlas data.  Base agreement is proved by comparing the
+selected trace ending at `z` with the zero-step base trace observed at `z`. -/
+noncomputable def ofTerminalPointComparisonsAndInitialChart
+    (p0 : Fin n → Fin (d + 1) → ℂ)
+    (base_mem : p0 ∈ Ω0 ∩ U)
+    (traceAt :
+      ∀ z, z ∈ U →
+        BHWJostOrientedTransferContinuationTrace hd n τ Ω0 U B0 p0 z)
+    (terminalPointComparison :
+      ∀ {y : Fin n → Fin (d + 1) → ℂ}
+        (T₁ T₂ :
+          BHWJostOrientedTransferTerminalPointTrace
+            hd n τ Ω0 U B0 p0 y),
+        BHWLocalChartTerminalComparisonData
+          (T₁.trace.chain.localChart (Fin.last T₁.trace.chain.m))
+          (T₂.trace.chain.localChart (Fin.last T₂.trace.chain.m)) y)
+    (C0 : BHWJostLocalOrientedContinuationChart hd n τ U)
+    (hp0C : p0 ∈ C0.carrier)
+    (start_patch : Set (Fin n → Fin (d + 1) → ℂ))
+    (hstart_open : IsOpen start_patch)
+    (hstart_preconnected : IsPreconnected start_patch)
+    (hstart_nonempty : start_patch.Nonempty)
+    (hstart_mem : p0 ∈ start_patch)
+    (hstart_sub : start_patch ⊆ Ω0 ∩ C0.carrier)
+    (hstart_agree : ∀ y, y ∈ start_patch → C0.branch y = B0 y)
+    (initial_chart_mem :
+      ∀ z, z ∈ Ω0 ∩ U → z ∈ C0.carrier)
+    (initial_branch_agree :
+      ∀ z, z ∈ Ω0 ∩ U → C0.branch z = B0 z) :
+    BHWOrientedContinuationTraceAtlasData hd n τ Ω0 U B0 where
+  p0 := p0
+  base_mem := base_mem
+  traceAt := traceAt
+  terminalPointComparison := terminalPointComparison
+  terminal_base_agree := by
+    intro z hz
+    let Tz :=
+      BHWJostOrientedTransferTerminalPointTrace.atEndpoint
+        (traceAt z hz.2)
+    let TbaseTrace :=
+      BHWJostOrientedTransferContinuationTrace.base
+        (hd := hd) (τ := τ) (Ω0 := Ω0) (U := U) (B0 := B0)
+        (p0 := p0) C0 base_mem hp0C start_patch hstart_open
+        hstart_preconnected hstart_nonempty hstart_mem hstart_sub
+        hstart_agree
+    have hzBase :
+        z ∈ TbaseTrace.chain.chart (Fin.last TbaseTrace.chain.m) := by
+      simpa [TbaseTrace, BHWJostOrientedTransferContinuationTrace.base,
+        BHWJostOrientedSourcePatchContinuationChain.base] using
+        initial_chart_mem z hz
+    let Tbase :=
+      BHWJostOrientedTransferTerminalPointTrace.ofTracePoint
+        (y := z) TbaseTrace hzBase
+    let P := terminalPointComparison Tz Tbase
+    have hlocal :
+        ((traceAt z hz.2).chain.localChart
+            (Fin.last (traceAt z hz.2).chain.m)).branch z =
+          C0.branch z := by
+      have hcmp :=
+        BHWLocalChartTerminalComparisonData.branch_eq_at_endpoint P
+      simpa [Tz, Tbase, TbaseTrace,
+        BHWJostOrientedTransferContinuationTrace.base,
+        BHWJostOrientedSourcePatchContinuationChain.base] using hcmp
+    calc
+      ((traceAt z hz.2).chain.branch
+          (Fin.last (traceAt z hz.2).chain.m)) z =
+          ((traceAt z hz.2).chain.localChart
+            (Fin.last (traceAt z hz.2).chain.m)).branch z :=
+        (traceAt z hz.2).chain.branch_eq_local
+          (Fin.last (traceAt z hz.2).chain.m) z
+          (traceAt z hz.2).chain.final_mem
+      _ = C0.branch z := hlocal
+      _ = B0 z := initial_branch_agree z hz
+
+end BHWOrientedContinuationTraceAtlasData
+
 /-- Terminal comparison data for two oriented continuation chains with the
 same base point and endpoint.  The hard BHW/Jost closed-loop comparison should
 produce this object; its consumer is just evaluation at the endpoint. -/

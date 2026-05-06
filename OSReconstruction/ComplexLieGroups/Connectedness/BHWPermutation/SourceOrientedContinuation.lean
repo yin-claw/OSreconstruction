@@ -1853,6 +1853,49 @@ structure BHWJostOrientedTransferContinuationTrace
             using chain.node_mem (Fin.castSucc j)) =
         ⟨chain.localChart j.succ, chain.oriented_transition j⟩
 
+namespace BHWJostOrientedTransferContinuationTrace
+
+variable [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
+variable {Ω0 U : Set (Fin n → Fin (d + 1) → ℂ)}
+variable {B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+variable {p0 : Fin n → Fin (d + 1) → ℂ}
+
+/-- The zero-step continuation chain, regarded as a transfer trace.  There
+are no transfer steps, so all provenance fields are over `Fin 0`. -/
+def base
+    (C0 : BHWJostLocalOrientedContinuationChart hd n τ U)
+    (hbase : p0 ∈ Ω0 ∩ U)
+    (hp0C : p0 ∈ C0.carrier)
+    (start_patch : Set (Fin n → Fin (d + 1) → ℂ))
+    (hstart_open : IsOpen start_patch)
+    (hstart_preconnected : IsPreconnected start_patch)
+    (hstart_nonempty : start_patch.Nonempty)
+    (hstart_mem : p0 ∈ start_patch)
+    (hstart_sub : start_patch ⊆ Ω0 ∩ C0.carrier)
+    (hstart_agree : ∀ y, y ∈ start_patch → C0.branch y = B0 y) :
+    BHWJostOrientedTransferContinuationTrace
+      hd n τ Ω0 U B0 p0 p0 where
+  chain :=
+    BHWJostOrientedSourcePatchContinuationChain.base
+      (hd := hd) (τ := τ) (Ω0 := Ω0) (U := U) (B0 := B0)
+      (p0 := p0) C0 hbase hp0C start_patch hstart_open
+      hstart_preconnected hstart_nonempty hstart_mem hstart_sub
+      hstart_agree
+  stepControl := by
+    intro j
+    exact Fin.elim0 j
+  step_left_mem := by
+    intro j
+    exact Fin.elim0 j
+  step_right_mem := by
+    intro j
+    exact Fin.elim0 j
+  step_transfer_eq := by
+    intro j
+    exact Fin.elim0 j
+
+end BHWJostOrientedTransferContinuationTrace
+
 /-- A transfer trace observed at an arbitrary point of its terminal chart.
 This is the trace-level object needed for atlas overlaps: the point being
 compared need not be the endpoint used to construct the underlying transfer
@@ -1875,6 +1918,29 @@ variable [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
 variable {Ω0 U : Set (Fin n → Fin (d + 1) → ℂ)}
 variable {B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ}
 variable {p0 y : Fin n → Fin (d + 1) → ℂ}
+
+/-- Observe a transfer trace at any point of its terminal chart. -/
+def ofTracePoint
+    {endpoint : Fin n → Fin (d + 1) → ℂ}
+    (T :
+      BHWJostOrientedTransferContinuationTrace
+        hd n τ Ω0 U B0 p0 endpoint)
+    (hy : y ∈ T.chain.chart (Fin.last T.chain.m)) :
+    BHWJostOrientedTransferTerminalPointTrace
+      hd n τ Ω0 U B0 p0 y where
+  endpoint := endpoint
+  trace := T
+  point_mem := hy
+
+/-- Observe a transfer trace at its own terminal endpoint. -/
+def atEndpoint
+    {endpoint : Fin n → Fin (d + 1) → ℂ}
+    (T :
+      BHWJostOrientedTransferContinuationTrace
+        hd n τ Ω0 U B0 p0 endpoint) :
+    BHWJostOrientedTransferTerminalPointTrace
+      hd n τ Ω0 U B0 p0 endpoint :=
+  ofTracePoint T T.chain.final_mem
 
 /-- The observed point lies in the terminal local chart carrier. -/
 theorem point_mem_terminalLocalChart

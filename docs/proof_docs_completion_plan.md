@@ -227,7 +227,10 @@ the local chart provenance field
 `BHW.BHWJostOrientedSourcePatchContinuationChain.base`,
 `BHW.BHWJostOrientedSourcePatchContinuationChain.snoc`,
 `BHW.BHWJostOrientedTransferContinuationTrace`,
+`BHW.BHWJostOrientedTransferContinuationTrace.base`,
 `BHW.BHWJostOrientedTransferTerminalPointTrace`,
+`BHW.BHWJostOrientedTransferTerminalPointTrace.ofTracePoint`,
+`BHW.BHWJostOrientedTransferTerminalPointTrace.atEndpoint`,
 `BHW.BHWJostOrientedTransferTerminalPointTrace.point_mem_terminalLocalChart`,
 `BHW.BHWJostOrientedSourcePatchContinuationChain.exists_of_nodeSteps`,
 `BHW.BHWJostOrientedSourcePatchContinuationChain.ofNodeSteps`,
@@ -276,20 +279,32 @@ terminal chain.  It also provides
 `BHW.BHWOrientedContinuationChainAtlasData.terminal_base_agree_of_sameEndpointComparison`,
 `BHW.BHWOrientedContinuationChainAtlasData.ofSameEndpointComparisonsAndBaseChain`,
 `BHW.BHWOrientedContinuationChainAtlasData.ofSameEndpointComparisonsAndInitialChart`,
+`BHW.BHWOrientedContinuationTraceAtlasData`,
+`BHW.BHWOrientedContinuationTraceAtlasData.chainAt`,
+`BHW.BHWOrientedContinuationTraceAtlasData.to_chainAtlasData`,
+`BHW.BHWOrientedContinuationTraceAtlasData.to_sourcePatchContinuationAtlas`,
+`BHW.BHWOrientedContinuationTraceAtlasData.exists_glued_branch`,
+`BHW.BHWOrientedContinuationTraceAtlasData.ofTerminalPointComparisonsAndInitialChart`,
 `BHW.BHWOrientedTerminalChainComparisonData`, and
 `BHW.BHWOrientedTerminalChainComparisonData.ofLocalChartComparison`,
 `BHW.BHWOrientedTerminalChainComparisonData.continuedValue_eq`, which
 turn selected terminal chains plus same-endpoint comparison/base agreement
-into the checked source-patch atlas and glued branch, and turn a produced
-terminal comparison patch into equality of continued values.  The atlas
+into the checked source-patch atlas and glued branch, turn selected transfer
+traces plus terminal-point comparison into the checked source-patch atlas and
+glued branch, and turn a produced terminal comparison patch into equality of
+continued values.  The chain-atlas
 constructor is not merely an endpoint wrapper: it retargets any terminal chart
 containing an overlap point `y` to a chain ending at `y`, compares both
 retargeted chains with the selected chain ending at `y`, and thereby proves
 the full terminal-overlap `EqOn`.  The base-chain constructor similarly
 retargets one normalized base chain to any `z ∈ Ω0 ∩ U` and uses
-same-endpoint comparison to derive the atlas base agreement field.  This keeps
-the carrier/API file below the hard-frontier size limit and introduces no new
-analytic assumption.
+same-endpoint comparison to derive the atlas base agreement field.  The
+trace-atlas constructor avoids the arbitrary-chain comparison surface
+altogether: it observes selected transfer traces at the overlap point, applies
+terminal-point trace comparison, rewrites by `branch_eq_local`, and proves
+base agreement by comparing against the zero-step base trace observed inside
+the initial chart.  This keeps the carrier/API file below the hard-frontier
+size limit and introduces no new analytic assumption.
 
 The open-chart BHW near-identity input is now checked in
 `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedBHWInvariance.lean`.
@@ -8035,6 +8050,44 @@ common-boundary envelope, or any theorem that already assumes locality.
      point_mem : y ∈ trace.chain.chart (Fin.last trace.chain.m)
    ```
 
+   The zero-step and observation constructors are now checked in Lean:
+
+   ```lean
+   def BHW.BHWJostOrientedTransferContinuationTrace.base
+       (C0 : BHWJostLocalOrientedContinuationChart hd n τ U)
+       (hbase : p0 ∈ Ω0 ∩ U)
+       (hp0C : p0 ∈ C0.carrier)
+       (start_patch : Set (Fin n -> Fin (d + 1) -> ℂ))
+       (hstart_open : IsOpen start_patch)
+       (hstart_preconnected : IsPreconnected start_patch)
+       (hstart_nonempty : start_patch.Nonempty)
+       (hstart_mem : p0 ∈ start_patch)
+       (hstart_sub : start_patch ⊆ Ω0 ∩ C0.carrier)
+       (hstart_agree :
+         ∀ y, y ∈ start_patch -> C0.branch y = B0 y) :
+       BHWJostOrientedTransferContinuationTrace
+         hd n τ Ω0 U B0 p0 p0
+
+   def BHW.BHWJostOrientedTransferTerminalPointTrace.ofTracePoint
+       (T :
+         BHWJostOrientedTransferContinuationTrace
+           hd n τ Ω0 U B0 p0 endpoint)
+       (hy : y ∈ T.chain.chart (Fin.last T.chain.m)) :
+       BHWJostOrientedTransferTerminalPointTrace
+         hd n τ Ω0 U B0 p0 y
+
+   def BHW.BHWJostOrientedTransferTerminalPointTrace.atEndpoint
+       (T :
+         BHWJostOrientedTransferContinuationTrace
+           hd n τ Ω0 U B0 p0 endpoint) :
+       BHWJostOrientedTransferTerminalPointTrace
+         hd n τ Ω0 U B0 p0 endpoint
+   ```
+
+   `base` is the zero-step chain with all transfer-provenance fields over
+   `Fin 0`.  `ofTracePoint` is the exact atlas-overlap observation map, and
+   `atEndpoint` is its specialization using `T.chain.final_mem`.
+
    The local output used by the trace induction is the chart-level analogue of
    terminal chain comparison:
 
@@ -8126,8 +8179,8 @@ common-boundary envelope, or any theorem that already assumes locality.
    useful high-level consumer if one has a theorem comparing arbitrary chain
    records, but the strict source-backed route must not try to manufacture
    such a theorem from the current data.  The final producer should instead
-   use a trace-level variant
-   `BHWOrientedContinuationTraceAtlasData.ofTransferTraceComparisonsAndInitialChart`
+   use the checked trace-level variant
+   `BHWOrientedContinuationTraceAtlasData.ofTerminalPointComparisonsAndInitialChart`
    whose comparison hypothesis ranges over terminal-point traces for the
    selected transfer traces.  After the trace comparison produces terminal
    branch equality at an overlap point, the atlas forgets the trace provenance
@@ -8147,6 +8200,60 @@ common-boundary envelope, or any theorem that already assumes locality.
    proofs, invoke
    `bhw_jost_orientedTerminalPointComparison_of_transferTraces`, and evaluate
    the resulting chart-level branch equality at `y`.
+
+   The checked trace-atlas surface is:
+
+   ```lean
+   structure BHW.BHWOrientedContinuationTraceAtlasData
+       [NeZero d] (hd : 2 ≤ d)
+       (n : Nat) (τ : Equiv.Perm (Fin n))
+       (Ω0 U : Set (Fin n -> Fin (d + 1) -> ℂ))
+       (B0 : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ) where
+     p0 : Fin n -> Fin (d + 1) -> ℂ
+     base_mem : p0 ∈ Ω0 ∩ U
+     traceAt :
+       ∀ z, z ∈ U ->
+         BHWJostOrientedTransferContinuationTrace hd n τ Ω0 U B0 p0 z
+     terminalPointComparison :
+       ∀ {y : Fin n -> Fin (d + 1) -> ℂ}
+         (T₁ T₂ :
+           BHWJostOrientedTransferTerminalPointTrace
+             hd n τ Ω0 U B0 p0 y),
+         BHWLocalChartTerminalComparisonData
+           (T₁.trace.chain.localChart (Fin.last T₁.trace.chain.m))
+           (T₂.trace.chain.localChart (Fin.last T₂.trace.chain.m)) y
+     terminal_base_agree :
+       ∀ z (hz : z ∈ Ω0 ∩ U),
+         ((traceAt z hz.2).chain.branch
+           (Fin.last (traceAt z hz.2).chain.m)) z = B0 z
+   ```
+
+   Its checked method
+   `BHWOrientedContinuationTraceAtlasData.to_chainAtlasData` proves the
+   ordinary atlas overlap field by forming
+   `Ta := ofTracePoint (traceAt a a.mem) hya` and
+   `Tb := ofTracePoint (traceAt b b.mem) hyb` at an arbitrary overlap point
+   `y`, applying `terminalPointComparison Ta Tb`, evaluating the returned
+   `BHWLocalChartTerminalComparisonData` at `y`, and rewriting both sides by
+   the terminal chains' `branch_eq_local`.  No arbitrary same-endpoint chain
+   theorem appears in this proof.
+
+   Its checked constructor
+   `BHWOrientedContinuationTraceAtlasData.ofTerminalPointComparisonsAndInitialChart`
+   proves base agreement by comparing the selected trace at
+   `z ∈ Ω0 ∩ U` with the zero-step base trace observed at `z`.  Concretely,
+   it builds `Tz := atEndpoint (traceAt z hz.2)`, builds
+   `TbaseTrace := BHWJostOrientedTransferContinuationTrace.base C0 ...`,
+   observes `TbaseTrace` at `z` using `initial_chart_mem z hz`, applies
+   `terminalPointComparison Tz Tbase`, rewrites the selected chain branch by
+   `branch_eq_local`, and closes with `initial_branch_agree z hz`.
+
+   Consequently the checked atlas assembly now has exactly two remaining
+   non-mechanical inputs: selected transfer traces `traceAt z hz` whose
+   provenance is retained from the compact transfer-cover fold, and the hard
+   theorem
+   `bhw_jost_orientedTerminalPointComparison_of_transferTraces`.
+
    The variant
    `BHWOrientedContinuationChainAtlasData.ofSameEndpointComparisonsAndBaseChain`
    also derives `terminal_base_agree`: for `z ∈ Ω0 ∩ U`, retarget the
