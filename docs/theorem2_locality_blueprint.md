@@ -15130,7 +15130,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       -- * `sourceOrientedNormalParameterBall_open_connected_center`;
       -- * `exists_sourceOrientedNormalParameterBall_subset_of_mem_nhds_center`;
       -- * `exists_sourceOrientedNormalParameterBall_subset_head_det_isUnit`;
-      -- * `exists_sourceOrientedNormalParameterBall_subset_schur_nhds`.
+      -- * `exists_sourceOrientedNormalParameterBall_subset_schur_nhds`;
+      -- * `exists_sourceOrientedNormalParameterBall_subset_coordinate_nhds`;
+      -- * `exists_sourceOrientedNormalParameterBall_subset_coordinate_bounds`.
       --
       -- Thus every finite-coordinate estimate shrink should first define
       -- honest target neighborhoods in the Schur head, mixed, and tail
@@ -15139,6 +15141,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       -- intersect/shrink with the already checked invertible-head and ambient
       -- image shrinks.  Open/connected/center membership comes from
       -- `sourceOrientedNormalParameterBall_open_connected_center`.
+      -- If the proof needs the old raw parameter inequalities directly, use
+      -- `exists_sourceOrientedNormalParameterBall_subset_coordinate_bounds`;
+      -- it is exactly the checked ball-based replacement for the retired
+      -- `sourceOrientedRankDeficientParameterBox_open_connected` step.
 
       theorem BHW.sourceOrientedSchurEstimateNeighborhood_shrink
           [NeZero d]

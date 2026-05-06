@@ -542,12 +542,15 @@ The first topology-only Schur shrink is now checked in
 `BHW.sourceOrientedNormalParameterSchurHead_center`,
 `BHW.sourceOrientedNormalParameterSchurMixed_center`, and
 `BHW.sourceOrientedNormalParameterSchurTail_center`, plus
-`BHW.exists_sourceOrientedNormalParameterBall_subset_schur_nhds`.  Production
-Lean should use this theorem, together with
+`BHW.exists_sourceOrientedNormalParameterBall_subset_schur_nhds`,
+`BHW.exists_sourceOrientedNormalParameterBall_subset_coordinate_nhds`, and
+`BHW.exists_sourceOrientedNormalParameterBall_subset_coordinate_bounds`.
+Production Lean should use these theorems, together with
 `BHW.sourceOrientedNormalParameterBall`, rather than reintroducing the retired
-continuous-linear coordinate-box pseudocode.  The theorem says that arbitrary
-neighborhoods of the center Schur head, mixed, and residual-tail coordinates
-pull back to a positive connected normal-parameter ball.
+continuous-linear coordinate-box pseudocode.  The theorems say that arbitrary
+neighborhoods of the center Schur head, mixed, and residual-tail coordinates,
+and arbitrary positive raw head/mixed/tail coordinate radii, pull back to a
+positive connected normal-parameter ball.
 
 The first normal-parameter support layer is now checked in
 `SourceOrientedNormalParameter.lean`.  The file supplies the finite head/tail
