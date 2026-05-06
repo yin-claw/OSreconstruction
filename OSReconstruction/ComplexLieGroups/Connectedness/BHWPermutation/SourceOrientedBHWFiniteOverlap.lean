@@ -535,9 +535,9 @@ end BHWJostOrientedSourcePatchContinuationChain
 
 /-- The geometric finite-overlap data for a closed oriented loop.  This is the
 remaining BHW/Jost producer target after the propagation and packaging layers
-have been checked: provide the initial max-rank seed, the ordered connected
-overlap domains for every transition, and a closing domain that contains the
-terminal seed by provenance. -/
+have been checked: provide the initial max-rank seed, the ordered domains
+whose max-rank parts are connected for every transition, and a closing domain
+that contains the terminal seed by provenance. -/
 structure BHWJostOrientedClosedLoopFiniteOverlapDomainData
     [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
     {Ω0 U : Set (Fin n → Fin (d + 1) → ℂ)}
@@ -1048,5 +1048,122 @@ theorem exists_of_preconnectedDomains_headSliceIFT
         closingDomain_contains_lastTransition_of_pos
 
 end BHWJostOrientedClosedLoopFiniteOverlapDomainData
+
+/-- Producer-facing finite-overlap data for the remaining strict
+Hall-Wightman/Jost source-patch construction.  This structure contains only
+the ordinary topological domains that local source-normal-form shrinkage is
+expected to produce: relatively open, nonempty, preconnected step and closing
+domains, together with the ordered containment transcript.  The checked
+consumer below converts these fields to the max-rank-connected closed-loop
+finite-overlap data using the sliced-head IFT local-image theorem. -/
+structure BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData
+    [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
+    {Ω0 U : Set (Fin n → Fin (d + 1) → ℂ)}
+    {B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+    {p0 : Fin n → Fin (d + 1) → ℂ}
+    (L : BHWJostOrientedClosedContinuationLoop hd n τ Ω0 U B0 p0) where
+  hn : d + 1 ≤ n
+  stepDomain : (j : Fin L.chain.m) → Set (SourceOrientedGramData d n)
+  stepDomain_relOpen :
+    ∀ j, IsRelOpenInSourceOrientedGramVariety d n (stepDomain j)
+  stepDomain_preconnected :
+    ∀ j, IsPreconnected (stepDomain j)
+  stepDomain_nonempty :
+    ∀ j, (stepDomain j).Nonempty
+  stepDomain_sub_start :
+    ∀ j, stepDomain j ⊆ (L.chain.localChart 0).orientedDomain
+  stepDomain_sub_left :
+    ∀ j,
+      stepDomain j ⊆
+        (L.chain.localChart (Fin.castSucc j)).orientedDomain
+  transition_sub_stepDomain :
+    ∀ j, (L.chain.oriented_transition j).orientedPatch ⊆ stepDomain j
+  transition_sub_nextDomain :
+    ∀ (j : Fin L.chain.m) (hnext : j.val + 1 < L.chain.m),
+      (L.chain.oriented_transition j).orientedPatch ⊆
+        stepDomain ⟨j.val + 1, hnext⟩
+  closingDomain : Set (SourceOrientedGramData d n)
+  closingDomain_relOpen :
+    IsRelOpenInSourceOrientedGramVariety d n closingDomain
+  closingDomain_preconnected : IsPreconnected closingDomain
+  closingDomain_nonempty : closingDomain.Nonempty
+  closingDomain_sub_final :
+    closingDomain ⊆
+      (L.chain.localChart (Fin.last L.chain.m)).orientedDomain
+  closingDomain_sub_start :
+    closingDomain ⊆ (L.chain.localChart 0).orientedDomain
+  closingPatch_sub_closingDomain :
+    L.closing_orientedPatch ⊆ closingDomain
+  closingDomain_contains_lastTransition_of_pos :
+    ∀ hpos : L.chain.m ≠ 0,
+      (L.chain.oriented_transition
+        ⟨L.chain.m.pred, Nat.pred_lt hpos⟩).orientedPatch ⊆
+          closingDomain
+
+namespace BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData
+
+variable [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
+variable {Ω0 U : Set (Fin n → Fin (d + 1) → ℂ)}
+variable {B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+variable {p0 : Fin n → Fin (d + 1) → ℂ}
+variable {L : BHWJostOrientedClosedContinuationLoop hd n τ Ω0 U B0 p0}
+
+/-- Producer-facing preconnected finite-overlap data converts mechanically to
+the checked closed-loop finite-overlap data.  The zero-transition case is
+handled by the closed-loop constructor from the stored closing patch; the
+positive case promotes every supplied preconnected domain to the required
+max-rank-connected domain using the sliced-head IFT theorem. -/
+theorem to_finiteOverlapDomainData
+    (P : BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData L) :
+    Nonempty (BHWJostOrientedClosedLoopFiniteOverlapDomainData L) :=
+  BHWJostOrientedClosedLoopFiniteOverlapDomainData.exists_of_preconnectedDomains_headSliceIFT
+      (d := d) (n := n) P.hn
+      P.stepDomain P.stepDomain_relOpen P.stepDomain_preconnected
+      P.stepDomain_nonempty P.stepDomain_sub_start P.stepDomain_sub_left
+      P.transition_sub_stepDomain P.transition_sub_nextDomain
+      P.closingDomain P.closingDomain_relOpen P.closingDomain_preconnected
+      P.closingDomain_nonempty P.closingDomain_sub_final
+      P.closingDomain_sub_start P.closingPatch_sub_closingDomain
+      P.closingDomain_contains_lastTransition_of_pos
+
+/-- Producer-facing data gives the terminal finite-overlap propagation packet
+consumed by the closed-loop seed layer. -/
+theorem to_finiteOverlapPropagationData
+    (P : BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData L) :
+    Nonempty (BHWJostOrientedFiniteOverlapPropagationData L) := by
+  rcases P.to_finiteOverlapDomainData with ⟨Q⟩
+  exact Q.to_finiteOverlapPropagationData
+
+/-- Producer-facing data gives the closed-loop max-rank seed consumed by the
+monodromy identity-principle layer. -/
+theorem to_closedLoopSeed
+    (P : BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData L) :
+    Nonempty (BHWJostOrientedMaxRankClosedLoopSeed hd n τ Ω0 U B0 L) := by
+  rcases P.to_finiteOverlapDomainData with ⟨Q⟩
+  exact Q.to_closedLoopSeed
+
+/-- Producer-facing data gives oriented closed-loop monodromy with no exposed
+max-rank-connectedness hypothesis. -/
+theorem to_orientedMonodromy_headSliceIFT
+    (P : BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData L) :
+    Set.EqOn
+      (L.chain.localChart (Fin.last L.chain.m)).Psi
+      (L.chain.localChart 0).Psi
+      L.closing_orientedPatch := by
+  rcases P.to_finiteOverlapDomainData with ⟨Q⟩
+  exact Q.to_orientedMonodromy_headSliceIFT
+
+/-- Producer-facing data gives source-branch closed-loop monodromy with no
+exposed max-rank-connectedness hypothesis. -/
+theorem to_sourceMonodromy_headSliceIFT
+    (P : BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData L) :
+    Set.EqOn
+      (L.chain.branch (Fin.last L.chain.m))
+      B0
+      L.closing_patch := by
+  rcases P.to_finiteOverlapDomainData with ⟨Q⟩
+  exact Q.to_sourceMonodromy_headSliceIFT
+
+end BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData
 
 end BHW

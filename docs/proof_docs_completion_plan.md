@@ -297,6 +297,15 @@ and
 `BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData.exists_of_zeroTransitions_closedLoop_headSliceIFT`,
 and the zero/positive split wrapper
 `BHW.BHWJostOrientedClosedLoopFiniteOverlapDomainData.exists_of_preconnectedDomains_headSliceIFT`.
+The same checked file now exposes the producer-facing package
+`BHW.BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData`, with
+mechanical consumers
+`BHW.BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData.to_finiteOverlapDomainData`,
+`BHW.BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData.to_finiteOverlapPropagationData`,
+`BHW.BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData.to_closedLoopSeed`,
+`BHW.BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData.to_orientedMonodromy_headSliceIFT`,
+and
+`BHW.BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData.to_sourceMonodromy_headSliceIFT`.
    This closes the
    previous-branch-as-seed gap for local proper-complex invariance: an already
 constructed holomorphic branch on an open source carrier can now be used as
@@ -995,6 +1004,31 @@ is now
    `exists_of_preconnectedDomains_headSliceIFT` performs that case split:
    zero-transition loops use the stored closing patch, and positive loops use
    the supplied ordered preconnected domains.
+
+   The final checked producer-facing interface is now
+   `BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData`.  It stores
+   only:
+   `hn : d + 1 <= n`,
+   relatively open nonempty preconnected `stepDomain j`,
+   the containments
+   `stepDomain j ⊆ (L.chain.localChart 0).orientedDomain`,
+   `stepDomain j ⊆ (L.chain.localChart (Fin.castSucc j)).orientedDomain`,
+   `(L.chain.oriented_transition j).orientedPatch ⊆ stepDomain j`,
+   and the ordered next-domain containments; plus a relatively open nonempty
+   preconnected `closingDomain` contained in the final and initial oriented
+   chart domains, containing `L.closing_orientedPatch`, and containing the
+   last transition patch in the positive-length case.  It deliberately has no
+   `initialSeed` field and no max-rank-connectedness fields.  The checked
+   method
+   `BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData.to_sourceMonodromy_headSliceIFT`
+   is exactly:
+   first call
+   `BHWJostOrientedClosedLoopFiniteOverlapDomainData.exists_of_preconnectedDomains_headSliceIFT`,
+   then apply
+   `BHWJostOrientedClosedLoopFiniteOverlapDomainData.to_sourceMonodromy_headSliceIFT`.
+   Therefore the remaining strict OS I §4.5 BHW/Jost producer theorem should
+   output this preconnected data structure for the specific source-backed
+   closed loop; once it does, monodromy is a mechanical one-line consumer.
 
 The first normal-parameter support layer is now checked in
 `SourceOrientedNormalParameter.lean`.  The file supplies the finite head/tail

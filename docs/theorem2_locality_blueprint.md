@@ -46495,6 +46495,75 @@ Proof decomposition of this theorem, without hiding the analytic work:
             stored closing patch in the zero branch, and otherwise calls
             `exists_of_positivePreconnectedDomains_headSliceIFT`.
 
+            The final producer-facing checked package is
+            `BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData`.
+            It stores exactly the data that the strict OS I §4.5 BHW/Jost
+            source-patch construction must still build:
+
+            ```lean
+            structure BHW.BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData
+                [NeZero d] {hd : 2 <= d} {τ : Equiv.Perm (Fin n)}
+                {Ω0 U : Set (Fin n -> Fin (d + 1) -> ℂ)}
+                {B0 : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ}
+                {p0 : Fin n -> Fin (d + 1) -> ℂ}
+                (L : BHW.BHWJostOrientedClosedContinuationLoop
+                  hd n τ Ω0 U B0 p0) where
+              hn : d + 1 <= n
+              stepDomain : (j : Fin L.chain.m) ->
+                Set (BHW.SourceOrientedGramData d n)
+              stepDomain_relOpen :
+                ∀ j, BHW.IsRelOpenInSourceOrientedGramVariety d n (stepDomain j)
+              stepDomain_preconnected :
+                ∀ j, IsPreconnected (stepDomain j)
+              stepDomain_nonempty :
+                ∀ j, (stepDomain j).Nonempty
+              stepDomain_sub_start :
+                ∀ j, stepDomain j ⊆ (L.chain.localChart 0).orientedDomain
+              stepDomain_sub_left :
+                ∀ j, stepDomain j ⊆
+                  (L.chain.localChart (Fin.castSucc j)).orientedDomain
+              transition_sub_stepDomain :
+                ∀ j, (L.chain.oriented_transition j).orientedPatch ⊆
+                  stepDomain j
+              transition_sub_nextDomain :
+                ∀ (j : Fin L.chain.m) (hnext : j.val + 1 < L.chain.m),
+                  (L.chain.oriented_transition j).orientedPatch ⊆
+                    stepDomain ⟨j.val + 1, hnext⟩
+              closingDomain : Set (BHW.SourceOrientedGramData d n)
+              closingDomain_relOpen :
+                BHW.IsRelOpenInSourceOrientedGramVariety d n closingDomain
+              closingDomain_preconnected :
+                IsPreconnected closingDomain
+              closingDomain_nonempty : closingDomain.Nonempty
+              closingDomain_sub_final :
+                closingDomain ⊆
+                  (L.chain.localChart (Fin.last L.chain.m)).orientedDomain
+              closingDomain_sub_start :
+                closingDomain ⊆ (L.chain.localChart 0).orientedDomain
+              closingPatch_sub_closingDomain :
+                L.closing_orientedPatch ⊆ closingDomain
+              closingDomain_contains_lastTransition_of_pos :
+                ∀ hpos : L.chain.m ≠ 0,
+                  (L.chain.oriented_transition
+                    ⟨L.chain.m.pred, Nat.pred_lt hpos⟩).orientedPatch ⊆
+                      closingDomain
+            ```
+
+            Its checked method
+            `BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData.to_finiteOverlapDomainData`
+            calls the unified preconnected-domain consumer above.  The
+            downstream methods
+            `to_finiteOverlapPropagationData`, `to_closedLoopSeed`,
+            `to_orientedMonodromy_headSliceIFT`, and
+            `to_sourceMonodromy_headSliceIFT` are then pure packaging.  In
+            particular, after the source-backed BHW/Jost construction returns
+            `P : BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData L`,
+            closed-loop source monodromy is:
+
+            ```lean
+            exact P.to_sourceMonodromy_headSliceIFT
+            ```
+
             After this data is built, the checked consumers
             `BHWJostOrientedClosedLoopFiniteOverlapDomainData.to_orientedMonodromy_headSliceIFT`
             and
