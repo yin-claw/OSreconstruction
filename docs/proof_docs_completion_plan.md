@@ -293,6 +293,7 @@ it provides
 `BHW.BHWJostOrientedClosingPatchTerminalSeedData`,
 `BHW.BHWJostOrientedClosingPatchTerminalSeedData.of_sourceRealized_branch_eq`,
 `BHW.BHWJostOrientedClosingPatchTerminalSeedData.of_closingPatch_sourceBranch_eq`,
+`BHW.BHWJostOrientedClosingPatchTerminalSeedData.of_closingPatch_exists_sourceBranch_eq`,
 `BHW.BHWJostOrientedClosingPatchTerminalSeedData.to_finiteOverlapPropagationData`,
 `BHW.BHWJostOrientedClosingPatchTerminalSeedData.to_closedLoopSeed`,
 `BHW.BHWJostOrientedClosingPatchTerminalSeedData.to_orientedMonodromy_headSliceIFT`,
@@ -7838,12 +7839,16 @@ common-boundary envelope, or any theorem that already assumes locality.
    source branch values for those representatives.  The checked constructor
    `BHWJostOrientedClosingPatchTerminalSeedData.of_sourceRealized_branch_eq`
    rewrites this source-level equality into the required terminal/initial
-   `Psi` equality.  If the Hall-Wightman/Jost argument proves this branch
-   equality uniformly for all matching representatives over
-   `L.closing_orientedPatch`, call the stronger checked constructor
-   `BHWJostOrientedClosingPatchTerminalSeedData.of_closingPatch_sourceBranch_eq`;
-   it performs the max-rank seed extraction and representative choice
-   automatically.  The endpoint consumer is
+   `Psi` equality.  The most realistic whole-closing-patch target is now the
+   existential checked constructor
+   `BHWJostOrientedClosingPatchTerminalSeedData.of_closingPatch_exists_sourceBranch_eq`:
+   for every `G ∈ L.closing_orientedPatch`, produce one initial source
+   representative and one terminal source representative with invariant `G`
+   and equal branch values.  It performs max-rank seed extraction
+   automatically.  If the Hall-Wightman/Jost argument naturally proves the
+   stronger universal equality for all matching representatives, the checked
+   constructor `of_closingPatch_sourceBranch_eq` is also available.  The
+   endpoint consumer is
    `BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData`.
 
    The theorem `bhw_jost_closedChain_orientedMaxRankMonodromy_of_seed` is then
@@ -9207,7 +9212,10 @@ common-boundary envelope, or any theorem that already assumes locality.
    `of_closingPatch_sourceBranch_eq` goes one step further: from source-branch
    equality for all matching representatives over `L.closing_orientedPatch`,
    it uses the checked max-rank seed extractor and the closing-patch
-   representative helper to produce the terminal-seed package directly.  Its
+   representative helper to produce the terminal-seed package directly.  The
+   preferred weaker constructor
+   `of_closingPatch_exists_sourceBranch_eq` needs only one such matching pair
+   for each closing invariant and then performs the same seed extraction.  Its
    method
    `to_finiteOverlapPropagationData` calls the constructor above, its method
    `to_closedLoopSeed` reaches the identity-principle seed layer, its method
