@@ -36,6 +36,27 @@ theorem isConnected_preimage_continuousLinearEquiv
   rw [← himage]
   exact hS.image e.symm e.symm.continuous.continuousOn
 
+/-- Connectedness is transported through the preimage of a homeomorphism.
+This is the topology-only replacement for the normal-parameter coordinate
+model, whose checked coordinate map is a homeomorphism rather than a
+continuous linear equivalence. -/
+theorem isConnected_preimage_homeomorph
+    {E F : Type*}
+    [TopologicalSpace E] [TopologicalSpace F]
+    (e : E ≃ₜ F)
+    {S : Set F}
+    (hS : IsConnected S) :
+    IsConnected (e ⁻¹' S) := by
+  have himage : e.symm '' S = e ⁻¹' S := by
+    ext x
+    constructor
+    · rintro ⟨y, hy, rfl⟩
+      simpa using hy
+    · intro hx
+      exact ⟨e x, hx, by simp⟩
+  rw [← himage]
+  exact hS.image e.symm e.symm.continuous.continuousOn
+
 /-- The Schur parameter set with an exact-rank residual coordinate is
 connected when the head, mixed, and exact residual pieces are connected. -/
 theorem isConnected_sourcePrincipalSchur_rankExact_parameterSet

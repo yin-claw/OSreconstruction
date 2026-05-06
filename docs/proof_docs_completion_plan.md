@@ -458,7 +458,10 @@ step is now checked separately as
 `BHW.isConnected_sourcePrincipalSchur_rankExact_parameterSet`; the oriented
 proof should use it before transporting by the normal-parameter coordinate
 equivalence via the checked helper
-`BHW.isConnected_preimage_continuousLinearEquiv`.
+`BHW.isConnected_preimage_homeomorph` for the checked normal-parameter
+homeomorphism.  The older continuous-linear helper
+`BHW.isConnected_preimage_continuousLinearEquiv` remains valid for genuinely
+linear chart coordinates, but it is not the normal-parameter route.
 The pure principal-Schur oriented max-rank slice is now checked in
 `SourceOrientedSchurParameter.lean`:
 `BHW.sourcePrincipalSchur_orientedMaxRank_parameterSet_eq` rewrites the

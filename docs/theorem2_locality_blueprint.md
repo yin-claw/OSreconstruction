@@ -14775,7 +14775,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
           -- parameter map, identify its underlying value with the principal
           -- Schur graph on `P`, prove `toInv` agrees with the inverse
           -- variety transport of that point, and then transport through
-          -- `encode` by `isConnected_preimage_continuousLinearEquiv`.
+          -- `encode` by `isConnected_preimage_homeomorph`; the checked normal
+          -- coordinate bridge is a homeomorphism, not a continuous-linear
+          -- equivalence.
           --
           -- The determinant coordinates do not split this set into separate
           -- local branches: `SourceOrientedMaxRankAt` only reads `G.gram`, and
