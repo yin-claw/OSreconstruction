@@ -814,8 +814,38 @@ frontier by
 `BHW.isConnected_sourceOrientedRankDeficientSchurParameterWindow_tailRank`:
 connectedness of the full Schur-parameter window restricted to residual-tail
 exact rank follows from connectedness of the tail-coordinate exact-rank slice.
-Thus the remaining connectedness blocker is purely the residual-tail geometry,
-not the head/mixed product topology or the normal-coordinate homeomorphism.
+The first upstream residual-tail bridge is now checked in
+`SourceOrientedRankDeficientTailRankConnected.lean`:
+`BHW.sourceComplexDotGram_rank_eq_iff_fullRank` identifies exact ordinary
+dot-Gram rank with full column rank of the tuple,
+`BHW.sourceShiftedTailGram_rank_eq_iff_normalized_fullRank` transports this
+through the norm-one diagonal normalization from the shifted tail metric to the
+Euclidean dot product, and
+`BHW.sourceShiftedTailTupleWindow_tailRank_joined_radial_smul` proves that
+positive radial shrinking stays inside the target-shaped shifted-tail window
+and preserves exact residual rank.  The file now also checks
+`BHW.sourceFullRankConfigurations_smul_mem`,
+`BHW.real_pow_le_self_of_pos_of_le_one`,
+`BHW.sourceShiftedTailTupleWindow_tailRank_joined`,
+`BHW.sourceShiftedTailTupleWindow_tailRank_nonempty`,
+`BHW.isPathConnected_sourceShiftedTailTupleWindow_tailRank`, and
+`BHW.isConnected_sourceShiftedTailTupleWindow_tailRank`.
+
+The checked proof is exactly the planned transcript.  In the hard range
+`hn : d + 1 ≤ n`, set `D := d + 1 - r`, `m := n - r`, and derive
+`D ≤ m`.  For two tail-slice points, normalize by
+`Aᵢ u μ := (sourceShiftedTailMetricNormalization d r hrD).scale μ * qᵢ u μ`.
+The rank bridge puts `Aᵢ` in `sourceFullRankConfigurations m D`; the checked
+path-connectedness of that full-rank configuration space gives a path `γ`.
+Unnormalize `γ`, bound the unnormalized tuple, shifted Gram, and determinant
+paths on `unitInterval`, choose one `0 < ρ ≤ 1` small enough for both the
+coordinate and residual-data radii, join the endpoints radially, and use
+`t ↦ ρ • γq t` for the middle path.  Coordinate bounds use the tuple norm
+bound; Gram and determinant bounds use the checked homogeneity lemmas and
+`ρ^D ≤ ρ`; exact rank uses normalized full-rank preservation under nonzero
+scalar multiplication.  A separately constructed scaled standard full-rank
+configuration proves nonemptiness.  Thus the residual-tail exact-rank
+connectedness blocker is closed with no new axiom or `sorry`.
 
 The first Euclidean induction case is checked:
 `sourceTailOrientedInvariant_selectedGram_det` proves that a selected Gram
