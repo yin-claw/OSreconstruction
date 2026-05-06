@@ -7,6 +7,25 @@ import OSReconstruction.Wightman.Spectral.KallenLehmann
 import OSReconstruction.Wightman.Reconstruction.WickRotation.BHWTranslation
 
 /-!
+# Cluster decomposition from Källén-Lehmann (RETIRED)
+
+**Status (2026-05-06)**: parked in `Proofideas/`. The cluster theorem
+`W_analytic_cluster_integral` was closed via the Ruelle 1962 route in
+`OSReconstruction/Wightman/Reconstruction/WickRotation/RuelleClusterBound.lean`,
+making this spectral / KL derivation no longer required.
+
+Has 9 sorrys + open issues (existential bundling, OS time reflection,
+vacuum bridge, AC marginal — see `docs/cluster_axiom_vetting.md`
+Issues 1–4) that would each take substantial work to resolve. Preserved
+here as architectural reference in case a future state-specific spectral
+derivation is wanted (mass gap, asymptotic completeness, particle
+interpretation — applications where the KL representation is needed
+beyond cluster).
+
+The KL primitives used here (`kallen_lehmann_representation`,
+`vacuum_spectral_measure_W2`, etc.) live in production at
+`OSReconstruction/Wightman/Spectral/KallenLehmann.lean`.
+
 # Cluster decomposition from Källén-Lehmann
 
 This file demonstrates the **architecture** for closing the Schwinger cluster
