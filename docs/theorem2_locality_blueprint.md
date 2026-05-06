@@ -15451,9 +15451,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (Head : BHW.SourceRankDeficientHeadGaugeData d N.r N.hrD) :
           BHW.SourceOrientedRankDeficientSchurEstimateChoice d n N Head := by
         classical
-        -- Choose the checked finite-product coordinate homeomorphism
-        -- `sourceOrientedNormalParameterCoordHomeomorph`.  The older draft
-        -- used an unimplemented continuous-linear equivalence
+        -- Choose the checked single finite-function coordinate homeomorphism
+        -- `sourceOrientedNormalParameterFiniteCoordHomeomorph`, and take a
+        -- small metric ball supplied by
+        -- `sourceOrientedNormalParameterFiniteCoordBall_open_connected_center`.
+        -- The older draft used an unimplemented continuous-linear equivalence
         -- `sourceOrientedRankDeficientNormalParameterCoordEquiv`; production
         -- Lean should not require that stronger surface.  The head radius is
         -- obtained from the open neighborhood `Head.U` and the continuity of
@@ -15466,7 +15468,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
         -- give the determinant-unit neighborhood needed before applying the
         -- checked max-rank-to-tail-rank bridge.
         let encode :=
-          BHW.sourceOrientedNormalParameterCoordHomeomorph
+          BHW.sourceOrientedNormalParameterFiniteCoordHomeomorph
             (d := d) (n := n) (r := N.r)
             (hrD := N.hrD) (hrn := N.hrn)
         rcases
@@ -15592,8 +15594,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.SourceOrientedRankDeficientSchurNeighborhoodData
             d n N Head := by
         classical
-        -- Choose the canonical checked finite-product coordinate homeomorphism
-        -- for the product
+        -- Choose the canonical checked single finite-function coordinate
+        -- homeomorphism for the product
         -- `(head matrix) × (mixed coefficients) × (tail residual vectors)`.
         -- Let `c0` be the encoded center.  Choose a small open ball `P`
         -- around `c0`; open balls in the finite-dimensional complex model are

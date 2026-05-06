@@ -1,4 +1,5 @@
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOriented
+import Mathlib.Analysis.Convex.PathConnected
 
 /-!
 # Head/tail source indices for rank-deficient normal parameters
@@ -262,6 +263,165 @@ theorem sourceOrientedNormalParameter_head_det_isUnit_mem_nhds_center
         𝓝 (sourceOrientedNormalCenterParameter d n r hrD hrn) :=
   isOpen_sourceOrientedNormalParameter_head_det_isUnit.mem_nhds
     (sourceOrientedNormalCenterParameter_head_det_isUnit d n r hrD hrn)
+
+/-- A single finite coordinate index for normal parameters: head entries,
+mixed entries, and residual-tail vector entries. -/
+abbrev SourceOrientedNormalParameterFiniteCoordIndex (d n r : ℕ) :=
+  (Fin r × Fin r) ⊕
+    ((Fin (n - r) × Fin r) ⊕ (Fin (n - r) × Fin (d + 1 - r)))
+
+/-- Normal parameters encoded as one finite function into `ℂ`.  This is the
+metric finite-dimensional coordinate model used for small connected balls. -/
+def sourceOrientedNormalParameterFiniteCoord
+    {d n r : ℕ}
+    {hrD : r < d + 1}
+    {hrn : r ≤ n}
+    (p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn) :
+    SourceOrientedNormalParameterFiniteCoordIndex d n r → ℂ
+  | Sum.inl ab => p.head ab.1 ab.2
+  | Sum.inr (Sum.inl ua) => p.mixed ua.1 ua.2
+  | Sum.inr (Sum.inr uμ) => p.tail uμ.1 uμ.2
+
+/-- The finite-coordinate center corresponding to the normal center parameter. -/
+def sourceOrientedNormalParameterFiniteCenterCoord
+    (d n r : ℕ) :
+    SourceOrientedNormalParameterFiniteCoordIndex d n r → ℂ
+  | Sum.inl ab => (1 : Matrix (Fin r) (Fin r) ℂ) ab.1 ab.2
+  | Sum.inr (Sum.inl _ua) => 0
+  | Sum.inr (Sum.inr _uμ) => 0
+
+@[simp]
+theorem sourceOrientedNormalParameterFiniteCoord_center
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n) :
+    sourceOrientedNormalParameterFiniteCoord
+        (sourceOrientedNormalCenterParameter d n r hrD hrn) =
+      sourceOrientedNormalParameterFiniteCenterCoord d n r := by
+  funext idx
+  rcases idx with ab | uaμ
+  · rfl
+  · rcases uaμ with ua | uμ <;> rfl
+
+/-- The normal-parameter record is equivalent to its single finite-coordinate
+function model. -/
+def sourceOrientedNormalParameterFiniteCoordEquiv
+    {d n r : ℕ}
+    {hrD : r < d + 1}
+    {hrn : r ≤ n} :
+    SourceOrientedRankDeficientNormalParameter d n r hrD hrn ≃
+      (SourceOrientedNormalParameterFiniteCoordIndex d n r → ℂ) where
+  toFun := sourceOrientedNormalParameterFiniteCoord
+  invFun := fun x =>
+    { head := fun a b => x (Sum.inl (a, b))
+      mixed := fun u a => x (Sum.inr (Sum.inl (u, a)))
+      tail := fun u μ => x (Sum.inr (Sum.inr (u, μ))) }
+  left_inv := by
+    intro p
+    cases p
+    rfl
+  right_inv := by
+    intro x
+    funext idx
+    rcases idx with ab | uaμ
+    · rfl
+    · rcases uaμ with ua | uμ <;> rfl
+
+@[simp]
+theorem sourceOrientedNormalParameterFiniteCoordEquiv_apply
+    {d n r : ℕ}
+    {hrD : r < d + 1}
+    {hrn : r ≤ n}
+    (p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn) :
+    sourceOrientedNormalParameterFiniteCoordEquiv p =
+      sourceOrientedNormalParameterFiniteCoord p :=
+  rfl
+
+@[simp]
+theorem sourceOrientedNormalParameterFiniteCoordEquiv_symm_apply
+    {d n r : ℕ}
+    {hrD : r < d + 1}
+    {hrn : r ≤ n}
+    (x : SourceOrientedNormalParameterFiniteCoordIndex d n r → ℂ) :
+    (sourceOrientedNormalParameterFiniteCoordEquiv
+        (d := d) (n := n) (r := r) (hrD := hrD) (hrn := hrn)).symm x =
+      { head := fun a b => x (Sum.inl (a, b))
+        mixed := fun u a => x (Sum.inr (Sum.inl (u, a)))
+        tail := fun u μ => x (Sum.inr (Sum.inr (u, μ))) } :=
+  rfl
+
+/-- The finite-coordinate encoding is continuous. -/
+theorem continuous_sourceOrientedNormalParameterFiniteCoord
+    {d n r : ℕ}
+    {hrD : r < d + 1}
+    {hrn : r ≤ n} :
+    Continuous
+      (sourceOrientedNormalParameterFiniteCoord
+        (d := d) (n := n) (r := r) (hrD := hrD) (hrn := hrn)) := by
+  apply continuous_pi
+  intro idx
+  rcases idx with ab | uaμ
+  · exact
+      (continuous_apply ab.2).comp
+        ((continuous_apply ab.1).comp
+          (continuous_sourceOrientedNormalParameter_head
+            (d := d) (n := n) (r := r) (hrD := hrD) (hrn := hrn)))
+  · rcases uaμ with ua | uμ
+    · exact
+        (continuous_apply ua.2).comp
+          ((continuous_apply ua.1).comp
+            (continuous_sourceOrientedNormalParameter_mixed
+              (d := d) (n := n) (r := r) (hrD := hrD) (hrn := hrn)))
+    · exact
+        (continuous_apply uμ.2).comp
+          ((continuous_apply uμ.1).comp
+            (continuous_sourceOrientedNormalParameter_tail
+              (d := d) (n := n) (r := r) (hrD := hrD) (hrn := hrn)))
+
+/-- The induced normal-parameter topology is homeomorphic to the single finite
+function-coordinate topology. -/
+def sourceOrientedNormalParameterFiniteCoordHomeomorph
+    {d n r : ℕ}
+    {hrD : r < d + 1}
+    {hrn : r ≤ n} :
+    SourceOrientedRankDeficientNormalParameter d n r hrD hrn ≃ₜ
+      (SourceOrientedNormalParameterFiniteCoordIndex d n r → ℂ) where
+  toEquiv := sourceOrientedNormalParameterFiniteCoordEquiv
+  continuous_toFun := continuous_sourceOrientedNormalParameterFiniteCoord
+  continuous_invFun := by
+    rw [continuous_induced_rng]
+    change Continuous
+      (fun x : SourceOrientedNormalParameterFiniteCoordIndex d n r → ℂ =>
+        ((fun a b => x (Sum.inl (a, b)) : Matrix (Fin r) (Fin r) ℂ),
+          (fun u a => x (Sum.inr (Sum.inl (u, a))) :
+            Matrix (Fin (n - r)) (Fin r) ℂ),
+          (fun u μ => x (Sum.inr (Sum.inr (u, μ))) :
+            Fin (n - r) → Fin (d + 1 - r) → ℂ)))
+    fun_prop
+
+/-- Metric balls in the single finite-coordinate model around the normal
+center. -/
+def sourceOrientedNormalParameterFiniteCoordBall
+    (d n r : ℕ)
+    (ε : ℝ) :
+    Set (SourceOrientedNormalParameterFiniteCoordIndex d n r → ℂ) :=
+  Metric.ball (sourceOrientedNormalParameterFiniteCenterCoord d n r) ε
+
+/-- Finite-coordinate balls are open, connected, and contain the normal
+center when their radius is positive. -/
+theorem sourceOrientedNormalParameterFiniteCoordBall_open_connected_center
+    (d n r : ℕ)
+    {ε : ℝ}
+    (hε : 0 < ε) :
+    IsOpen (sourceOrientedNormalParameterFiniteCoordBall d n r ε) ∧
+      IsConnected (sourceOrientedNormalParameterFiniteCoordBall d n r ε) ∧
+      sourceOrientedNormalParameterFiniteCenterCoord d n r ∈
+        sourceOrientedNormalParameterFiniteCoordBall d n r ε := by
+  constructor
+  · exact Metric.isOpen_ball
+  constructor
+  · exact (convex_ball _ _).isConnected ⟨_, Metric.mem_ball_self hε⟩
+  · exact Metric.mem_ball_self hε
 
 /-- Embed an orthogonal-tail coordinate vector into the full spacetime
 coordinate space by padding the first `r` head coordinates with zero. -/

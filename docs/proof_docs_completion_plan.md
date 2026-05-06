@@ -500,9 +500,11 @@ this local image.  The exact Lean proof should therefore:
    `C ∩ {S | Sᵀ = S ∧ S.rank = (d + 1) - N.r}`;
 4. invoke `isConnected_symmetric_matrix_ball`, `isConnected_matrix_ball`, and
    `matrixSymmetricRankExactCone_small_connected`, combine them with the
-   transported checked Schur theorem above, then transport connectedness
-   through the checked finite-product coordinate homeomorphism
-   `sourceOrientedNormalParameterCoordHomeomorph`.
+   transported checked Schur theorem above, and use the checked single
+   finite-function coordinate model
+   `sourceOrientedNormalParameterFiniteCoordHomeomorph` plus the connected ball
+   theorem `sourceOrientedNormalParameterFiniteCoordBall_open_connected_center`
+   for the small parameter ball.
 The remaining implementation targets are the concrete exceptional
 Schur/residual max-rank-connected local-image producer, now using
 `BHW.SourceOrientedVarietyTransportEquiv` for source changes, and the
@@ -523,7 +525,15 @@ topology and continuous projections
 `BHW.continuous_sourceOrientedNormalParameter_tail`, the checked finite-product
 coordinate equivalence and topology bridge
 `BHW.sourceOrientedNormalParameterCoordEquiv` and
-`BHW.sourceOrientedNormalParameterCoordHomeomorph`, the checked open
+`BHW.sourceOrientedNormalParameterCoordHomeomorph`, the single finite-function
+coordinate model
+`BHW.SourceOrientedNormalParameterFiniteCoordIndex`,
+`BHW.sourceOrientedNormalParameterFiniteCoord`,
+`BHW.sourceOrientedNormalParameterFiniteCoordEquiv`,
+`BHW.sourceOrientedNormalParameterFiniteCoordHomeomorph`,
+`BHW.sourceOrientedNormalParameterFiniteCoordBall`, and
+`BHW.sourceOrientedNormalParameterFiniteCoordBall_open_connected_center`, the
+checked open
 invertible-head locus and center-neighborhood theorem
 `BHW.isOpen_sourceOrientedNormalParameter_head_det_isUnit` and
 `BHW.sourceOrientedNormalParameter_head_det_isUnit_mem_nhds_center`, its center
