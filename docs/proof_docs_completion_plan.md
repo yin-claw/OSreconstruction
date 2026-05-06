@@ -585,6 +585,22 @@ invertible-head, head-gauge, and Schur-coordinate controls above.  This is the
 checked bridge from the connected window theorem to the finite ball used by
 the rank-deficient local-image producer.
 
+The downstream transport adapter for that producer is now checked in
+`SourceOrientedRankDeficientLocalImageTransport.lean`.  The theorems
+`BHW.SourceOrientedRankDeficientVarietyLocalImageData.ofNormalImageTransport`
+and
+`BHW.SourceOrientedRankDeficientMaxRankLocalImageData.ofNormalImageTransport`
+convert an open canonical normal image `Ω` into the old source-oriented
+local-image packets by using the checked `SourceOrientedVarietyTransportEquiv`
+inverse image, the exact normal-parameter image equality, and the stored
+continuity/center facts for `N.originalNormalVarietyPoint`.  Thus the concrete
+Schur/residual producer no longer has to reprove transported openness or
+centeredness.  Its remaining inputs are exactly: a connected parameter window
+containing the normal center, an open normal image `Ω`, the two-sided image
+coverage between `Ω` and the parameter window, transported containment in the
+requested ambient neighborhood, and, for the strengthened packet, connectedness
+of the max-rank preimage inside the same window.
+
 The head-gauge shrink layer is now checked in
 `SourceOrientedHeadGaugeSupport.lean`:
 `BHW.sourceRankDeficientHeadGauge_factor_continuousAt_center`,
