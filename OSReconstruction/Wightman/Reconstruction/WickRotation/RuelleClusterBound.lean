@@ -911,17 +911,78 @@ theorem W_analytic_cluster_integral_via_ruelle
       refine MeasureTheory.AEStronglyMeasurable.mul ?_
         (f.continuous.comp continuous_fst).aestronglyMeasurable
       -- F_ext_on_translatedPET_total composed with the joint Wick-rotated
-      -- config (with m-block shifted by `(0, a)`).
-      -- Strategy: define `joint : NPD n × NPD m → NPD (n+m)` by
-      -- `joint p := Fin.append p.1 (p.2 + a)`. Then our function equals
-      -- `(F_ext_total ∘ wick) ∘ joint`. By `bhw_euclidean_kernel_measurable
-      -- Wfn (n := n+m)` the inner function is AEStronglyMeasurable; `joint`
-      -- is continuous (Fin.append + addition); compose via
-      -- `AEStronglyMeasurable.comp_measurable` after establishing
-      -- `(volume.prod volume).map joint = volume` (via Lebesgue
-      -- translation/relabeling invariance).
-      -- ~50 lines bridging the volume measure-preservation. Routed.
-      sorry
+      -- config. Decompose:
+      --   joint p k μ = (T_v ∘ finAddProd.symm) p k μ
+      -- where T_v(x) := v + x with v := Fin.append 0 (fun _ μ => if μ=0 then 0 else a μ),
+      -- and finAddProd.symm (p₁, p₂) = Fin.append p₁ p₂.
+      -- Both T_v and finAddProd.symm are measure-preserving.
+      -- The kernel `F_ext_total ∘ wick` is AEStronglyMeasurable on
+      -- volume of NPD (n+m) by `bhw_euclidean_kernel_measurable`.
+      -- Compose via `AEStronglyMeasurable.comp_measurePreserving`.
+      let v_a : NPointDomain d (n + m) :=
+        Fin.append (0 : NPointDomain d n)
+          (fun _ μ => if μ = 0 then (0 : ℝ) else a μ)
+      have hT_mp : MeasureTheory.MeasurePreserving
+          (fun x : NPointDomain d (n + m) => v_a + x)
+          MeasureTheory.volume MeasureTheory.volume :=
+        MeasureTheory.measurePreserving_add_left MeasureTheory.volume v_a
+      have hJ₀_mp : MeasureTheory.MeasurePreserving
+          (fun p : NPointDomain d n × NPointDomain d m =>
+            Fin.append p.1 p.2)
+          (MeasureTheory.volume.prod MeasureTheory.volume) MeasureTheory.volume := by
+        have h_eq : (fun p : NPointDomain d n × NPointDomain d m =>
+            Fin.append p.1 p.2) =
+            ((MeasurableEquiv.finAddProd n m (Fin (d + 1) → ℝ)).symm :
+              NPointDomain d n × NPointDomain d m → NPointDomain d (n + m)) := by
+          funext p
+          rw [MeasurableEquiv.finAddProd_symm_apply]
+        rw [h_eq]
+        exact (MeasureTheory.volume_preserving_finAddProd n m
+          (Fin (d + 1) → ℝ)).symm
+      have hJ_mp : MeasureTheory.MeasurePreserving
+          (fun p : NPointDomain d n × NPointDomain d m =>
+            v_a + Fin.append p.1 p.2)
+          (MeasureTheory.volume.prod MeasureTheory.volume) MeasureTheory.volume :=
+        hT_mp.comp hJ₀_mp
+      have h_kernel : MeasureTheory.AEStronglyMeasurable
+          (fun x : NPointDomain d (n + m) =>
+            F_ext_on_translatedPET_total Wfn (fun k => wickRotatePoint (x k)))
+          MeasureTheory.volume :=
+        bhw_euclidean_kernel_measurable Wfn
+      have h_composed : MeasureTheory.AEStronglyMeasurable
+          (fun p : NPointDomain d n × NPointDomain d m =>
+            F_ext_on_translatedPET_total Wfn
+              (fun k => wickRotatePoint ((v_a + Fin.append p.1 p.2) k)))
+          (MeasureTheory.volume.prod MeasureTheory.volume) :=
+        h_kernel.comp_measurePreserving hJ_mp
+      -- Show the target function equals h_composed's argument.
+      have h_eq :
+          (fun p : NPointDomain d n × NPointDomain d m =>
+            F_ext_on_translatedPET_total Wfn
+              (Fin.append (fun k => wickRotatePoint (p.1 k))
+                (fun k μ => wickRotatePoint (p.2 k) μ +
+                  (if μ = 0 then (0 : ℂ) else (a μ : ℂ))))) =
+          (fun p : NPointDomain d n × NPointDomain d m =>
+            F_ext_on_translatedPET_total Wfn
+              (fun k => wickRotatePoint ((v_a + Fin.append p.1 p.2) k))) := by
+        funext p
+        congr 1
+        funext k
+        refine Fin.addCases (fun i' => ?_) (fun j' => ?_) k
+        · -- n-block: v_a is 0 here, append gives p.1 i'
+          simp [v_a, Fin.append_left]
+        · -- m-block: v_a adds spatial shift, append gives p.2 j'
+          funext μ
+          simp [v_a, Fin.append_right]
+          by_cases hμ : μ = 0
+          · subst hμ
+            simp [wickRotatePoint]
+          · simp [wickRotatePoint, hμ]
+            ring
+      rw [show (MeasureTheory.volume :
+          MeasureTheory.Measure (NPointDomain d n × NPointDomain d m)) =
+        MeasureTheory.volume.prod MeasureTheory.volume from rfl, h_eq]
+      exact h_composed
     · -- The eventually-in-a bound `‖clusterIntegrand a p‖ ≤ bound p` for
       -- `‖a⃗‖ > R_R` (where R_R is from Ruelle's bound).
       rw [Filter.eventually_iff_exists_mem]
