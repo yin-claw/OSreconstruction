@@ -777,6 +777,37 @@ slice `H * η = (H * η)ᵀ`, not a full-matrix local inverse.  The bridge
 must likewise be replaced by a slice-to-matrix conversion for the sliced
 parameter box.
 
+Next sliced reverse-image blocker: port the checked Witt/head-normalizer from
+the legacy full-matrix gauge to the sliced gauge interface.  The exact theorem
+surface is:
+
+```lean
+theorem BHW.sourceOrientedSchurResidualTailData_mem_variety_headSliceGauge
+    [NeZero d]
+    (hd : 2 ≤ d)
+    {n r : ℕ}
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : BHW.SourceRankDeficientHeadSliceGaugeData d r hrD)
+    {G : BHW.SourceOrientedGramData d n}
+    (hGvar : G ∈ BHW.sourceOrientedGramVariety d n)
+    (hHead :
+      BHW.sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U) :
+    BHW.sourceOrientedSchurResidualTailData d n r hrD hrn G
+        (Head.factor
+          (BHW.sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar)).1 ∈
+      BHW.sourceShiftedTailOrientedVariety d r hrD (n - r)
+```
+
+Its proof is a strict port of `sourceOrientedSchurResidualTailData_mem_variety`
+in `SourceOrientedHeadGaugeNormal.lean`: every use of `Head.factor A` becomes
+`(Head.factor A).1`, `Head.factor_gram` and `Head.factor_det_unit` are the
+sliced fields, and no `factorDomain`, coordinate-window, or left-inverse field
+is used.  The companion constructor
+`sourceOriented_schurResidualData_of_headSliceGauge` then follows by calling
+`sourceOriented_schurResidualData_of_tail_mem`.  Only after these two names are
+checked should the sliced canonical-image reverse inclusion be implemented.
+
 The first normal-parameter support layer is now checked in
 `SourceOrientedNormalParameter.lean`.  The file supplies the finite head/tail
 source-label split
