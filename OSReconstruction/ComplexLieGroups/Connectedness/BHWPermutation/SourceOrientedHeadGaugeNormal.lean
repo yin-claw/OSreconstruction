@@ -553,7 +553,7 @@ structure SourceOrientedHeadGaugeNormalParameterData
     (hrn : r ≤ n)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD) where
+    (Head : SourceRankDeficientHeadFactorData d r hrD) where
   p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn
   invariant_eq :
     G =
@@ -572,7 +572,7 @@ def sourceOrientedHeadGaugeHeadParameter
     (hrn : r ≤ n)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD) :
+    (Head : SourceRankDeficientHeadFactorData d r hrD) :
     SourceOrientedRankDeficientNormalParameter d n r hrD hrn where
   head := Head.factor (sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar)
   mixed := 0
@@ -585,7 +585,7 @@ theorem sourceOrientedHeadGaugeHeadParameter_head
     (hrn : r ≤ n)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD) :
+    (Head : SourceRankDeficientHeadFactorData d r hrD) :
     (sourceOrientedHeadGaugeHeadParameter d n r hrD hrn hGvar Head).head =
       Head.factor (sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar) := by
   rfl
@@ -598,7 +598,7 @@ theorem sourceOriented_headGauge_actualHeadGram_eq_normalHeadGram
     (hrn : r ≤ n)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
     {z : Fin n → Fin (d + 1) → ℂ}
     (hz : G = sourceOrientedMinkowskiInvariant d n z)
@@ -641,7 +641,7 @@ theorem sourceOriented_headGauge_normalHead_linearIndependent
     (hrn : r ≤ n)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U) :
     LinearIndependent ℂ
       (fun a : Fin r =>
@@ -682,7 +682,7 @@ structure SourceOrientedHeadGaugeFrameSameGramData
     (d n r : ℕ)
     (hrD : r < d + 1)
     (hrn : r ≤ n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
@@ -714,7 +714,7 @@ def sourceOriented_headGaugeFrameSameGramData
     (d n r : ℕ)
     (hrD : r < d + 1)
     (hrn : r ≤ n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
@@ -723,7 +723,7 @@ def sourceOriented_headGaugeFrameSameGramData
     SourceOrientedHeadGaugeFrameSameGramData
       d n r hrD hrn Head hGvar hHead hz where
   actual_linearIndependent :=
-    sourceHeadRows_linearIndependent_of_headGauge
+    sourceHeadRows_linearIndependent_of_headFactor
       d n r hrD hrn hGvar Head hHead hz
   normal_linearIndependent :=
     sourceOriented_headGauge_normalHead_linearIndependent
@@ -732,7 +732,7 @@ def sourceOriented_headGaugeFrameSameGramData
     sourceOriented_headGauge_actualHeadGram_eq_normalHeadGram
       d n r hrD hrn hGvar Head hHead hz
   headGram_det_unit :=
-    sourceOrientedSchurHeadBlock_det_isUnit_of_headGauge
+    sourceOrientedSchurHeadBlock_det_isUnit_of_headFactor
       d n r hrD hrn hGvar Head hHead
 
 /-- Pairing a vector against a canonical head coordinate vector extracts the
@@ -769,7 +769,7 @@ theorem sourceOriented_headGauge_headCoord_eq_zero_of_orthogonal_normalHead
     (hrn : r ≤ n)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
     {v : Fin (d + 1) → ℂ}
     (horth :
@@ -849,7 +849,7 @@ def sourceOriented_headGaugeTailCoordinatesAfterWittData
     (d n r : ℕ)
     (hrD : r < d + 1)
     (hrn : r ≤ n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
@@ -891,7 +891,7 @@ def sourceOriented_headGaugeTailCoordinatesAfterWittData
   change w = sourceOrientedNormalParameterVector d n r hrD hrn p
   have hAunit : IsUnit A.det := by
     simpa [A] using
-      sourceOrientedSchurHeadBlock_det_isUnit_of_headGauge
+      sourceOrientedSchurHeadBlock_det_isUnit_of_headFactor
         d n r hrD hrn hGvar Head hHead
   have hLmul :
       L * A = sourceOrientedSchurMixedBlock n r hrn G := by
@@ -999,7 +999,7 @@ theorem sourceOriented_headGauge_tailCoordinates_after_witt
     (d n r : ℕ)
     (hrD : r < d + 1)
     (hrn : r ≤ n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
@@ -1034,7 +1034,7 @@ def sourceOriented_headGaugeNormalParameterData_of_lorentz_head_normalized
     (d n r : ℕ)
     (hrD : r < d + 1)
     (hrn : r ≤ n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
@@ -1090,7 +1090,7 @@ structure SourceOrientedHeadGaugeWittData
     (d n r : ℕ)
     (hrD : r < d + 1)
     (hrn : r ≤ n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
@@ -1111,7 +1111,7 @@ def normalParameterData
     (d n r : ℕ)
     (hrD : r < d + 1)
     (hrn : r ≤ n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
@@ -1134,7 +1134,7 @@ def sourceOriented_headGaugeWittData
     {n r : ℕ}
     (hrD : r < d + 1)
     (hrn : r ≤ n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
@@ -1191,7 +1191,7 @@ def sourceOriented_headGaugeNormalParameterData
     {n r : ℕ}
     (hrD : r < d + 1)
     (hrn : r ≤ n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
@@ -1212,7 +1212,7 @@ theorem head_det_unit
     (hrn : r ≤ n)
     {G : SourceOrientedGramData d n}
     {hGvar : G ∈ sourceOrientedGramVariety d n}
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
     (D :
       SourceOrientedHeadGaugeNormalParameterData
@@ -1230,7 +1230,7 @@ theorem residualTail_mem_variety
     (hrn : r ≤ n)
     {G : SourceOrientedGramData d n}
     {hGvar : G ∈ sourceOrientedGramVariety d n}
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
     (D :
       SourceOrientedHeadGaugeNormalParameterData
@@ -1252,13 +1252,13 @@ def schurResidualData
     (hrn : r ≤ n)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
     (D :
       SourceOrientedHeadGaugeNormalParameterData
         d n r hrD hrn hGvar Head) :
     SourceOrientedSchurResidualData d n r hrD hrn G :=
-  sourceOriented_schurResidualData_of_tail_mem
+  sourceOriented_schurResidualData_of_tail_mem_headFactor
     d n r hrD hrn hGvar Head hHead
     (residualTail_mem_variety d n r hrD hrn Head hHead D)
 
@@ -1278,7 +1278,7 @@ def sourceOriented_headGaugeNormalParameterData_of_lorentz_normalized
     (hrn : r ≤ n)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     {z : Fin n → Fin (d + 1) → ℂ}
     (hz : G = sourceOrientedMinkowskiInvariant d n z)
     {p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn}
@@ -1313,7 +1313,7 @@ def sourceOriented_headGaugeNormalParameterData_of_lorentz_head_tail
     (hrn : r ≤ n)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     {z : Fin n → Fin (d + 1) → ℂ}
     (hz : G = sourceOrientedMinkowskiInvariant d n z)
     {p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn}
@@ -1341,15 +1341,15 @@ def sourceOriented_headGaugeNormalParameterData_of_lorentz_head_tail
       · exact congrFun (hΛhead a) μ
       · exact congrFun (hΛtail u) μ)
 
-/-- The checked head-gauge Witt normalizer proves that the explicit Schur
+/-- The checked head-factor Witt normalizer proves that the explicit Schur
 residual-tail datum lies on the shifted-tail oriented variety. -/
-theorem sourceOrientedSchurResidualTailData_mem_variety
+theorem sourceOrientedSchurResidualTailData_mem_variety_headFactor
     [NeZero d]
     (hd : 2 ≤ d)
     {n r : ℕ}
     (hrD : r < d + 1)
     (hrn : r ≤ n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U) :
@@ -1365,9 +1365,62 @@ theorem sourceOrientedSchurResidualTailData_mem_variety
       (sourceOriented_headGaugeNormalParameterData
         hd hrD hrn Head hGvar hHead hz.symm)
 
-/-- The local head gauge and checked Witt normalizer produce the full Schur
+/-- The local head factor and checked Witt normalizer produce the full Schur
 residual packet for a source-variety point whose selected head block lies in
-the head-gauge neighborhood. -/
+the head-factor neighborhood. -/
+def sourceOriented_schurResidualData_of_headFactor
+    [NeZero d]
+    (hd : 2 ≤ d)
+    {n r : ℕ}
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U) :
+    SourceOrientedSchurResidualData d n r hrD hrn G :=
+  sourceOriented_schurResidualData_of_tail_mem_headFactor
+    d n r hrD hrn hGvar Head hHead
+    (sourceOrientedSchurResidualTailData_mem_variety_headFactor
+      hd hrD hrn Head hGvar hHead)
+
+/-- Legacy full-gauge wrapper for the checked head-factor Witt normalizer. -/
+theorem sourceOrientedSchurResidualTailData_mem_variety
+    [NeZero d]
+    (hd : 2 ≤ d)
+    {n r : ℕ}
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U) :
+    sourceOrientedSchurResidualTailData d n r hrD hrn G
+        (Head.factor
+          (sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar)) ∈
+      sourceShiftedTailOrientedVariety d r hrD (n - r) :=
+  sourceOrientedSchurResidualTailData_mem_variety_headFactor
+    hd hrD hrn Head.toHeadFactorData hGvar hHead
+
+/-- Sliced-gauge wrapper for the checked head-factor Witt normalizer. -/
+theorem sourceOrientedSchurResidualTailData_mem_variety_headSliceGauge
+    [NeZero d]
+    (hd : 2 ≤ d)
+    {n r : ℕ}
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadSliceGaugeData d r hrD)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U) :
+    sourceOrientedSchurResidualTailData d n r hrD hrn G
+        ((Head.factor
+          (sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar)).1) ∈
+      sourceShiftedTailOrientedVariety d r hrD (n - r) :=
+  sourceOrientedSchurResidualTailData_mem_variety_headFactor
+    hd hrD hrn Head.toHeadFactorData hGvar hHead
+
+/-- Legacy full-gauge wrapper producing the full Schur residual packet. -/
 def sourceOriented_schurResidualData_of_headGauge
     [NeZero d]
     (hd : 2 ≤ d)
@@ -1379,9 +1432,22 @@ def sourceOriented_schurResidualData_of_headGauge
     (hGvar : G ∈ sourceOrientedGramVariety d n)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U) :
     SourceOrientedSchurResidualData d n r hrD hrn G :=
-  sourceOriented_schurResidualData_of_tail_mem
-    d n r hrD hrn hGvar Head hHead
-    (sourceOrientedSchurResidualTailData_mem_variety
-      hd hrD hrn Head hGvar hHead)
+  sourceOriented_schurResidualData_of_headFactor
+    hd hrD hrn Head.toHeadFactorData hGvar hHead
+
+/-- Sliced-gauge wrapper producing the full Schur residual packet. -/
+def sourceOriented_schurResidualData_of_headSliceGauge
+    [NeZero d]
+    (hd : 2 ≤ d)
+    {n r : ℕ}
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadSliceGaugeData d r hrD)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U) :
+    SourceOrientedSchurResidualData d n r hrD hrn G :=
+  sourceOriented_schurResidualData_of_headFactor
+    hd hrD hrn Head.toHeadFactorData hGvar hHead
 
 end BHW

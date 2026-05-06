@@ -777,9 +777,14 @@ slice `H * η = (H * η)ᵀ`, not a full-matrix local inverse.  The bridge
 must likewise be replaced by a slice-to-matrix conversion for the sliced
 parameter box.
 
-Next sliced reverse-image blocker: port the checked Witt/head-normalizer from
-the legacy full-matrix gauge to the sliced gauge interface.  The exact theorem
-surface is:
+The sliced reverse-image producer now has its Witt/head-normalizer membership
+input checked.  The legacy normalizer has been factored through the minimal
+head-factor interface `BHW.SourceRankDeficientHeadFactorData`, whose only
+mathematical fields are the symmetric-head neighborhood, the chosen factor, the
+signature-relative Gram identity, and determinant invertibility.  Both the
+legacy full gauge and the corrected sliced gauge forget to this interface, so
+the checked Witt proof no longer depends on `factorDomain`, coordinate-window,
+or left-inverse fields.  The sliced public theorem surface is:
 
 ```lean
 theorem BHW.sourceOrientedSchurResidualTailData_mem_variety_headSliceGauge
@@ -799,14 +804,16 @@ theorem BHW.sourceOrientedSchurResidualTailData_mem_variety_headSliceGauge
       BHW.sourceShiftedTailOrientedVariety d r hrD (n - r)
 ```
 
-Its proof is a strict port of `sourceOrientedSchurResidualTailData_mem_variety`
-in `SourceOrientedHeadGaugeNormal.lean`: every use of `Head.factor A` becomes
-`(Head.factor A).1`, `Head.factor_gram` and `Head.factor_det_unit` are the
-sliced fields, and no `factorDomain`, coordinate-window, or left-inverse field
-is used.  The companion constructor
-`sourceOriented_schurResidualData_of_headSliceGauge` then follows by calling
-`sourceOriented_schurResidualData_of_tail_mem`.  Only after these two names are
-checked should the sliced canonical-image reverse inclusion be implemented.
+Its proof is not a duplicate copy: `sourceOrientedSchurResidualTailData_mem_variety_headFactor`
+runs the existing Witt/head-normalization argument against
+`SourceRankDeficientHeadFactorData`, and
+`sourceOrientedSchurResidualTailData_mem_variety_headSliceGauge` applies it to
+`Head.toHeadFactorData`, where the factor is `(Head.factor A).1`.  The companion
+constructor `sourceOriented_schurResidualData_of_headSliceGauge` is also
+checked.  The next sliced reverse-image blocker is therefore the actual sliced
+Schur extracted-image theorem: define the slice-aware head-coordinate window
+and reprove the canonical-image reverse inclusion using the checked sliced
+residual packet.
 
 The first normal-parameter support layer is now checked in
 `SourceOrientedNormalParameter.lean`.  The file supplies the finite head/tail

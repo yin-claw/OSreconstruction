@@ -199,6 +199,55 @@ structure SourceRankDeficientHeadSliceGaugeData
       factor (sourceHeadFactorGramSymmCoord d r hrD H.1) = H
   factor_det_unit : ∀ A ∈ U, IsUnit ((factor A).1).det
 
+/-- Minimal head-factor data used by the Witt/head-normalizer.
+
+The residual-tail membership proof uses only the symmetric-head neighborhood,
+the selected factor, the signature-relative Gram identity, and determinant
+invertibility.  Keeping these fields separate lets the same proof consume the
+correct sliced head gauge without requiring the impossible full-matrix local
+left inverse. -/
+structure SourceRankDeficientHeadFactorData
+    (d r : ℕ)
+    (hrD : r < d + 1) where
+  U : Set (SourceSymmetricMatrixCoord r)
+  factor : SourceSymmetricMatrixCoord r → Matrix (Fin r) (Fin r) ℂ
+  factor_gram :
+    ∀ A ∈ U,
+      factor A * sourceHeadMetric d r hrD * (factor A)ᵀ =
+        (A : Matrix (Fin r) (Fin r) ℂ)
+  factor_det_unit : ∀ A ∈ U, IsUnit (factor A).det
+
+namespace SourceRankDeficientHeadGaugeData
+
+/-- The legacy full-matrix gauge supplies the minimal head-factor interface. -/
+def toHeadFactorData
+    {d r : ℕ}
+    {hrD : r < d + 1}
+    (Head : SourceRankDeficientHeadGaugeData d r hrD) :
+    SourceRankDeficientHeadFactorData d r hrD where
+  U := Head.U
+  factor := Head.factor
+  factor_gram := Head.factor_gram
+  factor_det_unit := Head.factor_det_unit
+
+end SourceRankDeficientHeadGaugeData
+
+namespace SourceRankDeficientHeadSliceGaugeData
+
+/-- The corrected sliced gauge supplies the same minimal head-factor interface
+by forgetting the slice proof on the selected factor. -/
+def toHeadFactorData
+    {d r : ℕ}
+    {hrD : r < d + 1}
+    (Head : SourceRankDeficientHeadSliceGaugeData d r hrD) :
+    SourceRankDeficientHeadFactorData d r hrD where
+  U := Head.U
+  factor := fun A => (Head.factor A).1
+  factor_gram := Head.factor_gram
+  factor_det_unit := Head.factor_det_unit
+
+end SourceRankDeficientHeadSliceGaugeData
+
 /-- The explicit residual-tail datum associated to a selected head factor. -/
 def sourceOrientedSchurResidualTailData
     (d n r : ℕ)
@@ -235,15 +284,15 @@ theorem sourceOrientedSchurResidualTailData_det
       sourceSchurResidualDeterminants d n r hrD hrn G headFactor lam := by
   rfl
 
-/-- A signature-relative head gauge makes the selected Schur head block
+/-- A signature-relative head factor makes the selected Schur head block
 invertible. -/
-theorem sourceOrientedSchurHeadBlock_det_isUnit_of_headGauge
+theorem sourceOrientedSchurHeadBlock_det_isUnit_of_headFactor
     (d n r : ℕ)
     (hrD : r < d + 1)
     (hrn : r ≤ n)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
-    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U) :
     IsUnit (sourceOrientedSchurHeadBlock n r hrn G).det := by
   let Acoord := sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar
@@ -261,15 +310,29 @@ theorem sourceOrientedSchurHeadBlock_det_isUnit_of_headGauge
     simpa [Acoord, H] using Head.factor_gram Acoord hHead
   simpa [hgram] using hprod
 
-/-- Once the shifted residual-tail datum is known to lie on the shifted-tail
-oriented variety, the full Schur residual packet is just algebra. -/
-def sourceOriented_schurResidualData_of_tail_mem
+/-- Legacy full-gauge specialization of
+`sourceOrientedSchurHeadBlock_det_isUnit_of_headFactor`. -/
+theorem sourceOrientedSchurHeadBlock_det_isUnit_of_headGauge
     (d n r : ℕ)
     (hrD : r < d + 1)
     (hrn : r ≤ n)
     {G : SourceOrientedGramData d n}
     (hGvar : G ∈ sourceOrientedGramVariety d n)
     (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U) :
+    IsUnit (sourceOrientedSchurHeadBlock n r hrn G).det :=
+  sourceOrientedSchurHeadBlock_det_isUnit_of_headFactor
+    d n r hrD hrn hGvar Head.toHeadFactorData hHead
+
+/-- Once the shifted residual-tail datum is known to lie on the shifted-tail
+oriented variety, the full Schur residual packet is just algebra. -/
+def sourceOriented_schurResidualData_of_tail_mem_headFactor
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
     (htail_mem :
       sourceOrientedSchurResidualTailData d n r hrD hrn G
@@ -283,7 +346,7 @@ def sourceOriented_schurResidualData_of_tail_mem
     { A := sourceOrientedSchurHeadBlock n r hrn G
       A_eq := rfl
       A_unit :=
-        sourceOrientedSchurHeadBlock_det_isUnit_of_headGauge
+        sourceOrientedSchurHeadBlock_det_isUnit_of_headFactor
           d n r hrD hrn hGvar Head hHead
       headFactor := H
       headFactor_gram := by
@@ -297,5 +360,43 @@ def sourceOriented_schurResidualData_of_tail_mem
       tail_det_eq := rfl
       tail_mem := by
         simpa [Acoord, H] using htail_mem }
+
+/-- Legacy full-gauge specialization of
+`sourceOriented_schurResidualData_of_tail_mem_headFactor`. -/
+def sourceOriented_schurResidualData_of_tail_mem
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
+    (htail_mem :
+      sourceOrientedSchurResidualTailData d n r hrD hrn G
+          (Head.factor
+            (sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar)) ∈
+        sourceShiftedTailOrientedVariety d r hrD (n - r)) :
+    SourceOrientedSchurResidualData d n r hrD hrn G :=
+  sourceOriented_schurResidualData_of_tail_mem_headFactor
+    d n r hrD hrn hGvar Head.toHeadFactorData hHead htail_mem
+
+/-- Sliced-gauge specialization of
+`sourceOriented_schurResidualData_of_tail_mem_headFactor`. -/
+def sourceOriented_schurResidualData_of_tail_mem_headSliceGauge
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (Head : SourceRankDeficientHeadSliceGaugeData d r hrD)
+    (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
+    (htail_mem :
+      sourceOrientedSchurResidualTailData d n r hrD hrn G
+          ((Head.factor
+            (sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar)).1) ∈
+        sourceShiftedTailOrientedVariety d r hrD (n - r)) :
+    SourceOrientedSchurResidualData d n r hrD hrn G :=
+  sourceOriented_schurResidualData_of_tail_mem_headFactor
+    d n r hrD hrn hGvar Head.toHeadFactorData hHead htail_mem
 
 end BHW

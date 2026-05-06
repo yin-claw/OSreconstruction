@@ -134,8 +134,28 @@ theorem sourceRankDeficientHeadGauge_exists_matrix_nhds_factor_coordinate_bound
     simpa [hcoord_eq] using hAcoordW
   exact ⟨hW_sub hAw, hW_factor (⟨A, hAsym⟩ : SourceSymmetricMatrixCoord r) hAw⟩
 
-/-- A local head gauge makes the actual selected head rows linearly
+/-- A local head factor makes the actual selected head rows linearly
 independent for every realizing source tuple. -/
+theorem sourceHeadRows_linearIndependent_of_headFactor
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    {G : SourceOrientedGramData d n}
+    (hGvar : G ∈ sourceOrientedGramVariety d n)
+    (Head : SourceRankDeficientHeadFactorData d r hrD)
+    (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hz : G = sourceOrientedMinkowskiInvariant d n z) :
+    LinearIndependent ℂ (fun a : Fin r => z (finSourceHead hrn a)) := by
+  have hA : IsUnit (sourceOrientedSchurHeadBlock n r hrn G).det :=
+    sourceOrientedSchurHeadBlock_det_isUnit_of_headFactor
+      d n r hrD hrn hGvar Head hHead
+  subst G
+  exact sourceHeadRows_linearIndependent_of_schurHeadBlock_isUnit
+    d n r hrn z (by simpa using hA)
+
+/-- Legacy full-gauge specialization of
+`sourceHeadRows_linearIndependent_of_headFactor`. -/
 theorem sourceHeadRows_linearIndependent_of_headGauge
     (d n r : ℕ)
     (hrD : r < d + 1)
@@ -146,13 +166,9 @@ theorem sourceHeadRows_linearIndependent_of_headGauge
     (hHead : sourceOrientedSchurHeadBlockSymm d n r hrD hrn hGvar ∈ Head.U)
     {z : Fin n → Fin (d + 1) → ℂ}
     (hz : G = sourceOrientedMinkowskiInvariant d n z) :
-    LinearIndependent ℂ (fun a : Fin r => z (finSourceHead hrn a)) := by
-  have hA : IsUnit (sourceOrientedSchurHeadBlock n r hrn G).det :=
-    sourceOrientedSchurHeadBlock_det_isUnit_of_headGauge
-      d n r hrD hrn hGvar Head hHead
-  subst G
-  exact sourceHeadRows_linearIndependent_of_schurHeadBlock_isUnit
-    d n r hrn z (by simpa using hA)
+    LinearIndependent ℂ (fun a : Fin r => z (finSourceHead hrn a)) :=
+  sourceHeadRows_linearIndependent_of_headFactor
+    d n r hrD hrn hGvar Head.toHeadFactorData hHead hz
 
 /-- Head-gauge specialization of the all-zero head-tail determinant
 contrapositive: if every selected head-tail determinant vanishes, the point is

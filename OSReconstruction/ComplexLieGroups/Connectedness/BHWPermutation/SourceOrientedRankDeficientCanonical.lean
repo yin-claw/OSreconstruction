@@ -51,9 +51,9 @@ noncomputable def sourceOriented_canonical_headGaugeNormalParameterData
     (hrn : r ≤ n)
     (Head : SourceRankDeficientHeadGaugeData d r hrD) :
     SourceOrientedHeadGaugeNormalParameterData d n r hrD hrn
-      (hwLemma3CanonicalSourceOrientedVariety d n r).2 Head :=
+      (hwLemma3CanonicalSourceOrientedVariety d n r).2 Head.toHeadFactorData :=
   sourceOriented_headGaugeNormalParameterData
-    hd hrD hrn Head
+    hd hrD hrn Head.toHeadFactorData
     (hwLemma3CanonicalSourceOrientedVariety d n r).2
     (hwLemma3CanonicalSource_headGauge_mem d n r hrD hrn Head)
     (z := hwLemma3CanonicalSource d n r)
