@@ -337,6 +337,49 @@ theorem os45_wickBranchDifference_zero_of_euclideanEdge_pairing_eq_on_timeSector
       (hτ_int ψ hψ_comp hψ_supp)
       (hid_int ψ hψ_comp hψ_supp) hpair
 
+/-- On the canonical Figure-2-4 source patch, the adjacent Wick branch
+difference has zero compact-test pairing.  This packages the checked
+Euclidean-edge equality with the canonical source-patch geometry and the
+checked Wick integrability specializations. -/
+theorem os45_wickBranchDifference_zero_on_figure24SourcePatch
+    (hd : 2 ≤ d)
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) (i : Fin n) (hi : i.val + 1 < n) :
+    ∀ ψ : SchwartzNPoint d n,
+      HasCompactSupport (ψ : NPointDomain d n → ℂ) →
+      tsupport (ψ : NPointDomain d n → ℂ) ⊆
+        BHW.os45Figure24SourcePatch (d := d) (n := n) i hi →
+      ∫ u : NPointDomain d n,
+          (bvt_F OS lgc n
+              (fun k => wickRotatePoint
+                (u (Equiv.swap i ⟨i.val + 1, hi⟩ k))) -
+            bvt_F OS lgc n (fun k => wickRotatePoint (u k))) * ψ u = 0 := by
+  exact
+    BHW.os45_wickBranchDifference_zero_of_euclideanEdge_pairing_eq_on_timeSector
+      (d := d) OS lgc n i hi
+      (BHW.os45Figure24SourcePatch (d := d) (n := n) i hi)
+      (BHW.os45Figure24SourcePatch_jost (d := d) hd n i hi)
+      (1 : Equiv.Perm (Fin n))
+      (BHW.os45Figure24SourcePatch_ordered (d := d) hd n i hi)
+      (by
+        intro x hx
+        simpa using
+          BHW.os45Figure24SourcePatch_swap_ordered
+            (d := d) hd n i hi x hx)
+      (by
+        intro ψ hψ_comp hψ_supp
+        exact
+          BHW.integrable_wickEdge_bvt_F_mul_schwartz_on_figure24SourcePatch
+            (d := d) hd OS lgc n i hi
+            (Equiv.swap i ⟨i.val + 1, hi⟩) ψ hψ_comp hψ_supp)
+      (by
+        intro ψ hψ_comp hψ_supp
+        exact
+          BHW.integrable_wickEdge_bvt_F_mul_schwartz_on_figure24SourcePatch
+            (d := d) hd OS lgc n i hi
+            (1 : Equiv.Perm (Fin n)) ψ hψ_comp hψ_supp)
+
 /-- Pair of ordinary/adjacent BHW-Jost branches on one selected OS45 source
 patch hull.
 
@@ -1200,5 +1243,139 @@ def bvt_F_distributionalJostAnchor_of_pairData_difference_zero_canonical
       (d := d) n (bvt_F OS lgc n) :=
   BHW.sourceDistributionalAdjacentTubeAnchor_of_pairData_difference_zero_canonical
     (d := d) hd OS lgc n V P hsource_subset hzero
+
+/-- A BHW/Jost pair carrier whose real source patch contains the canonical
+Figure-2-4 source patch already gives the compact Figure-2-4 Wick-pairing
+packet.
+
+The checked Euclidean-edge theorem supplies the Wick distributional zero on
+the canonical source patch; `P` transfers it through the pair-data
+Wick/real-trace fields. -/
+def os45CompactFigure24WickPairingEq_of_pairData_canonical
+    (hd : 2 ≤ d)
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ) (i : Fin n) (hi : i.val + 1 < n)
+    {V : Set (NPointDomain d n)}
+    (P : BHW.OS45SourcePatchBHWJostPairData
+      (d := d) hd OS lgc n i hi V)
+    (hsource_subset :
+      BHW.os45Figure24SourcePatch (d := d) (n := n) i hi ⊆ V) :
+    BHW.OS45CompactFigure24WickPairingEq
+      (d := d) n i hi OS lgc := by
+  let P0 :=
+    BHW.OS45SourcePatchBHWJostPairData.restrict_figure24SourcePatch
+      (d := d) (n := n) hd P hsource_subset
+  have hwick_zero :
+      ∀ ψ : SchwartzNPoint d n,
+        HasCompactSupport (ψ : NPointDomain d n → ℂ) →
+        tsupport (ψ : NPointDomain d n → ℂ) ⊆
+          BHW.os45Figure24SourcePatch (d := d) (n := n) i hi →
+        ∫ u : NPointDomain d n,
+            ((bvt_F OS lgc n fun k => wickRotatePoint (u (P0.τ k))) -
+              bvt_F OS lgc n fun k => wickRotatePoint (u k)) * ψ u = 0 := by
+    intro ψ hψ_comp hψ_supp
+    have hcanon :=
+      BHW.os45_wickBranchDifference_zero_on_figure24SourcePatch
+        (d := d) hd OS lgc n i hi ψ hψ_comp hψ_supp
+    simpa [P0.τ_eq] using hcanon
+  have hreal_zero :
+      ∀ ψ : SchwartzNPoint d n,
+        HasCompactSupport (ψ : NPointDomain d n → ℂ) →
+        tsupport (ψ : NPointDomain d n → ℂ) ⊆
+          BHW.os45Figure24SourcePatch (d := d) (n := n) i hi →
+        ∫ u : NPointDomain d n,
+            P0.difference (BHW.realEmbed u) * ψ u = 0 :=
+    BHW.os45_pairData_difference_realTrace_zero_of_wickDistributionZero
+      (d := d) (n := n) P0 hwick_zero
+  exact
+    BHW.os45CompactFigure24WickPairingEq_of_pairData_difference_zero_canonical
+      (d := d) hd OS lgc n i hi P0 (by intro x hx; exact hx) hreal_zero
+
+/-- A full adjacent family of BHW/Jost pair carriers gives the compact
+Figure-2-4 Wick-pairing family once each carrier contains its canonical source
+patch. -/
+def os45CompactFigure24WickPairingEq_family_of_pairData_canonical
+    (hd : 2 ≤ d)
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (V : ∀ (i : Fin n), i.val + 1 < n → Set (NPointDomain d n))
+    (P :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        BHW.OS45SourcePatchBHWJostPairData
+          (d := d) hd OS lgc n i hi (V i hi))
+    (hsource_subset :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        BHW.os45Figure24SourcePatch (d := d) (n := n) i hi ⊆ V i hi) :
+    ∀ (i : Fin n) (hi : i.val + 1 < n),
+      BHW.OS45CompactFigure24WickPairingEq
+        (d := d) n i hi OS lgc :=
+  fun i hi =>
+    BHW.os45CompactFigure24WickPairingEq_of_pairData_canonical
+      (d := d) hd OS lgc n i hi (P i hi) (hsource_subset i hi)
+
+/-- Direct source anchor from a full adjacent family of BHW/Jost pair carriers.
+No additional distributional-zero or integrability inputs remain. -/
+def sourceDistributionalAdjacentTubeAnchor_of_pairData_canonical
+    (hd : 2 ≤ d)
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (V : ∀ (i : Fin n), i.val + 1 < n → Set (NPointDomain d n))
+    (P :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        BHW.OS45SourcePatchBHWJostPairData
+          (d := d) hd OS lgc n i hi (V i hi))
+    (hsource_subset :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        BHW.os45Figure24SourcePatch (d := d) (n := n) i hi ⊆ V i hi) :
+    BHW.SourceDistributionalAdjacentTubeAnchor
+      (d := d) n (bvt_F OS lgc n) :=
+  BHW.sourceDistributionalAdjacentTubeAnchor_of_compactWickPairingEq
+    (d := d) OS lgc n
+    (BHW.os45CompactFigure24WickPairingEq_family_of_pairData_canonical
+      (d := d) hd OS lgc n V P hsource_subset)
+
+/-- Older selected-adjacent Jost anchor packet from a full adjacent family of
+BHW/Jost pair carriers. -/
+def bvt_F_selectedAdjacentDistributionalJostAnchorData_of_pairData_canonical
+    (hd : 2 ≤ d)
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (V : ∀ (i : Fin n), i.val + 1 < n → Set (NPointDomain d n))
+    (P :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        BHW.OS45SourcePatchBHWJostPairData
+          (d := d) hd OS lgc n i hi (V i hi))
+    (hsource_subset :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        BHW.os45Figure24SourcePatch (d := d) (n := n) i hi ⊆ V i hi) :
+    SelectedAdjacentDistributionalJostAnchorData OS lgc n :=
+  BHW.bvt_F_selectedAdjacentDistributionalJostAnchorData_of_compactWickPairingEq
+    (d := d) OS lgc n
+    (BHW.os45CompactFigure24WickPairingEq_family_of_pairData_canonical
+      (d := d) hd OS lgc n V P hsource_subset)
+
+/-- OS-selected naming wrapper for the direct source anchor produced from a
+full adjacent family of BHW/Jost pair carriers. -/
+def bvt_F_distributionalJostAnchor_of_pairData_canonical
+    (hd : 2 ≤ d)
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (V : ∀ (i : Fin n), i.val + 1 < n → Set (NPointDomain d n))
+    (P :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        BHW.OS45SourcePatchBHWJostPairData
+          (d := d) hd OS lgc n i hi (V i hi))
+    (hsource_subset :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        BHW.os45Figure24SourcePatch (d := d) (n := n) i hi ⊆ V i hi) :
+    BHW.SourceDistributionalAdjacentTubeAnchor
+      (d := d) n (bvt_F OS lgc n) :=
+  BHW.sourceDistributionalAdjacentTubeAnchor_of_pairData_canonical
+    (d := d) hd OS lgc n V P hsource_subset
 
 end BHW
