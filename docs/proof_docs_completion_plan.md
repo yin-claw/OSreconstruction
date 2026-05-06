@@ -836,6 +836,98 @@ slice, and the checked local-image wrapper consumes the sliced canonical-image
 theorem.  The remaining local producer target is the inverse-function theorem
 construction of `SourceRankDeficientHeadSliceGaugeData`.
 
+Head-slice inverse-function readiness, 2026-05-06.  The finite-dimensional
+coordinate reduction for that producer has now started in
+`SourceOrientedHeadSliceGaugeIFT.lean`.  The checked coordinate is not the full
+matrix variable `H`, but the symmetric submodule variable
+`K = H * η - η`, where `η := sourceHeadMetric d r hrD`.  The file checks:
+
+```lean
+def BHW.sourceSymmetricMatrixSubmodule (r : ℕ) :
+  Submodule ℂ (Matrix (Fin r) (Fin r) ℂ)
+
+theorem BHW.sourceHeadMetric_mul_self
+  (d r : ℕ) (hrD : r < d + 1) :
+  sourceHeadMetric d r hrD * sourceHeadMetric d r hrD = 1
+
+def BHW.sourceHeadGaugeSliceSymmCoordHomeomorph
+  (d r : ℕ) (hrD : r < d + 1) :
+  SourceHeadGaugeSlice d r hrD ≃ₜ sourceSymmetricMatrixSubmodule r
+
+def BHW.sourceHeadSliceGramPolynomial
+  (d r : ℕ) (hrD : r < d + 1) :
+  sourceSymmetricMatrixSubmodule r → sourceSymmetricMatrixSubmodule r
+
+theorem BHW.sourceHeadSliceGramPolynomial_eq_factorGram
+  (d r : ℕ) (hrD : r < d + 1)
+  (K : sourceSymmetricMatrixSubmodule r) :
+  (sourceHeadSliceGramPolynomial d r hrD K :
+      Matrix (Fin r) (Fin r) ℂ) =
+    (sourceHeadGaugeSliceOfSymmCoord d r hrD K).1 *
+      sourceHeadMetric d r hrD *
+      (sourceHeadGaugeSliceOfSymmCoord d r hrD K).1ᵀ
+```
+
+Mathematically, if `H` is in the slice and `K = Hη - η`, then
+`H = (η + K)η` because `η² = 1`, and hence
+`HηHᵀ = (η + K)η(η + K) = η + 2K + KηK`.  The derivative at the origin is
+therefore the continuous linear equivalence `K ↦ 2K`, bundled as
+`sourceHeadSliceGramPolynomialDerivEquiv`.
+
+The remaining Lean transcript for constructing
+`SourceRankDeficientHeadSliceGaugeData` is now exact:
+
+1. Register the local matrix sup-norm instances for
+   `Matrix (Fin r) (Fin r) ℂ`, prove the symmetric submodule is complete by
+   finite dimensionality (or by closed-submodule completeness), and prove
+   `HasStrictFDerivAt (sourceHeadSliceGramPolynomial d r hrD)
+   (sourceHeadSliceGramPolynomialDerivEquiv r : _ →L[ℂ] _) 0`.  The proof is
+   by unfolding the polynomial, applying finite-dimensional polynomial
+   `fun_prop` to the underlying matrix map, and using `Submodule.coe_norm` to
+   move the strict derivative through the symmetric-submodule subtype.  No
+   analytic or OS-specific theorem is hidden here; it is a finite-dimensional
+   quadratic-map calculation.
+2. Apply
+   `HasStrictFDerivAt.toOpenPartialHomeomorph` to get an open partial
+   homeomorphism `e` on `sourceSymmetricMatrixSubmodule r` with forward map
+   `sourceHeadSliceGramPolynomial d r hrD`, source containing `0`, and target
+   containing `sourceHeadMetricSymmSubmodule d r hrD`.
+3. Convert the target from the symmetric submodule to
+   `SourceSymmetricMatrixCoord r` via
+   `sourceSymmetricMatrixCoordToSubmodule.symm`.  Define
+   `Head.U` as this converted target and define
+   `Head.factor A` by pulling `A` back to the symmetric submodule, applying
+   `e.symm`, and converting the resulting `K` to the slice point
+   `sourceHeadGaugeSliceOfSymmCoord d r hrD K`.
+4. Define `Head.factorDomain` as the preimage of `e.source` under
+   `sourceHeadGaugeSliceSymmCoordHomeomorph`.  Openness and center membership
+   follow from the checked homeomorphism and the source membership of `0`.
+   The required coordinate-window field follows from the finite product
+   neighborhood-basis lemma:
+   every open neighborhood of `sourceHeadGaugeSliceCenter` in the slice
+   contains some positive
+   `sourceHeadGaugeSliceCoordinateWindow d r hrD ρ`.  In coordinates this is
+   the same as an entrywise window around `0` for `K`, because the diagonal
+   entries of `η` have norm `1`.
+5. The fields of `SourceRankDeficientHeadSliceGaugeData` are then mechanical:
+   `factor_continuousOn` is continuity of `e.symm` on the target composed with
+   the checked homeomorphisms; `factor_center` is
+   `e.symm (sourceHeadMetricSymmSubmodule d r hrD) = 0`; `factor_gram` is
+   `OpenPartialHomeomorph.right_inv` plus
+   `sourceHeadSliceGramPolynomial_eq_factorGram`; `factorDomain_mem` and
+   `factor_left_inverse` are `map_source` and `left_inv` for `e`; and
+   `factor_det_unit` follows by shrinking the factor domain to a small
+   coordinate window around the identity and applying continuity of determinant
+   plus `det 1 = 1`.
+
+This transcript is the finite-dimensional local-inverse construction needed
+for the sliced local-image producer.  It is independent of BHW continuation,
+OS positivity, Wightman functions, and the later monodromy atlas.  The only
+remaining proof-doc item inside this local producer is to pin the exact Lean
+neighborhood-basis lemma for the slice coordinate window; once that helper is
+checked, the `SourceRankDeficientHeadSliceGaugeData` constructor is a direct
+implementation task.
+
 The first normal-parameter support layer is now checked in
 `SourceOrientedNormalParameter.lean`.  The file supplies the finite head/tail
 source-label split
