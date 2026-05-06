@@ -151,4 +151,48 @@ theorem exists_glued_branch
 
 end BHWOrientedContinuationChainAtlasData
 
+/-- Terminal comparison data for two oriented continuation chains with the
+same base point and endpoint.  The hard BHW/Jost closed-loop comparison should
+produce this object; its consumer is just evaluation at the endpoint. -/
+structure BHWOrientedTerminalChainComparisonData
+    [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
+    {Ω0 U : Set (Fin n → Fin (d + 1) → ℂ)}
+    {B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+    {p0 z : Fin n → Fin (d + 1) → ℂ}
+    (C₁ C₂ :
+      BHWJostOrientedSourcePatchContinuationChain
+        hd n τ Ω0 U B0 p0 z) where
+  terminalPatch : Set (Fin n → Fin (d + 1) → ℂ)
+  endpoint_mem : z ∈ terminalPatch
+  terminalPatch_open : IsOpen terminalPatch
+  terminalPatch_preconnected : IsPreconnected terminalPatch
+  terminalPatch_sub_left :
+    terminalPatch ⊆ C₁.chart (Fin.last C₁.m)
+  terminalPatch_sub_right :
+    terminalPatch ⊆ C₂.chart (Fin.last C₂.m)
+  terminal_branches_eq :
+    Set.EqOn
+      (C₁.branch (Fin.last C₁.m))
+      (C₂.branch (Fin.last C₂.m))
+      terminalPatch
+
+namespace BHWOrientedTerminalChainComparisonData
+
+variable [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
+variable {Ω0 U : Set (Fin n → Fin (d + 1) → ℂ)}
+variable {B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+variable {p0 z : Fin n → Fin (d + 1) → ℂ}
+variable {C₁ C₂ :
+  BHWJostOrientedSourcePatchContinuationChain hd n τ Ω0 U B0 p0 z}
+
+/-- Terminal comparison data immediately gives equality of the two continued
+values. -/
+theorem continuedValue_eq
+    (P : BHWOrientedTerminalChainComparisonData C₁ C₂) :
+    bhw_continuedValueAlongOrientedChain hd n τ Ω0 U B0 C₁ =
+      bhw_continuedValueAlongOrientedChain hd n τ Ω0 U B0 C₂ :=
+  P.terminal_branches_eq P.endpoint_mem
+
+end BHWOrientedTerminalChainComparisonData
+
 end BHW

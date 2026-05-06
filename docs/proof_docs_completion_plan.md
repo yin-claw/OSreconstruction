@@ -255,10 +255,14 @@ producer plus uniform descent, and
 spelling of the compact transfer-cover chain fold.  It also provides
 `BHW.BHWOrientedContinuationChainAtlasData`,
 `BHW.BHWOrientedContinuationChainAtlasData.to_sourcePatchContinuationAtlas`,
-and `BHW.BHWOrientedContinuationChainAtlasData.exists_glued_branch`, which
+`BHW.BHWOrientedContinuationChainAtlasData.exists_glued_branch`,
+`BHW.BHWOrientedTerminalChainComparisonData`, and
+`BHW.BHWOrientedTerminalChainComparisonData.continuedValue_eq`, which
 turn selected terminal chains plus terminal overlap/base agreement into the
-checked source-patch atlas and glued branch.  This keeps the carrier/API file
-below the hard-frontier size limit and introduces no new analytic assumption.
+checked source-patch atlas and glued branch, and turn a produced terminal
+comparison patch into equality of continued values.  This keeps the
+carrier/API file below the hard-frontier size limit and introduces no new
+analytic assumption.
 
 The open-chart BHW near-identity input is now checked in
 `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedBHWInvariance.lean`.
@@ -7722,12 +7726,7 @@ common-boundary envelope, or any theorem that already assumes locality.
        (C₁ C₂ :
          BHW.BHWJostOrientedSourcePatchContinuationChain
            hd n τ Ω0 U B0 p0 z) :
-       ∃ P : Set (Fin n -> Fin (d + 1) -> ℂ),
-         z ∈ P ∧ IsOpen P ∧ IsPreconnected P ∧
-         P ⊆ C₁.chart (Fin.last C₁.m) ∩ C₂.chart (Fin.last C₂.m) ∧
-         Set.EqOn
-           (C₁.branch (Fin.last C₁.m))
-           (C₂.branch (Fin.last C₂.m)) P
+       BHW.BHWOrientedTerminalChainComparisonData C₁ C₂
 
    theorem BHW.bhw_branch_orientedChain_singleValued_on_sourcePatchHull
        [NeZero d] (hd : 2 <= d)
@@ -7944,8 +7943,10 @@ common-boundary envelope, or any theorem that already assumes locality.
    patch inside `C₁.start_patch ∩ C₂.start_patch`, and invokes the closed-loop
    source theorem.  The stored oriented transition data then propagate the
    equality forward to a small endpoint patch inside the intersection of the
-   two terminal charts at `z`.  Evaluating this endpoint equality gives
-   `bhw_branch_orientedChain_singleValued_on_sourcePatchHull`.
+   two terminal charts at `z`, packaged as
+   `BHWOrientedTerminalChainComparisonData C₁ C₂`.  The checked method
+   `BHWOrientedTerminalChainComparisonData.continuedValue_eq` evaluates this
+   endpoint equality to give chain single-valuedness.
 
    The checked assembly target for the atlas-from-chains step is
    `BHWOrientedContinuationChainAtlasData`: choose the fixed base point and
