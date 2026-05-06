@@ -764,9 +764,9 @@ theorem bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData
       L.closing_patch :=
   P.to_sourceMonodromy_headSliceIFT
 
-/-- Public source-monodromy endpoint for the preferred accumulated-germ
-closed-loop input: one source-realized terminal/initial branch equality above
-each point of the closing oriented patch. -/
+/-- Public source-monodromy endpoint for the stronger whole-closing-patch
+input: one source-realized terminal/initial branch equality above each point of
+the closing oriented patch. -/
 theorem bhw_jost_closedChain_sourceMonodromy_of_closingPatch_exists_sourceBranch_eq
     [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
     {Ω0 U : Set (Fin n → Fin (d + 1) → ℂ)}

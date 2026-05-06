@@ -7840,7 +7840,7 @@ common-boundary envelope, or any theorem that already assumes locality.
    source branch values for those representatives.  The checked constructor
    `BHWJostOrientedClosingPatchTerminalSeedData.of_sourceRealized_branch_eq`
    rewrites this source-level equality into the required terminal/initial
-   `Psi` equality.  The most realistic whole-closing-patch target is now the
+   `Psi` equality.  A useful stronger whole-closing-patch target is the
    existential checked constructor
    `BHWJostOrientedClosingPatchTerminalSeedData.of_closingPatch_exists_sourceBranch_eq`:
    for every `G ∈ L.closing_orientedPatch`, produce one initial source
@@ -7851,9 +7851,10 @@ common-boundary envelope, or any theorem that already assumes locality.
    constructor `of_closingPatch_sourceBranch_eq` is also available.  The
    terminal-seed endpoint consumer is
    `BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData`,
-   while the direct preferred endpoint from existential closing-patch equality
-   is
-   `BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatch_exists_sourceBranch_eq`.
+   while
+   `BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatch_exists_sourceBranch_eq`
+   is the direct endpoint from stronger whole-closing-patch existential
+   equality.
 
    The theorem `bhw_jost_closedChain_orientedMaxRankMonodromy_of_seed` is then
    the identity-principle propagation, not the monodromy theorem.  Let
@@ -9217,7 +9218,7 @@ common-boundary envelope, or any theorem that already assumes locality.
    equality for all matching representatives over `L.closing_orientedPatch`,
    it uses the checked max-rank seed extractor and the closing-patch
    representative helper to produce the terminal-seed package directly.  The
-   preferred weaker constructor
+   weaker whole-closing-patch constructor
    `of_closingPatch_exists_sourceBranch_eq` needs only one such matching pair
    for each closing invariant and then performs the same seed extraction.  Its
    method
