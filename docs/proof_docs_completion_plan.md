@@ -715,6 +715,21 @@ radius and residual-data radius in one local finite-dimensional estimate
 theorem; it must not obtain forward containment by destructing an abstract
 existential one-way theorem and hoping the returned radius has a compatible
 size.  The first Euclidean induction case is checked:
+
+The source-oriented adapter for a compatible shifted-tail packet is now
+checked in `SourceOrientedRankDeficientTailRadius.lean`.  It defines
+`BHW.SourceOrientedSchurTailSmallFor`,
+`BHW.SourceOrientedRankDeficientTailRadiusChoice`, and
+`BHW.SourceOrientedRankDeficientTailRadiusChoice.ofShiftedCompatible`.  The
+adapter proves that a supplied
+`SourceShiftedTailCompatibleSmallRealization` gives the source-oriented
+`tailRealize` field and, using
+`sourceOrientedSchurResidualTailData_normalParameter`, gives
+`normalParam_tail_small` for normal parameters with invertible head.  This
+does not construct the compatible estimates; it makes the remaining estimate
+obligation exact and purely shifted-tail/finite-dimensional.
+
+The first Euclidean induction case is checked:
 `sourceTailOrientedInvariant_selectedGram_det` proves that a selected Gram
 determinant is the square of the selected tail determinant,
 `sourceTailOrientedVariety_det_eq_zero_of_gram_eq_zero` proves zero Gram
