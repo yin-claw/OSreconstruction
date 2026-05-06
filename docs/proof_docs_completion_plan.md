@@ -644,6 +644,9 @@ It also checks
 `SourceOrientedRankDeficientAlgebraicNormalFormData.maxRankLocalImageData_of_headGaugeSchurWindowCanonicalImage`,
 the head-gauge-aware assembly wrapper that consumes a canonical-image theorem
 with the head-domain containment as an explicit hypothesis.
+The forward mixed-coordinate bridge is also checked as
+`sourceSchurMixedCoeff_normalParameter_headGauge` and
+`schurWindow_normalParameter_headGauge_mixedCoeff_eq`.
 Thus the remaining canonical-image theorem may assume a window already shrunk
 into the head-gauge factor domain; it no longer has to compare two different
 head factors by hand.

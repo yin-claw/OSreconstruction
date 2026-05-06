@@ -216,6 +216,39 @@ theorem sourceOrientedSchurResidualTailData_normalParameter_headGauge
   rw [hfactor]
   exact sourceOrientedSchurResidualTailData_normalParameter d n r hrD hrn p hH
 
+/-- With a head gauge whose factor is left-inverse on the stored normal head,
+the Schur mixed coefficient extracted from a normal image is the stored mixed
+coordinate. -/
+theorem sourceSchurMixedCoeff_normalParameter_headGauge
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    (p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn)
+    (hphead : p.head ∈ Head.factorDomain) :
+    sourceSchurMixedCoeff n r hrn
+        (sourceOrientedMinkowskiInvariant d n
+          (sourceOrientedNormalParameterVector d n r hrD hrn p))
+        (sourceOrientedSchurHeadBlock n r hrn
+          (sourceOrientedMinkowskiInvariant d n
+            (sourceOrientedNormalParameterVector d n r hrD hrn p))) =
+      p.mixed := by
+  have hU : sourceHeadFactorGramSymmCoord d r hrD p.head ∈ Head.U :=
+    Head.factorDomain_mem p.head hphead
+  have hunit :=
+    Head.factor_det_unit (sourceHeadFactorGramSymmCoord d r hrD p.head) hU
+  have hH : IsUnit p.head.det := by
+    simpa [Head.factor_left_inverse p.head hphead] using hunit
+  have hA :
+      IsUnit (p.head * sourceHeadMetric d r hrD * p.headᵀ).det := by
+    have hη : IsUnit (sourceHeadMetric d r hrD).det :=
+      sourceHeadMetric_det_isUnit d r hrD
+    have hHt : IsUnit p.headᵀ.det := Matrix.isUnit_det_transpose p.head hH
+    rw [Matrix.det_mul, Matrix.det_mul]
+    exact (hH.mul hη).mul hHt
+  rw [sourceOrientedSchurHeadBlock_normalParameter]
+  exact sourceSchurMixedCoeff_normalParameter d n r hrD hrn p hA
+
 /-- Gauge-selected residual tails of normal images lie on the shifted-tail
 variety whenever the stored head lies in the gauge factor domain. -/
 theorem sourceOrientedSchurResidualTailData_normalParameter_headGauge_mem_variety

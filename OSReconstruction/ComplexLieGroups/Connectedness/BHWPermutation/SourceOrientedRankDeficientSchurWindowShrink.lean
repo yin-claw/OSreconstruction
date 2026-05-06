@@ -261,6 +261,32 @@ theorem schurWindow_normalParameter_headGauge_residualTail_eq
     sourceOrientedSchurResidualTailData_normalParameter_headGauge
       d n r hrD hrn Head p (hdomain hp.1)
 
+/-- On a Schur window contained in the head-gauge factor domain, the extracted
+Schur mixed coefficient of a normal image is the stored mixed coordinate. -/
+theorem schurWindow_normalParameter_headGauge_mixedCoeff_eq
+    {d n r : ℕ}
+    {hrD : r < d + 1}
+    {hrn : r ≤ n}
+    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    {headRadius mixedRadius : ℝ}
+    {Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn}
+    (hdomain :
+      sourceOrientedHeadCoordinateWindow r headRadius ⊆ Head.factorDomain)
+    (p : SourceOrientedRankDeficientNormalParameter d n r hrD hrn)
+    (hp :
+      p ∈ sourceOrientedRankDeficientSchurParameterWindow
+        d n r hrD hrn headRadius mixedRadius Tail) :
+    sourceSchurMixedCoeff n r hrn
+        (sourceOrientedMinkowskiInvariant d n
+          (sourceOrientedNormalParameterVector d n r hrD hrn p))
+        (sourceOrientedSchurHeadBlock n r hrn
+          (sourceOrientedMinkowskiInvariant d n
+            (sourceOrientedNormalParameterVector d n r hrD hrn p))) =
+      p.mixed := by
+  exact
+    sourceSchurMixedCoeff_normalParameter_headGauge
+      d n r hrD hrn Head p (hdomain hp.1)
+
 /-- Membership form of
 `schurWindow_normalParameter_headGauge_residualTail_eq`. -/
 theorem schurWindow_normalParameter_headGauge_residualTail_mem_variety
