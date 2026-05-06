@@ -76,6 +76,45 @@ noncomputable def bhw_jost_orientedContinuationChain_of_transferCover
     hstart_open hstart_preconnected hstart_nonempty hstart_mem
     hstart_sub hstart_agree
 
+/-- A path-connected continuation set, together with branch-free transfer
+neighborhoods at every point, gives a selected continuation chain from the
+fixed base point to every point of `U`. -/
+noncomputable def bhw_jost_orientedContinuationChainAt_of_pathConnected_transferCover
+    [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
+    {Ω0 U : Set (Fin n → Fin (d + 1) → ℂ)}
+    {B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+    {p0 : Fin n → Fin (d + 1) → ℂ}
+    (hU_path : IsPathConnected U)
+    (T :
+      ∀ z, z ∈ U →
+        BHWJostOrientedBranchFreeTransferNeighborhood hd n τ U z)
+    (C0 : BHWJostLocalOrientedContinuationChart hd n τ U)
+    (hbase : p0 ∈ Ω0 ∩ U)
+    (hp0C : p0 ∈ C0.carrier)
+    (start_patch : Set (Fin n → Fin (d + 1) → ℂ))
+    (hstart_open : IsOpen start_patch)
+    (hstart_preconnected : IsPreconnected start_patch)
+    (hstart_nonempty : start_patch.Nonempty)
+    (hstart_mem : p0 ∈ start_patch)
+    (hstart_sub : start_patch ⊆ Ω0 ∩ C0.carrier)
+    (hstart_agree : ∀ y, y ∈ start_patch → C0.branch y = B0 y) :
+    ∀ z, z ∈ U →
+      BHWJostOrientedSourcePatchContinuationChain
+        hd n τ Ω0 U B0 p0 z := by
+  intro z hz
+  let hjoin : JoinedIn U p0 z := hU_path.joinedIn p0 hbase.2 z hz
+  have hchain :=
+    bhw_jost_orientedContinuationChain_of_transferCover
+      (hd := hd) (τ := τ) (Ω0 := Ω0) (U := U) (B0 := B0)
+      (p0 := p0) (γ := fun t : unitInterval => hjoin.somePath t)
+      hjoin.somePath.continuous
+      (by simp)
+      (fun t => hjoin.somePath_mem t)
+      (fun t => T (hjoin.somePath t) (hjoin.somePath_mem t))
+      C0 hbase hp0C start_patch hstart_open hstart_preconnected
+      hstart_nonempty hstart_mem hstart_sub hstart_agree
+  simpa using hchain
+
 /-- Chain-level data sufficient to assemble a source-patch continuation atlas.
 The hard content is selecting one continuation chain through each point of
 `U`, proving terminal overlap equality for the selected chains, and proving

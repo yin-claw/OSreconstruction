@@ -253,6 +253,10 @@ which builds branch-free transfer neighborhoods from a normal-form patch
 producer plus uniform descent, and
 `BHW.bhw_jost_orientedContinuationChain_of_transferCover`, the top-level
 spelling of the compact transfer-cover chain fold.  It also provides
+`BHW.bhw_jost_orientedContinuationChainAt_of_pathConnected_transferCover`,
+which chooses a path from the fixed base point to each point of a
+path-connected `U` and folds the corresponding transfer cover into a selected
+terminal chain.  It also provides
 `BHW.BHWOrientedContinuationChainAtlasData`,
 `BHW.BHWOrientedContinuationChainAtlasData.to_sourcePatchContinuationAtlas`,
 `BHW.BHWOrientedContinuationChainAtlasData.exists_glued_branch`,
@@ -7955,10 +7959,14 @@ common-boundary envelope, or any theorem that already assumes locality.
    The checked assembly target for the atlas-from-chains step is
    `BHWOrientedContinuationChainAtlasData`.  The Lean-ready route to it now
    uses
-   `BHWOrientedContinuationChainAtlasData.ofSameEndpointComparisons`: choose
-   the fixed base point and one oriented terminal chain through every point of
-   `U`, supply the same-endpoint comparison theorem for arbitrary pairs of
-   chains ending at the same point, and prove base agreement on `Ω0 ∩ U`.
+   `BHWOrientedContinuationChainAtlasData.ofSameEndpointComparisons`.  The
+   selected-chain field is now checked from path-connectedness by
+   `BHW.bhw_jost_orientedContinuationChainAt_of_pathConnected_transferCover`:
+   use `IsPathConnected.joinedIn p0 hbase.2 z hz`, take
+   `JoinedIn.somePath`, and call the compact transfer-cover fold along that
+   path.  The remaining hard atlas inputs are therefore the transfer
+   neighborhoods on `U`, the same-endpoint comparison theorem for arbitrary
+   pairs of chains ending at the same point, and base agreement on `Ω0 ∩ U`.
    The constructor derives the atlas `terminal_overlap_eq` field by a checked
    retargeting argument.  For `y` in the intersection of the terminal charts
    of chains ending at `a` and `b`, append the tautological same-chart
