@@ -57,6 +57,201 @@ def sourceOrientedRankDeficientTailWindow
       ‖(sourceShiftedTailOrientedInvariant d r hrD (n - r) p.tail).det ι‖ <
         Tail.tailEta)}
 
+@[simp]
+theorem sourceTailEmbed_smul
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (a : ℂ)
+    (q : Fin (d + 1 - r) → ℂ) :
+    sourceTailEmbed d r hrD (fun μ => a * q μ) =
+      fun μ => a * sourceTailEmbed d r hrD q μ := by
+  ext μ
+  by_cases h : r ≤ μ.val
+  · simp [sourceTailEmbed, h]
+  · simp [sourceTailEmbed, h]
+
+@[simp]
+theorem sourceShiftedTailGram_smul
+    (d r m : ℕ)
+    (hrD : r < d + 1)
+    (a : ℂ)
+    (q : Fin m → Fin (d + 1 - r) → ℂ)
+    (u v : Fin m) :
+    sourceShiftedTailGram d r hrD m (fun u μ => a * q u μ) u v =
+      a * a * sourceShiftedTailGram d r hrD m q u v := by
+  rw [sourceShiftedTailGram_apply, sourceShiftedTailGram_apply]
+  rw [sourceTailEmbed_smul, sourceTailEmbed_smul]
+  rw [sourceVectorMinkowskiInner_smul_left, sourceVectorMinkowskiInner_smul_right]
+  ring
+
+@[simp]
+theorem sourceShiftedTailOrientedInvariant_smul_gram
+    (d r m : ℕ)
+    (hrD : r < d + 1)
+    (a : ℂ)
+    (q : Fin m → Fin (d + 1 - r) → ℂ)
+    (u v : Fin m) :
+    (sourceShiftedTailOrientedInvariant d r hrD m
+        (fun u μ => a * q u μ)).gram u v =
+      a * a * (sourceShiftedTailOrientedInvariant d r hrD m q).gram u v := by
+  exact sourceShiftedTailGram_smul d r m hrD a q u v
+
+@[simp]
+theorem sourceShiftedTailOrientedInvariant_smul_det
+    (d r m : ℕ)
+    (hrD : r < d + 1)
+    (a : ℂ)
+    (q : Fin m → Fin (d + 1 - r) → ℂ)
+    (ι : Fin (d + 1 - r) ↪ Fin m) :
+    (sourceShiftedTailOrientedInvariant d r hrD m
+        (fun u μ => a * q u μ)).det ι =
+      a ^ (d + 1 - r) *
+        (sourceShiftedTailOrientedInvariant d r hrD m q).det ι := by
+  let M : Matrix (Fin (d + 1 - r)) (Fin (d + 1 - r)) ℂ :=
+    fun u μ => q (ι u) μ
+  change (a • M).det = a ^ (d + 1 - r) * M.det
+  rw [Matrix.det_smul]
+  simp
+
+/-- Scaling a tail tuple toward zero preserves membership in the target-shaped
+tail window inequalities. -/
+theorem sourceShiftedTailWindow_scaled
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn)
+    {q : Fin (n - r) → Fin (d + 1 - r) → ℂ}
+    (hq_coord : ∀ u μ, ‖q u μ‖ < Tail.tailCoordRadius)
+    (hq_gram :
+      ∀ u v,
+        ‖(sourceShiftedTailOrientedInvariant d r hrD (n - r) q).gram u v‖ <
+          Tail.tailEta)
+    (hq_det :
+      ∀ ι,
+        ‖(sourceShiftedTailOrientedInvariant d r hrD (n - r) q).det ι‖ <
+          Tail.tailEta)
+    {t : ℝ}
+    (ht_nonneg : 0 ≤ t)
+    (ht_le : t ≤ 1) :
+    (∀ u μ, ‖(t : ℂ) * q u μ‖ < Tail.tailCoordRadius) ∧
+      (∀ u v,
+        ‖(sourceShiftedTailOrientedInvariant d r hrD (n - r)
+            (fun u μ => (t : ℂ) * q u μ)).gram u v‖ < Tail.tailEta) ∧
+      (∀ ι,
+        ‖(sourceShiftedTailOrientedInvariant d r hrD (n - r)
+            (fun u μ => (t : ℂ) * q u μ)).det ι‖ < Tail.tailEta) := by
+  have ht_norm : ‖(t : ℂ)‖ ≤ 1 := by
+    rw [Complex.norm_real, Real.norm_eq_abs, abs_of_nonneg ht_nonneg]
+    exact ht_le
+  constructor
+  · intro u μ
+    calc
+      ‖(t : ℂ) * q u μ‖ = ‖(t : ℂ)‖ * ‖q u μ‖ := norm_mul _ _
+      _ ≤ 1 * ‖q u μ‖ := mul_le_mul_of_nonneg_right ht_norm (norm_nonneg _)
+      _ = ‖q u μ‖ := one_mul _
+      _ < Tail.tailCoordRadius := hq_coord u μ
+  constructor
+  · intro u v
+    calc
+      ‖(sourceShiftedTailOrientedInvariant d r hrD (n - r)
+            (fun u μ => (t : ℂ) * q u μ)).gram u v‖ =
+          ‖(t : ℂ) * (t : ℂ) *
+            (sourceShiftedTailOrientedInvariant d r hrD (n - r) q).gram u v‖ := by
+            rw [sourceShiftedTailOrientedInvariant_smul_gram]
+      _ = ‖(t : ℂ)‖ * ‖(t : ℂ)‖ *
+            ‖(sourceShiftedTailOrientedInvariant d r hrD (n - r) q).gram u v‖ := by
+            rw [norm_mul, norm_mul, mul_assoc]
+      _ ≤ 1 * 1 *
+            ‖(sourceShiftedTailOrientedInvariant d r hrD (n - r) q).gram u v‖ := by
+            gcongr
+      _ = ‖(sourceShiftedTailOrientedInvariant d r hrD (n - r) q).gram u v‖ := by
+            ring
+      _ < Tail.tailEta := hq_gram u v
+  · intro ι
+    have hpow_norm : ‖(t : ℂ) ^ (d + 1 - r)‖ ≤ 1 := by
+      calc
+        ‖(t : ℂ) ^ (d + 1 - r)‖ = ‖(t : ℂ)‖ ^ (d + 1 - r) := norm_pow _ _
+        _ ≤ 1 ^ (d + 1 - r) := pow_le_pow_left₀ (norm_nonneg _) ht_norm _
+        _ = 1 := one_pow _
+    calc
+      ‖(sourceShiftedTailOrientedInvariant d r hrD (n - r)
+            (fun u μ => (t : ℂ) * q u μ)).det ι‖ =
+          ‖(t : ℂ) ^ (d + 1 - r) *
+            (sourceShiftedTailOrientedInvariant d r hrD (n - r) q).det ι‖ := by
+            rw [sourceShiftedTailOrientedInvariant_smul_det]
+      _ = ‖(t : ℂ) ^ (d + 1 - r)‖ *
+            ‖(sourceShiftedTailOrientedInvariant d r hrD (n - r) q).det ι‖ :=
+            norm_mul _ _
+      _ ≤ 1 *
+            ‖(sourceShiftedTailOrientedInvariant d r hrD (n - r) q).det ι‖ := by
+            exact mul_le_mul_of_nonneg_right hpow_norm (norm_nonneg _)
+      _ = ‖(sourceShiftedTailOrientedInvariant d r hrD (n - r) q).det ι‖ :=
+            one_mul _
+      _ < Tail.tailEta := hq_det ι
+
+/-- The target-shaped window on shifted-tail tuples alone. -/
+def sourceShiftedTailTupleWindow
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn) :
+    Set (Fin (n - r) → Fin (d + 1 - r) → ℂ) :=
+  {q |
+    (∀ u μ, ‖q u μ‖ < Tail.tailCoordRadius) ∧
+    (∀ u v,
+      ‖(sourceShiftedTailOrientedInvariant d r hrD (n - r) q).gram u v‖ <
+        Tail.tailEta) ∧
+    (∀ ι,
+      ‖(sourceShiftedTailOrientedInvariant d r hrD (n - r) q).det ι‖ <
+        Tail.tailEta)}
+
+/-- The shifted-tail tuple window is connected: it is star-shaped from zero. -/
+theorem isConnected_sourceShiftedTailTupleWindow
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn) :
+    IsConnected (sourceShiftedTailTupleWindow d n r hrD hrn Tail) := by
+  have hzero : (0 : Fin (n - r) → Fin (d + 1 - r) → ℂ) ∈
+      sourceShiftedTailTupleWindow d n r hrD hrn Tail := by
+    constructor
+    · intro u μ
+      simp [Tail.tailCoordRadius_pos]
+    constructor
+    · intro u v
+      simp [sourceShiftedTailOrientedInvariant, sourceShiftedTailGram,
+        sourceVectorMinkowskiInner, Tail.tailEta_pos]
+    · intro ι
+      have hDtail : 0 < d + 1 - r := by omega
+      have hnonempty : Nonempty (Fin (d + 1 - r)) :=
+        Fin.pos_iff_nonempty.mp hDtail
+      have hdet0 :
+          (sourceShiftedTailOrientedInvariant d r hrD (n - r)
+            (0 : Fin (n - r) → Fin (d + 1 - r) → ℂ)).det ι = 0 := by
+        simpa [sourceShiftedTailOrientedInvariant] using
+          (Matrix.det_zero (n := Fin (d + 1 - r)) (R := ℂ) hnonempty)
+      rw [hdet0, norm_zero]
+      exact Tail.tailEta_pos
+  have hstar : StarConvex ℝ
+      (0 : Fin (n - r) → Fin (d + 1 - r) → ℂ)
+      (sourceShiftedTailTupleWindow d n r hrD hrn Tail) := by
+    rw [starConvex_iff_segment_subset]
+    intro q hq
+    rw [segment_subset_iff]
+    intro a b ha0 hb0 hab
+    have hb1 : b ≤ 1 := by linarith
+    dsimp [sourceShiftedTailTupleWindow] at hq ⊢
+    have hscaled :=
+      sourceShiftedTailWindow_scaled d n r hrD hrn Tail
+        hq.1 hq.2.1 hq.2.2 hb0 hb1
+    have hseg :
+        a • (0 : Fin (n - r) → Fin (d + 1 - r) → ℂ) + b • q =
+          fun u μ => (b : ℂ) * q u μ := by
+      ext u μ
+      simp
+    simpa [hseg] using hscaled
+  exact (hstar.isPathConnected hzero).isConnected
+
 /-- The tail window is open in the finite normal-parameter topology. -/
 theorem isOpen_sourceOrientedRankDeficientTailWindow
     (d n r : ℕ)

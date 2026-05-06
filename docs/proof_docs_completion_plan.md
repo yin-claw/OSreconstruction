@@ -748,8 +748,13 @@ The first Lean support for this corrected shape is checked in
 `BHW.sourceOrientedNormalCenterParameter_mem_tailWindow`,
 `BHW.sourceOriented_rankDeficient_tailWindowChoice`, and
 `BHW.SourceOrientedRankDeficientTailWindowChoice.normalParam_tail_small`.
-The remaining connected-window theorem is now exactly the star-shaped
-finite-coordinate contraction, not a compatible-radius estimate.
+The pure shifted-tail tuple window is already checked connected as
+`BHW.isConnected_sourceShiftedTailTupleWindow`, using the homogeneity lemmas
+`BHW.sourceShiftedTailGram_smul`,
+`BHW.sourceShiftedTailOrientedInvariant_smul_gram`, and
+`BHW.sourceShiftedTailOrientedInvariant_smul_det`.  The remaining
+connected-window theorem is now only the finite product assembly with the
+head and mixed coordinate boxes, not a compatible-radius estimate.
 
 The first Euclidean induction case is checked:
 `sourceTailOrientedInvariant_selectedGram_det` proves that a selected Gram
