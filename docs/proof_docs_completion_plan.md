@@ -263,6 +263,7 @@ terminal chain.  It also provides
 `BHW.BHWOrientedContinuationChainAtlasData.ofSameEndpointComparisons`,
 `BHW.BHWOrientedContinuationChainAtlasData.terminal_base_agree_of_sameEndpointComparison`,
 `BHW.BHWOrientedContinuationChainAtlasData.ofSameEndpointComparisonsAndBaseChain`,
+`BHW.BHWOrientedContinuationChainAtlasData.ofSameEndpointComparisonsAndInitialChart`,
 `BHW.BHWOrientedTerminalChainComparisonData`, and
 `BHW.BHWOrientedTerminalChainComparisonData.continuedValue_eq`, which
 turn selected terminal chains plus same-endpoint comparison/base agreement
@@ -7986,12 +7987,18 @@ common-boundary envelope, or any theorem that already assumes locality.
    retargeted chain with the selected chain ending at `y`; and rewrite the two
    continued values back to the original terminal branch values by
    `BHWJostOrientedSourcePatchContinuationChain.retargetTerminal_continuedValue_eq_branch`.
-   The variant
+The variant
    `BHWOrientedContinuationChainAtlasData.ofSameEndpointComparisonsAndBaseChain`
    also derives `terminal_base_agree`: for `z ∈ Ω0 ∩ U`, retarget the
    normalized base chain to endpoint `z`, compare the selected chain ending at
    `z` with that retargeted base chain, and rewrite the retargeted continued
    value back to the stored base-branch equality with `B0`.
+   The further specialization
+   `BHWOrientedContinuationChainAtlasData.ofSameEndpointComparisonsAndInitialChart`
+   builds that normalized base chain as the zero-step chain from the initial
+   chart.  Its only additional requirements are the honest initial-chart
+   fields `Ω0 ∩ U ⊆ C0.carrier` and
+   `∀ z ∈ Ω0 ∩ U, C0.branch z = B0 z`.
    Its method `to_sourcePatchContinuationAtlas` builds the atlas whose charts
    are the terminal source charts and whose branches are the stored terminal
    branches; its method `exists_glued_branch` then calls the checked

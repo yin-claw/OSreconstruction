@@ -373,6 +373,48 @@ noncomputable def ofSameEndpointComparisonsAndBaseChain
     (terminal_base_agree_of_sameEndpointComparison chainAt
       sameEndpointComparison Cbase base_chart_mem base_branch_agree)
 
+/-- Same-endpoint comparison plus an initial chart covering `Ω0 ∩ U`
+supplies the chain-atlas data.  The normalized base chain is the zero-step
+chain built from the initial chart. -/
+noncomputable def ofSameEndpointComparisonsAndInitialChart
+    (p0 : Fin n → Fin (d + 1) → ℂ)
+    (base_mem : p0 ∈ Ω0 ∩ U)
+    (chainAt :
+      ∀ z, z ∈ U →
+        BHWJostOrientedSourcePatchContinuationChain
+          hd n τ Ω0 U B0 p0 z)
+    (sameEndpointComparison :
+      ∀ {z : Fin n → Fin (d + 1) → ℂ}
+        (C₁ C₂ :
+          BHWJostOrientedSourcePatchContinuationChain
+            hd n τ Ω0 U B0 p0 z),
+          BHWOrientedTerminalChainComparisonData C₁ C₂)
+    (C0 : BHWJostLocalOrientedContinuationChart hd n τ U)
+    (hp0C : p0 ∈ C0.carrier)
+    (start_patch : Set (Fin n → Fin (d + 1) → ℂ))
+    (hstart_open : IsOpen start_patch)
+    (hstart_preconnected : IsPreconnected start_patch)
+    (hstart_nonempty : start_patch.Nonempty)
+    (hstart_mem : p0 ∈ start_patch)
+    (hstart_sub : start_patch ⊆ Ω0 ∩ C0.carrier)
+    (hstart_agree : ∀ y, y ∈ start_patch → C0.branch y = B0 y)
+    (initial_chart_mem :
+      ∀ z, z ∈ Ω0 ∩ U → z ∈ C0.carrier)
+    (initial_branch_agree :
+      ∀ z, z ∈ Ω0 ∩ U → C0.branch z = B0 z) :
+    BHWOrientedContinuationChainAtlasData hd n τ Ω0 U B0 :=
+  let Cbase :=
+    BHWJostOrientedSourcePatchContinuationChain.base
+      (hd := hd) (τ := τ) (Ω0 := Ω0) (U := U) (B0 := B0)
+      (p0 := p0) C0 base_mem hp0C start_patch hstart_open
+      hstart_preconnected hstart_nonempty hstart_mem hstart_sub
+      hstart_agree
+  ofSameEndpointComparisonsAndBaseChain
+    (hd := hd) (τ := τ) (Ω0 := Ω0) (U := U) (B0 := B0)
+    p0 base_mem chainAt sameEndpointComparison Cbase
+    (fun z hz => initial_chart_mem z hz)
+    (fun z hz => initial_branch_agree z hz)
+
 end BHWOrientedContinuationChainAtlasData
 
 end BHW
