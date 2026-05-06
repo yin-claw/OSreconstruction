@@ -529,6 +529,78 @@ theorem sourceMonodromy_of_terminalSeedOnClosingPatch_headSliceIFT
 
 end BHWJostOrientedFiniteOverlapPropagationData
 
+/-- Producer-facing terminal-seed data for the accumulated-germ closed-loop
+route.  This is the smaller alternative to large-start-domain finite-overlap
+data: the producer supplies only a nonempty relatively open max-rank seed in
+the closing oriented patch where the terminal and initial oriented germs
+agree. -/
+structure BHWJostOrientedClosingPatchTerminalSeedData
+    [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
+    {Ω0 U : Set (Fin n → Fin (d + 1) → ℂ)}
+    {B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+    {p0 : Fin n → Fin (d + 1) → ℂ}
+    (L : BHWJostOrientedClosedContinuationLoop hd n τ Ω0 U B0 p0) where
+  hn : d + 1 ≤ n
+  terminalSeed : Set (SourceOrientedGramData d n)
+  terminalSeed_relOpen :
+    IsRelOpenInSourceOrientedGramVariety d n terminalSeed
+  terminalSeed_nonempty : terminalSeed.Nonempty
+  terminalSeed_sub_closing :
+    terminalSeed ⊆ L.closing_orientedPatch
+  terminalSeed_sub_max :
+    terminalSeed ⊆ {G | SourceOrientedMaxRankAt d n G}
+  terminalSeed_eq :
+    Set.EqOn
+      (L.chain.localChart (Fin.last L.chain.m)).Psi
+      (L.chain.localChart 0).Psi
+      terminalSeed
+
+namespace BHWJostOrientedClosingPatchTerminalSeedData
+
+variable [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
+variable {Ω0 U : Set (Fin n → Fin (d + 1) → ℂ)}
+variable {B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+variable {p0 : Fin n → Fin (d + 1) → ℂ}
+variable {L : BHWJostOrientedClosedContinuationLoop hd n τ Ω0 U B0 p0}
+
+/-- Closing-patch terminal-seed data packages into the terminal finite-overlap
+interface by taking the closing oriented patch itself as terminal domain. -/
+def to_finiteOverlapPropagationData
+    (P : BHWJostOrientedClosingPatchTerminalSeedData L) :
+    BHWJostOrientedFiniteOverlapPropagationData L :=
+  BHWJostOrientedFiniteOverlapPropagationData.of_terminalSeedOnClosingPatch_headSliceIFT
+      (d := d) (n := n) (hd := hd) (τ := τ)
+      (Ω0 := Ω0) (U := U) (B0 := B0) (p0 := p0) (L := L)
+      P.hn P.terminalSeed_relOpen P.terminalSeed_nonempty
+      P.terminalSeed_sub_closing P.terminalSeed_sub_max P.terminalSeed_eq
+
+/-- Closing-patch terminal-seed data gives source monodromy by the checked
+terminal finite-overlap consumer. -/
+theorem to_sourceMonodromy_headSliceIFT
+    (P : BHWJostOrientedClosingPatchTerminalSeedData L) :
+    Set.EqOn
+      (L.chain.branch (Fin.last L.chain.m))
+      B0
+      L.closing_patch :=
+  P.to_finiteOverlapPropagationData.to_sourceMonodromy_headSliceIFT
+
+end BHWJostOrientedClosingPatchTerminalSeedData
+
+/-- Public endpoint for the accumulated-germ route once the closing-patch
+terminal equality seed has been produced. -/
+theorem bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData
+    [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
+    {Ω0 U : Set (Fin n → Fin (d + 1) → ℂ)}
+    {B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+    {p0 : Fin n → Fin (d + 1) → ℂ}
+    {L : BHWJostOrientedClosedContinuationLoop hd n τ Ω0 U B0 p0}
+    (P : BHWJostOrientedClosingPatchTerminalSeedData L) :
+    Set.EqOn
+      (L.chain.branch (Fin.last L.chain.m))
+      B0
+      L.closing_patch :=
+  P.to_sourceMonodromy_headSliceIFT
+
 namespace BHWJostOrientedSourcePatchContinuationChain
 
 variable [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}

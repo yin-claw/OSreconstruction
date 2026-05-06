@@ -283,6 +283,10 @@ it provides
 `BHW.BHWJostOrientedFiniteOverlapPropagationData.to_sourceMonodromy_headSliceIFT`,
 `BHW.BHWJostOrientedFiniteOverlapPropagationData.of_terminalSeedOnClosingPatch_headSliceIFT`,
 `BHW.BHWJostOrientedFiniteOverlapPropagationData.sourceMonodromy_of_terminalSeedOnClosingPatch_headSliceIFT`,
+`BHW.BHWJostOrientedClosingPatchTerminalSeedData`,
+`BHW.BHWJostOrientedClosingPatchTerminalSeedData.to_finiteOverlapPropagationData`,
+`BHW.BHWJostOrientedClosingPatchTerminalSeedData.to_sourceMonodromy_headSliceIFT`,
+`BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData`,
 and
 `BHW.exists_preconnectedRelOpen_maxRankSeed_inside`, plus
 `BHW.BHWJostOrientedSourcePatchContinuationChain.exists_terminalSeed_of_finiteOverlapDomains`,
@@ -1072,7 +1076,8 @@ is now
    `P.to_sourceMonodromy_headSliceIFT`, with no detour through
    `stepDomain_sub_start`.  If the accumulated propagation reaches the closing
    oriented patch itself, the even smaller checked exit is
-   `BHWJostOrientedFiniteOverlapPropagationData.sourceMonodromy_of_terminalSeedOnClosingPatch_headSliceIFT`.
+   `BHWJostOrientedClosingPatchTerminalSeedData L`, consumed by
+   `BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData`.
    No production theorem may infer `stepDomain_sub_start` from an arbitrary
    closed loop.
 
@@ -9165,6 +9170,18 @@ common-boundary envelope, or any theorem that already assumes locality.
    Therefore the accumulated-germ positive-length proof does not have to
    manufacture a separate terminal domain if its final equality seed already
    lies inside the closing oriented patch.
+
+   The producer-facing package for that smaller route is also checked:
+   `BHWJostOrientedClosingPatchTerminalSeedData L` stores `hn`, a terminal
+   seed, relative openness, nonemptiness, max-rank containment, containment in
+   `L.closing_orientedPatch`, and terminal/initial oriented-germ equality on
+   that seed.  Its method
+   `to_finiteOverlapPropagationData` calls the constructor above, its method
+   `to_sourceMonodromy_headSliceIFT` closes the source-monodromy goal, and the
+   stable public endpoint is
+   `BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData`.
+   This is the preferred Lean target for a patch-by-patch accumulated-germ
+   Hall-Wightman/Jost proof.
 
    The ordered finite induction has also been checked:
 

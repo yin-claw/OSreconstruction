@@ -46351,6 +46351,26 @@ Proof decomposition of this theorem, without hiding the analytic work:
             introduce a separate terminal domain once it has reached the
             closing oriented patch.
 
+            The producer-facing package for this route is now checked as
+            `BHWJostOrientedClosingPatchTerminalSeedData L`.  It stores
+            `hn`, the terminal seed, relative openness, nonemptiness,
+            containment in `L.closing_orientedPatch`, max-rank containment,
+            and terminal/initial oriented-germ equality.  The stable public
+            endpoint is:
+
+            ```lean
+            theorem BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData
+                (P : BHWJostOrientedClosingPatchTerminalSeedData L) :
+                Set.EqOn
+                  (L.chain.branch (Fin.last L.chain.m))
+                  B0
+                  L.closing_patch
+            ```
+
+            Thus the patch-by-patch positive-length proof should return this
+            package once it has propagated equality to a seed in the closing
+            oriented patch.
+
             The ordered finite induction has also been checked:
 
             ```lean
@@ -46658,7 +46678,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
             `stepDomain_sub_start` consumer.  If the accumulated propagation
             produces the terminal equality seed inside
             `L.closing_orientedPatch`, the still smaller checked endpoint is
-            `BHWJostOrientedFiniteOverlapPropagationData.sourceMonodromy_of_terminalSeedOnClosingPatch_headSliceIFT`.
+            `BHWJostOrientedClosingPatchTerminalSeedData L`, consumed by
+            `BHW.bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData`.
 
             The zero-transition branch is already checked at this
             producer-facing layer:
