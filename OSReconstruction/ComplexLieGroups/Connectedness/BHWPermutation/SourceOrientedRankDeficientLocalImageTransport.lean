@@ -75,6 +75,60 @@ noncomputable def ofNormalImageTransport
         rw [himage_eq]
         exact hsub)
 
+/-- Variant of `ofNormalImageTransport` deriving transported ambient
+containment from pointwise membership of the parameter-box image.  The concrete
+Schur/residual producer only needs to prove that every parameter in the chosen
+box maps into the requested ambient set, plus surjectivity onto the canonical
+normal image `Ω`. -/
+noncomputable def ofNormalImageTransport_of_parameter_mem
+    {G0 : SourceOrientedGramData d n}
+    (N : SourceOrientedRankDeficientAlgebraicNormalFormData d n G0)
+    {N0 : Set (SourceOrientedGramData d n)}
+    {parameterBox :
+      Set (SourceOrientedRankDeficientNormalParameter d n N.r N.hrD N.hrn)}
+    (parameterBox_open : IsOpen parameterBox)
+    (parameterBox_connected : IsConnected parameterBox)
+    (center_mem :
+      sourceOrientedNormalCenterParameter d n N.r N.hrD N.hrn ∈ parameterBox)
+    {Ω : Set (SourceOrientedVariety d n)}
+    (hΩ_open : IsOpen Ω)
+    (hsurj :
+      Ω ⊆
+        sourceOrientedNormalParameterVarietyPoint d n N.r N.hrD N.hrn ''
+          parameterBox)
+    (hmem :
+      ∀ p ∈ parameterBox,
+        sourceOrientedNormalParameterVarietyPoint d n N.r N.hrD N.hrn p ∈ Ω)
+    (himage :
+      ∀ p ∈ parameterBox,
+        (N.originalNormalVarietyPoint p).1 ∈
+          N0 ∩ sourceOrientedGramVariety d n) :
+    SourceOrientedRankDeficientVarietyLocalImageData
+      (d := d) (n := n)
+      (P := SourceOrientedRankDeficientNormalParameter d n N.r N.hrD N.hrn)
+      G0 N0 := by
+  have himage_eq :
+      N.originalNormalVarietyPoint '' parameterBox =
+        N.varietyTransport.invFun '' Ω := by
+    simpa [SourceOrientedRankDeficientAlgebraicNormalFormData.originalNormalVarietyPoint]
+      using
+        (sourceOrientedVarietyTransport_invFun_image_eq
+          (d := d) (n := n) N.varietyTransport
+          (α := SourceOrientedRankDeficientNormalParameter d n N.r N.hrD N.hrn)
+          (Ω := Ω) (s := parameterBox)
+          (f := sourceOrientedNormalParameterVarietyPoint d n N.r N.hrD N.hrn)
+          hsurj hmem)
+  exact
+    SourceOrientedRankDeficientVarietyLocalImageData.ofNormalImageTransport
+      (d := d) (n := n) N
+      parameterBox_open parameterBox_connected center_mem
+      hΩ_open hsurj hmem
+      (by
+        rw [← himage_eq, sourceOrientedVarietyUnderlyingSet_image]
+        intro G hG
+        rcases hG with ⟨p, hp, rfl⟩
+        exact himage p hp)
+
 end SourceOrientedRankDeficientVarietyLocalImageData
 
 namespace SourceOrientedRankDeficientMaxRankLocalImageData
@@ -134,6 +188,61 @@ noncomputable def ofNormalImageTransport
       (by
         rw [himage_eq]
         exact hsub)
+      hpreimage_connected
+
+/-- Strengthened variant deriving transported ambient containment from
+pointwise membership of the parameter-box image. -/
+noncomputable def ofNormalImageTransport_of_parameter_mem
+    {G0 : SourceOrientedGramData d n}
+    (N : SourceOrientedRankDeficientAlgebraicNormalFormData d n G0)
+    {N0 : Set (SourceOrientedGramData d n)}
+    {parameterBox :
+      Set (SourceOrientedRankDeficientNormalParameter d n N.r N.hrD N.hrn)}
+    (parameterBox_open : IsOpen parameterBox)
+    (parameterBox_connected : IsConnected parameterBox)
+    (center_mem :
+      sourceOrientedNormalCenterParameter d n N.r N.hrD N.hrn ∈ parameterBox)
+    {Ω : Set (SourceOrientedVariety d n)}
+    (hΩ_open : IsOpen Ω)
+    (hsurj :
+      Ω ⊆
+        sourceOrientedNormalParameterVarietyPoint d n N.r N.hrD N.hrn ''
+          parameterBox)
+    (hmem :
+      ∀ p ∈ parameterBox,
+        sourceOrientedNormalParameterVarietyPoint d n N.r N.hrD N.hrn p ∈ Ω)
+    (himage :
+      ∀ p ∈ parameterBox,
+        (N.originalNormalVarietyPoint p).1 ∈
+          N0 ∩ sourceOrientedGramVariety d n)
+    (hpreimage_connected :
+      IsConnected (parameterBox ∩
+        {p | SourceOrientedMaxRankAt d n (N.originalNormalVarietyPoint p).1})) :
+    SourceOrientedRankDeficientMaxRankLocalImageData
+      (d := d) (n := n)
+      (P := SourceOrientedRankDeficientNormalParameter d n N.r N.hrD N.hrn)
+      G0 N0 := by
+  have himage_eq :
+      N.originalNormalVarietyPoint '' parameterBox =
+        N.varietyTransport.invFun '' Ω := by
+    simpa [SourceOrientedRankDeficientAlgebraicNormalFormData.originalNormalVarietyPoint]
+      using
+        (sourceOrientedVarietyTransport_invFun_image_eq
+          (d := d) (n := n) N.varietyTransport
+          (α := SourceOrientedRankDeficientNormalParameter d n N.r N.hrD N.hrn)
+          (Ω := Ω) (s := parameterBox)
+          (f := sourceOrientedNormalParameterVarietyPoint d n N.r N.hrD N.hrn)
+          hsurj hmem)
+  exact
+    SourceOrientedRankDeficientMaxRankLocalImageData.ofNormalImageTransport
+      (d := d) (n := n) N
+      parameterBox_open parameterBox_connected center_mem
+      hΩ_open hsurj hmem
+      (by
+        rw [← himage_eq, sourceOrientedVarietyUnderlyingSet_image]
+        intro G hG
+        rcases hG with ⟨p, hp, rfl⟩
+        exact himage p hp)
       hpreimage_connected
 
 end SourceOrientedRankDeficientMaxRankLocalImageData

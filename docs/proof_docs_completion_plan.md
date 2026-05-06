@@ -600,6 +600,16 @@ containing the normal center, an open normal image `Ω`, the two-sided image
 coverage between `Ω` and the parameter window, transported containment in the
 requested ambient neighborhood, and, for the strengthened packet, connectedness
 of the max-rank preimage inside the same window.
+The follow-up variants
+`BHW.SourceOrientedRankDeficientVarietyLocalImageData.ofNormalImageTransport_of_parameter_mem`
+and
+`BHW.SourceOrientedRankDeficientMaxRankLocalImageData.ofNormalImageTransport_of_parameter_mem`
+derive the transported containment from pointwise membership of the parameter
+image plus the same surjectivity onto `Ω`.  The remaining producer therefore
+does **not** need a separate global proof that
+`sourceOrientedVarietyUnderlyingSet (N.varietyTransport.invFun '' Ω)` lies in
+`N0`; it only needs the normal-ball membership supplied by the shrink theorem
+and the canonical Schur extraction/surjectivity proof.
 
 The head-gauge shrink layer is now checked in
 `SourceOrientedHeadGaugeSupport.lean`:
