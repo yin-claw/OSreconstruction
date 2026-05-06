@@ -506,9 +506,20 @@ theorem W_analytic_cluster_integral_via_ruelle
         (nhds (L_n * L_m)) := by
     rw [← h_limit_eq_product]
     exact h_DC
-  -- Step 7: convert Tendsto to ∃ R bound form.
-  -- The filter `principal {a 0 = 0} ⊓ cobounded` contains sets of the form
-  -- `{a | a 0 = 0 ∧ ‖a⃗‖² > R²}` for any R. Use Tendsto's eventual ε-bound.
+  -- Step 7: convert Tendsto along `principal {a 0 = 0} ⊓ cobounded` to
+  -- the existential ε-R form. Strategy:
+  -- (1) From h_joint_tendsto + ε > 0: ∀ᶠ a in filter, ‖F a - L_n L_m‖ < ε.
+  -- (2) Decompose the filter membership: ∃ R₀, {a 0 = 0} ∩ (closedBall 0 R₀)ᶜ ⊆
+  --     {a | ‖F a - L_n L_m‖ < ε}.
+  -- (3) For a 0 = 0 + ‖a‖_sup > R₀: at least one spatial component exceeds R₀,
+  --     so ∑ (a (succ i))² > R₀².
+  -- (4) Set R := R₀ in the existential.
+  --
+  -- Plus: undo the change-of-variables (Step 1 sorry above) to identify the
+  -- joint integral with `∫ x : NPointDomain d (n+m), F_ext (f.tensorProduct g_a) x`.
+  --
+  -- Filter manipulation + change-of-variables undoing. Routed to follow-up
+  -- after Steps 1, 3 are filled.
   sorry
 
 end OSReconstruction
