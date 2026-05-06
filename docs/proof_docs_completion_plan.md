@@ -240,6 +240,13 @@ the local chart provenance field
 `BHW.BHWJostOrientedTransferContinuationTrace.hasUniqueSteps_base`,
 `BHW.BHWJostOrientedCertifiedTransferContinuationTrace`,
 `BHW.BHWJostOrientedCertifiedTransferContinuationTrace.base`,
+`BHW.BHWJostOrientedCertifiedTransferContinuationTrace.snocAtTerminalNode`,
+`BHW.BHWJostOrientedCertifiedTransferContinuationTrace.exists_of_nodeTransferSteps`,
+`BHW.BHWJostOrientedCertifiedTransferContinuationTrace.ofNodeTransferSteps`,
+`BHW.BHWJostOrientedCertifiedTransferContinuationTrace.exists_of_subdivision`,
+`BHW.BHWJostOrientedCertifiedTransferContinuationTrace.ofSubdivision`,
+`BHW.BHWJostOrientedCertifiedTransferContinuationTrace.exists_of_transferCover`,
+`BHW.BHWJostOrientedCertifiedTransferContinuationTrace.ofTransferCover`,
 `BHW.BHWJostOrientedCertifiedTransferContinuationTrace.toTerminalPointTrace`,
 `BHW.BHWJostOrientedCertifiedTransferContinuationTrace.atEndpoint`,
 `BHW.BHWJostOrientedCertifiedTransferTerminalPointTrace`,
@@ -293,7 +300,12 @@ path-connected `U` and folds the corresponding transfer cover into a selected
 terminal chain.  The provenance-retaining analogues are now also checked:
 `BHW.bhw_jost_orientedTransferContinuationTrace_of_transferCover` and
 `BHW.bhw_jost_orientedTransferContinuationTraceAt_of_pathConnected_transferCover`
-select transfer traces from the same compact-cover data.  The final mechanical
+select transfer traces from the same compact-cover data.  The certified
+analogues
+`BHW.bhw_jost_orientedCertifiedTransferContinuationTrace_of_transferCover` and
+`BHW.bhw_jost_orientedCertifiedTransferContinuationTraceAt_of_pathConnected_transferCover`
+select traces with stored `HasUniqueSteps` certificates when each
+center-forgotten transfer control has the one-step uniqueness theorem.  The final mechanical
 producer
 `BHW.bhw_jost_orientedGluedBranch_of_pathConnected_transferCover` takes those
 trace selections, a terminal-point trace comparison theorem, and the initial
@@ -316,6 +328,7 @@ provides
 `BHW.BHWOrientedContinuationTraceAtlasData.ofCertifiedTerminalPointComparisonsAndInitialChart`,
 `BHW.BHWOrientedContinuationTraceAtlasData.ofPathConnectedTransferCoverAndInitialChart`,
 `BHW.bhw_jost_orientedGluedBranch_of_certifiedTraces`,
+`BHW.bhw_jost_orientedGluedBranch_of_pathConnected_certifiedTransferCover`,
 `BHW.BHWOrientedTerminalChainComparisonData`, and
 `BHW.BHWOrientedTerminalChainComparisonData.ofLocalChartComparison`,
 `BHW.BHWOrientedTerminalChainComparisonData.continuedValue_eq`, which
@@ -8293,15 +8306,20 @@ common-boundary envelope, or any theorem that already assumes locality.
    `BHW.bhw_jost_orientedContinuationChainAt_of_pathConnected_transferCover`:
    use `IsPathConnected.joinedIn p0 hbase.2 z hz`, take
    `JoinedIn.somePath`, and call the compact transfer-cover fold along that
-   path.  The selected trace field is now checked in the same way by
+   path.  The selected raw trace field is checked in the same way by
    `BHW.bhw_jost_orientedTransferContinuationTraceAt_of_pathConnected_transferCover`:
    the compact subdivision supplies the centered transfer neighborhoods for
    each adjacent pair, while each stored trace step keeps the center-forgotten
-   control actually used by the transfer call.  Consequently the remaining
-   hard atlas inputs are the branch-free transfer neighborhoods on `U`, the
-   terminal-point comparison theorem for transfer-provenance traces observed
-   at the same point, and the initial chart covering `Ω0 ∩ U` with branch
-   `B0`; trace selection itself is no longer an extra proof obligation.  The
+   control actually used by the transfer call.  The selected certified trace
+   field is now checked by
+   `BHW.bhw_jost_orientedCertifiedTransferContinuationTraceAt_of_pathConnected_transferCover`:
+   it runs the same compact-cover fold and stores `HasUniqueSteps` for every
+   chosen center-forgotten transfer control.  Consequently the remaining hard
+   atlas inputs are the branch-free transfer neighborhoods on `U` together with
+   their one-step uniqueness certificates, the certified terminal-point
+   comparison theorem for transfer-provenance traces observed at the same
+   point, and the initial chart covering `Ω0 ∩ U` with branch `B0`; certified
+   trace selection itself is no longer an extra proof obligation.  The
    trace-level constructor derives the atlas
    `terminal_overlap_eq` field directly: for `y` in the intersection of the
    terminal charts of chains ending at `a` and `b`, build terminal-point
@@ -8376,6 +8394,10 @@ common-boundary envelope, or any theorem that already assumes locality.
    theorem `BHW.bhw_jost_orientedGluedBranch_of_certifiedTraces` composes
    certified selected traces, certified terminal-point comparison, and the
    initial chart to produce the glued holomorphic source-patch branch on `U`.
+   The checked path-connected theorem
+   `BHW.bhw_jost_orientedGluedBranch_of_pathConnected_certifiedTransferCover`
+   first selects the certified traces from a path-connected uniqueness-certified
+   transfer cover and then applies that certified glue theorem.
    The raw theorem `BHW.bhw_jost_orientedGluedBranch_of_pathConnected_transferCover`
    remains a convenience surface when one has an unbundled terminal-point
    comparison theorem, but the strict route should target the certified

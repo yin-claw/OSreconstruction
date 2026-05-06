@@ -589,6 +589,398 @@ def base
       hstart_preconnected hstart_nonempty hstart_mem hstart_sub
       hstart_agree
 
+/-- Append one uniqueness-certified transfer step to a certified transfer
+trace. -/
+def snocAtTerminalNode
+    (T :
+      BHWJostOrientedCertifiedTransferContinuationTrace
+        hd n τ Ω0 U B0 p0 p)
+    (N : BHWJostOrientedBranchFreeTransferNeighborhood hd n τ U center)
+    (hpN : T.trace.chain.node (Fin.last T.trace.chain.m) ∈ N.N)
+    (hpU : T.trace.chain.node (Fin.last T.trace.chain.m) ∈ U)
+    (hqN : q ∈ N.N) (hqU : q ∈ U)
+    (hN_unique :
+      BHWJostOrientedTransferControlHasUniqueNext
+        (BHWJostOrientedBranchFreeTransferNeighborhood.toTransferControl N)) :
+    BHWJostOrientedCertifiedTransferContinuationTrace
+      hd n τ Ω0 U B0 p0 q where
+  trace :=
+    BHWJostOrientedTransferContinuationTrace.snocAtTerminalNode
+      (hd := hd) (τ := τ) (Ω0 := Ω0) (U := U) (B0 := B0)
+      (p0 := p0) (q := q) T.trace N hpN hpU hqN hqU
+  stepUnique := by
+    intro j
+    refine Fin.lastCases ?_ ?_ j
+    · have hstep :
+        ((T.trace.snocAtTerminalNode N hpN hpU hqN hqU).stepControl
+          (Fin.last T.trace.chain.m)) =
+          BHWJostOrientedBranchFreeTransferNeighborhood.toTransferControl N := by
+        change Fin.lastCases
+          (BHWJostOrientedBranchFreeTransferNeighborhood.toTransferControl N)
+          (fun i => T.trace.stepControl i) (Fin.last T.trace.chain.m) =
+          BHWJostOrientedBranchFreeTransferNeighborhood.toTransferControl N
+        exact Fin.lastCases_last
+      rw [hstep]
+      exact hN_unique
+    · intro i
+      have hstep :
+        ((T.trace.snocAtTerminalNode N hpN hpU hqN hqU).stepControl
+          i.castSucc) = T.trace.stepControl i := by
+        change Fin.lastCases
+          (BHWJostOrientedBranchFreeTransferNeighborhood.toTransferControl N)
+          (fun i => T.trace.stepControl i) i.castSucc =
+          T.trace.stepControl i
+        exact Fin.lastCases_castSucc i
+      rw [hstep]
+      exact T.stepUnique i
+
+/-- A finite sequence of source nodes, together with centered branch-free
+transfer neighborhoods whose center-forgotten controls have one-step
+uniqueness, produces a certified transfer trace. -/
+theorem exists_of_nodeTransferSteps
+    {m : ℕ}
+    (node : Fin (m + 1) → Fin n → Fin (d + 1) → ℂ)
+    (hnode_zero : node 0 = p0)
+    (hnodeU : ∀ j, node j ∈ U)
+    (stepControl :
+      ∀ _ : Fin m,
+        Σ center : Fin n → Fin (d + 1) → ℂ,
+          BHWJostOrientedBranchFreeTransferNeighborhood hd n τ U center)
+    (step_left_mem :
+      ∀ j, node (Fin.castSucc j) ∈ (stepControl j).2.N)
+    (step_right_mem :
+      ∀ j, node j.succ ∈ (stepControl j).2.N)
+    (step_unique :
+      ∀ j,
+        BHWJostOrientedTransferControlHasUniqueNext
+          (BHWJostOrientedBranchFreeTransferNeighborhood.toTransferControl
+            (stepControl j).2))
+    (C0 : BHWJostLocalOrientedContinuationChart hd n τ U)
+    (hbase : p0 ∈ Ω0 ∩ U)
+    (hp0C : p0 ∈ C0.carrier)
+    (start_patch : Set (Fin n → Fin (d + 1) → ℂ))
+    (hstart_open : IsOpen start_patch)
+    (hstart_preconnected : IsPreconnected start_patch)
+    (hstart_nonempty : start_patch.Nonempty)
+    (hstart_mem : p0 ∈ start_patch)
+    (hstart_sub : start_patch ⊆ Ω0 ∩ C0.carrier)
+    (hstart_agree : ∀ y, y ∈ start_patch → C0.branch y = B0 y) :
+    Nonempty
+      (BHWJostOrientedCertifiedTransferContinuationTrace
+        hd n τ Ω0 U B0 p0 (node (Fin.last m))) := by
+  induction m with
+  | zero =>
+      have hlast : node (Fin.last 0) = p0 := by
+        simpa using hnode_zero
+      refine ⟨?_⟩
+      rw [hlast]
+      exact
+        base (hd := hd) (τ := τ) (Ω0 := Ω0) (U := U) (B0 := B0)
+          (p0 := p0) C0 hbase hp0C start_patch hstart_open
+          hstart_preconnected hstart_nonempty hstart_mem hstart_sub
+          hstart_agree
+  | succ m ih =>
+      let nodePrefix : Fin (m + 1) → Fin n → Fin (d + 1) → ℂ :=
+        fun i => node (Fin.castSucc i)
+      have hnode_zero_prefix : nodePrefix 0 = p0 := by
+        simpa [nodePrefix] using hnode_zero
+      have hnodeU_prefix : ∀ j, nodePrefix j ∈ U := by
+        intro j
+        exact hnodeU (Fin.castSucc j)
+      let stepControlPrefix :
+          ∀ j : Fin m,
+            Σ center : Fin n → Fin (d + 1) → ℂ,
+              BHWJostOrientedBranchFreeTransferNeighborhood
+                hd n τ U center :=
+        fun j => stepControl (Fin.castSucc j)
+      have step_left_mem_prefix :
+          ∀ j, nodePrefix (Fin.castSucc j) ∈
+            (stepControlPrefix j).2.N := by
+        intro j
+        simpa [nodePrefix, stepControlPrefix] using
+          step_left_mem (Fin.castSucc j)
+      have step_right_mem_prefix :
+          ∀ j, nodePrefix j.succ ∈ (stepControlPrefix j).2.N := by
+        intro j
+        have hidx :
+            (Fin.castSucc j).succ = (j.succ).castSucc := by
+          ext
+          rfl
+        change node ((j.succ).castSucc) ∈
+          (stepControl (Fin.castSucc j)).2.N
+        rw [← hidx]
+        exact step_right_mem (Fin.castSucc j)
+      have step_unique_prefix :
+          ∀ j,
+            BHWJostOrientedTransferControlHasUniqueNext
+              (BHWJostOrientedBranchFreeTransferNeighborhood.toTransferControl
+                (stepControlPrefix j).2) := by
+        intro j
+        change BHWJostOrientedTransferControlHasUniqueNext
+          (BHWJostOrientedBranchFreeTransferNeighborhood.toTransferControl
+            (stepControl (Fin.castSucc j)).2)
+        exact step_unique (Fin.castSucc j)
+      rcases ih nodePrefix hnode_zero_prefix hnodeU_prefix
+        stepControlPrefix step_left_mem_prefix step_right_mem_prefix
+        step_unique_prefix with
+        ⟨Tprev⟩
+      let lastStep := stepControl (Fin.last m)
+      have hterminal :
+          Tprev.trace.chain.node (Fin.last Tprev.trace.chain.m) =
+            node (Fin.castSucc (Fin.last m)) := by
+        simpa [nodePrefix] using Tprev.trace.chain.node_last
+      have hpN :
+          Tprev.trace.chain.node (Fin.last Tprev.trace.chain.m) ∈
+            lastStep.2.N := by
+        rw [hterminal]
+        simpa [lastStep] using step_left_mem (Fin.last m)
+      have hpU :
+          Tprev.trace.chain.node (Fin.last Tprev.trace.chain.m) ∈ U := by
+        rw [hterminal]
+        exact hnodeU (Fin.castSucc (Fin.last m))
+      have hqN :
+          node (Fin.last m).succ ∈ lastStep.2.N := by
+        simpa [lastStep] using step_right_mem (Fin.last m)
+      have hqU :
+          node (Fin.last m).succ ∈ U :=
+        hnodeU (Fin.last m).succ
+      have hlast_succ :
+          (Fin.last m).succ = Fin.last (m + 1) := by
+        ext
+        rfl
+      refine ⟨?_⟩
+      simpa [hlast_succ, lastStep] using
+        snocAtTerminalNode
+          (hd := hd) (τ := τ) (Ω0 := Ω0) (U := U) (B0 := B0)
+          (p0 := p0) (q := node (Fin.last m).succ)
+          Tprev lastStep.2 hpN hpU hqN hqU (step_unique (Fin.last m))
+
+/-- Noncomputably select the certified transfer trace produced from finite
+node/control data. -/
+noncomputable def ofNodeTransferSteps
+    {m : ℕ}
+    (node : Fin (m + 1) → Fin n → Fin (d + 1) → ℂ)
+    (hnode_zero : node 0 = p0)
+    (hnodeU : ∀ j, node j ∈ U)
+    (stepControl :
+      ∀ _ : Fin m,
+        Σ center : Fin n → Fin (d + 1) → ℂ,
+          BHWJostOrientedBranchFreeTransferNeighborhood hd n τ U center)
+    (step_left_mem :
+      ∀ j, node (Fin.castSucc j) ∈ (stepControl j).2.N)
+    (step_right_mem :
+      ∀ j, node j.succ ∈ (stepControl j).2.N)
+    (step_unique :
+      ∀ j,
+        BHWJostOrientedTransferControlHasUniqueNext
+          (BHWJostOrientedBranchFreeTransferNeighborhood.toTransferControl
+            (stepControl j).2))
+    (C0 : BHWJostLocalOrientedContinuationChart hd n τ U)
+    (hbase : p0 ∈ Ω0 ∩ U)
+    (hp0C : p0 ∈ C0.carrier)
+    (start_patch : Set (Fin n → Fin (d + 1) → ℂ))
+    (hstart_open : IsOpen start_patch)
+    (hstart_preconnected : IsPreconnected start_patch)
+    (hstart_nonempty : start_patch.Nonempty)
+    (hstart_mem : p0 ∈ start_patch)
+    (hstart_sub : start_patch ⊆ Ω0 ∩ C0.carrier)
+    (hstart_agree : ∀ y, y ∈ start_patch → C0.branch y = B0 y) :
+    BHWJostOrientedCertifiedTransferContinuationTrace
+      hd n τ Ω0 U B0 p0 (node (Fin.last m)) :=
+  Classical.choice
+    (exists_of_nodeTransferSteps
+      (hd := hd) (τ := τ) (Ω0 := Ω0) (U := U) (B0 := B0)
+      (p0 := p0) node hnode_zero hnodeU stepControl
+      step_left_mem step_right_mem step_unique C0 hbase hp0C start_patch
+      hstart_open hstart_preconnected hstart_nonempty hstart_mem
+      hstart_sub hstart_agree)
+
+/-- A source path with a subdivision subordinate to uniqueness-certified
+branch-free transfer neighborhoods produces a certified transfer trace from the
+initial to the terminal endpoint. -/
+theorem exists_of_subdivision
+    (γ : unitInterval → Fin n → Fin (d + 1) → ℂ)
+    (hγ_zero : γ 0 = p0)
+    (hγU : ∀ t : unitInterval, γ t ∈ U)
+    (T :
+      ∀ t : unitInterval,
+        BHWJostOrientedBranchFreeTransferNeighborhood hd n τ U (γ t))
+    (T_unique :
+      ∀ t,
+        BHWJostOrientedTransferControlHasUniqueNext
+          (BHWJostOrientedBranchFreeTransferNeighborhood.toTransferControl
+            (T t)))
+    (S :
+      UnitIntervalOrderedSubdivision
+        (fun t : unitInterval => γ ⁻¹' (T t).N))
+    (C0 : BHWJostLocalOrientedContinuationChart hd n τ U)
+    (hbase : p0 ∈ Ω0 ∩ U)
+    (hp0C : p0 ∈ C0.carrier)
+    (start_patch : Set (Fin n → Fin (d + 1) → ℂ))
+    (hstart_open : IsOpen start_patch)
+    (hstart_preconnected : IsPreconnected start_patch)
+    (hstart_nonempty : start_patch.Nonempty)
+    (hstart_mem : p0 ∈ start_patch)
+    (hstart_sub : start_patch ⊆ Ω0 ∩ C0.carrier)
+    (hstart_agree : ∀ y, y ∈ start_patch → C0.branch y = B0 y) :
+    Nonempty
+      (BHWJostOrientedCertifiedTransferContinuationTrace
+        hd n τ Ω0 U B0 p0 (γ 1)) := by
+  let node : Fin (S.m + 1) → Fin n → Fin (d + 1) → ℂ :=
+    fun j => γ (S.t j)
+  have hnode_zero : node 0 = p0 := by
+    simpa [node, S.t_zero] using hγ_zero
+  have hnodeU : ∀ j, node j ∈ U := by
+    intro j
+    exact hγU (S.t j)
+  let stepControl :
+      ∀ _ : Fin S.m,
+        Σ center : Fin n → Fin (d + 1) → ℂ,
+          BHWJostOrientedBranchFreeTransferNeighborhood hd n τ U center :=
+    fun j =>
+      let t : unitInterval := Classical.choose (S.interval_endpoints_mem_cover j)
+      ⟨γ t, T t⟩
+  have step_left_mem :
+      ∀ j, node (Fin.castSucc j) ∈ (stepControl j).2.N := by
+    intro j
+    let t : unitInterval := Classical.choose (S.interval_endpoints_mem_cover j)
+    have ht := Classical.choose_spec (S.interval_endpoints_mem_cover j)
+    change γ (S.t (Fin.castSucc j)) ∈ (T t).N
+    exact ht.1
+  have step_right_mem :
+      ∀ j, node j.succ ∈ (stepControl j).2.N := by
+    intro j
+    let t : unitInterval := Classical.choose (S.interval_endpoints_mem_cover j)
+    have ht := Classical.choose_spec (S.interval_endpoints_mem_cover j)
+    change γ (S.t j.succ) ∈ (T t).N
+    exact ht.2
+  have step_unique :
+      ∀ j,
+        BHWJostOrientedTransferControlHasUniqueNext
+          (BHWJostOrientedBranchFreeTransferNeighborhood.toTransferControl
+            (stepControl j).2) := by
+    intro j
+    let t : unitInterval := Classical.choose (S.interval_endpoints_mem_cover j)
+    change BHWJostOrientedTransferControlHasUniqueNext
+      (BHWJostOrientedBranchFreeTransferNeighborhood.toTransferControl (T t))
+    exact T_unique t
+  have htrace :=
+    exists_of_nodeTransferSteps
+      (hd := hd) (τ := τ) (Ω0 := Ω0) (U := U) (B0 := B0)
+      (p0 := p0) node hnode_zero hnodeU stepControl
+      step_left_mem step_right_mem step_unique C0 hbase hp0C start_patch
+      hstart_open hstart_preconnected hstart_nonempty hstart_mem
+      hstart_sub hstart_agree
+  simpa [node, S.t_last] using htrace
+
+/-- Noncomputably select the certified transfer trace produced from a path
+subdivision and uniqueness-certified branch-free transfer neighborhoods. -/
+noncomputable def ofSubdivision
+    (γ : unitInterval → Fin n → Fin (d + 1) → ℂ)
+    (hγ_zero : γ 0 = p0)
+    (hγU : ∀ t : unitInterval, γ t ∈ U)
+    (T :
+      ∀ t : unitInterval,
+        BHWJostOrientedBranchFreeTransferNeighborhood hd n τ U (γ t))
+    (T_unique :
+      ∀ t,
+        BHWJostOrientedTransferControlHasUniqueNext
+          (BHWJostOrientedBranchFreeTransferNeighborhood.toTransferControl
+            (T t)))
+    (S :
+      UnitIntervalOrderedSubdivision
+        (fun t : unitInterval => γ ⁻¹' (T t).N))
+    (C0 : BHWJostLocalOrientedContinuationChart hd n τ U)
+    (hbase : p0 ∈ Ω0 ∩ U)
+    (hp0C : p0 ∈ C0.carrier)
+    (start_patch : Set (Fin n → Fin (d + 1) → ℂ))
+    (hstart_open : IsOpen start_patch)
+    (hstart_preconnected : IsPreconnected start_patch)
+    (hstart_nonempty : start_patch.Nonempty)
+    (hstart_mem : p0 ∈ start_patch)
+    (hstart_sub : start_patch ⊆ Ω0 ∩ C0.carrier)
+    (hstart_agree : ∀ y, y ∈ start_patch → C0.branch y = B0 y) :
+    BHWJostOrientedCertifiedTransferContinuationTrace
+      hd n τ Ω0 U B0 p0 (γ 1) :=
+  Classical.choice
+    (exists_of_subdivision
+      (hd := hd) (τ := τ) (Ω0 := Ω0) (U := U) (B0 := B0)
+      (p0 := p0) γ hγ_zero hγU T T_unique S C0 hbase hp0C
+      start_patch hstart_open hstart_preconnected hstart_nonempty
+      hstart_mem hstart_sub hstart_agree)
+
+/-- A continuous source path with uniqueness-certified branch-free transfer
+neighborhoods along the path produces a certified transfer trace after
+selecting the compact subdivision of the transfer cover. -/
+theorem exists_of_transferCover
+    (γ : unitInterval → Fin n → Fin (d + 1) → ℂ)
+    (hγ : Continuous γ)
+    (hγ_zero : γ 0 = p0)
+    (hγU : ∀ t : unitInterval, γ t ∈ U)
+    (T :
+      ∀ t : unitInterval,
+        BHWJostOrientedBranchFreeTransferNeighborhood hd n τ U (γ t))
+    (T_unique :
+      ∀ t,
+        BHWJostOrientedTransferControlHasUniqueNext
+          (BHWJostOrientedBranchFreeTransferNeighborhood.toTransferControl
+            (T t)))
+    (C0 : BHWJostLocalOrientedContinuationChart hd n τ U)
+    (hbase : p0 ∈ Ω0 ∩ U)
+    (hp0C : p0 ∈ C0.carrier)
+    (start_patch : Set (Fin n → Fin (d + 1) → ℂ))
+    (hstart_open : IsOpen start_patch)
+    (hstart_preconnected : IsPreconnected start_patch)
+    (hstart_nonempty : start_patch.Nonempty)
+    (hstart_mem : p0 ∈ start_patch)
+    (hstart_sub : start_patch ⊆ Ω0 ∩ C0.carrier)
+    (hstart_agree : ∀ y, y ∈ start_patch → C0.branch y = B0 y) :
+    Nonempty
+      (BHWJostOrientedCertifiedTransferContinuationTrace
+        hd n τ Ω0 U B0 p0 (γ 1)) := by
+  exact
+    exists_of_subdivision
+      (hd := hd) (τ := τ) (Ω0 := Ω0) (U := U) (B0 := B0)
+      (p0 := p0) γ hγ_zero hγU T T_unique
+      (unitInterval_orderedSubdivision_of_orientedTransferCover
+        (hd := hd) (τ := τ) γ hγ T)
+      C0 hbase hp0C start_patch hstart_open hstart_preconnected
+      hstart_nonempty hstart_mem hstart_sub hstart_agree
+
+/-- Noncomputably select the certified transfer trace produced by the compact
+transfer-cover subdivision of a continuous source path. -/
+noncomputable def ofTransferCover
+    (γ : unitInterval → Fin n → Fin (d + 1) → ℂ)
+    (hγ : Continuous γ)
+    (hγ_zero : γ 0 = p0)
+    (hγU : ∀ t : unitInterval, γ t ∈ U)
+    (T :
+      ∀ t : unitInterval,
+        BHWJostOrientedBranchFreeTransferNeighborhood hd n τ U (γ t))
+    (T_unique :
+      ∀ t,
+        BHWJostOrientedTransferControlHasUniqueNext
+          (BHWJostOrientedBranchFreeTransferNeighborhood.toTransferControl
+            (T t)))
+    (C0 : BHWJostLocalOrientedContinuationChart hd n τ U)
+    (hbase : p0 ∈ Ω0 ∩ U)
+    (hp0C : p0 ∈ C0.carrier)
+    (start_patch : Set (Fin n → Fin (d + 1) → ℂ))
+    (hstart_open : IsOpen start_patch)
+    (hstart_preconnected : IsPreconnected start_patch)
+    (hstart_nonempty : start_patch.Nonempty)
+    (hstart_mem : p0 ∈ start_patch)
+    (hstart_sub : start_patch ⊆ Ω0 ∩ C0.carrier)
+    (hstart_agree : ∀ y, y ∈ start_patch → C0.branch y = B0 y) :
+    BHWJostOrientedCertifiedTransferContinuationTrace
+      hd n τ Ω0 U B0 p0 (γ 1) :=
+  Classical.choice
+    (exists_of_transferCover
+      (hd := hd) (τ := τ) (Ω0 := Ω0) (U := U) (B0 := B0)
+      (p0 := p0) γ hγ hγ_zero hγU T T_unique C0 hbase hp0C
+      start_patch hstart_open hstart_preconnected hstart_nonempty
+      hstart_mem hstart_sub hstart_agree)
+
 /-- Observe a certified transfer trace at any point of its terminal chart. -/
 def toTerminalPointTrace
     (T :
