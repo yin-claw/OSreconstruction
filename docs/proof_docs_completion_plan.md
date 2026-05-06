@@ -380,6 +380,21 @@ produced transfer charts by the stored `step_chart_A/B` equations, and returns
 former prose-only finite uniqueness induction for shared skeletons; it still
 does not compare different selected paths or prove closed-path monodromy.
 
+The closed-loop packaging bridge is now split into
+`OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedContinuationMonodromyComparison.lean`.
+It checks
+`BHW.BHWJostOrientedClosedContinuationLoop.normalizedBaseChain`,
+`BHW.BHWJostOrientedClosedContinuationLoop.terminalChainComparison_base_of_sourceMonodromy`,
+and
+`BHW.BHWJostOrientedClosedContinuationLoop.terminalChainComparison_base_of_closingPatchTerminalSeedData`.
+These constructors take a closed loop whose source monodromy has already been
+proved on the stored closing patch and package it as
+`BHWOrientedTerminalChainComparisonData` between the loop chain and the
+normalized zero-step base chain built from the initial chart.  This is pure
+bookkeeping: `closing_patch_sub_final` gives the terminal-chart side,
+`closing_patch_sub_start` plus `start_patch_sub` gives the base-chart side,
+and `start_agree` rewrites the base branch to `B0`.
+
 The open-chart BHW near-identity input is now checked in
 `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedBHWInvariance.lean`.
 It provides `BHW.complexLorentz_exp_nhd_of_one`,
@@ -8448,6 +8463,13 @@ common-boundary envelope, or any theorem that already assumes locality.
    from the closed-path/source monodromy construction, either such a shared
    skeleton comparison problem or the retargeted same-endpoint
    `BHWOrientedTerminalChainComparisonData` consumed by the bridge.
+   Once a closed-return construction has been reduced to a closed loop against
+   the original base chart, the checked
+   `BHWJostOrientedClosedContinuationLoop.terminalChainComparison_base_of_closingPatchTerminalSeedData`
+   packages closing-patch terminal-seed/source-monodromy data as
+   `BHWOrientedTerminalChainComparisonData` between the closed-loop chain and
+   the normalized zero-step base chain.  Thus the source-monodromy consumer and
+   the chain-comparison consumer now meet at a checked object.
    The checked
    theorem `BHW.bhw_jost_orientedGluedBranch_of_certifiedTraces` composes
    certified selected traces, certified terminal-point comparison, and the

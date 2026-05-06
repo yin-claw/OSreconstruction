@@ -45403,7 +45403,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
             stored chart-production equations.  Thus the repeated finite
             uniqueness part is no longer a prose gap; the remaining hard work
             is to obtain the closed-return seed or same-endpoint retargeted
-            comparison from the BHW/Jost monodromy construction.  The checked theorem
+            comparison from the BHW/Jost monodromy construction.  The
+            closed-loop packaging bridge
+            `BHWJostOrientedClosedContinuationLoop.terminalChainComparison_base_of_closingPatchTerminalSeedData`
+            is checked as well: once the closing-patch terminal seed gives
+            source monodromy, it packages terminal comparison between the
+            closed-loop chain and the normalized zero-step base chain built
+            from the initial chart.  The checked theorem
             `BHW.bhw_jost_orientedGluedBranch_of_certifiedTraces` composes
             certified selected traces, certified terminal-point comparison,
             and the initial chart to produce the glued holomorphic
