@@ -46573,6 +46573,29 @@ Proof decomposition of this theorem, without hiding the analytic work:
             OS I §4.5 path/atlas construction must supply the package above,
             or the theorem must take it explicitly.
 
+            The zero-transition branch is already checked at this
+            producer-facing layer:
+
+            ```lean
+            theorem BHW.BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData
+                .exists_of_zeroTransitions
+                (hn : d + 1 <= n)
+                (hm : L.chain.m = 0) :
+                Nonempty
+                  (BHW.BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData L)
+
+            theorem BHW.bhw_jost_closedChain_sourceMonodromy_of_zeroTransitions
+                (hn : d + 1 <= n)
+                (hm : L.chain.m = 0) :
+                Set.EqOn
+                  (L.chain.branch (Fin.last L.chain.m))
+                  B0
+                  L.closing_patch
+            ```
+
+            Thus the only remaining finite-overlap construction is the
+            positive-length source-backed ribbon.
+
             After this data is built, the checked consumers
             `BHWJostOrientedClosedLoopFiniteOverlapDomainData.to_orientedMonodromy_headSliceIFT`
             and

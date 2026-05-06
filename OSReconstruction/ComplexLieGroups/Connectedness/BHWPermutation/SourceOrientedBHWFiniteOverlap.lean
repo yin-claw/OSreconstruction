@@ -1108,6 +1108,38 @@ variable {B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ}
 variable {p0 : Fin n → Fin (d + 1) → ℂ}
 variable {L : BHWJostOrientedClosedContinuationLoop hd n τ Ω0 U B0 p0}
 
+/-- Zero-transition closed loops have producer-facing preconnected
+finite-overlap data with no further geometric input: there are no step
+domains, and the stored closing oriented patch is the closing domain. -/
+theorem exists_of_zeroTransitions
+    (hn : d + 1 ≤ n)
+    (hm : L.chain.m = 0) :
+    Nonempty
+      (BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData L) := by
+  have helim (j : Fin L.chain.m) : False :=
+    Nat.not_lt_zero j.val (by simpa [hm] using j.isLt)
+  refine ⟨?P⟩
+  exact
+    { hn := hn
+      stepDomain := fun j => False.elim (helim j)
+      stepDomain_relOpen := fun j => False.elim (helim j)
+      stepDomain_preconnected := fun j => False.elim (helim j)
+      stepDomain_nonempty := fun j => False.elim (helim j)
+      stepDomain_sub_start := fun j => False.elim (helim j)
+      stepDomain_sub_left := fun j => False.elim (helim j)
+      transition_sub_stepDomain := fun j => False.elim (helim j)
+      transition_sub_nextDomain := fun j => False.elim (helim j)
+      closingDomain := L.closing_orientedPatch
+      closingDomain_relOpen := L.closing_orientedPatch_relOpen
+      closingDomain_preconnected := L.closing_orientedPatch_preconnected
+      closingDomain_nonempty := L.closing_orientedPatch_nonempty
+      closingDomain_sub_final := L.closing_orientedPatch_sub_final
+      closingDomain_sub_start := L.closing_orientedPatch_sub_start
+      closingPatch_sub_closingDomain := fun _ hG => hG
+      closingDomain_contains_lastTransition_of_pos := by
+        intro hpos
+        exact False.elim (hpos hm) }
+
 /-- Producer-facing preconnected finite-overlap data converts mechanically to
 the checked closed-loop finite-overlap data.  The zero-transition case is
 handled by the closed-loop constructor from the stored closing patch; the
@@ -1182,5 +1214,26 @@ theorem bhw_jost_closedChain_sourceMonodromy_of_preconnectedFiniteOverlapData
       B0
       L.closing_patch :=
   P.to_sourceMonodromy_headSliceIFT
+
+/-- Zero-transition closed loops have source monodromy with no finite-overlap
+geometric input.  This is the degenerate closed-loop branch of the
+producer-facing finite-overlap route. -/
+theorem bhw_jost_closedChain_sourceMonodromy_of_zeroTransitions
+    [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
+    {Ω0 U : Set (Fin n → Fin (d + 1) → ℂ)}
+    {B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+    {p0 : Fin n → Fin (d + 1) → ℂ}
+    {L : BHWJostOrientedClosedContinuationLoop hd n τ Ω0 U B0 p0}
+    (hn : d + 1 ≤ n)
+    (hm : L.chain.m = 0) :
+    Set.EqOn
+      (L.chain.branch (Fin.last L.chain.m))
+      B0
+      L.closing_patch := by
+  rcases
+    BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData.exists_of_zeroTransitions
+      (d := d) (n := n) (L := L) hn hm with
+    ⟨P⟩
+  exact bhw_jost_closedChain_sourceMonodromy_of_preconnectedFiniteOverlapData P
 
 end BHW

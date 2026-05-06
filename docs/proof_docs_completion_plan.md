@@ -307,7 +307,10 @@ mechanical consumers
 and
 `BHW.BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData.to_sourceMonodromy_headSliceIFT`,
 plus the public endpoint
-`BHW.bhw_jost_closedChain_sourceMonodromy_of_preconnectedFiniteOverlapData`.
+`BHW.bhw_jost_closedChain_sourceMonodromy_of_preconnectedFiniteOverlapData`,
+and the zero-transition endpoints
+`BHW.BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData.exists_of_zeroTransitions`
+and `BHW.bhw_jost_closedChain_sourceMonodromy_of_zeroTransitions`.
    This closes the
    previous-branch-as-seed gap for local proper-complex invariance: an already
 constructed holomorphic branch on an open source carrier can now be used as
@@ -1034,6 +1037,13 @@ is now
    The stable public consumer name is checked as
    `BHW.bhw_jost_closedChain_sourceMonodromy_of_preconnectedFiniteOverlapData`:
    its proof is just `P.to_sourceMonodromy_headSliceIFT`.
+   The degenerate zero-transition branch is also checked at this
+   producer-facing level as
+   `BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData.exists_of_zeroTransitions`
+   and
+   `BHW.bhw_jost_closedChain_sourceMonodromy_of_zeroTransitions`: if
+   `L.chain.m = 0`, the finite step family is empty and the stored
+   `L.closing_orientedPatch` is the closing domain.
    A Gemini theorem-shape sanity check on 2026-05-06 agreed with the route
    discipline here: an arbitrary closed-loop statement from only `L` and
    `hn` is too strong, because chart intersections can have multiple
@@ -9487,6 +9497,13 @@ common-boundary envelope, or any theorem that already assumes locality.
    Lean boundary: the source-backed construction proves the ordered
    relatively open nonempty preconnected domains and containment transcript;
    the checked consumer converts it to monodromy.
+   The zero-transition case of this package is already discharged:
+   `BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData.exists_of_zeroTransitions`
+   fills the empty step family by `Fin.elim0`, chooses
+   `L.closing_orientedPatch` as `closingDomain`, and the public theorem
+   `BHW.bhw_jost_closedChain_sourceMonodromy_of_zeroTransitions` immediately
+   gives source monodromy.  Therefore the only remaining finite-overlap
+   producer content is the positive-length ordered ribbon.
 
    Once `P :
    BHWJostOrientedClosedLoopPreconnectedFiniteOverlapDomainData L` is
