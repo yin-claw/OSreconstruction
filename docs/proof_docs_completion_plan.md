@@ -261,6 +261,8 @@ terminal chain.  It also provides
 `BHW.BHWOrientedContinuationChainAtlasData.to_sourcePatchContinuationAtlas`,
 `BHW.BHWOrientedContinuationChainAtlasData.exists_glued_branch`,
 `BHW.BHWOrientedContinuationChainAtlasData.ofSameEndpointComparisons`,
+`BHW.BHWOrientedContinuationChainAtlasData.terminal_base_agree_of_sameEndpointComparison`,
+`BHW.BHWOrientedContinuationChainAtlasData.ofSameEndpointComparisonsAndBaseChain`,
 `BHW.BHWOrientedTerminalChainComparisonData`, and
 `BHW.BHWOrientedTerminalChainComparisonData.continuedValue_eq`, which
 turn selected terminal chains plus same-endpoint comparison/base agreement
@@ -269,8 +271,11 @@ terminal comparison patch into equality of continued values.  The atlas
 constructor is not merely an endpoint wrapper: it retargets any terminal chart
 containing an overlap point `y` to a chain ending at `y`, compares both
 retargeted chains with the selected chain ending at `y`, and thereby proves
-the full terminal-overlap `EqOn`.  This keeps the carrier/API file below the
-hard-frontier size limit and introduces no new analytic assumption.
+the full terminal-overlap `EqOn`.  The base-chain constructor similarly
+retargets one normalized base chain to any `z ∈ Ω0 ∩ U` and uses
+same-endpoint comparison to derive the atlas base agreement field.  This keeps
+the carrier/API file below the hard-frontier size limit and introduces no new
+analytic assumption.
 
 The open-chart BHW near-identity input is now checked in
 `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedBHWInvariance.lean`.
@@ -7972,7 +7977,8 @@ common-boundary envelope, or any theorem that already assumes locality.
    `JoinedIn.somePath`, and call the compact transfer-cover fold along that
    path.  The remaining hard atlas inputs are therefore the transfer
    neighborhoods on `U`, the same-endpoint comparison theorem for arbitrary
-   pairs of chains ending at the same point, and base agreement on `Ω0 ∩ U`.
+   pairs of chains ending at the same point, and a normalized base chain whose
+   terminal chart covers `Ω0 ∩ U`.
    The constructor derives the atlas `terminal_overlap_eq` field by a checked
    retargeting argument.  For `y` in the intersection of the terminal charts
    of chains ending at `a` and `b`, append the tautological same-chart
@@ -7980,6 +7986,12 @@ common-boundary envelope, or any theorem that already assumes locality.
    retargeted chain with the selected chain ending at `y`; and rewrite the two
    continued values back to the original terminal branch values by
    `BHWJostOrientedSourcePatchContinuationChain.retargetTerminal_continuedValue_eq_branch`.
+   The variant
+   `BHWOrientedContinuationChainAtlasData.ofSameEndpointComparisonsAndBaseChain`
+   also derives `terminal_base_agree`: for `z ∈ Ω0 ∩ U`, retarget the
+   normalized base chain to endpoint `z`, compare the selected chain ending at
+   `z` with that retargeted base chain, and rewrite the retargeted continued
+   value back to the stored base-branch equality with `B0`.
    Its method `to_sourcePatchContinuationAtlas` builds the atlas whose charts
    are the terminal source charts and whose branches are the stored terminal
    branches; its method `exists_glued_branch` then calls the checked

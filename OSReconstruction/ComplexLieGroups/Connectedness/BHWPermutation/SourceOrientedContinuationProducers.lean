@@ -300,6 +300,79 @@ noncomputable def ofSameEndpointComparisons
           Cb hyb
   terminal_base_agree := terminal_base_agree
 
+/-- Base agreement follows from same-endpoint comparison with a base chain
+whose terminal chart covers the initial source patch and whose terminal branch
+is already normalized by `B0` there. -/
+theorem terminal_base_agree_of_sameEndpointComparison
+    {p0 : Fin n → Fin (d + 1) → ℂ}
+    (chainAt :
+      ∀ z, z ∈ U →
+        BHWJostOrientedSourcePatchContinuationChain
+          hd n τ Ω0 U B0 p0 z)
+    (sameEndpointComparison :
+      ∀ {z : Fin n → Fin (d + 1) → ℂ}
+        (C₁ C₂ :
+          BHWJostOrientedSourcePatchContinuationChain
+            hd n τ Ω0 U B0 p0 z),
+          BHWOrientedTerminalChainComparisonData C₁ C₂)
+    (Cbase :
+      BHWJostOrientedSourcePatchContinuationChain
+        hd n τ Ω0 U B0 p0 p0)
+    (base_chart_mem :
+      ∀ z, z ∈ Ω0 ∩ U → z ∈ Cbase.chart (Fin.last Cbase.m))
+    (base_branch_agree :
+      ∀ z, z ∈ Ω0 ∩ U →
+        Cbase.branch (Fin.last Cbase.m) z = B0 z) :
+    ∀ z (hz : z ∈ Ω0 ∩ U),
+      (chainAt z hz.2).branch
+        (Fin.last (chainAt z hz.2).m) z = B0 z := by
+  intro z hz
+  let Ctarget := chainAt z hz.2
+  let CbaseAtZ := Cbase.retargetTerminal (base_chart_mem z hz)
+  have hcmp :
+      bhw_continuedValueAlongOrientedChain hd n τ Ω0 U B0 Ctarget =
+        bhw_continuedValueAlongOrientedChain hd n τ Ω0 U B0 CbaseAtZ :=
+    (sameEndpointComparison Ctarget CbaseAtZ).continuedValue_eq
+  calc
+    (chainAt z hz.2).branch (Fin.last (chainAt z hz.2).m) z =
+        bhw_continuedValueAlongOrientedChain hd n τ Ω0 U B0 Ctarget := rfl
+    _ = bhw_continuedValueAlongOrientedChain hd n τ Ω0 U B0 CbaseAtZ :=
+        hcmp
+    _ = Cbase.branch (Fin.last Cbase.m) z :=
+        BHWJostOrientedSourcePatchContinuationChain.retargetTerminal_continuedValue_eq_branch
+          Cbase (base_chart_mem z hz)
+    _ = B0 z := base_branch_agree z hz
+
+/-- Same-endpoint comparison plus a normalized base chain supplies all
+chain-atlas fields, including both terminal overlap and base agreement. -/
+noncomputable def ofSameEndpointComparisonsAndBaseChain
+    (p0 : Fin n → Fin (d + 1) → ℂ)
+    (base_mem : p0 ∈ Ω0 ∩ U)
+    (chainAt :
+      ∀ z, z ∈ U →
+        BHWJostOrientedSourcePatchContinuationChain
+          hd n τ Ω0 U B0 p0 z)
+    (sameEndpointComparison :
+      ∀ {z : Fin n → Fin (d + 1) → ℂ}
+        (C₁ C₂ :
+          BHWJostOrientedSourcePatchContinuationChain
+            hd n τ Ω0 U B0 p0 z),
+          BHWOrientedTerminalChainComparisonData C₁ C₂)
+    (Cbase :
+      BHWJostOrientedSourcePatchContinuationChain
+        hd n τ Ω0 U B0 p0 p0)
+    (base_chart_mem :
+      ∀ z, z ∈ Ω0 ∩ U → z ∈ Cbase.chart (Fin.last Cbase.m))
+    (base_branch_agree :
+      ∀ z, z ∈ Ω0 ∩ U →
+        Cbase.branch (Fin.last Cbase.m) z = B0 z) :
+    BHWOrientedContinuationChainAtlasData hd n τ Ω0 U B0 :=
+  ofSameEndpointComparisons
+    (hd := hd) (τ := τ) (Ω0 := Ω0) (U := U) (B0 := B0)
+    p0 base_mem chainAt sameEndpointComparison
+    (terminal_base_agree_of_sameEndpointComparison chainAt
+      sameEndpointComparison Cbase base_chart_mem base_branch_agree)
+
 end BHWOrientedContinuationChainAtlasData
 
 end BHW
