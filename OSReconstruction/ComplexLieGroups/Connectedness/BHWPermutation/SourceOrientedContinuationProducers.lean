@@ -854,6 +854,74 @@ theorem bhw_jost_orientedGluedBranch_of_pathConnected_certifiedTransferCover
     hstart_preconnected hstart_nonempty hstart_mem hstart_sub hstart_agree
     initial_chart_mem initial_branch_agree
 
+/-- Source-normal-form producer form of the certified path-connected gluing
+theorem.  The remaining analytic inputs are the uniform local descent theorem,
+one-step uniqueness for the center-forgotten controls produced by that descent,
+and certified terminal-point trace comparison. -/
+theorem bhw_jost_orientedGluedBranch_of_pathConnected_sourceNormalFormProducer
+    [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
+    {Ω0 U : Set (Fin n → Fin (d + 1) → ℂ)}
+    {B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+    (p0 : Fin n → Fin (d + 1) → ℂ)
+    (base_mem : p0 ∈ Ω0 ∩ U)
+    (hU_path : IsPathConnected U)
+    (patchAt :
+      ∀ {center : Fin n → Fin (d + 1) → ℂ}, center ∈ U →
+        BHWJostOrientedSourceNormalFormGeometryPatch hd n τ U center)
+    (uniformDescent :
+      ∀ {center : Fin n → Fin (d + 1) → ℂ}
+        (hcenter : center ∈ U),
+        ∀ p q,
+          p ∈ (patchAt hcenter).carrier → p ∈ U →
+          q ∈ (patchAt hcenter).carrier → q ∈ U →
+          ∀ Cprev : BHWJostLocalOrientedContinuationChart hd n τ U,
+            p ∈ Cprev.carrier →
+              Σ Cnext : BHWJostLocalOrientedContinuationChart hd n τ U,
+                BHWJostOrientedTransitionData hd n τ U Cprev Cnext p q)
+    (uniformDescent_unique :
+      ∀ z (hz : z ∈ U),
+        BHWJostOrientedTransferControlHasUniqueNext
+          (BHWJostOrientedBranchFreeTransferNeighborhood.toTransferControl
+            (bhw_jost_orientedBranchFreeTransferNeighborhood_at_of_sourceNormalFormProducer
+              (hd := hd) (τ := τ) (U := U)
+              patchAt uniformDescent hz)))
+    (terminalPointComparison :
+      ∀ {y : Fin n → Fin (d + 1) → ℂ}
+        (T₁ T₂ :
+          BHWJostOrientedCertifiedTransferTerminalPointTrace
+            hd n τ Ω0 U B0 p0 y),
+        BHWLocalChartTerminalComparisonData
+          (T₁.trace.trace.chain.localChart
+            (Fin.last T₁.trace.trace.chain.m))
+          (T₂.trace.trace.chain.localChart
+            (Fin.last T₂.trace.trace.chain.m)) y)
+    (C0 : BHWJostLocalOrientedContinuationChart hd n τ U)
+    (hp0C : p0 ∈ C0.carrier)
+    (start_patch : Set (Fin n → Fin (d + 1) → ℂ))
+    (hstart_open : IsOpen start_patch)
+    (hstart_preconnected : IsPreconnected start_patch)
+    (hstart_nonempty : start_patch.Nonempty)
+    (hstart_mem : p0 ∈ start_patch)
+    (hstart_sub : start_patch ⊆ Ω0 ∩ C0.carrier)
+    (hstart_agree : ∀ y, y ∈ start_patch → C0.branch y = B0 y)
+    (initial_chart_mem :
+      ∀ z, z ∈ Ω0 ∩ U → z ∈ C0.carrier)
+    (initial_branch_agree :
+      ∀ z, z ∈ Ω0 ∩ U → C0.branch z = B0 z) :
+    ∃ B : (Fin n → Fin (d + 1) → ℂ) → ℂ,
+      DifferentiableOn ℂ B U ∧
+      (∀ z, z ∈ Ω0 → z ∈ U → B z = B0 z) :=
+  bhw_jost_orientedGluedBranch_of_pathConnected_certifiedTransferCover
+    (hd := hd) (τ := τ) (Ω0 := Ω0) (U := U) (B0 := B0)
+    p0 base_mem hU_path
+    (fun _ hz =>
+      bhw_jost_orientedBranchFreeTransferNeighborhood_at_of_sourceNormalFormProducer
+        (hd := hd) (τ := τ) (U := U)
+        patchAt uniformDescent hz)
+    uniformDescent_unique terminalPointComparison C0 hp0C start_patch
+    hstart_open hstart_preconnected hstart_nonempty hstart_mem hstart_sub
+    hstart_agree initial_chart_mem initial_branch_agree
+
 /-- Terminal comparison data for two oriented continuation chains with the
 same base point and endpoint.  The hard BHW/Jost closed-loop comparison should
 produce this object; its consumer is just evaluation at the endpoint. -/

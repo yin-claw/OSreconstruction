@@ -329,6 +329,7 @@ provides
 `BHW.BHWOrientedContinuationTraceAtlasData.ofPathConnectedTransferCoverAndInitialChart`,
 `BHW.bhw_jost_orientedGluedBranch_of_certifiedTraces`,
 `BHW.bhw_jost_orientedGluedBranch_of_pathConnected_certifiedTransferCover`,
+`BHW.bhw_jost_orientedGluedBranch_of_pathConnected_sourceNormalFormProducer`,
 `BHW.BHWOrientedTerminalChainComparisonData`, and
 `BHW.BHWOrientedTerminalChainComparisonData.ofLocalChartComparison`,
 `BHW.BHWOrientedTerminalChainComparisonData.continuedValue_eq`, which
@@ -8397,7 +8398,13 @@ common-boundary envelope, or any theorem that already assumes locality.
    The checked path-connected theorem
    `BHW.bhw_jost_orientedGluedBranch_of_pathConnected_certifiedTransferCover`
    first selects the certified traces from a path-connected uniqueness-certified
-   transfer cover and then applies that certified glue theorem.
+   transfer cover and then applies that certified glue theorem.  The checked
+   source-normal-form theorem
+   `BHW.bhw_jost_orientedGluedBranch_of_pathConnected_sourceNormalFormProducer`
+   specializes this to the source-normal-form patch producer plus uniform
+   descent input; after that reduction, the non-mechanical inputs are exactly
+   the one-step uniqueness theorem for the produced transfer controls and the
+   certified terminal-point comparison theorem.
    The raw theorem `BHW.bhw_jost_orientedGluedBranch_of_pathConnected_transferCover`
    remains a convenience surface when one has an unbundled terminal-point
    comparison theorem, but the strict route should target the certified
