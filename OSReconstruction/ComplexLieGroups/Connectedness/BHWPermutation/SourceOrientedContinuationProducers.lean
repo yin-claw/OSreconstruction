@@ -224,6 +224,38 @@ variable {p0 z : Fin n → Fin (d + 1) → ℂ}
 variable {C₁ C₂ :
   BHWJostOrientedSourcePatchContinuationChain hd n τ Ω0 U B0 p0 z}
 
+/-- A chart-level comparison between the terminal local charts packages into
+the chain-level terminal comparison data. -/
+def ofLocalChartComparison
+    (P :
+      BHWLocalChartTerminalComparisonData
+        (C₁.localChart (Fin.last C₁.m))
+        (C₂.localChart (Fin.last C₂.m)) z) :
+    BHWOrientedTerminalChainComparisonData C₁ C₂ where
+  terminalPatch := P.terminalPatch
+  endpoint_mem := P.endpoint_mem
+  terminalPatch_open := P.terminalPatch_open
+  terminalPatch_preconnected := P.terminalPatch_preconnected
+  terminalPatch_sub_left := by
+    intro y hy
+    simpa [C₁.chart_eq_local (Fin.last C₁.m)]
+      using P.terminalPatch_sub_left hy
+  terminalPatch_sub_right := by
+    intro y hy
+    simpa [C₂.chart_eq_local (Fin.last C₂.m)]
+      using P.terminalPatch_sub_right hy
+  terminal_branches_eq := by
+    intro y hy
+    have hy₁ : y ∈ C₁.chart (Fin.last C₁.m) := by
+      simpa [C₁.chart_eq_local (Fin.last C₁.m)]
+        using P.terminalPatch_sub_left hy
+    have hy₂ : y ∈ C₂.chart (Fin.last C₂.m) := by
+      simpa [C₂.chart_eq_local (Fin.last C₂.m)]
+        using P.terminalPatch_sub_right hy
+    rw [C₁.branch_eq_local (Fin.last C₁.m) y hy₁,
+      C₂.branch_eq_local (Fin.last C₂.m) y hy₂]
+    exact P.terminal_branches_eq hy
+
 /-- Terminal comparison data immediately gives equality of the two continued
 values. -/
 theorem continuedValue_eq

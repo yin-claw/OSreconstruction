@@ -518,6 +518,7 @@ structure BHWJostOrientedTransitionData
   sourcePatch_preconnected : IsPreconnected sourcePatch
   sourcePatch_nonempty : sourcePatch.Nonempty
   source_mem : p ∈ sourcePatch
+  target_mem_sourcePatch : q ∈ sourcePatch
   target_mem : q ∈ Cright.carrier
   sourcePatch_sub :
     sourcePatch ⊆ Cleft.carrier ∩ Cright.carrier
@@ -559,6 +560,7 @@ def sameChart
   sourcePatch_preconnected := C.carrier_preconnected
   sourcePatch_nonempty := ⟨p, hp⟩
   source_mem := hp
+  target_mem_sourcePatch := hq
   target_mem := hq
   sourcePatch_sub := by
     intro y hy
@@ -617,6 +619,18 @@ theorem source_mem_right_carrier
     p ∈ Cright.carrier :=
   sourcePatch_subset_right T T.source_mem
 
+/-- The transition target point belongs to the stored overlap source patch. -/
+theorem target_mem_overlap
+    (T : BHWJostOrientedTransitionData hd n τ U Cleft Cright p q) :
+    q ∈ T.sourcePatch :=
+  T.target_mem_sourcePatch
+
+/-- The transition target point belongs to the left chart carrier. -/
+theorem target_mem_left_carrier
+    (T : BHWJostOrientedTransitionData hd n τ U Cleft Cright p q) :
+    q ∈ Cleft.carrier :=
+  sourcePatch_subset_left T T.target_mem_sourcePatch
+
 /-- The transition source point belongs to the ambient continuation set `U`. -/
 theorem source_mem_U
     (T : BHWJostOrientedTransitionData hd n τ U Cleft Cright p q) :
@@ -661,6 +675,43 @@ theorem source_branch_agree_at_source
     Cleft.branch p = Cright.branch p :=
   source_branch_agree_of_oriented T T.source_mem
 
+/-- At the transition target point, the two chart branches also agree. -/
+theorem source_branch_agree_at_target
+    (T : BHWJostOrientedTransitionData hd n τ U Cleft Cright p q) :
+    Cleft.branch q = Cright.branch q :=
+  source_branch_agree_of_oriented T T.target_mem_sourcePatch
+
+/-- Reverse an oriented transition.  This is valid because the transition
+payload records that both endpoints lie in the stored overlap source patch. -/
+def symm
+    (T : BHWJostOrientedTransitionData hd n τ U Cleft Cright p q) :
+    BHWJostOrientedTransitionData hd n τ U Cright Cleft q p where
+  sourcePatch := T.sourcePatch
+  sourcePatch_open := T.sourcePatch_open
+  sourcePatch_preconnected := T.sourcePatch_preconnected
+  sourcePatch_nonempty := T.sourcePatch_nonempty
+  source_mem := T.target_mem_sourcePatch
+  target_mem_sourcePatch := T.source_mem
+  target_mem := sourcePatch_subset_left T T.source_mem
+  sourcePatch_sub := by
+    intro y hy
+    exact ⟨(T.sourcePatch_sub hy).2, (T.sourcePatch_sub hy).1⟩
+  source_branch_agree := by
+    intro y hy
+    exact (T.source_branch_agree hy).symm
+  orientedPatch := T.orientedPatch
+  orientedPatch_relOpen := T.orientedPatch_relOpen
+  orientedPatch_preconnected := T.orientedPatch_preconnected
+  orientedPatch_nonempty := T.orientedPatch_nonempty
+  orientedPatch_sub := by
+    intro G hG
+    exact ⟨(T.orientedPatch_sub hG).2, (T.orientedPatch_sub hG).1⟩
+  sourcePatch_oriented_mem := T.sourcePatch_oriented_mem
+  orientedPatch_source_realizes := T.orientedPatch_source_realizes
+  oriented_psi_agree := by
+    intro G hG
+    exact (T.oriented_psi_agree hG).symm
+
 /-- Every oriented transition-patch point is represented by a genuine source
 overlap point where the two consecutive source branches agree. -/
 theorem exists_sourcePatch_realization_of_orientedPatch
@@ -692,6 +743,102 @@ theorem exists_sourcePatch_realization_mem_U_of_orientedPatch
   exact ⟨y, hyPatch, sourcePatch_subset_U T hyPatch, hyG, hbranch⟩
 
 end BHWJostOrientedTransitionData
+
+/-- Chart-level terminal comparison data.  This is the local output of a
+one-step uniqueness comparison: a source patch around the target point, lying
+in both local chart carriers, on which the two local branches agree. -/
+structure BHWLocalChartTerminalComparisonData
+    [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
+    {U : Set (Fin n → Fin (d + 1) → ℂ)}
+    (Cleft Cright : BHWJostLocalOrientedContinuationChart hd n τ U)
+    (q : Fin n → Fin (d + 1) → ℂ) where
+  terminalPatch : Set (Fin n → Fin (d + 1) → ℂ)
+  endpoint_mem : q ∈ terminalPatch
+  terminalPatch_open : IsOpen terminalPatch
+  terminalPatch_preconnected : IsPreconnected terminalPatch
+  terminalPatch_sub_left : terminalPatch ⊆ Cleft.carrier
+  terminalPatch_sub_right : terminalPatch ⊆ Cright.carrier
+  terminal_branches_eq :
+    Set.EqOn Cleft.branch Cright.branch terminalPatch
+
+namespace BHWLocalChartTerminalComparisonData
+
+variable [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
+variable {U : Set (Fin n → Fin (d + 1) → ℂ)}
+variable {Cleft Cright : BHWJostLocalOrientedContinuationChart hd n τ U}
+variable {q : Fin n → Fin (d + 1) → ℂ}
+
+/-- A chart-level comparison gives equality at the target point. -/
+theorem branch_eq_at_endpoint
+    (P : BHWLocalChartTerminalComparisonData Cleft Cright q) :
+    Cleft.branch q = Cright.branch q :=
+  P.terminal_branches_eq P.endpoint_mem
+
+/-- Chart-level comparison is symmetric. -/
+def symm
+    (P : BHWLocalChartTerminalComparisonData Cleft Cright q) :
+    BHWLocalChartTerminalComparisonData Cright Cleft q where
+  terminalPatch := P.terminalPatch
+  endpoint_mem := P.endpoint_mem
+  terminalPatch_open := P.terminalPatch_open
+  terminalPatch_preconnected := P.terminalPatch_preconnected
+  terminalPatch_sub_left := P.terminalPatch_sub_right
+  terminalPatch_sub_right := P.terminalPatch_sub_left
+  terminal_branches_eq := by
+    intro y hy
+    exact (P.terminal_branches_eq hy).symm
+
+/-- Chart-level comparisons compose after shrinking to a connected open
+endpoint neighborhood inside the intersection of the two comparison patches. -/
+noncomputable def trans
+    {Cmid Cright : BHWJostLocalOrientedContinuationChart hd n τ U}
+    (P₁₂ : BHWLocalChartTerminalComparisonData Cleft Cmid q)
+    (P₂₃ : BHWLocalChartTerminalComparisonData Cmid Cright q) :
+    BHWLocalChartTerminalComparisonData Cleft Cright q :=
+  let s := P₁₂.terminalPatch ∩ P₂₃.terminalPatch
+  have hs_open : IsOpen s := P₁₂.terminalPatch_open.inter P₂₃.terminalPatch_open
+  have hq_s : q ∈ s := ⟨P₁₂.endpoint_mem, P₂₃.endpoint_mem⟩
+  let Q := Classical.choose
+    (exists_open_preconnected_neighborhood_subset (s := s) hs_open hq_s)
+  have hQ_spec :
+      q ∈ Q ∧ IsOpen Q ∧ IsPreconnected Q ∧ Q.Nonempty ∧ Q ⊆ s :=
+    Classical.choose_spec
+      (exists_open_preconnected_neighborhood_subset (s := s) hs_open hq_s)
+  { terminalPatch := Q
+    endpoint_mem := hQ_spec.1
+    terminalPatch_open := hQ_spec.2.1
+    terminalPatch_preconnected := hQ_spec.2.2.1
+    terminalPatch_sub_left := by
+      intro y hy
+      exact P₁₂.terminalPatch_sub_left ((hQ_spec.2.2.2.2 hy).1)
+    terminalPatch_sub_right := by
+      intro y hy
+      exact P₂₃.terminalPatch_sub_right ((hQ_spec.2.2.2.2 hy).2)
+    terminal_branches_eq := by
+      intro y hy
+      have hy12 : y ∈ P₁₂.terminalPatch := (hQ_spec.2.2.2.2 hy).1
+      have hy23 : y ∈ P₂₃.terminalPatch := (hQ_spec.2.2.2.2 hy).2
+      exact (P₁₂.terminal_branches_eq hy12).trans
+        (P₂₃.terminal_branches_eq hy23) }
+
+/-- Any transition whose overlap contains the target gives a chart-level
+comparison at that target. -/
+def ofTransition
+    {p : Fin n → Fin (d + 1) → ℂ}
+    (T : BHWJostOrientedTransitionData hd n τ U Cleft Cright p q) :
+    BHWLocalChartTerminalComparisonData Cleft Cright q where
+  terminalPatch := T.sourcePatch
+  endpoint_mem := T.target_mem_sourcePatch
+  terminalPatch_open := T.sourcePatch_open
+  terminalPatch_preconnected := T.sourcePatch_preconnected
+  terminalPatch_sub_left :=
+    BHWJostOrientedTransitionData.sourcePatch_subset_left T
+  terminalPatch_sub_right :=
+    BHWJostOrientedTransitionData.sourcePatch_subset_right T
+  terminal_branches_eq :=
+    BHWJostOrientedTransitionData.source_branch_agree_of_oriented T
+
+end BHWLocalChartTerminalComparisonData
 
 /-- Source-normal-form geometry patch used to build branch-free local transfer
 neighborhoods. -/
@@ -1671,6 +1818,74 @@ theorem retargetTerminal_continuedValue_eq_branch
     (C.branch_eq_local (Fin.last C.m) y hy).symm
 
 end BHWJostOrientedSourcePatchContinuationChain
+
+/-- A continuation chain together with the branch-free transfer provenance
+that produced each stored transition.  This is the theorem surface needed for
+same-endpoint comparison: arbitrary chain records do not remember enough
+source-backed data to support the strict BHW/Jost monodromy argument. -/
+structure BHWJostOrientedTransferContinuationTrace
+    [NeZero d] (hd : 2 ≤ d)
+    (n : ℕ) (τ : Equiv.Perm (Fin n))
+    (Ω0 U : Set (Fin n → Fin (d + 1) → ℂ))
+    (B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (p0 z : Fin n → Fin (d + 1) → ℂ) where
+  chain : BHWJostOrientedSourcePatchContinuationChain hd n τ Ω0 U B0 p0 z
+  stepControl :
+    (j : Fin chain.m) →
+      BHWJostOrientedBranchFreeTransferNeighborhood
+        hd n τ U (chain.node (Fin.castSucc j))
+  step_left_mem :
+    ∀ j, chain.node (Fin.castSucc j) ∈ (stepControl j).N
+  step_right_mem :
+    ∀ j, chain.node j.succ ∈ (stepControl j).N
+  step_transfer_eq :
+    ∀ j,
+      (stepControl j).transfer
+        (chain.node (Fin.castSucc j)) (chain.node j.succ)
+        (step_left_mem j)
+        (chain.chart_sub_U (Fin.castSucc j)
+          (chain.node_mem (Fin.castSucc j)))
+        (step_right_mem j)
+        (chain.chart_sub_U j.succ (chain.node_mem j.succ))
+        (chain.localChart (Fin.castSucc j))
+        (by
+          simpa [chain.chart_eq_local (Fin.castSucc j)]
+            using chain.node_mem (Fin.castSucc j)) =
+        ⟨chain.localChart j.succ, chain.oriented_transition j⟩
+
+/-- A transfer trace observed at an arbitrary point of its terminal chart.
+This is the trace-level object needed for atlas overlaps: the point being
+compared need not be the endpoint used to construct the underlying transfer
+trace. -/
+structure BHWJostOrientedTransferTerminalPointTrace
+    [NeZero d] (hd : 2 ≤ d)
+    (n : ℕ) (τ : Equiv.Perm (Fin n))
+    (Ω0 U : Set (Fin n → Fin (d + 1) → ℂ))
+    (B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (p0 y : Fin n → Fin (d + 1) → ℂ) where
+  endpoint : Fin n → Fin (d + 1) → ℂ
+  trace :
+    BHWJostOrientedTransferContinuationTrace
+      hd n τ Ω0 U B0 p0 endpoint
+  point_mem : y ∈ trace.chain.chart (Fin.last trace.chain.m)
+
+namespace BHWJostOrientedTransferTerminalPointTrace
+
+variable [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
+variable {Ω0 U : Set (Fin n → Fin (d + 1) → ℂ)}
+variable {B0 : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+variable {p0 y : Fin n → Fin (d + 1) → ℂ}
+
+/-- The observed point lies in the terminal local chart carrier. -/
+theorem point_mem_terminalLocalChart
+    (T :
+      BHWJostOrientedTransferTerminalPointTrace
+        hd n τ Ω0 U B0 p0 y) :
+    y ∈ (T.trace.chain.localChart (Fin.last T.trace.chain.m)).carrier := by
+  simpa [T.trace.chain.chart_eq_local (Fin.last T.trace.chain.m)]
+    using T.point_mem
+
+end BHWJostOrientedTransferTerminalPointTrace
 
 /-- A closed oriented continuation loop at the fixed base point. -/
 structure BHWJostOrientedClosedContinuationLoop

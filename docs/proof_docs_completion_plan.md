@@ -201,9 +201,18 @@ the local chart provenance field
 `BHW.BHWJostOrientedTransitionData.sourcePatch_subset_U`,
 `BHW.BHWJostOrientedTransitionData.source_mem_U`,
 `BHW.BHWJostOrientedTransitionData.source_mem_right_carrier`,
+`BHW.BHWJostOrientedTransitionData.target_mem_overlap`,
+`BHW.BHWJostOrientedTransitionData.target_mem_left_carrier`,
 `BHW.BHWJostOrientedTransitionData.source_branch_agree_at_source`,
+`BHW.BHWJostOrientedTransitionData.source_branch_agree_at_target`,
+`BHW.BHWJostOrientedTransitionData.symm`,
 `BHW.BHWJostOrientedTransitionData.exists_sourcePatch_realization_of_orientedPatch`,
 `BHW.BHWJostOrientedTransitionData.exists_sourcePatch_realization_mem_U_of_orientedPatch`,
+`BHW.BHWLocalChartTerminalComparisonData`,
+`BHW.BHWLocalChartTerminalComparisonData.branch_eq_at_endpoint`,
+`BHW.BHWLocalChartTerminalComparisonData.symm`,
+`BHW.BHWLocalChartTerminalComparisonData.trans`,
+`BHW.BHWLocalChartTerminalComparisonData.ofTransition`,
 `BHW.BHWJostOrientedSourceNormalFormGeometryPatch.exists_source_realization`,
 `BHW.BHWJostOrientedSourceNormalFormGeometryPatch.exists_source_realization_mem_U`,
 `BHW.BHWJostOrientedTransitionData.orientedPatch_connected`,
@@ -217,6 +226,9 @@ the local chart provenance field
 `BHW.BHWJostOrientedBranchFreeTransferNeighborhood.transfer_branch_agree_at_source`,
 `BHW.BHWJostOrientedSourcePatchContinuationChain.base`,
 `BHW.BHWJostOrientedSourcePatchContinuationChain.snoc`,
+`BHW.BHWJostOrientedTransferContinuationTrace`,
+`BHW.BHWJostOrientedTransferTerminalPointTrace`,
+`BHW.BHWJostOrientedTransferTerminalPointTrace.point_mem_terminalLocalChart`,
 `BHW.BHWJostOrientedSourcePatchContinuationChain.exists_of_nodeSteps`,
 `BHW.BHWJostOrientedSourcePatchContinuationChain.ofNodeSteps`,
 `BHW.BHWJostOrientedSourcePatchContinuationChain.exists_of_subdivision`,
@@ -265,6 +277,7 @@ terminal chain.  It also provides
 `BHW.BHWOrientedContinuationChainAtlasData.ofSameEndpointComparisonsAndBaseChain`,
 `BHW.BHWOrientedContinuationChainAtlasData.ofSameEndpointComparisonsAndInitialChart`,
 `BHW.BHWOrientedTerminalChainComparisonData`, and
+`BHW.BHWOrientedTerminalChainComparisonData.ofLocalChartComparison`,
 `BHW.BHWOrientedTerminalChainComparisonData.continuedValue_eq`, which
 turn selected terminal chains plus same-endpoint comparison/base agreement
 into the checked source-patch atlas and glued branch, and turn a produced
@@ -7956,38 +7969,185 @@ common-boundary envelope, or any theorem that already assumes locality.
    Since `L.closing_patch_sub_start hy` puts `y` in `chain.start_patch`,
    `chain.start_agree y` rewrites the initial source branch to `B0 y`.
 
-   `bhw_jost_terminalOrientedBranches_eq_of_closed_monodromy` compares two
-   oriented chains only when they have the same fixed base point `p0`.  It
-   concatenates `C₁` with the reverse of `C₂`, forms the corresponding
-   `BHWJostOrientedClosedContinuationLoop` at `p0`, chooses the closing source
-   patch inside `C₁.start_patch ∩ C₂.start_patch`, and invokes the closed-loop
-   source theorem.  The stored oriented transition data then propagate the
-   equality forward to a small endpoint patch inside the intersection of the
-   two terminal charts at `z`, packaged as
-   `BHWOrientedTerminalChainComparisonData C₁ C₂`.  The checked method
-   `BHWOrientedTerminalChainComparisonData.continuedValue_eq` evaluates this
-   endpoint equality to give chain single-valuedness.
+   The same-endpoint comparison theorem must be stated with source-backed
+   continuation provenance, not as a naive reversal of arbitrary one-sided
+   chain data.  The checked transition structure now records
+   `target_mem_sourcePatch : q ∈ sourcePatch`, so
+   `BHWJostOrientedTransitionData.symm` is a genuine checked reverse of an
+   individual overlap.  This is necessary but not sufficient for the terminal
+   comparison theorem: after following `C₁` to the common endpoint `z`, there
+   is still no free transition from the terminal chart of `C₁` to the terminal
+   chart of `C₂`, since that is exactly the equality being proved.
+
+   The Lean-ready surface is therefore a provenance theorem, not an arbitrary
+   chain theorem:
+
+   ```lean
+   structure BHW.BHWJostOrientedTransferContinuationTrace
+       [NeZero d] (hd : 2 ≤ d)
+       (n : Nat) (τ : Equiv.Perm (Fin n))
+       (Ω0 U : Set (Fin n -> Fin (d + 1) -> ℂ))
+       (B0 : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
+       (p0 z : Fin n -> Fin (d + 1) -> ℂ) where
+     chain :
+       BHWJostOrientedSourcePatchContinuationChain hd n τ Ω0 U B0 p0 z
+     -- the actual finite source nodes and the controlling branch-free
+     -- neighborhoods used to produce each step of `chain`
+     stepControl :
+       (j : Fin chain.m) ->
+         BHWJostOrientedBranchFreeTransferNeighborhood
+           hd n τ U (chain.node (Fin.castSucc j))
+     step_left_mem :
+       ∀ j, chain.node (Fin.castSucc j) ∈ (stepControl j).N
+     step_right_mem :
+       ∀ j, chain.node j.succ ∈ (stepControl j).N
+     step_transfer_eq :
+       ∀ j,
+         (stepControl j).transfer
+           (chain.node (Fin.castSucc j)) (chain.node j.succ)
+           (step_left_mem j)
+           (chain.chart_sub_U (Fin.castSucc j)
+             (chain.node_mem (Fin.castSucc j)))
+           (step_right_mem j)
+           (chain.chart_sub_U j.succ (chain.node_mem j.succ))
+           (chain.localChart (Fin.castSucc j))
+           (by
+             simpa [chain.chart_eq_local (Fin.castSucc j)]
+               using chain.node_mem (Fin.castSucc j)) =
+           ⟨chain.localChart j.succ, chain.oriented_transition j⟩
+   ```
+
+   For atlas overlaps we usually observe a trace at a point in its terminal
+   chart rather than at the endpoint originally used to build the trace.  The
+   checked carrier is:
+
+   ```lean
+   structure BHW.BHWJostOrientedTransferTerminalPointTrace
+       [NeZero d] (hd : 2 ≤ d)
+       (n : Nat) (τ : Equiv.Perm (Fin n))
+       (Ω0 U : Set (Fin n -> Fin (d + 1) -> ℂ))
+       (B0 : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
+       (p0 y : Fin n -> Fin (d + 1) -> ℂ) where
+     endpoint : Fin n -> Fin (d + 1) -> ℂ
+     trace :
+       BHWJostOrientedTransferContinuationTrace
+         hd n τ Ω0 U B0 p0 endpoint
+     point_mem : y ∈ trace.chain.chart (Fin.last trace.chain.m)
+   ```
+
+   The local output used by the trace induction is the chart-level analogue of
+   terminal chain comparison:
+
+   ```lean
+   structure BHW.BHWLocalChartTerminalComparisonData
+       [NeZero d] {hd : 2 ≤ d} {τ : Equiv.Perm (Fin n)}
+       {U : Set (Fin n -> Fin (d + 1) -> ℂ)}
+       (Cleft Cright : BHWJostLocalOrientedContinuationChart hd n τ U)
+       (q : Fin n -> Fin (d + 1) -> ℂ) where
+     terminalPatch : Set (Fin n -> Fin (d + 1) -> ℂ)
+     endpoint_mem : q ∈ terminalPatch
+     terminalPatch_open : IsOpen terminalPatch
+     terminalPatch_preconnected : IsPreconnected terminalPatch
+     terminalPatch_sub_left : terminalPatch ⊆ Cleft.carrier
+     terminalPatch_sub_right : terminalPatch ⊆ Cright.carrier
+     terminal_branches_eq :
+       Set.EqOn Cleft.branch Cright.branch terminalPatch
+   ```
+
+   The equality step required by this trace is the real one-step
+   Hall-Wightman/Jost uniqueness theorem:
+
+   ```lean
+   theorem BHW.bhw_jost_orientedTransfer_unique_next
+       (N : BHWJostOrientedBranchFreeTransferNeighborhood hd n τ U c)
+       {p q : Fin n -> Fin (d + 1) -> ℂ}
+       (hpN : p ∈ N.N) (hpU : p ∈ U)
+       (hqN : q ∈ N.N) (hqU : q ∈ U)
+       {CprevA CprevB :
+         BHWJostLocalOrientedContinuationChart hd n τ U}
+       (hpA : p ∈ CprevA.carrier) (hpB : p ∈ CprevB.carrier)
+       (sourceSeed : Set (Fin n -> Fin (d + 1) -> ℂ))
+       (hsourceSeed_mem : p ∈ sourceSeed)
+       (hsourceSeed_sub : sourceSeed ⊆ CprevA.carrier ∩ CprevB.carrier)
+       (hsourceSeed_eq :
+         Set.EqOn CprevA.branch CprevB.branch sourceSeed) :
+       BHWLocalChartTerminalComparisonData
+         (N.transfer p q hpN hpU hqN hqU CprevA hpA).1
+         (N.transfer p q hpN hpU hqN hqU CprevB hpB).1 q
+   ```
+
+   Its proof is not a wrapper: it is exactly the local Hall-Wightman descent
+   with the previous chart's branch as the seed branch.  It uses
+   `branch_same_sourceOrientedInvariant`, `branch_complexLorentzInvariant`,
+   and the normal-form source-realization fields to show that two descents
+   from equal previous germs give equal next germs on a target source patch
+   around `q`.
+
+   From this one-step uniqueness theorem, prove a finite induction
+   `bhw_jost_orientedTransferTrace_terminalComparison_of_sameTrace`: two
+   traces with the same finite nodes and same controlling branch-free
+   neighborhoods, and with equal starting germs on an initial source patch,
+   have terminal comparison data at the final node.  The induction state is a
+   source patch around `chain.node i` contained in both current local-chart
+   carriers, with equality of the current branches there; the successor case
+   is exactly `bhw_jost_orientedTransfer_unique_next`.
+
+   Finally the closed-path theorem for two terminal-point traces is:
+
+   ```lean
+   theorem BHW.bhw_jost_orientedTerminalPointComparison_of_transferTraces
+       (T₁ T₂ :
+         BHWJostOrientedTransferTerminalPointTrace
+           hd n τ Ω0 U B0 p0 y) :
+       BHWLocalChartTerminalComparisonData
+         (T₁.trace.chain.localChart (Fin.last T₁.trace.chain.m))
+         (T₂.trace.chain.localChart (Fin.last T₂.trace.chain.m)) y
+   ```
+
+   The hard proof forms the source closed path obtained by following
+   `T₁.trace` and then the reversed source nodes of `T₂.trace`, uses the
+   branch-free transfer controls to continue the observed `T₁` terminal germ
+   back to a closing patch at `p0`, constructs
+   `BHWJostOrientedClosingPatchTerminalSeedData` for that closed loop by the
+   strict OS I §4.5 BHW/Jost source-patch argument, and invokes
+   `bhw_jost_closedChain_sourceMonodromy_of_closingPatchTerminalSeedData`.
+   The resulting equality with `B0` on the closing patch, together with
+   equality of `T₂.trace`'s initial chart with `B0`, is transported forward
+   along the stored trace of `T₂` by the finite uniqueness induction, yielding
+   a terminal patch inside the two observed terminal charts at `y`.  For the
+   special case `y = z` with `point_mem := chain.final_mem`, this chart-level
+   comparison packages into
+   `BHWOrientedTerminalChainComparisonData T₁.trace.chain T₂.trace.chain`;
+   its checked method `continuedValue_eq` is only the endpoint evaluation.
 
    The checked assembly target for the atlas-from-chains step is
-   `BHWOrientedContinuationChainAtlasData`.  The Lean-ready route to it now
-   uses
-   `BHWOrientedContinuationChainAtlasData.ofSameEndpointComparisons`.  The
+   `BHWOrientedContinuationChainAtlasData`.  The checked constructor
+   `BHWOrientedContinuationChainAtlasData.ofSameEndpointComparisons` remains a
+   useful high-level consumer if one has a theorem comparing arbitrary chain
+   records, but the strict source-backed route must not try to manufacture
+   such a theorem from the current data.  The final producer should instead
+   use a trace-level variant
+   `BHWOrientedContinuationTraceAtlasData.ofTransferTraceComparisonsAndInitialChart`
+   whose comparison hypothesis ranges over terminal-point traces for the
+   selected transfer traces.  After the trace comparison produces terminal
+   branch equality at an overlap point, the atlas forgets the trace provenance
+   and stores only the underlying terminal chain chart.  The
    selected-chain field is now checked from path-connectedness by
    `BHW.bhw_jost_orientedContinuationChainAt_of_pathConnected_transferCover`:
    use `IsPathConnected.joinedIn p0 hbase.2 z hz`, take
    `JoinedIn.somePath`, and call the compact transfer-cover fold along that
    path.  The remaining hard atlas inputs are therefore the transfer
-   neighborhoods on `U`, the same-endpoint comparison theorem for arbitrary
-   pairs of chains ending at the same point, and a normalized base chain whose
-   terminal chart covers `Ω0 ∩ U`.
-   The constructor derives the atlas `terminal_overlap_eq` field by a checked
-   retargeting argument.  For `y` in the intersection of the terminal charts
-   of chains ending at `a` and `b`, append the tautological same-chart
-   transition to retarget both chains to endpoint `y`; compare each
-   retargeted chain with the selected chain ending at `y`; and rewrite the two
-   continued values back to the original terminal branch values by
-   `BHWJostOrientedSourcePatchContinuationChain.retargetTerminal_continuedValue_eq_branch`.
-The variant
+   neighborhoods on `U`, trace provenance for those selected path chains, the
+   terminal-point comparison theorem for transfer-provenance traces observed
+   at the same point, and the initial chart covering `Ω0 ∩ U` with branch
+   `B0`.  The trace-level constructor derives the atlas
+   `terminal_overlap_eq` field directly: for `y` in the intersection of the
+   terminal charts of chains ending at `a` and `b`, build terminal-point
+   traces from the selected traces for `a` and `b` using the two membership
+   proofs, invoke
+   `bhw_jost_orientedTerminalPointComparison_of_transferTraces`, and evaluate
+   the resulting chart-level branch equality at `y`.
+   The variant
    `BHWOrientedContinuationChainAtlasData.ofSameEndpointComparisonsAndBaseChain`
    also derives `terminal_base_agree`: for `z ∈ Ω0 ∩ U`, retarget the
    normalized base chain to endpoint `z`, compare the selected chain ending at
@@ -8797,17 +8957,16 @@ The variant
    Thus
    `L.chain.branch (Fin.last L.chain.m) y = B0 y`.
 
-   The comparison theorem
-   `bhw_jost_terminalBranches_eq_of_closed_monodromy` compares two chains only
-   when they have the same fixed base point `p0`.  It concatenates `C₁` with
-   the reverse of `C₂`, then closes the loop at `p0` on a small open
-   preconnected patch contained in `C₁.start_patch ∩ C₂.start_patch` (hence in
-   the initial chart of `C₁` and the final chart of the reversed `C₂`).  After
-   closed-chain monodromy gives equality on that base patch, the stored scalar
-   transition data propagate the equality forward to a small open preconnected
-   endpoint patch inside the intersection of the two terminal charts at `z`.
-   The public `bhw_branch_chain_singleValued_on_sourcePatchHull` is just
-   evaluation of this endpoint-overlap equality at `z`.
+   The comparison theorem must be read with the same provenance warning as
+   the oriented route.  A bare scalar chain is not enough to concatenate
+   `C₁` with a stored reverse of `C₂` unless the transition data are
+   symmetric and the terminal bridge is produced as an output rather than used
+   as an input.  The active strict route therefore uses transfer traces and
+   one-step uniqueness: closed-chain monodromy gives equality on a base
+   closing patch for a source-backed return trace, and finite uniqueness
+   transports that equality forward to the endpoint patch.  The public
+   `bhw_branch_chain_singleValued_on_sourcePatchHull` is just evaluation of
+   this produced endpoint-overlap equality at `z`.
 
    The atlas theorem chooses the fixed `p0` once, includes the restricted
    starting chart `Ω0 ∩ U` with the branch `B0` restricted to that open subset
@@ -9833,17 +9992,19 @@ The variant
      C.branch (Fin.last C.m) z
    ```
 
-   with `C.final_mem : z ∈ C.chart (Fin.last C.m)`.  Single-valuedness compares two
-   chains `C₁` and `C₂` only when they have the same fixed `p0`: traverse
-   `C₁`, then the reverse of `C₂`; the resulting closed finite chain returns
-   to a chart containing `p0`, and its closing patch is chosen inside the
-   intersection of the two stored start patches, where both starting branches
-   agree with `B0`.  The oriented monodromy theorem, followed by the
-   source-level pullback calculation above, forces equality at the endpoint.
-   Holomorphy of the assembled global branch on `U` is local: around `z`, use
-   the final chart of a chosen chain to define the branch; on overlaps of two
-   such neighborhoods, the chain single-valuedness theorem identifies the two
-   local definitions.  The atlas
+   with `C.final_mem : z ∈ C.chart (Fin.last C.m)`.  Single-valuedness on the
+   strict route is not proved by naively traversing `C₁` and then the stored
+   reverse of `C₂`; that construction needs a terminal bridge which is the
+   desired conclusion.  The Lean-ready comparison instead carries transfer
+   provenance, proves one-step Hall-Wightman uniqueness for two descents from
+   equal previous germs, and applies the closed-path source monodromy theorem
+   only to the source-backed return trace.  The resulting base-patch equality
+   is then transported along the second trace by the finite uniqueness
+   induction, producing the endpoint patch as output.  Holomorphy of the
+   assembled global branch on `U` is local: around `z`, use the final chart of
+   a chosen trace to define the branch; on overlaps of two such neighborhoods,
+   the trace single-valuedness theorem identifies the two local definitions.
+   The atlas
    also includes the explicit restricted `Ω0 ∩ U`/`B0` chart, so base
    agreement is a special case of the same comparison rather than a separate
    hidden assumption.
