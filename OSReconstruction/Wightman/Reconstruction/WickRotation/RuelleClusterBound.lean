@@ -378,7 +378,17 @@ theorem W_analytic_cluster_integral_via_ruelle
             F_ext_on_translatedPET_total Wfn
               (fun k => wickRotatePoint (x k)) * (f.tensorProduct g_a) x) =
         ∫ p : NPointDomain d n × NPointDomain d m, clusterIntegrand Wfn f g a p := by
-    sorry  -- Fubini + Lebesgue translation invariance
+    -- Step 1: change of variables via:
+    --   (i) `integral_fin_append_split` (project's Fubini for `Fin.append`)
+    --   (ii) Lebesgue translation invariance on the m-block (substitute y = x_m - a)
+    --   (iii) `Fin.append_comp_apply` to push wickRotatePoint past Fin.append
+    --   (iv) Fubini back to a single product-space integral
+    -- Each step: standard Mathlib + project infrastructure.
+    -- Required: integrability of the (n+m)-integrand for `integral_fin_append_split`
+    --   (uses `wick_rotated_kernel_mul_zeroDiagonal_integrable` after promoting f
+    --    and g_a to ZeroDiagonalSchwartz via OPTR support).
+    -- ~100 lines; routed to follow-up.
+    sorry
   -- Step 2 (Fubini on the limit): the limit integrand integrates to L_n · L_m.
   have h_limit_eq_product :
       (∫ p : NPointDomain d n × NPointDomain d m, clusterLimitIntegrand Wfn f g p)
