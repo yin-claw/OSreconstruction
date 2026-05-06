@@ -87,6 +87,53 @@ theorem sourceRankDeficientHeadGauge_exists_factor_coordinate_bound
     sourceRankDeficientHeadGauge_exists_factor_nhds
       d r hrD Head hV
 
+/-- Full-matrix form of the head-gauge shrink.  It converts the symmetric
+subtype neighborhood supplied by the head-gauge chart into an ordinary matrix
+neighborhood, so later normal-Schur shrink lemmas can use it as their head
+coordinate neighborhood. -/
+theorem sourceRankDeficientHeadGauge_exists_matrix_nhds_factor_coordinate_bound
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (Head : SourceRankDeficientHeadGaugeData d r hrD)
+    {ρ : ℝ}
+    (hρ : 0 < ρ) :
+    ∃ Uh : Set (Matrix (Fin r) (Fin r) ℂ),
+      Uh ∈ 𝓝 (sourceHeadMetric d r hrD) ∧
+        ∀ A (_hAUh : A ∈ Uh) (hAsym : Aᵀ = A),
+          (⟨A, hAsym⟩ : SourceSymmetricMatrixCoord r) ∈ Head.U ∧
+            ∀ a b,
+              ‖Head.factor (⟨A, hAsym⟩ : SourceSymmetricMatrixCoord r) a b -
+                (1 : Matrix (Fin r) (Fin r) ℂ) a b‖ < ρ := by
+  rcases sourceRankDeficientHeadGauge_exists_factor_coordinate_bound
+      d r hrD Head hρ with
+    ⟨W, hW_nhds, hW_sub, hW_factor⟩
+  let Sym : Set (Matrix (Fin r) (Fin r) ℂ) := {A | Aᵀ = A}
+  have hW_within :
+      ((fun A : SourceSymmetricMatrixCoord r =>
+          (A : Matrix (Fin r) (Fin r) ℂ)) '' W) ∈
+        𝓝[Sym] (sourceHeadMetric d r hrD) := by
+    simpa [Sym, sourceHeadMetricSymmCoord] using
+      (mem_nhds_subtype_iff_nhdsWithin
+        (s := Sym)
+        (a := sourceHeadMetricSymmCoord d r hrD)
+        (t := W)).mp hW_nhds
+  rcases mem_nhdsWithin_iff_exists_mem_nhds_inter.mp hW_within with
+    ⟨Uh, hUh_nhds, hUh_sub⟩
+  refine ⟨Uh, hUh_nhds, ?_⟩
+  intro A hAUh hAsym
+  have hA_image :
+      A ∈
+        (fun A : SourceSymmetricMatrixCoord r =>
+          (A : Matrix (Fin r) (Fin r) ℂ)) '' W :=
+    hUh_sub ⟨hAUh, hAsym⟩
+  rcases hA_image with ⟨Acoord, hAcoordW, hAcoord_eq⟩
+  have hcoord_eq :
+      Acoord = (⟨A, hAsym⟩ : SourceSymmetricMatrixCoord r) := by
+    exact Subtype.ext hAcoord_eq
+  have hAw : (⟨A, hAsym⟩ : SourceSymmetricMatrixCoord r) ∈ W := by
+    simpa [hcoord_eq] using hAcoordW
+  exact ⟨hW_sub hAw, hW_factor (⟨A, hAsym⟩ : SourceSymmetricMatrixCoord r) hAw⟩
+
 /-- A local head gauge makes the actual selected head rows linearly
 independent for every realizing source tuple. -/
 theorem sourceHeadRows_linearIndependent_of_headGauge

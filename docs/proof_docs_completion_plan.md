@@ -565,15 +565,28 @@ unproved part of the finite estimate theorem is therefore not topology but the
 choice of the Schur neighborhoods/radii from the head gauge and shifted-tail
 realization estimates.
 
+The head-gauge-aware version of this common shrink is also checked as
+`BHW.SourceOrientedRankDeficientAlgebraicNormalFormData.exists_normalParameterBall_image_subset_open_headGauge_schur_and_coordinate_bounds`.
+It first converts the symmetric-subtype gauge shrink into an ordinary
+full-matrix Schur-head neighborhood, then chooses one normal-parameter ball
+where the Schur head lies in `Head.U`, the local factor is entrywise close to
+`1`, the mixed/tail Schur neighborhoods hold, and the raw head/mixed/tail
+coordinate bounds hold.  Thus the finite estimate proof no longer has to
+manually reconcile subtype neighborhoods with the ordinary matrix
+neighborhoods consumed by the normal-Schur continuity lemmas.
+
 The head-gauge shrink layer is now checked in
 `SourceOrientedHeadGaugeSupport.lean`:
 `BHW.sourceRankDeficientHeadGauge_factor_continuousAt_center`,
-`BHW.sourceRankDeficientHeadGauge_exists_factor_nhds`, and
+`BHW.sourceRankDeficientHeadGauge_exists_factor_nhds`,
 `BHW.sourceRankDeficientHeadGauge_exists_factor_coordinate_bound`.  These do
 not assert existence of a head-gauge chart; they say that once the chart data
 are supplied, continuity on the open chart lets production Lean shrink around
 the canonical head metric so the gauge factor stays in any prescribed
-neighborhood, in particular entrywise close to the identity.
+neighborhood, in particular entrywise close to the identity.  The bridge
+`BHW.sourceRankDeficientHeadGauge_exists_matrix_nhds_factor_coordinate_bound`
+is the checked subtype-to-full-matrix conversion used by the head-gauge-aware
+normal-ball shrink.
 
 The first normal-parameter support layer is now checked in
 `SourceOrientedNormalParameter.lean`.  The file supplies the finite head/tail
