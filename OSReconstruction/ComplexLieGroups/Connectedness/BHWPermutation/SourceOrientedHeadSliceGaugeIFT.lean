@@ -486,6 +486,47 @@ theorem sourceHeadGaugeSliceCoordinateWindow_det_isUnit
       exact lt_trans hsum_half hdiag_gt_half)
   exact isUnit_iff_ne_zero.mpr hdet_ne
 
+/-- A fixed small radius for the final determinant-unit shrink of the
+head-slice IFT chart. -/
+noncomputable def sourceHeadSliceGaugeIFTWindowRadius
+    (r : ℕ) : ℝ :=
+  (1 : ℝ) / (4 * ((Fintype.card (Fin r) : ℝ) + 1))
+
+theorem sourceHeadSliceGaugeIFTWindowRadius_pos
+    (r : ℕ) :
+    0 < sourceHeadSliceGaugeIFTWindowRadius r := by
+  unfold sourceHeadSliceGaugeIFTWindowRadius
+  positivity
+
+theorem sourceHeadSliceGaugeIFTWindowRadius_lt_half
+    (r : ℕ) :
+    sourceHeadSliceGaugeIFTWindowRadius r < (1 : ℝ) / 2 := by
+  let c : ℝ := Fintype.card (Fin r)
+  have hc : 0 ≤ c := by positivity
+  have hden : 2 < 4 * (c + 1) := by nlinarith
+  have hpos : (0 : ℝ) < 2 := by norm_num
+  simpa [sourceHeadSliceGaugeIFTWindowRadius, c] using
+    one_div_lt_one_div_of_lt hpos hden
+
+theorem sourceHeadSliceGaugeIFTWindowRadius_card_mul_lt_half
+    (r : ℕ) :
+    (Fintype.card (Fin r) : ℝ) *
+        sourceHeadSliceGaugeIFTWindowRadius r < (1 : ℝ) / 2 := by
+  let c : ℝ := Fintype.card (Fin r)
+  have hc : 0 ≤ c := by positivity
+  have hden_pos : 0 < 4 * (c + 1) := by positivity
+  have hle : c / (4 * (c + 1)) ≤ (1 : ℝ) / 4 := by
+    rw [div_le_iff₀ hden_pos]
+    nlinarith
+  have hquarter : (1 : ℝ) / 4 < (1 : ℝ) / 2 := by norm_num
+  calc
+    c * sourceHeadSliceGaugeIFTWindowRadius r =
+        c / (4 * (c + 1)) := by
+          rw [sourceHeadSliceGaugeIFTWindowRadius]
+          change c * (1 / (4 * (c + 1))) = c / (4 * (c + 1))
+          ring
+    _ < (1 : ℝ) / 2 := lt_of_le_of_lt hle hquarter
+
 /-- The sliced Gram map in symmetric `K = H * η - η` coordinates. -/
 def sourceHeadSliceGramPolynomial
     (d r : ℕ)
@@ -849,5 +890,372 @@ theorem sourceHeadSliceGramPolynomial_left_inv_on_chartSource
       K := by
   simpa [sourceHeadSliceGramPolynomialOpenPartialHomeomorph_coe] using
     (sourceHeadSliceGramPolynomialOpenPartialHomeomorph d r hrD).left_inv hK
+
+/-- The local IFT chart restricted to a fixed small coordinate window where
+the recovered head factor is invertible. -/
+noncomputable def sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    OpenPartialHomeomorph
+      (sourceSymmetricMatrixSubmodule r)
+      (sourceSymmetricMatrixSubmodule r) :=
+  (sourceHeadSliceGramPolynomialOpenPartialHomeomorph d r hrD).restrOpen
+    (sourceSymmetricMatrixCoordinateWindow r
+      (sourceHeadSliceGaugeIFTWindowRadius r))
+    (isOpen_sourceSymmetricMatrixCoordinateWindow r
+      (sourceHeadSliceGaugeIFTWindowRadius r))
+
+@[simp]
+theorem sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph_coe
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    (sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph d r hrD :
+      sourceSymmetricMatrixSubmodule r → sourceSymmetricMatrixSubmodule r) =
+      sourceHeadSliceGramPolynomial d r hrD :=
+  rfl
+
+@[simp]
+theorem sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph_source
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    (sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph d r hrD).source =
+      (sourceHeadSliceGramPolynomialOpenPartialHomeomorph d r hrD).source ∩
+        sourceSymmetricMatrixCoordinateWindow r
+          (sourceHeadSliceGaugeIFTWindowRadius r) :=
+  rfl
+
+theorem sourceHeadSliceGramPolynomialRestricted_zero_mem_chartSource
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    (0 : sourceSymmetricMatrixSubmodule r) ∈
+      (sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph d r hrD).source := by
+  simp [sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph,
+    sourceHeadSliceGramPolynomial_zero_mem_chartSource,
+    zero_mem_sourceSymmetricMatrixCoordinateWindow,
+    sourceHeadSliceGaugeIFTWindowRadius_pos]
+
+theorem sourceHeadSliceGramPolynomialRestricted_center_mem_chartTarget
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    sourceHeadMetricSymmSubmodule d r hrD ∈
+      (sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph d r hrD).target := by
+  have hsource :=
+    sourceHeadSliceGramPolynomialRestricted_zero_mem_chartSource d r hrD
+  have htarget :=
+    (sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph d r hrD).map_source
+      hsource
+  simpa using htarget
+
+/-- Slice-domain set for the final head-slice gauge data. -/
+def sourceHeadSliceIFTFactorDomain
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    Set (SourceHeadGaugeSlice d r hrD) :=
+  {H | sourceHeadGaugeSliceSymmCoord d r hrD H ∈
+    (sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph d r hrD).source}
+
+/-- Target symmetric-head neighborhood for the final head-slice gauge data,
+expressed in the legacy `SourceSymmetricMatrixCoord` subtype. -/
+def sourceHeadSliceIFTTargetU
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    Set (SourceSymmetricMatrixCoord r) :=
+  {A | sourceSymmetricMatrixCoordToSubmodule r A ∈
+    (sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph d r hrD).target}
+
+/-- The local inverse head factor produced by the restricted head-slice chart. -/
+noncomputable def sourceHeadSliceIFTFactor
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (A : SourceSymmetricMatrixCoord r) :
+    SourceHeadGaugeSlice d r hrD :=
+  sourceHeadGaugeSliceOfSymmCoord d r hrD
+    ((sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph d r hrD).symm
+      (sourceSymmetricMatrixCoordToSubmodule r A))
+
+theorem isOpen_sourceHeadSliceIFTFactorDomain
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    IsOpen (sourceHeadSliceIFTFactorDomain d r hrD) := by
+  have hcont :
+      Continuous (sourceHeadGaugeSliceSymmCoord d r hrD) :=
+    (sourceHeadGaugeSliceSymmCoordHomeomorph d r hrD).continuous
+  exact
+    (sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph d r hrD).open_source.preimage
+      hcont
+
+theorem sourceHeadSliceIFTFactorDomain_center_mem
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    sourceHeadGaugeSliceCenter d r hrD ∈
+      sourceHeadSliceIFTFactorDomain d r hrD := by
+  simpa [sourceHeadSliceIFTFactorDomain] using
+    sourceHeadSliceGramPolynomialRestricted_zero_mem_chartSource d r hrD
+
+theorem sourceHeadSliceIFTFactorDomain_coordinate
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    ∃ ρ : ℝ, 0 < ρ ∧
+      sourceHeadGaugeSliceCoordinateWindow d r hrD ρ ⊆
+        sourceHeadSliceIFTFactorDomain d r hrD := by
+  exact
+    exists_sourceHeadGaugeSliceCoordinateWindow_subset_of_mem_nhds_center
+      d r hrD
+      ((isOpen_sourceHeadSliceIFTFactorDomain d r hrD).mem_nhds
+        (sourceHeadSliceIFTFactorDomain_center_mem d r hrD))
+
+theorem isOpen_sourceHeadSliceIFTTargetU
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    IsOpen (sourceHeadSliceIFTTargetU d r hrD) :=
+  (sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph d r hrD).open_target.preimage
+    (sourceSymmetricMatrixCoordToSubmodule r).continuous
+
+theorem sourceHeadSliceIFTTargetU_center_mem
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    sourceHeadMetricSymmCoord d r hrD ∈
+      sourceHeadSliceIFTTargetU d r hrD := by
+  simpa [sourceHeadSliceIFTTargetU, sourceHeadMetricSymmCoord,
+    sourceHeadMetricSymmSubmodule] using
+    sourceHeadSliceGramPolynomialRestricted_center_mem_chartTarget d r hrD
+
+theorem sourceHeadSliceIFTFactor_mem_domain
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (A : SourceSymmetricMatrixCoord r)
+    (hA : A ∈ sourceHeadSliceIFTTargetU d r hrD) :
+    sourceHeadSliceIFTFactor d r hrD A ∈
+      sourceHeadSliceIFTFactorDomain d r hrD := by
+  let e := sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph d r hrD
+  have htarget :
+      sourceSymmetricMatrixCoordToSubmodule r A ∈ e.target := by
+    simpa [sourceHeadSliceIFTTargetU, e] using hA
+  have hsource : e.symm (sourceSymmetricMatrixCoordToSubmodule r A) ∈ e.source :=
+    e.symm.map_source htarget
+  simpa [sourceHeadSliceIFTFactorDomain, sourceHeadSliceIFTFactor, e] using hsource
+
+theorem sourceHeadSliceIFTFactor_continuousOn
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    ContinuousOn (sourceHeadSliceIFTFactor d r hrD)
+      (sourceHeadSliceIFTTargetU d r hrD) := by
+  let e := sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph d r hrD
+  have hcoord :
+      ContinuousOn (fun A : SourceSymmetricMatrixCoord r =>
+        sourceSymmetricMatrixCoordToSubmodule r A)
+        (sourceHeadSliceIFTTargetU d r hrD) :=
+    (sourceSymmetricMatrixCoordToSubmodule r).continuous.continuousOn
+  have hmaps :
+      ∀ A ∈ sourceHeadSliceIFTTargetU d r hrD,
+        sourceSymmetricMatrixCoordToSubmodule r A ∈ e.target := by
+    intro A hA
+    simpa [sourceHeadSliceIFTTargetU, e] using hA
+  have hsymm :
+      ContinuousOn
+        (fun A : SourceSymmetricMatrixCoord r =>
+          e.symm (sourceSymmetricMatrixCoordToSubmodule r A))
+        (sourceHeadSliceIFTTargetU d r hrD) :=
+    ContinuousOn.comp e.symm.continuousOn hcoord hmaps
+  exact
+    (sourceHeadGaugeSliceSymmCoordHomeomorph d r hrD).symm.continuous.comp_continuousOn
+      hsymm
+
+theorem sourceHeadSliceIFTFactor_center
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    sourceHeadSliceIFTFactor d r hrD
+        (sourceHeadMetricSymmCoord d r hrD) =
+      sourceHeadGaugeSliceCenter d r hrD := by
+  let e := sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph d r hrD
+  have hsource :
+      (0 : sourceSymmetricMatrixSubmodule r) ∈ e.source := by
+    simpa [e] using
+      sourceHeadSliceGramPolynomialRestricted_zero_mem_chartSource d r hrD
+  have hsymm :
+      e.symm (sourceHeadMetricSymmSubmodule d r hrD) =
+        (0 : sourceSymmetricMatrixSubmodule r) := by
+    have hleft := e.left_inv hsource
+    simpa [e, sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph_coe,
+      sourceHeadSliceGramPolynomial_zero] using hleft
+  change sourceHeadGaugeSliceOfSymmCoord d r hrD
+      (e.symm
+        (sourceSymmetricMatrixCoordToSubmodule r
+          (sourceHeadMetricSymmCoord d r hrD))) =
+    sourceHeadGaugeSliceCenter d r hrD
+  rw [show sourceSymmetricMatrixCoordToSubmodule r
+      (sourceHeadMetricSymmCoord d r hrD) =
+        sourceHeadMetricSymmSubmodule d r hrD by rfl, hsymm]
+  simp
+
+theorem sourceHeadSliceIFTFactor_gram
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (A : SourceSymmetricMatrixCoord r)
+    (hA : A ∈ sourceHeadSliceIFTTargetU d r hrD) :
+    (sourceHeadSliceIFTFactor d r hrD A).1 *
+        sourceHeadMetric d r hrD *
+        (sourceHeadSliceIFTFactor d r hrD A).1ᵀ =
+      (A : Matrix (Fin r) (Fin r) ℂ) := by
+  let e := sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph d r hrD
+  let K := e.symm (sourceSymmetricMatrixCoordToSubmodule r A)
+  have htarget :
+      sourceSymmetricMatrixCoordToSubmodule r A ∈ e.target := by
+    simpa [sourceHeadSliceIFTTargetU, e] using hA
+  have hpoly :
+      sourceHeadSliceGramPolynomial d r hrD K =
+        sourceSymmetricMatrixCoordToSubmodule r A := by
+    have hright := e.right_inv htarget
+    simpa [K, e, sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph_coe]
+      using hright
+  have hgram := sourceHeadSliceGramPolynomial_eq_factorGram d r hrD K
+  calc
+    (sourceHeadSliceIFTFactor d r hrD A).1 *
+        sourceHeadMetric d r hrD *
+        (sourceHeadSliceIFTFactor d r hrD A).1ᵀ =
+        (sourceHeadSliceGramPolynomial d r hrD K :
+          Matrix (Fin r) (Fin r) ℂ) := by
+          simpa [sourceHeadSliceIFTFactor, K] using hgram.symm
+    _ = (A : Matrix (Fin r) (Fin r) ℂ) := by
+          exact congrArg Subtype.val hpoly
+
+/-- The ordinary Gram coordinate of a slice factor is the sliced Gram
+polynomial of its symmetric `K = Hη - η` coordinate. -/
+theorem sourceHeadFactorGramSymmCoord_eq_sourceHeadSliceGramPolynomial
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (H : SourceHeadGaugeSlice d r hrD) :
+    sourceSymmetricMatrixCoordToSubmodule r
+        (sourceHeadFactorGramSymmCoord d r hrD H.1) =
+      sourceHeadSliceGramPolynomial d r hrD
+        (sourceHeadGaugeSliceSymmCoord d r hrD H) := by
+  let K := sourceHeadGaugeSliceSymmCoord d r hrD H
+  apply Subtype.ext
+  have hH_eq :
+      sourceHeadGaugeSliceOfSymmCoord d r hrD K = H := by
+    change sourceHeadGaugeSliceOfSymmCoord d r hrD
+        (sourceHeadGaugeSliceSymmCoord d r hrD H) = H
+    exact sourceHeadGaugeSliceOfSymmCoord_symmCoord d r hrD H
+  calc
+    (sourceSymmetricMatrixCoordToSubmodule r
+        (sourceHeadFactorGramSymmCoord d r hrD H.1) :
+        Matrix (Fin r) (Fin r) ℂ) =
+        H.1 * sourceHeadMetric d r hrD * H.1ᵀ := rfl
+    _ =
+        (sourceHeadGaugeSliceOfSymmCoord d r hrD K).1 *
+          sourceHeadMetric d r hrD *
+          (sourceHeadGaugeSliceOfSymmCoord d r hrD K).1ᵀ := by
+          rw [hH_eq]
+    _ =
+        (sourceHeadSliceGramPolynomial d r hrD K :
+          Matrix (Fin r) (Fin r) ℂ) := by
+          exact (sourceHeadSliceGramPolynomial_eq_factorGram d r hrD K).symm
+
+theorem sourceHeadSliceIFTFactorDomain_mem
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (H : SourceHeadGaugeSlice d r hrD)
+    (hH : H ∈ sourceHeadSliceIFTFactorDomain d r hrD) :
+    sourceHeadFactorGramSymmCoord d r hrD H.1 ∈
+      sourceHeadSliceIFTTargetU d r hrD := by
+  let e := sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph d r hrD
+  let K := sourceHeadGaugeSliceSymmCoord d r hrD H
+  have hK : K ∈ e.source := by
+    simpa [sourceHeadSliceIFTFactorDomain, K, e] using hH
+  have htarget : e K ∈ e.target := e.map_source hK
+  have hpoly_target :
+      sourceHeadSliceGramPolynomial d r hrD K ∈ e.target := by
+    simpa [e, sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph_coe]
+      using htarget
+  have hAeq :
+      sourceSymmetricMatrixCoordToSubmodule r
+          (sourceHeadFactorGramSymmCoord d r hrD H.1) =
+        sourceHeadSliceGramPolynomial d r hrD K := by
+    simpa [K] using
+      sourceHeadFactorGramSymmCoord_eq_sourceHeadSliceGramPolynomial d r hrD H
+  simpa [sourceHeadSliceIFTTargetU, hAeq, e] using hpoly_target
+
+theorem sourceHeadSliceIFTFactor_left_inverse
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (H : SourceHeadGaugeSlice d r hrD)
+    (hH : H ∈ sourceHeadSliceIFTFactorDomain d r hrD) :
+    sourceHeadSliceIFTFactor d r hrD
+        (sourceHeadFactorGramSymmCoord d r hrD H.1) = H := by
+  let e := sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph d r hrD
+  let K := sourceHeadGaugeSliceSymmCoord d r hrD H
+  have hK : K ∈ e.source := by
+    simpa [sourceHeadSliceIFTFactorDomain, K, e] using hH
+  have hleft :
+      e.symm (sourceHeadSliceGramPolynomial d r hrD K) = K := by
+    have h := e.left_inv hK
+    simpa [e, sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph_coe]
+      using h
+  have hAeq :
+      sourceSymmetricMatrixCoordToSubmodule r
+          (sourceHeadFactorGramSymmCoord d r hrD H.1) =
+        sourceHeadSliceGramPolynomial d r hrD K := by
+    simpa [K] using
+      sourceHeadFactorGramSymmCoord_eq_sourceHeadSliceGramPolynomial d r hrD H
+  change sourceHeadGaugeSliceOfSymmCoord d r hrD
+      (e.symm
+        (sourceSymmetricMatrixCoordToSubmodule r
+          (sourceHeadFactorGramSymmCoord d r hrD H.1))) = H
+  rw [hAeq, hleft]
+  exact sourceHeadGaugeSliceOfSymmCoord_symmCoord d r hrD H
+
+theorem sourceHeadSliceIFTFactor_det_unit
+    (d r : ℕ)
+    (hrD : r < d + 1)
+    (A : SourceSymmetricMatrixCoord r)
+    (hA : A ∈ sourceHeadSliceIFTTargetU d r hrD) :
+    IsUnit ((sourceHeadSliceIFTFactor d r hrD A).1).det := by
+  let H := sourceHeadSliceIFTFactor d r hrD A
+  have hdomain :
+      H ∈ sourceHeadSliceIFTFactorDomain d r hrD := by
+    simpa [H] using sourceHeadSliceIFTFactor_mem_domain d r hrD A hA
+  let e := sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph d r hrD
+  have hKsource :
+      sourceHeadGaugeSliceSymmCoord d r hrD H ∈ e.source := by
+    simpa [sourceHeadSliceIFTFactorDomain, e] using hdomain
+  have hKwindow :
+      sourceHeadGaugeSliceSymmCoord d r hrD H ∈
+        sourceSymmetricMatrixCoordinateWindow r
+          (sourceHeadSliceGaugeIFTWindowRadius r) := by
+    simpa [e, sourceHeadSliceGramPolynomialRestrictedOpenPartialHomeomorph_source]
+      using hKsource.2
+  have hHwindow :
+      H ∈ sourceHeadGaugeSliceCoordinateWindow d r hrD
+        (sourceHeadSliceGaugeIFTWindowRadius r) :=
+    (sourceHeadGaugeSliceSymmCoord_mem_coordinateWindow_iff d r hrD
+      (sourceHeadSliceGaugeIFTWindowRadius r) H).1 hKwindow
+  exact
+    sourceHeadGaugeSliceCoordinateWindow_det_isUnit d r hrD
+      (sourceHeadSliceGaugeIFTWindowRadius_pos r)
+      (sourceHeadSliceGaugeIFTWindowRadius_lt_half r)
+      (sourceHeadSliceGaugeIFTWindowRadius_card_mul_lt_half r)
+      hHwindow
+
+/-- Checked finite-dimensional local producer for the corrected rank-deficient
+head-slice gauge data. -/
+noncomputable def sourceRankDeficientHeadSliceGaugeData
+    (d r : ℕ)
+    (hrD : r < d + 1) :
+    SourceRankDeficientHeadSliceGaugeData d r hrD where
+  factorDomain := sourceHeadSliceIFTFactorDomain d r hrD
+  factorDomain_open := isOpen_sourceHeadSliceIFTFactorDomain d r hrD
+  factorDomain_center_mem := sourceHeadSliceIFTFactorDomain_center_mem d r hrD
+  factorDomain_coordinate := sourceHeadSliceIFTFactorDomain_coordinate d r hrD
+  U := sourceHeadSliceIFTTargetU d r hrD
+  U_open := isOpen_sourceHeadSliceIFTTargetU d r hrD
+  center_mem := sourceHeadSliceIFTTargetU_center_mem d r hrD
+  factor := sourceHeadSliceIFTFactor d r hrD
+  factor_mem_domain := sourceHeadSliceIFTFactor_mem_domain d r hrD
+  factor_continuousOn := sourceHeadSliceIFTFactor_continuousOn d r hrD
+  factor_center := sourceHeadSliceIFTFactor_center d r hrD
+  factor_gram := sourceHeadSliceIFTFactor_gram d r hrD
+  factorDomain_mem := sourceHeadSliceIFTFactorDomain_mem d r hrD
+  factor_left_inverse := sourceHeadSliceIFTFactor_left_inverse d r hrD
+  factor_det_unit := sourceHeadSliceIFTFactor_det_unit d r hrD
 
 end BHW

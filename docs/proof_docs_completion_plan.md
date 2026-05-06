@@ -885,8 +885,8 @@ Mathematically, if `H` is in the slice and `K = Hη - η`, then
 therefore the continuous linear equivalence `K ↦ 2K`, bundled as
 `sourceHeadSliceGramPolynomialDerivEquiv`.
 
-The remaining Lean transcript for constructing
-`SourceRankDeficientHeadSliceGaugeData` is now exact:
+The local Lean producer for
+`SourceRankDeficientHeadSliceGaugeData` is now checked:
 
 1. Register the local matrix sup-norm instances for
    `Matrix (Fin r) (Fin r) ℂ`, use the checked finite-dimensional complete
@@ -917,35 +917,39 @@ The remaining Lean transcript for constructing
    `Head.factor A` by pulling `A` back to the symmetric submodule, applying
    `e.symm`, and converting the resulting `K` to the slice point
    `sourceHeadGaugeSliceOfSymmCoord d r hrD K`.
-4. Define `Head.factorDomain` as the preimage of `e.source`, additionally
-   shrunk inside the determinant-unit locus for the recovered slice factor.
-   Openness and center membership follow from the checked homeomorphism, the
-   source membership of `0`, and openness of the determinant-unit locus.  The
-   required coordinate-window field is now checked as
-   `exists_sourceHeadGaugeSliceCoordinateWindow_subset_of_mem_nhds_center`:
-   every open neighborhood of `sourceHeadGaugeSliceCenter` in the slice
-   contains some positive
-   `sourceHeadGaugeSliceCoordinateWindow d r hrD ρ`.  In coordinates this is
-   the same as an entrywise window around `0` for `K`, because the diagonal
-   entries of `η` have norm `1`.
-5. The fields of `SourceRankDeficientHeadSliceGaugeData` are then mechanical:
+4. Define `Head.factorDomain` as the preimage of the restricted chart source.
+   The restriction intersects the raw IFT source with the fixed entrywise
+   coordinate window
+   `sourceSymmetricMatrixCoordinateWindow r
+   (sourceHeadSliceGaugeIFTWindowRadius r)`.  Openness and center membership
+   follow from the checked homeomorphism, the source membership of `0`, and
+   the checked positivity of the radius.  The required coordinate-window field
+   is checked as
+   `sourceHeadSliceIFTFactorDomain_coordinate`, using
+   `exists_sourceHeadGaugeSliceCoordinateWindow_subset_of_mem_nhds_center`.
+5. The fields of `SourceRankDeficientHeadSliceGaugeData` are checked
+   mechanically:
    `factor_continuousOn` is continuity of `e.symm` on the target composed with
    the checked homeomorphisms; `factor_center` is
    `e.symm (sourceHeadMetricSymmSubmodule d r hrD) = 0`; `factor_gram` is
    `OpenPartialHomeomorph.right_inv` plus
    `sourceHeadSliceGramPolynomial_eq_factorGram`; `factorDomain_mem` and
    `factor_left_inverse` are `map_source` and `left_inv` for `e`; and
-   `factor_det_unit` follows by shrinking the factor domain to a small
-   coordinate window around the identity and applying continuity of determinant
-   plus `det 1 = 1`.
+   `factor_det_unit` follows by extracting the stored small coordinate-window
+   membership from the restricted source, transporting it back to an identity
+   window in the slice, and applying the checked Gershgorin estimate
+   `sourceHeadGaugeSliceCoordinateWindow_det_isUnit`.
 
 This transcript is the finite-dimensional local-inverse construction needed
 for the sliced local-image producer.  It is independent of BHW continuation,
 OS positivity, Wightman functions, and the later monodromy atlas.  The
-coordinate-window neighborhood-basis helper, strict derivative, and raw
-`OpenPartialHomeomorph` packaging are now checked.  The remaining
-implementation-level local-producer item is the determinant-unit shrink and
-the final `SourceRankDeficientHeadSliceGaugeData` structure fill.
+coordinate-window neighborhood-basis helper, strict derivative, raw
+`OpenPartialHomeomorph` packaging, determinant-unit shrink, left inverse, and
+final structure fill are now checked in
+`BHW.sourceRankDeficientHeadSliceGaugeData`.  The next rank-deficient
+local-image implementation step is to consume this concrete producer in the
+existing sliced Schur/local-image wrapper instead of passing it as a
+parameter.
 
 The first normal-parameter support layer is now checked in
 `SourceOrientedNormalParameter.lean`.  The file supplies the finite head/tail
