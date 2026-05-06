@@ -13360,7 +13360,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | `BHW.SourceTailOrientedData`, `BHW.SourceTailOrientedData.ext`, `BHW.SourceShiftedTailOrientedData.ext`, `BHW.sourceTailOrientedInvariant`, `BHW.sourceTailOrientedInvariant_gram`, `BHW.sourceTailOrientedInvariant_det`, `BHW.sourceTailOrientedVariety`, `BHW.sourceTailOrientedInvariant_selectedGram_det`, `BHW.sourceTailOrientedVariety_selectedGram_det`, `BHW.sourceTailOrientedInvariant_mixedGram_det`, `BHW.sourceTailOrientedVariety_mixedGram_det`, `BHW.sourceTailOrientedInvariant_reflection`, `BHW.sourceTail_reflection_norm`, `BHW.sourceTailOrientedInvariant_eq_of_gram_eq_selectedDet`, `BHW.sourceTailOrientedInvariant_or_reflection_eq_of_gram_eq`, `BHW.sourceTailOrientedVariety_det_eq_zero_of_gram_eq_zero`, `BHW.sourceTailOrientedSmallRealization_zeroGram`, `BHW.sourceTailOrientedSmallRealization_zeroRank_bound`, `BHW.sourceTailPermuteOrientedData`, `BHW.sourceTailOrientedInvariant_perm`, `BHW.sourceTailPermuteOrientedData_symm_apply`, `BHW.sourceTailOrientedVariety_perm_iff`, `BHW.sourceTail_exists_principalMinor_of_rank`, `BHW.sourceTailFullFrame_factorWithDet`, `BHW.sourceTail_permute_to_head`, `BHW.sourceTailSmallRealization_transport_perm`, `BHW.SourceShiftedTailMetricNormalization`, `BHW.sourceShiftedTailMetricNormalization`, `BHW.sourceShiftedTailDataToEuclidean`, `BHW.sourceVectorMinkowskiInner_sourceTailEmbed_tail`, `BHW.sourceShiftedTailInvariant_toEuclidean`, `BHW.sourceShiftedTailDataToEuclidean_injective`, `BHW.sourceShiftedTailVariety_toEuclidean_iff`, `BHW.sourceShiftedTailInvariant_eq_of_toEuclidean_eq`, `BHW.SourceTailOrientedCompatibleSmallRealization`, `BHW.SourceShiftedTailCompatibleSmallRealization`, `BHW.sourceShiftedTailCompatibleSmallRealization_of_euclidean` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedTailEuclidean.lean`. | Finite diagonal normalization bridge from the shifted residual-tail metric to the Euclidean tail model.  The Euclidean tail data model, determinant identities, coordinate reflection, selected-determinant sign-repair propagation, zero-rank estimate wrapper, source-label permutation transport, canonical shifted-tail metric normalization, scaled-invariant equality, variety-membership equivalence, and injective descent back to shifted data are checked.  The compatible packet structures remain available as data containers, but the active local-image route uses the one-way shifted realization in `SourceOrientedTailSmallRealization.lean` plus separate continuity shrink estimates for forward containment. |
       | `BHW.sourceTailOrientedVariety_rank_le`, `BHW.sourceTailOrientedVariety_det_eq_zero_of_rank_lt`, `BHW.sourceTailOrientedSmallRealization_fullRankStep`, `BHW.sourceTailOrientedSmallRealization_fullRank_bound`, `BHW.sourceTailOrientedSmallRealization_rankLt_bound`, `BHW.sourceTailOrientedSmallRealization`, `BHW.sourceShiftedTailSmallRealization` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedTailSmallRealization.lean`. | Euclidean and shifted-tail one-way small realization.  The top-rank proof uses `sourceComplexSymmetric_factorSmall_rankLE` to factor the whole small rank-`D` Gram coordinate, uses a selected invertible principal minor only to prove `T.det ι ≠ 0`, and invokes `sourceTailOrientedInvariant_or_reflection_eq_of_gram_eq` to choose the correct determinant sheet without changing coordinate norms.  The rank-`< D` proof shows all full determinant coordinates vanish on both the target variety point and the same-Gram factor, so no determinant-sheet information remains to repair.  The shifted theorem transports this through the norm-one diagonal metric normalization. |
       | `BHW.SourceOrientedSchurTailSmallFor`, `BHW.SourceOrientedRankDeficientTailRadiusChoice`, `BHW.SourceOrientedRankDeficientTailRadiusChoice.ofShiftedCompatible` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedRankDeficientTailRadius.lean`. | Conditional source-oriented adapter from a supplied compatible shifted-tail estimate packet to the old rank-deficient tail-radius interface.  The adapter uses `sourceOrientedSchurResidualTailData_normalParameter` to turn smallness of `sourceShiftedTailOrientedInvariant p.tail` into `SourceOrientedSchurTailSmallFor` for the explicit Schur residual-tail datum, with the required `IsUnit p.head.det` hypothesis explicit.  This is no longer the active existence target: a same-radius compatible packet is the wrong general shape for the quadratic/determinantal tail invariant map.  The active local-image route uses the checked one-way theorem `sourceShiftedTailSmallRealization` plus a target-shaped tail window in the parameter set. |
-      | `BHW.SourceOrientedRankDeficientTailWindowChoice`, `BHW.sourceOrientedRankDeficientTailWindow`, `BHW.sourceTailEmbed_smul`, `BHW.sourceShiftedTailGram_smul`, `BHW.sourceShiftedTailOrientedInvariant_smul_gram`, `BHW.sourceShiftedTailOrientedInvariant_smul_det`, `BHW.sourceShiftedTailTupleWindow`, `BHW.isConnected_sourceShiftedTailTupleWindow`, `BHW.isOpen_sourceOrientedRankDeficientTailWindow`, `BHW.sourceOrientedNormalCenterParameter_mem_tailWindow`, `BHW.sourceOriented_rankDeficient_tailWindowChoice`, `BHW.SourceOrientedRankDeficientTailWindowChoice.normalParam_tail_small` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedRankDeficientTailWindow.lean`. | Corrected target-shaped tail-window support.  A positive tail coordinate radius is paired with the residual-data radius returned by `sourceShiftedTailSmallRealization`; the parameter window stores both the raw tail-coordinate bound and the shifted-tail invariant inequalities.  The shifted-tail tuple window is connected by star-shaped contraction from zero, using the checked homogeneity of the shifted Gram and determinant coordinates.  The normal-parameter window is open, contains the normal center, and supplies Schur residual-tail smallness for normal parameters with invertible head via `sourceOrientedSchurResidualTailData_normalParameter`.  The remaining parameter-window support theorem is the finite product assembly with head and mixed coordinate boxes. |
+      | `BHW.SourceOrientedRankDeficientTailWindowChoice`, `BHW.sourceOrientedRankDeficientTailWindow`, `BHW.sourceMatrixCoordinateWindow`, `BHW.sourceOrientedHeadCoordinateWindow`, `BHW.sourceOrientedMixedCoordinateWindow`, `BHW.sourceTailEmbed_smul`, `BHW.sourceShiftedTailGram_smul`, `BHW.sourceShiftedTailOrientedInvariant_smul_gram`, `BHW.sourceShiftedTailOrientedInvariant_smul_det`, `BHW.sourceShiftedTailTupleWindow`, `BHW.isOpen_sourceShiftedTailTupleWindow`, `BHW.isConnected_sourceShiftedTailTupleWindow`, `BHW.isOpen_sourceOrientedRankDeficientTailWindow`, `BHW.sourceOrientedNormalCenterParameter_mem_tailWindow`, `BHW.sourceOrientedRankDeficientSchurParameterWindow`, `BHW.sourceOrientedRankDeficientSchurParameterWindow_open_connected`, `BHW.sourceOriented_rankDeficient_tailWindowChoice`, `BHW.SourceOrientedRankDeficientTailWindowChoice.normalParam_tail_small` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedRankDeficientTailWindow.lean`. | Corrected target-shaped tail-window and full Schur parameter-window support.  A positive tail coordinate radius is paired with the residual-data radius returned by `sourceShiftedTailSmallRealization`; the parameter window stores both the raw tail-coordinate bound and the shifted-tail invariant inequalities.  The shifted-tail tuple window is open and connected by star-shaped contraction from zero, using the checked homogeneity of the shifted Gram and determinant coordinates.  The full Schur parameter window is the product of the identity head-coordinate polydisc, the zero mixed-coordinate polydisc, and the shifted-tail tuple window, transported through the normal-parameter coordinate homeomorphism; it is checked open, connected, and contains the normal center.  Window membership supplies Schur residual-tail smallness for normal parameters with invertible head via `sourceOrientedSchurResidualTailData_normalParameter`. |
       | `BHW.sourceOrientedSchurHeadBlock`, `BHW.sourceOrientedSchurHeadBlock_apply`, `BHW.sourceOrientedSchurMixedBlock`, `BHW.sourceOrientedSchurTailBlock`, `BHW.sourceSchurMixedCoeff`, `BHW.sourceSchurMixedCoeff_mul_headBlock`, `BHW.sourceSchurComplement`, `BHW.sourceSchurResidualDeterminants`, `BHW.sourceShiftedTailOrientedVariety`, `BHW.SourceOrientedSchurResidualData`, `BHW.SourceOrientedSchurResidualData.L_mul_A`, `BHW.sourceVectorMinkowskiInner_comm`, `BHW.sourceVectorMinkowskiInner_sub_left`, `BHW.sourceVectorMinkowskiInner_sub_right`, `BHW.sourceActualSchurResidualVector`, `BHW.sourceActualSchurResidualVector_decomp`, `BHW.sourceActualSchurResidualVector_inner_head`, `BHW.sourceActualSchurResidualVector_head_inner`, `BHW.sourceActualSchurResidualVector_inner_residual`, `BHW.sourceActualSchurSelectedOriginalMatrix`, `BHW.sourceActualSchurSelectedResidualMatrix`, `BHW.sourceSchurHeadTailRowOperation`, `BHW.sourceSchurHeadTailRowOperation_det`, `BHW.sourceActualSchurResidual_selectedFrameDet`, `BHW.sourceActualSchurResidual_selectedFrameDet_eq_headFactor_mul_tail_det`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_gram`, `BHW.sourceNormalFullFrameDetFromSchur_headTail`, `BHW.sourceNormalFullFrameDetFromSchur_headTail_eq_source_det`, `BHW.sourceOrientedSchur_fullFrameDet_reconstruct_of_headTailPropagation`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_det_of_fullFrameReconstruct`, `BHW.sourceOrientedNormalParameterVector_realizes_schur_of_fullFrameReconstruct` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedSchurResidual.lean`. | Schur residual coordinate packet, actual residual-vector setup, ordinary Gram realization, selected head-tail determinant calibration, and determinant/full-data consumers.  The Gram theorem uses `hGvar` to get symmetry of the source Gram and uses `L * A = mixed`; the actual residual-vector theorems decompose each tail vector, prove residual orthogonality to the selected head span, and identify the actual residual Gram matrix with the stored Schur-complement tail Gram `R.tail.gram`; the selected actual-residual row-operation theorem proves that replacing selected tail rows by actual Schur residual rows leaves the selected head-tail determinant unchanged, via a determinant-one block lower-triangular row operation, and its calibrated form identifies those selected actual residual determinants with `R.headFactor.det * R.tail.det`; the selected stored-frame theorem proves the residual determinant quotient really recovers `G.det` on frames of the form `head ∪ lam`; the checked head-tail-propagation consumer shows that a single oriented-variety determinant propagation theorem mechanically implies full Schur determinant reconstruction; the checked consumers turn the already checked normal-parameter finite Laplace formula plus a supplied full-frame reconstruction equality over `G` into determinant-coordinate and full oriented-data equality for the realized normal tuple.  The unconditional hard-range propagation and Schur reconstruction theorem is supplied by the next `SourceOrientedSchurPropagation.lean` row; after that, residual data production continues through the checked head-gauge interface in the next row. |
       | `BHW.SourceSymmetricMatrixCoord`, `BHW.sourceHeadMetricSymmCoord`, `BHW.sourceOrientedSchurHeadBlockSymm`, `BHW.SourceRankDeficientHeadGaugeData`, `BHW.sourceOrientedSchurResidualTailData`, `BHW.sourceOrientedSchurHeadBlock_det_isUnit_of_headGauge`, `BHW.sourceOriented_schurResidualData_of_tail_mem` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedHeadGauge.lean`. | Head-gauge and residual-data producer interface.  The selected Schur head block is bundled as a symmetric matrix only after `G ∈ sourceOrientedGramVariety d n`; this corrects the earlier impossible ambient use of a symmetric-subtype open set.  The checked constructor proves that once a local signature-relative head factor is available and the explicit residual tail datum is shown to lie in `sourceShiftedTailOrientedVariety`, the full `SourceOrientedSchurResidualData` packet is mechanical.  The residual-tail membership and top-level head-gauge residual packet are now checked in `SourceOrientedHeadGaugeNormal.lean`; no extra `hA_unit` assumption or residual-data wrapper remains on this algebraic interface. |
       | `BHW.sourceHeadRows_linearIndependent_of_headGauge`, `BHW.sourceOrientedGramVariety_notMaxRank_of_headGauge_headTailDet_eq_zero`, `BHW.exists_headTail_fullFrameDet_ne_zero_of_headGauge_maxRank`, `BHW.sourceOrientedGramVariety_det_eq_of_gram_eq_headTailDet_eq_of_headGauge`, `BHW.sourceOrientedGramData_eq_of_gram_eq_headTailDet_eq_of_headGauge` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedHeadGaugeSupport.lean`. | Head-gauge specialization of the checked Schur propagation support.  A local signature-relative head gauge now immediately supplies actual head-row linear independence for any realizing source tuple, the all-zero selected head-tail determinant contradiction, the max-rank existence of a nonzero selected `head ∪ lam` full-frame determinant, and determinant/full-data equality from ordinary Gram equality plus selected head-tail determinant equality.  This is the finite-dimensional consumer surface fed by the checked local Witt/head-normalization theorem and residual-tail theorem; determinant-propagation bookkeeping is no longer part of the producer frontier. |
@@ -15407,72 +15407,55 @@ Proof decomposition of this theorem, without hiding the analytic work:
             tailRealize := hrealize }
 
       def BHW.sourceOrientedRankDeficientSchurParameterWindow
-          [NeZero d]
-          (d n : Nat)
-          {G0 : BHW.SourceOrientedGramData d n}
-          (N :
-            BHW.SourceOrientedRankDeficientAlgebraicNormalFormData d n G0)
-          (encode :
-            BHW.SourceOrientedRankDeficientNormalParameter
-              d n N.r N.hrD N.hrn ≃L[ℂ] (Fin m -> ℂ))
+          (d n r : Nat)
+          (hrD : r < d + 1)
+          (hrn : r <= n)
           (headRadius mixedRadius : ℝ)
           (Tail :
             BHW.SourceOrientedRankDeficientTailWindowChoice
-              d n N.r N.hrD N.hrn) :
-          Set (Fin m -> ℂ) :=
-        {c |
-          let p := encode.symm c
-          (∀ a b,
-            ‖p.head a b -
-              (1 : Matrix (Fin N.r) (Fin N.r) ℂ) a b‖ < headRadius) ∧
-          (∀ u a, ‖p.mixed u a‖ < mixedRadius) ∧
+              d n r hrD hrn) :
+          Set
+            (BHW.SourceOrientedRankDeficientNormalParameter
+              d n r hrD hrn) :=
+        {p |
+          p.head ∈
+            BHW.sourceOrientedHeadCoordinateWindow r headRadius ∧
+          p.mixed ∈
+            BHW.sourceOrientedMixedCoordinateWindow n r mixedRadius ∧
           p ∈
             BHW.sourceOrientedRankDeficientTailWindow
-              d n N.r N.hrD N.hrn Tail}
+              d n r hrD hrn Tail}
 
       theorem BHW.sourceOrientedRankDeficientSchurParameterWindow_open_connected
-          [NeZero d]
-          (d n : Nat)
-          {G0 : BHW.SourceOrientedGramData d n}
-          (N :
-            BHW.SourceOrientedRankDeficientAlgebraicNormalFormData d n G0)
-          (encode :
-            BHW.SourceOrientedRankDeficientNormalParameter
-              d n N.r N.hrD N.hrn ≃L[ℂ] (Fin m -> ℂ))
+          (d n r : Nat)
+          (hrD : r < d + 1)
+          (hrn : r <= n)
           {headRadius mixedRadius : ℝ}
           (hheadRadius : 0 < headRadius)
           (hmixedRadius : 0 < mixedRadius)
           (Tail :
             BHW.SourceOrientedRankDeficientTailWindowChoice
-              d n N.r N.hrD N.hrn) :
+              d n r hrD hrn) :
           IsOpen
             (BHW.sourceOrientedRankDeficientSchurParameterWindow
-              d n N encode headRadius mixedRadius Tail) ∧
+              d n r hrD hrn headRadius mixedRadius Tail) ∧
           IsConnected
             (BHW.sourceOrientedRankDeficientSchurParameterWindow
-              d n N encode headRadius mixedRadius Tail) ∧
-          encode
-            (BHW.sourceOrientedNormalCenterParameter
-              d n N.r N.hrD N.hrn) ∈
+              d n r hrD hrn headRadius mixedRadius Tail) ∧
+          BHW.sourceOrientedNormalCenterParameter d n r hrD hrn ∈
             BHW.sourceOrientedRankDeficientSchurParameterWindow
-              d n N encode headRadius mixedRadius Tail := by
+              d n r hrD hrn headRadius mixedRadius Tail := by
         -- Openness is a finite intersection of strict coordinate inequalities:
         -- head and mixed projections are continuous, and the shifted-tail Gram
         -- and determinant coordinates are polynomial in `p.tail`.
         --
-        -- Connectedness is by star-shaped contraction from the normal center
-        -- in the checked finite coordinate model.  Along
-        --   `p_t.head = 1 + t • (p.head - 1)`,
-        --   `p_t.mixed = t • p.mixed`,
-        --   `p_t.tail = t • p.tail`
-        -- for `0 <= t <= 1`, the head/mixed/tail coordinate bounds shrink;
-        -- tail Gram coordinates scale by `(t : ℂ)^2`, and tail determinant
-        -- coordinates scale by `(t : ℂ)^(d + 1 - N.r)`, so the invariant
-        -- window is preserved.  Apply `StarConvex.isPathConnected` and then
-        -- `IsPathConnected.isConnected`.
+        -- Connectedness is the checked finite product assembly: the head and
+        -- mixed coordinate polydiscs are convex, the shifted-tail tuple window
+        -- is star-shaped from zero, and the product window is transported
+        -- through `sourceOrientedNormalParameterCoordHomeomorph`.
         exact
-          BHW.sourceOrientedRankDeficientSchurParameterWindow_open_connected_from_star
-            d n N encode hheadRadius hmixedRadius Tail
+          BHW.sourceOrientedRankDeficientSchurParameterWindow_open_connected
+            d n r hrD hrn hheadRadius hmixedRadius Tail
 
       structure BHW.SourceOrientedRankDeficientSchurEstimateChoice
           [NeZero d]

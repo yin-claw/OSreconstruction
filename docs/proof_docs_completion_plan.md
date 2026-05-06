@@ -740,21 +740,33 @@ The window is open by finite-coordinate continuity and connected because it
 is star-shaped from the normal center: along `t ∈ [0,1]`, head/mixed/tail
 coordinates scale toward the center, tail Gram coordinates scale by `t^2`,
 and tail determinant coordinates scale by `t^(d+1-r)`.
-The first Lean support for this corrected shape is checked in
+The Lean support for this corrected shape is checked in
 `SourceOrientedRankDeficientTailWindow.lean`: it defines
 `BHW.SourceOrientedRankDeficientTailWindowChoice`,
 `BHW.sourceOrientedRankDeficientTailWindow`,
+`BHW.sourceMatrixCoordinateWindow`,
+`BHW.sourceOrientedHeadCoordinateWindow`,
+`BHW.sourceOrientedMixedCoordinateWindow`,
+`BHW.sourceShiftedTailTupleWindow`,
+`BHW.isOpen_sourceShiftedTailTupleWindow`,
+`BHW.isConnected_sourceShiftedTailTupleWindow`,
 `BHW.isOpen_sourceOrientedRankDeficientTailWindow`,
 `BHW.sourceOrientedNormalCenterParameter_mem_tailWindow`,
+`BHW.sourceOrientedRankDeficientSchurParameterWindow`,
+`BHW.sourceOrientedRankDeficientSchurParameterWindow_open_connected`,
 `BHW.sourceOriented_rankDeficient_tailWindowChoice`, and
 `BHW.SourceOrientedRankDeficientTailWindowChoice.normalParam_tail_small`.
-The pure shifted-tail tuple window is already checked connected as
-`BHW.isConnected_sourceShiftedTailTupleWindow`, using the homogeneity lemmas
+The pure shifted-tail tuple window is checked open and connected; connectedness
+uses the homogeneity lemmas
 `BHW.sourceShiftedTailGram_smul`,
 `BHW.sourceShiftedTailOrientedInvariant_smul_gram`, and
-`BHW.sourceShiftedTailOrientedInvariant_smul_det`.  The remaining
-connected-window theorem is now only the finite product assembly with the
-head and mixed coordinate boxes, not a compatible-radius estimate.
+`BHW.sourceShiftedTailOrientedInvariant_smul_det`.  The full Schur parameter
+window is now checked as the finite product assembly of the identity head
+coordinate polydisc, the zero mixed-coordinate polydisc, and the shifted-tail
+tuple window, transported through the checked normal-parameter coordinate
+homeomorphism.  The remaining rank-deficient local-image work is therefore the
+Schur/residual image and shrink theorem, not the connectedness of the
+parameter window and not a compatible-radius estimate.
 
 The first Euclidean induction case is checked:
 `sourceTailOrientedInvariant_selectedGram_det` proves that a selected Gram

@@ -57,6 +57,168 @@ def sourceOrientedRankDeficientTailWindow
       ‖(sourceShiftedTailOrientedInvariant d r hrD (n - r) p.tail).det ι‖ <
         Tail.tailEta)}
 
+/-- A finite coordinate polydisc in a two-index complex coordinate model. -/
+def sourceMatrixCoordinateWindow {ι κ : Type*}
+    (center : ι → κ → ℂ) (ρ : ℝ) :
+    Set (ι → κ → ℂ) :=
+  {x | ∀ i j, ‖x i j - center i j‖ < ρ}
+
+theorem sourceMatrixCoordinateWindow_real_affine_sub_eq
+    (a b : ℝ)
+    (z w c : ℂ)
+    (hab : a + b = 1) :
+    a • z + b • w - c = a • (z - c) + b • (w - c) := by
+  have h : (a + b : ℝ) • c = c := by
+    rw [hab]
+    simp
+  calc
+    a • z + b • w - c = a • z + b • w - (a + b : ℝ) • c := by
+      rw [h]
+    _ = a • z + b • w - (a • c + b • c) := by
+      rw [show (a + b : ℝ) • c = a • c + b • c from add_smul a b c]
+    _ = a • (z - c) + b • (w - c) := by
+      rw [show a • (z - c) = a • z - a • c from smul_sub a z c]
+      rw [show b • (w - c) = b • w - b • c from smul_sub b w c]
+      abel
+
+/-- Coordinate polydiscs are convex in the real affine structure. -/
+theorem convex_sourceMatrixCoordinateWindow {ι κ : Type*}
+    (center : ι → κ → ℂ)
+    (ρ : ℝ) :
+    Convex ℝ (sourceMatrixCoordinateWindow center ρ) := by
+  intro x hx
+  rw [starConvex_iff_segment_subset]
+  intro y hy
+  rw [segment_subset_iff]
+  intro a b ha hb hab i j
+  have hdecomp :
+      (a • x + b • y) i j - center i j =
+        a • (x i j - center i j) + b • (y i j - center i j) := by
+    rw [Pi.add_apply, Pi.smul_apply, Pi.smul_apply]
+    exact
+      sourceMatrixCoordinateWindow_real_affine_sub_eq
+        a b (x i j) (y i j) (center i j) hab
+  have hnorm_le :
+      ‖(a • x + b • y) i j - center i j‖ ≤
+        a * ‖x i j - center i j‖ +
+          b * ‖y i j - center i j‖ := by
+    calc
+      ‖(a • x + b • y) i j - center i j‖ =
+          ‖a • (x i j - center i j) +
+            b • (y i j - center i j)‖ := by
+            rw [hdecomp]
+      _ ≤
+          ‖a • (x i j - center i j)‖ +
+            ‖b • (y i j - center i j)‖ :=
+            norm_add_le _ _
+      _ =
+          |a| * ‖x i j - center i j‖ +
+            |b| * ‖y i j - center i j‖ := by
+            rw [norm_smul, norm_smul]
+            simp [Real.norm_eq_abs]
+      _ =
+          a * ‖x i j - center i j‖ +
+            b * ‖y i j - center i j‖ := by
+            rw [abs_of_nonneg ha, abs_of_nonneg hb]
+  have hweighted :
+      a * ‖x i j - center i j‖ +
+          b * ‖y i j - center i j‖ < ρ := by
+    have hxle :
+        a * ‖x i j - center i j‖ ≤ a * ρ :=
+      mul_le_mul_of_nonneg_left (le_of_lt (hx i j)) ha
+    have hyle :
+        b * ‖y i j - center i j‖ ≤ b * ρ :=
+      mul_le_mul_of_nonneg_left (le_of_lt (hy i j)) hb
+    have hsum_eq : a * ρ + b * ρ = ρ := by
+      rw [← add_mul, hab, one_mul]
+    by_cases ha_eq : a = 0
+    · have hb_pos : 0 < b := by
+        linarith
+      have hylt :
+          b * ‖y i j - center i j‖ < b * ρ :=
+        mul_lt_mul_of_pos_left (hy i j) hb_pos
+      calc
+        a * ‖x i j - center i j‖ +
+            b * ‖y i j - center i j‖
+            < a * ρ + b * ρ :=
+              add_lt_add_of_le_of_lt hxle hylt
+        _ = ρ := hsum_eq
+    · have ha_pos : 0 < a := lt_of_le_of_ne ha (Ne.symm ha_eq)
+      have hxlt :
+          a * ‖x i j - center i j‖ < a * ρ :=
+        mul_lt_mul_of_pos_left (hx i j) ha_pos
+      calc
+        a * ‖x i j - center i j‖ +
+            b * ‖y i j - center i j‖
+            < a * ρ + b * ρ :=
+              add_lt_add_of_lt_of_le hxlt hyle
+        _ = ρ := hsum_eq
+  exact lt_of_le_of_lt hnorm_le hweighted
+
+theorem isOpen_sourceMatrixCoordinateWindow {ι κ : Type*}
+    [Finite ι] [Finite κ]
+    (center : ι → κ → ℂ)
+    (ρ : ℝ) :
+    IsOpen (sourceMatrixCoordinateWindow center ρ) := by
+  simp only [sourceMatrixCoordinateWindow, Set.setOf_forall]
+  exact isOpen_iInter_of_finite fun i : ι =>
+    isOpen_iInter_of_finite fun j : κ =>
+      isOpen_lt (by fun_prop) continuous_const
+
+/-- The head-factor coordinate window around the identity matrix. -/
+def sourceOrientedHeadCoordinateWindow
+    (r : ℕ)
+    (ρ : ℝ) :
+    Set (Matrix (Fin r) (Fin r) ℂ) :=
+  sourceMatrixCoordinateWindow (1 : Matrix (Fin r) (Fin r) ℂ) ρ
+
+/-- The mixed-coordinate window around zero. -/
+def sourceOrientedMixedCoordinateWindow
+    (n r : ℕ)
+    (ρ : ℝ) :
+    Set (Matrix (Fin (n - r)) (Fin r) ℂ) :=
+  sourceMatrixCoordinateWindow (0 : Matrix (Fin (n - r)) (Fin r) ℂ) ρ
+
+theorem isOpen_sourceOrientedHeadCoordinateWindow
+    (r : ℕ)
+    (ρ : ℝ) :
+    IsOpen (sourceOrientedHeadCoordinateWindow r ρ) := by
+  simpa [sourceOrientedHeadCoordinateWindow] using
+    isOpen_sourceMatrixCoordinateWindow
+      (1 : Matrix (Fin r) (Fin r) ℂ) ρ
+
+theorem isOpen_sourceOrientedMixedCoordinateWindow
+    (n r : ℕ)
+    (ρ : ℝ) :
+    IsOpen (sourceOrientedMixedCoordinateWindow n r ρ) := by
+  simpa [sourceOrientedMixedCoordinateWindow] using
+    isOpen_sourceMatrixCoordinateWindow
+      (0 : Matrix (Fin (n - r)) (Fin r) ℂ) ρ
+
+theorem isConnected_sourceOrientedHeadCoordinateWindow
+    (r : ℕ)
+    {ρ : ℝ}
+    (hρ : 0 < ρ) :
+    IsConnected (sourceOrientedHeadCoordinateWindow r ρ) := by
+  exact
+    (convex_sourceMatrixCoordinateWindow
+      (1 : Matrix (Fin r) (Fin r) ℂ) ρ).isConnected
+      ⟨(1 : Matrix (Fin r) (Fin r) ℂ), by
+        intro i j
+        simp [hρ]⟩
+
+theorem isConnected_sourceOrientedMixedCoordinateWindow
+    (n r : ℕ)
+    {ρ : ℝ}
+    (hρ : 0 < ρ) :
+    IsConnected (sourceOrientedMixedCoordinateWindow n r ρ) := by
+  exact
+    (convex_sourceMatrixCoordinateWindow
+      (0 : Matrix (Fin (n - r)) (Fin r) ℂ) ρ).isConnected
+      ⟨(0 : Matrix (Fin (n - r)) (Fin r) ℂ), by
+        intro i j
+        simpa using hρ⟩
+
 @[simp]
 theorem sourceTailEmbed_smul
     (d r : ℕ)
@@ -252,6 +414,54 @@ theorem isConnected_sourceShiftedTailTupleWindow
     simpa [hseg] using hscaled
   exact (hstar.isPathConnected hzero).isConnected
 
+/-- The shifted-tail tuple window is open in finite coordinates. -/
+theorem isOpen_sourceShiftedTailTupleWindow
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn) :
+    IsOpen (sourceShiftedTailTupleWindow d n r hrD hrn Tail) := by
+  have hcoord_open :
+      IsOpen {q : Fin (n - r) → Fin (d + 1 - r) → ℂ |
+        ∀ u μ, ‖q u μ‖ < Tail.tailCoordRadius} := by
+    simp only [Set.setOf_forall]
+    exact isOpen_iInter_of_finite fun u : Fin (n - r) =>
+      isOpen_iInter_of_finite fun μ : Fin (d + 1 - r) =>
+        isOpen_lt
+          (continuous_norm.comp
+            ((continuous_apply μ).comp (continuous_apply u)))
+          continuous_const
+  have hgram_open :
+      IsOpen {q : Fin (n - r) → Fin (d + 1 - r) → ℂ |
+        ∀ u v,
+          ‖(sourceShiftedTailOrientedInvariant d r hrD (n - r) q).gram u v‖ <
+            Tail.tailEta} := by
+    simp only [Set.setOf_forall]
+    exact isOpen_iInter_of_finite fun u : Fin (n - r) =>
+      isOpen_iInter_of_finite fun v : Fin (n - r) => by
+        have hgram_q :
+            Continuous (fun q : Fin (n - r) → Fin (d + 1 - r) → ℂ =>
+              (sourceShiftedTailOrientedInvariant d r hrD (n - r) q).gram u v) := by
+          simpa [sourceShiftedTailOrientedInvariant] using
+            (continuous_apply v).comp
+              ((continuous_apply u).comp
+                (continuous_sourceShiftedTailGram d r (n - r) hrD))
+        exact isOpen_lt (continuous_norm.comp hgram_q) continuous_const
+  have hdet_open :
+      IsOpen {q : Fin (n - r) → Fin (d + 1 - r) → ℂ |
+        ∀ ι,
+          ‖(sourceShiftedTailOrientedInvariant d r hrD (n - r) q).det ι‖ <
+            Tail.tailEta} := by
+    simp only [Set.setOf_forall]
+    exact isOpen_iInter_of_finite fun ι : Fin (d + 1 - r) ↪ Fin (n - r) => by
+      have hdet_q :
+          Continuous (fun q : Fin (n - r) → Fin (d + 1 - r) → ℂ =>
+            (sourceShiftedTailOrientedInvariant d r hrD (n - r) q).det ι) := by
+        fun_prop
+      exact isOpen_lt (continuous_norm.comp hdet_q) continuous_const
+  simpa [sourceShiftedTailTupleWindow, Set.setOf_and] using
+    hcoord_open.inter (hgram_open.inter hdet_open)
+
 /-- The tail window is open in the finite normal-parameter topology. -/
 theorem isOpen_sourceOrientedRankDeficientTailWindow
     (d n r : ℕ)
@@ -333,6 +543,154 @@ theorem sourceOrientedNormalCenterParameter_mem_tailWindow
         (Matrix.det_zero (n := Fin (d + 1 - r)) (R := ℂ) hnonempty)
     rw [hdet0, norm_zero]
     exact Tail.tailEta_pos
+
+/-- The full rank-deficient Schur parameter window on normal parameters:
+head near identity, mixed near zero, and tail in the target-shaped shifted
+tail window. -/
+def sourceOrientedRankDeficientSchurParameterWindow
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (headRadius mixedRadius : ℝ)
+    (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn) :
+    Set (SourceOrientedRankDeficientNormalParameter d n r hrD hrn) :=
+  {p |
+    p.head ∈ sourceOrientedHeadCoordinateWindow r headRadius ∧
+    p.mixed ∈ sourceOrientedMixedCoordinateWindow n r mixedRadius ∧
+    p ∈ sourceOrientedRankDeficientTailWindow d n r hrD hrn Tail}
+
+theorem isOpen_sourceOrientedRankDeficientSchurParameterWindow
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (headRadius mixedRadius : ℝ)
+    (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn) :
+    IsOpen
+      (sourceOrientedRankDeficientSchurParameterWindow
+        d n r hrD hrn headRadius mixedRadius Tail) := by
+  let P := SourceOrientedRankDeficientNormalParameter d n r hrD hrn
+  have hhead_cont : Continuous (fun p : P => p.head) :=
+    continuous_sourceOrientedNormalParameter_head
+  have hmixed_cont : Continuous (fun p : P => p.mixed) :=
+    continuous_sourceOrientedNormalParameter_mixed
+  have hhead_open :
+      IsOpen {p : P |
+        p.head ∈ sourceOrientedHeadCoordinateWindow r headRadius} := by
+    exact
+      IsOpen.preimage hhead_cont
+        (isOpen_sourceOrientedHeadCoordinateWindow r headRadius)
+  have hmixed_open :
+      IsOpen {p : P |
+        p.mixed ∈ sourceOrientedMixedCoordinateWindow n r mixedRadius} := by
+    exact
+      IsOpen.preimage hmixed_cont
+        (isOpen_sourceOrientedMixedCoordinateWindow n r mixedRadius)
+  have htail_open :
+      IsOpen {p : P |
+        p ∈ sourceOrientedRankDeficientTailWindow d n r hrD hrn Tail} :=
+    isOpen_sourceOrientedRankDeficientTailWindow d n r hrD hrn Tail
+  simpa [sourceOrientedRankDeficientSchurParameterWindow, Set.setOf_and] using
+    hhead_open.inter (hmixed_open.inter htail_open)
+
+theorem isConnected_sourceOrientedRankDeficientSchurParameterWindow
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    {headRadius mixedRadius : ℝ}
+    (hheadRadius : 0 < headRadius)
+    (hmixedRadius : 0 < mixedRadius)
+    (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn) :
+    IsConnected
+      (sourceOrientedRankDeficientSchurParameterWindow
+        d n r hrD hrn headRadius mixedRadius Tail) := by
+  let S : Set (Matrix (Fin r) (Fin r) ℂ ×
+      Matrix (Fin (n - r)) (Fin r) ℂ ×
+        (Fin (n - r) → Fin (d + 1 - r) → ℂ)) :=
+    sourceOrientedHeadCoordinateWindow r headRadius ×ˢ
+      (sourceOrientedMixedCoordinateWindow n r mixedRadius ×ˢ
+        sourceShiftedTailTupleWindow d n r hrD hrn Tail)
+  have hhead_conn :
+      IsConnected (sourceOrientedHeadCoordinateWindow r headRadius) :=
+    isConnected_sourceOrientedHeadCoordinateWindow r hheadRadius
+  have hmixed_conn :
+      IsConnected (sourceOrientedMixedCoordinateWindow n r mixedRadius) :=
+    isConnected_sourceOrientedMixedCoordinateWindow n r hmixedRadius
+  have htail_conn :
+      IsConnected (sourceShiftedTailTupleWindow d n r hrD hrn Tail) :=
+    isConnected_sourceShiftedTailTupleWindow d n r hrD hrn Tail
+  have hS : IsConnected S := by
+    dsimp [S]
+    exact hhead_conn.prod (hmixed_conn.prod htail_conn)
+  let e :=
+    sourceOrientedNormalParameterCoordHomeomorph
+      (d := d) (n := n) (r := r) (hrD := hrD) (hrn := hrn)
+  have himage : e.symm '' S = e ⁻¹' S := by
+    ext p
+    constructor
+    · rintro ⟨x, hx, rfl⟩
+      simpa using hx
+    · intro hp
+      exact ⟨e p, hp, by simp [e]⟩
+  have hpre : IsConnected (e ⁻¹' S) := by
+    rw [← himage]
+    exact hS.image e.symm e.symm.continuous.continuousOn
+  have heq :
+      sourceOrientedRankDeficientSchurParameterWindow
+          d n r hrD hrn headRadius mixedRadius Tail =
+        e ⁻¹' S := by
+    ext p
+    simp [sourceOrientedRankDeficientSchurParameterWindow, S, e,
+      sourceOrientedRankDeficientTailWindow, sourceShiftedTailTupleWindow,
+      sourceOrientedNormalParameterCoordHomeomorph,
+      sourceOrientedNormalParameterCoordEquiv, sourceOrientedNormalParameterCoord]
+  rw [heq]
+  exact hpre
+
+theorem sourceOrientedNormalCenterParameter_mem_schurParameterWindow
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    {headRadius mixedRadius : ℝ}
+    (hheadRadius : 0 < headRadius)
+    (hmixedRadius : 0 < mixedRadius)
+    (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn) :
+    sourceOrientedNormalCenterParameter d n r hrD hrn ∈
+      sourceOrientedRankDeficientSchurParameterWindow
+        d n r hrD hrn headRadius mixedRadius Tail := by
+  constructor
+  · intro a b
+    simp [sourceOrientedNormalCenterParameter, hheadRadius]
+  constructor
+  · intro u a
+    simpa [sourceOrientedNormalCenterParameter] using hmixedRadius
+  · exact sourceOrientedNormalCenterParameter_mem_tailWindow d n r hrD hrn Tail
+
+/-- The full Schur parameter window is an open connected neighborhood of the
+normal center. -/
+theorem sourceOrientedRankDeficientSchurParameterWindow_open_connected
+    (d n r : ℕ)
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    {headRadius mixedRadius : ℝ}
+    (hheadRadius : 0 < headRadius)
+    (hmixedRadius : 0 < mixedRadius)
+    (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn) :
+    IsOpen
+        (sourceOrientedRankDeficientSchurParameterWindow
+          d n r hrD hrn headRadius mixedRadius Tail) ∧
+      IsConnected
+        (sourceOrientedRankDeficientSchurParameterWindow
+          d n r hrD hrn headRadius mixedRadius Tail) ∧
+      sourceOrientedNormalCenterParameter d n r hrD hrn ∈
+        sourceOrientedRankDeficientSchurParameterWindow
+          d n r hrD hrn headRadius mixedRadius Tail := by
+  exact
+    ⟨isOpen_sourceOrientedRankDeficientSchurParameterWindow
+        d n r hrD hrn headRadius mixedRadius Tail,
+      isConnected_sourceOrientedRankDeficientSchurParameterWindow
+        d n r hrD hrn hheadRadius hmixedRadius Tail,
+      sourceOrientedNormalCenterParameter_mem_schurParameterWindow
+        d n r hrD hrn hheadRadius hmixedRadius Tail⟩
 
 /-- Build a tail-window choice from the checked one-way shifted-tail small
 realization theorem. -/
