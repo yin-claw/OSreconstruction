@@ -252,3 +252,73 @@ The vetting exercise has been **highly valuable**:
 Without vetting, we would have spent weeks deriving from false foundations
 and getting wrong proofs. The textbook-axiom + Gemini-vetting workflow is
 working as designed.
+
+---
+
+## Pivot — 2026-05-05/06: from spectral / KL route to Ruelle 1962
+
+The Källén-Lehmann route encountered structural obstacles (Issues 1–4
+above) that were taking weeks to resolve. After consulting Gemini deep-think
+(`history/gemini_deep_think.md`) on the analytic cluster question,
+identified Araki-Hepp-Ruelle 1962 (Helv. Phys. Acta 35) as the canonical
+reference: their **Theorem 2** proves the pointwise analytic cluster
+*strictly* on the standard forward tube, exactly what we need.
+
+The route was approved (`docs/cluster_via_ruelle_plan.md`). It introduces
+two textbook axioms in place of the spectral / KL infrastructure:
+
+### 8. `ruelle_analytic_cluster_bound`
+**File**: `Wightman/Reconstruction/WickRotation/RuelleClusterBound.lean`.
+**Statement**: there exist constants `C, N, R > 0` such that for all
+forward-tube `z₁, z₂` and spatial `a` with `|⃗a| > R`:
+```
+‖W_analytic_BHW(append z₁ (z₂ + (0, a)))‖ ≤ C · (1 + ‖z₁‖ + ‖z₂‖)^N.
+```
+**Crucial property**: `C, N` are **independent of `a`** — the spectral-gap
+content of R4 (distributional cluster) lifted to the analytic level.
+
+**Verdict (Gemini deep-think, 2026-05-05)**: **Standard** — the route is
+correct as stated. The pointwise analytic cluster on the standard forward
+tube `T` is the canonical statement (Araki-Hepp-Ruelle 1962, Theorem 2);
+the uniform-in-a polynomial bound is the corresponding spectral consequence
+documented in Streater-Wightman §3.4 and Jost VI.1. The previous Route
+(i) attempt failed because we tried to use `spectrum_condition`'s a-dependent
+bound, which is too weak.
+
+**Sources**: `DT` (deep-think), `LP` (Araki-Hepp-Ruelle 1962 Theorem 2,
+Streater-Wightman §3.4, Jost VI.1).
+
+### 9. `ruelle_analytic_cluster_pointwise`
+**File**: `Wightman/Reconstruction/WickRotation/RuelleClusterBound.lean`.
+**Statement**: for all forward-tube `z₁, z₂`,
+```
+W_analytic_BHW(append z₁ (z₂ + (0, a))) → W_analytic_BHW(z₁) · W_analytic_BHW(z₂)
+```
+along the spatial-cobounded filter on `a`.
+
+**Verdict (Gemini deep-think, 2026-05-05)**: **Standard** — this is exactly
+Theorem 2 of Araki-Hepp-Ruelle 1962. Gemini explicitly verified that this
+statement holds *strictly* on the standard forward tube `T` (not requiring
+extension to the extended tube `T'`, where the limit may not be defined).
+Our usage stays within `T`, so the statement is directly applicable.
+
+**Sources**: `DT` (deep-think), `LP` (Araki-Hepp-Ruelle 1962 Theorem 2 —
+"On the asymptotic behaviour of Wightman functions in space-like
+directions", Helv. Phys. Acta 35, 164).
+
+### Audit table
+
+| Axiom | File:Line | Rating | Sources | Notes |
+|-------|-----------|--------|---------|-------|
+| `ruelle_analytic_cluster_bound` | RuelleClusterBound.lean:~88 | Standard | DT, LP | Streater-Wightman §3.4, Jost VI.1, Araki-Hepp-Ruelle 1962 |
+| `ruelle_analytic_cluster_pointwise` | RuelleClusterBound.lean:~149 | Standard | DT, LP | Araki-Hepp-Ruelle 1962 Theorem 2 |
+
+### Status of the two routes
+
+* **Källén-Lehmann route** (`Spectral/ClusterFromKL.lean`,
+  `Spectral/KallenLehmann.lean`): superseded. No longer imported. Open
+  Issues 1–4 above are deferred and not required for cluster closure.
+* **Ruelle route** (`RuelleClusterBound.lean`): closes
+  `W_analytic_cluster_integral` and `wickRotatedBoundaryPairing_cluster`
+  with **zero local sorrys** (modulo `bhw_euclidean_kernel_measurable`'s
+  pre-existing transitive sorry).

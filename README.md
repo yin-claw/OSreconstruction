@@ -4,7 +4,7 @@ A Lean 4 formalization of the **Osterwalder-Schrader reconstruction theorem** an
 
 ## Current Axiom Inventory
 
-The tracked production tree currently contains **11 explicit axioms**:
+The tracked production tree currently contains **13 explicit axioms**:
 
 **Functional analysis (2):**
 - `schwartz_nuclear_extension` in `Wightman/WightmanAxioms.lean` — **partially proved**: nuclearity of Schwartz space is now proved in the [`gaussian-field`](https://github.com/or-n/gaussian-field) library; the remaining gap is importing the instance and deriving the kernel theorem
@@ -22,6 +22,12 @@ The tracked production tree currently contains **11 explicit axioms**:
 
 **Reconstruction bridge (1):**
 - `reduced_bargmann_hall_wightman_of_input` in `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean`
+
+**Wightman cluster — Ruelle 1962 (2):**
+- `ruelle_analytic_cluster_bound` in `Wightman/Reconstruction/WickRotation/RuelleClusterBound.lean` — uniform-in-`a` polynomial bound on the analytic continuation of the (n+m)-point function for spatially separated arguments. Reference: Ruelle 1962 (Helv. Phys. Acta 35), Jost VI.1, Streater-Wightman §3.4.
+- `ruelle_analytic_cluster_pointwise` in `Wightman/Reconstruction/WickRotation/RuelleClusterBound.lean` — pointwise factorization of the analytic continuation as `|⃗a| → ∞` along spacelike directions. Reference: Araki-Hepp-Ruelle 1962 Theorem 2 (Helv. Phys. Acta 35, 164).
+
+These two axioms together close `W_analytic_cluster_integral` (OS axiom E4 on the Wick-rotated Schwinger side) via dominated convergence; they encode the spectral-gap content of R4 at the analytic level.
 
 The former `vladimirov_tillmann` axiom has been **proved as a theorem** from 3 of the SCV axioms above plus ~10K lines of Paley-Wiener-Schwartz proofs. See `docs/vladimirov_tillmann_summary.md` for details.
 
@@ -119,9 +125,9 @@ This fetches Mathlib and dependencies automatically on first build.
 
 ## Project Status
 
-The tracked production tree currently includes **11 explicit `axiom`
-declarations** (2 FA + 8 SCV + 1 reconstruction bridge). See the axiom
-inventory at the top of this file for the complete list. Remaining work
+The tracked production tree currently includes **13 explicit `axiom`
+declarations** (2 FA + 8 SCV + 1 reconstruction bridge + 2 Ruelle cluster).
+See the axiom inventory at the top of this file for the complete list. Remaining work
 outside these deferred surfaces is represented by explicit theorem-level
 `sorry` placeholders.
 The snapshot below counts only tracked production files; local scratch under
