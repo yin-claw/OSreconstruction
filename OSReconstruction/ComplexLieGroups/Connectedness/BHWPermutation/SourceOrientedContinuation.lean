@@ -483,6 +483,24 @@ theorem exists_source_realization_mem_U_branch_eq
     ⟨z, hz, hzG, hbranch⟩
   exact ⟨z, hz, C.carrier_sub_U hz, hzG, hbranch⟩
 
+/-- If a local oriented chart has a source point, its oriented domain is
+nonempty. -/
+theorem orientedDomain_nonempty_of_carrier_nonempty
+    (C : BHWJostLocalOrientedContinuationChart hd n τ U)
+    (hC : C.carrier.Nonempty) :
+    C.orientedDomain.Nonempty := by
+  rcases hC with ⟨z, hz⟩
+  exact ⟨sourceOrientedMinkowskiInvariant d n z, C.oriented_mem z hz⟩
+
+/-- A local oriented chart domain is connected once its source carrier is
+known to be nonempty. -/
+theorem orientedDomain_connected_of_carrier_nonempty
+    (C : BHWJostLocalOrientedContinuationChart hd n τ U)
+    (hC : C.carrier.Nonempty) :
+    IsConnected C.orientedDomain :=
+  ⟨C.orientedDomain_nonempty_of_carrier_nonempty hC,
+    C.oriented_preconnected⟩
+
 end BHWJostLocalOrientedContinuationChart
 
 /-- Transition data between consecutive oriented BHW/Jost charts.  The
@@ -580,6 +598,12 @@ theorem orientedPatch_subset_right
     T.orientedPatch ⊆ Cright.orientedDomain := by
   intro G hG
   exact (T.orientedPatch_sub hG).2
+
+/-- A stored oriented transition patch is connected. -/
+theorem orientedPatch_connected
+    (T : BHWJostOrientedTransitionData hd n τ U Cleft Cright p q) :
+    IsConnected T.orientedPatch :=
+  ⟨T.orientedPatch_nonempty, T.orientedPatch_preconnected⟩
 
 /-- Oriented germ agreement on the transition patch descends to agreement of
 the source branches on the realized source overlap. -/
@@ -690,6 +714,19 @@ theorem exists_source_realization_mem_U
       sourceOrientedMinkowskiInvariant d n z = G := by
   rcases P.exists_source_realization hG with ⟨z, hz, hzG⟩
   exact ⟨z, hz, P.carrier_sub_U hz, hzG⟩
+
+/-- The oriented domain of a source-normal-form geometry patch is nonempty. -/
+theorem orientedDomain_nonempty
+    (P : BHWJostOrientedSourceNormalFormGeometryPatch hd n τ U center) :
+    P.orientedDomain.Nonempty :=
+  ⟨sourceOrientedMinkowskiInvariant d n center,
+    P.oriented_mem center P.center_mem⟩
+
+/-- The oriented domain of a source-normal-form geometry patch is connected. -/
+theorem orientedDomain_connected
+    (P : BHWJostOrientedSourceNormalFormGeometryPatch hd n τ U center) :
+    IsConnected P.orientedDomain :=
+  ⟨P.orientedDomain_nonempty, P.oriented_preconnected⟩
 
 end BHWJostOrientedSourceNormalFormGeometryPatch
 
@@ -1619,6 +1656,12 @@ theorem closing_patch_subset_final_localChart
   intro y hy
   simpa [L.chain.chart_eq_local (Fin.last L.chain.m)] using
     L.closing_patch_sub_final hy
+
+/-- The stored closing oriented patch of a closed loop is connected. -/
+theorem closing_orientedPatch_connected
+    (L : BHWJostOrientedClosedContinuationLoop hd n τ Ω0 U B0 p0) :
+    IsConnected L.closing_orientedPatch :=
+  ⟨L.closing_orientedPatch_nonempty, L.closing_orientedPatch_preconnected⟩
 
 /-- Oriented monodromy on the closing invariant patch descends to equality of
 the terminal and initial source branches on the closing source patch. -/
