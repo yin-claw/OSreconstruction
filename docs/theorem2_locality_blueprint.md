@@ -14935,6 +14935,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
       -- obtained by relative-continuity shrinkage from the variety into this
       -- subtype-open set; it must not be defined as an ambient open set by
       -- the ill-typed condition `headBlock(G) ∈ Head.U` for arbitrary `G`.
+      --
+      -- Important normal-parameter correction: the production coordinate
+      -- surface is the checked finite-coordinate homeomorphism together with
+      -- the pulled-back ball `sourceOrientedNormalParameterBall`.  Do not
+      -- introduce a stronger `≃L[ℂ] (Fin m -> ℂ)` target for the normal
+      -- parameter record.  The topology-only shrink from arbitrary
+      -- neighborhoods of the center Schur head/mixed/tail coordinates to a
+      -- positive connected normal-parameter ball is now checked as
+      -- `exists_sourceOrientedNormalParameterBall_subset_schur_nhds`.
 
       structure BHW.SourceOrientedRankDeficientNormalLocalImageData
           [NeZero d]
@@ -14986,9 +14995,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
         classical
         let Head :=
           BHW.sourceRankDeficientHeadGauge_at_sourceMetric d N.r N.hrD
-        -- Pick a finite-coordinate equivalence `encode` for the product of
-        -- head, mixed, and residual-tail variables.  Let `P` be a sufficiently
-        -- small open ball around the encoded center.  Shrink it so:
+        -- Pick the checked finite-coordinate homeomorphism only internally;
+        -- the public parameter set is a sufficiently small pulled-back ball
+        -- `sourceOrientedNormalParameterBall ε` around the normal center.
+        -- Shrink it so:
         -- (1) the head Gram block of every nearby normal invariant lies in
         --     `Head.U`;
         -- (2) the Schur mixed coefficients are bounded by the mixed radius;
@@ -15112,60 +15122,23 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (∀ u μ, ‖p.tail u μ‖ < tailEpsilon) ->
             encode p ∈ P
 
-      def BHW.sourceOrientedRankDeficientParameterBox
-          [NeZero d]
-          (d n : Nat)
-          {G0 : BHW.SourceOrientedGramData d n}
-          (N :
-            BHW.SourceOrientedRankDeficientAlgebraicNormalFormData d n G0)
-          (encode :
-            BHW.SourceOrientedRankDeficientNormalParameter
-              d n N.r N.hrD N.hrn ≃L[ℂ] (Fin m -> ℂ))
-          (headRadius mixedRadius tailRadius : ℝ) :
-          Set (Fin m -> ℂ) :=
-        {c |
-          let p := encode.symm c
-          (∀ a b,
-            ‖p.head a b -
-              (1 : Matrix (Fin N.r) (Fin N.r) ℂ) a b‖ < headRadius) ∧
-          (∀ u a, ‖p.mixed u a‖ < mixedRadius) ∧
-          (∀ u μ, ‖p.tail u μ‖ < tailRadius)}
-
-      theorem BHW.sourceOrientedRankDeficientParameterBox_open_connected
-          [NeZero d]
-          (d n : Nat)
-          {G0 : BHW.SourceOrientedGramData d n}
-          (N :
-            BHW.SourceOrientedRankDeficientAlgebraicNormalFormData d n G0)
-          (encode :
-            BHW.SourceOrientedRankDeficientNormalParameter
-              d n N.r N.hrD N.hrn ≃L[ℂ] (Fin m -> ℂ))
-          {headRadius mixedRadius tailRadius : ℝ}
-          (hhead : 0 < headRadius)
-          (hmixed : 0 < mixedRadius)
-          (htail : 0 < tailRadius) :
-          IsOpen
-            (BHW.sourceOrientedRankDeficientParameterBox
-              d n N encode headRadius mixedRadius tailRadius) ∧
-          IsConnected
-            (BHW.sourceOrientedRankDeficientParameterBox
-              d n N encode headRadius mixedRadius tailRadius) ∧
-          encode
-            (BHW.sourceOrientedNormalCenterParameter
-              d n N.r N.hrD N.hrn) ∈
-            BHW.sourceOrientedRankDeficientParameterBox
-              d n N encode headRadius mixedRadius tailRadius := by
-        -- The set is a finite intersection of inverse images of open balls
-        -- under continuous coordinate maps, hence open.  It is convex because
-        -- each coordinate inequality is a ball centered at a coordinate of
-        -- the normal center or at zero; finite intersections of convex sets
-        -- are convex, and convex subsets of finite-dimensional complex
-        -- normed spaces are preconnected.  The center membership is immediate
-        -- from the three positive radii and
-        -- `sourceOrientedNormalCenterParameter`.
-        exact
-          BHW.finiteCoordinateParameterBox_open_connected_contains_center
-            (d := d) (n := n) N encode hhead hmixed htail
+      -- Retired draft surface, not a production target:
+      -- `sourceOrientedRankDeficientParameterBox` with an `≃L[ℂ]` encoding.
+      -- The checked replacement is:
+      --
+      -- * `sourceOrientedNormalParameterBall`;
+      -- * `sourceOrientedNormalParameterBall_open_connected_center`;
+      -- * `exists_sourceOrientedNormalParameterBall_subset_of_mem_nhds_center`;
+      -- * `exists_sourceOrientedNormalParameterBall_subset_head_det_isUnit`;
+      -- * `exists_sourceOrientedNormalParameterBall_subset_schur_nhds`.
+      --
+      -- Thus every finite-coordinate estimate shrink should first define
+      -- honest target neighborhoods in the Schur head, mixed, and tail
+      -- coordinate spaces, call
+      -- `exists_sourceOrientedNormalParameterBall_subset_schur_nhds`, and then
+      -- intersect/shrink with the already checked invertible-head and ambient
+      -- image shrinks.  Open/connected/center membership comes from
+      -- `sourceOrientedNormalParameterBall_open_connected_center`.
 
       theorem BHW.sourceOrientedSchurEstimateNeighborhood_shrink
           [NeZero d]
@@ -15618,7 +15591,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
         -- The continuity of the normal Schur head/mixed/tail maps is now
         -- checked as `continuous_sourceOrientedNormalParameterSchurHead`,
         -- `continuous_sourceOrientedNormalParameterSchurMixed`, and
-        -- `continuous_sourceOrientedNormalParameterSchurTail`.
+        -- `continuous_sourceOrientedNormalParameterSchurTail`.  The common
+        -- pullback-to-ball step is checked as
+        -- `exists_sourceOrientedNormalParameterBall_subset_schur_nhds`, using
+        -- the center identities
+        -- `sourceOrientedNormalParameterSchurHead_center`,
+        -- `sourceOrientedNormalParameterSchurMixed_center`, and
+        -- `sourceOrientedNormalParameterSchurTail_center`.
         -- All five shrinkings are finite-coordinate continuity estimates at
         -- the canonical normal point: the head block is the signature
         -- diagonal `sourceHeadMetric d N.r N.hrD`, the mixed block is `0`,

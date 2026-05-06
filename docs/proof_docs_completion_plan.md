@@ -537,6 +537,18 @@ The normal Schur-coordinate continuity layer is also checked:
 finite-coordinate continuity facts used by the estimate/shrink proof for the
 head, mixed, and residual-tail Schur coordinates.
 
+The first topology-only Schur shrink is now checked in
+`SourceOrientedRankDeficientSchurShrink.lean`.  It adds the center identities
+`BHW.sourceOrientedNormalParameterSchurHead_center`,
+`BHW.sourceOrientedNormalParameterSchurMixed_center`, and
+`BHW.sourceOrientedNormalParameterSchurTail_center`, plus
+`BHW.exists_sourceOrientedNormalParameterBall_subset_schur_nhds`.  Production
+Lean should use this theorem, together with
+`BHW.sourceOrientedNormalParameterBall`, rather than reintroducing the retired
+continuous-linear coordinate-box pseudocode.  The theorem says that arbitrary
+neighborhoods of the center Schur head, mixed, and residual-tail coordinates
+pull back to a positive connected normal-parameter ball.
+
 The first normal-parameter support layer is now checked in
 `SourceOrientedNormalParameter.lean`.  The file supplies the finite head/tail
 source-label split
