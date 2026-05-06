@@ -15454,7 +15454,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
         -- Choose the checked single finite-function coordinate homeomorphism
         -- `sourceOrientedNormalParameterFiniteCoordHomeomorph`, and take a
         -- small metric ball supplied by
-        -- `sourceOrientedNormalParameterFiniteCoordBall_open_connected_center`.
+        -- `sourceOrientedNormalParameterBall_open_connected_center`; the
+        -- radius can be shrunk inside the invertible-head locus by
+        -- `exists_sourceOrientedNormalParameterBall_subset_head_det_isUnit`.
         -- The older draft used an unimplemented continuous-linear equivalence
         -- `sourceOrientedRankDeficientNormalParameterCoordEquiv`; production
         -- Lean should not require that stronger surface.  The head radius is
