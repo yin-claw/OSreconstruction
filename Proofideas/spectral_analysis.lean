@@ -2,6 +2,16 @@
 Copyright (c) 2026 ModularPhysics Contributors. All rights reserved.
 Released under Apache 2.0 license.
 Authors: ModularPhysics Contributors
+
+PARKED 2026-05-06 (was `OSReconstruction/GeneralResults/SpectralAnalysis.lean`).
+Moved to `Proofideas/` per PR #82 review (xiyin137): the two functional-
+analysis axioms in this file (`spectral_riemann_lebesgue`,
+`continuous_translate_schwartz`) were introduced for the
+Källén-Lehmann route, never made it through formal axiom-gate review,
+and are not used after the cluster theorem pivoted to the Ruelle 1962
+route. Preserved here. Both are standard Mathlib-style FA statements
+that can be re-introduced under the standard axiom-gate process if
+needed downstream.
 -/
 import Mathlib.MeasureTheory.Measure.MeasureSpace
 import Mathlib.MeasureTheory.Integral.Bochner.Basic

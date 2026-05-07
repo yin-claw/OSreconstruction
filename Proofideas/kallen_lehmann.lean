@@ -2,6 +2,15 @@
 Copyright (c) 2026 ModularPhysics Contributors. All rights reserved.
 Released under Apache 2.0 license.
 Authors: ModularPhysics Contributors
+
+PARKED 2026-05-06 (was `OSReconstruction/Wightman/Spectral/KallenLehmann.lean`).
+Moved to `Proofideas/` per PR #82 review (xiyin137): the 5 axioms in this
+file are QFT-specific (vacuum spectral measure, W₂ spectral support, etc.)
+and were not used in production after the cluster theorem pivoted to the
+Ruelle 1962 route. Preserved here as a reusable spectral primitive in case
+a future state-specific spectral derivation is wanted (mass gap, asymptotic
+completeness, particle interpretation). The cluster derivation that
+consumed these axioms is parked alongside in `cluster_from_kallen_lehmann.lean`.
 -/
 import OSReconstruction.Wightman.Reconstruction.Core
 import OSReconstruction.Wightman.Reconstruction.SchwingerOS

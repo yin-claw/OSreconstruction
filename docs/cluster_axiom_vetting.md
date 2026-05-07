@@ -1,12 +1,25 @@
 # Cluster route axiom vetting log
 
-Vetting record for the textbook axioms used in the spectral / Källén-Lehmann
-route to closing `W_analytic_cluster_integral` (`r2e/kallen-lehmann-revival`
-branch).
+Vetting record for axioms considered while closing `W_analytic_cluster_integral`
+on the `r2e/kallen-lehmann-revival` branch.
+
+**Status (2026-05-06)**: the cluster theorem is closed via the **Ruelle 1962
+route** (see "Pivot" section below). The KL/spectral-route axioms recorded
+here were superseded; entries 4–7 below describe axioms now parked in
+`Proofideas/kallen_lehmann.lean`. They are no longer in the production
+trust surface. Entries 1–3 (`snag_theorem`, `spectral_riemann_lebesgue`,
+`continuous_translate_schwartz`) likewise: `snag_theorem` remains in
+production via `GeneralResults/SNAGTheorem.lean`; the other two have
+been parked in `Proofideas/spectral_analysis.lean`.
+
+The two production-trust additions made by PR #82 are the **Ruelle**
+axioms documented in the Pivot section. Both have docstring-level
+verdicts of "Standard" with full citation; their formal entry in this
+log is the audit-table row in that section.
 
 ---
 
-## Vetted axioms
+## Vetted axioms (historical — most superseded by Ruelle pivot)
 
 ### 1. `snag_theorem`
 **Verdict (Gemini chat, 2026-05-03)**: **Standard** — matches Reed-Simon I VIII.12 exactly.

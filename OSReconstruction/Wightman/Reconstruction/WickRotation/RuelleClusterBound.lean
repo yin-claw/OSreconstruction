@@ -103,6 +103,16 @@ axiom ruelle_analytic_cluster_bound
         z₂ ∈ ForwardTube d m →
         ∀ (a : SpacetimeDim d), a 0 = 0 →
           (∑ i : Fin d, (a (Fin.succ i)) ^ 2) > R ^ 2 →
+          -- Joint analytic-domain hypothesis: the appended config must
+          -- lie in the natural domain (PET) of `W_analytic_BHW (n+m)`.
+          -- For OPTR-supported Wick configurations with AE-distinct joint
+          -- times, this is established via `joint_wick_config_in_PET`.
+          -- (Without this hypothesis, the LHS evaluates `.val` outside
+          -- its analytic domain and the bound is meaningless.)
+          (Fin.append z₁
+              (fun k μ => z₂ k μ +
+                (if μ = 0 then (0 : ℂ) else (a μ : ℂ)))) ∈
+            PermutedExtendedTube d (n + m) →
           ‖(W_analytic_BHW Wfn (n + m)).val
               (Fin.append z₁
                 (fun k μ => z₂ k μ +
@@ -150,7 +160,18 @@ spacelike directions.
 axiom ruelle_analytic_cluster_pointwise
     (Wfn : WightmanFunctions d) (n m : ℕ)
     (z₁ : Fin n → Fin (d + 1) → ℂ) (z₂ : Fin m → Fin (d + 1) → ℂ)
-    (hz₁ : z₁ ∈ ForwardTube d n) (hz₂ : z₂ ∈ ForwardTube d m) :
+    (hz₁ : z₁ ∈ ForwardTube d n) (hz₂ : z₂ ∈ ForwardTube d m)
+    -- Joint analytic-domain hypothesis: eventually-in-`a` (along the
+    -- spatial-cobounded filter), the appended config lies in PET.
+    -- For OPTR-supported Wick configurations with AE-distinct joint
+    -- times, this holds for all such `a` (via `joint_wick_config_in_PET`).
+    (h_joint_PET : ∀ᶠ a : SpacetimeDim d in
+        Filter.principal {a : SpacetimeDim d | a 0 = 0} ⊓
+          Bornology.cobounded (SpacetimeDim d),
+      (Fin.append z₁
+          (fun k μ => z₂ k μ +
+            (if μ = 0 then (0 : ℂ) else (a μ : ℂ)))) ∈
+        PermutedExtendedTube d (n + m)) :
     Filter.Tendsto
       (fun a : SpacetimeDim d =>
         (W_analytic_BHW Wfn (n + m)).val
@@ -819,9 +840,24 @@ theorem W_analytic_cluster_integral_via_ruelle
         -- Positivity of times from OPTR.
         have hp1_pos : ∀ i : Fin n, p.1 i 0 > 0 := fun i => (hp1 i).1
         have hp2_pos : ∀ i : Fin m, p.2 i 0 > 0 := fun i => (hp2 i).1
+        -- Joint-PET membership eventually-in-`a`: from h_distinct_joint
+        -- we get joint PET for all `a` with `a 0 = 0`.
+        have h_joint_PET_eventually : ∀ᶠ a : SpacetimeDim d in
+            Filter.principal {a : SpacetimeDim d | a 0 = 0} ⊓
+              Bornology.cobounded (SpacetimeDim d),
+            (Fin.append (fun k => wickRotatePoint (p.1 k))
+                (fun k μ => wickRotatePoint (p.2 k) μ +
+                  (if μ = 0 then (0 : ℂ) else (a μ : ℂ)))) ∈
+              PermutedExtendedTube d (n + m) := by
+          refine Filter.eventually_iff_exists_mem.mpr
+            ⟨{a : SpacetimeDim d | a 0 = 0}, ?_, ?_⟩
+          · exact Filter.mem_inf_of_left (Filter.mem_principal_self _)
+          · intro a ha₀
+            exact joint_wick_config_in_PET n m p.1 p.2 a ha₀ hp1_pos hp2_pos
+              h_distinct_joint
         -- The Ruelle pointwise axiom gives Tendsto for W_analytic_BHW.
         have h_ruelle_pt :=
-          ruelle_analytic_cluster_pointwise Wfn n m _ _ hw1 hw2
+          ruelle_analytic_cluster_pointwise Wfn n m _ _ hw1 hw2 h_joint_PET_eventually
         unfold clusterIntegrand clusterLimitIntegrand
         -- Bridge: F_ext_on_translatedPET_total = W_analytic_BHW on each config.
         -- Single n-config: wick(p.1) ∈ ForwardTube ⊆ PET.
@@ -1128,10 +1164,20 @@ theorem W_analytic_cluster_integral_via_ruelle
               wick_OPTR_in_forwardTube m p.2 hp2
             have hp1_pos : ∀ i : Fin n, p.1 i 0 > 0 := fun i => (hp1 i).1
             have hp2_pos : ∀ i : Fin m, p.2 i 0 > 0 := fun i => (hp2 i).1
+            -- Joint PET membership: the joint Wick-rotated config (with
+            -- spatial m-block shift) lies in PET when joint times are
+            -- distinct (established by h_distinct_joint via AE).
+            have h_joint_PET :
+                (Fin.append (fun k => wickRotatePoint (p.1 k))
+                  (fun k μ => wickRotatePoint (p.2 k) μ +
+                    (if μ = 0 then (0 : ℂ) else (a μ : ℂ)))) ∈
+                  PermutedExtendedTube d (n + m) :=
+              joint_wick_config_in_PET n m p.1 p.2 a ha.1 hp1_pos hp2_pos
+                h_distinct_joint
             -- Apply Ruelle's bound to the joint analytic continuation.
             have h_ruelle_bound :=
               h_ruelle (fun k => wickRotatePoint (p.1 k))
-                (fun k => wickRotatePoint (p.2 k)) hw1 hw2 a ha.1 ha.2
+                (fun k => wickRotatePoint (p.2 k)) hw1 hw2 a ha.1 ha.2 h_joint_PET
             -- Use ‖wick z‖ = ‖z‖ to convert Ruelle's bound to dominator form.
             rw [wickRotate_norm_eq, wickRotate_norm_eq] at h_ruelle_bound
             -- Bridge F_ext_on_translatedPET_total ↔ W_analytic_BHW on the joint

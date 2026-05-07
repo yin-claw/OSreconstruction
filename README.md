@@ -24,10 +24,10 @@ The tracked production tree currently contains **13 explicit axioms**:
 - `reduced_bargmann_hall_wightman_of_input` in `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean`
 
 **Wightman cluster — Ruelle 1962 (2):**
-- `ruelle_analytic_cluster_bound` in `Wightman/Reconstruction/WickRotation/RuelleClusterBound.lean` — uniform-in-`a` polynomial bound on the analytic continuation of the (n+m)-point function for spatially separated arguments. Reference: Ruelle 1962 (Helv. Phys. Acta 35), Jost VI.1, Streater-Wightman §3.4.
-- `ruelle_analytic_cluster_pointwise` in `Wightman/Reconstruction/WickRotation/RuelleClusterBound.lean` — pointwise factorization of the analytic continuation as `|⃗a| → ∞` along spacelike directions. Reference: Araki-Hepp-Ruelle 1962 Theorem 2 (Helv. Phys. Acta 35, 164).
+- `ruelle_analytic_cluster_bound` in `Wightman/Reconstruction/WickRotation/RuelleClusterBound.lean` — uniform-in-`a` polynomial bound on the analytic continuation of the (n+m)-point function for spatially separated arguments, on configs in the joint analytic domain (`PermutedExtendedTube d (n+m)`). Reference: Ruelle 1962 (Helv. Phys. Acta 35), Jost VI.1, Streater-Wightman §3.4.
+- `ruelle_analytic_cluster_pointwise` in `Wightman/Reconstruction/WickRotation/RuelleClusterBound.lean` — pointwise factorization of the analytic continuation as `|⃗a| → ∞` along spacelike directions, hypothesizing eventual joint-PET membership of the appended config. Reference: Araki-Hepp-Ruelle 1962 Theorem 2 (Helv. Phys. Acta 35, 164).
 
-These two axioms together close `W_analytic_cluster_integral` (OS axiom E4 on the Wick-rotated Schwinger side) via dominated convergence; they encode the spectral-gap content of R4 at the analytic level.
+These two axioms together discharge `W_analytic_cluster_integral` (the analytic-cluster ingredient of OS axiom E4 on the Wick-rotated Schwinger side, for OPTR-supported tests) via dominated convergence; they encode the spectral-gap content of R4 at the analytic level. The OPTR-restricted bridge to the public `OsterwalderSchraderAxioms.E4_cluster` surface is `schwinger_E4_cluster_OPTR_case` in the same file. The full lift from OPTR-supported to arbitrary `ZeroDiagonalSchwartz` tests is left for follow-up.
 
 The former `vladimirov_tillmann` axiom has been **proved as a theorem** from 3 of the SCV axioms above plus ~10K lines of Paley-Wiener-Schwartz proofs. See `docs/vladimirov_tillmann_summary.md` for details.
 
