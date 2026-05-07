@@ -11417,7 +11417,21 @@ Proof decomposition of this theorem, without hiding the analytic work:
       is reserved for genuine full-coordinate oriented-invariant
       homeomorphisms, not for determinant-coordinate source changes.
 
-      The proof body of the chart theorem is consequently fixed.  Notice that
+      The proof body of the chart theorem is consequently fixed.  The Lean
+      interface part of this correction is now checked in
+      `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedRankDeficientTubeResidual.lean`:
+      `BHW.SourceOrientedRankDeficientNormalFormData` records the actual
+      source-level `toOriginal` return map and its variety-relative
+      compatibility, `BHW.SourceOrientedResidualPolydiscData` records the
+      compact residual family with original-coordinate `Ω`,
+      `originalInvariant_mem`, `image_surj`, and `maxRank_dense_original`, and
+      `BHW.sourceOrientedRankDeficientResidualChartProducer_of_tubeResidualPolydiscProducer`
+      mechanically converts such a producer into the already checked
+      `BHW.SourceOrientedRankDeficientResidualChartProducer`.  This is only
+      the checked interface/reducer; the hard theorem remains the construction
+      of the normal-form data and tube residual-polydisc fields.
+
+      Notice that
       it consumes the original-coordinate polydisc fields directly; it does
       not apply `SourceOrientedInvariantTransportEquiv.invFun` to a normal
       open set.
