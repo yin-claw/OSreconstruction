@@ -4102,19 +4102,19 @@ implementation contract is:
    ordinary Hall-Wightman adapted normal form, the residual coefficient
    polydisc, the extended-tube stability shrink, Schur-tail image
    surjectivity, and max-rank density to be proved before the residual chart
-   can be assembled.  The transport interface is now checked in
-   `SourceOrientedTransport.lean` as a homeomorphism preserving the oriented
-   variety and max-rank predicate, with derived inverse-image openness and
-   inverse max-rank/variety preservation lemmas.  It also now checks
-   `BHW.sourceOrientedInvariantTransport_mem_inter_iff` for moving
-   `Ω ∩ sourceOrientedGramVariety` through `toFun`/`invFun`, and
-   `BHW.sourceOrientedInvariantTransport_invFun_image_inter_variety_relOpen`,
-   `BHW.sourceOrientedInvariantTransport_invFun_image_inter_variety_subset_image`,
-   and `BHW.sourceOrientedInvariantTransport_invFun_image_eq_inter_variety`
-   for pulling normal Schur image-surjectivity and relative openness back to
-   original oriented coordinates.  Finally,
-   `BHW.sourceOrientedInvariantTransport_closure_maxRankDense` transports
-   residual max-rank-density closure statements through `invFun`.  The
+   can be assembled.  The checked transport interfaces in
+   `SourceOrientedTransport.lean` are still useful, but the residual-chart
+   producer may not depend on an ambient `SourceOrientedInvariantTransportEquiv`
+   for source-matrix normal forms.  The checked source-matrix return path is
+   variety-relative (`SourceOrientedVarietyTransportEquiv`), so the
+   extended-tube residual polydisc must return its original-coordinate ambient
+   open set directly: `Ω : Set (SourceOrientedGramData d n)`,
+   `Ω_open : IsOpen Ω`, original-coordinate image membership, original-coordinate
+   image surjectivity, and original-coordinate max-rank density.  The ambient
+   `Ω` is chosen after pulling the normal subtype-open Schur image back through
+   the variety transport and representing that relatively open set by an
+   actual ambient open neighborhood; it is not obtained by applying an
+   unavailable ambient source-matrix coordinate homeomorphism.  The
    normal-form packet now separates the actual
    extended-tube adapted representative `adaptedBase` from the canonical
    normal coordinate source `normalBase = hwLemma3CanonicalSource d n r`.
@@ -4124,13 +4124,14 @@ implementation contract is:
    transport is stored only in
    `SourceOrientedResidualPolydiscData.toOriginal_residualVector_mem_ET`.
    This closes the previous gap where an arbitrary source-coordinate normal
-   form was implicitly treated as tube-preserving.  The residual data now also
-   stores its normal neighborhood `Ω`, image-surjectivity field, and max-rank
+   form was implicitly treated as tube-preserving or as an ambient oriented
+   coordinate homeomorphism.  The residual data now also stores the
+   original-coordinate neighborhood `Ω`, image-surjectivity field, and max-rank
    density field, produced by the explicit
-   `sourceOriented_rankDeficient_normalParameterPolydisc` theorem.  That
-   theorem uses head-factor, mixed-coefficient, and tail residual-vector
-   coordinates; it is not allowed to recover surjectivity later from an
-   arbitrary compact parameter set.  Its max-rank-density field is pinned by
+   `sourceOriented_rankDeficient_tubeResidualPolydisc` theorem.  That theorem
+   uses head-factor, mixed-coefficient, and tail residual-vector coordinates;
+   it is not allowed to recover surjectivity later from an arbitrary compact
+   parameter set.  Its max-rank-density field is pinned by
    `sourceShiftedTailOrientedMaxRank_dense_in_parameterOpen` plus
    `sourceOrientedNormalParameterVector_maxRank_iff_tail`, so the density
    argument perturbs only the Schur tail while the invertible head block stays

@@ -116,6 +116,22 @@ end SourceOrientedInvariantTransportEquiv
 abbrev SourceOrientedVariety (d n : ℕ) :=
   {G : SourceOrientedGramData d n // G ∈ sourceOrientedGramVariety d n}
 
+/-- An actual source tuple, packaged as a point of the oriented source
+variety via its oriented Minkowski invariant. -/
+noncomputable def sourceTupleOrientedVarietyPoint
+    (d n : ℕ)
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    SourceOrientedVariety d n :=
+  ⟨sourceOrientedMinkowskiInvariant d n z, ⟨z, rfl⟩⟩
+
+@[simp]
+theorem sourceTupleOrientedVarietyPoint_val
+    (d n : ℕ)
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    (sourceTupleOrientedVarietyPoint d n z).1 =
+      sourceOrientedMinkowskiInvariant d n z :=
+  rfl
+
 /-- Underlying ambient set of a subtype set in the oriented source variety. -/
 def sourceOrientedVarietyUnderlyingSet
     (d n : ℕ) (S : Set (SourceOrientedVariety d n)) :
