@@ -11463,11 +11463,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.SourceOrientedRankDeficientNormalFormData.exists_ofAdaptedBase`
       packages the existing Schur normal-form matrix construction and
       Lorentz/Witt normalization once an adapted ET base is supplied, and
+      `BHW.SourceOrientedRankDeficientNormalFormData.exists_ofExtendedTube`
+      combines the checked adapted ET representative with the rank-deficient
+      same-oriented-invariant conversion to produce the source-level normal
+      form data from an original extended-tube tuple,
       `BHW.sourceOrientedRankDeficientResidualChartProducer_of_tubeResidualPolydiscProducer`
       mechanically converts such a producer into the already checked
       `BHW.SourceOrientedRankDeficientResidualChartProducer`.  This is only
-      the checked interface/reducer; the hard theorem remains the construction
-      of the normal-form data and tube residual-polydisc fields.
+      the checked interface/reducer plus normal-form producer; the hard theorem
+      remains the construction of the tube residual-polydisc fields.
 
       Notice that
       it consumes the original-coordinate polydisc fields directly; it does
@@ -25049,7 +25053,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.hw_nullPlane_orthogonality_relation` is also checked there, with
       the corrected required hypothesis `α ≠ 0`; so is
       `BHW.imag_difference_orthogonal_realVector`, and
-      `BHW.imag_nullNormalForm_coefficients`.
+      `BHW.imag_nullNormalForm_coefficients`.  The equation-(41) cone
+      removal theorem `BHW.forwardCone_remove_spacelikeOrthogonal_twoPlane`
+      and the tube part of the second remark
+      `BHW.hw_secondRemark_eta_mem_forwardTube` are checked there as well.
       The proofs are purely
       definitional/topological: they use `complexLorentzVectorAction_add`,
       `complexLorentzVectorAction_smul`, `complexLorentzAction_inv`,
@@ -25361,23 +25368,140 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (∀ i, b * x i = a * y i)
       ```
 
-      together with the time-coordinate equations to produce one real null
-      vector `ℓ` and scalars `a,b` satisfying the definition of
-      `BHW.realNullCollinear`.  The zero-spatial-vector subcases are closed
-      by `BHW.sum_sq_eq_zero`, which forces the whole null vector to vanish;
-      the hypothesis `hne` then selects the nonzero common direction.
+      This equality case is not a black-box appeal to Hilbert-space
+      equality.  It is a finite-sum calculation with the following checked
+      expansion target:
+
+      ```lean
+      theorem BHW.sum_sq_linear_combination_expand
+          {ι : Type} [Fintype ι]
+          (x y : ι -> ℝ) (A B : ℝ) :
+          ∑ i, (A * x i - B * y i) ^ 2 =
+            A ^ 2 * (∑ i, x i ^ 2)
+              - 2 * A * B * (∑ i, x i * y i)
+              + B ^ 2 * (∑ i, y i ^ 2)
+      ```
+
+      The proof of `real_cauchy_eq_collinear_of_abs_dot_eq_norms` is:
+      set
+      `xy := ∑ i, x i * y i`,
+      `xx := ∑ i, x i ^ 2`, and
+      `yy := ∑ i, y i ^ 2`.  Nonnegativity of `xx` and `yy` is
+      `Finset.sum_nonneg (fun i _ => sq_nonneg _)`.  Squaring `heq` gives
+
+      ```lean
+      have hsq : xy ^ 2 = xx * yy := by
+        have h := congrArg (fun r : ℝ => r ^ 2) heq
+        simpa [xy, xx, yy, sq_abs, mul_pow,
+          Real.sq_sqrt hxx_nonneg, Real.sq_sqrt hyy_nonneg] using h
+      ```
+
+      If `xx = 0`, then `BHW.sum_sq_eq_zero x` gives `x = 0`; choose
+      `(a,b) = (0,1)`.  If `xx ≠ 0`, choose `(a,b) = (xx,xy)`.  The
+      expansion with `A = xy` and `B = xx`, followed by `ring_nf` and
+      `rw [hsq]`, proves
+
+      ```lean
+      have hsum0 :
+          ∑ i, (xy * x i - xx * y i) ^ 2 = 0 := by
+        have hexpand :=
+          BHW.sum_sq_linear_combination_expand x y xy xx
+        rw [hexpand]
+        simp [xy, xx, yy] at hsq ⊢
+        ring_nf
+        rw [hsq]
+        ring
+      ```
+
+      Then `BHW.sum_sq_eq_zero (fun i => xy * x i - xx * y i)` gives
+      `xy * x i = xx * y i` for every coordinate, exactly the desired
+      `b * x i = a * y i`.  Together with the time-coordinate equations
+      this produces one real null vector `ℓ` and scalars `a,b` satisfying
+      the definition of `BHW.realNullCollinear`.  The zero-spatial-vector
+      subcases are closed by `BHW.sum_sq_eq_zero`, which forces the whole
+      null vector to vanish; the hypothesis `hne` then selects the nonzero
+      common direction.
+
+      The remaining synchronization for
+      `realNull_orthogonal_collinear` is also finite algebra.  From
+      `MinkowskiSpace.minkowskiInner_decomp` obtain
+
+      ```lean
+      hx_sp  : (∑ i : Fin d, x i.succ ^ 2) = x 0 ^ 2
+      hy_sp  : (∑ i : Fin d, y i.succ ^ 2) = y 0 ^ 2
+      hxy_sp : (∑ i : Fin d, x i.succ * y i.succ) = x 0 * y 0
+      ```
+
+      The null-vector square-root lemma and `hxy_sp` give the Cauchy
+      equality for the spatial parts, so the previous theorem returns
+      `a b : ℝ`, `a ≠ 0 ∨ b ≠ 0`, and
+      `hsp : ∀ i : Fin d, b * x i.succ = a * y i.succ`.  Summing
+      `hsp i * x i.succ` and `hsp i * y i.succ` gives
+
+      ```lean
+      hxrel_sum :
+        b * (∑ i : Fin d, x i.succ ^ 2) =
+          a * (∑ i : Fin d, x i.succ * y i.succ)
+      hyrel_sum :
+        b * (∑ i : Fin d, x i.succ * y i.succ) =
+          a * (∑ i : Fin d, y i.succ ^ 2)
+      ```
+
+      Rewriting these by `hx_sp`, `hy_sp`, and `hxy_sp` yields
+      `x 0 * (b * x 0 - a * y 0) = 0` and
+      `y 0 * (b * x 0 - a * y 0) = 0`.  If both time coordinates vanish,
+      the two null equations and `BHW.sum_sq_eq_zero` force `x = 0` and
+      `y = 0`, contradicting `hne`; otherwise one factor cancels and gives
+      `htime : b * x 0 = a * y 0`.
+
+      Finally split on `a = 0`.  If `a = 0`, then `b ≠ 0`; `hsp` and
+      `htime` force `x = 0`, so choose the common null vector `ℓ = y` with
+      coefficients `(0,1)`.  If `a ≠ 0`, then `x ≠ 0`; choose
+      `ℓ = x` with coefficients `(1, b / a)`, and use `hsp` plus `htime`
+      and `field_simp [a_ne]` to prove every coordinate of
+      `y = (b/a) • x`.  This finite Cauchy bridge and the
+      null-collinearity theorem are production-checked in
+      `SourceHWTubeCoefficient.lean` as
+      `BHW.sum_sq_linear_combination_expand`,
+      `BHW.real_cauchy_eq_collinear_of_abs_dot_eq_norms`, and
+      `BHW.realNull_orthogonal_collinear`.
 
       Proof of
-      `real_orthogonal_equalNorm_not_collinear_positive`: trichotomize
-      `A := MinkowskiSpace.minkowskiInner d x x`.
-      If `A = 0`, then both vectors are null and orthogonal, so
-      `realNull_orthogonal_collinear` contradicts `hnot`.  If `A < 0`,
-      then whichever of `x,y` is nonzero is timelike up to time orientation;
-      if its time component is negative, replace it by `-x`.  Apply
-      `MinkowskiSpace.minkowskiInner_orthogonal_to_timelike_nonneg` to the
-      other vector and the timelike vector.  This gives the other vector's
-      square `>= 0`, contradicting `heq : other.square = A < 0`.  Hence
-      only `0 < A` remains.
+      `real_orthogonal_equalNorm_not_collinear_positive`: set
+      `A := MinkowskiSpace.minkowskiInner d x x` and use
+      `lt_trichotomy A 0`.
+      If `A = 0`, then `heq.symm` rewrites
+      `MinkowskiSpace.minkowskiInner d y y = 0`; the checked
+      `BHW.realNull_orthogonal_collinear hx_null hy_null hxy hne`
+      contradicts `hnot`.  If `A < 0`, then `x` is timelike.  First prove
+      `x 0 ≠ 0`: if `x 0 = 0`, the decomposition
+      `A = -(x 0)^2 + ∑ i, x_i^2` and nonnegativity of the spatial square
+      contradict `A < 0`.  Split on the sign of `x 0`.
+
+      For `0 < x 0`, apply
+      `MinkowskiSpace.minkowskiInner_orthogonal_to_timelike_nonneg`
+      to `ξ = y` and `η = x`, with
+
+      ```lean
+      htimelike :
+        MinkowskiSpace.IsTimelike d x := by
+        simpa [MinkowskiSpace.IsTimelike,
+          MinkowskiSpace.minkowskiNormSq] using hA_neg
+      hfuture : MinkowskiSpace.IsFutureDirected d x := hx0_pos
+      horth_yx :
+        MinkowskiSpace.minkowskiInner d y x = 0 := by
+        simpa [MinkowskiSpace.minkowskiInner_comm] using hxy
+      ```
+
+      This gives `0 ≤ MinkowskiSpace.minkowskiInner d y y`, while
+      `heq` rewrites it to `A < 0`, contradiction.  For `x 0 < 0`, use
+      `η = fun μ => -x μ`; its time component is positive, its norm square
+      is still `A`, and `y` is orthogonal to it by bilinearity (or by
+      unfolding `MinkowskiSpace.minkowskiInner`).  The same nonnegativity
+      contradiction closes the negative-time branch.  Therefore the only
+      trichotomy branch left is `0 < A`.  This theorem is production-checked
+      in `SourceHWTubeCoefficient.lean` as
+      `BHW.real_orthogonal_equalNorm_not_collinear_positive`.
 
       With `hA_pos : 0 < A`, define
       `s : ℝ := Real.sqrt A`, `α : ℂ := (s : ℂ)`,
@@ -25388,7 +25512,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `u.v = 0 / s^2 = 0`.  Finally extensionality and field simplification
       give
       `fun μ => (qre μ : ℂ) + I * (qim μ : ℂ) =
-       fun μ => α * ((u μ : ℂ) + I * (v μ : ℂ))`.
+       fun μ => α * ((u μ : ℂ) + I * (v μ : ℂ))`.  In Lean, the
+      bilinear scaling equalities factor `1 / s^2` out of the finite
+      Minkowski sums with `Finset.sum_div`; the theorem is production-checked
+      in `SourceHWTubeCoefficient.lean` as
+      `BHW.realImag_null_not_collinear_to_spacelike_orthonormal`.
 
       theorem BHW.forwardCone_timeOrientation_constant_on_timelike_segment
           [NeZero d]
@@ -25521,6 +25649,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (hγ_one_time := by simpa using hYpr.1)
         exact ⟨htime_pos, hYY_neg⟩
 
+      Production status: checked in `SourceHWTubeCoefficient.lean` as
+      `BHW.forwardCone_remove_spacelikeOrthogonal_twoPlane`.  The checked
+      proof uses `MinkowskiSpace.minkowskiInner_add_right`,
+      `MinkowskiSpace.minkowskiInner_smul_right`, and
+      `MinkowskiSpace.minkowskiInner_comm` for the path-square expansion,
+      plus a local bridge
+      `MinkowskiSpace.minkowskiInner d Z Z =
+       ∑ μ, minkowskiSignature d μ * Z μ ^ 2`
+      to match the `BHW.InOpenForwardCone` definition.
+
       /-- Algebraic split of one complex null vector.  If `q ≠ 0`,
       `B(q,q)=0`, and `q` is orthogonal to a forward-tube configuration in
       the sense needed by the second remark, then `q` is a nonzero scalar
@@ -25581,6 +25719,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
         refine ⟨α, u, v, hα, ?_, huu, hvv, huv⟩
         ext μ
         simpa [qre, qim] using congrFun hq_reim μ
+
+      Production status: checked in `SourceHWTubeCoefficient.lean` as
+      `BHW.complexNullOrthogonal_forwardTube_spacelikeNormalForm`.  In the
+      production file this theorem is intentionally placed after
+      `BHW.nonzero_realNull_not_orthogonal_to_forwardCone_differences`,
+      because the lightlike-collinear exclusion uses that contradiction
+      theorem.
 
       /-- Hall-Wightman's coefficient split in the second remark.  Once
       `q = α (u + i v)`, every vector `ξ i` orthogonal to `q` decomposes
@@ -25643,6 +25788,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
             BHW.sourceComplexMinkowskiInner_smul_right, hcv_q,
             hcv_relation, hα]
 
+      Production status: checked in `SourceHWTubeCoefficient.lean` as
+      `BHW.hw_secondRemark_coefficients_orthogonalTo_nullPlane`.  The checked
+      proof introduces `U := fun μ => (u μ : ℂ)` and
+      `V := fun μ => (v μ : ℂ)`, casts `huu`, `huv`, and `hvv` into
+      `sourceComplexMinkowskiInner` identities for `U,V`, and then computes
+      `cu q = α` and `cv q = I * α` from right-linearity.
+
       /-- The tube part of Hall-Wightman's second remark after the coefficient
       split: if `ξ + a q` is in the forward tube and
       `ξ = η + β q` is the orthogonal-null-plane split, then `η` is in the
@@ -25674,49 +25826,92 @@ Proof decomposition of this theorem, without hiding the analytic work:
         intro k
         let prevη : Fin (d + 1) -> ℂ :=
           if h : k.val = 0 then 0 else η ⟨k.val - 1, by omega⟩
-        let prevξ : Fin (d + 1) -> ℂ :=
-          if h : k.val = 0 then 0 else ξ ⟨k.val - 1, by omega⟩
         let δη : Fin (d + 1) -> ℂ := fun μ => η k μ - prevη μ
         let γ : ℂ :=
           (β k + a k) -
             (if h : k.val = 0 then 0
              else β ⟨k.val - 1, by omega⟩ +
                   a ⟨k.val - 1, by omega⟩)
-        have hdiff :
+        have hdiff_tube :
             (fun μ =>
-              ((ξ k μ + a k * q μ) -
-                (if h : k.val = 0 then 0
-                 else ξ ⟨k.val - 1, by omega⟩ μ +
-                      a ⟨k.val - 1, by omega⟩ * q μ)).im)
+              (let prev : Fin (d + 1) -> ℂ :=
+                if h : k.val = 0 then 0
+                else (fun i μ => ξ i μ + a i * q μ)
+                  ⟨k.val - 1, by omega⟩
+              ((fun i μ => ξ i μ + a i * q μ) k μ - prev μ).im))
             =
             fun μ => (δη μ + γ * q μ).im := by
           ext μ
-          simp [δη, prevη, hξ_split, γ, add_comm, add_left_comm, add_assoc,
-            sub_eq_add_neg, mul_add]
+          by_cases hk : k.val = 0
+          · simp [δη, prevη, hξ_split, γ, hk, add_comm, add_left_comm,
+              add_assoc, sub_eq_add_neg]
+            ring
+          · simp [δη, prevη, hξ_split, γ, hk, add_comm, add_left_comm,
+              add_assoc, sub_eq_add_neg]
+            ring
         have horth_u :
             MinkowskiSpace.minkowskiInner d
-              (fun μ => (δη μ).im) u = 0 :=
-          BHW.imag_difference_orthogonal_realVector
-            (d := d) huη k
+              (fun μ => (δη μ).im) u = 0 := by
+          by_cases hk : k.val = 0
+          · simpa [δη, prevη, hk] using
+              BHW.imag_difference_orthogonal_realVector (d := d) huη k
+          · simpa [δη, prevη, hk] using
+              BHW.imag_difference_orthogonal_realVector (d := d) huη k
         have horth_v :
             MinkowskiSpace.minkowskiInner d
-              (fun μ => (δη μ).im) v = 0 :=
-          BHW.imag_difference_orthogonal_realVector
-            (d := d) hvη k
+              (fun μ => (δη μ).im) v = 0 := by
+          by_cases hk : k.val = 0
+          · simpa [δη, prevη, hk] using
+              BHW.imag_difference_orthogonal_realVector (d := d) hvη k
+          · simpa [δη, prevη, hk] using
+              BHW.imag_difference_orthogonal_realVector (d := d) hvη k
         have hcone_with_plane :
             BHW.InOpenForwardCone d (fun μ => (δη μ + γ * q μ).im) := by
-          simpa [BHW.ForwardTube, hdiff] using hξaq k
+          have hcone_raw := hξaq k
+          dsimp [BHW.ForwardTube] at hcone_raw
+          convert hcone_raw using 1
+          ext μ
+          by_cases hk : k.val = 0
+          · simp [δη, prevη, γ, hk, hξ_split, add_comm, add_left_comm,
+              add_assoc, sub_eq_add_neg]
+            ring
+          · simp [δη, prevη, γ, hk, hξ_split, add_comm, add_left_comm,
+              add_assoc, sub_eq_add_neg]
+            ring
         rcases
           BHW.imag_nullNormalForm_coefficients
-            (d := d) hq γ with
+            (d := d) (γ := γ) hq with
           ⟨p, r, himag_eq⟩
+        have hcone_plane_real :
+            BHW.InOpenForwardCone d
+              (fun μ => (δη μ).im + p * u μ + r * v μ) := by
+          have hfun :
+              (fun μ => (δη μ + γ * q μ).im) =
+                fun μ => (δη μ).im + p * u μ + r * v μ := by
+            ext μ
+            calc
+              (δη μ + γ * q μ).im =
+                  (δη μ).im + (γ * q μ).im := by
+                rw [Complex.add_im]
+              _ = (δη μ).im + (p * u μ + r * v μ) := by
+                rw [congrFun himag_eq μ]
+              _ = (δη μ).im + p * u μ + r * v μ := by
+                ring
+          exact hfun ▸ hcone_with_plane
         have hremove :=
           BHW.forwardCone_remove_spacelikeOrthogonal_twoPlane
             (d := d) (Y := fun μ => (δη μ).im)
             (u := u) (v := v) (p := p) (r := r)
             huu hvv huv horth_u horth_v
-            (by simpa [himag_eq] using hcone_with_plane)
+            hcone_plane_real
         simpa [BHW.ForwardTube, δη, prevη] using hremove
+
+      Production status: checked in `SourceHWTubeCoefficient.lean` as
+      `BHW.hw_secondRemark_eta_mem_forwardTube`.  The checked proof does not
+      rely on an informal rewrite of `ForwardTube`: it introduces the
+      let-bound previous point from the definition, aligns it with `δη` and
+      `γ` by `by_cases hk : k.val = 0`, and uses `convert hcone_raw using 1`
+      before applying the checked equation-(41) cone-removal theorem.
 
       /-- Hall-Wightman's second remark after Lemma 2.  A forward-tube point
       with one orthogonal complex-null residual can be rewritten as a
@@ -25749,7 +25944,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
             simp [hq0]
         · rcases
             BHW.complexNullOrthogonal_forwardTube_spacelikeNormalForm
-              (d := d) hd hξq hq0 hq_null ?_ with
+              (d := d) hd hξq hq0 hq_null ?horthForwardPoint with
             ⟨α, u, v, hα, hq, huu, hvv, huv⟩
           · rcases
               BHW.hw_secondRemark_coefficients_orthogonalTo_nullPlane
@@ -25763,12 +25958,20 @@ Proof decomposition of this theorem, without hiding the analytic work:
             refine ⟨η, β, hηFT, ?_, hξ_split⟩
             exact Or.inr ⟨α, u, v, hα, hq, huu, hvv, huv, huη, hvη⟩
           · intro i
-            -- `hξq` is the forward point, but `q` is orthogonal to `ξ`.
-            -- The normal-form lemma only uses the orthogonality to the base
-            -- vectors; the extra `a i q` term is null and orthogonal to `q`.
-            simpa [BHW.sourceComplexMinkowskiInner_add_right,
-              BHW.sourceComplexMinkowskiInner_smul_right, hq_null,
-              hq_orth i]
+            -- The normal-form lemma is applied to the actual forward-tube
+            -- point `ζ i = ξ i + a i q`.  Orthogonality follows from
+            -- `B(q, ξ i) = 0` and `B(q,q) = 0`.
+            rw [BHW.sourceComplexMinkowskiInner_add_right,
+              BHW.sourceComplexMinkowskiInner_smul_right,
+              hq_orth i, hq_null]
+            ring
+
+      Production status: checked in `SourceHWTubeCoefficient.lean` as
+      `BHW.hw_secondRemark_forwardTube_singleNullResidual_normalForm`.  The
+      nonzero branch applies the normal-form theorem to the actual forward
+      point `fun i μ => ξ i μ + a i * q μ`; the required orthogonality is a
+      checked right-linearity calculation, not an implicit reuse of
+      `hq_orth`.
 
       /-- Hall-Wightman's third remark after Lemma 2.  In the standard null
       normal form, changing the coefficients of the null residual keeps the
@@ -25802,6 +26005,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (u v : Fin (d + 1) -> ℝ)
           (t : ℝ) :
           IsLinearMap ℂ (BHW.complexMinkowskiTwoPlaneRotation (d := d) u v t)
+
+      In production this is packaged as the reusable linear map
+      `BHW.complexMinkowskiTwoPlaneRotationLinearMap`; its `toFun` is
+      definitionally `BHW.complexMinkowskiTwoPlaneRotation`, with additivity
+      and scalar compatibility proved by expanding right-linearity of
+      `sourceComplexMinkowskiInner`.
 
       theorem BHW.complexMinkowskiTwoPlaneRotation_apply_orthogonal
           [NeZero d]
@@ -26215,6 +26424,20 @@ Proof decomposition of this theorem, without hiding the analytic work:
               atTop (nhds η) := by
           simpa using htend.const_add η
         exact hto.eventually (hopen.mem_nhds hη)
+
+      Production status: checked in `SourceHWTubeCoefficient.lean` for
+      `BHW.complexMinkowskiTwoPlaneRotation`,
+      `BHW.complexMinkowskiTwoPlaneRotationLinearMap`,
+      `BHW.complexMinkowskiTwoPlaneRotation_apply_orthogonal`,
+      `BHW.complexMinkowskiTwoPlaneRotation_apply_u`,
+      `BHW.complexMinkowskiTwoPlaneRotation_apply_v`,
+      `BHW.complexMinkowskiTwoPlaneRotation_scale_null`, and
+      `BHW.forwardTube_eventually_singleNullSmallCoefficients`.  The
+      null-scaling proof explicitly computes `B(U,q)=α` and `B(V,q)=I*α`,
+      rewrites `Complex.cosh t + Complex.sinh t = Complex.exp t`, and reduces
+      the remaining `I^2 = -1` algebra by `ring_nf` followed by
+      `Complex.I_sq`.  The next unchecked theorem in this block is the
+      determinant-one/Lorentz-group conversion for the same rotation.
 
       theorem BHW.hw_thirdRemark_nullNormalForm_allCoefficients_mem_extendedTube
           [NeZero d]
@@ -30622,7 +30845,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | Selected-span alignment and common residual subspaces | Proof transcript pinned; production Lean not started. | First align the selected `z` and `w` spans by determinant-repaired Witt extension; only then put the two residual families in the common orthogonal complement.  Reversing this order is false.  The residual subspaces and their isotropy/orthogonality fields are extracted from the aligned decomposition. |
       | Common isotropic residual frame plus dual frame | Proof transcript pinned; production Lean not started. | Build a maximal isotropic frame in the common orthogonal complement, inject the left residual span into it by the Witt-index/dimension theorem, extract coefficient functions with `exists_coefficients_of_mem_span_finite_frame`, then construct the dual frame recursively inside the nondegenerate complement and store `qDual_pair_zero`, `q_dual`, `qDual_orth`. |
       | Isotropic contraction family | Proof transcript pinned; production Lean not started. | Define the partial isometry on `span ξ ⊔ span q ⊔ span qDual` fixing `ξ`, scaling `q` by `exp(-t)`, and scaling `qDual` by `exp(t)`; prove form preservation from `q_pair_zero`, `qDual_pair_zero`, `q_dual`, and orthogonality to `ξ`; extend by `complexMinkowski_wittExtension_subspaceIsometry`. |
-      | Extended-tube stability for all residual coefficients | Proof transcript pinned; corrected target for arbitrary endpoints is `ExtendedTube`, not `ForwardTube`. | Hall-Wightman's second remark gives `hw_secondRemark_forwardTube_singleNullResidual_normalForm` via the real/imaginary null split, exclusion of the lightlike-collinear case, coefficient projection, and equation-(41) cone lemma; the third remark is the explicit complex two-plane rotation fixing the orthogonal complement and scaling `u + i v` by `exp t`; transport gives the arbitrary-endpoint one-null-vector theorem; finite induction gives `hw_isotropicFrame_allCoefficients_mem_extendedTube` without dual-frame hypotheses.  The dual frame is used only for the null-boost contraction and the two-curve value equality/limit, not for coefficient-freedom membership. |
+      | Extended-tube stability for all residual coefficients | Checked in `SourceHWTubeCoefficient.lean`; corrected target for arbitrary endpoints is `ExtendedTube`, not `ForwardTube`. | Hall-Wightman's second remark gives `hw_secondRemark_forwardTube_singleNullResidual_normalForm`; the third remark is the checked determinant-one complex Lorentz two-plane rotation fixing the orthogonal complement and scaling `u + i v` by `exp t`; transport gives `hw_singleIsotropicResidual_allCoefficients_mem_extendedTube`; finite induction and the empty-source wrapper give the public `hw_isotropicFrame_allCoefficients_mem_extendedTube`.  The dual frame is used only for the null-boost contraction and the two-curve value equality/limit, not for coefficient-freedom membership. |
       | Singular two-curve analytic limit | Lean-shaped topology transcript pinned; production Lean not started. | Once `HWSameSourceGramSingularContractionData` exists, continuity of `extendF` on `ExtendedTube`, orbit invariance, `Filter.Tendsto.congr'`, and `tendsto_nhds_unique` prove equality of endpoint values.  The required geometric input is exactly the contraction-data theorem in the preceding low-rank rows; no additional analytic gap remains in this limit step. |
       | `extendF_complexLorentzInvariant_of_cinv` | Implemented and exact-file checked in `ComplexInvariance/Extend.lean`, together with `BHW.extendF_preimage_eq_of_cinv`. | The proof unfolds `extendF`, chooses forward-tube preimages, and compares them by `complexLorentzAction_mul`; this is not a scalar representative theorem and does not use PET/EOW/locality. |
 
@@ -34231,9 +34454,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | --- | --- | --- |
       | Definitional subset and connectedness of `sourceExtendedTubeGramDomain` | Mechanically ready with checked support. | Use the image definition of `sourceExtendedTubeGramDomain`, the range definition of `sourceComplexGramVariety`, `BHW.isConnected_extendedTube`, and `BHW.contDiff_sourceMinkowskiGram`. |
       | Pointwise-to-global relative-open assembly | Mechanically ready after local realization. | Choose explicit neighborhoods from `sourceExtendedTubeGramDomain_relOpen_at`, form the subtype-indexed union, and use `sourceExtendedTubeGramDomain_subset_sourceComplexGramVariety`; no Hall-Wightman geometry occurs here. |
-      | Adapted same-Gram representative `hwLemma3_extendedTube_adaptedRankRepresentative` | Proof transcript pinned; production Lean not started. | Reduced to the Lemma-2 residual-frame/all-coefficients extended-tube theorem, checked selected projection/selected-orthogonality support, checked Schur-zero residual theorem, and checked span-rank equality; the blueprint explicitly forbids source-changing an arbitrary representative to zero tail. |
+      | Adapted same-Gram representative `hwLemma3_extendedTube_adaptedRankRepresentative` | Checked in `SourceHWAdaptedTubeRepresentative.lean`. | Assembles the checked residual-frame/all-coefficients extended-tube theorem, selected projection/selected-orthogonality support, Schur-zero residual theorem, and span-rank equality; the proof explicitly handles `n = 0` and forbids source-changing an arbitrary representative to zero tail. |
       | Principal block, projection, Schur-zero residual algebra, and residual-frame data | Checked in `SourceHWSelectedProjection.lean`. | The checked layer defines the principal block, selected coefficients, projection, and residual; proves selected rows are fixed, residuals are orthogonal to selected vectors and selected projections, complementary residual pairings are the reindexed rectangular Schur complement, rank-`r` residual pairings vanish over all original labels, original vectors are orthogonal to residuals, the selected projection preserves the full scalar Gram matrix, the projected source span has finrank `r`, every vector in a finite-frame span has explicit coordinates, and the selected residuals admit a finite linearly independent totally isotropic coordinate frame orthogonal to the selected projection tuple.  The checked theorem names are `hwLemma3_selectedResidual_selected`, `hwLemma3_selectedProjection_inner_residual`, `hwLemma3_selectedResidual_inner_projection`, `hwLemma3_selectedComplement_residual_inner_residual_eq_schur`, `hwLemma3_selectedResidual_inner_residual_eq_zero`, `hwLemma3_selectedProjection_gram_eq`, `hwLemma3_selectedProjection_span_finrank_eq_rank`, `exists_coefficients_of_mem_span_finite_frame`, and `hwLemma3_selectedResidual_isotropicFrameData`. |
-      | Normal-form source transport | Core finite source-change, head-normalization, adaptedness preservation, tail-zero, selected-head Witt/Lorentz orbit layer, Cauchy-Binet determinant transport, variety-relative source-matrix transport, exceptional-to-canonical source transport, subtype-valued normal-image transport, local-image transport adapters, invertible-head principal-Schur equality, transported max-rank-to-tail-rank rewrite, residual-tail exact-rank connectedness, final Schur-window shrink/topology packet, extracted-image inclusions, extracted-image openness, the corrected slice-gauge data surface, sliced forward residual/mixed extraction, sliced Witt/head-normalizer residual-tail membership, sliced extracted-image openness/reverse inclusion, sliced Schur parameter-window/local-image assembly, the finite-dimensional IFT producer `sourceRankDeficientHeadSliceGaugeData`, the concrete `maxRankLocalImageData_of_headSliceIFTSchurWindow` wrapper, the arbitrary exceptional-rank producer `sourceOrientedRankDeficientMaxRankLocalImageData_of_headSliceIFT`, the hard-range connectedness consumer `sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_headSliceIFT`, and the connected/preconnected-domain finite-overlap constructors checked in `SourceNormalFormTransport.lean`, `SourceOrientedRankDeficientNormalImage.lean`, `SourceOrientedRankDeficientLocalImageTransport.lean`, `SourceOrientedRankDeficientTailRankConnected.lean`, `SourceOrientedRankDeficientSliceParameter.lean`, `SourceOrientedRankDeficientSchurWindowShrink.lean`, `SourceOrientedRankDeficientCanonicalImage.lean`, `SourceOrientedHeadGauge.lean`, `SourceOrientedSchurTailSliceNormal.lean`, `SourceOrientedHeadGaugeNormal.lean`, `SourceOrientedBHWFiniteOverlap.lean`, and `SourceOrientedHeadSliceGaugeIFT.lean`. | The checked layer builds the source permutation, projection matrix, invertible symmetric congruence to `sourceHeadMetric`, canonical Gram congruence, coefficient-span/rank preservation under invertible source matrices, nondegeneracy from adaptedness, the concrete normal-form source-change tail-zero theorem, the complex Lorentz transport to `hwLemma3CanonicalSource`, `sourceOrientedMinkowskiInvariant_sourceTupleLinearChange`, `sourceOrientedVarietySourceMatrixTransportEquivOfMatrix`, `sourceOriented_lowRank_exists_normalFormSourceMatrix_to_canonical`, `sourceOriented_lowRank_exists_normalFormVarietyTransport_from_canonical`, `sourceOrientedNormalParameterVarietyPoint`, `SourceOrientedRankDeficientAlgebraicNormalFormData.originalNormalVarietyPoint`, `sourceOrientedNormalParameterVarietyPoint_eq_sourcePrincipalSchurGraph`, `SourceOrientedRankDeficientAlgebraicNormalFormData.parameterBox_maxRank_preimage_eq_tailRank`, the normal-image transport adapters, residual-tail exact-rank connectedness, the legacy head-domain shrink layer, the legacy forward residual/mixed bridges, the canonical extracted-image theorem, the sliced forward extraction bridges, the minimal head-factor refactor that gives the sliced residual-tail packet, the sliced extracted-image inclusions, the sliced parameter window topology, the sliced strengthened local-image wrapper, the concrete sliced-head IFT producer, the public canonical local-image wrapper that supplies it, the arbitrary exceptional-rank local-image producer, the hard-range connectedness theorem consuming it, and the finite-overlap constructors that now accept ordinary connected or nonempty preconnected domains.  The prior full-matrix `SourceRankDeficientHeadGaugeData` local-image wrapper is now classified as a conditional legacy surface, not a constructible endpoint.  Remaining work is the genuine Hall-Wightman/Jost geometric producer of nonempty preconnected finite-overlap domains and ordered containments.  It is not an ambient determinant-coordinate transport field, transported openness bookkeeping, separate transported-containment proof, source-change max-rank rewrite, radial endpoint argument, residual-tail middle-path topology, parameter-set shrink compatibility, extracted-image openness, sliced parameter-window assembly, sliced-head IFT problem, normal-form transport problem, local-image hypothesis problem, or max-rank-connectedness hypothesis problem. |
+      | Normal-form source transport | Source-level normal-form data with actual `toOriginal` is checked, together with the core finite source-change, head-normalization, adaptedness preservation, tail-zero, selected-head Witt/Lorentz orbit layer, Cauchy-Binet determinant transport, variety-relative source-matrix transport, exceptional-to-canonical source transport, subtype-valued normal-image transport, local-image transport adapters, invertible-head principal-Schur equality, transported max-rank-to-tail-rank rewrite, residual-tail exact-rank connectedness, final Schur-window shrink/topology packet, extracted-image inclusions, extracted-image openness, the corrected slice-gauge data surface, sliced forward residual/mixed extraction, sliced Witt/head-normalizer residual-tail membership, sliced extracted-image openness/reverse inclusion, sliced Schur parameter-window/local-image assembly, the finite-dimensional IFT producer `sourceRankDeficientHeadSliceGaugeData`, the concrete `maxRankLocalImageData_of_headSliceIFTSchurWindow` wrapper, the arbitrary exceptional-rank producer `sourceOrientedRankDeficientMaxRankLocalImageData_of_headSliceIFT`, the hard-range connectedness consumer `sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_headSliceIFT`, and the connected/preconnected-domain finite-overlap constructors checked in `SourceNormalFormTransport.lean`, `SourceHWAdaptedTubeRepresentative.lean`, `SourceOrientedRankDeficientTubeResidual.lean`, `SourceOrientedRankDeficientNormalImage.lean`, `SourceOrientedRankDeficientLocalImageTransport.lean`, `SourceOrientedRankDeficientTailRankConnected.lean`, `SourceOrientedRankDeficientSliceParameter.lean`, `SourceOrientedRankDeficientSchurWindowShrink.lean`, `SourceOrientedRankDeficientCanonicalImage.lean`, `SourceOrientedHeadGauge.lean`, `SourceOrientedSchurTailSliceNormal.lean`, `SourceOrientedHeadGaugeNormal.lean`, `SourceOrientedBHWFiniteOverlap.lean`, and `SourceOrientedHeadSliceGaugeIFT.lean`. | The checked layer now includes `hwLemma3_extendedTube_adaptedRankRepresentative`, `SourceOrientedRankDeficientNormalFormData.ofSourceMatrixLorentz`, `SourceOrientedRankDeficientNormalFormData.exists_ofAdaptedBase`, and `SourceOrientedRankDeficientNormalFormData.exists_ofExtendedTube`; it builds the adapted ET representative, rank-deficient same-oriented-invariant conversion, actual continuous `toOriginal`, and variety-relative source transport without using an ambient determinant-coordinate transport.  The prior full-matrix `SourceRankDeficientHeadGaugeData` local-image wrapper is now classified as a conditional legacy surface, not a constructible endpoint.  Remaining work is the genuine tube-valued residual-polydisc producer: compact ET shrink for `N.toOriginal (residualVector c)`, Schur image-surjectivity, original-coordinate max-rank density, and then the ordered finite-overlap/Jost domain containments. |
       | Near-identity selected-block square root | Proof transcript pinned; pure matrix analysis. | Define the finite matrix binomial series for `(1 + B)^(1/2)`, prove convergence via a scalar power-series majorant, transpose compatibility, square identity, and entrywise smallness via `matrix_opNorm_le_card_mul_sup_entry`. |
       | Schur-rank bound and Takagi residual factorization | Proof transcript pinned; pure finite linear algebra. | Prove block Gaussian rank equality, Autonne-Takagi with rank support and explicit entry-L1 control, small factorization, and tail embedding with coordinate estimates. |
       | Orthogonal-tail residual realization | Proof transcript pinned; production Lean not started. | Transport the Takagi factors into `complexMinkowskiOrthogonalTailSubspace`, prove they pair to the Schur complement and are orthogonal to the selected block, then transport back through the Minkowski orthogonal model with norm control. |

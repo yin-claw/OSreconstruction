@@ -1,5 +1,6 @@
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedLocalRealization
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedRankDeficientNormalImage
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceHWAdaptedTubeRepresentative
 
 /-!
 # Tube-valued rank-deficient residual polydiscs
@@ -239,6 +240,49 @@ theorem exists_ofAdaptedBase
       (d := d) (n := n) (z0 := z0) r hrD hrn
       hadaptedBase_mem hadaptedBase_same_oriented hMunit Λ
       (by simpa [M] using hΛ), rfl⟩
+
+/-- Existence of source-level rank-deficient normal-form data from an original
+extended-tube tuple.  The adapted representative is produced inside the
+ordinary extended tube before the source-matrix/Lorentz normal-form transport
+is assembled. -/
+theorem exists_ofExtendedTube
+    [NeZero d]
+    (hd : 2 ≤ d)
+    {n : ℕ}
+    {z0 : Fin n → Fin (d + 1) → ℂ}
+    (hz0 : z0 ∈ ExtendedTube d n)
+    (hlow :
+      ¬ SourceOrientedMaxRankAt d n
+        (sourceOrientedMinkowskiInvariant d n z0)) :
+    ∃ N : SourceOrientedRankDeficientNormalFormData d n z0,
+      N.adaptedBase ∈ ExtendedTube d n := by
+  classical
+  let G0 : Fin n → Fin n → ℂ := sourceMinkowskiGram d n z0
+  have hrank_lt :
+      sourceGramMatrixRank n G0 < d + 1 :=
+    sourceOriented_notMaxRank_sourceGramMatrixRank_lt_fullFrame
+      d n z0 hlow
+  rcases hwLemma3_extendedTube_adaptedRankRepresentative
+      (d := d) hd hz0 with
+    ⟨adaptedBase, hadapted_mem, hadapted_gram, hadapted_span⟩
+  have hadapted_rank_lt :
+      sourceGramMatrixRank n (sourceMinkowskiGram d n adaptedBase) < d + 1 := by
+    simpa [G0, hadapted_gram] using hrank_lt
+  have hadapted_oriented :
+      sourceOrientedMinkowskiInvariant d n adaptedBase =
+        sourceOrientedMinkowskiInvariant d n z0 :=
+    sourceOrientedMinkowskiInvariant_eq_of_sameGram_rank_lt
+      (d := d) n hadapted_gram hadapted_rank_lt
+  have hadapted_span' :
+      Module.finrank ℂ
+          (LinearMap.range (sourceCoefficientEval d n adaptedBase)) =
+        sourceGramMatrixRank n (sourceMinkowskiGram d n adaptedBase) := by
+    simpa [hadapted_gram] using hadapted_span
+  rcases exists_ofAdaptedBase
+      d n hadapted_mem hadapted_oriented
+      hadapted_rank_lt hadapted_span' with
+    ⟨N, _hN_adapted⟩
+  exact ⟨N, N.adaptedBase_mem⟩
 
 end SourceOrientedRankDeficientNormalFormData
 

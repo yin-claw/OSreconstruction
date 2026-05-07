@@ -4880,9 +4880,45 @@ implementation contract is:
    non-orthogonality to a strict forward-cone difference, the coefficient
    projection `ξ i = η i + β i q`, and the equation-(41) cone lemma
    `forwardCone_remove_spacelikeOrthogonal_twoPlane`.  This normal-form
-   packet explicitly assumes `[NeZero n]`; the `n = 0` case is a separate
+   packet explicitly assumes `[NeZero n]`.  The remaining finite Cauchy
+   equality case inside the Lorentz-index-one null-collinearity argument is
+   now pinned to a Lean-level sum-of-squares proof: define
+   `xy = ∑ i, x i * y i`, `xx = ∑ i, x i ^ 2`, `yy = ∑ i, y i ^ 2`, square
+   the equality hypothesis to get `xy ^ 2 = xx * yy`, expand
+   `∑ i, (xy * x i - xx * y i) ^ 2` with
+   `BHW.sum_sq_linear_combination_expand`, and close coordinatewise with the
+   checked `BHW.sum_sq_eq_zero`.  The subsequent time-coordinate
+   synchronization for `BHW.realNull_orthogonal_collinear` is likewise
+   explicit: multiply the spatial relation by `x_i` and `y_i`, sum, rewrite
+   with the three `minkowskiInner_decomp` identities, and cancel one nonzero
+   time factor unless both null vectors are zero, which is excluded by
+   `hne`.  The finite Cauchy bridge and null-collinearity theorem are now
+   checked in `SourceHWTubeCoefficient.lean`.  The next positivity lemma
+   `BHW.real_orthogonal_equalNorm_not_collinear_positive` is reduced to an
+   exact Lean trichotomy on `A = MinkowskiSpace.minkowskiInner d x x`: the
+   zero branch calls the checked null-collinearity theorem, and the negative
+   branch applies
+   `MinkowskiSpace.minkowskiInner_orthogonal_to_timelike_nonneg` to `x` or
+   `-x` according to the sign of the time component.  This positivity lemma is
+   now checked in `SourceHWTubeCoefficient.lean`, as is
+   `BHW.realImag_null_not_collinear_to_spacelike_orthonormal`, whose scaling
+   proof normalizes by `s = sqrt A` and factors `1 / s^2` through the finite
+   Minkowski sums with `Finset.sum_div`.  The forward-tube complex-null
+   normal form
+   `BHW.complexNullOrthogonal_forwardTube_spacelikeNormalForm` is also
+   checked, after the real-null forward-cone contradiction theorem it uses
+   to exclude the lightlike-collinear alternative.  No untracked Hilbert-space
+   equality-case theorem is being hidden here.  The `n = 0` case is a separate
    trivial empty-configuration branch and cannot be used to infer spacelike
-   normal form for an arbitrary null vector.  The third remark is
+   normal form for an arbitrary null vector.  The equation-(41) cone-removal
+   lemma `BHW.forwardCone_remove_spacelikeOrthogonal_twoPlane` is checked as
+   well; its path-square expansion uses the existing bilinearity lemmas for
+   `MinkowskiSpace.minkowskiInner` and a local conversion to the
+   `BHW.InOpenForwardCone` quadratic-sum convention.  The coefficient split
+   `BHW.hw_secondRemark_coefficients_orthogonalTo_nullPlane` is checked after
+   explicitly complexifying the real spacelike directions to `U,V` and casting
+   their real inner-product identities into `sourceComplexMinkowskiInner`.
+   The third remark is
    expanded through the explicit complex two-plane rotation
    `complexMinkowski_twoPlaneComplexRotation_lorentz`: fix the orthogonal
    complement of `span {u,v}` and act on the plane by
@@ -5094,7 +5130,7 @@ implementation contract is:
    | Low-rank selected principal block and residual frame | Checked in `BHWPermutation/SourceHWSelectedProjection.lean`; principal-minor extraction checked locally. | The checked layer defines `sourcePrincipalGramMatrix`, `hw_selectedSpanCoeff`, `hwLemma3_selectedProjection`, and `hwLemma3_selectedResidual`; proves selected rows are fixed, `row_i * A⁻¹ * A = row_i`, selected/projection-residual orthogonality, the complementary residual-Schur entry theorem, rank-`r` residual-residual zero, original/residual orthogonality, projection Gram equality, projected-span finrank `r`, explicit finite-frame coordinates for span membership, and `hwLemma3_selectedResidual_isotropicFrameData`.  Remaining low-rank work starts at extended-tube coefficient freedom and the two-endpoint residual alignment theorem, not selected Schur algebra. |
    | Low-rank residual-frame alignment | Proof transcript pinned; production Lean not started. | Align selected spans first, extract the residual span, choose an independent common isotropic frame `q`, store explicit coefficient functions for both residual families, and prove pairwise isotropy plus orthogonality to the selected block from the zero Schur complement. |
    | Dual frame and contraction family | Proof transcript pinned; production Lean not started. | Store `qDual_pair_zero`, `q_dual`, `qDual_orth`, build the finite partial boost scaling `q`/`qDual`, and Witt-extend it; the dual frame is used only for null-boost contraction and the two-curve value equality/limit, not for the coefficient-freedom membership theorem. |
-   | Tube stability and singular limit | Proof transcript pinned; corrected target for arbitrary endpoints is `ExtendedTube`, not `ForwardTube`; first API/collinear-exclusion bridge implemented and exact-file checked in `BHWPermutation/SourceHWTubeCoefficient.lean`. | Split off the trivial `n = 0` case.  The mechanical bridge layer now provides `HWNullResidualNormalForm`, `realNullCollinear`, `complexLorentzAction_add`, `complexLorentzAction_smul_vector`, `complexLorentzAction_cancel_left`, `sourceComplexMinkowskiInner_complexLorentzVectorAction`, `tendsto_singleResidual_exp_neg_zero`, `complexNull_iff_real_imag_equal_orthogonal`, `real_imag_nonzero_of_complex_ne_zero`, `realNullCollinear_commonVector`, `realNullCollinear_scalar_ne_zero_of_nonzero_direction`, `sum_sq_eq_zero`, `abs_sum_mul_le_sqrt_mul_sqrt`, `realNull_abs_time_eq_spatial_norm`, `realNullCollinear_orthogonal_forwardTube_differences`, `realNull_not_orthogonal_to_forwardCone`, `nonzero_realNull_not_orthogonal_to_forwardCone_differences`, `forwardCone_timeOrientation_constant_on_timelike_segment`, corrected `hw_nullPlane_orthogonality_relation` with explicit `α ≠ 0`, `imag_difference_orthogonal_realVector`, and `imag_nullNormalForm_coefficients`.  For `[NeZero n]`, prove Hall-Wightman's second remark as `hw_secondRemark_forwardTube_singleNullResidual_normalForm`: rule out the lightlike-collinear case by strict forward-cone non-orthogonality, normalize the non-collinear real/imaginary null plane to spacelike orthonormal vectors, project to `η + β q`, and apply the equation-(41) cone lemma.  Then prove the third-remark scaling theorem by the explicit complex two-plane rotation fixing the orthogonal complement and scaling `u + i v` by `exp t`; transport the one-null-vector coefficient theorem from a forward representative to an arbitrary extended-tube endpoint, and finite-induct to `hw_isotropicFrame_allCoefficients_mem_extendedTube`. |
+   | Tube stability and singular limit | Checked in `BHWPermutation/SourceHWTubeCoefficient.lean`; corrected target for arbitrary endpoints is `ExtendedTube`, not `ForwardTube`. | The checked layer now runs through Hall-Wightman's second and third remarks, the explicit determinant-one complex Lorentz two-plane rotation, the arbitrary-endpoint one-null coefficient theorem, the finite-frame induction, the `n = 0` wrapper, and the public base/all-coefficients theorem `BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube`.  It also records `complexLorentzAction_inv_left`, `complexLorentzVectorAction_inv_left`, and `sourceComplexMinkowskiInner_finset_sum_smul_right` as the Lean bridge lemmas needed by the transport and induction steps.  The dual frame remains only for the later null-boost contraction/value-limit packet, not for coefficient-freedom membership. |
    | `extendF_complexLorentzInvariant_of_cinv` | Implemented and exact-file checked in `ComplexInvariance/Extend.lean`. | Unfold `extendF`, choose forward-tube preimages, and use the new direct-preimage helper `BHW.extendF_preimage_eq_of_cinv`; no PET/EOW/locality and no scalar-representative content. |
 
    The oriented max-rank continuation layer consumes the following public
@@ -5603,9 +5639,9 @@ implementation contract is:
    | --- | --- | --- |
    | Definitional subset and connectedness | Mechanical with checked support. | Use the image/range definitions, `BHW.isConnected_extendedTube`, and `BHW.contDiff_sourceMinkowskiGram`. |
    | Pointwise-to-global relative-open assembly | Mechanical after local realization. | Choose explicit `sourceExtendedTubeGramDomain_relOpen_at` neighborhoods, form the subtype-indexed union, and use the subset lemma. |
-   | Adapted same-Gram representative | Proof transcript pinned; production Lean not started. | `hwLemma3_extendedTube_adaptedRankRepresentative` is reduced to the Lemma-2 residual-frame/all-coefficients extended-tube theorem, selected projection, Schur-zero residual theorem, and span-rank equality; the blueprint explicitly forbids source-changing an arbitrary representative to zero tail. |
+   | Adapted same-Gram representative | Checked in `BHWPermutation/SourceHWAdaptedTubeRepresentative.lean`. | `hwLemma3_extendedTube_adaptedRankRepresentative` now consumes the checked residual-frame/all-coefficients extended-tube theorem, selected projection, Schur-zero residual theorem, and span-rank equality.  It explicitly handles `n = 0` and forbids source-changing an arbitrary representative to zero tail. |
    | Principal block/projection/Schur-zero algebra | Proof transcript pinned; principal-minor extraction checked locally. | The blueprint now gives the selected coefficient definition, projection Gram equality, residual orthogonality, residual-residual zero via the Schur complement, and span-finrank theorem.  These are finite algebra support targets, not final wrappers. |
-   | Normal-form source transport | The algebraic variety-relative source-change layer is checked; the source-level ET normal-form producer with actual `toOriginal` is not yet proved.  The checked interface/reducer is now in `SourceOrientedRankDeficientTubeResidual.lean`. | Source permutation, projection matrix, congruence-to-identity, canonical Gram congruence, coefficient-span/rank preservation, tail-zero from adaptedness, the complex Lorentz transport to `hwLemma3CanonicalSource`, row-multilinearity for full-frame determinants, oriented invariant transport on actual tuples, the variety-subtype homeomorphism for invertible source matrices, max-rank preservation, `sourceOriented_lowRank_exists_normalFormSourceMatrix_to_canonical`, `sourceOriented_lowRank_exists_normalFormVarietyTransport_from_canonical`, `sourceOrientedNormalParameterVarietyPoint`, `SourceOrientedRankDeficientAlgebraicNormalFormData.originalNormalVarietyPoint`, the invertible-head principal-Schur equality `sourceOrientedNormalParameterVarietyPoint_eq_sourcePrincipalSchurGraph`, and the transported normal-image max-rank rewrite `SourceOrientedRankDeficientAlgebraicNormalFormData.originalNormalVarietyPoint_maxRank_iff_tail_rank` are checked.  `SourceOrientedRankDeficientTubeResidual.lean` also checks `SourceOrientedRankDeficientNormalFormData`, `SourceOrientedResidualPolydiscData`, and the reduction from a tube residual-polydisc producer to `SourceOrientedRankDeficientResidualChartProducer`.  What remains hard is the actual Hall-Wightman producer of that normal-form/polydisc data: adapted ET representative, source-level inverse transport, compact tube shrink, Schur image-surjectivity, and max-rank density.  The old ambient `SourceOrientedInvariantTransportEquiv` source-change target is rejected for determinant coordinates; downstream code must consume either actual source tuples or the checked `SourceOrientedVarietyTransportEquiv` interface. |
+   | Normal-form source transport | Source-level normal-form data with actual `toOriginal` is checked in `SourceOrientedRankDeficientTubeResidual.lean`. | `SourceOrientedRankDeficientNormalFormData.ofSourceMatrixLorentz`, `SourceOrientedRankDeficientNormalFormData.exists_ofAdaptedBase`, and `SourceOrientedRankDeficientNormalFormData.exists_ofExtendedTube` now assemble the adapted ET representative, rank-deficient same-oriented-invariant conversion, invertible source matrix, complex Lorentz normalization, continuous actual `toOriginal`, and variety-relative source transport.  What remains hard is the tube-valued residual-polydisc producer itself: compact tube shrink for `N.toOriginal (residualVector c)`, Schur image-surjectivity, and original-coordinate max-rank density.  The old ambient `SourceOrientedInvariantTransportEquiv` source-change target remains rejected for determinant coordinates. |
    | Near-identity square root | Proof transcript pinned; pure matrix analysis. | The blueprint gives the binomial-series construction of `(1 + B)^(1/2)`, convergence via a scalar power-series majorant, transpose compatibility, the square identity, and entrywise estimates from matrix norm bounds. |
    | Schur-rank/Takagi/tail factorization | Proof transcript pinned; pure finite linear algebra. | The proof is split into Mathlib Schur-complement rank factorization, Autonne-Takagi with rank support and explicit entry-L1 control, small factorization, and tail embedding with coordinate estimates. |
    | Orthogonal-tail residual realization | Proof transcript pinned; production Lean not started. | Takagi factors are transported into `complexMinkowskiOrthogonalTailSubspace`, paired to the Schur complement, kept orthogonal to the selected block, and transported back through the Minkowski orthogonal model with norm control. |
