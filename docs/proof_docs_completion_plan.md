@@ -4795,6 +4795,15 @@ implementation contract is:
    pointwise relation check.  It does not prove the SFT kernel theorem, the
    radical vanishing-ideal theorem, or the reverse statement
    `sourceOrientedGramVariety_eq_algebraic`.
+   The standard-dot side has the matching checked forward zero-locus support
+   in `SourceOrientedInvariantCoordinateStandardEval.lean`.  It defines
+   `standardSOCoordinateEval`, proves the standard Cauchy-Binet identity
+   `sourceMatrixMinor_sourceComplexDotGram_standardFullFrame`, and checks
+   `standardSOAlgebraicRelationGenerators_eval_eq_zero` and
+   `standardSOAlgebraicRelationIdeal_eval_eq_zero` for actual dot-tuples.
+   This narrows the future SFT target by confirming the displayed standard
+   relations really vanish on tuple invariants, but it still does not prove
+   that these relations generate the invariant-coordinate map kernel.
    The theorem-2 blueprint now tightens this into the single standard-dot
    support surface `BHW.standardSO_FFT_SFT_coordinatePresentation`, whose three
    outputs are: FFT generation by pairings and ordered volumes, SFT kernel
