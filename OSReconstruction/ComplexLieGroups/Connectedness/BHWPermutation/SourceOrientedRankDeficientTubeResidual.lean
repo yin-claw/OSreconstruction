@@ -1,5 +1,5 @@
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedLocalRealization
-import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedNormalParameterBall
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedNormalParameterFinCoord
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedRankDeficientNormalImage
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceHWAdaptedTubeRepresentative
 
@@ -452,6 +452,117 @@ theorem exists_normalParameterBall_toOriginal_mem_ET
   exists_sourceOrientedNormalParameterBall_subset_of_mem_nhds_center
     d n N.r N.hrD N.hrn
     N.toOriginal_normalParameterVector_mem_ET_mem_nhds_center
+
+/-- In concrete `Fin m -> ℂ` normal coordinates, choose a positive closed
+ball around the encoded center whose decoded returned source tuples stay in
+the extended tube. -/
+theorem exists_finCoordClosedBall_toOriginal_mem_ET
+    {d n : ℕ}
+    {z0 : Fin n → Fin (d + 1) → ℂ}
+    (N : SourceOrientedRankDeficientNormalFormData d n z0) :
+    ∃ ε : ℝ,
+      0 < ε ∧
+        sourceOrientedNormalParameterFinCoordClosedBall d n N.r ε ⊆
+          {c : Fin (sourceOrientedNormalParameterFinCoordDim d n N.r) → ℂ |
+            N.toOriginal
+                (sourceOrientedNormalParameterVector d n N.r N.hrD N.hrn
+                  ((sourceOrientedNormalParameterFinCoordHomeomorph
+                    (d := d) (n := n) (r := N.r)
+                    (hrD := N.hrD) (hrn := N.hrn)).symm c)) ∈
+              ExtendedTube d n} := by
+  let e :=
+    sourceOrientedNormalParameterFinCoordHomeomorph
+      (d := d) (n := n) (r := N.r) (hrD := N.hrD) (hrn := N.hrn)
+  let U :
+      Set (SourceOrientedRankDeficientNormalParameter d n N.r N.hrD N.hrn) :=
+    {p |
+      N.toOriginal
+          (sourceOrientedNormalParameterVector d n N.r N.hrD N.hrn p) ∈
+        ExtendedTube d n}
+  have hU : U ∈
+      𝓝 (sourceOrientedNormalCenterParameter d n N.r N.hrD N.hrn) :=
+    N.toOriginal_normalParameterVector_mem_ET_mem_nhds_center
+  have hcoord :
+      e.symm ⁻¹' U ∈
+        𝓝 (sourceOrientedNormalParameterFinCenterCoord d n N.r) := by
+    have hcenter :
+        e.symm (sourceOrientedNormalParameterFinCenterCoord d n N.r) =
+          sourceOrientedNormalCenterParameter d n N.r N.hrD N.hrn := by
+      rw [Homeomorph.symm_apply_eq]
+      simp [e]
+    have hs :
+        Tendsto e.symm
+          (𝓝 (sourceOrientedNormalParameterFinCenterCoord d n N.r))
+          (𝓝 (sourceOrientedNormalCenterParameter d n N.r N.hrD N.hrn)) := by
+      have hs0 :
+          Tendsto e.symm
+            (𝓝 (sourceOrientedNormalParameterFinCenterCoord d n N.r))
+            (𝓝 (e.symm (sourceOrientedNormalParameterFinCenterCoord d n N.r))) :=
+        e.symm.continuous.continuousAt
+      simpa [hcenter]
+        using hs0
+    exact hs hU
+  rcases
+    exists_sourceOrientedNormalParameterFinCoordClosedBall_subset_of_mem_nhds_center
+      d n N.r hcoord with
+    ⟨ε, hε_pos, hε_sub⟩
+  refine ⟨ε, hε_pos, ?_⟩
+  intro c hc
+  exact hε_sub hc
+
+/-- The compact/open finite-coordinate parameter pair for the tube-stability
+part of the residual-polydisc producer. -/
+theorem exists_finCoordCompactOpen_toOriginal_mem_ET
+    {d n : ℕ}
+    {z0 : Fin n → Fin (d + 1) → ℂ}
+    (N : SourceOrientedRankDeficientNormalFormData d n z0) :
+    ∃ ε : ℝ,
+      0 < ε ∧
+        IsCompact (sourceOrientedNormalParameterFinCoordClosedBall d n N.r ε) ∧
+        IsOpen (sourceOrientedNormalParameterFinCoordOpenBall d n N.r ε) ∧
+        sourceOrientedNormalParameterFinCoordOpenBall d n N.r ε ⊆
+          sourceOrientedNormalParameterFinCoordClosedBall d n N.r ε ∧
+        sourceOrientedNormalParameterFinCenterCoord d n N.r ∈
+          sourceOrientedNormalParameterFinCoordOpenBall d n N.r ε ∧
+        (∀ c,
+          c ∈ sourceOrientedNormalParameterFinCoordClosedBall d n N.r ε →
+            N.toOriginal
+                (sourceOrientedNormalParameterVector d n N.r N.hrD N.hrn
+                  ((sourceOrientedNormalParameterFinCoordHomeomorph
+                    (d := d) (n := n) (r := N.r)
+                    (hrD := N.hrD) (hrn := N.hrn)).symm c)) ∈
+              ExtendedTube d n) := by
+  rcases N.exists_finCoordClosedBall_toOriginal_mem_ET with
+    ⟨ε, hε_pos, hε_tube⟩
+  refine
+    ⟨ε, hε_pos,
+      isCompact_sourceOrientedNormalParameterFinCoordClosedBall d n N.r ε,
+      isOpen_sourceOrientedNormalParameterFinCoordOpenBall d n N.r ε,
+      sourceOrientedNormalParameterFinCoordOpenBall_subset_closedBall
+        d n N.r le_rfl,
+      sourceOrientedNormalParameterFinCenterCoord_mem_openBall d n N.r hε_pos,
+      ?_⟩
+  intro c hc
+  exact hε_tube hc
+
+/-- The decoded finite-coordinate normal vector is continuous on any compact
+coordinate ball. -/
+theorem continuousOn_finCoord_normalParameterVector_closedBall
+    {d n : ℕ}
+    {z0 : Fin n → Fin (d + 1) → ℂ}
+    (N : SourceOrientedRankDeficientNormalFormData d n z0)
+    (ε : ℝ) :
+    ContinuousOn
+      (fun c : Fin (sourceOrientedNormalParameterFinCoordDim d n N.r) → ℂ =>
+        sourceOrientedNormalParameterVector d n N.r N.hrD N.hrn
+          ((sourceOrientedNormalParameterFinCoordHomeomorph
+            (d := d) (n := n) (r := N.r)
+            (hrD := N.hrD) (hrn := N.hrn)).symm c))
+      (sourceOrientedNormalParameterFinCoordClosedBall d n N.r ε) :=
+  ((continuous_sourceOrientedNormalParameterVector d n N.r N.hrD N.hrn).comp
+    (sourceOrientedNormalParameterFinCoordHomeomorph
+      (d := d) (n := n) (r := N.r)
+      (hrD := N.hrD) (hrn := N.hrn)).symm.continuous).continuousOn
 
 end SourceOrientedRankDeficientNormalFormData
 

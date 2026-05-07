@@ -4181,6 +4181,16 @@ implementation contract is:
    `BHW.isOpen_sourceOrientedNormalParameterFinCoordOpenBall`,
    `BHW.isCompact_sourceOrientedNormalParameterFinCoordClosedBall`, and
    `BHW.sourceOrientedNormalParameterFinCoordOpenBall_subset_closedBall`.
+   The finite-coordinate neighborhood shrink is checked as
+   `BHW.exists_sourceOrientedNormalParameterFinCoordClosedBall_subset_of_mem_nhds_center`.
+   The tube-normal-form wrappers
+   `BHW.SourceOrientedRankDeficientNormalFormData.exists_finCoordClosedBall_toOriginal_mem_ET`
+   and
+   `BHW.SourceOrientedRankDeficientNormalFormData.exists_finCoordCompactOpen_toOriginal_mem_ET`
+   now produce the actual closed compact ball `K`, open ball `P`, center
+   membership, `P ⊆ K`, and pointwise
+   `N.toOriginal (normalVector (decode c)) ∈ ExtendedTube d n` field used by
+   `SourceOrientedResidualPolydiscData`.
    The all-arity rank bridge
    `BHW.sourceOrientedNormalParameterVector_maxRank_iff_tail` is also
    checked: on the invertible-head normal-parameter locus, max rank of the
@@ -4188,14 +4198,26 @@ implementation contract is:
    invariant.  The original-coordinate version needed by the tube producer is
    checked as
    `BHW.SourceOrientedRankDeficientNormalFormData.toOriginal_normalParameterVector_maxRank_iff_tail`.
-   Its max-rank-density field is pinned, in the hard full-frame range, by the
-   checked relative-open max-rank density theorem on the transported original
-   image (`sourceOrientedMaxRank_dense_in_relOpen_inter`), then rewritten
-   through the same normal-parameter image.  The complementary small-arity
-   branch still needs the corresponding chart-density support theorem, or an
-   all-arity replacement density theorem, before the residual-polydisc
-   producer is production-complete.  The downstream compactness support is
-   also explicit:
+   Its max-rank-density field is now pinned by the checked all-arity
+   parameter-density theorem in `SourceOrientedShiftedTailDensity.lean`,
+   then rewritten through the same normal-parameter image.  The file checks
+   `BHW.sourceShiftedTailGram_rank_le_max`,
+   `BHW.sourceShiftedTail_maxRank_of_selectedGram_det_ne_zero`, the canonical
+   full-rank template determinant, the selected-minor line polynomial,
+   `BHW.dense_compl_sourceShiftedTailSelectedGramLineRoots`, and
+   `BHW.sourceShiftedTailOrientedMaxRank_dense_in_parameterOpen`.  The
+   density proof is a finite polynomial-line argument: for each tail parameter `q`
+   and open `P ∋ q`, choose the canonical shifted-tail full-rank template `τ`,
+   form the line `q + t • (τ - q)`, take the determinant polynomial of one
+   selected `min (d + 1 - r) m` Gram block of `sourceShiftedTailGram`, prove
+   this polynomial is nonzero by evaluating at `t = 1`, and use density of the
+   complement of the finite root set in `ℂ` to choose `t` with the line still
+   in `P` and the selected Gram block nonzero.  The template's first
+   `min (d + 1 - r) m` tail rows are the
+   corresponding coordinate basis vectors, the selected shifted Gram block is
+   diagonal with nonzero `MinkowskiSpace.metricSignature` entries, and the
+   root-avoidance helper is proved from `Polynomial.rootSet_finite` and
+   `Dense.diff_finite`.  The downstream compactness support is also explicit:
    Lean checkpoint: `SourceOrientedRankDeficientTubeResidual.lean` now checks
    this corrected interface as data, not as a hidden axiom.  It introduces
    `BHW.SourceOrientedRankDeficientNormalFormData` with an actual

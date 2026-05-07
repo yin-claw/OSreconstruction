@@ -133,4 +133,36 @@ theorem sourceOrientedNormalParameterFinCoordOpenBall_subset_closedBall
   intro c hc
   exact Metric.ball_subset_closedBall (Metric.ball_subset_ball hεδ hc)
 
+/-- The encoded normal center lies in every positive-radius open ball. -/
+theorem sourceOrientedNormalParameterFinCenterCoord_mem_openBall
+    (d n r : ℕ)
+    {ε : ℝ}
+    (hε : 0 < ε) :
+    sourceOrientedNormalParameterFinCenterCoord d n r ∈
+      sourceOrientedNormalParameterFinCoordOpenBall d n r ε := by
+  simp [sourceOrientedNormalParameterFinCoordOpenBall, hε]
+
+/-- The encoded normal center lies in every nonnegative-radius closed ball. -/
+theorem sourceOrientedNormalParameterFinCenterCoord_mem_closedBall
+    (d n r : ℕ)
+    {ε : ℝ}
+    (hε : 0 ≤ ε) :
+    sourceOrientedNormalParameterFinCenterCoord d n r ∈
+      sourceOrientedNormalParameterFinCoordClosedBall d n r ε := by
+  simp [sourceOrientedNormalParameterFinCoordClosedBall, hε]
+
+/-- Every finite-coordinate neighborhood of the normal center contains a
+positive-radius closed ball around the center. -/
+theorem exists_sourceOrientedNormalParameterFinCoordClosedBall_subset_of_mem_nhds_center
+    (d n r : ℕ)
+    {U : Set (Fin (sourceOrientedNormalParameterFinCoordDim d n r) → ℂ)}
+    (hU : U ∈ 𝓝 (sourceOrientedNormalParameterFinCenterCoord d n r)) :
+    ∃ ε : ℝ,
+      0 < ε ∧
+        sourceOrientedNormalParameterFinCoordClosedBall d n r ε ⊆ U := by
+  rcases Metric.mem_nhds_iff.mp hU with ⟨ε, hε_pos, hε_sub⟩
+  refine ⟨ε / 2, half_pos hε_pos, ?_⟩
+  exact
+    (Metric.closedBall_subset_ball (half_lt_self hε_pos)).trans hε_sub
+
 end BHW

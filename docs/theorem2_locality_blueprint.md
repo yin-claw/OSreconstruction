@@ -9568,10 +9568,83 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (BHW.sourceShiftedTailOrientedInvariant d r hrD (n - r)
                 p.tail)
 
-      /- Remaining density support target.  This is a Lean-pseudocode theorem
-      surface for the residual-polydisc producer, not yet a checked declaration
-      as of this pass; it may be replaced by one checked all-arity density
-      theorem if that route is cleaner. -/
+      /- Checked shifted-tail density support used by the residual-polydisc
+      producer. -/
+      def BHW.sourceShiftedTailFullRankTemplate
+          (d r m : Nat)
+          (hrD : r < d + 1) :
+          Fin m -> Fin (d + 1 - r) -> ℂ
+
+      -- Checked in `SourceOrientedShiftedTailDensity.lean`.
+      theorem BHW.sourceShiftedTailFullRankTemplate_selectedGram_det_ne_zero
+          (d r m : Nat)
+          (hrD : r < d + 1) :
+          Matrix.det (fun a b : Fin (min (d + 1 - r) m) =>
+            BHW.sourceShiftedTailGram d r hrD m
+              (BHW.sourceShiftedTailFullRankTemplate d r m hrD)
+              (Fin.castLE (min_le_right _ _) a)
+              (Fin.castLE (min_le_right _ _) b)) ≠ 0
+
+      def BHW.sourceShiftedTailSelectedGramLinePolynomial
+          (d r m : Nat)
+          (hrD : r < d + 1)
+          (q : Fin m -> Fin (d + 1 - r) -> ℂ) :
+          Polynomial ℂ
+
+      -- Checked in `SourceOrientedShiftedTailDensity.lean`.
+      theorem BHW.sourceShiftedTailSelectedGramLinePolynomial_eval
+          (d r m : Nat)
+          (hrD : r < d + 1)
+          (q : Fin m -> Fin (d + 1 - r) -> ℂ)
+          (t : ℂ) :
+          (BHW.sourceShiftedTailSelectedGramLinePolynomial
+            d r m hrD q).eval t =
+            Matrix.det (fun a b : Fin (min (d + 1 - r) m) =>
+              BHW.sourceShiftedTailGram d r hrD m
+                (q + t •
+                  (BHW.sourceShiftedTailFullRankTemplate d r m hrD - q))
+                (Fin.castLE (min_le_right _ _) a)
+                (Fin.castLE (min_le_right _ _) b))
+
+      -- Checked in `SourceOrientedShiftedTailDensity.lean`.
+      theorem BHW.sourceShiftedTailSelectedGramLinePolynomial_ne_zero
+          (d r m : Nat)
+          (hrD : r < d + 1)
+          (q : Fin m -> Fin (d + 1 - r) -> ℂ) :
+          BHW.sourceShiftedTailSelectedGramLinePolynomial d r m hrD q ≠ 0
+
+      -- Checked in `SourceOrientedShiftedTailDensity.lean`.
+      theorem BHW.dense_compl_sourceShiftedTailSelectedGramLineRoots
+          (d r m : Nat)
+          (hrD : r < d + 1)
+          (q : Fin m -> Fin (d + 1 - r) -> ℂ) :
+          Dense
+            ((BHW.sourceShiftedTailSelectedGramLinePolynomial
+              d r m hrD q).rootSet ℂ)ᶜ
+
+      -- Checked in `SourceOrientedShiftedTailDensity.lean`.
+      theorem BHW.sourceShiftedTailGram_rank_le_max
+          (d r m : Nat)
+          (hrD : r < d + 1)
+          (q : Fin m -> Fin (d + 1 - r) -> ℂ) :
+          BHW.sourceGramMatrixRank m
+            (BHW.sourceShiftedTailGram d r hrD m q) <=
+              min (d + 1 - r) m
+
+      -- Checked in `SourceOrientedShiftedTailDensity.lean`.
+      theorem BHW.sourceShiftedTail_maxRank_of_selectedGram_det_ne_zero
+          (d r m : Nat)
+          (hrD : r < d + 1)
+          {q : Fin m -> Fin (d + 1 - r) -> ℂ}
+          (hdet :
+            Matrix.det (fun a b : Fin (min (d + 1 - r) m) =>
+              BHW.sourceShiftedTailGram d r hrD m q
+                (Fin.castLE (min_le_right _ _) a)
+                (Fin.castLE (min_le_right _ _) b)) ≠ 0) :
+          BHW.SourceShiftedTailOrientedMaxRankAt d r hrD m
+            (BHW.sourceShiftedTailOrientedInvariant d r hrD m q)
+
+      -- Checked in `SourceOrientedShiftedTailDensity.lean`.
       theorem BHW.sourceShiftedTailOrientedMaxRank_dense_in_parameterOpen
           (d r m : Nat)
           (hrD : r < d + 1)
@@ -9631,11 +9704,36 @@ Proof decomposition of this theorem, without hiding the analytic work:
       The max-rank equivalence is Schur rank additivity: the invertible head
       block contributes rank `r`, the mixed rows do not change rank after
       Schur reduction, and
-      `min (d+1) n = r + min (d+1-r) (n-r)`.  Tail max-rank density is the
-      standard determinantal-complement theorem in the finite vector space of
-      tail parameters: the non-max-rank locus is cut out by all maximal
-      minors, at least one maximal minor is a nonzero polynomial, and over
-      `ℂ` its complement is dense in every nonempty open ball.
+      `min (d+1) n = r + min (d+1-r) (n-r)`.  Tail max-rank density is
+      reduced to the finite polynomial-line theorem displayed above and is
+      now checked in `SourceOrientedShiftedTailDensity.lean`: a nonzero
+      selected maximal shifted-tail Gram minor gives max rank, the universal
+      rank bound gives the reverse inequality, and the nonvanishing/root-
+      avoidance argument proves density in every open parameter neighborhood.
+      Given `q ∈ P`, use the continuous line
+      `t ↦ q + t • (τ - q)` toward the canonical shifted-tail full-rank
+      template `τ`.  The preimage of `P` is an open neighborhood of `0`.  The
+      selected Gram determinant polynomial along this line is nonzero because
+      its value at `1` is the nonzero determinant of the template selected
+      Gram block.  Its root set is finite, so the dense complement meets the
+      open preimage of `P`; the resulting parameter `q'` lies in `P` and has
+      a nonzero selected maximal Gram minor.
+      At implementation level, `sourceShiftedTailFullRankTemplate` is the
+      tuple whose first `min (d + 1 - r) m` tail rows are the corresponding
+      shifted-tail coordinate basis vectors and whose remaining rows are zero.
+      Its selected shifted Gram block is diagonal with nonzero
+      `MinkowskiSpace.metricSignature` entries.  The line polynomial is the
+      determinant of that same selected shifted Gram block after substituting
+      the affine line `q + t • (τ - q)`.  Its nonzero proof evaluates at
+      `t = 1`, rewrites the line point to `τ`, and applies the template
+      determinant theorem.  Root avoidance uses
+      `Polynomial.rootSet_finite` and `Dense.diff_finite` on `ℂ`; the open
+      set is the preimage of `P` under the continuous affine line and
+      contains `0`.  The file also installs the product-coordinate topology
+      on `SourceShiftedTailOrientedData` and checks
+      `BHW.continuous_sourceShiftedTailOrientedInvariant`, so the final
+      closure statement is an image-closure theorem, not only a parameter
+      statement.
 
       The compact polydisc producer is then a finite-dimensional shrinking
       theorem, not a choice principle:
@@ -9687,6 +9785,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
       still maps into `ExtendedTube`.  This replaces the invalid
       `N.normalTransport.perturb_back_small` shortcut; no source-matrix
       normal-form map is claimed to preserve the extended tube globally.
+      In concrete finite coordinates, the checked helper
+      `BHW.SourceOrientedRankDeficientNormalFormData.exists_finCoordCompactOpen_toOriginal_mem_ET`
+      supplies exactly the compact closed ball `K`, open ball `P`,
+      `P ⊆ K`, center membership, and tube-stability field for the decoded
+      normal vectors.
 
       Use the checked finite-coordinate homeomorphism
       `BHW.sourceOrientedNormalParameterFinCoordHomeomorph` from
