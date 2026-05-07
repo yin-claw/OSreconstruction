@@ -7512,7 +7512,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
       strict derivative at the base and the local homeomorphism
       `sourceFullFrameGaugeSliceImplicitKernelOpenPartialHomeomorph`; the
       local-section proof still needs the open-neighborhood regularity theorem
-      below before the scalar descent can consume this chart.
+      below before the scalar descent can consume this chart.  The reusable
+      inverse-chart differentiability wrapper
+      `SCV.openPartialHomeomorph_symm_differentiableOn_of_hasFDerivAt` is now
+      checked; the remaining work is to feed it the full-frame-specific
+      derivative-invertibility and smoothness facts on the selected ambient
+      shrink.
 
       ```lean
       theorem BHW.SourceFullFrameMaxRankChartAmbientShrink.chartCandidate_differentiableOn_Ωamb

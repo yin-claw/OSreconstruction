@@ -4457,7 +4457,13 @@ implementation contract is:
    The small-arity branch must similarly use an arbitrary-complex-base
    selected zero-section for the ordinary source Gram map inside
    `ExtendedTube`; the existing real-base zero-section support is not, by
-   itself, a section at an arbitrary extended-tube max-rank point.
+   itself, a section at an arbitrary extended-tube max-rank point.  The generic
+   inverse-chart differentiability consumer
+   `SCV.openPartialHomeomorph_symm_differentiableOn_of_hasFDerivAt` is now
+   checked in `SourceOrientedHolomorphicSection.lean`: it packages the exact
+   `OpenPartialHomeomorph.contDiffAt_symm` proof pattern needed once the
+   full-frame and small-arity producers provide pointwise invertible
+   derivatives and smoothness of their forward chart maps.
    The oriented normal-variety support is now tied to explicit algebraic
    equations: symmetry/rank of the Gram field, determinant alternation under
    source-frame reindexing, and the Cauchy-Binet relation

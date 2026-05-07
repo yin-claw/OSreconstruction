@@ -13,6 +13,34 @@ noncomputable section
 
 open Complex Topology Matrix LorentzLieGroup Classical Filter NormedSpace
 
+namespace SCV
+
+/-- If a local homeomorphism has an invertible derivative and is smooth at
+each inverse image of a set, then its inverse is differentiable on that set.
+This packages the repeated `OpenPartialHomeomorph.contDiffAt_symm` pattern used
+by selected zero-section and full-frame implicit-inverse charts. -/
+theorem openPartialHomeomorph_symm_differentiableOn_of_hasFDerivAt
+    {𝕜 E F : Type*}
+    [NontriviallyNormedField 𝕜]
+    [NormedAddCommGroup E] [NormedSpace 𝕜 E] [CompleteSpace E]
+    [NormedAddCommGroup F] [NormedSpace 𝕜 F]
+    (e : OpenPartialHomeomorph E F)
+    {D : Set F}
+    (hD_target : D ⊆ e.target)
+    (hderiv :
+      ∀ y, y ∈ D →
+        ∃ e' : E ≃L[𝕜] F,
+          HasFDerivAt e (e' : E →L[𝕜] F) (e.symm y))
+    (hsmooth : ∀ y, y ∈ D → ContDiffAt 𝕜 ⊤ e (e.symm y)) :
+    DifferentiableOn 𝕜 e.symm D := by
+  intro y hy
+  rcases hderiv y hy with ⟨e', he'⟩
+  have hsymm : ContDiffAt 𝕜 ⊤ e.symm y :=
+    e.contDiffAt_symm (hD_target hy) he' (hsmooth y hy)
+  exact (hsymm.differentiableAt (by simp)).differentiableWithinAt
+
+end SCV
+
 namespace BHW
 
 /-- A local ambient holomorphic section of the source-oriented invariant map
