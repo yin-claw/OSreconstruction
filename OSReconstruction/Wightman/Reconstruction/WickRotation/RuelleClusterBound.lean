@@ -5,6 +5,7 @@ Authors: Michael Douglas, ModularPhysics Contributors
 -/
 import OSReconstruction.Wightman.Reconstruction.WickRotation.BHWTranslation
 import OSReconstruction.Wightman.Reconstruction.WickRotation.SchwingerAxioms
+import OSReconstruction.Wightman.Reconstruction.SchwingerOS
 
 /-!
 # Ruelle's analytic cluster bound
@@ -1285,22 +1286,14 @@ both factors OPTR-supported.
 `OsterwalderSchraderAxioms.E4_cluster` field
 (`SchwingerOS.lean`) is stated for arbitrary
 `ZeroDiagonalSchwartz` tests and an explicit joint-test witness
-`fg_a : ZeroDiagonalSchwartz d (n+m)` satisfying
-`fg_a.1 x = f.1 (splitFirst x) * g_a.1 (splitLast x)`. Discharging that
-field from this theorem requires two additional bridges, both deferred
-to a follow-up:
-1. A reduction from arbitrary `ZeroDiagonalSchwartz` tests to the
-   OPTR-supported subset (e.g., density of the OPTR subspace, or a
-   cut-off argument exploiting that `S_n` is determined by its action
-   on OPTR via the OS Reeh-Schlieder reasoning).
-2. Replacement of `f.tensorProduct g_a` by the explicit `fg_a`
-   witness — straightforward since both define the same product
-   distribution on rectangles, but requires unfolding
-   `splitFirst` / `splitLast`.
-
-The current theorem is what naturally falls out of the Wick-rotated
-boundary integral; the bridges above belong to whichever follow-up wires
-the full R→E theorem to the `OsterwalderSchraderAxioms` package. -/
+`fg_a : ZeroDiagonalSchwartz d (n+m)`. The OPTR-restricted
+specialization that matches `E4_cluster`'s shape exactly (modulo
+OPTR support hypotheses) is `schwinger_E4_cluster_OPTR_case` below.
+Discharging the *full* `E4_cluster` field additionally requires a
+reduction from arbitrary `ZeroDiagonalSchwartz` tests to the
+OPTR-supported subset (e.g., density of OPTR-supported in
+`ZeroDiagonalSchwartz` plus continuity of the Schwinger functional);
+that extension is left for follow-up. -/
 theorem W_analytic_cluster_integral (Wfn : WightmanFunctions d) (n m : ℕ)
     (f : SchwartzNPoint d n) (g : SchwartzNPoint d m)
     (hsupp_f : tsupport ((f : SchwartzNPoint d n) : NPointDomain d n → ℂ) ⊆
@@ -1348,5 +1341,79 @@ theorem wickRotatedBoundaryPairing_cluster (Wfn : WightmanFunctions d)
             wickRotatedBoundaryPairing Wfn m g‖ < ε := by
   simp only [wickRotatedBoundaryPairing]
   exact W_analytic_cluster_integral Wfn n m f g hsupp_f hsupp_g ε hε
+
+/-! ### Bridge to the public `OsterwalderSchraderAxioms.E4_cluster` surface
+
+The cluster theorems above are stated for OPTR-supported `SchwartzNPoint`
+inputs. The public `E4_cluster` field on `OsterwalderSchraderAxioms`
+(`SchwingerOS.lean:792`) is a stronger surface: arbitrary
+`ZeroDiagonalSchwartz` tests + an explicit joint-test witness
+`fg_a : ZeroDiagonalSchwartz d (n+m)` related to `f, g_a` via
+`splitFirst / splitLast`.
+
+The theorem `schwinger_E4_cluster_OPTR_case` below provides the
+OPTR-restricted *specialization* of `E4_cluster` for the Schwinger
+functions constructed from a `WightmanFunctions` package
+(`constructSchwingerFunctions`). It matches the shape of
+`E4_cluster` exactly, modulo the additional OPTR support hypotheses on
+`f, g`. Discharging the *full* `E4_cluster` field requires a separate
+bridge from arbitrary `ZeroDiagonalSchwartz` tests to OPTR-supported
+ones (e.g., density of OPTR in `ZeroDiagonalSchwartz` plus continuity
+of the Schwinger functional). That extension is left for follow-up. -/
+
+/-- **Schwinger E4 cluster for OPTR-supported tests** —
+matches the shape of `OsterwalderSchraderAxioms.E4_cluster`
+(`SchwingerOS.lean:792`) for the Schwinger functions constructed from a
+`WightmanFunctions` package, restricted to OPTR-supported `f, g`.
+
+The output is the same factorization conclusion that `E4_cluster`
+demands: `∃ R > 0, ∀ a (spatial, |a⃗| > R), ∀ g_a (translate of g),
+∀ fg_a (joint witness), ‖S(n+m) fg_a - S n f · S m g‖ < ε`.
+
+The bridge:
+1. Apply `wickRotatedBoundaryPairing_cluster` to `f.1, g.1` (using the
+   OPTR support hypotheses).
+2. Use `tensorProduct_apply` plus the `fg_a` witness identity
+   `fg_a.1 x = f.1 (splitFirst x) * g_a.1 (splitLast x)` to identify
+   `fg_a.1 = f.1.tensorProduct g_a.1` as `SchwartzNPoint` via
+   `SchwartzMap.ext`.
+3. Unfold `constructSchwingerFunctions` to `wickRotatedBoundaryPairing`. -/
+theorem schwinger_E4_cluster_OPTR_case
+    (Wfn : WightmanFunctions d) (n m : ℕ)
+    (f : ZeroDiagonalSchwartz d n) (g : ZeroDiagonalSchwartz d m)
+    (hsupp_f : tsupport ((f.1 : SchwartzNPoint d n) :
+      NPointDomain d n → ℂ) ⊆ OrderedPositiveTimeRegion d n)
+    (hsupp_g : tsupport ((g.1 : SchwartzNPoint d m) :
+      NPointDomain d m → ℂ) ⊆ OrderedPositiveTimeRegion d m)
+    (ε : ℝ) (hε : ε > 0) :
+    ∃ R : ℝ, R > 0 ∧
+      ∀ a : SpacetimeDim d, a 0 = 0 →
+        (∑ i : Fin d, (a (Fin.succ i))^2) > R^2 →
+        ∀ (g_a : ZeroDiagonalSchwartz d m),
+          (∀ x : NPointDomain d m, g_a.1 x = g.1 (fun i => x i - a)) →
+          ∀ (fg_a : ZeroDiagonalSchwartz d (n + m)),
+            (∀ x : NPointDomain d (n + m),
+              fg_a.1 x = f.1 (splitFirst n m x) * g_a.1 (splitLast n m x)) →
+            ‖constructSchwingerFunctions Wfn (n + m) fg_a -
+              constructSchwingerFunctions Wfn n f *
+              constructSchwingerFunctions Wfn m g‖ < ε := by
+  obtain ⟨R, hR, hcluster⟩ :=
+    wickRotatedBoundaryPairing_cluster Wfn n m f.1 g.1 hsupp_f hsupp_g ε hε
+  refine ⟨R, hR, ?_⟩
+  intro a ha₀ ha_large g_a hg_a fg_a hfg_a
+  -- Apply the cluster theorem at the SchwartzNPoint level using g_a.1.
+  have hcl := hcluster a ha₀ ha_large g_a.1 hg_a
+  -- Identify fg_a.1 with f.1.tensorProduct g_a.1 via the witness identity
+  -- and tensorProduct_apply.
+  have h_fg_eq : (fg_a.1 : SchwartzNPoint d (n + m)) = f.1.tensorProduct g_a.1 := by
+    apply SchwartzMap.ext
+    intro x
+    rw [hfg_a, SchwartzMap.tensorProduct_apply]
+  -- Unfold constructSchwingerFunctions and rewrite using h_fg_eq.
+  show ‖wickRotatedBoundaryPairing Wfn (n + m) fg_a.1 -
+      wickRotatedBoundaryPairing Wfn n f.1 *
+      wickRotatedBoundaryPairing Wfn m g.1‖ < ε
+  rw [h_fg_eq]
+  exact hcl
 
 end OSReconstruction
