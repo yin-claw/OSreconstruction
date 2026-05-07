@@ -4804,6 +4804,19 @@ implementation contract is:
    This narrows the future SFT target by confirming the displayed standard
    relations really vanish on tuple invariants, but it still does not prove
    that these relations generate the invariant-coordinate map kernel.
+   The concrete tuple-level source/dot determinant scale is also checked in
+   `SourceOrientedMinkowskiDotTransport.lean`.  The forward map sends a source
+   selected determinant to `sourceMinkowskiToDotDetScale d` times the standard
+   selected volume, while the contravariant source-to-dot coordinate-ring map
+   must use `sourceMinkowskiToDotInvDetScale d` times the standard volume,
+   because it evaluates source polynomials after pulling a dot tuple back by
+   `(complexMinkowskiToDotLinearEquiv d).symm`.  The checked theorems are
+   `sourceMinkowskiGram_after_complexMinkowskiToDotLinearEquiv_symm`,
+   `standardFullFrameDet_after_complexMinkowskiToDotLinearEquiv`, and
+   `sourceFullFrameDet_after_complexMinkowskiToDotLinearEquiv_symm`, with both
+   determinant scales proved nonzero.  This corrects the future coordinate
+   transport contract: determinant variables are transported by the inverse
+   scale in the coordinate-ring direction.
    The theorem-2 blueprint now tightens this into the single standard-dot
    support surface `BHW.standardSO_FFT_SFT_coordinatePresentation`, whose three
    outputs are: FFT generation by pairings and ordered volumes, SFT kernel

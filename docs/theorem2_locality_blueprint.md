@@ -13633,10 +13633,53 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (BHW.sourceGramCoordinatePolynomial d n ij) =
             BHW.standardPairingCoordinatePolynomial (d + 1) n ij
 
-      theorem BHW.sourceMinkowskiToDotLinearEquiv_det_ne_zero
-          (d : Nat)
-          [NeZero d] :
-          Matrix.det (BHW.complexMinkowskiToDotLinearEquiv_matrix d) ≠ 0
+      def BHW.sourceMinkowskiToDotDetScale (d : Nat) : ℂ :=
+        ∏ μ : Fin (d + 1), BHW.complexMinkowskiDotScale d μ
+
+      def BHW.sourceMinkowskiToDotInvDetScale (d : Nat) : ℂ :=
+        ∏ μ : Fin (d + 1), BHW.complexMinkowskiDotInvScale d μ
+
+      theorem BHW.sourceMinkowskiToDotDetScale_ne_zero
+          (d : Nat) :
+          BHW.sourceMinkowskiToDotDetScale d ≠ 0
+
+      theorem BHW.sourceMinkowskiToDotInvDetScale_ne_zero
+          (d : Nat) :
+          BHW.sourceMinkowskiToDotInvDetScale d ≠ 0
+
+      theorem BHW.sourceMinkowskiGram_after_complexMinkowskiToDotLinearEquiv_symm
+          (d n : Nat)
+          (y : Fin n -> Fin (d + 1) -> ℂ) :
+          BHW.sourceMinkowskiGram d n
+              (fun i => (BHW.complexMinkowskiToDotLinearEquiv d).symm (y i)) =
+            BHW.sourceComplexDotGram (d + 1) n y
+
+      theorem BHW.standardFullFrameDet_after_complexMinkowskiToDotLinearEquiv
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          (z : Fin n -> Fin (d + 1) -> ℂ) :
+          Matrix.det
+              (fun a μ : Fin (d + 1) =>
+                BHW.complexMinkowskiToDotLinearEquiv d (z (ι a)) μ) =
+            BHW.sourceMinkowskiToDotDetScale d *
+              BHW.sourceFullFrameDet d n ι z
+
+      theorem BHW.sourceFullFrameDet_after_complexMinkowskiToDotLinearEquiv_symm
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          (y : Fin n -> Fin (d + 1) -> ℂ) :
+          BHW.sourceFullFrameDet d n ι
+              (fun i =>
+                (BHW.complexMinkowskiToDotLinearEquiv d).symm (y i)) =
+            BHW.sourceMinkowskiToDotInvDetScale d *
+              Matrix.det (fun a μ : Fin (d + 1) => y (ι a) μ)
+
+      -- Checked in `SourceOrientedMinkowskiDotTransport.lean`.
+      -- The coordinate-ring equivalence is contravariant: source polynomials
+      -- are evaluated after pulling a dot tuple back by
+      -- `(complexMinkowskiToDotLinearEquiv d).symm`, so determinant variables
+      -- transport with `sourceMinkowskiToDotInvDetScale d`, not the forward
+      -- determinant scale.
 
       theorem BHW.sourceMinkowskiToDotCoordinateRingEquiv_apply_sourceDet
           (d n : Nat)
@@ -13644,7 +13687,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (ι : Fin (d + 1) ↪ Fin n) :
           BHW.sourceMinkowskiToDotCoordinateRingEquiv d n
               (BHW.sourceFullFrameDetPolynomial d n ι) =
-            Matrix.det (BHW.complexMinkowskiToDotLinearEquiv_matrix d) *
+            BHW.sourceMinkowskiToDotInvDetScale d *
               BHW.standardVolumeCoordinatePolynomial (d + 1) n ι
 
       theorem BHW.sourceMinkowskiToDotCoordinateRingEquiv_adjoin_pairing_volume
@@ -13715,8 +13758,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
         -- `sourceMinkowskiToDotCoordinateRingEquiv_apply_sourceGram`; on
         -- `Sum.inr ι` it is
         -- `sourceMinkowskiToDotCoordinateRingEquiv_apply_sourceDet`, with the
-        -- fixed nonzero determinant of the Minkowski-to-dot linear equivalence
-        -- absorbed by the volume-coordinate generator.  Constants and
+        -- fixed nonzero inverse determinant scale of the Minkowski-to-dot
+        -- linear equivalence absorbed by the volume-coordinate generator.
+        -- Constants and
         -- addition/multiplication are functoriality of the two algebra maps.
         induction p using MvPolynomial.induction_on with
         | C a => simp
