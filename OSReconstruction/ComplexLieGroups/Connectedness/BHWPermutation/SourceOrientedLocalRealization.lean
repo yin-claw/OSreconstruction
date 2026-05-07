@@ -117,6 +117,26 @@ structure SourceOrientedRankDeficientResidualChartData
 
 namespace SourceOrientedRankDeficientResidualChartData
 
+/-- The residual chart center lies in the stored invariant neighborhood. -/
+theorem center_mem
+    {d n : ℕ}
+    {z0 : Fin n → Fin (d + 1) → ℂ}
+    (C : SourceOrientedRankDeficientResidualChartData d n z0) :
+    sourceOrientedMinkowskiInvariant d n z0 ∈ C.Ω := by
+  have hcK : C.c0 ∈ C.K := C.P_subset_K C.c0_mem
+  have hcΩ :
+      sourceOrientedMinkowskiInvariant d n (C.toVec C.c0) ∈ C.Ω :=
+    (C.toInv_eq C.c0 hcK).1
+  simpa [C.toVec_c0_invariant] using hcΩ
+
+/-- The residual chart center vector itself is an extended-tube point. -/
+theorem toVec_c0_mem
+    {d n : ℕ}
+    {z0 : Fin n → Fin (d + 1) → ℂ}
+    (C : SourceOrientedRankDeficientResidualChartData d n z0) :
+    C.toVec C.c0 ∈ ExtendedTube d n :=
+  C.toVec_mem C.c0 (C.P_subset_K C.c0_mem)
+
 /-- A residual chart gives rank-deficient realization data by using the
 surjective parameter image and the stored extended-tube membership of the
 actual vector formula. -/
@@ -128,13 +148,8 @@ noncomputable def to_realizationData
   refine
     { Ω := C.Ω
       Ω_open := C.Ω_open
-      center_mem := ?_
+      center_mem := C.center_mem
       realize := ?_ }
-  · have hcK : C.c0 ∈ C.K := C.P_subset_K C.c0_mem
-    have hcΩ :
-        sourceOrientedMinkowskiInvariant d n (C.toVec C.c0) ∈ C.Ω :=
-      (C.toInv_eq C.c0 hcK).1
-    simpa [C.toVec_c0_invariant] using hcΩ
   · intro G hG
     let c : Fin C.m → ℂ := Classical.choose (C.image_surj hG)
     have hc_spec :
@@ -153,6 +168,16 @@ noncomputable def to_localRealization
   C.to_realizationData.to_localRealization
 
 end SourceOrientedRankDeficientResidualChartData
+
+/-- The remaining rank-deficient producer target, isolated as a type alias so
+downstream assembly can name the exact hard input without restating it. -/
+def SourceOrientedRankDeficientResidualChartProducer
+    (d n : ℕ) : Type :=
+  ∀ {z0 : Fin n → Fin (d + 1) → ℂ},
+    z0 ∈ ExtendedTube d n →
+      ¬ SourceOrientedMaxRankAt d n
+          (sourceOrientedMinkowskiInvariant d n z0) →
+        SourceOrientedRankDeficientResidualChartData d n z0
 
 /-- The explicit reconstructed vector map is continuous on the model
 determinant-nonzero locus. -/
@@ -486,11 +511,7 @@ global local-realization producer is a pure max-rank/rank-deficient dispatch. -/
 noncomputable def sourceOrientedExtendedTubeLocalRealizationProducer_of_rankDeficientResidualChartProducer
     {d n : ℕ}
     (rankDeficient :
-      ∀ {z0 : Fin n → Fin (d + 1) → ℂ},
-        z0 ∈ ExtendedTube d n →
-          ¬ SourceOrientedMaxRankAt d n
-              (sourceOrientedMinkowskiInvariant d n z0) →
-            SourceOrientedRankDeficientResidualChartData d n z0) :
+      SourceOrientedRankDeficientResidualChartProducer d n) :
     SourceOrientedExtendedTubeLocalRealizationProducer d n := by
   intro z0 hz0
   by_cases hmax :
@@ -542,11 +563,7 @@ after the single remaining rank-deficient residual chart producer is supplied. -
 theorem sourceOrientedExtendedTubeDomain_relOpen_connected_of_rankDeficientResidualChartProducer
     {d n : ℕ}
     (rankDeficient :
-      ∀ {z0 : Fin n → Fin (d + 1) → ℂ},
-        z0 ∈ ExtendedTube d n →
-          ¬ SourceOrientedMaxRankAt d n
-              (sourceOrientedMinkowskiInvariant d n z0) →
-            SourceOrientedRankDeficientResidualChartData d n z0) :
+      SourceOrientedRankDeficientResidualChartProducer d n) :
     IsRelOpenInSourceOrientedGramVariety d n
         (sourceOrientedExtendedTubeDomain d n) ∧
       IsConnected (sourceOrientedExtendedTubeDomain d n) :=

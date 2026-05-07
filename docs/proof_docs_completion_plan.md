@@ -3398,8 +3398,12 @@ implementation contract is:
    `SourceOrientedRankDeficientResidualChartData.to_realizationData` then
    derives `SourceOrientedRankDeficientRealizationData`, and
    `.to_localRealization` derives
-   `SourceOrientedExtendedTubeLocalRealizationData`.  No proof step may
-   replace this ET-valued residual family by an arbitrary variety lift.
+   `SourceOrientedExtendedTubeLocalRealizationData`.  The long hard target is
+   named by the checked alias
+   `SourceOrientedRankDeficientResidualChartProducer`, and the chart exposes
+   checked accessors `center_mem` and `toVec_c0_mem` so downstream proofs do
+   not reopen the center bookkeeping.  No proof step may replace this
+   ET-valued residual family by an arbitrary variety lift.
    The max-rank section theorem is now split by arity: when `n < d + 1`, the
    oriented chart reduces to the ordinary Gram max-rank chart because there
    are no full-frame determinant coordinates; when `d + 1 <= n`, the checked
