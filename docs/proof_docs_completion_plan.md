@@ -1820,8 +1820,8 @@ the chosen Schur window.
 - `BHW.same_sourceOrientedInvariant_detOneOrbit_or_singularLimit`, including
   the high-rank determinant-ratio/Witt-extension orbit theorem and the
   low-rank Hall-Wightman isotropic contraction data;
-- `BHW.sourceOrientedExtendedTube_localRealization`, including the full-frame
-  oriented local section, the arbitrary complex max-rank chart
+- checked `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected`, including
+  the full-frame oriented local section, the arbitrary complex max-rank chart
   `BHW.sourceOrientedMaxRankChart_at`, their shared
   `BHW.SourceOrientedFullFrameMaxRankChartData` producer, and the
   rank-deficient Schur/residual realization chart;
@@ -3305,10 +3305,26 @@ implementation contract is:
    with the production ordering requirement that the generic
    finite-dimensional SCV predicates are imported before the
    `to_isRelOpenIn` conversion is declared,
-   `BHW.sourceOrientedScalarRepresentativeData_bvt_F`.  These names are
-   active proof-doc targets but are not production-Lean-ready until their
-   producer ledger is complete; their purpose is also to make clear that an
-   oriented proof cannot be fed through the existing pure-Gram
+   `BHW.sourceOrientedScalarRepresentativeData_bvt_F`.
+   `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected`,
+   `BHW.SourceOrientedScalarRepresentativeData`,
+   `BHW.sourceOrientedQuotientValue`,
+   `BHW.sourceOrientedQuotientValue_wellDefined`,
+   `BHW.LocallyBoundedOn`,
+   `SCV.continuousWithinAt_of_local_eqOn_relNeighborhood`,
+   `SCV.locallyBoundedAt_of_local_eqOn_relNeighborhood`,
+   `SCV.continuousWithinAt_of_compact_parameter_surjection`,
+   `BHW.sourceOrientedResidualChart_compactBound`,
+   `BHW.sourceOrientedResidualChart_quotient_eq_parameter`,
+   `BHW.sourceOrientedQuotientValue_locallyBounded_of_residualChart`,
+   `BHW.sourceOrientedQuotientValue_continuous_of_residualChart`,
+   `BHW.sourceOrientedQuotientValue_continuous_locallyBounded_of_maxRankLocal`,
+   `BHW.sourceOrientedResidualChart_clusterValue`, and
+   `BHW.sourceOrientedScalarRepresentativeData_of_branchLaw` are now checked;
+   the later descent and Hall-Wightman specialization names remain active
+   proof-doc targets and are not production-Lean-ready until their producer
+   ledger is complete.  Their purpose is also to make clear that an oriented
+   proof cannot be fed through the existing pure-Gram
    `SourceScalarRepresentativeData.branch_eq` API.
    Lean-shape correction: `SourceOrientedGramData` is now a product-coordinate
    type, not a raw record with untransported topology.  The `.gram` and `.det`
@@ -3324,10 +3340,11 @@ implementation contract is:
    `sourceOrientedMinkowskiInvariant_permAct`;
    `same_sourceOrientedInvariant_detOneOrbit_or_singularLimit`;
    `extendedTube_same_sourceOrientedInvariant_extendF_eq`;
-   `sourceOrientedExtendedTubeDomain_relOpen_connected`;
+   `sourceOrientedExtendedTubeDomain_relOpen_connected` (checked);
    `sourceOrientedVarietyGermHolomorphicOn_extendF_descent`; and only then
-   the three assembly surfaces
-   `sourceOrientedScalarRepresentativeData_of_branchLaw`,
+   the already checked assembly surface
+   `sourceOrientedScalarRepresentativeData_of_branchLaw` plus the remaining
+   specializations
    `hallWightman_sourceOrientedScalarRepresentativeData`, and
    `sourceOrientedScalarRepresentativeData_bvt_F`.  The specialization to
    `bvt_F` uses `bvt_F_holomorphic`,
@@ -3349,32 +3366,37 @@ implementation contract is:
    and by oriented germ precomposition; it is finite source-coordinate
    algebra, not a scalar-representative or locality input.
    Current oriented scalar-representative assembly clarification, 2026-05-02:
-   the theorem-2 blueprint now gives Lean-shaped bodies for
-   `BHW.sourceOrientedScalarRepresentativeData_of_branchLaw` and
-   `BHW.hallWightman_sourceOrientedScalarRepresentativeData`.  The first
+   `BHW.sourceOrientedScalarRepresentativeData_of_branchLaw` is checked in
+   `SourceOrientedScalarRepresentative.lean`, and the theorem-2 blueprint
+   still gives the Lean-shaped body for
+   `BHW.hallWightman_sourceOrientedScalarRepresentativeData`.  The checked
    constructor only chooses the descended `Phi`, sets `U_eq := rfl` for the
    exact oriented extended-tube domain, stores the relative-open and connected
    fields from `hGeom`, and copies the branch equation from
-   `Classical.choose_spec hDesc`.  The second first proves the oriented
-   extended-tube branch law, then calls
+   `Classical.choose_spec hDesc`.  The Hall-Wightman constructor first proves
+   the oriented extended-tube branch law, then calls
    `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected` and
    `BHW.sourceOrientedVarietyGermHolomorphicOn_extendF_descent`, and only
    then assembles the representative.  The quotient value
-   `BHW.sourceOrientedQuotientValue_wellDefined` is also pinned with the
+   `BHW.sourceOrientedQuotientValue_wellDefined` is also checked with the
    exact `dif_pos`/`Classical.choose_spec` proof: compare the chosen
    preimage with the supplied one by the oriented branch law.  These are
    assembly proofs; they do not reduce the required lower producer list.
    The same cleanup pins the mechanical
-   `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected` body as the pair
-   of `BHW.sourceOrientedExtendedTubeDomain_relOpen` and
-   `BHW.sourceOrientedExtendedTubeDomain_connected`; the only real
-   mathematical content in that theorem remains the local realization theorem
-   feeding the relative-open half.  Lean has now checked this topology split in
+   `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected` body as the
+   producer-instantiated pair of relative openness and connectedness; the only
+   real mathematical content in that theorem is the local realization theorem
+   feeding the relative-open half.  Lean has checked this topology split in
    `SourceOrientedLocalRealization.lean` as
    `BHW.SourceOrientedExtendedTubeLocalRealizationData`,
    `BHW.SourceOrientedExtendedTubeLocalRealizationProducer`,
    `BHW.sourceOrientedExtendedTubeDomain_relOpen_of_localRealization`, and
    `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_localRealization`.
+   The final no-parameter theorem is now checked in
+   `SourceOrientedRankDeficientTubeResidualPolydisc.lean` as
+   `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected`, by applying
+   `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_rankDeficientResidualChartProducer`
+   to `BHW.sourceOriented_rankDeficient_residualChartProducer`.
    The full-frame max-rank tube shrink is now also checked in the same file as
    `BHW.continuousOn_sourceFullFrameGauge_reconstructVector_on_modelDetNonzero`,
    `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_fullFrameDetNonzero`,
@@ -3390,10 +3412,10 @@ implementation contract is:
    chart inverse to recover the oriented invariant.  The small-arity proof
    uses the ordinary source-Gram local image theorem inside `ExtendedTube` and
    the fact that there are no embeddings `Fin (d + 1) ↪ Fin n` when
-   `n < d + 1`.  The final no-parameter public theorem is therefore blocked
-   only by the rank-deficient residual extended-tube realization and the final
-   max-rank/rank-deficient dispatch.  No downstream proof should re-prove the
-   open-union argument or hide this datum behind a scalar representative.
+   `n < d + 1`.  The rank-deficient residual extended-tube realization and
+   the final max-rank/rank-deficient dispatch are now checked.  No downstream
+   proof should re-prove the open-union argument or hide this datum behind a
+   scalar representative.
    The oriented branch-law surface has been tightened: it must return an
    actual `∃ Λ : ComplexLorentzGroup d, w = complexLorentzAction Λ z` orbit
    alternative or the singular contraction data.  Returning only
@@ -3405,8 +3427,11 @@ implementation contract is:
    The oriented domain geometry has also been split: connectedness is a
    mechanical continuous-image theorem from `isConnected_extendedTube` and
    `continuous_sourceOrientedMinkowskiInvariant`; relative openness is the
-   separate `sourceOrientedExtendedTube_localRealization` theorem.  That
-   theorem must construct actual nearby extended-tube vectors realizing the
+   checked
+   `sourceOrientedExtendedTubeDomain_relOpen_of_localRealization` theorem
+   applied to the checked producer
+   `sourceOrientedExtendedTubeLocalRealizationProducer_of_rankDeficientResidualChartProducer`.
+   That producer constructs actual nearby extended-tube vectors realizing the
    full oriented invariant, using selected full-frame charts in full rank and
    Hall-Wightman adapted residual-frame charts in rank-deficient cases.
    The rank-deficient local-image packet checked by the sliced Schur stack is
@@ -3438,24 +3463,23 @@ implementation contract is:
    are no full-frame determinant coordinates; when `d + 1 <= n`, the checked
    full-frame local-realization def above supplies the actual
    extended-tube-valued local section at the `SourceOrientedExtendedTubeLocalRealizationData`
-   interface.  The max-rank dispatcher is checked, so the remaining Lean work
-   for the global producer is rank-deficient residual realization plus the
-   final case split, not another max-rank tube-shrink argument.
+   interface.  The max-rank dispatcher, rank-deficient residual realization,
+   and final case split are now checked, so no further Lean work remains in
+   the local-realization producer.
    full-frame chart must use `SourceOrientedFullFrameGaugeChartData`, a
    gauge-fixed special-orthogonal section with determinant coordinate
    `G.det ι`.  The rank-deficient half is named separately as
    `SourceOrientedRankDeficientRealizationData`; it must realize nearby
    oriented-variety points by residual isotropic-frame variables inside
    `ExtendedTube`, not by arbitrary ordinary Gram lifts.
-   The top-level local-realization theorem is now an assembly theorem only
-   after these two cases: `SourceOrientedLocalHolomorphicSectionData.to_localRealization`
-   converts the max-rank holomorphic section into local realization,
-   `SourceOrientedRankDeficientRealizationData.to_localRealization` converts
-   the residual chart into local realization, and
-   `sourceOrientedExtendedTube_localRealization` dispatches by
-   `SourceOrientedMaxRankAt`.  The relative-openness proof must index its
-   open union by the subtype of actual extended-tube points; it may not use
-   implicit proof placeholders or an arbitrary lift of an oriented invariant.
+   The top-level local-realization theorem is now an assembly theorem over
+   these two cases: `SourceOrientedRankDeficientResidualChartData.to_localRealization`
+   converts the residual chart into local realization, and
+   `sourceOrientedExtendedTubeLocalRealizationProducer_of_rankDeficientResidualChartProducer`
+   dispatches by `SourceOrientedMaxRankAt`.  The relative-openness proof
+   indexes its open union by the subtype of actual extended-tube points; it
+   does not use implicit proof placeholders or an arbitrary lift of an
+   oriented invariant.
    The full-frame gauge chart now has an implementation contract:
    `SourceFullFrameOrientedGramData`,
    `SourceFullFrameOrientedCoord`,
@@ -4335,29 +4359,32 @@ implementation contract is:
    is reserved for genuine full-coordinate homeomorphisms, not for arbitrary
    source changes.
    `sourceOrientedResidualChart_compactBound`,
-   `sourceOrientedResidualChart_quotient_eq_parameter`, and
-   `sourceOrientedResidualChart_clusterValue` are the only allowed route to
-   `sourceOrientedQuotientValue_locallyBounded_of_residualChart` and
-   `sourceOrientedQuotientValue_continuous_of_residualChart`.  This closes a
+   `sourceOrientedResidualChart_quotient_eq_parameter`,
+   `sourceOrientedQuotientValue_locallyBounded_of_residualChart`, and
+   `sourceOrientedResidualChart_clusterValue` are checked in
+   `SourceOrientedScalarRepresentative.lean`, along with the generic compact
+   parameter helper `SCV.continuousWithinAt_of_compact_parameter_surjection`
+   and its consumer
+   `sourceOrientedQuotientValue_continuous_of_residualChart`, and the
+   conditional global assembly
+   `sourceOrientedQuotientValue_continuous_locallyBounded_of_maxRankLocal`.
+   This closes a
    previous documentation gap where compactness and branch-law independence
    were described in prose but not pinned as Lean-sized theorem surfaces.
-   The compactness support is now proof-script level: `compactBound` is
-   `R.K_compact.exists_bound_of_continuousOn` applied to
+   The compactness support is now proof-script level and checked:
+   `compactBound` is `R.K_compact.exists_bound_of_continuousOn` applied to
    `extendF F ∘ R.toVec`; `quotient_eq_parameter` is a direct call to
    `sourceOrientedQuotientValue_wellDefined`; local boundedness is
-   `compactBound` plus `R.image_surj`; and continuity is factored through the
-   finite-dimensional/first-countable compact-parameter helper
-   `SCV.continuousWithinAt_of_compact_parameter_surjection`.  That helper now
-   includes the base-domain hypothesis `hy0U : y0 ∈ U` and is proved by the
-   concrete Mathlib route
-   `Filter.tendsto_iff_seq_tendsto`,
-   `IsCompact.image_of_continuousOn`,
-   `IsCompact.tendsto_nhds_of_unique_mapClusterPt`,
-   `TopologicalSpace.FirstCountableTopology.tendsto_subseq`,
-   `IsCompact.tendsto_subseq'`, and `tendsto_nhds_unique`; it is not an
-   unconstrained topological-subnet placeholder.  In the residual-chart
-   application, `hy0U` is derived from the stored field
-   `R.center_mem_ET`; the compact-parameter center only has to satisfy
+   `compactBound` plus `R.image_surj`; and continuity is factored through
+   `SCV.continuousWithinAt_of_compact_parameter_surjection`.  That helper uses
+   compact separation of the bad parameter set
+   `K ∩ value ⁻¹' Vᶜ`: its image under the continuous parameter map is compact
+   and closed, does not contain the base point by the cluster-value hypothesis,
+   and therefore supplies a target neighborhood on which every local parameter
+   representative has value in `V`.  It is not an unconstrained subnet or choice
+   placeholder.  In the residual-chart
+   application, `hy0U` is derived from the original `hz0` witness, equivalently
+   the stored field `R.center_mem_ET`; the compact-parameter center only has to satisfy
    `R.toVec_c0_invariant`, not `R.toVec c0 = z0`.  The production
    ordering is pinned: `sourceOrientedQuotientValue` and
    `sourceOrientedQuotientValue_wellDefined` must appear before
@@ -4365,7 +4392,10 @@ implementation contract is:
    latter is discussed inside the residual-chart packet.  The cluster-value
    lemma uses `R.center_mem_ET` directly and compares fibres by the oriented
    invariant equality; it does not try to identify the adapted residual
-   center source tuple with the original `z0`.
+   center source tuple with the original `z0`.  The remaining
+   `sourceOrientedQuotientValue_continuous_locallyBounded` work is now exactly
+   the max-rank local representative producer; the rank-deficient continuity
+   and boundedness branch is no longer a blocker.
    Low-rank same-Gram orientation is now explicit: not-max-rank gives
    `sourceGramMatrixRank < d+1`; every full-frame determinant then vanishes
    by the Gram-minor identity
@@ -4386,8 +4416,8 @@ implementation contract is:
    branch uses the residual-chart continuity and compact-bound theorems.  This
    closes the former prose-only step between local sections/residual charts and
    the `ContinuousOn`/`LocallyBoundedOn` hypotheses needed by the normal
-   Riemann theorem.  The two topological glue helpers now have
-   scratch-checked Lean-shaped bodies: continuity is
+   Riemann theorem.  The two topological glue helpers are now checked Lean:
+   continuity is
    `ContinuousOn.continuousAt` on the open chart, `nhdsWithin_le_nhds`,
    eventual membership in `Ω ∩ V`, and `Tendsto.congr'`; local boundedness
    chooses an open preimage of `Metric.ball (Ψ x) 1` and transfers the bound
@@ -13691,10 +13721,10 @@ This doc is complete only when:
    independence, and the archived adjacent-word source cover are not active
    implementation options;
 7. the active oriented scalar-source packet separates checked source-germ
-   infrastructure from the missing producer theorems:
+   infrastructure from the remaining producer theorems:
    `BHW.same_sourceOrientedInvariant_detOneOrbit_or_singularLimit`,
    `BHW.extendedTube_same_sourceOrientedInvariant_extendF_eq`,
-   `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected`,
+   checked `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected`,
    `BHW.sourceOrientedVarietyGermHolomorphicOn_extendF_descent`,
    `BHW.sourceOrientedScalarRepresentativeData_of_branchLaw`,
    `BHW.hallWightman_sourceOrientedScalarRepresentativeData`, and

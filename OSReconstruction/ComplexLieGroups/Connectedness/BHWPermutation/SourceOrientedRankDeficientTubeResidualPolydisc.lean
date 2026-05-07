@@ -740,4 +740,35 @@ noncomputable def sourceOriented_rankDeficient_residualChartProducer
     SourceOrientedRankDeficientResidualChartProducer d n :=
   sourceOrientedRankDeficientResidualChartProducer_of_tubeResidualPolydiscProducer
     (sourceOriented_rankDeficient_tubeResidualPolydiscProducer d n hd)
+
+/-- Pointwise rank-deficient residual chart obtained from the all-arity
+producer.  This is the fixed-center form consumed by later quotient-value
+continuity and local-boundedness arguments. -/
+noncomputable def sourceOriented_rankDeficient_residualChart
+    {d : ℕ}
+    [NeZero d]
+    (hd : 2 ≤ d)
+    (n : ℕ)
+    {z0 : Fin n → Fin (d + 1) → ℂ}
+    (hz0 : z0 ∈ ExtendedTube d n)
+    (hlow :
+      ¬ SourceOrientedMaxRankAt d n
+        (sourceOrientedMinkowskiInvariant d n z0)) :
+    SourceOrientedRankDeficientResidualChartData d n z0 :=
+  sourceOriented_rankDeficient_residualChartProducer d n hd hz0 hlow
+
+/-- The oriented extended-tube image is relatively open in the source-oriented
+variety and connected.  The relative-openness half is now supplied by the
+checked all-arity rank-deficient residual chart producer; connectedness is the
+continuous image of the extended tube. -/
+theorem sourceOrientedExtendedTubeDomain_relOpen_connected
+    {d : ℕ}
+    [NeZero d]
+    (hd : 2 ≤ d)
+    (n : ℕ) :
+    IsRelOpenInSourceOrientedGramVariety d n
+        (sourceOrientedExtendedTubeDomain d n) ∧
+      IsConnected (sourceOrientedExtendedTubeDomain d n) :=
+  sourceOrientedExtendedTubeDomain_relOpen_connected_of_rankDeficientResidualChartProducer
+    (sourceOriented_rankDeficient_residualChartProducer d n hd)
 end BHW

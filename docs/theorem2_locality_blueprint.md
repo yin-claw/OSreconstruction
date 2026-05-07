@@ -3773,6 +3773,26 @@ Proof decomposition of this theorem, without hiding the analytic work:
               BHW.extendF F w
       ```
 
+      Lean checkpoint: `SourceOrientedScalarRepresentative.lean` now checks
+      `BHW.SourceOrientedScalarRepresentativeData`,
+      `BHW.sourceOrientedQuotientValue`,
+      `BHW.sourceOrientedQuotientValue_wellDefined`,
+      `BHW.LocallyBoundedOn`,
+      `SCV.continuousWithinAt_of_local_eqOn_relNeighborhood`,
+      `SCV.locallyBoundedAt_of_local_eqOn_relNeighborhood`,
+      `SCV.continuousWithinAt_of_compact_parameter_surjection`,
+      `BHW.sourceOrientedResidualChart_compactBound`,
+      `BHW.sourceOrientedResidualChart_quotient_eq_parameter`,
+      `BHW.sourceOrientedQuotientValue_locallyBounded_of_residualChart`,
+      `BHW.sourceOrientedQuotientValue_continuous_of_residualChart`,
+      `BHW.sourceOrientedQuotientValue_continuous_locallyBounded_of_maxRankLocal`,
+      `BHW.sourceOrientedResidualChart_clusterValue`, and the mechanical
+      representative assembly
+      `BHW.sourceOrientedScalarRepresentativeData_of_branchLaw`.  The hard
+      producer remains the descent theorem that supplies the descended
+      germ-holomorphic `Phi`; the data package itself is no longer a Lean
+      blocker.
+
       Placement note for Lean implementation.  The Gram part of
       `sourceOrientedMinkowskiInvariant_complexLorentzAction` is already
       checked locally as
@@ -4244,11 +4264,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
       ```
 
       The relative-openness half is not a consequence of that continuity.  It
-      must be a local vector-realization theorem for the oriented invariant:
+      is checked through a local vector-realization producer for the oriented
+      invariant:
 
       ```lean
       structure BHW.SourceOrientedExtendedTubeLocalRealizationData
-          [NeZero d]
           (d n : Nat)
           (z0 : Fin n -> Fin (d + 1) -> ℂ) where
         Ω : Set (BHW.SourceOrientedGramData d n)
@@ -4259,18 +4279,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
           Ω ∩ BHW.sourceOrientedGramVariety d n ⊆
             BHW.sourceOrientedExtendedTubeDomain d n
 
-      theorem BHW.sourceOrientedExtendedTube_localRealization
-          [NeZero d]
-          (hd : 2 <= d)
-          (n : Nat)
-          {z0 : Fin n -> Fin (d + 1) -> ℂ}
-          (hz0 : z0 ∈ BHW.ExtendedTube d n) :
-          BHW.SourceOrientedExtendedTubeLocalRealizationData d n z0
+      def BHW.SourceOrientedExtendedTubeLocalRealizationProducer
+          (d n : Nat) : Type :=
+        ∀ {z0 : Fin n -> Fin (d + 1) -> ℂ},
+          z0 ∈ BHW.ExtendedTube d n ->
+            BHW.SourceOrientedExtendedTubeLocalRealizationData d n z0
 
-      theorem BHW.sourceOrientedExtendedTubeDomain_relOpen
-          [NeZero d]
-          (hd : 2 <= d)
-          (n : Nat) :
+      theorem BHW.sourceOrientedExtendedTubeDomain_relOpen_of_localRealization
+          (localRealization :
+            BHW.SourceOrientedExtendedTubeLocalRealizationProducer d n) :
           BHW.IsRelOpenInSourceOrientedGramVariety d n
             (BHW.sourceOrientedExtendedTubeDomain d n) := by
         classical
@@ -4278,30 +4295,35 @@ Proof decomposition of this theorem, without hiding the analytic work:
           {z : Fin n -> Fin (d + 1) -> ℂ //
             z ∈ BHW.ExtendedTube d n}
         let Ω : Set (BHW.SourceOrientedGramData d n) :=
-          ⋃ p : I,
-            (BHW.sourceOrientedExtendedTube_localRealization
-              (d := d) hd n (z0 := p.1) p.2).Ω
+          ⋃ p : I, (localRealization p.2).Ω
         refine ⟨Ω, ?_, ?_⟩
         · -- union of the open neighborhoods supplied by local realization
-          exact isOpen_iUnion fun p =>
-              (BHW.sourceOrientedExtendedTube_localRealization
-                (d := d) hd n (z0 := p.1) p.2).Ω_open
+          exact isOpen_iUnion fun p => (localRealization p.2).Ω_open
         · ext G
           constructor
           · intro hG
             rcases hG with ⟨z, hz, hGz⟩
             subst hGz
             constructor
-            · exact ⟨⟨z, hz⟩,
-                (BHW.sourceOrientedExtendedTube_localRealization
-                  (d := d) hd n (z0 := z) hz).center_mem⟩
+            · exact ⟨⟨z, hz⟩, (localRealization hz).center_mem⟩
             · exact ⟨z, rfl⟩
           · rintro ⟨hΩ, hvar⟩
             rcases hΩ with ⟨p, hGΩ⟩
-            exact
-              (BHW.sourceOrientedExtendedTube_localRealization
-                (d := d) hd n (z0 := p.1) p.2).realizes
-                ⟨hGΩ, hvar⟩
+            exact (localRealization p.2).realizes ⟨hGΩ, hvar⟩
+
+      theorem BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_localRealization
+          (localRealization :
+            BHW.SourceOrientedExtendedTubeLocalRealizationProducer d n) :
+          BHW.IsRelOpenInSourceOrientedGramVariety d n
+              (BHW.sourceOrientedExtendedTubeDomain d n) ∧
+            IsConnected (BHW.sourceOrientedExtendedTubeDomain d n)
+
+      theorem BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_rankDeficientResidualChartProducer
+          (rankDeficient :
+            BHW.SourceOrientedRankDeficientResidualChartProducer d n) :
+          BHW.IsRelOpenInSourceOrientedGramVariety d n
+              (BHW.sourceOrientedExtendedTubeDomain d n) ∧
+            IsConnected (BHW.sourceOrientedExtendedTubeDomain d n)
 
       theorem BHW.sourceOrientedExtendedTubeDomain_relOpen_connected
           [NeZero d]
@@ -4311,18 +4333,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (BHW.sourceOrientedExtendedTubeDomain d n) ∧
           IsConnected (BHW.sourceOrientedExtendedTubeDomain d n) := by
         exact
-          ⟨BHW.sourceOrientedExtendedTubeDomain_relOpen
-              (d := d) hd n,
-            BHW.sourceOrientedExtendedTubeDomain_connected
-              (d := d) hd n⟩
+          BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_rankDeficientResidualChartProducer
+            (BHW.sourceOriented_rankDeficient_residualChartProducer d n hd)
       ```
 
-      The displayed union proof is pseudo-code for the intended construction;
-      the implementation should use the subtype index `I` of extended-tube
-      points, as shown, and should not use implicit proof placeholders inside
-      the set comprehension.  The mathematical obligation is the local
-      realization theorem.  It is the oriented analogue of Hall-Wightman
-      Lemma 3 and must be proved by actual finite-dimensional coordinates:
+      The displayed union proof is now checked in
+      `SourceOrientedLocalRealization.lean`, using the subtype index `I` of
+      extended-tube points and no implicit proof placeholders inside the set
+      comprehension.  The mathematical obligation was the local realization
+      theorem, the oriented analogue of Hall-Wightman Lemma 3, and it is now
+      supplied by actual finite-dimensional coordinates:
 
       * In a full source-rank chart choose
         `ι : Fin (d + 1) ↪ Fin n` with
@@ -4551,87 +4571,47 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (d := d) hd n hn_le hz0 ι hι
       ```
 
-      Production order correction for `sourceOrientedExtendedTube_localRealization`.
-      The public local-realization theorem displayed above is assembled only
-      after the rank-deficient residual chart packet is available.  Both
-      max-rank branches are now checked directly:
+      Production order correction for the local-realization producer.
+      The public local-realization producer is assembled only after the
+      rank-deficient residual chart packet is available.  Both max-rank
+      branches are checked directly:
       `sourceOrientedExtendedTubeLocalRealizationData_of_smallArityMaxRank`
       and `sourceOrientedExtendedTubeLocalRealizationData_of_fullFrameMaxRank`
       are folded by
       `sourceOrientedExtendedTubeLocalRealizationData_of_maxRank`.  Max rank no
       longer needs a separate `SourceOrientedLocalHolomorphicSectionData`
-      wrapper to prove relative openness.  The final proof should have the
-      following dispatch shape, not a new theorem hiding both cases:
+      wrapper to prove relative openness.  The final proof has the following
+      checked dispatch shape, not a theorem hiding both cases:
 
       ```lean
-      theorem BHW.SourceOrientedLocalHolomorphicSectionData.to_localRealization
-          [NeZero d]
-          {z0 : Fin n -> Fin (d + 1) -> ℂ}
-          (S :
-            BHW.SourceOrientedLocalHolomorphicSectionData d n
-              (BHW.sourceOrientedMinkowskiInvariant d n z0)) :
-          BHW.SourceOrientedExtendedTubeLocalRealizationData d n z0 :=
-        { Ω := S.Ω
-          Ω_open := S.Ω_open
-          center_mem := S.center_mem
-          realizes := by
-            intro G hG
-            exact ⟨S.section G, S.section_mem G hG.1,
-              S.section_right_inv G hG⟩ }
-
       theorem BHW.SourceOrientedRankDeficientRealizationData.to_localRealization
-          [NeZero d]
           {z0 : Fin n -> Fin (d + 1) -> ℂ}
           (R : BHW.SourceOrientedRankDeficientRealizationData d n z0) :
-          BHW.SourceOrientedExtendedTubeLocalRealizationData d n z0 :=
-        { Ω := R.Ω
-          Ω_open := R.Ω_open
-          center_mem := R.center_mem
-          realizes := by
-            intro G hG
-            rcases R.realize G hG with ⟨z, hz, hZG⟩
-            exact ⟨z, hz, hZG⟩ }
+          BHW.SourceOrientedExtendedTubeLocalRealizationData d n z0
 
-      theorem BHW.sourceOrientedExtendedTube_localRealization_of_maxRank
-          [NeZero d]
-          (hd : 2 <= d)
-          (n : Nat)
-          {z0 : Fin n -> Fin (d + 1) -> ℂ}
-          (hz0 : z0 ∈ BHW.ExtendedTube d n)
-          (hmax :
-            BHW.SourceOrientedMaxRankAt d n
-              (BHW.sourceOrientedMinkowskiInvariant d n z0)) :
-          BHW.SourceOrientedExtendedTubeLocalRealizationData d n z0 := by
-        exact
-          BHW.sourceOrientedExtendedTubeLocalRealizationData_of_maxRank
-            (d := d) (n := n) hz0 hmax
-
-      theorem BHW.sourceOrientedExtendedTube_localRealization
-          [NeZero d]
-          (hd : 2 <= d)
-          (n : Nat)
-          {z0 : Fin n -> Fin (d + 1) -> ℂ}
-          (hz0 : z0 ∈ BHW.ExtendedTube d n) :
-          BHW.SourceOrientedExtendedTubeLocalRealizationData d n z0 := by
+      def BHW.sourceOrientedExtendedTubeLocalRealizationProducer_of_rankDeficientResidualChartProducer
+          (rankDeficient :
+            BHW.SourceOrientedRankDeficientResidualChartProducer d n) :
+          BHW.SourceOrientedExtendedTubeLocalRealizationProducer d n := by
+        intro z0 hz0
         by_cases hmax :
           BHW.SourceOrientedMaxRankAt d n
             (BHW.sourceOrientedMinkowskiInvariant d n z0)
         · exact
-            BHW.sourceOrientedExtendedTube_localRealization_of_maxRank
-              (d := d) hd n hz0 hmax
+            BHW.sourceOrientedExtendedTubeLocalRealizationData_of_maxRank
+              hz0 hmax
         · exact
-            (BHW.sourceOriented_rankDeficient_localRealization
-              (d := d) hd n hz0 hmax).to_localRealization
+            (rankDeficient hz0 hmax).to_localRealization
       ```
 
-      Thus `sourceOrientedExtendedTubeDomain_relOpen` consumes one public
-      local-realization theorem, but that theorem itself has no independent
-      mathematics: max rank comes from the holomorphic local section and
-      exceptional rank comes from
-      `sourceOriented_rankDeficient_localRealization`, whose proof is the
-      residual-polydisc construction above.  This production order prevents
-      the relative-openness theorem from becoming a wrapper around the whole
-      oriented Lemma-3 problem.
+      Thus `sourceOrientedExtendedTubeDomain_relOpen_of_localRealization`
+      consumes one public local-realization producer, but that producer itself
+      has no independent mathematics: max rank comes from the checked max-rank
+      local section and exceptional rank comes from
+      `sourceOriented_rankDeficient_residualChartProducer`, whose proof is the
+      residual-polydisc construction above.  The public no-parameter theorem
+      `sourceOrientedExtendedTubeDomain_relOpen_connected` is now the direct
+      producer instantiation.
 
       In the small-arity case `n < d + 1`, there is no ordered full-frame
       source determinant, so the oriented invariant carries no extra
@@ -6534,7 +6514,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       the proof docs must keep them separate.  `sourceOrientedMaxRankChart_at`
       is a chart on the oriented source variety near an arbitrary complex
       max-rank point; it has no `ExtendedTube` hypothesis.  The max-rank
-      part of `sourceOrientedExtendedTube_localRealization` is stronger: its
+      part of the checked extended-tube local-realization producer is stronger: its
       base point is `sourceOrientedMinkowskiInvariant z0` with
       `z0 ∈ ExtendedTube`, and the reconstructed vector section must be
       shrunk to remain inside `ExtendedTube`.  Both use the same selected
@@ -7769,10 +7749,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       the identity principle can use max-rank charts without an extended-tube
       basepoint, while scalar descent needs the stronger tube-valued section.
 
-      The rank-deficient half of `sourceOrientedExtendedTube_localRealization`
-      is a different theorem.  It is not a local holomorphic section theorem;
-      it is a local image-realization theorem plus continuity/local-boundedness
-      support for the quotient scalar value:
+      The rank-deficient half of the extended-tube local-realization producer
+      is different from the max-rank local section.  It is not a local
+      holomorphic section theorem; it is a local image-realization theorem plus
+      continuity/local-boundedness support for the quotient scalar value:
 
       ```lean
       structure BHW.SourceOrientedRankDeficientRealizationData
@@ -7789,31 +7769,23 @@ Proof decomposition of this theorem, without hiding the analytic work:
               z ∈ BHW.ExtendedTube d n ∧
               BHW.sourceOrientedMinkowskiInvariant d n z = G}
 
-      theorem BHW.sourceOriented_rankDeficient_localRealization
+      def BHW.sourceOriented_rankDeficient_residualChartProducer
+          (d n : Nat)
           [NeZero d]
-          (hd : 2 <= d)
-          (n : Nat)
-          {z0 : Fin n -> Fin (d + 1) -> ℂ}
-          (hz0 : z0 ∈ BHW.ExtendedTube d n)
-          (hlow :
-            ¬ BHW.SourceOrientedMaxRankAt d n
-              (BHW.sourceOrientedMinkowskiInvariant d n z0)) :
-          BHW.SourceOrientedRankDeficientRealizationData d n z0
+          (hd : 2 <= d) :
+          BHW.SourceOrientedRankDeficientResidualChartProducer d n
 
-      theorem BHW.sourceOrientedExtendedTube_localRealization_of_rankDeficient
+      theorem BHW.sourceOrientedExtendedTubeDomain_relOpen_connected
           [NeZero d]
           (hd : 2 <= d)
-          (n : Nat)
-          {z0 : Fin n -> Fin (d + 1) -> ℂ}
-          (hz0 : z0 ∈ BHW.ExtendedTube d n)
-          (hlow :
-            ¬ BHW.SourceOrientedMaxRankAt d n
-              (BHW.sourceOrientedMinkowskiInvariant d n z0)) :
-          BHW.SourceOrientedExtendedTubeLocalRealizationData d n z0
+          (n : Nat) :
+          BHW.IsRelOpenInSourceOrientedGramVariety d n
+            (BHW.sourceOrientedExtendedTubeDomain d n) ∧
+          IsConnected (BHW.sourceOrientedExtendedTubeDomain d n)
       ```
 
-      The rank-deficient proof must consume the ordinary Hall-Wightman Lemma-3
-      adapted-normal-form machinery, but it cannot stop at ordinary Gram
+      The rank-deficient proof consumes the ordinary Hall-Wightman Lemma-3
+      adapted-normal-form machinery, but it does not stop at ordinary Gram
       realization.  Its concrete obligations are:
 
       * choose the adapted representative with the same ordinary Gram as
@@ -7828,10 +7800,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       * shrink the residual coefficient polydisc using the Hall-Wightman
         coefficient-freedom theorem so all these tuples remain in
         `ExtendedTube d n`;
-      * prove the quotient value is locally bounded near the exceptional
-        locus by the same family, using continuity of `extendF F` on the
-        extended tube and the branch law to remove dependence on the chosen
-        realization.
+      * expose max-rank parameter density in the same original-coordinate
+        image, so the later quotient-descent proof can use this family for
+        exceptional-rank control.
 
       The previous `realize` field is not strong enough by itself to prove
       continuity or local boundedness of the quotient scalar value, because it
@@ -7841,7 +7812,6 @@ Proof decomposition of this theorem, without hiding the analytic work:
 
       ```lean
       structure BHW.SourceOrientedRankDeficientResidualChartData
-          [NeZero d]
           (d n : Nat)
           (z0 : Fin n -> Fin (d + 1) -> ℂ) where
         m : Nat
@@ -7946,20 +7916,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
         C.to_realizationData.to_localRealization
       ```
 
-      The remaining hard producer is consequently not a topology wrapper; it
-      is the theorem constructing this residual chart:
+      The hard producer is consequently not a topology wrapper; it is the
+      checked theorem constructing this residual chart:
 
       ```lean
-      theorem BHW.sourceOriented_rankDeficient_residualChart
+      def BHW.sourceOriented_rankDeficient_residualChartProducer
+          (d n : Nat)
           [NeZero d]
-          (hd : 2 <= d)
-          (n : Nat)
-          {z0 : Fin n -> Fin (d + 1) -> ℂ}
-          (hz0 : z0 ∈ BHW.ExtendedTube d n)
-          (hlow :
-            ¬ BHW.SourceOrientedMaxRankAt d n
-              (BHW.sourceOrientedMinkowskiInvariant d n z0)) :
-          BHW.SourceOrientedRankDeficientResidualChartData d n z0
+          (hd : 2 <= d) :
+          BHW.SourceOrientedRankDeficientResidualChartProducer d n
       ```
 
       In production Lean the long target is named by:
@@ -7980,8 +7945,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `SourceOrientedRankDeficientResidualChartData.toVec_c0_mem`, derived
       from `P_subset_K` and `toVec_mem`.
 
-      Its proof must provide the actual `toVec` formula after all
-      Hall-Wightman residual-frame shrinkings, prove `toVec_mem` directly in
+      Its proof provides the actual `toVec` formula after all
+      Hall-Wightman residual-frame shrinkings, proves `toVec_mem` directly in
       `ExtendedTube`, and prove `image_surj` for `Ω ∩ sourceOrientedGramVariety`.
       The already checked Schur local-image stack can supply the algebraic
       image and max-rank-density bookkeeping, but only after it is paired with
@@ -11518,7 +11483,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       surfaces:
 
       ```lean
-      theorem BHW.sourceOriented_rankDeficient_residualChart
+      def BHW.sourceOriented_rankDeficient_residualChart
           [NeZero d]
           (hd : 2 <= d)
           (n : Nat)
@@ -12075,22 +12040,18 @@ Proof decomposition of this theorem, without hiding the analytic work:
 
       ```lean
       theorem BHW.sourceOrientedResidualChart_compactBound
-          [NeZero d]
-          (hd : 2 <= d)
-          (n : Nat)
-          (F : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
-          (hF_ext_cont :
-            ContinuousOn (BHW.extendF F) (BHW.ExtendedTube d n))
+          {d n : Nat}
           {z0 : Fin n -> Fin (d + 1) -> ℂ}
+          (F : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
           (R :
-            BHW.SourceOrientedRankDeficientResidualChartData d n z0) :
+            BHW.SourceOrientedRankDeficientResidualChartData d n z0)
+          (hF_ext_cont :
+            ContinuousOn (BHW.extendF F) (BHW.ExtendedTube d n)) :
           ∃ C : ℝ, 0 <= C ∧
             ∀ c ∈ R.K, ‖BHW.extendF F (R.toVec c)‖ <= C
 
       theorem BHW.sourceOrientedResidualChart_quotient_eq_parameter
-          [NeZero d]
-          (hd : 2 <= d)
-          (n : Nat)
+          {d n : Nat}
           (F : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
           (hBranch :
             ∀ {z w : Fin n -> Fin (d + 1) -> ℂ},
@@ -12103,7 +12064,6 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (R :
             BHW.SourceOrientedRankDeficientResidualChartData d n z0)
           {G : BHW.SourceOrientedGramData d n}
-          (hG : G ∈ R.Ω ∩ BHW.sourceOrientedExtendedTubeDomain d n)
           {c : Fin R.m -> ℂ}
           (hc : c ∈ R.P)
           (hcG :
@@ -12112,12 +12072,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
             BHW.extendF F (R.toVec c)
 
       theorem BHW.sourceOrientedResidualChart_clusterValue
-          [NeZero d]
-          (hd : 2 <= d)
-          (n : Nat)
+          {d n : Nat}
           (F : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
-          (hF_ext_cont :
-            ContinuousOn (BHW.extendF F) (BHW.ExtendedTube d n))
           (hBranch :
             ∀ {z w : Fin n -> Fin (d + 1) -> ℂ},
               z ∈ BHW.ExtendedTube d n ->
@@ -12136,17 +12092,25 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.extendF F (R.toVec c) = BHW.extendF F z0
       ```
 
-      `sourceOrientedQuotientValue_locallyBounded_of_residualChart` is then
+      Lean checkpoint: `SourceOrientedScalarRepresentative.lean` checks
+      `sourceOrientedResidualChart_compactBound`,
+      `sourceOrientedResidualChart_quotient_eq_parameter`,
+      `sourceOrientedQuotientValue_locallyBounded_of_residualChart`, and
+      `sourceOrientedResidualChart_clusterValue`.  The same file also checks
+      the compact-parameter continuity helper
+      `SCV.continuousWithinAt_of_compact_parameter_surjection` and its
+      rank-deficient consumer
+      `sourceOrientedQuotientValue_continuous_of_residualChart`.
+      `sourceOrientedQuotientValue_locallyBounded_of_residualChart` is
       `compactBound` plus `image_surj` and
       `sourceOrientedResidualChart_quotient_eq_parameter`.
       `sourceOrientedQuotientValue_continuous_of_residualChart` is the
-      finite-dimensional first-countable compact-parameter theorem applied
-      to `R.K`, followed by `sourceOrientedResidualChart_clusterValue`.  The
-      Lean proof below uses the existing cluster/subsequence APIs
-      `IsCompact.tendsto_nhds_of_unique_mapClusterPt`,
-      `TopologicalSpace.FirstCountableTopology.tendsto_subseq`, and
-      `IsCompact.tendsto_subseq'`; it does not require an extra subnet
-      abstraction layer.
+      compact-parameter separation theorem applied to `R.K`, followed by
+      `sourceOrientedResidualChart_clusterValue`: for every open neighborhood
+      `V` of the center value, the bad set `K ∩ value ⁻¹' Vᶜ` has compact
+      closed parameter image away from the center invariant, so its complement
+      gives the required target neighborhood.  No sequential/subnet abstraction
+      layer is needed.
       No choice of parameters may be made outside `R.K`; otherwise the
       compactness proof and the branch-law identification break.
 
@@ -12188,15 +12152,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
 
       The quotient-to-parameter rewrite is also mechanical after
       well-definedness.  The membership proof for `R.toVec c` uses
-      `R.P_subset_K`; the fact that `G` lies in the extended-tube oriented
-      image is present only to match the caller's local-domain hypotheses:
+      `R.P_subset_K`; no separate hypothesis that `G` lies in the
+      extended-tube oriented image is needed, because the equality
+      `sourceOrientedMinkowskiInvariant d n (R.toVec c) = G` supplies the
+      required image witness:
 
       ```lean
       theorem BHW.sourceOrientedResidualChart_quotient_eq_parameter ... := by
         have hcK : c ∈ R.K := R.P_subset_K hc
         exact
           BHW.sourceOrientedQuotientValue_wellDefined
-            (d := d) hd n F hBranch
+            (d := d) F hBranch
             (R.toVec_mem c hcK) hcG
       ```
 
@@ -12214,7 +12180,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (d := d) hd n hz0 hlow
         obtain ⟨C, hC_nonneg, hC⟩ :=
           BHW.sourceOrientedResidualChart_compactBound
-            (d := d) hd n F hF_ext_cont R
+            (d := d) F R hF_ext_cont
         refine ⟨R.Ω, R.Ω_open, R.center_mem, C, hC_nonneg, ?_⟩
         intro G hG
         rcases R.image_surj ⟨hG.1, ?_⟩ with ⟨c, hcP, hcG⟩
@@ -12223,7 +12189,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
               BHW.sourceOrientedQuotientValue n F G =
                 BHW.extendF F (R.toVec c) :=
             BHW.sourceOrientedResidualChart_quotient_eq_parameter
-              (d := d) hd n F hBranch R hG hcP hcG
+              (d := d) F hBranch R hcP hcG
           simpa [hq] using hC c hcK
         · exact
             BHW.sourceOrientedExtendedTubeDomain_subset_variety
@@ -12248,85 +12214,50 @@ Proof decomposition of this theorem, without hiding the analytic work:
       ```
 
       Continuity at a rank-deficient point requires one reusable topology
-      lemma so the Lean proof does not have to manipulate compact
-      subsequences in the middle of the Hall-Wightman descent.  The helper is
-      deliberately finite-dimensional/first-countable: it says that a quotient
-      function locally represented by a compact parameter family is continuous
-      at the base point, provided the base point lies in the represented
-      domain and all compact cluster parameters over the base fibre have the
-      base value.
+      lemma so the Lean proof does not hide compactness inside the
+      Hall-Wightman descent.  The checked helper is a compact-separation
+      theorem: a quotient function locally represented by a compact parameter
+      family is continuous at the base point when all compact parameters over
+      the base fibre have the base value.
 
       ```lean
       theorem SCV.continuousWithinAt_of_compact_parameter_surjection
-          {P Y : Type*}
-          [TopologicalSpace P] [FirstCountableTopology P]
-          [TopologicalSpace Y] [FirstCountableTopology Y] [T2Space Y]
-          {K P0 : Set P} {Ω U : Set Y}
+          {X Y : Type*}
+          [TopologicalSpace X] [TopologicalSpace Y]
+          [T2Space X] [T2Space Y]
+          {K P : Set X} {Ω U : Set Y}
           {y0 : Y}
-          {param : P -> Y}
-          {value : P -> ℂ}
+          {param : X -> Y}
+          {value : X -> ℂ}
           {phi : Y -> ℂ}
           (hK_compact : IsCompact K)
-          (hP0_sub : P0 ⊆ K)
+          (hP_sub : P ⊆ K)
           (hparam_cont : ContinuousOn param K)
           (hvalue_cont : ContinuousOn value K)
           (hy0U : y0 ∈ U)
-          (hy0Ω : y0 ∈ Ω)
           (hΩ_open : IsOpen Ω)
+          (hy0Ω : y0 ∈ Ω)
           (hsurj :
-            Ω ∩ U ⊆ param '' P0)
+            ∀ y, y ∈ Ω ∩ U -> ∃ c, c ∈ P ∧ param c = y)
           (hphi_param :
             ∀ y, y ∈ Ω ∩ U ->
-              ∀ c ∈ P0, param c = y -> phi y = value c)
+              ∀ c ∈ P, param c = y -> phi y = value c)
           (hcluster_base :
             ∀ c ∈ K, param c = y0 -> value c = phi y0) :
           ContinuousWithinAt phi U y0
       ```
 
-      Proof transcript for this helper.  Work from the identity
-      `ContinuousWithinAt phi U y0 = Tendsto phi (𝓝[U] y0) (𝓝 (phi y0))`
-      and use `Filter.tendsto_iff_seq_tendsto`, which is available because
-      `FirstCountableTopology` gives
-      `IsCountablyGenerated (𝓝[U] y0)`.  Fix a sequence
-      `u : ℕ -> Y` with `hu : Tendsto u atTop (𝓝[U] y0)`.
-      The open-neighborhood hypothesis gives
-      `hΩ_ev : ∀ᶠ j in atTop, u j ∈ Ω`, and the within-filter gives
-      `hU_ev : ∀ᶠ j in atTop, u j ∈ U`.  Since
-      `hy0Ω` and `hy0U` put the base point in `Ω ∩ U`, `hsurj`
-      supplies a fallback parameter `cBase ∈ P0` with
-      `param cBase = y0`.  Define a total chooser
-      `cseq : ℕ -> P` by choosing a witness from `hsurj` whenever
-      `u j ∈ Ω ∩ U`, and using `cBase` otherwise.  Then eventually
-      `cseq j ∈ P0`, `param (cseq j) = u j`, and
-      `phi (u j) = value (cseq j)` by `hphi_param`; also eventually
-      `cseq j ∈ K` by `hP0_sub`.
-
-      It remains to prove
-      `Tendsto (fun j => value (cseq j)) atTop (𝓝 (phi y0))`.
-      Let `Kval := value '' K`.  The compactness theorem
-      `hK_compact.image_of_continuousOn hvalue_cont` gives compactness of
-      `Kval`, and the previous paragraph gives eventual membership in
-      `Kval`.  Apply
-      `IsCompact.tendsto_nhds_of_unique_mapClusterPt` to `Kval`.  For the
-      required uniqueness clause, take any
-      `a ∈ Kval` with
-      `MapClusterPt a atTop (fun j => value (cseq j))`.  First use
-      `TopologicalSpace.FirstCountableTopology.tendsto_subseq` to pass to a
-      subsequence on which `value (cseq j)` tends to `a`.  Since the
-      corresponding parameter subsequence is still eventually in `K`, apply
-      `hK_compact.tendsto_subseq'` to pass to a further subsequence with
-      `cseq j -> c*` for some `c* ∈ K`.  Continuity-on-`K` of `value`
-      gives `value (cseq j) -> value c*`, while the first subsequence limit
-      still gives `value (cseq j) -> a`; `tendsto_nhds_unique` in `ℂ`
-      yields `a = value c*`.  Continuity-on-`K` of `param`, the eventual
-      equality `param (cseq j) = u j`, and `hu` give
-      `param c* = y0`, again by `tendsto_nhds_unique` in the Hausdorff space
-      `Y`.  Hence `value c* = phi y0` by `hcluster_base`, so
-      `a = phi y0`.  This proves the unique-cluster condition and therefore
-      the scalar convergence.  Finally use `Filter.Tendsto.congr'` with the
-      eventual equality `phi (u j) = value (cseq j)` and discharge the
-      original `ContinuousWithinAt` by
-      `Filter.tendsto_iff_seq_tendsto.2`.
+      Proof transcript for this helper.  Given an open neighborhood `V` of
+      `phi y0`, set `Bad := K ∩ value ⁻¹' Vᶜ`.  The field
+      `hvalue_cont` and compactness of `K` make `Bad` compact; `hparam_cont`
+      makes `param '' Bad` compact and hence closed in the Hausdorff target.
+      The cluster-base hypothesis proves `y0 ∉ param '' Bad`: any bad
+      parameter over `y0` would have `value c = phi y0 ∈ V`, contradicting
+      badness.  Therefore `(param '' Bad)ᶜ ∩ Ω` is an open target
+      neighborhood of `y0`.  For `y` in this neighborhood and in `U`,
+      `hsurj` chooses `c ∈ P` with `param c = y`; if `value c ∉ V`, then
+      `c ∈ Bad` and hence `y ∈ param '' Bad`, contradiction.  Thus
+      `value c ∈ V`, and `hphi_param` transfers this to `phi y ∈ V`.
 
       With that helper, the rank-deficient continuity proof has no hidden
       analytic step:
@@ -12349,16 +12280,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 BHW.sourceOrientedMinkowskiInvariant d n (R.toVec c))
               R.K := by
           exact
-            (BHW.continuous_sourceOrientedMinkowskiInvariant d n).continuousOn.comp
+            (BHW.continuous_sourceOrientedMinkowskiInvariant
+              (d := d) (n := n)).continuousOn.comp
               R.toVec_continuousOn
-              (by intro c hc; trivial)
+              (by intro c hc; exact Set.mem_univ _)
         have hy0U :
             BHW.sourceOrientedMinkowskiInvariant d n z0 ∈
-              BHW.sourceOrientedExtendedTubeDomain d n := by
-          exact ⟨z0, R.center_mem_ET, rfl⟩
+            BHW.sourceOrientedExtendedTubeDomain d n := by
+          exact ⟨z0, hz0, rfl⟩
         refine
           SCV.continuousWithinAt_of_compact_parameter_surjection
-            (K := R.K) (P0 := R.P)
+            (K := R.K) (P := R.P)
             (Ω := R.Ω)
             (U := BHW.sourceOrientedExtendedTubeDomain d n)
             (y0 := BHW.sourceOrientedMinkowskiInvariant d n z0)
@@ -12367,7 +12299,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (value := fun c => BHW.extendF F (R.toVec c))
             (phi := BHW.sourceOrientedQuotientValue n F)
             R.K_compact R.P_subset_K hparam_cont hvalue_cont hy0U
-            R.center_mem R.Ω_open ?_ ?_ ?_
+            R.Ω_open R.center_mem ?_ ?_ ?_
         · intro G hG
           exact R.image_surj ⟨hG.1,
             BHW.sourceOrientedExtendedTubeDomain_subset_variety
@@ -12375,11 +12307,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
         · intro G hG c hcP hcG
           exact
             BHW.sourceOrientedResidualChart_quotient_eq_parameter
-              (d := d) hd n F hBranch R hG hcP hcG
+              (d := d) F hBranch R hcP hcG
         · intro c hcK hc0
+          have hcenter :
+              BHW.sourceOrientedQuotientValue n F
+                  (BHW.sourceOrientedMinkowskiInvariant d n z0) =
+                BHW.extendF F z0 :=
+            BHW.sourceOrientedQuotientValue_wellDefined
+              (d := d) F hBranch hz0 rfl
           exact
-            BHW.sourceOrientedResidualChart_clusterValue
-              (d := d) hd n F hF_ext_cont hBranch R hcK hc0
+            (BHW.sourceOrientedResidualChart_clusterValue
+              (d := d) F hBranch R hcK hc0).trans hcenter.symm
       ```
 
       Finally, the cluster-value lemma uses the branch law only once.  The
@@ -12416,7 +12354,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
 
       ```lean
       noncomputable def BHW.sourceOrientedQuotientValue
-          [NeZero d]
+          {d : Nat}
           (n : Nat)
           (F : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
           (G : BHW.SourceOrientedGramData d n) : ℂ :=
@@ -12426,9 +12364,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
           0
 
       theorem BHW.sourceOrientedQuotientValue_wellDefined
-          [NeZero d]
-          (hd : 2 <= d)
-          (n : Nat)
+          {d n : Nat}
           (F : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
           (hBranch :
             ∀ {z w : Fin n -> Fin (d + 1) -> ℂ},
@@ -12441,7 +12377,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
           {z : Fin n -> Fin (d + 1) -> ℂ}
           (hz : z ∈ BHW.ExtendedTube d n)
           (hGz : BHW.sourceOrientedMinkowskiInvariant d n z = G) :
-          BHW.sourceOrientedQuotientValue n F G = BHW.extendF F z := by
+          BHW.sourceOrientedQuotientValue (d := d) n F G =
+            BHW.extendF F z := by
         classical
         have hGmem :
             G ∈ BHW.sourceOrientedExtendedTubeDomain d n :=
@@ -12502,7 +12439,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
         · intro G hG
           exact
             BHW.sourceOrientedQuotientValue_wellDefined
-              (d := d) hd n F hBranch
+              (d := d) F hBranch
               (S.section_mem G hG.1)
               (S.section_right_inv G hG)
 
@@ -12572,25 +12509,31 @@ Proof decomposition of this theorem, without hiding the analytic work:
         have hphi : phi y = Ψ y := hEq ⟨hyΩ, hU_sub hyU⟩
         simpa [hphi] using hnorm
 
-      theorem BHW.sourceOrientedQuotientValue_continuous_locallyBounded
+      theorem BHW.sourceOrientedQuotientValue_continuous_locallyBounded_of_maxRankLocal
           [NeZero d]
           (hd : 2 <= d)
           (n : Nat)
           (F : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
-          (hF_holo : DifferentiableOn ℂ F (BHW.ForwardTube d n))
-          (hF_cinv :
-            ∀ (Λ : ComplexLorentzGroup d)
-              (z : Fin n -> Fin (d + 1) -> ℂ),
-              z ∈ BHW.ForwardTube d n ->
-              BHW.complexLorentzAction Λ z ∈ BHW.ForwardTube d n ->
-              F (BHW.complexLorentzAction Λ z) = F z)
+          (hF_ext_cont :
+            ContinuousOn (BHW.extendF F) (BHW.ExtendedTube d n))
           (hBranch :
             ∀ {z w : Fin n -> Fin (d + 1) -> ℂ},
               z ∈ BHW.ExtendedTube d n ->
               w ∈ BHW.ExtendedTube d n ->
               BHW.sourceOrientedMinkowskiInvariant d n z =
                 BHW.sourceOrientedMinkowskiInvariant d n w ->
-              BHW.extendF F z = BHW.extendF F w) :
+              BHW.extendF F z = BHW.extendF F w)
+          (hMaxLocal :
+            ∀ {G0 : BHW.SourceOrientedGramData d n},
+              G0 ∈ BHW.sourceOrientedExtendedTubeDomain d n ->
+                BHW.SourceOrientedMaxRankAt d n G0 ->
+                  ∃ Ω Ψ,
+                    IsOpen Ω ∧ G0 ∈ Ω ∧
+                    DifferentiableOn ℂ Ψ Ω ∧
+                    Ω ∩ BHW.sourceOrientedGramVariety d n ⊆
+                      BHW.sourceOrientedExtendedTubeDomain d n ∧
+                    Set.EqOn (BHW.sourceOrientedQuotientValue n F) Ψ
+                      (Ω ∩ BHW.sourceOrientedGramVariety d n)) :
           ContinuousOn (BHW.sourceOrientedQuotientValue n F)
             (BHW.sourceOrientedExtendedTubeDomain d n) ∧
           BHW.LocallyBoundedOn (BHW.sourceOrientedQuotientValue n F)
@@ -12606,11 +12549,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
           by_cases hmax :
             BHW.SourceOrientedMaxRankAt d n
               (BHW.sourceOrientedMinkowskiInvariant d n z0)
-          · rcases
-              BHW.sourceOrientedQuotientValue_holomorphicOn_maxRank
-                (d := d) hd n F hF_holo hF_cinv hBranch
-                ⟨z0, hz0, rfl⟩ hmax with
-              ⟨Ω, Ψ, hΩ_open, hG0Ω, hΨ, hΩ_sub, hEq⟩
+	          · rcases hMaxLocal ⟨z0, hz0, rfl⟩ hmax with
+	              ⟨Ω, Ψ, hΩ_open, hG0Ω, hΨ, hΩ_sub, hEq⟩
             exact
               SCV.continuousWithinAt_of_local_eqOn_relNeighborhood
                 (U := BHW.sourceOrientedExtendedTubeDomain d n)
@@ -12618,35 +12558,33 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 (Ω := Ω)
                 hU_sub ⟨z0, hz0, rfl⟩ hΩ_open hG0Ω
                 hΨ.continuousOn hEq
-          · exact
-              BHW.sourceOrientedQuotientValue_continuous_of_residualChart
-                (d := d) hd n F
-                (BHW.extendF_holomorphicOn
-                  (d := d) hd n F hF_holo hF_cinv).continuousOn
-                hBranch hz0 hmax
+	          · exact
+	              BHW.sourceOrientedQuotientValue_continuous_of_residualChart
+	                (d := d) hd n F hF_ext_cont hBranch hz0 hmax
         · intro G0 hG0
           rcases hG0 with ⟨z0, hz0, rfl⟩
           by_cases hmax :
             BHW.SourceOrientedMaxRankAt d n
               (BHW.sourceOrientedMinkowskiInvariant d n z0)
-          · rcases
-              BHW.sourceOrientedQuotientValue_holomorphicOn_maxRank
-                (d := d) hd n F hF_holo hF_cinv hBranch
-                ⟨z0, hz0, rfl⟩ hmax with
-              ⟨Ω, Ψ, hΩ_open, hG0Ω, hΨ, hΩ_sub, hEq⟩
+	          · rcases hMaxLocal ⟨z0, hz0, rfl⟩ hmax with
+	              ⟨Ω, Ψ, hΩ_open, hG0Ω, hΨ, hΩ_sub, hEq⟩
             exact
               SCV.locallyBoundedAt_of_local_eqOn_relNeighborhood
                 (U := BHW.sourceOrientedExtendedTubeDomain d n)
                 (V := BHW.sourceOrientedGramVariety d n)
                 (Ω := Ω)
                 hU_sub hΩ_open hG0Ω hΨ.continuousOn hEq
-          · exact
-              BHW.sourceOrientedQuotientValue_locallyBounded_of_residualChart
-                (d := d) hd n F
-                (BHW.extendF_holomorphicOn
-                  (d := d) hd n F hF_holo hF_cinv).continuousOn
-                hBranch hz0 hmax
-      ```
+	          · exact
+	              BHW.sourceOrientedQuotientValue_locallyBounded_of_residualChart
+	                (d := d) hd n F hF_ext_cont hBranch hz0 hmax
+	      ```
+
+	      Lean checkpoint: the conditional assembly theorem
+	      `BHW.sourceOrientedQuotientValue_continuous_locallyBounded_of_maxRankLocal`
+	      is checked in `SourceOrientedScalarRepresentative.lean`.  The
+	      unconditional theorem with hypotheses `hF_holo` and `hF_cinv` remains
+	      blocked precisely by the max-rank local representative producer
+	      `BHW.sourceOrientedQuotientValue_holomorphicOn_maxRank`.
 
       The two `SCV.*_local_eqOn_relNeighborhood` helpers are ordinary
       topological glue.  For continuity, `hΩ_open` and `hxΩ` make membership
@@ -13928,7 +13866,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
         · intro w hw
           exact
             BHW.sourceOrientedQuotientValue_wellDefined
-              (d := d) hd n F hBranch hw rfl
+              (d := d) F hBranch hw rfl
       ```
 
       The displayed proof uses the usual source-germ convention that
@@ -13991,9 +13929,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | `BHW.sourceOrientedMaxRankChartData_of_maxRankAt_fullFrame`, `BHW.sourceOrientedGramVariety_local_connectedRelOpen_basis_of_fullFrameMaxRank_and_localImage`, `BHW.sourceOrientedGramVariety_connectedRelOpenTube_around_compactPath_of_fullFrameMaxRank_and_localImage`, `BHW.sourceOrientedRelOpen_inter_maxRank_relOpen`, `BHW.sourceOrientedMaxRank_dense_in_relOpen_inter`, `BHW.sourceOrientedRelOpen_inter_maxRank_nonempty`, `BHW.sourceOrientedGramVariety_maxRank_identity_principle_of_connected`, `BHW.sourceOrientedGramVariety_maxRank_identity_principle_of_connected_fullFrame`, `BHW.sourceOrientedGramVariety_maxRank_eqOn_of_connected_fullFrame`, `BHW.sourceOrientedGramVariety_relOpen_eqOn_zero_of_eqOn_maxRank`, `BHW.sourceOrientedGramVariety_identity_principle_of_connected_maxRank_fullFrame`, `BHW.sourceOrientedGramVariety_eqOn_of_connected_maxRank_fullFrame`, `BHW.bhw_jost_closedChain_orientedMaxRankMonodromy_of_seed`, `BHW.bhw_jost_closedChain_sourceMonodromy_on_maxRankClosingPatch_of_seed`, `BHW.bhw_jost_closedChain_orientedMonodromy_of_seed`, `BHW.bhw_jost_closedChain_sourceMonodromy_of_seed` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedFullFrameMaxRankProducer.lean` and `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedMaxRankIdentity.lean`. | The hard-range full-frame producer now removes the abstract max-rank chart hypothesis: oriented max rank of a source-variety point gives a nonzero selected full-frame determinant, hence a finite-coordinate max-rank chart.  The max-rank locus is relatively open inside the oriented source variety by the determinant-nonzero union characterization, and it is dense in every relatively open oriented patch by pulling back to source tuples and using `dense_sourceComplexGramRegularAt`.  The max-rank identity theorem is the checked clopen propagation on the connected max-rank subtype; density and continuity extend it to all ranks once the max-rank part of the domain is connected.  The closed-loop seed consumers turn a stored `BHWJostOrientedMaxRankClosedLoopSeed` into terminal-initial oriented germ equality and source-branch equality first on max-rank closing points and then on the whole closing patch.  This does not prove the Hall-Wightman closed-loop seed itself and it still takes connectedness of the closing max-rank part as an explicit geometric input. |
       | `BHW.same_sourceOrientedInvariant_detOneOrbit_or_singularLimit` | Componentwise proof transcript pinned; production Lean not started. | Split by `HWSourceGramOrbitRankAt`.  In the orbit-rank branch, extract Gram equality and determinant equality from `SourceOrientedGramData`, prove `HWSameSourceGramSOOrientationCompatible` via a nonzero full-frame determinant and the determinant-ratio formula for `HWFullRankSameGramFrameMapDet`, then call `hw_sameSourceGram_regular_orbit`.  In the low-rank branch, call the Hall-Wightman residual-frame contraction producer.  The lower support transcript expands coefficient kernels, restricted-rank nondegeneracy, determinant-repaired Witt extension, selected Schur residuals, common isotropic residual frames, dual frames, contraction curves, and the singular topology limit; the missing work is implementation, not a remaining theorem-shape gap in this row. |
       | `BHW.extendedTube_same_sourceOrientedInvariant_extendF_eq` | Assembly transcript pinned; not production-Lean-ready until the previous row's Hall-Wightman producers exist. | Apply the previous row's actual orbit alternative to determinant-`1` complex Lorentz invariance of `extendF` via `extendF_complexLorentzInvariant_of_cinv`; apply the singular alternative by the checked topology-limit transcript for `hw_sameSourceGram_singularLimit_extendF_eq`.  This theorem has no independent route choice and must not be implemented before `same_sourceOrientedInvariant_detOneOrbit_or_singularLimit`. |
-      | `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected` | Connectedness half checked as `BHW.sourceOrientedExtendedTubeDomain_connected`; the open-union topology split for the relative-openness half is checked as `BHW.SourceOrientedExtendedTubeLocalRealizationData`, `BHW.SourceOrientedExtendedTubeLocalRealizationProducer`, `BHW.sourceOrientedExtendedTubeDomain_relOpen_of_localRealization`, and `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_localRealization` in `SourceOrientedLocalRealization.lean`.  The max-rank local-realization branch is also checked there as `BHW.sourceComplexGramRegularAt_of_HWSourceGramMaxRankAt_any`, `BHW.continuousOn_sourceFullFrameGauge_reconstructVector_on_modelDetNonzero`, `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_smallArityMaxRank`, `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_fullFrameDetNonzero`, `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_fullFrameMaxRank`, and `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_maxRank`.  The rank-deficient target interface and producer are now checked as `BHW.SourceOrientedRankDeficientRealizationData`, `BHW.SourceOrientedRankDeficientRealizationData.to_localRealization`, `BHW.SourceOrientedRankDeficientResidualChartData`, `BHW.SourceOrientedRankDeficientResidualChartData.center_mem`, `BHW.SourceOrientedRankDeficientResidualChartData.toVec_c0_mem`, `BHW.SourceOrientedRankDeficientResidualChartData.to_realizationData`, `BHW.SourceOrientedRankDeficientResidualChartData.to_localRealization`, `BHW.SourceOrientedRankDeficientResidualChartProducer`, `BHW.sourceOriented_rankDeficient_tubeResidualPolydiscProducer`, `BHW.sourceOriented_rankDeficient_residualChartProducer`, `BHW.sourceOrientedExtendedTubeLocalRealizationProducer_of_rankDeficientResidualChartProducer`, and `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_rankDeficientResidualChartProducer`. | The rank-deficient residual-chart producer is now checked in `SourceOrientedRankDeficientTubeResidualPolydisc.lean`, so this local-realization input is no longer a blocker.  The full-frame max-rank case no longer has a tube-shrink gap: it uses `isOpen_extendedTube`, the explicit reconstructed-vector map, the model-domain shrinker, and the stored chart inverse to produce an actual `ExtendedTube` witness realizing each nearby oriented-variety point.  The small-arity max-rank case uses the ordinary source-Gram local image theorem inside `ExtendedTube` and emptiness of `Fin (d + 1) ↪ Fin n`.  Rank-deficient charts use the checked sliced-head Schur stack only for original-coordinate image bookkeeping; the explicit ET-valued residual family is produced through the checked tube residual-polydisc data, with `toVec c := N.toOriginal (P.residualVector c)`.  The next theorem-2 blocker after this row is the downstream source-oriented scalar representative/descent layer, not an unproved residual-chart wrapper. |
-      | `BHW.sourceOrientedVarietyGermHolomorphicOn_extendF_descent` | Componentwise regular/removable transcript pinned; production Lean not started. | Define `Phi` as the quotient value of `extendF F` on `sourceOrientedExtendedTubeDomain`, prove well-definedness from the oriented branch law, prove holomorphy on `SourceOrientedMaxRankAt` by `sourceOrientedMaxRank_localSection_smallArity` or `sourceOrientedMaxRank_localSection_fullFrame`, prove continuity/local boundedness of the quotient value near the exceptional locus using `sourceOrientedQuotientValue_locallyBounded_of_residualChart` and `sourceOrientedQuotientValue_continuous_of_residualChart`, and extend across `SourceOrientedExceptionalRank` using the algebraic SO-invariant model: `sourceOrientedInvariantRing_generated_by_gram_det`, `sourceOrientedInvariantRing_relations_kernel`, `sourceOrientedInvariantRing_integrallyClosed`, `sourceOrientedAlgebraicCoordinateRing_iso_invariants`, analytic exceptional-rank locus, density of the max-rank stratum, and the normal analytic-space Riemann theorem.  The only permitted standard algebraic-geometry import boundary here is `BHW.standardSO_FFT_SFT_coordinatePresentation`: it must provide the explicit `SO` pairing/volume generators, Cauchy-Binet kernel, and coordinate-map surjectivity in one sorry-free theorem, and it must remain independent of OS, Wightman functions, EOW, PET, and locality.  No all-rank local-section theorem and no arbitrary ambient extension of `Phi` is allowed. |
-      | `BHW.sourceOrientedScalarRepresentativeData_of_branchLaw`, `BHW.hallWightman_sourceOrientedScalarRepresentativeData`, `BHW.sourceOrientedScalarRepresentativeData_bvt_F` | Assembly only after the preceding rows. | Specialize to `bvt_F` using `bvt_F_holomorphic`, `bvt_F_complexLorentzInvariant_forwardTube`, and `BHW_forwardTube_eq`; no full-component/improper invariant is needed on this proper-complex route. |
+      | `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected` | Checked in `SourceOrientedRankDeficientTubeResidualPolydisc.lean`, by applying `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_rankDeficientResidualChartProducer` to the checked `BHW.sourceOriented_rankDeficient_residualChartProducer`; the same file also checks the pointwise fixed-center wrapper `BHW.sourceOriented_rankDeficient_residualChart`.  The connectedness half is `BHW.sourceOrientedExtendedTubeDomain_connected`; the open-union topology split for the relative-openness half is checked as `BHW.SourceOrientedExtendedTubeLocalRealizationData`, `BHW.SourceOrientedExtendedTubeLocalRealizationProducer`, `BHW.sourceOrientedExtendedTubeDomain_relOpen_of_localRealization`, and `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_localRealization` in `SourceOrientedLocalRealization.lean`.  The max-rank local-realization branch is also checked there as `BHW.sourceComplexGramRegularAt_of_HWSourceGramMaxRankAt_any`, `BHW.continuousOn_sourceFullFrameGauge_reconstructVector_on_modelDetNonzero`, `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_smallArityMaxRank`, `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_fullFrameDetNonzero`, `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_fullFrameMaxRank`, and `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_maxRank`.  The rank-deficient target interface and producer are checked as `BHW.SourceOrientedRankDeficientRealizationData`, `BHW.SourceOrientedRankDeficientRealizationData.to_localRealization`, `BHW.SourceOrientedRankDeficientResidualChartData`, `BHW.SourceOrientedRankDeficientResidualChartData.center_mem`, `BHW.SourceOrientedRankDeficientResidualChartData.toVec_c0_mem`, `BHW.SourceOrientedRankDeficientResidualChartData.to_realizationData`, `BHW.SourceOrientedRankDeficientResidualChartData.to_localRealization`, `BHW.SourceOrientedRankDeficientResidualChartProducer`, `BHW.sourceOriented_rankDeficient_tubeResidualPolydiscProducer`, `BHW.sourceOriented_rankDeficient_residualChartProducer`, `BHW.sourceOrientedExtendedTubeLocalRealizationProducer_of_rankDeficientResidualChartProducer`, and `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_rankDeficientResidualChartProducer`. | This local-realization input is no longer a blocker.  The full-frame max-rank case no longer has a tube-shrink gap: it uses `isOpen_extendedTube`, the explicit reconstructed-vector map, the model-domain shrinker, and the stored chart inverse to produce an actual `ExtendedTube` witness realizing each nearby oriented-variety point.  The small-arity max-rank case uses the ordinary source-Gram local image theorem inside `ExtendedTube` and emptiness of `Fin (d + 1) ↪ Fin n`.  Rank-deficient charts use the checked sliced-head Schur stack only for original-coordinate image bookkeeping; the explicit ET-valued residual family is produced through the checked tube residual-polydisc data, with `toVec c := N.toOriginal (P.residualVector c)`.  The next theorem-2 blocker after this row is the downstream source-oriented scalar representative/descent layer, not an unproved residual-chart wrapper. |
+      | `BHW.sourceOrientedVarietyGermHolomorphicOn_extendF_descent` | Componentwise regular/removable transcript pinned; production Lean not started.  The prerequisite quotient-value definition, well-definedness theorem, local-boundedness predicate, max-rank topological glue helpers, compact-parameter continuity helper, residual-chart compact/local-boundedness/continuity helpers, and the conditional global continuity/local-boundedness assembly `sourceOrientedQuotientValue_continuous_locallyBounded_of_maxRankLocal` are checked in `SourceOrientedScalarRepresentative.lean`. | Define `Phi` as the checked quotient value of `extendF F` on `sourceOrientedExtendedTubeDomain`, prove holomorphy on `SourceOrientedMaxRankAt` by `sourceOrientedMaxRank_localSection_smallArity` or `sourceOrientedMaxRank_localSection_fullFrame`, feed that max-rank local representative theorem into the checked conditional continuity/local-boundedness assembly, and extend across `SourceOrientedExceptionalRank` using the algebraic SO-invariant model: `sourceOrientedInvariantRing_generated_by_gram_det`, `sourceOrientedInvariantRing_relations_kernel`, `sourceOrientedInvariantRing_integrallyClosed`, `sourceOrientedAlgebraicCoordinateRing_iso_invariants`, analytic exceptional-rank locus, density of the max-rank stratum, and the normal analytic-space Riemann theorem.  The only permitted standard algebraic-geometry import boundary here is `BHW.standardSO_FFT_SFT_coordinatePresentation`: it must provide the explicit `SO` pairing/volume generators, Cauchy-Binet kernel, and coordinate-map surjectivity in one sorry-free theorem, and it must remain independent of OS, Wightman functions, EOW, PET, and locality.  No all-rank local-section theorem and no arbitrary ambient extension of `Phi` is allowed. |
+      | `BHW.sourceOrientedScalarRepresentativeData_of_branchLaw`, `BHW.hallWightman_sourceOrientedScalarRepresentativeData`, `BHW.sourceOrientedScalarRepresentativeData_bvt_F` | The data structure and `sourceOrientedScalarRepresentativeData_of_branchLaw` are checked in `SourceOrientedScalarRepresentative.lean`; the Hall-Wightman and `bvt_F` specializations remain assembly after the branch law and descent rows. | Specialize to `bvt_F` using `bvt_F_holomorphic`, `bvt_F_complexLorentzInvariant_forwardTube`, and `BHW_forwardTube_eq`; no full-component/improper invariant is needed on this proper-complex route. |
 
       In particular, `BHW.sourceOrientedScalarRepresentativeData_bvt_F` is the
       active source representative name for theorem 2, but it is not
@@ -14581,7 +14519,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       selected vectors to remain in `ExtendedTube`, because the connected
       component theorem is a statement about the whole oriented source
       variety.  Extended-tube shrinkings remain only in
-      `sourceOrientedExtendedTube_localRealization`.
+      the checked extended-tube local-realization producer.
 
       The stratum dispatcher is now checked in
       `BHWPermutation/SourceOrientedLocalBasis.lean`.  The checked theorem
