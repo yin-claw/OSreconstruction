@@ -4201,16 +4201,23 @@ implementation contract is:
    `BHW.exists_sourceOrientedSlicedNormalParameterFinCoordClosedBall_subset_of_mem_nhds_center`,
    `BHW.SourceOrientedRankDeficientNormalFormData.exists_slicedFinCoordCompactOpen_toOriginal_mem_ET`,
    `BHW.SourceOrientedRankDeficientNormalFormData.continuousOn_slicedFinCoord_normalParameterVector_closedBall`,
+   `BHW.SourceOrientedRankDeficientNormalFormData.toOriginal_slicedNormalParameterVector_maxRank_iff_tail`,
+   `BHW.SourceOrientedRankDeficientNormalFormData.slicedFinCoord_originalImage_mem_varietyTransport`,
    and
-   `BHW.SourceOrientedRankDeficientNormalFormData.toOriginal_slicedNormalParameterVector_maxRank_iff_tail`.
+   `BHW.SourceOrientedRankDeficientNormalFormData.slicedFinCoord_originalImage_surj_varietyTransport`.
    The proof is formal from the checked head-slice symmetric-coordinate
    homeomorphism, finite-dimensional `ContinuousLinearEquiv.ofFinrankEq`,
    the existing sliced-to-normal forgetful continuity theorem, and
-   `N.toOriginal_normalParameterVector_mem_ET_mem_nhds_center`.  The final
-   residual-polydisc uses
-   `residualVector c := normalVector ((decode c).toNormalParameter)`, with
-   `K`/`P` taken from the sliced compact/open pair after shrinking into the
-   sliced Schur image window.
+   `N.toOriginal_normalParameterVector_mem_ET_mem_nhds_center`, plus the
+   checked variety-relative transport equality
+   `N.originalNormalVarietyPoint_eq_toOriginal`.  The final residual-polydisc
+   uses `residualVector c := normalVector ((decode c).toNormalParameter)`,
+   with `K`/`P` taken from a sliced compact/open pair after shrinking into
+   the sliced Schur image window.  The remaining precision gap is no longer
+   finite-coordinate transport; it is the compact/open Schur-window sandwich
+   itself: choose `K` compact and `P` open with `P ⊆ K`, prove `K` decodes
+   into the transported extracted image and the extended tube, and prove the
+   extracted image is already surjective from `P`.
    The all-arity rank bridge
    `BHW.sourceOrientedNormalParameterVector_maxRank_iff_tail` is also
    checked: on the invertible-head normal-parameter locus, max rank of the

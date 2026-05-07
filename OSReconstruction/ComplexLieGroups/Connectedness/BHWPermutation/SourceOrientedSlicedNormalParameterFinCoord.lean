@@ -376,6 +376,103 @@ theorem toOriginal_slicedNormalParameterVector_maxRank_iff_tail
         (sourceShiftedTailOrientedInvariant d N.r N.hrD (n - N.r) p.tail) :=
   N.toOriginal_normalParameterVector_maxRank_iff_tail p.toNormalParameter hH
 
+/-- Finite-coordinate membership bridge for the original-coordinate image
+coming from a sliced normal-parameter image. -/
+theorem slicedFinCoord_originalImage_mem_varietyTransport
+    {d n : ℕ}
+    {z0 : Fin n → Fin (d + 1) → ℂ}
+    (N : SourceOrientedRankDeficientNormalFormData d n z0)
+    {W :
+      Set (SourceOrientedRankDeficientSlicedNormalParameter
+        d n N.r N.hrD N.hrn)}
+    {Ω : Set (SourceOrientedVariety d n)}
+    (hmem :
+      ∀ p, p ∈ W →
+        sourceOrientedSlicedNormalParameterVarietyPoint
+          d n N.r N.hrD N.hrn p ∈ Ω) :
+    ∀ c,
+      c ∈
+          sourceOrientedSlicedNormalParameterFinCoordHomeomorph
+              (d := d) (n := n) (r := N.r)
+              (hrD := N.hrD) (hrn := N.hrn) ''
+            W →
+        sourceOrientedMinkowskiInvariant d n
+          (N.toOriginal
+            (sourceOrientedNormalParameterVector d n N.r N.hrD N.hrn
+              ((sourceOrientedSlicedNormalParameterFinCoordHomeomorph
+                (d := d) (n := n) (r := N.r)
+                (hrD := N.hrD) (hrn := N.hrn)).symm c).toNormalParameter)) ∈
+          sourceOrientedVarietyUnderlyingSet d n
+            (N.varietyTransport.invFun '' Ω) := by
+  intro c hc
+  let e :=
+    sourceOrientedSlicedNormalParameterFinCoordHomeomorph
+      (d := d) (n := n) (r := N.r) (hrD := N.hrD) (hrn := N.hrn)
+  rcases hc with ⟨p, hpW, rfl⟩
+  rw [e.symm_apply_apply]
+  rw [sourceOrientedVarietyUnderlyingSet]
+  refine ⟨N.varietyTransport.invFun
+      (sourceOrientedSlicedNormalParameterVarietyPoint
+        d n N.r N.hrD N.hrn p), ?_, ?_⟩
+  · exact ⟨_, hmem p hpW, rfl⟩
+  · simpa [e, sourceOrientedSlicedNormalParameterVarietyPoint,
+      SourceOrientedRankDeficientAlgebraicNormalFormData.originalNormalVarietyPoint]
+      using N.originalNormalVarietyPoint_eq_toOriginal p.toNormalParameter
+
+/-- Finite-coordinate surjectivity bridge for the original-coordinate image
+coming from a sliced normal-parameter image. -/
+theorem slicedFinCoord_originalImage_surj_varietyTransport
+    {d n : ℕ}
+    {z0 : Fin n → Fin (d + 1) → ℂ}
+    (N : SourceOrientedRankDeficientNormalFormData d n z0)
+    {W :
+      Set (SourceOrientedRankDeficientSlicedNormalParameter
+        d n N.r N.hrD N.hrn)}
+    {Ω : Set (SourceOrientedVariety d n)}
+    (hsurj :
+      Ω ⊆
+        sourceOrientedSlicedNormalParameterVarietyPoint
+          d n N.r N.hrD N.hrn '' W) :
+    sourceOrientedVarietyUnderlyingSet d n
+        (N.varietyTransport.invFun '' Ω) ⊆
+      (fun c =>
+        sourceOrientedMinkowskiInvariant d n
+          (N.toOriginal
+            (sourceOrientedNormalParameterVector d n N.r N.hrD N.hrn
+              ((sourceOrientedSlicedNormalParameterFinCoordHomeomorph
+                (d := d) (n := n) (r := N.r)
+                (hrD := N.hrD) (hrn := N.hrn)).symm c).toNormalParameter))) ''
+        (sourceOrientedSlicedNormalParameterFinCoordHomeomorph
+            (d := d) (n := n) (r := N.r)
+            (hrD := N.hrD) (hrn := N.hrn) '' W) := by
+  intro G hG
+  let e :=
+    sourceOrientedSlicedNormalParameterFinCoordHomeomorph
+      (d := d) (n := n) (r := N.r) (hrD := N.hrD) (hrn := N.hrn)
+  rw [sourceOrientedVarietyUnderlyingSet] at hG
+  rcases hG with ⟨Gv, hGv, hG⟩
+  rcases hGv with ⟨Hv, hHvΩ, hHvGv⟩
+  rcases hsurj hHvΩ with ⟨p, hpW, hpHv⟩
+  refine ⟨e p, ⟨p, hpW, rfl⟩, ?_⟩
+  have htransport :
+      (N.varietyTransport.invFun Hv).1 =
+        sourceOrientedMinkowskiInvariant d n
+          (N.toOriginal
+            (sourceOrientedNormalParameterVector d n N.r N.hrD N.hrn
+              p.toNormalParameter)) := by
+    rw [← hpHv]
+    simpa [e, sourceOrientedSlicedNormalParameterVarietyPoint,
+      SourceOrientedRankDeficientAlgebraicNormalFormData.originalNormalVarietyPoint]
+      using N.originalNormalVarietyPoint_eq_toOriginal p.toNormalParameter
+  have hactual :
+      sourceOrientedMinkowskiInvariant d n
+        (N.toOriginal
+          (sourceOrientedNormalParameterVector d n N.r N.hrD N.hrn
+            p.toNormalParameter)) = G := by
+    rw [← hG]
+    exact htransport.symm.trans (congrArg Subtype.val hHvGv)
+  simpa [e] using hactual
+
 end SourceOrientedRankDeficientNormalFormData
 
 end BHW

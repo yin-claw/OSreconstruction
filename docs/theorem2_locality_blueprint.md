@@ -9868,6 +9868,38 @@ Proof decomposition of this theorem, without hiding the analytic work:
                   (hrD := N.hrD) (hrn := N.hrn)).symm c).toNormalParameter)
             (BHW.sourceOrientedSlicedNormalParameterFinCoordClosedBall
               d n N.r N.hrD N.hrn ε)
+
+      theorem BHW.SourceOrientedRankDeficientNormalFormData.slicedFinCoord_originalImage_mem_varietyTransport
+          (N : BHW.SourceOrientedRankDeficientNormalFormData d n z0)
+          {W : Set (BHW.SourceOrientedRankDeficientSlicedNormalParameter
+            d n N.r N.hrD N.hrn)}
+          {Ω : Set (BHW.SourceOrientedVariety d n)}
+          (hmem :
+            ∀ p, p ∈ W →
+              BHW.sourceOrientedSlicedNormalParameterVarietyPoint
+                d n N.r N.hrD N.hrn p ∈ Ω) :
+          ∀ c, c ∈
+              BHW.sourceOrientedSlicedNormalParameterFinCoordHomeomorph '' W →
+            BHW.sourceOrientedMinkowskiInvariant d n
+              (N.toOriginal (normalVector ((decode c).toNormalParameter))) ∈
+              BHW.sourceOrientedVarietyUnderlyingSet d n
+                (N.varietyTransport.invFun '' Ω)
+
+      theorem BHW.SourceOrientedRankDeficientNormalFormData.slicedFinCoord_originalImage_surj_varietyTransport
+          (N : BHW.SourceOrientedRankDeficientNormalFormData d n z0)
+          {W : Set (BHW.SourceOrientedRankDeficientSlicedNormalParameter
+            d n N.r N.hrD N.hrn)}
+          {Ω : Set (BHW.SourceOrientedVariety d n)}
+          (hsurj :
+            Ω ⊆
+              BHW.sourceOrientedSlicedNormalParameterVarietyPoint
+                d n N.r N.hrD N.hrn '' W) :
+          BHW.sourceOrientedVarietyUnderlyingSet d n
+              (N.varietyTransport.invFun '' Ω) ⊆
+            (fun c =>
+              BHW.sourceOrientedMinkowskiInvariant d n
+                (N.toOriginal (normalVector ((decode c).toNormalParameter)))) ''
+              (BHW.sourceOrientedSlicedNormalParameterFinCoordHomeomorph '' W)
       ```
 
       Then the residual-polydisc chooses `K` and `P` from this sliced
@@ -9914,7 +9946,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `originalInvariant_mem` is pointwise membership of the decoded sliced
       parameter image, and `image_surj` is the equality
       `Ω ∩ sourceOrientedGramVariety d n = normalImage '' P`, transported only
-      through `SourceOrientedVarietyTransportEquiv`.
+      through `SourceOrientedVarietyTransportEquiv`.  The finite-coordinate
+      membership and surjectivity rewrites are now checked as
+      `N.slicedFinCoord_originalImage_mem_varietyTransport` and
+      `N.slicedFinCoord_originalImage_surj_varietyTransport`.
 
       For `maxRank_dense_original`, in the hard full-frame range apply the
       checked density theorem on the relatively open image,
