@@ -13715,6 +13715,34 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (BHW.standardSOInvariantCoordinateMap D n) =
             BHW.standardSOAlgebraicRelationIdeal D n
 
+      theorem BHW.standardSOInvariantCoordinateMap_aeval
+          (D n : Nat)
+          (z : Fin n -> Fin D -> ℂ)
+          (p : BHW.standardSOInvariantCoordinateRing D n) :
+          MvPolynomial.aeval
+              (fun im : Fin n × Fin D => z im.1 im.2)
+              ((BHW.standardSOInvariantCoordinateMap D n p :
+                  BHW.standardSOInvariantSubalgebra D n) :
+                BHW.standardTupleCoordinateRing D n) =
+            BHW.standardSOCoordinateEval D n z p := by
+        -- Checked in `SourceOrientedStandardSOInvariantKernel.lean`.
+        -- Prove algebra-hom equality after composing
+        -- `standardSOInvariantCoordinateMap` with tuple evaluation.  On
+        -- pairing variables this unfolds to `sourceComplexDotGram`; on
+        -- volume variables use `RingHom.map_det` and pointwise matrix ext.
+
+      theorem BHW.standardSOAlgebraicRelationIdeal_le_invariantCoordinateMap_ker
+          (D n : Nat) :
+          BHW.standardSOAlgebraicRelationIdeal D n ≤
+            RingHom.ker (BHW.standardSOInvariantCoordinateMap D n) := by
+        -- Checked in `SourceOrientedStandardSOInvariantKernel.lean`.
+        -- For `p` in the relation ideal, evaluate the underlying image
+        -- polynomial at an arbitrary tuple.  The eval bridge rewrites this to
+        -- `standardSOCoordinateEval D n z p`, which is zero by the already
+        -- checked forward relation-vanishing theorem.  `MvPolynomial.funext`
+        -- turns pointwise zero evaluation into polynomial equality, and
+        -- subtype ext gives equality in the invariant subalgebra.
+
       theorem BHW.standardSOInvariantCoordinateMap_surjective_of_generators
           (D n : Nat)
           (hFFT :

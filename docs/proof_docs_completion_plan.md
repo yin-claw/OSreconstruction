@@ -4927,6 +4927,17 @@ implementation contract is:
    cite a slogan-level "FFT/SFT for SO" theorem with incompatible coordinates,
    and may not proceed to the oriented normality theorem unless those three
    outputs are available from the same sorry-free proof or source theorem.
+   The easy containment direction of the SFT kernel is now separated from the
+   hard invariant-theory theorem.  Prove the eval bridge
+   `standardSOInvariantCoordinateMap_aeval`: evaluating the underlying tuple
+   polynomial of `standardSOInvariantCoordinateMap D n p` at an arbitrary
+   tuple `z` is exactly `standardSOCoordinateEval D n z p`.  The variable
+   cases are pairing expansion and `RingHom.map_det` for volume.  Then
+   `standardSOAlgebraicRelationIdeal_le_invariantCoordinateMap_ker` follows:
+   for `p` in the displayed relation ideal, use the already checked
+   `standardSOAlgebraicRelationIdeal_eval_eq_zero` at every tuple and conclude
+   the underlying image polynomial is zero by `MvPolynomial.funext`.  Thus the
+   remaining SFT content is only the reverse kernel inclusion.
    The surjectivity output is no longer a named black box inside that package:
    the checked adapter
    `BHW.standardSOInvariantCoordinateMap_surjective_of_generator_eq` takes the
