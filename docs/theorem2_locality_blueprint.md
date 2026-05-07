@@ -13121,7 +13121,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (fun p : (Fin D ↪ Fin n) × Equiv.Perm (Fin D) =>
             MvPolynomial.X
                 (Sum.inr ((p.2.toEmbedding).trans p.1)) -
-              (p.2.sign : ℂ) * MvPolynomial.X (Sum.inr p.1))) ∪
+              MvPolynomial.C (p.2.sign : ℂ) *
+                (MvPolynomial.X (Sum.inr p.1) :
+                  BHW.standardSOInvariantCoordinateRing D n))) ∪
         (Set.range
           (fun p : (Fin D ↪ Fin n) × (Fin D ↪ Fin n) =>
             Matrix.det
@@ -13320,16 +13322,20 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (fun p : (Fin (d + 1) ↪ Fin n) × Equiv.Perm (Fin (d + 1)) =>
             MvPolynomial.X
                 (Sum.inr ((p.2.toEmbedding).trans p.1)) -
-              (p.2.sign : ℂ) * MvPolynomial.X (Sum.inr p.1))) ∪
+              MvPolynomial.C (p.2.sign : ℂ) *
+                (MvPolynomial.X (Sum.inr p.1) :
+                  BHW.sourceOrientedInvariantCoordinateRing d n))) ∪
         (Set.range
           (fun p : (Fin (d + 1) ↪ Fin n) × (Fin (d + 1) ↪ Fin n) =>
             Matrix.det
                 (fun a b =>
                   MvPolynomial.X
                     (Sum.inl (p.1 a, p.2 b))) -
-              BHW.minkowskiMetricDet d *
-                MvPolynomial.X (Sum.inr p.1) *
-                  MvPolynomial.X (Sum.inr p.2)))
+              MvPolynomial.C (BHW.minkowskiMetricDet d) *
+                (MvPolynomial.X (Sum.inr p.1) :
+                  BHW.sourceOrientedInvariantCoordinateRing d n) *
+                  (MvPolynomial.X (Sum.inr p.2) :
+                    BHW.sourceOrientedInvariantCoordinateRing d n)))
 
       def BHW.sourceOrientedAlgebraicRelationIdeal
           (d n : Nat) :
@@ -13340,6 +13346,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (d n : Nat) :
           BHW.sourceOrientedInvariantCoordinateRing d n →ₐ[ℂ]
             BHW.sourceOrientedInvariantSubalgebra d n
+
+      -- The coordinate-ring and relation-ideal definitions above are checked
+      -- in `SourceOrientedInvariantCoordinateRing.lean`.  Scalar coefficients
+      -- in polynomial relations are Lean-explicit as `MvPolynomial.C (...)`;
+      -- the file proves no FFT/SFT or normality theorem.
 
       def BHW.algEquivMapSubalgebra
           {A B : Type*} [CommSemiring A] [CommSemiring B]

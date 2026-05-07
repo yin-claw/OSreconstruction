@@ -4772,6 +4772,17 @@ implementation contract is:
    must have exactly this generator/kernel content, be sorry-free, and must
    not be introduced as an axiom or as a theorem mentioning OS, Wightman
    functions, EOW, locality, or theorem 2.
+   The concrete polynomial coordinate rings and relation ideals are now
+   checked in `SourceOrientedInvariantCoordinateRing.lean`: standard tuple
+   coordinates, standard pairing and ordered-volume polynomials,
+   `standardSOInvariantCoordinateRing`,
+   `standardSOAlgebraicRelationGenerators`,
+   `standardSOAlgebraicRelationIdeal`,
+   `sourceOrientedInvariantCoordinateRing`,
+   `sourceOrientedAlgebraicRelationGenerators`, and
+   `sourceOrientedAlgebraicRelationIdeal`.  Scalar coefficients in polynomial
+   relations are explicit constants via `MvPolynomial.C`; this file is only
+   coordinate bookkeeping and does not assert the `SO` FFT/SFT theorem.
    The theorem-2 blueprint now tightens this into the single standard-dot
    support surface `BHW.standardSO_FFT_SFT_coordinatePresentation`, whose three
    outputs are: FFT generation by pairings and ordered volumes, SFT kernel
