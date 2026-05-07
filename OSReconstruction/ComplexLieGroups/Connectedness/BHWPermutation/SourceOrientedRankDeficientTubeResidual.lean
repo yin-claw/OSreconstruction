@@ -139,6 +139,107 @@ noncomputable def ofSourceMatrixLorentz
     rw [sourceOrientedMinkowskiInvariant_sourceTupleLinearChange]
     rw [sourceOrientedMinkowskiInvariant_complexLorentzAction]
 
+/-- Existence of source-level normal-form data from an already adapted
+extended-tube representative.
+
+This theorem packages the checked finite Schur normal-form algebra and the
+checked Lorentz/Witt normalization.  It deliberately assumes the adapted
+extended-tube representative as input; proving that representative exists is
+the separate Hall-Wightman Lemma-3 adapted-representative target. -/
+theorem exists_ofAdaptedBase
+    (d n : ℕ)
+    {z0 adaptedBase : Fin n → Fin (d + 1) → ℂ}
+    (hadaptedBase_mem : adaptedBase ∈ ExtendedTube d n)
+    (hadaptedBase_same_oriented :
+      sourceOrientedMinkowskiInvariant d n adaptedBase =
+        sourceOrientedMinkowskiInvariant d n z0)
+    (hrank_lt :
+      sourceGramMatrixRank n (sourceMinkowskiGram d n adaptedBase) < d + 1)
+    (hadapted :
+      Module.finrank ℂ
+          (LinearMap.range (sourceCoefficientEval d n adaptedBase)) =
+        sourceGramMatrixRank n (sourceMinkowskiGram d n adaptedBase)) :
+    ∃ N : SourceOrientedRankDeficientNormalFormData d n z0,
+      N.adaptedBase = adaptedBase := by
+  classical
+  let G : Fin n → Fin n → ℂ := sourceMinkowskiGram d n adaptedBase
+  let r : ℕ := sourceGramMatrixRank n G
+  have hrD : r < d + 1 := by
+    simpa [r, G] using hrank_lt
+  have hrn : r ≤ n := by
+    simpa [r, G] using sourceGramMatrixRank_le_arity n G
+  have hGsym : G ∈ sourceSymmetricMatrixSpace n := by
+    intro i j
+    exact sourceMinkowskiGram_symm d n adaptedBase i j
+  have hGrank : (Matrix.of fun i j : Fin n => G i j).rank = r := by
+    change sourceGramMatrixRank n G = r
+    rfl
+  rcases exists_sourcePrincipalMinor_ne_zero_of_sourceSymmetricRank
+      (n := n) (r := r) (Z := G) hGsym hGrank with
+    ⟨I, hI, hminor⟩
+  rcases exists_sourcePermutation_movingPrincipalBlockToHead
+      n r hrn hI with
+    ⟨σ, hσ⟩
+  let Gp : Fin n → Fin n → ℂ := sourcePermuteComplexGram n σ G
+  have hGpsym : Gp ∈ sourceSymmetricMatrixSpace n :=
+    sourcePermuteComplexGram_mem_sourceSymmetricMatrixSpace n σ hGsym
+  let A : Matrix (Fin r) (Fin r) ℂ := sourceHeadHeadBlock n r hrn Gp
+  let B : Matrix (Fin (n - r)) (Fin r) ℂ := sourceTailHeadBlock n r hrn Gp
+  let C : Matrix (Fin (n - r)) (Fin (n - r)) ℂ :=
+    sourceTailTailBlock n r hrn Gp
+  have hBlock :
+      sourcePermuteComplexGram n σ G = sourceBlockMatrix n r hrn A B C := by
+    simpa [Gp, A, B, C] using
+      (sourceBlockMatrix_of_headTailBlocks n r hrn Gp hGpsym).symm
+  have hA_det_eq : A.det = sourceMatrixMinor n r I I G := by
+    change Matrix.det (sourceHeadHeadBlock n r hrn Gp) =
+      sourceMatrixMinor n r I I G
+    have hmat :
+        sourceHeadHeadBlock n r hrn Gp =
+          fun a b : Fin r => G (I a) (I b) := by
+      ext a b
+      simp [sourceHeadHeadBlock, Gp, sourcePermuteComplexGram, hσ a, hσ b]
+    rw [hmat]
+    rfl
+  have hA : IsUnit A.det := by
+    apply isUnit_iff_ne_zero.mpr
+    rw [hA_det_eq]
+    exact hminor
+  have hAsym : A.transpose = A := by
+    simpa [A] using
+      sourceHeadHeadBlock_symm_of_sourceSymmetric n r hrn hGpsym
+  have hRankGp : sourceGramMatrixRank n Gp = r := by
+    simpa [Gp, r] using
+      sourceGramMatrixRank_sourcePermuteComplexGram n σ G
+  have hSchur : C - B * A⁻¹ * B.transpose = 0 := by
+    exact hwLemma3_schurComplement_eq_zero_of_rank_eq
+      n r hrn hGpsym hBlock hRankGp hA
+  rcases complexSymmetric_invertible_congruence_to_sourceHeadMetric
+      d r hrD hAsym hA with
+    ⟨P, hPunit, hP⟩
+  let M : Matrix (Fin n) (Fin n) ℂ :=
+    hwLemma3_normalFormSourceChangeMatrix n r hrn σ A B P
+  have hMunit : IsUnit M.det := by
+    simpa [M] using
+      hwLemma3_normalFormSourceChangeMatrix_det_isUnit
+        n r hrn σ hA hPunit
+  have hGram :
+      sourceGramCongruence n M G =
+        hwLemma3CanonicalGram d n r hrD hrn := by
+    simpa [M, Gp, A, B, C] using
+      hwLemma3_normalFormSourceChangeMatrix_canonicalGram
+        d n r hrD hrn hBlock hA hAsym hSchur hP
+  rcases
+      hwLemma3_normalFormSourceChange_exists_complexLorentz_to_canonicalSource_of_adapted
+        d n r hrD hrn (σ := σ) (A := A) (B := B) (P := P)
+        hA hPunit hGram (by simpa [G] using hadapted) with
+    ⟨Λ, hΛ⟩
+  refine
+    ⟨SourceOrientedRankDeficientNormalFormData.ofSourceMatrixLorentz
+      (d := d) (n := n) (z0 := z0) r hrD hrn
+      hadaptedBase_mem hadaptedBase_same_oriented hMunit Λ
+      (by simpa [M] using hΛ), rfl⟩
+
 end SourceOrientedRankDeficientNormalFormData
 
 /-- Compact residual-polydisc data in normal source coordinates, with all

@@ -4151,7 +4151,13 @@ implementation contract is:
    hwLemma3CanonicalSource d n r`, the actual return map is
    `sourceTupleLinearChange d n M⁻¹ ∘ complexLorentzAction Λ⁻¹`, and its
    source-variety compatibility is proved through the checked
-   `SourceOrientedVarietyTransportEquiv` for `M`.
+   `SourceOrientedVarietyTransportEquiv` for `M`.  It also checks
+   `BHW.SourceOrientedRankDeficientNormalFormData.exists_ofAdaptedBase`,
+   which packages the existing Schur normal-form source matrix construction
+   and Lorentz/Witt normalization into an existential source-level
+   normal-form packet once an adapted extended-tube base with strict
+   source-rank deficiency is already supplied.  The adapted ET base itself is
+   still the separate hard Hall-Wightman representative theorem.
    The remaining hard theorem is the producer of this data; the checked
    reducer only proves that no ambient source-matrix invariant transport is
    needed after those fields are available.

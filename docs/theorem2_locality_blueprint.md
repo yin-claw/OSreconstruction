@@ -11430,6 +11430,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       matrix and Lorentz normalizing equation:
       `toOriginal z = sourceTupleLinearChange d n M⁻¹
       (complexLorentzAction Λ⁻¹ z)`,
+      `BHW.SourceOrientedRankDeficientNormalFormData.exists_ofAdaptedBase`
+      packages the existing Schur normal-form matrix construction and
+      Lorentz/Witt normalization once an adapted ET base is supplied, and
       `BHW.sourceOrientedRankDeficientResidualChartProducer_of_tubeResidualPolydiscProducer`
       mechanically converts such a producer into the already checked
       `BHW.SourceOrientedRankDeficientResidualChartProducer`.  This is only
