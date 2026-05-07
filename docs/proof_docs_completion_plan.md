@@ -74,6 +74,9 @@ local Slot 1:
    `BHW.OS45SourcePatchBHWJostOrientedContinuationInputs.exists_gluedBranch`,
    `BHW.OS45SourcePatchBHWJostHullData.exists_ordinaryBranch_of_orientedContinuationInputs`,
    `BHW.OS45SourcePatchBHWJostHullData.exists_adjacentBranch_of_orientedContinuationInputs`,
+   `BHW.OS45SourcePatchBHWJostHullData.ordinaryBranchOfOrientedContinuationInputs`,
+   `BHW.OS45SourcePatchBHWJostHullData.adjacentBranchOfOrientedContinuationInputs`,
+   `BHW.OS45SourcePatchBHWJostHullData.pairDataOfOrientedContinuationInputs`,
    `BHW.integrable_bvt_F_wickRotate_mul_schwartz_of_orderedSector`,
    `BHW.integrable_wickEdge_bvt_F_mul_schwartz_of_orderedSector`,
    `BHW.integrable_extendF_realSource_mul_schwartz_of_ET`,
@@ -10546,7 +10549,14 @@ common-boundary envelope, or any theorem that already assumes locality.
    adjacent branch, holomorphy on `H.U`, real trace by `BHW.permAct_realEmbed`,
    and initial-domain agreement on the permutation preimage of
    `ExtendedTube`; its Wick trace remains a separate OS I/BHW continuation
-   datum.
+   datum.  The checked
+   `H.pairDataOfOrientedContinuationInputs` chooses the two branches from
+   those input packets and calls
+   `BHW.OS45SourcePatchBHWJostPairData.ofHullDataAndBranches`; therefore the
+   exact remaining inputs to build the pair carrier are just the ordinary
+   strict-oriented continuation packet, the adjacent strict-oriented
+   continuation packet, and the adjacent Wick trace formula on the selected
+   source patch.
 
    With these three surfaces,
    `BHW.os45_sourcePatch_bhwJostPairData_on_figure24SourcePatch_of_OSI45`

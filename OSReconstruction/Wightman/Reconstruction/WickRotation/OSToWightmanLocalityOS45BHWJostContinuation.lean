@@ -244,6 +244,217 @@ theorem exists_adjacentBranch_of_orientedContinuationInputs
       (H.real_tau_ET x hx) (H.real_id_mem x hx)
   simpa [BHW.permAct_realEmbed] using hcontinue
 
+/-- The ordinary branch selected from the checked strict-oriented continuation
+input packet. -/
+noncomputable def ordinaryBranchOfOrientedContinuationInputs
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V)
+    (hV_ordered :
+      ∀ x, x ∈ V →
+        x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+          (1 : Equiv.Perm (Fin n)))
+    (I : BHW.OS45SourcePatchBHWJostOrientedContinuationInputs
+      (d := d) hd n H.τ (BHW.ExtendedTube d n) H.U
+      (BHW.extendF (bvt_F OS lgc n))) :
+    (Fin n → Fin (d + 1) → ℂ) → ℂ :=
+  Classical.choose (H.exists_ordinaryBranch_of_orientedContinuationInputs
+    hV_ordered I)
+
+theorem ordinaryBranchOfOrientedContinuationInputs_spec
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V)
+    (hV_ordered :
+      ∀ x, x ∈ V →
+        x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+          (1 : Equiv.Perm (Fin n)))
+    (I : BHW.OS45SourcePatchBHWJostOrientedContinuationInputs
+      (d := d) hd n H.τ (BHW.ExtendedTube d n) H.U
+      (BHW.extendF (bvt_F OS lgc n))) :
+    DifferentiableOn ℂ
+        (H.ordinaryBranchOfOrientedContinuationInputs hV_ordered I) H.U ∧
+      (∀ x, x ∈ V →
+        H.ordinaryBranchOfOrientedContinuationInputs hV_ordered I
+          (fun k => wickRotatePoint (x k)) =
+          bvt_F OS lgc n (fun k => wickRotatePoint (x k))) ∧
+      (∀ x, x ∈ V →
+        H.ordinaryBranchOfOrientedContinuationInputs hV_ordered I
+          (BHW.realEmbed x) =
+          BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x)) :=
+  Classical.choose_spec
+    (H.exists_ordinaryBranch_of_orientedContinuationInputs hV_ordered I)
+
+theorem ordinaryBranchOfOrientedContinuationInputs_holo
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V)
+    (hV_ordered :
+      ∀ x, x ∈ V →
+        x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+          (1 : Equiv.Perm (Fin n)))
+    (I : BHW.OS45SourcePatchBHWJostOrientedContinuationInputs
+      (d := d) hd n H.τ (BHW.ExtendedTube d n) H.U
+      (BHW.extendF (bvt_F OS lgc n))) :
+    DifferentiableOn ℂ
+      (H.ordinaryBranchOfOrientedContinuationInputs hV_ordered I) H.U :=
+  (H.ordinaryBranchOfOrientedContinuationInputs_spec hV_ordered I).1
+
+theorem ordinaryBranchOfOrientedContinuationInputs_wick_trace
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V)
+    (hV_ordered :
+      ∀ x, x ∈ V →
+        x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+          (1 : Equiv.Perm (Fin n)))
+    (I : BHW.OS45SourcePatchBHWJostOrientedContinuationInputs
+      (d := d) hd n H.τ (BHW.ExtendedTube d n) H.U
+      (BHW.extendF (bvt_F OS lgc n))) :
+    ∀ x, x ∈ V →
+      H.ordinaryBranchOfOrientedContinuationInputs hV_ordered I
+        (fun k => wickRotatePoint (x k)) =
+        bvt_F OS lgc n (fun k => wickRotatePoint (x k)) :=
+  (H.ordinaryBranchOfOrientedContinuationInputs_spec hV_ordered I).2.1
+
+theorem ordinaryBranchOfOrientedContinuationInputs_real_trace
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V)
+    (hV_ordered :
+      ∀ x, x ∈ V →
+        x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+          (1 : Equiv.Perm (Fin n)))
+    (I : BHW.OS45SourcePatchBHWJostOrientedContinuationInputs
+      (d := d) hd n H.τ (BHW.ExtendedTube d n) H.U
+      (BHW.extendF (bvt_F OS lgc n))) :
+    ∀ x, x ∈ V →
+      H.ordinaryBranchOfOrientedContinuationInputs hV_ordered I
+        (BHW.realEmbed x) =
+        BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x) :=
+  (H.ordinaryBranchOfOrientedContinuationInputs_spec hV_ordered I).2.2
+
+/-- The adjacent branch selected from the checked strict-oriented continuation
+input packet. -/
+noncomputable def adjacentBranchOfOrientedContinuationInputs
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V)
+    (I : BHW.OS45SourcePatchBHWJostOrientedContinuationInputs
+      (d := d) hd n H.τ
+      {z | BHW.permAct (d := d) H.τ z ∈ BHW.ExtendedTube d n}
+      H.U
+      (fun z =>
+        BHW.extendF (bvt_F OS lgc n)
+          (BHW.permAct (d := d) H.τ z))) :
+    (Fin n → Fin (d + 1) → ℂ) → ℂ :=
+  Classical.choose (H.exists_adjacentBranch_of_orientedContinuationInputs I)
+
+theorem adjacentBranchOfOrientedContinuationInputs_spec
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V)
+    (I : BHW.OS45SourcePatchBHWJostOrientedContinuationInputs
+      (d := d) hd n H.τ
+      {z | BHW.permAct (d := d) H.τ z ∈ BHW.ExtendedTube d n}
+      H.U
+      (fun z =>
+        BHW.extendF (bvt_F OS lgc n)
+          (BHW.permAct (d := d) H.τ z))) :
+    DifferentiableOn ℂ
+        (H.adjacentBranchOfOrientedContinuationInputs I) H.U ∧
+      (∀ x, x ∈ V →
+        H.adjacentBranchOfOrientedContinuationInputs I (BHW.realEmbed x) =
+          BHW.extendF (bvt_F OS lgc n)
+            (BHW.realEmbed (fun k => x (H.τ k)))) ∧
+      (∀ z,
+        z ∈ {z | BHW.permAct (d := d) H.τ z ∈ BHW.ExtendedTube d n} →
+        z ∈ H.U →
+          H.adjacentBranchOfOrientedContinuationInputs I z =
+            BHW.extendF (bvt_F OS lgc n)
+              (BHW.permAct (d := d) H.τ z)) :=
+  Classical.choose_spec
+    (H.exists_adjacentBranch_of_orientedContinuationInputs I)
+
+theorem adjacentBranchOfOrientedContinuationInputs_holo
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V)
+    (I : BHW.OS45SourcePatchBHWJostOrientedContinuationInputs
+      (d := d) hd n H.τ
+      {z | BHW.permAct (d := d) H.τ z ∈ BHW.ExtendedTube d n}
+      H.U
+      (fun z =>
+        BHW.extendF (bvt_F OS lgc n)
+          (BHW.permAct (d := d) H.τ z))) :
+    DifferentiableOn ℂ
+      (H.adjacentBranchOfOrientedContinuationInputs I) H.U :=
+  (H.adjacentBranchOfOrientedContinuationInputs_spec I).1
+
+theorem adjacentBranchOfOrientedContinuationInputs_real_trace
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V)
+    (I : BHW.OS45SourcePatchBHWJostOrientedContinuationInputs
+      (d := d) hd n H.τ
+      {z | BHW.permAct (d := d) H.τ z ∈ BHW.ExtendedTube d n}
+      H.U
+      (fun z =>
+        BHW.extendF (bvt_F OS lgc n)
+          (BHW.permAct (d := d) H.τ z))) :
+    ∀ x, x ∈ V →
+      H.adjacentBranchOfOrientedContinuationInputs I (BHW.realEmbed x) =
+        BHW.extendF (bvt_F OS lgc n)
+          (BHW.realEmbed (fun k => x (H.τ k))) :=
+  (H.adjacentBranchOfOrientedContinuationInputs_spec I).2.1
+
+theorem adjacentBranchOfOrientedContinuationInputs_initial_agree
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V)
+    (I : BHW.OS45SourcePatchBHWJostOrientedContinuationInputs
+      (d := d) hd n H.τ
+      {z | BHW.permAct (d := d) H.τ z ∈ BHW.ExtendedTube d n}
+      H.U
+      (fun z =>
+        BHW.extendF (bvt_F OS lgc n)
+          (BHW.permAct (d := d) H.τ z))) :
+    ∀ z,
+      z ∈ {z | BHW.permAct (d := d) H.τ z ∈ BHW.ExtendedTube d n} →
+      z ∈ H.U →
+        H.adjacentBranchOfOrientedContinuationInputs I z =
+          BHW.extendF (bvt_F OS lgc n)
+            (BHW.permAct (d := d) H.τ z) :=
+  (H.adjacentBranchOfOrientedContinuationInputs_spec I).2.2
+
+/-- Assemble the checked OS45 source-patch pair carrier from the two strict
+oriented continuation input packets and the remaining adjacent Wick-trace
+datum. -/
+noncomputable def pairDataOfOrientedContinuationInputs
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V)
+    (hV_ordered :
+      ∀ x, x ∈ V →
+        x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+          (1 : Equiv.Perm (Fin n)))
+    (Iord : BHW.OS45SourcePatchBHWJostOrientedContinuationInputs
+      (d := d) hd n H.τ (BHW.ExtendedTube d n) H.U
+      (BHW.extendF (bvt_F OS lgc n)))
+    (Iadj : BHW.OS45SourcePatchBHWJostOrientedContinuationInputs
+      (d := d) hd n H.τ
+      {z | BHW.permAct (d := d) H.τ z ∈ BHW.ExtendedTube d n}
+      H.U
+      (fun z =>
+        BHW.extendF (bvt_F OS lgc n)
+          (BHW.permAct (d := d) H.τ z)))
+    (adjacent_wick_trace :
+      ∀ x, x ∈ V →
+        H.adjacentBranchOfOrientedContinuationInputs Iadj
+          (fun k => wickRotatePoint (x k)) =
+          bvt_F OS lgc n (fun k => wickRotatePoint (x (H.τ k)))) :
+    BHW.OS45SourcePatchBHWJostPairData
+      (d := d) hd OS lgc n i hi V :=
+  BHW.OS45SourcePatchBHWJostPairData.ofHullDataAndBranches
+    (d := d) H
+    (H.ordinaryBranchOfOrientedContinuationInputs hV_ordered Iord)
+    (H.adjacentBranchOfOrientedContinuationInputs Iadj)
+    (H.ordinaryBranchOfOrientedContinuationInputs_holo hV_ordered Iord)
+    (H.adjacentBranchOfOrientedContinuationInputs_holo Iadj)
+    (H.ordinaryBranchOfOrientedContinuationInputs_wick_trace hV_ordered Iord)
+    adjacent_wick_trace
+    (H.ordinaryBranchOfOrientedContinuationInputs_real_trace hV_ordered Iord)
+    (H.adjacentBranchOfOrientedContinuationInputs_real_trace Iadj)
+
 end OS45SourcePatchBHWJostHullData
 
 end BHW

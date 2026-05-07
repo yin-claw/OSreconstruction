@@ -47476,7 +47476,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
             Wick trace through `BHW.extendF_bvt_F_wickRotate_eq_of_ordered`;
             the checked adjacent branch consumer supplies the real trace and
             initial-domain agreement, with the adjacent Wick trace still a
-            separate OS I/BHW continuation datum.
+            separate OS I/BHW continuation datum.  The checked
+            `H.pairDataOfOrientedContinuationInputs` then chooses the two
+            branches from the input packets and calls
+            `BHW.OS45SourcePatchBHWJostPairData.ofHullDataAndBranches`, so the
+            carrier producer now has only three exact inputs: ordinary
+            strict-oriented continuation data, adjacent strict-oriented
+            continuation data, and the adjacent Wick trace formula.
             After these three lower surfaces, the pair-data producer is
             field-copying: build `H`, obtain `Bord` and `Btau`, and call the
             checked constructor
