@@ -2055,6 +2055,23 @@ theorem BHW.sourceOrientedInvariantRing_relations_kernel_of_presentation
 theorem BHW.sourceOrientedInvariantCoordinateMap_surjective_of_presentation
     (H : BHW.StandardSOCoordinatePresentationData (d + 1) n) :
     Function.Surjective (BHW.sourceOrientedInvariantCoordinateMap d n)
+
+structure BHW.SourceOrientedCoordinatePresentationData
+    (d n : Nat) : Prop where
+  fft :
+    BHW.sourceOrientedInvariantSubalgebra d n =
+      Algebra.adjoin ℂ
+        (Set.range (BHW.sourceGramCoordinatePolynomial d n) ∪
+         Set.range (BHW.sourceFullFrameDetPolynomial d n))
+  sft :
+    RingHom.ker (BHW.sourceOrientedInvariantCoordinateMap d n) =
+      BHW.sourceOrientedAlgebraicRelationIdeal d n
+  surjective :
+    Function.Surjective (BHW.sourceOrientedInvariantCoordinateMap d n)
+
+theorem BHW.sourceOrientedCoordinatePresentationData_of_standard
+    (H : BHW.StandardSOCoordinatePresentationData (d + 1) n) :
+    BHW.SourceOrientedCoordinatePresentationData d n
 ```
 
 This data structure is not an axiom and not a disguised proof of FFT/SFT.  It

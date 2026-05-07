@@ -97,4 +97,30 @@ theorem sourceOrientedInvariantCoordinateMap_surjective_of_presentation
   sourceOrientedInvariantCoordinateMap_surjective_of_standard_generators
     d n H.fft
 
+/-- Source-side coordinate presentation data transported from the standard-dot
+presentation.  This is the source theorem shape consumed by later
+coordinate-ring and normality adapters. -/
+structure SourceOrientedCoordinatePresentationData
+    (d n : ℕ) : Prop where
+  fft :
+    sourceOrientedInvariantSubalgebra d n =
+      Algebra.adjoin ℂ
+        (Set.range (sourceGramCoordinatePolynomial d n) ∪
+          Set.range (sourceFullFrameDetPolynomial d n))
+  sft :
+    RingHom.ker (sourceOrientedInvariantCoordinateMap d n) =
+      sourceOrientedAlgebraicRelationIdeal d n
+  surjective :
+    Function.Surjective (sourceOrientedInvariantCoordinateMap d n)
+
+/-- The exact standard-dot presentation packet formally gives the source
+presentation packet through the checked source/dot transport layer. -/
+theorem sourceOrientedCoordinatePresentationData_of_standard
+    {d n : ℕ}
+    (H : StandardSOCoordinatePresentationData (d + 1) n) :
+    SourceOrientedCoordinatePresentationData d n :=
+  ⟨sourceOrientedInvariantRing_generated_by_gram_det_of_presentation H,
+    sourceOrientedInvariantRing_relations_kernel_of_presentation H,
+    sourceOrientedInvariantCoordinateMap_surjective_of_presentation H⟩
+
 end BHW

@@ -14454,6 +14454,27 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (BHW.sourceOrientedInvariantCoordinateMap d n) :=
         BHW.sourceOrientedInvariantCoordinateMap_surjective_of_standard_generators
           d n H.fft
+
+      structure BHW.SourceOrientedCoordinatePresentationData
+          (d n : Nat) : Prop where
+        fft :
+          BHW.sourceOrientedInvariantSubalgebra d n =
+            Algebra.adjoin ℂ
+              (Set.range (BHW.sourceGramCoordinatePolynomial d n) ∪
+               Set.range (BHW.sourceFullFrameDetPolynomial d n))
+        sft :
+          RingHom.ker (BHW.sourceOrientedInvariantCoordinateMap d n) =
+            BHW.sourceOrientedAlgebraicRelationIdeal d n
+        surjective :
+          Function.Surjective (BHW.sourceOrientedInvariantCoordinateMap d n)
+
+      theorem BHW.sourceOrientedCoordinatePresentationData_of_standard
+          {d n : Nat}
+          (H : BHW.StandardSOCoordinatePresentationData (d + 1) n) :
+          BHW.SourceOrientedCoordinatePresentationData d n :=
+        ⟨BHW.sourceOrientedInvariantRing_generated_by_gram_det_of_presentation H,
+          BHW.sourceOrientedInvariantRing_relations_kernel_of_presentation H,
+          BHW.sourceOrientedInvariantCoordinateMap_surjective_of_presentation H⟩
       ```
 
       The unconditional theorem
