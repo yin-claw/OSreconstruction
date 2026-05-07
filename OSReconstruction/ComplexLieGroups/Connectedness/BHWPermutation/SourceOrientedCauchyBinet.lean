@@ -61,4 +61,30 @@ theorem sourceMatrixMinor_sourceOrientedInvariant_fullFrame
     SourceOrientedGramData.det] using
     sourceMatrixMinor_sourceMinkowskiGram_fullFrame d n ι κ z
 
+/-- Reindexing a selected full frame multiplies its determinant by the sign of
+the source-frame permutation. -/
+theorem sourceFullFrameDet_reindex_selectedFrame
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    (ρ : Equiv.Perm (Fin (d + 1)))
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    sourceFullFrameDet d n (ρ.toEmbedding.trans ι) z =
+      (ρ.sign : ℂ) * sourceFullFrameDet d n ι z := by
+  unfold sourceFullFrameDet sourceFullFrameMatrix
+  have hperm :=
+    Matrix.det_permute ρ (fun a μ : Fin (d + 1) => z (ι a) μ)
+  simpa [Matrix.submatrix, Function.comp_def, mul_comm] using hperm
+
+/-- The same selected-frame alternation equation in oriented invariant
+coordinates. -/
+theorem sourceOrientedInvariant_det_reindex_selectedFrame
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    (ρ : Equiv.Perm (Fin (d + 1)))
+    (z : Fin n → Fin (d + 1) → ℂ) :
+    (sourceOrientedMinkowskiInvariant d n z).det (ρ.toEmbedding.trans ι) =
+      (ρ.sign : ℂ) * (sourceOrientedMinkowskiInvariant d n z).det ι := by
+  simpa [sourceOrientedMinkowskiInvariant, SourceOrientedGramData.det] using
+    sourceFullFrameDet_reindex_selectedFrame d n ι ρ z
+
 end BHW

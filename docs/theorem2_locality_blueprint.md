@@ -12968,6 +12968,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
               BHW.sourceFullFrameDet d n ι z *
               BHW.sourceFullFrameDet d n κ z
 
+      theorem BHW.sourceFullFrameDet_reindex_selectedFrame
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          (ρ : Equiv.Perm (Fin (d + 1)))
+          (z : Fin n -> Fin (d + 1) -> ℂ) :
+          BHW.sourceFullFrameDet d n ((ρ.toEmbedding).trans ι) z =
+            (ρ.sign : ℂ) * BHW.sourceFullFrameDet d n ι z
+
       def BHW.sourceOrientedAlgebraicVariety
           (d n : Nat) : Set (BHW.SourceOrientedGramData d n) :=
         {G | BHW.sourceOrientedAlgebraicRelations d n G}
@@ -12996,6 +13004,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `SourceOrientedCauchyBinet.lean`: rewrite the selected source Gram minor as
       `det (Mι * η * Mκᵀ)`, then use `Matrix.det_mul`,
       `Matrix.det_transpose`, and the definition of `minkowskiMetricDet`.
+      The determinant alternation equation is likewise checked by
+      `Matrix.det_permute` on the row-permuted selected full-frame matrix.
       The theorem `sourceOrientedGramVariety_eq_algebraic` is the
       source-coordinate form of the first fundamental theorem for the special
       complex orthogonal/Lorentz group on tuples.  The normality theorem must
