@@ -580,4 +580,95 @@ theorem hwLemma3_selectedProjection_span_finrank_eq_rank
     simpa [hrankξ] using hle
   exact le_antisymm hspan_le hrank_le_span
 
+/-- A vector in the span of a finite frame has explicit coordinates on that
+frame. -/
+theorem exists_coefficients_of_mem_span_finite_frame
+    {d s : ℕ}
+    {q : Fin s → Fin (d + 1) → ℂ}
+    {v : Fin (d + 1) → ℂ}
+    (hv : v ∈ Submodule.span ℂ (Set.range q)) :
+    ∃ a : Fin s → ℂ, v = ∑ c : Fin s, a c • q c := by
+  rcases (Submodule.mem_span_range_iff_exists_fun (R := ℂ) (v := q)).1 hv with
+    ⟨a, ha⟩
+  exact ⟨a, ha.symm⟩
+
+/-- The selected residuals span a finite totally isotropic frame orthogonal to
+the selected projection tuple. -/
+theorem hwLemma3_selectedResidual_isotropicFrameData
+    (d n r : ℕ)
+    (I : Fin r → Fin n)
+    (z0 : Fin n → Fin (d + 1) → ℂ)
+    (hrank :
+      sourceGramMatrixRank n (sourceMinkowskiGram d n z0) = r)
+    (hminor :
+      sourceMatrixMinor n r I I (sourceMinkowskiGram d n z0) ≠ 0) :
+    ∃ (s : ℕ)
+      (q : Fin s → Fin (d + 1) → ℂ)
+      (a : Fin n → Fin s → ℂ),
+      LinearIndependent ℂ q ∧
+      (∀ c e,
+        sourceComplexMinkowskiInner d (q c) (q e) = 0) ∧
+      (∀ c i,
+        sourceComplexMinkowskiInner d (q c)
+          (hwLemma3_selectedProjection d n r I
+            (sourceMinkowskiGram d n z0) z0 i) = 0) ∧
+      (∀ i μ,
+        hwLemma3_selectedResidual d n r I
+          (sourceMinkowskiGram d n z0) z0 i μ =
+        ∑ c : Fin s, a i c * q c μ) ∧
+      (fun i μ =>
+        hwLemma3_selectedProjection d n r I
+          (sourceMinkowskiGram d n z0) z0 i μ +
+        ∑ c : Fin s, a i c * q c μ) = z0 := by
+  classical
+  let G : Fin n → Fin n → ℂ := sourceMinkowskiGram d n z0
+  let ξ : Fin n → Fin (d + 1) → ℂ :=
+    hwLemma3_selectedProjection d n r I G z0
+  let ρ : Fin n → Fin (d + 1) → ℂ :=
+    hwLemma3_selectedResidual d n r I G z0
+  let R : Submodule ℂ (Fin (d + 1) → ℂ) :=
+    Submodule.span ℂ (Set.range ρ)
+  rcases Submodule.exists_fun_fin_finrank_span_eq
+      (K := ℂ) (s := Set.range ρ) with
+    ⟨q, hq_mem, hq_span, hq_li⟩
+  have hres_mem :
+      ∀ i : Fin n, ρ i ∈ Submodule.span ℂ (Set.range q) := by
+    intro i
+    rw [hq_span]
+    exact Submodule.subset_span ⟨i, rfl⟩
+  have hcoef_exists :
+      ∀ i : Fin n,
+        ∃ coeff :
+            Fin (Module.finrank ℂ (Submodule.span ℂ (Set.range ρ))) → ℂ,
+          ρ i = ∑ c, coeff c • q c := by
+    intro i
+    exact exists_coefficients_of_mem_span_finite_frame (hres_mem i)
+  choose a ha using hcoef_exists
+  refine ⟨Module.finrank ℂ R, q, a, hq_li, ?_, ?_, ?_, ?_⟩
+  · intro c e
+    rcases hq_mem c with ⟨i, hi⟩
+    rcases hq_mem e with ⟨j, hj⟩
+    rw [← hi, ← hj]
+    exact hwLemma3_selectedResidual_inner_residual_eq_zero
+      d n r I z0 hrank hminor i j
+  · intro c i
+    rcases hq_mem c with ⟨j, hj⟩
+    rw [← hj]
+    exact hwLemma3_selectedResidual_inner_projection d n r I z0 hminor j i
+  · intro i μ
+    have hcoord := congrFun (ha i) μ
+    simpa [Pi.smul_apply, smul_eq_mul] using hcoord
+  · ext i μ
+    have hcoord := congrFun (ha i) μ
+    have hadd :=
+      congrFun (hwLemma3_selectedProjection_add_residual d n r I G z0 i) μ
+    calc
+      ξ i μ + ∑ c : Fin (Module.finrank ℂ R), a i c * q c μ
+          =
+        ξ i μ + ρ i μ := by
+          simpa [R, Pi.smul_apply, smul_eq_mul] using
+            congrArg (fun x => ξ i μ + x) hcoord.symm
+      _ = z0 i μ := by
+          simpa [ξ, ρ, G] using hadd
+
 end BHW

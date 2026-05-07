@@ -31471,13 +31471,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
           r
 
       theorem BHW.hwLemma3_selectedResidual_isotropicFrameData
-          [NeZero d] (hd : 2 <= d)
-          (n r : Nat)
-          {z0 : Fin n -> Fin (d + 1) -> ℂ}
-          (hr :
-            r = BHW.sourceGramMatrixRank n
-              (BHW.sourceMinkowskiGram d n z0))
-          {I : Fin r -> Fin n}
+          (d n r : Nat)
+          (I : Fin r -> Fin n)
+          (z0 : Fin n -> Fin (d + 1) -> ℂ)
+          (hrank :
+            BHW.sourceGramMatrixRank n
+              (BHW.sourceMinkowskiGram d n z0) = r)
           (hminor :
             BHW.sourceMatrixMinor n r I I
               (BHW.sourceMinkowskiGram d n z0) ≠ 0) :
@@ -31572,13 +31571,24 @@ Proof decomposition of this theorem, without hiding the analytic work:
          lower bound `r <= finrank (range (sourceCoefficientEval d n ξ))`.
          Hence the source span of `ξ` has finrank exactly `r`.  This is
          `BHW.hwLemma3_selectedProjection_span_finrank_eq_rank`.
-      6. Choose a finite independent frame `q : Fin s -> Fin (d + 1) -> ℂ`
-         for the span of the residuals `ρ i`, and coefficients
-         `a : Fin n -> Fin s -> ℂ` with
-         `ρ i = ∑ c, a i c • q c`.  The residual-pairing zero theorem gives
-         `B(q c, q e)=0`, and selected-residual orthogonality gives
-         `B(q c, ξ i)=0`.  This is the package
-         `BHW.hwLemma3_selectedResidual_isotropicFrameData`.
+      6. Checked in `SourceHWSelectedProjection.lean`: choose the finite
+         independent frame `q` by applying
+         `Submodule.exists_fun_fin_finrank_span_eq` to
+         `Submodule.span ℂ (Set.range ρ)`, where
+         `ρ := BHW.hwLemma3_selectedResidual d n r I G z0`.  Each `q c` is
+         literally some residual vector.  The coefficient functions
+         `a : Fin n -> Fin s -> ℂ` are obtained from
+         `BHW.exists_coefficients_of_mem_span_finite_frame` after rewriting
+         `Submodule.span ℂ (Set.range q)` to the residual span.  The checked
+         theorem `BHW.hwLemma3_selectedResidual_inner_residual_eq_zero` gives
+         `B(q c, q e)=0`, and
+         `BHW.hwLemma3_selectedResidual_inner_projection` gives
+         `B(q c, ξ i)=0`.  The final source decomposition is just
+         `BHW.hwLemma3_selectedProjection_add_residual` plus the chosen
+         coefficient equality.  This is the package
+         `BHW.hwLemma3_selectedResidual_isotropicFrameData`; it is now
+         production Lean, finite linear algebra, and has no `[NeZero d]`,
+         `hd`, or extended-tube hypothesis.
       7. Since
          `z0 = fun i => ξ i + ∑ c, a i c • q c` is in the extended tube,
          Hall-Wightman's second/third remarks after Lemma 2, in the local
@@ -31614,7 +31624,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
         let ξ :=
           BHW.hwLemma3_selectedProjection d n r I G z0
         rcases BHW.hwLemma3_selectedResidual_isotropicFrameData
-            (d := d) hd n r (z0 := z0) (by rfl) hminor with
+            d n r I z0 (by rfl) hminor with
           ⟨s, q, a, hq_li, hq_pair_zero, hq_orth_ξ,
             hres_coeff, hz0_decomp⟩
         have hendpoint :
@@ -34056,7 +34066,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | Definitional subset and connectedness of `sourceExtendedTubeGramDomain` | Mechanically ready with checked support. | Use the image definition of `sourceExtendedTubeGramDomain`, the range definition of `sourceComplexGramVariety`, `BHW.isConnected_extendedTube`, and `BHW.contDiff_sourceMinkowskiGram`. |
       | Pointwise-to-global relative-open assembly | Mechanically ready after local realization. | Choose explicit neighborhoods from `sourceExtendedTubeGramDomain_relOpen_at`, form the subtype-indexed union, and use `sourceExtendedTubeGramDomain_subset_sourceComplexGramVariety`; no Hall-Wightman geometry occurs here. |
       | Adapted same-Gram representative `hwLemma3_extendedTube_adaptedRankRepresentative` | Proof transcript pinned; production Lean not started. | Reduced to the Lemma-2 residual-frame/all-coefficients extended-tube theorem, checked selected projection/selected-orthogonality support, checked Schur-zero residual theorem, and checked span-rank equality; the blueprint explicitly forbids source-changing an arbitrary representative to zero tail. |
-      | Principal block, projection, and Schur-zero residual algebra | Checked in `SourceHWSelectedProjection.lean`. | The checked layer defines the principal block, selected coefficients, projection, and residual; proves selected rows are fixed, residuals are orthogonal to selected vectors and selected projections, complementary residual pairings are the reindexed rectangular Schur complement, rank-`r` residual pairings vanish over all original labels, original vectors are orthogonal to residuals, the selected projection preserves the full scalar Gram matrix, and the projected source span has finrank `r`.  The checked theorem names are `hwLemma3_selectedResidual_selected`, `hwLemma3_selectedProjection_inner_residual`, `hwLemma3_selectedResidual_inner_projection`, `hwLemma3_selectedComplement_residual_inner_residual_eq_schur`, `hwLemma3_selectedResidual_inner_residual_eq_zero`, `hwLemma3_selectedProjection_gram_eq`, and `hwLemma3_selectedProjection_span_finrank_eq_rank`. |
+      | Principal block, projection, Schur-zero residual algebra, and residual-frame data | Checked in `SourceHWSelectedProjection.lean`. | The checked layer defines the principal block, selected coefficients, projection, and residual; proves selected rows are fixed, residuals are orthogonal to selected vectors and selected projections, complementary residual pairings are the reindexed rectangular Schur complement, rank-`r` residual pairings vanish over all original labels, original vectors are orthogonal to residuals, the selected projection preserves the full scalar Gram matrix, the projected source span has finrank `r`, every vector in a finite-frame span has explicit coordinates, and the selected residuals admit a finite linearly independent totally isotropic coordinate frame orthogonal to the selected projection tuple.  The checked theorem names are `hwLemma3_selectedResidual_selected`, `hwLemma3_selectedProjection_inner_residual`, `hwLemma3_selectedResidual_inner_projection`, `hwLemma3_selectedComplement_residual_inner_residual_eq_schur`, `hwLemma3_selectedResidual_inner_residual_eq_zero`, `hwLemma3_selectedProjection_gram_eq`, `hwLemma3_selectedProjection_span_finrank_eq_rank`, `exists_coefficients_of_mem_span_finite_frame`, and `hwLemma3_selectedResidual_isotropicFrameData`. |
       | Normal-form source transport | Core finite source-change, head-normalization, adaptedness preservation, tail-zero, selected-head Witt/Lorentz orbit layer, Cauchy-Binet determinant transport, variety-relative source-matrix transport, exceptional-to-canonical source transport, subtype-valued normal-image transport, local-image transport adapters, invertible-head principal-Schur equality, transported max-rank-to-tail-rank rewrite, residual-tail exact-rank connectedness, final Schur-window shrink/topology packet, extracted-image inclusions, extracted-image openness, the corrected slice-gauge data surface, sliced forward residual/mixed extraction, sliced Witt/head-normalizer residual-tail membership, sliced extracted-image openness/reverse inclusion, sliced Schur parameter-window/local-image assembly, the finite-dimensional IFT producer `sourceRankDeficientHeadSliceGaugeData`, the concrete `maxRankLocalImageData_of_headSliceIFTSchurWindow` wrapper, the arbitrary exceptional-rank producer `sourceOrientedRankDeficientMaxRankLocalImageData_of_headSliceIFT`, the hard-range connectedness consumer `sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_headSliceIFT`, and the connected/preconnected-domain finite-overlap constructors checked in `SourceNormalFormTransport.lean`, `SourceOrientedRankDeficientNormalImage.lean`, `SourceOrientedRankDeficientLocalImageTransport.lean`, `SourceOrientedRankDeficientTailRankConnected.lean`, `SourceOrientedRankDeficientSliceParameter.lean`, `SourceOrientedRankDeficientSchurWindowShrink.lean`, `SourceOrientedRankDeficientCanonicalImage.lean`, `SourceOrientedHeadGauge.lean`, `SourceOrientedSchurTailSliceNormal.lean`, `SourceOrientedHeadGaugeNormal.lean`, `SourceOrientedBHWFiniteOverlap.lean`, and `SourceOrientedHeadSliceGaugeIFT.lean`. | The checked layer builds the source permutation, projection matrix, invertible symmetric congruence to `sourceHeadMetric`, canonical Gram congruence, coefficient-span/rank preservation under invertible source matrices, nondegeneracy from adaptedness, the concrete normal-form source-change tail-zero theorem, the complex Lorentz transport to `hwLemma3CanonicalSource`, `sourceOrientedMinkowskiInvariant_sourceTupleLinearChange`, `sourceOrientedVarietySourceMatrixTransportEquivOfMatrix`, `sourceOriented_lowRank_exists_normalFormSourceMatrix_to_canonical`, `sourceOriented_lowRank_exists_normalFormVarietyTransport_from_canonical`, `sourceOrientedNormalParameterVarietyPoint`, `SourceOrientedRankDeficientAlgebraicNormalFormData.originalNormalVarietyPoint`, `sourceOrientedNormalParameterVarietyPoint_eq_sourcePrincipalSchurGraph`, `SourceOrientedRankDeficientAlgebraicNormalFormData.parameterBox_maxRank_preimage_eq_tailRank`, the normal-image transport adapters, residual-tail exact-rank connectedness, the legacy head-domain shrink layer, the legacy forward residual/mixed bridges, the canonical extracted-image theorem, the sliced forward extraction bridges, the minimal head-factor refactor that gives the sliced residual-tail packet, the sliced extracted-image inclusions, the sliced parameter window topology, the sliced strengthened local-image wrapper, the concrete sliced-head IFT producer, the public canonical local-image wrapper that supplies it, the arbitrary exceptional-rank local-image producer, the hard-range connectedness theorem consuming it, and the finite-overlap constructors that now accept ordinary connected or nonempty preconnected domains.  The prior full-matrix `SourceRankDeficientHeadGaugeData` local-image wrapper is now classified as a conditional legacy surface, not a constructible endpoint.  Remaining work is the genuine Hall-Wightman/Jost geometric producer of nonempty preconnected finite-overlap domains and ordered containments.  It is not an ambient determinant-coordinate transport field, transported openness bookkeeping, separate transported-containment proof, source-change max-rank rewrite, radial endpoint argument, residual-tail middle-path topology, parameter-set shrink compatibility, extracted-image openness, sliced parameter-window assembly, sliced-head IFT problem, normal-form transport problem, local-image hypothesis problem, or max-rank-connectedness hypothesis problem. |
       | Near-identity selected-block square root | Proof transcript pinned; pure matrix analysis. | Define the finite matrix binomial series for `(1 + B)^(1/2)`, prove convergence via a scalar power-series majorant, transpose compatibility, square identity, and entrywise smallness via `matrix_opNorm_le_card_mul_sup_entry`. |
       | Schur-rank bound and Takagi residual factorization | Proof transcript pinned; pure finite linear algebra. | Prove block Gaussian rank equality, Autonne-Takagi with rank support and explicit entry-L1 control, small factorization, and tail embedding with coordinate estimates. |
