@@ -4797,7 +4797,12 @@ implementation contract is:
    The removable step now also has explicit oriented inputs:
    `sourceOrientedExceptionalRank_eq_lowerRank`,
    `sourceOrientedExceptionalRank_isAnalyticSubvariety`, and
-   `sourceOrientedMaxRank_dense_in_domain`.  The domain-density proof is now
+   `sourceOrientedMaxRank_dense_in_domain`.  The rank-identification theorem
+   `sourceOrientedExceptionalRank_eq_lowerRank` is a purely checked rank
+   bridge: an oriented-variety point is an actual oriented source invariant,
+   so `sourceGramMatrixRank_le_spacetime_source_min` bounds its Gram rank by
+   `min (d + 1) n`, and failure of the defining max-rank equality is exactly
+   the strict lower-rank inequality.  The domain-density proof is now
    checked in `SourceOrientedDomainDensity.lean` in two layers.  First
    `sourceOrientedMaxRank_dense_in_domain_inter_maxRank` proves closure of the
    explicit max-rank locus: max-rank centers are immediate by

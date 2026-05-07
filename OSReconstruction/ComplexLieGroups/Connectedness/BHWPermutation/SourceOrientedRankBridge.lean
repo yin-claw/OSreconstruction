@@ -59,6 +59,54 @@ theorem sourceGramMatrixRank_le_spacetime_source_min
   rw [sourceGramMatrixRank_eq_restrictedMinkowskiRank_range]
   exact le_min (le_trans hrank_le_M hle_d1) (le_trans hrank_le_M hle_n)
 
+/-- Oriented source-variety points have ordinary Gram rank bounded by the
+spacetime/source minimum. -/
+theorem sourceOrientedGramVariety_rank_le_min
+    {G : SourceOrientedGramData d n}
+    (hG : G ∈ sourceOrientedGramVariety d n) :
+    sourceGramMatrixRank n G.gram ≤ min (d + 1) n := by
+  rcases hG with ⟨z, rfl⟩
+  simpa [sourceOrientedMinkowskiInvariant, SourceOrientedGramData.gram] using
+    sourceGramMatrixRank_le_spacetime_source_min d n z
+
+/-- Inside the oriented source variety, the exceptional-rank predicate is
+exactly strict lower ordinary Gram rank. -/
+theorem sourceOrientedExceptionalRank_iff_sourceGramMatrixRank_lt_min
+    {G : SourceOrientedGramData d n}
+    (hG : G ∈ sourceOrientedGramVariety d n) :
+    SourceOrientedExceptionalRank d n G ↔
+      sourceGramMatrixRank n G.gram < min (d + 1) n := by
+  rw [sourceOrientedExceptionalRank_iff_not_maxRank (d := d) (n := n) hG]
+  constructor
+  · intro hnotMax
+    have hne :
+        sourceGramMatrixRank n G.gram ≠ min (d + 1) n := by
+      intro h
+      exact hnotMax (by simpa [SourceOrientedMaxRankAt] using h)
+    exact lt_of_le_of_ne
+      (sourceOrientedGramVariety_rank_le_min (d := d) (n := n) hG) hne
+  · intro hlt hmax
+    exact (ne_of_lt hlt) (by simpa [SourceOrientedMaxRankAt] using hmax)
+
+/-- The exceptional-rank locus is the oriented source variety intersected with
+the strict lower-rank ordinary Gram locus. -/
+theorem sourceOrientedExceptionalRank_eq_lowerRank
+    (d n : ℕ) :
+    {G | SourceOrientedExceptionalRank d n G} =
+      sourceOrientedGramVariety d n ∩
+        {G | sourceGramMatrixRank n G.gram < min (d + 1) n} := by
+  ext G
+  constructor
+  · intro hG
+    exact
+      ⟨hG.1,
+        (sourceOrientedExceptionalRank_iff_sourceGramMatrixRank_lt_min
+          (d := d) (n := n) hG.1).1 hG⟩
+  · rintro ⟨hGvar, hrank⟩
+    exact
+      (sourceOrientedExceptionalRank_iff_sourceGramMatrixRank_lt_min
+        (d := d) (n := n) hGvar).2 hrank
+
 /-- In the hard source range `d + 1 ≤ n`, oriented max-rank is the
 full spacetime-frame rank equation on the ordinary Gram coordinate. -/
 theorem sourceOrientedMaxRankAt_iff_sourceGramMatrixRank_eq_fullFrame
