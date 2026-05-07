@@ -861,6 +861,114 @@ theorem sourceOrientedHeadSliceGaugeSchurExtractedImage_subset_slicedParameter_i
     SourceOrientedRankDeficientSlicedNormalParameter.toNormalParameter,
     sourceOrientedNormalParameterVarietyPoint, p] using hrecon
 
+/-- Small-arity reverse inclusion for the sliced-gauge extracted image.  The
+proof is the same Schur reconstruction as the hard branch, but the final
+full oriented-data equality uses the determinant-vacuous small-arity
+endpoint. -/
+theorem sourceOrientedHeadSliceGaugeSchurExtractedImage_subset_slicedParameter_image_smallArity
+    [NeZero d]
+    (hd : 2 ≤ d)
+    (hn : n < d + 1)
+    {r : ℕ}
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadSliceGaugeData d r hrD)
+    (headRadius mixedRadius : ℝ)
+    (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn) :
+    sourceOrientedHeadSliceGaugeSchurExtractedImage
+        d n r hrD hrn Head headRadius mixedRadius Tail ⊆
+      sourceOrientedSlicedNormalParameterVarietyPoint d n r hrD hrn ''
+        sourceOrientedRankDeficientSlicedSchurParameterWindow
+          d n r hrD hrn headRadius mixedRadius Tail := by
+  intro Gv hGv
+  let Acoord := sourceOrientedSchurHeadBlockSymm d n r hrD hrn Gv.2
+  let Hslice := Head.factor Acoord
+  let H := Hslice.1
+  let L := sourceSchurMixedCoeff n r hrn Gv.1
+    (sourceOrientedSchurHeadBlock n r hrn Gv.1)
+  let T := sourceOrientedSchurResidualTailData d n r hrD hrn Gv.1 H
+  change
+    (let Acoord := sourceOrientedSchurHeadBlockSymm d n r hrD hrn Gv.2
+     let H := (Head.factor Acoord).1
+     let T := sourceOrientedSchurResidualTailData d n r hrD hrn Gv.1 H
+     Acoord ∈ Head.U ∧
+       H ∈ sourceOrientedHeadCoordinateWindow r headRadius ∧
+       sourceSchurMixedCoeff n r hrn Gv.1
+           (sourceOrientedSchurHeadBlock n r hrn Gv.1) ∈
+         sourceOrientedMixedCoordinateWindow n r mixedRadius ∧
+       (∀ u v, ‖T.gram u v‖ < Tail.tailEta) ∧
+       (∀ ι, ‖T.det ι‖ < Tail.tailEta)) at hGv
+  dsimp only at hGv
+  rcases hGv with ⟨hHeadU, hH_window, hL_window, hT_gram, hT_det⟩
+  let R : SourceOrientedSchurResidualData d n r hrD hrn Gv.1 :=
+    sourceOriented_schurResidualData_of_headSliceGauge
+      hd hrD hrn Head Gv.2 hHeadU
+  have hT_mem :
+      T ∈ sourceShiftedTailOrientedVariety d r hrD (n - r) := by
+    simpa [T, H, Hslice, Acoord] using
+      sourceOrientedSchurResidualTailData_mem_variety_headSliceGauge
+        hd hrD hrn Head Gv.2 hHeadU
+  rcases Tail.tailRealize T hT_mem hT_gram hT_det with
+    ⟨q, hq_coord, hqT⟩
+  have hqR :
+      sourceShiftedTailOrientedInvariant d r hrD (n - r) q = R.tail := by
+    simpa [R, T, H, Hslice, Acoord,
+      sourceOriented_schurResidualData_of_headSliceGauge,
+      sourceOriented_schurResidualData_of_headFactor,
+      sourceOriented_schurResidualData_of_tail_mem_headFactor] using hqT
+  let p : SourceOrientedRankDeficientSlicedNormalParameter d n r hrD hrn :=
+    { head := Hslice
+      mixed := R.L
+      tail := q }
+  have hp :
+      p ∈ sourceOrientedRankDeficientSlicedSchurParameterWindow
+        d n r hrD hrn headRadius mixedRadius Tail := by
+    refine ⟨?_, ?_, ?_⟩
+    · simpa [p, H, Hslice, sourceHeadGaugeSliceCoordinateWindow,
+        sourceOrientedHeadCoordinateWindow, sourceHeadFactorCoordinateWindow,
+        sourceMatrixCoordinateWindow] using hH_window
+    · simpa [p, R, L, H, Hslice, Acoord,
+        sourceOriented_schurResidualData_of_headSliceGauge,
+        sourceOriented_schurResidualData_of_headFactor,
+        sourceOriented_schurResidualData_of_tail_mem_headFactor] using hL_window
+    · refine ⟨?_, ?_, ?_⟩
+      · simpa [p, SourceOrientedRankDeficientSlicedNormalParameter.toNormalParameter]
+          using hq_coord
+      · intro u v
+        have hproj :
+            (sourceShiftedTailOrientedInvariant d r hrD (n - r) q).gram u v =
+              T.gram u v := by
+          exact congrFun (congrFun (congrArg SourceShiftedTailOrientedData.gram hqT) u) v
+        have hgram :
+            (sourceShiftedTailOrientedInvariant d r hrD (n - r)
+                p.toNormalParameter.tail).gram u v =
+              T.gram u v := by
+          simpa [p, SourceOrientedRankDeficientSlicedNormalParameter.toNormalParameter]
+            using hproj
+        rw [hgram]
+        exact hT_gram u v
+      · intro ι
+        have hproj :
+            (sourceShiftedTailOrientedInvariant d r hrD (n - r) q).det ι =
+              T.det ι := by
+          exact congrFun (congrArg SourceShiftedTailOrientedData.det hqT) ι
+        have hdet :
+            (sourceShiftedTailOrientedInvariant d r hrD (n - r)
+                p.toNormalParameter.tail).det ι =
+              T.det ι := by
+          simpa [p, SourceOrientedRankDeficientSlicedNormalParameter.toNormalParameter]
+            using hproj
+        rw [hdet]
+        exact hT_det ι
+  refine ⟨p, hp, ?_⟩
+  apply Subtype.ext
+  have hrecon :=
+    sourceOriented_reconstruct_from_schurResidual_smallArity
+      d n r hn hrD hrn Gv.2 R hqR
+  simpa [sourceOrientedSlicedNormalParameterVarietyPoint,
+    SourceOrientedRankDeficientSlicedNormalParameter.toNormalParameter,
+    sourceOrientedNormalParameterVarietyPoint, p] using hrecon
+
 /-- The canonical Schur/residual image theorem for the genuine sliced
 head-gauge parameter window. -/
 theorem sourceOrientedHeadSliceGaugeSchurWindowCanonicalImage
@@ -895,6 +1003,46 @@ theorem sourceOrientedHeadSliceGaugeSchurWindowCanonicalImage
       ?_, ?_⟩
   · exact
       sourceOrientedHeadSliceGaugeSchurExtractedImage_subset_slicedParameter_image
+        hd hn hrD hrn Head headRadius mixedRadius Tail
+  · intro p hp
+    exact
+      sourceOrientedSlicedNormalParameterVarietyPoint_mem_headSliceGaugeSchurExtractedImage
+        Head hdomain p hp
+
+/-- Small-arity canonical Schur/residual image theorem for the genuine sliced
+head-gauge parameter window. -/
+theorem sourceOrientedHeadSliceGaugeSchurWindowCanonicalImage_smallArity
+    [NeZero d]
+    (hd : 2 ≤ d)
+    (hn : n < d + 1)
+    {r : ℕ}
+    (hrD : r < d + 1)
+    (hrn : r ≤ n)
+    (Head : SourceRankDeficientHeadSliceGaugeData d r hrD)
+    {headRadius mixedRadius : ℝ}
+    (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn)
+    (hdomain :
+      sourceHeadGaugeSliceCoordinateWindow d r hrD headRadius ⊆
+        Head.factorDomain) :
+    ∃ Ω : Set (SourceOrientedVariety d n),
+      IsOpen Ω ∧
+        Ω ⊆
+          sourceOrientedSlicedNormalParameterVarietyPoint d n r hrD hrn ''
+            sourceOrientedRankDeficientSlicedSchurParameterWindow
+              d n r hrD hrn headRadius mixedRadius Tail ∧
+        (∀ p,
+          p ∈ sourceOrientedRankDeficientSlicedSchurParameterWindow
+            d n r hrD hrn headRadius mixedRadius Tail →
+          sourceOrientedSlicedNormalParameterVarietyPoint
+            d n r hrD hrn p ∈ Ω) := by
+  refine
+    ⟨sourceOrientedHeadSliceGaugeSchurExtractedImage
+        d n r hrD hrn Head headRadius mixedRadius Tail,
+      isOpen_sourceOrientedHeadSliceGaugeSchurExtractedImage
+        d n r hrD hrn Head headRadius mixedRadius Tail,
+      ?_, ?_⟩
+  · exact
+      sourceOrientedHeadSliceGaugeSchurExtractedImage_subset_slicedParameter_image_smallArity
         hd hn hrD hrn Head headRadius mixedRadius Tail
   · intro p hp
     exact

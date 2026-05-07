@@ -364,4 +364,72 @@ theorem sourceShiftedTailOrientedMaxRank_dense_in_parameterOpen
   have hclose := map_mem_closure hF_cont h0_closure hmapsF
   simpa [line, τ, S] using hclose
 
+/-- Shifted-tail max-rank parameters are dense in every open parameter
+domain.  This is the parameter-space version of
+`sourceShiftedTailOrientedMaxRank_dense_in_parameterOpen`; it uses the same
+selected-minor polynomial line but does not push forward by the invariant
+map. -/
+theorem sourceShiftedTailOrientedMaxRank_parameter_dense_in_open
+    (d r m : ℕ)
+    (hrD : r < d + 1)
+    {P : Set (Fin m → Fin (d + 1 - r) → ℂ)}
+    (hP_open : IsOpen P) :
+    ∀ q ∈ P,
+      q ∈ closure
+        {q' | q' ∈ P ∧
+          SourceShiftedTailOrientedMaxRankAt d r hrD m
+            (sourceShiftedTailOrientedInvariant d r hrD m q')} := by
+  intro q hqP
+  let τ : Fin m → Fin (d + 1 - r) → ℂ :=
+    sourceShiftedTailFullRankTemplate d r m hrD
+  let line : ℂ → Fin m → Fin (d + 1 - r) → ℂ :=
+    fun t => q + t • (τ - q)
+  let poly : Polynomial ℂ :=
+    sourceShiftedTailSelectedGramLinePolynomial d r m hrD q
+  let S : Set (Fin m → Fin (d + 1 - r) → ℂ) :=
+    {q' | q' ∈ P ∧
+      SourceShiftedTailOrientedMaxRankAt d r hrD m
+        (sourceShiftedTailOrientedInvariant d r hrD m q')}
+  have hline_cont : Continuous line := by
+    dsimp [line]
+    fun_prop
+  have hA_open : IsOpen (line ⁻¹' P) :=
+    hP_open.preimage hline_cont
+  have h0A : (0 : ℂ) ∈ line ⁻¹' P := by
+    dsimp [line, τ]
+    simpa using hqP
+  have hroots_dense : Dense (poly.rootSet ℂ)ᶜ := by
+    simpa [poly] using
+      dense_compl_sourceShiftedTailSelectedGramLineRoots d r m hrD q
+  have h0_closure :
+      (0 : ℂ) ∈ closure ((line ⁻¹' P) ∩ (poly.rootSet ℂ)ᶜ) :=
+    (hroots_dense.open_subset_closure_inter hA_open) h0A
+  have hmaps : Set.MapsTo line ((line ⁻¹' P) ∩ (poly.rootSet ℂ)ᶜ) S := by
+    intro t ht
+    refine ⟨ht.1, ?_⟩
+    have ht_not_root : t ∉ poly.rootSet ℂ := ht.2
+    have hEval_ne : poly.eval t ≠ 0 := by
+      intro hEval
+      apply ht_not_root
+      have hroot_iff :
+          t ∈ poly.rootSet ℂ ↔ Polynomial.aeval t poly = 0 := by
+        exact Polynomial.mem_rootSet_of_ne
+          (sourceShiftedTailSelectedGramLinePolynomial_ne_zero d r m hrD q)
+      rw [hroot_iff]
+      simpa [poly] using hEval
+    have hdet :
+        Matrix.det (fun a b : Fin (min (d + 1 - r) m) =>
+          sourceShiftedTailGram d r hrD m (line t)
+            (Fin.castLE (min_le_right (d + 1 - r) m) a)
+            (Fin.castLE (min_le_right (d + 1 - r) m) b)) ≠ 0 := by
+      have hEval' := hEval_ne
+      change
+        (sourceShiftedTailSelectedGramLinePolynomial d r m hrD q).eval t ≠ 0
+        at hEval'
+      rw [sourceShiftedTailSelectedGramLinePolynomial_eval] at hEval'
+      simpa [line, τ] using hEval'
+    exact sourceShiftedTail_maxRank_of_selectedGram_det_ne_zero d r m hrD hdet
+  have hclose := map_mem_closure hline_cont h0_closure hmaps
+  simpa [line, τ, S] using hclose
+
 end BHW

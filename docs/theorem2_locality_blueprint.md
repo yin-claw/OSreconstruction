@@ -9744,7 +9744,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       theorem, not a choice principle:
 
       ```lean
-      theorem BHW.sourceOriented_rankDeficient_tubeResidualPolydisc
+      noncomputable def BHW.sourceOriented_rankDeficient_tubeResidualPolydisc
           [NeZero d]
           (hd : 2 <= d)
           {z0 : Fin n -> Fin (d + 1) -> ℂ}
@@ -10069,7 +10069,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       original-coordinate assembly is:
 
       ```lean
-      theorem BHW.sourceOriented_rankDeficient_tubeResidualPolydisc_hardRange
+      noncomputable def BHW.sourceOriented_rankDeficient_tubeResidualPolydisc_hardRange
           [NeZero d]
           (hd : 2 <= d)
           (hn : d + 1 <= n)
@@ -10133,10 +10133,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
           }
       ```
 
-      The public all-arity theorem must split before this call:
+      The public all-arity constructor splits before this call:
 
       ```lean
-      theorem BHW.sourceOriented_rankDeficient_tubeResidualPolydisc
+      noncomputable def BHW.sourceOriented_rankDeficient_tubeResidualPolydisc
           [NeZero d]
           (hd : 2 <= d)
           {z0 : Fin n -> Fin (d + 1) -> ℂ}
@@ -10155,7 +10155,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       of the full-frame determinant Schur reconstruction theorem:
 
       ```lean
-      theorem BHW.sourceOriented_rankDeficient_tubeResidualPolydisc_smallArity
+      noncomputable def BHW.sourceOriented_rankDeficient_tubeResidualPolydisc_smallArity
           [NeZero d]
           (hd : 2 <= d)
           (hn : n < d + 1)
@@ -10164,13 +10164,239 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.SourceOrientedResidualPolydiscData d n N
       ```
 
-      Its proof has no oriented determinant coordinates.  It uses the same
-      source-level normal-form `toOriginal`, the sliced finite-coordinate
-      extended-tube shrink, and the small-arity pure-Gram Schur residual
-      realization where the determinant families indexed by
-      `Fin (d + 1 - r) ↪ Fin (n - r)` are empty.  This theorem must be proved
-      directly; the hard-range theorem above may not be called with a fake
-      `d + 1 <= n` hypothesis.
+      Its proof has no full-frame determinant-coordinate obligations.  The
+      checked determinant-vacuous Schur reconstruction endpoints are:
+
+      ```lean
+      theorem BHW.sourceOrientedNormalParameterVector_realizes_schur_det_smallArity
+          (d n r : Nat)
+          (hn : n < d + 1)
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          {G : BHW.SourceOrientedGramData d n}
+          (R : BHW.SourceOrientedSchurResidualData d n r hrD hrn G)
+          {p : BHW.SourceOrientedRankDeficientNormalParameter d n r hrD hrn}
+          (hhead : p.head = R.headFactor)
+          (hmixed : p.mixed = R.L)
+          (htail :
+            BHW.sourceShiftedTailOrientedInvariant d r hrD (n - r) p.tail =
+              R.tail) :
+          (BHW.sourceOrientedMinkowskiInvariant d n
+            (BHW.sourceOrientedNormalParameterVector d n r hrD hrn p)).det =
+            G.det := by
+        funext iota
+        have hle : d + 1 <= n := by
+          simpa using Fintype.card_le_of_embedding iota
+        exact False.elim (by omega)
+
+      theorem BHW.sourceOrientedNormalParameterVector_realizes_schur_smallArity
+          (d n r : Nat)
+          (hn : n < d + 1)
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          {G : BHW.SourceOrientedGramData d n}
+          (hGvar : G ∈ BHW.sourceOrientedGramVariety d n)
+          (R : BHW.SourceOrientedSchurResidualData d n r hrD hrn G)
+          {p : BHW.SourceOrientedRankDeficientNormalParameter d n r hrD hrn}
+          (hhead : p.head = R.headFactor)
+          (hmixed : p.mixed = R.L)
+          (htail :
+            BHW.sourceShiftedTailOrientedInvariant d r hrD (n - r) p.tail =
+              R.tail) :
+          BHW.sourceOrientedMinkowskiInvariant d n
+            (BHW.sourceOrientedNormalParameterVector d n r hrD hrn p) = G := by
+        apply BHW.SourceOrientedGramData.ext
+        · exact
+            BHW.sourceOrientedNormalParameterVector_realizes_schur_gram
+              d n r hrD hrn hGvar R hhead hmixed htail
+        · exact
+            BHW.sourceOrientedNormalParameterVector_realizes_schur_det_smallArity
+              d n r hn hrD hrn R hhead hmixed htail
+
+      theorem BHW.sourceOriented_reconstruct_from_schurResidual_smallArity
+          (d n r : Nat)
+          (hn : n < d + 1)
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          {G : BHW.SourceOrientedGramData d n}
+          (hGvar : G ∈ BHW.sourceOrientedGramVariety d n)
+          (R : BHW.SourceOrientedSchurResidualData d n r hrD hrn G)
+          {q : Fin (n - r) -> Fin (d + 1 - r) -> Complex}
+          (hq :
+            BHW.sourceShiftedTailOrientedInvariant d r hrD (n - r) q =
+              R.tail) :
+          BHW.sourceOrientedMinkowskiInvariant d n
+            (BHW.sourceOrientedNormalParameterVector d n r hrD hrn
+              { head := R.headFactor, mixed := R.L, tail := q }) = G
+      ```
+
+      Using those endpoints, the sliced canonical image gets a small-arity
+      reverse inclusion by the hard-range proof pattern with the final
+      `sourceOriented_reconstruct_from_schurResidual` call replaced by
+      `sourceOriented_reconstruct_from_schurResidual_smallArity`:
+
+      ```lean
+      theorem BHW.sourceOrientedHeadSliceGaugeSchurExtractedImage_subset_slicedParameter_image_smallArity
+          [NeZero d]
+          (hd : 2 <= d)
+          (hn : n < d + 1)
+          {r : Nat}
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          (Head : BHW.SourceRankDeficientHeadSliceGaugeData d r hrD)
+          (headRadius mixedRadius : Real)
+          (Tail : BHW.SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn) :
+          BHW.sourceOrientedHeadSliceGaugeSchurExtractedImage
+              d n r hrD hrn Head headRadius mixedRadius Tail ⊆
+            BHW.sourceOrientedSlicedNormalParameterVarietyPoint d n r hrD hrn ''
+              BHW.sourceOrientedRankDeficientSlicedSchurParameterWindow
+                d n r hrD hrn headRadius mixedRadius Tail
+
+      theorem BHW.sourceOrientedHeadSliceGaugeSchurWindowCanonicalImage_smallArity
+          [NeZero d]
+          (hd : 2 <= d)
+          (hn : n < d + 1)
+          {r : Nat}
+          (hrD : r < d + 1)
+          (hrn : r <= n)
+          (Head : BHW.SourceRankDeficientHeadSliceGaugeData d r hrD)
+          {headRadius mixedRadius : Real}
+          (Tail : BHW.SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn)
+          (hdomain :
+            BHW.sourceHeadGaugeSliceCoordinateWindow d r hrD headRadius ⊆
+              Head.factorDomain) :
+          ∃ Ω : Set (BHW.SourceOrientedVariety d n),
+            IsOpen Ω ∧
+              Ω ⊆
+                BHW.sourceOrientedSlicedNormalParameterVarietyPoint d n r hrD hrn ''
+                  BHW.sourceOrientedRankDeficientSlicedSchurParameterWindow
+                    d n r hrD hrn headRadius mixedRadius Tail ∧
+              (∀ p,
+                p ∈ BHW.sourceOrientedRankDeficientSlicedSchurParameterWindow
+                  d n r hrD hrn headRadius mixedRadius Tail ->
+                BHW.sourceOrientedSlicedNormalParameterVarietyPoint
+                  d n r hrD hrn p ∈ Ω)
+      ```
+
+      The compact/open parameter shrink is the checked hard-range shrink with the
+      tail-rank-connectedness field deleted.  It chooses the Schur window
+      directly from:
+
+      * `N.exists_slicedFinCoordCompactOpen_toOriginal_mem_ET`,
+      * `exists_sourceOrientedRankDeficientSlicedSchurParameterWindow_coordinate_bounds_subset_of_mem_nhds_center`,
+      * `sourceRankDeficientHeadSliceGaugeData.factorDomain_coordinate`, and
+      * `sourceOrientedRankDeficientSlicedSchurParameterWindow_open_connected`.
+
+      The checked small-arity finite-coordinate control theorem is:
+
+      ```lean
+      theorem BHW.SourceOrientedRankDeficientNormalFormData.exists_slicedSchurWindow_finCoordControl_smallArity
+          [NeZero d]
+          (hd : 2 <= d)
+          (hn : n < d + 1)
+          {z0 : Fin n -> Fin (d + 1) -> Complex}
+          (N : BHW.SourceOrientedRankDeficientNormalFormData d n z0) :
+          ∃ ε headRadius mixedRadius Tail Ωv,
+            let W :=
+              BHW.sourceOrientedRankDeficientSlicedSchurParameterWindow
+                d n N.r N.hrD N.hrn headRadius mixedRadius Tail
+            let e :=
+              BHW.sourceOrientedSlicedNormalParameterFinCoordHomeomorph
+                (d := d) (n := n) (r := N.r)
+                (hrD := N.hrD) (hrn := N.hrn)
+            0 < ε ∧
+              0 < headRadius ∧
+              0 < mixedRadius ∧
+              IsCompact
+                (BHW.sourceOrientedSlicedNormalParameterFinCoordClosedBall
+                  d n N.r N.hrD N.hrn ε) ∧
+              IsOpen W ∧
+              BHW.sourceOrientedSlicedNormalCenterParameter
+                d n N.r N.hrD N.hrn ∈ W ∧
+              e '' W ⊆
+                BHW.sourceOrientedSlicedNormalParameterFinCoordClosedBall
+                  d n N.r N.hrD N.hrn ε ∧
+              (∀ c,
+                c ∈
+                  BHW.sourceOrientedSlicedNormalParameterFinCoordClosedBall
+                    d n N.r N.hrD N.hrn ε ->
+                N.toOriginal
+                    (BHW.sourceOrientedNormalParameterVector
+                      d n N.r N.hrD N.hrn
+                      ((e.symm c).toNormalParameter)) ∈
+                  BHW.ExtendedTube d n) ∧
+              IsOpen Ωv ∧
+              Ωv ⊆
+                BHW.sourceOrientedSlicedNormalParameterVarietyPoint
+                  d n N.r N.hrD N.hrn '' W ∧
+              (∀ p, p ∈ W ->
+                BHW.sourceOrientedSlicedNormalParameterVarietyPoint
+                  d n N.r N.hrD N.hrn p ∈ Ωv) ∧
+              (∀ p, p ∈ W -> IsUnit p.toNormalParameter.head.det)
+      ```
+
+      The max-rank-density field does not use hard-range ambient density.
+      It is supplied in parameter coordinates from the checked shifted-tail
+      density theorem.  The checked parameter-closure strengthening is:
+
+      ```lean
+      theorem BHW.sourceShiftedTailOrientedMaxRank_parameter_dense_in_open
+          (d r m : Nat)
+          (hrD : r < d + 1)
+          {P : Set (Fin m -> Fin (d + 1 - r) -> Complex)}
+          (hP_open : IsOpen P) :
+          ∀ q ∈ P,
+            q ∈ closure
+              {q' | q' ∈ P ∧
+                BHW.SourceShiftedTailOrientedMaxRankAt d r hrD m
+                  (BHW.sourceShiftedTailOrientedInvariant d r hrD m q')}
+      ```
+
+      The checked all-arity lift through the fixed-head/fixed-mixed sliced
+      Schur window and the checked max-rank bridge is:
+
+      ```lean
+      theorem BHW.SourceOrientedRankDeficientNormalFormData.slicedSchurWindow_originalMaxRank_dense
+          {d n : Nat}
+          {z0 : Fin n -> Fin (d + 1) -> ℂ}
+          (N : BHW.SourceOrientedRankDeficientNormalFormData d n z0)
+          {W : Set (BHW.SourceOrientedRankDeficientSlicedNormalParameter
+              d n N.r N.hrD N.hrn)}
+          (hW_open : IsOpen W)
+          (hhead : ∀ p, p ∈ W -> IsUnit p.toNormalParameter.head.det) :
+          let e :=
+            BHW.sourceOrientedSlicedNormalParameterFinCoordHomeomorph
+              (d := d) (n := n) (r := N.r)
+              (hrD := N.hrD) (hrn := N.hrn)
+          let image :
+              (Fin (BHW.sourceOrientedSlicedNormalParameterFinCoordDim
+                  d n N.r) -> ℂ) ->
+                BHW.SourceOrientedGramData d n :=
+            fun c =>
+              BHW.sourceOrientedMinkowskiInvariant d n
+                (N.toOriginal
+                  (BHW.sourceOrientedNormalParameterVector
+                    d n N.r N.hrD N.hrn
+                    ((e.symm c).toNormalParameter)))
+          ∀ c, c ∈ e '' W ->
+            image c ∈ closure
+              (image ''
+                {c' | c' ∈ e '' W ∧
+                  BHW.SourceOrientedMaxRankAt d n (image c')})
+      ```
+
+      The checked `sourceOriented_rankDeficient_tubeResidualPolydisc_smallArity`
+      follows the hard-range constructor pattern with three branch-specific
+      substitutions:
+
+      * the control packet comes from `exists_slicedSchurWindow_finCoordControl_smallArity`;
+      * the subtype-open image comes from
+        `sourceOrientedHeadSliceGaugeSchurWindowCanonicalImage_smallArity`; and
+      * `maxRank_dense_original` comes from
+        `N.slicedSchurWindow_originalMaxRank_dense hW_open hhead`.
+
+      This theorem is proved directly; the hard-range theorem above is not
+      called with a fake `d + 1 <= n` hypothesis.
 
       The hard-range constructor no longer needs a separate density lift for
       the final `maxRank_dense_original` field: the transported Schur image is
@@ -10178,47 +10404,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.sourceOrientedMaxRank_dense_in_relOpen_inter` gives density there,
       and `N.slicedFinCoord_originalImage_surj_varietyTransport` pulls the
       dense max-rank points back to finite-coordinate Schur parameters.  The
-      following sliced tail-density theorem remains the direct parameter-level
-      strengthening, useful for any later proof that wants density before
-      passing to the relatively open image:
-
-      ```lean
-      theorem BHW.SourceOrientedRankDeficientNormalFormData.slicedSchurWindow_originalMaxRank_dense
-          [NeZero d]
-          (hn : d + 1 <= n)
-          {z0 : Fin n -> Fin (d + 1) -> ℂ}
-          (N : BHW.SourceOrientedRankDeficientNormalFormData d n z0)
-          {headRadius mixedRadius : ℝ}
-          {Tail :
-            BHW.SourceOrientedRankDeficientTailWindowChoice
-              d n N.r N.hrD N.hrn}
-          (hhead :
-            ∀ p ∈ W, IsUnit p.toNormalParameter.head.det)
-          (hW_open : IsOpen W) :
-          ∀ c ∈ e '' W,
-            BHW.sourceOrientedMinkowskiInvariant d n
-                (N.toOriginal (normalVector ((e.symm c).toNormalParameter))) ∈
-              closure
-                ((fun c' =>
-                  BHW.sourceOrientedMinkowskiInvariant d n
-                    (N.toOriginal
-                      (normalVector ((e.symm c').toNormalParameter)))) ''
-                  {c' | c' ∈ e '' W ∧
-                    BHW.SourceOrientedMaxRankAt d n
-                      (BHW.sourceOrientedMinkowskiInvariant d n
-                        (N.toOriginal
-                          (normalVector ((e.symm c').toNormalParameter))))})
-      ```
-
-      Its proof uses the product-coordinate homeomorphism for sliced
-      parameters.  Head and mixed coordinates are held fixed, while the tail
-      coordinate is perturbed inside the open tail slice by
-      `BHW.sourceShiftedTailOrientedMaxRank_dense_in_parameterOpen`.  The
-      checked bridge
-      `N.toOriginal_slicedNormalParameterVector_maxRank_iff_tail` converts
-      shifted-tail max rank to original-coordinate max rank, and continuity
-      of the finite-coordinate normal image pushes parameter density forward
-      to the displayed closure statement.
+      all-arity parameter-density theorem displayed above remains useful for
+      any later proof that wants density before passing to a relatively open
+      image: its proof holds head and mixed coordinates fixed, perturbs only
+      the tail coordinate inside the open tail slice, converts shifted-tail
+      max rank to original-coordinate max rank by
+      `N.toOriginal_slicedNormalParameterVector_maxRank_iff_tail`, and pushes
+      closure through the finite-coordinate homeomorphism and the continuous
+      original invariant map.
 
       For `maxRank_dense_original`, in the hard full-frame range apply the
       checked density theorem on the relatively open image,
@@ -10229,12 +10422,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       normal-parameter coordinates, the rewrite to the shifted residual-tail
       max-rank predicate is checked by
       `BHW.SourceOrientedRankDeficientNormalFormData.toOriginal_normalParameterVector_maxRank_iff_tail`.
-      In the
-      small-arity branch, the remaining support theorem is the corresponding
-      max-rank chart-density theorem from the small-arity local chart, unless
-      the implementation instead proves one all-arity density theorem covering
-      both branches.  This density argument is original-image density; it does
-      not assume the source-matrix transport is an ambient homeomorphism.
+      In the small-arity branch, the checked all-arity parameter-density lift
+      supplies the density field directly.  Both density arguments are
+      original-image density arguments; neither assumes that source-matrix
+      transport is an ambient homeomorphism.
 
       The determinant formula in
       `sourceSchurResidualDeterminants` is the cofactor/wedge formula for
@@ -13800,7 +13991,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | `BHW.sourceOrientedMaxRankChartData_of_maxRankAt_fullFrame`, `BHW.sourceOrientedGramVariety_local_connectedRelOpen_basis_of_fullFrameMaxRank_and_localImage`, `BHW.sourceOrientedGramVariety_connectedRelOpenTube_around_compactPath_of_fullFrameMaxRank_and_localImage`, `BHW.sourceOrientedRelOpen_inter_maxRank_relOpen`, `BHW.sourceOrientedMaxRank_dense_in_relOpen_inter`, `BHW.sourceOrientedRelOpen_inter_maxRank_nonempty`, `BHW.sourceOrientedGramVariety_maxRank_identity_principle_of_connected`, `BHW.sourceOrientedGramVariety_maxRank_identity_principle_of_connected_fullFrame`, `BHW.sourceOrientedGramVariety_maxRank_eqOn_of_connected_fullFrame`, `BHW.sourceOrientedGramVariety_relOpen_eqOn_zero_of_eqOn_maxRank`, `BHW.sourceOrientedGramVariety_identity_principle_of_connected_maxRank_fullFrame`, `BHW.sourceOrientedGramVariety_eqOn_of_connected_maxRank_fullFrame`, `BHW.bhw_jost_closedChain_orientedMaxRankMonodromy_of_seed`, `BHW.bhw_jost_closedChain_sourceMonodromy_on_maxRankClosingPatch_of_seed`, `BHW.bhw_jost_closedChain_orientedMonodromy_of_seed`, `BHW.bhw_jost_closedChain_sourceMonodromy_of_seed` | Checked in `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedFullFrameMaxRankProducer.lean` and `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedMaxRankIdentity.lean`. | The hard-range full-frame producer now removes the abstract max-rank chart hypothesis: oriented max rank of a source-variety point gives a nonzero selected full-frame determinant, hence a finite-coordinate max-rank chart.  The max-rank locus is relatively open inside the oriented source variety by the determinant-nonzero union characterization, and it is dense in every relatively open oriented patch by pulling back to source tuples and using `dense_sourceComplexGramRegularAt`.  The max-rank identity theorem is the checked clopen propagation on the connected max-rank subtype; density and continuity extend it to all ranks once the max-rank part of the domain is connected.  The closed-loop seed consumers turn a stored `BHWJostOrientedMaxRankClosedLoopSeed` into terminal-initial oriented germ equality and source-branch equality first on max-rank closing points and then on the whole closing patch.  This does not prove the Hall-Wightman closed-loop seed itself and it still takes connectedness of the closing max-rank part as an explicit geometric input. |
       | `BHW.same_sourceOrientedInvariant_detOneOrbit_or_singularLimit` | Componentwise proof transcript pinned; production Lean not started. | Split by `HWSourceGramOrbitRankAt`.  In the orbit-rank branch, extract Gram equality and determinant equality from `SourceOrientedGramData`, prove `HWSameSourceGramSOOrientationCompatible` via a nonzero full-frame determinant and the determinant-ratio formula for `HWFullRankSameGramFrameMapDet`, then call `hw_sameSourceGram_regular_orbit`.  In the low-rank branch, call the Hall-Wightman residual-frame contraction producer.  The lower support transcript expands coefficient kernels, restricted-rank nondegeneracy, determinant-repaired Witt extension, selected Schur residuals, common isotropic residual frames, dual frames, contraction curves, and the singular topology limit; the missing work is implementation, not a remaining theorem-shape gap in this row. |
       | `BHW.extendedTube_same_sourceOrientedInvariant_extendF_eq` | Assembly transcript pinned; not production-Lean-ready until the previous row's Hall-Wightman producers exist. | Apply the previous row's actual orbit alternative to determinant-`1` complex Lorentz invariance of `extendF` via `extendF_complexLorentzInvariant_of_cinv`; apply the singular alternative by the checked topology-limit transcript for `hw_sameSourceGram_singularLimit_extendF_eq`.  This theorem has no independent route choice and must not be implemented before `same_sourceOrientedInvariant_detOneOrbit_or_singularLimit`. |
-      | `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected` | Connectedness half checked as `BHW.sourceOrientedExtendedTubeDomain_connected`; the open-union topology split for the relative-openness half is checked as `BHW.SourceOrientedExtendedTubeLocalRealizationData`, `BHW.SourceOrientedExtendedTubeLocalRealizationProducer`, `BHW.sourceOrientedExtendedTubeDomain_relOpen_of_localRealization`, and `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_localRealization` in `SourceOrientedLocalRealization.lean`.  The max-rank local-realization branch is also checked there as `BHW.sourceComplexGramRegularAt_of_HWSourceGramMaxRankAt_any`, `BHW.continuousOn_sourceFullFrameGauge_reconstructVector_on_modelDetNonzero`, `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_smallArityMaxRank`, `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_fullFrameDetNonzero`, `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_fullFrameMaxRank`, and `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_maxRank`.  The rank-deficient target interface is now checked as `BHW.SourceOrientedRankDeficientRealizationData`, `BHW.SourceOrientedRankDeficientRealizationData.to_localRealization`, `BHW.SourceOrientedRankDeficientResidualChartData`, `BHW.SourceOrientedRankDeficientResidualChartData.center_mem`, `BHW.SourceOrientedRankDeficientResidualChartData.toVec_c0_mem`, `BHW.SourceOrientedRankDeficientResidualChartData.to_realizationData`, `BHW.SourceOrientedRankDeficientResidualChartData.to_localRealization`, `BHW.SourceOrientedRankDeficientResidualChartProducer`, `BHW.sourceOrientedExtendedTubeLocalRealizationProducer_of_rankDeficientResidualChartProducer`, and `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_rankDeficientResidualChartProducer`. | The only remaining input for the final no-parameter theorem is the rank-deficient residual chart producer `SourceOrientedRankDeficientResidualChartProducer d n`.  The full-frame max-rank case no longer has a tube-shrink gap: it uses `isOpen_extendedTube`, the explicit reconstructed-vector map, the model-domain shrinker, and the stored chart inverse to produce an actual `ExtendedTube` witness realizing each nearby oriented-variety point.  The small-arity max-rank case uses the ordinary source-Gram local image theorem inside `ExtendedTube` and emptiness of `Fin (d + 1) ↪ Fin n`.  Rank-deficient charts may use the checked sliced-head IFT local-image stack (`sourceOrientedRankDeficientMaxRankLocalImageData_of_headSliceIFT`) only for algebraic image bookkeeping; they still must produce the explicit ET-valued residual family `toVec`.  This is the sole remaining local-realization implementation target, not a public-domain wrapper. |
+      | `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected` | Connectedness half checked as `BHW.sourceOrientedExtendedTubeDomain_connected`; the open-union topology split for the relative-openness half is checked as `BHW.SourceOrientedExtendedTubeLocalRealizationData`, `BHW.SourceOrientedExtendedTubeLocalRealizationProducer`, `BHW.sourceOrientedExtendedTubeDomain_relOpen_of_localRealization`, and `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_localRealization` in `SourceOrientedLocalRealization.lean`.  The max-rank local-realization branch is also checked there as `BHW.sourceComplexGramRegularAt_of_HWSourceGramMaxRankAt_any`, `BHW.continuousOn_sourceFullFrameGauge_reconstructVector_on_modelDetNonzero`, `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_smallArityMaxRank`, `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_fullFrameDetNonzero`, `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_fullFrameMaxRank`, and `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_maxRank`.  The rank-deficient target interface and producer are now checked as `BHW.SourceOrientedRankDeficientRealizationData`, `BHW.SourceOrientedRankDeficientRealizationData.to_localRealization`, `BHW.SourceOrientedRankDeficientResidualChartData`, `BHW.SourceOrientedRankDeficientResidualChartData.center_mem`, `BHW.SourceOrientedRankDeficientResidualChartData.toVec_c0_mem`, `BHW.SourceOrientedRankDeficientResidualChartData.to_realizationData`, `BHW.SourceOrientedRankDeficientResidualChartData.to_localRealization`, `BHW.SourceOrientedRankDeficientResidualChartProducer`, `BHW.sourceOriented_rankDeficient_tubeResidualPolydiscProducer`, `BHW.sourceOriented_rankDeficient_residualChartProducer`, `BHW.sourceOrientedExtendedTubeLocalRealizationProducer_of_rankDeficientResidualChartProducer`, and `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_rankDeficientResidualChartProducer`. | The rank-deficient residual-chart producer is now checked in `SourceOrientedRankDeficientTubeResidualPolydisc.lean`, so this local-realization input is no longer a blocker.  The full-frame max-rank case no longer has a tube-shrink gap: it uses `isOpen_extendedTube`, the explicit reconstructed-vector map, the model-domain shrinker, and the stored chart inverse to produce an actual `ExtendedTube` witness realizing each nearby oriented-variety point.  The small-arity max-rank case uses the ordinary source-Gram local image theorem inside `ExtendedTube` and emptiness of `Fin (d + 1) ↪ Fin n`.  Rank-deficient charts use the checked sliced-head Schur stack only for original-coordinate image bookkeeping; the explicit ET-valued residual family is produced through the checked tube residual-polydisc data, with `toVec c := N.toOriginal (P.residualVector c)`.  The next theorem-2 blocker after this row is the downstream source-oriented scalar representative/descent layer, not an unproved residual-chart wrapper. |
       | `BHW.sourceOrientedVarietyGermHolomorphicOn_extendF_descent` | Componentwise regular/removable transcript pinned; production Lean not started. | Define `Phi` as the quotient value of `extendF F` on `sourceOrientedExtendedTubeDomain`, prove well-definedness from the oriented branch law, prove holomorphy on `SourceOrientedMaxRankAt` by `sourceOrientedMaxRank_localSection_smallArity` or `sourceOrientedMaxRank_localSection_fullFrame`, prove continuity/local boundedness of the quotient value near the exceptional locus using `sourceOrientedQuotientValue_locallyBounded_of_residualChart` and `sourceOrientedQuotientValue_continuous_of_residualChart`, and extend across `SourceOrientedExceptionalRank` using the algebraic SO-invariant model: `sourceOrientedInvariantRing_generated_by_gram_det`, `sourceOrientedInvariantRing_relations_kernel`, `sourceOrientedInvariantRing_integrallyClosed`, `sourceOrientedAlgebraicCoordinateRing_iso_invariants`, analytic exceptional-rank locus, density of the max-rank stratum, and the normal analytic-space Riemann theorem.  The only permitted standard algebraic-geometry import boundary here is `BHW.standardSO_FFT_SFT_coordinatePresentation`: it must provide the explicit `SO` pairing/volume generators, Cauchy-Binet kernel, and coordinate-map surjectivity in one sorry-free theorem, and it must remain independent of OS, Wightman functions, EOW, PET, and locality.  No all-rank local-section theorem and no arbitrary ambient extension of `Phi` is allowed. |
       | `BHW.sourceOrientedScalarRepresentativeData_of_branchLaw`, `BHW.hallWightman_sourceOrientedScalarRepresentativeData`, `BHW.sourceOrientedScalarRepresentativeData_bvt_F` | Assembly only after the preceding rows. | Specialize to `bvt_F` using `bvt_F_holomorphic`, `bvt_F_complexLorentzInvariant_forwardTube`, and `BHW_forwardTube_eq`; no full-component/improper invariant is needed on this proper-complex route. |
 

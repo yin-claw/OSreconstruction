@@ -4236,10 +4236,28 @@ implementation contract is:
    sliced finite-coordinate variety-transport bridges, and fills
    `maxRank_dense_original` from
    `BHW.sourceOrientedMaxRank_dense_in_relOpen_inter` plus image-surjectivity.
-   The remaining public all-arity residual-polydisc theorem must split before
-   this call.  The complementary `n < d + 1` branch is a
-   separate pure-Gram residual chart with empty oriented determinant families;
-   it must not fake a hard-range hypothesis.
+   The public all-arity residual-polydisc theorem now splits before this call.
+   The complementary `n < d + 1` branch is checked through:
+   `BHW.sourceOrientedNormalParameterVector_realizes_schur_det_smallArity`,
+   `BHW.sourceOrientedNormalParameterVector_realizes_schur_smallArity`,
+   `BHW.sourceOriented_reconstruct_from_schurResidual_smallArity`,
+   `BHW.sourceOrientedHeadSliceGaugeSchurExtractedImage_subset_slicedParameter_image_smallArity`,
+   `BHW.sourceOrientedHeadSliceGaugeSchurWindowCanonicalImage_smallArity`,
+   `BHW.SourceOrientedRankDeficientNormalFormData.exists_slicedSchurWindow_finCoordControl_smallArity`,
+   `BHW.SourceOrientedRankDeficientNormalFormData.slicedSchurWindow_originalMaxRank_dense`,
+   `BHW.sourceOriented_rankDeficient_tubeResidualPolydisc_smallArity`,
+   `BHW.sourceOriented_rankDeficient_tubeResidualPolydisc`,
+   `BHW.sourceOriented_rankDeficient_tubeResidualPolydiscProducer`, and
+   `BHW.sourceOriented_rankDeficient_residualChartProducer`.
+   The Schur reconstruction proof is determinant-vacuous: for
+   `ι : Fin (d + 1) ↪ Fin n`, `Fintype.card_le_of_embedding ι` contradicts
+   `n < d + 1`.  The compact/open shrink is the same sliced finite-coordinate
+   ET shrink plus Schur coordinate-window basis as the hard-range proof, with
+   no tail-rank-connectedness requirement.  The image-surjectivity field uses
+   the small-arity canonical image theorem, and the density field uses the
+   fixed-head/fixed-mixed shifted-tail parameter-density lift.  This branch is
+   a separate pure-Gram residual chart with empty oriented determinant
+   families; it must not fake a hard-range hypothesis.
    The all-arity rank bridge
    `BHW.sourceOrientedNormalParameterVector_maxRank_iff_tail` is also
    checked: on the invertible-head normal-parameter locus, max rank of the
@@ -4266,7 +4284,21 @@ implementation contract is:
    corresponding coordinate basis vectors, the selected shifted Gram block is
    diagonal with nonzero `MinkowskiSpace.metricSignature` entries, and the
    root-avoidance helper is proved from `Polynomial.rootSet_finite` and
-   `Dense.diff_finite`.  The downstream compactness support is also explicit:
+   `Dense.diff_finite`.  The small-arity residual chart uses the checked parameter
+   closure strengthening
+   `BHW.sourceShiftedTailOrientedMaxRank_parameter_dense_in_open`, proved by
+   the same line/root-avoidance argument but with closure target
+   `{q' | q' ∈ P ∧ SourceShiftedTailOrientedMaxRankAt ...}` instead of the
+   shifted-tail invariant image.  The downstream lift
+   `BHW.SourceOrientedRankDeficientNormalFormData.slicedSchurWindow_originalMaxRank_dense`
+   fixes the sliced head and mixed coordinates, applies that tail-parameter
+   density inside the open tail fiber of the Schur window, converts tail
+   max-rank to original-coordinate max-rank using
+   `BHW.SourceOrientedRankDeficientNormalFormData.toOriginal_slicedNormalParameterVector_maxRank_iff_tail`,
+   and pushes closure through the finite-coordinate homeomorphism and the
+   continuous original invariant map.  This is all-arity support and does not
+   use the hard-range-only ambient density theorem.
+   The downstream compactness support is also explicit:
    Lean checkpoint: `SourceOrientedRankDeficientTubeResidual.lean` now checks
    this corrected interface as data, not as a hidden axiom.  It introduces
    `BHW.SourceOrientedRankDeficientNormalFormData` with an actual
