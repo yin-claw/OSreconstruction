@@ -9992,9 +9992,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `N.slicedFinCoord_originalImage_mem_varietyTransport` and
       `N.slicedFinCoord_originalImage_surj_varietyTransport`.
 
-      In the hard range `d + 1 <= n`, the remaining producer should now be
-      implemented through the following precise compact-control Schur window,
-      not by reusing the abstract
+      In the hard range `d + 1 <= n`, the compact-control Schur window is now
+      checked in
+      `SourceOrientedRankDeficientTubeResidualPolydisc.lean`.  It must be
+      used directly, not replaced by the abstract
       `SourceOrientedRankDeficientMaxRankLocalImageData` packet:
 
       ```lean
@@ -10043,14 +10044,18 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (∀ p, p ∈ W -> IsUnit p.toNormalParameter.head.det)
       ```
 
-      Proof transcript for this control theorem.  First call
+      Checked proof transcript for this control theorem.  First call
       `N.exists_slicedFinCoordCompactOpen_toOriginal_mem_ET` and keep its
       closed finite-coordinate ball as `K`.  Pull the open finite-coordinate
       ball in that theorem back along the sliced finite-coordinate
-      homeomorphism; this is a neighborhood of the sliced center.  Strengthen
-      `exists_slicedSchurParameterWindow_image_subset_open_headDomain_tailRank_connected`
-      by intersecting its existing normal-ball shrink with this sliced
-      neighborhood, so the final sliced Schur window `W` satisfies
+      homeomorphism; this is a neighborhood of the sliced center.  The checked
+      finite-product basis lemmas
+      `BHW.exists_sourceMatrixCoordinateWindow_subset_of_mem_nhds`,
+      `BHW.exists_sourceOrientedRankDeficientSlicedSchurParameterWindow_coordinate_bounds_subset_of_mem_nhds_center`,
+      and
+      `BHW.SourceOrientedRankDeficientAlgebraicNormalFormData.exists_slicedSchurParameterWindow_subset_nhds_image_subset_open_headDomain_tailRank_connected`
+      shrink the existing normal-ball/head-domain Schur window into this
+      sliced neighborhood, so the final sliced Schur window `W` satisfies
       `e '' W ⊆ K`.  Then feed the same `headRadius`, `mixedRadius`, and
       `Tail` to
       `sourceOrientedHeadSliceGaugeSchurWindowCanonicalImage`, obtaining the
@@ -10058,8 +10063,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       inclusion into `slicedPoint '' W`.  The head-unit field is the
       `hhead` field of the sliced Schur-window shrink.
 
-      With that theorem available, the hard-range residual-polydisc body is
-      mechanical:
+      The hard-range residual-polydisc body is now checked as
+      `BHW.sourceOriented_rankDeficient_tubeResidualPolydisc_hardRange` in
+      `SourceOrientedRankDeficientTubeResidualPolydisc.lean`.  Its
+      original-coordinate assembly is:
 
       ```lean
       theorem BHW.sourceOriented_rankDeficient_tubeResidualPolydisc_hardRange
@@ -10120,7 +10127,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
               -- `N.slicedFinCoord_originalImage_surj_varietyTransport`
               -- to `hΩv_surj`
             maxRank_dense_original := by
-              -- use the sliced Schur-window density theorem below
+              -- use `sourceOrientedMaxRank_dense_in_relOpen_inter` on the
+              -- transported relatively open image and pull the dense
+              -- max-rank points back through `image_surj`
           }
       ```
 
@@ -10163,8 +10172,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
       directly; the hard-range theorem above may not be called with a fake
       `d + 1 <= n` hypothesis.
 
-      The only non-mechanical field in this final constructor is the density
-      lift from the tail polynomial theorem to the finite Schur window:
+      The hard-range constructor no longer needs a separate density lift for
+      the final `maxRank_dense_original` field: the transported Schur image is
+      relatively open in the source-oriented variety, so
+      `BHW.sourceOrientedMaxRank_dense_in_relOpen_inter` gives density there,
+      and `N.slicedFinCoord_originalImage_surj_varietyTransport` pulls the
+      dense max-rank points back to finite-coordinate Schur parameters.  The
+      following sliced tail-density theorem remains the direct parameter-level
+      strengthening, useful for any later proof that wants density before
+      passing to the relatively open image:
 
       ```lean
       theorem BHW.SourceOrientedRankDeficientNormalFormData.slicedSchurWindow_originalMaxRank_dense

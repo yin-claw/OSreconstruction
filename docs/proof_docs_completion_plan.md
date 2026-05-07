@@ -4212,6 +4212,14 @@ implementation contract is:
    `BHW.SourceOrientedRankDeficientNormalFormData.slicedFinCoord_originalImage_mem_varietyTransport`,
    and
    `BHW.SourceOrientedRankDeficientNormalFormData.slicedFinCoord_originalImage_surj_varietyTransport`.
+   The compact/open sliced Schur-window sandwich is now also checked:
+   `BHW.exists_sourceMatrixCoordinateWindow_subset_of_mem_nhds`,
+   `BHW.exists_sourceOrientedRankDeficientSlicedSchurParameterWindow_coordinate_bounds_subset_of_mem_nhds_center`,
+   `BHW.exists_sourceOrientedRankDeficientSlicedSchurParameterWindow_subset_of_mem_nhds_center`,
+   `BHW.SourceOrientedRankDeficientAlgebraicNormalFormData.exists_slicedSchurParameterWindow_subset_nhds_image_subset_open_headDomain_tailRank_connected`,
+   `BHW.SourceOrientedRankDeficientNormalFormData.exists_slicedSchurWindow_finCoordControl`,
+   and the hard-range constructor
+   `BHW.sourceOriented_rankDeficient_tubeResidualPolydisc_hardRange`.
    The proof is formal from the checked head-slice symmetric-coordinate
    homeomorphism, finite-dimensional `ContinuousLinearEquiv.ofFinrankEq`,
    the existing sliced-to-normal forgetful continuity theorem, and
@@ -4221,13 +4229,15 @@ implementation contract is:
    uses `residualVector c := normalVector ((decode c).toNormalParameter)`,
    with compact `K` supplied by the sliced extended-tube shrink and open `P`
    supplied by the sliced Schur image window after shrinking that window into
-   `K`.  In the hard range `d + 1 ≤ n`, the remaining precision gap is no
-   longer finite-coordinate transport; it is the compact/open Schur-window
-   sandwich itself: choose `K` compact and `P` open with `P ⊆ K`, prove `K`
-   decodes into the extended tube, prove the transported extracted image is
-   represented from `P`, and prove original-coordinate image membership for
-   parameters in `P`.  The public all-arity residual-polydisc theorem must
-   split before this call.  The complementary `n < d + 1` branch is a
+   `K`.  In the hard range `d + 1 ≤ n`, the original-coordinate
+   `SourceOrientedResidualPolydiscData` assembly is now checked: it represents
+   the transported subtype-open `Ωv` by an ambient open `Ω`, fills
+   `Ω_center`, `originalInvariant_mem`, and `image_surj` using the checked
+   sliced finite-coordinate variety-transport bridges, and fills
+   `maxRank_dense_original` from
+   `BHW.sourceOrientedMaxRank_dense_in_relOpen_inter` plus image-surjectivity.
+   The remaining public all-arity residual-polydisc theorem must split before
+   this call.  The complementary `n < d + 1` branch is a
    separate pure-Gram residual chart with empty oriented determinant families;
    it must not fake a hard-range hypothesis.
    The all-arity rank bridge

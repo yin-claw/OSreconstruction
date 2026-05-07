@@ -165,6 +165,25 @@ theorem isOpen_sourceMatrixCoordinateWindow {ι κ : Type*}
     isOpen_iInter_of_finite fun j : κ =>
       isOpen_lt (by fun_prop) continuous_const
 
+/-- Coordinate windows form a neighborhood basis at any finite two-index
+coordinate point. -/
+theorem exists_sourceMatrixCoordinateWindow_subset_of_mem_nhds
+    {ι κ : Type*}
+    [Fintype ι] [Fintype κ]
+    (center : ι → κ → ℂ)
+    {V : Set (ι → κ → ℂ)}
+    (hV : V ∈ 𝓝 center) :
+    ∃ ρ : ℝ, 0 < ρ ∧ sourceMatrixCoordinateWindow center ρ ⊆ V := by
+  rcases Metric.mem_nhds_iff.mp hV with ⟨ρ, hρ, hρsub⟩
+  refine ⟨ρ, hρ, ?_⟩
+  intro x hx
+  apply hρsub
+  rw [Metric.mem_ball, dist_eq_norm, pi_norm_lt_iff hρ]
+  intro i
+  rw [pi_norm_lt_iff hρ]
+  intro j
+  simpa [Pi.sub_apply] using hx i j
+
 /-- The head-factor coordinate window around the identity matrix. -/
 def sourceOrientedHeadCoordinateWindow
     (r : ℕ)

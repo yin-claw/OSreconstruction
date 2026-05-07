@@ -2,6 +2,7 @@ import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrie
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedRankDeficientTailRankConnected
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedRankDeficientSliceParameter
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedRankDeficientLocalImageTransport
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedHeadSliceGaugeIFT
 
 /-!
 # Schur-window shrink for transported rank-deficient normal images
@@ -17,6 +18,161 @@ noncomputable section
 open Complex Topology Matrix LorentzLieGroup Classical Filter NormedSpace
 
 namespace BHW
+
+/-- Positive coordinate bounds forcing every sufficiently small sliced Schur
+window into a prescribed sliced-neighborhood of the canonical center. -/
+theorem exists_sourceOrientedRankDeficientSlicedSchurParameterWindow_coordinate_bounds_subset_of_mem_nhds_center
+    {d n r : ℕ}
+    {hrD : r < d + 1}
+    {hrn : r ≤ n}
+    {U : Set (SourceOrientedRankDeficientSlicedNormalParameter d n r hrD hrn)}
+    (hU :
+      U ∈ 𝓝 (sourceOrientedSlicedNormalCenterParameter d n r hrD hrn)) :
+    ∃ headBound mixedBound tailBound : ℝ,
+      0 < headBound ∧
+        0 < mixedBound ∧
+        0 < tailBound ∧
+        ∀ {headRadius mixedRadius : ℝ}
+          (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn),
+          headRadius ≤ headBound →
+          mixedRadius ≤ mixedBound →
+          Tail.tailCoordRadius ≤ tailBound →
+          sourceOrientedRankDeficientSlicedSchurParameterWindow
+              d n r hrD hrn headRadius mixedRadius Tail ⊆ U := by
+  let e :=
+    sourceOrientedSlicedNormalParameterCoordHomeomorph
+      (d := d) (n := n) (r := r) (hrD := hrD) (hrn := hrn)
+  let p0 := sourceOrientedSlicedNormalCenterParameter d n r hrD hrn
+  let H0 := sourceHeadGaugeSliceCenter d r hrD
+  let M0 : Matrix (Fin (n - r)) (Fin r) ℂ := 0
+  let T0 : Fin (n - r) → Fin (d + 1 - r) → ℂ := 0
+  have hUprod : e.symm ⁻¹' U ∈ 𝓝 (H0, (M0, T0)) := by
+    have hpre : e.symm ⁻¹' U ∈ 𝓝 (e p0) :=
+      e.symm.continuous.continuousAt (by simpa [p0] using hU)
+    simpa [e, p0, H0, M0, T0, sourceOrientedSlicedNormalParameterCoordHomeomorph,
+      sourceOrientedSlicedNormalParameterCoordEquiv,
+      sourceOrientedSlicedNormalParameterCoord,
+      sourceOrientedSlicedNormalCenterParameter] using hpre
+  rcases mem_nhds_prod_iff'.1 hUprod with
+    ⟨Uh, Vmt, hUh_open, hH0_Uh, hVmt_open, hmt_Vmt, hprod_sub⟩
+  have hVmt_nhds : Vmt ∈ 𝓝 (M0, T0) :=
+    hVmt_open.mem_nhds hmt_Vmt
+  rcases mem_nhds_prod_iff'.1 hVmt_nhds with
+    ⟨Um, Ut, hUm_open, hM0_Um, hUt_open, hT0_Ut, hmt_sub⟩
+  rcases exists_sourceHeadGaugeSliceCoordinateWindow_subset_of_mem_nhds_center
+      d r hrD (hUh_open.mem_nhds hH0_Uh) with
+    ⟨headBound, hheadBound, hhead_sub⟩
+  rcases exists_sourceMatrixCoordinateWindow_subset_of_mem_nhds
+      (M0 : Matrix (Fin (n - r)) (Fin r) ℂ)
+      (hUm_open.mem_nhds hM0_Um) with
+    ⟨mixedBound, hmixedBound, hmixed_sub⟩
+  rcases exists_sourceMatrixCoordinateWindow_subset_of_mem_nhds
+      (T0 : Fin (n - r) → Fin (d + 1 - r) → ℂ)
+      (hUt_open.mem_nhds hT0_Ut) with
+    ⟨tailBound, htailBound, htail_sub⟩
+  refine
+    ⟨headBound, mixedBound, tailBound, hheadBound, hmixedBound, htailBound,
+      ?_⟩
+  intro headRadius mixedRadius Tail hhead_le hmixed_le htail_le p hp
+  have hhead_bound :
+      p.head ∈ sourceHeadGaugeSliceCoordinateWindow d r hrD headBound := by
+    intro a b
+    exact lt_of_lt_of_le (hp.1 a b) hhead_le
+  have hhead : p.head ∈ Uh := hhead_sub hhead_bound
+  have hmixed_bound :
+      p.mixed ∈ sourceMatrixCoordinateWindow M0 mixedBound := by
+    intro u a
+    have hcoord := hp.2.1 u a
+    exact lt_of_lt_of_le (by simpa [sourceOrientedMixedCoordinateWindow,
+      sourceMatrixCoordinateWindow, M0] using hcoord) hmixed_le
+  have hmixed : p.mixed ∈ Um := hmixed_sub hmixed_bound
+  have htail_bound : p.tail ∈ sourceMatrixCoordinateWindow T0 tailBound := by
+    intro u μ
+    have hcoord := hp.2.2.1 u μ
+    exact lt_of_lt_of_le (by simpa [sourceMatrixCoordinateWindow, T0] using hcoord)
+      htail_le
+  have htail : p.tail ∈ Ut := htail_sub htail_bound
+  have hcoord : e p ∈ Uh ×ˢ Vmt := by
+    have hmt : (p.mixed, p.tail) ∈ Vmt :=
+      hmt_sub (Set.mk_mem_prod hmixed htail)
+    simpa [e, sourceOrientedSlicedNormalParameterCoordHomeomorph,
+      sourceOrientedSlicedNormalParameterCoordEquiv,
+      sourceOrientedSlicedNormalParameterCoord] using
+      (Set.mk_mem_prod hhead hmt)
+  have hpU : e p ∈ e.symm ⁻¹' U := hprod_sub hcoord
+  simpa [e] using hpU
+
+/-- Sliced Schur parameter windows form a neighborhood basis at the canonical
+sliced center.  The tail window contributes only its raw coordinate radius for
+this topological shrink; the invariant inequalities are kept for the later
+Schur-image theorem. -/
+theorem exists_sourceOrientedRankDeficientSlicedSchurParameterWindow_subset_of_mem_nhds_center
+    {d n r : ℕ}
+    {hrD : r < d + 1}
+    {hrn : r ≤ n}
+    {U : Set (SourceOrientedRankDeficientSlicedNormalParameter d n r hrD hrn)}
+    (hU :
+      U ∈ 𝓝 (sourceOrientedSlicedNormalCenterParameter d n r hrD hrn)) :
+    ∃ (headRadius mixedRadius : ℝ)
+      (Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn),
+      0 < headRadius ∧
+        0 < mixedRadius ∧
+        sourceOrientedRankDeficientSlicedSchurParameterWindow
+            d n r hrD hrn headRadius mixedRadius Tail ⊆ U := by
+  let e :=
+    sourceOrientedSlicedNormalParameterCoordHomeomorph
+      (d := d) (n := n) (r := r) (hrD := hrD) (hrn := hrn)
+  let p0 := sourceOrientedSlicedNormalCenterParameter d n r hrD hrn
+  let H0 := sourceHeadGaugeSliceCenter d r hrD
+  let M0 : Matrix (Fin (n - r)) (Fin r) ℂ := 0
+  let T0 : Fin (n - r) → Fin (d + 1 - r) → ℂ := 0
+  have hUprod : e.symm ⁻¹' U ∈ 𝓝 (H0, (M0, T0)) := by
+    have hpre : e.symm ⁻¹' U ∈ 𝓝 (e p0) :=
+      e.symm.continuous.continuousAt (by simpa [p0] using hU)
+    simpa [e, p0, H0, M0, T0, sourceOrientedSlicedNormalParameterCoordHomeomorph,
+      sourceOrientedSlicedNormalParameterCoordEquiv,
+      sourceOrientedSlicedNormalParameterCoord,
+      sourceOrientedSlicedNormalCenterParameter] using hpre
+  rcases mem_nhds_prod_iff'.1 hUprod with
+    ⟨Uh, Vmt, hUh_open, hH0_Uh, hVmt_open, hmt_Vmt, hprod_sub⟩
+  have hVmt_nhds : Vmt ∈ 𝓝 (M0, T0) :=
+    hVmt_open.mem_nhds hmt_Vmt
+  rcases mem_nhds_prod_iff'.1 hVmt_nhds with
+    ⟨Um, Ut, hUm_open, hM0_Um, hUt_open, hT0_Ut, hmt_sub⟩
+  rcases exists_sourceHeadGaugeSliceCoordinateWindow_subset_of_mem_nhds_center
+      d r hrD (hUh_open.mem_nhds hH0_Uh) with
+    ⟨headRadius, hheadRadius, hhead_sub⟩
+  rcases exists_sourceMatrixCoordinateWindow_subset_of_mem_nhds
+      (M0 : Matrix (Fin (n - r)) (Fin r) ℂ)
+      (hUm_open.mem_nhds hM0_Um) with
+    ⟨mixedRadius, hmixedRadius, hmixed_sub⟩
+  rcases exists_sourceMatrixCoordinateWindow_subset_of_mem_nhds
+      (T0 : Fin (n - r) → Fin (d + 1 - r) → ℂ)
+      (hUt_open.mem_nhds hT0_Ut) with
+    ⟨tailRadius, htailRadius, htail_sub⟩
+  let Tail : SourceOrientedRankDeficientTailWindowChoice d n r hrD hrn :=
+    sourceOriented_rankDeficient_tailWindowChoice
+      d n r hrD hrn htailRadius
+  refine ⟨headRadius, mixedRadius, Tail, hheadRadius, hmixedRadius, ?_⟩
+  intro p hp
+  have hhead : p.head ∈ Uh := hhead_sub hp.1
+  have hmixed : p.mixed ∈ Um := hmixed_sub hp.2.1
+  have htail_coord : p.tail ∈ sourceMatrixCoordinateWindow T0 tailRadius := by
+    intro u μ
+    have hcoord := hp.2.2.1 u μ
+    simpa [Tail, sourceOriented_rankDeficient_tailWindowChoice,
+      sourceMatrixCoordinateWindow, T0] using hcoord
+  have htail : p.tail ∈ Ut := htail_sub htail_coord
+  have hcoord : e p ∈ Uh ×ˢ Vmt := by
+    have hmt : (p.mixed, p.tail) ∈ Vmt :=
+      hmt_sub (Set.mk_mem_prod hmixed htail)
+    simpa [e, sourceOrientedSlicedNormalParameterCoordHomeomorph,
+      sourceOrientedSlicedNormalParameterCoordEquiv,
+      sourceOrientedSlicedNormalParameterCoord] using
+      (Set.mk_mem_prod hhead hmt)
+  have hpU : e p ∈ e.symm ⁻¹' U := hprod_sub hcoord
+  simpa [e] using hpU
+
 namespace SourceOrientedRankDeficientAlgebraicNormalFormData
 
 /-- Around a transported rank-deficient normal-form point, choose one
@@ -350,6 +506,166 @@ theorem exists_slicedSchurParameterWindow_image_subset_open_headDomain_tailRank_
   refine
     ⟨ρ, ρ, Tail, hρ_pos, hρ_pos, hW_headDomain, hW_open, hW_conn,
       hW_center, ?_, ?_, ?_⟩
+  · intro p hp
+    exact hball_head (hW_sub_ball p hp)
+  · intro p hp
+    exact hball_image p.toNormalParameter (hW_sub_ball p hp)
+  · simpa [W] using hW_tailRank_conn
+
+/-- Sliced Schur-window shrink with an additional sliced-parameter
+neighborhood constraint.  This is the topology packet needed to make the
+finite-coordinate Schur image `e '' W` lie inside a prechosen compact
+tube-control ball. -/
+theorem exists_slicedSchurParameterWindow_subset_nhds_image_subset_open_headDomain_tailRank_connected
+    {d n : ℕ}
+    {G0 : SourceOrientedGramData d n}
+    (hn : d + 1 ≤ n)
+    (N : SourceOrientedRankDeficientAlgebraicNormalFormData d n G0)
+    {U : Set (SourceOrientedRankDeficientSlicedNormalParameter d n N.r N.hrD N.hrn)}
+    (hU :
+      U ∈ 𝓝 (sourceOrientedSlicedNormalCenterParameter d n N.r N.hrD N.hrn))
+    {headDomain : Set (SourceHeadGaugeSlice d N.r N.hrD)}
+    {headDomainRadius : ℝ}
+    (hheadDomainRadius : 0 < headDomainRadius)
+    (hheadDomain :
+      sourceHeadGaugeSliceCoordinateWindow d N.r N.hrD headDomainRadius ⊆
+        headDomain)
+    {N0 : Set (SourceOrientedGramData d n)}
+    (hN0_open : IsOpen N0)
+    (hG0N0 : G0 ∈ N0) :
+    ∃ (headRadius mixedRadius : ℝ)
+      (Tail : SourceOrientedRankDeficientTailWindowChoice d n N.r N.hrD N.hrn),
+      0 < headRadius ∧
+        0 < mixedRadius ∧
+        sourceHeadGaugeSliceCoordinateWindow d N.r N.hrD headRadius ⊆
+          headDomain ∧
+        IsOpen
+          (sourceOrientedRankDeficientSlicedSchurParameterWindow
+            d n N.r N.hrD N.hrn headRadius mixedRadius Tail) ∧
+        IsConnected
+          (sourceOrientedRankDeficientSlicedSchurParameterWindow
+            d n N.r N.hrD N.hrn headRadius mixedRadius Tail) ∧
+        sourceOrientedSlicedNormalCenterParameter d n N.r N.hrD N.hrn ∈
+          sourceOrientedRankDeficientSlicedSchurParameterWindow
+            d n N.r N.hrD N.hrn headRadius mixedRadius Tail ∧
+        sourceOrientedRankDeficientSlicedSchurParameterWindow
+            d n N.r N.hrD N.hrn headRadius mixedRadius Tail ⊆ U ∧
+        (∀ p,
+          p ∈ sourceOrientedRankDeficientSlicedSchurParameterWindow
+            d n N.r N.hrD N.hrn headRadius mixedRadius Tail →
+          IsUnit p.toNormalParameter.head.det) ∧
+        (∀ p,
+          p ∈ sourceOrientedRankDeficientSlicedSchurParameterWindow
+            d n N.r N.hrD N.hrn headRadius mixedRadius Tail →
+            (N.originalNormalVarietyPoint p.toNormalParameter).1 ∈
+              N0 ∩ sourceOrientedGramVariety d n) ∧
+        IsConnected
+          (sourceOrientedRankDeficientSlicedSchurParameterWindow
+              d n N.r N.hrD N.hrn headRadius mixedRadius Tail ∩
+            {p : SourceOrientedRankDeficientSlicedNormalParameter d n N.r N.hrD N.hrn |
+              (sourceOrientedNormalParameterSchurTail d n N.r N.hrD N.hrn
+                p.toNormalParameter).rank =
+                d + 1 - N.r}) := by
+  rcases N.exists_normalParameterBall_image_subset_open_and_head
+      hN0_open hG0N0 with
+    ⟨ε₀, hε₀, _hball_open, _hball_conn, _hball_center, hball_head,
+      hball_image⟩
+  rcases
+      exists_sourceOrientedRankDeficientSlicedSchurParameterWindow_coordinate_bounds_subset_of_mem_nhds_center
+        (d := d) (n := n) (r := N.r) (hrD := N.hrD) (hrn := N.hrn) hU with
+    ⟨headBound, mixedBound, tailBound, hheadBound, hmixedBound, htailBound,
+      hbounds_sub⟩
+  let δ : ℝ := headDomainRadius
+  have hδ : 0 < δ := hheadDomainRadius
+  let ρ : ℝ :=
+    min (ε₀ / 2)
+      (min (δ / 2)
+        (min (headBound / 2) (min (mixedBound / 2) (tailBound / 2))))
+  have hρ_pos : 0 < ρ := by
+    dsimp [ρ]
+    exact
+      lt_min (half_pos hε₀)
+        (lt_min (half_pos hδ)
+          (lt_min (half_pos hheadBound)
+            (lt_min (half_pos hmixedBound) (half_pos htailBound))))
+  have hρ_le₀ : ρ ≤ ε₀ := by
+    dsimp [ρ]
+    exact le_trans (min_le_left _ _) (by linarith)
+  have hρ_leδ : ρ ≤ δ := by
+    dsimp [ρ]
+    exact le_trans (le_trans (min_le_right _ _) (min_le_left _ _)) (by linarith)
+  have hρ_le_head : ρ ≤ headBound := by
+    dsimp [ρ]
+    exact
+      le_trans
+        (le_trans (min_le_right _ _) (le_trans (min_le_right _ _) (min_le_left _ _)))
+        (by linarith)
+  have hρ_le_mixed : ρ ≤ mixedBound := by
+    dsimp [ρ]
+    exact
+      le_trans
+        (le_trans (min_le_right _ _)
+          (le_trans (min_le_right _ _) (le_trans (min_le_right _ _) (min_le_left _ _))))
+        (by linarith)
+  have hρ_le_tail : ρ ≤ tailBound := by
+    dsimp [ρ]
+    exact
+      le_trans
+        (le_trans (min_le_right _ _)
+          (le_trans (min_le_right _ _) (le_trans (min_le_right _ _) (min_le_right _ _))))
+        (by linarith)
+  let Tail : SourceOrientedRankDeficientTailWindowChoice d n N.r N.hrD N.hrn :=
+    sourceOriented_rankDeficient_tailWindowChoice
+      d n N.r N.hrD N.hrn hρ_pos
+  have htail_le₀ : Tail.tailCoordRadius ≤ ε₀ := by
+    simpa [Tail, sourceOriented_rankDeficient_tailWindowChoice] using hρ_le₀
+  have htail_le_bound : Tail.tailCoordRadius ≤ tailBound := by
+    simpa [Tail, sourceOriented_rankDeficient_tailWindowChoice] using hρ_le_tail
+  let W : Set (SourceOrientedRankDeficientSlicedNormalParameter d n N.r N.hrD N.hrn) :=
+    sourceOrientedRankDeficientSlicedSchurParameterWindow
+      d n N.r N.hrD N.hrn ρ ρ Tail
+  have hW_headDomain :
+      sourceHeadGaugeSliceCoordinateWindow d N.r N.hrD ρ ⊆ headDomain := by
+    intro H hH
+    exact hheadDomain (by
+      intro a b
+      exact lt_of_lt_of_le (hH a b) hρ_leδ)
+  have hW_sub_U : W ⊆ U := by
+    exact hbounds_sub Tail hρ_le_head hρ_le_mixed htail_le_bound
+  have hW_sub_ball :
+      ∀ p ∈ W,
+        p.toNormalParameter ∈
+          sourceOrientedNormalParameterBall (d := d) (n := n) (r := N.r)
+            (hrD := N.hrD) (hrn := N.hrn) ε₀ := by
+    intro p hp
+    exact
+      sourceOrientedRankDeficientSchurParameterWindow_subset_normalParameterBall
+        d n N.r N.hrD N.hrn hε₀ hρ_le₀ hρ_le₀ Tail htail_le₀
+        (sourceOrientedSlicedSchurParameterWindow_toNormalParameter_mem hp)
+  rcases sourceOrientedRankDeficientSlicedSchurParameterWindow_open_connected
+      d n N.r N.hrD N.hrn hρ_pos hρ_pos Tail with
+    ⟨hW_open, hW_conn, hW_center⟩
+  have htailRank_conn :
+      IsConnected
+        (sourceShiftedTailTupleWindow d n N.r N.hrD N.hrn Tail ∩
+          {q : Fin (n - N.r) → Fin (d + 1 - N.r) → ℂ |
+            (sourceShiftedTailGram d N.r N.hrD (n - N.r) q).rank =
+              d + 1 - N.r}) :=
+    isConnected_sourceShiftedTailTupleWindow_tailRank
+      d n N.r N.hrD N.hrn hn Tail
+  have hW_tailRank_conn :
+      IsConnected
+        (W ∩
+          {p : SourceOrientedRankDeficientSlicedNormalParameter d n N.r N.hrD N.hrn |
+            (sourceOrientedNormalParameterSchurTail d n N.r N.hrD N.hrn
+              p.toNormalParameter).rank =
+              d + 1 - N.r}) := by
+    exact
+      isConnected_sourceOrientedRankDeficientSlicedSchurParameterWindow_tailRank
+        d n N.r N.hrD N.hrn hρ_pos hρ_pos Tail htailRank_conn
+  refine
+    ⟨ρ, ρ, Tail, hρ_pos, hρ_pos, hW_headDomain, hW_open, hW_conn,
+      hW_center, hW_sub_U, ?_, ?_, ?_⟩
   · intro p hp
     exact hball_head (hW_sub_ball p hp)
   · intro p hp
