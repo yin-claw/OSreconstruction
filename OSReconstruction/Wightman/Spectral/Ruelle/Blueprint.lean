@@ -150,19 +150,34 @@ product of V̄+, with **no atom at any zero-momentum coordinate**.
 This is the key spectral-gap content of R4: the cluster property
 implies the truncated correlations have no zero-mode contribution.
 
-Proof sketch:
-* GNS construction: vacuum sector decomposition of `W_2(a, 0)` via
-  spectral theorem applied to translation generators.
-* Cluster ⇔ vacuum uniqueness (Streater-Wightman 3.5).
-* No atom at zero momentum ⇔ Tendsto of `⟨ψ, U(a) φ⟩ → 0` for ψ, φ ⊥ Ω
-  under spatial cobounded.
+**Existing infrastructure (discovered 2026-05-07)**:
 
-**Effort**: 8–15 active days (genuine risk).
+The project already provides much of this at the GNS level:
+* `gnsQFT Wfn : WightmanQFT d` (`GNSHilbertSpace.lean:2125`) — full
+  GNS construction.
+* `gns_vacuum_unique_of_poincare_invariant`
+  (`GNSHilbertSpace.lean:2073`) — *PROVED*: vacuum is the unique
+  Poincaré-invariant vector. Reduces from R4 cluster.
+* `gns_cluster_completion` (`GNSHilbertSpace.lean:1917`) — *PROVED*:
+  for `Φ : PreHilbert Wfn`, `ψ : GNSHilbert Wfn`, and any nonzero
+  spatial direction `a`,
+  `⟨Φ, U(r·a) ψ⟩ → ⟨Φ, Ω⟩ ⟨Ω, ψ⟩` as `r → ∞`.
 
-**Prerequisites** (KL vetting issues to resolve first):
-* Issue 1: `wightman_gns_schwinger_bridge` existential→class refactor.
-* Issue 2: OS time reflection in the bridge (`osConj`).
-* Issue 3: vacuum expectation bridge axiom.
+**Gap to close**: `gns_cluster_completion` gives **ray decay** along a
+single spatial direction. L2 needs **full spatial-cobounded decay**
+(uniform in direction at infinity). The lift uses:
+* SNAG (`snag_theorem` axiom in `GeneralResults/SNAGTheorem.lean`) →
+  joint spectral measure of the translation group.
+* Decay along all spatial rays + spectral measure structure → no atom
+  at zero spatial momentum on the vacuum complement.
+* Then the cobounded-Tendsto form follows from L5 (Riemann-Lebesgue)
+  applied to the no-atom-at-zero spectral measure.
+
+**Revised effort**: 3–7 active days (was 8–15). KL Issue 1
+(existential bundling) is partially solved by the existing `gnsQFT`
+construction; we use that directly rather than redefining a class.
+KL Issues 2–3 (OS time reflection, vacuum expectation bridge) still
+matter for L7 recombination but not for L2 itself.
 
 ### L3: Laplace transform representation
 **File**: `LaplaceRepresentation.lean`.
