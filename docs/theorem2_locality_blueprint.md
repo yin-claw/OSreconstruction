@@ -14387,6 +14387,83 @@ Proof decomposition of this theorem, without hiding the analytic work:
       support file.  It cannot be introduced as an axiom, a production
       `sorry`, a QFT theorem, or a theorem-2/locality assumption.
 
+      The Lean-ready checkpoint before the hard invariant-theory proof is the
+      conditional presentation data packet below.  It records exactly the two
+      non-formal standard `SO` facts and derives the standard/source
+      surjectivity and source transport consequences from already checked
+      algebra.  This is allowed because it does not assert FFT/SFT; it merely
+      fixes the shape of the proof object that a future sorry-free theorem
+      must provide.
+
+      ```lean
+      structure BHW.StandardSOCoordinatePresentationData
+          (D n : Nat) : Prop where
+        fft :
+          BHW.standardSOInvariantSubalgebra D n =
+            Algebra.adjoin ℂ
+              (Set.range (BHW.standardPairingCoordinatePolynomial D n) ∪
+               Set.range (BHW.standardVolumeCoordinatePolynomial D n))
+        sft :
+          RingHom.ker (BHW.standardSOInvariantCoordinateMap D n) =
+            BHW.standardSOAlgebraicRelationIdeal D n
+
+      theorem BHW.StandardSOCoordinatePresentationData.surjective
+          {D n : Nat}
+          (H : BHW.StandardSOCoordinatePresentationData D n) :
+          Function.Surjective
+            (BHW.standardSOInvariantCoordinateMap D n) :=
+        BHW.standardSOInvariantCoordinateMap_surjective_of_generators
+          D n H.fft
+
+      theorem BHW.standardSO_FFT_SFT_coordinatePresentation_of_data
+          {D n : Nat}
+          (H : BHW.StandardSOCoordinatePresentationData D n) :
+          BHW.standardSOInvariantSubalgebra D n =
+            Algebra.adjoin ℂ
+              (Set.range (BHW.standardPairingCoordinatePolynomial D n) ∪
+               Set.range (BHW.standardVolumeCoordinatePolynomial D n)) ∧
+          RingHom.ker
+              (BHW.standardSOInvariantCoordinateMap D n) =
+            BHW.standardSOAlgebraicRelationIdeal D n ∧
+          Function.Surjective
+            (BHW.standardSOInvariantCoordinateMap D n) :=
+        ⟨H.fft, H.sft, H.surjective⟩
+
+      theorem BHW.sourceOrientedInvariantRing_generated_by_gram_det_of_presentation
+          {d n : Nat}
+          (H : BHW.StandardSOCoordinatePresentationData (d + 1) n) :
+          BHW.sourceOrientedInvariantSubalgebra d n =
+            Algebra.adjoin ℂ
+              (Set.range (BHW.sourceGramCoordinatePolynomial d n) ∪
+               Set.range (BHW.sourceFullFrameDetPolynomial d n)) :=
+        BHW.sourceOrientedInvariantRing_generated_by_gram_det_of_standard_generators
+          d n H.fft
+
+      theorem BHW.sourceOrientedInvariantRing_relations_kernel_of_presentation
+          {d n : Nat}
+          (H : BHW.StandardSOCoordinatePresentationData (d + 1) n) :
+          RingHom.ker (BHW.sourceOrientedInvariantCoordinateMap d n) =
+            BHW.sourceOrientedAlgebraicRelationIdeal d n :=
+        BHW.sourceOrientedInvariantRing_relations_kernel_of_standard
+          d n H.sft
+
+      theorem BHW.sourceOrientedInvariantCoordinateMap_surjective_of_presentation
+          {d n : Nat}
+          (H : BHW.StandardSOCoordinatePresentationData (d + 1) n) :
+          Function.Surjective
+            (BHW.sourceOrientedInvariantCoordinateMap d n) :=
+        BHW.sourceOrientedInvariantCoordinateMap_surjective_of_standard_generators
+          d n H.fft
+      ```
+
+      The unconditional theorem
+      `BHW.standardSO_FFT_SFT_coordinatePresentation D n hD` is Lean-ready
+      only after a genuine standard invariant-theory proof supplies such an
+      `H` for `D >= 3`.  Until then, downstream normality statements must be
+      conditional on `StandardSOCoordinatePresentationData (d + 1) n`, or stay
+      in proof docs.  This prevents the normality/Riemann layer from smuggling
+      the hard `SO` theorem into a theorem-2 wrapper.
+
       Lean-facing transport transcript for the two invariant-ring theorems:
 
       ```lean

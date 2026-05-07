@@ -2016,6 +2016,58 @@ Wightman functions, EOW, PET, locality, or theorem 2.  The public descent
 surface remains downstream of these support statements and is not the first
 Lean target.
 
+Current invariant-theory readiness clarification, 2026-05-07: the
+rank-deficient local-realization/Hall-Wightman Lemma-3 blocker is closed, and
+the source/dot invariant-coordinate transport layer is checked down to the
+easy kernel-containment direction.  The next implementable local Lean target
+is therefore not another residual chart and not the theorem-2 wrapper.  It is
+only the conditional presentation boundary for the standard-dot invariant
+theory package:
+
+```lean
+structure BHW.StandardSOCoordinatePresentationData
+    (D n : Nat) : Prop where
+  fft :
+    BHW.standardSOInvariantSubalgebra D n =
+      Algebra.adjoin ℂ
+        (Set.range (BHW.standardPairingCoordinatePolynomial D n) ∪
+         Set.range (BHW.standardVolumeCoordinatePolynomial D n))
+  sft :
+    RingHom.ker (BHW.standardSOInvariantCoordinateMap D n) =
+      BHW.standardSOAlgebraicRelationIdeal D n
+
+theorem BHW.StandardSOCoordinatePresentationData.surjective
+    (H : BHW.StandardSOCoordinatePresentationData D n) :
+    Function.Surjective (BHW.standardSOInvariantCoordinateMap D n)
+
+theorem BHW.sourceOrientedInvariantRing_generated_by_gram_det_of_presentation
+    (H : BHW.StandardSOCoordinatePresentationData (d + 1) n) :
+    BHW.sourceOrientedInvariantSubalgebra d n =
+      Algebra.adjoin ℂ
+        (Set.range (BHW.sourceGramCoordinatePolynomial d n) ∪
+         Set.range (BHW.sourceFullFrameDetPolynomial d n))
+
+theorem BHW.sourceOrientedInvariantRing_relations_kernel_of_presentation
+    (H : BHW.StandardSOCoordinatePresentationData (d + 1) n) :
+    RingHom.ker (BHW.sourceOrientedInvariantCoordinateMap d n) =
+      BHW.sourceOrientedAlgebraicRelationIdeal d n
+
+theorem BHW.sourceOrientedInvariantCoordinateMap_surjective_of_presentation
+    (H : BHW.StandardSOCoordinatePresentationData (d + 1) n) :
+    Function.Surjective (BHW.sourceOrientedInvariantCoordinateMap d n)
+```
+
+This data structure is not an axiom and not a disguised proof of FFT/SFT.  It
+is the exact shape that a future sorry-free proof or imported library theorem
+must supply.  The unconditional theorems
+`BHW.standardSOInvariantRing_generated_by_pairings_and_volume`,
+`BHW.standardSOInvariantRing_relations_kernel`, and
+`BHW.standardSO_FFT_SFT_coordinatePresentation` remain unimplemented until a
+real standard invariant-theory proof is available.  Downstream normality and
+Riemann-extension work may consume this conditional package only as an
+explicit hypothesis; it may not erase the standard `SO` boundary or pretend
+that theorem 2 is already closed.
+
 Current oriented real-uniqueness readiness clarification, 2026-05-02: the
 real-patch uniqueness group
 `BHW.sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment` now has
