@@ -4689,15 +4689,74 @@ Proof decomposition of this theorem, without hiding the analytic work:
       transport preserving the tube.
 
       The small-arity producer has a separate ordinary-Gram zero-section
-      contract.  It must call
-      `sourceSelectedComplexGramMap_implicit_chart_of_complex_nonzero_minor`
-      at the actual complex extended-tube witness `z0`, prove differentiability
-      of `q ↦ e.symm (q, 0)` on a target shrink by the same inverse-chart
-      pattern, shrink the ambient Gram neighborhood inside `ExtendedTube`, and
-      then lift to `SourceOrientedLocalHolomorphicSectionData` by the
-      determinant-field emptiness when `n < d + 1`.  The older real-base
-      zero-section packet is useful evidence but is not a substitute for this
-      arbitrary-complex-base theorem.
+      contract.  It must build the selected implicit chart at the actual
+      complex extended-tube witness `z0`; calling the older real-base
+      zero-section packet would prove the wrong local statement.  The
+      implementation should first add the complex-base analogues of the
+      selected product-chart support:
+
+      ```lean
+      BHW.sourceSelectedComplexGramKernelProjectionAt
+      BHW.sourceSelectedComplexGramProdMapAt
+      BHW.contDiff_sourceSelectedComplexGramProdMapAt
+      BHW.sourceSelectedComplexGramProdMapAt_hasFDerivAt
+      BHW.sourceSelectedComplexGramProdMapAt_fderiv
+      BHW.sourceSelectedComplexGramProdMapAt_base_fderiv_isInvertible
+      BHW.sourceSelectedComplexGramProdMapAt_local_invertible_nhds
+      BHW.sourceSelectedComplexGramImplicitChartAt
+      BHW.sourceSelectedComplexGramImplicitChartAt_apply
+      BHW.sourceSelectedComplexGramImplicitChartAt_mem_source
+      BHW.sourceSelectedComplexGramImplicitChartAt_self
+      BHW.sourceSelectedComplexZeroKernelTargetCLMAt
+      BHW.sourceSelectedComplexGramZeroSectionAt_differentiableOn
+      BHW.sourceSelectedComplexGramZeroSectionAt_selectedGram
+      BHW.sourceSelectedComplexGramZeroSectionAt_base
+      BHW.exists_sourceSelectedComplexGramZeroSectionAt_good_ball
+      ```
+
+      These are copy-shape proofs from the checked real-base complex
+      zero-section file, except the base is `z0` and the product chart uses
+      `sourceSelectedComplexGramDifferentialToSym ... z0 I`.  The implicit
+      chart is built from
+      `sourceSelectedComplexGramMap_hasStrictFDerivAt` and
+      `sourceSelectedComplexGramDifferentialToSym_surjective_of_sourceComplexRegularMinor_ne_zero`.
+      The good-ball shrink chooses a flat selected-coordinate ball `D` so that
+      the zero-kernel inverse source `e.symm (q, 0)` lies in `ExtendedTube d n`,
+      stays in the same nonzero complex-minor patch, and has invertible
+      product-chart derivative.  Its differentiability is obtained by the
+      checked `SCV.openPartialHomeomorph_symm_differentiableOn_of_hasFDerivAt`
+      pattern.
+
+      The final small-arity section is then mechanical:
+
+      ```lean
+      theorem BHW.sourceOrientedMaxRank_localSection_smallArity
+          {d n : Nat} [NeZero d]
+          (hn : n < d + 1)
+          {z0 : Fin n -> Fin (d + 1) -> ℂ}
+          (hz0 : z0 ∈ BHW.ExtendedTube d n)
+          (hmax :
+            BHW.SourceOrientedMaxRankAt d n
+              (BHW.sourceOrientedMinkowskiInvariant d n z0)) :
+          BHW.SourceOrientedLocalHolomorphicSectionData (d := d) n
+            (BHW.sourceOrientedMinkowskiInvariant d n z0)
+      ```
+
+      Convert `hmax` to `HWSourceGramMaxRankAt`, then to
+      `SourceComplexGramRegularAt`, choose `I,J,hminor`, and use the
+      complex-base good ball.  Let
+      `Ω = {G | sourceSelectedComplexGramFlatCoordCLM n (min n (d + 1)) I
+                G.gram ∈ D}` and
+      `toVec G = e.symm (sourceSelectedComplexZeroKernelTargetCLMAt ... qG)`.
+      `Ω_open` is the preimage of `D` under the continuous-linear selected
+      coordinate projection, `toVec_mem` is the tube field of the good ball,
+      and `toVec_holomorphic` is composition with the zero-section
+      differentiability theorem.  On `Ω ∩ sourceOrientedGramVariety`, the
+      selected-coordinate equality plus
+      `sourceSelectedComplexGramCoord_eq_fullGram_eq_of_sourceComplexRegularMinor_ne_zero_of_mem_variety`
+      gives equality of ordinary Gram matrices; determinant coordinates are
+      vacuous because an embedding `Fin (d + 1) ↪ Fin n` contradicts
+      `n < d + 1`.
 
       Checked full-frame inverse-regularity support for this producer,
       2026-05-07:
@@ -4717,6 +4776,31 @@ Proof decomposition of this theorem, without hiding the analytic work:
       full-frame blocker, and the full-frame max-rank local-section branch is
       production-checked.  The remaining max-rank local-section branch is the
       small-arity arbitrary-complex-base selected zero-section.
+
+      Checked small-arity/all-arity max-rank holomorphic-section support,
+      2026-05-07:
+      `SourceComplexZeroSectionAt.lean` proves the arbitrary-complex-base
+      selected kernel projection, product chart, implicit chart, zero-kernel
+      target, differentiable zero-section, selected-Gram/base equations, and
+      good-ball shrink inside `ExtendedTube`.  The product chart is based at
+      the actual complex point `z0` and uses
+      `sourceSelectedComplexGramDifferentialToSym ... z0 I`; it is not the
+      older real-base chart.  `SourceOrientedSmallArityHolomorphicSection.lean`
+      proves `sourceOrientedMaxRank_localSection_smallArity`, with
+      `Ω = {G | sourceSelectedComplexGramFlatCoordCLM ... G.gram ∈ D}` and
+      `toVec G = e.symm (qG, 0)`.  `toVec_mem` comes directly from the
+      good-ball tube shrink, holomorphy is composition with the flat-coordinate
+      projection, ordinary Gram right-inversion is supplied by
+      `sourceSelectedComplexGramCoord_eq_fullGram_eq_of_sourceComplexRegularMinor_ne_zero_of_mem_variety`,
+      and determinant coordinates are eliminated by the contradiction
+      `Fin (d + 1) ↪ Fin n` versus `n < d + 1`.
+      `SourceOrientedMaxRankHolomorphicSection.lean` checks the all-arity
+      dispatcher `sourceOrientedExtendedTube_holomorphicLocalSection`, plus
+      the scalar consumers
+      `sourceOrientedQuotientValue_holomorphicOn_maxRank` and
+      `sourceOrientedQuotientValue_continuous_locallyBounded`.  The remaining
+      oriented scalar-source theorem is now the normal/exceptional-rank
+      Riemann extension package, not the local-section producer.
 
       Production order correction for the local-realization producer.
       The public local-realization producer is assembled only after the
@@ -14088,7 +14172,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | `BHW.same_sourceOrientedInvariant_detOneOrbit_or_singularLimit` | Componentwise proof transcript pinned; production Lean not started. | Split by `HWSourceGramOrbitRankAt`.  In the orbit-rank branch, extract Gram equality and determinant equality from `SourceOrientedGramData`, prove `HWSameSourceGramSOOrientationCompatible` via a nonzero full-frame determinant and the determinant-ratio formula for `HWFullRankSameGramFrameMapDet`, then call `hw_sameSourceGram_regular_orbit`.  In the low-rank branch, call the Hall-Wightman residual-frame contraction producer.  The lower support transcript expands coefficient kernels, restricted-rank nondegeneracy, determinant-repaired Witt extension, selected Schur residuals, common isotropic residual frames, dual frames, contraction curves, and the singular topology limit; the missing work is implementation, not a remaining theorem-shape gap in this row. |
       | `BHW.extendedTube_same_sourceOrientedInvariant_extendF_eq` | Assembly transcript pinned; not production-Lean-ready until the previous row's Hall-Wightman producers exist. | Apply the previous row's actual orbit alternative to determinant-`1` complex Lorentz invariance of `extendF` via `extendF_complexLorentzInvariant_of_cinv`; apply the singular alternative by the checked topology-limit transcript for `hw_sameSourceGram_singularLimit_extendF_eq`.  This theorem has no independent route choice and must not be implemented before `same_sourceOrientedInvariant_detOneOrbit_or_singularLimit`. |
       | `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected` | Checked in `SourceOrientedRankDeficientTubeResidualPolydisc.lean`, by applying `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_rankDeficientResidualChartProducer` to the checked `BHW.sourceOriented_rankDeficient_residualChartProducer`; the same file also checks the pointwise fixed-center wrapper `BHW.sourceOriented_rankDeficient_residualChart`.  The connectedness half is `BHW.sourceOrientedExtendedTubeDomain_connected`; the open-union topology split for the relative-openness half is checked as `BHW.SourceOrientedExtendedTubeLocalRealizationData`, `BHW.SourceOrientedExtendedTubeLocalRealizationProducer`, `BHW.sourceOrientedExtendedTubeDomain_relOpen_of_localRealization`, and `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_localRealization` in `SourceOrientedLocalRealization.lean`.  The max-rank local-realization branch is also checked there as `BHW.sourceComplexGramRegularAt_of_HWSourceGramMaxRankAt_any`, `BHW.continuousOn_sourceFullFrameGauge_reconstructVector_on_modelDetNonzero`, `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_smallArityMaxRank`, `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_fullFrameDetNonzero`, `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_fullFrameMaxRank`, and `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_maxRank`.  The rank-deficient target interface and producer are checked as `BHW.SourceOrientedRankDeficientRealizationData`, `BHW.SourceOrientedRankDeficientRealizationData.to_localRealization`, `BHW.SourceOrientedRankDeficientResidualChartData`, `BHW.SourceOrientedRankDeficientResidualChartData.center_mem`, `BHW.SourceOrientedRankDeficientResidualChartData.toVec_c0_mem`, `BHW.SourceOrientedRankDeficientResidualChartData.to_realizationData`, `BHW.SourceOrientedRankDeficientResidualChartData.to_localRealization`, `BHW.SourceOrientedRankDeficientResidualChartProducer`, `BHW.sourceOriented_rankDeficient_tubeResidualPolydiscProducer`, `BHW.sourceOriented_rankDeficient_residualChartProducer`, `BHW.sourceOrientedExtendedTubeLocalRealizationProducer_of_rankDeficientResidualChartProducer`, and `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_rankDeficientResidualChartProducer`. | This local-realization input is no longer a blocker.  The full-frame max-rank case no longer has a tube-shrink gap: it uses `isOpen_extendedTube`, the explicit reconstructed-vector map, the model-domain shrinker, and the stored chart inverse to produce an actual `ExtendedTube` witness realizing each nearby oriented-variety point.  The small-arity max-rank case uses the ordinary source-Gram local image theorem inside `ExtendedTube` and emptiness of `Fin (d + 1) ↪ Fin n`.  Rank-deficient charts use the checked sliced-head Schur stack only for original-coordinate image bookkeeping; the explicit ET-valued residual family is produced through the checked tube residual-polydisc data, with `toVec c := N.toOriginal (P.residualVector c)`.  The next theorem-2 blocker after this row is the downstream source-oriented scalar representative/descent layer, not an unproved residual-chart wrapper. |
-      | `BHW.sourceOrientedVarietyGermHolomorphicOn_extendF_descent` | Componentwise regular/removable transcript pinned; production Lean not started.  The prerequisite quotient-value definition, well-definedness theorem, local-boundedness predicate, max-rank topological glue helpers, compact-parameter continuity helper, residual-chart compact/local-boundedness/continuity helpers, and the conditional global continuity/local-boundedness assembly `sourceOrientedQuotientValue_continuous_locallyBounded_of_maxRankLocal` are checked in `SourceOrientedScalarRepresentative.lean`. | Define `Phi` as the checked quotient value of `extendF F` on `sourceOrientedExtendedTubeDomain`, prove holomorphy on `SourceOrientedMaxRankAt` by `sourceOrientedMaxRank_localSection_smallArity` or `sourceOrientedMaxRank_localSection_fullFrame`, feed that max-rank local representative theorem into the checked conditional continuity/local-boundedness assembly, and extend across `SourceOrientedExceptionalRank` using the algebraic SO-invariant model: `sourceOrientedInvariantRing_generated_by_gram_det`, `sourceOrientedInvariantRing_relations_kernel`, `sourceOrientedInvariantRing_integrallyClosed`, `sourceOrientedAlgebraicCoordinateRing_iso_invariants`, analytic exceptional-rank locus, density of the max-rank stratum, and the normal analytic-space Riemann theorem.  The only permitted standard algebraic-geometry import boundary here is `BHW.standardSO_FFT_SFT_coordinatePresentation`: it must provide the explicit `SO` pairing/volume generators, Cauchy-Binet kernel, and coordinate-map surjectivity in one sorry-free theorem, and it must remain independent of OS, Wightman functions, EOW, PET, and locality.  No all-rank local-section theorem and no arbitrary ambient extension of `Phi` is allowed. |
+      | `BHW.sourceOrientedVarietyGermHolomorphicOn_extendF_descent` | Componentwise regular/removable transcript pinned; production Lean not started for the final normal/Riemann extension.  The prerequisite quotient-value definition, well-definedness theorem, local-boundedness predicate, max-rank topological glue helpers, compact-parameter continuity helper, residual-chart compact/local-boundedness/continuity helpers, conditional global continuity/local-boundedness assembly `sourceOrientedQuotientValue_continuous_locallyBounded_of_maxRankLocal`, all-arity local holomorphic section producer `sourceOrientedExtendedTube_holomorphicLocalSection`, max-rank quotient holomorphy theorem `sourceOrientedQuotientValue_holomorphicOn_maxRank`, and global `sourceOrientedQuotientValue_continuous_locallyBounded` are checked. | Define `Phi` as the checked quotient value of `extendF F` on `sourceOrientedExtendedTubeDomain`, feed the checked continuity/local-boundedness theorem and max-rank holomorphy theorem into the normal analytic-space Riemann extension, and extend across `SourceOrientedExceptionalRank` using the algebraic SO-invariant model: `sourceOrientedInvariantRing_generated_by_gram_det`, `sourceOrientedInvariantRing_relations_kernel`, `sourceOrientedInvariantRing_integrallyClosed`, `sourceOrientedAlgebraicCoordinateRing_iso_invariants`, analytic exceptional-rank locus, density of the max-rank stratum, and the normal analytic-space Riemann theorem.  The only permitted standard algebraic-geometry import boundary here is `BHW.standardSO_FFT_SFT_coordinatePresentation`: it must provide the explicit `SO` pairing/volume generators, Cauchy-Binet kernel, and coordinate-map surjectivity in one sorry-free theorem, and it must remain independent of OS, Wightman functions, EOW, PET, and locality.  No all-rank local-section theorem and no arbitrary ambient extension of `Phi` is allowed. |
       | `BHW.sourceOrientedScalarRepresentativeData_of_branchLaw`, `BHW.hallWightman_sourceOrientedScalarRepresentativeData`, `BHW.sourceOrientedScalarRepresentativeData_bvt_F` | The data structure and `sourceOrientedScalarRepresentativeData_of_branchLaw` are checked in `SourceOrientedScalarRepresentative.lean`; the Hall-Wightman and `bvt_F` specializations remain assembly after the branch law and descent rows. | Specialize to `bvt_F` using `bvt_F_holomorphic`, `bvt_F_complexLorentzInvariant_forwardTube`, and `BHW_forwardTube_eq`; no full-component/improper invariant is needed on this proper-complex route. |
 
       In particular, `BHW.sourceOrientedScalarRepresentativeData_bvt_F` is the

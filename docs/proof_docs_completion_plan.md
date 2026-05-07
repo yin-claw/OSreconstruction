@@ -4546,17 +4546,113 @@ implementation contract is:
    extended-tube shrink and `toVec_right_inv` from
    `reconstructInvariant_chartCandidate_eq_of_mem_relDomain`.
 
-   The small-arity branch has an analogous but simpler target.  It must use
-   `sourceSelectedComplexGramMap_implicit_chart_of_complex_nonzero_minor` at
-   the actual complex extended-tube witness `z0`, not the real-base
-   zero-section.  The required producer exposes an ambient open set of
-   ordinary Gram coordinates, a zero-kernel section
-   `q ↦ e.symm (q, 0)`, differentiability of that section from the same
-   `OpenPartialHomeomorph.contDiffAt_symm` pattern, an extended-tube shrink
-   around `z0`, and the right-inverse equality for the ordinary Gram map.  In
-   the oriented small-arity wrapper the determinant-coordinate family is empty,
-   so `SourceOrientedGramData.ext` reduces the right-inverse statement to the
-   ordinary Gram equality.
+   The small-arity branch has an analogous but simpler target.  It must use a
+   selected complex implicit chart at the actual complex extended-tube witness
+   `z0`, not the real-base zero-section.  The required implementation surface
+   is now Lean-pseudocode precise:
+
+   ```lean
+   noncomputable def BHW.sourceSelectedComplexGramKernelProjectionAt
+       (d n : Nat)
+       {z0 : Fin n -> Fin (d + 1) -> ℂ}
+       (I : Fin (min n (d + 1)) -> Fin n) :
+       (Fin n -> Fin (d + 1) -> ℂ) ->L[ℂ]
+         LinearMap.ker
+           (BHW.sourceSelectedComplexGramDifferentialToSym d n
+             (min n (d + 1)) z0 I)
+
+   noncomputable def BHW.sourceSelectedComplexGramProdMapAt
+       (d n : Nat)
+       {z0 : Fin n -> Fin (d + 1) -> ℂ}
+       (I : Fin (min n (d + 1)) -> Fin n) :
+       (Fin n -> Fin (d + 1) -> ℂ) ->
+         BHW.sourceSelectedComplexSymCoordSubspace n (min n (d + 1)) I ×
+           LinearMap.ker
+             (BHW.sourceSelectedComplexGramDifferentialToSym d n
+               (min n (d + 1)) z0 I) :=
+     fun z =>
+       (BHW.sourceSelectedComplexGramMap d n (min n (d + 1)) I z,
+        BHW.sourceSelectedComplexGramKernelProjectionAt d n (z0 := z0) I
+          (z - z0))
+
+   theorem BHW.contDiff_sourceSelectedComplexGramProdMapAt ...
+   theorem BHW.sourceSelectedComplexGramProdMapAt_hasFDerivAt ...
+   theorem BHW.sourceSelectedComplexGramProdMapAt_fderiv ...
+   theorem BHW.sourceSelectedComplexGramProdMapAt_base_fderiv_isInvertible ...
+   theorem BHW.sourceSelectedComplexGramProdMapAt_local_invertible_nhds ...
+
+   noncomputable def BHW.sourceSelectedComplexGramImplicitChartAt
+       (d n : Nat)
+       {z0 : Fin n -> Fin (d + 1) -> ℂ}
+       {I : Fin (min n (d + 1)) -> Fin n}
+       {J : Fin (min n (d + 1)) -> Fin (d + 1)}
+       (hI : Function.Injective I)
+       (hJ : Function.Injective J)
+       (hminor : BHW.sourceComplexRegularMinor d n I J z0 ≠ 0) :
+       OpenPartialHomeomorph
+         (Fin n -> Fin (d + 1) -> ℂ)
+         (BHW.sourceSelectedComplexSymCoordSubspace n (min n (d + 1)) I ×
+           LinearMap.ker
+             (BHW.sourceSelectedComplexGramDifferentialToSym d n
+               (min n (d + 1)) z0 I))
+
+   theorem BHW.sourceSelectedComplexGramImplicitChartAt_apply ...
+   theorem BHW.sourceSelectedComplexGramImplicitChartAt_mem_source ...
+   theorem BHW.sourceSelectedComplexGramImplicitChartAt_self ...
+
+   noncomputable def BHW.sourceSelectedComplexZeroKernelTargetCLMAt ...
+   theorem BHW.sourceSelectedComplexGramZeroSectionAt_differentiableOn ...
+   theorem BHW.sourceSelectedComplexGramZeroSectionAt_selectedGram ...
+   theorem BHW.sourceSelectedComplexGramZeroSectionAt_base ...
+   theorem BHW.exists_sourceSelectedComplexGramZeroSectionAt_good_ball ...
+   ```
+
+   Here `sourceSelectedComplexGramImplicitChartAt` is built directly from
+   `sourceSelectedComplexGramMap_hasStrictFDerivAt` and
+   `sourceSelectedComplexGramDifferentialToSym_surjective_of_sourceComplexRegularMinor_ne_zero`.
+   The good-ball theorem shrinks a flat selected-coordinate ball `D` around
+   the base coordinate
+   `(sourceSelectedComplexSymCoordFinEquiv n (min n (d + 1)) hI)
+     (sourceSelectedComplexGramMap d n (min n (d + 1)) I z0)`
+   so that `q ↦ e.symm (q, 0)` lies in `ExtendedTube d n`, stays in the
+   same nonzero complex-minor patch, and has invertible product-chart
+   derivative.  Differentiability of the zero-section is obtained from the
+   checked `SCV.openPartialHomeomorph_symm_differentiableOn_of_hasFDerivAt`
+   pattern, with the forward chart smoothness supplied by
+   `contDiff_sourceSelectedComplexGramProdMapAt`.
+
+   The oriented small-arity wrapper then uses ordinary Gram coordinates only:
+
+   ```lean
+   theorem BHW.sourceOrientedMaxRank_localSection_smallArity
+       {d n : Nat} [NeZero d]
+       (hn : n < d + 1)
+       {z0 : Fin n -> Fin (d + 1) -> ℂ}
+       (hz0 : z0 ∈ BHW.ExtendedTube d n)
+       (hmax :
+         BHW.SourceOrientedMaxRankAt d n
+           (BHW.sourceOrientedMinkowskiInvariant d n z0)) :
+       BHW.SourceOrientedLocalHolomorphicSectionData (d := d) n
+         (BHW.sourceOrientedMinkowskiInvariant d n z0)
+   ```
+
+   It converts `hmax` to ordinary source-Gram regularity, chooses `I,J` and
+   `hminor`, defines
+   `Ω := {G | sourceSelectedComplexGramFlatCoordCLM n (min n (d + 1)) I
+             G.gram ∈ D}`,
+   and sets
+   `toVec G := e.symm (sourceSelectedComplexZeroKernelTargetCLMAt ... qG)`,
+   where `qG` is the flat selected coordinate of `G.gram`.  `toVec_mem` is
+   exactly the `ExtendedTube` field of the good-ball shrink.  Holomorphy is
+   the composition of the continuous-linear projection `G ↦ qG` with
+   `sourceSelectedComplexGramZeroSectionAt_differentiableOn`.  For
+   `toVec_right_inv`, the selected-coordinate equality from
+   `sourceSelectedComplexGramZeroSectionAt_selectedGram` and the checked
+   variety lemma
+   `sourceSelectedComplexGramCoord_eq_fullGram_eq_of_sourceComplexRegularMinor_ne_zero_of_mem_variety`
+   prove equality of ordinary Gram matrices; the determinant field is
+   eliminated because an embedding `Fin (d + 1) ↪ Fin n` would contradict
+   `hn`.
 
    Full-frame holomorphic-section regularity support checked, 2026-05-07:
    `SourceOrientedFullFrameHolomorphicSection.lean` now proves
@@ -4590,8 +4686,29 @@ implementation contract is:
    existing
    `differentiableOn_sourceFullFrameGauge_reconstructVector_on_modelDetNonzero`,
    and reuses the checked tube shrink/right-inverse fields.  The remaining
-   max-rank local-section implementation task is the small-arity
+   max-rank local-section implementation task was the small-arity
    arbitrary-complex-base zero-section branch.
+
+   Max-rank holomorphic-section producer checked, 2026-05-07:
+   `SourceComplexZeroSectionAt.lean` now checks the arbitrary-complex-base
+   selected product chart, implicit chart, zero-kernel target, differentiable
+   zero-section, selected-Gram/base equations, and the extended-tube
+   good-ball shrink.  `SourceOrientedSmallArityHolomorphicSection.lean` checks
+   `sourceOrientedMaxRank_localSection_smallArity`: it converts oriented
+   max-rank at the actual tube witness to ordinary complex source regularity,
+   chooses the nonzero selected minor by `Classical.choose`, takes
+   `Ω` to be the selected flat-coordinate preimage of the good ball, and
+   proves the oriented right inverse by ordinary Gram equality plus vacuity of
+   the determinant-coordinate index when `n < d + 1`.
+   `SourceOrientedMaxRankHolomorphicSection.lean` then checks
+   `sourceOrientedExtendedTube_holomorphicLocalSection`,
+   `sourceOrientedQuotientValue_holomorphicOn_maxRank`, and
+   `sourceOrientedQuotientValue_continuous_locallyBounded` by plugging the
+   checked small-arity/full-frame branch producer into the already checked
+   scalar quotient consumers.  The local-section/descent bridge is no longer
+   the theorem-2 blocker; the remaining oriented descent blocker is the
+   normal analytic-space Riemann/exceptional-rank extension package described
+   below.
    The oriented normal-variety support is now tied to explicit algebraic
    equations: symmetry/rank of the Gram field, determinant alternation under
    source-frame reindexing, and the Cauchy-Binet relation
