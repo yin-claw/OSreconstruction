@@ -67,6 +67,13 @@ local Slot 1:
    `BHW.isOpen_permAct_preimage_extendedTube`,
    `BHW.differentiableOn_extendF_bvt_F_extendedTube`,
    `BHW.differentiableOn_extendF_bvt_F_permAct_preimageExtendedTube`,
+   `BHW.wickRotate_mem_BHW_forwardTube_of_ordered`,
+   `BHW.extendF_bvt_F_wickRotate_eq_of_ordered`,
+   `BHW.OS45SourcePatchBHWJostHullData.wick_id_forwardTube_of_ordered`,
+   `BHW.OS45SourcePatchBHWJostOrientedContinuationInputs`,
+   `BHW.OS45SourcePatchBHWJostOrientedContinuationInputs.exists_gluedBranch`,
+   `BHW.OS45SourcePatchBHWJostHullData.exists_ordinaryBranch_of_orientedContinuationInputs`,
+   `BHW.OS45SourcePatchBHWJostHullData.exists_adjacentBranch_of_orientedContinuationInputs`,
    `BHW.integrable_bvt_F_wickRotate_mul_schwartz_of_orderedSector`,
    `BHW.integrable_wickEdge_bvt_F_mul_schwartz_of_orderedSector`,
    `BHW.integrable_extendF_realSource_mul_schwartz_of_ET`,
@@ -10521,6 +10528,25 @@ common-boundary envelope, or any theorem that already assumes locality.
    The OS-I input is exactly this covariance/branch-selection used to justify
    the local BHW continuation; no later common-boundary or Jost/Ruelle
    uniqueness theorem is involved.
+
+   The checked strict-route consumer for these two branch producers is now
+   `BHW.OS45SourcePatchBHWJostOrientedContinuationInputs.exists_gluedBranch`
+   in `OSToWightmanLocalityOS45BHWJostContinuation.lean`.  It is a thin
+   specialization of the already checked
+   `BHW.bhw_jost_orientedGluedBranch_of_pathConnected_sourceNormalFormProducer_retargetedComparisons`
+   and therefore exposes the honest remaining analytic inputs rather than
+   hiding them: `patchAt`, `uniformDescent`, `uniformDescent_unique`,
+   `retargetedComparison`, the initial oriented chart `C0`, the start patch,
+   and the initial-chart agreement on `Ω0 ∩ H.U`.  The checked
+   `H.exists_ordinaryBranch_of_orientedContinuationInputs` then supplies the
+   ordinary branch, holomorphy on `H.U`, Wick trace by
+   `BHW.extendF_bvt_F_wickRotate_eq_of_ordered`, and real trace by
+   continuation agreement.  The checked
+   `H.exists_adjacentBranch_of_orientedContinuationInputs` supplies the
+   adjacent branch, holomorphy on `H.U`, real trace by `BHW.permAct_realEmbed`,
+   and initial-domain agreement on the permutation preimage of
+   `ExtendedTube`; its Wick trace remains a separate OS I/BHW continuation
+   datum.
 
    With these three surfaces,
    `BHW.os45_sourcePatch_bhwJostPairData_on_figure24SourcePatch_of_OSI45`

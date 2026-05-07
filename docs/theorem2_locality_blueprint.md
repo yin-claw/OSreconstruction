@@ -47464,6 +47464,19 @@ Proof decomposition of this theorem, without hiding the analytic work:
             while the adjacent Wick
             trace is supplied by the OS-I/BHW
             continuation datum rather than by a direct `wick_tau_ET` field.
+            The checked strict-route consumer is now
+            `BHW.OS45SourcePatchBHWJostOrientedContinuationInputs.exists_gluedBranch`,
+            which specializes
+            `BHW.bhw_jost_orientedGluedBranch_of_pathConnected_sourceNormalFormProducer_retargetedComparisons`
+            to the OS45 source hull.  It leaves exactly the honest analytic
+            inputs explicit: `patchAt`, `uniformDescent`,
+            `uniformDescent_unique`, `retargetedComparison`, initial chart
+            `C0`, the start patch, and initial-chart agreement on
+            `Ω0 ∩ H.U`.  The checked ordinary branch consumer supplies its
+            Wick trace through `BHW.extendF_bvt_F_wickRotate_eq_of_ordered`;
+            the checked adjacent branch consumer supplies the real trace and
+            initial-domain agreement, with the adjacent Wick trace still a
+            separate OS I/BHW continuation datum.
             After these three lower surfaces, the pair-data producer is
             field-copying: build `H`, obtain `Bord` and `Btau`, and call the
             checked constructor
