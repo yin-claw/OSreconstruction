@@ -4851,6 +4851,23 @@ implementation contract is:
    pairing/volume adjoin transport theorem, and the matching invariant
    coordinate equivalence
    `sourceMinkowskiToDotInvariantCoordinateEquiv`.
+   The relation-ideal transport is now checked and generator-level mechanical.
+   Under
+   `sourceMinkowskiToDotInvariantCoordinateEquiv`, source symmetry and rank
+   minor generators map exactly to the corresponding standard-dot generators.
+   Source determinant-alternation generators map to
+   `MvPolynomial.C (sourceMinkowskiToDotInvDetScale d)` times the standard
+   alternation generators, so ideal membership is preserved by scalar
+   multiplication; the reverse direction multiplies the mapped source
+   alternation generator by `MvPolynomial.C (sourceMinkowskiToDotDetScale d)`
+   and uses `sourceMinkowskiToDotDetScale_mul_invDetScale`.  Source
+   Cauchy-Binet generators map exactly to standard Cauchy-Binet generators
+   because
+   `minkowskiMetricDet d * sourceMinkowskiToDotInvDetScale d *
+      sourceMinkowskiToDotInvDetScale d = 1`.  Therefore
+   `sourceOrientedRelationIdeal_transport_dot` is only `Ideal.map_span`,
+   `Ideal.span_le`, and the four generator-image calculations; it does not
+   invoke the standard `SO` SFT theorem.
    The theorem-2 blueprint now tightens this into the single standard-dot
    support surface `BHW.standardSO_FFT_SFT_coordinatePresentation`, whose three
    outputs are: FFT generation by pairings and ordered volumes, SFT kernel

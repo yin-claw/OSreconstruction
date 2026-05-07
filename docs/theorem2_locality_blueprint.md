@@ -13798,13 +13798,35 @@ Proof decomposition of this theorem, without hiding the analytic work:
 
       theorem BHW.sourceOrientedRelationIdeal_transport_dot
           (d n : Nat)
-          [NeZero d]
-          (hd : 2 <= d)
           :
           BHW.algEquivMapIdeal
               (BHW.sourceMinkowskiToDotInvariantCoordinateEquiv d n)
               (BHW.sourceOrientedAlgebraicRelationIdeal d n) =
             BHW.standardSOAlgebraicRelationIdeal (d + 1) n
+
+      -- Proof transcript for
+      -- `sourceOrientedRelationIdeal_transport_dot`:
+      --
+      -- 1. Unfold both ideals and rewrite the source side by
+      --    `Ideal.map_span`.
+      -- 2. For the forward inclusion, prove every image of a source
+      --    generator lies in the standard span:
+      --    * symmetry maps exactly to standard symmetry;
+      --    * `(d + 2)` source Gram minors map exactly to `(D + 1)`
+      --      standard Gram minors with `D = d + 1`;
+      --    * source alternation maps to
+      --      `MvPolynomial.C (sourceMinkowskiToDotInvDetScale d)` times the
+      --      standard alternation generator;
+      --    * source Cauchy-Binet maps exactly to standard Cauchy-Binet by
+      --      `minkowskiMetricDet_mul_invDetScale_mul_invDetScale`.
+      -- 3. For the reverse inclusion, use `Ideal.subset_span` for exact
+      --    symmetry/minor/Cauchy-Binet preimages, and for alternation multiply
+      --    the mapped source alternation generator by
+      --    `MvPolynomial.C (sourceMinkowskiToDotDetScale d)`, using
+      --    `sourceMinkowskiToDotDetScale_mul_invDetScale`.
+      -- 4. No `[NeZero d]`, `hd`, or standard `SO` SFT input is used in this
+      --    transport theorem; those hypotheses begin only at the invariant
+      --    theorem/reductivity layer.
 
       def BHW.sourceMinkowskiToDotInvariantSubalgebraEquiv
           (d n : Nat)
