@@ -96,4 +96,31 @@ theorem sourceOrientedExceptionalRank_eq_minorsVanishing
         (sourceOrientedLowerRank_iff_minors_eq_zero
           (d := d) (n := n) (G := G)).2 hminors⟩
 
+/-- The common zero locus of all maximal source-Gram minors is closed in the
+oriented source-coordinate ambient space. -/
+theorem isClosed_sourceOrientedMaximalMinorsVanishing
+    (d n : ℕ) :
+    IsClosed
+      {G : SourceOrientedGramData d n |
+        ∀ I J : Fin (min (d + 1) n) → Fin n,
+          sourceMatrixMinor n (min (d + 1) n) I J G.gram = 0} := by
+  rw [show
+      {G : SourceOrientedGramData d n |
+        ∀ I J : Fin (min (d + 1) n) → Fin n,
+          sourceMatrixMinor n (min (d + 1) n) I J G.gram = 0} =
+        ⋂ I : Fin (min (d + 1) n) → Fin n,
+          ⋂ J : Fin (min (d + 1) n) → Fin n,
+            {G : SourceOrientedGramData d n |
+              sourceMatrixMinor n (min (d + 1) n) I J G.gram = 0} by
+    ext G
+    simp]
+  apply isClosed_iInter
+  intro I
+  apply isClosed_iInter
+  intro J
+  exact isClosed_eq
+    ((continuous_sourceMatrixMinor n (min (d + 1) n) I J).comp
+      continuous_sourceOrientedGramData_gram)
+    continuous_const
+
 end BHW
