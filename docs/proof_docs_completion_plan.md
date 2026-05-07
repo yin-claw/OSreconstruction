@@ -5182,17 +5182,19 @@ implementation contract is:
    Hall-Wightman Lemma-2 residual-frame theorem plus
    `BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube`, setting the null
    residual coefficients to zero while preserving scalar products.  The proof
-   is now decomposed through
+   is now checked in
+   `OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/SourceExtendedTubeRank.lean`
+   through
    `BHW.sourceGramMatrixRank_pos_of_mem_extendedTube`,
    with its support theorem
    `BHW.openForwardCone_imag_complexSelfInner_ne_zero`: if
    `v = x + iη` and `η ∈ BHW.InOpenForwardCone d`, then `B(v,v) ≠ 0`
    because `BHW.sourceComplexMinkowskiInner_self_re_im` turns `B(v,v)=0`
    into both `B(x,η)=0` and `B(x,x)=B(η,η)`, while
-   `BHW.openForwardCone_realMinkowskiSelf_pos` gives `B(η,η)>0`,
-   contradicting
-   `BHW.realMinkowski_self_nonpos_of_orthogonal_timelike`; a nonzero
-   forward-tube diagonal Gram entry then gives positive matrix rank by
+   `MinkowskiSpace.minkowskiInner_orthogonal_to_timelike_nonneg` gives
+   `0 ≤ B(x,x)` and the checked open-cone/timelike conversion gives
+   `B(η,η) < 0`; a nonzero forward-tube diagonal Gram entry then gives
+   positive matrix rank by
    `BHW.matrix_rank_pos_of_nonzero_entry`, and the extended-tube case follows
    by `BHW.sourceMinkowskiGram_complexLorentzAction`.  The remaining adapted
    representative construction is decomposed through

@@ -31267,37 +31267,27 @@ Proof decomposition of this theorem, without hiding the analytic work:
               BHW.sourceGramMatrixRank n
                 (BHW.sourceMinkowskiGram d n z0)
 
-      def BHW.sourceRealMinkowskiInner
-          (d : Nat)
-          (x y : Fin (d + 1) -> ℝ) : ℝ :=
-        x 0 * y 0 -
-          ∑ μ : Fin d, x μ.succ * y μ.succ
-
-      theorem BHW.openForwardCone_realMinkowskiSelf_pos
-          [NeZero d] (hd : 2 <= d)
-          {η : Fin (d + 1) -> ℝ}
-          (hη : BHW.InOpenForwardCone d η) :
-          0 < BHW.sourceRealMinkowskiInner d η η
-
-      theorem BHW.realMinkowski_self_nonpos_of_orthogonal_timelike
-          [NeZero d] (hd : 2 <= d)
-          {x η : Fin (d + 1) -> ℝ}
-          (hη : BHW.InOpenForwardCone d η)
-          (horth : BHW.sourceRealMinkowskiInner d x η = 0) :
-          BHW.sourceRealMinkowskiInner d x x <= 0
+      -- Checked support layer:
+      -- OSReconstruction/ComplexLieGroups/Connectedness/BHWPermutation/
+      --   SourceExtendedTubeRank.lean
 
       theorem BHW.sourceComplexMinkowskiInner_self_re_im
-          [NeZero d]
+          (d : Nat)
           (v : Fin (d + 1) -> ℂ) :
           (BHW.sourceComplexMinkowskiInner d v v).re =
-            BHW.sourceRealMinkowskiInner d
+            MinkowskiSpace.minkowskiInner d
               (fun μ => (v μ).re) (fun μ => (v μ).re) -
-            BHW.sourceRealMinkowskiInner d
+            MinkowskiSpace.minkowskiInner d
               (fun μ => (v μ).im) (fun μ => (v μ).im) ∧
           (BHW.sourceComplexMinkowskiInner d v v).im =
             2 *
-              BHW.sourceRealMinkowskiInner d
+              MinkowskiSpace.minkowskiInner d
                 (fun μ => (v μ).re) (fun μ => (v μ).im)
+
+      theorem BHW.matrix_eq_zero_of_rank_eq_zero_source
+          {m n : Type*} [Fintype m] [Fintype n] [DecidableEq n]
+          (A : Matrix m n ℂ) (hA : A.rank = 0) :
+          A = 0
 
       theorem BHW.openForwardCone_imag_complexSelfInner_ne_zero
           [NeZero d] (hd : 2 <= d)
@@ -31307,10 +31297,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.sourceComplexMinkowskiInner d v v ≠ 0
 
       theorem BHW.matrix_rank_pos_of_nonzero_entry
-          {ι κ : Type*} [Fintype ι] [Fintype κ]
-          [DecidableEq ι] [DecidableEq κ]
-          (M : Matrix ι κ ℂ)
-          {i : ι} {j : κ}
+          {m n : Type*} [Fintype m] [Fintype n] [DecidableEq n]
+          (M : Matrix m n ℂ)
+          {i : m} {j : n}
           (hij : M i j ≠ 0) :
           0 < M.rank
 
@@ -31441,11 +31430,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
          `v = x + iη`, `η ∈ V_+`, and `B(v,v)=0`, then the imaginary part of
          `B(v,v)`, computed by
          `BHW.sourceComplexMinkowskiInner_self_re_im`, gives `B(x,η)=0`,
-         while the real part gives `B(x,x)=B(η,η)>0` using
-         `BHW.openForwardCone_realMinkowskiSelf_pos`; this contradicts
-         `BHW.realMinkowski_self_nonpos_of_orthogonal_timelike`.  A nonzero
-         diagonal matrix entry gives positive matrix rank by
-         `BHW.matrix_rank_pos_of_nonzero_entry`, yielding
+         while the real part gives `B(x,x)=B(η,η)`.  In the checked
+         `MinkowskiSpace` sign convention, the existing theorem
+         `MinkowskiSpace.minkowskiInner_orthogonal_to_timelike_nonneg` gives
+         `0 <= B(x,x)`, while the open-cone hypothesis gives
+         `B(η,η) < 0`; contradiction.  A nonzero diagonal matrix entry gives
+         positive matrix rank by `BHW.matrix_rank_pos_of_nonzero_entry`,
+         yielding
          `BHW.sourceGramMatrixRank_pos_of_forwardTube`.  The extended-tube
          theorem then rewrites through the chosen Lorentz preimage by
          `BHW.sourceMinkowskiGram_complexLorentzAction`; the scalar rank then
