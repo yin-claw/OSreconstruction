@@ -120,10 +120,44 @@ theorem spectral_riemann_lebesgue
       refine continuous_const.mul ?_
       exact (Complex.continuous_ofReal.comp (continuous_apply i))
   simp_rw [h_step1]
-  -- Step 2-3: deferred — Radon-Nikodym + density-form integral, plus
-  -- Mathlib's RL with sign / 2π reconciliation. The reduction is now
-  -- to a one-variable Fourier integral over `Fin d → ℝ` against the
-  -- (integrable) RN density of `spatialMarginal μ`.
+  -- Step 2: Radon-Nikodym density reduction.
+  -- Use `integral_rnDeriv_smul`: for `μ' ≪ ν`,
+  --   `∫ x, (μ'.rnDeriv ν x).toReal • f x ∂ν = ∫ x, f x ∂μ'`.
+  -- Applied with μ' = spatialMarginal μ and ν = volume:
+  --   `∫ q, exp(i a · q) d(spatialMarginal μ)(q) =
+  --    ∫ q, ((spatialMarginal μ).rnDeriv volume q).toReal • exp(i a · q) ∂volume`.
+  set ρ : (Fin d → ℝ) → ℝ :=
+    fun q => ((spatialMarginal μ).rnDeriv MeasureTheory.volume q).toReal with hρ_def
+  haveI : IsFiniteMeasure (spatialMarginal μ) := by
+    unfold spatialMarginal
+    exact MeasureTheory.Measure.isFiniteMeasure_map μ (spatialProj d)
+  have h_step2 : ∀ a : Fin d → ℝ,
+      (∫ q : Fin d → ℝ,
+          Complex.exp (Complex.I *
+            (∑ i : Fin d, (a i : ℂ) * (q i : ℂ))) ∂(spatialMarginal μ)) =
+      (∫ q : Fin d → ℝ, (ρ q : ℂ) *
+          Complex.exp (Complex.I *
+            (∑ i : Fin d, (a i : ℂ) * (q i : ℂ)))) := by
+    intro a
+    rw [← MeasureTheory.integral_rnDeriv_smul (μ := spatialMarginal μ)
+      (ν := MeasureTheory.volume) h_spatial_AC
+      (f := fun q => Complex.exp (Complex.I *
+            (∑ i : Fin d, (a i : ℂ) * (q i : ℂ))))]
+    refine MeasureTheory.integral_congr_ae ?_
+    refine Filter.Eventually.of_forall (fun q => ?_)
+    show (((spatialMarginal μ).rnDeriv MeasureTheory.volume q).toReal : ℂ) *
+        Complex.exp (Complex.I * (∑ i : Fin d, (a i : ℂ) * (q i : ℂ))) =
+      ((spatialMarginal μ).rnDeriv MeasureTheory.volume q).toReal •
+        Complex.exp (Complex.I * (∑ i : Fin d, (a i : ℂ) * (q i : ℂ)))
+    rw [Complex.real_smul]
+  simp_rw [h_step2]
+  -- Step 3-5: Reduce to Mathlib's `tendsto_integral_exp_inner_smul_cocompact`.
+  -- Our integrand is `(ρ q : ℂ) * exp(i ⟨a, q⟩)` where `⟨a, q⟩ := ∑ a_i q_i`.
+  -- Mathlib's RL form (after substituting w = -a/(2π)) gives the same shape:
+  --   `∫ v, 𝐞(-⟨v, w⟩) • f v = ∫ v, exp(-2π i ⟨v, w⟩) f(v)`.
+  -- With f := (ρ : ℂ) and w := -a/(2π), Mathlib RL yields the goal.
+  -- Reconcile cocompact ↔ cobounded via `Metric.cobounded_eq_cocompact` on
+  -- the proper space `Fin d → ℝ`.
   sorry
 
 end Ruelle
