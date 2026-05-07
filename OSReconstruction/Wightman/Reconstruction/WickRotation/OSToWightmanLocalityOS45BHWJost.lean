@@ -539,6 +539,51 @@ variable {lgc : OSLinearGrowthCondition d OS}
 variable {i : Fin n} {hi : i.val + 1 < n}
 variable {V : Set (NPointDomain d n)}
 
+/-- Assemble the pair carrier once the ordinary and adjacent BHW/Jost branches
+on the checked source-patch hull have been produced. -/
+def ofHullDataAndBranches
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V)
+    (Bord Btau : (Fin n → Fin (d + 1) → ℂ) → ℂ)
+    (Bord_holo : DifferentiableOn ℂ Bord H.U)
+    (Btau_holo : DifferentiableOn ℂ Btau H.U)
+    (Bord_wick_trace :
+      ∀ x, x ∈ V →
+        Bord (fun k => wickRotatePoint (x k)) =
+          bvt_F OS lgc n (fun k => wickRotatePoint (x k)))
+    (Btau_wick_trace :
+      ∀ x, x ∈ V →
+        Btau (fun k => wickRotatePoint (x k)) =
+          bvt_F OS lgc n (fun k => wickRotatePoint (x (H.τ k))))
+    (Bord_real_trace :
+      ∀ x, x ∈ V →
+        Bord (BHW.realEmbed x) =
+          BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x))
+    (Btau_real_trace :
+      ∀ x, x ∈ V →
+        Btau (BHW.realEmbed x) =
+          BHW.extendF (bvt_F OS lgc n)
+            (BHW.realEmbed (fun k => x (H.τ k)))) :
+    BHW.OS45SourcePatchBHWJostPairData
+      (d := d) hd OS lgc n i hi V where
+  τ := H.τ
+  τ_eq := H.τ_eq
+  U := H.U
+  V_open := H.V_open
+  V_nonempty := H.V_nonempty
+  U_open := H.U_open
+  U_connected := H.U_connected
+  wick_mem := H.wick_id_mem
+  real_mem := H.real_id_mem
+  Bord := Bord
+  Btau := Btau
+  Bord_holo := Bord_holo
+  Btau_holo := Btau_holo
+  Bord_wick_trace := Bord_wick_trace
+  Btau_wick_trace := Btau_wick_trace
+  Bord_real_trace := Bord_real_trace
+  Btau_real_trace := Btau_real_trace
+
 /-- Restrict a BHW/Jost pair carrier to a smaller real source patch while
 keeping the same complex hull and branches. -/
 def restrict
