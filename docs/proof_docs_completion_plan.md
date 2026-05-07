@@ -4868,6 +4868,33 @@ implementation contract is:
    `sourceOrientedRelationIdeal_transport_dot` is only `Ideal.map_span`,
    `Ideal.span_le`, and the four generator-image calculations; it does not
    invoke the standard `SO` SFT theorem.
+   The generator-coordinate map layer is now checked in
+   `SourceOrientedInvariantCoordinateMap.lean` and must be kept separate from
+   the genuine `SO` FFT/SFT theorem.  It defines
+   `standardSOGeneratorSubalgebra D n` to be the algebra generated in
+   `standardTupleCoordinateRing D n` by the checked pairing and ordered-volume
+   polynomials, and `sourceOrientedGeneratorSubalgebra d n` analogously
+   from the source Gram and selected determinant polynomials.  The maps
+   `standardSOGeneratorCoordinateMap` and
+   `sourceOrientedGeneratorCoordinateMap` are just `MvPolynomial.aeval` into
+   those generated subalgebras: `Sum.inl ij` goes to the corresponding
+   pairing/Gram generator element and `Sum.inr ι` goes to the corresponding
+   volume/determinant generator element.  Surjectivity is proved by
+   `Algebra.adjoin_induction` on the subtype membership in the generated
+   subalgebra; constants use `MvPolynomial.C`, generator cases use the
+   matching variable, and add/mul cases use closure of the algebra-map range.
+   The source/dot generator-subalgebra transport is then a `simpa` wrapper
+   around the already checked
+   `sourceMinkowskiToDotCoordinateRingEquiv_adjoin_pairing_volume`.
+   Restricting the tuple-coordinate equivalence gives
+   `sourceMinkowskiToDotGeneratorSubalgebraEquiv`, and polynomial induction
+   proves the commutative square
+   `sourceMinkowskiToDotGeneratorCoordinateMap_commutes`.  The determinant
+   generator case is exactly the inverse determinant-scale calculation already
+   checked for
+   `sourceMinkowskiToDotCoordinateRingEquiv_apply_sourceDet`.  None of these
+   declarations says that the generated subalgebra is the full invariant
+   subalgebra; that equality remains the actual FFT input.
    The theorem-2 blueprint now tightens this into the single standard-dot
    support surface `BHW.standardSO_FFT_SFT_coordinatePresentation`, whose three
    outputs are: FFT generation by pairings and ordered volumes, SFT kernel
