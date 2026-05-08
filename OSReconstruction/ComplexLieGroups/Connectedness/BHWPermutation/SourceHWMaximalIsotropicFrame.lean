@@ -354,6 +354,44 @@ theorem complexMinkowskiRelativeOrthogonalQuotientForm_isSymm
           simp [complexMinkowskiRelativeOrthogonalQuotientForm_mk,
             sourceComplexMinkowskiInner_comm d]
 
+/-- If the only vector in `Rperp` annihilating all of `Rperp` is the retyped
+copy of `R`, then the induced quotient form on `Rperp / R` is nondegenerate.
+
+The remaining geometric work for the maximal-frame extension is therefore the
+annihilator computation inside the nondegenerate ambient subspace `N`; the
+quotient radical step itself is now checked. -/
+theorem complexMinkowskiRelativeOrthogonalQuotientForm_nondegenerate_of_restrict_ker_le
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (RN : Submodule ℂ N)
+    (hann :
+      (((sourceComplexMinkowskiBilinForm d).restrict N).restrict
+        (complexMinkowskiRelativeOrthogonalIn (d := d) N RN)).ker ≤
+        complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N) RN) :
+    (complexMinkowskiRelativeOrthogonalQuotientForm
+      (d := d) (N := N) RN).Nondegenerate := by
+  refine ((complexMinkowskiRelativeOrthogonalQuotientForm_isSymm
+    (d := d) (N := N) RN).isRefl.nondegenerate_iff_separatingLeft).2 ?_
+  intro x hx
+  induction x using Quotient.inductionOn with
+  | h x =>
+      have hxR :
+          x ∈ complexMinkowskiSubmoduleInRelativeOrthogonal
+            (d := d) (N := N) RN := by
+        apply hann
+        rw [LinearMap.mem_ker]
+        ext y
+        have hxy := hx (Quotient.mk'' y)
+        simpa [complexMinkowskiRelativeOrthogonalQuotientForm_mk] using hxy
+      have hxR' :
+          x - 0 ∈ complexMinkowskiSubmoduleInRelativeOrthogonal
+            (d := d) (N := N) RN :=
+        Submodule.sub_mem _ hxR (Submodule.zero_mem _)
+      change Quotient.mk'' x =
+        Quotient.mk'' (0 : complexMinkowskiRelativeOrthogonalIn (d := d) N RN)
+      apply Quotient.sound'
+      simpa [Submodule.quotientRel_def] using hxR'
+
 end RelativeOrthogonalQuotientSupport
 
 /-- The zero subspace is totally isotropic. -/
