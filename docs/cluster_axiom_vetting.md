@@ -396,53 +396,71 @@ mass-hyperboloid foliation `dp⁰ / 2E_p`.
 spectral analysis on Ω⊥. Probably 1–3 weeks of focused QFT-spectral
 formalization.
 
-### 11. L4 spectral-data axiom (WITHHELD)
+### 11. `wightman_l4_spectral_data_axiom`
 
 **File**: `Wightman/Spectral/Ruelle/L4_UniformPolynomialBound.lean`.
 
-**Status (2026-05-08)**: **Production axiom intentionally withheld.**
+**Status (2026-05-08)**: **Shipped after RACH.bound regulator refactor.**
 
-A first attempt drafted `wightman_l4_spectral_data_axiom : L4SpectralData
-Wfn n m`, mirroring `gns_l2_spectral_data_axiom` in shape — a polarized
-Fourier representation of the joint analytic continuation
-`W_analytic_BHW (n+m)` along the spatial-shift parameter, with each
-polarization-piece measure having total mass polynomially bounded in
-`(‖z₁‖, ‖z₂‖)`.
+**History**:
 
-**Vetting verdict (Gemini chat, 2026-05-08)**: **FLAGGED — vacuous /
-unsatisfiable**. The bound shape inherited from
-`RuelleAnalyticClusterHypotheses.bound` (uniform `C, N` over the entire
-`ForwardTube d n × ForwardTube d m`, polynomial only in `‖z‖`) is
-**unsatisfiable for any actual Wightman QFT**, including the free
-scalar field. Counterexample: for `n = m = 2`, Wick's theorem gives a
-disconnected pairing `W₂(z₁,₁, z₁,₂) · W₂(z₂,₁ + a, z₂,₂ + a)` whose
-first factor is independent of `a` and blows up as `(z₁,₁ - z₁,₂) →
-∂V+` (allowed within the open `ForwardTube d 2`); the polynomial
-bound `C(1+‖z₁‖+‖z₂‖)^N` cannot capture this internal singularity.
+A first draft of this axiom (2026-05-08, earlier in the day) mirrored
+`gns_l2_spectral_data_axiom` in shape — a polarized Fourier
+representation of the joint analytic continuation `W_analytic_BHW
+(n+m)` along the spatial-shift parameter, with polarization-piece mass
+bound `C(1+‖z₁‖+‖z₂‖)^N`. **Gemini chat vetting (2026-05-08)**
+flagged the bound shape as **vacuous** for any actual Wightman QFT
+(free-field counterexample: the disconnected Wick pairing `W₂(z₁,₁,
+z₁,₂) · W₂(z₂,₁ + a, z₂,₂ + a)` is independent of `a` and blows up
+as `Im(z₁,₁ - z₁,₂) → ∂V+`, which the bare polynomial in `‖z‖`
+cannot capture). Axiomatizing the unsatisfiable shape would have
+introduced inconsistency.
 
-**The textbook bound** (Streater-Wightman Theorem 3.1.1) includes a
-boundary-distance regulator `(1 + Δ(Im z)⁻¹)^M` which is missing from
-the current `RuelleAnalyticClusterHypotheses.bound` shape.
+The fix: refactor `RuelleAnalyticClusterHypotheses.bound` to include
+the **Streater-Wightman boundary regulator**
+`(1 + (tubeBoundaryDist z)⁻¹)^M`, where `tubeBoundaryDist` is the
+minimum distance of consecutive imaginary differences to `∂V+`.
+With the regulator, the bound is satisfiable: the regulator factor
+matches the `1/(z-w)²` blow-up of free-field 2-point pairings as
+imaginary differences approach the cone boundary.
 
-**Effect**: axiomatizing the current `L4SpectralData` shape would
-make the system inconsistent (False would be provable, since no
-witness exists in any model). The axiom was removed.
+**Statement** (current):
+```
+∀ z₁ ∈ ForwardTube d n, ∀ z₂ ∈ ForwardTube d m,
+  ∃ μ : Fin 4 → Measure, (each μ_k finite) ∧
+  (mass bound: ‖μ_k‖ ≤ C(1+‖z₁‖+‖z₂‖)^N · (1+Δ(z₁)⁻¹)^M · (1+Δ(z₂)⁻¹)^M) ∧
+  (polarized Fourier representation along real spatial shifts a)
+```
 
-**What was kept**: the structural definition `L4SpectralData` and the
-conditional reduction `ruelle_analytic_cluster_bound_of` — the latter
-is `(possibly-vacuous antecedent) → (possibly-vacuous consequent)` and
-remains valid regardless of whether either side is satisfiable.
+**Vetting verdict (Gemini chat, 2026-05-08)**: **Likely correct /
+Standard** — the regulator restores satisfiability; polarization,
+SNAG, and polynomial-with-regulator growth ingredients are all
+textbook content (Streater-Wightman 3.1.1, BLT 11.2,
+Glimm-Jaffe §6.2, Reed-Simon II §IX.8). Free fields' `1/(z-w)²`
+mass blow-up is now witnessed by the regulator.
 
-**Project follow-up**: see
-`docs/ruelle_bound_vacuity_concern.md` for the full analysis and
-proposed repair options (Option A: boundary-distance regulator;
-Option B: pointwise-uniform constants via quantifier reordering).
-Coordinate with @xiyin137 before changing the
-`RuelleAnalyticClusterHypotheses` interface (shared-repo policy).
+**Connection to existing project infrastructure**: the regulator
+shape matches `fourierLaplaceExtMultiDim_vladimirov_growth` (proved
+in `OSReconstruction/SCV/PaleyWienerSchwartz.lean:3286`). The L4
+axiom is morally a transport of that proven bound through
+`bv_implies_fourier_support` + `fl_representation_from_bv` (existing
+SCV axioms) to the `W_analytic_BHW` side.
+
+**Discharge plan**: prove the L4 axiom via the existing SCV
+infrastructure (above). Estimated 1–2 weeks of focused work.
+
+**Knock-on**: the cluster proof
+`W_analytic_cluster_integral_via_ruelle` previously consumed the
+old (vacuous) bound; its dominator-integrability step is now
+`sorry`'d at `RuelleClusterBound.lean:718` because the new dominator
+includes the regulator factor `(1+Δ⁻¹)^M`, whose integrability
+against Schwartz-supported test functions requires IBP rework
+(Streater-Wightman §3.4 / Ruelle 1962 — derivative-transfer
+argument). See `docs/ruelle_bound_vacuity_concern.md` for details.
 
 ### Audit table
 
 | Axiom | File:Line | Rating | Sources | Notes |
 |-------|-----------|--------|---------|-------|
 | `gns_l2_spectral_data_axiom` | L2_NoZeroMomentumAtom.lean | Pending DT | LP (Glimm-Jaffe §6.2, Reed-Simon II §IX.8, Streater-Wightman §3.5) | Single explicit axiom for the GNS-spectral L2 chain; consumed only by `gns_orthogonal_spatial_cobounded_decay`. Pending vetting via Gemini deep-think. |
-| `wightman_l4_spectral_data_axiom` (WITHHELD) | L4_UniformPolynomialBound.lean | Flagged (Vacuous) | GR (Gemini chat 2026-05-08), LP (Streater-Wightman 3.1.1, BLT 11.2) | Removed after Gemini vetting. Inherits unsatisfiable bound shape from `RuelleAnalyticClusterHypotheses.bound`. See `docs/ruelle_bound_vacuity_concern.md`. |
+| `wightman_l4_spectral_data_axiom` | L4_UniformPolynomialBound.lean | Likely correct / Standard | GR (Gemini chat 2026-05-08), LP (Streater-Wightman 3.1.1, BLT 11.2) | Polarized Fourier representation of joint W_analytic_BHW with Vladimirov-style boundary regulator. Discharges RACH.bound unconditionally. Cluster proof dominator step requires IBP rework (sorry'd). |

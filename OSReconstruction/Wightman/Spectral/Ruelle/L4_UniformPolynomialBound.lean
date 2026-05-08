@@ -116,7 +116,7 @@ transform of a positive measure. -/
 structure L4SpectralData
     (Wfn : WightmanFunctions d) (n m : ℕ) : Prop where
   data :
-    ∃ (C : ℝ) (N : ℕ) (R : ℝ),
+    ∃ (C : ℝ) (N M : ℕ) (R : ℝ),
       0 < C ∧ 0 < R ∧
       ∀ (z₁ : Fin n → Fin (d + 1) → ℂ),
       ∀ (z₂ : Fin m → Fin (d + 1) → ℂ),
@@ -124,7 +124,10 @@ structure L4SpectralData
         z₂ ∈ ForwardTube d m →
         ∃ (μ : Fin 4 → Measure (Fin (d + 1) → ℝ)),
           (∀ k, IsFiniteMeasure (μ k)) ∧
-          (∀ k, ((μ k) Set.univ).toReal ≤ C * (1 + ‖z₁‖ + ‖z₂‖) ^ N) ∧
+          (∀ k, ((μ k) Set.univ).toReal ≤
+            C * (1 + ‖z₁‖ + ‖z₂‖) ^ N
+              * (1 + (tubeBoundaryDist z₁)⁻¹) ^ M
+              * (1 + (tubeBoundaryDist z₂)⁻¹) ^ M) ∧
           ∀ (a : SpacetimeDim d), a 0 = 0 →
             (∑ i : Fin d, (a (Fin.succ i)) ^ 2) > R ^ 2 →
             (Fin.append z₁
@@ -154,7 +157,7 @@ polynomially bounded in `(‖z₁‖, ‖z₂‖)` by hypothesis, *independently
 with the same constant `C`. -/
 theorem ruelle_analytic_cluster_bound_of
     (Wfn : WightmanFunctions d) (n m : ℕ) (hL4 : L4SpectralData Wfn n m) :
-    ∃ (C : ℝ) (N : ℕ) (R : ℝ),
+    ∃ (C : ℝ) (N M : ℕ) (R : ℝ),
       0 < C ∧ 0 < R ∧
       ∀ (z₁ : Fin n → Fin (d + 1) → ℂ),
       ∀ (z₂ : Fin m → Fin (d + 1) → ℂ),
@@ -170,16 +173,20 @@ theorem ruelle_analytic_cluster_bound_of
               (Fin.append z₁
                 (fun k μ_idx => z₂ k μ_idx +
                   (if μ_idx = 0 then (0 : ℂ) else (a μ_idx : ℂ))))‖
-            ≤ C * (1 + ‖z₁‖ + ‖z₂‖) ^ N := by
-  obtain ⟨C, N, R, hC, hR, h⟩ := hL4.data
-  refine ⟨C, N, R, hC, hR, ?_⟩
+            ≤ C * (1 + ‖z₁‖ + ‖z₂‖) ^ N
+                * (1 + (tubeBoundaryDist z₁)⁻¹) ^ M
+                * (1 + (tubeBoundaryDist z₂)⁻¹) ^ M := by
+  obtain ⟨C, N, M, R, hC, hR, h⟩ := hL4.data
+  refine ⟨C, N, M, R, hC, hR, ?_⟩
   intro z₁ z₂ hz₁ hz₂ a ha₀ ha_R hPET
   obtain ⟨μ, h_finite, h_mass, h_bridge⟩ := h z₁ z₂ hz₁ hz₂
   -- Apply the polarized representation, then bound by triangle inequality.
   rw [h_bridge a ha₀ ha_R hPET]
   -- The expression is `(1/4) · Σ_k iᵏ · ∫ exp(i a·p) dμ_k`.
   -- ‖(1/4) · Σ‖ ≤ (1/4) · Σ ‖i^k · ∫‖ ≤ (1/4) · Σ 1 · μ_k.univ.
-  set bound := C * (1 + ‖z₁‖ + ‖z₂‖) ^ N with hbound_def
+  set bound := C * (1 + ‖z₁‖ + ‖z₂‖) ^ N
+                * (1 + (tubeBoundaryDist z₁)⁻¹) ^ M
+                * (1 + (tubeBoundaryDist z₂)⁻¹) ^ M with hbound_def
   -- Bound each Fourier integral by μ_k.univ.toReal.
   have h_each_bound : ∀ k : Fin 4,
       ‖∫ p : Fin (d + 1) → ℝ,
@@ -248,62 +255,99 @@ theorem ruelle_analytic_cluster_bound_of
     _ = bound := by
         simp [Finset.sum_const]
 
-/-! ### L4 spectral data — vacuity concern; no production axiom
+/-! ### L4 spectral data — production axiom
 
-**Status (2026-05-08): conditional reduction only; production axiom
-withheld pending bound-shape correction.**
+**Status (2026-05-08): production axiom shipped after RACH.bound
+boundary-regulator refactor.**
 
-A first attempt at this file added a production axiom
-`wightman_l4_spectral_data_axiom : L4SpectralData Wfn n m`. **This was
-withdrawn after Gemini-chat vetting (2026-05-08)** identified that the
-underlying bound shape inherited from `RuelleAnalyticClusterHypotheses.bound`
-is mathematically *unsatisfiable* for general Wightman QFTs, so axiomatizing
-it would introduce an inconsistency (False would be provable).
+Earlier (also 2026-05-08), Gemini-chat vetting flagged that the
+production axiom for `L4SpectralData` could not be safely added because
+the bound shape it inherited from `RuelleAnalyticClusterHypotheses.bound`
+was unsatisfiable for general Wightman QFTs. Free-field counterexample:
+the disconnected pairing `W₂(z₁,₁, z₁,₂) · W₂(z₂,₁, z₂,₂)` from Wick's
+theorem is independent of `a` and blows up as `Im(z₁,₁ - z₁,₂) → ∂V+`,
+which the bare polynomial `(1 + ‖z‖)^N` cannot capture.
 
-**The flaw (free-field counterexample)**: For `n = m = 2`, the joint
-analytic 4-point function decomposes by Wick's theorem as a sum of
-2-point pairings; one pairing
-`W₂(z₁,₁, z₁,₂) · W₂(z₂,₁, z₂,₂)` is **independent of `a`** but has
-internal singularities as `Im(z₁,₁ - z₁,₂) → ∂V+`. The polynomial
-bound `C(1 + ‖z₁‖ + ‖z₂‖)^N` cannot capture this blow-up
-(the norm stays bounded as imaginary differences shrink).
+The fix: refactor `RACH.bound` to include the
+**Streater-Wightman boundary regulator** `(1 + Δ(Im z)⁻¹)^M`, where
+`Δ` is the minimum distance of consecutive imaginary differences to
+`∂V+`. With the regulator, the bound is satisfiable (free fields
+satisfy it: the regulator factor matches the `1/(z-w)²` blow-up
+mode-by-mode). `L4SpectralData` was updated in this file to inherit
+the new shape; the conditional reduction `ruelle_analytic_cluster_bound_of`
+re-proves the new (regulated) bound from the polarized Fourier
+representation by triangle inequality.
 
-**Textbook bound (Streater-Wightman Theorem 3.1.1)**:
-```
-‖W(z)‖ ≤ C(1 + ‖z‖)^N · (1 + Δ(Im z)^{-1})^M
-```
-where `Δ(y)` is the invariant distance of imaginary-difference
-variables to `∂V+`. The boundary-distance factor is essential and
-must be threaded through the formal statement.
+The textbook content of the production axiom combines four ingredients:
 
-See also `Bogoliubov-Logunov-Todorov`, *Axiomatic QFT*, Theorem 11.2,
-which gives the same form on the extended tube.
+1. **Spectral resolution** of multi-time matrix elements via SNAG on
+   the GNS Hilbert space.
+2. **Polarization** of off-diagonal sesquilinear forms.
+3. **Polynomial growth + boundary regulator** of each polarization
+   piece's total mass: matches `fourierLaplaceExtMultiDim_vladimirov_growth`
+   (proved in `OSReconstruction/SCV/PaleyWienerSchwartz.lean:3286`)
+   on the FL-extension side, transported via
+   `bv_implies_fourier_support` + `fl_representation_from_bv` to the
+   `W_analytic_BHW` side.
+4. **|exp(i p · a)| = 1** for real spatial shifts (used in the
+   conditional proof above).
 
-**Project-level item**: refactor `RuelleAnalyticClusterHypotheses.bound`
-to include the `Δ(Im z)^{-M}` regulator, then revisit the L4 axiom shape.
-The conditional reduction `ruelle_analytic_cluster_bound_of` proved
-above remains valid (it is a "vacuous antecedent → vacuous consequent"
-implication and so survives the bound-shape change in either form).
+References:
+* Streater-Wightman, *PCT, Spin and Statistics, and All That*,
+  Theorem 3.1.1 (polynomial behavior on the forward tube) and §3.5.
+* Bogoliubov-Logunov-Todorov, *Axiomatic QFT*, Theorem 11.2.
+* Glimm-Jaffe, *Quantum Physics*, §6.2 — spectral support of vacuum
+  expectation values.
+* Reed-Simon II §IX.8 — SNAG / Stone's theorem and AC spectral
+  measures.
 
-**Why the existing `RuelleAnalyticClusterHypotheses` did not surface
-this earlier**: the structure was reviewed as a *hypothesis* the user
-must supply (e.g., for free fields one can compute the bound directly,
-or restrict to compact `Im(z)` subsets where the bound holds). The
-implicit understanding was that the hypothesis would be discharged
-"locally" at call sites; only when an attempt is made to discharge
-*globally for any Wightman family* does the unsatisfiability surface.
+**Vetting verdict (Gemini chat, 2026-05-08)**: the production axiom
+in this corrected shape is **Likely correct / Standard**. The
+boundary regulator restores satisfiability (the free-field
+counterexample is now witnessed by the regulator's blow-up); the
+polynomial-bound and polarization ingredients are textbook.
 
-**No axiom is added here.** Downstream consumers seeking
-`RuelleAnalyticClusterHypotheses` should:
-1. Either supply it model-by-model (e.g., free fields, generalized
-   free fields).
-2. Or wait for the project-level refactor that includes the boundary
-   regulator.
+**Status**: production axiom shipped. Downstream cluster proof
+(`W_analytic_cluster_integral_via_ruelle`) is currently `sorry`'d at
+the dominator-integrability step; the new dominator includes the
+regulator factor and requires IBP rework (Streater-Wightman §3.4 /
+Ruelle 1962 — derivative-transfer argument). See
+`docs/ruelle_bound_vacuity_concern.md`. -/
+axiom wightman_l4_spectral_data_axiom
+    (Wfn : WightmanFunctions d) (n m : ℕ) :
+    L4SpectralData Wfn n m
 
-Reference for the L4 conditional reduction below: it is proved
-unconditionally (no project axioms beyond Mathlib's `propext`,
-`Classical.choice`, `Quot.sound`, plus pre-existing `sorryAx` from
-`W_analytic_BHW`'s definition lineage). -/
+/-! ### L4 unconditional -/
+
+/-- **L4 unconditional**: the uniform-in-`a` polynomial bound on the
+joint analytic continuation, with Streater-Wightman boundary
+regulator, for any Wightman family.
+
+Discharges the `bound` field of `RuelleAnalyticClusterHypotheses` from
+the L4 spectral-data axiom. -/
+theorem ruelle_analytic_cluster_bound
+    (Wfn : WightmanFunctions d) (n m : ℕ) :
+    ∃ (C : ℝ) (N M : ℕ) (R : ℝ),
+      0 < C ∧ 0 < R ∧
+      ∀ (z₁ : Fin n → Fin (d + 1) → ℂ),
+      ∀ (z₂ : Fin m → Fin (d + 1) → ℂ),
+        z₁ ∈ ForwardTube d n →
+        z₂ ∈ ForwardTube d m →
+        ∀ (a : SpacetimeDim d), a 0 = 0 →
+          (∑ i : Fin d, (a (Fin.succ i)) ^ 2) > R ^ 2 →
+          (Fin.append z₁
+              (fun k μ_idx => z₂ k μ_idx +
+                (if μ_idx = 0 then (0 : ℂ) else (a μ_idx : ℂ)))) ∈
+            PermutedExtendedTube d (n + m) →
+          ‖(W_analytic_BHW Wfn (n + m)).val
+              (Fin.append z₁
+                (fun k μ_idx => z₂ k μ_idx +
+                  (if μ_idx = 0 then (0 : ℂ) else (a μ_idx : ℂ))))‖
+            ≤ C * (1 + ‖z₁‖ + ‖z₂‖) ^ N
+                * (1 + (tubeBoundaryDist z₁)⁻¹) ^ M
+                * (1 + (tubeBoundaryDist z₂)⁻¹) ^ M :=
+  ruelle_analytic_cluster_bound_of Wfn n m
+    (wightman_l4_spectral_data_axiom Wfn n m)
 
 end Ruelle
 end OSReconstruction

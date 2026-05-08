@@ -2,18 +2,19 @@
 
 **Date**: 2026-05-08
 **Surfaced during**: L4 (uniform polynomial bound) axiom-vetting via Gemini chat.
-**Severity**: medium — pre-existing structural issue; no inconsistency in current code, but blocks unconditional discharge of the conditional cluster theorem.
+**Status (2026-05-08, later)**: **Repaired via Option A** (boundary-distance regulator). See "Resolution" at the bottom.
+**Severity**: medium — pre-existing structural issue; resolved on branch `r2e/ruelle-l5-grind`.
 
 ## Summary
 
 The `bound` field of `RuelleAnalyticClusterHypotheses` in
 `OSReconstruction/Wightman/Reconstruction/WickRotation/RuelleClusterBound.lean:151–167`
-is, as currently formulated, **mathematically unsatisfiable** for any actual
-Wightman QFT. Adding a production axiom asserting it would introduce
-inconsistency (the system would prove `False`). The conditional cluster
-theorem consuming `RuelleAnalyticClusterHypotheses` is formally correct
-but its premise is vacuous in general — only model-specific or
-boundary-restricted instances can supply it.
+was, as originally formulated, **mathematically unsatisfiable** for
+any actual Wightman QFT. Adding a production axiom asserting it would
+have introduced inconsistency (the system would prove `False`). The
+conditional cluster theorem consuming `RuelleAnalyticClusterHypotheses`
+was formally correct but its premise was vacuous in general — only
+model-specific or boundary-restricted instances could supply it.
 
 ## The current bound
 
@@ -153,6 +154,43 @@ Once `RuelleAnalyticClusterHypotheses.bound` is repaired, both
 `L4SpectralData` and the conditional reduction will be updated
 to mirror the new shape, and a vetted production axiom can be
 considered.
+
+## Resolution (2026-05-08, same day, Option A applied on `r2e/ruelle-l5-grind`)
+
+Option A was implemented:
+
+1. **`tubeBoundaryDist`** defined in `RuelleClusterBound.lean:166`:
+   for `z : Fin n → Fin (d+1) → ℂ`, takes the minimum
+   `Metric.infDist` of consecutive imaginary differences `Im(z_k -
+   z_{k-1})` to the closed complement of the open forward cone
+   `(openForwardConeSet d)ᶜ`. Returns `1` for `n = 0`.
+2. **`RuelleAnalyticClusterHypotheses.bound`** updated to include the
+   factor `(1 + (tubeBoundaryDist z₁)⁻¹)^M · (1 + (tubeBoundaryDist
+   z₂)⁻¹)^M` with new exponent `M`. Now matches Streater-Wightman
+   3.1.1 shape (and aligns with the proven
+   `fourierLaplaceExtMultiDim_vladimirov_growth` in
+   `OSReconstruction/SCV/PaleyWienerSchwartz.lean:3286`).
+3. **`L4SpectralData`** updated to mirror the new shape; the
+   conditional reduction `ruelle_analytic_cluster_bound_of`
+   re-proved with the regulator.
+4. **`wightman_l4_spectral_data_axiom`** now shipped (vetted "Likely
+   correct / Standard" by Gemini chat after the regulator fix);
+   discharges `RACH.bound` unconditionally.
+5. **Active sorry**: `W_analytic_cluster_integral_via_ruelle`
+   (`RuelleClusterBound.lean:718`) — the dominator-integrability
+   step. The new dominator includes the regulator factor
+   `(1 + (tubeBoundaryDist (wick z))⁻¹)^M` after Wick rotation,
+   which becomes `min_k (x_k 0 - x_{k-1} 0)`-style for OPTR
+   configs. For `M ≥ 1`, naive local integrability fails (the
+   diagonal singularity is codim-1). Resolution requires IBP in
+   the time differences, transferring derivatives onto Schwartz
+   `f, g` — Streater-Wightman §3.4 / Ruelle 1962. This is its own
+   ~1–2 week follow-up; the project Vladimirov-Tillmann
+   infrastructure (`bv_implies_fourier_support`,
+   `fl_representation_from_bv`, `fourierLaplaceExtMultiDim_*`)
+   provides the building blocks.
+
+PR forthcoming on `r2e/ruelle-l5-grind` → `myfork`.
 
 ## References
 
