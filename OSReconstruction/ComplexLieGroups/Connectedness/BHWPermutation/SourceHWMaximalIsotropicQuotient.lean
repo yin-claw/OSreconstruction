@@ -40,6 +40,19 @@ def BilinFormTotallyIsotropicSubspace
     (Q : Submodule ℂ V) : Prop :=
   ∀ {x y : V}, x ∈ Q → y ∈ Q → B x y = 0
 
+/-- A totally isotropic subspace maximal by finite dimension for a fixed
+bilinear form. -/
+structure BilinFormMaximalTotallyIsotropicSubspace
+    {V : Type*}
+    [AddCommGroup V] [Module ℂ V]
+    (B : LinearMap.BilinForm ℂ V) where
+  Q : Submodule ℂ V
+  Q_iso : BilinFormTotallyIsotropicSubspace B Q
+  maximal :
+    ∀ S : Submodule ℂ V,
+      BilinFormTotallyIsotropicSubspace B S →
+        Module.finrank ℂ S ≤ Module.finrank ℂ Q
+
 /-- Every finite-dimensional vector space with a bilinear form contains a
 totally isotropic subspace of maximal finite dimension. -/
 theorem bilinForm_maximalTotallyIsotropicSubspace_exists
@@ -78,6 +91,19 @@ theorem bilinForm_maximalTotallyIsotropicSubspace_exists
   have hle : Module.finrank ℂ S ≤ k :=
     Nat.le_findGreatest hS_bound hP_S
   simpa [k, hQ_rank] using hle
+
+/-- Packaged maximal isotropic subspace for a finite-dimensional bilinear
+form. -/
+noncomputable def bilinFormMaximalTotallyIsotropicSubspace
+    {V : Type*}
+    [AddCommGroup V] [Module ℂ V] [FiniteDimensional ℂ V]
+    (B : LinearMap.BilinForm ℂ V) :
+    BilinFormMaximalTotallyIsotropicSubspace B :=
+  let h := bilinForm_maximalTotallyIsotropicSubspace_exists B
+  let Q := Classical.choose h
+  { Q := Q
+    Q_iso := (Classical.choose_spec h).1
+    maximal := (Classical.choose_spec h).2 }
 
 /-- The image carrier of a linear map after quotienting its codomain by a
 submodule, defined by explicit quotient-class representatives. -/
@@ -375,6 +401,48 @@ theorem complexMinkowskiRelativeOrthogonalQuotient_maximalIsotropicSubspace_exis
             Module.finrank ℂ S ≤ Module.finrank ℂ Qbar :=
   bilinForm_maximalTotallyIsotropicSubspace_exists
     (complexMinkowskiRelativeOrthogonalQuotientForm (d := d) (N := N) RN)
+
+/-- Packaged maximal isotropic quotient subspace for the relative-orthogonal
+quotient form `Rperp / R`. -/
+noncomputable def complexMinkowskiRelativeOrthogonalQuotient_maximalIsotropicSubspace
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (RN : Submodule ℂ N) :
+    BilinFormMaximalTotallyIsotropicSubspace
+      (complexMinkowskiRelativeOrthogonalQuotientForm (d := d) (N := N) RN) :=
+  bilinFormMaximalTotallyIsotropicSubspace
+    (complexMinkowskiRelativeOrthogonalQuotientForm (d := d) (N := N) RN)
+
+/-- Specialized package for a maximal isotropic subspace of the
+relative-orthogonal quotient `Rperp / R`. -/
+structure ComplexMinkowskiRelativeOrthogonalQuotientMaximalPackage
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (RN : Submodule ℂ N) where
+  Q : Submodule ℂ
+    (complexMinkowskiRelativeOrthogonalIn (d := d) N RN ⧸
+      complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N) RN)
+  Q_iso :
+    BilinFormTotallyIsotropicSubspace
+      (complexMinkowskiRelativeOrthogonalQuotientForm (d := d) (N := N) RN) Q
+  maximal :
+    ∀ S : Submodule ℂ
+      (complexMinkowskiRelativeOrthogonalIn (d := d) N RN ⧸
+        complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N) RN),
+      BilinFormTotallyIsotropicSubspace
+        (complexMinkowskiRelativeOrthogonalQuotientForm (d := d) (N := N) RN) S →
+        Module.finrank ℂ S ≤ Module.finrank ℂ Q
+
+/-- Packaged specialized maximal isotropic quotient subspace. -/
+noncomputable def complexMinkowskiRelativeOrthogonalQuotient_maximalPackage
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (RN : Submodule ℂ N) :
+    ComplexMinkowskiRelativeOrthogonalQuotientMaximalPackage (d := d) (N := N) RN := by
+  let M :=
+    complexMinkowskiRelativeOrthogonalQuotient_maximalIsotropicSubspace
+      (d := d) (N := N) RN
+  exact { Q := M.Q, Q_iso := M.Q_iso, maximal := M.maximal }
 
 /-- Pair an isotropic test subspace `S` against the fixed subspace `R`, landing
 in the dual of `R`.  This is the first rank-nullity map in the compatible
@@ -708,6 +776,40 @@ def complexMinkowskiPairingKernelQuotientImage
     refine ⟨c • xker, ?_⟩
     simp
 
+/-- Rank-nullity for the concrete quotient image of `ker(S -> R*)`. -/
+theorem complexMinkowskiPairingKernelQuotientImage_finrank_add_inter
+    {d : ℕ}
+    {N R S : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_le : R ≤ N)
+    (hS_le : S ≤ N)
+    (hR_iso : ComplexMinkowskiTotallyIsotropicSubspace d R) :
+    Module.finrank ℂ
+        (complexMinkowskiPairingKernelQuotientImage
+          (d := d) (N := N) (R := R) (S := S) hR_le hS_le) +
+      Module.finrank ℂ (complexMinkowskiSubmoduleIn (d := d) R S) =
+        Module.finrank ℂ
+          (LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S)) := by
+  let RN := complexMinkowskiSubmoduleIn (d := d) N R
+  let Rperp := complexMinkowskiRelativeOrthogonalIn (d := d) N RN
+  let Rin : Submodule ℂ Rperp :=
+    complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N) RN
+  let A :
+      LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S) →ₗ[ℂ] Rperp :=
+    complexMinkowskiPairingKerToRelativeOrthogonal
+      (d := d) (N := N) (R := R) (S := S) hR_le hS_le
+  change
+    Module.finrank ℂ
+        (linearMapQuotientImageCarrier
+          (V := Rperp)
+          (W := LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S))
+          Rin A) +
+      Module.finrank ℂ (complexMinkowskiSubmoduleIn (d := d) R S) =
+        Module.finrank ℂ
+          (LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S))
+  exact
+    complexMinkowskiPairingKer_genericQuotientImage_finrank_add_inter
+      (d := d) (N := N) (R := R) (S := S) hR_le hS_le hR_iso
+
 /-- The quotient-image carrier of `ker(S -> R*)` is isotropic for the induced
 quotient form when `S` is totally isotropic. -/
 theorem complexMinkowskiPairingKernelQuotientImage_isotropic
@@ -736,6 +838,40 @@ theorem complexMinkowskiPairingKernelQuotientImage_isotropic
           (d := d) (N := N) (R := R) (S := S) hR_le hS_le yker)) = 0
   rw [complexMinkowskiRelativeOrthogonalQuotientForm_mk]
   exact hS_iso (xker : S) (yker : S)
+
+/-- A maximal isotropic quotient subspace bounds the concrete quotient image of
+`ker(S -> R*)`. -/
+theorem complexMinkowskiPairingKernelQuotientImage_finrank_le_of_maximal
+    {d : ℕ}
+    {N R S : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_le : R ≤ N)
+    (hS_le : S ≤ N)
+    (hS_iso : ComplexMinkowskiTotallyIsotropicSubspace d S)
+    (Qbar : Submodule ℂ
+      (complexMinkowskiRelativeOrthogonalIn (d := d) N
+          (complexMinkowskiSubmoduleIn (d := d) N R) ⧸
+        complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N)
+          (complexMinkowskiSubmoduleIn (d := d) N R)))
+    (hQbar_max :
+      ∀ T : Submodule ℂ
+        (complexMinkowskiRelativeOrthogonalIn (d := d) N
+            (complexMinkowskiSubmoduleIn (d := d) N R) ⧸
+          complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N)
+            (complexMinkowskiSubmoduleIn (d := d) N R)),
+        BilinFormTotallyIsotropicSubspace
+          (complexMinkowskiRelativeOrthogonalQuotientForm (d := d) (N := N)
+            (complexMinkowskiSubmoduleIn (d := d) N R))
+          T →
+          Module.finrank ℂ T ≤ Module.finrank ℂ Qbar) :
+    Module.finrank ℂ
+      (complexMinkowskiPairingKernelQuotientImage
+        (d := d) (N := N) (R := R) (S := S) hR_le hS_le) ≤
+      Module.finrank ℂ Qbar :=
+  hQbar_max
+    (complexMinkowskiPairingKernelQuotientImage
+      (d := d) (N := N) (R := R) (S := S) hR_le hS_le)
+    (complexMinkowskiPairingKernelQuotientImage_isotropic
+      (d := d) (N := N) (R := R) (S := S) hR_le hS_le hS_iso)
 
 /-- The preimage in `Rperp` of a subspace of the quotient `Rperp / R`. -/
 def complexMinkowskiRelativeOrthogonalQuotientPreimageInRperp
@@ -1016,5 +1152,83 @@ theorem complexMinkowskiRelativeOrthogonalQuotientPreimage_isotropic
   exact
     complexMinkowskiRelativeOrthogonalQuotientPreimageInN_pair_zero
       (d := d) (N := N) RN Qbar hQbar_pair_zero hxN hyN
+
+/-- Candidate source subspace obtained as the preimage of a packaged maximal
+isotropic quotient subspace.  This name hides the long quotient-preimage
+expression in later field statements. -/
+@[irreducible] def complexMinkowskiRelativeOrthogonalQuotientPreimageOfMaximal
+    {d : ℕ}
+    {N R : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (M : ComplexMinkowskiRelativeOrthogonalQuotientMaximalPackage
+      (d := d) (N := N) (complexMinkowskiSubmoduleIn (d := d) N R)) :
+    Submodule ℂ (Fin (d + 1) → ℂ) :=
+  complexMinkowskiRelativeOrthogonalQuotientPreimage (d := d) N
+    (complexMinkowskiSubmoduleIn (d := d) N R) M.Q
+
+/-- Rank comparison against a candidate `Q` whose dimension is
+`finrank R + finrank M.Q`, where `M.Q` is maximal isotropic in `Rperp / R`. -/
+theorem complexMinkowskiSubspace_finrank_le_of_quotient_maximal
+    {d : ℕ}
+    {N R S Q : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_le : R ≤ N)
+    (hS_le : S ≤ N)
+    (hR_iso : ComplexMinkowskiTotallyIsotropicSubspace d R)
+    (hS_iso : ComplexMinkowskiTotallyIsotropicSubspace d S)
+    (M : ComplexMinkowskiRelativeOrthogonalQuotientMaximalPackage
+      (d := d) (N := N) (complexMinkowskiSubmoduleIn (d := d) N R))
+    (hQ_fin :
+      Module.finrank ℂ Q = Module.finrank ℂ R + Module.finrank ℂ M.Q) :
+    Module.finrank ℂ S ≤ Module.finrank ℂ Q := by
+  have hS_rank :
+      Module.finrank ℂ S =
+        Module.finrank ℂ
+            (LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S)) +
+          Module.finrank ℂ
+            (LinearMap.range (complexMinkowskiPairingToSubmoduleDual d R S)) := by
+    have h :=
+      LinearMap.finrank_range_add_finrank_ker
+        (complexMinkowskiPairingToSubmoduleDual d R S)
+    rw [add_comm] at h
+    exact h.symm
+  have hker_rank :=
+    complexMinkowskiPairingKernelQuotientImage_finrank_add_inter
+      (d := d) (N := N) (R := R) (S := S) hR_le hS_le hR_iso
+  have hrange :
+      Module.finrank ℂ
+          (LinearMap.range (complexMinkowskiPairingToSubmoduleDual d R S)) +
+        Module.finrank ℂ (complexMinkowskiSubmoduleIn (d := d) R S) ≤
+          Module.finrank ℂ R :=
+    complexMinkowskiPairingToSubmoduleDual_range_add_inter_finrank_le
+      (d := d) (R := R) (S := S) hS_iso
+  have himage :
+      Module.finrank ℂ
+        (complexMinkowskiPairingKernelQuotientImage
+          (d := d) (N := N) (R := R) (S := S) hR_le hS_le) ≤
+        Module.finrank ℂ M.Q :=
+    complexMinkowskiPairingKernelQuotientImage_finrank_le_of_maximal
+      (d := d) (N := N) (R := R) (S := S)
+      hR_le hS_le hS_iso M.Q M.maximal
+  exact quotient_rankNullity_cancel_le hS_rank hker_rank hrange himage hQ_fin
+
+/-- Global maximality of a candidate `Q` follows from the quotient-maximal
+dimension formula. -/
+theorem complexMinkowskiSubspace_global_maximal_of_quotient_maximal
+    {d : ℕ}
+    {N R Q : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_le : R ≤ N)
+    (hR_iso : ComplexMinkowskiTotallyIsotropicSubspace d R)
+    (M : ComplexMinkowskiRelativeOrthogonalQuotientMaximalPackage
+      (d := d) (N := N) (complexMinkowskiSubmoduleIn (d := d) N R))
+    (hQ_fin :
+      Module.finrank ℂ Q = Module.finrank ℂ R + Module.finrank ℂ M.Q) :
+    ∀ S : Submodule ℂ (Fin (d + 1) → ℂ),
+      S ≤ N →
+      ComplexMinkowskiTotallyIsotropicSubspace d S →
+      Module.finrank ℂ S ≤ Module.finrank ℂ Q := by
+  intro S hS_le hS_iso
+  exact
+    complexMinkowskiSubspace_finrank_le_of_quotient_maximal
+      (d := d) (N := N) (R := R) (S := S) (Q := Q)
+      hR_le hS_le hR_iso hS_iso M hQ_fin
 
 end BHW
