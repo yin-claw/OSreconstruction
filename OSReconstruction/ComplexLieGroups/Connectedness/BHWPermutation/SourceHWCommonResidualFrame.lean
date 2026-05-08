@@ -504,4 +504,79 @@ theorem directSum_identity_sum_isotropicEmbedding_preserves
   rw [hfour, hfour]
   rw [h_mx_Ery, h_Erx_my, h_mx_ry, h_rx_my, hE_preserves rx ry]
 
+/-- A totally isotropic subspace embeds injectively into the span of an
+independent totally isotropic frame once its finrank is no larger than the
+frame length.  Pairing preservation is automatic because both source and
+target residual blocks are totally isotropic. -/
+theorem complexMinkowski_totallyIsotropic_embedding_into_frame
+    {d s : ℕ}
+    {R : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {q : Fin s → Fin (d + 1) → ℂ}
+    (hq_independent : LinearIndependent ℂ q)
+    (hq_pair_zero :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (q c') = 0)
+    (hR_iso : ComplexMinkowskiTotallyIsotropicSubspace d R)
+    (hdim : Module.finrank ℂ R ≤ s) :
+    ∃ E : R →ₗ[ℂ] (Fin (d + 1) → ℂ),
+      Function.Injective E ∧
+      (∀ x : R, E x ∈ Submodule.span ℂ (Set.range q)) ∧
+      ∀ x y : R,
+        sourceComplexMinkowskiInner d (E x) (E y) =
+          sourceComplexMinkowskiInner d
+            (x : Fin (d + 1) → ℂ)
+            (y : Fin (d + 1) → ℂ) := by
+  let k := Module.finrank ℂ R
+  let b := Module.finBasis ℂ R
+  let ι : Fin k → Fin s := Fin.castLE hdim
+  let L : (Fin k → ℂ) →ₗ[ℂ] (Fin (d + 1) → ℂ) := {
+    toFun := fun a => ∑ i : Fin k, a i • q (ι i)
+    map_add' := by
+      intro a b'
+      ext μ
+      simp [Pi.add_apply, Finset.sum_add_distrib, add_smul]
+    map_smul' := by
+      intro c a
+      ext μ
+      simp [Pi.smul_apply, smul_eq_mul, Finset.mul_sum, mul_assoc] }
+  let E : R →ₗ[ℂ] (Fin (d + 1) → ℂ) :=
+    L.comp b.equivFunL.toLinearMap
+  refine ⟨E, ?_, ?_, ?_⟩
+  · intro x y hxy
+    apply b.equivFunL.injective
+    ext i
+    have hli_sub : LinearIndependent ℂ (fun i : Fin k => q (ι i)) :=
+      hq_independent.comp ι (Fin.castLE_injective hdim)
+    have hsum :
+        (∑ i : Fin k,
+          (b.equivFunL x - b.equivFunL y) i • q (ι i)) = 0 := by
+      have hdiff : E (x - y) = 0 := by
+        rw [map_sub, hxy, sub_self]
+      simpa [E, L, sub_eq_add_neg, Pi.sub_apply] using hdiff
+    have hcoeff := Fintype.linearIndependent_iff.mp hli_sub
+      (fun i : Fin k => (b.equivFunL x - b.equivFunL y) i) hsum
+    have hi := hcoeff i
+    exact sub_eq_zero.mp (by simpa [Pi.sub_apply] using hi)
+  · intro x
+    change (∑ i : Fin k, b.equivFunL x i • q (ι i)) ∈
+      Submodule.span ℂ (Set.range q)
+    exact Submodule.sum_mem _ fun i _ =>
+      Submodule.smul_mem _ (b.equivFunL x i)
+        (Submodule.subset_span ⟨ι i, rfl⟩)
+  · intro x y
+    have hQiso :=
+      complexMinkowskiTotallyIsotropic_span_range d s q hq_pair_zero
+    have hEx_mem : E x ∈ Submodule.span ℂ (Set.range q) := by
+      change (∑ i : Fin k, b.equivFunL x i • q (ι i)) ∈
+        Submodule.span ℂ (Set.range q)
+      exact Submodule.sum_mem _ fun i _ =>
+        Submodule.smul_mem _ (b.equivFunL x i)
+          (Submodule.subset_span ⟨ι i, rfl⟩)
+    have hEy_mem : E y ∈ Submodule.span ℂ (Set.range q) := by
+      change (∑ i : Fin k, b.equivFunL y i • q (ι i)) ∈
+        Submodule.span ℂ (Set.range q)
+      exact Submodule.sum_mem _ fun i _ =>
+        Submodule.smul_mem _ (b.equivFunL y i)
+          (Submodule.subset_span ⟨ι i, rfl⟩)
+    rw [hQiso ⟨E x, hEx_mem⟩ ⟨E y, hEy_mem⟩, hR_iso x y]
+
 end BHW
