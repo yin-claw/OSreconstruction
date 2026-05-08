@@ -1,5 +1,6 @@
 import OSReconstruction.Wightman.Reconstruction.WickRotation.OSToWightmanLocalityOS45BHWJost
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedContinuationProducers
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedScalarRepresentative
 
 /-!
 # OS45 BHW/Jost oriented continuation consumers
@@ -84,6 +85,100 @@ theorem OS45SourcePatchBHWJostHullData.wick_id_forwardTube_of_ordered
   exact
     BHW.wickRotate_mem_BHW_forwardTube_of_ordered
       (d := d) (n := n) (hV_ordered x hx)
+
+namespace OS45SourcePatchBHWJostHullData
+
+variable {hd : 2 ≤ d}
+variable {OS : OsterwalderSchraderAxioms d}
+variable {lgc : OSLinearGrowthCondition d OS}
+variable {i : Fin n} {hi : i.val + 1 < n}
+variable {V : Set (NPointDomain d n)}
+
+/-- The ordinary source-oriented scalar representative supplies the normalized
+initial chart used by the strict continuation packet on an OS45 source-patch
+hull.
+
+This is only the initial-chart packaging step.  The scalar representative
+itself, the source-normal-form transfer patches, one-step uniqueness, and
+closed-path comparison remain the genuine analytic inputs. -/
+noncomputable def ordinaryInitialChartOfSourceOrientedScalarRepresentative
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V)
+    (S : BHW.SourceOrientedScalarRepresentativeData
+      (d := d) n (bvt_F OS lgc n)) :
+    BHWJostLocalOrientedContinuationChart hd n H.τ H.U :=
+  S.toExtendedTubeInitialChart
+    (τ := H.τ) (U := H.U)
+    (hET_sub_U := by
+      intro z hz
+      rw [H.U_eq]
+      exact
+        BHW.mem_os45SourcePatchBHWJostHull_of_extendedTube
+          (d := d) (n := n) H.τ H.base_wick_mem_extendedTube hz)
+    (hF_ext_holo :=
+      BHW.differentiableOn_extendF_bvt_F_extendedTube
+        (d := d) OS lgc n)
+
+theorem ordinaryInitialChartOfSourceOrientedScalarRepresentative_mem
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V)
+    (S : BHW.SourceOrientedScalarRepresentativeData
+      (d := d) n (bvt_F OS lgc n))
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hz : z ∈ BHW.ExtendedTube d n) :
+    z ∈
+      (H.ordinaryInitialChartOfSourceOrientedScalarRepresentative S).carrier :=
+  hz
+
+theorem ordinaryInitialChartOfSourceOrientedScalarRepresentative_branch
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V)
+    (S : BHW.SourceOrientedScalarRepresentativeData
+      (d := d) n (bvt_F OS lgc n))
+    {z : Fin n → Fin (d + 1) → ℂ} :
+    (H.ordinaryInitialChartOfSourceOrientedScalarRepresentative S).branch z =
+      BHW.extendF (bvt_F OS lgc n) z :=
+  rfl
+
+/-- The same scalar representative supplies the adjacent permuted initial
+chart on the OS45 hull.  The oriented germ is precomposed by the source-label
+permutation stored in `H.τ`. -/
+noncomputable def adjacentInitialChartOfSourceOrientedScalarRepresentative
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V)
+    (S : BHW.SourceOrientedScalarRepresentativeData
+      (d := d) n (bvt_F OS lgc n)) :
+    BHWJostLocalOrientedContinuationChart hd n H.τ H.U :=
+  S.toPermutedExtendedTubeInitialChart
+    (τ := H.τ) (U := H.U)
+    (hPermET_sub_U := H.adjacentExtendedTubePreimage_subset_U)
+    (hF_perm_holo :=
+      BHW.differentiableOn_extendF_bvt_F_permAct_preimageExtendedTube
+        (d := d) OS lgc n H.τ)
+
+theorem adjacentInitialChartOfSourceOrientedScalarRepresentative_mem
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V)
+    (S : BHW.SourceOrientedScalarRepresentativeData
+      (d := d) n (bvt_F OS lgc n))
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hz : BHW.permAct (d := d) H.τ z ∈ BHW.ExtendedTube d n) :
+    z ∈
+      (H.adjacentInitialChartOfSourceOrientedScalarRepresentative S).carrier :=
+  hz
+
+theorem adjacentInitialChartOfSourceOrientedScalarRepresentative_branch
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V)
+    (S : BHW.SourceOrientedScalarRepresentativeData
+      (d := d) n (bvt_F OS lgc n))
+    {z : Fin n → Fin (d + 1) → ℂ} :
+    (H.adjacentInitialChartOfSourceOrientedScalarRepresentative S).branch z =
+      BHW.extendF (bvt_F OS lgc n)
+        (BHW.permAct (d := d) H.τ z) :=
+  rfl
+
+end OS45SourcePatchBHWJostHullData
 
 /-- Exact analytic inputs needed by the checked strict source-oriented
 continuation consumer.  This is intentionally an input surface, not a theorem:

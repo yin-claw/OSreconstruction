@@ -49323,7 +49323,34 @@ Proof decomposition of this theorem, without hiding the analytic work:
             inputs explicit: `patchAt`, `uniformDescent`,
             `uniformDescent_unique`, `retargetedComparison`, initial chart
             `C0`, the start patch, and initial-chart agreement on
-            `Ω0 ∩ H.U`.  The checked ordinary branch consumer supplies its
+            `Ω0 ∩ H.U`.  Both initial-chart subfields are now checked from
+            the ordinary source-oriented scalar representative:
+            `BHW.SourceOrientedScalarRepresentativeData.toExtendedTubeInitialChart`
+            packages a proved ordinary source-oriented scalar representative
+            as a `BHWJostLocalOrientedContinuationChart` on
+            `BHW.ExtendedTube`, and
+            `BHW.OS45SourcePatchBHWJostHullData.ordinaryInitialChartOfSourceOrientedScalarRepresentative`
+            specializes it to the OS45 hull.  Its proof is only packaging:
+            the carrier is `BHW.ExtendedTube`, the Lorentz-step provenance is
+            the identity Lorentz action, the oriented domain is the
+            representative's `sourceOrientedExtendedTubeDomain`, and
+            containment in `H.U` is
+            `BHW.mem_os45SourcePatchBHWJostHull_of_extendedTube`.  Therefore
+            the ordinary packet's initial chart is available once
+            `BHW.sourceOrientedScalarRepresentativeData_bvt_F` is proved.  The
+            adjacent packet uses the separate checked
+            `BHW.SourceOrientedScalarRepresentativeData.toPermutedExtendedTubeInitialChart`,
+            which precomposes the oriented germ by source-label permutation for
+            `z ↦ BHW.extendF (bvt_F OS lgc n) (BHW.permAct H.τ z)` on the
+            adjacent preimage of `BHW.ExtendedTube`.  Its OS45 specialization
+            is
+            `BHW.OS45SourcePatchBHWJostHullData.adjacentInitialChartOfSourceOrientedScalarRepresentative`,
+            using
+            `BHW.OS45SourcePatchBHWJostHullData.adjacentExtendedTubePreimage_subset_U`
+            for hull containment and the existing permuted extended-tube
+            holomorphy of `extendF`.  This is a source-permutation/oriented
+            invariant construction, not a downstream common-boundary-envelope
+            input.  The checked ordinary branch consumer supplies its
             Wick trace through `BHW.extendF_bvt_F_wickRotate_eq_of_ordered`;
             the checked adjacent branch consumer supplies the real trace and
             initial-domain agreement, with the adjacent Wick trace still a

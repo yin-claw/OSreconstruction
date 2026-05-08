@@ -12,7 +12,7 @@ bookkeeping after the analytic continuation data has been supplied.
 
 noncomputable section
 
-open Complex Topology MeasureTheory
+open Complex Topology MeasureTheory NormedSpace
 
 namespace BHW
 
@@ -660,6 +660,78 @@ theorem adjacentExtendedTubePreimage_meets_U
         H.U).Nonempty :=
   ⟨BHW.realEmbed H.x0, H.base_real_mem_adjacentExtendedTubePreimage,
     H.base_real_mem_U⟩
+
+/-- The full adjacent preimage of the ordinary extended tube lies in the
+stored OS45 source-patch hull.  The proof joins the Wick base point to the
+real seed inside the ordinary extended tube, then joins that real seed to the
+target point inside the adjacent preimage. -/
+theorem adjacentExtendedTubePreimage_subset_U
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V) :
+    {z | BHW.permAct (d := d) H.τ z ∈ BHW.ExtendedTube d n} ⊆ H.U := by
+  intro z hz
+  rw [H.U_eq]
+  letI : LocallyConvexSpace ℝ ℂ := NormedSpace.toLocallyConvexSpace
+  letI : LocallyConvexSpace ℝ (Fin (d + 1) → ℂ) := Pi.locallyConvexSpace
+  letI : LocallyConvexSpace ℝ (Fin n → Fin (d + 1) → ℂ) :=
+    Pi.locallyConvexSpace
+  let A : Set (Fin n → Fin (d + 1) → ℂ) :=
+    {z | BHW.permAct (d := d) H.τ z ∈ BHW.ExtendedTube d n}
+  have hET_path : IsPathConnected (BHW.ExtendedTube d n) :=
+    (IsOpen.isConnected_iff_isPathConnected
+      (U := BHW.ExtendedTube d n) BHW.isOpen_extendedTube).mp
+      (BHW.isConnected_extendedTube (d := d) (n := n))
+  have hjoin_base_real :
+      JoinedIn (BHW.os45SourcePatchBHWJostAmbient d n H.τ)
+        H.z0 (BHW.realEmbed H.x0) :=
+    (hET_path.joinedIn H.z0 H.base_wick_mem_extendedTube
+      (BHW.realEmbed H.x0) H.base_real_mem_extendedTube).mono
+      (by
+        intro w hw
+        exact Or.inl hw)
+  have hA_open : IsOpen A :=
+    BHW.isOpen_extendedTube.preimage
+      (BHW.continuous_permAct (d := d) (n := n) H.τ)
+  have hA_preconnected : IsPreconnected A := by
+    have hA_eq :
+        A =
+          (fun w : Fin n → Fin (d + 1) → ℂ =>
+            BHW.permAct (d := d) H.τ⁻¹ w) ''
+            BHW.ExtendedTube d n := by
+      ext y
+      constructor
+      · intro hy
+        refine ⟨BHW.permAct (d := d) H.τ y, hy, ?_⟩
+        ext k μ
+        simp [BHW.permAct]
+      · rintro ⟨w, hw, rfl⟩
+        have hcancel :
+            BHW.permAct (d := d) H.τ
+                (BHW.permAct (d := d) H.τ⁻¹ w) = w := by
+          ext k μ
+          simp [BHW.permAct]
+        simpa [A, hcancel] using hw
+    have hpre :
+        IsPreconnected
+          ((fun w : Fin n → Fin (d + 1) → ℂ =>
+            BHW.permAct (d := d) H.τ⁻¹ w) ''
+            BHW.ExtendedTube d n) :=
+      (BHW.isConnected_extendedTube (d := d) (n := n)).2.image _
+        (BHW.continuous_permAct (d := d) (n := n) H.τ⁻¹).continuousOn
+    simpa [hA_eq] using hpre
+  have hA_connected : IsConnected A :=
+    ⟨⟨BHW.realEmbed H.x0, H.base_real_mem_adjacentExtendedTubePreimage⟩,
+      hA_preconnected⟩
+  have hA_path : IsPathConnected A :=
+    (IsOpen.isConnected_iff_isPathConnected (U := A) hA_open).mp
+      hA_connected
+  have hjoin_real_z :
+      JoinedIn (BHW.os45SourcePatchBHWJostAmbient d n H.τ)
+        (BHW.realEmbed H.x0) z :=
+    (hA_path.joinedIn (BHW.realEmbed H.x0)
+      H.base_real_mem_adjacentExtendedTubePreimage z hz).mono
+      H.adjacentExtendedTubePreimage_subset_ambient
+  exact hjoin_base_real.trans hjoin_real_z
 
 end OS45SourcePatchBHWJostHullData
 

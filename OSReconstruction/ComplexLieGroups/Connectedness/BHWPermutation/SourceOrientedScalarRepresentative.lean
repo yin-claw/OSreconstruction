@@ -1,3 +1,4 @@
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedContinuation
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedRankDeficientTubeResidualPolydisc
 
 /-!
@@ -33,6 +34,282 @@ structure SourceOrientedScalarRepresentativeData
   branch_eq :
     ∀ w, w ∈ ExtendedTube d n →
       Phi (sourceOrientedMinkowskiInvariant d n w) = extendF F w
+
+/-- A source-oriented scalar representative gives the normalized initial
+oriented continuation chart on the ordinary extended tube, for any OS45
+continuation ambient `U` containing that extended tube.
+
+The hard input is still the scalar representative itself; this constructor
+only packages its oriented pullback law into the local chart API used by the
+strict BHW/Jost continuation chain. -/
+noncomputable def SourceOrientedScalarRepresentativeData.toExtendedTubeInitialChart
+    {d : ℕ}
+    [NeZero d]
+    {hd : 2 ≤ d}
+    {n : ℕ}
+    {F : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+    (S : SourceOrientedScalarRepresentativeData (d := d) n F)
+    (τ : Equiv.Perm (Fin n))
+    (U : Set (Fin n → Fin (d + 1) → ℂ))
+    (hET_sub_U : ExtendedTube d n ⊆ U)
+    (hF_ext_holo : DifferentiableOn ℂ (extendF F) (ExtendedTube d n)) :
+    BHWJostLocalOrientedContinuationChart hd n τ U where
+  carrier := ExtendedTube d n
+  carrier_open := isOpen_extendedTube
+  carrier_preconnected := (isConnected_extendedTube (d := d) (n := n)).2
+  carrier_sub_U := hET_sub_U
+  carrier_is_lorentz_step := by
+    refine ⟨ExtendedTube d n, isOpen_extendedTube, ?_, 1, ?_⟩
+    · intro z hz
+      exact Or.inl hz
+    · ext z
+      constructor
+      · intro hz
+        exact ⟨z, hz, by simp [complexLorentzAction_one]⟩
+      · rintro ⟨u, hu, rfl⟩
+        simpa [complexLorentzAction_one] using hu
+  orientedDomain := S.U
+  oriented_relOpen := S.U_relOpen
+  oriented_preconnected := S.U_connected.2
+  oriented_sub_variety := by
+    rw [S.U_eq]
+    exact sourceOrientedExtendedTubeDomain_subset_variety d n
+  oriented_mem := by
+    intro z hz
+    rw [S.U_eq]
+    exact ⟨z, hz, rfl⟩
+  oriented_realizes := by
+    intro G hG
+    rw [S.U_eq] at hG
+    rcases hG with ⟨z, hz, hG⟩
+    exact ⟨z, hz, hG⟩
+  Psi := S.Phi
+  Psi_holo := S.Phi_holomorphic
+  branch := extendF F
+  branch_eq_orientedPullback := by
+    intro z hz
+    exact (S.branch_eq z hz).symm
+  branch_holo := hF_ext_holo
+  branch_same_sourceOrientedInvariant := by
+    intro z w hz hw hzw
+    calc
+      extendF F z = S.Phi (sourceOrientedMinkowskiInvariant d n z) :=
+        (S.branch_eq z hz).symm
+      _ = S.Phi (sourceOrientedMinkowskiInvariant d n w) := by rw [hzw]
+      _ = extendF F w := S.branch_eq w hw
+  branch_complexLorentzInvariant := by
+    intro Λ z hz hΛz
+    calc
+      extendF F (complexLorentzAction Λ z) =
+          S.Phi
+            (sourceOrientedMinkowskiInvariant d n
+              (complexLorentzAction Λ z)) :=
+        (S.branch_eq (complexLorentzAction Λ z) hΛz).symm
+      _ = S.Phi (sourceOrientedMinkowskiInvariant d n z) := by
+        rw [sourceOrientedMinkowskiInvariant_complexLorentzAction]
+      _ = extendF F z := S.branch_eq z hz
+
+/-- A source-oriented scalar representative also gives the normalized initial
+oriented continuation chart on a permuted extended-tube preimage.
+
+The oriented germ is the ordinary representative precomposed with the source
+permutation on oriented invariants.  This is the chart needed for the adjacent
+initial branch `z ↦ extendF F (permAct τ z)` in the OS45 strict route. -/
+noncomputable def SourceOrientedScalarRepresentativeData.toPermutedExtendedTubeInitialChart
+    {d : ℕ}
+    [NeZero d]
+    {hd : 2 ≤ d}
+    {n : ℕ}
+    {F : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+    (S : SourceOrientedScalarRepresentativeData (d := d) n F)
+    (τ : Equiv.Perm (Fin n))
+    (U : Set (Fin n → Fin (d + 1) → ℂ))
+    (hPermET_sub_U :
+      {z : Fin n → Fin (d + 1) → ℂ |
+        permAct (d := d) τ z ∈ ExtendedTube d n} ⊆ U)
+    (hF_perm_holo :
+      DifferentiableOn ℂ
+        (fun z : Fin n → Fin (d + 1) → ℂ =>
+          extendF F (permAct (d := d) τ z))
+        {z | permAct (d := d) τ z ∈ ExtendedTube d n}) :
+    BHWJostLocalOrientedContinuationChart hd n τ U where
+  carrier := {z | permAct (d := d) τ z ∈ ExtendedTube d n}
+  carrier_open :=
+    isOpen_extendedTube.preimage (continuous_permAct (d := d) (n := n) τ)
+  carrier_preconnected := by
+    have hcarrier_eq :
+        {z : Fin n → Fin (d + 1) → ℂ |
+          permAct (d := d) τ z ∈ ExtendedTube d n} =
+          (fun z : Fin n → Fin (d + 1) → ℂ =>
+            permAct (d := d) τ⁻¹ z) '' ExtendedTube d n := by
+      ext z
+      constructor
+      · intro hz
+        refine ⟨permAct (d := d) τ z, hz, ?_⟩
+        ext k μ
+        simp [permAct]
+      · rintro ⟨w, hw, rfl⟩
+        have hcancel :
+            permAct (d := d) τ (permAct (d := d) τ⁻¹ w) = w := by
+          ext k μ
+          simp [permAct]
+        simpa [hcancel] using hw
+    have hpre :
+        IsPreconnected
+          ((fun z : Fin n → Fin (d + 1) → ℂ =>
+            permAct (d := d) τ⁻¹ z) '' ExtendedTube d n) :=
+      (isConnected_extendedTube (d := d) (n := n)).2.image _
+        (continuous_permAct (d := d) (n := n) τ⁻¹).continuousOn
+    simpa [hcarrier_eq] using hpre
+  carrier_sub_U := hPermET_sub_U
+  carrier_is_lorentz_step := by
+    refine
+      ⟨{z : Fin n → Fin (d + 1) → ℂ |
+          permAct (d := d) τ z ∈ ExtendedTube d n},
+        isOpen_extendedTube.preimage
+          (continuous_permAct (d := d) (n := n) τ),
+        ?_, 1, ?_⟩
+    · intro z hz
+      exact Or.inr hz
+    · ext z
+      constructor
+      · intro hz
+        exact ⟨z, hz, by simp [complexLorentzAction_one]⟩
+      · rintro ⟨u, hu, rfl⟩
+        simpa [complexLorentzAction_one] using hu
+  orientedDomain :=
+    {G : SourceOrientedGramData d n |
+      sourcePermuteOrientedGram d n τ G ∈ S.U}
+  oriented_relOpen :=
+    S.U_relOpen.preimage_sourcePermuteOrientedGram (d := d) (n := n) τ
+  oriented_preconnected := by
+    have hdomain_eq :
+        {G : SourceOrientedGramData d n |
+          sourcePermuteOrientedGram d n τ G ∈ S.U} =
+          (fun G : SourceOrientedGramData d n =>
+            sourcePermuteOrientedGram d n τ⁻¹ G) '' S.U := by
+      ext G
+      constructor
+      · intro hG
+        refine ⟨sourcePermuteOrientedGram d n τ G, hG, ?_⟩
+        exact sourcePermuteOrientedGram_inv_mul (d := d) (n := n) τ G
+      · rintro ⟨H, hH, rfl⟩
+        have hcancel :
+            sourcePermuteOrientedGram d n τ
+                (sourcePermuteOrientedGram d n τ⁻¹ H) = H := by
+          simpa using
+            sourcePermuteOrientedGram_inv_mul
+              (d := d) (n := n) τ⁻¹ H
+        change
+          sourcePermuteOrientedGram d n τ
+              (sourcePermuteOrientedGram d n τ⁻¹ H) ∈ S.U
+        rw [hcancel]
+        exact hH
+    have hpre :
+        IsPreconnected
+          ((fun G : SourceOrientedGramData d n =>
+            sourcePermuteOrientedGram d n τ⁻¹ G) '' S.U) :=
+      S.U_connected.2.image _
+        (continuous_sourcePermuteOrientedGram
+          (d := d) (n := n) τ⁻¹).continuousOn
+    simpa [hdomain_eq] using hpre
+  oriented_sub_variety := by
+    intro G hG
+    have hperm_var :
+        sourcePermuteOrientedGram d n τ G ∈
+          sourceOrientedGramVariety d n := by
+      rw [S.U_eq] at hG
+      exact sourceOrientedExtendedTubeDomain_subset_variety d n hG
+    exact
+      (sourcePermuteOrientedGram_mem_variety_iff
+        (d := d) (n := n) τ G).1 hperm_var
+  oriented_mem := by
+    intro z hz
+    rw [S.U_eq]
+    change
+      sourcePermuteOrientedGram d n τ
+          (sourceOrientedMinkowskiInvariant d n z) ∈
+        sourceOrientedExtendedTubeDomain d n
+    rw [← sourceOrientedMinkowskiInvariant_permAct
+      (d := d) (n := n) τ z]
+    exact ⟨permAct (d := d) τ z, hz, rfl⟩
+  oriented_realizes := by
+    intro G hG
+    rw [S.U_eq] at hG
+    rcases hG with ⟨w, hw, hwG⟩
+    refine ⟨permAct (d := d) τ⁻¹ w, ?_, ?_⟩
+    · have hcancel :
+          permAct (d := d) τ (permAct (d := d) τ⁻¹ w) = w := by
+        ext k μ
+        simp [permAct]
+      simpa [hcancel] using hw
+    · calc
+        sourceOrientedMinkowskiInvariant d n
+            (permAct (d := d) τ⁻¹ w) =
+            sourcePermuteOrientedGram d n τ⁻¹
+              (sourceOrientedMinkowskiInvariant d n w) :=
+          sourceOrientedMinkowskiInvariant_permAct
+            (d := d) (n := n) τ⁻¹ w
+        _ = sourcePermuteOrientedGram d n τ⁻¹
+              (sourcePermuteOrientedGram d n τ G) := by rw [hwG]
+        _ = G := sourcePermuteOrientedGram_inv_mul
+          (d := d) (n := n) τ G
+  Psi := fun G => S.Phi (sourcePermuteOrientedGram d n τ G)
+  Psi_holo :=
+    S.Phi_holomorphic.precomp_sourcePermuteOrientedGram
+      (d := d) (n := n) τ
+  branch := fun z => extendF F (permAct (d := d) τ z)
+  branch_eq_orientedPullback := by
+    intro z hz
+    calc
+      extendF F (permAct (d := d) τ z) =
+          S.Phi
+            (sourceOrientedMinkowskiInvariant d n
+              (permAct (d := d) τ z)) :=
+        (S.branch_eq (permAct (d := d) τ z) hz).symm
+      _ = S.Phi
+            (sourcePermuteOrientedGram d n τ
+              (sourceOrientedMinkowskiInvariant d n z)) := by
+        rw [sourceOrientedMinkowskiInvariant_permAct]
+  branch_holo := hF_perm_holo
+  branch_same_sourceOrientedInvariant := by
+    intro z w hz hw hzw
+    calc
+      extendF F (permAct (d := d) τ z) =
+          S.Phi
+            (sourcePermuteOrientedGram d n τ
+              (sourceOrientedMinkowskiInvariant d n z)) := by
+        rw [← sourceOrientedMinkowskiInvariant_permAct
+          (d := d) (n := n) τ z]
+        exact (S.branch_eq (permAct (d := d) τ z) hz).symm
+      _ = S.Phi
+            (sourcePermuteOrientedGram d n τ
+              (sourceOrientedMinkowskiInvariant d n w)) := by rw [hzw]
+      _ = extendF F (permAct (d := d) τ w) := by
+        rw [← sourceOrientedMinkowskiInvariant_permAct
+          (d := d) (n := n) τ w]
+        exact S.branch_eq (permAct (d := d) τ w) hw
+  branch_complexLorentzInvariant := by
+    intro Λ z hz hΛz
+    calc
+      extendF F (permAct (d := d) τ (complexLorentzAction Λ z)) =
+          S.Phi
+            (sourcePermuteOrientedGram d n τ
+              (sourceOrientedMinkowskiInvariant d n
+                (complexLorentzAction Λ z))) := by
+        rw [← sourceOrientedMinkowskiInvariant_permAct
+          (d := d) (n := n) τ (complexLorentzAction Λ z)]
+        exact
+          (S.branch_eq
+            (permAct (d := d) τ (complexLorentzAction Λ z)) hΛz).symm
+      _ = S.Phi
+            (sourcePermuteOrientedGram d n τ
+              (sourceOrientedMinkowskiInvariant d n z)) := by
+        rw [sourceOrientedMinkowskiInvariant_complexLorentzAction]
+      _ = extendF F (permAct (d := d) τ z) := by
+        rw [← sourceOrientedMinkowskiInvariant_permAct
+          (d := d) (n := n) τ z]
+        exact S.branch_eq (permAct (d := d) τ z) hz
 
 /-- The branch-defined quotient value on the source-oriented extended-tube
 image, extended by zero away from that image. -/

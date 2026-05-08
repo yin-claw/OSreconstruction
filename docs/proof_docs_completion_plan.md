@@ -97,6 +97,15 @@ local Slot 1:
    `BHW.OS45SourcePatchBHWJostHullData.wick_id_forwardTube_of_ordered`,
    `BHW.OS45SourcePatchBHWJostOrientedContinuationInputs`,
    `BHW.OS45SourcePatchBHWJostOrientedContinuationInputs.exists_gluedBranch`,
+   `BHW.SourceOrientedScalarRepresentativeData.toExtendedTubeInitialChart`,
+   `BHW.SourceOrientedScalarRepresentativeData.toPermutedExtendedTubeInitialChart`,
+   `BHW.OS45SourcePatchBHWJostHullData.adjacentExtendedTubePreimage_subset_U`,
+   `BHW.OS45SourcePatchBHWJostHullData.ordinaryInitialChartOfSourceOrientedScalarRepresentative`,
+   `BHW.OS45SourcePatchBHWJostHullData.ordinaryInitialChartOfSourceOrientedScalarRepresentative_mem`,
+   `BHW.OS45SourcePatchBHWJostHullData.ordinaryInitialChartOfSourceOrientedScalarRepresentative_branch`,
+   `BHW.OS45SourcePatchBHWJostHullData.adjacentInitialChartOfSourceOrientedScalarRepresentative`,
+   `BHW.OS45SourcePatchBHWJostHullData.adjacentInitialChartOfSourceOrientedScalarRepresentative_mem`,
+   `BHW.OS45SourcePatchBHWJostHullData.adjacentInitialChartOfSourceOrientedScalarRepresentative_branch`,
    `BHW.OS45SourcePatchBHWJostHullData.exists_ordinaryBranch_of_orientedContinuationInputs`,
    `BHW.OS45SourcePatchBHWJostHullData.exists_adjacentBranch_of_orientedContinuationInputs`,
    `BHW.OS45SourcePatchBHWJostHullData.ordinaryBranchOfOrientedContinuationInputs`,
@@ -11545,6 +11554,26 @@ common-boundary envelope, or any theorem that already assumes locality.
    hiding them: `patchAt`, `uniformDescent`, `uniformDescent_unique`,
    `retargetedComparison`, the initial oriented chart `C0`, the start patch,
    and the initial-chart agreement on `Ω0 ∩ H.U`.  The checked
+   `BHW.SourceOrientedScalarRepresentativeData.toExtendedTubeInitialChart`
+   converts a proved ordinary source-oriented scalar representative into the
+   ordinary extended-tube initial chart, and
+   `BHW.OS45SourcePatchBHWJostHullData.ordinaryInitialChartOfSourceOrientedScalarRepresentative`
+   specializes it to the OS45 hull by using
+   `BHW.mem_os45SourcePatchBHWJostHull_of_extendedTube` and
+   `BHW.differentiableOn_extendF_bvt_F_extendedTube`.  The adjacent initial
+   chart is also checked separately: the generic
+   `BHW.SourceOrientedScalarRepresentativeData.toPermutedExtendedTubeInitialChart`
+   precomposes the oriented germ by source-label permutation, while
+   `BHW.OS45SourcePatchBHWJostHullData.adjacentExtendedTubePreimage_subset_U`
+   proves the full adjacent preimage of `ExtendedTube` lies in the same OS45
+   hull by path-joining through the ordinary and adjacent extended-tube pieces.
+   `BHW.OS45SourcePatchBHWJostHullData.adjacentInitialChartOfSourceOrientedScalarRepresentative`
+   then specializes this permuted chart to
+   `z ↦ BHW.extendF (bvt_F OS lgc n) (BHW.permAct H.τ z)`.  Thus both the
+   ordinary and adjacent packets' `C0`, `initial_chart_mem`, and initial-branch
+   agreement fields are mechanical once
+   `BHW.sourceOrientedScalarRepresentativeData_bvt_F` is proved; no
+   common-boundary envelope is used for this initial-chart step.  The checked
    `H.exists_ordinaryBranch_of_orientedContinuationInputs` then supplies the
    ordinary branch, holomorphy on `H.U`, Wick trace by
    `BHW.extendF_bvt_F_wickRotate_eq_of_ordered`, and real trace by
