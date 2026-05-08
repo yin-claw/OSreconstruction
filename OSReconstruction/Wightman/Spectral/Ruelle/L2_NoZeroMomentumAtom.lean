@@ -116,42 +116,34 @@ theorem gns_ray_decay
 /-- **Spectral data for the GNS spacetime translation rep on a pair of
 states orthogonal to the vacuum.**
 
-Records the spectral measure produced by SNAG (applied to the spacetime
-translation subgroup of the GNS Poincaré rep) and its key analytic
-property — AC spatial marginal — along with the SNAG-derived bridge
-identity expressing the matrix element as the spatial Fourier transform
-of the measure.
+The off-diagonal sesquilinear spectral measure `μ_{Φ,ψ}` is in general
+a **complex** measure (the matrix element `⟨Φ, U(a) ψ⟩` is not
+positive-definite for `Φ ≠ ψ`, so by Bochner is not the Fourier
+transform of a positive measure). Polarization decomposes it into
+four diagonal positive measures.
 
-For a pair `Φ, ψ ⊥ Ω` in the GNS Hilbert space:
-* `μ`: a finite Borel measure on the (d+1)-momentum space.
-* AC spatial marginal: the load-bearing input. Comes from spectral
-  support analysis on Ω⊥ (Glimm-Jaffe §6.2, Reed-Simon II §IX.8 — for
-  physical QFTs the spectral measure on Ω⊥ is supported on mass
-  hyperboloids `p² ≥ m²` in V̄+, projecting to AC spatial marginal
-  via `dp⁰ / 2E_p`).
-* Bridge identity: from SNAG.
-
-This structure is the conditional input for the L2 reduction. It is
-*discharged* unconditionally for any `WightmanFunctions` via the axiom
-`gns_l2_spectral_data_axiom` below — see that axiom for the textbook
-status. -/
+This structure packages the polarization-form spectral data: four
+positive measures `μₖ` (`k = 0, 1, 2, 3`) plus four AC-marginal claims
+plus the polarized bridge identity. Each `μₖ` corresponds to the
+diagonal SNAG measure of the polarization vector `Φ + iᵏ ψ`. -/
 structure L2SpectralData
     (Wfn : WightmanFunctions d) (Φ ψ : GNSHilbertSpace Wfn) : Prop where
-  /-- A finite Borel measure on the (d+1)-dimensional momentum space
-  whose spatial Fourier transform represents `⟨Φ, U(a) ψ⟩` for
-  spatial `a`. -/
-  μ_exists :
-    ∃ (μ : Measure (Fin (d + 1) → ℝ)),
-      IsFiniteMeasure μ ∧
-      -- AC spatial marginal: this is the load-bearing textbook input.
-      spatialMarginal μ ≪ (MeasureTheory.volume : Measure (Fin d → ℝ)) ∧
-      -- Bridge identity: matrix element = spatial Fourier transform of μ.
+  /-- Four polarization-piece positive measures, each with AC spatial
+  marginal, and the polarized bridge identity. -/
+  data :
+    ∃ (μ : Fin 4 → Measure (Fin (d + 1) → ℝ)),
+      (∀ k, IsFiniteMeasure (μ k)) ∧
+      -- AC spatial marginal of each piece.
+      (∀ k, spatialMarginal (μ k) ≪
+        (MeasureTheory.volume : Measure (Fin d → ℝ))) ∧
+      -- Polarized bridge: ⟨Φ, U(a) ψ⟩ = (1/4) Σ i^k ∫ exp(i a·p) dμ_k.
       ∀ a : SpacetimeDim d, a 0 = 0 →
         @inner ℂ _ _ Φ
           (poincareActGNS Wfn (PoincareGroup.translation' a) ψ) =
-          ∫ p : Fin (d + 1) → ℝ,
-            Complex.exp (Complex.I *
-              (∑ i : Fin d, (a (Fin.succ i) : ℂ) * (p i.succ : ℂ))) ∂μ
+          (1 / 4 : ℂ) * ∑ k : Fin 4, Complex.I ^ (k : ℕ) *
+            ∫ p : Fin (d + 1) → ℝ,
+              Complex.exp (Complex.I *
+                (∑ i : Fin d, (a (Fin.succ i) : ℂ) * (p i.succ : ℂ))) ∂(μ k)
 
 /-! ### L2 spectral data — production axiom
 
@@ -161,26 +153,29 @@ content combines:
 
 1. **SNAG application** (existing `snag_theorem` axiom): produces the
    joint projection-valued measure of the spacetime translation
-   subgroup on `GNSHilbertSpace Wfn`. Each state ψ gets a spectral
-   measure μ_ψ with `μ_ψ B = ‖E(B) ψ‖²`. The SNAG bridge identity
-   `⟨ψ, U(a) ψ⟩ = ∫ exp(i ⟨a, p⟩) dμ_ψ` is direct.
+   subgroup on `GNSHilbertSpace Wfn`. Each state χ gets a positive
+   spectral measure μ_χ with `μ_χ B = ‖E(B) χ‖²`. The SNAG bridge
+   identity `⟨χ, U(a) χ⟩ = ∫ exp(i ⟨a, p⟩) dμ_χ` is direct.
 
-2. **Polarization** for the off-diagonal pair `(Φ, ψ)`: the sesquilinear
-   spectral form `μ_{Φ,ψ}` is built from four diagonal SNAG measures
-   via the polarization identity. The bridge identity polarizes
-   accordingly.
+2. **Polarization** for the off-diagonal pair `(Φ, ψ)`: applying SNAG
+   to each of the four polarization vectors `χ_k := Φ + iᵏ ψ` yields
+   four positive measures `μ_k = μ_{χ_k}`. The polarization identity
+   gives the matrix element as `(1/4) Σ_k iᵏ ⟨χ_k, U(a) χ_k⟩` =
+   `(1/4) Σ_k iᵏ ∫ exp(i a·p) dμ_k`.
 
 3. **Spectrum support on V̄+ \ {0} for Ω⊥** (textbook QFT): R4 cluster
    + spectrum condition + vacuum uniqueness imply the spectral measure
    on the vacuum complement is supported strictly inside the forward
-   light cone, away from `p = 0`. Hence the spectral measure has no
-   atom at zero momentum.
+   light cone, away from `p = 0`. Each `χ_k` (with both Φ, ψ ⊥ Ω)
+   satisfies `χ_k ⊥ Ω`, so each `μ_k` is supported on `V̄+ \ {0}`.
 
 4. **AC spatial marginal** (textbook QFT, the deep input): for physical
    Wightman QFTs, the spectral measure on Ω⊥ projects to AC spatial
-   marginal via the mass-hyperboloid foliation. This requires R4 to
-   exclude zero-mass particles in the truncated correlations and
-   spectrum-condition support on `p² ≥ m² ≥ 0` for some mass spectrum.
+   marginal via the mass-hyperboloid foliation `dp⁰ / 2E_p` (locally
+   integrable for `d ≥ 2` even at zero mass; massless `1+1`-D scalar
+   theories famously violate Wightman R0/R4 anyway, so are excluded by
+   the input). Singular continuous components are forbidden by
+   Poincaré covariance.
 
 References:
 * Glimm-Jaffe, *Quantum Physics*, §6.2 (spectral support of vacuum
@@ -191,9 +186,19 @@ References:
 * Streater-Wightman, *PCT, Spin and Statistics, and All That*, §3.5
   (cluster decomposition theorem; vacuum uniqueness).
 
-Status: paper-textbook QFT result, requires substantial spectral
-analysis to formalize from R4 + spectrum_condition. Adopted as a
-single explicit axiom at the GNS-spectral boundary. -/
+**Vetting verdict (Gemini chat, 2026-05-07)**: **Likely correct /
+Standard**. Three subtle issues called out:
+* AC for d ≥ 2 (spacetime ≥ 3) is standard from Poincaré covariance
+  even for massless theories; only 1+1D massless violates Wightman
+  axioms anyway.
+* AC of each diagonal polarization piece implies AC of the polarized
+  total variation (this is what justifies the four-positive-measure
+  formulation here).
+* Vacuum-orthogonality is the right minimal hypothesis (no need to
+  restrict to algebraic span).
+
+Status: paper-textbook QFT result, single explicit axiom at the
+GNS-spectral boundary. -/
 axiom gns_l2_spectral_data_axiom
     (Wfn : WightmanFunctions d)
     (Φ ψ : GNSHilbertSpace Wfn)
@@ -224,17 +229,11 @@ theorem gns_orthogonal_spatial_cobounded_decay_of
       (Filter.principal {a : SpacetimeDim d | a 0 = 0} ⊓
         Bornology.cobounded (SpacetimeDim d))
       (nhds (0 : ℂ)) := by
-  obtain ⟨μ, _, h_AC, h_bridge⟩ := hL2.μ_exists
-  -- Apply L5 (spectral_riemann_lebesgue) to get spatial Fourier transform decay
-  -- of μ along cobounded `a_spatial`.
-  -- Need to bridge from "a : SpacetimeDim d with a 0 = 0" to "a_spatial : Fin d → ℝ".
-  -- The spatial part of `a` is `fun i : Fin d => a (Fin.succ i)`.
+  obtain ⟨μ, h_finite, h_AC, h_bridge⟩ := hL2.data
+  -- For each polarization piece μ k, apply L5.
+  -- spatialOf projects SpacetimeDim d → (Fin d → ℝ).
   set spatialOf : SpacetimeDim d → (Fin d → ℝ) :=
     fun a i => a (Fin.succ i) with hsp_def
-  -- L5 gives Tendsto over cobounded(Fin d → ℝ) of the Fourier integrand.
-  have h_L5 := spectral_riemann_lebesgue μ h_AC
-  -- Compose with the continuous projection `spatialOf`.
-  -- spatialOf is continuous (just evaluation at successor coords).
   have h_sp_cont : Continuous spatialOf :=
     continuous_pi (fun _ => continuous_apply _)
   -- spatialOf preserves cobounded: it's a continuous linear surjection between
@@ -310,16 +309,55 @@ theorem gns_orthogonal_spatial_cobounded_decay_of
       -- ‖spatialOf a‖ ≤ R, but ‖a‖ > R, and ‖spatialOf a‖ = ‖a‖. Contradiction.
       have : ‖a‖ ≤ R := h_norm_eq ▸ h_in_ball
       linarith
-  -- Compose L5 with spatialOf to get Tendsto along the inf filter, valued in ℂ.
-  have h_composed := h_L5.comp h_sp_cobounded
-  -- Use eventual equality: on {a 0 = 0}, the L5 integrand at `spatialOf a` equals
-  -- the matrix element by the L2 bridge identity. {a 0 = 0} is a member of the
-  -- inf filter, so eventually true.
-  refine h_composed.congr' ?_
+  -- For each k, apply L5 to μ k, compose with spatialOf, get Tendsto → 0.
+  have h_each_decay : ∀ k : Fin 4,
+      Filter.Tendsto
+        (fun a : SpacetimeDim d =>
+          ∫ p : Fin (d + 1) → ℝ,
+            Complex.exp (Complex.I *
+              (∑ i : Fin d, (a (Fin.succ i) : ℂ) * (p i.succ : ℂ))) ∂(μ k))
+        (Filter.principal {a : SpacetimeDim d | a 0 = 0} ⊓
+          Bornology.cobounded (SpacetimeDim d))
+        (nhds (0 : ℂ)) := by
+    intro k
+    haveI : IsFiniteMeasure (μ k) := h_finite k
+    have h_L5_k := spectral_riemann_lebesgue (μ k) (h_AC k)
+    exact h_L5_k.comp h_sp_cobounded
+  -- The polarized sum: Σ k, i^k * (decay term k) → Σ k, i^k * 0 = 0.
+  have h_sum_decay :
+      Filter.Tendsto
+        (fun a : SpacetimeDim d =>
+          ∑ k : Fin 4, Complex.I ^ (k : ℕ) *
+            ∫ p : Fin (d + 1) → ℝ,
+              Complex.exp (Complex.I *
+                (∑ i : Fin d, (a (Fin.succ i) : ℂ) * (p i.succ : ℂ))) ∂(μ k))
+        (Filter.principal {a : SpacetimeDim d | a 0 = 0} ⊓
+          Bornology.cobounded (SpacetimeDim d))
+        (nhds (0 : ℂ)) := by
+    have h_zero_sum : (0 : ℂ) = ∑ k : Fin 4, Complex.I ^ (k : ℕ) * (0 : ℂ) := by
+      simp
+    rw [h_zero_sum]
+    exact tendsto_finset_sum _ (fun k _ =>
+      ((h_each_decay k).const_mul (Complex.I ^ (k : ℕ))))
+  -- (1/4) * (sum) → (1/4) * 0 = 0.
+  have h_quarter_decay :
+      Filter.Tendsto
+        (fun a : SpacetimeDim d =>
+          (1 / 4 : ℂ) * ∑ k : Fin 4, Complex.I ^ (k : ℕ) *
+            ∫ p : Fin (d + 1) → ℝ,
+              Complex.exp (Complex.I *
+                (∑ i : Fin d, (a (Fin.succ i) : ℂ) * (p i.succ : ℂ))) ∂(μ k))
+        (Filter.principal {a : SpacetimeDim d | a 0 = 0} ⊓
+          Bornology.cobounded (SpacetimeDim d))
+        (nhds (0 : ℂ)) := by
+    have h_zero : (0 : ℂ) = (1 / 4 : ℂ) * 0 := by simp
+    rw [h_zero]
+    exact h_sum_decay.const_mul _
+  -- Use eventual equality: on {a 0 = 0}, matrix element = polarized sum.
+  refine h_quarter_decay.congr' ?_
   refine Filter.Eventually.mono (Filter.mem_inf_of_left
     (Filter.mem_principal_self {a : SpacetimeDim d | a 0 = 0})) ?_
   intro a ha0
-  -- a 0 = 0; apply bridge identity (symmetric direction).
   exact (h_bridge a ha0).symm
 
 /-! ### L2 unconditional (Option B)
