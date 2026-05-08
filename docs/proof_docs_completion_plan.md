@@ -6092,11 +6092,15 @@ implementation contract is:
    `BHW.linearMapQuotientImageCarrier_finrank_add_ker`.  The concrete
    dependent carrier and isotropy proof are checked as
    `BHW.complexMinkowskiPairingKernelQuotientImage` and
-   `BHW.complexMinkowskiPairingKernelQuotientImage_isotropic`.  The next pass
-   should connect the concrete dependent carrier to the generic quotient-image
-   API without unfolding the raw `Rperp ⧸ R` expression, prove the dimension
-   comparison between `ker (S -> R*)`, this quotient-image carrier, and
-   `T = S ∩ R`, then combine it with the quotient-preimage finrank formula.
+   `BHW.complexMinkowskiPairingKernelQuotientImage_isotropic`.  The generic
+   quotient-image dimension comparison is checked as
+   `BHW.complexMinkowskiPairingKerToRelativeOrthogonal_mem_Rin_iff`,
+   `BHW.complexMinkowskiPairingKerToRelativeOrthogonalComapEquivInter`,
+   `BHW.complexMinkowskiPairingKerToRelativeOrthogonal_comap_finrank_eq_inter`,
+   and
+   `BHW.complexMinkowskiPairingKer_genericQuotientImage_finrank_add_inter`.
+   The next pass should combine this with the maximal `Qbar` bound and the
+   quotient-preimage finrank formula.
    It should not start by adding a new generic
    `complexMinkowski_wittExtension_subspaceIsometry` theorem.
    The residual-frame alignment now has an

@@ -354,6 +354,160 @@ theorem complexMinkowskiPairingKerToRelativeOrthogonal_apply_coe
         ((x : LinearMap.ker
           (complexMinkowskiPairingToSubmoduleDual d R S)) : S) := rfl
 
+/-- Membership in the retyped `R` inside `Rperp` is the same as the underlying
+source vector of the pairing kernel lying in `R`. -/
+theorem complexMinkowskiPairingKerToRelativeOrthogonal_mem_Rin_iff
+    {d : ℕ}
+    {N R S : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_le : R ≤ N)
+    (hS_le : S ≤ N)
+    (x : LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S)) :
+    complexMinkowskiPairingKerToRelativeOrthogonal
+        (d := d) (N := N) (R := R) (S := S) hR_le hS_le x ∈
+      complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N)
+        (complexMinkowskiSubmoduleIn (d := d) N R) ↔
+    (((x : LinearMap.ker
+        (complexMinkowskiPairingToSubmoduleDual d R S)) : S) :
+      Fin (d + 1) → ℂ) ∈ R := by
+  rfl
+
+/-- The kernel term in the generic quotient-image rank-nullity formula is
+linearly equivalent to the retyped intersection `S ∩ R`. -/
+noncomputable def complexMinkowskiPairingKerToRelativeOrthogonalComapEquivInter
+    {d : ℕ}
+    {N R S : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_le : R ≤ N)
+    (hS_le : S ≤ N)
+    (hR_iso : ComplexMinkowskiTotallyIsotropicSubspace d R) :
+    complexMinkowskiSubmoduleIn (d := d) R S ≃ₗ[ℂ]
+      (let RN := complexMinkowskiSubmoduleIn (d := d) N R
+       let Rperp := complexMinkowskiRelativeOrthogonalIn (d := d) N RN
+       let Rin : Submodule ℂ Rperp :=
+        complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N) RN
+       let A :
+          LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S) →ₗ[ℂ] Rperp :=
+        complexMinkowskiPairingKerToRelativeOrthogonal
+          (d := d) (N := N) (R := R) (S := S) hR_le hS_le
+       Rin.comap A) where
+  toFun t := by
+    let s : S := ⟨(t : Fin (d + 1) → ℂ), t.2⟩
+    have hsKer :
+        s ∈ LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S) := by
+      rw [LinearMap.mem_ker]
+      ext r
+      exact hR_iso ⟨(t : Fin (d + 1) → ℂ), (t : R).2⟩ r
+    let x :
+        LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S) :=
+      ⟨s, hsKer⟩
+    refine ⟨x, ?_⟩
+    change complexMinkowskiPairingKerToRelativeOrthogonal
+        (d := d) (N := N) (R := R) (S := S) hR_le hS_le x ∈
+      complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N)
+        (complexMinkowskiSubmoduleIn (d := d) N R)
+    rw [complexMinkowskiPairingKerToRelativeOrthogonal_mem_Rin_iff
+      (d := d) (N := N) (R := R) (S := S) hR_le hS_le x]
+    exact (t : R).2
+  invFun x := by
+    let xker : LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S) := x
+    have hxR :
+        (((xker : LinearMap.ker
+          (complexMinkowskiPairingToSubmoduleDual d R S)) : S) :
+            Fin (d + 1) → ℂ) ∈ R := by
+      rw [← complexMinkowskiPairingKerToRelativeOrthogonal_mem_Rin_iff
+        (d := d) (N := N) (R := R) (S := S) hR_le hS_le xker]
+      exact x.2
+    exact ⟨⟨(xker : S), hxR⟩, (xker : S).2⟩
+  left_inv t := by
+    ext i
+    rfl
+  right_inv x := by
+    ext i
+    rfl
+  map_add' t u := by
+    ext i
+    rfl
+  map_smul' c t := by
+    ext i
+    rfl
+
+/-- Finrank form of the equivalence between the generic quotient-image kernel
+term and the retyped intersection `S ∩ R`. -/
+theorem complexMinkowskiPairingKerToRelativeOrthogonal_comap_finrank_eq_inter
+    {d : ℕ}
+    {N R S : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_le : R ≤ N)
+    (hS_le : S ≤ N)
+    (hR_iso : ComplexMinkowskiTotallyIsotropicSubspace d R) :
+    Module.finrank ℂ
+      (let RN := complexMinkowskiSubmoduleIn (d := d) N R
+       let Rperp := complexMinkowskiRelativeOrthogonalIn (d := d) N RN
+       let Rin : Submodule ℂ Rperp :=
+        complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N) RN
+       let A :
+          LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S) →ₗ[ℂ] Rperp :=
+        complexMinkowskiPairingKerToRelativeOrthogonal
+          (d := d) (N := N) (R := R) (S := S) hR_le hS_le
+       Rin.comap A) =
+        Module.finrank ℂ (complexMinkowskiSubmoduleIn (d := d) R S) := by
+  exact
+    (LinearEquiv.finrank_eq
+      (complexMinkowskiPairingKerToRelativeOrthogonalComapEquivInter
+        (d := d) (N := N) (R := R) (S := S) hR_le hS_le hR_iso)).symm
+
+/-- Rank-nullity for `ker(S -> R*) -> Rperp / R`, in the generic quotient-image
+carrier form. -/
+theorem complexMinkowskiPairingKer_genericQuotientImage_finrank_add_inter
+    {d : ℕ}
+    {N R S : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_le : R ≤ N)
+    (hS_le : S ≤ N)
+    (hR_iso : ComplexMinkowskiTotallyIsotropicSubspace d R) :
+    Module.finrank ℂ
+      (let RN := complexMinkowskiSubmoduleIn (d := d) N R
+       let Rperp := complexMinkowskiRelativeOrthogonalIn (d := d) N RN
+       let Rin : Submodule ℂ Rperp :=
+        complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N) RN
+       let A :
+          LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S) →ₗ[ℂ] Rperp :=
+        complexMinkowskiPairingKerToRelativeOrthogonal
+          (d := d) (N := N) (R := R) (S := S) hR_le hS_le
+       linearMapQuotientImageCarrier
+        (V := Rperp)
+        (W := LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S))
+        Rin A) +
+      Module.finrank ℂ (complexMinkowskiSubmoduleIn (d := d) R S) =
+        Module.finrank ℂ
+          (LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S)) := by
+  let RN := complexMinkowskiSubmoduleIn (d := d) N R
+  let Rperp := complexMinkowskiRelativeOrthogonalIn (d := d) N RN
+  let Rin : Submodule ℂ Rperp :=
+    complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N) RN
+  let A :
+      LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S) →ₗ[ℂ] Rperp :=
+    complexMinkowskiPairingKerToRelativeOrthogonal
+      (d := d) (N := N) (R := R) (S := S) hR_le hS_le
+  change
+    Module.finrank ℂ
+        (linearMapQuotientImageCarrier
+          (V := Rperp)
+          (W := LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S))
+          Rin A) +
+      Module.finrank ℂ (complexMinkowskiSubmoduleIn (d := d) R S) =
+        Module.finrank ℂ
+          (LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S))
+  have h :=
+    linearMapQuotientImageCarrier_finrank_add_ker
+      (V := Rperp)
+      (W := LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S))
+      Rin A
+  rw [linearMapToQuotientImageCarrier_ker_eq_comap
+    (V := Rperp)
+    (W := LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S))
+    Rin A] at h
+  rw [complexMinkowskiPairingKerToRelativeOrthogonal_comap_finrank_eq_inter
+    (d := d) (N := N) (R := R) (S := S) hR_le hS_le hR_iso] at h
+  exact h
+
 /-- The image of `ker(S -> R*)` in the quotient `Rperp / R`, represented as a
 submodule carrier rather than as a separate dependent quotient map. -/
 def complexMinkowskiPairingKernelQuotientImage
