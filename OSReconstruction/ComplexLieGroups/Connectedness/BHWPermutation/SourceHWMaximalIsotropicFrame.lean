@@ -1,0 +1,123 @@
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceHWLowRankNormalForm
+
+/-!
+# Maximal isotropic frames for Hall-Wightman low-rank geometry
+
+This file proves the finite-dimensional existence of a maximal totally
+isotropic frame inside any complex Minkowski subspace.  It does not yet prove
+the stronger residual-alignment theorem needed by the low-rank Hall-Wightman
+branch: the remaining geometric work must still choose such a frame in a way
+compatible with the right residual span and produce the determinant-one
+correction moving the left residual span into it.
+-/
+
+noncomputable section
+
+open Complex Topology Matrix LorentzLieGroup Classical Filter NormedSpace
+open scoped Matrix.Norms.Operator
+
+namespace BHW
+
+/-- A maximal totally isotropic subspace inside a given ambient subspace,
+maximal by finite dimension among all totally isotropic subspaces contained
+in the ambient subspace. -/
+structure ComplexMinkowskiMaximalIsotropicSubspaceIn
+    (d : ℕ)
+    (N : Submodule ℂ (Fin (d + 1) → ℂ)) where
+  Q : Submodule ℂ (Fin (d + 1) → ℂ)
+  Q_le : Q ≤ N
+  Q_iso : ComplexMinkowskiTotallyIsotropicSubspace d Q
+  maximal :
+    ∀ R : Submodule ℂ (Fin (d + 1) → ℂ),
+      R ≤ N →
+      ComplexMinkowskiTotallyIsotropicSubspace d R →
+      Module.finrank ℂ R ≤ Module.finrank ℂ Q
+
+/-- A finite independent frame for a maximal totally isotropic subspace. -/
+structure ComplexMinkowskiMaximalIsotropicFrameIn
+    (d : ℕ)
+    (N : Submodule ℂ (Fin (d + 1) → ℂ)) where
+  s : ℕ
+  q : Fin s → Fin (d + 1) → ℂ
+  q_mem : ∀ c, q c ∈ N
+  q_independent : LinearIndependent ℂ q
+  q_pair_zero : ∀ c c', sourceComplexMinkowskiInner d (q c) (q c') = 0
+  maximal :
+    ∀ R : Submodule ℂ (Fin (d + 1) → ℂ),
+      R ≤ N →
+      ComplexMinkowskiTotallyIsotropicSubspace d R →
+      Module.finrank ℂ R ≤ s
+
+/-- Turn a maximal isotropic subspace into an explicit independent frame. -/
+noncomputable def complexMinkowskiMaximalIsotropicFrameIn_of_subspace
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (F : ComplexMinkowskiMaximalIsotropicSubspaceIn d N) :
+    ComplexMinkowskiMaximalIsotropicFrameIn d N := by
+  let b := Module.finBasis ℂ F.Q
+  let s := Module.finrank ℂ F.Q
+  let q : Fin s → Fin (d + 1) → ℂ := fun c =>
+    (b c : Fin (d + 1) → ℂ)
+  refine
+    { s := s
+      q := q
+      q_mem := ?_
+      q_independent := ?_
+      q_pair_zero := ?_
+      maximal := ?_ }
+  · intro c
+    exact F.Q_le (b c).2
+  · exact b.linearIndependent.map' F.Q.subtype (Submodule.ker_subtype F.Q)
+  · intro c c'
+    exact F.Q_iso (b c) (b c')
+  · intro R hR_le hR_iso
+    exact F.maximal R hR_le hR_iso
+
+/-- The zero subspace is totally isotropic. -/
+theorem complexMinkowskiTotallyIsotropic_bot
+    (d : ℕ) :
+    ComplexMinkowskiTotallyIsotropicSubspace d
+      (⊥ : Submodule ℂ (Fin (d + 1) → ℂ)) := by
+  intro x _
+  have hx : (x : Fin (d + 1) → ℂ) = 0 := (Submodule.mem_bot ℂ).1 x.2
+  rw [hx]
+  simp [sourceComplexMinkowskiInner]
+
+/-- Finite-dimensional maximal-finrank argument for the existence of a
+maximal totally isotropic subspace inside any ambient subspace. -/
+theorem complexMinkowski_maximalIsotropicSubspaceIn_exists
+    (d : ℕ)
+    (N : Submodule ℂ (Fin (d + 1) → ℂ)) :
+    Nonempty (ComplexMinkowskiMaximalIsotropicSubspaceIn d N) := by
+  classical
+  let P : ℕ → Prop := fun k =>
+    ∃ Q : Submodule ℂ (Fin (d + 1) → ℂ),
+      Q ≤ N ∧
+        ComplexMinkowskiTotallyIsotropicSubspace d Q ∧
+        Module.finrank ℂ Q = k
+  have hP0 : P 0 := by
+    refine ⟨⊥, bot_le, complexMinkowskiTotallyIsotropic_bot d, ?_⟩
+    simp
+  let k := Nat.findGreatest P (Module.finrank ℂ N)
+  have hPk : P k := Nat.findGreatest_spec (by simp) hP0
+  rcases hPk with ⟨Q, hQ_le, hQ_iso, hQ_rank⟩
+  refine ⟨{ Q := Q, Q_le := hQ_le, Q_iso := hQ_iso, maximal := ?_ }⟩
+  intro R hR_le hR_iso
+  have hR_bound : Module.finrank ℂ R ≤ Module.finrank ℂ N :=
+    Submodule.finrank_mono hR_le
+  have hP_R : P (Module.finrank ℂ R) :=
+    ⟨R, hR_le, hR_iso, rfl⟩
+  have hle : Module.finrank ℂ R ≤ k :=
+    Nat.le_findGreatest hR_bound hP_R
+  simpa [k, hQ_rank] using hle
+
+/-- Every ambient subspace contains a finite maximal totally isotropic frame. -/
+theorem complexMinkowski_maximalIsotropicFrameIn_exists
+    (d : ℕ)
+    (N : Submodule ℂ (Fin (d + 1) → ℂ)) :
+    Nonempty (ComplexMinkowskiMaximalIsotropicFrameIn d N) := by
+  rcases complexMinkowski_maximalIsotropicSubspaceIn_exists d N with ⟨F⟩
+  exact ⟨complexMinkowskiMaximalIsotropicFrameIn_of_subspace F⟩
+
+end BHW
+
