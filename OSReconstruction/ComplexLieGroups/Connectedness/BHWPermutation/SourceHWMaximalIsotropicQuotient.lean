@@ -101,6 +101,149 @@ theorem complexMinkowskiRelativeOrthogonalQuotient_maximalIsotropicSubspace_exis
   bilinForm_maximalTotallyIsotropicSubspace_exists
     (complexMinkowskiRelativeOrthogonalQuotientForm (d := d) (N := N) RN)
 
+/-- Pair an isotropic test subspace `S` against the fixed subspace `R`, landing
+in the dual of `R`.  This is the first rank-nullity map in the compatible
+maximal-frame extension proof. -/
+def complexMinkowskiPairingToSubmoduleDual
+    (d : ℕ)
+    (R S : Submodule ℂ (Fin (d + 1) → ℂ)) :
+    S →ₗ[ℂ] Module.Dual ℂ R where
+  toFun s :=
+    { toFun := fun r =>
+        sourceComplexMinkowskiInner d
+          (s : Fin (d + 1) → ℂ) (r : Fin (d + 1) → ℂ)
+      map_add' := by
+        intro x y
+        rw [Submodule.coe_add, sourceComplexMinkowskiInner_add_right]
+      map_smul' := by
+        intro c x
+        rw [Submodule.coe_smul, sourceComplexMinkowskiInner_smul_right]
+        simp }
+  map_add' := by
+    intro x y
+    ext r
+    change sourceComplexMinkowskiInner d
+        ((x + y : S) : Fin (d + 1) → ℂ) (r : Fin (d + 1) → ℂ) =
+      sourceComplexMinkowskiInner d
+          (x : Fin (d + 1) → ℂ) (r : Fin (d + 1) → ℂ) +
+        sourceComplexMinkowskiInner d
+          (y : Fin (d + 1) → ℂ) (r : Fin (d + 1) → ℂ)
+    rw [Submodule.coe_add, sourceComplexMinkowskiInner_add_left]
+  map_smul' := by
+    intro c x
+    ext r
+    change sourceComplexMinkowskiInner d
+        ((c • x : S) : Fin (d + 1) → ℂ) (r : Fin (d + 1) → ℂ) =
+      c * sourceComplexMinkowskiInner d
+          (x : Fin (d + 1) → ℂ) (r : Fin (d + 1) → ℂ)
+    rw [Submodule.coe_smul, sourceComplexMinkowskiInner_smul_left]
+
+/-- The range of the pairing map `S -> R*` annihilates the intersection
+`S ∩ R` when `S` is totally isotropic. -/
+theorem complexMinkowskiPairingToSubmoduleDual_range_le_dualAnnihilator
+    {d : ℕ}
+    {R S : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hS_iso : ComplexMinkowskiTotallyIsotropicSubspace d S) :
+    LinearMap.range (complexMinkowskiPairingToSubmoduleDual d R S) ≤
+      (complexMinkowskiSubmoduleIn (d := d) R S).dualAnnihilator := by
+  intro φ hφ
+  rcases hφ with ⟨s, rfl⟩
+  rw [Submodule.mem_dualAnnihilator]
+  intro r hr
+  exact hS_iso s ⟨(r : Fin (d + 1) → ℂ), hr⟩
+
+/-- Dimension form of the annihilator bound for the pairing map `S -> R*`.
+The `finrank (S ∩ R)` term is the one that later cancels against the quotient
+map kernel. -/
+theorem complexMinkowskiPairingToSubmoduleDual_range_add_inter_finrank_le
+    {d : ℕ}
+    {R S : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hS_iso : ComplexMinkowskiTotallyIsotropicSubspace d S) :
+    Module.finrank ℂ
+        (LinearMap.range (complexMinkowskiPairingToSubmoduleDual d R S)) +
+      Module.finrank ℂ (complexMinkowskiSubmoduleIn (d := d) R S) ≤
+        Module.finrank ℂ R := by
+  let T := complexMinkowskiSubmoduleIn (d := d) R S
+  have hle :
+      LinearMap.range (complexMinkowskiPairingToSubmoduleDual d R S) ≤
+        T.dualAnnihilator := by
+    simpa [T] using
+      complexMinkowskiPairingToSubmoduleDual_range_le_dualAnnihilator
+        (d := d) (R := R) (S := S) hS_iso
+  calc
+    Module.finrank ℂ
+          (LinearMap.range (complexMinkowskiPairingToSubmoduleDual d R S)) +
+        Module.finrank ℂ T
+        ≤ Module.finrank ℂ T.dualAnnihilator + Module.finrank ℂ T := by
+          exact Nat.add_le_add_right (Submodule.finrank_mono hle) _
+    _ = Module.finrank ℂ R := by
+      rw [add_comm]
+      exact Subspace.finrank_add_finrank_dualAnnihilator_eq T
+
+/-- The kernel of the pairing map `S -> R*` consists exactly of those vectors
+of `S` that lie in the relative orthogonal of `R` inside `N`. -/
+theorem complexMinkowskiPairingToSubmoduleDual_mem_ker_iff
+    {d : ℕ}
+    {N R S : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_le : R ≤ N)
+    (hS_le : S ≤ N)
+    (x : S) :
+    x ∈ LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S) ↔
+      (⟨(x : Fin (d + 1) → ℂ), hS_le x.2⟩ : N) ∈
+        complexMinkowskiRelativeOrthogonalIn (d := d) N
+          (complexMinkowskiSubmoduleIn (d := d) N R) := by
+  constructor
+  · intro hx r
+    rw [LinearMap.mem_ker] at hx
+    have hval := congrArg
+      (fun φ : Module.Dual ℂ R =>
+        φ ⟨((r : N) : Fin (d + 1) → ℂ), r.2⟩) hx
+    simpa [complexMinkowskiPairingToSubmoduleDual] using hval
+  · intro hx
+    rw [LinearMap.mem_ker]
+    ext r
+    let rN : complexMinkowskiSubmoduleIn (d := d) N R :=
+      ⟨⟨(r : Fin (d + 1) → ℂ), hR_le r.2⟩, r.2⟩
+    have hval := hx rN
+    simpa [complexMinkowskiPairingToSubmoduleDual, rN] using hval
+
+/-- The kernel of `S -> R*`, retyped into the relative orthogonal `Rperp`
+inside `N`. -/
+def complexMinkowskiPairingKerToRelativeOrthogonal
+    {d : ℕ}
+    {N R S : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_le : R ≤ N)
+    (hS_le : S ≤ N) :
+    LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S) →ₗ[ℂ]
+      complexMinkowskiRelativeOrthogonalIn (d := d) N
+        (complexMinkowskiSubmoduleIn (d := d) N R) where
+  toFun x :=
+    ⟨⟨((x : LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S)) : S),
+        hS_le (x : S).2⟩,
+      (complexMinkowskiPairingToSubmoduleDual_mem_ker_iff
+        (d := d) (N := N) (R := R) (S := S) hR_le hS_le (x : S)).1 x.2⟩
+  map_add' x y := by
+    ext i
+    rfl
+  map_smul' c x := by
+    ext i
+    rfl
+
+@[simp]
+theorem complexMinkowskiPairingKerToRelativeOrthogonal_apply_coe
+    {d : ℕ}
+    {N R S : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_le : R ≤ N)
+    (hS_le : S ≤ N)
+    (x : LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S)) :
+    (((complexMinkowskiPairingKerToRelativeOrthogonal
+      (d := d) (N := N) (R := R) (S := S) hR_le hS_le x :
+        complexMinkowskiRelativeOrthogonalIn (d := d) N
+          (complexMinkowskiSubmoduleIn (d := d) N R)) : N) :
+      Fin (d + 1) → ℂ) =
+        ((x : LinearMap.ker
+          (complexMinkowskiPairingToSubmoduleDual d R S)) : S) := rfl
+
 /-- The preimage in `Rperp` of a subspace of the quotient `Rperp / R`. -/
 def complexMinkowskiRelativeOrthogonalQuotientPreimageInRperp
     {d : ℕ}

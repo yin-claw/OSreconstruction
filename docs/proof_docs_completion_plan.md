@@ -6077,9 +6077,16 @@ implementation contract is:
    checked generically as
    `BHW.bilinForm_maximalTotallyIsotropicSubspace_exists` and specialized as
    `BHW.complexMinkowskiRelativeOrthogonalQuotient_maximalIsotropicSubspace_exists`.
-   The next pass should add the rank-nullity comparison for arbitrary
-   isotropic `S ≤ N`, including the `T = S ∩ R` cancellation described above
-   and the quotient-preimage finrank formula.
+   The pairing-map half of the rank-nullity comparison is checked as
+   `BHW.complexMinkowskiPairingToSubmoduleDual`,
+   `BHW.complexMinkowskiPairingToSubmoduleDual_range_le_dualAnnihilator`,
+   `BHW.complexMinkowskiPairingToSubmoduleDual_range_add_inter_finrank_le`,
+   `BHW.complexMinkowskiPairingToSubmoduleDual_mem_ker_iff`, and
+   `BHW.complexMinkowskiPairingKerToRelativeOrthogonal`.  The next pass should
+   add the quotient-image carrier for
+   `ker (S -> R*) -> Rperp ⧸ R`, prove its image is quotient-isotropic, prove
+   its kernel is `T = S ∩ R`, and combine those facts with the quotient-preimage
+   finrank formula.
    It should not start by adding a new generic
    `complexMinkowski_wittExtension_subspaceIsometry` theorem.
    The residual-frame alignment now has an
