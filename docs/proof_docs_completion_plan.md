@@ -3135,22 +3135,29 @@ implementation contract is:
    multiplication proof, `fullComplexLorentz_mul_det`,
    `fullComplexLorentz_mul_vectorAction`,
    `fullComplexLorentz_mul_configAction`, and
-   `fullComplexLorentz_to_complexLorentzGroup_of_det_one`.  Second expose
-   `BHW.sourceComplexMinkowskiBilinForm` from the already implemented
-   `sourceComplexMinkowskiInner`, prove ambient nondegeneracy directly from
-   the checked `sourceComplexMinkowskiInner_left_nonDegenerate` using
-   `LinearMap.BilinForm.Nondegenerate.ofSeparatingLeft`, and define
-   `complexMinkowskiOrthogonalSubmodule` through
-   `LinearMap.BilinForm.orthogonal`.  Third prove the proper-span complement
-   and reflection packet.  The complement theorem now has an implementation
-   transcript: `restrictedMinkowskiRank_eq_finrank_of_nondegenerate` proves the
-   restricted radical is bottom, then
-   `sourceSpan_orthogonalComplement_nontrivial_of_proper` uses
-   `sourceGramMatrixRank_eq_restrictedMinkowskiRank_range`, `S.M_eq_range`,
-   `S.M_nondegenerate`, `LinearMap.BilinForm.finrank_orthogonal`, and
-   `Module.nontrivial_of_finrank_pos`.  The polarization theorem
-   `exists_nonisotropic_in_nondegenerate_subspace` is scratch-checked: if
-   `B(x,x)` vanished identically, then applying it to `x+y` gives
+   `fullComplexLorentz_to_complexLorentzGroup_of_det_one`.  Second keep the
+   source orthogonal complement as the checked kernel of
+   `complexMinkowskiToSubmoduleDual`; the complement nondegeneracy proof is
+   direct finite linear algebra.  Nondegeneracy of `M` makes
+   `restrictedMinkowskiLeftMap d M` injective, hence surjective onto `M`'s
+   dual by equal finite dimension; for any ambient `v`, choose `m ∈ M` with
+   the same functional on `M`, so `v - m ∈ Mᗮ`.  A vector in `Mᗮ` orthogonal
+   to every vector of `Mᗮ` is then orthogonal to every ambient vector, hence
+   zero by `sourceComplexMinkowskiInner_left_nonDegenerate`.  Third prove the
+   proper-span complement and reflection packet.  The dimension gate
+   `sourceSpan_orthogonalComplement_nontrivial_of_proper` now rewrites
+   `Module.finrank ℂ S.M` with
+   `HWHighRankSpanIsometryData.M_finrank_eq_sourceGramRank` and applies
+   `complexMinkowskiOrthogonalSubmodule_ne_bot_of_finrank_lt`; the
+   vector-valued version is the immediate
+   `Submodule.exists_mem_ne_zero_of_ne_bot` extraction.  Combining this
+   nontriviality with `complexMinkowskiOrthogonalSubmodule_nondegenerate` and
+   the polarization theorem gives
+   `exists_nonisotropic_mem_sourceSpan_orthogonalComplement_of_proper`, whose
+   witness is an element of `complexMinkowskiOrthogonalSubmodule d S.M` with
+   nonzero self-pairing.  The polarization theorem
+   `exists_nonisotropic_in_nondegenerate_subspace` is scratch-checked:
+   if `B(x,x)` vanished identically, then applying it to `x+y` gives
    `(2 : ℂ) * B(x,y)=0`, hence `B(x,y)=0`, contradicting nondegeneracy.  The
    Householder determinant is computed as a module-reflection determinant:
    `LinearMap.det_eq_det_mul_det` for `W := ℂ ∙ u`, determinant `-1` on
@@ -5572,15 +5579,20 @@ implementation contract is:
 	   `BHW.complexMinkowskiOrthogonalSubmodule`,
 	   `BHW.mem_complexMinkowskiOrthogonalSubmodule_iff`,
 	   `BHW.complexMinkowskiOrthogonalSubmodule_ne_bot_of_finrank_lt`,
+	   `BHW.exists_nonzero_mem_complexMinkowskiOrthogonalSubmodule_of_finrank_lt`,
 	   `BHW.sourceSpan_orthogonalComplement_nontrivial_of_orbitRank_rank_lt_spacetime`,
+	   `BHW.exists_nonzero_mem_sourceSpan_orthogonalComplement_of_orbitRank_rank_lt_spacetime`,
 	   `BHW.HWHighRankSpanIsometryData.M_finrank_eq_sourceGramRank`, and
 	   `BHW.HWHighRankSpanIsometryData.N_finrank_eq_sourceGramRank`,
+	   `BHW.sourceSpan_orthogonalComplement_nontrivial_of_proper`,
+	   `BHW.exists_nonzero_mem_sourceSpan_orthogonalComplement_of_proper`,
 	   `BHW.complexMinkowski_wittExtension_full_of_sourceSpan`,
 	   `BHW.fullComplexLorentz_to_complexLorentzGroup_of_det_one`,
 	   `BHW.fullComplexLorentz_det_neg_reflection_fixing_sourceSpan`,
 	   `BHW.sourceSpan_orthogonalComplement_nontrivial_of_proper`,
 	   `BHW.complexMinkowskiOrthogonalSubmodule_nondegenerate`,
    `BHW.exists_nonisotropic_in_nondegenerate_subspace`,
+   `BHW.exists_nonisotropic_mem_sourceSpan_orthogonalComplement_of_proper`,
    `BHW.det_eq_of_conj_by_linearEquiv`,
    `BHW.det_restrict_reflection_span`,
    `BHW.det_quotient_reflection_span`,
@@ -7033,10 +7045,27 @@ finrank `< d + 1` and hence is not `⊤`.  Define the ambient orthogonal
 complement as the kernel of the linear map sending `v` to the functional
 `x ↦ sourceComplexMinkowskiInner d v x` on the source span.  Rank-nullity,
 `Subspace.dual_finrank_eq`, and the strict finrank inequality give that this
-orthogonal complement is nontrivial.  This is not the Witt extension itself; it
-is the finite-dimensional rank gate that lets the next proof identify the
-non-full orbit-rank case as a proper nondegenerate source span with a nonzero
-orthogonal complement before constructing the determinant-correcting reflection.
+orthogonal complement is nontrivial.  The vector-valued extraction is
+mechanical and should be named separately:
+`exists_nonzero_mem_complexMinkowskiOrthogonalSubmodule_of_finrank_lt` is
+`Submodule.exists_mem_ne_zero_of_ne_bot` applied to
+`complexMinkowskiOrthogonalSubmodule_ne_bot_of_finrank_lt`; the source-span
+specialization
+`exists_nonzero_mem_sourceSpan_orthogonalComplement_of_orbitRank_rank_lt_spacetime`
+applies the same extraction to
+`sourceSpan_orthogonalComplement_nontrivial_of_orbitRank_rank_lt_spacetime`.
+For the stored `HWHighRankSpanIsometryData` packet, the corresponding
+producer-level helpers are
+`sourceSpan_orthogonalComplement_nontrivial_of_proper`, which rewrites
+`Module.finrank ℂ S.M` with
+`HWHighRankSpanIsometryData.M_finrank_eq_sourceGramRank` and applies the same
+dimension theorem, and
+`exists_nonzero_mem_sourceSpan_orthogonalComplement_of_proper`, which performs
+the same `Submodule.exists_mem_ne_zero_of_ne_bot` extraction.
+These are not the Witt extension itself; they are the finite-dimensional rank
+gate that lets the next proof identify the non-full orbit-rank case as a
+proper nondegenerate source span with an explicit nonzero orthogonal-complement
+vector before constructing the determinant-correcting reflection.
 
 The remaining public theorem-slot surfaces in this scalar-source gate are not
 implemented in Lean.  The current production file

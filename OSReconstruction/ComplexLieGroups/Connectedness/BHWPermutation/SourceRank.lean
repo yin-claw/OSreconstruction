@@ -607,6 +607,33 @@ theorem sourceSpan_orthogonalComplement_nontrivial_of_orbitRank_rank_lt_spacetim
     (sourceCoefficientEval_range_finrank_lt_spacetime_of_orbitRank_rank_lt_spacetime
       d n hzRank hlt)
 
+/-- If a source subspace has dimension below the ambient spacetime dimension,
+then its complex Minkowski orthogonal complement contains a nonzero vector. -/
+theorem exists_nonzero_mem_complexMinkowskiOrthogonalSubmodule_of_finrank_lt
+    (d : ℕ)
+    {M : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hfin : Module.finrank ℂ M < d + 1) :
+    ∃ v : Fin (d + 1) → ℂ,
+      v ∈ complexMinkowskiOrthogonalSubmodule d M ∧ v ≠ 0 :=
+  Submodule.exists_mem_ne_zero_of_ne_bot
+    (complexMinkowskiOrthogonalSubmodule_ne_bot_of_finrank_lt d hfin)
+
+/-- In the high-rank but non-full-rank branch, the source-span orthogonal
+complement contains a nonzero vector. -/
+theorem exists_nonzero_mem_sourceSpan_orthogonalComplement_of_orbitRank_rank_lt_spacetime
+    (d n : ℕ)
+    {z : Fin n → Fin (d + 1) → ℂ}
+    (hzRank : HWSourceGramOrbitRankAt d n z)
+    (hlt :
+      sourceGramMatrixRank n (sourceMinkowskiGram d n z) < d + 1) :
+    ∃ v : Fin (d + 1) → ℂ,
+      v ∈ complexMinkowskiOrthogonalSubmodule d
+          (LinearMap.range (sourceCoefficientEval d n z)) ∧
+        v ≠ 0 :=
+  Submodule.exists_mem_ne_zero_of_ne_bot
+    (sourceSpan_orthogonalComplement_nontrivial_of_orbitRank_rank_lt_spacetime
+      d n hzRank hlt)
+
 /-- In the high-rank branch, the coefficient-evaluation kernel is exactly the
 scalar Gram kernel. -/
 theorem hw_highRank_eval_ker_eq_gramKernel
@@ -872,6 +899,149 @@ theorem N_finrank_eq_sourceGramRank
       d n (z := w) hndeg).symm
 
 end HWHighRankSpanIsometryData
+
+/-- In the high-rank but non-full-rank branch, the stored source span in the
+span-isometry packet has nontrivial complex Minkowski orthogonal complement. -/
+theorem sourceSpan_orthogonalComplement_nontrivial_of_proper
+    (d n : ℕ)
+    {z w : Fin n → Fin (d + 1) → ℂ}
+    (S : HWHighRankSpanIsometryData d n z w)
+    (hproper :
+      sourceGramMatrixRank n (sourceMinkowskiGram d n z) < d + 1) :
+    complexMinkowskiOrthogonalSubmodule d S.M ≠ ⊥ := by
+  apply complexMinkowskiOrthogonalSubmodule_ne_bot_of_finrank_lt d
+  rw [HWHighRankSpanIsometryData.M_finrank_eq_sourceGramRank d n S]
+  exact hproper
+
+/-- In the high-rank but non-full-rank branch, the stored source span in the
+span-isometry packet has a nonzero complex Minkowski orthogonal vector. -/
+theorem exists_nonzero_mem_sourceSpan_orthogonalComplement_of_proper
+    (d n : ℕ)
+    {z w : Fin n → Fin (d + 1) → ℂ}
+    (S : HWHighRankSpanIsometryData d n z w)
+    (hproper :
+      sourceGramMatrixRank n (sourceMinkowskiGram d n z) < d + 1) :
+    ∃ v : Fin (d + 1) → ℂ,
+      v ∈ complexMinkowskiOrthogonalSubmodule d S.M ∧ v ≠ 0 :=
+  Submodule.exists_mem_ne_zero_of_ne_bot
+    (sourceSpan_orthogonalComplement_nontrivial_of_proper d n S hproper)
+
+/-- A nontrivial nondegenerate complex Minkowski subspace contains a vector
+with nonzero self-pairing. -/
+theorem exists_nonisotropic_in_nondegenerate_subspace
+    (d : ℕ)
+    (M : Submodule ℂ (Fin (d + 1) → ℂ))
+    [Nontrivial M]
+    (hM : ComplexMinkowskiNondegenerateSubspace d M) :
+    ∃ u : M,
+      sourceComplexMinkowskiInner d
+        (u : Fin (d + 1) → ℂ)
+        (u : Fin (d + 1) → ℂ) ≠ 0 := by
+  by_contra hnone
+  have hdiag :
+      ∀ u : M,
+        sourceComplexMinkowskiInner d
+          (u : Fin (d + 1) → ℂ)
+          (u : Fin (d + 1) → ℂ) = 0 := by
+    intro u
+    by_contra hu
+    exact hnone ⟨u, hu⟩
+  obtain ⟨x, hx_ne⟩ := exists_ne (0 : M)
+  have hx_zero : x = 0 := by
+    apply hM x
+    intro y
+    have hsum := hdiag (x + y)
+    have hx := hdiag x
+    have hy := hdiag y
+    have hxy2 :
+        (2 : ℂ) * sourceComplexMinkowskiInner d
+          (x : Fin (d + 1) → ℂ)
+          (y : Fin (d + 1) → ℂ) = 0 := by
+      change
+        sourceComplexMinkowskiInner d
+          ((x : Fin (d + 1) → ℂ) + (y : Fin (d + 1) → ℂ))
+          ((x : Fin (d + 1) → ℂ) + (y : Fin (d + 1) → ℂ)) = 0 at hsum
+      rw [sourceComplexMinkowskiInner_add_left,
+        sourceComplexMinkowskiInner_add_right,
+        sourceComplexMinkowskiInner_add_right] at hsum
+      rw [hx, hy,
+        sourceComplexMinkowskiInner_comm d
+          (y : Fin (d + 1) → ℂ)
+          (x : Fin (d + 1) → ℂ)] at hsum
+      linear_combination hsum
+    exact (mul_eq_zero.mp hxy2).resolve_left (by norm_num : (2 : ℂ) ≠ 0)
+  exact hx_ne hx_zero
+
+/-- The complex Minkowski orthogonal complement of a nondegenerate subspace is
+nondegenerate. -/
+theorem complexMinkowskiOrthogonalSubmodule_nondegenerate
+    (d : ℕ)
+    {M : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hM : ComplexMinkowskiNondegenerateSubspace d M) :
+    ComplexMinkowskiNondegenerateSubspace d
+      (complexMinkowskiOrthogonalSubmodule d M) := by
+  let O := complexMinkowskiOrthogonalSubmodule d M
+  intro x horth
+  apply Subtype.ext
+  apply sourceComplexMinkowskiInner_left_nonDegenerate d
+  intro v
+  let R := restrictedMinkowskiLeftMap d M
+  have hR_inj : Function.Injective R := by
+    rw [← LinearMap.ker_eq_bot]
+    exact restrictedMinkowskiRadical_eq_bot_of_nondegenerate d hM
+  have hdim :
+      Module.finrank ℂ M = Module.finrank ℂ (Module.Dual ℂ M) := by
+    rw [Subspace.dual_finrank_eq]
+  have hR_surj : Function.Surjective R :=
+    (LinearMap.injective_iff_surjective_of_finrank_eq_finrank hdim).1 hR_inj
+  obtain ⟨m, hm⟩ := hR_surj (complexMinkowskiToSubmoduleDual d M v)
+  have hvm_orth : v - (m : Fin (d + 1) → ℂ) ∈ O := by
+    rw [mem_complexMinkowskiOrthogonalSubmodule_iff]
+    intro y
+    have hmy :
+        sourceComplexMinkowskiInner d
+          (m : Fin (d + 1) → ℂ)
+          (y : Fin (d + 1) → ℂ) =
+        sourceComplexMinkowskiInner d v
+          (y : Fin (d + 1) → ℂ) := by
+      have h := congrArg (fun f : Module.Dual ℂ M => f y) hm
+      simpa [R, restrictedMinkowskiLeftMap, complexMinkowskiToSubmoduleDual]
+        using h
+    rw [sourceComplexMinkowskiInner_sub_left, hmy, sub_self]
+  have hxm :
+      sourceComplexMinkowskiInner d
+        (x : Fin (d + 1) → ℂ)
+        (m : Fin (d + 1) → ℂ) = 0 :=
+    (mem_complexMinkowskiOrthogonalSubmodule_iff d M
+      (x : Fin (d + 1) → ℂ)).1 x.property m
+  have hxvm :
+      sourceComplexMinkowskiInner d
+        (x : Fin (d + 1) → ℂ)
+        (v - (m : Fin (d + 1) → ℂ)) = 0 :=
+    horth ⟨v - (m : Fin (d + 1) → ℂ), hvm_orth⟩
+  rw [sourceComplexMinkowskiInner_sub_right, hxm, sub_zero] at hxvm
+  exact hxvm
+
+/-- In the high-rank but non-full-rank branch, the stored source span has a
+nonisotropic vector in its complex Minkowski orthogonal complement. -/
+theorem exists_nonisotropic_mem_sourceSpan_orthogonalComplement_of_proper
+    (d n : ℕ)
+    {z w : Fin n → Fin (d + 1) → ℂ}
+    (S : HWHighRankSpanIsometryData d n z w)
+    (hproper :
+      sourceGramMatrixRank n (sourceMinkowskiGram d n z) < d + 1) :
+    ∃ u : complexMinkowskiOrthogonalSubmodule d S.M,
+      sourceComplexMinkowskiInner d
+        (u : Fin (d + 1) → ℂ)
+        (u : Fin (d + 1) → ℂ) ≠ 0 := by
+  have hcomp_ne : complexMinkowskiOrthogonalSubmodule d S.M ≠ ⊥ :=
+    sourceSpan_orthogonalComplement_nontrivial_of_proper d n S hproper
+  letI : Nontrivial (complexMinkowskiOrthogonalSubmodule d S.M) :=
+    (Submodule.nontrivial_iff_ne_bot).2 hcomp_ne
+  exact
+    exists_nonisotropic_in_nondegenerate_subspace d
+      (complexMinkowskiOrthogonalSubmodule d S.M)
+      (complexMinkowskiOrthogonalSubmodule_nondegenerate d S.M_nondegenerate)
 
 /-- The low-rank branch is exactly the complement of the orbit-rank branch. -/
 theorem hwSourceGram_lowRank_iff_not_orbitRank

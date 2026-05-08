@@ -25554,8 +25554,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
             simp [BHW.sourceComplexMinkowskiInner_smul_left, hx m] }
 
       theorem BHW.complexMinkowskiOrthogonalSubmodule_nondegenerate
-          [NeZero d]
-          (hd : 2 <= d)
+          (d : Nat)
           {M : Submodule ℂ (Fin (d + 1) -> ℂ)}
           (hM : BHW.ComplexMinkowskiNondegenerateSubspace d M) :
           BHW.ComplexMinkowskiNondegenerateSubspace d
@@ -29096,7 +29095,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.restrictedMinkowskiRank d M = Module.finrank ℂ M
 
       theorem BHW.exists_nonisotropic_in_nondegenerate_subspace
-          [NeZero d]
+          (d : Nat)
           (M : Submodule ℂ (Fin (d + 1) -> ℂ))
           [Nontrivial M]
           (hM :
@@ -29107,12 +29106,24 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (u : Fin (d + 1) -> ℂ) ≠ 0
 
       theorem BHW.complexMinkowskiOrthogonalSubmodule_nondegenerate
-          [NeZero d]
-          (M : Submodule ℂ (Fin (d + 1) -> ℂ))
+          (d : Nat)
+          {M : Submodule ℂ (Fin (d + 1) -> ℂ)}
           (hM :
             BHW.ComplexMinkowskiNondegenerateSubspace d M) :
           BHW.ComplexMinkowskiNondegenerateSubspace d
             (BHW.complexMinkowskiOrthogonalSubmodule d M)
+
+      theorem BHW.exists_nonisotropic_mem_sourceSpan_orthogonalComplement_of_proper
+          (d n : Nat)
+          {z w : Fin n -> Fin (d + 1) -> ℂ}
+          (S : BHW.HWHighRankSpanIsometryData d n z w)
+          (hproper :
+            BHW.sourceGramMatrixRank n (BHW.sourceMinkowskiGram d n z) <
+              d + 1) :
+          ∃ u : BHW.complexMinkowskiOrthogonalSubmodule d S.M,
+            BHW.sourceComplexMinkowskiInner d
+              (u : Fin (d + 1) -> ℂ)
+              (u : Fin (d + 1) -> ℂ) ≠ 0
 
       def BHW.fullComplexLorentzReflection
           [NeZero d]
@@ -30204,37 +30215,55 @@ Proof decomposition of this theorem, without hiding the analytic work:
             h ⟨x, hx⟩
 
       theorem BHW.complexMinkowskiOrthogonalSubmodule_nondegenerate
-          [NeZero d]
-          (M : Submodule ℂ (Fin (d + 1) -> ℂ))
+          (d : Nat)
+          {M : Submodule ℂ (Fin (d + 1) -> ℂ)}
           (hM : BHW.ComplexMinkowskiNondegenerateSubspace d M) :
           BHW.ComplexMinkowskiNondegenerateSubspace d
             (BHW.complexMinkowskiOrthogonalSubmodule d M) := by
-        let B := BHW.sourceComplexMinkowskiBilinForm d
-        have hB_refl : B.IsRefl :=
-          BHW.sourceComplexMinkowskiBilinForm_isRefl d
-        have hB_nd : B.Nondegenerate :=
-          BHW.sourceComplexMinkowskiBilinForm_nondegenerate d
-        have hMrest : (B.restrict M).Nondegenerate := by
-          simpa [B] using
-            BHW.complexMinkowskiNondegenerateSubspace_to_restrict
-              d M hM
-        have hCompl : IsCompl M (B.orthogonal M) :=
-          (LinearMap.BilinForm.restrict_nondegenerate_iff_isCompl_orthogonal
-            (B := B) (W := M) hB_refl).mp hMrest
-        have horthorth : B.orthogonal (B.orthogonal M) = M :=
-          LinearMap.BilinForm.orthogonal_orthogonal
-            (B := B) hB_nd hB_refl M
-        have hCompl2 :
-            IsCompl (B.orthogonal M)
-              (B.orthogonal (B.orthogonal M)) := by
-          simpa [horthorth] using hCompl.symm
-        have hOrest :
-            (B.restrict (B.orthogonal M)).Nondegenerate :=
-          (LinearMap.BilinForm.restrict_nondegenerate_iff_isCompl_orthogonal
-            (B := B) (W := B.orthogonal M) hB_refl).mpr hCompl2
-        simpa [BHW.complexMinkowskiOrthogonalSubmodule, B] using
-          BHW.complexMinkowskiNondegenerateSubspace_of_restrict
-            d (B.orthogonal M) hOrest
+        let O := BHW.complexMinkowskiOrthogonalSubmodule d M
+        intro x horth
+        apply Subtype.ext
+        apply BHW.sourceComplexMinkowskiInner_left_nonDegenerate d
+        intro v
+        let R := BHW.restrictedMinkowskiLeftMap d M
+        have hR_inj : Function.Injective R := by
+          rw [← LinearMap.ker_eq_bot]
+          exact
+            BHW.restrictedMinkowskiRadical_eq_bot_of_nondegenerate d hM
+        have hdim :
+            Module.finrank ℂ M = Module.finrank ℂ (Module.Dual ℂ M) := by
+          rw [Subspace.dual_finrank_eq]
+        have hR_surj : Function.Surjective R :=
+          (LinearMap.injective_iff_surjective_of_finrank_eq_finrank
+            hdim).1 hR_inj
+        obtain ⟨m, hm⟩ :=
+          hR_surj (BHW.complexMinkowskiToSubmoduleDual d M v)
+        have hvm_orth : v - (m : Fin (d + 1) -> ℂ) ∈ O := by
+          rw [BHW.mem_complexMinkowskiOrthogonalSubmodule_iff]
+          intro y
+          have hmy :
+              BHW.sourceComplexMinkowskiInner d
+                (m : Fin (d + 1) -> ℂ)
+                (y : Fin (d + 1) -> ℂ) =
+              BHW.sourceComplexMinkowskiInner d
+                v (y : Fin (d + 1) -> ℂ) := by
+            have h := congrArg (fun f : Module.Dual ℂ M => f y) hm
+            simpa [R, BHW.restrictedMinkowskiLeftMap,
+              BHW.complexMinkowskiToSubmoduleDual] using h
+          rw [BHW.sourceComplexMinkowskiInner_sub_left, hmy, sub_self]
+        have hxm :
+            BHW.sourceComplexMinkowskiInner d
+              (x : Fin (d + 1) -> ℂ)
+              (m : Fin (d + 1) -> ℂ) = 0 :=
+          (BHW.mem_complexMinkowskiOrthogonalSubmodule_iff d M
+            (x : Fin (d + 1) -> ℂ)).1 x.property m
+        have hxvm :
+            BHW.sourceComplexMinkowskiInner d
+              (x : Fin (d + 1) -> ℂ)
+              (v - (m : Fin (d + 1) -> ℂ)) = 0 :=
+          horth ⟨v - (m : Fin (d + 1) -> ℂ), hvm_orth⟩
+        rw [BHW.sourceComplexMinkowskiInner_sub_right, hxm, sub_zero] at hxvm
+        exact hxvm
 
       theorem BHW.restrictedMinkowskiRank_eq_finrank_of_nondegenerate
           (d : Nat)
@@ -30261,83 +30290,33 @@ Proof decomposition of this theorem, without hiding the analytic work:
           Nat.sub_zero]
 
       theorem BHW.sourceSpan_orthogonalComplement_nontrivial_of_proper
-          [NeZero d]
-          (_hd : 2 <= d)
+          (d n : Nat)
           {z w : Fin n -> Fin (d + 1) -> ℂ}
           (S : BHW.HWHighRankSpanIsometryData d n z w)
           (hproper :
             BHW.sourceGramMatrixRank n
                 (BHW.sourceMinkowskiGram d n z) < d + 1) :
-          Nontrivial
-            (BHW.complexMinkowskiOrthogonalSubmodule d S.M) := by
-        let B := BHW.sourceComplexMinkowskiBilinForm d
-        have hB_nd : B.Nondegenerate :=
-          BHW.sourceComplexMinkowskiBilinForm_nondegenerate d
-        have hrank_eq :
-            BHW.sourceGramMatrixRank n
-                (BHW.sourceMinkowskiGram d n z) =
-              Module.finrank ℂ S.M := by
-          calc
-            BHW.sourceGramMatrixRank n
-                (BHW.sourceMinkowskiGram d n z)
-                =
-              BHW.restrictedMinkowskiRank d
-                (LinearMap.range
-                  (BHW.sourceCoefficientEval d n z)) :=
-                  BHW.sourceGramMatrixRank_eq_restrictedMinkowskiRank_range
-                    d n z
-            _ = BHW.restrictedMinkowskiRank d S.M := by
-                  rw [← S.M_eq_range]
-            _ = Module.finrank ℂ S.M :=
-                  BHW.restrictedMinkowskiRank_eq_finrank_of_nondegenerate
-                    d S.M_nondegenerate
-        have hM_lt : Module.finrank ℂ S.M < d + 1 := by
-          simpa [hrank_eq] using hproper
-        have horth_fin :
-            Module.finrank ℂ
-                (BHW.complexMinkowskiOrthogonalSubmodule d S.M) =
-              Module.finrank ℂ (Fin (d + 1) -> ℂ) -
-                Module.finrank ℂ S.M := by
-          simpa [BHW.complexMinkowskiOrthogonalSubmodule, B] using
-            LinearMap.BilinForm.finrank_orthogonal
-              (B := B) hB_nd S.M
-        have hOpos :
-            0 < Module.finrank ℂ
-              (BHW.complexMinkowskiOrthogonalSubmodule d S.M) := by
-          rw [horth_fin]
-          simpa [Module.finrank_fin_fun] using
-            Nat.sub_pos_of_lt hM_lt
-        exact Module.nontrivial_of_finrank_pos hOpos
+          BHW.complexMinkowskiOrthogonalSubmodule d S.M ≠ ⊥ := by
+        apply
+          BHW.complexMinkowskiOrthogonalSubmodule_ne_bot_of_finrank_lt d
+        rw [BHW.HWHighRankSpanIsometryData.M_finrank_eq_sourceGramRank
+          d n S]
+        exact hproper
       ```
 
-      The proof of `sourceComplexMinkowskiBilinForm_nondegenerate` was
-      scratch-checked against Lean and reuses the already implemented
-      `sourceComplexMinkowskiInner_left_nonDegenerate`; no new diagonal-model
-      theorem is needed for this ambient nondegeneracy bridge.  The checked
-      diagonal scale `BHW.complexMinkowskiToDotLinearEquiv d` remains useful
-      for the full Witt-extension theorem and for symmetric source-variety
-      identification, but it is not the first proof of ambient
-      nondegeneracy.  The proof of
-      `complexMinkowskiOrthogonalSubmodule_nondegenerate` first converts
-      `ComplexMinkowskiNondegenerateSubspace d M` to
-      `(B.restrict M).Nondegenerate`, applies
-      `LinearMap.BilinForm.restrict_nondegenerate_iff_isCompl_orthogonal` to
-      get `IsCompl M (B.orthogonal M)`, and then uses the same theorem in the
-      complementary direction for `B.orthogonal M`, together with ambient
-      nondegeneracy and reflexivity.  The proof of
+      The proof of
+      `complexMinkowskiOrthogonalSubmodule_nondegenerate` is now the direct
+      quotient-dual proof above, not a dependency on a heavier Mathlib
+      orthogonal-complement theorem.  The proof of
       `restrictedMinkowskiRank_eq_finrank_of_nondegenerate` first proves the
       restricted radical is bottom from `S.M_nondegenerate`, then unfolds
       `restrictedMinkowskiRank`.  The proof of
-      `sourceSpan_orthogonalComplement_nontrivial_of_proper` rewrites `S.M`
-      as `LinearMap.range (sourceCoefficientEval d n z)`, uses the checked
-      `sourceGramMatrixRank_eq_restrictedMinkowskiRank_range`, applies
-      `restrictedMinkowskiRank_eq_finrank_of_nondegenerate` to replace the
-      restricted rank by `finrank S.M`, and obtains `finrank S.M < d + 1`
-      from `hproper`.  Since the ambient vector space has finrank `d + 1`,
-      `LinearMap.BilinForm.finrank_orthogonal` gives positive finrank of
-      `S.Mᗮ`, and `Module.nontrivial_of_finrank_pos` turns this into
-      `Nontrivial S.Mᗮ`.  This complement proof transcript was
-      scratch-checked against the local Lean APIs.
+      `sourceSpan_orthogonalComplement_nontrivial_of_proper` uses the checked
+      `HWHighRankSpanIsometryData.M_finrank_eq_sourceGramRank` equation and
+      then applies
+      `complexMinkowskiOrthogonalSubmodule_ne_bot_of_finrank_lt`.  Its
+      vector-valued version is the one-line
+      `Submodule.exists_mem_ne_zero_of_ne_bot` extraction.
 
       Finally, the reflection theorem is not a sign-choice black box.  It is
       the explicit Householder map.  The nonisotropic vector is produced from
@@ -30761,9 +30740,92 @@ Proof decomposition of this theorem, without hiding the analytic work:
       step: high-rank gives a nondegenerate source span, while
       `sourceGramMatrixRank < d + 1` says its dimension is strictly below the
       ambient dimension, so the orthogonal complement is nonzero.  The
-      complement is nondegenerate because the source span is nondegenerate in
-      a nondegenerate ambient space.  Finally, a nonzero nondegenerate complex
-      symmetric space contains a nonisotropic vector: if
+      immediate vector-valued form is:
+
+      ```lean
+      theorem BHW.exists_nonzero_mem_complexMinkowskiOrthogonalSubmodule_of_finrank_lt
+          (d : Nat)
+          {M : Submodule ℂ (Fin (d + 1) -> ℂ)}
+          (hfin : Module.finrank ℂ M < d + 1) :
+          ∃ v : Fin (d + 1) -> ℂ,
+            v ∈ BHW.complexMinkowskiOrthogonalSubmodule d M ∧ v ≠ 0 := by
+        exact
+          Submodule.exists_mem_ne_zero_of_ne_bot
+            (BHW.complexMinkowskiOrthogonalSubmodule_ne_bot_of_finrank_lt
+              d hfin)
+
+      theorem BHW.exists_nonzero_mem_sourceSpan_orthogonalComplement_of_orbitRank_rank_lt_spacetime
+          (d n : Nat)
+          {z : Fin n -> Fin (d + 1) -> ℂ}
+          (hzRank : BHW.HWSourceGramOrbitRankAt d n z)
+          (hlt :
+            BHW.sourceGramMatrixRank n (BHW.sourceMinkowskiGram d n z) <
+              d + 1) :
+          ∃ v : Fin (d + 1) -> ℂ,
+            v ∈
+              BHW.complexMinkowskiOrthogonalSubmodule d
+                (LinearMap.range (BHW.sourceCoefficientEval d n z)) ∧
+            v ≠ 0 := by
+        exact
+          Submodule.exists_mem_ne_zero_of_ne_bot
+            (BHW.sourceSpan_orthogonalComplement_nontrivial_of_orbitRank_rank_lt_spacetime
+              d n hzRank hlt)
+
+      theorem BHW.sourceSpan_orthogonalComplement_nontrivial_of_proper
+          (d n : Nat)
+          {z w : Fin n -> Fin (d + 1) -> ℂ}
+          (S : BHW.HWHighRankSpanIsometryData d n z w)
+          (hproper :
+            BHW.sourceGramMatrixRank n (BHW.sourceMinkowskiGram d n z) <
+              d + 1) :
+          BHW.complexMinkowskiOrthogonalSubmodule d S.M ≠ ⊥ := by
+        apply
+          BHW.complexMinkowskiOrthogonalSubmodule_ne_bot_of_finrank_lt d
+        rw [BHW.HWHighRankSpanIsometryData.M_finrank_eq_sourceGramRank
+          d n S]
+        exact hproper
+
+      theorem BHW.exists_nonzero_mem_sourceSpan_orthogonalComplement_of_proper
+          (d n : Nat)
+          {z w : Fin n -> Fin (d + 1) -> ℂ}
+          (S : BHW.HWHighRankSpanIsometryData d n z w)
+          (hproper :
+            BHW.sourceGramMatrixRank n (BHW.sourceMinkowskiGram d n z) <
+              d + 1) :
+          ∃ v : Fin (d + 1) -> ℂ,
+            v ∈ BHW.complexMinkowskiOrthogonalSubmodule d S.M ∧ v ≠ 0 :=
+        Submodule.exists_mem_ne_zero_of_ne_bot
+          (BHW.sourceSpan_orthogonalComplement_nontrivial_of_proper
+            d n S hproper)
+
+      theorem BHW.exists_nonisotropic_mem_sourceSpan_orthogonalComplement_of_proper
+          (d n : Nat)
+          {z w : Fin n -> Fin (d + 1) -> ℂ}
+          (S : BHW.HWHighRankSpanIsometryData d n z w)
+          (hproper :
+            BHW.sourceGramMatrixRank n (BHW.sourceMinkowskiGram d n z) <
+              d + 1) :
+          ∃ u : BHW.complexMinkowskiOrthogonalSubmodule d S.M,
+            BHW.sourceComplexMinkowskiInner d
+              (u : Fin (d + 1) -> ℂ)
+              (u : Fin (d + 1) -> ℂ) ≠ 0 := by
+        have hcomp_ne :
+            BHW.complexMinkowskiOrthogonalSubmodule d S.M ≠ ⊥ :=
+          BHW.sourceSpan_orthogonalComplement_nontrivial_of_proper
+            d n S hproper
+        letI : Nontrivial
+            (BHW.complexMinkowskiOrthogonalSubmodule d S.M) :=
+          (Submodule.nontrivial_iff_ne_bot).2 hcomp_ne
+        exact
+          BHW.exists_nonisotropic_in_nondegenerate_subspace d
+            (BHW.complexMinkowskiOrthogonalSubmodule d S.M)
+            (BHW.complexMinkowskiOrthogonalSubmodule_nondegenerate
+              d S.M_nondegenerate)
+      ```
+
+      The complement is nondegenerate by the quotient-dual decomposition
+      theorem above.  A nonzero nondegenerate complex symmetric space contains
+      a nonisotropic vector: if
       `B(u,u) = 0` for every `u`, polarization gives
       `B(u,v) = 0` for all `u,v`, contradicting nondegeneracy.  The reflection
       is the explicit Householder map
@@ -32140,7 +32202,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | Restricted-rank bridge: `sourceCoefficientGramMap_eq_toLin_transpose`, `sourceGramMatrixRank_eq_finrank_range_sourceCoefficientGramMap`, `sourceCoefficientEval_mem_restrictedMinkowskiRadical_iff`, `sourceCoefficientGramKernel_eq_eval_preimage_radical`, `finrank_range_sourceCoefficientGramMap_eq_restrictedRank`, and `sourceGramMatrixRank_eq_restrictedMinkowskiRank_range` | Implemented and exact-file checked in `BHWPermutation/SourceRank.lean`. | The checked proof quotients coefficient space by `ker sourceCoefficientEval` with `Submodule.liftQ`, uses `Submodule.range_liftQ`, identifies the lifted kernel with the restricted radical through `sourceCoefficientEval.quotKerEquivRange`, applies `LinearMap.finrank_range_add_finrank_ker`, and rewrites the scalar matrix rank through the transposed coefficient Gram map. |
       | High-rank nondegeneracy and kernel transport | Implemented and exact-file checked in `BHWPermutation/SourceRank.lean`. | Degenerate restricted span forces scalar rank `< min d n` using `Submodule.one_le_finrank_iff`, `Submodule.finrank_lt`, and `sourceComplexMinkowskiInner_left_nonDegenerate`; then `ker evalZ = gramKernel = ker evalW` under same Gram.  This is the checked step that prevents using `z i ↦ w i` before well-definedness is proved. |
       | High-rank span isometry data | Implemented and exact-file checked in `BHWPermutation/SourceRank.lean`. | Builds `HWHighRankSpanIsometryData` from the common coefficient quotient using `hwHighRankSpanIsometryOfKernelEq`, `hwHighRankSpanIsometry_apply_eval`, and `sourceCoefficientEval_pair_eq_sum_gram`; the producer is a `noncomputable def` because it returns data, while `HWHighRankSpanIsometryData_sourceGram_eq` is a proposition-valued theorem. |
-      | High-rank determinant orientation and orbit theorem | Full transcript pinned; production Lean not started. | Start with the full-complex extension from `HWHighRankSpanIsometryData`, now decomposed through source span plus orthogonal complement, complement-isometry classification over `ℂ`, product assembly, and matrix conversion.  The classification helper is pinned by orthogonal bases, complex square-root normalization, and the coordinate-sum identity.  In the proper-span case, `sourceSpan_orthogonalComplement_nontrivial_of_proper`, `exists_nonisotropic_in_nondegenerate_subspace`, and the Householder module-reflection determinant compute the determinant flip without a sign-choice black box.  In the full-ambient-rank case, the full-frame determinant-ratio equality is pinned by the unique selected-frame isometry and determinant action on frames.  The public high-rank orbit and orbit-or-improper theorems then only assemble `HWHighRankSpanIsometryData`, consume the determinant-sensitive Witt producer, and rewrite vectorwise action equality to configuration equality.  The determinant-`-1` full-rank branch is exposed as `HWSameSourceGramImproperOrbitData` and may be consumed only by the conditional full-component Hall-Wightman fork; the active oriented fork proves the determinant ratio is `1` before calling the proper orbit theorem. |
+      | High-rank determinant orientation and orbit theorem | Complement vector packet now checked; full-complex extension and Householder determinant still not implemented. | Start with the full-complex extension from `HWHighRankSpanIsometryData`, now decomposed through source span plus orthogonal complement, complement-isometry classification over `ℂ`, product assembly, and matrix conversion.  The classification helper is pinned by orthogonal bases, complex square-root normalization, and the coordinate-sum identity.  In the proper-span case, the checked `sourceSpan_orthogonalComplement_nontrivial_of_proper`, `complexMinkowskiOrthogonalSubmodule_nondegenerate`, and `exists_nonisotropic_mem_sourceSpan_orthogonalComplement_of_proper` supply the nonisotropic complement vector; the remaining Householder module-reflection determinant computes the determinant flip without a sign-choice black box.  In the full-ambient-rank case, the full-frame determinant-ratio equality is pinned by the unique selected-frame isometry and determinant action on frames.  The public high-rank orbit and orbit-or-improper theorems then only assemble `HWHighRankSpanIsometryData`, consume the determinant-sensitive Witt producer, and rewrite vectorwise action equality to configuration equality.  The determinant-`-1` full-rank branch is exposed as `HWSameSourceGramImproperOrbitData` and may be consumed only by the conditional full-component Hall-Wightman fork; the active oriented fork proves the determinant ratio is `1` before calling the proper orbit theorem. |
       | Principal minor extraction for low-rank selected block | Principal-minor extraction checked locally; selected-frame construction transcript pinned. | `BHW.exists_sourcePrincipalMinor_ne_zero_of_sourceSymmetricRank` is checked in `BHWPermutation/SourceComplexSchurPatch.lean`; the selected-span frame uses the inverse principal Gram block coefficient formula and the Schur-complement exact-rank theorem displayed above. |
       | Low-rank selected-span frame and residual Schur-zero theorem | Proof transcript pinned; production Lean not started. | Inverse principal Gram block coefficients, residual orthogonality, residual-pairing equality from `hgram`, and residual-residual zero from the indexed Schur-complement theorem at exact rank.  The proof uses `selectedIndexSumEquiv` and case-splits on selected versus complementary indices; no block-matrix prose is left as a mathematical step. |
       | Selected-span alignment and common residual subspaces | Proof transcript pinned; production Lean not started. | First align the selected `z` and `w` spans by determinant-repaired Witt extension; only then put the two residual families in the common orthogonal complement.  Reversing this order is false.  The residual subspaces and their isotropy/orthogonality fields are extracted from the aligned decomposition. |
