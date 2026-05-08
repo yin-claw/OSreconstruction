@@ -527,6 +527,40 @@ theorem exists_sourceFullFrameDet_ne_zero_of_sourceGramRank_eq_spacetime
   exact exists_sourceFullFrameDet_ne_zero_of_sourceComplexGramRegularAt
     d n hn hreg
 
+/-- Equality of oriented source invariants supplies the determinant
+compatibility required for the determinant-`1` same-Gram extension branch. -/
+theorem sourceOriented_soCompatible_of_sameInvariant
+    (d n : ℕ)
+    {z w : Fin n → Fin (d + 1) → ℂ}
+    (hgram : sourceMinkowskiGram d n z = sourceMinkowskiGram d n w)
+    (horiented :
+      sourceOrientedMinkowskiInvariant d n z =
+        sourceOrientedMinkowskiInvariant d n w) :
+    HWSameSourceGramSOOrientationCompatible d n z w := by
+  by_cases hlt :
+      sourceGramMatrixRank n (sourceMinkowskiGram d n z) < d + 1
+  · exact Or.inl hlt
+  · have hle :
+        sourceGramMatrixRank n (sourceMinkowskiGram d n z) ≤ d + 1 :=
+      le_trans (sourceGramMatrixRank_le_spacetime_source_min d n z)
+        (min_le_left (d + 1) n)
+    have hfull :
+        sourceGramMatrixRank n (sourceMinkowskiGram d n z) = d + 1 :=
+      le_antisymm hle (Nat.le_of_not_lt hlt)
+    rcases exists_sourceFullFrameDet_ne_zero_of_sourceGramRank_eq_spacetime
+        d n z hfull with
+      ⟨ι, hι⟩
+    right
+    calc
+      HWFullRankSameGramFrameMapDet d n z w =
+          sourceFullFrameDet d n ι w / sourceFullFrameDet d n ι z :=
+            hwFullRankSameGramFrameMapDet_eq_det_ratio_of_fullFrame
+              d n hfull hgram ι hι
+      _ = sourceFullFrameDet d n ι z / sourceFullFrameDet d n ι z := by
+            rw [← same_sourceOrientedInvariant_fullFrameDet
+              (d := d) (n := n) horiented ι]
+      _ = 1 := div_self hι
+
 /-- In the hard range, every oriented max-rank source-variety point lies on
 some selected full-frame determinant-nonzero sheet. -/
 theorem exists_selectedDetNonzero_of_sourceOrientedMaxRankAt
