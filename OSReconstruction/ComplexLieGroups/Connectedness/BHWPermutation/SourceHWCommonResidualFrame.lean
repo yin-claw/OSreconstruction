@@ -367,4 +367,141 @@ theorem directSum_identity_sum_isotropicEmbedding_maps_left
     _ = m := by
             rw [heM_val, heR_zero, add_zero]
 
+/-- The direct-sum equivalence preserves the complex Minkowski pairing when
+the residual embedding preserves residual pairings. -/
+theorem directSum_identity_sum_isotropicEmbedding_preserves
+    {d : ℕ}
+    {M R : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {E : R →ₗ[ℂ] (Fin (d + 1) → ℂ)}
+    (hM : ComplexMinkowskiNondegenerateSubspace d M)
+    (hR_orth :
+      ∀ x : R, ∀ m : M,
+        sourceComplexMinkowskiInner d
+          (x : Fin (d + 1) → ℂ)
+          (m : Fin (d + 1) → ℂ) = 0)
+    (hE_inj : Function.Injective E)
+    (hE_orth :
+      ∀ x : R, ∀ m : M,
+        sourceComplexMinkowskiInner d
+          (E x)
+          (m : Fin (d + 1) → ℂ) = 0)
+    (hE_preserves :
+      ∀ x y : R,
+        sourceComplexMinkowskiInner d (E x) (E y) =
+          sourceComplexMinkowskiInner d
+            (x : Fin (d + 1) → ℂ)
+            (y : Fin (d + 1) → ℂ)) :
+    let T :=
+      directSum_identity_sum_isotropicEmbedding
+        (d := d) M R E hM hR_orth hE_inj hE_orth
+    ∀ x y : ↥(M ⊔ R),
+      sourceComplexMinkowskiInner d
+        ((T x : ↥(M ⊔ LinearMap.range E)) : Fin (d + 1) → ℂ)
+        ((T y : ↥(M ⊔ LinearMap.range E)) : Fin (d + 1) → ℂ) =
+      sourceComplexMinkowskiInner d
+        (x : Fin (d + 1) → ℂ)
+        (y : Fin (d + 1) → ℂ) := by
+  intro T x y
+  have hfour :
+      ∀ a b c e : Fin (d + 1) → ℂ,
+        sourceComplexMinkowskiInner d (a + b) (c + e) =
+          sourceComplexMinkowskiInner d a c +
+            sourceComplexMinkowskiInner d a e +
+            sourceComplexMinkowskiInner d b c +
+            sourceComplexMinkowskiInner d b e := by
+    intro a b c e
+    rw [sourceComplexMinkowskiInner_add_left]
+    rw [sourceComplexMinkowskiInner_add_right]
+    rw [sourceComplexMinkowskiInner_add_right]
+    ring
+  rcases (Submodule.mem_sup.mp x.2) with ⟨mx0, hmx0, rx0, hrx0, hxsum⟩
+  rcases (Submodule.mem_sup.mp y.2) with ⟨my0, hmy0, ry0, hry0, hysum⟩
+  let mx : M := ⟨mx0, hmx0⟩
+  let rx : R := ⟨rx0, hrx0⟩
+  let my : M := ⟨my0, hmy0⟩
+  let ry : R := ⟨ry0, hry0⟩
+  let xM : ↥(M ⊔ R) :=
+    ⟨(mx : Fin (d + 1) → ℂ), Submodule.mem_sup_left mx.2⟩
+  let xR : ↥(M ⊔ R) :=
+    ⟨(rx : Fin (d + 1) → ℂ), Submodule.mem_sup_right rx.2⟩
+  let yM : ↥(M ⊔ R) :=
+    ⟨(my : Fin (d + 1) → ℂ), Submodule.mem_sup_left my.2⟩
+  let yR : ↥(M ⊔ R) :=
+    ⟨(ry : Fin (d + 1) → ℂ), Submodule.mem_sup_right ry.2⟩
+  have hx_decomp : x = xM + xR := by
+    apply Subtype.ext
+    simpa [xM, xR, mx, rx] using hxsum.symm
+  have hy_decomp : y = yM + yR := by
+    apply Subtype.ext
+    simpa [yM, yR, my, ry] using hysum.symm
+  have hTx :
+      ((T x : ↥(M ⊔ LinearMap.range E)) : Fin (d + 1) → ℂ) =
+        (mx : Fin (d + 1) → ℂ) + E rx := by
+    calc
+      ((T x : ↥(M ⊔ LinearMap.range E)) : Fin (d + 1) → ℂ)
+          = ((T (xM + xR) : ↥(M ⊔ LinearMap.range E)) :
+              Fin (d + 1) → ℂ) := by rw [hx_decomp]
+      _ = ((T xM : ↥(M ⊔ LinearMap.range E)) : Fin (d + 1) → ℂ) +
+            ((T xR : ↥(M ⊔ LinearMap.range E)) :
+              Fin (d + 1) → ℂ) := by
+              exact congrArg
+                (fun z : ↥(M ⊔ LinearMap.range E) =>
+                  (z : Fin (d + 1) → ℂ))
+                (map_add T xM xR)
+      _ = (mx : Fin (d + 1) → ℂ) + E rx := by
+              rw [directSum_identity_sum_isotropicEmbedding_maps_left
+                    (d := d) (M := M) (R := R) (E := E)
+                    hM hR_orth hE_inj hE_orth mx,
+                  directSum_identity_sum_isotropicEmbedding_maps_right
+                    (d := d) (M := M) (R := R) (E := E)
+                    hM hR_orth hE_inj hE_orth rx]
+  have hTy :
+      ((T y : ↥(M ⊔ LinearMap.range E)) : Fin (d + 1) → ℂ) =
+        (my : Fin (d + 1) → ℂ) + E ry := by
+    calc
+      ((T y : ↥(M ⊔ LinearMap.range E)) : Fin (d + 1) → ℂ)
+          = ((T (yM + yR) : ↥(M ⊔ LinearMap.range E)) :
+              Fin (d + 1) → ℂ) := by rw [hy_decomp]
+      _ = ((T yM : ↥(M ⊔ LinearMap.range E)) : Fin (d + 1) → ℂ) +
+            ((T yR : ↥(M ⊔ LinearMap.range E)) :
+              Fin (d + 1) → ℂ) := by
+              exact congrArg
+                (fun z : ↥(M ⊔ LinearMap.range E) =>
+                  (z : Fin (d + 1) → ℂ))
+                (map_add T yM yR)
+      _ = (my : Fin (d + 1) → ℂ) + E ry := by
+              rw [directSum_identity_sum_isotropicEmbedding_maps_left
+                    (d := d) (M := M) (R := R) (E := E)
+                    hM hR_orth hE_inj hE_orth my,
+                  directSum_identity_sum_isotropicEmbedding_maps_right
+                    (d := d) (M := M) (R := R) (E := E)
+                    hM hR_orth hE_inj hE_orth ry]
+  have hx_val :
+      (x : Fin (d + 1) → ℂ) =
+        (mx : Fin (d + 1) → ℂ) + (rx : Fin (d + 1) → ℂ) := by
+    simpa [mx, rx] using hxsum.symm
+  have hy_val :
+      (y : Fin (d + 1) → ℂ) =
+        (my : Fin (d + 1) → ℂ) + (ry : Fin (d + 1) → ℂ) := by
+    simpa [my, ry] using hysum.symm
+  have h_mx_Ery :
+      sourceComplexMinkowskiInner d (mx : Fin (d + 1) → ℂ) (E ry) = 0 := by
+    rw [sourceComplexMinkowskiInner_comm]
+    exact hE_orth ry mx
+  have h_Erx_my :
+      sourceComplexMinkowskiInner d (E rx) (my : Fin (d + 1) → ℂ) = 0 :=
+    hE_orth rx my
+  have h_mx_ry :
+      sourceComplexMinkowskiInner d
+        (mx : Fin (d + 1) → ℂ) (ry : Fin (d + 1) → ℂ) = 0 := by
+    rw [sourceComplexMinkowskiInner_comm]
+    exact hR_orth ry mx
+  have h_rx_my :
+      sourceComplexMinkowskiInner d
+        (rx : Fin (d + 1) → ℂ) (my : Fin (d + 1) → ℂ) = 0 :=
+    hR_orth rx my
+  rw [hTx, hTy, hx_val, hy_val]
+  rw [hfour, hfour]
+  rw [h_mx_Ery, h_Erx_my, h_mx_ry, h_rx_my, hE_preserves rx ry]
+
 end BHW
