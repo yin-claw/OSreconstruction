@@ -130,6 +130,84 @@ theorem complexMinkowski_maximalIsotropicFrameIn_of_subspace_containing
   rw [complexMinkowskiMaximalIsotropicFrameIn_of_subspace_span_eq F]
   exact hR_le_Q hx
 
+/-- The part of an ambient source subspace `R` viewed inside the subtype `N`.
+
+When `R ≤ N`, this is just `R` with its vectors retyped as elements of `N`;
+without that hypothesis it is the intersection `R ∩ N` in subtype form. -/
+def complexMinkowskiSubmoduleIn
+    {d : ℕ}
+    (N R : Submodule ℂ (Fin (d + 1) → ℂ)) : Submodule ℂ N :=
+  R.comap N.subtype
+
+/-- Relative orthogonal of `R` inside the restricted source subspace `N`. -/
+def complexMinkowskiRelativeOrthogonalIn
+    {d : ℕ}
+    (N : Submodule ℂ (Fin (d + 1) → ℂ))
+    (R : Submodule ℂ N) : Submodule ℂ N where
+  carrier := {x | ∀ r : R,
+    sourceComplexMinkowskiInner d
+      (x : Fin (d + 1) → ℂ)
+      ((r : N) : Fin (d + 1) → ℂ) = 0}
+  zero_mem' := by
+    intro r
+    simp [sourceComplexMinkowskiInner]
+  add_mem' := by
+    intro x y hx hy r
+    change sourceComplexMinkowskiInner d
+      ((x : Fin (d + 1) → ℂ) + (y : Fin (d + 1) → ℂ))
+      ((r : N) : Fin (d + 1) → ℂ) = 0
+    rw [sourceComplexMinkowskiInner_add_left]
+    simp [hx r, hy r]
+  smul_mem' := by
+    intro c x hx r
+    change sourceComplexMinkowskiInner d
+      (c • (x : Fin (d + 1) → ℂ))
+      ((r : N) : Fin (d + 1) → ℂ) = 0
+    rw [sourceComplexMinkowskiInner_smul_left]
+    simp [hx r]
+
+/-- A totally isotropic subspace lies in its relative orthogonal after retyping
+inside any ambient subspace. -/
+theorem complexMinkowskiSubmoduleIn_le_relativeOrthogonalIn_of_totallyIsotropic
+    {d : ℕ}
+    {N R : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_iso : ComplexMinkowskiTotallyIsotropicSubspace d R) :
+    complexMinkowskiSubmoduleIn N R ≤
+      complexMinkowskiRelativeOrthogonalIn N
+        (complexMinkowskiSubmoduleIn N R) := by
+  intro x hx r
+  exact hR_iso ⟨(x : Fin (d + 1) → ℂ), hx⟩
+    ⟨((r : N) : Fin (d + 1) → ℂ), r.2⟩
+
+/-- The retyped subspace `R` viewed as a subspace of its relative orthogonal
+inside `N`. -/
+def complexMinkowskiSubmoduleInRelativeOrthogonal
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (RN : Submodule ℂ N) :
+    Submodule ℂ (complexMinkowskiRelativeOrthogonalIn N RN) :=
+  RN.comap (complexMinkowskiRelativeOrthogonalIn N RN).subtype
+
+/-- The retyped subspace is contained in the kernel of the restricted form on
+its relative orthogonal, so the form descends to the quotient. -/
+theorem complexMinkowskiSubmoduleIn_comap_le_relativeOrthogonalIn_restrict_ker
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (RN : Submodule ℂ N) :
+    complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N) RN ≤
+      (((sourceComplexMinkowskiBilinForm d).restrict N).restrict
+        (complexMinkowskiRelativeOrthogonalIn N RN)).ker := by
+  intro x hx
+  rw [LinearMap.mem_ker]
+  ext y
+  change sourceComplexMinkowskiInner d
+    (((x : complexMinkowskiRelativeOrthogonalIn N RN) : N) :
+      Fin (d + 1) → ℂ)
+    (((y : complexMinkowskiRelativeOrthogonalIn N RN) : N) :
+      Fin (d + 1) → ℂ) = 0
+  rw [sourceComplexMinkowskiInner_comm]
+  exact y.2 ⟨(x : N), hx⟩
+
 /-- The zero subspace is totally isotropic. -/
 theorem complexMinkowskiTotallyIsotropic_bot
     (d : ℕ) :
