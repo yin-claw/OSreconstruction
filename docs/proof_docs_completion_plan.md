@@ -6082,11 +6082,13 @@ implementation contract is:
    `BHW.complexMinkowskiPairingToSubmoduleDual_range_le_dualAnnihilator`,
    `BHW.complexMinkowskiPairingToSubmoduleDual_range_add_inter_finrank_le`,
    `BHW.complexMinkowskiPairingToSubmoduleDual_mem_ker_iff`, and
-   `BHW.complexMinkowskiPairingKerToRelativeOrthogonal`.  The next pass should
-   add the quotient-image carrier for
-   `ker (S -> R*) -> Rperp ⧸ R`, prove its image is quotient-isotropic, prove
-   its kernel is `T = S ∩ R`, and combine those facts with the quotient-preimage
-   finrank formula.
+   `BHW.complexMinkowskiPairingKerToRelativeOrthogonal`.  The quotient-image
+   carrier and isotropy proof are checked as
+   `BHW.complexMinkowskiPairingKernelQuotientImage` and
+   `BHW.complexMinkowskiPairingKernelQuotientImage_isotropic`.  The next pass
+   should prove the dimension comparison between `ker (S -> R*)`, this
+   quotient-image carrier, and `T = S ∩ R`, then combine it with the
+   quotient-preimage finrank formula.
    It should not start by adding a new generic
    `complexMinkowski_wittExtension_subspaceIsometry` theorem.
    The residual-frame alignment now has an

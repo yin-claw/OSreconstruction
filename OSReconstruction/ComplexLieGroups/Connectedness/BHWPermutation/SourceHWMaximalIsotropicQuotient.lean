@@ -244,6 +244,70 @@ theorem complexMinkowskiPairingKerToRelativeOrthogonal_apply_coe
         ((x : LinearMap.ker
           (complexMinkowskiPairingToSubmoduleDual d R S)) : S) := rfl
 
+/-- The image of `ker(S -> R*)` in the quotient `Rperp / R`, represented as a
+submodule carrier rather than as a separate dependent quotient map. -/
+def complexMinkowskiPairingKernelQuotientImage
+    {d : ℕ}
+    {N R S : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_le : R ≤ N)
+    (hS_le : S ≤ N) :
+    Submodule ℂ
+      (complexMinkowskiRelativeOrthogonalIn (d := d) N
+          (complexMinkowskiSubmoduleIn (d := d) N R) ⧸
+        complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N)
+          (complexMinkowskiSubmoduleIn (d := d) N R)) where
+  carrier := {q |
+    ∃ x : LinearMap.ker (complexMinkowskiPairingToSubmoduleDual d R S),
+      q =
+        Submodule.mkQ
+          (complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N)
+            (complexMinkowskiSubmoduleIn (d := d) N R))
+          (complexMinkowskiPairingKerToRelativeOrthogonal
+            (d := d) (N := N) (R := R) (S := S) hR_le hS_le x)}
+  zero_mem' := by
+    refine ⟨0, ?_⟩
+    simp
+  add_mem' := by
+    intro x y hx hy
+    rcases hx with ⟨xker, rfl⟩
+    rcases hy with ⟨yker, rfl⟩
+    refine ⟨xker + yker, ?_⟩
+    simp
+  smul_mem' := by
+    intro c x hx
+    rcases hx with ⟨xker, rfl⟩
+    refine ⟨c • xker, ?_⟩
+    simp
+
+/-- The quotient-image carrier of `ker(S -> R*)` is isotropic for the induced
+quotient form when `S` is totally isotropic. -/
+theorem complexMinkowskiPairingKernelQuotientImage_isotropic
+    {d : ℕ}
+    {N R S : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_le : R ≤ N)
+    (hS_le : S ≤ N)
+    (hS_iso : ComplexMinkowskiTotallyIsotropicSubspace d S) :
+    BilinFormTotallyIsotropicSubspace
+      (complexMinkowskiRelativeOrthogonalQuotientForm (d := d) (N := N)
+        (complexMinkowskiSubmoduleIn (d := d) N R))
+      (complexMinkowskiPairingKernelQuotientImage
+        (d := d) (N := N) (R := R) (S := S) hR_le hS_le) := by
+  intro x y hx hy
+  rcases hx with ⟨xker, rfl⟩
+  rcases hy with ⟨yker, rfl⟩
+  rw [Submodule.mkQ_apply, Submodule.mkQ_apply]
+  change
+    complexMinkowskiRelativeOrthogonalQuotientForm (d := d) (N := N)
+        (complexMinkowskiSubmoduleIn (d := d) N R)
+      (Quotient.mk''
+        (complexMinkowskiPairingKerToRelativeOrthogonal
+          (d := d) (N := N) (R := R) (S := S) hR_le hS_le xker))
+      (Quotient.mk''
+        (complexMinkowskiPairingKerToRelativeOrthogonal
+          (d := d) (N := N) (R := R) (S := S) hR_le hS_le yker)) = 0
+  rw [complexMinkowskiRelativeOrthogonalQuotientForm_mk]
+  exact hS_iso (xker : S) (yker : S)
+
 /-- The preimage in `Rperp` of a subspace of the quotient `Rperp / R`. -/
 def complexMinkowskiRelativeOrthogonalQuotientPreimageInRperp
     {d : ℕ}
