@@ -1,4 +1,5 @@
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceHWLowRankNormalForm
+import Mathlib.LinearAlgebra.Quotient.Bilinear
 
 /-!
 # Maximal isotropic frames for Hall-Wightman low-rank geometry
@@ -130,6 +131,11 @@ theorem complexMinkowski_maximalIsotropicFrameIn_of_subspace_containing
   rw [complexMinkowskiMaximalIsotropicFrameIn_of_subspace_span_eq F]
   exact hR_le_Q hx
 
+section RelativeOrthogonalQuotientSupport
+
+local instance complexMinkowskiRelativeOrthogonalSemiring : Semiring ℂ :=
+  (inferInstance : Ring ℂ).toSemiring
+
 /-- The part of an ambient source subspace `R` viewed inside the subtype `N`.
 
 When `R ≤ N`, this is just `R` with its vectors retyped as elements of `N`;
@@ -138,6 +144,36 @@ def complexMinkowskiSubmoduleIn
     {d : ℕ}
     (N R : Submodule ℂ (Fin (d + 1) → ℂ)) : Submodule ℂ N :=
   R.comap N.subtype
+
+/-- If `R ≤ N`, retyping `R` as a subspace of `N` does not change the
+linear space. -/
+noncomputable def complexMinkowskiSubmoduleInEquivOfLe
+    {d : ℕ}
+    {N R : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_le : R ≤ N) :
+    R ≃ₗ[ℂ] complexMinkowskiSubmoduleIn (d := d) N R where
+  toFun x := ⟨⟨(x : Fin (d + 1) → ℂ), hR_le x.2⟩, x.2⟩
+  invFun x := ⟨((x : complexMinkowskiSubmoduleIn (d := d) N R) : N), x.2⟩
+  left_inv x := by
+    ext i
+    rfl
+  right_inv x := by
+    ext i
+    rfl
+  map_add' x y := by
+    ext i
+    rfl
+  map_smul' c x := by
+    ext i
+    rfl
+
+theorem complexMinkowskiSubmoduleIn_finrank_eq_of_le
+    {d : ℕ}
+    {N R : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_le : R ≤ N) :
+    Module.finrank ℂ (complexMinkowskiSubmoduleIn (d := d) N R) =
+      Module.finrank ℂ R :=
+  LinearEquiv.finrank_eq (complexMinkowskiSubmoduleInEquivOfLe (d := d) hR_le).symm
 
 /-- Relative orthogonal of `R` inside the restricted source subspace `N`. -/
 def complexMinkowskiRelativeOrthogonalIn
@@ -188,6 +224,61 @@ def complexMinkowskiSubmoduleInRelativeOrthogonal
     Submodule ℂ (complexMinkowskiRelativeOrthogonalIn N RN) :=
   RN.comap (complexMinkowskiRelativeOrthogonalIn N RN).subtype
 
+/-- If `RN` lies in its relative orthogonal, then retyping it inside that
+relative orthogonal is a linear equivalence. -/
+noncomputable def complexMinkowskiSubmoduleInRelativeOrthogonalEquivOfLe
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {RN : Submodule ℂ N}
+    (hRN_le :
+      RN ≤ complexMinkowskiRelativeOrthogonalIn (d := d) N RN) :
+    RN ≃ₗ[ℂ]
+      complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N) RN where
+  toFun x := ⟨⟨(x : N), hRN_le x.2⟩, x.2⟩
+  invFun x :=
+    ⟨((x : complexMinkowskiSubmoduleInRelativeOrthogonal
+      (d := d) (N := N) RN) :
+        complexMinkowskiRelativeOrthogonalIn (d := d) N RN), x.2⟩
+  left_inv x := by
+    ext i
+    rfl
+  right_inv x := by
+    ext i
+    rfl
+  map_add' x y := by
+    ext i
+    rfl
+  map_smul' c x := by
+    ext i
+    rfl
+
+theorem complexMinkowskiSubmoduleInRelativeOrthogonal_finrank_eq_of_le
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {RN : Submodule ℂ N}
+    (hRN_le :
+      RN ≤ complexMinkowskiRelativeOrthogonalIn (d := d) N RN) :
+    Module.finrank ℂ
+        (complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N) RN) =
+      Module.finrank ℂ RN :=
+  LinearEquiv.finrank_eq
+    (complexMinkowskiSubmoduleInRelativeOrthogonalEquivOfLe
+      (d := d) (N := N) hRN_le).symm
+
+theorem complexMinkowskiSubmoduleInRelativeOrthogonal_finrank_eq_of_totallyIsotropic
+    {d : ℕ}
+    {N R : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_le : R ≤ N)
+    (hR_iso : ComplexMinkowskiTotallyIsotropicSubspace d R) :
+    Module.finrank ℂ
+        (complexMinkowskiSubmoduleInRelativeOrthogonal
+          (d := d) (N := N) (complexMinkowskiSubmoduleIn (d := d) N R)) =
+      Module.finrank ℂ R := by
+  rw [complexMinkowskiSubmoduleInRelativeOrthogonal_finrank_eq_of_le
+    (complexMinkowskiSubmoduleIn_le_relativeOrthogonalIn_of_totallyIsotropic
+      (N := N) (R := R) hR_iso)]
+  exact complexMinkowskiSubmoduleIn_finrank_eq_of_le (d := d) hR_le
+
 /-- The retyped subspace is contained in the kernel of the restricted form on
 its relative orthogonal, so the form descends to the quotient. -/
 theorem complexMinkowskiSubmoduleIn_comap_le_relativeOrthogonalIn_restrict_ker
@@ -207,6 +298,63 @@ theorem complexMinkowskiSubmoduleIn_comap_le_relativeOrthogonalIn_restrict_ker
       Fin (d + 1) → ℂ) = 0
   rw [sourceComplexMinkowskiInner_comm]
   exact y.2 ⟨(x : N), hx⟩
+
+/-- The complex-Minkowski pairing induced on the quotient `Rperp / R`, where
+`Rperp` is the relative orthogonal of `R` inside `N`. -/
+noncomputable def complexMinkowskiRelativeOrthogonalQuotientForm
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (RN : Submodule ℂ N) := by
+  let Rperp := complexMinkowskiRelativeOrthogonalIn N RN
+  let Bperp : LinearMap.BilinForm ℂ Rperp :=
+    ((sourceComplexMinkowskiBilinForm d).restrict N).restrict Rperp
+  let RinPerp : Submodule ℂ Rperp :=
+    complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N) RN
+  have hker : RinPerp ≤ Bperp.ker := by
+    simpa [Bperp, RinPerp, Rperp] using
+      complexMinkowskiSubmoduleIn_comap_le_relativeOrthogonalIn_restrict_ker
+        (d := d) (N := N) RN
+  have hsymm : Bperp.IsSymm := by
+    exact ((sourceComplexMinkowskiBilinForm_isSymm d).restrict N).restrict Rperp
+  have hker_flip : RinPerp ≤ (LinearMap.flip Bperp).ker := by
+    simpa using (hsymm.isRefl.ker_flip ▸ hker)
+  exact LinearMap.liftQ₂ (R := ℂ) (R₂ := ℂ) (S := ℂ) (S₂ := ℂ)
+    (M := Rperp) (N := Rperp) (P := ℂ)
+    (ρ := RingHom.id ℂ) (σ := RingHom.id ℂ)
+    RinPerp RinPerp (Bperp : Rperp →ₗ[ℂ] Rperp →ₗ[ℂ] ℂ) hker hker_flip
+
+@[simp]
+theorem complexMinkowskiRelativeOrthogonalQuotientForm_mk
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (RN : Submodule ℂ N)
+    (x y : complexMinkowskiRelativeOrthogonalIn N RN) :
+    complexMinkowskiRelativeOrthogonalQuotientForm (d := d) (N := N) RN
+      (Quotient.mk'' x) (Quotient.mk'' y) =
+    sourceComplexMinkowskiInner d
+      (((x : complexMinkowskiRelativeOrthogonalIn N RN) : N) :
+        Fin (d + 1) → ℂ)
+      (((y : complexMinkowskiRelativeOrthogonalIn N RN) : N) :
+        Fin (d + 1) → ℂ) := by
+  rfl
+
+/-- The induced quotient form remains symmetric. -/
+theorem complexMinkowskiRelativeOrthogonalQuotientForm_isSymm
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (RN : Submodule ℂ N) :
+    (complexMinkowskiRelativeOrthogonalQuotientForm
+      (d := d) (N := N) RN).IsSymm := by
+  constructor
+  intro x y
+  induction x using Quotient.inductionOn with
+  | h x =>
+      induction y using Quotient.inductionOn with
+      | h y =>
+          simp [complexMinkowskiRelativeOrthogonalQuotientForm_mk,
+            sourceComplexMinkowskiInner_comm d]
+
+end RelativeOrthogonalQuotientSupport
 
 /-- The zero subspace is totally isotropic. -/
 theorem complexMinkowskiTotallyIsotropic_bot
