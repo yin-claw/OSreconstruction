@@ -5974,7 +5974,23 @@ implementation contract is:
    not yet solve the residual-alignment
    problem, because the route still needs a maximal frame compatible with the
    right residual span and a determinant-one correction moving the left
-   residual span into it.  The residual-frame alignment now has an
+   residual span into it.  The frame-compatibility theorem is a separate
+   unproved support surface:
+   `BHW.complexMinkowski_maximalIsotropicFrameIn_extending` must extend a given
+   totally isotropic subspace `R ≤ N` to a globally maximal totally isotropic
+   frame inside the nondegenerate ambient complement `N`, with
+   `R ≤ Submodule.span ℂ (Set.range F.q)`.  The already checked
+   `BHW.complexMinkowski_maximalIsotropicFrameIn_exists` does not imply this
+   containment by itself; it supplies a global maximal frame, but not one
+   containing the specific right residual subspace.  The basis-packaging tail is
+   now checked: `BHW.complexMinkowskiMaximalIsotropicFrameIn_of_subspace_span_eq`
+   identifies the span of the frame obtained from a maximal isotropic subspace
+   with that subspace, and
+   `BHW.complexMinkowski_maximalIsotropicFrameIn_of_subspace_containing` turns a
+   maximal isotropic subspace containing `R` into the desired frame containment.
+   The remaining frame-compatibility proof is therefore only the
+   maximal-isotropic-subspace extension inside the nondegenerate complement.
+   The residual-frame alignment now has an
    implementation-level support
    packet in the blueprint: define
    `BHW.complexMinkowskiOrthogonalSubmodule d M`; prove its nondegeneracy
@@ -6002,9 +6018,10 @@ implementation contract is:
    `Λfix : ComplexLorentzGroup d` fixing `M` pointwise and sending every vector
    of `Rz` into `Submodule.span ℂ (Set.range q)`.  Its proof must adjoin
    hyperbolic dual frames to the two residual blocks, extend the resulting
-   nondegenerate block map by identity on the orthogonal complement, and repair
-   determinant inside the hyperbolic block; it must not call a generic
-   degenerate Witt-extension theorem.  The last packaging substep is now
+   nondegenerate block map by identity on the orthogonal complement, and handle
+   the determinant-one condition inside the hyperbolic-basis construction; it
+   must not call a generic degenerate Witt-extension theorem.  The last
+   packaging substep is now
    checked as
    `BHW.complexMinkowski_selectedResidualHyperbolicExtension_of_ambientLinearEquiv`:
    an ambient determinant-one form-preserving linear equivalence fixing `M` and
@@ -6023,21 +6040,30 @@ implementation contract is:
    and
    `BHW.complexMinkowski_nondegenerateSubspaceEquiv_detOne_orbitExtension`.
    The repair composes a raw determinant-`-1` ambient extension with a
-   Householder reflection fixing the proper target block.  Therefore the
-   remaining unproved content of
-   `BHW.complexMinkowski_selectedResidualHyperbolicExtension` is now the
-   compatible hyperbolic-dual block construction extending the degenerate
-   residual isometry, not the ambient extension or determinant repair after such
-   a block is available.  The checked structure
+   Householder reflection fixing the proper target block.  This is only the
+   proper completed-block branch.  If the residual hyperbolic completion fills
+   the whole ambient space, there is no proper orthogonal-complement reflection
+   available; the compatible dual-frame construction must choose the full
+   hyperbolic block map with determinant `1` directly and then invoke
+   `BHW.complexMinkowski_selectedResidualHyperbolicExtension_of_ambientLinearEquiv`.
+   Thus the remaining unproved content of
+   `BHW.complexMinkowski_selectedResidualHyperbolicExtension` has two parts:
+   build compatible source/target hyperbolic dual blocks extending the
+   degenerate residual isometry, and split the determinant argument into the
+   checked proper-block repair branch plus the full-block determinant-one
+   orientation normalization branch.  The checked structure
    `BHW.HWSelectedResidualHyperbolicBlockExtensionData` is the exact target for
-   that construction: it stores proper nondegenerate blocks `K,L`, the inclusions
+   the proper branch: it stores proper nondegenerate blocks `K,L`, the inclusions
    `M ≤ K` and `Rz ≤ K`, a pairing-preserving `Tblock : K ≃ₗ[ℂ] L`, the fact that
    `Tblock` fixes `M`, and the fact that it sends `Rz` into the chosen frame
    span.  The checked theorem
    `BHW.complexMinkowski_selectedResidualHyperbolicExtension_of_blockExtensionData`
-   converts this packet into the required proper Lorentz correction.  Thus the
-   next implementation theorem should be the producer of this block-extension
-   data, not another wrapper around the final `Λfix` conclusion.
+   converts this packet into the required proper Lorentz correction.  The next
+   implementation theorem should therefore either produce this proper-branch
+   block data under an explicit properness hypothesis or produce the direct
+   ambient determinant-one equivalence for the full-block branch; it should not
+   wrap the final `Λfix` conclusion without discharging one of those two
+   determinant cases.
    The first mechanical support layer is now exact-Lean shaped:
    `BHW.subspace_le_complexMinkowskiOrthogonalSubmodule` has hypotheses
    `(hR_orth : ∀ x : R, ∀ m : M,

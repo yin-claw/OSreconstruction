@@ -25712,8 +25712,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
       hard theorem can now target
       `BHW.HWLowRankResidualFrameExtensionData`; the checked conversion
       `BHW.hw_lowRank_residualAlignmentData_of_frameExtensionData` supplies
-      `HWLowRankResidualAlignmentData`.  The
-      strengthened constructor
+      `HWLowRankResidualAlignmentData`.  The still-unproved strengthened
+      constructor
       `complexMinkowski_maximalIsotropicFrameIn_extending` starts with a
       basis of the given totally isotropic subspace `R`, splits off dual
       hyperbolic partners for that basis, and then completes the basis to a
@@ -25819,13 +25819,46 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 (y : Fin (d + 1) -> ℂ)
       ```
 
-      The remaining determinant-one extension theorem must expose exactly the
-      data used by the residual-frame producer.  It extends the checked
+      There are now two honest finite-dimensional support theorems left in this
+      part of the low-rank route.  First, the right residual span must be
+      contained in the final maximal isotropic frame:
+
+      ```lean
+      theorem BHW.complexMinkowski_maximalIsotropicFrameIn_extending
+          {d : Nat}
+          {N R : Submodule ℂ (Fin (d + 1) -> ℂ)}
+          (hN :
+            BHW.ComplexMinkowskiNondegenerateSubspace d N)
+          (hR_le : R ≤ N)
+          (hR_iso : BHW.ComplexMinkowskiTotallyIsotropicSubspace d R) :
+          ∃ F : BHW.ComplexMinkowskiMaximalIsotropicFrameIn d N,
+            R ≤ Submodule.span ℂ (Set.range F.q)
+      ```
+
+      This theorem is stronger than the already checked
+      `BHW.complexMinkowski_maximalIsotropicFrameIn_exists`.  A frame of
+      globally maximal Witt dimension is not enough unless its span contains the
+      actual right residual subspace.  The proof must extend the given totally
+      isotropic subspace to a global maximal totally isotropic subspace inside
+      the nondegenerate ambient complement, then take a basis of that enlarged
+      subspace.  Equivalently, it is the isotropic-subspace extension half of the
+      finite-dimensional Witt decomposition; it is not supplied by the current
+      max-finrank existence argument alone.  The basis-packaging tail of this
+      step is checked:
+      `BHW.complexMinkowskiMaximalIsotropicFrameIn_of_subspace_span_eq` proves
+      that the frame built from a maximal isotropic subspace spans that subspace,
+      and
+      `BHW.complexMinkowski_maximalIsotropicFrameIn_of_subspace_containing`
+      converts a maximal isotropic subspace containing `R` into the required
+      frame containment.  Thus the remaining proof obligation is specifically
+      the maximal-isotropic-subspace extension, not the basis conversion.
+
+      Second, the determinant-one extension theorem must expose exactly the data
+      used by the residual-frame producer.  It extends the checked
       identity-plus-residual isometry on the degenerate partial domain
-      `M ⊔ Rleft` by first adjoining hyperbolic dual frames to the residual
-      blocks, extending the resulting nondegenerate block map by identity on
-      the orthogonal complement, and applying the determinant-one repair
-      inside the hyperbolic block.  The theorem statement is:
+      `M ⊔ Rleft` by adjoining compatible hyperbolic dual frames to the residual
+      blocks and then building an ambient determinant-one form-preserving
+      equivalence.  The theorem statement is:
 
       ```lean
       theorem BHW.complexMinkowski_selectedResidualHyperbolicExtension
@@ -25910,19 +25943,39 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.complexMinkowski_nondegenerateSubspaceEquiv_detOne_orbitExtension`:
       if the raw ambient extension has determinant `-1`, a Householder
       reflection fixing the proper target block corrects the determinant without
-      changing the prescribed block action.  Thus, after the future
-      hyperbolic-dual construction turns `M ⊔ Rleft` and `M ⊔ Qleft` into
-      matching proper nondegenerate blocks and extends `T` to those blocks, the
-      passage to a proper ambient complex Lorentz transformation is already
-      Lean-checked.  The remaining work is the compatible hyperbolic-dual block
-      construction itself.  This final consumer is checked as
+      changing the prescribed block action.  This proves the proper completed
+      target-block branch.  It is not, by itself, the full determinant story:
+      the hyperbolic completion of `M ⊔ Qleft` can be the whole ambient space
+      when the residual isotropic subspace is maximal in `Mᗮ`.  In that full
+      block case there is no orthogonal-complement reflection left to use; the
+      compatible dual-frame construction must instead choose the completed
+      hyperbolic block map with determinant `1` directly, or supply an ambient
+      determinant-one equivalence to the already checked packaging lemma
+      `BHW.complexMinkowski_selectedResidualHyperbolicExtension_of_ambientLinearEquiv`.
+
+      Therefore the checked proper-block consumer is a sufficient branch, not
+      the final theorem surface for all cases.  It is recorded as
       `BHW.HWSelectedResidualHyperbolicBlockExtensionData` and
       `BHW.complexMinkowski_selectedResidualHyperbolicExtension_of_blockExtensionData`:
       the data records proper nondegenerate blocks `K,L`, inclusions
       `M ≤ K` and `Rleft ≤ K`, a pairing-preserving block equivalence, pointwise
       fixing of `M`, and the image of `Rleft` in `Submodule.span ℂ (Set.range q)`.
       Once such data is produced, the proper Lorentz element and the required
-      `Λfix_M`/`left_span` fields are mechanical.
+      `Λfix_M`/`left_span` fields are mechanical.  The full
+      `BHW.complexMinkowski_selectedResidualHyperbolicExtension` producer must
+      be a two-branch construction:
+
+      * if the completed target hyperbolic block is proper, produce
+        `BHW.HWSelectedResidualHyperbolicBlockExtensionData` and invoke the
+        checked proper-block consumer;
+      * if the completed block is all of `Fin (d + 1) -> ℂ`, prove from the
+        chosen source and target hyperbolic dual bases that the resulting
+        ambient block equivalence has determinant `1`, then invoke
+        `BHW.complexMinkowski_selectedResidualHyperbolicExtension_of_ambientLinearEquiv`
+        directly.
+
+      This is the exact remaining determinant-one content; the docs must not
+      assume the proper-block branch covers the full-block case.
 
       Lean-shaped proof of the residual-frame-extension producer after the
       support packet exists:

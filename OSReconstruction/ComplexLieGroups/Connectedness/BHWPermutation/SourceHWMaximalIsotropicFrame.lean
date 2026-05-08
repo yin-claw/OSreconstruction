@@ -73,6 +73,63 @@ noncomputable def complexMinkowskiMaximalIsotropicFrameIn_of_subspace
   · intro R hR_le hR_iso
     exact F.maximal R hR_le hR_iso
 
+/-- The frame obtained from a maximal isotropic subspace spans that subspace. -/
+theorem complexMinkowskiMaximalIsotropicFrameIn_of_subspace_span_eq
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (F : ComplexMinkowskiMaximalIsotropicSubspaceIn d N) :
+    Submodule.span ℂ
+        (Set.range (complexMinkowskiMaximalIsotropicFrameIn_of_subspace F).q) =
+      F.Q := by
+  let b := Module.finBasis ℂ F.Q
+  let s := Module.finrank ℂ F.Q
+  let q : Fin s → Fin (d + 1) → ℂ := fun c =>
+    (b c : Fin (d + 1) → ℂ)
+  have hq :
+      (complexMinkowskiMaximalIsotropicFrameIn_of_subspace F).q = q := rfl
+  apply le_antisymm
+  · rw [Submodule.span_le]
+    rintro _ ⟨c, rfl⟩
+    rw [hq]
+    exact (b c).2
+  · intro x hx
+    let xQ : F.Q := ⟨x, hx⟩
+    have hxsum :
+        x = ∑ c : Fin s, b.equivFun xQ c • q c := by
+      have hrepr_val :
+          (∑ c : Fin s, (b.repr xQ) c • (b c : Fin (d + 1) → ℂ)) = x := by
+        calc
+          (∑ c : Fin s, (b.repr xQ) c • (b c : Fin (d + 1) → ℂ)) =
+              F.Q.subtype (∑ c : Fin s, (b.repr xQ) c • b c) := by
+                rw [map_sum]
+                simp
+          _ = x := by
+                exact congrArg (fun y : F.Q => (y : Fin (d + 1) → ℂ))
+                  (b.sum_repr xQ)
+      calc
+        x = ∑ c : Fin s, (b.repr xQ) c • (b c : Fin (d + 1) → ℂ) :=
+          hrepr_val.symm
+        _ = ∑ c : Fin s, b.equivFun xQ c • q c := by
+              simp [q, Module.Basis.equivFun_apply]
+    rw [hxsum, hq]
+    exact Submodule.sum_mem _ fun c _ =>
+      Submodule.smul_mem _ _ (Submodule.subset_span ⟨c, rfl⟩)
+
+/-- If a maximal isotropic subspace already contains `R`, its associated frame
+also contains `R` in its span.  This is the checked basis-packaging step for the
+future theorem extending a given isotropic subspace to a global maximal one. -/
+theorem complexMinkowski_maximalIsotropicFrameIn_of_subspace_containing
+    {d : ℕ}
+    {N R : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (F : ComplexMinkowskiMaximalIsotropicSubspaceIn d N)
+    (hR_le_Q : R ≤ F.Q) :
+    ∃ G : ComplexMinkowskiMaximalIsotropicFrameIn d N,
+      R ≤ Submodule.span ℂ (Set.range G.q) := by
+  refine ⟨complexMinkowskiMaximalIsotropicFrameIn_of_subspace F, ?_⟩
+  intro x hx
+  rw [complexMinkowskiMaximalIsotropicFrameIn_of_subspace_span_eq F]
+  exact hR_le_Q hx
+
 /-- The zero subspace is totally isotropic. -/
 theorem complexMinkowskiTotallyIsotropic_bot
     (d : ℕ) :
