@@ -25894,6 +25894,21 @@ Proof decomposition of this theorem, without hiding the analytic work:
       equivalence as `Λfix : ComplexLorentzGroup d` and proves exactly the
       `Λfix_M` and `left_span` fields needed below.
 
+      The nondegenerate-block extension substep is also checked in
+      `SourceHWResidualWittExtension.lean`.  The theorem
+      `BHW.exists_complexMinkowskiOrthogonalComplementIsometry_of_finrank_eq`
+      gives a form-preserving equivalence between orthogonal complements of
+      same-finrank nondegenerate subspaces.  The theorem
+      `BHW.complexMinkowski_nondegenerateSubspaceEquiv_ambientExtension`
+      then extends any pairing-preserving equivalence `T : K ≃ₗ[ℂ] L`
+      between nondegenerate complex-Minkowski subspaces to an ambient
+      pairing-preserving linear equivalence that agrees with `T` on `K`.
+      Thus, after the future hyperbolic-dual construction turns
+      `M ⊔ Rleft` and `M ⊔ Qleft` into matching nondegenerate blocks, the
+      extension from that block to the full ambient source space is already
+      Lean-checked; the remaining work is the compatible hyperbolic-dual
+      construction and determinant-one repair.
+
       Lean-shaped proof of the residual-frame-extension producer after the
       support packet exists:
 

@@ -6010,6 +6010,17 @@ implementation contract is:
    an ambient determinant-one form-preserving linear equivalence fixing `M` and
    sending `Rz` into the frame span is mechanically converted into the required
    `Λfix` fields.
+   The nondegenerate-block extension piece of that support surface is also
+   checked in `SourceHWResidualWittExtension.lean`:
+   `BHW.exists_complexMinkowskiOrthogonalComplementIsometry_of_finrank_eq`
+   matches orthogonal complements of same-finrank nondegenerate subspaces, and
+   `BHW.complexMinkowski_nondegenerateSubspaceEquiv_ambientExtension` extends
+   any pairing-preserving equivalence between nondegenerate subspaces to a
+   pairing-preserving ambient linear equivalence agreeing with it on the
+   source block.  Therefore the remaining unproved content of
+   `BHW.complexMinkowski_selectedResidualHyperbolicExtension` is now the
+   compatible hyperbolic-dual construction and determinant-one repair, not the
+   ambient extension from a completed nondegenerate block.
    The first mechanical support layer is now exact-Lean shaped:
    `BHW.subspace_le_complexMinkowskiOrthogonalSubmodule` has hypotheses
    `(hR_orth : ∀ x : R, ∀ m : M,
