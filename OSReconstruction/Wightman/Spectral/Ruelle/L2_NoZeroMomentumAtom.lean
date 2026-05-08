@@ -199,31 +199,81 @@ theorem gns_orthogonal_spatial_cobounded_decay
         (Filter.principal {a : SpacetimeDim d | a 0 = 0} ⊓
           Bornology.cobounded (SpacetimeDim d))
         (Bornology.cobounded (Fin d → ℝ)) := by
-    -- Inside `{a | a 0 = 0}`, `spatialOf` is essentially identity (with reindexing).
-    -- Bounded preimage: if `spatialOf a` is bounded and `a 0 = 0`, then `a` is bounded.
-    refine Filter.Tendsto.mono_left ?_ inf_le_right
-    -- Now: Tendsto spatialOf cobounded(SpacetimeDim d) cobounded(Fin d → ℝ).
-    -- Continuous linear surjection between finite-dim normed spaces.
-    -- Use `LinearEquiv.toContinuousLinearEquiv` after extending to a section.
-    -- Actually, `spatialOf` is a projection; it's not an isomorphism. But it
-    -- maps cobounded to cobounded because it's surjective and continuous between
-    -- finite-dim spaces (a ⊥-bounded set lifts a bounded set).
-    --
-    -- Simpler proof via norm bound: ‖spatialOf a‖ ≤ ‖a‖ (sup norm decreases).
-    -- That gives cobounded → "cobounded or smaller", which is the wrong direction.
-    --
-    -- The right reasoning: for any `a : SpacetimeDim d`, the spatial part
-    -- `spatialOf a` has `‖spatialOf a‖ = max_{i ≥ 1} |a i|`. The full norm
-    -- `‖a‖ = max_i |a i| = max(|a 0|, ‖spatialOf a‖)`. So `‖spatialOf a‖ ≥
-    -- ‖a‖ - |a 0|`. Without a 0 = 0 constraint, can have ‖a‖ → ∞ with
-    -- spatialOf a bounded (e.g., a = (n, 0, ...)).
-    --
-    -- This is why the principal filter on `{a 0 = 0}` is needed.
-    sorry
-  exact (h_L5.comp h_sp_cobounded).congr (fun a => by
-    -- Pointwise: (h_L5 ∘ spatialOf) a = our integrand at a.
-    -- Need: ∫ p, exp(i ∑ (spatialOf a) i * p_{i+1}) dμ = ⟨Φ, U(a) ψ⟩.
-    sorry)
+    -- Strategy: reduce to "‖spatialOf a‖ → ∞" along the inf filter, using
+    -- `‖a‖ = ‖spatialOf a‖` whenever `a 0 = 0`.
+    rw [Filter.tendsto_def]
+    intro S hS
+    -- For S ∈ cobounded, Sᶜ is bounded.
+    -- S ∈ cobounded ⇔ Sᶜ is bounded.
+    have hSc_bdd : Bornology.IsBounded (Sᶜ : Set (Fin d → ℝ)) := by
+      rw [Bornology.isBounded_def, compl_compl]
+      exact hS
+    obtain ⟨R, hR⟩ : ∃ R, Sᶜ ⊆ Metric.closedBall (0 : Fin d → ℝ) R :=
+      hSc_bdd.subset_closedBall (0 : Fin d → ℝ)
+    -- spatialOf⁻¹ S contains {a 0 = 0} ∩ {a : ‖a‖ > R}, both in their filters.
+    refine Filter.mem_of_superset (?_ : {a : SpacetimeDim d | a 0 = 0} ∩
+        {a : SpacetimeDim d | R < ‖a‖} ∈ _)
+      (?_ : {a : SpacetimeDim d | a 0 = 0} ∩
+          {a : SpacetimeDim d | R < ‖a‖} ⊆ spatialOf ⁻¹' S)
+    · refine Filter.inter_mem ?_ ?_
+      · exact Filter.mem_inf_of_left (Filter.mem_principal_self _)
+      · refine Filter.mem_inf_of_right ?_
+        rw [Metric.cobounded_eq_cocompact, Filter.mem_cocompact]
+        refine ⟨Metric.closedBall (0 : SpacetimeDim d) R,
+          isCompact_closedBall _ _, fun a ha => ?_⟩
+        simp only [Set.mem_compl_iff, Metric.mem_closedBall, dist_zero_right] at ha
+        simp only [Set.mem_setOf_eq]
+        linarith
+    · -- Inclusion: a 0 = 0 + ‖a‖ > R → spatialOf a ∉ closedBall(0, R) → spatialOf a ∈ S.
+      rintro a ⟨ha0, ha_norm⟩
+      simp only [Set.mem_setOf_eq] at ha_norm
+      -- ‖a‖ = ‖spatialOf a‖ when a 0 = 0.
+      have h_norm_eq : ‖spatialOf a‖ = ‖a‖ := by
+        -- Sup norm; both = max over indices, with a 0 = 0 contributing 0 in full norm.
+        simp only [Pi.norm_def, Pi.nnnorm_def, hsp_def]
+        congr 1
+        apply le_antisymm
+        · -- spatialOf side ≤ full side
+          refine Finset.sup_le (fun i _ => ?_)
+          exact Finset.le_sup (f := fun j : Fin (d + 1) => ‖a j‖₊)
+            (Finset.mem_univ (Fin.succ i))
+        · -- full side ≤ spatialOf side (using a 0 = 0).
+          refine Finset.sup_le (fun i _ => ?_)
+          rcases Fin.eq_zero_or_eq_succ i with hi | ⟨j, rfl⟩
+          · subst hi
+            have h_a0_zero : ‖a 0‖₊ = 0 := by
+              rw [nnnorm_eq_zero]
+              -- Need: a 0 = 0 from ha0; conclude ‖a 0‖ = 0.
+              -- ha0 says a 0 = 0 (for the function a : SpacetimeDim d).
+              -- a 0 : Fin (d+1) → ℝ; we need this is 0 in that space.
+              -- Wait: a : SpacetimeDim d, so a 0 is a real number? Let me check.
+              -- Actually SpacetimeDim d := Fin (d+1) → ℝ. So a : Fin (d+1) → ℝ,
+              -- and a 0 : ℝ.
+              exact ha0
+            rw [h_a0_zero]
+            exact zero_le _
+          · exact Finset.le_sup (f := fun j : Fin d => ‖a (Fin.succ j)‖₊)
+              (Finset.mem_univ j)
+      -- Show spatialOf a ∈ S via spatialOf a ∉ Sᶜ.
+      simp only [Set.mem_preimage]
+      by_contra h_not_in_S
+      have h_in_Sc : spatialOf a ∈ Sᶜ := h_not_in_S
+      have h_in_ball : spatialOf a ∈ Metric.closedBall (0 : Fin d → ℝ) R := hR h_in_Sc
+      simp only [Metric.mem_closedBall, dist_zero_right] at h_in_ball
+      -- ‖spatialOf a‖ ≤ R, but ‖a‖ > R, and ‖spatialOf a‖ = ‖a‖. Contradiction.
+      have : ‖a‖ ≤ R := h_norm_eq ▸ h_in_ball
+      linarith
+  -- Compose L5 with spatialOf to get Tendsto along the inf filter, valued in ℂ.
+  have h_composed := h_L5.comp h_sp_cobounded
+  -- Use eventual equality: on {a 0 = 0}, the L5 integrand at `spatialOf a` equals
+  -- the matrix element by the L2 bridge identity. {a 0 = 0} is a member of the
+  -- inf filter, so eventually true.
+  refine h_composed.congr' ?_
+  refine Filter.Eventually.mono (Filter.mem_inf_of_left
+    (Filter.mem_principal_self {a : SpacetimeDim d | a 0 = 0})) ?_
+  intro a ha0
+  -- a 0 = 0; apply bridge identity (symmetric direction).
+  exact (h_bridge a ha0).symm
 
 end Ruelle
 end OSReconstruction
