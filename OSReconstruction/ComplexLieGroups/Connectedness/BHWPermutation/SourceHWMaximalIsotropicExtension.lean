@@ -72,4 +72,45 @@ theorem complexMinkowskiRelativeOrthogonalQuotientPreimageOfMaximal_isotropic
     complexMinkowskiRelativeOrthogonalQuotientPreimage_isotropic
       (d := d) (N := N) RN M.Q M.Q_iso
 
+/-- Assemble a globally maximal isotropic subspace from the named quotient
+preimage candidate once its finrank formula has been supplied. -/
+theorem complexMinkowski_maximalIsotropicSubspaceIn_extending_of_finrank
+    {d : ℕ}
+    {N R : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_le : R ≤ N)
+    (hR_iso : ComplexMinkowskiTotallyIsotropicSubspace d R)
+    (M : ComplexMinkowskiRelativeOrthogonalQuotientMaximalPackage
+      (d := d) (N := N) (complexMinkowskiSubmoduleIn (d := d) N R))
+    (hQ_fin :
+      Module.finrank ℂ
+          (complexMinkowskiRelativeOrthogonalQuotientPreimageOfMaximal
+            (d := d) (N := N) (R := R) M) =
+        Module.finrank ℂ R + Module.finrank ℂ M.Q) :
+    ∃ F : ComplexMinkowskiMaximalIsotropicSubspaceIn d N,
+      R ≤ F.Q := by
+  let Q : Submodule ℂ (Fin (d + 1) → ℂ) :=
+    complexMinkowskiRelativeOrthogonalQuotientPreimageOfMaximal
+      (d := d) (N := N) (R := R) M
+  have hR_le_Q : R ≤ Q :=
+    complexMinkowskiRelativeOrthogonalQuotientPreimageOfMaximal_contains
+      (d := d) (N := N) (R := R) hR_le hR_iso M
+  have hQ_le : Q ≤ N :=
+    complexMinkowskiRelativeOrthogonalQuotientPreimageOfMaximal_le
+      (d := d) (N := N) (R := R) M
+  have hQ_iso : ComplexMinkowskiTotallyIsotropicSubspace d Q :=
+    complexMinkowskiRelativeOrthogonalQuotientPreimageOfMaximal_isotropic
+      (d := d) (N := N) (R := R) M
+  have hQ_fin' :
+      Module.finrank ℂ Q = Module.finrank ℂ R + Module.finrank ℂ M.Q :=
+    hQ_fin
+  have hQ_global_max :
+      ∀ S : Submodule ℂ (Fin (d + 1) → ℂ),
+        S ≤ N →
+        ComplexMinkowskiTotallyIsotropicSubspace d S →
+        Module.finrank ℂ S ≤ Module.finrank ℂ Q :=
+    complexMinkowskiSubspace_global_maximal_of_quotient_maximal
+      (d := d) (N := N) (R := R) (Q := Q) hR_le hR_iso M hQ_fin'
+  exact ⟨{ Q := Q, Q_le := hQ_le, Q_iso := hQ_iso, maximal := hQ_global_max },
+    hR_le_Q⟩
+
 end BHW

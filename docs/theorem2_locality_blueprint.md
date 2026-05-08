@@ -25525,11 +25525,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (BHW.ComplexMinkowskiMaximalIsotropicFrameIn d N)
 
       theorem BHW.complexMinkowski_maximalIsotropicFrameIn_extending
-          [NeZero d]
-          (hd : 2 <= d)
           {N R : Submodule ℂ (Fin (d + 1) -> ℂ)}
-          (hN :
-            BHW.ComplexMinkowskiNondegenerateSubspace d N)
           (hR_le : R ≤ N)
           (hR_iso : BHW.ComplexMinkowskiTotallyIsotropicSubspace d R) :
           ∃ F : BHW.ComplexMinkowskiMaximalIsotropicFrameIn d N,
@@ -25712,14 +25708,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
       hard theorem can now target
       `BHW.HWLowRankResidualFrameExtensionData`; the checked conversion
       `BHW.hw_lowRank_residualAlignmentData_of_frameExtensionData` supplies
-      `HWLowRankResidualAlignmentData`.  The still-unproved strengthened
-      constructor
-      `complexMinkowski_maximalIsotropicFrameIn_extending` starts with a
-      basis of the given totally isotropic subspace `R`, splits off dual
-      hyperbolic partners for that basis, and then completes the basis to a
-      maximal isotropic frame inside the remaining orthogonal complement.  Its
-      output is essential here: the right residual subspace `Rw` must already
-      lie in the final frame span before the left residual subspace is moved.
+      `HWLowRankResidualAlignmentData`.  The strengthened constructor
+      `complexMinkowski_maximalIsotropicFrameIn_extending` is now checked:
+      it extends a given totally isotropic subspace `R` to a global maximal
+      isotropic subspace by the relative-orthogonal quotient/rank-nullity
+      argument, then packages a basis of that enlarged subspace as a maximal
+      frame.  Its output is essential here: the right residual subspace `Rw`
+      already lies in the final frame span before the left residual subspace is
+      moved.
 
       For `complexMinkowski_totallyIsotropic_embedding_into_frame`, choose a
       basis of `R`.  The maximality field gives
@@ -25819,154 +25815,45 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 (y : Fin (d + 1) -> ℂ)
       ```
 
-      There are now two honest finite-dimensional support theorems left in this
-      part of the low-rank route.  First, the right residual span must be
-      contained in the final maximal isotropic frame:
+      The right-residual containment theorem in this part of the low-rank route
+      is now checked.  The production statement is slightly stronger than the
+      earlier proof sketch: it does not require a separate nondegeneracy
+      hypothesis on `N`.
 
       ```lean
       theorem BHW.complexMinkowski_maximalIsotropicFrameIn_extending
           {d : Nat}
           {N R : Submodule ℂ (Fin (d + 1) -> ℂ)}
-          (hN :
-            BHW.ComplexMinkowskiNondegenerateSubspace d N)
           (hR_le : R ≤ N)
           (hR_iso : BHW.ComplexMinkowskiTotallyIsotropicSubspace d R) :
           ∃ F : BHW.ComplexMinkowskiMaximalIsotropicFrameIn d N,
             R ≤ Submodule.span ℂ (Set.range F.q)
       ```
 
-      This theorem is stronger than the already checked
+      This theorem is stronger than the older checked
       `BHW.complexMinkowski_maximalIsotropicFrameIn_exists`.  A frame of
       globally maximal Witt dimension is not enough unless its span contains the
-      actual right residual subspace.  The proof must extend the given totally
-      isotropic subspace to a global maximal totally isotropic subspace inside
-      the nondegenerate ambient complement, then take a basis of that enlarged
-      subspace.  Equivalently, it is the isotropic-subspace extension half of the
-      finite-dimensional Witt decomposition; it is not supplied by the current
-      max-finrank existence argument alone.  The basis-packaging tail of this
-      step is checked:
-      `BHW.complexMinkowskiMaximalIsotropicFrameIn_of_subspace_span_eq` proves
-      that the frame built from a maximal isotropic subspace spans that subspace,
-      and
-      `BHW.complexMinkowski_maximalIsotropicFrameIn_of_subspace_containing`
-      converts a maximal isotropic subspace containing `R` into the required
-      frame containment.  Thus the remaining proof obligation is specifically
-      the maximal-isotropic-subspace extension, not the basis conversion.
-
-      Lean-shaped proof route for
-      `BHW.complexMinkowski_maximalIsotropicFrameIn_extending`:
+      actual right residual subspace.  The checked proof extends the given
+      totally isotropic subspace to a global maximal totally isotropic subspace
+      by the relative-orthogonal quotient/rank-nullity argument, then takes a
+      basis of that enlarged subspace.  The final production declarations are:
 
       ```lean
-      -- Work in the restricted nondegenerate space `N`.
-      let B := (BHW.sourceComplexMinkowskiBilinForm d).restrict N
+      theorem BHW.complexMinkowski_maximalIsotropicSubspaceIn_extending
+          {d : Nat}
+          {N R : Submodule ℂ (Fin (d + 1) -> ℂ)}
+          (hR_le : R ≤ N)
+          (hR_iso : BHW.ComplexMinkowskiTotallyIsotropicSubspace d R) :
+          ∃ F : BHW.ComplexMinkowskiMaximalIsotropicSubspaceIn d N,
+            R ≤ F.Q
 
-      -- Relative orthogonal of `R` inside `N`.
-      let RN : Submodule ℂ N :=
-        BHW.complexMinkowskiSubmoduleIn N R
-      let Rperp : Submodule ℂ N :=
-        BHW.complexMinkowskiRelativeOrthogonalIn N RN
-
-      have hRN_le_Rperp : RN ≤ Rperp :=
-        BHW.complexMinkowskiSubmoduleIn_le_relativeOrthogonalIn_of_totallyIsotropic
-          (N := N) (R := R) hR_iso
-
-      let RinPerp : Submodule ℂ Rperp :=
-        BHW.complexMinkowskiSubmoduleInRelativeOrthogonal RN
-
-      have hRinPerp_ker :
-          RinPerp ≤
-            (((BHW.sourceComplexMinkowskiBilinForm d).restrict N).restrict
-              Rperp).ker :=
-        BHW.complexMinkowskiSubmoduleIn_comap_le_relativeOrthogonalIn_restrict_ker
-          (d := d) (N := N) RN
-
-      -- Induced form on the quotient `Rperp ⧸ RinPerp`.
-      let Bquot : LinearMap.BilinForm ℂ (Rperp ⧸ RinPerp) :=
-        BHW.complexMinkowskiRelativeOrthogonalQuotientForm
-          (d := d) (N := N) RN
-
-      have hBquot_nondeg : Bquot.Nondegenerate := by
-        simpa [Bquot] using
-          BHW.complexMinkowskiRelativeOrthogonalQuotientForm_nondegenerate
-            (d := d) (N := N) hN RN
-
-      -- Choose a maximal isotropic quotient subspace by the same
-      -- finite `Nat.findGreatest` pattern used by
-      -- `complexMinkowski_maximalIsotropicSubspaceIn_exists`.
-      obtain ⟨Qbar, hQbar_iso, hQbar_max⟩ :=
-        BHW.complexMinkowskiRelativeOrthogonalQuotient_maximalIsotropicSubspace_exists
-          (d := d) (N := N) RN
-
-      -- Pull it back to `N`.
-      let Q : Submodule ℂ (Fin (d + 1) -> ℂ) :=
-        BHW.complexMinkowskiRelativeOrthogonalQuotientPreimage
-          (d := d) N RN Qbar
-
-      have hR_le_Q : R ≤ Q :=
-        BHW.complexMinkowskiSubmodule_le_relativeOrthogonalQuotientPreimage
-          (d := d) (N := N) (R := R) hR_le hR_iso Qbar
-      have hQ_iso : BHW.ComplexMinkowskiTotallyIsotropicSubspace d Q :=
-        BHW.complexMinkowskiRelativeOrthogonalQuotientPreimage_isotropic
-          (d := d) (N := N) RN Qbar hQbar_iso
-
-      -- Global maximality is the concrete rank-nullity comparison.
-      have hQ_global_max :
-          ∀ S : Submodule ℂ (Fin (d + 1) -> ℂ),
-            S ≤ N ->
-            BHW.ComplexMinkowskiTotallyIsotropicSubspace d S ->
-            Module.finrank ℂ S ≤ Module.finrank ℂ Q := by
-        intro S hS_le hS_iso
-        let phiS : S ->ₗ[ℂ] Module.Dual ℂ R := ...
-        have hker :
-            LinearMap.ker phiS =
-              -- `S ∩ Rperp`, transported to the subtype `S`
-              ... := ...
-        let kerToQuot : LinearMap.ker phiS ->ₗ[ℂ] Rperp ⧸ RinPerp :=
-          -- Send `s ∈ ker phiS` to its class in `Rperp ⧸ R`.
-          -- The kernel proof supplies `s ∈ Rperp`.
-          ...
-        have h_rank_nullity :
-            Module.finrank ℂ S =
-              Module.finrank ℂ (LinearMap.ker phiS) +
-              Module.finrank ℂ (LinearMap.range phiS) := by
-          simpa using LinearMap.finrank_range_add_finrank_ker phiS
-        let T : Submodule ℂ R :=
-          -- the retyped intersection `S ∩ R` inside `R`
-          BHW.complexMinkowskiSubmoduleIn (d := d) R S
-        have h_range_le_ann :
-            LinearMap.range phiS ≤ T.dualAnnihilator := by
-          -- If `t ∈ T`, then `t ∈ S ∩ R`.  Since `S` is totally isotropic,
-          -- every functional `phiS s` vanishes on `t`.
-          ...
-        have h_ann_dim :
-            Module.finrank ℂ (LinearMap.range phiS) +
-              Module.finrank ℂ T ≤ Module.finrank ℂ R := by
-          -- Bound the range by `T.dualAnnihilator`, then use
-          -- `Submodule.finrank_add_finrank_dualAnnihilator_eq T`.
-          ...
-        have hker_image_iso :
-            -- image of `ker phiS` in `Rperp ⧸ R` is totally isotropic
-            ... := ...
-        have hker_le_Qbar :
-            Module.finrank ℂ (LinearMap.range kerToQuot) ≤
-              Module.finrank ℂ Qbar := hQbar_max _ hker_image_iso
-        have hker_rank :
-            Module.finrank ℂ (LinearMap.ker phiS) =
-              Module.finrank ℂ (LinearMap.range kerToQuot) +
-                Module.finrank ℂ T := by
-          -- Rank-nullity for `kerToQuot : LinearMap.ker phiS ->ₗ Rperp ⧸ R`.
-          -- Its kernel is exactly `T = S ∩ R`.
-          ...
-        -- Combine:
-        -- `finrank S = finrank ker phiS + finrank range phiS`
-        -- `= finrank image(kerToQuot) + finrank T + finrank range phiS`
-        -- `≤ finrank Qbar + finrank R = finrank Q`.
-        omega
-
-      exact
-        BHW.complexMinkowski_maximalIsotropicFrameIn_of_subspace_containing
-          { Q := Q, Q_le := ..., Q_iso := hQ_iso, maximal := hQ_global_max }
-          hR_le_Q
+      theorem BHW.complexMinkowski_maximalIsotropicFrameIn_extending
+          {d : Nat}
+          {N R : Submodule ℂ (Fin (d + 1) -> ℂ)}
+          (hR_le : R ≤ N)
+          (hR_iso : BHW.ComplexMinkowskiTotallyIsotropicSubspace d R) :
+          ∃ F : BHW.ComplexMinkowskiMaximalIsotropicFrameIn d N,
+            R ≤ Submodule.span ℂ (Set.range F.q)
       ```
 
       The subtype/relative-orthogonal API in the first lines is now checked in
@@ -25996,9 +25883,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.complexMinkowskiRelativeOrthogonal_restrict_ker_le_submoduleInRelativeOrthogonal`,
       and
       `BHW.complexMinkowskiRelativeOrthogonalQuotientForm_nondegenerate`.
-      The remaining quotient route is the implementation contract.  It uses
-      only ordinary finite-dimensional linear algebra, quotient induced forms,
-      and rank-nullity.  The quotient-preimage carriers and their ambient
+      The quotient route is now checked.  It uses only ordinary
+      finite-dimensional linear algebra, quotient induced forms, and
+      rank-nullity.  The quotient-preimage carriers and their ambient
       containment are now checked in
       `SourceHWMaximalIsotropicQuotient.lean` as
       `BHW.complexMinkowskiRelativeOrthogonalQuotientPreimageInRperp`,
@@ -26025,9 +25912,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.complexMinkowskiPairingToSubmoduleDual_range_le_dualAnnihilator`,
       `BHW.complexMinkowskiPairingToSubmoduleDual_range_add_inter_finrank_le`,
       `BHW.complexMinkowskiPairingToSubmoduleDual_mem_ker_iff`, and
-      `BHW.complexMinkowskiPairingKerToRelativeOrthogonal`.  The next concrete
-      support packet is the quotient-image dimension half for an arbitrary
-      isotropic `S ≤ N`: the generic quotient-image API is checked as
+      `BHW.complexMinkowskiPairingKerToRelativeOrthogonal`.  The quotient-image
+      dimension half for an arbitrary isotropic `S ≤ N` is checked: the generic
+      quotient-image API is
       `BHW.linearMapQuotientImageCarrier`,
       `BHW.linearMapToQuotientImageCarrier`,
       `BHW.linearMapToQuotientImageCarrier_surjective`,
@@ -26051,15 +25938,21 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.complexMinkowskiPairingKer_genericQuotientImage_finrank_add_inter`;
       the source-coordinate quotient-preimage finrank formula is checked as
       `BHW.complexMinkowskiRelativeOrthogonalQuotientPreimage_finrank_eq_add`;
-      next combine this with the maximal `Qbar` bound so the `finrank T` terms
-      cancel.
-      It must not be replaced by a generic degenerate
+      the maximal-`Qbar` bound and `finrank T` cancellation are checked as
+      `BHW.complexMinkowskiPairingKernelQuotientImage_finrank_le_of_maximal`,
+      `BHW.complexMinkowskiSubspace_finrank_le_of_quotient_maximal`, and
+      `BHW.complexMinkowskiSubspace_global_maximal_of_quotient_maximal`; and
+      the final raw quotient-preimage wrappers are checked as
+      `BHW.complexMinkowski_maximalIsotropicSubspaceIn_extending` and
+      `BHW.complexMinkowski_maximalIsotropicFrameIn_extending`.
+      The remaining producer must not replace the determinant-one residual
+      extension with a generic degenerate
       `complexMinkowski_wittExtension_subspaceIsometry` theorem, because that
       would hide exactly the compatibility and dimension comparison needed by
       the residual-frame route.
 
-      Second, the determinant-one extension theorem must expose exactly the data
-      used by the residual-frame producer.  It extends the checked
+      The remaining determinant-one extension theorem must expose exactly the
+      data used by the residual-frame producer.  It extends the checked
       identity-plus-residual isometry on the degenerate partial domain
       `M ⊔ Rleft` by adjoining compatible hyperbolic dual frames to the residual
       blocks and then building an ambient determinant-one form-preserving
@@ -32704,7 +32597,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | Low-rank selected-span frame and residual Schur-zero theorem | Implemented and exact-file checked in `BHWPermutation/SourceHWLowRankAlignment.lean` as `BHW.HWLowRankSelectedSpanFrameData` and `BHW.hw_lowRank_selectedSpanFrame_of_sameSourceGram`. | The checked producer chooses the scalar rank and an injective principal index set by `Classical.choose`, proves selected-residual head orthogonality at both endpoints by rewriting the same coefficient formula through `hgram`, and obtains residual-pairing equality from the exact-rank Schur-zero theorem on both endpoints.  Thus the selected-frame step now contains no block-matrix prose and no analytic input. |
       | Selected-span alignment and common residual subspaces | Superseded by the checked row immediately below. | The former proof-transcript row is retained only as route history: the selected `z` and `w` spans must be aligned before the residual families are placed in the common orthogonal complement. |
       | Low-rank selected-span alignment and residual subspaces | Selected-frame producer, determinant-one selected-span orbit, alignment producer, residual-subspace extraction, and orthogonal-complement/direct-sum packet checked in `SourceHWLowRankAlignment.lean` and `SourceHWCommonResidualFrame.lean`. | `HWLowRankSelectedSpanFrameData` and `hw_lowRank_selectedSpanFrame_of_sameSourceGram` build the selected block, shared coefficients, and residual pairings from same source Gram data.  `sourceCoefficientEval_range_eq_span`, `sourceGramMatrixRank_selectedTuple_eq_of_principal_minor_ne`, and `hw_lowRank_selectedSpanFrame_detOneOrbit` feed the selected tuple into the checked high-rank/Witt determinant-one theorem.  `hw_lowRank_selectedSpanAlignment_of_selectedSpanFrame` records the selected-span Lorentz alignment, common nondegenerate selected span, and two residual families in the common orthogonal complement.  `hw_lowRank_residualSubspaces_after_selectedAlignment` turns those fields into totally isotropic residual subspaces orthogonal to the common selected span; `hw_lowRank_residualSubspaces_orthogonalComplement_after_selectedAlignment` adds inclusions in `complexMinkowskiOrthogonalSubmodule d A.M` and disjointness from `A.M`; `complexMinkowski_totallyIsotropic_embedding_into_frame` builds the injective residual embedding into a checked isotropic frame once the Witt-index dimension bound is available; `directSum_identity_sum_isotropicFrameEmbedding` composes that embedding with the direct-sum equivalence and its preservation theorem; `directSum_identity_sum_isotropicEmbedding_maps_right`/`_maps_left` prove the action on both summands; and `directSum_identity_sum_isotropicEmbedding_preserves` proves full block-pairing preservation from the residual embedding's pairing-preservation field. |
-      | Common isotropic residual frame plus dual frame | Residual embedding/direct-sum packet and dual-frame packet checked in `BHWPermutation/SourceHWCommonResidualFrame.lean`; global maximal-frame existence, basis-packaging wrappers, relative-orthogonal subtype/kernel helpers, quotient form, quotient radical bridge, quotient nondegeneracy, quotient-preimage carriers, quotient-isotropy pullback, maximal quotient choice, pairing-map rank-nullity support, quotient-image carrier/isotropy support, retyping finrank helpers, quotient-image rank comparison, candidate carrier, and candidate containment/inclusion/isotropy fields checked in `SourceHWMaximalIsotropicFrame.lean`, `SourceHWMaximalIsotropicQuotient.lean`, and `SourceHWMaximalIsotropicExtension.lean`; residual-alignment-to-normal-form consumers checked in `SourceHWLowRankNormalForm.lean`; containment-compatible maximal frame wrapper and determinant-one residual extension still pending. | The checked layer injects a totally isotropic residual subspace into a chosen independent isotropic frame, extracts coefficient functions with `exists_coefficients_of_mem_span_finite_frame`, proves the identity-plus-residual direct-sum map preserves the pairing, proves existence of a finite maximal totally isotropic frame in any ambient subspace, feeds maximality directly into the residual embedding/direct-sum packet, proves that a frame obtained from a globally maximal isotropic subspace spans that subspace, packages a globally maximal isotropic subspace containing the right residual span into the required frame containment, retypes an ambient subspace inside a containing subtype as `complexMinkowskiSubmoduleIn`, defines its relative orthogonal as `complexMinkowskiRelativeOrthogonalIn`, proves that a totally isotropic subspace lies in that relative orthogonal, identifies the retyped subspace inside the relative orthogonal, proves the restricted-form kernel condition needed for quotient descent, checks the induced quotient form with its `mk` and symmetry lemmas, checks the radical bridge from restricted-kernel inclusion to quotient nondegeneracy, checks the double-orthogonal quotient nondegeneracy theorem, checks quotient-preimage carrier definitions, ambient containment, original-`R` containment, quotient-isotropy pullback, maximal quotient choice, pairing-map rank-nullity support, quotient-image carrier/isotropy support, concrete quotient-image rank/nullity, concrete maximal-quotient bound, candidate containment, candidate ambient inclusion, and candidate isotropy, checks the retyping finrank identities needed for the later `finrank R + finrank Qbar` comparison, converts `HWLowRankResidualFrameExtensionData` into `HWLowRankResidualAlignmentData`, constructs the isotropic dual frame inside the nondegenerate orthogonal complement via raw duals plus half-Gram cleanup, proves that `HWLowRankResidualAlignmentData` mechanically yields `HWLowRankCommonIsotropicFrameData`, and proves that common data mechanically yield a full `HWLowRankIsotropicNormalForm` and singular contraction data.  Remaining work is the compatible maximal/common isotropic frame producer landing in `HWLowRankResidualFrameExtensionData`: first finish the final wrapper for the quotient/rank-nullity theorem `complexMinkowski_maximalIsotropicFrameIn_extending` by sealing the named candidate finrank equality without unfolding the dependent quotient preimage, then prove a determinant-one correction moving the left residuals into that frame span while fixing `A.M`. |
+      | Common isotropic residual frame plus dual frame | Residual embedding/direct-sum packet and dual-frame packet checked in `BHWPermutation/SourceHWCommonResidualFrame.lean`; global maximal-frame existence, basis-packaging wrappers, relative-orthogonal subtype/kernel helpers, quotient form, quotient radical bridge, quotient nondegeneracy, quotient-preimage carriers, quotient-isotropy pullback, maximal quotient choice, pairing-map rank-nullity support, quotient-image carrier/isotropy support, retyping finrank helpers, quotient-image rank comparison, candidate carrier, candidate containment/inclusion/isotropy fields, and containment-compatible maximal subspace/frame extension checked in `SourceHWMaximalIsotropicFrame.lean`, `SourceHWMaximalIsotropicQuotient.lean`, `SourceHWMaximalIsotropicExtension.lean`, and `SourceHWMaximalIsotropicFinal.lean`; residual-alignment-to-normal-form consumers checked in `SourceHWLowRankNormalForm.lean`; determinant-one residual extension still pending. | The checked layer injects a totally isotropic residual subspace into a chosen independent isotropic frame, extracts coefficient functions with `exists_coefficients_of_mem_span_finite_frame`, proves the identity-plus-residual direct-sum map preserves the pairing, proves existence of a finite maximal totally isotropic frame in any ambient subspace, feeds maximality directly into the residual embedding/direct-sum packet, proves that a frame obtained from a globally maximal isotropic subspace spans that subspace, packages a globally maximal isotropic subspace containing the right residual span into the required frame containment, retypes an ambient subspace inside a containing subtype as `complexMinkowskiSubmoduleIn`, defines its relative orthogonal as `complexMinkowskiRelativeOrthogonalIn`, proves that a totally isotropic subspace lies in that relative orthogonal, identifies the retyped subspace inside the relative orthogonal, proves the restricted-form kernel condition needed for quotient descent, checks the induced quotient form with its `mk` and symmetry lemmas, checks the radical bridge from restricted-kernel inclusion to quotient nondegeneracy, checks the double-orthogonal quotient nondegeneracy theorem, checks quotient-preimage carrier definitions, ambient containment, original-`R` containment, quotient-isotropy pullback, maximal quotient choice, pairing-map rank-nullity support, quotient-image carrier/isotropy support, concrete quotient-image rank/nullity, concrete maximal-quotient bound, candidate containment, candidate ambient inclusion, candidate isotropy, raw quotient-preimage maximal extension, and basis-frame containment wrapper, converts `HWLowRankResidualFrameExtensionData` into `HWLowRankResidualAlignmentData`, constructs the isotropic dual frame inside the nondegenerate orthogonal complement via raw duals plus half-Gram cleanup, proves that `HWLowRankResidualAlignmentData` mechanically yields `HWLowRankCommonIsotropicFrameData`, and proves that common data mechanically yield a full `HWLowRankIsotropicNormalForm` and singular contraction data.  Remaining work is the compatible maximal/common isotropic frame producer landing in `HWLowRankResidualFrameExtensionData`: use the checked `complexMinkowski_maximalIsotropicFrameIn_extending` wrapper to place the right residual span in the final frame, then prove a determinant-one correction moving the left residuals into that frame span while fixing `A.M`. |
       | Isotropic contraction family | Hyperbolic-block support, selected-plus-hyperbolic block map, determinant-one global extension, and packaged Lorentz family checked in `BHWPermutation/SourceHWCommonResidualFrame.lean`. | The checked layer now proves dual-pair linear independence, the disjointness facts for `M`, `span q`, and `span qDual`, nondegeneracy of `span q ⊔ span qDual` and `M ⊔ (span q ⊔ span qDual)`, scalar submodule scaling equivalences, two-summand scaling maps, reciprocal-exponential identities, and the hyperbolic sub-boost preserving the pairing on `span q ⊔ span qDual`.  It also defines `directSum_congr_sup_equiv`, proves the hyperbolic block is orthogonal/disjoint from `M`, defines `complexMinkowski_selectedHyperbolicContraction`, proves its action on `M`, `q`, and `qDual`, proves it preserves the full pairing, computes its determinant as `1`, splits the ambient space by the nondegenerate block plus its orthogonal complement, extends by identity, proves the global map is form-preserving and determinant one, and packages it as `complexMinkowski_selectedHyperbolicContractionFamily` with checked action formulas on `M`, `q`, and `qDual`.  The remaining low-rank producer work is now upstream of this family: construct the compatible maximal residual frame and determinant-one correction packaged as `HWLowRankResidualFrameExtensionData`, then use the checked conversion chain into `BHW.hw_lowRank_isotropicNormalForm_of_commonFrameData`. |
       | Extended-tube stability for all residual coefficients | Checked in `SourceHWTubeCoefficient.lean`; corrected target for arbitrary endpoints is `ExtendedTube`, not `ForwardTube`. | Hall-Wightman's second remark gives `hw_secondRemark_forwardTube_singleNullResidual_normalForm`; the third remark is the checked determinant-one complex Lorentz two-plane rotation fixing the orthogonal complement and scaling `u + i v` by `exp t`; transport gives `hw_singleIsotropicResidual_allCoefficients_mem_extendedTube`; finite induction and the empty-source wrapper give the public `hw_isotropicFrame_allCoefficients_mem_extendedTube`.  The dual frame is used only for the null-boost contraction and the two-curve value equality/limit, not for coefficient-freedom membership. |
       | Singular two-curve analytic limit | Implemented and exact-file checked in `BHWPermutation/SourceHWSingularLimit.lean` as `BHW.ComplexMinkowskiTotallyIsotropicSubspace`, `BHW.complexMinkowskiTotallyIsotropic_span_range`, `BHW.span_frame_orthogonal_to_subspace`, `BHW.HWSameSourceGramSingularContractionData`, `BHW.HWLowRankIsotropicNormalForm`, `BHW.hw_lowRank_isotropicNormalForm_to_contractionData`, and `BHW.hw_sameSourceGram_singularLimit_extendF_eq`. | Once `HWSameSourceGramSingularContractionData` exists, continuity of `extendF` on `ExtendedTube`, orbit invariance from `extendF_complexLorentzInvariant_of_cinv`, `Filter.Tendsto.congr'`, and `tendsto_nhds_unique` prove equality of endpoint values.  The checked span-induction lemmas identify isotropic/orthogonal residual spans from finite frame pairings, and the checked normal-form adapter identifies the remaining geometric input as production of `HWLowRankIsotropicNormalForm`; no analytic gap remains in this limit step. |
