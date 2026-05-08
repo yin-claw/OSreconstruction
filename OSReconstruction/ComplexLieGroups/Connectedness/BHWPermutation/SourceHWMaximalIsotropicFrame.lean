@@ -228,4 +228,54 @@ theorem directSum_identity_sum_isotropicMaximalFrameEmbedding
     hM hR_orth F.q_independent F.q_pair_zero hq_orth_M hR_iso
     (F.maximal R hR_le hR_iso)
 
+/-- The final geometric packet expected from the compatible maximal-frame
+and determinant-one residual-alignment theorem.  It chooses a maximal frame
+inside the orthogonal complement of the selected span and a Lorentz correction
+fixing the selected span, with both residual families landing in that frame
+span. -/
+structure HWLowRankResidualFrameExtensionData
+    {d n r : ℕ}
+    {z w : Fin n → Fin (d + 1) → ℂ}
+    {I : Fin r → Fin n}
+    {S : HWLowRankSelectedSpanFrame d n r z w I}
+    (A : HWLowRankSelectedSpanAlignment d n r z w I S) where
+  F : ComplexMinkowskiMaximalIsotropicFrameIn d
+    (complexMinkowskiOrthogonalSubmodule d A.M)
+  Λfix : ComplexLorentzGroup d
+  Λfix_M :
+    ∀ m : A.M,
+      complexLorentzVectorAction Λfix
+        (m : Fin (d + 1) → ℂ) =
+      (m : Fin (d + 1) → ℂ)
+  left_span :
+    ∀ i,
+      complexLorentzVectorAction Λfix (A.leftResidual i) ∈
+        Submodule.span ℂ (Set.range F.q)
+  right_span :
+    ∀ i, A.rightResidual i ∈ Submodule.span ℂ (Set.range F.q)
+
+/-- Convert the final geometric frame-extension packet into the residual
+alignment data consumed by the checked low-rank normal-form assembly. -/
+def hw_lowRank_residualAlignmentData_of_frameExtensionData
+    {d n r : ℕ}
+    {z w : Fin n → Fin (d + 1) → ℂ}
+    {I : Fin r → Fin n}
+    {S : HWLowRankSelectedSpanFrame d n r z w I}
+    {A : HWLowRankSelectedSpanAlignment d n r z w I S}
+    (D : HWLowRankResidualFrameExtensionData A) :
+    HWLowRankResidualAlignmentData A :=
+  { Λfix := D.Λfix
+    s := D.F.s
+    q := D.F.q
+    Λfix_M := D.Λfix_M
+    left_span := D.left_span
+    right_span := D.right_span
+    q_pair_zero := D.F.q_pair_zero
+    q_orth_M := by
+      intro c m
+      exact
+        (mem_complexMinkowskiOrthogonalSubmodule_iff
+          d A.M (D.F.q c)).1 (D.F.q_mem c) m
+    q_independent := D.F.q_independent }
+
 end BHW
