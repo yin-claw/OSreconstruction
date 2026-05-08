@@ -4,7 +4,7 @@ A Lean 4 formalization of the **Osterwalder-Schrader reconstruction theorem** an
 
 ## Current Axiom Inventory
 
-The tracked production tree currently contains **12 explicit axioms**:
+The tracked production tree currently contains **14 explicit axioms** (verified by `rg '^axiom\s+\w' OSReconstruction --glob '*.lean'`):
 
 **Functional analysis (2):**
 - `schwartz_nuclear_extension` in `Wightman/WightmanAxioms.lean` — **partially proved**: nuclearity of Schwartz space is now proved in the [`gaussian-field`](https://github.com/or-n/gaussian-field) library; the remaining gap is importing the instance and deriving the kernel theorem
@@ -19,6 +19,9 @@ The tracked production tree currently contains **12 explicit axioms**:
 - `tube_boundaryValue_of_vladimirov_growth` in `SCV/TubeBoundaryValueExistence.lean` — BV existence from Vladimirov growth (M>0)
 - `tube_boundaryValue_realizes_dualCone_distribution` in `SCV/FourierSupportCone.lean` — BV realized by dual-cone distribution
 - `bochner_tube_extension` in `SCV/BochnerTubeTheorem.lean` — global Bochner tube extension theorem
+
+**SNAG / spectral (1):**
+- `snag_theorem` in `GeneralResults/SNAGTheorem.lean` — Stone-Naimark-Ambrose-Godement: every strongly-continuous unitary representation of a locally compact abelian group has a joint projection-valued spectral measure (Reed-Simon I VIII.12 / Mackey 1957). Vetted "Standard"; see `docs/cluster_axiom_vetting.md` entry 1.
 
 **Reconstruction bridge (1):**
 - `reduced_bargmann_hall_wightman_of_input` in `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean`
@@ -46,12 +49,11 @@ the cluster proof's existing dominator no longer matches the new shape
 and requires IBP rework (Streater-Wightman §3.4 / Ruelle 1962). See
 `docs/ruelle_bound_vacuity_concern.md`.
 
-One inventoried **frontier lemma** with a tracked production sorry:
-- `OSReconstruction/Wightman/Spectral/Ruelle/L5_SpectralRiemannLebesgue.lean`
-  — pure measure-theoretic Riemann-Lebesgue for finite measures with
-  AC spatial marginal. Steps 1, 2, 3a proved; steps 3b–e remain
-  (Mathlib RL bridging via `EuclideanSpace ℝ (Fin d)` + sign/2π
-  reconciliation).
+L5 (`OSReconstruction/Wightman/Spectral/Ruelle/L5_SpectralRiemannLebesgue.lean`)
+— pure measure-theoretic Riemann-Lebesgue for finite measures with AC
+spatial marginal — is now **fully proved** (`#print axioms
+spectral_riemann_lebesgue` shows only `[propext, Classical.choice,
+Quot.sound]`, no sorryAx, no project axioms beyond Mathlib).
 
 The Path A blueprint and L2 (no zero-momentum atom) reductions are
 parked in `Proofideas/` as architectural reference, not in production.

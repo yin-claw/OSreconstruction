@@ -155,6 +155,106 @@ Once `RuelleAnalyticClusterHypotheses.bound` is repaired, both
 to mirror the new shape, and a vetted production axiom can be
 considered.
 
+## Audit: the vacuity propagates through a chain (2026-05-08, follow-up to Option A)
+
+After applying Option A to `RACH.bound`, follow-up audit established that
+the same flawed bound shape appears in a **coordinated chain of project
+sites**. The IBP rework for the cluster proof requires fixing all of
+them. Importantly, the math is classical (Vladimirov / Streater-Wightman);
+the gap is mechanical: the wrong shape was inherited through a chain of
+theorems and one axiom hypothesis.
+
+### The chain
+
+```
+exists_acrOne_productTensor_witness                              -- private theorem
+  ↓                                                                  with sorry at line 66
+  (OSToWightman.lean:38)                                             (claims unregulated bound)
+
+schwinger_continuation_base_step_acrOne_assembly_with_translationInvariant
+  ↓                                                                  -- transitively sorry'd
+  (OSToWightman.lean:508)
+
+full_analytic_continuation_with_acr_symmetry_growth
+  ↓                                                                  -- transitively sorry'd
+  (OSToWightman.lean:2515)
+
+full_analytic_continuation_with_symmetry_growth
+  ↓                                                                  -- transitively sorry'd
+  (OSToWightman.lean:2553)
+
+bv_implies_fourier_support                                       -- AXIOM: hypothesis is
+  (VladimirovTillmann.lean:148)                                       the same wrong shape
+```
+
+All five claim or require the unregulated polynomial bound
+`‖F z‖ ≤ C(1+‖z‖)^N` over the analytic-continuation domain. Per the
+free-field counterexample (above), this is unsatisfiable for general
+Wightman QFTs — so:
+
+- Theorems #1-#4 are claimed but *cannot* be proved as stated.
+  Each ends in (or transitively pulls in) `sorry`.
+- Axiom #5 is consistent in isolation but its hypothesis is unsatisfiable —
+  so it cannot be applied honestly anywhere.
+
+### Smoking gun: `bv_implies_fourier_support` signature contradicts its docstring
+
+The axiom's **docstring** (`VladimirovTillmann.lean:58-59`) states the
+correct textbook hypothesis:
+```
+‖F(z)‖ ≤ C(1+‖z‖)^N · (1 + dist(Im z, ∂C)⁻¹)^q
+```
+*with* the regulator. Line 140 even says explicitly: "The compact-subset
+polynomial growth hypothesis suffices for Vladimirov 25.1."
+
+But the axiom **signature** (line 162-164) drops the regulator. The
+codified hypothesis is therefore *stronger* than what the docstring
+claims and *stronger* than what Vladimirov 25.1 actually requires.
+
+### Fix path
+
+A coordinated shape-propagation across the chain:
+
+1. **Source theorem**: change `exists_acrOne_productTensor_witness`'s
+   conclusion to include the regulator. Then its `sorry` becomes
+   provable (matches the actual textbook content;
+   Glaser-Streater-Wightman / Osterwalder-Schrader II / Glimm-Jaffe Ch. 6).
+2. **Propagate**: update the three downstream theorems
+   (`schwinger_continuation_base_step_..._translationInvariant`,
+   `full_analytic_continuation_with_acr_symmetry_growth`,
+   `full_analytic_continuation_with_symmetry_growth`) to thread
+   the regulated bound.
+3. **Axiom relaxation**: relax `bv_implies_fourier_support`'s
+   `hF_growth` hypothesis to either the regulated form (matching
+   docstring) or the compact-subset form (line 140's claim). Both
+   are satisfiable; both suffice for Vladimirov 25.1 per its
+   actual statement.
+
+After these steps, the IBP rework for the cluster proof can use the
+relaxed `bv_implies_fourier_support` to obtain `Tflat` from the
+regulated `W_analytic_BHW`, then apply the standard Schwartz-pairing
+argument (Streater-Wightman §3.4).
+
+### Effort estimate (revised post-audit)
+
+- Source-theorem shape change + sorry fill: 1 week (substantial OS
+  analytic-continuation content, but standard literature).
+- Propagation + axiom relaxation: 2-4 days (mechanical).
+- Cluster-proof rework via Tflat dual pairing: 1-2 weeks.
+- **Total: 2-4 weeks** with high confidence.
+
+Worst case (~6 weeks): if `OSLinearGrowthCondition` itself needs
+shape adjustment to support the regulated bound. Will report back if
+scope grows.
+
+### Why this audit matters beyond the cluster proof
+
+The polynomial-bound chain feeds into the OS reconstruction's
+analytic-continuation layer, used elsewhere in the project. Fixing
+the shape propagation is orthogonal to L4 / Ruelle / cluster but
+is load-bearing for any unconditional discharge that routes through
+this chain.
+
 ## Resolution (2026-05-08, same day, Option A applied on `r2e/ruelle-l5-grind`)
 
 Option A was implemented:
