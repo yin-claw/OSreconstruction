@@ -6094,7 +6094,8 @@ implementation contract is:
    `BHW.linearMapQuotientImageCarrier_isotropic_of_pair_zero` and
    `BHW.linearMapQuotientImageCarrier_finrank_le_of_maximal_isotropic`.
    The abstract quotient-preimage dimension and final arithmetic cancellation
-   are checked as `BHW.quotientPreimage_finrank_eq_add` and
+   are checked as `BHW.quotientPreimage_finrank_eq_add`,
+   `BHW.quotientPreimageCarrier_finrank_eq_add`, and
    `BHW.quotient_rankNullity_cancel_le`.  The concrete
    dependent carrier and isotropy proof are checked as
    `BHW.complexMinkowskiPairingKernelQuotientImage` and

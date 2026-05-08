@@ -26037,7 +26037,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
       and arithmetic hooks are checked as
       `BHW.linearMapQuotientImageCarrier_isotropic_of_pair_zero`,
       `BHW.linearMapQuotientImageCarrier_finrank_le_of_maximal_isotropic`,
-      `BHW.quotientPreimage_finrank_eq_add`, and
+      `BHW.quotientPreimage_finrank_eq_add`,
+      `BHW.quotientPreimageCarrier_finrank_eq_add`, and
       `BHW.quotient_rankNullity_cancel_le`; the concrete
       dependent carrier and isotropy proof are checked as
       `BHW.complexMinkowskiPairingKernelQuotientImage` and

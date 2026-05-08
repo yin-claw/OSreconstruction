@@ -225,6 +225,35 @@ theorem linearMapQuotientImageCarrier_finrank_le_of_maximal_isotropic
   hmax (linearMapQuotientImageCarrier p A)
     (linearMapQuotientImageCarrier_isotropic_of_pair_zero p A B h_pair)
 
+/-- The explicit carrier of the preimage of a quotient submodule under the
+quotient map.  This avoids unfolding `Submodule.comap` at dependent source
+specializations while remaining definitionally the same carrier. -/
+def quotientPreimageCarrier
+    {V : Type*}
+    [AddCommGroup V] [Module ℂ V]
+    (p : Submodule ℂ V)
+    (Q : Submodule ℂ (V ⧸ p)) :
+    Submodule ℂ V where
+  carrier := {x | p.mkQ x ∈ Q}
+  zero_mem' := by
+    simp
+  add_mem' := by
+    intro x y hx hy
+    exact Q.add_mem hx hy
+  smul_mem' := by
+    intro c x hx
+    exact Q.smul_mem c hx
+
+/-- The explicit quotient-preimage carrier agrees with the `comap` carrier. -/
+theorem quotientPreimageCarrier_eq_comap
+    {V : Type*}
+    [AddCommGroup V] [Module ℂ V]
+    (p : Submodule ℂ V)
+    (Q : Submodule ℂ (V ⧸ p)) :
+    quotientPreimageCarrier p Q = Q.comap p.mkQ := by
+  ext x
+  rfl
+
 /-- The quotient map from the full preimage of a quotient submodule to that
 quotient submodule. -/
 def quotientPreimageToSubmodule
@@ -301,6 +330,17 @@ theorem quotientPreimage_finrank_eq_add
   rw [hrange, finrank_top, hker_fin] at hrank
   rw [add_comm] at hrank
   exact hrank.symm
+
+/-- Finrank version for the explicit quotient-preimage carrier. -/
+theorem quotientPreimageCarrier_finrank_eq_add
+    {V : Type*}
+    [AddCommGroup V] [Module ℂ V] [FiniteDimensional ℂ V]
+    (p : Submodule ℂ V)
+    (Q : Submodule ℂ (V ⧸ p)) :
+    Module.finrank ℂ (quotientPreimageCarrier p Q) =
+      Module.finrank ℂ p + Module.finrank ℂ Q := by
+  rw [quotientPreimageCarrier_eq_comap]
+  exact quotientPreimage_finrank_eq_add p Q
 
 /-- Arithmetic cancellation for the two rank-nullity identities used in the
 compatible maximal-isotropic extension. -/
@@ -705,18 +745,10 @@ def complexMinkowskiRelativeOrthogonalQuotientPreimageInRperp
     (Qbar : Submodule ℂ
       (complexMinkowskiRelativeOrthogonalIn (d := d) N RN ⧸
         complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N) RN)) :
-    Submodule ℂ (complexMinkowskiRelativeOrthogonalIn (d := d) N RN) where
-  carrier := {x |
-    Submodule.mkQ
-      (complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N) RN) x ∈ Qbar}
-  zero_mem' := by
-    simp
-  add_mem' := by
-    intro x y hx hy
-    exact Qbar.add_mem hx hy
-  smul_mem' := by
-    intro c x hx
-    exact Qbar.smul_mem c hx
+    Submodule ℂ (complexMinkowskiRelativeOrthogonalIn (d := d) N RN) :=
+  quotientPreimageCarrier
+    (V := complexMinkowskiRelativeOrthogonalIn (d := d) N RN)
+    (complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N) RN) Qbar
 
 /-- The same quotient preimage retyped as a subspace of the ambient subtype
 `N`. -/
