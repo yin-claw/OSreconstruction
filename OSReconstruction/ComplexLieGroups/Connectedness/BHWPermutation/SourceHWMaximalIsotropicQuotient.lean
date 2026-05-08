@@ -79,6 +79,116 @@ theorem bilinForm_maximalTotallyIsotropicSubspace_exists
     Nat.le_findGreatest hS_bound hP_S
   simpa [k, hQ_rank] using hle
 
+/-- The image carrier of a linear map after quotienting its codomain by a
+submodule, defined by explicit quotient-class representatives. -/
+def linearMapQuotientImageCarrier
+    {V W : Type*}
+    [AddCommGroup V] [Module ℂ V]
+    [AddCommGroup W] [Module ℂ W]
+    (p : Submodule ℂ V)
+    (A : W →ₗ[ℂ] V) :
+    Submodule ℂ (V ⧸ p) where
+  carrier := {q | ∃ x : W, q = p.mkQ (A x)}
+  zero_mem' := by
+    refine ⟨0, ?_⟩
+    simp
+  add_mem' := by
+    intro x y hx hy
+    rcases hx with ⟨xw, rfl⟩
+    rcases hy with ⟨yw, rfl⟩
+    refine ⟨xw + yw, ?_⟩
+    simp
+  smul_mem' := by
+    intro c x hx
+    rcases hx with ⟨xw, rfl⟩
+    refine ⟨c • xw, ?_⟩
+    simp
+
+/-- The quotient-image representative map from the domain to its image carrier. -/
+def linearMapToQuotientImageCarrier
+    {V W : Type*}
+    [AddCommGroup V] [Module ℂ V]
+    [AddCommGroup W] [Module ℂ W]
+    (p : Submodule ℂ V)
+    (A : W →ₗ[ℂ] V) :
+    W →ₗ[ℂ] linearMapQuotientImageCarrier p A where
+  toFun x := ⟨p.mkQ (A x), ⟨x, rfl⟩⟩
+  map_add' x y := by
+    ext
+    simp
+  map_smul' c x := by
+    ext
+    simp
+
+/-- The representative map onto the generic quotient-image carrier is
+surjective by construction. -/
+theorem linearMapToQuotientImageCarrier_surjective
+    {V W : Type*}
+    [AddCommGroup V] [Module ℂ V]
+    [AddCommGroup W] [Module ℂ W]
+    (p : Submodule ℂ V)
+    (A : W →ₗ[ℂ] V) :
+    Function.Surjective (linearMapToQuotientImageCarrier p A) := by
+  intro q
+  rcases q.2 with ⟨x, hx⟩
+  refine ⟨x, ?_⟩
+  ext
+  exact hx.symm
+
+/-- Kernel membership for the generic quotient-image representative map. -/
+theorem linearMapToQuotientImageCarrier_mem_ker_iff
+    {V W : Type*}
+    [AddCommGroup V] [Module ℂ V]
+    [AddCommGroup W] [Module ℂ W]
+    (p : Submodule ℂ V)
+    (A : W →ₗ[ℂ] V)
+    (x : W) :
+    x ∈ LinearMap.ker (linearMapToQuotientImageCarrier p A) ↔ A x ∈ p := by
+  constructor
+  · intro hx
+    rw [LinearMap.mem_ker] at hx
+    have hxval := congrArg Subtype.val hx
+    change p.mkQ (A x) = 0 at hxval
+    rw [Submodule.mkQ_apply] at hxval
+    exact (Submodule.Quotient.mk_eq_zero (p := p) (x := A x)).1 hxval
+  · intro hx
+    rw [LinearMap.mem_ker]
+    ext
+    change p.mkQ (A x) = 0
+    rw [Submodule.mkQ_apply]
+    exact (Submodule.Quotient.mk_eq_zero (p := p) (x := A x)).2 hx
+
+/-- The kernel of the generic representative map is the comap of the quotient
+submodule along the original linear map. -/
+theorem linearMapToQuotientImageCarrier_ker_eq_comap
+    {V W : Type*}
+    [AddCommGroup V] [Module ℂ V]
+    [AddCommGroup W] [Module ℂ W]
+    (p : Submodule ℂ V)
+    (A : W →ₗ[ℂ] V) :
+    LinearMap.ker (linearMapToQuotientImageCarrier p A) = p.comap A := by
+  ext x
+  exact linearMapToQuotientImageCarrier_mem_ker_iff p A x
+
+/-- Rank-nullity for the generic representative map onto a quotient-image
+carrier. -/
+theorem linearMapQuotientImageCarrier_finrank_add_ker
+    {V W : Type*}
+    [AddCommGroup V] [Module ℂ V]
+    [AddCommGroup W] [Module ℂ W] [FiniteDimensional ℂ W]
+    (p : Submodule ℂ V)
+    (A : W →ₗ[ℂ] V) :
+    Module.finrank ℂ (linearMapQuotientImageCarrier p A) +
+      Module.finrank ℂ (LinearMap.ker (linearMapToQuotientImageCarrier p A)) =
+        Module.finrank ℂ W := by
+  let f := linearMapToQuotientImageCarrier p A
+  have hrange : LinearMap.range f = ⊤ :=
+    LinearMap.range_eq_top.2
+      (linearMapToQuotientImageCarrier_surjective p A)
+  have hrank := LinearMap.finrank_range_add_finrank_ker f
+  rw [hrange] at hrank
+  simpa [f] using hrank
+
 /-- Specialized maximal isotropic quotient subspace for the relative-orthogonal
 quotient form `Rperp / R`. -/
 theorem complexMinkowskiRelativeOrthogonalQuotient_maximalIsotropicSubspace_exists
