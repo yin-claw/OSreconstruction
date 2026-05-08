@@ -26049,9 +26049,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.complexMinkowskiPairingKerToRelativeOrthogonal_comap_finrank_eq_inter`,
       and
       `BHW.complexMinkowskiPairingKer_genericQuotientImage_finrank_add_inter`;
-      next instantiate the abstract quotient-preimage finrank theorem for the
-      explicit `Rperp` preimage carrier and combine it with the maximal `Qbar`
-      bound so the `finrank T` terms cancel.
+      the source-coordinate quotient-preimage finrank formula is checked as
+      `BHW.complexMinkowskiRelativeOrthogonalQuotientPreimage_finrank_eq_add`;
+      next combine this with the maximal `Qbar` bound so the `finrank T` terms
+      cancel.
       It must not be replaced by a generic degenerate
       `complexMinkowski_wittExtension_subspaceIsometry` theorem, because that
       would hide exactly the compatibility and dimension comparison needed by

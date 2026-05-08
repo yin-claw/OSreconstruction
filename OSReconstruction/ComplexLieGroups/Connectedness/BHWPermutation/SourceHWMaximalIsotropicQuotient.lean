@@ -776,6 +776,31 @@ def complexMinkowskiRelativeOrthogonalQuotientPreimage
   (complexMinkowskiRelativeOrthogonalQuotientPreimageInN
     (d := d) (N := N) RN Qbar).map N.subtype
 
+/-- For a totally isotropic `R ≤ N`, the source-coordinate quotient preimage has
+dimension `finrank R + finrank Qbar`. -/
+theorem complexMinkowskiRelativeOrthogonalQuotientPreimage_finrank_eq_add
+    {d : ℕ}
+    {N R : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hR_le : R ≤ N)
+    (hR_iso : ComplexMinkowskiTotallyIsotropicSubspace d R)
+    (Qbar : Submodule ℂ
+      (complexMinkowskiRelativeOrthogonalIn (d := d) N
+          (complexMinkowskiSubmoduleIn (d := d) N R) ⧸
+        complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N)
+          (complexMinkowskiSubmoduleIn (d := d) N R))) :
+    Module.finrank ℂ
+        (complexMinkowskiRelativeOrthogonalQuotientPreimage (d := d) N
+          (complexMinkowskiSubmoduleIn (d := d) N R) Qbar) =
+      Module.finrank ℂ R + Module.finrank ℂ Qbar := by
+  rw [complexMinkowskiRelativeOrthogonalQuotientPreimage]
+  rw [Submodule.finrank_map_subtype_eq]
+  rw [complexMinkowskiRelativeOrthogonalQuotientPreimageInN]
+  rw [Submodule.finrank_map_subtype_eq]
+  rw [complexMinkowskiRelativeOrthogonalQuotientPreimageInRperp]
+  rw [quotientPreimageCarrier_finrank_eq_add]
+  rw [complexMinkowskiSubmoduleInRelativeOrthogonal_finrank_eq_of_totallyIsotropic
+    (d := d) (N := N) (R := R) hR_le hR_iso]
+
 /-- The ambient-coordinate quotient preimage remains inside `N`. -/
 theorem complexMinkowskiRelativeOrthogonalQuotientPreimage_le
     {d : ℕ}

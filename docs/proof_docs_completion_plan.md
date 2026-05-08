@@ -6106,9 +6106,10 @@ implementation contract is:
    `BHW.complexMinkowskiPairingKerToRelativeOrthogonal_comap_finrank_eq_inter`,
    and
    `BHW.complexMinkowskiPairingKer_genericQuotientImage_finrank_add_inter`.
-   The next pass should instantiate the abstract quotient-preimage dimension
-   theorem through a small source-level wrapper for the explicit `Rperp`
-   preimage carrier, then combine it with the maximal `Qbar` bound.
+   The source-coordinate quotient-preimage finrank formula is checked as
+   `BHW.complexMinkowskiRelativeOrthogonalQuotientPreimage_finrank_eq_add`.
+   The next pass should combine this with the maximal `Qbar` bound so the
+   `finrank T` terms cancel.
    It should not start by adding a new generic
    `complexMinkowski_wittExtension_subspaceIsometry` theorem.
    The residual-frame alignment now has an
