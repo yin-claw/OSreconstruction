@@ -119,5 +119,48 @@ theorem complexMinkowski_maximalIsotropicFrameIn_exists
   rcases complexMinkowski_maximalIsotropicSubspaceIn_exists d N with ⟨F⟩
   exact ⟨complexMinkowskiMaximalIsotropicFrameIn_of_subspace F⟩
 
-end BHW
+namespace ComplexMinkowskiMaximalIsotropicFrameIn
 
+/-- The span of a maximal isotropic frame lies in its ambient subspace. -/
+theorem span_le
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (F : ComplexMinkowskiMaximalIsotropicFrameIn d N) :
+    Submodule.span ℂ (Set.range F.q) ≤ N := by
+  rw [Submodule.span_le]
+  rintro _ ⟨c, rfl⟩
+  exact F.q_mem c
+
+/-- The span of a maximal isotropic frame is totally isotropic. -/
+theorem span_isotropic
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (F : ComplexMinkowskiMaximalIsotropicFrameIn d N) :
+    ComplexMinkowskiTotallyIsotropicSubspace d
+      (Submodule.span ℂ (Set.range F.q)) :=
+  complexMinkowskiTotallyIsotropic_span_range d F.s F.q F.q_pair_zero
+
+/-- The span of an independent maximal frame has finrank equal to the frame
+length. -/
+theorem finrank_span
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (F : ComplexMinkowskiMaximalIsotropicFrameIn d N) :
+    Module.finrank ℂ (Submodule.span ℂ (Set.range F.q)) = F.s := by
+  simpa using finrank_span_eq_card F.q_independent
+
+/-- Maximality can be read against the finrank of the frame span. -/
+theorem maximal_span
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (F : ComplexMinkowskiMaximalIsotropicFrameIn d N)
+    (R : Submodule ℂ (Fin (d + 1) → ℂ))
+    (hR_le : R ≤ N)
+    (hR_iso : ComplexMinkowskiTotallyIsotropicSubspace d R) :
+    Module.finrank ℂ R ≤
+      Module.finrank ℂ (Submodule.span ℂ (Set.range F.q)) := by
+  simpa [F.finrank_span] using F.maximal R hR_le hR_iso
+
+end ComplexMinkowskiMaximalIsotropicFrameIn
+
+end BHW

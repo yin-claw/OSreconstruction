@@ -5782,6 +5782,10 @@ implementation contract is:
    `BHW.complexMinkowskiTotallyIsotropic_bot`,
    `BHW.complexMinkowski_maximalIsotropicSubspaceIn_exists`,
    `BHW.complexMinkowski_maximalIsotropicFrameIn_exists`,
+   `BHW.ComplexMinkowskiMaximalIsotropicFrameIn.span_le`,
+   `BHW.ComplexMinkowskiMaximalIsotropicFrameIn.span_isotropic`,
+   `BHW.ComplexMinkowskiMaximalIsotropicFrameIn.finrank_span`,
+   `BHW.ComplexMinkowskiMaximalIsotropicFrameIn.maximal_span`,
    `BHW.HWLowRankCommonIsotropicFrameData`,
    `BHW.HWLowRankResidualAlignmentData`,
    `BHW.hw_lowRank_commonIsotropicFrameData_of_residualAlignmentData`,
@@ -5950,7 +5954,10 @@ implementation contract is:
    `BHW.complexMinkowski_maximalIsotropicSubspaceIn_exists` chooses a
    maximal-finrank totally isotropic subspace inside any ambient subspace, and
    `BHW.complexMinkowski_maximalIsotropicFrameIn_exists` turns it into an
-   independent finite frame.  This does not yet solve the residual-alignment
+   independent finite frame.  The namespace lemmas
+   `span_le`, `span_isotropic`, `finrank_span`, and `maximal_span` expose the
+   frame span as the checked totally isotropic subspace with the expected
+   dimension and maximality bound.  This does not yet solve the residual-alignment
    problem, because the route still needs a maximal frame compatible with the
    right residual span and a determinant-one correction moving the left
    residual span into it.  The residual-frame alignment now has an

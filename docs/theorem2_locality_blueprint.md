@@ -25703,9 +25703,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       finite-dimensional complex vector space is now obtained in production
       Lean by choosing a totally isotropic subspace of maximal finite
       dimension among all totally isotropic subspaces contained in the ambient
-      subspace, then taking a finite basis of that subspace.  Maximality
-      records the dimension bound for every totally isotropic subspace of the
-      same ambient subspace.  The
+      subspace, then taking a finite basis of that subspace.  The checked
+      namespace lemmas `span_le`, `span_isotropic`, `finrank_span`, and
+      `maximal_span` expose the frame span with its dimension and maximality
+      bound.  The
       strengthened constructor
       `complexMinkowski_maximalIsotropicFrameIn_extending` starts with a
       basis of the given totally isotropic subspace `R`, splits off dual
