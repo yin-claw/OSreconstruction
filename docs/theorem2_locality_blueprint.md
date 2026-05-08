@@ -26033,7 +26033,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.linearMapToQuotientImageCarrier_surjective`,
       `BHW.linearMapToQuotientImageCarrier_mem_ker_iff`,
       `BHW.linearMapToQuotientImageCarrier_ker_eq_comap`, and
-      `BHW.linearMapQuotientImageCarrier_finrank_add_ker`; the concrete
+      `BHW.linearMapQuotientImageCarrier_finrank_add_ker`; the maximal-bound
+      and arithmetic hooks are checked as
+      `BHW.linearMapQuotientImageCarrier_isotropic_of_pair_zero`,
+      `BHW.linearMapQuotientImageCarrier_finrank_le_of_maximal_isotropic`,
+      `BHW.quotientPreimage_finrank_eq_add`, and
+      `BHW.quotient_rankNullity_cancel_le`; the concrete
       dependent carrier and isotropy proof are checked as
       `BHW.complexMinkowskiPairingKernelQuotientImage` and
       `BHW.complexMinkowskiPairingKernelQuotientImage_isotropic`.  The generic
@@ -26043,8 +26048,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.complexMinkowskiPairingKerToRelativeOrthogonal_comap_finrank_eq_inter`,
       and
       `BHW.complexMinkowskiPairingKer_genericQuotientImage_finrank_add_inter`;
-      next combine it with the maximal `Qbar` bound and the quotient-preimage
-      finrank formula so the `finrank T` terms cancel.
+      next instantiate the abstract quotient-preimage finrank theorem for the
+      explicit `Rperp` preimage carrier and combine it with the maximal `Qbar`
+      bound so the `finrank T` terms cancel.
       It must not be replaced by a generic degenerate
       `complexMinkowski_wittExtension_subspaceIsometry` theorem, because that
       would hide exactly the compatibility and dimension comparison needed by

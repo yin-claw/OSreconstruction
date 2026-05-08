@@ -6089,7 +6089,13 @@ implementation contract is:
    `BHW.linearMapToQuotientImageCarrier_surjective`,
    `BHW.linearMapToQuotientImageCarrier_mem_ker_iff`,
    `BHW.linearMapToQuotientImageCarrier_ker_eq_comap`, and
-   `BHW.linearMapQuotientImageCarrier_finrank_add_ker`.  The concrete
+   `BHW.linearMapQuotientImageCarrier_finrank_add_ker`.  The quotient-image
+   maximal-bound hook is checked as
+   `BHW.linearMapQuotientImageCarrier_isotropic_of_pair_zero` and
+   `BHW.linearMapQuotientImageCarrier_finrank_le_of_maximal_isotropic`.
+   The abstract quotient-preimage dimension and final arithmetic cancellation
+   are checked as `BHW.quotientPreimage_finrank_eq_add` and
+   `BHW.quotient_rankNullity_cancel_le`.  The concrete
    dependent carrier and isotropy proof are checked as
    `BHW.complexMinkowskiPairingKernelQuotientImage` and
    `BHW.complexMinkowskiPairingKernelQuotientImage_isotropic`.  The generic
@@ -6099,8 +6105,9 @@ implementation contract is:
    `BHW.complexMinkowskiPairingKerToRelativeOrthogonal_comap_finrank_eq_inter`,
    and
    `BHW.complexMinkowskiPairingKer_genericQuotientImage_finrank_add_inter`.
-   The next pass should combine this with the maximal `Qbar` bound and the
-   quotient-preimage finrank formula.
+   The next pass should instantiate the abstract quotient-preimage dimension
+   theorem through a small source-level wrapper for the explicit `Rperp`
+   preimage carrier, then combine it with the maximal `Qbar` bound.
    It should not start by adding a new generic
    `complexMinkowski_wittExtension_subspaceIsometry` theorem.
    The residual-frame alignment now has an

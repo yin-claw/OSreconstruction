@@ -189,6 +189,131 @@ theorem linearMapQuotientImageCarrier_finrank_add_ker
   rw [hrange] at hrank
   simpa [f] using hrank
 
+/-- A quotient-image carrier is totally isotropic when the chosen quotient
+representatives pair to zero. -/
+theorem linearMapQuotientImageCarrier_isotropic_of_pair_zero
+    {V W : Type*}
+    [AddCommGroup V] [Module ℂ V]
+    [AddCommGroup W] [Module ℂ W]
+    (p : Submodule ℂ V)
+    (A : W →ₗ[ℂ] V)
+    (B : LinearMap.BilinForm ℂ (V ⧸ p))
+    (h_pair : ∀ x y : W, B (p.mkQ (A x)) (p.mkQ (A y)) = 0) :
+    BilinFormTotallyIsotropicSubspace B (linearMapQuotientImageCarrier p A) := by
+  intro x y hx hy
+  rcases hx with ⟨xw, rfl⟩
+  rcases hy with ⟨yw, rfl⟩
+  exact h_pair xw yw
+
+/-- A maximal isotropic quotient subspace bounds any quotient-image carrier whose
+representatives pair to zero. -/
+theorem linearMapQuotientImageCarrier_finrank_le_of_maximal_isotropic
+    {V W : Type*}
+    [AddCommGroup V] [Module ℂ V]
+    [AddCommGroup W] [Module ℂ W]
+    (p : Submodule ℂ V)
+    (A : W →ₗ[ℂ] V)
+    (B : LinearMap.BilinForm ℂ (V ⧸ p))
+    (Qmax : Submodule ℂ (V ⧸ p))
+    (hmax :
+      ∀ Q : Submodule ℂ (V ⧸ p),
+        BilinFormTotallyIsotropicSubspace B Q →
+          Module.finrank ℂ Q ≤ Module.finrank ℂ Qmax)
+    (h_pair : ∀ x y : W, B (p.mkQ (A x)) (p.mkQ (A y)) = 0) :
+    Module.finrank ℂ (linearMapQuotientImageCarrier p A) ≤
+      Module.finrank ℂ Qmax :=
+  hmax (linearMapQuotientImageCarrier p A)
+    (linearMapQuotientImageCarrier_isotropic_of_pair_zero p A B h_pair)
+
+/-- The quotient map from the full preimage of a quotient submodule to that
+quotient submodule. -/
+def quotientPreimageToSubmodule
+    {V : Type*}
+    [AddCommGroup V] [Module ℂ V]
+    (p : Submodule ℂ V)
+    (Q : Submodule ℂ (V ⧸ p)) :
+    Q.comap p.mkQ →ₗ[ℂ] Q where
+  toFun x := ⟨p.mkQ x, x.2⟩
+  map_add' x y := by
+    ext
+    simp
+  map_smul' c x := by
+    ext
+    simp
+
+/-- The quotient-preimage map is onto the chosen quotient submodule. -/
+theorem quotientPreimageToSubmodule_surjective
+    {V : Type*}
+    [AddCommGroup V] [Module ℂ V]
+    (p : Submodule ℂ V)
+    (Q : Submodule ℂ (V ⧸ p)) :
+    Function.Surjective (quotientPreimageToSubmodule p Q) := by
+  intro q
+  obtain ⟨x, hx⟩ := p.mkQ_surjective q
+  refine ⟨⟨x, ?_⟩, ?_⟩
+  · simp [hx, q.2]
+  · ext
+    exact hx
+
+/-- The kernel of the quotient-preimage map is exactly the original quotient
+submodule, retyped inside the preimage. -/
+theorem quotientPreimageToSubmodule_ker_eq_comap
+    {V : Type*}
+    [AddCommGroup V] [Module ℂ V]
+    (p : Submodule ℂ V)
+    (Q : Submodule ℂ (V ⧸ p)) :
+    LinearMap.ker (quotientPreimageToSubmodule p Q) =
+      p.comap (Q.comap p.mkQ).subtype := by
+  ext x
+  constructor
+  · intro hx
+    rw [LinearMap.mem_ker] at hx
+    have hxval := congrArg Subtype.val hx
+    change p.mkQ (x : V) = 0 at hxval
+    rw [Submodule.mkQ_apply] at hxval
+    exact (Submodule.Quotient.mk_eq_zero (p := p) (x := (x : V))).1 hxval
+  · intro hx
+    rw [LinearMap.mem_ker]
+    ext
+    change p.mkQ (x : V) = 0
+    rw [Submodule.mkQ_apply]
+    exact (Submodule.Quotient.mk_eq_zero (p := p) (x := (x : V))).2 hx
+
+/-- The preimage of a quotient submodule has dimension equal to the dimension of
+the quotient kernel plus the dimension of the quotient submodule. -/
+theorem quotientPreimage_finrank_eq_add
+    {V : Type*}
+    [AddCommGroup V] [Module ℂ V] [FiniteDimensional ℂ V]
+    (p : Submodule ℂ V)
+    (Q : Submodule ℂ (V ⧸ p)) :
+    Module.finrank ℂ (Q.comap p.mkQ) =
+      Module.finrank ℂ p + Module.finrank ℂ Q := by
+  let f := quotientPreimageToSubmodule p Q
+  have hrange : LinearMap.range f = ⊤ :=
+    LinearMap.range_eq_top.2
+      (quotientPreimageToSubmodule_surjective p Q)
+  have hker_fin :
+      Module.finrank ℂ (LinearMap.ker f) = Module.finrank ℂ p := by
+    rw [quotientPreimageToSubmodule_ker_eq_comap]
+    exact LinearEquiv.finrank_eq
+      (Submodule.comapSubtypeEquivOfLe (Submodule.le_comap_mkQ p Q))
+  have hrank := LinearMap.finrank_range_add_finrank_ker f
+  rw [hrange, finrank_top, hker_fin] at hrank
+  rw [add_comm] at hrank
+  exact hrank.symm
+
+/-- Arithmetic cancellation for the two rank-nullity identities used in the
+compatible maximal-isotropic extension. -/
+theorem quotient_rankNullity_cancel_le
+    {s ker image inter range r q Q : ℕ}
+    (hS : s = ker + range)
+    (hker : image + inter = ker)
+    (hrange : range + inter ≤ r)
+    (himage : image ≤ q)
+    (hQ : Q = r + q) :
+    s ≤ Q := by
+  omega
+
 /-- Specialized maximal isotropic quotient subspace for the relative-orthogonal
 quotient form `Rperp / R`. -/
 theorem complexMinkowskiRelativeOrthogonalQuotient_maximalIsotropicSubspace_exists
