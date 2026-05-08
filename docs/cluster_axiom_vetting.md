@@ -396,8 +396,53 @@ mass-hyperboloid foliation `dp⁰ / 2E_p`.
 spectral analysis on Ω⊥. Probably 1–3 weeks of focused QFT-spectral
 formalization.
 
+### 11. L4 spectral-data axiom (WITHHELD)
+
+**File**: `Wightman/Spectral/Ruelle/L4_UniformPolynomialBound.lean`.
+
+**Status (2026-05-08)**: **Production axiom intentionally withheld.**
+
+A first attempt drafted `wightman_l4_spectral_data_axiom : L4SpectralData
+Wfn n m`, mirroring `gns_l2_spectral_data_axiom` in shape — a polarized
+Fourier representation of the joint analytic continuation
+`W_analytic_BHW (n+m)` along the spatial-shift parameter, with each
+polarization-piece measure having total mass polynomially bounded in
+`(‖z₁‖, ‖z₂‖)`.
+
+**Vetting verdict (Gemini chat, 2026-05-08)**: **FLAGGED — vacuous /
+unsatisfiable**. The bound shape inherited from
+`RuelleAnalyticClusterHypotheses.bound` (uniform `C, N` over the entire
+`ForwardTube d n × ForwardTube d m`, polynomial only in `‖z‖`) is
+**unsatisfiable for any actual Wightman QFT**, including the free
+scalar field. Counterexample: for `n = m = 2`, Wick's theorem gives a
+disconnected pairing `W₂(z₁,₁, z₁,₂) · W₂(z₂,₁ + a, z₂,₂ + a)` whose
+first factor is independent of `a` and blows up as `(z₁,₁ - z₁,₂) →
+∂V+` (allowed within the open `ForwardTube d 2`); the polynomial
+bound `C(1+‖z₁‖+‖z₂‖)^N` cannot capture this internal singularity.
+
+**The textbook bound** (Streater-Wightman Theorem 3.1.1) includes a
+boundary-distance regulator `(1 + Δ(Im z)⁻¹)^M` which is missing from
+the current `RuelleAnalyticClusterHypotheses.bound` shape.
+
+**Effect**: axiomatizing the current `L4SpectralData` shape would
+make the system inconsistent (False would be provable, since no
+witness exists in any model). The axiom was removed.
+
+**What was kept**: the structural definition `L4SpectralData` and the
+conditional reduction `ruelle_analytic_cluster_bound_of` — the latter
+is `(possibly-vacuous antecedent) → (possibly-vacuous consequent)` and
+remains valid regardless of whether either side is satisfiable.
+
+**Project follow-up**: see
+`docs/ruelle_bound_vacuity_concern.md` for the full analysis and
+proposed repair options (Option A: boundary-distance regulator;
+Option B: pointwise-uniform constants via quantifier reordering).
+Coordinate with @xiyin137 before changing the
+`RuelleAnalyticClusterHypotheses` interface (shared-repo policy).
+
 ### Audit table
 
 | Axiom | File:Line | Rating | Sources | Notes |
 |-------|-----------|--------|---------|-------|
 | `gns_l2_spectral_data_axiom` | L2_NoZeroMomentumAtom.lean | Pending DT | LP (Glimm-Jaffe §6.2, Reed-Simon II §IX.8, Streater-Wightman §3.5) | Single explicit axiom for the GNS-spectral L2 chain; consumed only by `gns_orthogonal_spatial_cobounded_decay`. Pending vetting via Gemini deep-think. |
+| `wightman_l4_spectral_data_axiom` (WITHHELD) | L4_UniformPolynomialBound.lean | Flagged (Vacuous) | GR (Gemini chat 2026-05-08), LP (Streater-Wightman 3.1.1, BLT 11.2) | Removed after Gemini vetting. Inherits unsatisfiable bound shape from `RuelleAnalyticClusterHypotheses.bound`. See `docs/ruelle_bound_vacuity_concern.md`. |
