@@ -202,6 +202,30 @@ def complexMinkowskiRelativeOrthogonalIn
     rw [sourceComplexMinkowskiInner_smul_left]
     simp [hx r]
 
+/-- The concrete relative orthogonal agrees with Mathlib's orthogonal for the
+restricted complex-Minkowski bilinear form. -/
+theorem complexMinkowskiRelativeOrthogonalIn_eq_orthogonal
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (RN : Submodule ℂ N) :
+    complexMinkowskiRelativeOrthogonalIn (d := d) N RN =
+      (((sourceComplexMinkowskiBilinForm d).restrict N).orthogonal RN) := by
+  ext x
+  constructor
+  · intro hx r hr
+    change sourceComplexMinkowskiInner d
+      ((r : N) : Fin (d + 1) → ℂ)
+      (x : Fin (d + 1) → ℂ) = 0
+    rw [sourceComplexMinkowskiInner_comm]
+    exact hx ⟨r, hr⟩
+  · intro hx r
+    have h := hx (r : N) r.2
+    change sourceComplexMinkowskiInner d
+      (x : Fin (d + 1) → ℂ)
+      (((r : RN) : N) : Fin (d + 1) → ℂ) = 0
+    rw [sourceComplexMinkowskiInner_comm]
+    exact h
+
 /-- A totally isotropic subspace lies in its relative orthogonal after retyping
 inside any ambient subspace. -/
 theorem complexMinkowskiSubmoduleIn_le_relativeOrthogonalIn_of_totallyIsotropic
@@ -299,6 +323,48 @@ theorem complexMinkowskiSubmoduleIn_comap_le_relativeOrthogonalIn_restrict_ker
   rw [sourceComplexMinkowskiInner_comm]
   exact y.2 ⟨(x : N), hx⟩
 
+/-- In a nondegenerate ambient subspace, the kernel of the restricted form on
+`Rperp` is contained in the retyped original subspace.  This is the checked
+double-orthogonal computation behind the quotient radical argument. -/
+theorem complexMinkowskiRelativeOrthogonal_restrict_ker_le_submoduleInRelativeOrthogonal
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hN : ComplexMinkowskiNondegenerateSubspace d N)
+    (RN : Submodule ℂ N) :
+    (((sourceComplexMinkowskiBilinForm d).restrict N).restrict
+        (complexMinkowskiRelativeOrthogonalIn (d := d) N RN)).ker ≤
+      complexMinkowskiSubmoduleInRelativeOrthogonal (d := d) (N := N) RN := by
+  let B : LinearMap.BilinForm ℂ N := (sourceComplexMinkowskiBilinForm d).restrict N
+  let Rperp := complexMinkowskiRelativeOrthogonalIn (d := d) N RN
+  have hRperp_eq : Rperp = B.orthogonal RN := by
+    simpa [B, Rperp] using
+      complexMinkowskiRelativeOrthogonalIn_eq_orthogonal (d := d) (N := N) RN
+  have hBnd : B.Nondegenerate := by
+    simpa [B] using complexMinkowskiNondegenerateSubspace_to_restrict d N hN
+  have hBrefl : B.IsRefl :=
+    (((sourceComplexMinkowskiBilinForm_isSymm d).restrict N).isRefl)
+  intro x hx
+  change ((x : Rperp) : N) ∈ RN
+  have hx_orth : ((x : Rperp) : N) ∈ B.orthogonal Rperp := by
+    intro y hy
+    rw [LinearMap.mem_ker] at hx
+    have hxy :
+        sourceComplexMinkowskiInner d
+          (((x : Rperp) : N) : Fin (d + 1) → ℂ)
+          ((⟨y, hy⟩ : Rperp) : Fin (d + 1) → ℂ) = 0 := by
+      have hfun := congrArg (fun L : Rperp →ₗ[ℂ] ℂ => L ⟨y, hy⟩) hx
+      simpa [B, Rperp, LinearMap.BilinForm.restrict] using hfun
+    change sourceComplexMinkowskiInner d
+      (y : Fin (d + 1) → ℂ)
+      (((x : Rperp) : N) : Fin (d + 1) → ℂ) = 0
+    rw [sourceComplexMinkowskiInner_comm]
+    exact hxy
+  have hx_double : ((x : Rperp) : N) ∈ B.orthogonal (B.orthogonal RN) := by
+    simpa [hRperp_eq] using hx_orth
+  have hdouble : B.orthogonal (B.orthogonal RN) = RN :=
+    LinearMap.BilinForm.orthogonal_orthogonal hBnd hBrefl RN
+  simpa [hdouble] using hx_double
+
 /-- The complex-Minkowski pairing induced on the quotient `Rperp / R`, where
 `Rperp` is the relative orthogonal of `R` inside `N`. -/
 noncomputable def complexMinkowskiRelativeOrthogonalQuotientForm
@@ -391,6 +457,20 @@ theorem complexMinkowskiRelativeOrthogonalQuotientForm_nondegenerate_of_restrict
         Quotient.mk'' (0 : complexMinkowskiRelativeOrthogonalIn (d := d) N RN)
       apply Quotient.sound'
       simpa [Submodule.quotientRel_def] using hxR'
+
+/-- In a nondegenerate ambient subspace, the induced quotient form on
+`Rperp / R` is nondegenerate. -/
+theorem complexMinkowskiRelativeOrthogonalQuotientForm_nondegenerate
+    {d : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hN : ComplexMinkowskiNondegenerateSubspace d N)
+    (RN : Submodule ℂ N) :
+    (complexMinkowskiRelativeOrthogonalQuotientForm
+      (d := d) (N := N) RN).Nondegenerate :=
+  complexMinkowskiRelativeOrthogonalQuotientForm_nondegenerate_of_restrict_ker_le
+    (d := d) (N := N) RN
+    (complexMinkowskiRelativeOrthogonal_restrict_ker_le_submoduleInRelativeOrthogonal
+      (d := d) (N := N) hN RN)
 
 end RelativeOrthogonalQuotientSupport
 
