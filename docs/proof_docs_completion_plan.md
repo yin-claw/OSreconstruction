@@ -184,7 +184,15 @@ local Slot 1:
    Jost/Ruelle boundary package; then finish the active
    proper-complex/oriented representative
    `BHW.sourceOrientedScalarRepresentativeData_bvt_F` through
-   `BHW.sourceFullFrameDet_*`,
+   the checked selected-frame basis helpers
+   `BHW.sourceFullFrameBasis` and `BHW.sourceFullFrameBasis_apply`,
+   the checked same-Gram nonvanishing bridge
+   `BHW.sourceFullFrameDet_ne_zero_of_sameGram_fullFrame`,
+   the checked nonzero-frame bridge
+   `BHW.exists_sourceFullFrameDet_ne_zero_of_sourceGramRank_eq_spacetime`,
+   the checked oriented-coordinate projections
+   `BHW.same_sourceOrientedInvariant_sourceGram` and
+   `BHW.same_sourceOrientedInvariant_fullFrameDet`,
    `BHW.same_sourceOrientedInvariant_detOneOrbit_or_singularLimit`,
    `BHW.extendedTube_same_sourceOrientedInvariant_extendF_eq`,
    `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected`,

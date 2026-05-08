@@ -125,6 +125,29 @@ def sourceOrientedMinkowskiInvariant (d n : ℕ)
     SourceOrientedGramData d n :=
   (sourceMinkowskiGram d n z, fun ι => sourceFullFrameDet d n ι z)
 
+/-- Equality of oriented source invariants implies equality of the ordinary
+source Gram coordinates. -/
+theorem same_sourceOrientedInvariant_sourceGram
+    {z w : Fin n → Fin (d + 1) → ℂ}
+    (horiented :
+      sourceOrientedMinkowskiInvariant d n z =
+        sourceOrientedMinkowskiInvariant d n w) :
+    sourceMinkowskiGram d n z = sourceMinkowskiGram d n w := by
+  simpa [sourceOrientedMinkowskiInvariant, SourceOrientedGramData.gram] using
+    congrArg SourceOrientedGramData.gram horiented
+
+/-- Equality of oriented source invariants implies equality of every ordered
+full-frame determinant coordinate. -/
+theorem same_sourceOrientedInvariant_fullFrameDet
+    {z w : Fin n → Fin (d + 1) → ℂ}
+    (horiented :
+      sourceOrientedMinkowskiInvariant d n z =
+        sourceOrientedMinkowskiInvariant d n w)
+    (ι : Fin (d + 1) ↪ Fin n) :
+    sourceFullFrameDet d n ι z = sourceFullFrameDet d n ι w := by
+  simpa [sourceOrientedMinkowskiInvariant, SourceOrientedGramData.det] using
+    congrFun (congrArg SourceOrientedGramData.det horiented) ι
+
 /-- The oriented Hall-Wightman source variety. -/
 def sourceOrientedGramVariety (d n : ℕ) :
     Set (SourceOrientedGramData d n) :=

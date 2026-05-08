@@ -1,3 +1,4 @@
+import Mathlib.LinearAlgebra.Basis.Defs
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedFullFrameChart
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedLocalBasis
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceComplexDensity
@@ -15,6 +16,42 @@ noncomputable section
 open Complex Topology Matrix LorentzLieGroup Classical Filter NormedSpace
 
 namespace BHW
+
+/-- The selected nonzero full frame of a source tuple as a basis of complex
+spacetime. -/
+noncomputable def sourceFullFrameBasis
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hι : sourceFullFrameDet d n ι z ≠ 0) :
+    Module.Basis (Fin (d + 1)) ℂ (Fin (d + 1) → ℂ) :=
+  let M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ :=
+    sourceFullFrameMatrix d n ι z
+  let hMdet : IsUnit M.transpose.det := by
+    rw [Matrix.det_transpose]
+    exact isUnit_iff_ne_zero.mpr (by simpa [M, sourceFullFrameDet] using hι)
+  letI hM : Invertible M.transpose :=
+    Matrix.invertibleOfIsUnitDet M.transpose hMdet
+  (Pi.basisFun ℂ (Fin (d + 1))).map
+    (Matrix.toLinearEquiv' M.transpose hM)
+
+/-- The selected full-frame basis evaluates to the selected source vectors. -/
+theorem sourceFullFrameBasis_apply
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hι : sourceFullFrameDet d n ι z ≠ 0)
+    (a : Fin (d + 1)) :
+    sourceFullFrameBasis d n ι z hι a = z (ι a) := by
+  ext μ
+  unfold sourceFullFrameBasis
+  rw [Module.Basis.map_apply, Pi.basisFun_apply]
+  change
+    ((((sourceFullFrameMatrix d n ι z).transpose.toLinearEquiv' _) :
+        Module.End ℂ (Fin (d + 1) → ℂ)) (Pi.single a 1)) μ =
+      z (ι a) μ
+  rw [Matrix.toLinearEquiv'_apply, Matrix.toLin'_apply]
+  simp [sourceFullFrameMatrix]
 
 /-- In the hard range `d + 1 <= n`, scalar max rank of an actual source
 configuration forces maximal complex source span. -/
@@ -78,6 +115,75 @@ theorem exists_sourceFullFrameDet_ne_zero_of_sourceComplexGramRegularAt
   have hdet : M.det ≠ 0 :=
     ((Matrix.isUnit_iff_isUnit_det M).1 hMunit).ne_zero
   exact ⟨ι, by simpa [M, sourceFullFrameDet] using hdet⟩
+
+/-- Same ordinary source Gram preserves nonvanishing of a selected full-frame
+determinant. -/
+theorem sourceFullFrameDet_ne_zero_of_sameGram_fullFrame
+    (d n : ℕ)
+    {z w : Fin n → Fin (d + 1) → ℂ}
+    (hgram : sourceMinkowskiGram d n z = sourceMinkowskiGram d n w)
+    (ι : Fin (d + 1) ↪ Fin n)
+    (hι : sourceFullFrameDet d n ι z ≠ 0) :
+    sourceFullFrameDet d n ι w ≠ 0 := by
+  let Mz : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ :=
+    sourceFullFrameMatrix d n ι z
+  let Mw : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ :=
+    sourceFullFrameMatrix d n ι w
+  have hsel :
+      sourceFullFrameGram d Mz =
+        sourceFullFrameGram d Mw := by
+    ext a b
+    simpa [Mz, Mw, sourceFullFrameGram_sourceFullFrameMatrix] using
+      congrFun (congrFun hgram (ι a)) (ι b)
+  intro hwzero
+  have hdet_eq :
+      (Matrix.of (sourceFullFrameGram d Mz)).det =
+        (Matrix.of (sourceFullFrameGram d Mw)).det := by
+    simpa using
+      congrArg (fun G : Fin (d + 1) → Fin (d + 1) → ℂ =>
+        (Matrix.of G).det) hsel
+  have hzdet : Mz.det ≠ 0 := by
+    simpa [Mz, sourceFullFrameDet] using hι
+  have hwdet : Mw.det = 0 := by
+    simpa [Mw, sourceFullFrameDet] using hwzero
+  have hdet_eq' :
+      minkowskiMetricDet d * Mz.det ^ 2 =
+        minkowskiMetricDet d * Mw.det ^ 2 := by
+    calc
+      minkowskiMetricDet d * Mz.det ^ 2 =
+          (Matrix.of (sourceFullFrameGram d Mz)).det :=
+        (sourceFullFrameGram_det_eq d Mz).symm
+      _ = (Matrix.of (sourceFullFrameGram d Mw)).det := hdet_eq
+      _ = minkowskiMetricDet d * Mw.det ^ 2 :=
+        sourceFullFrameGram_det_eq d Mw
+  have hright : minkowskiMetricDet d * Mw.det ^ 2 = 0 := by
+    rw [hwdet]
+    simp
+  exact (mul_ne_zero (minkowskiMetricDet_ne_zero d)
+    (pow_ne_zero 2 hzdet)) (hdet_eq'.trans hright)
+
+/-- Full scalar Gram rank supplies a nonzero ordered full-frame determinant. -/
+theorem exists_sourceFullFrameDet_ne_zero_of_sourceGramRank_eq_spacetime
+    (d n : ℕ)
+    (z : Fin n → Fin (d + 1) → ℂ)
+    (hfull :
+      sourceGramMatrixRank n (sourceMinkowskiGram d n z) = d + 1) :
+    ∃ ι : Fin (d + 1) ↪ Fin n, sourceFullFrameDet d n ι z ≠ 0 := by
+  have hrank_le_n :
+      sourceGramMatrixRank n (sourceMinkowskiGram d n z) ≤ n :=
+    by
+      simpa [sourceGramMatrixRank] using
+        (Matrix.rank_le_width
+          (A := Matrix.of fun i j : Fin n => sourceMinkowskiGram d n z i j))
+  have hn : d + 1 ≤ n := by
+    simpa [hfull] using hrank_le_n
+  have hmax : HWSourceGramMaxRankAt d n z := by
+    simp [HWSourceGramMaxRankAt, HWSourceGramMaxRank, hfull,
+      Nat.min_eq_left hn]
+  have hreg : SourceComplexGramRegularAt d n z :=
+    sourceComplexGramRegularAt_of_HWSourceGramMaxRankAt d n hn hmax
+  exact exists_sourceFullFrameDet_ne_zero_of_sourceComplexGramRegularAt
+    d n hn hreg
 
 /-- In the hard range, every oriented max-rank source-variety point lies on
 some selected full-frame determinant-nonzero sheet. -/
