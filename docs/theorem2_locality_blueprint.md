@@ -26143,50 +26143,53 @@ Proof decomposition of this theorem, without hiding the analytic work:
 	      `SourceHWCommonResidualFrame.lean`; no independent choice of dual
 	      vectors outside the selected-span orthogonal complement is permitted.
 
-      /-- The null boost fixing the selected span and contracting every vector
-      in the totally isotropic residual frame.  The proof chooses a dual
-      isotropic frame `qDual`, completes
-      `selectedSpan ⊕ span q ⊕ span qDual` to an orthogonal Witt basis, and
-      scales `q` by `exp (-t)` and `qDual` by `exp t`.  The dual scaling is
-      part of the output so the proof that the family lies in
-      `ComplexLorentzGroup d` is visible, not hidden inside a bare existence
-      of maps.  In production declaration order, first prove the two support
-      theorems displayed immediately below this public surface:
-      `BHW.complexMinkowski_wittExtension_subspaceIsometry` and
-      `BHW.complexMinkowski_isotropicContraction_partialIsometry`. -/
-      theorem BHW.complexMinkowski_isotropicContractionFamily
-          [NeZero d]
-          (hd : 2 <= d)
-          {n s : Nat}
-          {ξ : Fin n -> Fin (d + 1) -> ℂ}
-          {q : Fin s -> Fin (d + 1) -> ℂ}
-          {qDual : Fin s -> Fin (d + 1) -> ℂ}
-          (hq_pair_zero :
-            ∀ c c',
-              BHW.sourceComplexMinkowskiInner d (q c) (q c') = 0)
-          (hqDual_pair_zero :
-            ∀ c c',
-              BHW.sourceComplexMinkowskiInner d (qDual c) (qDual c') = 0)
-          (hq_dual :
-            ∀ c c',
-              BHW.sourceComplexMinkowskiInner d (q c) (qDual c') =
-                if c = c' then (1 : ℂ) else 0)
-          (hq_orth :
-            ∀ c i, BHW.sourceComplexMinkowskiInner d (q c) (ξ i) = 0)
-          (hqDual_orth :
-            ∀ c i, BHW.sourceComplexMinkowskiInner d (qDual c) (ξ i) = 0) :
-          ∃ contract : ℝ -> ComplexLorentzGroup d,
-            (∀ t i μ,
-              (∑ ν : Fin (d + 1),
-                (contract t).val μ ν * ξ i ν) = ξ i μ) ∧
-            (∀ t c μ,
-              (∑ ν : Fin (d + 1),
-                (contract t).val μ ν * q c ν) =
-                  Real.exp (-t) * q c μ) ∧
-            (∀ t c μ,
-              (∑ ν : Fin (d + 1),
-                (contract t).val μ ν * qDual c ν) =
-                  Real.exp t * qDual c μ)
+	      /-- The null boost fixing the selected span and contracting every vector
+	      in the totally isotropic residual frame.  The proof chooses a dual
+	      isotropic frame `qDual`, forms the nondegenerate subspace
+	      `K = M ⊔ span q ⊔ span qDual`, scales `q` by `exp (-t)` and
+	      `qDual` by `exp t`, and extends the resulting isometry by the identity
+	      on `Kᗮ`.  This route deliberately avoids a general degenerate
+	      `complexMinkowski_wittExtension_subspaceIsometry`: the low-rank boost
+	      is extended from a nondegenerate hyperbolic block. -/
+	      theorem BHW.complexMinkowski_isotropicContractionFamily
+	          {n s : Nat}
+	          {M : Submodule ℂ (Fin (d + 1) -> ℂ)}
+	          (hM :
+	            BHW.ComplexMinkowskiNondegenerateSubspace d M)
+	          {ξ : Fin n -> Fin (d + 1) -> ℂ}
+	          {q : Fin s -> Fin (d + 1) -> ℂ}
+	          {qDual : Fin s -> Fin (d + 1) -> ℂ}
+	          (hξ_mem : ∀ i, ξ i ∈ M)
+	          (hq_orth_M :
+	            ∀ c (m : M),
+	              BHW.sourceComplexMinkowskiInner d
+	                (q c) (m : Fin (d + 1) -> ℂ) = 0)
+	          (hqDual_orth_M :
+	            ∀ c (m : M),
+	              BHW.sourceComplexMinkowskiInner d
+	                (qDual c) (m : Fin (d + 1) -> ℂ) = 0)
+	          (hq_pair_zero :
+	            ∀ c c',
+	              BHW.sourceComplexMinkowskiInner d (q c) (q c') = 0)
+	          (hqDual_pair_zero :
+	            ∀ c c',
+	              BHW.sourceComplexMinkowskiInner d (qDual c) (qDual c') = 0)
+	          (hq_dual :
+	            ∀ c c',
+	              BHW.sourceComplexMinkowskiInner d (q c) (qDual c') =
+	                if c = c' then (1 : ℂ) else 0) :
+	          ∃ contract : ℝ -> ComplexLorentzGroup d,
+	            (∀ t i μ,
+	              (∑ ν : Fin (d + 1),
+	                (contract t).val μ ν * ξ i ν) = ξ i μ) ∧
+	            (∀ t c μ,
+	              (∑ ν : Fin (d + 1),
+	                (contract t).val μ ν * q c ν) =
+	                  (Real.exp (-t) : ℂ) * q c μ) ∧
+	            (∀ t c μ,
+	              (∑ ν : Fin (d + 1),
+	                (contract t).val μ ν * qDual c ν) =
+	                  (Real.exp t : ℂ) * qDual c μ)
 
       /-- Hall-Wightman's second and third remarks after Lemma 2,
       finite-frame version: if one coefficient choice along a finite totally
@@ -26237,120 +26240,153 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (fun i μ => ξ i μ + ∑ c : Fin s, b i c * q c μ) ∈
               BHW.ExtendedTube d n
 
-      /-- General finite-dimensional Witt extension for the complex Minkowski
-      form.  Unlike the high-rank shortcut statement, the subspace here need
-      not be nondegenerate: an isometry between two finite-dimensional
-      subspaces of the ambient nondegenerate complex Minkowski space extends to
-      a global complex Lorentz transformation.  This is the standard Witt
-      lemma used by the low-rank contraction frame. -/
-      theorem BHW.complexMinkowski_wittExtension_subspaceIsometry
-          [NeZero d]
-          (hd : 2 <= d)
-          {M N : Submodule ℂ (Fin (d + 1) -> ℂ)}
-          (T : M ≃ₗ[ℂ] N)
-          (hT :
-            ∀ x y : M,
-              BHW.sourceComplexMinkowskiInner d
-                ((T x : N) : Fin (d + 1) -> ℂ)
-                ((T y : N) : Fin (d + 1) -> ℂ) =
-              BHW.sourceComplexMinkowskiInner d
-                (x : Fin (d + 1) -> ℂ)
-                (y : Fin (d + 1) -> ℂ)) :
-          ∃ Λ : ComplexLorentzGroup d,
-            ∀ x : M,
-              BHW.complexLorentzVectorAction Λ
-                (x : Fin (d + 1) -> ℂ) =
-              ((T x : N) : Fin (d + 1) -> ℂ)
+	      /-- The partial finite-frame isometry underlying the low-rank null
+	      boost.  Its domain is the nondegenerate span of the selected block,
+	      the residual isotropic frame, and the dual residual frame. -/
+	      theorem BHW.complexMinkowski_isotropicContraction_onHyperbolicBlock
+	          {s : Nat}
+	          {M : Submodule ℂ (Fin (d + 1) -> ℂ)}
+	          (hM :
+	            BHW.ComplexMinkowskiNondegenerateSubspace d M)
+	          {q : Fin s -> Fin (d + 1) -> ℂ}
+	          {qDual : Fin s -> Fin (d + 1) -> ℂ}
+	          (hq_orth_M :
+	            ∀ c (m : M),
+	              BHW.sourceComplexMinkowskiInner d
+	                (q c) (m : Fin (d + 1) -> ℂ) = 0)
+	          (hqDual_orth_M :
+	            ∀ c (m : M),
+	              BHW.sourceComplexMinkowskiInner d
+	                (qDual c) (m : Fin (d + 1) -> ℂ) = 0)
+	          (hq_pair_zero :
+	            ∀ c c',
+	              BHW.sourceComplexMinkowskiInner d (q c) (q c') = 0)
+	          (hqDual_pair_zero :
+	            ∀ c c',
+	              BHW.sourceComplexMinkowskiInner d (qDual c) (qDual c') = 0)
+	          (hq_dual :
+	            ∀ c c',
+	              BHW.sourceComplexMinkowskiInner d (q c) (qDual c') =
+	                if c = c' then (1 : ℂ) else 0)
+	          (t : ℝ) :
+	          ∃ K : Submodule ℂ (Fin (d + 1) -> ℂ),
+	          ∃ T : K ≃ₗ[ℂ] K,
+	          ∃ hM_mem : M ≤ K,
+	          ∃ hq : ∀ c, q c ∈ K,
+	          ∃ hqDual : ∀ c, qDual c ∈ K,
+	            (∀ m : M,
+	              ((T ⟨m, hM_mem m.2⟩ : K) :
+	                Fin (d + 1) -> ℂ) = m) ∧
+	            (∀ c,
+	              ((T ⟨q c, hq c⟩ : K) :
+	                Fin (d + 1) -> ℂ) =
+	                fun μ => (Real.exp (-t) : ℂ) * q c μ) ∧
+	            (∀ c,
+	              ((T ⟨qDual c, hqDual c⟩ : K) :
+	                Fin (d + 1) -> ℂ) =
+	                fun μ => (Real.exp t : ℂ) * qDual c μ) ∧
+	            (∀ x y : K,
+	              BHW.sourceComplexMinkowskiInner d
+	                ((T x : K) : Fin (d + 1) -> ℂ)
+	                ((T y : K) : Fin (d + 1) -> ℂ) =
+	              BHW.sourceComplexMinkowskiInner d
+	                (x : Fin (d + 1) -> ℂ)
+	                (y : Fin (d + 1) -> ℂ)) ∧
+	            LinearMap.det T.toLinearMap = 1
 
-      /-- The partial finite-frame isometry underlying the low-rank null
-      boost.  Its domain is the span of the common base vectors, the residual
-      isotropic frame, and the dual residual frame.  It fixes every `ξ i`,
-      scales `q c` by `exp (-t)`, scales `qDual c` by `exp t`, and preserves
-      the complex Minkowski form on that span. -/
-      theorem BHW.complexMinkowski_isotropicContraction_partialIsometry
-          [NeZero d]
-          (hd : 2 <= d)
-          {n s : Nat}
-          {ξ : Fin n -> Fin (d + 1) -> ℂ}
-          {q : Fin s -> Fin (d + 1) -> ℂ}
-          {qDual : Fin s -> Fin (d + 1) -> ℂ}
-          (hq_pair_zero :
-            ∀ c c',
-              BHW.sourceComplexMinkowskiInner d (q c) (q c') = 0)
-          (hqDual_pair_zero :
-            ∀ c c',
-              BHW.sourceComplexMinkowskiInner d (qDual c) (qDual c') = 0)
-          (hq_dual :
-            ∀ c c',
-              BHW.sourceComplexMinkowskiInner d (q c) (qDual c') =
-                if c = c' then (1 : ℂ) else 0)
-          (hq_orth :
-            ∀ c i, BHW.sourceComplexMinkowskiInner d (q c) (ξ i) = 0)
-          (hqDual_orth :
-            ∀ c i, BHW.sourceComplexMinkowskiInner d (qDual c) (ξ i) = 0)
-          (t : ℝ) :
-          ∃ K : Submodule ℂ (Fin (d + 1) -> ℂ),
-          ∃ T : K ≃ₗ[ℂ] K,
-          ∃ hξ : ∀ i, ξ i ∈ K,
-          ∃ hq : ∀ c, q c ∈ K,
-          ∃ hqDual : ∀ c, qDual c ∈ K,
-            (∀ i,
-              ((T ⟨ξ i, hξ i⟩ : K) :
-                Fin (d + 1) -> ℂ) = ξ i) ∧
-            (∀ c,
-              ((T ⟨q c, hq c⟩ : K) :
-                Fin (d + 1) -> ℂ) =
-                fun μ => Real.exp (-t) * q c μ) ∧
-            (∀ c,
-              ((T ⟨qDual c, hqDual c⟩ : K) :
-                Fin (d + 1) -> ℂ) =
-                fun μ => Real.exp t * qDual c μ) ∧
-            (∀ x y : K,
-              BHW.sourceComplexMinkowskiInner d
-                ((T x : K) : Fin (d + 1) -> ℂ)
-                ((T y : K) : Fin (d + 1) -> ℂ) =
-              BHW.sourceComplexMinkowskiInner d
-                (x : Fin (d + 1) -> ℂ)
-                (y : Fin (d + 1) -> ℂ))
+	      /-- Extend the hyperbolic-block contraction by the identity on the
+	      orthogonal complement of the nondegenerate block, and package it as a
+	      determinant-one complex Lorentz element. -/
+	      theorem BHW.complexMinkowski_isotropicContraction_globalLinearEquiv
+	          {s : Nat}
+	          {M : Submodule ℂ (Fin (d + 1) -> ℂ)}
+	          (hM :
+	            BHW.ComplexMinkowskiNondegenerateSubspace d M)
+	          {q : Fin s -> Fin (d + 1) -> ℂ}
+	          {qDual : Fin s -> Fin (d + 1) -> ℂ}
+	          (hq_orth_M :
+	            ∀ c (m : M),
+	              BHW.sourceComplexMinkowskiInner d
+	                (q c) (m : Fin (d + 1) -> ℂ) = 0)
+	          (hqDual_orth_M :
+	            ∀ c (m : M),
+	              BHW.sourceComplexMinkowskiInner d
+	                (qDual c) (m : Fin (d + 1) -> ℂ) = 0)
+	          (hq_pair_zero :
+	            ∀ c c',
+	              BHW.sourceComplexMinkowskiInner d (q c) (q c') = 0)
+	          (hqDual_pair_zero :
+	            ∀ c c',
+	              BHW.sourceComplexMinkowskiInner d (qDual c) (qDual c') = 0)
+	          (hq_dual :
+	            ∀ c c',
+	              BHW.sourceComplexMinkowskiInner d (q c) (qDual c') =
+	                if c = c' then (1 : ℂ) else 0)
+	          (t : ℝ) :
+	          ∃ E : (Fin (d + 1) -> ℂ) ≃ₗ[ℂ] (Fin (d + 1) -> ℂ),
+	            (∀ x y,
+	              BHW.sourceComplexMinkowskiInner d (E x) (E y) =
+	                BHW.sourceComplexMinkowskiInner d x y) ∧
+	            LinearMap.det E.toLinearMap = 1 ∧
+	            (∀ m : M, E m = m) ∧
+	            (∀ c, E (q c) = ((Real.exp (-t) : ℝ) : ℂ) • q c) ∧
+	            (∀ c, E (qDual c) = ((Real.exp t : ℝ) : ℂ) • qDual c)
 
       Proof transcript for the contraction family.  For each fixed `t`, put
-      `X := Submodule.span ℂ (Set.range ξ)`, `Q := Submodule.span ℂ
-      (Set.range q)`, `Qd := Submodule.span ℂ (Set.range qDual)`, and
-      `K := X ⊔ Q ⊔ Qd`.  The duality equations imply:
+      `Q := Submodule.span ℂ (Set.range q)`, `Qd := Submodule.span ℂ
+      (Set.range qDual)`, and let `K := M ⊔ Q ⊔ Qd` be the submodule generated
+      by the selected nondegenerate block and the hyperbolic residual pair.
+      The duality equations imply:
 
       1. `q` is linearly independent, because pairing
          `∑ c, a c • q c = 0` with `qDual c0` gives `a c0 = 0`.
       2. `qDual` is linearly independent by the same argument, using symmetry
          of `sourceComplexMinkowskiInner`.
-      3. `Q ∩ X = ⊥`: an element of `Q ∩ X` pairs trivially with every
-         `qDual c` by `hqDual_orth`, while the duality equation reads off its
-         `q`-coordinates.
-      4. `Qd ∩ (X ⊔ Q) = ⊥`: pair with every `q c` and use `hq_orth`,
-         `hq_pair_zero`, and `hq_dual`.
+      3. `Q ∩ M = ⊥`: an element of `Q ∩ M` pairs trivially with every
+         `qDual c` by `hqDual_orth_M`, while the duality equation reads off
+         its `q`-coordinates.
+      4. `Qd ∩ (M ⊔ Q) = ⊥`: pair with every `m : M` using
+         `hqDual_orth_M`, and pair with every `q c` using
+         `hq_pair_zero`, `hq_dual`, and symmetry of the bilinear form.
 
-      These four facts give a direct-sum coordinate decomposition of `K`.
+      These four facts give a direct-sum coordinate decomposition of the
+      hyperbolic block `K`.  The form on `K` is nondegenerate: it is the
+      orthogonal direct sum of the already nondegenerate selected block `M`
+      and the hyperbolic pair `Q ⊕ Qd`, whose Gram matrix is
+      `0 I; I 0` in the `q/qDual` bases.
       Define `T_t` on `K` by
-      `x + qpart + qdpart ↦ x + Real.exp (-t) • qpart +
-      Real.exp t • qdpart`.  The displayed pairings show that `T_t`
+      `m + qpart + qdpart ↦ m + (Real.exp (-t) : ℂ) • qpart +
+      (Real.exp t : ℂ) • qdpart`.  The displayed pairings show that `T_t`
       preserves the complex Minkowski form on all pairs of generators:
-      the `X`-`X` block is fixed, the `X`-`Q` and `X`-`Qd` blocks are zero,
+      the `M`-`M` block is fixed, the `M`-`Q` and `M`-`Qd` blocks are zero,
       the `Q`-`Q` and `Qd`-`Qd` blocks are zero, and the `Q`-`Qd` block is
       multiplied by `Real.exp (-t) * Real.exp t = 1`.  The inverse is the
       same construction with `-t`, so this is a linear equivalence
-      `K ≃ₗ[ℂ] K`.  This proves
-      `BHW.complexMinkowski_isotropicContraction_partialIsometry`.
+      `K ≃ₗ[ℂ] K`.  Its determinant is
+      `(Real.exp (-t) : ℂ) ^ s * (Real.exp t : ℂ) ^ s = 1`, because `M` is
+      fixed and the two residual diagonal blocks have reciprocal determinants.
+      This proves `BHW.complexMinkowski_isotropicContraction_onHyperbolicBlock`.
 
-      Then apply
-      `BHW.complexMinkowski_wittExtension_subspaceIsometry` to this partial
-      isometry for each `t`, and choose the returned Lorentz transformation
-      as `contract t`.  The three output formulas of
-      `BHW.complexMinkowski_isotropicContractionFamily` are obtained by
-      applying the extension equality to the generators `ξ i`, `q c`, and
-      `qDual c`.  No continuity of the chosen map `t ↦ contract t` is used
-      later; all limits in the low-rank branch are proved from the explicit
-      contracted configurations and the checked Mathlib scalar limit
-      `Real.tendsto_exp_neg_atTop_nhds_zero`, followed by the continuous
-      coercion `ℝ -> ℂ` and finite-sum continuity.
+      Next use nondegeneracy of `K` and
+      `LinearMap.BilinForm.restrict_nondegenerate_iff_isCompl_orthogonal` to
+      split the ambient complex Minkowski space as `K ⊔ Kᗮ`.  Extend `T_t` by
+      the identity on `Kᗮ` using `Submodule.prodEquivOfIsCompl`.  The product
+      map preserves the bilinear form by the same block calculation, and its
+      determinant is still `1` because the orthogonal-complement factor is the
+      identity.  This gives
+      `BHW.complexMinkowski_isotropicContraction_globalLinearEquiv`.
+
+      Finally package the global determinant-one form-preserving linear
+      equivalence by
+      `BHW.complexLorentzGroupOfLinearEquivPreservesInner`, and read its
+      coordinate action with
+      `BHW.complexLorentzVectorAction_ofLinearEquivPreservesInner`.  Since
+      each `ξ i ∈ M`, the selected block is fixed; `q` and `qDual` are scaled
+      by construction.  No continuity of the chosen map `t ↦ contract t` is
+      used later.  All low-rank limits come from the checked finite helper
+      `BHW.tendsto_isotropicResidual_exp_neg_base`, the scalar limit
+      `Real.tendsto_exp_neg_atTop_nhds_zero`, the continuous coercion
+      `ℝ -> ℂ`, and finite-sum continuity.
 
       Proof transcript for the tube-stability theorems.  The base-membership
       theorem is Hall-Wightman's second remark after Lemma 2.  Its conclusion
@@ -32367,7 +32403,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | Selected-span alignment and common residual subspaces | Superseded by the checked row immediately below. | The former proof-transcript row is retained only as route history: the selected `z` and `w` spans must be aligned before the residual families are placed in the common orthogonal complement. |
       | Low-rank selected-span alignment and residual subspaces | Selected-frame producer, determinant-one selected-span orbit, alignment producer, residual-subspace extraction, and orthogonal-complement/direct-sum packet checked in `SourceHWLowRankAlignment.lean` and `SourceHWCommonResidualFrame.lean`. | `HWLowRankSelectedSpanFrameData` and `hw_lowRank_selectedSpanFrame_of_sameSourceGram` build the selected block, shared coefficients, and residual pairings from same source Gram data.  `sourceCoefficientEval_range_eq_span`, `sourceGramMatrixRank_selectedTuple_eq_of_principal_minor_ne`, and `hw_lowRank_selectedSpanFrame_detOneOrbit` feed the selected tuple into the checked high-rank/Witt determinant-one theorem.  `hw_lowRank_selectedSpanAlignment_of_selectedSpanFrame` records the selected-span Lorentz alignment, common nondegenerate selected span, and two residual families in the common orthogonal complement.  `hw_lowRank_residualSubspaces_after_selectedAlignment` turns those fields into totally isotropic residual subspaces orthogonal to the common selected span; `hw_lowRank_residualSubspaces_orthogonalComplement_after_selectedAlignment` adds inclusions in `complexMinkowskiOrthogonalSubmodule d A.M` and disjointness from `A.M`; `complexMinkowski_totallyIsotropic_embedding_into_frame` builds the injective residual embedding into a checked isotropic frame once the Witt-index dimension bound is available; `directSum_identity_sum_isotropicFrameEmbedding` composes that embedding with the direct-sum equivalence and its preservation theorem; `directSum_identity_sum_isotropicEmbedding_maps_right`/`_maps_left` prove the action on both summands; and `directSum_identity_sum_isotropicEmbedding_preserves` proves full block-pairing preservation from the residual embedding's pairing-preservation field. |
       | Common isotropic residual frame plus dual frame | Residual embedding/direct-sum packet and dual-frame packet checked in `BHWPermutation/SourceHWCommonResidualFrame.lean`; maximal common frame still pending. | The checked layer injects a totally isotropic residual subspace into a chosen independent isotropic frame, extracts coefficient functions with `exists_coefficients_of_mem_span_finite_frame`, proves the identity-plus-residual direct-sum map preserves the pairing, and constructs the isotropic dual frame inside the nondegenerate orthogonal complement via raw duals plus half-Gram cleanup.  Remaining work is the maximal/common isotropic frame producer that contains the right residual span and gives the dimension bound for the left residual embedding. |
-      | Isotropic contraction family | Proof transcript pinned; production Lean not started. | Define the partial isometry on `span ξ ⊔ span q ⊔ span qDual` fixing `ξ`, scaling `q` by `exp(-t)`, and scaling `qDual` by `exp(t)`; prove form preservation from `q_pair_zero`, `qDual_pair_zero`, `q_dual`, and orthogonality to `ξ`; extend by `complexMinkowski_wittExtension_subspaceIsometry`. |
+      | Isotropic contraction family | Proof transcript pinned; production Lean not started. | Build the null boost on the nondegenerate hyperbolic block `M ⊔ span q ⊔ span qDual`, fixing the selected block `M`, scaling `q` by `exp(-t)`, and scaling `qDual` by `exp(t)`; prove form preservation and determinant `1` from the dual-frame relations, split the ambient space as this nondegenerate block plus its orthogonal complement, extend by identity, and package with `complexLorentzGroupOfLinearEquivPreservesInner`. |
       | Extended-tube stability for all residual coefficients | Checked in `SourceHWTubeCoefficient.lean`; corrected target for arbitrary endpoints is `ExtendedTube`, not `ForwardTube`. | Hall-Wightman's second remark gives `hw_secondRemark_forwardTube_singleNullResidual_normalForm`; the third remark is the checked determinant-one complex Lorentz two-plane rotation fixing the orthogonal complement and scaling `u + i v` by `exp t`; transport gives `hw_singleIsotropicResidual_allCoefficients_mem_extendedTube`; finite induction and the empty-source wrapper give the public `hw_isotropicFrame_allCoefficients_mem_extendedTube`.  The dual frame is used only for the null-boost contraction and the two-curve value equality/limit, not for coefficient-freedom membership. |
       | Singular two-curve analytic limit | Implemented and exact-file checked in `BHWPermutation/SourceHWSingularLimit.lean` as `BHW.ComplexMinkowskiTotallyIsotropicSubspace`, `BHW.complexMinkowskiTotallyIsotropic_span_range`, `BHW.span_frame_orthogonal_to_subspace`, `BHW.HWSameSourceGramSingularContractionData`, `BHW.HWLowRankIsotropicNormalForm`, `BHW.hw_lowRank_isotropicNormalForm_to_contractionData`, and `BHW.hw_sameSourceGram_singularLimit_extendF_eq`. | Once `HWSameSourceGramSingularContractionData` exists, continuity of `extendF` on `ExtendedTube`, orbit invariance from `extendF_complexLorentzInvariant_of_cinv`, `Filter.Tendsto.congr'`, and `tendsto_nhds_unique` prove equality of endpoint values.  The checked span-induction lemmas identify isotropic/orthogonal residual spans from finite frame pairings, and the checked normal-form adapter identifies the remaining geometric input as production of `HWLowRankIsotropicNormalForm`; no analytic gap remains in this limit step. |
       | `extendF_complexLorentzInvariant_of_cinv` | Implemented and exact-file checked in `ComplexInvariance/Extend.lean`, together with `BHW.extendF_preimage_eq_of_cinv`. | The proof unfolds `extendF`, chooses forward-tube preimages, and compares them by `complexLorentzAction_mul`; this is not a scalar representative theorem and does not use PET/EOW/locality. |

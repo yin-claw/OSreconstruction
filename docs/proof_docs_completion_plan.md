@@ -5734,8 +5734,8 @@ implementation contract is:
    `BHW.ComplexMinkowskiNondegenerateSubspace`,
    `BHW.complexMinkowski_isotropicFrame_dualFrameIn`,
    `BHW.complexMinkowski_isotropicDualFrame_of_residualFrame`,
-   `BHW.complexMinkowski_wittExtension_subspaceIsometry`,
-   `BHW.complexMinkowski_isotropicContraction_partialIsometry`,
+   `BHW.complexMinkowski_isotropicContraction_onHyperbolicBlock`,
+   `BHW.complexMinkowski_isotropicContraction_globalLinearEquiv`,
    `BHW.complexMinkowski_isotropicContractionFamily`,
    `BHW.hw_isotropicFrame_base_mem_extendedTube_of_endpoint`,
    `BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube`, and
@@ -5744,26 +5744,24 @@ implementation contract is:
    null vector in ranks one and two; the dimension-general Lean route must
    contract a finite totally isotropic frame instead.  The normal-form packet
    must store the dual isotropic frame fields used by the contraction:
-   `qDual_pair_zero`, `q_dual`, `qDual_orth`, and the contraction-family
-   field `contract_scale_qDual`; otherwise the Lorentz-family construction is
-   hidden behind an unexplained existence theorem.  The dual-frame supplier is
-   now pinned as an induction inside the nondegenerate orthogonal complement
-   `N = BHW.complexMinkowskiOrthogonalSubmodule d M`: split
-   `q0` from `qtail`, use linear independence to get
-   `IsCompl (ℂ∙q0) (span range qtail)` in the totally isotropic span,
-   construct `p0 ∈ N` by the radical-partner theorem, split the hyperbolic
-   plane `span {q0,p0}`, recurse on `qtail` inside its nondegenerate
-   orthogonal complement, and assemble
-   `qDual 0 = p0`, `qDual (succ a) = qtailDual a`.  This keeps every dual
-   vector in `Mᗮ`; no ambient dual-vector choice outside the selected-span
-   orthogonal complement is allowed.  The contraction family is
-   split through the standard finite-dimensional Witt lemma
-   `BHW.complexMinkowski_wittExtension_subspaceIsometry`: first define the
-   partial isometry on
-   `span (range ξ) ⊔ span (range q) ⊔ span (range qDual)` fixing `ξ`,
-   scaling `q` by `Real.exp (-t)`, and scaling `qDual` by `Real.exp t`; then
-   use the dual-pairing equations to prove this partial map preserves the
-   complex Minkowski form before extending it to `ComplexLorentzGroup d`.
+   `qDual_pair_zero`, `q_dual`, `qDual_orth_M`, `qDual_orth`, and the
+   contraction-family field `contract_scale_qDual`; otherwise the
+   Lorentz-family construction is hidden behind an unexplained existence
+   theorem.  The dual-frame supplier is now checked inside the nondegenerate
+   orthogonal complement
+   `N = BHW.complexMinkowskiOrthogonalSubmodule d M`: extend the coordinate
+   functionals from `span q` to `N`, represent them using nondegeneracy of the
+   restricted form, and apply the half-Gram correction to kill the dual-dual
+   block while preserving the `q`-dual Kronecker pairings.  This keeps every
+   dual vector in `Mᗮ`; no ambient dual-vector choice outside the selected-span
+   orthogonal complement is allowed.  The contraction family is then built on
+   the nondegenerate hyperbolic block `M ⊔ span q ⊔ span qDual`: first scale
+   `q` by `Real.exp (-t)` and `qDual` by `Real.exp t`, prove form preservation
+   and determinant `1` from the dual-pairing equations, split the ambient
+   space as this block plus its orthogonal complement, extend by identity, and
+   package the resulting determinant-one form-preserving linear equivalence as
+   a `ComplexLorentzGroup d`.  No general degenerate subspace-isometry
+   extension is used in this low-rank boost.
    The tube-membership fields are sourced from Hall-Wightman's second and
    third remarks after Lemma 2:
    `BHW.hw_isotropicFrame_base_mem_extendedTube_of_endpoint` proves that
@@ -6102,7 +6100,7 @@ implementation contract is:
    | High-rank determinant/Witt orbit theorem | Active oriented proper-orbit branch implemented and exact-file checked in `SourceFullComplexLorentzWitt.lean`; full-complex group support checked in `SourceFullComplexLorentz.lean` and `SourceFullComplexLorentzFrame.lean`. | Starting from `HWHighRankSpanIsometryData`, the checked theorem `complexMinkowski_wittExtension_full_of_sourceSpan` splits the ambient space through source span plus orthogonal complement, proves complement-isometry classification over `ℂ`, assembles the product map, and packages it as a full complex Lorentz transformation.  The checked theorem `complexMinkowski_wittExtension_detOne_of_sourceSpan` then performs determinant repair in the proper-span branch and uses the full-frame determinant ratio in the full-rank branch.  The checked consumers `hw_sameSourceGram_regular_orbit` and `hw_sameSourceOrientedInvariant_maxRank_properOrbit` give the active determinant-`1` orbit needed by the oriented route.  The conditional pure-Gram improper alternative remains separate and still needs Hall-Wightman's space-inversion/improper-component source input; it is not needed for the active oriented max-rank proper-orbit consumer. |
    | Low-rank selected principal block and residual frame | Checked in `BHWPermutation/SourceHWSelectedProjection.lean`; principal-minor extraction checked locally. | The checked layer defines `sourcePrincipalGramMatrix`, `hw_selectedSpanCoeff`, `hwLemma3_selectedProjection`, and `hwLemma3_selectedResidual`; proves selected rows are fixed, `row_i * A⁻¹ * A = row_i`, selected/projection-residual orthogonality, the complementary residual-Schur entry theorem, rank-`r` residual-residual zero, original/residual orthogonality, projection Gram equality, projected-span finrank `r`, explicit finite-frame coordinates for span membership, and `hwLemma3_selectedResidual_isotropicFrameData`.  Remaining low-rank work starts at extended-tube coefficient freedom and the two-endpoint residual alignment theorem, not selected Schur algebra. |
    | Low-rank residual-frame alignment | Selected-span frame producer, selected-span determinant-one orbit, alignment producer, residual-subspace extraction, and orthogonal-complement/direct-sum packet checked in `BHWPermutation/SourceHWLowRankAlignment.lean` and `BHWPermutation/SourceHWCommonResidualFrame.lean`. | `HWLowRankSelectedSpanFrameData` stores the scalar rank, selected principal indices, and `HWLowRankSelectedSpanFrame`.  `hw_lowRank_selectedSpanFrame_of_sameSourceGram` chooses a nonzero principal scalar block with `exists_sourcePrincipalMinor_ne_zero_of_sourceSymmetricRank`, uses the checked selected-projection theorem for head orthogonality, and uses the exact-rank Schur-zero theorem on both endpoints to obtain residual-pairing equality as `0 = 0`.  `sourceCoefficientEval_range_eq_span`, `sourceGramMatrixRank_selectedTuple_eq_of_principal_minor_ne`, and `hw_lowRank_selectedSpanFrame_detOneOrbit` reduce the selected block to the checked high-rank/Witt determinant-one orbit theorem.  `hw_lowRank_selectedSpanAlignment_of_selectedSpanFrame` builds `HWLowRankSelectedSpanAlignment`: it aligns selected spans, proves the common selected span is nondegenerate, transports the left residuals by Lorentz invariance, and places both residual families in the common orthogonal complement.  `hw_lowRank_residualSubspaces_after_selectedAlignment` extracts totally isotropic residual subspaces orthogonal to the selected block; `hw_lowRank_residualSubspaces_orthogonalComplement_after_selectedAlignment` adds inclusions into `complexMinkowskiOrthogonalSubmodule d A.M` plus disjointness from `A.M`; `complexMinkowski_totallyIsotropic_embedding_into_frame` builds the injective residual embedding into an independent isotropic frame from the Witt-index dimension bound; `directSum_identity_sum_isotropicFrameEmbedding` packages the embedding, `M`-orthogonality, residual pairing preservation, and direct-sum pairing-preserving equivalence from the frame data; `coefficients_of_family_mem_span_finite_frame` extracts the finite normal-form coefficients for source-indexed residual families in the frame span; `directSum_identity_sum_isotropicEmbedding_maps_right`/`_maps_left` prove the action on both summands; and `directSum_identity_sum_isotropicEmbedding_preserves` proves full block-pairing preservation.  The remaining producer starts at the maximal common isotropic frame with its dimension/maximality certificate, the dual frame, and the null-boost normal form. |
-   | Dual frame and contraction family | Dual-frame packet checked in `BHWPermutation/SourceHWCommonResidualFrame.lean`; contraction family not started. | `BHW.complexMinkowski_rawDualFrameIn`, `BHW.complexMinkowski_isotropicDualFrame_of_rawDualFrame`, `BHW.complexMinkowski_isotropicFrame_dualFrameIn`, and `BHW.complexMinkowski_isotropicDualFrame_of_residualFrame` now produce and store `qDual_pair_zero`, `q_dual`, `qDual_orth_M`, and `qDual_orth` from nondegenerate orthogonal-complement data.  The remaining work in this row is the finite partial boost scaling `q`/`qDual` and its Witt extension; the dual frame is used only for null-boost contraction and the two-curve value equality/limit, not for the coefficient-freedom membership theorem. |
+   | Dual frame and contraction family | Dual-frame packet checked in `BHWPermutation/SourceHWCommonResidualFrame.lean`; contraction family proof docs corrected to a nondegenerate hyperbolic-block route; production contraction family not started. | `BHW.complexMinkowski_rawDualFrameIn`, `BHW.complexMinkowski_isotropicDualFrame_of_rawDualFrame`, `BHW.complexMinkowski_isotropicFrame_dualFrameIn`, and `BHW.complexMinkowski_isotropicDualFrame_of_residualFrame` now produce and store `qDual_pair_zero`, `q_dual`, `qDual_orth_M`, and `qDual_orth` from nondegenerate orthogonal-complement data.  The remaining work in this row is the finite null boost on `M ⊔ span q ⊔ span qDual`: prove the hyperbolic block nondegenerate, scale `q`/`qDual` by reciprocal exponentials with determinant `1`, split the ambient space by the block and its orthogonal complement, extend by identity, and package the resulting global map with `complexLorentzGroupOfLinearEquivPreservesInner`.  No general degenerate `complexMinkowski_wittExtension_subspaceIsometry` is used. |
    | Tube stability and singular limit | Tube-stability support checked in `BHWPermutation/SourceHWTubeCoefficient.lean`; singular normal-form/data/analytic limit checked in `BHWPermutation/SourceHWSingularLimit.lean`; corrected target for arbitrary endpoints is `ExtendedTube`, not `ForwardTube`. | The checked tube layer now runs through Hall-Wightman's second and third remarks, the explicit determinant-one complex Lorentz two-plane rotation, the arbitrary-endpoint one-null coefficient theorem, the finite-frame induction, the `n = 0` wrapper, and the public base/all-coefficients theorem `BHW.hw_isotropicFrame_allCoefficients_mem_extendedTube`.  It also records `complexLorentzAction_inv_left`, `complexLorentzVectorAction_inv_left`, and `sourceComplexMinkowskiInner_finset_sum_smul_right` as the Lean bridge lemmas needed by the transport and induction steps.  The checked singular-limit layer defines `ComplexMinkowskiTotallyIsotropicSubspace`, proves finite-frame isotropic/orthogonal span lemmas, defines `HWSameSourceGramSingularContractionData` and `HWLowRankIsotropicNormalForm`, converts the normal form to contraction data, and proves `hw_sameSourceGram_singularLimit_extendF_eq`; the dual frame remains only for producing the null-boost contraction normal form, not for coefficient-freedom membership. |
    | `extendF_complexLorentzInvariant_of_cinv` | Implemented and exact-file checked in `ComplexInvariance/Extend.lean`. | Unfold `extendF`, choose forward-tube preimages, and use the new direct-preimage helper `BHW.extendF_preimage_eq_of_cinv`; no PET/EOW/locality and no scalar-representative content. |
 
