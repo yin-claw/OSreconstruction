@@ -988,43 +988,81 @@ theorem W_analytic_cluster_integral_via_ruelle
         exact image_eq_zero_of_notMem_tsupport h_notInTsupp
       simp [clusterIntegrand, clusterLimitIntegrand, h_f_zero]
       exact tendsto_const_nhds
-  -- Step 4 (dominator): construct a uniform-in-a integrable dominator on
-  -- (NPointDomain d n × NPointDomain d m), valid for `|⃗a|` large enough.
   -- Step 4–7: dominator + dominated convergence + ε-R conversion.
   --
-  -- BLOCKED ON RACH.bound REFACTOR (2026-05-08): The bound shape was
-  -- updated to include the boundary-distance regulator
-  -- `(1 + (tubeBoundaryDist z)⁻¹)^M` (Streater-Wightman Theorem 3.1.1)
-  -- after the previous shape was found to be unsatisfiable for any
-  -- Wightman QFT (free-field counterexample via Wick's theorem;
-  -- internal `W₂(z₁,₁, z₁,₂)` blows up as `Im(z₁,₁ - z₁,₂) → ∂V+`,
-  -- which the bare polynomial `(1 + ‖z‖)^N` cannot capture).
+  -- BLOCKED ON RACH.bound REFACTOR (2026-05-08): the bound shape was
+  -- updated to include the Streater-Wightman boundary-distance
+  -- regulator `(1 + (tubeBoundaryDist z)⁻¹)^M` after the previous
+  -- shape was found unsatisfiable for any Wightman QFT (free-field
+  -- counterexample via Wick decomposition; see
+  -- `docs/ruelle_bound_vacuity_concern.md`).
   --
-  -- The dominator constructed below in the previous proof was
-  -- `C_R · (1+‖p₁‖+‖p₂‖)^N_R · ‖f(p₁)‖ · ‖g(p₂)‖`, which is
-  -- integrable against Schwartz `f, g`. The new bound shape
-  -- requires the dominator to additionally absorb
-  -- `(1 + (tubeBoundaryDist (wick p₁))⁻¹)^M_R · (1 + (tubeBoundaryDist (wick p₂))⁻¹)^M_R`.
+  -- The previous dominator `C_R · (1+‖p₁‖+‖p₂‖)^N_R · ‖f(p₁)‖ · ‖g(p₂)‖`
+  -- is no longer typed correctly: the new bound delivers the regulator
+  -- factor `(1 + (tubeBoundaryDist (wick p))⁻¹)^M_R` as well.
   --
-  -- After Wick rotation, `tubeBoundaryDist (wick p) = min_k (p_k 0 - p_{k-1} 0)`
-  -- for OPTR-supported configurations. The factor `(1 + Δ⁻¹)^M_R`
-  -- has codimension-1 diagonal singularities; for `M_R ≥ 1`, naive
-  -- local integrability fails. The textbook resolution
-  -- (Streater-Wightman §3.4 / Ruelle 1962) absorbs `Δ⁻¹` into
-  -- Schwartz derivative seminorms via integration by parts in
-  -- the time differences, transferring `M_R + 1` derivatives
-  -- onto `f, g` and bounding the residual factor by Schwartz
-  -- derivative seminorms.
+  -- ### Fillability case for this `sorry`
   --
-  -- The IBP rework is its own substantial follow-up. For now,
-  -- the cluster proof is sorry'd at this step. See
-  -- `docs/ruelle_bound_vacuity_concern.md` for the full analysis.
+  -- The math is classical (Streater-Wightman §3.4 / Ruelle 1962 /
+  -- Araki-Hepp-Ruelle 1962): use the **Schwartz dual pairing**
+  -- instead of a pointwise dominator.
   --
-  -- The pre-existing project axioms `bv_implies_fourier_support`
-  -- and `fl_representation_from_bv` (in OSReconstruction/SCV/
-  -- VladimirovTillmann.lean) plus the proven
-  -- `fourierLaplaceExtMultiDim_vladimirov_growth` give the
-  -- infrastructure needed for the IBP rework.
+  --   1. By `fl_representation_from_bv` (existing project axiom in
+  --      `OSReconstruction/SCV/VladimirovTillmann.lean`):
+  --        `W_analytic_BHW(z) = (FL Tflat)(z)`
+  --      for some tempered distribution `Tflat` on the dual cone
+  --      (where `Tflat : SchwartzMap → ℂ` is a `ContinuousLinearMap`).
+  --   2. The cluster integrand
+  --        `W_analytic_BHW(joint(wick p₁, wick p₂ + (0,a))) · f(p₁) · g(p₂)`
+  --      integrates over `(p₁, p₂)` to
+  --        `Tflat(ψ_a)`
+  --      where `ψ_a ∈ Schwartz(dual)` is constructed by Fubini-pairing
+  --      `(f ⊗ g_a)` with the Wick-rotated kernel.
+  --   3. Continuity of `Tflat` on Schwartz:
+  --        `‖Tflat ψ‖ ≤ ‖Tflat‖ · ‖ψ‖_{seminorm}`.
+  --   4. `‖ψ_a‖_{seminorm}` is uniformly bounded in `a` by translation-
+  --      invariance of Schwartz seminorms (`g_a(x) := g(x - a)`).
+  --   5. → uniform `ε`-R conclusion, no pointwise dominator needed.
+  --
+  -- ### Available Lean infrastructure
+  --
+  -- * `bv_implies_fourier_support` (axiom, VladimirovTillmann.lean:148)
+  --   — produces `Tflat` from polynomial-bounded boundary value.
+  -- * `fl_representation_from_bv` (axiom, same file:392)
+  --   — gives `W = FL extension of Tflat`.
+  -- * `fourierLaplaceExtMultiDim_vladimirov_growth` (PROVED in
+  --   PaleyWienerSchwartz.lean:3286) — the regulated growth bound.
+  -- * Mathlib has Schwartz-Fubini and Schwartz-CLM continuity in the
+  --   standard form needed for steps (2)–(4).
+  --
+  -- ### Identified gap
+  --
+  -- `bv_implies_fourier_support`'s **hypothesis** asks for the
+  -- *unregulated* polynomial growth on the tube — the same shape just
+  -- shown unsatisfiable. The companion theorem
+  -- `full_analytic_continuation_with_symmetry_growth`
+  -- (`OSToWightman.lean:2553`) is supposed to supply this growth for
+  -- OS-derived Wightman functions, but `#print axioms` shows it
+  -- depends on `sorryAx` — i.e., it is not actually proved either.
+  -- So the polynomial-bound chain has hidden vacuity.
+  --
+  -- The IBP rework therefore likely also requires either:
+  --   (a) supplying the unregulated bound on a regularized subdomain
+  --       where it actually holds, or
+  --   (b) relaxing `bv_implies_fourier_support`'s hypothesis to accept
+  --       the regulated form (which IS satisfiable). Vladimirov's
+  --       Theorem 25.1 only requires tempered BV; the unregulated
+  --       polynomial bound was over-strong.
+  --
+  -- Option (b) is the cleaner fix; the regulated bound is now
+  -- available unconditionally via `wightman_l4_spectral_data_axiom`.
+  --
+  -- ### Estimate
+  --
+  -- 1–2 weeks if option (b) works as expected; 2–4 weeks if a
+  -- separate audit/fix of the polynomial-bound chain is needed first.
+  -- Tracked as a separate follow-up; this PR is the structure-only
+  -- refactor of `RACH.bound`.
   sorry
 
 /-! ### Public-facing theorems
