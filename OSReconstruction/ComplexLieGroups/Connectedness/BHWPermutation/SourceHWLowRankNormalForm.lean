@@ -103,6 +103,115 @@ structure HWLowRankCommonIsotropicFrameData
         (m : Fin (d + 1) → ℂ) = 0
   q_independent : LinearIndependent ℂ q
 
+/-- The geometric residual-alignment packet just before coefficient
+extraction.  A future finite-dimensional Witt-basis theorem should produce
+this data from `HWLowRankSelectedSpanAlignment`: a determinant-one Lorentz
+correction fixing the selected span, a common totally isotropic frame, and
+span membership of both residual families after the correction. -/
+structure HWLowRankResidualAlignmentData
+    {d n r : ℕ}
+    {z w : Fin n → Fin (d + 1) → ℂ}
+    {I : Fin r → Fin n}
+    {S : HWLowRankSelectedSpanFrame d n r z w I}
+    (A : HWLowRankSelectedSpanAlignment d n r z w I S) where
+  Λfix : ComplexLorentzGroup d
+  s : ℕ
+  q : Fin s → Fin (d + 1) → ℂ
+  Λfix_M :
+    ∀ m : A.M,
+      complexLorentzVectorAction Λfix
+        (m : Fin (d + 1) → ℂ) =
+      (m : Fin (d + 1) → ℂ)
+  left_span :
+    ∀ i,
+      complexLorentzVectorAction Λfix (A.leftResidual i) ∈
+        Submodule.span ℂ (Set.range q)
+  right_span :
+    ∀ i, A.rightResidual i ∈ Submodule.span ℂ (Set.range q)
+  q_pair_zero :
+    ∀ c c', sourceComplexMinkowskiInner d (q c) (q c') = 0
+  q_orth_M :
+    ∀ c (m : A.M),
+      sourceComplexMinkowskiInner d (q c)
+        (m : Fin (d + 1) → ℂ) = 0
+  q_independent : LinearIndependent ℂ q
+
+/-- Coefficient extraction and endpoint-expansion assembly from the geometric
+residual-alignment packet.  This removes purely mechanical coefficient
+bookkeeping from the remaining finite-dimensional common-frame producer. -/
+noncomputable def hw_lowRank_commonIsotropicFrameData_of_residualAlignmentData
+    {d n r : ℕ}
+    {z w : Fin n → Fin (d + 1) → ℂ}
+    {I : Fin r → Fin n}
+    {S : HWLowRankSelectedSpanFrame d n r z w I}
+    (A : HWLowRankSelectedSpanAlignment d n r z w I S)
+    (D : HWLowRankResidualAlignmentData A) :
+    HWLowRankCommonIsotropicFrameData A := by
+  classical
+  let leftVectors : Fin n → Fin (d + 1) → ℂ :=
+    fun i => complexLorentzVectorAction D.Λfix (A.leftResidual i)
+  let hLeftExists :=
+    coefficients_of_family_mem_span_finite_frame
+      (d := d) (n := n) (s := D.s) (q := D.q)
+      (v := leftVectors) (by
+        intro i
+        exact D.left_span i)
+  let aLeft : Fin n → Fin D.s → ℂ := Classical.choose hLeftExists
+  have h_aLeft :
+      ∀ i, leftVectors i = ∑ c : Fin D.s, aLeft i c • D.q c :=
+    Classical.choose_spec hLeftExists
+  let hRightExists :=
+    coefficients_of_family_mem_span_finite_frame
+      (d := d) (n := n) (s := D.s) (q := D.q)
+      (v := A.rightResidual) D.right_span
+  let aRight : Fin n → Fin D.s → ℂ := Classical.choose hRightExists
+  have h_aRight :
+      ∀ i, A.rightResidual i = ∑ c : Fin D.s, aRight i c • D.q c :=
+    Classical.choose_spec hRightExists
+  refine
+    { Λfix := D.Λfix
+      s := D.s
+      aLeft := aLeft
+      aRight := aRight
+      q := D.q
+      left_eq := ?_
+      right_eq := ?_
+      q_pair_zero := D.q_pair_zero
+      q_orth_M := D.q_orth_M
+      q_independent := D.q_independent }
+  · ext i μ
+    calc
+      complexLorentzAction (D.Λfix * A.Λsel) z i μ =
+          complexLorentzVectorAction D.Λfix
+            (complexLorentzVectorAction A.Λsel (z i)) μ := by
+            simpa [complexLorentzAction] using
+              congrFun (congrFun
+                (complexLorentzAction_mul D.Λfix A.Λsel z) i) μ
+      _ =
+          complexLorentzVectorAction D.Λfix
+            (A.ξ i + A.leftResidual i) μ := by
+            rw [A.left_decomp i]
+      _ =
+          (complexLorentzVectorAction D.Λfix (A.ξ i) +
+            complexLorentzVectorAction D.Λfix (A.leftResidual i)) μ := by
+            simpa only [Pi.add_apply] using
+              congrFun
+                (complexLorentzVectorAction_add D.Λfix (A.ξ i)
+                  (A.leftResidual i)) μ
+      _ = (A.ξ i + ∑ c : Fin D.s, aLeft i c • D.q c) μ := by
+            rw [D.Λfix_M ⟨A.ξ i, A.ξ_mem i⟩]
+            rw [show
+                complexLorentzVectorAction D.Λfix (A.leftResidual i) =
+                  ∑ c : Fin D.s, aLeft i c • D.q c from
+                by simpa [leftVectors] using h_aLeft i]
+  · ext i μ
+    calc
+      w i μ = (A.ξ i + A.rightResidual i) μ := by
+          rw [A.right_decomp i]
+      _ = (A.ξ i + ∑ c : Fin D.s, aRight i c • D.q c) μ := by
+          rw [show A.rightResidual i =
+              ∑ c : Fin D.s, aRight i c • D.q c from h_aRight i]
+
 /-- Once the common isotropic-frame data are available, the full low-rank
 normal form is mechanical: build the dual frame in `Mᗮ`, package the
 determinant-one null boost, use coefficient freedom for extended-tube
