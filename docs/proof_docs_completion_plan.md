@@ -6021,10 +6021,23 @@ implementation contract is:
      `phiS : S ->ₗ[ℂ] Module.Dual ℂ R` by
      `phiS s r = sourceComplexMinkowskiInner d
        (s : Fin (d + 1) -> ℂ) (r : Fin (d + 1) -> ℂ)`.  Its kernel is
-     `S ∩ Rperp`.  Rank-nullity gives
-     `finrank S ≤ finrank (S ∩ Rperp) + finrank R`.  The image of
-     `S ∩ Rperp` in `Rperp ⧸ R` is totally isotropic, so its finrank is at most
-     `finrank Qbar`; hence `finrank S ≤ finrank R + finrank Qbar = finrank Q`.
+     `S ∩ Rperp`.  Let `T := S ∩ R`, retyped as a subspace of `R`.
+     Because `S` is totally isotropic, every functional in `LinearMap.range phiS`
+     vanishes on `T`, so
+     `LinearMap.range phiS ≤ T.dualAnnihilator`.  The dual-annihilator
+     dimension theorem gives
+     `finrank (LinearMap.range phiS) + finrank T ≤ finrank R`.
+     The image of `S ∩ Rperp` in `Rperp ⧸ R` is totally isotropic, and its
+     kernel is exactly `T`; rank-nullity for this quotient map gives
+     `finrank (S ∩ Rperp) =
+        finrank image + finrank T ≤ finrank Qbar + finrank T`.
+     Combining this with rank-nullity for `phiS` cancels the `finrank T` term:
+     `finrank S =
+        finrank (S ∩ Rperp) + finrank (LinearMap.range phiS)
+        ≤ finrank Qbar + finrank R`.
+     Finally, rank-nullity for the quotient-preimage map
+     `preimage(Qbar) -> Qbar` gives
+     `finrank Q = finrank R + finrank Qbar`.
    * Package `Q` as `ComplexMinkowskiMaximalIsotropicSubspaceIn d N` and apply
      the checked
      `complexMinkowski_maximalIsotropicFrameIn_of_subspace_containing`.
@@ -6054,10 +6067,19 @@ implementation contract is:
    quotient-zero containment checked as
    `BHW.complexMinkowskiSubmoduleInRelativeOrthogonal_mkQ_mem_quotientPreimage`,
    `BHW.complexMinkowskiSubmodule_mem_relativeOrthogonalQuotientPreimage`, and
-   `BHW.complexMinkowskiSubmodule_le_relativeOrthogonalQuotientPreimage`.  The
-   next pass should add the isotropy pullback from a quotient-isotropic `Qbar`,
-   the maximal-quotient choice, and the rank-nullity comparison for arbitrary
-   isotropic `S ≤ N`.
+   `BHW.complexMinkowskiSubmodule_le_relativeOrthogonalQuotientPreimage`.
+   The quotient-isotropy pullback is checked as
+   `BHW.complexMinkowskiRelativeOrthogonalQuotientPreimageInRperp_pair_zero`,
+   `BHW.complexMinkowskiRelativeOrthogonalQuotientPreimageInN_pair_zero`, and
+   `BHW.complexMinkowskiRelativeOrthogonalQuotientPreimage_isotropic`, using
+   the pointwise quotient-subspace predicate
+   `BHW.BilinFormTotallyIsotropicSubspace`.  The maximal-quotient choice is
+   checked generically as
+   `BHW.bilinForm_maximalTotallyIsotropicSubspace_exists` and specialized as
+   `BHW.complexMinkowskiRelativeOrthogonalQuotient_maximalIsotropicSubspace_exists`.
+   The next pass should add the rank-nullity comparison for arbitrary
+   isotropic `S ≤ N`, including the `T = S ∩ R` cancellation described above
+   and the quotient-preimage finrank formula.
    It should not start by adding a new generic
    `complexMinkowski_wittExtension_subspaceIsometry` theorem.
    The residual-frame alignment now has an
