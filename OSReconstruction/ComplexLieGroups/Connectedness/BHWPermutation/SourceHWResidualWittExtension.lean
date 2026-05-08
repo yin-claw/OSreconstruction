@@ -180,4 +180,191 @@ theorem complexMinkowski_nondegenerateSubspaceEquiv_ambientExtension
       _ = (T x : Fin (d + 1) → ℂ) := by
             simp [eL]
 
+/-- A proper nondegenerate source subspace admits a determinant-`-1` full
+complex Lorentz reflection fixing it pointwise. -/
+theorem fullComplexLorentz_det_neg_reflection_fixing_nondegenerate_subspace
+    {d : ℕ}
+    {M : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hM : ComplexMinkowskiNondegenerateSubspace d M)
+    (hproper : Module.finrank ℂ M < d + 1) :
+    ∃ R : HallWightmanFullComplexLorentzGroup d,
+      hallWightmanFullComplexLorentzDet R = -1 ∧
+      ∀ x : M,
+        hallWightmanFullComplexLorentzVectorAction R
+            (x : Fin (d + 1) → ℂ) =
+          x := by
+  have hcomp_ne :
+      complexMinkowskiOrthogonalSubmodule d M ≠ ⊥ :=
+    complexMinkowskiOrthogonalSubmodule_ne_bot_of_finrank_lt d hproper
+  letI : Nontrivial (complexMinkowskiOrthogonalSubmodule d M) :=
+    (Submodule.nontrivial_iff_ne_bot).2 hcomp_ne
+  rcases
+    exists_nonisotropic_in_nondegenerate_subspace d
+      (complexMinkowskiOrthogonalSubmodule d M)
+      (complexMinkowskiOrthogonalSubmodule_nondegenerate d hM) with
+  ⟨u, hu⟩
+  refine
+    ⟨fullComplexLorentzReflection u hu,
+      fullComplexLorentzReflection_det u hu,
+      ?_⟩
+  intro x
+  exact fullComplexLorentzReflection_fix_subspace u hu x
+
+/-- A pairing-preserving equivalence between nondegenerate subspaces extends to
+a determinant-one proper complex Lorentz transformation, provided the target
+subspace is proper.  If the raw ambient extension has determinant `-1`, a
+Householder reflection fixing the target subspace repairs the determinant
+without changing the prescribed action on the source block. -/
+theorem complexMinkowski_nondegenerateSubspaceEquiv_detOne_orbitExtension
+    {d : ℕ}
+    {K L : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hK : ComplexMinkowskiNondegenerateSubspace d K)
+    (hL : ComplexMinkowskiNondegenerateSubspace d L)
+    (hLproper : Module.finrank ℂ L < d + 1)
+    (T : K ≃ₗ[ℂ] L)
+    (hT :
+      ∀ x y,
+        sourceComplexMinkowskiInner d
+          (T x : Fin (d + 1) → ℂ)
+          (T y : Fin (d + 1) → ℂ) =
+        sourceComplexMinkowskiInner d
+          (x : Fin (d + 1) → ℂ)
+          (y : Fin (d + 1) → ℂ)) :
+    ∃ Λ : ComplexLorentzGroup d,
+      ∀ x : K,
+        complexLorentzVectorAction Λ (x : Fin (d + 1) → ℂ) =
+          (T x : Fin (d + 1) → ℂ) := by
+  rcases
+    complexMinkowski_nondegenerateSubspaceEquiv_ambientExtension
+      (d := d) hK hL T hT with
+  ⟨E, hE_pres, hE_apply⟩
+  let A : HallWightmanFullComplexLorentzGroup d :=
+    HallWightmanFullComplexLorentzGroup.ofLinearMap E.toLinearMap hE_pres
+  have hA_action :
+      ∀ v,
+        hallWightmanFullComplexLorentzVectorAction A v = E v := by
+    intro v
+    simpa [A] using
+      HallWightmanFullComplexLorentzGroup.ofLinearMap_vectorAction
+        E.toLinearMap hE_pres v
+  by_cases hdetA : hallWightmanFullComplexLorentzDet A = 1
+  · rcases fullComplexLorentz_to_complexLorentzGroup_of_det_one A hdetA with
+    ⟨Λ, hΛ⟩
+    refine ⟨Λ, ?_⟩
+    intro x
+    calc
+      complexLorentzVectorAction Λ (x : Fin (d + 1) → ℂ) =
+          hallWightmanFullComplexLorentzVectorAction A
+            (x : Fin (d + 1) → ℂ) := hΛ _
+      _ = E (x : Fin (d + 1) → ℂ) := hA_action _
+      _ = (T x : Fin (d + 1) → ℂ) := hE_apply x
+  · have hA_neg : hallWightmanFullComplexLorentzDet A = -1 :=
+      det_eq_neg_one_of_sq_one_of_ne_one
+        (hallWightmanFullComplexLorentz_det_sq_eq_one A) hdetA
+    rcases
+      fullComplexLorentz_det_neg_reflection_fixing_nondegenerate_subspace
+        (d := d) hL hLproper with
+    ⟨R, hRdet, hRfix⟩
+    let RA : HallWightmanFullComplexLorentzGroup d :=
+      hallWightmanFullComplexLorentzMul R A
+    have hRAdet : hallWightmanFullComplexLorentzDet RA = 1 := by
+      simp [RA, fullComplexLorentz_mul_det, hRdet, hA_neg]
+    rcases fullComplexLorentz_to_complexLorentzGroup_of_det_one RA hRAdet with
+    ⟨Λ, hΛ⟩
+    refine ⟨Λ, ?_⟩
+    intro x
+    have hEx : E (x : Fin (d + 1) → ℂ) = (T x : Fin (d + 1) → ℂ) :=
+      hE_apply x
+    calc
+      complexLorentzVectorAction Λ (x : Fin (d + 1) → ℂ) =
+          hallWightmanFullComplexLorentzVectorAction RA
+            (x : Fin (d + 1) → ℂ) := hΛ _
+      _ =
+          hallWightmanFullComplexLorentzVectorAction R
+            (hallWightmanFullComplexLorentzVectorAction A
+              (x : Fin (d + 1) → ℂ)) := by
+            simpa [RA] using
+              fullComplexLorentz_mul_vectorAction R A
+                (x : Fin (d + 1) → ℂ)
+      _ =
+          hallWightmanFullComplexLorentzVectorAction R
+            (E (x : Fin (d + 1) → ℂ)) := by
+            rw [hA_action]
+      _ = hallWightmanFullComplexLorentzVectorAction R
+            (T x : Fin (d + 1) → ℂ) := by
+            rw [hEx]
+      _ = (T x : Fin (d + 1) → ℂ) := hRfix (T x)
+
+/-- The nondegenerate block data needed after adjoining compatible hyperbolic
+duals to the degenerate residual source and target blocks.  The producer of this
+structure is the remaining hard finite-dimensional step for the selected
+residual hyperbolic extension. -/
+structure HWSelectedResidualHyperbolicBlockExtensionData
+    {d s : ℕ}
+    {M Rleft : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (q : Fin s → Fin (d + 1) → ℂ) where
+  K : Submodule ℂ (Fin (d + 1) → ℂ)
+  L : Submodule ℂ (Fin (d + 1) → ℂ)
+  K_nondeg : ComplexMinkowskiNondegenerateSubspace d K
+  L_nondeg : ComplexMinkowskiNondegenerateSubspace d L
+  L_proper : Module.finrank ℂ L < d + 1
+  K_M : M ≤ K
+  K_left : Rleft ≤ K
+  Tblock : K ≃ₗ[ℂ] L
+  Tblock_preserves :
+    ∀ x y : K,
+      sourceComplexMinkowskiInner d
+        (Tblock x : Fin (d + 1) → ℂ)
+        (Tblock y : Fin (d + 1) → ℂ) =
+      sourceComplexMinkowskiInner d
+        (x : Fin (d + 1) → ℂ)
+        (y : Fin (d + 1) → ℂ)
+  Tblock_M :
+    ∀ m : M,
+      (Tblock ⟨(m : Fin (d + 1) → ℂ), K_M m.2⟩ :
+        Fin (d + 1) → ℂ) =
+      (m : Fin (d + 1) → ℂ)
+  Tblock_left_span :
+    ∀ x : Rleft,
+      (Tblock ⟨(x : Fin (d + 1) → ℂ), K_left x.2⟩ :
+        Fin (d + 1) → ℂ) ∈
+      Submodule.span ℂ (Set.range q)
+
+/-- Once the compatible residual hyperbolic block extension data is available,
+the selected residual hyperbolic extension output is mechanical. -/
+theorem complexMinkowski_selectedResidualHyperbolicExtension_of_blockExtensionData
+    {d s : ℕ}
+    {M Rleft : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {q : Fin s → Fin (d + 1) → ℂ}
+    (D : HWSelectedResidualHyperbolicBlockExtensionData (d := d)
+      (M := M) (Rleft := Rleft) q) :
+    ∃ Λfix : ComplexLorentzGroup d,
+      (∀ m : M,
+        complexLorentzVectorAction Λfix
+          (m : Fin (d + 1) → ℂ) =
+        (m : Fin (d + 1) → ℂ)) ∧
+      ∀ x : Rleft,
+        complexLorentzVectorAction Λfix
+          (x : Fin (d + 1) → ℂ) ∈
+        Submodule.span ℂ (Set.range q) := by
+  rcases
+    complexMinkowski_nondegenerateSubspaceEquiv_detOne_orbitExtension
+      (d := d) D.K_nondeg D.L_nondeg D.L_proper D.Tblock
+      D.Tblock_preserves with
+  ⟨Λfix, hΛfix⟩
+  refine ⟨Λfix, ?_, ?_⟩
+  · intro m
+    calc
+      complexLorentzVectorAction Λfix (m : Fin (d + 1) → ℂ) =
+          complexLorentzVectorAction Λfix
+            ((⟨(m : Fin (d + 1) → ℂ), D.K_M m.2⟩ : D.K) :
+              Fin (d + 1) → ℂ) := rfl
+      _ =
+          (D.Tblock ⟨(m : Fin (d + 1) → ℂ), D.K_M m.2⟩ :
+            Fin (d + 1) → ℂ) := hΛfix _
+      _ = (m : Fin (d + 1) → ℂ) := D.Tblock_M m
+  · intro x
+    rw [hΛfix (⟨(x : Fin (d + 1) → ℂ), D.K_left x.2⟩ : D.K)]
+    exact D.Tblock_left_span x
+
 end BHW

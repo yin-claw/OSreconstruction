@@ -25903,11 +25903,26 @@ Proof decomposition of this theorem, without hiding the analytic work:
       then extends any pairing-preserving equivalence `T : K ≃ₗ[ℂ] L`
       between nondegenerate complex-Minkowski subspaces to an ambient
       pairing-preserving linear equivalence that agrees with `T` on `K`.
-      Thus, after the future hyperbolic-dual construction turns
-      `M ⊔ Rleft` and `M ⊔ Qleft` into matching nondegenerate blocks, the
-      extension from that block to the full ambient source space is already
-      Lean-checked; the remaining work is the compatible hyperbolic-dual
-      construction and determinant-one repair.
+      The determinant-one repair for such nondegenerate block extensions is now
+      checked as
+      `BHW.fullComplexLorentz_det_neg_reflection_fixing_nondegenerate_subspace`
+      and
+      `BHW.complexMinkowski_nondegenerateSubspaceEquiv_detOne_orbitExtension`:
+      if the raw ambient extension has determinant `-1`, a Householder
+      reflection fixing the proper target block corrects the determinant without
+      changing the prescribed block action.  Thus, after the future
+      hyperbolic-dual construction turns `M ⊔ Rleft` and `M ⊔ Qleft` into
+      matching proper nondegenerate blocks and extends `T` to those blocks, the
+      passage to a proper ambient complex Lorentz transformation is already
+      Lean-checked.  The remaining work is the compatible hyperbolic-dual block
+      construction itself.  This final consumer is checked as
+      `BHW.HWSelectedResidualHyperbolicBlockExtensionData` and
+      `BHW.complexMinkowski_selectedResidualHyperbolicExtension_of_blockExtensionData`:
+      the data records proper nondegenerate blocks `K,L`, inclusions
+      `M ≤ K` and `Rleft ≤ K`, a pairing-preserving block equivalence, pointwise
+      fixing of `M`, and the image of `Rleft` in `Submodule.span ℂ (Set.range q)`.
+      Once such data is produced, the proper Lorentz element and the required
+      `Λfix_M`/`left_span` fields are mechanical.
 
       Lean-shaped proof of the residual-frame-extension producer after the
       support packet exists:

@@ -6017,10 +6017,27 @@ implementation contract is:
    `BHW.complexMinkowski_nondegenerateSubspaceEquiv_ambientExtension` extends
    any pairing-preserving equivalence between nondegenerate subspaces to a
    pairing-preserving ambient linear equivalence agreeing with it on the
-   source block.  Therefore the remaining unproved content of
+   source block.  The determinant-one repair for completed nondegenerate blocks
+   is now checked as
+   `BHW.fullComplexLorentz_det_neg_reflection_fixing_nondegenerate_subspace`
+   and
+   `BHW.complexMinkowski_nondegenerateSubspaceEquiv_detOne_orbitExtension`.
+   The repair composes a raw determinant-`-1` ambient extension with a
+   Householder reflection fixing the proper target block.  Therefore the
+   remaining unproved content of
    `BHW.complexMinkowski_selectedResidualHyperbolicExtension` is now the
-   compatible hyperbolic-dual construction and determinant-one repair, not the
-   ambient extension from a completed nondegenerate block.
+   compatible hyperbolic-dual block construction extending the degenerate
+   residual isometry, not the ambient extension or determinant repair after such
+   a block is available.  The checked structure
+   `BHW.HWSelectedResidualHyperbolicBlockExtensionData` is the exact target for
+   that construction: it stores proper nondegenerate blocks `K,L`, the inclusions
+   `M ≤ K` and `Rz ≤ K`, a pairing-preserving `Tblock : K ≃ₗ[ℂ] L`, the fact that
+   `Tblock` fixes `M`, and the fact that it sends `Rz` into the chosen frame
+   span.  The checked theorem
+   `BHW.complexMinkowski_selectedResidualHyperbolicExtension_of_blockExtensionData`
+   converts this packet into the required proper Lorentz correction.  Thus the
+   next implementation theorem should be the producer of this block-extension
+   data, not another wrapper around the final `Λfix` conclusion.
    The first mechanical support layer is now exact-Lean shaped:
    `BHW.subspace_le_complexMinkowskiOrthogonalSubmodule` has hypotheses
    `(hR_orth : ∀ x : R, ∀ m : M,
