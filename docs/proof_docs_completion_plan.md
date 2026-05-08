@@ -5995,6 +5995,21 @@ implementation contract is:
    the map from `Rz` is only an injective isometry into the frame span, not an
    equivalence onto the whole maximal frame span, and the frame must be chosen
    to contain `Rw` before the determinant-one residual extension is applied.
+   The final unproved support surface is now stated as
+   `BHW.complexMinkowski_selectedResidualHyperbolicExtension`: given that
+   direct-sum isometry, its action on `M` and `Rz`, a containing isotropic frame
+   `q`, and the orthogonality/disjointness facts, it returns
+   `Λfix : ComplexLorentzGroup d` fixing `M` pointwise and sending every vector
+   of `Rz` into `Submodule.span ℂ (Set.range q)`.  Its proof must adjoin
+   hyperbolic dual frames to the two residual blocks, extend the resulting
+   nondegenerate block map by identity on the orthogonal complement, and repair
+   determinant inside the hyperbolic block; it must not call a generic
+   degenerate Witt-extension theorem.  The last packaging substep is now
+   checked as
+   `BHW.complexMinkowski_selectedResidualHyperbolicExtension_of_ambientLinearEquiv`:
+   an ambient determinant-one form-preserving linear equivalence fixing `M` and
+   sending `Rz` into the frame span is mechanically converted into the required
+   `Λfix` fields.
    The first mechanical support layer is now exact-Lean shaped:
    `BHW.subspace_le_complexMinkowskiOrthogonalSubmodule` has hypotheses
    `(hR_orth : ∀ x : R, ∀ m : M,

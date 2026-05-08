@@ -25819,6 +25819,81 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 (y : Fin (d + 1) -> ℂ)
       ```
 
+      The remaining determinant-one extension theorem must expose exactly the
+      data used by the residual-frame producer.  It extends the checked
+      identity-plus-residual isometry on the degenerate partial domain
+      `M ⊔ Rleft` by first adjoining hyperbolic dual frames to the residual
+      blocks, extending the resulting nondegenerate block map by identity on
+      the orthogonal complement, and applying the determinant-one repair
+      inside the hyperbolic block.  The theorem statement is:
+
+      ```lean
+      theorem BHW.complexMinkowski_selectedResidualHyperbolicExtension
+          [NeZero d]
+          (hd : 2 <= d)
+          {M Rleft Qleft : Submodule ℂ (Fin (d + 1) -> ℂ)}
+          (hM : BHW.ComplexMinkowskiNondegenerateSubspace d M)
+          (hRleft_orth :
+            ∀ x : Rleft, ∀ m : M,
+              BHW.sourceComplexMinkowskiInner d
+                (x : Fin (d + 1) -> ℂ)
+                (m : Fin (d + 1) -> ℂ) = 0)
+          (hQleft_orth :
+            ∀ x : Qleft, ∀ m : M,
+              BHW.sourceComplexMinkowskiInner d
+                (x : Fin (d + 1) -> ℂ)
+                (m : Fin (d + 1) -> ℂ) = 0)
+          (hM_disjoint_left : Disjoint M Rleft)
+          (hM_disjoint_Qleft : Disjoint M Qleft)
+          (T : ↥(M ⊔ Rleft) ≃ₗ[ℂ] ↥(M ⊔ Qleft))
+          (hT_maps_M :
+            ∀ m : M,
+              ((T ⟨(m : Fin (d + 1) -> ℂ),
+                  Submodule.mem_sup_left m.2⟩ : ↥(M ⊔ Qleft)) :
+                Fin (d + 1) -> ℂ) =
+                (m : Fin (d + 1) -> ℂ))
+          (hT_maps_Rleft_Qleft :
+            ∀ x : Rleft,
+              ((T ⟨(x : Fin (d + 1) -> ℂ),
+                  Submodule.mem_sup_right x.2⟩ : ↥(M ⊔ Qleft)) :
+                Fin (d + 1) -> ℂ) ∈ Qleft)
+          (hT_preserves :
+            ∀ x y : ↥(M ⊔ Rleft),
+              BHW.sourceComplexMinkowskiInner d
+                ((T x : ↥(M ⊔ Qleft)) : Fin (d + 1) -> ℂ)
+                ((T y : ↥(M ⊔ Qleft)) : Fin (d + 1) -> ℂ) =
+              BHW.sourceComplexMinkowskiInner d
+                (x : Fin (d + 1) -> ℂ)
+                (y : Fin (d + 1) -> ℂ))
+          {s : Nat}
+          {q : Fin s -> Fin (d + 1) -> ℂ}
+          (hq_independent : LinearIndependent ℂ q)
+          (hq_pair_zero :
+            ∀ c c',
+              BHW.sourceComplexMinkowskiInner d (q c) (q c') = 0)
+          (hq_mem :
+            ∀ c, q c ∈ BHW.complexMinkowskiOrthogonalSubmodule d M)
+          (hQleft_le_Qspan :
+            Qleft ≤ Submodule.span ℂ (Set.range q)) :
+          ∃ Λfix : ComplexLorentzGroup d,
+            (∀ m : M,
+              BHW.complexLorentzVectorAction Λfix
+                (m : Fin (d + 1) -> ℂ) =
+                (m : Fin (d + 1) -> ℂ)) ∧
+            ∀ x : Rleft,
+              BHW.complexLorentzVectorAction Λfix
+                (x : Fin (d + 1) -> ℂ) ∈
+                Submodule.span ℂ (Set.range q)
+      ```
+
+      The final packaging substep of this theorem is checked as
+      `BHW.complexMinkowski_selectedResidualHyperbolicExtension_of_ambientLinearEquiv`:
+      once the hyperbolic-basis construction has produced an ambient linear
+      equivalence preserving `sourceComplexMinkowskiInner`, with determinant
+      `1`, fixing `M`, and sending `Rleft` into the frame span, it packages that
+      equivalence as `Λfix : ComplexLorentzGroup d` and proves exactly the
+      `Λfix_M` and `left_span` fields needed below.
+
       Lean-shaped proof of the residual-frame-extension producer after the
       support packet exists:
 
@@ -25888,12 +25963,45 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 intro c m
                 exact F.q_mem c m)
               (hEleft_Q x) m
+        have hQleft_orth_M :
+            ∀ x : Qleft, ∀ m : A.M,
+              BHW.sourceComplexMinkowskiInner d
+                (x : Fin (d + 1) -> ℂ)
+                (m : Fin (d + 1) -> ℂ) = 0 := by
+          intro x m
+          rcases x.2 with ⟨r, hr⟩
+          simpa [hr] using hEleft_orth_M r m
+        have hM_disjoint_Qleft : Disjoint A.M Qleft :=
+          BHW.complexMinkowski_disjoint_of_nondegenerate_orthogonal
+            A.M_nondeg hQleft_orth_M
         let Domain : Submodule ℂ (Fin (d + 1) -> ℂ) := A.M ⊔ Rleft
         let Target : Submodule ℂ (Fin (d + 1) -> ℂ) := A.M ⊔ Qleft
         let T : ↥Domain ≃ₗ[ℂ] ↥Target :=
           BHW.directSum_identity_sum_isotropicEmbedding
             (d := d) A.M Rleft Eleft A.M_nondeg hRleft_orth
             hEleft_inj hEleft_orth_M
+        have hT_maps_M :
+            ∀ m : A.M,
+              ((T ⟨(m : Fin (d + 1) -> ℂ),
+                  Submodule.mem_sup_left m.2⟩ : ↥Target) :
+                Fin (d + 1) -> ℂ) =
+                (m : Fin (d + 1) -> ℂ) := by
+          intro m
+          exact
+            BHW.directSum_identity_sum_isotropicEmbedding_maps_left
+              (d := d) A.M_nondeg hRleft_orth hEleft_inj
+              hEleft_orth_M m
+        have hT_maps_Rleft_Qleft :
+            ∀ x : Rleft,
+              ((T ⟨(x : Fin (d + 1) -> ℂ),
+                  Submodule.mem_sup_right x.2⟩ : ↥Target) :
+                Fin (d + 1) -> ℂ) ∈ Qleft := by
+          intro x
+          have hx :=
+            BHW.directSum_identity_sum_isotropicEmbedding_maps_right
+              (d := d) A.M_nondeg hRleft_orth hEleft_inj
+              hEleft_orth_M x
+          exact ⟨x, by simpa [Qleft] using (congrArg Subtype.val hx).symm⟩
         have hT_preserves :
             ∀ x y : ↥Domain,
               BHW.sourceComplexMinkowskiInner d
@@ -25907,10 +26015,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
             hEleft_orth_M hEleft_preserves
         rcases BHW.complexMinkowski_selectedResidualHyperbolicExtension
             (d := d) hd (M := A.M) (Rleft := Rleft)
-            (Qleft := Qleft) (Qspan := Qspan) T hT_preserves
-            F.q_independent F.q_pair_zero F.q_mem
-            hQleft_le_Qspan hM_disjoint_left with
-          ⟨Λfix, hΛfix_M, hΛfix_left_Q, hΛfix_det_one⟩
+            (Qleft := Qleft) A.M_nondeg hRleft_orth hQleft_orth_M
+            hM_disjoint_left hM_disjoint_Qleft T hT_maps_M
+            hT_maps_Rleft_Qleft hT_preserves F.q_independent
+            F.q_pair_zero F.q_mem hQleft_le_Qspan with
+          ⟨Λfix, hΛfix_M, hΛfix_left_Q⟩
         refine
           { F := F
             Λfix := Λfix

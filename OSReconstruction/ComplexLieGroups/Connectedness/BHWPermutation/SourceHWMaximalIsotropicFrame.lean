@@ -278,4 +278,53 @@ def hw_lowRank_residualAlignmentData_of_frameExtensionData
           d A.M (D.F.q c)).1 (D.F.q_mem c) m
     q_independent := D.F.q_independent }
 
+/-- Package an already constructed ambient determinant-one form-preserving
+linear equivalence as the residual hyperbolic extension output.
+
+The hard geometric theorem still has to build `E` from hyperbolic dual
+completions of the degenerate residual blocks.  Once such an ambient `E` is
+available, this lemma is the mechanical bridge to the proper complex Lorentz
+group and the two fields needed by the frame-extension producer. -/
+theorem complexMinkowski_selectedResidualHyperbolicExtension_of_ambientLinearEquiv
+    {d s : ℕ}
+    {M Rleft : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {q : Fin s → Fin (d + 1) → ℂ}
+    (E : (Fin (d + 1) → ℂ) ≃ₗ[ℂ] (Fin (d + 1) → ℂ))
+    (hpres :
+      ∀ x y,
+        sourceComplexMinkowskiInner d (E x) (E y) =
+          sourceComplexMinkowskiInner d x y)
+    (hdet : LinearMap.det E.toLinearMap = 1)
+    (hE_M : ∀ m : M, E (m : Fin (d + 1) → ℂ) = (m : Fin (d + 1) → ℂ))
+    (hE_left_span :
+      ∀ x : Rleft,
+        E (x : Fin (d + 1) → ℂ) ∈ Submodule.span ℂ (Set.range q)) :
+    ∃ Λfix : ComplexLorentzGroup d,
+      (∀ m : M,
+        complexLorentzVectorAction Λfix
+          (m : Fin (d + 1) → ℂ) =
+        (m : Fin (d + 1) → ℂ)) ∧
+      ∀ x : Rleft,
+        complexLorentzVectorAction Λfix
+          (x : Fin (d + 1) → ℂ) ∈ Submodule.span ℂ (Set.range q) := by
+  let Λfix := complexLorentzGroupOfLinearEquivPreservesInner d E hpres hdet
+  refine ⟨Λfix, ?_, ?_⟩
+  · intro m
+    calc
+      complexLorentzVectorAction Λfix (m : Fin (d + 1) → ℂ) =
+          E (m : Fin (d + 1) → ℂ) := by
+            simpa [Λfix] using
+              complexLorentzVectorAction_ofLinearEquivPreservesInner
+                d E hpres hdet (m : Fin (d + 1) → ℂ)
+      _ = (m : Fin (d + 1) → ℂ) := hE_M m
+  · intro x
+    have haction :
+        complexLorentzVectorAction Λfix (x : Fin (d + 1) → ℂ) =
+          E (x : Fin (d + 1) → ℂ) := by
+      simpa [Λfix] using
+        complexLorentzVectorAction_ofLinearEquivPreservesInner
+          d E hpres hdet (x : Fin (d + 1) → ℂ)
+    rw [haction]
+    exact hE_left_span x
+
 end BHW
