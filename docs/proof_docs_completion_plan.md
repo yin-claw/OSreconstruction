@@ -3170,7 +3170,8 @@ implementation contract is:
    on the quotient via `Submodule.mapQ_apply`.  These are ordinary
    finite-dimensional linear algebra support lemmas, not source imports and
    not public theorem-2 wrappers.
-   The full-complex Witt extension is now decomposed as well: since
+   The full-complex Witt extension is now checked in
+   `SourceFullComplexLorentzWitt.lean`: since
    `HWHighRankSpanIsometryData` supplies nondegenerate `S.M` and `S.N`, use
    `Submodule.prodEquivOfIsCompl` to split the ambient space as each source
    span plus its orthogonal complement, choose an isometry between the two
@@ -3178,15 +3179,20 @@ implementation contract is:
    nondegenerate complex symmetric bilinear forms, and assemble the product
    map into `HallWightmanFullComplexLorentzGroup` by converting a
    source-inner-preserving linear equivalence to a matrix.  The classification
-   helper is now proof-doc pinned locally: take Mathlib orthogonal bases,
+   helper is a checked theorem: take Mathlib orthogonal bases,
    use nondegeneracy to prove all diagonal entries are nonzero, use
    `IsAlgClosed.exists_pow_nat_eq` over `ℂ` to rescale them to diagonal
    `1` with `Basis.isUnitSMul`, and compare both forms by
    `LinearMap.sum_repr_mul_repr_mul` in the normalized bases.  This is finite
    linear algebra only and no new axiom is authorized or needed.
-   Until these finite linear-algebra sublemmas are implemented sorry-free, the
-   high-rank orbit theorem remains blocked after the span-isometry
-   construction.
+   The determinant-`1` consumer
+   `BHW.complexMinkowski_wittExtension_detOne_of_sourceSpan`, the scalar
+   high-rank proper orbit theorem `BHW.hw_sameSourceGram_regular_orbit`, and
+   the active oriented max-rank consumer
+   `BHW.hw_sameSourceOrientedInvariant_maxRank_properOrbit` are also checked
+   in that file.  The remaining theorem-2 branch-law work is now below this
+   high-rank proper-orbit row: the conditional pure-Gram improper alternative
+   and, for the active oriented route, the low-rank singular-limit packet.
    The active
    germ API
    `BHW.SourceVarietyGermHolomorphicOn`,
@@ -6018,7 +6024,7 @@ implementation contract is:
    | Restricted-rank bridge | Implemented and exact-file checked in `BHWPermutation/SourceRank.lean`. | The checked proof identifies scalar matrix rank with `finrank (range sourceCoefficientGramMap)`, quotients coefficient space by `ker sourceCoefficientEval` using `Submodule.liftQ` and `Submodule.range_liftQ`, identifies the lifted kernel with the restricted radical through `sourceCoefficientEval.quotKerEquivRange`, applies `LinearMap.finrank_range_add_finrank_ker`, and assembles `sourceGramMatrixRank_eq_restrictedMinkowskiRank_range`. |
    | High-rank kernel transport | Implemented and exact-file checked in `BHWPermutation/SourceRank.lean`. | Defines `ComplexMinkowskiNondegenerateSubspace`; proves that a degenerate restricted span has positive radical finrank, hence restricted rank below span dimension, span dimension `<= n` and `<= d`, scalar rank `< min d n`, high-rank span nondegeneracy, `ker evalZ = gramKernel`, and same-Gram transport `ker evalZ = ker evalW`. |
    | High-rank span isometry data | Implemented and exact-file checked in `BHWPermutation/SourceRank.lean`. | Constructs the quotient-induced isometry as `hwHighRankSpanIsometryOfKernelEq`, proves `hwHighRankSpanIsometry_apply_eval`, packages `HWHighRankSpanIsometryData` by `hw_highRank_spanIsometryData_of_sameSourceGram`, and proves `HWHighRankSpanIsometryData_sourceGram_eq`.  This closes the well-defined coefficient-quotient part before any Witt extension. |
-   | High-rank determinant/Witt orbit theorem | Partial production Lean in progress. | Starting from `HWHighRankSpanIsometryData`, split the Witt extension into determinant-`1` proper orbit and determinant-`-1` improper full-complex-orthogonal orbit.  The full-complex group object, determinant/action algebra, proper-span complement/nonisotropic packet, Householder determinant repair, proper-span determinant-`-1` reflection consumer, full-frame determinant action, and full-rank determinant-ratio identification are now implemented in `SourceFullComplexLorentz.lean`, `SourceFullComplexLorentzFrame.lean`, `SourceRank.lean`, and `SourceOrientedFullFrameMaxRankProducer.lean`.  The remaining production Lean in this row is the full-complex extension through source span plus orthogonal complement, including complement-isometry classification over `ℂ`, product assembly, conversion from inner-preserving linear equivalence to `HallWightmanFullComplexLorentzGroup`, and final vectorwise-to-configuration orbit assembly.  The classification proof is pinned by orthogonal bases, complex square-root normalization, and the coordinate-sum identity.  No theorem-shape gap remains in this high-rank row; the conditional pure-Gram fork still needs Hall-Wightman's space-inversion/improper-component source input. |
+   | High-rank determinant/Witt orbit theorem | Active oriented proper-orbit branch implemented and exact-file checked in `SourceFullComplexLorentzWitt.lean`; full-complex group support checked in `SourceFullComplexLorentz.lean` and `SourceFullComplexLorentzFrame.lean`. | Starting from `HWHighRankSpanIsometryData`, the checked theorem `complexMinkowski_wittExtension_full_of_sourceSpan` splits the ambient space through source span plus orthogonal complement, proves complement-isometry classification over `ℂ`, assembles the product map, and packages it as a full complex Lorentz transformation.  The checked theorem `complexMinkowski_wittExtension_detOne_of_sourceSpan` then performs determinant repair in the proper-span branch and uses the full-frame determinant ratio in the full-rank branch.  The checked consumers `hw_sameSourceGram_regular_orbit` and `hw_sameSourceOrientedInvariant_maxRank_properOrbit` give the active determinant-`1` orbit needed by the oriented route.  The conditional pure-Gram improper alternative remains separate and still needs Hall-Wightman's space-inversion/improper-component source input; it is not needed for the active oriented max-rank proper-orbit consumer. |
    | Low-rank selected principal block and residual frame | Checked in `BHWPermutation/SourceHWSelectedProjection.lean`; principal-minor extraction checked locally. | The checked layer defines `sourcePrincipalGramMatrix`, `hw_selectedSpanCoeff`, `hwLemma3_selectedProjection`, and `hwLemma3_selectedResidual`; proves selected rows are fixed, `row_i * A⁻¹ * A = row_i`, selected/projection-residual orthogonality, the complementary residual-Schur entry theorem, rank-`r` residual-residual zero, original/residual orthogonality, projection Gram equality, projected-span finrank `r`, explicit finite-frame coordinates for span membership, and `hwLemma3_selectedResidual_isotropicFrameData`.  Remaining low-rank work starts at extended-tube coefficient freedom and the two-endpoint residual alignment theorem, not selected Schur algebra. |
    | Low-rank residual-frame alignment | Proof transcript pinned; production Lean not started. | Align selected spans first, extract the residual span, choose an independent common isotropic frame `q`, store explicit coefficient functions for both residual families, and prove pairwise isotropy plus orthogonality to the selected block from the zero Schur complement. |
    | Dual frame and contraction family | Proof transcript pinned; production Lean not started. | Store `qDual_pair_zero`, `q_dual`, `qDual_orth`, build the finite partial boost scaling `q`/`qDual`, and Witt-extend it; the dual frame is used only for null-boost contraction and the two-curve value equality/limit, not for the coefficient-freedom membership theorem. |
