@@ -163,4 +163,69 @@ theorem maximal_span
 
 end ComplexMinkowskiMaximalIsotropicFrameIn
 
+/-- A totally isotropic subspace of the same ambient subspace embeds into a
+maximal isotropic frame. -/
+theorem complexMinkowski_totallyIsotropic_embedding_into_maximalFrame
+    {d : ℕ}
+    {N R : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (F : ComplexMinkowskiMaximalIsotropicFrameIn d N)
+    (hR_le : R ≤ N)
+    (hR_iso : ComplexMinkowskiTotallyIsotropicSubspace d R) :
+    ∃ E : R →ₗ[ℂ] (Fin (d + 1) → ℂ),
+      Function.Injective E ∧
+      (∀ x : R, E x ∈ Submodule.span ℂ (Set.range F.q)) ∧
+      ∀ x y : R,
+        sourceComplexMinkowskiInner d (E x) (E y) =
+          sourceComplexMinkowskiInner d
+            (x : Fin (d + 1) → ℂ)
+            (y : Fin (d + 1) → ℂ) :=
+  complexMinkowski_totallyIsotropic_embedding_into_frame
+    (d := d) (s := F.s) (R := R) (q := F.q)
+    F.q_independent F.q_pair_zero hR_iso
+    (F.maximal R hR_le hR_iso)
+
+/-- A maximal isotropic frame supplies the dimension bound required by the
+direct-sum residual embedding packet. -/
+theorem directSum_identity_sum_isotropicMaximalFrameEmbedding
+    {d : ℕ}
+    {M N R : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (F : ComplexMinkowskiMaximalIsotropicFrameIn d N)
+    (hM : ComplexMinkowskiNondegenerateSubspace d M)
+    (hR_orth :
+      ∀ x : R, ∀ m : M,
+        sourceComplexMinkowskiInner d
+          (x : Fin (d + 1) → ℂ)
+          (m : Fin (d + 1) → ℂ) = 0)
+    (hR_le : R ≤ N)
+    (hR_iso : ComplexMinkowskiTotallyIsotropicSubspace d R)
+    (hq_orth_M :
+      ∀ c (m : M),
+        sourceComplexMinkowskiInner d (F.q c)
+          (m : Fin (d + 1) → ℂ) = 0) :
+    ∃ (E : R →ₗ[ℂ] (Fin (d + 1) → ℂ))
+      (hE_inj : Function.Injective E)
+      (hE_orth :
+        ∀ x : R, ∀ m : M,
+          sourceComplexMinkowskiInner d (E x)
+            (m : Fin (d + 1) → ℂ) = 0),
+      (∀ x : R, E x ∈ Submodule.span ℂ (Set.range F.q)) ∧
+      (∀ x y : R,
+        sourceComplexMinkowskiInner d (E x) (E y) =
+          sourceComplexMinkowskiInner d
+            (x : Fin (d + 1) → ℂ)
+            (y : Fin (d + 1) → ℂ)) ∧
+      let T := directSum_identity_sum_isotropicEmbedding
+        (d := d) M R E hM hR_orth hE_inj hE_orth
+      ∀ x y : ↥(M ⊔ R),
+        sourceComplexMinkowskiInner d
+          ((T x : ↥(M ⊔ LinearMap.range E)) : Fin (d + 1) → ℂ)
+          ((T y : ↥(M ⊔ LinearMap.range E)) : Fin (d + 1) → ℂ) =
+        sourceComplexMinkowskiInner d
+          (x : Fin (d + 1) → ℂ)
+          (y : Fin (d + 1) → ℂ) :=
+  directSum_identity_sum_isotropicFrameEmbedding
+    (d := d) (s := F.s) (M := M) (R := R) (q := F.q)
+    hM hR_orth F.q_independent F.q_pair_zero hq_orth_M hR_iso
+    (F.maximal R hR_le hR_iso)
+
 end BHW
