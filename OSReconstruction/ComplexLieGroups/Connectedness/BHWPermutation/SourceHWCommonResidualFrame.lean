@@ -1,3 +1,4 @@
+import Mathlib.LinearAlgebra.Dual.Lemmas
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceHWLowRankAlignment
 
 /-!
@@ -652,5 +653,292 @@ theorem coefficients_of_family_mem_span_finite_frame
   choose a ha using fun i =>
     exists_coefficients_of_mem_span_finite_frame (hv i)
   exact ⟨a, ha⟩
+
+/-- A raw frame dual to a totally isotropic frame can be corrected, inside the
+same subspace, to an isotropic dual frame.  The correction is the standard
+Gram-matrix half-subtraction
+`y c - (1 / 2) • ∑ k, ⟪y c, y k⟫ • q k`; the `q`-dual pairings are unchanged
+because the `q`-frame is totally isotropic, and the self-pairings cancel by
+symmetry of the complex Minkowski form. -/
+theorem complexMinkowski_isotropicDualFrame_of_rawDualFrame
+    {d s : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {q y : Fin s → Fin (d + 1) → ℂ}
+    (hq_mem : ∀ c, q c ∈ N)
+    (hy_mem : ∀ c, y c ∈ N)
+    (hq_pair_zero :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (q c') = 0)
+    (hy_dual :
+      ∀ c c',
+        sourceComplexMinkowskiInner d (q c) (y c') =
+          if c = c' then (1 : ℂ) else 0) :
+    ∃ qDual : Fin s → Fin (d + 1) → ℂ,
+      (∀ c, qDual c ∈ N) ∧
+      (∀ c c', sourceComplexMinkowskiInner d (qDual c) (qDual c') = 0) ∧
+      ∀ c c',
+        sourceComplexMinkowskiInner d (q c) (qDual c') =
+          if c = c' then (1 : ℂ) else 0 := by
+  let corr : Fin s → Fin (d + 1) → ℂ :=
+    fun c => (2 : ℂ)⁻¹ •
+      (∑ k : Fin s, sourceComplexMinkowskiInner d (y c) (y k) • q k)
+  let qDual : Fin s → Fin (d + 1) → ℂ := fun c => y c - corr c
+  refine ⟨qDual, ?_, ?_, ?_⟩
+  · intro c
+    apply Submodule.sub_mem
+    · exact hy_mem c
+    · apply Submodule.smul_mem
+      exact Submodule.sum_mem _ fun k _ =>
+        Submodule.smul_mem _ _ (hq_mem k)
+  · intro i j
+    have h_y_corr :
+        sourceComplexMinkowskiInner d (y i) (corr j) =
+          (2 : ℂ)⁻¹ * sourceComplexMinkowskiInner d (y i) (y j) := by
+      change sourceComplexMinkowskiInner d (y i)
+          ((2 : ℂ)⁻¹ •
+            (∑ k : Fin s, sourceComplexMinkowskiInner d (y j) (y k) • q k)) = _
+      rw [sourceComplexMinkowskiInner_smul_right,
+        sourceComplexMinkowskiInner_sum_smul_right]
+      have hsum :
+          (∑ k : Fin s,
+              sourceComplexMinkowskiInner d (y j) (y k) *
+                sourceComplexMinkowskiInner d (y i) (q k)) =
+            sourceComplexMinkowskiInner d (y j) (y i) := by
+        calc
+          (∑ k : Fin s,
+              sourceComplexMinkowskiInner d (y j) (y k) *
+                sourceComplexMinkowskiInner d (y i) (q k)) =
+            ∑ k : Fin s,
+              sourceComplexMinkowskiInner d (y j) (y k) *
+                (if k = i then (1 : ℂ) else 0) := by
+                apply Finset.sum_congr rfl
+                intro k _
+                rw [sourceComplexMinkowskiInner_comm d (y i) (q k),
+                  hy_dual]
+          _ = sourceComplexMinkowskiInner d (y j) (y i) := by
+                simp
+      rw [hsum]
+      rw [sourceComplexMinkowskiInner_comm d (y j) (y i)]
+    have h_corr_y :
+        sourceComplexMinkowskiInner d (corr i) (y j) =
+          (2 : ℂ)⁻¹ * sourceComplexMinkowskiInner d (y i) (y j) := by
+      change sourceComplexMinkowskiInner d
+          ((2 : ℂ)⁻¹ •
+            (∑ k : Fin s, sourceComplexMinkowskiInner d (y i) (y k) • q k))
+          (y j) = _
+      rw [sourceComplexMinkowskiInner_smul_left,
+        sourceComplexMinkowskiInner_sum_smul_left]
+      have hsum :
+          (∑ k : Fin s,
+              sourceComplexMinkowskiInner d (y i) (y k) *
+                sourceComplexMinkowskiInner d (q k) (y j)) =
+            sourceComplexMinkowskiInner d (y i) (y j) := by
+        calc
+          (∑ k : Fin s,
+              sourceComplexMinkowskiInner d (y i) (y k) *
+                sourceComplexMinkowskiInner d (q k) (y j)) =
+            ∑ k : Fin s,
+              sourceComplexMinkowskiInner d (y i) (y k) *
+                (if k = j then (1 : ℂ) else 0) := by
+                apply Finset.sum_congr rfl
+                intro k _
+                rw [hy_dual]
+          _ = sourceComplexMinkowskiInner d (y i) (y j) := by
+                simp
+      rw [hsum]
+    have h_corr_corr :
+        sourceComplexMinkowskiInner d (corr i) (corr j) = 0 := by
+      change sourceComplexMinkowskiInner d
+          ((2 : ℂ)⁻¹ •
+            (∑ k : Fin s, sourceComplexMinkowskiInner d (y i) (y k) • q k))
+          ((2 : ℂ)⁻¹ •
+            (∑ k : Fin s, sourceComplexMinkowskiInner d (y j) (y k) • q k)) = 0
+      rw [sourceComplexMinkowskiInner_smul_left,
+        sourceComplexMinkowskiInner_smul_right,
+        sourceComplexMinkowskiInner_sum_smul_left]
+      simp [sourceComplexMinkowskiInner_sum_smul_right, hq_pair_zero]
+    change sourceComplexMinkowskiInner d (y i - corr i) (y j - corr j) = 0
+    rw [sourceComplexMinkowskiInner_sub_left,
+      sourceComplexMinkowskiInner_sub_right,
+      sourceComplexMinkowskiInner_sub_right]
+    rw [h_y_corr, h_corr_y, h_corr_corr]
+    ring
+  · intro i j
+    have hq_corr : sourceComplexMinkowskiInner d (q i) (corr j) = 0 := by
+      change sourceComplexMinkowskiInner d (q i)
+          ((2 : ℂ)⁻¹ •
+            (∑ k : Fin s, sourceComplexMinkowskiInner d (y j) (y k) • q k)) = 0
+      rw [sourceComplexMinkowskiInner_smul_right,
+        sourceComplexMinkowskiInner_sum_smul_right]
+      simp [hq_pair_zero]
+    change sourceComplexMinkowskiInner d (q i) (y j - corr j) = _
+    rw [sourceComplexMinkowskiInner_sub_right, hq_corr, sub_zero, hy_dual]
+
+/-- In a nondegenerate subspace, an independent finite frame has raw dual
+vectors for the restricted complex Minkowski pairing.  These raw duals are not
+yet isotropic; `complexMinkowski_isotropicDualFrame_of_rawDualFrame` performs
+the subsequent isotropization when the original frame is totally isotropic. -/
+theorem complexMinkowski_rawDualFrameIn
+    {d s : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {q : Fin s → Fin (d + 1) → ℂ}
+    (hN : ComplexMinkowskiNondegenerateSubspace d N)
+    (hq_mem : ∀ c, q c ∈ N)
+    (hq_independent : LinearIndependent ℂ q) :
+    ∃ y : Fin s → Fin (d + 1) → ℂ,
+      (∀ c, y c ∈ N) ∧
+      ∀ c c',
+        sourceComplexMinkowskiInner d (q c) (y c') =
+          if c = c' then (1 : ℂ) else 0 := by
+  let qN : Fin s → N := fun c => ⟨q c, hq_mem c⟩
+  have hqN_independent : LinearIndependent ℂ qN := by
+    rw [Fintype.linearIndependent_iff]
+    intro a hsum i
+    have hsum_val : (∑ j : Fin s, a j • q j) = 0 := by
+      have h := congrArg (fun x : N => (x : Fin (d + 1) → ℂ)) hsum
+      simpa [qN] using h
+    exact (Fintype.linearIndependent_iff.mp hq_independent a hsum_val) i
+  let Q : Submodule ℂ N := Submodule.span ℂ (Set.range qN)
+  let bQ : Module.Basis (Fin s) ℂ Q := Module.Basis.span hqN_independent
+  let B := (sourceComplexMinkowskiBilinForm d).restrict N
+  have hBnd : B.Nondegenerate := by
+    simpa [B] using complexMinkowskiNondegenerateSubspace_to_restrict d N hN
+  let phi : Fin s → Module.Dual ℂ N := fun c =>
+    Subspace.dualLift Q (bQ.coord c)
+  let yN : Fin s → N := fun c => (B.toDual hBnd).symm (phi c)
+  let y : Fin s → Fin (d + 1) → ℂ := fun c => yN c
+  refine ⟨y, ?_, ?_⟩
+  · intro c
+    exact (yN c).2
+  · intro i j
+    have hraw : B (yN j) (qN i) = if i = j then (1 : ℂ) else 0 := by
+      calc
+        B (yN j) (qN i) = phi j (qN i) := by
+          simp [yN]
+        _ = bQ.coord j ⟨qN i, Submodule.subset_span ⟨i, rfl⟩⟩ := by
+          change (Subspace.dualLift Q (bQ.coord j)) (qN i) =
+            bQ.coord j ⟨qN i, Submodule.subset_span ⟨i, rfl⟩⟩
+          exact Subspace.dualLift_of_mem (W := Q) (φ := bQ.coord j)
+            (show qN i ∈ Q from Submodule.subset_span ⟨i, rfl⟩)
+        _ = if i = j then (1 : ℂ) else 0 := by
+          by_cases hij : i = j <;> simp [bQ, Q, hij]
+    have hraw' :
+        sourceComplexMinkowskiInner d (y j) (q i) =
+          if i = j then (1 : ℂ) else 0 := by
+      change B (yN j) (qN i) = if i = j then (1 : ℂ) else 0
+      exact hraw
+    rw [sourceComplexMinkowskiInner_comm d (q i) (y j)]
+    exact hraw'
+
+/-- An independent totally isotropic frame in a nondegenerate subspace admits an
+isotropic dual frame inside the same subspace.  This is the finite-dimensional
+dual-frame packet used by the low-rank null-boost construction. -/
+theorem complexMinkowski_isotropicFrame_dualFrameIn
+    {d s : ℕ}
+    {N : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hN : ComplexMinkowskiNondegenerateSubspace d N)
+    {q : Fin s → Fin (d + 1) → ℂ}
+    (hq_mem : ∀ c, q c ∈ N)
+    (hq_independent : LinearIndependent ℂ q)
+    (hq_pair_zero :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (q c') = 0) :
+    ∃ qDual : Fin s → Fin (d + 1) → ℂ,
+      (∀ c, qDual c ∈ N) ∧
+      (∀ c c', sourceComplexMinkowskiInner d (qDual c) (qDual c') = 0) ∧
+      ∀ c c',
+        sourceComplexMinkowskiInner d (q c) (qDual c') =
+          if c = c' then (1 : ℂ) else 0 := by
+  rcases complexMinkowski_rawDualFrameIn
+      (d := d) (s := s) (N := N) (q := q)
+      hN hq_mem hq_independent with
+    ⟨y, hy_mem, hy_dual⟩
+  exact complexMinkowski_isotropicDualFrame_of_rawDualFrame
+    (d := d) (s := s) (N := N) (q := q) (y := y)
+    hq_mem hy_mem hq_pair_zero hy_dual
+
+/-- A residual isotropic frame orthogonal to a nondegenerate selected span has
+an isotropic dual frame in the same orthogonal complement.  The returned
+orthogonality-to-`ξ` field is just orthogonality to `M`, since the base vectors
+lie in `M`. -/
+theorem complexMinkowski_isotropicDualFrame_of_residualFrame
+    {d n s : ℕ}
+    {ξ : Fin n → Fin (d + 1) → ℂ}
+    {q : Fin s → Fin (d + 1) → ℂ}
+    {M : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hM_nondeg : ComplexMinkowskiNondegenerateSubspace d M)
+    (hξ_mem : ∀ i, ξ i ∈ M)
+    (hq_orth_M :
+      ∀ c (m : M),
+        sourceComplexMinkowskiInner d
+          (q c) (m : Fin (d + 1) → ℂ) = 0)
+    (hq_pair_zero :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (q c') = 0)
+    (hq_independent : LinearIndependent ℂ q) :
+    ∃ qDual : Fin s → Fin (d + 1) → ℂ,
+      (∀ c c', sourceComplexMinkowskiInner d (qDual c) (qDual c') = 0) ∧
+      (∀ c c',
+        sourceComplexMinkowskiInner d (q c) (qDual c') =
+          if c = c' then (1 : ℂ) else 0) ∧
+      (∀ c (m : M),
+        sourceComplexMinkowskiInner d
+          (qDual c) (m : Fin (d + 1) → ℂ) = 0) ∧
+      ∀ c i, sourceComplexMinkowskiInner d (qDual c) (ξ i) = 0 := by
+  let N := complexMinkowskiOrthogonalSubmodule d M
+  have hN : ComplexMinkowskiNondegenerateSubspace d N :=
+    complexMinkowskiOrthogonalSubmodule_nondegenerate d hM_nondeg
+  have hq_mem : ∀ c, q c ∈ N := by
+    intro c
+    change q c ∈ complexMinkowskiOrthogonalSubmodule d M
+    rw [mem_complexMinkowskiOrthogonalSubmodule_iff]
+    intro m
+    exact hq_orth_M c m
+  rcases complexMinkowski_isotropicFrame_dualFrameIn
+      (d := d) (s := s) (N := N)
+      hN hq_mem hq_independent hq_pair_zero with
+    ⟨qDual, hqDual_mem, hqDual_pair_zero, hq_dual⟩
+  have hqDual_orth_M :
+      ∀ c (m : M),
+        sourceComplexMinkowskiInner d
+          (qDual c) (m : Fin (d + 1) → ℂ) = 0 := by
+    intro c m
+    exact
+      (mem_complexMinkowskiOrthogonalSubmodule_iff d M (qDual c)).1
+        (by simpa [N] using hqDual_mem c) m
+  refine ⟨qDual, hqDual_pair_zero, hq_dual, hqDual_orth_M, ?_⟩
+  intro c i
+  exact hqDual_orth_M c ⟨ξ i, hξ_mem i⟩
+
+/-- A finite residual expansion with all coefficients scaled by `exp (-t)`
+converges to the base configuration.  This is the convergence calculation used
+by the low-rank singular normal-form producer; it depends only on finite
+products and `exp (-t) → 0`, not on any continuity of the chosen Lorentz
+transform family. -/
+theorem tendsto_isotropicResidual_exp_neg_base
+    {d n s : ℕ}
+    (ξ : Fin n → Fin (d + 1) → ℂ)
+    (a : Fin n → Fin s → ℂ)
+    (q : Fin s → Fin (d + 1) → ℂ) :
+    Tendsto
+      (fun t : ℝ =>
+        fun i μ =>
+          ξ i μ + ∑ c : Fin s, (Real.exp (-t) : ℂ) * a i c * q c μ)
+      atTop (nhds ξ) := by
+  rw [tendsto_pi_nhds]
+  intro i
+  rw [tendsto_pi_nhds]
+  intro μ
+  have hsum :
+      Tendsto
+        (fun t : ℝ =>
+          ∑ c : Fin s, (Real.exp (-t) : ℂ) * a i c * q c μ)
+        atTop (nhds (0 : ℂ)) := by
+    simpa using
+      tendsto_finset_sum (s := Finset.univ)
+        (fun c _ =>
+          (tendsto_complex_exp_neg_atTop_nhds_zero.mul
+            (tendsto_const_nhds (x := a i c))).mul
+            (tendsto_const_nhds (x := q c μ)))
+  have hconst : Tendsto (fun _ : ℝ => ξ i μ) atTop (nhds (ξ i μ)) :=
+    tendsto_const_nhds
+  simpa using hconst.add hsum
 
 end BHW
