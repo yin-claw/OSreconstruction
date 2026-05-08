@@ -6050,10 +6050,14 @@ implementation contract is:
    `BHW.complexMinkowskiRelativeOrthogonalQuotientPreimageInRperp`,
    `BHW.complexMinkowskiRelativeOrthogonalQuotientPreimageInN`,
    `BHW.complexMinkowskiRelativeOrthogonalQuotientPreimage`, and
-   `BHW.complexMinkowskiRelativeOrthogonalQuotientPreimage_le`.  The next pass
-   should add the quotient-zero containment of the original `R`, the isotropy
-   pullback from a quotient-isotropic `Qbar`, the maximal-quotient choice, and
-   the rank-nullity comparison for arbitrary isotropic `S ≤ N`.
+   `BHW.complexMinkowskiRelativeOrthogonalQuotientPreimage_le`, with the
+   quotient-zero containment checked as
+   `BHW.complexMinkowskiSubmoduleInRelativeOrthogonal_mkQ_mem_quotientPreimage`,
+   `BHW.complexMinkowskiSubmodule_mem_relativeOrthogonalQuotientPreimage`, and
+   `BHW.complexMinkowskiSubmodule_le_relativeOrthogonalQuotientPreimage`.  The
+   next pass should add the isotropy pullback from a quotient-isotropic `Qbar`,
+   the maximal-quotient choice, and the rank-nullity comparison for arbitrary
+   isotropic `S ≤ N`.
    It should not start by adding a new generic
    `complexMinkowski_wittExtension_subspaceIsometry` theorem.
    The residual-frame alignment now has an
