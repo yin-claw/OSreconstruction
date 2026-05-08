@@ -145,14 +145,18 @@ local Slot 1:
    `BHW.sourceDistributionalAdjacentTubeAnchor_of_orientedContinuationInputs`
    and its exact-source-patch specialization
    `BHW.sourceDistributionalAdjacentTubeAnchor_of_orientedContinuationInputs_on_figure24SourcePatch`,
-   so the remaining input can be stated directly as ordinary/adjacent strict
+   and the sibling selected-Jost packet constructors
+   `BHW.selectedAdjacentDistributionalJostAnchorData_of_orientedContinuationInputs`
+   and
+   `BHW.selectedAdjacentDistributionalJostAnchorData_of_orientedContinuationInputs_on_figure24SourcePatch`
+   are checked too, so the remaining input can be stated directly as ordinary/adjacent strict
    oriented-continuation packets on the canonical Figure-2-4 source patches
    plus the adjacent Wick trace there;
    the selected OS-side Jost data constructor from already-produced OS45
    envelopes is checked as
    `BHW.bvt_F_selectedAdjacentDistributionalJostAnchorData_of_os45Envelopes`,
-   reducing that route to the actual single-chart common-boundary/envelope
-   supplier; the common-chart variant
+   but this is a downstream/common-boundary handoff, not the active upstream
+   producer for the source anchor; the common-chart variant
    `BHW.bvt_F_selectedAdjacentDistributionalJostAnchorData_of_commonChartEnvelopes`
    is also checked, so the supplier may return the common chart `Uc`, function
    `Hc`, and Wick/real trace identities directly and let the checked pullback
@@ -199,14 +203,14 @@ local Slot 1:
    call the checked one-chart local EOW/gluing route to produce
    `BHW.os45_adjacent_commonBoundaryEnvelope`.
 
-Only after this Slot 1 envelope exists does the route move to
-`bvt_F_selectedAdjacentDistributionalJostAnchorData_of_OSII`, the checked
-projection to `BHW.SourceDistributionalAdjacentTubeAnchor`, the direct source
-frontier `hallWightman_source_permutedBranch_compatibility_of_distributionalAnchor`,
-and then the `S''_n` single-valuedness/Jost boundary-transfer layer.  This
-downstream package is still the alternative to BHW/PET monodromy through
-`hOrbit`; it must not be used to manufacture the local source-germ or EOW
-inputs.
+Only after the direct pair-carrier/oriented-continuation source anchor exists
+does the route move to the direct source frontier
+`hallWightman_source_permutedBranch_compatibility_of_distributionalAnchor`,
+and then the `S''_n` single-valuedness/Jost boundary-transfer layer.  The
+single-chart common-boundary envelope remains downstream of the oriented
+real-seed/source-germ layer in the strict DAG; it must not be used to
+manufacture the pair carriers, the source anchor, the local source-germ, or
+its own EOW inputs.
 
 Readiness status for the active scalar-source route (2026-05-02):
 **proof-doc route pinned; public wrapper Lean not ready**.  The proof

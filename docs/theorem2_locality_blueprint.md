@@ -58886,20 +58886,25 @@ structure SelectedAdjacentDistributionalJostAnchorData
               (fun k => x (Equiv.swap i ⟨i.val + 1, hi⟩ k))) * φ x
 ```
 
-Construction of this package is genuine theorem-2 mathematics:
+Construction of this package is genuine theorem-2 mathematics, but the active
+strict route no longer obtains it from a single-chart common-boundary
+envelope.  The direct upstream producer is the OS I §4.5/BHW-Jost
+source-patch pair carrier on the canonical Figure-2-4 patches:
 
-1. obtain `V`, `rho`, all real-edge side conditions, and the single-chart
-   branch-difference envelope from the strengthened
-   `BHW.os45_adjacent_singleChart_commonBoundaryValue`; its proof in turn
-   starts from `BHW.os45_adjacent_localEOWGeometry (d := d) hd i hi`;
-2. apply
-   `BHW.bvt_F_adjacent_extendF_edgeDistribution_eq_of_osEOWDifferenceEnvelope`
-   to get the compact-test equality on `V`, using `.symm` if the checked
-   theorem is stated in the swap-first orientation;
-3. use the checked Hall-Wightman scalar-product geometry lemma
-   `BHW.exists_sourceDistributionalUniquenessEnvironment_of_open_jost_patch` to construct
-   `baseGramEnvironment`, its variety-level uniqueness proof, and the
-   realization/lift facts.
+1. construct
+   `P : BHW.OS45SourcePatchBHWJostPairData ... (BHW.os45Figure24SourcePatch ...)`
+   from the ordinary/adjacent strict oriented-continuation packets and the
+   adjacent Wick trace on that same patch;
+2. use the checked Euclidean-edge branch-difference zero plus `P.difference`
+   to derive the compact real source-patch equality through
+   `BHW.os45CompactFigure24WickPairingEq_of_pairData_on_figure24SourcePatch`;
+3. reindex that compact family by the checked
+   `BHW.sourceDistributionalAdjacentTubeAnchor_of_pairData_on_figure24SourcePatch`
+   and the selected-Jost sibling when needed.
+
+The older common-boundary/envelope constructor remains checked as a downstream
+handoff, but it is not an allowed input to the pair carrier, the source
+anchor, or the oriented source-germ layer.
 
 The Lean implementation target is the following constructor, followed by the
 already checked reindexing bridge.  The constructor is the next genuine
@@ -58914,23 +58919,26 @@ on each canonical `BHW.os45Figure24SourcePatch`, and the adjacent Wick trace is
 proved there, the direct source distributional adjacent-tube anchor is
 constructed mechanically.  This theorem is only a consumer bridge; it does not
 prove the OS I §4.5 branch theorem.
-The selected-data half of the same reduction is now checked as
+The selected-data half of the oriented-continuation reduction is checked as
+`BHW.selectedAdjacentDistributionalJostAnchorData_of_orientedContinuationInputs`
+and
+`BHW.selectedAdjacentDistributionalJostAnchorData_of_orientedContinuationInputs_on_figure24SourcePatch`.
+The selected-data half of the downstream common-envelope route is checked as
 `BHW.bvt_F_selectedAdjacentDistributionalJostAnchorData_of_os45Envelopes`.
 It implements the constructor below from a family of real-open Jost patches
 with left/right ET membership and a `Nonempty AdjacentOSEOWDifferenceEnvelope`
 on each patch.  The use of `Nonempty` is intentional: the envelope is a data
 structure, not a proposition, while the supplier hypothesis should remain a
-proof-level existence field.  The only unimplemented OS-side input for this
-constructor is therefore the single-chart common-boundary/envelope supplier
-itself.
+proof-level existence field.  This envelope supplier is downstream in the
+strict DAG and must not be used to manufacture the direct pair carrier.
 The common-chart handoff is checked too:
 `BHW.bvt_F_selectedAdjacentDistributionalJostAnchorData_of_commonChartEnvelopes`
 takes `V`, `ρ`, `Uc`, `Hc`, the Wick/real membership fields, and the two trace
 identities, applies
 `BHW.adjacentOSEOWDifferenceEnvelope_of_commonChartEnvelope`, and then uses the
-selected-data constructor.  Thus the next hard theorem may target the
-common-chart output exactly; no theorem after it needs to unpack or reprove
-the direct envelope pullback.
+selected-data constructor.  Thus the later common-envelope theorem may target
+the common-chart output exactly; no theorem after it needs to unpack or
+reprove the direct envelope pullback.
 
 ```lean
 noncomputable def bvt_F_selectedAdjacentDistributionalJostAnchorData_of_OSII
