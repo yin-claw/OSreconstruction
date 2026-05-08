@@ -1086,6 +1086,95 @@ theorem directSum_scale_sup_equiv_apply_of_eq_add
                   (d := d) (A := A) (B := B)
                   hdisj α β hα hβ b]
 
+/-- Apply independent linear equivalences on two complementary summands inside
+their supremum. -/
+noncomputable def directSum_congr_sup_equiv
+    {d : ℕ}
+    {A B : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hdisj : Disjoint A B)
+    (EA : A ≃ₗ[ℂ] A) (EB : B ≃ₗ[ℂ] B) :
+    ↥(A ⊔ B) ≃ₗ[ℂ] ↥(A ⊔ B) := by
+  let S : Submodule ℂ (Fin (d + 1) → ℂ) := A ⊔ B
+  let As : Submodule ℂ S := A.comap S.subtype
+  let Bs : Submodule ℂ S := B.comap S.subtype
+  have hcompl : IsCompl As Bs := by
+    simpa [S, As, Bs] using
+      isCompl_comap_sup_subtype_of_disjoint
+        (d := d) (M := A) (R := B) hdisj
+  let eA : As ≃ₗ[ℂ] A :=
+    Submodule.comapSubtypeEquivOfLe (show A ≤ S from le_sup_left)
+  let eB : Bs ≃ₗ[ℂ] B :=
+    Submodule.comapSubtypeEquivOfLe (show B ≤ S from le_sup_right)
+  let EA' : As ≃ₗ[ℂ] As := eA.trans (EA.trans eA.symm)
+  let EB' : Bs ≃ₗ[ℂ] Bs := eB.trans (EB.trans eB.symm)
+  exact (Submodule.prodEquivOfIsCompl As Bs hcompl).symm.trans
+    ((EA'.prodCongr EB').trans (Submodule.prodEquivOfIsCompl As Bs hcompl))
+
+/-- If `x = a + b`, the direct-sum congruence sends `x` to
+`EA a + EB b`. -/
+theorem directSum_congr_sup_equiv_apply_of_eq_add
+    {d : ℕ}
+    {A B : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hdisj : Disjoint A B)
+    (EA : A ≃ₗ[ℂ] A) (EB : B ≃ₗ[ℂ] B)
+    {x : ↥(A ⊔ B)} {a : A} {b : B}
+    (hx : (a : Fin (d + 1) → ℂ) + (b : Fin (d + 1) → ℂ) =
+      (x : Fin (d + 1) → ℂ)) :
+    ((directSum_congr_sup_equiv (d := d) (A := A) (B := B)
+        hdisj EA EB x : ↥(A ⊔ B)) : Fin (d + 1) → ℂ) =
+      (EA a : Fin (d + 1) → ℂ) + (EB b : Fin (d + 1) → ℂ) := by
+  let S : Submodule ℂ (Fin (d + 1) → ℂ) := A ⊔ B
+  let As : Submodule ℂ S := A.comap S.subtype
+  let Bs : Submodule ℂ S := B.comap S.subtype
+  have hcompl : IsCompl As Bs := by
+    simpa [S, As, Bs] using
+      isCompl_comap_sup_subtype_of_disjoint
+        (d := d) (M := A) (R := B) hdisj
+  let eA : As ≃ₗ[ℂ] A :=
+    Submodule.comapSubtypeEquivOfLe (show A ≤ S from le_sup_left)
+  let eB : Bs ≃ₗ[ℂ] B :=
+    Submodule.comapSubtypeEquivOfLe (show B ≤ S from le_sup_right)
+  let EA' : As ≃ₗ[ℂ] As := eA.trans (EA.trans eA.symm)
+  let EB' : Bs ≃ₗ[ℂ] Bs := eB.trans (EB.trans eB.symm)
+  let T : S ≃ₗ[ℂ] S :=
+    (Submodule.prodEquivOfIsCompl As Bs hcompl).symm.trans
+      ((EA'.prodCongr EB').trans (Submodule.prodEquivOfIsCompl As Bs hcompl))
+  have hTdef : directSum_congr_sup_equiv (d := d) (A := A) (B := B)
+      hdisj EA EB = T := by
+    rfl
+  rw [hTdef]
+  let y : S := x
+  let xA : ↥(A ⊔ B) :=
+    ⟨(a : Fin (d + 1) → ℂ), Submodule.mem_sup_left a.2⟩
+  let xB : ↥(A ⊔ B) :=
+    ⟨(b : Fin (d + 1) → ℂ), Submodule.mem_sup_right b.2⟩
+  let xa : As := ⟨xA, a.2⟩
+  let xb : Bs := ⟨xB, b.2⟩
+  have hsymm :
+      (Submodule.prodEquivOfIsCompl As Bs hcompl).symm y = (xa, xb) := by
+    refine (Submodule.prodEquivOfIsCompl As Bs hcompl).symm_apply_eq.2 ?_
+    apply Subtype.ext
+    simpa [y, xa, xb, xA, xB] using hx.symm
+  have hEA : ((EA' xa : As) : Fin (d + 1) → ℂ) =
+      (EA a : Fin (d + 1) → ℂ) := by
+    rfl
+  have hEB : ((EB' xb : Bs) : Fin (d + 1) → ℂ) =
+      (EB b : Fin (d + 1) → ℂ) := by
+    rfl
+  calc
+    ((T y : S) : Fin (d + 1) → ℂ)
+        = (((Submodule.prodEquivOfIsCompl As Bs hcompl)
+            ((EA'.prodCongr EB') (xa, xb)) : S) :
+              Fin (d + 1) → ℂ) := by
+            dsimp [T]
+            rw [hsymm]
+    _ = ((EA' xa : As) : Fin (d + 1) → ℂ) +
+          ((EB' xb : Bs) : Fin (d + 1) → ℂ) := by
+            rfl
+    _ = (EA a : Fin (d + 1) → ℂ) +
+          (EB b : Fin (d + 1) → ℂ) := by
+            rw [hEA, hEB]
+
 /-- The span of a totally isotropic frame and an isotropic Kronecker-dual
 frame is a nondegenerate hyperbolic block. -/
 theorem complexMinkowski_hyperbolicFrameSpan_nondegenerate
@@ -1277,6 +1366,63 @@ theorem complexMinkowski_selected_sup_hyperbolicFrameSpan_nondegenerate
     (x : Fin (d + 1) → ℂ) = m0 + h0 := hxsum.symm
     _ = 0 := by rw [hm0_zero, hh0_zero, zero_add]
 
+/-- The hyperbolic residual block is orthogonal to the selected block when
+both frame halves are. -/
+theorem complexMinkowski_hyperbolicFrameSpan_orthogonal_selected
+    {d s : ℕ}
+    {M : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {q qDual : Fin s → Fin (d + 1) → ℂ}
+    (hq_orth_M :
+      ∀ c (m : M), sourceComplexMinkowskiInner d (q c)
+        (m : Fin (d + 1) → ℂ) = 0)
+    (hqDual_orth_M :
+      ∀ c (m : M), sourceComplexMinkowskiInner d (qDual c)
+        (m : Fin (d + 1) → ℂ) = 0) :
+    ∀ x : ↥(Submodule.span ℂ (Set.range q) ⊔
+      Submodule.span ℂ (Set.range qDual)), ∀ m : M,
+      sourceComplexMinkowskiInner d
+        (x : Fin (d + 1) → ℂ) (m : Fin (d + 1) → ℂ) = 0 := by
+  let Q : Submodule ℂ (Fin (d + 1) → ℂ) := Submodule.span ℂ (Set.range q)
+  let Qd : Submodule ℂ (Fin (d + 1) → ℂ) :=
+    Submodule.span ℂ (Set.range qDual)
+  intro x m
+  rcases Submodule.mem_sup.mp x.2 with ⟨qx, hqx, qdx, hqdx, hxsum⟩
+  have hqx_pair : sourceComplexMinkowskiInner d qx
+      (m : Fin (d + 1) → ℂ) = 0 := by
+    exact span_frame_orthogonal_to_subspace
+      (d := d) (s := s) (M := M) (q := q)
+      hq_orth_M (by simpa [Q] using hqx) m
+  have hqdx_pair : sourceComplexMinkowskiInner d qdx
+      (m : Fin (d + 1) → ℂ) = 0 := by
+    exact span_frame_orthogonal_to_subspace
+      (d := d) (s := s) (M := M) (q := qDual)
+      hqDual_orth_M (by simpa [Qd] using hqdx) m
+  rw [show (x : Fin (d + 1) → ℂ) = qx + qdx from hxsum.symm]
+  rw [sourceComplexMinkowskiInner_add_left, hqx_pair, hqdx_pair, add_zero]
+
+/-- A nondegenerate selected block is disjoint from the orthogonal hyperbolic
+residual block. -/
+theorem complexMinkowski_selected_disjoint_hyperbolicFrameSpan
+    {d s : ℕ}
+    {M : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {q qDual : Fin s → Fin (d + 1) → ℂ}
+    (hM : ComplexMinkowskiNondegenerateSubspace d M)
+    (hq_orth_M :
+      ∀ c (m : M), sourceComplexMinkowskiInner d (q c)
+        (m : Fin (d + 1) → ℂ) = 0)
+    (hqDual_orth_M :
+      ∀ c (m : M), sourceComplexMinkowskiInner d (qDual c)
+        (m : Fin (d + 1) → ℂ) = 0) :
+    Disjoint M (Submodule.span ℂ (Set.range q) ⊔
+      Submodule.span ℂ (Set.range qDual)) :=
+  complexMinkowski_disjoint_of_nondegenerate_orthogonal
+    (d := d) (M := M)
+    (R := Submodule.span ℂ (Set.range q) ⊔
+      Submodule.span ℂ (Set.range qDual)) hM
+    (complexMinkowski_hyperbolicFrameSpan_orthogonal_selected
+      (d := d) (s := s) (M := M) (q := q) (qDual := qDual)
+      hq_orth_M hqDual_orth_M)
+
 /-- The hyperbolic-block contraction that scales `q` by `exp (-t)` and
 `qDual` by `exp t`. -/
 noncomputable def complexMinkowski_hyperbolicFrameSpanContraction
@@ -1453,6 +1599,326 @@ theorem complexMinkowski_hyperbolicFrameSpanContraction_preserves
     sourceComplexMinkowskiInner_smul_left,
     sourceComplexMinkowskiInner_smul_right,
     hqx_qy, hqdx_qdy, hβα, mul_assoc, mul_left_comm, mul_comm]
+
+/-- The selected-plus-hyperbolic block contraction: identity on `M` and the
+hyperbolic sub-boost on `span q ⊔ span qDual`. -/
+noncomputable def complexMinkowski_selectedHyperbolicContraction
+    {d s : ℕ}
+    {M : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {q qDual : Fin s → Fin (d + 1) → ℂ}
+    (hM : ComplexMinkowskiNondegenerateSubspace d M)
+    (hq_orth_M :
+      ∀ c (m : M), sourceComplexMinkowskiInner d (q c)
+        (m : Fin (d + 1) → ℂ) = 0)
+    (hqDual_orth_M :
+      ∀ c (m : M), sourceComplexMinkowskiInner d (qDual c)
+        (m : Fin (d + 1) → ℂ) = 0)
+    (hqDual_pair_zero :
+      ∀ c c', sourceComplexMinkowskiInner d (qDual c) (qDual c') = 0)
+    (hdual :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (qDual c') =
+        if c = c' then (1 : ℂ) else 0)
+    (t : ℝ) :
+    ↥(M ⊔ (Submodule.span ℂ (Set.range q) ⊔
+      Submodule.span ℂ (Set.range qDual))) ≃ₗ[ℂ]
+    ↥(M ⊔ (Submodule.span ℂ (Set.range q) ⊔
+      Submodule.span ℂ (Set.range qDual))) := by
+  let H : Submodule ℂ (Fin (d + 1) → ℂ) :=
+    Submodule.span ℂ (Set.range q) ⊔ Submodule.span ℂ (Set.range qDual)
+  have hdisj : Disjoint M H := by
+    simpa [H] using
+      complexMinkowski_selected_disjoint_hyperbolicFrameSpan
+        (d := d) (s := s) (M := M) (q := q) (qDual := qDual)
+        hM hq_orth_M hqDual_orth_M
+  let TH : H ≃ₗ[ℂ] H := by
+    simpa [H] using
+      complexMinkowski_hyperbolicFrameSpanContraction
+        (d := d) (s := s) (q := q) (qDual := qDual)
+        hqDual_pair_zero hdual t
+  exact directSum_congr_sup_equiv (d := d) (A := M) (B := H)
+    hdisj (LinearEquiv.refl ℂ M) TH
+
+/-- The selected-plus-hyperbolic contraction fixes the selected block. -/
+theorem complexMinkowski_selectedHyperbolicContraction_maps_M
+    {d s : ℕ}
+    {M : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {q qDual : Fin s → Fin (d + 1) → ℂ}
+    (hM : ComplexMinkowskiNondegenerateSubspace d M)
+    (hq_orth_M :
+      ∀ c (m : M), sourceComplexMinkowskiInner d (q c)
+        (m : Fin (d + 1) → ℂ) = 0)
+    (hqDual_orth_M :
+      ∀ c (m : M), sourceComplexMinkowskiInner d (qDual c)
+        (m : Fin (d + 1) → ℂ) = 0)
+    (hqDual_pair_zero :
+      ∀ c c', sourceComplexMinkowskiInner d (qDual c) (qDual c') = 0)
+    (hdual :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (qDual c') =
+        if c = c' then (1 : ℂ) else 0)
+    (t : ℝ) (m : M) :
+    ((complexMinkowski_selectedHyperbolicContraction
+        (d := d) (s := s) (M := M) (q := q) (qDual := qDual)
+        hM hq_orth_M hqDual_orth_M hqDual_pair_zero hdual t
+      ⟨(m : Fin (d + 1) → ℂ), Submodule.mem_sup_left m.2⟩ :
+      ↥(M ⊔ (Submodule.span ℂ (Set.range q) ⊔
+        Submodule.span ℂ (Set.range qDual)))) : Fin (d + 1) → ℂ) = m := by
+  let H : Submodule ℂ (Fin (d + 1) → ℂ) :=
+    Submodule.span ℂ (Set.range q) ⊔ Submodule.span ℂ (Set.range qDual)
+  have hdisj : Disjoint M H := by
+    simpa [H] using
+      complexMinkowski_selected_disjoint_hyperbolicFrameSpan
+        (d := d) (s := s) (M := M) (q := q) (qDual := qDual)
+        hM hq_orth_M hqDual_orth_M
+  let TH : H ≃ₗ[ℂ] H := by
+    simpa [H] using
+      complexMinkowski_hyperbolicFrameSpanContraction
+        (d := d) (s := s) (q := q) (qDual := qDual)
+        hqDual_pair_zero hdual t
+  have happ := directSum_congr_sup_equiv_apply_of_eq_add
+    (d := d) (A := M) (B := H) hdisj (LinearEquiv.refl ℂ M) TH
+    (x := ⟨(m : Fin (d + 1) → ℂ), Submodule.mem_sup_left m.2⟩)
+    (a := m) (b := (0 : H))
+    (by simp)
+  simpa [complexMinkowski_selectedHyperbolicContraction, H, TH] using happ
+
+/-- The selected-plus-hyperbolic contraction scales the residual frame by
+`exp (-t)`. -/
+theorem complexMinkowski_selectedHyperbolicContraction_maps_q
+    {d s : ℕ}
+    {M : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {q qDual : Fin s → Fin (d + 1) → ℂ}
+    (hM : ComplexMinkowskiNondegenerateSubspace d M)
+    (hq_orth_M :
+      ∀ c (m : M), sourceComplexMinkowskiInner d (q c)
+        (m : Fin (d + 1) → ℂ) = 0)
+    (hqDual_orth_M :
+      ∀ c (m : M), sourceComplexMinkowskiInner d (qDual c)
+        (m : Fin (d + 1) → ℂ) = 0)
+    (hqDual_pair_zero :
+      ∀ c c', sourceComplexMinkowskiInner d (qDual c) (qDual c') = 0)
+    (hdual :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (qDual c') =
+        if c = c' then (1 : ℂ) else 0)
+    (t : ℝ) (c : Fin s) :
+    ((complexMinkowski_selectedHyperbolicContraction
+        (d := d) (s := s) (M := M) (q := q) (qDual := qDual)
+        hM hq_orth_M hqDual_orth_M hqDual_pair_zero hdual t
+      ⟨q c, Submodule.mem_sup_right
+        (Submodule.mem_sup_left (Submodule.subset_span ⟨c, rfl⟩))⟩ :
+      ↥(M ⊔ (Submodule.span ℂ (Set.range q) ⊔
+        Submodule.span ℂ (Set.range qDual)))) : Fin (d + 1) → ℂ) =
+      ((Real.exp (-t) : ℝ) : ℂ) • q c := by
+  let H : Submodule ℂ (Fin (d + 1) → ℂ) :=
+    Submodule.span ℂ (Set.range q) ⊔ Submodule.span ℂ (Set.range qDual)
+  have hdisj : Disjoint M H := by
+    simpa [H] using
+      complexMinkowski_selected_disjoint_hyperbolicFrameSpan
+        (d := d) (s := s) (M := M) (q := q) (qDual := qDual)
+        hM hq_orth_M hqDual_orth_M
+  let TH : H ≃ₗ[ℂ] H := by
+    simpa [H] using
+      complexMinkowski_hyperbolicFrameSpanContraction
+        (d := d) (s := s) (q := q) (qDual := qDual)
+        hqDual_pair_zero hdual t
+  let hqH : q c ∈ H := by
+    exact Submodule.mem_sup_left (Submodule.subset_span ⟨c, rfl⟩)
+  have hTHq : ((TH ⟨q c, hqH⟩ : H) : Fin (d + 1) → ℂ) =
+      ((Real.exp (-t) : ℝ) : ℂ) • q c := by
+    simpa [TH, H, hqH] using
+      complexMinkowski_hyperbolicFrameSpanContraction_maps_q
+        (d := d) (s := s) (q := q) (qDual := qDual)
+        hqDual_pair_zero hdual t c
+  have happ := directSum_congr_sup_equiv_apply_of_eq_add
+    (d := d) (A := M) (B := H) hdisj (LinearEquiv.refl ℂ M) TH
+    (x := ⟨q c, Submodule.mem_sup_right hqH⟩)
+    (a := (0 : M)) (b := ⟨q c, hqH⟩)
+    (by simp)
+  have happ' :
+      ((complexMinkowski_selectedHyperbolicContraction
+          (d := d) (s := s) (M := M) (q := q) (qDual := qDual)
+          hM hq_orth_M hqDual_orth_M hqDual_pair_zero hdual t
+        ⟨q c, Submodule.mem_sup_right hqH⟩ :
+        ↥(M ⊔ H)) : Fin (d + 1) → ℂ) =
+        ((TH ⟨q c, hqH⟩ : H) : Fin (d + 1) → ℂ) := by
+    simpa [complexMinkowski_selectedHyperbolicContraction, H, TH] using happ
+  simpa [complexMinkowski_selectedHyperbolicContraction, H, TH]
+    using happ'.trans hTHq
+
+/-- The selected-plus-hyperbolic contraction scales the dual residual frame by
+`exp t`. -/
+theorem complexMinkowski_selectedHyperbolicContraction_maps_qDual
+    {d s : ℕ}
+    {M : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {q qDual : Fin s → Fin (d + 1) → ℂ}
+    (hM : ComplexMinkowskiNondegenerateSubspace d M)
+    (hq_orth_M :
+      ∀ c (m : M), sourceComplexMinkowskiInner d (q c)
+        (m : Fin (d + 1) → ℂ) = 0)
+    (hqDual_orth_M :
+      ∀ c (m : M), sourceComplexMinkowskiInner d (qDual c)
+        (m : Fin (d + 1) → ℂ) = 0)
+    (hqDual_pair_zero :
+      ∀ c c', sourceComplexMinkowskiInner d (qDual c) (qDual c') = 0)
+    (hdual :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (qDual c') =
+        if c = c' then (1 : ℂ) else 0)
+    (t : ℝ) (c : Fin s) :
+    ((complexMinkowski_selectedHyperbolicContraction
+        (d := d) (s := s) (M := M) (q := q) (qDual := qDual)
+        hM hq_orth_M hqDual_orth_M hqDual_pair_zero hdual t
+      ⟨qDual c, Submodule.mem_sup_right
+        (Submodule.mem_sup_right (Submodule.subset_span ⟨c, rfl⟩))⟩ :
+      ↥(M ⊔ (Submodule.span ℂ (Set.range q) ⊔
+        Submodule.span ℂ (Set.range qDual)))) : Fin (d + 1) → ℂ) =
+      ((Real.exp t : ℝ) : ℂ) • qDual c := by
+  let H : Submodule ℂ (Fin (d + 1) → ℂ) :=
+    Submodule.span ℂ (Set.range q) ⊔ Submodule.span ℂ (Set.range qDual)
+  have hdisj : Disjoint M H := by
+    simpa [H] using
+      complexMinkowski_selected_disjoint_hyperbolicFrameSpan
+        (d := d) (s := s) (M := M) (q := q) (qDual := qDual)
+        hM hq_orth_M hqDual_orth_M
+  let TH : H ≃ₗ[ℂ] H := by
+    simpa [H] using
+      complexMinkowski_hyperbolicFrameSpanContraction
+        (d := d) (s := s) (q := q) (qDual := qDual)
+        hqDual_pair_zero hdual t
+  let hqDualH : qDual c ∈ H := by
+    exact Submodule.mem_sup_right (Submodule.subset_span ⟨c, rfl⟩)
+  have hTHq : ((TH ⟨qDual c, hqDualH⟩ : H) :
+      Fin (d + 1) → ℂ) = ((Real.exp t : ℝ) : ℂ) • qDual c := by
+    simpa [TH, H, hqDualH] using
+      complexMinkowski_hyperbolicFrameSpanContraction_maps_qDual
+        (d := d) (s := s) (q := q) (qDual := qDual)
+        hqDual_pair_zero hdual t c
+  have happ := directSum_congr_sup_equiv_apply_of_eq_add
+    (d := d) (A := M) (B := H) hdisj (LinearEquiv.refl ℂ M) TH
+    (x := ⟨qDual c, Submodule.mem_sup_right hqDualH⟩)
+    (a := (0 : M)) (b := ⟨qDual c, hqDualH⟩)
+    (by simp)
+  have happ' :
+      ((complexMinkowski_selectedHyperbolicContraction
+          (d := d) (s := s) (M := M) (q := q) (qDual := qDual)
+          hM hq_orth_M hqDual_orth_M hqDual_pair_zero hdual t
+        ⟨qDual c, Submodule.mem_sup_right hqDualH⟩ :
+        ↥(M ⊔ H)) : Fin (d + 1) → ℂ) =
+        ((TH ⟨qDual c, hqDualH⟩ : H) : Fin (d + 1) → ℂ) := by
+    simpa [complexMinkowski_selectedHyperbolicContraction, H, TH] using happ
+  simpa [complexMinkowski_selectedHyperbolicContraction, H, TH]
+    using happ'.trans hTHq
+
+/-- The selected-plus-hyperbolic contraction preserves the complex Minkowski
+pairing on `M ⊔ (span q ⊔ span qDual)`. -/
+theorem complexMinkowski_selectedHyperbolicContraction_preserves
+    {d s : ℕ}
+    {M : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {q qDual : Fin s → Fin (d + 1) → ℂ}
+    (hM : ComplexMinkowskiNondegenerateSubspace d M)
+    (hq_orth_M :
+      ∀ c (m : M), sourceComplexMinkowskiInner d (q c)
+        (m : Fin (d + 1) → ℂ) = 0)
+    (hqDual_orth_M :
+      ∀ c (m : M), sourceComplexMinkowskiInner d (qDual c)
+        (m : Fin (d + 1) → ℂ) = 0)
+    (hq_pair_zero :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (q c') = 0)
+    (hqDual_pair_zero :
+      ∀ c c', sourceComplexMinkowskiInner d (qDual c) (qDual c') = 0)
+    (hdual :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (qDual c') =
+        if c = c' then (1 : ℂ) else 0)
+    (t : ℝ) :
+    let T := complexMinkowski_selectedHyperbolicContraction
+      (d := d) (s := s) (M := M) (q := q) (qDual := qDual)
+      hM hq_orth_M hqDual_orth_M hqDual_pair_zero hdual t
+    ∀ x y : ↥(M ⊔ (Submodule.span ℂ (Set.range q) ⊔
+      Submodule.span ℂ (Set.range qDual))),
+      sourceComplexMinkowskiInner d
+        ((T x : ↥(M ⊔ (Submodule.span ℂ (Set.range q) ⊔
+          Submodule.span ℂ (Set.range qDual)))) : Fin (d + 1) → ℂ)
+        ((T y : ↥(M ⊔ (Submodule.span ℂ (Set.range q) ⊔
+          Submodule.span ℂ (Set.range qDual)))) : Fin (d + 1) → ℂ) =
+      sourceComplexMinkowskiInner d
+        (x : Fin (d + 1) → ℂ) (y : Fin (d + 1) → ℂ) := by
+  intro T x y
+  let H : Submodule ℂ (Fin (d + 1) → ℂ) :=
+    Submodule.span ℂ (Set.range q) ⊔ Submodule.span ℂ (Set.range qDual)
+  have hdisj : Disjoint M H := by
+    simpa [H] using
+      complexMinkowski_selected_disjoint_hyperbolicFrameSpan
+        (d := d) (s := s) (M := M) (q := q) (qDual := qDual)
+        hM hq_orth_M hqDual_orth_M
+  let TH : H ≃ₗ[ℂ] H := by
+    simpa [H] using
+      complexMinkowski_hyperbolicFrameSpanContraction
+        (d := d) (s := s) (q := q) (qDual := qDual)
+        hqDual_pair_zero hdual t
+  have hH_orth_M :=
+    complexMinkowski_hyperbolicFrameSpan_orthogonal_selected
+      (d := d) (s := s) (M := M) (q := q) (qDual := qDual)
+      hq_orth_M hqDual_orth_M
+  have hTH_pres :=
+    complexMinkowski_hyperbolicFrameSpanContraction_preserves
+      (d := d) (s := s) (q := q) (qDual := qDual)
+      hq_pair_zero hqDual_pair_zero hdual t
+  rcases Submodule.mem_sup.mp x.2 with ⟨mx0, hmx0, hxH0, hhxH0, hxsum⟩
+  rcases Submodule.mem_sup.mp y.2 with ⟨my0, hmy0, hyH0, hhyH0, hysum⟩
+  let mx : M := ⟨mx0, hmx0⟩
+  let my : M := ⟨my0, hmy0⟩
+  let hxH : H := ⟨hxH0, by simpa [H] using hhxH0⟩
+  let hyH : H := ⟨hyH0, by simpa [H] using hhyH0⟩
+  have hTx : ((T x : ↥(M ⊔ (Submodule.span ℂ (Set.range q) ⊔
+        Submodule.span ℂ (Set.range qDual)))) : Fin (d + 1) → ℂ) =
+      (mx : Fin (d + 1) → ℂ) + (TH hxH : Fin (d + 1) → ℂ) := by
+    simpa [T, complexMinkowski_selectedHyperbolicContraction,
+      H, TH, mx, hxH] using
+      directSum_congr_sup_equiv_apply_of_eq_add
+        (d := d) (A := M) (B := H) hdisj
+        (LinearEquiv.refl ℂ M) TH
+        (x := (x : ↥(M ⊔ H))) (a := mx) (b := hxH)
+        (by simpa [mx, hxH] using hxsum)
+  have hTy : ((T y : ↥(M ⊔ (Submodule.span ℂ (Set.range q) ⊔
+        Submodule.span ℂ (Set.range qDual)))) : Fin (d + 1) → ℂ) =
+      (my : Fin (d + 1) → ℂ) + (TH hyH : Fin (d + 1) → ℂ) := by
+    simpa [T, complexMinkowski_selectedHyperbolicContraction,
+      H, TH, my, hyH] using
+      directSum_congr_sup_equiv_apply_of_eq_add
+        (d := d) (A := M) (B := H) hdisj
+        (LinearEquiv.refl ℂ M) TH
+        (x := (y : ↥(M ⊔ H))) (a := my) (b := hyH)
+        (by simpa [my, hyH] using hysum)
+  have hhx_my : sourceComplexMinkowskiInner d
+      (hxH : Fin (d + 1) → ℂ) (my : Fin (d + 1) → ℂ) = 0 :=
+    hH_orth_M hxH my
+  have hhy_mx : sourceComplexMinkowskiInner d
+      (hyH : Fin (d + 1) → ℂ) (mx : Fin (d + 1) → ℂ) = 0 :=
+    hH_orth_M hyH mx
+  have hThx_my : sourceComplexMinkowskiInner d
+      ((TH hxH : H) : Fin (d + 1) → ℂ) (my : Fin (d + 1) → ℂ) = 0 :=
+    hH_orth_M (TH hxH) my
+  have hThy_mx : sourceComplexMinkowskiInner d
+      ((TH hyH : H) : Fin (d + 1) → ℂ) (mx : Fin (d + 1) → ℂ) = 0 :=
+    hH_orth_M (TH hyH) mx
+  have hTH_pair : sourceComplexMinkowskiInner d
+      ((TH hxH : H) : Fin (d + 1) → ℂ)
+      ((TH hyH : H) : Fin (d + 1) → ℂ) =
+      sourceComplexMinkowskiInner d (hxH : Fin (d + 1) → ℂ)
+        (hyH : Fin (d + 1) → ℂ) := by
+    simpa [TH, H] using hTH_pres hxH hyH
+  have hhx_my0 : sourceComplexMinkowskiInner d hxH0 my0 = 0 := by
+    simpa [hxH, my] using hhx_my
+  have hmx_hy0 : sourceComplexMinkowskiInner d mx0 hyH0 = 0 := by
+    rw [sourceComplexMinkowskiInner_comm d mx0 hyH0]
+    simpa [hyH, mx] using hhy_mx
+  rw [hTx, hTy,
+    show (x : Fin (d + 1) → ℂ) = mx0 + hxH0 from hxsum.symm,
+    show (y : Fin (d + 1) → ℂ) = my0 + hyH0 from hysum.symm]
+  simp [sourceComplexMinkowskiInner_add_left,
+    sourceComplexMinkowskiInner_add_right,
+    hThx_my, hThy_mx, hhx_my0, hmx_hy0, hTH_pair,
+    mx, my, hxH, hyH,
+    sourceComplexMinkowskiInner_comm d (mx : Fin (d + 1) → ℂ)
+      ((TH hyH : H) : Fin (d + 1) → ℂ)]
 
 /-- A raw frame dual to a totally isotropic frame can be corrected, inside the
 same subspace, to an isotropic dual frame.  The correction is the standard
