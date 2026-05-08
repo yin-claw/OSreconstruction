@@ -58906,6 +58906,14 @@ already checked reindexing bridge.  The constructor is the next genuine
 mathematical step: it chooses one OS45 patch per adjacent transposition,
 proves the Hall-Wightman real-environment property for the Gram image of that
 same patch, and obtains compact-test equality from the OS45 EOW envelope.
+The strict oriented-continuation route now also has the checked canonical
+handoff
+`BHW.sourceDistributionalAdjacentTubeAnchor_of_orientedContinuationInputs_on_figure24SourcePatch`:
+once the ordinary and adjacent oriented-continuation input packets are supplied
+on each canonical `BHW.os45Figure24SourcePatch`, and the adjacent Wick trace is
+proved there, the direct source distributional adjacent-tube anchor is
+constructed mechanically.  This theorem is only a consumer bridge; it does not
+prove the OS I §4.5 branch theorem.
 
 ```lean
 noncomputable def bvt_F_selectedAdjacentDistributionalJostAnchorData_of_OSII

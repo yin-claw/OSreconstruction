@@ -457,4 +457,118 @@ noncomputable def pairDataOfOrientedContinuationInputs
 
 end OS45SourcePatchBHWJostHullData
 
+/-- A full adjacent family of strict oriented-continuation input packets
+supplies the direct source distributional adjacent-tube anchor, once the
+remaining adjacent Wick-trace datum has been supplied on each selected source
+patch.
+
+This is a mechanical bridge from the oriented BHW/Jost continuation consumer
+to the already checked compact Figure-2-4 source-anchor consumer.  The hard
+OS I section 4.5 work is still exactly the construction of the input packets
+and the adjacent Wick trace; this theorem does not manufacture those data. -/
+noncomputable def sourceDistributionalAdjacentTubeAnchor_of_orientedContinuationInputs
+    (hd : 2 ≤ d)
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (V : ∀ (i : Fin n), i.val + 1 < n → Set (NPointDomain d n))
+    (H :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        BHW.OS45SourcePatchBHWJostHullData
+          (d := d) hd OS lgc n i hi (V i hi))
+    (hsource_subset :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        BHW.os45Figure24SourcePatch (d := d) (n := n) i hi ⊆ V i hi)
+    (hV_ordered :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        ∀ x, x ∈ V i hi →
+          x ∈ EuclideanOrderedPositiveTimeSector (d := d) (n := n)
+            (1 : Equiv.Perm (Fin n)))
+    (Iord :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        BHW.OS45SourcePatchBHWJostOrientedContinuationInputs
+          (d := d) hd n (H i hi).τ (BHW.ExtendedTube d n) (H i hi).U
+          (BHW.extendF (bvt_F OS lgc n)))
+    (Iadj :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        BHW.OS45SourcePatchBHWJostOrientedContinuationInputs
+          (d := d) hd n (H i hi).τ
+          {z | BHW.permAct (d := d) (H i hi).τ z ∈ BHW.ExtendedTube d n}
+          (H i hi).U
+          (fun z =>
+            BHW.extendF (bvt_F OS lgc n)
+              (BHW.permAct (d := d) (H i hi).τ z)))
+    (adjacent_wick_trace :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        ∀ x, x ∈ V i hi →
+          (H i hi).adjacentBranchOfOrientedContinuationInputs (Iadj i hi)
+            (fun k => wickRotatePoint (x k)) =
+            bvt_F OS lgc n (fun k => wickRotatePoint (x ((H i hi).τ k)))) :
+    BHW.SourceDistributionalAdjacentTubeAnchor
+      (d := d) n (bvt_F OS lgc n) :=
+  BHW.sourceDistributionalAdjacentTubeAnchor_of_pairData_canonical
+    (d := d) hd OS lgc n V
+    (fun i hi =>
+      (H i hi).pairDataOfOrientedContinuationInputs
+        (hV_ordered i hi) (Iord i hi) (Iadj i hi)
+        (adjacent_wick_trace i hi))
+    hsource_subset
+
+/-- Canonical Figure-2-4 specialization of
+`sourceDistributionalAdjacentTubeAnchor_of_orientedContinuationInputs`.
+
+After the ordinary and adjacent strict oriented-continuation input packets are
+constructed on the actual OS45 Figure-2-4 source patches, and the adjacent Wick
+trace is supplied there, the checked compact source-anchor consumer applies
+without any additional source-patch containment hypothesis. -/
+noncomputable def sourceDistributionalAdjacentTubeAnchor_of_orientedContinuationInputs_on_figure24SourcePatch
+    (hd : 2 ≤ d)
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (Iord :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        let H :=
+          BHW.os45_sourcePatch_bhwJostHullData_on_figure24SourcePatch
+            (d := d) hd OS lgc n i hi
+        BHW.OS45SourcePatchBHWJostOrientedContinuationInputs
+          (d := d) hd n H.τ (BHW.ExtendedTube d n) H.U
+          (BHW.extendF (bvt_F OS lgc n)))
+    (Iadj :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        let H :=
+          BHW.os45_sourcePatch_bhwJostHullData_on_figure24SourcePatch
+            (d := d) hd OS lgc n i hi
+        BHW.OS45SourcePatchBHWJostOrientedContinuationInputs
+          (d := d) hd n H.τ
+          {z | BHW.permAct (d := d) H.τ z ∈ BHW.ExtendedTube d n}
+          H.U
+          (fun z =>
+            BHW.extendF (bvt_F OS lgc n)
+              (BHW.permAct (d := d) H.τ z)))
+    (adjacent_wick_trace :
+      ∀ (i : Fin n) (hi : i.val + 1 < n),
+        let H :=
+          BHW.os45_sourcePatch_bhwJostHullData_on_figure24SourcePatch
+            (d := d) hd OS lgc n i hi
+        ∀ x, x ∈ BHW.os45Figure24SourcePatch (d := d) (n := n) i hi →
+          H.adjacentBranchOfOrientedContinuationInputs (Iadj i hi)
+            (fun k => wickRotatePoint (x k)) =
+            bvt_F OS lgc n (fun k => wickRotatePoint (x (H.τ k)))) :
+    BHW.SourceDistributionalAdjacentTubeAnchor
+      (d := d) n (bvt_F OS lgc n) :=
+  BHW.sourceDistributionalAdjacentTubeAnchor_of_orientedContinuationInputs
+    (d := d) hd OS lgc n
+    (fun i hi => BHW.os45Figure24SourcePatch (d := d) (n := n) i hi)
+    (fun i hi =>
+      BHW.os45_sourcePatch_bhwJostHullData_on_figure24SourcePatch
+        (d := d) hd OS lgc n i hi)
+    (by
+      intro i hi x hx
+      exact hx)
+    (by
+      intro i hi x hx
+      exact BHW.os45Figure24SourcePatch_ordered (d := d) hd n i hi x hx)
+    Iord Iadj adjacent_wick_trace
+
 end BHW

@@ -140,7 +140,14 @@ local Slot 1:
    and
    `BHW.bvt_F_distributionalJostAnchor_of_pairData_on_figure24SourcePatch`
    reduce the remaining canonical route input to a full adjacent family of
-   pair carriers built directly on `BHW.os45Figure24SourcePatch`;
+   pair carriers built directly on `BHW.os45Figure24SourcePatch`; the oriented
+   continuation consumer is now also checked through
+   `BHW.sourceDistributionalAdjacentTubeAnchor_of_orientedContinuationInputs`
+   and its exact-source-patch specialization
+   `BHW.sourceDistributionalAdjacentTubeAnchor_of_orientedContinuationInputs_on_figure24SourcePatch`,
+   so the remaining input can be stated directly as ordinary/adjacent strict
+   oriented-continuation packets on the canonical Figure-2-4 source patches
+   plus the adjacent Wick trace there;
    the oriented adjacent real-seed/anchor layer remains a downstream
    determinant-regular shrinking step;
    it must not use `BHW.os45_adjacent_commonBoundaryEnvelope`, the oriented
