@@ -654,6 +654,590 @@ theorem coefficients_of_family_mem_span_finite_frame
     exists_coefficients_of_mem_span_finite_frame (hv i)
   exact ⟨a, ha⟩
 
+/-- A Kronecker dual frame reads off coefficients, hence the left frame is
+linearly independent. -/
+theorem complexMinkowski_dualPair_linearIndependent_left
+    {d s : ℕ}
+    {q qDual : Fin s → Fin (d + 1) → ℂ}
+    (hdual :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (qDual c') =
+        if c = c' then (1 : ℂ) else 0) :
+    LinearIndependent ℂ q := by
+  rw [Fintype.linearIndependent_iff]
+  intro a hsum c
+  have hcoeff :=
+    sourceComplexMinkowskiInner_sum_smul_dual_left
+      (d := d) (m := s) (u := q) (e := qDual) hdual a c
+  rw [hsum] at hcoeff
+  simpa [sourceComplexMinkowskiInner] using hcoeff.symm
+
+/-- A Kronecker dual frame also makes the dual frame linearly independent. -/
+theorem complexMinkowski_dualPair_linearIndependent_right
+    {d s : ℕ}
+    {q qDual : Fin s → Fin (d + 1) → ℂ}
+    (hdual :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (qDual c') =
+        if c = c' then (1 : ℂ) else 0) :
+    LinearIndependent ℂ qDual := by
+  have hdual' :
+      ∀ c c', sourceComplexMinkowskiInner d (qDual c) (q c') =
+        if c = c' then (1 : ℂ) else 0 := by
+    intro c c'
+    rw [sourceComplexMinkowskiInner_comm d (qDual c) (q c'), hdual c' c]
+    by_cases h : c = c'
+    · subst c'
+      simp
+    · simp [h, eq_comm]
+  rw [Fintype.linearIndependent_iff]
+  intro a hsum c
+  have hcoeff :=
+    sourceComplexMinkowskiInner_sum_smul_dual_left
+      (d := d) (m := s) (u := qDual) (e := q) hdual' a c
+  rw [hsum] at hcoeff
+  simpa [sourceComplexMinkowskiInner] using hcoeff.symm
+
+/-- The residual frame span meets the selected block trivially once the dual
+frame is orthogonal to the selected block. -/
+theorem complexMinkowski_span_frame_disjoint_selected_of_dual_orthogonal
+    {d s : ℕ}
+    {M : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {q qDual : Fin s → Fin (d + 1) → ℂ}
+    (hqDual_orth_M :
+      ∀ c (m : M),
+        sourceComplexMinkowskiInner d (qDual c)
+          (m : Fin (d + 1) → ℂ) = 0)
+    (hdual :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (qDual c') =
+        if c = c' then (1 : ℂ) else 0) :
+    Disjoint (Submodule.span ℂ (Set.range q)) M := by
+  rw [Submodule.disjoint_def]
+  intro x hxQ hxM
+  rcases exists_coefficients_of_mem_span_finite_frame
+      (d := d) (s := s) (q := q) hxQ with
+    ⟨a, ha⟩
+  have hzero_a : ∀ c, a c = 0 := by
+    intro c
+    have hcoeff :=
+      sourceComplexMinkowskiInner_sum_smul_dual_left
+        (d := d) (m := s) (u := q) (e := qDual) hdual a c
+    have hxpair : sourceComplexMinkowskiInner d x (qDual c) = 0 := by
+      rw [sourceComplexMinkowskiInner_comm d x (qDual c)]
+      exact hqDual_orth_M c ⟨x, hxM⟩
+    have hcoeff_x : sourceComplexMinkowskiInner d x (qDual c) = a c := by
+      rw [ha]
+      exact hcoeff
+    rw [hxpair] at hcoeff_x
+    exact hcoeff_x.symm
+  calc
+    x = ∑ c : Fin s, a c • q c := ha
+    _ = 0 := by simp [hzero_a]
+
+/-- The dual residual frame span meets the selected block plus residual frame
+span trivially.  This is the second direct-sum fact for the hyperbolic block
+`M ⊔ span q ⊔ span qDual`. -/
+theorem complexMinkowski_span_dualFrame_disjoint_selected_sup_frame
+    {d s : ℕ}
+    {M : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {q qDual : Fin s → Fin (d + 1) → ℂ}
+    (hq_orth_M :
+      ∀ c (m : M),
+        sourceComplexMinkowskiInner d (q c)
+          (m : Fin (d + 1) → ℂ) = 0)
+    (hq_pair_zero :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (q c') = 0)
+    (hdual :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (qDual c') =
+        if c = c' then (1 : ℂ) else 0) :
+    Disjoint (Submodule.span ℂ (Set.range qDual))
+      (M ⊔ Submodule.span ℂ (Set.range q)) := by
+  have hdual' :
+      ∀ c c', sourceComplexMinkowskiInner d (qDual c) (q c') =
+        if c = c' then (1 : ℂ) else 0 := by
+    intro c c'
+    rw [sourceComplexMinkowskiInner_comm d (qDual c) (q c'), hdual c' c]
+    by_cases h : c = c'
+    · subst c'
+      simp
+    · simp [h, eq_comm]
+  rw [Submodule.disjoint_def]
+  intro x hxQd hxSup
+  rcases exists_coefficients_of_mem_span_finite_frame
+      (d := d) (s := s) (q := qDual) hxQd with
+    ⟨a, ha⟩
+  rcases Submodule.mem_sup.mp hxSup with ⟨m, hm, qx, hqx, hxsum⟩
+  rcases exists_coefficients_of_mem_span_finite_frame
+      (d := d) (s := s) (q := q) hqx with
+    ⟨b, hb⟩
+  have hzero_a : ∀ c, a c = 0 := by
+    intro c
+    have hcoeff :=
+      sourceComplexMinkowskiInner_sum_smul_dual_left
+        (d := d) (m := s) (u := qDual) (e := q) hdual' a c
+    have hx_pair : sourceComplexMinkowskiInner d x (q c) = 0 := by
+      rw [hxsum.symm]
+      rw [sourceComplexMinkowskiInner_add_left]
+      have hm_pair : sourceComplexMinkowskiInner d m (q c) = 0 := by
+        rw [sourceComplexMinkowskiInner_comm d m (q c)]
+        exact hq_orth_M c ⟨m, hm⟩
+      have hqx_pair : sourceComplexMinkowskiInner d qx (q c) = 0 := by
+        rw [hb]
+        rw [sourceComplexMinkowskiInner_sum_smul_left]
+        simp [hq_pair_zero]
+      rw [hm_pair, hqx_pair, add_zero]
+    have hcoeff_x : sourceComplexMinkowskiInner d x (q c) = a c := by
+      rw [ha]
+      exact hcoeff
+    rw [hx_pair] at hcoeff_x
+    exact hcoeff_x.symm
+  calc
+    x = ∑ c : Fin s, a c • qDual c := ha
+    _ = 0 := by simp [hzero_a]
+
+/-- The two halves of a hyperbolic residual frame have disjoint spans. -/
+theorem complexMinkowski_span_frame_disjoint_dualFrame
+    {d s : ℕ}
+    {q qDual : Fin s → Fin (d + 1) → ℂ}
+    (hqDual_pair_zero :
+      ∀ c c', sourceComplexMinkowskiInner d (qDual c) (qDual c') = 0)
+    (hdual :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (qDual c') =
+        if c = c' then (1 : ℂ) else 0) :
+    Disjoint (Submodule.span ℂ (Set.range q))
+      (Submodule.span ℂ (Set.range qDual)) := by
+  let Qd : Submodule ℂ (Fin (d + 1) → ℂ) :=
+    Submodule.span ℂ (Set.range qDual)
+  have hQd_iso : ComplexMinkowskiTotallyIsotropicSubspace d Qd := by
+    simpa [Qd] using
+      complexMinkowskiTotallyIsotropic_span_range d s qDual hqDual_pair_zero
+  have hqDual_orth_Qd :
+      ∀ c (m : Qd),
+        sourceComplexMinkowskiInner d (qDual c)
+          (m : Fin (d + 1) → ℂ) = 0 := by
+    intro c m
+    exact hQd_iso ⟨qDual c, Submodule.subset_span ⟨c, rfl⟩⟩ m
+  simpa [Qd] using
+    complexMinkowski_span_frame_disjoint_selected_of_dual_orthogonal
+      (d := d) (s := s) (M := Qd) (q := q) (qDual := qDual)
+      hqDual_orth_Qd hdual
+
+/-- Scaling a submodule by a nonzero scalar as a linear equivalence of that
+submodule with itself. -/
+noncomputable def submoduleScaleLinearEquiv
+    {d : ℕ}
+    (S : Submodule ℂ (Fin (d + 1) → ℂ))
+    (α : ℂ) (hα : α ≠ 0) :
+    S ≃ₗ[ℂ] S where
+  toFun x := ⟨α • (x : Fin (d + 1) → ℂ), S.smul_mem α x.2⟩
+  invFun x := ⟨α⁻¹ • (x : Fin (d + 1) → ℂ), S.smul_mem α⁻¹ x.2⟩
+  left_inv x := by
+    apply Subtype.ext
+    ext μ
+    simp [Pi.smul_apply, hα]
+  right_inv x := by
+    apply Subtype.ext
+    ext μ
+    simp [Pi.smul_apply, hα]
+  map_add' x y := by
+    apply Subtype.ext
+    ext μ
+    simp [Pi.smul_apply, mul_add]
+  map_smul' c x := by
+    apply Subtype.ext
+    ext μ
+    simp [Pi.smul_apply, mul_left_comm]
+
+/-- The submodule scaling equivalence acts by scalar multiplication after
+forgetting the subtype. -/
+theorem submoduleScaleLinearEquiv_apply
+    {d : ℕ}
+    (S : Submodule ℂ (Fin (d + 1) → ℂ))
+    (α : ℂ) (hα : α ≠ 0) (x : S) :
+    ((submoduleScaleLinearEquiv S α hα x : S) : Fin (d + 1) → ℂ) =
+      α • (x : Fin (d + 1) → ℂ) :=
+  rfl
+
+/-- Determinant of the scalar multiplication equivalence on a finite
+submodule. -/
+theorem submoduleScaleLinearEquiv_det
+    {d : ℕ}
+    (S : Submodule ℂ (Fin (d + 1) → ℂ))
+    (α : ℂ) (hα : α ≠ 0) :
+    LinearMap.det (submoduleScaleLinearEquiv S α hα).toLinearMap =
+      α ^ Module.finrank ℂ S := by
+  have hlin :
+      (submoduleScaleLinearEquiv S α hα).toLinearMap =
+        α • (LinearMap.id : S →ₗ[ℂ] S) := by
+    ext x μ
+    simp [submoduleScaleLinearEquiv, Pi.smul_apply]
+  rw [hlin, LinearMap.det_smul]
+  simp
+
+/-- The complex scalar used to contract a null frame is nonzero. -/
+theorem complex_exp_neg_ne_zero (t : ℝ) :
+    ((Real.exp (-t) : ℝ) : ℂ) ≠ 0 := by
+  exact_mod_cast Real.exp_ne_zero (-t)
+
+/-- The complex scalar used to expand the dual null frame is nonzero. -/
+theorem complex_exp_pos_ne_zero (t : ℝ) :
+    ((Real.exp t : ℝ) : ℂ) ≠ 0 := by
+  exact_mod_cast Real.exp_ne_zero t
+
+/-- The two null-boost scale factors are reciprocal. -/
+theorem complex_exp_neg_mul_exp (t : ℝ) :
+    ((Real.exp (-t) : ℝ) : ℂ) * ((Real.exp t : ℝ) : ℂ) = 1 := by
+  rw [← Complex.ofReal_mul]
+  norm_num [← Real.exp_add]
+
+/-- The determinant contribution of equally many contracted and expanded
+null directions is one. -/
+theorem complex_exp_neg_pow_mul_exp_pow (t : ℝ) (s : ℕ) :
+    (((Real.exp (-t) : ℝ) : ℂ) ^ s) *
+      (((Real.exp t : ℝ) : ℂ) ^ s) = 1 := by
+  rw [← mul_pow]
+  rw [complex_exp_neg_mul_exp t]
+  simp
+
+/-- Scale two complementary summands inside their supremum. -/
+noncomputable def directSum_scale_sup_equiv
+    {d : ℕ}
+    {A B : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hdisj : Disjoint A B)
+    (α β : ℂ) (hα : α ≠ 0) (hβ : β ≠ 0) :
+    ↥(A ⊔ B) ≃ₗ[ℂ] ↥(A ⊔ B) := by
+  let S : Submodule ℂ (Fin (d + 1) → ℂ) := A ⊔ B
+  let As : Submodule ℂ S := A.comap S.subtype
+  let Bs : Submodule ℂ S := B.comap S.subtype
+  have hcompl : IsCompl As Bs := by
+    simpa [S, As, Bs] using
+      isCompl_comap_sup_subtype_of_disjoint
+        (d := d) (M := A) (R := B) hdisj
+  let eA : As ≃ₗ[ℂ] A :=
+    Submodule.comapSubtypeEquivOfLe (show A ≤ S from le_sup_left)
+  let eB : Bs ≃ₗ[ℂ] B :=
+    Submodule.comapSubtypeEquivOfLe (show B ≤ S from le_sup_right)
+  let scaleA : As ≃ₗ[ℂ] As :=
+    eA.trans ((submoduleScaleLinearEquiv A α hα).trans eA.symm)
+  let scaleB : Bs ≃ₗ[ℂ] Bs :=
+    eB.trans ((submoduleScaleLinearEquiv B β hβ).trans eB.symm)
+  exact (Submodule.prodEquivOfIsCompl As Bs hcompl).symm.trans
+    ((scaleA.prodCongr scaleB).trans
+      (Submodule.prodEquivOfIsCompl As Bs hcompl))
+
+/-- The two-summand scaling equivalence scales the left summand. -/
+theorem directSum_scale_sup_equiv_maps_left
+    {d : ℕ}
+    {A B : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hdisj : Disjoint A B)
+    (α β : ℂ) (hα : α ≠ 0) (hβ : β ≠ 0)
+    (a : A) :
+    ((directSum_scale_sup_equiv (d := d) (A := A) (B := B)
+        hdisj α β hα hβ
+      ⟨(a : Fin (d + 1) → ℂ), Submodule.mem_sup_left a.2⟩ :
+        ↥(A ⊔ B)) : Fin (d + 1) → ℂ) =
+      α • (a : Fin (d + 1) → ℂ) := by
+  let S : Submodule ℂ (Fin (d + 1) → ℂ) := A ⊔ B
+  let As : Submodule ℂ S := A.comap S.subtype
+  let Bs : Submodule ℂ S := B.comap S.subtype
+  have hcompl : IsCompl As Bs := by
+    simpa [S, As, Bs] using
+      isCompl_comap_sup_subtype_of_disjoint
+        (d := d) (M := A) (R := B) hdisj
+  let eA : As ≃ₗ[ℂ] A :=
+    Submodule.comapSubtypeEquivOfLe (show A ≤ S from le_sup_left)
+  let eB : Bs ≃ₗ[ℂ] B :=
+    Submodule.comapSubtypeEquivOfLe (show B ≤ S from le_sup_right)
+  let scaleA : As ≃ₗ[ℂ] As :=
+    eA.trans ((submoduleScaleLinearEquiv A α hα).trans eA.symm)
+  let scaleB : Bs ≃ₗ[ℂ] Bs :=
+    eB.trans ((submoduleScaleLinearEquiv B β hβ).trans eB.symm)
+  let T : S ≃ₗ[ℂ] S :=
+    (Submodule.prodEquivOfIsCompl As Bs hcompl).symm.trans
+      ((scaleA.prodCongr scaleB).trans
+        (Submodule.prodEquivOfIsCompl As Bs hcompl))
+  have hTdef :
+      directSum_scale_sup_equiv (d := d) (A := A) (B := B)
+        hdisj α β hα hβ = T := by
+    rfl
+  rw [hTdef]
+  let y : S := ⟨(a : Fin (d + 1) → ℂ), Submodule.mem_sup_left a.2⟩
+  let xa : As := ⟨y, a.2⟩
+  have hsymm :
+      (Submodule.prodEquivOfIsCompl As Bs hcompl).symm y = (xa, 0) := by
+    simpa [y, xa] using
+      Submodule.prodEquivOfIsCompl_symm_apply_left As Bs hcompl xa
+  have hscaleA : ((scaleA xa : As) : Fin (d + 1) → ℂ) =
+      α • (a : Fin (d + 1) → ℂ) := by
+    rfl
+  have hscaleB_zero : ((scaleB (0 : Bs) : Bs) :
+      Fin (d + 1) → ℂ) = 0 := by
+    have hz : scaleB (0 : Bs) = 0 := map_zero scaleB
+    exact congrArg (fun z : Bs => (z : Fin (d + 1) → ℂ)) hz
+  calc
+    ((T y : S) : Fin (d + 1) → ℂ)
+        = (((Submodule.prodEquivOfIsCompl As Bs hcompl)
+            ((scaleA.prodCongr scaleB) (xa, 0)) : S) :
+              Fin (d + 1) → ℂ) := by
+            dsimp [T]
+            rw [hsymm]
+    _ = ((scaleA xa : As) : Fin (d + 1) → ℂ) +
+          ((scaleB (0 : Bs) : Bs) : Fin (d + 1) → ℂ) := by
+            rfl
+    _ = α • (a : Fin (d + 1) → ℂ) := by
+            rw [hscaleA, hscaleB_zero, add_zero]
+
+/-- The two-summand scaling equivalence scales the right summand. -/
+theorem directSum_scale_sup_equiv_maps_right
+    {d : ℕ}
+    {A B : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hdisj : Disjoint A B)
+    (α β : ℂ) (hα : α ≠ 0) (hβ : β ≠ 0)
+    (b : B) :
+    ((directSum_scale_sup_equiv (d := d) (A := A) (B := B)
+        hdisj α β hα hβ
+      ⟨(b : Fin (d + 1) → ℂ), Submodule.mem_sup_right b.2⟩ :
+        ↥(A ⊔ B)) : Fin (d + 1) → ℂ) =
+      β • (b : Fin (d + 1) → ℂ) := by
+  let S : Submodule ℂ (Fin (d + 1) → ℂ) := A ⊔ B
+  let As : Submodule ℂ S := A.comap S.subtype
+  let Bs : Submodule ℂ S := B.comap S.subtype
+  have hcompl : IsCompl As Bs := by
+    simpa [S, As, Bs] using
+      isCompl_comap_sup_subtype_of_disjoint
+        (d := d) (M := A) (R := B) hdisj
+  let eA : As ≃ₗ[ℂ] A :=
+    Submodule.comapSubtypeEquivOfLe (show A ≤ S from le_sup_left)
+  let eB : Bs ≃ₗ[ℂ] B :=
+    Submodule.comapSubtypeEquivOfLe (show B ≤ S from le_sup_right)
+  let scaleA : As ≃ₗ[ℂ] As :=
+    eA.trans ((submoduleScaleLinearEquiv A α hα).trans eA.symm)
+  let scaleB : Bs ≃ₗ[ℂ] Bs :=
+    eB.trans ((submoduleScaleLinearEquiv B β hβ).trans eB.symm)
+  let T : S ≃ₗ[ℂ] S :=
+    (Submodule.prodEquivOfIsCompl As Bs hcompl).symm.trans
+      ((scaleA.prodCongr scaleB).trans
+        (Submodule.prodEquivOfIsCompl As Bs hcompl))
+  have hTdef :
+      directSum_scale_sup_equiv (d := d) (A := A) (B := B)
+        hdisj α β hα hβ = T := by
+    rfl
+  rw [hTdef]
+  let y : S := ⟨(b : Fin (d + 1) → ℂ), Submodule.mem_sup_right b.2⟩
+  let xb : Bs := ⟨y, b.2⟩
+  have hsymm :
+      (Submodule.prodEquivOfIsCompl As Bs hcompl).symm y = (0, xb) := by
+    simpa [y, xb] using
+      Submodule.prodEquivOfIsCompl_symm_apply_right As Bs hcompl xb
+  have hscaleA_zero : ((scaleA (0 : As) : As) :
+      Fin (d + 1) → ℂ) = 0 := by
+    have hz : scaleA (0 : As) = 0 := map_zero scaleA
+    exact congrArg (fun z : As => (z : Fin (d + 1) → ℂ)) hz
+  have hscaleB : ((scaleB xb : Bs) : Fin (d + 1) → ℂ) =
+      β • (b : Fin (d + 1) → ℂ) := by
+    rfl
+  calc
+    ((T y : S) : Fin (d + 1) → ℂ)
+        = (((Submodule.prodEquivOfIsCompl As Bs hcompl)
+            ((scaleA.prodCongr scaleB) (0, xb)) : S) :
+              Fin (d + 1) → ℂ) := by
+            dsimp [T]
+            rw [hsymm]
+    _ = ((scaleA (0 : As) : As) : Fin (d + 1) → ℂ) +
+          ((scaleB xb : Bs) : Fin (d + 1) → ℂ) := by
+            rfl
+    _ = β • (b : Fin (d + 1) → ℂ) := by
+            rw [hscaleA_zero, hscaleB, zero_add]
+
+/-- The span of a totally isotropic frame and an isotropic Kronecker-dual
+frame is a nondegenerate hyperbolic block. -/
+theorem complexMinkowski_hyperbolicFrameSpan_nondegenerate
+    {d s : ℕ}
+    {q qDual : Fin s → Fin (d + 1) → ℂ}
+    (hq_pair_zero :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (q c') = 0)
+    (hqDual_pair_zero :
+      ∀ c c', sourceComplexMinkowskiInner d (qDual c) (qDual c') = 0)
+    (hdual :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (qDual c') =
+        if c = c' then (1 : ℂ) else 0) :
+    ComplexMinkowskiNondegenerateSubspace d
+      (Submodule.span ℂ (Set.range q) ⊔
+        Submodule.span ℂ (Set.range qDual)) := by
+  let Q : Submodule ℂ (Fin (d + 1) → ℂ) := Submodule.span ℂ (Set.range q)
+  let Qd : Submodule ℂ (Fin (d + 1) → ℂ) :=
+    Submodule.span ℂ (Set.range qDual)
+  have hdual' :
+      ∀ c c', sourceComplexMinkowskiInner d (qDual c) (q c') =
+        if c = c' then (1 : ℂ) else 0 := by
+    intro c c'
+    rw [sourceComplexMinkowskiInner_comm d (qDual c) (q c'), hdual c' c]
+    by_cases h : c = c'
+    · subst c'
+      simp
+    · simp [h, eq_comm]
+  intro x horth
+  rcases Submodule.mem_sup.mp x.2 with ⟨qx, hqx, qdx, hqdx, hxsum⟩
+  rcases exists_coefficients_of_mem_span_finite_frame
+      (d := d) (s := s) (q := q) (by simpa [Q] using hqx) with
+    ⟨a, ha⟩
+  rcases exists_coefficients_of_mem_span_finite_frame
+      (d := d) (s := s) (q := qDual) (by simpa [Qd] using hqdx) with
+    ⟨b, hb⟩
+  have hzero_a : ∀ c, a c = 0 := by
+    intro c
+    have hx_pair : sourceComplexMinkowskiInner d
+        (x : Fin (d + 1) → ℂ) (qDual c) = 0 := by
+      exact horth ⟨qDual c, by
+        change qDual c ∈ Q ⊔ Qd
+        exact Submodule.mem_sup_right (by
+          exact Submodule.subset_span ⟨c, rfl⟩)⟩
+    have hcalc : sourceComplexMinkowskiInner d
+        (x : Fin (d + 1) → ℂ) (qDual c) = a c := by
+      rw [show (x : Fin (d + 1) → ℂ) = qx + qdx from hxsum.symm]
+      rw [sourceComplexMinkowskiInner_add_left]
+      have hqx_pair : sourceComplexMinkowskiInner d qx (qDual c) = a c := by
+        rw [ha]
+        exact sourceComplexMinkowskiInner_sum_smul_dual_left
+          (d := d) (m := s) (u := q) (e := qDual) hdual a c
+      have hqdx_pair : sourceComplexMinkowskiInner d qdx (qDual c) = 0 := by
+        rw [hb]
+        rw [sourceComplexMinkowskiInner_sum_smul_left]
+        simp [hqDual_pair_zero]
+      rw [hqx_pair, hqdx_pair, add_zero]
+    rw [hx_pair] at hcalc
+    exact hcalc.symm
+  have hzero_b : ∀ c, b c = 0 := by
+    intro c
+    have hx_pair : sourceComplexMinkowskiInner d
+        (x : Fin (d + 1) → ℂ) (q c) = 0 := by
+      exact horth ⟨q c, by
+        change q c ∈ Q ⊔ Qd
+        exact Submodule.mem_sup_left (by
+          exact Submodule.subset_span ⟨c, rfl⟩)⟩
+    have hcalc : sourceComplexMinkowskiInner d
+        (x : Fin (d + 1) → ℂ) (q c) = b c := by
+      rw [show (x : Fin (d + 1) → ℂ) = qx + qdx from hxsum.symm]
+      rw [sourceComplexMinkowskiInner_add_left]
+      have hqx_pair : sourceComplexMinkowskiInner d qx (q c) = 0 := by
+        rw [ha]
+        rw [sourceComplexMinkowskiInner_sum_smul_left]
+        simp [hq_pair_zero]
+      have hqdx_pair : sourceComplexMinkowskiInner d qdx (q c) = b c := by
+        rw [hb]
+        exact sourceComplexMinkowskiInner_sum_smul_dual_left
+          (d := d) (m := s) (u := qDual) (e := q) hdual' b c
+      rw [hqx_pair, hqdx_pair, zero_add]
+    rw [hx_pair] at hcalc
+    exact hcalc.symm
+  apply Subtype.ext
+  calc
+    (x : Fin (d + 1) → ℂ) = qx + qdx := hxsum.symm
+    _ = (∑ c : Fin s, a c • q c) + qdx := by rw [ha]
+    _ = (∑ c : Fin s, a c • q c) +
+          (∑ c : Fin s, b c • qDual c) := by rw [hb]
+    _ = 0 := by simp [hzero_a, hzero_b]
+
+/-- Adding the hyperbolic residual block orthogonally to a nondegenerate
+selected block remains nondegenerate. -/
+theorem complexMinkowski_selected_sup_hyperbolicFrameSpan_nondegenerate
+    {d s : ℕ}
+    {M : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {q qDual : Fin s → Fin (d + 1) → ℂ}
+    (hM : ComplexMinkowskiNondegenerateSubspace d M)
+    (hq_orth_M :
+      ∀ c (m : M),
+        sourceComplexMinkowskiInner d (q c)
+          (m : Fin (d + 1) → ℂ) = 0)
+    (hqDual_orth_M :
+      ∀ c (m : M),
+        sourceComplexMinkowskiInner d (qDual c)
+          (m : Fin (d + 1) → ℂ) = 0)
+    (hq_pair_zero :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (q c') = 0)
+    (hqDual_pair_zero :
+      ∀ c c', sourceComplexMinkowskiInner d (qDual c) (qDual c') = 0)
+    (hdual :
+      ∀ c c', sourceComplexMinkowskiInner d (q c) (qDual c') =
+        if c = c' then (1 : ℂ) else 0) :
+    ComplexMinkowskiNondegenerateSubspace d
+      (M ⊔ (Submodule.span ℂ (Set.range q) ⊔
+        Submodule.span ℂ (Set.range qDual))) := by
+  let Q : Submodule ℂ (Fin (d + 1) → ℂ) := Submodule.span ℂ (Set.range q)
+  let Qd : Submodule ℂ (Fin (d + 1) → ℂ) :=
+    Submodule.span ℂ (Set.range qDual)
+  let H : Submodule ℂ (Fin (d + 1) → ℂ) := Q ⊔ Qd
+  have hH : ComplexMinkowskiNondegenerateSubspace d H := by
+    simpa [H, Q, Qd] using
+      complexMinkowski_hyperbolicFrameSpan_nondegenerate
+        (d := d) (s := s) (q := q) (qDual := qDual)
+        hq_pair_zero hqDual_pair_zero hdual
+  have hH_orth_M :
+      ∀ x : H, ∀ m : M,
+        sourceComplexMinkowskiInner d
+          (x : Fin (d + 1) → ℂ) (m : Fin (d + 1) → ℂ) = 0 := by
+    intro x m
+    rcases Submodule.mem_sup.mp x.2 with ⟨qx, hqx, qdx, hqdx, hxsum⟩
+    have hqx_pair : sourceComplexMinkowskiInner d qx
+        (m : Fin (d + 1) → ℂ) = 0 := by
+      exact span_frame_orthogonal_to_subspace
+        (d := d) (s := s) (M := M) (q := q)
+        hq_orth_M (by simpa [Q] using hqx) m
+    have hqdx_pair : sourceComplexMinkowskiInner d qdx
+        (m : Fin (d + 1) → ℂ) = 0 := by
+      exact span_frame_orthogonal_to_subspace
+        (d := d) (s := s) (M := M) (q := qDual)
+        hqDual_orth_M (by simpa [Qd] using hqdx) m
+    rw [show (x : Fin (d + 1) → ℂ) = qx + qdx from hxsum.symm]
+    rw [sourceComplexMinkowskiInner_add_left, hqx_pair, hqdx_pair, add_zero]
+  intro x horth
+  rcases Submodule.mem_sup.mp x.2 with ⟨m0, hm0, h0, hh0, hxsum⟩
+  let m : M := ⟨m0, hm0⟩
+  let h : H := ⟨h0, by simpa [H] using hh0⟩
+  have hm_zero : m = 0 := by
+    apply hM m
+    intro y
+    have hx_pair : sourceComplexMinkowskiInner d
+        (x : Fin (d + 1) → ℂ) (y : Fin (d + 1) → ℂ) = 0 := by
+      exact horth ⟨(y : Fin (d + 1) → ℂ), by
+        exact Submodule.mem_sup_left y.2⟩
+    have hcalc : sourceComplexMinkowskiInner d
+        (x : Fin (d + 1) → ℂ) (y : Fin (d + 1) → ℂ) =
+        sourceComplexMinkowskiInner d
+          (m : Fin (d + 1) → ℂ) (y : Fin (d + 1) → ℂ) := by
+      rw [show (x : Fin (d + 1) → ℂ) = m0 + h0 from hxsum.symm]
+      rw [sourceComplexMinkowskiInner_add_left]
+      have hh_pair : sourceComplexMinkowskiInner d h0
+          (y : Fin (d + 1) → ℂ) = 0 := by
+        exact hH_orth_M h y
+      rw [hh_pair, add_zero]
+    rw [hx_pair] at hcalc
+    exact hcalc.symm
+  have hh_zero : h = 0 := by
+    apply hH h
+    intro y
+    have hx_pair : sourceComplexMinkowskiInner d
+        (x : Fin (d + 1) → ℂ) (y : Fin (d + 1) → ℂ) = 0 := by
+      exact horth ⟨(y : Fin (d + 1) → ℂ), by
+        exact Submodule.mem_sup_right y.2⟩
+    have hcalc : sourceComplexMinkowskiInner d
+        (x : Fin (d + 1) → ℂ) (y : Fin (d + 1) → ℂ) =
+        sourceComplexMinkowskiInner d
+          (h : Fin (d + 1) → ℂ) (y : Fin (d + 1) → ℂ) := by
+      rw [show (x : Fin (d + 1) → ℂ) = m0 + h0 from hxsum.symm]
+      rw [sourceComplexMinkowskiInner_add_left]
+      have hm_pair : sourceComplexMinkowskiInner d m0
+          (y : Fin (d + 1) → ℂ) = 0 := by
+        rw [sourceComplexMinkowskiInner_comm d m0 (y : Fin (d + 1) → ℂ)]
+        exact hH_orth_M y m
+      rw [hm_pair, zero_add]
+    rw [hx_pair] at hcalc
+    exact hcalc.symm
+  apply Subtype.ext
+  have hm0_zero : m0 = 0 := congrArg Subtype.val hm_zero
+  have hh0_zero : h0 = 0 := congrArg Subtype.val hh_zero
+  calc
+    (x : Fin (d + 1) → ℂ) = m0 + h0 := hxsum.symm
+    _ = 0 := by rw [hm0_zero, hh0_zero, zero_add]
+
 /-- A raw frame dual to a totally isotropic frame can be corrected, inside the
 same subspace, to an isotropic dual frame.  The correction is the standard
 Gram-matrix half-subtraction
