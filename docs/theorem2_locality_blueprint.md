@@ -47223,9 +47223,6 @@ Proof decomposition of this theorem, without hiding the analytic work:
            wick_adjacent_mem :
              ∀ x, x ∈ hChart.V0 ->
                (fun k => wickRotatePoint (x (τ k))) ∈ Ωτ
-           wick_source_mem :
-             ∀ x, x ∈ hChart.V0 ->
-               (fun k => wickRotatePoint (x k)) ∈ Ωτ
            branchτ : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ
            branchτ_holo : DifferentiableOn ℂ branchτ Ωτ
            branchτ_eq_correctedExtendF :
@@ -47378,10 +47375,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
          obtained by composing the ordinary corrected `extendF (bvt_F OS lgc
          n)` with the finite coordinate permutation, and the boundary-pairing
          field must then identify that selected branch with the OS-I
-         `(4.1)`/`(4.12)` compact distribution.  The final continuation
-         theorem must construct the `adjacentBranch` on `DΩ.Ω`, prove its
-         holomorphy and invariance there, and transport the compact pairing
-         from the adjacent permuted edge to the deterministic canonical lift.
+         `(4.1)`/`(4.12)` compact distribution.  The active source-patch
+         theorem uses the resulting branch only through the local BHW/Jost
+         carrier and its pointwise Wick/real trace fields.  The stronger
+         adjacent-boundary packet, with real-boundary comparison and
+         deterministic-lift pairing, is downstream of the compact source-patch
+         theorem and must not be used to prove it.
          These carriers must not be implemented as `True`, as arbitrary
          chosen functions, or as wrappers around
          `OS45Figure24AdjacentBranchData`; if no lower-level theorem with this
@@ -47432,9 +47431,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
                  x ∈ EuclideanOrderedPositiveTimeSector
                    (d := d) (n := n) 1 :=
                hV_ordered x (hChart.V0_sub hx)
-             exact hPFT
-               (wick_mem_permutedForwardTube_of_ordered
-                 (d := d) (n := n) (π := τ) x hxord)
+             change
+               (fun k => wickRotatePoint ((fun j => x (τ j)) (τ k))) ∈
+                 BHW.ExtendedTube d n
+             simpa [τ, Equiv.swap_apply_def, Equiv.swap_inv]
+               using
+                 BHW.forwardTube_subset_extendedTube
+                   (d := d) (n := n)
+                   (wickRotate_mem_forwardTube_of_mem_orderedPositiveTimeSector
+                     (d := d) (n := n) (1 : Equiv.Perm (Fin n)) hxord)
            have hbranch_holo :
                DifferentiableOn ℂ branchτ Ωτ := by
              exact
@@ -47537,32 +47542,56 @@ Proof decomposition of this theorem, without hiding the analytic work:
                  BHW.permutedExtendedTubeSector] using hz)
          ```
 
-         The displayed `wick_mem_permutedForwardTube_of_ordered` and
-         `differentiable_permNPoint` names may be implemented as private
-         one-line topology helpers if no exact declaration already exists:
-         the first is just the definition of `BHW.PermutedForwardTube` after
-         `τ * τ = 1`, and the second is continuity/differentiability of a
-         finite coordinate permutation.  The final integral-congruence line
-         is deliberately recorded at theorem-surface level: the production
-         proof must rewrite the pointwise integrand by the same displayed
-         steps and then call the repository's standard integral congruence
-         lemma, rather than introducing a new analytic shortcut.
+         The displayed `differentiable_permNPoint` name may be implemented as
+         a private one-line finite-coordinate differentiability helper if no
+         exact declaration already exists.  The Wick-sector membership above
+         deliberately unfolds `permutedExtendedTubeSector`: the relabelled
+         Wick point is in the selected adjacent pullback sector because
+         applying the adjacent permutation again gives the ordinary Wick point,
+         which is in the forward tube by ordinary ordered Euclidean time.
+         Do **not** add a matching `sourceWick ∈ Ωτ` field here.  Unfolding
+         that false-looking target would require the adjacent Wick point
+         itself to lie in the ordinary extended tube, which is not supplied by
+         the ordered-sector hypotheses and is not the role of this initial
+         OS-I `(4.1)/(4.12)` packet.  The source Wick trace is produced later
+         by the local OS-I §4.5/BHW continuation theorem on the connected
+         Figure-2-4 hull.  The final integral-congruence line is recorded at
+         theorem-surface level: the production proof must rewrite the
+         pointwise integrand by the same displayed steps and then call the
+         repository's standard integral congruence lemma, rather than
+         introducing a new analytic shortcut.
+
+         Checked support, 2026-05-09: this exact one-sided membership is now
+         production-checked as
+         `BHW.os45_adjacentWick_mem_selectedAdjacentSector_of_ordered`; the
+         canonical Figure-2-4 specialization is
+         `BHW.os45Figure24SourcePatch_adjacentWick_mem_selectedAdjacentSector`.
+         The stored source-patch hull also exposes the checked method
+         `BHW.OS45SourcePatchBHWJostHullData.adjacent_wick_mem_U`, using the
+         adjacent preimage of the ordinary extended tube and the involutivity
+         of the selected adjacent transposition.  These are strict OS45
+         support facts, not source-variety descent facts.
 
          A later implementation may package these subclaims as private
          helpers, but only if the helpers expose this content: an initial
          adjacent permuted-tube boundary theorem, a Lorentz/BHW continuation
-         theorem on `DΩ.Ω`, and the resulting canonical-lift compact pairing.
-         Those helpers are still source mathematics, not forwarding wrappers.
+         theorem on the selected local hull, and the resulting pointwise trace
+         fields.  The canonical-lift compact pairing belongs to the downstream
+         adjacent-boundary packet after the compact source-patch theorem is
+         checked.  These helpers are still source mathematics, not forwarding
+         wrappers.
 
          The theorem surface for
-         `BHW.os45Figure24_adjacentBranchData_of_OSI45` must fill three
-         provenance fields: holomorphic/Lorentz continuation, real Jost
-         boundary equality, and the fixed canonical-lift compact pairing.  A
-         packet with only `adjacent_holo`, `adjacent_lorentzInvariant`, and
-         one lift-pairing field is too weak: the later real-boundary theorem
-         would be false for an arbitrary analytic branch.  The source
-         comparison is therefore stored directly as
-         `adjacent_realBoundary_eq_ordinary`.
+         `BHW.os45Figure24_adjacentBranchData_of_OSI45` is now a downstream
+         boundary-data surface.  It must fill three provenance fields:
+         holomorphic/Lorentz continuation, real Jost boundary equality, and
+         the fixed canonical-lift compact pairing.  A packet with only
+         `adjacent_holo`, `adjacent_lorentzInvariant`, and one lift-pairing
+         field is too weak for the later real-boundary theorem.  But this
+         packet is not the first active producer for
+         `BHW.os45Figure24_sourcePatch_pairing_eq_swappedSourcePatch_of_OSI45`;
+         its `adjacent_realBoundary_eq_ordinary` field may consume that
+         theorem only after it is proved.
 
          ```lean
          theorem BHW.os45Figure24_adjacentBranchData_of_OSI45
@@ -47590,12 +47619,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
                φZ ψZ Dinit DΩ Dlor
          ```
 
-         The final continuation constructor is the local implementation-facing
-         form of OS I §4.5 after `(4.1)/(4.12)` and `(4.14)` have been
-         isolated.  It may be implemented as a private theorem, but its proof
-         term must visibly construct the adjacent branch on `DΩ.Ω`, prove the
-         real-boundary comparison for every compact `χ` supported in
-         `hChart.V0`, and prove the fixed lift pairing for `φ`.
+         The final adjacent-boundary constructor is the downstream
+         implementation-facing form of OS I §4.5 after `(4.1)/(4.12)`,
+         `(4.14)`, the local BHW/Jost carrier, and the compact source-patch
+         theorem have been isolated.  It may be implemented as a private
+         theorem later, but its proof term must visibly construct the adjacent
+         branch on `DΩ.Ω`, prove the real-boundary comparison for every compact
+         `χ` supported in `hChart.V0`, and prove the fixed lift pairing for
+         `φ`.  It is not an input to the active source-patch compact theorem.
 
          Strict-route reset, 2026-05-09: do not route the OS45 producer
          through `SourceOrientedScalarRepresentativeData` or
@@ -47872,10 +47903,6 @@ Proof decomposition of this theorem, without hiding the analytic work:
              ∀ x, x ∈ hChart.V0 ->
                (fun k => wickRotatePoint (x (Dinit.τ k))) ∈ Dinit.Ωτ :=
              Dinit.wick_adjacent_mem
-           sourceWick_mem_Ωτ :
-             ∀ x, x ∈ hChart.V0 ->
-               (fun k => wickRotatePoint (x k)) ∈ Dinit.Ωτ :=
-             Dinit.wick_source_mem
            realPatch_mem_ΩJ :
              ∀ x, x ∈ hChart.V0 -> BHW.realEmbed x ∈ ΩJ
            lift_mem_ΩJ_of_support :
@@ -47889,14 +47916,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
                  WJ (BHW.complexLorentzAction Λ z) = WJ z
            WJ_agrees_Ωτ :
              ∀ z, z ∈ Dinit.Ωτ -> WJ z = Dinit.branchτ z
-           WJ_agrees_initialEdge :
+           WJ_agrees_adjacentEdge :
              ∀ x, x ∈ hChart.V0 ->
-               WJ (fun k => wickRotatePoint (x k)) =
-                 Dinit.branchτ (fun k => wickRotatePoint (x k)) := by
+               WJ (fun k => wickRotatePoint (x (Dinit.τ k))) =
+                 Dinit.branchτ
+                   (fun k => wickRotatePoint (x (Dinit.τ k))) := by
              intro x hx
              exact WJ_agrees_Ωτ
-               (fun k => wickRotatePoint (x k))
-               (sourceWick_mem_Ωτ x hx)
+               (fun k => wickRotatePoint (x (Dinit.τ k)))
+               (adjacentEdge_mem_Ωτ x hx)
            WJ_restrict_DΩ_holo :
              DifferentiableOn ℂ WJ DΩ.Ω := WJ_holo.mono DΩ_sub_ΩJ
            WJ_restrict_DΩ_lorentzInvariant :
@@ -47931,11 +47959,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
          `tsupport φ`, and it is connected on this local Figure-2-4
          component.  The continued branch must agree with `Dinit.branchτ` on
          all of `Dinit.Ωτ`; agreement only on the selected edge is too weak to
-         be the BHW analytic-continuation input.  The `WJ_wick_trace` and
-         `WJ_real_trace` fields are pointwise consequences of that agreement
-         plus the OS-I `(4.1)/(4.12)` formula for `Dinit.branchτ`; they are
-         the only branch-trace consequences needed to assemble the checked
-         pair-data carrier.
+         be the BHW analytic-continuation input.  `WJ_agrees_adjacentEdge` is
+         the direct edge consequence of that normalization.  The
+         `WJ_wick_trace` and `WJ_real_trace` fields are the local OS I
+         §4.5/BHW trace outputs on the source Wick edge and real Jost edge;
+         they are not proved by pretending the source Wick edge lies in the
+         initial pullback sector.  They are the only branch-trace consequences
+         needed to assemble the checked pair-data carrier.
 
          The actual lower theorem is then:
 
@@ -47987,12 +48017,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
            Bargmann-Hall-Wightman continuation theorem on that local connected
            hull;
          * prove `WJ_agrees_Ωτ` as the branch-normalization condition in the
-           BHW theorem, then derive `WJ_agrees_initialEdge` from
+           BHW theorem, then derive `WJ_agrees_adjacentEdge` from
            `Dinit.wick_adjacent_mem`;
-         * derive the pointwise Wick and real trace formulas on `hChart.V0`
-           from `WJ_agrees_Ωτ`, `Dinit.wick_adjacent_mem`,
-           swapped real-embedding membership, and
-           `Dinit.branchτ_eq_correctedExtendF`.
+         * prove the pointwise Wick and real trace formulas on `hChart.V0` as
+           the local OS I §4.5/BHW boundary-trace outputs on the source Wick
+           edge and real Jost edge, using the initial adjacent branch
+           normalization only on the adjacent edge where its domain actually
+           applies.
 
          For production implementation, this lower theorem should not be
          attacked as one large proof.  The proof-doc-complete split is the

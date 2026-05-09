@@ -733,6 +733,27 @@ theorem adjacentExtendedTubePreimage_subset_U
       H.adjacentExtendedTubePreimage_subset_ambient
   exact hjoin_base_real.trans hjoin_real_z
 
+/-- The adjacent-relabelled Wick edge of a stored OS45 source patch lies in
+the stored BHW/Jost hull. -/
+theorem adjacent_wick_mem_U
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V) :
+    ∀ x, x ∈ V →
+      (fun k => wickRotatePoint (x (H.τ k))) ∈ H.U := by
+  intro x hx
+  apply H.adjacentExtendedTubePreimage_subset_U
+  change
+    BHW.permAct (d := d) H.τ
+      (fun k => wickRotatePoint (x (H.τ k))) ∈ BHW.ExtendedTube d n
+  have hrewrite :
+      BHW.permAct (d := d) H.τ
+          (fun k => wickRotatePoint (x (H.τ k))) =
+        fun k => wickRotatePoint (x k) := by
+    ext k μ
+    simp [BHW.permAct, H.τ_eq, Equiv.swap_apply_self]
+  rw [hrewrite]
+  exact H.wick_id_ET x hx
+
 end OS45SourcePatchBHWJostHullData
 
 /-- Pair of ordinary/adjacent BHW-Jost branches on one selected OS45 source

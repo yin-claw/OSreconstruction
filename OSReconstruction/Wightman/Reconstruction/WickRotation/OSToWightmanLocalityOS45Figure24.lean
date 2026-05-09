@@ -2601,6 +2601,22 @@ theorem os45Figure24SourcePatch_wick_mem_extendedTube
     simpa [hft_eq] using hroot
   exact BHW.forwardTube_subset_extendedTube (by simpa using hBHW)
 
+/-- The adjacent-relabelled Wick rotation of every canonical Figure-2-4
+source-patch point lies in the selected adjacent permuted extended-tube
+sector. -/
+theorem os45Figure24SourcePatch_adjacentWick_mem_selectedAdjacentSector
+    [NeZero d]
+    (hd : 2 ≤ d)
+    (n : Nat) (i : Fin n) (hi : i.val + 1 < n) :
+    ∀ x ∈ BHW.os45Figure24SourcePatch (d := d) n i hi,
+      (fun k => wickRotatePoint (x (Equiv.swap i ⟨i.val + 1, hi⟩ k))) ∈
+        BHW.permutedExtendedTubeSector d n
+          (Equiv.swap i ⟨i.val + 1, hi⟩) := by
+  intro x hx
+  exact BHW.os45_adjacentWick_mem_selectedAdjacentSector_of_ordered
+    (d := d) (n := n) i hi x
+    (BHW.os45Figure24SourcePatch_ordered (d := d) hd n i hi x hx)
+
 /-- The adjacent-permuted real embedding of every point of the canonical
 Figure-2-4 source patch lies in the ordinary extended tube. -/
 theorem os45Figure24SourcePatch_permAct_realEmbed_mem_extendedTube

@@ -72,9 +72,10 @@ local Slot 1:
    and `BHW.os45_adjacent_identity_horizontalEdge_sourcePatch` now choose the
    ordered seed inside `Ufig ∩ Upath`, shrink with compact closure, and export
    the closure-level Figure-2-4 path field;
-3. current proof-document frontier: finish the upstream direct OS-I compact
-   branch-difference producer and the scalar-source inputs before any
-   branch-local Lean pass:
+3. current strict-route frontier: finish the upstream direct OS-I compact
+   branch-difference producer.  The first branch-local Lean pass has begun
+   only on the checked OS45 geometry/hull support; the actual local
+   OS-I/BHW branch-continuation producer is still the open gate:
    `BHW.os45Figure24_sourcePatch_pairing_eq_swappedSourcePatch_of_OSI45`
    must be proved as a direct OS I §4.5 / BHW-Jost compact theorem, feeding
    `BHW.OS45CompactFigure24WickPairingEq` and
@@ -92,9 +93,16 @@ local Slot 1:
    `BHW.isOpen_permAct_preimage_extendedTube`,
    `BHW.differentiableOn_extendF_bvt_F_extendedTube`,
    `BHW.differentiableOn_extendF_bvt_F_permAct_preimageExtendedTube`,
+   `BHW.os45_adjacentWick_mem_selectedAdjacentSector_of_ordered`,
+   `BHW.os45Figure24SourcePatch_adjacentWick_mem_selectedAdjacentSector`,
    `BHW.wickRotate_mem_BHW_forwardTube_of_ordered`,
    `BHW.extendF_bvt_F_wickRotate_eq_of_ordered`,
    `BHW.OS45SourcePatchBHWJostHullData.wick_id_forwardTube_of_ordered`,
+   `BHW.OS45SourcePatchBHWJostHullData.adjacent_wick_mem_U`,
+   plus the older source-oriented initial-chart/continuation consumers listed
+   below as historical side support only.  Those source-oriented consumers
+   must not be used as the active theorem-2 producer under the strict OS-II
+   route:
    `BHW.OS45SourcePatchBHWJostOrientedContinuationInputs`,
    `BHW.OS45SourcePatchBHWJostOrientedContinuationInputs.exists_gluedBranch`,
    `BHW.SourceOrientedScalarRepresentativeData.toExtendedTubeInitialChart`,
@@ -9748,14 +9756,35 @@ or the compact lift pairing as fields of the active source-patch producer;
 those are downstream boundary-data consequences after the compact
 source-patch theorem has been proved.
 The boundary-functional packet must therefore expose both selected Wick-edge
-memberships in the adjacent permuted tube:
-`Dinit.wick_source_mem : (fun k => wickRotatePoint (x k)) ∈ Dinit.Ωτ`,
-used for the pair-data `Btau_wick_trace`, and the older
-`Dinit.wick_adjacent_mem`, used only for downstream lift transport.  The
-pointwise trace helper is
+memberships at the correct layers.  The initial adjacent-tube packet exposes
+only
+`Dinit.wick_adjacent_mem :
+  (fun k => wickRotatePoint (x (Dinit.τ k))) ∈ Dinit.Ωτ`, which is the
+membership needed for the OS-I `(4.1)/(4.12)` compact adjacent-edge pairing.
+The source Wick point
+`fun k => wickRotatePoint (x k)` is **not** added as a field of
+`Dinit.Ωτ`; its trace is produced later by the local OS-I §4.5/BHW
+continuation theorem on the connected Figure-2-4 hull.  The pointwise trace
+helper is
 `BHW.os45_BHWJostPointwiseTraces_of_OSI45`, whose proof is just
-`WJ_agrees_Ωτ` plus `Dinit.branchτ_eq_correctedExtendF` and the real
-membership rewrite from `hV_swapET`; no compact distributional equality enters.
+the local BHW/Jost trace output plus `Dinit.branchτ_eq_correctedExtendF` on
+the adjacent edge and the real membership rewrite from `hV_swapET`; no compact
+distributional equality enters.
+Lean-level membership transcript, 2026-05-09: for
+`τ = Equiv.swap i ⟨i.val + 1, hi⟩` and
+`Dinit.Ωτ = BHW.permutedExtendedTubeSector d n τ`, the initial `Dinit`
+membership is a one-line consequence of the ordered source patch.  For
+`wick_adjacent_mem`, unfold `permutedExtendedTubeSector` at
+`z = fun k => wickRotatePoint (x (τ k))`; the target becomes
+`fun k => wickRotatePoint ((fun j => x (τ j)) (τ k)) ∈ BHW.ExtendedTube d n`,
+which rewrites by `τ * τ = 1` to the ordinary Wick point and follows from
+`wickRotate_mem_forwardTube_of_mem_orderedPositiveTimeSector` at permutation
+`1`, then `BHW.forwardTube_subset_extendedTube`.  Do not add a symmetric
+`wick_source_mem` field at this layer: unfolding it would require
+`fun k => wickRotatePoint (x (τ k)) ∈ BHW.ExtendedTube d n`, which is not a
+consequence of the ordered-sector hypotheses and is not the initial
+adjacent-tube domain condition.  No `PermutedForwardTube`, PET monodromy,
+source scalar representative, or ambient invariant transport enters.
 
 Latest adjacent-hull/real-boundary refinement, 2026-05-02: the local hull is
 now fixed as a path component, not an unnamed connected open set.  Define the
