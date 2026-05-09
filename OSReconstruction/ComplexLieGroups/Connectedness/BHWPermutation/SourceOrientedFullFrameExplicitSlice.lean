@@ -362,6 +362,19 @@ theorem sourceFullFrameRealOrientedCoordComplexifyLinear_apply
       sourceFullFrameRealOrientedCoordComplexify d Y :=
   rfl
 
+/-- Componentwise complexification of real full-frame oriented coordinates is
+injective. -/
+theorem sourceFullFrameRealOrientedCoordComplexify_injective
+    (d : ℕ) :
+    Function.Injective (sourceFullFrameRealOrientedCoordComplexify d) := by
+  intro Y Z hYZ
+  apply Prod.ext
+  · funext a b
+    exact
+      Complex.ofReal_injective
+        (congrFun (congrFun (congrArg Prod.fst hYZ) a) b)
+  · exact Complex.ofReal_injective (congrArg Prod.snd hYZ)
+
 /-- The real tangent model for the full-frame oriented hypersurface at a real
 base frame, defined as the real form whose componentwise complexification lies
 in the checked complex tangent space. -/
@@ -487,6 +500,18 @@ theorem sourceFullFrameRealOrientedTangentComplexifyLinear_apply
       ⟨sourceFullFrameRealOrientedCoordComplexify d
         (Y : SourceFullFrameRealOrientedCoord d), Y.property⟩ :=
   rfl
+
+/-- The real tangent complexification map is injective. -/
+theorem sourceFullFrameRealOrientedTangentComplexifyLinear_injective
+    (d : ℕ)
+    (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+    Function.Injective
+      (sourceFullFrameRealOrientedTangentComplexifyLinear d M0R) := by
+  intro Y Z hYZ
+  apply Subtype.ext
+  exact
+    sourceFullFrameRealOrientedCoordComplexify_injective d
+      (congrArg Subtype.val hYZ)
 
 /-- The real version of the constructive full-frame differential right-inverse
 formula. -/
@@ -731,5 +756,63 @@ theorem sourceFullFrameRealDifferentialRightInverseLinear_complexify
   exact
     sourceFullFrameOrientedDifferentialRightInverseLinear_realComplexify
       d hM0R (Y : SourceFullFrameRealOrientedCoord d) Y.property
+
+/-- The real right inverse is injective on the real tangent model. -/
+theorem sourceFullFrameRealDifferentialRightInverseLinear_injective
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det) :
+    Function.Injective
+      (sourceFullFrameRealDifferentialRightInverseLinear d hM0R) := by
+  intro Y Z hYZ
+  apply sourceFullFrameRealOrientedTangentComplexifyLinear_injective d M0R
+  apply Subtype.ext
+  have hmap :
+      (sourceFullFrameRealDifferentialRightInverseLinear d hM0R Y).map
+          Complex.ofReal =
+        (sourceFullFrameRealDifferentialRightInverseLinear d hM0R Z).map
+          Complex.ofReal := by
+    rw [hYZ]
+  let hM0C : IsUnit (M0R.map Complex.ofReal).det := by
+    have hdetMap :
+        (M0R.map Complex.ofReal).det = (M0R.det : ℂ) := by
+      simpa [RingHom.mapMatrix_apply] using
+        (RingHom.map_det Complex.ofRealHom M0R).symm
+    rw [hdetMap]
+    exact hM0R.map Complex.ofRealHom
+  let YC := sourceFullFrameRealOrientedTangentComplexifyLinear d M0R Y
+  let ZC := sourceFullFrameRealOrientedTangentComplexifyLinear d M0R Z
+  have hYc :
+      (sourceFullFrameRealDifferentialRightInverseLinear d hM0R Y).map
+          Complex.ofReal =
+        sourceFullFrameOrientedDifferentialRightInverseLinear d hM0C YC := by
+    simpa [hM0C, YC, sourceFullFrameRealOrientedTangentComplexifyLinear] using
+      sourceFullFrameRealDifferentialRightInverseLinear_complexify d hM0R Y
+  have hZc :
+      (sourceFullFrameRealDifferentialRightInverseLinear d hM0R Z).map
+          Complex.ofReal =
+        sourceFullFrameOrientedDifferentialRightInverseLinear d hM0C ZC := by
+    simpa [hM0C, ZC, sourceFullFrameRealOrientedTangentComplexifyLinear] using
+      sourceFullFrameRealDifferentialRightInverseLinear_complexify d hM0R Z
+  have hright :
+      sourceFullFrameOrientedDifferentialRightInverseLinear d hM0C YC =
+        sourceFullFrameOrientedDifferentialRightInverseLinear d hM0C ZC := by
+    rw [← hYc, ← hZc]
+    exact hmap
+  have hdiff :=
+    congrArg (sourceFullFrameOrientedDifferential d
+      (M0R.map Complex.ofReal)) hright
+  have hdiff' : (YC : SourceFullFrameOrientedCoord d) =
+      (ZC : SourceFullFrameOrientedCoord d) := by
+    change
+      sourceFullFrameOrientedDifferential d (M0R.map Complex.ofReal)
+          (sourceFullFrameOrientedDifferentialRightInverseLinear d hM0C YC) =
+        sourceFullFrameOrientedDifferential d (M0R.map Complex.ofReal)
+          (sourceFullFrameOrientedDifferentialRightInverseLinear d hM0C ZC)
+        at hdiff
+    rw [sourceFullFrameOrientedDifferential_rightInverse d hM0C YC,
+      sourceFullFrameOrientedDifferential_rightInverse d hM0C ZC] at hdiff
+    exact hdiff
+  simpa [YC, ZC, sourceFullFrameRealOrientedTangentComplexifyLinear] using hdiff'
 
 end BHW

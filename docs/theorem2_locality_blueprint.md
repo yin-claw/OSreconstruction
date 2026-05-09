@@ -19813,6 +19813,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.SourceFullFrameRealOrientedCoord d ->ₗ[ℝ]
             BHW.SourceFullFrameOrientedCoord d
 
+      theorem BHW.sourceFullFrameRealOrientedCoordComplexify_injective
+          (d : Nat) :
+          Function.Injective
+            (BHW.sourceFullFrameRealOrientedCoordComplexify d)
+
       def BHW.sourceFullFrameRealOrientedTangentSpace
           (d : Nat)
           (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
@@ -19825,6 +19830,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
             BHW.sourceFullFrameOrientedTangentSpace d
               (BHW.sourceFullFrameOrientedGram d
                 (M0R.map Complex.ofReal))
+
+      theorem
+          BHW.sourceFullFrameRealOrientedTangentComplexifyLinear_injective
+          (d : Nat)
+          (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+          Function.Injective
+            (BHW.sourceFullFrameRealOrientedTangentComplexifyLinear
+              d M0R)
 
       noncomputable def
           BHW.sourceFullFrameRealDifferentialRightInverseFormulaLinear
@@ -19860,6 +19873,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 exact hM0R.map Complex.ofRealHom)
               (BHW.sourceFullFrameRealOrientedTangentComplexifyLinear
                 d M0R Y)
+
+      theorem
+          BHW.sourceFullFrameRealDifferentialRightInverseLinear_injective
+          (d : Nat)
+          {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hM0R : IsUnit M0R.det) :
+          Function.Injective
+            (BHW.sourceFullFrameRealDifferentialRightInverseLinear
+              d hM0R)
 
       theorem BHW.sourceRealFullFrameLocalCoord_image_open
           (d n : Nat)
@@ -19981,9 +20003,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `SourceFullFrameRealOrientedCoord`,
       `sourceFullFrameRealOrientedCoordComplexify`,
       `sourceFullFrameRealOrientedCoordComplexifyLinear`,
+      `sourceFullFrameRealOrientedCoordComplexify_injective`,
       `sourceFullFrameRealOrientedTangentSpace`,
       `mem_sourceFullFrameRealOrientedTangentSpace`,
       `sourceFullFrameRealOrientedTangentComplexifyLinear`,
+      `sourceFullFrameRealOrientedTangentComplexifyLinear_injective`,
       `sourceFullFrameRealDifferentialRightInverseFormula`,
       `sourceFullFrameRealDifferentialRightInverseFormulaLinear`,
       `sourceFullFrameRealDifferentialRightInverseLinear`,
@@ -19991,7 +20015,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrame_minkowskiMatrix_map_ofReal`,
       `sourceFullFrameRealOrientedCoordComplexify_matrix_of`, and
       `sourceFullFrameOrientedDifferentialRightInverseLinear_realComplexify`,
-      plus `sourceFullFrameRealDifferentialRightInverseLinear_complexify`.
+      plus `sourceFullFrameRealDifferentialRightInverseLinear_complexify` and
+      `sourceFullFrameRealDifferentialRightInverseLinear_injective`.
       Thus the next producer step is not to prove abstract reality of the
       complex slice, but to package finite coordinates for this checked real
       tangent slice and feed that into `sourceFullFrameRealGaugeSliceData`.

@@ -2389,9 +2389,11 @@ checks the real-source permutation topology helpers
    `SourceFullFrameRealOrientedCoord`,
    `sourceFullFrameRealOrientedCoordComplexify`,
    `sourceFullFrameRealOrientedCoordComplexifyLinear`,
+   `sourceFullFrameRealOrientedCoordComplexify_injective`,
    `sourceFullFrameRealOrientedTangentSpace`,
    `mem_sourceFullFrameRealOrientedTangentSpace`,
    `sourceFullFrameRealOrientedTangentComplexifyLinear`,
+   `sourceFullFrameRealOrientedTangentComplexifyLinear_injective`,
    `sourceFullFrameRealDifferentialRightInverseFormula`,
    `sourceFullFrameRealDifferentialRightInverseFormulaLinear`,
    `sourceFullFrameRealDifferentialRightInverseLinear`,
@@ -2399,10 +2401,11 @@ checks the real-source permutation topology helpers
    `sourceFullFrame_minkowskiMatrix_map_ofReal`,
    `sourceFullFrameRealOrientedCoordComplexify_matrix_of`, and
    `sourceFullFrameOrientedDifferentialRightInverseLinear_realComplexify`,
-   and `sourceFullFrameRealDifferentialRightInverseLinear_complexify`
+   `sourceFullFrameRealDifferentialRightInverseLinear_complexify`, and
+   `sourceFullFrameRealDifferentialRightInverseLinear_injective`
    define the real tangent model, prove the real formula is linear on it, and
-   prove that this real right inverse complexifies to the explicit complex
-   right inverse.  The remaining real-slice step is therefore to build the
+   prove that this real right inverse complexifies injectively to the explicit
+   complex right inverse.  The remaining real-slice step is therefore to build the
    finite coordinate equivalences for this real slice and use this checked
    complexification theorem to define `sourceFullFrameRealGaugeSliceData`.
    After that, apply the real
