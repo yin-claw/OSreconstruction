@@ -5991,16 +5991,19 @@ implementation contract is:
    determinant-nonzero full-frame base.  The open-image obligation belongs to
    the final shrunken source chart, not to the frame-domain packet: the next
    honest mathematical frontier is
-   `sourceFullFrameRealSplitKernelMixedCoord_open_on_W`, the finite-product
-   open-image theorem for the chosen split neighborhood `W`.  This theorem
-   must be proved locally: first through the checked determinant-nonzero
-   triangular homeomorphism
-   `sourceFullFrameRealSplitMixedRowsHomeomorph`, whose inverse is the checked
-   `sourceFullFrameRealSplitMixedRowsInv` and whose continuity uses
-   `continuous_subtype_matrix_inv_of_det_ne_zero_real`; then through a
+   `sourceFullFrameRealSplitProductKernelCoord_open_after_homeomorph_on_W`,
+   the selected-frame/product open-image theorem after passing through the
+   checked determinant-nonzero triangular homeomorphism.  The mechanical
+   bridge
+   `sourceFullFrameRealSplitKernelMixedCoord_open_on_W_of_product_homeomorph_open`
+   then derives the split-kernel/mixed open-image theorem used by
+   `isOpen_sourceFullFrameRealCoord_image_of_split_local_open`.  The remaining
+   product theorem must be proved locally: first restrict the chosen split
+   neighborhood `W` to the determinant-nonzero frame locus; then use the
    selected-frame local product/submersion chart around the base frame whose
-   first coordinate is `S.realKernelCoord`; and finally by product openness.
-   It must not be replaced by a global selected-frame open-map assertion.
+   first coordinate is `S.realKernelCoord`; and finally apply product
+   openness with the identity mixed-row coordinate.  It must not be replaced
+   by a global selected-frame open-map assertion.
    The split-image
    bridge is now checked:
    `sourceFullFrameRealKernelMixedCoord_image_eq_split` rewrites the raw
@@ -6016,7 +6019,14 @@ implementation contract is:
    The determinant-nonzero tail/mixed coordinate replacement is therefore no
    longer an unproved part of the frontier; the only remaining local-open
    ingredient is the selected-frame product chart and the final shrink to the
-   chosen `W`.
+   chosen determinant-nonzero `W`.  The product-coordinate bridge now checked
+   in Lean is
+   `sourceFullFrameRealSplitProductKernelCoord`,
+   `sourceFullFrameRealSplitKernelMixedCoord_eq_productKernelCoord_homeomorph`,
+   `sourceFullFrameRealSplitKernelMixedCoord_image_eq_product_homeomorph_image`,
+   `isOpen_sourceFullFrameRealSplitKernelMixedCoord_image_of_product_homeomorph_image_open`,
+   and
+   `sourceFullFrameRealSplitKernelMixedCoord_open_on_W_of_product_homeomorph_open`.
    The checked bridge
    `isOpen_sourceFullFrameRealCoord_image_of_split_local_open` then carries
    this split-local open-image theorem through the finite real coordinate

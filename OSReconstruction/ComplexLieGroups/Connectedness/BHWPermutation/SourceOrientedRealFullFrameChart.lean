@@ -597,6 +597,24 @@ def sourceFullFrameRealSplitKernelMixedCoord
       (sourceComplementIndex ι → Fin (d + 1) → ℝ) :=
   (S.realKernelCoord p.1, sourceFullFrameRealSplitMixedRows p)
 
+/-- After the determinant-nonzero mixed-row homeomorphism, the split
+kernel/mixed coordinate is just the product of the selected-frame kernel
+coordinate with the identity on mixed rows. -/
+def sourceFullFrameRealSplitProductKernelCoord
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    (p :
+      Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ)) :
+    (Fin S.realModelDim → ℝ) ×
+      (sourceComplementIndex ι → Fin (d + 1) → ℝ) :=
+  (S.realKernelCoord p.1, p.2)
+
 /-- On determinant-nonzero selected frames, the split kernel/mixed coordinate
 is the selected-frame kernel coordinate together with the checked rowwise
 linear equivalence from complement rows to mixed rows. -/
@@ -617,6 +635,142 @@ theorem sourceFullFrameRealSplitKernelMixedCoord_eq_tailMixedRowsLinearEquiv
         sourceRealFullFrameTailMixedRowsLinearEquiv d n ι p.1 hp p.2) := by
   rw [sourceFullFrameRealSplitKernelMixedCoord,
     sourceFullFrameRealSplitMixedRows_eq_tailMixedRowsLinearEquiv p hp]
+
+/-- The split kernel/mixed coordinate factors through the checked
+determinant-nonzero mixed-row homeomorphism and the product coordinate. -/
+theorem sourceFullFrameRealSplitKernelMixedCoord_eq_productKernelCoord_homeomorph
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    (p : sourceFullFrameRealSplitDetNonzero d n ι) :
+    sourceFullFrameRealSplitKernelMixedCoord S (p : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ)) =
+      sourceFullFrameRealSplitProductKernelCoord S
+        ((sourceFullFrameRealSplitMixedRowsHomeomorph d n ι p) :
+          Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+            (sourceComplementIndex ι → Fin (d + 1) → ℝ)) := by
+  rfl
+
+/-- The image of the split kernel/mixed coordinate over a determinant-nonzero
+set is the image of the product coordinate after applying the checked
+mixed-row homeomorphism on the determinant-nonzero subtype. -/
+theorem sourceFullFrameRealSplitKernelMixedCoord_image_eq_product_homeomorph_image
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    {V : Set
+      (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ))}
+    (hV_det : V ⊆ {p | p.1.det ≠ 0}) :
+    sourceFullFrameRealSplitKernelMixedCoord S '' V =
+      sourceFullFrameRealSplitProductKernelCoord S ''
+        ((Subtype.val :
+          sourceFullFrameRealSplitDetNonzero d n ι →
+            Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+              (sourceComplementIndex ι → Fin (d + 1) → ℝ)) ''
+          ((sourceFullFrameRealSplitMixedRowsHomeomorph d n ι) ''
+            {p : sourceFullFrameRealSplitDetNonzero d n ι |
+              p.1 ∈ V})) := by
+  ext y
+  constructor
+  · rintro ⟨p, hpV, rfl⟩
+    let q : sourceFullFrameRealSplitDetNonzero d n ι :=
+      ⟨p, hV_det hpV⟩
+    refine
+      ⟨((sourceFullFrameRealSplitMixedRowsHomeomorph d n ι q) :
+          Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+            (sourceComplementIndex ι → Fin (d + 1) → ℝ)), ?_, ?_⟩
+    · exact
+        ⟨sourceFullFrameRealSplitMixedRowsHomeomorph d n ι q,
+          ⟨q, hpV, rfl⟩, rfl⟩
+    · rw [← sourceFullFrameRealSplitKernelMixedCoord_eq_productKernelCoord_homeomorph
+        S q]
+  · rintro ⟨p, ⟨q, ⟨r, hrV, rfl⟩, rfl⟩, rfl⟩
+    refine ⟨(r : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+      (sourceComplementIndex ι → Fin (d + 1) → ℝ)), hrV, ?_⟩
+    rw [sourceFullFrameRealSplitKernelMixedCoord_eq_productKernelCoord_homeomorph
+      S r]
+
+/-- Once the selected-frame/product coordinate is known to have open images
+after the checked mixed-row homeomorphism, the original split kernel/mixed
+coordinate has the same open-image property. -/
+theorem isOpen_sourceFullFrameRealSplitKernelMixedCoord_image_of_product_homeomorph_image_open
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    {V : Set
+      (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ))}
+    (hV_det : V ⊆ {p | p.1.det ≠ 0})
+    (hopen :
+      IsOpen
+        (sourceFullFrameRealSplitProductKernelCoord S ''
+          ((Subtype.val :
+            sourceFullFrameRealSplitDetNonzero d n ι →
+              Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+                (sourceComplementIndex ι → Fin (d + 1) → ℝ)) ''
+            ((sourceFullFrameRealSplitMixedRowsHomeomorph d n ι) ''
+              {p : sourceFullFrameRealSplitDetNonzero d n ι |
+                p.1 ∈ V})))) :
+    IsOpen (sourceFullFrameRealSplitKernelMixedCoord S '' V) := by
+  rwa [sourceFullFrameRealSplitKernelMixedCoord_image_eq_product_homeomorph_image
+    S hV_det]
+
+/-- Local-open form of the previous bridge on a chosen split neighborhood
+`W`.  The remaining mathematical input is exactly the local openness of the
+selected-frame/product coordinate after the checked mixed-row homeomorphism. -/
+theorem sourceFullFrameRealSplitKernelMixedCoord_open_on_W_of_product_homeomorph_open
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    {W : Set
+      (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ))}
+    (hW_det : W ⊆ {p | p.1.det ≠ 0})
+    (hProduct_open :
+      ∀ {V : Set
+        (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+          (sourceComplementIndex ι → Fin (d + 1) → ℝ))},
+        IsOpen V →
+        V ⊆ W →
+        IsOpen
+          (sourceFullFrameRealSplitProductKernelCoord S ''
+            ((Subtype.val :
+              sourceFullFrameRealSplitDetNonzero d n ι →
+                Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+                  (sourceComplementIndex ι → Fin (d + 1) → ℝ)) ''
+              ((sourceFullFrameRealSplitMixedRowsHomeomorph d n ι) ''
+                {p : sourceFullFrameRealSplitDetNonzero d n ι |
+                  p.1 ∈ V})))) :
+    ∀ {V : Set
+      (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ))},
+      IsOpen V →
+      V ⊆ W →
+      IsOpen (sourceFullFrameRealSplitKernelMixedCoord S '' V) := by
+  intro V hV_open hV_sub
+  apply
+    isOpen_sourceFullFrameRealSplitKernelMixedCoord_image_of_product_homeomorph_image_open
+      S
+  · intro p hpV
+    exact hW_det (hV_sub hpV)
+  · exact hProduct_open hV_open hV_sub
 
 /-- The source-space kernel/mixed coordinate factors through the checked
 selected-frame/complement-row split homeomorphism. -/

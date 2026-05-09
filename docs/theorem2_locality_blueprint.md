@@ -19565,6 +19565,20 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (Fin S.realModelDim -> ℝ) ×
             (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ)
 
+      def BHW.sourceFullFrameRealSplitProductKernelCoord
+          {d n : Nat}
+          {ι : Fin (d + 1) ↪ Fin n}
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          {hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0}
+          (S :
+            BHW.SourceFullFrameRealGaugeSliceData d
+              (BHW.sourceRealFullFrameMatrix d n ι x0) hdet)
+          (p :
+            Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+              (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ)) :
+          (Fin S.realModelDim -> ℝ) ×
+            (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ)
+
       theorem
           BHW.sourceFullFrameRealSplitKernelMixedCoord_eq_tailMixedRowsLinearEquiv
           {d n : Nat}
@@ -19582,6 +19596,58 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (S.realKernelCoord p.1,
               BHW.sourceRealFullFrameTailMixedRowsLinearEquiv
                 d n ι p.1 hp p.2)
+
+      theorem
+          BHW.sourceFullFrameRealSplitKernelMixedCoord_eq_productKernelCoord_homeomorph
+          {d n : Nat}
+          {ι : Fin (d + 1) ↪ Fin n}
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          {hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0}
+          (S :
+            BHW.SourceFullFrameRealGaugeSliceData d
+              (BHW.sourceRealFullFrameMatrix d n ι x0) hdet)
+          (p : BHW.sourceFullFrameRealSplitDetNonzero d n ι) :
+          BHW.sourceFullFrameRealSplitKernelMixedCoord S p =
+            BHW.sourceFullFrameRealSplitProductKernelCoord S
+              (BHW.sourceFullFrameRealSplitMixedRowsHomeomorph
+                d n ι p)
+
+      theorem
+          BHW.sourceFullFrameRealSplitKernelMixedCoord_open_on_W_of_product_homeomorph_open
+          {d n : Nat}
+          {ι : Fin (d + 1) ↪ Fin n}
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          {hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0}
+          (S : BHW.SourceFullFrameRealGaugeSliceData d
+            (BHW.sourceRealFullFrameMatrix d n ι x0) hdet)
+          {W : Set
+            (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+              (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ))}
+          (hW_det : W ⊆ {p | p.1.det ≠ 0})
+          (hProduct_open :
+            ∀ {V : Set
+              (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+                (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ))},
+              IsOpen V ->
+              V ⊆ W ->
+              IsOpen
+                (BHW.sourceFullFrameRealSplitProductKernelCoord S ''
+                  ((Subtype.val :
+                    BHW.sourceFullFrameRealSplitDetNonzero d n ι ->
+                      Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+                        (BHW.sourceComplementIndex ι ->
+                          Fin (d + 1) -> ℝ)) ''
+                    ((BHW.sourceFullFrameRealSplitMixedRowsHomeomorph
+                      d n ι) ''
+                      {p : BHW.sourceFullFrameRealSplitDetNonzero d n ι |
+                        p.1 ∈ V})))) :
+          ∀ {V : Set
+            (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+              (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ))},
+            IsOpen V ->
+            V ⊆ W ->
+            IsOpen
+              (BHW.sourceFullFrameRealSplitKernelMixedCoord S '' V)
 
       theorem BHW.sourceFullFrameRealKernelMixedCoord_image_eq_split
           {d n : Nat}
@@ -20364,18 +20430,18 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 (BHW.sourceFullFrameRealKernelMixedCoord S x)) '' U)
 
       -- Remaining hard local-open theorem, to be proved for the specific
-      -- split neighborhood `W` chosen in the implicit-chart constructor:
-      -- The proof must be local.  It should factor through:
-      --   (1) the checked determinant-nonzero triangular homeomorphism
-      --       `sourceFullFrameRealSplitMixedRowsHomeomorph`, whose forward
-      --       map is `(M,T) ↦ (M, sourceFullFrameRealSplitMixedRows (M,T))`
-      --       and whose inverse is `sourceFullFrameRealSplitMixedRowsInv`;
-      --   (2) a selected-frame local product/submersion chart around `M0R`
-      --       whose first coordinate is `S.realKernelCoord`; and
-      --   (3) the product-open theorem for that local frame coordinate and
-      --       the mixed-row coordinates.  Do not replace this with a global
-      --       selected-frame open-map assertion.
-      theorem BHW.sourceFullFrameRealSplitKernelMixedCoord_open_on_W
+      -- determinant-nonzero split neighborhood `W` chosen in the
+      -- implicit-chart constructor:
+      --   (1) pass `V` through the checked triangular homeomorphism
+      --       `sourceFullFrameRealSplitMixedRowsHomeomorph`;
+      --   (2) prove local product openness for
+      --       `(M,Y) ↦ (S.realKernelCoord M, Y)` using the selected-frame
+      --       local product/submersion chart around `M0R`; and
+      --   (3) apply the checked bridge
+      --       `sourceFullFrameRealSplitKernelMixedCoord_open_on_W_of_product_homeomorph_open`.
+      -- Do not replace this with a global selected-frame open-map assertion.
+      theorem
+          BHW.sourceFullFrameRealSplitProductKernelCoord_open_after_homeomorph_on_W
           {d n : Nat}
           {ι : Fin (d + 1) ↪ Fin n}
           {x0 : Fin n -> Fin (d + 1) -> ℝ}
@@ -20384,14 +20450,23 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (BHW.sourceRealFullFrameMatrix d n ι x0) hdet)
           (W : Set
             (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
-              (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ))) :
+              (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ)))
+          (hW_det : W ⊆ {p | p.1.det ≠ 0}) :
           (∀ {V : Set
             (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
               (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ))},
             IsOpen V ->
             V ⊆ W ->
             IsOpen
-              (BHW.sourceFullFrameRealSplitKernelMixedCoord S '' V))
+              (BHW.sourceFullFrameRealSplitProductKernelCoord S ''
+                ((Subtype.val :
+                  BHW.sourceFullFrameRealSplitDetNonzero d n ι ->
+                    Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+                      (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ)) ''
+                  ((BHW.sourceFullFrameRealSplitMixedRowsHomeomorph
+                    d n ι) ''
+                    {p : BHW.sourceFullFrameRealSplitDetNonzero d n ι |
+                      p.1 ∈ V}))))
 
       theorem BHW.sourceFullFrameRealCompatibleImplicitChartData
           [NeZero d]
@@ -20444,11 +20519,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
         -- 8. Prove `realCoord_image_open` by choosing `E0` as the inverse
         --    split image of a split neighborhood `W`, applying
         --    `isOpen_sourceFullFrameRealKernelMixedCoord_image_of_split_local_open`,
-        --    and proving the remaining local theorem
-        --    `sourceFullFrameRealSplitKernelMixedCoord_open_on_W`.  The
-        --    selected-frame part comes from the real IFT packet, and the
-        --    mixed-row part uses the checked determinant-nonzero rowwise
-        --    linear equivalence `sourceRealFullFrameMixedRowLinearEquiv`;
+        --    and proving the remaining product-local theorem
+        --    `sourceFullFrameRealSplitProductKernelCoord_open_after_homeomorph_on_W`.
+        --    The selected-frame part comes from the real IFT packet; the
+        --    mixed-row part has already been isolated by the checked
+        --    determinant-nonzero homeomorphism
+        --    `sourceFullFrameRealSplitMixedRowsHomeomorph`;
         --    finally apply
         --    `isOpen_sourceFullFrameRealCoord_image_of_kernelMixedCoord_image_open`
         --    for the finite coordinate equivalence.
@@ -20606,7 +20682,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrameRealSplitDetNonzero`,
       `sourceFullFrameRealSplitMixedRowsHomeomorph`,
       `sourceFullFrameRealSplitKernelMixedCoord`,
+      `sourceFullFrameRealSplitProductKernelCoord`,
       `sourceFullFrameRealSplitKernelMixedCoord_eq_tailMixedRowsLinearEquiv`,
+      `sourceFullFrameRealSplitKernelMixedCoord_eq_productKernelCoord_homeomorph`,
+      `sourceFullFrameRealSplitKernelMixedCoord_image_eq_product_homeomorph_image`,
+      `isOpen_sourceFullFrameRealSplitKernelMixedCoord_image_of_product_homeomorph_image_open`,
+      `sourceFullFrameRealSplitKernelMixedCoord_open_on_W_of_product_homeomorph_open`,
       `sourceFullFrameRealKernelMixedCoord_eq_split`,
       `sourceFullFrameRealKernelMixedCoord_image_eq_split`,
       `isOpen_sourceFullFrameRealKernelMixedCoord_image_of_split_image_open`,
@@ -20687,9 +20768,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrameRealCompatibleImplicitChartData`, which must construct
       the shrunken source patch from a real full-frame determinant-nonzero
       point.  The next unproved theorem is not a global selected-frame
-      open-map statement; it is the local finite-product open-image theorem
-      `sourceFullFrameRealSplitKernelMixedCoord_open_on_W` on the chosen split
-      neighborhood `W`.  Its proof must combine the checked source split
+      open-map statement; it is the local selected-frame/product open-image
+      theorem
+      `sourceFullFrameRealSplitProductKernelCoord_open_after_homeomorph_on_W`
+      on the chosen determinant-nonzero split neighborhood `W`.  The checked
+      bridge
+      `sourceFullFrameRealSplitKernelMixedCoord_open_on_W_of_product_homeomorph_open`
+      then converts it to the split-kernel/mixed open-image theorem consumed
+      downstream.  Its proof must combine the checked source split
       homeomorphism, the checked determinant-nonzero triangular tail/mixed-row
       homeomorphism `sourceFullFrameRealSplitMixedRowsHomeomorph`, and a
       selected-frame local product/submersion chart whose first coordinate is
