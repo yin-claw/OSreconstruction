@@ -19213,20 +19213,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.IsHWOrientedRealEnvironment d n E
 
       structure BHW.IsOS45Figure24CheckedRealPatch
-          [NeZero d]
-          (d n : Nat)
+          {d : Nat} [NeZero d]
+          (n : Nat)
           (π : Equiv.Perm (Fin n))
           (i : Fin n) (hi : i.val + 1 < n)
           (E0 : Set (Fin n -> Fin (d + 1) -> ℝ)) : Prop where
-        open : IsOpen E0
+        isOpen : IsOpen E0
         nonempty : E0.Nonempty
         permuted_jost :
           {y | ∃ x ∈ E0, y = fun k => x (π k)} ⊆
             BHW.JostSet d n
-        gramEnvironment_permuted :
-          BHW.IsHWRealEnvironment d n
-            (BHW.sourceRealMinkowskiGram d n ''
-              {y | ∃ x ∈ E0, y = fun k => x (π k)})
 
       theorem BHW.sourceRealFullFrameDet_nonzero_isOpen
           (d n : Nat)
@@ -19323,25 +19319,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
         exact
           hdense.exists_mem_open hE_open hxE
 
-      theorem BHW.IsHWRealEnvironment.restrict_sourceOpen
-          (d n : Nat)
-          {E0 E : Set (Fin n -> Fin (d + 1) -> ℝ)}
-          (hEnv :
-            BHW.IsHWRealEnvironment d n
-              (BHW.sourceRealMinkowskiGram d n '' E0))
-          (hE_sub : E ⊆ E0)
-          (hE_open : IsOpen E)
-          (hE_ne : E.Nonempty) :
-          BHW.IsHWRealEnvironment d n
-            (BHW.sourceRealMinkowskiGram d n '' E) := by
-        -- The checked pure-Gram real-environment predicate is local on the
-        -- real source patch: nonempty open restrictions preserve the
-        -- regular/totally-real chart fields and the source-Gram image is
-        -- restricted by ordinary image monotonicity.
-        exact BHW.isHWRealEnvironment_restrict_sourceOpen
-          (d := d) (n := n) hEnv hE_sub hE_open hE_ne
-
-      theorem BHW.os45Figure24_checkedRealPatch_fullFrameSubpatch
+      theorem BHW.os45Figure24_checkedRealPatch_fullFrameGramEnvironmentSubpatch
           [NeZero d]
           (hd : 2 <= d)
           (n : Nat)
@@ -19352,7 +19330,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (hE0_is_checked_patch :
             BHW.IsOS45Figure24CheckedRealPatch (d := d) n π i hi E0) :
           ∃ (ι : Fin (d + 1) ↪ Fin n)
-            (E : Set (Fin n -> Fin (d + 1) -> ℝ)),
+            (E : Set (Fin n -> Fin (d + 1) -> ℝ))
+            (O : Set (Fin n -> Fin n -> ℝ)),
             E ⊆ E0 ∧ IsOpen E ∧ E.Nonempty ∧
             IsOpen {y | ∃ x ∈ E, y = fun k => x (π k)} ∧
             {y | ∃ x ∈ E, y = fun k => x (π k)}.Nonempty ∧
@@ -19360,16 +19339,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
               BHW.sourceRealFullFrameDet d n ι y ≠ 0) ∧
             {y | ∃ x ∈ E, y = fun k => x (π k)} ⊆
               BHW.JostSet d n ∧
-            BHW.IsHWRealEnvironment d n
-              (BHW.sourceRealMinkowskiGram d n ''
-                {y | ∃ x ∈ E, y = fun k => x (π k)}) := by
+            O ⊆
+              BHW.sourceRealMinkowskiGram d n ''
+                {y | ∃ x ∈ E, y = fun k => x (π k)} ∧
+            BHW.IsHWRealEnvironment d n O := by
         let ι := BHW.sourceRealHeadFullFrameEmbedding d n hn
         let H := BHW.realSourcePermuteHomeomorph d n π
         let Eperm0 : Set (Fin n -> Fin (d + 1) -> ℝ) :=
           {y | ∃ x ∈ E0, y = fun k => x (π k)}
         have hEperm0_open : IsOpen Eperm0 :=
           BHW.isOpen_realSourcePermuteImage d n π
-            hE0_is_checked_patch.open
+            hE0_is_checked_patch.isOpen
         have hEperm0_ne : Eperm0.Nonempty :=
           BHW.nonempty_realSourcePermuteImage d n π
             hE0_is_checked_patch.nonempty
@@ -19389,15 +19369,23 @@ Proof decomposition of this theorem, without hiding the analytic work:
           exact ⟨H.symm y, y, hy, rfl⟩
         have hperm_image :
             {y | ∃ x ∈ E, y = fun k => x (π k)} = Eperm := by
-          ext y
-          constructor
-          · rintro ⟨x, hxE, rfl⟩
-            rcases hxE with ⟨y0, hy0, rfl⟩
-            simpa [H] using hy0
-          · intro hy
-            refine ⟨H.symm y, ⟨y, hy, rfl⟩, ?_⟩
-            ext k μ
-            simp [H, BHW.realSourcePermuteHomeomorph]
+          have h_as_image :
+              {y | ∃ x ∈ E, y = fun k => x (π k)} = H '' E := by
+            ext y
+            constructor
+            · rintro ⟨x, hxE, rfl⟩
+              exact ⟨x, hxE, rfl⟩
+            · rintro ⟨x, hxE, rfl⟩
+              exact ⟨x, hxE, rfl⟩
+          have h_image : H '' E = Eperm := by
+            ext y
+            constructor
+            · rintro ⟨x, hxE, rfl⟩
+              rcases hxE with ⟨y0, hy0, rfl⟩
+              simpa using hy0
+            · intro hy
+              exact ⟨H.symm y, ⟨y, hy, rfl⟩, by simp⟩
+          exact h_as_image.trans h_image
         have hE_sub : E ⊆ E0 := by
           intro x hxE
           rcases hxE with ⟨y, hyEperm, rfl⟩
@@ -19408,22 +19396,25 @@ Proof decomposition of this theorem, without hiding the analytic work:
             Eperm ⊆ BHW.JostSet d n := by
           intro y hy
           exact hE0_is_checked_patch.permuted_jost hy.1
-        have hGramEnv :
-            BHW.IsHWRealEnvironment d n
-              (BHW.sourceRealMinkowskiGram d n '' Eperm) :=
-          BHW.IsHWRealEnvironment.restrict_sourceOpen
-            (d := d) (n := n)
-            hE0_is_checked_patch.gramEnvironment_permuted
-            (by intro y hy; exact hy.1)
-            hEperm_open hEperm_ne
+        rcases (BHW.dense_sourceGramRegularAt d n).exists_mem_open
+            hEperm_open hEperm_ne with
+          ⟨y0, hy0reg, hy0Eperm⟩
+        have hy0_jost : y0 ∈ BHW.JostSet d n :=
+          hEperm_jost hy0Eperm
+        rcases BHW.sourceRealGramMap_realEnvironmentAt_of_regular
+            (d := d) n hy0reg hy0_jost Eperm hEperm_open hy0Eperm with
+          ⟨O, hO_sub, hO_env⟩
         refine
-          ⟨ι, E, hE_sub, hE_open, hE_ne, ?_, ?_, ?_, ?_, ?_⟩
+          ⟨ι, E, O, hE_sub, hE_open, hE_ne, ?_, ?_, ?_, ?_, ?_, ?_⟩
         · simpa [hperm_image] using hEperm_open
         · simpa [hperm_image] using hEperm_ne
         · intro y hy
-          simpa [hperm_image, Eperm] using hy.2
+          have hyEperm : y ∈ Eperm := by
+            simpa [hperm_image] using hy
+          exact hyEperm.2
         · simpa [hperm_image] using hEperm_jost
-        · simpa [hperm_image] using hGramEnv
+        · simpa [hperm_image] using hO_sub
+        · exact hO_env
 
       theorem BHW.os45Figure24_realPatch_orientedRegularSubpatch
           [NeZero d]
@@ -19437,32 +19428,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
           ∃ E : Set (Fin n -> Fin (d + 1) -> ℝ),
             E ⊆ E0 ∧ IsOpen E ∧ E.Nonempty ∧
             BHW.IsHWOrientedRealEnvironment d n
-              {y | ∃ x ∈ E, y = fun k => x (π k)} := by
-        by_cases hnsmall : n < d + 1
-        · let E : Set (Fin n -> Fin (d + 1) -> ℝ) := E0
-          refine ⟨E, subset_rfl, ?_, ?_, ?_⟩
-          · exact hE0_is_checked_patch.open
-          · exact hE0_is_checked_patch.nonempty
-          · exact
-              BHW.sourceOrientedRealEnvironment_smallArity_of_pureGram
-                (d := d) n hnsmall
-                hE0_is_checked_patch.gramEnvironment_permuted
-        · have hn : d + 1 <= n := Nat.le_of_not_lt hnsmall
-          rcases
-            BHW.os45Figure24_checkedRealPatch_fullFrameSubpatch
-              (d := d) hd n hn π i hi E0 hE0_is_checked_patch with
-            ⟨ι, E, hE_sub, hE_open, hE_ne, hEperm_open, hEperm_ne,
-              hι, hEperm_jost, hGramEnv⟩
-          refine ⟨E, hE_sub, hE_open, hE_ne, ?_⟩
-          exact
-            BHW.sourceOrientedRealEnvironment_fullFrameSubpatch
-              (d := d) hd n hn
-              hEperm_open
-              hEperm_jost
-              hEperm_ne
-              ι
-              hι
-              hGramEnv
+              {y | ∃ x ∈ E, y = fun k => x (π k)}
       ```
 
       In the small-arity theorem the determinant-coordinate family is empty,
@@ -19476,13 +19442,19 @@ Proof decomposition of this theorem, without hiding the analytic work:
       producer that the adjacent compact-Wick seed must use: shrink the
       checked real patch to a nonempty open subset on which either `n < d + 1`
       or a selected real full-frame determinant is nonzero.  The theorem
-      `os45Figure24_checkedRealPatch_fullFrameSubpatch` is the missing
-      producer for the second branch: nonvanishing of
-      `sourceRealFullFrameDet` is open, and the checked OS45 real patch must
-      contain a full-frame point after the π-permutation; intersecting with
-      that determinant-open set preserves the pure-Gram real environment after
-      shrinking.  It is not enough to reuse `gramEnvironment`, because that
-      set has already forgotten the determinant-coordinate signs.
+      `os45Figure24_checkedRealPatch_fullFrameGramEnvironmentSubpatch` is the
+      checked producer for the second branch: nonvanishing of
+      `sourceRealFullFrameDet` is open and dense, so the checked OS45 real
+      patch contains a full-frame point after the π-permutation; intersecting
+      with that determinant-open set and then applying
+      `sourceRealGramMap_realEnvironmentAt_of_regular` gives a smaller
+      pure-Gram real environment `O` inside the determinant-regular subpatch's
+      Gram image.  It is not valid to assert that an arbitrary source-open
+      restriction of a pure-Gram environment is again an `IsHWRealEnvironment`
+      on the full restricted Gram image: relative openness is a Gram-variety
+      condition and must be rebuilt from a regular point.  The next oriented
+      producer therefore shrinks over this `O`; it may not reuse a whole
+      `gramEnvironment` field after determinant signs have been forgotten.
 
       This raw distributional anchor deliberately does **not** carry an
       oriented uniqueness field.  The full Figure-2-4 real patch may have to
@@ -21690,17 +21662,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
             BHW.IsOS45Figure24CheckedRealPatch (d := d) n π i hi E0)
           (hE_sub : E ⊆ E0)
           (hE_open : IsOpen E)
-          (hE_ne : E.Nonempty)
-          (hGramEnv_restrict :
-            BHW.IsHWRealEnvironment d n
-              (BHW.sourceRealMinkowskiGram d n ''
-                {y | ∃ x ∈ E, y = fun k => x (π k)})) :
+          (hE_ne : E.Nonempty) :
           BHW.IsOS45Figure24CheckedRealPatch (d := d) n π i hi E := by
         refine
-          { open := hE_open
+          { isOpen := hE_open
             nonempty := hE_ne
-            permuted_jost := ?_
-            gramEnvironment_permuted := hGramEnv_restrict }
+            permuted_jost := ?_ }
         intro y hy
         rcases hy with ⟨x, hx, rfl⟩
         exact hPatch.permuted_jost ⟨x, hE_sub hx, rfl⟩
@@ -21760,7 +21727,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (E0 ∩
               {x |
                 BHW.sourceRealOrientedMinkowskiInvariant d n
-                  (fun k => x (π k)) ∈ W0})
+                  (fun k => x (π k)) ∈ W0}) := by
+        apply BHW.IsOS45Figure24CheckedRealPatch.restrict_open
+          (d := d) hd n π i hi hPatch
+        · intro x hx
+          exact hx.1
+        · exact hPatch.isOpen.inter
+            (hW0_open.preimage
+              (BHW.continuous_realSourcePermute_orientedInvariant d n π))
+        · exact hNonempty
 
       theorem BHW.os45Figure24_checkedRealPatch_shrink_into_orientedRelOpen
           [NeZero d]
@@ -21796,7 +21771,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
           intro x hx
           exact hx.1
         have hE1_open : IsOpen E1 := by
-          exact hPatch.open.inter
+          exact hPatch.isOpen.inter
             (hW0_open.preimage
               (BHW.continuous_realSourcePermute_orientedInvariant d n π))
         have hx0W0 :
@@ -22213,7 +22188,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `os45Figure24_checkedRealPatch_chartContact`; then
       `os45Figure24_checkedRealPatch_shrink_into_orientedRelOpen` restricts
       the checked real patch to the preimage of the relatively open
-      `hChart.Wscal` while preserving the OS45 checked-patch environment.
+      `hChart.Wscal` while preserving the OS45 checked-patch data.
       Only after this restriction does
       `os45Figure24_realPatch_orientedRegularSubpatch` impose the
       determinant-regular oriented environment.  Consequently

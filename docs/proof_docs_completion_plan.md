@@ -5590,16 +5590,28 @@ implementation contract is:
    `sourceRealFullFrameDet_nonzero_isOpen`,
    `sourceRealFullFrameDet_nonzero_dense`,
    `nonempty_open_inter_sourceRealFullFrameDet_nonzero`,
-   `IsHWRealEnvironment.restrict_sourceOpen`,
+   `sourceRealHeadFullFrameEmbedding`,
    `isOpen_realSourcePermuteImage`,
    `nonempty_realSourcePermuteImage`, and
-   `os45Figure24_checkedRealPatch_fullFrameSubpatch`: after π-permutation,
+   `os45Figure24_checkedRealPatch_fullFrameGramEnvironmentSubpatch`: after π-permutation,
    choose the fixed head full-frame embedding, intersect the π-permuted patch
    with the dense open nonvanishing determinant locus, pull that determinant
-   subpatch back by the real source-permutation homeomorphism, preserve the
-   pure-Gram real environment by the open-subpatch restriction theorem, and
-   only then call
+   subpatch back by the real source-permutation homeomorphism, choose a regular
+   Jost point in the determinant-open subpatch using
+   `dense_sourceGramRegularAt`, and build a smaller pure-Gram real environment
+   by `sourceRealGramMap_realEnvironmentAt_of_regular`.  The route deliberately
+   does not use an arbitrary source-open restriction theorem for
+   `IsHWRealEnvironment`: relative openness is a Gram-variety condition and must
+   be rebuilt from a regular point before the later oriented chart shrink calls
    `sourceOrientedRealEnvironment_fullFrameSubpatch`.
+   The surrounding checked-patch shrink is now Lean-checked too:
+   `continuous_realSourcePermute_orientedInvariant`,
+   `IsOS45Figure24CheckedRealPatch.restrict_open`,
+   `IsOS45Figure24CheckedRealPatch.restrict_orientedOpen`, and
+   `os45Figure24_checkedRealPatch_shrink_into_orientedRelOpen` restrict a
+   checked real patch to the part whose π-permuted oriented invariant lies in a
+   prescribed relatively open oriented source-variety set, without adding any
+   pure-Gram environment field to the checked-patch structure.
    The oriented adjacent `S'_n` consumers now have concrete data shapes:
    `OS45AdjacentSPrimeOrientedScalarizationChart`,
    the proposition alias `OS45AdjacentSPrimeOrientedSourceEq`,

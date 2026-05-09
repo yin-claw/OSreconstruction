@@ -1,4 +1,5 @@
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOriented
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceComplexTangent
 
 /-!
 # Real points in the oriented source invariant space
@@ -443,5 +444,232 @@ def sourceRealHeadFullFrameEmbedding
   inj' := by
     intro a b hab
     exact Fin.ext (congrArg (fun x : Fin n => x.val) hab)
+
+/-- A checked OS45 real source patch, before the oriented determinant-regular
+shrink.  The patch is stored in source coordinates, while the Jost condition is
+recorded after the permutation used by the adjacent branch. -/
+structure IsOS45Figure24CheckedRealPatch
+    {d : ℕ} [NeZero d]
+    (n : ℕ)
+    (π : Equiv.Perm (Fin n))
+    (i : Fin n) (_hi : i.val + 1 < n)
+    (E0 : Set (Fin n → Fin (d + 1) → ℝ)) : Prop where
+  isOpen : IsOpen E0
+  nonempty : E0.Nonempty
+  permuted_jost :
+    {y | ∃ x ∈ E0, y = fun k => x (π k)} ⊆ JostSet d n
+
+/-- In the hard range, a checked OS45 real source patch has a nonempty open
+subpatch whose permuted image has a fixed nonzero full-frame determinant and
+contains a smaller Hall-Wightman pure-Gram real environment. -/
+theorem os45Figure24_checkedRealPatch_fullFrameGramEnvironmentSubpatch
+    {d : ℕ} [NeZero d]
+    (_hd : 2 ≤ d)
+    (n : ℕ)
+    (hn : d + 1 ≤ n)
+    (π : Equiv.Perm (Fin n))
+    (i : Fin n) (hi : i.val + 1 < n)
+    (E0 : Set (Fin n → Fin (d + 1) → ℝ))
+    (hE0 : IsOS45Figure24CheckedRealPatch (d := d) n π i hi E0) :
+    ∃ (ι : Fin (d + 1) ↪ Fin n)
+      (E : Set (Fin n → Fin (d + 1) → ℝ))
+      (O : Set (Fin n → Fin n → ℝ)),
+      E ⊆ E0 ∧ IsOpen E ∧ E.Nonempty ∧
+      IsOpen {y | ∃ x ∈ E, y = fun k => x (π k)} ∧
+      {y | ∃ x ∈ E, y = fun k => x (π k)}.Nonempty ∧
+      (∀ y ∈ {y | ∃ x ∈ E, y = fun k => x (π k)},
+        sourceRealFullFrameDet d n ι y ≠ 0) ∧
+      {y | ∃ x ∈ E, y = fun k => x (π k)} ⊆ JostSet d n ∧
+      O ⊆
+        sourceRealMinkowskiGram d n ''
+          {y | ∃ x ∈ E, y = fun k => x (π k)} ∧
+      IsHWRealEnvironment d n O := by
+  let ι := sourceRealHeadFullFrameEmbedding d n hn
+  let H := realSourcePermuteHomeomorph d n π
+  let Eperm0 : Set (Fin n → Fin (d + 1) → ℝ) :=
+    {y | ∃ x ∈ E0, y = fun k => x (π k)}
+  have hEperm0_open : IsOpen Eperm0 :=
+    isOpen_realSourcePermuteImage d n π hE0.isOpen
+  have hEperm0_ne : Eperm0.Nonempty :=
+    nonempty_realSourcePermuteImage d n π hE0.nonempty
+  let Eperm : Set (Fin n → Fin (d + 1) → ℝ) :=
+    Eperm0 ∩ {y | sourceRealFullFrameDet d n ι y ≠ 0}
+  have hEperm_open : IsOpen Eperm :=
+    hEperm0_open.inter (sourceRealFullFrameDet_nonzero_isOpen d n ι)
+  have hEperm_ne : Eperm.Nonempty :=
+    nonempty_open_inter_sourceRealFullFrameDet_nonzero
+      d n ι hEperm0_open hEperm0_ne
+  let E : Set (Fin n → Fin (d + 1) → ℝ) := H.symm '' Eperm
+  have hE_open : IsOpen E := H.symm.isOpenMap Eperm hEperm_open
+  have hE_ne : E.Nonempty := by
+    rcases hEperm_ne with ⟨y, hy⟩
+    exact ⟨H.symm y, y, hy, rfl⟩
+  have hperm_image :
+      {y | ∃ x ∈ E, y = fun k => x (π k)} = Eperm := by
+    have h_as_image :
+        {y | ∃ x ∈ E, y = fun k => x (π k)} = H '' E := by
+      ext y
+      constructor
+      · rintro ⟨x, hxE, rfl⟩
+        exact ⟨x, hxE, rfl⟩
+      · rintro ⟨x, hxE, rfl⟩
+        exact ⟨x, hxE, rfl⟩
+    have h_image : H '' E = Eperm := by
+      ext y
+      constructor
+      · rintro ⟨x, hxE, rfl⟩
+        rcases hxE with ⟨y0, hy0, rfl⟩
+        simpa using hy0
+      · intro hy
+        exact ⟨H.symm y, ⟨y, hy, rfl⟩, by simp⟩
+    exact h_as_image.trans h_image
+  have hE_sub : E ⊆ E0 := by
+    intro x hxE
+    rcases hxE with ⟨y, hyEperm, rfl⟩
+    have hyEperm0 : y ∈ Eperm0 := hyEperm.1
+    rcases hyEperm0 with ⟨x0, hx0E0, rfl⟩
+    simpa [H, realSourcePermuteHomeomorph] using hx0E0
+  have hEperm_jost : Eperm ⊆ JostSet d n := by
+    intro y hy
+    exact hE0.permuted_jost hy.1
+  rcases (dense_sourceGramRegularAt d n).exists_mem_open
+      hEperm_open hEperm_ne with
+    ⟨y0, hy0reg, hy0Eperm⟩
+  have hy0_jost : y0 ∈ JostSet d n :=
+    hEperm_jost hy0Eperm
+  rcases sourceRealGramMap_realEnvironmentAt_of_regular
+      (d := d) n hy0reg hy0_jost Eperm hEperm_open hy0Eperm with
+    ⟨O, hO_sub, hO_env⟩
+  refine ⟨ι, E, O, hE_sub, hE_open, hE_ne, ?_, ?_, ?_, ?_, ?_, ?_⟩
+  · simpa [hperm_image] using hEperm_open
+  · simpa [hperm_image] using hEperm_ne
+  · intro y hy
+    have hyEperm : y ∈ Eperm := by
+      simpa [hperm_image] using hy
+    exact hyEperm.2
+  · simpa [hperm_image] using hEperm_jost
+  · simpa [hperm_image] using hO_sub
+  · exact hO_env
+
+/-- The real oriented invariant remains continuous after a source-label
+permutation. -/
+theorem continuous_realSourcePermute_orientedInvariant
+    (d n : ℕ)
+    (π : Equiv.Perm (Fin n)) :
+    Continuous
+      (fun x : Fin n → Fin (d + 1) → ℝ =>
+        sourceRealOrientedMinkowskiInvariant d n (fun k => x (π k))) := by
+  exact
+    (continuous_sourceRealOrientedMinkowskiInvariant d n).comp
+      (realSourcePermuteHomeomorph d n π).continuous
+
+/-- Restricting a checked OS45 real source patch to a nonempty open source
+subpatch preserves the checked-patch data. -/
+theorem IsOS45Figure24CheckedRealPatch.restrict_open
+    {d : ℕ} [NeZero d]
+    (_hd : 2 ≤ d)
+    (n : ℕ)
+    (π : Equiv.Perm (Fin n))
+    (i : Fin n) (hi : i.val + 1 < n)
+    {E0 E : Set (Fin n → Fin (d + 1) → ℝ)}
+    (hPatch : IsOS45Figure24CheckedRealPatch (d := d) n π i hi E0)
+    (hE_sub : E ⊆ E0)
+    (hE_open : IsOpen E)
+    (hE_ne : E.Nonempty) :
+    IsOS45Figure24CheckedRealPatch (d := d) n π i hi E := by
+  refine
+    { isOpen := hE_open
+      nonempty := hE_ne
+      permuted_jost := ?_ }
+  intro y hy
+  rcases hy with ⟨x, hx, rfl⟩
+  exact hPatch.permuted_jost ⟨x, hE_sub hx, rfl⟩
+
+/-- Restricting a checked OS45 real source patch by an ambient open oriented
+condition preserves checkedness. -/
+theorem IsOS45Figure24CheckedRealPatch.restrict_orientedOpen
+    {d : ℕ} [NeZero d]
+    (hd : 2 ≤ d)
+    (n : ℕ)
+    (π : Equiv.Perm (Fin n))
+    (i : Fin n) (hi : i.val + 1 < n)
+    {E0 : Set (Fin n → Fin (d + 1) → ℝ)}
+    (hPatch : IsOS45Figure24CheckedRealPatch (d := d) n π i hi E0)
+    {W0 : Set (SourceOrientedGramData d n)}
+    (hW0_open : IsOpen W0)
+    (hNonempty :
+      (E0 ∩
+        {x |
+          sourceRealOrientedMinkowskiInvariant d n
+            (fun k => x (π k)) ∈ W0}).Nonempty) :
+    IsOS45Figure24CheckedRealPatch (d := d) n π i hi
+      (E0 ∩
+        {x |
+          sourceRealOrientedMinkowskiInvariant d n
+            (fun k => x (π k)) ∈ W0}) := by
+  apply IsOS45Figure24CheckedRealPatch.restrict_open
+    (d := d) hd n π i hi hPatch
+  · intro x hx
+    exact hx.1
+  · exact hPatch.isOpen.inter
+      (hW0_open.preimage
+        (continuous_realSourcePermute_orientedInvariant d n π))
+  · exact hNonempty
+
+/-- Shrink a checked OS45 real source patch so its permuted oriented invariants
+land in a prescribed relatively open oriented source-variety set. -/
+theorem os45Figure24_checkedRealPatch_shrink_into_orientedRelOpen
+    {d : ℕ} [NeZero d]
+    (hd : 2 ≤ d)
+    (n : ℕ)
+    (π : Equiv.Perm (Fin n))
+    (i : Fin n) (hi : i.val + 1 < n)
+    (E0 : Set (Fin n → Fin (d + 1) → ℝ))
+    (hPatch : IsOS45Figure24CheckedRealPatch (d := d) n π i hi E0)
+    {W : Set (SourceOrientedGramData d n)}
+    (hW_rel : IsRelOpenInSourceOrientedGramVariety d n W)
+    (hContact :
+      ∃ x0 ∈ E0,
+        sourceRealOrientedMinkowskiInvariant d n (fun k => x0 (π k)) ∈ W) :
+    ∃ E1 : Set (Fin n → Fin (d + 1) → ℝ),
+      E1 ⊆ E0 ∧
+      IsOpen E1 ∧
+      E1.Nonempty ∧
+      IsOS45Figure24CheckedRealPatch (d := d) n π i hi E1 ∧
+      (∀ y ∈ {y | ∃ x ∈ E1, y = fun k => x (π k)},
+        sourceRealOrientedMinkowskiInvariant d n y ∈ W) := by
+  rcases hW_rel with ⟨W0, hW0_open, hW_eq⟩
+  rcases hContact with ⟨x0, hx0E0, hx0W⟩
+  let E1 : Set (Fin n → Fin (d + 1) → ℝ) :=
+    E0 ∩
+      {x |
+        sourceRealOrientedMinkowskiInvariant d n (fun k => x (π k)) ∈ W0}
+  have hE1_sub : E1 ⊆ E0 := by
+    intro x hx
+    exact hx.1
+  have hE1_open : IsOpen E1 :=
+    hPatch.isOpen.inter
+      (hW0_open.preimage
+        (continuous_realSourcePermute_orientedInvariant d n π))
+  have hx0W0 :
+      sourceRealOrientedMinkowskiInvariant d n (fun k => x0 (π k)) ∈ W0 := by
+    have hx0W' :
+        sourceRealOrientedMinkowskiInvariant d n (fun k => x0 (π k)) ∈
+          W0 ∩ sourceOrientedGramVariety d n := by
+      simpa [hW_eq] using hx0W
+    exact hx0W'.1
+  have hE1_ne : E1.Nonempty := ⟨x0, hx0E0, hx0W0⟩
+  have hChecked1 :
+      IsOS45Figure24CheckedRealPatch (d := d) n π i hi E1 :=
+    IsOS45Figure24CheckedRealPatch.restrict_orientedOpen
+      (d := d) hd n π i hi hPatch hW0_open hE1_ne
+  refine ⟨E1, hE1_sub, hE1_open, hE1_ne, hChecked1, ?_⟩
+  intro y hy
+  rcases hy with ⟨x, hxE1, rfl⟩
+  rw [hW_eq]
+  exact
+    ⟨hxE1.2,
+      sourceRealOrientedMinkowskiInvariant_mem_variety d n
+        (fun k => x (π k))⟩
 
 end BHW
