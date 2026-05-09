@@ -2241,15 +2241,21 @@ checks the real-source permutation topology helpers
 `BHW.sourceRealFullFrameDetLinePolynomial_leadingCoeff`,
 `BHW.sourceRealFullFrameDetLinePolynomial_ne_zero`,
 `BHW.sourceRealFullFrameDetLinePolynomial_eval`,
-`BHW.sourceRealFullFrameDet_nonzero_dense`, and
-`BHW.nonempty_open_inter_sourceRealFullFrameDet_nonzero`; and the canonical
-head full-frame embedding `BHW.sourceRealHeadFullFrameEmbedding`.  This
-closes only the definition/permutation/topological-image,
-determinant-openness, and selected determinant-density layer: no real patch is
-asserted to be a uniqueness patch yet.  The remaining real-uniqueness proof
-still begins with the tangent/IFT environment producer
-`BHW.IsHWOrientedRealEnvironment` and
-`BHW.sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment`.
+   `BHW.sourceRealFullFrameDet_nonzero_dense`, and
+   `BHW.nonempty_open_inter_sourceRealFullFrameDet_nonzero`; and the canonical
+   head full-frame embedding `BHW.sourceRealHeadFullFrameEmbedding`.  The next
+   determinant/max-rank bridge is now checked too:
+   `BHW.sourceRealOrientedMinkowskiInvariant_gram`,
+   `BHW.sourceRealOrientedMinkowskiInvariant_det`,
+   `BHW.realSourcePermute_symm_image_permImage_eq`, and, in
+   `SourceOrientedRealMaxRank.lean`,
+   `BHW.sourceOrientedMaxRankAt_sourceReal_fullFrameDet_ne_zero`.  This
+   closes only the definition/permutation/topological-image,
+   determinant-openness, selected determinant-density, and max-rank bridge
+   layer: no real patch is asserted to be a uniqueness patch yet.  The remaining
+   real-uniqueness proof still begins with the tangent/IFT environment producer
+   `BHW.IsHWOrientedRealEnvironment` and
+   `BHW.sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment`.
 
 Current compact Figure-2-4 branch-difference readiness correction,
 2026-05-03: the OS I Section 4.5 compact producer
@@ -5579,8 +5585,8 @@ implementation contract is:
    `SourceOrientedJacobianExpectedRankAt`,
    `sourceOrientedRegularAt_iff_expectedRealJacobianRank`,
    `sourceOrientedTotallyReal_of_expectedRealJacobianRank`,
-   `sourceOrientedRealEnvironment_smallArity_of_pureGram`,
-   `sourceOrientedRealEnvironment_fullFrameSubpatch`, and
+   `sourceOrientedRealEnvironment_smallArityGramSubpatch`,
+   `sourceOrientedRealEnvironment_fullFrameGramSubpatch`, and
    `os45Figure24_realPatch_orientedRegularSubpatch`.  The adjacent compact
    seed must shrink to a nonempty open oriented-regular subpatch; it may not
    reuse the pure-Gram `gramEnvironment`, because that carrier has forgotten
@@ -5592,7 +5598,8 @@ implementation contract is:
    `nonempty_open_inter_sourceRealFullFrameDet_nonzero`,
    `sourceRealHeadFullFrameEmbedding`,
    `isOpen_realSourcePermuteImage`,
-   `nonempty_realSourcePermuteImage`, and
+   `nonempty_realSourcePermuteImage`,
+   `os45Figure24_checkedRealPatch_gramEnvironmentSubpatch`, and
    `os45Figure24_checkedRealPatch_fullFrameGramEnvironmentSubpatch`: after π-permutation,
    choose the fixed head full-frame embedding, intersect the π-permuted patch
    with the dense open nonvanishing determinant locus, pull that determinant
@@ -5603,9 +5610,10 @@ implementation contract is:
    does not use an arbitrary source-open restriction theorem for
    `IsHWRealEnvironment`: relative openness is a Gram-variety condition and must
    be rebuilt from a regular point before the later oriented chart shrink calls
-   `sourceOrientedRealEnvironment_fullFrameSubpatch`.
+   `sourceOrientedRealEnvironment_fullFrameGramSubpatch`.
    The surrounding checked-patch shrink is now Lean-checked too:
    `continuous_realSourcePermute_orientedInvariant`,
+   `realSourcePermute_symm_image_permImage_eq`,
    `IsOS45Figure24CheckedRealPatch.restrict_open`,
    `IsOS45Figure24CheckedRealPatch.restrict_orientedOpen`, and
    `os45Figure24_checkedRealPatch_shrink_into_orientedRelOpen` restrict a

@@ -51,6 +51,16 @@ theorem sourceRealOrientedMinkowskiInvariant_mem_variety
       sourceOrientedGramVariety d n := by
   exact ⟨realEmbed x, rfl⟩
 
+/-- The ordinary Gram coordinate of a real oriented invariant is the complexified
+real source Gram matrix. -/
+theorem sourceRealOrientedMinkowskiInvariant_gram
+    (d n : ℕ)
+    (x : Fin n → Fin (d + 1) → ℝ) :
+    (sourceRealOrientedMinkowskiInvariant d n x).gram =
+      sourceRealGramComplexify n (sourceRealMinkowskiGram d n x) := by
+  simpa [sourceRealOrientedMinkowskiInvariant, sourceOrientedMinkowskiInvariant,
+    SourceOrientedGramData.gram] using sourceMinkowskiGram_realEmbed d n x
+
 /-- Permuting real source labels permutes their oriented source invariant. -/
 theorem sourceRealOrientedMinkowskiInvariant_perm
     (d n : ℕ)
@@ -175,6 +185,34 @@ theorem nonempty_realSourcePermuteImage
   rcases hE_ne with ⟨x, hxE⟩
   exact ⟨fun k => x (π k), x, hxE, rfl⟩
 
+/-- Pulling a real source patch back by the inverse permutation homeomorphism
+and then taking its explicit π-permuted image recovers the original patch. -/
+theorem realSourcePermute_symm_image_permImage_eq
+    (d n : ℕ)
+    (π : Equiv.Perm (Fin n))
+    (E : Set (Fin n → Fin (d + 1) → ℝ)) :
+    {y | ∃ x ∈ (realSourcePermuteHomeomorph d n π).symm '' E,
+      y = fun k => x (π k)} = E := by
+  let H := realSourcePermuteHomeomorph d n π
+  have h_as_image :
+      {y | ∃ x ∈ H.symm '' E, y = fun k => x (π k)} =
+        H '' (H.symm '' E) := by
+    ext y
+    constructor
+    · rintro ⟨x, hxE, rfl⟩
+      exact ⟨x, hxE, rfl⟩
+    · rintro ⟨x, hxE, rfl⟩
+      exact ⟨x, hxE, rfl⟩
+  have h_image : H '' (H.symm '' E) = E := by
+    ext y
+    constructor
+    · rintro ⟨x, hxE, rfl⟩
+      rcases hxE with ⟨y0, hy0, rfl⟩
+      simpa using hy0
+    · intro hy
+      exact ⟨H.symm y, ⟨y, hy, rfl⟩, by simp⟩
+  exact h_as_image.trans h_image
+
 /-- The real selected full-frame matrix. -/
 def sourceRealFullFrameMatrix
     (d n : ℕ)
@@ -233,6 +271,18 @@ theorem sourceFullFrameDet_realEmbed
   exact
     (RingHom.map_det Complex.ofRealHom
       (sourceRealFullFrameMatrix d n ι x)).symm
+
+/-- The selected determinant coordinate of a real oriented invariant is the
+complexification of the corresponding real full-frame determinant. -/
+theorem sourceRealOrientedMinkowskiInvariant_det
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    (x : Fin n → Fin (d + 1) → ℝ) :
+    (sourceRealOrientedMinkowskiInvariant d n x).det ι =
+      (sourceRealFullFrameDet d n ι x : ℂ) := by
+  simpa [sourceRealOrientedMinkowskiInvariant, sourceOrientedMinkowskiInvariant,
+    SourceOrientedGramData.det] using
+      sourceFullFrameDet_realEmbed d n ι x
 
 /-- The nonvanishing locus of a real full-frame determinant is open. -/
 theorem sourceRealFullFrameDet_nonzero_isOpen
@@ -458,6 +508,48 @@ structure IsOS45Figure24CheckedRealPatch
   nonempty : E0.Nonempty
   permuted_jost :
     {y | ∃ x ∈ E0, y = fun k => x (π k)} ⊆ JostSet d n
+
+/-- A checked OS45 real source patch contains a nonempty open subpatch whose
+permuted Gram image contains a smaller Hall-Wightman pure-Gram real
+environment. -/
+theorem os45Figure24_checkedRealPatch_gramEnvironmentSubpatch
+    {d : ℕ} [NeZero d]
+    (n : ℕ)
+    (π : Equiv.Perm (Fin n))
+    (i : Fin n) (hi : i.val + 1 < n)
+    (E0 : Set (Fin n → Fin (d + 1) → ℝ))
+    (hE0 : IsOS45Figure24CheckedRealPatch (d := d) n π i hi E0) :
+    ∃ (E : Set (Fin n → Fin (d + 1) → ℝ))
+      (O : Set (Fin n → Fin n → ℝ)),
+      E ⊆ E0 ∧ IsOpen E ∧ E.Nonempty ∧
+      IsOpen {y | ∃ x ∈ E, y = fun k => x (π k)} ∧
+      {y | ∃ x ∈ E, y = fun k => x (π k)}.Nonempty ∧
+      {y | ∃ x ∈ E, y = fun k => x (π k)} ⊆ JostSet d n ∧
+      O ⊆
+        sourceRealMinkowskiGram d n ''
+          {y | ∃ x ∈ E, y = fun k => x (π k)} ∧
+      IsHWRealEnvironment d n O := by
+  let Eperm : Set (Fin n → Fin (d + 1) → ℝ) :=
+    {y | ∃ x ∈ E0, y = fun k => x (π k)}
+  have hEperm_open : IsOpen Eperm :=
+    isOpen_realSourcePermuteImage d n π hE0.isOpen
+  have hEperm_ne : Eperm.Nonempty :=
+    nonempty_realSourcePermuteImage d n π hE0.nonempty
+  have hEperm_jost : Eperm ⊆ JostSet d n := hE0.permuted_jost
+  rcases (dense_sourceGramRegularAt d n).exists_mem_open
+      hEperm_open hEperm_ne with
+    ⟨y0, hy0reg, hy0Eperm⟩
+  have hy0_jost : y0 ∈ JostSet d n :=
+    hEperm_jost hy0Eperm
+  rcases sourceRealGramMap_realEnvironmentAt_of_regular
+      (d := d) n hy0reg hy0_jost Eperm hEperm_open hy0Eperm with
+    ⟨O, hO_sub, hO_env⟩
+  refine ⟨E0, O, subset_rfl, hE0.isOpen, hE0.nonempty, ?_, ?_, ?_, ?_, ?_⟩
+  · exact hEperm_open
+  · exact hEperm_ne
+  · exact hEperm_jost
+  · exact hO_sub
+  · exact hO_env
 
 /-- In the hard range, a checked OS45 real source patch has a nonempty open
 subpatch whose permuted image has a fixed nonzero full-frame determinant and

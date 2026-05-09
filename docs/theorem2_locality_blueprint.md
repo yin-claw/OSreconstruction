@@ -18583,11 +18583,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.sourceRealFullFrameDet_nonzero_dense`, and
       `BHW.nonempty_open_inter_sourceRealFullFrameDet_nonzero`; and the
       canonical head full-frame embedding
-      `BHW.sourceRealHeadFullFrameEmbedding`.  This is only the
-      definition/permutation/topological-image, determinant-openness, and
-      selected determinant-density substrate.  No theorem yet asserts that a
-      Figure-2-4 real patch is an oriented uniqueness patch; the next honest
-      real-uniqueness frontier is still the tangent/IFT environment packet
+      `BHW.sourceRealHeadFullFrameEmbedding`.  The next checked finite layer is
+      `BHW.sourceRealOrientedMinkowskiInvariant_gram`,
+      `BHW.sourceRealOrientedMinkowskiInvariant_det`,
+      `BHW.realSourcePermute_symm_image_permImage_eq`,
+      `BHW.os45Figure24_checkedRealPatch_gramEnvironmentSubpatch`, and
+      `BHW.sourceOrientedMaxRankAt_sourceReal_fullFrameDet_ne_zero` in
+      `SourceOrientedRealMaxRank.lean`.  This is only the
+      definition/permutation/topological-image, determinant-openness, selected
+      determinant-density, and max-rank bridge substrate.  No theorem yet
+      asserts that a Figure-2-4 real patch is an oriented uniqueness patch; the
+      next honest real-uniqueness frontier is still the tangent/IFT environment packet
       `BHW.IsHWOrientedRealEnvironment` and the proof of
       `BHW.sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment`.
 
@@ -19165,6 +19171,28 @@ Proof decomposition of this theorem, without hiding the analytic work:
       determinant-rank hypotheses come from.  The generic real-patch shrink is:
 
       ```lean
+      theorem BHW.sourceRealOrientedMinkowskiInvariant_gram
+          (d n : Nat)
+          (x : Fin n -> Fin (d + 1) -> ℝ) :
+          (BHW.sourceRealOrientedMinkowskiInvariant d n x).gram =
+            BHW.sourceRealGramComplexify n
+              (BHW.sourceRealMinkowskiGram d n x)
+
+      theorem BHW.sourceRealOrientedMinkowskiInvariant_det
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          (x : Fin n -> Fin (d + 1) -> ℝ) :
+          (BHW.sourceRealOrientedMinkowskiInvariant d n x).det ι =
+            (BHW.sourceRealFullFrameDet d n ι x : ℂ)
+
+      theorem BHW.sourceOrientedMaxRankAt_sourceReal_fullFrameDet_ne_zero
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          {x : Fin n -> Fin (d + 1) -> ℝ}
+          (hdet : BHW.sourceRealFullFrameDet d n ι x ≠ 0) :
+          BHW.SourceOrientedMaxRankAt d n
+            (BHW.sourceRealOrientedMinkowskiInvariant d n x)
+
       def BHW.SourceOrientedJacobianExpectedRankAt
           (d n : Nat)
           (x : Fin n -> Fin (d + 1) -> ℝ) : Prop :=
@@ -19187,15 +19215,21 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.SourceOrientedComplexifiedRealTangentEqualsComplexTangent
             d n x
 
-      theorem BHW.sourceOrientedRealEnvironment_smallArity_of_pureGram
+      theorem BHW.sourceOrientedRealEnvironment_smallArityGramSubpatch
           (d n : Nat)
           (hn : n < d + 1)
           {E : Set (Fin n -> Fin (d + 1) -> ℝ)}
-          (hE : BHW.IsHWRealEnvironment d n
-            (BHW.sourceRealMinkowskiGram d n '' E)) :
-          BHW.IsHWOrientedRealEnvironment d n E
+          (hE_open : IsOpen E)
+          (hE_jost : E ⊆ BHW.JostSet d n)
+          (hE_nonempty : E.Nonempty)
+          {O : Set (Fin n -> Fin n -> ℝ)}
+          (hO_sub : O ⊆ BHW.sourceRealMinkowskiGram d n '' E)
+          (hO_env : BHW.IsHWRealEnvironment d n O) :
+          ∃ E' : Set (Fin n -> Fin (d + 1) -> ℝ),
+            E' ⊆ E ∧ IsOpen E' ∧ E'.Nonempty ∧
+            BHW.IsHWOrientedRealEnvironment d n E'
 
-      theorem BHW.sourceOrientedRealEnvironment_fullFrameSubpatch
+      theorem BHW.sourceOrientedRealEnvironment_fullFrameGramSubpatch
           [NeZero d]
           (hd : 2 <= d)
           (n : Nat)
@@ -19207,10 +19241,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (ι : Fin (d + 1) ↪ Fin n)
           (hι_nonzero :
             ∀ x ∈ E, BHW.sourceRealFullFrameDet d n ι x ≠ 0)
-          (hGramEnv :
-            BHW.IsHWRealEnvironment d n
-              (BHW.sourceRealMinkowskiGram d n '' E)) :
-          BHW.IsHWOrientedRealEnvironment d n E
+          {O : Set (Fin n -> Fin n -> ℝ)}
+          (hO_sub : O ⊆ BHW.sourceRealMinkowskiGram d n '' E)
+          (hO_env : BHW.IsHWRealEnvironment d n O) :
+          ∃ E' : Set (Fin n -> Fin (d + 1) -> ℝ),
+            E' ⊆ E ∧ IsOpen E' ∧ E'.Nonempty ∧
+            BHW.IsHWOrientedRealEnvironment d n E'
 
       structure BHW.IsOS45Figure24CheckedRealPatch
           {d : Nat} [NeZero d]
@@ -19318,6 +19354,26 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.sourceRealFullFrameDet_nonzero_dense d n ι
         exact
           hdense.exists_mem_open hE_open hxE
+
+      theorem BHW.os45Figure24_checkedRealPatch_gramEnvironmentSubpatch
+          [NeZero d]
+          (n : Nat)
+          (π : Equiv.Perm (Fin n))
+          (i : Fin n) (hi : i.val + 1 < n)
+          (E0 : Set (Fin n -> Fin (d + 1) -> ℝ))
+          (hE0_is_checked_patch :
+            BHW.IsOS45Figure24CheckedRealPatch (d := d) n π i hi E0) :
+          ∃ (E : Set (Fin n -> Fin (d + 1) -> ℝ))
+            (O : Set (Fin n -> Fin n -> ℝ)),
+            E ⊆ E0 ∧ IsOpen E ∧ E.Nonempty ∧
+            IsOpen {y | ∃ x ∈ E, y = fun k => x (π k)} ∧
+            {y | ∃ x ∈ E, y = fun k => x (π k)}.Nonempty ∧
+            {y | ∃ x ∈ E, y = fun k => x (π k)} ⊆
+              BHW.JostSet d n ∧
+            O ⊆
+              BHW.sourceRealMinkowskiGram d n ''
+                {y | ∃ x ∈ E, y = fun k => x (π k)} ∧
+            BHW.IsHWRealEnvironment d n O
 
       theorem BHW.os45Figure24_checkedRealPatch_fullFrameGramEnvironmentSubpatch
           [NeZero d]
@@ -19439,11 +19495,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
       oriented equations, and the real Jacobian rank equals the complex
       tangent rank because all Gram and determinant coordinate polynomials
       have real coefficients.  The final OS45 subpatch theorem is the
-      producer that the adjacent compact-Wick seed must use: shrink the
-      checked real patch to a nonempty open subset on which either `n < d + 1`
-      or a selected real full-frame determinant is nonzero.  The theorem
+      producer that the adjacent compact-Wick seed must use: first use
+      `os45Figure24_checkedRealPatch_gramEnvironmentSubpatch` to obtain a
+      smaller pure-Gram real environment `O` inside the π-permuted Gram image,
+      then shrink over `O` in the small-arity branch; in the hard range use a
+      selected determinant-nonzero subpatch as well.  The theorem
       `os45Figure24_checkedRealPatch_fullFrameGramEnvironmentSubpatch` is the
-      checked producer for the second branch: nonvanishing of
+      checked producer for the hard branch: nonvanishing of
       `sourceRealFullFrameDet` is open and dense, so the checked OS45 real
       patch contains a full-frame point after the π-permutation; intersecting
       with that determinant-open set and then applying
