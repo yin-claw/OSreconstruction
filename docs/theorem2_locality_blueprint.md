@@ -20374,6 +20374,26 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrameRealCompatibleNormalizedKernelMap`,
       `sourceFullFrameRealCompatibleNormalizedKernelMap_zero`,
       `sourceFullFrameRealCompatibleNormalizedKernelMap_hasStrictFDerivAt`,
+      `sourceFullFrameSymmetricEquationDerivCLM_realComplexify_im`,
+      `sourceFullFrameRealCompatibleKernelProjection_im_zero`,
+      `sourceFullFrameGaugeSliceMapSymmetric_realComplexify_sub_base_im`,
+      `sourceFullFrameRealCompatibleExplicitKernelMap_real_im`,
+      `sourceFullFrameGaugeSliceKernelDerivCLM_realComplexify_im`,
+      `sourceFullFrameRealSliceKernelCoordEquiv_real_im`,
+      `sourceFullFrameRealSliceKernelCoordEquiv_symm_real_im`,
+      `sourceFullFrameRealCompatibleNormalizedKernelMap_real_im`,
+      `sourceFullFrameRealCoordinateComplexifyCLM`,
+      `sourceFullFrameRealCoordinateComplexifyCLM_apply`,
+      `sourceFullFrameComplexCoordinateReCLM`,
+      `sourceFullFrameComplexCoordinateReCLM_apply`,
+      `sourceFullFrameRealCompatibleNormalizedKernelMapReal`,
+      `sourceFullFrameRealCompatibleNormalizedKernelMapReal_zero`,
+      `sourceFullFrameRealCompatibleNormalizedKernelMapReal_complexify`,
+      `sourceFullFrameRealCompatibleNormalizedKernelMapReal_hasStrictFDerivAt`,
+      `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph`,
+      `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph_coe`,
+      `sourceFullFrameRealCompatibleNormalizedKernel_zero_mem_chartSource`,
+      `sourceFullFrameRealCompatibleNormalizedKernel_zero_mem_chartTarget`,
       and `sourceFullFrameRealDifferentialRightInverseLinear_injective`.
       Thus the next producer step is not to prove membership in the complex
       slice, the real-coefficient tangent split, or the finite-coordinate
@@ -20390,7 +20410,40 @@ Proof decomposition of this theorem, without hiding the analytic work:
       theorem using the checked identity strict derivative.  That real chart supplies
       `realKernelCoord`, `frameDomain`, the selected-frame open image theorem,
       and the `complexKernelCoord_real_eq` uniqueness equation needed by
-      `sourceFullFrameRealGaugeSliceData`.
+      `sourceFullFrameRealGaugeSliceData`.  Lean-facing implementation has
+      now checked the algebraic real-form chain
+      `sourceFullFrameSymmetricEquationDerivCLM_realComplexify_im`,
+      `sourceFullFrameRealCompatibleKernelProjection_im_zero`,
+      `sourceFullFrameGaugeSliceMapSymmetric_realComplexify_sub_base_im`, and
+      `sourceFullFrameRealCompatibleExplicitKernelMap_real_im`.  These four
+      facts isolate all real-coefficient algebra before the real IFT: the
+      first shows the restricted equation derivative is real on complexified
+      real symmetric coordinates, the second shows the explicit
+      determinant-direction projection preserves the real form, the third
+      shows the nonlinear gauge-slice coordinate minus the real base remains
+      real on complexified real slice inputs, and the fourth composes them for
+      the explicit kernel map.  The final normalized real-form theorem is now
+      checked as `sourceFullFrameRealCompatibleNormalizedKernelMap_real_im`:
+      it decomposes finite complex coordinates into real and imaginary parts,
+      uses `F.complexCoordEquiv_real_eq` on each part, and applies injectivity
+      of `sourceFullFrameRealSliceKernelCoordEquiv` to make the imaginary
+      coordinate vector vanish.  The real restriction and real IFT layer are
+      also checked: `sourceFullFrameRealCompatibleNormalizedKernelMapReal`
+      takes the coordinatewise real part of the explicit normalized complex
+      map on complexified real coordinates,
+      `sourceFullFrameRealCompatibleNormalizedKernelMapReal_complexify`
+      recovers the complex map after complexification,
+      `sourceFullFrameRealCompatibleNormalizedKernelMapReal_hasStrictFDerivAt`
+      proves identity strict derivative over `ℝ` by restricting the complex
+      derivative and composing coordinatewise `ofReal`/`re`, and
+      `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph`
+      packages the real inverse-function chart with checked origin
+      source/target membership.  The remaining full-frame chart producer is
+      now a packaging/shrink step: use this real local homeomorphism to define
+      `realKernelCoord`, use the explicit complex kernel map for
+      `complexKernelCoord`, prove `complexKernelCoord_real_eq` by the checked
+      complexification identity plus local inverse uniqueness, and combine it
+      with the selected-frame domain and open-image theorem.
       The hard producer still remaining is
       `sourceFullFrameRealCompatibleImplicitChartData`, which must construct
       that data from a real full-frame determinant-nonzero point.
