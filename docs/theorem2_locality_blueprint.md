@@ -19528,6 +19528,24 @@ Proof decomposition of this theorem, without hiding the analytic work:
             BHW.IsHWOrientedRealEnvironment d n
               {y | ∃ x ∈ E, y = fun k => x (π k)}
 
+      theorem
+          BHW.os45Figure24_checkedRealPatch_sourceOrientedDistributionalUniquenessSubpatch_of_realCompatibleImplicitChartProducer
+          {d : Nat} [NeZero d]
+          (hd : 2 <= d)
+          (n : Nat)
+          (hn : d + 1 <= n)
+          (π : Equiv.Perm (Fin n))
+          (i : Fin n) (hi : i.val + 1 < n)
+          (E0 : Set (Fin n -> Fin (d + 1) -> ℝ))
+          (hE0 :
+            BHW.IsOS45Figure24CheckedRealPatch (d := d) n π i hi E0)
+          (P :
+            BHW.SourceFullFrameRealCompatibleImplicitChartProducer d n) :
+          ∃ E : Set (Fin n -> Fin (d + 1) -> ℝ),
+            E ⊆ E0 ∧ IsOpen E ∧ E.Nonempty ∧
+            BHW.sourceOrientedDistributionalUniquenessPatch d n
+              {y | ∃ x ∈ E, y = fun k => x (π k)}
+
       theorem BHW.sourceFullFrameRealCompatibleImplicitChartData
           [NeZero d]
           (hd : 2 <= d)
@@ -19560,7 +19578,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceOrientedLocalRealChartData_of_fullFrameDet_ne_zero_of_realCompatibleImplicitChartProducer`,
       `sourceOrientedRealEnvironment_of_realCompatibleImplicitChartProducer`,
       and
-      `os45Figure24_checkedRealPatch_fullFrameOrientedEnvironmentSubpatch_of_realCompatibleImplicitChartProducer`.
+      `os45Figure24_checkedRealPatch_fullFrameOrientedEnvironmentSubpatch_of_realCompatibleImplicitChartProducer`,
+      and
+      `os45Figure24_checkedRealPatch_sourceOrientedDistributionalUniquenessSubpatch_of_realCompatibleImplicitChartProducer`.
       The hard producer still remaining is
       `sourceFullFrameRealCompatibleImplicitChartData`, which must construct
       that data from a real full-frame determinant-nonzero point.

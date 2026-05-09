@@ -222,4 +222,31 @@ theorem os45Figure24_checkedRealPatch_fullFrameOrientedEnvironmentSubpatch_of_re
       sourceOrientedLocalRealChartData_of_fullFrameRealCompatibleImplicitChartData
         (P ι hy))
 
+/-- From the real-compatible full-frame chart producer, a checked OS45 real
+patch contains a source-oriented distributional uniqueness subpatch. -/
+theorem os45Figure24_checkedRealPatch_sourceOrientedDistributionalUniquenessSubpatch_of_realCompatibleImplicitChartProducer
+    {d : ℕ} [NeZero d]
+    (hd : 2 ≤ d)
+    (n : ℕ)
+    (hn : d + 1 ≤ n)
+    (π : Equiv.Perm (Fin n))
+    (i : Fin n) (hi : i.val + 1 < n)
+    (E0 : Set (Fin n → Fin (d + 1) → ℝ))
+    (hE0 : IsOS45Figure24CheckedRealPatch (d := d) n π i hi E0)
+    (P : SourceFullFrameRealCompatibleImplicitChartProducer d n) :
+    ∃ E : Set (Fin n → Fin (d + 1) → ℝ),
+      E ⊆ E0 ∧
+      IsOpen E ∧
+      E.Nonempty ∧
+      sourceOrientedDistributionalUniquenessPatch d n
+        {y | ∃ x ∈ E, y = fun k => x (π k)} := by
+  rcases
+      os45Figure24_checkedRealPatch_fullFrameOrientedEnvironmentSubpatch_of_realCompatibleImplicitChartProducer
+        hd n hn π i hi E0 hE0 P with
+    ⟨E, hE_sub, hE_open, hE_ne, hEnv⟩
+  exact
+    ⟨E, hE_sub, hE_open, hE_ne,
+      sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment
+        hd hn hEnv⟩
+
 end BHW
