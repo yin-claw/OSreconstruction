@@ -1,4 +1,5 @@
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedFullFrameOrbit
+import Mathlib.LinearAlgebra.Dimension.Free
 
 /-!
 # Explicit full-frame gauge slice
@@ -1188,6 +1189,350 @@ theorem sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexS
   exact sourceFullFrameRealDifferentialRightInverseLinear_mem_complexSlice
     d hM0R Y
 
+/-- Every element of the explicit complex slice at a complexified real base
+splits as the componentwise complexification of two real-slice elements. -/
+theorem sourceFullFrameExplicitComplexSlice_re_im_mem_realRange
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (X :
+      (sourceFullFrameExplicitGaugeSliceData d
+        (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)).slice) :
+    ∃ XR XI : sourceFullFrameRealDifferentialRightInverseRange d hM0R,
+      (X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) =
+        (XR : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal +
+          Complex.I •
+            (XI : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal := by
+  let hM0C : IsUnit (M0R.map Complex.ofReal).det :=
+    sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R
+  change
+    ∃ XR XI : sourceFullFrameRealDifferentialRightInverseRange d hM0R,
+      (X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) =
+        (XR : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal +
+          Complex.I •
+            (XI : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal
+  rcases X.property with ⟨Y, hXY⟩
+  let Yr : sourceFullFrameRealOrientedTangentSpace d M0R :=
+    ⟨sourceFullFrameOrientedCoordRe d (Y : SourceFullFrameOrientedCoord d),
+      sourceFullFrameOrientedTangent_re_mem d hM0R Y.property⟩
+  let Yi : sourceFullFrameRealOrientedTangentSpace d M0R :=
+    ⟨sourceFullFrameOrientedCoordIm d (Y : SourceFullFrameOrientedCoord d),
+      sourceFullFrameOrientedTangent_im_mem d hM0R Y.property⟩
+  let XR : sourceFullFrameRealDifferentialRightInverseRange d hM0R :=
+    ⟨sourceFullFrameRealDifferentialRightInverseLinear d hM0R Yr, ⟨Yr, rfl⟩⟩
+  let XI : sourceFullFrameRealDifferentialRightInverseRange d hM0R :=
+    ⟨sourceFullFrameRealDifferentialRightInverseLinear d hM0R Yi, ⟨Yi, rfl⟩⟩
+  refine ⟨XR, XI, ?_⟩
+  let R :=
+    sourceFullFrameOrientedDifferentialRightInverseLinear d hM0C
+  have hYsplit :
+      Y =
+        sourceFullFrameRealOrientedTangentComplexifyLinear d M0R Yr +
+          Complex.I •
+            sourceFullFrameRealOrientedTangentComplexifyLinear d M0R Yi := by
+    apply Subtype.ext
+    change
+      (Y : SourceFullFrameOrientedCoord d) =
+        sourceFullFrameRealOrientedCoordComplexify d
+            (Yr : SourceFullFrameRealOrientedCoord d) +
+          Complex.I •
+            sourceFullFrameRealOrientedCoordComplexify d
+              (Yi : SourceFullFrameRealOrientedCoord d)
+    simpa [Yr, Yi] using
+      sourceFullFrameOrientedCoord_re_im_decomp d
+        (Y : SourceFullFrameOrientedCoord d)
+  have hRsplit :
+      R Y =
+        R (sourceFullFrameRealOrientedTangentComplexifyLinear d M0R Yr) +
+          Complex.I •
+            R (sourceFullFrameRealOrientedTangentComplexifyLinear d M0R Yi) := by
+    let A := sourceFullFrameRealOrientedTangentComplexifyLinear d M0R Yr
+    let B := sourceFullFrameRealOrientedTangentComplexifyLinear d M0R Yi
+    calc
+      R Y = R (A + Complex.I • B) := by
+        rw [hYsplit]
+      _ = R A + R (Complex.I • B) := by
+        exact (R.map_add A (Complex.I • B))
+      _ = R A + Complex.I • R B := by
+        rw [R.map_smul]
+  have hYr :
+      (sourceFullFrameRealDifferentialRightInverseLinear d hM0R Yr).map
+          Complex.ofReal =
+        R (sourceFullFrameRealOrientedTangentComplexifyLinear d M0R Yr) := by
+    simpa [R, hM0C, sourceFullFrameRealOrientedTangentComplexifyLinear] using
+      sourceFullFrameRealDifferentialRightInverseLinear_complexify d hM0R Yr
+  have hYi :
+      (sourceFullFrameRealDifferentialRightInverseLinear d hM0R Yi).map
+          Complex.ofReal =
+        R (sourceFullFrameRealOrientedTangentComplexifyLinear d M0R Yi) := by
+    simpa [R, hM0C, sourceFullFrameRealOrientedTangentComplexifyLinear] using
+      sourceFullFrameRealDifferentialRightInverseLinear_complexify d hM0R Yi
+  calc
+    (X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) = R Y := hXY.symm
+    _ =
+        R (sourceFullFrameRealOrientedTangentComplexifyLinear d M0R Yr) +
+          Complex.I •
+            R (sourceFullFrameRealOrientedTangentComplexifyLinear d M0R Yi) := hRsplit
+    _ =
+        (XR : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal +
+          Complex.I •
+            (XI : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal := by
+      rw [← hYr, ← hYi]
+
+/-- The canonical finite basis of the real explicit slice. -/
+noncomputable def sourceFullFrameRealDifferentialRightInverseRangeBasis
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det) :
+    Module.Basis
+      (Fin (Module.finrank ℝ
+        (sourceFullFrameRealDifferentialRightInverseRange d hM0R)))
+      ℝ (sourceFullFrameRealDifferentialRightInverseRange d hM0R) :=
+  Module.finBasis ℝ (sourceFullFrameRealDifferentialRightInverseRange d hM0R)
+
+/-- A real basis vector of the real explicit slice, complexified as an element
+of the explicit complex slice. -/
+noncomputable def sourceFullFrameRealSliceComplexBasisVector
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (i : Fin (Module.finrank ℝ
+      (sourceFullFrameRealDifferentialRightInverseRange d hM0R))) :
+    (sourceFullFrameExplicitGaugeSliceData d
+      (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)).slice :=
+  let b := sourceFullFrameRealDifferentialRightInverseRangeBasis d hM0R
+  ⟨((b i : sourceFullFrameRealDifferentialRightInverseRange d hM0R) :
+      Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal,
+    sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice
+      d hM0R (b i).property⟩
+
+/-- Complex coordinates on the explicit complex slice obtained by
+complexifying the canonical real basis of the real explicit slice. -/
+noncomputable def sourceFullFrameRealSliceComplexCoordLinearMap
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det) :
+    (Fin (Module.finrank ℝ
+      (sourceFullFrameRealDifferentialRightInverseRange d hM0R)) → ℂ) →ₗ[ℂ]
+      (sourceFullFrameExplicitGaugeSliceData d
+        (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)).slice where
+  toFun := fun q =>
+    ∑ i, q i • sourceFullFrameRealSliceComplexBasisVector d hM0R i
+  map_add' := by
+    intro q r
+    simp [Pi.add_apply, add_smul, Finset.sum_add_distrib]
+  map_smul' := by
+    intro c q
+    simp [Pi.smul_apply, Finset.smul_sum, smul_smul]
+
+/-- On real coordinates, the complex coordinate map is exactly componentwise
+complexification of the corresponding real basis expansion. -/
+theorem sourceFullFrameRealSliceComplexCoordLinearMap_real_eq
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (q : Fin (Module.finrank ℝ
+      (sourceFullFrameRealDifferentialRightInverseRange d hM0R)) → ℝ) :
+    sourceFullFrameRealSliceComplexCoordLinearMap d hM0R
+        (fun i => (q i : ℂ)) =
+      ⟨(((sourceFullFrameRealDifferentialRightInverseRangeBasis d hM0R).equivFun.symm q :
+          sourceFullFrameRealDifferentialRightInverseRange d hM0R) :
+          Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal,
+        sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice
+          d hM0R
+          (((sourceFullFrameRealDifferentialRightInverseRangeBasis d hM0R).equivFun.symm q :
+            sourceFullFrameRealDifferentialRightInverseRange d hM0R).property)⟩ := by
+  apply Subtype.ext
+  ext a b
+  rw [Module.Basis.equivFun_symm_apply]
+  simp only [sourceFullFrameRealSliceComplexCoordLinearMap,
+    sourceFullFrameRealSliceComplexBasisVector, LinearMap.coe_mk,
+    AddHom.coe_mk]
+  simp only [Submodule.coe_sum, Submodule.coe_smul_of_tower,
+    Matrix.sum_apply, Matrix.smul_apply, Matrix.map_apply, smul_eq_mul]
+  rw [Complex.ofReal_sum]
+  simp
+
+/-- The complex coordinate map splits a coordinate vector into the images of
+its real and imaginary coordinate parts. -/
+theorem sourceFullFrameRealSliceComplexCoordLinearMap_re_im_decomp
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (q : Fin (Module.finrank ℝ
+      (sourceFullFrameRealDifferentialRightInverseRange d hM0R)) → ℂ) :
+    sourceFullFrameRealSliceComplexCoordLinearMap d hM0R q =
+      sourceFullFrameRealSliceComplexCoordLinearMap d hM0R
+          (fun i => ((q i).re : ℂ)) +
+        Complex.I •
+          sourceFullFrameRealSliceComplexCoordLinearMap d hM0R
+            (fun i => ((q i).im : ℂ)) := by
+  let C := sourceFullFrameRealSliceComplexCoordLinearMap d hM0R
+  let qR : Fin (Module.finrank ℝ
+      (sourceFullFrameRealDifferentialRightInverseRange d hM0R)) → ℂ :=
+    fun i => ((q i).re : ℂ)
+  let qI : Fin (Module.finrank ℝ
+      (sourceFullFrameRealDifferentialRightInverseRange d hM0R)) → ℂ :=
+    fun i => ((q i).im : ℂ)
+  have hq : q = qR + Complex.I • qI := by
+    ext i
+    simp only [Pi.add_apply, Pi.smul_apply, qR, qI, smul_eq_mul]
+    rw [mul_comm]
+    exact (Complex.re_add_im (q i)).symm
+  calc
+    C q = C (qR + Complex.I • qI) := by rw [hq]
+    _ = C qR + C (Complex.I • qI) := C.map_add qR (Complex.I • qI)
+    _ = C qR + Complex.I • C qI := by rw [C.map_smul]
+
+/-- The real-basis complex coordinate map is injective. -/
+theorem sourceFullFrameRealSliceComplexCoordLinearMap_injective
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det) :
+    Function.Injective
+      (sourceFullFrameRealSliceComplexCoordLinearMap d hM0R) := by
+  let Rr := sourceFullFrameRealDifferentialRightInverseRange d hM0R
+  let C := sourceFullFrameRealSliceComplexCoordLinearMap d hM0R
+  let b := sourceFullFrameRealDifferentialRightInverseRangeBasis d hM0R
+  intro q r hqr
+  have hdiff : C (q - r) = 0 := by
+    rw [map_sub, hqr, sub_self]
+  let qR : Fin (Module.finrank ℝ Rr) → ℝ := fun i => ((q - r) i).re
+  let qI : Fin (Module.finrank ℝ Rr) → ℝ := fun i => ((q - r) i).im
+  have hsplit :
+      C (q - r) =
+        C (fun i => (qR i : ℂ)) +
+          Complex.I • C (fun i => (qI i : ℂ)) := by
+    simpa [C, qR, qI] using
+      sourceFullFrameRealSliceComplexCoordLinearMap_re_im_decomp
+        d hM0R (q - r)
+  have hsub :
+      C (fun i => (qR i : ℂ)) +
+          Complex.I • C (fun i => (qI i : ℂ)) = 0 := by
+    rwa [← hsplit]
+  have hrealR :
+      C (fun i => (qR i : ℂ)) =
+        ⟨(((b.equivFun.symm qR : Rr) :
+            Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal),
+          sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice
+            d hM0R ((b.equivFun.symm qR : Rr).property)⟩ := by
+    simpa [C, b, Rr] using
+      sourceFullFrameRealSliceComplexCoordLinearMap_real_eq d hM0R qR
+  have hrealI :
+      C (fun i => (qI i : ℂ)) =
+        ⟨(((b.equivFun.symm qI : Rr) :
+            Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal),
+          sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice
+            d hM0R ((b.equivFun.symm qI : Rr).property)⟩ := by
+    simpa [C, b, Rr] using
+      sourceFullFrameRealSliceComplexCoordLinearMap_real_eq d hM0R qI
+  rw [hrealR, hrealI] at hsub
+  have hmat :
+      (((b.equivFun.symm qR : Rr) :
+          Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal) +
+        Complex.I •
+          (((b.equivFun.symm qI : Rr) :
+            Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal) = 0 := by
+    simpa [Submodule.coe_add, Submodule.coe_smul_of_tower] using
+      congrArg Subtype.val hsub
+  have hparts :=
+    sourceFullFrameMatrix_map_ofReal_add_I_smul_eq_zero hmat
+  have hqR_zero : qR = 0 := by
+    have hXR : (b.equivFun.symm qR : Rr) = 0 := by
+      apply Subtype.ext
+      exact hparts.1
+    calc
+      qR = b.equivFun (b.equivFun.symm qR) :=
+        (b.equivFun.apply_symm_apply qR).symm
+      _ = b.equivFun (0 : Rr) := congrArg b.equivFun hXR
+      _ = 0 := b.equivFun.map_zero
+  have hqI_zero : qI = 0 := by
+    have hXI : (b.equivFun.symm qI : Rr) = 0 := by
+      apply Subtype.ext
+      exact hparts.2
+    calc
+      qI = b.equivFun (b.equivFun.symm qI) :=
+        (b.equivFun.apply_symm_apply qI).symm
+      _ = b.equivFun (0 : Rr) := congrArg b.equivFun hXI
+      _ = 0 := b.equivFun.map_zero
+  ext i
+  have hre : (q i - r i).re = 0 := by
+    simpa [qR, Pi.sub_apply] using congrFun hqR_zero i
+  have him : (q i - r i).im = 0 := by
+    simpa [qI, Pi.sub_apply] using congrFun hqI_zero i
+  have hzero : q i - r i = 0 := Complex.ext hre him
+  exact sub_eq_zero.mp hzero
+
+/-- The real-basis complex coordinate map is surjective onto the explicit
+complex slice. -/
+theorem sourceFullFrameRealSliceComplexCoordLinearMap_surjective
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det) :
+    Function.Surjective
+      (sourceFullFrameRealSliceComplexCoordLinearMap d hM0R) := by
+  let Rr := sourceFullFrameRealDifferentialRightInverseRange d hM0R
+  let C := sourceFullFrameRealSliceComplexCoordLinearMap d hM0R
+  let b := sourceFullFrameRealDifferentialRightInverseRangeBasis d hM0R
+  intro X
+  rcases sourceFullFrameExplicitComplexSlice_re_im_mem_realRange d hM0R X with
+    ⟨XR, XI, hX⟩
+  let qR : Fin (Module.finrank ℝ Rr) → ℝ := b.equivFun XR
+  let qI : Fin (Module.finrank ℝ Rr) → ℝ := b.equivFun XI
+  let q : Fin (Module.finrank ℝ Rr) → ℂ :=
+    fun i => (qR i : ℂ) + Complex.I * (qI i : ℂ)
+  refine ⟨q, ?_⟩
+  have hqsplit :
+      q = (fun i => (qR i : ℂ)) +
+          Complex.I • (fun i => (qI i : ℂ)) := by
+    ext i
+    simp [q, smul_eq_mul]
+  have hCsplit :
+      C q =
+        C (fun i => (qR i : ℂ)) +
+          Complex.I • C (fun i => (qI i : ℂ)) := by
+    calc
+      C q =
+          C ((fun i => (qR i : ℂ)) +
+            Complex.I • (fun i => (qI i : ℂ))) := by rw [hqsplit]
+      _ = C (fun i => (qR i : ℂ)) +
+            C (Complex.I • (fun i => (qI i : ℂ))) := by
+        exact C.map_add (fun i => (qR i : ℂ))
+          (Complex.I • (fun i => (qI i : ℂ)))
+      _ = C (fun i => (qR i : ℂ)) +
+            Complex.I • C (fun i => (qI i : ℂ)) := by
+        rw [C.map_smul]
+  have hrealR :
+      C (fun i => (qR i : ℂ)) =
+        ⟨((XR : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal),
+          sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice
+            d hM0R XR.property⟩ := by
+    simpa [C, b, Rr, qR] using
+      sourceFullFrameRealSliceComplexCoordLinearMap_real_eq d hM0R qR
+  have hrealI :
+      C (fun i => (qI i : ℂ)) =
+        ⟨((XI : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal),
+          sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice
+            d hM0R XI.property⟩ := by
+    simpa [C, b, Rr, qI] using
+      sourceFullFrameRealSliceComplexCoordLinearMap_real_eq d hM0R qI
+  calc
+    C q =
+        C (fun i => (qR i : ℂ)) +
+          Complex.I • C (fun i => (qI i : ℂ)) := hCsplit
+    _ =
+        ⟨((XR : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal),
+          sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice
+            d hM0R XR.property⟩ +
+          Complex.I •
+            ⟨((XI : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal),
+              sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice
+                d hM0R XI.property⟩ := by
+      rw [hrealR, hrealI]
+    _ = X := by
+      apply Subtype.ext
+      simpa [Submodule.coe_add, Submodule.coe_smul_of_tower] using hX.symm
+
 /-- Finite-coordinate real-form data for the explicit full-frame slice.
 
 The producer for this packet is the remaining finite-dimensional linear
@@ -1213,6 +1558,33 @@ structure SourceFullFrameRealSliceFiniteCoordData
             Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal),
           sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice
             d hM0R (realCoordEquiv q).property⟩
+
+/-- Finite-coordinate real-form data for the explicit full-frame slice,
+constructed from a real basis of the real right-inverse range and its
+componentwise complexification. -/
+theorem sourceFullFrameRealSliceFiniteCoordData
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det) :
+    Nonempty (SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) := by
+  let Rr := sourceFullFrameRealDifferentialRightInverseRange d hM0R
+  let b := sourceFullFrameRealDifferentialRightInverseRangeBasis d hM0R
+  let C := sourceFullFrameRealSliceComplexCoordLinearMap d hM0R
+  let eC : (Fin (Module.finrank ℝ Rr) → ℂ) ≃L[ℂ]
+      (sourceFullFrameExplicitGaugeSliceData d
+        (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)).slice :=
+    (LinearEquiv.ofBijective C
+      ⟨sourceFullFrameRealSliceComplexCoordLinearMap_injective d hM0R,
+        sourceFullFrameRealSliceComplexCoordLinearMap_surjective d hM0R⟩).toContinuousLinearEquiv
+  exact ⟨{
+    realModelDim := Module.finrank ℝ Rr
+    realCoordEquiv := b.equivFun.symm
+    complexCoordEquiv := eC
+    complexCoordEquiv_real_eq := by
+      intro q
+      change C (fun i => (q i : ℂ)) = _
+      simpa [C, b, Rr] using
+        sourceFullFrameRealSliceComplexCoordLinearMap_real_eq d hM0R q }⟩
 
 /-- The real right inverse is injective on the real tangent model. -/
 theorem sourceFullFrameRealDifferentialRightInverseLinear_injective

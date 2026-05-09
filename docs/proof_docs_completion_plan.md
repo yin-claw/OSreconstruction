@@ -2428,15 +2428,24 @@ checks the real-source permutation topology helpers
    `sourceFullFrameRealDifferentialRightInverseRange`,
    `sourceFullFrameRealDifferentialRightInverseLinear_mem_complexSlice`,
    `sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice`,
+   `sourceFullFrameExplicitComplexSlice_re_im_mem_realRange`,
+   `sourceFullFrameRealDifferentialRightInverseRangeBasis`,
+   `sourceFullFrameRealSliceComplexBasisVector`,
+   `sourceFullFrameRealSliceComplexCoordLinearMap`,
+   `sourceFullFrameRealSliceComplexCoordLinearMap_real_eq`,
+   `sourceFullFrameRealSliceComplexCoordLinearMap_re_im_decomp`,
+   `sourceFullFrameRealSliceComplexCoordLinearMap_injective`,
+   `sourceFullFrameRealSliceComplexCoordLinearMap_surjective`,
    `SourceFullFrameRealSliceFiniteCoordData`, and
+   `sourceFullFrameRealSliceFiniteCoordData`, plus
    `sourceFullFrameRealDifferentialRightInverseLinear_injective`
    define the real tangent model, prove the real formula is linear on it, prove
    that this real right inverse complexifies injectively to the explicit complex
-   right inverse, and prove that the named real slice complexifies into the
-   named explicit complex slice.  The remaining real-slice step is therefore no
-   longer a membership problem or a data-surface problem: it is the producer
-   theorem for the checked finite-coordinate real-form packet
-   `SourceFullFrameRealSliceFiniteCoordData d M0R hM0R`, whose fields are
+   right inverse, prove that the named real slice complexifies into the
+   named explicit complex slice, prove every explicit complex-slice vector
+   splits as `XR + I XI` with `XR, XI` in the real range, and construct the
+   checked finite-coordinate real-form packet
+   `SourceFullFrameRealSliceFiniteCoordData d M0R hM0R`.  Its fields are
    `realSlice := sourceFullFrameRealDifferentialRightInverseRange d hM0R`,
    `complexSlice := (sourceFullFrameExplicitGaugeSliceData d
    (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)).slice`, a real
@@ -2444,31 +2453,22 @@ checks the real-source permutation topology helpers
    complex coordinate equivalence `(Fin m -> ℂ) ≃L[ℂ] complexSlice`, and the
    compatibility equation saying that complex coordinates applied to
    `SCV.realToComplex q` are exactly the componentwise complexification of the
-   real-slice vector with real coordinates `q`.  The producer of this packet is
-   the only linear algebra input needed to define the `realModelDim` and
+   real-slice vector with real coordinates `q`.  This closes the finite
+   real-slice linear algebra needed for the `realModelDim` and
    `realModelToComplexSlice` fields of `sourceFullFrameRealGaugeSliceData`.
    The real-coefficient tangent-equation split is now checked as
    `sourceFullFrameOrientedTangent_re_mem` and
    `sourceFullFrameOrientedTangent_im_mem`; its proof uses the checked real
    Gram-matrix inverse bridge and
    `sourceFullFrameOrientedEquationDerivLinear_realComplexify_im`.  The
-   remaining producer proof is now pinned to the following Lean steps:
-   (i) decompose each element of the explicit complex slice by unfolding its
-   range membership as
-   `sourceFullFrameOrientedDifferentialRightInverseLinear d hM0C Y`, splitting
-   `Y` into those real and imaginary tangent parts, and applying
-   `sourceFullFrameRealDifferentialRightInverseLinear_complexify`,
-   (ii) choose a real finite basis of
-   `sourceFullFrameRealDifferentialRightInverseRange d hM0R`, define the
-   complex coordinate map by finite sums of the componentwise complexified
-   basis vectors, prove injectivity with
-   `sourceFullFrameMatrix_map_ofReal_add_I_smul_eq_zero`, and prove
-   surjectivity from the range decomposition in (i).
-   After that, apply the real
-   inverse/implicit-function theorem to the real kernel map, whose
-   complexification is the existing complex implicit-kernel map; then shrink
-   the real source patch so source invariants lie in the selected complex
-   chart and selected frames lie in the real frame domain.  The
+   remaining full-frame producer proof is now pinned to the real-compatible
+   implicit-chart layer: instantiate `SourceFullFrameRealGaugeSliceData` with
+   the explicit complex slice and the checked finite-coordinate packet, apply
+   the real inverse/implicit-function theorem to the real kernel map whose
+   complexification is the existing complex implicit-kernel map, prove
+   `complexKernelCoord_real_eq` by uniqueness of that local inverse, and then
+   shrink the real source patch so source invariants lie in the selected
+   complex chart and selected frames lie in the real frame domain.  The
    `realCoord_image_open` field must pass through the checked
    `sourceRealFullFrameSplitHomeomorph`, then be proved from the
    selected-frame open map plus the rowwise linear equivalence

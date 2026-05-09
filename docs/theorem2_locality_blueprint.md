@@ -20097,6 +20097,19 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (BHW.SourceFullFrameRealSliceFiniteCoordData
               d M0R hM0R)
 
+      -- Checked support for this producer:
+      -- * `sourceFullFrameExplicitComplexSlice_re_im_mem_realRange`
+      --   splits every explicit complex-slice vector at a complexified real
+      --   base as `XR.map Complex.ofReal + I • XI.map Complex.ofReal` with
+      --   `XR, XI` in the real right-inverse range.
+      -- * `sourceFullFrameRealSliceComplexCoordLinearMap` is the finite
+      --   complex coordinate map obtained by complexifying a real basis of
+      --   `sourceFullFrameRealDifferentialRightInverseRange`.
+      -- * `sourceFullFrameRealSliceComplexCoordLinearMap_real_eq`,
+      --   `_injective`, and `_surjective` prove the real compatibility and
+      --   bijectivity needed for the continuous complex coordinate
+      --   equivalence.
+
       theorem BHW.sourceRealFullFrameLocalCoord_image_open
           (d n : Nat)
           (ι : Fin (d + 1) ↪ Fin n)
@@ -20147,13 +20160,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
         --    `X - R(L X)` is in the orbit tangent by the checked kernel
         --    theorem.  The real producer uses
         --    `sourceFullFrameRealDifferentialRightInverseRange` for the real
-        --    slice and
-        --    `sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice`
-        --    for the inclusion into the explicit complex slice.  The only
-        --    linear-algebra theorem still needed here is
-        --    `sourceFullFrameRealSliceFiniteCoordData`, which chooses a finite
-        --    real coordinate basis on this range and a compatible complex
-        --    coordinate equivalence on the explicit complex slice.
+        --    slice and the checked theorem
+        --    `sourceFullFrameRealSliceFiniteCoordData`, whose complex
+        --    coordinate equivalence is built from a real basis of that range.
         -- 3. Run the real inverse/implicit-function theorem for the real
         --    kernel map.  Its complexification is the existing complex
         --    `sourceFullFrameGaugeSliceImplicitKernelMap`; uniqueness of the
