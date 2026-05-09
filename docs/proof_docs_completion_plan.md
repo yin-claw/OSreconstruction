@@ -3284,6 +3284,83 @@ implementation contract is:
    the obstruction remains visible as a missing completed-frame orientation
    theorem, not hidden inside a determinant assumption.
 
+   Critical-path route correction: the singular-limit API
+   `BHW.HWSameSourceGramSingularContractionData` does **not** require a common
+   residual frame.  It requires two determinant-`1` orbit curves, one from the
+   left endpoint and one from the right endpoint, converging to the same
+   selected base `ξ`.  Therefore the full-block determinant obstruction can be
+   bypassed on the OS-II route by using separate maximal isotropic frames:
+
+   ```lean
+   structure BHW.HWLowRankSeparateResidualFrameData
+       (A : BHW.HWLowRankSelectedSpanAlignment d n r z w I S) where
+     sLeft : ℕ
+     qLeft : Fin sLeft → Fin (d + 1) → ℂ
+     sRight : ℕ
+     qRight : Fin sRight → Fin (d + 1) → ℂ
+     left_span :
+       ∀ i, A.leftResidual i ∈ Submodule.span ℂ (Set.range qLeft)
+     right_span :
+       ∀ i, A.rightResidual i ∈ Submodule.span ℂ (Set.range qRight)
+     qLeft_pair_zero : ∀ c c',
+       BHW.sourceComplexMinkowskiInner d (qLeft c) (qLeft c') = 0
+     qRight_pair_zero : ∀ c c',
+       BHW.sourceComplexMinkowskiInner d (qRight c) (qRight c') = 0
+     qLeft_orth_M : ∀ c (m : A.M),
+       BHW.sourceComplexMinkowskiInner d (qLeft c) m = 0
+     qRight_orth_M : ∀ c (m : A.M),
+       BHW.sourceComplexMinkowskiInner d (qRight c) m = 0
+     qLeft_independent : LinearIndependent ℂ qLeft
+     qRight_independent : LinearIndependent ℂ qRight
+
+   theorem BHW.hw_lowRank_separateResidualFrameData
+       (A : BHW.HWLowRankSelectedSpanAlignment d n r z w I S) :
+       BHW.HWLowRankSeparateResidualFrameData A
+
+   theorem
+       BHW.hw_sameSourceGram_singular_contractionData_of_separateFrameData
+       [NeZero d] (hd : 2 ≤ d)
+       (hz : z ∈ BHW.ExtendedTube d n)
+       (hw : w ∈ BHW.ExtendedTube d n)
+       (A : BHW.HWLowRankSelectedSpanAlignment d n r z w I S)
+       (D : BHW.HWLowRankSeparateResidualFrameData A) :
+       BHW.HWSameSourceGramSingularContractionData d n z w
+   ```
+
+   Proof transcript: apply
+   `hw_lowRank_residualSubspaces_orthogonalComplement_after_selectedAlignment`
+   to get the left and right residual spans inside `A.Mᗮ`; extend each
+   separately with `complexMinkowski_maximalIsotropicFrameIn_extending`; extract
+   coefficients of `A.leftResidual` in `qLeft` and `A.rightResidual` in
+   `qRight`; build separate dual frames using
+   `complexMinkowski_isotropicDualFrame_of_residualFrame`; build two
+   determinant-`1` contraction families with
+   `complexMinkowski_selectedHyperbolicContractionFamily`; use
+   `hw_isotropicFrame_allCoefficients_mem_extendedTube` separately for the left
+   endpoint `complexLorentzAction A.Λsel z` and the right endpoint `w`; and
+   conclude both curves tend to `A.ξ` with
+   `tendsto_isotropicResidual_exp_neg_base`.
+
+   This is faithful to Hall-Wightman's singular-limit argument and avoids the
+   false implication "original strict-low-rank oriented invariant determines
+   auxiliary full-block orientation."  The common-frame/full-block determinant
+   path remains available as a stronger optional route when completed-frame
+   orientation data is present, but it is no longer the critical path for the
+   low-rank Lemma-2 singular contraction.
+
+   Lean checkpoint, 2026-05-08: this separate-frame route is checked in
+   `SourceHWSeparateResidualFrame.lean`:
+
+   - `BHW.HWLowRankSeparateResidualFrameData`
+   - `BHW.hw_lowRank_separateResidualFrameData`
+   - `BHW.hw_sameSourceGram_singular_contractionData_of_separateFrameData`
+   - `BHW.hw_sameSourceGram_singular_contractionData_of_selectedAlignment`
+
+   The final declaration takes a checked selected-span alignment and produces
+   the exact `HWSameSourceGramSingularContractionData` expected by the
+   singular-limit consumer, with separate determinant-`1` contraction families
+   on the left and right residual frames.
+
    The blueprint now pins the lower implementation order for this row.  First
    define `BHW.HallWightmanFullComplexLorentzGroup d` as metric-preserving
    complex matrices with no determinant field, together with
