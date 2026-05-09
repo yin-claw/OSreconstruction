@@ -399,9 +399,6 @@ structure SourceFullFrameRealGaugeSliceData
   center_mem_frameDomain : M0R ∈ frameDomain
   frameDomain_det_nonzero : frameDomain ⊆ {M | M.det ≠ 0}
   realKernelCoord_continuousOn : ContinuousOn realKernelCoord frameDomain
-  realKernelCoord_image_open_on_frameDomain :
-    ∀ {S : Set (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)},
-      IsOpen S → S ⊆ frameDomain → IsOpen (realKernelCoord '' S)
 
 /-- The real kernel coordinate together with the selected mixed-row coordinates
 of a source tuple.  This is the raw real coordinate map before applying the
@@ -419,6 +416,142 @@ def sourceFullFrameRealKernelMixedCoord
       (sourceComplementIndex ι → Fin (d + 1) → ℝ) :=
   (S.realKernelCoord (sourceRealFullFrameMatrix d n ι x),
     sourceRealSelectedMixedRows d n ι x)
+
+/-- The mixed Gram rows computed from split real source coordinates: pair each
+complement row with each selected-frame row. -/
+def sourceFullFrameRealSplitMixedRows
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    (p :
+      Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ)) :
+    sourceComplementIndex ι → Fin (d + 1) → ℝ :=
+  fun k a => MinkowskiSpace.minkowskiInner d (p.2 k) (p.1 a)
+
+/-- The split-space form of the real kernel/mixed coordinate: apply the real
+kernel coordinate to the selected-frame factor and compute mixed Gram rows
+from the selected frame and complement rows. -/
+def sourceFullFrameRealSplitKernelMixedCoord
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    (p :
+      Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ)) :
+    (Fin S.realModelDim → ℝ) ×
+      (sourceComplementIndex ι → Fin (d + 1) → ℝ) :=
+  (S.realKernelCoord p.1, sourceFullFrameRealSplitMixedRows p)
+
+/-- The source-space kernel/mixed coordinate factors through the checked
+selected-frame/complement-row split homeomorphism. -/
+theorem sourceFullFrameRealKernelMixedCoord_eq_split
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    (x : Fin n → Fin (d + 1) → ℝ) :
+    sourceFullFrameRealKernelMixedCoord S x =
+      sourceFullFrameRealSplitKernelMixedCoord S
+        (sourceRealFullFrameSplitHomeomorph d n ι x) := by
+  apply Prod.ext
+  · simp [sourceFullFrameRealKernelMixedCoord,
+      sourceFullFrameRealSplitKernelMixedCoord,
+      sourceRealFullFrameSplitHomeomorph_apply]
+  · ext k a
+    simp [sourceFullFrameRealKernelMixedCoord,
+      sourceFullFrameRealSplitKernelMixedCoord,
+      sourceFullFrameRealSplitMixedRows,
+      sourceRealFullFrameSplitHomeomorph_apply,
+      sourceRealSelectedMixedRows, sourceRealMinkowskiGram,
+      sourceRealFullFrameMatrix, MinkowskiSpace.minkowskiInner]
+
+/-- The source-coordinate image is exactly the split-coordinate image under the
+selected-frame/complement-row split. -/
+theorem sourceFullFrameRealKernelMixedCoord_image_eq_split
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    (U : Set (Fin n → Fin (d + 1) → ℝ)) :
+    sourceFullFrameRealKernelMixedCoord S '' U =
+      sourceFullFrameRealSplitKernelMixedCoord S ''
+        (sourceRealFullFrameSplitHomeomorph d n ι '' U) := by
+  ext y
+  constructor
+  · rintro ⟨x, hx, rfl⟩
+    exact
+      ⟨sourceRealFullFrameSplitHomeomorph d n ι x,
+        ⟨x, hx, rfl⟩, by
+          rw [← sourceFullFrameRealKernelMixedCoord_eq_split S x]⟩
+  · rintro ⟨p, ⟨x, hx, rfl⟩, rfl⟩
+    exact
+      ⟨x, hx, by
+        rw [sourceFullFrameRealKernelMixedCoord_eq_split S x]⟩
+
+/-- It is enough to prove openness after passing to the checked
+selected-frame/complement-row split. -/
+theorem isOpen_sourceFullFrameRealKernelMixedCoord_image_of_split_image_open
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    {U : Set (Fin n → Fin (d + 1) → ℝ)}
+    (hU :
+      IsOpen
+        (sourceFullFrameRealSplitKernelMixedCoord S ''
+          (sourceRealFullFrameSplitHomeomorph d n ι '' U))) :
+    IsOpen (sourceFullFrameRealKernelMixedCoord S '' U) := by
+  rwa [sourceFullFrameRealKernelMixedCoord_image_eq_split]
+
+/-- For a source patch obtained as the inverse split image of a split
+neighborhood `W`, the open-image problem reduces to local openness of the
+split kernel/mixed coordinate on `W`. -/
+theorem isOpen_sourceFullFrameRealKernelMixedCoord_image_of_split_local_open
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    {W : Set
+      (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ))}
+    (hW_open_image :
+      ∀ {V : Set
+        (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+          (sourceComplementIndex ι → Fin (d + 1) → ℝ))},
+        IsOpen V →
+        V ⊆ W →
+        IsOpen (sourceFullFrameRealSplitKernelMixedCoord S '' V))
+    {U : Set (Fin n → Fin (d + 1) → ℝ)}
+    (hU_open : IsOpen U)
+    (hU_sub :
+      U ⊆ (sourceRealFullFrameSplitHomeomorph d n ι).symm '' W) :
+    IsOpen (sourceFullFrameRealKernelMixedCoord S '' U) := by
+  apply isOpen_sourceFullFrameRealKernelMixedCoord_image_of_split_image_open S
+  apply hW_open_image
+  · exact (sourceRealFullFrameSplitHomeomorph d n ι).isOpenMap U hU_open
+  · intro p hp
+    rcases hp with ⟨x, hx, rfl⟩
+    rcases hU_sub hx with ⟨p', hpW, hp'⟩
+    have hp_eq : sourceRealFullFrameSplitHomeomorph d n ι x = p' := by
+      rw [← hp']
+      simp
+    simpa [hp_eq] using hpW
 
 /-- The kernel-plus-mixed real coordinate map is continuous on any real source
 patch whose selected frame remains in the real gauge-slice frame domain. -/

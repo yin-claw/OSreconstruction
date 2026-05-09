@@ -5963,19 +5963,27 @@ implementation contract is:
    local inverse coordinate with checked `ContinuousOn` and center equation.
    The constructor
    `sourceFullFrameRealGaugeSliceData_of_frameKernelCoord` now packages these
-   fields into `SourceFullFrameRealGaugeSliceData` once the two genuinely
-   remaining facts are supplied: the selected-frame kernel coordinate is open
-   on the frame domain, and the chosen complex selected-frame coordinate
-   agrees with the complexification of the real one on complexified real
-   frames.  The canonical real-locus extension
+   fields into `SourceFullFrameRealGaugeSliceData` once the chosen complex
+   selected-frame coordinate agrees with the complexification of the real one
+   on complexified real frames.  The canonical real-locus extension
    `sourceFullFrameRealCompatibleComplexKernelCoordFromReal` and its
    real-locus equation are now checked, so the specialized constructor
-   `sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_open` reduces the
-   gauge-slice packet to the single selected-frame open-image theorem
-   `sourceFullFrameRealCompatibleFrameKernelCoordR_image_open_on_frameDomain`.
-   That theorem is now the next honest mathematical frontier: it must prove
-   the selected-frame kernel coordinate is an open map on the local frame
-   domain, not merely continuous.
+   `sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_realExtension`
+   supplies the gauge-slice packet from the checked frame-domain data, and
+   `sourceFullFrameRealGaugeSliceData` packages it at any real
+   determinant-nonzero full-frame base.  The open-image obligation belongs to
+   the final shrunken source chart, not to the frame-domain packet: the next
+   honest mathematical frontier is
+   `sourceFullFrameRealSplitKernelMixedCoord_open_on_W`, the finite-product
+   open-image theorem for the chosen split neighborhood `W`, combining the
+   checked source split homeomorphism with the real IFT-selected frame
+   coordinate.  The split-image bridge is now checked:
+   `sourceFullFrameRealKernelMixedCoord_image_eq_split` rewrites the raw
+   source-coordinate image as the image of
+   `sourceFullFrameRealSplitKernelMixedCoord` over
+   `sourceRealFullFrameSplitHomeomorph '' U`, so the remaining proof is
+   exactly local openness of that finite-product map on the chosen split
+   neighborhood.
    The mechanical bridges around it are
    `sourceOrientedRealEnvironment_of_localRealCharts`,
    `sourceOrientedRealEnvironment_of_fullFrameDetNonzero_localCharts`, and the

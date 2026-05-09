@@ -1108,11 +1108,11 @@ theorem sourceFullFrameRealCompatibleComplexKernelCoordFromReal_real_eq
   rw [dif_pos h]
   rw [hchoose]
 
-/-- Mechanical constructor for the real gauge-slice packet once the two
-remaining local-image facts are supplied: openness of the selected-frame
-kernel coordinate and compatibility with the complex selected-frame coordinate.
-This isolates the still-hard open-map/complex-identification obligations from
-the already checked real IFT domain and continuity fields. -/
+/-- Mechanical constructor for the real gauge-slice packet once a compatible
+complex selected-frame coordinate is supplied.  The gauge-slice packet records
+the local frame domain, determinant control, continuity, and real/complex
+compatibility; the open-image obligation belongs to the final shrunken source
+chart, not to this frame-domain-wide packet. -/
 noncomputable def sourceFullFrameRealGaugeSliceData_of_frameKernelCoord
     (d : ℕ)
     {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
@@ -1127,13 +1127,7 @@ noncomputable def sourceFullFrameRealGaugeSliceData_of_frameKernelCoord
         complexKernelCoord (M.map Complex.ofReal) =
           F.complexCoordEquiv
             (SCV.realToComplex
-              (sourceFullFrameRealCompatibleFrameKernelCoordR d hM0R F M)))
-    (realKernelCoord_image_open_on_frameDomain :
-      ∀ {S : Set (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)},
-        IsOpen S →
-        S ⊆ sourceFullFrameRealCompatibleFrameDomain d hM0R F →
-        IsOpen
-          (sourceFullFrameRealCompatibleFrameKernelCoordR d hM0R F '' S)) :
+              (sourceFullFrameRealCompatibleFrameKernelCoordR d hM0R F M))) :
     SourceFullFrameRealGaugeSliceData d M0R hM0R.ne_zero where
   M0_det_unit := sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R
   complexSlice :=
@@ -1154,29 +1148,32 @@ noncomputable def sourceFullFrameRealGaugeSliceData_of_frameKernelCoord
     sourceFullFrameRealCompatibleFrameDomain_det_nonzero d hM0R F
   realKernelCoord_continuousOn :=
     continuousOn_sourceFullFrameRealCompatibleFrameKernelCoordR d hM0R F
-  realKernelCoord_image_open_on_frameDomain :=
-    realKernelCoord_image_open_on_frameDomain
 
 /-- Mechanical real gauge-slice constructor in the common case where the
 complex selected-frame coordinate is the canonical real-locus extension above.
-After the selected-frame open-map theorem is proved, this is the direct
-constructor for `SourceFullFrameRealGaugeSliceData`. -/
-noncomputable def sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_open
+This is the direct constructor for `SourceFullFrameRealGaugeSliceData` from the
+checked real-compatible IFT frame-domain packet. -/
+noncomputable def sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_realExtension
     (d : ℕ)
     {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
     (hM0R : IsUnit M0R.det)
-    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R)
-    (realKernelCoord_image_open_on_frameDomain :
-      ∀ {S : Set (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)},
-        IsOpen S →
-        S ⊆ sourceFullFrameRealCompatibleFrameDomain d hM0R F →
-        IsOpen
-          (sourceFullFrameRealCompatibleFrameKernelCoordR d hM0R F '' S)) :
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
     SourceFullFrameRealGaugeSliceData d M0R hM0R.ne_zero :=
   sourceFullFrameRealGaugeSliceData_of_frameKernelCoord d hM0R F
     (sourceFullFrameRealCompatibleComplexKernelCoordFromReal d hM0R F)
     (sourceFullFrameRealCompatibleComplexKernelCoordFromReal_real_eq
       d hM0R F)
-    realKernelCoord_image_open_on_frameDomain
+
+/-- The checked real-compatible full-frame gauge-slice packet at a real
+determinant-nonzero base. -/
+theorem sourceFullFrameRealGaugeSliceData
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det) :
+    Nonempty (SourceFullFrameRealGaugeSliceData d M0R hM0R.ne_zero) := by
+  rcases sourceFullFrameRealSliceFiniteCoordData d hM0R with ⟨F⟩
+  exact
+    ⟨sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_realExtension
+      d hM0R F⟩
 
 end BHW
