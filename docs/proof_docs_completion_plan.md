@@ -2053,6 +2053,8 @@ componentwise regular/removable transcript rather than a single amorphous
 `BHW.sourceOrientedQuotientValue_wellDefined`,
 `BHW.sourceOrientedQuotientValue_holomorphicOn_maxRank`,
 `BHW.sourceOrientedQuotientValue_continuous_locallyBounded`,
+`BHW.sourceOrientedQuotientValue_holomorphicOn_maxRank_of_extendF`,
+`BHW.sourceOrientedQuotientValue_continuous_locallyBounded_of_extendF`,
 the residual-chart compact-parameter continuity and boundedness lemmas,
 `BHW.sourceOrientedExceptionalRank_isAnalyticSubvariety`,
 `BHW.sourceOrientedMaxRank_dense_in_domain`,
@@ -4803,7 +4805,11 @@ implementation contract is:
    branch uses the residual-chart continuity and compact-bound theorems.  This
    closes the former prose-only step between local sections/residual charts and
    the `ContinuousOn`/`LocallyBoundedOn` hypotheses needed by the normal
-   Riemann theorem.  The two topological glue helpers are now checked Lean:
+   Riemann theorem.  The branch-law-free generic theorem is now specialized to
+   `extendF` in `SourceOrientedHWQuotient.lean` as
+   `sourceOrientedQuotientValue_holomorphicOn_maxRank_of_extendF` and
+   `sourceOrientedQuotientValue_continuous_locallyBounded_of_extendF`.
+   The two topological glue helpers are now checked Lean:
    continuity is
    `ContinuousOn.continuousAt` on the open chart, `nhdsWithin_le_nhds`,
    eventual membership in `Ω ∩ V`, and `Tendsto.congr'`; local boundedness
@@ -5089,7 +5095,12 @@ implementation contract is:
    `sourceOrientedQuotientValue_holomorphicOn_maxRank`, and
    `sourceOrientedQuotientValue_continuous_locallyBounded` by plugging the
    checked small-arity/full-frame branch producer into the already checked
-   scalar quotient consumers.  The local-section/descent bridge is no longer
+   scalar quotient consumers.  `SourceOrientedHWQuotient.lean` now checks the
+   `extendF` specializations
+   `sourceOrientedQuotientValue_holomorphicOn_maxRank_of_extendF` and
+   `sourceOrientedQuotientValue_continuous_locallyBounded_of_extendF` by
+   supplying the checked source-oriented branch law.  The
+   local-section/descent bridge is no longer
    the theorem-2 blocker; the remaining oriented descent blocker is the
    normal analytic-space Riemann/exceptional-rank extension package described
    below.
