@@ -18254,24 +18254,40 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 Ψ (BHW.sourceRealOrientedMinkowskiInvariant d n x)) ->
             Set.EqOn Φ Ψ U
 
+      structure BHW.SourceOrientedLocalRealChartData
+          (d n : Nat)
+          (x0 : Fin n -> Fin (d + 1) -> ℝ) where
+        m : Nat
+        C :
+          BHW.SourceOrientedMaxRankChartData d n
+            (M := Fin m -> ℂ)
+            (BHW.sourceRealOrientedMinkowskiInvariant d n x0)
+        E0 : Set (Fin n -> Fin (d + 1) -> ℝ)
+        E0_open : IsOpen E0
+        center_mem : x0 ∈ E0
+        invariant_mem_chart :
+          ∀ x ∈ E0,
+            BHW.sourceRealOrientedMinkowskiInvariant d n x ∈ C.Ω
+        realCoord :
+          (Fin n -> Fin (d + 1) -> ℝ) -> (Fin m -> ℝ)
+        realCoord_continuous : Continuous realCoord
+        realCoord_image_open :
+          ∀ {S : Set (Fin n -> Fin (d + 1) -> ℝ)},
+            IsOpen S -> S ⊆ E0 -> IsOpen (realCoord '' S)
+        chart_real_eq :
+          ∀ x ∈ E0,
+            C.chart (BHW.sourceRealOrientedMinkowskiInvariant d n x) =
+              SCV.realToComplex (realCoord x)
+
       structure BHW.IsHWOrientedRealEnvironment
           (d n : Nat)
           (E : Set (Fin n -> Fin (d + 1) -> ℝ)) : Prop where
         nonempty : E.Nonempty
         open_real : IsOpen E
         realized_by_jost : E ⊆ BHW.JostSet d n
-        left_regular :
-          ∀ x ∈ E, BHW.SourceOrientedRegularAt d n x
-        maximal_totally_real :
+        local_real_chart :
           ∀ x ∈ E,
-            BHW.SourceOrientedComplexifiedRealTangentEqualsComplexTangent
-              d n x
-
-      theorem BHW.sourceOrientedRegularAt_of_realEnvironment
-          (d n : Nat)
-          {E : Set (Fin n -> Fin (d + 1) -> ℝ)}
-          (hE : BHW.IsHWOrientedRealEnvironment d n E) :
-          ∀ x ∈ E, BHW.SourceOrientedRegularAt d n x
+            Nonempty (BHW.SourceOrientedLocalRealChartData d n x)
 
       /-- Canonical Figure-2-4 source patch used by the adjacent `S'_n`
       packet.  The definition is a union over proofs of the active dimension
@@ -18589,141 +18605,60 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.realSourcePermute_symm_image_permImage_eq`,
       `BHW.os45Figure24_checkedRealPatch_gramEnvironmentSubpatch`, and
       `BHW.sourceOrientedMaxRankAt_sourceReal_fullFrameDet_ne_zero` in
-      `SourceOrientedRealMaxRank.lean`.  This is only the
-      definition/permutation/topological-image, determinant-openness, selected
-      determinant-density, and max-rank bridge substrate.  No theorem yet
-      asserts that a Figure-2-4 real patch is an oriented uniqueness patch; the
-      next honest real-uniqueness frontier is still the tangent/IFT environment packet
-      `BHW.IsHWOrientedRealEnvironment` and the proof of
+      `SourceOrientedRealMaxRank.lean`.  The generic SCV uniqueness consumer is
+      now checked in `SourceOrientedRealUniqueness.lean`:
+      `BHW.SourceOrientedLocalRealChartData`,
+      `BHW.IsHWOrientedRealEnvironment`,
+      `BHW.SourceOrientedLocalRealChartData.shrink_to_domain_and_realPatch`,
+      `BHW.sourceOrientedLocalTotallyReal_zero_seed`, and
       `BHW.sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment`.
+      No theorem yet asserts that a Figure-2-4 real patch supplies an
+      `IsHWOrientedRealEnvironment`; the next honest real-uniqueness frontier
+      is the tangent/IFT producer of that local real chart data and the
+      small-arity/full-frame environment subpatch producers.
 
       The theorem
       `sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment` is
       the real analytic content behind the uniqueness predicate.  Its proof
       must not be replaced by an assumption field.  The local proof is the
-      oriented analog of the checked scalar-Gram uniqueness stack: use
-      `SourceOrientedRegularAt` to choose oriented source coordinates near
-      `sourceRealOrientedMinkowskiInvariant d n x0`, use
-      `SourceOrientedComplexifiedRealTangentEqualsComplexTangent` to identify
-      the complex tangent with the complexification of the real patch tangent,
-      restrict the two germ-holomorphic representatives to this local
-      coordinate chart, apply `SCV.identity_theorem_totally_real` on the open
-      real coordinate slice, and then propagate from the local slice through
-      the connected relatively open oriented source domain by
-      `sourceOrientedGramVariety_identity_principle`.
+      oriented analog of the checked scalar-Gram uniqueness stack: use the
+      local finite-coordinate packet
+      `SourceOrientedLocalRealChartData` at a real point of the environment,
+      restrict a germ-holomorphic representative to the associated max-rank
+      chart, apply the checked `SCV.identity_theorem_totally_real` to the
+      open real coordinate image, and then propagate from the local max-rank
+      seed through the connected relatively open oriented source domain by the
+      checked max-rank connectedness and identity principles.
 
       The local-to-global proof must expose the local seed produced by the
       totally-real identity theorem.  It is not enough to say "identity
       theorem on a real patch": the patch must become a nonempty relatively
       open oriented source subset inside the connected domain `U`, so that
-      the oriented variety identity principle can propagate the equality.
+      `sourceOrientedGramVariety_eqOn_of_connected_maxRank_fullFrame` can
+      propagate the equality after
+      `sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_headSliceIFT`
+      supplies connectedness of `U ∩ MaxRank`.
 
       ```lean
-      structure BHW.SourceOrientedLocalChartData
-          (d n : Nat)
-          (x0 : Fin n -> Fin (d + 1) -> ℝ) where
-        Ω : Set (BHW.SourceOrientedGramData d n)
-        Ω_relOpen :
-          BHW.IsRelOpenInSourceOrientedGramVariety d n Ω
-        center_mem :
-          BHW.sourceRealOrientedMinkowskiInvariant d n x0 ∈ Ω
-        model : Type*
-        [model_normed : NormedAddCommGroup model]
-        [model_complex : NormedSpace ℂ model]
-        chart : BHW.SourceOrientedGramData d n -> model
-        chart_open : IsOpen (chart '' Ω)
-        chart_biholomorphic :
-          BHW.LocalBiholomorphOnSourceOrientedVariety d n Ω chart
-
-      structure BHW.SourceOrientedLocalChartTotallyRealSlice
-          (d n : Nat)
-          (x0 : Fin n -> Fin (d + 1) -> ℝ)
-          (C : BHW.SourceOrientedLocalChartData d n x0) where
-        E0 : Set (Fin n -> Fin (d + 1) -> ℝ)
-        E0_open : IsOpen E0
-        x0_mem : x0 ∈ E0
-        realCoord : (Fin n -> Fin (d + 1) -> ℝ) -> C.model
-        realCoord_maps :
-          ∀ x ∈ E0,
-            realCoord x =
-              C.chart (BHW.sourceRealOrientedMinkowskiInvariant d n x)
-        realCoord_image_open :
-          IsOpen (realCoord '' E0)
-        realCoord_openMap_on_E0 :
-          ∀ {S : Set (Fin n -> Fin (d + 1) -> ℝ)},
-            IsOpen S ->
-            S ⊆ E0 ->
-            ∃ O : Set C.model,
-              IsOpen O ∧ realCoord '' S = O ∩ realCoord '' E0
-        totallyReal :
-          BHW.IsMaximalTotallyRealSubmanifold
-            (realCoord '' E0) (C.chart '' C.Ω)
-
-      theorem BHW.sourceOrientedLocalChart_at
-          (d n : Nat)
-          {x0 : Fin n -> Fin (d + 1) -> ℝ}
-          (hreg : BHW.SourceOrientedRegularAt d n x0) :
-          BHW.SourceOrientedLocalChartData d n x0
-
-      theorem BHW.sourceOrientedLocalChart_totallyRealSlice
-          (d n : Nat)
-          {x0 : Fin n -> Fin (d + 1) -> ℝ}
-          (hreg : BHW.SourceOrientedRegularAt d n x0)
-          (htr :
-            BHW.SourceOrientedComplexifiedRealTangentEqualsComplexTangent
-              d n x0) :
-          BHW.SourceOrientedLocalChartTotallyRealSlice d n x0
-            (BHW.sourceOrientedLocalChart_at d n hreg)
-
-      structure BHW.NonemptyOpenInTotallyRealSlice
-          {M : Type*} [NormedAddCommGroup M] [NormedSpace ℂ M]
-          (R0 R Ω : Set M) : Prop where
-        nonempty : R0.Nonempty
-        subset_slice : R0 ⊆ R
-        subset_ambient : R0 ⊆ Ω
-        open_in_slice : ∃ O : Set M, IsOpen O ∧ R0 = O ∩ R
-
       theorem SCV.identity_theorem_totally_real
-          {M : Type*} [NormedAddCommGroup M] [NormedSpace ℂ M]
-          {Ω R R0 : Set M}
-          {φ ψ : M -> ℂ}
-          (hTR : BHW.IsMaximalTotallyRealSubmanifold R Ω)
-          (hΩ_open : IsOpen Ω)
-          (hΩ_conn : IsConnected Ω)
-          (hφ : DifferentiableOn ℂ φ Ω)
-          (hψ : DifferentiableOn ℂ ψ Ω)
-          (hR0 : BHW.NonemptyOpenInTotallyRealSlice R0 R Ω)
-          (hEq : Set.EqOn φ ψ R0) :
-          Set.EqOn φ ψ Ω
+          {m : Nat}
+          {D : Set (Fin m -> ℂ)}
+          (hD_open : IsOpen D)
+          (hD_conn : IsConnected D)
+          {f : (Fin m -> ℂ) -> ℂ}
+          (hf : DifferentiableOn ℂ f D)
+          {V : Set (Fin m -> ℝ)}
+          (hV_open : IsOpen V)
+          (hV_ne : V.Nonempty)
+          (hV_sub : ∀ q ∈ V, SCV.realToComplex q ∈ D)
+          (hf_zero : ∀ q ∈ V, f (SCV.realToComplex q) = 0) :
+          ∀ z ∈ D, f z = 0
 
-      def BHW.sourceOrientedRestrictedRealSlice
+      theorem BHW.SourceOrientedLocalRealChartData
+          .shrink_to_domain_and_realPatch
           (d n : Nat)
           {x0 : Fin n -> Fin (d + 1) -> ℝ}
-          (C : BHW.SourceOrientedLocalChartData d n x0)
-          (R : BHW.SourceOrientedLocalChartTotallyRealSlice d n x0 C)
-          (Ω : Set (BHW.SourceOrientedGramData d n)) :
-          Set C.model :=
-        R.realCoord ''
-          {x | x ∈ R.E0 ∧
-            BHW.sourceRealOrientedMinkowskiInvariant d n x ∈ Ω}
-
-      theorem BHW.sourceOrientedLocalChart_totallyRealSlice_restrict
-          (d n : Nat)
-          {x0 : Fin n -> Fin (d + 1) -> ℝ}
-          (C : BHW.SourceOrientedLocalChartData d n x0)
-          (R : BHW.SourceOrientedLocalChartTotallyRealSlice d n x0 C)
-          {Ω : Set (BHW.SourceOrientedGramData d n)}
-          (hΩ_sub_chart : Ω ⊆ C.Ω)
-          (hΩ_chart_open : IsOpen (C.chart '' Ω)) :
-          BHW.IsMaximalTotallyRealSubmanifold
-            (BHW.sourceOrientedRestrictedRealSlice d n C R Ω)
-            (C.chart '' Ω)
-
-      theorem BHW.sourceOrientedLocalChart_shrink_to_domain_and_realPatch
-          (d n : Nat)
-          {x0 : Fin n -> Fin (d + 1) -> ℝ}
-          (C : BHW.SourceOrientedLocalChartData d n x0)
-          (R : BHW.SourceOrientedLocalChartTotallyRealSlice d n x0 C)
+          (R : BHW.SourceOrientedLocalRealChartData d n x0)
           {E : Set (Fin n -> Fin (d + 1) -> ℝ)}
           {U : Set (BHW.SourceOrientedGramData d n)}
           (hE_open : IsOpen E)
@@ -18734,13 +18669,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
             BHW.sourceRealOrientedMinkowskiInvariant d n x0 ∈ U) :
           ∃ (Ω : Set (BHW.SourceOrientedGramData d n))
             (Eseed : Set (Fin n -> Fin (d + 1) -> ℝ)),
-            BHW.IsRelOpenInSourceOrientedGramVariety d n Ω ∧
-            IsConnected Ω ∧
-            Ω ⊆ U ∧
             BHW.sourceRealOrientedMinkowskiInvariant d n x0 ∈ Ω ∧
-            Ω ⊆ C.Ω ∧
-            IsOpen (C.chart '' Ω) ∧
-            IsConnected (C.chart '' Ω) ∧
+            BHW.IsRelOpenInSourceOrientedGramVariety d n Ω ∧
+            Ω ⊆ U ∩ {G | BHW.SourceOrientedMaxRankAt d n G} ∧
+            Ω ⊆ R.C.Ω ∧
+            IsOpen (R.C.chart '' Ω) ∧
+            IsConnected (R.C.chart '' Ω) ∧
             IsOpen Eseed ∧
             x0 ∈ Eseed ∧
             Eseed ⊆ E ∧
@@ -18748,206 +18682,59 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (∀ x ∈ Eseed,
               BHW.sourceRealOrientedMinkowskiInvariant d n x ∈ Ω)
 
-      theorem BHW.realCoord_seed_nonempty_open_in_restrictedSlice
-          (d n : Nat)
-          {x0 : Fin n -> Fin (d + 1) -> ℝ}
-          {C : BHW.SourceOrientedLocalChartData d n x0}
-          (R : BHW.SourceOrientedLocalChartTotallyRealSlice d n x0 C)
-          {Ω : Set (BHW.SourceOrientedGramData d n)}
-          {Eseed : Set (Fin n -> Fin (d + 1) -> ℝ)}
-          (hEseed_open : IsOpen Eseed)
-          (hx0Eseed : x0 ∈ Eseed)
-          (hEseed_sub_R : Eseed ⊆ R.E0)
-          (hEseed_maps :
-            ∀ x ∈ Eseed,
-              BHW.sourceRealOrientedMinkowskiInvariant d n x ∈ Ω) :
-          BHW.NonemptyOpenInTotallyRealSlice
-            (R.realCoord '' Eseed)
-            (BHW.sourceOrientedRestrictedRealSlice d n C R Ω)
-            (C.chart '' Ω)
-
-      theorem BHW.SourceOrientedVarietyGermHolomorphicOn.to_chart
-          (d n : Nat)
-          {x0 : Fin n -> Fin (d + 1) -> ℝ}
-          {Φ : BHW.SourceOrientedGramData d n -> ℂ}
-          {U Ω : Set (BHW.SourceOrientedGramData d n)}
-          (hΦ :
-            BHW.SourceOrientedVarietyGermHolomorphicOn d n Φ U)
-          (C : BHW.SourceOrientedLocalChartData d n x0)
-          (hΩ_rel :
-            BHW.IsRelOpenInSourceOrientedGramVariety d n Ω)
-          (hΩ_sub : Ω ⊆ U)
-          (hΩ_sub_chart : Ω ⊆ C.Ω) :
-          ∃ φc : C.model -> ℂ,
-            DifferentiableOn ℂ φc (C.chart '' Ω) ∧
-            ∀ G ∈ Ω, φc (C.chart G) = Φ G := by
-        let φc : C.model -> ℂ :=
-          fun y => Φ (C.chart_biholomorphic.inv y)
-        refine ⟨φc, ?_, ?_⟩
-        · exact
-            BHW.LocalBiholomorphOnSourceOrientedVariety.germ_to_chart
-              (d := d) (n := n)
-              (Ω := Ω) (Ω0 := C.Ω) (U := U)
-              (chart := C.chart) (Φ := Φ)
-              C.chart_biholomorphic hΦ hΩ_rel hΩ_sub hΩ_sub_chart
-        · intro G hGΩ
-          simp [φc, C.chart_biholomorphic.left_inv_on G
-            (hΩ_sub_chart hGΩ)]
-
-      theorem BHW.sourceOrientedLocalTotallyRealIdentity_seed
+      theorem BHW.sourceOrientedLocalTotallyReal_zero_seed
           (d n : Nat)
           {E : Set (Fin n -> Fin (d + 1) -> ℝ)}
           (hE : BHW.IsHWOrientedRealEnvironment d n E)
           {U : Set (BHW.SourceOrientedGramData d n)}
-          {Φ Ψ : BHW.SourceOrientedGramData d n -> ℂ}
+          {H : BHW.SourceOrientedGramData d n -> ℂ}
           (hU_rel :
             BHW.IsRelOpenInSourceOrientedGramVariety d n U)
           (hE_U :
             ∀ x ∈ E,
               BHW.sourceRealOrientedMinkowskiInvariant d n x ∈ U)
-          (hΦ :
-            BHW.SourceOrientedVarietyGermHolomorphicOn d n Φ U)
-          (hΨ :
-            BHW.SourceOrientedVarietyGermHolomorphicOn d n Ψ U)
-          (hEq_real :
+          (hH :
+            BHW.SourceOrientedVarietyGermHolomorphicOn d n H U)
+          (h_zero :
             ∀ x ∈ E,
-              Φ (BHW.sourceRealOrientedMinkowskiInvariant d n x) =
-                Ψ (BHW.sourceRealOrientedMinkowskiInvariant d n x)) :
+              H (BHW.sourceRealOrientedMinkowskiInvariant d n x) = 0) :
           ∃ W : Set (BHW.SourceOrientedGramData d n),
             BHW.IsRelOpenInSourceOrientedGramVariety d n W ∧
             W.Nonempty ∧
-            W ⊆ U ∧
-            Set.EqOn Φ Ψ W := by
-        rcases hE.nonempty with ⟨x0, hx0E⟩
-        have hreg : BHW.SourceOrientedRegularAt d n x0 :=
-          hE.left_regular x0 hx0E
-        have htr :
-            BHW.SourceOrientedComplexifiedRealTangentEqualsComplexTangent
-              d n x0 :=
-          hE.maximal_totally_real x0 hx0E
-        let C := BHW.sourceOrientedLocalChart_at d n hreg
-        let R :=
-          BHW.sourceOrientedLocalChart_totallyRealSlice d n hreg htr
-        obtain ⟨Ω, Eseed, hΩ_rel, hΩ_conn, hΩ_sub_U, hΩ_center,
-          hΩ_sub_chart, hΩ_chart_open, hΩ_chart_conn, hEseed_open,
-          hx0Eseed, hEseed_sub_E, hEseed_sub_R, hEseed_maps⟩ :=
-          BHW.sourceOrientedLocalChart_shrink_to_domain_and_realPatch
-            (d := d) (n := n) C R hE.open_real hx0E hU_rel
-            (hE_U x0 hx0E)
-        obtain ⟨φc, hφc_holo, hφc_eq⟩ :=
-          BHW.SourceOrientedVarietyGermHolomorphicOn.to_chart
-            (d := d) (n := n) hΦ C hΩ_rel hΩ_sub_U hΩ_sub_chart
-        obtain ⟨ψc, hψc_holo, hψc_eq⟩ :=
-          BHW.SourceOrientedVarietyGermHolomorphicOn.to_chart
-            (d := d) (n := n) hΨ C hΩ_rel hΩ_sub_U hΩ_sub_chart
-        have hcoord_real :
-            Set.EqOn φc ψc (R.realCoord '' Eseed) := by
-          rintro y ⟨x, hxSeed, rfl⟩
-          have hxE : x ∈ E := hEseed_sub_E hxSeed
-          have hxR : x ∈ R.E0 := hEseed_sub_R hxSeed
-          have hxΩ :
-              BHW.sourceRealOrientedMinkowskiInvariant d n x ∈ Ω :=
-            hEseed_maps x hxSeed
-          calc
-            φc (R.realCoord x)
-                = Φ (BHW.sourceRealOrientedMinkowskiInvariant d n x) := by
-                  simpa [R.realCoord_maps x hxR] using
-                    hφc_eq
-                      (BHW.sourceRealOrientedMinkowskiInvariant d n x)
-                      hxΩ
-            _ = Ψ (BHW.sourceRealOrientedMinkowskiInvariant d n x) :=
-                  hEq_real x hxE
-            _ = ψc (R.realCoord x) := by
-                  simpa [R.realCoord_maps x hxR] using
-                    (hψc_eq
-                      (BHW.sourceRealOrientedMinkowskiInvariant d n x)
-                      hxΩ).symm
-        have hTRΩ :
-            BHW.IsMaximalTotallyRealSubmanifold
-              (BHW.sourceOrientedRestrictedRealSlice d n C R Ω)
-              (C.chart '' Ω) :=
-          BHW.sourceOrientedLocalChart_totallyRealSlice_restrict
-            d n C R hΩ_sub_chart hΩ_chart_open
-        have hR0 :
-            BHW.NonemptyOpenInTotallyRealSlice
-              (R.realCoord '' Eseed)
-              (BHW.sourceOrientedRestrictedRealSlice d n C R Ω)
-              (C.chart '' Ω) :=
-          BHW.realCoord_seed_nonempty_open_in_restrictedSlice
-            d n R hEseed_open hx0Eseed hEseed_sub_R hEseed_maps
-        have hcoord_eq :
-            Set.EqOn φc ψc (C.chart '' Ω) :=
-          SCV.identity_theorem_totally_real
-            hTRΩ hΩ_chart_open hΩ_chart_conn
-            hφc_holo hψc_holo hR0 hcoord_real
-        refine ⟨Ω, hΩ_rel, ⟨_, hΩ_center⟩, hΩ_sub_U, ?_⟩
-        intro G hGΩ
-        have hchart := hcoord_eq ⟨G, hGΩ, rfl⟩
-        exact (hφc_eq G hGΩ).symm.trans
-          (hchart.trans (hψc_eq G hGΩ))
+            W ⊆ U ∩ {G | BHW.SourceOrientedMaxRankAt d n G} ∧
+            Set.EqOn H 0 W
 
       theorem BHW.sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment
-          (d n : Nat)
+          [NeZero d]
+          (hd : 2 <= d)
+          (hn : d + 1 <= n)
           {E : Set (Fin n -> Fin (d + 1) -> ℝ)}
           (hE : BHW.IsHWOrientedRealEnvironment d n E) :
-          BHW.sourceOrientedDistributionalUniquenessPatch d n E := by
-        refine ⟨hE.nonempty, ?_⟩
-        intro U Φ Ψ hU_rel hU_conn hE_U hΦ hΨ hEq_real
-        obtain ⟨W, hW_rel, hW_ne, hW_sub, hEq_W⟩ :=
-          BHW.sourceOrientedLocalTotallyRealIdentity_seed
-            d n hE hU_rel hE_U hΦ hΨ hEq_real
-        let H : BHW.SourceOrientedGramData d n -> ℂ := fun G => Φ G - Ψ G
-        have hH_holo :
-            BHW.SourceOrientedVarietyGermHolomorphicOn d n H U :=
-          BHW.SourceOrientedVarietyGermHolomorphicOn.sub
-            (d := d) (n := n) hΦ hΨ
-        have hH_zero_W : Set.EqOn H 0 W := by
-          intro G hGW
-          exact sub_eq_zero.mpr (hEq_W hGW)
-        have hH_zero_U : Set.EqOn H 0 U :=
-          BHW.sourceOrientedGramVariety_identity_principle
-            (d := d) (n := n) hU_rel hU_conn
-            hW_rel hW_ne hW_sub hH_holo hH_zero_W
-        intro G hGU
-        exact sub_eq_zero.mp (hH_zero_U hGU)
+          BHW.sourceOrientedDistributionalUniquenessPatch d n E
       ```
 
       The helper
-      `sourceOrientedLocalChart_shrink_to_domain_and_realPatch` is ordinary
-      finite-dimensional topology: intersect the local oriented chart
-      neighborhood with the relatively open set `U`, then choose a smaller
-      connected oriented neighborhood `Ω` and a real seed neighborhood
-      `Eseed`.  The seed satisfies `Eseed ⊆ E`, `Eseed ⊆ R.E0`, and its
-      oriented real invariant lies in `Ω`; `C.chart '' Ω` is open and
-      connected and `Ω ⊆ C.Ω`, so the chart map is available exactly on the
-      holomorphy domain used by the real identity theorem.  The proof may use
-      local connected balls inside the chart image, but it may not use any
-      OS-specific equality or final locality.  The local chart conversion
-      `SourceOrientedVarietyGermHolomorphicOn.to_chart` is just the germ API
-      transported through the local biholomorphic chart and returns a
-      holomorphic function on `C.chart '' Ω` that agrees with the original
-      germ on `Ω`; it is not allowed to choose a new scalar representative.
-      `sourceOrientedRestrictedRealSlice`,
-      `sourceOrientedLocalChart_totallyRealSlice_restrict`, and
-      `realCoord_seed_nonempty_open_in_restrictedSlice` are the real topology
-      inputs saying the selected real seed gives a nonempty open subset of
-      the totally real slice **inside `C.chart '' Ω`**, not merely inside the
-      larger chart `C.chart '' C.Ω`.  The openness step uses the
-      `realCoord_openMap_on_E0` field of the local real slice; without that
-      coordinate-chart fact, the image of an open real seed would not be
-      automatically open in the slice.  This makes
-      `sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment` a
-      real SCV/totally-real theorem rather than an assumption field.
+      `SourceOrientedLocalRealChartData.shrink_to_domain_and_realPatch` is
+      ordinary finite-dimensional topology: use the checked max-rank chart
+      shrinker `SourceOrientedMaxRankChartData.shrink_to_relOpen`, then cut the
+      real patch by the preimage of the open coordinate domain
+      `R.C.chart '' Ω` under `SCV.realToComplex ∘ R.realCoord`.  The
+      `chart_real_eq` field converts real agreement on `Eseed` into vanishing
+      on the standard totally-real slice in `Fin R.m -> ℂ`, so the checked
+      theorem is the existing finite-coordinate
+      `SCV.identity_theorem_totally_real`; no abstract
+      `IsMaximalTotallyRealSubmanifold` predicate is introduced.
 
-      The support theorem slots
-      `sourceOrientedLocalChart_at` and
-      `sourceOrientedLocalChart_totallyRealSlice` are finite-dimensional
-      invariant-theory/SCV facts.  They are not QFT hypotheses.  In
-      particular, `maximal_totally_real` is the oriented replacement for the
-      checked pure-Gram predicate
-      `SourceComplexifiedRealTangentEqualsComplexTangent`; it cannot be
-      inferred from the pure-Gram tangent theorem because the determinant
-      coordinates add extra tangent equations.
+      The final propagation step is also concrete: first obtain a nonempty
+      relatively open max-rank seed `W` from
+      `sourceOrientedLocalTotallyReal_zero_seed`, then use
+      `sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_headSliceIFT`
+      to get connectedness of `U ∩ MaxRank` from `IsConnected U`, and finally
+      call `sourceOrientedGramVariety_eqOn_of_connected_maxRank_fullFrame`.
+      Thus `sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment`
+      is a hard-range theorem with explicit `[NeZero d]`, `2 <= d`, and
+      `d + 1 <= n` inputs.  The small-arity route is handled separately by the
+      pure-Gram environment branch.
 
       The oriented tangent package must therefore be decomposed before Lean:
 
@@ -19111,61 +18898,37 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (BHW.sourceOrientedDefiningEquations d n)
             (BHW.sourceRealOrientedMinkowskiInvariant d n x)
 
-      theorem BHW.sourceOrientedLocalChart_at
-          (d n : Nat)
-          {x0 : Fin n -> Fin (d + 1) -> ℝ}
-          (hreg : BHW.SourceOrientedRegularAt d n x0) :
-          BHW.SourceOrientedLocalChartData d n x0 := by
-        have hsubm :=
-          BHW.sourceOrientedRegularAt_submersion_equations
-            (d := d) (n := n) hreg
-        have hzero :
-            BHW.sourceOrientedDefiningEquations d n
-              (BHW.sourceRealOrientedMinkowskiInvariant d n x0) = 0 := by
-          simpa [BHW.sourceOrientedGramVariety_eq_zeroLocus_definingEquations]
-            using
-              BHW.sourceRealOrientedMinkowskiInvariant_mem_variety
-                (d := d) (n := n) x0
-        exact
-          BHW.localBiholomorphOn_zeroLocus_of_submersion
-            (F := BHW.sourceOrientedDefiningEquations d n)
-            (G0 := BHW.sourceRealOrientedMinkowskiInvariant d n x0)
-            (hF := BHW.sourceOrientedDefiningEquations_hasFDerivAt d n _)
-            hsubm hzero
-
-      theorem BHW.sourceOrientedLocalChart_totallyRealSlice
+      theorem BHW.sourceOrientedLocalRealChartData_of_submersion
           (d n : Nat)
           {x0 : Fin n -> Fin (d + 1) -> ℝ}
           (hreg : BHW.SourceOrientedRegularAt d n x0)
           (htr :
             BHW.SourceOrientedComplexifiedRealTangentEqualsComplexTangent
               d n x0) :
-          BHW.SourceOrientedLocalChartTotallyRealSlice d n x0
-            (BHW.sourceOrientedLocalChart_at d n hreg) := by
-        let C := BHW.sourceOrientedLocalChart_at d n hreg
+          BHW.SourceOrientedLocalRealChartData d n x0 := by
+        let C := BHW.sourceOrientedMaxRankChartData_of_realRegular
+          (d := d) (n := n) x0 hreg
         have hrealCoeff :
             BHW.sourceOrientedDefiningEquations_haveRealCoefficients
               (d := d) (n := n) := by
           exact
             BHW.sourceOrientedDefiningEquations_realCoeff
               (d := d) (n := n)
-        have hrealSubmanifold :=
-          BHW.realSlice_submanifold_of_realCoeff_submersion
-            (d := d) (n := n) C hrealCoeff hreg
         exact
-          BHW.localChart_totallyRealSlice_of_tangentComplexification
-            (d := d) (n := n) C hrealSubmanifold htr
+          BHW.sourceOrientedLocalRealChartData_of_realCoeff_submersion
+            (d := d) (n := n) C hrealCoeff hreg htr
       ```
 
       The defining equations are exactly the symmetry, rank/minor,
       alternation, and Cauchy-Binet equations listed in the oriented algebraic
       model; their coefficients are real on the real source slice.  The
       submersion statement is just the Jacobian expected-rank condition
-      rewritten for those equations.  The totally-real slice theorem uses the
-      equality of the complex tangent with the complexification of the real
-      tangent to identify the real slice as maximal totally real in the local
-      complex chart.  None of these theorems can cite Wick rotation, compact
-      OS-I equality, EOW, or final locality.
+      rewritten for those equations.  The local real chart data theorem uses
+      the equality of the complex tangent with the complexification of the real
+      tangent to put the real source slice into the standard
+      `SCV.realToComplex` coordinate form consumed by the totally-real identity
+      theorem.  None of these theorems can cite Wick rotation, compact OS-I
+      equality, EOW, or final locality.
 
       The producer of an oriented real environment must also say where the
       determinant-rank hypotheses come from.  The generic real-patch shrink is:

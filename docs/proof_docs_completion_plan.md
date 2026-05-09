@@ -2196,13 +2196,13 @@ Current oriented real-uniqueness readiness clarification, 2026-05-02: the
 real-patch uniqueness group
 `BHW.sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment` now has
 a componentwise transcript in the theorem-2 blueprint.  The lower support
-targets are `BHW.sourceOrientedLocalTotallyRealIdentity_seed`,
-`BHW.sourceOrientedLocalChart_at`,
-`BHW.sourceOrientedLocalChart_totallyRealSlice`,
-`BHW.sourceOrientedLocalChart_shrink_to_domain_and_realPatch`,
-`BHW.SourceOrientedVarietyGermHolomorphicOn.to_chart`, the
+targets are the finite-coordinate packet
+`BHW.SourceOrientedLocalRealChartData`,
+`BHW.SourceOrientedLocalRealChartData.shrink_to_domain_and_realPatch`,
+`BHW.sourceOrientedLocalTotallyReal_zero_seed`,
+`BHW.SourceOrientedVarietyGermHolomorphicOn.to_maxRank_chart`, the
 `LocalBiholomorphOnSourceOrientedVariety` inverse/differentiability fields,
-the tangent package
+and the tangent/IFT package
 `sourceFullFrameDetDifferential`,
 `sourceOrientedDifferentialCLM`,
 `sourceOrientedMinkowskiInvariant_hasFDerivAt`,
@@ -2249,13 +2249,18 @@ checks the real-source permutation topology helpers
    `BHW.sourceRealOrientedMinkowskiInvariant_det`,
    `BHW.realSourcePermute_symm_image_permImage_eq`, and, in
    `SourceOrientedRealMaxRank.lean`,
-   `BHW.sourceOrientedMaxRankAt_sourceReal_fullFrameDet_ne_zero`.  This
-   closes only the definition/permutation/topological-image,
-   determinant-openness, selected determinant-density, and max-rank bridge
-   layer: no real patch is asserted to be a uniqueness patch yet.  The remaining
-   real-uniqueness proof still begins with the tangent/IFT environment producer
-   `BHW.IsHWOrientedRealEnvironment` and
+   `BHW.sourceOrientedMaxRankAt_sourceReal_fullFrameDet_ne_zero`.  The generic
+   SCV uniqueness consumer is now checked in
+   `SourceOrientedRealUniqueness.lean`:
+   `BHW.SourceOrientedLocalRealChartData`,
+   `BHW.IsHWOrientedRealEnvironment`,
+   `BHW.SourceOrientedLocalRealChartData.shrink_to_domain_and_realPatch`,
+   `BHW.sourceOrientedLocalTotallyReal_zero_seed`, and
    `BHW.sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment`.
+   No real patch is asserted to be a uniqueness patch yet; the remaining
+   real-uniqueness proof begins with the tangent/IFT producer of
+   `SourceOrientedLocalRealChartData` and the small-arity/full-frame
+   environment subpatch producers.
 
 Current compact Figure-2-4 branch-difference readiness correction,
 2026-05-03: the OS I Section 4.5 compact producer
@@ -5804,26 +5809,19 @@ implementation contract is:
    `BHW.IsHWOrientedRealEnvironment` by
    `BHW.sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment`,
    through the local seed theorem
-   `BHW.sourceOrientedLocalTotallyRealIdentity_seed`.  That seed theorem uses
-   `BHW.sourceOrientedLocalChart_at`,
-   `BHW.sourceOrientedLocalChart_totallyRealSlice`,
-   `BHW.sourceOrientedLocalChart_shrink_to_domain_and_realPatch`,
-   `BHW.sourceOrientedRestrictedRealSlice`,
-   `BHW.sourceOrientedLocalChart_totallyRealSlice_restrict`,
-   `BHW.realCoord_seed_nonempty_open_in_restrictedSlice`,
-   `BHW.SourceOrientedVarietyGermHolomorphicOn.to_chart`, and
-   `SCV.identity_theorem_totally_real` to produce a nonempty relatively open
-   oriented subset `W ⊆ U` where two oriented germ-holomorphic functions
-   agree.  The shrink now returns both a connected oriented neighborhood `Ω`
-   and an open real seed `Eseed`, with `C.chart '' Ω` open and connected.
-   The blueprint pins `BHW.NonemptyOpenInTotallyRealSlice` as the exact input
-   to `SCV.identity_theorem_totally_real` on the restricted slice inside
-   `C.chart '' Ω`; the proof must not apply the identity theorem on the
-   larger `C.chart '' C.Ω` while the pulled-back functions are only
-   holomorphic on `C.chart '' Ω`.  The local slice data must also expose
-   `realCoord_openMap_on_E0`, since openness of the real seed image in the
-   restricted totally-real slice is a coordinate-chart theorem, not a formal
-   consequence of `IsOpen Eseed`.  `to_chart` is now factored through
+   `BHW.sourceOrientedLocalTotallyReal_zero_seed`.  That seed theorem uses
+   `BHW.SourceOrientedLocalRealChartData`,
+   `BHW.SourceOrientedLocalRealChartData.shrink_to_domain_and_realPatch`,
+   `BHW.SourceOrientedVarietyGermHolomorphicOn.to_maxRank_chart`, and the
+   checked finite-coordinate `SCV.identity_theorem_totally_real` to produce a
+   nonempty relatively open max-rank oriented subset `W ⊆ U` where the
+   difference of two oriented germ-holomorphic functions vanishes.  The shrink
+   returns both a connected oriented neighborhood `Ω` and an open real seed
+   `Eseed`, with `C.chart '' Ω` open and connected.  The local real chart data
+   exposes `chart_real_eq`, so the real seed image is an open subset of the
+   standard totally-real slice `SCV.realToComplex '' (R.realCoord '' Eseed)`;
+   no abstract maximal-totally-real slice predicate is introduced.  `to_maxRank_chart`
+   is factored through
    `LocalBiholomorphOnSourceOrientedVariety`: the chart API exposes an inverse,
    left/right inverse laws, inverse membership, and inverse differentiability/
    continuity on the chart image.  The proof of
@@ -5834,21 +5832,19 @@ implementation contract is:
    by `differentiableOn_of_local_agreement`.  Thus `to_chart` returns an actual
    holomorphic representative on `C.chart '' Ω` agreeing with the source germ
    on `Ω`; it cannot choose a new scalar representative or forget the shrink
-   `Ω ⊆ C.Ω`.  Only then may
+   `Ω ⊆ C.Ω`.  Only then may the hard-range
    `sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment` call
-   `sourceOrientedGramVariety_identity_principle` to propagate the equality
-   over the connected `U`.  This is finite-dimensional invariant-theory/SCV
-   support, not a QFT axiom; it cannot be inferred from the pure-Gram
+   `sourceOrientedGramVariety_maxRank_inter_relOpen_isConnected_of_headSliceIFT`
+   and `sourceOrientedGramVariety_eqOn_of_connected_maxRank_fullFrame` to
+   propagate the equality over connected `U`.  This is finite-dimensional
+   invariant-theory/SCV support, not a QFT axiom; it cannot be inferred from the pure-Gram
    real-tangent theorem because the oriented determinant coordinates add
    extra tangent equations.  The local chart producer is now pinned to the
    finite-dimensional implicit-function theorem for
-   `sourceOrientedDefiningEquations`: prove
-   `sourceOrientedGramVariety_eq_zeroLocus_definingEquations`,
-   `sourceOrientedDefiningEquations_hasFDerivAt`, and
-   `sourceOrientedRegularAt_submersion_equations`, then apply
-   `localBiholomorphOn_zeroLocus_of_submersion`.  The totally-real slice is
-   produced only after the defining equations' real coefficients and the
-   tangent-complexification equality are proved.
+   `sourceOrientedDefiningEquations` and must finally output
+   `SourceOrientedLocalRealChartData`: prove the zero-locus, derivative,
+   submersion, real-coefficient, and tangent-complexification facts, then put
+   the real coordinate image into the standard `SCV.realToComplex` form.
    Gemini Deep Research interaction
    `v1_ChczMGoxYWNQTEphYWlfdU1QeFlpRTJBSRIXMzBqMWFjUExKYWFpX3VNUHhZaUUyQUk`
    independently confirmed this route-risk classification: proper
