@@ -617,6 +617,32 @@ theorem sourceFullFrameRealDifferentialRightInverseLinear_apply
         (Y : SourceFullFrameRealOrientedCoord d) :=
   rfl
 
+/-- Complexifying a real full-frame matrix complexifies its determinant. -/
+theorem sourceFullFrame_matrix_map_ofReal_det
+    (d : ℕ)
+    (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+    (M0R.map Complex.ofReal).det = (M0R.det : ℂ) := by
+  simpa [RingHom.mapMatrix_apply] using
+    (RingHom.map_det Complex.ofRealHom M0R).symm
+
+/-- A real determinant unit remains a unit after complexifying the matrix. -/
+theorem sourceFullFrame_matrix_map_ofReal_det_isUnit
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det) :
+    IsUnit (M0R.map Complex.ofReal).det := by
+  rw [sourceFullFrame_matrix_map_ofReal_det]
+  exact hM0R.map Complex.ofRealHom
+
+/-- The real explicit slice is the range of the real constructive differential
+right inverse. -/
+noncomputable def sourceFullFrameRealDifferentialRightInverseRange
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det) :
+    Submodule ℝ (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :=
+  LinearMap.range (sourceFullFrameRealDifferentialRightInverseLinear d hM0R)
+
 /-- Componentwise complexification commutes with the nonsingular inverse for
 real matrices. -/
 theorem matrix_map_ofReal_nonsing_inv
@@ -756,6 +782,73 @@ theorem sourceFullFrameRealDifferentialRightInverseLinear_complexify
   exact
     sourceFullFrameOrientedDifferentialRightInverseLinear_realComplexify
       d hM0R (Y : SourceFullFrameRealOrientedCoord d) Y.property
+
+/-- The real right inverse lands, after complexification, in the explicit
+complex gauge slice. -/
+theorem sourceFullFrameRealDifferentialRightInverseLinear_mem_complexSlice
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (Y : sourceFullFrameRealOrientedTangentSpace d M0R) :
+    (sourceFullFrameRealDifferentialRightInverseLinear d hM0R Y).map
+        Complex.ofReal ∈
+      (sourceFullFrameExplicitGaugeSliceData d
+        (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)).slice := by
+  let hM0C : IsUnit (M0R.map Complex.ofReal).det :=
+    sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R
+  let YC := sourceFullFrameRealOrientedTangentComplexifyLinear d M0R Y
+  have hcomplex :
+      (sourceFullFrameRealDifferentialRightInverseLinear d hM0R Y).map
+          Complex.ofReal =
+        sourceFullFrameOrientedDifferentialRightInverseLinear d hM0C YC := by
+    simpa [hM0C, YC, sourceFullFrameRealOrientedTangentComplexifyLinear] using
+      sourceFullFrameRealDifferentialRightInverseLinear_complexify d hM0R Y
+  rw [hcomplex]
+  change
+    sourceFullFrameOrientedDifferentialRightInverseLinear d hM0C YC ∈
+      sourceFullFrameOrientedDifferentialRightInverseRange d hM0C
+  exact ⟨YC, rfl⟩
+
+/-- Every element of the real explicit slice complexifies into the explicit
+complex gauge slice. -/
+theorem sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    {X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hX : X ∈ sourceFullFrameRealDifferentialRightInverseRange d hM0R) :
+    X.map Complex.ofReal ∈
+      (sourceFullFrameExplicitGaugeSliceData d
+        (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)).slice := by
+  rcases hX with ⟨Y, rfl⟩
+  exact sourceFullFrameRealDifferentialRightInverseLinear_mem_complexSlice
+    d hM0R Y
+
+/-- Finite-coordinate real-form data for the explicit full-frame slice.
+
+The producer for this packet is the remaining finite-dimensional linear
+algebra step before the real implicit-function theorem: it must choose real
+coordinates on the real right-inverse range and compatible complex coordinates
+on the explicit complex slice. -/
+structure SourceFullFrameRealSliceFiniteCoordData
+    (d : ℕ)
+    (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
+    (hM0R : IsUnit M0R.det) where
+  realModelDim : ℕ
+  realCoordEquiv :
+    (Fin realModelDim → ℝ) ≃ₗ[ℝ]
+      sourceFullFrameRealDifferentialRightInverseRange d hM0R
+  complexCoordEquiv :
+    (Fin realModelDim → ℂ) ≃L[ℂ]
+      (sourceFullFrameExplicitGaugeSliceData d
+        (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)).slice
+  complexCoordEquiv_real_eq :
+    ∀ q : Fin realModelDim → ℝ,
+      complexCoordEquiv (fun i => (q i : ℂ)) =
+        ⟨((realCoordEquiv q :
+            Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map Complex.ofReal),
+          sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice
+            d hM0R (realCoordEquiv q).property⟩
 
 /-- The real right inverse is injective on the real tangent model. -/
 theorem sourceFullFrameRealDifferentialRightInverseLinear_injective

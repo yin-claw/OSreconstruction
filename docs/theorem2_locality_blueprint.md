@@ -19883,6 +19883,82 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (BHW.sourceFullFrameRealDifferentialRightInverseLinear
               d hM0R)
 
+      theorem BHW.sourceFullFrame_matrix_map_ofReal_det
+          (d : Nat)
+          (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+          (M0R.map Complex.ofReal).det = (M0R.det : ℂ)
+
+      theorem BHW.sourceFullFrame_matrix_map_ofReal_det_isUnit
+          (d : Nat)
+          {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hM0R : IsUnit M0R.det) :
+          IsUnit (M0R.map Complex.ofReal).det
+
+      noncomputable def
+          BHW.sourceFullFrameRealDifferentialRightInverseRange
+          (d : Nat)
+          {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hM0R : IsUnit M0R.det) :
+          Submodule ℝ (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
+
+      theorem
+          BHW.sourceFullFrameRealDifferentialRightInverseLinear_mem_complexSlice
+          (d : Nat)
+          {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hM0R : IsUnit M0R.det)
+          (Y : BHW.sourceFullFrameRealOrientedTangentSpace d M0R) :
+          (BHW.sourceFullFrameRealDifferentialRightInverseLinear
+              d hM0R Y).map Complex.ofReal ∈
+            (BHW.sourceFullFrameExplicitGaugeSliceData d
+              (BHW.sourceFullFrame_matrix_map_ofReal_det_isUnit
+                d hM0R)).slice
+
+      theorem
+          BHW.sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice
+          (d : Nat)
+          {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hM0R : IsUnit M0R.det)
+          {X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hX :
+            X ∈
+              BHW.sourceFullFrameRealDifferentialRightInverseRange
+                d hM0R) :
+          X.map Complex.ofReal ∈
+            (BHW.sourceFullFrameExplicitGaugeSliceData d
+              (BHW.sourceFullFrame_matrix_map_ofReal_det_isUnit
+                d hM0R)).slice
+
+      structure BHW.SourceFullFrameRealSliceFiniteCoordData
+          (d : Nat)
+          (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
+          (hM0R : IsUnit M0R.det) where
+        realModelDim : Nat
+        realCoordEquiv :
+          (Fin realModelDim -> ℝ) ≃ₗ[ℝ]
+            BHW.sourceFullFrameRealDifferentialRightInverseRange
+              d hM0R
+        complexCoordEquiv :
+          (Fin realModelDim -> ℂ) ≃L[ℂ]
+            (BHW.sourceFullFrameExplicitGaugeSliceData d
+              (BHW.sourceFullFrame_matrix_map_ofReal_det_isUnit
+                d hM0R)).slice
+        complexCoordEquiv_real_eq :
+          ∀ q : Fin realModelDim -> ℝ,
+            complexCoordEquiv (SCV.realToComplex q) =
+              ⟨((realCoordEquiv q :
+                  Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ).map
+                  Complex.ofReal),
+                BHW.sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice
+                  d hM0R (realCoordEquiv q).property⟩
+
+      theorem BHW.sourceFullFrameRealSliceFiniteCoordData
+          (d : Nat)
+          {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hM0R : IsUnit M0R.det) :
+          Nonempty
+            (BHW.SourceFullFrameRealSliceFiniteCoordData
+              d M0R hM0R)
+
       theorem BHW.sourceRealFullFrameLocalCoord_image_open
           (d n : Nat)
           (ι : Fin (d + 1) ↪ Fin n)
@@ -19931,10 +20007,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
         --    The complement proof is the direct decomposition
         --    `X = R(L X) + (X - R(L X))`, and
         --    `X - R(L X)` is in the orbit tangent by the checked kernel
-        --    theorem.  The real producer must next prove that, because
-        --    `M0R`, `G`, and the tangent determinant coordinate are real, this
-        --    right inverse maps the real tangent model to real matrices; its
-        --    complexification is then exactly the chosen complex slice.
+        --    theorem.  The real producer uses
+        --    `sourceFullFrameRealDifferentialRightInverseRange` for the real
+        --    slice and
+        --    `sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice`
+        --    for the inclusion into the explicit complex slice.  The only
+        --    linear-algebra theorem still needed here is
+        --    `sourceFullFrameRealSliceFiniteCoordData`, which chooses a finite
+        --    real coordinate basis on this range and a compatible complex
+        --    coordinate equivalence on the explicit complex slice.
         -- 3. Run the real inverse/implicit-function theorem for the real
         --    kernel map.  Its complexification is the existing complex
         --    `sourceFullFrameGaugeSliceImplicitKernelMap`; uniqueness of the
@@ -20012,14 +20093,21 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrameRealDifferentialRightInverseFormulaLinear`,
       `sourceFullFrameRealDifferentialRightInverseLinear`,
       `matrix_map_ofReal_nonsing_inv`,
+      `sourceFullFrame_matrix_map_ofReal_det`,
+      `sourceFullFrame_matrix_map_ofReal_det_isUnit`,
       `sourceFullFrame_minkowskiMatrix_map_ofReal`,
       `sourceFullFrameRealOrientedCoordComplexify_matrix_of`, and
       `sourceFullFrameOrientedDifferentialRightInverseLinear_realComplexify`,
-      plus `sourceFullFrameRealDifferentialRightInverseLinear_complexify` and
+      plus `sourceFullFrameRealDifferentialRightInverseLinear_complexify`,
+      `sourceFullFrameRealDifferentialRightInverseRange`,
+      `sourceFullFrameRealDifferentialRightInverseLinear_mem_complexSlice`,
+      `sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice`,
+      `SourceFullFrameRealSliceFiniteCoordData`, and
       `sourceFullFrameRealDifferentialRightInverseLinear_injective`.
-      Thus the next producer step is not to prove abstract reality of the
-      complex slice, but to package finite coordinates for this checked real
-      tangent slice and feed that into `sourceFullFrameRealGaugeSliceData`.
+      Thus the next producer step is not to prove membership in the complex
+      slice, but to prove the finite-coordinate real-form packet
+      `sourceFullFrameRealSliceFiniteCoordData` for this named real slice and
+      feed that into `sourceFullFrameRealGaugeSliceData`.
       The hard producer still remaining is
       `sourceFullFrameRealCompatibleImplicitChartData`, which must construct
       that data from a real full-frame determinant-nonzero point.

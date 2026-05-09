@@ -2398,16 +2398,34 @@ checks the real-source permutation topology helpers
    `sourceFullFrameRealDifferentialRightInverseFormulaLinear`,
    `sourceFullFrameRealDifferentialRightInverseLinear`,
    `matrix_map_ofReal_nonsing_inv`,
+   `sourceFullFrame_matrix_map_ofReal_det`,
+   `sourceFullFrame_matrix_map_ofReal_det_isUnit`,
    `sourceFullFrame_minkowskiMatrix_map_ofReal`,
    `sourceFullFrameRealOrientedCoordComplexify_matrix_of`, and
    `sourceFullFrameOrientedDifferentialRightInverseLinear_realComplexify`,
-   `sourceFullFrameRealDifferentialRightInverseLinear_complexify`, and
+   `sourceFullFrameRealDifferentialRightInverseLinear_complexify`,
+   `sourceFullFrameRealDifferentialRightInverseRange`,
+   `sourceFullFrameRealDifferentialRightInverseLinear_mem_complexSlice`,
+   `sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice`,
+   `SourceFullFrameRealSliceFiniteCoordData`, and
    `sourceFullFrameRealDifferentialRightInverseLinear_injective`
-   define the real tangent model, prove the real formula is linear on it, and
-   prove that this real right inverse complexifies injectively to the explicit
-   complex right inverse.  The remaining real-slice step is therefore to build the
-   finite coordinate equivalences for this real slice and use this checked
-   complexification theorem to define `sourceFullFrameRealGaugeSliceData`.
+   define the real tangent model, prove the real formula is linear on it, prove
+   that this real right inverse complexifies injectively to the explicit complex
+   right inverse, and prove that the named real slice complexifies into the
+   named explicit complex slice.  The remaining real-slice step is therefore no
+   longer a membership problem or a data-surface problem: it is the producer
+   theorem for the checked finite-coordinate real-form packet
+   `SourceFullFrameRealSliceFiniteCoordData d M0R hM0R`, whose fields are
+   `realSlice := sourceFullFrameRealDifferentialRightInverseRange d hM0R`,
+   `complexSlice := (sourceFullFrameExplicitGaugeSliceData d
+   (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)).slice`, a real
+   coordinate equivalence `(Fin m -> ℝ) ≃ₗ[ℝ] realSlice`, a continuous
+   complex coordinate equivalence `(Fin m -> ℂ) ≃L[ℂ] complexSlice`, and the
+   compatibility equation saying that complex coordinates applied to
+   `SCV.realToComplex q` are exactly the componentwise complexification of the
+   real-slice vector with real coordinates `q`.  The producer of this packet is
+   the only linear algebra input needed to define the `realModelDim` and
+   `realModelToComplexSlice` fields of `sourceFullFrameRealGaugeSliceData`.
    After that, apply the real
    inverse/implicit-function theorem to the real kernel map, whose
    complexification is the existing complex implicit-kernel map; then shrink
