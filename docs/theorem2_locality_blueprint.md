@@ -18984,10 +18984,111 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ :=
         fun k a => BHW.sourceRealMinkowskiGram d n x k.1 (ι a)
 
+      theorem BHW.sourceRealSelectedMixedRows_apply
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          (x : Fin n -> Fin (d + 1) -> ℝ)
+          (k : BHW.sourceComplementIndex ι)
+          (a : Fin (d + 1)) :
+          BHW.sourceRealSelectedMixedRows d n ι x k a =
+            BHW.sourceRealMinkowskiGram d n x k.1 (ι a)
+
       theorem BHW.continuous_sourceRealSelectedMixedRows
           (d n : Nat)
           (ι : Fin (d + 1) ↪ Fin n) :
           Continuous (BHW.sourceRealSelectedMixedRows d n ι)
+
+      def BHW.sourceRealFullFrameMixedRowMap
+          (d : Nat)
+          (M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+          (Fin (d + 1) -> ℝ) ->ₗ[ℝ] (Fin (d + 1) -> ℝ)
+
+      noncomputable def BHW.sourceRealFullFrameMixedRowLinearEquiv
+          (d : Nat)
+          (M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
+          (hM : M.det ≠ 0) :
+          (Fin (d + 1) -> ℝ) ≃ₗ[ℝ] (Fin (d + 1) -> ℝ)
+
+      theorem BHW.sourceRealFullFrameMixedRowLinearEquiv_apply
+          (d : Nat)
+          (M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
+          (hM : M.det ≠ 0)
+          (v : Fin (d + 1) -> ℝ)
+          (a : Fin (d + 1)) :
+          BHW.sourceRealFullFrameMixedRowLinearEquiv d M hM v a =
+            ∑ μ : Fin (d + 1),
+              MinkowskiSpace.metricSignature d μ * v μ * M a μ
+
+      theorem BHW.sourceRealSelectedMixedRows_tail_eq_mixedRowLinearEquiv
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          {x : Fin n -> Fin (d + 1) -> ℝ}
+          (hdet : BHW.sourceRealFullFrameDet d n ι x ≠ 0)
+          (k : BHW.sourceComplementIndex ι) :
+          BHW.sourceRealSelectedMixedRows d n ι x k =
+            BHW.sourceRealFullFrameMixedRowLinearEquiv d
+              (BHW.sourceRealFullFrameMatrix d n ι x) hdet (x k.1)
+
+      def BHW.sourceRealFullFrameTailMixedRowsMap
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          (M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+          (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ) ->ₗ[ℝ]
+            (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ)
+
+      noncomputable def BHW.sourceRealFullFrameTailMixedRowsLinearEquiv
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          (M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
+          (hM : M.det ≠ 0) :
+          (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ) ≃ₗ[ℝ]
+            (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ)
+
+      theorem BHW.sourceRealSelectedMixedRows_eq_tailMixedRowsLinearEquiv
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          {x : Fin n -> Fin (d + 1) -> ℝ}
+          (hdet : BHW.sourceRealFullFrameDet d n ι x ≠ 0) :
+          BHW.sourceRealSelectedMixedRows d n ι x =
+            BHW.sourceRealFullFrameTailMixedRowsLinearEquiv d n ι
+              (BHW.sourceRealFullFrameMatrix d n ι x) hdet
+              (fun k => x k.1)
+
+      noncomputable def BHW.sourceRealFullFrameSplitHomeomorph
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n) :
+          (Fin n -> Fin (d + 1) -> ℝ) ≃ₜ
+            (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+              (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ))
+
+      theorem BHW.sourceRealFullFrameSplitHomeomorph_apply
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          (x : Fin n -> Fin (d + 1) -> ℝ) :
+          BHW.sourceRealFullFrameSplitHomeomorph d n ι x =
+            (BHW.sourceRealFullFrameMatrix d n ι x, fun k => x k.1)
+
+      theorem BHW.sourceRealFullFrameSplitHomeomorph_symm_apply_selected
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          (p :
+            Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+              (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ))
+          (a μ : Fin (d + 1)) :
+          (BHW.sourceRealFullFrameSplitHomeomorph d n ι).symm p
+              (ι a) μ =
+            p.1 a μ
+
+      theorem BHW.sourceRealFullFrameSplitHomeomorph_symm_apply_complement
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          (p :
+            Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+              (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ))
+          (k : BHW.sourceComplementIndex ι)
+          (μ : Fin (d + 1)) :
+          (BHW.sourceRealFullFrameSplitHomeomorph d n ι).symm p k.1 μ =
+            p.2 k μ
 
       theorem BHW.sourceSelectedMixedRows_sourceRealOrientedMinkowskiInvariant
           (d n : Nat)
@@ -19381,6 +19482,67 @@ Proof decomposition of this theorem, without hiding the analytic work:
             S ⊆ frameDomain ->
             IsOpen (realKernelCoord '' S)
 
+      def BHW.sourceFullFrameRealKernelMixedCoord
+          {d n : Nat}
+          {ι : Fin (d + 1) ↪ Fin n}
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          {hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0}
+          (S :
+            BHW.SourceFullFrameRealGaugeSliceData d
+              (BHW.sourceRealFullFrameMatrix d n ι x0) hdet)
+          (x : Fin n -> Fin (d + 1) -> ℝ) :
+          (Fin S.realModelDim -> ℝ) ×
+            (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ)
+
+      theorem BHW.continuous_sourceFullFrameRealKernelMixedCoord
+          {d n : Nat}
+          {ι : Fin (d + 1) ↪ Fin n}
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          {hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0}
+          (S :
+            BHW.SourceFullFrameRealGaugeSliceData d
+              (BHW.sourceRealFullFrameMatrix d n ι x0) hdet) :
+          Continuous (BHW.sourceFullFrameRealKernelMixedCoord S)
+
+      theorem
+          BHW.continuous_sourceFullFrameRealCoord_of_kernelMixedCoord
+          {d n m : Nat}
+          {ι : Fin (d + 1) ↪ Fin n}
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          {hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0}
+          (S :
+            BHW.SourceFullFrameRealGaugeSliceData d
+              (BHW.sourceRealFullFrameMatrix d n ι x0) hdet)
+          (coordEquivR :
+            (Fin m -> ℝ) ≃ₗ[ℝ]
+              ((Fin S.realModelDim -> ℝ) ×
+                (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ))) :
+          Continuous
+            (fun x : Fin n -> Fin (d + 1) -> ℝ =>
+              coordEquivR.symm
+                (BHW.sourceFullFrameRealKernelMixedCoord S x))
+
+      theorem
+          BHW.isOpen_sourceFullFrameRealCoord_image_of_kernelMixedCoord_image_open
+          {d n m : Nat}
+          {ι : Fin (d + 1) ↪ Fin n}
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          {hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0}
+          (S :
+            BHW.SourceFullFrameRealGaugeSliceData d
+              (BHW.sourceRealFullFrameMatrix d n ι x0) hdet)
+          (coordEquivR :
+            (Fin m -> ℝ) ≃ₗ[ℝ]
+              ((Fin S.realModelDim -> ℝ) ×
+                (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ)))
+          {U : Set (Fin n -> Fin (d + 1) -> ℝ)}
+          (hU :
+            IsOpen (BHW.sourceFullFrameRealKernelMixedCoord S '' U)) :
+          IsOpen
+            ((fun x : Fin n -> Fin (d + 1) -> ℝ =>
+              coordEquivR.symm
+                (BHW.sourceFullFrameRealKernelMixedCoord S x)) '' U)
+
       structure BHW.SourceFullFrameRealCompatibleImplicitChartData
           (d n : Nat)
           (ι : Fin (d + 1) ↪ Fin n)
@@ -19556,6 +19718,120 @@ Proof decomposition of this theorem, without hiding the analytic work:
           Nonempty
             (BHW.SourceFullFrameRealCompatibleImplicitChartData
               d n ι x0 hdet)
+      ```
+
+      Lean-pseudocode transcript for
+      `sourceFullFrameRealCompatibleImplicitChartData`:
+
+      ```lean
+      theorem BHW.sourceRealFullFrameMatrix_map_ofReal_det
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          (x : Fin n -> Fin (d + 1) -> ℝ) :
+          ((BHW.sourceRealFullFrameMatrix d n ι x).map
+              Complex.ofReal).det =
+            (BHW.sourceRealFullFrameDet d n ι x : ℂ)
+
+      theorem BHW.sourceRealFullFrameMatrix_map_ofReal_det_isUnit
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          {x : Fin n -> Fin (d + 1) -> ℝ}
+          (hdet : BHW.sourceRealFullFrameDet d n ι x ≠ 0) :
+          IsUnit
+            ((BHW.sourceRealFullFrameMatrix d n ι x).map
+              Complex.ofReal).det
+
+      noncomputable def BHW.sourceFullFrameRealGaugeSliceData
+          (d : Nat)
+          (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
+          (hM0R : M0R.det ≠ 0) :
+          BHW.SourceFullFrameRealGaugeSliceData d M0R hM0R
+
+      theorem BHW.sourceFullFrameRealGaugeSliceData_complexKernelCoord_real_eq
+          (d : Nat)
+          (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
+          (hM0R : M0R.det ≠ 0)
+          (M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+          let S := BHW.sourceFullFrameRealGaugeSliceData d M0R hM0R
+          S.complexKernelCoord (M.map Complex.ofReal) =
+            S.realModelToComplexSlice
+              (SCV.realToComplex (S.realKernelCoord M))
+
+      theorem BHW.sourceRealFullFrameLocalCoord_image_open
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          (hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0)
+          (S : BHW.SourceFullFrameRealGaugeSliceData d
+            (BHW.sourceRealFullFrameMatrix d n ι x0) hdet)
+          {E0 : Set (Fin n -> Fin (d + 1) -> ℝ)}
+          (hE0_open : IsOpen E0)
+          (hE0_frame :
+            ∀ x ∈ E0,
+              BHW.sourceRealFullFrameMatrix d n ι x ∈ S.frameDomain)
+          {U : Set (Fin n -> Fin (d + 1) -> ℝ)}
+          (hU_open : IsOpen U)
+          (hU_sub : U ⊆ E0) :
+          IsOpen
+            ((fun x =>
+              (S.realKernelCoord
+                (BHW.sourceRealFullFrameMatrix d n ι x),
+               BHW.sourceRealSelectedMixedRows d n ι x)) '' U)
+
+      theorem BHW.sourceFullFrameRealCompatibleImplicitChartData
+          [NeZero d]
+          (hd : 2 <= d)
+          (n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          (hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0) :
+          Nonempty
+            (BHW.SourceFullFrameRealCompatibleImplicitChartData
+              d n ι x0 hdet) := by
+        -- 1. Put `M0R := sourceRealFullFrameMatrix d n ι x0`.
+        --    Use `sourceRealFullFrameMatrix_map_ofReal_det_isUnit hdet`
+        --    for the complex determinant-unit field.
+        -- 2. Build `S := sourceFullFrameRealGaugeSliceData d M0R hdet`.
+        --    This is the explicit real gauge slice from the constructive
+        --    full-frame differential right inverse:
+        --    `B := (1/2) • (M0⁻¹ * G * (M0ᵀ)⁻¹ * η)` plus the determinant
+        --    correction already checked in
+        --    `sourceFullFrameOrientedDifferential_constructedGram` and
+        --    `sourceFullFrameOrientedDifferential_constructedDet`.
+        --    Because `M0R`, `G`, and the tangent determinant coordinate are
+        --    real, this right inverse is real and its complexification is the
+        --    chosen complex slice.
+        -- 3. Run the real inverse/implicit-function theorem for the real
+        --    kernel map.  Its complexification is the existing complex
+        --    `sourceFullFrameGaugeSliceImplicitKernelMap`; uniqueness of the
+        --    local inverse gives `complexKernelCoord_real_eq`.
+        -- 4. Define the chart `C` from the full-frame max-rank chart
+        --    constructor using this same complex slice, not
+        --    `sourceFullFrameGaugeSlice_exists`.
+        -- 5. Shrink `E0` so real source invariants lie in `C.Ω` and selected
+        --    real frames lie in `S.frameDomain`.
+        -- 6. Let `realCoord` be the inverse of `coordEquivR` applied to
+        --    `(S.realKernelCoord (sourceRealFullFrameMatrix ... x),
+        --      sourceRealSelectedMixedRows ... x)`.
+        -- 7. Prove continuity using the checked
+        --    `continuous_sourceFullFrameRealKernelMixedCoord` and the
+        --    linear finite-coordinate equivalence defining `realCoord`.
+        -- 8. Prove `realCoord_image_open` using
+        --    `sourceRealFullFrameLocalCoord_image_open`: first pass through
+        --    `sourceRealFullFrameSplitHomeomorph`; selected-frame openness
+        --    comes from the real IFT packet, and each unselected row maps by
+        --    the checked linear equivalence
+        --    `sourceRealFullFrameMixedRowLinearEquiv`; finally apply
+        --    `isOpen_sourceFullFrameRealCoord_image_of_kernelMixedCoord_image_open`
+        --    for the finite coordinate equivalence.
+        -- 9. Prove `chart_eq_kernel_mixed` from the checked complex
+        --    full-frame chart formula plus
+        --    `sourceFullFrameOrientedCoordOfSource_sourceRealOrientedMinkowskiInvariant`
+        --    and
+        --    `sourceSelectedMixedRows_sourceRealOrientedMinkowskiInvariant`.
+        -- 10. Assemble `SourceFullFrameRealCompatibleImplicitChartData`;
+        --     the downstream conversion to `SourceOrientedLocalRealChartData`
+        --     is already checked.
       ```
 
       The two checked finite-coordinate equalities feeding

@@ -15,6 +15,31 @@ open Complex Topology Matrix LorentzLieGroup Classical Filter NormedSpace
 
 namespace BHW
 
+/-- Complexifying a real selected full-frame matrix complexifies its
+determinant. -/
+theorem sourceRealFullFrameMatrix_map_ofReal_det
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    (x : Fin n → Fin (d + 1) → ℝ) :
+    ((sourceRealFullFrameMatrix d n ι x).map Complex.ofReal).det =
+      (sourceRealFullFrameDet d n ι x : ℂ) := by
+  rw [sourceRealFullFrameDet]
+  exact
+    (RingHom.map_det Complex.ofRealHom
+      (sourceRealFullFrameMatrix d n ι x)
+    ).symm
+
+/-- A nonzero real selected full-frame determinant remains a unit after
+complexifying the selected full-frame matrix. -/
+theorem sourceRealFullFrameMatrix_map_ofReal_det_isUnit
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    {x : Fin n → Fin (d + 1) → ℝ}
+    (hdet : sourceRealFullFrameDet d n ι x ≠ 0) :
+    IsUnit ((sourceRealFullFrameMatrix d n ι x).map Complex.ofReal).det := by
+  rw [sourceRealFullFrameMatrix_map_ofReal_det]
+  exact isUnit_iff_ne_zero.mpr (by exact_mod_cast hdet)
+
 /-- A real gauge-slice packet whose complexification is the complex full-frame
 gauge slice used by the existing full-frame max-rank chart. -/
 structure SourceFullFrameRealGaugeSliceData
@@ -43,6 +68,83 @@ structure SourceFullFrameRealGaugeSliceData
   realKernelCoord_image_open_on_frameDomain :
     ∀ {S : Set (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)},
       IsOpen S → S ⊆ frameDomain → IsOpen (realKernelCoord '' S)
+
+/-- The real kernel coordinate together with the selected mixed-row coordinates
+of a source tuple.  This is the raw real coordinate map before applying the
+finite coordinate equivalence in `SourceFullFrameRealCompatibleImplicitChartData`. -/
+def sourceFullFrameRealKernelMixedCoord
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    (x : Fin n → Fin (d + 1) → ℝ) :
+    (Fin S.realModelDim → ℝ) ×
+      (sourceComplementIndex ι → Fin (d + 1) → ℝ) :=
+  (S.realKernelCoord (sourceRealFullFrameMatrix d n ι x),
+    sourceRealSelectedMixedRows d n ι x)
+
+/-- The kernel-plus-mixed real coordinate map is continuous. -/
+theorem continuous_sourceFullFrameRealKernelMixedCoord
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet) :
+    Continuous (sourceFullFrameRealKernelMixedCoord S) := by
+  apply Continuous.prodMk
+  · exact S.realKernelCoord_continuous.comp
+      (continuous_sourceRealFullFrameMatrix d n ι)
+  · exact continuous_sourceRealSelectedMixedRows d n ι
+
+/-- Composing the raw kernel/mixed coordinate map with a finite real coordinate
+equivalence gives a continuous real coordinate map. -/
+theorem continuous_sourceFullFrameRealCoord_of_kernelMixedCoord
+    {d n m : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    (coordEquivR :
+      (Fin m → ℝ) ≃ₗ[ℝ]
+        ((Fin S.realModelDim → ℝ) ×
+          (sourceComplementIndex ι → Fin (d + 1) → ℝ))) :
+    Continuous
+      (fun x : Fin n → Fin (d + 1) → ℝ =>
+        coordEquivR.symm (sourceFullFrameRealKernelMixedCoord S x)) := by
+  exact
+    (LinearMap.continuous_of_finiteDimensional coordEquivR.symm.toLinearMap).comp
+      (continuous_sourceFullFrameRealKernelMixedCoord S)
+
+/-- If the raw kernel/mixed coordinate image is open, then applying the inverse
+finite real coordinate equivalence preserves openness. -/
+theorem isOpen_sourceFullFrameRealCoord_image_of_kernelMixedCoord_image_open
+    {d n m : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    (coordEquivR :
+      (Fin m → ℝ) ≃ₗ[ℝ]
+        ((Fin S.realModelDim → ℝ) ×
+          (sourceComplementIndex ι → Fin (d + 1) → ℝ)))
+    {U : Set (Fin n → Fin (d + 1) → ℝ)}
+    (hU :
+      IsOpen (sourceFullFrameRealKernelMixedCoord S '' U)) :
+    IsOpen
+      ((fun x : Fin n → Fin (d + 1) → ℝ =>
+        coordEquivR.symm (sourceFullFrameRealKernelMixedCoord S x)) '' U) := by
+  rw [← Set.image_image]
+  exact coordEquivR.symm.toContinuousLinearEquiv.toHomeomorph.isOpenMap
+    (sourceFullFrameRealKernelMixedCoord S '' U) hU
 
 /-- Full-frame real/complex chart data before it is collapsed to the generic
 `SourceOrientedLocalRealChartData` interface. -/

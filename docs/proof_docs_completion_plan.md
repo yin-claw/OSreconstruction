@@ -2251,7 +2251,21 @@ checks the real-source permutation topology helpers
    `SourceOrientedRealMaxRank.lean`,
    `BHW.sourceFullFrameOrientedCoordOfSource_sourceRealOrientedMinkowskiInvariant`,
    `BHW.sourceRealSelectedMixedRows`,
+   `BHW.sourceRealSelectedMixedRows_apply`,
    `BHW.continuous_sourceRealSelectedMixedRows`,
+   `BHW.sourceRealFullFrameMixedRowMap`,
+   `BHW.sourceRealFullFrameMixedRowLinearEquiv`,
+   `BHW.sourceRealFullFrameMixedRowLinearEquiv_apply`,
+   `BHW.sourceRealSelectedMixedRows_tail_eq_mixedRowLinearEquiv`,
+   `BHW.sourceRealFullFrameTailMixedRowsMap`,
+   `BHW.sourceRealFullFrameTailMixedRowsLinearEquiv`,
+   `BHW.sourceRealFullFrameTailMixedRowsLinearEquiv_apply`,
+   `BHW.sourceRealSelectedMixedRows_eq_tailMixedRowsLinearEquiv`,
+   `BHW.sourceRealFullFrameSplitEquiv`,
+   `BHW.sourceRealFullFrameSplitHomeomorph`,
+   `BHW.sourceRealFullFrameSplitHomeomorph_apply`,
+   `BHW.sourceRealFullFrameSplitHomeomorph_symm_apply_selected`,
+   `BHW.sourceRealFullFrameSplitHomeomorph_symm_apply_complement`,
    `BHW.sourceSelectedMixedRows_sourceRealOrientedMinkowskiInvariant`, and
    `BHW.sourceOrientedMaxRankAt_sourceReal_fullFrameDet_ne_zero`.  The generic
    SCV uniqueness consumer is now checked in
@@ -2287,6 +2301,10 @@ checks the real-source permutation topology helpers
    slice/IFT/open-map package.  The packaging layer is now checked in
    `SourceOrientedRealFullFrameChart.lean` as
    `SourceFullFrameRealGaugeSliceData`,
+   `sourceFullFrameRealKernelMixedCoord`,
+   `continuous_sourceFullFrameRealKernelMixedCoord`,
+   `continuous_sourceFullFrameRealCoord_of_kernelMixedCoord`,
+   `isOpen_sourceFullFrameRealCoord_image_of_kernelMixedCoord_image_open`,
    `SourceFullFrameRealCompatibleImplicitChartData`,
    `SourceFullFrameRealCompatibleImplicitChartData.chart_real_eq`,
    `SourceFullFrameRealCompatibleImplicitChartData.to_localRealChartData`,
@@ -2306,6 +2324,26 @@ checks the real-source permutation topology helpers
    is purely mechanical: a source-open Jost patch with local real chart data at
    every point is an `IsHWOrientedRealEnvironment`, and a determinant-nonzero
    OS45 subpatch becomes one by applying the local chart producer pointwise.
+   The producer proof transcript is now finite-dimensional and explicit:
+   first use
+   `sourceRealFullFrameMatrix_map_ofReal_det_isUnit` for the complex base
+   determinant; then build `sourceFullFrameRealGaugeSliceData` from the
+   constructive full-frame differential right inverse
+   `B = (1/2) • (M0⁻¹ * G * (M0ᵀ)⁻¹ * η)` using the checked
+   `sourceFullFrameOrientedDifferential_constructedGram` and
+   `sourceFullFrameOrientedDifferential_constructedDet`; then apply the real
+   inverse/implicit-function theorem to the real kernel map, whose
+   complexification is the existing complex implicit-kernel map; then shrink
+   the real source patch so source invariants lie in the selected complex
+   chart and selected frames lie in the real frame domain.  The
+   `realCoord_image_open` field must pass through the checked
+   `sourceRealFullFrameSplitHomeomorph`, then be proved from the
+   selected-frame open map plus the rowwise linear equivalence
+   checked as `sourceRealFullFrameMixedRowLinearEquiv` and
+   `sourceRealFullFrameTailMixedRowsLinearEquiv`, with
+   `sourceRealSelectedMixedRows_eq_tailMixedRowsLinearEquiv` identifying the
+   whole unselected tail block with its mixed Gram block against the
+   nondegenerate selected frame.
 
 Current compact Figure-2-4 branch-difference readiness correction,
 2026-05-03: the OS I Section 4.5 compact producer
@@ -5653,6 +5691,10 @@ implementation contract is:
    coordinate map is locally open on the determinant-nonzero source patch.
    The checked packaging layer for this split is
    `SourceFullFrameRealGaugeSliceData`,
+   `sourceFullFrameRealKernelMixedCoord`,
+   `continuous_sourceFullFrameRealKernelMixedCoord`,
+   `continuous_sourceFullFrameRealCoord_of_kernelMixedCoord`,
+   `isOpen_sourceFullFrameRealCoord_image_of_kernelMixedCoord_image_open`,
    `SourceFullFrameRealCompatibleImplicitChartData`,
    `SourceFullFrameRealCompatibleImplicitChartData.chart_real_eq`,
    `SourceFullFrameRealCompatibleImplicitChartData.to_localRealChartData`,
@@ -5667,7 +5709,20 @@ implementation contract is:
    plus the direct uniqueness-subpatch consumer
    `os45Figure24_checkedRealPatch_sourceOrientedDistributionalUniquenessSubpatch_of_realCompatibleImplicitChartProducer`;
    the hard producer still remaining is
-   `sourceFullFrameRealCompatibleImplicitChartData`.
+   `sourceFullFrameRealCompatibleImplicitChartData`.  Its proof must first
+   use `sourceRealFullFrameMatrix_map_ofReal_det_isUnit` for the complex base
+   determinant, then construct `sourceFullFrameRealGaugeSliceData` from the
+   explicit full-frame differential right inverse
+   `B = (1/2) • (M0⁻¹ * G * (M0ᵀ)⁻¹ * η)`, then run the real IFT for the
+   kernel map and identify its complexification with the checked complex
+   implicit-kernel map.  The `realCoord_image_open` field is proved by first
+   passing through the checked `sourceRealFullFrameSplitHomeomorph`, then
+   combining the selected-frame open map with the checked rowwise linear
+   equivalence `sourceRealFullFrameMixedRowLinearEquiv`, its tail-product
+   version `sourceRealFullFrameTailMixedRowsLinearEquiv`, and the checked
+   identification `sourceRealSelectedMixedRows_eq_tailMixedRowsLinearEquiv`
+   from the unselected real source rows to their mixed Gram rows against the
+   selected frame.
    The mechanical bridges around it are
    `sourceOrientedRealEnvironment_of_localRealCharts`,
    `sourceOrientedRealEnvironment_of_fullFrameDetNonzero_localCharts`, and the
