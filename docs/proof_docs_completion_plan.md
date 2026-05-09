@@ -6229,7 +6229,25 @@ implementation contract is:
    `dual_orthogonal_to_subspace`, and
    `selected_sup_hyperbolic_nondegenerate`.  This packet is not the residual
    block theorem yet; it is the source/target hyperbolic basis supply needed
-   before building the block equivalence `Tblock`.
+   before building the block equivalence `Tblock`.  The next mechanical bridge
+   is the checked span equivalence
+   `BHW.linearEquiv_spanOfLinearIndependentFrames`, built from
+   `LinearIndependent.linearCombinationEquiv`; its application theorem sends
+   each source basis vector to the matching target basis vector, and will be
+   used for both the isotropic basis half and the dual half of the completed
+   hyperbolic block.  The same file checks
+   `BHW.linearEquiv_spanOfLinearIndependentFrames_preserves_isotropic` and
+   `BHW.linearEquiv_spanOfLinearIndependentFrames_preserves_dual_pairing`,
+   which are the pairing-preservation facts needed before combining the two
+   half-span equivalences by `BHW.directSum_congr_sup_equiv`.  To avoid an
+   unnecessary cast between `Fin (finrank Rleft)` and
+   `Fin (finrank (LinearMap.range Eleft))`, the target side should be built from
+   the image of the source basis:
+   `BHW.ComplexMinkowskiIsotropicSubspaceBasisDualFrameData.imageFrame_dualFrameIn`
+   takes an injective pairing-preserving residual embedding `E : R →ₗ[ℂ] V`,
+   proves the image basis is independent and isotropic in the target
+   nondegenerate subspace, and returns a target isotropic dual frame with the
+   same index type as the source basis.
    The first mechanical support layer is now exact-Lean shaped:
    `BHW.subspace_le_complexMinkowskiOrthogonalSubmodule` has hypotheses
    `(hR_orth : ∀ x : R, ∀ m : M,

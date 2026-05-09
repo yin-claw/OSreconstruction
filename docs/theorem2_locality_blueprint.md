@@ -26127,7 +26127,21 @@ Proof decomposition of this theorem, without hiding the analytic work:
       will apply this packet once to `Rleft` and once to
       `LinearMap.range Eleft`, then build the hyperbolic-block equivalence
       mapping each source basis vector to its target image and each source dual
-      to the matching target dual.
+      to the matching target dual.  The span-level bridge is
+      `BHW.linearEquiv_spanOfLinearIndependentFrames`, defined from
+      `LinearIndependent.linearCombinationEquiv`, with an application theorem
+      proving that the canonical equivalence sends `v i` to `w i`.  The
+      checked preservation lemmas
+      `BHW.linearEquiv_spanOfLinearIndependentFrames_preserves_isotropic` and
+      `BHW.linearEquiv_spanOfLinearIndependentFrames_preserves_dual_pairing`
+      show that these span maps preserve the zero pairings on each isotropic
+      half and the Kronecker cross-pairing between the two halves.  The target
+      side should use
+      `BHW.ComplexMinkowskiIsotropicSubspaceBasisDualFrameData.imageFrame_dualFrameIn`:
+      given the source basis packet and the injective pairing-preserving
+      residual embedding `Eleft`, it builds the target basis as
+      `Eleft (sourceFrame c)` and returns a target isotropic dual frame with
+      the same `Fin source.k` index type, avoiding a later finrank cast.
 
       Lean-shaped proof of the residual-frame-extension producer after the
       support packet exists:
