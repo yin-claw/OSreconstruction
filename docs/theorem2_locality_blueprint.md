@@ -18956,6 +18956,42 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.SourceOrientedMaxRankAt d n
             (BHW.sourceRealOrientedMinkowskiInvariant d n x)
 
+      theorem BHW.sourceOrientedLocalRealChartData_of_fullFrameDet_ne_zero
+          [NeZero d]
+          (hd : 2 <= d)
+          (n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          (hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0) :
+          Nonempty (BHW.SourceOrientedLocalRealChartData d n x0)
+
+      theorem BHW.sourceOrientedRealEnvironment_of_localRealCharts
+          (d n : Nat)
+          {E : Set (Fin n -> Fin (d + 1) -> ℝ)}
+          (hE_open : IsOpen E)
+          (hE_nonempty : E.Nonempty)
+          (hE_jost : E ⊆ BHW.JostSet d n)
+          (hCharts :
+            ∀ x ∈ E,
+              Nonempty (BHW.SourceOrientedLocalRealChartData d n x)) :
+          BHW.IsHWOrientedRealEnvironment d n E
+
+      theorem
+          BHW.sourceOrientedRealEnvironment_of_fullFrameDetNonzero_localCharts
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          {E : Set (Fin n -> Fin (d + 1) -> ℝ)}
+          (hE_open : IsOpen E)
+          (hE_nonempty : E.Nonempty)
+          (hE_jost : E ⊆ BHW.JostSet d n)
+          (hdet :
+            ∀ x ∈ E, BHW.sourceRealFullFrameDet d n ι x ≠ 0)
+          (hLocal :
+            ∀ {x : Fin n -> Fin (d + 1) -> ℝ},
+              BHW.sourceRealFullFrameDet d n ι x ≠ 0 ->
+                Nonempty (BHW.SourceOrientedLocalRealChartData d n x)) :
+          BHW.IsHWOrientedRealEnvironment d n E
+
       def BHW.SourceOrientedJacobianExpectedRankAt
           (d n : Nat)
           (x : Fin n -> Fin (d + 1) -> ℝ) : Prop :=
@@ -19250,14 +19286,35 @@ Proof decomposition of this theorem, without hiding the analytic work:
               {y | ∃ x ∈ E, y = fun k => x (π k)}
       ```
 
+      The theorem `sourceOrientedLocalRealChartData_of_fullFrameDet_ne_zero`
+      is the first hard real-IFT target in this block.  It must not be proved
+      by directly reusing
+      `sourceOrientedFullFrameMaxRankChartData_of_selectedDetNonzero`: that
+      checked chart chooses an arbitrary complex gauge-slice complement and an
+      arbitrary complex finite-coordinate basis, so it does not provide the
+      literal real-slice equation
+      `C.chart (sourceRealOrientedMinkowskiInvariant d n x) =
+      SCV.realToComplex (realCoord x)`.  The proof must instead build a
+      real-compatible full-frame local chart: start from the real full-frame
+      matrix at `x0`, choose a real gauge-slice complement and complexify it,
+      run the real/complex implicit-function theorem with real-coefficient
+      Gram and determinant equations, prove the local real source-to-oriented
+      invariant map is open/submersive on a small real neighborhood, and then
+      install the resulting real coordinates into
+      `SourceOrientedLocalRealChartData`.
+
       In the small-arity theorem the determinant-coordinate family is empty,
       so oriented regularity is the checked pure-Gram regularity after
       extensional rewriting of `SourceOrientedGramData.det`.  In the
-      full-frame theorem the nonzero determinant condition gives a real
-      full-frame chart; the determinant cofactor rows add exactly the missing
-      oriented equations, and the real Jacobian rank equals the complex
-      tangent rank because all Gram and determinant coordinate polynomials
-      have real coefficients.  The final OS45 subpatch theorem is the
+      full-frame theorem the nonzero determinant condition gives the
+      real-compatible full-frame chart above; the determinant cofactor rows add
+      exactly the missing oriented equations, and the real Jacobian rank equals
+      the complex tangent rank because all Gram and determinant coordinate
+      polynomials have real coefficients.  The checked intermediate bridge is
+      `sourceOrientedRealEnvironment_of_fullFrameDetNonzero_localCharts`: once
+      the pointwise local chart theorem is available, a source-open Jost patch
+      with a fixed nonzero determinant sheet is immediately an
+      `IsHWOrientedRealEnvironment`.  The final OS45 subpatch theorem is the
       producer that the adjacent compact-Wick seed must use: first use
       `os45Figure24_checkedRealPatch_gramEnvironmentSubpatch` to obtain a
       smaller pure-Gram real environment `O` inside the π-permuted Gram image,

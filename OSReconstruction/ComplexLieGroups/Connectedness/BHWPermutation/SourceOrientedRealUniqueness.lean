@@ -55,6 +55,75 @@ structure IsHWOrientedRealEnvironment
   local_real_chart :
     ∀ x ∈ E, Nonempty (SourceOrientedLocalRealChartData d n x)
 
+/-- Package a source-open Jost real patch with local real chart data at every
+point as a Hall-Wightman oriented real environment. -/
+theorem sourceOrientedRealEnvironment_of_localRealCharts
+    (d n : ℕ)
+    {E : Set (Fin n → Fin (d + 1) → ℝ)}
+    (hE_open : IsOpen E)
+    (hE_nonempty : E.Nonempty)
+    (hE_jost : E ⊆ JostSet d n)
+    (hCharts :
+      ∀ x ∈ E, Nonempty (SourceOrientedLocalRealChartData d n x)) :
+    IsHWOrientedRealEnvironment d n E where
+  nonempty := hE_nonempty
+  open_real := hE_open
+  realized_by_jost := hE_jost
+  local_real_chart := hCharts
+
+/-- A fixed determinant-nonzero real patch is an oriented real environment once
+the pointwise full-frame local real chart producer is available. -/
+theorem sourceOrientedRealEnvironment_of_fullFrameDetNonzero_localCharts
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    {E : Set (Fin n → Fin (d + 1) → ℝ)}
+    (hE_open : IsOpen E)
+    (hE_nonempty : E.Nonempty)
+    (hE_jost : E ⊆ JostSet d n)
+    (hdet :
+      ∀ x ∈ E, sourceRealFullFrameDet d n ι x ≠ 0)
+    (hLocal :
+      ∀ {x : Fin n → Fin (d + 1) → ℝ},
+        sourceRealFullFrameDet d n ι x ≠ 0 →
+          Nonempty (SourceOrientedLocalRealChartData d n x)) :
+    IsHWOrientedRealEnvironment d n E :=
+  sourceOrientedRealEnvironment_of_localRealCharts d n
+    hE_open hE_nonempty hE_jost
+    (fun x hx => hLocal (hdet x hx))
+
+/-- In the hard range, a checked OS45 real patch has a determinant-regular
+permuted subpatch which becomes an oriented real environment as soon as the
+pointwise full-frame local real chart producer is available. -/
+theorem os45Figure24_checkedRealPatch_fullFrameOrientedEnvironmentSubpatch_of_localCharts
+    {d : ℕ} [NeZero d]
+    (hd : 2 ≤ d)
+    (n : ℕ)
+    (hn : d + 1 ≤ n)
+    (π : Equiv.Perm (Fin n))
+    (i : Fin n) (hi : i.val + 1 < n)
+    (E0 : Set (Fin n → Fin (d + 1) → ℝ))
+    (hE0 : IsOS45Figure24CheckedRealPatch (d := d) n π i hi E0)
+    (hLocal :
+      ∀ (ι : Fin (d + 1) ↪ Fin n)
+        {y : Fin n → Fin (d + 1) → ℝ},
+        sourceRealFullFrameDet d n ι y ≠ 0 →
+          Nonempty (SourceOrientedLocalRealChartData d n y)) :
+    ∃ E : Set (Fin n → Fin (d + 1) → ℝ),
+      E ⊆ E0 ∧
+      IsOpen E ∧
+      E.Nonempty ∧
+      IsHWOrientedRealEnvironment d n
+        {y | ∃ x ∈ E, y = fun k => x (π k)} := by
+  rcases os45Figure24_checkedRealPatch_fullFrameGramEnvironmentSubpatch
+      (d := d) hd n hn π i hi E0 hE0 with
+    ⟨ι, E, _O, hE_sub, hE_open, hE_ne, hEperm_open, hEperm_ne,
+      hdet, hEperm_jost, _hO_sub, _hO_env⟩
+  refine ⟨E, hE_sub, hE_open, hE_ne, ?_⟩
+  exact
+    sourceOrientedRealEnvironment_of_fullFrameDetNonzero_localCharts
+      d n ι hEperm_open hEperm_ne hEperm_jost hdet
+      (fun {y} hy => hLocal ι hy)
+
 namespace SourceOrientedLocalRealChartData
 
 /-- Shrink a local real chart simultaneously inside a relatively open oriented
@@ -243,4 +312,3 @@ theorem sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment
       hΦ hΨ hW_eq
 
 end BHW
-

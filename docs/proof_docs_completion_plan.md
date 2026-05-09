@@ -2261,6 +2261,26 @@ checks the real-source permutation topology helpers
    real-uniqueness proof begins with the tangent/IFT producer of
    `SourceOrientedLocalRealChartData` and the small-arity/full-frame
    environment subpatch producers.
+   Important Lean-facing correction: the checked full-frame max-rank chart
+   producer
+   `BHW.sourceOrientedFullFrameMaxRankChartData_of_selectedDetNonzero`
+   chooses an arbitrary complex gauge-slice complement through
+   `Submodule.exists_isCompl` and then can pass through an arbitrary complex
+   finite-coordinate basis.  That chart is sufficient for complex max-rank
+   connectedness, but it is not sufficient for the real-seed theorem because
+   `SourceOrientedLocalRealChartData.chart_real_eq` requires the chart of a
+   real source invariant to be literally `SCV.realToComplex` of real
+   coordinates.  Therefore the next hard producer must be a real-compatible
+   local chart theorem, not a reuse of the arbitrary complex chart:
+   `BHW.sourceOrientedLocalRealChartData_of_fullFrameDet_ne_zero`.
+   Its proof must choose a real full-frame base, a real-compatible gauge slice
+   whose complexification is the complex slice, prove the source-to-oriented
+   invariant map is a real submersion/open map on a small real neighborhood,
+   and install the resulting finite real coordinates into
+   `SourceOrientedLocalRealChartData`.  The checked bridge after that producer
+   is purely mechanical: a source-open Jost patch with local real chart data at
+   every point is an `IsHWOrientedRealEnvironment`, and a determinant-nonzero
+   OS45 subpatch becomes one by applying the local chart producer pointwise.
 
 Current compact Figure-2-4 branch-difference readiness correction,
 2026-05-03: the OS I Section 4.5 compact producer
@@ -5595,8 +5615,16 @@ implementation contract is:
    `os45Figure24_realPatch_orientedRegularSubpatch`.  The adjacent compact
    seed must shrink to a nonempty open oriented-regular subpatch; it may not
    reuse the pure-Gram `gramEnvironment`, because that carrier has forgotten
-   determinant-coordinate signs.  The full-frame branch of that shrink is now
-   explicit through
+   determinant-coordinate signs.  The hard full-frame local chart producer is
+   now specifically
+   `sourceOrientedLocalRealChartData_of_fullFrameDet_ne_zero`; it must use a
+   real-compatible gauge slice/IFT and not the arbitrary complex full-frame
+   max-rank chart.  The mechanical bridges around it are
+   `sourceOrientedRealEnvironment_of_localRealCharts`,
+   `sourceOrientedRealEnvironment_of_fullFrameDetNonzero_localCharts`, and the
+   OS45 subpatch bridge
+   `os45Figure24_checkedRealPatch_fullFrameOrientedEnvironmentSubpatch_of_localCharts`.
+   The full-frame branch of that shrink is now explicit through
    `IsOS45Figure24CheckedRealPatch`,
    `sourceRealFullFrameDet_nonzero_isOpen`,
    `sourceRealFullFrameDet_nonzero_dense`,
