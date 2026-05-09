@@ -127,4 +127,79 @@ theorem complexMinkowski_selectedResidualHyperbolicExtension_of_fullBlockData
     rw [hE_apply (x : Fin (d + 1) → ℂ)]
     simpa [hx] using hT_left_span x
 
+/-- Full-block residual hyperbolic extension from an explicitly oriented
+completed full-rank tuple.
+
+This is the honest full-block consumer: instead of hiding the determinant-one
+condition as a raw hypothesis, it asks for a full-rank tuple of completed-frame
+vectors whose oriented source invariant is preserved by the ambient
+top-to-top block equivalence. -/
+theorem complexMinkowski_selectedResidualHyperbolicExtension_of_fullBlockOrientedTuple
+    {d s m : ℕ}
+    {M Rleft K L : Submodule ℂ (Fin (d + 1) → ℂ)}
+    {q : Fin s → Fin (d + 1) → ℂ}
+    (hKtop : K = ⊤) (hLtop : L = ⊤)
+    (Tblock : K ≃ₗ[ℂ] L)
+    (hT :
+      ∀ x y : K,
+        sourceComplexMinkowskiInner d
+          (Tblock x : Fin (d + 1) → ℂ)
+          (Tblock y : Fin (d + 1) → ℂ) =
+        sourceComplexMinkowskiInner d
+          (x : Fin (d + 1) → ℂ)
+          (y : Fin (d + 1) → ℂ))
+    {z w : Fin m → Fin (d + 1) → ℂ}
+    (hfull :
+      sourceGramMatrixRank m (sourceMinkowskiGram d m z) = d + 1)
+    (horiented :
+      sourceOrientedMinkowskiInvariant d m z =
+        sourceOrientedMinkowskiInvariant d m w)
+    (hT_tuple :
+      ∀ i,
+        fullBlockAmbientEquivOfTopBlock hKtop hLtop Tblock (z i) = w i)
+    (hK_M : M ≤ K)
+    (hK_left : Rleft ≤ K)
+    (hT_M :
+      ∀ m : M,
+        (Tblock ⟨(m : Fin (d + 1) → ℂ), hK_M m.2⟩ :
+          Fin (d + 1) → ℂ) =
+        (m : Fin (d + 1) → ℂ))
+    (hT_left_span :
+      ∀ x : Rleft,
+        (Tblock ⟨(x : Fin (d + 1) → ℂ), hK_left x.2⟩ :
+          Fin (d + 1) → ℂ) ∈
+        Submodule.span ℂ (Set.range q)) :
+    ∃ Λfix : ComplexLorentzGroup d,
+      (∀ m : M,
+        complexLorentzVectorAction Λfix
+          (m : Fin (d + 1) → ℂ) =
+        (m : Fin (d + 1) → ℂ)) ∧
+      ∀ x : Rleft,
+        complexLorentzVectorAction Λfix
+          (x : Fin (d + 1) → ℂ) ∈
+        Submodule.span ℂ (Set.range q) := by
+  let E := fullBlockAmbientEquivOfTopBlock hKtop hLtop Tblock
+  have hE_apply :
+      ∀ x : Fin (d + 1) → ℂ,
+        E x =
+          (Tblock ⟨x, by rw [hKtop]; trivial⟩ :
+            Fin (d + 1) → ℂ) := by
+    intro x
+    exact fullBlockAmbientEquivOfTopBlock_apply hKtop hLtop Tblock x
+  have hE_preserves :
+      ∀ x y,
+        sourceComplexMinkowskiInner d (E x) (E y) =
+          sourceComplexMinkowskiInner d x y := by
+    intro x y
+    rw [hE_apply x, hE_apply y]
+    exact hT _ _
+  have hdet : LinearMap.det E.toLinearMap = 1 :=
+    linearEquiv_det_one_of_same_sourceOrientedInvariant_fullRank
+      d m hfull horiented E hE_preserves hT_tuple
+  exact
+    complexMinkowski_selectedResidualHyperbolicExtension_of_fullBlockData
+      (d := d) (s := s) (M := M) (Rleft := Rleft)
+      (K := K) (L := L) (q := q)
+      hKtop hLtop Tblock hT hdet hK_M hK_left hT_M hT_left_span
+
 end BHW

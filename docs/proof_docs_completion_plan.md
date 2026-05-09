@@ -3242,6 +3242,48 @@ implementation contract is:
    equivalent volume-family statement, for the actual top-to-top residual block
    equivalence.
 
+   The full-block residual consumer should therefore expose a completed-frame
+   orientation contract rather than a bare determinant hypothesis:
+
+   ```lean
+   theorem
+       BHW.complexMinkowski_selectedResidualHyperbolicExtension_of_fullBlockOrientedTuple
+       (hKtop : K = ⊤) (hLtop : L = ⊤)
+       (Tblock : K ≃ₗ[ℂ] L)
+       (hT : ∀ x y : K, ...)
+       {z w : Fin m → Fin (d + 1) → ℂ}
+       (hfull :
+         BHW.sourceGramMatrixRank m (BHW.sourceMinkowskiGram d m z) =
+           d + 1)
+       (horiented :
+         BHW.sourceOrientedMinkowskiInvariant d m z =
+           BHW.sourceOrientedMinkowskiInvariant d m w)
+       (hT_tuple :
+         ∀ i,
+           BHW.fullBlockAmbientEquivOfTopBlock hKtop hLtop Tblock (z i) =
+             w i)
+       (hK_M : M ≤ K) (hK_left : Rleft ≤ K)
+       (hT_M : ∀ m : M, ...)
+       (hT_left_span : ∀ x : Rleft, ...) :
+       ∃ Λfix : ComplexLorentzGroup d, ...
+   ```
+
+   Proof transcript: set
+   `E := fullBlockAmbientEquivOfTopBlock hKtop hLtop Tblock`; derive
+   `E`'s pairing preservation from `fullBlockAmbientEquivOfTopBlock_apply`
+   and `hT`; obtain
+   `LinearMap.det E.toLinearMap = 1` from
+   `linearEquiv_det_one_of_same_sourceOrientedInvariant_fullRank hfull
+   horiented E hpres hT_tuple`; then apply the already checked
+   `complexMinkowski_selectedResidualHyperbolicExtension_of_fullBlockData`.
+
+   This theorem is the correct downstream surface for the residual branch:
+   later work may prove `hfull`, `horiented`, and `hT_tuple` by choosing the
+   concrete completed frame `(M\text{-basis}, q, qDual)` and target completed
+   frame `(M\text{-basis}, p, pDual)`.  If that construction cannot be made,
+   the obstruction remains visible as a missing completed-frame orientation
+   theorem, not hidden inside a determinant assumption.
+
    The blueprint now pins the lower implementation order for this row.  First
    define `BHW.HallWightmanFullComplexLorentzGroup d` as metric-preserving
    complex matrices with no determinant field, together with
