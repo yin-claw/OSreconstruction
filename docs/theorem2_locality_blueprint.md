@@ -19916,7 +19916,18 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrameOrientedDifferentialRightInverseRange`,
       `sourceFullFrameOrientedDifferentialRightInverseRange_isCompl`, and
       `sourceFullFrameExplicitGaugeSliceData`; this closes the complex
-      explicit-slice substep of the real-compatible producer plan.
+      explicit-slice substep of the real-compatible producer plan.  The same
+      file now also checks the real-complexification gate
+      `SourceFullFrameRealOrientedCoord`,
+      `sourceFullFrameRealOrientedCoordComplexify`,
+      `sourceFullFrameRealDifferentialRightInverseFormula`,
+      `matrix_map_ofReal_nonsing_inv`,
+      `sourceFullFrame_minkowskiMatrix_map_ofReal`,
+      `sourceFullFrameRealOrientedCoordComplexify_matrix_of`, and
+      `sourceFullFrameOrientedDifferentialRightInverseLinear_realComplexify`.
+      Thus the next producer step is not to prove abstract reality of the
+      complex slice, but to package the real tangent model/finite coordinate
+      maps and feed this checked formula into `sourceFullFrameRealGaugeSliceData`.
       The hard producer still remaining is
       `sourceFullFrameRealCompatibleImplicitChartData`, which must construct
       that data from a real full-frame determinant-nonzero point.

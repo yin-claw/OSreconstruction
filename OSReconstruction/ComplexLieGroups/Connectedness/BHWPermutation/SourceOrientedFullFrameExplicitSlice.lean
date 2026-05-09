@@ -321,4 +321,128 @@ noncomputable def sourceFullFrameExplicitGaugeSliceData
   intro X
   rfl
 
+/-- Real product-coordinate model for full-frame oriented tangent data. -/
+abbrev SourceFullFrameRealOrientedCoord (d : ℕ) :=
+  (Fin (d + 1) → Fin (d + 1) → ℝ) × ℝ
+
+/-- Componentwise complexification of real full-frame oriented coordinates. -/
+def sourceFullFrameRealOrientedCoordComplexify
+    (d : ℕ) (Y : SourceFullFrameRealOrientedCoord d) :
+    SourceFullFrameOrientedCoord d :=
+  (fun a b => (Y.1 a b : ℂ), (Y.2 : ℂ))
+
+/-- The real version of the constructive full-frame differential right-inverse
+formula. -/
+noncomputable def sourceFullFrameRealDifferentialRightInverseFormula
+    (d : ℕ)
+    (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
+    (Y : SourceFullFrameRealOrientedCoord d) :
+    Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ :=
+  let G : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ := Matrix.of Y.1
+  let B : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ :=
+    (2 : ℝ)⁻¹ • (M0R⁻¹ * G * (M0R.transpose)⁻¹ *
+      LorentzLieGroup.minkowskiMatrix d)
+  M0R * B
+
+/-- Componentwise complexification commutes with the nonsingular inverse for
+real matrices. -/
+theorem matrix_map_ofReal_nonsing_inv
+    (d : ℕ)
+    (A : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
+    (hA : IsUnit A.det) :
+    (A⁻¹).map Complex.ofReal = (A.map Complex.ofReal)⁻¹ := by
+  symm
+  refine Matrix.inv_eq_left_inv ?_
+  ext i j
+  have h :=
+    congrArg
+      (fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ => M i j)
+      (Matrix.nonsing_inv_mul A hA)
+  simp [Matrix.mul_apply] at h ⊢
+  simp only [← Complex.ofReal_mul]
+  rw [← Complex.ofReal_sum]
+  rw [h]
+  by_cases hij : i = j <;> simp [Matrix.one_apply, hij]
+
+/-- The real Minkowski metric matrix complexifies to the complex Lorentz metric
+matrix. -/
+theorem sourceFullFrame_minkowskiMatrix_map_ofReal
+    (d : ℕ) :
+    (LorentzLieGroup.minkowskiMatrix d).map Complex.ofReal =
+      ComplexLorentzGroup.ηℂ (d := d) := by
+  ext i j
+  by_cases hij : i = j <;>
+    simp [LorentzLieGroup.minkowskiMatrix, ComplexLorentzGroup.ηℂ, hij]
+
+/-- Matrix form of complexifying the Gram component of a real full-frame
+oriented coordinate. -/
+theorem sourceFullFrameRealOrientedCoordComplexify_matrix_of
+    (d : ℕ) (Y : SourceFullFrameRealOrientedCoord d) :
+    Matrix.of (sourceFullFrameRealOrientedCoordComplexify d Y).1 =
+      (Matrix.of Y.1).map Complex.ofReal := by
+  ext i j
+  rfl
+
+/-- The explicit complex right inverse is the componentwise complexification of
+the real right-inverse formula whenever the complexified real coordinate lies in
+the complex tangent space. -/
+theorem sourceFullFrameOrientedDifferentialRightInverseLinear_realComplexify
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (Y : SourceFullFrameRealOrientedCoord d)
+    (hY :
+      sourceFullFrameRealOrientedCoordComplexify d Y ∈
+        sourceFullFrameOrientedTangentSpace d
+          (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal))) :
+    sourceFullFrameOrientedDifferentialRightInverseLinear d
+        (M0 := M0R.map Complex.ofReal)
+        (by
+          have hdetMap :
+              (M0R.map Complex.ofReal).det = (M0R.det : ℂ) := by
+            simpa [RingHom.mapMatrix_apply] using
+              (RingHom.map_det Complex.ofRealHom M0R).symm
+          rw [hdetMap]
+          exact hM0R.map Complex.ofRealHom)
+        ⟨sourceFullFrameRealOrientedCoordComplexify d Y, hY⟩ =
+      (sourceFullFrameRealDifferentialRightInverseFormula d M0R Y).map
+        Complex.ofReal := by
+  let hM0C : IsUnit (M0R.map Complex.ofReal).det := by
+    have hdetMap : (M0R.map Complex.ofReal).det = (M0R.det : ℂ) := by
+      simpa [RingHom.mapMatrix_apply] using
+        (RingHom.map_det Complex.ofRealHom M0R).symm
+    rw [hdetMap]
+    exact hM0R.map Complex.ofRealHom
+  change
+    sourceFullFrameOrientedDifferentialRightInverseLinear d hM0C
+        ⟨sourceFullFrameRealOrientedCoordComplexify d Y, hY⟩ =
+      (sourceFullFrameRealDifferentialRightInverseFormula d M0R Y).map
+        Complex.ofReal
+  rw [sourceFullFrameOrientedDifferentialRightInverseLinear_apply]
+  simp only [sourceFullFrameRealDifferentialRightInverseFormula]
+  let G : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ := Matrix.of Y.1
+  have hG :
+      Matrix.of (sourceFullFrameRealOrientedCoordComplexify d Y).1 =
+        G.map Complex.ofReal := by
+    dsimp [G]
+    exact sourceFullFrameRealOrientedCoordComplexify_matrix_of d Y
+  have hInvM := matrix_map_ofReal_nonsing_inv d M0R hM0R
+  have hMtUnit : IsUnit M0R.transpose.det := by
+    simpa [Matrix.det_transpose] using hM0R
+  have hInvMt := matrix_map_ofReal_nonsing_inv d M0R.transpose hMtUnit
+  have hMtMap :
+      M0R.transpose.map Complex.ofReal =
+        (M0R.map Complex.ofReal).transpose := by
+    ext i j
+    rfl
+  have hEta := sourceFullFrame_minkowskiMatrix_map_ofReal d
+  rw [hG, ← hInvM, ← hMtMap, ← hInvMt, ← hEta]
+  ext i j
+  simp [G, Matrix.mul_apply, smul_eq_mul]
+  simp only [← Complex.ofReal_mul]
+  rw [Finset.mul_sum]
+  apply Finset.sum_congr rfl
+  intro x _
+  ring
+
 end BHW

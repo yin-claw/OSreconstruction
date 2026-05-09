@@ -2384,9 +2384,20 @@ checks the real-source permutation topology helpers
    `sourceFullFrameOrientedDifferential_kernel_eq_orbitTangent`.  This
    replaces the arbitrary `Submodule.exists_isCompl` slice in the real route
    by a named explicit complex slice.  This substep is now checked in
-   `SourceOrientedFullFrameExplicitSlice.lean`.  The remaining real-slice step
-   is to prove that this right inverse preserves real matrices when `M0` and
-   the tangent coordinate are real, then use it to define
+   `SourceOrientedFullFrameExplicitSlice.lean`.  The real-complexification
+   gate is also now checked there:
+   `SourceFullFrameRealOrientedCoord`,
+   `sourceFullFrameRealOrientedCoordComplexify`,
+   `sourceFullFrameRealDifferentialRightInverseFormula`,
+   `matrix_map_ofReal_nonsing_inv`,
+   `sourceFullFrame_minkowskiMatrix_map_ofReal`,
+   `sourceFullFrameRealOrientedCoordComplexify_matrix_of`, and
+   `sourceFullFrameOrientedDifferentialRightInverseLinear_realComplexify`
+   prove that the explicit complex right inverse is the componentwise
+   complexification of the real formula whenever the complexified real
+   coordinate lies in the complex tangent space.  The remaining real-slice
+   step is therefore to build the real tangent model/finite coordinates and use
+   this checked complexification theorem to define
    `sourceFullFrameRealGaugeSliceData`.  After that, apply the real
    inverse/implicit-function theorem to the real kernel map, whose
    complexification is the existing complex implicit-kernel map; then shrink
