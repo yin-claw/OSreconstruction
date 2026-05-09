@@ -20110,6 +20110,42 @@ Proof decomposition of this theorem, without hiding the analytic work:
       --   bijectivity needed for the continuous complex coordinate
       --   equivalence.
 
+      noncomputable def BHW.sourceFullFrameRealSliceKernelCoordEquiv
+          (d : Nat)
+          {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hM0R : IsUnit M0R.det)
+          (F : BHW.SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+          (Fin F.realModelDim -> ℂ) ≃L[ℂ]
+            (BHW.sourceFullFrameSymmetricEquationDerivCLM d
+              (BHW.sourceFullFrameOrientedGramCoord d
+                (M0R.map Complex.ofReal))).ker
+
+      noncomputable def BHW.sourceFullFrameRealSliceNormalizedImplicitKernelMap
+          (d : Nat)
+          {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hM0R : IsUnit M0R.det)
+          (F : BHW.SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+          (Fin F.realModelDim -> ℂ) -> (Fin F.realModelDim -> ℂ)
+
+      theorem BHW.sourceFullFrameRealSliceNormalizedImplicitKernelMap_hasStrictFDerivAt
+          (d : Nat)
+          {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hM0R : IsUnit M0R.det)
+          (F : BHW.SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+          HasStrictFDerivAt
+            (BHW.sourceFullFrameRealSliceNormalizedImplicitKernelMap d hM0R F)
+            (1 : (Fin F.realModelDim -> ℂ) →L[ℂ]
+              (Fin F.realModelDim -> ℂ)) 0
+
+      noncomputable def
+          BHW.sourceFullFrameRealSliceNormalizedImplicitKernelOpenPartialHomeomorph
+          (d : Nat)
+          {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hM0R : IsUnit M0R.det)
+          (F : BHW.SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+          OpenPartialHomeomorph
+            (Fin F.realModelDim -> ℂ) (Fin F.realModelDim -> ℂ)
+
       theorem BHW.sourceRealFullFrameLocalCoord_image_open
           (d n : Nat)
           (ι : Fin (d + 1) ↪ Fin n)
@@ -20270,15 +20306,26 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrameRealDifferentialRightInverseRange`,
       `sourceFullFrameRealDifferentialRightInverseLinear_mem_complexSlice`,
       `sourceFullFrameRealDifferentialRightInverseRange_complexify_mem_complexSlice`,
-      `SourceFullFrameRealSliceFiniteCoordData`, and
-      `sourceFullFrameRealDifferentialRightInverseLinear_injective`.
+      `sourceFullFrameExplicitComplexSlice_re_im_mem_realRange`,
+      `SourceFullFrameRealSliceFiniteCoordData`,
+      `sourceFullFrameRealSliceFiniteCoordData`,
+      `sourceFullFrameRealSliceKernelCoordEquiv`,
+      `sourceFullFrameRealSliceNormalizedImplicitKernelMap`,
+      `sourceFullFrameRealSliceNormalizedImplicitKernelMap_zero`,
+      `sourceFullFrameRealSliceNormalizedImplicitKernelMap_hasStrictFDerivAt`,
+      `sourceFullFrameRealSliceNormalizedImplicitKernelOpenPartialHomeomorph`,
+      `sourceFullFrameRealSliceNormalizedImplicitKernel_zero_mem_chartSource`,
+      `sourceFullFrameRealSliceNormalizedImplicitKernel_zero_mem_chartTarget`,
+      and `sourceFullFrameRealDifferentialRightInverseLinear_injective`.
       Thus the next producer step is not to prove membership in the complex
-      slice or the real-coefficient tangent split, but to prove the
-      finite-coordinate real-form packet
-      `sourceFullFrameRealSliceFiniteCoordData` for this named real slice:
-      decompose explicit complex-slice elements through the checked re/im
-      tangent split, then build a compatible complex coordinate equivalence
-      from a real finite basis of the real slice.  Feed that packet into
+      slice, the real-coefficient tangent split, or the finite-coordinate
+      real-form packet.  Those are now checked.  The remaining real-compatible
+      implicit-chart step is to prove that the normalized finite-coordinate
+      implicit-kernel map preserves the real form, restrict it to real
+      coordinates, and apply the real inverse-function theorem using the
+      checked identity strict derivative.  That real chart supplies
+      `realKernelCoord`, `frameDomain`, the selected-frame open image theorem,
+      and the `complexKernelCoord_real_eq` uniqueness equation needed by
       `sourceFullFrameRealGaugeSliceData`.
       The hard producer still remaining is
       `sourceFullFrameRealCompatibleImplicitChartData`, which must construct

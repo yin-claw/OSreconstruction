@@ -2436,8 +2436,16 @@ checks the real-source permutation topology helpers
    `sourceFullFrameRealSliceComplexCoordLinearMap_re_im_decomp`,
    `sourceFullFrameRealSliceComplexCoordLinearMap_injective`,
    `sourceFullFrameRealSliceComplexCoordLinearMap_surjective`,
-   `SourceFullFrameRealSliceFiniteCoordData`, and
-   `sourceFullFrameRealSliceFiniteCoordData`, plus
+   `SourceFullFrameRealSliceFiniteCoordData`,
+   `sourceFullFrameRealSliceFiniteCoordData`,
+   `sourceFullFrameRealSliceKernelCoordEquiv`,
+   `sourceFullFrameRealSliceNormalizedImplicitKernelMap`,
+   `sourceFullFrameRealSliceNormalizedImplicitKernelMap_zero`,
+   `sourceFullFrameRealSliceNormalizedImplicitKernelMap_hasStrictFDerivAt`,
+   `sourceFullFrameRealSliceNormalizedImplicitKernelOpenPartialHomeomorph`,
+   `sourceFullFrameRealSliceNormalizedImplicitKernel_zero_mem_chartSource`,
+   and `sourceFullFrameRealSliceNormalizedImplicitKernel_zero_mem_chartTarget`,
+   plus
    `sourceFullFrameRealDifferentialRightInverseLinear_injective`
    define the real tangent model, prove the real formula is linear on it, prove
    that this real right inverse complexifies injectively to the explicit complex
@@ -2456,19 +2464,24 @@ checks the real-source permutation topology helpers
    real-slice vector with real coordinates `q`.  This closes the finite
    real-slice linear algebra needed for the `realModelDim` and
    `realModelToComplexSlice` fields of `sourceFullFrameRealGaugeSliceData`.
+   The normalized implicit-kernel map then conjugates the checked complex
+   implicit-kernel map by this finite coordinate equivalence, proves its
+   strict derivative at the origin is the identity, and packages the resulting
+   local inverse-function chart with origin source/target membership.
    The real-coefficient tangent-equation split is now checked as
    `sourceFullFrameOrientedTangent_re_mem` and
    `sourceFullFrameOrientedTangent_im_mem`; its proof uses the checked real
    Gram-matrix inverse bridge and
    `sourceFullFrameOrientedEquationDerivLinear_realComplexify_im`.  The
    remaining full-frame producer proof is now pinned to the real-compatible
-   implicit-chart layer: instantiate `SourceFullFrameRealGaugeSliceData` with
-   the explicit complex slice and the checked finite-coordinate packet, apply
-   the real inverse/implicit-function theorem to the real kernel map whose
-   complexification is the existing complex implicit-kernel map, prove
-   `complexKernelCoord_real_eq` by uniqueness of that local inverse, and then
-   shrink the real source patch so source invariants lie in the selected
-   complex chart and selected frames lie in the real frame domain.  The
+   implicit-chart layer: prove the normalized finite-coordinate
+   implicit-kernel map preserves the real form, take its real restriction,
+   apply the real inverse-function theorem using the checked identity
+   derivative, define the `realKernelCoord` and `complexKernelCoord` fields
+   from the resulting source/target shrink, prove `complexKernelCoord_real_eq`
+   by uniqueness of that local inverse, and then shrink the real source patch
+   so source invariants lie in the selected complex chart and selected frames
+   lie in the real frame domain.  The
    `realCoord_image_open` field must pass through the checked
    `sourceRealFullFrameSplitHomeomorph`, then be proved from the
    selected-frame open map plus the rowwise linear equivalence
