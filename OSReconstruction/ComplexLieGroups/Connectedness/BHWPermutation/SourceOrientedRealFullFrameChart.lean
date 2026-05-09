@@ -428,6 +428,24 @@ def sourceFullFrameRealSplitMixedRows
     sourceComplementIndex ι → Fin (d + 1) → ℝ :=
   fun k a => MinkowskiSpace.minkowskiInner d (p.2 k) (p.1 a)
 
+/-- On determinant-nonzero selected frames, the split mixed-row component is
+the checked rowwise linear equivalence from complement rows to mixed Gram
+rows. -/
+theorem sourceFullFrameRealSplitMixedRows_eq_tailMixedRowsLinearEquiv
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    (p :
+      Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ))
+    (hp : p.1.det ≠ 0) :
+    sourceFullFrameRealSplitMixedRows p =
+      sourceRealFullFrameTailMixedRowsLinearEquiv d n ι p.1 hp p.2 := by
+  ext k a
+  rw [sourceRealFullFrameTailMixedRowsLinearEquiv_apply]
+  rw [sourceRealFullFrameMixedRowLinearEquiv_apply]
+  simp [sourceFullFrameRealSplitMixedRows,
+    MinkowskiSpace.minkowskiInner, mul_comm]
+
 /-- The split-space form of the real kernel/mixed coordinate: apply the real
 kernel coordinate to the selected-frame factor and compute mixed Gram rows
 from the selected frame and complement rows. -/
@@ -445,6 +463,27 @@ def sourceFullFrameRealSplitKernelMixedCoord
     (Fin S.realModelDim → ℝ) ×
       (sourceComplementIndex ι → Fin (d + 1) → ℝ) :=
   (S.realKernelCoord p.1, sourceFullFrameRealSplitMixedRows p)
+
+/-- On determinant-nonzero selected frames, the split kernel/mixed coordinate
+is the selected-frame kernel coordinate together with the checked rowwise
+linear equivalence from complement rows to mixed rows. -/
+theorem sourceFullFrameRealSplitKernelMixedCoord_eq_tailMixedRowsLinearEquiv
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    (p :
+      Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ))
+    (hp : p.1.det ≠ 0) :
+    sourceFullFrameRealSplitKernelMixedCoord S p =
+      (S.realKernelCoord p.1,
+        sourceRealFullFrameTailMixedRowsLinearEquiv d n ι p.1 hp p.2) := by
+  rw [sourceFullFrameRealSplitKernelMixedCoord,
+    sourceFullFrameRealSplitMixedRows_eq_tailMixedRowsLinearEquiv p hp]
 
 /-- The source-space kernel/mixed coordinate factors through the checked
 selected-frame/complement-row split homeomorphism. -/
@@ -622,6 +661,43 @@ theorem isOpen_sourceFullFrameRealCoord_image_of_kernelMixedCoord_image_open
   rw [← Set.image_image]
   exact coordEquivR.symm.toContinuousLinearEquiv.toHomeomorph.isOpenMap
     (sourceFullFrameRealKernelMixedCoord S '' U) hU
+
+/-- If the split kernel/mixed coordinate is locally open on the chosen split
+neighborhood, then the finite real coordinate map has open image on the
+corresponding inverse split source patch. -/
+theorem isOpen_sourceFullFrameRealCoord_image_of_split_local_open
+    {d n m : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    (coordEquivR :
+      (Fin m → ℝ) ≃ₗ[ℝ]
+        ((Fin S.realModelDim → ℝ) ×
+          (sourceComplementIndex ι → Fin (d + 1) → ℝ)))
+    {W : Set
+      (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ))}
+    (hW_open_image :
+      ∀ {V : Set
+        (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+          (sourceComplementIndex ι → Fin (d + 1) → ℝ))},
+        IsOpen V →
+        V ⊆ W →
+        IsOpen (sourceFullFrameRealSplitKernelMixedCoord S '' V))
+    {U : Set (Fin n → Fin (d + 1) → ℝ)}
+    (hU_open : IsOpen U)
+    (hU_sub :
+      U ⊆ (sourceRealFullFrameSplitHomeomorph d n ι).symm '' W) :
+    IsOpen
+      ((fun x : Fin n → Fin (d + 1) → ℝ =>
+        coordEquivR.symm (sourceFullFrameRealKernelMixedCoord S x)) '' U) :=
+  isOpen_sourceFullFrameRealCoord_image_of_kernelMixedCoord_image_open
+    S coordEquivR
+    (isOpen_sourceFullFrameRealKernelMixedCoord_image_of_split_local_open
+      S hW_open_image hU_open hU_sub)
 
 /-- Full-frame real/complex chart data before it is collapsed to the generic
 `SourceOrientedLocalRealChartData` interface. -/

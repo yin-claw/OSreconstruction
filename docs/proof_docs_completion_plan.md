@@ -5975,15 +5975,29 @@ implementation contract is:
    the final shrunken source chart, not to the frame-domain packet: the next
    honest mathematical frontier is
    `sourceFullFrameRealSplitKernelMixedCoord_open_on_W`, the finite-product
-   open-image theorem for the chosen split neighborhood `W`, combining the
-   checked source split homeomorphism with the real IFT-selected frame
-   coordinate.  The split-image bridge is now checked:
+   open-image theorem for the chosen split neighborhood `W`.  This theorem
+   must be proved locally: first through a determinant-nonzero triangular
+   homeomorphism
+   `(M,T) ↦ (M, sourceFullFrameRealSplitMixedRows (M,T))`, whose inverse uses
+   `sourceRealFullFrameTailMixedRowsLinearEquiv`; then through a selected-frame
+   local product/submersion chart around the base frame whose first coordinate
+   is `S.realKernelCoord`; and finally by product openness.  It must not be
+   replaced by a global selected-frame open-map assertion.  The split-image
+   bridge is now checked:
    `sourceFullFrameRealKernelMixedCoord_image_eq_split` rewrites the raw
    source-coordinate image as the image of
    `sourceFullFrameRealSplitKernelMixedCoord` over
    `sourceRealFullFrameSplitHomeomorph '' U`, so the remaining proof is
    exactly local openness of that finite-product map on the chosen split
-   neighborhood.
+   neighborhood.  The mixed-row half of that product is now identified with
+   the checked determinant-nonzero rowwise linear equivalence in
+   `sourceFullFrameRealSplitMixedRows_eq_tailMixedRowsLinearEquiv`, and the
+   full split coordinate is rewritten in that triangular form by
+   `sourceFullFrameRealSplitKernelMixedCoord_eq_tailMixedRowsLinearEquiv`.
+   The checked bridge
+   `isOpen_sourceFullFrameRealCoord_image_of_split_local_open` then carries
+   this split-local open-image theorem through the finite real coordinate
+   equivalence used in the final implicit chart.
    The mechanical bridges around it are
    `sourceOrientedRealEnvironment_of_localRealCharts`,
    `sourceOrientedRealEnvironment_of_fullFrameDetNonzero_localCharts`, and the
