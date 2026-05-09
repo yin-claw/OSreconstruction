@@ -1890,12 +1890,15 @@ the chosen Schur window.
   `BHW.os45Figure24_sourcePatch_pairing_eq_swappedSourcePatch_of_OSI45` and
   its source-patch compact partition.
 
-Until the lower support lemmas in these five groups are implemented or
-replaced by already checked sorry-free local support with the same
-mathematical content, public theorem-2 Lean remains closed.  If Lean work
-starts from this proof-doc state, the first target must be one of those lower
-finite-dimensional, SCV, or OS-I support lemmas, not a public
-scalar-representative or adjacent `S'_n` wrapper.
+The first two groups above are now genuinely checked support, not proof-doc
+placeholders.  The remaining theorem-2 blockers are the descent/normal
+Riemann group, the oriented real-patch uniqueness group, and the OS I §4.5
+compact Figure-2-4 branch-difference producer.  Until those remaining support
+lemmas are implemented or replaced by already checked sorry-free local support
+with the same mathematical content, public theorem-2 Lean remains closed.  If
+Lean work starts from this proof-doc state, the first target must be one of
+those lower SCV/algebraic-geometry, real-uniqueness, or OS-I support lemmas,
+not a public scalar-representative or adjacent `S'_n` wrapper.
 
 First lower Lean implementation step, 2026-05-02: the finite oriented
 determinant layer is now checked in
@@ -4525,24 +4528,23 @@ implementation contract is:
    The determinant-smallness hypothesis remains in the public theorem surface
    for compatibility with the paired box producer, but the checked realization
    proof uses only Gram smallness plus the variety relations.
-   The residual-chart producer is now split one layer further.  Before Lean
-   may implement the extended-tube residual chart, the blueprint requires only
-   genuine ambient transports where they are mathematically available, and uses
-   the checked variety-relative transport interface for source-matrix normal
-   forms.  The active no-tube algebraic producer is based on
+   The residual-chart producer split is now closed.  The blueprint requires
+   only genuine ambient transports where they are mathematically available,
+   and uses the checked variety-relative transport interface for source-matrix
+   normal forms.  The active no-tube algebraic producer is based on
    `SourceOrientedRankDeficientAlgebraicNormalFormData` and
    `SourceOrientedRankDeficientAlgebraicNormalFormData.originalNormalVarietyPoint`;
    the older `SourceOrientedInvariantTransportEquiv` shortcut is not permitted
-   for source changes.  The remaining extended-tube residual-chart surfaces are
+   for source changes.  The extended-tube residual-chart surfaces
    `SourceOrientedRankDeficientNormalFormData`,
    `SourceOrientedRankDeficientNormalFormData.exists_ofExtendedTube`,
    `SourceOrientedResidualPolydiscData`,
    `sourceOriented_rankDeficient_tubeResidualPolydisc`, and
-   `SourceOrientedRankDeficientTubeResidualPolydiscProducer`.  These surfaces force the
-   ordinary Hall-Wightman adapted normal form, the residual coefficient
-   polydisc, the extended-tube stability shrink, Schur-tail image
-   surjectivity, and max-rank density to be proved before the residual chart
-   can be assembled.  The checked transport interfaces in
+   `SourceOrientedRankDeficientTubeResidualPolydiscProducer` are checked; they
+   force, and now provide, the ordinary Hall-Wightman adapted normal form, the
+   residual coefficient polydisc, the extended-tube stability shrink,
+   Schur-tail image surjectivity, and max-rank density before the residual
+   chart is assembled.  The checked transport interfaces in
    `SourceOrientedTransport.lean` are still useful, but the residual-chart
    producer may not depend on an ambient `SourceOrientedInvariantTransportEquiv`
    for source-matrix normal forms.  The checked source-matrix return path is
@@ -4735,10 +4737,15 @@ implementation contract is:
    source-rank deficiency is already supplied, and
    `BHW.SourceOrientedRankDeficientNormalFormData.exists_ofExtendedTube`,
    which now combines the checked adapted ET representative with the
-   rank-deficient same-oriented-invariant conversion.  The remaining hard
-   theorem is the tube-valued residual-polydisc producer; the checked reducer
-   and normal-form producer prove that no ambient source-matrix invariant
-   transport is needed after those fields are available.  The checked theorem
+   rank-deficient same-oriented-invariant conversion.  The formerly hard
+   tube-valued residual-polydisc producer is now checked through
+   `BHW.sourceOriented_rankDeficient_tubeResidualPolydisc_hardRange`,
+   `BHW.sourceOriented_rankDeficient_tubeResidualPolydisc_smallArity`,
+   `BHW.sourceOriented_rankDeficient_tubeResidualPolydisc`,
+   `BHW.sourceOriented_rankDeficient_tubeResidualPolydiscProducer`, and
+   `BHW.sourceOriented_rankDeficient_residualChartProducer`; the reducer and
+   normal-form producer prove that no ambient source-matrix invariant transport
+   is needed.  The checked theorem
    `BHW.isConnected_sourcePrincipalSchur_varietyTransported_orientedMaxRank_preimage_of_eq`
    is the connectedness form to call once the normal-parameter vector has been
    packaged as a `BHW.SourceOrientedVariety d n` point, identified with the
