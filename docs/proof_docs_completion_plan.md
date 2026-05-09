@@ -3128,6 +3128,58 @@ implementation contract is:
    "choose a sign on the complement" step: the complement is nontrivial by the
    rank inequality, nondegenerate by orthogonal-complement linear algebra, and
    contains a nonisotropic vector by polarization.
+
+   Residual full-block route correction, 2026-05-08: the selected residual
+   hyperbolic block producer must stay split.  The existing checked
+   `BHW.HWSelectedResidualHyperbolicBlockExtensionData` is the **proper-target
+   block** packet and legitimately carries
+   `L_proper : Module.finrank ℂ L < d + 1`, because its consumer repairs a raw
+   nondegenerate-block extension by reflecting in the target orthogonal
+   complement.  It must not be weakened by pretending the same repair exists
+   when `L = ⊤`.  The full-block branch instead gets a separate mechanical
+   bridge:
+
+   ```lean
+   noncomputable def BHW.fullBlockAmbientEquivOfTopBlock
+       (hKtop : K = ⊤) (hLtop : L = ⊤)
+       (Tblock : K ≃ₗ[ℂ] L) :
+       (Fin (d + 1) → ℂ) ≃ₗ[ℂ] (Fin (d + 1) → ℂ)
+
+   theorem BHW.fullBlockAmbientEquivOfTopBlock_apply
+       (hKtop : K = ⊤) (hLtop : L = ⊤)
+       (Tblock : K ≃ₗ[ℂ] L)
+       (x : Fin (d + 1) → ℂ) :
+       BHW.fullBlockAmbientEquivOfTopBlock hKtop hLtop Tblock x =
+         (Tblock ⟨x, by rw [hKtop]; trivial⟩ :
+           Fin (d + 1) → ℂ)
+
+   theorem BHW.complexMinkowski_selectedResidualHyperbolicExtension_of_fullBlockData
+       (hKtop : K = ⊤) (hLtop : L = ⊤)
+       (Tblock : K ≃ₗ[ℂ] L)
+       (hT : ∀ x y : K, ...)
+       (hdet :
+         LinearMap.det
+           (BHW.fullBlockAmbientEquivOfTopBlock hKtop hLtop Tblock).toLinearMap =
+             1)
+       (hK_M : M ≤ K) (hK_left : Rleft ≤ K)
+       (hT_M : ∀ m : M, ...)
+       (hT_left_span : ∀ x : Rleft, ...) :
+       ∃ Λfix : ComplexLorentzGroup d,
+         (∀ m : M, BHW.complexLorentzVectorAction Λfix m = m) ∧
+         ∀ x : Rleft,
+           BHW.complexLorentzVectorAction Λfix x ∈
+             Submodule.span ℂ (Set.range q)
+   ```
+
+   This bridge is deliberately **not** the missing oriented determinant proof.
+   It only removes Lean packaging from the full-block branch: once the
+   source-oriented/volume-family argument proves the displayed `hdet`, the
+   existing ambient determinant-one constructor
+   `BHW.complexMinkowski_selectedResidualHyperbolicExtension_of_ambientLinearEquiv`
+   finishes the Lorentz correction.  The next implementation pass should add
+   exactly this mechanical full-block bridge in a small companion file before
+   attacking the oriented determinant theorem.
+
    The blueprint now pins the lower implementation order for this row.  First
    define `BHW.HallWightmanFullComplexLorentzGroup d` as metric-preserving
    complex matrices with no determinant field, together with

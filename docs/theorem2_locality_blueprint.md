@@ -26075,7 +26075,65 @@ Proof decomposition of this theorem, without hiding the analytic work:
         directly.
 
       This is the exact remaining determinant-one content; the docs must not
-      assume the proper-block branch covers the full-block case.
+      assume the proper-block branch covers the full-block case.  The
+      immediate mechanical full-block bridge is now Lean-shaped separately:
+
+      ```lean
+      noncomputable def BHW.fullBlockAmbientEquivOfTopBlock
+          (hKtop : K = ⊤) (hLtop : L = ⊤)
+          (Tblock : K ≃ₗ[ℂ] L) :
+          (Fin (d + 1) -> ℂ) ≃ₗ[ℂ] (Fin (d + 1) -> ℂ)
+
+      theorem BHW.fullBlockAmbientEquivOfTopBlock_apply
+          (hKtop : K = ⊤) (hLtop : L = ⊤)
+          (Tblock : K ≃ₗ[ℂ] L)
+          (x : Fin (d + 1) -> ℂ) :
+          BHW.fullBlockAmbientEquivOfTopBlock hKtop hLtop Tblock x =
+            (Tblock ⟨x, by rw [hKtop]; trivial⟩ :
+              Fin (d + 1) -> ℂ)
+
+      theorem BHW.complexMinkowski_selectedResidualHyperbolicExtension_of_fullBlockData
+          (hKtop : K = ⊤) (hLtop : L = ⊤)
+          (Tblock : K ≃ₗ[ℂ] L)
+          (hT :
+            ∀ x y : K,
+              BHW.sourceComplexMinkowskiInner d
+                (Tblock x : Fin (d + 1) -> ℂ)
+                (Tblock y : Fin (d + 1) -> ℂ) =
+              BHW.sourceComplexMinkowskiInner d
+                (x : Fin (d + 1) -> ℂ)
+                (y : Fin (d + 1) -> ℂ))
+          (hdet :
+            LinearMap.det
+              (BHW.fullBlockAmbientEquivOfTopBlock
+                hKtop hLtop Tblock).toLinearMap = 1)
+          (hK_M : M ≤ K) (hK_left : Rleft ≤ K)
+          (hT_M :
+            ∀ m : M,
+              (Tblock ⟨(m : Fin (d + 1) -> ℂ), hK_M m.2⟩ :
+                Fin (d + 1) -> ℂ) =
+              (m : Fin (d + 1) -> ℂ))
+          (hT_left_span :
+            ∀ x : Rleft,
+              (Tblock ⟨(x : Fin (d + 1) -> ℂ), hK_left x.2⟩ :
+                Fin (d + 1) -> ℂ) ∈
+              Submodule.span ℂ (Set.range q)) :
+          ∃ Λfix : ComplexLorentzGroup d,
+            (∀ m : M,
+              BHW.complexLorentzVectorAction Λfix
+                (m : Fin (d + 1) -> ℂ) =
+              (m : Fin (d + 1) -> ℂ)) ∧
+            ∀ x : Rleft,
+              BHW.complexLorentzVectorAction Λfix
+                (x : Fin (d + 1) -> ℂ) ∈
+              Submodule.span ℂ (Set.range q)
+      ```
+
+      This theorem is not the oriented determinant proof; it merely says that
+      once the full-block determinant equality is supplied, the old ambient
+      determinant-one packaging lemma finishes the branch.  The next checked
+      file should add this bridge before the source-oriented volume/family
+      determinant theorem is attempted.
 
       The next checked sublemma is now the hyperbolic basis supply, not another
       wrapper around `Λfix`.  Its Lean-level target is:
