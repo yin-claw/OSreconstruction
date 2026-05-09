@@ -374,6 +374,46 @@ theorem sourceFullFrameRealSliceNormalizedImplicitKernel_zero_mem_chartTarget
       d hM0R F).map_source hsource
   simpa using htarget
 
+/-- An open partial homeomorphism from a frame space to product coordinates
+makes the first product coordinate, crossed with an unchanged tail coordinate,
+locally open on its source.  This is the pure-topology bridge used by the
+selected-frame product chart in the real full-frame producer. -/
+theorem isOpen_product_first_id_image_of_openPartialHomeomorph
+    {Frame K O Tail : Type*}
+    [TopologicalSpace Frame] [TopologicalSpace K] [TopologicalSpace O]
+    [TopologicalSpace Tail]
+    (e : OpenPartialHomeomorph Frame (K × O))
+    {V : Set (Frame × Tail)}
+    (hV_open : IsOpen V)
+    (hV_sub : V ⊆ {p : Frame × Tail | p.1 ∈ e.source}) :
+    IsOpen ((fun p : Frame × Tail => ((e p.1).1, p.2)) '' V) := by
+  let eprod := e.prod (OpenPartialHomeomorph.refl Tail)
+  have hV_sub' : V ⊆ eprod.source := by
+    intro p hp
+    change p.1 ∈ e.source ∧
+      p.2 ∈ (OpenPartialHomeomorph.refl Tail).source
+    exact ⟨hV_sub hp, by simp⟩
+  have h_img : IsOpen (eprod '' V) :=
+    eprod.isOpen_image_of_subset_source hV_open hV_sub'
+  have hproj : IsOpenMap (fun q : (K × O) × Tail => (q.1.1, q.2)) := by
+    simpa using
+      (isOpenMap_fst (X := K) (Y := O)).prodMap
+        (IsOpenMap.id : IsOpenMap (id : Tail → Tail))
+  have hEq :
+      ((fun p : Frame × Tail => ((e p.1).1, p.2)) '' V) =
+        (fun q : (K × O) × Tail => (q.1.1, q.2)) '' (eprod '' V) := by
+    ext y
+    constructor
+    · rintro ⟨p, hp, rfl⟩
+      exact ⟨(e p.1, p.2), ⟨p, hp, by simp [eprod]⟩, rfl⟩
+    · rintro ⟨q, ⟨p, hp, hpq⟩, hqy⟩
+      refine ⟨p, hp, ?_⟩
+      subst hpq
+      subst hqy
+      simp [eprod]
+  rw [hEq]
+  exact hproj _ h_img
+
 /-- A real gauge-slice packet whose complexification is the complex full-frame
 gauge slice used by the existing full-frame max-rank chart. -/
 structure SourceFullFrameRealGaugeSliceData
@@ -994,6 +1034,96 @@ theorem source_patch_frame_mem_domain
   simpa [hframe] using D.frame_mem_domain p hpW
 
 end SourceFullFrameRealSelectedFrameProductOpenData
+
+/-- A selected-frame local product chart whose first coordinate is the real
+kernel coordinate.  Producing this structure from the real submersion theorem
+is the remaining non-mechanical selected-frame step. -/
+structure SourceFullFrameRealSelectedFrameProductChartData
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    (O : Type*) [TopologicalSpace O] where
+  frameChart :
+    OpenPartialHomeomorph
+      (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
+      ((Fin S.realModelDim → ℝ) × O)
+  center_mem_source :
+    sourceRealFullFrameMatrix d n ι x0 ∈ frameChart.source
+  source_det : frameChart.source ⊆ {M | M.det ≠ 0}
+  source_frameDomain : frameChart.source ⊆ S.frameDomain
+  first_eq_realKernelCoord :
+    ∀ M ∈ frameChart.source, (frameChart M).1 = S.realKernelCoord M
+
+namespace SourceFullFrameRealSelectedFrameProductChartData
+
+/-- A selected-frame local product chart produces the product-open packet
+consumed by the real full-frame implicit chart constructor. -/
+noncomputable def toOpenData
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    {S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet}
+    {O : Type*} [TopologicalSpace O]
+    (D : SourceFullFrameRealSelectedFrameProductChartData S O) :
+    SourceFullFrameRealSelectedFrameProductOpenData S where
+  W := {p |
+    p.1 ∈ D.frameChart.source}
+  W_open := D.frameChart.open_source.preimage continuous_fst
+  center_mem := by
+    simpa [sourceRealFullFrameSplitHomeomorph_apply] using D.center_mem_source
+  W_det := by
+    intro p hp
+    exact D.source_det hp
+  frame_mem_domain := by
+    intro p hp
+    exact D.source_frameDomain hp
+  product_open_after_homeomorph := by
+    intro V hV_open hV_sub
+    let Vh : Set
+      (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ)) :=
+      ((Subtype.val :
+        sourceFullFrameRealSplitDetNonzero d n ι →
+          Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+            (sourceComplementIndex ι → Fin (d + 1) → ℝ)) ''
+        ((sourceFullFrameRealSplitMixedRowsHomeomorph d n ι) ''
+          {p : sourceFullFrameRealSplitDetNonzero d n ι | p.1 ∈ V}))
+    have hVh_open : IsOpen Vh := by
+      exact isOpen_sourceFullFrameRealSplitMixedRowsHomeomorph_val_image
+        (d := d) (n := n) (ι := ι) hV_open
+    have hVh_sub : Vh ⊆ {p | p.1 ∈ D.frameChart.source} := by
+      rintro p ⟨q, ⟨r, hrV, rfl⟩, rfl⟩
+      have hrW : r.1 ∈ {p | p.1 ∈ D.frameChart.source} := hV_sub hrV
+      simpa [sourceFullFrameRealSplitMixedRowsHomeomorph] using hrW
+    have htop :=
+      isOpen_product_first_id_image_of_openPartialHomeomorph
+        D.frameChart hVh_open hVh_sub
+    have hEq :
+        sourceFullFrameRealSplitProductKernelCoord S '' Vh =
+          (fun p :
+            Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+              (sourceComplementIndex ι → Fin (d + 1) → ℝ) =>
+            ((D.frameChart p.1).1, p.2)) '' Vh := by
+      ext y
+      constructor
+      · rintro ⟨p, hp, rfl⟩
+        refine ⟨p, hp, ?_⟩
+        simp [sourceFullFrameRealSplitProductKernelCoord,
+          D.first_eq_realKernelCoord p.1 (hVh_sub hp)]
+      · rintro ⟨p, hp, rfl⟩
+        refine ⟨p, hp, ?_⟩
+        simp [sourceFullFrameRealSplitProductKernelCoord,
+          D.first_eq_realKernelCoord p.1 (hVh_sub hp)]
+    rwa [hEq]
+
+end SourceFullFrameRealSelectedFrameProductChartData
 
 /-- The source-space kernel/mixed coordinate factors through the checked
 selected-frame/complement-row split homeomorphism. -/

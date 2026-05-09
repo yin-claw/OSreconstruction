@@ -20692,6 +20692,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `SourceFullFrameRealSelectedFrameProductOpenData.realCoord_continuousOn_source_patch`,
       `SourceFullFrameRealSelectedFrameProductOpenData.realCoord_eq_kernel_mixed_on_source_patch`,
       `SourceFullFrameRealSelectedFrameProductOpenData.realCoord_image_open_source_patch`,
+      `isOpen_product_first_id_image_of_openPartialHomeomorph`,
+      `SourceFullFrameRealSelectedFrameProductChartData`,
+      `SourceFullFrameRealSelectedFrameProductChartData.toOpenData`,
       plus the producer-level mechanical consumers
       `SourceFullFrameRealCompatibleImplicitChartProducer`,
       `sourceOrientedLocalRealChartData_of_fullFrameDet_ne_zero_of_realCompatibleImplicitChartProducer`,

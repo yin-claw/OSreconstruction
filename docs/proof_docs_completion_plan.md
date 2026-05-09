@@ -6062,9 +6062,21 @@ implementation contract is:
    `SourceFullFrameRealSelectedFrameProductOpenData.realCoord_eq_kernel_mixed_on_source_patch`,
    and
    `SourceFullFrameRealSelectedFrameProductOpenData.realCoord_image_open_source_patch`.
+   The pure topology step feeding the packet is also checked:
+   `isOpen_product_first_id_image_of_openPartialHomeomorph` says that an
+   open partial homeomorphism from the selected-frame space to product
+   coordinates `K × O`, crossed with the identity tail coordinate, makes
+   `(frame,tail) ↦ (firstProductCoordinate,tail)` locally open on its source.
+   The product-chart-to-packet step is checked as
+   `SourceFullFrameRealSelectedFrameProductChartData` and
+   `SourceFullFrameRealSelectedFrameProductChartData.toOpenData`: a selected
+   frame open partial homeomorphism to
+   `(Fin S.realModelDim → ℝ) × O`, whose first coordinate is exactly
+   `S.realKernelCoord` on its source and whose source lies inside the
+   determinant-nonzero frame domain, mechanically produces the packet above.
    Thus the next theorem to prove is not a wrapper around arbitrary openness
-   of `S.realKernelCoord`; it is the production of this packet from the real
-   IFT selected-frame local product chart.
+   of `S.realKernelCoord`; it is the construction of this selected-frame
+   product chart from the real IFT/submersion derivative.
    The mechanical bridges around it are
    `sourceOrientedRealEnvironment_of_localRealCharts`,
    `sourceOrientedRealEnvironment_of_fullFrameDetNonzero_localCharts`, and the
