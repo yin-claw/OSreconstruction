@@ -375,6 +375,93 @@ theorem sourceFullFrameRealOrientedCoordComplexify_injective
         (congrFun (congrFun (congrArg Prod.fst hYZ) a) b)
   · exact Complex.ofReal_injective (congrArg Prod.snd hYZ)
 
+/-- Entrywise real part of a complex full-frame oriented coordinate. -/
+def sourceFullFrameOrientedCoordRe
+    (d : ℕ) (Y : SourceFullFrameOrientedCoord d) :
+    SourceFullFrameRealOrientedCoord d :=
+  (fun a b => (Y.1 a b).re, Y.2.re)
+
+/-- Entrywise imaginary part of a complex full-frame oriented coordinate. -/
+def sourceFullFrameOrientedCoordIm
+    (d : ℕ) (Y : SourceFullFrameOrientedCoord d) :
+    SourceFullFrameRealOrientedCoord d :=
+  (fun a b => (Y.1 a b).im, Y.2.im)
+
+/-- A complex full-frame oriented coordinate decomposes into its real and
+imaginary real-coordinate parts. -/
+theorem sourceFullFrameOrientedCoord_re_im_decomp
+    (d : ℕ) (Y : SourceFullFrameOrientedCoord d) :
+    Y =
+      sourceFullFrameRealOrientedCoordComplexify d
+        (sourceFullFrameOrientedCoordRe d Y) +
+        Complex.I •
+          sourceFullFrameRealOrientedCoordComplexify d
+            (sourceFullFrameOrientedCoordIm d Y) := by
+  apply Prod.ext
+  · funext a b
+    change Y.1 a b = (Y.1 a b).re + Complex.I * (Y.1 a b).im
+    rw [mul_comm]
+    exact (Complex.re_add_im (Y.1 a b)).symm
+  · change Y.2 = Y.2.re + Complex.I * Y.2.im
+    rw [mul_comm]
+    exact (Complex.re_add_im Y.2).symm
+
+@[simp]
+theorem sourceFullFrameOrientedCoordRe_complexify
+    (d : ℕ) (Y : SourceFullFrameRealOrientedCoord d) :
+    sourceFullFrameOrientedCoordRe d
+        (sourceFullFrameRealOrientedCoordComplexify d Y) = Y := by
+  apply Prod.ext
+  · funext a b
+    simp [sourceFullFrameOrientedCoordRe,
+      sourceFullFrameRealOrientedCoordComplexify]
+  · simp [sourceFullFrameOrientedCoordRe,
+      sourceFullFrameRealOrientedCoordComplexify]
+
+@[simp]
+theorem sourceFullFrameOrientedCoordIm_complexify
+    (d : ℕ) (Y : SourceFullFrameRealOrientedCoord d) :
+    sourceFullFrameOrientedCoordIm d
+        (sourceFullFrameRealOrientedCoordComplexify d Y) = 0 := by
+  apply Prod.ext
+  · funext a b
+    simp [sourceFullFrameOrientedCoordIm,
+      sourceFullFrameRealOrientedCoordComplexify]
+  · simp [sourceFullFrameOrientedCoordIm,
+      sourceFullFrameRealOrientedCoordComplexify]
+
+/-- Real and imaginary real oriented coordinates cannot cancel in
+`Y + I Z = 0` after componentwise complexification. -/
+theorem sourceFullFrameRealOrientedCoordComplexify_add_I_smul_eq_zero
+    {d : ℕ}
+    {Y Z : SourceFullFrameRealOrientedCoord d}
+    (h :
+      sourceFullFrameRealOrientedCoordComplexify d Y +
+          Complex.I • sourceFullFrameRealOrientedCoordComplexify d Z =
+        (0 : SourceFullFrameOrientedCoord d)) :
+    Y = 0 ∧ Z = 0 := by
+  constructor
+  · apply Prod.ext
+    · funext a b
+      have hentry := congrFun (congrFun (congrArg Prod.fst h) a) b
+      have hre := congrArg Complex.re hentry
+      simp [sourceFullFrameRealOrientedCoordComplexify, smul_eq_mul] at hre
+      exact hre
+    · have hentry := congrArg Prod.snd h
+      have hre := congrArg Complex.re hentry
+      simp [sourceFullFrameRealOrientedCoordComplexify, smul_eq_mul] at hre
+      exact hre
+  · apply Prod.ext
+    · funext a b
+      have hentry := congrFun (congrFun (congrArg Prod.fst h) a) b
+      have him := congrArg Complex.im hentry
+      simp [sourceFullFrameRealOrientedCoordComplexify, smul_eq_mul] at him
+      exact him
+    · have hentry := congrArg Prod.snd h
+      have him := congrArg Complex.im hentry
+      simp [sourceFullFrameRealOrientedCoordComplexify, smul_eq_mul] at him
+      exact him
+
 /-- The real tangent model for the full-frame oriented hypersurface at a real
 base frame, defined as the real form whose componentwise complexification lies
 in the checked complex tangent space. -/
@@ -681,6 +768,54 @@ theorem sourceFullFrameRealOrientedCoordComplexify_matrix_of
       (Matrix.of Y.1).map Complex.ofReal := by
   ext i j
   rfl
+
+/-- Entrywise real part of a complex full-frame matrix. -/
+def sourceFullFrameMatrixRe
+    {d : ℕ}
+    (X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) :
+    Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ :=
+  fun i j => (X i j).re
+
+/-- Entrywise imaginary part of a complex full-frame matrix. -/
+def sourceFullFrameMatrixIm
+    {d : ℕ}
+    (X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) :
+    Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ :=
+  fun i j => (X i j).im
+
+/-- A complex full-frame matrix decomposes into real and imaginary parts. -/
+theorem sourceFullFrameMatrix_re_im_decomp
+    {d : ℕ}
+    (X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) :
+    X =
+      (sourceFullFrameMatrixRe X).map Complex.ofReal +
+        Complex.I • (sourceFullFrameMatrixIm X).map Complex.ofReal := by
+  ext i j
+  simp only [sourceFullFrameMatrixRe, sourceFullFrameMatrixIm,
+    Matrix.map_apply, Matrix.add_apply, Matrix.smul_apply, smul_eq_mul]
+  rw [mul_comm]
+  exact (Complex.re_add_im (X i j)).symm
+
+/-- Real and imaginary real matrices cannot cancel in
+`A + I B = 0` after componentwise complexification. -/
+theorem sourceFullFrameMatrix_map_ofReal_add_I_smul_eq_zero
+    {d : ℕ}
+    {A B : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (h :
+      A.map Complex.ofReal + Complex.I • B.map Complex.ofReal =
+        (0 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ)) :
+    A = 0 ∧ B = 0 := by
+  constructor
+  · ext i j
+    have hij := congr_fun (congr_fun h i) j
+    have hre := congrArg Complex.re hij
+    simp [Matrix.add_apply, Matrix.smul_apply, smul_eq_mul] at hre
+    exact hre
+  · ext i j
+    have hij := congr_fun (congr_fun h i) j
+    have him := congrArg Complex.im hij
+    simp [Matrix.add_apply, Matrix.smul_apply, smul_eq_mul] at him
+    exact him
 
 /-- The explicit complex right inverse is the componentwise complexification of
 the real right-inverse formula whenever the complexified real coordinate lies in

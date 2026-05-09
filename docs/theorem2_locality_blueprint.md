@@ -19818,6 +19818,34 @@ Proof decomposition of this theorem, without hiding the analytic work:
           Function.Injective
             (BHW.sourceFullFrameRealOrientedCoordComplexify d)
 
+      def BHW.sourceFullFrameOrientedCoordRe
+          (d : Nat) (Y : BHW.SourceFullFrameOrientedCoord d) :
+          BHW.SourceFullFrameRealOrientedCoord d
+
+      def BHW.sourceFullFrameOrientedCoordIm
+          (d : Nat) (Y : BHW.SourceFullFrameOrientedCoord d) :
+          BHW.SourceFullFrameRealOrientedCoord d
+
+      theorem BHW.sourceFullFrameOrientedCoord_re_im_decomp
+          (d : Nat) (Y : BHW.SourceFullFrameOrientedCoord d) :
+          Y =
+            BHW.sourceFullFrameRealOrientedCoordComplexify d
+              (BHW.sourceFullFrameOrientedCoordRe d Y) +
+              Complex.I •
+                BHW.sourceFullFrameRealOrientedCoordComplexify d
+                  (BHW.sourceFullFrameOrientedCoordIm d Y)
+
+      theorem
+          BHW.sourceFullFrameRealOrientedCoordComplexify_add_I_smul_eq_zero
+          {d : Nat}
+          {Y Z : BHW.SourceFullFrameRealOrientedCoord d}
+          (h :
+            BHW.sourceFullFrameRealOrientedCoordComplexify d Y +
+                Complex.I •
+                  BHW.sourceFullFrameRealOrientedCoordComplexify d Z =
+              (0 : BHW.SourceFullFrameOrientedCoord d)) :
+          Y = 0 ∧ Z = 0
+
       def BHW.sourceFullFrameRealOrientedTangentSpace
           (d : Nat)
           (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
@@ -19893,6 +19921,32 @@ Proof decomposition of this theorem, without hiding the analytic work:
           {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
           (hM0R : IsUnit M0R.det) :
           IsUnit (M0R.map Complex.ofReal).det
+
+      def BHW.sourceFullFrameMatrixRe
+          {d : Nat}
+          (X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) :
+          Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ
+
+      def BHW.sourceFullFrameMatrixIm
+          {d : Nat}
+          (X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) :
+          Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ
+
+      theorem BHW.sourceFullFrameMatrix_re_im_decomp
+          {d : Nat}
+          (X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) :
+          X =
+            (BHW.sourceFullFrameMatrixRe X).map Complex.ofReal +
+              Complex.I •
+                (BHW.sourceFullFrameMatrixIm X).map Complex.ofReal
+
+      theorem BHW.sourceFullFrameMatrix_map_ofReal_add_I_smul_eq_zero
+          {d : Nat}
+          {A B : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (h :
+            A.map Complex.ofReal + Complex.I • B.map Complex.ofReal =
+              (0 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ)) :
+          A = 0 ∧ B = 0
 
       noncomputable def
           BHW.sourceFullFrameRealDifferentialRightInverseRange
@@ -20085,6 +20139,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrameRealOrientedCoordComplexify`,
       `sourceFullFrameRealOrientedCoordComplexifyLinear`,
       `sourceFullFrameRealOrientedCoordComplexify_injective`,
+      `sourceFullFrameOrientedCoordRe`,
+      `sourceFullFrameOrientedCoordIm`,
+      `sourceFullFrameOrientedCoord_re_im_decomp`,
+      `sourceFullFrameOrientedCoordRe_complexify`,
+      `sourceFullFrameOrientedCoordIm_complexify`,
+      `sourceFullFrameRealOrientedCoordComplexify_add_I_smul_eq_zero`,
       `sourceFullFrameRealOrientedTangentSpace`,
       `mem_sourceFullFrameRealOrientedTangentSpace`,
       `sourceFullFrameRealOrientedTangentComplexifyLinear`,
@@ -20096,7 +20156,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrame_matrix_map_ofReal_det`,
       `sourceFullFrame_matrix_map_ofReal_det_isUnit`,
       `sourceFullFrame_minkowskiMatrix_map_ofReal`,
-      `sourceFullFrameRealOrientedCoordComplexify_matrix_of`, and
+      `sourceFullFrameRealOrientedCoordComplexify_matrix_of`,
+      `sourceFullFrameMatrixRe`,
+      `sourceFullFrameMatrixIm`,
+      `sourceFullFrameMatrix_re_im_decomp`,
+      `sourceFullFrameMatrix_map_ofReal_add_I_smul_eq_zero`, and
       `sourceFullFrameOrientedDifferentialRightInverseLinear_realComplexify`,
       plus `sourceFullFrameRealDifferentialRightInverseLinear_complexify`,
       `sourceFullFrameRealDifferentialRightInverseRange`,

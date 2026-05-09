@@ -2390,6 +2390,12 @@ checks the real-source permutation topology helpers
    `sourceFullFrameRealOrientedCoordComplexify`,
    `sourceFullFrameRealOrientedCoordComplexifyLinear`,
    `sourceFullFrameRealOrientedCoordComplexify_injective`,
+   `sourceFullFrameOrientedCoordRe`,
+   `sourceFullFrameOrientedCoordIm`,
+   `sourceFullFrameOrientedCoord_re_im_decomp`,
+   `sourceFullFrameOrientedCoordRe_complexify`,
+   `sourceFullFrameOrientedCoordIm_complexify`,
+   `sourceFullFrameRealOrientedCoordComplexify_add_I_smul_eq_zero`,
    `sourceFullFrameRealOrientedTangentSpace`,
    `mem_sourceFullFrameRealOrientedTangentSpace`,
    `sourceFullFrameRealOrientedTangentComplexifyLinear`,
@@ -2402,6 +2408,10 @@ checks the real-source permutation topology helpers
    `sourceFullFrame_matrix_map_ofReal_det_isUnit`,
    `sourceFullFrame_minkowskiMatrix_map_ofReal`,
    `sourceFullFrameRealOrientedCoordComplexify_matrix_of`, and
+   `sourceFullFrameMatrixRe`,
+   `sourceFullFrameMatrixIm`,
+   `sourceFullFrameMatrix_re_im_decomp`,
+   `sourceFullFrameMatrix_map_ofReal_add_I_smul_eq_zero`,
    `sourceFullFrameOrientedDifferentialRightInverseLinear_realComplexify`,
    `sourceFullFrameRealDifferentialRightInverseLinear_complexify`,
    `sourceFullFrameRealDifferentialRightInverseRange`,
@@ -2426,6 +2436,23 @@ checks the real-source permutation topology helpers
    real-slice vector with real coordinates `q`.  The producer of this packet is
    the only linear algebra input needed to define the `realModelDim` and
    `realModelToComplexSlice` fields of `sourceFullFrameRealGaugeSliceData`.
+   Its proof is now pinned to the following Lean steps:
+   (i) prove that the real and imaginary coordinate parts of any
+   `Y ∈ sourceFullFrameOrientedTangentSpace d
+   (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal))` belong to
+   `sourceFullFrameRealOrientedTangentSpace d M0R`; this is the real-coefficient
+   tangent-equation split,
+   (ii) decompose each element of the explicit complex slice by unfolding its
+   range membership as
+   `sourceFullFrameOrientedDifferentialRightInverseLinear d hM0C Y`, splitting
+   `Y` into those real and imaginary tangent parts, and applying
+   `sourceFullFrameRealDifferentialRightInverseLinear_complexify`,
+   (iii) choose a real finite basis of
+   `sourceFullFrameRealDifferentialRightInverseRange d hM0R`, define the
+   complex coordinate map by finite sums of the componentwise complexified
+   basis vectors, prove injectivity with
+   `sourceFullFrameMatrix_map_ofReal_add_I_smul_eq_zero`, and prove
+   surjectivity from the range decomposition in (ii).
    After that, apply the real
    inverse/implicit-function theorem to the real kernel map, whose
    complexification is the existing complex implicit-kernel map; then shrink
