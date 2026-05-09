@@ -615,6 +615,25 @@ def sourceFullFrameRealSplitProductKernelCoord
       (sourceComplementIndex ι → Fin (d + 1) → ℝ) :=
   (S.realKernelCoord p.1, p.2)
 
+/-- If the selected-frame kernel coordinate is open, then its product with the
+identity mixed-row coordinate is open.  The final producer uses this topology
+fact on a shrunken local frame chart. -/
+theorem isOpenMap_sourceFullFrameRealSplitProductKernelCoord_of_realKernelCoord
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    (hS_open : IsOpenMap S.realKernelCoord) :
+    IsOpenMap (sourceFullFrameRealSplitProductKernelCoord S) := by
+  simpa [sourceFullFrameRealSplitProductKernelCoord, Prod.map_map] using
+    hS_open.prodMap (IsOpenMap.id :
+      IsOpenMap (id :
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ) →
+          sourceComplementIndex ι → Fin (d + 1) → ℝ))
+
 /-- On determinant-nonzero selected frames, the split kernel/mixed coordinate
 is the selected-frame kernel coordinate together with the checked rowwise
 linear equivalence from complement rows to mixed rows. -/

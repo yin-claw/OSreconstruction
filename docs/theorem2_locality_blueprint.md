@@ -19580,6 +19580,19 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ)
 
       theorem
+          BHW.isOpenMap_sourceFullFrameRealSplitProductKernelCoord_of_realKernelCoord
+          {d n : Nat}
+          {ι : Fin (d + 1) ↪ Fin n}
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          {hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0}
+          (S :
+            BHW.SourceFullFrameRealGaugeSliceData d
+              (BHW.sourceRealFullFrameMatrix d n ι x0) hdet)
+          (hS_open : IsOpenMap S.realKernelCoord) :
+          IsOpenMap
+            (BHW.sourceFullFrameRealSplitProductKernelCoord S)
+
+      theorem
           BHW.sourceFullFrameRealSplitKernelMixedCoord_eq_tailMixedRowsLinearEquiv
           {d n : Nat}
           {ι : Fin (d + 1) ↪ Fin n}
@@ -20683,6 +20696,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrameRealSplitMixedRowsHomeomorph`,
       `sourceFullFrameRealSplitKernelMixedCoord`,
       `sourceFullFrameRealSplitProductKernelCoord`,
+      `isOpenMap_sourceFullFrameRealSplitProductKernelCoord_of_realKernelCoord`,
       `sourceFullFrameRealSplitKernelMixedCoord_eq_tailMixedRowsLinearEquiv`,
       `sourceFullFrameRealSplitKernelMixedCoord_eq_productKernelCoord_homeomorph`,
       `sourceFullFrameRealSplitKernelMixedCoord_image_eq_product_homeomorph_image`,

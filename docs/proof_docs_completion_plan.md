@@ -6022,6 +6022,7 @@ implementation contract is:
    chosen determinant-nonzero `W`.  The product-coordinate bridge now checked
    in Lean is
    `sourceFullFrameRealSplitProductKernelCoord`,
+   `isOpenMap_sourceFullFrameRealSplitProductKernelCoord_of_realKernelCoord`,
    `sourceFullFrameRealSplitKernelMixedCoord_eq_productKernelCoord_homeomorph`,
    `sourceFullFrameRealSplitKernelMixedCoord_image_eq_product_homeomorph_image`,
    `isOpen_sourceFullFrameRealSplitKernelMixedCoord_image_of_product_homeomorph_image_open`,
