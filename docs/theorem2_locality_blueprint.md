@@ -20970,6 +20970,26 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrameRealCompatibleKernelProjection d hM0R`, using the
       checked complex finite-coordinate chart
       `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC`.
+      The determinant-direction ambient comparison is now checked as
+      `BHW.sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC`.
+      Its coordinate formula is definitional, and
+      `BHW.sourceFullFrameRealCompatibleSymmetricEquation_eq_of_zero_projection_eq`
+      gives local injectivity on the zero hypersurface for equality of the
+      determinant-direction projection.  The downstream reconstruction bridge is
+      checked as
+      `BHW.sourceFullFrameGauge_reconstructInvariant_eq_of_realCompatibleProjection_eq_mixedRows_eq`:
+      once the selected source coordinate and reconstructed gauge-slice
+      coordinate are both in this ambient chart source, determinant-direction
+      projection equality plus mixed-row equality reconstructs the original
+      oriented invariant.
+      The finite compatible kernel chart is also checked:
+      `BHW.sourceFullFrameRealCompatibleSliceKernelOpenPartialHomeomorphC`
+      has coe
+      `BHW.sourceFullFrameRealCompatibleSliceKernelOpenPartialHomeomorphC_coe`,
+      and
+      `BHW.sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC_realInvariant`
+      identifies the ambient determinant-direction selected coordinate with the
+      real selected-frame target coordinate on real source invariants.
       The older
       generic max-rank constructor
       `sourceOrientedMaxRankChartData_of_selectedDetNonzero` must not be used

@@ -20,6 +20,319 @@ open scoped Matrix.Norms.Operator
 namespace BHW
 
 set_option synthInstance.maxHeartbeats 160000 in
+set_option maxHeartbeats 700000 in
+/-- Ambient symmetric-equation local chart using the determinant-direction
+projection as its kernel coordinate.  This is the ambient comparison chart for
+the real-compatible full-frame route; unlike
+`sourceFullFrameSymmetricEquation_implicitChart`, its right coordinate is the
+explicit projection `sourceFullFrameRealCompatibleKernelProjection`. -/
+noncomputable def sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det) :
+    OpenPartialHomeomorph
+      (sourceFullFrameSymmetricCoordSubmodule d)
+      (ℂ × (sourceFullFrameSymmetricEquationDerivCLM d
+        (sourceFullFrameOrientedGramCoord d (M0R.map Complex.ofReal))).ker) := by
+  let hE : CompleteSpace (sourceFullFrameSymmetricCoordSubmodule d) :=
+    sourceFullFrameSymmetricCoordSubmodule_completeSpace d
+  letI : CompleteSpace (sourceFullFrameSymmetricCoordSubmodule d) := hE
+  let M0 := M0R.map Complex.ofReal
+  let H0S := sourceFullFrameSymmetricBase d M0
+  let f := sourceFullFrameSymmetricEquation d
+  let L := sourceFullFrameSymmetricEquationDerivCLM d
+      (sourceFullFrameOrientedGramCoord d M0)
+  let K := L.ker
+  let hK : CompleteSpace K := by infer_instance
+  letI : CompleteSpace K := hK
+  let P : sourceFullFrameSymmetricCoordSubmodule d →L[ℂ] K :=
+    sourceFullFrameRealCompatibleKernelProjection d hM0R
+  have hstrict : HasStrictFDerivAt f L H0S := by
+    simpa [f, L, H0S, M0, sourceFullFrameSymmetricBase] using
+      sourceFullFrameSymmetricEquation_hasStrictFDerivAt d H0S
+  have hrange_left : L.range = ⊤ := by
+    simpa [L, M0] using
+      sourceFullFrameSymmetricEquationDerivCLM_range_eq_top_of_det_ne_zero
+        (d := d)
+        (H0 := sourceFullFrameOrientedGramCoord d (M0R.map Complex.ofReal))
+        (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R).ne_zero
+  have hP_strict : HasStrictFDerivAt
+      (fun H : sourceFullFrameSymmetricCoordSubmodule d => P (H - H0S))
+      P H0S := by
+    have hsubarg : HasStrictFDerivAt
+        (fun H : sourceFullFrameSymmetricCoordSubmodule d => H - H0S)
+        (1 : sourceFullFrameSymmetricCoordSubmodule d →L[ℂ]
+          sourceFullFrameSymmetricCoordSubmodule d) H0S := by
+      have hid : HasStrictFDerivAt
+          (fun H : sourceFullFrameSymmetricCoordSubmodule d => H)
+          (1 : sourceFullFrameSymmetricCoordSubmodule d →L[ℂ]
+            sourceFullFrameSymmetricCoordSubmodule d) H0S :=
+        hasStrictFDerivAt_id H0S
+      exact hid.sub_const H0S
+    have hlin0 : HasStrictFDerivAt
+        (fun X : sourceFullFrameSymmetricCoordSubmodule d => P X)
+        P (H0S - H0S) := by
+      exact @ContinuousLinearMap.hasStrictFDerivAt ℂ _
+        (sourceFullFrameSymmetricCoordSubmodule d) _ _ _ K _ _ _ P
+        (x := H0S - H0S)
+    have hcomp := HasStrictFDerivAt.comp (𝕜 := ℂ) (x := H0S)
+        (g := fun X : sourceFullFrameSymmetricCoordSubmodule d => P X)
+        (f := fun H : sourceFullFrameSymmetricCoordSubmodule d => H - H0S)
+        hlin0 hsubarg
+    simpa [P, ContinuousLinearMap.comp_id] using hcomp
+  have hrange_right : P.range = ⊤ := by
+    apply LinearMap.range_eq_top.mpr
+    intro K
+    refine ⟨(K : sourceFullFrameSymmetricCoordSubmodule d), ?_⟩
+    exact sourceFullFrameRealCompatibleKernelProjection_apply_ker d hM0R K
+  have hcompl : IsCompl L.ker P.ker := by
+    simpa [P, L, M0] using
+      (LinearMap.isCompl_of_proj
+        (sourceFullFrameRealCompatibleKernelProjection_apply_ker d hM0R))
+  let φ : @ImplicitFunctionData ℂ inferInstance
+      (sourceFullFrameSymmetricCoordSubmodule d) inferInstance inferInstance hE
+      ℂ inferInstance inferInstance inferInstance
+      K inferInstance inferInstance hK :=
+    @ImplicitFunctionData.mk ℂ inferInstance
+      (sourceFullFrameSymmetricCoordSubmodule d) inferInstance inferInstance hE
+      ℂ inferInstance inferInstance inferInstance
+      K inferInstance inferInstance hK
+      f L (fun H => P (H - H0S)) P H0S
+      hstrict hP_strict hrange_left hrange_right hcompl
+  exact @ImplicitFunctionData.toOpenPartialHomeomorph ℂ inferInstance
+      (sourceFullFrameSymmetricCoordSubmodule d) inferInstance inferInstance hE
+      ℂ inferInstance inferInstance inferInstance
+      K inferInstance inferInstance hK φ
+
+@[simp]
+theorem sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC_apply
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (H : sourceFullFrameSymmetricCoordSubmodule d) :
+    sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC
+        d hM0R H =
+      (sourceFullFrameSymmetricEquation d H,
+        sourceFullFrameRealCompatibleKernelProjection d hM0R
+          (H - sourceFullFrameSymmetricBase d (M0R.map Complex.ofReal))) := by
+  unfold sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC
+  rfl
+
+theorem sourceFullFrameRealCompatibleSymmetricEquation_eq_of_zero_projection_eq
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    {H G : sourceFullFrameSymmetricCoordSubmodule d}
+    (hH_source :
+      H ∈ (sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC
+        d hM0R).source)
+    (hG_source :
+      G ∈ (sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC
+        d hM0R).source)
+    (hH_zero : sourceFullFrameSymmetricEquation d H = 0)
+    (hG_zero : sourceFullFrameSymmetricEquation d G = 0)
+    (hproj :
+      sourceFullFrameRealCompatibleKernelProjection d hM0R
+          (H - sourceFullFrameSymmetricBase d (M0R.map Complex.ofReal)) =
+        sourceFullFrameRealCompatibleKernelProjection d hM0R
+          (G - sourceFullFrameSymmetricBase d (M0R.map Complex.ofReal))) :
+    H = G := by
+  let e := sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC
+    d hM0R
+  have hH_chart :
+      e H =
+        (0, sourceFullFrameRealCompatibleKernelProjection d hM0R
+          (H - sourceFullFrameSymmetricBase d (M0R.map Complex.ofReal))) := by
+    rw [sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC_apply]
+    rw [hH_zero]
+  have hG_chart :
+      e G =
+        (0, sourceFullFrameRealCompatibleKernelProjection d hM0R
+          (G - sourceFullFrameSymmetricBase d (M0R.map Complex.ofReal))) := by
+    rw [sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC_apply]
+    rw [hG_zero]
+  have heq : e H = e G := by
+    rw [hH_chart, hG_chart, hproj]
+  have hsymm := congrArg e.symm heq
+  simpa [e.left_inv hH_source, e.left_inv hG_source] using hsymm
+
+theorem sourceFullFrameSelectedSymmetricCoordOfSource_eq_gaugeSliceMapSymmetric_of_realCompatibleProjection_eq
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (S : SourceFullFrameGaugeSliceData d (M0R.map Complex.ofReal))
+    {G : SourceOrientedGramData d n}
+    (hG : G ∈ sourceOrientedGramVariety d n)
+    (X : S.slice)
+    (hG_source :
+      sourceFullFrameSelectedSymmetricCoordOfSource d n ι hG ∈
+        (sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC
+          d hM0R).source)
+    (hX_source :
+      sourceFullFrameGaugeSliceMapSymmetric d (M0R.map Complex.ofReal) S X ∈
+        (sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC
+          d hM0R).source)
+    (hprojection :
+      sourceFullFrameRealCompatibleKernelProjection d hM0R
+          (sourceFullFrameSelectedSymmetricCoordOfSource d n ι hG -
+            sourceFullFrameSymmetricBase d (M0R.map Complex.ofReal)) =
+        sourceFullFrameRealCompatibleKernelProjection d hM0R
+          (sourceFullFrameGaugeSliceMapSymmetric d
+              (M0R.map Complex.ofReal) S X -
+            sourceFullFrameSymmetricBase d (M0R.map Complex.ofReal))) :
+    sourceFullFrameSelectedSymmetricCoordOfSource d n ι hG =
+      sourceFullFrameGaugeSliceMapSymmetric d (M0R.map Complex.ofReal) S X := by
+  have hG_zero :
+      sourceFullFrameSymmetricEquation d
+          (sourceFullFrameSelectedSymmetricCoordOfSource d n ι hG) = 0 := by
+    have hvar :=
+      sourceFullFrameSelectedSymmetricCoordOfSource_mem_varietyCoord
+        d n ι hG
+    have hhyp :
+        ((sourceFullFrameSelectedSymmetricCoordOfSource d n ι hG :
+            sourceFullFrameSymmetricCoordSubmodule d) :
+          SourceFullFrameOrientedCoord d) ∈
+          sourceFullFrameOrientedHypersurfaceCoord d :=
+      sourceFullFrameOrientedGramVarietyCoord_subset_hypersurface d hvar
+    simpa [sourceFullFrameSymmetricEquation] using hhyp.2
+  have hX_zero :
+      sourceFullFrameSymmetricEquation d
+          (sourceFullFrameGaugeSliceMapSymmetric d
+            (M0R.map Complex.ofReal) S X) = 0 := by
+    have hhyp :=
+      sourceFullFrameGaugeSliceMapSymmetric_mem_hypersurface d
+        (M0R.map Complex.ofReal) S X
+    simpa [sourceFullFrameSymmetricHypersurfaceCoord] using hhyp
+  exact
+    sourceFullFrameRealCompatibleSymmetricEquation_eq_of_zero_projection_eq
+      d hM0R hG_source hX_source hG_zero hX_zero hprojection
+
+theorem sourceFullFrameOrientedCoordOfSource_eq_gaugeSliceMap_of_realCompatibleProjection_eq
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (S : SourceFullFrameGaugeSliceData d (M0R.map Complex.ofReal))
+    {G : SourceOrientedGramData d n}
+    (hG : G ∈ sourceOrientedGramVariety d n)
+    (X : S.slice)
+    (hG_source :
+      sourceFullFrameSelectedSymmetricCoordOfSource d n ι hG ∈
+        (sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC
+          d hM0R).source)
+    (hX_source :
+      sourceFullFrameGaugeSliceMapSymmetric d (M0R.map Complex.ofReal) S X ∈
+        (sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC
+          d hM0R).source)
+    (hprojection :
+      sourceFullFrameRealCompatibleKernelProjection d hM0R
+          (sourceFullFrameSelectedSymmetricCoordOfSource d n ι hG -
+            sourceFullFrameSymmetricBase d (M0R.map Complex.ofReal)) =
+        sourceFullFrameRealCompatibleKernelProjection d hM0R
+          (sourceFullFrameGaugeSliceMapSymmetric d
+              (M0R.map Complex.ofReal) S X -
+            sourceFullFrameSymmetricBase d (M0R.map Complex.ofReal))) :
+    sourceFullFrameOrientedCoordOfSource d n ι G =
+      sourceFullFrameGaugeSliceMap d (M0R.map Complex.ofReal) S X := by
+  have hsym :=
+    sourceFullFrameSelectedSymmetricCoordOfSource_eq_gaugeSliceMapSymmetric_of_realCompatibleProjection_eq
+      d n ι hM0R S hG X hG_source hX_source hprojection
+  have hcoe := congrArg
+    (fun H : sourceFullFrameSymmetricCoordSubmodule d =>
+      (H : SourceFullFrameOrientedCoord d)) hsym
+  simpa [sourceFullFrameSelectedSymmetricCoordOfSource,
+    sourceFullFrameGaugeSliceMapSymmetric] using hcoe
+
+theorem sourceFullFrameGauge_reconstructInvariant_eq_of_realCompatibleProjection_eq_mixedRows_eq
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (S : SourceFullFrameGaugeSliceData d (M0R.map Complex.ofReal))
+    {G : SourceOrientedGramData d n}
+    (hG : G ∈ sourceOrientedGramVariety d n)
+    (hdet : G.det ι ≠ 0)
+    (y : sourceFullFrameMaxRankChartModel d n ι
+      (M0R.map Complex.ofReal) S)
+    (hG_source :
+      sourceFullFrameSelectedSymmetricCoordOfSource d n ι hG ∈
+        (sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC
+          d hM0R).source)
+    (hX_source :
+      sourceFullFrameGaugeSliceMapSymmetric d (M0R.map Complex.ofReal) S y.1 ∈
+        (sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC
+          d hM0R).source)
+    (hprojection :
+      sourceFullFrameRealCompatibleKernelProjection d hM0R
+          (sourceFullFrameSelectedSymmetricCoordOfSource d n ι hG -
+            sourceFullFrameSymmetricBase d (M0R.map Complex.ofReal)) =
+        sourceFullFrameRealCompatibleKernelProjection d hM0R
+          (sourceFullFrameGaugeSliceMapSymmetric d
+              (M0R.map Complex.ofReal) S y.1 -
+            sourceFullFrameSymmetricBase d (M0R.map Complex.ofReal)))
+    (hmixed :
+      y.2 = sourceSelectedMixedRows d n ι G) :
+    sourceFullFrameGauge_reconstructInvariant d n ι
+        (M0R.map Complex.ofReal) S y = G := by
+  have hsel :
+      sourceFullFrameOrientedCoordOfSource d n ι G =
+        sourceFullFrameGaugeSliceMap d (M0R.map Complex.ofReal) S y.1 :=
+    sourceFullFrameOrientedCoordOfSource_eq_gaugeSliceMap_of_realCompatibleProjection_eq
+      d n ι hM0R S hG y.1 hG_source hX_source hprojection
+  have hsel_reconstruct :
+      sourceFullFrameOrientedCoordOfSource d n ι
+          (sourceFullFrameGauge_reconstructInvariant d n ι
+            (M0R.map Complex.ofReal) S y) =
+        sourceFullFrameOrientedCoordOfSource d n ι G := by
+    calc
+      sourceFullFrameOrientedCoordOfSource d n ι
+          (sourceFullFrameGauge_reconstructInvariant d n ι
+            (M0R.map Complex.ofReal) S y) =
+          sourceFullFrameOrientedGramCoord d
+            (sourceFullFrameGauge_reconstructFrame d n ι
+              (M0R.map Complex.ofReal) S y) := by
+        exact
+          sourceFullFrameOrientedCoordOfSource_reconstructInvariant_eq
+            d n ι (M0R.map Complex.ofReal) S y
+      _ = sourceFullFrameGaugeSliceMap d (M0R.map Complex.ofReal) S y.1 := by
+        rfl
+      _ = sourceFullFrameOrientedCoordOfSource d n ι G := hsel.symm
+  have hdet_reconstruct :
+      (sourceFullFrameGauge_reconstructInvariant d n ι
+        (M0R.map Complex.ofReal) S y).det ι ≠ 0 := by
+    have hdet_eq :
+        (sourceFullFrameGauge_reconstructInvariant d n ι
+          (M0R.map Complex.ofReal) S y).det ι = G.det ι := by
+      simpa [sourceFullFrameOrientedCoordOfSource] using
+        congrArg Prod.snd hsel_reconstruct
+    rw [hdet_eq]
+    exact hdet
+  have hframe_det :
+      (sourceFullFrameGauge_reconstructFrame d n ι
+        (M0R.map Complex.ofReal) S y).det ≠ 0 := by
+    rw [← sourceFullFrameGauge_reconstructInvariant_selectedDet
+      d n ι (M0R.map Complex.ofReal) S y]
+    exact hdet_reconstruct
+  have hmixed_reconstruct :
+      sourceSelectedMixedRows d n ι
+          (sourceFullFrameGauge_reconstructInvariant d n ι
+            (M0R.map Complex.ofReal) S y) =
+        sourceSelectedMixedRows d n ι G := by
+    calc
+      sourceSelectedMixedRows d n ι
+          (sourceFullFrameGauge_reconstructInvariant d n ι
+            (M0R.map Complex.ofReal) S y) = y.2 := by
+        exact
+          sourceSelectedMixedRows_reconstructInvariant_eq_of_frame_det_ne_zero
+            d n ι (M0R.map Complex.ofReal) S y hframe_det
+      _ = sourceSelectedMixedRows d n ι G := hmixed
+  exact
+    sourceFullFrameGauge_reconstructInvariant_eq_of_selectedCoord_eq_mixedRows_eq
+      d n ι (M0R.map Complex.ofReal) S y hG hdet hsel_reconstruct
+      hmixed_reconstruct
+
+set_option synthInstance.maxHeartbeats 160000 in
 set_option maxHeartbeats 500000 in
 /-- The explicit real-compatible kernel-coordinate map has the same strict
 derivative as the generic implicit-kernel map. -/
@@ -257,6 +570,76 @@ theorem sourceFullFrameRealCompatibleNormalizedKernelC_zero_mem_chartTarget
       d hM0R F
   have htarget :=
     (sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC
+      d hM0R F).map_source hsource
+  simpa using htarget
+
+/-- The determinant-direction complex kernel chart transported from finite
+coordinates back to the explicit complex full-frame slice. -/
+noncomputable def sourceFullFrameRealCompatibleSliceKernelOpenPartialHomeomorphC
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    OpenPartialHomeomorph
+      (sourceFullFrameExplicitGaugeSliceData d
+        (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)).slice
+      (sourceFullFrameSymmetricEquationDerivCLM d
+        (sourceFullFrameOrientedGramCoord d (M0R.map Complex.ofReal))).ker :=
+  let E := sourceFullFrameRealSliceKernelCoordEquiv d hM0R F
+  F.complexCoordEquiv.symm.toHomeomorph.toOpenPartialHomeomorph |>.trans
+    ((sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC
+      d hM0R F).trans E.toHomeomorph.toOpenPartialHomeomorph)
+
+@[simp]
+theorem sourceFullFrameRealCompatibleSliceKernelOpenPartialHomeomorphC_coe
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    (sourceFullFrameRealCompatibleSliceKernelOpenPartialHomeomorphC
+      d hM0R F :
+        (sourceFullFrameExplicitGaugeSliceData d
+          (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)).slice →
+        (sourceFullFrameSymmetricEquationDerivCLM d
+          (sourceFullFrameOrientedGramCoord d (M0R.map Complex.ofReal))).ker) =
+      sourceFullFrameRealCompatibleExplicitKernelMap d hM0R := by
+  funext X
+  simp [sourceFullFrameRealCompatibleSliceKernelOpenPartialHomeomorphC,
+    sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC_coe,
+    sourceFullFrameRealCompatibleNormalizedKernelMap]
+
+/-- The determinant-direction slice-kernel chart contains the origin in its
+source. -/
+theorem sourceFullFrameRealCompatibleSliceKernelC_zero_mem_chartSource
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    (0 :
+      (sourceFullFrameExplicitGaugeSliceData d
+        (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)).slice) ∈
+      (sourceFullFrameRealCompatibleSliceKernelOpenPartialHomeomorphC
+        d hM0R F).source := by
+  unfold sourceFullFrameRealCompatibleSliceKernelOpenPartialHomeomorphC
+  simp [sourceFullFrameRealCompatibleNormalizedKernelC_zero_mem_chartSource
+    d hM0R F]
+
+/-- The determinant-direction slice-kernel chart contains the origin in its
+target. -/
+theorem sourceFullFrameRealCompatibleSliceKernelC_zero_mem_chartTarget
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    (0 :
+      (sourceFullFrameSymmetricEquationDerivCLM d
+        (sourceFullFrameOrientedGramCoord d (M0R.map Complex.ofReal))).ker) ∈
+      (sourceFullFrameRealCompatibleSliceKernelOpenPartialHomeomorphC
+        d hM0R F).target := by
+  have hsource :=
+    sourceFullFrameRealCompatibleSliceKernelC_zero_mem_chartSource d hM0R F
+  have htarget :=
+    (sourceFullFrameRealCompatibleSliceKernelOpenPartialHomeomorphC
       d hM0R F).map_source hsource
   simpa using htarget
 
@@ -981,6 +1364,54 @@ theorem sourceFullFrameRealCompatibleFrameTargetCoordC_base
       ((sourceFullFrameRealCompatibleKernelProjection d hM0R) 0) = 0
   rw [(sourceFullFrameRealCompatibleKernelProjection d hM0R).map_zero]
   exact (sourceFullFrameRealSliceKernelCoordEquiv d hM0R F).symm.map_zero
+
+/-- Ambient source-invariant version of the determinant-direction selected
+kernel coordinate, written in the same finite target coordinates as
+`sourceFullFrameRealCompatibleFrameTargetCoordC`. -/
+noncomputable def sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R)
+    (G : SourceOrientedGramData d n) :
+    Fin F.realModelDim → ℂ :=
+  (sourceFullFrameRealSliceKernelCoordEquiv d hM0R F).symm
+    (sourceFullFrameRealCompatibleKernelProjection d hM0R
+      (sourceFullFrameSelectedSymmetricCoordAmbient d n ι G -
+        sourceFullFrameSymmetricBase d (M0R.map Complex.ofReal)))
+
+/-- On real source invariants, the ambient determinant-direction selected
+kernel coordinate is exactly the frame-level target coordinate of the selected
+real full-frame matrix. -/
+theorem sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC_realInvariant
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    (hM0R : IsUnit (sourceRealFullFrameMatrix d n ι x0).det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d
+      (sourceRealFullFrameMatrix d n ι x0) hM0R)
+    (x : Fin n → Fin (d + 1) → ℝ) :
+    sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC
+        d n ι hM0R F (sourceRealOrientedMinkowskiInvariant d n x) =
+      sourceFullFrameRealCompatibleFrameTargetCoordC d hM0R F
+        ((sourceRealFullFrameMatrix d n ι x).map Complex.ofReal) := by
+  unfold sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC
+  unfold sourceFullFrameRealCompatibleFrameTargetCoordC
+  congr 2
+
+@[simp]
+theorem sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC_base
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    (hM0R : IsUnit (sourceRealFullFrameMatrix d n ι x0).det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d
+      (sourceRealFullFrameMatrix d n ι x0) hM0R) :
+    sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC
+        d n ι hM0R F (sourceRealOrientedMinkowskiInvariant d n x0) = 0 := by
+  rw [sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC_realInvariant]
+  exact sourceFullFrameRealCompatibleFrameTargetCoordC_base d hM0R F
 
 /-- Complex derivative of the frame-level target coordinate used by the
 selected-frame product-chart construction. -/

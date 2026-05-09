@@ -6173,6 +6173,40 @@ implementation contract is:
    real/complex equality
    `chart_eq_kernel_mixed` for the determinant-direction real coordinate.
 
+   The determinant-direction comparison layer is now Lean-checked.  The ambient
+   symmetric-equation IFT chart is
+   `BHW.sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC`;
+   its checked apply theorem says its coordinates are exactly
+   `(sourceFullFrameSymmetricEquation d H,
+   sourceFullFrameRealCompatibleKernelProjection d hM0R
+   (H - sourceFullFrameSymmetricBase d (M0R.map Complex.ofReal)))`.
+   The checked injectivity bridge
+   `BHW.sourceFullFrameRealCompatibleSymmetricEquation_eq_of_zero_projection_eq`
+   says that, inside this chart source, two symmetric coordinates on the zero
+   hypersurface with the same determinant-direction projection are equal.
+   Consequently the source-selected/gauge-slice comparison is also checked as
+   `BHW.sourceFullFrameSelectedSymmetricCoordOfSource_eq_gaugeSliceMapSymmetric_of_realCompatibleProjection_eq`,
+   `BHW.sourceFullFrameOrientedCoordOfSource_eq_gaugeSliceMap_of_realCompatibleProjection_eq`,
+   and
+   `BHW.sourceFullFrameGauge_reconstructInvariant_eq_of_realCompatibleProjection_eq_mixedRows_eq`.
+   This removes the earlier algebraic ambiguity: the compatible chart may use
+   determinant-direction projection equality directly, provided the ambient
+   selected coordinate and reconstructed gauge-slice coordinate have both been
+   shrunk into the checked ambient chart source.
+
+   The finite complex chart side is checked too:
+   `BHW.sourceFullFrameRealCompatibleSliceKernelOpenPartialHomeomorphC` is the
+   determinant-direction kernel chart transported back to the explicit complex
+   full-frame slice, with coe theorem
+   `BHW.sourceFullFrameRealCompatibleSliceKernelOpenPartialHomeomorphC_coe` and
+   origin source/target lemmas.  The ambient source-invariant coordinate
+   `BHW.sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC` is in the
+   same finite target coordinates as
+   `sourceFullFrameRealCompatibleFrameTargetCoordC`, and
+   `BHW.sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC_realInvariant`
+   proves it agrees with the selected real full-frame coordinate on real
+   source invariants.
+
    Lean-pseudocode for the next implementation target:
 
    ```lean
