@@ -6175,6 +6175,19 @@ implementation contract is:
    The companion
    `BHW.complexMinkowski_submodule_eq_top_of_linearEquiv_full` shows that a
    source block linearly equivalent to such a full target block is full too.
+   A Gemini theorem-shape audit on 2026-05-08 confirmed the full-block risk:
+   when the hyperbolic block is full and the target maximal isotropic span must
+   be preserved, there is no determinant-flipping repair inside the stabilizer
+   of that target maximal isotropic subspace.  In hyperbolic coordinates the
+   stabilizer has Levi action `A` on the maximal isotropic subspace and
+   `(Aᵀ)⁻¹` on a dual, so its determinant contribution is
+   `det A * det (Aᵀ)⁻¹ = 1`; unipotent changes also have determinant one.
+   Flipping one target isotropic basis vector is not a valid repair, because
+   preserving the Kronecker pairing forces the matching dual vector to flip as
+   well, leaving the determinant unchanged.  Therefore the full-block branch
+   must use the oriented source invariant/volume-family condition to prove the
+   full-block map is already determinant one.  It must not assert an automatic
+   frame-choice determinant repair.
    The last packaging substep is now
    checked as
    `BHW.complexMinkowski_selectedResidualHyperbolicExtension_of_ambientLinearEquiv`:

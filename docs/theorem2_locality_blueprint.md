@@ -26161,7 +26161,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.complexMinkowski_submodule_eq_top_of_not_finrank_lt_spacetime`
       turns `¬ Module.finrank ℂ L < d + 1` into `L = ⊤`, and
       `BHW.complexMinkowski_submodule_eq_top_of_linearEquiv_full` carries
-      fullness back across the block equivalence to the source block.
+      fullness back across the block equivalence to the source block.  The
+      full-block determinant branch is an oriented-invariant branch, not a
+      repair branch: preserving the target maximal isotropic span leaves only
+      determinant-one stabilizer freedom (`A` on the span and `(Aᵀ)⁻¹` on a
+      dual), so a determinant-`-1` block map cannot be fixed by flipping a
+      target basis vector or by a hidden reflection.  The full-block proof must
+      show that the oriented source-volume/family invariant forces the
+      constructed full ambient block map to have determinant one already.
 
       Lean-shaped proof of the residual-frame-extension producer after the
       support packet exists:
