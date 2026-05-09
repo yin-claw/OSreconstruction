@@ -18572,10 +18572,20 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.continuous_sourceRealFullFrameDet`,
       `BHW.sourceFullFrameMatrix_realEmbed`,
       `BHW.sourceFullFrameDet_realEmbed`,
-      `BHW.sourceRealFullFrameDet_nonzero_isOpen`; and the canonical head
-      full-frame embedding `BHW.sourceRealHeadFullFrameEmbedding`.  This is
-      only the definition/permutation/topological-image and
-      determinant-openness substrate.  No theorem yet asserts that a
+      `BHW.sourceRealFullFrameDet_nonzero_isOpen`,
+      `BHW.sourceRealFullFrameUnitTemplate`,
+      `BHW.sourceRealFullFrameUnitTemplate_selected`,
+      `BHW.sourceRealFullFrameMatrix_add_unitTemplate`,
+      `BHW.sourceRealFullFrameDetLinePolynomial`,
+      `BHW.sourceRealFullFrameDetLinePolynomial_leadingCoeff`,
+      `BHW.sourceRealFullFrameDetLinePolynomial_ne_zero`,
+      `BHW.sourceRealFullFrameDetLinePolynomial_eval`,
+      `BHW.sourceRealFullFrameDet_nonzero_dense`, and
+      `BHW.nonempty_open_inter_sourceRealFullFrameDet_nonzero`; and the
+      canonical head full-frame embedding
+      `BHW.sourceRealHeadFullFrameEmbedding`.  This is only the
+      definition/permutation/topological-image, determinant-openness, and
+      selected determinant-density substrate.  No theorem yet asserts that a
       Figure-2-4 real patch is an oriented uniqueness patch; the next honest
       real-uniqueness frontier is still the tangent/IFT environment packet
       `BHW.IsHWOrientedRealEnvironment` and the proof of

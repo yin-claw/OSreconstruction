@@ -2233,11 +2233,21 @@ checks the real-source permutation topology helpers
 `BHW.continuous_sourceRealFullFrameDet`,
 `BHW.sourceFullFrameMatrix_realEmbed`,
 `BHW.sourceFullFrameDet_realEmbed`,
-`BHW.sourceRealFullFrameDet_nonzero_isOpen`; and the canonical head
-full-frame embedding `BHW.sourceRealHeadFullFrameEmbedding`.  This closes
-only the definition/permutation/topological-image and determinant-openness
-layer: no real patch is asserted to be a uniqueness patch yet.  The remaining
-real-uniqueness proof still begins with the tangent/IFT environment producer
+`BHW.sourceRealFullFrameDet_nonzero_isOpen`,
+`BHW.sourceRealFullFrameUnitTemplate`,
+`BHW.sourceRealFullFrameUnitTemplate_selected`,
+`BHW.sourceRealFullFrameMatrix_add_unitTemplate`,
+`BHW.sourceRealFullFrameDetLinePolynomial`,
+`BHW.sourceRealFullFrameDetLinePolynomial_leadingCoeff`,
+`BHW.sourceRealFullFrameDetLinePolynomial_ne_zero`,
+`BHW.sourceRealFullFrameDetLinePolynomial_eval`,
+`BHW.sourceRealFullFrameDet_nonzero_dense`, and
+`BHW.nonempty_open_inter_sourceRealFullFrameDet_nonzero`; and the canonical
+head full-frame embedding `BHW.sourceRealHeadFullFrameEmbedding`.  This
+closes only the definition/permutation/topological-image,
+determinant-openness, and selected determinant-density layer: no real patch is
+asserted to be a uniqueness patch yet.  The remaining real-uniqueness proof
+still begins with the tangent/IFT environment producer
 `BHW.IsHWOrientedRealEnvironment` and
 `BHW.sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment`.
 

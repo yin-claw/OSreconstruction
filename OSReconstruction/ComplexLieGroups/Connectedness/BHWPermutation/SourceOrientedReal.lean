@@ -247,6 +247,192 @@ theorem sourceRealFullFrameDet_nonzero_isOpen
     hopen.preimage (continuous_sourceRealFullFrameDet d n ι)
   simpa [Set.preimage] using hpre
 
+/-- The real source direction which adds the identity matrix to the selected
+full-frame rows. -/
+def sourceRealFullFrameUnitTemplate
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n) :
+    Fin n → Fin (d + 1) → ℝ :=
+  fun k μ =>
+    ∑ a : Fin (d + 1),
+      if ι a = k ∧ a = μ then (1 : ℝ) else 0
+
+@[simp]
+theorem sourceRealFullFrameUnitTemplate_selected
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    (a μ : Fin (d + 1)) :
+    sourceRealFullFrameUnitTemplate d n ι (ι a) μ =
+      if a = μ then (1 : ℝ) else 0 := by
+  classical
+  by_cases h : a = μ
+  · subst μ
+    rw [sourceRealFullFrameUnitTemplate]
+    simp
+  · rw [sourceRealFullFrameUnitTemplate]
+    have hzero :
+        (∑ b : Fin (d + 1),
+          if ι b = ι a ∧ b = μ then (1 : ℝ) else 0) = 0 := by
+      apply Finset.sum_eq_zero
+      intro b _hb
+      by_cases hcond : ι b = ι a ∧ b = μ
+      · have hba : b = a := ι.injective hcond.1
+        have haμ : a = μ := by rw [← hba, hcond.2]
+        exact False.elim (h haμ)
+      · by_cases hba : b = a
+        · have hbμ : b ≠ μ := by
+            intro hbμ
+            apply h
+            rw [← hba, hbμ]
+          simp [hba, h]
+        · simp [hba]
+    rw [hzero]
+    simp [h]
+
+/-- Along the unit-template line, the selected real full-frame matrix is
+translated by `t • 1`. -/
+theorem sourceRealFullFrameMatrix_add_unitTemplate
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    (x : Fin n → Fin (d + 1) → ℝ)
+    (t : ℝ) :
+    sourceRealFullFrameMatrix d n ι
+        (x + t • sourceRealFullFrameUnitTemplate d n ι) =
+      sourceRealFullFrameMatrix d n ι x +
+        t • (1 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) := by
+  ext a μ
+  by_cases h : a = μ
+  · subst μ
+    simp [sourceRealFullFrameMatrix, Pi.add_apply, Pi.smul_apply]
+  · simp [sourceRealFullFrameMatrix, Pi.add_apply, Pi.smul_apply, h]
+
+/-- The selected full-frame determinant along the unit-template line. -/
+def sourceRealFullFrameDetLinePolynomial
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    (x : Fin n → Fin (d + 1) → ℝ) : Polynomial ℝ :=
+  Matrix.det ((Polynomial.X : Polynomial ℝ) •
+      (1 : Matrix (Fin (d + 1)) (Fin (d + 1)) (Polynomial ℝ)) +
+    (sourceRealFullFrameMatrix d n ι x).map Polynomial.C)
+
+/-- The selected full-frame determinant line polynomial has leading
+coefficient one. -/
+theorem sourceRealFullFrameDetLinePolynomial_leadingCoeff
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    (x : Fin n → Fin (d + 1) → ℝ) :
+    Polynomial.leadingCoeff
+      (sourceRealFullFrameDetLinePolynomial d n ι x) = 1 := by
+  simpa [sourceRealFullFrameDetLinePolynomial] using
+    Polynomial.leadingCoeff_det_X_one_add_C
+      (A := sourceRealFullFrameMatrix d n ι x)
+
+/-- The selected full-frame determinant line polynomial is not zero. -/
+theorem sourceRealFullFrameDetLinePolynomial_ne_zero
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    (x : Fin n → Fin (d + 1) → ℝ) :
+    sourceRealFullFrameDetLinePolynomial d n ι x ≠ 0 := by
+  intro hp
+  have hlead :=
+    sourceRealFullFrameDetLinePolynomial_leadingCoeff d n ι x
+  have hlead0 := congrArg Polynomial.leadingCoeff hp
+  rw [hlead] at hlead0
+  norm_num at hlead0
+
+/-- Evaluating the selected full-frame determinant line polynomial gives the
+determinant on the corresponding real source line. -/
+theorem sourceRealFullFrameDetLinePolynomial_eval
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    (x : Fin n → Fin (d + 1) → ℝ)
+    (t : ℝ) :
+    (sourceRealFullFrameDetLinePolynomial d n ι x).eval t =
+      sourceRealFullFrameDet d n ι
+        (x + t • sourceRealFullFrameUnitTemplate d n ι) := by
+  unfold sourceRealFullFrameDetLinePolynomial sourceRealFullFrameDet
+  rw [Matrix.det_apply', Polynomial.eval_finset_sum, Matrix.det_apply',
+    sourceRealFullFrameMatrix_add_unitTemplate]
+  apply Finset.sum_congr rfl
+  intro σ _
+  rw [Polynomial.eval_mul, Polynomial.eval_intCast]
+  congr 1
+  rw [Polynomial.eval_prod]
+  apply Finset.prod_congr rfl
+  intro i _
+  by_cases h : σ i = i
+  · have hdiag : (1 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) i (σ i) = 1 := by
+      simp [Matrix.one_apply, h]
+    simp [Matrix.add_apply, Matrix.smul_apply, Matrix.map_apply, h,
+      add_comm]
+  · have hoff : (1 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) i (σ i) = 0 := by
+      have h' : i ≠ σ i := by
+        intro hi
+        exact h hi.symm
+      simp [h']
+    simp [Matrix.add_apply, Matrix.smul_apply, Matrix.map_apply, h,
+      add_comm]
+
+/-- The nonvanishing locus of any selected real full-frame determinant is
+dense. -/
+theorem sourceRealFullFrameDet_nonzero_dense
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n) :
+    Dense {x : Fin n → Fin (d + 1) → ℝ |
+      sourceRealFullFrameDet d n ι x ≠ 0} := by
+  rw [dense_iff_inter_open]
+  intro U hU hU_nonempty
+  rcases hU_nonempty with ⟨x, hxU⟩
+  let line : ℝ → Fin n → Fin (d + 1) → ℝ :=
+    fun t => x + t • sourceRealFullFrameUnitTemplate d n ι
+  let p := sourceRealFullFrameDetLinePolynomial d n ι x
+  have hp_ne : p ≠ 0 := by
+    simpa [p] using
+      sourceRealFullFrameDetLinePolynomial_ne_zero d n ι x
+  have hroots_finite : ({t : ℝ | p.eval t = 0}).Finite := by
+    apply Set.Finite.subset (p.roots.toFinset.finite_toSet)
+    intro t ht
+    simp only [Set.mem_setOf_eq, Finset.mem_coe, Multiset.mem_toFinset] at ht ⊢
+    exact (Polynomial.mem_roots hp_ne).mpr ht
+  have hdense : Dense (Set.univ \ {t : ℝ | p.eval t = 0}) := by
+    simpa using
+      (Dense.diff_finite (s := (Set.univ : Set ℝ)) dense_univ hroots_finite)
+  have hline_cont : Continuous line := by
+    exact continuous_const.add (continuous_id.smul continuous_const)
+  have hpre_open : IsOpen (line ⁻¹' U) := hU.preimage hline_cont
+  have hpre_nonempty : (line ⁻¹' U).Nonempty := by
+    refine ⟨0, ?_⟩
+    simpa [line] using hxU
+  obtain ⟨t, htgood, htU⟩ :=
+    hdense.exists_mem_open hpre_open hpre_nonempty
+  have hp_eval_ne : p.eval t ≠ 0 := by
+    have ht_not : t ∉ {t : ℝ | p.eval t = 0} := by
+      simpa [Set.mem_diff, p] using htgood
+    simpa using ht_not
+  refine ⟨line t, htU, ?_⟩
+  have heval : p.eval t =
+      sourceRealFullFrameDet d n ι (line t) := by
+    simpa [p, line] using
+      sourceRealFullFrameDetLinePolynomial_eval d n ι x t
+  exact fun h => hp_eval_ne (by rwa [heval])
+
+/-- Every nonempty open real source patch contains a point where a selected
+full-frame determinant is nonzero. -/
+theorem nonempty_open_inter_sourceRealFullFrameDet_nonzero
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n)
+    {E : Set (Fin n → Fin (d + 1) → ℝ)}
+    (hE_open : IsOpen E)
+    (hE_ne : E.Nonempty) :
+    (E ∩
+      {x : Fin n → Fin (d + 1) → ℝ |
+        sourceRealFullFrameDet d n ι x ≠ 0}).Nonempty := by
+  rcases
+    (sourceRealFullFrameDet_nonzero_dense d n ι).exists_mem_open
+      hE_open hE_ne with
+    ⟨x, hxdet, hxE⟩
+  exact ⟨x, hxE, hxdet⟩
+
 /-- The canonical head full-frame embedding when the source has at least
 `d + 1` labels. -/
 def sourceRealHeadFullFrameEmbedding
