@@ -59,6 +59,36 @@ theorem sourceFullFrameRealCompatibleSymmetricDetDirection_ne_zero
         (d := d) (H0 := sourceFullFrameOrientedGram d (M0R.map Complex.ofReal))
         (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R).ne_zero
 
+set_option synthInstance.maxHeartbeats 100000 in
+/-- The determinant-direction derivative scalar at a complexified real
+full-frame base is itself the complexification of the corresponding real
+scalar. -/
+theorem sourceFullFrameRealCompatibleSymmetricDetDirection_scalar
+    (d : ℕ)
+    (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+    sourceFullFrameSymmetricEquationDerivCLM d
+      (sourceFullFrameOrientedGramCoord d (M0R.map Complex.ofReal))
+      (sourceFullFrameSymmetricDetDirection d) =
+      -((2 : ℂ) * minkowskiMetricDet d * ((M0R.det : ℝ) : ℂ)) := by
+  have h := sourceFullFrameOrientedEquation_fderiv_detDirection
+    (d := d) (H0 := sourceFullFrameOrientedGram d (M0R.map Complex.ofReal))
+  simpa [sourceFullFrameSymmetricEquationDerivCLM,
+    sourceFullFrameOrientedGramCoord, sourceFullFrameSymmetricDetDirection,
+    sourceFullFrameDetDirection, sourceFullFrameOrientedGram,
+    sourceFullFrame_matrix_map_ofReal_det] using h
+
+/-- The determinant-direction derivative scalar has zero imaginary part at a
+complexified real full-frame base. -/
+theorem sourceFullFrameRealCompatibleSymmetricDetDirection_scalar_im
+    (d : ℕ)
+    (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+    Complex.im (sourceFullFrameSymmetricEquationDerivCLM d
+      (sourceFullFrameOrientedGramCoord d (M0R.map Complex.ofReal))
+      (sourceFullFrameSymmetricDetDirection d)) = 0 := by
+  rw [sourceFullFrameRealCompatibleSymmetricDetDirection_scalar]
+  rw [minkowskiMetricDet_eq_ofReal_minkowskiMatrix_det]
+  simp
+
 set_option synthInstance.maxHeartbeats 120000 in
 set_option maxHeartbeats 400000 in
 /-- Explicit kernel projection for the symmetric full-frame equation at a

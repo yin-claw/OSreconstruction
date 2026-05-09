@@ -20364,6 +20364,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrameRealSliceNormalizedImplicitKernel_zero_mem_chartSource`,
       `sourceFullFrameRealSliceNormalizedImplicitKernel_zero_mem_chartTarget`,
       `sourceFullFrameRealCompatibleSymmetricDetDirection_ne_zero`,
+      `sourceFullFrameRealCompatibleSymmetricDetDirection_scalar`,
+      `sourceFullFrameRealCompatibleSymmetricDetDirection_scalar_im`,
       `sourceFullFrameRealCompatibleKernelProjection`,
       `sourceFullFrameRealCompatibleKernelProjection_apply_ker`,
       `sourceFullFrameRealCompatibleExplicitKernelMap`,
