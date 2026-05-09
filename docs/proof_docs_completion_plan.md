@@ -9765,11 +9765,15 @@ The source Wick point
 `fun k => wickRotatePoint (x k)` is **not** added as a field of
 `Dinit.Ωτ`; its trace is produced later by the local OS-I §4.5/BHW
 continuation theorem on the connected Figure-2-4 hull.  The pointwise trace
-helper is
-`BHW.os45_BHWJostPointwiseTraces_of_OSI45`, whose proof is just
-the local BHW/Jost trace output plus `Dinit.branchτ_eq_correctedExtendF` on
-the adjacent edge and the real membership rewrite from `hV_swapET`; no compact
-distributional equality enters.
+split is now:
+`BHW.os45_BHWJostBranch_onLocalHull_of_OSI45` returns the source Wick trace as
+part of the genuine local BHW/Jost continuation output, while
+`BHW.os45_BHWJostRealTrace_of_initialBranch` derives only the real trace from
+the generic permuted-sector hypotheses
+`WJ = branchτ` on `BHW.permutedExtendedTubeSector d n τ`,
+`branchτ z = extendF (bvt_F OS lgc n) (BHW.permAct τ z)` on that sector, and
+the real membership rewrite from `hV_swapET`.  No compact distributional
+equality enters.
 Lean-level membership transcript, 2026-05-09: for
 `τ = Equiv.swap i ⟨i.val + 1, hi⟩` and
 `Dinit.Ωτ = BHW.permutedExtendedTubeSector d n τ`, the initial `Dinit`

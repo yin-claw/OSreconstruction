@@ -47961,11 +47961,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
          all of `Dinit.Ωτ`; agreement only on the selected edge is too weak to
          be the BHW analytic-continuation input.  `WJ_agrees_adjacentEdge` is
          the direct edge consequence of that normalization.  The
-         `WJ_wick_trace` and `WJ_real_trace` fields are the local OS I
-         §4.5/BHW trace outputs on the source Wick edge and real Jost edge;
-         they are not proved by pretending the source Wick edge lies in the
-         initial pullback sector.  They are the only branch-trace consequences
-         needed to assemble the checked pair-data carrier.
+         `WJ_wick_trace` field is the local OS I §4.5/BHW trace output on the
+         source Wick edge; it is not proved by pretending the source Wick edge
+         lies in the initial pullback sector.  The `WJ_real_trace` field is the
+         real-sector consequence of `WJ_agrees_Ωτ`, the checked real-sector
+         membership in `Dinit.Ωτ`, and `Dinit.branchτ_eq_correctedExtendF`.
+         These are the only branch-trace consequences needed to assemble the
+         checked pair-data carrier.
 
          The actual lower theorem is then:
 
@@ -48013,17 +48015,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
            membership fields for the whole initial tube `Dinit.Ωτ`, the
            adjacent Wick edge, real Jost patch, `DΩ.Ω`, and
            `hChart.adjLift · 0`;
-         * obtain `WJ`, `WJ_holo`, and `WJ_lorentzInvariant` by the
-           Bargmann-Hall-Wightman continuation theorem on that local connected
-           hull;
+         * obtain `WJ`, `WJ_holo`, `WJ_lorentzInvariant`, and the source Wick
+           trace by the Bargmann-Hall-Wightman continuation theorem on that
+           local connected hull;
          * prove `WJ_agrees_Ωτ` as the branch-normalization condition in the
            BHW theorem, then derive `WJ_agrees_adjacentEdge` from
            `Dinit.wick_adjacent_mem`;
-         * prove the pointwise Wick and real trace formulas on `hChart.V0` as
-           the local OS I §4.5/BHW boundary-trace outputs on the source Wick
-           edge and real Jost edge, using the initial adjacent branch
-           normalization only on the adjacent edge where its domain actually
-           applies.
+         * prove the real trace formula on `hChart.V0` separately from
+           real-sector membership in `Dinit.Ωτ`, `WJ_agrees_Ωτ`, and
+           `Dinit.branchτ_eq_correctedExtendF`.
 
          For production implementation, this lower theorem should not be
          attacked as one large proof.  The proof-doc-complete split is the
@@ -48152,24 +48152,39 @@ Proof decomposition of this theorem, without hiding the analytic work:
                (∀ Λ z, z ∈ ΩJ ->
                  BHW.complexLorentzAction Λ z ∈ ΩJ ->
                    WJ (BHW.complexLorentzAction Λ z) = WJ z) ∧
-               (∀ z, z ∈ Dinit.Ωτ -> WJ z = Dinit.branchτ z)
+               (∀ z, z ∈ Dinit.Ωτ -> WJ z = Dinit.branchτ z) ∧
+               (∀ x, x ∈ hChart.V0 ->
+                 WJ (fun k => wickRotatePoint (x k)) =
+                   bvt_F OS lgc n
+                     (fun k => wickRotatePoint (x (Dinit.τ k))))
 
-         theorem BHW.os45_BHWJostPointwiseTraces_of_OSI45
+         theorem BHW.os45_BHWJostRealTrace_of_initialBranch
              ...
-             {ΩJ : Set (Fin n -> Fin (d + 1) -> ℂ)}
+             (τ : Equiv.Perm (Fin n))
+             (V : Set (NPointDomain d n))
              {WJ : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ}
-             (hW_Ωτ : ∀ z, z ∈ Dinit.Ωτ -> WJ z = Dinit.branchτ z)
+             {branchτ : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ}
+             (hW_Ωτ :
+               ∀ z, z ∈ BHW.permutedExtendedTubeSector d n τ ->
+                 WJ z = branchτ z)
+             (hbranchτ_eq_correctedExtendF :
+               ∀ z, z ∈ BHW.permutedExtendedTubeSector d n τ ->
+                 branchτ z =
+                   BHW.extendF (bvt_F OS lgc n) (BHW.permAct (d := d) τ z))
              (hrealτ :
-               ∀ x, x ∈ hChart.V0 ->
-                 BHW.realEmbed x ∈ Dinit.Ωτ) :
-             (∀ x, x ∈ hChart.V0 ->
-               WJ (fun k => wickRotatePoint (x k)) =
-                 bvt_F OS lgc n
-                   (fun k => wickRotatePoint (x (Dinit.τ k)))) ∧
-             (∀ x, x ∈ hChart.V0 ->
+               ∀ x, x ∈ V ->
+                 BHW.realEmbed x ∈ BHW.permutedExtendedTubeSector d n τ) :
+             ∀ x, x ∈ V ->
                WJ (BHW.realEmbed x) =
                  BHW.extendF (bvt_F OS lgc n)
-                   (BHW.realEmbed (fun k => x (Dinit.τ k))))
+                   (BHW.realEmbed (fun k => x (τ k)))
+
+         /- The source Wick trace is not a consequence of `hW_Ωτ`, because
+            the source Wick point is not generally in `Dinit.Ωτ`.  It is an
+            output of the local OS I §4.5/BHW continuation theorem itself.
+            The real trace is the mechanical one: use `hrealτ`, rewrite by
+            `hW_Ωτ`, then apply `Dinit.branchτ_eq_correctedExtendF` on the
+            adjacent real sector. -/
 
          -- Downstream boundary-data theorem, not an input to the compact
          -- source-patch branch-difference producer.
@@ -48250,7 +48265,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
                (d := d) hd OS lgc n i hi V hV_jost hV_ET hV_swapET
                hChart φ hφ_comp hφ_supp ψZ Dinit DΩ Dlor
            obtain
-             ⟨WJ, hWJ_holo, hWJ_inv, hWJ_Ωτ⟩ :=
+             ⟨WJ, hWJ_holo, hWJ_inv, hWJ_Ωτ, hWJ_wick_trace⟩ :=
              BHW.os45_BHWJostBranch_onLocalHull_of_OSI45
                (d := d) hd OS lgc n i hi V hV_jost hV_ET hV_swapET
                hChart φ hφ_comp hφ_supp ψZ Dinit DΩ Dlor
@@ -48263,19 +48278,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
              simpa [Dinit.Ωτ_sector_eq, BHW.permutedExtendedTubeSector,
                BHW.permAct, Dinit.τ] using
                hV_swapET x (hChart.V0_sub hx)
-           have htraces :
-               (∀ x, x ∈ hChart.V0 ->
-                 WJ (fun k => wickRotatePoint (x k)) =
-                   bvt_F OS lgc n
-                     (fun k => wickRotatePoint (x (Dinit.τ k)))) ∧
-               (∀ x, x ∈ hChart.V0 ->
+           have hWJ_real_trace :
+               ∀ x, x ∈ hChart.V0 ->
                  WJ (BHW.realEmbed x) =
                    BHW.extendF (bvt_F OS lgc n)
-                     (BHW.realEmbed (fun k => x (Dinit.τ k)))) :=
-             BHW.os45_BHWJostPointwiseTraces_of_OSI45
+                     (BHW.realEmbed (fun k => x (Dinit.τ k))) :=
+             BHW.os45_BHWJostRealTrace_of_initialBranch
                (d := d) hd OS lgc n i hi V hV_jost hV_ET hV_swapET
-               hChart φ hφ_comp hφ_supp ψZ Dinit DΩ Dlor
-               hWJ_Ωτ hrealτ
+               Dinit.τ hChart.V0
+               hWJ_Ωτ Dinit.branchτ_eq_correctedExtendF hrealτ
            exact
              { ΩJ := ΩJ
                ΩJ_open := hΩJ_open
@@ -48291,8 +48302,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
                WJ_holo := hWJ_holo
                WJ_lorentzInvariant := hWJ_inv
                WJ_agrees_Ωτ := hWJ_Ωτ
-               WJ_wick_trace := htraces.1
-               WJ_real_trace := htraces.2 }
+               WJ_wick_trace := hWJ_wick_trace
+               WJ_real_trace := hWJ_real_trace }
          ```
 
          Proof-body checklist for these five lower surfaces:

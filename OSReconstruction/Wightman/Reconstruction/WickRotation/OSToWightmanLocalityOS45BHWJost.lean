@@ -113,6 +113,47 @@ theorem differentiableOn_extendF_bvt_F_permAct_preimageExtendedTube
   exact (hExtend _ (hmaps hz)).comp z
     ((hperm_diff z).differentiableWithinAt) hmaps
 
+/-- Real-trace rewrite for an adjacent BHW/Jost branch normalized on one
+permuted extended-tube sector.
+
+This is only the mechanical real-edge half of the OS I §4.5 trace split: the
+source Wick trace is not derived here. -/
+theorem os45_BHWJostRealTrace_of_initialBranch
+    (OS : OsterwalderSchraderAxioms d)
+    (lgc : OSLinearGrowthCondition d OS)
+    (n : ℕ)
+    (τ : Equiv.Perm (Fin n))
+    (V : Set (NPointDomain d n))
+    {WJ branchτ : (Fin n → Fin (d + 1) → ℂ) → ℂ}
+    (hW_Ωτ :
+      ∀ z, z ∈ BHW.permutedExtendedTubeSector d n τ →
+        WJ z = branchτ z)
+    (hbranchτ_eq_correctedExtendF :
+      ∀ z, z ∈ BHW.permutedExtendedTubeSector d n τ →
+        branchτ z =
+          BHW.extendF (bvt_F OS lgc n) (BHW.permAct (d := d) τ z))
+    (hrealτ :
+      ∀ x, x ∈ V →
+        BHW.realEmbed x ∈ BHW.permutedExtendedTubeSector d n τ) :
+    ∀ x, x ∈ V →
+      WJ (BHW.realEmbed x) =
+        BHW.extendF (bvt_F OS lgc n)
+          (BHW.realEmbed (fun k => x (τ k))) := by
+  intro x hx
+  have hxΩ :
+      BHW.realEmbed x ∈ BHW.permutedExtendedTubeSector d n τ :=
+    hrealτ x hx
+  calc
+    WJ (BHW.realEmbed x)
+        = branchτ (BHW.realEmbed x) :=
+          hW_Ωτ (BHW.realEmbed x) hxΩ
+    _ = BHW.extendF (bvt_F OS lgc n)
+          (BHW.permAct (d := d) τ (BHW.realEmbed x)) :=
+          hbranchτ_eq_correctedExtendF (BHW.realEmbed x) hxΩ
+    _ = BHW.extendF (bvt_F OS lgc n)
+          (BHW.realEmbed (fun k => x (τ k))) := by
+          simp [BHW.permAct_realEmbed]
+
 /-- On an open Euclidean ordered source patch, the identity Wick trace is
 integrable against every compactly supported Schwartz test supported in the
 patch. -/
