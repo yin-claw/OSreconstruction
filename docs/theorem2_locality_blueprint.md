@@ -18604,6 +18604,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.sourceRealOrientedMinkowskiInvariant_det`,
       `BHW.realSourcePermute_symm_image_permImage_eq`,
       `BHW.os45Figure24_checkedRealPatch_gramEnvironmentSubpatch`, and
+      `BHW.sourceFullFrameOrientedCoordOfSource_sourceRealOrientedMinkowskiInvariant`,
+      `BHW.sourceRealSelectedMixedRows`,
+      `BHW.continuous_sourceRealSelectedMixedRows`,
+      `BHW.sourceSelectedMixedRows_sourceRealOrientedMinkowskiInvariant`, and
       `BHW.sourceOrientedMaxRankAt_sourceReal_fullFrameDet_ne_zero` in
       `SourceOrientedRealMaxRank.lean`.  The generic SCV uniqueness consumer is
       now checked in `SourceOrientedRealUniqueness.lean`:
@@ -18612,6 +18616,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `BHW.SourceOrientedLocalRealChartData.shrink_to_domain_and_realPatch`,
       `BHW.sourceOrientedLocalTotallyReal_zero_seed`, and
       `BHW.sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment`.
+      The full-frame real-compatible packaging layer is checked in
+      `SourceOrientedRealFullFrameChart.lean`:
+      `BHW.SourceFullFrameRealGaugeSliceData`,
+      `BHW.SourceFullFrameRealCompatibleImplicitChartData`,
+      `BHW.SourceFullFrameRealCompatibleImplicitChartData.chart_real_eq`,
+      `BHW.SourceFullFrameRealCompatibleImplicitChartData.to_localRealChartData`,
+      and
+      `BHW.sourceOrientedLocalRealChartData_of_fullFrameRealCompatibleImplicitChartData`.
       No theorem yet asserts that a Figure-2-4 real patch supplies an
       `IsHWOrientedRealEnvironment`; the next honest real-uniqueness frontier
       is the tangent/IFT producer of that local real chart data and the
@@ -19423,20 +19435,28 @@ Proof decomposition of this theorem, without hiding the analytic work:
                     Complex.ofReal)),
                 BHW.sourceSelectedMixedRows d n ι
                   (BHW.sourceRealOrientedMinkowskiInvariant d n x))
-        chart_real_eq :
-          ∀ x ∈ E0,
-            C.chart
-                (BHW.sourceRealOrientedMinkowskiInvariant d n x) =
-              SCV.realToComplex (realCoord x)
         realCoord_continuous : Continuous realCoord
         realCoord_image_open :
           ∀ {S : Set (Fin n -> Fin (d + 1) -> ℝ)},
             IsOpen S -> S ⊆ E0 -> IsOpen (realCoord '' S)
 
-      theorem BHW.SourceFullFrameRealCompatibleImplicitChartData.to_localRealChartData
-          [NeZero d]
-          (hd : 2 <= d)
-          {n : Nat}
+      theorem BHW.SourceFullFrameRealCompatibleImplicitChartData.chart_real_eq
+          {d n : Nat}
+          {ι : Fin (d + 1) ↪ Fin n}
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          {hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0}
+          (R :
+            BHW.SourceFullFrameRealCompatibleImplicitChartData
+              d n ι x0 hdet)
+          (x : Fin n -> Fin (d + 1) -> ℝ)
+          (hx : x ∈ R.E0) :
+          R.C.chart
+              (BHW.sourceRealOrientedMinkowskiInvariant d n x) =
+            SCV.realToComplex (R.realCoord x)
+
+      noncomputable def
+          BHW.SourceFullFrameRealCompatibleImplicitChartData.to_localRealChartData
+          {d n : Nat}
           {ι : Fin (d + 1) ↪ Fin n}
           {x0 : Fin n -> Fin (d + 1) -> ℝ}
           {hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0}
@@ -19444,6 +19464,18 @@ Proof decomposition of this theorem, without hiding the analytic work:
             BHW.SourceFullFrameRealCompatibleImplicitChartData
               d n ι x0 hdet) :
           BHW.SourceOrientedLocalRealChartData d n x0
+
+      theorem
+          BHW.sourceOrientedLocalRealChartData_of_fullFrameRealCompatibleImplicitChartData
+          {d n : Nat}
+          {ι : Fin (d + 1) ↪ Fin n}
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          {hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0}
+          (R :
+            Nonempty
+              (BHW.SourceFullFrameRealCompatibleImplicitChartData
+                d n ι x0 hdet)) :
+          Nonempty (BHW.SourceOrientedLocalRealChartData d n x0)
 
       theorem BHW.sourceFullFrameRealCompatibleImplicitChartData
           [NeZero d]
@@ -19464,7 +19496,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceSelectedMixedRows_sourceRealOrientedMinkowskiInvariant` for the
       mixed rows.  Thus the remaining unimplemented content is exactly the
       real-compatible slice/IFT/open-map package, not any determinant or
-      mixed-row coordinate bookkeeping.
+      mixed-row coordinate bookkeeping.  Lean checkpoint, 2026-05-09:
+      `SourceOrientedRealFullFrameChart.lean` checks
+      `SourceFullFrameRealGaugeSliceData`,
+      `SourceFullFrameRealCompatibleImplicitChartData`,
+      `SourceFullFrameRealCompatibleImplicitChartData.chart_real_eq`,
+      `SourceFullFrameRealCompatibleImplicitChartData.to_localRealChartData`,
+      and
+      `sourceOrientedLocalRealChartData_of_fullFrameRealCompatibleImplicitChartData`.
+      The hard producer still remaining is
+      `sourceFullFrameRealCompatibleImplicitChartData`, which must construct
+      that data from a real full-frame determinant-nonzero point.
 
       In the small-arity theorem the determinant-coordinate family is empty,
       so oriented regularity is the checked pure-Gram regularity after

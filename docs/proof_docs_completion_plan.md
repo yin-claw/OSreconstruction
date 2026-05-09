@@ -2284,12 +2284,17 @@ checks the real-source permutation topology helpers
    `SourceOrientedLocalRealChartData`.  The selected full-frame block and
    mixed-row parts of `chart_real_eq` are now finite-coordinate rewrites; the
    only unimplemented mathematical content is the real-compatible
-   slice/IFT/open-map package, now named in the blueprint as
+   slice/IFT/open-map package.  The packaging layer is now checked in
+   `SourceOrientedRealFullFrameChart.lean` as
    `SourceFullFrameRealGaugeSliceData`,
    `SourceFullFrameRealCompatibleImplicitChartData`,
+   `SourceFullFrameRealCompatibleImplicitChartData.chart_real_eq`,
    `SourceFullFrameRealCompatibleImplicitChartData.to_localRealChartData`,
-   and `sourceFullFrameRealCompatibleImplicitChartData`.  The checked bridge
-   after that producer
+   and
+   `sourceOrientedLocalRealChartData_of_fullFrameRealCompatibleImplicitChartData`.
+   The hard producer still remaining is
+   `sourceFullFrameRealCompatibleImplicitChartData`.  The checked bridge after
+   that producer
    is purely mechanical: a source-open Jost patch with local real chart data at
    every point is an `IsHWOrientedRealEnvironment`, and a determinant-nonzero
    OS45 subpatch becomes one by applying the local chart producer pointwise.
@@ -5638,11 +5643,15 @@ implementation contract is:
    remains is to construct the real gauge-slice coordinates, prove their
    complexification agrees with the complex kernel chart, and prove the real
    coordinate map is locally open on the determinant-nonzero source patch.
-   The blueprint now fixes this split as
+   The checked packaging layer for this split is
    `SourceFullFrameRealGaugeSliceData`,
    `SourceFullFrameRealCompatibleImplicitChartData`,
+   `SourceFullFrameRealCompatibleImplicitChartData.chart_real_eq`,
    `SourceFullFrameRealCompatibleImplicitChartData.to_localRealChartData`,
-   and `sourceFullFrameRealCompatibleImplicitChartData`.
+   and
+   `sourceOrientedLocalRealChartData_of_fullFrameRealCompatibleImplicitChartData`;
+   the hard producer still remaining is
+   `sourceFullFrameRealCompatibleImplicitChartData`.
    The mechanical bridges around it are
    `sourceOrientedRealEnvironment_of_localRealCharts`,
    `sourceOrientedRealEnvironment_of_fullFrameDetNonzero_localCharts`, and the
