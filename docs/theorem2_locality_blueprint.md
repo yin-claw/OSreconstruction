@@ -19757,6 +19757,50 @@ Proof decomposition of this theorem, without hiding the analytic work:
             S.realModelToComplexSlice
               (SCV.realToComplex (S.realKernelCoord M))
 
+      noncomputable def
+          BHW.sourceFullFrameOrientedDifferentialRightInverseLinear
+          (d : Nat)
+          {M0 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ}
+          (hM0 : IsUnit M0.det) :
+          BHW.sourceFullFrameOrientedTangentSpace d
+              (BHW.sourceFullFrameOrientedGram d M0) ->ₗ[ℂ]
+            Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ
+
+      theorem BHW.sourceFullFrameOrientedDifferential_rightInverse
+          (d : Nat)
+          {M0 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ}
+          (hM0 : IsUnit M0.det)
+          (Y :
+            BHW.sourceFullFrameOrientedTangentSpace d
+              (BHW.sourceFullFrameOrientedGram d M0)) :
+          BHW.sourceFullFrameOrientedDifferential d M0
+              (BHW.sourceFullFrameOrientedDifferentialRightInverseLinear
+                d hM0 Y) =
+            (Y : BHW.SourceFullFrameOrientedCoord d)
+
+      noncomputable def
+          BHW.sourceFullFrameOrientedDifferentialRightInverseRange
+          (d : Nat)
+          {M0 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ}
+          (hM0 : IsUnit M0.det) :
+          Submodule ℂ (Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ)
+
+      theorem
+          BHW.sourceFullFrameOrientedDifferentialRightInverseRange_isCompl
+          (d : Nat)
+          {M0 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ}
+          (hM0 : IsUnit M0.det) :
+          IsCompl
+            (BHW.sourceFullFrameOrientedDifferentialRightInverseRange
+              d hM0)
+            (BHW.sourceFullFrameOrbitTangent d M0)
+
+      noncomputable def BHW.sourceFullFrameExplicitGaugeSliceData
+          (d : Nat)
+          {M0 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ}
+          (hM0 : IsUnit M0.det) :
+          BHW.SourceFullFrameGaugeSliceData d M0
+
       theorem BHW.sourceRealFullFrameLocalCoord_image_open
           (d n : Nat)
           (ι : Fin (d + 1) ↪ Fin n)
@@ -19798,9 +19842,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
         --    correction already checked in
         --    `sourceFullFrameOrientedDifferential_constructedGram` and
         --    `sourceFullFrameOrientedDifferential_constructedDet`.
-        --    Because `M0R`, `G`, and the tangent determinant coordinate are
-        --    real, this right inverse is real and its complexification is the
-        --    chosen complex slice.
+        --    The complex side is now a named explicit slice:
+        --    `sourceFullFrameExplicitGaugeSliceData d hM0`, whose slice is
+        --    the range of
+        --    `sourceFullFrameOrientedDifferentialRightInverseLinear`.
+        --    The complement proof is the direct decomposition
+        --    `X = R(L X) + (X - R(L X))`, and
+        --    `X - R(L X)` is in the orbit tangent by the checked kernel
+        --    theorem.  The real producer must next prove that, because
+        --    `M0R`, `G`, and the tangent determinant coordinate are real, this
+        --    right inverse maps the real tangent model to real matrices; its
+        --    complexification is then exactly the chosen complex slice.
         -- 3. Run the real inverse/implicit-function theorem for the real
         --    kernel map.  Its complexification is the existing complex
         --    `sourceFullFrameGaugeSliceImplicitKernelMap`; uniqueness of the
@@ -19857,6 +19909,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `os45Figure24_checkedRealPatch_fullFrameOrientedEnvironmentSubpatch_of_realCompatibleImplicitChartProducer`,
       and
       `os45Figure24_checkedRealPatch_sourceOrientedDistributionalUniquenessSubpatch_of_realCompatibleImplicitChartProducer`.
+      Lean checkpoint, 2026-05-09:
+      `SourceOrientedFullFrameExplicitSlice.lean` now checks
+      `sourceFullFrameOrientedDifferentialRightInverseLinear`,
+      `sourceFullFrameOrientedDifferential_rightInverse`,
+      `sourceFullFrameOrientedDifferentialRightInverseRange`,
+      `sourceFullFrameOrientedDifferentialRightInverseRange_isCompl`, and
+      `sourceFullFrameExplicitGaugeSliceData`; this closes the complex
+      explicit-slice substep of the real-compatible producer plan.
       The hard producer still remaining is
       `sourceFullFrameRealCompatibleImplicitChartData`, which must construct
       that data from a real full-frame determinant-nonzero point.

@@ -2327,11 +2327,67 @@ checks the real-source permutation topology helpers
    The producer proof transcript is now finite-dimensional and explicit:
    first use
    `sourceRealFullFrameMatrix_map_ofReal_det_isUnit` for the complex base
-   determinant; then build `sourceFullFrameRealGaugeSliceData` from the
+   determinant; then build the complex slice from the explicit range of the
    constructive full-frame differential right inverse
-   `B = (1/2) • (M0⁻¹ * G * (M0ᵀ)⁻¹ * η)` using the checked
+   `B = (1/2) • (M0⁻¹ * G * (M0ᵀ)⁻¹ * η)`.  The Lean surface for this
+   substep is:
+
+   ```lean
+   noncomputable def BHW.sourceFullFrameOrientedDifferentialRightInverseLinear
+       (d : ℕ)
+       {M0 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ}
+       (hM0 : IsUnit M0.det) :
+       BHW.sourceFullFrameOrientedTangentSpace d
+           (BHW.sourceFullFrameOrientedGram d M0) →ₗ[ℂ]
+         Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ
+
+   theorem BHW.sourceFullFrameOrientedDifferential_rightInverse
+       (d : ℕ)
+       {M0 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ}
+       (hM0 : IsUnit M0.det)
+       (Y :
+         BHW.sourceFullFrameOrientedTangentSpace d
+           (BHW.sourceFullFrameOrientedGram d M0)) :
+       BHW.sourceFullFrameOrientedDifferential d M0
+           (BHW.sourceFullFrameOrientedDifferentialRightInverseLinear
+             d hM0 Y) =
+         (Y : BHW.SourceFullFrameOrientedCoord d)
+
+   noncomputable def
+       BHW.sourceFullFrameOrientedDifferentialRightInverseRange
+       (d : ℕ)
+       {M0 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ}
+       (hM0 : IsUnit M0.det) :
+       Submodule ℂ (Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ)
+
+   theorem
+       BHW.sourceFullFrameOrientedDifferentialRightInverseRange_isCompl
+       (d : ℕ)
+       {M0 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ}
+       (hM0 : IsUnit M0.det) :
+       IsCompl
+         (BHW.sourceFullFrameOrientedDifferentialRightInverseRange d hM0)
+         (BHW.sourceFullFrameOrbitTangent d M0)
+
+   noncomputable def BHW.sourceFullFrameExplicitGaugeSliceData
+       (d : ℕ)
+       {M0 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ}
+       (hM0 : IsUnit M0.det) :
+       BHW.SourceFullFrameGaugeSliceData d M0
+   ```
+
+   The proof uses the checked
    `sourceFullFrameOrientedDifferential_constructedGram` and
-   `sourceFullFrameOrientedDifferential_constructedDet`; then apply the real
+   `sourceFullFrameOrientedDifferential_constructedDet`; the range-complement
+   proof decomposes `X` as `R(L X) + (X - R(L X))`, with the second summand in
+   the orbit tangent by
+   `sourceFullFrameOrientedDifferential_kernel_eq_orbitTangent`.  This
+   replaces the arbitrary `Submodule.exists_isCompl` slice in the real route
+   by a named explicit complex slice.  This substep is now checked in
+   `SourceOrientedFullFrameExplicitSlice.lean`.  The remaining real-slice step
+   is to prove that this right inverse preserves real matrices when `M0` and
+   the tangent coordinate are real, then use it to define
+   `sourceFullFrameRealGaugeSliceData`.  After that, apply the real
    inverse/implicit-function theorem to the real kernel map, whose
    complexification is the existing complex implicit-kernel map; then shrink
    the real source patch so source invariants lie in the selected complex
