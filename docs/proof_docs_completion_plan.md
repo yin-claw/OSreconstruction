@@ -2215,6 +2215,32 @@ patch with fixed nonzero full-frame determinant, not the old pure-Gram
 seed theorem may not assume oriented distributional uniqueness before this
 patch exists.
 
+Current real-oriented core checkpoint, 2026-05-09: the first finite-coordinate
+real layer is checked in `SourceOrientedReal.lean`.  It provides
+`BHW.sourceRealOrientedMinkowskiInvariant`,
+`BHW.continuous_realEmbed_sourceNPoint`,
+`BHW.continuous_sourceRealOrientedMinkowskiInvariant`,
+`BHW.sourceRealOrientedMinkowskiInvariant_mem_variety`,
+`BHW.sourceRealOrientedMinkowskiInvariant_perm`,
+`BHW.sourceRealOrientedMinkowskiInvariant_perm_mul`,
+`BHW.sourceOrientedDistributionalUniquenessPatch`, and
+`BHW.sourceOrientedDistributionalUniquenessPatch_mono`.  The same file also
+checks the real-source permutation topology helpers
+`BHW.realSourcePermuteHomeomorph`, `BHW.isOpen_realSourcePermuteImage`,
+`BHW.nonempty_realSourcePermuteImage`; the real full-frame determinant layer
+`BHW.sourceRealFullFrameMatrix`, `BHW.sourceRealFullFrameDet`,
+`BHW.continuous_sourceRealFullFrameMatrix`,
+`BHW.continuous_sourceRealFullFrameDet`,
+`BHW.sourceFullFrameMatrix_realEmbed`,
+`BHW.sourceFullFrameDet_realEmbed`,
+`BHW.sourceRealFullFrameDet_nonzero_isOpen`; and the canonical head
+full-frame embedding `BHW.sourceRealHeadFullFrameEmbedding`.  This closes
+only the definition/permutation/topological-image and determinant-openness
+layer: no real patch is asserted to be a uniqueness patch yet.  The remaining
+real-uniqueness proof still begins with the tangent/IFT environment producer
+`BHW.IsHWOrientedRealEnvironment` and
+`BHW.sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment`.
+
 Current compact Figure-2-4 branch-difference readiness correction,
 2026-05-03: the OS I Section 4.5 compact producer
 `BHW.os45Figure24_sourcePatch_pairing_eq_swappedSourcePatch_of_OSI45` now has

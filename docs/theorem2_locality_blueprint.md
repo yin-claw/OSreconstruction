@@ -18552,6 +18552,35 @@ Proof decomposition of this theorem, without hiding the analytic work:
                   φ x
       ```
 
+      Current checked real-oriented core, 2026-05-09:
+      `SourceOrientedReal.lean` now contains the finite-coordinate real layer
+      from the beginning of this block:
+      `BHW.sourceRealOrientedMinkowskiInvariant`,
+      `BHW.continuous_realEmbed_sourceNPoint`,
+      `BHW.continuous_sourceRealOrientedMinkowskiInvariant`,
+      `BHW.sourceRealOrientedMinkowskiInvariant_mem_variety`,
+      `BHW.sourceRealOrientedMinkowskiInvariant_perm`,
+      `BHW.sourceRealOrientedMinkowskiInvariant_perm_mul`,
+      `BHW.sourceOrientedDistributionalUniquenessPatch`, and
+      `BHW.sourceOrientedDistributionalUniquenessPatch_mono`.  The same file
+      also checks the real-source permutation topology helpers
+      `BHW.realSourcePermuteHomeomorph`, `BHW.isOpen_realSourcePermuteImage`,
+      `BHW.nonempty_realSourcePermuteImage`; the real full-frame determinant
+      layer `BHW.sourceRealFullFrameMatrix`,
+      `BHW.sourceRealFullFrameDet`,
+      `BHW.continuous_sourceRealFullFrameMatrix`,
+      `BHW.continuous_sourceRealFullFrameDet`,
+      `BHW.sourceFullFrameMatrix_realEmbed`,
+      `BHW.sourceFullFrameDet_realEmbed`,
+      `BHW.sourceRealFullFrameDet_nonzero_isOpen`; and the canonical head
+      full-frame embedding `BHW.sourceRealHeadFullFrameEmbedding`.  This is
+      only the definition/permutation/topological-image and
+      determinant-openness substrate.  No theorem yet asserts that a
+      Figure-2-4 real patch is an oriented uniqueness patch; the next honest
+      real-uniqueness frontier is still the tangent/IFT environment packet
+      `BHW.IsHWOrientedRealEnvironment` and the proof of
+      `BHW.sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment`.
+
       The theorem
       `sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment` is
       the real analytic content behind the uniqueness predicate.  Its proof
