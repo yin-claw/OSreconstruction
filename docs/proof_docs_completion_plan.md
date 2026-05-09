@@ -2296,9 +2296,11 @@ checks the real-source permutation topology helpers
    invariant map is a real submersion/open map on a small real neighborhood,
    and install the resulting finite real coordinates into
    `SourceOrientedLocalRealChartData`.  The selected full-frame block and
-   mixed-row parts of `chart_real_eq` are now finite-coordinate rewrites; the
-   only unimplemented mathematical content is the real-compatible
-   slice/IFT/open-map package.  The packaging layer is now checked in
+   mixed-row parts of `chart_real_eq` are now finite-coordinate rewrites.
+   The real-compatible gauge-slice and real IFT layers are now checked; the
+   remaining unimplemented mathematical content in this producer is the
+   shrunken source patch and the local finite-product open-image theorem.
+   The packaging layer is now checked in
    `SourceOrientedRealFullFrameChart.lean` as
    `SourceFullFrameRealGaugeSliceData`,
    `sourceFullFrameRealKernelMixedCoord`,
@@ -2310,6 +2312,13 @@ checks the real-source permutation topology helpers
    `SourceFullFrameRealCompatibleImplicitChartData.to_localRealChartData`,
    and
    `sourceOrientedLocalRealChartData_of_fullFrameRealCompatibleImplicitChartData`,
+   with determinant-nonzero split support
+   `continuousOn_matrix_inv_of_det_ne_zero_real`,
+   `continuous_subtype_matrix_inv_of_det_ne_zero_real`,
+   `sourceFullFrameRealSplitMixedRowsInv`,
+   `sourceFullFrameRealSplitMixedRowsInv_eq_tailMixedRowsLinearEquiv_symm`,
+   `sourceFullFrameRealSplitDetNonzero`, and
+   `sourceFullFrameRealSplitMixedRowsHomeomorph`,
    together with the checked producer-level consumers
    `SourceFullFrameRealCompatibleImplicitChartProducer`,
    `sourceOrientedLocalRealChartData_of_fullFrameDet_ne_zero_of_realCompatibleImplicitChartProducer`,
@@ -5909,10 +5918,11 @@ implementation contract is:
    max-rank chart.  The checked finite-coordinate inputs for its
    `chart_real_eq` field are
    `sourceFullFrameOrientedCoordOfSource_sourceRealOrientedMinkowskiInvariant`
-   and `sourceSelectedMixedRows_sourceRealOrientedMinkowskiInvariant`; what
-   remains is to construct the real gauge-slice coordinates, prove their
-   complexification agrees with the complex kernel chart, and prove the real
-   coordinate map is locally open on the determinant-nonzero source patch.
+   and `sourceSelectedMixedRows_sourceRealOrientedMinkowskiInvariant`.  The
+   real gauge-slice coordinates and their complexification compatibility are
+   now checked; what remains is to construct the shrunken source patch and
+   prove the real coordinate map is locally open on that determinant-nonzero
+   patch.
    The checked packaging layer for this split is
    `SourceFullFrameRealGaugeSliceData`,
    `sourceFullFrameRealKernelMixedCoord`,
@@ -5924,6 +5934,13 @@ implementation contract is:
    `SourceFullFrameRealCompatibleImplicitChartData.to_localRealChartData`,
    and
    `sourceOrientedLocalRealChartData_of_fullFrameRealCompatibleImplicitChartData`,
+   plus the checked determinant-nonzero split homeomorphism
+   `sourceFullFrameRealSplitMixedRowsHomeomorph`, its inverse
+   `sourceFullFrameRealSplitMixedRowsInv`, its inverse-linear-equivalence
+   theorem
+   `sourceFullFrameRealSplitMixedRowsInv_eq_tailMixedRowsLinearEquiv_symm`,
+   and matrix-inversion continuity
+   `continuous_subtype_matrix_inv_of_det_ne_zero_real`,
    together with the checked producer-level consumers
    `SourceFullFrameRealCompatibleImplicitChartProducer`,
    `sourceOrientedLocalRealChartData_of_fullFrameDet_ne_zero_of_realCompatibleImplicitChartProducer`,
@@ -5976,13 +5993,15 @@ implementation contract is:
    honest mathematical frontier is
    `sourceFullFrameRealSplitKernelMixedCoord_open_on_W`, the finite-product
    open-image theorem for the chosen split neighborhood `W`.  This theorem
-   must be proved locally: first through a determinant-nonzero triangular
-   homeomorphism
-   `(M,T) ↦ (M, sourceFullFrameRealSplitMixedRows (M,T))`, whose inverse uses
-   `sourceRealFullFrameTailMixedRowsLinearEquiv`; then through a selected-frame
-   local product/submersion chart around the base frame whose first coordinate
-   is `S.realKernelCoord`; and finally by product openness.  It must not be
-   replaced by a global selected-frame open-map assertion.  The split-image
+   must be proved locally: first through the checked determinant-nonzero
+   triangular homeomorphism
+   `sourceFullFrameRealSplitMixedRowsHomeomorph`, whose inverse is the checked
+   `sourceFullFrameRealSplitMixedRowsInv` and whose continuity uses
+   `continuous_subtype_matrix_inv_of_det_ne_zero_real`; then through a
+   selected-frame local product/submersion chart around the base frame whose
+   first coordinate is `S.realKernelCoord`; and finally by product openness.
+   It must not be replaced by a global selected-frame open-map assertion.
+   The split-image
    bridge is now checked:
    `sourceFullFrameRealKernelMixedCoord_image_eq_split` rewrites the raw
    source-coordinate image as the image of
@@ -5994,6 +6013,10 @@ implementation contract is:
    `sourceFullFrameRealSplitMixedRows_eq_tailMixedRowsLinearEquiv`, and the
    full split coordinate is rewritten in that triangular form by
    `sourceFullFrameRealSplitKernelMixedCoord_eq_tailMixedRowsLinearEquiv`.
+   The determinant-nonzero tail/mixed coordinate replacement is therefore no
+   longer an unproved part of the frontier; the only remaining local-open
+   ingredient is the selected-frame product chart and the final shrink to the
+   chosen `W`.
    The checked bridge
    `isOpen_sourceFullFrameRealCoord_image_of_split_local_open` then carries
    this split-local open-image theorem through the finite real coordinate

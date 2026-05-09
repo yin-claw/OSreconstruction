@@ -428,6 +428,59 @@ def sourceFullFrameRealSplitMixedRows
     sourceComplementIndex ι → Fin (d + 1) → ℝ :=
   fun k a => MinkowskiSpace.minkowskiInner d (p.2 k) (p.1 a)
 
+/-- Matrix inversion is continuous on the real determinant-nonzero locus. -/
+theorem continuousOn_matrix_inv_of_det_ne_zero_real
+    {q : Type*} [Fintype q] [DecidableEq q] :
+    ContinuousOn (fun A : Matrix q q ℝ => A⁻¹)
+      {A : Matrix q q ℝ | A.det ≠ 0} := by
+  intro A hA
+  have hcont : ContinuousAt (fun z : ℝ => Ring.inverse z) A.det := by
+    simpa [Ring.inverse_eq_inv] using
+      (ContinuousInv₀.continuousAt_inv₀ hA : ContinuousAt Inv.inv A.det)
+  exact (continuousAt_matrix_inv A hcont).continuousWithinAt
+
+/-- The inverse matrix is continuous when the determinant-nonzero condition is
+part of the domain. -/
+theorem continuous_subtype_matrix_inv_of_det_ne_zero_real
+    {q : Type*} [Fintype q] [DecidableEq q] :
+    Continuous
+      (fun A : {A : Matrix q q ℝ // A.det ≠ 0} =>
+        (A : Matrix q q ℝ)⁻¹) := by
+  rw [continuous_iff_continuousAt]
+  intro A
+  have hcont : ContinuousAt (fun z : ℝ => Ring.inverse z) (A : Matrix q q ℝ).det := by
+    simpa [Ring.inverse_eq_inv] using
+      (ContinuousInv₀.continuousAt_inv₀ A.property :
+        ContinuousAt Inv.inv (A : Matrix q q ℝ).det)
+  exact
+    (continuousAt_matrix_inv (A : Matrix q q ℝ) hcont).comp
+      continuous_subtype_val.continuousAt
+
+/-- Explicit inverse to the split mixed-row map on determinant-nonzero frames. -/
+noncomputable def sourceFullFrameRealSplitMixedRowsInv
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    (p :
+      Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ)) :
+    sourceComplementIndex ι → Fin (d + 1) → ℝ :=
+  fun k =>
+    Matrix.toLin'
+      (LorentzLieGroup.minkowskiMatrix d * p.1⁻¹) (p.2 k)
+
+/-- The explicit inverse is the inverse of the checked rowwise mixed-row
+linear equivalence. -/
+theorem sourceFullFrameRealSplitMixedRowsInv_eq_tailMixedRowsLinearEquiv_symm
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    (p :
+      Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ))
+    (hp : p.1.det ≠ 0) :
+    sourceFullFrameRealSplitMixedRowsInv p =
+      (sourceRealFullFrameTailMixedRowsLinearEquiv d n ι p.1 hp).symm p.2 := by
+  rfl
+
 /-- On determinant-nonzero selected frames, the split mixed-row component is
 the checked rowwise linear equivalence from complement rows to mixed Gram
 rows. -/
@@ -445,6 +498,86 @@ theorem sourceFullFrameRealSplitMixedRows_eq_tailMixedRowsLinearEquiv
   rw [sourceRealFullFrameMixedRowLinearEquiv_apply]
   simp [sourceFullFrameRealSplitMixedRows,
     MinkowskiSpace.minkowskiInner, mul_comm]
+
+/-- Split coordinates with determinant-nonzero selected-frame component. -/
+abbrev sourceFullFrameRealSplitDetNonzero
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n) :=
+  {p :
+    Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+      (sourceComplementIndex ι → Fin (d + 1) → ℝ) // p.1.det ≠ 0}
+
+/-- On the determinant-nonzero split domain, replacing complement rows by
+mixed rows is a homeomorphism. -/
+noncomputable def sourceFullFrameRealSplitMixedRowsHomeomorph
+    (d n : ℕ)
+    (ι : Fin (d + 1) ↪ Fin n) :
+    sourceFullFrameRealSplitDetNonzero d n ι ≃ₜ
+      sourceFullFrameRealSplitDetNonzero d n ι where
+  toFun p :=
+    ⟨(p.1.1, sourceFullFrameRealSplitMixedRows p.1), p.property⟩
+  invFun p :=
+    ⟨(p.1.1, sourceFullFrameRealSplitMixedRowsInv p.1), p.property⟩
+  left_inv := by
+    intro p
+    apply Subtype.ext
+    apply Prod.ext
+    · rfl
+    · change
+        sourceFullFrameRealSplitMixedRowsInv
+          (p.1.1, sourceFullFrameRealSplitMixedRows p.1) = p.1.2
+      rw [sourceFullFrameRealSplitMixedRowsInv_eq_tailMixedRowsLinearEquiv_symm
+        (p.1.1, sourceFullFrameRealSplitMixedRows p.1) p.property]
+      rw [sourceFullFrameRealSplitMixedRows_eq_tailMixedRowsLinearEquiv p.1 p.property]
+      exact
+        (sourceRealFullFrameTailMixedRowsLinearEquiv d n ι p.1.1
+          p.property).symm_apply_apply p.1.2
+  right_inv := by
+    intro p
+    apply Subtype.ext
+    apply Prod.ext
+    · rfl
+    · change
+        sourceFullFrameRealSplitMixedRows
+          (p.1.1, sourceFullFrameRealSplitMixedRowsInv p.1) = p.1.2
+      rw [sourceFullFrameRealSplitMixedRows_eq_tailMixedRowsLinearEquiv
+        (p.1.1, sourceFullFrameRealSplitMixedRowsInv p.1) p.property]
+      rw [sourceFullFrameRealSplitMixedRowsInv_eq_tailMixedRowsLinearEquiv_symm
+        p.1 p.property]
+      exact
+        (sourceRealFullFrameTailMixedRowsLinearEquiv d n ι p.1.1
+          p.property).apply_symm_apply p.1.2
+  continuous_toFun := by
+    apply Continuous.subtype_mk
+    apply Continuous.prodMk
+    · exact continuous_fst.comp continuous_subtype_val
+    · unfold sourceFullFrameRealSplitMixedRows
+      apply continuous_pi
+      intro k
+      apply continuous_pi
+      intro a
+      simp [MinkowskiSpace.minkowskiInner]
+      fun_prop
+  continuous_invFun := by
+    have hInv :
+        Continuous
+          (fun p : sourceFullFrameRealSplitDetNonzero d n ι =>
+            (p.1.1 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)⁻¹) := by
+      exact
+        continuous_subtype_matrix_inv_of_det_ne_zero_real.comp
+          (Continuous.subtype_mk
+            (continuous_fst.comp continuous_subtype_val)
+            (fun p => p.property))
+    apply Continuous.subtype_mk
+    apply Continuous.prodMk
+    · exact continuous_fst.comp continuous_subtype_val
+    · unfold sourceFullFrameRealSplitMixedRowsInv
+      apply continuous_pi
+      intro k
+      apply continuous_pi
+      intro a
+      simp [Matrix.toLin'_apply, Matrix.mulVec, dotProduct]
+      fun_prop
 
 /-- The split-space form of the real kernel/mixed coordinate: apply the real
 kernel coordinate to the selected-frame factor and compute mixed Gram rows

@@ -19510,6 +19510,47 @@ Proof decomposition of this theorem, without hiding the analytic work:
             BHW.sourceRealFullFrameTailMixedRowsLinearEquiv
               d n ι p.1 hp p.2
 
+      theorem BHW.continuousOn_matrix_inv_of_det_ne_zero_real
+          {q : Type*} [Fintype q] [DecidableEq q] :
+          ContinuousOn (fun A : Matrix q q ℝ => A⁻¹)
+            {A : Matrix q q ℝ | A.det ≠ 0}
+
+      theorem BHW.continuous_subtype_matrix_inv_of_det_ne_zero_real
+          {q : Type*} [Fintype q] [DecidableEq q] :
+          Continuous
+            (fun A : {A : Matrix q q ℝ // A.det ≠ 0} =>
+              (A : Matrix q q ℝ)⁻¹)
+
+      def BHW.sourceFullFrameRealSplitMixedRowsInv
+          {d n : Nat}
+          {ι : Fin (d + 1) ↪ Fin n}
+          (p :
+            Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+              (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ)) :
+          BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ
+
+      theorem
+          BHW.sourceFullFrameRealSplitMixedRowsInv_eq_tailMixedRowsLinearEquiv_symm
+          {d n : Nat}
+          {ι : Fin (d + 1) ↪ Fin n}
+          (p :
+            Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+              (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ))
+          (hp : p.1.det ≠ 0) :
+          BHW.sourceFullFrameRealSplitMixedRowsInv p =
+            (BHW.sourceRealFullFrameTailMixedRowsLinearEquiv
+              d n ι p.1 hp).symm p.2
+
+      abbrev BHW.sourceFullFrameRealSplitDetNonzero
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+
+      def BHW.sourceFullFrameRealSplitMixedRowsHomeomorph
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n) :
+          BHW.sourceFullFrameRealSplitDetNonzero d n ι ≃ₜ
+            BHW.sourceFullFrameRealSplitDetNonzero d n ι
+
       def BHW.sourceFullFrameRealSplitKernelMixedCoord
           {d n : Nat}
           {ι : Fin (d + 1) ↪ Fin n}
@@ -20325,9 +20366,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       -- Remaining hard local-open theorem, to be proved for the specific
       -- split neighborhood `W` chosen in the implicit-chart constructor:
       -- The proof must be local.  It should factor through:
-      --   (1) a determinant-nonzero triangular homeomorphism
-      --       `(M,T) ↦ (M, sourceFullFrameRealSplitMixedRows (M,T))`,
-      --       whose inverse uses `sourceRealFullFrameTailMixedRowsLinearEquiv`;
+      --   (1) the checked determinant-nonzero triangular homeomorphism
+      --       `sourceFullFrameRealSplitMixedRowsHomeomorph`, whose forward
+      --       map is `(M,T) ↦ (M, sourceFullFrameRealSplitMixedRows (M,T))`
+      --       and whose inverse is `sourceFullFrameRealSplitMixedRowsInv`;
       --   (2) a selected-frame local product/submersion chart around `M0R`
       --       whose first coordinate is `S.realKernelCoord`; and
       --   (3) the product-open theorem for that local frame coordinate and
@@ -20425,9 +20467,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrameOrientedCoordOfSource_sourceRealOrientedMinkowskiInvariant`
       for the selected full-frame block and
       `sourceSelectedMixedRows_sourceRealOrientedMinkowskiInvariant` for the
-      mixed rows.  Thus the remaining unimplemented content is exactly the
-      real-compatible slice/IFT/open-map package, not any determinant or
-      mixed-row coordinate bookkeeping.  Lean checkpoint, 2026-05-09:
+      mixed rows.  The real-compatible gauge-slice and real IFT layers are now
+      checked; the remaining unimplemented producer content is the shrunken
+      source patch and the local finite-product open-image theorem, not any
+      determinant or mixed-row coordinate bookkeeping.  Lean checkpoint,
+      2026-05-09:
       `SourceOrientedRealFullFrameChart.lean` checks
       `SourceFullFrameRealGaugeSliceData`,
       `SourceFullFrameRealCompatibleImplicitChartData`,
@@ -20553,8 +20597,14 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrameRealGaugeSliceData_of_frameKernelCoord`,
       `sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_realExtension`,
       `sourceFullFrameRealGaugeSliceData`,
+      `continuousOn_matrix_inv_of_det_ne_zero_real`,
+      `continuous_subtype_matrix_inv_of_det_ne_zero_real`,
       `sourceFullFrameRealSplitMixedRows`,
+      `sourceFullFrameRealSplitMixedRowsInv`,
+      `sourceFullFrameRealSplitMixedRowsInv_eq_tailMixedRowsLinearEquiv_symm`,
       `sourceFullFrameRealSplitMixedRows_eq_tailMixedRowsLinearEquiv`,
+      `sourceFullFrameRealSplitDetNonzero`,
+      `sourceFullFrameRealSplitMixedRowsHomeomorph`,
       `sourceFullFrameRealSplitKernelMixedCoord`,
       `sourceFullFrameRealSplitKernelMixedCoord_eq_tailMixedRowsLinearEquiv`,
       `sourceFullFrameRealKernelMixedCoord_eq_split`,
@@ -20640,9 +20690,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       open-map statement; it is the local finite-product open-image theorem
       `sourceFullFrameRealSplitKernelMixedCoord_open_on_W` on the chosen split
       neighborhood `W`.  Its proof must combine the checked source split
-      homeomorphism, a determinant-nonzero triangular tail/mixed-row
-      homeomorphism, and a selected-frame local product/submersion chart whose
-      first coordinate is the real IFT-selected frame coordinate.  This is the
+      homeomorphism, the checked determinant-nonzero triangular tail/mixed-row
+      homeomorphism `sourceFullFrameRealSplitMixedRowsHomeomorph`, and a
+      selected-frame local product/submersion chart whose first coordinate is
+      the real IFT-selected frame coordinate.  This is the
       exact open-map input used to fill the
       `SourceFullFrameRealCompatibleImplicitChartData.realCoord_image_open`
       field.  The split-image bridge is now checked:
