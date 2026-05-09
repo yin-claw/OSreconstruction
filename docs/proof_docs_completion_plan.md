@@ -2396,6 +2396,7 @@ checks the real-source permutation topology helpers
    `sourceFullFrameOrientedCoordRe_complexify`,
    `sourceFullFrameOrientedCoordIm_complexify`,
    `sourceFullFrameRealOrientedCoordComplexify_add_I_smul_eq_zero`,
+   `complex_add_I_mul_eq_zero_of_im_eq_zero`,
    `sourceFullFrameRealOrientedTangentSpace`,
    `mem_sourceFullFrameRealOrientedTangentSpace`,
    `sourceFullFrameRealOrientedTangentComplexifyLinear`,
@@ -2407,7 +2408,17 @@ checks the real-source permutation topology helpers
    `sourceFullFrame_matrix_map_ofReal_det`,
    `sourceFullFrame_matrix_map_ofReal_det_isUnit`,
    `sourceFullFrame_minkowskiMatrix_map_ofReal`,
-   `sourceFullFrameRealOrientedCoordComplexify_matrix_of`, and
+   `minkowskiMetricDet_eq_ofReal_minkowskiMatrix_det`,
+   `sourceFullFrameRealGramMatrix`,
+   `sourceFullFrame_minkowskiMatrix_det_isUnit`,
+   `sourceFullFrameRealGramMatrix_det_isUnit`,
+   `sourceFullFrameGram_map_ofReal_matrix`,
+   `sourceFullFrameGram_map_ofReal_matrix_inv`,
+   `sourceFullFrameRealGramMatrix_map_ofReal_inv`,
+   `sourceFullFrameRealOrientedCoordComplexify_matrix_of`,
+   `sourceFullFrameOrientedEquationDerivLinear_realComplexify_im`,
+   `sourceFullFrameOrientedTangent_re_mem`,
+   `sourceFullFrameOrientedTangent_im_mem`,
    `sourceFullFrameMatrixRe`,
    `sourceFullFrameMatrixIm`,
    `sourceFullFrameMatrix_re_im_decomp`,
@@ -2436,23 +2447,23 @@ checks the real-source permutation topology helpers
    real-slice vector with real coordinates `q`.  The producer of this packet is
    the only linear algebra input needed to define the `realModelDim` and
    `realModelToComplexSlice` fields of `sourceFullFrameRealGaugeSliceData`.
-   Its proof is now pinned to the following Lean steps:
-   (i) prove that the real and imaginary coordinate parts of any
-   `Y ∈ sourceFullFrameOrientedTangentSpace d
-   (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal))` belong to
-   `sourceFullFrameRealOrientedTangentSpace d M0R`; this is the real-coefficient
-   tangent-equation split,
-   (ii) decompose each element of the explicit complex slice by unfolding its
+   The real-coefficient tangent-equation split is now checked as
+   `sourceFullFrameOrientedTangent_re_mem` and
+   `sourceFullFrameOrientedTangent_im_mem`; its proof uses the checked real
+   Gram-matrix inverse bridge and
+   `sourceFullFrameOrientedEquationDerivLinear_realComplexify_im`.  The
+   remaining producer proof is now pinned to the following Lean steps:
+   (i) decompose each element of the explicit complex slice by unfolding its
    range membership as
    `sourceFullFrameOrientedDifferentialRightInverseLinear d hM0C Y`, splitting
    `Y` into those real and imaginary tangent parts, and applying
    `sourceFullFrameRealDifferentialRightInverseLinear_complexify`,
-   (iii) choose a real finite basis of
+   (ii) choose a real finite basis of
    `sourceFullFrameRealDifferentialRightInverseRange d hM0R`, define the
    complex coordinate map by finite sums of the componentwise complexified
    basis vectors, prove injectivity with
    `sourceFullFrameMatrix_map_ofReal_add_I_smul_eq_zero`, and prove
-   surjectivity from the range decomposition in (ii).
+   surjectivity from the range decomposition in (i).
    After that, apply the real
    inverse/implicit-function theorem to the real kernel map, whose
    complexification is the existing complex implicit-kernel map; then shrink

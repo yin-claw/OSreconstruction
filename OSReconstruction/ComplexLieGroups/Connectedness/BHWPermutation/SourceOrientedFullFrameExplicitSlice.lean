@@ -462,6 +462,26 @@ theorem sourceFullFrameRealOrientedCoordComplexify_add_I_smul_eq_zero
       simp [sourceFullFrameRealOrientedCoordComplexify, smul_eq_mul] at him
       exact him
 
+/-- If `a` and `b` are real-valued complex scalars, then `a + I b = 0`
+forces both to vanish. -/
+theorem complex_add_I_mul_eq_zero_of_im_eq_zero
+    {a b : ℂ}
+    (ha : a.im = 0)
+    (hb : b.im = 0)
+    (h : a + Complex.I * b = 0) :
+    a = 0 ∧ b = 0 := by
+  constructor
+  · apply Complex.ext
+    · have hre := congrArg Complex.re h
+      simp [hb, Complex.mul_re, Complex.I_re, Complex.I_im] at hre
+      exact hre
+    · simpa using ha
+  · apply Complex.ext
+    · have him := congrArg Complex.im h
+      simp [ha, hb, Complex.mul_im, Complex.I_re, Complex.I_im] at him
+      exact him
+    · simpa using hb
+
 /-- The real tangent model for the full-frame oriented hypersurface at a real
 base frame, defined as the real form whose componentwise complexification lies
 in the checked complex tangent space. -/
@@ -760,6 +780,86 @@ theorem sourceFullFrame_minkowskiMatrix_map_ofReal
   by_cases hij : i = j <;>
     simp [LorentzLieGroup.minkowskiMatrix, ComplexLorentzGroup.ηℂ, hij]
 
+/-- The complex Minkowski metric determinant is the complexification of the
+real Minkowski metric determinant. -/
+theorem minkowskiMetricDet_eq_ofReal_minkowskiMatrix_det
+    (d : ℕ) :
+    minkowskiMetricDet d =
+      ((LorentzLieGroup.minkowskiMatrix d).det : ℂ) := by
+  rw [minkowskiMetricDet]
+  rw [← sourceFullFrame_minkowskiMatrix_map_ofReal d]
+  simpa [RingHom.mapMatrix_apply] using
+    (RingHom.map_det Complex.ofRealHom
+      (LorentzLieGroup.minkowskiMatrix d)).symm
+
+/-- The real full-frame Gram matrix `M η Mᵀ`. -/
+def sourceFullFrameRealGramMatrix
+    (d : ℕ)
+    (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+    Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ :=
+  M0R * LorentzLieGroup.minkowskiMatrix d * M0R.transpose
+
+/-- The real Minkowski metric determinant is a unit. -/
+theorem sourceFullFrame_minkowskiMatrix_det_isUnit
+    (d : ℕ) :
+    IsUnit (LorentzLieGroup.minkowskiMatrix d).det := by
+  have hsquare :
+      (LorentzLieGroup.minkowskiMatrix d).det *
+          (LorentzLieGroup.minkowskiMatrix d).det = 1 := by
+    have h := congrArg Matrix.det (LorentzLieGroup.minkowskiMatrix_sq d)
+    simpa [Matrix.det_mul] using h
+  exact isUnit_iff_ne_zero.mpr (left_ne_zero_of_mul_eq_one hsquare)
+
+/-- A nonsingular real full frame has nonsingular real Gram matrix. -/
+theorem sourceFullFrameRealGramMatrix_det_isUnit
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det) :
+    IsUnit (sourceFullFrameRealGramMatrix d M0R).det := by
+  rw [sourceFullFrameRealGramMatrix, Matrix.det_mul, Matrix.det_mul,
+    Matrix.det_transpose]
+  rw [mul_assoc]
+  exact hM0R.mul ((sourceFullFrame_minkowskiMatrix_det_isUnit d).mul hM0R)
+
+/-- At a real full-frame base, the complex Gram matrix is the complexification
+of the real Gram matrix. -/
+theorem sourceFullFrameGram_map_ofReal_matrix
+    (d : ℕ)
+    (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+    Matrix.of (sourceFullFrameGram d (M0R.map Complex.ofReal)) =
+      (sourceFullFrameRealGramMatrix d M0R).map Complex.ofReal := by
+  rw [sourceFullFrameGram_eq_mul_eta_transpose]
+  ext i j
+  simp [sourceFullFrameRealGramMatrix, Matrix.mul_apply,
+    ComplexLorentzGroup.ηℂ, LorentzLieGroup.minkowskiMatrix,
+    Matrix.diagonal_apply]
+
+/-- The inverse of the complex Gram matrix at a real full-frame base is the
+complexification of the inverse real Gram matrix. -/
+theorem sourceFullFrameGram_map_ofReal_matrix_inv
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det) :
+    ((Matrix.of (sourceFullFrameGram d (M0R.map Complex.ofReal)))⁻¹) =
+      ((sourceFullFrameRealGramMatrix d M0R)⁻¹).map Complex.ofReal := by
+  rw [sourceFullFrameGram_map_ofReal_matrix]
+  exact
+    (matrix_map_ofReal_nonsing_inv d
+      (sourceFullFrameRealGramMatrix d M0R)
+      (sourceFullFrameRealGramMatrix_det_isUnit d hM0R)).symm
+
+/-- The inverse of the complexification of the real Gram matrix is the
+complexification of its real inverse. -/
+theorem sourceFullFrameRealGramMatrix_map_ofReal_inv
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det) :
+    ((sourceFullFrameRealGramMatrix d M0R).map Complex.ofReal)⁻¹ =
+      ((sourceFullFrameRealGramMatrix d M0R)⁻¹).map Complex.ofReal :=
+  (matrix_map_ofReal_nonsing_inv d
+    (sourceFullFrameRealGramMatrix d M0R)
+    (sourceFullFrameRealGramMatrix_det_isUnit d hM0R)).symm
+
 /-- Matrix form of complexifying the Gram component of a real full-frame
 oriented coordinate. -/
 theorem sourceFullFrameRealOrientedCoordComplexify_matrix_of
@@ -768,6 +868,135 @@ theorem sourceFullFrameRealOrientedCoordComplexify_matrix_of
       (Matrix.of Y.1).map Complex.ofReal := by
   ext i j
   rfl
+
+/-- The linearized oriented equation has real value on complexified real
+coordinates at a complexified real full-frame base. -/
+theorem sourceFullFrameOrientedEquationDerivLinear_realComplexify_im
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (Y : SourceFullFrameRealOrientedCoord d) :
+    Complex.im
+      (sourceFullFrameOrientedEquationDerivLinear d
+        (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal))
+        (sourceFullFrameRealOrientedCoordComplexify d Y)) = 0 := by
+  simp only [sourceFullFrameOrientedEquationDerivLinear,
+    sourceFullFrameOrientedGram, LinearMap.coe_mk, AddHom.coe_mk]
+  rw [sourceFullFrameGram_map_ofReal_matrix,
+    sourceFullFrameRealGramMatrix_map_ofReal_inv d hM0R,
+    sourceFullFrameRealOrientedCoordComplexify_matrix_of,
+    minkowskiMetricDet_eq_ofReal_minkowskiMatrix_det,
+    sourceFullFrame_matrix_map_ofReal_det d M0R,
+    sourceFullFrame_matrix_map_ofReal_det d
+      (sourceFullFrameRealGramMatrix d M0R)]
+  simp [sourceFullFrameRealOrientedCoordComplexify, Matrix.mul_apply,
+    Matrix.trace]
+
+/-- The real part of a complex tangent coordinate at a complexified real
+full-frame base is a real tangent coordinate. -/
+theorem sourceFullFrameOrientedTangent_re_mem
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    {Y : SourceFullFrameOrientedCoord d}
+    (hY :
+      Y ∈ sourceFullFrameOrientedTangentSpace d
+        (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal))) :
+    sourceFullFrameOrientedCoordRe d Y ∈
+      sourceFullFrameRealOrientedTangentSpace d M0R := by
+  rw [mem_sourceFullFrameRealOrientedTangentSpace]
+  rw [mem_sourceFullFrameOrientedTangentSpace_iff_symmetric_and_deriv_eq_zero]
+  have hY' :
+      Y ∈ sourceFullFrameSymmetricCoordSubmodule d ∧
+        sourceFullFrameOrientedEquationDerivLinear d
+          (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal)) Y = 0 := by
+    exact
+      (mem_sourceFullFrameOrientedTangentSpace_iff_symmetric_and_deriv_eq_zero).1
+        hY
+  constructor
+  · intro a b
+    change ((Y.1 a b).re : ℂ) = ((Y.1 b a).re : ℂ)
+    exact_mod_cast congrArg Complex.re (hY'.1 a b)
+  · let L :=
+      sourceFullFrameOrientedEquationDerivLinear d
+        (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal))
+    have hsplit :
+        L Y =
+          L (sourceFullFrameRealOrientedCoordComplexify d
+              (sourceFullFrameOrientedCoordRe d Y)) +
+            Complex.I *
+              L (sourceFullFrameRealOrientedCoordComplexify d
+                (sourceFullFrameOrientedCoordIm d Y)) := by
+      have h :=
+        congrArg L (sourceFullFrameOrientedCoord_re_im_decomp d Y)
+      simpa [L] using h
+    have hzero :
+        L (sourceFullFrameRealOrientedCoordComplexify d
+              (sourceFullFrameOrientedCoordRe d Y)) +
+            Complex.I *
+              L (sourceFullFrameRealOrientedCoordComplexify d
+                (sourceFullFrameOrientedCoordIm d Y)) = 0 := by
+      rw [← hsplit, hY'.2]
+    exact
+      (complex_add_I_mul_eq_zero_of_im_eq_zero
+        (sourceFullFrameOrientedEquationDerivLinear_realComplexify_im
+          d hM0R (sourceFullFrameOrientedCoordRe d Y))
+        (sourceFullFrameOrientedEquationDerivLinear_realComplexify_im
+          d hM0R (sourceFullFrameOrientedCoordIm d Y))
+        hzero).1
+
+/-- The imaginary part of a complex tangent coordinate at a complexified real
+full-frame base is a real tangent coordinate. -/
+theorem sourceFullFrameOrientedTangent_im_mem
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    {Y : SourceFullFrameOrientedCoord d}
+    (hY :
+      Y ∈ sourceFullFrameOrientedTangentSpace d
+        (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal))) :
+    sourceFullFrameOrientedCoordIm d Y ∈
+      sourceFullFrameRealOrientedTangentSpace d M0R := by
+  rw [mem_sourceFullFrameRealOrientedTangentSpace]
+  rw [mem_sourceFullFrameOrientedTangentSpace_iff_symmetric_and_deriv_eq_zero]
+  have hY' :
+      Y ∈ sourceFullFrameSymmetricCoordSubmodule d ∧
+        sourceFullFrameOrientedEquationDerivLinear d
+          (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal)) Y = 0 := by
+    exact
+      (mem_sourceFullFrameOrientedTangentSpace_iff_symmetric_and_deriv_eq_zero).1
+        hY
+  constructor
+  · intro a b
+    change ((Y.1 a b).im : ℂ) = ((Y.1 b a).im : ℂ)
+    exact_mod_cast congrArg Complex.im (hY'.1 a b)
+  · let L :=
+      sourceFullFrameOrientedEquationDerivLinear d
+        (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal))
+    have hsplit :
+        L Y =
+          L (sourceFullFrameRealOrientedCoordComplexify d
+              (sourceFullFrameOrientedCoordRe d Y)) +
+            Complex.I *
+              L (sourceFullFrameRealOrientedCoordComplexify d
+                (sourceFullFrameOrientedCoordIm d Y)) := by
+      have h :=
+        congrArg L (sourceFullFrameOrientedCoord_re_im_decomp d Y)
+      simpa [L] using h
+    have hzero :
+        L (sourceFullFrameRealOrientedCoordComplexify d
+              (sourceFullFrameOrientedCoordRe d Y)) +
+            Complex.I *
+              L (sourceFullFrameRealOrientedCoordComplexify d
+                (sourceFullFrameOrientedCoordIm d Y)) = 0 := by
+      rw [← hsplit, hY'.2]
+    exact
+      (complex_add_I_mul_eq_zero_of_im_eq_zero
+        (sourceFullFrameOrientedEquationDerivLinear_realComplexify_im
+          d hM0R (sourceFullFrameOrientedCoordRe d Y))
+        (sourceFullFrameOrientedEquationDerivLinear_realComplexify_im
+          d hM0R (sourceFullFrameOrientedCoordIm d Y))
+        hzero).2
 
 /-- Entrywise real part of a complex full-frame matrix. -/
 def sourceFullFrameMatrixRe
