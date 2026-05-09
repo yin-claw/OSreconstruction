@@ -99,6 +99,7 @@ local Slot 1:
    `BHW.extendF_bvt_F_wickRotate_eq_of_ordered`,
    `BHW.OS45SourcePatchBHWJostHullData.wick_id_forwardTube_of_ordered`,
    `BHW.OS45SourcePatchBHWJostHullData.adjacent_wick_mem_U`,
+   `BHW.OS45SourcePatchBHWJostHullData.real_id_mem_selectedAdjacentSector`,
    plus the older source-oriented initial-chart/continuation consumers listed
    below as historical side support only.  Those source-oriented consumers
    must not be used as the active theorem-2 producer under the strict OS-II
@@ -10192,7 +10193,12 @@ common-boundary envelope, or any theorem that already assumes locality.
    `real_id_ET` is the checked ordinary real source-patch extended-tube
    field, and `real_tau_ET` rewrites by the checked
    `BHW.permAct_realEmbed` before using the swapped real source-patch
-   extended-tube field.  The exact topology API to pin in Lean is
+   extended-tube field.  The checked accessor
+   `BHW.OS45SourcePatchBHWJostHullData.real_id_mem_selectedAdjacentSector`
+   unfolds `BHW.permutedExtendedTubeSector` and exposes this as precisely the
+   real-sector membership consumed by
+   `BHW.os45_BHWJostRealTrace_of_initialBranch`.  The exact topology API to
+   pin in Lean is
    `JoinedIn.mono`, `BHW.isOpen_pathComponentIn_of_isOpen_normed`,
    `BHW.os45SourcePatchBHWJostHull_open`,
    `BHW.mem_os45SourcePatchBHWJostHull_of_extendedTube`,

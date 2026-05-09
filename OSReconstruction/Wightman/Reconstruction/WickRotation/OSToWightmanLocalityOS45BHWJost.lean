@@ -666,6 +666,17 @@ theorem base_real_mem_adjacentExtendedTubePreimage
       BHW.ExtendedTube d n :=
   H.real_tau_ET H.x0 H.x0_mem
 
+/-- The real source edge of a stored OS45 source patch lies in the selected
+adjacent permuted extended-tube sector. -/
+theorem real_id_mem_selectedAdjacentSector
+    (H : BHW.OS45SourcePatchBHWJostHullData
+      (d := d) hd OS lgc n i hi V) :
+    ∀ x, x ∈ V →
+      BHW.realEmbed x ∈ BHW.permutedExtendedTubeSector d n H.τ := by
+  intro x hx
+  rw [BHW.permutedExtendedTubeSector]
+  exact H.real_tau_ET x hx
+
 /-- The ordinary extended tube is contained in the OS45 BHW/Jost ambient. -/
 theorem extendedTube_subset_ambient
     (H : BHW.OS45SourcePatchBHWJostHullData

@@ -49279,7 +49279,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
             `BHW.os45Figure24SourcePatch_wick_mem_extendedTube` gives
             `wick_id_ET`; checked exact source-patch ordinary/swapped
             extended-tube accessors, with `BHW.permAct_realEmbed` for the
-            permuted real configuration, give the two real fields.  There is
+            permuted real configuration, give the two real fields.  The checked
+            accessor
+            `BHW.OS45SourcePatchBHWJostHullData.real_id_mem_selectedAdjacentSector`
+            unfolds `BHW.permutedExtendedTubeSector` and exposes
+            `real_tau_ET` in exactly the form consumed by
+            `BHW.os45_BHWJostRealTrace_of_initialBranch`.  There is
             deliberately no direct `wick_tau_ET`: the checked swapped ordered
             sector does not imply
             `BHW.permAct τ (fun k => wickRotatePoint (x k)) ∈ BHW.ExtendedTube d n`.
