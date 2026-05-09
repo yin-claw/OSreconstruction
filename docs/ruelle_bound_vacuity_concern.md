@@ -273,9 +273,18 @@ Option A was implemented:
 3. **`L4SpectralData`** updated to mirror the new shape; the
    conditional reduction `ruelle_analytic_cluster_bound_of`
    re-proved with the regulator.
-4. **`wightman_l4_spectral_data_axiom`** now shipped (vetted "Likely
-   correct / Standard" by Gemini chat after the regulator fix);
-   discharges `RACH.bound` unconditionally.
+4. **`wightman_l4_spectral_data_axiom`** was drafted as a production
+   axiom shipping the polarized-Fourier representation in the
+   regulated shape, then **withdrawn (2026-05-09)** after the PR-#86
+   review by [@xiyin137](https://github.com/xiyin137): per the
+   project's axiom discipline, new production axioms encode classical
+   background infrastructure (SNAG, Bochner, Schwartz-Fubini,
+   Vladimirov-style SCV/FA) rather than QFT-specific consequences
+   such as the polarized representation of `W_analytic_BHW`. Only the
+   conditional reduction `ruelle_analytic_cluster_bound_of` is shipped
+   in PR #86; downstream consumers must supply `L4SpectralData`
+   explicitly, or future work will discharge it as a theorem (see the
+   audit's chain-of-fixes plan above).
 5. **Active sorry**: `W_analytic_cluster_integral_via_ruelle`
    (`RuelleClusterBound.lean:718`) — the dominator-integrability
    step. The new dominator includes the regulator factor
@@ -290,7 +299,7 @@ Option A was implemented:
    `fl_representation_from_bv`, `fourierLaplaceExtMultiDim_*`)
    provides the building blocks.
 
-PR forthcoming on `r2e/ruelle-l5-grind` → `myfork`.
+Shipped in PR xiyin137#86 (open).
 
 ## References
 

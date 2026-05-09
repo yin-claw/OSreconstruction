@@ -1054,8 +1054,18 @@ theorem W_analytic_cluster_integral_via_ruelle
   --       Theorem 25.1 only requires tempered BV; the unregulated
   --       polynomial bound was over-strong.
   --
-  -- Option (b) is the cleaner fix; the regulated bound is now
-  -- available unconditionally via `wightman_l4_spectral_data_axiom`.
+  -- Option (b) is the cleaner fix. The regulated bound is available
+  -- as the conditional structure `L4SpectralData` (see
+  -- `OSReconstruction/Wightman/Spectral/Ruelle/L4_UniformPolynomialBound.lean`)
+  -- and the conditional reduction `ruelle_analytic_cluster_bound_of`
+  -- there. There is intentionally NO production axiom discharging
+  -- `L4SpectralData` (a draft `wightman_l4_spectral_data_axiom` was
+  -- withdrawn 2026-05-09 per PR-#86 review: no QFT-specific production
+  -- axioms). The IBP rework therefore takes either an explicit
+  -- `L4SpectralData Wfn n m` parameter at this site, or a future
+  -- proved theorem discharging it via the SCV / FL infrastructure
+  -- (`bv_implies_fourier_support` + `fl_representation_from_bv` +
+  -- `fourierLaplaceExtMultiDim_vladimirov_growth`).
   --
   -- ### Estimate
   --

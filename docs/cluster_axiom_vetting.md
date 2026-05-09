@@ -347,9 +347,10 @@ directions", Helv. Phys. Acta 35, 164).
 * **L2 (no zero-momentum atom)**: in production at
   `OSReconstruction/Wightman/Spectral/Ruelle/L2_NoZeroMomentumAtom.lean`.
   Conditional reduction `gns_orthogonal_spatial_cobounded_decay_of`
-  is fully proved from L5 + a `L2SpectralData` hypothesis. The
-  unconditional `gns_orthogonal_spatial_cobounded_decay` discharges
-  via the new axiom `gns_l2_spectral_data_axiom` (see entry 10 below).
+  is fully proved from L5 + an `L2SpectralData` hypothesis.
+  An unconditional discharge via `gns_l2_spectral_data_axiom` was
+  drafted and withdrawn after PR-#86 review (see entry 10 below);
+  no production axiom ships.
 * **L5 (spectral Riemann-Lebesgue)**: in production at
   `OSReconstruction/Wightman/Spectral/Ruelle/L5_SpectralRiemannLebesgue.lean`.
   Fully PROVED (no sorrys, no project axioms beyond Mathlib).

@@ -43,23 +43,38 @@ most the total mass of its measure, which is bounded by `C · (1 + ‖z₁‖ +
 modulus is then bounded by `(1/4) · 4 · C · (1 + ‖z₁‖ + ‖z₂‖) ^ N
 = C · (1 + ‖z₁‖ + ‖z₂‖) ^ N`.
 
-## Discharge
+## Discharge (conditional only — no production axiom)
 
-The structural hypothesis `L4SpectralData` is then axiomatized via
-`wightman_l4_spectral_data_axiom` for general Wightman families. The
-textbook content combines:
+`L4SpectralData` is **kept as a conditional input**; this file ships
+the conditional reduction `ruelle_analytic_cluster_bound_of` only.
+A production axiom `wightman_l4_spectral_data_axiom` was drafted in
+PR-#86 and **withdrawn (2026-05-09)** on review by
+[@xiyin137](https://github.com/xiyin137): per the project's axiom
+discipline, new production axioms encode classical background
+infrastructure (SNAG, Bochner tube, Schwartz-Fubini, Vladimirov-style
+SCV/FA), not QFT-specific consequences such as the polarized Fourier
+representation of `W_analytic_BHW`. Downstream consumers must supply
+`L4SpectralData` explicitly, or future work will discharge it as a
+theorem.
+
+The textbook discharge content (a future-work proof obligation, not
+an axiom commitment) combines:
 
 1. **Spectral resolution** of multi-time matrix elements via the GNS
    spacetime translation rep (SNAG theorem).
 2. **Polarization** of off-diagonal sesquilinear forms into four positive
    measures.
 3. **Polynomial growth in `(z₁, z₂)`** of each polarization piece's total
-   mass: from `spectrum_condition` (polynomial bound on `W_analytic_BHW`)
-   plus the SNAG / Bochner correspondence between bounded continuous
-   functions and Fourier transforms of finite measures.
-4. **Spectrum support in the dual cone** for the spatial-shift Fourier
-   representation: the modulus of `exp(i p · a)` is `1` for real spatial
-   `a`, regardless of the support, hence the bound is uniform in `a`.
+   mass with boundary regulator: matches
+   `fourierLaplaceExtMultiDim_vladimirov_growth`
+   (proved in `OSReconstruction/SCV/PaleyWienerSchwartz.lean:3286`)
+   on the FL-extension side, transported via
+   `bv_implies_fourier_support` + `fl_representation_from_bv` (existing
+   SCV axioms) to the `W_analytic_BHW` side.
+4. **|exp(i p · a)| = 1** for real spatial shifts: the modulus of
+   `exp(i p · a)` is `1` for real spatial `a`, regardless of support,
+   hence the bound is uniform in `a` (this part is captured by the
+   conditional reduction in this file).
 
 ## References
 
