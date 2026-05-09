@@ -347,6 +347,22 @@ theorem sourceFullFrameOrientedGram_hasFDerivAt
         (sourceFullFrameOrientedDifferential d M0 X).2
     rfl
 
+/-- Strict Frechet derivative of the full oriented full-frame coordinate map.
+This is the strict-derivative form needed by the selected-frame product-chart
+construction. -/
+theorem sourceFullFrameOrientedGram_hasStrictFDerivAt
+    (d : ℕ)
+    {M0 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ}
+    (hM0 : IsUnit M0.det) :
+    HasStrictFDerivAt
+      (sourceFullFrameOrientedGramCoord d)
+      (sourceFullFrameOrientedDifferentialCLM d M0) M0 := by
+  have hcd : ContDiffAt ℂ ⊤ (sourceFullFrameOrientedGramCoord d) M0 :=
+    (contDiff_sourceFullFrameOrientedGramCoord d).contDiffAt
+  have hstrict := hcd.hasStrictFDerivAt (by simp)
+  have hfderiv := (sourceFullFrameOrientedGram_hasFDerivAt (d := d) hM0).fderiv
+  exact hstrict.congr_fderiv hfderiv
+
 /-- Trace-form Frechet derivative of the oriented hypersurface equation. -/
 theorem sourceFullFrameOrientedEquation_hasFDerivAt_trace
     (d : ℕ)

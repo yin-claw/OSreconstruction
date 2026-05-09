@@ -2519,17 +2519,15 @@ checks the real-source permutation topology helpers
    `sourceFullFrameOrientedTangent_im_mem`; its proof uses the checked real
    Gram-matrix inverse bridge and
    `sourceFullFrameOrientedEquationDerivLinear_realComplexify_im`.  The
-   remaining full-frame producer proof is now pinned to the real-compatible
-   implicit-chart layer: prove
-   `sourceFullFrameRealCompatibleNormalizedKernelMap` preserves the real form,
-   take its real restriction, apply the real inverse-function theorem using
-   the checked identity derivative, define the `realKernelCoord` and
-   `complexKernelCoord` fields from the resulting source/target shrink, prove
-   `complexKernelCoord_real_eq` by uniqueness of that local inverse, and then
-   shrink the real source patch
-   so source invariants lie in the selected complex chart and selected frames
-   lie in the real frame domain.  The
-   Lean-level real-form proof is now checked through the following algebraic
+   real-compatible implicit-chart layer is now checked through the real-form
+   preservation theorem, the real restriction, the real inverse-function
+   theorem, the local real kernel coordinate, and the frame-domain
+   `SourceFullFrameRealGaugeSliceData` packet.  The remaining full-frame
+   producer proof must now build the compatible complex max-rank chart from
+   the same determinant-direction projection, then shrink the real source
+   patch so source invariants lie in that chart and selected frames lie in the
+   checked real frame domain.  The Lean-level real-form proof is checked
+   through the following algebraic
    sublemmas before any real IFT call: (i)
    `sourceFullFrameSymmetricEquationDerivCLM_realComplexify_im`, saying the
    restricted symmetric derivative has real value on componentwise
@@ -2562,12 +2560,11 @@ checks the real-source permutation topology helpers
    The real IFT chart
    `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph` and
    its origin source/target membership are checked.  The remaining producer
-   packaging starts from this real local homeomorphism: shrink its source and
-   target, define `realKernelCoord` from the inverse real chart, define
-   `complexKernelCoord` from the explicit complex kernel map, prove
-   `complexKernelCoord_real_eq` by the checked complexification identity and
-   local inverse uniqueness, and then assemble the selected-frame domain and
-   open-image field.
+   packaging starts from this real local homeomorphism and the checked
+   `sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_realExtension`;
+   what remains is to construct the corresponding complex max-rank chart with
+   the determinant-direction coordinate, then assemble the selected-frame
+   source patch and open-image field.
    The
    `realCoord_image_open` field must pass through the checked
    `sourceRealFullFrameSplitHomeomorph`, then be proved from the
@@ -6017,9 +6014,12 @@ implementation contract is:
    full split coordinate is rewritten in that triangular form by
    `sourceFullFrameRealSplitKernelMixedCoord_eq_tailMixedRowsLinearEquiv`.
    The determinant-nonzero tail/mixed coordinate replacement is therefore no
-   longer an unproved part of the frontier; the only remaining local-open
-   ingredient is the selected-frame product chart and the final shrink to the
-   chosen determinant-nonzero `W`.  The product-coordinate bridge now checked
+   longer an unproved part of the frontier.  The local-open ingredient has
+   now also been checked through the selected-frame product chart; the
+   remaining final producer work is to pair this open-image packet with a
+   compatible complex max-rank chart using the same determinant-direction
+   projection, and then perform the final source-patch shrink.  The
+   product-coordinate bridge now checked
    in Lean is
    `sourceFullFrameRealSplitProductKernelCoord`,
    `isOpenMap_sourceFullFrameRealSplitProductKernelCoord_of_realKernelCoord`,
@@ -6074,14 +6074,15 @@ implementation contract is:
    `(Fin S.realModelDim → ℝ) × O`, whose first coordinate is exactly
    `S.realKernelCoord` on its source and whose source lies inside the
    determinant-nonzero frame domain, mechanically produces the packet above.
-   Thus the next theorem to prove is not a wrapper around arbitrary openness
-   of `S.realKernelCoord`; it is the construction of this selected-frame
-   product chart from the real IFT/submersion derivative.
+   This selected-frame product-chart theorem is now checked.  It is not a
+   wrapper around arbitrary openness of `S.realKernelCoord`; it is the
+   determinant-direction real IFT/submersion construction whose first
+   coordinate is the checked real-compatible kernel coordinate.
 
-   Lean-pseudocode for the remaining selected-frame product chart:
+   Checked Lean surface:
 
    ```lean
-   theorem BHW.sourceFullFrameRealSelectedFrameProductChartData_of_realCompatibleSlice
+   noncomputable def BHW.sourceFullFrameRealSelectedFrameProductChartData_of_realCompatibleSlice
        {d n : Nat}
        {ι : Fin (d + 1) ↪ Fin n}
        {x0 : Fin n -> Fin (d + 1) -> ℝ}
@@ -6098,12 +6099,29 @@ implementation contract is:
              O instO
    ```
 
+   The checked declarations feeding it are:
+   `sourceFullFrameOrientedGram_hasStrictFDerivAt`,
+   `sourceFullFrameRealCompatibleFrameTargetDerivC`,
+   `sourceFullFrameRealCompatibleFrameTargetCoordC_hasStrictFDerivAt`,
+   `sourceFullFrameRealCompatibleFrameTargetDerivC_complexCoordEquiv`,
+   `sourceFullFrameRealMatrixComplexifyCLM`,
+   `sourceFullFrameRealCompatibleFrameTargetDerivR`,
+   `sourceFullFrameRealCompatibleFrameTargetCoordR_hasStrictFDerivAt`,
+   `sourceFullFrameRealCompatibleFrameTargetDerivR_realCoordEquiv`,
+   `sourceFullFrameRealCompatibleFrameTargetDerivR_range_eq_top`, and
+   `sourceFullFrameRealSelectedFrameProductChartData_of_realCompatibleSlice`.
+   The compatible complex-side IFT packet is also named and checked as
+   `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC`,
+   `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC_coe`,
+   `sourceFullFrameRealCompatibleNormalizedKernelC_zero_mem_chartSource`, and
+   `sourceFullFrameRealCompatibleNormalizedKernelC_zero_mem_chartTarget`.
+
    In the final `sourceFullFrameRealCompatibleImplicitChartData` producer,
    take `hM0R := isUnit_iff_ne_zero.mpr hdet`; the harmless difference
    between `hM0R.ne_zero` and the given `hdet` is bridged by proof
    irrelevance/casting when installing the concrete slice packet.
 
-   The proof must be organized as follows.
+   The checked product-chart proof is organized as follows.
 
    1. Define the selected-frame target coordinate
       `T M := sourceFullFrameRealCompatibleFrameTargetCoordR d hM0R F M`
@@ -6140,6 +6158,53 @@ implementation contract is:
       `SourceFullFrameRealSelectedFrameProductChartData S O`; then
       `SourceFullFrameRealSelectedFrameProductChartData.toOpenData` supplies
       the already checked `SourceFullFrameRealSelectedFrameProductOpenData S`.
+
+   The remaining non-mechanical producer step is now the compatible complex
+   chart, not the selected-frame open map.  The final
+   `SourceFullFrameRealCompatibleImplicitChartData.C` must be built from the
+   same determinant-direction kernel projection
+   `sourceFullFrameRealCompatibleKernelProjection d hM0R` used by the real
+   coordinate.  It must not use the older generic constructor
+   `sourceOrientedMaxRankChartData_of_selectedDetNonzero` (nor the underlying
+   `sourceFullFrameGaugeSliceImplicitKernelMap`) for this final field, because
+   those charts use Mathlib's arbitrary closed-complement projection
+   `sourceFullFrameSymmetricEquationKernelProjection`.  That generic chart is
+   valid max-rank local-image infrastructure, but it does not give the
+   real/complex equality
+   `chart_eq_kernel_mixed` for the determinant-direction real coordinate.
+
+   Lean-pseudocode for the next implementation target:
+
+   ```lean
+   noncomputable def BHW.sourceOrientedFullFrameMaxRankChartData_of_realCompatibleSlice
+       {d n : Nat}
+       (ι : Fin (d + 1) ↪ Fin n)
+       {x0 : Fin n -> Fin (d + 1) -> ℝ}
+       (hM0R : IsUnit (BHW.sourceRealFullFrameMatrix d n ι x0).det)
+       (F : BHW.SourceFullFrameRealSliceFiniteCoordData d
+         (BHW.sourceRealFullFrameMatrix d n ι x0) hM0R) :
+       Σ m : Nat,
+         BHW.SourceOrientedMaxRankChartData d n
+           (M := Fin m -> ℂ)
+           (BHW.sourceRealOrientedMinkowskiInvariant d n x0)
+   ```
+
+   Its chart formula must be finite-coordinate compatible:
+
+   ```lean
+   coordEquivC (C.chart (BHW.sourceRealOrientedMinkowskiInvariant d n x)) =
+     (S.realModelToComplexSlice.symm
+       (S.complexKernelCoord
+         ((BHW.sourceRealFullFrameMatrix d n ι x).map Complex.ofReal)),
+      BHW.sourceSelectedMixedRows d n ι
+        (BHW.sourceRealOrientedMinkowskiInvariant d n x))
+   ```
+
+   on the shrunken real source patch.  Prove this by building the complex
+   local chart from the checked
+   `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC` and
+   its determinant-direction projection, then postcomposing by the explicit
+   finite product coordinate equivalence shared with `coordEquivR`.
    The mechanical bridges around it are
    `sourceOrientedRealEnvironment_of_localRealCharts`,
    `sourceOrientedRealEnvironment_of_fullFrameDetNonzero_localCharts`, and the

@@ -1,4 +1,6 @@
 import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedRealFullFrameChart
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedFullFrameHolomorphicSection
+import OSReconstruction.ComplexLieGroups.Connectedness.BHWPermutation.SourceOrientedFullFrameJacobi
 
 /-!
 # Real-compatible full-frame kernel map
@@ -179,6 +181,84 @@ theorem sourceFullFrameRealCompatibleNormalizedKernelMap_hasStrictFDerivAt
     rw [ContinuousLinearEquiv.symm_apply_apply]
     exact ContinuousLinearEquiv.symm_apply_apply F.complexCoordEquiv q
   simpa [hfun, hderiv] using hcomp
+
+set_option synthInstance.maxHeartbeats 160000 in
+set_option maxHeartbeats 400000 in
+/-- The complex inverse-function chart for the determinant-direction
+normalized kernel map.  This is the complex chart that is compatible with the
+real route; it uses `sourceFullFrameRealCompatibleKernelProjection`, not the
+generic closed-complement projection. -/
+noncomputable def sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    OpenPartialHomeomorph (Fin F.realModelDim → ℂ) (Fin F.realModelDim → ℂ) := by
+  let f := sourceFullFrameRealCompatibleNormalizedKernelMap d hM0R F
+  let e : (Fin F.realModelDim → ℂ) ≃L[ℂ] (Fin F.realModelDim → ℂ) :=
+    ContinuousLinearEquiv.refl ℂ (Fin F.realModelDim → ℂ)
+  have hderiv : HasStrictFDerivAt f
+      (e : (Fin F.realModelDim → ℂ) →L[ℂ] (Fin F.realModelDim → ℂ)) 0 := by
+    simpa [f, e] using
+      sourceFullFrameRealCompatibleNormalizedKernelMap_hasStrictFDerivAt
+        d hM0R F
+  exact @HasStrictFDerivAt.toOpenPartialHomeomorph ℂ _
+    (Fin F.realModelDim → ℂ) _ _ (Fin F.realModelDim → ℂ) _ _
+    f e 0 inferInstance hderiv
+
+@[simp]
+theorem sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC_coe
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    (sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC
+      d hM0R F : (Fin F.realModelDim → ℂ) → (Fin F.realModelDim → ℂ)) =
+      sourceFullFrameRealCompatibleNormalizedKernelMap d hM0R F := by
+  rfl
+
+set_option synthInstance.maxHeartbeats 160000 in
+set_option maxHeartbeats 400000 in
+/-- The determinant-direction complex normalized kernel chart contains the
+origin in its source. -/
+theorem sourceFullFrameRealCompatibleNormalizedKernelC_zero_mem_chartSource
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    (0 : Fin F.realModelDim → ℂ) ∈
+      (sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC
+        d hM0R F).source := by
+  let f := sourceFullFrameRealCompatibleNormalizedKernelMap d hM0R F
+  let e : (Fin F.realModelDim → ℂ) ≃L[ℂ] (Fin F.realModelDim → ℂ) :=
+    ContinuousLinearEquiv.refl ℂ (Fin F.realModelDim → ℂ)
+  have hderiv : HasStrictFDerivAt f
+      (e : (Fin F.realModelDim → ℂ) →L[ℂ] (Fin F.realModelDim → ℂ)) 0 := by
+    simpa [f, e] using
+      sourceFullFrameRealCompatibleNormalizedKernelMap_hasStrictFDerivAt
+        d hM0R F
+  unfold sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC
+  simp only [HasStrictFDerivAt.toOpenPartialHomeomorph,
+    ApproximatesLinearOn.toOpenPartialHomeomorph_source]
+  exact (Classical.choose_spec hderiv.approximates_deriv_on_open_nhds).1
+
+/-- The determinant-direction complex normalized kernel chart contains the
+origin in its target. -/
+theorem sourceFullFrameRealCompatibleNormalizedKernelC_zero_mem_chartTarget
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    (0 : Fin F.realModelDim → ℂ) ∈
+      (sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC
+        d hM0R F).target := by
+  have hsource :=
+    sourceFullFrameRealCompatibleNormalizedKernelC_zero_mem_chartSource
+      d hM0R F
+  have htarget :=
+    (sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC
+      d hM0R F).map_source hsource
+  simpa using htarget
 
 set_option synthInstance.maxHeartbeats 100000 in
 /-- The restricted symmetric equation derivative has real value on
@@ -902,6 +982,196 @@ theorem sourceFullFrameRealCompatibleFrameTargetCoordC_base
   rw [(sourceFullFrameRealCompatibleKernelProjection d hM0R).map_zero]
   exact (sourceFullFrameRealSliceKernelCoordEquiv d hM0R F).symm.map_zero
 
+/-- Complex derivative of the frame-level target coordinate used by the
+selected-frame product-chart construction. -/
+noncomputable def sourceFullFrameRealCompatibleFrameTargetDerivC
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ →L[ℂ]
+      (Fin F.realModelDim → ℂ) :=
+  let K := (sourceFullFrameSymmetricEquationDerivCLM d
+    (sourceFullFrameOrientedGramCoord d (M0R.map Complex.ofReal))).ker
+  ((sourceFullFrameRealSliceKernelCoordEquiv d hM0R F).symm :
+      K →L[ℂ] (Fin F.realModelDim → ℂ)).comp
+    ((sourceFullFrameRealCompatibleKernelProjection d hM0R).comp
+      ((sourceFullFrameSymmetrizeCoordCLM d).comp
+        (sourceFullFrameOrientedDifferentialCLM d (M0R.map Complex.ofReal))))
+
+set_option synthInstance.maxHeartbeats 160000 in
+set_option maxHeartbeats 500000 in
+/-- The complex frame-level target coordinate has the explicit derivative
+obtained by differentiating the oriented full-frame invariant, symmetrizing,
+projecting to the real-compatible tangent kernel, and applying finite kernel
+coordinates. -/
+theorem sourceFullFrameRealCompatibleFrameTargetCoordC_hasStrictFDerivAt
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    HasStrictFDerivAt
+      (sourceFullFrameRealCompatibleFrameTargetCoordC d hM0R F)
+      (sourceFullFrameRealCompatibleFrameTargetDerivC d hM0R F)
+      (M0R.map Complex.ofReal) := by
+  let M0C := M0R.map Complex.ofReal
+  let Lsym := sourceFullFrameSymmetrizeCoordCLM d
+  let K := (sourceFullFrameSymmetricEquationDerivCLM d
+    (sourceFullFrameOrientedGramCoord d M0C)).ker
+  let P : sourceFullFrameSymmetricCoordSubmodule d →L[ℂ] K :=
+    sourceFullFrameRealCompatibleKernelProjection d hM0R
+  let E := sourceFullFrameRealSliceKernelCoordEquiv d hM0R F
+  let Es : K →L[ℂ] (Fin F.realModelDim → ℂ) := E.symm
+  have hGram : HasStrictFDerivAt
+      (sourceFullFrameOrientedGramCoord d)
+      (sourceFullFrameOrientedDifferentialCLM d M0C) M0C := by
+    simpa [M0C] using sourceFullFrameOrientedGram_hasStrictFDerivAt
+      (d := d) (M0 := M0C)
+      (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)
+  have hL : HasStrictFDerivAt
+      (fun H : SourceFullFrameOrientedCoord d => Lsym H)
+      Lsym (sourceFullFrameOrientedGramCoord d M0C) :=
+    Lsym.hasStrictFDerivAt
+  have hSymm : HasStrictFDerivAt
+      (fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ =>
+        Lsym (sourceFullFrameOrientedGramCoord d M))
+      (Lsym.comp (sourceFullFrameOrientedDifferentialCLM d M0C)) M0C := by
+    simpa using
+      (HasStrictFDerivAt.comp (𝕜 := ℂ) (x := M0C)
+        (g := fun H : SourceFullFrameOrientedCoord d => Lsym H)
+        (f := sourceFullFrameOrientedGramCoord d) hL hGram)
+  let base := sourceFullFrameSymmetricBase d M0C
+  have hSub : HasStrictFDerivAt
+      (fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ =>
+        Lsym (sourceFullFrameOrientedGramCoord d M) - base)
+      (Lsym.comp (sourceFullFrameOrientedDifferentialCLM d M0C)) M0C := by
+    exact hSymm.sub_const base
+  have hP : HasStrictFDerivAt
+      (P : sourceFullFrameSymmetricCoordSubmodule d → K)
+      P (Lsym (sourceFullFrameOrientedGramCoord d M0C) - base) :=
+    @ContinuousLinearMap.hasStrictFDerivAt ℂ _
+      (sourceFullFrameSymmetricCoordSubmodule d) _ _ _
+      K _ _ _
+      P (Lsym (sourceFullFrameOrientedGramCoord d M0C) - base)
+  have hPcomp : HasStrictFDerivAt
+      (fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ =>
+        P (Lsym (sourceFullFrameOrientedGramCoord d M) - base))
+      (P.comp (Lsym.comp (sourceFullFrameOrientedDifferentialCLM d M0C)))
+      M0C := by
+    simpa using
+      (HasStrictFDerivAt.comp (𝕜 := ℂ) (x := M0C)
+        (g := (P : sourceFullFrameSymmetricCoordSubmodule d → K))
+        (f := fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ =>
+          Lsym (sourceFullFrameOrientedGramCoord d M) - base) hP hSub)
+  have hE : HasStrictFDerivAt
+      (Es : K → Fin F.realModelDim → ℂ)
+      Es (P (Lsym (sourceFullFrameOrientedGramCoord d M0C) - base)) :=
+    @ContinuousLinearMap.hasStrictFDerivAt ℂ _
+      K _ _ _
+      (Fin F.realModelDim → ℂ) _ _ _
+      Es (P (Lsym (sourceFullFrameOrientedGramCoord d M0C) - base))
+  have hcomp : HasStrictFDerivAt
+      (fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ =>
+        Es (P (Lsym (sourceFullFrameOrientedGramCoord d M) - base)))
+      (Es.comp (P.comp (Lsym.comp
+        (sourceFullFrameOrientedDifferentialCLM d M0C)))) M0C := by
+    simpa using
+      (HasStrictFDerivAt.comp (𝕜 := ℂ) (x := M0C)
+        (g := (Es : K → Fin F.realModelDim → ℂ))
+        (f := fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ =>
+          P (Lsym (sourceFullFrameOrientedGramCoord d M) - base))
+        hE hPcomp)
+  refine hcomp.congr_of_eventuallyEq ?_
+  filter_upwards with M
+  simp [sourceFullFrameRealCompatibleFrameTargetCoordC,
+    M0C, Lsym, P, E, Es, K, base, sourceFullFrameSymmetrizeCoordCLM]
+
+set_option synthInstance.maxHeartbeats 160000 in
+set_option maxHeartbeats 500000 in
+/-- On the explicit complex slice coordinates, the complex frame-target
+derivative recovers the finite coordinate vector. -/
+theorem sourceFullFrameRealCompatibleFrameTargetDerivC_complexCoordEquiv
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R)
+    (q : Fin F.realModelDim → ℂ) :
+    sourceFullFrameRealCompatibleFrameTargetDerivC d hM0R F
+        (F.complexCoordEquiv q :
+          Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) = q := by
+  let hM0C := sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R
+  let S := sourceFullFrameExplicitGaugeSliceData d hM0C
+  let K := (sourceFullFrameSymmetricEquationDerivCLM d
+    (sourceFullFrameOrientedGramCoord d (M0R.map Complex.ofReal))).ker
+  let E := sourceFullFrameRealSliceKernelCoordEquiv d hM0R F
+  let X : S.slice := F.complexCoordEquiv q
+  have hsymm :
+      (sourceFullFrameSymmetrizeCoordCLM d)
+          (sourceFullFrameOrientedDifferentialCLM d (M0R.map Complex.ofReal)
+            (X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ)) =
+        sourceFullFrameGaugeSliceSymmetricDerivCLM d hM0C S X := by
+    apply Subtype.ext
+    change
+      (sourceFullFrameSymmetrizeCoord d
+          (sourceFullFrameOrientedDifferential d (M0R.map Complex.ofReal)
+            (X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ)) :
+          SourceFullFrameOrientedCoord d) =
+        sourceFullFrameOrientedDifferential d (M0R.map Complex.ofReal)
+          (X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ)
+    exact sourceFullFrameSymmetrizeCoord_eq_of_mem_symmetric d
+      (sourceFullFrameGaugeSliceSymmetricDerivCLM d hM0C S X).property
+  have hproj :
+      (sourceFullFrameRealCompatibleKernelProjection d hM0R)
+          (sourceFullFrameGaugeSliceSymmetricDerivCLM d hM0C S X) =
+        sourceFullFrameGaugeSliceKernelDerivCLM d hM0C S X := by
+    have hp := sourceFullFrameRealCompatibleKernelProjection_apply_ker d hM0R
+      (sourceFullFrameGaugeSliceKernelDerivCLM d hM0C S X)
+    simpa [sourceFullFrameGaugeSliceKernelDerivCLM] using hp
+  calc
+    sourceFullFrameRealCompatibleFrameTargetDerivC d hM0R F
+        (F.complexCoordEquiv q :
+          Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ)
+        = E.symm ((sourceFullFrameRealCompatibleKernelProjection d hM0R)
+            ((sourceFullFrameSymmetrizeCoordCLM d)
+              (sourceFullFrameOrientedDifferentialCLM d
+                (M0R.map Complex.ofReal)
+                (X : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ)))) := by
+          simp [sourceFullFrameRealCompatibleFrameTargetDerivC, E, X]
+    _ = E.symm (sourceFullFrameGaugeSliceKernelDerivCLM d hM0C S X) := by
+          rw [hsymm, hproj]
+    _ = q := by
+          rw [← sourceFullFrameGaugeSliceKernelDerivContinuousLinearEquiv_coe]
+          let e :=
+            sourceFullFrameGaugeSliceKernelDerivContinuousLinearEquiv
+              d hM0C S
+          change F.complexCoordEquiv.symm
+              (e.symm (e (F.complexCoordEquiv q))) = q
+          rw [ContinuousLinearEquiv.symm_apply_apply]
+          exact ContinuousLinearEquiv.symm_apply_apply F.complexCoordEquiv q
+
+/-- Complexification of real full-frame matrices as a continuous real-linear
+map. -/
+noncomputable def sourceFullFrameRealMatrixComplexifyCLM
+    (d : ℕ) :
+    Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ →L[ℝ]
+      Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ :=
+  ContinuousLinearMap.pi fun i =>
+    ContinuousLinearMap.pi fun j =>
+      Complex.ofRealCLM.comp
+        ((ContinuousLinearMap.proj j).comp
+          (ContinuousLinearMap.proj i :
+            Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ →L[ℝ]
+              Fin (d + 1) → ℝ))
+
+@[simp]
+theorem sourceFullFrameRealMatrixComplexifyCLM_apply
+    (d : ℕ)
+    (M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+    sourceFullFrameRealMatrixComplexifyCLM d M = M.map Complex.ofReal := by
+  ext i j
+  change Complex.ofRealCLM (M i j) = (M i j : ℂ)
+  simp
+
 /-- Real frame-level target coordinate, obtained by restricting the complex
 target coordinate to complexified real frames and taking coordinatewise real
 part. -/
@@ -942,6 +1212,125 @@ theorem sourceFullFrameRealCompatibleFrameTargetCoordR_base
   rw [sourceFullFrameRealCompatibleFrameTargetCoordC_base d hM0R F]
   ext i
   simp [sourceFullFrameComplexCoordinateReCLM]
+
+/-- Real derivative of the frame-level target coordinate used by the
+selected-frame product-chart construction. -/
+noncomputable def sourceFullFrameRealCompatibleFrameTargetDerivR
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ →L[ℝ]
+      (Fin F.realModelDim → ℝ) :=
+  (sourceFullFrameComplexCoordinateReCLM F.realModelDim).comp
+    (((sourceFullFrameRealCompatibleFrameTargetDerivC d hM0R F).restrictScalars ℝ).comp
+      (sourceFullFrameRealMatrixComplexifyCLM d))
+
+set_option synthInstance.maxHeartbeats 140000 in
+set_option maxHeartbeats 500000 in
+/-- The real frame-level target coordinate has the real derivative obtained by
+restricting the complex derivative to complexified real matrices and taking
+coordinatewise real part. -/
+theorem sourceFullFrameRealCompatibleFrameTargetCoordR_hasStrictFDerivAt
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    HasStrictFDerivAt
+      (sourceFullFrameRealCompatibleFrameTargetCoordR d hM0R F)
+      (sourceFullFrameRealCompatibleFrameTargetDerivR d hM0R F)
+      M0R := by
+  let fC := sourceFullFrameRealCompatibleFrameTargetCoordC d hM0R F
+  let LC := sourceFullFrameRealCompatibleFrameTargetDerivC d hM0R F
+  let incl := sourceFullFrameRealMatrixComplexifyCLM d
+  let re := sourceFullFrameComplexCoordinateReCLM F.realModelDim
+  have hC : HasStrictFDerivAt fC LC (M0R.map Complex.ofReal) := by
+    simpa [fC, LC] using
+      sourceFullFrameRealCompatibleFrameTargetCoordC_hasStrictFDerivAt
+        d hM0R F
+  have hC_R : HasStrictFDerivAt fC (LC.restrictScalars ℝ)
+      (M0R.map Complex.ofReal) :=
+    hC.restrictScalars ℝ
+  have hC_at_incl : HasStrictFDerivAt fC (LC.restrictScalars ℝ)
+      (incl M0R) := by
+    simpa [incl] using hC_R
+  have hincl : HasStrictFDerivAt
+      (fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ => incl M)
+      incl M0R :=
+    ContinuousLinearMap.hasStrictFDerivAt incl (x := M0R)
+  have hcomp1 : HasStrictFDerivAt
+      (fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ => fC (incl M))
+      ((LC.restrictScalars ℝ).comp incl) M0R := by
+    simpa using
+      (HasStrictFDerivAt.comp (𝕜 := ℝ) (x := M0R)
+        (g := fC)
+        (f := fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ => incl M)
+        hC_at_incl hincl)
+  have hre : HasStrictFDerivAt
+      (fun q : Fin F.realModelDim → ℂ => re q)
+      re (fC (incl M0R)) :=
+    ContinuousLinearMap.hasStrictFDerivAt re (x := fC (incl M0R))
+  have hcomp2 : HasStrictFDerivAt
+      (fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ =>
+        re (fC (incl M)))
+      (re.comp ((LC.restrictScalars ℝ).comp incl)) M0R := by
+    simpa using
+      (HasStrictFDerivAt.comp (𝕜 := ℝ) (x := M0R)
+        (g := fun q : Fin F.realModelDim → ℂ => re q)
+        (f := fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ =>
+          fC (incl M)) hre hcomp1)
+  simpa [sourceFullFrameRealCompatibleFrameTargetCoordR,
+    sourceFullFrameRealCompatibleFrameTargetDerivR, fC, LC, incl, re]
+    using hcomp2
+
+set_option synthInstance.maxHeartbeats 160000 in
+set_option maxHeartbeats 500000 in
+/-- On the explicit real slice coordinates, the real frame-target derivative
+recovers the finite coordinate vector. -/
+theorem sourceFullFrameRealCompatibleFrameTargetDerivR_realCoordEquiv
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R)
+    (q : Fin F.realModelDim → ℝ) :
+    sourceFullFrameRealCompatibleFrameTargetDerivR d hM0R F
+        ((F.realCoordEquiv q :
+            sourceFullFrameRealDifferentialRightInverseRange d hM0R) :
+          Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) = q := by
+  let XR : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ :=
+    (F.realCoordEquiv q :
+      sourceFullFrameRealDifferentialRightInverseRange d hM0R)
+  have hcomplex :
+      (F.complexCoordEquiv (fun i => (q i : ℂ)) :
+          Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ) =
+        XR.map Complex.ofReal := by
+    have h := F.complexCoordEquiv_real_eq q
+    exact congrArg Subtype.val h
+  change sourceFullFrameComplexCoordinateReCLM F.realModelDim
+      (sourceFullFrameRealCompatibleFrameTargetDerivC d hM0R F
+        (XR.map Complex.ofReal)) = q
+  rw [← hcomplex]
+  rw [sourceFullFrameRealCompatibleFrameTargetDerivC_complexCoordEquiv]
+  ext i
+  simp [sourceFullFrameComplexCoordinateReCLM]
+
+/-- The real frame-target derivative is surjective. -/
+theorem sourceFullFrameRealCompatibleFrameTargetDerivR_range_eq_top
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    LinearMap.range
+        (sourceFullFrameRealCompatibleFrameTargetDerivR d hM0R F).toLinearMap =
+      ⊤ := by
+  rw [LinearMap.range_eq_top]
+  intro q
+  exact
+    ⟨((F.realCoordEquiv q :
+        sourceFullFrameRealDifferentialRightInverseRange d hM0R) :
+        Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ),
+      sourceFullFrameRealCompatibleFrameTargetDerivR_realCoordEquiv
+        d hM0R F q⟩
 
 /-- Frame matrices whose real-compatible target coordinate lies in the local
 real inverse-function target and whose determinant remains nonzero. -/
@@ -1163,6 +1552,97 @@ noncomputable def sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_realExte
     (sourceFullFrameRealCompatibleComplexKernelCoordFromReal d hM0R F)
     (sourceFullFrameRealCompatibleComplexKernelCoordFromReal_real_eq
       d hM0R F)
+
+set_option synthInstance.maxHeartbeats 200000 in
+set_option maxHeartbeats 700000 in
+/-- The real-compatible selected-frame slice supplies the local product chart
+whose first coordinate is the checked real selected-frame kernel coordinate. -/
+noncomputable def sourceFullFrameRealSelectedFrameProductChartData_of_realCompatibleSlice
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    (hM0R : IsUnit (sourceRealFullFrameMatrix d n ι x0).det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d
+      (sourceRealFullFrameMatrix d n ι x0) hM0R) :
+    Sigma fun O : Type =>
+      Sigma fun instO : TopologicalSpace O =>
+        @SourceFullFrameRealSelectedFrameProductChartData
+          d n ι x0 hM0R.ne_zero
+          (sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_realExtension
+            d hM0R F)
+          O instO := by
+  let M0R := sourceRealFullFrameMatrix d n ι x0
+  let S :=
+    sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_realExtension
+      d hM0R F
+  let f := sourceFullFrameRealCompatibleFrameTargetCoordR d hM0R F
+  let f' := sourceFullFrameRealCompatibleFrameTargetDerivR d hM0R F
+  let O := f'.ker
+  let eK :=
+    sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph
+      d hM0R F
+  have hf : HasStrictFDerivAt f f' M0R := by
+    simpa [f, f', M0R] using
+      sourceFullFrameRealCompatibleFrameTargetCoordR_hasStrictFDerivAt
+        d hM0R F
+  have hsurj : LinearMap.range f'.toLinearMap = ⊤ := by
+    simpa [f'] using
+      sourceFullFrameRealCompatibleFrameTargetDerivR_range_eq_top d hM0R F
+  let eT : OpenPartialHomeomorph
+      (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
+      ((Fin F.realModelDim → ℝ) × O) :=
+    hf.implicitToOpenPartialHomeomorph f f' hsurj
+  let eProd : OpenPartialHomeomorph
+      ((Fin F.realModelDim → ℝ) × O)
+      ((Fin F.realModelDim → ℝ) × O) :=
+    eK.symm.prod (OpenPartialHomeomorph.refl O)
+  let sourceOpen : Set (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :=
+    S.frameDomain ∩ {M | M.det ≠ 0}
+  have hsourceOpen : IsOpen sourceOpen := by
+    exact S.frameDomain_open.inter
+      (isOpen_ne_fun
+        (continuous_id.matrix_det :
+          Continuous
+            (fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ =>
+              M.det))
+        continuous_const)
+  let frameChart := (eT.trans eProd).restrOpen sourceOpen hsourceOpen
+  refine ⟨O, ?_⟩
+  letI : TopologicalSpace O := inferInstance
+  refine ⟨inferInstance, ?_⟩
+  refine
+    { frameChart := frameChart
+      center_mem_source := ?_
+      source_det := ?_
+      source_frameDomain := ?_
+      first_eq_realKernelCoord := ?_ }
+  · have hTsource : M0R ∈ eT.source :=
+      hf.mem_implicitToOpenPartialHomeomorph_source hsurj
+    have hTself : eT M0R = (f M0R, (0 : O)) := by
+      exact hf.implicitToOpenPartialHomeomorph_self hsurj
+    have hKtarget : (0 : Fin F.realModelDim → ℝ) ∈ eK.target := by
+      simpa [eK] using
+        sourceFullFrameRealCompatibleNormalizedKernel_zero_mem_chartTarget
+          d hM0R F
+    have hProdSource : eT M0R ∈ eProd.source := by
+      have hf0 : f M0R = 0 := by
+        simp [f, M0R]
+      rw [hTself]
+      simpa [eProd, hf0] using hKtarget
+    have hTrans : M0R ∈ (eT.trans eProd).source :=
+      ⟨hTsource, hProdSource⟩
+    have hOpen : M0R ∈ sourceOpen :=
+      ⟨S.center_mem_frameDomain, hM0R.ne_zero⟩
+    exact ⟨hTrans, hOpen⟩
+  · intro M hM
+    exact hM.2.2
+  · intro M hM
+    exact hM.2.1
+  · intro M _hM
+    have hfirstT : (eT M).1 = f M := by
+      exact hf.implicitToOpenPartialHomeomorph_fst hsurj M
+    change (eProd (eT M)).1 = eK.symm (f M)
+    simp [eProd, hfirstT]
 
 /-- The checked real-compatible full-frame gauge-slice packet at a real
 determinant-nonzero base. -/

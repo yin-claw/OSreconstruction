@@ -20627,12 +20627,18 @@ Proof decomposition of this theorem, without hiding the analytic work:
         --    `sourceFullFrameRealSliceFiniteCoordData`, whose complex
         --    coordinate equivalence is built from a real basis of that range.
         -- 3. Run the real inverse/implicit-function theorem for the real
-        --    kernel map.  Its complexification is the existing complex
-        --    `sourceFullFrameGaugeSliceImplicitKernelMap`; uniqueness of the
-        --    local inverse gives `complexKernelCoord_real_eq`.
-        -- 4. Define the chart `C` from the full-frame max-rank chart
-        --    constructor using this same complex slice, not
-        --    `sourceFullFrameGaugeSlice_exists`.
+        --    determinant-direction kernel map.  Its complexification is the
+        --    determinant-direction complex kernel map
+        --    `sourceFullFrameRealCompatibleNormalizedKernelMap`, not the
+        --    older generic `sourceFullFrameGaugeSliceImplicitKernelMap`.
+        -- 4. Define the chart `C` from the real-compatible full-frame
+        --    max-rank chart constructor using this same complex slice and
+        --    determinant-direction projection.  Do not use
+        --    `sourceOrientedMaxRankChartData_of_selectedDetNonzero` here:
+        --    that generic constructor is valid max-rank infrastructure, but
+        --    its kernel coordinate comes from Mathlib's arbitrary
+        --    closed-complement projection and therefore does not prove the
+        --    final `chart_eq_kernel_mixed` equality for the real route.
         -- 5. Shrink `E0` so real source invariants lie in `C.Ω` and selected
         --    real frames lie in `S.frameDomain`.
         -- 6. Let `realCoord` be the inverse of `coordEquivR` applied to
@@ -20695,6 +20701,20 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `isOpen_product_first_id_image_of_openPartialHomeomorph`,
       `SourceFullFrameRealSelectedFrameProductChartData`,
       `SourceFullFrameRealSelectedFrameProductChartData.toOpenData`,
+      `sourceFullFrameOrientedGram_hasStrictFDerivAt`,
+      `sourceFullFrameRealCompatibleFrameTargetDerivC`,
+      `sourceFullFrameRealCompatibleFrameTargetCoordC_hasStrictFDerivAt`,
+      `sourceFullFrameRealCompatibleFrameTargetDerivC_complexCoordEquiv`,
+      `sourceFullFrameRealMatrixComplexifyCLM`,
+      `sourceFullFrameRealCompatibleFrameTargetDerivR`,
+      `sourceFullFrameRealCompatibleFrameTargetCoordR_hasStrictFDerivAt`,
+      `sourceFullFrameRealCompatibleFrameTargetDerivR_realCoordEquiv`,
+      `sourceFullFrameRealCompatibleFrameTargetDerivR_range_eq_top`,
+      `sourceFullFrameRealSelectedFrameProductChartData_of_realCompatibleSlice`,
+      `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC`,
+      `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC_coe`,
+      `sourceFullFrameRealCompatibleNormalizedKernelC_zero_mem_chartSource`,
+      `sourceFullFrameRealCompatibleNormalizedKernelC_zero_mem_chartTarget`,
       plus the producer-level mechanical consumers
       `SourceFullFrameRealCompatibleImplicitChartProducer`,
       `sourceOrientedLocalRealChartData_of_fullFrameDet_ne_zero_of_realCompatibleImplicitChartProducer`,
@@ -20933,16 +20953,30 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceRealFullFrameSplitHomeomorph '' U`, so the remaining open-map
       theorem is precisely local openness of this finite-product map on the
       chosen split neighborhood.
-      The selected-frame product-chart construction is now isolated: prove
-      `sourceFullFrameRealSelectedFrameProductChartData_of_realCompatibleSlice`
-      from the real derivative of
-      `sourceFullFrameRealCompatibleFrameTargetCoordR`, choose a complement to
-      the derivative kernel, use `HasStrictFDerivAt.toOpenPartialHomeomorph`
-      for `M ↦ (T M, orbitComplementCoord (M - M0R))`, restrict to
-      `S.frameDomain`, postcompose the first coordinate by
+      The selected-frame product-chart construction is now checked as
+      `sourceFullFrameRealSelectedFrameProductChartData_of_realCompatibleSlice`:
+      it uses the real derivative of
+      `sourceFullFrameRealCompatibleFrameTargetCoordR`, chooses the derivative
+      kernel as the complementary product coordinate via
+      `HasStrictFDerivAt.implicitToOpenPartialHomeomorph`, restricts to
+      `S.frameDomain ∩ {M | M.det ≠ 0}`, postcomposes the first coordinate by
       `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph.symm`,
-      and then apply
+      and then feeds
       `SourceFullFrameRealSelectedFrameProductChartData.toOpenData`.
+      The next unproved Lean theorem is the compatible complex full-frame
+      chart producer: build the `SourceOrientedMaxRankChartData` field for
+      `SourceFullFrameRealCompatibleImplicitChartData` from the same
+      determinant-direction projection
+      `sourceFullFrameRealCompatibleKernelProjection d hM0R`, using the
+      checked complex finite-coordinate chart
+      `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC`.
+      The older
+      generic max-rank constructor
+      `sourceOrientedMaxRankChartData_of_selectedDetNonzero` must not be used
+      for this field, because its `chart` coordinate is based on
+      `sourceFullFrameSymmetricEquationKernelProjection`, an arbitrary
+      closed-complement projection, and therefore is not the real-compatible
+      coordinate needed by `chart_eq_kernel_mixed`.
 
       In the small-arity theorem the determinant-coordinate family is empty,
       so oriented regularity is the checked pure-Gram regularity after
