@@ -20146,6 +20146,53 @@ Proof decomposition of this theorem, without hiding the analytic work:
           OpenPartialHomeomorph
             (Fin F.realModelDim -> ℂ) (Fin F.realModelDim -> ℂ)
 
+      noncomputable def BHW.sourceFullFrameRealCompatibleKernelProjection
+          (d : Nat)
+          {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hM0R : IsUnit M0R.det) :
+          BHW.sourceFullFrameSymmetricCoordSubmodule d →L[ℂ]
+            (BHW.sourceFullFrameSymmetricEquationDerivCLM d
+              (BHW.sourceFullFrameOrientedGramCoord d
+                (M0R.map Complex.ofReal))).ker
+
+      noncomputable def BHW.sourceFullFrameRealCompatibleExplicitKernelMap
+          (d : Nat)
+          {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hM0R : IsUnit M0R.det) :
+          (BHW.sourceFullFrameExplicitGaugeSliceData d
+            (BHW.sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)).slice ->
+            (BHW.sourceFullFrameSymmetricEquationDerivCLM d
+              (BHW.sourceFullFrameOrientedGramCoord d
+                (M0R.map Complex.ofReal))).ker
+
+      theorem BHW.sourceFullFrameRealCompatibleExplicitKernelMap_hasStrictFDerivAt
+          (d : Nat)
+          {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hM0R : IsUnit M0R.det) :
+          HasStrictFDerivAt
+            (BHW.sourceFullFrameRealCompatibleExplicitKernelMap d hM0R)
+            (BHW.sourceFullFrameGaugeSliceKernelDerivCLM d
+              (BHW.sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)
+              (BHW.sourceFullFrameExplicitGaugeSliceData d
+                (BHW.sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R))) 0
+
+      noncomputable def BHW.sourceFullFrameRealCompatibleNormalizedKernelMap
+          (d : Nat)
+          {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hM0R : IsUnit M0R.det)
+          (F : BHW.SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+          (Fin F.realModelDim -> ℂ) -> (Fin F.realModelDim -> ℂ)
+
+      theorem BHW.sourceFullFrameRealCompatibleNormalizedKernelMap_hasStrictFDerivAt
+          (d : Nat)
+          {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hM0R : IsUnit M0R.det)
+          (F : BHW.SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+          HasStrictFDerivAt
+            (BHW.sourceFullFrameRealCompatibleNormalizedKernelMap d hM0R F)
+            (1 : (Fin F.realModelDim -> ℂ) →L[ℂ]
+              (Fin F.realModelDim -> ℂ)) 0
+
       theorem BHW.sourceRealFullFrameLocalCoord_image_open
           (d n : Nat)
           (ι : Fin (d + 1) ↪ Fin n)
@@ -20316,14 +20363,29 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrameRealSliceNormalizedImplicitKernelOpenPartialHomeomorph`,
       `sourceFullFrameRealSliceNormalizedImplicitKernel_zero_mem_chartSource`,
       `sourceFullFrameRealSliceNormalizedImplicitKernel_zero_mem_chartTarget`,
+      `sourceFullFrameRealCompatibleSymmetricDetDirection_ne_zero`,
+      `sourceFullFrameRealCompatibleKernelProjection`,
+      `sourceFullFrameRealCompatibleKernelProjection_apply_ker`,
+      `sourceFullFrameRealCompatibleExplicitKernelMap`,
+      `sourceFullFrameRealCompatibleExplicitKernelMap_zero`,
+      `sourceFullFrameRealCompatibleExplicitKernelMap_hasStrictFDerivAt`,
+      `sourceFullFrameRealCompatibleNormalizedKernelMap`,
+      `sourceFullFrameRealCompatibleNormalizedKernelMap_zero`,
+      `sourceFullFrameRealCompatibleNormalizedKernelMap_hasStrictFDerivAt`,
       and `sourceFullFrameRealDifferentialRightInverseLinear_injective`.
       Thus the next producer step is not to prove membership in the complex
       slice, the real-coefficient tangent split, or the finite-coordinate
-      real-form packet.  Those are now checked.  The remaining real-compatible
-      implicit-chart step is to prove that the normalized finite-coordinate
-      implicit-kernel map preserves the real form, restrict it to real
-      coordinates, and apply the real inverse-function theorem using the
-      checked identity strict derivative.  That real chart supplies
+      real-form packet.  Those are now checked.  For the real route, the
+      arbitrary closed-complement projection used by the generic complex
+      implicit chart is replaced by the checked determinant-direction
+      projection
+      `sourceFullFrameRealCompatibleKernelProjection`; the explicit normalized
+      map
+      `sourceFullFrameRealCompatibleNormalizedKernelMap` has identity strict
+      derivative at the origin.  The remaining real-compatible implicit-chart
+      step is to prove that this explicit normalized map preserves the real
+      form, restrict it to real coordinates, and apply the real inverse-function
+      theorem using the checked identity strict derivative.  That real chart supplies
       `realKernelCoord`, `frameDomain`, the selected-frame open image theorem,
       and the `complexKernelCoord_real_eq` uniqueness equation needed by
       `sourceFullFrameRealGaugeSliceData`.

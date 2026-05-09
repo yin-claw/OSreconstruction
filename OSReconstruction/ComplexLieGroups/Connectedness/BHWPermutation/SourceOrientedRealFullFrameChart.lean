@@ -42,6 +42,102 @@ theorem sourceRealFullFrameMatrix_map_ofReal_det_isUnit
   rw [sourceRealFullFrameMatrix_map_ofReal_det]
   exact isUnit_iff_ne_zero.mpr (by exact_mod_cast hdet)
 
+set_option synthInstance.maxHeartbeats 120000 in
+set_option maxHeartbeats 300000 in
+/-- The determinant-coordinate direction is transverse to the symmetric
+full-frame equation at a complexified real full-frame base. -/
+theorem sourceFullFrameRealCompatibleSymmetricDetDirection_ne_zero
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det) :
+    sourceFullFrameSymmetricEquationDerivCLM d
+      (sourceFullFrameOrientedGramCoord d (M0R.map Complex.ofReal))
+      (sourceFullFrameSymmetricDetDirection d) ≠ 0 := by
+  simpa [sourceFullFrameSymmetricEquationDerivCLM,
+    sourceFullFrameOrientedGramCoord] using
+      sourceFullFrameOrientedEquation_fderiv_detDirection_ne_zero
+        (d := d) (H0 := sourceFullFrameOrientedGram d (M0R.map Complex.ofReal))
+        (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R).ne_zero
+
+set_option synthInstance.maxHeartbeats 120000 in
+set_option maxHeartbeats 400000 in
+/-- Explicit kernel projection for the symmetric full-frame equation at a
+complexified real base, using the determinant-coordinate direction as the
+chosen transverse complement.  Unlike the arbitrary closed-complement
+projection used in the generic complex chart, this projection is algebraic and
+is the one intended for the real-compatible chart route. -/
+noncomputable def sourceFullFrameRealCompatibleKernelProjection
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det) :
+    sourceFullFrameSymmetricCoordSubmodule d →L[ℂ]
+      (sourceFullFrameSymmetricEquationDerivCLM d
+        (sourceFullFrameOrientedGramCoord d (M0R.map Complex.ofReal))).ker := by
+  let L := sourceFullFrameSymmetricEquationDerivCLM d
+      (sourceFullFrameOrientedGramCoord d (M0R.map Complex.ofReal))
+  let u := sourceFullFrameSymmetricDetDirection d
+  let a : ℂ := L u
+  have ha : a ≠ 0 := by
+    simpa [L, u, a] using
+      sourceFullFrameRealCompatibleSymmetricDetDirection_ne_zero d hM0R
+  let P : sourceFullFrameSymmetricCoordSubmodule d →L[ℂ]
+      sourceFullFrameSymmetricCoordSubmodule d :=
+    ContinuousLinearMap.id ℂ (sourceFullFrameSymmetricCoordSubmodule d) -
+      (1 / a) • (ContinuousLinearMap.smulRight L u)
+  refine P.codRestrict L.ker ?_
+  intro H
+  change L (P H) = 0
+  simp [P, ContinuousLinearMap.smulRight_apply]
+  rw [show L u = a by rfl]
+  field_simp [ha]
+  ring
+
+set_option synthInstance.maxHeartbeats 120000 in
+@[simp]
+theorem sourceFullFrameRealCompatibleKernelProjection_apply_ker
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (K : (sourceFullFrameSymmetricEquationDerivCLM d
+        (sourceFullFrameOrientedGramCoord d (M0R.map Complex.ofReal))).ker) :
+    sourceFullFrameRealCompatibleKernelProjection d hM0R K = K := by
+  let L := sourceFullFrameSymmetricEquationDerivCLM d
+      (sourceFullFrameOrientedGramCoord d (M0R.map Complex.ofReal))
+  have hK : L (K : sourceFullFrameSymmetricCoordSubmodule d) = 0 := K.property
+  apply Subtype.ext
+  change ((sourceFullFrameRealCompatibleKernelProjection d hM0R) K :
+      sourceFullFrameSymmetricCoordSubmodule d) = K
+  simp [sourceFullFrameRealCompatibleKernelProjection, L,
+    ContinuousLinearMap.smulRight_apply, hK]
+
+/-- The explicit real-compatible kernel-coordinate map on the named full-frame
+gauge slice.  It uses the determinant-direction projection above instead of
+the arbitrary closed-complement projection in the generic complex implicit
+chart. -/
+noncomputable def sourceFullFrameRealCompatibleExplicitKernelMap
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det) :
+    (sourceFullFrameExplicitGaugeSliceData d
+      (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)).slice →
+      (sourceFullFrameSymmetricEquationDerivCLM d
+        (sourceFullFrameOrientedGramCoord d (M0R.map Complex.ofReal))).ker :=
+  fun X =>
+    sourceFullFrameRealCompatibleKernelProjection d hM0R
+      (sourceFullFrameGaugeSliceMapSymmetric d (M0R.map Complex.ofReal)
+        (sourceFullFrameExplicitGaugeSliceData d
+          (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)) X -
+        sourceFullFrameSymmetricBase d (M0R.map Complex.ofReal))
+
+set_option synthInstance.maxHeartbeats 100000 in
+@[simp]
+theorem sourceFullFrameRealCompatibleExplicitKernelMap_zero
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det) :
+    sourceFullFrameRealCompatibleExplicitKernelMap d hM0R 0 = 0 := by
+  simp [sourceFullFrameRealCompatibleExplicitKernelMap]
+
 /-- Finite-coordinate equivalence from the real-form explicit slice coordinates
 to the implicit-kernel target.  This is the complex-linear normalization used
 by the real-compatible implicit chart: explicit slice coordinates are first

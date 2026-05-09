@@ -2444,7 +2444,16 @@ checks the real-source permutation topology helpers
    `sourceFullFrameRealSliceNormalizedImplicitKernelMap_hasStrictFDerivAt`,
    `sourceFullFrameRealSliceNormalizedImplicitKernelOpenPartialHomeomorph`,
    `sourceFullFrameRealSliceNormalizedImplicitKernel_zero_mem_chartSource`,
-   and `sourceFullFrameRealSliceNormalizedImplicitKernel_zero_mem_chartTarget`,
+   `sourceFullFrameRealSliceNormalizedImplicitKernel_zero_mem_chartTarget`,
+   `sourceFullFrameRealCompatibleSymmetricDetDirection_ne_zero`,
+   `sourceFullFrameRealCompatibleKernelProjection`,
+   `sourceFullFrameRealCompatibleKernelProjection_apply_ker`,
+   `sourceFullFrameRealCompatibleExplicitKernelMap`,
+   `sourceFullFrameRealCompatibleExplicitKernelMap_zero`,
+   `sourceFullFrameRealCompatibleExplicitKernelMap_hasStrictFDerivAt`,
+   `sourceFullFrameRealCompatibleNormalizedKernelMap`,
+   `sourceFullFrameRealCompatibleNormalizedKernelMap_zero`, and
+   `sourceFullFrameRealCompatibleNormalizedKernelMap_hasStrictFDerivAt`,
    plus
    `sourceFullFrameRealDifferentialRightInverseLinear_injective`
    define the real tangent model, prove the real formula is linear on it, prove
@@ -2467,19 +2476,26 @@ checks the real-source permutation topology helpers
    The normalized implicit-kernel map then conjugates the checked complex
    implicit-kernel map by this finite coordinate equivalence, proves its
    strict derivative at the origin is the identity, and packages the resulting
-   local inverse-function chart with origin source/target membership.
+   local inverse-function chart with origin source/target membership.  For the
+   real route, the arbitrary closed-complement projection from the generic
+   complex implicit chart is not used as the real-form input.  Instead, the
+   checked determinant-direction projection gives an explicit algebraic kernel
+   projection at a complexified real base, defines an explicit
+   real-compatible kernel map, and proves the same identity-derivative
+   normalized finite-coordinate theorem for that explicit map.
    The real-coefficient tangent-equation split is now checked as
    `sourceFullFrameOrientedTangent_re_mem` and
    `sourceFullFrameOrientedTangent_im_mem`; its proof uses the checked real
    Gram-matrix inverse bridge and
    `sourceFullFrameOrientedEquationDerivLinear_realComplexify_im`.  The
    remaining full-frame producer proof is now pinned to the real-compatible
-   implicit-chart layer: prove the normalized finite-coordinate
-   implicit-kernel map preserves the real form, take its real restriction,
-   apply the real inverse-function theorem using the checked identity
-   derivative, define the `realKernelCoord` and `complexKernelCoord` fields
-   from the resulting source/target shrink, prove `complexKernelCoord_real_eq`
-   by uniqueness of that local inverse, and then shrink the real source patch
+   implicit-chart layer: prove
+   `sourceFullFrameRealCompatibleNormalizedKernelMap` preserves the real form,
+   take its real restriction, apply the real inverse-function theorem using
+   the checked identity derivative, define the `realKernelCoord` and
+   `complexKernelCoord` fields from the resulting source/target shrink, prove
+   `complexKernelCoord_real_eq` by uniqueness of that local inverse, and then
+   shrink the real source patch
    so source invariants lie in the selected complex chart and selected frames
    lie in the real frame domain.  The
    `realCoord_image_open` field must pass through the checked
