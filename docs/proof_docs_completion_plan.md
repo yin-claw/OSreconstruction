@@ -6023,6 +6023,9 @@ implementation contract is:
    in Lean is
    `sourceFullFrameRealSplitProductKernelCoord`,
    `isOpenMap_sourceFullFrameRealSplitProductKernelCoord_of_realKernelCoord`,
+   `isOpen_sourceFullFrameRealSplitDetNonzero`,
+   `isOpen_sourceFullFrameRealSplitMixedRowsHomeomorph_val_image`,
+   `sourceFullFrameRealSplitProductKernelCoord_open_after_homeomorph_on_W_of_realKernelCoord_openMap`,
    `sourceFullFrameRealSplitKernelMixedCoord_eq_productKernelCoord_homeomorph`,
    `sourceFullFrameRealSplitKernelMixedCoord_image_eq_product_homeomorph_image`,
    `isOpen_sourceFullFrameRealSplitKernelMixedCoord_image_of_product_homeomorph_image_open`,

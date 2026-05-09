@@ -634,6 +634,95 @@ theorem isOpenMap_sourceFullFrameRealSplitProductKernelCoord_of_realKernelCoord
         (sourceComplementIndex ι → Fin (d + 1) → ℝ) →
           sourceComplementIndex ι → Fin (d + 1) → ℝ))
 
+/-- The determinant-nonzero split-coordinate locus is open. -/
+theorem isOpen_sourceFullFrameRealSplitDetNonzero
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n} :
+    IsOpen
+      {p :
+        Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+          (sourceComplementIndex ι → Fin (d + 1) → ℝ) |
+        p.1.det ≠ 0} := by
+  exact
+    isOpen_ne_fun
+      ((continuous_fst :
+        Continuous
+          (fun p :
+            Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+              (sourceComplementIndex ι → Fin (d + 1) → ℝ) => p.1)
+        ).matrix_det)
+      continuous_const
+
+/-- Passing an ambient-open set through the determinant-nonzero mixed-row
+homeomorphism and then forgetting the subtype gives an ambient-open set. -/
+theorem isOpen_sourceFullFrameRealSplitMixedRowsHomeomorph_val_image
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {V : Set
+      (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ))}
+    (hV_open : IsOpen V) :
+    IsOpen
+      ((Subtype.val :
+        sourceFullFrameRealSplitDetNonzero d n ι →
+          Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+            (sourceComplementIndex ι → Fin (d + 1) → ℝ)) ''
+        ((sourceFullFrameRealSplitMixedRowsHomeomorph d n ι) ''
+          {p : sourceFullFrameRealSplitDetNonzero d n ι |
+            p.1 ∈ V})) := by
+  have hpre :
+      IsOpen
+        {p : sourceFullFrameRealSplitDetNonzero d n ι |
+          p.1 ∈ V} := by
+    exact hV_open.preimage continuous_subtype_val
+  have hH :
+      IsOpen
+        ((sourceFullFrameRealSplitMixedRowsHomeomorph d n ι) ''
+          {p : sourceFullFrameRealSplitDetNonzero d n ι |
+            p.1 ∈ V}) := by
+    exact (sourceFullFrameRealSplitMixedRowsHomeomorph d n ι).isOpenMap _ hpre
+  exact
+    (isOpen_sourceFullFrameRealSplitDetNonzero (d := d) (n := n) (ι := ι)
+      ).isOpenMap_subtype_val _ hH
+
+/-- If the selected-frame kernel coordinate is globally open, the transformed
+product-coordinate image required by the local bridge is open.  The final
+producer will replace the global hypothesis with the corresponding local
+selected-frame product chart on the chosen `W`. -/
+theorem sourceFullFrameRealSplitProductKernelCoord_open_after_homeomorph_on_W_of_realKernelCoord_openMap
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    {W : Set
+      (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ))}
+    (hS_open : IsOpenMap S.realKernelCoord) :
+    ∀ {V : Set
+      (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ))},
+      IsOpen V →
+      V ⊆ W →
+      IsOpen
+        (sourceFullFrameRealSplitProductKernelCoord S ''
+          ((Subtype.val :
+            sourceFullFrameRealSplitDetNonzero d n ι →
+              Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+                (sourceComplementIndex ι → Fin (d + 1) → ℝ)) ''
+            ((sourceFullFrameRealSplitMixedRowsHomeomorph d n ι) ''
+              {p : sourceFullFrameRealSplitDetNonzero d n ι |
+                p.1 ∈ V}))) := by
+  intro V hV_open _hV_sub
+  exact
+    (isOpenMap_sourceFullFrameRealSplitProductKernelCoord_of_realKernelCoord
+      S hS_open)
+      _
+      (isOpen_sourceFullFrameRealSplitMixedRowsHomeomorph_val_image
+        (d := d) (n := n) (ι := ι) hV_open)
+
 /-- On determinant-nonzero selected frames, the split kernel/mixed coordinate
 is the selected-frame kernel coordinate together with the checked rowwise
 linear equivalence from complement rows to mixed rows. -/

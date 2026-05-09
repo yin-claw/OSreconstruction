@@ -19592,6 +19592,62 @@ Proof decomposition of this theorem, without hiding the analytic work:
           IsOpenMap
             (BHW.sourceFullFrameRealSplitProductKernelCoord S)
 
+      theorem BHW.isOpen_sourceFullFrameRealSplitDetNonzero
+          {d n : Nat}
+          {ι : Fin (d + 1) ↪ Fin n} :
+          IsOpen
+            {p :
+              Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+                (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ) |
+              p.1.det ≠ 0}
+
+      theorem
+          BHW.isOpen_sourceFullFrameRealSplitMixedRowsHomeomorph_val_image
+          {d n : Nat}
+          {ι : Fin (d + 1) ↪ Fin n}
+          {V : Set
+            (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+              (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ))}
+          (hV_open : IsOpen V) :
+          IsOpen
+            ((Subtype.val :
+              BHW.sourceFullFrameRealSplitDetNonzero d n ι ->
+                Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+                  (BHW.sourceComplementIndex ι ->
+                    Fin (d + 1) -> ℝ)) ''
+              ((BHW.sourceFullFrameRealSplitMixedRowsHomeomorph d n ι) ''
+                {p : BHW.sourceFullFrameRealSplitDetNonzero d n ι |
+                  p.1 ∈ V}))
+
+      theorem
+          BHW.sourceFullFrameRealSplitProductKernelCoord_open_after_homeomorph_on_W_of_realKernelCoord_openMap
+          {d n : Nat}
+          {ι : Fin (d + 1) ↪ Fin n}
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          {hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0}
+          (S :
+            BHW.SourceFullFrameRealGaugeSliceData d
+              (BHW.sourceRealFullFrameMatrix d n ι x0) hdet)
+          {W : Set
+            (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+              (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ))}
+          (hS_open : IsOpenMap S.realKernelCoord) :
+          ∀ {V : Set
+            (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+              (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ))},
+            IsOpen V ->
+            V ⊆ W ->
+            IsOpen
+              (BHW.sourceFullFrameRealSplitProductKernelCoord S ''
+                ((Subtype.val :
+                  BHW.sourceFullFrameRealSplitDetNonzero d n ι ->
+                    Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+                      (BHW.sourceComplementIndex ι ->
+                        Fin (d + 1) -> ℝ)) ''
+                  ((BHW.sourceFullFrameRealSplitMixedRowsHomeomorph d n ι) ''
+                    {p : BHW.sourceFullFrameRealSplitDetNonzero d n ι |
+                      p.1 ∈ V})))
+
       theorem
           BHW.sourceFullFrameRealSplitKernelMixedCoord_eq_tailMixedRowsLinearEquiv
           {d n : Nat}
@@ -20697,6 +20753,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrameRealSplitKernelMixedCoord`,
       `sourceFullFrameRealSplitProductKernelCoord`,
       `isOpenMap_sourceFullFrameRealSplitProductKernelCoord_of_realKernelCoord`,
+      `isOpen_sourceFullFrameRealSplitDetNonzero`,
+      `isOpen_sourceFullFrameRealSplitMixedRowsHomeomorph_val_image`,
+      `sourceFullFrameRealSplitProductKernelCoord_open_after_homeomorph_on_W_of_realKernelCoord_openMap`,
       `sourceFullFrameRealSplitKernelMixedCoord_eq_tailMixedRowsLinearEquiv`,
       `sourceFullFrameRealSplitKernelMixedCoord_eq_productKernelCoord_homeomorph`,
       `sourceFullFrameRealSplitKernelMixedCoord_image_eq_product_homeomorph_image`,
