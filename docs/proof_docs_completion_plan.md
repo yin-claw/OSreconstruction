@@ -6035,6 +6035,36 @@ implementation contract is:
    `isOpen_sourceFullFrameRealCoord_image_of_split_local_open` then carries
    this split-local open-image theorem through the finite real coordinate
    equivalence used in the final implicit chart.
+   Lean-facing tightening, 2026-05-09: the local product theorem is now
+   packaged as `SourceFullFrameRealSelectedFrameProductOpenData S`.  This
+   packet records the chosen split neighborhood `W`, `IsOpen W`, base
+   membership
+   `sourceRealFullFrameSplitHomeomorph d n ι x0 ∈ W`, determinant control
+   `W ⊆ {p | p.1.det ≠ 0}`, selected-frame domain membership
+   `∀ p ∈ W, p.1 ∈ S.frameDomain`, and the one genuine remaining
+   product-open field: every ambient-open `V ⊆ W` has open image under
+   `(M,Y) ↦ (S.realKernelCoord M, Y)` after the checked
+   determinant-nonzero mixed-row homeomorphism.  The mechanical theorem
+   `SourceFullFrameRealSelectedFrameProductOpenData.split_kernel_mixed_open_on_W`
+   immediately derives the split-kernel/mixed open-image theorem from the
+   already checked bridge
+   `sourceFullFrameRealSplitKernelMixedCoord_open_on_W_of_product_homeomorph_open`.
+   The same packet gives the final source patch as
+   `(sourceRealFullFrameSplitHomeomorph d n ι).symm '' W`, proves that patch
+   is open and contains `x0`, and supplies the selected-frame-domain
+   membership needed for continuity.  These mechanical consequences are
+   checked as
+   `SourceFullFrameRealSelectedFrameProductOpenData.source_patch_open`,
+   `SourceFullFrameRealSelectedFrameProductOpenData.center_mem_source_patch`,
+   `SourceFullFrameRealSelectedFrameProductOpenData.source_patch_frame_mem_domain`,
+   `SourceFullFrameRealSelectedFrameProductOpenData.realCoord_image_open_on_source_subset`,
+   `SourceFullFrameRealSelectedFrameProductOpenData.realCoord_continuousOn_source_patch`,
+   `SourceFullFrameRealSelectedFrameProductOpenData.realCoord_eq_kernel_mixed_on_source_patch`,
+   and
+   `SourceFullFrameRealSelectedFrameProductOpenData.realCoord_image_open_source_patch`.
+   Thus the next theorem to prove is not a wrapper around arbitrary openness
+   of `S.realKernelCoord`; it is the production of this packet from the real
+   IFT selected-frame local product chart.
    The mechanical bridges around it are
    `sourceOrientedRealEnvironment_of_localRealCharts`,
    `sourceOrientedRealEnvironment_of_fullFrameDetNonzero_localCharts`, and the

@@ -880,6 +880,121 @@ theorem sourceFullFrameRealSplitKernelMixedCoord_open_on_W_of_product_homeomorph
     exact hW_det (hV_sub hpV)
   · exact hProduct_open hV_open hV_sub
 
+/-- Selected-frame local product-open data on the split source coordinates.
+
+The hard real full-frame producer must construct this packet from the real
+IFT selected-frame chart.  Once it is available, the determinant-nonzero
+mixed-row homeomorphism and source-split bridges below consume it
+mechanically. -/
+structure SourceFullFrameRealSelectedFrameProductOpenData
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    (S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet) where
+  W :
+    Set
+      (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ))
+  W_open : IsOpen W
+  center_mem : sourceRealFullFrameSplitHomeomorph d n ι x0 ∈ W
+  W_det : W ⊆ {p | p.1.det ≠ 0}
+  frame_mem_domain : ∀ p ∈ W, p.1 ∈ S.frameDomain
+  product_open_after_homeomorph :
+    ∀ {V : Set
+      (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ))},
+      IsOpen V →
+      V ⊆ W →
+      IsOpen
+        (sourceFullFrameRealSplitProductKernelCoord S ''
+          ((Subtype.val :
+            sourceFullFrameRealSplitDetNonzero d n ι →
+              Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+                (sourceComplementIndex ι → Fin (d + 1) → ℝ)) ''
+            ((sourceFullFrameRealSplitMixedRowsHomeomorph d n ι) ''
+              {p : sourceFullFrameRealSplitDetNonzero d n ι |
+                p.1 ∈ V})))
+
+namespace SourceFullFrameRealSelectedFrameProductOpenData
+
+/-- The selected-frame product-open packet immediately gives the split
+kernel/mixed open-image theorem required by the source-coordinate bridge. -/
+theorem split_kernel_mixed_open_on_W
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    {S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet}
+    (D : SourceFullFrameRealSelectedFrameProductOpenData S) :
+    ∀ {V : Set
+      (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ×
+        (sourceComplementIndex ι → Fin (d + 1) → ℝ))},
+      IsOpen V →
+      V ⊆ D.W →
+      IsOpen (sourceFullFrameRealSplitKernelMixedCoord S '' V) :=
+  sourceFullFrameRealSplitKernelMixedCoord_open_on_W_of_product_homeomorph_open
+    S D.W_det D.product_open_after_homeomorph
+
+/-- The inverse split source patch attached to selected-frame product-open data
+is open. -/
+theorem source_patch_open
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    {S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet}
+    (D : SourceFullFrameRealSelectedFrameProductOpenData S) :
+    IsOpen ((sourceRealFullFrameSplitHomeomorph d n ι).symm '' D.W) :=
+  (sourceRealFullFrameSplitHomeomorph d n ι).symm.isOpenMap D.W D.W_open
+
+/-- The inverse split source patch contains the base tuple. -/
+theorem center_mem_source_patch
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    {S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet}
+    (D : SourceFullFrameRealSelectedFrameProductOpenData S) :
+    x0 ∈ (sourceRealFullFrameSplitHomeomorph d n ι).symm '' D.W := by
+  refine ⟨sourceRealFullFrameSplitHomeomorph d n ι x0, D.center_mem, ?_⟩
+  simp
+
+/-- Source points in the inverse split patch have selected frames in the local
+frame domain recorded by the real gauge-slice packet. -/
+theorem source_patch_frame_mem_domain
+    {d n : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    {S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet}
+    (D : SourceFullFrameRealSelectedFrameProductOpenData S)
+    {x : Fin n → Fin (d + 1) → ℝ}
+    (hx : x ∈ (sourceRealFullFrameSplitHomeomorph d n ι).symm '' D.W) :
+    sourceRealFullFrameMatrix d n ι x ∈ S.frameDomain := by
+  rcases hx with ⟨p, hpW, rfl⟩
+  have hp_eq :
+      sourceRealFullFrameSplitHomeomorph d n ι
+          ((sourceRealFullFrameSplitHomeomorph d n ι).symm p) = p := by
+    simp
+  have hframe :
+      sourceRealFullFrameMatrix d n ι
+          ((sourceRealFullFrameSplitHomeomorph d n ι).symm p) = p.1 :=
+    congrArg Prod.fst hp_eq
+  simpa [hframe] using D.frame_mem_domain p hpW
+
+end SourceFullFrameRealSelectedFrameProductOpenData
+
 /-- The source-space kernel/mixed coordinate factors through the checked
 selected-frame/complement-row split homeomorphism. -/
 theorem sourceFullFrameRealKernelMixedCoord_eq_split
@@ -1093,6 +1208,103 @@ theorem isOpen_sourceFullFrameRealCoord_image_of_split_local_open
     S coordEquivR
     (isOpen_sourceFullFrameRealKernelMixedCoord_image_of_split_local_open
       S hW_open_image hU_open hU_sub)
+
+namespace SourceFullFrameRealSelectedFrameProductOpenData
+
+/-- The selected-frame product-open packet gives the final finite real
+coordinate open-image theorem on any source patch inside its inverse split
+patch. -/
+theorem realCoord_image_open_on_source_subset
+    {d n m : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    {S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet}
+    (D : SourceFullFrameRealSelectedFrameProductOpenData S)
+    (coordEquivR :
+      (Fin m → ℝ) ≃ₗ[ℝ]
+        ((Fin S.realModelDim → ℝ) ×
+          (sourceComplementIndex ι → Fin (d + 1) → ℝ)))
+    {U : Set (Fin n → Fin (d + 1) → ℝ)}
+    (hU_open : IsOpen U)
+    (hU_sub :
+      U ⊆ (sourceRealFullFrameSplitHomeomorph d n ι).symm '' D.W) :
+    IsOpen
+      ((fun x : Fin n → Fin (d + 1) → ℝ =>
+        coordEquivR.symm (sourceFullFrameRealKernelMixedCoord S x)) '' U) :=
+  isOpen_sourceFullFrameRealCoord_image_of_split_local_open
+    S coordEquivR D.split_kernel_mixed_open_on_W hU_open hU_sub
+
+/-- On the inverse split source patch, the canonical finite real coordinate
+obtained from the kernel/mixed coordinate is continuous. -/
+theorem realCoord_continuousOn_source_patch
+    {d n m : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    {S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet}
+    (D : SourceFullFrameRealSelectedFrameProductOpenData S)
+    (coordEquivR :
+      (Fin m → ℝ) ≃ₗ[ℝ]
+        ((Fin S.realModelDim → ℝ) ×
+          (sourceComplementIndex ι → Fin (d + 1) → ℝ))) :
+    ContinuousOn
+      (fun x : Fin n → Fin (d + 1) → ℝ =>
+        coordEquivR.symm (sourceFullFrameRealKernelMixedCoord S x))
+      ((sourceRealFullFrameSplitHomeomorph d n ι).symm '' D.W) :=
+  continuousOn_sourceFullFrameRealCoord_of_kernelMixedCoord
+    S coordEquivR (fun _x hx => D.source_patch_frame_mem_domain hx)
+
+/-- The canonical finite real coordinate recovers the kernel/mixed coordinate
+after applying the coordinate equivalence. -/
+theorem realCoord_eq_kernel_mixed_on_source_patch
+    {d n m : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    {S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet}
+    (D : SourceFullFrameRealSelectedFrameProductOpenData S)
+    (coordEquivR :
+      (Fin m → ℝ) ≃ₗ[ℝ]
+        ((Fin S.realModelDim → ℝ) ×
+          (sourceComplementIndex ι → Fin (d + 1) → ℝ)))
+    (x : Fin n → Fin (d + 1) → ℝ)
+    (_hx : x ∈ (sourceRealFullFrameSplitHomeomorph d n ι).symm '' D.W) :
+    coordEquivR
+        (coordEquivR.symm (sourceFullFrameRealKernelMixedCoord S x)) =
+      (S.realKernelCoord (sourceRealFullFrameMatrix d n ι x),
+        sourceRealSelectedMixedRows d n ι x) := by
+  simp [sourceFullFrameRealKernelMixedCoord]
+
+/-- The canonical finite real coordinate has open image on the whole inverse
+split source patch attached to the packet. -/
+theorem realCoord_image_open_source_patch
+    {d n m : ℕ}
+    {ι : Fin (d + 1) ↪ Fin n}
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
+    {S :
+      SourceFullFrameRealGaugeSliceData d
+        (sourceRealFullFrameMatrix d n ι x0) hdet}
+    (D : SourceFullFrameRealSelectedFrameProductOpenData S)
+    (coordEquivR :
+      (Fin m → ℝ) ≃ₗ[ℝ]
+        ((Fin S.realModelDim → ℝ) ×
+          (sourceComplementIndex ι → Fin (d + 1) → ℝ))) :
+    IsOpen
+      ((fun x : Fin n → Fin (d + 1) → ℝ =>
+        coordEquivR.symm (sourceFullFrameRealKernelMixedCoord S x)) ''
+          ((sourceRealFullFrameSplitHomeomorph d n ι).symm '' D.W)) :=
+  D.realCoord_image_open_on_source_subset coordEquivR D.source_patch_open
+    (fun _x hx => hx)
+
+end SourceFullFrameRealSelectedFrameProductOpenData
 
 /-- Full-frame real/complex chart data before it is collapsed to the generic
 `SourceOrientedLocalRealChartData` interface. -/
