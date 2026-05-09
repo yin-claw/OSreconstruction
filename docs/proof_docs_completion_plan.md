@@ -6247,7 +6247,27 @@ implementation contract is:
    takes an injective pairing-preserving residual embedding `E : R →ₗ[ℂ] V`,
    proves the image basis is independent and isotropic in the target
    nondegenerate subspace, and returns a target isotropic dual frame with the
-   same index type as the source basis.
+   same index type as the source basis.  The direct-sum bridge has now also
+   been checked in Lean:
+   `BHW.directSum_congr_sup_equiv_between` and
+   `BHW.directSum_congr_sup_equiv_between_apply_of_eq_add` combine equivalences
+   between two different complementary suprema.  On top of it,
+   `BHW.complexMinkowski_hyperbolicFrameSpanEquiv_between`,
+   `BHW.complexMinkowski_hyperbolicFrameSpanEquiv_between_preserves`, and
+   `BHW.complexMinkowski_hyperbolicFrameSpanEquiv_between_maps_left_span`
+   package the source-to-target hyperbolic span map.  The selected-block lift
+   `BHW.complexMinkowski_selectedHyperbolicBlockEquiv_between` preserves the
+   full pairing, fixes `M`, and sends the source residual frame span into the
+   target residual frame span.  Finally,
+   `BHW.hw_selectedResidualHyperbolicBlockExtensionData_of_hyperbolicFrames`
+   and
+   `BHW.ComplexMinkowskiIsotropicSubspaceBasisDualFrameData.selectedResidualHyperbolicBlockExtensionData`
+   produce the proper-branch
+   `BHW.HWSelectedResidualHyperbolicBlockExtensionData` once the target
+   hyperbolic frame, target span containment, and explicit `L_proper` hypothesis
+   are available.  The remaining low-rank residual-frame producer work is now
+   the branch split: either prove this `L_proper` condition for the chosen
+   target completion, or handle the full-ambient determinant-one case directly.
    The first mechanical support layer is now exact-Lean shaped:
    `BHW.subspace_le_complexMinkowskiOrthogonalSubmodule` has hypotheses
    `(hR_orth : ∀ x : R, ∀ m : M,

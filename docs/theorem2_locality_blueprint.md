@@ -26141,7 +26141,22 @@ Proof decomposition of this theorem, without hiding the analytic work:
       given the source basis packet and the injective pairing-preserving
       residual embedding `Eleft`, it builds the target basis as
       `Eleft (sourceFrame c)` and returns a target isotropic dual frame with
-      the same `Fin source.k` index type, avoiding a later finrank cast.
+      the same `Fin source.k` index type, avoiding a later finrank cast.  The
+      direct-sum and block layers are also checked:
+      `BHW.directSum_congr_sup_equiv_between` combines source and target
+      complementary suprema, `BHW.complexMinkowski_hyperbolicFrameSpanEquiv_between`
+      preserves the hyperbolic-span pairing and maps the source frame span into
+      the target frame span, and
+      `BHW.complexMinkowski_selectedHyperbolicBlockEquiv_between` lifts this
+      map across the selected block by the identity on `M`.  The constructor
+      `BHW.hw_selectedResidualHyperbolicBlockExtensionData_of_hyperbolicFrames`
+      packages these facts into
+      `BHW.HWSelectedResidualHyperbolicBlockExtensionData`, and
+      `BHW.ComplexMinkowskiIsotropicSubspaceBasisDualFrameData.selectedResidualHyperbolicBlockExtensionData`
+      specializes it to the source basis-dual packet.  Thus the remaining
+      implementation issue is no longer the `Tblock` itself; it is the final
+      proper/full branch split needed to supply `L_proper` for this constructor
+      or bypass it with a direct full-ambient determinant-one extension.
 
       Lean-shaped proof of the residual-frame-extension producer after the
       support packet exists:
