@@ -18270,7 +18270,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
             BHW.sourceRealOrientedMinkowskiInvariant d n x ∈ C.Ω
         realCoord :
           (Fin n -> Fin (d + 1) -> ℝ) -> (Fin m -> ℝ)
-        realCoord_continuous : Continuous realCoord
+        realCoord_continuousOn : ContinuousOn realCoord E0
         realCoord_image_open :
           ∀ {S : Set (Fin n -> Fin (d + 1) -> ℝ)},
             IsOpen S -> S ⊆ E0 -> IsOpen (realCoord '' S)
@@ -19475,7 +19475,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
         frameDomain_open : IsOpen frameDomain
         center_mem_frameDomain : M0R ∈ frameDomain
         frameDomain_det_nonzero : frameDomain ⊆ {M | M.det ≠ 0}
-        realKernelCoord_continuous : Continuous realKernelCoord
+        realKernelCoord_continuousOn :
+          ContinuousOn realKernelCoord frameDomain
         realKernelCoord_image_open_on_frameDomain :
           ∀ {S : Set (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)},
             IsOpen S ->
@@ -19494,18 +19495,22 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (Fin S.realModelDim -> ℝ) ×
             (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ)
 
-      theorem BHW.continuous_sourceFullFrameRealKernelMixedCoord
+      theorem BHW.continuousOn_sourceFullFrameRealKernelMixedCoord
           {d n : Nat}
           {ι : Fin (d + 1) ↪ Fin n}
           {x0 : Fin n -> Fin (d + 1) -> ℝ}
           {hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0}
           (S :
             BHW.SourceFullFrameRealGaugeSliceData d
-              (BHW.sourceRealFullFrameMatrix d n ι x0) hdet) :
-          Continuous (BHW.sourceFullFrameRealKernelMixedCoord S)
+              (BHW.sourceRealFullFrameMatrix d n ι x0) hdet)
+          {E0 : Set (Fin n -> Fin (d + 1) -> ℝ)}
+          (hE0_frame :
+            ∀ x ∈ E0,
+              BHW.sourceRealFullFrameMatrix d n ι x ∈ S.frameDomain) :
+          ContinuousOn (BHW.sourceFullFrameRealKernelMixedCoord S) E0
 
       theorem
-          BHW.continuous_sourceFullFrameRealCoord_of_kernelMixedCoord
+          BHW.continuousOn_sourceFullFrameRealCoord_of_kernelMixedCoord
           {d n m : Nat}
           {ι : Fin (d + 1) ↪ Fin n}
           {x0 : Fin n -> Fin (d + 1) -> ℝ}
@@ -19516,11 +19521,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (coordEquivR :
             (Fin m -> ℝ) ≃ₗ[ℝ]
               ((Fin S.realModelDim -> ℝ) ×
-                (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ))) :
-          Continuous
+                (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ)))
+          {E0 : Set (Fin n -> Fin (d + 1) -> ℝ)}
+          (hE0_frame :
+            ∀ x ∈ E0,
+              BHW.sourceRealFullFrameMatrix d n ι x ∈ S.frameDomain) :
+          ContinuousOn
             (fun x : Fin n -> Fin (d + 1) -> ℝ =>
               coordEquivR.symm
-                (BHW.sourceFullFrameRealKernelMixedCoord S x))
+                (BHW.sourceFullFrameRealKernelMixedCoord S x)) E0
 
       theorem
           BHW.isOpen_sourceFullFrameRealCoord_image_of_kernelMixedCoord_image_open
@@ -19597,7 +19606,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
                     Complex.ofReal)),
                 BHW.sourceSelectedMixedRows d n ι
                   (BHW.sourceRealOrientedMinkowskiInvariant d n x))
-        realCoord_continuous : Continuous realCoord
+        realCoord_continuousOn : ContinuousOn realCoord E0
         realCoord_image_open :
           ∀ {S : Set (Fin n -> Fin (d + 1) -> ℝ)},
             IsOpen S -> S ⊆ E0 -> IsOpen (realCoord '' S)
@@ -20193,6 +20202,19 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (1 : (Fin F.realModelDim -> ℂ) →L[ℂ]
               (Fin F.realModelDim -> ℂ)) 0
 
+      theorem
+          BHW.sourceFullFrameRealCompatibleFrameKernelCoordR_image_open_on_frameDomain
+          (d : Nat)
+          {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hM0R : IsUnit M0R.det)
+          (F : BHW.SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+          ∀ {S : Set (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)},
+            IsOpen S ->
+            S ⊆ BHW.sourceFullFrameRealCompatibleFrameDomain d hM0R F ->
+            IsOpen
+              (BHW.sourceFullFrameRealCompatibleFrameKernelCoordR
+                d hM0R F '' S)
+
       theorem BHW.sourceRealFullFrameLocalCoord_image_open
           (d n : Nat)
           (ι : Fin (d + 1) ↪ Fin n)
@@ -20259,8 +20281,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
         --    `(S.realKernelCoord (sourceRealFullFrameMatrix ... x),
         --      sourceRealSelectedMixedRows ... x)`.
         -- 7. Prove continuity using the checked
-        --    `continuous_sourceFullFrameRealKernelMixedCoord` and the
-        --    linear finite-coordinate equivalence defining `realCoord`.
+        --    `continuousOn_sourceFullFrameRealKernelMixedCoord`, the
+        --    selected-frame domain membership, and the linear
+        --    finite-coordinate equivalence defining `realCoord`.
         -- 8. Prove `realCoord_image_open` using
         --    `sourceRealFullFrameLocalCoord_image_open`: first pass through
         --    `sourceRealFullFrameSplitHomeomorph`; selected-frame openness
@@ -20394,6 +20417,23 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph_coe`,
       `sourceFullFrameRealCompatibleNormalizedKernel_zero_mem_chartSource`,
       `sourceFullFrameRealCompatibleNormalizedKernel_zero_mem_chartTarget`,
+      `sourceFullFrameRealCompatibleFrameTargetCoordC`,
+      `continuous_sourceFullFrameRealCompatibleFrameTargetCoordC`,
+      `sourceFullFrameRealCompatibleFrameTargetCoordC_base`,
+      `sourceFullFrameRealCompatibleFrameTargetCoordR`,
+      `continuous_sourceFullFrameRealCompatibleFrameTargetCoordR`,
+      `sourceFullFrameRealCompatibleFrameTargetCoordR_base`,
+      `sourceFullFrameRealCompatibleFrameDomain`,
+      `sourceFullFrameRealCompatibleFrameDomain_open`,
+      `sourceFullFrameRealCompatibleFrameDomain_base_mem`,
+      `sourceFullFrameRealCompatibleFrameDomain_det_nonzero`,
+      `sourceFullFrameRealCompatibleFrameKernelCoordR`,
+      `continuousOn_sourceFullFrameRealCompatibleFrameKernelCoordR`,
+      `sourceFullFrameRealCompatibleFrameKernelCoordR_base`,
+      `sourceFullFrameRealCompatibleComplexKernelCoordFromReal`,
+      `sourceFullFrameRealCompatibleComplexKernelCoordFromReal_real_eq`,
+      `sourceFullFrameRealGaugeSliceData_of_frameKernelCoord`,
+      `sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_open`,
       and `sourceFullFrameRealDifferentialRightInverseLinear_injective`.
       Thus the next producer step is not to prove membership in the complex
       slice, the real-coefficient tangent split, or the finite-coordinate
@@ -20404,13 +20444,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrameRealCompatibleKernelProjection`; the explicit normalized
       map
       `sourceFullFrameRealCompatibleNormalizedKernelMap` has identity strict
-      derivative at the origin.  The remaining real-compatible implicit-chart
-      step is to prove that this explicit normalized map preserves the real
-      form, restrict it to real coordinates, and apply the real inverse-function
-      theorem using the checked identity strict derivative.  That real chart supplies
-      `realKernelCoord`, `frameDomain`, the selected-frame open image theorem,
-      and the `complexKernelCoord_real_eq` uniqueness equation needed by
-      `sourceFullFrameRealGaugeSliceData`.  Lean-facing implementation has
+      derivative at the origin.  Lean-facing implementation has
       now checked the algebraic real-form chain
       `sourceFullFrameSymmetricEquationDerivCLM_realComplexify_im`,
       `sourceFullFrameRealCompatibleKernelProjection_im_zero`,
@@ -20440,13 +20474,46 @@ Proof decomposition of this theorem, without hiding the analytic work:
       packages the real inverse-function chart with checked origin
       source/target membership.  The remaining full-frame chart producer is
       now a packaging/shrink step: use this real local homeomorphism to define
-      `realKernelCoord`, use the explicit complex kernel map for
-      `complexKernelCoord`, prove `complexKernelCoord_real_eq` by the checked
-      complexification identity plus local inverse uniqueness, and combine it
-      with the selected-frame domain and open-image theorem.
+      `realKernelCoord` on the local target-preimage frame domain, use the
+      explicit complex kernel map for `complexKernelCoord`, prove
+      `complexKernelCoord_real_eq` by the checked complexification identity
+      plus local inverse uniqueness, and combine it with the selected-frame
+      domain and open-image theorem.  Lean-facing correction, 2026-05-09:
+      because this real inverse-function chart is an `OpenPartialHomeomorph`,
+      its inverse coordinate is continuous on the chart target rather than as
+      a global total function.  The checked API now records
+      `ContinuousOn realKernelCoord frameDomain` in
+      `SourceFullFrameRealGaugeSliceData` and
+      `ContinuousOn realCoord E0` in the local real chart data; the
+      totally-real seed proof only uses continuity on those local open
+      domains.  The frame-domain half of that packaging is now checked:
+      `sourceFullFrameRealCompatibleFrameTargetCoordR` is the real
+      finite-coordinate target map, `sourceFullFrameRealCompatibleFrameDomain`
+      is the preimage of the real IFT target intersected with
+      determinant-nonzero frames, and
+      `sourceFullFrameRealCompatibleFrameKernelCoordR` is the local inverse
+      coordinate on that domain.
+      `sourceFullFrameRealGaugeSliceData_of_frameKernelCoord` is also
+      checked: once the selected-frame kernel coordinate is proved open on
+      this domain and a compatible complex selected-frame coordinate is
+      supplied, it assembles the full `SourceFullFrameRealGaugeSliceData`
+      packet mechanically.  The common compatible complex coordinate is now
+      checked as `sourceFullFrameRealCompatibleComplexKernelCoordFromReal`,
+      a total zero extension away from the real locus whose real-locus
+      equation is
+      `sourceFullFrameRealCompatibleComplexKernelCoordFromReal_real_eq`; hence
+      `sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_open` reduces
+      `SourceFullFrameRealGaugeSliceData` to the single selected-frame
+      open-image theorem.
       The hard producer still remaining is
       `sourceFullFrameRealCompatibleImplicitChartData`, which must construct
-      that data from a real full-frame determinant-nonzero point.
+      that data from a real full-frame determinant-nonzero point.  Its next
+      unproved theorem is exactly
+      `sourceFullFrameRealCompatibleFrameKernelCoordR_image_open_on_frameDomain`.
+      Once that open-image theorem is checked,
+      `sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_open` supplies
+      the real gauge-slice packet, and the remaining implicit-chart producer
+      is a finite-product shrink over `sourceRealFullFrameSplitHomeomorph`.
 
       In the small-arity theorem the determinant-coordinate family is empty,
       so oriented regularity is the checked pure-Gram regularity after

@@ -398,7 +398,7 @@ structure SourceFullFrameRealGaugeSliceData
   frameDomain_open : IsOpen frameDomain
   center_mem_frameDomain : M0R ∈ frameDomain
   frameDomain_det_nonzero : frameDomain ⊆ {M | M.det ≠ 0}
-  realKernelCoord_continuous : Continuous realKernelCoord
+  realKernelCoord_continuousOn : ContinuousOn realKernelCoord frameDomain
   realKernelCoord_image_open_on_frameDomain :
     ∀ {S : Set (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)},
       IsOpen S → S ⊆ frameDomain → IsOpen (realKernelCoord '' S)
@@ -420,24 +420,30 @@ def sourceFullFrameRealKernelMixedCoord
   (S.realKernelCoord (sourceRealFullFrameMatrix d n ι x),
     sourceRealSelectedMixedRows d n ι x)
 
-/-- The kernel-plus-mixed real coordinate map is continuous. -/
-theorem continuous_sourceFullFrameRealKernelMixedCoord
+/-- The kernel-plus-mixed real coordinate map is continuous on any real source
+patch whose selected frame remains in the real gauge-slice frame domain. -/
+theorem continuousOn_sourceFullFrameRealKernelMixedCoord
     {d n : ℕ}
     {ι : Fin (d + 1) ↪ Fin n}
     {x0 : Fin n → Fin (d + 1) → ℝ}
     {hdet : sourceRealFullFrameDet d n ι x0 ≠ 0}
     (S :
       SourceFullFrameRealGaugeSliceData d
-        (sourceRealFullFrameMatrix d n ι x0) hdet) :
-    Continuous (sourceFullFrameRealKernelMixedCoord S) := by
-  apply Continuous.prodMk
-  · exact S.realKernelCoord_continuous.comp
-      (continuous_sourceRealFullFrameMatrix d n ι)
-  · exact continuous_sourceRealSelectedMixedRows d n ι
+        (sourceRealFullFrameMatrix d n ι x0) hdet)
+    {E0 : Set (Fin n → Fin (d + 1) → ℝ)}
+    (hE0_frame :
+      ∀ x ∈ E0, sourceRealFullFrameMatrix d n ι x ∈ S.frameDomain) :
+    ContinuousOn (sourceFullFrameRealKernelMixedCoord S) E0 := by
+  exact
+    (S.realKernelCoord_continuousOn.comp
+      (continuous_sourceRealFullFrameMatrix d n ι).continuousOn
+      hE0_frame).prodMk
+      (continuous_sourceRealSelectedMixedRows d n ι).continuousOn
 
 /-- Composing the raw kernel/mixed coordinate map with a finite real coordinate
-equivalence gives a continuous real coordinate map. -/
-theorem continuous_sourceFullFrameRealCoord_of_kernelMixedCoord
+equivalence gives a continuous real coordinate map on the chosen source
+patch. -/
+theorem continuousOn_sourceFullFrameRealCoord_of_kernelMixedCoord
     {d n m : ℕ}
     {ι : Fin (d + 1) ↪ Fin n}
     {x0 : Fin n → Fin (d + 1) → ℝ}
@@ -448,13 +454,17 @@ theorem continuous_sourceFullFrameRealCoord_of_kernelMixedCoord
     (coordEquivR :
       (Fin m → ℝ) ≃ₗ[ℝ]
         ((Fin S.realModelDim → ℝ) ×
-          (sourceComplementIndex ι → Fin (d + 1) → ℝ))) :
-    Continuous
+          (sourceComplementIndex ι → Fin (d + 1) → ℝ)))
+    {E0 : Set (Fin n → Fin (d + 1) → ℝ)}
+    (hE0_frame :
+      ∀ x ∈ E0, sourceRealFullFrameMatrix d n ι x ∈ S.frameDomain) :
+    ContinuousOn
       (fun x : Fin n → Fin (d + 1) → ℝ =>
-        coordEquivR.symm (sourceFullFrameRealKernelMixedCoord S x)) := by
+        coordEquivR.symm (sourceFullFrameRealKernelMixedCoord S x)) E0 := by
   exact
-    (LinearMap.continuous_of_finiteDimensional coordEquivR.symm.toLinearMap).comp
-      (continuous_sourceFullFrameRealKernelMixedCoord S)
+    (LinearMap.continuous_of_finiteDimensional
+      coordEquivR.symm.toLinearMap).comp_continuousOn
+      (continuousOn_sourceFullFrameRealKernelMixedCoord S hE0_frame)
 
 /-- If the raw kernel/mixed coordinate image is open, then applying the inverse
 finite real coordinate equivalence preserves openness. -/
@@ -530,7 +540,7 @@ structure SourceFullFrameRealCompatibleImplicitChartData
             ((sourceRealFullFrameMatrix d n ι x).map Complex.ofReal)),
           sourceSelectedMixedRows d n ι
             (sourceRealOrientedMinkowskiInvariant d n x))
-  realCoord_continuous : Continuous realCoord
+  realCoord_continuousOn : ContinuousOn realCoord E0
   realCoord_image_open :
     ∀ {S : Set (Fin n → Fin (d + 1) → ℝ)},
       IsOpen S → S ⊆ E0 → IsOpen (realCoord '' S)
@@ -573,7 +583,7 @@ noncomputable def to_localRealChartData
   center_mem := R.center_mem
   invariant_mem_chart := R.invariant_mem_chart
   realCoord := R.realCoord
-  realCoord_continuous := R.realCoord_continuous
+  realCoord_continuousOn := R.realCoord_continuousOn
   realCoord_image_open := R.realCoord_image_open
   chart_real_eq := R.chart_real_eq
 

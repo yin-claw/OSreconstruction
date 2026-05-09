@@ -844,4 +844,339 @@ theorem sourceFullFrameRealCompatibleNormalizedKernel_zero_mem_chartTarget
       d hM0R F).map_source hsource
   simpa using htarget
 
+/-- Complex frame-level target coordinate for the real-compatible normalized
+kernel chart.  It sends a full-frame matrix to the determinant-direction
+projected symmetric equation coordinate, written in the finite kernel target
+coordinates supplied by the real-form slice packet. -/
+noncomputable def sourceFullFrameRealCompatibleFrameTargetCoordC
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ →
+      Fin F.realModelDim → ℂ :=
+  fun M =>
+    (sourceFullFrameRealSliceKernelCoordEquiv d hM0R F).symm
+      (sourceFullFrameRealCompatibleKernelProjection d hM0R
+        (sourceFullFrameSymmetrizeCoord d
+            (sourceFullFrameOrientedGramCoord d M) -
+          sourceFullFrameSymmetricBase d (M0R.map Complex.ofReal)))
+
+/-- The complex frame-level target coordinate is continuous. -/
+theorem continuous_sourceFullFrameRealCompatibleFrameTargetCoordC
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    Continuous
+      (sourceFullFrameRealCompatibleFrameTargetCoordC d hM0R F) := by
+  unfold sourceFullFrameRealCompatibleFrameTargetCoordC
+  exact
+    (sourceFullFrameRealSliceKernelCoordEquiv d hM0R F).symm.continuous.comp
+      ((sourceFullFrameRealCompatibleKernelProjection d hM0R).continuous.comp
+        (((continuous_sourceFullFrameSymmetrizeCoord d).comp
+          (continuous_sourceFullFrameOrientedGramCoord d)).sub
+            continuous_const))
+
+@[simp]
+theorem sourceFullFrameRealCompatibleFrameTargetCoordC_base
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    sourceFullFrameRealCompatibleFrameTargetCoordC d hM0R F
+        (M0R.map Complex.ofReal) = 0 := by
+  unfold sourceFullFrameRealCompatibleFrameTargetCoordC
+  have hsymm :
+      sourceFullFrameSymmetrizeCoord d
+          (sourceFullFrameOrientedGramCoord d (M0R.map Complex.ofReal)) =
+        sourceFullFrameSymmetricBase d (M0R.map Complex.ofReal) := by
+    apply Subtype.ext
+    simpa [sourceFullFrameSymmetricBase] using
+      sourceFullFrameSymmetrizeCoord_eq_of_mem_symmetric d
+        (sourceFullFrameOrientedGramCoord_mem_symmetric d
+          (M0R.map Complex.ofReal))
+  rw [hsymm, sub_self]
+  change (sourceFullFrameRealSliceKernelCoordEquiv d hM0R F).symm
+      ((sourceFullFrameRealCompatibleKernelProjection d hM0R) 0) = 0
+  rw [(sourceFullFrameRealCompatibleKernelProjection d hM0R).map_zero]
+  exact (sourceFullFrameRealSliceKernelCoordEquiv d hM0R F).symm.map_zero
+
+/-- Real frame-level target coordinate, obtained by restricting the complex
+target coordinate to complexified real frames and taking coordinatewise real
+part. -/
+noncomputable def sourceFullFrameRealCompatibleFrameTargetCoordR
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ →
+      Fin F.realModelDim → ℝ :=
+  fun M =>
+    sourceFullFrameComplexCoordinateReCLM F.realModelDim
+      (sourceFullFrameRealCompatibleFrameTargetCoordC d hM0R F
+        (M.map Complex.ofReal))
+
+/-- The real frame-level target coordinate is continuous. -/
+theorem continuous_sourceFullFrameRealCompatibleFrameTargetCoordR
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    Continuous
+      (sourceFullFrameRealCompatibleFrameTargetCoordR d hM0R F) := by
+  unfold sourceFullFrameRealCompatibleFrameTargetCoordR
+  apply (sourceFullFrameComplexCoordinateReCLM F.realModelDim).continuous.comp
+  apply
+    (continuous_sourceFullFrameRealCompatibleFrameTargetCoordC d hM0R F).comp
+  fun_prop
+
+@[simp]
+theorem sourceFullFrameRealCompatibleFrameTargetCoordR_base
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    sourceFullFrameRealCompatibleFrameTargetCoordR d hM0R F M0R = 0 := by
+  unfold sourceFullFrameRealCompatibleFrameTargetCoordR
+  rw [sourceFullFrameRealCompatibleFrameTargetCoordC_base d hM0R F]
+  ext i
+  simp [sourceFullFrameComplexCoordinateReCLM]
+
+/-- Frame matrices whose real-compatible target coordinate lies in the local
+real inverse-function target and whose determinant remains nonzero. -/
+def sourceFullFrameRealCompatibleFrameDomain
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    Set (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :=
+  {M |
+    sourceFullFrameRealCompatibleFrameTargetCoordR d hM0R F M ∈
+      (sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph
+        d hM0R F).target ∧
+    M.det ≠ 0}
+
+/-- The real-compatible frame domain is open. -/
+theorem sourceFullFrameRealCompatibleFrameDomain_open
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    IsOpen (sourceFullFrameRealCompatibleFrameDomain d hM0R F) := by
+  unfold sourceFullFrameRealCompatibleFrameDomain
+  refine
+    ((sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph
+      d hM0R F).open_target.preimage
+        (continuous_sourceFullFrameRealCompatibleFrameTargetCoordR d hM0R F)
+      ).inter ?_
+  exact
+    isOpen_ne_fun
+      (continuous_id.matrix_det :
+        Continuous
+          (fun M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ => M.det))
+      continuous_const
+
+/-- The base real frame lies in the real-compatible frame domain. -/
+theorem sourceFullFrameRealCompatibleFrameDomain_base_mem
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    M0R ∈ sourceFullFrameRealCompatibleFrameDomain d hM0R F := by
+  constructor
+  · rw [sourceFullFrameRealCompatibleFrameTargetCoordR_base d hM0R F]
+    exact
+      sourceFullFrameRealCompatibleNormalizedKernel_zero_mem_chartTarget
+        d hM0R F
+  · exact hM0R.ne_zero
+
+/-- Every matrix in the real-compatible frame domain has nonzero determinant. -/
+theorem sourceFullFrameRealCompatibleFrameDomain_det_nonzero
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    sourceFullFrameRealCompatibleFrameDomain d hM0R F ⊆ {M | M.det ≠ 0} := by
+  intro M hM
+  exact hM.2
+
+/-- The real selected-frame slice coordinate obtained by applying the inverse
+of the real normalized kernel chart to the frame-level target coordinate. -/
+noncomputable def sourceFullFrameRealCompatibleFrameKernelCoordR
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ →
+      Fin F.realModelDim → ℝ :=
+  fun M =>
+    (sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph
+      d hM0R F).symm
+        (sourceFullFrameRealCompatibleFrameTargetCoordR d hM0R F M)
+
+/-- The real selected-frame slice coordinate is continuous on the local
+real-compatible frame domain. -/
+theorem continuousOn_sourceFullFrameRealCompatibleFrameKernelCoordR
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    ContinuousOn
+      (sourceFullFrameRealCompatibleFrameKernelCoordR d hM0R F)
+      (sourceFullFrameRealCompatibleFrameDomain d hM0R F) := by
+  unfold sourceFullFrameRealCompatibleFrameKernelCoordR
+  exact
+    (sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph
+      d hM0R F).continuousOn_symm.comp
+        (continuous_sourceFullFrameRealCompatibleFrameTargetCoordR
+          d hM0R F).continuousOn
+        (by
+          intro M hM
+          exact hM.1)
+
+@[simp]
+theorem sourceFullFrameRealCompatibleFrameKernelCoordR_base
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    sourceFullFrameRealCompatibleFrameKernelCoordR d hM0R F M0R = 0 := by
+  let e :=
+    sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph
+      d hM0R F
+  have hsource :
+      (0 : Fin F.realModelDim → ℝ) ∈ e.source := by
+    simpa [e] using
+      sourceFullFrameRealCompatibleNormalizedKernel_zero_mem_chartSource
+        d hM0R F
+  have htarget :
+      (0 : Fin F.realModelDim → ℝ) ∈ e.target := by
+    simpa [e] using
+      sourceFullFrameRealCompatibleNormalizedKernel_zero_mem_chartTarget
+        d hM0R F
+  have he0 : e (0 : Fin F.realModelDim → ℝ) =
+      (0 : Fin F.realModelDim → ℝ) := by
+    rw [sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph_coe]
+    exact sourceFullFrameRealCompatibleNormalizedKernelMapReal_zero d hM0R F
+  unfold sourceFullFrameRealCompatibleFrameKernelCoordR
+  rw [sourceFullFrameRealCompatibleFrameTargetCoordR_base d hM0R F]
+  exact ((e.eq_symm_apply hsource htarget).mpr he0).symm
+
+/-- A total complex selected-frame coordinate obtained from the real coordinate
+on complexified real frames.  Away from the real locus it is an arbitrary
+zero extension; the full implicit-chart producer later proves that the actual
+complex max-rank chart agrees with this coordinate on the real source patch
+where it is used. -/
+noncomputable def sourceFullFrameRealCompatibleComplexKernelCoordFromReal
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R) :
+    Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ →
+      (sourceFullFrameExplicitGaugeSliceData d
+        (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)).slice :=
+  fun M =>
+    if h : ∃ MR : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ,
+        M = MR.map Complex.ofReal then
+      F.complexCoordEquiv
+        (SCV.realToComplex
+          (sourceFullFrameRealCompatibleFrameKernelCoordR d hM0R F
+            (Classical.choose h)))
+    else 0
+
+/-- On complexified real frames, the total complex selected-frame coordinate
+is exactly the complexification of the real selected-frame coordinate. -/
+theorem sourceFullFrameRealCompatibleComplexKernelCoordFromReal_real_eq
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R)
+    (M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+    sourceFullFrameRealCompatibleComplexKernelCoordFromReal d hM0R F
+        (M.map Complex.ofReal) =
+      F.complexCoordEquiv
+        (SCV.realToComplex
+          (sourceFullFrameRealCompatibleFrameKernelCoordR d hM0R F M)) := by
+  unfold sourceFullFrameRealCompatibleComplexKernelCoordFromReal
+  let h : ∃ MR : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ,
+      M.map Complex.ofReal = MR.map Complex.ofReal := ⟨M, rfl⟩
+  have hchoose : Classical.choose h = M := by
+    have hspec := Classical.choose_spec h
+    ext i j
+    exact Complex.ofReal_injective (congrFun (congrFun hspec i) j).symm
+  rw [dif_pos h]
+  rw [hchoose]
+
+/-- Mechanical constructor for the real gauge-slice packet once the two
+remaining local-image facts are supplied: openness of the selected-frame
+kernel coordinate and compatibility with the complex selected-frame coordinate.
+This isolates the still-hard open-map/complex-identification obligations from
+the already checked real IFT domain and continuity fields. -/
+noncomputable def sourceFullFrameRealGaugeSliceData_of_frameKernelCoord
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R)
+    (complexKernelCoord :
+      Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ →
+        (sourceFullFrameExplicitGaugeSliceData d
+          (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)).slice)
+    (complexKernelCoord_real_eq :
+      ∀ M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ,
+        complexKernelCoord (M.map Complex.ofReal) =
+          F.complexCoordEquiv
+            (SCV.realToComplex
+              (sourceFullFrameRealCompatibleFrameKernelCoordR d hM0R F M)))
+    (realKernelCoord_image_open_on_frameDomain :
+      ∀ {S : Set (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)},
+        IsOpen S →
+        S ⊆ sourceFullFrameRealCompatibleFrameDomain d hM0R F →
+        IsOpen
+          (sourceFullFrameRealCompatibleFrameKernelCoordR d hM0R F '' S)) :
+    SourceFullFrameRealGaugeSliceData d M0R hM0R.ne_zero where
+  M0_det_unit := sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R
+  complexSlice :=
+    sourceFullFrameExplicitGaugeSliceData d
+      (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)
+  realModelDim := F.realModelDim
+  realModelToComplexSlice := F.complexCoordEquiv
+  realKernelCoord :=
+    sourceFullFrameRealCompatibleFrameKernelCoordR d hM0R F
+  complexKernelCoord := complexKernelCoord
+  complexKernelCoord_real_eq := complexKernelCoord_real_eq
+  frameDomain := sourceFullFrameRealCompatibleFrameDomain d hM0R F
+  frameDomain_open :=
+    sourceFullFrameRealCompatibleFrameDomain_open d hM0R F
+  center_mem_frameDomain :=
+    sourceFullFrameRealCompatibleFrameDomain_base_mem d hM0R F
+  frameDomain_det_nonzero :=
+    sourceFullFrameRealCompatibleFrameDomain_det_nonzero d hM0R F
+  realKernelCoord_continuousOn :=
+    continuousOn_sourceFullFrameRealCompatibleFrameKernelCoordR d hM0R F
+  realKernelCoord_image_open_on_frameDomain :=
+    realKernelCoord_image_open_on_frameDomain
+
+/-- Mechanical real gauge-slice constructor in the common case where the
+complex selected-frame coordinate is the canonical real-locus extension above.
+After the selected-frame open-map theorem is proved, this is the direct
+constructor for `SourceFullFrameRealGaugeSliceData`. -/
+noncomputable def sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_open
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (F : SourceFullFrameRealSliceFiniteCoordData d M0R hM0R)
+    (realKernelCoord_image_open_on_frameDomain :
+      ∀ {S : Set (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)},
+        IsOpen S →
+        S ⊆ sourceFullFrameRealCompatibleFrameDomain d hM0R F →
+        IsOpen
+          (sourceFullFrameRealCompatibleFrameKernelCoordR d hM0R F '' S)) :
+    SourceFullFrameRealGaugeSliceData d M0R hM0R.ne_zero :=
+  sourceFullFrameRealGaugeSliceData_of_frameKernelCoord d hM0R F
+    (sourceFullFrameRealCompatibleComplexKernelCoordFromReal d hM0R F)
+    (sourceFullFrameRealCompatibleComplexKernelCoordFromReal_real_eq
+      d hM0R F)
+    realKernelCoord_image_open_on_frameDomain
+
 end BHW

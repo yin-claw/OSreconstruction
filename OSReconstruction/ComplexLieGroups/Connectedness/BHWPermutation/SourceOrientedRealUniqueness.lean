@@ -35,7 +35,7 @@ structure SourceOrientedLocalRealChartData
   invariant_mem_chart :
     ∀ x ∈ E0, sourceRealOrientedMinkowskiInvariant d n x ∈ C.Ω
   realCoord : (Fin n → Fin (d + 1) → ℝ) → (Fin m → ℝ)
-  realCoord_continuous : Continuous realCoord
+  realCoord_continuousOn : ContinuousOn realCoord E0
   realCoord_image_open :
     ∀ {S : Set (Fin n → Fin (d + 1) → ℝ)},
       IsOpen S → S ⊆ E0 → IsOpen (realCoord '' S)
@@ -154,30 +154,36 @@ theorem shrink_to_domain_and_realPatch
   obtain ⟨Ω, hcenter, hΩ_rel, hΩ_sub_Umax, hΩ_sub_C,
       hΩ_chart_open, hΩ_chart_conn⟩ :=
     R.C.shrink_to_relOpen hU_rel hx0U
-  let Eseed : Set (Fin n → Fin (d + 1) → ℝ) :=
-    E ∩ R.E0 ∩
-      {x | SCV.realToComplex (R.realCoord x) ∈ R.C.chart '' Ω}
   have hrealToComplex_cont :
       Continuous (fun q : Fin R.m → ℝ => SCV.realToComplex q) := by
     apply continuous_pi
     intro i
     exact Complex.continuous_ofReal.comp (continuous_apply i)
-  have hcoord_complex_cont :
-      Continuous
+  have hcoord_complex_contOn :
+      ContinuousOn
         (fun x : Fin n → Fin (d + 1) → ℝ =>
-          SCV.realToComplex (R.realCoord x)) :=
-    hrealToComplex_cont.comp R.realCoord_continuous
-  have hpre_open :
-      IsOpen
-        {x : Fin n → Fin (d + 1) → ℝ |
-          SCV.realToComplex (R.realCoord x) ∈ R.C.chart '' Ω} :=
-    hΩ_chart_open.preimage hcoord_complex_cont
+          SCV.realToComplex (R.realCoord x)) R.E0 :=
+    hrealToComplex_cont.comp_continuousOn R.realCoord_continuousOn
+  obtain ⟨Vcoord, hVcoord_open, hVcoord_eq⟩ :=
+    (continuousOn_iff'.mp hcoord_complex_contOn)
+      (R.C.chart '' Ω) hΩ_chart_open
+  let Eseed : Set (Fin n → Fin (d + 1) → ℝ) :=
+    E ∩ R.E0 ∩ Vcoord
   have hEseed_open : IsOpen Eseed :=
-    (hE_open.inter R.E0_open).inter hpre_open
+    (hE_open.inter R.E0_open).inter hVcoord_open
   have hx0Eseed : x0 ∈ Eseed := by
     refine ⟨⟨hx0E, R.center_mem⟩, ?_⟩
-    exact ⟨sourceRealOrientedMinkowskiInvariant d n x0,
-      hcenter, R.chart_real_eq x0 R.center_mem⟩
+    have hxpre :
+        x0 ∈
+          {x : Fin n → Fin (d + 1) → ℝ |
+            SCV.realToComplex (R.realCoord x) ∈ R.C.chart '' Ω} ∩
+            R.E0 := by
+      exact ⟨⟨sourceRealOrientedMinkowskiInvariant d n x0,
+        hcenter, R.chart_real_eq x0 R.center_mem⟩, R.center_mem⟩
+    have hxV : x0 ∈ Vcoord ∩ R.E0 := by
+      rw [← hVcoord_eq]
+      exact hxpre
+    exact hxV.1
   have hEseed_sub_E : Eseed ⊆ E := by
     intro x hx
     exact hx.1.1
@@ -190,8 +196,19 @@ theorem shrink_to_domain_and_realPatch
     let G := sourceRealOrientedMinkowskiInvariant d n x
     have hxR : x ∈ R.E0 := hEseed_sub_R hx
     have hGΩbig : G ∈ R.C.Ω := R.invariant_mem_chart x hxR
+    have hxpre :
+        x ∈
+          {x : Fin n → Fin (d + 1) → ℝ |
+            SCV.realToComplex (R.realCoord x) ∈ R.C.chart '' Ω} ∩
+            R.E0 := by
+      have hxV : x ∈ Vcoord ∩ R.E0 := ⟨hx.2, hxR⟩
+      change x ∈
+        (fun x : Fin n → Fin (d + 1) → ℝ =>
+          SCV.realToComplex (R.realCoord x)) ⁻¹' (R.C.chart '' Ω) ∩ R.E0
+      rw [hVcoord_eq]
+      exact hxV
     have hchart_mem : R.C.chart G ∈ R.C.chart '' Ω := by
-      simpa [G, R.chart_real_eq x hxR] using hx.2
+      simpa [G, R.chart_real_eq x hxR] using hxpre.1
     have hinvΩ :
         R.C.chart_biholomorphic.inv (R.C.chart G) ∈ Ω :=
       LocalBiholomorphOnSourceOrientedVariety.inv_mem_restrict

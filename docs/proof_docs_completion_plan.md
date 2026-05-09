@@ -2302,8 +2302,8 @@ checks the real-source permutation topology helpers
    `SourceOrientedRealFullFrameChart.lean` as
    `SourceFullFrameRealGaugeSliceData`,
    `sourceFullFrameRealKernelMixedCoord`,
-   `continuous_sourceFullFrameRealKernelMixedCoord`,
-   `continuous_sourceFullFrameRealCoord_of_kernelMixedCoord`,
+   `continuousOn_sourceFullFrameRealKernelMixedCoord`,
+   `continuousOn_sourceFullFrameRealCoord_of_kernelMixedCoord`,
    `isOpen_sourceFullFrameRealCoord_image_of_kernelMixedCoord_image_open`,
    `SourceFullFrameRealCompatibleImplicitChartData`,
    `SourceFullFrameRealCompatibleImplicitChartData.chart_real_eq`,
@@ -5916,8 +5916,8 @@ implementation contract is:
    The checked packaging layer for this split is
    `SourceFullFrameRealGaugeSliceData`,
    `sourceFullFrameRealKernelMixedCoord`,
-   `continuous_sourceFullFrameRealKernelMixedCoord`,
-   `continuous_sourceFullFrameRealCoord_of_kernelMixedCoord`,
+   `continuousOn_sourceFullFrameRealKernelMixedCoord`,
+   `continuousOn_sourceFullFrameRealCoord_of_kernelMixedCoord`,
    `isOpen_sourceFullFrameRealCoord_image_of_kernelMixedCoord_image_open`,
    `SourceFullFrameRealCompatibleImplicitChartData`,
    `SourceFullFrameRealCompatibleImplicitChartData.chart_real_eq`,
@@ -5947,6 +5947,35 @@ implementation contract is:
    identification `sourceRealSelectedMixedRows_eq_tailMixedRowsLinearEquiv`
    from the unselected real source rows to their mixed Gram rows against the
    selected frame.
+   Lean-facing correction, 2026-05-09: the real IFT chart is an
+   `OpenPartialHomeomorph`, so its inverse coordinate is continuous only on
+   the local chart target, not as a global total function.  The checked local
+   real-chart API therefore uses `ContinuousOn realCoord E0`, and the
+   full-frame gauge-slice packet uses
+   `ContinuousOn realKernelCoord frameDomain`.  The open-image fields remain
+   local on `E0`/`frameDomain`, which is exactly what the totally-real seed
+   proof consumes.  The frame-domain side is now named and checked in Lean:
+   `sourceFullFrameRealCompatibleFrameTargetCoordC/R` are the complex and
+   real frame-level target coordinates,
+   `sourceFullFrameRealCompatibleFrameDomain` is the target-preimage
+   determinant-nonzero domain with checked openness/base-membership/determinant
+   fields, and `sourceFullFrameRealCompatibleFrameKernelCoordR` is the real
+   local inverse coordinate with checked `ContinuousOn` and center equation.
+   The constructor
+   `sourceFullFrameRealGaugeSliceData_of_frameKernelCoord` now packages these
+   fields into `SourceFullFrameRealGaugeSliceData` once the two genuinely
+   remaining facts are supplied: the selected-frame kernel coordinate is open
+   on the frame domain, and the chosen complex selected-frame coordinate
+   agrees with the complexification of the real one on complexified real
+   frames.  The canonical real-locus extension
+   `sourceFullFrameRealCompatibleComplexKernelCoordFromReal` and its
+   real-locus equation are now checked, so the specialized constructor
+   `sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_open` reduces the
+   gauge-slice packet to the single selected-frame open-image theorem
+   `sourceFullFrameRealCompatibleFrameKernelCoordR_image_open_on_frameDomain`.
+   That theorem is now the next honest mathematical frontier: it must prove
+   the selected-frame kernel coordinate is an open map on the local frame
+   domain, not merely continuous.
    The mechanical bridges around it are
    `sourceOrientedRealEnvironment_of_localRealCharts`,
    `sourceOrientedRealEnvironment_of_fullFrameDetNonzero_localCharts`, and the
