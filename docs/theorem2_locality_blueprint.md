@@ -19477,6 +19477,57 @@ Proof decomposition of this theorem, without hiding the analytic work:
                 d n ι x0 hdet)) :
           Nonempty (BHW.SourceOrientedLocalRealChartData d n x0)
 
+      def BHW.SourceFullFrameRealCompatibleImplicitChartProducer
+          (d n : Nat) : Prop :=
+        ∀ (ι : Fin (d + 1) ↪ Fin n)
+          {x0 : Fin n -> Fin (d + 1) -> ℝ},
+          (hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0) ->
+            Nonempty
+              (BHW.SourceFullFrameRealCompatibleImplicitChartData
+                d n ι x0 hdet)
+
+      theorem
+          BHW.sourceOrientedLocalRealChartData_of_fullFrameDet_ne_zero_of_realCompatibleImplicitChartProducer
+          {d n : Nat}
+          (P :
+            BHW.SourceFullFrameRealCompatibleImplicitChartProducer d n)
+          (ι : Fin (d + 1) ↪ Fin n)
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          (hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0) :
+          Nonempty (BHW.SourceOrientedLocalRealChartData d n x0)
+
+      theorem
+          BHW.sourceOrientedRealEnvironment_of_realCompatibleImplicitChartProducer
+          {d n : Nat}
+          (P :
+            BHW.SourceFullFrameRealCompatibleImplicitChartProducer d n)
+          (ι : Fin (d + 1) ↪ Fin n)
+          {E : Set (Fin n -> Fin (d + 1) -> ℝ)}
+          (hE_open : IsOpen E)
+          (hE_nonempty : E.Nonempty)
+          (hE_jost : E ⊆ BHW.JostSet d n)
+          (hdet :
+            ∀ x ∈ E, BHW.sourceRealFullFrameDet d n ι x ≠ 0) :
+          BHW.IsHWOrientedRealEnvironment d n E
+
+      theorem
+          BHW.os45Figure24_checkedRealPatch_fullFrameOrientedEnvironmentSubpatch_of_realCompatibleImplicitChartProducer
+          {d : Nat} [NeZero d]
+          (hd : 2 <= d)
+          (n : Nat)
+          (hn : d + 1 <= n)
+          (π : Equiv.Perm (Fin n))
+          (i : Fin n) (hi : i.val + 1 < n)
+          (E0 : Set (Fin n -> Fin (d + 1) -> ℝ))
+          (hE0 :
+            BHW.IsOS45Figure24CheckedRealPatch (d := d) n π i hi E0)
+          (P :
+            BHW.SourceFullFrameRealCompatibleImplicitChartProducer d n) :
+          ∃ E : Set (Fin n -> Fin (d + 1) -> ℝ),
+            E ⊆ E0 ∧ IsOpen E ∧ E.Nonempty ∧
+            BHW.IsHWOrientedRealEnvironment d n
+              {y | ∃ x ∈ E, y = fun k => x (π k)}
+
       theorem BHW.sourceFullFrameRealCompatibleImplicitChartData
           [NeZero d]
           (hd : 2 <= d)
@@ -19503,7 +19554,13 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `SourceFullFrameRealCompatibleImplicitChartData.chart_real_eq`,
       `SourceFullFrameRealCompatibleImplicitChartData.to_localRealChartData`,
       and
-      `sourceOrientedLocalRealChartData_of_fullFrameRealCompatibleImplicitChartData`.
+      `sourceOrientedLocalRealChartData_of_fullFrameRealCompatibleImplicitChartData`,
+      plus the producer-level mechanical consumers
+      `SourceFullFrameRealCompatibleImplicitChartProducer`,
+      `sourceOrientedLocalRealChartData_of_fullFrameDet_ne_zero_of_realCompatibleImplicitChartProducer`,
+      `sourceOrientedRealEnvironment_of_realCompatibleImplicitChartProducer`,
+      and
+      `os45Figure24_checkedRealPatch_fullFrameOrientedEnvironmentSubpatch_of_realCompatibleImplicitChartProducer`.
       The hard producer still remaining is
       `sourceFullFrameRealCompatibleImplicitChartData`, which must construct
       that data from a real full-frame determinant-nonzero point.

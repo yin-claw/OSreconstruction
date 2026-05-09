@@ -157,4 +157,69 @@ theorem sourceOrientedLocalRealChartData_of_fullFrameRealCompatibleImplicitChart
   rcases R with ⟨R⟩
   exact ⟨R.to_localRealChartData⟩
 
+/-- Pointwise producer for the remaining hard real-compatible full-frame chart
+theorem. -/
+def SourceFullFrameRealCompatibleImplicitChartProducer
+    (d n : ℕ) : Prop :=
+  ∀ (ι : Fin (d + 1) ↪ Fin n)
+    {x0 : Fin n → Fin (d + 1) → ℝ},
+    (hdet : sourceRealFullFrameDet d n ι x0 ≠ 0) →
+      Nonempty (SourceFullFrameRealCompatibleImplicitChartData d n ι x0 hdet)
+
+/-- A pointwise real-compatible full-frame chart producer supplies the public
+local real chart theorem on every determinant-nonzero sheet. -/
+theorem sourceOrientedLocalRealChartData_of_fullFrameDet_ne_zero_of_realCompatibleImplicitChartProducer
+    {d n : ℕ}
+    (P : SourceFullFrameRealCompatibleImplicitChartProducer d n)
+    (ι : Fin (d + 1) ↪ Fin n)
+    {x0 : Fin n → Fin (d + 1) → ℝ}
+    (hdet : sourceRealFullFrameDet d n ι x0 ≠ 0) :
+    Nonempty (SourceOrientedLocalRealChartData d n x0) :=
+  sourceOrientedLocalRealChartData_of_fullFrameRealCompatibleImplicitChartData
+    (P ι hdet)
+
+/-- A source-open determinant-nonzero Jost patch is an oriented real
+environment once the pointwise real-compatible full-frame chart producer is
+available. -/
+theorem sourceOrientedRealEnvironment_of_realCompatibleImplicitChartProducer
+    {d n : ℕ}
+    (P : SourceFullFrameRealCompatibleImplicitChartProducer d n)
+    (ι : Fin (d + 1) ↪ Fin n)
+    {E : Set (Fin n → Fin (d + 1) → ℝ)}
+    (hE_open : IsOpen E)
+    (hE_nonempty : E.Nonempty)
+    (hE_jost : E ⊆ JostSet d n)
+    (hdet :
+      ∀ x ∈ E, sourceRealFullFrameDet d n ι x ≠ 0) :
+    IsHWOrientedRealEnvironment d n E :=
+  sourceOrientedRealEnvironment_of_fullFrameDetNonzero_localCharts
+    d n ι hE_open hE_nonempty hE_jost hdet
+    (fun {_x} hx =>
+      sourceOrientedLocalRealChartData_of_fullFrameRealCompatibleImplicitChartData
+        (P ι hx))
+
+/-- The checked OS45 determinant-regular subpatch becomes an oriented real
+environment from the pointwise real-compatible full-frame chart producer. -/
+theorem os45Figure24_checkedRealPatch_fullFrameOrientedEnvironmentSubpatch_of_realCompatibleImplicitChartProducer
+    {d : ℕ} [NeZero d]
+    (hd : 2 ≤ d)
+    (n : ℕ)
+    (hn : d + 1 ≤ n)
+    (π : Equiv.Perm (Fin n))
+    (i : Fin n) (hi : i.val + 1 < n)
+    (E0 : Set (Fin n → Fin (d + 1) → ℝ))
+    (hE0 : IsOS45Figure24CheckedRealPatch (d := d) n π i hi E0)
+    (P : SourceFullFrameRealCompatibleImplicitChartProducer d n) :
+    ∃ E : Set (Fin n → Fin (d + 1) → ℝ),
+      E ⊆ E0 ∧
+      IsOpen E ∧
+      E.Nonempty ∧
+      IsHWOrientedRealEnvironment d n
+        {y | ∃ x ∈ E, y = fun k => x (π k)} :=
+  os45Figure24_checkedRealPatch_fullFrameOrientedEnvironmentSubpatch_of_localCharts
+    hd n hn π i hi E0 hE0
+    (fun ι {_y} hy =>
+      sourceOrientedLocalRealChartData_of_fullFrameRealCompatibleImplicitChartData
+        (P ι hy))
+
 end BHW

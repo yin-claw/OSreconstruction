@@ -2291,7 +2291,13 @@ checks the real-source permutation topology helpers
    `SourceFullFrameRealCompatibleImplicitChartData.chart_real_eq`,
    `SourceFullFrameRealCompatibleImplicitChartData.to_localRealChartData`,
    and
-   `sourceOrientedLocalRealChartData_of_fullFrameRealCompatibleImplicitChartData`.
+   `sourceOrientedLocalRealChartData_of_fullFrameRealCompatibleImplicitChartData`,
+   together with the checked producer-level consumers
+   `SourceFullFrameRealCompatibleImplicitChartProducer`,
+   `sourceOrientedLocalRealChartData_of_fullFrameDet_ne_zero_of_realCompatibleImplicitChartProducer`,
+   `sourceOrientedRealEnvironment_of_realCompatibleImplicitChartProducer`,
+   and
+   `os45Figure24_checkedRealPatch_fullFrameOrientedEnvironmentSubpatch_of_realCompatibleImplicitChartProducer`.
    The hard producer still remaining is
    `sourceFullFrameRealCompatibleImplicitChartData`.  The checked bridge after
    that producer
@@ -5649,7 +5655,13 @@ implementation contract is:
    `SourceFullFrameRealCompatibleImplicitChartData.chart_real_eq`,
    `SourceFullFrameRealCompatibleImplicitChartData.to_localRealChartData`,
    and
-   `sourceOrientedLocalRealChartData_of_fullFrameRealCompatibleImplicitChartData`;
+   `sourceOrientedLocalRealChartData_of_fullFrameRealCompatibleImplicitChartData`,
+   together with the checked producer-level consumers
+   `SourceFullFrameRealCompatibleImplicitChartProducer`,
+   `sourceOrientedLocalRealChartData_of_fullFrameDet_ne_zero_of_realCompatibleImplicitChartProducer`,
+   `sourceOrientedRealEnvironment_of_realCompatibleImplicitChartProducer`,
+   and
+   `os45Figure24_checkedRealPatch_fullFrameOrientedEnvironmentSubpatch_of_realCompatibleImplicitChartProducer`;
    the hard producer still remaining is
    `sourceFullFrameRealCompatibleImplicitChartData`.
    The mechanical bridges around it are
