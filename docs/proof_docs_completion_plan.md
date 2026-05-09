@@ -2075,6 +2075,33 @@ EOW, PET, locality, or theorem 2.  The public descent
 surface remains downstream of these support statements and is not the first
 Lean target.
 
+Current descent reducer target, 2026-05-09: the next production Lean step is
+the mechanical reducer from the exact normal/Riemann input to the oriented
+descent theorem, not the public theorem-2 wrapper.  The hard input should be
+kept as the explicit proposition
+`BHW.SourceOrientedNormalRiemannExtensionInput d n`, whose fields are exactly:
+continuity and local boundedness of a branch-defined scalar on
+`sourceOrientedExtendedTubeDomain d n`, holomorphic local representatives on
+the non-exceptional locus, and the conclusion
+`SourceOrientedVarietyGermHolomorphicOn d n Phi
+  (sourceOrientedExtendedTubeDomain d n)`.  The checked reducer
+`BHW.sourceOrientedVarietyGermHolomorphicOn_extendF_descent_of_normalRiemann`
+then sets `Phi := sourceOrientedQuotientValue n F`, uses
+`sourceOrientedQuotientValue_continuous_locallyBounded`, converts
+non-exceptional membership to `SourceOrientedMaxRankAt` by
+`not_exceptional_rank_iff_maxRank`, calls
+`sourceOrientedQuotientValue_holomorphicOn_maxRank`, and proves the branch
+equation by `sourceOrientedQuotientValue_wellDefined`.
+`BHW.hallWightman_sourceOrientedScalarRepresentativeData_of_normalRiemann`
+is the corresponding generic representative assembly: it supplies the checked
+source-oriented branch law
+`extendedTube_same_sourceOrientedInvariant_extendF_eq`, calls the reducer, and
+feeds `sourceOrientedExtendedTubeDomain_relOpen_connected` plus the descended
+`Phi` to `sourceOrientedScalarRepresentativeData_of_branchLaw`.  This
+checkpoint deliberately leaves the true hard theorem at the normal/Riemann
+input; it introduces no new axiom, no sorry, and no QFT-specific trust
+boundary.
+
 Current invariant-theory readiness clarification, 2026-05-07: the
 rank-deficient local-realization/Hall-Wightman Lemma-3 blocker is closed, and
 the source/dot invariant-coordinate transport layer is checked down to the

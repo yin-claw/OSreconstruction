@@ -14622,6 +14622,82 @@ Proof decomposition of this theorem, without hiding the analytic work:
         exact ⟨Ω, Ψ, hΩ_open, hGΩ, hΨ, hEq, hΩ_sub⟩
       ```
 
+      The production Lean reducer before the hard normal/Riemann theorem is:
+
+      ```lean
+      def BHW.SourceOrientedNormalRiemannExtensionInput
+          (d n : Nat) : Prop :=
+        ∀ {Phi : BHW.SourceOrientedGramData d n -> ℂ},
+          ContinuousOn Phi
+              (BHW.sourceOrientedExtendedTubeDomain d n) ->
+          BHW.LocallyBoundedOn Phi
+              (BHW.sourceOrientedExtendedTubeDomain d n) ->
+          (∀ G0,
+            G0 ∈ BHW.sourceOrientedExtendedTubeDomain d n \
+              {G | BHW.SourceOrientedExceptionalRank d n G} ->
+            ∃ Ω Ψ,
+              IsOpen Ω ∧ G0 ∈ Ω ∧
+              DifferentiableOn ℂ Ψ Ω ∧
+              Ω ∩ BHW.sourceOrientedGramVariety d n ⊆
+                BHW.sourceOrientedExtendedTubeDomain d n ∧
+              Set.EqOn Phi Ψ
+                (Ω ∩ BHW.sourceOrientedGramVariety d n)) ->
+          BHW.SourceOrientedVarietyGermHolomorphicOn d n Phi
+            (BHW.sourceOrientedExtendedTubeDomain d n)
+
+      theorem
+          BHW.sourceOrientedVarietyGermHolomorphicOn_extendF_descent_of_normalRiemann
+          [NeZero d]
+          (hd : 2 <= d)
+          (n : Nat)
+          (F : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
+          (hF_holo : DifferentiableOn ℂ F (BHW.ForwardTube d n))
+          (hF_cinv :
+            ∀ (Λ : ComplexLorentzGroup d)
+              (z : Fin n -> Fin (d + 1) -> ℂ),
+              z ∈ BHW.ForwardTube d n ->
+              BHW.complexLorentzAction Λ z ∈ BHW.ForwardTube d n ->
+              F (BHW.complexLorentzAction Λ z) = F z)
+          (hBranch :
+            ∀ {z w : Fin n -> Fin (d + 1) -> ℂ},
+              z ∈ BHW.ExtendedTube d n ->
+              w ∈ BHW.ExtendedTube d n ->
+              BHW.sourceOrientedMinkowskiInvariant d n z =
+                BHW.sourceOrientedMinkowskiInvariant d n w ->
+              BHW.extendF F z = BHW.extendF F w)
+          (hRiemann :
+            BHW.SourceOrientedNormalRiemannExtensionInput d n) :
+          ∃ Phi : BHW.SourceOrientedGramData d n -> ℂ,
+            BHW.SourceOrientedVarietyGermHolomorphicOn d n Phi
+              (BHW.sourceOrientedExtendedTubeDomain d n) ∧
+            ∀ w, w ∈ BHW.ExtendedTube d n ->
+              Phi (BHW.sourceOrientedMinkowskiInvariant d n w) =
+                BHW.extendF F w
+
+      noncomputable def
+          BHW.hallWightman_sourceOrientedScalarRepresentativeData_of_normalRiemann
+          [NeZero d]
+          (hd : 2 <= d)
+          (n : Nat)
+          (F : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ)
+          (hF_holo : DifferentiableOn ℂ F (BHW.ForwardTube d n))
+          (hF_cinv :
+            ∀ (Λ : ComplexLorentzGroup d)
+              (z : Fin n -> Fin (d + 1) -> ℂ),
+              z ∈ BHW.ForwardTube d n ->
+              BHW.complexLorentzAction Λ z ∈ BHW.ForwardTube d n ->
+              F (BHW.complexLorentzAction Λ z) = F z)
+          (hRiemann :
+            BHW.SourceOrientedNormalRiemannExtensionInput d n) :
+          BHW.SourceOrientedScalarRepresentativeData (d := d) n F
+      ```
+
+      These two declarations are purely checked glue around the hard
+      normal/Riemann input.  They are the first permitted production Lean step
+      in the descent group because they do not assert normality, do not import
+      the `SO` axiom boundary, and do not mention OS, Wightman functions, EOW,
+      PET, locality, or theorem 2.
+
       The rank-identification step
       `sourceOrientedExceptionalRank_eq_lowerRank` is checked in
       `SourceOrientedRankBridge.lean`: an oriented-variety point is an actual
