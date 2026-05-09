@@ -14,6 +14,42 @@ open scoped Matrix.Norms.Operator
 
 namespace BHW
 
+/-- A complex-spacetime submodule whose finrank is not strictly below the
+ambient finrank is the whole ambient subspace. -/
+theorem complexMinkowski_submodule_eq_top_of_not_finrank_lt_spacetime
+    {d : ℕ}
+    {L : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (hnot : ¬ Module.finrank ℂ L < d + 1) :
+    L = ⊤ := by
+  by_contra hne
+  have hlt :
+      Module.finrank ℂ L <
+        Module.finrank ℂ (Fin (d + 1) → ℂ) :=
+    Submodule.finrank_lt hne
+  have hamb : Module.finrank ℂ (Fin (d + 1) → ℂ) = d + 1 := by
+    simp
+  exact hnot (by simpa [hamb] using hlt)
+
+/-- If a subspace is linearly equivalent to a full complex-spacetime subspace,
+then it is full as well. -/
+theorem complexMinkowski_submodule_eq_top_of_linearEquiv_full
+    {d : ℕ}
+    {K L : Submodule ℂ (Fin (d + 1) → ℂ)}
+    (T : K ≃ₗ[ℂ] L)
+    (hLtop : L = ⊤) :
+    K = ⊤ := by
+  apply complexMinkowski_submodule_eq_top_of_not_finrank_lt_spacetime
+    (d := d) (L := K)
+  intro hKproper
+  have hfinKL : Module.finrank ℂ K = Module.finrank ℂ L :=
+    T.finrank_eq
+  have hfinL : Module.finrank ℂ L = d + 1 := by
+    rw [hLtop]
+    simp
+  have hfinK : Module.finrank ℂ K = d + 1 := by
+    rw [hfinKL, hfinL]
+  omega
+
 /-- Apply independent linear equivalences between two pairs of complementary
 summands inside their respective suprema. -/
 noncomputable def directSum_congr_sup_equiv_between

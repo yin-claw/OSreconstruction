@@ -6154,17 +6154,28 @@ implementation contract is:
    the map from `Rz` is only an injective isometry into the frame span, not an
    equivalence onto the whole maximal frame span, and the frame must be chosen
    to contain `Rw` before the determinant-one residual extension is applied.
-   The final unproved support surface is now stated as
-   `BHW.complexMinkowski_selectedResidualHyperbolicExtension`: given that
-   direct-sum isometry, its action on `M` and `Rz`, a containing isotropic frame
-   `q`, and the orthogonality/disjointness facts, it returns
-   `Λfix : ComplexLorentzGroup d` fixing `M` pointwise and sending every vector
-   of `Rz` into `Submodule.span ℂ (Set.range q)`.  Its proof must adjoin
-   hyperbolic dual frames to the two residual blocks, extend the resulting
-   nondegenerate block map by identity on the orthogonal complement, and handle
-   the determinant-one condition inside the hyperbolic-basis construction; it
-   must not call a generic degenerate Witt-extension theorem.  The last
-   packaging substep is now
+   The selected residual hyperbolic extension is now decomposed more sharply.
+   The hyperbolic dual-frame block map itself is checked by
+   `BHW.hw_selectedResidualHyperbolicBlockExtensionData_of_hyperbolicFrames`
+   and the source-basis specialization
+   `BHW.ComplexMinkowskiIsotropicSubspaceBasisDualFrameData.selectedResidualHyperbolicBlockExtensionData`.
+   These theorems adjoin source and target dual frames, build the
+   nondegenerate selected-plus-hyperbolic block equivalence, prove it preserves
+   the form, prove it fixes `M`, and prove it sends the source residual span
+   into the chosen target frame span.  What remains unproved is not `Tblock`;
+   it is the determinant branch that turns this block map into a proper
+   complex Lorentz correction.  In the proper target-block case, the checked
+   constructor requires the explicit hypothesis
+   `Module.finrank ℂ L < d + 1`; in the full-block case, the proof must build
+   a determinant-one ambient equivalence directly, since the proper-complement
+   reflection used by the repair theorem is unavailable.  The finrank branch
+   gate is checked as
+   `BHW.complexMinkowski_submodule_eq_top_of_not_finrank_lt_spacetime`; if
+   the target completed block is not proper, it is all of complex spacetime.
+   The companion
+   `BHW.complexMinkowski_submodule_eq_top_of_linearEquiv_full` shows that a
+   source block linearly equivalent to such a full target block is full too.
+   The last packaging substep is now
    checked as
    `BHW.complexMinkowski_selectedResidualHyperbolicExtension_of_ambientLinearEquiv`:
    an ambient determinant-one form-preserving linear equivalence fixing `M` and

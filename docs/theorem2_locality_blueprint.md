@@ -26156,7 +26156,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
       specializes it to the source basis-dual packet.  Thus the remaining
       implementation issue is no longer the `Tblock` itself; it is the final
       proper/full branch split needed to supply `L_proper` for this constructor
-      or bypass it with a direct full-ambient determinant-one extension.
+      or bypass it with a direct full-ambient determinant-one extension.  The
+      finrank gate for this split is checked:
+      `BHW.complexMinkowski_submodule_eq_top_of_not_finrank_lt_spacetime`
+      turns `¬ Module.finrank ℂ L < d + 1` into `L = ⊤`, and
+      `BHW.complexMinkowski_submodule_eq_top_of_linearEquiv_full` carries
+      fullness back across the block equivalence to the source block.
 
       Lean-shaped proof of the residual-frame-extension producer after the
       support packet exists:
