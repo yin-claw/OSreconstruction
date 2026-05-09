@@ -20933,6 +20933,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceRealFullFrameSplitHomeomorph '' U`, so the remaining open-map
       theorem is precisely local openness of this finite-product map on the
       chosen split neighborhood.
+      The selected-frame product-chart construction is now isolated: prove
+      `sourceFullFrameRealSelectedFrameProductChartData_of_realCompatibleSlice`
+      from the real derivative of
+      `sourceFullFrameRealCompatibleFrameTargetCoordR`, choose a complement to
+      the derivative kernel, use `HasStrictFDerivAt.toOpenPartialHomeomorph`
+      for `M ↦ (T M, orbitComplementCoord (M - M0R))`, restrict to
+      `S.frameDomain`, postcompose the first coordinate by
+      `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph.symm`,
+      and then apply
+      `SourceFullFrameRealSelectedFrameProductChartData.toOpenData`.
 
       In the small-arity theorem the determinant-coordinate family is empty,
       so oriented regularity is the checked pure-Gram regularity after

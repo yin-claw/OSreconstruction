@@ -6077,6 +6077,69 @@ implementation contract is:
    Thus the next theorem to prove is not a wrapper around arbitrary openness
    of `S.realKernelCoord`; it is the construction of this selected-frame
    product chart from the real IFT/submersion derivative.
+
+   Lean-pseudocode for the remaining selected-frame product chart:
+
+   ```lean
+   theorem BHW.sourceFullFrameRealSelectedFrameProductChartData_of_realCompatibleSlice
+       {d n : Nat}
+       {ι : Fin (d + 1) ↪ Fin n}
+       {x0 : Fin n -> Fin (d + 1) -> ℝ}
+       (hM0R :
+         IsUnit (BHW.sourceRealFullFrameMatrix d n ι x0).det)
+       (F : BHW.SourceFullFrameRealSliceFiniteCoordData d
+         (BHW.sourceRealFullFrameMatrix d n ι x0) hM0R) :
+       Sigma fun O : Type =>
+         Sigma fun instO : TopologicalSpace O =>
+           @BHW.SourceFullFrameRealSelectedFrameProductChartData
+             d n ι x0 hM0R.ne_zero
+             (BHW.sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_realExtension
+               d hM0R F)
+             O instO
+   ```
+
+   In the final `sourceFullFrameRealCompatibleImplicitChartData` producer,
+   take `hM0R := isUnit_iff_ne_zero.mpr hdet`; the harmless difference
+   between `hM0R.ne_zero` and the given `hdet` is bridged by proof
+   irrelevance/casting when installing the concrete slice packet.
+
+   The proof must be organized as follows.
+
+   1. Define the selected-frame target coordinate
+      `T M := sourceFullFrameRealCompatibleFrameTargetCoordR d hM0R F M`
+      for the concrete finite-coordinate packet `F`.  The checked relation is
+      `S.realKernelCoord M =
+        e.symm (T M)`, where
+      `e := sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph
+        d hM0R F`.
+   2. Prove the real derivative theorem for `T` at `M0R`.  Its derivative is
+      the real form of
+      `(sourceFullFrameRealSliceKernelCoordEquiv d hM0R F).symm ∘
+       sourceFullFrameRealCompatibleKernelProjection d hM0R ∘
+       sourceFullFrameSymmetrizeCoord d ∘
+       sourceFullFrameOrientedDifferentialCLM d (M0R.map Complex.ofReal)`.
+      The right inverse on the target coordinates is the checked
+      `F.realCoordEquiv`, viewed as a real full-frame matrix direction through
+      `sourceFullFrameRealDifferentialRightInverseRange`.
+   3. Choose a finite-dimensional real complement `O` to the kernel of this
+      derivative and a continuous linear equivalence
+      `frameLinearProductEquiv :
+        Matrix (Fin (d+1)) (Fin (d+1)) ℝ ≃L[ℝ]
+          ((Fin S.realModelDim -> ℝ) × O)`
+      whose first coordinate is the derivative of `T`.
+   4. Apply `HasStrictFDerivAt.toOpenPartialHomeomorph` to the nonlinear
+      product map
+      `M ↦ (T M, orbitComplementCoord (M - M0R))`, obtaining a target-product
+      selected-frame chart whose first coordinate is `T`.
+   5. Restrict this chart source to
+      `S.frameDomain` (equivalently `T M ∈ e.target` plus determinant
+      nonzero).  Postcompose with `e.symm.prod (OpenPartialHomeomorph.refl O)`.
+      The resulting open partial homeomorphism has first coordinate exactly
+      `S.realKernelCoord`.
+   6. Package it as
+      `SourceFullFrameRealSelectedFrameProductChartData S O`; then
+      `SourceFullFrameRealSelectedFrameProductChartData.toOpenData` supplies
+      the already checked `SourceFullFrameRealSelectedFrameProductOpenData S`.
    The mechanical bridges around it are
    `sourceOrientedRealEnvironment_of_localRealCharts`,
    `sourceOrientedRealEnvironment_of_fullFrameDetNonzero_localCharts`, and the
