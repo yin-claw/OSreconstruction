@@ -139,6 +139,61 @@ the former fixed-`w` forward-tube chamber-chain route is quarantined.  The
 present note owns the theorem-2 consumer chain from the OS45 local edge packet
 to the final `bvt_W` locality theorem.
 
+Route-integrity lock, 2026-05-09.  The oriented source-variety and
+determinant-coordinate files are an implementation encoding of the proper
+complex `L_+(C)` continuation used in OS I §4.5 after the OS-II repair.  They
+are **not** a separate theorem-2 proof route.  In particular:
+
+* The final theorem-2 proof must still pass through the OS-II boundary-value
+  construction for `bvt_F`, the OS I §4.5/BHW-Jost branch-difference packet,
+  the selected Figure-2-4 real patch, the adjacent `S'_n` source seed, and the
+  final transfer to `bvt_W`.
+* A Lean theorem that is merely conditional on
+  `SourceOrientedNormalRiemannExtensionInput`,
+  `SourceFullFrameRealCompatibleImplicitChartProducer`,
+  `SourceOrientedRankDeficientResidualChartProducer`, or a similar producer
+  is not a closed theorem-2 step.  Such hypotheses may appear only as named
+  frontier contracts while their proof transcripts are being implemented.
+* No generic "variety descent proves locality" wrapper may replace the
+  branchwise OS-II/BHW source construction.  The only allowed descent use is
+  the local source-germ descent needed to express the same OS branch on the
+  oriented invariant coordinates.
+* No new axiom is part of this strict theorem-2 route.  The proof may not close
+  by consuming an invariant-theory, analytic-normality, or QFT axiom in place
+  of an OS-II/OS-I proof step.  Such an axiom is forbidden on the theorem-2
+  route unless an actual error in the OS papers is first identified, documented
+  locally, and separately approved as a paper-correction boundary.
+* The current real/full-frame chart substrate is acceptable only because it is
+  a local-coordinate realization of the Figure-2-4 totally-real uniqueness
+  patch.  It cannot be used to skip the OS-II adjacent branch comparison, and
+  it cannot export a public theorem-2 wrapper while the source-BHW/Jost and
+  real-locus compatibility producers remain open.
+
+Implementation consequence: every new Lean theorem on this route must be
+classified in its docstring or nearby blueprint paragraph as one of:
+
+1. **OS-II/OS-I step**: directly consumes or produces one of the branch,
+   boundary-value, BHW-Jost, Figure-2-4, or `bvt_W` objects above;
+2. **coordinate infrastructure**: proves source-variety, full-frame,
+   normal-form, or real-chart facts used by a named OS-II/OS-I step; or
+3. **conditional side infrastructure**: useful mathematics that is not allowed
+   to close theorem 2.
+
+Only category 1 and category 2 may be on the strict theorem-2 critical path.
+Category 3 must stay quarantined from theorem-2 wrapper names.
+
+Strict-route reset after Claude Entry #1821 and the user directive of
+2026-05-09: the variety-descent/Riemann-extension chain and the real-IFT
+source-variety uniqueness chain are no longer active theorem-2 frontiers.  They
+may remain in the repository as checked or conditional side infrastructure, but
+they are not to be extended, wrapped into theorem-2 names, or used as a
+replacement for the literal OS-II proof unless an actual error in OS-II/OS-I is
+identified and documented.  The only active theorem-2 frontier is the literal
+OS-II / OS I §4.5 branch-comparison route, beginning with the compact
+Figure-2-4 branch-difference theorem
+`BHW.os45Figure24_sourcePatch_pairing_eq_swappedSourcePatch_of_OSI45` and its
+direct consumers.
+
 Current BHW interface correction: the **common fixed-`w`
 permuted-forward-tube gallery** is rejected, and the reachable-label `hOrbit`
 monodromy route is no longer the strict OS-paper implementation gate.  The
@@ -15236,8 +15291,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
       producer; downstream scalar consumers still need migration from pure
       Gram data to the oriented data structure.
 
-      Because this route is now the active theorem-2 source route, every
-      downstream consumer that currently
+      For the OS45 source-patch implementation layer retained on the strict
+      route, every downstream consumer that currently
       mentions `hRep.Phi (sourceMinkowskiGram d n z)`,
       `sourcePermuteComplexGram`, `sourceDoublePermutationGramDomain`, or
       `SourceScalarRepresentativeData.branch_eq` must be migrated to the
@@ -20919,15 +20974,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `sourceFullFrameRealGaugeSliceData_of_frameKernelCoord` is also
       checked: once a compatible complex selected-frame coordinate is
       supplied, it assembles the full `SourceFullFrameRealGaugeSliceData`
-      packet mechanically.  The common compatible complex coordinate is now
-      checked as `sourceFullFrameRealCompatibleComplexKernelCoordFromReal`,
-      a total zero extension away from the real locus whose real-locus
-      equation is
-      `sourceFullFrameRealCompatibleComplexKernelCoordFromReal_real_eq`; hence
+      packet mechanically.  The common compatible complex coordinate currently
+      checked as `sourceFullFrameRealCompatibleComplexKernelCoordFromReal` is a
+      useful real-locus support extension for the frame-domain packet; the
+      specialized constructor
       `sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_realExtension`
-      supplies the real gauge-slice packet from the checked frame-domain data,
-      and `sourceFullFrameRealGaugeSliceData` now packages it at any real
-      determinant-nonzero full-frame base.
+      may remain as checked side support.  It is not a theorem-2 critical-path
+      gauge-slice packet unless this side infrastructure is explicitly resumed
+      and rederived from the common complex restriction of
+      `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC`.
       The hard producer still remaining is
       `sourceFullFrameRealCompatibleImplicitChartData`, which must construct
       the shrunken source patch from a real full-frame determinant-nonzero
@@ -21273,11 +21328,163 @@ Proof decomposition of this theorem, without hiding the analytic work:
 
       and prove:
 
-      * `sourceFullFrameRealCompatibleModelChartDomain_open`: expand the second
-        condition into the four non-variety raw-domain conditions composed
-        with `sourceFullFrameRealCompatibleChartInvRaw`; the variety condition
-        is automatic from
-        `sourceFullFrameGauge_reconstructInvariant_mem_variety`;
+      The openness layer must be implemented by naming the ambient/open
+      predicates rather than by unfolding the raw domain inside a large proof.
+      First define the raw ambient domain
+
+      ```lean
+      def BHW.sourceFullFrameRealCompatibleChartDomainAmbient
+          ... : Set (BHW.SourceOrientedGramData d n) :=
+        {G | G.det ι != 0} ∩
+        {G |
+          BHW.sourceFullFrameSelectedSymmetricCoordAmbient d n ι G ∈
+            eSym.source} ∩
+        {G |
+          BHW.sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC
+              d n ι hM0R F G ∈ eK.target} ∩
+        {G |
+          BHW.sourceFullFrameGaugeSliceMapSymmetric d M0 S
+              (F.complexCoordEquiv
+                (BHW.sourceFullFrameRealCompatibleSelectedKernelSourceCoordC
+                  ι hM0R F G)) ∈ eSym.source}
+      ```
+
+      where `eSym` is
+      `sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC
+      d hM0R`, `eK` is
+      `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC
+      d hM0R F`, `M0 := (sourceRealFullFrameMatrix d n ι x0).map
+      Complex.ofReal`, and `S := sourceFullFrameExplicitGaugeSliceData d
+      (sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R)`.  Prove
+
+      ```lean
+      theorem BHW.sourceFullFrameRealCompatibleChartDomain_eq_ambient
+          ... :
+          BHW.sourceFullFrameRealCompatibleChartDomain ι hM0R F =
+            BHW.sourceFullFrameRealCompatibleChartDomainAmbient
+                ι hM0R F ∩
+              BHW.sourceOrientedGramVariety d n
+
+      theorem BHW.sourceFullFrameRealCompatibleChartDomainAmbient_open
+          ... :
+          IsOpen
+            (BHW.sourceFullFrameRealCompatibleChartDomainAmbient
+              ι hM0R F)
+
+      theorem BHW.sourceFullFrameRealCompatibleChartDomain_relOpen
+          ... :
+          BHW.IsRelOpenInSourceOrientedGramVariety d n
+            (BHW.sourceFullFrameRealCompatibleChartDomain ι hM0R F)
+      ```
+
+      The proof of `ChartDomainAmbient_open` is four intersections:
+
+      * determinant nonzero is `isOpen_ne_fun` applied to the continuous
+        coordinate `fun G => G.det ι`;
+      * selected symmetric source is `eSym.open_source.preimage` of
+        `continuous_sourceFullFrameSelectedSymmetricCoordAmbient`;
+      * selected kernel target is `eK.open_target.preimage` of
+        `continuous_sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC`;
+      * the final gauge-slice source condition is proved on the selected-kernel
+        target locus by
+        `eK.continuousOn_symm.comp
+          (continuous_sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC
+            ι hM0R F).continuousOn ...`,
+        followed by `continuousOn_iff'.mp` and intersection with the target
+        locus.  The composed map is
+        `G ↦ sourceFullFrameGaugeSliceMapSymmetric d M0 S
+          (F.complexCoordEquiv (eK.symm (selectedKernel G)))`, using
+        `(contDiff_sourceFullFrameGaugeSliceMapSymmetric d S).continuous`
+        and `F.complexCoordEquiv.continuous`.
+
+      For the model-domain proof, introduce the open model predicate
+
+      ```lean
+      def BHW.sourceFullFrameRealCompatibleModelChartOpenDomain
+          ... :
+          Set (BHW.sourceFullFrameRealCompatibleChartModel ι F.realModelDim) :=
+        {y |
+          y.1 ∈ eK.source} ∩
+        {y |
+          BHW.sourceFullFrameGaugeSliceMapSymmetric d M0 S
+              (F.complexCoordEquiv y.1) ∈ eSym.source} ∩
+        {y |
+          BHW.sourceFullFrameRealCompatibleChartModelToGaugeModel
+              ι hM0R F y ∈
+            BHW.sourceFullFrameGaugeModelDetNonzero d n ι M0 S}
+      ```
+
+      and prove the two reconstruction readoff formulas
+
+      ```lean
+      theorem
+          BHW.sourceFullFrameRealCompatibleSelectedSymmetricCoordAmbient_invRaw_eq
+          ... (y :
+            BHW.sourceFullFrameRealCompatibleChartModel ι F.realModelDim) :
+          BHW.sourceFullFrameSelectedSymmetricCoordAmbient d n ι
+              (BHW.sourceFullFrameRealCompatibleChartInvRaw ι hM0R F y) =
+            BHW.sourceFullFrameGaugeSliceMapSymmetric d M0 S
+              (F.complexCoordEquiv y.1)
+
+      theorem
+          BHW.sourceFullFrameRealCompatibleSelectedKernelSourceCoordC_invRaw_eq_of_source
+          ... {y :
+            BHW.sourceFullFrameRealCompatibleChartModel ι F.realModelDim}
+          (hy_source : y.1 ∈ eK.source) :
+          BHW.sourceFullFrameRealCompatibleSelectedKernelSourceCoordC
+              ι hM0R F
+              (BHW.sourceFullFrameRealCompatibleChartInvRaw ι hM0R F y) =
+            y.1
+      ```
+
+      The first formula is the selected symmetric coordinate part of
+      `sourceFullFrameOrientedCoordOfSource_reconstructInvariant_eq`.  The
+      second uses
+      `sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC_reconstructInvariant_eq`,
+      rewrites the normalized map as `eK y.1`, and closes by
+      `eK.left_inv hy_source`.
+
+      Then prove
+
+      ```lean
+      theorem
+          BHW.sourceFullFrameRealCompatibleModelChartDomain_eq_openDomain
+          ... :
+          BHW.sourceFullFrameRealCompatibleModelChartDomain ι hM0R F =
+            BHW.sourceFullFrameRealCompatibleModelChartOpenDomain ι hM0R F
+
+      theorem BHW.sourceFullFrameRealCompatibleModelChartDomain_open
+          ... :
+          IsOpen
+            (BHW.sourceFullFrameRealCompatibleModelChartDomain ι hM0R F)
+      ```
+
+      In the `⊆` direction of `eq_openDomain`, the source condition is the
+      first conjunct, the gauge-slice source condition is the selected
+      symmetric raw-domain condition rewritten by
+      `SelectedSymmetricCoordAmbient_invRaw_eq`, and determinant nonzero is
+      `sourceFullFrameGauge_reconstructInvariant_selectedDet`.  In the `⊇`
+      direction, the reconstructed invariant is in the raw domain because:
+      variety is
+      `sourceFullFrameGauge_reconstructInvariant_mem_variety`; determinant
+      nonzero is the model-det condition rewritten by
+      `sourceFullFrameGauge_reconstructInvariant_selectedDet`; selected
+      symmetric source is the second open-domain conjunct; selected kernel
+      target follows from
+      `sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC_reconstructInvariant_eq`,
+      the coe theorem for `eK`, and `eK.map_source`; and the final gauge-slice
+      source condition is the second open-domain conjunct after
+      `SelectedKernelSourceCoordC_invRaw_eq_of_source`.
+
+      `ModelChartOpenDomain_open` is the intersection of:
+      `eK.open_source.preimage continuous_fst`,
+      `eSym.open_source.preimage` of
+      `y ↦ sourceFullFrameGaugeSliceMapSymmetric d M0 S
+        (F.complexCoordEquiv y.1)`, and
+      `(sourceFullFrameGaugeModelDetNonzero_open d n ι M0 S).preimage
+        (continuous_sourceFullFrameRealCompatibleChartModelToGaugeModel
+          ι hM0R F)`.
+
       * `sourceFullFrameRealCompatibleChartRaw_center_mem_modelChartDomain`:
         the first component is `0 ∈ eK.source`; the second component is the
         raw-domain base membership using the base-source lemma above,
@@ -21294,8 +21501,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
       `ΩV := sourceFullFrameRealCompatibleChartInvRaw '' V`.  Then
       `ΩV` is relatively open by
       `LocalBiholomorphOnSourceOrientedVariety.inv_image_open_relOpen`,
-      `chartRaw '' ΩV = V` by the raw right-inverse, and max-rank follows from
-      raw-domain membership.  Taking
+      using `sourceFullFrameRealCompatibleChartDomain_relOpen` as the
+      source-domain relative-open input; `chartRaw '' ΩV = V` follows from the
+      raw right-inverse, and max-rank follows from raw-domain membership.
+      Taking
       `V := sourceFullFrameRealCompatibleModelChartDomain` gives the raw
       max-rank chart; postcomposing this raw product chart by
       `(sourceFullFrameRealCompatibleCoordEquivC ι F.realModelDim).symm`
@@ -21305,7 +21514,294 @@ Proof decomposition of this theorem, without hiding the analytic work:
       postcomposing this raw product chart with
       `(sourceFullFrameRealCompatibleCoordEquivC ι F.realModelDim).symm`,
       upgraded to a `ContinuousLinearEquiv` by finite dimensionality.  The
-      companion formula theorem is:
+      checked producer for this part is:
+
+      ```lean
+      noncomputable def
+          BHW.sourceOrientedFullFrameMaxRankChartData_of_realCompatibleSlice
+          ... :
+          Σ m : Nat,
+            BHW.SourceOrientedMaxRankChartData d n
+              (M := Fin m -> ℂ)
+              (BHW.sourceRealOrientedMinkowskiInvariant d n x0)
+      ```
+
+      Lean checkpoint, 2026-05-09: this `C`-field producer is now checked.
+      The checked declarations are
+      `sourceFullFrameRealCompatibleChartDomainAmbient`,
+      `sourceFullFrameRealCompatibleChartDomain_eq_ambient`,
+      `sourceFullFrameRealCompatibleChartDomainAmbient_open`,
+      `sourceFullFrameRealCompatibleChartDomain_relOpen`,
+      `sourceFullFrameRealCompatibleSelectedSymmetricCoordAmbient_invRaw_eq`,
+      `sourceFullFrameRealCompatibleSelectedKernelSourceCoordC_invRaw_eq_of_source`,
+      `sourceFullFrameRealCompatibleModelChartOpenDomain`,
+      `sourceFullFrameRealCompatibleModelChartDomain_eq_openDomain`,
+      `sourceFullFrameRealCompatibleModelChartDomain_open`,
+      `sourceFullFrameRealCompatibleShrunkenChartDomain_relOpen`,
+      `sourceFullFrameRealCompatibleLocalBiholomorphShrunken`,
+      `sourceFullFrameRealCompatibleMaxRankChartDataRaw`, and
+      `sourceOrientedFullFrameMaxRankChartData_of_realCompatibleSlice`.
+
+      The remaining producer work is the real-locus compatibility theorem, not
+      another chart-image shrink.  One must **not** claim the finite-coordinate
+      real formula from the separately constructed real and complex
+      `HasStrictFDerivAt.toOpenPartialHomeomorph` charts: those choices are
+      independent, so the real inverse and complex inverse are not
+      automatically the same on the real locus.
+
+      If this real/full-frame side infrastructure is resumed as coordinate
+      support, the implementation route is fixed: construct the real
+      selected-frame coordinate by restricting the same complex IFT chart used
+      in `sourceFullFrameRealCompatibleMaxRankChartDataRaw`.  Do not use the
+      independently chosen real `toOpenPartialHomeomorph` for any final
+      `SourceFullFrameRealCompatibleImplicitChartData` packet.
+
+      Lean-transcript for the common complex/real chart:
+
+      ```lean
+      def BHW.sourceFullFrameRealCompatibleConjCoord
+          (r : Nat) : (Fin r -> ℂ) -> (Fin r -> ℂ) :=
+        fun q i => Complex.conj (q i)
+
+      theorem
+          BHW.sourceFullFrameRealCompatibleNormalizedKernelMap_conj
+          ... (q : Fin F.realModelDim -> ℂ) :
+          BHW.sourceFullFrameRealCompatibleNormalizedKernelMap d hM0R F
+              (BHW.sourceFullFrameRealCompatibleConjCoord F.realModelDim q) =
+            BHW.sourceFullFrameRealCompatibleConjCoord F.realModelDim
+              (BHW.sourceFullFrameRealCompatibleNormalizedKernelMap
+                d hM0R F q)
+      ```
+
+      Proof of conjugation equivariance must be by explicit real-form
+      linear/algebraic lemmas, not by analytic continuation.  First prove the
+      finite-coordinate real-form conjugation lemmas:
+
+      ```lean
+      theorem BHW.sourceFullFrameRealSlice_complexCoordEquiv_conj
+          ... (q : Fin F.realModelDim -> ℂ) :
+          F.complexCoordEquiv
+              (BHW.sourceFullFrameRealCompatibleConjCoord F.realModelDim q) =
+            BHW.sourceFullFrameExplicitSliceConj d hM0R
+              (F.complexCoordEquiv q)
+
+      theorem BHW.sourceFullFrameRealSliceKernelCoordEquiv_conj
+          ... (q : Fin F.realModelDim -> ℂ) :
+          BHW.sourceFullFrameRealSliceKernelCoordEquiv d hM0R F
+              (BHW.sourceFullFrameRealCompatibleConjCoord F.realModelDim q) =
+            BHW.sourceFullFrameRealCompatibleKernelConj d hM0R
+              ((BHW.sourceFullFrameRealSliceKernelCoordEquiv d hM0R F) q)
+
+      theorem BHW.sourceFullFrameRealSliceKernelCoordEquiv_symm_conj
+          ... (K : _) :
+          (BHW.sourceFullFrameRealSliceKernelCoordEquiv d hM0R F).symm
+              (BHW.sourceFullFrameRealCompatibleKernelConj d hM0R K) =
+            BHW.sourceFullFrameRealCompatibleConjCoord F.realModelDim
+              ((BHW.sourceFullFrameRealSliceKernelCoordEquiv d hM0R F).symm K)
+      ```
+
+      Each of these is proved by decomposing `q` into coordinatewise real and
+      imaginary parts, using complex linearity, `F.complexCoordEquiv_real_eq`,
+      `sourceFullFrameRealSliceKernelCoordEquiv_real_im`, and equality by
+      `Complex.ext` on the full-frame Gram and determinant coordinates.  Next
+      prove the nonlinear algebraic conjugation lemmas:
+
+      ```lean
+      theorem BHW.sourceFullFrameGaugeSliceMapSymmetric_conj
+          ... (X : S.slice) :
+          BHW.sourceFullFrameGaugeSliceMapSymmetric d (M0R.map Complex.ofReal)
+              S (BHW.sourceFullFrameExplicitSliceConj d hM0R X) =
+            BHW.sourceFullFrameSymmetricCoordConj d
+              (BHW.sourceFullFrameGaugeSliceMapSymmetric d
+                (M0R.map Complex.ofReal) S X)
+
+      theorem BHW.sourceFullFrameRealCompatibleKernelProjection_conj
+          ... (H : BHW.sourceFullFrameSymmetricCoordSubmodule d) :
+          BHW.sourceFullFrameRealCompatibleKernelProjection d hM0R
+              (BHW.sourceFullFrameSymmetricCoordConj d H) =
+            BHW.sourceFullFrameRealCompatibleKernelConj d hM0R
+              (BHW.sourceFullFrameRealCompatibleKernelProjection d hM0R H)
+
+      theorem BHW.sourceFullFrameRealCompatibleExplicitKernelMap_conj
+          ... (X : S.slice) :
+          BHW.sourceFullFrameRealCompatibleExplicitKernelMap d hM0R
+              (BHW.sourceFullFrameExplicitSliceConj d hM0R X) =
+            BHW.sourceFullFrameRealCompatibleKernelConj d hM0R
+              (BHW.sourceFullFrameRealCompatibleExplicitKernelMap d hM0R X)
+      ```
+
+      The gauge-slice theorem is a direct `simp` proof from the polynomial
+      definitions of `sourceFullFrameGaugeSliceMap`,
+      `sourceFullFrameOrientedGram`, determinant conjugation, and the real
+      base `M0R.map Complex.ofReal`.  The projection theorem expands the
+      determinant-direction formula
+      `H - (1 / L u) • (ContinuousLinearMap.smulRight L u) H`; `L u` is real
+      by the checked
+      `sourceFullFrameRealCompatibleSymmetricDetDirection_scalar_im`, and
+      `L` commutes with conjugation by the same real-coefficient derivative
+      proof used for `sourceFullFrameSymmetricEquationDerivCLM_realComplexify_im`.
+      The explicit-kernel theorem is then just the previous two lemmas.  Finally
+      `sourceFullFrameRealCompatibleNormalizedKernelMap_conj` follows by
+      unfolding the normalized map and applying
+      `sourceFullFrameRealSliceKernelCoordEquiv_symm_conj`.
+
+      Next shrink the complex IFT chart to a conjugation-stable source:
+
+      ```lean
+      def BHW.sourceFullFrameRealCompatibleNormalizedKernelConjStableSource
+          ... : Set (Fin F.realModelDim -> ℂ) :=
+        eK.source ∩
+          (BHW.sourceFullFrameRealCompatibleConjCoord F.realModelDim) ⁻¹'
+            eK.source
+
+      noncomputable def
+          BHW.sourceFullFrameRealCompatibleNormalizedKernelConjStableOpenPartialHomeomorphC
+          ... :
+          OpenPartialHomeomorph (Fin F.realModelDim -> ℂ)
+            (Fin F.realModelDim -> ℂ) :=
+        eK.restrOpen
+          (BHW.sourceFullFrameRealCompatibleNormalizedKernelConjStableSource
+            d hM0R F)
+          (by
+            exact eK.open_source.inter
+              (eK.open_source.preimage
+                (continuous_pi fun i => Complex.continuous_conj.comp
+                  (continuous_apply i))))
+      ```
+
+      Its source unfolds to
+      `eK.source ∩ sourceFullFrameRealCompatibleNormalizedKernelConjStableSource
+      d hM0R F`, hence to the intended `eK.source ∩ conj ⁻¹' eK.source` by
+      idempotence.  Its target is open because it is the image of an open subset
+      of `eK.source` under the open partial homeomorphism.  Prove:
+
+      ```lean
+      theorem
+          BHW.sourceFullFrameRealCompatibleNormalizedKernelConjStable_source_conj
+          ... {q} (hq : q ∈ stable.source) :
+          BHW.sourceFullFrameRealCompatibleConjCoord F.realModelDim q ∈
+            stable.source
+
+      theorem
+          BHW.sourceFullFrameRealCompatibleNormalizedKernelConjStable_real_inverse
+          ... {u : Fin F.realModelDim -> ℝ}
+          (hu :
+            SCV.realToComplex u ∈ stable.target) :
+          ∃ q : Fin F.realModelDim -> ℝ,
+            stable.symm (SCV.realToComplex u) = SCV.realToComplex q
+      ```
+
+      Proof of the real-inverse theorem: let `qC := stable.symm
+      (SCV.realToComplex u)`.  Since `stable qC = SCV.realToComplex u`,
+      conjugation equivariance gives `stable (conj qC) = SCV.realToComplex u`.
+      Both `qC` and `conj qC` lie in `stable.source`, so injectivity of the
+      restricted partial homeomorphism gives `conj qC = qC`; extract
+      coordinatewise real parts to obtain `q`.
+
+      Now define the real restricted partial homeomorphism from this same
+      complex chart:
+
+      ```lean
+      noncomputable def
+          BHW.sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph_fromComplex
+          ... :
+          OpenPartialHomeomorph (Fin F.realModelDim -> ℝ)
+            (Fin F.realModelDim -> ℝ)
+      ```
+
+      with:
+
+      * `source := {q | SCV.realToComplex q ∈ stable.source}`;
+      * `target := {u | SCV.realToComplex u ∈ stable.target}`;
+      * `toFun q := Complex.re ∘ stable (SCV.realToComplex q)`;
+      * `invFun u := Complex.re ∘ stable.symm (SCV.realToComplex u)`.
+
+      Prove the exact bridge fields:
+
+      ```lean
+      theorem
+          BHW.sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph_fromComplex_coe
+          ... :
+          (BHW.sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph_fromComplex
+              d hM0R F :
+            (Fin F.realModelDim -> ℝ) -> (Fin F.realModelDim -> ℝ)) =
+            BHW.sourceFullFrameRealCompatibleNormalizedKernelMapReal d hM0R F
+
+      theorem
+          BHW.sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph_fromComplex_symm_realToComplex
+          ... {u : Fin F.realModelDim -> ℝ}
+          (hu : u ∈
+            (BHW.sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph_fromComplex
+              d hM0R F).target) :
+          SCV.realToComplex
+              ((BHW.sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph_fromComplex
+                d hM0R F).symm u) =
+            stable.symm (SCV.realToComplex u)
+      ```
+
+      The coe theorem is `sourceFullFrameRealCompatibleNormalizedKernelMapReal_complexify`
+      plus the stable chart's coe theorem.  The `symm_realToComplex` theorem is
+      the real-inverse theorem above, followed by extensionality.
+
+      Build the final real gauge slice and selected-frame product chart from
+      this restricted real partial homeomorphism:
+
+      ```lean
+      noncomputable def
+          BHW.sourceFullFrameRealGaugeSliceData_of_complexRestrictedKernelCoord
+          ... :
+          BHW.SourceFullFrameRealGaugeSliceData d
+            (BHW.sourceRealFullFrameMatrix d n ι x0) hM0R.ne_zero
+
+      noncomputable def
+          BHW.sourceFullFrameRealSelectedFrameProductChartData_of_complexRestrictedSlice
+          ... :
+          Sigma fun O : Type => Sigma fun instO : TopologicalSpace O =>
+            @BHW.SourceFullFrameRealSelectedFrameProductChartData ...
+      ```
+
+      These are the same constructors as the current real-extension packet,
+      with the real partial homeomorphism replaced by
+      `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorph_fromComplex`.
+      This is not a new mathematical route; it is the same local real
+      full-frame chart, now chosen as the real restriction of the complex chart
+      consumed by the oriented max-rank packet.
+
+      With that common chart, prove:
+
+      ```lean
+      theorem
+          BHW.sourceFullFrameRealCompatibleSelectedKernelSourceCoordC_realInvariant_eq
+          ... (x : Fin n -> Fin (d + 1) -> ℝ)
+          (hframe :
+            BHW.sourceRealFullFrameMatrix d n ι x ∈
+              BHW.sourceFullFrameRealCompatibleFrameDomain d hM0R F)
+          (hchart :
+            BHW.sourceRealOrientedMinkowskiInvariant d n x ∈
+              (BHW.sourceFullFrameRealCompatibleMaxRankChartDataRaw
+                ι hM0R F).Ω) :
+          BHW.sourceFullFrameRealCompatibleSelectedKernelSourceCoordC
+              ι hM0R F
+              (BHW.sourceRealOrientedMinkowskiInvariant d n x) =
+            let S :=
+              BHW.sourceFullFrameRealGaugeSliceData_of_complexRestrictedKernelCoord
+                d hM0R F
+            S.realModelToComplexSlice.symm
+              (S.complexKernelCoord
+                ((BHW.sourceRealFullFrameMatrix d n ι x).map Complex.ofReal))
+      ```
+
+      Proof: rewrite the selected ambient finite coordinate by
+      `sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC_realInvariant`.
+      The `hframe` hypothesis gives membership in the real restricted target;
+      use the `symm_realToComplex` theorem to identify the complex inverse
+      `sourceFullFrameRealCompatibleSelectedKernelSourceCoordC` with the
+      complexification of the real inverse.  Finally unfold
+      `sourceFullFrameRealGaugeSliceData_of_complexRestrictedKernelCoord`;
+      its `complexKernelCoord_real_eq` field is exactly the same equality,
+      transported through `F.complexCoordEquiv.symm_apply_apply`.
+
+      This theorem is the exact missing bridge for the companion formula:
 
       ```lean
       theorem
@@ -21316,7 +21812,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
               ι hM0R F
           let C := P.2
           let S :=
-            BHW.sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_realExtension
+            BHW.sourceFullFrameRealGaugeSliceData_of_complexRestrictedKernelCoord
               d hM0R F
           ∀ x,
             BHW.sourceRealOrientedMinkowskiInvariant d n x ∈ C.Ω ->
@@ -21332,20 +21828,26 @@ Proof decomposition of this theorem, without hiding the analytic work:
                   (BHW.sourceRealOrientedMinkowskiInvariant d n x))
       ```
 
-      The proof unfolds the finite postcomposition, uses
-      `sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC_realInvariant`
-      on the real source invariant, applies the right-inverse theorem for
-      `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC`,
-      and finishes with
-      `sourceFullFrameRealCompatibleComplexKernelCoordFromReal_real_eq`.
+      Once the real-locus compatibility theorem above is checked, the formula
+      proof is mechanical: unfold the finite postcomposition, apply
+      `sourceFullFrameRealCompatibleCoordEquivC.symm_apply_apply` to recover
+      the raw product chart, use
+      `sourceFullFrameRealCompatibleSelectedKernelSourceCoordC_realInvariant_eq`
+      for the first component, and use the definition of
+      `sourceFullFrameRealCompatibleChartRaw` for the mixed-row component.
+      The final `SourceFullFrameRealCompatibleImplicitChartData.chart_real_eq`
+      then follows from the existing
+      `complexKernelCoord_real_eq` field of the selected-frame slice packet.
 
-      The final `sourceFullFrameRealCompatibleImplicitChartData` assembly is
-      now mechanical.  Take
+      If this side infrastructure is resumed and the real-locus compatibility
+      bridge is checked, the final
+      `sourceFullFrameRealCompatibleImplicitChartData` assembly is mechanical.
+      Take
       `hM0R := isUnit_iff_ne_zero.mpr hdet`, choose
       `F` from `sourceFullFrameRealSliceFiniteCoordData d hM0R`, set
-      `S := sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_realExtension
+      `S := sourceFullFrameRealGaugeSliceData_of_complexRestrictedKernelCoord
       d hM0R F`, take `D` from
-      `sourceFullFrameRealSelectedFrameProductChartData_of_realCompatibleSlice
+      `sourceFullFrameRealSelectedFrameProductChartData_of_complexRestrictedSlice
       ... |>.toOpenData`, take `P` from
       `sourceOrientedFullFrameMaxRankChartData_of_realCompatibleSlice ι hM0R F`,
       and define
@@ -21376,8 +21878,10 @@ Proof decomposition of this theorem, without hiding the analytic work:
         SourceFullFrameRealGaugeSliceData ... hM0R.ne_zero` to the original
         `hdet` is by proof irrelevance.
 
-      This completes the Lean-ready route for the producer without introducing
-      a new axiom, `sorry`, or an ambient source-matrix transport shortcut.
+      Once the common complex-restricted real chart and the bridge above are
+      checked, this completes the Lean-ready side-infrastructure route for the
+      producer without introducing a new axiom, `sorry`, an ambient
+      source-matrix transport shortcut, or a theorem-2 replacement route.
 
       Lean checkpoint, 2026-05-09: the raw compatible complex chart core is now
       checked in `SourceOrientedRealFullFrameKernel.lean`.  This includes the
@@ -45746,8 +46250,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | `BHW.OS45Figure24JostRuelleDomainData` and `BHW.os45Figure24_jostRuelleDomainData_of_chart` | Lean-shaped proof pinned; production Lean not started. | Choose `Ω := BHW.ExtendedTube d n`; use `BHW.isOpen_extendedTube`, `BHW.isConnected_extendedTube`, `hV_ET`, and `hChart.adjLift_mem_extendedTube`.  The swapped real-embedding field remains on the surrounding canonical surface for adjacent-source use, but this domain constructor must not infer extended-tube membership from bare `JostSet` membership or choose a second domain. |
       | `BHW.OS45Figure24OrdinaryBranchData` and `BHW.os45Figure24_ordinaryBranchData_of_bvt_F` | Transcript pinned but production Lean not started; mechanically ready after domain data. | `bvt_F_holomorphic`, `bvt_F_complexLorentzInvariant_forwardTube`, `bvt_F_restrictedLorentzInvariant_forwardTube`, `BHW.extendF_holomorphicOn`, `BHW.extendF_complex_lorentz_invariant`, and `DΩ.Ω_sub_extendedTube`. |
       | `BHW.OS45BHWJostLocalContinuationData` and `BHW.os45_BHWJostLocalContinuationData_from_OSI45` | Split required by the route-cycle correction; production Lean not started. | The upstream BHW/Jost hull and branch-continuation pieces may feed `BHW.OS45SourcePatchBHWJostPairData`: `os45_BHWJostHullData_of_figure24`, `os45_BHWJostBranch_onLocalHull_of_OSI45`, the ordinary and selected adjacent branch continuations, holomorphy, complex-Lorentz invariance, and the Wick/real trace formulas from OS I equations (4.1), (4.12), and (4.14).  The full local-continuation data package, including `os45_BHWJostRealBoundaryEq_of_OSI45`, `os45_BHWJostLiftTransport_onSupport_of_OSI45`, and `os45_BHWJostLiftPairing_of_OSI45`, is downstream of the direct source-patch compact theorem and may consume it later.  No source scalar representative, PET independence, EOW envelope, `bvt_W`, final locality, or oriented common-boundary envelope. |
-      | `BHW.OS45Figure24AdjacentBranchData` and `BHW.os45Figure24_adjacentBranchData_of_OSI45` | Assembly transcript pinned once the local continuation carrier above is supplied; production Lean not started. | OS I §4.5 equations (4.1), (4.12), (4.14), compact zero-diagonal Euclidean symmetry, and BHW continuation of the adjacent branch, split through `OS45AdjacentPermutedTubeBoundaryFunctional`, `OS45AdjacentPermutedTubeLorentzInvariantBranch`, `os45Figure24_adjacentBHWContinuation_to_JostDomain`, the continuation-data producer `os45_bhwJostContinuation_adjacentPermutedBranch`, the assembly theorem `os45_BHWJost_continue_adjacentBranch_from_OSI45`, and the lower carrier theorem `os45_BHWJostLocalContinuationData_from_OSI45`.  The data must carry `adjacent_realBoundary_eq_ordinary` for every compact test supported in `hChart.V0`; this is source content consumed by generic Jost/Ruelle uniqueness, not a consequence of the final lift pairing. |
-      | `BHW.os45Figure24_realBoundaryEq_of_OSI45` | Mechanical extraction from adjacent branch provenance; production Lean not started. | Rewrite `Dord.ordinaryBranch` by `Dord.ordinaryBranch_def` and use `Dadj.adjacent_realBoundary_eq_ordinary`.  The source proof is in the adjacent BHW/Jost continuation packet; no scalar representative, local source equality, separate source-branch `= OS.S`, PET independence, or final locality. |
+      | `BHW.OS45Figure24AdjacentBranchData` and `BHW.os45Figure24_adjacentBranchData_of_OSI45` | Downstream boundary-data transcript; not the first active source-patch producer. | After `BHW.os45Figure24_sourcePatch_pairing_eq_swappedSourcePatch_of_OSI45` is checked, this packet may combine the local continuation branch with the finished compact source-patch equality, the lift-transport theorem, and the initial compact boundary pairing.  Its `adjacent_realBoundary_eq_ordinary` field must not be used to prove the source-patch theorem. |
+      | `BHW.os45Figure24_realBoundaryEq_of_OSI45` | Downstream mechanical extraction; production Lean not started. | Rewrite `Dord.ordinaryBranch` by `Dord.ordinaryBranch_def` and use `Dadj.adjacent_realBoundary_eq_ordinary` only after that adjacent boundary packet has been built downstream.  No scalar representative, local source equality, separate source-branch `= OS.S`, PET independence, or final locality. |
       | `BHW.os45Figure24_sourcePatch_pairing_eq_swappedSourcePatch_of_OSI45` | Route-cycle corrected; first BHW/Jost carrier/algebra layer checked, OS I §4.5 producer not started. | Direct OS I §4.5/BHW-Jost compact producer: checked Wick compact equality for every compact test supported in the chart, zero-diagonal conversion through equations (4.1), (4.12), and (4.14), construction of the checked `BHW.OS45SourcePatchBHWJostPairData` preferably on `BHW.os45Figure24SourcePatch`, checked subtraction through `BHW.OS45SourcePatchBHWJostPairData.difference`, direct edge/totally-real uniqueness on that carrier, and checked real-trace integration via `BHW.os45CompactFigure24WickPairingEq_of_pairData_on_figure24SourcePatch` or the broader canonical consumer.  A separate difference-data wrapper is optional only if it stores additional source provenance.  It must not call `BHW.os45_adjacent_commonBoundaryEnvelope`, the oriented branch-germ suppliers, the oriented adjacent `S'_n` seed/path package, individual real-branch `= OS.S` statements, PET independence, final locality, or the later OS-specific `JostRuelleCompactBoundaryData` package that consumes this compact theorem. |
       | `BHW.OS45SourcePatchBHWJostHullData`, `BHW.os45_sourcePatch_bhwJostHullData_on_figure24SourcePatch`, `BHW.OS45SourcePatchBHWJostPairData`, `BHW.continuous_wickRotateRealConfig`, `BHW.differentiable_permAct`, `BHW.isOpen_permAct_preimage_extendedTube`, `BHW.differentiableOn_extendF_bvt_F_extendedTube`, `BHW.differentiableOn_extendF_bvt_F_permAct_preimageExtendedTube`, `BHW.integrable_bvt_F_wickRotate_mul_schwartz_of_orderedSector`, `BHW.integrable_wickEdge_bvt_F_mul_schwartz_of_orderedSector`, `BHW.integrable_extendF_realSource_mul_schwartz_of_ET`, `BHW.integrable_wickEdge_bvt_F_mul_schwartz_on_figure24SourcePatch`, `BHW.integrable_extendF_realSource_mul_schwartz_on_figure24SourcePatch`, `BHW.integrable_extendF_swapRealSource_mul_schwartz_on_figure24SourcePatch`, `BHW.integral_wickBranchDifference_mul_eq_zero_of_pairing_eq`, `BHW.os45_wickBranchDifference_zero_of_euclideanEdge_pairing_eq_on_timeSector`, `BHW.os45_wickBranchDifference_zero_on_figure24SourcePatch`, `BHW.OS45SourcePatchBHWJostPairData.restrict`, `BHW.OS45SourcePatchBHWJostPairData.restrict_figure24SourcePatch`, `BHW.OS45SourcePatchBHWJostPairData.ofHullDataAndBranches`, `BHW.OS45SourcePatchBHWJostPairData.difference`, `BHW.OS45SourcePatchBHWJostPairData.difference_holo`, `BHW.OS45SourcePatchBHWJostPairData.difference_wick_trace`, `BHW.OS45SourcePatchBHWJostPairData.difference_real_trace`, `BHW.os45_pairData_difference_identity_of_wickDistributionZero`, `BHW.os45_pairData_difference_realTrace_zero_of_wickDistributionZero`, `BHW.realSourceBranchDifference_zero_of_pairData_difference_zero`, `BHW.integral_realSourceBranchDifference_eq_zero_to_pairing_eq`, `BHW.os45Figure24_sourcePatch_pairing_eq_of_realSourceBranchDifference_zero`, `BHW.os45CompactFigure24WickPairingEq_of_realSourceBranchDifference_zero`, `BHW.os45CompactFigure24WickPairingEq_of_pairData_difference_zero`, `BHW.os45CompactFigure24WickPairingEq_of_pairData_difference_zero_canonical`, `BHW.os45CompactFigure24WickPairingEq_of_pairData_canonical`, `BHW.os45CompactFigure24WickPairingEq_of_pairData_on_figure24SourcePatch`, `BHW.os45CompactFigure24WickPairingEq_family_of_pairData_difference_zero`, `BHW.os45CompactFigure24WickPairingEq_family_of_pairData_difference_zero_canonical`, `BHW.os45CompactFigure24WickPairingEq_family_of_pairData_canonical`, `BHW.os45CompactFigure24WickPairingEq_family_of_pairData_on_figure24SourcePatch`, `BHW.sourceDistributionalAdjacentTubeAnchor_of_pairData_difference_zero`, `BHW.sourceDistributionalAdjacentTubeAnchor_of_pairData_difference_zero_canonical`, `BHW.sourceDistributionalAdjacentTubeAnchor_of_pairData_canonical`, `BHW.sourceDistributionalAdjacentTubeAnchor_of_pairData_on_figure24SourcePatch`, `BHW.bvt_F_selectedAdjacentDistributionalJostAnchorData_of_pairData_difference_zero`, `BHW.bvt_F_selectedAdjacentDistributionalJostAnchorData_of_pairData_difference_zero_canonical`, `BHW.bvt_F_selectedAdjacentDistributionalJostAnchorData_of_pairData_canonical`, `BHW.bvt_F_selectedAdjacentDistributionalJostAnchorData_of_pairData_on_figure24SourcePatch`, `BHW.bvt_F_distributionalJostAnchor_of_pairData_difference_zero`, `BHW.bvt_F_distributionalJostAnchor_of_pairData_difference_zero_canonical`, `BHW.bvt_F_distributionalJostAnchor_of_pairData_canonical`, and `BHW.bvt_F_distributionalJostAnchor_of_pairData_on_figure24SourcePatch` | Checked in `OSToWightmanLocalityOS45BHWJost.lean`. | This is the honest lower support layer for the compact source-patch theorem.  It stores two holomorphic branches on the same connected hull, their Wick traces, and their real source traces; the checked constructors restrict such a carrier to smaller open source patches, especially the canonical Figure-2-4 source patch.  The checked Wick integrability support proves the identity Wick trace integrable on an ordered source patch and every permuted Wick trace integrable there by `bvt_F_perm`; the checked real-source integrability support proves the corresponding `extendF` traces integrable from extended-tube membership, continuity of real embedding/permutation, and `BHW.extendF_holomorphicOn`; the checked canonical specializations discharge these hypotheses on `os45Figure24SourcePatch`.  The checked theorems subtract the branches, rewrite equality of the two compact Wick pairings as zero of the Wick branch-difference pairing under explicit integrability hypotheses, convert the checked OS45 Euclidean-edge pairing theorem into canonical Wick branch-difference zero, upgrade compact-test Wick-trace distributional zero to pointwise zero of `P.difference` on the connected hull by the existing Wick-real-section identity theorem, rewrite this as real-source `P.difference` distributional zero, translate it to the explicit `extendF` source difference, turn zero of that integrated real difference into equality of the compact real source pairings, package that equality into `BHW.OS45CompactFigure24WickPairingEq`, and fold a full adjacent family into both selected and direct source-anchor surfaces.  The exact-source-patch variants leave only the pair carrier on `BHW.os45Figure24SourcePatch` as input; the broader canonical variants leave the pair carrier plus canonical source-patch containment.  The layer does not construct the pair from OS I §4.5; that carrier producer is the remaining direct BHW/Jost source obligation. |
       | `BHW.OS45CompactFigure24WickPairingEq`, `BHW.os45CompactFigure24WickPairingEq_of_sourcePatchPairing`, `BHW.sourceDistributionalAdjacentTubeAnchor_of_compactWickPairingEq`, `BHW.bvt_F_selectedAdjacentDistributionalJostAnchorData_of_compactWickPairingEq`, and `BHW.bvt_F_distributionalJostAnchor_of_compactWickPairingEq` | Checked in `OSToWightmanLocalityOS45Compact.lean`. | This is a packaging layer after the direct source-patch compact theorem, not a proof of that theorem.  The constructor uses `os45CompactRealPatch_pullbackSchwartz` to move arbitrary `π`-labelled compact tests to the canonical source patch; a full adjacent family then produces the existing `SourceDistributionalAdjacentTubeAnchor` by using the Gram images of the unlabelled left source patches as uniqueness environments.  The selected-witness bridge takes the identity-labelled compact patch as the base patch and reuses the same compact equality, so downstream OS-II code can consume either the older `SelectedAdjacentDistributionalJostAnchorData` surface or the direct source anchor.  It supplies ordinary source-distributional anchor data; the oriented adjacent `S'_n` real-seed layer still requires determinant-regular shrinking and oriented source equality. |
@@ -46719,6 +47223,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
            wick_adjacent_mem :
              ∀ x, x ∈ hChart.V0 ->
                (fun k => wickRotatePoint (x (τ k))) ∈ Ωτ
+           wick_source_mem :
+             ∀ x, x ∈ hChart.V0 ->
+               (fun k => wickRotatePoint (x k)) ∈ Ωτ
            branchτ : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ
            branchτ_holo : DifferentiableOn ℂ branchτ Ωτ
            branchτ_eq_correctedExtendF :
@@ -47090,6 +47597,32 @@ Proof decomposition of this theorem, without hiding the analytic work:
          real-boundary comparison for every compact `χ` supported in
          `hChart.V0`, and prove the fixed lift pairing for `φ`.
 
+         Strict-route reset, 2026-05-09: do not route the OS45 producer
+         through `SourceOrientedScalarRepresentativeData` or
+         `OS45SourcePatchBHWJostOrientedContinuationInputs`; those encode the
+         quarantined source-variety continuation framework and are not the
+         literal OS-II / OS I §4.5 proof.  The permitted Lean target here is a
+         non-source-descent local BHW/Jost carrier: it stores the concrete
+         BHW/Jost hull, the continued adjacent branch `WJ`, its holomorphy and
+         Lorentz invariance, agreement with the initial adjacent tube, and the
+         pointwise Wick/real trace rewrites needed to build
+         `OS45SourcePatchBHWJostPairData`.
+
+         Dependency correction: the real-boundary comparison between ordinary
+         and adjacent real traces, and the compact lift pairing against the
+         fixed `φ`, are **not** fields of the active producer for
+         `BHW.os45Figure24_sourcePatch_pairing_eq_swappedSourcePatch_of_OSI45`.
+         They are downstream Jost/Ruelle-boundary consequences and may consume
+         the finished compact source-patch theorem.  Putting them into the
+         first carrier and proving them from the source-patch theorem would be
+         circular.
+
+         The stronger adjacent-branch record below is retained only as a
+         downstream boundary-data shape.  It should not be implemented before
+         the compact source-patch branch-difference theorem, because its
+         `Badj_realBoundary_eq_ordinary` and `Badj_liftPairing` fields are not
+         inputs to `OS45SourcePatchBHWJostPairData`.
+
          ```lean
          structure BHW.OS45AdjacentBHWJostContinuationData
              [NeZero d]
@@ -47332,10 +47865,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
            adjacentEdge_mem_ΩJ :
              ∀ x, x ∈ hChart.V0 ->
                (fun k => wickRotatePoint (x (Dinit.τ k))) ∈ ΩJ
+           sourceWick_mem_ΩJ :
+             ∀ x, x ∈ hChart.V0 ->
+               (fun k => wickRotatePoint (x k)) ∈ ΩJ
            adjacentEdge_mem_Ωτ :
              ∀ x, x ∈ hChart.V0 ->
                (fun k => wickRotatePoint (x (Dinit.τ k))) ∈ Dinit.Ωτ :=
              Dinit.wick_adjacent_mem
+           sourceWick_mem_Ωτ :
+             ∀ x, x ∈ hChart.V0 ->
+               (fun k => wickRotatePoint (x k)) ∈ Dinit.Ωτ :=
+             Dinit.wick_source_mem
            realPatch_mem_ΩJ :
              ∀ x, x ∈ hChart.V0 -> BHW.realEmbed x ∈ ΩJ
            lift_mem_ΩJ_of_support :
@@ -47351,12 +47891,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
              ∀ z, z ∈ Dinit.Ωτ -> WJ z = Dinit.branchτ z
            WJ_agrees_initialEdge :
              ∀ x, x ∈ hChart.V0 ->
-               WJ (fun k => wickRotatePoint (x (Dinit.τ k))) =
-                 Dinit.branchτ (fun k => wickRotatePoint (x (Dinit.τ k))) := by
+               WJ (fun k => wickRotatePoint (x k)) =
+                 Dinit.branchτ (fun k => wickRotatePoint (x k)) := by
              intro x hx
              exact WJ_agrees_Ωτ
-               (fun k => wickRotatePoint (x (Dinit.τ k)))
-               (adjacentEdge_mem_Ωτ x hx)
+               (fun k => wickRotatePoint (x k))
+               (sourceWick_mem_Ωτ x hx)
            WJ_restrict_DΩ_holo :
              DifferentiableOn ℂ WJ DΩ.Ω := WJ_holo.mono DΩ_sub_ΩJ
            WJ_restrict_DΩ_lorentzInvariant :
@@ -47365,20 +47905,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
                  WJ (BHW.complexLorentzAction Λ z) = WJ z := by
              intro Λ z hz hΛz
              exact WJ_lorentzInvariant Λ z (DΩ_sub_ΩJ hz) (DΩ_sub_ΩJ hΛz)
-           WJ_realBoundary_eq_ordinary :
-             ∀ χ : SchwartzNPoint d n,
-               HasCompactSupport (χ : NPointDomain d n -> ℂ) ->
-               tsupport (χ : NPointDomain d n -> ℂ) ⊆ hChart.V0 ->
-                 ∫ x : NPointDomain d n,
-                     BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x) * χ x
-                   =
-                 ∫ x : NPointDomain d n,
-                     WJ (BHW.realEmbed x) * χ x
-           WJ_liftPairing :
-             ∫ x : NPointDomain d n,
-                 WJ (hChart.adjLift x (0 : unitInterval)) * φ x
-               =
-             OS.S n ψZ
+           WJ_wick_trace :
+             ∀ x, x ∈ hChart.V0 ->
+               WJ (fun k => wickRotatePoint (x k)) =
+                 bvt_F OS lgc n
+                   (fun k => wickRotatePoint (x (Dinit.τ k)))
+           WJ_real_trace :
+             ∀ x, x ∈ hChart.V0 ->
+               WJ (BHW.realEmbed x) =
+                 BHW.extendF (bvt_F OS lgc n)
+                   (BHW.realEmbed (fun k => x (Dinit.τ k)))
          ```
 
          The symbol
@@ -47390,12 +47926,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
          spell it as an existing local BHW hull if one is already available,
          but it may not replace it by global PET branch independence.  The
          required geometric facts are exactly the fields above: the hull
-         contains the whole initial adjacent tube `Dinit.Ωτ`, the adjacent
+         contains the whole initial adjacent tube `Dinit.Ωτ`, the selected
          Wick edge, the real Jost patch, `DΩ.Ω`, and the canonical lift over
          `tsupport φ`, and it is connected on this local Figure-2-4
          component.  The continued branch must agree with `Dinit.branchτ` on
          all of `Dinit.Ωτ`; agreement only on the selected edge is too weak to
-         be the BHW analytic-continuation input.
+         be the BHW analytic-continuation input.  The `WJ_wick_trace` and
+         `WJ_real_trace` fields are pointwise consequences of that agreement
+         plus the OS-I `(4.1)/(4.12)` formula for `Dinit.branchτ`; they are
+         the only branch-trace consequences needed to assemble the checked
+         pair-data carrier.
 
          The actual lower theorem is then:
 
@@ -47449,17 +47989,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
          * prove `WJ_agrees_Ωτ` as the branch-normalization condition in the
            BHW theorem, then derive `WJ_agrees_initialEdge` from
            `Dinit.wick_adjacent_mem`;
-         * prove `WJ_realBoundary_eq_ordinary` by equality of the two
-           boundary-value distributions on the real Jost patch, not by generic
-           Jost/Ruelle uniqueness;
-         * prove `WJ_liftPairing` by applying the same continued branch to
-           the fixed compact lift family and using the initial compact
-           boundary pairing `Dinit.branchτ_boundary_pairing`.
+         * derive the pointwise Wick and real trace formulas on `hChart.V0`
+           from `WJ_agrees_Ωτ`, `Dinit.wick_adjacent_mem`,
+           swapped real-embedding membership, and
+           `Dinit.branchτ_eq_correctedExtendF`.
 
          For production implementation, this lower theorem should not be
          attacked as one large proof.  The proof-doc-complete split is the
-         following five local support surfaces.  These are all inside the same
-         OS I §4.5/BHW theorem; none is a public theorem-2 shortcut.
+         following local support surfaces.  These are all inside the same OS I
+         §4.5/BHW theorem; none is a public theorem-2 shortcut.
 
          The hull in the first support surface must be a concrete path
          component, not an unnamed connected open set.  Use the proper-complex
@@ -47562,6 +48100,8 @@ Proof decomposition of this theorem, without hiding the analytic work:
                DΩ.Ω ⊆ ΩJ ∧
                (∀ x, x ∈ hChart.V0 ->
                  (fun k => wickRotatePoint (x (Dinit.τ k))) ∈ ΩJ) ∧
+               (∀ x, x ∈ hChart.V0 ->
+                 (fun k => wickRotatePoint (x k)) ∈ ΩJ) ∧
                (∀ x, x ∈ hChart.V0 -> BHW.realEmbed x ∈ ΩJ) ∧
                (∀ x, x ∈ tsupport (φ : NPointDomain d n -> ℂ) ->
                  hChart.adjLift x (0 : unitInterval) ∈ ΩJ)
@@ -47583,39 +48123,25 @@ Proof decomposition of this theorem, without hiding the analytic work:
                    WJ (BHW.complexLorentzAction Λ z) = WJ z) ∧
                (∀ z, z ∈ Dinit.Ωτ -> WJ z = Dinit.branchτ z)
 
-         theorem BHW.os45_BHWJostRealBoundaryEq_of_OSI45
+         theorem BHW.os45_BHWJostPointwiseTraces_of_OSI45
              ...
              {ΩJ : Set (Fin n -> Fin (d + 1) -> ℂ)}
              {WJ : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ}
-             (hV_open : IsOpen V)
-             (hV_adjLift_ET :
-               let τ : Equiv.Perm (Fin n) :=
-                 Equiv.swap i ⟨i.val + 1, hi⟩
-               ∀ x, x ∈ V -> ∀ t,
-                 BHW.os45Figure24AdjacentLift
-                   (d := d) (n := n) hd τ x t ∈
-                 BHW.ExtendedTube d n)
-             (hV_sourcePatch :
-               V ⊆ BHW.os45Figure24SourcePatch (d := d) n i hi)
-             (hV_orientedPath_closure :
-               ∀ x ∈ closure hChart.V0,
-                 BHW.OS45Figure24OrientedPathField (d := d) n i hi x)
-             (hW_holo : DifferentiableOn ℂ WJ ΩJ)
-             (hW_inv :
-               ∀ Λ z, z ∈ ΩJ ->
-                 BHW.complexLorentzAction Λ z ∈ ΩJ ->
-                   WJ (BHW.complexLorentzAction Λ z) = WJ z)
              (hW_Ωτ : ∀ z, z ∈ Dinit.Ωτ -> WJ z = Dinit.branchτ z)
-             (hreal : ∀ x, x ∈ hChart.V0 -> BHW.realEmbed x ∈ ΩJ) :
-             ∀ χ : SchwartzNPoint d n,
-               HasCompactSupport (χ : NPointDomain d n -> ℂ) ->
-               tsupport (χ : NPointDomain d n -> ℂ) ⊆ hChart.V0 ->
-                 ∫ x : NPointDomain d n,
-                     BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x) * χ x
-                   =
-                 ∫ x : NPointDomain d n,
-                     WJ (BHW.realEmbed x) * χ x
+             (hrealτ :
+               ∀ x, x ∈ hChart.V0 ->
+                 BHW.realEmbed x ∈ Dinit.Ωτ) :
+             (∀ x, x ∈ hChart.V0 ->
+               WJ (fun k => wickRotatePoint (x k)) =
+                 bvt_F OS lgc n
+                   (fun k => wickRotatePoint (x (Dinit.τ k)))) ∧
+             (∀ x, x ∈ hChart.V0 ->
+               WJ (BHW.realEmbed x) =
+                 BHW.extendF (bvt_F OS lgc n)
+                   (BHW.realEmbed (fun k => x (Dinit.τ k))))
 
+         -- Downstream boundary-data theorem, not an input to the compact
+         -- source-patch branch-difference producer.
          theorem BHW.os45_BHWJostLiftPairing_of_OSI45
              ...
              {WJ : (Fin n -> Fin (d + 1) -> ℂ) -> ℂ}
@@ -47688,7 +48214,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
            classical
            obtain
              ⟨ΩJ, hΩJ_open, hΩJ_conn, hΩJ_hull, hΩτ_sub,
-               hDΩ_sub, hadj_mem, hreal_mem, hlift_mem⟩ :=
+               hDΩ_sub, hadj_mem, hsourceWick_mem, hreal_mem, hlift_mem⟩ :=
              BHW.os45_BHWJostHullData_of_figure24
                (d := d) hd OS lgc n i hi V hV_jost hV_ET hV_swapET
                hChart φ hφ_comp hφ_supp ψZ Dinit DΩ Dlor
@@ -47698,38 +48224,27 @@ Proof decomposition of this theorem, without hiding the analytic work:
                (d := d) hd OS lgc n i hi V hV_jost hV_ET hV_swapET
                hChart φ hφ_comp hφ_supp ψZ Dinit DΩ Dlor
                hΩJ_open hΩJ_conn hΩJ_hull hΩτ_sub
-           have hrealBoundary :
-               ∀ χ : SchwartzNPoint d n,
-                 HasCompactSupport (χ : NPointDomain d n -> ℂ) ->
-                 tsupport (χ : NPointDomain d n -> ℂ) ⊆ hChart.V0 ->
-                   ∫ x : NPointDomain d n,
-                       BHW.extendF (bvt_F OS lgc n) (BHW.realEmbed x) * χ x
-                     =
-                   ∫ x : NPointDomain d n,
-                       WJ (BHW.realEmbed x) * χ x :=
-             BHW.os45_BHWJostRealBoundaryEq_of_OSI45
+           have hrealτ :
+               ∀ x, x ∈ hChart.V0 -> BHW.realEmbed x ∈ Dinit.Ωτ := by
+             intro x hx
+             -- Unfold the selected permuted-sector real embedding and use
+             -- `hV_swapET x (hChart.V0_sub hx)`.
+             simpa [Dinit.Ωτ_sector_eq, BHW.permutedExtendedTubeSector,
+               BHW.permAct, Dinit.τ] using
+               hV_swapET x (hChart.V0_sub hx)
+           have htraces :
+               (∀ x, x ∈ hChart.V0 ->
+                 WJ (fun k => wickRotatePoint (x k)) =
+                   bvt_F OS lgc n
+                     (fun k => wickRotatePoint (x (Dinit.τ k)))) ∧
+               (∀ x, x ∈ hChart.V0 ->
+                 WJ (BHW.realEmbed x) =
+                   BHW.extendF (bvt_F OS lgc n)
+                     (BHW.realEmbed (fun k => x (Dinit.τ k)))) :=
+             BHW.os45_BHWJostPointwiseTraces_of_OSI45
                (d := d) hd OS lgc n i hi V hV_jost hV_ET hV_swapET
                hChart φ hφ_comp hφ_supp ψZ Dinit DΩ Dlor
-               hV_open hV_adjLift_ET hV_sourcePatch
-               hV_orientedPath_closure
-               hWJ_holo hWJ_inv hWJ_Ωτ hreal_mem
-           have hLiftTransport :
-               ∀ x, x ∈ tsupport (φ : NPointDomain d n -> ℂ) ->
-                 WJ (hChart.adjLift x (0 : unitInterval)) =
-                   Dinit.branchτ
-                     (fun k => wickRotatePoint (x (Dinit.τ k))) :=
-             BHW.os45_BHWJostLiftTransport_onSupport_of_OSI45
-               (d := d) hd OS lgc n i hi V hV_jost hV_ET hV_swapET
-               hChart φ hφ_comp hφ_supp ψZ Dinit DΩ Dlor
-               hWJ_inv hΩτ_sub hWJ_Ωτ hlift_mem
-           have hLiftPairing :
-               ∫ x : NPointDomain d n,
-                   WJ (hChart.adjLift x (0 : unitInterval)) * φ x
-                 =
-               OS.S n ψZ :=
-             BHW.os45_BHWJostLiftPairing_of_OSI45
-               (d := d) hd OS lgc n i hi V hChart
-               φ hφ_comp hφ_supp ψZ Dinit WJ hLiftTransport
+               hWJ_Ωτ hrealτ
            exact
              { ΩJ := ΩJ
                ΩJ_open := hΩJ_open
@@ -47738,14 +48253,15 @@ Proof decomposition of this theorem, without hiding the analytic work:
                DΩ_sub_ΩJ := hDΩ_sub
                Ωτ_sub_ΩJ := hΩτ_sub
                adjacentEdge_mem_ΩJ := hadj_mem
+               sourceWick_mem_ΩJ := hsourceWick_mem
                realPatch_mem_ΩJ := hreal_mem
                lift_mem_ΩJ_of_support := hlift_mem
                WJ := WJ
                WJ_holo := hWJ_holo
                WJ_lorentzInvariant := hWJ_inv
                WJ_agrees_Ωτ := hWJ_Ωτ
-               WJ_realBoundary_eq_ordinary := hrealBoundary
-               WJ_liftPairing := hLiftPairing }
+               WJ_wick_trace := htraces.1
+               WJ_real_trace := htraces.2 }
          ```
 
          Proof-body checklist for these five lower surfaces:
@@ -48038,13 +48554,16 @@ Proof decomposition of this theorem, without hiding the analytic work:
              BHW.os45_BHWJostLocalContinuationData_from_OSI45
                (d := d) hd OS lgc n i hi V hV_jost hV_ET hV_swapET
                hChart φ hφ_comp hφ_supp ψZ Dinit DΩ Dlor
+           -- Downstream only: after the compact source-patch theorem is
+           -- proved, combine `C.WJ`, its pointwise trace fields, the
+           -- source-patch compact equality, and the lift-transport theorem to
+           -- build the stronger adjacent-boundary packet.  This theorem is
+           -- not an input to
+           -- `os45Figure24_sourcePatch_pairing_eq_swappedSourcePatch_of_OSI45`.
            exact
-             ⟨C.WJ,
-              C.WJ_agrees_initialEdge,
-              C.WJ_restrict_DΩ_holo,
-              C.WJ_restrict_DΩ_lorentzInvariant,
-              C.WJ_realBoundary_eq_ordinary,
-              C.WJ_liftPairing⟩
+             BHW.os45_BHWJostBoundaryPacket_from_localContinuation
+               (d := d) hd OS lgc n i hi V hV_jost hV_ET hV_swapET
+               hChart φ hφ_comp hφ_supp ψZ Dinit DΩ Dlor C
          ```
 
          /-- Real Jost boundary comparison for the two branches.  The source
@@ -52036,7 +52555,9 @@ Proof decomposition of this theorem, without hiding the analytic work:
             while the adjacent Wick
             trace is supplied by the OS-I/BHW
             continuation datum rather than by a direct `wick_tau_ET` field.
-            The checked strict-route consumer is now
+            Route-integrity reset, 2026-05-09: the following checked
+            source-oriented continuation consumer is archived side
+            infrastructure, not the active theorem-2 route:
             `BHW.OS45SourcePatchBHWJostOrientedContinuationInputs.exists_gluedBranch`,
             which specializes
             `BHW.bhw_jost_orientedGluedBranch_of_pathConnected_sourceNormalFormProducer_retargetedComparisons`
@@ -55418,7 +55939,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | `BHW.os45AdjacentSPrimeSourceEq_of_compactWickPairingEq` | Archived pure-Gram source-equality surface; not active on the oriented route. | On the conditional pure-Gram fork, after scalarization, use the compact distributional identity theorem on the real Wick section to prove `Set.EqOn (Phi ∘ sourcePermuteComplexGram τ) Phi` on the connected source scalar chart; do not replace this with pointwise adjacent-Wick equality.  On the active route, this is replaced by `BHW.os45AdjacentSPrimeOrientedSourceEq_of_compactWickPairingEq`. |
       | `BHW.os45AdjacentSPrimeScalarSeed_of_compactWickPairingEq` and `BHW.os45AdjacentSPrimeScalarSeed_with_sourceProvenance` | Archived pure-Gram provenance seed; not active on the oriented route. | On the conditional pure-Gram fork, preserve `V0`, `V0_connected`, `Usrc`, `zreg`, `Gseed`, `hwick_mem` or `zwick0 ∈ Usrc`, `hUsrc_double`, and the seed equality so the later corridor path has endpoints and domain membership.  On the active route, the corresponding theorem is the oriented provenance seed. |
       | `BHW.os45AdjacentSPrimeSeedFigure24Path_of_compactWickPairingEq` | Archived pure-Gram path theorem; not active on the oriented route. | On the conditional pure-Gram fork, consume the provenance seed, the checked `hV_figPath_closure` from the selected source patch, `IsOpen.isConnected_iff_isPathConnected`, `JoinedIn.somePath`, `Path.trans`, `Path.trans_range`, and the scalar double-domain realization theorem.  On the active route, use the oriented seed path surface. |
-      | Generic post-seed propagation through a connected scalar corridor | Checked support in `BHWPermutation/SourceComplexDensity.lean` as `BHW.os45AdjacentScalarEq_on_quarterTurnCorridor`. | Once `Wseed`, `Wscal`, `Wseed ⊆ Wscal`, `Wscal ⊆ sourceDoublePermutationGramDomain d n τ`, and the seed `Set.EqOn` are supplied, this theorem propagates equality by `BHW.sourceComplexGramVariety_identity_principle`; it does not construct the OS45 seed or the Figure-2-4 path. |
+      | OS post-seed propagation through a connected scalar corridor | Checked support in `BHWPermutation/SourceComplexDensity.lean` as `BHW.os45AdjacentScalarEq_on_quarterTurnCorridor`. | Once `Wseed`, `Wscal`, `Wseed ⊆ Wscal`, `Wscal ⊆ sourceDoublePermutationGramDomain d n τ`, and the seed `Set.EqOn` are supplied, this theorem propagates equality by `BHW.sourceComplexGramVariety_identity_principle`; it is only the analytic continuation step after the OS45 seed has been built, and it does not construct the OS45 seed or the Figure-2-4 path. |
 
       The only checked rows in this table are geometry/topology inputs from
       the Figure-2-4 source patch and lower source-variety infrastructure.
