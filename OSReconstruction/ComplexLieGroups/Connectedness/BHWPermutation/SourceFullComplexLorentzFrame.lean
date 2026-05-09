@@ -96,4 +96,76 @@ theorem fullComplexLorentz_det_eq_frameMapDet_of_fullRank
           rw [← hdet_action]
     _ = HWFullRankSameGramFrameMapDet d n z w := hratio.symm
 
+/-- Ambient-linear-equivalence version of
+`fullComplexLorentz_det_eq_frameMapDet_of_fullRank`. -/
+theorem linearEquiv_det_eq_frameMapDet_of_fullRank
+    (d n : ℕ)
+    {z w : Fin n → Fin (d + 1) → ℂ}
+    (hfull :
+      sourceGramMatrixRank n (sourceMinkowskiGram d n z) = d + 1)
+    (hgram : sourceMinkowskiGram d n z = sourceMinkowskiGram d n w)
+    (E : (Fin (d + 1) → ℂ) ≃ₗ[ℂ] (Fin (d + 1) → ℂ))
+    (hpres :
+      ∀ x y,
+        sourceComplexMinkowskiInner d (E x) (E y) =
+          sourceComplexMinkowskiInner d x y)
+    (hE : ∀ i, E (z i) = w i) :
+    LinearMap.det E.toLinearMap =
+      HWFullRankSameGramFrameMapDet d n z w := by
+  let A : HallWightmanFullComplexLorentzGroup d :=
+    HallWightmanFullComplexLorentzGroup.ofLinearMap E.toLinearMap hpres
+  have hA :
+      ∀ i,
+        hallWightmanFullComplexLorentzVectorAction A (z i) = w i := by
+    intro i
+    calc
+      hallWightmanFullComplexLorentzVectorAction A (z i) =
+          E.toLinearMap (z i) := by
+          exact
+            HallWightmanFullComplexLorentzGroup.ofLinearMap_vectorAction
+              E.toLinearMap hpres (z i)
+      _ = w i := hE i
+  have hdetA :=
+    fullComplexLorentz_det_eq_frameMapDet_of_fullRank
+      d n hfull hgram A hA
+  simpa [A, hallWightmanFullComplexLorentzDet,
+    HallWightmanFullComplexLorentzGroup.ofLinearMap,
+    LinearMap.det_toMatrix'] using hdetA
+
+/-- In full scalar rank, equality of oriented source invariants forces any
+ambient same-tuple form-preserving equivalence to have determinant `1`. -/
+theorem linearEquiv_det_one_of_same_sourceOrientedInvariant_fullRank
+    (d n : ℕ)
+    {z w : Fin n → Fin (d + 1) → ℂ}
+    (hfull :
+      sourceGramMatrixRank n (sourceMinkowskiGram d n z) = d + 1)
+    (horiented :
+      sourceOrientedMinkowskiInvariant d n z =
+        sourceOrientedMinkowskiInvariant d n w)
+    (E : (Fin (d + 1) → ℂ) ≃ₗ[ℂ] (Fin (d + 1) → ℂ))
+    (hpres :
+      ∀ x y,
+        sourceComplexMinkowskiInner d (E x) (E y) =
+          sourceComplexMinkowskiInner d x y)
+    (hE : ∀ i, E (z i) = w i) :
+    LinearMap.det E.toLinearMap = 1 := by
+  have hgram : sourceMinkowskiGram d n z = sourceMinkowskiGram d n w :=
+    same_sourceOrientedInvariant_sourceGram horiented
+  have hdet :
+      LinearMap.det E.toLinearMap =
+        HWFullRankSameGramFrameMapDet d n z w :=
+    linearEquiv_det_eq_frameMapDet_of_fullRank
+      d n hfull hgram E hpres hE
+  have hSO : HWSameSourceGramSOOrientationCompatible d n z w :=
+    sourceOriented_soCompatible_of_sameInvariant d n hgram horiented
+  have hone : HWFullRankSameGramFrameMapDet d n z w = 1 := by
+    rcases hSO with hlt | hone
+    · have hnot :
+          ¬ sourceGramMatrixRank n (sourceMinkowskiGram d n z) < d + 1 := by
+        rw [hfull]
+        exact Nat.lt_irrefl _
+      exact False.elim (hnot hlt)
+    · exact hone
+  exact hdet.trans hone
+
 end BHW

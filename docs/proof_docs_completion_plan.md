@@ -3180,6 +3180,68 @@ implementation contract is:
    exactly this mechanical full-block bridge in a small companion file before
    attacking the oriented determinant theorem.
 
+   Full-rank ambient determinant gate, 2026-05-08: the next small Lean target
+   is the generic determinant comparison for an arbitrary ambient linear
+   equivalence.  It is not a residual full-block determinant proof; it applies
+   only after one has a genuinely full scalar-rank source tuple whose oriented
+   determinant coordinates are fixed.
+
+   ```lean
+   theorem BHW.linearEquiv_det_eq_frameMapDet_of_fullRank
+       (d n : ℕ)
+       {z w : Fin n → Fin (d + 1) → ℂ}
+       (hfull :
+         BHW.sourceGramMatrixRank n (BHW.sourceMinkowskiGram d n z) =
+           d + 1)
+       (hgram :
+         BHW.sourceMinkowskiGram d n z =
+           BHW.sourceMinkowskiGram d n w)
+       (E : (Fin (d + 1) → ℂ) ≃ₗ[ℂ] (Fin (d + 1) → ℂ))
+       (hpres :
+         ∀ x y,
+           BHW.sourceComplexMinkowskiInner d (E x) (E y) =
+             BHW.sourceComplexMinkowskiInner d x y)
+       (hE : ∀ i, E (z i) = w i) :
+       LinearMap.det E.toLinearMap =
+         BHW.HWFullRankSameGramFrameMapDet d n z w
+
+   theorem BHW.linearEquiv_det_one_of_same_sourceOrientedInvariant_fullRank
+       (d n : ℕ)
+       {z w : Fin n → Fin (d + 1) → ℂ}
+       (hfull :
+         BHW.sourceGramMatrixRank n (BHW.sourceMinkowskiGram d n z) =
+           d + 1)
+       (horiented :
+         BHW.sourceOrientedMinkowskiInvariant d n z =
+           BHW.sourceOrientedMinkowskiInvariant d n w)
+       (E : (Fin (d + 1) → ℂ) ≃ₗ[ℂ] (Fin (d + 1) → ℂ))
+       (hpres :
+         ∀ x y,
+           BHW.sourceComplexMinkowskiInner d (E x) (E y) =
+             BHW.sourceComplexMinkowskiInner d x y)
+       (hE : ∀ i, E (z i) = w i) :
+       LinearMap.det E.toLinearMap = 1
+   ```
+
+   Proof transcript: package `E.toLinearMap` as
+   `HallWightmanFullComplexLorentzGroup.ofLinearMap E.toLinearMap hpres`;
+   rewrite the action with `ofLinearMap_vectorAction`; apply the already
+   checked `fullComplexLorentz_det_eq_frameMapDet_of_fullRank`; and unfold
+   `hallWightmanFullComplexLorentzDet` using `LinearMap.det_toMatrix'`.  The
+   determinant-one corollary obtains ordinary Gram equality from
+   `same_sourceOrientedInvariant_sourceGram`, invokes
+   `sourceOriented_soCompatible_of_sameInvariant`, and excludes the low-rank
+   disjunct by rewriting with `hfull`.
+
+   This gate is intentionally restricted to a full-rank tuple.  In the
+   residual full-block branch the original low-rank tuple has all full-frame
+   determinant coordinates zero, while the completed hyperbolic block contains
+   auxiliary dual vectors.  Therefore the remaining honest theorem is not a
+   direct application of the oriented invariant of the original tuple; it is
+   the construction of an orientation-compatible completed frame, or an
+   equivalent volume-family statement, for the actual top-to-top residual block
+   equivalence.
+
    The blueprint now pins the lower implementation order for this row.  First
    define `BHW.HallWightmanFullComplexLorentzGroup d` as metric-preserving
    complex matrices with no determinant field, together with
