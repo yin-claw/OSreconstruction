@@ -45,4 +45,48 @@ axiom standardSO_FFT_SFT_presentationData
     (D n : ℕ) (hD : 3 ≤ D) :
     StandardSOCoordinatePresentationData D n
 
+/-- Source-oriented coordinate presentation produced from the audited standard
+`SO` FFT/SFT axiom.
+
+This is only a derived consequence of `standardSO_FFT_SFT_presentationData`;
+it does not introduce a source-side axiom.  The theorem lives in this axiom
+module so downstream normality code must still import the trust boundary
+explicitly. -/
+theorem sourceOrientedCoordinatePresentationData_of_standardSO_FFT_SFT
+    {d n : ℕ}
+    (hd : 2 ≤ d) :
+    SourceOrientedCoordinatePresentationData d n :=
+  sourceOrientedCoordinatePresentationData_of_standard
+    (standardSO_FFT_SFT_presentationData (d + 1) n
+      (Nat.succ_le_succ hd))
+
+/-- Source FFT generation obtained from the audited standard `SO` axiom. -/
+theorem sourceOrientedInvariantRing_generated_by_gram_det_of_standardSO_FFT_SFT
+    {d n : ℕ}
+    (hd : 2 ≤ d) :
+    sourceOrientedInvariantSubalgebra d n =
+      Algebra.adjoin ℂ
+        (Set.range (sourceGramCoordinatePolynomial d n) ∪
+          Set.range (sourceFullFrameDetPolynomial d n)) :=
+  (sourceOrientedCoordinatePresentationData_of_standardSO_FFT_SFT
+    (d := d) (n := n) hd).fft
+
+/-- Source SFT kernel equality obtained from the audited standard `SO` axiom. -/
+theorem sourceOrientedInvariantRing_relations_kernel_of_standardSO_FFT_SFT
+    {d n : ℕ}
+    (hd : 2 ≤ d) :
+    RingHom.ker (sourceOrientedInvariantCoordinateMap d n) =
+      sourceOrientedAlgebraicRelationIdeal d n :=
+  (sourceOrientedCoordinatePresentationData_of_standardSO_FFT_SFT
+    (d := d) (n := n) hd).sft
+
+/-- Source invariant-coordinate surjectivity obtained from the audited
+standard `SO` axiom. -/
+theorem sourceOrientedInvariantCoordinateMap_surjective_of_standardSO_FFT_SFT
+    {d n : ℕ}
+    (hd : 2 ≤ d) :
+    Function.Surjective (sourceOrientedInvariantCoordinateMap d n) :=
+  (sourceOrientedCoordinatePresentationData_of_standardSO_FFT_SFT
+    (d := d) (n := n) hd).surjective
+
 end BHW

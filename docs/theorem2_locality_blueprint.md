@@ -14504,6 +14504,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
       consumers must import the axiom module explicitly and pass the produced
       `H` through `BHW.sourceOrientedCoordinatePresentationData_of_standard`;
       there is no unconditional source-presentation theorem in the BHW barrel.
+      The axiom module now provides the derived source-side convenience
+      theorem
+      `BHW.sourceOrientedCoordinatePresentationData_of_standardSO_FFT_SFT`
+      and its field projections
+      `BHW.sourceOrientedInvariantRing_generated_by_gram_det_of_standardSO_FFT_SFT`,
+      `BHW.sourceOrientedInvariantRing_relations_kernel_of_standardSO_FFT_SFT`,
+      and
+      `BHW.sourceOrientedInvariantCoordinateMap_surjective_of_standardSO_FFT_SFT`.
+      These are consequences of the single standard `SO` axiom, not new
+      source-side axioms; importing them is therefore an explicit audit choice
+      by the normality/Riemann module.
       Gemini required the relation ideal to include the vector-bracket linear
       syzygies
       `∑ k, (-1)^k G_{i,j_k}[j_0,...,hat j_k,...,j_D] = 0`; those generators

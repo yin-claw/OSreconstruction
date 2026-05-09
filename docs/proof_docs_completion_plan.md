@@ -2181,6 +2181,17 @@ locality, or theorem 2.  Downstream normality and Riemann-extension work may
 consume the source presentation data produced from this axiom, but must keep
 this trust boundary visible in theorem dependency audits.
 
+Current axiom-consequence checkpoint, 2026-05-09: the axiom module now exposes
+the derived source-side packet without adding a source-side axiom:
+`BHW.sourceOrientedCoordinatePresentationData_of_standardSO_FFT_SFT`, together
+with the field-level consequences
+`BHW.sourceOrientedInvariantRing_generated_by_gram_det_of_standardSO_FFT_SFT`,
+`BHW.sourceOrientedInvariantRing_relations_kernel_of_standardSO_FFT_SFT`, and
+`BHW.sourceOrientedInvariantCoordinateMap_surjective_of_standardSO_FFT_SFT`.
+These theorems live in `SourceOrientedStandardSOAxiom.lean`, so any consumer
+still imports the audited Weyl-Cartan boundary explicitly.  The BHW barrel and
+the axiom-free conditional presentation module remain unchanged.
+
 Current oriented real-uniqueness readiness clarification, 2026-05-02: the
 real-patch uniqueness group
 `BHW.sourceOrientedDistributionalUniquenessPatch_of_HWRealEnvironment` now has
