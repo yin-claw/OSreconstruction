@@ -18956,6 +18956,36 @@ Proof decomposition of this theorem, without hiding the analytic work:
           BHW.SourceOrientedMaxRankAt d n
             (BHW.sourceRealOrientedMinkowskiInvariant d n x)
 
+      theorem BHW.sourceFullFrameOrientedCoordOfSource_sourceRealOrientedMinkowskiInvariant
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          (x : Fin n -> Fin (d + 1) -> ℝ) :
+          BHW.sourceFullFrameOrientedCoordOfSource d n ι
+              (BHW.sourceRealOrientedMinkowskiInvariant d n x) =
+            BHW.sourceFullFrameOrientedGramCoord d
+              ((BHW.sourceRealFullFrameMatrix d n ι x).map Complex.ofReal)
+
+      def BHW.sourceRealSelectedMixedRows
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          (x : Fin n -> Fin (d + 1) -> ℝ) :
+          BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ :=
+        fun k a => BHW.sourceRealMinkowskiGram d n x k.1 (ι a)
+
+      theorem BHW.continuous_sourceRealSelectedMixedRows
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n) :
+          Continuous (BHW.sourceRealSelectedMixedRows d n ι)
+
+      theorem BHW.sourceSelectedMixedRows_sourceRealOrientedMinkowskiInvariant
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          (x : Fin n -> Fin (d + 1) -> ℝ) :
+          BHW.sourceSelectedMixedRows d n ι
+              (BHW.sourceRealOrientedMinkowskiInvariant d n x) =
+            fun k a =>
+              (BHW.sourceRealSelectedMixedRows d n ι x k a : ℂ)
+
       theorem BHW.sourceOrientedLocalRealChartData_of_fullFrameDet_ne_zero
           [NeZero d]
           (hd : 2 <= d)
@@ -19302,6 +19332,139 @@ Proof decomposition of this theorem, without hiding the analytic work:
       invariant map is open/submersive on a small real neighborhood, and then
       install the resulting real coordinates into
       `SourceOrientedLocalRealChartData`.
+
+      Lean-ready split for that hard theorem:
+
+      ```lean
+      structure BHW.SourceFullFrameRealGaugeSliceData
+          (d : Nat)
+          (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
+          (hM0R : M0R.det ≠ 0) where
+        M0 : Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ :=
+          M0R.map Complex.ofReal
+        M0_det_unit : IsUnit M0.det
+        complexSlice : BHW.SourceFullFrameGaugeSliceData d M0
+        realModelDim : Nat
+        realModelToComplexSlice :
+          (Fin realModelDim -> ℂ) ≃L[ℂ] complexSlice.slice
+        realKernelCoord :
+          Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ ->
+            Fin realModelDim -> ℝ
+        complexKernelCoord :
+          Matrix (Fin (d + 1)) (Fin (d + 1)) ℂ ->
+            complexSlice.slice
+        complexKernelCoord_real_eq :
+          ∀ M : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ,
+            complexKernelCoord (M.map Complex.ofReal) =
+              realModelToComplexSlice
+                (SCV.realToComplex (realKernelCoord M))
+        frameDomain : Set (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
+        frameDomain_open : IsOpen frameDomain
+        center_mem_frameDomain : M0R ∈ frameDomain
+        frameDomain_det_nonzero : frameDomain ⊆ {M | M.det ≠ 0}
+        realKernelCoord_continuous : Continuous realKernelCoord
+        realKernelCoord_image_open_on_frameDomain :
+          ∀ {S : Set (Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)},
+            IsOpen S ->
+            S ⊆ frameDomain ->
+            IsOpen (realKernelCoord '' S)
+
+      structure BHW.SourceFullFrameRealCompatibleImplicitChartData
+          (d n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          (x0 : Fin n -> Fin (d + 1) -> ℝ)
+          (hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0) where
+        slice :
+          BHW.SourceFullFrameRealGaugeSliceData d
+            (BHW.sourceRealFullFrameMatrix d n ι x0) hdet
+        m : Nat
+        C :
+          BHW.SourceOrientedMaxRankChartData d n
+            (M := Fin m -> ℂ)
+            (BHW.sourceRealOrientedMinkowskiInvariant d n x0)
+        coordEquivR :
+          (Fin m -> ℝ) ≃ₗ[ℝ]
+            ((Fin slice.realModelDim -> ℝ) ×
+              (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ))
+        coordEquivC :
+          (Fin m -> ℂ) ≃ₗ[ℂ]
+            ((Fin slice.realModelDim -> ℂ) ×
+              (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℂ))
+        coordEquiv_realToComplex :
+          ∀ u : Fin m -> ℝ,
+            coordEquivC (SCV.realToComplex u) =
+              (SCV.realToComplex (coordEquivR u).1,
+                fun k a => ((coordEquivR u).2 k a : ℂ))
+        E0 : Set (Fin n -> Fin (d + 1) -> ℝ)
+        E0_open : IsOpen E0
+        center_mem : x0 ∈ E0
+        invariant_mem_chart :
+          ∀ x ∈ E0,
+            BHW.sourceRealOrientedMinkowskiInvariant d n x ∈ C.Ω
+        frame_mem_domain :
+          ∀ x ∈ E0,
+            BHW.sourceRealFullFrameMatrix d n ι x ∈
+              slice.frameDomain
+        realCoord : (Fin n -> Fin (d + 1) -> ℝ) -> Fin m -> ℝ
+        realCoord_eq_kernel_mixed :
+          ∀ x ∈ E0,
+            coordEquivR (realCoord x) =
+              (slice.realKernelCoord
+                (BHW.sourceRealFullFrameMatrix d n ι x),
+                BHW.sourceRealSelectedMixedRows d n ι x)
+        chart_eq_kernel_mixed :
+          ∀ x ∈ E0,
+            coordEquivC
+              (C.chart
+                (BHW.sourceRealOrientedMinkowskiInvariant d n x)) =
+              (slice.realModelToComplexSlice.symm
+                (slice.complexKernelCoord
+                  ((BHW.sourceRealFullFrameMatrix d n ι x).map
+                    Complex.ofReal)),
+                BHW.sourceSelectedMixedRows d n ι
+                  (BHW.sourceRealOrientedMinkowskiInvariant d n x))
+        chart_real_eq :
+          ∀ x ∈ E0,
+            C.chart
+                (BHW.sourceRealOrientedMinkowskiInvariant d n x) =
+              SCV.realToComplex (realCoord x)
+        realCoord_continuous : Continuous realCoord
+        realCoord_image_open :
+          ∀ {S : Set (Fin n -> Fin (d + 1) -> ℝ)},
+            IsOpen S -> S ⊆ E0 -> IsOpen (realCoord '' S)
+
+      theorem BHW.SourceFullFrameRealCompatibleImplicitChartData.to_localRealChartData
+          [NeZero d]
+          (hd : 2 <= d)
+          {n : Nat}
+          {ι : Fin (d + 1) ↪ Fin n}
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          {hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0}
+          (R :
+            BHW.SourceFullFrameRealCompatibleImplicitChartData
+              d n ι x0 hdet) :
+          BHW.SourceOrientedLocalRealChartData d n x0
+
+      theorem BHW.sourceFullFrameRealCompatibleImplicitChartData
+          [NeZero d]
+          (hd : 2 <= d)
+          (n : Nat)
+          (ι : Fin (d + 1) ↪ Fin n)
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          (hdet : BHW.sourceRealFullFrameDet d n ι x0 ≠ 0) :
+          Nonempty
+            (BHW.SourceFullFrameRealCompatibleImplicitChartData
+              d n ι x0 hdet)
+      ```
+
+      The two checked finite-coordinate equalities feeding
+      `chart_real_eq` are now
+      `sourceFullFrameOrientedCoordOfSource_sourceRealOrientedMinkowskiInvariant`
+      for the selected full-frame block and
+      `sourceSelectedMixedRows_sourceRealOrientedMinkowskiInvariant` for the
+      mixed rows.  Thus the remaining unimplemented content is exactly the
+      real-compatible slice/IFT/open-map package, not any determinant or
+      mixed-row coordinate bookkeeping.
 
       In the small-arity theorem the determinant-coordinate family is empty,
       so oriented regularity is the checked pure-Gram regularity after

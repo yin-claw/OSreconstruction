@@ -2249,6 +2249,10 @@ checks the real-source permutation topology helpers
    `BHW.sourceRealOrientedMinkowskiInvariant_det`,
    `BHW.realSourcePermute_symm_image_permImage_eq`, and, in
    `SourceOrientedRealMaxRank.lean`,
+   `BHW.sourceFullFrameOrientedCoordOfSource_sourceRealOrientedMinkowskiInvariant`,
+   `BHW.sourceRealSelectedMixedRows`,
+   `BHW.continuous_sourceRealSelectedMixedRows`,
+   `BHW.sourceSelectedMixedRows_sourceRealOrientedMinkowskiInvariant`, and
    `BHW.sourceOrientedMaxRankAt_sourceReal_fullFrameDet_ne_zero`.  The generic
    SCV uniqueness consumer is now checked in
    `SourceOrientedRealUniqueness.lean`:
@@ -2277,7 +2281,15 @@ checks the real-source permutation topology helpers
    whose complexification is the complex slice, prove the source-to-oriented
    invariant map is a real submersion/open map on a small real neighborhood,
    and install the resulting finite real coordinates into
-   `SourceOrientedLocalRealChartData`.  The checked bridge after that producer
+   `SourceOrientedLocalRealChartData`.  The selected full-frame block and
+   mixed-row parts of `chart_real_eq` are now finite-coordinate rewrites; the
+   only unimplemented mathematical content is the real-compatible
+   slice/IFT/open-map package, now named in the blueprint as
+   `SourceFullFrameRealGaugeSliceData`,
+   `SourceFullFrameRealCompatibleImplicitChartData`,
+   `SourceFullFrameRealCompatibleImplicitChartData.to_localRealChartData`,
+   and `sourceFullFrameRealCompatibleImplicitChartData`.  The checked bridge
+   after that producer
    is purely mechanical: a source-open Jost patch with local real chart data at
    every point is an `IsHWOrientedRealEnvironment`, and a determinant-nonzero
    OS45 subpatch becomes one by applying the local chart producer pointwise.
@@ -5619,7 +5631,19 @@ implementation contract is:
    now specifically
    `sourceOrientedLocalRealChartData_of_fullFrameDet_ne_zero`; it must use a
    real-compatible gauge slice/IFT and not the arbitrary complex full-frame
-   max-rank chart.  The mechanical bridges around it are
+   max-rank chart.  The checked finite-coordinate inputs for its
+   `chart_real_eq` field are
+   `sourceFullFrameOrientedCoordOfSource_sourceRealOrientedMinkowskiInvariant`
+   and `sourceSelectedMixedRows_sourceRealOrientedMinkowskiInvariant`; what
+   remains is to construct the real gauge-slice coordinates, prove their
+   complexification agrees with the complex kernel chart, and prove the real
+   coordinate map is locally open on the determinant-nonzero source patch.
+   The blueprint now fixes this split as
+   `SourceFullFrameRealGaugeSliceData`,
+   `SourceFullFrameRealCompatibleImplicitChartData`,
+   `SourceFullFrameRealCompatibleImplicitChartData.to_localRealChartData`,
+   and `sourceFullFrameRealCompatibleImplicitChartData`.
+   The mechanical bridges around it are
    `sourceOrientedRealEnvironment_of_localRealCharts`,
    `sourceOrientedRealEnvironment_of_fullFrameDetNonzero_localCharts`, and the
    OS45 subpatch bridge
