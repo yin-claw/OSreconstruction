@@ -2388,17 +2388,24 @@ checks the real-source permutation topology helpers
    gate is also now checked there:
    `SourceFullFrameRealOrientedCoord`,
    `sourceFullFrameRealOrientedCoordComplexify`,
+   `sourceFullFrameRealOrientedCoordComplexifyLinear`,
+   `sourceFullFrameRealOrientedTangentSpace`,
+   `mem_sourceFullFrameRealOrientedTangentSpace`,
+   `sourceFullFrameRealOrientedTangentComplexifyLinear`,
    `sourceFullFrameRealDifferentialRightInverseFormula`,
+   `sourceFullFrameRealDifferentialRightInverseFormulaLinear`,
+   `sourceFullFrameRealDifferentialRightInverseLinear`,
    `matrix_map_ofReal_nonsing_inv`,
    `sourceFullFrame_minkowskiMatrix_map_ofReal`,
    `sourceFullFrameRealOrientedCoordComplexify_matrix_of`, and
-   `sourceFullFrameOrientedDifferentialRightInverseLinear_realComplexify`
-   prove that the explicit complex right inverse is the componentwise
-   complexification of the real formula whenever the complexified real
-   coordinate lies in the complex tangent space.  The remaining real-slice
-   step is therefore to build the real tangent model/finite coordinates and use
-   this checked complexification theorem to define
-   `sourceFullFrameRealGaugeSliceData`.  After that, apply the real
+   `sourceFullFrameOrientedDifferentialRightInverseLinear_realComplexify`,
+   and `sourceFullFrameRealDifferentialRightInverseLinear_complexify`
+   define the real tangent model, prove the real formula is linear on it, and
+   prove that this real right inverse complexifies to the explicit complex
+   right inverse.  The remaining real-slice step is therefore to build the
+   finite coordinate equivalences for this real slice and use this checked
+   complexification theorem to define `sourceFullFrameRealGaugeSliceData`.
+   After that, apply the real
    inverse/implicit-function theorem to the real kernel map, whose
    complexification is the existing complex implicit-kernel map; then shrink
    the real source patch so source invariants lie in the selected complex

@@ -331,6 +331,163 @@ def sourceFullFrameRealOrientedCoordComplexify
     SourceFullFrameOrientedCoord d :=
   (fun a b => (Y.1 a b : ℂ), (Y.2 : ℂ))
 
+/-- Componentwise complexification as a real-linear map. -/
+def sourceFullFrameRealOrientedCoordComplexifyLinear
+    (d : ℕ) :
+    SourceFullFrameRealOrientedCoord d →ₗ[ℝ]
+      SourceFullFrameOrientedCoord d where
+  toFun := sourceFullFrameRealOrientedCoordComplexify d
+  map_add' := by
+    intro Y Z
+    apply Prod.ext
+    · funext a b
+      simp [sourceFullFrameRealOrientedCoordComplexify]
+    · simp [sourceFullFrameRealOrientedCoordComplexify]
+  map_smul' := by
+    intro c Y
+    apply Prod.ext
+    · funext a b
+      dsimp [sourceFullFrameRealOrientedCoordComplexify]
+      change ((c * Y.1 a b : ℝ) : ℂ) =
+        (c : ℂ) * (Y.1 a b : ℂ)
+      rw [Complex.ofReal_mul]
+    · dsimp [sourceFullFrameRealOrientedCoordComplexify]
+      change ((c * Y.2 : ℝ) : ℂ) = (c : ℂ) * (Y.2 : ℂ)
+      rw [Complex.ofReal_mul]
+
+@[simp]
+theorem sourceFullFrameRealOrientedCoordComplexifyLinear_apply
+    (d : ℕ) (Y : SourceFullFrameRealOrientedCoord d) :
+    sourceFullFrameRealOrientedCoordComplexifyLinear d Y =
+      sourceFullFrameRealOrientedCoordComplexify d Y :=
+  rfl
+
+/-- The real tangent model for the full-frame oriented hypersurface at a real
+base frame, defined as the real form whose componentwise complexification lies
+in the checked complex tangent space. -/
+def sourceFullFrameRealOrientedTangentSpace
+    (d : ℕ)
+    (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+    Submodule ℝ (SourceFullFrameRealOrientedCoord d) where
+  carrier :=
+    {Y |
+      sourceFullFrameRealOrientedCoordComplexify d Y ∈
+        sourceFullFrameOrientedTangentSpace d
+          (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal))}
+  zero_mem' := by
+    change
+      sourceFullFrameRealOrientedCoordComplexify d 0 ∈
+        sourceFullFrameOrientedTangentSpace d
+          (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal))
+    change
+      (0 : SourceFullFrameOrientedCoord d) ∈
+        sourceFullFrameOrientedTangentSpace d
+          (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal))
+    exact
+      Submodule.zero_mem
+        (sourceFullFrameOrientedTangentSpace d
+          (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal)))
+  add_mem' := by
+    intro Y Z hY hZ
+    have hadd :
+        sourceFullFrameRealOrientedCoordComplexify d (Y + Z) =
+          sourceFullFrameRealOrientedCoordComplexify d Y +
+            sourceFullFrameRealOrientedCoordComplexify d Z := by
+      apply Prod.ext
+      · funext a b
+        simp [sourceFullFrameRealOrientedCoordComplexify]
+      · simp [sourceFullFrameRealOrientedCoordComplexify]
+    change
+      sourceFullFrameRealOrientedCoordComplexify d (Y + Z) ∈
+        sourceFullFrameOrientedTangentSpace d
+          (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal))
+    rw [hadd]
+    exact
+      (sourceFullFrameOrientedTangentSpace d
+        (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal))).add_mem hY hZ
+  smul_mem' := by
+    intro c Y hY
+    have hsmul :
+        sourceFullFrameRealOrientedCoordComplexify d (c • Y) =
+          (c : ℂ) • sourceFullFrameRealOrientedCoordComplexify d Y := by
+      apply Prod.ext
+      · funext a b
+        dsimp [sourceFullFrameRealOrientedCoordComplexify]
+        change ((c * Y.1 a b : ℝ) : ℂ) =
+          (c : ℂ) * (Y.1 a b : ℂ)
+        rw [Complex.ofReal_mul]
+      · dsimp [sourceFullFrameRealOrientedCoordComplexify]
+        change ((c * Y.2 : ℝ) : ℂ) = (c : ℂ) * (Y.2 : ℂ)
+        rw [Complex.ofReal_mul]
+    change
+      sourceFullFrameRealOrientedCoordComplexify d (c • Y) ∈
+        sourceFullFrameOrientedTangentSpace d
+          (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal))
+    rw [hsmul]
+    exact
+      (sourceFullFrameOrientedTangentSpace d
+        (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal))).smul_mem
+          (c : ℂ) hY
+
+theorem mem_sourceFullFrameRealOrientedTangentSpace
+    {d : ℕ}
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    {Y : SourceFullFrameRealOrientedCoord d} :
+    Y ∈ sourceFullFrameRealOrientedTangentSpace d M0R ↔
+      sourceFullFrameRealOrientedCoordComplexify d Y ∈
+      sourceFullFrameOrientedTangentSpace d
+          (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal)) :=
+  Iff.rfl
+
+/-- Componentwise complexification sends the real tangent model into the
+complex full-frame tangent space. -/
+def sourceFullFrameRealOrientedTangentComplexifyLinear
+    (d : ℕ)
+    (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+    sourceFullFrameRealOrientedTangentSpace d M0R →ₗ[ℝ]
+      sourceFullFrameOrientedTangentSpace d
+        (sourceFullFrameOrientedGram d (M0R.map Complex.ofReal)) where
+  toFun := fun Y =>
+    ⟨sourceFullFrameRealOrientedCoordComplexify d
+      (Y : SourceFullFrameRealOrientedCoord d), Y.property⟩
+  map_add' := by
+    intro Y Z
+    apply Subtype.ext
+    change
+      sourceFullFrameRealOrientedCoordComplexify d
+          ((Y : SourceFullFrameRealOrientedCoord d) +
+            (Z : SourceFullFrameRealOrientedCoord d)) =
+        sourceFullFrameRealOrientedCoordComplexify d
+            (Y : SourceFullFrameRealOrientedCoord d) +
+          sourceFullFrameRealOrientedCoordComplexify d
+            (Z : SourceFullFrameRealOrientedCoord d)
+    simpa using
+      (sourceFullFrameRealOrientedCoordComplexifyLinear d).map_add
+        (Y : SourceFullFrameRealOrientedCoord d)
+        (Z : SourceFullFrameRealOrientedCoord d)
+  map_smul' := by
+    intro c Y
+    apply Subtype.ext
+    change
+      sourceFullFrameRealOrientedCoordComplexify d
+          (c • (Y : SourceFullFrameRealOrientedCoord d)) =
+        (c : ℂ) •
+          sourceFullFrameRealOrientedCoordComplexify d
+            (Y : SourceFullFrameRealOrientedCoord d)
+    exact
+      (sourceFullFrameRealOrientedCoordComplexifyLinear d).map_smul
+        c (Y : SourceFullFrameRealOrientedCoord d)
+
+@[simp]
+theorem sourceFullFrameRealOrientedTangentComplexifyLinear_apply
+    (d : ℕ)
+    (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
+    (Y : sourceFullFrameRealOrientedTangentSpace d M0R) :
+    sourceFullFrameRealOrientedTangentComplexifyLinear d M0R Y =
+      ⟨sourceFullFrameRealOrientedCoordComplexify d
+        (Y : SourceFullFrameRealOrientedCoord d), Y.property⟩ :=
+  rfl
+
 /-- The real version of the constructive full-frame differential right-inverse
 formula. -/
 noncomputable def sourceFullFrameRealDifferentialRightInverseFormula
@@ -343,6 +500,97 @@ noncomputable def sourceFullFrameRealDifferentialRightInverseFormula
     (2 : ℝ)⁻¹ • (M0R⁻¹ * G * (M0R.transpose)⁻¹ *
       LorentzLieGroup.minkowskiMatrix d)
   M0R * B
+
+/-- The real right-inverse formula is linear in the real tangent coordinate. -/
+noncomputable def sourceFullFrameRealDifferentialRightInverseFormulaLinear
+    (d : ℕ)
+    (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+    SourceFullFrameRealOrientedCoord d →ₗ[ℝ]
+      Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ where
+  toFun := sourceFullFrameRealDifferentialRightInverseFormula d M0R
+  map_add' := by
+    intro Y Z
+    let A : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ := Matrix.of Y.1
+    let B : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ := Matrix.of Z.1
+    let C : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ :=
+      (M0R.transpose)⁻¹
+    let E : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ :=
+      LorentzLieGroup.minkowskiMatrix d
+    have hOf : Matrix.of ((Y.1 + Z.1)) = A + B := by
+      exact (Matrix.of_add_of Y.1 Z.1).symm
+    have hlin :
+        M0R⁻¹ * (A + B) * C * E =
+          M0R⁻¹ * A * C * E + M0R⁻¹ * B * C * E := by
+      noncomm_ring
+    change
+      M0R * ((2 : ℝ)⁻¹ •
+          (M0R⁻¹ * Matrix.of (Y + Z).1 * (M0R.transpose)⁻¹ *
+            LorentzLieGroup.minkowskiMatrix d)) =
+        M0R * ((2 : ℝ)⁻¹ •
+          (M0R⁻¹ * Matrix.of Y.1 * (M0R.transpose)⁻¹ *
+            LorentzLieGroup.minkowskiMatrix d)) +
+        M0R * ((2 : ℝ)⁻¹ •
+          (M0R⁻¹ * Matrix.of Z.1 * (M0R.transpose)⁻¹ *
+            LorentzLieGroup.minkowskiMatrix d))
+    simp only [Prod.fst_add]
+    dsimp [A, B, C, E] at hOf hlin
+    rw [hOf, hlin, smul_add, Matrix.mul_add]
+  map_smul' := by
+    intro c Y
+    let A : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ := Matrix.of Y.1
+    let C : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ :=
+      (M0R.transpose)⁻¹
+    let E : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ :=
+      LorentzLieGroup.minkowskiMatrix d
+    have hOf : Matrix.of (c • Y.1) = c • A := by
+      exact (Matrix.smul_of c Y.1).symm
+    have hlin :
+        M0R⁻¹ * (c • A) * C * E =
+          c • (M0R⁻¹ * A * C * E) := by
+      rw [Matrix.mul_smul, Matrix.smul_mul, Matrix.smul_mul]
+    change
+      M0R * ((2 : ℝ)⁻¹ •
+          (M0R⁻¹ * Matrix.of (c • Y).1 * (M0R.transpose)⁻¹ *
+            LorentzLieGroup.minkowskiMatrix d)) =
+        c •
+          (M0R * ((2 : ℝ)⁻¹ •
+            (M0R⁻¹ * Matrix.of Y.1 * (M0R.transpose)⁻¹ *
+              LorentzLieGroup.minkowskiMatrix d)))
+    simp only [Prod.smul_fst]
+    dsimp [A, C, E] at hOf hlin
+    rw [hOf, hlin]
+    rw [smul_smul, Matrix.mul_smul, Matrix.mul_smul, smul_smul]
+    rw [mul_comm c]
+
+@[simp]
+theorem sourceFullFrameRealDifferentialRightInverseFormulaLinear_apply
+    (d : ℕ)
+    (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ)
+    (Y : SourceFullFrameRealOrientedCoord d) :
+    sourceFullFrameRealDifferentialRightInverseFormulaLinear d M0R Y =
+      sourceFullFrameRealDifferentialRightInverseFormula d M0R Y :=
+  rfl
+
+/-- The real right inverse restricted to the real full-frame tangent model. -/
+noncomputable def sourceFullFrameRealDifferentialRightInverseLinear
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (_hM0R : IsUnit M0R.det) :
+    sourceFullFrameRealOrientedTangentSpace d M0R →ₗ[ℝ]
+      Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ :=
+  (sourceFullFrameRealDifferentialRightInverseFormulaLinear d M0R).comp
+    (sourceFullFrameRealOrientedTangentSpace d M0R).subtype
+
+@[simp]
+theorem sourceFullFrameRealDifferentialRightInverseLinear_apply
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (Y : sourceFullFrameRealOrientedTangentSpace d M0R) :
+    sourceFullFrameRealDifferentialRightInverseLinear d hM0R Y =
+      sourceFullFrameRealDifferentialRightInverseFormula d M0R
+        (Y : SourceFullFrameRealOrientedCoord d) :=
+  rfl
 
 /-- Componentwise complexification commutes with the nonsingular inverse for
 real matrices. -/
@@ -444,5 +692,44 @@ theorem sourceFullFrameOrientedDifferentialRightInverseLinear_realComplexify
   apply Finset.sum_congr rfl
   intro x _
   ring
+
+/-- The real right inverse on the real tangent model complexifies to the
+explicit complex right inverse. -/
+theorem sourceFullFrameRealDifferentialRightInverseLinear_complexify
+    (d : ℕ)
+    {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+    (hM0R : IsUnit M0R.det)
+    (Y : sourceFullFrameRealOrientedTangentSpace d M0R) :
+    (sourceFullFrameRealDifferentialRightInverseLinear d hM0R Y).map
+        Complex.ofReal =
+      sourceFullFrameOrientedDifferentialRightInverseLinear d
+        (M0 := M0R.map Complex.ofReal)
+        (by
+          have hdetMap :
+              (M0R.map Complex.ofReal).det = (M0R.det : ℂ) := by
+            simpa [RingHom.mapMatrix_apply] using
+              (RingHom.map_det Complex.ofRealHom M0R).symm
+          rw [hdetMap]
+          exact hM0R.map Complex.ofRealHom)
+        ⟨sourceFullFrameRealOrientedCoordComplexify d
+            (Y : SourceFullFrameRealOrientedCoord d), Y.property⟩ := by
+  change
+    (sourceFullFrameRealDifferentialRightInverseFormula d M0R
+        (Y : SourceFullFrameRealOrientedCoord d)).map Complex.ofReal =
+      sourceFullFrameOrientedDifferentialRightInverseLinear d
+        (M0 := M0R.map Complex.ofReal)
+        (by
+          have hdetMap :
+              (M0R.map Complex.ofReal).det = (M0R.det : ℂ) := by
+            simpa [RingHom.mapMatrix_apply] using
+              (RingHom.map_det Complex.ofRealHom M0R).symm
+          rw [hdetMap]
+          exact hM0R.map Complex.ofRealHom)
+        ⟨sourceFullFrameRealOrientedCoordComplexify d
+            (Y : SourceFullFrameRealOrientedCoord d), Y.property⟩
+  symm
+  exact
+    sourceFullFrameOrientedDifferentialRightInverseLinear_realComplexify
+      d hM0R (Y : SourceFullFrameRealOrientedCoord d) Y.property
 
 end BHW

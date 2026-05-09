@@ -19801,6 +19801,66 @@ Proof decomposition of this theorem, without hiding the analytic work:
           (hM0 : IsUnit M0.det) :
           BHW.SourceFullFrameGaugeSliceData d M0
 
+      abbrev BHW.SourceFullFrameRealOrientedCoord (d : Nat) :=
+        (Fin (d + 1) -> Fin (d + 1) -> ℝ) × ℝ
+
+      def BHW.sourceFullFrameRealOrientedCoordComplexify
+          (d : Nat) (Y : BHW.SourceFullFrameRealOrientedCoord d) :
+          BHW.SourceFullFrameOrientedCoord d
+
+      def BHW.sourceFullFrameRealOrientedCoordComplexifyLinear
+          (d : Nat) :
+          BHW.SourceFullFrameRealOrientedCoord d ->ₗ[ℝ]
+            BHW.SourceFullFrameOrientedCoord d
+
+      def BHW.sourceFullFrameRealOrientedTangentSpace
+          (d : Nat)
+          (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+          Submodule ℝ (BHW.SourceFullFrameRealOrientedCoord d)
+
+      def BHW.sourceFullFrameRealOrientedTangentComplexifyLinear
+          (d : Nat)
+          (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+          BHW.sourceFullFrameRealOrientedTangentSpace d M0R ->ₗ[ℝ]
+            BHW.sourceFullFrameOrientedTangentSpace d
+              (BHW.sourceFullFrameOrientedGram d
+                (M0R.map Complex.ofReal))
+
+      noncomputable def
+          BHW.sourceFullFrameRealDifferentialRightInverseFormulaLinear
+          (d : Nat)
+          (M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ) :
+          BHW.SourceFullFrameRealOrientedCoord d ->ₗ[ℝ]
+            Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ
+
+      noncomputable def
+          BHW.sourceFullFrameRealDifferentialRightInverseLinear
+          (d : Nat)
+          {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hM0R : IsUnit M0R.det) :
+          BHW.sourceFullFrameRealOrientedTangentSpace d M0R ->ₗ[ℝ]
+            Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ
+
+      theorem
+          BHW.sourceFullFrameRealDifferentialRightInverseLinear_complexify
+          (d : Nat)
+          {M0R : Matrix (Fin (d + 1)) (Fin (d + 1)) ℝ}
+          (hM0R : IsUnit M0R.det)
+          (Y : BHW.sourceFullFrameRealOrientedTangentSpace d M0R) :
+          (BHW.sourceFullFrameRealDifferentialRightInverseLinear
+              d hM0R Y).map Complex.ofReal =
+            BHW.sourceFullFrameOrientedDifferentialRightInverseLinear d
+              (M0 := M0R.map Complex.ofReal)
+              (by
+                have hdetMap :
+                    (M0R.map Complex.ofReal).det = (M0R.det : ℂ) := by
+                  simpa [RingHom.mapMatrix_apply] using
+                    (RingHom.map_det Complex.ofRealHom M0R).symm
+                rw [hdetMap]
+                exact hM0R.map Complex.ofRealHom)
+              (BHW.sourceFullFrameRealOrientedTangentComplexifyLinear
+                d M0R Y)
+
       theorem BHW.sourceRealFullFrameLocalCoord_image_open
           (d n : Nat)
           (ι : Fin (d + 1) ↪ Fin n)
@@ -19920,14 +19980,21 @@ Proof decomposition of this theorem, without hiding the analytic work:
       file now also checks the real-complexification gate
       `SourceFullFrameRealOrientedCoord`,
       `sourceFullFrameRealOrientedCoordComplexify`,
+      `sourceFullFrameRealOrientedCoordComplexifyLinear`,
+      `sourceFullFrameRealOrientedTangentSpace`,
+      `mem_sourceFullFrameRealOrientedTangentSpace`,
+      `sourceFullFrameRealOrientedTangentComplexifyLinear`,
       `sourceFullFrameRealDifferentialRightInverseFormula`,
+      `sourceFullFrameRealDifferentialRightInverseFormulaLinear`,
+      `sourceFullFrameRealDifferentialRightInverseLinear`,
       `matrix_map_ofReal_nonsing_inv`,
       `sourceFullFrame_minkowskiMatrix_map_ofReal`,
       `sourceFullFrameRealOrientedCoordComplexify_matrix_of`, and
-      `sourceFullFrameOrientedDifferentialRightInverseLinear_realComplexify`.
+      `sourceFullFrameOrientedDifferentialRightInverseLinear_realComplexify`,
+      plus `sourceFullFrameRealDifferentialRightInverseLinear_complexify`.
       Thus the next producer step is not to prove abstract reality of the
-      complex slice, but to package the real tangent model/finite coordinate
-      maps and feed this checked formula into `sourceFullFrameRealGaugeSliceData`.
+      complex slice, but to package finite coordinates for this checked real
+      tangent slice and feed that into `sourceFullFrameRealGaugeSliceData`.
       The hard producer still remaining is
       `sourceFullFrameRealCompatibleImplicitChartData`, which must construct
       that data from a real full-frame determinant-nonzero point.
