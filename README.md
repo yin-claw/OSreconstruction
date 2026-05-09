@@ -22,7 +22,7 @@ The tracked production tree currently contains **13 explicit axioms**:
 - `bochner_tube_extension` in `SCV/BochnerTubeTheorem.lean` — global Bochner tube extension theorem
 
 **Classical invariant theory (1):**
-- `standardSO_FFT_SFT_presentationData` in `ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedStandardSOPresentation.lean` — Weyl-Cartan FFT/SFT for `SO(D; ℂ)` on `(ℂ^D)^n`, with Gram and ordered-volume generators and the corrected symmetry/rank/alternation/Cauchy-Binet/linear-syzygy presentation kernel (authorized 2026-05-07)
+- `standardSO_FFT_SFT_presentationData` in `ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedStandardSOAxiom.lean` — Weyl-Cartan FFT/SFT for `SO(D; ℂ)` on `(ℂ^D)^n`, with Gram and ordered-volume generators and the corrected symmetry/rank/alternation/Cauchy-Binet/linear-syzygy presentation kernel (authorized 2026-05-07). The axiom module is deliberately separate from the axiom-free conditional presentation module and is not imported by the BHW barrel.
 
 **Reconstruction bridge (1):**
 - `reduced_bargmann_hall_wightman_of_input` in `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean`

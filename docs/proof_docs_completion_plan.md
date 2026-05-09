@@ -2131,19 +2131,22 @@ theorem BHW.sourceOrientedCoordinatePresentationData_of_standard
 axiom BHW.standardSO_FFT_SFT_presentationData
     (D n : Nat) (hD : 3 <= D) :
     BHW.StandardSOCoordinatePresentationData D n
-
-theorem BHW.sourceOrientedCoordinatePresentationData
-    (d n : Nat) (hd : 2 <= d) :
-    BHW.SourceOrientedCoordinatePresentationData d n
 ```
 
 `BHW.standardSO_FFT_SFT_presentationData` is now the single explicit
 paper-classical axiom boundary for this invariant-theory theorem, authorized
-on 2026-05-07 after the linear-syzygy correction.  It is finite-dimensional
-classical invariant theory only; it does not mention OS, Wightman functions,
-EOW, PET, locality, or theorem 2.  Downstream normality and Riemann-extension
-work may consume the source presentation data produced from this axiom, but
-must keep this trust boundary visible in theorem dependency audits.
+on 2026-05-07 after the linear-syzygy correction.  It lives in
+`SourceOrientedStandardSOAxiom.lean`, while
+`SourceOrientedStandardSOPresentation.lean` remains axiom-free and exports only
+the conditional `_of_data` theorem surfaces.  The axiom module is deliberately
+not imported by the BHW permutation barrel.  Downstream code that wants to use
+the paper-classical theorem must import the axiom module explicitly, bind
+`H := BHW.standardSO_FFT_SFT_presentationData D n hD`, and pass `H` to the
+conditional presentation theorems.  It is finite-dimensional classical
+invariant theory only; it does not mention OS, Wightman functions, EOW, PET,
+locality, or theorem 2.  Downstream normality and Riemann-extension work may
+consume the source presentation data produced from this axiom, but must keep
+this trust boundary visible in theorem dependency audits.
 
 Current oriented real-uniqueness readiness clarification, 2026-05-02: the
 real-patch uniqueness group
@@ -5067,14 +5070,15 @@ implementation contract is:
    Thus the production Lean boundary for the FFT is now reduced to the reverse
    inclusion of the actual fixed subalgebra into the generated one.
    The theorem-2 blueprint now tightens this into the single standard-dot
-   support surface `BHW.standardSO_FFT_SFT_coordinatePresentation`, whose three
-   outputs are: FFT generation by pairings and ordered volumes, SFT kernel
-   equality with the explicit symmetry/minor/alternation/Cauchy-Binet plus
-   linear-vector-syzygy ideal,
-   and surjectivity of `BHW.standardSOInvariantCoordinateMap`.  Lean may not
-   cite a slogan-level "FFT/SFT for SO" theorem with incompatible coordinates,
-   and may not proceed to the oriented normality theorem unless those three
-   outputs are available from the same sorry-free proof or source theorem.
+   support packet `BHW.StandardSOCoordinatePresentationData`, whose fields and
+   formal consequence give: FFT generation by pairings and ordered volumes,
+   SFT kernel equality with the explicit symmetry/minor/alternation/Cauchy-
+   Binet plus linear-vector-syzygy ideal, and surjectivity of
+   `BHW.standardSOInvariantCoordinateMap`.  Lean may not cite a slogan-level
+   "FFT/SFT for SO" theorem with incompatible coordinates, and may not proceed
+   to the oriented normality theorem unless those outputs are available from
+   the same sorry-free proof or from the explicitly imported audited axiom
+   module.
    The easy containment direction of the SFT kernel is now separated from the
    hard invariant-theory theorem.  Prove the eval bridge
    `standardSOInvariantCoordinateMap_aeval`: evaluating the underlying tuple

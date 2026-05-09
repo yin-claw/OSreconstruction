@@ -13757,14 +13757,24 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (by
               simpa [BHW.standardSOGeneratorSubalgebra] using hFFT)
 
-      /-- Standard finite-dimensional invariant-theory support for the
-      special orthogonal group.  This is the only non-Hall-Wightman algebraic
-      source allowed in the oriented normality packet.  It is a theorem about
-      the polynomial representation of `SO_D(ℂ)` on `(ℂ^D)^n`, not about
-      Wightman functions. -/
-      theorem BHW.standardSO_FFT_SFT_coordinatePresentation
-          (D n : Nat)
-          (hD : 3 <= D) :
+      /-- Conditional standard finite-dimensional invariant-theory support for
+      the special orthogonal group.  This is a data packet about the polynomial
+      representation of `SO_D(ℂ)` on `(ℂ^D)^n`, not about Wightman functions. -/
+      structure BHW.StandardSOCoordinatePresentationData
+          (D n : Nat) : Prop where
+        fft :
+          BHW.standardSOInvariantSubalgebra D n =
+            Algebra.adjoin ℂ
+              (Set.range (BHW.standardPairingCoordinatePolynomial D n) ∪
+               Set.range (BHW.standardVolumeCoordinatePolynomial D n))
+        sft :
+          RingHom.ker
+              (BHW.standardSOInvariantCoordinateMap D n) =
+            BHW.standardSOAlgebraicRelationIdeal D n
+
+      theorem BHW.standardSO_FFT_SFT_coordinatePresentation_of_data
+          {D n : Nat}
+          (H : BHW.StandardSOCoordinatePresentationData D n) :
           BHW.standardSOInvariantSubalgebra D n =
             Algebra.adjoin ℂ
               (Set.range (BHW.standardPairingCoordinatePolynomial D n) ∪
@@ -13773,48 +13783,27 @@ Proof decomposition of this theorem, without hiding the analytic work:
               (BHW.standardSOInvariantCoordinateMap D n) =
             BHW.standardSOAlgebraicRelationIdeal D n ∧
           Function.Surjective
-            (BHW.standardSOInvariantCoordinateMap D n) := by
-        have hFFT :
-            BHW.standardSOInvariantSubalgebra D n =
-              Algebra.adjoin ℂ
-                (Set.range (BHW.standardPairingCoordinatePolynomial D n) ∪
-                 Set.range (BHW.standardVolumeCoordinatePolynomial D n)) :=
-          BHW.standardSOInvariantRing_generated_by_pairings_and_volume
-            D n hD
-        have hSFT :
-            RingHom.ker
-                (BHW.standardSOInvariantCoordinateMap D n) =
-              BHW.standardSOAlgebraicRelationIdeal D n :=
-          BHW.standardSOInvariantRing_relations_kernel D n hD
-        exact
-          ⟨hFFT, hSFT,
-            BHW.standardSOInvariantCoordinateMap_surjective_of_generators
-              D n hFFT⟩
+            (BHW.standardSOInvariantCoordinateMap D n)
 
       theorem BHW.standardSOInvariantRing_generated_by_pairings_and_volume_fromPresentation
-          (D n : Nat)
-          (hD : 3 <= D) :
+          {D n : Nat}
+          (H : BHW.StandardSOCoordinatePresentationData D n) :
           BHW.standardSOInvariantSubalgebra D n =
             Algebra.adjoin ℂ
               (Set.range (BHW.standardPairingCoordinatePolynomial D n) ∪
                Set.range (BHW.standardVolumeCoordinatePolynomial D n)) :=
-        (BHW.standardSO_FFT_SFT_coordinatePresentation D n hD).1
+        H.fft
 
       theorem BHW.standardSOInvariantRing_relations_kernel_fromPresentation
-          (D n : Nat)
-          (hD : 3 <= D) :
+          {D n : Nat}
+          (H : BHW.StandardSOCoordinatePresentationData D n) :
           RingHom.ker
               (BHW.standardSOInvariantCoordinateMap D n) =
             BHW.standardSOAlgebraicRelationIdeal D n :=
-        (BHW.standardSO_FFT_SFT_coordinatePresentation D n hD).2.1
+        H.sft
 
-      theorem BHW.standardSOInvariantCoordinateMap_surjective
-          (D n : Nat)
-          (hD : 3 <= D) :
-          Function.Surjective
-            (BHW.standardSOInvariantCoordinateMap D n) :=
-        (BHW.standardSO_FFT_SFT_coordinatePresentation D n hD).2.2
-
+      -- In `SourceOrientedStandardSOAxiom.lean`, intentionally outside the
+      -- BHW permutation barrel:
       axiom BHW.standardSO_FFT_SFT_presentationData
           (D n : Nat) (hD : 3 <= D) :
           BHW.StandardSOCoordinatePresentationData D n
@@ -14337,17 +14326,21 @@ Proof decomposition of this theorem, without hiding the analytic work:
             (d := d) (n := n) hd
       ```
 
-      The standard-dot presentation theorem
-      `BHW.standardSO_FFT_SFT_coordinatePresentation` is now the exact
+      The standard-dot presentation data packet
+      `BHW.StandardSOCoordinatePresentationData` is now the exact
       invariant-theory boundary.  It bundles the first and second fundamental
       theorems for the special complex orthogonal group in the vector
-      representation with the surjectivity statement actually consumed by the
-      coordinate-ring isomorphism.  If this theorem is not proved locally, it
-      may be consumed only from an existing sorry-free library theorem with
-      exactly these generators, kernel, and coordinate conventions.  It must
-      include the small-arity case: if `n < D`, the determinant generator
-      range is empty and the statement reduces to the ordinary Gram invariant
-      theorem.  The integrally-closed theorem uses only standard invariant
+      representation; the already checked theorem
+      `BHW.standardSO_FFT_SFT_coordinatePresentation_of_data` then derives the
+      surjectivity statement actually consumed by the coordinate-ring
+      isomorphism.  If this packet is not proved locally, it may be consumed
+      only by explicitly importing the axiom module
+      `SourceOrientedStandardSOAxiom.lean`, binding
+      `H := BHW.standardSO_FFT_SFT_presentationData D n hD`, and passing `H`
+      through the conditional `_of_data` theorem surfaces.  It must include
+      the small-arity case: if `n < D`, the determinant generator range is
+      empty and the statement reduces to the ordinary Gram invariant theorem.
+      The integrally-closed theorem uses only standard invariant
       theory: `SO_D(ℂ)` is reductive for `D >= 3`, hence linearly reductive
       in characteristic zero; invariants of an integrally closed finitely
       generated domain under a linearly reductive algebraic group are
@@ -14357,11 +14350,12 @@ Proof decomposition of this theorem, without hiding the analytic work:
 
       The kernel theorem is not allowed to hide the oriented equations in the
       words "the usual relations".  Its coordinate ideal is generated by
-      exactly four families: symmetry of the pairing coordinates, vanishing
-      of all `(D + 1)`-minors of the pairing matrix, alternation of the
-      ordered volume coordinates, and the Cauchy-Binet equations
-      `det(q[ι,κ]) = p_ι * p_κ`.  After transport back to the Minkowski
-      source coordinates the last family becomes
+      the explicit families in `standardSOAlgebraicRelationGenerators`:
+      symmetry of the pairing coordinates, vanishing of all `(D + 1)`-minors
+      of the pairing matrix, alternation of the ordered volume coordinates,
+      the Cauchy-Binet equations `det(q[ι,κ]) = p_ι * p_κ`, and the
+      vector-bracket linear syzygies.  After transport back to the Minkowski
+      source coordinates the Cauchy-Binet family becomes
       `det(G[ι,κ]) = minkowskiMetricDet d * det_ι * det_κ`.  The coordinate
       ring equivalence is then the first isomorphism theorem applied to
       `standardSOInvariantCoordinateMap` and transported to the source side.
@@ -14384,10 +14378,11 @@ Proof decomposition of this theorem, without hiding the analytic work:
       If Mathlib lacks the algebraic-group/reductive-invariants framework
       needed to prove the standard-dot theorems directly, the only acceptable
       source boundary is the single explicit standard finite-dimensional
-      invariant-theory axiom `BHW.standardSO_FFT_SFT_presentationData`, with
-      these exact generators and kernel.  It must remain an audited
-      Weyl-Cartan SO FFT/SFT trust boundary, not a QFT theorem, production
-      `sorry`, or theorem-2/locality assumption.
+      invariant-theory axiom `BHW.standardSO_FFT_SFT_presentationData` in
+      `SourceOrientedStandardSOAxiom.lean`, with these exact generators and
+      kernel.  The axiom module is not imported by the BHW barrel.  It must
+      remain an audited Weyl-Cartan SO FFT/SFT trust boundary, not a QFT
+      theorem, production `sorry`, or theorem-2/locality assumption.
 
       The Lean-ready checkpoint for the hard invariant-theory proof is the
       presentation data packet below.  It records exactly the two non-formal
@@ -14481,14 +14476,17 @@ Proof decomposition of this theorem, without hiding the analytic work:
       axiom BHW.standardSO_FFT_SFT_presentationData
           (D n : Nat) (hD : 3 <= D) :
           BHW.StandardSOCoordinatePresentationData D n
-
-      theorem BHW.sourceOrientedCoordinatePresentationData
-          (d n : Nat) (hd : 2 <= d) :
-          BHW.SourceOrientedCoordinatePresentationData d n
       ```
 
       As of 2026-05-07, `BHW.standardSO_FFT_SFT_presentationData` is the
       explicit approved paper-classical axiom supplying `H` for `D >= 3`.
+      As of 2026-05-08, it lives in
+      `SourceOrientedStandardSOAxiom.lean`, while
+      `SourceOrientedStandardSOPresentation.lean` remains axiom-free and
+      exports only the conditional `_of_data` presentation surfaces.  Downstream
+      consumers must import the axiom module explicitly and pass the produced
+      `H` through `BHW.sourceOrientedCoordinatePresentationData_of_standard`;
+      there is no unconditional source-presentation theorem in the BHW barrel.
       Gemini required the relation ideal to include the vector-bracket linear
       syzygies
       `∑ k, (-1)^k G_{i,j_k}[j_0,...,hat j_k,...,j_D] = 0`; those generators
@@ -14761,7 +14759,7 @@ Proof decomposition of this theorem, without hiding the analytic work:
       | `BHW.same_sourceOrientedInvariant_detOneOrbit_or_singularLimit` | Componentwise proof transcript pinned; production Lean in progress.  The source-oriented projection/full-frame determinant helpers are checked in `SourceOriented.lean` and `SourceOrientedFullFrameMaxRankProducer.lean`; the high-rank span-isometry, full-complex Lorentz group, determinant repair, complement-Witt extension, and active proper-orbit consumer are checked in `SourceRank.lean`, `SourceFullComplexLorentz.lean`, `SourceFullComplexLorentzFrame.lean`, and `SourceFullComplexLorentzWitt.lean`; the singular two-curve data container is checked in `SourceHWSingularLimit.lean`. | Split by `HWSourceGramOrbitRankAt`.  The high-rank branch is now checked all the way through the active oriented proper orbit theorem `BHW.hw_sameSourceGram_regular_orbit`: equality of oriented determinant coordinates gives `HWSameSourceGramSOOrientationCompatible`, the checked full-complex Witt extension maps the source span to the target span, and determinant repair/full-frame determinant control packages the map as a determinant-`1` `ComplexLorentzGroup` element.  The remaining blocker in this row is exactly the low-rank Hall-Wightman residual-frame contraction producer `BHW.hw_sameSourceGram_singular_contractionData`; the analytic limit consumer of that data is no longer open. |
       | `BHW.extendedTube_same_sourceOrientedInvariant_extendF_eq` | Assembly transcript pinned; not production-Lean-ready until `BHW.hw_sameSourceGram_singular_contractionData` and the preceding branch-law row are checked. | Apply the previous row's proper-orbit alternative to determinant-`1` complex Lorentz invariance of `extendF` via `extendF_complexLorentzInvariant_of_cinv`; apply the singular alternative by the checked theorem `BHW.hw_sameSourceGram_singularLimit_extendF_eq` in `SourceHWSingularLimit.lean`.  This theorem has no independent route choice and must not be implemented before `same_sourceOrientedInvariant_detOneOrbit_or_singularLimit`. |
       | `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected` | Checked in `SourceOrientedRankDeficientTubeResidualPolydisc.lean`, by applying `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_rankDeficientResidualChartProducer` to the checked `BHW.sourceOriented_rankDeficient_residualChartProducer`; the same file also checks the pointwise fixed-center wrapper `BHW.sourceOriented_rankDeficient_residualChart`.  The connectedness half is `BHW.sourceOrientedExtendedTubeDomain_connected`; the open-union topology split for the relative-openness half is checked as `BHW.SourceOrientedExtendedTubeLocalRealizationData`, `BHW.SourceOrientedExtendedTubeLocalRealizationProducer`, `BHW.sourceOrientedExtendedTubeDomain_relOpen_of_localRealization`, and `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_localRealization` in `SourceOrientedLocalRealization.lean`.  The max-rank local-realization branch is also checked there as `BHW.sourceComplexGramRegularAt_of_HWSourceGramMaxRankAt_any`, `BHW.continuousOn_sourceFullFrameGauge_reconstructVector_on_modelDetNonzero`, `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_smallArityMaxRank`, `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_fullFrameDetNonzero`, `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_fullFrameMaxRank`, and `BHW.sourceOrientedExtendedTubeLocalRealizationData_of_maxRank`.  The rank-deficient target interface and producer are checked as `BHW.SourceOrientedRankDeficientRealizationData`, `BHW.SourceOrientedRankDeficientRealizationData.to_localRealization`, `BHW.SourceOrientedRankDeficientResidualChartData`, `BHW.SourceOrientedRankDeficientResidualChartData.center_mem`, `BHW.SourceOrientedRankDeficientResidualChartData.toVec_c0_mem`, `BHW.SourceOrientedRankDeficientResidualChartData.to_realizationData`, `BHW.SourceOrientedRankDeficientResidualChartData.to_localRealization`, `BHW.SourceOrientedRankDeficientResidualChartProducer`, `BHW.sourceOriented_rankDeficient_tubeResidualPolydiscProducer`, `BHW.sourceOriented_rankDeficient_residualChartProducer`, `BHW.sourceOrientedExtendedTubeLocalRealizationProducer_of_rankDeficientResidualChartProducer`, and `BHW.sourceOrientedExtendedTubeDomain_relOpen_connected_of_rankDeficientResidualChartProducer`. | This local-realization input is no longer a blocker.  The full-frame max-rank case no longer has a tube-shrink gap: it uses `isOpen_extendedTube`, the explicit reconstructed-vector map, the model-domain shrinker, and the stored chart inverse to produce an actual `ExtendedTube` witness realizing each nearby oriented-variety point.  The small-arity max-rank case uses the ordinary source-Gram local image theorem inside `ExtendedTube` and emptiness of `Fin (d + 1) ↪ Fin n`.  Rank-deficient charts use the checked sliced-head Schur stack only for original-coordinate image bookkeeping; the explicit ET-valued residual family is produced through the checked tube residual-polydisc data, with `toVec c := N.toOriginal (P.residualVector c)`.  The next theorem-2 blocker after this row is the downstream source-oriented scalar representative/descent layer, not an unproved residual-chart wrapper. |
-      | `BHW.sourceOrientedVarietyGermHolomorphicOn_extendF_descent` | Componentwise regular/removable transcript pinned; production Lean not started for the final normal/Riemann extension.  The prerequisite quotient-value definition, well-definedness theorem, local-boundedness predicate, max-rank topological glue helpers, compact-parameter continuity helper, residual-chart compact/local-boundedness/continuity helpers, conditional global continuity/local-boundedness assembly `sourceOrientedQuotientValue_continuous_locallyBounded_of_maxRankLocal`, all-arity local holomorphic section producer `sourceOrientedExtendedTube_holomorphicLocalSection`, max-rank quotient holomorphy theorem `sourceOrientedQuotientValue_holomorphicOn_maxRank`, global `sourceOrientedQuotientValue_continuous_locallyBounded`, exceptional-rank lower-rank identification `sourceOrientedExceptionalRank_eq_lowerRank`, determinant-zero-locus identification `sourceOrientedExceptionalRank_eq_minorsVanishing`, closedness of the determinant-zero locus `isClosed_sourceOrientedMaximalMinorsVanishing`, analytic exceptional-locus theorem `sourceOrientedExceptionalRank_isAnalyticSubvariety`, explicit max-rank density theorem `sourceOrientedMaxRank_dense_in_domain_inter_maxRank`, non-exceptional/max-rank bridge `not_exceptional_rank_iff_maxRank`, non-exceptional domain-density theorem `sourceOrientedMaxRank_dense_in_domain`, coordinate-ring relation definitions `sourceOrientedAlgebraicRelationGenerators`/`sourceOrientedAlgebraicRelationIdeal`, source forward ideal-vanishing bridge `sourceOrientedAlgebraicRelationIdeal_eval_eq_zero_of_relations`, standard-dot Cauchy-Binet support `sourceMatrixMinor_sourceComplexDotGram_standardFullFrame`, standard forward ideal-vanishing bridge `standardSOAlgebraicRelationIdeal_eval_eq_zero`, standard easy kernel containment `standardSOAlgebraicRelationIdeal_le_invariantCoordinateMap_ker`, and its source transport `sourceOrientedAlgebraicRelationIdeal_le_invariantCoordinateMap_ker` are checked. | Define `Phi` as the checked quotient value of `extendF F` on `sourceOrientedExtendedTubeDomain`, feed the checked continuity/local-boundedness theorem, max-rank holomorphy theorem, non-exceptional/max-rank bridge, and domain-density theorem into the normal analytic-space Riemann extension, and extend across `SourceOrientedExceptionalRank` using the algebraic SO-invariant model: `sourceOrientedInvariantRing_generated_by_gram_det`, `sourceOrientedInvariantRing_relations_kernel`, `sourceOrientedInvariantRing_integrallyClosed`, `sourceOrientedAlgebraicCoordinateRing_iso_invariants`, and the normal analytic-space Riemann theorem.  The checked forward Cauchy-Binet and linear-syzygy support supplies the actual-tuple direction of the oriented determinant relations; the checked source coordinate-evaluation bridge and standard-dot bridge now also give only the easy containment direction, namely that displayed relations map to zero under the invariant-coordinate maps.  They do not prove the reverse SFT kernel inclusion.  The permitted standard algebraic-geometry import boundary here is the audited axiom-backed `BHW.standardSO_FFT_SFT_coordinatePresentation`: it must provide the explicit `SO` pairing/volume generators, symmetry/rank/alternation/Cauchy-Binet plus linear-syzygy kernel, and coordinate-map surjectivity, and it must remain independent of OS, Wightman functions, EOW, PET, and locality.  No all-rank local-section theorem and no arbitrary ambient extension of `Phi` is allowed. |
+      | `BHW.sourceOrientedVarietyGermHolomorphicOn_extendF_descent` | Componentwise regular/removable transcript pinned; production Lean not started for the final normal/Riemann extension.  The prerequisite quotient-value definition, well-definedness theorem, local-boundedness predicate, max-rank topological glue helpers, compact-parameter continuity helper, residual-chart compact/local-boundedness/continuity helpers, conditional global continuity/local-boundedness assembly `sourceOrientedQuotientValue_continuous_locallyBounded_of_maxRankLocal`, all-arity local holomorphic section producer `sourceOrientedExtendedTube_holomorphicLocalSection`, max-rank quotient holomorphy theorem `sourceOrientedQuotientValue_holomorphicOn_maxRank`, global `sourceOrientedQuotientValue_continuous_locallyBounded`, exceptional-rank lower-rank identification `sourceOrientedExceptionalRank_eq_lowerRank`, determinant-zero-locus identification `sourceOrientedExceptionalRank_eq_minorsVanishing`, closedness of the determinant-zero locus `isClosed_sourceOrientedMaximalMinorsVanishing`, analytic exceptional-locus theorem `sourceOrientedExceptionalRank_isAnalyticSubvariety`, explicit max-rank density theorem `sourceOrientedMaxRank_dense_in_domain_inter_maxRank`, non-exceptional/max-rank bridge `not_exceptional_rank_iff_maxRank`, non-exceptional domain-density theorem `sourceOrientedMaxRank_dense_in_domain`, coordinate-ring relation definitions `sourceOrientedAlgebraicRelationGenerators`/`sourceOrientedAlgebraicRelationIdeal`, source forward ideal-vanishing bridge `sourceOrientedAlgebraicRelationIdeal_eval_eq_zero_of_relations`, standard-dot Cauchy-Binet support `sourceMatrixMinor_sourceComplexDotGram_standardFullFrame`, standard forward ideal-vanishing bridge `standardSOAlgebraicRelationIdeal_eval_eq_zero`, standard easy kernel containment `standardSOAlgebraicRelationIdeal_le_invariantCoordinateMap_ker`, and its source transport `sourceOrientedAlgebraicRelationIdeal_le_invariantCoordinateMap_ker` are checked. | Define `Phi` as the checked quotient value of `extendF F` on `sourceOrientedExtendedTubeDomain`, feed the checked continuity/local-boundedness theorem, max-rank holomorphy theorem, non-exceptional/max-rank bridge, and domain-density theorem into the normal analytic-space Riemann extension, and extend across `SourceOrientedExceptionalRank` using the algebraic SO-invariant model: `sourceOrientedInvariantRing_generated_by_gram_det`, `sourceOrientedInvariantRing_relations_kernel`, `sourceOrientedInvariantRing_integrallyClosed`, `sourceOrientedAlgebraicCoordinateRing_iso_invariants`, and the normal analytic-space Riemann theorem.  The checked forward Cauchy-Binet and linear-syzygy support supplies the actual-tuple direction of the oriented determinant relations; the checked source coordinate-evaluation bridge and standard-dot bridge now also give only the easy containment direction, namely that displayed relations map to zero under the invariant-coordinate maps.  They do not prove the reverse SFT kernel inclusion.  The permitted standard algebraic-geometry import boundary here is the audited axiom-backed `BHW.StandardSOCoordinatePresentationData`, supplied only by explicitly importing `SourceOrientedStandardSOAxiom.lean` and binding `BHW.standardSO_FFT_SFT_presentationData`: it must provide the explicit `SO` pairing/volume generators, symmetry/rank/alternation/Cauchy-Binet plus linear-syzygy kernel, and coordinate-map surjectivity via `BHW.standardSO_FFT_SFT_coordinatePresentation_of_data`, and it must remain independent of OS, Wightman functions, EOW, PET, and locality.  No all-rank local-section theorem and no arbitrary ambient extension of `Phi` is allowed. |
       | `BHW.sourceOrientedScalarRepresentativeData_of_branchLaw`, `BHW.hallWightman_sourceOrientedScalarRepresentativeData`, `BHW.sourceOrientedScalarRepresentativeData_bvt_F` | The data structure and `sourceOrientedScalarRepresentativeData_of_branchLaw` are checked in `SourceOrientedScalarRepresentative.lean`; the Hall-Wightman and `bvt_F` specializations remain assembly after the branch law and descent rows. | Specialize to `bvt_F` using `bvt_F_holomorphic`, `bvt_F_complexLorentzInvariant_forwardTube`, and `BHW_forwardTube_eq`; no full-component/improper invariant is needed on this proper-complex route. |
 
       In particular, `BHW.sourceOrientedScalarRepresentativeData_bvt_F` is the

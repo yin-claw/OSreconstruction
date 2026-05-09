@@ -191,7 +191,7 @@ direct `sorry` census.
 | `tube_boundaryValue_of_vladimirov_growth` | `SCV/TubeBoundaryValueExistence.lean` | BV existence from Vladimirov growth | `docs/scv_infrastructure_blueprint.md` |
 | `tube_boundaryValue_realizes_dualCone_distribution` | `SCV/FourierSupportCone.lean` | BV realized by dual-cone distribution | `docs/scv_infrastructure_blueprint.md` |
 | `bochner_tube_extension` | `SCV/BochnerTubeTheorem.lean` | global Bochner tube extension | `docs/scv_infrastructure_blueprint.md` |
-| `standardSO_FFT_SFT_presentationData` | `ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedStandardSOPresentation.lean` | Weyl-Cartan SO FFT/SFT presentation with linear syzygies | `docs/theorem2_locality_blueprint.md` |
+| `standardSO_FFT_SFT_presentationData` | `ComplexLieGroups/Connectedness/BHWPermutation/SourceOrientedStandardSOAxiom.lean` | Weyl-Cartan SO FFT/SFT presentation with linear syzygies; axiom module kept out of the BHW barrel | `docs/theorem2_locality_blueprint.md` |
 
 `vladimirov_tillmann` is no longer listed here because it is now proved as a
 theorem from the SCV axiom inventory, not an explicit production axiom.
