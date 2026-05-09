@@ -20998,6 +20998,420 @@ Proof decomposition of this theorem, without hiding the analytic work:
       closed-complement projection, and therefore is not the real-compatible
       coordinate needed by `chart_eq_kernel_mixed`.
 
+      Final proof transcript for the compatible complex chart producer,
+      2026-05-09.  The implementation must first introduce explicit finite
+      reindexing equivalences, not a basis-chosen finite-dimensional
+      equivalence:
+
+      ```lean
+      abbrev BHW.sourceFullFrameRealCompatibleModelIndex
+          {d n : Nat}
+          (ι : Fin (d + 1) ↪ Fin n)
+          (r : Nat) :=
+        Sum (Fin r) (Sigma fun _ : BHW.sourceComplementIndex ι => Fin (d + 1))
+
+      noncomputable def BHW.sourceFullFrameRealCompatibleCoordEquivR
+          {d n : Nat}
+          (ι : Fin (d + 1) ↪ Fin n)
+          (r : Nat) :
+          (Fin (Fintype.card
+            (BHW.sourceFullFrameRealCompatibleModelIndex ι r)) -> ℝ) ≃ₗ[ℝ]
+            ((Fin r -> ℝ) ×
+              (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℝ))
+
+      noncomputable def BHW.sourceFullFrameRealCompatibleCoordEquivC
+          {d n : Nat}
+          (ι : Fin (d + 1) ↪ Fin n)
+          (r : Nat) :
+          (Fin (Fintype.card
+            (BHW.sourceFullFrameRealCompatibleModelIndex ι r)) -> ℂ) ≃ₗ[ℂ]
+            ((Fin r -> ℂ) ×
+              (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℂ))
+
+      theorem BHW.sourceFullFrameRealCompatibleCoordEquiv_realToComplex
+          {d n : Nat}
+          (ι : Fin (d + 1) ↪ Fin n)
+          (r : Nat)
+          (u : Fin (Fintype.card
+            (BHW.sourceFullFrameRealCompatibleModelIndex ι r)) -> ℝ) :
+          BHW.sourceFullFrameRealCompatibleCoordEquivC ι r
+              (SCV.realToComplex u) =
+            (SCV.realToComplex
+              ((BHW.sourceFullFrameRealCompatibleCoordEquivR ι r u).1),
+             fun k a =>
+              (((BHW.sourceFullFrameRealCompatibleCoordEquivR ι r u).2 k a
+                : ℝ) : ℂ))
+      ```
+
+      Definition order:
+
+      1. reindex from `Fin (Fintype.card α)` to
+         `α := Sum (Fin r)
+           (Sigma fun _ : sourceComplementIndex ι => Fin (d + 1))` using
+         `(Fintype.equivFin α).symm`;
+      2. split functions on the sum by
+         `LinearEquiv.sumArrowLequivProdArrow`;
+      3. curry the second factor by `LinearEquiv.piCurry`;
+      4. prove the real/complex compatibility by extensionality and cases on
+         the sum index.  This avoids an arbitrary complex basis and gives the
+         exact `coordEquiv_realToComplex` field needed by
+         `SourceFullFrameRealCompatibleImplicitChartData.chart_real_eq`.
+
+      The raw compatible chart is the finite product chart
+
+      ```lean
+      noncomputable def BHW.sourceFullFrameRealCompatibleChartRaw
+          {d n : Nat}
+          (ι : Fin (d + 1) ↪ Fin n)
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          (hM0R :
+            IsUnit (BHW.sourceRealFullFrameMatrix d n ι x0).det)
+          (F : BHW.SourceFullFrameRealSliceFiniteCoordData d
+            (BHW.sourceRealFullFrameMatrix d n ι x0) hM0R) :
+          BHW.SourceOrientedGramData d n ->
+            ((Fin F.realModelDim -> ℂ) ×
+              (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℂ)) :=
+        fun G =>
+          ((BHW.sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC
+              d hM0R F).symm
+            (BHW.sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC
+              d n ι hM0R F G),
+           BHW.sourceSelectedMixedRows d n ι G)
+
+      noncomputable def BHW.sourceFullFrameRealCompatibleChartInvRaw
+          {d n : Nat}
+          (ι : Fin (d + 1) ↪ Fin n)
+          {x0 : Fin n -> Fin (d + 1) -> ℝ}
+          (hM0R :
+            IsUnit (BHW.sourceRealFullFrameMatrix d n ι x0).det)
+          (F : BHW.SourceFullFrameRealSliceFiniteCoordData d
+            (BHW.sourceRealFullFrameMatrix d n ι x0) hM0R) :
+          ((Fin F.realModelDim -> ℂ) ×
+            (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℂ)) ->
+              BHW.SourceOrientedGramData d n :=
+        fun y =>
+          BHW.sourceFullFrameGauge_reconstructInvariant d n ι
+            ((BHW.sourceRealFullFrameMatrix d n ι x0).map Complex.ofReal)
+            (BHW.sourceFullFrameExplicitGaugeSliceData d
+              (BHW.sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R))
+            (F.complexCoordEquiv y.1, y.2)
+      ```
+
+      The raw domain is a variety-relative shrink:
+
+      ```lean
+      def BHW.sourceFullFrameRealCompatibleChartDomain
+          ... : Set (BHW.SourceOrientedGramData d n) :=
+        BHW.sourceOrientedGramVariety d n ∩
+          {G | G.det ι ≠ 0} ∩
+          {G |
+            BHW.sourceFullFrameSelectedSymmetricCoordAmbient d n ι G ∈
+              (BHW.sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC
+                d hM0R).source} ∩
+          {G |
+            BHW.sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC
+                d n ι hM0R F G ∈
+              (BHW.sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC
+                d hM0R F).target} ∩
+          {G |
+            let q :=
+              (BHW.sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC
+                d hM0R F).symm
+                (BHW.sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC
+                  d n ι hM0R F G)
+            BHW.sourceFullFrameGaugeSliceMapSymmetric d
+                ((BHW.sourceRealFullFrameMatrix d n ι x0).map Complex.ofReal)
+                (BHW.sourceFullFrameExplicitGaugeSliceData d
+                  (BHW.sourceFullFrame_matrix_map_ofReal_det_isUnit d hM0R))
+                (F.complexCoordEquiv q) ∈
+              (BHW.sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC
+                d hM0R).source}
+      ```
+
+      Relative openness is the ambient-open witness obtained by intersecting
+      the determinant nonzero set and the displayed source/target preimages,
+      then intersecting with `sourceOrientedGramVariety d n`.  Center
+      membership uses
+      a new base-source lemma for the determinant-direction ambient chart,
+      `sourceFullFrameRealCompatibleSymmetricEquation_base_mem_chartSource`,
+      `sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC_base`,
+      `sourceFullFrameRealCompatibleNormalizedKernelC_zero_mem_chartTarget`,
+      the definitional identity
+      `sourceFullFrameGaugeSliceMapSymmetric ... 0 =
+        sourceFullFrameSymmetricBase d (M0R.map Complex.ofReal)`, and
+      `sourceFullFrameOrientedCoordOfSource_sourceRealOrientedMinkowskiInvariant`.
+
+      The left inverse theorem is:
+
+      ```lean
+      theorem BHW.sourceFullFrameRealCompatibleChartInvRaw_left_inv
+          ... {G : BHW.SourceOrientedGramData d n}
+          (hG :
+            G ∈ BHW.sourceFullFrameRealCompatibleChartDomain
+              d n ι hM0R F) :
+          BHW.sourceFullFrameRealCompatibleChartInvRaw ι hM0R F
+            (BHW.sourceFullFrameRealCompatibleChartRaw ι hM0R F G) = G
+      ```
+
+      Its proof is fixed:
+
+      1. destruct `hG` to obtain variety membership, `G.det ι ≠ 0`,
+         selected ambient-chart source membership, finite selected-kernel target
+         membership, and reconstructed gauge-slice ambient-chart source
+         membership;
+      2. set `eK :=
+         sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC
+         d hM0R F` and
+         `q := eK.symm
+           (sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC
+             d n ι hM0R F G)`;
+      3. use `eK.right_inv` on the target membership to prove
+         `eK q =
+          sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC
+            d n ι hM0R F G`;
+      4. rewrite `eK` by
+         `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC_coe`
+         and unfold
+         `sourceFullFrameRealCompatibleNormalizedKernelMap` and
+         `sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC`;
+      5. apply injectivity of
+         `sourceFullFrameRealSliceKernelCoordEquiv d hM0R F` to convert the
+         finite-coordinate equality into equality of
+         `sourceFullFrameRealCompatibleKernelProjection d hM0R` on the selected
+         source coordinate and the reconstructed gauge-slice coordinate;
+      6. apply
+         `sourceFullFrameGauge_reconstructInvariant_eq_of_realCompatibleProjection_eq_mixedRows_eq`
+         with
+         `y := (F.complexCoordEquiv q,
+           sourceSelectedMixedRows d n ι G)`.
+
+      The right inverse on `chartRaw '' domain` is the same left-inverse theorem
+      applied to the representing `G`.  The inverse differentiability and
+      continuity fields are inherited from
+      `differentiableOn_sourceFullFrameGauge_reconstructInvariant_on_modelDetNonzero`
+      and
+      `continuousOn_sourceFullFrameGauge_reconstructInvariant_on_modelDetNonzero`;
+      the determinant-nonzero model-domain side follows from the left inverse
+      and the stored `G.det ι ≠ 0`.
+
+      The raw packet is therefore:
+
+      ```lean
+      noncomputable def BHW.sourceFullFrameRealCompatibleMaxRankChartDataRaw
+          ... :
+          BHW.SourceOrientedMaxRankChartData d n
+            (M :=
+              (Fin F.realModelDim -> ℂ) ×
+                (BHW.sourceComplementIndex ι -> Fin (d + 1) -> ℂ))
+            (BHW.sourceRealOrientedMinkowskiInvariant d n x0)
+      ```
+
+      It is not enough to set `Ω` to the full raw domain, because
+      `SourceOrientedMaxRankChartData` requires `IsOpen (chart '' Ω)`.  The
+      image-open shrink is a separate checked step with the following exact
+      transcript.
+
+      First prove the base and reconstruction-side formulas:
+
+      ```lean
+      theorem
+          BHW.sourceFullFrameRealCompatibleSymmetricEquation_base_mem_chartSource
+          ... :
+          BHW.sourceFullFrameSymmetricBase d
+              ((BHW.sourceRealFullFrameMatrix d n ι x0).map Complex.ofReal) ∈
+            (BHW.sourceFullFrameRealCompatibleSymmetricEquationOpenPartialHomeomorphC
+              d hM0R).source
+
+      theorem
+          BHW.sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC_reconstructInvariant_eq
+          ... (y :
+            BHW.sourceFullFrameRealCompatibleChartModel ι F.realModelDim) :
+          BHW.sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC
+              d n ι hM0R F
+              (BHW.sourceFullFrameRealCompatibleChartInvRaw ι hM0R F y) =
+            BHW.sourceFullFrameRealCompatibleNormalizedKernelMap d hM0R F y.1
+
+      theorem
+          BHW.sourceFullFrameRealCompatibleChartRaw_invRaw_eq_of_source_mem_domain
+          ... {y :
+            BHW.sourceFullFrameRealCompatibleChartModel ι F.realModelDim}
+          (hy_source :
+            y.1 ∈
+              (BHW.sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC
+                d hM0R F).source)
+          (hy_domain :
+            BHW.sourceFullFrameRealCompatibleChartInvRaw ι hM0R F y ∈
+              BHW.sourceFullFrameRealCompatibleChartDomain ι hM0R F) :
+          BHW.sourceFullFrameRealCompatibleChartRaw ι hM0R F
+              (BHW.sourceFullFrameRealCompatibleChartInvRaw ι hM0R F y) = y
+      ```
+
+      The second theorem rewrites the selected symmetric coordinate of
+      `sourceFullFrameRealCompatibleChartInvRaw y` by
+      `sourceFullFrameOrientedCoordOfSource_reconstructInvariant_eq`, then
+      unfolds the determinant-direction finite kernel map.  The third theorem
+      uses `eK.left_inv hy_source` for the first component and
+      `sourceSelectedMixedRows_reconstructInvariant_eq_of_frame_det_ne_zero`
+      for the second component; the frame determinant comes from
+      `sourceFullFrameGauge_reconstructInvariant_selectedDet` and
+      `hy_domain.2.1`.
+
+      Now define the model-open right-inverse domain
+
+      ```lean
+      def BHW.sourceFullFrameRealCompatibleModelChartDomain
+          ... :
+          Set (BHW.sourceFullFrameRealCompatibleChartModel ι F.realModelDim) :=
+        {y |
+          y.1 ∈
+            (BHW.sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC
+              d hM0R F).source} ∩
+        {y |
+          BHW.sourceFullFrameRealCompatibleChartInvRaw ι hM0R F y ∈
+            BHW.sourceFullFrameRealCompatibleChartDomain ι hM0R F}
+      ```
+
+      and prove:
+
+      * `sourceFullFrameRealCompatibleModelChartDomain_open`: expand the second
+        condition into the four non-variety raw-domain conditions composed
+        with `sourceFullFrameRealCompatibleChartInvRaw`; the variety condition
+        is automatic from
+        `sourceFullFrameGauge_reconstructInvariant_mem_variety`;
+      * `sourceFullFrameRealCompatibleChartRaw_center_mem_modelChartDomain`:
+        the first component is `0 ∈ eK.source`; the second component is the
+        raw-domain base membership using the base-source lemma above,
+        `sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC_base`,
+        `0 ∈ eK.target`, and `sourceFullFrameGaugeSliceMapSymmetric ... 0 =
+        sourceFullFrameSymmetricBase ...`;
+      * `sourceFullFrameRealCompatibleModelChartDomain_subset_image`: send
+        `y` to `sourceFullFrameRealCompatibleChartInvRaw y`; membership in the
+        raw domain is the second conjunct, and the image equality is
+        `sourceFullFrameRealCompatibleChartRaw_invRaw_eq_of_source_mem_domain`.
+
+      Finally use the general local-biholomorph shrink pattern:
+      for an open `V ⊆ chartRaw '' rawDomain`, set
+      `ΩV := sourceFullFrameRealCompatibleChartInvRaw '' V`.  Then
+      `ΩV` is relatively open by
+      `LocalBiholomorphOnSourceOrientedVariety.inv_image_open_relOpen`,
+      `chartRaw '' ΩV = V` by the raw right-inverse, and max-rank follows from
+      raw-domain membership.  Taking
+      `V := sourceFullFrameRealCompatibleModelChartDomain` gives the raw
+      max-rank chart; postcomposing this raw product chart by
+      `(sourceFullFrameRealCompatibleCoordEquivC ι F.realModelDim).symm`
+      gives the finite `Fin m -> ℂ` chart used by the real producer.
+
+      The finite-coordinate `C` used in the real chart is obtained by
+      postcomposing this raw product chart with
+      `(sourceFullFrameRealCompatibleCoordEquivC ι F.realModelDim).symm`,
+      upgraded to a `ContinuousLinearEquiv` by finite dimensionality.  The
+      companion formula theorem is:
+
+      ```lean
+      theorem
+          BHW.sourceOrientedFullFrameMaxRankChartData_of_realCompatibleSlice_chart_real
+          ... :
+          let P :=
+            BHW.sourceOrientedFullFrameMaxRankChartData_of_realCompatibleSlice
+              ι hM0R F
+          let C := P.2
+          let S :=
+            BHW.sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_realExtension
+              d hM0R F
+          ∀ x,
+            BHW.sourceRealOrientedMinkowskiInvariant d n x ∈ C.Ω ->
+              BHW.sourceFullFrameRealCompatibleCoordEquivC
+                  ι F.realModelDim
+                  (C.chart
+                    (BHW.sourceRealOrientedMinkowskiInvariant d n x)) =
+                (S.realModelToComplexSlice.symm
+                  (S.complexKernelCoord
+                    ((BHW.sourceRealFullFrameMatrix d n ι x).map
+                      Complex.ofReal)),
+                 BHW.sourceSelectedMixedRows d n ι
+                  (BHW.sourceRealOrientedMinkowskiInvariant d n x))
+      ```
+
+      The proof unfolds the finite postcomposition, uses
+      `sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC_realInvariant`
+      on the real source invariant, applies the right-inverse theorem for
+      `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC`,
+      and finishes with
+      `sourceFullFrameRealCompatibleComplexKernelCoordFromReal_real_eq`.
+
+      The final `sourceFullFrameRealCompatibleImplicitChartData` assembly is
+      now mechanical.  Take
+      `hM0R := isUnit_iff_ne_zero.mpr hdet`, choose
+      `F` from `sourceFullFrameRealSliceFiniteCoordData d hM0R`, set
+      `S := sourceFullFrameRealGaugeSliceData_of_frameKernelCoord_realExtension
+      d hM0R F`, take `D` from
+      `sourceFullFrameRealSelectedFrameProductChartData_of_realCompatibleSlice
+      ... |>.toOpenData`, take `P` from
+      `sourceOrientedFullFrameMaxRankChartData_of_realCompatibleSlice ι hM0R F`,
+      and define
+
+      ```lean
+      Ep := (BHW.sourceRealFullFrameSplitHomeomorph d n ι).symm '' D.W
+      E0 := Ep ∩
+        (BHW.sourceRealOrientedMinkowskiInvariant d n) ⁻¹' P.2.Ω
+      realCoord x :=
+        (BHW.sourceFullFrameRealCompatibleCoordEquivR ι F.realModelDim).symm
+          (BHW.sourceFullFrameRealKernelMixedCoord S x)
+      ```
+
+      Then fill the fields as follows:
+
+      * `E0_open` is `D.source_patch_open` intersected with the ambient-open
+        witness from `P.2.Ω_relOpen` pulled back by
+        `continuous_sourceRealOrientedMinkowskiInvariant`;
+      * `center_mem` is `D.center_mem_source_patch` plus `P.2.center_mem`;
+      * `invariant_mem_chart` is the second component of membership in `E0`;
+      * `frame_mem_domain`, `realCoord_continuousOn`,
+        `realCoord_eq_kernel_mixed`, and `realCoord_image_open` are exactly the
+        checked `SourceFullFrameRealSelectedFrameProductOpenData` consequences,
+        restricted from `Ep` to `E0`;
+      * `chart_eq_kernel_mixed` is the companion finite-coordinate formula
+        theorem above;
+      * the harmless cast from `S :
+        SourceFullFrameRealGaugeSliceData ... hM0R.ne_zero` to the original
+        `hdet` is by proof irrelevance.
+
+      This completes the Lean-ready route for the producer without introducing
+      a new axiom, `sorry`, or an ambient source-matrix transport shortcut.
+
+      Lean checkpoint, 2026-05-09: the raw compatible complex chart core is now
+      checked in `SourceOrientedRealFullFrameKernel.lean`.  This includes the
+      explicit real/complex finite reindexing equivalences and their
+      `realToComplex` compatibility, the raw determinant-direction product
+      chart, the raw reconstruction inverse, the raw domain/accessors, max-rank
+      from selected determinant nonzero, the determinant-direction projection
+      equality extracted from the complex IFT right-inverse, the raw left and
+      right inverse theorems, chart continuity, reconstruction-inverse
+      continuity/differentiability on the raw image, and
+      `sourceFullFrameRealCompatibleLocalBiholomorphRaw`.  The remaining Lean
+      step for the `C` field is exactly the open-image/relative-open shrink
+      converting this raw local biholomorphic inverse into
+      `SourceOrientedMaxRankChartData`, followed by the finite-coordinate real
+      formula theorem and the final `E0` assembly.
+
+      Second Lean checkpoint, 2026-05-09: the reconstruction-side algebra for
+      the image-open shrink is now checked.  The new checked declarations are
+      `sourceFullFrameRealCompatibleSymmetricEquation_base_mem_chartSource`,
+      `sourceFullFrameRealCompatibleChartDomain_center_mem`,
+      `sourceFullFrameRealCompatibleSelectedKernelSourceCoordC_base`,
+      `sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC_reconstructInvariant_eq`,
+      `sourceFullFrameRealCompatibleChartRaw_invRaw_eq_of_source_mem_domain`,
+      `sourceFullFrameRealCompatibleModelChartDomain` with source/domain
+      accessors, `sourceFullFrameRealCompatibleModelChartDomain_subset_image`,
+      `sourceFullFrameRealCompatibleChartRaw_center_mem_modelChartDomain`,
+      `sourceFullFrameRealCompatibleShrunkenChartDomain`,
+      `sourceFullFrameRealCompatibleShrunkenChartDomain_subset_rawDomain`, and
+      `sourceFullFrameRealCompatibleChartRaw_image_shrunkenDomain`.  Thus the
+      remaining `C`-field work is no longer inverse algebra; it is precisely
+      the openness layer: model-domain openness and relative openness of the
+      shrunken source patch, followed by packaging into
+      `SourceOrientedMaxRankChartData`.
+
       In the small-arity theorem the determinant-coordinate family is empty,
       so oriented regularity is the checked pure-Gram regularity after
       extensional rewriting of `SourceOrientedGramData.det`.  In the

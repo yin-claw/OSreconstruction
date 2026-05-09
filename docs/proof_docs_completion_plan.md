@@ -6207,7 +6207,119 @@ implementation contract is:
    proves it agrees with the selected real full-frame coordinate on real
    source invariants.
 
-   Lean-pseudocode for the next implementation target:
+   The blueprint now records the near-transcription implementation route for
+   the compatible complex chart.  The next implementation target is not a
+   generic finite-dimensional chart wrapper.  It has these exact pieces:
+
+   1. Define explicit finite reindexing equivalences
+      `sourceFullFrameRealCompatibleCoordEquivR/C` using
+      `Sum (Fin F.realModelDim)
+        (Sigma fun _ : sourceComplementIndex ι => Fin (d + 1))`, then prove
+      `sourceFullFrameRealCompatibleCoordEquiv_realToComplex` by cases on the
+      sum index.  This supplies the final
+      `coordEquiv_realToComplex` field without arbitrary basis choices.
+   2. Define the raw determinant-direction complex chart
+      `sourceFullFrameRealCompatibleChartRaw G :=
+        (eK.symm
+          (sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC
+            d n ι hM0R F G),
+         sourceSelectedMixedRows d n ι G)`, where
+      `eK :=
+        sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC
+        d hM0R F`.
+   3. Define its inverse by reconstructing from
+      `(F.complexCoordEquiv q, rows)` through
+      `sourceFullFrameGauge_reconstructInvariant`.
+   4. Shrink the raw domain to the source variety, selected determinant
+      nonzero, selected ambient symmetric chart source, finite selected-kernel
+      target, and reconstructed gauge-slice ambient symmetric chart source.
+      Relative openness is the ambient-open witness intersected with
+      `sourceOrientedGramVariety`; base membership uses the new
+      `sourceFullFrameRealCompatibleSymmetricEquation_base_mem_chartSource`
+      lemma for the determinant-direction ambient chart.
+   5. Prove the raw left inverse by using `eK.right_inv`, rewriting with
+      `sourceFullFrameRealCompatibleNormalizedKernelOpenPartialHomeomorphC_coe`,
+      applying injectivity of
+      `sourceFullFrameRealSliceKernelCoordEquiv d hM0R F`, and then applying
+      `sourceFullFrameGauge_reconstructInvariant_eq_of_realCompatibleProjection_eq_mixedRows_eq`.
+      The right inverse on the chart image is this left inverse on the
+      representing source point.
+   6. Package the raw chart only after the image-open shrink is explicit.
+      First prove
+      `sourceFullFrameRealCompatibleSymmetricEquation_base_mem_chartSource`,
+      `sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC_reconstructInvariant_eq`,
+      and
+      `sourceFullFrameRealCompatibleChartRaw_invRaw_eq_of_source_mem_domain`.
+      Then define
+      `sourceFullFrameRealCompatibleModelChartDomain` as the model points whose
+      finite coordinate lies in `eK.source` and whose raw reconstruction lies
+      in `sourceFullFrameRealCompatibleChartDomain`; prove this model domain is
+      open, contains the center coordinate, and is contained in
+      `chartRaw '' sourceFullFrameRealCompatibleChartDomain`.  The shrunken
+      source patch is `chartInvRaw '' sourceFullFrameRealCompatibleModelChartDomain`,
+      so the chart image is exactly the model domain.  This supplies the
+      `chart_open` and relative-openness fields without using the old generic
+      full-frame chart.  Then postcompose by the explicit
+      `sourceFullFrameRealCompatibleCoordEquivC` to get
+      `sourceOrientedFullFrameMaxRankChartData_of_realCompatibleSlice`.
+   7. Prove the finite-coordinate real formula theorem
+      `sourceOrientedFullFrameMaxRankChartData_of_realCompatibleSlice_chart_real`
+      from
+      `sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC_realInvariant`,
+      the complex `eK.right_inv`, and
+      `sourceFullFrameRealCompatibleComplexKernelCoordFromReal_real_eq`.
+   8. Assemble `sourceFullFrameRealCompatibleImplicitChartData` by intersecting
+      the checked real product-open source patch
+      `(sourceRealFullFrameSplitHomeomorph d n ι).symm '' D.W` with the
+      preimage of `C.Ω`.  The real-side fields come from
+   `SourceFullFrameRealSelectedFrameProductOpenData`; `chart_eq_kernel_mixed`
+   comes from the finite-coordinate formula theorem.
+
+   Lean checkpoint, 2026-05-09: the first half of this implementation route is
+   now checked in `SourceOrientedRealFullFrameKernel.lean`.  New checked
+   declarations are
+   `sourceFullFrameRealCompatibleModelIndex`,
+   `sourceFullFrameRealCompatibleCoordEquiv`,
+   `sourceFullFrameRealCompatibleCoordEquivR`,
+   `sourceFullFrameRealCompatibleCoordEquivC`,
+   `sourceFullFrameRealCompatibleCoordEquiv_realToComplex`,
+   `continuous_sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC`,
+   `sourceFullFrameRealCompatibleChartModel`,
+   `sourceFullFrameRealCompatibleSelectedKernelSourceCoordC`,
+   `sourceFullFrameRealCompatibleChartRaw`,
+   `sourceFullFrameRealCompatibleChartModelToGaugeModel`,
+   `continuous_sourceFullFrameRealCompatibleChartModelToGaugeModel`,
+   `differentiable_sourceFullFrameRealCompatibleChartModelToGaugeModel`,
+   `sourceFullFrameRealCompatibleChartInvRaw`,
+   `sourceFullFrameRealCompatibleChartDomain` and its accessors,
+   `sourceFullFrameRealCompatibleChartDomain_maxRank`,
+   `sourceFullFrameRealCompatibleChartRaw_projection_eq`,
+   `sourceFullFrameRealCompatibleChartInvRaw_left_inv`,
+   `sourceFullFrameRealCompatibleChartRaw_right_inv_on_image`,
+   `sourceFullFrameRealCompatibleChartInvRaw_mem_domain_on_image`,
+   `sourceFullFrameRealCompatibleChartRaw_modelDetNonzero_on_image`,
+   `continuousOn_sourceFullFrameRealCompatibleChartRaw`,
+   `continuousOn_sourceFullFrameRealCompatibleChartInvRaw_on_image`,
+   `differentiableOn_sourceFullFrameRealCompatibleChartInvRaw_on_image`, and
+   `sourceFullFrameRealCompatibleLocalBiholomorphRaw`.  A second checked
+   layer now proves the reconstruction-side algebra for the open-image shrink:
+   `sourceFullFrameRealCompatibleSymmetricEquation_base_mem_chartSource`,
+   `sourceFullFrameRealCompatibleChartDomain_center_mem`,
+   `sourceFullFrameRealCompatibleSelectedKernelSourceCoordC_base`,
+   `sourceFullFrameRealCompatibleSelectedKernelCoordAmbientC_reconstructInvariant_eq`,
+   `sourceFullFrameRealCompatibleChartRaw_invRaw_eq_of_source_mem_domain`,
+   `sourceFullFrameRealCompatibleModelChartDomain`,
+   `sourceFullFrameRealCompatibleModelChartDomain_subset_image`,
+   `sourceFullFrameRealCompatibleChartRaw_center_mem_modelChartDomain`,
+   `sourceFullFrameRealCompatibleShrunkenChartDomain`,
+   `sourceFullFrameRealCompatibleShrunkenChartDomain_subset_rawDomain`, and
+   `sourceFullFrameRealCompatibleChartRaw_image_shrunkenDomain`.  The remaining
+   producer work is exactly the openness layer that upgrades this raw local
+   biholomorphic inverse to the `SourceOrientedMaxRankChartData` field,
+   followed by the finite-coordinate real formula theorem and final `E0`
+   assembly.
+
+   Lean-pseudocode for the concrete chart producer:
 
    ```lean
    noncomputable def BHW.sourceOrientedFullFrameMaxRankChartData_of_realCompatibleSlice
