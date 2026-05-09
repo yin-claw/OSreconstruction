@@ -255,33 +255,28 @@ theorem ruelle_analytic_cluster_bound_of
     _ = bound := by
         simp [Finset.sum_const]
 
-/-! ### L4 spectral data — production axiom
+/-! ### L4 production axiom withdrawn
 
-**Status (2026-05-08): production axiom shipped after RACH.bound
-boundary-regulator refactor.**
+**Status (2026-05-09): production axiom withdrawn after PR-#86 review;
+conditional reduction kept.**
 
-Earlier (also 2026-05-08), Gemini-chat vetting flagged that the
-production axiom for `L4SpectralData` could not be safely added because
-the bound shape it inherited from `RuelleAnalyticClusterHypotheses.bound`
-was unsatisfiable for general Wightman QFTs. Free-field counterexample:
-the disconnected pairing `W₂(z₁,₁, z₁,₂) · W₂(z₂,₁, z₂,₂)` from Wick's
-theorem is independent of `a` and blows up as `Im(z₁,₁ - z₁,₂) → ∂V+`,
-which the bare polynomial `(1 + ‖z‖)^N` cannot capture.
+An earlier draft of this file (2026-05-08) shipped a production axiom
+`wightman_l4_spectral_data_axiom : L4SpectralData Wfn n m` discharging
+the L4 hypothesis unconditionally for any Wightman family. The axiom
+was withdrawn after the PR-#86 review
+([@xiyin137](https://github.com/xiyin137)): per the project's axiom
+discipline, new production axioms should encode classical background
+infrastructure (SNAG, Bochner, Schwartz-Fubini, Vladimirov-style
+SCV/FA) rather than QFT-specific consequences such as the polarized
+Fourier representation of `W_analytic_BHW`. `L4SpectralData` is kept
+as a conditional structure; downstream consumers must supply it
+explicitly.
 
-The fix: refactor `RACH.bound` to include the
-**Streater-Wightman boundary regulator** `(1 + Δ(Im z)⁻¹)^M`, where
-`Δ` is the minimum distance of consecutive imaginary differences to
-`∂V+`. With the regulator, the bound is satisfiable (free fields
-satisfy it: the regulator factor matches the `1/(z-w)²` blow-up
-mode-by-mode). `L4SpectralData` was updated in this file to inherit
-the new shape; the conditional reduction `ruelle_analytic_cluster_bound_of`
-re-proves the new (regulated) bound from the polarized Fourier
-representation by triangle inequality.
+The textbook discharge content (formerly the axiom's justification)
+is the proof obligation that future work will need to discharge as
+theorems rather than axioms. It combines:
 
-The textbook content of the production axiom combines four ingredients:
-
-1. **Spectral resolution** of multi-time matrix elements via SNAG on
-   the GNS Hilbert space.
+1. **Spectral resolution** of multi-time matrix elements via SNAG.
 2. **Polarization** of off-diagonal sesquilinear forms.
 3. **Polynomial growth + boundary regulator** of each polarization
    piece's total mass: matches `fourierLaplaceExtMultiDim_vladimirov_growth`
@@ -292,62 +287,16 @@ The textbook content of the production axiom combines four ingredients:
 4. **|exp(i p · a)| = 1** for real spatial shifts (used in the
    conditional proof above).
 
-References:
+References for the discharge content:
 * Streater-Wightman, *PCT, Spin and Statistics, and All That*,
-  Theorem 3.1.1 (polynomial behavior on the forward tube) and §3.5.
+  Theorem 3.1.1 and §3.5.
 * Bogoliubov-Logunov-Todorov, *Axiomatic QFT*, Theorem 11.2.
-* Glimm-Jaffe, *Quantum Physics*, §6.2 — spectral support of vacuum
-  expectation values.
-* Reed-Simon II §IX.8 — SNAG / Stone's theorem and AC spectral
-  measures.
+* Glimm-Jaffe, *Quantum Physics*, §6.2.
+* Reed-Simon II §IX.8.
 
-**Vetting verdict (Gemini chat, 2026-05-08)**: the production axiom
-in this corrected shape is **Likely correct / Standard**. The
-boundary regulator restores satisfiability (the free-field
-counterexample is now witnessed by the regulator's blow-up); the
-polynomial-bound and polarization ingredients are textbook.
-
-**Status**: production axiom shipped. Downstream cluster proof
-(`W_analytic_cluster_integral_via_ruelle`) is currently `sorry`'d at
-the dominator-integrability step; the new dominator includes the
-regulator factor and requires IBP rework (Streater-Wightman §3.4 /
-Ruelle 1962 — derivative-transfer argument). See
-`docs/ruelle_bound_vacuity_concern.md`. -/
-axiom wightman_l4_spectral_data_axiom
-    (Wfn : WightmanFunctions d) (n m : ℕ) :
-    L4SpectralData Wfn n m
-
-/-! ### L4 unconditional -/
-
-/-- **L4 unconditional**: the uniform-in-`a` polynomial bound on the
-joint analytic continuation, with Streater-Wightman boundary
-regulator, for any Wightman family.
-
-Discharges the `bound` field of `RuelleAnalyticClusterHypotheses` from
-the L4 spectral-data axiom. -/
-theorem ruelle_analytic_cluster_bound
-    (Wfn : WightmanFunctions d) (n m : ℕ) :
-    ∃ (C : ℝ) (N M : ℕ) (R : ℝ),
-      0 < C ∧ 0 < R ∧
-      ∀ (z₁ : Fin n → Fin (d + 1) → ℂ),
-      ∀ (z₂ : Fin m → Fin (d + 1) → ℂ),
-        z₁ ∈ ForwardTube d n →
-        z₂ ∈ ForwardTube d m →
-        ∀ (a : SpacetimeDim d), a 0 = 0 →
-          (∑ i : Fin d, (a (Fin.succ i)) ^ 2) > R ^ 2 →
-          (Fin.append z₁
-              (fun k μ_idx => z₂ k μ_idx +
-                (if μ_idx = 0 then (0 : ℂ) else (a μ_idx : ℂ)))) ∈
-            PermutedExtendedTube d (n + m) →
-          ‖(W_analytic_BHW Wfn (n + m)).val
-              (Fin.append z₁
-                (fun k μ_idx => z₂ k μ_idx +
-                  (if μ_idx = 0 then (0 : ℂ) else (a μ_idx : ℂ))))‖
-            ≤ C * (1 + ‖z₁‖ + ‖z₂‖) ^ N
-                * (1 + (tubeBoundaryDist z₁)⁻¹) ^ M
-                * (1 + (tubeBoundaryDist z₂)⁻¹) ^ M :=
-  ruelle_analytic_cluster_bound_of Wfn n m
-    (wightman_l4_spectral_data_axiom Wfn n m)
+The downstream cluster proof (`W_analytic_cluster_integral_via_ruelle`)
+remains `sorry`'d at the dominator-integrability step; see
+`docs/ruelle_bound_vacuity_concern.md` for the IBP rework plan. -/
 
 end Ruelle
 end OSReconstruction

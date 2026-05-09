@@ -4,7 +4,7 @@ A Lean 4 formalization of the **Osterwalder-Schrader reconstruction theorem** an
 
 ## Current Axiom Inventory
 
-The tracked production tree currently contains **14 explicit axioms** (verified by `rg '^axiom\s+\w' OSReconstruction --glob '*.lean'`):
+The tracked production tree currently contains **12 explicit axioms** (verified by `rg '^axiom\s+\w' OSReconstruction --glob '*.lean'`):
 
 **Functional analysis (2):**
 - `schwartz_nuclear_extension` in `Wightman/WightmanAxioms.lean` — **partially proved**: nuclearity of Schwartz space is now proved in the [`gaussian-field`](https://github.com/or-n/gaussian-field) library; the remaining gap is importing the instance and deriving the kernel theorem
@@ -26,9 +26,7 @@ The tracked production tree currently contains **14 explicit axioms** (verified 
 **Reconstruction bridge (1):**
 - `reduced_bargmann_hall_wightman_of_input` in `Wightman/Reconstruction/WickRotation/BHWReducedExtension.lean`
 
-**Wightman GNS spectral (2):**
-- `gns_l2_spectral_data_axiom` in `Wightman/Spectral/Ruelle/L2_NoZeroMomentumAtom.lean` — for any pair of states orthogonal to the vacuum in the GNS Hilbert space, the spacetime translation rep has a finite Borel spectral measure with AC spatial marginal and SNAG-derived Fourier-bridge identity. References: Glimm-Jaffe §6.2 (mass-hyperboloid spectral analysis), Reed-Simon II §IX.8 (SNAG / AC spectral measures), Streater-Wightman §3.5. Adopted as a single axiom at the GNS-spectral boundary; vetting status: see `docs/cluster_axiom_vetting.md`.
-- `wightman_l4_spectral_data_axiom` in `Wightman/Spectral/Ruelle/L4_UniformPolynomialBound.lean` — for any Wightman family and any arities `(n, m)`, the joint analytic continuation `W_analytic_BHW (n+m)` admits a polarized Fourier representation along real spatial shifts with polynomial-and-boundary-regulated mass bound `C(1+‖z₁‖+‖z₂‖)^N · (1+(tubeBoundaryDist z₁)⁻¹)^M · (1+(tubeBoundaryDist z₂)⁻¹)^M` (Streater-Wightman Theorem 3.1.1 shape). References: Streater-Wightman 3.1.1 / §3.5, Bogoliubov-Logunov-Todorov §11, Glimm-Jaffe §6.2, Reed-Simon II §IX.8. Discharges the `bound` field of `RuelleAnalyticClusterHypotheses` unconditionally. Vetting status: see `docs/cluster_axiom_vetting.md` (entry 11).
+Per the project's axiom discipline, new production axioms encode classical background infrastructure (SNAG, Bochner tube, Schwartz-Fubini, nuclearity, Vladimirov-style SCV/FA). QFT-specific consequences (Wightman / GNS / Ruelle / cluster claims) are kept as conditional inputs or discharged via proved theorems on the proof route, not added to the axiom inventory.
 
 ### Conditional theorems and inventoried frontier lemmas
 
@@ -38,16 +36,25 @@ in `Wightman/Reconstruction/WickRotation/RuelleClusterBound.lean`)
 is a **conditional theorem**: it takes an explicit
 `RuelleAnalyticClusterHypotheses Wfn n m` parameter packaging the two
 textbook Ruelle 1962 / Araki-Hepp-Ruelle 1962 inputs (uniform polynomial
-bound + pointwise factorization on PET). The `bound` field is now
-unconditionally satisfied via `wightman_l4_spectral_data_axiom`; the
-`pointwise` field still requires call-site supply.
+bound + pointwise factorization on PET). Both fields are conditional
+inputs supplied at call sites — neither is discharged via production
+axiom on the QFT side.
+
+The L2 and L4 reductions
+(`gns_orthogonal_spatial_cobounded_decay_of` in
+`Wightman/Spectral/Ruelle/L2_NoZeroMomentumAtom.lean` and
+`ruelle_analytic_cluster_bound_of` in
+`Wightman/Spectral/Ruelle/L4_UniformPolynomialBound.lean`) are
+**conditional reductions** taking explicit `L2SpectralData` and
+`L4SpectralData` packets. They expose the textbook proof obligations
+as named hypothesis structures rather than as production axioms.
 
 **Active sorry (2026-05-08)**: the dominator-integrability step in
 `W_analytic_cluster_integral_via_ruelle` (`RuelleClusterBound.lean:718`).
-The bound shape was repaired (regulator added) after a vacuity finding;
-the cluster proof's existing dominator no longer matches the new shape
-and requires IBP rework (Streater-Wightman §3.4 / Ruelle 1962). See
-`docs/ruelle_bound_vacuity_concern.md`.
+The `RACH.bound` shape was repaired (boundary-distance regulator added)
+after a vacuity finding; the cluster proof's existing dominator no
+longer matches the new shape and requires IBP rework (Streater-Wightman
+§3.4 / Ruelle 1962). See `docs/ruelle_bound_vacuity_concern.md`.
 
 L5 (`OSReconstruction/Wightman/Spectral/Ruelle/L5_SpectralRiemannLebesgue.lean`)
 — pure measure-theoretic Riemann-Lebesgue for finite measures with AC

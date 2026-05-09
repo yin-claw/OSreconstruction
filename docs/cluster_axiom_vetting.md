@@ -356,9 +356,25 @@ directions", Helv. Phys. Acta 35, 164).
 
 ---
 
-## Production-axiom additions (Option B for L2)
+## Production-axiom proposals (withdrawn after PR-#86 review)
 
-### 10. `gns_l2_spectral_data_axiom`
+The two QFT-specific axiom proposals below were drafted for the L2 and
+L4 reductions, then **withdrawn (2026-05-09)** after the PR-#86 review
+([@xiyin137](https://github.com/xiyin137)). Per the project's axiom
+discipline, new production axioms encode classical background
+infrastructure (SNAG, Bochner tube, Schwartz-Fubini, Vladimirov-style
+SCV/FA) rather than QFT-specific consequences such as GNS-spectral AC
+marginal claims or the polarized-Fourier representation of
+`W_analytic_BHW`. Both reductions are kept as conditional theorems
+(`gns_orthogonal_spatial_cobounded_decay_of`,
+`ruelle_analytic_cluster_bound_of`) consuming explicit hypothesis
+structures; downstream callers supply the spectral data at use sites
+or future work discharges them as theorems.
+
+The detailed entries below are retained as the proof obligations that
+future work will need to close as theorems rather than axioms.
+
+### 10. `gns_l2_spectral_data_axiom` (WITHDRAWN)
 **File**: `Wightman/Spectral/Ruelle/L2_NoZeroMomentumAtom.lean`.
 
 **Statement**: for a `WightmanFunctions d` family `Wfn` and a pair of
@@ -396,11 +412,13 @@ mass-hyperboloid foliation `dp⁰ / 2E_p`.
 spectral analysis on Ω⊥. Probably 1–3 weeks of focused QFT-spectral
 formalization.
 
-### 11. `wightman_l4_spectral_data_axiom`
+### 11. `wightman_l4_spectral_data_axiom` (WITHDRAWN)
 
 **File**: `Wightman/Spectral/Ruelle/L4_UniformPolynomialBound.lean`.
 
-**Status (2026-05-08)**: **Shipped after RACH.bound regulator refactor.**
+**Status (2026-05-09)**: **Withdrawn after PR-#86 review.** Production
+axiom not shipped; conditional reduction `ruelle_analytic_cluster_bound_of`
+retained.
 
 **History**:
 
@@ -458,9 +476,9 @@ against Schwartz-supported test functions requires IBP rework
 (Streater-Wightman §3.4 / Ruelle 1962 — derivative-transfer
 argument). See `docs/ruelle_bound_vacuity_concern.md` for details.
 
-### Audit table
+### Audit table (withdrawn entries — record only)
 
-| Axiom | File:Line | Rating | Sources | Notes |
-|-------|-----------|--------|---------|-------|
-| `gns_l2_spectral_data_axiom` | L2_NoZeroMomentumAtom.lean | Pending DT | LP (Glimm-Jaffe §6.2, Reed-Simon II §IX.8, Streater-Wightman §3.5) | Single explicit axiom for the GNS-spectral L2 chain; consumed only by `gns_orthogonal_spatial_cobounded_decay`. Pending vetting via Gemini deep-think. |
-| `wightman_l4_spectral_data_axiom` | L4_UniformPolynomialBound.lean | Likely correct / Standard | GR (Gemini chat 2026-05-08), LP (Streater-Wightman 3.1.1, BLT 11.2) | Polarized Fourier representation of joint W_analytic_BHW with Vladimirov-style boundary regulator. Discharges RACH.bound unconditionally. Cluster proof dominator step requires IBP rework (sorry'd). |
+| Axiom (proposed) | File | Disposition | Notes |
+|------------------|------|-------------|-------|
+| `gns_l2_spectral_data_axiom` | L2_NoZeroMomentumAtom.lean | **WITHDRAWN** (2026-05-09, PR-#86 review) | Conditional reduction `gns_orthogonal_spatial_cobounded_decay_of` retained; production axiom not shipped per the no-QFT-axioms discipline. Discharge content (SNAG + polarization + AC marginal) remains a future-work proof obligation. |
+| `wightman_l4_spectral_data_axiom` | L4_UniformPolynomialBound.lean | **WITHDRAWN** (2026-05-09, PR-#86 review) | Conditional reduction `ruelle_analytic_cluster_bound_of` retained; production axiom not shipped. The regulator-fix on `RACH.bound` lands in PR-#86; the dischargeable Vladimirov-bound chain (via `bv_implies_fourier_support` + `fl_representation_from_bv` + `fourierLaplaceExtMultiDim_vladimirov_growth`) becomes the path for a future proved theorem. |

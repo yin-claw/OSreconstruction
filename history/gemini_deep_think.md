@@ -29,17 +29,17 @@ To answer your question directly: The pointwise cluster identity evaluated on ar
 
 extended tube $\mathcal{T}'$ falls into category **(c) — it is actually false (or mathematically ill-posed) in generic
 
- configurations.** 
+ configurations.**
 
 The theorem fails on the extended tube because of a geometric trap: **shifting a sub-cluster by a large real
 
- spatial translation generally forces the joint configuration completely out of the domain of holomorphy.** 
+ spatial translation generally forces the joint configuration completely out of the domain of holomorphy.**
 
 However, if you restrict the pointwise
 
  limit to the **standard forward tube $\mathcal{T}$**, the identity is **(a) a literal corollary**
 
- of the distributional theorem via Vitali's Convergence Theorem. 
+ of the distributional theorem via Vitali's Convergence Theorem.
 
 Here is the rigorous breakdown of the geometry, the resolution of
 
@@ -91,11 +91,11 @@ Because $\Lambda$ is a
 
 $, the growing term $-\lambda \text{Im}(\Lambda a)$ will inevitably overwhelm the original coordinate and push it out of $V^+$.
 
- 
+
 
 Consequently, the sequence $(z, w+\lambda a)$ **escapes the extended tube**. The Wightman function encounters singularities or
 
- branch cuts, making the asymptotic limit mathematically undefined. 
+ branch cuts, making the asymptotic limit mathematically undefined.
 
 ### 2. Verification of the "Jost Point"
 
@@ -114,7 +114,7 @@ z \in \mathcal{T}'_n$ and $w \in \mathcal{T}'_m$
 
  are complex (i.e., they have non-zero imaginary parts), adding a real spatial vector $\lambda a$ leaves those imaginary
 
- parts fixed. Therefore, the joint configuration **never** becomes a Jost point. 
+ parts fixed. Therefore, the joint configuration **never** becomes a Jost point.
 * **The Truth in the Argument:** The
 
  argument you heard is actually the standard proof for the cluster decomposition of **real Wightman distributions**. For tempered distributions evaluated on real Minkowski space
@@ -136,14 +136,14 @@ sigma_n \oplus \sigma_m$ exists. Would this ruin the cluster?
 
 **No, it would not,
 
- because of the Bargmann-Hall-Wightman (BHW) Theorem.** 
+ because of the Bargmann-Hall-Wightman (BHW) Theorem.**
 By the Axiom of
 
  Locality (*Streater-Wightman, Theorem 3-2*), the Wightman functions are analytically continued
 
  from all permuted forward tubes to form a **single, single-valued, completely symmetric analytic function** on the entire permuted extended tube
 
- $\mathscr{T}'$. 
+ $\mathscr{T}'$.
 
 Because the function is globally single-valued and natively possesses permutation symmetry on this manifold,
 
@@ -160,12 +160,12 @@ Because of the domain escape problem on $\mathcal{T}'$, rigorous texts frame the
 
 1
 
-. **Distributional Level (Real Spacetime):** 
+. **Distributional Level (Real Spacetime):**
    * **Streater-Wightman**,
 
  *PCT, Spin and Statistics, and All That*: **Theorem 4-9** (or 4-1
 
-3 depending on the edition) states Ruelle's Cluster Decomposition Theorem strictly for distributions. 
+3 depending on the edition) states Ruelle's Cluster Decomposition Theorem strictly for distributions.
    * On page 135 (
 
 1964 ed.), they explicitly address your question about analytic continuation to the extended tube, stating: *"By analytic continuation the relation holds
@@ -174,12 +174,12 @@ Because of the domain escape problem on $\mathcal{T}'$, rigorous texts frame the
 
 2
 
-. **Standard Forward Tube $\mathcal{T}$ (Category A):** 
+. **Standard Forward Tube $\mathcal{T}$ (Category A):**
    * **Araki, He
 
 pp, Ruelle (1962)**, *"On the asymptotic behaviour of Wightman functions in space-like
 
- directions"* (*Helv. Phys. Acta 35, 164*). 
+ directions"* (*Helv. Phys. Acta 35, 164*).
    * This
 
  is the definitive "gold standard" paper for your exact question. In **Theorem 2**, they explicitly prove the pointwise analytic

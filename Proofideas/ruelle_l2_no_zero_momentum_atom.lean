@@ -131,6 +131,4 @@ The "no atom at zero spatial momentum" form requires committing to the
 SNAG output's type (joint PVM on momentum space). Stub deferred until
 the SNAG application is concretely written; see proof outline above.
 -/
-
 end
-
